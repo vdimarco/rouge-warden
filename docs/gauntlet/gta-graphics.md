@@ -178,3 +178,38 @@ Unreal is not available in this environment, so in-engine frames are the last co
 - Playability raw: 39 / 10 dimensions, index 39
 - Total: 79 / 200
 - Delta vs last round: +1
+
+### Round 6 — 2026-10-21 — rubric v1
+
+- What changed: `apply_comic_style.py` shades crew pixels with a half-lambert key from a fixed afternoon sun. The shade side is cooler and the lit side is slightly warm. Pixels outside the crew stencil are unchanged. The material updates when `apply_comic_style.py` runs in the editor.
+- Why it helped: Character models were tied for the lowest aesthetics score. The crew material is an emissive fill, so a body is one flat colour. A wrapped key is the first form that fill can carry without a new mesh.
+- Screenshots: before `docs/gauntlet/gta-graphics/round-06/before-crew.png`, after `docs/gauntlet/gta-graphics/round-06/after-crew.png`. These are a direct port of the crew key on stand-in ellipses, not an Unreal capture and not the shipped mesh. `Scripts/test_plateau_trees.py` passed. The sky patch in the preview is identical before and after. `GET /gta/` returned 200.
+- Next target: animation smoothness (still 3, the lowest aesthetics score).
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 4 | The city sun is unchanged. The crew key is a stencil term, not a new light. |
+| Color palette | 5 | The key tints the crew shade cool and the lit side warm. The street palette stays. |
+| Detail density | 4 | Doors and steps are unchanged. |
+| Texture and material quality | 4 | No new texture. The crew albedo is only multiplied. |
+| Composition and camera | 4 | Unchanged gameplay camera. |
+| Atmosphere | 4 | Weather streaks are unchanged. |
+| Character models | 4 | The crew stencil now has a lit side and a cool shade. The mesh is still the same low-poly body. |
+| Animation smoothness | 3 | No motion reviewed. |
+| Particles and VFX | 4 | Rain streaks are unchanged. |
+| UI polish | 5 | Untouched. |
+| Responsiveness and input latency | 4 | Not measured this round. |
+| Controls feel | 4 | Not played. |
+| Mission clarity | 5 | Unchanged objective card. |
+| Pacing | 4 | Unchanged mission slice. |
+| Fun factor | 3 | Not played. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 4 | No new juice. |
+| Sound design | 3 | Not listened to. |
+| Variety | 3 | One district. The crew key is one sun direction. |
+| Performance stability | 5 | The comic source test passed. The key is a dot product on crew pixels. Frame time was not remeasured. |
+
+- Aesthetics raw: 41 / 10 dimensions, index 41
+- Playability raw: 39 / 10 dimensions, index 39
+- Total: 80 / 200
+- Delta vs last round: +1

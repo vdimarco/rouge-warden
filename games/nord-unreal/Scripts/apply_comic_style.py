@@ -91,6 +91,15 @@ Color = lerp(Color, saturate(DotInk), Dot * 0.18 * (1.0 - max(PrintedCrew, Folia
 float Hatch = step(frac((Pixel.x - Pixel.y) / (DotSize * 0.9)), 0.25) * (1.0 - smoothstep(0.1, 0.17, L2));
 Color = lerp(Color, float3(0.03, 0.04, 0.07), Hatch * (Sky ? 0.0 : 0.12) * (1.0 - max(PrintedCrew, Foliage)));
 
+// The crew material is an emissive fill, so the body has no directional shade. Half-lambert
+// (Mitchell, Francke, Eng, Team Fortress 2, 2007) gives a lit side from the afternoon sun.
+// The city is left alone: PrintedCrew is 0 there.
+float3 ToSun = normalize(float3(-0.62, -0.48, 0.62));
+float Half = saturate(dot(NormalC, ToSun) * 0.5 + 0.5);
+Half *= Half;
+float3 Key = lerp(float3(0.62, 0.70, 0.86), float3(1.16, 1.06, 0.94), Half);
+Color = lerp(Color, saturate(Color * Key), PrintedCrew);
+
 Color = lerp(Color, float3(0.025, 0.015, 0.05), saturate(Ink) * (Sky ? 0.0 : 1.0));
 return Color;
 '''

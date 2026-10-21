@@ -1,0 +1,4 @@
+- [x] Add a crew-only half-lambert key in `apply_comic_style.py`
+- [x] Shade a figure before and after
+- [x] Run `Scripts/test_plateau_trees.py`
+- [ ] Apply the comic material in Unreal (editor not available here)
