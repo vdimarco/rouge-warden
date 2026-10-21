@@ -2069,6 +2069,7 @@ function after(dt, inp, yawDelta) {
   TIPS[0] = hands.tip(0); TIPS[1] = hands.tip(1);
   // third person: the ropes leave the hero's own hands (the old muzzles stay for first person)
   if (flatOn && flatcam.opacity > 0.5) { TIPS[0] = hero.hand(0); TIPS[1] = hero.hand(1); }
+  markGoldInk(dt);
   ropes.update(dt, P, TIPS, G.time);
   game.update(dt, G.time, P, inp); // before the hand-off it only lets the sleeping King breathe
   view.update(dt, G.time, vh.pos);
@@ -2127,6 +2128,26 @@ function after(dt, inp, yawDelta) {
   audio.update(dt);
   drawWeb(dt);
   publishSwing();
+}
+
+// Chase view only: a normal cup on the gold-ring tower is drawn as the ink web. The flight and the length
+// stay the aimed cup (easy stays false). The flag lingers 150 ms after release so the hemp cup does not
+// zip back across that fade. A headset and first person keep the mesh rope.
+function markGoldInk(dt) {
+  if (!P) return;
+  const chase = flatOn && !isXR() && !(flatcam && flatcam.firstPerson);
+  const g = city && city.goldRing;
+  for (const r of P.ropes) {
+    const on = !!(chase && g && r.state === "attached"
+      && Math.abs(r.anchor.x - g.x) < 2
+      && Math.abs(r.anchor.y - g.y) < 6
+      && Math.abs(r.anchor.z - g.z) < 8);
+    if (on) { r.inkLine = true; r.inkFade = 0; }
+    else if (r.inkLine && chase && r.state === "idle") {
+      r.inkFade = (r.inkFade || 0) + (dt || 0);
+      if (r.inkFade > 0.15) r.inkLine = false;
+    } else r.inkLine = false;
+  }
 }
 
 // The easy web. In the 3D scene it is a line in the world from the hand toward the anchor, ink #2B2A33,
@@ -2328,7 +2349,7 @@ function drawWeb(dt) {
   }
   let pending = false;
   for (let i = 0; i < 2; i++) {
-    if (P.ropes[i].easy && P.ropes[i].state === "attached") pending = true;
+    if ((P.ropes[i].easy || P.ropes[i].inkLine) && P.ropes[i].state === "attached") pending = true;
     else if (webWas[i] || webFade[i] > 0) pending = true;
   }
   if (!pending) {
@@ -2346,7 +2367,7 @@ function drawWeb(dt) {
   let any = false;
   const handOf = (i) => TIPS[i] || { x: P.pos.x, y: P.pos.y + P.chest, z: P.pos.z };
   for (let i = 0; i < 2; i++) {
-    const r = P.ropes[i], on = !!(r.easy && r.state === "attached");
+    const r = P.ropes[i], on = !!((r.easy || r.inkLine) && r.state === "attached");
     if (on) {
       webWas[i] = true; webFade[i] = 0;
       webA[i].x = r.anchor.x; webA[i].y = r.anchor.y; webA[i].z = r.anchor.z;
@@ -2367,7 +2388,7 @@ function drawWeb(dt) {
   if (threeD && webMesh) {
     webMesh.count = webSeg;
     webMesh.visible = webSeg > 0;
-    webMesh.userData.fade = webFade[0];
+    webMesh.userData.fade = Math.max(webFade[0], webFade[1]);
     if (webSeg) { webMesh.instanceMatrix.needsUpdate = true; webFadeAttr.needsUpdate = true; }
   }
   const sp = Math.hypot(P.vel.x, P.vel.y, P.vel.z);
@@ -2399,7 +2420,13 @@ function publishSwing() {
   window.__test = window.__test || {};
   window.__test.swing = SWING_VIEW;
   let r = null;
-  if (P) { if (P.ropes[0].easy && P.ropes[0].state === "attached") r = P.ropes[0]; else if (P.ropes[1].easy && P.ropes[1].state === "attached") r = P.ropes[1]; }
+  if (P) {
+    const live = (q) => q.state === "attached";
+    if (live(P.ropes[0]) && P.ropes[0].easy) r = P.ropes[0];
+    else if (live(P.ropes[1]) && P.ropes[1].easy) r = P.ropes[1];
+    else if (live(P.ropes[0]) && P.ropes[0].inkLine) r = P.ropes[0];
+    else if (live(P.ropes[1]) && P.ropes[1].inkLine) r = P.ropes[1];
+  }
   SWING_VIEW.attached = !!r;
   SWING_VIEW.ropeLength = r ? r.len : 0;
   SWING_VIEW.speed = P ? Math.hypot(P.vel.x, P.vel.y, P.vel.z) : 0;

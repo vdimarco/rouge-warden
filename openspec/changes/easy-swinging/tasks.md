@@ -11,3 +11,4 @@
 - [ ] `openspec validate` — the CLI is not installed in this environment, so this check did not run.
 - [x] Browser: a swing chain at 390×844 and 1280×800, including an off-screen anchor line. Frame time at both widths is under a 60 Hz budget. Existing `qa/vr/*.test.mjs` and e2e scripts pass.
 - [x] Browser: the gold-ring tower holds the rope at 390×844 and 1280×800, the left button fires the left rope 10 of 10 at 1280, and the page reports 0 errors. `qa/vr/gold-ring.e2e.mjs`.
+- [x] Chase-view gold-ring rope is the ink web: a mid-swing frame and a frame about 100 ms after release at 1280×800 and 390×844. Ink `#2B2A33`, about 2 px at 1280, drawn to the anchor, gone by 150 ms. The aimed cup stays easy-off. `qa/vr/gold-ring.e2e.mjs`.

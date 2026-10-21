@@ -55,7 +55,7 @@ The rope length SHALL be the distance to the anchor and SHALL NOT exceed 16 body
 - **THEN** the average speed across the chain is at least the speed at the start
 
 ### Requirement: The web is an ink line
-When the scene is 3D, the web SHALL be a line in world space from the hand toward the anchor, not a 2D stroke clipped to the screen edge. On a 1280-wide view it SHALL stay about 2 px wide at every distance, so a far anchor does not disappear. The ink SHALL be `#2B2A33`. It SHALL sag at the start of the swing and pull straight under tension, and SHALL fade out over 150 ms on release. At the top of the swing speed, 3 or 4 thin lines of paper `#F3E9D6` at 25% opacity SHALL still trail the body on the overlay. `window.__test.swing` SHALL be `{ attached, anchor: { x, y, z, offscreen }, ropeLength, speed }`.
+When the scene is 3D, the web SHALL be a line in world space from the hand toward the anchor, not a 2D stroke clipped to the screen edge. On a 1280-wide view it SHALL stay about 2 px wide at every distance, so a far anchor does not disappear. The ink SHALL be `#2B2A33`. It SHALL sag at the start of the swing and pull straight under tension, and SHALL fade out over 150 ms on release. In the chase view a rope anchored on the gold-ring tower, including the aimed cup whose flight and length stay a normal cup, SHALL be drawn as that same ink line from the hand to the anchor and SHALL fade out over 150 ms on release. At the top of the swing speed, 3 or 4 thin lines of paper `#F3E9D6` at 25% opacity SHALL still trail the body on the overlay. `window.__test.swing` SHALL be `{ attached, anchor: { x, y, z, offscreen }, ropeLength, speed }`.
 
 #### Scenario: An anchor off the screen
 - **WHEN** the web holds a sky anchor outside the 3D view
@@ -68,6 +68,10 @@ When the scene is 3D, the web SHALL be a line in world space from the hand towar
 #### Scenario: The line sags when the swing starts
 - **WHEN** an easy web has just attached in the 3D scene and the rope is not yet taut
 - **THEN** the middle of the part on screen sits about 16 px off the straight chord through that part, on a 1280-wide view
+
+#### Scenario: The gold-ring rope fades in ink
+- **WHEN** the chase view is mid-swing on a rope anchored to the gold-ring tower and the player releases
+- **THEN** the line is ink `#2B2A33`, about 2 px wide on a 1280-wide view, drawn from the hand to that anchor, partly faded about 100 ms after release, and gone by 150 ms
 
 ### Requirement: A headset does not turn the view to follow a swing
 When a headset session is in play, the game SHALL NOT rotate the view to follow a swing, the velocity, or an anchor. The view SHALL stay the headset pose. A stick snap or smooth turn MAY still yaw the rig, including while a rope is out. A swing SHALL start from the trigger of the hand that fires it. The other hand's trigger SHALL NOT start that rope, and the grip SHALL NOT start it. The anchor distances, the rope cap, the speed adds, the reswing wait, the ink line, and `window.__test.swing` stay as specified above.
