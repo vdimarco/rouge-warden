@@ -21,7 +21,8 @@ function rng(seed) {
 export const JOB = {
   offers: 4, near: [90, 420], refresh: 650, markerR: 4.5, markerUp: 3, leave: 700, // a job is dropped when you go this far away
   catch: { fall: 7, fallMax: 22, reach: 2.8, delay: 3.5, reward: 30, clear: 3, out: 1.6 }, // clear: the drop under the edge ends this low (no ledge)
-  washer: { grip: 60, reach: 2.6, reward: 40 },
+  // beat: the eighth-flush carry. pace and climb are a swing and a wall run, not a walk. A farther tower keeps the minute.
+  washer: { grip: 60, beat: 36, pace: 16, climb: 8, spare: 10, reach: 2.6, reward: 40 },
   pizza: { speed: 12, spare: 18, reach: 4.5, reward: 25, bonus: 15 },
   balloon: { rise: 2.4, drift: 1.1, top: 170, reach: 2.6, back: 4.5, slip: 1.2, clear: 5, reward: 20 }, // clear: it can be caught once this high
   brawl: { time: 120, wave1: 4, wave2: 3, reward: 35 },
@@ -182,17 +183,35 @@ export function createJobs({ city, combat, cars = null, seed = 4711 }) {
     if (type === "catch") { const q = pickRoof(fx, fz, lo, hi, 45, 150, clearEdge); if (q) { at = { x: q.x, y: q.y, z: q.z }; extra.bid = q.b.id; extra.edge = q.extra; } }
     else if (type === "brawl") { const q = pickRoof(fx, fz, lo, hi, 14, 70); if (q) { at = { x: q.x, y: q.y, z: q.z }; extra.bid = q.b.id; } }
     else if (type === "washer") {
-      const q = pickRoof(fx, fz, lo, hi, 55, 200);
-      if (q) {
-        // the washer hangs on the face that looks on to a street, at 40 to 70 % of the height
-        const t = q.b.tiers[0], faces = [[t.maxX, (t.minZ + t.maxZ) / 2, 1, 0], [t.minX, (t.minZ + t.maxZ) / 2, -1, 0], [(t.minX + t.maxX) / 2, t.maxZ, 0, 1], [(t.minX + t.maxX) / 2, t.minZ, 0, -1]];
+      // the washer hangs on the face that looks on to a street, at 40 to 70 % of the height
+      const hangOn = (b) => {
+        const t = b.tiers[0], faces = [[t.maxX, (t.minZ + t.maxZ) / 2, 1, 0], [t.minX, (t.minZ + t.maxZ) / 2, -1, 0], [(t.minX + t.maxX) / 2, t.maxZ, 0, 1], [(t.minX + t.maxX) / 2, t.minZ, 0, -1]];
         for (const [x, z, nx, nz] of faces) {
           const sx = x + nx * 8, sz = z + nz * 8;
           if (city.collideSphere(sx, 1, sz, 1) || city.isWater(sx, sz)) continue;
-          const h = Math.min(t.y1, q.b.roofY) * (0.4 + 0.3 * r());
-          at = { x: sx, y: ground(sx, sz), z: sz }; extra.hang = { x: x + nx * 0.45, y: h, z: z + nz * 0.45, nx, nz };
-          break;
+          const hy = Math.min(t.y1, b.roofY) * (0.4 + 0.3 * r());
+          return { at: { x: sx, y: ground(sx, sz), z: sz }, hang: { x: x + nx * 0.45, y: hy, z: z + nz * 0.45, nx, nz } };
         }
+        return null;
+      };
+      const tall = (b) => {
+        const t = b.tiers[b.tiers.length - 1];
+        return b.roofY >= 55 && b.roofY <= 200 && t.maxX - t.minX >= 10 && t.maxZ - t.minZ >= 10;
+      };
+      // a close band (the eighth flush) walks the towers in range. A wide band keeps the old random pick.
+      if (hi <= 180) {
+        const hits = [];
+        for (const { b } of tops) {
+          if (!tall(b)) continue;
+          const c = roofCentre(b), d = Math.hypot(c.x - fx, c.z - fz);
+          if (d < lo || d > hi) continue;
+          const w = hangOn(b);
+          if (w) hits.push(w);
+        }
+        if (hits.length) { const w = hits[Math.floor(r() * hits.length)]; at = w.at; extra.hang = w.hang; }
+      } else {
+        const q = pickRoof(fx, fz, lo, hi, 55, 200);
+        if (q) { const w = hangOn(q.b); if (w) { at = w.at; extra.hang = w.hang; } }
       }
     } else if (type === "getaway") {
       // the car starts on a crossing and runs the grid
@@ -332,11 +351,17 @@ export function createJobs({ city, combat, cars = null, seed = 4711 }) {
       A.timer = JOB.catch.delay;
       A.reward = JOB.catch.reward;
     },
-    washer(A) {
-      const H = A.o.hang;
+    washer(A, h) {
+      const H = A.o.hang, W = JOB.washer;
       A.data = { p: person(WASHER, H.x, H.y - 1.6, H.z, 14, { yaw: Math.atan2(H.nx, H.nz) }), caught: false };
-      A.timer = JOB.washer.grip;
-      A.reward = JOB.washer.reward;
+      // an odd job keeps the minute. The eighth flush is a swing: 36 s when he is close, longer only when the tower is far.
+      let clock = W.grip;
+      if (A.mission && h) {
+        const d = Math.hypot(H.x - h.x, H.z - h.z), climb = Math.max(0, H.y - h.y);
+        clock = Math.min(W.grip, Math.max(W.beat, d / W.pace + climb / W.climb + W.spare));
+      }
+      A.timer = clock;
+      A.reward = W.reward;
     },
     pizza(A, h) {
       // a story delivery is a swing or two. An odd-job pizza still runs across town.

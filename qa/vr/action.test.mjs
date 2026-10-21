@@ -559,6 +559,41 @@ test("Window Washer: reach him, carry him down to the street", () => {
   });
   assert.ok(r.end && r.end.type === "done", JSON.stringify(r.end));
 });
+test("the eighth-flush washer hangs for 36 s inside a swing, and an odd job keeps 60", () => {
+  const spots = [hero(city.start.x, city.start.y, city.start.z), hero(-200, 0, 40), hero(180, 0, -120), hero(40, 0, -200)];
+  for (let seed = 1; seed <= 24; seed++) {
+    const C = createCombat(city), J = createJobs({ city, combat: C, seed });
+    const h = spots[seed % spots.length];
+    const o = J.prepare("washer", h, [24, 140]);
+    assert.ok(o && o.hang, "a tower in the beat band, seed " + seed);
+    const d = Math.hypot(o.hang.x - h.x, o.hang.z - h.z);
+    assert.ok(d <= 160, "within a swing: " + d.toFixed(0) + " m");
+    J.start("washer", o, h, { mission: "GET HIM DOWN" });
+    assert.equal(J.active.timer, JOB.washer.beat, "seed " + seed + " d " + d.toFixed(0));
+    J.update(0, 0, h);
+    assert.ok(/36 s/.test(J.card.title), J.card.title);
+  }
+  const C = createCombat(city), J = createJobs({ city, combat: C, seed: 2 });
+  const h = hero(city.start.x, city.start.y, city.start.z);
+  const odd = J.prepare("washer", h, [90, 420]) || J.prepare("washer", h);
+  assert.ok(odd);
+  J.start("washer", odd, h);
+  assert.equal(J.active.timer, JOB.washer.grip);
+  J.update(0, 0, h);
+  assert.ok(/60 s/.test(J.card.title), J.card.title);
+  const origin = hero(h.x, 0, h.z);
+  const far = { id: 9, type: "washer", name: "Window Washer", x: origin.x + 800, y: 0, z: origin.z, hang: { x: origin.x + 800, y: 50, z: origin.z, nx: 1, nz: 0 } };
+  J.start("washer", far, origin, { mission: "GET HIM DOWN" });
+  assert.equal(J.active.timer, JOB.washer.grip, "a far tower is not cut to 36 s");
+  const away = hero(origin.x + 200, 0, origin.z);
+  let end = null;
+  for (let t = 0; t < 40 && J.active; t += DT) {
+    J.update(DT, t, away);
+    for (const e of J.events) if (e.type === "failed") end = e;
+    J.events.length = 0;
+  }
+  assert.ok(!end, "the far clock is still running at 40 s");
+});
 test("Pizza Rush: on the roof in time pays, late is a cold pizza", () => {
   const ok = runJob("pizza", (J, C, h, t) => (t > 3 && J.active ? hero(J.active.data.drop.x, J.active.data.drop.y, J.active.data.drop.z) : h));
   assert.ok(ok.end && ok.end.type === "done" && ok.end.reward > JOB.pizza.reward, JSON.stringify(ok.end));

@@ -92,11 +92,13 @@ try {
     return {
       calm, held: held && held.title, heldN: held && held.n, heldJob: false,
       n, title: ob && ob.title, detail: ob && ob.detail, job: job && job.type,
+      timer: job && job.timer,
     };
   });
   await page.screenshot({ path: out + "/washer.png" });
   check(down.held === "FLUSH THE CLOGS" && down.heldN === 7, "seven flushes are still the clog card", down);
   check(down.job === "washer" && /GET HIM DOWN/.test(down.title || "") && /WASHER/.test(down.title || "") && !/FLUSH THE CLOGS|BALLOON/.test((down.title || "") + " " + (down.detail || "")), "the eighth flush is a carry down, not the balloon", down);
+  check(down.timer <= 36 && down.timer > 34 && /3[4-6] s/.test(down.title || "") && !/60 s/.test(down.title || ""), "the eighth flush counts from 36 s, not a minute", down);
   check(page.errors.length === 0, "no page errors", page.errors);
 } finally {
   await close();

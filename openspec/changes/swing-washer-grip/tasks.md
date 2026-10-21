@@ -1,0 +1,2 @@
+- [ ] The eighth-flush washer inside a swing hangs for 36 s, an odd job stays at 60 s, and a far tower is not cut to 36 s
+- [ ] Check the 36 s card in a 1280×800 play
