@@ -1,0 +1,5 @@
+- [x] Draw profile 0 (body, cabin, roof, four tires, four rims) in the opening shade
+- [x] Keep the opening pitch, the aim, the socket, and the surveyed car spawn
+- [x] Check that the coupe replaces the constructor box on the right of the frame
+- [x] Run `Scripts/test_opening_car.py`
+- [ ] Confirm the saved coupe meshes in Unreal (editor not available here)

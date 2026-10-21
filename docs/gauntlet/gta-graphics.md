@@ -1788,3 +1788,38 @@ Unreal is not available in this environment, so in-engine frames are the last co
 - Playability raw: 39 / 10 dimensions, index 39
 - Total: 125 / 200
 - Delta vs last round: +1
+
+### Round 52 — 2026-10-21 — rubric v1
+
+- What changed: the opening shade draws the seventies fastback instead of the constructor box. Profile 0 is the body, the cabin, the roof, four tires, and four rims, in the default teal paint. It sits on the surveyed car spawn at the layout yaw. Wheels keep the constructor locals, and the rims sit at Y ±106.5. The game already loads those meshes in `ApplyPaint`. Pitch, aim, socket, the pawn, and the grove stay.
+- Why it helped: the box on the right of the opening frame was a stand-in. The picture now shows a coupe with glass, a lamp, and a wheel. Detail and texture stay at 9. The coupe is one object at the edge of the frame, and its own facets still read as a game mesh. This is not a categorical jump of the frame.
+- Screenshots: before `docs/gauntlet/gta-graphics/round-52/before-frame.png`, after `docs/gauntlet/gta-graphics/round-52/after-frame.png`. Crops of the car are `before-coupe.png` and `after-coupe.png`. Both use the opening walk camera (arm 420, socket Y 70, socket Z 110, pitch −16, yaw about 110°, horizontal FOV 90) at the surveyed sidewalk spawn, with the hoodie walk at 0.75 s and the same walk-peak rock. Foot dust is left out. Not an Unreal capture. The full-frame mean absolute delta is 0.0049 and the max is 0.584. 15324 pixels change, in a box from x 764 to 959 and y 206 to 311. The red box is gone. A teal fastback sits on the road, clipped at the right edge the way the box was. `Scripts/test_opening_car.py` passed. `QuebecGameplay.cpp` was not compiled. `GET /gta/` returned 200. OpenSpec CLI is not installed, so the change files were not validated with `openspec`.
+- Next target: animation stays at 5. A still of this walk will not move it. Every other aesthetics score is 9, and a 10 needs a categorical picture. This frame is not one.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 9 | The street shade is unchanged. |
+| Color palette | 9 | The coupe is the default teal. The street hues are unchanged. |
+| Detail density | 9 | The box is now the coupe: glass, a lamp, and a wheel. The rest of the frame, and the coupe's own facets, still set the 9. |
+| Texture and material quality | 9 | The coupe uses the authored paint, glass, and rubber. The asphalt mix is unchanged, and the body is still flat shade. |
+| Composition and camera | 9 | The opening aim is unchanged. The coupe sits where the box sat, still cut off at the right edge. |
+| Atmosphere | 9 | The street dust grade is unchanged. |
+| Character models | 9 | The hoodie is unchanged. |
+| Animation smoothness | 5 | The stride is unchanged. The crew blend space still cannot be posed here. |
+| Particles and VFX | 9 | The shoe puffs are unchanged. They are left out of these frames. |
+| UI polish | 9 | The radar heading is unchanged. |
+| Responsiveness and input latency | 4 | Not measured this round. |
+| Controls feel | 4 | Not played. |
+| Mission clarity | 5 | The objective words are unchanged. |
+| Pacing | 4 | Unchanged mission slice. |
+| Fun factor | 3 | Not played. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 4 | The coupe is the new mark. No new juice. |
+| Sound design | 3 | Not listened to. |
+| Variety | 3 | One coupe in this frame. The sedan and the wagon stay on their own profiles. |
+| Performance stability | 5 | `Scripts/test_opening_car.py` passed. The body file has more than 5000 faces. Frame time was not remeasured. |
+
+- Aesthetics raw: 86 / 10 dimensions, index 86
+- Playability raw: 39 / 10 dimensions, index 39
+- Total: 125 / 200
+- Delta vs last round: 0
