@@ -1572,3 +1572,48 @@ Unreal is not available here, so the native diamond was not captured. The title 
 ![Play client at 1280, host offline](gta-missions/r34-play-1280.png)
 
 ![Menu on a 390-wide screen, Recover visible](gta-missions/r34-play-menu-390.png)
+
+### Round 35 — 2026-10-21 — rubric v1
+
+- What changed: La course is a sixth side job. The passenger boards at a south road. The drop is a quay west of the terrace, and it counts only from a car at the arrival speed. After boarding, four seconds on foot loses them. Getting back in the car clears that clock. The job clock is 100 seconds and does not grow. The pay is 450. The goon pay stays 300. From the spawn the nearest open job is still the escape, and from the terrace it is still the goons.
+- Why it helped: The other jobs are a delivery, a chase, a fight, an escape, and a poster tour. None of them fails because you stepped out of the car. The four seconds is a drive you can lose by walking, which is a different clock from the pond's beam hold.
+- Screenshots: title `docs/gauntlet/gta-missions/r35-title-1280.png`, `r35-title-390.png`, `r35-title-320.png`. Play client, host offline, `r35-play-1280.png`. Menu with Recover `r35-play-menu-390.png`. The title loaded with no page errors. The raw play page still logs the missing `@epicgames-ps/lib-pixelstreamingfrontend-ue5.8` specifier; the shell and Recover still draw. The fare was not driven in a car. `Scripts/test_job_rules.py` reports 190 assertions, 0 failures, on c++, g++, and clang++. Syntax check `--both` passed for `QuebecSideJobs.cpp`. OpenSpec CLI is not installed, so `openspec validate` did not run.
+- Next target: mission clarity, still the remaining 7. The native card was not seen, so the score waits. The next round spends cash on a wrecked car instead of rewriting a card this container cannot show. Responsiveness stays at 3 and stays out of scope. Performance stays at 4 and is not measurable here. Fun, difficulty, and variety stay at 9. The grace is proven by the rules. It was not felt, so the pacing score waits at 9.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 3 | Unchanged. |
+| Color palette | 5 | Unchanged. |
+| Detail density | 3 | Unchanged. |
+| Texture and material quality | 3 | Unchanged. |
+| Composition and camera | 4 | Unchanged. |
+| Atmosphere | 4 | Unchanged. |
+| Character models | 3 | Unchanged. |
+| Animation smoothness | 3 | Unchanged. |
+| Particles and VFX | 2 | Unchanged. |
+| UI polish | 4 | Unchanged. The native card was not seen, and French and English still share the screen. |
+| Responsiveness and input latency | 3 | Unchanged. Still a lagged stream. Out of scope for this loop. |
+| Controls feel | 8 | Unchanged. Lock still holds Space while driving. |
+| Mission clarity | 7 | Unchanged. The fare names the passenger and the quay. The native card was not seen. |
+| Pacing | 9 | Four seconds on foot after boarding loses the passenger. A slow car at the quay finishes the fare. A fast car does not. The clock does not grow. |
+| Fun factor | 9 | Unchanged. Chez Lise still sells a kit, a vest, or one star. A sixth job is not the reference's spread of things to do. |
+| Difficulty curve | 9 | Unchanged. Selling the last page ends it for 200 and does not bank the chain. |
+| Feedback | 8 | Unchanged. Boarding uses the checkpoint cue the jobs already play. The rank sting is unchanged. |
+| Sound design | 8 | Unchanged. The lock still chirps. The fare adds no new tone. |
+| Variety | 9 | La course is a sixth job in the same district. Still one neighbourhood, so this is not the reference's spread. |
+| Performance stability | 4 | Unchanged. Not measurable in this container. |
+
+- Aesthetics raw: 34 / 10 dimensions, index 34
+- Playability raw: 74 / 10 dimensions, index 74
+- Total: 108 / 200
+- Delta vs last round: +1 (round 34 was 107). Pacing 8 → 9. Every other score held.
+
+![GTA title at 1280](gta-missions/r35-title-1280.png)
+
+![GTA title at 390](gta-missions/r35-title-390.png)
+
+![GTA title at 320](gta-missions/r35-title-320.png)
+
+![Play client at 1280, host offline](gta-missions/r35-play-1280.png)
+
+![Menu on a 390-wide screen, Recover visible](gta-missions/r35-play-menu-390.png)
