@@ -228,6 +228,24 @@ float CoatEdge = pow(1.0 - CoatNdV, 5.0);
 float Coat = Clear * (0.62 + 0.38 * CoatEdge) * SkyHit;
 Color = lerp(Color, SkyRefl, Coat);
 
+// Warm sun, cool shade, on the clear day. Johannes Itten, The Art of Color
+// (1961), the warm-cool contrast. The crew key already has the half-lambert
+// and this node has no shadow ray, so that term is the split. The multiply
+// is put back to the pixel's luminance, so the exposure stays and only the
+// hue moves. Pixels the cool wash already owns stay. Gloss, the sky and the
+// printed crew stay. NightFactor 1 leaves the colour for the night grade.
+float DayLum = dot(Color, float3(0.299, 0.587, 0.114));
+float DayOpen = smoothstep(0.08, 0.16, DayLum);
+float DayMatte = smoothstep(0.28, 0.62, Roughness);
+float3 DayCool = float3(0.62, 0.96, 1.18);
+float3 DayWarm = float3(1.55, 1.12, 0.42);
+float3 DayTint = lerp(DayCool, DayWarm, Half);
+float DayShare = DayMatte * DayOpen * (1.0 - saturate(NightFactor)) * (Sky ? 0.0 : 1.0) * (1.0 - PrintedCrew);
+float3 DayGraded = saturate(Color * DayTint);
+float DayKept = dot(DayGraded, float3(0.299, 0.587, 0.114));
+DayGraded *= DayLum / max(DayKept, 1.0e-3);
+Color = lerp(Color, saturate(DayGraded), DayShare);
+
 // Night grade. Masaki Kawase, "Frame Buffer Postprocessing Effects in
 // DOUBLE-S.T.E.A.L (Wreckless)" (GDC 2003), gathers bloom from wide taps.
 // A pyramid does not fit this node, so sixteen taps are the gather. The moon

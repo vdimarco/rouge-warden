@@ -1,0 +1,5 @@
+# Itten's warm-cool contrast
+
+Johannes Itten, The Art of Color (1961), treats warm against cool as a contrast of its own. The comic node has no shadow ray. The crew key already has a half-lambert toward the afternoon sun (Mitchell, Francke, Eng, Team Fortress 2, 2007), and this grade reuses that term. A matte midtone is multiplied by a tint that runs from (0.62, 0.96, 1.18) in shade to (1.55, 1.12, 0.42) in sun, then scaled back to the pixel's luminance so the exposure does not move. Pixels darker than the cool-wash gate, glossy bodywork, the sky and printed crew are left alone. NightFactor 1 leaves the colour for the night grade. The clear-day lighting multipliers, the night exposure and the window glow stay as they are.
+
+Unreal is not installed. The offline picture is the walking camera (arm 420, socket Y 70, socket Z 110, pitch −12, horizontal FOV 90) looking down a street of the burnt-orange brick paper, with the asphalt colour from the two-scale mix. The before frame has no grade. The after frame is the grade. It is not an engine capture.

@@ -1298,3 +1298,38 @@ Unreal is not available in this environment, so in-engine frames are the last co
 - Playability raw: 39 / 10 dimensions, index 39
 - Total: 111 / 200
 - Delta vs last round: +1
+
+### Round 38 — 2026-10-21 — rubric v1
+
+- What changed: After the clearcoat and before the night grade, a matte midtone is multiplied by a tint from (0.62, 0.96, 1.18) in shade to (1.55, 1.12, 0.42) toward the sun, then scaled back to that pixel's luminance. The split is the crew key's half-lambert. Pixels the cool wash already owns, glossy bodywork, the sky and printed crew stay. NightFactor 1 leaves the colour.
+- Why it helped: Color palette was at 8. A clear day held one temperature, so the wall facing the sun matched the wall in shade and the road stayed a neutral grey.
+- Screenshots: before `docs/gauntlet/gta-graphics/round-38/before-frame.png`, after `docs/gauntlet/gta-graphics/round-38/after-frame.png`. Crops are `before-street.png` and `after-street.png`. Both use the walking camera (arm 420, socket Y 70, socket Z 110, pitch −12, horizontal FOV 90) looking down a street of the burnt-orange brick paper and the two-scale asphalt. Not an Unreal capture. The street crop mean absolute delta is 0.046 and the max is 0.267. The full-frame mean is 0.044. The shade wall goes duller brown, the sunlit wall stays burnt orange, and the road goes warm. `Scripts/test_day_grade.py` passed. The comic material was not applied in Unreal. `GET /gta/` returned 200. OpenSpec CLI is not installed, so the change files were not validated with `openspec`.
+- Next target: detail density, tied at 8 with lighting, atmosphere, character models and UI polish. Composition and particles stay at 6, because the walking socket and the rain displacement stay as they are. Animation smoothness stays at 3 and is skipped until a pose can be drawn.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 8 | The sun vector and the exposure are unchanged. The grade puts the luminance back. |
+| Color palette | 9 | Shade brick, sunlit brick and the road are three hues. It is still one multiply, and the shade is brown rather than skylight. |
+| Detail density | 8 | The street mesh is unchanged. |
+| Texture and material quality | 9 | The asphalt mix and the brick paper are unchanged. |
+| Composition and camera | 6 | The walking socket is unchanged. |
+| Atmosphere | 8 | The moon grade and the street sheen are unchanged. |
+| Character models | 8 | No figure changed. |
+| Animation smoothness | 3 | Skipped. The blend space still cannot be posed here. |
+| Particles and VFX | 6 | Rain rings are unchanged. |
+| UI polish | 8 | The radar is unchanged. |
+| Responsiveness and input latency | 4 | Not measured this round. |
+| Controls feel | 4 | Not played. |
+| Mission clarity | 5 | The objective words are unchanged. |
+| Pacing | 4 | Unchanged mission slice. |
+| Fun factor | 3 | Not played. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 4 | No new juice. |
+| Sound design | 3 | Not listened to. |
+| Variety | 3 | One street grade. |
+| Performance stability | 5 | `Scripts/test_day_grade.py` passed. The grade adds no texture taps. Frame time was not remeasured. |
+
+- Aesthetics raw: 73 / 10 dimensions, index 73
+- Playability raw: 39 / 10 dimensions, index 39
+- Total: 112 / 200
+- Delta vs last round: +1
