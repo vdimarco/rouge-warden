@@ -1,3 +1,0 @@
-- [ ] A held swing lets go on the GO cue and catches the next building without a new press
-- [ ] Letting the button up still lets go and does not fire another rope
-- [ ] Check both in a 1280×800 play, and that one button still leaves the roof

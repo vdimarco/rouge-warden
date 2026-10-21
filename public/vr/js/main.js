@@ -1573,12 +1573,15 @@ function fillCam() {
   CAM.yaw = flatcam ? flatcam.yaw : G.rigYaw; CAM.pitch = flatcam ? flatcam.pitch : 0; CAM.fov = camera.fov; CAM.aspect = camera.aspect;
   return CAM;
 }
-function playerEasy() {
+function easyDir() {
   easyDx = P.vel.x; easyDz = P.vel.z;
   if (Math.hypot(easyDx, easyDz) < 1) {
     const yaw = G.rigYaw + yawOfQuat(G.input.head.local.quat);
     easyDx = -Math.sin(yaw); easyDz = -Math.cos(yaw);
   }
+}
+function playerEasy() {
+  easyDir();
   const a = easyAnchor(P, easyDx, easyDz);
   if (a.sky) { fillCam(); for (let n = 0; n < 8 && project(CAM, a.x, a.y, a.z, PROJ).inView; n++) a.y += a.easyH * 3; }
   return a;
@@ -1628,10 +1631,9 @@ function aimAndFire(dt, inp) {
     // A held button, after the GO cue let the last rope go, catches the next building. It does not dry-fire while none is ahead.
     if (useEasy && chainArm[i] && h.holding && !h.triggerDown && settings.hold !== "toggle") {
       if (swingCool[i] > 0) { lastAim[i] = null; continue; }
-      const next = playerEasy();
+      const next = chainAim(i);
       lastAim[i] = next;
-      const building = next && next.valid && !next.sky && next.tag === "building" && next.id !== chainFrom[i] && !ui.blocking(i);
-      if (building) { realWait[i] = true; shoot(i, h, next); }
+      if (next && !ui.blocking(i)) { realWait[i] = true; shoot(i, h, next); }
       continue;
     }
     // easy swing only looks for an anchor on the press. The rest of the time the old ray stays for a headset and for G.test.aimAt.
@@ -1663,6 +1665,17 @@ function aimAndFire(dt, inp) {
       }
     }
   }
+}
+// The next building after a let-go. The usual point first, then a lower, farther one, skipping the building just left.
+function chainAim(i) {
+  easyDir();
+  const avoid = chainFrom[i];
+  const tries = [{ avoid }, { avoid, up: 8, ahead: 20, reach: 10 }, { avoid, up: 4, ahead: 34, reach: 16 }];
+  for (let t = 0; t < tries.length; t++) {
+    const a = easyAnchor(P, easyDx, easyDz, tries[t]);
+    if (a && !a.sky && a.tag === "building" && a.id !== avoid) return a;
+  }
+  return null;
 }
 // Mouse and pad, flat play: a building rope that has shown the GO cue lets go while the button stays down, and the
 // next frame catches the building ahead. The cue stays long enough to read. A clog, a pipe, the crack and a phone rope stay.

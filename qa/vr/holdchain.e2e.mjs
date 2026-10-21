@@ -18,42 +18,57 @@ try {
   await enterXR(page, "desktop");
   await page.evaluate(() => { G.renderer.setAnimationLoop(null); G.test.hold(true); G.test.step(1 / 60, 20); });
 
-  await page.evaluate(() => {
+  const held = await page.evaluate(() => {
     const S = G.city.start, yaw = S.yaw;
     G.test.teleport(S.x, S.y + 30, S.z);
     G.rigYaw = yaw; G.desktop.level(0); G.flatcam.reset(yaw);
-    G.P.vel.x = -Math.sin(yaw) * 8; G.P.vel.z = -Math.cos(yaw) * 8; G.P.vel.y = -4; G.P.onGround = false;
-    G.test.step(1 / 60, 10);
-  });
-  await page.keyboard.down("KeyE");
-  const held = await page.evaluate(() => {
-    const before = G.test.events().length;
-    let n = 0, first = null;
-    for (; n < 180; n++) {
-      G.test.step(1 / 60, 1);
-      const r = G.P.ropes.find((q) => q.state === "attached" && q.target && q.target.tag === "building");
-      if (r) { first = r.target.id; break; }
-    }
-    let second = null, frames = 0, ups = 0, drys = 0, fires = 0;
-    const start = G.test.events().length;
-    for (; frames < 420 && second == null; frames++) {
-      G.test.step(1 / 60, 1);
-      const ev = G.test.events();
-      for (let i = start; i < ev.length; i++) {
-        const e = ev[i];
-        if (e.type === "input" && e.edge === "triggerUp") ups++;
-        if (e.type === "dry") drys++;
-        if (e.type === "fire") fires++;
-        if (e.type === "attach" && e.target && e.target.tag === "building" && e.target.id !== first) second = e.target.id;
+    G.P.onGround = false;
+    G.P.vel.x = -Math.sin(yaw) * 8; G.P.vel.z = -Math.cos(yaw) * 8; G.P.vel.y = -4;
+    G.test.step(1 / 60, 15);
+    window.dispatchEvent(new KeyboardEvent("keydown", { code: "KeyE" }));
+    const mark = G.frame;
+    const log = [], seen = new Set();
+    const take = () => {
+      for (const e of G.test.events()) {
+        if (!(e.frame > mark)) continue;
+        if (e.type !== "attach" && e.type !== "fire" && e.type !== "detach" && e.type !== "dry" && !(e.type === "input" && e.edge === "triggerUp")) continue;
+        const key = e.frame + ":" + e.type + ":" + (e.side ?? "") + ":" + (e.target && e.target.id);
+        if (seen.has(key)) continue;
+        seen.add(key);
+        log.push({ t: e.type, tag: e.target && e.target.tag, id: e.target && e.target.id, frame: e.frame });
       }
+    };
+    let frames = 0, cue = 0, wallAt = -1;
+    for (; frames < 500; frames++) {
+      G.test.step(1 / 60, 1);
+      take();
+      const act = G.test.action();
+      if (act.cueAir[0] || act.cueAir[1]) cue++;
+      if (G.P.wall && wallAt < 0) wallAt = frames;
+      const builds = log.filter((e) => e.t === "attach" && e.tag === "building");
+      const ids = [...new Set(builds.map((e) => e.id))];
+      if (ids.length >= 2 && log.some((e) => e.t === "detach")) break;
     }
+    window.dispatchEvent(new KeyboardEvent("keyup", { code: "KeyE" }));
     G.test.render(0);
-    const ropes = G.test.state().ropes.map((r) => ({ state: r.state, tag: r.tag, id: r.id }));
-    return { n, frames, first, second, ups, drys, fires, ropes, air: !G.P.onGround, before };
+    const attaches = log.filter((e) => e.t === "attach");
+    const first = attaches[0] || null;
+    const building = attaches.find((e) => e.tag === "building" && first && e.id !== first.id) || null;
+    return {
+      frames, cue, wallAt, first, building,
+      ups: log.filter((e) => e.t === "input").length,
+      drys: log.filter((e) => e.t === "dry").length,
+      fires: log.filter((e) => e.t === "fire").length,
+      log: log.slice(0, 14),
+      air: !G.P.onGround, wall: !!G.P.wall,
+      y: +G.P.pos.y.toFixed(1),
+    };
   });
   await page.screenshot({ path: out + "/chain.png" });
-  check(held.first != null && held.second != null && held.second !== held.first, "holding E through the cue catches a different building", held);
-  check(held.ups === 0 && held.drys === 0 && held.fires >= 1, "the next web is not a new press and not a dry fire", held);
+  console.log("chain", JSON.stringify({ frames: held.frames, cue: held.cue, wallAt: held.wallAt, first: held.first, building: held.building, fires: held.fires, y: held.y, log: held.log }));
+  const gap = held.building && held.log ? held.building.frame - (held.log.find((e) => e.t === "detach") || {}).frame : null;
+  check(held.first && held.building && held.building.id !== held.first.id && gap != null && gap < 90, "holding E through the cue catches a different building", { ...held, gap });
+  check(held.ups === 0 && held.drys === 0 && held.fires >= 2, "the next web is not a new press and not a dry fire", held);
 
   await page.keyboard.up("KeyE");
   await page.evaluate(() => {
