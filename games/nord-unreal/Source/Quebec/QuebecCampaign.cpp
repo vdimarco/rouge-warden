@@ -1,11 +1,14 @@
 #include "QuebecCampaign.h"
 #include "QuebecGameplay.h"
 #include "QuebecGTA.h" // Side jobs: QuebecJobs::IsJobActive for the race gate guard (JOBS).
+#include "QuebecCourtRules.h"
 #include "QuebecPondRules.h"
 #include "QuebecSky.h"
 
 static_assert(QuebecPondRules::StepBanked == AQuebecCampaign::PondBankedStep,
     "mission 3 banks in the session only; the campaign and the rules share one banked index");
+static_assert(QuebecCourtRules::StepBanked == AQuebecCampaign::CourtBankedStep,
+    "mission 4 banks in the session only; the campaign and the rules share one banked index");
 
 #include "Components/BoxComponent.h"
 #include "Components/CapsuleComponent.h"
@@ -331,6 +334,29 @@ void AQuebecCampaign::BuildEncounter()
     PondCaptions.Add(AddCaption(TEXT("PondDashCaption"),PondAt(QuebecPondRules::DashEnd,200.),TEXT("SPRINT"),18.f));
     PondParts.Add(AddPart(TEXT("PondPicnicClamp"),Sphere,PondAt(QuebecPondRules::Picnic,80.),FVector(48.,48.,48.),Berry));
     PondCaptions.Add(AddCaption(TEXT("PondPicnicCaption"),PondAt(QuebecPondRules::Picnic,180.),TEXT("PICNIC CLAMP"),18.f));
+
+    // Mission 4 posts. Hidden until the picnic is banked. The ball and the ink sweep move in UpdatePresentation.
+    const auto CourtAt = [](const QuebecCourtRules::FSpot& Spot, double Height)
+    {
+        return FVector(Spot.X, Spot.Y, Height);
+    };
+    CourtParts.Add(AddPart(TEXT("CourtArrive"),Cylinder,CourtAt(QuebecCourtRules::Arrive,6.),FVector(200.,200.,12.),Cream));
+    CourtCaptions.Add(AddCaption(TEXT("CourtArriveCaption"),CourtAt(QuebecCourtRules::Arrive,160.),TEXT("EXHIBITION"),18.f));
+    const TCHAR* PanelNames[] = {TEXT("PANEL"), TEXT("MIDDLE"), TEXT("GOLD")};
+    for (int32 Panel = 0; Panel < QuebecCourtRules::PanelCount; ++Panel)
+    {
+        const bool bGold = Panel == QuebecCourtRules::GoldPanel;
+        CourtParts.Add(AddPart(*FString::Printf(TEXT("CourtPanel%d"), Panel), Cube,
+            CourtAt(QuebecCourtRules::Panels[Panel], bGold ? 100. : 80.), FVector(70., 70., bGold ? 200. : 160.), Gold));
+        CourtCaptions.Add(AddCaption(*FString::Printf(TEXT("CourtPanelCaption%d"), Panel),
+            CourtAt(QuebecCourtRules::Panels[Panel], bGold ? 230. : 190.), PanelNames[Panel], 18.f));
+    }
+    CourtParts.Add(AddPart(TEXT("CourtReturnGate"),Cube,CourtAt(QuebecCourtRules::ReturnGate,110.),FVector(36.,36.,220.),Lime));
+    CourtCaptions.Add(AddCaption(TEXT("CourtGateCaption"),CourtAt(QuebecCourtRules::ReturnGate,250.),TEXT("RETURN"),18.f));
+    CourtParts.Add(AddPart(TEXT("CourtClamp"),Sphere,CourtAt(QuebecCourtRules::Clamp,80.),FVector(48.,48.,48.),Berry));
+    CourtCaptions.Add(AddCaption(TEXT("CourtClampCaption"),CourtAt(QuebecCourtRules::Clamp,180.),TEXT("COURT CLAMP"),18.f));
+    CourtParts.Add(AddPart(TEXT("CourtBall"),Sphere,CourtAt(QuebecCourtRules::Panels[0],140.),FVector(90.,90.,90.),Cream));
+    CourtParts.Add(AddPart(TEXT("CourtInk"),Cube,CourtAt(QuebecCourtRules::ReturnGate,40.),FVector(420.,16.,10.),Berry));
 }
 
 void AQuebecCampaign::Tick(float DeltaSeconds)
@@ -342,7 +368,11 @@ void AQuebecCampaign::Tick(float DeltaSeconds)
         bClampOpen = FMath::Fmod(GetWorld()->GetTimeSeconds(),6.f) < 2.5f;
         if (Phase <= EQuebecCampaignPhase::ReleaseTable) TickTerrace(DeltaSeconds);
         if (Phase == EQuebecCampaignPhase::RaceReady || Phase == EQuebecCampaignPhase::RaceRunning) TickRace(DeltaSeconds);
-        if (Phase == EQuebecCampaignPhase::Complete) TickPond();
+        if (Phase == EQuebecCampaignPhase::Complete)
+        {
+            TickPond();
+            TickCourt();
+        }
     }
     if (GetWorld()->GetTimeSeconds()-LastPresentationTime >= .1f)
     {
@@ -561,6 +591,70 @@ bool AQuebecCampaign::HandleInteract(AQuebecController* Controller)
         }
         return false;
     }
+    if (IsCourtOpen())
+    {
+        const AGameStateBase* CourtState = GetWorld()->GetGameState();
+        const double CourtTime = static_cast<double>(CourtState ? CourtState->GetServerWorldTimeSeconds() : GetWorld()->GetTimeSeconds());
+        if (CourtStep == QuebecCourtRules::StepRally)
+        {
+            int32 BestPanel = -1;
+            double BestDistance = QuebecCourtRules::Reach + 1.;
+            const AQuebecCharacter* Character = Cast<AQuebecCharacter>(Controller->GetPawn());
+            if (!Character) return false;
+            for (int32 Panel = 0; Panel < QuebecCourtRules::PanelCount; ++Panel)
+            {
+                const QuebecCourtRules::FSpot& Spot = QuebecCourtRules::Panels[Panel];
+                if (!NearCourt(Controller, Spot.X, Spot.Y)) continue;
+                const double Distance = FVector::Dist2D(Character->GetActorLocation(), FVector(Spot.X, Spot.Y, 0.));
+                if (Distance < BestDistance) { BestDistance = Distance; BestPanel = Panel; }
+            }
+            if (BestPanel < 0) return false;
+            const int32 Next = QuebecCourtRules::Apply(CourtStep, QuebecCourtRules::EAct::Score, BestPanel, CourtTime);
+            if (Next == CourtStep)
+            {
+                Controller->ShowInteractionMessage(BestPanel == QuebecCourtRules::GoldPanel
+                    ? TEXT("Wait until the ball is on the gold panel.")
+                    : TEXT("That panel is a decoy. The gold one restarts the rally."));
+                return true;
+            }
+            AdvanceCourt(Next, Controller, TEXT("The point restarts. The return gate is the way out. RED JERSEY: I wanted to win that."), false);
+            return true;
+        }
+        if (CourtStep == QuebecCourtRules::StepRedirect)
+        {
+            const QuebecCourtRules::FSpot& Gold = QuebecCourtRules::Panels[QuebecCourtRules::GoldPanel];
+            if (NearCourt(Controller, Gold.X, Gold.Y))
+            {
+                Controller->PlayFeedback(EQuebecFeedbackCue::Dialogue);
+                Controller->ShowInteractionMessage(TEXT("That panel restarts the point. The referee is already writing the penalty."));
+                return true;
+            }
+            if (NearCourt(Controller, QuebecCourtRules::ReturnGate.X, QuebecCourtRules::ReturnGate.Y))
+            {
+                const int32 Next = QuebecCourtRules::Apply(CourtStep, QuebecCourtRules::EAct::Bank, QuebecCourtRules::BankPanel, CourtTime);
+                if (Next == CourtStep)
+                {
+                    Controller->ShowInteractionMessage(QuebecCourtRules::SweepDanger(CourtTime)
+                        ? TEXT("Ink on the line. Let it pass.")
+                        : TEXT("Wait until the ball crosses the middle panel."));
+                    return true;
+                }
+                AdvanceCourt(Next, Controller, TEXT("The bank goes in. The referee calls a penalty on the light."), false);
+                return true;
+            }
+            return false;
+        }
+        if (CourtStep == QuebecCourtRules::StepPull && NearCourt(Controller, QuebecCourtRules::Clamp.X, QuebecCourtRules::Clamp.Y))
+        {
+            PlungerPoint = FVector(QuebecCourtRules::Clamp.X, QuebecCourtRules::Clamp.Y, 130.);
+            PlungerPullTime = GetWorld()->GetTimeSeconds();
+            // The court is session state. CompletedMissions stays 2 and the v1 slot is not rewritten.
+            AdvanceCourt(QuebecCourtRules::Apply(CourtStep, QuebecCourtRules::EAct::Use, -1, CourtTime), Controller,
+                TEXT("The players sit up. Fourth souvenir, for this session."), true);
+            return true;
+        }
+        return false;
+    }
     return false;
 }
 
@@ -632,6 +726,39 @@ bool AQuebecCampaign::NearPond(const AQuebecController* Controller, double X, do
     const FVector Position = Character->GetActorLocation();
     if (FMath::Abs(Position.Z) > 400.) return false;
     return FVector::Dist2D(Position, FVector(X, Y, 0.)) <= QuebecPondRules::Reach;
+}
+
+void AQuebecCampaign::TickCourt()
+{
+    if (!IsCourtOpen() || CourtStep != QuebecCourtRules::StepArrive) return;
+    for (TActorIterator<AQuebecController> It(GetWorld()); It; ++It)
+    {
+        if (!NearCourt(*It, QuebecCourtRules::Arrive.X, QuebecCourtRules::Arrive.Y)) continue;
+        const int32 Next = QuebecCourtRules::Apply(CourtStep, QuebecCourtRules::EAct::Walk, -1, 0.);
+        if (Next != CourtStep)
+            AdvanceCourt(Next, *It, TEXT("The exhibition is one point from perfect. Score the gold panel."), false);
+        break;
+    }
+}
+
+void AQuebecCampaign::AdvanceCourt(int32 Next, AQuebecController* Who, const TCHAR* Message, bool bFinished)
+{
+    if (Next == CourtStep) return;
+    CourtStep = Next;
+    if (Who && Message) Who->ShowInteractionMessage(Message);
+    for (TActorIterator<AQuebecController> It(GetWorld()); It; ++It)
+        It->PlayFeedback(bFinished ? EQuebecFeedbackCue::Complete : EQuebecFeedbackCue::Checkpoint);
+    UpdatePresentation();
+    ForceNetUpdate();
+}
+
+bool AQuebecCampaign::NearCourt(const AQuebecController* Controller, double X, double Y) const
+{
+    const AQuebecCharacter* Character = Controller ? Cast<AQuebecCharacter>(Controller->GetPawn()) : nullptr;
+    if (!Character) return false;
+    const FVector Position = Character->GetActorLocation();
+    if (FMath::Abs(Position.Z) > 400.) return false;
+    return FVector::Dist2D(Position, FVector(X, Y, 0.)) <= QuebecCourtRules::Reach;
 }
 
 void AQuebecCampaign::TickRace(float DeltaSeconds)
@@ -799,7 +926,14 @@ void AQuebecCampaign::RequestRetry(AQuebecController* Controller)
             }
             return;
         }
-        Controller->ShowInteractionMessage(TEXT("Both scenes are banked. T replays the race."));
+        if (IsCourtOpen())
+        {
+            const QuebecCourtRules::FSpot Spot = QuebecCourtRules::RecoverAt(CourtStep);
+            if (MoveToSafeCheckpoint(Controller, FVector(Spot.X, Spot.Y, 100.), FRotator(0., 90., 0.)))
+                Controller->ShowInteractionMessage(TEXT("This rally restored. The gold panel still loops."));
+            return;
+        }
+        Controller->ShowInteractionMessage(TEXT("The match is banked. T replays the race."));
         return;
     }
     if (Phase <= EQuebecCampaignPhase::ReleaseTable)
@@ -859,7 +993,12 @@ void AQuebecCampaign::RequestReplay(AQuebecController* Controller)
         Controller->ShowInteractionMessage(TEXT("The picnic is still in the picture. T replays the race after it is free."));
         return;
     }
-    // A race replay does not rewind PondStep. A banked picnic stays banked for this session.
+    if (IsCourtOpen())
+    {
+        Controller->ShowInteractionMessage(TEXT("The match is still looping. T replays the race after the court is free."));
+        return;
+    }
+    // A race replay does not rewind PondStep or CourtStep. A banked picnic and a banked court stay banked for this session.
     RaceGateIndex = 0;
     RaceElapsed = 0.f;
     bRaceRetried = false;
@@ -869,7 +1008,7 @@ void AQuebecCampaign::RequestReplay(AQuebecController* Controller)
     ChangePhase(EQuebecCampaignPhase::RaceReady);
     RequestRetry(Controller);
     bRaceRetried = false;
-    Controller->ShowInteractionMessage(TEXT("Race replay ready. Your two completed scenes stay banked."));
+    Controller->ShowInteractionMessage(TEXT("Race replay ready. The banked scenes stay banked."));
 }
 
 void AQuebecCampaign::RecordRaceResult()
@@ -899,6 +1038,26 @@ FString AQuebecCampaign::GetInteractionPrompt(const AQuebecController* Controlle
             return TEXT("E: pull the picnic clamp");
         return FString();
     }
+    if (IsCourtOpen())
+    {
+        if (CourtStep == QuebecCourtRules::StepRally)
+        {
+            for (int32 Panel = 0; Panel < QuebecCourtRules::PanelCount; ++Panel)
+            {
+                const QuebecCourtRules::FSpot& Spot = QuebecCourtRules::Panels[Panel];
+                if (NearCourt(Controller, Spot.X, Spot.Y)) return TEXT("E: score this panel");
+            }
+        }
+        else if (CourtStep == QuebecCourtRules::StepRedirect)
+        {
+            const QuebecCourtRules::FSpot& Gold = QuebecCourtRules::Panels[QuebecCourtRules::GoldPanel];
+            if (NearCourt(Controller, Gold.X, Gold.Y)) return TEXT("E: the gold panel restarts the point");
+            if (NearCourt(Controller, QuebecCourtRules::ReturnGate.X, QuebecCourtRules::ReturnGate.Y)) return TEXT("E: bank the ball");
+        }
+        else if (CourtStep == QuebecCourtRules::StepPull && NearCourt(Controller, QuebecCourtRules::Clamp.X, QuebecCourtRules::Clamp.Y))
+            return TEXT("E: pull the court clamp");
+        return FString();
+    }
     if (Phase == EQuebecCampaignPhase::AimWorklight && CanReach(Controller,WorklightLocation,LightRadius))
         return IsAimingLight(Controller) ? TEXT("Mouse: aim / E: release worklight") : LightOperator ? TEXT("Friend aiming the worklight") : TEXT("E: aim worklight at gold seam");
     if (Phase == EQuebecCampaignPhase::PullClamp && CanReach(Controller,FirstClampLocation,ClampRadius))
@@ -911,6 +1070,8 @@ FString AQuebecCampaign::GetInteractionPrompt(const AQuebecController* Controlle
 FString AQuebecCampaign::GetMissionTitle() const
 {
     if (IsPondOpen()) return TEXT("03 / STILL LIFE, MOVING TARGET");
+    if (IsCourtOpen()) return TEXT("04 / MATCH POINTLESS");
+    if (Phase == EQuebecCampaignPhase::Complete) return TEXT("THE PARK IS OPEN");
     return Phase <= EQuebecCampaignPhase::ReleaseTable ? TEXT("01 / A TABLE FOR ETERNITY") : TEXT("02 / NO SUCH THING AS A QUIET LAP");
 }
 
@@ -929,6 +1090,18 @@ FString AQuebecCampaign::GetObjectiveText() const
         default: break;
         }
     }
+    if (IsCourtOpen())
+    {
+        switch (CourtStep)
+        {
+        case QuebecCourtRules::StepArrive: return TEXT("Walk to the exhibition court");
+        case QuebecCourtRules::StepRally: return TEXT("Score the gold panel once. It restarts the rally.");
+        case QuebecCourtRules::StepRedirect: return TEXT("Bank the ball into the return gate, not the gold panel.");
+        case QuebecCourtRules::StepPull: return TEXT("Pull the court clamp");
+        default: break;
+        }
+    }
+    if (Phase == EQuebecCampaignPhase::Complete) return TEXT("The match is banked / T: replay the race");
     switch (Phase)
     {
     case EQuebecCampaignPhase::AimWorklight: return TEXT("Aim the worklight at the gold seam");
@@ -957,6 +1130,19 @@ FString AQuebecCampaign::GetBriefingText() const
         default: break;
         }
     }
+    if (IsCourtOpen())
+    {
+        switch (CourtStep)
+        {
+        case QuebecCourtRules::StepArrive: return TEXT("RED JERSEY: One point from perfect. CURATOR: The exhibition will finish itself. Walk onto the court.");
+        case QuebecCourtRules::StepRally: return TEXT("The gold panel restarts the rally. Score it once so the loop is obvious.");
+        case QuebecCourtRules::StepRedirect: return TEXT("RED JERSEY: I wanted to win that. Bank the ball into the return gate while the ink is off the line.");
+        case QuebecCourtRules::StepPull: return TEXT("The referee is writing a penalty on the light. Pull the clamp. The players can sit up.");
+        default: break;
+        }
+    }
+    if (Phase == EQuebecCampaignPhase::Complete && PondStep >= PondBankedStep && CourtStep >= CourtBankedStep)
+        return TEXT("The court group is up. Fourth souvenir, for this session. WHITE CAP: The collector's mark is on this one too.");
     switch (Phase)
     {
     case EQuebecCampaignPhase::AimWorklight: return TEXT("CURATOR: A moment this lovely should never move. LIME JACKET: The chairs disagree. Strongly. Find the seam in that picnic press.");
@@ -974,6 +1160,7 @@ FString AQuebecCampaign::GetStatusText() const
 {
     if (!SaveStatus.IsEmpty()) return SaveStatus;
     if (IsPondOpen()) return TEXT("R recovers this step");
+    if (IsCourtOpen()) return TEXT("R recovers this rally");
     if (Phase == EQuebecCampaignPhase::AimWorklight) return FString::Printf(TEXT("Alignment %d%% / hold %d%%"),FMath::RoundToInt(LightAlignment*100.f),FMath::RoundToInt(LightHoldProgress*100.f));
     if (Phase == EQuebecCampaignPhase::CrossCable) return FString::Printf(TEXT("Sprint %s / jump %s / R: recover"),bSprintSeen?TEXT("banked"):TEXT("needed"),bJumpSeen?TEXT("banked"):TEXT("needed"));
     if (Phase == EQuebecCampaignPhase::PullClamp || Phase == EQuebecCampaignPhase::ReleaseTable) return bClampOpen ? TEXT("GREEN BEAT / pull now / R: recover") : TEXT("Press squeezing / wait for green / R: recover");
@@ -993,6 +1180,11 @@ FVector AQuebecCampaign::GetObjectiveLocation() const
     if (IsPondOpen())
     {
         const QuebecPondRules::FSpot Spot = QuebecPondRules::Objective(PondStep);
+        return FVector(Spot.X, Spot.Y, 100.);
+    }
+    if (IsCourtOpen())
+    {
+        const QuebecCourtRules::FSpot Spot = QuebecCourtRules::Objective(CourtStep);
         return FVector(Spot.X, Spot.Y, 100.);
     }
     switch (Phase)
@@ -1074,6 +1266,20 @@ void AQuebecCampaign::UpdatePresentation()
             if (PondCaptions.IsValidIndex(Index)) PondCaptions[Index]->SetVisibility(bShow);
         }
     }
+    if (CourtParts.Num() == QuebecCourtRules::PartCount)
+    {
+        const AGameStateBase* CourtState = GetWorld()->GetGameState();
+        const double CourtTime = static_cast<double>(CourtState ? CourtState->GetServerWorldTimeSeconds() : GetWorld()->GetTimeSeconds());
+        const bool bCourtWorld = Phase == EQuebecCampaignPhase::Complete && PondStep >= PondBankedStep;
+        for (int32 Index = 0; Index < CourtParts.Num(); ++Index)
+        {
+            const bool bShow = bCourtWorld && QuebecCourtRules::PartVisible(CourtStep, Index, CourtTime);
+            CourtParts[Index]->SetVisibility(bShow);
+            if (CourtCaptions.IsValidIndex(Index)) CourtCaptions[Index]->SetVisibility(bShow);
+        }
+        const QuebecCourtRules::FSpot Ball = QuebecCourtRules::BallSpot(CourtTime);
+        CourtParts[QuebecCourtRules::PartBall]->SetWorldLocation(FVector(Ball.X, Ball.Y, 140.));
+    }
     // Every sign faces the local camera; the shared objective itself remains authoritative.
     if (APlayerController* Local = GetWorld()->GetFirstPlayerController())
     {
@@ -1096,6 +1302,7 @@ void AQuebecCampaign::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
     DOREPLIFETIME(AQuebecCampaign,Phase);
     DOREPLIFETIME(AQuebecCampaign,CompletedMissions);
     DOREPLIFETIME(AQuebecCampaign,PondStep);
+    DOREPLIFETIME(AQuebecCampaign,CourtStep);
     DOREPLIFETIME(AQuebecCampaign,LightOperator);
     DOREPLIFETIME(AQuebecCampaign,LightYaw);
     DOREPLIFETIME(AQuebecCampaign,LightPitch);

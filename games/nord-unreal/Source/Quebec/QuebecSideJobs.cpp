@@ -381,7 +381,7 @@ bool AQuebecSideJobs::HandleInteract(AQuebecController* Player)
         return true;
     }
     for (TActorIterator<AQuebecCampaign> It(GetWorld()); It; ++It)
-        if (It->Phase == EQuebecCampaignPhase::RaceRunning || It->IsAimingLight(Player) || It->IsPondOpen())
+        if (It->Phase == EQuebecCampaignPhase::RaceRunning || It->IsAimingLight(Player) || It->IsStoryBeatOpen())
         {
             QuebecNotice::Show(Player,TEXT("PAS MAINTENANT"),TEXT("Termine d'abord la scène du Curateur."),3.f);
             return true;
@@ -666,9 +666,9 @@ bool AQuebecSideJobs::RequestRetry(AQuebecController* Player)
     if (!IsActive() && !bRetryFailed) return false;
     // A downed player waits for the respawn, and R never pulls a player out of an officer's arrest hold.
     if (IsHeldByPolice(Player)) return true;
-    // The same guard as E: during the campaign race, the pond scene, or while aiming the worklight, R belongs to the campaign.
+    // The same guard as E: during the campaign race, an open story beat, or while aiming the worklight, R belongs to the campaign.
     for (TActorIterator<AQuebecCampaign> It(GetWorld()); It; ++It)
-        if (It->Phase == EQuebecCampaignPhase::RaceRunning || It->IsAimingLight(Player) || It->IsPondOpen()) return false;
+        if (It->Phase == EQuebecCampaignPhase::RaceRunning || It->IsAimingLight(Player) || It->IsStoryBeatOpen()) return false;
     const int32 Index = IsActive() ? JobIndex : LastJob;
     MovePlayerToMarker(Player,Index);
     StartJob(Index,Player);

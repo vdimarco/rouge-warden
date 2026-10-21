@@ -2193,7 +2193,7 @@ void AQuebecHUD::DrawHUD()
     const bool bSideJobRunning = SideJobs && SideJobs->IsActive();
     if (!bPortrait)
     {
-        const bool bShowRecover = bSideJobRunning || (Campaign && (!Campaign->IsCampaignComplete() || Campaign->IsPondOpen()));
+        const bool bShowRecover = bSideJobRunning || (Campaign && (!Campaign->IsCampaignComplete() || Campaign->IsStoryBeatOpen()));
         RightText(bShowRecover ? TEXT("C  Character   /   F2  Look   /   R  Recover") : TEXT("C  Character   /   F2  Look"), Muted, Right, Margin + 48.f * Scale, .85f);
     }
 
@@ -2213,14 +2213,16 @@ void AQuebecHUD::DrawHUD()
         Action = Campaign->GetObjectiveText();
         Status = Campaign->GetStatusText();
         Target = Campaign->GetObjectiveLocation();
-        bHasObjective = !Campaign->IsCampaignComplete() || Campaign->IsPondOpen();
-        // After both story scenes the card used to say the city was finished, while the four side jobs
+        bHasObjective = !Campaign->IsCampaignComplete() || Campaign->IsStoryBeatOpen();
+        // After the open story beats the card used to say the city was finished, while the four side jobs
         // stayed off the radar until the player was within 100 m. The same gold diamond now leads to the
-        // next job. Mission 3 keeps that diamond until the picnic is banked. During the earlier story
+        // next job. Missions 3 and 4 keep that diamond until they are banked. During the earlier story
         // the campaign objective keeps the diamond.
         if (Campaign->IsPondOpen() && bTouchControls)
             Status = TEXT("Menu · Recover restores this step");
-        else if (Campaign->IsCampaignComplete() && !Campaign->IsPondOpen() && SideJobs)
+        else if (Campaign->IsCourtOpen() && bTouchControls)
+            Status = TEXT("Menu · Recover restores this rally");
+        else if (Campaign->IsCampaignComplete() && !Campaign->IsStoryBeatOpen() && SideJobs)
         {
             const int32 Guide = SideJobs->GuideMarker(Here, true);
             if (Guide >= 0)

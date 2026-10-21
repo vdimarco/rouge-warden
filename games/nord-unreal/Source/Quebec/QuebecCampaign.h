@@ -37,7 +37,7 @@ public:
     bool IsSupported() const { return Version == 1 && CompletedMissions >= 0 && CompletedMissions <= 2; }
 };
 
-/** Story encounters. All objective decisions run on authority. Mission 3 is session state on top of a finished race. */
+/** Story encounters. All objective decisions run on authority. Missions 3 and 4 are session state on top of a finished race. */
 UCLASS()
 class QUEBEC_API AQuebecCampaign : public AActor
 {
@@ -63,14 +63,18 @@ public:
     FVector GetObjectiveLocation() const;
     int32 GetCompletedMissionCount() const { return CompletedMissions; }
     bool IsCampaignComplete() const { return Phase == EQuebecCampaignPhase::Complete; }
-    // QuebecPondRules::StepBanked. Kept here so the save header stays free of the rules header.
-    // A boundary-2 save offers mission 3 again each session; PondStep is not written to the slot.
+    // QuebecPondRules::StepBanked and QuebecCourtRules::StepBanked. Kept here so the save header stays free of the rules headers.
+    // A boundary-2 save offers mission 3 again each session. PondStep and CourtStep are not written to the slot.
     static constexpr int32 PondBankedStep = 6;
+    static constexpr int32 CourtBankedStep = 4;
     bool IsPondOpen() const { return Phase == EQuebecCampaignPhase::Complete && PondStep < PondBankedStep; }
+    bool IsCourtOpen() const { return Phase == EQuebecCampaignPhase::Complete && PondStep >= PondBankedStep && CourtStep < CourtBankedStep; }
+    bool IsStoryBeatOpen() const { return IsPondOpen() || IsCourtOpen(); }
 
     UPROPERTY(VisibleAnywhere, ReplicatedUsing=UpdatePresentation) EQuebecCampaignPhase Phase = EQuebecCampaignPhase::AimWorklight;
     UPROPERTY(VisibleAnywhere, Replicated) int32 CompletedMissions = 0;
     UPROPERTY(VisibleAnywhere, ReplicatedUsing=UpdatePresentation) int32 PondStep = 0;
+    UPROPERTY(VisibleAnywhere, ReplicatedUsing=UpdatePresentation) int32 CourtStep = 0;
     UPROPERTY(VisibleAnywhere, Replicated) TObjectPtr<APlayerState> LightOperator;
     UPROPERTY(VisibleAnywhere, Replicated) float LightYaw = 0.f;
     UPROPERTY(VisibleAnywhere, Replicated) float LightPitch = 0.f;
@@ -128,6 +132,8 @@ private:
     UPROPERTY() TArray<TObjectPtr<UStaticMeshComponent>> PressParts;
     UPROPERTY() TArray<TObjectPtr<UStaticMeshComponent>> PondParts;
     UPROPERTY() TArray<TObjectPtr<UTextRenderComponent>> PondCaptions;
+    UPROPERTY() TArray<TObjectPtr<UStaticMeshComponent>> CourtParts;
+    UPROPERTY() TArray<TObjectPtr<UTextRenderComponent>> CourtCaptions;
     UPROPERTY() TObjectPtr<UStaticMesh> Cube;
     UPROPERTY() TObjectPtr<UStaticMesh> Sphere;
     UPROPERTY() TObjectPtr<UStaticMesh> Cylinder;
@@ -158,6 +164,9 @@ private:
     void TickPond();
     void AdvancePond(int32 Next, AQuebecController* Who, const TCHAR* Message, bool bFinished);
     bool NearPond(const AQuebecController* Controller, double X, double Y) const;
+    void TickCourt();
+    void AdvanceCourt(int32 Next, AQuebecController* Who, const TCHAR* Message, bool bFinished);
+    bool NearCourt(const AQuebecController* Controller, double X, double Y) const;
     void ChangePhase(EQuebecCampaignPhase Next, bool bFeedback = true);
     void StopAiming();
     void SaveBoundary();

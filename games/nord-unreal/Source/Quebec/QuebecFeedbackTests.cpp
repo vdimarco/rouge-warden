@@ -46,6 +46,10 @@ bool FQuebecRaceResultTest::RunTest(const FString& Parameters)
     TestTrue(TEXT("An open pond step names recover instead of the lap card"),
         Race->GetStatusText().Contains(TEXT("R recovers this step")));
     Race->PondStep = AQuebecCampaign::PondBankedStep;
+    Race->CourtStep = 0;
+    TestTrue(TEXT("A banked picnic opens the court rally instead of the lap card"),
+        Race->GetStatusText().Contains(TEXT("R recovers this rally")));
+    Race->CourtStep = AQuebecCampaign::CourtBankedStep;
     const FString Status = Race->GetStatusText();
     TestTrue(TEXT("Result presents recovered time and clean session best"),
         Status.Contains(TEXT("10.0s")) && Status.Contains(TEXT("recovered")) && Status.Contains(TEXT("60.0s")));

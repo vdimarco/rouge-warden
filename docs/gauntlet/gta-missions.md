@@ -173,3 +173,48 @@ Unreal is not available here, so the native diamond was not captured. The title 
 ![Play client at 1280, host offline](gta-missions/r3-play-1280.png)
 
 ![Menu on a 390-wide screen, Recover visible](gta-missions/r3-play-menu-390.png)
+
+### Round 4 — 2026-10-21 — rubric v1
+
+- What changed: After the picnic is banked, mission 4 Match Pointless leads on the mapped exhibition court. Score the gold panel once (it restarts the rally), bank the ball into the return gate while the ink is off the line, then pull the clamp. The court is session state. The v1 save still stores CompletedMissions 0–2. Side jobs and T wait until the clamp is banked. R restores the current rally and does not rewind it.
+- Why it helped: Variety was tied at the bottom of the scores this loop can move. The story stopped at mission 3 of 8, and the picnic handed the player straight to side jobs. The gold panel teaches the loop; the bank is a timing window the ink can spoil.
+- Screenshots: title `docs/gauntlet/gta-missions/r4-title-1280.png`, `r4-title-390.png`, `r4-title-320.png`. Play client, host offline, `r4-play-1280.png`. Menu with Recover `r4-play-menu-390.png`. The title loaded with no page errors. The raw play page still logs the missing `@epicgames-ps/lib-pixelstreamingfrontend-ue5.8` specifier; the shell and Recover still draw. No native court capture: Unreal is not in this container. `Scripts/test_court_rules.py` reports 133 assertions, 0 failures, on c++, g++ and clang++. `Scripts/test_pond_rules.py` still reports 385 assertions, 0 failures. `Scripts/test_job_rules.py` still reports 126 assertions, 0 failures. Syntax check `--both` passed for the campaign, the HUD, side jobs and the race-result test. OpenSpec CLI is not installed, so `openspec validate` did not run.
+- Next target: fun factor (4), tied with controls, mission clarity, pacing, feedback, sound and performance. Responsiveness stays at 3 and stays out of scope. This loop should put a played payoff on the bank shot, or open mission 5, rather than touch the stream.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 3 | Unchanged. Sky and worklight only. |
+| Color palette | 5 | Unchanged. The court posts use the same ink, gold, cream, lime and berry. |
+| Detail density | 3 | Unchanged. The new posts are a few comic primitives on one court. |
+| Texture and material quality | 3 | Unchanged. |
+| Composition and camera | 4 | Unchanged. The diamond is the one the story already used. |
+| Atmosphere | 4 | Unchanged. The exhibition copy is in the card; the court was not played. |
+| Character models | 3 | Unchanged. |
+| Animation smoothness | 3 | Unchanged. The ball steps between panels. It is not a rally. |
+| Particles and VFX | 2 | Unchanged. The ink is a bar turning on and off. |
+| UI polish | 4 | The card names mission 4, and touch says Menu · Recover. French and English still share the screen. |
+| Responsiveness and input latency | 3 | Unchanged. Still a lagged stream. Out of scope for this loop. |
+| Controls feel | 4 | Unchanged. Scoring is still E at a panel. There is no racket. |
+| Mission clarity | 4 | The card names the gold trap and the return gate. The native card was not seen, and there is still no route line. |
+| Pacing | 4 | Unchanged. A fourth beat exists on paper between the picnic and the side jobs. Its length was not played. |
+| Fun factor | 4 | The absurd bank and the penalty on the light are written. They were not played, so the feel score stays. |
+| Difficulty curve | 5 | The gold panel teaches the loop. The bank then adds a window the ink can close. The rules prove both a clear window and a dangerous one. |
+| Feedback | 4 | The trap panel uses the dialogue cue. The bank and the pull reuse checkpoint and complete. None of it was heard. |
+| Sound design | 4 | Unchanged. The city still has two loops and the pond tick. Nobody is voiced. |
+| Variety | 5 | Four of eight story missions are now in the build, plus the four side jobs. The court was not played in Unreal. |
+| Performance stability | 4 | Unchanged. |
+
+- Aesthetics raw: 34 / 10 dimensions, index 34
+- Playability raw: 41 / 10 dimensions, index 41
+- Total: 75 / 200
+- Delta vs last round: +2 (round 3 was 73). Difficulty curve 4 → 5. Variety 4 → 5. Every other score held.
+
+![GTA title at 1280](gta-missions/r4-title-1280.png)
+
+![GTA title at 390](gta-missions/r4-title-390.png)
+
+![GTA title at 320](gta-missions/r4-title-320.png)
+
+![Play client at 1280, host offline](gta-missions/r4-play-1280.png)
+
+![Menu on a 390-wide screen, Recover visible](gta-missions/r4-play-menu-390.png)
