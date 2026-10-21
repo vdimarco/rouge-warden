@@ -1088,3 +1088,38 @@ Unreal is not available in this environment, so in-engine frames are the last co
 - Playability raw: 39 / 10 dimensions, index 39
 - Total: 105 / 200
 - Delta vs last round: +1
+
+### Round 32 — 2026-10-21 — rubric v1
+
+- What changed: after the street sheen, a road pixel looks up the screen on a 5 by 7 grid for a lamp head. The head has to be brighter than a lit window and warmer than a headlight. The mix adds a warm pool and follows NightFactor, so a clear day stays as it was. The point-light radius and the lamp height stay at 18 m and 440 cm.
+- Why it helped: Lighting was at 7. The night road under a lamp was black apart from a one-pixel sheen streak. The gather lays a pool on that road.
+- Screenshots: before `docs/gauntlet/gta-graphics/round-32/before-pool.png`, after `docs/gauntlet/gta-graphics/round-32/after-pool.png`. These are a 2× nearest crop of an offline shade. Full frames are `before-frame.png` and `after-frame.png`. The walking camera (arm 420, socket Y 70, socket Z 110, pitch −12, horizontal FOV 90) sits on a La Fontaine street. The globes are 55 cm stand-ins at the OSM lamp points. Not an Unreal capture. The crop mean absolute delta is 0.028 and the max is 0.35. The full frame mean is 0.0024 because the sky and the near road are unchanged. The pool edge is scalloped because the taps are points. A head that falls between the 16 px steps can be missed. `Scripts/test_pool.py` passed. `Scripts/test_night.py`, `Scripts/test_street.py`, `Scripts/test_coat.py`, `Scripts/test_cloud.py`, `Scripts/test_horizon_haze.py`, `Scripts/test_contact.py`, `Scripts/test_crew_colour.py` and `Scripts/test_plateau_trees.py` passed. The comic material was not rebuilt. `GET /gta/` returned 200. OpenSpec CLI is not installed, so the change files were not validated with `openspec`.
+- Next target: color palette. Detail stays off the facades. Composition and particles stay at 6, because the walking socket and the rain displacement stay as they are. Animation smoothness stays at 3 and is skipped until a pose can be drawn.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 8 | A warm pool sits on the road under the lamp heads. It is a blocky gather, not a shadowed light. |
+| Color palette | 7 | The pool is one warm brown. Brick and window hues are unchanged. |
+| Detail density | 7 | The street meshes are unchanged. |
+| Texture and material quality | 8 | The clearcoat is unchanged. |
+| Composition and camera | 6 | The walking socket is unchanged. The shade uses that socket on a lamp street. |
+| Atmosphere | 8 | The moon grade and the sheen are unchanged. The streaks in the plate are the sheen. |
+| Character models | 7 | The clothed idle fallback is unchanged. No figure is in this frame. |
+| Animation smoothness | 3 | Skipped. The blend space still cannot be posed here. |
+| Particles and VFX | 6 | Rain rings are unchanged. The pool is a gather, not a particle. |
+| UI polish | 7 | The street column is unchanged. |
+| Responsiveness and input latency | 4 | Not measured this round. |
+| Controls feel | 4 | Not played. |
+| Mission clarity | 5 | The objective words are unchanged. |
+| Pacing | 4 | Unchanged mission slice. |
+| Fun factor | 3 | Not played. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 4 | No new juice. |
+| Sound design | 3 | Not listened to. |
+| Variety | 3 | One night street. The clear-day path is the same shader with NightFactor 0. |
+| Performance stability | 5 | The comic source tests passed. The pool adds 35 scene-colour taps on the road. Frame time was not remeasured. |
+
+- Aesthetics raw: 67 / 10 dimensions, index 67
+- Playability raw: 39 / 10 dimensions, index 39
+- Total: 106 / 200
+- Delta vs last round: +1

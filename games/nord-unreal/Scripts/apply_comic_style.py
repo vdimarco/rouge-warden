@@ -304,6 +304,31 @@ float RoadMat = smoothstep(0.55, 0.75, Roughness);
 float RoadMask = RoadUp * RoadMat * Below * (Sky ? 0.0 : 1.0) * (1.0 - PrintedCrew) * (1.0 - Foliage) * (1.0 - SmoothReflection);
 float RoadMix = RoadMask * 0.85 * saturate(NightFactor);
 Color = lerp(Color, saturate(Color + Sheen), RoadMix);
+// Warm pool under a lamp head. This node is after tonemap, so the point
+// light's 18 m reach is not in this colour. A road pixel looks up the screen
+// for a head that is brighter than a window and warmer than a headlight.
+// NightFactor 0 leaves the colour.
+float PoolW = 0.0;
+const float2 PoolTap[35] = {
+    float2(-64, -40), float2(-32, -40), float2(0, -40), float2(32, -40), float2(64, -40),
+    float2(-64, -56), float2(-32, -56), float2(0, -56), float2(32, -56), float2(64, -56),
+    float2(-64, -72), float2(-32, -72), float2(0, -72), float2(32, -72), float2(64, -72),
+    float2(-64, -88), float2(-32, -88), float2(0, -88), float2(32, -88), float2(64, -88),
+    float2(-64, -104), float2(-32, -104), float2(0, -104), float2(32, -104), float2(64, -104),
+    float2(-64, -120), float2(-32, -120), float2(0, -120), float2(32, -120), float2(64, -120),
+    float2(-64, -136), float2(-32, -136), float2(0, -136), float2(32, -136), float2(64, -136)
+};
+for (int PoolI = 0; PoolI < 35; PoolI++)
+{
+    float3 PoolRgb = SceneTextureLookup(ColorUV + PoolTap[PoolI] * Texel, 14, false).rgb;
+    float PoolPeak = max(PoolRgb.r, max(PoolRgb.g, PoolRgb.b));
+    float PoolWarm = saturate((PoolRgb.r - PoolRgb.b) / max(PoolPeak, 1.0e-3));
+    float PoolHit = step(0.82, PoolPeak) * step(0.40, PoolWarm) * step(PoolWarm, 0.78);
+    float PoolDist = length(PoolTap[PoolI]);
+    PoolW = max(PoolW, PoolHit * saturate(1.0 - PoolDist / 180.0));
+}
+float3 PoolCol = float3(0.45, 0.22, 0.07);
+Color = lerp(Color, saturate(Color + PoolCol * PoolW), RoadMask * saturate(NightFactor));
 return Color;
 '''
 
