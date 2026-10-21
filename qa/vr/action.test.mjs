@@ -5,7 +5,7 @@ import { generate } from "../../public/vr/js/city.js";
 import { createCombat, FIGHT } from "../../public/vr/js/combat.js";
 import { createCars, CAR, trafficAt, nearTraffic } from "../../public/vr/js/cars.js";
 import { createStreet } from "../../public/vr/js/street.js";
-import { createJobs, JOB, CRIME_LINES, STORY_ROUTE, STORY_NEAR } from "../../public/vr/js/jobs.js";
+import { createJobs, JOB, CRIME_LINES, MISS, STORY_ROUTE, STORY_NEAR } from "../../public/vr/js/jobs.js";
 
 const city = generate();
 let fails = 0;
@@ -661,6 +661,46 @@ test("Stop, Thief!: his run keeps to the streets, clear of buildings and water, 
   }
   assert.ok(runs >= 15, "thief offers " + runs);
   assert.ok(turns >= runs, "corners " + turns + " in " + runs + " runs");
+});
+test("Stop, Thief!: falling behind speeds him up, and staying close keeps the jog", () => {
+  const C = createCombat(city), J = createJobs({ city, combat: C, seed: 2 });
+  const S = city.safe[2];
+  J.start("thief", null, hero(S.x, S.y, S.z));
+  const g = J.active.data.runner;
+  const far = () => hero(g.x + 40, g.y, g.z);
+  for (let i = 0; i < 2 / DT; i++) { C.update(DT, far()); J.update(DT, i * DT, far()); C.events.length = 0; }
+  assert.ok(J.active, "still chasing");
+  assert.ok(g.speed > 8, "pulling at " + g.speed.toFixed(2));
+  assert.match(J.card.detail, /pulling away/i);
+  const near = () => hero(g.x + 2, g.y, g.z);
+  for (let i = 0; i < 1.2 / DT; i++) { C.update(DT, near()); J.update(DT, i * DT, near()); C.events.length = 0; }
+  assert.ok(g.speed < JOB.thief.speed + 0.45, "back to a jog at " + g.speed.toFixed(2));
+  assert.match(J.card.detail, /run him down/i);
+  assert.doesNotMatch(J.card.detail, /pulling away/i);
+});
+test("Sludge Run: falling behind speeds the runner, and the first-swing wait still holds him", () => {
+  const C = createCombat(city), J = createJobs({ city, combat: C });
+  const S = city.start, h0 = hero(S.x, S.y, S.z);
+  J.start("sludge", null, h0);
+  const g = C.goons.find((q) => q.runner);
+  const far = () => hero(g.x + 80, g.y, g.z);
+  for (let i = 0; i < 3 / DT; i++) { C.update(DT, far()); J.update(DT, i * DT, far()); C.events.length = 0; }
+  assert.ok(J.active && !J.active.data.crew, "still the runner");
+  assert.ok(g.speed > JOB.sludge.speed + 1.5, "pulling at " + g.speed.toFixed(2));
+  assert.match(J.card.detail, /pulling away/i);
+  const x0 = g.x, z0 = g.z;
+  J.holdChase(true);
+  for (let i = 0; i < 1 / DT; i++) { C.update(DT, far()); J.update(DT, i * DT, far()); C.events.length = 0; }
+  assert.equal(g.speed, 0);
+  assert.ok(Math.hypot(g.x - x0, g.z - z0) < 0.2, "the lesson holds him");
+  assert.match(J.card.detail, /swing first/i);
+});
+test("A miss names itself: got away, and the drain", () => {
+  assert.equal(MISS.away.title, "GOT AWAY");
+  assert.match(MISS.away.detail, /swing/i);
+  assert.equal(MISS.drain.title, "IT BLEW");
+  assert.match(MISS.drain.detail, /drain/i);
+  assert.equal(MISS.dumpster.title, "MISSED");
 });
 test("markers: four offers of different jobs round the player, and walking into one starts it", () => {
   const C = createCombat(city), J = createJobs({ city, combat: C });

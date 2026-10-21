@@ -25,10 +25,11 @@ export const JOB = {
   pizza: { speed: 12, spare: 18, reach: 4.5, reward: 25, bonus: 15 },
   balloon: { rise: 2.4, drift: 1.1, top: 170, reach: 2.6, back: 4.5, slip: 1.2, clear: 5, reward: 20 }, // clear: it can be caught once this high
   brawl: { time: 120, wave1: 4, wave2: 3, reward: 35 },
-  sludge: { speed: 5.4, crew: 3, runnerHp: 2, reward: 50, spare: 6 },
+  // press: past this gap the runner leaves the jog. ramp: seconds to reach fast. ease: seconds to fall back to the jog.
+  sludge: { speed: 5.4, fast: 7.4, press: 46, ramp: 2, ease: 0.7, crew: 3, runnerHp: 2, reward: 50, spare: 6 },
   // taxi: the fare's drop is this far off; the clock gives this road speed plus spare; get out for longer than walk and they leave
   taxi: { near: 260, far: 560, speed: 13, spare: 20, reach: 9, walk: 4, reward: 35, tip: 20, hail: 6 },
-  thief: { speed: 6.3, hops: [4, 6], spare: 4, reward: 30 },
+  thief: { speed: 6.3, fast: 9.2, press: 28, ramp: 1.2, ease: 0.6, hops: [4, 6], spare: 4, reward: 30 },
   // crimes near the hero: one every every[0]..every[1] s while no job runs, near[0]..near[1] m away, taken from take m, gone
   // after last s. The first comes after first s of free play.
   crime: { every: [45, 80], first: 40, near: [50, 150], take: 28, last: 60 },
@@ -44,6 +45,21 @@ export const CRIME_LINES = {
   thief: ["Stop, thief!", "A purse snatcher! Get him!"],
 };
 export const QUIPS = ["Nobody expects the plunger.", "That's a clean sweep.", "Flushed out!", "All in a day's plunge.", "Back to the sewer with you."];
+// A miss names itself and one thing to do on the retry. No payoff word: a win owns that.
+export const MISS = {
+  away: { title: "GOT AWAY", detail: "Stay close. A swing beats a jog.", short: "SWING IN" },
+  drain: { title: "IT BLEW", detail: "Catch the runner before the drain.", short: "SWING IN" },
+  time: { title: "TOO SLOW", detail: "Close the gap before the clock wins.", short: "CLOSER" },
+  dumpster: { title: "MISSED", detail: "Catch them in the air, above the street.", short: "CATCH" },
+  drainpipe: { title: "SLID", detail: "Reach the washer before his grip goes.", short: "REACH" },
+  cold: { title: "COLD", detail: "The roof was too far for that clock.", short: "FASTER" },
+  gone: { title: "GONE", detail: "Grab the balloon before it clears the roofs.", short: "GRAB" },
+  knockout: { title: "DOWN", detail: "Dodge the wind-up, then hit back.", short: "DODGE" },
+  left: { title: "LEFT IT", detail: "Stay with the job.", short: "STAY" },
+  walked: { title: "WALKED OFF", detail: "Stay in the car.", short: "DRIVE" },
+  late: { title: "TOO SLOW", detail: "The fare needed a faster street.", short: "FASTER" },
+  flood: { title: "IT BURST", detail: "Seal the leak, then clear the crew.", short: "SEAL" },
+};
 export const JOB_NAMES = { sludge: "Sludge Run", catch: "Catch!", washer: "Window Washer", pizza: "Pizza Rush", balloon: "Balloon Chase", brawl: "Rooftop Brawl", taxi: "Taxi!", thief: "Stop, Thief!", mugging: "Mugging", getaway: "Getaway Car", tanker: "Sludge Tanker" };
 // After the Sludge Run the story is three different jobs, in this order. The twelve clogs stay in the city and still wake the King.
 export const STORY_ROUTE = [
@@ -271,6 +287,7 @@ export function createJobs({ city, combat, cars = null, seed = 4711 }) {
     for (const p of J.people) p.on = false;
     J.people = []; J.balloons = [];
     J.active = null;
+    J.card = null;
     if (ok) { J.done[A.type] = (J.done[A.type] || 0) + 1; J.stats.done++; if (A.type === "sludge") J.story.sludge = true; }
     else if (!quiet) { J.failed[A.type] = (J.failed[A.type] || 0) + 1; J.stats.failed++; }
     if (!quiet) emit({ type: ok ? "done" : "failed", job: A.type, why, reward: ok ? A.reward : 0, x: A.o.x, y: A.o.y, z: A.o.z, crime: !!A.o.crime });
@@ -436,6 +453,15 @@ export function createJobs({ city, combat, cars = null, seed = 4711 }) {
   };
   const fmt = (s) => Math.max(0, Math.ceil(s)) + " s";
   const near3 = (a, b, d) => (a.x - b.x) ** 2 + (a.y - b.y) ** 2 + (a.z - b.z) ** 2 < d * d;
+  // A chase you lose speeds up. Inside the press distance it eases back to the jog. A held lesson never calls this.
+  function pressRun(g, h, C, dt) {
+    const gap = Math.hypot(g.x - h.x, g.z - h.z);
+    let heat = g.heat || 0;
+    heat = gap > C.press ? Math.min(1, heat + dt / C.ramp) : Math.max(0, heat - dt / C.ease);
+    g.heat = heat;
+    g.speed = C.speed + (C.fast - C.speed) * heat;
+    return { heat, pulling: heat >= 0.55, gap };
+  }
   // carrying someone: they ride over the hero's left shoulder, and a landing on anything sets them down
   function carry(p, h) {
     const yaw = h.yaw || 0, rx = Math.cos(yaw), rz = -Math.sin(yaw);
@@ -470,7 +496,12 @@ export function createJobs({ city, combat, cars = null, seed = 4711 }) {
       if (!D.crew && combat.events.some((e) => e.type === "arrived" && e.id === g.id)) { end(false, "drain"); return; }
       if (A.timer <= 0) { end(false, "time"); return; }
       const goal = D.crew ? (crew.find((q) => combat.alive(q)) || h) : g;
-      A.card = card("SLUDGE RUN " + fmt(A.timer), D.crew ? "Beat his crew: " + left + " left" : "Catch the runner, " + Math.round(Math.hypot(g.x - h.x, g.z - h.z)) + " m", goal, { short: fmt(A.timer) });
+      let chase = "Catch the runner, " + Math.round(Math.hypot(g.x - h.x, g.z - h.z)) + " m";
+      if (!D.crew && g.on && combat.alive(g)) {
+        const pull = pressRun(g, h, JOB.sludge, dt);
+        if (pull.pulling) chase = "He's pulling away. Swing closer, " + Math.round(pull.gap) + " m";
+      }
+      A.card = card("SLUDGE RUN " + fmt(A.timer), D.crew ? "Beat his crew: " + left + " left" : chase, goal, { short: fmt(A.timer) });
       J.card = A.card;
     },
     catch(A, dt, h) {
@@ -558,7 +589,9 @@ export function createJobs({ city, combat, cars = null, seed = 4711 }) {
       }
       if (combat.events.some((e) => e.type === "arrived" && e.id === g.id)) { end(false, "away"); return; }
       if (A.timer <= 0) { end(false, "away"); return; }
-      A.card = card("STOP, THIEF! " + fmt(A.timer), "Run him down, " + Math.round(Math.hypot(g.x - h.x, g.z - h.z)) + " m", g, { short: fmt(A.timer) });
+      const pull = pressRun(g, h, JOB.thief, dt);
+      const line = pull.pulling ? "He's pulling away. Swing closer, " + Math.round(pull.gap) + " m" : "Run him down, " + Math.round(pull.gap) + " m";
+      A.card = card("STOP, THIEF! " + fmt(A.timer), line, g, { short: fmt(A.timer) });
       J.card = A.card;
     },
     mugging(A, dt, h) {
@@ -643,7 +676,9 @@ export function createJobs({ city, combat, cars = null, seed = 4711 }) {
   J.carrying = () => !!(J.active && J.active.data.caught && (J.active.type === "catch" || J.active.type === "washer"));
   J.info = () => ({
     active: J.active ? { type: J.active.type, phase: J.active.phase, timer: J.active.timer, t: J.active.t, crime: !!J.active.o.crime,
-      data: { caught: !!J.active.data.caught, falling: !!J.active.data.falling, crew: !!J.active.data.crew, stopped: !!J.active.data.stopped, seals: J.active.data.seals || 0 } } : null,
+      data: { caught: !!J.active.data.caught, falling: !!J.active.data.falling, crew: !!J.active.data.crew, stopped: !!J.active.data.stopped, seals: J.active.data.seals || 0,
+        run: J.active.data.runner && J.active.data.runner.on ? J.active.data.runner.speed : 0,
+        heat: J.active.data.runner ? (J.active.data.runner.heat || 0) : 0 } } : null,
     offers: J.offers.map((o) => ({ id: o.id, type: o.type, x: o.x, y: o.y, z: o.z, crime: !!o.crime })), crimeT, done: { ...J.done }, failed: { ...J.failed }, story: { ...J.story }, stats: { ...J.stats }, card: J.card,
   });
   return J;
