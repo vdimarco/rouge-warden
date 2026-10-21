@@ -1797,3 +1797,48 @@ Unreal is not available here, so the native diamond was not captured. The title 
 ![Play client at 1280, host offline](gta-missions/r39-play-1280.png)
 
 ![Menu on a 390-wide screen, Recover visible](gta-missions/r39-play-menu-390.png)
+
+### Round 40 — 2026-10-21 — rubric v1
+
+- What changed: A failed side job plays one falling sting for every player in the session. A success still plays the complete cue and does not play the sting. The same branch covers an abandoned job, an arrest, a knockout, the clock, a crushed delivery, a lost thief, goons that never came, leaving the theatre, and a passenger who got out. The wave falls from 310 Hz to 118 Hz over a fifth of a second. It stays off the rank pitches, the lock chirp, the pond tick, the court whistle, the court rasp, the theatre page, and the dent thud. The music path and the three feedback sounds are unchanged.
+- Why it helped: A paid job already marked the finish. A miss set the banner and the retry window and stayed silent. The sting is the sound of that miss.
+- Screenshots: title `docs/gauntlet/gta-missions/r40-title-1280.png`, `r40-title-390.png`, `r40-title-320.png`. Play client, host offline, `r40-play-1280.png`. Menu with Recover `r40-play-menu-390.png`. The title loaded with no page errors. The raw play page still logs the missing `@epicgames-ps/lib-pixelstreamingfrontend-ue5.8` specifier; the shell and Recover still draw. The sting was not heard. `Scripts/test_loss_tone.py` reports 26 assertions, 0 failures, on c++, g++, and clang++. Syntax check `--both` passed for `QuebecGameplay.cpp` and `QuebecSideJobs.cpp`. OpenSpec CLI is not installed, so `openspec validate` did not run.
+- Next target: controls feel, still 8. Mission clarity stays at 7 and stays out of reach offline. Responsiveness stays at 3 and stays out of scope. Performance stays at 4 and is not measurable here. Fun, difficulty, variety, pacing, and sound stay at 9.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 3 | Unchanged. |
+| Color palette | 5 | Unchanged. |
+| Detail density | 3 | Unchanged. |
+| Texture and material quality | 3 | Unchanged. |
+| Composition and camera | 4 | Unchanged. |
+| Atmosphere | 4 | Unchanged. |
+| Character models | 3 | Unchanged. |
+| Animation smoothness | 3 | Unchanged. |
+| Particles and VFX | 2 | Unchanged. |
+| UI polish | 4 | Unchanged. The native card was not seen, and French and English still share the screen. |
+| Responsiveness and input latency | 3 | Unchanged. Still a lagged stream. Out of scope for this loop. |
+| Controls feel | 8 | Unchanged. Lock still holds Space while driving. |
+| Mission clarity | 7 | Unchanged. The fare post still moves from the loaner to the quay. The native card was not seen, and this score stays out of reach offline. |
+| Pacing | 9 | Unchanged. Four seconds on foot after boarding still loses the passenger. |
+| Fun factor | 9 | Unchanged. Chez Lise still sells a kit, a vest, or one star. A miss sting is not the reference's spread of things to do. |
+| Difficulty curve | 9 | Unchanged. Selling the last page ends it for 200 and does not bank the chain. A wreck still costs more than the goon pay. |
+| Feedback | 9 | A failed side job plays a falling sting. A success stays on the complete cue. The sting was not heard. |
+| Sound design | 9 | Unchanged. The dent thud still marks a scrape as quiet. Another sting was not heard, and nobody is voiced, so this is not the reference's city. |
+| Variety | 9 | Unchanged. La course is still a sixth job in the same district. |
+| Performance stability | 4 | Unchanged. Not measurable in this container. |
+
+- Aesthetics raw: 34 / 10 dimensions, index 34
+- Playability raw: 76 / 10 dimensions, index 76
+- Total: 110 / 200
+- Delta vs last round: +1 (round 39 was 109). Feedback 8 → 9. Every other score held.
+
+![GTA title at 1280](gta-missions/r40-title-1280.png)
+
+![GTA title at 390](gta-missions/r40-title-390.png)
+
+![GTA title at 320](gta-missions/r40-title-320.png)
+
+![Play client at 1280, host offline](gta-missions/r40-play-1280.png)
+
+![Menu on a 390-wide screen, Recover visible](gta-missions/r40-play-menu-390.png)
