@@ -382,7 +382,7 @@ void AQuebecCar::UpdateExhaust(float DeltaSeconds)
     if (GetNetMode() == NM_DedicatedServer) return;
     const float Now = GetWorld()->GetTimeSeconds();
     // Idling in gear and rolling both turn the engine. A wreck keeps the bonnet smoke and skips this.
-    const bool bRunning = !IsWrecked() && !IsPedalo() && (FMath::Abs(Speed) > 80.f || FMath::Abs(Throttle) > 0.05f);
+    const bool bRunning = RideKind == 0 && !IsWrecked() && (FMath::Abs(Speed) > 80.f || FMath::Abs(Throttle) > 0.05f);
     for (int32 I = 0; I < ExhaustPuffs.Num(); ++I)
     {
         UStaticMeshComponent* Puff = ExhaustPuffs[I];

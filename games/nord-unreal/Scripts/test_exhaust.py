@@ -21,7 +21,7 @@ class ExhaustTests(unittest.TestCase):
         self.assertIn("FVector(150.,25.*(NextSmokePuff%3-1),40.)", DRIVE)
         self.assertIn('TEXT("/Game/Materials/M_Dark.M_Dark")', DRIVE)
         self.assertIn("BodyDamage >= SmokeDamage", DRIVE)
-        self.assertIn("const bool bRunning = !IsWrecked() && !IsPedalo() && (FMath::Abs(Speed) > 80.f || FMath::Abs(Throttle) > 0.05f);", block)
+        self.assertIn("const bool bRunning = RideKind == 0 && !IsWrecked() && (FMath::Abs(Speed) > 80.f || FMath::Abs(Throttle) > 0.05f);", block)
         self.assertIn("FVector(-240.f, 14.f * static_cast<float>(NextExhaust % 3 - 1), 18.f)", block)
         self.assertIn("(-GetActorForwardVector() * 160.f + FVector(0.f, 0.f, 180.f)) * DeltaSeconds", block)
         self.assertIn("FMath::Lerp(0.16f, 0.55f, FMath::Min(1.f, Life * 1.4f))", block)
@@ -34,14 +34,15 @@ class ExhaustTests(unittest.TestCase):
         self.assertNotIn("rain_streak", block)
 
     def test_a_stopped_car_does_not_run_and_a_rolling_one_does(self):
-        def running(speed, throttle, wrecked, pedalo=False):
-            return (not wrecked) and (not pedalo) and (abs(speed) > 80.0 or abs(throttle) > 0.05)
+        def running(speed, throttle, wrecked, ride=0):
+            return ride == 0 and (not wrecked) and (abs(speed) > 80.0 or abs(throttle) > 0.05)
         self.assertFalse(running(0.0, 0.0, False))
         self.assertFalse(running(40.0, 0.0, False))
         self.assertTrue(running(120.0, 0.0, False))
         self.assertTrue(running(0.0, 0.2, False))
         self.assertFalse(running(400.0, 1.0, True))
-        self.assertFalse(running(200.0, 1.0, False, pedalo=True))
+        self.assertFalse(running(200.0, 1.0, False, ride=1))
+        self.assertFalse(running(200.0, 1.0, False, ride=2))
 
     def test_the_column_leaves_the_tail_and_rises(self):
         # Car at the origin, facing +X. Age in seconds. Side index 0, 1, 2.

@@ -1,7 +1,7 @@
 ## ADDED Requirements
 
 ### Requirement: A running car leaves exhaust at the tail
-A car that is not a wreck, and is either faster than 80 cm/s or holding throttle, SHALL spawn a short column of puffs at the tail. A stopped car with no throttle SHALL spawn none. A wreck SHALL keep the bonnet smoke and SHALL NOT add this column. A pedalo SHALL NOT add this column.
+A car that is not a wreck, and is either faster than 80 cm/s or holding throttle, SHALL spawn a short column of puffs at the tail. A stopped car with no throttle SHALL spawn none. A wreck SHALL keep the bonnet smoke and SHALL NOT add this column. A pedalo and a bicycle SHALL NOT add this column.
 
 #### Scenario: The column leaves the tail
 - **WHEN** a running car faces away down the street
@@ -11,8 +11,8 @@ A car that is not a wreck, and is either faster than 80 cm/s or holding throttle
 - **WHEN** the speed is under 80 cm/s and the throttle is at rest
 - **THEN** no exhaust puff is spawned
 
-#### Scenario: A pedalo stays clear
-- **WHEN** the ride is the pond pedalo and the player is paddling
+#### Scenario: A pedalo or a bicycle stays clear
+- **WHEN** the ride is the pond pedalo or the park bicycle and the player is under power
 - **THEN** no exhaust puff is spawned
 
 #### Scenario: A wreck keeps the bonnet smoke
