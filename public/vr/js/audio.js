@@ -32,7 +32,7 @@ function seeded(seed) { // from fish
 /* ---------------- shared state: what the game asked for, kept even before the context exists ---------------- */
 function newState(on = true) {
   return {
-    on, speed: 0, height: NaN, ropes: [0, 0], music: false, fight: false, duck: false, amb: 1, crowd: 0, handles: new Set(),
+    on, speed: 0, height: NaN, ropes: [0, 0], music: false, fight: false, chase: 0, duck: false, amb: 1, crowd: 0, handles: new Set(),
     L: { x: 0, y: 1.6, z: 0, fx: 0, fy: 0, fz: -1, ux: 0, uy: 1, uz: 0 }, // the listener: world position, forward and up
   };
 }
@@ -927,7 +927,12 @@ function musicTick(e, t, ahead) {
   const dt = M.kT < 0 ? 1 : clamp(t - M.kT, 0, 1);
   M.kT = t;
   M.k += (clamp(e.st.speed / 30, 0, 1) - M.k) * (1 - Math.exp(-dt / 0.6));
-  if (Math.abs(M.k - M.lpK) > 0.01) { e.musLP.frequency.setTargetAtTime(1400 + 7500 * Math.pow(M.k, 1.5), t, 0.25); M.lpK = M.k; }
+  const chase = e.st.chase || 0;
+  // falling behind opens the groove a little, the way speed does, so the chase is brighter than a stroll
+  if (Math.abs(M.k - M.lpK) > 0.01 || Math.abs(chase - (M.cK || 0)) > 0.05) {
+    e.musLP.frequency.setTargetAtTime(1400 + 7500 * Math.pow(M.k, 1.5) + 1400 * chase, t, 0.25);
+    M.lpK = M.k; M.cK = chase;
+  }
   // a long gap (a hitch, a hidden page): skip ahead on the grid instead of playing everything at once
   if (M.next < t - 0.05) { const n = Math.ceil((t - M.next) / S16); M.step += n; M.next += n * S16; }
   while (M.next < t + ahead && M.next < M.until) { playStep(e, M.step, M.next); M.step++; M.next += S16; }
@@ -947,7 +952,17 @@ function playStep(e, step, t) {
     if (s % 4 === 0 && s !== 0) kick(e, at, 0.8);
     if (s === 3 || s === 11) bass(e, at, mtof(C.root + 12), S16);
     if (s >= 13) tone(e, at, { type: "triangle", f: [196, 165, 131][s - 13], f2: [150, 120, 95][s - 13], dur: 0.16, att: 0.002, peak: 0.12, to: e.musIn });
+  } else if ((e.st.chase || 0) > 0.08) {
+    // a bomb clock on the chase: quarters while you keep pace, eighths once you fall behind. A fight already has its own pulse.
+    const c = e.st.chase;
+    if (s % 4 === 0) clockTick(e, at, 0.45 + 0.55 * c);
+    else if (c > 0.7 && s % 2 === 0) clockTick(e, at, 0.55);
   }
+}
+// a dry click, higher than the hats, so a chase reads as a clock and not as another snare
+function clockTick(e, t, v) {
+  ring(e, t, [[2800, 0.22 * v, 0.012], [1700, 0.16 * v, 0.02]], { to: e.musIn });
+  hiss(e, t, { type: "highpass", f: 5000, dur: 0.018, att: 0.001, peak: 0.14 * v, to: e.musIn });
 }
 // an electric piano: one sine through another (FM), bright at the strike and mellow after
 function keys(e, t, f, dur, v) {
@@ -1199,6 +1214,9 @@ export function createAudio(settings) {
     // the fight layer of the groove: driving kicks, a stab on the off-beat and toms into each bar while goons fight the hero
     fight(v) { st.fight = !!v; },
     get fightOn() { return st.fight; },
+    // 0..1 on a chase: 0 while closing or off the chase, about 0.4 while the distance holds, 1 while falling behind
+    chase(v) { st.chase = clamp(num(v), 0, 1); },
+    get chaseOn() { return st.chase; },
     // a one-shot. pos (world, {x, y, z}) makes it spatial; vol 0..2; pitch 0.25..4 (1 = as designed)
     sfx(name, o) {
       if (!on || !alive() || !SFX[name]) return;
@@ -1327,7 +1345,7 @@ export async function renderOffline(name, seconds = 2, opts = {}) {
     } else if (name === "music") {
       st.music = true;
       musicSet(e, 0);
-      steps((t) => { st.speed = val(opts.speed, t, 0); musicTick(e, t, dt + 0.001); });
+      steps((t) => { st.speed = val(opts.speed, t, 0); st.chase = val(opts.chase, t, 0); musicTick(e, t, dt + 0.001); });
     } else if (name.startsWith("loop:")) {
       const f = opts.from || opts.pos || { x: 0, y: 1.6, z: -3 }, g = opts.to || f;
       const h = makeHandle(name.slice(5), f), p = { x: 0, y: 0, z: 0 };

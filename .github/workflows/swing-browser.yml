@@ -135,6 +135,10 @@ jobs:
         env:
           NODE_PATH: ${{ github.workspace }}/qa/browser/node_modules
           SHOTS: ${{ github.workspace }}/test-results/flat
+      - name: The chase clock in the music
+        run: node qa/vr/chasebed.e2e.mjs
+        env:
+          NODE_PATH: ${{ github.workspace }}/qa/browser/node_modules
       - uses: actions/upload-artifact@v4
         if: always()
         with:

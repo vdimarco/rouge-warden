@@ -37,7 +37,7 @@ await test("node: loads and every call is a no-op", async (ok) => {
   h.setPos({ x: 2, y: 2, z: 2 }); h.setVol(0.5);
   for (const n of mod.SOUND_NAMES) A.sfx(n, { pos: { x: 1, y: 1, z: 1 }, vol: 1, pitch: 1.2 });
   A.setListener({ x: 0, y: 1.6, z: 0 }, { x: 0, y: 0, z: 0, w: 1 }); A.setWind(20, 50); A.setRope("left", 0.5); A.setRope(1, 0.5);
-  A.music(true); A.duck(true); A.duck(false); A.ambience(0.5); A.update(1 / 72); A.resume(); A.suspend(); h.stop();
+  A.music(true); A.chase(1); A.chase(0); A.duck(true); A.duck(false); A.ambience(0.5); A.update(1 / 72); A.resume(); A.suspend(); h.stop();
   const dud = A.loop("no-such-loop", null);
   dud.setPos({ x: 0, y: 0, z: 0 }); dud.setVol(1); dud.stop();
   ok(A.musicOn === true, "music(true) does not show in musicOn");

@@ -83,3 +83,40 @@ Loop: missions, playability, controls, feel, UX, pacing and fun for In Full Swin
 ![The clock stays at 76 s and the card says to swing first](fullswing-r2/clock-waits.png)
 
 ![After the rope, the card is the chase and the clock has moved to 74 s](fullswing-r2/clock-runs.png)
+
+### Round 3 — 2026-10-21 — rubric v1
+
+- What changed: A chase (the runner before his crew, the thief, the getaway car, the balloon) adds a clock tick to the groove. Falling behind speeds the tick and opens the filter. Closing takes the tick away. The first-lesson hold, and a fight, stay on the groove they already had.
+- Why it helped: The sticker could already say FALLING BEHIND while the music stayed the same sunset loop. Spider-Man 2 tightens the chase when the target pulls away. An offline render of the same groove, same speed, was brighter with the clock (high end 0.0075 to 0.0081, difference 0.0034). In play, falling behind sets the bed to full, closing sets it to quiet, and the lesson hold keeps it quiet.
+- Screenshots: `docs/gauntlet/fullswing-r3/falling-behind.png` (the sticker reads FALLING BEHIND, which is the full tick). No speaker in this run. The level was measured from the render, not heard in a room.
+- Next target: controls feel (5), tied with variety and sound. Controls is the one to change next: swing is still hold-forward plus the mouse.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 5 | Unchanged. Golden-hour sun and ink shadows. |
+| Color palette | 6 | Unchanged. Yellow, red and sludge green still separate the HUD from the blocks. |
+| Detail density | 4 | Unchanged. Open blocks more than a dressed borough. |
+| Texture and material quality | 3 | Unchanged. Flat fills. |
+| Composition and camera | 4 | Unchanged. The chase camera still leaves the runner low in the frame. |
+| Atmosphere | 5 | Unchanged. The dusk skyline has a mood. The street under the chase does not. |
+| Character models | 3 | Unchanged. Simple comic figures at this distance. |
+| Animation smoothness | 4 | Scored from still frames in software GL. |
+| Particles and VFX | 4 | Unchanged. A rope line and the sticker. No hit or trail in this frame. |
+| UI polish | 6 | Unchanged. The sticker and the mission pill are the same ink and yellow. |
+| Responsiveness and input latency | 7 | Unchanged. The bed follows the same stepped frame as the sticker. |
+| Controls feel | 5 | Unchanged. Swing is still hold-forward plus the mouse. |
+| Mission clarity | 7 | Unchanged. The card and the sticker still name the runner, and the clock now agrees when you are losing him. |
+| Pacing | 6 | Unchanged. The lesson still waits, and Mission 2 is still twelve of the same clog. |
+| Fun factor | 6 | Unchanged. The chase is the same swing. The tick marks losing him. It does not add a new trick. |
+| Difficulty curve | 6 | Unchanged. Falling behind is now audible. The runner is still the same jog. |
+| Feedback | 6 | The tick sits under the sticker's FALLING BEHIND. Hits, the GO cue and hit-stop are unchanged. |
+| Sound design | 5 | The chase now has a clock that speeds up when the runner pulls away and drops out when you close. It is a click on the same groove, measured from a render, not a scored chase heard on speakers. |
+| Variety | 5 | Unchanged. Odd jobs cover chase, carry, drive and fight. The story after Mission 1 does not. |
+| Performance stability | 6 | The chase play and the render finished with no page errors. Frame time on a real GPU was not measured. |
+
+- Aesthetics raw: 44 / 10 dimensions, index 44
+- Playability raw: 59 / 10 dimensions, index 59
+- Total: 103 / 200
+- Delta vs last round: +1 (round 2 was 102). Sound design 4 → 5. Every other score held.
+
+![Falling behind: the sticker names the runner and says FALLING BEHIND](fullswing-r3/falling-behind.png)
