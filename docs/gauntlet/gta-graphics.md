@@ -1543,3 +1543,38 @@ Unreal is not available in this environment, so in-engine frames are the last co
 - Playability raw: 39 / 10 dimensions, index 39
 - Total: 118 / 200
 - Delta vs last round: +1
+
+### Round 45 — 2026-10-21 — rubric v1
+
+- What changed: the nearest tree within 18 m sheds eight autumn cards from the lower crown. A new card every 0.22 s lives 2.2 s, drifts across at 120 cm/s and down at 140 cm/s. A farther tree stays still. The rain streak shader stays.
+- Why it helped: Particles were at 7. The tail column is the only loose smoke, and a crown did not shed.
+- Screenshots: before `docs/gauntlet/gta-graphics/round-45/before-frame.png`, after `docs/gauntlet/gta-graphics/round-45/after-frame.png`. Crops are `before-leaves.png` and `after-leaves.png`. Both use the opening walk camera (arm 420, socket Y 70, socket Z 110, pitch −16, horizontal FOV 90) with one sidewalk tree. Not an Unreal capture. The leaf crop mean absolute delta is 0.080 and the max is 0.350. The full-frame mean is 0.0032. 6811 pixels change. `Scripts/test_leaves.py` passed. `QuebecVegetation.cpp` was not compiled. `GET /gta/` returned 200. OpenSpec CLI is not installed, so the change files were not validated with `openspec`.
+- Next target: composition, back to the lowest aesthetics score at 7. The opening pitch is in, and the socket stays. Animation smoothness stays at 3 and is skipped until a pose can be drawn.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 9 | The street shade is unchanged. |
+| Color palette | 9 | The cards use the autumn leaf material. |
+| Detail density | 9 | The street mesh is unchanged. The tree in the picture is a stand-in. |
+| Texture and material quality | 9 | The asphalt mix is unchanged. |
+| Composition and camera | 7 | The opening pitch is unchanged. |
+| Atmosphere | 9 | The street dust is unchanged. |
+| Character models | 8 | No figure changed. |
+| Animation smoothness | 3 | Skipped. The blend space still cannot be posed here. |
+| Particles and VFX | 8 | Ochre cards leave the lower crown and drift down across the street. They are flat cards, not a canopy, and a distant tree stays still. |
+| UI polish | 9 | The radar heading is unchanged. |
+| Responsiveness and input latency | 4 | Not measured this round. |
+| Controls feel | 4 | Not played. |
+| Mission clarity | 5 | The objective words are unchanged. |
+| Pacing | 4 | Unchanged mission slice. |
+| Fun factor | 3 | Not played. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 4 | The cards are the new mark. No new juice. |
+| Sound design | 3 | Not listened to. |
+| Variety | 3 | One tree, one drift. Rain rings are unchanged. |
+| Performance stability | 5 | `Scripts/test_leaves.py` passed. Eight cards. Frame time was not remeasured. |
+
+- Aesthetics raw: 80 / 10 dimensions, index 80
+- Playability raw: 39 / 10 dimensions, index 39
+- Total: 119 / 200
+- Delta vs last round: +1
