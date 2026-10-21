@@ -311,3 +311,42 @@ Loop: missions, playability, controls, feel, UX, pacing and fun for In Full Swin
 - Delta vs last round: +1 (round 7 was 111). Controls feel 6 → 7. Every other score held.
 
 ![A fast let-go outside the GO cue, the hero still in the air](fullswing-r8/carry.png)
+
+### Round 9 — 2026-10-21 — rubric v1
+
+- What changed: The purse snatcher stays at a 6.3 m/s jog while the hero is within 28 m, and rises toward 9.2 m/s when the gap is wider. Closing the gap brings him back to the jog. The Sludge Run runner does the same, milder: 5.4 m/s within 46 m, toward 7.4 m/s past that, and the first-swing wait still holds him stopped. A miss holds a lesson card for 1.7 s. GOT AWAY says to stay close, because a swing beats a jog. The toast still says what happened. There is no payoff word. The story mission starts again after that card.
+- Why it helped: The chase was one jog, and losing it was a toast. Spider-Man 2 pulls a pursuit away when you lose the gap, and a miss says what to do before the retry. A 1280×800 play stayed about 40 m behind the thief. His speed rose past 8 m/s and the card said he was pulling away. The clock running out showed GOT AWAY and the swing line, with no KASPLASH, and then Mission 2 started again.
+- Screenshots: `docs/gauntlet/fullswing-r9/pull.png`, `docs/gauntlet/fullswing-r9/miss.png`.
+- Next target: sound design (6), tied with performance. Sound is the one to change next: the pull-away and the miss are still the same mix, and a buffer can measure a new sting the way the chase clock was measured. Performance still has no real-GPU frame time.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 5 | Held. Golden-hour sun and ink shadows. |
+| Color palette | 6 | Held. Yellow, red and sludge green still separate the HUD from the blocks. |
+| Detail density | 4 | Held. Open blocks more than a dressed borough. |
+| Texture and material quality | 3 | Held. Flat fills. |
+| Composition and camera | 4 | Held. The chase camera still sits behind the hero. The card is the new read. |
+| Atmosphere | 5 | Held. The dusk skyline has a mood. The street under the chase does not. |
+| Character models | 3 | Held. Simple comic figures. |
+| Animation smoothness | 4 | Scored from still frames in software GL. Continuous motion was not watched. |
+| Particles and VFX | 5 | Held. No new word on a miss. The win word is unchanged. |
+| UI polish | 6 | Held. The lesson uses the same ink pill as the mission. |
+| Responsiveness and input latency | 7 | Held. The speed and the card were on the stepped frames. |
+| Controls feel | 7 | Held. The swing carry is unchanged. |
+| Mission clarity | 7 | Held. The missions were already named. The new lines say the chase is getting away. |
+| Pacing | 7 | Held. The lesson is under two seconds, then the same mission. The twelve clogs are still after Mission 4. |
+| Fun factor | 7 | Held. The win still lands on the big word. This round changes the chase, not the finish. |
+| Difficulty curve | 7 | Falling behind turns the jog into a run, and closing the gap brings the jog back. A miss holds a lesson, then the chase starts again. The later missions are still one pace. |
+| Feedback | 7 | Held. The miss is a card and a toast, not a new hit. The win payoff is unchanged. |
+| Sound design | 6 | Held. Not listened to. The pull-away and the miss add no new sting. The chase clock is unchanged. |
+| Variety | 7 | Held. Missions 2, 3 and 4 are still a chase, a rescue and a fight. |
+| Performance stability | 6 | The 1280×800 play passed with no page errors. Frame time on a real GPU was not measured. |
+
+- Aesthetics raw: 45 / 10 dimensions, index 45
+- Playability raw: 68 / 10 dimensions, index 68
+- Total: 113 / 200
+- Delta vs last round: +1 (round 8 was 112). Difficulty curve 6 → 7. Every other score held.
+
+![Falling behind: the card says he is pulling away](fullswing-r9/pull.png)
+
+![A miss holds GOT AWAY before the chase starts again](fullswing-r9/miss.png)

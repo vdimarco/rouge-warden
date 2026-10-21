@@ -23,7 +23,7 @@ import { createStreet, STREET } from "./street.js";
 import { createStreetView, createFigures } from "./streetview.js";
 import { createCombat, FIGHT } from "./combat.js";
 import { createCars, nearTraffic, trafficAt, CAR } from "./cars.js";
-import { createJobs, JOB_NAMES, STORY_ROUTE, STORY_NEAR } from "./jobs.js";
+import { createJobs, JOB_NAMES, MISS, STORY_ROUTE, STORY_NEAR } from "./jobs.js";
 import { createActionView } from "./actionview.js";
 import { createActionHud, placeGoal } from "./actionhud.js";
 import { createBloom } from "./bloom.js";
@@ -408,6 +408,7 @@ function streetFrame(dt, inPlay) {
 let sprinting = false, energy = 1, energyWait = 0, driving = false, fightHints = 0, sludgeRetry = -1, routeRetry = -1;
 // a won job hangs on a big word before the next mission card (winHold seconds, winCard on the pill, winStory after)
 let winHold = 0, winCard = null, winStory = null, lastWin = null;
+let missHold = 0, missCard = null, missJob = null, lastMiss = null;
 // A test can run the story route under ?nocut. Real play runs it only after Mission 1, and the tests leave it off.
 let routeForce = false;
 // The fall into the lake after the toilet erupts (flat screen): { t, sludge } while it lasts. The splash fishes the hero out on the
@@ -668,12 +669,21 @@ function actionFrame(dt, inp) {
   if (lakeDrop && ((lakeDrop.t += dt) > LAKE_DROP.max || (lakeDrop.t > 0.5 && P.onGround && !respawning))) endLakeDrop();
   if (sludgeRetry > 0 && (sludgeRetry -= dt) <= 0) { sludgeRetry = -1; startSludge(); }
   // the win hangs in play. The next mission, and its card, wait until that moment is over.
+  // a miss holds its lesson the same way, and the retry waits until that card has been up.
   if (winHold > 0) {
     winHold -= dt;
     if (winHold <= 0) {
       winHold = 0; winCard = null;
       if (winStory) { const name = winStory; winStory = null; story(name); }
       if (routeOpen() && !jobs.active && routeRetry < 0) routeRetry = 0.35;
+    }
+  } else if (missHold > 0) {
+    missHold -= dt;
+    if (missHold <= 0) {
+      missHold = 0; missCard = null;
+      const job = missJob; missJob = null;
+      if (job === "sludge" && !save.jobs.sludge) sludgeRetry = 0.4;
+      else if (routeOpen() && !jobs.active && jobs.storyNext() && jobs.storyNext().type === job && routeRetry < 0) routeRetry = 0.4;
     }
   } else {
     if (routing && !jobs.active && routeRetry < 0) routeRetry = 0.8;
@@ -744,6 +754,14 @@ function winPayoff(e) {
   winHold = 1.35;
   winStory = null;
 }
+// A miss is a lesson, not a cheer. The card names the miss and one thing to do, and the retry waits it out.
+function missPayoff(e) {
+  const lesson = MISS[e.why] || { title: "MISSED", detail: "Try that one again.", short: "AGAIN" };
+  lastMiss = { job: e.job, why: e.why, title: lesson.title };
+  missCard = { title: lesson.title, detail: lesson.detail, short: lesson.short, n: 0, of: 0, tag: "miss", goal: null };
+  missHold = 1.7;
+  missJob = e.job;
+}
 const FAIL_LINES = {
   drain: "The Market drain blew! Sludge everywhere. Try again!",
   time: "Out of time!", dumpster: "Ouch! A dumpster broke the fall. They are fine, but you missed.",
@@ -786,8 +804,7 @@ function jobEvent(e) {
     }
     case "failed":
       ui.toast(FAIL_LINES[e.why] || "Job failed.");
-      if (e.job === "sludge") sludgeRetry = 3.5;
-      else if (routeOpen() && jobs.storyNext() && jobs.storyNext().type === e.job) routeRetry = 3.5;
+      missPayoff(e);
       break;
   }
 }
@@ -810,6 +827,7 @@ function routeOpen() {
 }
 function routeCard() {
   if (winHold > 0 && winCard) return winCard;
+  if (missHold > 0 && missCard) return missCard;
   if (jobs.active || !routeOpen()) return null;
   const step = jobs.storyNext();
   if (!step) return null;
@@ -2518,6 +2536,14 @@ G.test = {
     };
   },
   teleport(x, y, z) { teleport(P, x, y, z); placeRig(G.rigYaw, x, y, z); return v3(P.pos); },
+  // turn the chase view toward a world point (a test frame, not a control)
+  face(x, z) {
+    const yaw = Math.atan2(-(x - P.pos.x), -(z - P.pos.z));
+    G.rigYaw = yaw;
+    placeRig(yaw, P.pos.x, P.pos.y, P.pos.z);
+    if (flatOn && flatcam) { flatcam.settle(); hero.setYaw(yaw); }
+    return yaw;
+  },
   toLocal(x, y, z) { const R = rig.position; rotY(-G.rigYaw, x - R.x, z - R.z, T); return { x: T.x, y: y - R.y, z: T.z }; },
   toWorld(x, y, z) { const R = rig.position; rotY(G.rigYaw, x, z, T); return { x: R.x + T.x, y: R.y + y, z: R.z + T.z }; },
   aimAt(side, x, y, z) { ov.aim[side] = x == null ? null : { x, y, z }; },
@@ -2564,7 +2590,7 @@ G.test = {
   // tune the Verse numbers for a test (VERSE in main.js): verse({ lines: 0 }); returns a copy of them all
   verse(o) { if (o) Object.assign(VERSE, o); return { ...VERSE }; },
   // the city action (flat play): fights, cars, jobs, the moves, and the screen bits
-  action: () => ({ on: actionOn(), driving, sprinting, energy, roll: P.roll || 0, combat: combat.info(), cars: cars.info(), jobs: jobs.info(), hud: actHud.info(), view: actionView.info(), figures: figures.info(), save: JSON.parse(JSON.stringify(save.jobs)), ropeTargets: [...ropeIds], cueAir: cueAir.slice(), slowT, hero: G.hero.info().pose, zip: zip ? { ...zip } : null, hitStop: hitStopT, win: lastWin ? { ...lastWin, hold: winHold } : null,
+  action: () => ({ on: actionOn(), driving, sprinting, energy, roll: P.roll || 0, combat: combat.info(), cars: cars.info(), jobs: jobs.info(), hud: actHud.info(), view: actionView.info(), figures: figures.info(), save: JSON.parse(JSON.stringify(save.jobs)), ropeTargets: [...ropeIds], cueAir: cueAir.slice(), slowT, hero: G.hero.info().pose, zip: zip ? { ...zip } : null, hitStop: hitStopT, win: lastWin ? { ...lastWin, hold: winHold } : null, miss: lastMiss ? { ...lastMiss, hold: missHold } : null,
     verse: { mode: verseMode(), impact: impactT, sense: senseAmt, twos: G.hero.info().twos, plate: VS.plate, mood: VS.mood, moodHurt, moodFight, smear: G.hero.info().smear, cam: flatcam.info() } }),
   // the goon as the figures draw him (on threes in flat play)
   goonView(id) { const g = combat.goons.find((q) => q.id === id); if (!g) return null; const v = goonOnThrees(g); return { phase: v.phase, poseT: v.poseT, pose: v.pose, x: v.x, z: v.z }; },
@@ -2612,6 +2638,13 @@ G.test = {
     else if (A.type === "catch") { D.falling = true; D.caught = true; }
     else if (A.type === "washer") D.caught = true;
     else return false;
+    return true;
+  },
+  // Drop the live job's clock so the next update fails it (a chase says they got away).
+  failJob() {
+    const A = jobs.active;
+    if (!A) return false;
+    A.timer = 0;
     return true;
   },
   sample: (points) => new Promise((resolve, reject) => samples.push({ points, resolve, reject })),
