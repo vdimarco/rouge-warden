@@ -946,3 +946,40 @@ Loop: missions, playability, controls, feel, UX, pacing and fun for In Full Swin
 - Delta vs last round: +1 (round 24 was 125). Sound design 7 → 8. Every other score held.
 
 ![The second flush plays the stab](fullswing-r25/stab.png)
+
+### Round 26 — 2026-10-21 — rubric v1
+
+- What changed: A won flush plays a wet sting, a won fight plays a hit, a won chase or delivery plays a dash, and a won rescue plays a lift. A won job does not play the ring-trial fanfare. A finished ring trial still does. A miss plays none of the win stings. The cheer, the comic word, and the hop stay.
+- Why it helped: Every won job played the same brass fanfare a finished ring trial plays. Spider-Man 2 marks a finished mission with a sting that fits it. A rendered flush, fight, dash and lift measured 0.030, 0.030, 0.025 and 0.046 in the first half-second, and under 0.0002 after eight tenths. The ring fanfare was still at 0.072 then. The closest two stings matched at 0.055. A 1280×800 play won the purse snatcher on GOT IT, Stop, Thief! done, and played the dash. The rescue played the lift, the roof fight played the hit, and the Sludge Run played the wet sting. A miss played the low sting and none of those. A speaker was not used.
+- Screenshots: `docs/gauntlet/fullswing-r26/got.png`.
+- Next target: performance stability (6), the lowest playability score. This machine has no real GPU to time, so that score is not the next implementation round.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 5 | Held. Golden-hour sun and ink shadows. |
+| Color palette | 6 | Held. Yellow, red and sludge green still separate the HUD from the blocks. |
+| Detail density | 4 | Held. Open blocks more than a dressed borough. |
+| Texture and material quality | 3 | Held. Flat fills. |
+| Composition and camera | 4 | Held. The chase camera still sits behind the hero. This frame is the win card. |
+| Atmosphere | 5 | Held. The dusk skyline has a mood. The street under the card does not. |
+| Character models | 3 | Held. Simple comic figures. |
+| Animation smoothness | 4 | Scored from still frames in software GL. Continuous motion was not watched. |
+| Particles and VFX | 5 | Held. No new effect. The card is the change on screen. |
+| UI polish | 6 | Held. The same ink pill says GOT IT. |
+| Responsiveness and input latency | 8 | Held. The clog card still rewrites its metres every frame. |
+| Controls feel | 9 | Held. The first web still hangs from a building at the real rope length. |
+| Mission clarity | 9 | Held. The King card still names the nearest pipe, and the compass still says The King's pipe. |
+| Pacing | 9 | Held. Seven of the twelve flushes are a different job, and the clog pump never runs three times in a row. |
+| Fun factor | 8 | Held. A win still hops the hero. This round changes the sting, not the hop. |
+| Difficulty curve | 8 | Held. The eighth flush still counts from 36 s. The rescue still falls at the same rate. |
+| Feedback | 8 | Held. A chase that is pulling away still turns the card hot. |
+| Sound design | 9 | A flush, a fight, a dash and a lift measured 0.030, 0.030, 0.025 and 0.046 in the first half-second, and under 0.0002 after eight tenths, while the ring fanfare was still at 0.072. The closest two matched at 0.055. The purse snatcher played the dash, the rescue the lift, the roof fight the hit, and the Sludge Run the wet sting. A miss played none of them. A speaker was not used. |
+| Variety | 8 | Held. The rescue, the chase, and the mugging are in the clog run. This round changes the sting, not the jobs. |
+| Performance stability | 6 | The 1280×800 play passed with no page errors. Frame time on a real GPU was not measured. |
+
+- Aesthetics raw: 45 / 10 dimensions, index 45
+- Playability raw: 82 / 10 dimensions, index 82
+- Total: 127 / 200
+- Delta vs last round: +1 (round 25 was 126). Sound design 8 → 9. Every other score held.
+
+![The purse snatcher pays off with its own sting](fullswing-r26/got.png)
