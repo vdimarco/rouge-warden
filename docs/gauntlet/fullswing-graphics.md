@@ -407,3 +407,40 @@ Playability was scored from a flat boot and the city render check, not a full pl
 
 Playability was scored from a flat boot and the city render check, not a full playthrough. OpenSpec CLI validation was not run; the `openspec` command is not installed.
 
+### Round 12 — 2026-10-21 — rubric v1
+
+- What changed: Shaded wall under the street air takes a warm multiply. The lit band stays the sun, and a lit window keeps its own light. The warm tone is full at 8 m and gone by 20 m, so the lower floors change and the roofs stay the cold cel. The height is the 18 m street layer already in this shader, from Carsten Wenzel, SIGGRAPH 2006, the height only. No global-illumination pass was added.
+- Why it helped: The chase view looks away from the sun, and the piers beside the avenue were the cold blue shade. They now read as wall that the street is lighting. The upper floors stay cold, so the building still has the three cel bands.
+- Screenshots: before `docs/gauntlet/shots/r12-before-play.png`, after `docs/gauntlet/shots/r12-after-play.png`. The shaded pier: `docs/gauntlet/shots/r12-before-wall.png`, `docs/gauntlet/shots/r12-after-wall.png`.
+- Next target: Texture and material quality (5), tied with the other aesthetics scores still at 5. The lower shade is warmer, and the wall is still a flat cel with joints.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 6 | Shaded wall beside the avenue reads warm, and the floors by the roof stay the cold cel. It is still three bands, not bounced light with contact. |
+| Color palette | 5 | Unchanged. The sunset inks hold. The shade band is warmer and the grade is the same. |
+| Detail density | 5 | Unchanged. |
+| Texture and material quality | 5 | Unchanged. The wall is still a flat cel with masonry joints. |
+| Composition and camera | 5 | Unchanged. Reported distance stayed 4.5 m and pitch stayed −0.349. |
+| Atmosphere | 5 | Unchanged. The 18 m layer is only the height of this bounce. |
+| Character models | 5 | Unchanged. Skinned triangles stayed at 12,468. |
+| Animation smoothness | 5 | Unchanged. |
+| Particles and VFX | 5 | Unchanged. |
+| UI polish | 5 | Unchanged. The dotted score plate from round 11. |
+| Responsiveness and input latency | 6 | Unchanged. No new pass. No input timing was measured. |
+| Controls feel | 5 | Unchanged. |
+| Mission clarity | 4 | Unchanged. Not played. |
+| Pacing | 4 | Unchanged. |
+| Fun factor | 4 | Unchanged. Not played as a session. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 5 | Unchanged. |
+| Sound design | 4 | Unchanged. |
+| Variety | 4 | Unchanged. |
+| Performance stability | 6 | `qa/vr/render.mjs` passed, including flat play and the lit-sphere cel check. Street mean 67.1, from 65.4. Saturation 0.52. |
+
+- Aesthetics raw: 51 / 10 dimensions, index 51
+- Playability raw: 46 / 10 dimensions, index 46
+- Total: 97 / 200
+- Delta vs last round: +1 (96 → 97). Lighting 5 → 6. Playability unchanged.
+
+Playability was scored from a flat boot and the city render check, not a full playthrough. OpenSpec CLI validation was not run; the `openspec` command is not installed.
+
