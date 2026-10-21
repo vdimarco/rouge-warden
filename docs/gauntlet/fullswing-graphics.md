@@ -148,3 +148,40 @@ Playability was scored from a flat boot and the city render check, not a full pl
 
 Playability was scored from a flat boot and the city render check, not a full playthrough. OpenSpec CLI validation was not run; the `openspec` command is not installed.
 
+### Round 5 — 2026-10-21 — rubric v1
+
+- What changed: Sidewalks get one instanced mesh of bins, bollards, and hydrants, one kind per spot, on both walks and off the carriageway. They fade out between 70 m and 110 m. The bollard's pale band is painted after the cel bands, or the three tones swallow it. Parks, the Needle plaza, and the Dome stay clear. No colliders and no extra full-screen pass. No city-dressing paper fit a three-band comic street, so the shapes are original boxes on the prop draw already in the city view.
+- Why it helped: The avenue had lanes, trees, and lamps, and the walks were empty. A bin, a striped post, and a hydrant in the near block are the first street furniture, which is what makes Spider-Man 2's sidewalks read as a city. They are still a few simple shapes.
+- Screenshots: before `docs/gauntlet/shots/r05-before-street.png`, after `docs/gauntlet/shots/r05-after-street.png`. The needle is effectively unchanged, because the furniture has faded out by that distance: `docs/gauntlet/shots/r05-before-needle.png`, `docs/gauntlet/shots/r05-after-needle.png`.
+- Next target: Atmosphere (4), tied with composition, character models, animation, particles and VFX, and UI. The street and needle still show stepped fog and no weather, which is the gap these views still show once the walks have furniture.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 5 | Unchanged. The posts take the same three bands. |
+| Color palette | 5 | Unchanged. The bin, stripe, and hydrant sit in the existing inks. |
+| Detail density | 5 | The near sidewalk shows a bollard, and bins and hydrants recur down the walks. Still sparse next to Spider-Man 2. |
+| Texture and material quality | 5 | Unchanged. Courses and fresnel from round 4. The new props are flat comic colours. |
+| Composition and camera | 4 | Unchanged. Fixed cameras. The furniture sits in the street frame. |
+| Atmosphere | 4 | Unchanged. One shaft, stepped fog, no weather. |
+| Character models | 4 | Unchanged. Hair, shoulders, and a rim from round 3. |
+| Animation smoothness | 4 | Unchanged. Stills only. |
+| Particles and VFX | 4 | Unchanged. One occluded sun shaft. |
+| UI polish | 4 | Unchanged. The shots hide the page. |
+| Responsiveness and input latency | 6 | Unchanged. One extra instanced draw. No input timing was measured. |
+| Controls feel | 5 | Unchanged. |
+| Mission clarity | 4 | Unchanged. Not played. |
+| Pacing | 4 | Unchanged. |
+| Fun factor | 4 | Unchanged. Not played as a session. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 5 | Unchanged. |
+| Sound design | 4 | Unchanged. |
+| Variety | 4 | Unchanged. |
+| Performance stability | 6 | `qa/vr/render.mjs` passed, including flat play and the lit-sphere cel check. The street frame went from 53 draws to 54. Street mean stayed in band. |
+
+- Aesthetics raw: 44 / 10 dimensions, index 44
+- Playability raw: 46 / 10 dimensions, index 46
+- Total: 90 / 200
+- Delta vs last round: +1 (89 → 90). Detail density 4 → 5. Playability unchanged.
+
+Playability was scored from a flat boot and the city render check, not a full playthrough. OpenSpec CLI validation was not run; the `openspec` command is not installed.
+
