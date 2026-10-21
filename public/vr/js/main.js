@@ -2283,7 +2283,9 @@ function putWeb(hand, anchor, sagPx, alpha) {
     let drop = 0;
     if (saw && u > ua + 1e-4 && u < ub - 1e-4 && tl >= 8) {
       const s = (u - ua) / (ub - ua);
-      drop = sagPx * (0.5 - 0.5 * Math.cos(s * Math.PI * 2));
+      // The visible ends sit partway off the rope, so the bow the eye measures is shallower than
+      // this offset. 1.65 brings that bow back to about (1 - tension) * 16 px.
+      drop = sagPx * 1.65 * (0.5 - 0.5 * Math.cos(s * Math.PI * 2));
     }
     if (drop > 0.05) {
       WEB_FROM.copy(p).project(camera);
