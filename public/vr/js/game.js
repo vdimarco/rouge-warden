@@ -1839,8 +1839,18 @@ export function createGame({ scene, city, view, ropes, hands, ui, audio, P, save
     progress.goal = null;
     if (progress.king === "beaten" || K.state === "gone") { OBJ.title = "ALL CLEAR"; OBJ.detail = "Free roam: trials and Loonies"; OBJ.short = ""; OBJ.n = OBJ.of = 0; }
     else if (K.state === "awake") {
-      OBJ.title = "FLUSH THE KING"; OBJ.detail = "Rope his pipes and pump them off";
-      OBJ.n = pipes.filter((q) => q.ripped).length; OBJ.of = pipes.length; OBJ.short = "PIPES " + OBJ.n + "/" + OBJ.of;
+      let pipe = null, pd = Infinity;
+      for (const p of pipes) {
+        if (p.ripped) continue;
+        const d = Math.hypot(p.tip.x - CHEST.x, p.tip.z - CHEST.z);
+        if (d < pd) { pd = d; pipe = p; }
+      }
+      OBJ.title = "FLUSH THE KING";
+      OBJ.n = pipes.filter((q) => q.ripped).length; OBJ.of = pipes.length;
+      OBJ.detail = pipe ? "Next pipe, " + Math.round(pd) + " m" : "Rope his pipes and pump them off";
+      OBJ.short = "PIPES " + OBJ.n + "/" + OBJ.of;
+      // the compass uses this same pipe, so a leftover clog cannot point somewhere else
+      progress.goal = pipe ? { x: pipe.tip.x, y: pipe.tip.y, z: pipe.tip.z, kind: "pipe", name: "King" } : null;
     } else {
       let best = null, bd = Infinity;
       for (const c of clogs) { if (c.done) continue; const d = Math.hypot(c.x - CHEST.x, c.z - CHEST.z); if (d < bd) { bd = d; best = c; } }

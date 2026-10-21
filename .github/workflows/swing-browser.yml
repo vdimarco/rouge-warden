@@ -167,6 +167,11 @@ jobs:
         env:
           NODE_PATH: ${{ github.workspace }}/qa/browser/node_modules
           SHOTS: ${{ github.workspace }}/test-results/flat
+      - name: The compass names the King's pipe
+        run: node qa/vr/kingcompass.e2e.mjs
+        env:
+          NODE_PATH: ${{ github.workspace }}/qa/browser/node_modules
+          SHOTS: ${{ github.workspace }}/test-results/flat
       - name: A held swing catches the next building
         run: node qa/vr/holdchain.e2e.mjs
         env:
