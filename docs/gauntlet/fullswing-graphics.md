@@ -555,3 +555,40 @@ Playability was scored from a flat boot and the city render check, not a full pl
 
 Playability was scored from a flat boot and the city render check, not a full playthrough. OpenSpec CLI validation was not run; the `openspec` command is not installed.
 
+### Round 16 — 2026-10-21 — rubric v1
+
+- What changed: Shop floors keep a cloth band above the windows once the painted tile is on. The flat facade already had the band, and it turned off inside the tile's range, which is where the street camera sits. Each bay is red or teal, with a darker hem and a seam that fades before it shimmers. The band is mixed on after the teal grade, so the grade does not repaint the shaded cloth. No new mesh.
+- Why it helped: The near shop wall was one painted slab. A coloured band now sits on the wall above the lit glass, and the glass stays the shop window.
+- Screenshots: before `docs/gauntlet/shots/r16-before-street.png`, after `docs/gauntlet/shots/r16-after-street.png`. The sunset: `docs/gauntlet/shots/r16-before-needle.png`, `docs/gauntlet/shots/r16-after-needle.png`. Chase: `docs/gauntlet/shots/r16-before-play.png`, `docs/gauntlet/shots/r16-after-play.png`.
+- Next target: Character models (5), tied with composition, animation, particles and VFX, and UI. The chase hero is still a simple read beside the street.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 6 | Unchanged. Shaded lower walls stay warm. The floors by the roof stay the cool band. |
+| Color palette | 6 | Unchanged. Cool shade stays teal and the step toward the sun stays rose. |
+| Detail density | 6 | A red or teal band sits above the shop glass. The floors above it are still one tile. |
+| Texture and material quality | 6 | Unchanged. The masonry units from round 13. |
+| Composition and camera | 5 | Unchanged. Reported distance stayed 4.5 m and pitch stayed −0.349. |
+| Atmosphere | 6 | Unchanged. The far avenue still sits in the warm dust from round 15. |
+| Character models | 5 | Unchanged. Skinned triangles stayed at 12,468. |
+| Animation smoothness | 5 | Unchanged. |
+| Particles and VFX | 5 | Unchanged. |
+| UI polish | 5 | Unchanged. The dotted score plate from round 11. |
+| Responsiveness and input latency | 6 | Unchanged. No new pass and no new draw. No input timing was measured. |
+| Controls feel | 5 | Unchanged. |
+| Mission clarity | 4 | Unchanged. Not played. |
+| Pacing | 4 | Unchanged. |
+| Fun factor | 4 | Unchanged. Not played as a session. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 5 | Unchanged. |
+| Sound design | 4 | Unchanged. |
+| Variety | 4 | Unchanged. |
+| Performance stability | 6 | `qa/vr/render.mjs` passed, including flat play, the painted-sky checks, and the lit-sphere cel check. Street mean 73.2, saturation 0.57. |
+
+- Aesthetics raw: 55 / 10 dimensions, index 55
+- Playability raw: 46 / 10 dimensions, index 46
+- Total: 101 / 200
+- Delta vs last round: +1 (100 → 101). Detail density 5 → 6. Playability unchanged.
+
+Playability was scored from a flat boot and the city render check, not a full playthrough. OpenSpec CLI validation was not run; the `openspec` command is not installed.
+

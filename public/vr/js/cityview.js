@@ -320,7 +320,7 @@ vec3 roomTint(float c, float s) {
   if (c < 0.8) return vec3(1.08, 0.88, 0.66);
   return vec3(0.94, 0.94, 0.9);
 }
-vec3 wallColor(int k, float shop, float sd, float salt, float h1, float h2, float h3, vec3 N, vec3 V, float dist, out float lineY) {
+vec3 wallColor(int k, float shop, float sd, float salt, float h1, float h2, float h3, vec3 N, vec3 V, float dist, out float lineY, out vec4 awning) {
   float fh = vInfo.z, bay = vInfo.w;
   float u = vFace.x, faceW = vFace.y, top = vFace.w, y = vW.y;
   bool glassy = k <= 1;
@@ -558,12 +558,6 @@ vec3 wallColor(int k, float shop, float sd, float salt, float h1, float h2, floa
   float emBlock = wmask * mix(litAvg, lit, detail);
   vec3 col = mix(celWall, room, wmask);
   float em = emBlock;
-  // an awning over the shop windows in the flat look
-  if (shopRow && nearD < 0.5) {
-    float ay = smoothstep(0.58 - aa.y, 0.58 + aa.y, f.y) * (1.0 - smoothstep(0.96 - aa.y, 0.96 + aa.y, f.y));
-    vec3 aw = comicCelX(rs < 0.5 ? vec3(0.7, 0.14, 0.1) : vec3(0.1, 0.4, 0.4), band, LITMUL, LITADD);
-    col = mix(col, aw, ay * detail);
-  }
   // -- the painted tile: the atlas cell for this window, lit or dark. The painted family shows the whole tile in the
   // building's own wall paint; the other families show only the tile's window, stretched into their own window shape.
   if (nearD > 0.001) {
@@ -901,6 +895,21 @@ vec3 wallColor(int k, float shop, float sd, float salt, float h1, float h2, floa
   float shade = 1.0 - smoothstep(0.25, 1.15, band);
   float low = 1.0 - smoothstep(8.0, 20.0, y);
   col = mix(col, col * vec3(1.7, 1.05, 0.5) + vec3(0.08, 0.02, 0.0), shade * low * (1.0 - em) * 0.85);
+  // A cloth band over the shop windows. The flat look used to paint this only while the window atlas
+  // was off, and the street camera is inside that atlas, so the near shops had no awning.
+  // It sits above the shop glass (the window ends at 0.56 of the street floor). The caller mixes it
+  // on after the teal grade, or that grade would repaint the shaded cloth.
+  awning = vec4(0.0);
+  if (shopRow) {
+    float y0 = 0.58;
+    float y1 = 0.96;
+    float ay = smoothstep(y0 - aa.y, y0 + aa.y, f.y) * (1.0 - smoothstep(y1 - aa.y, y1 + aa.y, f.y));
+    float hem = smoothstep(y0 - aa.y, y0 + aa.y, f.y) * (1.0 - smoothstep(0.70 - aa.y, 0.70 + aa.y, f.y));
+    vec3 cloth = rs < 0.5 ? vec3(0.92, 0.10, 0.08) : vec3(0.06, 0.48, 0.58);
+    cloth = mix(cloth, cloth * vec3(0.45, 0.40, 0.42), hem);
+    cloth = mix(cloth, cloth * 0.72, stripe(u / cw, 0.04));
+    awning = vec4(comicCelX(cloth, band, LITMUL, LITADD), ay * detail);
+  }
   return col;
 }
 vec3 roofColor(int k, float h1, float h2, vec3 N) {
@@ -943,8 +952,9 @@ void main() {
   float h1 = fract(sd * 0.0913), h2 = fract(sd * 0.3771), h3 = fract(sd * 0.1313);
   vec3 col;
   float lineY = -1.0;
+  vec4 awn = vec4(0.0);
   if (N.y > 0.5) col = roofColor(k, h1, h2, N);
-  else col = wallColor(k, shop, sd, salt, h1, h2, h3, N, V, dist, lineY);
+  else col = wallColor(k, shop, sd, salt, h1, h2, h3, N, V, dist, lineY, awn);
   // a clogged district goes grey-green; the finale warms everything
   col = mix(col, vec3(dot(col, vec3(0.3, 0.5, 0.2))) * vec3(0.82, 0.98, 0.62), vClog * 0.38);
   col *= mix(vec3(1.0), vec3(1.08, 1.0, 0.9), uFinale);
@@ -962,7 +972,8 @@ void main() {
   col += vec3(1.0, 0.72, 0.39) * fold * foldSun * 0.22;
   if (lineY > 0.0) ink = max(ink, comicInk(abs(vW.y - lineY), wpx * 0.8));
   col = mix(col, INKC, ink);
-  gl_FragColor = vec4(mix(gradeInk(col), vFog.rgb, comicPoster(vFog.a, 4.0)), 1.0);
+  vec3 shown = mix(gradeInk(col), mix(awn.rgb, INKC, ink), awn.a);
+  gl_FragColor = vec4(mix(shown, vFog.rgb, comicPoster(vFog.a, 4.0)), 1.0);
 }`;
 
 // The Needle, the Dome, the expressway and the King's perch: one mesh, a kind per vertex.
