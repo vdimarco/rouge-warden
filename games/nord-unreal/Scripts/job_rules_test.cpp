@@ -235,6 +235,15 @@ namespace
         Expect(!FareNeedsLoan(false, false), "a driver is given a second car");
         Expect(!FareNeedsLoan(true, true), "a free car nearby still spawns a loaner");
         Expect(FareLoanRadius == 3000., "the loaner looks farther than the curb");
+        Expect(FareCarIsFree(false, false, false, false, false, 0.f), "a parked car is passed over");
+        Expect(!FareCarIsFree(false, false, false, false, true, 121.f), "moving traffic counts as a ride");
+        Expect(!FareCarIsFree(false, false, false, false, true, -121.f), "traffic rolling backward counts as a ride");
+        Expect(FareCarIsFree(false, false, false, false, true, 120.f), "stopped traffic is passed over");
+        Expect(!FareCarIsFree(true, false, false, false, false, 0.f), "an occupied car counts as a ride");
+        Expect(!FareCarIsFree(false, true, false, false, false, 0.f), "a driven car counts as a ride");
+        Expect(!FareCarIsFree(false, false, true, false, false, 0.f), "a police car counts as a ride");
+        Expect(!FareCarIsFree(false, false, false, true, false, 0.f), "a wreck counts as a ride");
+        Expect(FareTakeSpeed == 120.f, "the door speed drifted from the traffic car a player can enter");
     }
 
     void GuideTests()

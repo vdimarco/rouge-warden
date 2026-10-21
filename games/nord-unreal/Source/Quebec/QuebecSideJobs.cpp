@@ -512,7 +512,7 @@ void AQuebecSideJobs::BeginJobContent(AQuebecController* Player)
         // curb makes that a choice. A driver, or a free car already nearby, does not get a second one.
         bool bFreeCar = !Cast<AQuebecCharacter>(Body);
         for (TActorIterator<AQuebecCar> It(GetWorld()); It && !bFreeCar; ++It)
-            if (!It->Occupant && !It->GetController() && !It->bPolice && !It->IsWrecked() &&
+            if (QuebecJobRules::FareCarIsFree(It->Occupant != nullptr, It->GetController() != nullptr, It->bPolice, It->IsWrecked(), It->bTraffic, It->Speed) &&
                 FVector::Dist2D(It->GetActorLocation(), MarkerPoint) < QuebecJobRules::FareLoanRadius) bFreeCar = true;
         const int32 Curb = QuebecJobRules::FareNeedsLoan(Cast<AQuebecCharacter>(Body) != nullptr, bFreeCar)
             ? SideJobNearestRoad(MarkerPoint) : INDEX_NONE;

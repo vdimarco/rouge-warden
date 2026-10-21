@@ -4,4 +4,5 @@
 - [x] Run the fare from the sixth marker in `QuebecSideJobs.cpp`
 - [x] Prove the grace, the slow drop, the clearance, and the guides in `Scripts/test_job_rules.py`
 - [x] Offer a curb loaner when the fare starts on foot and no free car is nearby
+- [x] Treat moving traffic as not a free car, matching the door
 - [ ] Host: start La course, step out, and lose the passenger

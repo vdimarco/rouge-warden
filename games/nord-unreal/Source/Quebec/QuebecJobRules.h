@@ -83,6 +83,8 @@ namespace QuebecJobRules
     inline constexpr float FareGraceSeconds = 4.f;
     // A walker with no free car this close gets a loaner at the curb, so the four seconds are a choice.
     inline constexpr double FareLoanRadius = 3000.;
+    // FindInteractableCar offers a traffic car only at or under this speed. Faster traffic is not a ride.
+    inline constexpr float FareTakeSpeed = 120.f;
 
     struct FFare
     {
@@ -184,6 +186,14 @@ namespace QuebecJobRules
     inline bool FareNeedsLoan(bool bOnFoot, bool bFreeCarNearby)
     {
         return bOnFoot && !bFreeCarNearby;
+    }
+
+    // A free car is one the player can enter. Moving traffic is not. Stopped traffic, at FareTakeSpeed, is.
+    inline bool FareCarIsFree(bool bOccupied, bool bControlled, bool bPolice, bool bWrecked, bool bTraffic, float Speed)
+    {
+        if (bOccupied || bControlled || bPolice || bWrecked) return false;
+        if (bTraffic && std::fabs(static_cast<double>(Speed)) > static_cast<double>(FareTakeSpeed)) return false;
+        return true;
     }
 
     inline int PosterBits(int Mask)

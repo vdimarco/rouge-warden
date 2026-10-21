@@ -12,7 +12,7 @@ The sixth side job SHALL pick the passenger up at its marker and drop them at th
 - **THEN** the fare is done, and the same car one centimetre per second faster is still aboard
 
 ### Requirement: A walker gets a car at the curb
-La course SHALL offer a loaner when the starter is on foot and no free car is already within 30 metres. A driver SHALL NOT be offered a second car. A free car already nearby SHALL NOT be joined by a loaner.
+La course SHALL offer a loaner when the starter is on foot and no free car is already within 30 metres. A driver SHALL NOT be offered a second car. A free car already nearby SHALL NOT be joined by a loaner. Moving traffic the player cannot enter SHALL NOT count as a free car. Traffic slow enough to enter SHALL count.
 
 #### Scenario: On foot
 - **WHEN** the starter is walking and no free car is nearby
@@ -20,6 +20,14 @@ La course SHALL offer a loaner when the starter is on foot and no free car is al
 
 #### Scenario: Already driving
 - **WHEN** the starter is in a car
+- **THEN** the fare does not ask for a loaner
+
+#### Scenario: Moving traffic
+- **WHEN** the only car within 30 metres is traffic too fast to enter
+- **THEN** the fare still asks for a loaner
+
+#### Scenario: Stopped traffic
+- **WHEN** a traffic car within 30 metres is slow enough to enter
 - **THEN** the fare does not ask for a loaner
 
 #### Scenario: The guides

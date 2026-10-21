@@ -2275,7 +2275,7 @@ AQuebecCar* AQuebecController::FindInteractableCar() const
     for (TActorIterator<AQuebecCar> It(GetWorld()); It; ++It)
     {
         const double Distance = FVector::DistSquared(Character->GetActorLocation(), It->GetActorLocation());
-        if (!It->Occupant && !It->GetController() && (!It->bTraffic || FMath::Abs(It->Speed) <= 120.f) && Distance <= NearestDistance)
+        if (!It->Occupant && !It->GetController() && (!It->bTraffic || FMath::Abs(It->Speed) <= QuebecJobRules::FareTakeSpeed) && Distance <= NearestDistance)
         {
             FHitResult Hit;
             FCollisionQueryParams Query(SCENE_QUERY_STAT(EnterCar), false, Character);
