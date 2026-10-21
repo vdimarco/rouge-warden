@@ -101,6 +101,12 @@ float3 Key = lerp(float3(0.62, 0.70, 0.86), float3(1.16, 1.06, 0.94), Half);
 Color = lerp(Color, saturate(Color * Key), PrintedCrew);
 
 Color = lerp(Color, float3(0.025, 0.015, 0.05), saturate(Ink) * (Sky ? 0.0 : 1.0));
+
+// Aerial perspective: distant surfaces take the afternoon sky. Near the camera the street stays.
+// Hoffman and Preetham, "Rendering Outdoor Light Scattering in Real-Time" (2002), reduced to a
+// depth fade because the clear-day fog multipliers stay at 1.
+float Aerial = smoothstep(2500.0, 14000.0, DepthC);
+Color = lerp(Color, float3(0.62, 0.70, 0.80), Aerial * 0.5 * (Sky ? 0.0 : 1.0));
 return Color;
 '''
 
