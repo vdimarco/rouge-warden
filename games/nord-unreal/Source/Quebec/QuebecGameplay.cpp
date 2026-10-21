@@ -169,7 +169,9 @@ AQuebecCharacter::AQuebecCharacter()
     CameraArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraArm"));
     CameraArm->SetupAttachment(RootComponent);
     CameraArm->TargetArmLength = 420.f;
-    CameraArm->SocketOffset = FVector(0., 0., 55.);
+    // The aim pose already sits 70 cm to the figure's right. Idle uses that same shoulder,
+    // so the street stays open beside them and aiming does not slide the frame sideways.
+    CameraArm->SocketOffset = FVector(0., 70., 55.);
     CameraArm->bUsePawnControlRotation = false;
     CameraArm->SetUsingAbsoluteRotation(true);
     Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));

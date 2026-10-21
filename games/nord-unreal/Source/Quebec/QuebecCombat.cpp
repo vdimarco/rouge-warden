@@ -49,7 +49,8 @@ namespace
     // Police chasing the shooter are threats, but goons still win close calls with them.
     constexpr double CombatPoliceThreatPenalty = .2;
     constexpr float CombatWeaponCycleSeconds = .15f;
-    const FVector CombatSocketOffset(0., 0., 55.);
+    // Idle matches the walker's shoulder. Aim only closes in and lifts; the sideways offset stays.
+    const FVector CombatSocketOffset(0., 70., 55.);
     const FVector CombatAimSocketOffset(0., 70., 62.);
 
     const TCHAR* const CombatWeaponNames[] = {
