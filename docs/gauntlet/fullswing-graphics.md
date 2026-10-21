@@ -333,3 +333,40 @@ Playability was scored from a flat boot and the city render check, not a full pl
 
 Playability was scored from a flat boot and the city render check, not a full playthrough. OpenSpec CLI validation was not run; the `openspec` command is not installed.
 
+### Round 10 — 2026-10-21 — rubric v1
+
+- What changed: The hair and the collar arrive after the head. The turn eases more slowly than the look, and while it is behind the hair shifts up to 12 cm along the head's right. A teleport snaps it back onto the skull. At rest it sits on the head again. The source is John Lasseter, "Principles of Traditional Animation Applied to 3D Computer Animation" (SIGGRAPH 1987), the follow-through principle only.
+- Why it helped: A yaw of the view used to swing the hair on the same frame as the skull. Five frames into a yaw it is now 8 degrees behind, so the crown and the collar still face the old direction. It is one mesh, not cloth, and the body is still a block.
+- Screenshots: before `docs/gauntlet/shots/r10-before-play.png`, after `docs/gauntlet/shots/r10-after-play.png`. Close portraits of the same moment: `docs/gauntlet/shots/r10-before-close.png`, `docs/gauntlet/shots/r10-after-close.png`.
+- Next target: UI polish (4). It is the only aesthetics score still at 4.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 5 | Unchanged. |
+| Color palette | 5 | Unchanged. |
+| Detail density | 5 | Unchanged. |
+| Texture and material quality | 5 | Unchanged. |
+| Composition and camera | 5 | Unchanged. Reported distance stayed 4.5 m and pitch stayed −0.349. The shot yaws the view on purpose. |
+| Atmosphere | 5 | Unchanged. |
+| Character models | 5 | Unchanged. The hair mass and collar from round 9. |
+| Animation smoothness | 5 | Five frames into a yaw the hair is 8 degrees behind the head, with a short sideways drag. At rest it sits on the skull. There is still no cloth and no filmed run. |
+| Particles and VFX | 5 | Unchanged. Sidewalk steam from round 8. |
+| UI polish | 4 | Unchanged. The play frame shows the existing comic HUD. |
+| Responsiveness and input latency | 6 | Unchanged. No new draw. No input timing was measured. |
+| Controls feel | 5 | Unchanged. The look still aims the head. The hair only follows it. |
+| Mission clarity | 4 | Unchanged. Not played. |
+| Pacing | 4 | Unchanged. |
+| Fun factor | 4 | Unchanged. Not played as a session. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 5 | Unchanged. |
+| Sound design | 4 | Unchanged. |
+| Variety | 4 | Unchanged. |
+| Performance stability | 6 | `qa/vr/render.mjs` passed, including flat play and the lit-sphere cel check. Street mean 65.5. Skinned triangles stayed at 12,468. |
+
+- Aesthetics raw: 49 / 10 dimensions, index 49
+- Playability raw: 46 / 10 dimensions, index 46
+- Total: 95 / 200
+- Delta vs last round: +1 (94 → 95). Animation smoothness 4 → 5. Playability unchanged.
+
+Playability was scored from a flat boot and the city render check, not a full playthrough. OpenSpec CLI validation was not run; the `openspec` command is not installed.
+
