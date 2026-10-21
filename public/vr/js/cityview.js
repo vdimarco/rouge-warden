@@ -320,8 +320,9 @@ vec3 roomTint(float c, float s) {
   if (c < 0.8) return vec3(1.08, 0.88, 0.66);
   return vec3(0.94, 0.94, 0.9);
 }
-vec3 wallColor(int k, float shop, float sd, float salt, float h1, float h2, float h3, vec3 N, vec3 V, float dist, out float lineY, out vec4 awning, out vec3 clay) {
+vec3 wallColor(int k, float shop, float sd, float salt, float h1, float h2, float h3, vec3 N, vec3 V, float dist, out float lineY, out vec4 awning, out vec3 clay, out vec4 spill) {
   clay = vec3(1.0);
+  spill = vec4(0.0);
   float fh = vInfo.z, bay = vInfo.w;
   float u = vFace.x, faceW = vFace.y, top = vFace.w, y = vW.y;
   bool glassy = k <= 1;
@@ -929,8 +930,21 @@ vec3 wallColor(int k, float shop, float sd, float salt, float h1, float h2, floa
     vec3 cloth = rs < 0.5 ? vec3(0.92, 0.10, 0.08) : vec3(0.06, 0.48, 0.58);
     cloth = mix(cloth, cloth * vec3(0.45, 0.40, 0.42), hem);
     cloth = mix(cloth, cloth * 0.72, stripe(u / cw, 0.04));
+    // The shop lamp hits the cloth from below. The hem, nearest the glass, takes the warm light.
+    // The top of the cloth stays its own red or teal. A dark shop leaves the cloth alone.
+    float fromGlass = (1.0 - smoothstep(y0, 0.90, f.y)) * lit;
+    cloth = mix(cloth, cloth * vec3(1.55, 0.78, 0.36) + vec3(0.20, 0.06, 0.0), fromGlass);
     awning = vec4(comicCelX(cloth, band, LITMUL, LITADD), ay * detail);
   }
+  // James Gurney, Color and Light (2010): a local light colours the nearby surface and dies with distance.
+  // The pool is printed after the grade, so the teal paper cannot take the lamp's colour. It stays off the
+  // glass, and a face in the sun keeps only a little of it.
+  vec2 outd = max(wr.xy - fc, fc - wr.zw);
+  float gap = max(outd.x, outd.y);
+  float nearWin = 1.0 - smoothstep(0.0, 0.28, gap);
+  float spillA = nearWin * lit * inFloors * (1.0 - wmask) * detail;
+  spillA *= mix(1.0, 0.28, smoothstep(0.15, 1.05, band));
+  spill = vec4(1.55, 0.92, 0.42, clamp(spillA, 0.0, 1.0));
   clay = mix(vec3(1.0), clayPrint, clamp(clayOn, 0.0, 1.0));
   return col;
 }
@@ -976,8 +990,9 @@ void main() {
   float lineY = -1.0;
   vec4 awn = vec4(0.0);
   vec3 clay = vec3(1.0);
+  vec4 spill = vec4(0.0);
   if (N.y > 0.5) col = roofColor(k, h1, h2, N);
-  else col = wallColor(k, shop, sd, salt, h1, h2, h3, N, V, dist, lineY, awn, clay);
+  else col = wallColor(k, shop, sd, salt, h1, h2, h3, N, V, dist, lineY, awn, clay, spill);
   // a clogged district goes grey-green; the finale warms everything
   col = mix(col, vec3(dot(col, vec3(0.3, 0.5, 0.2))) * vec3(0.82, 0.98, 0.62), vClog * 0.38);
   col *= mix(vec3(1.0), vec3(1.08, 1.0, 0.9), uFinale);
@@ -996,7 +1011,10 @@ void main() {
   if (lineY > 0.0) ink = max(ink, comicInk(abs(vW.y - lineY), wpx * 0.8));
   col = mix(col, INKC, ink);
   // The clay is printed on the graded wall, the way the awning is. The grade itself stays the teal and rose paper.
-  vec3 shown = mix(gradeInk(col) * clay, mix(awn.rgb, INKC, ink), awn.a);
+  // The lamp pool is printed after that, and it stays off the ink line.
+  vec3 graded = gradeInk(col) * clay;
+  graded = mix(graded, graded * spill.rgb + vec3(0.07, 0.025, 0.0), spill.a * (1.0 - ink));
+  vec3 shown = mix(graded, mix(awn.rgb, INKC, ink), awn.a);
   gl_FragColor = vec4(mix(shown, vFog.rgb, comicPoster(vFog.a, 4.0)), 1.0);
 }`;
 

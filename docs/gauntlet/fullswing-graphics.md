@@ -851,3 +851,44 @@ Playability was scored from a flat boot and the city render check, not a full pl
 
 Playability was scored from a flat boot and the city render check, not a full playthrough. OpenSpec CLI validation was not run; the `openspec` command is not installed.
 
+### Round 24 — 2026-10-21 — rubric v1
+
+- What changed: A lit window throws a warm pool onto the pier beside it. The pool falls off within a fraction of the cell, stays off the glass, and is weaker on a face in the sun. A lit shop warms the hem of its cloth, nearest the glass. The top of the cloth stays red or teal. A dark shop leaves the cloth alone. No new mesh and no new draw. James Gurney, Color and Light (2010): a local light colours the nearby surface and dies with distance. The cel and the teal and rose grade are unchanged. The pool is printed after the grade.
+- Why it helped: The window was a sticker of light, and the cloth above it was one colour from top to bottom. On the street the hem of a lit shop now takes the lamp (an awning crop moved by a mean channel-sum of 27). The road did not move.
+- Screenshots: street before `docs/gauntlet/shots/r24-before-street.png`, after `docs/gauntlet/shots/r24-after-street.png`. The shop cloth: `docs/gauntlet/shots/r24-before-awning.png`, `docs/gauntlet/shots/r24-after-awning.png`. The sunset: `docs/gauntlet/shots/r24-before-needle.png`, `docs/gauntlet/shots/r24-after-needle.png`.
+- Next target: Color palette (6), tied with detail density, composition, atmosphere, character models, particles and UI. The grade is still one teal and one rose.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 7 | A lit shop's cloth is warmer along the hem than along the top. The pool stays off the glass, and the road away from the shops does not take the lamp. |
+| Color palette | 6 | Unchanged. Cool shade stays teal and the step toward the sun stays rose. |
+| Detail density | 6 | Unchanged. The shop awnings from round 16. |
+| Texture and material quality | 7 | Unchanged. The masonry clay from round 23. |
+| Composition and camera | 6 | Unchanged. On a fast rope the head still sits lower. The reported pitch stayed −0.349 and the distance stayed 4.5 m. |
+| Atmosphere | 6 | Unchanged. The far avenue still sits in the warm dust from round 15. |
+| Character models | 6 | Unchanged. The cream belt from round 17. Skinned triangles stayed at 12,468. |
+| Animation smoothness | 7 | Unchanged. A full run steps the lifted knee out, and a jog keeps the captured loop. |
+| Particles and VFX | 6 | Unchanged. The cream trail from round 19. |
+| UI polish | 6 | Unchanged. The cream lip and rose hem from round 21. |
+| Responsiveness and input latency | 6 | Unchanged. No new pass and no new draw. No input timing was measured. |
+| Controls feel | 5 | Unchanged. |
+| Mission clarity | 4 | Unchanged. Not played. |
+| Pacing | 4 | Unchanged. |
+| Fun factor | 4 | Unchanged. Not played as a session. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 5 | Unchanged. |
+| Sound design | 4 | Unchanged. |
+| Variety | 4 | Unchanged. |
+| Performance stability | 6 | `qa/vr/render.mjs` passed, including flat play, the painted-sky checks, the lit-sphere cel check, and the canyon ink lines (26.7%). Street mean 75.8, saturation 0.59. |
+
+- Aesthetics raw: 63 / 10 dimensions, index 63
+- Playability raw: 46 / 10 dimensions, index 46
+- Total: 109 / 200
+- Delta vs last round: +1 (108 → 109). Lighting 6 → 7. Playability unchanged.
+
+Playability was scored from a flat boot and the city render check, not a full playthrough. OpenSpec CLI validation was not run; the `openspec` command is not installed.
+
+
+#### Round 24 review correction — 2026-10-21
+
+PR #611 review found that blank bays and incomplete top-floor rows could emit light from suppressed windows. The spill now uses the same `inFloors` mask as the window. Before and after renders passed all 50 existing checks after restoring both shared character models to the local checkout. Street mean 70.6, saturation 0.59; canyon ink 26.9%. City, physics, target and mobile Node checks also passed. Before: `docs/gauntlet/shots/r24-review-before-street.png`; after: `docs/gauntlet/shots/r24-review-after-street.png`. The correction earns no additional points: retain the round's recorded 109/200 (+0 for review repair), with the same playthrough and hardware limits. Fresh remote review, CI and preview checks remain required before merge.
