@@ -1168,3 +1168,40 @@ Loop: missions, playability, controls, feel, UX, pacing and fun for In Full Swin
 - Delta vs last round: +1 (round 30 was 131). Responsiveness and input latency 8 → 9. Every other score held.
 
 ![Seven seconds is already on the card](fullswing-r31/now.png)
+
+### Round 32 — 2026-10-21 — rubric v1
+
+- What changed: After a pipe comes off, the King still throws, then he stomps the deck, and he keeps alternating. With every pipe on he only throws. On the ground within 28 m the stomp takes a heart. In the air it does not. During the wind-up the card says "He's stomping. Get off the deck".
+- Why it helped: The King only threw sludge, so the fight after the first pipe was the same attack again. Spider-Man 2 gives a boss more than one move, and a ground attack you can leave by being in the air. A 1280×800 play watched a throw while every pipe was on, then one pipe came off and the attack after the next throw was a stomp. The card said to get off the deck. On the deck that stomp took a heart. The same stomp in the air took none.
+- Screenshots: `docs/gauntlet/fullswing-r32/stomp.png`.
+- Next target: a new mission type. Performance stability stays at 6. This machine has no real GPU to time, so that score is not the next implementation round.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 5 | Held. Golden-hour sun and ink shadows. |
+| Color palette | 6 | Held. Yellow, red and sludge green still separate the HUD from the blocks. |
+| Detail density | 4 | Held. Open blocks more than a dressed borough. |
+| Texture and material quality | 3 | Held. Flat fills. |
+| Composition and camera | 4 | Held. The chase camera still sits behind the hero. This frame is the stomp card. |
+| Atmosphere | 5 | Held. The dusk skyline has a mood. The street under the card does not. |
+| Character models | 3 | Held. Simple comic figures. The King is still the same model. |
+| Animation smoothness | 4 | Scored from still frames in software GL. Continuous motion was not watched. |
+| Particles and VFX | 5 | Held. The stomp uses the ring and the comic words that were already there. |
+| UI polish | 6 | Held. The card is still the ink pill. It names the stomp for that wind-up. |
+| Responsiveness and input latency | 9 | Held. One frame after a clock drop, the pill still matches the objective. |
+| Controls feel | 9 | Held. The first web still hangs from a building at the real rope length. |
+| Mission clarity | 9 | Held. During a stomp the card says to get off the deck. The rest of the time it still names the nearest pipe. |
+| Pacing | 9 | Held. Eight of the twelve flushes are a different job, and the clog pump never runs three times in a row. Three flushes are still the same clog. |
+| Fun factor | 9 | Held. The roof fight still launches at 14 m/s and a chase still launches at 8. The stomp is a second King attack, and the fight is still those two moves. |
+| Difficulty curve | 9 | Held. The ninth-flush car still cruises at 24 m/s. An odd-job getaway stays at 17 m/s. |
+| Feedback | 9 | Held. Seven seconds left still turns the card hot on that same frame. |
+| Sound design | 9 | Held. A flush, a fight, a dash and a lift are still different stings, and the ring fanfare is still the trial. |
+| Variety | 9 | Held. The King now stomps between throws after a pipe is off, and with every pipe on he only throws. Two attacks on one boss is not the spread of a 2023 boss fight, so the score stays. |
+| Performance stability | 6 | The 1280×800 play passed with no page errors. Frame time on a real GPU was not measured. |
+
+- Aesthetics raw: 45 / 10 dimensions, index 45
+- Playability raw: 87 / 10 dimensions, index 87
+- Total: 132 / 200
+- Delta vs last round: 0 (round 31 was 132). The stomp is a second King attack. No score moved.
+
+![The card says to get off the deck](fullswing-r32/stomp.png)
