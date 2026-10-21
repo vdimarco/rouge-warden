@@ -1090,18 +1090,24 @@ export function createHero(scene, renderer) {
         const hang = clamp(ry / rl, 0, 1);
         const along = (vel.x * rx + vel.y * ry + vel.z * rz) / rl;
         const across = Math.hypot(hs, vel.y);
-        const bottom = hang * (1 - smooth(1.5, 8, Math.abs(along))) * smooth(5, 12, across);
-        kw = clamp((1 - hang) * smooth(-1, 7, along), 0, 1);
-        tw = clamp(Math.max(bottom, (1 - kw) * hang * smooth(5, 14, across)), 0, 1);
+        // A taut rope keeps the radial speed near zero, so the tuck follows the rise and how far the
+        // rope is off vertical, not the speed toward the anchor. The bottom is the fast pass under it.
+        const rising = smooth(0.5, 4, vel.y);
+        const bottom = hang * (1 - smooth(1.5, 8, Math.abs(along))) * smooth(5, 12, across) * (1 - rising);
+        const rise = Math.max(smooth(-2, 3, vel.y), 1 - smooth(1, 7, across));
+        kw = clamp((1 - hang) * rise, 0, 1);
+        tw = clamp(Math.max(bottom, (1 - kw) * hang * smooth(5, 14, across) * (1 - rising)), 0, 1);
       }
       let hw = Math.max(0, 1 - tw - kw);
+      const keyed = tw + kw;
+      if (keyed > 0.2) hw *= 1 - smooth(0.2, 0.55, keyed);
       const sw = tw + kw + hw || 1;
       tw /= sw; kw /= sw; hw /= sw;
       for (let sd = 0; sd < 2; sd++) {
         const sx = sd === 0 ? 1 : -1;
         const yH = ay + (sd === 0 ? 0.36 : 0.2), zH = az - (sd === 0 ? 0.3 : 0.44);
         const yT = ay + (sd === 0 ? 0.22 : 0.42), zT = az - (sd === 0 ? 0.52 : 0.28);
-        const yK = ay + (sd === 0 ? 0.58 : 0.46), zK = az + (sd === 0 ? 0.24 : 0.08);
+        const yK = ay + (sd === 0 ? 0.62 : 0.5), zK = az + (sd === 0 ? 0.62 : 0.42);
         V.k.set(sx * 0.14, yH * hw + yT * tw + yK * kw, zH * hw + zT * tw + zK * kw);
         foot[sd].p.lerp(V.k, wS);
         foot[sd].pitch += (0.4 * hw + 0.95 * tw + 0.25 * kw) * wS;

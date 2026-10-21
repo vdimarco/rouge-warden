@@ -6,7 +6,7 @@ John Lasseter, "Principles of Traditional Animation Applied to 3D Computer Anima
 
 ## Decisions
 
-- The blend is the rope, not a clock. Hang is how far the chest is under the anchor. Along is speed toward the anchor. Across is speed on the arc. The bottom is a high hang, a small along, and a high across. The tuck is a low hang while rising.
+- The blend is the rope, not a clock. Hang is how far the chest is under the anchor. Across is speed on the arc. The bottom is a high hang, little speed along the rope, and a high across. A taut rope keeps the radial speed near zero, so the tuck is a low hang while the body is rising, or while it slows at the top. It does not wait for speed toward the anchor.
 - A quiet hang (little speed, or the blend in and out) keeps the previous mild trail, so a stop on a rope does not snap into a sprint.
 - The rope arm still reaches the anchor after this pose, and the captured ground loops still replace the idle and the run on the ground.
 - No new draw, and the skinned triangle count stays where it is.
