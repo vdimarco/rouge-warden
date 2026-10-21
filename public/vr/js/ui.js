@@ -1289,6 +1289,7 @@ dialog.fs-menu::backdrop{background:radial-gradient(circle at 50% 50%,rgba(255,2
 @media (max-height:460px){.fs-pill b{font-size:24px}.fs-pill small,.fs-pill em{font-size:17px}.fs-sub{font-size:22px}
 dialog.fs-menu{padding:10px 18px 8px;box-shadow:7px 7px 0 var(--ink,#140a18)}.fs-menu>:last-child{margin-bottom:0}.fs-menu h2{font-size:24px;padding:4px 14px 1px;margin-bottom:4px}.fs-menu .lead{margin-bottom:6px}.fs-menu .fs-row,.fs-menu .fs-seg{margin:8px 0;gap:10px}.fs-menu .btn{min-height:42px;padding:5px 10px 2px;font-size:18px;border-width:3px;box-shadow:4px 4px 0 var(--ink,#140a18)}.fs-menu .fs-seg .btn{min-height:38px;font-size:16px}.fs-menu .fs-seg>span{font-size:16px}.fs-menu p{margin:6px 0}}
 .fs-pill.fs-mission{order:-1;align-items:baseline;gap:10px;padding:6px 14px 3px;background:var(--cream,#fff4d8);transform:rotate(-0.8deg);white-space:nowrap}
+.fs-pill.fs-mission.fs-pull{background:#ffd6c4;border-color:var(--magenta,#d8457a);box-shadow:4px 4px 0 var(--magenta,#d8457a)}
 .fs-mission b{font-size:23px;letter-spacing:.04em}.fs-mission small{font-size:18px;opacity:.75}.fs-m-short{display:none}
 .fs-train{position:absolute;left:14px;bottom:14px;transform:rotate(-0.6deg);width:min(360px,38vw);padding:8px 10px 6px;background:#fffdf5;border:4px solid var(--ink,#140a18);border-radius:4px;box-shadow:6px 6px 0 var(--ink,#140a18)}
 .fs-train h3{margin:0 0 3px;font:400 20px/1 var(--comic,"Bangers",Impact,sans-serif);letter-spacing:.06em}
@@ -1602,6 +1603,7 @@ body:has(#phoneControls:not([hidden])) .fs-top:has(.fs-pill:not([hidden]):not(.f
       dh.obj = os; k.mission.hidden = !ob;
       if (ob) { k.mTitle.textContent = ob.title + (ob.of ? " " + ob.n + "/" + ob.of : ""); k.mDetail.textContent = ob.detail; k.mDetail.hidden = !ob.detail; k.mShort.textContent = ob.short || ""; }
       k.mission.classList.toggle("no-short", !(ob && ob.short));
+      k.mission.classList.toggle("fs-pull", !!(ob && /pulling away/i.test(ob.detail || "")));
     }
     const trn = pg.training, ts = trn ? trn.now + "|" + (trn.done ? 1 : 0) + "|" + trn.items.map((r) => (r.done ? "1" : "0") + r.n).join("") : "";
     if (dh.train !== ts) { dh.train = ts; drawTraining(trn); }

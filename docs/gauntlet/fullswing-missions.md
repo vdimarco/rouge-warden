@@ -461,3 +461,40 @@ Loop: missions, playability, controls, feel, UX, pacing and fun for In Full Swin
 - Delta vs last round: +1 (round 11 was 115). Variety 7 → 8. Every other score held.
 
 ![Mission 5 asks for a pizza on a roof, not another chase](fullswing-r12/pizza.png)
+
+### Round 13 — 2026-10-21 — rubric v1
+
+- What changed: While a chase card says he is pulling away, the pill itself turns hot: a warm fill and a magenta edge. Closing the gap brings the cream ink pill back with the jog line. The speed rule is unchanged.
+- Why it helped: Losing the gap was a sentence on the same cream chip as every other card. Spider-Man 2 marks a pursuit you are losing on the objective, not only in the words. A 1280×800 play stayed about 40 m behind the thief. The pill read that he was pulling away, and its fill and edge measured as the warm card (`#ffd6c4`, magenta `#d8457a`). Coming back in, the line said to run him down and the magenta edge was gone.
+- Screenshots: `docs/gauntlet/fullswing-r13/hot.png`.
+- Next target: pacing (7), tied with responsiveness, controls, mission clarity, difficulty, and sound. Pacing is the one to change next: the story is four beats, then twelve of the same clog. Sound was not the round. Performance stays at 6. This machine has no real GPU to time, so that score is not the next round.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 5 | Held. Golden-hour sun and ink shadows. |
+| Color palette | 6 | Held. Yellow, red and sludge green still separate the HUD from the blocks. The hot card uses the magenta already in the HUD. |
+| Detail density | 4 | Held. Open blocks more than a dressed borough. |
+| Texture and material quality | 3 | Held. Flat fills. |
+| Composition and camera | 4 | Held. The chase camera still sits behind the hero. This frame is the card. |
+| Atmosphere | 5 | Held. The dusk skyline has a mood. The street under the chase does not. |
+| Character models | 3 | Held. Simple comic figures. |
+| Animation smoothness | 4 | Scored from still frames in software GL. Continuous motion was not watched. |
+| Particles and VFX | 5 | Held. No new word or trail. The card is the change. |
+| UI polish | 6 | Held. The hot state is a fill and an edge on the same pill. |
+| Responsiveness and input latency | 7 | Held. The hot class was on the stepped frame after the line changed. |
+| Controls feel | 7 | Held. The swing carry is unchanged. |
+| Mission clarity | 7 | Held. The line already said he was pulling away. The color repeats that line. |
+| Pacing | 7 | Held. The story route is unchanged. The card follows the pull. |
+| Fun factor | 8 | Held. A win still hops the hero. This round changes the chase card, not the finish. |
+| Difficulty curve | 7 | Held. Falling behind still turns the jog into a run. The card now shows that. |
+| Feedback | 8 | Losing the gap turns the card hot, and closing the gap puts the ink pill back. It is a color, not a hit. |
+| Sound design | 7 | Held. Not listened to. The fast clock and the miss sting are unchanged. |
+| Variety | 8 | Held. Mission 5 is still the delivery after the fight. |
+| Performance stability | 6 | The 1280×800 play passed with no page errors. Frame time on a real GPU was not measured. |
+
+- Aesthetics raw: 45 / 10 dimensions, index 45
+- Playability raw: 72 / 10 dimensions, index 72
+- Total: 117 / 200
+- Delta vs last round: +1 (round 12 was 116). Feedback 7 → 8. Every other score held.
+
+![Pulling away turns the mission card hot](fullswing-r13/hot.png)
