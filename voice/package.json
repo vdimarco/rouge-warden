@@ -1,15 +1,22 @@
 {
-  "name": "watch-call",
+  "name": "wrist-relay",
   "private": true,
   "type": "module",
   "description": "Talk to Hermes through a Fitbit Sense 2: Twilio calls your phone and you answer on the watch",
+  "bin": {
+    "wrist-relay": "./wrist-relay.mjs"
+  },
   "scripts": {
+    "prepare": "node prepare-bin.mjs",
     "start": "node call-server.mjs",
     "call": "node call.mjs",
-    "test": "node ../qa/voice/call.test.mjs && node ../qa/voice/relay.test.mjs && node ../qa/voice/agents.test.mjs",
-    "relay-key": "node relay-key.mjs"
+    "test": "node ../qa/voice/call.test.mjs && node ../qa/voice/relay.test.mjs && node ../qa/voice/agents.test.mjs && node ../qa/voice/pair.test.mjs",
+    "relay-key": "node relay-key.mjs",
+    "wrist-relay": "node wrist-relay.mjs"
   },
   "dependencies": {
+    "multicast-dns": "^7.2.5",
+    "qrcode": "^1.5.4",
     "ws": "^8.18.3"
   }
 }

@@ -55,6 +55,7 @@ class WatchController(app: Application) : AndroidViewModel(app) {
             runCatching { link.pullConfig() }
             reloadKey()
             refreshFood()
+            launch { WatchBus.configSaved.collect { reloadKey() } }
             WatchBus.stream.collect { msg ->
                 when (msg) {
                     is WireMsg.Ack -> {

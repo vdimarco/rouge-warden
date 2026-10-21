@@ -28,6 +28,7 @@ class WatchWearService : WearableListenerService() {
                 val store = RelayStore(this)
                 store.save(url, token)
                 map.getString("agent")?.let { store.setAgent(it) }
+                WatchBus.savedConfig()
             }
         } finally {
             events.release()

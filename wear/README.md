@@ -4,6 +4,27 @@ The watch records what you say and speaks the reply. A companion Android phone t
 
 Speech on the phone uses Vosk (`vosk-model-small-en-us-0.15`). The model is downloaded by the phone app. It is not inside the APK. Whisper.cpp was not used, because the Vosk library already includes the native code for the phone ABIs.
 
+## Set up
+
+1. On the computer that runs Hermes:
+
+```sh
+npm ci --prefix voice
+cd voice && npx wrist-relay
+```
+
+The first run makes a token. The terminal prints a pairing link and a QR code. Leave it running. The link looks like `https://your-relay/pair?u=...&k=...` and redirects to `wristagent://pair?u=<relay url>&k=<token>`.
+
+2. On the phone, tap that link, scan the QR code, or tap Connect when the phone finds the relay on the same Wi-Fi. The phone sends the relay to the watch. Tap Download speech model once.
+
+3. Open the watch. Until the phone has paired, it says "Open phone app to connect". Then hold Talk and speak.
+
+The phone's Advanced section still has URL and token fields. The watch has no setup fields.
+
+To put the relay on Cloudflare instead, run `node voice/worker/deploy.mjs`. That generates a token and runs `npx wrangler deploy`, then prints the same kind of link. Hermes must be a public HTTPS address for that deploy (`HERMES_API_URL` and `HERMES_API_KEY` as Worker secrets). Pi and the JSONL memory file stay on `npx wrist-relay`.
+
+The pairing link is the relay token. Anyone with it can talk to the relay. On the same Wi-Fi the relay also answers mDNS as `_wristagent._tcp`, and the phone asks you to tap Connect before it saves that relay.
+
 ## Install
 
 Build both debug APKs from `wear/` (the phone module lives in `mobile/`):
@@ -34,28 +55,11 @@ Open Hermes on the phone once and tap "Download speech model". Until that finish
 
 ## Relay
 
-The relay is part of the call server, on the same port Tailscale Funnel already publishes.
+`npx wrist-relay` is the relay. It listens on `CALL_PORT` (8650) on every interface, so a phone on the same Wi-Fi can reach it, and Tailscale Funnel can still publish `CALL_PUBLIC_URL`. Copy `voice/.env.example` to `voice/.env` and set `HERMES_API_KEY`. Set `CALL_PUBLIC_URL` when the phone is not on that Wi-Fi.
 
-1. `npm ci --prefix voice`
-2. Copy `voice/.env.example` to `voice/.env`. Set `HERMES_API_KEY` and `CALL_PUBLIC_URL`.
-3. `node voice/relay-key.mjs new pixel-watch`
-4. The command prints a token once, and a line `qr=hermes://relay?url=...&token=...`. Put that URL in a QR code.
-5. `node voice/call-server.mjs`
+The phone stores the token with EncryptedSharedPreferences and pushes `url`, `token`, and `agent` to the watch on `/hermes/config`. An https relay URL is the usual one. `http://` is accepted for localhost and private LAN addresses (10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16). The relay checks `Authorization: Bearer`.
 
-On the phone, scan the QR, or type the https URL and the token and tap Save key. The phone sends them to the watch over the Wearable data layer. You can also set them with adb. The token is stored with EncryptedSharedPreferences. It is not in the APK.
-
-```sh
-adb -s WATCH_SERIAL shell am broadcast -a com.rouge.hermes.SET_RELAY \
-  -n com.rouge.hermes.watch/com.rouge.hermes.relay.RelayKeyReceiver \
-  --es url https://your-computer.your-tailnet.ts.net --es token YOUR_TOKEN
-adb -s PHONE_SERIAL shell am broadcast -a com.rouge.hermes.SET_RELAY \
-  -n com.rouge.hermes.phone/com.rouge.hermes.relay.RelayKeyReceiver \
-  --es url https://your-computer.your-tailnet.ts.net --es token YOUR_TOKEN
-```
-
-Revoke a key with `node voice/relay-key.mjs revoke pixel-watch`. The next request fails. No restart.
-
-The URL has to be `https://`, or `http://127.0.0.1` for a local test. The relay checks `Authorization: Bearer`.
+`node voice/relay-key.mjs new pixel-watch` prints another `wristagent://pair` link. `node voice/relay-key.mjs revoke pixel-watch` rejects that token on the next request. No restart. `node voice/call-server.mjs` is the Fitbit call server and stays on 127.0.0.1.
 
 ## Agents
 

@@ -3,6 +3,8 @@
 //
 //   POST /relay/v1/responses   { input, mode, day, agent }
 //   GET  /relay/v1/food?day=YYYY-MM-DD
+//   GET  /pair                 HTML that redirects to wristagent://pair
+//   GET  /pair/lan             LAN-only { u, k } for one-tap discovery
 //   WS   /relay/v1/stream      bearer token, then JSON turns (see voice/adapters.md)
 //
 // Authorization: Bearer <token>. Tokens live in WATCH_RELAY_KEY or voice/relay-keys.json.
@@ -13,6 +15,7 @@ import { fileURLToPath } from "node:url";
 import { WebSocketServer } from "ws";
 import { createBackends, pickAgent } from "./agents.mjs";
 import { createMemory, memoryFile, withFacts } from "./memory.mjs";
+import { clientIp, deepLink, isPrivateIp, pairPage } from "./pair.mjs";
 import { FOOD_INSTRUCTIONS, VOICE_INSTRUCTIONS, hermesRequestBody, readSse, sameText } from "./watch-call.mjs";
 
 export const RESPONSES_PATH = "/relay/v1/responses";
@@ -146,6 +149,7 @@ export function createRelay({
   spawn,
   limit = Number(env.WATCH_RELAY_RATE || 30),
   windowMs = Number(env.WATCH_RELAY_WINDOW_MS || 60_000),
+  privateClient = (req) => isPrivateIp(clientIp(req)),
 } = {}) {
   const allow = createLimiter(limit, windowMs, now);
   const store = memory || createMemory({ file: memoryPath, now });
@@ -154,6 +158,10 @@ export function createRelay({
 
   function route(req, res) {
     const url = new URL(req.url, "http://local");
+    if (url.pathname === "/pair" || url.pathname === "/pair/" || url.pathname === "/pair/lan") {
+      servePair(url, req, res);
+      return true;
+    }
     if (url.pathname !== RESPONSES_PATH && url.pathname !== FOOD_PATH) return false;
     handle(url, req, res).catch((error) => {
       if (!res.headersSent) {
@@ -174,6 +182,37 @@ export function createRelay({
   };
 
   return route;
+
+  function servePair(url, req, res) {
+    if (req.method !== "GET" && req.method !== "HEAD") {
+      json(res, 405, { error: "method" });
+      return;
+    }
+    const token = activeKeys(env, keysFile)[0]?.token || "";
+    if (url.pathname === "/pair/lan") {
+      const host = String(req.headers.host || "").split(",")[0].trim();
+      if (!privateClient(req) || !token || !host) {
+        json(res, 404, { error: "not found" });
+        return;
+      }
+      json(res, 200, { u: `http://${host}`, k: token });
+      return;
+    }
+    let relayUrl = url.searchParams.get("u") || url.searchParams.get("url") || "";
+    let key = url.searchParams.get("k") || url.searchParams.get("token") || "";
+    if ((!relayUrl || !key) && privateClient(req) && token) {
+      const host = String(req.headers.host || "").split(",")[0].trim();
+      relayUrl = relayUrl || (host ? `http://${host}` : "");
+      key = key || token;
+    }
+    if (!relayUrl || !key) {
+      res.writeHead(200, { "content-type": "text/html; charset=utf-8" }).end("<!doctype html><p>Open the pairing link printed by wrist-relay.</p>");
+      return;
+    }
+    const link = deepLink(relayUrl, key);
+    const body = req.method === "HEAD" ? "" : pairPage(link);
+    res.writeHead(200, { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" }).end(body);
+  }
 
   function openSocket(ws, key) {
     const turns = new Map();

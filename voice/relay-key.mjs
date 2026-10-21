@@ -6,6 +6,7 @@
 import { randomBytes } from "node:crypto";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
+import { deepLink, pairPageUrl } from "./pair.mjs";
 import { loadEnv } from "./watch-call.mjs";
 
 const file = process.env.WATCH_RELAY_KEYS
@@ -30,12 +31,13 @@ if (cmd === "new") {
   write(db);
   const env = loadEnv();
   const url = String(env.CALL_PUBLIC_URL || "https://your-computer.your-tailnet.ts.net").replace(/\/+$/, "");
-  const qr = `hermes://relay?url=${encodeURIComponent(url)}&token=${encodeURIComponent(token)}`;
+  const qr = deepLink(url, token);
   console.log(`id=${id}`);
   console.log(`url=${url}`);
   console.log(`token=${token}`);
   console.log(`qr=${qr}`);
-  console.log("Put that qr string in a QR code and scan it in the phone app, or pass url and token to adb. See wear/README.md.");
+  console.log(`pair=${pairPageUrl(url, url, token)}`);
+  console.log("Open the pair link on the phone, or scan the qr string. See wear/README.md.");
 } else if (cmd === "revoke") {
   const id = process.argv[3];
   if (!id) {

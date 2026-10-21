@@ -43,7 +43,7 @@ On each turn the relay calls `recall` and appends a "Facts you already know" sec
 
 ## Relay endpoints
 
-Both require `Authorization: Bearer <token>`.
+Turn and food routes require `Authorization: Bearer <token>`. `GET /pair` does not. It returns HTML that redirects to `wristagent://pair?u=&k=`. `GET /pair/lan` returns `{ u, k }` only when the client address is private.
 
 - `POST /relay/v1/responses` with `{ input, mode, day, agent }` streams `text/event-stream` in the Hermes event shape, so the phone parser is the same for every agent. Hermes turns are proxied byte for byte. Other agents are written as `response.output_text.delta` events.
 - `GET /relay/v1/food?day=YYYY-MM-DD` returns today's entries. It does not spend the rate limit.

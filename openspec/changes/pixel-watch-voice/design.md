@@ -34,4 +34,6 @@ Food mode uses the same agents. The instructions ask for a spoken confirmation a
 
 ## Auth
 
-Bearer token from `WATCH_RELAY_KEY` or `voice/relay-keys.json`. Revoke by setting `revoked: true` (read on every request). Rate limit applies to accepted turns, not to food reads or rejected bodies. The key is stored in EncryptedSharedPreferences, entered with a QR code or adb, never compiled in.
+Bearer token from `WATCH_RELAY_KEY` or `voice/relay-keys.json`. `npx wrist-relay` creates the file on first run, prints `wristagent://pair?u=&k=` and a QR code, and serves `GET /pair`, which redirects to that link. Revoke by setting `revoked: true` (read on every request). Rate limit applies to accepted turns, not to food reads or rejected bodies. The key is stored in EncryptedSharedPreferences. The phone takes the link, the QR, or a confirmed `_wristagent._tcp` advertisement (RFC 6763 DNS-SD, TXT `u` and `k`). It then writes `/hermes/config`. The watch shows "Open phone app to connect" until that item arrives. URL and token fields stay under Advanced. `http://` is allowed only for localhost and private IPv4, so a phone on the same Wi-Fi can use the LAN address. `GET /pair/lan` returns the token only to a private client.
+
+`voice/worker` is the Cloudflare path. `node voice/worker/deploy.mjs` writes a token and runs `npx wrangler deploy`. The worker serves `/pair` and proxies Hermes or OpenAI when those URLs are public. Pi and the JSONL memory file stay on the Node relay. The worker does not advertise mDNS.

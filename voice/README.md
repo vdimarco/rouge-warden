@@ -85,4 +85,8 @@ herdr agent wait codex --until blocked && node voice/call.mjs "Codex is waiting 
 
 A Pixel Watch 3 and an Android phone are a second front end. The watch records audio and speaks. The phone transcribes. Both talk to this call server, which routes the turn to Hermes, the Pi CLI, or an OpenAI-compatible endpoint, and keeps a shared memory file. The Twilio path above is unchanged.
 
-`node voice/relay-key.mjs new pixel-watch` makes a bearer token. Install and the relay URL are in `wear/README.md`. The adapter and memory interfaces are in `voice/adapters.md`.
+On the computer that runs Hermes, `cd voice && npx wrist-relay` makes a token on first run, prints a pairing link and a QR code, and advertises the relay on the local network. The phone opens `wristagent://pair?u=<relay url>&k=<token>` from that link, from the QR code, or from a Connect tap on the same Wi-Fi, then sends the relay to the watch. The three steps are in `wear/README.md`.
+
+`node voice/worker/deploy.mjs` is the Cloudflare path. It runs `npx wrangler deploy` and prints the same kind of link. Hermes has to be a public HTTPS address for that worker. Pi and the JSONL memory file stay on `npx wrist-relay`.
+
+The adapter and memory interfaces are in `voice/adapters.md`.

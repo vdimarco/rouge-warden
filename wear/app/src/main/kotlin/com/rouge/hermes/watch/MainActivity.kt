@@ -89,43 +89,50 @@ private fun TalkScreen(startFood: Boolean, ensureMic: () -> Boolean) {
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         item { TimeText() }
-        item {
-            Text(
-                text = if (!hasKey) "Add the relay key" else state.status,
-                fontSize = 12.sp,
-                textAlign = TextAlign.Center,
-            )
-        }
-        item {
-            val shown = state.reply.ifBlank { state.heard }
-            Text(text = shown, textAlign = TextAlign.Center, modifier = Modifier.padding(horizontal = 12.dp))
-        }
-        item {
-            HoldPad(
-                label = if (state.armed == Mode.FOOD) "Log" else "Talk",
-                holding = state.phase == Phase.HOLDING,
-                onHold = {
-                    if (ensureMic()) controller.press()
-                },
-                onRelease = { controller.release() },
-            )
-        }
-        item {
-            Chip(
-                label = { Text(if (state.armed == Mode.FOOD) "Logging food" else "Log food") },
-                onClick = { controller.toggleMode() },
-                enabled = state.phase != Phase.HOLDING,
-            )
-        }
-        item {
-            Chip(
-                label = { Text(com.rouge.hermes.protocol.Agents.label(state.agent)) },
-                onClick = { controller.cycleAgent() },
-                enabled = state.phase == Phase.IDLE,
-            )
-        }
-        items(state.food.size) { index ->
-            Text(state.food[index].label(), fontSize = 12.sp, textAlign = TextAlign.Center)
+        if (!hasKey) {
+            item {
+                Text(
+                    text = "Open phone app to connect",
+                    fontSize = 16.sp,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(horizontal = 12.dp),
+                )
+            }
+        } else {
+            item {
+                Text(text = state.status, fontSize = 12.sp, textAlign = TextAlign.Center)
+            }
+            item {
+                val shown = state.reply.ifBlank { state.heard }
+                Text(text = shown, textAlign = TextAlign.Center, modifier = Modifier.padding(horizontal = 12.dp))
+            }
+            item {
+                HoldPad(
+                    label = if (state.armed == Mode.FOOD) "Log" else "Talk",
+                    holding = state.phase == Phase.HOLDING,
+                    onHold = {
+                        if (ensureMic()) controller.press()
+                    },
+                    onRelease = { controller.release() },
+                )
+            }
+            item {
+                Chip(
+                    label = { Text(if (state.armed == Mode.FOOD) "Logging food" else "Log food") },
+                    onClick = { controller.toggleMode() },
+                    enabled = state.phase != Phase.HOLDING,
+                )
+            }
+            item {
+                Chip(
+                    label = { Text(com.rouge.hermes.protocol.Agents.label(state.agent)) },
+                    onClick = { controller.cycleAgent() },
+                    enabled = state.phase == Phase.IDLE,
+                )
+            }
+            items(state.food.size) { index ->
+                Text(state.food[index].label(), fontSize = 12.sp, textAlign = TextAlign.Center)
+            }
         }
     }
 }

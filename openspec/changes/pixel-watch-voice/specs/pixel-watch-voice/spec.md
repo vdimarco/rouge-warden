@@ -70,6 +70,36 @@ A food turn SHALL ask the agent for a short confirmation and a final FOOD line. 
 - AND the watch can show the entry
 - AND the watch does not speak the JSON line
 
+### Requirement: Pairing does not ask for a pasted key
+The phone SHALL accept `wristagent://pair?u=<relay url>&k=<token>`, a QR code of that link, and an https page that redirects to it. Saving that setup SHALL push the relay address, token, and agent to the watch. The default phone screen SHALL hide URL and token fields under Advanced. A relay on the same Wi-Fi SHALL be offered as one Connect tap. The watch SHALL show "Open phone app to connect" until a config arrives, and SHALL have no key fields.
+
+#### Scenario: The owner taps the pairing link
+- WHEN the phone opens `wristagent://pair` with a relay URL and a token
+- THEN the phone stores them and sends them to the watch
+
+#### Scenario: The owner opens the https fallback
+- WHEN a browser opens the relay `/pair` page with the relay URL and token
+- THEN the page redirects to `wristagent://pair` with those values
+
+#### Scenario: The owner confirms a relay on the same Wi-Fi
+- WHEN the phone finds a `_wristagent._tcp` relay and the owner taps Connect
+- THEN the phone stores that relay and sends it to the watch
+
+#### Scenario: The watch is not paired
+- WHEN the watch has no relay config
+- THEN it shows "Open phone app to connect"
+
+### Requirement: The relay can start with one command
+`npx wrist-relay` SHALL create a token when none exists, print a pairing link and a QR code, serve the `/pair` page, and advertise `_wristagent._tcp` on the local network. `node voice/worker/deploy.mjs` SHALL run `wrangler deploy` and print a pairing link for the deployed worker.
+
+#### Scenario: First run
+- WHEN the owner starts the relay and no token exists
+- THEN a token is created and the process prints a `wristagent://pair` link
+
+#### Scenario: The LAN token stays on the LAN
+- WHEN a client that is not on a private address requests `/pair/lan`
+- THEN the relay does not return the token
+
 ### Requirement: The relay is authenticated
 The relay SHALL reject a request whose bearer token is missing, wrong, or revoked, and SHALL rate-limit accepted turns.
 

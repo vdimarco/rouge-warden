@@ -83,6 +83,14 @@ class ProtocolTest {
         assertEquals("https://watch.example.ts.net", lines?.url)
         assertNull(parseRelaySetup("http://example.com\ntoken=relay-token-0123456789"))
         assertNull(parseRelaySetup("url=https://watch.example.ts.net\ntoken=short"))
+        val tap = parseRelaySetup("wristagent://pair?u=https%3A%2F%2Fwatch.example.ts.net&k=relay-token-0123456789")
+        assertEquals(RelaySetup("https://watch.example.ts.net", "relay-token-0123456789"), tap)
+        val page = parseRelaySetup("https://watch.example.ts.net/pair?u=https%3A%2F%2Fwatch.example.ts.net&k=relay-token-0123456789")
+        assertEquals("https://watch.example.ts.net", page?.url)
+        val lan = parseRelaySetup("wristagent://pair?u=http%3A%2F%2F192.168.1.20%3A8650&k=relay-token-0123456789")
+        assertEquals("http://192.168.1.20:8650", lan?.url)
+        assertNull(parseRelaySetup("wristagent://pair?u=http%3A%2F%2F1.2.3.4%3A8650&k=relay-token-0123456789"))
+        assertEquals("http://10.1.2.3:8650/relay/v1/food", relayEndpoint("http://10.1.2.3:8650", "/relay/v1/food"))
         assertEquals(
             "http://127.0.0.1:8650/relay/v1/responses",
             relayEndpoint("http://127.0.0.1:8650/", "/relay/v1/responses"),
