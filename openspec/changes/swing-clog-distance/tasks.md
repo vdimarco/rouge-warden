@@ -1,0 +1,2 @@
+- [ ] The clog card's distance drops within a few frames of moving closer
+- [ ] Check that drop in a 1280×800 play
