@@ -4,6 +4,7 @@
 #include "QuebecPlayerState.h"
 #include "QuebecPolice.h"
 #include "QuebecSideJobs.h"
+#include "QuebecCart.h"
 
 #include "CanvasItem.h"
 #include "Engine/Canvas.h"
@@ -15,7 +16,7 @@
 
 // The street layer of the HUD: wanted stars, vitals, weapon, cash and the side-job column; the centre banners
 // (K.-O., ARRÊTÉ!, MISSION RÉUSSIE / RATÉE, notices, star changes); the aim reticle; and radar blips for police,
-// goons, side jobs and pickups. It reads only replicated state, so both players see the same thing under lag.
+// goons, side jobs, the casse-croûte and pickups. It reads only replicated state, so both players see the same thing under lag.
 
 namespace
 {
@@ -106,7 +107,13 @@ void AQuebecController::TickGameNotice()
 FString AQuebecHUD::StreetPrompt() const
 {
     const AQuebecSideJobs* Jobs = AQuebecSideJobs::Find(GetWorld());
-    return Jobs && PlayerOwner ? Jobs->GetPrompt(PlayerOwner->GetPawn()) : FString();
+    if (Jobs && PlayerOwner)
+    {
+        const FString Job = Jobs->GetPrompt(PlayerOwner->GetPawn());
+        if (!Job.IsEmpty()) return Job;
+    }
+    const AQuebecCart* Cart = AQuebecCart::Find(GetWorld());
+    return Cart && PlayerOwner ? Cart->GetPrompt(PlayerOwner->GetPawn()) : FString();
 }
 
 float AQuebecHUD::StreetColumnWidth() const
@@ -328,6 +335,25 @@ void AQuebecHUD::DrawStreetHUD(float UIScale, bool bTall, bool bTouch, float Rad
             FCanvasNGonItem Fill(Dot, FVector2D(3.5f * S), 12, Tone);
             Fill.BlendMode = SE_BLEND_Translucent;
             Canvas->DrawItem(Fill);
+        }
+    }
+    // Chez Lise is a diamond, and only inside 80 m, so the race gates (about 94 m out) stay clear of it.
+    if (const AQuebecCart* Cart = AQuebecCart::Find(World))
+    {
+        constexpr double StandBlipRange = 8000.;
+        const FVector Spot = Cart->GetSpot();
+        if (FVector::DistSquared2D(Spot, Here) <= FMath::Square(StandBlipRange))
+        {
+            const FVector2D Dot = RadarPoint(Spot);
+            if (OnRadar(Dot))
+            {
+                FCanvasNGonItem Rim(Dot, FVector2D(5.f * S), 4, Ink);
+                Rim.BlendMode = SE_BLEND_Translucent;
+                Canvas->DrawItem(Rim);
+                FCanvasNGonItem Fill(Dot, FVector2D(3.2f * S), 4, CashTone);
+                Fill.BlendMode = SE_BLEND_Translucent;
+                Canvas->DrawItem(Fill);
+            }
         }
     }
     FVector Goal = FVector::ZeroVector;

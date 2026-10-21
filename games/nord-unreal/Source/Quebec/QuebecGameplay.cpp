@@ -22,6 +22,7 @@
 #include "QuebecPlayerState.h"
 #include "QuebecLife.h" // Living street: companion assignment for runtime walkers (PEOPLE).
 #include "QuebecSideJobs.h" // Side jobs: markers, E, R and the game mode spawn (JOBS).
+#include "QuebecCart.h" // Chez Lise: the stall that spends session cash.
 #include "QuebecPolice.h" // Police: the dispatcher spawned by the game mode (POLICE).
 #include "LaFontaineMap.h"
 #include "LaFontaineExtensionMap.h"
@@ -2276,6 +2277,7 @@ void AQuebecController::ServerInteract_Implementation()
         if (State->AdvanceMissionNear(Character->GetActorLocation())) return;
     // Side jobs (JOBS): E at a yellow marker starts a job, after car and campaign interactions.
     if (AQuebecSideJobs* Jobs = AQuebecSideJobs::Find(GetWorld()); Jobs && Jobs->HandleInteract(this)) return;
+    if (AQuebecCart* Cart = AQuebecCart::Find(GetWorld()); Cart && Cart->HandleInteract(this)) return;
     if (AQuebecParkResident* Resident = FindInteractableResident())
     {
         Resident->Acknowledge(Character, true);
@@ -2600,7 +2602,7 @@ void AQuebecHUD::DrawHUD()
     else if (Controller)
     {
         if (Campaign) Prompt = Campaign->GetInteractionPrompt(Controller);
-        if (Prompt.IsEmpty()) Prompt = StreetPrompt(); // Side-job marker (JOBS).
+        if (Prompt.IsEmpty()) Prompt = StreetPrompt(); // Side-job marker, or Chez Lise.
         if (Prompt.IsEmpty())
             if (AQuebecParkResident* Resident = Controller->FindInteractableResident())
                 Prompt = FString(TEXT("E  /  Talk to ")) + AQuebecParkResident::NameForStyle(Resident->Style);
@@ -2966,9 +2968,12 @@ void AQuebecGameMode::BeginPlay()
                 Material && Material->GetName().Contains(TEXT("Beacon")))
                 It->SetActorHiddenInGame(true);
     }
-    // Side jobs (JOBS): four yellow markers, one shared job at a time. No cars spawn here, so population is unchanged.
+    // Side jobs (JOBS): five yellow markers, one shared job at a time. No cars spawn here, so population is unchanged.
     if (!FParse::Param(FCommandLine::Get(), TEXT("NordNoCampaign")) && !FParse::Param(FCommandLine::Get(), TEXT("NordNoSideJobs")))
         GetWorld()->SpawnActor<AQuebecSideJobs>();
+    // Chez Lise, on the Sherbrooke sidewalk. E spends session cash. No population change.
+    if (!FParse::Param(FCommandLine::Get(), TEXT("NordNoCampaign")))
+        GetWorld()->SpawnActor<AQuebecCart>();
     // Combat: weapon, vest and health pickups at street and park points, none near a QA anchor and no collision.
     if (!FParse::Param(FCommandLine::Get(), TEXT("NordNoCampaign"))) QuebecCombat::SpawnPickups(GetWorld());
     // Police (POLICE): the dispatcher and its garage sign. Police cars and officers appear only while a player has stars.
