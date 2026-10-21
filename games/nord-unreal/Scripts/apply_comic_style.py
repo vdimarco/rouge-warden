@@ -72,9 +72,9 @@ float3 Chroma = Color / max(Lum, 1.0e-3);
 Color = saturate(Chroma * Light);
 float L2 = dot(Color, float3(0.299, 0.587, 0.114));
 Color = saturate(lerp(L2.xxx, Color, Saturation));
-// Shadows read as violet ink wash, never as black.
+// Shadows read as a cool sky wash, never as black and never as violet.
 float ShadowAmount = 1.0 - smoothstep(0.04, 0.32, L2);
-Color += float3(0.10, 0.05, 0.19) * ShadowAmount * (Sky ? 0.0 : 1.0) * lerp(1.0, 0.35, NovelCrew);
+Color += float3(0.05, 0.07, 0.11) * ShadowAmount * (Sky ? 0.0 : 1.0) * lerp(1.0, 0.35, NovelCrew);
 L2 = dot(Color, float3(0.299, 0.587, 0.114));
 
 // Ben-Day dots on a 45 degree screen: bigger in shade, absent from the sky.
@@ -84,12 +84,12 @@ float Dist = length(frac(R) - 0.5);
 float Shade = Sky ? 0.0 : saturate((0.28 - L2) / 0.28);
 float Radius = sqrt(Shade) * 0.6;
 float Dot = 1.0 - smoothstep(Radius - 0.05, Radius + 0.05, Dist);
-float3 DotInk = Sky ? Color * float3(0.72, 0.62, 1.05) : Color * float3(0.45, 0.32, 0.62) + float3(0.05, 0.0, 0.1);
+float3 DotInk = Sky ? Color * float3(0.78, 0.86, 1.05) : Color * float3(0.55, 0.62, 0.78) + float3(0.02, 0.03, 0.05);
 Color = lerp(Color, saturate(DotInk), Dot * 0.18 * (1.0 - max(PrintedCrew, Foliage)));
 
 // Hatching in the deepest shadow.
 float Hatch = step(frac((Pixel.x - Pixel.y) / (DotSize * 0.9)), 0.25) * (1.0 - smoothstep(0.1, 0.17, L2));
-Color = lerp(Color, float3(0.05, 0.02, 0.1), Hatch * (Sky ? 0.0 : 0.12) * (1.0 - max(PrintedCrew, Foliage)));
+Color = lerp(Color, float3(0.03, 0.04, 0.07), Hatch * (Sky ? 0.0 : 0.12) * (1.0 - max(PrintedCrew, Foliage)));
 
 Color = lerp(Color, float3(0.025, 0.015, 0.05), saturate(Ink) * (Sky ? 0.0 : 1.0));
 return Color;

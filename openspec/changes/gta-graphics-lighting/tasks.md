@@ -1,0 +1,4 @@
+- [x] Shift the shadow wash, shade dots, and hatch off violet in `apply_comic_style.py`
+- [x] Shade the wash before and after
+- [x] Run `Scripts/test_plateau_trees.py`
+- [ ] Apply the comic material in Unreal (editor not available here)

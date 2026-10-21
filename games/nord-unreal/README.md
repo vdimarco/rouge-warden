@@ -68,7 +68,7 @@ The older standalone prototype is [retired and archived](Verification/RetiredPro
 
 The game renders in an animated comic-book style by default, inspired by the look of *Spider-Man: Into the Spider-Verse*. No characters, suits, logos or sound words from the film are used. The post-process material `/Game/Art/Comic/M_ComicInk` adds:
 - ink outlines from depth and normal edges
-- flat light bands with stronger colour and violet shadows
+- flat light bands with stronger colour and cool sky shadows
 - Ben-Day halftone dots in shade and in the sky
 - hatching in the deepest shadow
 - red and blue print plates that drift apart with distance, in place of depth of field

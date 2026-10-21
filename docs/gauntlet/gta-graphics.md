@@ -108,3 +108,38 @@ Unreal is not available in this environment, so in-engine frames are the last co
 - Playability raw: 39 / 10 dimensions, index 39
 - Total: 77 / 200
 - Delta vs last round: +3
+
+### Round 4 — 2026-10-21 — rubric v1
+
+- What changed: `apply_comic_style.py` lifts dark pixels with a cool sky wash `(0.05, 0.07, 0.11)` instead of a violet wash, and the shade dots and hatch follow that blue. Ink outlines and the clear 15:00 light multipliers are unchanged. The material updates when `apply_comic_style.py` runs in the editor.
+- Why it helped: Lighting was tied for the lowest aesthetics score. The visual review already says comic shadows push foliage toward purple. A sky-coloured wash keeps shade off black and takes the violet out of it.
+- Screenshots: before `docs/gauntlet/gta-graphics/round-04/before-shadow.png`, after `docs/gauntlet/gta-graphics/round-04/after-shadow.png`. These are a direct port of the shadow wash, not an Unreal capture. `Scripts/test_plateau_trees.py` passed. `GET /gta/` returned 200.
+- Next target: detail density (tied at 3 with character models and animation smoothness). Detail density is the remaining city-graphics gap.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 4 | Shade is a cool sky wash instead of violet. It is still one hard sun, with no bounce. |
+| Color palette | 5 | Brick and sky stay. Only the shadow cast moved off violet. |
+| Detail density | 3 | Same geometry. The street is still thin on props. |
+| Texture and material quality | 4 | Unchanged course grain. The wash is a colour add, not a surface. |
+| Composition and camera | 4 | Unchanged gameplay camera. |
+| Atmosphere | 4 | Weather streaks are unchanged. No fog volume. |
+| Character models | 3 | Untouched. |
+| Animation smoothness | 3 | No motion reviewed. |
+| Particles and VFX | 4 | Rain streaks are unchanged. |
+| UI polish | 5 | Untouched. |
+| Responsiveness and input latency | 4 | Not measured this round. |
+| Controls feel | 4 | Not played. |
+| Mission clarity | 5 | Unchanged objective card. |
+| Pacing | 4 | Unchanged two-mission slice. |
+| Fun factor | 3 | Not played. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 4 | No new juice. |
+| Sound design | 3 | Not listened to. |
+| Variety | 3 | One district. |
+| Performance stability | 5 | The comic source test passed. The wash is the same instruction count. Frame time was not remeasured. |
+
+- Aesthetics raw: 39 / 10 dimensions, index 39
+- Playability raw: 39 / 10 dimensions, index 39
+- Total: 78 / 200
+- Delta vs last round: +1
