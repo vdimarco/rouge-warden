@@ -37,7 +37,7 @@ public:
     bool IsSupported() const { return Version == 1 && CompletedMissions >= 0 && CompletedMissions <= 2; }
 };
 
-/** Story encounters. All objective decisions run on authority. Missions 3 and 4 are session state on top of a finished race. */
+/** Story encounters. All objective decisions run on authority. Missions 3, 4 and 5 are session state on top of a finished race. */
 UCLASS()
 class QUEBEC_API AQuebecCampaign : public AActor
 {
@@ -63,18 +63,21 @@ public:
     FVector GetObjectiveLocation() const;
     int32 GetCompletedMissionCount() const { return CompletedMissions; }
     bool IsCampaignComplete() const { return Phase == EQuebecCampaignPhase::Complete; }
-    // QuebecPondRules::StepBanked and QuebecCourtRules::StepBanked. Kept here so the save header stays free of the rules headers.
-    // A boundary-2 save offers mission 3 again each session. PondStep and CourtStep are not written to the slot.
+    // Banked indexes from the rules headers. Kept here so the save header stays free of those headers.
+    // A boundary-2 save offers mission 3 again each session. PondStep, CourtStep and ShowStep are not written to the slot.
     static constexpr int32 PondBankedStep = 6;
     static constexpr int32 CourtBankedStep = 4;
+    static constexpr int32 ShowBankedStep = 5;
     bool IsPondOpen() const { return Phase == EQuebecCampaignPhase::Complete && PondStep < PondBankedStep; }
     bool IsCourtOpen() const { return Phase == EQuebecCampaignPhase::Complete && PondStep >= PondBankedStep && CourtStep < CourtBankedStep; }
-    bool IsStoryBeatOpen() const { return IsPondOpen() || IsCourtOpen(); }
+    bool IsShowOpen() const { return Phase == EQuebecCampaignPhase::Complete && PondStep >= PondBankedStep && CourtStep >= CourtBankedStep && ShowStep < ShowBankedStep; }
+    bool IsStoryBeatOpen() const { return IsPondOpen() || IsCourtOpen() || IsShowOpen(); }
 
     UPROPERTY(VisibleAnywhere, ReplicatedUsing=UpdatePresentation) EQuebecCampaignPhase Phase = EQuebecCampaignPhase::AimWorklight;
     UPROPERTY(VisibleAnywhere, Replicated) int32 CompletedMissions = 0;
     UPROPERTY(VisibleAnywhere, ReplicatedUsing=UpdatePresentation) int32 PondStep = 0;
     UPROPERTY(VisibleAnywhere, ReplicatedUsing=UpdatePresentation) int32 CourtStep = 0;
+    UPROPERTY(VisibleAnywhere, ReplicatedUsing=UpdatePresentation) int32 ShowStep = 0;
     UPROPERTY(VisibleAnywhere, Replicated) TObjectPtr<APlayerState> LightOperator;
     UPROPERTY(VisibleAnywhere, Replicated) float LightYaw = 0.f;
     UPROPERTY(VisibleAnywhere, Replicated) float LightPitch = 0.f;
@@ -134,6 +137,8 @@ private:
     UPROPERTY() TArray<TObjectPtr<UTextRenderComponent>> PondCaptions;
     UPROPERTY() TArray<TObjectPtr<UStaticMeshComponent>> CourtParts;
     UPROPERTY() TArray<TObjectPtr<UTextRenderComponent>> CourtCaptions;
+    UPROPERTY() TArray<TObjectPtr<UStaticMeshComponent>> ShowParts;
+    UPROPERTY() TArray<TObjectPtr<UTextRenderComponent>> ShowCaptions;
     UPROPERTY() TObjectPtr<UStaticMesh> Cube;
     UPROPERTY() TObjectPtr<UStaticMesh> Sphere;
     UPROPERTY() TObjectPtr<UStaticMesh> Cylinder;
@@ -167,6 +172,9 @@ private:
     void TickCourt();
     void AdvanceCourt(int32 Next, AQuebecController* Who, const TCHAR* Message, bool bFinished);
     bool NearCourt(const AQuebecController* Controller, double X, double Y) const;
+    void TickShow();
+    void AdvanceShow(int32 Next, AQuebecController* Who, const TCHAR* Message, bool bFinished);
+    bool NearShow(const AQuebecController* Controller, double X, double Y) const;
     void ChangePhase(EQuebecCampaignPhase Next, bool bFeedback = true);
     void StopAiming();
     void SaveBoundary();

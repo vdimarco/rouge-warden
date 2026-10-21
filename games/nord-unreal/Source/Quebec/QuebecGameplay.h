@@ -530,6 +530,11 @@ private:
     UPROPERTY() TObjectPtr<class UAudioComponent> PondTickAudio;
     UPROPERTY() TObjectPtr<class USoundWaveProcedural> PondTickWave;
     double PondBlinkTime = -1.;
+    void TickShowPage();
+    void PlayShowPage();
+    UPROPERTY() TObjectPtr<class UAudioComponent> ShowPageAudio;
+    UPROPERTY() TObjectPtr<class USoundWaveProcedural> ShowPageWave;
+    int32 ShowHeardStep = -1;
     UPROPERTY() TObjectPtr<AQuebecCharacter> WalkingCharacter;
     UPROPERTY() TObjectPtr<UMaterialInterface> ComicMaterial;
     bool bComicStyle = false;

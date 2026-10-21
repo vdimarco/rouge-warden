@@ -218,3 +218,48 @@ Unreal is not available here, so the native diamond was not captured. The title 
 ![Play client at 1280, host offline](gta-missions/r4-play-1280.png)
 
 ![Menu on a 390-wide screen, Recover visible](gta-missions/r4-play-menu-390.png)
+
+### Round 5 — 2026-10-21 — rubric v1
+
+- What changed: After the court is banked, mission 5 Standing Ovation leads on dry ground south of the west pond. Walk to the loading edge, set the followspot and hang the backdrop in either order, then call the curtain from that edge. The curtain reveals four comic panels. A local page sound plays once on that step. The show is session state. The v1 save still stores CompletedMissions 0–2. Side jobs and T wait until the curtain. R restores the current step and does not rewind a station that is already set.
+- Why it helped: Fun was the tied target, and the story still stopped before the show the rescues were building toward. The either-order stations and the page turn are that show's joke. The page sound is the first payoff that is not one of the three cooked cues.
+- Screenshots: title `docs/gauntlet/gta-missions/r5-title-1280.png`, `r5-title-390.png`, `r5-title-320.png`. Play client, host offline, `r5-play-1280.png`. Menu with Recover `r5-play-menu-390.png`. The title loaded with no page errors. The raw play page still logs the missing `@epicgames-ps/lib-pixelstreamingfrontend-ue5.8` specifier; the shell and Recover still draw. No native show capture: Unreal is not in this container. `Scripts/test_show_rules.py` reports 221 assertions, 0 failures, on c++, g++ and clang++. Court, pond and job rule tests still pass. Syntax check `--both` passed for the campaign, the controller, the race-result test and the music tests. OpenSpec CLI is not installed, so `openspec validate` did not run.
+- Next target: fun factor (4), still tied with controls, mission clarity, pacing, sound and performance. Responsiveness stays at 3 and stays out of scope. The page is in the build, but it was not played, so the feel score waits. The next round should keep going into mission 6 rather than touch the stream.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 3 | Unchanged. Sky and worklight only. |
+| Color palette | 5 | Unchanged. The show posts use the same ink, gold, cream, lime and berry. |
+| Detail density | 3 | Unchanged. The new posts are a few comic primitives south of the pond. |
+| Texture and material quality | 3 | Unchanged. |
+| Composition and camera | 4 | Unchanged. The diamond is the one the story already used. |
+| Atmosphere | 4 | Unchanged. The ovation copy is in the card; the show was not played. |
+| Character models | 3 | Unchanged. |
+| Animation smoothness | 3 | Unchanged. The page is posts appearing. |
+| Particles and VFX | 2 | Unchanged. No new effect. The page is visibility. |
+| UI polish | 4 | The card names mission 5, and touch says Menu · Recover. French and English still share the screen. |
+| Responsiveness and input latency | 3 | Unchanged. Still a lagged stream. Out of scope for this loop. |
+| Controls feel | 4 | Unchanged. The stations are still E. There is no followspot aim. |
+| Mission clarity | 4 | The card names either station and then the loading edge. The native card was not seen, and there is still no route line. |
+| Pacing | 4 | Unchanged. A fifth beat exists on paper between the court and the side jobs. Its length was not played. |
+| Fun factor | 4 | The either-order rehearsal and the page turn are written. They were not played, so the feel score stays. |
+| Difficulty curve | 5 | Unchanged. The new beat is a short choice in front of the same side jobs. |
+| Feedback | 5 | The curtain plays a page sound that is not the pond tick and not one of the three cooked cues. It was not heard in Unreal. |
+| Sound design | 4 | Unchanged. The city still has two loops. The page is one more procedural blip, and nobody is voiced. |
+| Variety | 6 | Five of eight story missions are now in the build, plus the four side jobs. The show was not played in Unreal. |
+| Performance stability | 4 | Unchanged. |
+
+- Aesthetics raw: 34 / 10 dimensions, index 34
+- Playability raw: 43 / 10 dimensions, index 43
+- Total: 77 / 200
+- Delta vs last round: +2 (round 4 was 75). Feedback 4 → 5. Variety 5 → 6. Every other score held.
+
+![GTA title at 1280](gta-missions/r5-title-1280.png)
+
+![GTA title at 390](gta-missions/r5-title-390.png)
+
+![GTA title at 320](gta-missions/r5-title-320.png)
+
+![Play client at 1280, host offline](gta-missions/r5-play-1280.png)
+
+![Menu on a 390-wide screen, Recover visible](gta-missions/r5-play-menu-390.png)

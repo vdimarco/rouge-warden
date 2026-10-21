@@ -50,6 +50,10 @@ bool FQuebecRaceResultTest::RunTest(const FString& Parameters)
     TestTrue(TEXT("A banked picnic opens the court rally instead of the lap card"),
         Race->GetStatusText().Contains(TEXT("R recovers this rally")));
     Race->CourtStep = AQuebecCampaign::CourtBankedStep;
+    Race->ShowStep = 0;
+    TestTrue(TEXT("A banked court opens the ovation instead of the lap card"),
+        Race->GetStatusText().Contains(TEXT("R recovers this cue")));
+    Race->ShowStep = AQuebecCampaign::ShowBankedStep;
     const FString Status = Race->GetStatusText();
     TestTrue(TEXT("Result presents recovered time and clean session best"),
         Status.Contains(TEXT("10.0s")) && Status.Contains(TEXT("recovered")) && Status.Contains(TEXT("60.0s")));

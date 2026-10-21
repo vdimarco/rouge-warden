@@ -3,6 +3,8 @@
 #include "QuebecCampaign.h"
 #include "QuebecPondRules.h"
 #include "QuebecPondTone.h"
+#include "QuebecShowRules.h"
+#include "QuebecShowTone.h"
 #include "QuebecSky.h"
 #include "QuebecCrewAnimation.h"
 #include "QuebecGTA.h" // AQuebecCar: street traces each frame (DRIVE).
@@ -1621,6 +1623,10 @@ AQuebecController::AQuebecController()
     PondTickAudio->bAutoActivate = false;
     PondTickAudio->bAllowSpatialization = false;
     PondTickAudio->VolumeMultiplier = .55f;
+    ShowPageAudio = CreateDefaultSubobject<UAudioComponent>(TEXT("ShowPageAudio"));
+    ShowPageAudio->bAutoActivate = false;
+    ShowPageAudio->bAllowSpatialization = false;
+    ShowPageAudio->VolumeMultiplier = .6f;
 }
 
 void AQuebecController::PlayFeedback(EQuebecFeedbackCue Cue)
@@ -1761,6 +1767,36 @@ void AQuebecController::PlayPondTick()
     PondTickAudio->Play();
 }
 
+void AQuebecController::PlayShowPage()
+{
+    if (!ShowPageAudio || !GetWorld() || !GetWorld()->AllowAudioPlayback()) return;
+    if (!ShowPageWave)
+    {
+        ShowPageWave = NewObject<USoundWaveProcedural>(this);
+        ShowPageWave->SetSampleRate(static_cast<uint32>(QuebecShowTone::SampleRate));
+        ShowPageWave->NumChannels = 1;
+        ShowPageWave->Duration = static_cast<float>(QuebecShowTone::PageFrames) / static_cast<float>(QuebecShowTone::SampleRate);
+        ShowPageAudio->SetSound(ShowPageWave);
+    }
+    ShowPageWave->ResetAudio();
+    int16 Pcm[QuebecShowTone::PageFrames];
+    for (int32 Frame = 0; Frame < QuebecShowTone::PageFrames; ++Frame)
+    {
+        const float Sample = FMath::Clamp(static_cast<float>(QuebecShowTone::SampleAt(Frame)), -1.f, 1.f);
+        Pcm[Frame] = static_cast<int16>(Sample * 32767.f);
+    }
+    ShowPageWave->QueueAudio(reinterpret_cast<const uint8*>(Pcm), QuebecShowTone::PageFrames * static_cast<int32>(sizeof(int16)));
+    ShowPageAudio->Play();
+}
+
+void AQuebecController::TickShowPage()
+{
+    const AQuebecCampaign* Campaign = CampaignFor(GetWorld());
+    const int32 Step = (IsLocalController() && Campaign) ? Campaign->ShowStep : -1;
+    if (Step == QuebecShowRules::StepBanked && ShowHeardStep == QuebecShowRules::StepCue) PlayShowPage();
+    ShowHeardStep = (IsLocalController() && Campaign) ? Step : -1;
+}
+
 void AQuebecController::TickPondBlink()
 {
     const AQuebecCampaign* Campaign = CampaignFor(GetWorld());
@@ -1784,6 +1820,7 @@ void AQuebecController::PlayerTick(float DeltaTime)
     if (!IsLocalController()) return;
     UpdateMusic(Campaign && Campaign->Phase == EQuebecCampaignPhase::RaceRunning);
     TickPondBlink();
+    TickShowPage();
     BrowserStateElapsed += DeltaTime;
     if (BrowserStateElapsed >= .5f && !BrowserStreamerId.IsEmpty() && IPixelStreaming2Module::IsAvailable())
     {
@@ -2216,12 +2253,14 @@ void AQuebecHUD::DrawHUD()
         bHasObjective = !Campaign->IsCampaignComplete() || Campaign->IsStoryBeatOpen();
         // After the open story beats the card used to say the city was finished, while the four side jobs
         // stayed off the radar until the player was within 100 m. The same gold diamond now leads to the
-        // next job. Missions 3 and 4 keep that diamond until they are banked. During the earlier story
+        // next job. Missions 3, 4 and 5 keep that diamond until they are banked. During the earlier story
         // the campaign objective keeps the diamond.
         if (Campaign->IsPondOpen() && bTouchControls)
             Status = TEXT("Menu · Recover restores this step");
         else if (Campaign->IsCourtOpen() && bTouchControls)
             Status = TEXT("Menu · Recover restores this rally");
+        else if (Campaign->IsShowOpen() && bTouchControls)
+            Status = TEXT("Menu · Recover restores this cue");
         else if (Campaign->IsCampaignComplete() && !Campaign->IsStoryBeatOpen() && SideJobs)
         {
             const int32 Guide = SideJobs->GuideMarker(Here, true);
