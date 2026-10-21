@@ -1,5 +1,5 @@
 {
-  "status": "in progress; no new candidate promoted",
+  "status": "Touch-policy candidate verified; delivery pending. Co-op30FPS remains open; no native candidate retained.",
   "target": "Both simultaneous viewers sustain at least29 real native and decoded FPS over a common settled60-second interval, preserving visuals and solo responsiveness.",
   "evidence_root": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/CoopThroughput-20261019",
   "paid_generation_spend_usd": 0,
@@ -849,14 +849,14 @@
     "candidate": "Touch receiver pressure below29FPS; recovery requires15consecutive samples at least35FPS",
     "deployed": false,
     "fresh_performance_pending": false,
-    "native_mutations": false,
+    "persistent_native_source_asset_package_mutations": false,
     "original_source_art_preserved": true,
     "cpu_tests_passed": 81,
     "offline_browser_passed": true,
     "steering_layout_passed": true,
     "full_mobile_suite_run": false,
     "target_achieved": false,
-    "desktop_diagnostic_pending": true,
+    "desktop_diagnostic_pending": false,
     "trials": {
       "BaselineLocal-v1": {
         "valid": true,
@@ -955,6 +955,382 @@
           "source_preserved": true,
           "owned_children_closed": true
         }
+      },
+      "AmbienceOff-v1": {
+        "valid": true,
+        "elapsed_seconds": 451.767,
+        "receipt": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/CoopThroughput-20261021/AmbienceOff-v1/Result.json",
+        "receipt_sha256": "7714ef1e7af4921d1e4a08714aa3470a47db6b047b426c220740c5c6cad6674e",
+        "target_met_by_phase": {
+          "A": false,
+          "B": false,
+          "A2": false
+        },
+        "phases": {
+          "A": {
+            "common_seconds": 65.0,
+            "target_checks": {
+              "NordHost": {
+                "native_fps": 16.792063855655208,
+                "decoded_fps": 16.75137916072646,
+                "target_met": false
+              },
+              "NordFriend1": {
+                "native_fps": 16.676434546326387,
+                "decoded_fps": 16.623114945061864,
+                "target_met": false
+              }
+            },
+            "viewers": {
+              "NordFriend1": {
+                "width": 706,
+                "height": 326,
+                "codec": "video/VP8",
+                "framesDropped": 0,
+                "packetsLost": 0,
+                "freezeCount": 0,
+                "jitterBufferMsPerFrame": 125.28895738636363,
+                "one_second_fps_p10": 15.888778550148958
+              },
+              "NordHost": {
+                "width": 706,
+                "height": 326,
+                "codec": "video/VP8",
+                "framesDropped": 0,
+                "packetsLost": 0,
+                "freezeCount": 0,
+                "jitterBufferMsPerFrame": 96.17423681776131,
+                "one_second_fps_p10": 15.857284440039644
+              }
+            },
+            "report_sha256": "a87344ffc2026bdcbf971b39f4327df974b87e00dcfbeb78f4e56f1a184eb5d6",
+            "measurement_passed": true,
+            "target_met": false
+          },
+          "B": {
+            "common_seconds": 65.0,
+            "target_checks": {
+              "NordHost": {
+                "native_fps": 24.033065507473587,
+                "decoded_fps": 24.07175054602909,
+                "target_met": false
+              },
+              "NordFriend1": {
+                "native_fps": 24.13318268483864,
+                "decoded_fps": 24.138473642800946,
+                "target_met": false
+              }
+            },
+            "viewers": {
+              "NordFriend1": {
+                "width": 706,
+                "height": 326,
+                "codec": "video/VP8",
+                "framesDropped": 0,
+                "packetsLost": 0,
+                "freezeCount": 0,
+                "jitterBufferMsPerFrame": 55.580471316818766,
+                "one_second_fps_p10": 23.668639053254438
+              },
+              "NordHost": {
+                "width": 706,
+                "height": 326,
+                "codec": "video/VP8",
+                "framesDropped": 0,
+                "packetsLost": 0,
+                "freezeCount": 0,
+                "jitterBufferMsPerFrame": 71.75723294723294,
+                "one_second_fps_p10": 23.668639053254438
+              }
+            },
+            "report_sha256": "fe2c42e473bc48012c166779db476581d51e56fae01d6eeb17b0519df8cf4431",
+            "measurement_passed": true,
+            "target_met": false
+          },
+          "A2": {
+            "common_seconds": 65.0,
+            "target_checks": {
+              "NordHost": {
+                "native_fps": 16.846575827287207,
+                "decoded_fps": 16.852974464720383,
+                "target_met": false
+              },
+              "NordFriend1": {
+                "native_fps": 16.962699822380106,
+                "decoded_fps": 16.975551430099745,
+                "target_met": false
+              }
+            },
+            "viewers": {
+              "NordHost": {
+                "width": 706,
+                "height": 326,
+                "codec": "video/VP8",
+                "framesDropped": 0,
+                "packetsLost": 0,
+                "freezeCount": 0,
+                "jitterBufferMsPerFrame": 140.54788408463662,
+                "one_second_fps_p10": 15.888778550148958
+              },
+              "NordFriend1": {
+                "width": 706,
+                "height": 326,
+                "codec": "video/VP8",
+                "framesDropped": 0,
+                "packetsLost": 0,
+                "freezeCount": 0,
+                "jitterBufferMsPerFrame": 106.37778333333334,
+                "one_second_fps_p10": 15.904572564612327
+              }
+            },
+            "report_sha256": "6f00de1d0ad82cb22e4d5d2d7a269df350c4a0d81cc219f481b3bd1dbf30d8b4",
+            "measurement_passed": true,
+            "target_met": false
+          }
+        },
+        "owned_children_closed": true,
+        "ambience_host_status_preserved": true,
+        "settings_file_unchanged": true,
+        "overlay_sources_unchanged": true,
+        "native_identities_unchanged": true,
+        "package_preserved": true,
+        "saved_preserved_exactly": true,
+        "source_preserved": true,
+        "candidate_files_unchanged": true,
+        "restoration_limit": "Host payload reapplication is acknowledged with observable status/layer checks, not a full loaded-settings getter. Animation phase, layer order and instant pixels are not restored; same-value concurrent IPC cannot be identified.",
+        "host_payload_reapplied": true,
+        "runtime_flags_and_status_restored": true,
+        "mode": "simultaneous two-player touch playback; same candidate during desktop ambience on/off/on",
+        "measurement_passed": true,
+        "target_met": false,
+        "source_file_count": 243,
+        "host_payload_source": "captured original disk payload",
+        "host_payload_observable_settled": true,
+        "scoped_namespace_sequence_matches_before": true,
+        "ambience_pause_retained": false
+      },
+      "SoloCandidateLocal-v1": {
+        "mode": "solo Host touch playback with Friend asleep",
+        "valid": true,
+        "measurement_passed": true,
+        "target_met": true,
+        "target_scope": "Solo Host native and decoded FPS at least29; this does not establish the simultaneous two-player target.",
+        "reference_fps": 60,
+        "elapsed_seconds": 126.207,
+        "receipt": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/CoopThroughput-20261021/SoloCandidateLocal-v1/Result.json",
+        "receipt_sha256": "caced09d5ddcd764eb17e221e7448ec5f8b818e0366ef273ff5361d003ee6c5e",
+        "measurement_report_sha256": "7e4a00fe14c0cce08c30cec74c721851bd64f77a8251af4e2c64c91af0962fc9",
+        "common_seconds": 65.0,
+        "target_checks": {
+          "NordHost": {
+            "native_fps": 58.11580368017381,
+            "decoded_fps": 58.11989649669192,
+            "target_met": true
+          }
+        },
+        "viewers": {
+          "NordHost": {
+            "seconds": 64.539,
+            "decodedFps": 58.11989649669192,
+            "receivedMbps": 4.454432823564046,
+            "width": 1412,
+            "height": 652,
+            "requested": "1412x652",
+            "codec": "video/VP8",
+            "decodeMsPerFrame": 2.1464001599573446,
+            "jitterBufferMsPerFrame": 47.07431866666666,
+            "whole_run_frame_gap_upper_bound_ms": 83.40000000000146,
+            "framesDropped": 0,
+            "framesReceived": 3750,
+            "freezeCount": 0,
+            "totalFreezesDuration": 0,
+            "packetsLost": 0,
+            "one_second_fps_min": 56.10236220472441,
+            "one_second_fps_p10": 57.312252964426875
+          }
+        },
+        "native_rates": {
+          "host": {
+            "weighted_fps": 58.11580368017381,
+            "fully_enclosed_awake_rows": 12
+          }
+        },
+        "friend_sleep_proof": {
+          "passed": true,
+          "fully_enclosed_sleeping_rows": 12,
+          "state_entering_interval": "sleep",
+          "wake_transitions_in_accepted_interval": 0,
+          "no_awake_fps_interval_overlaps": true
+        },
+        "source_file_count": 243,
+        "preservation": {
+          "native_identities_unchanged": true,
+          "package_preserved": true,
+          "saved_preserved_exactly": true,
+          "source_preserved": true,
+          "owned_children_closed": true
+        },
+        "scope_limit": "Local Host-PC touch-emulated Chromium with software browser decoding; no physical-phone, off-LAN, audible playback, input-to-photon or driving-comfort claim."
+      },
+      "NaniteAsyncTrial-v1": {
+        "receipt": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/CoopThroughput-20261021/NaniteAsyncTrial-v1/Result.json",
+        "receipt_sha256": "93904f160ff156fc86d74a0410679f852b314289b754dee9594d75fb02d55e38",
+        "measurement_report_sha256": "9568192e6376793323b504a864dba09436b31b0ca28d47541db67a99b8501eee",
+        "measurement_valid": true,
+        "target_met": false,
+        "candidate_kept": false,
+        "measurement_processes_closed": true,
+        "exact_accepted60_vp8_restored": true,
+        "restored_demo_pid": 3195972,
+        "restoration_within240_seconds": true,
+        "preservation": {
+          "package_preserved": true,
+          "source_243_preserved": true,
+          "containers_preserved": true,
+          "protected_units_unchanged": true,
+          "scheduling_environment_restored_exactly": true
+        },
+        "saved_full_inventory_equal": false,
+        "saved_classified_preservation": {
+          "classified_saved_before_restore": {
+            "passed": true,
+            "allowed_runtime_delta_count": 5,
+            "rejected_delta_count": 0
+          },
+          "classified_saved_after_restore": {
+            "passed": true,
+            "allowed_runtime_delta_count": 9,
+            "rejected_delta_count": 0
+          }
+        },
+        "saved_scope": "Only normal exact per-launch CrashReportClient entries and Guest CachedClientID increments; campaign saves and other existing settings preserved. No Saved rollback.",
+        "retained_native_logs": {
+          "host": {
+            "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/CoopThroughput-20261021/NaniteAsyncTrial-v1/host-candidate-native.log",
+            "sha256": "cd84ec685952704c325d74c2e2e37d3ca1bff2a4753a5c866f63493da99d3b47"
+          },
+          "friend": {
+            "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/CoopThroughput-20261021/NaniteAsyncTrial-v1/friend-candidate-native.log",
+            "sha256": "12a06c320837ee457e2e61913baa72c2db8533815a2cf3fad912a2e95414e367"
+          }
+        },
+        "decision": "Reject: Nanite async rasterization0 alone did not achieve30FPS.",
+        "native_readback": {
+          "host": "[2026.10.21-21.41.35:269][  0]r.Nanite.AsyncRasterization = \"0\"      LastSetBy: Console",
+          "friend": "[2026.10.21-21.41.38:157][  0]r.Nanite.AsyncRasterization = \"0\"      LastSetBy: Console"
+        },
+        "common_seconds": 65.0,
+        "target_checks": {
+          "NordHost": {
+            "native_fps": 15.211885596296236,
+            "decoded_fps": 15.179706639377306,
+            "target_met": false
+          },
+          "NordFriend1": {
+            "native_fps": 15.382459091068363,
+            "decoded_fps": 15.41246924469616,
+            "target_met": false
+          }
+        },
+        "viewers": {
+          "NordHost": {
+            "seconds": 64.494,
+            "decodedFps": 15.179706639377306,
+            "receivedMbps": 0.46321530685024964,
+            "width": 706,
+            "height": 326,
+            "requested": "706x326",
+            "codec": "video/VP8",
+            "candidate": {
+              "type": "host",
+              "protocol": "udp"
+            },
+            "decodeMsPerFrame": 0.6187987742594484,
+            "jitterBufferMsPerFrame": 92.84538202247191,
+            "whole_run_frame_gap_upper_bound_ms": 100.10000000000582,
+            "framesDropped": 0,
+            "framesReceived": 980,
+            "freezeCount": 0,
+            "totalFreezesDuration": 0.0,
+            "packetsLost": 0,
+            "meanQuantizer": 9.79979570990807,
+            "one_second_fps_min": 13.83399209486166,
+            "one_second_fps_p10": 14.836795252225519
+          },
+          "NordFriend1": {
+            "seconds": 64.623,
+            "decodedFps": 15.41246924469616,
+            "receivedMbps": 0.4625492471720594,
+            "width": 706,
+            "height": 326,
+            "requested": "706x326",
+            "codec": "video/VP8",
+            "candidate": {
+              "type": "host",
+              "protocol": "udp"
+            },
+            "decodeMsPerFrame": 0.6604688755020081,
+            "jitterBufferMsPerFrame": 96.19879216867469,
+            "whole_run_frame_gap_upper_bound_ms": 133.39999999999418,
+            "framesDropped": 0,
+            "framesReceived": 996,
+            "freezeCount": 0,
+            "totalFreezesDuration": 0.0,
+            "packetsLost": 0,
+            "meanQuantizer": 8.934738955823294,
+            "one_second_fps_min": 13.861386138613861,
+            "one_second_fps_p10": 14.792899408284024
+          }
+        },
+        "root_directly_inspected_paired_player_images": true,
+        "native_error_fatal_ensure_count": 0
+      },
+      "H264OnlyTrial-v1": {
+        "receipt": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/CoopThroughput-20261021/H264OnlyTrial-v1/Result.json",
+        "receipt_sha256": "5fb9aae0b60162c8eaa750729f7b341136696585836f961a1f311f53615d361b",
+        "measurement_report_sha256": "aee6782e2a644ddd9d5914c6a5bc503d60cf2795211c17f649146efd96b009ba",
+        "measurement_valid": false,
+        "target_met": false,
+        "candidate_kept": false,
+        "measurement_processes_closed": true,
+        "exact_accepted60_vp8_restored": true,
+        "restored_demo_pid": 3224569,
+        "restoration_within240_seconds": true,
+        "preservation": {
+          "package_preserved": true,
+          "source_243_preserved": true,
+          "containers_preserved": true,
+          "protected_units_unchanged": true,
+          "scheduling_environment_restored_exactly": true
+        },
+        "saved_full_inventory_equal": false,
+        "saved_classified_preservation": {
+          "classified_saved_before_restore": {
+            "passed": true,
+            "allowed_runtime_delta_count": 5,
+            "rejected_delta_count": 0
+          },
+          "classified_saved_after_restore": {
+            "passed": true,
+            "allowed_runtime_delta_count": 9,
+            "rejected_delta_count": 0
+          }
+        },
+        "saved_scope": "Only normal exact per-launch CrashReportClient entries and Guest CachedClientID increments; campaign saves and other existing settings preserved. No Saved rollback.",
+        "retained_native_logs": {
+          "host": {
+            "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/CoopThroughput-20261021/H264OnlyTrial-v1/host-candidate-native.log",
+            "sha256": "f8f58bf78e7b7c56a0e56ecfb2c6b67b27373ce2516d6cc331bdeb6b94af7100"
+          },
+          "friend": {
+            "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/CoopThroughput-20261021/H264OnlyTrial-v1/friend-candidate-native.log",
+            "sha256": "f358f90351b3039a58707f7d356caab4ef5509390ee9a0eca54f7d4f6fe5d073"
+          }
+        },
+        "decision": "Reject: Host failed readiness before a valid media/FPS measurement. This is not a throughput comparison.",
+        "target_evaluated": false,
+        "measurement_failure": "Owned Host did not become ready",
+        "only_codec_argument_changed": true
       }
     },
     "aborted_attempt": {
@@ -977,6 +1353,10 @@
         "source_preserved": true,
         "fixture_files_preserved": true
       }
-    }
+    },
+    "solo_performance_pending": false,
+    "solo_29fps_target_achieved": true,
+    "native_diagnostics_complete": true,
+    "accepted_native_recipe": "Existing Production60-v2/fps60_lifecycle.py,60FPS native/WebRTC ceiling,VP8,MediaCapture default and scheduling0; no diagnostic launch change retained."
   }
 }
