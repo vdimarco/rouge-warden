@@ -2,6 +2,7 @@
 #include "QuebecGameplay.h"
 #include "QuebecGTA.h" // Side jobs: QuebecJobs::IsJobActive for the race gate guard (JOBS).
 #include "QuebecBlankRules.h"
+#include "QuebecPace.h"
 #include "QuebecConvoyRules.h"
 #include "QuebecCourtRules.h"
 #include "QuebecPondRules.h"
@@ -1815,6 +1816,33 @@ bool AQuebecCampaign::GetNextObjectiveLocation(FVector& Out) const
     }
     default: return false;
     }
+}
+
+bool AQuebecCampaign::GetBeatPace(int32& OutIndex, int32& OutCount, int32& OutWalkSeconds) const
+{
+    const auto Publish = [&](const QuebecPace::FBeat& Beat)
+    {
+        if (Beat.Count <= 0) return false;
+        OutIndex = Beat.Index;
+        OutCount = Beat.Count;
+        OutWalkSeconds = Beat.WalkSeconds;
+        if (Beat.bMeasureWalk)
+        {
+            FVector Next = FVector::ZeroVector;
+            OutWalkSeconds = 0;
+            if (GetNextObjectiveLocation(Next))
+                OutWalkSeconds = QuebecPace::WalkSeconds(static_cast<double>(FVector::Dist2D(GetObjectiveLocation(), Next)));
+        }
+        return true;
+    };
+    if (IsPondOpen()) return Publish(QuebecPace::Linear(PondStep, QuebecPondRules::StepBanked, QuebecPondRules::Objective));
+    if (IsCourtOpen()) return Publish(QuebecPace::Linear(CourtStep, QuebecCourtRules::StepBanked, QuebecCourtRules::Objective));
+    if (IsShowOpen()) return Publish(QuebecPace::Show(ShowStep));
+    if (IsRescueOpen()) return Publish(QuebecPace::Rescue(RescueMask));
+    if (IsConvoyOpen()) return Publish(QuebecPace::Linear(ConvoyStep, QuebecConvoyRules::StepBanked, QuebecConvoyRules::Objective));
+    if (IsBlankOpen()) return Publish(QuebecPace::Linear(BlankStep, QuebecBlankRules::StepBanked, QuebecBlankRules::Objective));
+    if (Phase == EQuebecCampaignPhase::Complete || Phase >= EQuebecCampaignPhase::RaceReady) return false;
+    return Publish(QuebecPace::Terrace(static_cast<int>(Phase)));
 }
 
 void AQuebecCampaign::UpdatePresentation()

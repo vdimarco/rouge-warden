@@ -1,6 +1,7 @@
 #include "QuebecGameplay.h"
 #include "Misc/PackageName.h"
 #include "QuebecCampaign.h"
+#include "QuebecPace.h"
 #include "QuebecRouteLine.h"
 #include "QuebecCourtRules.h"
 #include "QuebecCourtTone.h"
@@ -147,7 +148,7 @@ namespace
         if (AQuebecCharacter* Walker = Cast<AQuebecCharacter>(Pawn))
         {
             Walker->StopJumping();
-            Walker->GetCharacterMovement()->MaxWalkSpeed = 450.f;
+            Walker->GetCharacterMovement()->MaxWalkSpeed = static_cast<float>(QuebecPace::WalkCmPerSecond);
             Walker->GetCharacterMovement()->MaxSwimSpeed = 260.f;
             Walker->GetCharacterMovement()->StopMovementImmediately();
             Walker->ReleaseCombatInput(); // Combat: a held Fire or Aim must not outlive the browser.
@@ -171,7 +172,7 @@ AQuebecCharacter::AQuebecCharacter()
     bUseControllerRotationYaw = false;
     GetCharacterMovement()->bOrientRotationToMovement = true;
     GetCharacterMovement()->RotationRate = FRotator(0.f, 500.f, 0.f);
-    GetCharacterMovement()->MaxWalkSpeed = 450.f;
+    GetCharacterMovement()->MaxWalkSpeed = static_cast<float>(QuebecPace::WalkCmPerSecond);
     GetCharacterMovement()->JumpZVelocity = 600.f;
     GetCharacterMovement()->AirControl = 0.35f;
     GetCharacterMovement()->GetNavAgentPropertiesRef().bCanSwim = true;
@@ -339,20 +340,20 @@ void AQuebecCharacter::MoveRight(float Value)
 void AQuebecCharacter::StartSprint()
 {
     if (IsInputLocked()) return; // People: no sprint while down.
-    GetCharacterMovement()->MaxWalkSpeed = 800.f;
+    GetCharacterMovement()->MaxWalkSpeed = static_cast<float>(QuebecPace::SprintCmPerSecond);
     GetCharacterMovement()->MaxSwimSpeed = 390.f;
     ServerSetSprint(true);
 }
 void AQuebecCharacter::StopSprint()
 {
-    GetCharacterMovement()->MaxWalkSpeed = 450.f;
+    GetCharacterMovement()->MaxWalkSpeed = static_cast<float>(QuebecPace::WalkCmPerSecond);
     GetCharacterMovement()->MaxSwimSpeed = 260.f;
     ServerSetSprint(false);
 }
 void AQuebecCharacter::ServerSetSprint_Implementation(bool bSprint)
 {
     const bool bCanSprint = bSprint && !bInVehicle && !IsInputLocked(); // People: no sprint while down.
-    GetCharacterMovement()->MaxWalkSpeed = bCanSprint ? 800.f : 450.f;
+    GetCharacterMovement()->MaxWalkSpeed = static_cast<float>(bCanSprint ? QuebecPace::SprintCmPerSecond : QuebecPace::WalkCmPerSecond);
     GetCharacterMovement()->MaxSwimSpeed = bCanSprint ? 390.f : 260.f;
 }
 
@@ -369,7 +370,7 @@ void AQuebecCharacter::OnRep_InVehicle()
     SetActorEnableCollision(!bInVehicle);
     GetCharacterMovement()->StopMovementImmediately();
     GetCharacterMovement()->SetMovementMode(bInVehicle ? MOVE_None : MOVE_Walking);
-    GetCharacterMovement()->MaxWalkSpeed = 450.f;
+    GetCharacterMovement()->MaxWalkSpeed = static_cast<float>(QuebecPace::WalkCmPerSecond);
     GetCharacterMovement()->MaxSwimSpeed = 260.f;
     // Combat: the car takes the input, so a Fire or Aim held while getting in would never see its release.
     ReleaseCombatInput();
@@ -2365,6 +2366,12 @@ void AQuebecHUD::DrawHUD()
                 else Status = bTouchControls ? TEXT("Use at the yellow M · Menu · Race replay") : TEXT("E at the yellow M · T replays the race");
             }
         }
+        int32 PaceIndex = 0, PaceCount = 0, PaceWalk = 0;
+        if (Campaign->GetBeatPace(PaceIndex, PaceCount, PaceWalk))
+        {
+            Status += FString::Printf(TEXT(" · %d of %d"), PaceIndex, PaceCount);
+            if (PaceWalk > 0) Status += FString::Printf(TEXT(" · ~%ds walk"), PaceWalk);
+        }
     }
     else if (State && State->MissionIndex >= 0 && State->MissionIndex < AQuebecGameState::MissionCount)
     {
@@ -3584,7 +3591,7 @@ bool FQuebecBrowserInputReleaseTest::RunTest(const FString& Parameters)
     Press(EKeys::W); Press(EKeys::LeftShift); Press(EKeys::SpaceBar);
     Controller->PlayerInput->ProcessInputStack(WalkerStack,.016f,false);
     TestTrue(TEXT("Native W key is held"),Controller->PlayerInput->IsPressed(EKeys::W));
-    TestEqual(TEXT("Native sprint binding is active"),Walker->GetCharacterMovement()->MaxWalkSpeed,800.f);
+    TestEqual(TEXT("Native sprint binding is active"),Walker->GetCharacterMovement()->MaxWalkSpeed,static_cast<float>(QuebecPace::SprintCmPerSecond));
     TestTrue(TEXT("Native movement creates pending input"),!Walker->GetPendingMovementInputVector().IsNearlyZero());
     if (!TestTrue(TEXT("Controller acquires actual worklight"),Campaign->HandleInteract(Controller))) return false;
     TestTrue(TEXT("Worklight belongs to departing controller"),Campaign->IsAimingLight(Controller));
@@ -3601,7 +3608,7 @@ bool FQuebecBrowserInputReleaseTest::RunTest(const FString& Parameters)
     TestFalse(TEXT("Data loss flushes sprint"),Controller->PlayerInput->IsPressed(EKeys::LeftShift));
     TestFalse(TEXT("Data loss flushes jump"),Controller->PlayerInput->IsPressed(EKeys::SpaceBar));
     TestTrue(TEXT("Data loss clears pending movement"),Walker->GetPendingMovementInputVector().IsNearlyZero());
-    TestEqual(TEXT("Sprint returns to walking speed"),Walker->GetCharacterMovement()->MaxWalkSpeed,450.f);
+    TestEqual(TEXT("Sprint returns to walking speed"),Walker->GetCharacterMovement()->MaxWalkSpeed,static_cast<float>(QuebecPace::WalkCmPerSecond));
     TestNull(TEXT("Only departing operator is released"),Campaign->LightOperator.Get());
     TestTrue(TEXT("Campaign phase is preserved"),Campaign->Phase==Phase);
     TestEqual(TEXT("Completed missions are preserved"),Campaign->CompletedMissions,Completed);

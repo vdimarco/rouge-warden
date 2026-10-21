@@ -578,3 +578,48 @@ Unreal is not available here, so the native diamond was not captured. The title 
 ![Play client at 1280, host offline](gta-missions/r12-play-1280.png)
 
 ![Menu on a 390-wide screen, Recover visible](gta-missions/r12-play-menu-390.png)
+
+### Round 13 — 2026-10-21 — rubric v1
+
+- What changed: While a story beat or the terrace is open, the mission card says which stop this is, such as 2 of 6. When the next stop is a walk, it also says about how many seconds that leg takes at 450 cm/s, the player's walking speed. The ovation's either-order choice and a rescue group do not invent one walk. Parking the car and releasing the table are not walks. The race keeps its own clock. Sprint stays 800 cm/s, so a sprint arrives sooner than the card's walk.
+- Why it helped: Pacing was a 4 the tests can prove. A beat was a sentence and a diamond. Nothing said how much of it was left, or how long the next leg was.
+- Screenshots: title `docs/gauntlet/gta-missions/r13-title-1280.png`, `r13-title-390.png`, `r13-title-320.png`. Play client, host offline, `r13-play-1280.png`. Menu with Recover `r13-play-menu-390.png`. The title loaded with no page errors. The raw play page still logs the missing `@epicgames-ps/lib-pixelstreamingfrontend-ue5.8` specifier; the shell and Recover still draw. No native card: Unreal is not in this container. `Scripts/test_beat_pace.py` reports 20 assertions, 0 failures, on c++, g++ and clang++. Syntax check `--both` passed for the campaign and the HUD. OpenSpec CLI is not installed, so `openspec validate` did not run.
+- Next target: fun factor (4), still tied with controls, sound and performance. Responsiveness stays at 3 and stays out of scope. The length is now a number the rules prove. It was not walked in Unreal, so the feel score waits. The next round should keep to a 4 the tests can prove, such as controls via the input mapping, and should not add a chapter or touch the stream.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 3 | Unchanged. |
+| Color palette | 5 | Unchanged. |
+| Detail density | 3 | Unchanged. |
+| Texture and material quality | 3 | Unchanged. |
+| Composition and camera | 4 | Unchanged. |
+| Atmosphere | 4 | Unchanged. |
+| Character models | 3 | Unchanged. |
+| Animation smoothness | 3 | Unchanged. |
+| Particles and VFX | 2 | Unchanged. |
+| UI polish | 4 | The count shares the status line, which already wraps. The native card was not seen, and French and English still share the screen. |
+| Responsiveness and input latency | 3 | Unchanged. Still a lagged stream. Out of scope for this loop. |
+| Controls feel | 4 | Unchanged. The walk speed on the card is the same 450 cm/s the player already uses. Steering was not driven. |
+| Mission clarity | 7 | Unchanged. The turn line is the same. The new text is the length. |
+| Pacing | 5 | The card says which stop this is, and about how many seconds the next walk is. The rules prove the counts and the seconds. A sprint is faster, and the walk was not timed in Unreal. |
+| Fun factor | 4 | The length is written. It was not walked, so the feel score stays. |
+| Difficulty curve | 6 | Unchanged. The seconds do not add a fail state. |
+| Feedback | 6 | Unchanged. |
+| Sound design | 4 | Unchanged. The city still has two loops. Nobody is voiced. |
+| Variety | 9 | Unchanged. Eight of eight story missions, plus the four side jobs. |
+| Performance stability | 4 | Unchanged. |
+
+- Aesthetics raw: 34 / 10 dimensions, index 34
+- Playability raw: 52 / 10 dimensions, index 52
+- Total: 86 / 200
+- Delta vs last round: +1 (round 12 was 85). Pacing 4 → 5. Every other score held.
+
+![GTA title at 1280](gta-missions/r13-title-1280.png)
+
+![GTA title at 390](gta-missions/r13-title-390.png)
+
+![GTA title at 320](gta-missions/r13-title-320.png)
+
+![Play client at 1280, host offline](gta-missions/r13-play-1280.png)
+
+![Menu on a 390-wide screen, Recover visible](gta-missions/r13-play-menu-390.png)
