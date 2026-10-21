@@ -259,3 +259,40 @@ Playability was scored from a flat boot and the city render check, not a full pl
 
 Playability was scored from a flat boot and the city render check, not a full playthrough. OpenSpec CLI validation was not run; the `openspec` command is not installed.
 
+### Round 8 — 2026-10-21 — rubric v1
+
+- What changed: Grates on both sidewalks put up comic steam. Each grate has two puffs, half a loop apart, so a still always has one rising. They drift up about 3.6 m, grow as they age, shrink away inside 8 m and past 70 m, and thin out in the existing haze. One extra city draw. No full-screen pass. The loop follows William T. Reeves, "Particle Systems — a Technique for Modeling a Class of Fuzzy Objects" (SIGGRAPH 1983). The puff is the lumpy cel cloud this game already uses, not Reeves's fuzzy shading.
+- Why it helped: The avenue had haze and one sun shaft, and nothing moving in the air. Cream puffs with an ink edge now rise off the walks in the street view. They are a few grates, not weather.
+- Screenshots: before `docs/gauntlet/shots/r08-before-street.png`, after `docs/gauntlet/shots/r08-after-street.png`. Play frame, with the round 7 chase offset still in place: `docs/gauntlet/shots/r08-after-play.png`.
+- Next target: Character models (4), tied with animation smoothness and UI. The play frame still shows a blocky figure.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 5 | Unchanged. The steam uses the existing cel bands. |
+| Color palette | 5 | Unchanged. The puffs are warm cream in the dusk violet. |
+| Detail density | 5 | Unchanged. Bins, bollards, and hydrants from round 5. The grates add puffs, not more props. |
+| Texture and material quality | 5 | Unchanged. Courses and fresnel from round 4. |
+| Composition and camera | 5 | Unchanged. The chase offset from round 7. Reported distance stayed 4.5 m and pitch stayed −0.349. |
+| Atmosphere | 5 | Unchanged. The 18 m haze from round 6. The puffs sit in it. |
+| Character models | 4 | Unchanged. Hair, shoulders, and a rim from round 3. |
+| Animation smoothness | 4 | Unchanged. The shot is a still. The puffs loop, and that motion was not filmed. |
+| Particles and VFX | 5 | Cream puffs with an ink edge rise from the sidewalks in the street view. One sun shaft remains. There is no weather. |
+| UI polish | 4 | Unchanged. The play frame shows the existing comic HUD. |
+| Responsiveness and input latency | 6 | Unchanged. One instanced draw. No input timing was measured. |
+| Controls feel | 5 | Unchanged. |
+| Mission clarity | 4 | Unchanged. Not played. |
+| Pacing | 4 | Unchanged. |
+| Fun factor | 4 | Unchanged. Not played as a session. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 5 | Unchanged. |
+| Sound design | 4 | Unchanged. |
+| Variety | 4 | Unchanged. |
+| Performance stability | 6 | `qa/vr/render.mjs` passed, including flat play and the lit-sphere cel check. Street mean stayed 65.4. The street shot drew 55 calls, one more than round 7. |
+
+- Aesthetics raw: 47 / 10 dimensions, index 47
+- Playability raw: 46 / 10 dimensions, index 46
+- Total: 93 / 200
+- Delta vs last round: +1 (92 → 93). Particles and VFX 4 → 5. Playability unchanged.
+
+Playability was scored from a flat boot and the city render check, not a full playthrough. OpenSpec CLI validation was not run; the `openspec` command is not installed.
+
