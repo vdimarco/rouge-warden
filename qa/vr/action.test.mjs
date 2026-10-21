@@ -487,6 +487,26 @@ test("Sludge Run left alone: the runner reaches the drain and it fails", () => {
   const r = runJob("sludge", (J, C, h) => hero(h.x, h.y, h.z));
   assert.ok(r.end && r.end.type === "failed" && (r.end.why === "drain" || r.end.why === "time"), JSON.stringify(r.end));
 });
+test("Sludge Run waits out the first swing: the runner and the clock stay until the chase is released", () => {
+  const C = createCombat(city), J = createJobs({ city, combat: C });
+  const S = city.start, h = hero(S.x, S.y, S.z, { safe: true });
+  J.start("sludge", null, h);
+  J.holdChase(true);
+  const g = C.goons.find((q) => q.runner);
+  const x0 = g.x, z0 = g.z, t0 = J.active.timer;
+  for (let i = 0; i < 90; i++) { C.update(DT, h); J.update(DT, i * DT, h); J.events.length = 0; C.events.length = 0; }
+  assert.ok(J.active && J.active.data.hold, "still waiting");
+  assert.ok(Math.hypot(g.x - x0, g.z - z0) < 0.2, "he waits: moved " + Math.hypot(g.x - x0, g.z - z0).toFixed(2));
+  assert.ok(Math.abs(J.active.timer - t0) < 1e-6, "the clock waits: " + J.active.timer);
+  assert.match(J.card.detail, /swing first/i);
+  assert.equal(J.card.short, "SWING");
+  J.holdChase(false);
+  for (let i = 0; i < 60; i++) { C.update(DT, h); J.update(DT, i * DT, h); J.events.length = 0; C.events.length = 0; }
+  assert.ok(J.active && !J.active.data.hold);
+  assert.ok(Math.hypot(g.x - x0, g.z - z0) > 2, "then he runs: " + Math.hypot(g.x - x0, g.z - z0).toFixed(1));
+  assert.ok(J.active.timer < t0 - 1, "and the clock runs: " + J.active.timer.toFixed(2));
+  assert.match(J.card.detail, /catch the runner/i);
+});
 test("Catch!: be there when they fall, then land to set them down", () => {
   const r = runJob("catch", (J, C, h) => {
     const A = J.active;

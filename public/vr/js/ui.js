@@ -1588,6 +1588,8 @@ body:has(#phoneControls:not([hidden])) .fs-top:has(.fs-pill:not([hidden]):not(.f
     if (dh.trial !== tr) { dh.trial = tr; k.trialBox.hidden = !tr; if (tr) k.trial.textContent = tr; }
     const tg = nearestTarget();
     k.compassBox.hidden = !tg;
+    const compassTitle = !tg ? "" : tg.kind === "job" ? "Your job" : tg.kind === "ring" ? "The next ring" : "The nearest clog";
+    if (k.compassBox.title !== compassTitle) k.compassBox.title = compassTitle;
     if (tg && Pl) {
       const dx = tg.x - Pl.pos.x, dz = tg.z - Pl.pos.z, d = Math.sqrt(dx * dx + dz * dz), a = Math.round(wrap(Math.atan2(-dx, -dz) - HD.yaw) / DEG / 3) * 3;
       if (a !== dh.ang) { dh.ang = a; k.arrow.style.transform = "rotate(" + -a + "deg)"; }

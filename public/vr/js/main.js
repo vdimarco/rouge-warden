@@ -25,7 +25,7 @@ import { createCombat, FIGHT } from "./combat.js";
 import { createCars, nearTraffic, trafficAt, CAR } from "./cars.js";
 import { createJobs, JOB_NAMES } from "./jobs.js";
 import { createActionView } from "./actionview.js";
-import { createActionHud } from "./actionhud.js";
+import { createActionHud, placeGoal } from "./actionhud.js";
 import { createBloom } from "./bloom.js";
 import { createTarget, bidOf, project, releaseWindow, kick } from "./target.js";
 
@@ -626,6 +626,12 @@ function actionFrame(dt, inp) {
   // the gang guards the clogs once Mission 1 is done
   if (save.jobs.sludge) guardClogs();
   const hf = heroFight();
+  // Mission 1 waits out the first lesson. A rope, or that lesson ending (the row ticks, or Skip), starts the runner and the clock.
+  const chase = jobs.active;
+  if (chase && chase.data && chase.data.hold) {
+    const swung = P.ropes[0].state === "attached" || P.ropes[1].state === "attached";
+    if (swung || !game.progress || game.progress.tutorial !== 0) jobs.holdChase(false);
+  }
   combat.update(dt, hf);
   jobs.offersOn = save.jobs.sludge; // while driving only a taxi marker starts (jobs.js)
   jobs.crimesOn = save.jobs.sludge; // crimes start near the hero after Mission 1
@@ -718,6 +724,8 @@ function jobEvent(e) {
 function startSludge() {
   if (!actionOn() || save.jobs.sludge) return;
   jobs.start("sludge", null, heroFight());
+  // the gold-ring row (or the spoken tutorial's first line) is still the lesson: the bomb waits
+  if (game.progress && game.progress.tutorial === 0) jobs.holdChase(true);
 }
 function hudFrame(dt, inp) {
   const phone = !!inp.easySwing, near = !driving ? carInReach() : null;
@@ -733,10 +741,46 @@ function hudFrame(dt, inp) {
   else if (combat.inReach(heroFight()) && fightHints < 3) prompt = key("RT", "CLICK", "TAP") + "PUNCH";
   const fight = combat.hits > 0 || combat.focus > 0 || combat.fighting > 0;
   actHud.update(dt, { on: G.state === "play" || G.state === "paused", hp: combat.hp, max: FIGHT.hp, energy: energy < 0.999 || sprinting ? energy : -1, prompt, phone, nearCar: !!near, driving, shout: shoutFrame(dt),
+    goal: goalFrame(phone),
     combo: combat.hits, focus: fight ? combat.focus : -1, warn: warnFrame(),
     wall: !!P.wall,
     air: G.state === "play" && !P.onGround && !P.wall && !driving && P.ropes[0].state !== "attached" && P.ropes[1].state !== "attached",
     throwable: combat.fighting > 0 && !!combat.throwTarget(throwFrom()) });
+}
+// the job sticker: the goal's name and distance, on the goal, or on the screen edge when it is off the view.
+// A chase says CLOSING or FALLING BEHIND from how the distance changed over the last half second.
+const GOAL_V = new THREE.Vector3(), GOAL_CAM = new THREE.Vector3(), GOAL_LOOK = new THREE.Vector3();
+const GOAL_NAMES = { sludge: "RUNNER", thief: "THIEF", getaway: "CAR", balloon: "BALLOON", catch: "FALLING", washer: "WASHER", pizza: "DROP", taxi: "DROP", brawl: "FIGHT", mugging: "MUGGING", tanker: "LEAK" };
+const GOAL_CHASE = { sludge: true, thief: true, getaway: true, balloon: true };
+let goalTrack = { tag: "", d: 0, t: -1, trend: "" };
+function goalFrame(phone) {
+  const ob = jobs.card, g = ob && ob.goal;
+  if (!ob || !g || G.state !== "play") { goalTrack.tag = ""; return null; }
+  GOAL_V.set(g.x, (g.y || 0) + 2.4, g.z);
+  camera.updateMatrixWorld();
+  GOAL_CAM.copy(GOAL_V).applyMatrix4(camera.matrixWorldInverse);
+  const ndc = GOAL_V.project(camera);
+  camera.getWorldDirection(GOAL_LOOK);
+  const gx = g.x - camera.position.x, gz = g.z - camera.position.z;
+  const turn = Math.atan2(-GOAL_LOOK.z * gx + GOAL_LOOK.x * gz, GOAL_LOOK.x * gx + GOAL_LOOK.z * gz);
+  const pad = phone ? { l: 110, t: 108, r: 140, b: 168 } : { l: 80, t: 108, r: 80, b: 96 };
+  const place = placeGoal(GOAL_CAM, ndc, { w: innerWidth, h: innerHeight }, pad, turn);
+  const dh = Math.hypot(g.x - P.pos.x, g.z - P.pos.z);
+  if (ob.tag !== goalTrack.tag) goalTrack = { tag: ob.tag, d: dh, t: G.time, trend: "" };
+  else {
+    const elapsed = G.time - goalTrack.t, jumped = Math.abs(dh - goalTrack.d) > 6;
+    if (jumped || elapsed >= 0.45) {
+      const rate = (dh - goalTrack.d) / Math.max(0.05, elapsed);
+      let set = true;
+      if (rate < -1.5) goalTrack.trend = "CLOSING";
+      else if (rate > 1.5) goalTrack.trend = "FALLING BEHIND";
+      else if (elapsed >= 1.1) goalTrack.trend = "";
+      else set = false;
+      if (set) { goalTrack.d = dh; goalTrack.t = G.time; }
+    }
+  }
+  const crew = ob.tag === "sludge" && /crew/i.test(ob.detail || "");
+  return { x: place.x, y: place.y, off: place.off, angle: place.angle, name: crew ? "CREW" : (GOAL_NAMES[ob.tag] || "GOAL"), dist: Math.round(dh), trend: GOAL_CHASE[ob.tag] && !crew ? goalTrack.trend : "" };
 }
 // the warning: a red mark on the screen over the goon who winds up near the hero (the prompt line says how to dodge)
 const WARN_V = new THREE.Vector3(), WARN_OUT = { x: 0, y: 0 };

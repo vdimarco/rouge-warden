@@ -16,13 +16,22 @@ Mission 3. A press skips the comic. A headset does not play it.
 - **THEN** the King's comic plays first, then the cottage room, then the Sludge Run starts with its card and timer
 
 ### Requirement: Mission 1, Sludge Run
-A gang runner in hazard yellow SHALL run the streets from under the start roof to the Market drain at 5.4 m/s. The card SHALL
-show the time left and the distance, and the compass SHALL point at him. Knocking him down (a punch, a rope pull, a dive or a
-car) SHALL bring his crew of three.
+A gang runner in hazard yellow SHALL run the streets from under the start roof to the Market drain at 5.4 m/s. The card SHALL show the time left and the distance, and the compass SHALL point at him. Knocking him down (a punch, a rope pull, a dive or a car) SHALL bring his crew of three.
+
+On a first lesson (the training checklist or the spoken tutorial still on its first row), the runner SHALL wait and the clock SHALL NOT count down. The card SHALL keep the time left and SHALL say to swing first. The first rope, or the end of that first row (including Skip), SHALL start the run and the clock. A start with the lesson already past, including a retry, SHALL run at once.
 
 #### Scenario: The chase
-- **WHEN** Mission 1 starts
+- **WHEN** Mission 1 starts after the first lesson
 - **THEN** the card shows SLUDGE RUN with the time left, and the runner moves toward the Market drain
+
+#### Scenario: The first lesson holds the chase
+- **WHEN** Mission 1 starts while the first training row is still open
+- **THEN** the card shows SLUDGE RUN with the time left and tells the player to swing first
+- **AND** three seconds later the time left is the same and the runner has not moved along his path
+
+#### Scenario: A swing starts the clock
+- **WHEN** the player attaches a rope during that wait
+- **THEN** the runner runs toward the Market drain and the time left falls
 
 ### Requirement: Mission 1 ends
 Beating the runner's crew SHALL defuse the bomb, pay 50 Loonies and play the "Mission 2" card. If the runner reaches the drain or
@@ -125,3 +134,18 @@ Job markers and their map pins SHALL stay on while the player drives. Only a Tax
 #### Scenario: Driving past a pizza marker
 - **WHEN** the player drives through a Pizza Rush marker
 - **THEN** no job starts, and the marker stays
+
+### Requirement: The job goal stays on screen
+While a job has a goal, flat play SHALL show a sticker on that goal with its name and the distance in metres. The names are RUNNER (the Sludge Run, or CREW once his crew is out), FALLING, WASHER, DROP, BALLOON, FIGHT, THIEF, MUGGING, CAR, LEAK. When the goal is outside the view, or behind the camera, the sticker SHALL sit inside the window and point the way to turn. On a chase (the runner before his crew, the thief, the getaway car, the balloon) the sticker SHALL say CLOSING when the hero is getting nearer and FALLING BEHIND when the goal is getting away. The compass SHALL keep pointing at the goal, and its title SHALL say it is the job.
+
+#### Scenario: The runner is in view
+- **WHEN** Mission 1 is running and the player looks toward the runner
+- **THEN** a sticker reading RUNNER and a distance in metres sits on him, inside the window
+
+#### Scenario: The runner is behind you
+- **WHEN** the player turns away from the runner
+- **THEN** the sticker stays inside the window and still names the runner
+
+#### Scenario: Gaining and losing
+- **WHEN** the player moves toward the runner, and then away from him
+- **THEN** the sticker says CLOSING while the distance falls, and FALLING BEHIND while it grows

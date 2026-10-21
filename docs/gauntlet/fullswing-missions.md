@@ -1,0 +1,85 @@
+# Full Swing missions gauntlet
+
+Loop: missions, playability, controls, feel, UX, pacing and fun for In Full Swing. Focus group: playability. Reference: Marvel's Spider-Man 2. Rubric: [RUBRIC.md](RUBRIC.md). Original fiction and UI only.
+
+### Round 1 — 2026-10-21 — rubric v1
+
+- What changed: While a job has a goal, a comic sticker names it and shows the distance. On the Sludge Run it reads RUNNER (CREW once his crew is out). It sits on the goal in view. Off to the side, or behind the camera, it sits on the left or right edge and points the way to turn. A chase says CLOSING or FALLING BEHIND. The compass title says "Your job" during a job.
+- Why it helped: A play of Mission 1 showed the bomb runner at the bottom of the chase camera, about 40 m away, while the training card said to swing at a gold ring and the compass was still titled "The nearest clog". Spider-Man 2 keeps the chase target readable, including when he leaves the frame, and tells you if you are gaining. The sticker does that without a new mission or a change to the timer.
+- Screenshots: before `docs/gauntlet/fullswing-r1/before-chase.png`. After `docs/gauntlet/fullswing-r1/runner-closing.png` and `docs/gauntlet/fullswing-r1/runner-offscreen.png`.
+- Next target: pacing (4), tied with sound design. Pacing is the one to change next: Mission 1's timer should not run against the training lesson. Sound stays at 4 until a round listens to it.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 5 | Golden-hour sun and ink shadows read clearly, and they are not a filmed city at dusk. |
+| Color palette | 6 | Yellow, red and sludge green are consistent and loud enough to separate the HUD from the blocks. |
+| Detail density | 4 | Blocks, a few signs and simple streets. A swing reads as open space more than a dressed borough. |
+| Texture and material quality | 3 | Flat fills. Little of the wear, glass or cloth a 2023 city uses to sell a surface. |
+| Composition and camera | 4 | The chase camera looks at the skyline. The runner stays low in the frame even with the sticker on him. |
+| Atmosphere | 5 | The dusk skyline and the lake have a mood. The street under the chase does not. |
+| Character models | 3 | The hero and the gang read as simple comic figures at this distance. |
+| Animation smoothness | 4 | Scored from still frames in software GL. Poses exist. Continuous motion was not watched. |
+| Particles and VFX | 4 | Clog beams and the comic words are the effects in play. This chase frame had neither a hit nor a trail. |
+| UI polish | 6 | The chips, the training card and the new sticker share one ink-and-yellow system and stay inside the window. |
+| Responsiveness and input latency | 7 | The sticker and the mission card update on the stepped frame that moves the hero. No missed press showed up in the run. |
+| Controls feel | 5 | Swing is hold-forward plus the mouse, with an auto target. It is not a one-button web swing, and the training still asks for the gold ring during the chase. |
+| Mission clarity | 6 | The runner is named, measured, and marked when he leaves the view, and the compass says it is the job. The training card still gives a second target. |
+| Pacing | 4 | The bomb timer, the eight-row training card and the gold-ring lesson all start together. After that, Mission 2 is twelve of the same clog. |
+| Fun factor | 5 | Catching a marked runner is a readable chase now. The opening still splits attention, so the swing is not the whole of the first minute. |
+| Difficulty curve | 5 | The runner jogs at 5.4 m/s once you can see him. The fail is a toast and a retry, then a short crew fight. |
+| Feedback | 6 | CLOSING and FALLING BEHIND sit on the chase, next to the existing GO cue, hit-stop and focus meter. |
+| Sound design | 4 | Not listened to this round (the playtest ran with audio disabled). The events have stingers. There is no chase bed that rises as the runner pulls away. |
+| Variety | 5 | Odd jobs and crimes cover chase, carry, drive and fight. The story objective after Mission 1 does not. |
+| Performance stability | 6 | Desktop play booted in software GL and the job tests passed with no page errors. Frame time on a real GPU was not measured. |
+
+- Aesthetics raw: 44 / 10 dimensions, index 44
+- Playability raw: 53 / 10 dimensions, index 53
+- Total: 97 / 200
+- Delta vs last round: — (first v1 score of this loop)
+
+![Before the sticker, the chase card names the runner and the view does not](fullswing-r1/before-chase.png)
+
+![RUNNER 38 m, CLOSING, on the runner](fullswing-r1/runner-closing.png)
+
+![Turned away, the sticker sits on the left edge and points left](fullswing-r1/runner-offscreen.png)
+
+### Round 2 — 2026-10-21 — rubric v1
+
+- What changed: On a first lesson (the gold-ring row, or the spoken tutorial's first line), the Sludge Run runner stands and the bomb clock does not count. The card keeps the time and says "Swing first. He waits until you do." A rope, or the end of that lesson, starts the run and the clock. A retry after the lesson runs at once. The eight training rows stay.
+- Why it helped: A play at 1280×800 had "SLUDGE RUN 75 s" and "Catch the runner, 38 m" while training still said "Swing at the gold ring". Three seconds later the clock read 72 s and the runner had moved 17 m. Spider-Man 2 teaches the swing inside the opening chase and does not burn the fail timer during that beat. After the change the clock stayed at 76 s for three seconds, a rope on the gold ring ticked the first row, and the card became "Catch the runner, 32 m" with the clock at 74 s.
+- Screenshots: before `docs/gauntlet/fullswing-r2/before-lesson.png`. After `docs/gauntlet/fullswing-r2/clock-waits.png` and `docs/gauntlet/fullswing-r2/clock-runs.png`.
+- Next target: sound design (4). It is the lowest playability score. It stays at 4 until a round listens to the chase.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 5 | Unchanged. Golden-hour sun and ink shadows, not a filmed city at dusk. |
+| Color palette | 6 | Unchanged. Yellow, red and sludge green still separate the HUD from the blocks. |
+| Detail density | 4 | Unchanged. The swing still reads as open space more than a dressed borough. |
+| Texture and material quality | 3 | Unchanged. Flat fills. |
+| Composition and camera | 4 | Unchanged. The chase camera still watches the skyline, and the runner leaves the bottom of the frame once he runs. |
+| Atmosphere | 5 | Unchanged. The dusk skyline has a mood. The street under the chase does not. |
+| Character models | 3 | Unchanged. Simple comic figures at this distance. |
+| Animation smoothness | 4 | Scored from still frames in software GL. The rope pose is there. Continuous motion was not watched. |
+| Particles and VFX | 4 | The second frame shows the rope line. No hit, trail or blast. |
+| UI polish | 6 | The wait sentence fits the mission pill beside the training card, in the same ink and yellow. |
+| Responsiveness and input latency | 7 | The card switches to the chase on the swing, and the stepped tests show the clock and the runner on that frame. |
+| Controls feel | 5 | Unchanged. Swing is still hold-forward plus the mouse. The lesson no longer races the bomb, and the swing itself is the same. |
+| Mission clarity | 7 | The card says to swing first while the gold-ring row is open, then names the runner and the distance. The gold ring is still a second place to look. |
+| Pacing | 6 | The bomb and the runner wait out the first swing, so the lesson is not a fail timer. After that, Mission 2 is still twelve of the same clog. |
+| Fun factor | 6 | The first minute is a swing and then a chase. The opening no longer splits the bomb and the lesson. |
+| Difficulty curve | 6 | Standing on the roof to learn the swing no longer loses the runner. Once he runs he is still the same 5.4 m/s jog, with a toast and a retry. |
+| Feedback | 6 | Unchanged. CLOSING, the GO cue and the hit-stop are the juice. The new sentence is the card, not a new hit. |
+| Sound design | 4 | Not listened to. The playtest ran with audio disabled. No chase bed was judged. |
+| Variety | 5 | Unchanged. Odd jobs cover chase, carry, drive and fight. The story after Mission 1 does not. |
+| Performance stability | 6 | The first-run play and the job tests passed with no page errors. Frame time on a real GPU was not measured. |
+
+- Aesthetics raw: 44 / 10 dimensions, index 44
+- Playability raw: 58 / 10 dimensions, index 58
+- Total: 102 / 200
+- Delta vs last round: +5 (round 1 was 97). Pacing 4 → 6, mission clarity 6 → 7, fun factor 5 → 6, difficulty curve 5 → 6. Every other score held.
+
+![Before: the bomb clock and the gold-ring lesson run together](fullswing-r2/before-lesson.png)
+
+![The clock stays at 76 s and the card says to swing first](fullswing-r2/clock-waits.png)
+
+![After the rope, the card is the chase and the clock has moved to 74 s](fullswing-r2/clock-runs.png)
