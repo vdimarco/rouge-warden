@@ -1,0 +1,6 @@
+- [x] With every pipe on, the next attack is a throw
+- [x] After a pipe is off, the attack after a pull is a belch, and the card says to leave the spot
+- [x] Standing on that spot when it lands takes a heart
+- [x] A step outside the circle keeps the heart
+- [x] The same belch in the air takes no heart
+- [x] Check it in a 1280×800 play

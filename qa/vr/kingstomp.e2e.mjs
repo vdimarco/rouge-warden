@@ -1,4 +1,4 @@
-// After a pipe is off, the King throws, then stomps the deck, then pulls. A stomp costs a heart on the ground and none in the air. A pull drags an airborne hero with no rope, and costs a heart inside 16 m. A rope or the ground holds.
+// After a pipe is off, the King throws, then stomps the deck, then pulls, then belches on a spot. A stomp costs a heart on the ground and none in the air. A pull drags an airborne hero with no rope, and costs a heart inside 16 m. A rope or the ground holds. A belch costs a heart only when you are still standing on the spot.
 import { mkdir } from "node:fs/promises";
 import { newPage, open, close, enterXR, checker, watchdog } from "./lib.mjs";
 
@@ -87,6 +87,27 @@ try {
   await page.screenshot({ path: out + "/pull.png" });
   check(pull.stomps > 0 && pull.kind === "pull" && /pulling/i.test(pull.detail) && /web/i.test(pull.detail) && pull.dom === pull.detail, "the attack after that stomp is a pull, and the card says to shoot a web", pull);
 
+  const belch = await page.evaluate(() => {
+    G.test.step(1 / 60, 70);
+    const pulls = G.game.info().king.pulls;
+    G.game.kingReady();
+    let kind = "", wind = 0, detail = "", dom = "", mark = null;
+    for (let i = 0; i < 10; i++) {
+      G.test.step(1 / 60, 1);
+      const k = G.game.info().king;
+      kind = k.kind; wind = k.windT; mark = k.mark;
+      const ob = G.game.progress.objective;
+      detail = ob ? ob.detail : "";
+      const sm = document.querySelector(".fs-mission small");
+      dom = sm ? sm.textContent : "";
+      if (kind === "belch" && wind > 0 && /belching/i.test(detail) && /spot/i.test(dom)) break;
+    }
+    G.test.render(0);
+    return { pulls, kind, wind, detail, dom, mark, turn: G.game.info().king.turn };
+  });
+  await page.screenshot({ path: out + "/belch.png" });
+  check(belch.pulls > 0 && belch.kind === "belch" && belch.mark && /belching/i.test(belch.detail) && /spot/i.test(belch.detail) && belch.dom === belch.detail, "the attack after that pull is a belch, and the card says to leave the spot", belch);
+
   const ground = await page.evaluate(() => {
     const m = G.game.info().king.mouth, d = G.game.info().deck;
     G.test.teleport(m[0], d.y, m[2]);
@@ -140,6 +161,7 @@ try {
         from: Math.hypot(before.x - m[0], before.z - m[2]),
         dist: Math.hypot(pos.x - m[0], pos.z - m[2]),
         rope: G.P.ropes[0].state, ground: G.P.onGround,
+        wall: G.P.wall, run: G.P.wallRun,
       };
     };
     place(20, d.y + 12, false, false);
@@ -150,12 +172,57 @@ try {
     const decked = release();
     place(8, d.y + 12, false, true);
     const held = release();
-    return { close, far, decked, held };
+    place(20, d.y + 12, false, false);
+    G.P.wall = { nx: 1, nz: 0 };
+    G.P.wallRun = { dir: 1, speed: 6 };
+    G.game.progress.hearts = 3;
+    const clung = release();
+    return { close, far, decked, held, clung };
   });
   check(yanked.close.pulls > yanked.close.was && yanked.close.moved > 13 && yanked.close.moved < 15 && yanked.close.dist < yanked.close.from && yanked.close.dist <= 16 && yanked.close.hearts === yanked.close.before - 1, "a pull in the air with no web drags you in and takes a heart inside 16 m", yanked.close);
   check(yanked.far.pulls > yanked.far.was && yanked.far.moved > 13 && yanked.far.moved < 15 && yanked.far.dist > 16 && yanked.far.hearts === yanked.far.before, "the same pull from farther away still drags you, and takes no heart past 16 m", yanked.far);
   check(yanked.decked.ground && yanked.decked.moved < 0.05 && yanked.decked.hearts === yanked.decked.before, "a pull on the ground leaves you where you are", yanked.decked);
   check(yanked.held.rope === "attached" && yanked.held.moved < 0.05 && yanked.held.hearts === yanked.held.before, "a rope holds against the pull", yanked.held);
+  check(yanked.clung.pulls > yanked.clung.was && yanked.clung.moved > 13 && yanked.clung.moved < 15 && yanked.clung.wall == null && yanked.clung.run == null && yanked.clung.hearts === yanked.clung.before - 1, "a pull lets go of a wall and still drags you in", yanked.clung);
+
+  const spat = await page.evaluate(() => {
+    const d = G.game.info().deck;
+    G.game.progress.hearts = 3;
+    const stand = (x, y, ground) => {
+      G.test.teleport(x, y, d.z);
+      G.P.frozen = true;
+      G.P.onGround = ground;
+      G.P.vel.x = G.P.vel.y = G.P.vel.z = 0;
+    };
+    const release = () => {
+      const before = { hearts: G.game.progress.hearts, x: G.P.pos.x, z: G.P.pos.z, belches: G.game.info().king.belches };
+      const mark = G.game.info().king.mark;
+      G.test.step(1 / 60, 70);
+      return {
+        before: before.hearts, hearts: G.game.progress.hearts,
+        belches: G.game.info().king.belches, was: before.belches,
+        moved: Math.hypot(G.P.pos.x - before.x, G.P.pos.z - before.z),
+        dist: mark ? Math.hypot(G.P.pos.x - mark[0], G.P.pos.z - mark[1]) : null,
+        ground: G.P.onGround,
+      };
+    };
+    stand(d.x, d.y, true);
+    G.game.kingWind("belch");
+    const hit = release();
+    stand(d.x, d.y, true);
+    G.game.kingWind("belch");
+    G.test.teleport(d.x + 12, d.y, d.z);
+    G.P.frozen = true;
+    G.P.onGround = true;
+    const clear = release();
+    stand(d.x, d.y + 10, false);
+    G.game.kingWind("belch");
+    const air = release();
+    return { hit, clear, air };
+  });
+  check(spat.hit.ground && spat.hit.dist <= 8 && spat.hit.belches > spat.hit.was && spat.hit.hearts === spat.hit.before - 1, "a belch on the marked spot takes a heart", spat.hit);
+  check(spat.clear.ground && spat.clear.dist > 8 && spat.clear.belches > spat.clear.was && spat.clear.hearts === spat.clear.before, "leaving the spot keeps the heart", spat.clear);
+  check(!spat.air.ground && spat.air.dist <= 8 && spat.air.belches > spat.air.was && spat.air.hearts === spat.air.before, "the same belch in the air takes no heart", spat.air);
 
   check(!page.errors.length, "no page errors", page.errors);
 } finally {

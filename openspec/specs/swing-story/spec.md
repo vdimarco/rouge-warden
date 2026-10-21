@@ -89,7 +89,7 @@ A panel whose picture has not loaded when the panel starts SHALL show the live c
 - **THEN** its panel shows the live shot and the scene plays on
 
 ### Requirement: The King stomps the deck
-While every pipe is still on, the King SHALL only throw. After a pipe is off, and before the finale, his attacks SHALL cycle a throw, then a stomp, then a pull, and then a throw again. During a stomp's wind-up the mission card SHALL say he is stomping and to get off the deck. A stomp SHALL take a heart when the hero is on the ground within 28 m of him. A stomp SHALL NOT take a heart when the hero is in the air.
+While every pipe is still on, the King SHALL only throw. After a pipe is off, and before the finale, his attacks SHALL cycle a throw, then a stomp, then a pull, then a belch, and then a throw again. During a stomp's wind-up the mission card SHALL say he is stomping and to get off the deck. A stomp SHALL take a heart when the hero is on the ground within 28 m of him. A stomp SHALL NOT take a heart when the hero is in the air.
 
 #### Scenario: A throw, then a stomp
 - **WHEN** one pipe is off and the King finishes a throw
@@ -100,7 +100,7 @@ While every pipe is still on, the King SHALL only throw. After a pipe is off, an
 - **THEN** a hero on the deck loses a heart, and a hero in the air does not
 
 ### Requirement: The King pulls you in
-After a pipe is off, the attack after a stomp SHALL be a pull. During that wind-up the mission card SHALL say he is pulling and to shoot a web. A hero in the air with no rope attached SHALL be dragged 14 m toward him. That drag SHALL take a heart when it leaves the hero within 16 m, and SHALL NOT take a heart when the hero is still farther than 16 m. A hero on the ground SHALL NOT be pulled and SHALL NOT lose a heart. A hero in the air with a rope attached SHALL NOT be pulled and SHALL NOT lose a heart.
+After a pipe is off, the attack after a stomp SHALL be a pull. During that wind-up the mission card SHALL say he is pulling and to shoot a web. A hero in the air with no rope attached SHALL be dragged 14 m toward him. That drag SHALL take a heart when it leaves the hero within 16 m, and SHALL NOT take a heart when the hero is still farther than 16 m. A hero clinging to a wall SHALL be dragged the same way and SHALL let go of the wall. A hero on the ground SHALL NOT be pulled and SHALL NOT lose a heart. A hero in the air with a rope attached SHALL NOT be pulled and SHALL NOT lose a heart.
 
 #### Scenario: A stomp, then a pull
 - **WHEN** one pipe is off and the King finishes a stomp
@@ -121,3 +121,26 @@ After a pipe is off, the attack after a stomp SHALL be a pull. During that wind-
 #### Scenario: A web holds
 - **WHEN** that pull lands on a hero in the air with a rope attached
 - **THEN** the hero stays put and does not lose a heart
+
+#### Scenario: A wall lets go
+- **WHEN** that pull lands on a hero clinging to a wall, in the air, with no rope, 20 m away
+- **THEN** the hero is dragged toward him, is no longer on the wall, and loses a heart
+
+### Requirement: The King belches on a spot
+After a pipe is off, the attack after a pull SHALL be a belch. During that wind-up the mission card SHALL say he is belching and to leave the spot. The spot SHALL be the hero's place when the wind-up begins, and it SHALL NOT follow the hero. A hero still on the ground within 8 m of that spot when the belch lands SHALL lose a heart. A hero on the ground farther than 8 m SHALL NOT lose a heart. A hero in the air SHALL NOT lose a heart.
+
+#### Scenario: A pull, then a belch
+- **WHEN** one pipe is off and the King finishes a pull
+- **THEN** his next attack is a belch and the card says to leave the spot
+
+#### Scenario: Still on the spot
+- **WHEN** that belch lands on a hero standing on the marked spot
+- **THEN** the hero loses a heart
+
+#### Scenario: Off the spot
+- **WHEN** that belch lands on a hero on the ground more than 8 m from the marked spot
+- **THEN** the hero does not lose a heart
+
+#### Scenario: In the air
+- **WHEN** that belch lands on a hero in the air over the marked spot
+- **THEN** the hero does not lose a heart
