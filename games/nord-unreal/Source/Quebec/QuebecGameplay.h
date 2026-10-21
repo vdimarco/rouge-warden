@@ -426,6 +426,10 @@ private:
     float SmokeSince = -1000.f;
     float NextSmokeAt = 0.f;
     int32 NextSmokePuff = 0;
+    UPROPERTY() TArray<TObjectPtr<UStaticMeshComponent>> ExhaustPuffs;
+    TArray<float> ExhaustBorn;
+    float NextExhaustAt = 0.f;
+    int32 NextExhaust = 0;
     // The tick interval the car rested at before SetAutopilot. ClearAutopilot restores it once the car is at rest;
     // until then bRestoreRestTick is set and the car keeps every-frame ticks while it brakes.
     float AutopilotRestTick = .1f;
@@ -441,6 +445,7 @@ private:
     void FinishAutopilotRelease();
     void NudgeStuckCar();
     void UpdateDamageSmoke(float DeltaSeconds);
+    void UpdateExhaust(float DeltaSeconds);
 
     // Traffic street life (QuebecTrafficLife.cpp), ambient traffic only: full stops at mapped ARRÊT junctions,
     // yielding to people in the lane ahead, and now and then a curb stop with signals and hazard lights.

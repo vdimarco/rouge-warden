@@ -1308,6 +1308,7 @@ void AQuebecCar::Tick(float DeltaSeconds)
     // Street traces: tyre marks on every peer while the car moves, and smoke from a battered car.
     if (!FMath::IsNearlyZero(Speed,1.f) || !FMath::IsNearlyZero(LateralSpeed,1.f)) QuebecTraces::TickCar(this,DeltaSeconds);
     UpdateDamageSmoke(DeltaSeconds);
+    UpdateExhaust(DeltaSeconds);
     if (!HasAuthority()) return;
     if (bTraffic && !Controller) UpdateTraffic();
     // An AI driver (police, side jobs) writes the same inputs a player would.

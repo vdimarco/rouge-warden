@@ -1473,3 +1473,38 @@ Unreal is not available in this environment, so in-engine frames are the last co
 - Playability raw: 39 / 10 dimensions, index 39
 - Total: 116 / 200
 - Delta vs last round: +1
+
+### Round 43 — 2026-10-21 — rubric v1
+
+- What changed: a car that is not a wreck, and is faster than 80 cm/s or holding throttle, grows a column of six pale spheres from the tail. A new puff every 0.16 s lives 1.1 s, drifts back at 160 cm/s and rises at 180 cm/s, swelling from scale 0.16 to 0.55. A stopped car stays clear. A wreck still uses the bonnet smoke.
+- Why it helped: Particles were at 6. The only smoke was the wreck column off the bonnet, and a healthy car left no trail.
+- Screenshots: before `docs/gauntlet/gta-graphics/round-43/before-frame.png`, after `docs/gauntlet/gta-graphics/round-43/after-frame.png`. Crops are `before-plume.png` and `after-plume.png`. Both use the walking camera (arm 420, socket Y 70, socket Z 110, pitch −12, horizontal FOV 90) behind a stand-in car. Not an Unreal capture. The plume crop mean absolute delta is 0.184 and the max is 0.573. The full-frame mean is 0.0016. 2276 pixels change. `Scripts/test_exhaust.py` passed. `QuebecDrive.cpp` was not compiled. `GET /gta/` returned 200. OpenSpec CLI is not installed, so the change files were not validated with `openspec`.
+- Next target: composition, still at 6. The walking socket stays. Particles can move again after this column is in. Animation smoothness stays at 3 and is skipped until a pose can be drawn.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 9 | The street shade is unchanged. The puffs use the same sun. |
+| Color palette | 9 | The puffs are the existing white material. |
+| Detail density | 9 | The street mesh is unchanged. The car in the picture is a stand-in box. |
+| Texture and material quality | 9 | The asphalt mix is unchanged. |
+| Composition and camera | 6 | The walking socket is unchanged. |
+| Atmosphere | 9 | The street dust is unchanged. |
+| Character models | 8 | No figure changed. |
+| Animation smoothness | 3 | Skipped. The blend space still cannot be posed here. |
+| Particles and VFX | 7 | A running car leaves a rising column at the tail. The puffs are spheres, not a volume, and a parked car stays clear. |
+| UI polish | 9 | The radar heading is unchanged. |
+| Responsiveness and input latency | 4 | Not measured this round. |
+| Controls feel | 4 | Not played. |
+| Mission clarity | 5 | The objective words are unchanged. |
+| Pacing | 4 | Unchanged mission slice. |
+| Fun factor | 3 | Not played. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 4 | The column is the new mark. No new juice. |
+| Sound design | 3 | Not listened to. |
+| Variety | 3 | One car, one column. Rain rings are unchanged. |
+| Performance stability | 5 | `Scripts/test_exhaust.py` passed. Six spheres. Frame time was not remeasured. |
+
+- Aesthetics raw: 78 / 10 dimensions, index 78
+- Playability raw: 39 / 10 dimensions, index 39
+- Total: 117 / 200
+- Delta vs last round: +1
