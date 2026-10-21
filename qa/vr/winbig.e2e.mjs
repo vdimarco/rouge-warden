@@ -20,26 +20,19 @@ try {
 
   const played = await page.evaluate(() => {
     const home = { x: G.P.pos.x, y: G.P.pos.y, z: G.P.pos.z };
-    function plant() {
-      G.test.teleport(home.x, home.y, home.z);
-      G.test.step(1 / 60, 6);
-    }
     function pop(type) {
-      plant();
-      if (type === "thief") G.test.storyMission(0);
-      else G.test.job(type);
-      let n = 0;
-      for (; n < 180; n++) {
-        G.test.step(1 / 60, 1);
-        const job = G.test.action().jobs.active;
-        if (job && job.type === type) break;
-      }
-      if (type === "brawl") {
-        const g = G.test.action().combat.list.find((q) => q.group === "job");
-        if (g) G.test.teleport(g.x + 80, g.y, g.z);
-        G.test.step(1 / 60, 2);
-      }
-      plant();
+      G.test.teleport(home.x, home.y, home.z);
+      if (type === "thief") {
+        G.test.storyMission(0);
+        let n = 0;
+        for (; n < 180; n++) {
+          G.test.step(1 / 60, 1);
+          const job = G.test.action().jobs.active;
+          if (job && job.type === type) break;
+        }
+      } else G.test.job(type);
+      // Finish before another step. A landing on the gang would clear the fight first.
+      G.test.teleport(home.x, home.y, home.z);
       const before = G.test.state();
       const killed = G.test.finishJob();
       let m = 0;
@@ -54,7 +47,7 @@ try {
       G.test.step(1 / 60, 18);
       const hop = G.test.state();
       return {
-        n, m, killed, slow,
+        m, killed, slow,
         up: win && win.up, big: !!(win && win.big), hold: win && win.hold, job: win && win.job, word: win && win.word,
         y0: before.pos.y, yAt: at.pos.y, yHop: hop.pos.y, ground: before.onGround, air: !hop.onGround,
       };
