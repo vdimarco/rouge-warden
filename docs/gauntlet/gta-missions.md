@@ -1527,3 +1527,48 @@ Unreal is not available here, so the native diamond was not captured. The title 
 ![Lock beside Auto on a 390-wide phone](gta-missions/r33-lock-390.png)
 
 ![Lock beside Auto on a short landscape phone](gta-missions/r33-lock-568.png)
+
+### Round 34 — 2026-10-21 — rubric v1
+
+- What changed: When the handbrake catches above 300 cm/s, a short chirp plays. The sweep runs from 1860 Hz down to 420 Hz under a little noise. A lock at 300 cm/s or slower stays quiet. A lock that is already held stays quiet. Letting go stays quiet. The comic word SKRRT still uses that same catch. The music path and the three feedback sounds are unchanged.
+- Why it helped: The phone can hold the lock, and the catch only painted a word. The engine hum does not mark the moment the wheels lock.
+- Screenshots: title `docs/gauntlet/gta-missions/r34-title-1280.png`, `r34-title-390.png`, `r34-title-320.png`. Play client, host offline, `r34-play-1280.png`. Menu with Recover `r34-play-menu-390.png`. The title loaded with no page errors. The raw play page still logs the missing `@epicgames-ps/lib-pixelstreamingfrontend-ue5.8` specifier; the shell and Recover still draw. The chirp was not heard in a car. `Scripts/test_skid_tone.py` reports 22 assertions, 0 failures, on c++, g++, and clang++. Syntax check `--both` passed for `QuebecGameplay.cpp`. OpenSpec CLI is not installed, so `openspec validate` did not run.
+- Next target: mission clarity, the remaining 7. The native card was not seen, so the score waits. Responsiveness stays at 3 and stays out of scope. Performance stays at 4 and is not measurable here. The chirp is proven by the wave. It was not heard, so the sound score waits at 8.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 3 | Unchanged. |
+| Color palette | 5 | Unchanged. |
+| Detail density | 3 | Unchanged. |
+| Texture and material quality | 3 | Unchanged. |
+| Composition and camera | 4 | Unchanged. |
+| Atmosphere | 4 | Unchanged. |
+| Character models | 3 | Unchanged. |
+| Animation smoothness | 3 | Unchanged. |
+| Particles and VFX | 2 | Unchanged. |
+| UI polish | 4 | Unchanged. The native card was not seen, and French and English still share the screen. |
+| Responsiveness and input latency | 3 | Unchanged. Still a lagged stream. Out of scope for this loop. |
+| Controls feel | 8 | Unchanged. Lock still holds Space while driving. |
+| Mission clarity | 7 | Unchanged. The last page names the sale and the blank ending. The native card was not seen. |
+| Pacing | 8 | Unchanged. The postcard is still a four-second hold. |
+| Fun factor | 9 | Unchanged. Chez Lise still sells a kit, a vest, or one star. |
+| Difficulty curve | 9 | Unchanged. Selling the last page ends it for 200 and does not bank the chain. |
+| Feedback | 8 | Unchanged. A bank still names its rank. The chirp is the sound of the catch, and the word SKRRT was already there. |
+| Sound design | 8 | The lock plays a sweep from 1860 Hz down to 420 Hz. It stays off the rank pitches and off the pond, court, and theatre tones. A lock at a walk stays quiet. It was not heard. |
+| Variety | 9 | The chirp is a cue on the lock the car already has. Still one district, so this is not the reference's spread. |
+| Performance stability | 4 | Unchanged. Not measurable in this container. |
+
+- Aesthetics raw: 34 / 10 dimensions, index 34
+- Playability raw: 73 / 10 dimensions, index 73
+- Total: 107 / 200
+- Delta vs last round: +1 (round 33 was 106). Sound design 7 → 8. Every other score held.
+
+![GTA title at 1280](gta-missions/r34-title-1280.png)
+
+![GTA title at 390](gta-missions/r34-title-390.png)
+
+![GTA title at 320](gta-missions/r34-title-320.png)
+
+![Play client at 1280, host offline](gta-missions/r34-play-1280.png)
+
+![Menu on a 390-wide screen, Recover visible](gta-missions/r34-play-menu-390.png)
