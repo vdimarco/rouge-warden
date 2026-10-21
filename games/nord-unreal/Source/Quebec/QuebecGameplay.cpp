@@ -2305,7 +2305,7 @@ void AQuebecHUD::DrawHUD()
         bHasObjective = !Campaign->IsCampaignComplete() || Campaign->IsStoryBeatOpen();
         // After the open story beats the card used to say the city was finished, while the four side jobs
         // stayed off the radar until the player was within 100 m. The same gold diamond now leads to the
-        // next job. Missions 3 through 7 keep that diamond until they are banked. During the earlier story
+        // next job. Missions 3 through 8 keep that diamond until they are banked. During the earlier story
         // the campaign objective keeps the diamond.
         if (Campaign->IsPondOpen() && bTouchControls)
             Status = TEXT("Menu · Recover restores this step");
@@ -2317,6 +2317,8 @@ void AQuebecHUD::DrawHUD()
             Status = TEXT("Menu · Recover restores this group");
         else if (Campaign->IsConvoyOpen() && bTouchControls)
             Status = TEXT("Menu · Recover restores this wagon");
+        else if (Campaign->IsBlankOpen() && bTouchControls)
+            Status = TEXT("Menu · Recover restores this page");
         else if (Campaign->IsCampaignComplete() && !Campaign->IsStoryBeatOpen() && SideJobs)
         {
             const int32 Guide = SideJobs->GuideMarker(Here, true);

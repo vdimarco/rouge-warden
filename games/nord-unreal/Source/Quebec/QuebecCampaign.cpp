@@ -1,6 +1,7 @@
 #include "QuebecCampaign.h"
 #include "QuebecGameplay.h"
 #include "QuebecGTA.h" // Side jobs: QuebecJobs::IsJobActive for the race gate guard (JOBS).
+#include "QuebecBlankRules.h"
 #include "QuebecConvoyRules.h"
 #include "QuebecCourtRules.h"
 #include "QuebecPondRules.h"
@@ -18,6 +19,8 @@ static_assert(QuebecRescueRules::Done == AQuebecCampaign::RescueDone,
     "mission 6 banks in the session only; the campaign and the rules share one done mask");
 static_assert(QuebecConvoyRules::StepBanked == AQuebecCampaign::ConvoyBankedStep,
     "mission 7 banks in the session only; the campaign and the rules share one banked index");
+static_assert(QuebecBlankRules::StepBanked == AQuebecCampaign::BlankBankedStep,
+    "mission 8 banks in the session only; the campaign and the rules share one banked index");
 
 #include "Components/BoxComponent.h"
 #include "Components/CapsuleComponent.h"
@@ -422,6 +425,25 @@ void AQuebecCampaign::BuildEncounter()
     ConvoyCaptions.Add(AddCaption(TEXT("ConvoyEscapeCaption"), ConvoyAt(QuebecConvoyRules::Escape, 250.), TEXT("ESCAPE"), 18.f));
     ConvoyParts.Add(AddPart(TEXT("ConvoyPlate"), Sphere, ConvoyAt(QuebecConvoyRules::Escape, 80.), FVector(48., 48., 48.), Cream));
     ConvoyCaptions.Add(AddCaption(TEXT("ConvoyPlateCaption"), ConvoyAt(QuebecConvoyRules::Escape, 180.), TEXT("BLANK PLATE"), 18.f));
+
+    // Mission 8 posts. Hidden until the convoy is banked. Order is gate A, B, C, cue, page.
+    const auto BlankAt = [](const QuebecBlankRules::FSpot& Spot, double Height)
+    {
+        return FVector(Spot.X, Spot.Y, Height);
+    };
+    const QuebecBlankRules::FSpot BlankGates[] = {QuebecBlankRules::GateA, QuebecBlankRules::GateB, QuebecBlankRules::GateC};
+    const TCHAR* BlankGateLabels[] = {TEXT("GATE 1"), TEXT("GATE 2"), TEXT("GATE 3")};
+    for (int32 Gate = 0; Gate < 3; ++Gate)
+    {
+        BlankParts.Add(AddPart(*FString::Printf(TEXT("BlankGate%d"), Gate), Cube,
+            BlankAt(BlankGates[Gate], 110.), FVector(36., 36., 220.), Lime));
+        BlankCaptions.Add(AddCaption(*FString::Printf(TEXT("BlankGateCaption%d"), Gate),
+            BlankAt(BlankGates[Gate], 250.), BlankGateLabels[Gate], 18.f));
+    }
+    BlankParts.Add(AddPart(TEXT("BlankCue"), Cylinder, BlankAt(QuebecBlankRules::Cue, 80.), FVector(40., 40., 160.), Gold));
+    BlankCaptions.Add(AddCaption(TEXT("BlankCueCaption"), BlankAt(QuebecBlankRules::Cue, 200.), TEXT("BLANK PAGE"), 18.f));
+    BlankParts.Add(AddPart(TEXT("BlankPage"), Cube, BlankAt(QuebecBlankRules::Cue, 140.), FVector(160., 8., 200.), Cream));
+    BlankCaptions.Add(AddCaption(TEXT("BlankPageCaption"), BlankAt(QuebecBlankRules::Cue, 280.), TEXT("LEFT BLANK"), 18.f));
 }
 
 void AQuebecCampaign::Tick(float DeltaSeconds)
@@ -439,6 +461,7 @@ void AQuebecCampaign::Tick(float DeltaSeconds)
             TickCourt();
             TickShow();
             TickConvoy();
+            TickBlank();
         }
     }
     if (GetWorld()->GetTimeSeconds()-LastPresentationTime >= .1f)
@@ -841,6 +864,19 @@ bool AQuebecCampaign::HandleInteract(AQuebecController* Controller)
         }
         return false;
     }
+    if (IsBlankOpen())
+    {
+        if (BlankStep == QuebecBlankRules::StepCue && NearBlank(Controller, QuebecBlankRules::Cue.X, QuebecBlankRules::Cue.Y))
+        {
+            PlungerPoint = FVector(QuebecBlankRules::Cue.X, QuebecBlankRules::Cue.Y, 130.);
+            PlungerPullTime = GetWorld()->GetTimeSeconds();
+            // The last page is session state. CompletedMissions stays 2 and the v1 slot is not rewritten.
+            AdvanceBlank(QuebecBlankRules::Apply(BlankStep, QuebecBlankRules::EAct::Use), Controller,
+                TEXT("MEMPHIS: Leave it blank. The park can have a tomorrow that is not a souvenir."), true);
+            return true;
+        }
+        return false;
+    }
     return false;
 }
 
@@ -1031,6 +1067,43 @@ bool AQuebecCampaign::NearConvoy(const AQuebecController* Controller, double X, 
     const FVector Position = Character->GetActorLocation();
     if (FMath::Abs(Position.Z) > 400.) return false;
     return FVector::Dist2D(Position, FVector(X, Y, 0.)) <= QuebecConvoyRules::Reach;
+}
+
+void AQuebecCampaign::TickBlank()
+{
+    if (!IsBlankOpen() || BlankStep >= QuebecBlankRules::StepCue) return;
+    const QuebecBlankRules::FSpot Spot = QuebecBlankRules::Objective(BlankStep);
+    for (TActorIterator<AQuebecController> It(GetWorld()); It; ++It)
+    {
+        if (!NearBlank(*It, Spot.X, Spot.Y)) continue;
+        const int32 Next = QuebecBlankRules::Apply(BlankStep, QuebecBlankRules::EAct::Walk);
+        if (Next == BlankStep) break;
+        const TCHAR* Message = Next == QuebecBlankRules::StepCue
+            ? TEXT("Three gates cut his route. The last page is still his. Leave it blank.")
+            : TEXT("That gate is blank. The next one is still his line.");
+        AdvanceBlank(Next, *It, Message, false);
+        break;
+    }
+}
+
+void AQuebecCampaign::AdvanceBlank(int32 Next, AQuebecController* Who, const TCHAR* Message, bool bFinished)
+{
+    if (Next == BlankStep) return;
+    BlankStep = Next;
+    if (Who && Message) Who->ShowInteractionMessage(Message);
+    for (TActorIterator<AQuebecController> It(GetWorld()); It; ++It)
+        It->PlayFeedback(bFinished ? EQuebecFeedbackCue::Complete : EQuebecFeedbackCue::Checkpoint);
+    UpdatePresentation();
+    ForceNetUpdate();
+}
+
+bool AQuebecCampaign::NearBlank(const AQuebecController* Controller, double X, double Y) const
+{
+    const AQuebecCharacter* Character = Controller ? Cast<AQuebecCharacter>(Controller->GetPawn()) : nullptr;
+    if (!Character) return false;
+    const FVector Position = Character->GetActorLocation();
+    if (FMath::Abs(Position.Z) > 400.) return false;
+    return FVector::Dist2D(Position, FVector(X, Y, 0.)) <= QuebecBlankRules::Reach;
 }
 
 void AQuebecCampaign::TickRace(float DeltaSeconds)
@@ -1226,7 +1299,14 @@ void AQuebecCampaign::RequestRetry(AQuebecController* Controller)
                 Controller->ShowInteractionMessage(TEXT("This wagon restored. The disruptions you finished stay banked."));
             return;
         }
-        Controller->ShowInteractionMessage(TEXT("The border has a gap. T replays the race."));
+        if (IsBlankOpen())
+        {
+            const QuebecBlankRules::FSpot Spot = QuebecBlankRules::RecoverAt(BlankStep);
+            if (MoveToSafeCheckpoint(Controller, FVector(Spot.X, Spot.Y, 100.), FRotator(0., 90., 0.)))
+                Controller->ShowInteractionMessage(TEXT("This page restored. The gates you crossed stay crossed."));
+            return;
+        }
+        Controller->ShowInteractionMessage(TEXT("The last page is blank. T replays the race."));
         return;
     }
     if (Phase <= EQuebecCampaignPhase::ReleaseTable)
@@ -1306,7 +1386,12 @@ void AQuebecCampaign::RequestReplay(AQuebecController* Controller)
         Controller->ShowInteractionMessage(TEXT("The convoy is still drawing the border. T replays the race after the escape."));
         return;
     }
-    // A race replay does not rewind PondStep, CourtStep, ShowStep, RescueMask or ConvoyStep. Banked scenes stay banked for this session.
+    if (IsBlankOpen())
+    {
+        Controller->ShowInteractionMessage(TEXT("The last page is still his. T replays the race after it is blank."));
+        return;
+    }
+    // A race replay does not rewind PondStep, CourtStep, ShowStep, RescueMask, ConvoyStep or BlankStep. Banked scenes stay banked for this session.
     RaceGateIndex = 0;
     RaceElapsed = 0.f;
     bRaceRetried = false;
@@ -1400,6 +1485,12 @@ FString AQuebecCampaign::GetInteractionPrompt(const AQuebecController* Controlle
             return TEXT("E: take the escape gate");
         return FString();
     }
+    if (IsBlankOpen())
+    {
+        if (BlankStep == QuebecBlankRules::StepCue && NearBlank(Controller, QuebecBlankRules::Cue.X, QuebecBlankRules::Cue.Y))
+            return TEXT("E: leave the page blank");
+        return FString();
+    }
     if (Phase == EQuebecCampaignPhase::AimWorklight && CanReach(Controller,WorklightLocation,LightRadius))
         return IsAimingLight(Controller) ? TEXT("Mouse: aim / E: release worklight") : LightOperator ? TEXT("Friend aiming the worklight") : TEXT("E: aim worklight at gold seam");
     if (Phase == EQuebecCampaignPhase::PullClamp && CanReach(Controller,FirstClampLocation,ClampRadius))
@@ -1416,6 +1507,7 @@ FString AQuebecCampaign::GetMissionTitle() const
     if (IsShowOpen()) return TEXT("05 / STANDING OVATION");
     if (IsRescueOpen()) return TEXT("06 / NOBODY LEFT IN THE PICTURE");
     if (IsConvoyOpen()) return TEXT("07 / CAN'T TOW TOMORROW");
+    if (IsBlankOpen()) return TEXT("08 / LEAVE THE LAST PAGE BLANK");
     if (Phase == EQuebecCampaignPhase::Complete) return TEXT("THE PARK IS OPEN");
     return Phase <= EQuebecCampaignPhase::ReleaseTable ? TEXT("01 / A TABLE FOR ETERNITY") : TEXT("02 / NO SUCH THING AS A QUIET LAP");
 }
@@ -1482,7 +1574,18 @@ FString AQuebecCampaign::GetObjectiveText() const
         default: break;
         }
     }
-    if (Phase == EQuebecCampaignPhase::Complete) return TEXT("The border has a gap / T: replay the race");
+    if (IsBlankOpen())
+    {
+        switch (BlankStep)
+        {
+        case QuebecBlankRules::StepGateA: return TEXT("Walk through the first projection gate");
+        case QuebecBlankRules::StepGateB: return TEXT("Walk through the second projection gate");
+        case QuebecBlankRules::StepGateC: return TEXT("Walk through the third projection gate");
+        case QuebecBlankRules::StepCue: return TEXT("Leave the last page blank");
+        default: break;
+        }
+    }
+    if (Phase == EQuebecCampaignPhase::Complete) return TEXT("The last page is blank / T: replay the race");
     switch (Phase)
     {
     case EQuebecCampaignPhase::AimWorklight: return TEXT("Aim the worklight at the gold seam");
@@ -1554,8 +1657,19 @@ FString AQuebecCampaign::GetBriefingText() const
         default: break;
         }
     }
-    if (Phase == EQuebecCampaignPhase::Complete && PondStep >= PondBankedStep && CourtStep >= CourtBankedStep && ShowStep >= ShowBankedStep && RescueMask >= RescueDone && ConvoyStep >= ConvoyBankedStep)
-        return TEXT("The border has a gap. GREEN CAP: That route was fine. TOPKNOT: This one is better.");
+    if (IsBlankOpen())
+    {
+        switch (BlankStep)
+        {
+        case QuebecBlankRules::StepGateA: return TEXT("The projector's blank panels cut his route. Walk the first gate. He has to come back to the stage.");
+        case QuebecBlankRules::StepGateB: return TEXT("One gate is blank. Two of his lines are still connected.");
+        case QuebecBlankRules::StepGateC: return TEXT("Two gates are blank. One line is left, and then the page.");
+        case QuebecBlankRules::StepCue: return TEXT("CURATOR: A moment this lovely should never move. MEMPHIS: Leave the last page blank.");
+        default: break;
+        }
+    }
+    if (Phase == EQuebecCampaignPhase::Complete && PondStep >= PondBankedStep && CourtStep >= CourtBankedStep && ShowStep >= ShowBankedStep && RescueMask >= RescueDone && ConvoyStep >= ConvoyBankedStep && BlankStep >= BlankBankedStep)
+        return TEXT("The last page is blank. The park keeps the day that was not in his book.");
     switch (Phase)
     {
     case EQuebecCampaignPhase::AimWorklight: return TEXT("CURATOR: A moment this lovely should never move. LIME JACKET: The chairs disagree. Strongly. Find the seam in that picnic press.");
@@ -1577,6 +1691,7 @@ FString AQuebecCampaign::GetStatusText() const
     if (IsShowOpen()) return TEXT("R recovers this cue");
     if (IsRescueOpen()) return TEXT("R recovers this group");
     if (IsConvoyOpen()) return TEXT("R recovers this wagon");
+    if (IsBlankOpen()) return TEXT("R recovers this page");
     if (Phase == EQuebecCampaignPhase::AimWorklight) return FString::Printf(TEXT("Alignment %d%% / hold %d%%"),FMath::RoundToInt(LightAlignment*100.f),FMath::RoundToInt(LightHoldProgress*100.f));
     if (Phase == EQuebecCampaignPhase::CrossCable) return FString::Printf(TEXT("Sprint %s / jump %s / R: recover"),bSprintSeen?TEXT("banked"):TEXT("needed"),bJumpSeen?TEXT("banked"):TEXT("needed"));
     if (Phase == EQuebecCampaignPhase::PullClamp || Phase == EQuebecCampaignPhase::ReleaseTable) return bClampOpen ? TEXT("GREEN BEAT / pull now / R: recover") : TEXT("Press squeezing / wait for green / R: recover");
@@ -1616,6 +1731,11 @@ FVector AQuebecCampaign::GetObjectiveLocation() const
     if (IsConvoyOpen())
     {
         const QuebecConvoyRules::FSpot Spot = QuebecConvoyRules::Objective(ConvoyStep);
+        return FVector(Spot.X, Spot.Y, 100.);
+    }
+    if (IsBlankOpen())
+    {
+        const QuebecBlankRules::FSpot Spot = QuebecBlankRules::Objective(BlankStep);
         return FVector(Spot.X, Spot.Y, 100.);
     }
     switch (Phase)
@@ -1745,6 +1865,18 @@ void AQuebecCampaign::UpdatePresentation()
             if (ConvoyCaptions.IsValidIndex(Index)) ConvoyCaptions[Index]->SetVisibility(bShow);
         }
     }
+    if (BlankParts.Num() == QuebecBlankRules::PartCount)
+    {
+        const bool bBlankWorld = Phase == EQuebecCampaignPhase::Complete && PondStep >= PondBankedStep
+            && CourtStep >= CourtBankedStep && ShowStep >= ShowBankedStep && RescueMask >= RescueDone
+            && ConvoyStep >= ConvoyBankedStep;
+        for (int32 Index = 0; Index < BlankParts.Num(); ++Index)
+        {
+            const bool bShow = bBlankWorld && QuebecBlankRules::PartVisible(BlankStep, Index);
+            BlankParts[Index]->SetVisibility(bShow);
+            if (BlankCaptions.IsValidIndex(Index)) BlankCaptions[Index]->SetVisibility(bShow);
+        }
+    }
     // Every sign faces the local camera; the shared objective itself remains authoritative.
     if (APlayerController* Local = GetWorld()->GetFirstPlayerController())
     {
@@ -1772,6 +1904,7 @@ void AQuebecCampaign::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
     DOREPLIFETIME(AQuebecCampaign,ShowStep);
     DOREPLIFETIME(AQuebecCampaign,RescueMask);
     DOREPLIFETIME(AQuebecCampaign,ConvoyStep);
+    DOREPLIFETIME(AQuebecCampaign,BlankStep);
     DOREPLIFETIME(AQuebecCampaign,LightOperator);
     DOREPLIFETIME(AQuebecCampaign,LightYaw);
     DOREPLIFETIME(AQuebecCampaign,LightPitch);

@@ -398,3 +398,48 @@ Unreal is not available here, so the native diamond was not captured. The title 
 ![Play client at 1280, host offline](gta-missions/r8-play-1280.png)
 
 ![Menu on a 390-wide screen, Recover visible](gta-missions/r8-play-menu-390.png)
+
+### Round 9 — 2026-10-21 — rubric v1
+
+- What changed: After the convoy is banked, mission 8 Leave the Last Page Blank leads through three projection gates in order, on dry ground south of the theatre, then a pull that leaves the page blank. Crossing a gate does not skip the next one. The step is session state. The v1 save still stores CompletedMissions 0–2. Side jobs and T wait until the page is blank. R restores the current gate and does not uncross one that is already crossed.
+- Why it helped: Fun was the tied target, and the story still stopped one chapter short. The three gates are the "draw him out" beat without the drive. The pull is the blank page. The page-turn attack and the two clamps stay out of this round.
+- Screenshots: title `docs/gauntlet/gta-missions/r9-title-1280.png`, `r9-title-390.png`, `r9-title-320.png`. Play client, host offline, `r9-play-1280.png`. Menu with Recover `r9-play-menu-390.png`. The title loaded with no page errors. The raw play page still logs the missing `@epicgames-ps/lib-pixelstreamingfrontend-ue5.8` specifier; the shell and Recover still draw. No native page capture: Unreal is not in this container. `Scripts/test_blank_rules.py` reports 124 assertions, 0 failures, on c++, g++ and clang++. Convoy rules still pass. Syntax check `--both` passed for the campaign, the controller and the race-result test. OpenSpec CLI is not installed, so `openspec validate` did not run.
+- Next target: fun factor (4), still tied with controls, mission clarity, pacing, sound and performance. Responsiveness stays at 3 and stays out of scope. All eight story missions are now in the build as session beats, and none of the new ones were played, so the feel score waits. The next round should change how a beat plays, such as a route line on the card, rather than touch the stream.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 3 | Unchanged. |
+| Color palette | 5 | Unchanged. The gates use the same lime, gold and cream. |
+| Detail density | 3 | Unchanged. Three gates and a panel. |
+| Texture and material quality | 3 | Unchanged. |
+| Composition and camera | 4 | Unchanged. |
+| Atmosphere | 4 | Unchanged. The blank-page line is in the card; it was not played. |
+| Character models | 3 | Unchanged. |
+| Animation smoothness | 3 | Unchanged. A gate is a post appearing. |
+| Particles and VFX | 2 | Unchanged. |
+| UI polish | 4 | The card names mission 8, and touch says Menu · Recover. French and English still share the screen. |
+| Responsiveness and input latency | 3 | Unchanged. Still a lagged stream. Out of scope for this loop. |
+| Controls feel | 4 | Unchanged. The gates are walk-up and the page is E. There is no drive. |
+| Mission clarity | 4 | The card names the current gate, then the page. The native card was not seen, and there is still no route line. |
+| Pacing | 4 | Unchanged. An eighth beat exists on paper. Its length was not played. |
+| Fun factor | 4 | The blank page is written. It was not played, so the feel score stays. |
+| Difficulty curve | 6 | Unchanged. The gates are in order. They do not add a tighter window than the beam. |
+| Feedback | 6 | Unchanged. A gate uses the checkpoint cue and the page uses complete. |
+| Sound design | 4 | Unchanged. The city still has two loops. Nobody is voiced. |
+| Variety | 9 | Eight of eight story missions are now in the build, plus the four side jobs. The page was not played in Unreal. |
+| Performance stability | 4 | Unchanged. |
+
+- Aesthetics raw: 34 / 10 dimensions, index 34
+- Playability raw: 48 / 10 dimensions, index 48
+- Total: 82 / 200
+- Delta vs last round: +1 (round 8 was 81). Variety 8 → 9. Every other score held.
+
+![GTA title at 1280](gta-missions/r9-title-1280.png)
+
+![GTA title at 390](gta-missions/r9-title-390.png)
+
+![GTA title at 320](gta-missions/r9-title-320.png)
+
+![Play client at 1280, host offline](gta-missions/r9-play-1280.png)
+
+![Menu on a 390-wide screen, Recover visible](gta-missions/r9-play-menu-390.png)
