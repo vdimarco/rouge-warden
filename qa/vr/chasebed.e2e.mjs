@@ -28,13 +28,29 @@ try {
       return Math.sqrt(e / a.length);
     };
     const quiet = await renderOffline("music", 4, { speed: 10, chase: 0, seed: 3 });
+    const pace = await renderOffline("music", 4, { speed: 10, chase: 0.4, seed: 3 });
     const hot = await renderOffline("music", 4, { speed: 10, chase: 1, seed: 3 });
-    const qa = quiet.getChannelData(0), ha = hot.getChannelData(0);
-    let d = 0;
-    for (let i = 0; i < qa.length; i++) { const z = ha[i] - qa[i]; d += z * z; }
-    return { quiet: hi(quiet), hot: hi(hot), diff: Math.sqrt(d / qa.length) };
+    const rms = (buf) => {
+      const a = buf.getChannelData(0);
+      let e = 0;
+      for (let i = 0; i < a.length; i++) e += a[i] * a[i];
+      return Math.sqrt(e / a.length);
+    };
+    const gap = (x, y) => {
+      const a = x.getChannelData(0), b = y.getChannelData(0);
+      let e = 0;
+      for (let i = 0; i < a.length; i++) { const z = a[i] - b[i]; e += z * z; }
+      return Math.sqrt(e / a.length);
+    };
+    return {
+      quiet: hi(quiet), hot: hi(hot), diff: gap(hot, quiet),
+      pace: rms(pace), behind: rms(hot),
+      paceClock: gap(pace, quiet), behindClock: gap(hot, quiet), louder: gap(hot, pace),
+    };
   });
+  console.log("bed " + JSON.stringify(bed));
   check(bed.hot > bed.quiet * 1.05 && bed.diff > 0.002, "falling behind brightens the groove and adds the clock", bed);
+  check(bed.behindClock > bed.paceClock * 1.4 && bed.louder > 0.006, "falling behind is louder than keeping pace", bed);
 
   const behind = await page.evaluate(() => {
     G.test.step(1 / 60, 10);

@@ -200,3 +200,40 @@ Loop: missions, playability, controls, feel, UX, pacing and fun for In Full Swin
 ![Mission 3 is a person on a roof edge](fullswing-r5/catch.png)
 
 ![Mission 4 is a fight on a roof](fullswing-r5/brawl.png)
+
+### Round 6 — 2026-10-21 — rubric v1
+
+- What changed: The chase clock is a wood block under the click. Keeping pace is a light hit on the quarter notes. Falling behind is a heavier hit, and on the eighth notes. Closing and the first-lesson wait stay quiet. A fight still uses its own pulse.
+- Why it helped: The old tick lived with the hats, so falling behind was barely brighter than the groove. A 4 s render of the same seed (speed 10) puts the keeping-pace clock 0.0033 RMS from the quiet groove, and falling behind 0.0114 RMS from it, about 3.4 times that clock. The whole mix only rises from 0.039 to 0.041, because the compressor holds the level. Closing and the lesson wait still report a chase of 0.
+- Screenshots: `docs/gauntlet/fullswing-r6/falling-behind.png`. The picture shows the state. The loudness is the render, not the picture. No speaker listen.
+- Next target: fun factor (6), tied with controls feel, difficulty, feedback, performance and sound. Fun is the one to change next: catching the thief, the faller or the roof still ends in a toast and a coin count.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 5 | Held. Golden-hour sun and ink shadows. |
+| Color palette | 6 | Held. Yellow, red and sludge green still separate the HUD from the blocks. |
+| Detail density | 4 | Held. Open blocks more than a dressed borough. |
+| Texture and material quality | 3 | Held. Flat fills. |
+| Composition and camera | 4 | Held. The runner still sits low in the chase frame. |
+| Atmosphere | 5 | Held. The dusk skyline has a mood. The street under the chase does not. |
+| Character models | 3 | Held. Simple comic figures at this distance. |
+| Animation smoothness | 4 | Scored from still frames in software GL. Continuous motion was not watched. |
+| Particles and VFX | 4 | Held. The sticker and the street. No new hit or trail. |
+| UI polish | 6 | Held. The FALLING BEHIND sticker is the same ink chip. |
+| Responsiveness and input latency | 7 | Held. The chase state flipped on the stepped frames. |
+| Controls feel | 6 | Held. One button still leaves the roof. The clock does not change the swing. |
+| Mission clarity | 7 | Held. The sticker still says FALLING BEHIND when the clock is full. |
+| Pacing | 7 | Held. The lesson waits, then the story missions, then the clogs. |
+| Fun factor | 6 | Held. The chase is the same jog. The clock marks losing it. This play did not catch him. |
+| Difficulty curve | 6 | Held. Falling behind is the same distance rule. The clock is heavier then, not a new fail. |
+| Feedback | 6 | Held. The sticker was already the chase readout. The clock now backs the losing state. |
+| Sound design | 6 | Falling behind is a wood block on the eighths, 3.4 times the keeping-pace clock in a seeded render. It is still one block on the same groove. Not heard on a speaker. |
+| Variety | 7 | Held. Missions 2, 3 and 4 are still a chase, a rescue and a fight. |
+| Performance stability | 6 | The chase-bed play and the render passed with no page errors. Frame time on a real GPU was not measured. |
+
+- Aesthetics raw: 44 / 10 dimensions, index 44
+- Playability raw: 64 / 10 dimensions, index 64
+- Total: 108 / 200
+- Delta vs last round: +1 (round 5 was 107). Sound design 5 → 6. Every other score held.
+
+![Falling behind, the state that drives the heavier clock](fullswing-r6/falling-behind.png)
