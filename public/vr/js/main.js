@@ -413,9 +413,10 @@ let winHold = 0, winCard = null, winStory = null, lastWin = null;
 let missHold = 0, missCard = null, missJob = null, lastMiss = null;
 // A test can run the story route under ?nocut. Real play runs it only after Mission 1, and the tests leave it off.
 let routeForce = false;
-// The fourth flush and the eighth flush each break the clog run with a different job. The queue waits out a story mission.
+// The fourth, sixth and eighth flushes each break the clog run with a different job. The queue waits out a story mission.
 const CLOG_BEAT = {
   4: { type: "balloon", mission: "UP FOR AIR", near: [18, 80] },
+  6: { type: "pizza", mission: "HOT PIE", near: [18, 80] },
   8: { type: "washer", mission: "GET HIM DOWN", near: [24, 140] },
 };
 const clogQueue = [];
@@ -2731,6 +2732,10 @@ G.test = {
     else if (A.type === "balloon") {
       D.b.free = true; D.b.held = true;
       if (D.kid) { D.kid.x = P.pos.x; D.kid.y = P.pos.y; D.kid.z = P.pos.z; }
+    }
+    else if (A.type === "pizza" && D.drop) {
+      P.pos.x = D.drop.x; P.pos.y = D.drop.y; P.pos.z = D.drop.z;
+      P.onGround = true;
     }
     else return false;
     return true;
