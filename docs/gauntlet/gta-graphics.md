@@ -1053,3 +1053,38 @@ Unreal is not available in this environment, so in-engine frames are the last co
 - Playability raw: 39 / 10 dimensions, index 39
 - Total: 104 / 200
 - Delta vs last round: +1
+
+### Round 31 — 2026-10-21 — rubric v1
+
+- What changed: the street column fill goes from opacity .34 to .62. A paper rule sits on the panel edge, clamped to the 4-scale-unit padding, and the warm accent covers the left edge. Health and armour bars draw three quarter cuts and a paper lip only as wide as the fill. A cut inside the fill is ink. A cut past the fill is paper. The mission card, the words, and the calm-street hide stay.
+- Why it helped: UI polish was at 6. The column was one faint fill, and the vitals bars were flat rectangles.
+- Screenshots: before `docs/gauntlet/gta-graphics/round-31/before-meter.png`, after `docs/gauntlet/gta-graphics/round-31/after-meter.png`. These are a 3× nearest crop of an offline shade of the street column at scale 1 on a 1280×720 frame. Phone crops are `before-phone.png` and `after-phone.png` (390×844, scale 0.70). Narrow crops are `before-narrow.png` and `after-narrow.png` (320×700, scale 0.60). The words are a stand-in. The game strings are unchanged. Not an Unreal capture. On the desktop crop the mean absolute delta is 0.082 and the max is 0.94. The phone crop mean is 0.090. The narrow crop mean is 0.086. `Scripts/test_street_meter.py` passed. `Scripts/test_hud_rule.py` passed. `QuebecGameHUD.cpp` was not compiled. `GET /gta/` returned 200. OpenSpec CLI is not installed, so the change files were not validated with `openspec`.
+- Next target: lighting. A warm pool on the road under the street lamps can be shaded offline, and the clear-day frame stays when the lamps are off. Composition and particles stay at 6, because the walking socket and the rain displacement stay as they are. Animation smoothness stays at 3 and is skipped until a pose can be drawn.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 7 | The card does not cast. The sun and the night grade are unchanged. |
+| Color palette | 7 | The meter uses the existing health green and armour blue. The street colours are unchanged. |
+| Detail density | 7 | The street is unchanged. |
+| Texture and material quality | 8 | The clearcoat is unchanged. |
+| Composition and camera | 6 | The walking socket is unchanged. |
+| Atmosphere | 8 | The moon grade and the street sheen are unchanged. |
+| Character models | 7 | The clothed idle fallback is unchanged. |
+| Animation smoothness | 3 | Skipped. The blend space still cannot be posed here. |
+| Particles and VFX | 6 | Rain rings are unchanged. |
+| UI polish | 7 | The street column is a framed card and the vitals bars are quartered meters. It is still a comic panel. |
+| Responsiveness and input latency | 4 | Not measured this round. |
+| Controls feel | 4 | Not played. |
+| Mission clarity | 5 | The objective words are unchanged. |
+| Pacing | 4 | Unchanged mission slice. |
+| Fun factor | 3 | Not played. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 4 | No new juice. |
+| Sound design | 3 | Not listened to. |
+| Variety | 3 | One district. The phone and narrow crops use the same column. |
+| Performance stability | 5 | `Scripts/test_street_meter.py` passed. The column adds a few rects when it is already open. Frame time was not remeasured. |
+
+- Aesthetics raw: 66 / 10 dimensions, index 66
+- Playability raw: 39 / 10 dimensions, index 39
+- Total: 105 / 200
+- Delta vs last round: +1

@@ -205,10 +205,24 @@ void AQuebecHUD::DrawStreetHUD(float UIScale, bool bTall, bool bTouch, float Rad
             DrawLine(A.X, A.Y, B.X, B.Y, Edge, FMath::Max(1.f, 1.4f * S));
         }
     };
-    const auto Bar = [this](float PosX, float PosY, float BarWidth, float BarHeight, float Share, const FLinearColor& Tone, const FLinearColor& Back)
+    // Quarter cuts are reference marks on the meter (Tufte, The Visual Display of
+    // Quantitative Information, 1983). The lip runs only as far as the fill.
+    const auto Bar = [this, S, Paper, Ink](float PosX, float PosY, float BarWidth, float BarHeight, float Share, const FLinearColor& Tone, const FLinearColor& Back)
     {
         DrawRect(Back, PosX, PosY, BarWidth, BarHeight);
-        DrawRect(Tone, PosX, PosY, BarWidth * FMath::Clamp(Share, 0.f, 1.f), BarHeight);
+        const float Fill = BarWidth * FMath::Clamp(Share, 0.f, 1.f);
+        DrawRect(Tone, PosX, PosY, Fill, BarHeight);
+        const float Lip = FMath::Min(FMath::Max(1.f, 2.f * S), BarHeight * .4f);
+        if (Fill > Lip)
+            DrawRect(Paper.CopyWithNewOpacity(.9f), PosX, PosY, Fill, Lip);
+        const float Gap = FMath::Min(FMath::Max(2.f, 3.f * S), BarWidth * .08f);
+        const FLinearColor Cut = Ink.CopyWithNewOpacity(.95f);
+        for (int32 Notch = 1; Notch < 4; ++Notch)
+        {
+            const float At = PosX + BarWidth * (static_cast<float>(Notch) / 4.f) - Gap * .5f;
+            const bool bCutFill = At < PosX + Fill;
+            DrawRect(bCutFill ? Cut : Paper.CopyWithNewOpacity(.85f), At, PosY, Gap, BarHeight);
+        }
     };
     // A centred comic plate: ink panel, coloured edges and an outlined title over a smaller detail line.
     const auto Plate = [&Write, &Measure, this, S, Font, Panel, Paper](const FString& Head, const FString& Line, const FLinearColor& Tone, float Middle, float Top, float Age, float Life)
@@ -460,7 +474,21 @@ void AQuebecHUD::DrawStreetHUD(float UIScale, bool bTall, bool bTouch, float Rad
         if (bJob) Total += (Remaining > 0.f ? 32.f * S : 0.f) + 18.f * S + GoalLines.Num() * 16.f * S + (bGoal ? 16.f * S : 0.f);
         if (bCashRow) Total += 20.f * S;
         float Row = bTall ? ScreenH * .6f - 6.f * S - Total : RadarY;
-        DrawRect(Panel.CopyWithNewOpacity(.34f), ColumnLeft - 6.f * S, Row - 4.f * S, ColumnWidth + 12.f * S, Total + 8.f * S);
+        const float PanelX = ColumnLeft - 6.f * S;
+        const float PanelY = Row - 4.f * S;
+        const float PanelW = ColumnWidth + 12.f * S;
+        const float PanelH = Total + 8.f * S;
+        DrawRect(Panel.CopyWithNewOpacity(.62f), PanelX, PanelY, PanelW, PanelH);
+        // Scott McCloud, Understanding Comics (1993): the border is what separates
+        // the panel from the scene. This column's padding is 4 scale units, so the
+        // rule sits on the edge, where it stays off the type.
+        const float RuleEdge = FMath::Min(FMath::Max(2.f, 2.f * S), 4.f * S);
+        const FLinearColor Rule = Paper.CopyWithNewOpacity(.88f);
+        DrawRect(Rule, PanelX, PanelY, PanelW, RuleEdge);
+        DrawRect(Rule, PanelX, PanelY + PanelH - RuleEdge, PanelW, RuleEdge);
+        DrawRect(Rule, PanelX, PanelY, RuleEdge, PanelH);
+        DrawRect(Rule, PanelX + PanelW - RuleEdge, PanelY, RuleEdge, PanelH);
+        DrawRect(Accent, PanelX, PanelY, RuleEdge, PanelH);
         if (bStarRow)
         {
             // Stars blink at 2 Hz while no officer sees the player; a change pops them for 0.4 s.
