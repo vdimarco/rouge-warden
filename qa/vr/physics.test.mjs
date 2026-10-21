@@ -563,6 +563,14 @@ section("Glide and wall run");
     teleport(S2, B.maxX + 2, 6, z); S2.vel.x = -5;
     run(S2, 60, () => inp({ hands: free }), { watch: false });
     check(S2.wall && !S2.wallRun, "a slow touch still clings, with no run");
+    // a glancing entry keeps its direction along the wall when there is no steering input
+    for (const dir of [-1, 1]) {
+      const E = createPlayer(city, FLAT);
+      teleport(E, B.maxX + 0.6, 8, z); E.vel.x = -8; E.vel.z = dir * 16;
+      for (let i = 0; i < 30 && !E.wall; i++) run(E, 1, () => inp({ hands: free }), { watch: false });
+      run(E, 1, () => inp({ hands: free }), { watch: false });
+      check(E.wallRun?.mode === "along" && E.vel.z * dir > 0, `a glancing wall run keeps its along-wall direction (${dir})`);
+    }
     // a run that reaches the top vaults onto the roof
     const T = createPlayer(city, FLAT);
     teleport(T, B.maxX + 4, B.maxY - 6, z); T.vel.x = -20; T.vel.y = 2;

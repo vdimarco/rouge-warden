@@ -574,7 +574,7 @@ export function step(P, h, inp) {
     // A side met at 4 body-heights a second, with at least half of that going into the wall, sticks. A brush does not.
     const runIt = RN && !attached && t.speed >= RN.min * H && t.into >= RN.min * H * 0.5;
     if (runIt) {
-      const nl = len2(t.nx, t.nz) || 1, along = vx * (t.nz / nl) - vz * (t.nx / nl);
+      const nl = len2(t.nx, t.nz) || 1, along = -vx * (t.nz / nl) + vz * (t.nx / nl);
       grab(P);
       if (P.wall) {
         const mode = Math.abs(along) > t.into ? "along" : "up";
