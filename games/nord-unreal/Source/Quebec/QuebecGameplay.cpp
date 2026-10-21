@@ -2790,6 +2790,8 @@ void AQuebecHUD::DrawHUD()
             Status = TEXT("Menu · Recover restores this home");
         else if (Campaign->IsEscortOpen() && bTouchControls)
             Status = TEXT("Menu · Recover restores this walk");
+        else if (Campaign->IsShadeOpen() && bTouchControls)
+            Status = TEXT("Menu · Recover restores this dark");
         else if (Campaign->IsCampaignComplete() && !Campaign->IsStoryBeatOpen() && SideJobs)
         {
             const int32 Guide = SideJobs->GuideMarker(Here, true);

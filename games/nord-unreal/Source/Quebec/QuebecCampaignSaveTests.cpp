@@ -105,8 +105,37 @@ bool FQuebecCampaignSaveRoundTripTest::RunTest(const FString& Parameters)
     TestEqual(TEXT("Escort schema survives serialization"),WalkReload->Version,4);
     TestEqual(TEXT("Escort step survives serialization"),WalkReload->EscortStep,1);
     TestEqual(TEXT("The home day stays banked beside the walk"),WalkReload->HomeStep,3);
+    TestEqual(TEXT("A version-4 tail starts the crossing over"),WalkReload->ShadeStep,0);
+    Walk->ShadeStep = 1;
+    TestFalse(TEXT("A version-4 slot carrying the crossing is rejected"),Walk->IsSupported());
     Walk->HomeStep = 0;
+    Walk->ShadeStep = 0;
     TestFalse(TEXT("A walk before the day is home is rejected"),Walk->IsSupported());
+
+    UQuebecCampaignSaveGame* Dark = NewObject<UQuebecCampaignSaveGame>();
+    Dark->Version = 5;
+    Dark->CompletedMissions = 2;
+    Dark->PondStep = 6;
+    Dark->CourtStep = 4;
+    Dark->ShowStep = 5;
+    Dark->RescueMask = 7;
+    Dark->ConvoyStep = 4;
+    Dark->BlankStep = 4;
+    Dark->TourStep = 3;
+    Dark->HomeStep = 3;
+    Dark->EscortStep = 2;
+    Dark->ShadeStep = 1;
+    TestTrue(TEXT("Crossing tail is accepted before serialization"),Dark->IsSupported());
+    TArray<uint8> DarkBytes;
+    if (!TestTrue(TEXT("Crossing tail serializes using engine save format"),UGameplayStatics::SaveGameToMemory(Dark,DarkBytes))) return false;
+    const UQuebecCampaignSaveGame* DarkReload = Cast<UQuebecCampaignSaveGame>(UGameplayStatics::LoadGameFromMemory(DarkBytes));
+    if (!TestNotNull(TEXT("Crossing tail reloads using engine save format"),DarkReload)) return false;
+    TestTrue(TEXT("Reloaded crossing tail remains supported"),DarkReload->IsSupported());
+    TestEqual(TEXT("Crossing schema survives serialization"),DarkReload->Version,5);
+    TestEqual(TEXT("Crossing step survives serialization"),DarkReload->ShadeStep,1);
+    TestEqual(TEXT("The walk stays banked beside the crossing"),DarkReload->EscortStep,2);
+    Dark->EscortStep = 0;
+    TestFalse(TEXT("A crossing before the walk is banked is rejected"),Dark->IsSupported());
 
     UQuebecCampaignSaveGame* Skip = NewObject<UQuebecCampaignSaveGame>();
     Skip->Version = 3;

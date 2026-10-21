@@ -49,7 +49,7 @@ namespace
 
 int main()
 {
-    Expect(Legacy == 1 && Rejected == 2 && Story == 3 && Current == 4, "the slot versions drifted");
+    Expect(Legacy == 1 && Rejected == 2 && Story == 3 && Escort == 4 && Current == 5, "the slot versions drifted");
     Expect(Current != Rejected, "the writer would plant the unsupported fixture");
     Expect(PondBanked == QuebecPondRules::StepBanked, "the pond bank left the save");
     Expect(CourtBanked == QuebecCourtRules::StepBanked, "the court bank left the save");
@@ -70,7 +70,7 @@ int main()
         Expect(Accept(Current, Completed, None), "a current race boundary with no story was rejected");
         Expect(!Accept(Rejected, Completed, None), "version 2 was accepted");
         Expect(!Accept(0, Completed, None), "version 0 was accepted");
-        Expect(!Accept(5, Completed, None), "a later schema was accepted");
+        Expect(!Accept(6, Completed, None), "a later schema was accepted");
     }
     Expect(!Accept(Legacy, -1, None), "a missing mission count was accepted");
     Expect(!Accept(Legacy, 3, None), "completed missions 3 were accepted on a legacy slot");
@@ -131,6 +131,20 @@ int main()
     WithCoat.Escort = 1;
     WithCoat.Home = 0;
     Expect(!Accept(Current, 2, WithCoat), "the walk started before the day was home");
+    FSteps Lit = Banked();
+    Lit.Escort = EscortBanked;
+    Lit.Shade = 1;
+    Expect(Accept(Current, 2, Lit), "a crossing in progress was rejected");
+    Expect(!Accept(Escort, 2, Lit), "a version-4 slot carried the crossing");
+    const FSteps FromEscort = Applied(Escort, Lit);
+    Expect(FromEscort.Escort == EscortBanked && FromEscort.Shade == 0, "a version-4 slot copied the crossing");
+    Lit.Shade = ShadeBanked;
+    Expect(Accept(Current, 2, Lit), "a finished crossing was rejected");
+    Lit.Shade = ShadeBanked + 1;
+    Expect(!Accept(Current, 2, Lit), "a crossing past the bank was accepted");
+    Lit.Shade = 1;
+    Lit.Escort = 0;
+    Expect(!Accept(Current, 2, Lit), "the crossing started before the walk was banked");
 
     std::printf("%d assertions, %d failures\n", Assertions, Failures);
     return Failures == 0 ? 0 : 1;

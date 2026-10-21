@@ -6,6 +6,7 @@
 #include "QuebecTour.h"
 #include "QuebecHome.h"
 #include "QuebecEscort.h"
+#include "QuebecShade.h"
 #include "QuebecChain.h"
 #include "QuebecPace.h"
 #include "QuebecConvoyRules.h"
@@ -43,6 +44,9 @@ static_assert(QuebecStorySave::HomeBanked == AQuebecCampaign::HomeBankedStep, "t
 static_assert(QuebecEscort::StepBanked == AQuebecCampaign::EscortBankedStep, "mission 11 and the story tail share one banked index");
 static_assert(QuebecStorySave::EscortBanked == AQuebecCampaign::EscortBankedStep, "the story tail left the escort bank");
 static_assert(QuebecEscort::MeetX == 29600. && QuebecEscort::MeetY == 16800., "the coat left the saved meet");
+static_assert(QuebecShade::StepBanked == AQuebecCampaign::ShadeBankedStep, "mission 12 and the story tail share one banked index");
+static_assert(QuebecStorySave::ShadeBanked == AQuebecCampaign::ShadeBankedStep, "the story tail left the shade bank");
+static_assert(QuebecShade::PocketX == 50700. && QuebecShade::PocketY == 14500., "the dark pocket left the lawn");
 static_assert(QuebecStorySave::Current != QuebecStorySave::Rejected, "the writer would plant the unsupported fixture");
 
 static FString WithClose(const TCHAR* Line, int32 Bonus)
@@ -178,7 +182,7 @@ void AQuebecCampaign::BeginPlay()
                 CompletedMissions = Save->CompletedMissions;
                 const QuebecStorySave::FSteps Steps = QuebecStorySave::Applied(Save->Version, {
                     Save->PondStep, Save->CourtStep, Save->ShowStep, Save->RescueMask,
-                    Save->ConvoyStep, Save->BlankStep, Save->TourStep, Save->HomeStep, Save->EscortStep});
+                    Save->ConvoyStep, Save->BlankStep, Save->TourStep, Save->HomeStep, Save->EscortStep, Save->ShadeStep});
                 PondStep = Steps.Pond;
                 CourtStep = Steps.Court;
                 ShowStep = Steps.Show;
@@ -188,10 +192,13 @@ void AQuebecCampaign::BeginPlay()
                 TourStep = Steps.Tour;
                 HomeStep = Steps.Home;
                 EscortStep = Steps.Escort;
+                ShadeStep = Steps.Shade;
                 // The coat's place is not in the slot. A walk in progress starts again at the meet.
                 EscortFriendX = static_cast<float>(EscortStep >= EscortBankedStep ? QuebecEscort::DoorX : QuebecEscort::MeetX);
                 EscortFriendY = static_cast<float>(EscortStep >= EscortBankedStep ? QuebecEscort::DoorY : QuebecEscort::MeetY);
                 bEscortPlanted = false;
+                // A lamp burn is not in the slot. A reload clears it.
+                bShadeBurned = false;
                 Phase = CompletedMissions == 2 ? EQuebecCampaignPhase::Complete :
                     CompletedMissions == 1 ? EQuebecCampaignPhase::RaceReady : EQuebecCampaignPhase::AimWorklight;
             }
@@ -505,6 +512,15 @@ void AQuebecCampaign::BuildEncounter()
     EscortCaption = AddCaption(TEXT("EscortCoat"), FVector(QuebecEscort::MeetX, QuebecEscort::MeetY, 200.), TEXT("GREY COAT"), 18.f);
     EscortDoor = AddPart(TEXT("EscortDoor"), Cube, FVector(QuebecEscort::DoorX, QuebecEscort::DoorY, 110.), FVector(36., 36., 220.), Lime);
     EscortDoorCaption = AddCaption(TEXT("EscortDoorCaption"), FVector(QuebecEscort::DoorX, QuebecEscort::DoorY, 250.), TEXT("EAST DOOR"), 18.f);
+
+    ShadePocket = AddPart(TEXT("ShadePocket"), Cube, FVector(QuebecShade::PocketX, QuebecShade::PocketY, 40.), FVector(80., 80., 12.), Lime);
+    ShadePocketCaption = AddCaption(TEXT("ShadePocketCaption"), FVector(QuebecShade::PocketX, QuebecShade::PocketY, 160.), TEXT("DARK"), 18.f);
+    ShadeFar = AddPart(TEXT("ShadeFar"), Cube, FVector(QuebecShade::FarX, QuebecShade::FarY, 40.), FVector(80., 80., 12.), Berry);
+    ShadeFarCaption = AddCaption(TEXT("ShadeFarCaption"), FVector(QuebecShade::FarX, QuebecShade::FarY, 160.), TEXT("SOUTH DARK"), 18.f);
+    ShadeLampA = AddPart(TEXT("ShadeLampA"), Cylinder, FVector(QuebecShade::LampAX, QuebecShade::LampAY, 140.), FVector(28., 28., 280.), Gold);
+    ShadeLampACaption = AddCaption(TEXT("ShadeLampACaption"), FVector(QuebecShade::LampAX, QuebecShade::LampAY, 300.), TEXT("LAMP"), 18.f);
+    ShadeLampB = AddPart(TEXT("ShadeLampB"), Cylinder, FVector(QuebecShade::LampBX, QuebecShade::LampBY, 140.), FVector(28., 28., 280.), Gold);
+    ShadeLampBCaption = AddCaption(TEXT("ShadeLampBCaption"), FVector(QuebecShade::LampBX, QuebecShade::LampBY, 300.), TEXT("LAMP"), 18.f);
 }
 
 void AQuebecCampaign::Tick(float DeltaSeconds)
@@ -526,6 +542,7 @@ void AQuebecCampaign::Tick(float DeltaSeconds)
             TickTour();
             TickHome();
             TickEscort(DeltaSeconds);
+            TickShade();
         }
     }
     if (GetWorld()->GetTimeSeconds()-LastPresentationTime >= .1f)
@@ -1439,6 +1456,71 @@ bool AQuebecCampaign::NearEscort(const AQuebecController* Controller, double X, 
     return FVector::Dist2D(Position, FVector(X, Y, 0.)) <= QuebecEscort::Reach;
 }
 
+void AQuebecCampaign::TickShade()
+{
+    if (!IsShadeOpen()) return;
+    const double GoalX = ShadeStep == QuebecShade::StepPocket ? QuebecShade::PocketX : QuebecShade::FarX;
+    const double GoalY = ShadeStep == QuebecShade::StepPocket ? QuebecShade::PocketY : QuebecShade::FarY;
+    AQuebecController* Foot = nullptr;
+    double FootX = 0.;
+    double FootY = 0.;
+    double FootSpan = 0.;
+    bool bHaveFoot = false;
+    bool bAnyLamp = false;
+    for (TActorIterator<AQuebecController> It(GetWorld()); It; ++It)
+    {
+        const APawn* Pawn = It->GetPawn();
+        if (!Pawn) continue;
+        const FVector Position = Pawn->GetActorLocation();
+        if (QuebecShade::InLamp(Position.X, Position.Y)) bAnyLamp = true;
+        const AQuebecCharacter* Walker = Cast<AQuebecCharacter>(Pawn);
+        const bool bFoot = Walker && !Walker->GetCharacterMovement()->IsSwimming();
+        if (!bFoot) continue;
+        const double Span = QuebecShade::Gap(Position.X, Position.Y, GoalX, GoalY);
+        if (bHaveFoot && Span >= FootSpan) continue;
+        bHaveFoot = true;
+        Foot = *It;
+        FootX = Position.X;
+        FootY = Position.Y;
+        FootSpan = Span;
+    }
+    const QuebecShade::FCross Before{static_cast<int>(ShadeStep), bShadeBurned};
+    const QuebecShade::FCross After = QuebecShade::Watch(Before, bHaveFoot, FootX, FootY, bAnyLamp);
+    if (After.Step != ShadeStep)
+    {
+        bShadeBurned = After.Step == QuebecShade::StepBanked ? false : After.bBurned;
+        const TCHAR* Message = After.Step == QuebecShade::StepBanked
+            ? TEXT("The south dark held. The lamps did not.")
+            : TEXT("The lamps are lit. Stay in the dark.");
+        AdvanceShade(After.Step, Foot, Message, After.Step == QuebecShade::StepBanked);
+        return;
+    }
+    if (After.bBurned == bShadeBurned) return;
+    bShadeBurned = After.bBurned;
+    if (Foot)
+    {
+        Foot->ShowInteractionMessage(bShadeBurned
+            ? TEXT("A lamp saw you. Go back to the dark pocket.")
+            : TEXT("The dark pocket covers you. Try the south side again."));
+    }
+    UpdatePresentation();
+    ForceNetUpdate();
+}
+
+void AQuebecCampaign::AdvanceShade(int32 Next, AQuebecController* Who, const TCHAR* Message, bool bFinished)
+{
+    if (Next == ShadeStep) return;
+    ShadeStep = Next;
+    // Link -1 is outside the seven banks, so the chain does not move. The purse is flat.
+    ShowStepMessage(Who, Message, bFinished, -1);
+    if (bFinished) GrantCash(QuebecShade::Pay);
+    for (TActorIterator<AQuebecController> It(GetWorld()); It; ++It)
+        It->PlayFeedback(bFinished ? EQuebecFeedbackCue::Complete : EQuebecFeedbackCue::Checkpoint);
+    UpdatePresentation();
+    ForceNetUpdate();
+    SaveBoundary();
+}
+
 void AQuebecCampaign::TickRace(float DeltaSeconds)
 {
     const float Now = GetWorld()->GetTimeSeconds();
@@ -1555,7 +1637,7 @@ void AQuebecCampaign::ChangePhase(EQuebecCampaignPhase Next, bool bFeedback)
 bool UQuebecCampaignSaveGame::IsSupported() const
 {
     const QuebecStorySave::FSteps Steps{
-        PondStep, CourtStep, ShowStep, RescueMask, ConvoyStep, BlankStep, TourStep, HomeStep, EscortStep};
+        PondStep, CourtStep, ShowStep, RescueMask, ConvoyStep, BlankStep, TourStep, HomeStep, EscortStep, ShadeStep};
     return QuebecStorySave::Accept(Version, CompletedMissions, Steps);
 }
 
@@ -1583,6 +1665,7 @@ void AQuebecCampaign::SaveBoundary()
         Save->TourStep = TourStep;
         Save->HomeStep = HomeStep;
         Save->EscortStep = EscortStep;
+        Save->ShadeStep = ShadeStep;
     }
     if (!Save || !UGameplayStatics::SaveGameToSlot(Save,SaveSlot(),0))
     {
@@ -1697,7 +1780,14 @@ void AQuebecCampaign::RequestRetry(AQuebecController* Controller)
                 Controller->ShowInteractionMessage(TEXT("This walk restored. Grey Coat is where you left the meeting."));
             return;
         }
-        Controller->ShowInteractionMessage(TEXT("Grey Coat is home. T replays the race."));
+        if (IsShadeOpen())
+        {
+            bShadeBurned = false;
+            if (MoveToSafeCheckpoint(Controller, FVector(QuebecShade::PocketX, QuebecShade::PocketY + QuebecShade::RecoverNorth, 100.), FRotator(0., 90., 0.)))
+                Controller->ShowInteractionMessage(TEXT("This crossing restored. The lamps are still lit."));
+            return;
+        }
+        Controller->ShowInteractionMessage(TEXT("The lawn is dark. T replays the race."));
         return;
     }
     if (Phase <= EQuebecCampaignPhase::ReleaseTable)
@@ -1796,6 +1886,11 @@ void AQuebecCampaign::RequestReplay(AQuebecController* Controller)
     if (IsEscortOpen())
     {
         Controller->ShowInteractionMessage(TEXT("Grey Coat is still waiting. T replays the race after the door."));
+        return;
+    }
+    if (IsShadeOpen())
+    {
+        Controller->ShowInteractionMessage(TEXT("The lamps are still lit. T replays the race after the dark."));
         return;
     }
     // A race replay does not rewind the story steps or the chain, and it does not write the slot. The story tail already holds the steps.
@@ -2040,6 +2135,7 @@ FString AQuebecCampaign::GetMissionTitle() const
     if (IsTourOpen()) return TEXT("09 / THREE WAYS ACROSS");
     if (IsHomeOpen()) return TEXT("10 / PUT THEM AWAY");
     if (IsEscortOpen()) return TEXT("11 / WALK WITH ME");
+    if (IsShadeOpen()) return TEXT("12 / STAY UNSEEN");
     if (Phase == EQuebecCampaignPhase::Complete) return TEXT("THE PARK IS OPEN");
     return Phase <= EQuebecCampaignPhase::ReleaseTable ? TEXT("01 / A TABLE FOR ETERNITY") : TEXT("02 / NO SUCH THING AS A QUIET LAP");
 }
@@ -2141,6 +2237,11 @@ FString AQuebecCampaign::GetObjectiveText() const
     {
         if (EscortStep == QuebecEscort::StepMeet) return TEXT("Walk up to Grey Coat");
         return bEscortPlanted ? TEXT("Go back. Grey Coat stopped.") : TEXT("Walk Grey Coat to the east door");
+    }
+    if (IsShadeOpen())
+    {
+        if (ShadeStep == QuebecShade::StepPocket) return TEXT("Step into the dark pocket");
+        return bShadeBurned ? TEXT("A lamp saw you. Return to the dark pocket.") : TEXT("Cross to the south dark. Stay out of the lamps.");
     }
     if (Phase == EQuebecCampaignPhase::Complete) return TEXT("The last page is blank / T: replay the race");
     switch (Phase)
@@ -2253,7 +2354,15 @@ FString AQuebecCampaign::GetBriefingText() const
             ? TEXT("GREY COAT: I stopped. Come back on foot.")
             : TEXT("GREY COAT: Stay on foot. If you ride off, I stop. The east door is south of here.");
     }
-    if (Phase == EQuebecCampaignPhase::Complete && PondStep >= PondBankedStep && CourtStep >= CourtBankedStep && ShowStep >= ShowBankedStep && RescueMask >= RescueDone && ConvoyStep >= ConvoyBankedStep && BlankStep >= BlankBankedStep && TourStep >= TourBankedStep && HomeStep >= HomeBankedStep && EscortStep >= EscortBankedStep)
+    if (IsShadeOpen())
+    {
+        if (ShadeStep == QuebecShade::StepPocket)
+            return TEXT("MEMPHIS: Two lamps watch the lawn. The straight line is lit. Step into the dark pocket.");
+        return bShadeBurned
+            ? TEXT("MEMPHIS: A lamp saw you. The pocket north of them covers you. Then try the south dark again.")
+            : TEXT("MEMPHIS: Stay out of the lamps. The west side of the lawn is dark. The south pocket pays once.");
+    }
+    if (Phase == EQuebecCampaignPhase::Complete && PondStep >= PondBankedStep && CourtStep >= CourtBankedStep && ShowStep >= ShowBankedStep && RescueMask >= RescueDone && ConvoyStep >= ConvoyBankedStep && BlankStep >= BlankBankedStep && TourStep >= TourBankedStep && HomeStep >= HomeBankedStep && EscortStep >= EscortBankedStep && ShadeStep >= ShadeBankedStep)
         return TEXT("The last page is blank. The park keeps the day that was not in his book.");
     switch (Phase)
     {
@@ -2280,6 +2389,7 @@ FString AQuebecCampaign::GetStatusText() const
     if (IsTourOpen()) return TEXT("R recovers this tour");
     if (IsHomeOpen()) return TEXT("R recovers this home");
     if (IsEscortOpen()) return TEXT("R recovers this walk");
+    if (IsShadeOpen()) return TEXT("R recovers this dark");
     if (Phase == EQuebecCampaignPhase::AimWorklight) return FString::Printf(TEXT("Alignment %d%% / hold %d%%"),FMath::RoundToInt(LightAlignment*100.f),FMath::RoundToInt(LightHoldProgress*100.f));
     if (Phase == EQuebecCampaignPhase::CrossCable) return FString::Printf(TEXT("Sprint %s / jump %s / R: recover"),bSprintSeen?TEXT("banked"):TEXT("needed"),bJumpSeen?TEXT("banked"):TEXT("needed"));
     if (Phase == EQuebecCampaignPhase::PullClamp || Phase == EQuebecCampaignPhase::ReleaseTable) return bClampOpen ? TEXT("GREEN BEAT / pull now / R: recover") : TEXT("Press squeezing / wait for green / R: recover");
@@ -2340,6 +2450,12 @@ FVector AQuebecCampaign::GetObjectiveLocation() const
     {
         if (EscortStep == QuebecEscort::StepWalk) return FVector(QuebecEscort::DoorX, QuebecEscort::DoorY, 100.);
         return FVector(QuebecEscort::MeetX, QuebecEscort::MeetY, 100.);
+    }
+    if (IsShadeOpen())
+    {
+        if (ShadeStep == QuebecShade::StepCross && bShadeBurned) return FVector(QuebecShade::PocketX, QuebecShade::PocketY, 100.);
+        if (ShadeStep == QuebecShade::StepCross) return FVector(QuebecShade::FarX, QuebecShade::FarY, 100.);
+        return FVector(QuebecShade::PocketX, QuebecShade::PocketY, 100.);
     }
     switch (Phase)
     {
@@ -2412,6 +2528,12 @@ bool AQuebecCampaign::GetNextObjectiveLocation(FVector& Out) const
     {
         if (EscortStep != QuebecEscort::StepMeet) return false;
         Out = At(QuebecEscort::DoorX, QuebecEscort::DoorY);
+        return true;
+    }
+    if (IsShadeOpen())
+    {
+        if (ShadeStep != QuebecShade::StepPocket) return false;
+        Out = At(QuebecShade::FarX, QuebecShade::FarY);
         return true;
     }
     if (Phase == EQuebecCampaignPhase::Complete) return false;
@@ -2617,8 +2739,15 @@ void AQuebecCampaign::UpdatePresentation()
                 Caption->SetText(FText::FromString(bEscortPlanted ? TEXT("WAITING") : TEXT("GREY COAT")));
             }
             if (Caption == EscortDoorCaption) Caption->SetVisibility(IsEscortOpen());
+            if (Caption == ShadePocketCaption || Caption == ShadeFarCaption || Caption == ShadeLampACaption || Caption == ShadeLampBCaption)
+                Caption->SetVisibility(IsShadeOpen());
         }
         if (EscortDoor) EscortDoor->SetVisibility(IsEscortOpen());
+        const bool bShadeWorld = IsShadeOpen();
+        if (ShadePocket) ShadePocket->SetVisibility(bShadeWorld);
+        if (ShadeFar) ShadeFar->SetVisibility(bShadeWorld);
+        if (ShadeLampA) ShadeLampA->SetVisibility(bShadeWorld);
+        if (ShadeLampB) ShadeLampB->SetVisibility(bShadeWorld);
         for (UTextRenderComponent* Caption : Captions) Caption->SetWorldRotation((Eye-Caption->GetComponentLocation()).Rotation());
     }
 }
@@ -2647,6 +2776,8 @@ void AQuebecCampaign::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
     DOREPLIFETIME(AQuebecCampaign,EscortFriendX);
     DOREPLIFETIME(AQuebecCampaign,EscortFriendY);
     DOREPLIFETIME(AQuebecCampaign,bEscortPlanted);
+    DOREPLIFETIME(AQuebecCampaign,ShadeStep);
+    DOREPLIFETIME(AQuebecCampaign,bShadeBurned);
     DOREPLIFETIME(AQuebecCampaign,LightOperator);
     DOREPLIFETIME(AQuebecCampaign,LightYaw);
     DOREPLIFETIME(AQuebecCampaign,LightPitch);

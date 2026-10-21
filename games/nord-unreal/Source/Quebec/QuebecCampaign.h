@@ -45,10 +45,12 @@ public:
     UPROPERTY(VisibleAnywhere) int32 HomeStep = 0;
     // Escort tail. Version 3 leaves this at 0. Version 4 writes it.
     UPROPERTY(VisibleAnywhere) int32 EscortStep = 0;
+    // Crossing tail. Version 4 leaves this at 0. Version 5 writes it. The lamp burn stays in the session.
+    UPROPERTY(VisibleAnywhere) int32 ShadeStep = 0;
     bool IsSupported() const;
 };
 
-/** Story encounters. All objective decisions run on authority. Missions 3 through 10 persist on the version-3 tail. Mission 11 persists on version 4. Completed missions stay 0–2. */
+/** Story encounters. All objective decisions run on authority. Missions 3 through 10 persist on the version-3 tail. Mission 11 persists on version 4. Mission 12 persists on version 5. Completed missions stay 0–2. */
 UCLASS()
 class QUEBEC_API AQuebecCampaign : public AActor
 {
@@ -96,6 +98,7 @@ public:
     static constexpr int32 TourBankedStep = 3;
     static constexpr int32 HomeBankedStep = 3;
     static constexpr int32 EscortBankedStep = 2;
+    static constexpr int32 ShadeBankedStep = 2;
     bool IsPondOpen() const { return Phase == EQuebecCampaignPhase::Complete && PondStep < PondBankedStep; }
     bool IsCourtOpen() const { return Phase == EQuebecCampaignPhase::Complete && PondStep >= PondBankedStep && CourtStep < CourtBankedStep; }
     bool IsShowOpen() const { return Phase == EQuebecCampaignPhase::Complete && PondStep >= PondBankedStep && CourtStep >= CourtBankedStep && ShowStep < ShowBankedStep; }
@@ -134,7 +137,14 @@ public:
             && BlankStep >= BlankBankedStep && TourStep >= TourBankedStep && HomeStep >= HomeBankedStep
             && EscortStep >= 0 && EscortStep < EscortBankedStep;
     }
-    bool IsStoryBeatOpen() const { return IsPondOpen() || IsCourtOpen() || IsShowOpen() || IsRescueOpen() || IsConvoyOpen() || IsBlankOpen() || IsTourOpen() || IsHomeOpen() || IsEscortOpen(); }
+    bool IsShadeOpen() const
+    {
+        return Phase == EQuebecCampaignPhase::Complete && PondStep >= PondBankedStep && CourtStep >= CourtBankedStep
+            && ShowStep >= ShowBankedStep && RescueMask >= RescueDone && ConvoyStep >= ConvoyBankedStep
+            && BlankStep >= BlankBankedStep && TourStep >= TourBankedStep && HomeStep >= HomeBankedStep
+            && EscortStep >= EscortBankedStep && ShadeStep >= 0 && ShadeStep < ShadeBankedStep;
+    }
+    bool IsStoryBeatOpen() const { return IsPondOpen() || IsCourtOpen() || IsShowOpen() || IsRescueOpen() || IsConvoyOpen() || IsBlankOpen() || IsTourOpen() || IsHomeOpen() || IsEscortOpen() || IsShadeOpen(); }
 
     UPROPERTY(VisibleAnywhere, ReplicatedUsing=UpdatePresentation) EQuebecCampaignPhase Phase = EQuebecCampaignPhase::AimWorklight;
     UPROPERTY(VisibleAnywhere, Replicated) int32 CompletedMissions = 0;
@@ -170,6 +180,10 @@ public:
     UPROPERTY(VisibleAnywhere, Replicated) float EscortFriendX = 29600.f;
     UPROPERTY(VisibleAnywhere, Replicated) float EscortFriendY = 16800.f;
     UPROPERTY(VisibleAnywhere, Replicated) bool bEscortPlanted = false;
+    // 0 dark pocket, 1 crossing, 2 banked. Written on the version-5 tail. Not a chain link.
+    // The lamp burn is not saved. A reload clears it and leaves the step where it was.
+    UPROPERTY(VisibleAnywhere, ReplicatedUsing=UpdatePresentation) int32 ShadeStep = 0;
+    UPROPERTY(VisibleAnywhere, Replicated) bool bShadeBurned = false;
     UPROPERTY(VisibleAnywhere, Replicated) TObjectPtr<APlayerState> LightOperator;
     UPROPERTY(VisibleAnywhere, Replicated) float LightYaw = 0.f;
     UPROPERTY(VisibleAnywhere, Replicated) float LightPitch = 0.f;
@@ -236,6 +250,14 @@ private:
     UPROPERTY() TObjectPtr<UTextRenderComponent> EscortCaption;
     UPROPERTY() TObjectPtr<UStaticMeshComponent> EscortDoor;
     UPROPERTY() TObjectPtr<UTextRenderComponent> EscortDoorCaption;
+    UPROPERTY() TObjectPtr<UStaticMeshComponent> ShadePocket;
+    UPROPERTY() TObjectPtr<UStaticMeshComponent> ShadeFar;
+    UPROPERTY() TObjectPtr<UStaticMeshComponent> ShadeLampA;
+    UPROPERTY() TObjectPtr<UStaticMeshComponent> ShadeLampB;
+    UPROPERTY() TObjectPtr<UTextRenderComponent> ShadePocketCaption;
+    UPROPERTY() TObjectPtr<UTextRenderComponent> ShadeFarCaption;
+    UPROPERTY() TObjectPtr<UTextRenderComponent> ShadeLampACaption;
+    UPROPERTY() TObjectPtr<UTextRenderComponent> ShadeLampBCaption;
     UPROPERTY() TArray<TObjectPtr<UStaticMeshComponent>> ConvoyParts;
     UPROPERTY() TArray<TObjectPtr<UTextRenderComponent>> ConvoyCaptions;
     UPROPERTY() TArray<TObjectPtr<UStaticMeshComponent>> BlankParts;
@@ -298,6 +320,8 @@ private:
     void TickEscort(float DeltaSeconds);
     void AdvanceEscort(int32 Next, AQuebecController* Who, const TCHAR* Message, bool bFinished);
     bool NearEscort(const AQuebecController* Controller, double X, double Y) const;
+    void TickShade();
+    void AdvanceShade(int32 Next, AQuebecController* Who, const TCHAR* Message, bool bFinished);
     void ChangePhase(EQuebecCampaignPhase Next, bool bFeedback = true);
     void StopAiming();
     void SaveBoundary();
