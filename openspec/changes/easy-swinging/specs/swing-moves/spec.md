@@ -1,7 +1,7 @@
 ## ADDED Requirements
 
 ### Requirement: A held swing attaches by itself
-In the chase view, holding swing SHALL attach the web without the player choosing a point. The anchor SHALL be 12 body-heights ahead along the horizontal velocity, or along the facing when that speed is under 1 m/s, and 14 body-heights above the feet. A building within 6 body-heights of that point SHALL take the anchor. With no building there, the anchor SHALL be that sky point, raised until it is off the screen. This SHALL work over open ground. A phone tap, first person, a headset, a test aim, and a hero on a wall SHALL keep their existing aim.
+In the chase view, holding swing SHALL attach the web without the player choosing a point. The anchor SHALL be 12 body-heights ahead along the horizontal velocity, or along the facing when that speed is under 1 m/s, and 14 body-heights above the feet. A building within 6 body-heights of that point SHALL take the anchor. With no building there, the anchor SHALL be that sky point, raised until it is off the screen. This SHALL work over open ground. A phone tap, first person, a headset, a test aim, and a hero on a wall SHALL keep their existing aim. With a goon in reach the swing button stays a punch, so a missed blow does not fire an easy web.
 
 #### Scenario: Open ground
 - **WHEN** the player holds swing over open ground with no building within 6 body-heights of the anchor point

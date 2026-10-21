@@ -1617,7 +1617,9 @@ function aimAndFire(dt, inp) {
     // Chase view, no test aim, not on a wall: a held swing takes the auto anchor. A phone tap still
     // aims (the building under the finger). A finger that holds the right half does not. First person
     // keeps the crosshair. A headset and G.test.aimAt keep the old ray.
-    const useEasy = flatOn && !isXR() && G.state === "play" && !ov.aim[i] && !P.wall
+    // A goon in reach makes this button a punch. An easy web here would carry the hero off the fight.
+    const melee = actionOn() && combat.inReach(heroFight());
+    const useEasy = flatOn && !isXR() && G.state === "play" && !ov.aim[i] && !P.wall && !melee
       && !(pickerOn && picker.result()?.special)
       && !(flatcam && flatcam.firstPerson)
       && !(inp.easySwing && !(inp.phoneHeld && inp.phoneHeld[i]));
@@ -2232,8 +2234,17 @@ function strokeWeb(ctx, hand, anchor, sag, alpha, w, h) {
   ctx.globalAlpha = 1;
 }
 function drawWeb(dt) {
-  if (!flatOn || isXR() || !P) { if (webCx) { webCx.setTransform(1, 0, 0, 1, 0, 0); webCx.clearRect(0, 0, webCv.width, webCv.height); } return; }
+  // An empty full-screen canvas, cleared every frame, sits in the compositor and can stall the next
+  // frame for seconds (the mouse-look resume timer). Leave it hidden until a web is actually drawn.
+  if (!flatOn || isXR() || !P) { if (webCv) webCv.hidden = true; return; }
+  let pending = false;
+  for (let i = 0; i < 2; i++) {
+    if (P.ropes[i].easy && P.ropes[i].state === "attached") pending = true;
+    else if (webWas[i] || webFade[i] > 0) pending = true;
+  }
+  if (!pending) { if (webCv) webCv.hidden = true; peakSp = 0; return; }
   const ctx = webCanvas(), w = webW, h = webH;
+  webCv.hidden = false;
   fillCam();
   let any = false;
   for (let i = 0; i < 2; i++) {
