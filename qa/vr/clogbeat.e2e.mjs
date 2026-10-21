@@ -1,4 +1,5 @@
-// The fourth flush is a balloon, the sixth is a pizza, the eighth is a washer, the tenth is a brawl, and the clog card comes back after.
+// The second flush is a rescue, the fourth a balloon, the fifth a chase, the sixth a pizza, the seventh a mugging,
+// the eighth a washer, the tenth a brawl, and the clog card comes back after each.
 import { mkdir } from "node:fs/promises";
 import { newPage, open, close, enterXR, checker, watchdog } from "./lib.mjs";
 
@@ -18,20 +19,67 @@ try {
   await enterXR(page, "desktop");
   await page.evaluate(() => { G.renderer.setAnimationLoop(null); G.test.hold(true); G.test.step(1 / 60, 20); G.game.skipTutorial(); G.test.step(1 / 60, 10); });
 
-  const early = await page.evaluate(() => {
+  const one = await page.evaluate(() => {
     const ids = G.game.targets().filter((t) => t.kind === "clog" && !t.done).map((t) => t.id);
-    for (let i = 0; i < 3; i++) G.test.clearClog(ids[i]);
+    G.test.clearClog(ids[0]);
     let n = 0;
     for (; n < 80; n++) {
       G.test.step(1 / 60, 1);
       const ob = G.game.progress.objective;
-      if (ob && ob.n === 3 && /FLUSH THE CLOGS/.test(ob.title || "")) break;
+      if (ob && ob.n === 1 && /FLUSH THE CLOGS/.test(ob.title || "") && !G.test.action().jobs.active) break;
     }
     const ob = G.game.progress.objective;
-    const job = G.test.action().jobs.active;
-    return { n, title: ob && ob.title, count: ob && ob.n, of: ob && ob.of, job: job && job.type, left: ids.length };
+    return { n, title: ob && ob.title, count: ob && ob.n, of: ob && ob.of, job: G.test.action().jobs.active && G.test.action().jobs.active.type, left: ids.length };
   });
-  check(early.left >= 8 && !early.job && early.title === "FLUSH THE CLOGS" && early.count === 3 && early.of === 12, "three flushes are still the clog card", early);
+  check(one.left >= 8 && !one.job && one.title === "FLUSH THE CLOGS" && one.count === 1 && one.of === 12, "one flush is still the clog card", one);
+
+  const edge = await page.evaluate(() => {
+    const id = G.game.targets().find((t) => t.kind === "clog" && !t.done);
+    G.test.clearClog(id.id);
+    let n = 0;
+    for (; n < 180; n++) {
+      G.test.step(1 / 60, 1);
+      const job = G.test.action().jobs.active;
+      const ob = G.game.progress.objective;
+      if (job && job.type === "catch" && ob && /OVER THE EDGE/.test(ob.title || "") && /CATCH/.test(ob.title || "")) break;
+    }
+    G.test.step(1 / 60, 4);
+    const ob = G.game.progress.objective;
+    const job = G.test.action().jobs.active;
+    G.test.render(0);
+    return { n, title: ob && ob.title, detail: ob && ob.detail, job: job && job.type, king: G.game.progress.king };
+  });
+  await page.screenshot({ path: out + "/edge.png" });
+  check(edge.job === "catch" && /OVER THE EDGE/.test(edge.title || "") && /CATCH/.test(edge.title || "") && !/FLUSH THE CLOGS/.test((edge.title || "") + " " + (edge.detail || "")) && edge.king !== "awake", "the second flush is a falling rescue, and the King still sleeps", edge);
+
+  const afterEdge = await page.evaluate(() => {
+    const killed = G.test.finishJob();
+    G.P.onGround = true;
+    let n = 0;
+    for (; n < 240; n++) {
+      G.test.step(1 / 60, 1);
+      const ob = G.game.progress.objective;
+      const job = G.test.action().jobs.active;
+      if (!job && ob && /FLUSH THE CLOGS/.test(ob.title || "") && ob.n === 2) break;
+    }
+    const ob = G.game.progress.objective;
+    return { n, killed, title: ob && ob.title, count: ob && ob.n, job: G.test.action().jobs.active && G.test.action().jobs.active.type };
+  });
+  check(afterEdge.killed && !afterEdge.job && afterEdge.title === "FLUSH THE CLOGS" && afterEdge.count === 2, "after the rescue the clog card returns", afterEdge);
+
+  const early = await page.evaluate(() => {
+    const id = G.game.targets().find((t) => t.kind === "clog" && !t.done);
+    G.test.clearClog(id.id);
+    let n = 0;
+    for (; n < 80; n++) {
+      G.test.step(1 / 60, 1);
+      const ob = G.game.progress.objective;
+      if (ob && ob.n === 3 && /FLUSH THE CLOGS/.test(ob.title || "") && !G.test.action().jobs.active) break;
+    }
+    const ob = G.game.progress.objective;
+    return { n, title: ob && ob.title, count: ob && ob.n, of: ob && ob.of, job: G.test.action().jobs.active && G.test.action().jobs.active.type };
+  });
+  check(!early.job && early.title === "FLUSH THE CLOGS" && early.count === 3 && early.of === 12, "three flushes are still the clog card", early);
 
   const air = await page.evaluate(() => {
     const id = G.game.targets().find((t) => t.kind === "clog" && !t.done);
@@ -66,19 +114,37 @@ try {
   });
   check(back.killed && !back.job && back.title === "FLUSH THE CLOGS" && back.count === 4, "after the balloon the clog card returns", back);
 
-  const fifth = await page.evaluate(() => {
-    const ids = G.game.targets().filter((t) => t.kind === "clog" && !t.done).map((t) => t.id);
-    G.test.clearClog(ids[0]);
+  const purse = await page.evaluate(() => {
+    const id = G.game.targets().find((t) => t.kind === "clog" && !t.done);
+    G.test.clearClog(id.id);
     let n = 0;
-    for (; n < 80; n++) {
+    for (; n < 180; n++) {
+      G.test.step(1 / 60, 1);
+      const job = G.test.action().jobs.active;
+      const ob = G.game.progress.objective;
+      if (job && job.type === "thief" && ob && /PURSE RUN/.test(ob.title || "") && /THIEF/.test(ob.title || "")) break;
+    }
+    G.test.step(1 / 60, 4);
+    const ob = G.game.progress.objective;
+    const job = G.test.action().jobs.active;
+    G.test.render(0);
+    return { n, title: ob && ob.title, detail: ob && ob.detail, job: job && job.type, king: G.game.progress.king };
+  });
+  check(purse.job === "thief" && /PURSE RUN/.test(purse.title || "") && /THIEF/.test(purse.title || "") && !/FLUSH THE CLOGS/.test((purse.title || "") + " " + (purse.detail || "")) && purse.king !== "awake", "the fifth flush is a chase, and the King still sleeps", purse);
+
+  const afterPurse = await page.evaluate(() => {
+    const killed = G.test.finishJob();
+    let n = 0;
+    for (; n < 240; n++) {
       G.test.step(1 / 60, 1);
       const ob = G.game.progress.objective;
-      if (ob && ob.n === 5 && /FLUSH THE CLOGS/.test(ob.title || "") && !G.test.action().jobs.active) break;
+      const job = G.test.action().jobs.active;
+      if (!job && ob && /FLUSH THE CLOGS/.test(ob.title || "") && ob.n === 5) break;
     }
     const ob = G.game.progress.objective;
-    return { n, title: ob && ob.title, count: ob && ob.n, job: G.test.action().jobs.active && G.test.action().jobs.active.type };
+    return { n, killed, title: ob && ob.title, count: ob && ob.n, job: G.test.action().jobs.active && G.test.action().jobs.active.type };
   });
-  check(fifth.title === "FLUSH THE CLOGS" && fifth.count === 5 && !fifth.job, "five flushes are still the clog card", fifth);
+  check(afterPurse.killed && !afterPurse.job && afterPurse.title === "FLUSH THE CLOGS" && afterPurse.count === 5, "after the chase the clog card returns", afterPurse);
 
   const pie = await page.evaluate(() => {
     const id = G.game.targets().find((t) => t.kind === "clog" && !t.done);
@@ -113,18 +179,42 @@ try {
   });
   check(afterPie.killed && !afterPie.job && afterPie.title === "FLUSH THE CLOGS" && afterPie.count === 6, "after the pizza the clog card returns", afterPie);
 
-  const down = await page.evaluate(() => {
-    let ids = G.game.targets().filter((t) => t.kind === "clog" && !t.done).map((t) => t.id);
-    for (let i = 0; i < 1; i++) G.test.clearClog(ids[i]);
-    let calm = 0;
-    for (; calm < 80; calm++) {
+  const alley = await page.evaluate(() => {
+    const id = G.game.targets().find((t) => t.kind === "clog" && !t.done);
+    G.test.clearClog(id.id);
+    let n = 0;
+    for (; n < 180; n++) {
+      G.test.step(1 / 60, 1);
+      const job = G.test.action().jobs.active;
+      const ob = G.game.progress.objective;
+      if (job && job.type === "mugging" && ob && /THE ALLEY/.test(ob.title || "") && /MUGGING/.test(ob.title || "")) break;
+    }
+    G.test.step(1 / 60, 4);
+    const ob = G.game.progress.objective;
+    const job = G.test.action().jobs.active;
+    G.test.render(0);
+    return { n, title: ob && ob.title, detail: ob && ob.detail, job: job && job.type, king: G.game.progress.king };
+  });
+  await page.screenshot({ path: out + "/alley.png" });
+  check(alley.job === "mugging" && /THE ALLEY/.test(alley.title || "") && /MUGGING/.test(alley.title || "") && /goons left/.test(alley.detail || "") && !/FLUSH THE CLOGS/.test((alley.title || "") + " " + (alley.detail || "")) && alley.king !== "awake", "the seventh flush is a mugging, and the King still sleeps", alley);
+
+  const afterAlley = await page.evaluate(() => {
+    const killed = G.test.finishJob();
+    let n = 0;
+    for (; n < 240; n++) {
       G.test.step(1 / 60, 1);
       const ob = G.game.progress.objective;
-      if (ob && ob.n === 7 && /FLUSH THE CLOGS/.test(ob.title || "") && !G.test.action().jobs.active) break;
+      const job = G.test.action().jobs.active;
+      if (!job && ob && /FLUSH THE CLOGS/.test(ob.title || "") && ob.n === 7) break;
     }
-    const held = G.game.progress.objective;
-    ids = G.game.targets().filter((t) => t.kind === "clog" && !t.done).map((t) => t.id);
-    G.test.clearClog(ids[0]);
+    const ob = G.game.progress.objective;
+    return { n, killed, title: ob && ob.title, count: ob && ob.n, job: G.test.action().jobs.active && G.test.action().jobs.active.type };
+  });
+  check(afterAlley.killed && !afterAlley.job && afterAlley.title === "FLUSH THE CLOGS" && afterAlley.count === 7, "after the alley the clog card returns", afterAlley);
+
+  const down = await page.evaluate(() => {
+    const id = G.game.targets().find((t) => t.kind === "clog" && !t.done);
+    G.test.clearClog(id.id);
     let n = 0;
     for (; n < 180; n++) {
       G.test.step(1 / 60, 1);
@@ -136,14 +226,9 @@ try {
     const ob = G.game.progress.objective;
     const job = G.test.action().jobs.active;
     G.test.render(0);
-    return {
-      calm, held: held && held.title, heldN: held && held.n, heldJob: false,
-      n, title: ob && ob.title, detail: ob && ob.detail, job: job && job.type,
-      timer: job && job.timer,
-    };
+    return { n, title: ob && ob.title, detail: ob && ob.detail, job: job && job.type, timer: job && job.timer };
   });
   await page.screenshot({ path: out + "/washer.png" });
-  check(down.held === "FLUSH THE CLOGS" && down.heldN === 7, "seven flushes are still the clog card", down);
   check(down.job === "washer" && /GET HIM DOWN/.test(down.title || "") && /WASHER/.test(down.title || "") && !/FLUSH THE CLOGS|BALLOON/.test((down.title || "") + " " + (down.detail || "")), "the eighth flush is a carry down, not the balloon", down);
   check(down.timer <= 36 && down.timer > 34 && /3[4-6] s/.test(down.title || "") && !/60 s/.test(down.title || ""), "the eighth flush counts from 36 s, not a minute", down);
 
