@@ -2373,6 +2373,7 @@ function drawWeb(dt) {
   if (threeD && webMesh) {
     webMesh.count = webSeg;
     webMesh.visible = webSeg > 0;
+    webMesh.userData.fade = webFade[0];
     if (webSeg) { webMesh.instanceMatrix.needsUpdate = true; webFadeAttr.needsUpdate = true; }
   }
   const sp = Math.hypot(P.vel.x, P.vel.y, P.vel.z);

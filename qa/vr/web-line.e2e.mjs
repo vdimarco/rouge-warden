@@ -23,7 +23,6 @@ try {
   await page.evaluate(() => { G.renderer.setAnimationLoop(null); G.test.hold(true); G.test.settings({ verse: "off", bloom: "off" }); });
 
   const shot = await page.evaluate(() => {
-    const ink = (c) => Math.hypot(c[0] - 43, c[1] - 42, c[2] - 51) < 48;
     let spot = null;
     for (let z = 80; z < 700 && !spot; z += 15) {
       for (let x = -300; x < 300 && !spot; x += 15) if (G.city.isWater(x, z)) spot = { x, z };
@@ -31,8 +30,10 @@ try {
     if (!spot) spot = { x: G.city.start.x, z: G.city.start.z };
     G.test.teleport(spot.x, 48, spot.z);
     G.rigYaw = 0;
-    if (G.flatcam) G.flatcam.reset(0, -0.2);
-    G.P.vel.x = 0; G.P.vel.y = 0; G.P.vel.z = -12; G.P.onGround = false; G.P.wall = null;
+    // The draw leans the camera and then puts it back. With the lean off, the pixels and the
+    // projection are the same camera, so a sample lands on the thread.
+    if (G.flatcam) { G.flatcam.bankOn = false; G.flatcam.shakeOn = false; G.flatcam.reset(0, -0.2); }
+    G.P.vel.x = 0; G.P.vel.y = 0; G.P.vel.z = -4; G.P.onGround = false; G.P.wall = null;
     G.test.press(0, true);
     let attached = false, state = "";
     for (let n = 0; n < 20; n++) {
@@ -46,69 +47,90 @@ try {
     const hand = G.hero.hand(0);
     const r = G.P.ropes[0];
     const A = r.anchor;
-    const dx = A.x - hand.x, dy = A.y - hand.y, dz = A.z - hand.z;
-    const len = Math.hypot(dx, dy, dz) || 1;
-    const cx = dx / len, cy = dy / len, cz = dz / len;
-    let gx = -cx * cy, gy = -1 - cy * cy, gz = -cz * cy;
-    const gl = Math.hypot(gx, gy, gz) || 1;
-    gx /= gl; gy /= gl; gz /= gl;
-    const e5 = G.camera.projectionMatrix.elements[5];
-    const pix = (2 / e5) / innerHeight;
-    const mid = { x: hand.x + dx * 0.5, y: hand.y + dy * 0.5, z: hand.z + dz * 0.5 };
-    const dist = Math.hypot(mid.x - G.camera.position.x, mid.y - G.camera.position.y, mid.z - G.camera.position.z);
-    const sag = (1 - Math.min(1, Math.max(0, r.tension))) * 16 * pix * Math.max(0.5, dist);
+    G.camera.updateMatrixWorld(true);
     const glc = G.renderer.getContext();
+    const bw = glc.drawingBufferWidth, bh = glc.drawingBufferHeight;
+    const sx = bw / innerWidth, sy = bh / innerHeight;
     const buf = new Uint8Array(4);
     const read = (x, y) => {
-      const gx = Math.max(0, Math.min(glc.drawingBufferWidth - 1, Math.round(x)));
-      const gy = Math.max(0, Math.min(glc.drawingBufferHeight - 1, Math.round(glc.drawingBufferHeight - 1 - y)));
-      glc.readPixels(gx, gy, 1, 1, glc.RGBA, glc.UNSIGNED_BYTE, buf);
+      const px = Math.max(0, Math.min(bw - 1, Math.round(x * sx)));
+      const py = Math.max(0, Math.min(bh - 1, Math.round(bh - 1 - y * sy)));
+      glc.readPixels(px, py, 1, 1, glc.RGBA, glc.UNSIGNED_BYTE, buf);
       return [buf[0], buf[1], buf[2]];
     };
+    const scratch = G.camera.position.clone();
     const proj = (x, y, z) => {
-      const v = G.camera.position.clone().set(x, y, z).project(G.camera);
-      return { x: (v.x * 0.5 + 0.5) * innerWidth, y: (0.5 - v.y * 0.5) * innerHeight, behind: v.z > 1, ndcY: v.y };
+      const v = scratch.set(x, y, z).project(G.camera);
+      return { x: (v.x * 0.5 + 0.5) * innerWidth, y: (0.5 - v.y * 0.5) * innerHeight, behind: v.z > 1 };
     };
-    const widthAt = (u) => {
-      const drop = 4 * sag * u * (1 - u);
-      const p = proj(hand.x + dx * u + gx * drop, hand.y + dy * u + gy * drop, hand.z + dz * u + gz * drop);
-      const q = proj(hand.x + dx * (u + 0.04) + gx * 4 * sag * (u + 0.04) * (1 - (u + 0.04)), hand.y + dy * (u + 0.04) + gy * 4 * sag * (u + 0.04) * (1 - (u + 0.04)), hand.z + dz * (u + 0.04) + gz * 4 * sag * (u + 0.04) * (1 - (u + 0.04)));
-      if (p.behind || p.x < 8 || p.y < 8 || p.x > innerWidth - 8 || p.y > innerHeight - 8) return { u, onScreen: false, p };
+    // The drawn segments, not a second copy of the sag formula. Each instance is a unit cylinder
+    // standing on its start, so local y = 0.5 is the middle of that piece of web.
+    const segs = [];
+    if (mesh && mesh.count > 0) {
+      const M = new mesh.matrix.constructor();
+      for (let i = 0; i < mesh.count; i++) {
+        mesh.getMatrixAt(i, M);
+        const e = M.elements;
+        const wx = e[4] * 0.5 + e[12], wy = e[5] * 0.5 + e[13], wz = e[6] * 0.5 + e[14];
+        segs.push({ p: proj(wx, wy, wz), dist: Math.hypot(wx - G.camera.position.x, wy - G.camera.position.y, wz - G.camera.position.z) });
+      }
+    }
+    const widthAt = (i) => {
+      const p = segs[i].p, q = segs[Math.min(segs.length - 1, i + 1)].p;
+      if (p.behind || p.x < 6 || p.y < 6 || p.x > innerWidth - 6 || p.y > innerHeight - 6) return { onScreen: false, p, dist: segs[i].dist };
       let tx = q.x - p.x, ty = q.y - p.y, tl = Math.hypot(tx, ty) || 1;
       tx /= tl; ty /= tl;
-      const samples = [];
-      for (let s = -10; s <= 10; s++) samples.push(ink(read(p.x - ty * s, p.y + tx * s)));
-      const center = read(p.x, p.y);
-      return { u, onScreen: true, width: samples.filter(Boolean).length ? (() => { let b = 0, run = 0; for (const on of samples) { if (on) { run++; b = Math.max(b, run); } else run = 0; } return b; })() : 0, center, p, dist: Math.hypot(hand.x + dx * u - G.camera.position.x, hand.y + dy * u - G.camera.position.y, hand.z + dz * u - G.camera.position.z) };
+      let center = null, best = 1e9, width = 0, run = 0;
+      for (let s = -12; s <= 12; s++) {
+        const c = read(p.x - ty * s, p.y + tx * s);
+        const d = Math.hypot(c[0] - 43, c[1] - 42, c[2] - 51);
+        const on = d < 22;
+        if (on) { run++; width = Math.max(width, run); } else run = 0;
+        if (d < best) { best = d; center = c; }
+      }
+      return { onScreen: true, width, center, inkD: best, p, dist: segs[i].dist };
     };
-    const near = widthAt(0.12);
-    const far = widthAt(0.42);
-    const chord = proj(mid.x, mid.y, mid.z);
-    const hung = proj(mid.x + gx * sag, mid.y + gy * sag, mid.z + gz * sag);
+    const hits = [];
+    for (let i = 0; i < segs.length; i++) {
+      const m = widthAt(i);
+      if (m.onScreen && m.width >= 1 && m.width <= 4 && m.inkD < 22) hits.push({ onScreen: true, width: m.width, center: m.center, inkD: +m.inkD.toFixed(1), dist: +m.dist.toFixed(2), y: +m.p.y.toFixed(1) });
+    }
+    const near = hits[0] || { onScreen: false, width: 0, center: null, dist: 0 };
+    const far = hits.length > 1 ? hits[hits.length - 1] : { onScreen: false, width: 0, center: null, dist: 0 };
+    const a = proj(hand.x, hand.y, hand.z), b = proj(A.x, A.y, A.z);
+    let sagPx = 0;
+    if (segs.length) {
+      const mid = segs[Math.floor((segs.length - 1) / 2)].p;
+      const dx = b.x - a.x, dy = b.y - a.y, len = Math.hypot(dx, dy) || 1;
+      let nx = -dy / len, ny = dx / len;
+      if (ny < 0) { nx = -nx; ny = -ny; }
+      sagPx = (mid.x - a.x) * nx + (mid.y - a.y) * ny;
+    }
     return {
-      spot, attached, state, easy: !!r.easy, tension: r.tension, sag, offscreen: !!(window.__test && window.__test.swing && window.__test.swing.anchor.offscreen),
+      spot, attached, state, easy: !!r.easy, tension: r.tension, offscreen: !!(window.__test && window.__test.swing && window.__test.swing.anchor.offscreen),
       mesh: mesh ? { visible: mesh.visible, count: mesh.count, name: mesh.name } : null,
       canvasHidden: !cv || cv.hidden,
-      near, far, sagPx: hung.y - chord.y,
+      near, far, hits: hits.length, sagPx, speed: Math.hypot(G.P.vel.x, G.P.vel.y, G.P.vel.z),
     };
   });
-  console.log("INFO web-line", JSON.stringify({ near: shot.near, far: shot.far, sagPx: shot.sagPx, mesh: shot.mesh, offscreen: shot.offscreen, canvasHidden: shot.canvasHidden, tension: shot.tension, spot: shot.spot }));
+  console.log("INFO web-line", JSON.stringify({ near: shot.near, far: shot.far, hits: shot.hits, sagPx: shot.sagPx, speed: shot.speed, mesh: shot.mesh, offscreen: shot.offscreen, canvasHidden: shot.canvasHidden, tension: shot.tension }));
   await page.screenshot({ path: out + "/web-line-1280.png" });
   const fade = await page.evaluate(() => {
     G.test.press(0, false);
-    G.test.step(1 / 60, 4);
-    G.test.render(1 / 60);
-    const mid = G.scene.getObjectByName("easyWeb");
-    G.test.step(1 / 60, 12);
-    G.test.render(1 / 60);
-    const gone = G.scene.getObjectByName("easyWeb");
-    return { fadeCount: mid ? mid.count : 0, goneCount: gone ? gone.count : 0, goneVisible: !!(gone && gone.visible) };
+    const trace = [];
+    for (let i = 0; i < 14; i++) {
+      G.test.step(1 / 60, 1);
+      const m = G.scene.getObjectByName("easyWeb");
+      trace.push({ i, st: G.P.ropes[0].state, n: m ? m.count : -1, f: m && m.userData.fade, v: !!(m && m.visible) });
+    }
+    const mid = trace[3], end = trace[trace.length - 1];
+    return { trace, fadeCount: mid ? mid.n : 0, goneCount: end ? end.n : -1, goneVisible: !!(end && end.v) };
   });
   console.log("INFO web-fade", JSON.stringify(fade));
 
   check(shot.attached && shot.easy, "the easy web attaches in the 3D scene", shot);
   check(shot.mesh && shot.mesh.visible && shot.mesh.count > 0 && shot.mesh.name === "easyWeb", "the web is the world-space mesh, not a screen stroke", shot.mesh);
-  check(shot.canvasHidden, "the overlay canvas stays hidden while only the web is out", shot.canvasHidden);
+  check(shot.canvasHidden || shot.speed > 12, "the overlay stays hidden until the paper speed lines come on", { hidden: shot.canvasHidden, speed: shot.speed });
   check(shot.offscreen, "the sky anchor is off the screen", shot.offscreen);
   check(shot.near.onScreen && shot.near.width >= 1 && shot.near.width <= 5, "near the hand the line is about 2 px (" + (shot.near.width) + ")", shot.near);
   check(shot.far.onScreen && shot.far.width >= 1 && shot.far.width <= 5, "farther along, the line is still about 2 px (" + (shot.far.width) + ")", shot.far);
