@@ -1333,3 +1333,38 @@ Unreal is not available in this environment, so in-engine frames are the last co
 - Playability raw: 39 / 10 dimensions, index 39
 - Total: 112 / 200
 - Delta vs last round: +1
+
+### Round 39 — 2026-10-21 — rubric v1
+
+- What changed: Each road at least 9 m wide and 15 m long gets eight bars across its middle, on the same white plane pool as the center dashes. A bar is 40 cm along the road, stops 80 cm short of each curb, and the next bar is 90 cm further on. The dash loop, the 9 m gate and the return count stay. Narrow streets stay bare.
+- Why it helped: Detail density was at 8. The avenue had a broken line down the middle and no crossing.
+- Screenshots: before `docs/gauntlet/gta-graphics/round-39/before-frame.png`, after `docs/gauntlet/gta-graphics/round-39/after-frame.png`. Crops are `before-bars.png` and `after-bars.png`. Both use the walking camera (arm 420, socket Y 70, socket Z 110, pitch −12, horizontal FOV 90) a few metres before the ladder on a 14 m road. Not an Unreal capture. The bar crop mean absolute delta is 0.183 and the max is 0.929. The full-frame mean is 0.079. The center dashes are in both frames. `Scripts/test_crosswalk.py` and `Scripts/test_lane_paint.py` passed. `QuebecTraces.cpp` was not compiled. `GET /gta/` returned 200. OpenSpec CLI is not installed, so the change files were not validated with `openspec`. The bars were not confirmed in Unreal.
+- Next target: lighting, tied at 8 with atmosphere, character models and UI polish. Composition and particles stay at 6, because the walking socket and the rain displacement stay as they are. Animation smoothness stays at 3 and is skipped until a pose can be drawn.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 8 | The sun and the night grade are unchanged. |
+| Color palette | 9 | The bars are the existing white under the day grade. No new hue. |
+| Detail density | 9 | The ladder crosses the avenue. The bars are flat planes, not worn paint. |
+| Texture and material quality | 9 | The asphalt mix is unchanged. The bar is one white material. |
+| Composition and camera | 6 | The walking socket is unchanged. |
+| Atmosphere | 8 | The moon grade and the street sheen are unchanged. |
+| Character models | 8 | No figure changed. |
+| Animation smoothness | 3 | Skipped. The blend space still cannot be posed here. |
+| Particles and VFX | 6 | Rain rings are unchanged. |
+| UI polish | 8 | The radar is unchanged. |
+| Responsiveness and input latency | 4 | Not measured this round. |
+| Controls feel | 4 | Not played. |
+| Mission clarity | 5 | The objective words are unchanged. |
+| Pacing | 4 | Unchanged mission slice. |
+| Fun factor | 3 | Not played. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 4 | No new juice. |
+| Sound design | 3 | Not listened to. |
+| Variety | 3 | The ladder is on the wide park roads. A narrow street stays bare. |
+| Performance stability | 5 | `Scripts/test_crosswalk.py` passed. Twenty-eight roads would add 224 bars when the ground trace hits. Frame time was not remeasured. |
+
+- Aesthetics raw: 74 / 10 dimensions, index 74
+- Playability raw: 39 / 10 dimensions, index 39
+- Total: 113 / 200
+- Delta vs last round: +1

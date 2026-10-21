@@ -89,7 +89,7 @@ private:
     UFUNCTION() void OnRep_Knock();
 };
 
-/** Broken white center line on the wide La Fontaine roads. Local to each peer, no collision. */
+/** Broken white center line and a ladder crossing on the wide La Fontaine roads. Local to each peer, no collision. */
 UCLASS(Transient, NotPlaceable)
 class QUEBEC_API AQuebecLanePaint : public AActor
 {

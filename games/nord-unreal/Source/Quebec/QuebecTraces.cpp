@@ -464,6 +464,7 @@ int32 AQuebecLanePaint::Spawn(UWorld* World)
     if (!Paint || !Paint->Dashes) return 0;
     if (UMaterialInterface* White = TraceMaterial(TEXT("M_White"))) Paint->Dashes->SetMaterial(0, White);
     int32 Count = 0;
+    int32 Bars = 0;
     for (int32 Road = 0; Road < UE_ARRAY_COUNT(LaFontaine::RoadSegments); ++Road)
     {
         const float Width = LaFontaine::RoadSegmentWidths[Road];
@@ -484,8 +485,22 @@ int32 AQuebecLanePaint::Spawn(UWorld* World)
             Paint->Dashes->AddInstance(FTransform(FRotator(0.f, Yaw, 0.f), Point, FVector(1.8f, .22f, 1.f)));
             ++Count;
         }
+        // Ladder crossing at the middle of the avenue. No rendering paper fits a painted bar.
+        // Eight bars run across the road, 40 cm along it, with a 50 cm gap, stopping 80 cm short of each curb.
+        const float BarSpan = (Width - 160.f) / 100.f;
+        const float Mid = Length * .5f;
+        for (int32 Bar = 0; Bar < 8; ++Bar)
+        {
+            const float AlongBar = Mid + (static_cast<float>(Bar) - 3.5f) * 90.f;
+            FVector BarPoint = Start + Direction * AlongBar;
+            float BarGround = 0.f;
+            if (!QuebecStreet::GroundAt(World, BarPoint, BarGround)) continue;
+            BarPoint.Z = BarGround + 2.f;
+            Paint->Dashes->AddInstance(FTransform(FRotator(0.f, Yaw, 0.f), BarPoint, FVector(.40f, BarSpan, 1.f)));
+            ++Bars;
+        }
     }
-    UE_LOG(LogTemp, Display, TEXT("NORD_TRACES center_dashes=%d"), Count);
+    UE_LOG(LogTemp, Display, TEXT("NORD_TRACES center_dashes=%d crosswalk_bars=%d"), Count, Bars);
     return Count;
 }
 
