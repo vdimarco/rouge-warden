@@ -75,13 +75,14 @@ public:
     int32 GetCompletedMissionCount() const { return CompletedMissions; }
     bool IsCampaignComplete() const { return Phase == EQuebecCampaignPhase::Complete; }
     // Banked indexes from the rules headers. Kept here so the save header stays free of those headers.
-    // A boundary-2 save offers mission 3 again each session. PondStep, CourtStep, ShowStep, RescueMask, ConvoyStep and BlankStep are not written to the slot.
+    // A boundary-2 save offers mission 3 again each session. PondStep, CourtStep, ShowStep, RescueMask, ConvoyStep, BlankStep and TourStep are not written to the slot.
     static constexpr int32 PondBankedStep = 6;
     static constexpr int32 CourtBankedStep = 4;
     static constexpr int32 ShowBankedStep = 5;
     static constexpr int32 RescueDone = 7;
     static constexpr int32 ConvoyBankedStep = 4;
     static constexpr int32 BlankBankedStep = 4;
+    static constexpr int32 TourBankedStep = 3;
     bool IsPondOpen() const { return Phase == EQuebecCampaignPhase::Complete && PondStep < PondBankedStep; }
     bool IsCourtOpen() const { return Phase == EQuebecCampaignPhase::Complete && PondStep >= PondBankedStep && CourtStep < CourtBankedStep; }
     bool IsShowOpen() const { return Phase == EQuebecCampaignPhase::Complete && PondStep >= PondBankedStep && CourtStep >= CourtBankedStep && ShowStep < ShowBankedStep; }
@@ -101,7 +102,13 @@ public:
             && ShowStep >= ShowBankedStep && RescueMask >= RescueDone && ConvoyStep >= ConvoyBankedStep
             && BlankStep >= 0 && BlankStep < BlankBankedStep;
     }
-    bool IsStoryBeatOpen() const { return IsPondOpen() || IsCourtOpen() || IsShowOpen() || IsRescueOpen() || IsConvoyOpen() || IsBlankOpen(); }
+    bool IsTourOpen() const
+    {
+        return Phase == EQuebecCampaignPhase::Complete && PondStep >= PondBankedStep && CourtStep >= CourtBankedStep
+            && ShowStep >= ShowBankedStep && RescueMask >= RescueDone && ConvoyStep >= ConvoyBankedStep
+            && BlankStep >= BlankBankedStep && TourStep >= 0 && TourStep < TourBankedStep;
+    }
+    bool IsStoryBeatOpen() const { return IsPondOpen() || IsCourtOpen() || IsShowOpen() || IsRescueOpen() || IsConvoyOpen() || IsBlankOpen() || IsTourOpen(); }
 
     UPROPERTY(VisibleAnywhere, ReplicatedUsing=UpdatePresentation) EQuebecCampaignPhase Phase = EQuebecCampaignPhase::AimWorklight;
     UPROPERTY(VisibleAnywhere, Replicated) int32 CompletedMissions = 0;
@@ -124,6 +131,8 @@ public:
     UPROPERTY(VisibleAnywhere, ReplicatedUsing=UpdatePresentation) int32 ConvoyStep = 0;
     // Session-only. 0–2 are the projection gates, 3 is the blank-page pull, 4 is banked. Not written to the v1 slot.
     UPROPERTY(VisibleAnywhere, ReplicatedUsing=UpdatePresentation) int32 BlankStep = 0;
+    // Session-only. 0 bike, 1 pedalo, 2 swim, 3 banked. Not written to the v1 slot. Not a chain link.
+    UPROPERTY(VisibleAnywhere, ReplicatedUsing=UpdatePresentation) int32 TourStep = 0;
     UPROPERTY(VisibleAnywhere, Replicated) TObjectPtr<APlayerState> LightOperator;
     UPROPERTY(VisibleAnywhere, Replicated) float LightYaw = 0.f;
     UPROPERTY(VisibleAnywhere, Replicated) float LightPitch = 0.f;
@@ -240,6 +249,9 @@ private:
     void TickBlank();
     void AdvanceBlank(int32 Next, AQuebecController* Who, const TCHAR* Message, bool bFinished);
     bool NearBlank(const AQuebecController* Controller, double X, double Y) const;
+    void TickTour();
+    void AdvanceTour(int32 Next, AQuebecController* Who, const TCHAR* Message, bool bFinished);
+    bool NearTour(const AQuebecController* Controller, double X, double Y) const;
     void ChangePhase(EQuebecCampaignPhase Next, bool bFeedback = true);
     void StopAiming();
     void SaveBoundary();

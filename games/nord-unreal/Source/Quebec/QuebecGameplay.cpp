@@ -2742,6 +2742,8 @@ void AQuebecHUD::DrawHUD()
             Status = TEXT("Menu · Recover restores this wagon");
         else if (Campaign->IsBlankOpen() && bTouchControls)
             Status = TEXT("Menu · Recover restores this page");
+        else if (Campaign->IsTourOpen() && bTouchControls)
+            Status = TEXT("Menu · Recover restores this tour");
         else if (Campaign->IsCampaignComplete() && !Campaign->IsStoryBeatOpen() && SideJobs)
         {
             const int32 Guide = SideJobs->GuideMarker(Here, true);
