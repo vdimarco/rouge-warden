@@ -53,7 +53,8 @@ uniform sampler2D uScene, uB0, uB1, uB2, uB3, uDepth;
 uniform float uStrength;
 uniform float uVerse, uNear, uFar, uFocus, uPlate, uImpact, uSense, uTime, uAspect, uEdge, uGrain, uLines, uHatch, uMood;
 uniform vec3 uMoodTint;
-uniform vec2 uTexel, uHead;
+uniform vec2 uTexel, uHead, uSunUV;
+uniform float uShaft;
 uniform vec3 uInk, uHold;
 varying vec2 vUv;
 vec3 glow(vec2 uv) {
@@ -125,6 +126,28 @@ void main() {
       c = mix(c, two, uImpact);
     }
   }
+  // Sun shafts. A short radial gather of the far, warm sky, from Kenny Mitchell's
+  // "Volumetric Light Scattering as a Post-Process" (GPU Gems 3, ch. 13). Buildings sit
+  // closer than the sky, so they block the samples. The light is capped so it cannot wash the frame.
+  if (uShaft > 0.0) {
+    // the sky is pinned just short of the far plane; a tower a few hundred metres off is still short of that
+    float here = smoothstep(0.99985, 0.99997, texture2D(uDepth, vUv).r);
+    vec2 stepUV = (vUv - uSunUV) * 0.022;
+    vec2 q = vUv;
+    vec3 shafts = vec3(0.0);
+    float illum = 0.07;
+    for (int i = 0; i < 16; i++) {
+      q -= stepUV;
+      vec2 qq = clamp(q, vec2(0.001), vec2(0.999));
+      float sky = smoothstep(0.99985, 0.99997, texture2D(uDepth, qq).r);
+      vec3 s = texture2D(uScene, qq).rgb;
+      float warm = smoothstep(0.25, 0.85, s.r - s.b);
+      shafts += s * sky * warm * illum;
+      illum *= 0.9;
+    }
+    // on the city, not piled onto the sun disc
+    c += min(shafts, vec3(0.22)) * (1.0 - here) * uShaft;
+  }
   gl_FragColor = vec4(c, 1.0);
 }
 `;
@@ -149,7 +172,8 @@ export function createBloom(renderer) {
   const comp = mk(COMPOSITE_FS, { uScene: { value: sceneRT.texture }, uB0: { value: A[0].texture }, uB1: { value: A[1].texture }, uB2: { value: A[2].texture }, uB3: { value: A[3].texture }, uStrength: { value: 0.5 },
     uDepth: { value: sceneRT.depthTexture }, uVerse: { value: 0 }, uNear: { value: 0.1 }, uFar: { value: 1000 }, uFocus: { value: 5 }, uPlate: { value: 0 },
     uImpact: { value: 0 }, uSense: { value: 0 }, uEdge: { value: 0 }, uGrain: { value: 0 }, uLines: { value: 0 }, uHatch: { value: 0 }, uMood: { value: 0 }, uMoodTint: { value: new THREE.Color(1, 1, 1) }, uTime: { value: 0 }, uAspect: { value: 1 }, uTexel: { value: new THREE.Vector2() }, uHead: { value: new THREE.Vector2(0.5, 0.6) },
-    uInk: { value: new THREE.Color(0x140a18) }, uHold: { value: new THREE.Color(0xe8203a) } });
+    uInk: { value: new THREE.Color(0x140a18) }, uHold: { value: new THREE.Color(0xe8203a) },
+    uSunUV: { value: new THREE.Vector2(0.5, 0.7) }, uShaft: { value: 0 } });
   const black = new THREE.DataTexture(new Uint8Array([0, 0, 0, 255]), 1, 1); // the glow levels when only the Verse pass runs
   black.needsUpdate = true;
   const size = new THREE.Vector2();
@@ -162,12 +186,13 @@ export function createBloom(renderer) {
     // render scene through camera with the glow of `level` ("off" | "low" | "high"). verse (or null): { focus (m, where the
     // plates are on register), plate (px, the slip far from the focus), impact 0..1, sense 0..1, head ({ x, y } in 0..1 uv),
     // time (s), edge (more slip toward the frame edge), grain (the paper), lines (the depth step that inks a line, 0 none),
-    // hatch 0..1, mood 0..1 and moodTint (a Color) }. With no glow and no verse the scene draws straight to the canvas.
-    render(scene, camera, level, verse = null) {
+    // hatch 0..1, mood 0..1 and moodTint (a Color) }. shaft (or null): { x, y } sun position in uv, for the light shafts.
+    // With no glow, no verse and no shaft the scene draws straight to the canvas.
+    render(scene, camera, level, verse = null, shaft = null) {
       const L = BLOOM[level];
       B.level = L ? level : "off";
       B.verse = !!verse;
-      if (!L && !verse) { renderer.render(scene, camera); B.last.calls = renderer.info.render.calls; B.last.triangles = renderer.info.render.triangles; return; }
+      if (!L && !verse && !shaft) { renderer.render(scene, camera); B.last.calls = renderer.info.render.calls; B.last.triangles = renderer.info.render.triangles; return; }
       renderer.getDrawingBufferSize(size);
       if (size.x !== w || size.y !== h) {
         w = size.x; h = size.y;
@@ -179,6 +204,8 @@ export function createBloom(renderer) {
       renderer.render(scene, camera);
       B.last.calls = renderer.info.render.calls; B.last.triangles = renderer.info.render.triangles;
       const u = comp.uniforms;
+      u.uShaft.value = shaft ? 1 : 0;
+      if (shaft) u.uSunUV.value.set(shaft.x, shaft.y);
       u.uVerse.value = verse ? 1 : 0;
       if (verse) {
         u.uNear.value = camera.near; u.uFar.value = camera.far; u.uFocus.value = Math.max(0.5, verse.focus || 5);

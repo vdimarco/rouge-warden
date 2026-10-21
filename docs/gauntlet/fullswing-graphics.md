@@ -38,3 +38,39 @@ Reference: Marvel's Spider-Man 2 (Insomniac, 2023). Rubric: `docs/gauntlet/RUBRI
 - Delta vs last round: baseline, no prior card
 
 Playability was scored from a flat boot and the city render check, not a full playthrough. `qa/vr/render.mjs` passed, including flat play. OpenSpec CLI validation was not run; the `openspec` command is not installed.
+
+### Round 2 — 2026-10-21 — rubric v1
+
+- What changed: Flat play adds a short radial gather of the far warm sky toward the sun. Near buildings block it. The painted sky itself is left alone, and the added light is capped. A headset still draws the scene straight. The source is Kenny Mitchell, GPU Gems 3, chapter 13.
+- Why it helped: The skyline had a sun in the paint and none in the air. With the sun in front of the camera, the tower and the roofs now catch a warm streak that stops on the geometry.
+- Screenshots: before `docs/gauntlet/shots/r02-before-needle.png`, after `docs/gauntlet/shots/r02-after-needle.png`. The before frame is the round 1 needle view. Street and harbour look away from the sun, so they do not run the pass.
+- Next target: Character models (3), the lowest aesthetics score.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 5 | The avenue still carries the sun, and a shaft now falls on the tower when the sun is in front. Walls are still flat bands. |
+| Color palette | 5 | Unchanged. The sunset inks hold, and the shaft is capped so it does not wash them. |
+| Detail density | 4 | Unchanged. The city is still thin on props. |
+| Texture and material quality | 4 | Unchanged. Roads are wet. Glass and brick are still flat colors. |
+| Composition and camera | 4 | Unchanged. Fixed cameras. The shaft reads in the needle view. |
+| Atmosphere | 4 | The shaft is a first bit of light in the air. Fog is still stepped, and there is no weather. |
+| Character models | 3 | Unchanged. Named shots hide the hero. People stay small comic figures. |
+| Animation smoothness | 4 | Unchanged. Stills only. |
+| Particles and VFX | 4 | One occluded sun shaft on flat views. No spray, debris, or weather. |
+| UI polish | 4 | Unchanged. The HUD was not part of this pass. |
+| Responsiveness and input latency | 6 | Unchanged. The shaft is one full-screen gather. No input timing was measured. |
+| Controls feel | 5 | Unchanged. |
+| Mission clarity | 4 | Unchanged. Not played. |
+| Pacing | 4 | Unchanged. |
+| Fun factor | 4 | Unchanged. Not played as a session. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 5 | Unchanged. |
+| Sound design | 4 | Unchanged. |
+| Variety | 4 | Unchanged. |
+| Performance stability | 6 | `qa/vr/render.mjs` passed, including flat play. Reported scene draw counts did not rise. |
+
+- Aesthetics raw: 41 / 10 dimensions, index 41
+- Playability raw: 46 / 10 dimensions, index 46
+- Total: 87 / 200
+- Delta vs last round: +2 (85 → 87). Lighting 4 → 5, particles and VFX 3 → 4. Playability unchanged.
+
