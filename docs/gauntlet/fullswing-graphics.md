@@ -222,3 +222,40 @@ Playability was scored from a flat boot and the city render check, not a full pl
 
 Playability was scored from a flat boot and the city render check, not a full playthrough. OpenSpec CLI validation was not run; the `openspec` command is not installed.
 
+### Round 7 — 2026-10-21 — rubric v1
+
+- What changed: In third-person flat play the chase camera slides 0.95 m onto the hero's right and 0.22 m up. The arm stays 4.5 m and the pitch stays 20 degrees down. The slide scales away in first person, fades once the camera is already down by the head, and stops short of a wall. The look direction is unchanged. The source is Mark Haigh-Hutchinson, Real-Time Cameras (2009): lead room and an off-centre subject, only the offset.
+- Why it helped: Standing in the avenue, the hero sat on the vanishing point. The jacket now sits about 100 pixels left of centre in a 1280-wide frame, and the street ahead holds the middle. It is still one chase camera, not a swinging shot.
+- Screenshots: before `docs/gauntlet/shots/r07-before-play.png`, after `docs/gauntlet/shots/r07-after-play.png`. These are play frames, with the hero standing in the avenue. Named cameras hide the hero, so they do not show this.
+- Next target: Particles and VFX (4), tied with character models, animation smoothness, and UI. The avenue has haze and one sun shaft, and no weather or debris a player sees while standing in it.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 5 | Unchanged. The shaft and the wet avenue are as in rounds 2 and 1. |
+| Color palette | 5 | Unchanged. The sunset inks hold. |
+| Detail density | 5 | Unchanged. Bins, bollards, and hydrants from round 5. |
+| Texture and material quality | 5 | Unchanged. Courses and fresnel from round 4. |
+| Composition and camera | 5 | The chase view puts the hero left of centre and leaves the avenue in the middle. Pitch and arm length stay the chase defaults. It is still one camera, not a swing. |
+| Atmosphere | 5 | Unchanged. The 18 m haze from round 6. |
+| Character models | 4 | Unchanged. Hair, shoulders, and a rim from round 3. The play frame shows the same figure. |
+| Animation smoothness | 4 | Unchanged. The shot is a settled idle. The slide is a still offset, not a motion. |
+| Particles and VFX | 4 | Unchanged. One occluded sun shaft. No weather or debris in the avenue. |
+| UI polish | 4 | Unchanged. The play frame shows the existing comic HUD. |
+| Responsiveness and input latency | 6 | Unchanged. The slide is a few metres of arithmetic after the arm. No input timing was measured. |
+| Controls feel | 5 | The centre ray moves with the camera, about a metre to the right. Not played as a session. |
+| Mission clarity | 4 | Unchanged. Not played. |
+| Pacing | 4 | Unchanged. |
+| Fun factor | 4 | Unchanged. Not played as a session. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 5 | Unchanged. |
+| Sound design | 4 | Unchanged. |
+| Variety | 4 | Unchanged. |
+| Performance stability | 6 | `qa/vr/render.mjs` passed, including flat play and the lit-sphere cel check. Street mean 65.4. Reported chase distance stayed 4.5 m and pitch stayed −0.349. |
+
+- Aesthetics raw: 46 / 10 dimensions, index 46
+- Playability raw: 46 / 10 dimensions, index 46
+- Total: 92 / 200
+- Delta vs last round: +1 (91 → 92). Composition and camera 4 → 5. Playability unchanged.
+
+Playability was scored from a flat boot and the city render check, not a full playthrough. OpenSpec CLI validation was not run; the `openspec` command is not installed.
+
