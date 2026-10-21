@@ -666,3 +666,40 @@ Playability was scored from a flat boot and the city render check, not a full pl
 
 Playability was scored from a flat boot and the city render check, not a full playthrough. OpenSpec CLI validation was not run; the `openspec` command is not installed.
 
+### Round 19 — 2026-10-21 — rubric v1
+
+- What changed: On a rope, off the ground, and faster than 10 m/s, a cream puff trails the body about every 0.08 s. It is born just behind and a little to one side, and it drifts back along the motion. The puff and the pool of 768 are the ones the city already draws. A stand and a quiet hang spawn nothing. No new mesh. None of the wind-field papers fit this cel pool, so the trail reuses that puff. Screen speed lines stay as they are and still ramp in only from 14 m/s.
+- Why it helped: The swing still showed the body and empty air. A few light flecks now sit beside the figure on the way through. They are still comic puffs, not a volume of wind.
+- Screenshots: before `docs/gauntlet/shots/r19-before-swing.png`, after `docs/gauntlet/shots/r19-after-swing.png`. The street, where the hero is hidden: `docs/gauntlet/shots/r19-before-street.png`, `docs/gauntlet/shots/r19-after-street.png`. The sunset: `docs/gauntlet/shots/r19-before-needle.png`, `docs/gauntlet/shots/r19-after-needle.png`.
+- Next target: Composition and camera (5), tied with UI polish. The chase stays at 4.5 m and −20°.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 6 | Unchanged. Shaded lower walls stay warm. The floors by the roof stay the cool band. |
+| Color palette | 6 | Unchanged. Cool shade stays teal and the step toward the sun stays rose. |
+| Detail density | 6 | Unchanged. The shop awnings from round 16. |
+| Texture and material quality | 6 | Unchanged. The masonry units from round 13. |
+| Composition and camera | 5 | Unchanged. The chase pitch stayed −0.349 and the distance stayed 4.5 m. |
+| Atmosphere | 6 | Unchanged. The far avenue still sits in the warm dust from round 15. |
+| Character models | 6 | Unchanged. The cream belt from round 17. Skinned triangles stayed at 12,468. |
+| Animation smoothness | 6 | Unchanged. The swing still trails at the bottom, and the run is still the captured loop. |
+| Particles and VFX | 6 | A fast swing leaves a few cream puffs beside the body. They are the existing comic puff, not a body of air. |
+| UI polish | 5 | Unchanged. The dotted score plate from round 11. |
+| Responsiveness and input latency | 6 | Unchanged. No new pass and no new draw. No input timing was measured. |
+| Controls feel | 5 | Unchanged. |
+| Mission clarity | 4 | Unchanged. Not played. |
+| Pacing | 4 | Unchanged. |
+| Fun factor | 4 | Unchanged. Not played as a session. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 5 | Unchanged. |
+| Sound design | 4 | Unchanged. |
+| Variety | 4 | Unchanged. |
+| Performance stability | 6 | `qa/vr/render.mjs` passed, including flat play, the painted-sky checks, and the lit-sphere cel check. Street mean 71.9, saturation 0.57. |
+
+- Aesthetics raw: 58 / 10 dimensions, index 58
+- Playability raw: 46 / 10 dimensions, index 46
+- Total: 104 / 200
+- Delta vs last round: +1 (103 → 104). Particles and VFX 5 → 6. Playability unchanged.
+
+Playability was scored from a flat boot and the city render check, not a full playthrough. OpenSpec CLI validation was not run; the `openspec` command is not installed.
+
