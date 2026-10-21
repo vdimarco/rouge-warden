@@ -2,7 +2,7 @@
 // the app starts from its icon), owns the rig and the body, runs the 14 steps of every frame, routes events to the
 // portal, the game and the feedback table, saves, and exposes window.G and G.test (spec §6 and §12).
 import * as THREE from "three";
-import { VERSION, SAVE_KEY, WORLD, SWING, COMFORT, PERF, COLORS, PHONE, CLIMB, TARGET, DESKTOP, PAD, HINT, MOVES } from "./config.js";
+import { VERSION, SAVE_KEY, WORLD, SWING, COMFORT, PERF, COLORS, PHONE, CLIMB, TARGET, DESKTOP, PAD, HINT, MOVES, SUN_DIR } from "./config.js";
 import { generate } from "./city.js";
 import { createPlayer, fire, release, step, teleport } from "./physics.js";
 import { createXR } from "./xr.js";
@@ -1903,6 +1903,14 @@ let lastTime = -1, fps = 60, titleCompiled = false;
 const lastInfo = { calls: 0, tris: 0, views: 1 };
 const samples = [];
 const errSeen = new Set();
+const SUN_PT = new THREE.Vector3();
+// Where the sun sits on the screen, for the shaft pass. Null when it is behind the camera. Flat play only.
+function sunShaft() {
+  SUN_PT.set(camera.position.x + SUN_DIR.x * 800, camera.position.y + SUN_DIR.y * 800, camera.position.z + SUN_DIR.z * 800);
+  SUN_PT.project(camera);
+  if (SUN_PT.z > 1) return null;
+  return { x: SUN_PT.x * 0.5 + 0.5, y: SUN_PT.y * 0.5 + 0.5 };
+}
 function loop(time, frame) {
   try {
     const raw = lastTime < 0 ? 1 / 60 : (time - lastTime) / 1000;
@@ -1941,7 +1949,7 @@ function render(frame, rdt = 0) {
   }
   if (!xr) {
     const vs = verseFrame(rdt);
-    bloom.render(scene, camera, bloomLevel(), vs);
+    bloom.render(scene, camera, bloomLevel(), vs, sunShaft());
     if (camLeaned) { camLeaned = false; flatcam.restore(); } // the lean and the shake are for the eye only
   } else renderer.render(scene, camera);
   const info = xr ? renderer.info.render : bloom.last;
