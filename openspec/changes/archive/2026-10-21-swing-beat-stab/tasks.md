@@ -1,0 +1,5 @@
+- [x] The stab is loud at once and quiet after four fifths of a second
+- [x] The trial countdown is still sounding after four fifths of a second
+- [x] The first flush plays neither cue
+- [x] The second flush plays the stab and not the countdown
+- [x] A job with no mission name plays the countdown and not the stab
