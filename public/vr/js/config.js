@@ -93,9 +93,10 @@ export const CLIMB = {
   // counting a fall) goes into it: a swing that brushes a wall keeps going
   head: 1.7, headR: 0.25, // the head sphere over the feet: a ceiling it meets on the way up is an overhang
   lip: 1, lipReach: 40, // under an overhang you move out to its face (found up to lipReach m out) and up lip m
-  // the wall run, in body-heights per second (SWING.bodyH). Touch a side at min or faster and you stick. Forward runs up,
-  // sideways runs along. After time seconds you slide down. Jump kicks off at kick, straight away from the wall. The roof is a vault.
-  run: { min: 4, up: 6, along: 7, slide: 2, time: 3, kick: 8 },
+  // the wall run: a wall met at min m/s or more with the move input toward it (or head-on) is run up (down, when falling faster
+  // than down m/s) at keep times that speed (at most max), slowing by decay m/s² to the climb speed. Space jumps off it with
+  // jump.out m/s out and 6 + jump.k times the run speed up (at most jump.max); at the top, a run faster than top m/s leaps up.
+  run: { min: 9, keep: 0.85, max: 24, decay: 7, down: 6, top: 10, jump: { out: 5, k: 0.5, max: 16 }, leap: 0.8 },
 };
 
 /* ---------------- one-tap phone swinging ---------------- */

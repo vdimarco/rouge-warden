@@ -25,7 +25,7 @@ const SETUP = () => {
     // in the air 3 m off the wall at half its height, flying at it, facing it
     flyIn(y = B.maxY / 2, z = QA.z) {
       G.test.teleport(B.maxX + 3, y, z); G.rigYaw = Math.PI / 2; G.desktop.level(0);
-      G.P.vel.x = -6; G.test.step(1 / 60, 30); // under 4 body-heights a second: a cling, not a wall run
+      G.P.vel.x = -8; G.test.step(1 / 60, 30);
       return !!G.P.wall;
     },
     // n frames of the climb: each limb's hold and whether it steps, the drawn palms and ankles, the body and the hero's root
