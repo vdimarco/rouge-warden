@@ -62,7 +62,7 @@ public:
     FString GetStatusText() const;
     FVector GetObjectiveLocation() const;
     bool GetNextObjectiveLocation(FVector& Out) const;
-    bool GetBeatPace(int32& OutIndex, int32& OutCount, int32& OutWalkSeconds) const;
+    bool GetBeatPace(int32& OutIndex, int32& OutCount, int32& OutWalkSeconds, int32& OutSprintSeconds) const;
     // Session chain. Not written to the v1 slot. A miss spoils the open beat.
     bool GetChainStake(int32& OutChain, int32& OutPay, bool& bOutBroken) const;
     // Tenths of a second still clear on the court return or the convoy gap. False on every other step.

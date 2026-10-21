@@ -1963,7 +1963,7 @@ bool AQuebecCampaign::GetNextObjectiveLocation(FVector& Out) const
     }
 }
 
-bool AQuebecCampaign::GetBeatPace(int32& OutIndex, int32& OutCount, int32& OutWalkSeconds) const
+bool AQuebecCampaign::GetBeatPace(int32& OutIndex, int32& OutCount, int32& OutWalkSeconds, int32& OutSprintSeconds) const
 {
     const auto Publish = [&](const QuebecPace::FBeat& Beat)
     {
@@ -1971,12 +1971,18 @@ bool AQuebecCampaign::GetBeatPace(int32& OutIndex, int32& OutCount, int32& OutWa
         OutIndex = Beat.Index;
         OutCount = Beat.Count;
         OutWalkSeconds = Beat.WalkSeconds;
+        OutSprintSeconds = Beat.SprintSeconds;
         if (Beat.bMeasureWalk)
         {
             FVector Next = FVector::ZeroVector;
             OutWalkSeconds = 0;
+            OutSprintSeconds = 0;
             if (GetNextObjectiveLocation(Next))
-                OutWalkSeconds = QuebecPace::WalkSeconds(static_cast<double>(FVector::Dist2D(GetObjectiveLocation(), Next)));
+            {
+                const double Distance = static_cast<double>(FVector::Dist2D(GetObjectiveLocation(), Next));
+                OutWalkSeconds = QuebecPace::WalkSeconds(Distance);
+                OutSprintSeconds = QuebecPace::SprintSeconds(Distance);
+            }
         }
         return true;
     };

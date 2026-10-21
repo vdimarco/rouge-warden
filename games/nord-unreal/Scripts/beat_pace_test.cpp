@@ -38,9 +38,20 @@ int main()
     Expect(WalkSeconds(200.) == 1, "a short leg rounds away to nothing");
     Expect(WalkSeconds(450.) == 1, "one second of walking is not one second");
     Expect(WalkSeconds(900.) == 2, "two seconds of walking is not two seconds");
+    Expect(SprintSeconds(0.) == 0, "a zero leg still names a sprint");
+    Expect(SprintSeconds(450.) == 1, "a one-second walk invents a faster sprint");
+    Expect(WalkSeconds(1800.) == 4 && SprintSeconds(1800.) == 2, "four seconds of walking hides the two-second sprint");
 
     const FBeat Pond = Linear(QuebecPondRules::StepShore, QuebecPondRules::StepBanked, QuebecPondRules::Objective);
     Expect(Pond.Index == 1 && Pond.Count == 6 && Pond.WalkSeconds > 0, "the pond does not open as stop 1 of 6 with a walk");
+    {
+        const auto Here = QuebecPondRules::Objective(QuebecPondRules::StepShore);
+        const auto Next = QuebecPondRules::Objective(QuebecPondRules::StepShore + 1);
+        const double Distance = std::hypot(Next.X - Here.X, Next.Y - Here.Y);
+        Expect(Pond.WalkSeconds == WalkSeconds(Distance) && Pond.SprintSeconds == SprintSeconds(Distance),
+            "the pond opening splits the walk and the sprint");
+        Expect(Pond.SprintSeconds < Pond.WalkSeconds, "the pond opening sprint is not shorter than the walk");
+    }
     const FBeat PondEnd = Linear(QuebecPondRules::StepPull, QuebecPondRules::StepBanked, QuebecPondRules::Objective);
     Expect(PondEnd.Index == 6 && PondEnd.Count == 6 && PondEnd.WalkSeconds == 0, "the picnic clamp invents a walk after the beat");
 
@@ -54,6 +65,8 @@ int main()
     const auto Curtain = QuebecShowRules::Objective(QuebecShowRules::StepCue);
     const int CurtainWalk = WalkSeconds(std::hypot(Curtain.X - Backdrop.X, Curtain.Y - Backdrop.Y));
     Expect(AfterSpot.Index == 3 && AfterSpot.Count == 4 && AfterSpot.WalkSeconds == CurtainWalk, "after the followspot the walk is not to the curtain");
+    Expect(AfterSpot.SprintSeconds == SprintSeconds(std::hypot(Curtain.X - Backdrop.X, Curtain.Y - Backdrop.Y)),
+        "after the followspot the sprint is not to the curtain");
     const auto Followspot = QuebecShowRules::Objective(QuebecShowRules::StepDrop);
     Expect(AfterSpot.WalkSeconds != WalkSeconds(std::hypot(Followspot.X - Backdrop.X, Followspot.Y - Backdrop.Y)) ||
         (Followspot.X == Curtain.X && Followspot.Y == Curtain.Y), "after the followspot the walk returns to the followspot");

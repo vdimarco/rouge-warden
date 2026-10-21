@@ -2471,11 +2471,12 @@ void AQuebecHUD::DrawHUD()
                 }
             }
         }
-        int32 PaceIndex = 0, PaceCount = 0, PaceWalk = 0;
-        if (Campaign->GetBeatPace(PaceIndex, PaceCount, PaceWalk))
+        int32 PaceIndex = 0, PaceCount = 0, PaceWalk = 0, PaceSprint = 0;
+        if (Campaign->GetBeatPace(PaceIndex, PaceCount, PaceWalk, PaceSprint))
         {
             Status += FString::Printf(TEXT(" · %d of %d"), PaceIndex, PaceCount);
             if (PaceWalk > 0) Status += FString::Printf(TEXT(" · ~%ds walk"), PaceWalk);
+            if (PaceSprint > 0 && PaceSprint < PaceWalk) Status += FString::Printf(TEXT(" · ~%ds sprint"), PaceSprint);
         }
         int32 Chain = 0;
         int32 ChainPay = 0;

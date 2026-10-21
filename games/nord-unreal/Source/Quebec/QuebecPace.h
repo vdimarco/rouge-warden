@@ -2,7 +2,7 @@
 
 // Engine-independent beat length. No Unreal includes, so Scripts/test_beat_pace.py can build this.
 // The card says which stop this is, and about how long the next leg is at a walk.
-// Walk speed is the player's un-sprinted MaxWalkSpeed. A sprint is faster, so the seconds are a walk.
+// A sprint is faster. The card names that shorter time when rounding makes it shorter.
 
 #include "QuebecBlankRules.h"
 #include "QuebecConvoyRules.h"
@@ -23,15 +23,26 @@ namespace QuebecPace
         int Index = 0;
         int Count = 0;
         int WalkSeconds = 0;
+        int SprintSeconds = 0;
         // Terrace legs use the live objective. The caller measures that distance.
         bool bMeasureWalk = false;
     };
 
+    inline int SecondsAt(double DistanceCm, double CmPerSecond)
+    {
+        if (!(DistanceCm > 0.) || !(CmPerSecond > 0.)) return 0;
+        const int Rounded = static_cast<int>(std::lround(DistanceCm / CmPerSecond));
+        return Rounded < 1 ? 1 : Rounded;
+    }
+
     inline int WalkSeconds(double DistanceCm)
     {
-        if (!(DistanceCm > 0.)) return 0;
-        const int Rounded = static_cast<int>(std::lround(DistanceCm / WalkCmPerSecond));
-        return Rounded < 1 ? 1 : Rounded;
+        return SecondsAt(DistanceCm, WalkCmPerSecond);
+    }
+
+    inline int SprintSeconds(double DistanceCm)
+    {
+        return SecondsAt(DistanceCm, SprintCmPerSecond);
     }
 
     template <typename ObjectiveFn>
@@ -45,7 +56,9 @@ namespace QuebecPace
         {
             const auto Here = Objective(Step);
             const auto Next = Objective(Step + 1);
-            Beat.WalkSeconds = WalkSeconds(std::hypot(Next.X - Here.X, Next.Y - Here.Y));
+            const double Distance = std::hypot(Next.X - Here.X, Next.Y - Here.Y);
+            Beat.WalkSeconds = WalkSeconds(Distance);
+            Beat.SprintSeconds = SprintSeconds(Distance);
         }
         return Beat;
     }
@@ -61,7 +74,9 @@ namespace QuebecPace
             Beat.Index = 1;
             const auto Here = QuebecShowRules::Objective(Step);
             const auto Stage = QuebecShowRules::Objective(QuebecShowRules::StepChoice);
-            Beat.WalkSeconds = WalkSeconds(std::hypot(Stage.X - Here.X, Stage.Y - Here.Y));
+            const double Distance = std::hypot(Stage.X - Here.X, Stage.Y - Here.Y);
+            Beat.WalkSeconds = WalkSeconds(Distance);
+            Beat.SprintSeconds = SprintSeconds(Distance);
         }
         else if (Step == QuebecShowRules::StepChoice)
             Beat.Index = 2;
@@ -69,7 +84,9 @@ namespace QuebecPace
         {
             Beat.Index = 3;
             const auto Here = QuebecShowRules::Objective(Step);
-            Beat.WalkSeconds = WalkSeconds(std::hypot(Curtain.X - Here.X, Curtain.Y - Here.Y));
+            const double Distance = std::hypot(Curtain.X - Here.X, Curtain.Y - Here.Y);
+            Beat.WalkSeconds = WalkSeconds(Distance);
+            Beat.SprintSeconds = SprintSeconds(Distance);
         }
         else if (Step == QuebecShowRules::StepCue)
             Beat.Index = 4;

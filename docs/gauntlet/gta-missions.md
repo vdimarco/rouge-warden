@@ -983,3 +983,48 @@ Unreal is not available here, so the native diamond was not captured. The title 
 ![Play client at 1280, host offline](gta-missions/r21-play-1280.png)
 
 ![Menu on a 390-wide screen, Recover visible](gta-missions/r21-play-menu-390.png)
+
+### Round 22 — 2026-10-21 — rubric v1
+
+- What changed: The card names a sprint when it is shorter than the walk. Walk stays 450 centimetres a second and sprint stays 800. Both round to the nearest second. A leg of 1800 centimetres is four seconds of walking and two seconds of sprinting. A one-second walk stays one second at a sprint, and the card does not repeat it. The pond's opening leg names a shorter sprint. The walk time itself does not change.
+- Why it helped: Pacing was a 5 because the card said how long the next leg was at a walk, and a sprint was already faster.
+- Screenshots: title `docs/gauntlet/gta-missions/r22-title-1280.png`, `r22-title-390.png`, `r22-title-320.png`. Play client, host offline, `r22-play-1280.png`. Menu with Recover `r22-play-menu-390.png`. The title loaded with no page errors. The raw play page still logs the missing `@epicgames-ps/lib-pixelstreamingfrontend-ue5.8` specifier; the shell and Recover still draw. The sprint line was not played in Unreal. `Scripts/test_beat_pace.py` reports 26 assertions, 0 failures, on c++, g++ and clang++. Syntax check `--both` passed for the campaign and the HUD. OpenSpec CLI is not installed, so `openspec validate` did not run.
+- Next target: controls feel (5), the lowest playability score this loop can still change. Pacing is now 6. Performance stays at 4 and is not measurable here. Responsiveness stays at 3 and stays out of scope. The sprint time is proven by the rules. It was not played, so the pacing score waits at 6. The next round should keep to a change the tests can prove, and should not add a chapter or touch the stream.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 3 | Unchanged. |
+| Color palette | 5 | Unchanged. |
+| Detail density | 3 | Unchanged. |
+| Texture and material quality | 3 | Unchanged. |
+| Composition and camera | 4 | Unchanged. |
+| Atmosphere | 4 | Unchanged. |
+| Character models | 3 | Unchanged. |
+| Animation smoothness | 3 | Unchanged. |
+| Particles and VFX | 2 | Unchanged. |
+| UI polish | 4 | The sprint shares the status line when it is shorter. The native card was not seen, and French and English still share the screen. |
+| Responsiveness and input latency | 3 | Unchanged. Still a lagged stream. Out of scope for this loop. |
+| Controls feel | 5 | Unchanged. Arrow keys still walk and drive on the same axes as WASD. |
+| Mission clarity | 7 | Unchanged. |
+| Pacing | 6 | A long leg names a sprint shorter than its walk. Four seconds of walking is two seconds of sprinting. A one-second walk does not grow a matching sprint line. The pond opening is shorter at a sprint. It was not played. |
+| Fun factor | 7 | Unchanged. A close call still pays on the front of a clear window. |
+| Difficulty curve | 7 | Unchanged. The court ink and the convoy beam still grow with the chain. |
+| Feedback | 7 | Unchanged. A bank still names its rank. |
+| Sound design | 6 | Unchanged. |
+| Variety | 9 | Unchanged. Eight of eight story missions, plus the four side jobs. |
+| Performance stability | 4 | Unchanged. Not measurable in this container. |
+
+- Aesthetics raw: 34 / 10 dimensions, index 34
+- Playability raw: 61 / 10 dimensions, index 61
+- Total: 95 / 200
+- Delta vs last round: +1 (round 21 was 94). Pacing 5 → 6. Every other score held.
+
+![GTA title at 1280](gta-missions/r22-title-1280.png)
+
+![GTA title at 390](gta-missions/r22-title-390.png)
+
+![GTA title at 320](gta-missions/r22-title-320.png)
+
+![Play client at 1280, host offline](gta-missions/r22-play-1280.png)
+
+![Menu on a 390-wide screen, Recover visible](gta-missions/r22-play-menu-390.png)
