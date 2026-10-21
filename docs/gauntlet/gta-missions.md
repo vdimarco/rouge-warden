@@ -1388,3 +1388,48 @@ Unreal is not available here, so the native diamond was not captured. The title 
 ![Play client at 1280, host offline](gta-missions/r30-play-1280.png)
 
 ![Menu on a 390-wide screen, Recover visible](gta-missions/r30-play-menu-390.png)
+
+### Round 31 — 2026-10-21 — rubric v1
+
+- What changed: On the north shore, E on the beam that never blinks starts a four-second hold. The clock runs only while you stand in it, and the prompt names the seconds left. One second outside pauses it. More than one second outside drops it, and it can be tried again. E on a blinking beam still breaks the chain and does not finish the hold. The blink period stays 2.4 seconds. The banked step stays 6. The save still stores only Version and CompletedMissions.
+- Why it helped: The steady beam was a tap. The other two blink, and nothing asked you to stay and watch them.
+- Screenshots: title `docs/gauntlet/gta-missions/r31-title-1280.png`, `r31-title-390.png`, `r31-title-320.png`. Play client, host offline, `r31-play-1280.png`. Menu with Recover `r31-play-menu-390.png`. The title loaded with no page errors. The raw play page still logs the missing `@epicgames-ps/lib-pixelstreamingfrontend-ue5.8` specifier; the shell and Recover still draw. The hold was not stood in Unreal. `Scripts/test_pond_rules.py` reports 413 assertions, 0 failures, on c++, g++, and clang++. Syntax check `--both` passed for `QuebecCampaign.cpp`. OpenSpec CLI is not installed, so `openspec validate` did not run.
+- Next target: a set piece on the blank page, if that last cue is still a single walk-up. Pacing is now 8. Fun stays at 9. Difficulty stays at 8. The other playability scores this loop can still change stay at 7, and the next round favors another story set piece over a small tune. Performance stays at 4 and is not measurable here. Responsiveness stays at 3 and stays out of scope. The hold is proven by the rules. It was not stood, so the pacing score waits at 8.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 3 | Unchanged. |
+| Color palette | 5 | Unchanged. |
+| Detail density | 3 | Unchanged. |
+| Texture and material quality | 3 | Unchanged. |
+| Composition and camera | 4 | Unchanged. |
+| Atmosphere | 4 | Unchanged. |
+| Character models | 3 | Unchanged. |
+| Animation smoothness | 3 | Unchanged. |
+| Particles and VFX | 2 | Unchanged. |
+| UI polish | 4 | Unchanged. The native card was not seen, and French and English still share the screen. |
+| Responsiveness and input latency | 3 | Unchanged. Still a lagged stream. Out of scope for this loop. |
+| Controls feel | 7 | Unchanged. The driving pedal still has three steps. |
+| Mission clarity | 7 | Unchanged. The tag step says to stay. The native card was not seen. |
+| Pacing | 8 | The postcard is no longer a tap. You stay four seconds while the other two blink. One second outside pauses it. More than one second drops it. It was not stood. |
+| Fun factor | 9 | Unchanged. Chez Lise still sells a kit, a vest, or one star. |
+| Difficulty curve | 8 | Unchanged. The clear wagon still banks and the called wagon still breaks the chain. A blinking beam still breaks it too. |
+| Feedback | 8 | Unchanged. A bank still names its rank. The hold names the seconds left with the prompt the stage bow already uses. |
+| Sound design | 7 | Unchanged. A bank still plays a pitch for its rank. The hold uses the dialogue cue that already exists. The blink tick is the one the shore already plays. |
+| Variety | 9 | The hold is a clock on the beam the shore already has. Still one district, so this is not the reference's spread. |
+| Performance stability | 4 | Unchanged. Not measurable in this container. |
+
+- Aesthetics raw: 34 / 10 dimensions, index 34
+- Playability raw: 70 / 10 dimensions, index 70
+- Total: 104 / 200
+- Delta vs last round: +1 (round 30 was 103). Pacing 7 → 8. Every other score held.
+
+![GTA title at 1280](gta-missions/r31-title-1280.png)
+
+![GTA title at 390](gta-missions/r31-title-390.png)
+
+![GTA title at 320](gta-missions/r31-title-320.png)
+
+![Play client at 1280, host offline](gta-missions/r31-play-1280.png)
+
+![Menu on a 390-wide screen, Recover visible](gta-missions/r31-play-menu-390.png)
