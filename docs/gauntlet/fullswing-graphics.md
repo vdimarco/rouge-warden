@@ -370,3 +370,40 @@ Playability was scored from a flat boot and the city render check, not a full pl
 
 Playability was scored from a flat boot and the city render check, not a full playthrough. OpenSpec CLI validation was not run; the `openspec` command is not installed.
 
+### Round 11 — 2026-10-21 — rubric v1
+
+- What changed: The chase score row sits on one paper plate with the pause menu's magenta dot field. Each sticker takes the same print. The coin has a lit face, the clog has a lit face, and the compass arrow sits on a cream dial with an ink ring. The row's box is unchanged, so the spoken line and the lock arrow keep their gap. The source is the menu's own dot field in this game, which copies Benjamin Day's mechanical tint (1879).
+- Why it helped: The mission, the loonies, the clogs, and the compass were four flat stickers on the sky. They now read as one printed instrument. It is still a comic sticker row, not Spider-Man 2's HUD.
+- Screenshots: before `docs/gauntlet/shots/r11-before-play.png`, after `docs/gauntlet/shots/r11-after-play.png`. The top of those frames is the row: `docs/gauntlet/shots/r11-before-play-top.png`, `docs/gauntlet/shots/r11-after-play-top.png`.
+- Next target: Lighting (5), tied with the other aesthetics scores. The avenue has a sun streak and a shaft. The walls are still flat bands.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 5 | Unchanged. The avenue still carries the sun, and a shaft still falls when the sun is in front. Walls are still flat bands. |
+| Color palette | 5 | Unchanged. The sunset inks hold. The plate uses the menu's magenta dots. |
+| Detail density | 5 | Unchanged. |
+| Texture and material quality | 5 | Unchanged. |
+| Composition and camera | 5 | Unchanged. Reported distance stayed 4.5 m and pitch stayed −0.349. |
+| Atmosphere | 5 | Unchanged. |
+| Character models | 5 | Unchanged. Skinned triangles stayed at 12,468. |
+| Animation smoothness | 5 | Unchanged. The hair still follows through a turn. |
+| Particles and VFX | 5 | Unchanged. Sidewalk steam from round 8. |
+| UI polish | 5 | The chase row is one dotted plate. The coin has a face and the compass arrow sits on a dial. It is still a flat sticker, not a dimensional HUD. |
+| Responsiveness and input latency | 6 | Unchanged. CSS only. No input timing was measured. |
+| Controls feel | 5 | Unchanged. |
+| Mission clarity | 4 | Unchanged. Not played. The mission line is the same words, printed with the scores. |
+| Pacing | 4 | Unchanged. |
+| Fun factor | 4 | Unchanged. Not played as a session. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 5 | Unchanged. |
+| Sound design | 4 | Unchanged. |
+| Variety | 4 | Unchanged. |
+| Performance stability | 6 | `qa/vr/render.mjs` passed, including flat play and the lit-sphere cel check. Street mean stayed 65.4. The row box stayed 12–57 px at 1280×720. The plate stayed inside the window at 640×360, 360×740, and 844×390. |
+
+- Aesthetics raw: 50 / 10 dimensions, index 50
+- Playability raw: 46 / 10 dimensions, index 46
+- Total: 96 / 200
+- Delta vs last round: +1 (95 → 96). UI polish 4 → 5. Playability unchanged.
+
+Playability was scored from a flat boot and the city render check, not a full playthrough. OpenSpec CLI validation was not run; the `openspec` command is not installed.
+
