@@ -32,6 +32,8 @@
 #include "QuebecBay.h" // The sidewalk atelier that spends cash on a dented car.
 #include "QuebecBuoy.h" // The north-pond buoy. One pedalo lap pays session cash once.
 #include "QuebecLap.h"
+#include "QuebecWadeMark.h" // The south-pond float. One wade pays session cash once.
+#include "QuebecWade.h"
 #include "QuebecPolice.h" // Police: the dispatcher spawned by the game mode (POLICE).
 #include "LaFontaineMap.h"
 #include "LaFontaineExtensionMap.h"
@@ -3262,6 +3264,7 @@ void AQuebecGameMode::BeginPlay()
             UE_LOG(LogTemp, Display, TEXT("NORD_PEDALO berth x=%.0f y=%.0f"), Point.X, Point.Y);
         }
         GetWorld()->SpawnActor<AQuebecBuoy>(FVector(QuebecLap::BuoyX, QuebecLap::BuoyY, 0.), FRotator::ZeroRotator);
+        GetWorld()->SpawnActor<AQuebecWade>(FVector(QuebecWade::BuoyX, QuebecWade::BuoyY, 0.), FRotator::ZeroRotator);
     }
     // Combat: weapon, vest and health pickups at street and park points, none near a QA anchor and no collision.
     if (!FParse::Param(FCommandLine::Get(), TEXT("NordNoCampaign"))) QuebecCombat::SpawnPickups(GetWorld());
