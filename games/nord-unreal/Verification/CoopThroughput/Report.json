@@ -845,11 +845,138 @@
   "recovery_2026_10_21": {
     "worktree": "/home/von/Work/rouge-warden-nord-coop-throughput",
     "branch": "codex/nord-coop-stream-throughput",
-    "integrated_main": "4c4f6b29",
+    "integrated_main": "f5731974468c053caf4e9c912bd3f2a4e7ea48d5",
     "candidate": "Touch receiver pressure below29FPS; recovery requires15consecutive samples at least35FPS",
     "deployed": false,
-    "fresh_performance_pending": true,
+    "fresh_performance_pending": false,
     "native_mutations": false,
-    "original_source_art_preserved": true
+    "original_source_art_preserved": true,
+    "cpu_tests_passed": 81,
+    "offline_browser_passed": true,
+    "steering_layout_passed": true,
+    "full_mobile_suite_run": false,
+    "target_achieved": false,
+    "desktop_diagnostic_pending": true,
+    "trials": {
+      "BaselineLocal-v1": {
+        "valid": true,
+        "target_met": false,
+        "receipt": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/CoopThroughput-20261021/BaselineLocal-v1/Result.json",
+        "receipt_sha256": "2e335b5be52a73db8667c74b1e5fa0f8a87c6685b3baafa0a52dfc49d96d8e5a",
+        "measurement_report_sha256": "b1c471237d037e74202d6873bdeca43eb555a587eec6e7c0ccb552debdc340fe",
+        "common_seconds": 65.0,
+        "target_checks": {
+          "NordHost": {
+            "native_fps": 15.392957721842258,
+            "decoded_fps": 15.410135962668402,
+            "target_met": false
+          },
+          "NordFriend1": {
+            "native_fps": 15.538776868770038,
+            "decoded_fps": 15.533674675068925,
+            "target_met": false
+          }
+        },
+        "viewers": {
+          "NordFriend1": {
+            "width": 706,
+            "height": 326,
+            "codec": "video/VP8",
+            "framesDropped": 0,
+            "packetsLost": 0,
+            "freezeCount": 0,
+            "one_second_fps_p10": 14.880952380952381,
+            "jitterBufferMsPerFrame": 103.54789452332656
+          },
+          "NordHost": {
+            "width": 706,
+            "height": 326,
+            "codec": "video/VP8",
+            "framesDropped": 0,
+            "packetsLost": 0,
+            "freezeCount": 0,
+            "one_second_fps_p10": 14.866204162537166,
+            "jitterBufferMsPerFrame": 159.4971046277666
+          }
+        },
+        "preservation": {
+          "native_identities_unchanged": true,
+          "package_preserved": true,
+          "saved_preserved_exactly": true,
+          "source_preserved": true,
+          "owned_children_closed": true
+        }
+      },
+      "CandidateLocal-v2": {
+        "valid": true,
+        "target_met": false,
+        "receipt": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/CoopThroughput-20261021/CandidateLocal-v2/Result.json",
+        "receipt_sha256": "d70ffe641842b6a81452e39e8471fe8a0e8a14d66ab4b5cbf16b3aa908863acb",
+        "measurement_report_sha256": "79779e09d25f453f73c3c0dbebe0eb8699c49c856755067a43d3cb21f03b5a1e",
+        "common_seconds": 65.0,
+        "target_checks": {
+          "NordHost": {
+            "native_fps": 15.375854214123006,
+            "decoded_fps": 15.377237357095341,
+            "target_met": false
+          },
+          "NordFriend1": {
+            "native_fps": 15.474547373548754,
+            "decoded_fps": 15.461122558056669,
+            "target_met": false
+          }
+        },
+        "viewers": {
+          "NordFriend1": {
+            "width": 706,
+            "height": 326,
+            "codec": "video/VP8",
+            "framesDropped": 0,
+            "packetsLost": 0,
+            "freezeCount": 0,
+            "one_second_fps_p10": 14.836795252225519,
+            "jitterBufferMsPerFrame": 140.55896292585172
+          },
+          "NordHost": {
+            "width": 706,
+            "height": 326,
+            "codec": "video/VP8",
+            "framesDropped": 0,
+            "packetsLost": 0,
+            "freezeCount": 0,
+            "one_second_fps_p10": 14.749262536873156,
+            "jitterBufferMsPerFrame": 121.58343762575451
+          }
+        },
+        "preservation": {
+          "native_identities_unchanged": true,
+          "package_preserved": true,
+          "saved_preserved_exactly": true,
+          "source_preserved": true,
+          "owned_children_closed": true
+        }
+      }
+    },
+    "aborted_attempt": {
+      "name": "CandidateLocal-v1",
+      "cause": "Guard required the first post-disconnect sleeping telemetry row; normal idle delay had not yet elapsed. No measurement browsers launched. Receipt retained."
+    },
+    "focused_mobile": {
+      "valid": true,
+      "selected_passed": 3,
+      "explicitly_skipped": 15,
+      "full_mobile_suite_run": false,
+      "receipt": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/CoopThroughput-20261021/FocusedMobile-v1/Run-v1/Result.json",
+      "receipt_sha256": "549e8443c56001fbcda191e10bbd67d791635a516ee4b497e6cd41f95af03968",
+      "scope": "Controlled28/35FPS statistics; actual bitrate commands, negotiated frames and decoded video. Not a realFPS result.",
+      "preservation": {
+        "owned_children_closed": true,
+        "identities_preserved": true,
+        "package_preserved": true,
+        "saved_preserved": true,
+        "source_preserved": true,
+        "fixture_files_preserved": true
+      }
+    }
   }
 }

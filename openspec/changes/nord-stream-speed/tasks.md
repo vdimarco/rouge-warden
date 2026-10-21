@@ -132,7 +132,7 @@ User target: improve both simultaneous players to a real sustained 30 FPS. This 
 
 - [x] Recover the continuation branch in a durable isolated worktree, integrate current main, and retain the dirty source/art checkout and historical receipts.
 - [x] Record the completed all-ambience diagnostic separately from target achievement and persistent desktop settings.
-- [ ] Count touch receiver rates below29FPS as pressure and require35FPS headroom for recovery; test exact boundaries and update rendered fixtures.
-- [ ] Run offline browser checks and real resized-video adaptation checks, distinguishing injected statistics from actual throughput.
+- [x] Count touch receiver rates below29FPS as pressure and require35FPS headroom for recovery; test exact boundaries and update rendered fixtures.
+- [x] Run offline browser checks and real resized-video adaptation checks, distinguishing injected statistics from actual throughput. CPU81/81, offline UI/layout and3 focused real-media callbacks passed;15 unrelated mobile callbacks were explicitly skipped.
 - [ ] Measure fresh simultaneous native/decoded rates and solo responsiveness with current service identities; retain resolution and desktop-workload limits.
 - [ ] Review and deliver only verified changes, preserving current progress and the other task's restarted service/deployment.
