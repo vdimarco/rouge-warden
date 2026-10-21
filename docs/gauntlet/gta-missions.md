@@ -1478,3 +1478,52 @@ Unreal is not available here, so the native diamond was not captured. The title 
 ![Play client at 1280, host offline](gta-missions/r32-play-1280.png)
 
 ![Menu on a 390-wide screen, Recover visible](gta-missions/r32-play-menu-390.png)
+
+### Round 33 — 2026-10-21 — rubric v1
+
+- What changed: While driving, Lock holds Space, the handbrake, and lets go when the thumb lifts. Auto gas stays down during that hold. Brake still sends S and still drops auto gas. On foot, Lock hides and Jump still sends Space. Leaving the car lifts Space. The steering steps and the pedal steps are the same.
+- Why it helped: The wheels already lock on Space, and the phone's brake button is reverse, which the wheel already does in three steps. A thumb had no way to hold the lock.
+- Screenshots: title `docs/gauntlet/gta-missions/r33-title-1280.png`, `r33-title-390.png`, `r33-title-320.png`. Play client, host offline, `r33-play-1280.png`. Menu with Recover `r33-play-menu-390.png`. Lock beside the wheel, `r33-lock-390.png` and `r33-lock-568.png`. The title loaded with no page errors. The raw play page still logs the missing `@epicgames-ps/lib-pixelstreamingfrontend-ue5.8` specifier; the shell and Recover still draw. The lock was not held in a car. `node --test touch-controls.test.mjs` passed, including the hold, the release, and the brake key. `node steering-layout.test.mjs` passed from 320 to 1280, portrait and landscape. OpenSpec CLI is not installed, so `openspec validate` did not run.
+- Next target: sound design, tied at 7 with mission clarity. Clarity waits on the native card. The phone can hold the lock, so the next round should be a skid cue the tests can prove, off the music path and off the three feedback sounds. Performance stays at 4 and is not measurable here. Responsiveness stays at 3 and stays out of scope. The hold is proven by the phone tests. It was not felt, so the controls score waits at 8.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 3 | Unchanged. |
+| Color palette | 5 | Unchanged. |
+| Detail density | 3 | Unchanged. |
+| Texture and material quality | 3 | Unchanged. |
+| Composition and camera | 4 | Unchanged. |
+| Atmosphere | 4 | Unchanged. |
+| Character models | 3 | Unchanged. |
+| Animation smoothness | 3 | Unchanged. |
+| Particles and VFX | 2 | Unchanged. |
+| UI polish | 4 | Unchanged. The native card was not seen, and French and English still share the screen. |
+| Responsiveness and input latency | 3 | Unchanged. Still a lagged stream. Out of scope for this loop. |
+| Controls feel | 8 | Lock holds Space while driving and lifts it on release or when you leave the car. Auto gas stays. Brake still sends S. It was not felt in a car. |
+| Mission clarity | 7 | Unchanged. The last page names the sale and the blank ending. The native card was not seen. |
+| Pacing | 8 | Unchanged. The postcard is still a four-second hold. |
+| Fun factor | 9 | Unchanged. Chez Lise still sells a kit, a vest, or one star. |
+| Difficulty curve | 9 | Unchanged. Selling the last page ends it for 200 and does not bank the chain. |
+| Feedback | 8 | Unchanged. A blank page still names its rank. The lock uses the handbrake the car already has. |
+| Sound design | 7 | Unchanged. A bank still plays a pitch for its rank. The lock adds no new cue. |
+| Variety | 9 | Lock is a second driving button. Still one district, so this is not the reference's spread. |
+| Performance stability | 4 | Unchanged. Not measurable in this container. |
+
+- Aesthetics raw: 34 / 10 dimensions, index 34
+- Playability raw: 72 / 10 dimensions, index 72
+- Total: 106 / 200
+- Delta vs last round: +1 (round 32 was 105). Controls feel 7 → 8. Every other score held.
+
+![GTA title at 1280](gta-missions/r33-title-1280.png)
+
+![GTA title at 390](gta-missions/r33-title-390.png)
+
+![GTA title at 320](gta-missions/r33-title-320.png)
+
+![Play client at 1280, host offline](gta-missions/r33-play-1280.png)
+
+![Menu on a 390-wide screen, Recover visible](gta-missions/r33-play-menu-390.png)
+
+![Lock beside Auto on a 390-wide phone](gta-missions/r33-lock-390.png)
+
+![Lock beside Auto on a short landscape phone](gta-missions/r33-lock-568.png)
