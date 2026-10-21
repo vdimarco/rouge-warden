@@ -63,6 +63,8 @@ public:
     FVector GetObjectiveLocation() const;
     bool GetNextObjectiveLocation(FVector& Out) const;
     bool GetBeatPace(int32& OutIndex, int32& OutCount, int32& OutWalkSeconds) const;
+    // Session chain. Not written to the v1 slot. A miss spoils the open beat.
+    bool GetChainStake(int32& OutChain, int32& OutPay, bool& bOutBroken) const;
     int32 GetCompletedMissionCount() const { return CompletedMissions; }
     bool IsCampaignComplete() const { return Phase == EQuebecCampaignPhase::Complete; }
     // Banked indexes from the rules headers. Kept here so the save header stays free of those headers.
@@ -100,6 +102,10 @@ public:
     UPROPERTY(VisibleAnywhere, ReplicatedUsing=UpdatePresentation) int32 CourtStep = 0;
     // Session-only. A spoiled bank increments it so the local rasp can hear the miss. Not written to the v1 slot.
     UPROPERTY(VisibleAnywhere, Replicated) int32 CourtMisses = 0;
+    // Session-only combo across the seven story banks. A miss zeroes it and spoils the open beat. Not written to the v1 slot.
+    UPROPERTY(VisibleAnywhere, Replicated) int32 Chain = 0;
+    UPROPERTY(VisibleAnywhere, Replicated) int32 ChainMask = 0;
+    UPROPERTY(VisibleAnywhere, Replicated) bool bChainSpoiled = false;
     UPROPERTY(VisibleAnywhere, ReplicatedUsing=UpdatePresentation) int32 ShowStep = 0;
     // Session-only bitfield. Bits 0–2 are the terrace, the pond and the court. 7 means every group is out. Not written to the v1 slot.
     UPROPERTY(VisibleAnywhere, ReplicatedUsing=UpdatePresentation) int32 RescueMask = 0;
@@ -196,6 +202,10 @@ private:
     bool bBuilt = false;
     bool bSaveBlocked = false;
     void RecordRaceResult();
+    void BankChain(int32 Link);
+    void BreakChain();
+    void ShowStepMessage(AQuebecController* Who, const TCHAR* Message, bool bFinished, int32 Link);
+    int32 LastChainPay = 0;
 
     void BuildEncounter();
     void SetupRaceRoute();

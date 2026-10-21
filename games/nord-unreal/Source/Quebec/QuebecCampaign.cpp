@@ -2,6 +2,7 @@
 #include "QuebecGameplay.h"
 #include "QuebecGTA.h" // Side jobs: QuebecJobs::IsJobActive for the race gate guard (JOBS).
 #include "QuebecBlankRules.h"
+#include "QuebecChain.h"
 #include "QuebecPace.h"
 #include "QuebecConvoyRules.h"
 #include "QuebecCourtRules.h"
@@ -9,6 +10,7 @@
 #include "QuebecRescueRules.h"
 #include "QuebecShowRules.h"
 #include "QuebecSky.h"
+#include "QuebecPlayerState.h"
 
 static_assert(QuebecPondRules::StepBanked == AQuebecCampaign::PondBankedStep,
     "mission 3 banks in the session only; the campaign and the rules share one banked index");
@@ -644,7 +646,8 @@ bool AQuebecCampaign::HandleInteract(AQuebecController* Controller)
             if (Next == PondStep)
             {
                 Controller->PlayFeedback(EQuebecFeedbackCue::Dialogue);
-                Controller->ShowInteractionMessage(TEXT("That beam blinks with the sky. The postcard does not."));
+                BreakChain();
+                Controller->ShowInteractionMessage(TEXT("That beam blinks with the sky. The postcard does not. The chain breaks."));
                 return true;
             }
             AdvancePond(Next, Controller, TEXT("Worklight onto the near lock. The sheet is peeling."), false);
@@ -703,9 +706,10 @@ bool AQuebecCampaign::HandleInteract(AQuebecController* Controller)
             const int32 Next = QuebecCourtRules::Apply(CourtStep, QuebecCourtRules::EAct::Score, BestPanel, CourtTime);
             if (Next == CourtStep)
             {
-                Controller->ShowInteractionMessage(BestPanel == QuebecCourtRules::GoldPanel
+                BreakChain();
+                Controller->ShowInteractionMessage(FString(BestPanel == QuebecCourtRules::GoldPanel
                     ? TEXT("Wait until the ball is on the gold panel.")
-                    : TEXT("That panel is a decoy. The gold one restarts the rally."));
+                    : TEXT("That panel is a decoy. The gold one restarts the rally.")) + TEXT(" The chain breaks."));
                 return true;
             }
             AdvanceCourt(Next, Controller, TEXT("The point restarts. The return gate is the way out. RED JERSEY: I wanted to win that."), false);
@@ -717,7 +721,8 @@ bool AQuebecCampaign::HandleInteract(AQuebecController* Controller)
             if (NearCourt(Controller, Gold.X, Gold.Y))
             {
                 Controller->PlayFeedback(EQuebecFeedbackCue::Dialogue);
-                Controller->ShowInteractionMessage(TEXT("That panel restarts the point. The referee is already writing the penalty."));
+                BreakChain();
+                Controller->ShowInteractionMessage(TEXT("That panel restarts the point. The referee is already writing the penalty. The chain breaks."));
                 return true;
             }
             if (NearCourt(Controller, QuebecCourtRules::ReturnGate.X, QuebecCourtRules::ReturnGate.Y))
@@ -726,10 +731,11 @@ bool AQuebecCampaign::HandleInteract(AQuebecController* Controller)
                 if (Next == CourtStep)
                 {
                     ++CourtMisses;
+                    BreakChain();
                     ForceNetUpdate();
-                    Controller->ShowInteractionMessage(QuebecCourtRules::SweepDanger(CourtTime)
+                    Controller->ShowInteractionMessage(FString(QuebecCourtRules::SweepDanger(CourtTime)
                         ? TEXT("Ink on the line. Let it pass.")
-                        : TEXT("Wait until the ball crosses the middle panel."));
+                        : TEXT("Wait until the ball crosses the middle panel.")) + TEXT(" The chain breaks."));
                     return true;
                 }
                 AdvanceCourt(Next, Controller, TEXT("The bank goes in. The referee calls a penalty on the light."), false);
@@ -842,7 +848,8 @@ bool AQuebecCampaign::HandleInteract(AQuebecController* Controller)
             if (Next == ConvoyStep)
             {
                 Controller->PlayFeedback(EQuebecFeedbackCue::Dialogue);
-                Controller->ShowInteractionMessage(TEXT("The beam is still painting. Wait for the gap."));
+                BreakChain();
+                Controller->ShowInteractionMessage(TEXT("The beam is still painting. Wait for the gap. The chain breaks."));
                 return true;
             }
             AdvanceConvoy(Next, Controller, TEXT("The feed stalls. The projector car is sitting alone."), false);
@@ -935,7 +942,7 @@ void AQuebecCampaign::AdvancePond(int32 Next, AQuebecController* Who, const TCHA
     if (Next == PondStep) return;
     PondStep = Next;
     PondSamples.Reset();
-    if (Who && Message) Who->ShowInteractionMessage(Message);
+    ShowStepMessage(Who, Message, bFinished, QuebecChain::LinkPond);
     for (TActorIterator<AQuebecController> It(GetWorld()); It; ++It)
         It->PlayFeedback(bFinished ? EQuebecFeedbackCue::Complete : EQuebecFeedbackCue::Checkpoint);
     UpdatePresentation();
@@ -968,7 +975,7 @@ void AQuebecCampaign::AdvanceCourt(int32 Next, AQuebecController* Who, const TCH
 {
     if (Next == CourtStep) return;
     CourtStep = Next;
-    if (Who && Message) Who->ShowInteractionMessage(Message);
+    ShowStepMessage(Who, Message, bFinished, QuebecChain::LinkCourt);
     for (TActorIterator<AQuebecController> It(GetWorld()); It; ++It)
         It->PlayFeedback(bFinished ? EQuebecFeedbackCue::Complete : EQuebecFeedbackCue::Checkpoint);
     UpdatePresentation();
@@ -1001,7 +1008,7 @@ void AQuebecCampaign::AdvanceShow(int32 Next, AQuebecController* Who, const TCHA
 {
     if (Next == ShowStep) return;
     ShowStep = Next;
-    if (Who && Message) Who->ShowInteractionMessage(Message);
+    ShowStepMessage(Who, Message, bFinished, QuebecChain::LinkShow);
     for (TActorIterator<AQuebecController> It(GetWorld()); It; ++It)
         It->PlayFeedback(bFinished ? EQuebecFeedbackCue::Complete : EQuebecFeedbackCue::Checkpoint);
     UpdatePresentation();
@@ -1021,7 +1028,7 @@ void AQuebecCampaign::AdvanceRescue(int32 Next, AQuebecController* Who, const TC
 {
     if (Next == RescueMask) return;
     RescueMask = Next;
-    if (Who && Message) Who->ShowInteractionMessage(Message);
+    ShowStepMessage(Who, Message, bFinished, QuebecChain::LinkRescue);
     for (TActorIterator<AQuebecController> It(GetWorld()); It; ++It)
         It->PlayFeedback(bFinished ? EQuebecFeedbackCue::Complete : EQuebecFeedbackCue::Checkpoint);
     UpdatePresentation();
@@ -1054,7 +1061,7 @@ void AQuebecCampaign::AdvanceConvoy(int32 Next, AQuebecController* Who, const TC
 {
     if (Next == ConvoyStep) return;
     ConvoyStep = Next;
-    if (Who && Message) Who->ShowInteractionMessage(Message);
+    ShowStepMessage(Who, Message, bFinished, QuebecChain::LinkConvoy);
     for (TActorIterator<AQuebecController> It(GetWorld()); It; ++It)
         It->PlayFeedback(bFinished ? EQuebecFeedbackCue::Complete : EQuebecFeedbackCue::Checkpoint);
     UpdatePresentation();
@@ -1091,7 +1098,7 @@ void AQuebecCampaign::AdvanceBlank(int32 Next, AQuebecController* Who, const TCH
 {
     if (Next == BlankStep) return;
     BlankStep = Next;
-    if (Who && Message) Who->ShowInteractionMessage(Message);
+    ShowStepMessage(Who, Message, bFinished, QuebecChain::LinkBlank);
     for (TActorIterator<AQuebecController> It(GetWorld()); It; ++It)
         It->PlayFeedback(bFinished ? EQuebecFeedbackCue::Complete : EQuebecFeedbackCue::Checkpoint);
     UpdatePresentation();
@@ -1120,6 +1127,7 @@ void AQuebecCampaign::TickRace(float DeltaSeconds)
         if (RaceElapsed > RaceTimeLimit)
         {
             bRaceTimedOut = true;
+            BreakChain();
             ChangePhase(EQuebecCampaignPhase::RaceReady);
             LastCarPositions.Reset();
             return;
@@ -1169,6 +1177,19 @@ void AQuebecCampaign::TickRace(float DeltaSeconds)
                         CompletedMissions = 2;
                         SaveBoundary();
                         ChangePhase(EQuebecCampaignPhase::Complete);
+                        if (bRaceRetried) bChainSpoiled = true;
+                        {
+                            const bool bWasSpoiled = bChainSpoiled;
+                            BankChain(QuebecChain::LinkTerrace);
+                            if (LastChainPay > 0)
+                            {
+                                const FString Pay = bWasSpoiled
+                                    ? FString::Printf(TEXT("Lap in.  +$%d · chain broken"), LastChainPay)
+                                    : FString::Printf(TEXT("Lap in.  +$%d · chain %d"), LastChainPay, Chain);
+                                for (TActorIterator<AQuebecController> Player(GetWorld()); Player; ++Player)
+                                    Player->ShowInteractionMessage(Pay);
+                            }
+                        }
                     }
                     if (Phase == EQuebecCampaignPhase::RaceRunning && RaceGateIndex > 1)
                         for (TActorIterator<AQuebecController> Player(GetWorld()); Player; ++Player)
@@ -1349,6 +1370,7 @@ void AQuebecCampaign::RequestRetry(AQuebecController* Controller)
     }
     else if (!MoveToSafeCheckpoint(Controller,CarPoint,Rotation)) return;
     bRaceRetried = true;
+    if (Phase == EQuebecCampaignPhase::RaceRunning || bRaceTimedOut) BreakChain();
     if (bRaceTimedOut || Phase == EQuebecCampaignPhase::RaceRunning)
     {
         bRaceTimedOut = false;
@@ -1392,7 +1414,7 @@ void AQuebecCampaign::RequestReplay(AQuebecController* Controller)
         Controller->ShowInteractionMessage(TEXT("The last page is still his. T replays the race after it is blank."));
         return;
     }
-    // A race replay does not rewind PondStep, CourtStep, ShowStep, RescueMask, ConvoyStep or BlankStep. Banked scenes stay banked for this session.
+    // A race replay does not rewind PondStep, CourtStep, ShowStep, RescueMask, ConvoyStep, BlankStep, or the chain. Banked scenes stay banked for this session.
     RaceGateIndex = 0;
     RaceElapsed = 0.f;
     bRaceRetried = false;
@@ -1403,6 +1425,59 @@ void AQuebecCampaign::RequestReplay(AQuebecController* Controller)
     RequestRetry(Controller);
     bRaceRetried = false;
     Controller->ShowInteractionMessage(TEXT("Race replay ready. The banked scenes stay banked."));
+}
+
+void AQuebecCampaign::BankChain(int32 Link)
+{
+    const QuebecChain::FBank Bank = QuebecChain::Bank(Chain, ChainMask, bChainSpoiled, Link);
+    LastChainPay = Bank.Pay;
+    if (Bank.Pay <= 0) return;
+    Chain = Bank.Chain;
+    ChainMask = Bank.Mask;
+    bChainSpoiled = Bank.bSpoiled;
+    if (const AGameStateBase* Game = GetWorld() ? GetWorld()->GetGameState() : nullptr)
+        for (APlayerState* Each : Game->PlayerArray)
+            if (AQuebecPlayerState* Stats = Cast<AQuebecPlayerState>(Each))
+            {
+                Stats->Cash += Bank.Pay;
+                Stats->Changed();
+            }
+    ForceNetUpdate();
+}
+
+void AQuebecCampaign::BreakChain()
+{
+    if (Chain == 0 && bChainSpoiled) return;
+    Chain = 0;
+    bChainSpoiled = true;
+    ForceNetUpdate();
+}
+
+void AQuebecCampaign::ShowStepMessage(AQuebecController* Who, const TCHAR* Message, bool bFinished, int32 Link)
+{
+    const bool bWasSpoiled = bChainSpoiled;
+    if (bFinished) BankChain(Link);
+    if (!Who || !Message) return;
+    if (bFinished && LastChainPay > 0)
+    {
+        if (bWasSpoiled)
+            Who->ShowInteractionMessage(FString(Message) + FString::Printf(TEXT("  +$%d · chain broken"), LastChainPay));
+        else
+            Who->ShowInteractionMessage(FString(Message) + FString::Printf(TEXT("  +$%d · chain %d"), LastChainPay, Chain));
+        return;
+    }
+    Who->ShowInteractionMessage(Message);
+}
+
+bool AQuebecCampaign::GetChainStake(int32& OutChain, int32& OutPay, bool& bOutBroken) const
+{
+    const int Link = QuebecChain::OpenLink(Phase == EQuebecCampaignPhase::Complete,
+        IsPondOpen(), IsCourtOpen(), IsShowOpen(), IsRescueOpen(), IsConvoyOpen(), IsBlankOpen());
+    if (Link < 0) return false;
+    OutChain = Chain;
+    OutPay = QuebecChain::Stake(Chain, bChainSpoiled, Link);
+    bOutBroken = bChainSpoiled;
+    return OutPay > 0;
 }
 
 void AQuebecCampaign::RecordRaceResult()
@@ -1995,6 +2070,9 @@ void AQuebecCampaign::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
     DOREPLIFETIME(AQuebecCampaign,PondStep);
     DOREPLIFETIME(AQuebecCampaign,CourtStep);
     DOREPLIFETIME(AQuebecCampaign,CourtMisses);
+    DOREPLIFETIME(AQuebecCampaign,Chain);
+    DOREPLIFETIME(AQuebecCampaign,ChainMask);
+    DOREPLIFETIME(AQuebecCampaign,bChainSpoiled);
     DOREPLIFETIME(AQuebecCampaign,ShowStep);
     DOREPLIFETIME(AQuebecCampaign,RescueMask);
     DOREPLIFETIME(AQuebecCampaign,ConvoyStep);

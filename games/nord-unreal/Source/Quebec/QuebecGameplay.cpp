@@ -2468,6 +2468,14 @@ void AQuebecHUD::DrawHUD()
             Status += FString::Printf(TEXT(" · %d of %d"), PaceIndex, PaceCount);
             if (PaceWalk > 0) Status += FString::Printf(TEXT(" · ~%ds walk"), PaceWalk);
         }
+        int32 Chain = 0;
+        int32 ChainPay = 0;
+        bool bChainBroken = false;
+        if (Campaign->GetChainStake(Chain, ChainPay, bChainBroken))
+        {
+            if (bChainBroken) Status += FString::Printf(TEXT(" · chain broken · +$%d"), ChainPay);
+            else Status += FString::Printf(TEXT(" · chain %d · +$%d"), Chain, ChainPay);
+        }
     }
     else if (State && State->MissionIndex >= 0 && State->MissionIndex < AQuebecGameState::MissionCount)
     {
