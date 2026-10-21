@@ -63,7 +63,7 @@ After the Sludge Run is won, the story SHALL be four missions in order: Stop, Th
 - **THEN** a lesson card names the miss, the same mission starts again after that card, and the card still does not say to flush the clogs
 
 ### Requirement: Clog beats
-While the King is still asleep, the second flush SHALL start a falling rescue, the fourth flush SHALL start a balloon to bring back, the fifth flush SHALL start a purse snatcher to run down, the sixth flush SHALL start a pizza to deliver to a roof, the seventh flush SHALL start a mugging to clear, the eighth flush SHALL start a washer to carry down, and the tenth flush SHALL start a rooftop brawl. Each of those jobs SHALL take the mission card, and that card SHALL NOT say to flush the clogs. The first, the third, the ninth, and the eleventh flushes SHALL keep the clog card, counting toward twelve. When a beat ends, the clog card SHALL return. Flushing all twelve SHALL still wake the King. The second, the fifth, the seventh, and the tenth flushes SHALL NOT wake him. A beat SHALL wait while a story mission is the current job. A beat SHALL NOT move the story route. The washer on the eighth flush SHALL give less time than an odd-job washer when he hangs within a swing. The King SHALL still roar only on the fourth and the eighth flush. The falling rescue SHALL keep its fall rate.
+While the King is still asleep, the second flush SHALL start a falling rescue, the fourth flush SHALL start a balloon to bring back, the fifth flush SHALL start a purse snatcher to run down, the sixth flush SHALL start a pizza to deliver to a roof, the seventh flush SHALL start a mugging to clear, the eighth flush SHALL start a washer to carry down, the ninth flush SHALL start a getaway car to rope, and the tenth flush SHALL start a rooftop brawl. Each of those jobs SHALL take the mission card, and that card SHALL NOT say to flush the clogs. The first, the third, and the eleventh flushes SHALL keep the clog card, counting toward twelve. When a beat ends, the clog card SHALL return. Flushing all twelve SHALL still wake the King. The second, the fifth, the seventh, the ninth, and the tenth flushes SHALL NOT wake him. A beat SHALL wait while a story mission is the current job. A beat SHALL NOT move the story route. The washer on the eighth flush SHALL give less time than an odd-job washer when he hangs within a swing. The King SHALL still roar only on the fourth and the eighth flush. The falling rescue SHALL keep its fall rate.
 
 #### Scenario: One flush
 - **WHEN** one clog is flushed and no story mission is running
@@ -117,8 +117,16 @@ While the King is still asleep, the second flush SHALL start a falling rescue, t
 - **WHEN** the eighth flush starts that washer within a swing
 - **THEN** the card counts from 36 s, not from a minute
 
-#### Scenario: Nine flushes
-- **WHEN** nine clogs are flushed and the washer beat has ended
+#### Scenario: After the washer
+- **WHEN** that washer is set down
+- **THEN** the card says FLUSH THE CLOGS 8/12
+
+#### Scenario: The ninth flush
+- **WHEN** the ninth clog is flushed
+- **THEN** the card names a getaway car to rope and does not say to flush the clogs, and the King is still asleep
+
+#### Scenario: After the car
+- **WHEN** that car is stopped
 - **THEN** the card says FLUSH THE CLOGS 9/12
 
 #### Scenario: The tenth flush

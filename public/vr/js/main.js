@@ -413,7 +413,7 @@ let winHold = 0, winCard = null, winStory = null, lastWin = null;
 let missHold = 0, missCard = null, missJob = null, lastMiss = null;
 // A test can run the story route under ?nocut. Real play runs it only after Mission 1, and the tests leave it off.
 let routeForce = false;
-// Seven flushes break the clog run, so the pump never runs three times in a row. The queue waits out a story mission.
+// Eight flushes break the clog run, so the pump never runs three times in a row. The queue waits out a story mission.
 const CLOG_BEAT = {
   2: { type: "catch", mission: "OVER THE EDGE", near: [36, 130] },
   4: { type: "balloon", mission: "UP FOR AIR", near: [18, 80] },
@@ -421,6 +421,7 @@ const CLOG_BEAT = {
   6: { type: "pizza", mission: "HOT PIE", near: [18, 80] },
   7: { type: "mugging", mission: "THE ALLEY", near: [18, 80] },
   8: { type: "washer", mission: "GET HIM DOWN", near: [24, 140] },
+  9: { type: "getaway", mission: "STOP THAT CAR", near: [20, 120] },
   10: { type: "brawl", mission: "ROOF CREW", near: [24, 140] },
 };
 const clogQueue = [];

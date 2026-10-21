@@ -1,5 +1,5 @@
 // The second flush is a rescue, the fourth a balloon, the fifth a chase, the sixth a pizza, the seventh a mugging,
-// the eighth a washer, the tenth a brawl, and the clog card comes back after each.
+// the eighth a washer, the ninth a getaway car, the tenth a brawl, and the clog card comes back after each.
 import { mkdir } from "node:fs/promises";
 import { newPage, open, close, enterXR, checker, watchdog } from "./lib.mjs";
 
@@ -254,17 +254,29 @@ try {
     const id = G.game.targets().find((t) => t.kind === "clog" && !t.done);
     G.test.clearClog(id.id);
     let n = 0;
-    for (; n < 80; n++) {
+    for (; n < 180; n++) {
       G.test.step(1 / 60, 1);
+      const job = G.test.action().jobs.active;
       const ob = G.game.progress.objective;
-      if (ob && ob.n === 9 && /FLUSH THE CLOGS/.test(ob.title || "") && !G.test.action().jobs.active) break;
+      if (job && job.type === "getaway" && ob && /STOP THAT CAR/.test(ob.title || "") && /GETAWAY/.test(ob.title || "")) break;
     }
+    G.test.step(1 / 60, 4);
     const ob = G.game.progress.objective;
-    return { back, n, spot: !!spot, title: ob && ob.title, count: ob && ob.n, job: G.test.action().jobs.active && G.test.action().jobs.active.type, king: G.game.progress.king };
+    const job = G.test.action().jobs.active;
+    G.test.render(0);
+    return { back, n, spot: !!spot, title: ob && ob.title, detail: ob && ob.detail, job: job && job.type, king: G.game.progress.king };
   });
-  check(nine.title === "FLUSH THE CLOGS" && nine.count === 9 && !nine.job && nine.king !== "awake", "nine flushes are still the clog card", nine);
+  await page.screenshot({ path: out + "/car.png" });
+  check(nine.job === "getaway" && /STOP THAT CAR/.test(nine.title || "") && /GETAWAY/.test(nine.title || "") && /Rope the car/.test(nine.detail || "") && !/FLUSH THE CLOGS/.test((nine.title || "") + " " + (nine.detail || "")) && nine.king !== "awake", "the ninth flush is a getaway car, and the King still sleeps", nine);
 
   const roof = await page.evaluate(() => {
+    const killed = G.test.finishJob();
+    let back = 0, returned = "";
+    for (; back < 240; back++) {
+      G.test.step(1 / 60, 1);
+      const ob = G.game.progress.objective;
+      if (!G.test.action().jobs.active && ob && /FLUSH THE CLOGS/.test(ob.title || "") && ob.n === 9) { returned = ob.title; break; }
+    }
     const id = G.game.targets().find((t) => t.kind === "clog" && !t.done);
     G.test.clearClog(id.id);
     let n = 0;
@@ -278,9 +290,10 @@ try {
     const ob = G.game.progress.objective;
     const job = G.test.action().jobs.active;
     G.test.render(0);
-    return { n, title: ob && ob.title, detail: ob && ob.detail, job: job && job.type, king: G.game.progress.king };
+    return { killed, back, returned, n, title: ob && ob.title, detail: ob && ob.detail, job: job && job.type, king: G.game.progress.king };
   });
   await page.screenshot({ path: out + "/roof.png" });
+  check(roof.killed && /FLUSH THE CLOGS/.test(roof.returned || ""), "stopping the car brings the clog card back at 9/12", roof);
   check(roof.job === "brawl" && /ROOF CREW/.test(roof.title || "") && /BRAWL/.test(roof.title || "") && /Wave 1/.test(roof.detail || "") && !/FLUSH THE CLOGS/.test((roof.title || "") + " " + (roof.detail || "")) && roof.king !== "awake", "the tenth flush is a roof fight, and the King still sleeps", roof);
 
   const eleven = await page.evaluate(() => {
