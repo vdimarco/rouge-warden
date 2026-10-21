@@ -1228,18 +1228,19 @@ body[data-mode="desktop"] .fs-hud{display:block}
 .fs-cross i:nth-child(2){left:50%;bottom:-14px;width:4px;height:9px;margin-left:-2px}
 .fs-cross i:nth-child(3){top:50%;left:-14px;height:4px;width:9px;margin-top:-2px}
 .fs-cross i:nth-child(4){top:50%;right:-14px;height:4px;width:9px;margin-top:-2px}
-.fs-top{position:absolute;top:calc(env(safe-area-inset-top,0px) + 12px);left:50%;transform:translateX(-50%);display:flex;gap:12px;flex-wrap:wrap;justify-content:center;width:max-content;max-width:96vw}
-.fs-pill{display:flex;align-items:center;gap:8px;padding:6px 16px 3px 10px;background:var(--yellow,#ffd84a);border:3px solid var(--ink,#140a18);border-radius:3px;box-shadow:4px 4px 0 var(--ink,#140a18);transform:rotate(-1.4deg)}
-.fs-pill:nth-child(2){transform:rotate(1deg);background:var(--cream,#fff4d8)}
+.fs-top{position:absolute;top:calc(env(safe-area-inset-top,0px) + 12px);left:50%;transform:translateX(-50%);display:flex;gap:12px;flex-wrap:wrap;justify-content:center;width:max-content;max-width:96vw;isolation:isolate}
+.fs-top::before{content:"";position:absolute;z-index:-1;inset:-3px -5px -4px -5px;pointer-events:none;border:3px solid var(--ink,#140a18);border-radius:8px;box-shadow:3px 3px 0 var(--ink,#140a18);background:radial-gradient(circle at 50% 50%,rgba(216,69,122,.55) 0 1.4px,rgba(216,69,122,0) 2.1px) 0 0/7px 7px,#fff9ea}
+.fs-pill{display:flex;align-items:center;gap:8px;padding:6px 16px 3px 10px;background:radial-gradient(circle at 50% 50%,rgba(20,10,24,.4) 0 1.25px,rgba(20,10,24,0) 1.85px) 0 0/6px 6px,var(--yellow,#ffd84a);border:3px solid var(--ink,#140a18);border-radius:3px;box-shadow:4px 4px 0 var(--ink,#140a18);transform:rotate(-1.4deg)}
+.fs-pill:nth-child(2){transform:rotate(1deg);background:radial-gradient(circle at 50% 50%,rgba(216,69,122,.5) 0 1.3px,rgba(216,69,122,0) 1.9px) 0 0/6px 6px,var(--cream,#fff4d8)}
 .fs-pill:nth-child(3){transform:rotate(-0.6deg)}
 .fs-pill:nth-child(n+4){transform:rotate(1.2deg)}
 .fs-pill b{font:400 30px/1 var(--comic,"Bangers",Impact,"Arial Black",sans-serif)}
-.fs-pill small{font:700 21px/1 var(--ui,"Barlow Condensed","Arial Narrow",system-ui,sans-serif);opacity:.6}
+.fs-pill small{font:700 21px/1 var(--ui,"Barlow Condensed","Arial Narrow",system-ui,sans-serif);opacity:1;color:var(--ink,#140a18)}
 .fs-pill em{font-style:normal;font-size:21px;letter-spacing:.1em;color:var(--magenta,#d8457a)}
-.fs-coin{width:24px;height:24px;border-radius:50%;background:#f2c14e;border:3px solid var(--ink,#140a18);box-sizing:border-box}
-.fs-drop{width:16px;height:21px;border-radius:50% 50% 50% 50%/62% 62% 38% 38%;background:#9cff3a;border:3px solid var(--ink,#140a18);box-sizing:border-box}
+.fs-coin{width:24px;height:24px;border-radius:50%;background:radial-gradient(circle at 34% 30%,#fff3bf 0 26%,#f2c14e 52%,#a87412 100%);border:3px solid var(--ink,#140a18);box-sizing:border-box;box-shadow:inset 0 -2px 0 rgba(20,10,24,.45)}
+.fs-drop{width:16px;height:21px;border-radius:50% 50% 50% 50%/62% 62% 38% 38%;background:linear-gradient(155deg,#f4ffd4 0%,#9cff3a 46%,#2f8a14 100%);border:3px solid var(--ink,#140a18);box-sizing:border-box}
 .fs-heart{color:#ff3a4a;font-size:26px;margin:0 1px;text-shadow:2px 0 var(--ink,#140a18),-2px 0 var(--ink,#140a18),0 2px var(--ink,#140a18),0 -2px var(--ink,#140a18)}.fs-heart.off{color:#d9cfb8}
-.fs-compass svg{width:28px;height:28px;fill:var(--red,#e0482c);stroke:var(--ink,#140a18);stroke-width:2.6;stroke-linejoin:round;transition:transform .08s linear}
+.fs-compass svg{width:28px;height:28px;border-radius:50%;background:#fff9ea;box-shadow:0 0 0 2.5px var(--ink,#140a18);fill:var(--red,#e0482c);stroke:var(--ink,#140a18);stroke-width:2.6;stroke-linejoin:round;transition:transform .08s linear}
 .fs-time b{color:var(--red,#e0482c)}
 .fs-flash{position:absolute;inset:0;opacity:0;pointer-events:none;box-shadow:inset 0 0 90px 30px rgba(110,255,120,.75)}
 .fs-flash.gold{box-shadow:inset 0 0 140px 50px rgba(255,200,70,.85)}
@@ -1289,9 +1290,9 @@ dialog.fs-menu::backdrop{background:radial-gradient(circle at 50% 50%,rgba(255,2
 @media (pointer:coarse) and (min-height:461px){.fs-menu .btn{min-height:58px}.fs-menu .fs-seg .btn{min-height:52px}}
 @media (max-height:460px){.fs-pill b{font-size:24px}.fs-pill small,.fs-pill em{font-size:17px}.fs-sub{font-size:22px}
 dialog.fs-menu{padding:10px 18px 8px;box-shadow:7px 7px 0 var(--ink,#140a18)}.fs-menu>:last-child{margin-bottom:0}.fs-menu h2{font-size:24px;padding:4px 14px 1px;margin-bottom:4px}.fs-menu .lead{margin-bottom:6px}.fs-menu .fs-row,.fs-menu .fs-seg{margin:8px 0;gap:10px}.fs-menu .btn{min-height:42px;padding:5px 10px 2px;font-size:18px;border-width:3px;box-shadow:4px 4px 0 var(--ink,#140a18)}.fs-menu .fs-seg .btn{min-height:38px;font-size:16px}.fs-menu .fs-seg>span{font-size:16px}.fs-menu p{margin:6px 0}}
-.fs-pill.fs-mission{order:-1;align-items:baseline;gap:10px;padding:6px 14px 3px;background:var(--cream,#fff4d8);transform:rotate(-0.8deg);white-space:nowrap}
-.fs-pill.fs-mission.fs-pull{background:#ffd6c4;border-color:var(--magenta,#d8457a);box-shadow:4px 4px 0 var(--magenta,#d8457a)}
-.fs-mission b{font-size:23px;letter-spacing:.04em}.fs-mission small{font-size:18px;opacity:.75}.fs-m-short{display:none}
+.fs-pill.fs-mission{order:-1;align-items:baseline;gap:10px;padding:6px 14px 3px;background:radial-gradient(circle at 50% 50%,rgba(216,69,122,.5) 0 1.3px,rgba(216,69,122,0) 1.9px) 0 0/6px 6px,var(--cream,#fff4d8);transform:rotate(-0.8deg);white-space:nowrap}
+.fs-pill.fs-mission.fs-pull{background:radial-gradient(circle at 50% 50%,rgba(216,69,122,.55) 0 1.3px,rgba(216,69,122,0) 1.9px) 0 0/6px 6px,#ffd6c4;border-color:var(--magenta,#d8457a);box-shadow:4px 4px 0 var(--magenta,#d8457a)}
+.fs-mission b{font-size:23px;letter-spacing:.04em}.fs-mission small{font-size:18px;opacity:1}.fs-m-short{display:none}
 .fs-train{position:absolute;left:14px;bottom:14px;transform:rotate(-0.6deg);width:min(360px,38vw);padding:8px 10px 6px;background:#fffdf5;border:4px solid var(--ink,#140a18);border-radius:4px;box-shadow:6px 6px 0 var(--ink,#140a18)}
 .fs-train h3{margin:0 0 3px;font:400 20px/1 var(--comic,"Bangers",Impact,sans-serif);letter-spacing:.06em}
 .fs-train.done h3::after{content:" · COMPLETE";color:#1f8a3a}
@@ -1316,12 +1317,12 @@ body.keyhints .fs-train{bottom:60px}
    mission's place while it shows. The mission shows a short label (the district, or the pipes). With four score pills (a
    trial, or the King's hearts; the chip and the mission are not counted) neither shows. */
 @media (max-width:819px),(max-height:519px){
-.fs-train{display:none}.fs-train-now:not([hidden]){display:flex;background:#fffdf5}
+.fs-train{display:none}.fs-train-now:not([hidden]){display:flex;background:radial-gradient(circle at 50% 50%,rgba(216,69,122,.45) 0 1.2px,rgba(216,69,122,0) 1.8px) 0 0/6px 6px,#fffdf5}
 .fs-mission b,.fs-mission small{display:none}.fs-mission .fs-m-short{display:block}
 .fs-mission.no-short,.fs-top:has(.fs-train-now:not([hidden])) .fs-mission,
 .fs-top:has(.fs-pill:not([hidden]):not(.fs-mission):not(.fs-train-now) ~ .fs-pill:not([hidden]):not(.fs-mission):not(.fs-train-now) ~ .fs-pill:not([hidden]):not(.fs-mission):not(.fs-train-now) ~ .fs-pill:not([hidden]):not(.fs-mission):not(.fs-train-now)) :is(.fs-mission,.fs-train-now){display:none}}
 body:has(#phoneControls:not([hidden])) .fs-train{display:none}
-body:has(#phoneControls:not([hidden])) .fs-train-now:not([hidden]){display:flex;background:#fffdf5}
+body:has(#phoneControls:not([hidden])) .fs-train-now:not([hidden]){display:flex;background:radial-gradient(circle at 50% 50%,rgba(216,69,122,.45) 0 1.2px,rgba(216,69,122,0) 1.8px) 0 0/6px 6px,#fffdf5}
 body:has(#phoneControls:not([hidden])) .fs-top:has(.fs-train-now:not([hidden])) .fs-mission{display:none}
 body:has(#phoneControls:not([hidden])) .fs-top:has(.fs-pill:not([hidden]):not(.fs-mission):not(.fs-train-now) ~ .fs-pill:not([hidden]):not(.fs-mission):not(.fs-train-now) ~ .fs-pill:not([hidden]):not(.fs-mission):not(.fs-train-now) ~ .fs-pill:not([hidden]):not(.fs-mission):not(.fs-train-now)) :is(.fs-mission,.fs-train-now){display:none}
 .fs-train-now b{display:none}.fs-train-now small{font:400 24px/1 var(--comic,"Bangers",Impact,sans-serif);letter-spacing:.04em}
