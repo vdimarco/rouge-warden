@@ -23,7 +23,7 @@ import { createStreet, STREET } from "./street.js";
 import { createStreetView, createFigures } from "./streetview.js";
 import { createCombat, FIGHT } from "./combat.js";
 import { createCars, nearTraffic, trafficAt, CAR } from "./cars.js";
-import { createJobs, JOB_NAMES, MISS, STORY_ROUTE, STORY_NEAR } from "./jobs.js";
+import { createJobs, JOB, JOB_NAMES, MISS, STORY_ROUTE, STORY_NEAR } from "./jobs.js";
 import { createActionView } from "./actionview.js";
 import { createActionHud, placeGoal } from "./actionhud.js";
 import { createBloom } from "./bloom.js";
@@ -423,6 +423,7 @@ const CLOG_BEAT = {
   8: { type: "washer", mission: "GET HIM DOWN", near: [24, 140] },
   9: { type: "getaway", mission: "STOP THAT CAR", near: [20, 120] },
   10: { type: "brawl", mission: "ROOF CREW", near: [24, 140] },
+  11: { type: "lid", mission: "HOLD IT DOWN", near: [16, 80] },
 };
 const clogQueue = [];
 function noteClogBeat(n) {
@@ -762,6 +763,7 @@ const WIN_CUE = {
   brawl: "winFight", mugging: "winFight",
   thief: "winDash", pizza: "winDash", getaway: "winDash", taxi: "winDash",
   catch: "winLift", washer: "winLift", balloon: "winLift",
+  lid: "winWet",
 };
 function winCue(job) { return WIN_CUE[job] || "winLift"; }
 const WIN_HIT = { t: 0 };
@@ -822,6 +824,7 @@ const FAIL_LINES = {
   knockout: "You were knocked out. The job is lost.", left: "You left the job behind.",
   walked: "The fare got bored and walked off.", late: "Too slow! The fare jumped out at a red light.", away: "They got away. Next time!",
   flood: "The tanker burst! Sludge everywhere. Next time!",
+  popped: "The lid popped. Stand on it until it seats.",
 };
 function jobEvent(e) {
   switch (e.type) {
@@ -2827,6 +2830,7 @@ G.test = {
       P.pos.x = D.drop.x; P.pos.y = D.drop.y; P.pos.z = D.drop.z;
       P.onGround = true;
     }
+    else if (A.type === "lid") D.held = JOB.lid.hold;
     else return false;
     return true;
   },

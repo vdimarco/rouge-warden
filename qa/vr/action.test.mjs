@@ -881,5 +881,38 @@ test("the ninth-flush car drives faster than an odd-job getaway", () => {
   assert.ok(J.active.timer < tSlow, "clock " + J.active.timer.toFixed(1) + " vs " + tSlow.toFixed(1));
   assert.match(J.card.title, /STOP THAT CAR/);
 });
+test("Seat the Lid: standing on it for 6 s seats it, leaving slips the hold, and the clock pops it", () => {
+  const C = createCombat(city), J = createJobs({ city, combat: C, seed: 11 });
+  const h0 = hero(city.start.x, city.start.y, city.start.z);
+  J.start("lid", null, h0, { mission: "HOLD IT DOWN" });
+  const o = J.active.o;
+  assert.ok(Math.hypot(o.x - h0.x, o.z - h0.z) > 8, "the lid is off the hero");
+  J.update(DT, 0, h0);
+  assert.match(J.card.title, /HOLD IT DOWN/);
+  assert.match(J.card.title, /SEAT THE LID/);
+  assert.match(J.card.detail, /Stand on the lid/);
+  assert.doesNotMatch(J.card.title + " " + J.card.detail, /FLUSH THE CLOGS/);
+  const on = hero(o.x, o.y, o.z);
+  for (let i = 0; i < 3 / DT; i++) J.update(DT, i * DT, on);
+  assert.ok(J.active && J.active.data.held > 2.5 && J.active.data.held < 3.2, "held " + J.active.data.held.toFixed(2));
+  assert.match(J.card.detail, /Stay on the lid/);
+  const air = hero(o.x, o.y + 4, o.z, { onGround: false });
+  const held = J.active.data.held;
+  for (let i = 0; i < 1 / DT; i++) J.update(DT, i * DT, air);
+  assert.ok(J.active && J.active.data.held < held - 1.5, "the air slips it to " + J.active.data.held.toFixed(2));
+  assert.match(J.card.detail, /slipped/i);
+  const away = hero(o.x + 12, o.y, o.z);
+  J.update(DT, 0, away);
+  assert.ok(J.active.data.held < held - 1.5);
+  for (let i = 0; i < 6 / DT && J.active; i++) J.update(DT, i * DT, on);
+  assert.ok(J.events.some((e) => e.type === "done" && e.why === "seated" && e.reward === JOB.lid.reward), JSON.stringify(J.events.filter((e) => e.type === "done" || e.type === "failed")));
+  const J2 = createJobs({ city, combat: createCombat(city), seed: 11 });
+  J2.start("lid", null, h0);
+  const far = hero(J2.active.o.x + 12, J2.active.o.y, J2.active.o.z);
+  const ev = [];
+  for (let i = 0; i < (JOB.lid.time + 1) / DT && J2.active; i++) { J2.update(DT, i * DT, far); ev.push(...J2.events); J2.events.length = 0; }
+  assert.ok(ev.some((e) => e.type === "failed" && e.why === "popped"), JSON.stringify(ev.filter((e) => e.type === "failed")));
+  assert.equal(MISS.popped.title, "POPPED");
+});
 console.log(fails ? "FAIL: action (" + fails + " failed)" : "PASS: action");
 process.exitCode = fails ? 1 : 0;

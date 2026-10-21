@@ -38,6 +38,8 @@ export const JOB = {
   // beat: the ninth flush. An odd-job getaway keeps speed.
   getaway: { speed: 17, beat: 24, hops: [5, 8], crew: 2, reward: 40, swerve: 0.5, spare: 8 },
   tanker: { crew: 3, time: 100, seals: 3, reward: 45 },
+  // stay: metres on the ground that fill the hold. Leaving the lid, or the ground, slips it at twice that rate.
+  lid: { stay: 4, hold: 6, time: 24, reward: 25 },
 };
 // the crime shouts (the hero's own words, as in the comics) and the quips after a crime is stopped
 export const CRIME_LINES = {
@@ -61,8 +63,9 @@ export const MISS = {
   walked: { title: "WALKED OFF", detail: "Stay in the car.", short: "DRIVE" },
   late: { title: "TOO SLOW", detail: "The fare needed a faster street.", short: "FASTER" },
   flood: { title: "IT BURST", detail: "Seal the leak, then clear the crew.", short: "SEAL" },
+  popped: { title: "POPPED", detail: "Stay on the lid until it seats.", short: "HOLD" },
 };
-export const JOB_NAMES = { sludge: "Sludge Run", catch: "Catch!", washer: "Window Washer", pizza: "Pizza Rush", balloon: "Balloon Chase", brawl: "Rooftop Brawl", taxi: "Taxi!", thief: "Stop, Thief!", mugging: "Mugging", getaway: "Getaway Car", tanker: "Sludge Tanker" };
+export const JOB_NAMES = { sludge: "Sludge Run", catch: "Catch!", washer: "Window Washer", pizza: "Pizza Rush", balloon: "Balloon Chase", brawl: "Rooftop Brawl", taxi: "Taxi!", thief: "Stop, Thief!", mugging: "Mugging", getaway: "Getaway Car", tanker: "Sludge Tanker", lid: "Seat the Lid" };
 // After the Sludge Run the story is four different jobs, in this order. The twelve clogs stay in the city and still wake the King.
 export const STORY_ROUTE = [
   { type: "thief", mission: "MISSION 2", pending: "Stop the purse snatcher", scene: "mission2" },
@@ -85,6 +88,7 @@ export const JOB_LINES = {
   mugging: "Three goons are mugging someone. Stop them!",
   getaway: "Rope the getaway car to stop it, then deal with the crew.",
   tanker: "Plug the leak with your plunger (rope it three times) and beat the crew.",
+  lid: "The lid is rattling. Stand on it until it seats.",
 };
 // jobs that take you far from their marker: no "left it behind" for these
 const ROAMS = { sludge: true, taxi: true, thief: true, getaway: true };
@@ -445,6 +449,11 @@ export function createJobs({ city, combat, cars = null, seed = 4711 }) {
       A.timer = JOB.brawl.time;
       A.reward = JOB.brawl.reward;
     },
+    lid(A) {
+      A.data = { held: 0 };
+      A.timer = JOB.lid.time;
+      A.reward = JOB.lid.reward;
+    },
   };
   function spawnRing(o, n) {
     for (let i = 0; i < n; i++) {
@@ -677,6 +686,20 @@ export function createJobs({ city, combat, cars = null, seed = 4711 }) {
       else if (left === 0 && A.data.wave === 2) { end(true, "cleared"); return; }
       if (A.timer <= 0) { end(false, "time"); return; }
       A.card = card("ROOFTOP BRAWL " + fmt(A.timer), "Wave " + A.data.wave + " of 2: " + left + " left", crew.find((q) => combat.alive(q)) || A.o, { short: fmt(A.timer), n: left });
+      J.card = A.card;
+    },
+    lid(A, dt, h) {
+      const C = JOB.lid;
+      if (A.data.held >= C.hold) { end(true, "seated"); return; }
+      A.timer -= dt;
+      const on = Math.hypot(h.x - A.o.x, h.z - A.o.z) <= C.stay && !!h.onGround;
+      if (on) A.data.held += dt;
+      else if (A.data.held > 0) A.data.held = Math.max(0, A.data.held - dt * 2);
+      if (A.data.held >= C.hold) { end(true, "seated"); return; }
+      if (A.timer <= 0) { end(false, "popped"); return; }
+      const left = Math.max(0, C.hold - A.data.held);
+      const detail = on ? "Stay on the lid, " + left.toFixed(1) + " s" : A.data.held > 0 ? "It slipped. Get back on the lid." : "Stand on the lid.";
+      A.card = card("SEAT THE LID " + fmt(A.timer), detail, A.o, { short: on ? "HOLD" : A.data.held > 0 ? "BACK" : "LID" });
       J.card = A.card;
     },
   };
