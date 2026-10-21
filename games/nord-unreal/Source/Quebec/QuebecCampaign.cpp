@@ -50,7 +50,7 @@ static_assert(QuebecStorySave::ShadeBanked == AQuebecCampaign::ShadeBankedStep, 
 static_assert(QuebecShade::PocketX == 50700. && QuebecShade::PocketY == 14500., "the dark pocket left the lawn");
 static_assert(QuebecGrab::StepBanked == AQuebecCampaign::GrabBankedStep, "mission 13 and the story tail share one banked index");
 static_assert(QuebecStorySave::GrabBanked == AQuebecCampaign::GrabBankedStep, "the story tail left the grab bank");
-static_assert(QuebecGrab::CaseX == 62000. && QuebecGrab::CaseY == 14000., "the case left the lawn");
+static_assert(QuebecGrab::CaseX == 36000. && QuebecGrab::CaseY == 14000., "the case left the lawn");
 static_assert(QuebecStorySave::Current != QuebecStorySave::Rejected, "the writer would plant the unsupported fixture");
 
 static FString WithClose(const TCHAR* Line, int32 Bonus)

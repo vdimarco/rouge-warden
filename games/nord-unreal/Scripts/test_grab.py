@@ -1,5 +1,6 @@
 """Build and run the engine-independent grab test with every available system compiler."""
 from pathlib import Path
+import json
 import math
 import re
 import shutil
@@ -8,7 +9,9 @@ import tempfile
 
 SOURCE = Path(__file__).resolve().with_name("grab_test.cpp")
 ROOT = SOURCE.parents[1] / "Source" / "Quebec"
-SPOTS = ((62000.0, 14000.0), (62000.0, 14900.0), (62000.0, 7000.0))
+SPOTS = ((36000.0, 14000.0), (36000.0, 14900.0), (36000.0, 7000.0))
+CASE = (36000.0, 14000.0)
+DROP = (36000.0, 7000.0)
 
 def nearest_road(path, spot):
     text = (ROOT / path).read_text()
@@ -32,6 +35,57 @@ for spot in SPOTS:
     for name in ("LaFontaineMap.h", "LaFontaineExtensionMap.h"):
         gap = nearest_road(name, spot)
         assert gap > 1400, f"{spot} is {gap:.0f} cm from a road centre in {name}"
+
+def point_segment(px, py, sx, sy, ex, ey):
+    dx, dy = ex - sx, ey - sy
+    length = dx * dx + dy * dy
+    if length < 1e-6:
+        return math.hypot(px - sx, py - sy)
+    along = max(0.0, min(1.0, ((px - sx) * dx + (py - sy) * dy) / length))
+    return math.hypot(px - (sx + along * dx), py - (sy + along * dy))
+
+def inside(px, py, ring):
+    contained = False
+    previous = len(ring) - 1
+    for index, (xi, yi) in enumerate(ring):
+        xj, yj = ring[previous]
+        if ((yi > py) != (yj > py)) and (px < (xj - xi) * (py - yi) / ((yj - yi) or 1e-12) + xi):
+            contained = not contained
+        previous = index
+    return contained
+
+def crosses(ax, ay, bx, by, cx, cy, dx, dy):
+    def side(px, py, qx, qy, rx, ry):
+        return (qy - py) * (rx - qx) - (qx - px) * (ry - qy)
+    return side(ax, ay, bx, by, cx, cy) * side(ax, ay, bx, by, dx, dy) < 0 and side(cx, cy, dx, dy, ax, ay) * side(cx, cy, dx, dy, bx, by) < 0
+
+def segment_clearance(ring):
+    if inside(*CASE, ring) or inside(*DROP, ring):
+        return 0.0
+    best = 1e18
+    count = len(ring)
+    for index in range(count):
+        ax, ay = ring[index]
+        bx, by = ring[(index + 1) % count]
+        if crosses(*CASE, *DROP, ax, ay, bx, by):
+            return 0.0
+        best = min(best, point_segment(ax, ay, *CASE, *DROP), point_segment(*CASE, ax, ay, bx, by), point_segment(*DROP, ax, ay, bx, by))
+    return best
+
+manifest = json.loads((ROOT.parents[1] / "Data" / "CityBuildings" / "manifest.json").read_text())
+shell = 1e18
+for building in manifest["buildings"]:
+    for ring in building["footprints"]:
+        if len(ring) < 2:
+            continue
+        xs = [point[0] for point in ring]
+        ys = [point[1] for point in ring]
+        if max(CASE[0], DROP[0]) + 250 < min(xs) or min(CASE[0], DROP[0]) - 250 > max(xs):
+            continue
+        if max(CASE[1], DROP[1]) + 250 < min(ys) or min(CASE[1], DROP[1]) - 250 > max(ys):
+            continue
+        shell = min(shell, segment_clearance(ring))
+assert shell > 200, f"the straight sprint is {shell:.0f} cm from a building shell"
 
 FLAGS = ["-std=c++20", "-Wall", "-Wextra", "-Wshadow", "-Wconversion", "-Wdouble-promotion", "-Werror", "-O1"]
 compilers = [name for name in ("c++", "g++", "clang++") if shutil.which(name)]

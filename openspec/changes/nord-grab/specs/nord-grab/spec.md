@@ -15,6 +15,10 @@ After the crossing is banked, the card SHALL ask the player to take the case on 
 - **WHEN** a dry walker reaches the drop with time left
 - **THEN** the grab is banked and the purse is 560 once
 
+#### Scenario: The open line
+- **WHEN** the straight line from the case to the drop is measured against the surveyed building shells
+- **THEN** the line stays more than 2 m from every shell, so a sprint does not run into a wall
+
 ### Requirement: Recover stands north of the case
 Recover SHALL place the player north of the case, outside the case and outside the drop, and SHALL NOT add time. A race replay SHALL NOT rewind the grab.
 

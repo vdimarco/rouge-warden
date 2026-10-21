@@ -13,9 +13,9 @@ namespace QuebecGrab
     inline constexpr int StepRun = 1;
     inline constexpr int StepBanked = 2;
 
-    inline constexpr double CaseX = 62000.;
+    inline constexpr double CaseX = 36000.;
     inline constexpr double CaseY = 14000.;
-    inline constexpr double DropX = 62000.;
+    inline constexpr double DropX = 36000.;
     inline constexpr double DropY = 7000.;
     inline constexpr double RecoverNorth = 900.;
     inline constexpr double Reach = 450.;
