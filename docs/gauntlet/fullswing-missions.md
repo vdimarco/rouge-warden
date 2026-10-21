@@ -498,3 +498,42 @@ Loop: missions, playability, controls, feel, UX, pacing and fun for In Full Swin
 - Delta vs last round: +1 (round 12 was 116). Feedback 7 → 8. Every other score held.
 
 ![Pulling away turns the mission card hot](fullswing-r13/hot.png)
+
+### Round 14 — 2026-10-21 — rubric v1
+
+- What changed: The fourth flush starts UP FOR AIR, a balloon to bring back. The eighth starts GET HIM DOWN, a washer to carry to the street. The card names that job until it ends, then FLUSH THE CLOGS returns with the count. Three flushes, and the flushes between the beats, stay on the clog card. One flush does not start a beat. All twelve still wake the King. A beat waits while a story mission is running.
+- Why it helped: After the story, the path to the King was twelve of the same pump. Spider-Man 2 breaks a long list with a different activity, then hands it back. A 1280×800 play flushed three clogs and the card stayed FLUSH THE CLOGS 3/12. The fourth named the balloon. Bringing it back returned the clog card at 4/12. Seven stayed on the clog card. The eighth named the washer, a carry, not the balloon. A skip-intro run that flushes one clog still shows FLUSH THE CLOGS 1/12.
+- Screenshots: `docs/gauntlet/fullswing-r14/balloon.png`, `docs/gauntlet/fullswing-r14/washer.png`.
+- Next target: difficulty curve (7), tied with responsiveness, controls, mission clarity, and sound. Difficulty is the one to change next: the later breather is the same 60 s grip as an odd-job washer, so the clog run does not get tighter. Sound was not the round. Performance stays at 6. This machine has no real GPU to time, so that score is not the next round.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 5 | Held. Golden-hour sun and ink shadows. |
+| Color palette | 6 | Held. Yellow, red and sludge green still separate the HUD from the blocks. |
+| Detail density | 4 | Held. Open blocks more than a dressed borough. |
+| Texture and material quality | 3 | Held. Flat fills. |
+| Composition and camera | 4 | Held. The chase camera still sits behind the hero. These frames are the card. |
+| Atmosphere | 5 | Held. The dusk skyline has a mood. The roof under the card does not. |
+| Character models | 3 | Held. Simple comic figures. |
+| Animation smoothness | 4 | Scored from still frames in software GL. Continuous motion was not watched. |
+| Particles and VFX | 5 | Held. No new effect. The beats use the jobs already in the city. |
+| UI polish | 6 | Held. The beats use the same ink pill. |
+| Responsiveness and input latency | 7 | Held. The new card was on the stepped frames after the flush. |
+| Controls feel | 7 | Held. The swing carry is unchanged. |
+| Mission clarity | 7 | Held. The card names the balloon, then the washer, then the clogs again. The missions were already named. |
+| Pacing | 8 | The fourth flush is a balloon and the eighth is a carry, and the clog card comes back between them. The other ten are still the same pump. |
+| Fun factor | 8 | Held. A win still hops the hero. This round changes when the next job starts, not the finish. |
+| Difficulty curve | 7 | Held. Falling behind still turns the jog into a run. The washer on the eighth flush has the same 60 s grip as an odd job. |
+| Feedback | 8 | Held. A chase that is pulling away still turns the card hot. The beats did not add a new hit. |
+| Sound design | 7 | Held. Not listened to. The beats use the existing job start. |
+| Variety | 8 | Held. The balloon and the washer were already jobs. This round is when they show up in the clog run. |
+| Performance stability | 6 | The 1280×800 play passed with no page errors. Frame time on a real GPU was not measured. |
+
+- Aesthetics raw: 45 / 10 dimensions, index 45
+- Playability raw: 73 / 10 dimensions, index 73
+- Total: 118 / 200
+- Delta vs last round: +1 (round 13 was 117). Pacing 7 → 8. Every other score held.
+
+![The fourth flush is a balloon to bring back](fullswing-r14/balloon.png)
+
+![The eighth flush is a washer to carry down](fullswing-r14/washer.png)

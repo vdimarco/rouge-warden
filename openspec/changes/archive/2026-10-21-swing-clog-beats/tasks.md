@@ -1,0 +1,2 @@
+- [x] Start a balloon on the fourth flush and a washer on the eighth, then return to the clog card
+- [x] Check both beats, and the flushes between them, in a 1280×800 play

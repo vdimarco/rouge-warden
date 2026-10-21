@@ -1412,7 +1412,8 @@ export function createGame({ scene, city, view, ropes, hands, ui, audio, P, save
   }
   function addPipeTarget(p) { ropes.addTarget({ id: p.tid, tag: "pipe", pos: { x: p.tip.x, y: p.tip.y, z: p.tip.z }, radius: 2.2, normal: { x: p.n.x, y: p.n.y, z: p.n.z } }); }
 
-  // 4 and 8 flushes wake him for a moment: a roar, the beam flares, and one lob at the roof that was just flushed
+  // 4 and 8 flushes wake him for a moment: a roar, the beam flares, and one lob at the roof that was just flushed.
+  // The same counts also break the clog run with a different job (main.js).
   function kingOnFlush() {
     if (K.state === "sleeping") {
       if (done.size >= KING.unlock) { say("king", 0); later(3.5, () => wakeKing(true)); return; }
@@ -1426,9 +1427,11 @@ export function createGame({ scene, city, view, ropes, hands, ui, audio, P, save
         const c = lastFlushed;
         if (c && !K.ball) lob(c);
       }
+      if (beatFn) beatFn(done.size);
     }
   }
   let lastFlushed = null;
+  let beatFn = null;
 
   // One ball at a time. The lob at a flushed roof is only for show: it hurts nobody.
   function makeBall(o, to, flight, cosmetic) {
@@ -2068,6 +2071,7 @@ export function createGame({ scene, city, view, ropes, hands, ui, audio, P, save
       jobCard = next;
     },
     onStory(fn) { storyFn = fn; },
+    onClogBeat(fn) { beatFn = fn; },
     // the line of the row or step you are on, again (after a scene covered it)
     resay() { if (train.on && progress.training && progress.training.now >= 0) trainSay(train.items[progress.training.now]); else if (tut.step >= 0) say("tutorial", tut.step); },
     // test and portal hooks
