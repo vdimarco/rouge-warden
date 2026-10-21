@@ -56,6 +56,9 @@ float fogAmt(vec3 wp) {
   float d = length(v), H = 110.0, yc = max(cameraPosition.y, 0.0), yp = max(wp.y, 0.0), dy = yc - yp;
   float hf = abs(dy) < 1.0 ? exp(-0.5 * (yc + yp) / H) : H * (exp(-yp / H) - exp(-yc / H)) / dy;
   float f = 1.0 - exp(-${FOG_K} * max(d - ${FOG_N}, 0.0) * hf);
+  float Hs = 18.0;
+  float hs = abs(dy) < 1.0 ? exp(-0.5 * (yc + yp) / Hs) : Hs * (exp(-yp / Hs) - exp(-yc / Hs)) / dy;
+  f = max(f, (1.0 - exp(-0.012 * max(d - 28.0, 0.0))) * hs * 0.40);
   return max(f, 0.06 * smoothstep(12.0, ${FOG_N}, d));
 }
 vec3 fogCol(vec3 wp) {
