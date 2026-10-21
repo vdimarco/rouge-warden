@@ -1020,3 +1020,40 @@ Loop: missions, playability, controls, feel, UX, pacing and fun for In Full Swin
 - Delta vs last round: +1 (round 26 was 127). Variety 8 → 9. Every other score held.
 
 ![The ninth flush is a getaway car](fullswing-r27/car.png)
+
+### Round 28 — 2026-10-21 — rubric v1
+
+- What changed: A job whose opening clock is at least 12 seconds turns the card hot once 8 seconds remain, or a quarter of that opening, whichever is less. Putting time back above that line brings the ink pill back. A falling person, and a free balloon at or above 140 m, use that same card. A 3.5 second edge and a 1.2 second slip do not heat from the clock. A won job stays the ink pill. Pulling away still heats the card.
+- Why it helped: A clock about to run out looked like any other card. Spider-Man 2 uses one urgent treatment when the objective is getting away. A 1280×800 play left the two-minute roof fight on the ink pill, turned it hot at 7 seconds (warm fill rgb(255, 214, 196), magenta edge rgb(216, 69, 122)), and brought the ink pill back at 30 seconds. The win card stayed GOT IT on the ink pill. A balloon under 140 m stayed ink and one at 140 m turned hot. The edge wait stayed ink, and a falling person turned the card hot. Closing a chase that is pulling away still brings the ink pill back.
+- Screenshots: `docs/gauntlet/fullswing-r28/hot.png`.
+- Next target: performance stability (6), the lowest playability score. This machine has no real GPU to time, so that score is not the next implementation round.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 5 | Held. Golden-hour sun and ink shadows. |
+| Color palette | 6 | Held. Yellow, red and sludge green still separate the HUD from the blocks. |
+| Detail density | 4 | Held. Open blocks more than a dressed borough. |
+| Texture and material quality | 3 | Held. Flat fills. |
+| Composition and camera | 4 | Held. The chase camera still sits behind the hero. This frame is the hot clock. |
+| Atmosphere | 5 | Held. The dusk skyline has a mood. The street under the card does not. |
+| Character models | 3 | Held. Simple comic figures. |
+| Animation smoothness | 4 | Scored from still frames in software GL. Continuous motion was not watched. |
+| Particles and VFX | 5 | Held. No new effect. The card is the change on screen. |
+| UI polish | 6 | Held. The hot pill is the one a chase already uses. |
+| Responsiveness and input latency | 8 | Held. The clog card still rewrites its metres every frame. |
+| Controls feel | 9 | Held. The first web still hangs from a building at the real rope length. |
+| Mission clarity | 9 | Held. The King card still names the nearest pipe, and the compass still says The King's pipe. |
+| Pacing | 9 | Held. Eight of the twelve flushes are a different job, and the clog pump never runs three times in a row. Three flushes are still the same clog. |
+| Fun factor | 8 | Held. A win still hops the hero. This round changes the card, not the hop. |
+| Difficulty curve | 8 | Held. The eighth flush still counts from 36 s. The rescue still falls at the same rate. |
+| Feedback | 9 | Seven seconds left on the roof fight turned the card hot, warm fill rgb(255, 214, 196) and magenta edge rgb(216, 69, 122). Thirty seconds brought the ink pill back. A falling person and a balloon at 140 m used that same card. A win stayed on the ink pill. |
+| Sound design | 9 | Held. A flush, a fight, a dash and a lift are still different stings, and the ring fanfare is still the trial. |
+| Variety | 9 | Held. The ninth flush is still the getaway car. This round changes the card, not the jobs. |
+| Performance stability | 6 | The 1280×800 play passed with no page errors. Frame time on a real GPU was not measured. |
+
+- Aesthetics raw: 45 / 10 dimensions, index 45
+- Playability raw: 84 / 10 dimensions, index 84
+- Total: 129 / 200
+- Delta vs last round: +1 (round 27 was 128). Feedback 8 → 9. Every other score held.
+
+![Seven seconds left turns the card hot](fullswing-r28/hot.png)
