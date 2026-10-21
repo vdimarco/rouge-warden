@@ -1193,3 +1193,38 @@ Unreal is not available in this environment, so in-engine frames are the last co
 - Playability raw: 39 / 10 dimensions, index 39
 - Total: 108 / 200
 - Delta vs last round: +1
+
+### Round 35 — 2026-10-21 — rubric v1
+
+- What changed: `AQuebecLanePaint` lays a broken white center line on La Fontaine roads at least 9 m wide. Each dash is an engine plane, 180 cm by 22 cm, 2 cm above the ground trace, every 450 cm. Narrower streets stay bare. The dashes do not collide. The host paints after the road meshes accept a trace. A remote client paints its own copy. A second spawn adds nothing.
+- Why it helped: Detail density was at 7, and the facades stay off limits. The wide roads were one unbroken sheet of asphalt.
+- Screenshots: before `docs/gauntlet/gta-graphics/round-35/before-frame.png`, after `docs/gauntlet/gta-graphics/round-35/after-frame.png`. Crops are `before-dashes.png` and `after-dashes.png`. Both use the walking camera (arm 420, socket Y 70, socket Z 110, pitch −12, horizontal FOV 90) on the sidewalk of a 14 m road. Not an Unreal capture. The dash pixels number 355. The max absolute delta is 0.612. The bounding crop mean is 0.004 because the gaps between dashes are still bare asphalt. The full-frame mean is 0.0004. `Scripts/test_lane_paint.py` passed. `QuebecTraces.cpp` was not compiled. `GET /gta/` returned 200. OpenSpec CLI is not installed, so the change files were not validated with `openspec`. The dashes were not confirmed in Unreal.
+- Next target: UI polish. It is the remaining aesthetics score at 7. Composition and particles stay at 6, because the walking socket and the rain displacement stay as they are. Animation smoothness stays at 3 and is skipped until a pose can be drawn.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 8 | The sun on the road is the same. The dashes are not lights. |
+| Color palette | 8 | The white is one marking. The street colours are otherwise unchanged. |
+| Detail density | 8 | Wide roads now carry a broken center line. Local streets and the buildings are unchanged. |
+| Texture and material quality | 8 | The clearcoat is unchanged. The dash is a flat white plane. |
+| Composition and camera | 6 | The walking socket is unchanged. |
+| Atmosphere | 8 | The moon grade and the street sheen are unchanged. |
+| Character models | 8 | The casual idle fallback is unchanged. No figure is in this frame. |
+| Animation smoothness | 3 | Skipped. The blend space still cannot be posed here. |
+| Particles and VFX | 6 | Rain rings are unchanged. |
+| UI polish | 7 | The street column is unchanged. |
+| Responsiveness and input latency | 4 | Not measured this round. |
+| Controls feel | 4 | Not played. |
+| Mission clarity | 5 | The objective words are unchanged. |
+| Pacing | 4 | Unchanged mission slice. |
+| Fun factor | 3 | Not played. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 4 | No new juice. |
+| Sound design | 3 | Not listened to. |
+| Variety | 3 | One boulevard. Narrow streets stay unmarked. |
+| Performance stability | 5 | `Scripts/test_lane_paint.py` passed. The dashes are one instanced mesh. Frame time was not remeasured. |
+
+- Aesthetics raw: 70 / 10 dimensions, index 70
+- Playability raw: 39 / 10 dimensions, index 39
+- Total: 109 / 200
+- Delta vs last round: +1

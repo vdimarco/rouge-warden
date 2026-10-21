@@ -89,6 +89,19 @@ private:
     UFUNCTION() void OnRep_Knock();
 };
 
+/** Broken white center line on the wide La Fontaine roads. Local to each peer, no collision. */
+UCLASS(Transient, NotPlaceable)
+class QUEBEC_API AQuebecLanePaint : public AActor
+{
+    GENERATED_BODY()
+public:
+    AQuebecLanePaint();
+    // One pool for this world. Returns how many dashes were added, or 0 when the pool already exists.
+    static int32 Spawn(UWorld* World);
+private:
+    UPROPERTY() TObjectPtr<UInstancedStaticMeshComponent> Dashes;
+};
+
 // Per-car state of the tyre-mark layer on one peer.
 struct FQuebecTyreTrail
 {

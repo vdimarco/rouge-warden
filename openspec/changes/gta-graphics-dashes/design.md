@@ -1,0 +1,5 @@
+# Paint, not a new road mesh
+
+None of the surveyed lighting or material papers fit a lane line. A broken white center line is the marking that separates the two directions of a wide street. `AQuebecLanePaint` is one instanced plane per world. Each dash is the engine plane scaled to 180 cm by 22 cm. The instance sits 2 cm above the ground trace, every 450 cm, starting 250 cm in from each end of a segment. Roads under 9 m wide, and segments under 15 m, are skipped. A dedicated server draws nothing. Toronto is skipped because those coordinates belong to La Fontaine. The host paints after the road meshes are made traceable. A remote client paints its own copy, because a client has no game mode. A second call finds the actor and adds nothing.
+
+Unreal is not installed. The offline picture is the walking camera (arm 420, socket Y 70, socket Z 110, pitch −12, horizontal FOV 90) standing on the sidewalk of a 14 m road. The before frame is bare asphalt. The after frame is the same road with the dashes. It is not an engine capture.

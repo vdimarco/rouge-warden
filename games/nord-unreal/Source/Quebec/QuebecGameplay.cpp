@@ -1724,6 +1724,8 @@ void AQuebecController::BeginPlay()
         PlayerCameraManager->ViewPitchMax = -5.f;
     }
     BindBrowserInputRelease();
+    // The game mode paints the host. A remote client has no game mode, so it paints its own copy.
+    if (IsLocalController() && GetNetMode() == NM_Client) AQuebecLanePaint::Spawn(GetWorld());
 }
 
 void AQuebecController::BindBrowserInputRelease()
@@ -3026,6 +3028,8 @@ void AQuebecGameMode::BeginPlay()
             Surface->SetCollisionResponseToChannel(ECC_Visibility,ECR_Block);
         }
     }
+    // After the road meshes accept a ground trace, so a dash is not dropped for lack of a hit.
+    if (!bToronto) AQuebecLanePaint::Spawn(GetWorld());
     // Toronto has its own origin and starts as free roam, with only its authored starter car.
     if (bToronto) return;
     if (!FParse::Param(FCommandLine::Get(), TEXT("NordNoCampaign")))

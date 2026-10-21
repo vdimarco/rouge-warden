@@ -442,6 +442,53 @@ int32 AQuebecStreetProp::SpawnStreetProps(UWorld* World)
     return Count;
 }
 
+AQuebecLanePaint::AQuebecLanePaint()
+{
+    PrimaryActorTick.bCanEverTick = false;
+    Dashes = CreateDefaultSubobject<UInstancedStaticMeshComponent>(TEXT("CenterDashes"));
+    RootComponent = Dashes;
+    Dashes->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+    Dashes->SetGenerateOverlapEvents(false);
+    Dashes->SetCanEverAffectNavigation(false);
+    Dashes->SetCastShadow(false);
+    Dashes->SetCullDistance(14000.f);
+    static ConstructorHelpers::FObjectFinder<UStaticMesh> Plane(TEXT("/Engine/BasicShapes/Plane.Plane"));
+    if (Plane.Succeeded()) Dashes->SetStaticMesh(Plane.Object);
+}
+
+int32 AQuebecLanePaint::Spawn(UWorld* World)
+{
+    if (!World || World->GetNetMode() == NM_DedicatedServer || QuebecDistrict::IsToronto(World)) return 0;
+    for (TActorIterator<AQuebecLanePaint> It(World); It; ++It) return 0;
+    AQuebecLanePaint* Paint = World->SpawnActor<AQuebecLanePaint>();
+    if (!Paint || !Paint->Dashes) return 0;
+    if (UMaterialInterface* White = TraceMaterial(TEXT("M_White"))) Paint->Dashes->SetMaterial(0, White);
+    int32 Count = 0;
+    for (int32 Road = 0; Road < UE_ARRAY_COUNT(LaFontaine::RoadSegments); ++Road)
+    {
+        const float Width = LaFontaine::RoadSegmentWidths[Road];
+        const FVector Start = LaFontaine::RoadSegments[Road][0];
+        const FVector End = LaFontaine::RoadSegments[Road][1];
+        const float Length = float(FVector::Dist2D(Start, End));
+        // Local streets stay unmarked. A wide road gets a broken line down its middle.
+        if (Width < 900.f || Length < 1500.f) continue;
+        const FVector Direction = (End - Start).GetSafeNormal2D();
+        const float Yaw = float(Direction.Rotation().Yaw);
+        for (float Along = 250.f; Along < Length - 250.f; Along += 450.f)
+        {
+            FVector Point = Start + Direction * Along;
+            float GroundZ = 0.f;
+            if (!QuebecStreet::GroundAt(World, Point, GroundZ)) continue;
+            Point.Z = GroundZ + 2.f;
+            // The engine plane is 100 cm. 1.8 by 0.22 is a dash 180 cm long and 22 cm wide.
+            Paint->Dashes->AddInstance(FTransform(FRotator(0.f, Yaw, 0.f), Point, FVector(1.8f, .22f, 1.f)));
+            ++Count;
+        }
+    }
+    UE_LOG(LogTemp, Display, TEXT("NORD_TRACES center_dashes=%d"), Count);
+    return Count;
+}
+
 AQuebecTraceMarks::AQuebecTraceMarks()
 {
     PrimaryActorTick.bCanEverTick = true;
