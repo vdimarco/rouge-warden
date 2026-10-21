@@ -703,3 +703,40 @@ Playability was scored from a flat boot and the city render check, not a full pl
 
 Playability was scored from a flat boot and the city render check, not a full playthrough. OpenSpec CLI validation was not run; the `openspec` command is not installed.
 
+### Round 20 — 2026-10-21 — rubric v1
+
+- What changed: On a rope, off the ground, and faster than 8 m/s, the chase camera rises by up to 1.15 m after the arm is placed. The arm stays 4.5 m and the pitch stays −20°. A stand on the street does not take the rise. The ceiling check still stops it. The source is Mark Haigh-Hutchinson, Real-Time Cameras (2009), the lead room already used for the shoulder slide.
+- Why it helped: The swing held the body near the middle, so the street ahead and the figure shared one band. The head now sits lower (screen y 425 to 524) and more of the avenue stays above it. It is still the same chase rig.
+- Screenshots: before `docs/gauntlet/shots/r20-before-swing.png`, after `docs/gauntlet/shots/r20-after-swing.png`. The street, where this slide does not run: `docs/gauntlet/shots/r20-before-street.png`, `docs/gauntlet/shots/r20-after-street.png`. The sunset: `docs/gauntlet/shots/r20-before-needle.png`, `docs/gauntlet/shots/r20-after-needle.png`.
+- Next target: UI polish (5). It is the only aesthetics score still at 5.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 6 | Unchanged. Shaded lower walls stay warm. The floors by the roof stay the cool band. |
+| Color palette | 6 | Unchanged. Cool shade stays teal and the step toward the sun stays rose. |
+| Detail density | 6 | Unchanged. The shop awnings from round 16. |
+| Texture and material quality | 6 | Unchanged. The masonry units from round 13. |
+| Composition and camera | 6 | On a fast rope the head drops from screen y 425 to 524. The reported pitch stayed −0.349 and the distance stayed 4.5 m. |
+| Atmosphere | 6 | Unchanged. The far avenue still sits in the warm dust from round 15. |
+| Character models | 6 | Unchanged. The cream belt from round 17. Skinned triangles stayed at 12,468. |
+| Animation smoothness | 6 | Unchanged. The swing still trails at the bottom, and the run is still the captured loop. |
+| Particles and VFX | 6 | Unchanged. The cream trail from round 19. |
+| UI polish | 5 | Unchanged. The dotted score plate from round 11. |
+| Responsiveness and input latency | 6 | Unchanged. No new pass and no new draw. No input timing was measured. |
+| Controls feel | 5 | Unchanged. |
+| Mission clarity | 4 | Unchanged. Not played. |
+| Pacing | 4 | Unchanged. |
+| Fun factor | 4 | Unchanged. Not played as a session. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 5 | Unchanged. |
+| Sound design | 4 | Unchanged. |
+| Variety | 4 | Unchanged. |
+| Performance stability | 6 | `qa/vr/render.mjs` passed, including flat play, the painted-sky checks, and the lit-sphere cel check. Street mean 73.2, saturation 0.57. |
+
+- Aesthetics raw: 59 / 10 dimensions, index 59
+- Playability raw: 46 / 10 dimensions, index 46
+- Total: 105 / 200
+- Delta vs last round: +1 (104 → 105). Composition and camera 5 → 6. Playability unchanged.
+
+Playability was scored from a flat boot and the city render check, not a full playthrough. OpenSpec CLI validation was not run; the `openspec` command is not installed.
+
