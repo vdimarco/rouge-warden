@@ -1,4 +1,4 @@
-// After a pipe is off, the King throws, then stomps the deck, then pulls, then belches on a spot, then sweeps a lane. A stomp costs a heart on the ground and none in the air. A pull drags an airborne hero with no rope, and costs a heart inside 16 m. A rope or the ground holds. A belch costs a heart only when you are still standing on the spot. A sweep costs a heart in that lane, on the ground or in the air. A step outside the lane does not.
+// After a pipe is off, the King throws, then stomps the deck, then pulls, then belches on a spot, then sweeps a lane, then grabs up close. A stomp costs a heart on the ground and none in the air. A pull drags an airborne hero with no rope, and costs a heart inside 16 m. A rope or the ground holds. A belch costs a heart only when you are still standing on the spot. A sweep costs a heart in that lane, on the ground or in the air. A grab costs a heart within 8 m, on the ground or in the air, and a rope does not hold.
 import { mkdir } from "node:fs/promises";
 import { newPage, open, close, enterXR, checker, watchdog } from "./lib.mjs";
 
@@ -129,6 +129,28 @@ try {
   });
   await page.screenshot({ path: out + "/sweep.png" });
   check(sweep.belches > 0 && sweep.kind === "sweep" && sweep.lane != null && /sweeping/i.test(sweep.detail) && /aside/i.test(sweep.detail) && sweep.dom === sweep.detail, "the attack after that belch is a sweep, and the card says to step aside", sweep);
+
+  const grab = await page.evaluate(() => {
+    G.game.progress.hearts = 3;
+    G.test.step(1 / 60, 70);
+    const sweeps = G.game.info().king.sweeps;
+    G.game.kingReady();
+    let kind = "", wind = 0, detail = "", dom = "";
+    for (let i = 0; i < 10; i++) {
+      G.test.step(1 / 60, 1);
+      const k = G.game.info().king;
+      kind = k.kind; wind = k.windT;
+      const ob = G.game.progress.objective;
+      detail = ob ? ob.detail : "";
+      const sm = document.querySelector(".fs-mission small");
+      dom = sm ? sm.textContent : "";
+      if (kind === "grab" && wind > 0 && /grabbing/i.test(detail) && /back/i.test(dom)) break;
+    }
+    G.test.render(0);
+    return { sweeps, kind, wind, detail, dom, turn: G.game.info().king.turn };
+  });
+  await page.screenshot({ path: out + "/grab.png" });
+  check(grab.sweeps > 0 && grab.kind === "grab" && /grabbing/i.test(grab.detail) && /back/i.test(grab.detail) && grab.dom === grab.detail, "the attack after that sweep is a grab, and the card says to get back", grab);
 
   const ground = await page.evaluate(() => {
     const m = G.game.info().king.mouth, d = G.game.info().deck;
@@ -297,6 +319,56 @@ try {
   check(lane.aside.ground && lane.aside.dist <= 36 && Math.abs(lane.aside.ang) > 0.45 && lane.aside.sweeps > lane.aside.was && lane.aside.hearts === lane.aside.before, "a step out of the lane keeps the heart", lane.aside);
   check(lane.far.ground && lane.far.dist > 36 && lane.far.sweeps > lane.far.was && lane.far.hearts === lane.far.before, "the same heading past his reach keeps the heart", lane.far);
   check(!lane.air.ground && lane.air.dist <= 36 && Math.abs(lane.air.ang) <= 0.45 && lane.air.sweeps > lane.air.was && lane.air.hearts === lane.air.before - 1, "a jump in the lane still takes a heart", lane.air);
+
+  const grip = await page.evaluate(() => {
+    const p = G.game.info().king.perch, d = G.game.info().deck;
+    G.game.progress.hearts = 3;
+    const stand = (x, y, ground, rope) => {
+      G.test.teleport(p[0] + x, y, p[2]);
+      G.P.frozen = true;
+      G.P.onGround = ground;
+      G.P.vel.x = G.P.vel.y = G.P.vel.z = 0;
+      if (rope) {
+        const r = G.P.ropes[0];
+        r.state = "attached";
+        r.sticky = true;
+        r.target = { tag: "building", id: 1 };
+        r.anchor.x = G.P.pos.x; r.anchor.y = G.P.pos.y + 40; r.anchor.z = G.P.pos.z;
+      }
+    };
+    const release = () => {
+      const before = { hearts: G.game.progress.hearts, x: G.P.pos.x, z: G.P.pos.z, grabs: G.game.info().king.grabs };
+      G.test.step(1 / 60, 70);
+      return {
+        before: before.hearts, hearts: G.game.progress.hearts,
+        grabs: G.game.info().king.grabs, was: before.grabs,
+        moved: Math.hypot(G.P.pos.x - before.x, G.P.pos.z - before.z),
+        dist: Math.hypot(G.P.pos.x - p[0], G.P.pos.z - p[2]),
+        ground: G.P.onGround, rope: G.P.ropes[0].state,
+      };
+    };
+    stand(4, d.y, true, false);
+    G.game.progress.hearts = 3;
+    G.game.kingWind("grab");
+    const close = release();
+    stand(14, d.y, true, false);
+    G.game.progress.hearts = 3;
+    G.game.kingWind("grab");
+    const far = release();
+    stand(4, d.y + 10, false, false);
+    G.game.progress.hearts = 3;
+    G.game.kingWind("grab");
+    const air = release();
+    stand(4, d.y + 10, false, true);
+    G.game.progress.hearts = 3;
+    G.game.kingWind("grab");
+    const held = release();
+    return { close, far, air, held };
+  });
+  check(grip.close.ground && grip.close.dist <= 8 && grip.close.moved < 0.05 && grip.close.grabs > grip.close.was && grip.close.hearts === grip.close.before - 1, "a grab up close takes a heart", grip.close);
+  check(grip.far.ground && grip.far.dist > 8 && grip.far.moved < 0.05 && grip.far.grabs > grip.far.was && grip.far.hearts === grip.far.before, "the same grab from farther away takes no heart", grip.far);
+  check(!grip.air.ground && grip.air.dist <= 8 && grip.air.grabs > grip.air.was && grip.air.hearts === grip.air.before - 1, "a jump does not save you from the grab", grip.air);
+  check(grip.held.rope === "attached" && grip.held.dist <= 8 && grip.held.moved < 0.05 && grip.held.grabs > grip.held.was && grip.held.hearts === grip.held.before - 1, "a rope does not hold against the grab", grip.held);
 
   check(!page.errors.length, "no page errors", page.errors);
 } finally {
