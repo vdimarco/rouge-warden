@@ -42,7 +42,7 @@ try {
       }
     };
     let frames = 0, cue = 0, wallAt = -1;
-    for (; frames < 500; frames++) {
+    for (; frames < 900; frames++) {
       G.test.step(1 / 60, 1);
       take();
       const act = G.test.action();

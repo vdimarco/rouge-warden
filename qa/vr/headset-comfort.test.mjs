@@ -2,7 +2,7 @@
 // A stick snap or smooth turn still does. Each rope starts on that hand's trigger.
 // node qa/vr/headset-comfort.test.mjs
 import assert from "node:assert/strict";
-import { playYaw, handFiresRope } from "../../public/vr/js/playturn.js";
+import { playYaw, handFiresRope, buttonHand } from "../../public/vr/js/playturn.js";
 
 const stick = -Math.PI / 4;
 const follow = 1.2;
@@ -29,5 +29,10 @@ const hands = [leftGrip, right];
 assert.deepEqual(hands.map(handFiresRope), [false, true], "the other hand's grip does not start the swinging hand's rope, and the right trigger does not start the left rope");
 assert.deepEqual([right, idle].map(handFiresRope), [true, false], "the left trigger does not start the right rope");
 assert.deepEqual([leftGrip, { triggerDown: false, gripDown: true }].map(handFiresRope), [false, false], "neither grip starts a rope");
+
+for (let i = 0; i < 10; i++) {
+  assert.equal(buttonHand(0), 0, "left button " + (i + 1) + " is the left rope");
+  assert.equal(buttonHand(1), 1, "right button " + (i + 1) + " is the right rope");
+}
 
 console.log("PASS: headset-comfort");

@@ -13,3 +13,9 @@ export function playYaw({ xr, turn, follow } = {}) {
 export function handFiresRope(hand) {
   return !!(hand && hand.triggerDown);
 }
+
+// Flat play, both ropes free: the left swing button is the left rope, the right button the right rope.
+// 0 is left, 1 is right. The side of the target does not pick the hand.
+export function buttonHand(which) {
+  return which === 1 ? 1 : 0;
+}

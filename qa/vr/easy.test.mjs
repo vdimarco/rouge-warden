@@ -119,5 +119,80 @@ console.log("\nchain");
   check(avg >= start - 1e-6, `average speed ${avg.toFixed(2)} m/s stays at or above the start ${start.toFixed(2)} m/s`);
 }
 
+console.log("\ngold ring");
+{
+  const S = city.start, G = city.goldRing;
+  const dx = G.x - S.x, dz = G.z - S.z, hl = Math.hypot(dx, dz);
+  const lessonHit = city.raycast(S.x, S.y + 1.25, S.z, G.x - S.x, G.y - (S.y + 1.25), G.z - S.z, 90, {});
+  const lesson = { x: lessonHit.x, y: lessonHit.y, z: lessonHit.z, nx: lessonHit.nx, ny: lessonHit.ny, nz: lessonHit.nz, id: lessonHit.collider.id };
+  let tower = 0, sky = 0;
+  const P = createPlayer(city);
+  teleport(P, S.x, S.y, S.z);
+  for (let i = 0; i < 30; i++) {
+    const a = easyAnchor(P, dx, dz, { lesson });
+    const onTower = !a.sky && a.tag === "building" && Math.abs(a.x - G.x) < 2 && Math.abs(a.z - G.z) < 8;
+    if (onTower) tower++;
+    if (a.sky) sky++;
+  }
+  check(tower === 30 && sky === 0, `gold ring lesson: 30 of 30 ropes take the tower (${tower} tower, ${sky} sky)`);
+
+  // The auto point sits inside the tower here. A ray from inside misses, so this used to stay sky.
+  let inside = 0;
+  const ux = dx / hl, uz = dz / hl;
+  P.pos.x = S.x + ux * 35; P.pos.z = S.z + uz * 35; P.pos.y = S.y;
+  for (let i = 0; i < 30; i++) {
+    const a = easyAnchor(P, dx, dz);
+    if (!a.sky && a.tag === "building" && Math.abs(a.x - G.x) < 2) inside++;
+  }
+  check(inside === 30, `a point inside the tower still takes that face, 30 of 30 (${inside})`);
+}
+
+console.log("\nheld building rope");
+{
+  const S = city.start, G = city.goldRing, P = createPlayer(city);
+  teleport(P, S.x, S.y, S.z);
+  const hp = { x: S.x, y: S.y + P.chest, z: S.z };
+  const hit = city.raycast(hp.x, hp.y, hp.z, G.x - hp.x, G.y - hp.y, G.z - hp.z, 90, {});
+  fire(P, 0, hp, { x: hit.x, y: hit.y, z: hit.z, nx: hit.nx, ny: hit.ny, nz: hit.nz, tag: "building", id: hit.collider.id });
+  const hold = () => ({ move: { x: 0, z: 0 }, jump: false, hands: [
+    { pos: { x: P.pos.x, y: P.pos.y + P.chest, z: P.pos.z }, velRel: { x: 0, y: 0, z: 0 }, yank: 0, grip: 0, holding: true, reeling: false },
+    { pos: { x: 0, y: 0, z: 0 }, velRel: { x: 0, y: 0, z: 0 }, yank: 0, grip: 0, holding: false, reeling: false },
+  ] });
+  let snaps = 0, saw = false;
+  for (let i = 0; i < 80 && P.ropes[0].state !== "attached"; i++) {
+    step(P, dt, hold());
+    if (P.events.some((e) => e.type === "snap")) snaps++;
+    P.events.length = 0;
+    if (P.ropes[0].state === "idle" && i > 2) break;
+  }
+  saw = P.ropes[0].state === "attached";
+  const steps = Math.round(5 / dt);
+  let attached = 0;
+  for (let i = 0; i < steps; i++) {
+    step(P, dt, hold());
+    if (P.ropes[0].state === "attached") attached++;
+    if (P.events.some((e) => e.type === "snap")) snaps++;
+    P.events.length = 0;
+  }
+  check(saw && attached === steps && snaps === 0, `a held building rope stays attached for 5 s (${(attached * dt).toFixed(2)} s, ${snaps} snaps)`);
+}
+
+console.log("\nrope cap");
+{
+  const cap = 16 * H;
+  console.log(`  h = ${H} m, 16h = ${cap.toFixed(1)} m`);
+  const P = body();
+  const g = swing(P);
+  check(g.len <= cap + 1e-6, `open-ground rope ${g.len.toFixed(1)} m is within the ${cap.toFixed(1)} m cap`);
+  const far = createPlayer(city);
+  teleport(far, 0, 40, 400);
+  const from = { x: far.pos.x, y: far.pos.y + far.chest, z: far.pos.z };
+  fire(far, 0, from, { x: 0, y: 40, z: 520, nx: 0, ny: -1, nz: 0, tag: "sky", id: "sky", easy: true });
+  armEasy(far.ropes[0], H);
+  step(far, dt, hold());
+  const len = far.ropes[0].len;
+  check(Math.abs(len - cap) < 1e-6, `a span past 16h clamps to ${cap.toFixed(1)} m (got ${len.toFixed(2)} m)`);
+}
+
 console.log(fails.length ? `\n${fails.length} FAILED, ${passes} passed` : `\n${passes} passed`);
 if (fails.length) { for (const f of fails) console.log(" - " + f); process.exit(1); }

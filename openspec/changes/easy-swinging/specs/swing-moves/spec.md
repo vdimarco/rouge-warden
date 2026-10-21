@@ -1,7 +1,7 @@
 ## ADDED Requirements
 
 ### Requirement: A held swing attaches by itself
-In the chase view, holding swing SHALL attach the web without the player choosing a point. The anchor SHALL be 12 body-heights ahead along the horizontal velocity, or along the facing when that speed is under 1 m/s, and 14 body-heights above the feet. A building within 6 body-heights of that point SHALL take the anchor. With no building there, the anchor SHALL be that sky point, raised until it is off the screen. This SHALL work over open ground. A phone tap, first person, a headset, a test aim, and a hero on a wall SHALL keep their existing aim. With a goon in reach the swing button stays a punch, so a missed blow does not fire an easy web.
+In the chase view, holding swing SHALL attach the web without the player choosing a point. The anchor SHALL be 12 body-heights ahead along the horizontal velocity, or along the facing when that speed is under 1 m/s, and 14 body-heights above the feet. A building within 6 body-heights of that point SHALL take the anchor, including when the point is inside the building. Sky SHALL be used only when no building is in that range. With no building there, the anchor SHALL be that sky point, raised until it is off the screen, except on the gold-ring lesson, where the marked tower face SHALL take the rope. This SHALL work over open ground. A phone tap, first person, a headset, a test aim, and a hero on a wall SHALL keep their existing aim. With a goon in reach the swing button stays a punch, so a missed blow does not fire an easy web. The left swing button SHALL fire the left rope, and the right swing button the right rope, when both ropes are free. A held rope on a building SHALL stay attached for at least 5 seconds.
 
 #### Scenario: Open ground
 - **WHEN** the player holds swing over open ground with no building within 6 body-heights of the anchor point
@@ -10,6 +10,22 @@ In the chase view, holding swing SHALL attach the web without the player choosin
 #### Scenario: A building in reach
 - **WHEN** the player holds swing and a building face is within 6 body-heights of the point 12 body-heights ahead and 14 above
 - **THEN** the web attaches to that face
+
+#### Scenario: The gold ring lesson
+- **WHEN** the player holds swing on the start roof during the gold-ring lesson
+- **THEN** 30 ropes in a row attach to the tower face at the gold ring, and none attach to a sky point
+
+#### Scenario: Inside the tower
+- **WHEN** the auto point sits inside the gold-ring tower
+- **THEN** the rope attaches to that tower's face
+
+#### Scenario: The buttons match the hands
+- **WHEN** both ropes are free and the player presses the left swing button, then the right, at a 1280-wide view
+- **THEN** the left button fires the left rope and the right button fires the right rope, 10 times out of 10
+
+#### Scenario: A held building rope
+- **WHEN** the player holds a rope that is attached to a building
+- **THEN** the rope is still attached after 5 seconds
 
 #### Scenario: A phone tap
 - **WHEN** the player taps the right half of the screen on a building
@@ -20,7 +36,7 @@ In the chase view, holding swing SHALL attach the web without the player choosin
 - **THEN** the web attaches to the auto anchor, and no new button is shown
 
 ### Requirement: The easy rope swings and lets go
-The rope length SHALL be the distance to the anchor and SHALL NOT exceed 16 body-heights. Gravity SHALL drive the arc. Holding forward SHALL add 15% speed once at the bottom of the arc. Release SHALL keep the speed and add 10% of it upward and forward. Another web SHALL be allowed 150 ms after the release. If the arc would put the feet below 1.5 body-heights, the rope SHALL shorten so the bottom of the arc stays on that line.
+The rope length SHALL be the distance to the anchor and SHALL NOT exceed 16 body-heights. One body-height is 1.8 m, so the cap is 28.8 m. Gravity SHALL drive the arc. Holding forward SHALL add 15% speed once at the bottom of the arc. Release SHALL keep the speed and add 10% of it upward and forward. Another web SHALL be allowed 150 ms after the release. If the arc would put the feet below 1.5 body-heights, the rope SHALL shorten so the bottom of the arc stays on that line.
 
 #### Scenario: Twenty swings
 - **WHEN** the player swings 20 times in a row over open ground

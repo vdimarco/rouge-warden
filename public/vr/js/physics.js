@@ -106,11 +106,53 @@ export function armEasy(r, hgt) {
 }
 
 // The point a held swing takes: 12h ahead along (dx, dz) and 14h above the feet. A building within 6h of that point
-// wins; otherwise the point itself, in the sky. opt.avoid is the building just left: another tier or its antenna is
-// not a new anchor. One reused result, so a caller copies it before the next call.
+// wins, including when the point sits inside the solid (a ray from inside a box does not hit it). opt.avoid is the
+// building just left: another tier or its antenna is not a new anchor. Otherwise the point itself, in the sky,
+// unless opt.lesson names the gold-ring tower. One reused result, so a caller copies it before the next call.
 const EASY_OUT = { x: 0, y: 0, z: 0, nx: 0, ny: -1, nz: 0, tag: "sky", id: "sky", bid: -1, easy: true, easyH: 1.8, sky: true, valid: true, same: false, special: false };
 const EASY_DIRS = [];
 for (let y = -1; y <= 1; y++) for (let x = -1; x <= 1; x++) for (let z = -1; z <= 1; z++) if (x || y || z) EASY_DIRS.push(x, y, z);
+// Closest point on a collider, and the outward normal. d is 0 when the query is inside. Null when farther than R.
+function faceOf(c, x, y, z, R) {
+  if (c.type === "box") {
+    const qx = x < c.minX ? c.minX : x > c.maxX ? c.maxX : x;
+    const qy = y < c.minY ? c.minY : y > c.maxY ? c.maxY : y;
+    const qz = z < c.minZ ? c.minZ : z > c.maxZ ? c.maxZ : z;
+    const dx = x - qx, dy = y - qy, dz = z - qz, d2 = dx * dx + dy * dy + dz * dz;
+    if (d2 > 1e-8) {
+      const d = Math.sqrt(d2);
+      if (d > R) return null;
+      return { d, x: qx, y: qy, z: qz, nx: dx / d, ny: dy / d, nz: dz / d };
+    }
+    const faces = [
+      [x - c.minX, c.minX, y, z, -1, 0, 0], [c.maxX - x, c.maxX, y, z, 1, 0, 0],
+      [y - c.minY, x, c.minY, z, 0, -1, 0], [c.maxY - y, x, c.maxY, z, 0, 1, 0],
+      [z - c.minZ, x, y, c.minZ, 0, 0, -1], [c.maxZ - z, x, y, c.maxZ, 0, 0, 1],
+    ];
+    let b = 0;
+    for (let i = 1; i < 6; i++) if (faces[i][0] < faces[b][0]) b = i;
+    const f = faces[b];
+    return { d: 0, x: f[1], y: f[2], z: f[3], nx: f[4], ny: f[5], nz: f[6] };
+  }
+  const ex = x - c.x, ez = z - c.z, horiz = Math.hypot(ex, ez);
+  const yTop = y > c.y1, yBot = y < c.y0;
+  if (horiz > c.r || yTop || yBot) {
+    const ux = horiz > 1e-8 ? ex / horiz : 1, uz = horiz > 1e-8 ? ez / horiz : 0;
+    const px = c.x + ux * Math.min(horiz, c.r), pz = c.z + uz * Math.min(horiz, c.r);
+    const py = yTop ? c.y1 : yBot ? c.y0 : y;
+    const vx = x - px, vy = y - py, vz = z - pz, d = Math.hypot(vx, vy, vz);
+    if (d > R) return null;
+    const n = d > 1e-8 ? d : 1;
+    return { d, x: px, y: py, z: pz, nx: vx / n, ny: vy / n, nz: vz / n };
+  }
+  const side = c.r - horiz, up = c.y1 - y, down = y - c.y0;
+  if (side <= up && side <= down) {
+    const ux = horiz > 1e-8 ? ex / horiz : 1, uz = horiz > 1e-8 ? ez / horiz : 0;
+    return { d: 0, x: c.x + ux * c.r, y, z: c.z + uz * c.r, nx: ux, ny: 0, nz: uz };
+  }
+  if (up <= down) return { d: 0, x, y: c.y1, z, nx: 0, ny: 1, nz: 0 };
+  return { d: 0, x, y: c.y0, z, nx: 0, ny: -1, nz: 0 };
+}
 export function easyAnchor(P, dx, dz, opt) {
   const H = (P.cfg && P.cfg.bodyH) || SWING.bodyH;
   const hl = len2(dx, dz) || 1;
@@ -123,15 +165,32 @@ export function easyAnchor(P, dx, dz, opt) {
   o.x = ax; o.y = ay; o.z = az; o.nx = 0; o.ny = -1; o.nz = 0; o.tag = "sky"; o.id = "sky"; o.bid = -1;
   const city = P.city;
   if (city.nearestSurface(ax, ay, az, R) <= R) {
-    let bt = R + 1, bx = 0, by = 0, bz = 0, bnx = 0, bny = 1, bnz = 0, cid = 0, bld = -1, hit = false;
+    let best = null;
+    const cols = city.colliders;
+    if (cols) for (let i = 0; i < cols.length; i++) {
+      const c = cols[i];
+      const piece = bidOf(c);
+      if (avoid != null && piece === avoid) continue;
+      const f = faceOf(c, ax, ay, az, R);
+      if (f && (!best || f.d < best.d)) { f.id = c.id; f.bid = piece; f.tag = c.tag || "building"; best = f; }
+    }
+    let bt = best ? best.d : R + 1, bx = 0, by = 0, bz = 0, bnx = 0, bny = 1, bnz = 0, cid = 0, bld = -1, btag = "building", hit = !!best;
+    if (best) { bx = best.x; by = best.y; bz = best.z; bnx = best.nx; bny = best.ny; bnz = best.nz; cid = best.id; bld = best.bid; btag = best.tag; }
     for (let i = 0; i < EASY_DIRS.length; i += 3) {
       const h = city.raycast(ax, ay, az, EASY_DIRS[i], EASY_DIRS[i + 1], EASY_DIRS[i + 2], R, HIT);
       const piece = h && h.collider ? bidOf(h.collider) : -1;
       if (h && h.t <= R && h.t < bt && h.collider && piece !== avoid) {
-        bt = h.t; bx = h.x; by = h.y; bz = h.z; bnx = h.nx; bny = h.ny; bnz = h.nz; cid = h.collider.id; bld = piece; hit = true;
+        bt = h.t; bx = h.x; by = h.y; bz = h.z; bnx = h.nx; bny = h.ny; bnz = h.nz; cid = h.collider.id; bld = piece; btag = "building"; hit = true;
       }
     }
-    if (hit) { o.x = bx; o.y = by; o.z = bz; o.nx = bnx; o.ny = bny; o.nz = bnz; o.tag = "building"; o.id = cid; o.bid = bld; o.sky = false; }
+    if (hit) { o.x = bx; o.y = by; o.z = bz; o.nx = bnx; o.ny = bny; o.nz = bnz; o.tag = btag; o.id = cid; o.bid = bld; o.sky = false; }
+  }
+  // The gold-ring lesson: the marked tower is the anchor when nothing sits in the 6h ball.
+  const lesson = o.sky && opt && opt.lesson;
+  if (lesson && lesson.x != null) {
+    o.x = lesson.x; o.y = lesson.y; o.z = lesson.z;
+    o.nx = lesson.nx || 0; o.ny = lesson.ny || 0; o.nz = lesson.nz || 0;
+    o.tag = "building"; o.id = lesson.id; o.sky = false;
   }
   return o;
 }

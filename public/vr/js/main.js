@@ -28,7 +28,7 @@ import { createActionView } from "./actionview.js";
 import { createActionHud, placeGoal } from "./actionhud.js";
 import { createBloom } from "./bloom.js";
 import { createTarget, bidOf, project, releaseWindow, kick } from "./target.js";
-import { playYaw, handFiresRope } from "./playturn.js";
+import { playYaw, handFiresRope, buttonHand } from "./playturn.js";
 
 const $ = (s) => document.querySelector(s);
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
@@ -1394,14 +1394,14 @@ function flatHud(dt, inp) {
   D.cue(cue);
   D.hints(play && !save.tutorial && hintT < HINT.seconds);
 }
-// Which hand a swing input fires (desktop.js asks when the input goes down): the free hand on the side of the target, or the right
-// hand for the second-rope input. With one rope out, the idle hand fires. In the opening there is no answer: the old mapping holds.
-// "Toggle": the next press of an input lets go of its own rope.
+// Which hand a swing input fires (desktop.js asks when the input goes down). Both ropes free: the left button
+// is the left rope and the right button is the right rope. With one rope out, the idle hand fires. In the opening
+// there is no answer: the old mapping holds. "Toggle": the next press of an input lets go of its own rope.
 function chooseHand(which, last, busy) {
   if (G.state !== "play" || !flatOn || D.mobile.enabled) return undefined;
   if (settings.hold === "toggle" && last >= 0 && P.ropes[last].state !== "idle") return last;
   const f0 = !busy[0] && P.ropes[0].state === "idle", f1 = !busy[1] && P.ropes[1].state === "idle";
-  if (f0 && f1) return which === 1 ? 1 : picker.hand(picker.result(), TCTX);
+  if (f0 && f1) return buttonHand(which);
   return f0 ? 0 : f1 ? 1 : -1;
 }
 // The pose the ears, the comic words and the far city follow: the camera in flat play, the head otherwise.
@@ -1564,8 +1564,8 @@ function couple(inp) {
 const latch = [false, false], realWait = [false, false], swingCool = [0, 0];
 // A held swing lets go after the GO cue has been readable, then catches the next building. chainArm is that catch.
 // chainFrom is the building just left, so the next web does not grab it again. cueHold is how long this rope's cue has shown.
-const CHAIN_SEE = 0.33;
-const chainArm = [false, false], chainFrom = [null, null], cueHold = [0, 0];
+const CHAIN_SEE = 0.33, CHAIN_HOLD = 5;
+const chainArm = [false, false], chainFrom = [null, null], cueHold = [0, 0], heldAge = [0, 0];
 let noneAt = -99;
 const PICK_OPTS = { avoidBid: -1 }; // reused: the options of the second pick when both swing inputs go down in one frame
 const PHONE_DIR = new THREE.Vector3(), PROJ = { x: 0, y: 0, depth: 0, behind: false, inView: false };
@@ -1598,18 +1598,20 @@ function canHang(a) {
   const gy = city.isWater(P.pos.x, P.pos.z) ? 0 : city.groundY(P.pos.x, P.pos.z);
   return d <= a.y - P.chest - (gy + 1.5 * H);
 }
+// The gold-ring lesson marks the tower. That face is the anchor when the 6h ball around the auto point is empty,
+// so the first ropes do not go to a sky point.
+function goldLesson() {
+  if (!pickerOn || !game || !game.progress || game.progress.tutorial !== 0) return null;
+  const res = picker.result();
+  if (!res || !res.valid || res.kind !== "ring") return null;
+  return { x: res.x, y: res.y, z: res.z, nx: res.nx, ny: res.ny, nz: res.nz, id: res.id };
+}
 function playerEasy() {
   easyDir();
-  const tries = [undefined, { up: 8, ahead: 20, reach: 10 }, { up: 4, ahead: 34, reach: 16 }];
-  let sky = null;
-  for (let t = 0; t < tries.length; t++) {
-    const a = easyAnchor(P, easyDx, easyDz, tries[t]);
-    if (!a || a.sky) { if (a && a.sky && !sky) sky = aimCopy(a); continue; }
-    if (canHang(a)) return aimCopy(a);
-  }
-  if (!sky) sky = aimCopy(easyAnchor(P, easyDx, easyDz));
-  if (sky.sky) { fillCam(); for (let n = 0; n < 8 && project(CAM, sky.x, sky.y, sky.z, PROJ).inView; n++) sky.y += sky.easyH * 3; }
-  return sky;
+  const lesson = goldLesson();
+  const a = easyAnchor(P, easyDx, easyDz, lesson ? { lesson } : undefined);
+  if (a.sky) { fillCam(); for (let n = 0; n < 8 && project(CAM, a.x, a.y, a.z, PROJ).inView; n++) a.y += a.easyH * 3; }
+  return a;
 }
 function aimAndFire(dt, inp) {
   if (driving) return;
@@ -1711,25 +1713,17 @@ function chainAim(i) {
 function holdChainRelease(dt, inp) {
   if (driving || !flatOn || isXR() || inp.easySwing || settings.hold === "toggle") {
     cueHold[0] = cueHold[1] = 0;
+    heldAge[0] = heldAge[1] = 0;
     return;
   }
   for (let i = 0; i < 2; i++) {
     const h = inp.hands[i], r = P.ropes[i];
-    if (!h.holding) { chainArm[i] = false; cueHold[i] = 0; continue; }
-    const sky = r.target && r.target.tag === "sky";
+    if (!h.holding) { chainArm[i] = false; cueHold[i] = 0; heldAge[i] = 0; continue; }
+    if (r.state !== "attached") { heldAge[i] = 0; cueHold[i] = 0; continue; }
+    heldAge[i] += dt;
+    // A held building rope stays on for at least 5 s. The catch of the next building waits until then.
+    if (heldAge[i] < CHAIN_HOLD) { cueHold[i] = 0; continue; }
     const airborne = !P.onGround && !P.wall;
-    if (sky) {
-      const liveSky = r.state === "attached" && r.easy && !r.sticky && airborne && cueAir[i] && releaseWindow(P, r, 0);
-      if (!liveSky) { cueHold[i] = 0; continue; }
-      cueHold[i] += dt;
-      if (cueHold[i] < CHAIN_SEE) continue;
-      chainFrom[i] = -1;
-      if (!chainAim(i)) continue;
-      chainArm[i] = true;
-      cueHold[i] = 0;
-      release(P, i);
-      continue;
-    }
     const building = r.state === "attached" && r.easy && !r.sticky && r.target && !SPECIAL_TAGS[r.target.tag];
     const live = building && airborne && releaseWindow(P, r, 0);
     if (live && cueAir[i]) {

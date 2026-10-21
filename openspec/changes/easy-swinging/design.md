@@ -4,7 +4,11 @@ Body height `h` is `SWING.bodyH` (1.8), next to `chestH`.
 
 ## Anchor
 
-`easyAnchor` in `physics.js` places a point 12h along the horizontal velocity and 14h above the feet. `nearestSurface` within 6h, then 26 rays from that point, snaps to the closest building face. With none, the point stays, tagged `sky`. `playerEasy` in `main.js` raises a sky anchor until `project()` says it is off the screen.
+`easyAnchor` in `physics.js` places a point 12h along the horizontal velocity and 14h above the feet. `nearestSurface` within 6h, then the closest point on a collider in that ball, snaps to that face. A ray from inside a box does not hit it (`city.js`), which is why the old 26-ray search left the gold-ring tower as sky when the point sat inside the solid. With none, the point stays, tagged `sky`. On the gold-ring lesson, `playerEasy` passes the marked tower face, and that face wins when the 6h ball is empty. Otherwise `playerEasy` raises a sky anchor until `project()` says it is off the screen.
+
+Both ropes free: `buttonHand` maps the left swing button to the left rope and the right button to the right rope. The side of the target was sending the left button to the right rope when the ring sat near the middle of a 1280-wide view.
+
+A held building rope is not released for the next-building catch until it has been attached for 5 seconds.
 
 The result object is reused. `fire` copies it, then `armEasy` sets `flyDur` to 0 so the cup attaches on the next physics step while the hold is still down.
 
@@ -12,7 +16,7 @@ This runs in the chase view during play, when there is no `G.test.aimAt`, the he
 
 ## Rope
 
-Length is the distance to the anchor, capped at 16h. `keepClear` shortens `len` immediately when `anchor.y - len - chest` would put the feet under `groundY + 1.5h` (the water plane `y = 0` over the lake). A trailing `lenTarget` would scrape for a step, so the length itself changes.
+Length is the distance to the anchor, capped at 16h. `h` is `SWING.bodyH`, 1.8 m, so 16h is 28.8 m. An open-ground rope of 25.3 m is under that cap. A longer span clamps to 28.8 m. `keepClear` shortens `len` immediately when `anchor.y - len - chest` would put the feet under `groundY + 1.5h` (the water plane `y = 0` over the lake). A trailing `lenTarget` would scrape for a step, so the length itself changes.
 
 Gravity is the existing pendulum. Holding forward (`inp.move.y > 0.2`) multiplies speed by 1.15 once per attach, when the fall has turned into a rise under the anchor (`prevY < -1`, chest mostly below the anchor). Letting go calls `easyBoost`: the velocity is kept and 10% of the speed is added along the horizontal velocity and upward. `swingCool` is 0.15 s per hand.
 
