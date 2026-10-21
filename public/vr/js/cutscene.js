@@ -67,7 +67,7 @@ export const SCENES = {
     { dur: 1.8, shot: heroShot, art: { src: "hero", focus: [0.33, 0.25], face: [0.33, 0.12], low: true }, caption: "Not on your watch.", balloon: { text: "Plunger up.", at: (c) => V(c.hero.x, c.hero.y + 0.45, c.hero.z) } },
     { dur: 1.8, shot: lookOut, art: { src: "swing", focus: [0.4, 0.4] }, title: { big: "Mission 1", small: "Sludge Run: catch the bomb runner" } },
   ],
-  // the Sludge Run is won: three different jobs, then the clogs can wake the King
+  // the Sludge Run is won: four different jobs, then the clogs can wake the King
   mission2: [
     { dur: 3.2, shot: (c) => needleShots(c).wide, art: { src: "swing", focus: [0.4, 0.4] }, title: { big: "Mission 2", small: "Stop the purse snatcher" } },
   ],
@@ -76,6 +76,9 @@ export const SCENES = {
   ],
   mission4: [
     { dur: 3.0, shot: (c) => needleShots(c).wide, art: { src: "city", focus: [0.5, 0.4], low: true }, title: { big: "Mission 4", small: "Clear the roof" } },
+  ],
+  mission5: [
+    { dur: 3.0, shot: heroShot, art: { src: "swing", focus: [0.4, 0.4] }, title: { big: "Mission 5", small: "Get the pizza to the roof" } },
   ],
   district: [
     { dur: 3.6, shot: clogShot, caption: (c) => c.district.name + ": " + c.district.left + (c.district.left === 1 ? " clog. " : " clogs. ") + (FLAVOUR[c.district.name] || "") },

@@ -1,0 +1,2 @@
+- [x] Add a pizza delivery as Mission 5, after the roof fight, and keep the clog card for after it
+- [x] Check the four story cards in a 1280×800 play, and that the clog card returns when the route ends

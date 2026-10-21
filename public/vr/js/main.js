@@ -54,7 +54,7 @@ function defaultSettings() {
   return { preset: COMFORT.defaultPreset, vignette: p.vignette, turn: p.turn, snap: p.snap, aim: p.aim, vignetteLook: "room", seated: false, height: 0, hand: "right", hold: "hold", cue: true, hz: PERF.hz, foveation: PERF.foveation, music: true, speedLines: true, verse: "full" };
 }
 // seen: the comic scenes already played (cutscene.js), so each plays once, and the phone's gesture card (mobile.js)
-function blankSave() { return { v: 1, intro: false, tutorial: false, clogs: [], loonies: [], bonus: 0, king: "sleeping", pipes: [], best: {}, seen: { opening: false, king: false, finale: false, mission2: false, mission3: false, mission4: false, phoneCoach: false, districts: [] }, jobs: { sludge: false, route: 0, done: {} }, settings: defaultSettings() }; }
+function blankSave() { return { v: 1, intro: false, tutorial: false, clogs: [], loonies: [], bonus: 0, king: "sleeping", pipes: [], best: {}, seen: { opening: false, king: false, finale: false, mission2: false, mission3: false, mission4: false, mission5: false, phoneCoach: false, districts: [] }, jobs: { sludge: false, route: 0, done: {} }, settings: defaultSettings() }; }
 function loadSave() {
   const s = blankSave(), raw = store.get(SAVE_KEY, null);
   if (!raw || typeof raw !== "object" || raw.v !== 1) return s;
@@ -64,7 +64,7 @@ function loadSave() {
   s.bonus = Number.isFinite(raw.bonus) && raw.bonus >= 0 ? raw.bonus : 0;
   s.king = ["sleeping", "awake", "beaten"].includes(raw.king) ? raw.king : "sleeping";
   if (raw.seen && typeof raw.seen === "object") {
-    for (const k of ["opening", "king", "finale", "mission2", "mission3", "mission4", "phoneCoach"]) s.seen[k] = raw.seen[k] === true;
+    for (const k of ["opening", "king", "finale", "mission2", "mission3", "mission4", "mission5", "phoneCoach"]) s.seen[k] = raw.seen[k] === true;
     s.seen.districts = ints(raw.seen.districts).filter((d) => d < 6);
   }
   if (raw.jobs && typeof raw.jobs === "object") {
@@ -348,6 +348,7 @@ const STORY_TOAST = {
   mission2: () => "Mission 2: stop the purse snatcher.",
   mission3: () => "Mission 3: catch the person falling.",
   mission4: () => "Mission 4: clear the Sludge Gang off the roof.",
+  mission5: () => "Mission 5: get the pizza to the roof.",
   king: () => "The King: rip off his three pipes, then flush him.",
   finale: () => "All clear! Free roam: trials and Loonies.",
 };
@@ -2612,7 +2613,7 @@ G.test = {
   goonView(id) { const g = combat.goons.find((q) => q.id === id); if (!g) return null; const v = goonOnThrees(g); return { phase: v.phase, poseT: v.poseT, pose: v.pose, x: v.x, z: v.z }; },
   // start a job (type: sludge, catch, washer, pizza, balloon, brawl, taxi, thief) at the nearest offer of that type, or at the hero
   job(type) { const o = jobs.offers.find((q) => q.type === type) || null; jobs.start(type, o, heroFight()); return jobs.info(); },
-  // Start story mission i (0 thief, 1 catch, 2 brawl). 3 or more ends the route and the clog card can show.
+  // Start story mission i (0 thief, 1 catch, 2 brawl, 3 pizza). 4 or more ends the route and the clog card can show.
   storyMission(i = 0) {
     const n = Math.max(0, Math.min(STORY_ROUTE.length, i | 0));
     routeForce = n < STORY_ROUTE.length;

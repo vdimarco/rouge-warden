@@ -1,6 +1,6 @@
 // In Full Swing: missions and odd jobs. Mission 1, "Sludge Run" (the story's fast start): a gang runner with a clog bomb runs the
-// streets to the Market drain; catch him before the timer runs out, beat his crew, and the bomb is defused. Missions 2, 3 and 4
-// (STORY_ROUTE) are a purse snatcher, a falling rescue and a roof fight. Odd jobs wait at markers after that route and pay
+// streets to the Market drain; catch him before the timer runs out, beat his crew, and the bomb is defused. Missions 2, 3, 4 and 5
+// (STORY_ROUTE) are a purse snatcher, a falling rescue, a roof fight and a pizza delivery. Odd jobs wait at markers after that route and pay
 // Loonies: catch a falling person, carry a stranded window washer down, a pizza rush, a balloon chase, a rooftop brawl, a taxi
 // fare (drive a car into the marker) and a purse snatcher to run down.
 // Crimes also start near the hero now and then with a shout (a mugging, a getaway car, a leaking sludge tanker, a purse
@@ -61,14 +61,15 @@ export const MISS = {
   flood: { title: "IT BURST", detail: "Seal the leak, then clear the crew.", short: "SEAL" },
 };
 export const JOB_NAMES = { sludge: "Sludge Run", catch: "Catch!", washer: "Window Washer", pizza: "Pizza Rush", balloon: "Balloon Chase", brawl: "Rooftop Brawl", taxi: "Taxi!", thief: "Stop, Thief!", mugging: "Mugging", getaway: "Getaway Car", tanker: "Sludge Tanker" };
-// After the Sludge Run the story is three different jobs, in this order. The twelve clogs stay in the city and still wake the King.
+// After the Sludge Run the story is four different jobs, in this order. The twelve clogs stay in the city and still wake the King.
 export const STORY_ROUTE = [
   { type: "thief", mission: "MISSION 2", pending: "Stop the purse snatcher", scene: "mission2" },
   { type: "catch", mission: "MISSION 3", pending: "Catch the person falling", scene: "mission3" },
   { type: "brawl", mission: "MISSION 4", pending: "Clear the Sludge Gang off the roof", scene: "mission4" },
+  { type: "pizza", mission: "MISSION 5", pending: "Get the pizza to the roof", scene: "mission5" },
 ];
 // How far from the hero a story job is placed, in metres. Close enough to reach, far enough to be a swing.
-export const STORY_NEAR = { thief: [18, 55], catch: [36, 130], brawl: [40, 170] };
+export const STORY_NEAR = { thief: [18, 55], catch: [36, 130], brawl: [40, 170], pizza: [24, 90] };
 // what the marker says, and the toast when you take the job
 export const JOB_LINES = {
   catch: "Someone is falling off a roof! Catch them.",
@@ -338,7 +339,9 @@ export function createJobs({ city, combat, cars = null, seed = 4711 }) {
       A.reward = JOB.washer.reward;
     },
     pizza(A, h) {
-      const q = pickRoof(A.o.x, A.o.z, 250, 460, 18, 90) || pickRoof(A.o.x, A.o.z, 150, 600, 10, 120);
+      // a story delivery is a swing or two. An odd-job pizza still runs across town.
+      const band = A.mission ? [70, 160] : [250, 460], wide = A.mission ? [40, 280] : [150, 600];
+      const q = pickRoof(A.o.x, A.o.z, band[0], band[1], 18, 90) || pickRoof(A.o.x, A.o.z, wide[0], wide[1], 10, 120);
       A.data = { drop: q ? { x: q.x, y: q.y, z: q.z } : { x: city.start.x, y: city.start.y, z: city.start.z } };
       const d = Math.hypot(A.data.drop.x - A.o.x, A.data.drop.z - A.o.z);
       A.timer = A.data.limit = d / JOB.pizza.speed + JOB.pizza.spare;

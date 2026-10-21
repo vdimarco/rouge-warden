@@ -1,4 +1,4 @@
-// Missions 2, 3 and 4 are a chase, a rescue and a fight. The clog card stays when that route is not running.
+// Missions 2, 3, 4 and 5 are a chase, a rescue, a fight and a delivery. The clog card stays when that route is not running.
 import { mkdir } from "node:fs/promises";
 import { newPage, open, close, enterXR, checker, watchdog } from "./lib.mjs";
 
@@ -22,6 +22,7 @@ try {
     { i: 0, file: "thief.png", title: /MISSION 2/, body: /thief|purse/i },
     { i: 1, file: "catch.png", title: /MISSION 3/, body: /catch|falling|edge/i },
     { i: 2, file: "brawl.png", title: /MISSION 4/, body: /brawl|wave|roof|gang/i },
+    { i: 3, file: "pizza.png", title: /MISSION 5/, body: /pizza|deliver/i },
   ];
   for (const s of steps) {
     const card = await page.evaluate((i) => {
@@ -51,7 +52,7 @@ try {
   }
 
   const back = await page.evaluate(() => {
-    G.test.storyMission(3);
+    G.test.storyMission(4);
     let n = 0;
     for (; n < 90; n++) {
       G.test.step(1 / 60, 1);
