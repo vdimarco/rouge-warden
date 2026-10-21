@@ -2474,7 +2474,7 @@ void AQuebecHUD::DrawHUD()
         Target = Campaign->GetObjectiveLocation();
         bHasNext = Campaign->GetNextObjectiveLocation(NextStop);
         bHasObjective = !Campaign->IsCampaignComplete() || Campaign->IsStoryBeatOpen();
-        // After the open story beats the card used to say the city was finished, while the four side jobs
+        // After the open story beats the card used to say the city was finished, while the five side jobs
         // stayed off the radar until the player was within 100 m. The same gold diamond now leads to the
         // next job. Missions 3 through 8 keep that diamond until they are banked. During the earlier story
         // the campaign objective keeps the diamond.

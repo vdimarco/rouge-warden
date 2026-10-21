@@ -158,6 +158,7 @@ private:
     void TickThief(float Now, float DeltaSeconds);
     void TickGoons(float Now);
     void TickEscape(float Now);
+    void TickPosters();
     AQuebecCar* SpawnJobCar(const FVector& Point, const FVector& Heading, int32 Paint, FName Tag) const;
     void SpawnWave(int32 Wave);
     void DriveThief(float Now);

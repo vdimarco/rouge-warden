@@ -26,19 +26,24 @@ namespace
     constexpr int32 SideJobThief = static_cast<int32>(QuebecJobRules::EJob::Thief);
     constexpr int32 SideJobGoons = static_cast<int32>(QuebecJobRules::EJob::Goons);
     constexpr int32 SideJobEscape = static_cast<int32>(QuebecJobRules::EJob::Escape);
+    constexpr int32 SideJobPosters = static_cast<int32>(QuebecJobRules::EJob::Posters);
 
     // HUD text in Québec French. The 3D captions stay ASCII: the text-render font has no accented glyphs.
-    const TCHAR* const SideJobTitles[] = {TEXT("Livraison chaude"), TEXT("Voleur de char"), TEXT("L'encre déborde"), TEXT("Cinq étoiles")};
-    const TCHAR* const SideJobSigns[] = {TEXT("LIVRAISON CHAUDE"), TEXT("VOLEUR DE CHAR"), TEXT("L'ENCRE DEBORDE"), TEXT("CINQ ETOILES")};
+    const TCHAR* const SideJobTitles[] = {TEXT("Livraison chaude"), TEXT("Voleur de char"), TEXT("L'encre déborde"), TEXT("Cinq étoiles"), TEXT("Trois affiches")};
+    const TCHAR* const SideJobSigns[] = {TEXT("LIVRAISON CHAUDE"), TEXT("VOLEUR DE CHAR"), TEXT("L'ENCRE DEBORDE"), TEXT("CINQ ETOILES"), TEXT("TROIS AFFICHES")};
     const TCHAR* const SideJobBriefs[] = {
         TEXT("Prends la commande au café, puis trois portes. Vite, c'est chaud!"),
         TEXT("Un voleur file sur Sherbrooke. Rentre-lui dedans jusqu'à ce que son char lâche."),
         TEXT("Les sbires du Curateur envahissent le Théâtre de Verdure. Trois vagues."),
-        TEXT("Trois étoiles aux trousses. Sème la police ou cache-toi au garage.")
+        TEXT("Trois étoiles aux trousses. Sème la police ou cache-toi au garage."),
+        TEXT("Rue Gauthier, trois coins. Colle-les dans l'ordre que tu veux. Le temps ne s'allonge pas.")
     };
     const TCHAR* const SideJobDoorStreets[] = {TEXT("rue De Lanaudière"), TEXT("rue Garnier"), TEXT("rue De La Roche")};
+    const TCHAR* const PosterCorners[] = {TEXT("Papineau"), TEXT("Cartier"), TEXT("Dorion")};
     static_assert(UE_ARRAY_COUNT(SideJobTitles) == QuebecJobRules::JobCount && UE_ARRAY_COUNT(SideJobSigns) == QuebecJobRules::JobCount);
+    static_assert(UE_ARRAY_COUNT(SideJobBriefs) == QuebecJobRules::JobCount);
     static_assert(UE_ARRAY_COUNT(SideJobDoorStreets) == QuebecJobRules::DoorCount);
+    static_assert(UE_ARRAY_COUNT(PosterCorners) == QuebecJobRules::PosterCount);
 
     FVector SideJobVector(const QuebecJobRules::FJobSpot& Spot)
     {
@@ -491,6 +496,13 @@ void AQuebecSideJobs::BeginJobContent(AQuebecController* Player)
         if (Garage.IsNearlyZero()) Garage = SideJobVector(QuebecJobRules::EscapeGarage);
         SetObjective(TEXT("Sème la police ou rejoins le garage"),GroundPoint(Garage,0.f),true);
     }
+    else if (JobIndex == SideJobPosters)
+    {
+        const int32 Aim = QuebecJobRules::NextPoster(QuebecJobRules::Markers[SideJobPosters], 0);
+        const TCHAR* Corner = Aim >= 0 && Aim < QuebecJobRules::PosterCount ? PosterCorners[Aim] : TEXT("Gauthier");
+        SetObjective(FString::Printf(TEXT("Colle l'affiche au coin %s"), Corner),
+            GroundPoint(SideJobVector(QuebecJobRules::PosterBoards[Aim >= 0 ? Aim : 0]), 0.f), true);
+    }
 }
 
 void AQuebecSideJobs::GrantPistols()
@@ -794,6 +806,7 @@ void AQuebecSideJobs::TickJob(float DeltaSeconds)
     else if (JobIndex == SideJobThief) TickThief(Now,DeltaSeconds);
     else if (JobIndex == SideJobGoons) TickGoons(Now);
     else if (JobIndex == SideJobEscape) TickEscape(Now);
+    else if (JobIndex == SideJobPosters) TickPosters();
 }
 
 void AQuebecSideJobs::TickDelivery()
@@ -1006,6 +1019,35 @@ void AQuebecSideJobs::TickEscape(float Now)
     FinishJob(true,bCarAtGarage ? TEXT("Planqué au garage") : TEXT("Police semée"));
 }
 
+void AQuebecSideJobs::TickPosters()
+{
+    const int32 Mask = JobStep;
+    int32 Hit = INDEX_NONE;
+    for (int32 Board = 0; Board < QuebecJobRules::PosterCount; ++Board)
+    {
+        if ((Mask & (1 << Board)) != 0) continue;
+        const FVector Point = GroundPoint(SideJobVector(QuebecJobRules::PosterBoards[Board]), 0.f);
+        if (ReachedBy(Point, 0., nullptr)) { Hit = Board; break; }
+    }
+    if (Hit == INDEX_NONE) return;
+    const int32 Next = QuebecJobRules::PastePoster(Mask, Hit);
+    JobStep = Next;
+    JobProgress = static_cast<float>(QuebecJobRules::PosterBits(Next)) / static_cast<float>(QuebecJobRules::PosterCount);
+    if (QuebecJobRules::PostersDone(Next))
+    {
+        FinishJob(true, TEXT("Trois affiches collées"));
+        return;
+    }
+    const QuebecJobRules::FJobSpot From = QuebecJobRules::PosterBoards[Hit];
+    const int32 Aim = QuebecJobRules::NextPoster(From, Next);
+    const int32 Shown = Aim >= 0 ? Aim : 0;
+    Say(TEXT("COLLÉ"), FString::Printf(TEXT("Coin %s, ensuite"), PosterCorners[Shown]), 2.5f);
+    SetObjective(FString::Printf(TEXT("Colle l'affiche au coin %s"), PosterCorners[Shown]),
+        GroundPoint(SideJobVector(QuebecJobRules::PosterBoards[Shown]), 0.f), true);
+    for (TActorIterator<AQuebecController> It(GetWorld()); It; ++It) It->PlayFeedback(EQuebecFeedbackCue::Checkpoint);
+    ForceNetUpdate();
+}
+
 void AQuebecSideJobs::OnRep_Job()
 {
     UpdatePresentation();
@@ -1045,7 +1087,9 @@ void AQuebecSideJobs::UpdatePresentation()
         GoalBag->SetRelativeLocation(TargetLocation+FVector(0.,0.,22.+6.*FMath::Sin(Clock*3.f)));
         GoalCaption->SetRelativeLocation(TargetLocation+FVector(0.,0.,330.));
         const FString Label = JobIndex == SideJobDelivery ? (JobStep == 0 ? FString(TEXT("CAFE / COMMANDE")) : FString::Printf(TEXT("PORTE %d/3"),JobStep)) :
-            JobIndex == SideJobGoons ? FString(TEXT("THEATRE")) : FString(TEXT("GARAGE"));
+            JobIndex == SideJobGoons ? FString(TEXT("THEATRE")) :
+            JobIndex == SideJobPosters ? FString::Printf(TEXT("AFFICHE %d/3"), FMath::Min(QuebecJobRules::PosterBits(JobStep) + 1, QuebecJobRules::PosterCount)) :
+            FString(TEXT("GARAGE"));
         // SetText rebuilds the caption's glyphs, so it runs only when the label changes.
         if (!Label.Equals(GoalLabel,ESearchCase::CaseSensitive)) { GoalLabel = Label; GoalCaption->SetText(FText::FromString(Label)); }
     }

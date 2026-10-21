@@ -1208,3 +1208,48 @@ Unreal is not available here, so the native diamond was not captured. The title 
 ![Play client at 1280, host offline](gta-missions/r26-play-1280.png)
 
 ![Menu on a 390-wide screen, Recover visible](gta-missions/r26-play-menu-390.png)
+
+### Round 27 — 2026-10-21 — rubric v1
+
+- What changed: A fifth side job, Trois affiches. The marker sits on rue Gauthier, short of Avenue Papineau. Three corners — Papineau, Cartier, Dorion — take a poster in any order. Pasting the same corner twice does not count twice. The clock is two minutes and does not grow. Pay is 350. The other four pays stay put, and the goon pay stays 300.
+- Why it helped: Fun was a 7 because the four jobs were a delivery, a chase, a fight, and an escape. None of them was a short tour you could finish in any order.
+- Screenshots: title `docs/gauntlet/gta-missions/r27-title-1280.png`, `r27-title-390.png`, `r27-title-320.png`. Play client, host offline, `r27-play-1280.png`. Menu with Recover `r27-play-menu-390.png`. The title loaded with no page errors. The raw play page still logs the missing `@epicgames-ps/lib-pixelstreamingfrontend-ue5.8` specifier; the shell and Recover still draw. The tour was not walked in Unreal. `Scripts/test_job_rules.py` reports 159 assertions, 0 failures, on c++, g++, and clang++. Syntax check `--both` passed for `QuebecSideJobs.cpp` and `QuebecGameplay.cpp`. OpenSpec CLI is not installed, so `openspec validate` did not run.
+- Next target: a place to spend the cash the jobs already pay. Fun is now 8. The other playability scores this loop can still change stay at 7, and the next round favors a cash sink over another small tune. Performance stays at 4 and is not measurable here. Responsiveness stays at 3 and stays out of scope. The tour is proven by the rules. It was not walked, so the fun score waits at 8. Variety stays at 9: five side jobs still sit in one district.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 3 | Unchanged. |
+| Color palette | 5 | Unchanged. |
+| Detail density | 3 | Unchanged. |
+| Texture and material quality | 3 | Unchanged. |
+| Composition and camera | 4 | Unchanged. |
+| Atmosphere | 4 | Unchanged. |
+| Character models | 3 | Unchanged. |
+| Animation smoothness | 3 | Unchanged. |
+| Particles and VFX | 2 | Unchanged. |
+| UI polish | 4 | Unchanged. The native card was not seen, and French and English still share the screen. |
+| Responsiveness and input latency | 3 | Unchanged. Still a lagged stream. Out of scope for this loop. |
+| Controls feel | 7 | Unchanged. The driving pedal still has three steps. |
+| Mission clarity | 7 | Unchanged. |
+| Pacing | 7 | Unchanged. On foot the card still names the time left to the diamond. |
+| Fun factor | 8 | A fifth side job pastes three posters on rue Gauthier in any order. The clock does not grow. The rules prove the walk fits two minutes, the corners stay apart, and the order does not matter. It was not walked. |
+| Difficulty curve | 7 | Unchanged. The court ink and the convoy beam still grow with the chain. |
+| Feedback | 7 | Unchanged. A bank still names its rank. |
+| Sound design | 7 | Unchanged. A bank still plays a pitch for its rank. |
+| Variety | 9 | Five side jobs now, including the poster tour. Still one district, so this is not the reference's spread. |
+| Performance stability | 4 | Unchanged. Not measurable in this container. |
+
+- Aesthetics raw: 34 / 10 dimensions, index 34
+- Playability raw: 66 / 10 dimensions, index 66
+- Total: 100 / 200
+- Delta vs last round: +1 (round 26 was 99). Fun factor 7 → 8. Every other score held.
+
+![GTA title at 1280](gta-missions/r27-title-1280.png)
+
+![GTA title at 390](gta-missions/r27-title-390.png)
+
+![GTA title at 320](gta-missions/r27-title-320.png)
+
+![Play client at 1280, host offline](gta-missions/r27-play-1280.png)
+
+![Menu on a 390-wide screen, Recover visible](gta-missions/r27-play-menu-390.png)

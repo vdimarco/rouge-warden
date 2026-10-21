@@ -17,19 +17,20 @@ namespace QuebecJobRules
         double Z = 0.;
     };
 
-    enum class EJob : uint8_t { Delivery, Thief, Goons, Escape };
-    inline constexpr int JobCount = 4;
+    enum class EJob : uint8_t { Delivery, Thief, Goons, Escape, Posters };
+    inline constexpr int JobCount = 5;
 
     // Yellow 'M' markers, all on sidewalks or park paths. Sources: OSM centrelines in Data/LaFontaine/osm.xml.
     // Delivery: Rue Rachel Est sidewalk, 25 m from the Maison des cyclistes café. Thief: park-side Sherbrooke
     // sidewalk south of Avenue Papineau. Goons: the path west of the Théâtre de Verdure bleachers. Escape: east
     // Sherbrooke sidewalk at Avenue du Parc-La Fontaine / Rue Atateken.
     inline constexpr FJobSpot Markers[JobCount] = {
-        {-22296., 25268., 0.}, {44747., 29578., 0.}, {-14333., 3740., 0.}, {34714., -38068., 0.}
+        {-22296., 25268., 0.}, {44747., 29578., 0.}, {-14333., 3740., 0.}, {34714., -38068., 0.},
+        {18031., 49813., 0.}
     };
-    // Base time limit in seconds. A delivery earns DoorBonusSeconds at each door.
-    inline constexpr float TimeLimits[JobCount] = {75.f, 150.f, 150.f, 180.f};
-    inline constexpr int Rewards[JobCount] = {250, 400, 300, 500};
+    // Base time limit in seconds. A delivery earns DoorBonusSeconds at each door. The poster tour does not.
+    inline constexpr float TimeLimits[JobCount] = {75.f, 150.f, 150.f, 180.f, 120.f};
+    inline constexpr int Rewards[JobCount] = {250, 400, 300, 500, 350};
 
     // Livraison chaude: pick up at the café, then three doors in order.
     inline constexpr FJobSpot DeliveryCafe = {-23677., 23184., 0.};
@@ -62,6 +63,13 @@ namespace QuebecJobRules
     inline constexpr int EscapeStars = 3;
     inline constexpr FJobSpot EscapeGarage = {50591., -17400., 0.};
     inline constexpr double GarageRadius = 700.;
+
+    // Trois affiches: three corners of rue Gauthier, any order. Papineau, then Cartier, then Dorion.
+    // The spots sit one sidewalk off the crossing. The clock is the base limit and does not grow.
+    inline constexpr int PosterCount = 3;
+    inline constexpr FJobSpot PosterBoards[PosterCount] = {
+        {18922., 51143., 0.}, {23957., 58660., 0.}, {27489., 63934., 0.}
+    };
 
     inline constexpr double MarkerRadius = 250.;
     inline constexpr double WalkerArrivalRadius = 300.;
@@ -114,6 +122,40 @@ namespace QuebecJobRules
     inline bool Arrived(double Distance, bool bInCar, float Speed)
     {
         return bInCar ? Distance <= CarArrivalRadius && std::fabs(Speed) <= CarArrivalSpeed : Distance <= WalkerArrivalRadius;
+    }
+
+    inline int PosterBits(int Mask)
+    {
+        int Count = 0;
+        for (int Board = 0; Board < PosterCount; ++Board)
+            if ((Mask & (1 << Board)) != 0) ++Count;
+        return Count;
+    }
+
+    // Pasting a corner twice leaves the mask as it was. A corner outside the tour does nothing.
+    inline int PastePoster(int Mask, int Board)
+    {
+        if (Board < 0 || Board >= PosterCount) return Mask;
+        return Mask | (1 << Board);
+    }
+
+    inline bool PostersDone(int Mask)
+    {
+        return PosterBits(Mask) >= PosterCount;
+    }
+
+    // Nearest corner that is not yet pasted, or -1 when the tour is done.
+    inline int NextPoster(const FJobSpot& From, int Mask)
+    {
+        int Best = -1;
+        double BestDistance = 1e300;
+        for (int Board = 0; Board < PosterCount; ++Board)
+        {
+            if ((Mask & (1 << Board)) != 0) continue;
+            const double Distance = Distance2D(From, PosterBoards[Board]);
+            if (Distance < BestDistance) { BestDistance = Distance; Best = Board; }
+        }
+        return Best;
     }
 
     inline int GoonTotal()

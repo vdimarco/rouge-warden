@@ -45,7 +45,9 @@ namespace
         {"cafe", DeliveryCafe}, {"door 1", DeliveryDoors[0]}, {"door 2", DeliveryDoors[1]}, {"door 3", DeliveryDoors[2]},
         {"thief start", ThiefStart}, {"goon arena", GoonArena},
         {"goon spawn 1", GoonSpawns[0]}, {"goon spawn 2", GoonSpawns[1]}, {"goon spawn 3", GoonSpawns[2]},
-        {"goon spawn 4", GoonSpawns[3]}, {"goon spawn 5", GoonSpawns[4]}, {"garage", EscapeGarage}
+        {"goon spawn 4", GoonSpawns[3]}, {"goon spawn 5", GoonSpawns[4]}, {"garage", EscapeGarage},
+        {"poster marker", Markers[4]}, {"poster papineau", PosterBoards[0]},
+        {"poster cartier", PosterBoards[1]}, {"poster dorion", PosterBoards[2]}
     };
 
     void PlacementTests()
@@ -85,6 +87,31 @@ namespace
         const double Allowed = static_cast<double>(TimeLimits[0] + DoorBonusSeconds * static_cast<float>(DoorCount - 1));
         Expect(Route / 1300. < Allowed, "delivery route %.0f m cannot be driven in %.0f s", Route / 100., Allowed);
         Expect(Distance2D(EscapeGarage, Markers[3]) > 15000., "garage is too close to the escape start");
+        // The poster tour is a walk along rue Gauthier. The corners stay apart, the marker does not
+        // paste one by itself, and a walk of the nearest-first route fits the clock with no bonus time.
+        for (int Board = 0; Board < PosterCount; ++Board)
+        {
+            Expect(Distance2D(Markers[4], PosterBoards[Board]) > 800., "the poster marker pastes a corner");
+            for (int Other = Board + 1; Other < PosterCount; ++Other)
+                Expect(Distance2D(PosterBoards[Board], PosterBoards[Other]) > 4000., "two affiches share a corner");
+        }
+        Expect(NextPoster(Markers[4], 0) == 0, "the first affiche is not the Papineau corner");
+        double Walk = 0.;
+        FJobSpot At = Markers[4];
+        int Mask = 0;
+        while (!PostersDone(Mask))
+        {
+            const int Board = NextPoster(At, Mask);
+            Expect(Board >= 0, "the tour runs out of corners");
+            if (Board < 0) break;
+            Walk += Distance2D(At, PosterBoards[Board]);
+            At = PosterBoards[Board];
+            Mask = PastePoster(Mask, Board);
+        }
+        Expect(PostersDone(Mask), "the nearest-first walk misses a corner");
+        Expect(Walk / 450. < static_cast<double>(TimeLimits[4]), "the affiche walk does not fit two minutes");
+        Expect(Rewards[2] == 300, "the goon reward moved");
+        Expect(Rewards[4] == 350 && TimeLimits[4] == 120.f, "the affiche pay or clock drifted");
     }
 
     void TimerTests()
@@ -180,6 +207,14 @@ namespace
         Expect(FreeRoamGuide(true, false, -1, Terrace, Markers, JobCount, 0) == 2, "after the story the card points at the nearest open job");
         Expect(FreeRoamGuide(true, true, 0, Spawn, Markers, JobCount, 0) == 0, "a running job stays on the card wherever the player is");
         Expect(FreeRoamGuide(true, true, 9, Spawn, Markers, JobCount, 0) == -1, "a running job with a bad index does not invent a marker");
+        const int Same = PastePoster(PastePoster(0, 0), 0);
+        Expect(Same == 1 && PosterBits(Same) == 1 && !PostersDone(Same), "pasting Papineau twice counts twice");
+        Expect(PastePoster(0, -1) == 0 && PastePoster(0, 9) == 0, "a corner outside the tour changes the mask");
+        const int Forward = PastePoster(PastePoster(PastePoster(0, 2), 0), 1);
+        const int Backward = PastePoster(PastePoster(PastePoster(0, 1), 2), 0);
+        Expect(Forward == Backward && PostersDone(Forward), "the order of the corners changes the result");
+        Expect(NextPoster(PosterBoards[0], 1) == 1, "after Papineau the tour does not go on to Cartier");
+        Expect(NextPoster(PosterBoards[2], 7) == -1, "a finished tour still names a corner");
         const FJobSpot Tied[] = {{0., 0., 0.}, {100., 0., 0.}};
         Expect(NearestOpenJob({50., 0., 0.}, Tied, 2, 0) == 0, "an equal distance keeps the earlier job");
     }
