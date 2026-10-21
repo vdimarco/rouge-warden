@@ -1205,3 +1205,40 @@ Loop: missions, playability, controls, feel, UX, pacing and fun for In Full Swin
 - Delta vs last round: 0 (round 31 was 132). The stomp is a second King attack. No score moved.
 
 ![The card says to get off the deck](fullswing-r32/stomp.png)
+
+### Round 33 — 2026-10-21 — rubric v1
+
+- What changed: The eleventh flush starts a lid to stand on. Standing on the ground within 4 m fills a 6 s hold. Leaving the circle or the ground slips that hold at twice the rate. Filling it seats the lid. A 24 s clock that runs out pops it. The card says HOLD IT DOWN and SEAT THE LID, and it does not say to flush the clogs. The King still sleeps. After the lid seats, the clog card returns at 11/12. The first and third flushes stay on the clog card.
+- Why it helped: The eleventh flush was the same clog card as the first and the third. Spider-Man 2 breaks a repeated objective with a stay-in-place verb before the finale. A 1280×800 play cleared the roof fight and the next card said HOLD IT DOWN · SEAT THE LID, with the line "Stand on the lid." The King was still asleep. Seating it brought FLUSH THE CLOGS at 11/12.
+- Screenshots: `docs/gauntlet/fullswing-r33/lid.png`.
+- Next target: another King attack, past the throw and the stomp. Performance stability stays at 6. This machine has no real GPU to time, so that score is not the next implementation round.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 5 | Held. Golden-hour sun and ink shadows. |
+| Color palette | 6 | Held. Yellow, red and sludge green still separate the HUD from the blocks. |
+| Detail density | 4 | Held. Open blocks more than a dressed borough. |
+| Texture and material quality | 3 | Held. Flat fills. |
+| Composition and camera | 4 | Held. The chase camera still sits behind the hero. This frame is the lid card. |
+| Atmosphere | 5 | Held. The dusk skyline has a mood. The street under the card does not. |
+| Character models | 3 | Held. Simple comic figures. |
+| Animation smoothness | 4 | Scored from still frames in software GL. Continuous motion was not watched. |
+| Particles and VFX | 5 | Held. The lid uses the gold goal beam that was already there. |
+| UI polish | 6 | Held. The card is still the ink pill. It names the lid for that flush. |
+| Responsiveness and input latency | 9 | Held. One frame after a clock drop, the pill still matches the objective. |
+| Controls feel | 9 | Held. The first web still hangs from a building at the real rope length. |
+| Mission clarity | 9 | Held. The lid card says to stand on the lid, and it does not say to flush the clogs. |
+| Pacing | 9 | Nine of the twelve flushes are a different job. The first and the third are still the clog card, and the pump never runs three times in a row. Nine different jobs is not a 2023 mission list, so the score stays. |
+| Fun factor | 9 | Held. The roof fight still launches at 14 m/s and a chase still launches at 8. The eleventh flush is a stay on the ground. |
+| Difficulty curve | 9 | Held. The ninth-flush car still cruises at 24 m/s. An odd-job getaway stays at 17 m/s. |
+| Feedback | 9 | Held. Seven seconds left still turns the card hot on that same frame. The lid clock is 24 s, so it heats in the last 6 s. |
+| Sound design | 9 | Held. A flush, a fight, a dash and a lift are still different stings, and the ring fanfare is still the trial. |
+| Variety | 9 | Held. The eleventh flush is a new job, standing on a lid until it seats. One new verb is not a 2023 mission list, so the score stays. |
+| Performance stability | 6 | The 1280×800 play passed with no page errors. Frame time on a real GPU was not measured. |
+
+- Aesthetics raw: 45 / 10 dimensions, index 45
+- Playability raw: 87 / 10 dimensions, index 87
+- Total: 132 / 200
+- Delta vs last round: 0 (round 32 was 132). The eleventh flush is a new job. No score moved.
+
+![The eleventh flush is a lid to stand on](fullswing-r33/lid.png)

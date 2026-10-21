@@ -1,5 +1,5 @@
 // The second flush is a rescue, the fourth a balloon, the fifth a chase, the sixth a pizza, the seventh a mugging,
-// the eighth a washer, the ninth a getaway car, the tenth a brawl, and the clog card comes back after each.
+// the eighth a washer, the ninth a getaway car, the tenth a brawl, the eleventh a lid to stand on, and the clog card comes back after each.
 import { mkdir } from "node:fs/promises";
 import { newPage, open, close, enterXR, checker, watchdog } from "./lib.mjs";
 
@@ -307,15 +307,32 @@ try {
     const id = G.game.targets().find((t) => t.kind === "clog" && !t.done);
     G.test.clearClog(id.id);
     let n = 0;
-    for (; n < 80; n++) {
+    for (; n < 180; n++) {
+      G.test.step(1 / 60, 1);
+      const job = G.test.action().jobs.active;
+      const ob = G.game.progress.objective;
+      if (job && job.type === "lid" && ob && /HOLD IT DOWN/.test(ob.title || "") && /SEAT THE LID/.test(ob.title || "")) break;
+    }
+    G.test.step(1 / 60, 4);
+    const ob = G.game.progress.objective;
+    const job = G.test.action().jobs.active;
+    G.test.render(0);
+    return { killed, back, n, title: ob && ob.title, detail: ob && ob.detail, job: job && job.type, king: G.game.progress.king };
+  });
+  await page.screenshot({ path: out + "/lid.png" });
+  check(eleven.job === "lid" && /HOLD IT DOWN/.test(eleven.title || "") && /SEAT THE LID/.test(eleven.title || "") && /lid/i.test(eleven.detail || "") && !/FLUSH THE CLOGS/.test((eleven.title || "") + " " + (eleven.detail || "")) && eleven.king !== "awake", "the eleventh flush is a lid to stand on, and the King still sleeps", eleven);
+
+  const seated = await page.evaluate(() => {
+    const killed = G.test.finishJob();
+    let back = 0, title = "", count = 0;
+    for (; back < 240; back++) {
       G.test.step(1 / 60, 1);
       const ob = G.game.progress.objective;
-      if (ob && ob.n === 11 && /FLUSH THE CLOGS/.test(ob.title || "") && !G.test.action().jobs.active) break;
+      if (!G.test.action().jobs.active && ob && ob.title === "FLUSH THE CLOGS" && ob.n === 11) { title = ob.title; count = ob.n; break; }
     }
-    const ob = G.game.progress.objective;
-    return { killed, back, n, title: ob && ob.title, count: ob && ob.n, job: G.test.action().jobs.active && G.test.action().jobs.active.type, king: G.game.progress.king };
+    return { killed, back, title, count, job: G.test.action().jobs.active && G.test.action().jobs.active.type, king: G.game.progress.king };
   });
-  check(eleven.killed && eleven.title === "FLUSH THE CLOGS" && eleven.count === 11 && !eleven.job && eleven.king !== "awake", "eleven flushes are the clog card, and the King still sleeps", eleven);
+  check(seated.killed && seated.title === "FLUSH THE CLOGS" && seated.count === 11 && !seated.job && seated.king !== "awake", "seating the lid brings the clog card back at 11/12, and the King still sleeps", seated);
   check(page.errors.length === 0, "no page errors", page.errors);
 } finally {
   await close();
