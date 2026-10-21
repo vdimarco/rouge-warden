@@ -63,7 +63,7 @@ After the Sludge Run is won, the story SHALL be four missions in order: Stop, Th
 - **THEN** a lesson card names the miss, the same mission starts again after that card, and the card still does not say to flush the clogs
 
 ### Requirement: Clog beats
-While the King is still asleep, the fourth flush SHALL start a balloon to bring back, and the eighth flush SHALL start a washer to carry down. Each of those jobs SHALL take the mission card, and that card SHALL NOT say to flush the clogs. The flushes between them SHALL keep the clog card, counting toward twelve. When the beat ends, the clog card SHALL return. One flush SHALL NOT start a beat. Flushing all twelve SHALL still wake the King. A beat SHALL wait while a story mission is the current job.
+While the King is still asleep, the fourth flush SHALL start a balloon to bring back, and the eighth flush SHALL start a washer to carry down. Each of those jobs SHALL take the mission card, and that card SHALL NOT say to flush the clogs. The flushes between them SHALL keep the clog card, counting toward twelve. When the beat ends, the clog card SHALL return. One flush SHALL NOT start a beat. Flushing all twelve SHALL still wake the King. A beat SHALL wait while a story mission is the current job. The washer on the eighth flush SHALL give less time than an odd-job washer when he hangs within a swing.
 
 #### Scenario: Three flushes
 - **WHEN** three clogs are flushed and no story mission is running
@@ -80,6 +80,10 @@ While the King is still asleep, the fourth flush SHALL start a balloon to bring 
 #### Scenario: The eighth flush
 - **WHEN** the eighth clog is flushed
 - **THEN** the card names a washer to carry down, and it is not the balloon
+
+#### Scenario: The eighth flush is a shorter hang
+- **WHEN** the eighth flush starts that washer within a swing
+- **THEN** the card counts from 36 s, not from a minute
 
 ### Requirement: Job markers
 After Mission 1, except while a story mission after the bomb is the current mission, up to four job markers (a light beam and a ring, coloured by job) SHALL wait 90 to 420 m from the player.
@@ -105,8 +109,9 @@ who drives SHALL leave the car first. During a job the map SHALL pin that job's 
 
 ### Requirement: Rescue jobs
 Catch!: someone SHALL slip off a tall roof; reaching them (or roping them) before they hit the street catches them, and a landing
-sets them down. Window Washer: the washer SHALL hang on a tower face for 60 s; reaching him picks him up, and the street sets
-him down.
+sets them down. Window Washer: an odd-job washer SHALL hang on a tower face for 60 s; reaching him picks him up, and the street sets
+him down. The washer that starts on the eighth flush SHALL hang for 36 s when the tower is within a swing, and for longer, up to
+that same 60 s, only when the tower is farther.
 
 #### Scenario: Catch!
 - **WHEN** the hero is within 2.8 m of the falling person before they reach the street, and then lands
@@ -115,6 +120,14 @@ him down.
 #### Scenario: Missed
 - **WHEN** the falling person reaches the street
 - **THEN** a toast says a dumpster broke the fall, and the job fails with no reward
+
+#### Scenario: The later carry is tighter
+- **WHEN** the eighth flush starts a washer on a tower within a swing
+- **THEN** the card counts down from 36 s
+
+#### Scenario: An odd-job washer keeps the minute
+- **WHEN** the player takes a window washer marker
+- **THEN** he hangs for 60 s
 
 ### Requirement: Odd jobs for fun
 Pizza Rush SHALL ask for a delivery to a roof 250 to 460 m away in time, with a tip for a fast one. Balloon Chase SHALL ask to
