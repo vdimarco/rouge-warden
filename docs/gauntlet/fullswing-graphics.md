@@ -814,3 +814,40 @@ Playability was scored from a flat boot and the city render check, not a full pl
 
 Playability was scored from a flat boot and the city render check, not a full playthrough. OpenSpec CLI validation was not run; the `openspec` command is not installed.
 
+### Round 23 — 2026-10-21 — rubric v1
+
+- What changed: Brick, stone and panel walls keep a second tone, printed after the grade. Neighbouring units stay different colours. Each course keeps a light crest until the course is only a few pixels tall. The bed stays at the unit clay, and every clay channel stays at or above 1, so a shade face does not drop under the ink. Glass, windows, rails, fire escapes and the shop awnings stay as they are. No new mesh and no new draw. Pascal Barla, Joëlle Thollot and Lee Markosian, X-Toon (NPAR 2006): the lighting band stays the cel, and the clay is the detail axis. The teal and rose grade is unchanged.
+- Why it helped: The cel and the grade were pulling a masonry face back into one hue. On the street a near wall crop moved by a mean channel-sum of 23, and the avenue's left face by 19. The road did not move. Farther up the avenue the print fades, so the sunset shot stays the flat grade.
+- Screenshots: street before `docs/gauntlet/shots/r23-before-street.png`, after `docs/gauntlet/shots/r23-after-street.png`. The wall crop: `docs/gauntlet/shots/r23-before-wall.png`, `docs/gauntlet/shots/r23-after-wall.png`. The sunset: `docs/gauntlet/shots/r23-before-needle.png`, `docs/gauntlet/shots/r23-after-needle.png`.
+- Next target: Lighting (6), tied with color palette, detail density, composition, atmosphere, character models, particles and UI. The sun is still one grade.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 6 | Unchanged. Shaded lower walls stay warm. The floors by the roof stay the cool band. |
+| Color palette | 6 | Unchanged. Cool shade stays teal and the step toward the sun stays rose. |
+| Detail density | 6 | Unchanged. The shop awnings from round 16. |
+| Texture and material quality | 7 | A near masonry wall keeps different clay from unit to unit, with a light crest on the course. The grade no longer pulls that face back to one hue. |
+| Composition and camera | 6 | Unchanged. On a fast rope the head still sits lower. The reported pitch stayed −0.349 and the distance stayed 4.5 m. |
+| Atmosphere | 6 | Unchanged. The far avenue still sits in the warm dust from round 15. |
+| Character models | 6 | Unchanged. The cream belt from round 17. Skinned triangles stayed at 12,468. |
+| Animation smoothness | 7 | Unchanged. A full run steps the lifted knee out, and a jog keeps the captured loop. |
+| Particles and VFX | 6 | Unchanged. The cream trail from round 19. |
+| UI polish | 6 | Unchanged. The cream lip and rose hem from round 21. |
+| Responsiveness and input latency | 6 | Unchanged. No new pass and no new draw. No input timing was measured. |
+| Controls feel | 5 | Unchanged. |
+| Mission clarity | 4 | Unchanged. Not played. |
+| Pacing | 4 | Unchanged. |
+| Fun factor | 4 | Unchanged. Not played as a session. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 5 | Unchanged. |
+| Sound design | 4 | Unchanged. |
+| Variety | 4 | Unchanged. |
+| Performance stability | 6 | `qa/vr/render.mjs` passed, including flat play, the painted-sky checks, the lit-sphere cel check, and the canyon ink lines (26.9%). Street mean 75.4, saturation 0.58. |
+
+- Aesthetics raw: 62 / 10 dimensions, index 62
+- Playability raw: 46 / 10 dimensions, index 46
+- Total: 108 / 200
+- Delta vs last round: +1 (107 → 108). Texture and material quality 6 → 7. Playability unchanged.
+
+Playability was scored from a flat boot and the city render check, not a full playthrough. OpenSpec CLI validation was not run; the `openspec` command is not installed.
+

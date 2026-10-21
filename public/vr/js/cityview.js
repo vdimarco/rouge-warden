@@ -320,7 +320,8 @@ vec3 roomTint(float c, float s) {
   if (c < 0.8) return vec3(1.08, 0.88, 0.66);
   return vec3(0.94, 0.94, 0.9);
 }
-vec3 wallColor(int k, float shop, float sd, float salt, float h1, float h2, float h3, vec3 N, vec3 V, float dist, out float lineY, out vec4 awning) {
+vec3 wallColor(int k, float shop, float sd, float salt, float h1, float h2, float h3, vec3 N, vec3 V, float dist, out float lineY, out vec4 awning, out vec3 clay) {
+  clay = vec3(1.0);
   float fh = vInfo.z, bay = vInfo.w;
   float u = vFace.x, faceW = vFace.y, top = vFace.w, y = vW.y;
   bool glassy = k <= 1;
@@ -472,6 +473,9 @@ vec3 wallColor(int k, float shop, float sd, float salt, float h1, float h2, floa
   vec3 mason = vec3(1.0);
   vec3 batchM = vec3(1.0);
   float masonOn = 0.0;
+  // Printed on the graded colour, after the cel. The cel and the grade pull a unit back into one band.
+  vec3 clayPrint = vec3(1.0);
+  float clayOn = 0.0;
   if (st >= 2 && st <= 5) {
     float pitch = st == 3 ? 0.42 : st == 4 ? 0.85 : 0.16;
     float run = pitch * (st >= 4 ? 2.2 : 2.0);
@@ -511,6 +515,18 @@ vec3 wallColor(int k, float shop, float sd, float salt, float h1, float h2, floa
     masonOn = 1.0;
     wallP *= mix(vec3(1.0), mason, 1.0 - joint);
     wallP = mix(wallP, vec3(0.2, 0.15, 0.17), joint * 0.82);
+    // Barla, Thollot, Markosian, X-Toon (NPAR 2006): the lighting band stays. A second tone, this unit's clay,
+    // is printed after the grade so that grade cannot pull every brick back to one hue. The course crest holds
+    // until the course is only a few pixels, past the point where the unit tint itself fades.
+    float grain = mix(batch, unit, unitNear);
+    // Every channel stays at or above 1. A darker bed, and a lo clay under 1, pushed shade faces
+    // under the ink test (max channel 46) and flooded the canyon rows. Hue is the clay.
+    vec3 loC = st == 3 ? vec3(1.00, 1.06, 1.28) : st == 4 ? vec3(1.00, 1.08, 1.22) : vec3(1.42, 1.08, 1.00);
+    vec3 hiC = st == 3 ? vec3(1.30, 1.16, 1.04) : st == 4 ? vec3(1.24, 1.14, 1.02) : vec3(1.18, 1.28, 1.06);
+    clayPrint = mix(loC, hiC, grain);
+    float courseHold = 1.0 - smoothstep(0.30, 0.80, max(wy, wx));
+    clayPrint *= mix(1.0, mix(1.0, 1.18, up), courseHold);
+    clayOn = max(unitNear, batchNear) * (1.0 - joint);
   }
   vec3 celWall = comicCelX(wallP, band, LITMUL, LITADD);
   vec3 green = vec3(0.5, 0.9, 0.25);
@@ -550,6 +566,7 @@ vec3 wallColor(int k, float shop, float sd, float salt, float h1, float h2, floa
   float rcut = mix(roundAvg, round0, detail);
   float wmask = wa.x * wa.y * rcut * inFloors;
   float wSharp = ww.x * ww.y * round0;
+  clayOn *= 1.0 - wmask;
   vec3 glassDark = mix(glassC, skyR, mirror);
   vec3 roomDark = comicCelX(glassDark * (0.85 + 0.4 * f.y), band, LITMUL, LITADD);
   vec3 roomNow = lit > 0.5 ? litWin : roomDark;
@@ -599,6 +616,7 @@ vec3 wallColor(int k, float shop, float sd, float salt, float h1, float h2, floa
     vec3 tcol = comicCelX(tc * (1.0 - e), band, LITMUL, LITADD) + glow;
     col = mix(col, mix(celWall, tcol, inFloors), nearD);
     em = mix(em, e * inFloors, nearD);
+    clayOn *= mix(1.0, 1.0 - win, nearD);
   }
   float upper = street ? 0.0 : inFloors * step(y, top);
   // a pixel's step in window metres, each screen axis (for the painted rooms' mip level)
@@ -736,6 +754,7 @@ vec3 wallColor(int k, float shop, float sd, float salt, float h1, float h2, floa
     vec3 roomC = lit > 0.5 ? litC : mix(comicCelX(darkC, band, LITMUL, LITADD), comicCelX(glassDark, band, LITMUL, LITADD), 0.35 + 0.4 * mirror);
     col = mix(col, roomC, inM);
     em = mix(em, lit, inM);
+    clayOn *= 1.0 - inM;
   }
   #endif
   #ifndef LOW
@@ -858,6 +877,7 @@ vec3 wallColor(int k, float shop, float sd, float salt, float h1, float h2, floa
     vec3 railCol = mix(comicCelX(vec3(0.16, 0.14, 0.18), band, LITMUL, LITADD), comicCelX(vec3(0.66, 0.63, 0.6), band, LITMUL, LITADD), slab * (1.0 - bar));
     col = mix(col, mix(comicCelX(vec3(0.3, 0.28, 0.32), band, LITMUL, LITADD), railCol, detail), rv);
     em *= 1.0 - rv;
+    clayOn *= 1.0 - rv;
   }
   // a fire escape: a landing at each floor and a stair zigzagging between them, two bays wide
   if (brickish && hr > 0.55 && fract(salt * 0.618) < 0.5 && cols >= 3.0) {
@@ -877,6 +897,7 @@ vec3 wallColor(int k, float shop, float sd, float salt, float h1, float h2, floa
     float fe = mix(feAvg, max(max(slab, rail), max(post, stair)), detail) * inX * inFloors0 * step(y, top);
     col = mix(col, comicCelX(vec3(0.17, 0.13, 0.17), band, LITMUL, LITADD), fe);
     em *= 1.0 - fe;
+    clayOn *= 1.0 - fe;
   }
   // world-anchored Ben-Day dots on the walls that are not fully lit, in face metres so they hold still in both eyes
   float dw = 1.0 - clamp(band - 1.0, 0.0, 1.0);
@@ -910,6 +931,7 @@ vec3 wallColor(int k, float shop, float sd, float salt, float h1, float h2, floa
     cloth = mix(cloth, cloth * 0.72, stripe(u / cw, 0.04));
     awning = vec4(comicCelX(cloth, band, LITMUL, LITADD), ay * detail);
   }
+  clay = mix(vec3(1.0), clayPrint, clamp(clayOn, 0.0, 1.0));
   return col;
 }
 vec3 roofColor(int k, float h1, float h2, vec3 N) {
@@ -953,8 +975,9 @@ void main() {
   vec3 col;
   float lineY = -1.0;
   vec4 awn = vec4(0.0);
+  vec3 clay = vec3(1.0);
   if (N.y > 0.5) col = roofColor(k, h1, h2, N);
-  else col = wallColor(k, shop, sd, salt, h1, h2, h3, N, V, dist, lineY, awn);
+  else col = wallColor(k, shop, sd, salt, h1, h2, h3, N, V, dist, lineY, awn, clay);
   // a clogged district goes grey-green; the finale warms everything
   col = mix(col, vec3(dot(col, vec3(0.3, 0.5, 0.2))) * vec3(0.82, 0.98, 0.62), vClog * 0.38);
   col *= mix(vec3(1.0), vec3(1.08, 1.0, 0.9), uFinale);
@@ -972,7 +995,8 @@ void main() {
   col += vec3(1.0, 0.72, 0.39) * fold * foldSun * 0.22;
   if (lineY > 0.0) ink = max(ink, comicInk(abs(vW.y - lineY), wpx * 0.8));
   col = mix(col, INKC, ink);
-  vec3 shown = mix(gradeInk(col), mix(awn.rgb, INKC, ink), awn.a);
+  // The clay is printed on the graded wall, the way the awning is. The grade itself stays the teal and rose paper.
+  vec3 shown = mix(gradeInk(col) * clay, mix(awn.rgb, INKC, ink), awn.a);
   gl_FragColor = vec4(mix(shown, vFog.rgb, comicPoster(vFog.a, 4.0)), 1.0);
 }`;
 
