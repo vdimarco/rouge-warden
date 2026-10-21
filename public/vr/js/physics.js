@@ -2,6 +2,7 @@
 // Pure: plain {x, y, z}, no three, no DOM. main.js calls step(P, h, inp) a few times a frame with a small h.
 // Deterministic, and step allocates nothing except the event objects it pushes.
 import { SWING, GAME, COMFORT } from "./config.js";
+import { bidOf } from "./target.js";
 
 // Targets you pump instead of swing on: a yank there counts as a pump and moves nothing.
 const SPECIAL = { clog: true, pipe: true, crack: true };
@@ -105,8 +106,9 @@ export function armEasy(r, hgt) {
 }
 
 // The point a held swing takes: 12h ahead along (dx, dz) and 14h above the feet. A building within 6h of that point
-// wins; otherwise the point itself, in the sky. One reused result, so a caller copies it before the next call.
-const EASY_OUT = { x: 0, y: 0, z: 0, nx: 0, ny: -1, nz: 0, tag: "sky", id: "sky", easy: true, easyH: 1.8, sky: true, valid: true, same: false, special: false };
+// wins; otherwise the point itself, in the sky. opt.avoid is the building just left: another tier or its antenna is
+// not a new anchor. One reused result, so a caller copies it before the next call.
+const EASY_OUT = { x: 0, y: 0, z: 0, nx: 0, ny: -1, nz: 0, tag: "sky", id: "sky", bid: -1, easy: true, easyH: 1.8, sky: true, valid: true, same: false, special: false };
 const EASY_DIRS = [];
 for (let y = -1; y <= 1; y++) for (let x = -1; x <= 1; x++) for (let z = -1; z <= 1; z++) if (x || y || z) EASY_DIRS.push(x, y, z);
 export function easyAnchor(P, dx, dz, opt) {
@@ -114,21 +116,22 @@ export function easyAnchor(P, dx, dz, opt) {
   const hl = len2(dx, dz) || 1;
   dx /= hl; dz /= hl;
   const ahead = opt && opt.ahead != null ? opt.ahead : 12, up = opt && opt.up != null ? opt.up : 14, reach = opt && opt.reach != null ? opt.reach : 6;
-  const avoid = opt ? opt.avoid : undefined;
+  const avoid = opt && opt.avoid != null ? opt.avoid : undefined;
   const ax = P.pos.x + dx * ahead * H, ay = P.pos.y + up * H, az = P.pos.z + dz * ahead * H, R = reach * H;
   const o = EASY_OUT;
   o.easy = true; o.easyH = H; o.valid = true; o.same = false; o.special = false; o.sky = true;
-  o.x = ax; o.y = ay; o.z = az; o.nx = 0; o.ny = -1; o.nz = 0; o.tag = "sky"; o.id = "sky";
+  o.x = ax; o.y = ay; o.z = az; o.nx = 0; o.ny = -1; o.nz = 0; o.tag = "sky"; o.id = "sky"; o.bid = -1;
   const city = P.city;
   if (city.nearestSurface(ax, ay, az, R) <= R) {
-    let bt = R + 1, bx = 0, by = 0, bz = 0, bnx = 0, bny = 1, bnz = 0, bid = 0, hit = false;
+    let bt = R + 1, bx = 0, by = 0, bz = 0, bnx = 0, bny = 1, bnz = 0, cid = 0, bld = -1, hit = false;
     for (let i = 0; i < EASY_DIRS.length; i += 3) {
       const h = city.raycast(ax, ay, az, EASY_DIRS[i], EASY_DIRS[i + 1], EASY_DIRS[i + 2], R, HIT);
-      if (h && h.t <= R && h.t < bt && h.collider && h.collider.id !== avoid) {
-        bt = h.t; bx = h.x; by = h.y; bz = h.z; bnx = h.nx; bny = h.ny; bnz = h.nz; bid = h.collider.id; hit = true;
+      const piece = h && h.collider ? bidOf(h.collider) : -1;
+      if (h && h.t <= R && h.t < bt && h.collider && piece !== avoid) {
+        bt = h.t; bx = h.x; by = h.y; bz = h.z; bnx = h.nx; bny = h.ny; bnz = h.nz; cid = h.collider.id; bld = piece; hit = true;
       }
     }
-    if (hit) { o.x = bx; o.y = by; o.z = bz; o.nx = bnx; o.ny = bny; o.nz = bnz; o.tag = "building"; o.id = bid; o.sky = false; }
+    if (hit) { o.x = bx; o.y = by; o.z = bz; o.nx = bnx; o.ny = bny; o.nz = bnz; o.tag = "building"; o.id = cid; o.bid = bld; o.sky = false; }
   }
   return o;
 }
