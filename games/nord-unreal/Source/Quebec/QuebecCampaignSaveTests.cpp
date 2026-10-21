@@ -197,6 +197,38 @@ bool FQuebecCampaignSaveRoundTripTest::RunTest(const FString& Parameters)
     TestEqual(TEXT("The grab stays banked beside the short way"),DaredReload->GrabStep,2);
     Dared->GrabStep = 0;
     TestFalse(TEXT("A short way before the grab is banked is rejected"),Dared->IsSupported());
+    Dared->GrabStep = 2;
+    Dared->ChaseStep = 1;
+    TestFalse(TEXT("A version-7 slot carrying the chase is rejected"),Dared->IsSupported());
+    Dared->ChaseStep = 0;
+
+    UQuebecCampaignSaveGame* Tailed = NewObject<UQuebecCampaignSaveGame>();
+    Tailed->Version = 8;
+    Tailed->CompletedMissions = 2;
+    Tailed->PondStep = 6;
+    Tailed->CourtStep = 4;
+    Tailed->ShowStep = 5;
+    Tailed->RescueMask = 7;
+    Tailed->ConvoyStep = 4;
+    Tailed->BlankStep = 4;
+    Tailed->TourStep = 3;
+    Tailed->HomeStep = 3;
+    Tailed->EscortStep = 2;
+    Tailed->ShadeStep = 2;
+    Tailed->GrabStep = 2;
+    Tailed->CutStep = 2;
+    Tailed->ChaseStep = 1;
+    TestTrue(TEXT("Chase tail is accepted before serialization"),Tailed->IsSupported());
+    TArray<uint8> TailedBytes;
+    if (!TestTrue(TEXT("Chase tail serializes using engine save format"),UGameplayStatics::SaveGameToMemory(Tailed,TailedBytes))) return false;
+    const UQuebecCampaignSaveGame* TailedReload = Cast<UQuebecCampaignSaveGame>(UGameplayStatics::LoadGameFromMemory(TailedBytes));
+    if (!TestNotNull(TEXT("Chase tail reloads using engine save format"),TailedReload)) return false;
+    TestTrue(TEXT("Reloaded chase tail remains supported"),TailedReload->IsSupported());
+    TestEqual(TEXT("Chase schema survives serialization"),TailedReload->Version,8);
+    TestEqual(TEXT("Chase step survives serialization"),TailedReload->ChaseStep,1);
+    TestEqual(TEXT("The short way stays banked beside the chase"),TailedReload->CutStep,2);
+    Tailed->CutStep = 0;
+    TestFalse(TEXT("A chase before the short way is banked is rejected"),Tailed->IsSupported());
 
     UQuebecCampaignSaveGame* Skip = NewObject<UQuebecCampaignSaveGame>();
     Skip->Version = 3;

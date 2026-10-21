@@ -9,6 +9,7 @@
 #include "QuebecShade.h"
 #include "QuebecGrab.h"
 #include "QuebecCut.h"
+#include "QuebecChase.h"
 #include "QuebecChain.h"
 #include "QuebecPace.h"
 #include "QuebecConvoyRules.h"
@@ -55,6 +56,9 @@ static_assert(QuebecGrab::CaseX == 36000. && QuebecGrab::CaseY == 14000., "the c
 static_assert(QuebecCut::StepBanked == AQuebecCampaign::CutBankedStep, "mission 14 and the story tail share one banked index");
 static_assert(QuebecStorySave::CutBanked == AQuebecCampaign::CutBankedStep, "the story tail left the short way");
 static_assert(QuebecCut::StartX == 24000. && QuebecCut::StartY == 18000., "the line left the lawn");
+static_assert(QuebecChase::StepBanked == AQuebecCampaign::ChaseBankedStep, "mission 15 and the story tail share one banked index");
+static_assert(QuebecStorySave::ChaseBanked == AQuebecCampaign::ChaseBankedStep, "the story tail left the chase");
+static_assert(QuebecChase::CountsAsCar(0) && !QuebecChase::CountsAsCar(1), "only a car takes the seat");
 static_assert(QuebecStorySave::Current != QuebecStorySave::Rejected, "the writer would plant the unsupported fixture");
 
 static FString WithClose(const TCHAR* Line, int32 Bonus)
@@ -190,7 +194,7 @@ void AQuebecCampaign::BeginPlay()
                 CompletedMissions = Save->CompletedMissions;
                 const QuebecStorySave::FSteps Steps = QuebecStorySave::Applied(Save->Version, {
                     Save->PondStep, Save->CourtStep, Save->ShowStep, Save->RescueMask,
-                    Save->ConvoyStep, Save->BlankStep, Save->TourStep, Save->HomeStep, Save->EscortStep, Save->ShadeStep, Save->GrabStep, Save->CutStep});
+                    Save->ConvoyStep, Save->BlankStep, Save->TourStep, Save->HomeStep, Save->EscortStep, Save->ShadeStep, Save->GrabStep, Save->CutStep, Save->ChaseStep});
                 PondStep = Steps.Pond;
                 CourtStep = Steps.Court;
                 ShowStep = Steps.Show;
@@ -203,6 +207,7 @@ void AQuebecCampaign::BeginPlay()
                 ShadeStep = Steps.Shade;
                 GrabStep = Steps.Grab;
                 CutStep = Steps.Cut;
+                ChaseStep = Steps.Chase;
                 // The coat's place is not in the slot. A walk in progress starts again at the meet.
                 EscortFriendX = static_cast<float>(EscortStep >= EscortBankedStep ? QuebecEscort::DoorX : QuebecEscort::MeetX);
                 EscortFriendY = static_cast<float>(EscortStep >= EscortBankedStep ? QuebecEscort::DoorY : QuebecEscort::MeetY);
@@ -223,6 +228,10 @@ void AQuebecCampaign::BeginPlay()
                 UE_LOG(LogTemp,Warning,TEXT("NORD campaign: preserving unsupported/unreadable save slot %s"),*SaveSlot());
             }
         }
+        // The tail's place is not in the slot. A chase in progress starts again behind the seat.
+        const QuebecChase::FTail Parked = QuebecChase::Park();
+        ChaseTailX = static_cast<float>(Parked.X);
+        ChaseTailY = static_cast<float>(Parked.Y);
         const auto SpawnCar = [this](const FVector& Location, const FRotator& Rotation, int32 Paint)
         {
             const FTransform Transform(Rotation,Location);
@@ -547,6 +556,14 @@ void AQuebecCampaign::BuildEncounter()
     CutFinishCaption = AddCaption(TEXT("CutFinishCaption"), FVector(QuebecCut::FinishX, QuebecCut::FinishY, 160.), TEXT("FINISH"), 18.f);
     CutRival = AddPart(TEXT("CutRival"), Cube, FVector(QuebecCut::StartX, QuebecCut::StartY, 90.), FVector(40., 40., 80.), Berry);
     CutRivalCaption = AddCaption(TEXT("CutRivalCaption"), FVector(QuebecCut::StartX, QuebecCut::StartY, 220.), TEXT("RIVAL"), 18.f);
+
+    const QuebecChase::FTail ParkedTail = QuebecChase::Park();
+    ChaseSeat = AddPart(TEXT("ChaseSeat"), Cube, FVector(QuebecChase::StartX, QuebecChase::StartY, 40.), FVector(70., 70., 16.), Gold);
+    ChaseSeatCaption = AddCaption(TEXT("ChaseSeatCaption"), FVector(QuebecChase::StartX, QuebecChase::StartY, 160.), TEXT("SEAT"), 18.f);
+    ChaseHide = AddPart(TEXT("ChaseHide"), Cube, FVector(QuebecChase::HideX, QuebecChase::HideY, 40.), FVector(70., 70., 16.), Lime);
+    ChaseHideCaption = AddCaption(TEXT("ChaseHideCaption"), FVector(QuebecChase::HideX, QuebecChase::HideY, 160.), TEXT("HIDE"), 18.f);
+    ChaseTail = AddPart(TEXT("ChaseTail"), Cube, FVector(ParkedTail.X, ParkedTail.Y, 90.), FVector(40., 40., 80.), Berry);
+    ChaseTailCaption = AddCaption(TEXT("ChaseTailCaption"), FVector(ParkedTail.X, ParkedTail.Y, 220.), TEXT("TAIL"), 18.f);
 }
 
 void AQuebecCampaign::Tick(float DeltaSeconds)
@@ -571,6 +588,7 @@ void AQuebecCampaign::Tick(float DeltaSeconds)
             TickShade();
             TickGrab(DeltaSeconds);
             TickCut(DeltaSeconds);
+            TickChase(DeltaSeconds);
         }
     }
     if (GetWorld()->GetTimeSeconds()-LastPresentationTime >= .1f)
@@ -1694,6 +1712,106 @@ void AQuebecCampaign::AdvanceCut(int32 Next, AQuebecController* Who, const TCHAR
     SaveBoundary();
 }
 
+void AQuebecCampaign::TickChase(float DeltaSeconds)
+{
+    if (!IsChaseOpen()) return;
+    const bool bSeating = ChaseStep == QuebecChase::StepSeat;
+    const double GoalX = bSeating ? QuebecChase::StartX : QuebecChase::HideX;
+    const double GoalY = bSeating ? QuebecChase::StartY : QuebecChase::HideY;
+    AQuebecController* Driver = nullptr;
+    double BodyX = 0.;
+    double BodyY = 0.;
+    double BodySpan = 0.;
+    bool bHaveBody = false;
+    bool bInCar = false;
+    for (TActorIterator<AQuebecCar> It(GetWorld()); It; ++It)
+    {
+        AQuebecCar* Car = *It;
+        if (!Car || !Car->Occupant || !QuebecChase::CountsAsCar(static_cast<int>(Car->RideKind))) continue;
+        AQuebecController* Who = Cast<AQuebecController>(Car->GetController());
+        if (!Who) continue;
+        const FVector Position = Car->GetActorLocation();
+        const bool bHere = bSeating ? QuebecChase::InStart(Position.X, Position.Y) : QuebecChase::InHide(Position.X, Position.Y);
+        if (bHere)
+        {
+            bHaveBody = true;
+            bInCar = true;
+            Driver = Who;
+            BodyX = Position.X;
+            BodyY = Position.Y;
+            break;
+        }
+        const double Span = QuebecChase::Apart(Position.X, Position.Y, GoalX, GoalY);
+        if (bHaveBody && Span >= BodySpan) continue;
+        bHaveBody = true;
+        bInCar = true;
+        Driver = Who;
+        BodyX = Position.X;
+        BodyY = Position.Y;
+        BodySpan = Span;
+    }
+    if (!bInCar && ChaseStep == QuebecChase::StepTail)
+    {
+        bHaveBody = false;
+        BodySpan = 0.;
+        for (TActorIterator<AQuebecController> It(GetWorld()); It; ++It)
+        {
+            const APawn* Pawn = It->GetPawn();
+            if (!Pawn) continue;
+            const AQuebecCharacter* Walker = Cast<AQuebecCharacter>(Pawn);
+            if (Walker && Walker->GetCharacterMovement()->IsSwimming()) continue;
+            const AQuebecCar* Ride = Cast<AQuebecCar>(Pawn);
+            if (Ride && QuebecChase::CountsAsCar(static_cast<int>(Ride->RideKind))) continue;
+            const FVector Position = Pawn->GetActorLocation();
+            const double Span = QuebecChase::Apart(Position.X, Position.Y, GoalX, GoalY);
+            if (bHaveBody && Span >= BodySpan) continue;
+            bHaveBody = true;
+            Driver = *It;
+            BodyX = Position.X;
+            BodyY = Position.Y;
+            BodySpan = Span;
+        }
+    }
+    const QuebecChase::FTail Before{static_cast<int>(ChaseStep), static_cast<double>(ChaseTailX), static_cast<double>(ChaseTailY)};
+    const QuebecChase::FTail After = QuebecChase::Tick(Before, static_cast<double>(DeltaSeconds), bInCar, bHaveBody, BodyX, BodyY);
+    if (After.Step != ChaseStep)
+    {
+        ChaseTailX = static_cast<float>(After.X);
+        ChaseTailY = static_cast<float>(After.Y);
+        const TCHAR* Message = TEXT("They caught you. The line is back.");
+        bool bFinished = false;
+        if (After.Step == QuebecChase::StepBanked)
+        {
+            Message = TEXT("You lost them at the hide. The tail is gone.");
+            bFinished = true;
+        }
+        else if (Before.Step == QuebecChase::StepSeat)
+            Message = TEXT("They are behind you. Drive.");
+        AdvanceChase(After.Step, Driver, Message, bFinished);
+        return;
+    }
+    const float NextX = static_cast<float>(After.X);
+    const float NextY = static_cast<float>(After.Y);
+    const bool bMoved = QuebecChase::Apart(static_cast<double>(NextX), static_cast<double>(NextY), static_cast<double>(ChaseTailX), static_cast<double>(ChaseTailY)) > 50.;
+    ChaseTailX = NextX;
+    ChaseTailY = NextY;
+    if (bMoved) ForceNetUpdate();
+}
+
+void AQuebecCampaign::AdvanceChase(int32 Next, AQuebecController* Who, const TCHAR* Message, bool bFinished)
+{
+    if (Next == ChaseStep) return;
+    ChaseStep = Next;
+    // Link -1 is outside the seven banks, so the chain does not move. The purse is flat.
+    ShowStepMessage(Who, Message, bFinished, -1);
+    if (bFinished) GrantCash(QuebecChase::Pay);
+    for (TActorIterator<AQuebecController> It(GetWorld()); It; ++It)
+        It->PlayFeedback(bFinished ? EQuebecFeedbackCue::Complete : EQuebecFeedbackCue::Checkpoint);
+    UpdatePresentation();
+    ForceNetUpdate();
+    SaveBoundary();
+}
+
 void AQuebecCampaign::TickRace(float DeltaSeconds)
 {
     const float Now = GetWorld()->GetTimeSeconds();
@@ -1810,7 +1928,7 @@ void AQuebecCampaign::ChangePhase(EQuebecCampaignPhase Next, bool bFeedback)
 bool UQuebecCampaignSaveGame::IsSupported() const
 {
     const QuebecStorySave::FSteps Steps{
-        PondStep, CourtStep, ShowStep, RescueMask, ConvoyStep, BlankStep, TourStep, HomeStep, EscortStep, ShadeStep, GrabStep, CutStep};
+        PondStep, CourtStep, ShowStep, RescueMask, ConvoyStep, BlankStep, TourStep, HomeStep, EscortStep, ShadeStep, GrabStep, CutStep, ChaseStep};
     return QuebecStorySave::Accept(Version, CompletedMissions, Steps);
 }
 
@@ -1841,6 +1959,7 @@ void AQuebecCampaign::SaveBoundary()
         Save->ShadeStep = ShadeStep;
         Save->GrabStep = GrabStep;
         Save->CutStep = CutStep;
+        Save->ChaseStep = ChaseStep;
     }
     if (!Save || !UGameplayStatics::SaveGameToSlot(Save,SaveSlot(),0))
     {
@@ -1974,7 +2093,13 @@ void AQuebecCampaign::RequestRetry(AQuebecController* Controller)
                 Controller->ShowInteractionMessage(TEXT("This race restored. Their clock keeps what it had."));
             return;
         }
-        Controller->ShowInteractionMessage(TEXT("The short way held. T replays the race."));
+        if (IsChaseOpen())
+        {
+            if (MoveToSafeCheckpoint(Controller, FVector(QuebecChase::RecoverX, QuebecChase::RecoverY, 100.), FRotator(0., 90., 0.)))
+                Controller->ShowInteractionMessage(TEXT("This tail restored. They keep the ground they gained."));
+            return;
+        }
+        Controller->ShowInteractionMessage(TEXT("The tail is lost. T replays the race."));
         return;
     }
     if (Phase <= EQuebecCampaignPhase::ReleaseTable)
@@ -2088,6 +2213,11 @@ void AQuebecCampaign::RequestReplay(AQuebecController* Controller)
     if (IsCutOpen())
     {
         Controller->ShowInteractionMessage(TEXT("The short way is still open. T replays the race after the finish."));
+        return;
+    }
+    if (IsChaseOpen())
+    {
+        Controller->ShowInteractionMessage(TEXT("The tail is still on you. T replays the race after the hide."));
         return;
     }
     // A race replay does not rewind the story steps or the chain, and it does not write the slot. The story tail already holds the steps.
@@ -2335,6 +2465,7 @@ FString AQuebecCampaign::GetMissionTitle() const
     if (IsShadeOpen()) return TEXT("12 / STAY UNSEEN");
     if (IsGrabOpen()) return TEXT("13 / THE WINDOW");
     if (IsCutOpen()) return TEXT("14 / THE SHORT WAY");
+    if (IsChaseOpen()) return TEXT("15 / ON YOUR TAIL");
     if (Phase == EQuebecCampaignPhase::Complete) return TEXT("THE PARK IS OPEN");
     return Phase <= EQuebecCampaignPhase::ReleaseTable ? TEXT("01 / A TABLE FOR ETERNITY") : TEXT("02 / NO SUCH THING AS A QUIET LAP");
 }
@@ -2451,6 +2582,11 @@ FString AQuebecCampaign::GetObjectiveText() const
     {
         if (CutStep == QuebecCut::StepLine) return TEXT("Step on the line");
         return FString::Printf(TEXT("Cut across. %ds before they arrive."), QuebecCut::Left(static_cast<double>(CutElapsed)));
+    }
+    if (IsChaseOpen())
+    {
+        if (ChaseStep == QuebecChase::StepSeat) return TEXT("Get in a car on the line");
+        return TEXT("Drive to the hide before they catch you");
     }
     if (Phase == EQuebecCampaignPhase::Complete) return TEXT("The last page is blank / T: replay the race");
     switch (Phase)
@@ -2583,7 +2719,13 @@ FString AQuebecCampaign::GetBriefingText() const
             return TEXT("MEMPHIS: They are faster on the road. The grass is shorter. Step on the line, then sprint the cut.");
         return TEXT("MEMPHIS: Stay on the grass. If they reach the finish, the line is back.");
     }
-    if (Phase == EQuebecCampaignPhase::Complete && PondStep >= PondBankedStep && CourtStep >= CourtBankedStep && ShowStep >= ShowBankedStep && RescueMask >= RescueDone && ConvoyStep >= ConvoyBankedStep && BlankStep >= BlankBankedStep && TourStep >= TourBankedStep && HomeStep >= HomeBankedStep && EscortStep >= EscortBankedStep && ShadeStep >= ShadeBankedStep && GrabStep >= GrabBankedStep && CutStep >= CutBankedStep)
+    if (IsChaseOpen())
+    {
+        if (ChaseStep == QuebecChase::StepSeat)
+            return TEXT("MEMPHIS: A car is on your tail. Get in on the line. The hide is down the road.");
+        return TEXT("MEMPHIS: Drive. If they catch you, the line is back. A bike will not lose them.");
+    }
+    if (Phase == EQuebecCampaignPhase::Complete && PondStep >= PondBankedStep && CourtStep >= CourtBankedStep && ShowStep >= ShowBankedStep && RescueMask >= RescueDone && ConvoyStep >= ConvoyBankedStep && BlankStep >= BlankBankedStep && TourStep >= TourBankedStep && HomeStep >= HomeBankedStep && EscortStep >= EscortBankedStep && ShadeStep >= ShadeBankedStep && GrabStep >= GrabBankedStep && CutStep >= CutBankedStep && ChaseStep >= ChaseBankedStep)
         return TEXT("The last page is blank. The park keeps the day that was not in his book.");
     switch (Phase)
     {
@@ -2613,6 +2755,7 @@ FString AQuebecCampaign::GetStatusText() const
     if (IsShadeOpen()) return TEXT("R recovers this dark");
     if (IsGrabOpen()) return TEXT("R recovers this window");
     if (IsCutOpen()) return TEXT("R recovers this cut");
+    if (IsChaseOpen()) return TEXT("R recovers this tail");
     if (Phase == EQuebecCampaignPhase::AimWorklight) return FString::Printf(TEXT("Alignment %d%% / hold %d%%"),FMath::RoundToInt(LightAlignment*100.f),FMath::RoundToInt(LightHoldProgress*100.f));
     if (Phase == EQuebecCampaignPhase::CrossCable) return FString::Printf(TEXT("Sprint %s / jump %s / R: recover"),bSprintSeen?TEXT("banked"):TEXT("needed"),bJumpSeen?TEXT("banked"):TEXT("needed"));
     if (Phase == EQuebecCampaignPhase::PullClamp || Phase == EQuebecCampaignPhase::ReleaseTable) return bClampOpen ? TEXT("GREEN BEAT / pull now / R: recover") : TEXT("Press squeezing / wait for green / R: recover");
@@ -2689,6 +2832,11 @@ FVector AQuebecCampaign::GetObjectiveLocation() const
     {
         if (CutStep == QuebecCut::StepRun) return FVector(QuebecCut::FinishX, QuebecCut::FinishY, 100.);
         return FVector(QuebecCut::StartX, QuebecCut::StartY, 100.);
+    }
+    if (IsChaseOpen())
+    {
+        if (ChaseStep == QuebecChase::StepTail) return FVector(QuebecChase::HideX, QuebecChase::HideY, 100.);
+        return FVector(QuebecChase::StartX, QuebecChase::StartY, 100.);
     }
     switch (Phase)
     {
@@ -2779,6 +2927,12 @@ bool AQuebecCampaign::GetNextObjectiveLocation(FVector& Out) const
     {
         if (CutStep != QuebecCut::StepLine) return false;
         Out = At(QuebecCut::FinishX, QuebecCut::FinishY);
+        return true;
+    }
+    if (IsChaseOpen())
+    {
+        if (ChaseStep != QuebecChase::StepSeat) return false;
+        Out = At(QuebecChase::HideX, QuebecChase::HideY);
         return true;
     }
     if (Phase == EQuebecCampaignPhase::Complete) return false;
@@ -2999,6 +3153,13 @@ void AQuebecCampaign::UpdatePresentation()
             }
             if (Caption == CutFinishCaption) Caption->SetVisibility(IsCutOpen());
             if (Caption == CutRivalCaption) Caption->SetVisibility(IsCutOpen());
+            if (Caption == ChaseSeatCaption)
+            {
+                Caption->SetVisibility(IsChaseOpen());
+                Caption->SetText(FText::FromString(ChaseStep == QuebecChase::StepTail ? TEXT("GONE") : TEXT("SEAT")));
+            }
+            if (Caption == ChaseHideCaption) Caption->SetVisibility(IsChaseOpen());
+            if (Caption == ChaseTailCaption) Caption->SetVisibility(IsChaseOpen());
         }
         if (EscortDoor) EscortDoor->SetVisibility(IsEscortOpen());
         const bool bShadeWorld = IsShadeOpen();
@@ -3020,6 +3181,15 @@ void AQuebecCampaign::UpdatePresentation()
             CutRival->SetWorldLocation(FVector(RivalX, RivalY, 90.));
             CutRival->SetVisibility(bCutWorld);
             if (CutRivalCaption) CutRivalCaption->SetWorldLocation(FVector(RivalX, RivalY, 220.));
+        }
+        const bool bChaseWorld = IsChaseOpen();
+        if (ChaseSeat) ChaseSeat->SetVisibility(bChaseWorld);
+        if (ChaseHide) ChaseHide->SetVisibility(bChaseWorld);
+        if (ChaseTail)
+        {
+            ChaseTail->SetWorldLocation(FVector(ChaseTailX, ChaseTailY, 90.));
+            ChaseTail->SetVisibility(bChaseWorld);
+            if (ChaseTailCaption) ChaseTailCaption->SetWorldLocation(FVector(ChaseTailX, ChaseTailY, 220.));
         }
         for (UTextRenderComponent* Caption : Captions) Caption->SetWorldRotation((Eye-Caption->GetComponentLocation()).Rotation());
     }
@@ -3055,6 +3225,9 @@ void AQuebecCampaign::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
     DOREPLIFETIME(AQuebecCampaign,GrabElapsed);
     DOREPLIFETIME(AQuebecCampaign,CutStep);
     DOREPLIFETIME(AQuebecCampaign,CutElapsed);
+    DOREPLIFETIME(AQuebecCampaign,ChaseStep);
+    DOREPLIFETIME(AQuebecCampaign,ChaseTailX);
+    DOREPLIFETIME(AQuebecCampaign,ChaseTailY);
     DOREPLIFETIME(AQuebecCampaign,LightOperator);
     DOREPLIFETIME(AQuebecCampaign,LightYaw);
     DOREPLIFETIME(AQuebecCampaign,LightPitch);

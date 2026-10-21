@@ -49,7 +49,7 @@ namespace
 
 int main()
 {
-    Expect(Legacy == 1 && Rejected == 2 && Story == 3 && Escort == 4 && Shade == 5 && Grab == 6 && Current == 7, "the slot versions drifted");
+    Expect(Legacy == 1 && Rejected == 2 && Story == 3 && Escort == 4 && Shade == 5 && Grab == 6 && Cut == 7 && Current == 8, "the slot versions drifted");
     Expect(Current != Rejected, "the writer would plant the unsupported fixture");
     Expect(PondBanked == QuebecPondRules::StepBanked, "the pond bank left the save");
     Expect(CourtBanked == QuebecCourtRules::StepBanked, "the court bank left the save");
@@ -70,10 +70,11 @@ int main()
         Expect(Accept(Escort, Completed, None), "a version-4 race boundary was rejected");
         Expect(Accept(Shade, Completed, None), "a version-5 race boundary was rejected");
         Expect(Accept(Grab, Completed, None), "a version-6 race boundary was rejected");
+        Expect(Accept(Cut, Completed, None), "a version-7 race boundary was rejected");
         Expect(Accept(Current, Completed, None), "a current race boundary with no story was rejected");
         Expect(!Accept(Rejected, Completed, None), "version 2 was accepted");
         Expect(!Accept(0, Completed, None), "version 0 was accepted");
-        Expect(!Accept(8, Completed, None), "a later schema was accepted");
+        Expect(!Accept(9, Completed, None), "a later schema was accepted");
     }
     Expect(!Accept(Legacy, -1, None), "a missing mission count was accepted");
     Expect(!Accept(Legacy, 3, None), "completed missions 3 were accepted on a legacy slot");
@@ -119,7 +120,7 @@ int main()
     const FSteps Done = Applied(Current, Banked());
     Expect(Done.Pond == PondBanked && Done.Court == CourtBanked && Done.Show == ShowBanked && Done.Rescue == RescueDone
         && Done.Convoy == ConvoyBanked && Done.Blank == BlankBanked && Done.Tour == TourBanked && Done.Home == HomeBanked
-        && Done.Escort == 0,
+        && Done.Escort == 0 && Done.Chase == 0,
         "a finished day did not round-trip");
     FSteps WithCoat = Banked();
     WithCoat.Escort = 1;
@@ -179,6 +180,23 @@ int main()
     Dared.Cut = 1;
     Dared.Grab = 0;
     Expect(!Accept(Current, 2, Dared), "the race started before the grab was banked");
+    FSteps Tailed = Banked();
+    Tailed.Escort = EscortBanked;
+    Tailed.Shade = ShadeBanked;
+    Tailed.Grab = GrabBanked;
+    Tailed.Cut = CutBanked;
+    Tailed.Chase = 1;
+    Expect(Accept(Current, 2, Tailed), "a chase in progress was rejected");
+    Expect(!Accept(Cut, 2, Tailed), "a version-7 slot carried the chase");
+    const FSteps FromCut = Applied(Cut, Tailed);
+    Expect(FromCut.Cut == CutBanked && FromCut.Chase == 0, "a version-7 slot copied the chase");
+    Tailed.Chase = ChaseBanked;
+    Expect(Accept(Current, 2, Tailed), "a finished chase was rejected");
+    Tailed.Chase = ChaseBanked + 1;
+    Expect(!Accept(Current, 2, Tailed), "a chase past the bank was accepted");
+    Tailed.Chase = 1;
+    Tailed.Cut = 0;
+    Expect(!Accept(Current, 2, Tailed), "the chase started before the short way was banked");
 
     std::printf("%d assertions, %d failures\n", Assertions, Failures);
     return Failures == 0 ? 0 : 1;
