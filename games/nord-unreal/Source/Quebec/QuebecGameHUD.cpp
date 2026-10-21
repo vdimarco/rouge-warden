@@ -5,6 +5,7 @@
 #include "QuebecPolice.h"
 #include "QuebecSideJobs.h"
 #include "QuebecCart.h"
+#include "QuebecBow.h"
 
 #include "CanvasItem.h"
 #include "Engine/Canvas.h"
@@ -112,8 +113,13 @@ FString AQuebecHUD::StreetPrompt() const
         const FString Job = Jobs->GetPrompt(PlayerOwner->GetPawn());
         if (!Job.IsEmpty()) return Job;
     }
-    const AQuebecCart* Cart = AQuebecCart::Find(GetWorld());
-    return Cart && PlayerOwner ? Cart->GetPrompt(PlayerOwner->GetPawn()) : FString();
+    if (const AQuebecCart* Cart = AQuebecCart::Find(GetWorld()); Cart && PlayerOwner)
+    {
+        const FString Stall = Cart->GetPrompt(PlayerOwner->GetPawn());
+        if (!Stall.IsEmpty()) return Stall;
+    }
+    const AQuebecBow* Bow = AQuebecBow::Find(GetWorld());
+    return Bow && PlayerOwner ? Bow->GetPrompt(PlayerOwner->GetPawn()) : FString();
 }
 
 float AQuebecHUD::StreetColumnWidth() const
@@ -351,6 +357,25 @@ void AQuebecHUD::DrawStreetHUD(float UIScale, bool bTall, bool bTouch, float Rad
                 Rim.BlendMode = SE_BLEND_Translucent;
                 Canvas->DrawItem(Rim);
                 FCanvasNGonItem Fill(Dot, FVector2D(3.2f * S), 4, CashTone);
+                Fill.BlendMode = SE_BLEND_Translucent;
+                Canvas->DrawItem(Fill);
+            }
+        }
+    }
+    // The stage bow is a gold diamond, and only inside 80 m, once the goon fight is won.
+    if (const AQuebecBow* Bow = AQuebecBow::Find(World); Bow && Bow->IsListed())
+    {
+        constexpr double BowBlipRange = 8000.;
+        const FVector Spot = Bow->GetSpot();
+        if (FVector::DistSquared2D(Spot, Here) <= FMath::Square(BowBlipRange))
+        {
+            const FVector2D Dot = RadarPoint(Spot);
+            if (OnRadar(Dot))
+            {
+                FCanvasNGonItem Rim(Dot, FVector2D(5.f * S), 4, Ink);
+                Rim.BlendMode = SE_BLEND_Translucent;
+                Canvas->DrawItem(Rim);
+                FCanvasNGonItem Fill(Dot, FVector2D(3.2f * S), 4, JobYellow);
                 Fill.BlendMode = SE_BLEND_Translucent;
                 Canvas->DrawItem(Fill);
             }

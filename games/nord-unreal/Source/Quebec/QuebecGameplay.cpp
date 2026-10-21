@@ -23,6 +23,7 @@
 #include "QuebecLife.h" // Living street: companion assignment for runtime walkers (PEOPLE).
 #include "QuebecSideJobs.h" // Side jobs: markers, E, R and the game mode spawn (JOBS).
 #include "QuebecCart.h" // Chez Lise: the stall that spends session cash.
+#include "QuebecBow.h" // The stage bow after the goon fight.
 #include "QuebecPolice.h" // Police: the dispatcher spawned by the game mode (POLICE).
 #include "LaFontaineMap.h"
 #include "LaFontaineExtensionMap.h"
@@ -2278,6 +2279,7 @@ void AQuebecController::ServerInteract_Implementation()
     // Side jobs (JOBS): E at a yellow marker starts a job, after car and campaign interactions.
     if (AQuebecSideJobs* Jobs = AQuebecSideJobs::Find(GetWorld()); Jobs && Jobs->HandleInteract(this)) return;
     if (AQuebecCart* Cart = AQuebecCart::Find(GetWorld()); Cart && Cart->HandleInteract(this)) return;
+    if (AQuebecBow* Bow = AQuebecBow::Find(GetWorld()); Bow && Bow->HandleInteract(this)) return;
     if (AQuebecParkResident* Resident = FindInteractableResident())
     {
         Resident->Acknowledge(Character, true);
@@ -2974,6 +2976,9 @@ void AQuebecGameMode::BeginPlay()
     // Chez Lise, on the Sherbrooke sidewalk. E spends session cash. No population change.
     if (!FParse::Param(FCommandLine::Get(), TEXT("NordNoCampaign")))
         GetWorld()->SpawnActor<AQuebecCart>();
+    // The stage bow. Hidden until the goon fight is won. No population change.
+    if (!FParse::Param(FCommandLine::Get(), TEXT("NordNoCampaign")))
+        GetWorld()->SpawnActor<AQuebecBow>();
     // Combat: weapon, vest and health pickups at street and park points, none near a QA anchor and no collision.
     if (!FParse::Param(FCommandLine::Get(), TEXT("NordNoCampaign"))) QuebecCombat::SpawnPickups(GetWorld());
     // Police (POLICE): the dispatcher and its garage sign. Police cars and officers appear only while a player has stars.
