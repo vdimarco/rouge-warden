@@ -35,7 +35,8 @@ export const JOB = {
   // after last s. The first comes after first s of free play.
   crime: { every: [45, 80], first: 40, near: [50, 150], take: 28, last: 60 },
   mugging: { crew: 3, time: 90, reward: 30 },
-  getaway: { speed: 17, hops: [5, 8], crew: 2, reward: 40, swerve: 0.5, spare: 8 },
+  // beat: the ninth flush. An odd-job getaway keeps speed.
+  getaway: { speed: 17, beat: 24, hops: [5, 8], crew: 2, reward: 40, swerve: 0.5, spare: 8 },
   tanker: { crew: 3, time: 100, seals: 3, reward: 45 },
 };
 // the crime shouts (the hero's own words, as in the comics) and the quips after a crime is stopped
@@ -420,13 +421,13 @@ export function createJobs({ city, combat, cars = null, seed = 4711 }) {
       A.reward = JOB.mugging.reward;
     },
     getaway(A) {
-      const C = JOB.getaway, path = A.o.path || streetRun(A.o.x, A.o.z, C.hops[1]) || [{ x: A.o.x, y: 0, z: A.o.z }, { x: A.o.x + 120, y: 0, z: A.o.z }];
+      const C = JOB.getaway, pace = A.mission ? C.beat : C.speed, path = A.o.path || streetRun(A.o.x, A.o.z, C.hops[1]) || [{ x: A.o.x, y: 0, z: A.o.z }, { x: A.o.x + 120, y: 0, z: A.o.z }];
       const yaw = path.length > 1 ? Math.atan2(-(path[1].x - path[0].x), -(path[1].z - path[0].z)) : 0;
-      const car = cars ? cars.jobCar(path[0].x, path[0].z, yaw, GETAWAY_PAINT, { path: path.slice(1), speed: C.speed }) : null;
+      const car = cars ? cars.jobCar(path[0].x, path[0].z, yaw, GETAWAY_PAINT, { path: path.slice(1), speed: pace }) : null;
       let len = 0;
       for (let i = 1; i < path.length; i++) len += Math.hypot(path[i].x - path[i - 1].x, path[i].z - path[i - 1].z);
       A.data = { car, path, pos: { x: path[0].x, y: 1.3, z: path[0].z }, stopped: false, crew: false };
-      A.timer = len / C.speed + C.spare;
+      A.timer = len / pace + C.spare;
       A.reward = C.reward;
       if (!car) { A.data.stopped = true; A.data.crew = true; spawnRing(A.o, C.crew); } // no car to drive: only the crew
     },
