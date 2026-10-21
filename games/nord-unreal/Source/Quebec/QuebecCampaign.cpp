@@ -462,7 +462,9 @@ void AQuebecCampaign::BuildEncounter()
     BlankParts.Add(AddPart(TEXT("BlankCue"), Cylinder, BlankAt(QuebecBlankRules::Cue, 80.), FVector(40., 40., 160.), Gold));
     BlankCaptions.Add(AddCaption(TEXT("BlankCueCaption"), BlankAt(QuebecBlankRules::Cue, 200.), TEXT("BLANK PAGE"), 18.f));
     BlankParts.Add(AddPart(TEXT("BlankPage"), Cube, BlankAt(QuebecBlankRules::Cue, 140.), FVector(160., 8., 200.), Cream));
-    BlankCaptions.Add(AddCaption(TEXT("BlankPageCaption"), BlankAt(QuebecBlankRules::Cue, 280.), TEXT("LEFT BLANK"), 18.f));
+    BlankCaptions.Add(AddCaption(TEXT("BlankPageCaption"), BlankAt(QuebecBlankRules::Cue, 280.), TEXT("THE PAGE"), 18.f));
+    BlankParts.Add(AddPart(TEXT("BlankKeep"), Cube, BlankAt(QuebecBlankRules::Keep, 110.), FVector(36., 36., 220.), Berry));
+    BlankCaptions.Add(AddCaption(TEXT("BlankKeepCaption"), BlankAt(QuebecBlankRules::Keep, 250.), TEXT("KEEP"), 18.f));
 }
 
 void AQuebecCampaign::Tick(float DeltaSeconds)
@@ -917,13 +919,28 @@ bool AQuebecCampaign::HandleInteract(AQuebecController* Controller)
     }
     if (IsBlankOpen())
     {
+        if (BlankStep == QuebecBlankRules::StepCue
+            && NearBlank(Controller, QuebecBlankRules::Keep.X, QuebecBlankRules::Keep.Y)
+            && !NearBlank(Controller, QuebecBlankRules::Cue.X, QuebecBlankRules::Cue.Y))
+        {
+            const QuebecBlankRules::FFinish Done = QuebecBlankRules::Finish(BlankStep, QuebecBlankRules::EPage::Sold, false);
+            PlungerPoint = FVector(QuebecBlankRules::Keep.X, QuebecBlankRules::Keep.Y, 130.);
+            PlungerPullTime = GetWorld()->GetTimeSeconds();
+            // The sale is session cash. CompletedMissions stays 2 and the v1 slot is not rewritten.
+            BreakChain();
+            GrantCash(Done.Cash);
+            AdvanceBlank(Done.Step, Controller,
+                TEXT("CURATOR: Lovely. MEMPHIS: You sold the page. The chain pays nothing."), Done.bBankChain);
+            return true;
+        }
         if (BlankStep == QuebecBlankRules::StepCue && NearBlank(Controller, QuebecBlankRules::Cue.X, QuebecBlankRules::Cue.Y))
         {
+            const QuebecBlankRules::FFinish Done = QuebecBlankRules::Finish(BlankStep, QuebecBlankRules::EPage::Blank, false);
             PlungerPoint = FVector(QuebecBlankRules::Cue.X, QuebecBlankRules::Cue.Y, 130.);
             PlungerPullTime = GetWorld()->GetTimeSeconds();
             // The last page is session state. CompletedMissions stays 2 and the v1 slot is not rewritten.
-            AdvanceBlank(QuebecBlankRules::Apply(BlankStep, QuebecBlankRules::EAct::Use), Controller,
-                TEXT("MEMPHIS: Leave it blank. The park can have a tomorrow that is not a souvenir."), true);
+            AdvanceBlank(Done.Step, Controller,
+                TEXT("MEMPHIS: Leave it blank. The park can have a tomorrow that is not a souvenir."), Done.bBankChain);
             return true;
         }
         return false;
@@ -1711,6 +1728,10 @@ FString AQuebecCampaign::GetInteractionPrompt(const AQuebecController* Controlle
     }
     if (IsBlankOpen())
     {
+        if (BlankStep == QuebecBlankRules::StepCue
+            && NearBlank(Controller, QuebecBlankRules::Keep.X, QuebecBlankRules::Keep.Y)
+            && !NearBlank(Controller, QuebecBlankRules::Cue.X, QuebecBlankRules::Cue.Y))
+            return FString::Printf(TEXT("E: sell the page for %d"), QuebecBlankRules::KeepPay);
         if (BlankStep == QuebecBlankRules::StepCue && NearBlank(Controller, QuebecBlankRules::Cue.X, QuebecBlankRules::Cue.Y))
             return TEXT("E: leave the page blank");
         return FString();
@@ -1805,7 +1826,7 @@ FString AQuebecCampaign::GetObjectiveText() const
         case QuebecBlankRules::StepGateA: return TEXT("Walk through the first projection gate");
         case QuebecBlankRules::StepGateB: return TEXT("Walk through the second projection gate");
         case QuebecBlankRules::StepGateC: return TEXT("Walk through the third projection gate");
-        case QuebecBlankRules::StepCue: return TEXT("Leave the last page blank");
+        case QuebecBlankRules::StepCue: return TEXT("Leave the page blank. His 200 does not pay the chain.");
         default: break;
         }
     }
@@ -1888,7 +1909,7 @@ FString AQuebecCampaign::GetBriefingText() const
         case QuebecBlankRules::StepGateA: return TEXT("The projector's blank panels cut his route. Walk the first gate. He has to come back to the stage.");
         case QuebecBlankRules::StepGateB: return TEXT("One gate is blank. Two of his lines are still connected.");
         case QuebecBlankRules::StepGateC: return TEXT("Two gates are blank. One line is left, and then the page.");
-        case QuebecBlankRules::StepCue: return TEXT("CURATOR: A moment this lovely should never move. MEMPHIS: Leave the last page blank.");
+        case QuebecBlankRules::StepCue: return TEXT("CURATOR: Two hundred, and the moment never moves. MEMPHIS: Leave it blank. The chain is worth more.");
         default: break;
         }
     }

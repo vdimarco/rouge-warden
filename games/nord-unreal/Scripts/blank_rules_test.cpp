@@ -6,6 +6,7 @@
 #pragma GCC poison PI HALF_PI TWO_PI INV_PI UE_PI check checkf checkSlow verify verifyf ensure ensureMsgf TEXT SMALL_NUMBER KINDA_SMALL_NUMBER BIG_NUMBER DELTA FORCEINLINE UE_LOG FVector FString TArray
 #endif
 #include "../Source/Quebec/QuebecBlankRules.h"
+#include "../Source/Quebec/QuebecChain.h"
 #include "../Source/Quebec/QuebecConvoyRules.h"
 #include "../Source/Quebec/QuebecRescueRules.h"
 #include "../Source/Quebec/QuebecShowRules.h"
@@ -109,6 +110,26 @@ int main()
     Expect(PartVisible(StepBanked, PartPage), "the blank page hides once it is banked");
     Expect(!PartVisible(StepBanked, PartGateA), "the first gate stays up after the page");
     Expect(!PartVisible(StepCue, 9), "an unknown part is visible");
+    Expect(PartCount == 6, "the curator's offer is missing from the part list");
+    Expect(PartVisible(StepCue, PartKeep), "the offer hides on the last page");
+    Expect(!PartVisible(StepGateA, PartKeep), "the offer shows before the last page");
+    Expect(!PartVisible(StepBanked, PartKeep), "the offer stays up after the page ends");
+
+    ExpectClear("keep", Keep);
+    const FSpot KeepAway[] = {GateA, GateARecover, GateB, GateBRecover, GateC, GateCRecover, Cue, CueRecover};
+    const char* KeepAwayNames[] = {"gate A", "gate A recover", "gate B", "gate B recover", "gate C", "gate C recover", "cue", "cue recover"};
+    for (int Index = 0; Index < 8; ++Index)
+        Expect(SpotDistance(Keep, KeepAway[Index]) > 800., "the offer stands on the %s", KeepAwayNames[Index]);
+
+    const FFinish Left = Finish(StepCue, EPage::Blank, false);
+    Expect(Left.Step == StepBanked && Left.bBankChain && Left.Cash == 0, "leaving the page blank skips the chain");
+    const FFinish Sale = Finish(StepCue, EPage::Sold, false);
+    Expect(Sale.Step == StepBanked && !Sale.bBankChain && Sale.Cash == KeepPay, "selling the page banks the chain");
+    const FFinish Again = Finish(StepCue, EPage::Sold, true);
+    Expect(Again.Step == StepBanked && !Again.bBankChain && Again.Cash == 0, "a second sale pays again");
+    const FFinish Early = Finish(StepGateC, EPage::Sold, false);
+    Expect(Early.Step == StepGateC && Early.Cash == 0 && !Early.bBankChain, "a gate accepts the sale");
+    Expect(KeepPay > 0 && KeepPay < QuebecChain::Base[QuebecChain::LinkBlank], "the sale pays at least the blank page");
 
     std::printf("%d assertions, %d failures\n", Assertions, Failures);
     return Failures == 0 ? 0 : 1;

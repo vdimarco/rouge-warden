@@ -32,15 +32,22 @@ namespace QuebecBlankRules
     inline constexpr FSpot GateCRecover = {-6100., 0., 0.};
     inline constexpr FSpot Cue = {-8600., -900., 0.};
     inline constexpr FSpot CueRecover = {-8600., -1600., 0.};
+    // Southeast of the blank page, off its recover post, on the same dry ground.
+    inline constexpr FSpot Keep = {-7528., -1800., 0.};
+    // Less than the blank page's chain base, so selling the page pays less than leaving it blank.
+    inline constexpr int KeepPay = 200;
+
+    enum class EPage : uint8_t { Blank = 0, Sold = 1 };
 
     inline constexpr double Reach = 200.;
 
-    inline constexpr int PartCount = 5;
+    inline constexpr int PartCount = 6;
     inline constexpr int PartGateA = 0;
     inline constexpr int PartGateB = 1;
     inline constexpr int PartGateC = 2;
     inline constexpr int PartCue = 3;
     inline constexpr int PartPage = 4;
+    inline constexpr int PartKeep = 5;
 
     enum class EAct : uint8_t { Walk, Use };
 
@@ -56,6 +63,29 @@ namespace QuebecBlankRules
         if (Step == StepGateC && Action == EAct::Walk) return StepCue;
         if (Step == StepCue && Action == EAct::Use) return StepBanked;
         return Step;
+    }
+
+    struct FFinish
+    {
+        int Step = 0;
+        int Cash = 0;
+        bool bBankChain = false;
+    };
+
+    // Leaving the page blank banks the chain. Selling it ends the page, pays the curator's price, and does not.
+    inline FFinish Finish(int Step, EPage Page, bool bAlreadySold)
+    {
+        FFinish Out;
+        Out.Step = Step;
+        if (Step != StepCue) return Out;
+        Out.Step = StepBanked;
+        if (Page == EPage::Sold)
+        {
+            Out.Cash = bAlreadySold ? 0 : KeepPay;
+            Out.bBankChain = false;
+        }
+        else Out.bBankChain = true;
+        return Out;
     }
 
     inline FSpot Objective(int Step)
@@ -102,6 +132,7 @@ namespace QuebecBlankRules
         if (Part == PartGateB) return Step == StepGateB;
         if (Part == PartGateC) return Step == StepGateC;
         if (Part == PartCue) return Step == StepCue;
+        if (Part == PartKeep) return Step == StepCue;
         return false;
     }
 }
