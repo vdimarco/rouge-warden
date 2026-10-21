@@ -1080,18 +1080,45 @@ export function createHero(scene, renderer) {
       arm[0].up.lerp(V.a, S.carry).normalize(); arm[0].fore.lerp(V.b, S.carry).normalize();
       lean += 0.1 * S.carry;
     }
-    // swing: legs trail, the hero hangs a little lower, the free arm goes out for balance
+    // swing: the chest leads through the bottom and the legs follow; the knees tuck on the way up.
+    // Lasseter, SIGGRAPH 1987 (arcs, follow-through, overlapping action). A quiet hang keeps the mild trail.
     if (wS > 0.001) {
+      let tw = 0, kw = 0;
+      if (nAtt) {
+        const rx = anchorMix.x - pos.x, ry = anchorMix.y - (pos.y + chestH), rz = anchorMix.z - pos.z;
+        const rl = Math.hypot(rx, ry, rz) || 1;
+        const hang = clamp(ry / rl, 0, 1);
+        const along = (vel.x * rx + vel.y * ry + vel.z * rz) / rl;
+        const across = Math.hypot(hs, vel.y);
+        // A taut rope keeps the radial speed near zero, so the tuck follows the rise and how far the
+        // rope is off vertical, not the speed toward the anchor. The bottom is the fast pass under it.
+        const rising = smooth(0.5, 4, vel.y);
+        const bottom = hang * (1 - smooth(1.5, 8, Math.abs(along))) * smooth(5, 12, across) * (1 - rising);
+        const rise = Math.max(smooth(-2, 3, vel.y), 1 - smooth(1, 7, across));
+        kw = clamp((1 - hang) * rise, 0, 1);
+        tw = clamp(Math.max(bottom, (1 - kw) * hang * smooth(5, 14, across) * (1 - rising)), 0, 1);
+      }
+      let hw = Math.max(0, 1 - tw - kw);
+      const keyed = tw + kw;
+      if (keyed > 0.2) hw *= 1 - smooth(0.2, 0.55, keyed);
+      const sw = tw + kw + hw || 1;
+      tw /= sw; kw /= sw; hw /= sw;
       for (let sd = 0; sd < 2; sd++) {
-        const sx = sd === 0 ? 1 : -1, ph = t * 3.1 + sd * 1.7;
-        V.k.set(sx * 0.14, ay + (sd === 0 ? 0.36 : 0.2) + 0.03 * Math.sin(ph), az - (sd === 0 ? 0.3 : 0.44) - 0.03 * Math.sin(ph + 1));
+        const sx = sd === 0 ? 1 : -1;
+        const yH = ay + (sd === 0 ? 0.36 : 0.2), zH = az - (sd === 0 ? 0.3 : 0.44);
+        const yT = ay + (sd === 0 ? 0.22 : 0.42), zT = az - (sd === 0 ? 0.52 : 0.28);
+        const yK = ay + (sd === 0 ? 0.62 : 0.5), zK = az + (sd === 0 ? 0.62 : 0.42);
+        V.k.set(sx * 0.14, yH * hw + yT * tw + yK * kw, zH * hw + zT * tw + zK * kw);
         foot[sd].p.lerp(V.k, wS);
-        foot[sd].pitch += 0.4 * wS;
-        V.a.set(sx * 0.8, -0.1, -0.3).normalize(); V.b.set(sx * 0.85, 0.05, 0.0).normalize();
+        foot[sd].pitch += (0.4 * hw + 0.95 * tw + 0.25 * kw) * wS;
+        pole[sd].lerp(V.a.set(sx * 0.2, tw > kw ? -0.25 : 0.35, tw > kw ? -1 : 1), wS);
+        const ax = sx * (0.8 * hw + 0.55 * tw + 0.4 * kw), ayA = -0.1 * hw + 0.05 * tw + 0.45 * kw, azA = -0.3 * hw - 0.8 * tw + 0.55 * kw;
+        V.a.set(ax, ayA, azA).normalize(); V.b.set(ax * 0.85, ayA + 0.15, azA * 0.65).normalize();
         arm[sd].up.lerp(V.a, wS).normalize(); arm[sd].fore.lerp(V.b, wS).normalize();
       }
-      hipsDy = hipsDy * (1 - wS) + (-0.06) * wS;
-      lean = lean * (1 - wS) + 0.12 * wS;
+      hipsDy = hipsDy * (1 - wS) + (-0.06 * hw - 0.1 * tw - 0.02 * kw) * wS;
+      hipsDz += (0.08 * tw - 0.03 * kw) * wS;
+      lean = lean * (1 - wS) + (0.12 * hw + 0.55 * tw - 0.06 * kw) * wS;
     }
     // land: a crouch, arms out, a forward lean
     if (cr > 0.001) {

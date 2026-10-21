@@ -629,3 +629,40 @@ Playability was scored from a flat boot and the city render check, not a full pl
 
 Playability was scored from a flat boot and the city render check, not a full playthrough. OpenSpec CLI validation was not run; the `openspec` command is not installed.
 
+### Round 18 — 2026-10-21 — rubric v1
+
+- What changed: On a rope the body follows the arc. At the bottom the chest leads and the legs sit behind the facing. On the way up the knees come forward. A quiet hang keeps the old mild trail, and the rope arm still reaches the anchor. A run on the street keeps the captured run loop. No new mesh. The swing follows Lasseter, Principles of Traditional Animation Applied to 3D Computer Animation (SIGGRAPH 1987). The run is the CMU loop already in `public/vr/anim/CREDITS.md`.
+- Why it helped: The chase frame was one standing idle. A run now takes a stride, and a swing puts one arm on the rope with the legs behind the body. It is still a comic figure on twos.
+- Screenshots: before `docs/gauntlet/shots/r18-before-play.png` (idle), after `docs/gauntlet/shots/r18-after-play.png` (run) and `docs/gauntlet/shots/r18-after-swing.png`. The street, where the hero is hidden: `docs/gauntlet/shots/r18-before-street.png`, `docs/gauntlet/shots/r18-after-street.png`. The sunset: `docs/gauntlet/shots/r18-before-needle.png`, `docs/gauntlet/shots/r18-after-needle.png`.
+- Next target: Particles and VFX (5), tied with composition and UI. The swing still has no wind in the air.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 6 | Unchanged. Shaded lower walls stay warm. The floors by the roof stay the cool band. |
+| Color palette | 6 | Unchanged. Cool shade stays teal and the step toward the sun stays rose. |
+| Detail density | 6 | Unchanged. The shop awnings from round 16. |
+| Texture and material quality | 6 | Unchanged. The masonry units from round 13. |
+| Composition and camera | 5 | Unchanged. The chase pitch stayed −0.349 and the distance stayed 4.5 m. |
+| Atmosphere | 6 | Unchanged. The far avenue still sits in the warm dust from round 15. |
+| Character models | 6 | Unchanged. The cream belt from round 17. Skinned triangles stayed at 12,468. |
+| Animation smoothness | 6 | A run takes a stride, and a swing puts the legs behind the facing with one arm on the rope. The pose still steps at 12 Hz. |
+| Particles and VFX | 5 | Unchanged. |
+| UI polish | 5 | Unchanged. The dotted score plate from round 11. |
+| Responsiveness and input latency | 6 | Unchanged. No new pass and no new draw. No input timing was measured. |
+| Controls feel | 5 | Unchanged. |
+| Mission clarity | 4 | Unchanged. Not played. |
+| Pacing | 4 | Unchanged. |
+| Fun factor | 4 | Unchanged. Not played as a session. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 5 | Unchanged. |
+| Sound design | 4 | Unchanged. |
+| Variety | 4 | Unchanged. |
+| Performance stability | 6 | `qa/vr/render.mjs` passed, including flat play, the painted-sky checks, and the lit-sphere cel check. Street mean 72, saturation 0.57. |
+
+- Aesthetics raw: 57 / 10 dimensions, index 57
+- Playability raw: 46 / 10 dimensions, index 46
+- Total: 103 / 200
+- Delta vs last round: +1 (102 → 103). Animation smoothness 5 → 6. Playability unchanged.
+
+Playability was scored from a flat boot and the city render check, not a full playthrough. OpenSpec CLI validation was not run; the `openspec` command is not installed.
+
