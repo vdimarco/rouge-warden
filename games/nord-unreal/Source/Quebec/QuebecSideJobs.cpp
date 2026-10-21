@@ -508,6 +508,25 @@ void AQuebecSideJobs::BeginJobContent(AQuebecController* Player)
     }
     else if (JobIndex == SideJobFare)
     {
+        // The passenger boards a walker at this marker, then allows four seconds on foot. A loaner at the
+        // curb makes that a choice. A driver, or a free car already nearby, does not get a second one.
+        bool bFreeCar = !Cast<AQuebecCharacter>(Body);
+        for (TActorIterator<AQuebecCar> It(GetWorld()); It && !bFreeCar; ++It)
+            if (!It->Occupant && !It->GetController() && !It->bPolice && !It->IsWrecked() &&
+                FVector::Dist2D(It->GetActorLocation(), MarkerPoint) < QuebecJobRules::FareLoanRadius) bFreeCar = true;
+        const int32 Curb = QuebecJobRules::FareNeedsLoan(Cast<AQuebecCharacter>(Body) != nullptr, bFreeCar)
+            ? SideJobNearestRoad(MarkerPoint) : INDEX_NONE;
+        if (Curb != INDEX_NONE && !IsValid(LoanCar))
+        {
+            const FVector A = LaFontaine::RoadSegments[Curb][0], B = LaFontaine::RoadSegments[Curb][1];
+            const FVector Heading = (B-A).GetSafeNormal2D();
+            const FVector Base = SideJobClosest2D(MarkerPoint, A, B)+SideJobRight(Heading)*(LaFontaine::RoadSegmentWidths[Curb]*.4f);
+            for (const float Along : {700.f, -700.f, 1400.f, 0.f})
+            {
+                LoanCar = SpawnJobCar(Base+Heading*Along, Heading, 2, TEXT("SideJobLoan"));
+                if (LoanCar) break;
+            }
+        }
         SetObjective(TEXT("Prends le passager"), GroundPoint(SideJobVector(QuebecJobRules::Markers[SideJobFare]), 0.f), true);
     }
 }

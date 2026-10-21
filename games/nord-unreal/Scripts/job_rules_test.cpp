@@ -231,6 +231,10 @@ namespace
         Expect(FareSecondsLeft(0.5) == 4, "half a second on foot rounds the grace down");
         Expect(FareSecondsLeft(3.5) == 1, "three and a half seconds leaves no whole second");
         Expect(FareSecondsLeft(4.) == 0 && FareSecondsLeft(6.) == 0, "a spent grace still shows a second");
+        Expect(FareNeedsLoan(true, false), "a walker with no car is left to find one");
+        Expect(!FareNeedsLoan(false, false), "a driver is given a second car");
+        Expect(!FareNeedsLoan(true, true), "a free car nearby still spawns a loaner");
+        Expect(FareLoanRadius == 3000., "the loaner looks farther than the curb");
     }
 
     void GuideTests()

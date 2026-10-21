@@ -11,6 +11,17 @@ The sixth side job SHALL pick the passenger up at its marker and drop them at th
 - **WHEN** a car reaches the quay at the arrival speed
 - **THEN** the fare is done, and the same car one centimetre per second faster is still aboard
 
+### Requirement: A walker gets a car at the curb
+La course SHALL offer a loaner when the starter is on foot and no free car is already within 30 metres. A driver SHALL NOT be offered a second car. A free car already nearby SHALL NOT be joined by a loaner.
+
+#### Scenario: On foot
+- **WHEN** the starter is walking and no free car is nearby
+- **THEN** the fare asks for a loaner
+
+#### Scenario: Already driving
+- **WHEN** the starter is in a car
+- **THEN** the fare does not ask for a loaner
+
 #### Scenario: The guides
 - **WHEN** no job is finished
 - **THEN** the spawn still names the escape and the terrace still names the goons

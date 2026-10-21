@@ -81,6 +81,8 @@ namespace QuebecJobRules
     inline constexpr int FareDone = 2;
     inline constexpr int FareLost = 3;
     inline constexpr float FareGraceSeconds = 4.f;
+    // A walker with no free car this close gets a loaner at the curb, so the four seconds are a choice.
+    inline constexpr double FareLoanRadius = 3000.;
 
     struct FFare
     {
@@ -175,6 +177,13 @@ namespace QuebecJobRules
         const double Left = static_cast<double>(FareGraceSeconds) - OnFoot;
         if (Left <= 0.) return 0;
         return static_cast<int>(std::ceil(Left));
+    }
+
+    // The fare boards a walker at the pickup, then gives them four seconds. A loaner is offered only
+    // when they are on foot and no free car is already waiting inside FareLoanRadius.
+    inline bool FareNeedsLoan(bool bOnFoot, bool bFreeCarNearby)
+    {
+        return bOnFoot && !bFreeCarNearby;
     }
 
     inline int PosterBits(int Mask)
