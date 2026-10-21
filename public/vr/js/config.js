@@ -64,8 +64,9 @@ export const MOVES = {
   sprint: 2.2, drain: 0.2, fill: 0.16, wait: 0.8, minEnergy: 0.12,
   roll: { time: 0.62, minSpeed: 6, friction: 1.4, fall: 13 },
   // the release boost (mouse and pad): a rope let go while the GO cue shows adds forward m/s along the flight and up m/s, widens
-  // the view by kick degrees and flips the hero over flip s. One boost per cool s.
-  release: { forward: 4, up: 3.5, kick: 7, flip: 0.55, cool: 0.6 },
+  // the view by kick degrees and flips the hero over flip s. A fast let-go outside that cue still carries: carryForward and
+  // carryUp, once the flight across the ground is at least carry m/s. A slow drop does not. One boost per cool s.
+  release: { forward: 4, up: 3.5, kick: 7, flip: 0.55, cool: 0.6, carry: 8, carryForward: 2.2, carryUp: 1.6, carryKick: 3 },
   // the finisher: the world runs at slow speed for time s (real time) after it, and the view narrows by zoom degrees
   finisher: { slow: 0.3, time: 0.7, zoom: 10 },
   // the glide (hold jump in the air with no rope, after minAir s): the fall eases to sink m/s, lift of the fall it stops turns into

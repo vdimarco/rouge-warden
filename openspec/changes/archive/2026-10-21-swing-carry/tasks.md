@@ -1,0 +1,3 @@
+- [x] A fast let-go outside the GO cue adds speed and does not flip
+- [x] A slow drop adds nothing, and the GO-cue boost is unchanged
+- [x] Check it in a 1280×800 play
