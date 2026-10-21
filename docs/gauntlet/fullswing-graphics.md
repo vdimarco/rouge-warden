@@ -777,3 +777,40 @@ Playability was scored from a flat boot and the city render check, not a full pl
 
 Playability was scored from a flat boot and the city render check, not a full playthrough. OpenSpec CLI validation was not run; the `openspec` command is not installed.
 
+### Round 22 — 2026-10-21 — rubric v1
+
+- What changed: At a full run the captured loop stays in the blend for the walk and the jog, and the body keeps an opened stride: the lifted knee steps out to the side and the arms swing against the legs. The 22 cm knee step waits for the run clip's weight (above about 2.9 m/s). At a jog the shin stays put, including on the fallback figure, which uses the same speed band when the clips never load. At the bottom of a swing one leg steps out of the trail and the free arm opens. A quiet hang stays the mild pose. The rope hand stays on the line to the anchor. Pose names and the twelve poses a second stay as they are. The chase arm stays 4.5 m and the pitch stays −20°. John Lasseter, SIGGRAPH 1987, the exaggeration principle. The captured file was not rebuilt.
+- Why it helped: From behind the chase, a stride along the facing foreshortens to a stand. The lifted knee now leaves the silhouette (one foot ahead of the facing, one behind; screen y 579 and 500). At the bottom of the swing the feet sit further apart on screen (x 480 and 549) and both stay behind the facing. The rope-hand cosine stayed 0.91.
+- Screenshots: run before `docs/gauntlet/shots/r22-before-run.png`, after `docs/gauntlet/shots/r22-after-run.png`. Swing before `docs/gauntlet/shots/r22-before-swing.png`, after `docs/gauntlet/shots/r22-after-swing.png`. The street, where the hero is hidden: `docs/gauntlet/shots/r22-before-street.png`, `docs/gauntlet/shots/r22-after-street.png`. The sunset: `docs/gauntlet/shots/r22-before-needle.png`, `docs/gauntlet/shots/r22-after-needle.png`.
+- Next target: Texture and material quality (6), tied with the other aesthetics scores except animation. The walls are still one cel read.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 6 | Unchanged. Shaded lower walls stay warm. The floors by the roof stay the cool band. |
+| Color palette | 6 | Unchanged. Cool shade stays teal and the step toward the sun stays rose. |
+| Detail density | 6 | Unchanged. The shop awnings from round 16. |
+| Texture and material quality | 6 | Unchanged. The masonry units from round 13. |
+| Composition and camera | 6 | Unchanged. On a fast rope the head still sits lower. The reported pitch stayed −0.349 and the distance stayed 4.5 m. |
+| Atmosphere | 6 | Unchanged. The far avenue still sits in the warm dust from round 15. |
+| Character models | 6 | Unchanged. The cream belt from round 17. Skinned triangles stayed at 12,468. |
+| Animation smoothness | 7 | A full run steps the lifted knee out of the silhouette, and the bottom of a swing spreads the legs. The rope hand stays on the line to the anchor. |
+| Particles and VFX | 6 | Unchanged. The cream trail from round 19. |
+| UI polish | 6 | Unchanged. The cream lip and rose hem from round 21. |
+| Responsiveness and input latency | 6 | Unchanged. No new pass and no new draw. No input timing was measured. |
+| Controls feel | 5 | Unchanged. |
+| Mission clarity | 4 | Unchanged. Not played. |
+| Pacing | 4 | Unchanged. |
+| Fun factor | 4 | Unchanged. Not played as a session. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 5 | Unchanged. |
+| Sound design | 4 | Unchanged. |
+| Variety | 4 | Unchanged. |
+| Performance stability | 6 | `qa/vr/render.mjs` passed, including flat play, the painted-sky checks, and the lit-sphere cel check. Street mean 73.2, saturation 0.57. |
+
+- Aesthetics raw: 61 / 10 dimensions, index 61
+- Playability raw: 46 / 10 dimensions, index 46
+- Total: 107 / 200
+- Delta vs last round: +1 (106 → 107). Animation smoothness 6 → 7. Playability unchanged.
+
+Playability was scored from a flat boot and the city render check, not a full playthrough. OpenSpec CLI validation was not run; the `openspec` command is not installed.
+
