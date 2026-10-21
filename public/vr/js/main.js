@@ -2259,7 +2259,7 @@ function putWeb(hand, anchor, sagPx, alpha) {
     const inFront = WEB_FROM.z < -0.05;
     WEB_FROM.copy(WEB_AXIS).project(camera);
     const sx = (WEB_FROM.x * 0.5 + 0.5) * w, sy = (0.5 - WEB_FROM.y * 0.5) * h;
-    const vis = inFront && sx > -40 && sy > -40 && sx < w + 40 && sy < h + 40;
+    const vis = inFront && sx >= 0 && sy >= 0 && sx < w && sy < h;
     if (vis) {
       if (!saw || u < ua) { ua = u; ax = sx; ay = sy; }
       if (!saw || u > ub) { ub = u; bx = sx; by = sy; }
