@@ -98,35 +98,35 @@ void AQuebecWade::Tick(float DeltaSeconds)
     if (Leg == static_cast<int32>(QuebecWade::ELeg::Done)) return;
 
     AQuebecCharacter* Walker = nullptr;
-    bool bAtBuoy = false;
-    bool bAtBank = false;
-    const QuebecWade::ELeg Before = static_cast<QuebecWade::ELeg>(Leg);
+    QuebecWade::FProgress Before;
+    Before.Leg = static_cast<QuebecWade::ELeg>(Leg);
+    Before.Swimmer = static_cast<int>(Swimmer);
+    QuebecWade::FProgress Next = Before;
     for (TActorIterator<AQuebecCharacter> It(GetWorld()); It; ++It)
     {
         if (!IsValid(*It) || It->IsInputLocked()) continue;
-        if (!Cast<AQuebecController>(It->GetController())) continue;
+        AQuebecController* Candidate = Cast<AQuebecController>(It->GetController());
+        if (!Candidate || !Candidate->PlayerState) continue;
         const FVector Here = It->GetActorLocation();
         const bool bBuoy = QuebecWade::Inside(Here.X, Here.Y, QuebecWade::BuoyX, QuebecWade::BuoyY, QuebecWade::Reach);
         const bool bBank = QuebecWade::Inside(Here.X, Here.Y, QuebecWade::BankX, QuebecWade::BankY, QuebecWade::Reach);
-        if (QuebecWade::Step(Before, true, bBuoy, bBank) == Before) continue;
+        const QuebecWade::FProgress Moved = QuebecWade::Advance(Before, static_cast<int>(Candidate->PlayerState->GetPlayerId()), true, bBuoy, bBank);
+        if (Moved.Leg == Before.Leg && Moved.Swimmer == Before.Swimmer) continue;
         Walker = *It;
-        bAtBuoy = bBuoy;
-        bAtBank = bBank;
+        Next = Moved;
         break;
     }
-    if (!Walker) return;
-
-    const QuebecWade::ELeg Next = QuebecWade::Step(Before, true, bAtBuoy, bAtBank);
-    if (Next == Before) return;
+    if (!Walker || (Next.Leg == Before.Leg && Next.Swimmer == Before.Swimmer)) return;
 
     const int Prize = QuebecWade::Purse(Before, Next);
     AQuebecController* Player = Cast<AQuebecController>(Walker->GetController());
     AQuebecPlayerState* Stats = Player ? Cast<AQuebecPlayerState>(Player->PlayerState) : nullptr;
     if (Prize > 0 && !Stats) return;
 
-    Leg = static_cast<int32>(Next);
+    Leg = static_cast<int32>(Next.Leg);
+    Swimmer = static_cast<int32>(Next.Swimmer);
     ForceNetUpdate();
-    if (Next == QuebecWade::ELeg::Buoy && Player)
+    if (Next.Leg == QuebecWade::ELeg::Buoy && Player)
     {
         UE_LOG(LogTemp, Display, TEXT("NORD_WADE buoy"));
         QuebecNotice::Show(Player, TEXT("BAIN"), TEXT("Reviens sur la rive."), 4.f);

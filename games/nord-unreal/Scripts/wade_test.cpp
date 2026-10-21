@@ -49,31 +49,40 @@ int main()
     Expect(Inside(BankX + 450., BankY, BankX, BankY, Reach), "the bank reach was short");
     Expect(!Inside(BankX + 451., BankY, BankX, BankY, Reach), "past the bank still counted");
 
-    Expect(Step(ELeg::Bank, true, false, true) == ELeg::Bank, "standing on the bank already finished the wade");
-    Expect(Purse(ELeg::Bank, ELeg::Bank) == 0, "standing on the bank paid");
+    const FProgress Start;
+    Expect(Advance(Start, 1, true, false, true).Leg == ELeg::Bank, "standing on the bank already finished the wade");
+    Expect(Purse(Start, Start) == 0, "standing on the bank paid");
 
-    Expect(Step(ELeg::Bank, false, true, false) == ELeg::Bank, "a driver tagged the float");
-    Expect(Step(ELeg::Buoy, false, false, true) == ELeg::Buoy, "a driver finished the wade");
-    Expect(Purse(ELeg::Buoy, ELeg::Buoy) == 0, "a driver was paid");
+    Expect(Advance(Start, 1, false, true, false).Leg == ELeg::Bank, "a driver tagged the float");
+    FProgress Waiting;
+    Waiting.Leg = ELeg::Buoy;
+    Waiting.Swimmer = 1;
+    Expect(Advance(Waiting, 1, false, false, true).Leg == ELeg::Buoy, "a driver finished the wade");
+    Expect(Purse(Waiting, Waiting) == 0, "a driver was paid");
 
-    const ELeg Tagged = Step(ELeg::Bank, true, true, false);
-    Expect(Tagged == ELeg::Buoy, "the swimmer missed the float");
-    Expect(Purse(ELeg::Bank, Tagged) == 0, "tagging the float paid early");
-    Expect(Step(ELeg::Bank, true, true, true) == ELeg::Buoy, "touching both spots skipped the float");
+    const FProgress Tagged = Advance(Start, 7, true, true, false);
+    Expect(Tagged.Leg == ELeg::Buoy && Tagged.Swimmer == 7, "the swimmer missed the float");
+    Expect(Purse(Start, Tagged) == 0, "tagging the float paid early");
+    Expect(Advance(Start, 7, true, true, true).Leg == ELeg::Buoy, "touching both spots skipped the float");
+
+    const FProgress Stolen = Advance(Tagged, 4, true, false, true);
+    Expect(Stolen.Leg == ELeg::Buoy && Stolen.Swimmer == 7, "a bystander finished the wade");
+    Expect(Purse(Tagged, Stolen) == 0, "a bystander was paid");
+    Expect(Advance(Tagged, Nobody, true, false, true).Leg == ELeg::Buoy, "nobody finished the wade");
 
     const double MidX = (BuoyX + BankX) * 0.5;
     const double MidY = (BuoyY + BankY) * 0.5;
     Expect(!Inside(MidX, MidY, BuoyX, BuoyY, Reach) && !Inside(MidX, MidY, BankX, BankY, Reach),
         "the middle of the wade counted as a mark");
-    Expect(Step(ELeg::Bank, true, false, false) == ELeg::Bank, "open water tagged the float");
-    Expect(Step(ELeg::Buoy, true, true, false) == ELeg::Buoy, "touching the float again finished the wade");
+    Expect(Advance(Start, 7, true, false, false).Leg == ELeg::Bank, "open water tagged the float");
+    Expect(Advance(Tagged, 7, true, true, false).Leg == ELeg::Buoy, "touching the float again finished the wade");
 
-    const ELeg Home = Step(Tagged, true, false, true);
-    Expect(Home == ELeg::Done, "the return missed the bank");
+    const FProgress Home = Advance(Tagged, 7, true, false, true);
+    Expect(Home.Leg == ELeg::Done && Home.Swimmer == 7, "the return missed the bank");
     Expect(Purse(Tagged, Home) == Pay, "the return paid %d", Purse(Tagged, Home));
-    Expect(Step(Home, true, true, true) == ELeg::Done, "the wade ran again");
-    Expect(Purse(Home, ELeg::Done) == 0, "the wade paid twice");
-    Expect(Step(ELeg::Buoy, true, false, false) == ELeg::Buoy, "leaving the float finished the wade");
+    Expect(Advance(Home, 7, true, true, true).Leg == ELeg::Done, "the wade ran again");
+    Expect(Purse(Home, Home) == 0, "the wade paid twice");
+    Expect(Advance(Tagged, 7, true, false, false).Leg == ELeg::Buoy, "leaving the float finished the wade");
 
     std::printf("%d assertions, %d failures\n", Assertions, Failures);
     return Failures == 0 ? 0 : 1;

@@ -26,8 +26,9 @@ public:
     virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 private:
-    // QuebecWade::ELeg. Replicated so a remote swimmer's notice matches the server.
+    // QuebecWade::ELeg. The swimmer is the player id who tagged the float, or -1.
     UPROPERTY(Replicated) int32 Leg = 0;
+    int32 Swimmer = -1;
     UPROPERTY() TObjectPtr<USceneComponent> Scene;
     UPROPERTY() TObjectPtr<UStaticMesh> Cylinder;
     bool bBuilt = false;

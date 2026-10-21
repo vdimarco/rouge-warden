@@ -1,7 +1,7 @@
 ## ADDED Requirements
 
 ### Requirement: A swimmer tags the float before the bank pays
-A person on foot who reaches the south-pond float SHALL move the wade from the bank to the float and SHALL NOT be paid yet. A person on foot who then reaches the bank SHALL finish the wade and pay 80 session cash once. A later visit SHALL NOT pay again. A driver SHALL NOT move the wade. Reaching the bank before the float SHALL NOT finish the wade.
+A person on foot who reaches the south-pond float SHALL move the wade from the bank to the float, remember that person, and SHALL NOT be paid yet. That same person, on foot at the bank, SHALL finish the wade and pay 80 session cash once. A different person waiting on the bank SHALL NOT finish it or be paid. A later visit SHALL NOT pay again. A driver SHALL NOT move the wade. Reaching the bank before the float SHALL NOT finish the wade.
 
 #### Scenario: Out and back
 - **WHEN** a swimmer reaches the float and then the bank
@@ -14,6 +14,10 @@ A person on foot who reaches the south-pond float SHALL move the wade from the b
 #### Scenario: A driver
 - **WHEN** a driver reaches the float or the bank
 - **THEN** the wade does not move and the purse is 0
+
+#### Scenario: A bystander
+- **WHEN** one player has tagged the float and a different player is on the bank
+- **THEN** the wade stays on the float and the purse is 0
 
 #### Scenario: A second time
 - **WHEN** the wade is already done

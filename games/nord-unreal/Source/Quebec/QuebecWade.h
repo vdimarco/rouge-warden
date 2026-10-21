@@ -17,12 +17,19 @@ namespace QuebecWade
 
     inline constexpr float Reach = 450.f;
     inline constexpr int Pay = 80;
+    inline constexpr int Nobody = -1;
 
     enum class ELeg : int
     {
         Bank = 0,
         Buoy = 1,
         Done = 2
+    };
+
+    struct FProgress
+    {
+        ELeg Leg = ELeg::Bank;
+        int Swimmer = Nobody;
     };
 
     inline double Dist2(double X, double Y, double TargetX, double TargetY)
@@ -38,18 +45,28 @@ namespace QuebecWade
         return Dist2(X, Y, TargetX, TargetY) <= Limit * Limit;
     }
 
-    // On foot, Bank becomes Buoy at the float, and Buoy becomes Done at the bank.
+    // On foot, Bank becomes Buoy at the float and remembers who tagged it.
+    // That same person becomes Done at the bank. Anyone else waiting there does not finish it.
     // Done stays Done. A driver stays where they are. Standing on the bank first does not finish.
-    inline ELeg Step(ELeg Leg, bool bOnFoot, bool bAtBuoy, bool bAtBank)
+    inline FProgress Advance(FProgress Progress, int Who, bool bOnFoot, bool bAtBuoy, bool bAtBank)
     {
-        if (!bOnFoot || Leg == ELeg::Done) return Leg;
-        if (Leg == ELeg::Bank && bAtBuoy) return ELeg::Buoy;
-        if (Leg == ELeg::Buoy && bAtBank) return ELeg::Done;
-        return Leg;
+        if (!bOnFoot || Who == Nobody || Progress.Leg == ELeg::Done) return Progress;
+        if (Progress.Leg == ELeg::Bank && bAtBuoy)
+        {
+            Progress.Leg = ELeg::Buoy;
+            Progress.Swimmer = Who;
+            return Progress;
+        }
+        if (Progress.Leg == ELeg::Buoy && bAtBank && Who == Progress.Swimmer)
+        {
+            Progress.Leg = ELeg::Done;
+            return Progress;
+        }
+        return Progress;
     }
 
-    inline int Purse(ELeg Before, ELeg After)
+    inline int Purse(FProgress Before, FProgress After)
     {
-        return Before == ELeg::Buoy && After == ELeg::Done ? Pay : 0;
+        return Before.Leg == ELeg::Buoy && After.Leg == ELeg::Done && After.Swimmer == Before.Swimmer ? Pay : 0;
     }
 }
