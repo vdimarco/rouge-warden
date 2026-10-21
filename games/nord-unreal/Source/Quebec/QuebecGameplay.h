@@ -400,6 +400,8 @@ private:
     QuebecSteer::FAssistState SteerAssist;
     FVector LastWallNormal = FVector::ZeroVector;
     float NextRamReportAt = 0.f;
+    // Server clock for the dent thud. A grind inside the gap stays quiet. Not saved.
+    double NextImpactToneAt = 0.;
     // People this car knocked down, driven past instead of treated as walls until PassedBodiesUntil.
     TArray<TWeakObjectPtr<AActor>> PassedBodies;
     TArray<float> PassedBodiesUntil;
@@ -418,6 +420,7 @@ private:
     bool PassStruckPerson(const FHitResult& Hit, const FVector& From, const FVector& Travel);
     void OnCarImpact(AQuebecCar* Other, float Closing, const FVector& Where);
     void OnWallImpact(const FVector& Normal, float Closing, float Step);
+    void PlayImpactThud(float Closing, bool bWall);
     bool SlideAlongStep(const FVector& Before, const FVector& Travel);
     void FinishDriveTick(const FVector& From, bool bStriker, float DeltaSeconds);
     void FinishAutopilotRelease();
@@ -488,6 +491,7 @@ public:
     AQuebecController();
     void PlayFeedback(EQuebecFeedbackCue Cue);
     void PlayRank(int32 ChainAfter, bool bWasSpoiled);
+    void PlayImpact();
     virtual void BeginPlay() override;
     virtual void SetupInputComponent() override;
     virtual void PlayerTick(float DeltaTime) override;
@@ -602,6 +606,10 @@ private:
     UPROPERTY() TObjectPtr<class UAudioComponent> SkidAudio;
     UPROPERTY() TObjectPtr<class USoundWaveProcedural> SkidWave;
     bool bWasSkidLocked = false;
+    UFUNCTION(Client, Unreliable) void ClientPlayImpact();
+    void PlayImpactTone();
+    UPROPERTY() TObjectPtr<class UAudioComponent> ImpactAudio;
+    UPROPERTY() TObjectPtr<class USoundWaveProcedural> ImpactWave;
     void ExitCar(AQuebecCar* Car);
 };
 

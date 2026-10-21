@@ -8,6 +8,7 @@
 #include "QuebecCourtTone.h"
 #include "QuebecRankTone.h"
 #include "QuebecSkidTone.h"
+#include "QuebecImpactTone.h"
 #include "QuebecStoryBed.h"
 #include "QuebecBarks.h"
 #include "QuebecPondRules.h"
@@ -1698,6 +1699,10 @@ AQuebecController::AQuebecController()
     SkidAudio->bAutoActivate = false;
     SkidAudio->bAllowSpatialization = false;
     SkidAudio->VolumeMultiplier = .7f;
+    ImpactAudio = CreateDefaultSubobject<UAudioComponent>(TEXT("ImpactAudio"));
+    ImpactAudio->bAutoActivate = false;
+    ImpactAudio->bAllowSpatialization = false;
+    ImpactAudio->VolumeMultiplier = .8f;
     StoryBedAudio = CreateDefaultSubobject<UAudioComponent>(TEXT("StoryBedAudio"));
     StoryBedAudio->bAutoActivate = false;
     StoryBedAudio->bAllowSpatialization = false;
@@ -2019,6 +2024,38 @@ void AQuebecController::PlaySkidTone()
     }
     SkidWave->QueueAudio(reinterpret_cast<const uint8*>(Pcm), QuebecSkidTone::Frames * static_cast<int32>(sizeof(int16)));
     SkidAudio->Play();
+}
+
+void AQuebecController::PlayImpact()
+{
+    ClientPlayImpact();
+}
+
+void AQuebecController::ClientPlayImpact_Implementation()
+{
+    PlayImpactTone();
+}
+
+void AQuebecController::PlayImpactTone()
+{
+    if (!ImpactAudio || !GetWorld() || !GetWorld()->AllowAudioPlayback()) return;
+    if (!ImpactWave)
+    {
+        ImpactWave = NewObject<USoundWaveProcedural>(this);
+        ImpactWave->SetSampleRate(static_cast<uint32>(QuebecImpactTone::SampleRate));
+        ImpactWave->NumChannels = 1;
+        ImpactWave->Duration = static_cast<float>(QuebecImpactTone::Frames) / static_cast<float>(QuebecImpactTone::SampleRate);
+        ImpactAudio->SetSound(ImpactWave);
+    }
+    ImpactWave->ResetAudio();
+    int16 Pcm[QuebecImpactTone::Frames];
+    for (int32 Frame = 0; Frame < QuebecImpactTone::Frames; ++Frame)
+    {
+        const float Sample = FMath::Clamp(static_cast<float>(QuebecImpactTone::SampleAt(Frame)), -1.f, 1.f);
+        Pcm[Frame] = static_cast<int16>(Sample * 32767.f);
+    }
+    ImpactWave->QueueAudio(reinterpret_cast<const uint8*>(Pcm), QuebecImpactTone::Frames * static_cast<int32>(sizeof(int16)));
+    ImpactAudio->Play();
 }
 
 void AQuebecController::PlayCourtWave(UAudioComponent* Audio, TObjectPtr<USoundWaveProcedural>& Wave, int32 Frames, bool bWhistle)

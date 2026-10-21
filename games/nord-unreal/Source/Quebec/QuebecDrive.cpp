@@ -1,6 +1,7 @@
 // AQuebecCar for the street systems: lag-tolerant steering on roads, the AI driver (autopilot), police livery,
 // body damage and smoke, people and props struck by a car, rams reported to the police, and wall forgiveness.
 #include "QuebecGameplay.h"
+#include "QuebecImpactTone.h"
 #include "QuebecGTA.h"
 #include "LaFontaineMap.h"
 #include "LaFontaineExtensionMap.h"
@@ -185,9 +186,22 @@ bool AQuebecCar::PassStruckPerson(const FHitResult& Hit, const FVector& From, co
     return true;
 }
 
+void AQuebecCar::PlayImpactThud(float Closing, bool bWall)
+{
+    if (!HasAuthority() || !GetWorld()) return;
+    const double Now = GetWorld()->GetTimeSeconds();
+    if (!QuebecImpactTone::Due(Closing, bWall, Now, NextImpactToneAt)) return;
+    AQuebecController* Driver = Cast<AQuebecController>(GetDriverController());
+    if (!Driver) return;
+    NextImpactToneAt = QuebecImpactTone::NextAt(Now);
+    Driver->PlayImpact();
+}
+
 void AQuebecCar::OnCarImpact(AQuebecCar* Other, float Closing, const FVector& Where)
 {
     if (!Other || !HasAuthority()) return;
+    PlayImpactThud(Closing, false);
+    Other->PlayImpactThud(Closing, false);
     AController* Driver = GetDriverController();
     const float Damage = QuebecSteer::ImpactDamage(Closing,false);
     if (Damage > 0.f)
@@ -209,6 +223,7 @@ void AQuebecCar::OnCarImpact(AQuebecCar* Other, float Closing, const FVector& Wh
 void AQuebecCar::OnWallImpact(const FVector& Normal, float Closing, float Step)
 {
     if (!HasAuthority()) return;
+    PlayImpactThud(Closing, true);
     LastWallNormal = Normal;
     const float Damage = QuebecSteer::ImpactDamage(Closing,true);
     if (Damage > 0.f && !bTraffic) AddBodyDamage(Damage,GetDriverController());
