@@ -444,3 +444,40 @@ Playability was scored from a flat boot and the city render check, not a full pl
 
 Playability was scored from a flat boot and the city render check, not a full playthrough. OpenSpec CLI validation was not run; the `openspec` command is not installed.
 
+### Round 13 — 2026-10-21 — rubric v1
+
+- What changed: Each brick, stone, and concrete unit takes its own clay, stone, or panel tone, with a lighter top edge and a darker bottom edge. A coarser batch of that colour stays once a single course is smaller than a pixel, including on the wall of a painted window tile. The glass in the tile is left alone. The three cel bands still shade the colour. The source is Adam Lake, Carl Marshall, Mark Harris, and Marc Blackstein, "Stylized Rendering Techniques for Scalable Real-Time 3D Animation", NPAR 2000. The ramp shades the surface colour. It does not replace it with one flat tone.
+- Why it helped: The wall was one cel colour with a joint. A few metres from a brick face, neighbouring units are now a darker clay and a lighter one. From the avenue, where a single course has already faded, the same batches remain as patches.
+- Screenshots: before `docs/gauntlet/shots/r13-before-street.png`, after `docs/gauntlet/shots/r13-after-street.png`. The near brick face: `docs/gauntlet/shots/r13-before-wall.png`, `docs/gauntlet/shots/r13-after-wall.png`. Chase: `docs/gauntlet/shots/r13-before-play.png`, `docs/gauntlet/shots/r13-after-play.png`.
+- Next target: Color palette (5), tied with the other aesthetics scores still at 5. The brick batches sit inside the same three sunset inks.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 6 | Unchanged. Shaded lower walls stay warm. The floors by the roof stay the cold cel. |
+| Color palette | 5 | Unchanged. The sunset inks hold. The new clay is a step inside that grade, not a new grade. |
+| Detail density | 5 | Unchanged. |
+| Texture and material quality | 6 | A near brick face is more than one clay, and the joint is still there. It is still a cel multiply, not a rough surface. |
+| Composition and camera | 5 | Unchanged. Reported distance stayed 4.5 m and pitch stayed −0.349. |
+| Atmosphere | 5 | Unchanged. |
+| Character models | 5 | Unchanged. Skinned triangles stayed at 12,468. |
+| Animation smoothness | 5 | Unchanged. |
+| Particles and VFX | 5 | Unchanged. |
+| UI polish | 5 | Unchanged. The dotted score plate from round 11. |
+| Responsiveness and input latency | 6 | Unchanged. No new pass. No input timing was measured. |
+| Controls feel | 5 | Unchanged. |
+| Mission clarity | 4 | Unchanged. Not played. |
+| Pacing | 4 | Unchanged. |
+| Fun factor | 4 | Unchanged. Not played as a session. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 5 | Unchanged. |
+| Sound design | 4 | Unchanged. |
+| Variety | 4 | Unchanged. |
+| Performance stability | 6 | `qa/vr/render.mjs` passed, including flat play and the lit-sphere cel check. Street mean 66, from 67.1. Saturation 0.52. |
+
+- Aesthetics raw: 52 / 10 dimensions, index 52
+- Playability raw: 46 / 10 dimensions, index 46
+- Total: 98 / 200
+- Delta vs last round: +1 (97 → 98). Texture and material quality 5 → 6. Playability unchanged.
+
+Playability was scored from a flat boot and the city render check, not a full playthrough. OpenSpec CLI validation was not run; the `openspec` command is not installed.
+
