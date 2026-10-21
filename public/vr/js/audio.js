@@ -492,6 +492,31 @@ const SFX = {
     hiss(e, t + 0.9, { buf: e.pink, type: "bandpass", f: 500, f2: 2500, sweep: 0.3, q: 1, dur: 0.35, att: 0.15, peak: 0.12 });
     return tone(e, t + 1.05, { type: "triangle", f: 1568, dur: 0.4, peak: 0.18, send: 0.2 });
   },
+  // a won flush: the splash of the job, not the ring-trial fanfare. The voice lasts through the longer part.
+  winWet(e, t) {
+    const s = splashAt(e, t, 0.5);
+    const b = brass(e, t + 0.02, 392, 0.12, 0.1);
+    return Math.max(s, b);
+  },
+  // a won fight: one crack and a short punch
+  winFight(e, t) {
+    const h = hiss(e, t, { type: "highpass", f: 1800, dur: 0.03, att: 0.0004, peak: 0.42 });
+    const p = tone(e, t, { f: 140, f2: 70, dur: 0.14, peak: 0.32 });
+    const b = brass(e, t + 0.01, 220, 0.1, 0.14);
+    return Math.max(h, p, b);
+  },
+  // a won chase or delivery: a rush, then a high ding
+  winDash(e, t) {
+    const h = hiss(e, t, { type: "bandpass", f: 500, f2: 3200, sweep: 0.22, q: 0.8, dur: 0.26, att: 0.01, peak: 0.18 });
+    const n = tone(e, t + 0.2, { type: "triangle", f: 880, f2: 1760, glide: 0.08, dur: 0.16, peak: 0.16 });
+    return Math.max(h, n);
+  },
+  // a won rescue: two rising notes, shorter than the ring-trial fanfare
+  winLift(e, t) {
+    const a = brass(e, t, 523.3, 0.1, 0.13);
+    const b = brass(e, t + 0.1, 1046.5, 0.18, 0.15);
+    return Math.max(a, b);
+  },
   // a trial ends: a little brass fanfare (after fish's record)
   trialEnd(e, t) {
     const G4 = 392, C5 = 523.3, E5 = 659.3, G5 = 784, C6 = 1046.5;

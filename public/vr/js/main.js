@@ -755,6 +755,14 @@ function combatEvent(e) {
 }
 // A won job, in this game's own words. The sheet has no new title, so a flush and a kasplash carry the moment.
 function winWord(job) { return job === "sludge" ? "FLUSH" : "KASPLASH"; }
+// A won job gets a sting that fits it. The ring-trial fanfare stays on a finished trial.
+const WIN_CUE = {
+  sludge: "winWet", tanker: "winWet",
+  brawl: "winFight", mugging: "winFight",
+  thief: "winDash", pizza: "winDash", getaway: "winDash", taxi: "winDash",
+  catch: "winLift", washer: "winLift", balloon: "winLift",
+};
+function winCue(job) { return WIN_CUE[job] || "winLift"; }
 const WIN_HIT = { t: 0 };
 // In front of the camera, short of the first wall, so the word sits in the view and not inside a block.
 function winSpot(out) {
@@ -784,7 +792,7 @@ function winPayoff(e) {
   const at = winSpot(FXP);
   const wide = flatOn && !isXR();
   const shown = !!fx.word(word, at, { scale: 2.4, size: wide ? screenWide(at, 0.62) : 0, life: 3.2 });
-  audio.sfx("trialEnd");
+  audio.sfx(winCue(e.job));
   audio.sfx("cheer", { vol: 1.1 });
   haptic(0, 1, 160); haptic(1, 1, 160);
   if (!REDUCED) { impact({ stop: 0.14, shake: 0.55, frame: true }); slowT = Math.max(slowT, 0.55); }

@@ -1,0 +1,7 @@
+- [ ] The four stings are quiet after seven tenths of a second and the ring fanfare is not
+- [ ] The four stings are not the same shape, and each voice lasts through its longest note
+- [ ] Winning the purse snatcher plays the dash
+- [ ] Winning the falling rescue plays the lift
+- [ ] Winning the roof fight plays the hit
+- [ ] Winning the Sludge Run plays the wet sting
+- [ ] A miss plays none of the win stings
