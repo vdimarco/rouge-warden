@@ -1,7 +1,0 @@
-- [ ] With every pipe on, the next attack is a throw
-- [ ] After a pipe is off, the attack after a belch is a sweep, and the card says to step aside
-- [ ] Standing in that lane when it lands takes a heart
-- [ ] A step outside the lane keeps the heart
-- [ ] The same heading past his reach keeps the heart
-- [ ] A jump in the lane still takes a heart
-- [ ] Check it in a 1280×800 play
