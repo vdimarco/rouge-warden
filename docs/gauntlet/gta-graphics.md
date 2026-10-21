@@ -248,3 +248,38 @@ Unreal is not available in this environment, so in-engine frames are the last co
 - Playability raw: 39 / 10 dimensions, index 39
 - Total: 81 / 200
 - Delta vs last round: +1
+
+### Round 8 — 2026-10-21 — rubric v1
+
+- What changed: `city_facade.hlsl` colours the inner pane of some windows warm, from a hash of the bay and the floor. Other windows stay dark. Mullions and doors stay. The map material updates when `apply_city_comic_style.py` runs in the editor.
+- Why it helped: Lighting was tied at 4 once animation was set aside. Every pane was the same dark glass, so the block looked empty. A warm room is the first practical light the facade colour can show.
+- Screenshots: before `docs/gauntlet/gta-graphics/round-08/before-lamps.png`, after `docs/gauntlet/gta-graphics/round-08/after-lamps.png`. These are a direct port of the facade shader, not an Unreal capture. `Scripts/test_environment_refresh.py` passed. `GET /gta/` returned 200.
+- Next target: detail density (tied at 4 with texture and material quality, composition, character models, and particles). Animation smoothness stays at 3 and is skipped until a pose can be drawn.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 5 | Some rooms read warm against dark glass. The pane does not cast light on the wall, and the sun is unchanged. |
+| Color palette | 5 | The warm pane sits in the existing masonry. Dark glass remains. |
+| Detail density | 4 | Doors and steps are unchanged. The street is still thin on signs and clutter. |
+| Texture and material quality | 4 | The lamp is a flat colour in the glass. |
+| Composition and camera | 4 | Unchanged gameplay camera. |
+| Atmosphere | 5 | The depth fade is unchanged. |
+| Character models | 4 | The crew key is unchanged. |
+| Animation smoothness | 3 | Skipped. The blend space still cannot be posed here. |
+| Particles and VFX | 4 | Rain streaks are unchanged. |
+| UI polish | 5 | Untouched. |
+| Responsiveness and input latency | 4 | Not measured this round. |
+| Controls feel | 4 | Not played. |
+| Mission clarity | 5 | Unchanged objective card. |
+| Pacing | 4 | Unchanged mission slice. |
+| Fun factor | 3 | Not played. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 4 | No new juice. |
+| Sound design | 3 | Not listened to. |
+| Variety | 3 | One district. Lit and dark rooms repeat on the same hash. |
+| Performance stability | 5 | The facade source test passed. The lamp is a hash, no samples. Frame time was not remeasured. |
+
+- Aesthetics raw: 43 / 10 dimensions, index 43
+- Playability raw: 39 / 10 dimensions, index 39
+- Total: 82 / 200
+- Delta vs last round: +1

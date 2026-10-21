@@ -33,6 +33,11 @@ float Recess = Glass * max(step(Cell.x, 0.5 - WindowWidth + 0.063), step(0.735, 
 Color *= 1.0 - Recess * 0.26;
 float Sash = Glass * max(step(P.x, 0.006), step(abs(Cell.y - 0.56), 0.008));
 Color = lerp(Color, float3(0.36, 0.355, 0.315), Sash);
+// Some rooms are lit. The warm pane is the glass colour, not a light that casts.
+float FloorId = floor((Z - 100.0) / 320.0);
+float Room = frac(sin(dot(floor(float2(UV.x + Seed, FloorId)), float2(19.13, 78.233))) * 43758.5453);
+float Lamp = Glass * (1.0 - Sash) * step(0.55, Room) * step(P.x, WindowWidth - 0.07) * step(P.y, 0.20);
+Color = lerp(Color, float3(0.78, 0.46, 0.18), Lamp);
 float Lintel = step(P.x, WindowWidth + 0.018) * step(abs(Cell.y - 0.83), 0.025) * Wall;
 float Sill = step(P.x, WindowWidth + 0.018) * step(abs(Cell.y - 0.18), 0.018) * Wall;
 Color = lerp(Color, float3(0.44, 0.425, 0.36), max(Lintel, Sill));
