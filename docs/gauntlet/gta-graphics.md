@@ -913,3 +913,38 @@ Unreal is not available in this environment, so in-engine frames are the last co
 - Playability raw: 39 / 10 dimensions, index 39
 - Total: 100 / 200
 - Delta vs last round: +1
+
+### Round 27 — 2026-10-21 — rubric v1
+
+- What changed: glossy bodywork in `Scripts/apply_comic_style.py` takes a clearcoat. The view ray reflects about the world normal and picks up the afternoon sky, weighted by a Fresnel term. Paint at roughness 0.30, glass at 0.18 and chrome at 0.23 are in range. Rubber, the pond's smooth-reflection case, printed crew, foliage and the sky pixel stay out. The cumulus paint and the horizon haze mix stay.
+- Why it helped: Texture and material quality was at 7. The coupe was a flat Lambert teal with black glass. The hood now carries the sky, and the glass reads as a reflection. The tires stay matte.
+- Screenshots: before `docs/gauntlet/gta-graphics/round-27/before-coat.png`, after `docs/gauntlet/gta-graphics/round-27/after-coat.png`. These rasterize the seventies coupe meshes on the walking camera (arm 420, socket Y 70, socket Z 110, pitch −12, horizontal FOV 90). Not an Unreal capture. The car is about 5% of the frame. Paint mean went from `(0.03, 0.20, 0.18)` to `(0.14, 0.31, 0.36)`. Glass mean went from `(0.04, 0.08, 0.11)` to `(0.16, 0.28, 0.45)`. The street delta is 0. A facing share of 0.22 was shaded first and did not show, so the facing share is 0.62. `Scripts/test_coat.py` passed. `Scripts/test_cloud.py` passed. `Scripts/test_horizon_haze.py` passed. `Scripts/test_plateau_trees.py` passed. `Scripts/test_crew_colour.py` passed. `Scripts/test_contact.py` passed. `GET /gta/` returned 200. OpenSpec CLI is not installed, so the change files were not validated with `openspec`.
+- Next target: night. A night grade can fill the frame, and it has to leave the clear-day lighting contract alone. Animation smoothness stays at 3 and is skipped until a pose can be drawn.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 7 | The contact darkening is unchanged. The coat is a reflection, not a new light. |
+| Color palette | 6 | The brick and the crew hues are unchanged. The sky colours on the car were already the afternoon sky. |
+| Detail density | 7 | The English bond is unchanged. The car mesh was already in the game. |
+| Texture and material quality | 8 | Paint and glass now carry the sky, and the tires stay matte. It is a Fresnel mix in the post process, not a clearcoat lobe. |
+| Composition and camera | 6 | The walking socket is unchanged. |
+| Atmosphere | 7 | The cumulus paint is unchanged. |
+| Character models | 6 | The crew hue grade is unchanged. The coat skips printed crew. |
+| Animation smoothness | 3 | Skipped. The blend space still cannot be posed here. |
+| Particles and VFX | 6 | Rain rings are unchanged. |
+| UI polish | 6 | The paper rule is unchanged. |
+| Responsiveness and input latency | 4 | Not measured this round. |
+| Controls feel | 4 | Not played. |
+| Mission clarity | 5 | The objective words are unchanged. |
+| Pacing | 4 | Unchanged mission slice. |
+| Fun factor | 3 | Not played. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 4 | No new juice. |
+| Sound design | 3 | Not listened to. |
+| Variety | 3 | One district, one coupe in the shade. The other two bodies use the same coat. |
+| Performance stability | 5 | The comic source tests passed. The coat adds one noise octave on the reflected ray. Frame time was not remeasured. |
+
+- Aesthetics raw: 62 / 10 dimensions, index 62
+- Playability raw: 39 / 10 dimensions, index 39
+- Total: 101 / 200
+- Delta vs last round: +1

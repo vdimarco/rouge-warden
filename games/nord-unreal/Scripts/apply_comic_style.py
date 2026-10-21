@@ -197,6 +197,36 @@ float3 CloudCol = lerp(float3(0.48, 0.54, 0.64), float3(0.98, 0.98, 0.96), Thick
 CloudCol = lerp(CloudCol, float3(0.96, 0.82, 0.64), CloudShade);
 float CloudMask = saturate(Body * Lift);
 Color = lerp(Color, CloudCol, CloudMask * (Sky ? 1.0 : 0.0));
+
+// Clearcoat on the glossy bodywork. Schlick, "An Inexpensive BRDF Model for
+// Physically-based Rendering" (1994), approximates Fresnel as (1 - n·v)^5.
+// A full clearcoat lobe does not fit this node, so the sky colour along the
+// reflected view ray is weighted by that Fresnel. Paint .30, glass .18 and
+// chrome .23 pick it up. Rubber, the pond's smooth-reflection case, printed
+// crew and foliage stay matte. The weather scalars and the haze mix stay.
+float3 Refl = reflect(Ray, NormalC);
+float2 ReflUv = Refl.xy / max(Refl.z, 0.07);
+float2 ReflPi = floor(ReflUv * 0.55);
+float2 ReflPf = frac(ReflUv * 0.55);
+ReflPf = ReflPf * ReflPf * (float2(3.0, 3.0) - ReflPf * 2.0);
+float ReflN = 0.0;
+for (int ReflCorner = 0; ReflCorner < 4; ReflCorner++)
+{
+    float CoatSX = (ReflCorner == 1 || ReflCorner == 3) ? 1.0 : 0.0;
+    float CoatSY = (ReflCorner >= 2) ? 1.0 : 0.0;
+    float CoatWX = (CoatSX > 0.5) ? ReflPf.x : (1.0 - ReflPf.x);
+    float CoatWY = (CoatSY > 0.5) ? ReflPf.y : (1.0 - ReflPf.y);
+    ReflN += CoatWX * CoatWY * frac(sin((ReflPi.x + CoatSX) * 127.1 + (ReflPi.y + CoatSY) * 311.7) * 43758.5453);
+}
+float ReflCloud = smoothstep(0.52, 0.72, ReflN) * smoothstep(0.04, 0.13, Refl.z);
+float3 SkyRefl = lerp(float3(0.64, 0.76, 0.90), float3(0.30, 0.50, 0.84), saturate(Refl.z / 0.40));
+SkyRefl = lerp(SkyRefl, float3(0.97, 0.97, 0.95), ReflCloud);
+float SkyHit = smoothstep(0.0, 0.08, Refl.z);
+float Clear = (1.0 - smoothstep(0.20, 0.42, Roughness)) * (1.0 - SmoothReflection) * (1.0 - PrintedCrew) * (1.0 - Foliage) * (Sky ? 0.0 : 1.0);
+float CoatNdV = saturate(dot(NormalC, -Ray));
+float CoatEdge = pow(1.0 - CoatNdV, 5.0);
+float Coat = Clear * (0.62 + 0.38 * CoatEdge) * SkyHit;
+Color = lerp(Color, SkyRefl, Coat);
 return Color;
 '''
 
