@@ -84,6 +84,11 @@ int main()
     Expect(!BeamTelegraph(1.5), "the open gap is marked as a warning");
     Expect(Apply(StepGap, EAct::Pull, 0.4) == StepGap, "a pull during the paint stalls the feed");
     Expect(Apply(StepGap, EAct::Pull, 1.5) == StepInvert, "a pull in the gap does not stall the feed");
+    Expect(BeamDanger(1.5, 4), "a held chain still leaves 1.5 s open");
+    Expect(Apply(StepGap, EAct::Pull, 1.5, 4) == StepGap, "a held chain still accepts the 1.5 s pull");
+    Expect(ClearSeconds(4) < ClearSeconds(0) && ClearSeconds(6) > 0.35, "the gap shrinks and still exists");
+    Expect(!PartVisible(StepGap, PartBeam, 1.5, 0) && PartVisible(StepGap, PartBeam, 1.5, 4),
+        "the beam mark does not grow with the chain");
     Expect(Apply(StepGap, EAct::Pull, 2.9) == StepInvert, "the warning refuses a pull that can still land");
     Expect(Apply(StepGap, EAct::Use, 1.5) == StepGap, "using the bay skips the pull");
     Expect(Apply(StepInvert, EAct::Use, 0.) == StepEscape, "inverting the plate does not isolate the escape");

@@ -65,6 +65,8 @@ public:
     bool GetBeatPace(int32& OutIndex, int32& OutCount, int32& OutWalkSeconds) const;
     // Session chain. Not written to the v1 slot. A miss spoils the open beat.
     bool GetChainStake(int32& OutChain, int32& OutPay, bool& bOutBroken) const;
+    // Tenths of a second still clear on the court return or the convoy gap. False on every other step.
+    bool GetClearWindow(int32& OutTenths) const;
     int32 JobStake(int32 BasePay) const;
     // A side job pays on the same chain. Failure breaks it. The story mask stays.
     int32 ApplyJobChain(int32 BasePay, bool bSucceeded);

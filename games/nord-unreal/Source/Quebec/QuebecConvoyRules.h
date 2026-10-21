@@ -63,9 +63,25 @@ namespace QuebecConvoyRules
         return Wrap(Time, BeamPeriod);
     }
 
-    inline bool BeamDanger(double Time)
+    // A held chain lengthens the beam. Chain 0 keeps the taught window. The cap leaves the warning and a clear gap.
+    inline double DangerSeconds(int Chain)
     {
-        return BeamPhase(Time) < BeamDangerSeconds;
+        if (Chain < 0) Chain = 0;
+        if (Chain > 6) Chain = 6;
+        const double Grown = BeamDangerSeconds + 0.16 * static_cast<double>(Chain);
+        const double Cap = BeamPeriod - BeamTelegraphSeconds - 0.40;
+        return Grown < Cap ? Grown : Cap;
+    }
+
+    inline double ClearSeconds(int Chain)
+    {
+        const double Clear = BeamPeriod - DangerSeconds(Chain) - BeamTelegraphSeconds;
+        return Clear > 0. ? Clear : 0.;
+    }
+
+    inline bool BeamDanger(double Time, int Chain = 0)
+    {
+        return BeamPhase(Time) < DangerSeconds(Chain);
     }
 
     inline bool BeamTelegraph(double Time)
@@ -73,10 +89,10 @@ namespace QuebecConvoyRules
         return BeamPhase(Time) > BeamPeriod - BeamTelegraphSeconds;
     }
 
-    inline int Apply(int Step, EAct Action, double Time)
+    inline int Apply(int Step, EAct Action, double Time, int Chain = 0)
     {
         if (Step == StepArrive && Action == EAct::Walk) return StepGap;
-        if (Step == StepGap && Action == EAct::Pull && !BeamDanger(Time)) return StepInvert;
+        if (Step == StepGap && Action == EAct::Pull && !BeamDanger(Time, Chain)) return StepInvert;
         if (Step == StepInvert && Action == EAct::Use) return StepEscape;
         if (Step == StepEscape && Action == EAct::Use) return StepBanked;
         return Step;
@@ -118,12 +134,12 @@ namespace QuebecConvoyRules
     }
 
     // Posts stay hidden until the groups are out. The beam shows only while it is painting or about to.
-    inline bool PartVisible(int Step, int Part, double Time)
+    inline bool PartVisible(int Step, int Part, double Time, int Chain = 0)
     {
         if (Part < 0 || Part >= PartCount) return false;
         if (Step >= StepBanked) return Part == PartPlate;
         if (Part == PartFeeder) return Step == StepArrive || Step == StepGap;
-        if (Part == PartBeam) return Step == StepGap && (BeamDanger(Time) || BeamTelegraph(Time));
+        if (Part == PartBeam) return Step == StepGap && (BeamDanger(Time, Chain) || BeamTelegraph(Time));
         if (Part == PartProjector) return Step == StepInvert;
         if (Part == PartEscape) return Step == StepEscape;
         return false;

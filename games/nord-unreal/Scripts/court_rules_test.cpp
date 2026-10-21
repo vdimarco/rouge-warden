@@ -170,6 +170,17 @@ int main()
     }
     Expect(bWhistleDistinct, "the whistle matches the pond tick");
 
+    Expect(DangerSeconds(0) == SweepDangerSeconds, "a fresh chain keeps the taught ink");
+    Expect(DangerSeconds(4) > DangerSeconds(0), "a held chain lengthens the ink");
+    Expect(ClearSeconds(4) < ClearSeconds(0), "a held chain shortens the clear window");
+    Expect(ClearSeconds(6) > 0.35, "a full chain still leaves a clear window");
+    Expect(DangerSeconds(6) < SweepPeriod - SweepTelegraphSeconds, "the ink does not eat the warning");
+    Expect(!SweepDanger(OnMiddle, 0) && SweepDanger(OnMiddle, 6), "the taught bank sample is ink once the chain is full");
+    Expect(Apply(StepRedirect, EAct::Bank, BankPanel, OnMiddle, 0) == StepPull, "chain zero still accepts the taught bank");
+    Expect(Apply(StepRedirect, EAct::Bank, BankPanel, OnMiddle, 6) == StepRedirect, "a full chain refuses the taught bank sample");
+    Expect(!PartVisible(StepRedirect, PartInk, OnMiddle, 0) && PartVisible(StepRedirect, PartInk, OnMiddle, 6),
+        "the ink mark does not grow with the chain");
+
     std::printf("%d assertions, %d failures\n", Assertions, Failures);
     return Failures == 0 ? 0 : 1;
 }

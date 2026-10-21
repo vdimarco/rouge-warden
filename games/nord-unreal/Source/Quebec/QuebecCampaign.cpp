@@ -727,13 +727,13 @@ bool AQuebecCampaign::HandleInteract(AQuebecController* Controller)
             }
             if (NearCourt(Controller, QuebecCourtRules::ReturnGate.X, QuebecCourtRules::ReturnGate.Y))
             {
-                const int32 Next = QuebecCourtRules::Apply(CourtStep, QuebecCourtRules::EAct::Bank, QuebecCourtRules::BankPanel, CourtTime);
+                const int32 Next = QuebecCourtRules::Apply(CourtStep, QuebecCourtRules::EAct::Bank, QuebecCourtRules::BankPanel, CourtTime, Chain);
                 if (Next == CourtStep)
                 {
                     ++CourtMisses;
                     BreakChain();
                     ForceNetUpdate();
-                    Controller->ShowInteractionMessage(FString(QuebecCourtRules::SweepDanger(CourtTime)
+                    Controller->ShowInteractionMessage(FString(QuebecCourtRules::SweepDanger(CourtTime, Chain)
                         ? TEXT("Ink on the line. Let it pass.")
                         : TEXT("Wait until the ball crosses the middle panel.")) + TEXT(" The chain breaks."));
                     return true;
@@ -844,7 +844,7 @@ bool AQuebecCampaign::HandleInteract(AQuebecController* Controller)
         const double ConvoyTime = static_cast<double>(ConvoyState ? ConvoyState->GetServerWorldTimeSeconds() : GetWorld()->GetTimeSeconds());
         if (ConvoyStep == QuebecConvoyRules::StepGap && NearConvoy(Controller, QuebecConvoyRules::Feeder.X, QuebecConvoyRules::Feeder.Y))
         {
-            const int32 Next = QuebecConvoyRules::Apply(ConvoyStep, QuebecConvoyRules::EAct::Pull, ConvoyTime);
+            const int32 Next = QuebecConvoyRules::Apply(ConvoyStep, QuebecConvoyRules::EAct::Pull, ConvoyTime, Chain);
             if (Next == ConvoyStep)
             {
                 Controller->PlayFeedback(EQuebecFeedbackCue::Dialogue);
@@ -1469,6 +1469,21 @@ void AQuebecCampaign::ShowStepMessage(AQuebecController* Who, const TCHAR* Messa
     Who->ShowInteractionMessage(Message);
 }
 
+bool AQuebecCampaign::GetClearWindow(int32& OutTenths) const
+{
+    if (IsCourtOpen() && CourtStep == QuebecCourtRules::StepRedirect)
+    {
+        OutTenths = static_cast<int32>(std::lround(QuebecCourtRules::ClearSeconds(Chain) * 10.));
+        return true;
+    }
+    if (IsConvoyOpen() && ConvoyStep == QuebecConvoyRules::StepGap)
+    {
+        OutTenths = static_cast<int32>(std::lround(QuebecConvoyRules::ClearSeconds(Chain) * 10.));
+        return true;
+    }
+    return false;
+}
+
 bool AQuebecCampaign::GetChainStake(int32& OutChain, int32& OutPay, bool& bOutBroken) const
 {
     const int Link = QuebecChain::OpenLink(Phase == EQuebecCampaignPhase::Complete,
@@ -2014,7 +2029,7 @@ void AQuebecCampaign::UpdatePresentation()
         const bool bCourtWorld = Phase == EQuebecCampaignPhase::Complete && PondStep >= PondBankedStep;
         for (int32 Index = 0; Index < CourtParts.Num(); ++Index)
         {
-            const bool bShow = bCourtWorld && QuebecCourtRules::PartVisible(CourtStep, Index, CourtTime);
+            const bool bShow = bCourtWorld && QuebecCourtRules::PartVisible(CourtStep, Index, CourtTime, Chain);
             CourtParts[Index]->SetVisibility(bShow);
             if (CourtCaptions.IsValidIndex(Index)) CourtCaptions[Index]->SetVisibility(bShow);
         }
@@ -2050,7 +2065,7 @@ void AQuebecCampaign::UpdatePresentation()
             && CourtStep >= CourtBankedStep && ShowStep >= ShowBankedStep && RescueMask >= RescueDone;
         for (int32 Index = 0; Index < ConvoyParts.Num(); ++Index)
         {
-            const bool bShow = bConvoyWorld && QuebecConvoyRules::PartVisible(ConvoyStep, Index, ConvoyTime);
+            const bool bShow = bConvoyWorld && QuebecConvoyRules::PartVisible(ConvoyStep, Index, ConvoyTime, Chain);
             ConvoyParts[Index]->SetVisibility(bShow);
             if (ConvoyCaptions.IsValidIndex(Index)) ConvoyCaptions[Index]->SetVisibility(bShow);
         }

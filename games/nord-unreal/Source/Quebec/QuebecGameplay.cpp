@@ -2485,6 +2485,9 @@ void AQuebecHUD::DrawHUD()
             if (bChainBroken) Status += FString::Printf(TEXT(" · chain broken · +$%d"), ChainPay);
             else Status += FString::Printf(TEXT(" · chain %d · +$%d"), Chain, ChainPay);
         }
+        int32 ClearTenths = 0;
+        if (Campaign->GetClearWindow(ClearTenths))
+            Status += FString::Printf(TEXT(" · %d.%ds clear"), ClearTenths / 10, ClearTenths % 10);
     }
     else if (State && State->MissionIndex >= 0 && State->MissionIndex < AQuebecGameState::MissionCount)
     {

@@ -106,9 +106,25 @@ namespace QuebecCourtRules
         return Wrap(Time, SweepPeriod);
     }
 
-    inline bool SweepDanger(double Time)
+    // A held chain lengthens the ink. Chain 0 keeps the taught window. The cap leaves the warning and a clear gap.
+    inline double DangerSeconds(int Chain)
     {
-        return SweepPhase(Time) < SweepDangerSeconds;
+        if (Chain < 0) Chain = 0;
+        if (Chain > 6) Chain = 6;
+        const double Grown = SweepDangerSeconds + 0.16 * static_cast<double>(Chain);
+        const double Cap = SweepPeriod - SweepTelegraphSeconds - 0.40;
+        return Grown < Cap ? Grown : Cap;
+    }
+
+    inline double ClearSeconds(int Chain)
+    {
+        const double Clear = SweepPeriod - DangerSeconds(Chain) - SweepTelegraphSeconds;
+        return Clear > 0. ? Clear : 0.;
+    }
+
+    inline bool SweepDanger(double Time, int Chain = 0)
+    {
+        return SweepPhase(Time) < DangerSeconds(Chain);
     }
 
     inline bool SweepTelegraph(double Time)
@@ -116,12 +132,12 @@ namespace QuebecCourtRules
         return SweepPhase(Time) > SweepPeriod - SweepTelegraphSeconds;
     }
 
-    inline int Apply(int Step, EAct Action, int Panel, double Time)
+    inline int Apply(int Step, EAct Action, int Panel, double Time, int Chain = 0)
     {
         if (Step == StepArrive && Action == EAct::Walk) return StepRally;
         if (Step == StepRally && Action == EAct::Score && Panel == GoldPanel && BallPanel(Time) == GoldPanel)
             return StepRedirect;
-        if (Step == StepRedirect && Action == EAct::Bank && BallPanel(Time) == BankPanel && !SweepDanger(Time))
+        if (Step == StepRedirect && Action == EAct::Bank && BallPanel(Time) == BankPanel && !SweepDanger(Time, Chain))
             return StepPull;
         if (Step == StepPull && Action == EAct::Use) return StepBanked;
         return Step;
@@ -158,7 +174,7 @@ namespace QuebecCourtRules
 
     // Posts: 0 arrive, 1–3 panels, 4 gate, 5 clamp, 6 ball, 7 ink.
     // Hidden until the picnic is banked. After the clamp, only the clamp stays.
-    inline bool PartVisible(int Step, int Part, double Time)
+    inline bool PartVisible(int Step, int Part, double Time, int Chain = 0)
     {
         if (Part < 0 || Part >= PartCount) return false;
         if (Step >= StepBanked) return Part == PartClamp;
@@ -167,7 +183,7 @@ namespace QuebecCourtRules
         if (Part == 4) return Step == StepRedirect || Step == StepPull;
         if (Part == PartClamp) return Step == StepPull;
         if (Part == PartBall) return Step == StepRally || Step == StepRedirect;
-        if (Part == PartInk) return Step == StepRedirect && (SweepDanger(Time) || SweepTelegraph(Time));
+        if (Part == PartInk) return Step == StepRedirect && (SweepDanger(Time, Chain) || SweepTelegraph(Time));
         return false;
     }
 }

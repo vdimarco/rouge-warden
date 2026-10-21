@@ -848,3 +848,48 @@ Unreal is not available here, so the native diamond was not captured. The title 
 ![Play client at 1280, host offline](gta-missions/r18-play-1280.png)
 
 ![Menu on a 390-wide screen, Recover visible](gta-missions/r18-play-menu-390.png)
+
+### Round 19 — 2026-10-21 — rubric v1
+
+- What changed: A held chain lengthens the court ink and the convoy beam. Chain 0 keeps the taught windows. The clear gap shrinks but does not disappear, and it does not cover the warning. The card says how many seconds are clear on the return and on the gap. The ink and the beam marks use that longer window.
+- Why it helped: Difficulty was a 6 because a miss cost the chain but the windows stayed the ones the first visit taught. Later, on a chain, the same sample is a miss.
+- Screenshots: title `docs/gauntlet/gta-missions/r19-title-1280.png`, `r19-title-390.png`, `r19-title-320.png`. Play client, host offline, `r19-play-1280.png`. Menu with Recover `r19-play-menu-390.png`. The title loaded with no page errors. The raw play page still logs the missing `@epicgames-ps/lib-pixelstreamingfrontend-ue5.8` specifier; the shell and Recover still draw. The windows were not played in Unreal. `Scripts/test_court_rules.py` reports 153 assertions, 0 failures, and `Scripts/test_convoy_rules.py` reports 98 assertions, 0 failures, on c++, g++ and clang++. `Scripts/test_chain.py` still reports 73 assertions, 0 failures. Syntax check `--both` passed for the campaign and the HUD. OpenSpec CLI is not installed, so `openspec validate` did not run.
+- Next target: feedback (6), tied with fun. Performance stays at 4 and is not measurable here. Responsiveness stays at 3 and stays out of scope. The longer windows are proven by the rules. They were not played, so the difficulty score waits at 7. The next round should keep to a change the tests can prove, and should not add a chapter or touch the stream.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 3 | Unchanged. |
+| Color palette | 5 | Unchanged. |
+| Detail density | 3 | Unchanged. |
+| Texture and material quality | 3 | Unchanged. |
+| Composition and camera | 4 | Unchanged. |
+| Atmosphere | 4 | Unchanged. |
+| Character models | 3 | Unchanged. |
+| Animation smoothness | 3 | Unchanged. |
+| Particles and VFX | 2 | Unchanged. |
+| UI polish | 4 | The clear seconds share the status line. The native card was not seen, and French and English still share the screen. |
+| Responsiveness and input latency | 3 | Unchanged. Still a lagged stream. Out of scope for this loop. |
+| Controls feel | 5 | Unchanged. Arrow keys still walk and drive on the same axes as WASD. |
+| Mission clarity | 7 | Unchanged. |
+| Pacing | 5 | Unchanged. The card still states the stop and the walk. |
+| Fun factor | 6 | Unchanged. A side job still pays on the story chain. The longer windows do not change the pay. |
+| Difficulty curve | 7 | The court ink and the convoy beam grow with the chain. The rules prove a taught sample that banks at chain 0 misses at a full chain, and that a clear gap remains. It was not played. |
+| Feedback | 6 | The card names the clear seconds. The hit is still the sting until it is heard. |
+| Sound design | 6 | Unchanged. |
+| Variety | 9 | Unchanged. Eight of eight story missions, plus the four side jobs. |
+| Performance stability | 4 | Unchanged. Not measurable in this container. |
+
+- Aesthetics raw: 34 / 10 dimensions, index 34
+- Playability raw: 58 / 10 dimensions, index 58
+- Total: 92 / 200
+- Delta vs last round: +1 (round 18 was 91). Difficulty curve 6 → 7. Every other score held.
+
+![GTA title at 1280](gta-missions/r19-title-1280.png)
+
+![GTA title at 390](gta-missions/r19-title-390.png)
+
+![GTA title at 320](gta-missions/r19-title-320.png)
+
+![Play client at 1280, host offline](gta-missions/r19-play-1280.png)
+
+![Menu on a 390-wide screen, Recover visible](gta-missions/r19-play-menu-390.png)
