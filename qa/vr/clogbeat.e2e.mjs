@@ -1,4 +1,4 @@
-// The fourth flush is a balloon, the sixth is a pizza, the eighth is a washer, and the clog card comes back after.
+// The fourth flush is a balloon, the sixth is a pizza, the eighth is a washer, the tenth is a brawl, and the clog card comes back after.
 import { mkdir } from "node:fs/promises";
 import { newPage, open, close, enterXR, checker, watchdog } from "./lib.mjs";
 
@@ -146,6 +146,67 @@ try {
   check(down.held === "FLUSH THE CLOGS" && down.heldN === 7, "seven flushes are still the clog card", down);
   check(down.job === "washer" && /GET HIM DOWN/.test(down.title || "") && /WASHER/.test(down.title || "") && !/FLUSH THE CLOGS|BALLOON/.test((down.title || "") + " " + (down.detail || "")), "the eighth flush is a carry down, not the balloon", down);
   check(down.timer <= 36 && down.timer > 34 && /3[4-6] s/.test(down.title || "") && !/60 s/.test(down.title || ""), "the eighth flush counts from 36 s, not a minute", down);
+
+  const nine = await page.evaluate(() => {
+    G.test.finishJob();
+    let back = 0;
+    for (; back < 240; back++) {
+      G.test.step(1 / 60, 1);
+      const ob = G.game.progress.objective;
+      if (!G.test.action().jobs.active && ob && /FLUSH THE CLOGS/.test(ob.title || "") && ob.n === 8) break;
+    }
+    const id = G.game.targets().find((t) => t.kind === "clog" && !t.done);
+    G.test.clearClog(id.id);
+    let n = 0;
+    for (; n < 80; n++) {
+      G.test.step(1 / 60, 1);
+      const ob = G.game.progress.objective;
+      if (ob && ob.n === 9 && /FLUSH THE CLOGS/.test(ob.title || "") && !G.test.action().jobs.active) break;
+    }
+    const ob = G.game.progress.objective;
+    return { back, n, title: ob && ob.title, count: ob && ob.n, job: G.test.action().jobs.active && G.test.action().jobs.active.type, king: G.game.progress.king };
+  });
+  check(nine.title === "FLUSH THE CLOGS" && nine.count === 9 && !nine.job && nine.king !== "awake", "nine flushes are still the clog card", nine);
+
+  const roof = await page.evaluate(() => {
+    const id = G.game.targets().find((t) => t.kind === "clog" && !t.done);
+    G.test.clearClog(id.id);
+    let n = 0;
+    for (; n < 180; n++) {
+      G.test.step(1 / 60, 1);
+      const job = G.test.action().jobs.active;
+      const ob = G.game.progress.objective;
+      if (job && job.type === "brawl" && ob && /ROOF CREW/.test(ob.title || "") && /BRAWL/.test(ob.title || "")) break;
+    }
+    G.test.step(1 / 60, 4);
+    const ob = G.game.progress.objective;
+    const job = G.test.action().jobs.active;
+    G.test.render(0);
+    return { n, title: ob && ob.title, detail: ob && ob.detail, job: job && job.type, king: G.game.progress.king };
+  });
+  await page.screenshot({ path: out + "/roof.png" });
+  check(roof.job === "brawl" && /ROOF CREW/.test(roof.title || "") && /BRAWL/.test(roof.title || "") && /Wave 1/.test(roof.detail || "") && !/FLUSH THE CLOGS/.test((roof.title || "") + " " + (roof.detail || "")) && roof.king !== "awake", "the tenth flush is a roof fight, and the King still sleeps", roof);
+
+  const eleven = await page.evaluate(() => {
+    const killed = G.test.finishJob();
+    let back = 0;
+    for (; back < 240; back++) {
+      G.test.step(1 / 60, 1);
+      const ob = G.game.progress.objective;
+      if (!G.test.action().jobs.active && ob && /FLUSH THE CLOGS/.test(ob.title || "") && ob.n === 10) break;
+    }
+    const id = G.game.targets().find((t) => t.kind === "clog" && !t.done);
+    G.test.clearClog(id.id);
+    let n = 0;
+    for (; n < 80; n++) {
+      G.test.step(1 / 60, 1);
+      const ob = G.game.progress.objective;
+      if (ob && ob.n === 11 && /FLUSH THE CLOGS/.test(ob.title || "") && !G.test.action().jobs.active) break;
+    }
+    const ob = G.game.progress.objective;
+    return { killed, back, n, title: ob && ob.title, count: ob && ob.n, job: G.test.action().jobs.active && G.test.action().jobs.active.type, king: G.game.progress.king };
+  });
+  check(eleven.killed && eleven.title === "FLUSH THE CLOGS" && eleven.count === 11 && !eleven.job && eleven.king !== "awake", "eleven flushes are the clog card, and the King still sleeps", eleven);
   check(page.errors.length === 0, "no page errors", page.errors);
 } finally {
   await close();

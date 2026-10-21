@@ -63,7 +63,7 @@ After the Sludge Run is won, the story SHALL be four missions in order: Stop, Th
 - **THEN** a lesson card names the miss, the same mission starts again after that card, and the card still does not say to flush the clogs
 
 ### Requirement: Clog beats
-While the King is still asleep, the fourth flush SHALL start a balloon to bring back, the sixth flush SHALL start a pizza to deliver to a roof, and the eighth flush SHALL start a washer to carry down. Each of those jobs SHALL take the mission card, and that card SHALL NOT say to flush the clogs. The fifth and the seventh flushes SHALL keep the clog card, counting toward twelve. When a beat ends, the clog card SHALL return. One flush SHALL NOT start a beat. Flushing all twelve SHALL still wake the King. A beat SHALL wait while a story mission is the current job. The washer on the eighth flush SHALL give less time than an odd-job washer when he hangs within a swing. The King SHALL still roar only on the fourth and the eighth flush.
+While the King is still asleep, the fourth flush SHALL start a balloon to bring back, the sixth flush SHALL start a pizza to deliver to a roof, the eighth flush SHALL start a washer to carry down, and the tenth flush SHALL start a rooftop brawl. Each of those jobs SHALL take the mission card, and that card SHALL NOT say to flush the clogs. The fifth, the seventh, the ninth, and the eleventh flushes SHALL keep the clog card, counting toward twelve. When a beat ends, the clog card SHALL return. One flush SHALL NOT start a beat. Flushing all twelve SHALL still wake the King. The tenth flush SHALL NOT wake him. A beat SHALL wait while a story mission is the current job. The washer on the eighth flush SHALL give less time than an odd-job washer when he hangs within a swing. The King SHALL still roar only on the fourth and the eighth flush.
 
 #### Scenario: Three flushes
 - **WHEN** three clogs are flushed and no story mission is running
@@ -92,6 +92,18 @@ While the King is still asleep, the fourth flush SHALL start a balloon to bring 
 #### Scenario: The eighth flush is a shorter hang
 - **WHEN** the eighth flush starts that washer within a swing
 - **THEN** the card counts from 36 s, not from a minute
+
+#### Scenario: Nine flushes
+- **WHEN** nine clogs are flushed and the washer beat has ended
+- **THEN** the card says FLUSH THE CLOGS 9/12
+
+#### Scenario: The tenth flush
+- **WHEN** the tenth clog is flushed
+- **THEN** the card names a rooftop brawl and does not say to flush the clogs, and the King is still asleep
+
+#### Scenario: Eleven flushes
+- **WHEN** eleven clogs are flushed and the brawl has ended
+- **THEN** the card says FLUSH THE CLOGS 11/12 and the King is still asleep
 
 ### Requirement: The clog compass names the card's clog
 While the card says to flush the clogs and names a district, the compass SHALL point at that clog, and its title SHALL name that district. A running job SHALL still title the compass as the job.
