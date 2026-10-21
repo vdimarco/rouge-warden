@@ -503,8 +503,9 @@ void AQuebecCharacter::ApplyStreetSway(float DeltaSeconds)
         if (bSwayApplied) RestoreStreetSway();
         return;
     }
-    SwayTime += DeltaSeconds;
-    const QuebecSway::FPose Sway = QuebecSway::Pose(SwayTime, GetVelocity().Size2D());
+    const float Speed = GetVelocity().Size2D();
+    SwayPhase = static_cast<float>(QuebecSway::Advance(SwayPhase, DeltaSeconds, Speed));
+    const QuebecSway::FPose Sway = QuebecSway::Pose(SwayPhase, Speed);
     const float Yaw = GetMesh()->GetRelativeRotation().Yaw;
     GetMesh()->SetRelativeLocation(FVector(0., Sway.Side, -96. + Sway.Bob));
     GetMesh()->SetRelativeRotation(FRotator(Sway.Pitch, Yaw, Sway.Roll));

@@ -19,6 +19,8 @@ namespace QuebecSway
     inline constexpr double WalkBob = 6.;
     inline constexpr double WalkSide = 4.;
     inline constexpr double WalkPitch = 4.;
+    // Full lean at the walk clip's reference speed. Below MoveSpeed the body stays at the idle share.
+    inline constexpr double WalkSpeed = 180.;
 
     struct FPose
     {
@@ -28,14 +30,40 @@ namespace QuebecSway
         double Pitch = 0.;
     };
 
-    // Time in seconds, planar speed in cm/s. Roll and pitch are degrees. Bob and side are cm.
-    // A moving body uses the walk rate. A still body uses the smaller idle share.
-    inline FPose Pose(double Time, double Speed)
+    // 0 at idle, 1 at WalkSpeed. Continuous, so crossing MoveSpeed does not step the lean.
+    inline double Blend(double Speed)
     {
-        const bool bMoving = Speed > MoveSpeed;
-        const double Omega = bMoving ? WalkOmega : IdleOmega;
-        const double Share = bMoving ? 1. : IdleShare;
-        const double Phase = Time * Omega;
+        if (!(Speed > MoveSpeed)) return 0.;
+        const double Span = WalkSpeed - MoveSpeed;
+        const double Along = (Speed - MoveSpeed) / Span;
+        return Along < 1. ? Along : 1.;
+    }
+
+    inline double OmegaFor(double Speed)
+    {
+        const double Along = Blend(Speed);
+        return IdleOmega + (WalkOmega - IdleOmega) * Along;
+    }
+
+    inline double ShareFor(double Speed)
+    {
+        const double Along = Blend(Speed);
+        return IdleShare + (1. - IdleShare) * Along;
+    }
+
+    // Phase is radians, kept by the caller. A speed change does not jump it.
+    inline double Advance(double Phase, double DeltaSeconds, double Speed)
+    {
+        constexpr double TwoPi = 6.283185307179586;
+        double Next = std::fmod(Phase + DeltaSeconds * OmegaFor(Speed), TwoPi);
+        if (Next < 0.) Next += TwoPi;
+        return Next;
+    }
+
+    // Phase in radians, planar speed in cm/s. Roll and pitch are degrees. Bob and side are cm.
+    inline FPose Pose(double Phase, double Speed)
+    {
+        const double Share = ShareFor(Speed);
         FPose Out;
         Out.Bob = std::sin(Phase * 2.) * WalkBob * Share;
         Out.Side = std::sin(Phase) * WalkSide * Share;

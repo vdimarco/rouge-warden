@@ -2,7 +2,7 @@
 
 Frank Thomas and Ollie Johnston, *The Illusion of Life* (1981), describe overlapping action: the body keeps a secondary motion of its own. A sampled walk cycle does not fit. The crew blend space is an Unreal asset, and this environment cannot pose it. The sine is the rock, not the steps.
 
-The phase is time times 7.2 rad/s while planar speed is above 5 cm/s, and 1.8 rad/s when still. The walk lean is 12°. The idle lean is 0.34 of that. Bob and pitch run at twice the rate, so the peak lean is a pure side rock. The mesh keeps its current yaw. The offset is lateral, in actor space, on top of the existing `(0, 0, -96)` rest.
+The caller integrates the phase. Idle is 1.8 rad/s and a walk at 180 cm/s is 7.2 rad/s, blended with speed, so starting or stopping does not jump the angle or the lean. The full lean is 12°. The idle lean is 0.34 of that. Bob and pitch run at twice the rate, so the peak lean is a pure side rock. The mesh keeps its current yaw. The offset is lateral, in actor space, on top of the existing `(0, 0, -96)` rest.
 
 The crew anim instance already drives the skeleton, so a second rock would stack. Swimming writes its own mesh rotation. A knockdown poses the hips. A fall restores the rest lean once, then leaves the mesh alone. A vehicle hides the walker.
 

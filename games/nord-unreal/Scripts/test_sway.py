@@ -18,7 +18,8 @@ assert "CameraArm->SocketOffset = FVector(0., 70., 110.);" in GAME
 assert "const FRotator Look(-16.f, Yaw, 0.f);" in GAME
 assert "GetMesh()->SetRelativeRotation(FRotator(0., -90., 0.));" in GAME
 assert "CasualStand->SetRelativeLocation(FVector(0., 0., -96.));" in GAME
-assert "const QuebecSway::FPose Sway = QuebecSway::Pose(SwayTime, GetVelocity().Size2D());" in GAME
+assert "SwayPhase = static_cast<float>(QuebecSway::Advance(SwayPhase, DeltaSeconds, Speed));" in GAME
+assert "const QuebecSway::FPose Sway = QuebecSway::Pose(SwayPhase, Speed);" in GAME
 assert "GetMesh()->SetRelativeLocation(FVector(0., Sway.Side, -96. + Sway.Bob));" in GAME
 assert "GetMesh()->SetRelativeRotation(FRotator(Sway.Pitch, Yaw, Sway.Roll));" in GAME
 assert "CasualStand->SetRelativeRotation(FRotator(Sway.Pitch, 0., Sway.Roll));" in GAME

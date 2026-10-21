@@ -212,7 +212,7 @@ private:
     float CrewLandingTime = 1.f;
     float CrewAnimationTime = 0.f;
     float CrewPoseElapsed = 0.f;
-    float SwayTime = 0.f;
+    float SwayPhase = 0.f;
     bool bSwayApplied = false;
     void ApplyStreetSway(float DeltaSeconds);
     void RestoreStreetSway();
