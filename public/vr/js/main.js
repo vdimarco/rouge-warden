@@ -2176,10 +2176,12 @@ function after(dt, inp, yawDelta) {
 }
 
 // The easy web. In the 3D scene it is a line in the world from the hand toward the anchor, ink #2B2A33,
-// about 2 CSS px wide at every distance (so a far anchor does not thin away). The sag is the parabola
-// in putRope (rope.js): at the start of the swing it hangs about 16 px, and tension pulls it straight.
-// It fades over 150 ms on the let-go. The paper speed lines stay a 2D overlay. A scene that is not the
-// perspective view keeps the old screen stroke, clipped to the edge.
+// about 2 CSS px wide at every distance (so a far anchor does not thin away). At the start the middle
+// sits about 16 px off the straight chord, toward the bottom of the screen, and tension pulls it
+// straight. That bow is unprojected into the world, so the line still runs past the edge of the view.
+// A world-down hang does not: on a sky web it lies along the rope. It fades over 150 ms on the let-go.
+// The paper speed lines stay a 2D overlay. A scene that is not the perspective view keeps the old
+// screen stroke, clipped to the edge.
 let webCv = null, webCx = null, webW = 0, webH = 0, peakSp = 0;
 const webWas = [false, false], webFade = [0, 0], webSag = [0, 0];
 const webA = [{ x: 0, y: 0, z: 0 }, { x: 0, y: 0, z: 0 }];
@@ -2233,30 +2235,43 @@ function ensureWeb() {
   webMesh.onBeforeRender = () => { mat.uniforms.uPix.value = webCss(); };
   scene.add(webMesh);
 }
-function webDrop(hand, anchor, tension) {
-  WEB_HAND.set(hand.x, hand.y, hand.z);
-  WEB_ANCH.set(anchor.x, anchor.y, anchor.z);
-  const dist = Math.max(0.5, camera.position.distanceTo(WEB_FROM.copy(WEB_HAND).lerp(WEB_ANCH, 0.5)));
+function webSagPx(tension) {
   const ten = tension < 0 ? 0 : tension > 1 ? 1 : tension;
-  return (1 - ten) * 16 * webCss() * dist;
+  return (1 - ten) * 16;
 }
-function putWeb(hand, anchor, sag, alpha) {
+function putWeb(hand, anchor, sagPx, alpha) {
   if (!(alpha > 0.01) || !webMesh) return;
   WEB_HAND.set(hand.x, hand.y, hand.z);
   WEB_ANCH.set(anchor.x, anchor.y, anchor.z);
   WEB_DIR.copy(WEB_ANCH).sub(WEB_HAND);
-  const len = WEB_DIR.length();
-  if (len < 1e-3) return;
-  WEB_DIR.multiplyScalar(1 / len);
-  WEB_G.set(0, -1, 0).addScaledVector(WEB_DIR, WEB_DIR.y);
-  const gLen = WEB_G.length();
-  if (gLen > 1e-4) WEB_G.multiplyScalar(1 / gLen);
-  const curved = sag > 0.02 && gLen > 1e-4;
+  if (WEB_DIR.length() < 1e-3) return;
+  camera.updateMatrixWorld();
+  const w = innerWidth || 1, h = innerHeight || 1;
+  WEB_FROM.copy(WEB_HAND).project(camera);
+  const ax = (WEB_FROM.x * 0.5 + 0.5) * w, ay = (0.5 - WEB_FROM.y * 0.5) * h;
+  WEB_FROM.copy(WEB_ANCH).project(camera);
+  const bx = (WEB_FROM.x * 0.5 + 0.5) * w, by = (0.5 - WEB_FROM.y * 0.5) * h;
+  let tx = bx - ax, ty = by - ay, tl = Math.hypot(tx, ty);
+  if (tl < 1) { tx = 0; ty = 1; } else { tx /= tl; ty /= tl; }
+  // Off the chord, toward the bottom of the screen. A vertical web bows to the side, which is the
+  // only direction that still reads as a sag when the anchor is straight up the view.
+  let nx = -ty, ny = tx;
+  if (ny < 0) { nx = -nx; ny = -ny; }
   const n = WEB_N;
   for (let k = 0; k <= n; k++) {
     const u = k / n;
     const p = WEB_PTS[k].copy(WEB_HAND).lerp(WEB_ANCH, u);
-    if (curved) p.addScaledVector(WEB_G, 4 * sag * u * (1 - u));
+    const drop = 4 * sagPx * u * (1 - u);
+    if (drop > 0.05) {
+      WEB_FROM.copy(p).project(camera);
+      const nz = WEB_FROM.z;
+      const sx = (WEB_FROM.x * 0.5 + 0.5) * w + nx * drop;
+      const sy = (0.5 - WEB_FROM.y * 0.5) * h + ny * drop;
+      WEB_FROM.x = (sx / w) * 2 - 1;
+      WEB_FROM.y = 1 - (sy / h) * 2;
+      WEB_FROM.z = nz;
+      p.copy(WEB_FROM).unproject(camera);
+    }
   }
   for (let k = 0; k < n && webSeg < WEB_MAX; k++) {
     const p = WEB_PTS[k], q = WEB_PTS[k + 1];
@@ -2358,7 +2373,7 @@ function drawWeb(dt) {
       webA[i].x = r.anchor.x; webA[i].y = r.anchor.y; webA[i].z = r.anchor.z;
       const ten = r.tension < 0 ? 0 : r.tension > 1 ? 1 : r.tension;
       const hand = handOf(i);
-      webSag[i] = threeD ? webDrop(hand, webA[i], ten) : (1 - ten) * 16;
+      webSag[i] = webSagPx(ten);
       if (threeD) putWeb(hand, webA[i], webSag[i], 1);
       else strokeWeb(ctx2, hand, webA[i], webSag[i], 1, w, h);
       any = true;

@@ -40,3 +40,7 @@ When the scene is 3D, the web SHALL be a line in world space from the hand towar
 #### Scenario: The line stays readable far away
 - **WHEN** the web is out on a 1280-wide view and the anchor is much farther from the camera than the hand
 - **THEN** the line is about 2 px wide both near the hand and farther along it
+
+#### Scenario: The line sags when the swing starts
+- **WHEN** an easy web has just attached in the 3D scene and the rope is not yet taut
+- **THEN** the middle of the line sits about 16 px below the straight line from the hand to the anchor on a 1280-wide view
