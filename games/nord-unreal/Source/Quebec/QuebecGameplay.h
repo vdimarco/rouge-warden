@@ -492,6 +492,7 @@ public:
     void PlayFeedback(EQuebecFeedbackCue Cue);
     void PlayRank(int32 ChainAfter, bool bWasSpoiled);
     void PlayImpact();
+    void PlayLoss();
     virtual void BeginPlay() override;
     virtual void SetupInputComponent() override;
     virtual void PlayerTick(float DeltaTime) override;
@@ -610,6 +611,10 @@ private:
     void PlayImpactTone();
     UPROPERTY() TObjectPtr<class UAudioComponent> ImpactAudio;
     UPROPERTY() TObjectPtr<class USoundWaveProcedural> ImpactWave;
+    UFUNCTION(Client, Unreliable) void ClientPlayLoss();
+    void PlayLossTone();
+    UPROPERTY() TObjectPtr<class UAudioComponent> LossAudio;
+    UPROPERTY() TObjectPtr<class USoundWaveProcedural> LossWave;
     void ExitCar(AQuebecCar* Car);
 };
 

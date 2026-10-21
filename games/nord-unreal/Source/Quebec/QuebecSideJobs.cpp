@@ -683,6 +683,10 @@ void AQuebecSideJobs::FinishJob(bool bSucceeded, const FString& Reason)
         if (GetWorld())
             for (TActorIterator<AQuebecController> It(GetWorld()); It; ++It) It->PlayFeedback(EQuebecFeedbackCue::Complete);
     }
+    else if (GetWorld())
+    {
+        for (TActorIterator<AQuebecController> It(GetWorld()); It; ++It) It->PlayLoss();
+    }
     LastJob = Finished;
     bLastSucceeded = bSucceeded;
     LastReward = Pay;

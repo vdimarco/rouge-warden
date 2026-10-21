@@ -9,6 +9,7 @@
 #include "QuebecRankTone.h"
 #include "QuebecSkidTone.h"
 #include "QuebecImpactTone.h"
+#include "QuebecLossTone.h"
 #include "QuebecStoryBed.h"
 #include "QuebecBarks.h"
 #include "QuebecPondRules.h"
@@ -1703,6 +1704,10 @@ AQuebecController::AQuebecController()
     ImpactAudio->bAutoActivate = false;
     ImpactAudio->bAllowSpatialization = false;
     ImpactAudio->VolumeMultiplier = .8f;
+    LossAudio = CreateDefaultSubobject<UAudioComponent>(TEXT("LossAudio"));
+    LossAudio->bAutoActivate = false;
+    LossAudio->bAllowSpatialization = false;
+    LossAudio->VolumeMultiplier = .65f;
     StoryBedAudio = CreateDefaultSubobject<UAudioComponent>(TEXT("StoryBedAudio"));
     StoryBedAudio->bAutoActivate = false;
     StoryBedAudio->bAllowSpatialization = false;
@@ -2056,6 +2061,38 @@ void AQuebecController::PlayImpactTone()
     }
     ImpactWave->QueueAudio(reinterpret_cast<const uint8*>(Pcm), QuebecImpactTone::Frames * static_cast<int32>(sizeof(int16)));
     ImpactAudio->Play();
+}
+
+void AQuebecController::PlayLoss()
+{
+    ClientPlayLoss();
+}
+
+void AQuebecController::ClientPlayLoss_Implementation()
+{
+    PlayLossTone();
+}
+
+void AQuebecController::PlayLossTone()
+{
+    if (!LossAudio || !GetWorld() || !GetWorld()->AllowAudioPlayback()) return;
+    if (!LossWave)
+    {
+        LossWave = NewObject<USoundWaveProcedural>(this);
+        LossWave->SetSampleRate(static_cast<uint32>(QuebecLossTone::SampleRate));
+        LossWave->NumChannels = 1;
+        LossWave->Duration = static_cast<float>(QuebecLossTone::Frames) / static_cast<float>(QuebecLossTone::SampleRate);
+        LossAudio->SetSound(LossWave);
+    }
+    LossWave->ResetAudio();
+    int16 Pcm[QuebecLossTone::Frames];
+    for (int32 Frame = 0; Frame < QuebecLossTone::Frames; ++Frame)
+    {
+        const float Sample = FMath::Clamp(static_cast<float>(QuebecLossTone::SampleAt(Frame)), -1.f, 1.f);
+        Pcm[Frame] = static_cast<int16>(Sample * 32767.f);
+    }
+    LossWave->QueueAudio(reinterpret_cast<const uint8*>(Pcm), QuebecLossTone::Frames * static_cast<int32>(sizeof(int16)));
+    LossAudio->Play();
 }
 
 void AQuebecController::PlayCourtWave(UAudioComponent* Audio, TObjectPtr<USoundWaveProcedural>& Wave, int32 Frames, bool bWhistle)
