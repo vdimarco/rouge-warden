@@ -446,6 +446,19 @@ vec3 wallColor(int k, float shop, float sd, float salt, float h1, float h2, floa
     }
   }
   #endif
+  // masonry joints on brick, stone, concrete and loft. A course smaller than a pixel fades out
+  // so the far wall stays a flat comic tone. Glass towers are left alone.
+  if (st >= 2 && st <= 5) {
+    float pitch = st == 3 ? 0.42 : st == 4 ? 0.85 : 0.16;
+    float run = pitch * (st >= 4 ? 2.2 : 2.0);
+    float cy = y / pitch;
+    float cx = u / run + mod(floor(cy), 2.0) * 0.5;
+    float wy = fwidth(cy), wx = fwidth(cx);
+    float jy = 1.0 - smoothstep(0.07, 0.07 + wy * 2.2, fract(cy));
+    float jx = 1.0 - smoothstep(0.06, 0.06 + wx * 2.2, fract(cx));
+    float joint = max(jy, jx) * (1.0 - smoothstep(0.22, 0.5, max(wy, wx)));
+    wallP = mix(wallP, vec3(0.2, 0.15, 0.17), joint * 0.82);
+  }
   vec3 celWall = comicCelX(wallP, band, LITMUL, LITADD);
   vec3 green = vec3(0.5, 0.9, 0.25);
   vec3 warm = vec3(1.06, 1.0, 0.88);
@@ -467,7 +480,13 @@ vec3 wallColor(int k, float shop, float sd, float salt, float h1, float h2, floa
   if (glassy) {
     vec3 R = reflect(-V, N);
     skyR = skyAt(vec3(R.x, abs(R.y) * 0.5 + 0.07, R.z)) * mix(vec3(1.0), vec3(0.78, 0.9, 1.0), step(0.5, h3)) * (0.7 + 0.3 * min(band, 1.0));
-    mirror = k == 1 ? 0.3 : (fr == F_CURTAIN ? 0.65 : 0.55);
+    // Schlick 1994: a pane facing the camera stays a window, a grazing pane takes the sky
+    float fres = pow(1.0 - clamp(dot(N, V), 0.0, 1.0), 3.0);
+    float face = k == 1 ? 0.08 : 0.12;
+    float edge = k == 1 ? 0.7 : 1.0;
+    mirror = mix(face, edge, fres);
+    float glint = pow(clamp(dot(normalize(R), normalize(uSunDir)), 0.0, 1.0), 22.0);
+    skyR += vec3(1.0, 0.62, 0.28) * glint * fres * 0.55;
   }
   #endif
   // -- flat blocks: a window in each cell, flat lit or dark (also the look without the atlas)
