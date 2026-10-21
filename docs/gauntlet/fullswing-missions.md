@@ -120,3 +120,42 @@ Loop: missions, playability, controls, feel, UX, pacing and fun for In Full Swin
 - Delta vs last round: +1 (round 2 was 102). Sound design 4 → 5. Every other score held.
 
 ![Falling behind: the sticker names the runner and says FALLING BEHIND](fullswing-r3/falling-behind.png)
+
+### Round 4 — 2026-10-21 — rubric v1
+
+- What changed: On the ground, a swing button with no stick walks the hero toward the web at walking speed. W and the left stick still steer. A clog, a pipe, or the crack does not pull you. The hint, the training row, the spoken line, the title note and How to play name the swing button. They no longer ask for a forward hold.
+- Why it helped: The first lesson said HOLD W AND LEFT MOUSE, and a press on its own slid across the start roof and stopped. Spider-Man 2 starts the web from the swing button. In play at 1280×800, E alone left the roof in under 4 s with the rope still attached. The physics check measured 3.57 s. A rope on a clog stayed put.
+- Screenshots: `docs/gauntlet/fullswing-r4/roof.png` (the hint and the training row on the roof) and `docs/gauntlet/fullswing-r4/air.png` (in the air a moment later, rope out). No phone, pad, or headset was in this run.
+- Next target: variety (5), tied with sound design. Variety is the one to change next: after Mission 1 the story is twelve of the same clog. Sound just gained a click on the same groove.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 5 | Unchanged. Golden-hour sun and ink shadows. |
+| Color palette | 6 | Unchanged. Yellow, red and sludge green still separate the HUD from the blocks. |
+| Detail density | 4 | Unchanged. Open blocks more than a dressed borough. |
+| Texture and material quality | 3 | Unchanged. Flat fills. |
+| Composition and camera | 4 | Unchanged. The chase camera still leaves the runner and the swing low in the frame. |
+| Atmosphere | 5 | Unchanged. The dusk skyline has a mood. The street under the swing does not. |
+| Character models | 3 | Unchanged. Simple comic figures at this distance. |
+| Animation smoothness | 4 | Scored from still frames in software GL. The rope is out. Continuous motion was not watched. |
+| Particles and VFX | 4 | Unchanged. A rope line and the sticker. No hit or trail in this frame. |
+| UI polish | 6 | The hint and the training row now name one button, in the same ink and yellow. |
+| Responsiveness and input latency | 7 | Unchanged. The rope and the walk start on the stepped frame of the press. |
+| Controls feel | 6 | One button leaves the roof and the rope carries the swing. It is still hold-the-button and one arc, not a chained web swing. |
+| Mission clarity | 7 | Unchanged. The card and the sticker still name the runner, and the first row no longer asks for a second hold. |
+| Pacing | 6 | Unchanged. The lesson still waits, and Mission 2 is still twelve of the same clog. |
+| Fun factor | 6 | The first minute is a swing and then a chase. Starting it is one button now, and the minute is still that chase. |
+| Difficulty curve | 6 | Unchanged. The roof is no longer a stuck press. The runner is still the same jog. |
+| Feedback | 6 | Unchanged. The GO cue still shows while the rope drags along the roof. |
+| Sound design | 5 | Unchanged. The chase clock is the click from last round. This play ran with audio disabled. |
+| Variety | 5 | Unchanged. Odd jobs cover chase, carry, drive and fight. The story after Mission 1 does not. |
+| Performance stability | 6 | The one-button play and the physics checks passed with no page errors. Frame time on a real GPU was not measured. |
+
+- Aesthetics raw: 44 / 10 dimensions, index 44
+- Playability raw: 60 / 10 dimensions, index 60
+- Total: 104 / 200
+- Delta vs last round: +1 (round 3 was 103). Controls feel 5 → 6. Every other score held.
+
+![On the roof, the hint says left mouse or E to swing](fullswing-r4/roof.png)
+
+![A moment later the rope is out and the hero is off the roof](fullswing-r4/air.png)

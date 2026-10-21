@@ -1,0 +1,3 @@
+- [x] A swing button with no stick walks off the start roof, and a clog does not
+- [x] The hint, the training row and the title note name the button and not a forward hold
+- [x] A play at 1280 by 800 shows the roof, then the hero in the air on one button

@@ -214,7 +214,7 @@ try {
   check(meta.labelTouch === "PLAY WITH TOUCH", "#playFlat carries data-label-touch=\"PLAY WITH TOUCH\"", meta.labelTouch);
   check(meta.mouse && meta.mouse.text === "PLAY WITH MOUSE AND KEYBOARD" && meta.mouse.enter, "#playMouse reads PLAY WITH MOUSE AND KEYBOARD and is an enter button", meta.mouse);
   check(meta.notes.every((n) => n) && /Left thumb moves/.test(meta.notes[0]) && /Right thumb swings/.test(meta.notes[0]) && !/SWING/.test(meta.notes[0]), "#touchNote says the left thumb moves and the right thumb swings", meta.notes[0]);
-  check(/left mouse button/.test(meta.notes[1]) && /\bW\b/.test(meta.notes[1]) && /game pad/i.test(meta.notes[1]), "#deskNote names the left mouse button, W and the game pad", meta.notes[1]);
+  check(/left mouse button/.test(meta.notes[1]) && !/\bW\b/.test(meta.notes[1]) && /game pad/i.test(meta.notes[1]), "#deskNote names the left mouse button and the game pad", meta.notes[1]);
   check(/touch/i.test(meta.notes[2]) && /mouse/i.test(meta.notes[2]), "#hybridNote speaks to a device with touch and a mouse", meta.notes[2]);
   check(!meta.em, "no em dash on the page");
   // the behaviour, which agent A wires in wireTitle (a phone has no fine pointer here)

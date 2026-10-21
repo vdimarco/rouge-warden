@@ -375,9 +375,22 @@ export function step(P, h, inp) {
       const want = mvs.roll.minSpeed * (P.roll > 0 ? 1 : 0);
       if (hs > 1e-3 && hs * f < want) { const k = want / (hs * f); V.x *= k; V.z *= k; }
     } else {
-      const k = 1 - Math.exp(-c.ground.friction * h), run = c.ground.run * (mvs && inp && inp.sprint ? mvs.sprint : 1);
-      V.x += (mx * run - V.x) * k;
-      V.z += (mz * run - V.z) * k;
+      // A swing with no stick walks toward the web at run speed. The first swing was built as a walk off the
+      // start roof; friction used to eat a press that did not also hold forward, so the lesson asked for both.
+      let wx = mx, wz = mz;
+      if (ml <= 0.15) {
+        let best = 0, bx = 0, bz = 0;
+        for (const r of P.ropes) {
+          if ((r.state !== "attached" && r.state !== "flying") || r.sticky || (r.target && SPECIAL[r.target.tag])) continue;
+          const dx = r.anchor.x - pos.x, dz = r.anchor.z - pos.z, d = len2(dx, dz);
+          if (d > best) { best = d; bx = dx / d; bz = dz / d; }
+        }
+        // already faster than a walk toward the web: leave that speed alone (a phone launch, a running start)
+        if (best > 4 && V.x * bx + V.z * bz < c.ground.run) { wx = bx; wz = bz; }
+      }
+      const k = 1 - Math.exp(-c.ground.friction * h), run = c.ground.run * (mvs && inp && inp.sprint && ml > 0.15 ? mvs.sprint : 1);
+      V.x += (wx * run - V.x) * k;
+      V.z += (wz * run - V.z) * k;
     }
     V.y = 0;
     if (inp && inp.jump) { V.y = c.ground.jump; P.onGround = false; P.ground = null; }

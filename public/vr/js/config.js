@@ -206,7 +206,7 @@ export const GAME = {
 // order; the first is the gold ring, as in the spoken tutorial. A headset keeps the spoken tutorial. "of": a live count.
 export const TRAINING = {
   mouse: [
-    { id: "rope", text: "Swing at the gold ring", keys: ["HOLD W", "+ LEFT MOUSE"], line: 0 },
+    { id: "rope", text: "Swing at the gold ring", keys: ["LEFT MOUSE", "OR E"], line: 0 },
     { id: "swing", text: "Let go when the ring says GO", keys: ["RELEASE"], line: 1 },
     { id: "again", text: "Swing again before you land", keys: ["LEFT MOUSE", "OR E"], line: 2 },
     { id: "reel", text: "Reel in", keys: ["HOLD SHIFT"], line: 3 },
@@ -216,7 +216,7 @@ export const TRAINING = {
     { id: "plunge", text: "Plunge a clog: rope it, then pump", keys: ["F", "F", "F"], of: 3, line: 7 },
   ],
   pad: [
-    { id: "rope", text: "Swing at the gold ring", keys: ["LEFT STICK UP", "+ RT"], line: 0 },
+    { id: "rope", text: "Swing at the gold ring", keys: ["RT"], line: 0 },
     { id: "swing", text: "Let go when the ring says GO", keys: ["RELEASE RT"], line: 1 },
     { id: "again", text: "Swing again before you land", keys: ["RT"], line: 2 },
     { id: "reel", text: "Reel in", keys: ["HOLD LB"], line: 3 },
@@ -261,7 +261,7 @@ export const LINES_HANDS = {
 // Mouse and keys. The game picks the building, so the lines say look at it and let go when the ring says GO.
 export const LINES_DESKTOP = {
   intro: ["Shoes off. Plunger up.", "Hear that? Something is backing up.", "Aim at the crack. Hold the left mouse button.", "Now press F to yank.", "Clear the space around you.", "Give yourself some room.", "The toilet is overflowing! Aim at it. Hold the left mouse button.", "Now press F to yank. Hold on!"],
-  tutorial: ["Look at the gold ring. Hold W and the left mouse button.", "Swing out. Let go when the ring says GO.", "Swing again before you land.", "Hold Shift to reel in.", "Press F to yank.", "Move the mouse to look around.", "Your score is at the top of the screen.", "That green light is a clog. Look at it and swing."],
+  tutorial: ["Look at the gold ring. Hold the left mouse button.", "Swing out. Let go when the ring says GO.", "Swing again before you land.", "Hold Shift to reel in.", "Press F to yank.", "Move the mouse to look around.", "Your score is at the top of the screen.", "That green light is a clog. Look at it and swing."],
   clog: ["That's a clog. Look at it and swing.", "Press F three times to pump.", "Flushed.", "The city thanks you. Quietly."],
   king: LINES.king, splash: LINES.splash,
   wall: ["On the wall. W and S climb, A and D go along it. Space jumps off."],
@@ -269,7 +269,7 @@ export const LINES_DESKTOP = {
 // A game pad. The words fit an Xbox pad and a PlayStation pad: trigger, bumper, stick and "the bottom button".
 export const LINES_PAD = {
   intro: ["Shoes off. Plunger up.", "Hear that? Something is backing up.", "Aim at the crack. Hold the right trigger.", "Now press the right bumper to yank.", "Clear the space around you.", "Give yourself some room.", "The toilet is overflowing! Aim at it. Hold the right trigger.", "Now press the right bumper to yank. Hold on!"],
-  tutorial: ["Look at the gold ring. Hold the left stick up and the right trigger.", "Swing out. Let go when the ring says GO.", "Swing again before you land.", "Hold the left bumper to reel in.", "Press the right bumper to yank.", "Push the right stick to look around.", "Your score is at the top of the screen.", "That green light is a clog. Look at it and swing."],
+  tutorial: ["Look at the gold ring. Hold the right trigger.", "Swing out. Let go when the ring says GO.", "Swing again before you land.", "Hold the left bumper to reel in.", "Press the right bumper to yank.", "Push the right stick to look around.", "Your score is at the top of the screen.", "That green light is a clog. Look at it and swing."],
   clog: ["That's a clog. Look at it and swing.", "Press the right bumper three times to pump.", "Flushed.", "The city thanks you. Quietly."],
   king: LINES.king, splash: LINES.splash,
   wall: ["On the wall. Push the left stick to climb. Press the bottom button to jump off."],
