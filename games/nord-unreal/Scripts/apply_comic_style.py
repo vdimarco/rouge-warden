@@ -72,9 +72,10 @@ float3 Chroma = Color / max(Lum, 1.0e-3);
 Color = saturate(Chroma * Light);
 float L2 = dot(Color, float3(0.299, 0.587, 0.114));
 Color = saturate(lerp(L2.xxx, Color, Saturation));
-// Shadows read as a cool sky wash, never as black and never as violet.
+// Shadows on the city read as a cool sky wash, never as black and never as violet.
+// Printed crew skips that wash. It was repainting dark cloth before the key.
 float ShadowAmount = 1.0 - smoothstep(0.04, 0.32, L2);
-Color += float3(0.05, 0.07, 0.11) * ShadowAmount * (Sky ? 0.0 : 1.0) * lerp(1.0, 0.35, NovelCrew);
+Color += float3(0.05, 0.07, 0.11) * ShadowAmount * (Sky ? 0.0 : 1.0) * (1.0 - PrintedCrew);
 L2 = dot(Color, float3(0.299, 0.587, 0.114));
 
 // Ben-Day dots on a 45 degree screen: bigger in shade, absent from the sky.
@@ -93,12 +94,13 @@ Color = lerp(Color, float3(0.03, 0.04, 0.07), Hatch * (Sky ? 0.0 : 0.12) * (1.0 
 
 // The crew material is an emissive fill, so the body has no directional shade. Half-lambert
 // (Mitchell, Francke, Eng, Team Fortress 2, 2007) gives a lit side from the afternoon sun.
-// The city is left alone: PrintedCrew is 0 there.
+// The value range matches the old key's luminance. The multiply stays a scalar so a warm-dark
+// tee does not pick up the blue shadow colour. The city is left alone: PrintedCrew is 0 there.
 float3 ToSun = normalize(float3(-0.62, -0.48, 0.62));
 float Half = saturate(dot(NormalC, ToSun) * 0.5 + 0.5);
 Half *= Half;
-float3 Key = lerp(float3(0.62, 0.70, 0.86), float3(1.16, 1.06, 0.94), Half);
-Color = lerp(Color, saturate(Color * Key), PrintedCrew);
+float CrewShade = lerp(0.70, 1.08, Half);
+Color = lerp(Color, saturate(Color * CrewShade), PrintedCrew);
 // Broad grazing rim from the same paper. The upward-only term sat inside the key
 // and did not separate the figure, so the edge follows (1 - n·v)^4 around the silhouette.
 float3 ToEye = -normalize(View.ViewForward);

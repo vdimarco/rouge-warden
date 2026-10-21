@@ -703,3 +703,38 @@ Unreal is not available in this environment, so in-engine frames are the last co
 - Playability raw: 39 / 10 dimensions, index 39
 - Total: 94 / 200
 - Delta vs last round: +1
+
+### Round 21 — 2026-10-21 — rubric v1
+
+- What changed: printed crew skips the cool shadow wash. The half-lambert multiply is a scalar from 0.70 to 1.08, the luminance of the old blue-to-warm key. The rim stays. The city wash stays.
+- Why it helped: Character models were at 5. The coloured key and the wash pushed a warm-dark tee toward indigo.
+- Screenshots: before `docs/gauntlet/gta-graphics/round-21/before-crew.png`, after `docs/gauntlet/gta-graphics/round-21/after-crew.png`. These are a 3× nearest crop of a walking-camera shade at pitch −12 and yaw 180, using the measured CurlyMetalhead tee albedo. Full frames are `before-frame.png` and `after-frame.png`. Not an Unreal capture. Shirt mean went from (0.146, 0.131, 0.165) to (0.125, 0.086, 0.073), so blue dropped below red. `Scripts/test_crew_colour.py` passed. `Scripts/test_plateau_trees.py` passed. `Scripts/test_horizon_haze.py` passed. `GET /gta/` returned 200. OpenSpec CLI is not installed, so the change files were not validated with `openspec`.
+- Next target: UI polish. The street panel is still one flat fill, and a mark on that panel can be shaded offline without changing mission text. Animation smoothness stays at 3 and is skipped until a pose can be drawn.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 6 | The city wash is unchanged. The crew shade uses the old key's value range. |
+| Color palette | 6 | Brick and stone hues are unchanged. |
+| Detail density | 6 | Troughs, rails, and doors are unchanged. |
+| Texture and material quality | 6 | The mottled face is unchanged. |
+| Composition and camera | 6 | The walking socket is unchanged. |
+| Atmosphere | 6 | The horizon fade is unchanged. |
+| Character models | 6 | A warm-dark tee stays warm in shade, and skin stays warm in the light. The shaded figure is still an ellipsoid stand-in. |
+| Animation smoothness | 3 | Skipped. The blend space still cannot be posed here. |
+| Particles and VFX | 6 | Rain rings are unchanged. |
+| UI polish | 5 | Untouched. |
+| Responsiveness and input latency | 4 | Not measured this round. |
+| Controls feel | 4 | Not played. |
+| Mission clarity | 5 | Unchanged objective card. |
+| Pacing | 4 | Unchanged mission slice. |
+| Fun factor | 3 | Not played. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 4 | No new juice. |
+| Sound design | 3 | Not listened to. |
+| Variety | 3 | One district. |
+| Performance stability | 5 | The comic source tests passed. The shade is a scalar on the existing crew mask. Frame time was not remeasured. |
+
+- Aesthetics raw: 56 / 10 dimensions, index 56
+- Playability raw: 39 / 10 dimensions, index 39
+- Total: 95 / 200
+- Delta vs last round: +1
