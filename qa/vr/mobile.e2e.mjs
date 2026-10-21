@@ -185,14 +185,49 @@ try {
  const upright=await page.evaluate(()=>({w:innerWidth,h:innerHeight,aspect:G.camera.aspect}));
  assert(upright.w===390&&upright.h===844&&upright.aspect<.5,'the page is upright at 390x844 '+JSON.stringify(upright));
  const standAt=at=>page.evaluate(({roof,turn})=>{const s=G.city.safe[roof];G.test.press(1,false);G.test.aimAt(1,null);G.desktop.mobile.reset();G.test.teleport(s.x,s.y,s.z);G.rigYaw=G.city.start.yaw+turn*Math.PI/4;G.test.step(1/60,90);},at);
- const findAt=async()=>{
-  const roofs=await page.evaluate(()=>G.city.safe.length);
+ // The old search stood on every safe roof, eight ways around, and each stand was its own browser call plus 90 frames.
+ // On a narrow phone that walked the whole list and the 180 s job ended before a tap. One pass stops at the first roof
+ // and turn that show two buildings off the centre. The tap below still settles for the full 90 frames.
+ const findAt=()=>page.evaluate(()=>{
+  const c=G.city,cam=G.camera,V3=cam.position.constructor,roofs=c.safe.length;
+  const scan=(skip,minA)=>{
+   cam.updateMatrixWorld(true);
+   const f=Math.tan(cam.fov*Math.PI/360),h0=G.test.state().head,cen=G.test.aim(1),found=[];
+   const ray=(nx,ny,far)=>{const d=new V3(nx*f*cam.aspect,ny*f,-1).normalize().applyQuaternion(cam.quaternion);return c.raycast(cam.position.x,cam.position.y,cam.position.z,d.x,d.y,d.z,far,{});};
+   const mid=ray(0,0,400);
+   skip=skip.concat(cen?[cen.id]:[],mid&&mid.collider?[mid.collider.id]:[]);
+   for(let a=minA;a<=.9;a+=.05)for(let ny=-.3;ny<=.7;ny+=.1){
+    const nx=a,h=ray(nx,ny,90);
+    if(!h||h.collider.tag!=='building'||skip.includes(h.collider.id)||Math.abs(h.ny)>.5||h.y<h0.y+4)continue;
+    const dx=h.x-h0.x,dy=h.y-h0.y,dz=h.z-h0.z,l=Math.hypot(dx,dy,dz);
+    if(l<20||l>80)continue;
+    const g=c.raycast(h0.x,h0.y,h0.z,dx/l,dy/l,dz/l,l+2,{});
+    if(!g||g.collider.id!==h.collider.id)continue;
+    const px=(nx*.5+.5)*innerWidth,py=(.5-ny*.5)*innerHeight;
+    if(document.elementFromPoint(px,py)!==G.renderer.domElement)continue;
+    found.push({id:h.collider.id});
+   }
+   return found[found.length>>1]||null;
+  };
+  let tried=0;
   for(let roof=0;roof<roofs;roof++)for(let turn=0;turn<8;turn++){
-   await standAt({roof,turn});
-   const a=await pick([]);if(a&&await pick([a.id],.1))return {roof,turn};
+   tried++;
+   const s=c.safe[roof];
+   G.test.press(1,false);G.test.aimAt(1,null);G.desktop.mobile.reset();
+   G.test.teleport(s.x,s.y,s.z);G.rigYaw=G.city.start.yaw+turn*Math.PI/4;
+   if(G.flatcam&&G.flatcam.settle)G.flatcam.settle();
+   let dist=-1;
+   for(let i=0;i<36;i++){
+    G.test.step(1/60,1);
+    const d=G.test.flat().dist;
+    if(i>10&&Math.abs(d-dist)<0.05)break;
+    dist=d;
+   }
+   const a=scan([],.4);
+   if(a&&scan([a.id],.1))return {roof,turn,tried,roofs};
   }
-  return null;
- };
+  return {roof:-1,turn:-1,tried,roofs};
+ });
  const uprightTap=async(label,at)=>{
   await standAt(at);
   // the first tap starts from no rope: a tap with a rope out is the switch, which the next step checks
@@ -207,7 +242,8 @@ try {
   assert(r.id===t.id&&miss<8,label+': the rope anchors on the tapped building, not the centre target '+JSON.stringify({tapped:t.id,centre:t.centre,got:r.id,miss,nx:t.nx,ny:t.ny}));
   return t;
  };
- const at3=await findAt();assert(at3,'portrait third person: a roof and a turn show two buildings off the screen centre');
+ const at3=await findAt();assert(at3&&at3.roof>=0,'portrait third person: a roof and a turn show two buildings off the screen centre '+JSON.stringify(at3));
+ console.log('portrait search, third person',JSON.stringify(at3));
  const ptp=await uprightTap('portrait third person',at3);console.log('PASS tap a building off the screen centre in portrait, third person',JSON.stringify({...at3,nx:+ptp.nx.toFixed(2),ny:+ptp.ny.toFixed(2),id:ptp.id}));
  // with a rope attached, a tap on another building off the centre switches to that building
  const pcur=await page.evaluate(()=>G.test.state().ropes[window.__side].id);
@@ -217,7 +253,8 @@ try {
  assert(psw.state==='attached'&&psw.id===pt2.id,'portrait: a tap on another building switches the rope to it '+JSON.stringify({want:pt2.id,got:psw}));
  console.log('PASS tap another building to switch ropes in portrait');
  await page.evaluate(()=>{G.test.press(1,false);G.flatcam.setFirstPerson(true);G.test.step(1/60,60);});
- const at1=await findAt();assert(at1,'portrait first person: a roof and a turn show two buildings off the screen centre');
+ const at1=await findAt();assert(at1&&at1.roof>=0,'portrait first person: a roof and a turn show two buildings off the screen centre '+JSON.stringify(at1));
+ console.log('portrait search, first person',JSON.stringify(at1));
  const pfp=await uprightTap('portrait first person',at1);console.log('PASS tap a building off the screen centre in portrait, first person',JSON.stringify({...at1,nx:+pfp.nx.toFixed(2),ny:+pfp.ny.toFixed(2),id:pfp.id}));
  await page.evaluate(()=>{G.flatcam.setFirstPerson(false);G.test.step(1/60,30);});
  // back to landscape for the checks below
