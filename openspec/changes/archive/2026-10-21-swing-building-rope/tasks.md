@@ -1,0 +1,3 @@
+- [x] The first web from the air attaches to a building the hero can hang under
+- [x] That rope is about as long as the distance, and the swing does not hit the wall
+- [x] Over open water the web stays in the sky, and a held swing still catches a different building

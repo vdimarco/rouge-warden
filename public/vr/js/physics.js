@@ -286,7 +286,10 @@ function attach(P, r) {
     const H = r.easyH || c.bodyH || SWING.bodyH;
     const gy = P.city.isWater(P.pos.x, P.pos.z) ? 0 : P.city.groundY(P.pos.x, P.pos.z);
     const maxL = r.anchor.y - P.chest - (gy + 1.5 * H);
-    L = Math.min(d, 16 * H);
+    // A sky rope stays inside 16 body-heights. A building rope is the real distance, so the hero starts
+    // on the sphere instead of flying past a short rope into the wall. The ground line still caps both.
+    const sky = r.target && r.target.tag === "sky";
+    L = sky ? Math.min(d, 16 * H) : d;
     if (L > maxL) L = maxL;
     L = Math.max(c.minRopeLen, L);
     target = L;
@@ -360,7 +363,8 @@ function keepClear(P, r) {
   if (!r.easy) return;
   const H = r.easyH || SWING.bodyH;
   const gy = P.city.isWater(P.pos.x, P.pos.z) ? 0 : P.city.groundY(P.pos.x, P.pos.z);
-  const cap = Math.min(r.len, 16 * H, r.anchor.y - P.chest - (gy + 1.5 * H));
+  const span = r.target && r.target.tag === "sky" ? 16 * H : Infinity;
+  const cap = Math.min(r.len, span, r.anchor.y - P.chest - (gy + 1.5 * H));
   const L = Math.max(P.cfg.minRopeLen, cap);
   if (r.len > L) { r.len = L; r.lenTarget = Math.min(r.lenTarget, L); r.stretch = 0; }
 }

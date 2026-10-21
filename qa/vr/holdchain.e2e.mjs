@@ -52,8 +52,8 @@ try {
       const ids = [...new Set(builds.map((e) => e.id))];
       if (ids.length >= 2 && log.some((e) => e.t === "detach")) break;
     }
-    window.dispatchEvent(new KeyboardEvent("keyup", { code: "KeyE" }));
     G.test.render(0);
+    window.dispatchEvent(new KeyboardEvent("keyup", { code: "KeyE" }));
     const attaches = log.filter((e) => e.t === "attach");
     const first = attaches[0] || null;
     const building = attaches.find((e) => e.tag === "building" && first && e.id !== first.id) || null;
@@ -71,6 +71,7 @@ try {
   console.log("chain", JSON.stringify({ frames: held.frames, cue: held.cue, wallAt: held.wallAt, first: held.first, building: held.building, fires: held.fires, y: held.y, log: held.log }));
   const gap = held.building && held.log ? held.building.frame - (held.log.find((e) => e.t === "detach") || {}).frame : null;
   check(held.first && held.building && held.building.bid !== held.first.bid && gap != null && gap < 90, "holding E through the cue catches a different building", { ...held, gap });
+  check(held.first && held.first.tag === "building" && held.wallAt < 0, "the first web is a building and the swing does not hit the wall", held);
   check(held.ups === 0 && held.drys === 0 && held.fires >= 2, "the next web is not a new press and not a dry fire", held);
 
   await page.keyboard.up("KeyE");

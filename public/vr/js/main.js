@@ -1581,11 +1581,29 @@ function easyDir() {
     easyDx = -Math.sin(yaw); easyDz = -Math.cos(yaw);
   }
 }
+function aimCopy(a) {
+  return { x: a.x, y: a.y, z: a.z, nx: a.nx, ny: a.ny, nz: a.nz, tag: a.tag, id: a.id, bid: a.bid, easy: true, easyH: a.easyH, sky: !!a.sky, valid: true, same: false, special: false };
+}
+// A building the hero can hang under: the rope is the real distance, and the bottom of that arc stays 1.5 body-heights up.
+function canHang(a) {
+  if (!a || a.sky || a.tag !== "building") return false;
+  const H = a.easyH || SWING.bodyH;
+  const d = Math.hypot(a.x - P.pos.x, a.y - (P.pos.y + P.chest), a.z - P.pos.z);
+  const gy = city.isWater(P.pos.x, P.pos.z) ? 0 : city.groundY(P.pos.x, P.pos.z);
+  return d <= a.y - P.chest - (gy + 1.5 * H);
+}
 function playerEasy() {
   easyDir();
-  const a = easyAnchor(P, easyDx, easyDz);
-  if (a.sky) { fillCam(); for (let n = 0; n < 8 && project(CAM, a.x, a.y, a.z, PROJ).inView; n++) a.y += a.easyH * 3; }
-  return a;
+  const tries = [undefined, { up: 8, ahead: 20, reach: 10 }, { up: 4, ahead: 34, reach: 16 }];
+  let sky = null;
+  for (let t = 0; t < tries.length; t++) {
+    const a = easyAnchor(P, easyDx, easyDz, tries[t]);
+    if (!a || a.sky) { if (a && a.sky && !sky) sky = aimCopy(a); continue; }
+    if (canHang(a)) return aimCopy(a);
+  }
+  if (!sky) sky = aimCopy(easyAnchor(P, easyDx, easyDz));
+  if (sky.sky) { fillCam(); for (let n = 0; n < 8 && project(CAM, sky.x, sky.y, sky.z, PROJ).inView; n++) sky.y += sky.easyH * 3; }
+  return sky;
 }
 function aimAndFire(dt, inp) {
   if (driving) return;
@@ -1675,7 +1693,7 @@ function chainAim(i) {
   const tries = [{ avoid }, { avoid, up: 8, ahead: 20, reach: 10 }, { avoid, up: 4, ahead: 34, reach: 16 }];
   for (let t = 0; t < tries.length; t++) {
     const a = easyAnchor(P, easyDx, easyDz, tries[t]);
-    if (a && !a.sky && a.tag === "building" && a.bid !== avoid) return a;
+    if (a && !a.sky && a.tag === "building" && a.bid !== avoid && canHang(a)) return a;
   }
   return null;
 }
