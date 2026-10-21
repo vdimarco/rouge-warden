@@ -197,7 +197,7 @@ export const GAME = {
   clogRadius: 2.5,
   loonieRadius: 2.2,
   looniesPerFlush: 5,
-  king: { unlock: 12, pipes: 3, hearts: 3, throwEvery: 3.5, windUp: 1, ballSpeed: 14, ballGravity: 4, ballRadius: 0.5, hitRadius: 0.3, grace: 3, firstDelay: 5, height: 16, reactAt: [4, 8] },
+  king: { unlock: 12, pipes: 3, hearts: 3, throwEvery: 3.5, windUp: 1, ballSpeed: 14, ballGravity: 4, ballRadius: 0.5, hitRadius: 0.3, grace: 3, firstDelay: 5, height: 16, reactAt: [4, 8], stompRadius: 28 },
   bankMax: 140,
   unlocks: { stripe: 30, cup: 60, launcher: 100, fireworks: 140 },
   tutorialRepeat: 8, tutorialTimeout: 30,
