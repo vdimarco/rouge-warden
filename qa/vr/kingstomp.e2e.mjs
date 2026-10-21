@@ -1,4 +1,4 @@
-// After a pipe is off, the King throws, then stomps the deck, then pulls, then belches on a spot. A stomp costs a heart on the ground and none in the air. A pull drags an airborne hero with no rope, and costs a heart inside 16 m. A rope or the ground holds. A belch costs a heart only when you are still standing on the spot.
+// After a pipe is off, the King throws, then stomps the deck, then pulls, then belches on a spot, then sweeps a lane. A stomp costs a heart on the ground and none in the air. A pull drags an airborne hero with no rope, and costs a heart inside 16 m. A rope or the ground holds. A belch costs a heart only when you are still standing on the spot. A sweep costs a heart in that lane, on the ground or in the air. A step outside the lane does not.
 import { mkdir } from "node:fs/promises";
 import { newPage, open, close, enterXR, checker, watchdog } from "./lib.mjs";
 
@@ -108,6 +108,28 @@ try {
   await page.screenshot({ path: out + "/belch.png" });
   check(belch.pulls > 0 && belch.kind === "belch" && belch.mark && /belching/i.test(belch.detail) && /spot/i.test(belch.detail) && belch.dom === belch.detail, "the attack after that pull is a belch, and the card says to leave the spot", belch);
 
+  const sweep = await page.evaluate(() => {
+    G.game.progress.hearts = 3;
+    G.test.step(1 / 60, 70);
+    const belches = G.game.info().king.belches;
+    G.game.kingReady();
+    let kind = "", wind = 0, detail = "", dom = "", lane = null;
+    for (let i = 0; i < 10; i++) {
+      G.test.step(1 / 60, 1);
+      const k = G.game.info().king;
+      kind = k.kind; wind = k.windT; lane = k.lane;
+      const ob = G.game.progress.objective;
+      detail = ob ? ob.detail : "";
+      const sm = document.querySelector(".fs-mission small");
+      dom = sm ? sm.textContent : "";
+      if (kind === "sweep" && wind > 0 && /sweeping/i.test(detail) && /aside/i.test(dom)) break;
+    }
+    G.test.render(0);
+    return { belches, kind, wind, detail, dom, lane, turn: G.game.info().king.turn };
+  });
+  await page.screenshot({ path: out + "/sweep.png" });
+  check(sweep.belches > 0 && sweep.kind === "sweep" && sweep.lane != null && /sweeping/i.test(sweep.detail) && /aside/i.test(sweep.detail) && sweep.dom === sweep.detail, "the attack after that belch is a sweep, and the card says to step aside", sweep);
+
   const ground = await page.evaluate(() => {
     const m = G.game.info().king.mouth, d = G.game.info().deck;
     G.test.teleport(m[0], d.y, m[2]);
@@ -164,26 +186,34 @@ try {
         wall: G.P.wall, run: G.P.wallRun,
       };
     };
-    place(20, d.y + 12, false, false);
+    place(20, m[1] + 1, false, false);
     const close = release();
-    place(40, d.y + 12, false, false);
+    place(40, m[1] + 1, false, false);
     const far = release();
     place(8, d.y, true, false);
     const decked = release();
-    place(8, d.y + 12, false, true);
+    place(20, m[1] + 1, false, true);
     const held = release();
-    place(20, d.y + 12, false, false);
+    place(20, m[1] + 1, false, false);
     G.P.wall = { nx: 1, nz: 0 };
     G.P.wallRun = { dir: 1, speed: 6 };
     G.game.progress.hearts = 3;
     const clung = release();
-    return { close, far, decked, held, clung };
+    place(24, d.y + 8, false, false);
+    G.game.progress.hearts = 3;
+    const hull = release();
+    G.P.frozen = false;
+    const x0 = G.P.pos.x, z0 = G.P.pos.z;
+    G.test.step(1 / 60, 8);
+    hull.snap = Math.hypot(G.P.pos.x - x0, G.P.pos.z - z0);
+    return { close, far, decked, held, clung, hull };
   });
   check(yanked.close.pulls > yanked.close.was && yanked.close.moved > 13 && yanked.close.moved < 15 && yanked.close.dist < yanked.close.from && yanked.close.dist <= 16 && yanked.close.hearts === yanked.close.before - 1, "a pull in the air with no web drags you in and takes a heart inside 16 m", yanked.close);
   check(yanked.far.pulls > yanked.far.was && yanked.far.moved > 13 && yanked.far.moved < 15 && yanked.far.dist > 16 && yanked.far.hearts === yanked.far.before, "the same pull from farther away still drags you, and takes no heart past 16 m", yanked.far);
   check(yanked.decked.ground && yanked.decked.moved < 0.05 && yanked.decked.hearts === yanked.decked.before, "a pull on the ground leaves you where you are", yanked.decked);
   check(yanked.held.rope === "attached" && yanked.held.moved < 0.05 && yanked.held.hearts === yanked.held.before, "a rope holds against the pull", yanked.held);
   check(yanked.clung.pulls > yanked.clung.was && yanked.clung.moved > 13 && yanked.clung.moved < 15 && yanked.clung.wall == null && yanked.clung.run == null && yanked.clung.hearts === yanked.clung.before - 1, "a pull lets go of a wall and still drags you in", yanked.clung);
+  check(yanked.hull.moved > 0.5 && yanked.hull.moved < 12 && yanked.hull.dist > 14 && yanked.hull.hearts === yanked.hull.before && yanked.hull.snap < 1, "a pull beside the pod stops at the tower", yanked.hull);
 
   const spat = await page.evaluate(() => {
     const d = G.game.info().deck;
@@ -223,6 +253,50 @@ try {
   check(spat.hit.ground && spat.hit.dist <= 8 && spat.hit.belches > spat.hit.was && spat.hit.hearts === spat.hit.before - 1, "a belch on the marked spot takes a heart", spat.hit);
   check(spat.clear.ground && spat.clear.dist > 8 && spat.clear.belches > spat.clear.was && spat.clear.hearts === spat.clear.before, "leaving the spot keeps the heart", spat.clear);
   check(!spat.air.ground && spat.air.dist <= 8 && spat.air.belches > spat.air.was && spat.air.hearts === spat.air.before, "the same belch in the air takes no heart", spat.air);
+
+  const lane = await page.evaluate(() => {
+    const p = G.game.info().king.perch, d = G.game.info().deck;
+    G.game.progress.hearts = 3;
+    const stand = (x, z, y, ground) => {
+      G.test.teleport(x, y, z);
+      G.P.frozen = true;
+      G.P.onGround = ground;
+      G.P.vel.x = G.P.vel.y = G.P.vel.z = 0;
+    };
+    const release = () => {
+      const before = { hearts: G.game.progress.hearts, x: G.P.pos.x, z: G.P.pos.z, sweeps: G.game.info().king.sweeps };
+      const heading = G.game.info().king.lane;
+      G.test.step(1 / 60, 70);
+      const dx = G.P.pos.x - p[0], dz = G.P.pos.z - p[2];
+      let ang = Math.atan2(dz, dx) - (heading == null ? 0 : heading);
+      ang = Math.atan2(Math.sin(ang), Math.cos(ang));
+      return {
+        before: before.hearts, hearts: G.game.progress.hearts,
+        sweeps: G.game.info().king.sweeps, was: before.sweeps,
+        moved: Math.hypot(G.P.pos.x - before.x, G.P.pos.z - before.z),
+        dist: Math.hypot(dx, dz), ang, ground: G.P.onGround,
+      };
+    };
+    stand(p[0] + 20, p[2], d.y, true);
+    G.game.kingWind("sweep");
+    const hit = release();
+    stand(p[0] + 20, p[2], d.y, true);
+    G.game.kingWind("sweep");
+    stand(p[0] + 20, p[2] + 14, d.y, true);
+    const aside = release();
+    stand(p[0] + 20, p[2], d.y, true);
+    G.game.kingWind("sweep");
+    stand(p[0] + 50, p[2], d.y, true);
+    const far = release();
+    stand(p[0] + 20, p[2], d.y + 10, false);
+    G.game.kingWind("sweep");
+    const air = release();
+    return { hit, aside, far, air };
+  });
+  check(lane.hit.ground && lane.hit.dist <= 36 && Math.abs(lane.hit.ang) <= 0.45 && lane.hit.sweeps > lane.hit.was && lane.hit.moved < 0.05 && lane.hit.hearts === lane.hit.before - 1, "a sweep in the lane takes a heart", lane.hit);
+  check(lane.aside.ground && lane.aside.dist <= 36 && Math.abs(lane.aside.ang) > 0.45 && lane.aside.sweeps > lane.aside.was && lane.aside.hearts === lane.aside.before, "a step out of the lane keeps the heart", lane.aside);
+  check(lane.far.ground && lane.far.dist > 36 && lane.far.sweeps > lane.far.was && lane.far.hearts === lane.far.before, "the same heading past his reach keeps the heart", lane.far);
+  check(!lane.air.ground && lane.air.dist <= 36 && Math.abs(lane.air.ang) <= 0.45 && lane.air.sweeps > lane.air.was && lane.air.hearts === lane.air.before - 1, "a jump in the lane still takes a heart", lane.air);
 
   check(!page.errors.length, "no page errors", page.errors);
 } finally {
