@@ -278,7 +278,7 @@ Loop: missions, playability, controls, feel, UX, pacing and fun for In Full Swin
 ### Round 8 — 2026-10-21 — rubric v1
 
 - What changed: On mouse and pad, letting go of a building rope while you are already moving at least 8 m/s carries the swing: 2.2 m/s along the flight and 1.6 m/s up. It does not cancel a fall and it does not flip the hero. The GO cue still does the larger boost and the flip. Under 8 m/s, a let-go is still just a let-go. The phone's own release is unchanged.
-- Why it helped: A swing died when you let go outside the GO window, so each arc was one hold and a drop. Spider-Man 2 keeps a moving web flying into the next one. A 1280×800 play let go while falling, outside the cue, already at about 21 m/s across the rope. The carry added 2.2 m/s, the fall continued, and the pose stayed swing. A near-still let-go added nothing.
+- Why it helped: A swing died when you let go outside the GO window, so each arc was one hold and a drop. Spider-Man 2 keeps a moving web flying into the next one. A 1280×800 play let go while falling, outside the cue, already moving across the rope. The carry added 2.2 m/s, the fall continued, and the pose stayed swing. A near-still let-go added nothing.
 - Screenshots: `docs/gauntlet/fullswing-r8/carry.png`.
 - Next target: difficulty curve (6), tied with sound and performance. Difficulty is the one to change next: the thief is still the same jog, and a miss is still a toast. Sound was not listened to. Performance still has no real-GPU frame time.
 

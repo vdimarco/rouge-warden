@@ -33,10 +33,11 @@ try {
       G.test.step(1 / 60, 1);
       if (G.P.ropes[0].state === "attached") { attached = true; break; }
     }
-    // falling, and fast across the rope: outside the GO window, which needs a rise. Along the rope the web would eat the speed.
+    // leave the GO window if the attach frame was already in it, then fall across the rope.
+    // Do not step after that: a held easy rope turns a fall into a rise in one frame.
+    for (let c = 0; c < 40 && G.test.action().cueAir[0]; c++) G.test.step(1 / 60, 1);
     const A = G.P.ropes[0].anchor, cx = G.P.pos.x - A.x, cz = G.P.pos.z - A.z, d = Math.hypot(cx, cz) || 1;
     G.P.vel.x = -cz / d * 14; G.P.vel.z = cx / d * 14; G.P.vel.y = -8; G.P.onGround = false;
-    G.test.step(1 / 60, 1);
     const cue = !!G.test.action().cueAir[0];
     const before = G.test.events().length;
     const hs0 = Math.hypot(G.P.vel.x, G.P.vel.z), vy0 = G.P.vel.y;
@@ -44,7 +45,7 @@ try {
   }, carry.yaw);
   await page.mouse.up();
   const flew = await page.evaluate((armed) => {
-    G.test.step(1 / 60, 3);
+    G.test.step(1 / 60, 2);
     G.test.render(0.05);
     const ev = G.test.events().slice(armed.before);
     const b = ev.find((e) => e.type === "boost");
@@ -66,14 +67,15 @@ try {
     G.test.teleport(S.x, S.y + 30, S.z);
     G.rigYaw = yaw; G.desktop.level(0); G.flatcam.reset(yaw);
     G.P.onGround = false; G.P.vel.x = G.P.vel.y = G.P.vel.z = 0;
-    G.test.step(1 / 60, 5);
+    G.test.step(1 / 60, 50); // the carry's cooldown, with no rope out
     return { yaw };
   });
   await page.mouse.down();
   await page.evaluate(() => {
     for (let n = 0; n < 90 && G.P.ropes[0].state !== "attached"; n++) G.test.step(1 / 60, 1);
-    G.P.vel.x = G.P.vel.z = 0; G.P.vel.y = -4; G.P.onGround = false;
-    G.test.step(1 / 60, 1);
+    for (let c = 0; c < 40 && G.test.action().cueAir[0]; c++) G.test.step(1 / 60, 1);
+    // a held rope speeds up in one frame, so the slow drop is set and let go without another held step
+    G.P.vel.x = G.P.vel.z = 0; G.P.vel.y = -2; G.P.onGround = false;
   });
   await page.mouse.up();
   const still = await page.evaluate(() => {
