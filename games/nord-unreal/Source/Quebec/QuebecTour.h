@@ -3,7 +3,7 @@
 // Engine-independent rules for mission 9, the tour across the park.
 // No Unreal includes, so Scripts/test_tour.py can build this with the system compiler.
 // Ride the park bike to the east mark, paddle the pedalo to the north buoy, then swim to the south float.
-// TourStep is session state. The v1 save still stores CompletedMissions 0–2.
+// TourStep is stored on the version-3 tail. A version-1 slot still stores CompletedMissions 0–2 and starts this beat over.
 // The seven story banks stay seven. This tour pays a flat purse and does not take a chain link.
 
 #include "QuebecCycle.h"

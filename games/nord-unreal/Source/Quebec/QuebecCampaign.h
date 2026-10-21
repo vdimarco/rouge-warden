@@ -34,10 +34,19 @@ class QUEBEC_API UQuebecCampaignSaveGame : public USaveGame
 public:
     UPROPERTY(VisibleAnywhere) int32 Version = 0;
     UPROPERTY(VisibleAnywhere) int32 CompletedMissions = -1;
-    bool IsSupported() const { return Version == 1 && CompletedMissions >= 0 && CompletedMissions <= 2; }
+    // Story tail. A version-1 slot leaves these at 0. Version 3 writes them. Version 2 is never written.
+    UPROPERTY(VisibleAnywhere) int32 PondStep = 0;
+    UPROPERTY(VisibleAnywhere) int32 CourtStep = 0;
+    UPROPERTY(VisibleAnywhere) int32 ShowStep = 0;
+    UPROPERTY(VisibleAnywhere) int32 RescueMask = 0;
+    UPROPERTY(VisibleAnywhere) int32 ConvoyStep = 0;
+    UPROPERTY(VisibleAnywhere) int32 BlankStep = 0;
+    UPROPERTY(VisibleAnywhere) int32 TourStep = 0;
+    UPROPERTY(VisibleAnywhere) int32 HomeStep = 0;
+    bool IsSupported() const;
 };
 
-/** Story encounters. All objective decisions run on authority. Missions 3, 4 and 5 are session state on top of a finished race. */
+/** Story encounters. All objective decisions run on authority. Missions 3 through 10 persist on the version-3 tail. Completed missions stay 0–2. */
 UCLASS()
 class QUEBEC_API AQuebecCampaign : public AActor
 {
@@ -74,8 +83,8 @@ public:
     int32 ApplyJobChain(int32 BasePay, bool bSucceeded);
     int32 GetCompletedMissionCount() const { return CompletedMissions; }
     bool IsCampaignComplete() const { return Phase == EQuebecCampaignPhase::Complete; }
-    // Banked indexes from the rules headers. Kept here so the save header stays free of those headers.
-    // A boundary-2 save offers mission 3 again each session. PondStep, CourtStep, ShowStep, RescueMask, ConvoyStep, BlankStep, TourStep and HomeStep are not written to the slot.
+    // Banked indexes from the rules headers. Kept here so this header stays free of those headers.
+    // A version-1 boundary offers mission 3 again. A version-3 slot resumes these steps. The chain is not in the slot.
     static constexpr int32 PondBankedStep = 6;
     static constexpr int32 CourtBankedStep = 4;
     static constexpr int32 ShowBankedStep = 5;
@@ -119,11 +128,13 @@ public:
 
     UPROPERTY(VisibleAnywhere, ReplicatedUsing=UpdatePresentation) EQuebecCampaignPhase Phase = EQuebecCampaignPhase::AimWorklight;
     UPROPERTY(VisibleAnywhere, Replicated) int32 CompletedMissions = 0;
+    // Written on the version-3 tail. The hold clocks below stay in the session.
     UPROPERTY(VisibleAnywhere, ReplicatedUsing=UpdatePresentation) int32 PondStep = 0;
     // Session-only clock for the steady beam. Not written to the v1 slot.
     UPROPERTY(VisibleAnywhere, Replicated) bool bPondTagHolding = false;
     UPROPERTY(VisibleAnywhere, Replicated) float PondTagInside = 0.f;
     UPROPERTY(VisibleAnywhere, Replicated) float PondTagOutside = 0.f;
+    // Written on the version-3 tail. The miss count below stays in the session.
     UPROPERTY(VisibleAnywhere, ReplicatedUsing=UpdatePresentation) int32 CourtStep = 0;
     // Session-only. A spoiled bank increments it so the local rasp can hear the miss. Not written to the v1 slot.
     UPROPERTY(VisibleAnywhere, Replicated) int32 CourtMisses = 0;
@@ -131,16 +142,17 @@ public:
     UPROPERTY(VisibleAnywhere, Replicated) int32 Chain = 0;
     UPROPERTY(VisibleAnywhere, Replicated) int32 ChainMask = 0;
     UPROPERTY(VisibleAnywhere, Replicated) bool bChainSpoiled = false;
+    // Written on the version-3 tail.
     UPROPERTY(VisibleAnywhere, ReplicatedUsing=UpdatePresentation) int32 ShowStep = 0;
-    // Session-only bitfield. Bits 0–2 are the terrace, the pond and the court. 7 means every group is out. Not written to the v1 slot.
+    // Bitfield. Bits 0–2 are the terrace, the pond and the court. 7 means every group is out. Written on the version-3 tail.
     UPROPERTY(VisibleAnywhere, ReplicatedUsing=UpdatePresentation) int32 RescueMask = 0;
-    // Session-only. 0 walk-up, 1 beam gap, 2 invert the plate, 3 escape gate, 4 banked. Not written to the v1 slot.
+    // 0 walk-up, 1 beam gap, 2 invert the plate, 3 escape gate, 4 banked. Written on the version-3 tail.
     UPROPERTY(VisibleAnywhere, ReplicatedUsing=UpdatePresentation) int32 ConvoyStep = 0;
-    // Session-only. 0–2 are the projection gates, 3 is the blank-page pull, 4 is banked. Not written to the v1 slot.
+    // 0–2 are the projection gates, 3 is the blank-page pull, 4 is banked. Written on the version-3 tail.
     UPROPERTY(VisibleAnywhere, ReplicatedUsing=UpdatePresentation) int32 BlankStep = 0;
-    // Session-only. 0 bike, 1 pedalo, 2 swim, 3 banked. Not written to the v1 slot. Not a chain link.
+    // 0 bike, 1 pedalo, 2 swim, 3 banked. Written on the version-3 tail. Not a chain link.
     UPROPERTY(VisibleAnywhere, ReplicatedUsing=UpdatePresentation) int32 TourStep = 0;
-    // Session-only. 0 bike stand, 1 pedalo berth, 2 south bank, 3 banked. Not written to the v1 slot. Not a chain link.
+    // 0 bike stand, 1 pedalo berth, 2 south bank, 3 banked. Written on the version-3 tail. Not a chain link.
     UPROPERTY(VisibleAnywhere, ReplicatedUsing=UpdatePresentation) int32 HomeStep = 0;
     UPROPERTY(VisibleAnywhere, Replicated) TObjectPtr<APlayerState> LightOperator;
     UPROPERTY(VisibleAnywhere, Replicated) float LightYaw = 0.f;

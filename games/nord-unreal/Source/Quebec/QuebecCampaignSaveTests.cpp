@@ -63,6 +63,38 @@ bool FQuebecCampaignSaveRoundTripTest::RunTest(const FString& Parameters)
     TestFalse(TEXT("Future schema remains rejected after engine roundtrip"),Reload->IsSupported());
     TestEqual(TEXT("Validation preserves unsupported version"),Reload->Version,2);
     TestEqual(TEXT("Validation preserves unsupported progress"),Reload->CompletedMissions,1);
+
+    UQuebecCampaignSaveGame* Tail = NewObject<UQuebecCampaignSaveGame>();
+    Tail->Version = 3;
+    Tail->CompletedMissions = 2;
+    Tail->PondStep = 6;
+    Tail->CourtStep = 2;
+    TestTrue(TEXT("Story tail is accepted before serialization"),Tail->IsSupported());
+    TArray<uint8> TailBytes;
+    if (!TestTrue(TEXT("Story tail serializes using engine save format"),UGameplayStatics::SaveGameToMemory(Tail,TailBytes))) return false;
+    const UQuebecCampaignSaveGame* TailReload = Cast<UQuebecCampaignSaveGame>(UGameplayStatics::LoadGameFromMemory(TailBytes));
+    if (!TestNotNull(TEXT("Story tail reloads using engine save format"),TailReload)) return false;
+    TestTrue(TEXT("Reloaded story tail remains supported"),TailReload->IsSupported());
+    TestEqual(TEXT("Story schema survives serialization"),TailReload->Version,3);
+    TestEqual(TEXT("Story tail keeps the race boundary"),TailReload->CompletedMissions,2);
+    TestEqual(TEXT("Pond step survives serialization"),TailReload->PondStep,6);
+    TestEqual(TEXT("Court step survives serialization"),TailReload->CourtStep,2);
+    TestEqual(TEXT("Later beats stay at their start"),TailReload->HomeStep,0);
+
+    UQuebecCampaignSaveGame* Skip = NewObject<UQuebecCampaignSaveGame>();
+    Skip->Version = 3;
+    Skip->CompletedMissions = 2;
+    Skip->PondStep = 2;
+    Skip->CourtStep = 1;
+    TestFalse(TEXT("A skipped beat is rejected"),Skip->IsSupported());
+    Skip->CourtStep = 0;
+    Skip->CompletedMissions = 1;
+    Skip->PondStep = 1;
+    TestFalse(TEXT("Story progress before the race is rejected"),Skip->IsSupported());
+    Skip->Version = 1;
+    Skip->CompletedMissions = 2;
+    Skip->PondStep = 4;
+    TestFalse(TEXT("A legacy slot carrying a pond step is rejected"),Skip->IsSupported());
     // This deliberately never writes a disk slot; on-disk preservation and
     // mission-boundary restart behavior are exercised by StorySlice integration QA.
     return true;

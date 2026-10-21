@@ -1,4 +1,5 @@
 #include "QuebecCampaign.h"
+#include "QuebecStorySave.h"
 #include "QuebecGameplay.h"
 #include "QuebecGTA.h" // Side jobs: QuebecJobs::IsJobActive for the race gate guard (JOBS).
 #include "QuebecBlankRules.h"
@@ -15,21 +16,30 @@
 #include "QuebecPlayerState.h"
 
 static_assert(QuebecPondRules::StepBanked == AQuebecCampaign::PondBankedStep,
-    "mission 3 banks in the session only; the campaign and the rules share one banked index");
+    "mission 3 and the story tail share one banked index");
 static_assert(QuebecCourtRules::StepBanked == AQuebecCampaign::CourtBankedStep,
-    "mission 4 banks in the session only; the campaign and the rules share one banked index");
+    "mission 4 and the story tail share one banked index");
 static_assert(QuebecShowRules::StepBanked == AQuebecCampaign::ShowBankedStep,
-    "mission 5 banks in the session only; the campaign and the rules share one banked index");
+    "mission 5 and the story tail share one banked index");
 static_assert(QuebecRescueRules::Done == AQuebecCampaign::RescueDone,
-    "mission 6 banks in the session only; the campaign and the rules share one done mask");
+    "mission 6 and the story tail share one done mask");
 static_assert(QuebecConvoyRules::StepBanked == AQuebecCampaign::ConvoyBankedStep,
-    "mission 7 banks in the session only; the campaign and the rules share one banked index");
+    "mission 7 and the story tail share one banked index");
 static_assert(QuebecBlankRules::StepBanked == AQuebecCampaign::BlankBankedStep,
-    "mission 8 banks in the session only; the campaign and the rules share one banked index");
+    "mission 8 and the story tail share one banked index");
 static_assert(QuebecTour::StepBanked == AQuebecCampaign::TourBankedStep,
-    "mission 9 banks in the session only; the campaign and the rules share one banked index");
+    "mission 9 and the story tail share one banked index");
 static_assert(QuebecHome::StepBanked == AQuebecCampaign::HomeBankedStep,
-    "mission 10 banks in the session only; the campaign and the rules share one banked index");
+    "mission 10 and the story tail share one banked index");
+static_assert(QuebecStorySave::PondBanked == AQuebecCampaign::PondBankedStep, "the story tail left the pond bank");
+static_assert(QuebecStorySave::CourtBanked == AQuebecCampaign::CourtBankedStep, "the story tail left the court bank");
+static_assert(QuebecStorySave::ShowBanked == AQuebecCampaign::ShowBankedStep, "the story tail left the show bank");
+static_assert(QuebecStorySave::RescueDone == AQuebecCampaign::RescueDone, "the story tail left the rescue mask");
+static_assert(QuebecStorySave::ConvoyBanked == AQuebecCampaign::ConvoyBankedStep, "the story tail left the convoy bank");
+static_assert(QuebecStorySave::BlankBanked == AQuebecCampaign::BlankBankedStep, "the story tail left the blank-page bank");
+static_assert(QuebecStorySave::TourBanked == AQuebecCampaign::TourBankedStep, "the story tail left the tour bank");
+static_assert(QuebecStorySave::HomeBanked == AQuebecCampaign::HomeBankedStep, "the story tail left the home bank");
+static_assert(QuebecStorySave::Current != QuebecStorySave::Rejected, "the writer would plant the unsupported fixture");
 
 static FString WithClose(const TCHAR* Line, int32 Bonus)
 {
@@ -162,6 +172,17 @@ void AQuebecCampaign::BeginPlay()
             if (Save && Save->IsSupported())
             {
                 CompletedMissions = Save->CompletedMissions;
+                const QuebecStorySave::FSteps Steps = QuebecStorySave::Applied(Save->Version, {
+                    Save->PondStep, Save->CourtStep, Save->ShowStep, Save->RescueMask,
+                    Save->ConvoyStep, Save->BlankStep, Save->TourStep, Save->HomeStep});
+                PondStep = Steps.Pond;
+                CourtStep = Steps.Court;
+                ShowStep = Steps.Show;
+                RescueMask = Steps.Rescue;
+                ConvoyStep = Steps.Convoy;
+                BlankStep = Steps.Blank;
+                TourStep = Steps.Tour;
+                HomeStep = Steps.Home;
                 Phase = CompletedMissions == 2 ? EQuebecCampaignPhase::Complete :
                     CompletedMissions == 1 ? EQuebecCampaignPhase::RaceReady : EQuebecCampaignPhase::AimWorklight;
             }
@@ -715,7 +736,7 @@ bool AQuebecCampaign::HandleInteract(AQuebecController* Controller)
                 PlungerPoint = FVector(UseSpot->X, UseSpot->Y, 130.);
                 PlungerPullTime = GetWorld()->GetTimeSeconds();
             }
-            // The picnic is session state. CompletedMissions stays 2 and the v1 slot is not rewritten.
+            // The picnic step is written on the version-3 tail. CompletedMissions stays 2.
             AdvancePond(QuebecPondRules::Apply(PondStep, QuebecPondRules::EAct::Use, -1, false), Controller, UseMessage, bFinish);
             return true;
         }
@@ -785,7 +806,7 @@ bool AQuebecCampaign::HandleInteract(AQuebecController* Controller)
         {
             PlungerPoint = FVector(QuebecCourtRules::Clamp.X, QuebecCourtRules::Clamp.Y, 130.);
             PlungerPullTime = GetWorld()->GetTimeSeconds();
-            // The court is session state. CompletedMissions stays 2 and the v1 slot is not rewritten.
+            // The court step is written on the version-3 tail. CompletedMissions stays 2.
             AdvanceCourt(QuebecCourtRules::Apply(CourtStep, QuebecCourtRules::EAct::Use, -1, CourtTime), Controller,
                 TEXT("The players sit up. Fourth souvenir, for this session."), true);
             return true;
@@ -824,7 +845,7 @@ bool AQuebecCampaign::HandleInteract(AQuebecController* Controller)
         {
             PlungerPoint = FVector(QuebecShowRules::Loading.X, QuebecShowRules::Loading.Y, 130.);
             PlungerPullTime = GetWorld()->GetTimeSeconds();
-            // The ovation is session state. CompletedMissions stays 2 and the v1 slot is not rewritten.
+            // The show step is written on the version-3 tail. CompletedMissions stays 2.
             AdvanceShow(QuebecShowRules::Apply(ShowStep, QuebecShowRules::EAct::Cue), Controller,
                 TEXT("The applause is a page turning. Four panels around the stage."), true);
             return true;
@@ -870,7 +891,7 @@ bool AQuebecCampaign::HandleInteract(AQuebecController* Controller)
                 PlungerPoint = FVector(Spot.X, Spot.Y, 130.);
                 PlungerPullTime = GetWorld()->GetTimeSeconds();
             }
-            // The groups are session state. CompletedMissions stays 2 and the v1 slot is not rewritten.
+            // The rescue mask is written on the version-3 tail. CompletedMissions stays 2.
             AdvanceRescue(Next, Controller, *Message, bFinished);
             return true;
         }
@@ -918,7 +939,7 @@ bool AQuebecCampaign::HandleInteract(AQuebecController* Controller)
         {
             PlungerPoint = FVector(QuebecConvoyRules::Escape.X, QuebecConvoyRules::Escape.Y, 130.);
             PlungerPullTime = GetWorld()->GetTimeSeconds();
-            // The convoy is session state. CompletedMissions stays 2 and the v1 slot is not rewritten.
+            // The convoy step is written on the version-3 tail. CompletedMissions stays 2.
             AdvanceConvoy(QuebecConvoyRules::Apply(ConvoyStep, QuebecConvoyRules::EAct::Use, ConvoyTime, Chain, QuebecConvoyRules::EWagon::Clear), Controller,
                 TEXT("GREEN CAP: That route was fine. TOPKNOT: This one is better. The border has a gap."), true);
             return true;
@@ -934,7 +955,7 @@ bool AQuebecCampaign::HandleInteract(AQuebecController* Controller)
             const QuebecBlankRules::FFinish Done = QuebecBlankRules::Finish(BlankStep, QuebecBlankRules::EPage::Sold, false);
             PlungerPoint = FVector(QuebecBlankRules::Keep.X, QuebecBlankRules::Keep.Y, 130.);
             PlungerPullTime = GetWorld()->GetTimeSeconds();
-            // The sale is session cash. CompletedMissions stays 2 and the v1 slot is not rewritten.
+            // The sale cash stays in the session. The page step is written. CompletedMissions stays 2.
             BreakChain();
             GrantCash(Done.Cash);
             AdvanceBlank(Done.Step, Controller,
@@ -946,7 +967,7 @@ bool AQuebecCampaign::HandleInteract(AQuebecController* Controller)
             const QuebecBlankRules::FFinish Done = QuebecBlankRules::Finish(BlankStep, QuebecBlankRules::EPage::Blank, false);
             PlungerPoint = FVector(QuebecBlankRules::Cue.X, QuebecBlankRules::Cue.Y, 130.);
             PlungerPullTime = GetWorld()->GetTimeSeconds();
-            // The last page is session state. CompletedMissions stays 2 and the v1 slot is not rewritten.
+            // The page step is written on the version-3 tail. CompletedMissions stays 2.
             AdvanceBlank(Done.Step, Controller,
                 TEXT("MEMPHIS: Leave it blank. The park can have a tomorrow that is not a souvenir."), Done.bBankChain);
             return true;
@@ -1054,6 +1075,7 @@ void AQuebecCampaign::AdvancePond(int32 Next, AQuebecController* Who, const TCHA
         It->PlayFeedback(bFinished ? EQuebecFeedbackCue::Complete : EQuebecFeedbackCue::Checkpoint);
     UpdatePresentation();
     ForceNetUpdate();
+    SaveBoundary();
 }
 
 bool AQuebecCampaign::NearPond(const AQuebecController* Controller, double X, double Y) const
@@ -1087,6 +1109,7 @@ void AQuebecCampaign::AdvanceCourt(int32 Next, AQuebecController* Who, const TCH
         It->PlayFeedback(bFinished ? EQuebecFeedbackCue::Complete : EQuebecFeedbackCue::Checkpoint);
     UpdatePresentation();
     ForceNetUpdate();
+    SaveBoundary();
 }
 
 bool AQuebecCampaign::NearCourt(const AQuebecController* Controller, double X, double Y) const
@@ -1120,6 +1143,7 @@ void AQuebecCampaign::AdvanceShow(int32 Next, AQuebecController* Who, const TCHA
         It->PlayFeedback(bFinished ? EQuebecFeedbackCue::Complete : EQuebecFeedbackCue::Checkpoint);
     UpdatePresentation();
     ForceNetUpdate();
+    SaveBoundary();
 }
 
 bool AQuebecCampaign::NearShow(const AQuebecController* Controller, double X, double Y) const
@@ -1140,6 +1164,7 @@ void AQuebecCampaign::AdvanceRescue(int32 Next, AQuebecController* Who, const TC
         It->PlayFeedback(bFinished ? EQuebecFeedbackCue::Complete : EQuebecFeedbackCue::Checkpoint);
     UpdatePresentation();
     ForceNetUpdate();
+    SaveBoundary();
 }
 
 bool AQuebecCampaign::NearRescue(const AQuebecController* Controller, double X, double Y) const
@@ -1173,6 +1198,7 @@ void AQuebecCampaign::AdvanceConvoy(int32 Next, AQuebecController* Who, const TC
         It->PlayFeedback(bFinished ? EQuebecFeedbackCue::Complete : EQuebecFeedbackCue::Checkpoint);
     UpdatePresentation();
     ForceNetUpdate();
+    SaveBoundary();
 }
 
 bool AQuebecCampaign::NearConvoy(const AQuebecController* Controller, double X, double Y) const
@@ -1210,6 +1236,7 @@ void AQuebecCampaign::AdvanceBlank(int32 Next, AQuebecController* Who, const TCH
         It->PlayFeedback(bFinished ? EQuebecFeedbackCue::Complete : EQuebecFeedbackCue::Checkpoint);
     UpdatePresentation();
     ForceNetUpdate();
+    SaveBoundary();
 }
 
 bool AQuebecCampaign::NearBlank(const AQuebecController* Controller, double X, double Y) const
@@ -1258,6 +1285,7 @@ void AQuebecCampaign::AdvanceTour(int32 Next, AQuebecController* Who, const TCHA
         It->PlayFeedback(bFinished ? EQuebecFeedbackCue::Complete : EQuebecFeedbackCue::Checkpoint);
     UpdatePresentation();
     ForceNetUpdate();
+    SaveBoundary();
 }
 
 bool AQuebecCampaign::NearTour(const AQuebecController* Controller, double X, double Y) const
@@ -1306,6 +1334,7 @@ void AQuebecCampaign::AdvanceHome(int32 Next, AQuebecController* Who, const TCHA
         It->PlayFeedback(bFinished ? EQuebecFeedbackCue::Complete : EQuebecFeedbackCue::Checkpoint);
     UpdatePresentation();
     ForceNetUpdate();
+    SaveBoundary();
 }
 
 bool AQuebecCampaign::NearHome(const AQuebecController* Controller, double X, double Y) const
@@ -1430,6 +1459,13 @@ void AQuebecCampaign::ChangePhase(EQuebecCampaignPhase Next, bool bFeedback)
     ForceNetUpdate();
 }
 
+bool UQuebecCampaignSaveGame::IsSupported() const
+{
+    const QuebecStorySave::FSteps Steps{
+        PondStep, CourtStep, ShowStep, RescueMask, ConvoyStep, BlankStep, TourStep, HomeStep};
+    return QuebecStorySave::Accept(Version, CompletedMissions, Steps);
+}
+
 FString AQuebecCampaign::SaveSlot() const
 {
     return FParse::Param(FCommandLine::Get(),TEXT("NordCampaignQA")) ? TEXT("NordCampaign_StorySliceQA_v1") : TEXT("NordCampaign_v1");
@@ -1440,7 +1476,20 @@ void AQuebecCampaign::SaveBoundary()
     if (QuebecDistrict::IsToronto(GetWorld()) || FParse::Param(FCommandLine::Get(),TEXT("NordNoCampaignSave"))) return;
     if (bSaveBlocked) return;
     UQuebecCampaignSaveGame* Save = Cast<UQuebecCampaignSaveGame>(UGameplayStatics::CreateSaveGameObject(UQuebecCampaignSaveGame::StaticClass()));
-    if (Save) { Save->Version=1; Save->CompletedMissions=CompletedMissions; }
+    if (Save)
+    {
+        // Version 2 stays the unsupported fixture. The tail is the story after the race.
+        Save->Version = QuebecStorySave::Current;
+        Save->CompletedMissions = CompletedMissions;
+        Save->PondStep = PondStep;
+        Save->CourtStep = CourtStep;
+        Save->ShowStep = ShowStep;
+        Save->RescueMask = RescueMask;
+        Save->ConvoyStep = ConvoyStep;
+        Save->BlankStep = BlankStep;
+        Save->TourStep = TourStep;
+        Save->HomeStep = HomeStep;
+    }
     if (!Save || !UGameplayStatics::SaveGameToSlot(Save,SaveSlot(),0))
     {
         SaveStatus = TEXT("SAVE FAILED / session progress retained");
@@ -1642,7 +1691,7 @@ void AQuebecCampaign::RequestReplay(AQuebecController* Controller)
         Controller->ShowInteractionMessage(TEXT("The day is still out. T replays the race after the bank."));
         return;
     }
-    // A race replay does not rewind PondStep, CourtStep, ShowStep, RescueMask, ConvoyStep, BlankStep, TourStep, HomeStep, or the chain. Banked scenes stay banked for this session.
+    // A race replay does not rewind the story steps or the chain, and it does not write the slot. The version-3 tail already holds the steps.
     RaceGateIndex = 0;
     RaceElapsed = 0.f;
     bRaceRetried = false;

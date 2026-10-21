@@ -3,7 +3,7 @@
 // Engine-independent rules for mission 10, putting the day away.
 // No Unreal includes, so Scripts/test_home.py can build this with the system compiler.
 // Ride the park bike back to the stand, paddle the pedalo back to the berth, then walk the south bank.
-// HomeStep is session state. The v1 save still stores CompletedMissions 0–2.
+// HomeStep is stored on the version-3 tail. A version-1 slot still stores CompletedMissions 0–2 and starts this beat over.
 // The seven story banks stay seven. This beat pays a flat purse and does not take a chain link.
 
 #include "QuebecCycle.h"

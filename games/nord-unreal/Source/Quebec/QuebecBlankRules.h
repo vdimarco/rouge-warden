@@ -3,7 +3,7 @@
 // Engine-independent rules for mission 8, Leave the Last Page Blank.
 // No Unreal includes, so Scripts/test_blank_rules.py can build this with the system compiler.
 // Three projection gates in order on dry ground south of the theatre, then one pull that leaves the page blank.
-// BlankStep is session state. The v1 save still stores CompletedMissions 0–2.
+// BlankStep is stored on the version-3 tail. A version-1 slot still stores CompletedMissions 0–2 and starts this beat over.
 
 #include <cmath>
 #include <cstdint>

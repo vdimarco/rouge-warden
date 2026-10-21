@@ -4,7 +4,7 @@
 // No Unreal includes, so Scripts/test_show_rules.py can build this with the system compiler.
 // Positions are centimetres on dry ground south of the west pond, in front of the Théâtre de Verdure sign.
 // The sign itself sits on the pond island; these spots stay off the water.
-// ShowStep is session state. The v1 save still stores CompletedMissions 0–2.
+// ShowStep is stored on the version-3 tail. A version-1 slot still stores CompletedMissions 0–2 and starts this beat over.
 // Display text lives in QuebecCampaign.cpp.
 
 #include <cmath>

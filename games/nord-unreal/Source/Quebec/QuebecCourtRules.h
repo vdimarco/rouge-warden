@@ -3,7 +3,7 @@
 // Engine-independent rules for mission 4, Match Pointless.
 // No Unreal includes, so Scripts/test_court_rules.py can build this with the system compiler.
 // Positions are centimetres on the first mapped tennis court (OSM 236077376), X east, Y north.
-// CourtStep is session state. The v1 save still stores CompletedMissions 0–2.
+// CourtStep is stored on the version-3 tail. A version-1 slot still stores CompletedMissions 0–2 and starts this beat over.
 // Display text lives in QuebecCampaign.cpp.
 
 #include <cmath>
