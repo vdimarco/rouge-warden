@@ -2022,3 +2022,48 @@ Unreal is not available here, so the native diamond was not captured. The title 
 ![Play client at 1280, host offline](gta-missions/r44-play-1280.png)
 
 ![Menu on a 390-wide screen, Recover visible](gta-missions/r44-play-menu-390.png)
+
+### Round 45 — 2026-10-21 — rubric v1
+
+- What changed: Three posts stand on sidewalks east of the park, each leg longer than 100 m. Walk them in order. Porte 1 remembers who tagged it. That person has to reach porte 2, then porte 3. They are paid 240 session cash once, at the last post. A driver does not count. A later post does not skip the one before it. A friend at a later post does not take the purse or end it. A second pass does not pay. On foot, in a wide landscape window, the card names the next porte. The v1 save is untouched, and this is not a story mission. The posts are engine cylinders in the comic lime, cream, and ink.
+- Why it helped: The pond laps are one out-and-back each. A walker now has an errand with a second stop and a third.
+- Screenshots: title `docs/gauntlet/gta-missions/r45-title-1280.png`, `r45-title-390.png`, `r45-title-320.png`. Play client, host offline, `r45-play-1280.png`. Menu with Recover `r45-play-menu-390.png`. The title loaded with no page errors. The raw play page still logs the missing `@epicgames-ps/lib-pixelstreamingfrontend-ue5.8` specifier; the shell and Recover still draw. The walk was not walked. `Scripts/test_trio.py` reports 30 assertions, 0 failures, on c++, g++, and clang++. The wade test still reports 29, and the pedalo lap test still reports 26. Syntax check `--both` passed for `QuebecTrioMark.cpp` and `QuebecGameplay.cpp`. OpenSpec CLI is not installed, so `openspec validate` did not run.
+- Next target: a new vehicle type. The playable scores that can still move are capped offline, so the score stays. Mission clarity stays at 7 and stays out of reach offline. Responsiveness stays at 3 and stays out of scope. Performance stays at 4 and is not measurable here.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 3 | Unchanged. |
+| Color palette | 5 | Unchanged. |
+| Detail density | 3 | Unchanged. |
+| Texture and material quality | 3 | Unchanged. |
+| Composition and camera | 4 | Unchanged. |
+| Atmosphere | 4 | Unchanged. |
+| Character models | 3 | Unchanged. |
+| Animation smoothness | 3 | Unchanged. |
+| Particles and VFX | 2 | Unchanged. |
+| UI polish | 4 | Unchanged. The native card was not seen, and French and English still share the screen. |
+| Responsiveness and input latency | 3 | Unchanged. Still a lagged stream. Out of scope for this loop. |
+| Controls feel | 9 | Unchanged. Getting out faster than a walk still keeps that pace. The three posts were not walked. |
+| Mission clarity | 7 | Unchanged. The fare post still moves from the loaner to the quay. The native card was not seen, and this score stays out of reach offline. |
+| Pacing | 9 | Unchanged. Four seconds on foot after boarding still loses the passenger. |
+| Fun factor | 9 | Unchanged. Chez Lise still sells a kit, a vest, or one star. A walk that was not walked is not the reference's spread of things to do. |
+| Difficulty curve | 9 | Unchanged. Selling the last page ends it for 200 and does not bank the chain. A wreck still costs more than the goon pay. |
+| Feedback | 9 | Unchanged. A failed side job still plays the falling sting. The sting was not heard. |
+| Sound design | 9 | Unchanged. The dent thud still marks a scrape as quiet. Nobody is voiced, so this is not the reference's city. |
+| Variety | 9 | Three sidewalk posts wait east of the park. The walk was not walked, so this is not a city of errands. |
+| Performance stability | 4 | Unchanged. Not measurable in this container. |
+
+- Aesthetics raw: 34 / 10 dimensions, index 34
+- Playability raw: 77 / 10 dimensions, index 77
+- Total: 111 / 200
+- Delta vs last round: 0 (round 44 was 111). The walk was not walked, so every score held.
+
+![GTA title at 1280](gta-missions/r45-title-1280.png)
+
+![GTA title at 390](gta-missions/r45-title-390.png)
+
+![GTA title at 320](gta-missions/r45-title-320.png)
+
+![Play client at 1280, host offline](gta-missions/r45-play-1280.png)
+
+![Menu on a 390-wide screen, Recover visible](gta-missions/r45-play-menu-390.png)
