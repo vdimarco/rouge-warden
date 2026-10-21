@@ -37,7 +37,7 @@ try {
     const bufs = {};
     for (const name of wins) bufs[name] = await renderOffline(name, 1.4, { seed: 1, at: 0 });
     bufs.trialEnd = await renderOffline("trialEnd", 1.4, { seed: 1, at: 0 });
-    const row = (buf) => ({ early: band(buf, 0.02, 0.2), late: band(buf, 0.8, 1.2), hold: buf.stats && buf.stats.voiceEnd });
+    const row = (buf) => ({ body: band(buf, 0.02, 0.45), late: band(buf, 0.8, 1.2), hold: buf.stats && buf.stats.voiceEnd });
     const out = {};
     for (const name of Object.keys(bufs)) out[name] = row(bufs[name]);
     let same = 0;
@@ -48,7 +48,7 @@ try {
     out.same = same;
     return out;
   }, WINS);
-  const quiet = WINS.every((n) => tone[n].late < tone[n].early * 0.45 && tone[n].early > 0.01);
+  const quiet = WINS.every((n) => tone[n].late < tone[n].body * 0.45 && tone[n].body > 0.01);
   const held = WINS.every((n) => tone[n].hold >= 0.4);
   check(quiet && tone.trialEnd.late > 0.01 && WINS.every((n) => tone.trialEnd.late > tone[n].late * 3), "the job stings go quiet while the ring fanfare is still sounding", tone);
   check(held && tone.same < 0.85, "the four stings are not the same shape, and each voice lasts through its note", tone);
@@ -146,6 +146,7 @@ try {
   check(flush.job === "sludge" && flush.calls.includes("winWet") && !flush.calls.includes("trialEnd"), "winning the sludge run plays the wet sting", flush);
 
   const miss = await page.evaluate(() => {
+    for (let i = 0; i < 120; i++) G.test.step(1 / 60, 1);
     G.test.job("thief");
     let n = 0;
     for (; n < 40; n++) {

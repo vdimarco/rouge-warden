@@ -507,9 +507,10 @@ const SFX = {
   },
   // a won chase or delivery: a rush, then a high ding
   winDash(e, t) {
-    const h = hiss(e, t, { type: "bandpass", f: 500, f2: 3200, sweep: 0.22, q: 0.8, dur: 0.26, att: 0.01, peak: 0.18 });
-    const n = tone(e, t + 0.2, { type: "triangle", f: 880, f2: 1760, glide: 0.08, dur: 0.16, peak: 0.16 });
-    return Math.max(h, n);
+    const h = hiss(e, t, { type: "bandpass", f: 700, f2: 3400, sweep: 0.16, q: 0.7, dur: 0.22, att: 0.004, peak: 0.3 });
+    const n = tone(e, t + 0.05, { type: "triangle", f: 988, f2: 1760, glide: 0.08, dur: 0.16, peak: 0.2 });
+    const b = brass(e, t + 0.08, 1318.5, 0.1, 0.1);
+    return Math.max(h, n, b);
   },
   // a won rescue: two rising notes, shorter than the ring-trial fanfare
   winLift(e, t) {
