@@ -1,0 +1,4 @@
+- [ ] The runner and the clock wait while the first lesson is open, and the card says to swing first
+- [ ] A rope, or the end of that lesson, starts the run and the clock
+- [ ] A start after the lesson, including the node chase, still runs at once
+- [ ] A first-run play shows the wait, then the chase, with no page errors

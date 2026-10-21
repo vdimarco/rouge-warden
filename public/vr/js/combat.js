@@ -512,6 +512,8 @@ export function createCombat(city) {
   function runPath(g, dt) {
     const P = g.path, q = P[g.pathI];
     if (!q) { g.stride = 0; setPose(g, 1); return; }
+    // a held chase (the first swing of Mission 1) stands. Speed 0 must not creep him along the path.
+    if (g.speed <= 0) { g.stride = 0; setPose(g, 1); return; }
     const dx = q.x - g.x, dz = q.z - g.z, d = Math.hypot(dx, dz), st = Math.min(g.speed * dt, d);
     g.x += (dx / (d || 1)) * st; g.z += (dz / (d || 1)) * st;
     const tb = city.topBelow(g.x, g.y + 0.6, g.z, 0.25);

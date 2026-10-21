@@ -130,6 +130,11 @@ jobs:
         env:
           NODE_PATH: ${{ github.workspace }}/qa/browser/node_modules
           SHOTS: ${{ github.workspace }}/test-results/flat
+      - name: Mission 1 waits out the first swing
+        run: node qa/vr/chasehold.e2e.mjs
+        env:
+          NODE_PATH: ${{ github.workspace }}/qa/browser/node_modules
+          SHOTS: ${{ github.workspace }}/test-results/flat
       - uses: actions/upload-artifact@v4
         if: always()
         with:

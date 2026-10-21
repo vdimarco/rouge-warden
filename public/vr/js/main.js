@@ -626,6 +626,12 @@ function actionFrame(dt, inp) {
   // the gang guards the clogs once Mission 1 is done
   if (save.jobs.sludge) guardClogs();
   const hf = heroFight();
+  // Mission 1 waits out the first lesson. A rope, or that lesson ending (the row ticks, or Skip), starts the runner and the clock.
+  const chase = jobs.active;
+  if (chase && chase.data && chase.data.hold) {
+    const swung = P.ropes[0].state === "attached" || P.ropes[1].state === "attached";
+    if (swung || !game.progress || game.progress.tutorial !== 0) jobs.holdChase(false);
+  }
   combat.update(dt, hf);
   jobs.offersOn = save.jobs.sludge; // while driving only a taxi marker starts (jobs.js)
   jobs.crimesOn = save.jobs.sludge; // crimes start near the hero after Mission 1
@@ -718,6 +724,8 @@ function jobEvent(e) {
 function startSludge() {
   if (!actionOn() || save.jobs.sludge) return;
   jobs.start("sludge", null, heroFight());
+  // the gold-ring row (or the spoken tutorial's first line) is still the lesson: the bomb waits
+  if (game.progress && game.progress.tutorial === 0) jobs.holdChase(true);
 }
 function hudFrame(dt, inp) {
   const phone = !!inp.easySwing, near = !driving ? carInReach() : null;

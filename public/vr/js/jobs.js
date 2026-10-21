@@ -244,6 +244,15 @@ export function createJobs({ city, combat, cars = null, seed = 4711 }) {
     offerAt = null; // fresh offers round wherever you are
   }
   J.cancel = () => end(false, "cancelled", true);
+  // The first lesson and Mission 1 start together. Until the player swings, the runner waits and the bomb clock does not
+  // count (main.js calls this). A retry, or a start after that lesson, never holds.
+  J.holdChase = function holdChase(on) {
+    const A = J.active;
+    if (!A || A.type !== "sludge" || !A.data || A.data.crew) return;
+    A.data.hold = !!on;
+    const g = A.data.runner;
+    if (g && g.on) g.speed = on ? 0 : JOB.sludge.speed;
+  };
   const person = (look, x, y, z, pose, extra = {}) => {
     const p = { on: true, x, y, z, yaw: r() * 6.28, phase: 0, stride: 0, pose, poseT: 0, height: extra.height || 1, shirt: look.shirt, pants: look.pants, skin: look.skin, bp: 0, br: 0, lift: 0, ...extra };
     J.people.push(p);
@@ -405,15 +414,22 @@ export function createJobs({ city, combat, cars = null, seed = 4711 }) {
   }
   const run = {
     sludge(A, dt, h) {
-      A.timer -= dt;
       const D = A.data, g = D.runner;
       if (!D.crew && (!g.on || !combat.alive(g))) {
-        // the runner is down: his crew jumps in
+        // the runner is down: his crew jumps in, and a held clock starts with them
+        D.hold = false;
         D.crew = true;
         for (let i = 0; i < JOB.sludge.crew; i++) { const a = (i / JOB.sludge.crew) * 6.28; const q = combat.spawn(g.x + Math.cos(a) * 5, g.y, g.z + Math.sin(a) * 5, "job"); q.aggro = true; }
         A.timer = Math.max(A.timer, 40);
         emit({ type: "say", line: "Get him, boys!" });
       }
+      if (D.hold && !D.crew && g.on && combat.alive(g)) {
+        g.speed = 0;
+        A.card = card("SLUDGE RUN " + fmt(A.timer), "Swing first. He waits until you do.", g, { short: "SWING" });
+        J.card = A.card;
+        return;
+      }
+      A.timer -= dt;
       const crew = combat.group("job");
       const left = crew.filter((q) => combat.alive(q)).length;
       if (D.crew && left === 0) { end(true, "defused"); return; }
