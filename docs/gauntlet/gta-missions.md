@@ -1707,3 +1707,48 @@ Unreal is not available here, so the native diamond was not captured. The title 
 ![Play client at 1280, host offline](gta-missions/r37-play-1280.png)
 
 ![Menu on a 390-wide screen, Recover visible](gta-missions/r37-play-menu-390.png)
+
+### Round 38 — 2026-10-21 — rubric v1
+
+- What changed: After the passenger boards, the world post stands on the waiting loaner and reads CHAR while the starter is on foot. The line says to get back in the car, with the seconds left. Once someone is driving, the post moves to the quay and reads QUAI. Before boarding, the post stays on the pickup and reads PASSAGER. On foot with no loaner waiting, the post stays on the quay. A post within 80 cm of the pickup or the quay uses that place's word. The loaner still spawns farther along the lane.
+- Why it helped: The four seconds were pointing at the quay while the car sat at the curb. The post now marks the car those seconds are for, then marks the quay once someone is in a car.
+- Screenshots: title `docs/gauntlet/gta-missions/r38-title-1280.png`, `r38-title-390.png`, `r38-title-320.png`. Play client, host offline, `r38-play-1280.png`. Menu with Recover `r38-play-menu-390.png`. The title loaded with no page errors. The raw play page still logs the missing `@epicgames-ps/lib-pixelstreamingfrontend-ue5.8` specifier; the shell and Recover still draw. The post was not seen in the native view. `Scripts/test_job_rules.py` reports 213 assertions, 0 failures, on c++, g++, and clang++. Syntax check `--both` passed for `QuebecSideJobs.cpp`. OpenSpec CLI is not installed, so `openspec validate` did not run.
+- Next target: mission clarity, still the remaining 7. The post move was not seen on the native card, so the score waits. Responsiveness stays at 3 and stays out of scope. Performance stays at 4 and is not measurable here. Fun, difficulty, variety, and pacing stay at 9.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 3 | Unchanged. |
+| Color palette | 5 | Unchanged. |
+| Detail density | 3 | Unchanged. |
+| Texture and material quality | 3 | Unchanged. |
+| Composition and camera | 4 | Unchanged. |
+| Atmosphere | 4 | Unchanged. |
+| Character models | 3 | Unchanged. |
+| Animation smoothness | 3 | Unchanged. |
+| Particles and VFX | 2 | Unchanged. |
+| UI polish | 4 | Unchanged. The native card was not seen, and French and English still share the screen. |
+| Responsiveness and input latency | 3 | Unchanged. Still a lagged stream. Out of scope for this loop. |
+| Controls feel | 8 | Unchanged. Lock still holds Space while driving. |
+| Mission clarity | 7 | The post stands on the loaner while the starter is on foot, then on the quay once someone drives. The native card and that post were not seen, so the score waits. |
+| Pacing | 9 | Unchanged. Four seconds on foot after boarding still loses the passenger. |
+| Fun factor | 9 | Unchanged. Chez Lise still sells a kit, a vest, or one star. A post that moves is not the reference's spread of things to do. |
+| Difficulty curve | 9 | Unchanged. Selling the last page ends it for 200 and does not bank the chain. A wreck still costs more than the goon pay. |
+| Feedback | 8 | Unchanged. Boarding still uses the checkpoint cue the jobs already play. |
+| Sound design | 8 | Unchanged. The lock still chirps. The post adds no new tone. |
+| Variety | 9 | Unchanged. La course is still a sixth job in the same district. |
+| Performance stability | 4 | Unchanged. Not measurable in this container. |
+
+- Aesthetics raw: 34 / 10 dimensions, index 34
+- Playability raw: 74 / 10 dimensions, index 74
+- Total: 108 / 200
+- Delta vs last round: 0 (round 37 was 108). The post now marks the car, and the native view was not seen, so no score moved.
+
+![GTA title at 1280](gta-missions/r38-title-1280.png)
+
+![GTA title at 390](gta-missions/r38-title-390.png)
+
+![GTA title at 320](gta-missions/r38-title-320.png)
+
+![Play client at 1280, host offline](gta-missions/r38-play-1280.png)
+
+![Menu on a 390-wide screen, Recover visible](gta-missions/r38-play-menu-390.png)
