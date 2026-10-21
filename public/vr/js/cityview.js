@@ -123,6 +123,41 @@ vec3 skyAt(vec3 d) {
   if (uHaveSky > 0.5) return skyStrip(d);
   return skyRamp(comicPoster(skyT(d), 5.0));
 }
+// Wet asphalt. Porous roads go darker and throw a fresnel mirror of the sky, with the micro-normal
+// stretched across the view so the glint runs away down the avenue. Adapted from Sébastien Lagarde's
+// notes on lighting wet surfaces (darken the diffuse, raise the fresnel). The mirror is this game's
+// own sky strip, read with textureLod so a branch does not break the derivatives. Lane paint stays
+// bright: a high luma skips most of the darkening.
+vec3 skyMirror(vec3 d) {
+  vec3 n = normalize(d);
+  if (uHaveSky > 0.5) return textureLod(uSky, skyUV(n), 2.0).rgb;
+  return skyRamp(skyT(n));
+}
+vec3 wetAsphalt(vec3 col, vec3 wp, vec3 N, float wet, float sunVis) {
+  if (wet < 0.01 || N.y < 0.5) return col;
+  vec3 V = normalize(cameraPosition - wp);
+  float puddle = smoothstep(0.52, 0.8, vnoise(wp.xz * 0.065 + vec2(3.1, 8.4)));
+  float gloss = wet * mix(0.75, 1.0, puddle);
+  float luma = dot(col, vec3(0.299, 0.587, 0.114));
+  float paint = smoothstep(0.42, 0.78, luma);
+  // lane paint is left alone so the dashes stay lighter than the wet road
+  float cover = gloss * (1.0 - paint);
+  col *= mix(1.0, mix(0.58, 0.36, puddle), cover);
+  vec2 viewXZ = normalize(V.xz + vec2(1e-4));
+  vec2 across = vec2(-viewXZ.y, viewXZ.x);
+  float rip = vnoise(vec2(dot(wp.xz, across) * 0.7, dot(wp.xz, viewXZ) * 0.07)) - 0.5;
+  float rough = mix(0.28, 0.04, puddle);
+  vec3 Nw = normalize(vec3(across.x * rip * rough, 1.0, across.y * rip * rough));
+  vec3 R = reflect(-V, Nw);
+  R.y = max(R.y, 0.02);
+  // a little mirror even when looking down, and a full one along the avenue
+  float fres = 0.18 + 0.82 * pow(1.0 - clamp(V.y, 0.0, 1.0), 2.2);
+  float spec = pow(clamp(dot(normalize(R), normalize(uSunDir)), 0.0, 1.0), mix(10.0, 36.0, puddle));
+  vec3 sky = skyMirror(R);
+  vec3 glint = min(vec3(1.0, 0.78, 0.42) * spec * sunVis * cover * 0.42, vec3(0.35));
+  vec3 fill = vec3(1.0, 0.55, 0.28) * (1.0 - sunVis) * cover * 0.14;
+  return col + sky * fres * cover * (0.55 + 0.6 * puddle) + glint + fill;
+}
 // Haze in four print-like steps toward the sky's own colour in that direction
 vec3 fogMix(vec3 col, vec3 wp, float maxF) {
   vec3 v = normalize(wp - cameraPosition);
@@ -969,6 +1004,8 @@ void main() {
   float dw = 1.0 - clamp(band - 1.0, 0.0, 1.0);
   col = mix(col, DOTC, comicDots(vec2(az * 12.0 + vW.x * 0.0, vW.y), 0.34, mix(0.62, 0.3, clamp(band, 0.0, 1.0))) * dw * 0.5 * step(float(k), 15.5));
   col += emit;
+  // the expressway deck is the same wet asphalt as the streets
+  if (k == 18) col = wetAsphalt(col, vW, N, 1.0, sunT(shadowDepthAt(vW + vec3(0.0, 0.4, 0.0))));
   col = mix(col, INKC, clamp(ink, 0.0, 1.0));
   gl_FragColor = vec4(fogMix(col, vW, maxF), 1.0);
 }`;
@@ -1012,8 +1049,10 @@ float aaLine(float d, float w, float fw) { return (1.0 - smoothstep(w - fw, w + 
 float stripes(float t, float fw) { float s = smoothstep(0.25 - fw, 0.25 + fw, abs(fract(t) - 0.5)); return mix(0.5, s, 1.0 - smoothstep(0.2, 0.5, fw)); }
 // an ink line where a pattern draws one (kerbs, park edges, the quay), as pixels: d metres to the edge over metres per pixel
 float gInk = 0.0;
+float gWet = 0.0; // 1 on asphalt, a little in alleys, 0 on sidewalks, parks and the boardwalk
 float inkD(float d, float fp) { return 1.0 - smoothstep(1.05, 2.55, d / fp); }
 vec3 asphalt(vec2 p, float fp) {
+  gWet = 1.0;
   // repair patches on a loose grid, flat, in a slightly lighter violet
   vec2 cell = floor(p / vec2(9.0, 6.0));
   float patchv = step(0.86, hash12(cell));
@@ -1081,7 +1120,8 @@ vec3 cityGround(vec2 p, float fp) {
   bool onX = ax < hx && p.y < float(${PROMENADE}.0);
   bool onZ = az < hz;
   if (!onX && !onZ) {
-    // inside a block: alleys and courtyards
+    // inside a block: alleys and courtyards, damp but not a mirror
+    gWet = 0.4;
     return vec3(0.34, 0.3, 0.42);
   }
   bool roadX = onX && ax < hx - wx;
@@ -1107,6 +1147,7 @@ vec3 cityGround(vec2 p, float fp) {
       // the boulevard: a planted median
       if (aw < 3.0) {
         gInk = max(gInk, inkD(3.0 - aw, fp));
+        gWet = 0.0; // the planted median stays matte
         return mix(vec3(0.4, 0.5, 0.15), vec3(0.86, 0.42, 0.1), step(0.72, vnoise(p * 0.5)));
       }
       lines += aaLine(aw - 3.2, 0.14, fp);
@@ -1163,6 +1204,7 @@ vec3 suburb(vec2 p, float fp) {
 vec3 groundAlbedo(vec3 wp, vec3 N, float fp) {
   vec2 p = wp.xz;
   gInk = 0.0;
+  gWet = 0.0;
   if (N.y < 0.5) return vec3(0.5, 0.46, 0.56);
   if (p.x < uLand.x || p.x > uLand.z || p.y < uLand.y) return suburb(p, fp);
   if (p.y > float(${PROMENADE}.0)) return promenade(p, fp);
@@ -1196,11 +1238,13 @@ void main() {
     float s = smoothstep(0.66 - sw, 0.66 + sw, sn) * step(0.5, cl + 0.3 * sn);
     alb = mix(alb, vec3(0.5, 0.78, 0.16), s * cl);
   }
-  float L = comicLight(N, uSunDir) * sunT(shadowDepthAt(vW + vec3(0.0, 0.1, 0.0)));
+  float sunVis = sunT(shadowDepthAt(vW + vec3(0.0, 0.1, 0.0)));
+  float L = comicLight(N, uSunDir) * sunVis;
   float band = comicBand(L, 0.12, 0.5);
   vec3 col = comicCelX(alb, band, vec3(1.7, 1.22, 0.8), vec3(0.08, 0.03, 0.0));
   float dw = 1.0 - clamp(band - 1.0, 0.0, 1.0);
   col = mix(col, DOTC, comicDots(vW.xz, 0.3, mix(0.62, 0.3, clamp(band, 0.0, 1.0))) * dw * 0.5);
+  col = wetAsphalt(col, vW, N, gWet, sunVis);
   col = mix(col, INKC, clamp(ink, 0.0, 1.0));
   gl_FragColor = vec4(fogMix(col, vW, 1.0), 1.0);
 }`;
