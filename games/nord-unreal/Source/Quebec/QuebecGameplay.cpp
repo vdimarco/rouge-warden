@@ -2357,6 +2357,19 @@ void AQuebecHUD::DrawHUD()
         GetTextSize(Value, W, H, Font, Size * Scale);
         Text(Value, Color, Right - W, Y, Size);
     };
+    // A paper rule and a crop tick turn a flat fill into a printed card. Scott McCloud,
+    // Understanding Comics (1993): the border is what separates the panel from the scene.
+    // Type stays at its existing inset, which is wider than this rule.
+    const auto PanelRule = [this, Scale, Paper](float X, float Y, float W, float H)
+    {
+        const float Inset = 4.f * Scale;
+        const float Weight = FMath::Max(1.f, 2.f * Scale);
+        const FLinearColor Rule = Paper.CopyWithNewOpacity(.7f);
+        DrawLine(X + Inset, Y + Inset, X + W - Inset, Y + Inset, Rule, Weight);
+        DrawLine(X + Inset, Y + H - Inset, X + W - Inset, Y + H - Inset, Rule, Weight);
+        const float Tick = 6.f * Scale;
+        DrawLine(X + W - Inset - Tick, Y + Inset, X + W - Inset, Y + Inset + Tick, Rule, Weight);
+    };
     const auto WrappedLines = [this, Font, Scale](const FString& Value, float Width, float Size)
     {
         TArray<FString> Words, Lines;
@@ -2576,6 +2589,7 @@ void AQuebecHUD::DrawHUD()
         const float Height = (22.f + Lines.Num() * 22.f) * Scale;
         DrawRect(Panel, Margin, TopClear, Width, Height);
         DrawRect(Accent, Margin, TopClear, 2.f * Scale, Height);
+        PanelRule(Margin, TopClear, Width, Height);
         for (int32 Row = 0; Row < Lines.Num(); ++Row)
             Text(Lines[Row], Paper, Margin + 14.f * Scale, TopClear + (11.f + Row * 22.f) * Scale, 1.05f);
         CaptionBottom = TopClear + Height + 8.f * Scale;
@@ -2729,6 +2743,7 @@ void AQuebecHUD::DrawHUD()
 
     DrawRect(Panel, MissionX, MissionY, MissionWidth, MissionHeight);
     DrawRect(Accent, MissionX, MissionY, 2.f * Scale, MissionHeight);
+    PanelRule(MissionX, MissionY, MissionWidth, MissionHeight);
     float RowY = MissionY + 10.f * Scale;
     for (const FString& Line : Titles) { Text(Line, Accent, MissionX + 12.f * Scale, RowY, .9f); RowY += 20.f * Scale; }
     for (const FString& Line : Actions) { Text(Line, Paper, MissionX + 12.f * Scale, RowY, 1.15f); RowY += 25.f * Scale; }
@@ -2758,6 +2773,7 @@ void AQuebecHUD::DrawHUD()
     if (!Prompt.IsEmpty())
     {
         DrawRect(Panel, PromptX, PromptY, PromptWidth, PromptHeight);
+        PanelRule(PromptX, PromptY, PromptWidth, PromptHeight);
         for (int32 I = 0; I < PromptLines.Num(); ++I) Text(PromptLines[I], Paper, PromptX + 12.f * Scale, PromptY + (10.f + I * 24.f) * Scale, 1.1f);
     }
     if (Car && bPortrait)

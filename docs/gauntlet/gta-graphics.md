@@ -738,3 +738,38 @@ Unreal is not available in this environment, so in-engine frames are the last co
 - Playability raw: 39 / 10 dimensions, index 39
 - Total: 95 / 200
 - Delta vs last round: +1
+
+### Round 22 — 2026-10-21 — rubric v1
+
+- What changed: the mission card, the caption, and the prompt draw a paper rule 4 scale units in from the top and bottom, and a 6-unit crop tick in the top-right padding. The accent bar, the words, and the 12-unit type inset stay.
+- Why it helped: UI polish was at 5. Those cards were a flat fill.
+- Screenshots: before `docs/gauntlet/gta-graphics/round-22/before-panel.png`, after `docs/gauntlet/gta-graphics/round-22/after-panel.png`. These are a 2× nearest crop of an offline shade of the mission card at scale 1 on a 1280×720 frame. The words are a stand-in; the game strings are unchanged. Not an Unreal capture. `Scripts/test_hud_rule.py` passed. `QuebecGameplay.cpp` was not compiled. `GET /gta/` returned 200. OpenSpec CLI is not installed, so the change files were not validated with `openspec`.
+- Next target: lighting. The crew shade still does not darken the ground under the figure, and a contact darkening can be shaded offline. Animation smoothness stays at 3 and is skipped until a pose can be drawn.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 6 | The city wash and the crew shade are unchanged. The card does not cast. |
+| Color palette | 6 | Brick and stone hues are unchanged. |
+| Detail density | 6 | Troughs, rails, and doors are unchanged. |
+| Texture and material quality | 6 | The mottled face is unchanged. |
+| Composition and camera | 6 | The walking socket is unchanged. |
+| Atmosphere | 6 | The horizon fade is unchanged. |
+| Character models | 6 | The crew hue grade is unchanged. |
+| Animation smoothness | 3 | Skipped. The blend space still cannot be posed here. |
+| Particles and VFX | 6 | Rain rings are unchanged. |
+| UI polish | 6 | The mission card has a paper rule and a crop tick. The words and their inset are unchanged. It is still a flat fill. |
+| Responsiveness and input latency | 4 | Not measured this round. |
+| Controls feel | 4 | Not played. |
+| Mission clarity | 5 | The objective words are unchanged. |
+| Pacing | 4 | Unchanged mission slice. |
+| Fun factor | 3 | Not played. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 4 | No new juice. |
+| Sound design | 3 | Not listened to. |
+| Variety | 3 | One district. |
+| Performance stability | 5 | The rule is three lines on the existing cards. Frame time was not remeasured. |
+
+- Aesthetics raw: 57 / 10 dimensions, index 57
+- Playability raw: 39 / 10 dimensions, index 39
+- Total: 96 / 200
+- Delta vs last round: +1
