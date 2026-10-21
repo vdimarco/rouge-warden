@@ -6,6 +6,8 @@ James Gurney, Color and Light (2010). A local light colours the nearby surface a
 
 ## Decisions
 
+- The spill uses the same `inFloors` visibility mask as the window. Blank bays and incomplete top-floor rows cannot emit light from a suppressed window.
+
 - The pool is a distance from the window rectangle in the cell, not a new light or a new draw. Inside the glass the window keeps its own glow. Outside, it fades across about 0.28 of the cell.
 - A sunlit face keeps about a quarter of the pool. A shaded face keeps it. The lamp has to read in the shade, where the grade is one teal.
 - The shop cloth takes the same warm light on the hem, nearest the glass, and keeps its own colour at the top. A dark shop does not.

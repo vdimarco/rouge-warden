@@ -888,3 +888,7 @@ Playability was scored from a flat boot and the city render check, not a full pl
 
 Playability was scored from a flat boot and the city render check, not a full playthrough. OpenSpec CLI validation was not run; the `openspec` command is not installed.
 
+
+#### Round 24 review correction — 2026-10-21
+
+PR #611 review found that blank bays and incomplete top-floor rows could emit light from suppressed windows. The spill now uses the same `inFloors` mask as the window. Before and after renders passed all 50 existing checks after restoring both shared character models to the local checkout. Street mean 70.6, saturation 0.59; canyon ink 26.9%. City, physics, target and mobile Node checks also passed. Before: `docs/gauntlet/shots/r24-review-before-street.png`; after: `docs/gauntlet/shots/r24-review-after-street.png`. The correction earns no additional points: retain the round's recorded 109/200 (+0 for review repair), with the same playthrough and hardware limits. Fresh remote review, CI and preview checks remain required before merge.

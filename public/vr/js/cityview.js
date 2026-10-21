@@ -942,7 +942,7 @@ vec3 wallColor(int k, float shop, float sd, float salt, float h1, float h2, floa
   vec2 outd = max(wr.xy - fc, fc - wr.zw);
   float gap = max(outd.x, outd.y);
   float nearWin = 1.0 - smoothstep(0.0, 0.28, gap);
-  float spillA = nearWin * lit * (1.0 - wmask) * detail;
+  float spillA = nearWin * lit * inFloors * (1.0 - wmask) * detail;
   spillA *= mix(1.0, 0.28, smoothstep(0.15, 1.05, band));
   spill = vec4(1.55, 0.92, 0.42, clamp(spillA, 0.0, 1.0));
   clay = mix(vec3(1.0), clayPrint, clamp(clayOn, 0.0, 1.0));

@@ -10,3 +10,7 @@ A near lit window in the street view SHALL warm the pier beside it, and that war
 #### Scenario: The city render
 - **WHEN** `qa/vr/render.mjs` runs
 - **THEN** it passes, including the canyon ink lines, and the street picture stays within its luminance and saturation bounds
+
+#### Scenario: A bay has no window
+- **WHEN** a bay is blank or its top-floor window is suppressed because the row is incomplete
+- **THEN** that bay emits no window-shaped light pool onto the wall
