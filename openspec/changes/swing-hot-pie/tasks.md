@@ -1,3 +1,0 @@
-- [ ] The fifth flush keeps the clog card
-- [ ] The sixth flush starts a pizza and the card does not say to flush the clogs
-- [ ] After that pizza, the clog card returns, and the eighth flush is still the 36 second washer

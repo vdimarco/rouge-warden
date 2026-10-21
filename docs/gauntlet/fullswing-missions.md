@@ -685,3 +685,40 @@ Loop: missions, playability, controls, feel, UX, pacing and fun for In Full Swin
 - Delta vs last round: +1 (round 17 was 121). Controls feel 7 → 8. Every other score held.
 
 ![A held swing on the next building](fullswing-r18/chain.png)
+
+### Round 19 — 2026-10-21 — rubric v1
+
+- What changed: The sixth flush starts a pizza delivery. The card says HOT PIE and names the roof. The fifth flush stays on the clog card. After the pizza, the clog card returns. The fourth flush is still the balloon. The eighth is still the washer at 36 seconds. The King still roars only at the fourth and the eighth.
+- Why it helped: After the balloon, four clogs in a row were the same pump before the washer. Spider-Man 2 breaks a repeated objective before it runs that long. A 1280×800 play flushed six clogs. The card read HOT PIE, PIZZA RUSH, Deliver to the roof, 37 m. Five flushes still read FLUSH THE CLOGS 5/12. After the pizza the clog card came back, and the eighth flush still counted from 36 s.
+- Screenshots: `docs/gauntlet/fullswing-r19/pie.png`.
+- Next target: performance stability (6), the lowest playability score. This machine has no real GPU to time, so that score is not the next implementation round. Sound design (7) was not listened to and is not the next implementation round either.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 5 | Held. Golden-hour sun and ink shadows. |
+| Color palette | 6 | Held. Yellow, red and sludge green still separate the HUD from the blocks. |
+| Detail density | 4 | Held. Open blocks more than a dressed borough. |
+| Texture and material quality | 3 | Held. Flat fills. |
+| Composition and camera | 4 | Held. The chase camera still sits behind the hero. This frame is the card. |
+| Atmosphere | 5 | Held. The dusk skyline has a mood. The street under the card does not. |
+| Character models | 3 | Held. Simple comic figures. |
+| Animation smoothness | 4 | Scored from still frames in software GL. Continuous motion was not watched. |
+| Particles and VFX | 5 | Held. No new effect. The card is the change. |
+| UI polish | 6 | Held. The same ink pill names the delivery. |
+| Responsiveness and input latency | 8 | Held. The clog card still rewrites its metres every frame. |
+| Controls feel | 8 | Held. A held swing still catches the next building. The first web over open roofs can still be the sky, because a building past the rope cap flies into the wall. |
+| Mission clarity | 8 | Held. The compass still names the district on the clog card. The delivery card names the roof. |
+| Pacing | 8 | The sixth flush is a roof delivery between the balloon and the washer. Nine of the twelve are still the same pump, so this is not a new point against Spider-Man 2. |
+| Fun factor | 8 | Held. A win still hops the hero. This round changes the job in the middle, not the finish. |
+| Difficulty curve | 8 | Held. The eighth flush still counts from 36 s. An odd-job washer still has the minute. |
+| Feedback | 8 | Held. A chase that is pulling away still turns the card hot. The delivery uses the pizza card that was already there. |
+| Sound design | 7 | Held. Not listened to. |
+| Variety | 8 | Held. The pizza was already Mission 5. This round places that delivery inside the clog run. |
+| Performance stability | 6 | The 1280×800 play passed with no page errors. Frame time on a real GPU was not measured. |
+
+- Aesthetics raw: 45 / 10 dimensions, index 45
+- Playability raw: 77 / 10 dimensions, index 77
+- Total: 122 / 200
+- Delta vs last round: 0 (round 18 was 122). The sixth flush is a different job, and nine clogs are still the same pump, so pacing stays at 8.
+
+![The sixth flush is a pizza to a roof](fullswing-r19/pie.png)

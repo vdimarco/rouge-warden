@@ -2733,6 +2733,10 @@ G.test = {
       D.b.free = true; D.b.held = true;
       if (D.kid) { D.kid.x = P.pos.x; D.kid.y = P.pos.y; D.kid.z = P.pos.z; }
     }
+    else if (A.type === "pizza" && D.drop) {
+      P.pos.x = D.drop.x; P.pos.y = D.drop.y; P.pos.z = D.drop.z;
+      P.onGround = true;
+    }
     else return false;
     return true;
   },
