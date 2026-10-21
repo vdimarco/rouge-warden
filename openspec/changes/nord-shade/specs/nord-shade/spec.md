@@ -1,7 +1,7 @@
 ## ADDED Requirements
 
 ### Requirement: Mission 12 crosses the lawn out of the lamps
-After the walk is banked, the card SHALL ask the player to step into the north dark pocket, then reach the south dark without standing in a lamp. A lamp SHALL burn the attempt, on foot or in a vehicle. Another person in a lamp SHALL burn it too. The north pocket SHALL clear a burn when the player is on foot there and nobody is in a lamp. The purse SHALL be 520 session cash, paid once when a dry walker reaches the south dark on a clean attempt. A rider SHALL NOT start or finish the crossing. The seven story banks SHALL stay seven.
+After the walk is banked, the card SHALL ask the player to step into the north dark pocket, then reach the south dark without standing in a lamp. A lamp SHALL burn the attempt, on foot or in a vehicle. Another person in a lamp SHALL burn it too. The north pocket SHALL clear a burn when a dry walker is there and nobody is in a lamp, even if a partner is closer to the south dark. The purse SHALL be 520 session cash, paid once when a dry walker reaches the south dark on a clean attempt. A rider SHALL NOT start or finish the crossing. The seven story banks SHALL stay seven.
 
 #### Scenario: The pocket
 - **WHEN** a dry walker steps into the north dark

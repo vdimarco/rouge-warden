@@ -1459,8 +1459,10 @@ bool AQuebecCampaign::NearEscort(const AQuebecController* Controller, double X, 
 void AQuebecCampaign::TickShade()
 {
     if (!IsShadeOpen()) return;
-    const double GoalX = ShadeStep == QuebecShade::StepPocket ? QuebecShade::PocketX : QuebecShade::FarX;
-    const double GoalY = ShadeStep == QuebecShade::StepPocket ? QuebecShade::PocketY : QuebecShade::FarY;
+    // A burned crossing clears at the north pocket. Pick that walker, even when a partner is closer to the south.
+    const bool bSeekPocket = ShadeStep == QuebecShade::StepPocket || bShadeBurned;
+    const double GoalX = bSeekPocket ? QuebecShade::PocketX : QuebecShade::FarX;
+    const double GoalY = bSeekPocket ? QuebecShade::PocketY : QuebecShade::FarY;
     AQuebecController* Foot = nullptr;
     double FootX = 0.;
     double FootY = 0.;
