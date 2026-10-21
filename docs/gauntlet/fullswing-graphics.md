@@ -518,3 +518,40 @@ Playability was scored from a flat boot and the city render check, not a full pl
 
 Playability was scored from a flat boot and the city render check, not a full playthrough. OpenSpec CLI validation was not run; the `openspec` command is not installed.
 
+### Round 15 — 2026-10-21 — rubric v1
+
+- What changed: Level views through the 18 m street layer take the avenue's warm light, a dusty rose-brown. Looking up, the haze stays the sky. The layer is a little thicker, still snapped to four print steps, and it still starts past the near kerb. The teal grade now sits on the surface, so it does not repaint the dust. Props use the same dust. The height split is the one already there, from Carsten Wenzel, SIGGRAPH 2006, the height only. The colour is this avenue's.
+- Why it helped: The far blocks used to sink into the same violet as the sky behind them. Down the street they now sit in warmer air, and the sky above that air stays cool. The kerb in front of the camera is unchanged.
+- Screenshots: before `docs/gauntlet/shots/r15-before-street.png`, after `docs/gauntlet/shots/r15-after-street.png`. The sunset: `docs/gauntlet/shots/r15-before-needle.png`, `docs/gauntlet/shots/r15-after-needle.png`. Chase: `docs/gauntlet/shots/r15-before-play.png`, `docs/gauntlet/shots/r15-after-play.png`.
+- Next target: Detail density (5), tied with composition, character models, animation, particles and VFX, and UI. The near walls are still one painted slab once the air has a colour of its own.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 6 | Unchanged. Shaded lower walls stay warm. The floors by the roof stay the cool band. |
+| Color palette | 6 | Unchanged. Cool shade stays teal and the step toward the sun stays rose. |
+| Detail density | 5 | Unchanged. |
+| Texture and material quality | 6 | Unchanged. The masonry units from round 13. |
+| Composition and camera | 5 | Unchanged. Reported distance stayed 4.5 m and pitch stayed −0.349. |
+| Atmosphere | 6 | The far avenue sits in warm dust the sky above it does not. The amount is still four print steps, and there is no weather. |
+| Character models | 5 | Unchanged. Skinned triangles stayed at 12,468. |
+| Animation smoothness | 5 | Unchanged. |
+| Particles and VFX | 5 | Unchanged. |
+| UI polish | 5 | Unchanged. The dotted score plate from round 11. |
+| Responsiveness and input latency | 6 | Unchanged. No new pass. No input timing was measured. |
+| Controls feel | 5 | Unchanged. |
+| Mission clarity | 4 | Unchanged. Not played. |
+| Pacing | 4 | Unchanged. |
+| Fun factor | 4 | Unchanged. Not played as a session. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 5 | Unchanged. |
+| Sound design | 4 | Unchanged. |
+| Variety | 4 | Unchanged. |
+| Performance stability | 6 | `qa/vr/render.mjs` passed, including flat play, the painted-sky checks, and the lit-sphere cel check. Street mean 73.2, from 70. Saturation 0.57. |
+
+- Aesthetics raw: 54 / 10 dimensions, index 54
+- Playability raw: 46 / 10 dimensions, index 46
+- Total: 100 / 200
+- Delta vs last round: +1 (99 → 100). Atmosphere 5 → 6. Playability unchanged.
+
+Playability was scored from a flat boot and the city render check, not a full playthrough. OpenSpec CLI validation was not run; the `openspec` command is not installed.
+
