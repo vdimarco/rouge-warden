@@ -872,3 +872,40 @@ Loop: missions, playability, controls, feel, UX, pacing and fun for In Full Swin
 - Delta vs last round: +1 (round 22 was 123). Pacing 8 → 9. Every other score held.
 
 ![The second flush is a falling rescue](fullswing-r23/edge.png)
+
+### Round 24 — 2026-10-21 — rubric v1
+
+- What changed: While the King is awake, the card says FLUSH THE KING and names the nearest pipe that is still on him, with the distance in metres. That distance drops on the next frames when the hero moves toward the pipe. The compass title is The King's pipe and it points at that same pipe. A clog still in the city does not take the compass.
+- Why it helped: The King card said to rope his pipes and did not say which one or how far, and the compass still hunted a clog. Spider-Man 2 points at the thing the mission just asked for. A 1280×800 play woke him. The card read FLUSH THE KING 0/3 and Next pipe. The compass title was The King's pipe, on a pipe that was still on him. Moving toward it dropped the metres by more than 8 within three frames. He was awake. The clogs were still in the city and did not take the compass.
+- Screenshots: `docs/gauntlet/fullswing-r24/pipe.png`.
+- Next target: performance stability (6), the lowest playability score. This machine has no real GPU to time, so that score is not the next implementation round. Sound design (7) was not listened to and is not the next implementation round either.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 5 | Held. Golden-hour sun and ink shadows. |
+| Color palette | 6 | Held. Yellow, red and sludge green still separate the HUD from the blocks. |
+| Detail density | 4 | Held. Open blocks more than a dressed borough. |
+| Texture and material quality | 3 | Held. Flat fills. |
+| Composition and camera | 4 | Held. The chase camera still sits behind the hero. This frame is the card. |
+| Atmosphere | 5 | Held. The dusk skyline has a mood. The street under the card does not. |
+| Character models | 3 | Held. Simple comic figures. |
+| Animation smoothness | 4 | Scored from still frames in software GL. Continuous motion was not watched. |
+| Particles and VFX | 5 | Held. No new effect. The card is the change. |
+| UI polish | 6 | Held. The same ink pill names the pipe. |
+| Responsiveness and input latency | 8 | Held. The clog card still rewrites its metres every frame. The King card now does the same. |
+| Controls feel | 9 | Held. The first web still hangs from a building at the real rope length. |
+| Mission clarity | 9 | The card said FLUSH THE KING 0/3 and Next pipe, and the compass was The King's pipe. The metres dropped by more than 8 within three frames. The three pipes are still one marker. |
+| Pacing | 9 | Held. Seven of the twelve flushes are a different job, and the clog pump never runs three times in a row. |
+| Fun factor | 8 | Held. A win still hops the hero. This round changes where the King card points, not the finish. |
+| Difficulty curve | 8 | Held. The eighth flush still counts from 36 s. The rescue still falls at the same rate. |
+| Feedback | 8 | Held. A chase that is pulling away still turns the card hot. |
+| Sound design | 7 | Held. Not listened to. |
+| Variety | 8 | Held. The rescue, the chase, and the mugging are in the clog run. The King fight is the same three pipes. |
+| Performance stability | 6 | The 1280×800 play passed with no page errors. Frame time on a real GPU was not measured. |
+
+- Aesthetics raw: 45 / 10 dimensions, index 45
+- Playability raw: 80 / 10 dimensions, index 80
+- Total: 125 / 200
+- Delta vs last round: +1 (round 23 was 124). Mission clarity 8 → 9. Every other score held.
+
+![The King card points at a pipe](fullswing-r24/pipe.png)
