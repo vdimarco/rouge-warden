@@ -1,0 +1,5 @@
+- [x] Birth pale spheres at the rear shoe while walking
+- [x] Keep the rain streak shader and the leaf slots
+- [x] Shade the stride with and without the trail at the opening camera
+- [x] Run `Scripts/test_scuff.py` and `Scripts/test_stride.py`
+- [ ] Confirm the puffs in Unreal (editor not available here)

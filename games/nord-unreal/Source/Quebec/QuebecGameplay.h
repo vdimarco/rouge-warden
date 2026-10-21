@@ -216,6 +216,15 @@ private:
     bool bSwayApplied = false;
     void ApplyStreetSway(float DeltaSeconds);
     void RestoreStreetSway();
+    // Pale spheres left at the rear shoe while walking. Five slots cover the puff life.
+    UPROPERTY() TArray<TObjectPtr<UStaticMeshComponent>> FootDust;
+    UPROPERTY() TArray<FVector> FootDustOrigin;
+    UPROPERTY() TArray<FVector> FootDustForward;
+    UPROPERTY() TArray<FVector> FootDustRight;
+    TArray<float> FootDustBorn;
+    float NextFootDustAt = 0.f;
+    int32 NextFootDust = 0;
+    void UpdateFootDust(float DeltaSeconds);
     UPROPERTY() TObjectPtr<UAnimSequence> CrewAnimation;
     UPROPERTY() TObjectPtr<APhysicsVolume> SwimVolume;
     UPROPERTY() TArray<TObjectPtr<AActor>> SwimFloors;

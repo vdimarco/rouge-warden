@@ -1683,3 +1683,38 @@ Unreal is not available in this environment, so in-engine frames are the last co
 - Playability raw: 39 / 10 dimensions, index 39
 - Total: 122 / 200
 - Delta vs last round: +1
+
+### Round 49 — 2026-10-21 — rubric v1
+
+- What changed: on foot, faster than 80 cm/s, five pale spheres are born at the rear shoe. A new puff every 0.16 s lives 0.7 s, so a slot is free before it is reused. It drifts back, rises, and grows from a 12 cm radius, then fades. The walker leaves it behind. A slow step, a swim, a knockdown, a fall, and a vehicle do not birth one. The rain streak shader and the leaf slots stay.
+- Why it helped: Particles were at 8. The leaf cards, the rain, and the tail column were already in, and a planted shoe left nothing.
+- Screenshots: before `docs/gauntlet/gta-graphics/round-49/before-frame.png`, after `docs/gauntlet/gta-graphics/round-49/after-frame.png`. Crops are `before-scuff.png` and `after-scuff.png`. Both are the casual stride at 0.75 s. The after frame adds puffs aged 0.04, 0.20, 0.36, and 0.52 s, with the walker moving at 180 cm/s. Both use the opening walk camera (arm 420, socket Y 70, socket Z 110, pitch −16, yaw about 110°, horizontal FOV 90) at the surveyed sidewalk spawn, with the same walk-peak rock. Not an Unreal capture. The foot crop mean absolute delta is 0.080 and the max is 0.426. The full-frame mean is 0.00046 and the max is 0.426. 949 pixels change. `Scripts/test_scuff.py` and `Scripts/test_stride.py` passed. `QuebecGameplay.cpp` was not compiled. `GET /gta/` returned 200. OpenSpec CLI is not installed, so the change files were not validated with `openspec`.
+- Next target: character models, tied at 8 with composition. Animation stays at 5. Another frame of the same walk will not move it. The crew blend space still cannot be posed.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 9 | The street shade is unchanged. |
+| Color palette | 9 | The puffs use the existing white material. |
+| Detail density | 9 | The street mesh is unchanged. |
+| Texture and material quality | 9 | The asphalt mix is unchanged. |
+| Composition and camera | 8 | The opening aim is unchanged. |
+| Atmosphere | 9 | The street dust grade is unchanged. The puffs are spheres, not that grade. |
+| Character models | 8 | The figure is the same casual civilian. |
+| Animation smoothness | 5 | The stride is unchanged. The crew blend space still cannot be posed here. |
+| Particles and VFX | 9 | A pale puff sits at the planted shoe and is left behind. The spheres are soft blobs, not a kicked sheet, and a standing walker stays clear. |
+| UI polish | 9 | The radar heading is unchanged. |
+| Responsiveness and input latency | 4 | Not measured this round. |
+| Controls feel | 4 | Not played. |
+| Mission clarity | 5 | The objective words are unchanged. |
+| Pacing | 4 | Unchanged mission slice. |
+| Fun factor | 3 | Not played. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 4 | The puff is the new mark. No new juice. |
+| Sound design | 3 | Not listened to. |
+| Variety | 3 | One shoe, one trail. Rain rings and leaf cards are unchanged. |
+| Performance stability | 5 | `Scripts/test_scuff.py` passed. Five spheres. Frame time was not remeasured. |
+
+- Aesthetics raw: 84 / 10 dimensions, index 84
+- Playability raw: 39 / 10 dimensions, index 39
+- Total: 123 / 200
+- Delta vs last round: +1

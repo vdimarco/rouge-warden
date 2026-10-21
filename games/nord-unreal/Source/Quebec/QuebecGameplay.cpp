@@ -48,6 +48,7 @@
 #include "CollegeBathurstMap.h"
 #include "QuebecStreetLook.h"
 #include "QuebecSway.h"
+#include "QuebecScuff.h"
 
 #include "Animation/AnimInstance.h"
 #include "Animation/AnimSequence.h"
@@ -546,6 +547,75 @@ void AQuebecCharacter::ApplyStreetSway(float DeltaSeconds)
     bSwayApplied = true;
 }
 
+void AQuebecCharacter::UpdateFootDust(float DeltaSeconds)
+{
+    // Age comes from the birth clock, so a long frame does not step the puff twice.
+    (void)DeltaSeconds;
+    if (GetNetMode() == NM_DedicatedServer || !GetCharacterMovement()) return;
+    const float Now = GetWorld()->GetTimeSeconds();
+    for (int32 Index = 0; Index < FootDust.Num(); ++Index)
+    {
+        UStaticMeshComponent* Puff = FootDust[Index];
+        if (!Puff || !Puff->IsVisible()) continue;
+        const float Age = Now - FootDustBorn[Index];
+        if (Age >= static_cast<float>(QuebecScuff::Life))
+        {
+            Puff->SetVisibility(false);
+            continue;
+        }
+        const QuebecScuff::FPuff Dust = QuebecScuff::At(Age, Index);
+        const QuebecScuff::FPuff Born = QuebecScuff::At(0., Index);
+        Puff->SetWorldLocation(FootDustOrigin[Index]
+            - FootDustForward[Index] * static_cast<float>(Dust.Back - Born.Back)
+            + FootDustRight[Index] * static_cast<float>(Dust.Side - Born.Side)
+            + FVector(0.f, 0.f, static_cast<float>(Dust.Up - Born.Up)));
+        Puff->SetWorldScale3D(FVector(static_cast<float>(Dust.Radius / 50.)));
+    }
+    const bool bScuffing = !bInVehicle && !IsKnocked() && !GetCharacterMovement()->IsSwimming()
+        && !GetCharacterMovement()->IsFalling()
+        && GetVelocity().Size2D() > static_cast<float>(QuebecScuff::WalkSpeed);
+    UPrimitiveComponent* Body = GetMesh()->IsVisible() ? static_cast<UPrimitiveComponent*>(GetMesh()) : CasualStand;
+    if (!bScuffing || Now < NextFootDustAt || !Body || !Body->WasRecentlyRendered(1.f)) return;
+    NextFootDustAt = Now + static_cast<float>(QuebecScuff::Interval);
+    const int32 Slot = FootDust.Num() < QuebecScuff::Count ? FootDust.Num() : NextFootDust % QuebecScuff::Count;
+    ++NextFootDust;
+    if (Slot == FootDust.Num())
+    {
+        UStaticMesh* Sphere = LoadObject<UStaticMesh>(nullptr, TEXT("/Engine/BasicShapes/Sphere.Sphere"));
+        if (!Sphere) return;
+        UStaticMeshComponent* NewPuff = NewObject<UStaticMeshComponent>(this);
+        NewPuff->SetStaticMesh(Sphere);
+        NewPuff->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+        NewPuff->SetCastShadow(false);
+        NewPuff->SetUsingAbsoluteLocation(true);
+        NewPuff->SetUsingAbsoluteRotation(true);
+        NewPuff->SetUsingAbsoluteScale(true);
+        NewPuff->SetupAttachment(GetCapsuleComponent());
+        NewPuff->RegisterComponent();
+        FootDust.Add(NewPuff);
+        FootDustBorn.Add(Now);
+        FootDustOrigin.Add(FVector::ZeroVector);
+        FootDustForward.Add(FVector::ForwardVector);
+        FootDustRight.Add(FVector::RightVector);
+    }
+    UStaticMeshComponent* Puff = FootDust[Slot];
+    if (!Puff) return;
+    if (UMaterialInterface* Material = LoadObject<UMaterialInterface>(nullptr, TEXT("/Game/Materials/M_White.M_White")))
+        Puff->SetMaterial(0, Material);
+    const QuebecScuff::FPuff Born = QuebecScuff::At(0., Slot);
+    const FVector Local(
+        -static_cast<float>(QuebecScuff::FootBack),
+        static_cast<float>(QuebecScuff::FootSide + Born.Side),
+        static_cast<float>(QuebecScuff::FootUp + Born.Up));
+    FootDustOrigin[Slot] = Body->GetComponentTransform().TransformPosition(Local);
+    FootDustForward[Slot] = GetActorForwardVector();
+    FootDustRight[Slot] = GetActorRightVector();
+    FootDustBorn[Slot] = Now;
+    Puff->SetWorldLocation(FootDustOrigin[Slot]);
+    Puff->SetWorldScale3D(FVector(static_cast<float>(Born.Radius / 50.)));
+    Puff->SetVisibility(true);
+}
+
 void AQuebecCharacter::Tick(float DeltaSeconds)
 {
     UpdateSwimming(DeltaSeconds);
@@ -594,6 +664,7 @@ void AQuebecCharacter::Tick(float DeltaSeconds)
         }
     }
     ApplyStreetSway(DeltaSeconds);
+    UpdateFootDust(DeltaSeconds);
     if (HasAuthority() && !bInVehicle && GetActorLocation().Z < -1500.)
     {
         GetCharacterMovement()->StopMovementImmediately();
