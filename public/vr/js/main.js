@@ -739,7 +739,19 @@ function winSpot(out) {
   if (hit && WIN_HIT.t < dist + 0.3) dist = Math.max(1.45, WIN_HIT.t * 0.5);
   return out.copy(camera.position).addScaledVector(FXD, dist);
 }
-// The payoff: a comic word wider than a finisher, a cheer, and a short slow moment. The next card waits.
+// The payoff: a comic word wider than a finisher, a cheer, a short slow moment, and a hop off the street. The next card waits.
+function winLaunch() {
+  if (REDUCED || driving || !flatOn || isXR() || !P) return 0;
+  const B = MOVES.win, v = P.vel, hs = Math.hypot(v.x, v.z);
+  if (hs > 0.5) { v.x += (v.x / hs) * B.forward; v.z += (v.z / hs) * B.forward; }
+  else { v.x += -Math.sin(G.rigYaw) * B.forward; v.z += -Math.cos(G.rigYaw) * B.forward; }
+  v.y = Math.max(v.y, 0) + B.up;
+  // the ground step zeroes an upward speed while the feet are down, so the hop has to leave the street now
+  P.onGround = false;
+  P.ground = null;
+  fovKick = Math.max(fovKick, B.kick);
+  return B.up;
+}
 function winPayoff(e) {
   const word = winWord(e.job);
   const at = winSpot(FXP);
@@ -749,7 +761,8 @@ function winPayoff(e) {
   audio.sfx("cheer", { vol: 1.1 });
   haptic(0, 1, 160); haptic(1, 1, 160);
   if (!REDUCED) { impact({ stop: 0.14, shake: 0.55, frame: true }); slowT = Math.max(slowT, 0.55); }
-  lastWin = { job: e.job, word, shown };
+  const up = winLaunch();
+  lastWin = { job: e.job, word, shown, up };
   winCard = { title: "GOT IT", detail: (JOB_NAMES[e.job] || "Job") + " done. +" + (e.reward || 0) + " Loonies", short: "GOT IT", n: 0, of: 0, tag: "win", goal: null };
   winHold = 1.35;
   winStory = null;
