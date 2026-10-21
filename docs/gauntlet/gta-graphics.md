@@ -1403,3 +1403,38 @@ Unreal is not available in this environment, so in-engine frames are the last co
 - Playability raw: 39 / 10 dimensions, index 39
 - Total: 114 / 200
 - Delta vs last round: +1
+
+### Round 41 — 2026-10-21 — rubric v1
+
+- What changed: After the far aerial mix and before the clouds, a clear-day surface lerps toward warm dust `(0.74, 0.71, 0.64)`. The band rises from 5 m to 18 m, dies by 70 m, and uses the same horizon weight as the far haze. Sky pixels stay. NightFactor 1 leaves the colour. The far window, from 25 m to 140 m, is unchanged.
+- Why it helped: Atmosphere was at 8. The far haze is zero inside 25 m, and the walking street lives inside that. The road ahead now pales and warms with distance. The foreground crosswalk does not.
+- Screenshots: before `docs/gauntlet/gta-graphics/round-41/before-frame.png`, after `docs/gauntlet/gta-graphics/round-41/after-frame.png`. Distance crops are `before-dust.png` and `after-dust.png`. Both use the walking camera (arm 420, socket Y 70, socket Z 110, pitch −12, horizontal FOV 90) on the brick street. Not an Unreal capture. The distance-crop mean absolute delta is 0.074 and the full-frame mean is 0.021 (max 0.256). The bottom of the frame, nearer than 5 m, stays (mean 0.00014). A road pixel at 13.9 m goes from about (0.36, 0.31, 0.17) to (0.48, 0.40, 0.22). `Scripts/test_street_air.py` passed, and the locked comic tests still passed. The comic material was not applied in Unreal. `GET /gta/` returned 200. OpenSpec CLI is not installed, so the change files were not validated with `openspec`.
+- Next target: character models, tied at 8 with UI polish. Composition and particles stay at 6, because the walking socket and the rain displacement stay as they are. Animation smoothness stays at 3 and is skipped until a pose can be drawn.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 9 | The shade wall is unchanged. Dust is a depth mix, not a new light. |
+| Color palette | 9 | The foreground keeps the round-38 hues. The distance warms because it is in the dust. |
+| Detail density | 9 | The street mesh, the dashes and the ladder are unchanged. |
+| Texture and material quality | 9 | The asphalt mix and the brick paper are unchanged. |
+| Composition and camera | 6 | The walking socket is unchanged. |
+| Atmosphere | 9 | The road ahead pales into warm dust. The foreground stays sharp. Past 70 m the cool haze still owns the view. There is no light shaft. |
+| Character models | 8 | No figure changed. |
+| Animation smoothness | 3 | Skipped. The blend space still cannot be posed here. |
+| Particles and VFX | 6 | Rain rings are unchanged. |
+| UI polish | 8 | The radar is unchanged. |
+| Responsiveness and input latency | 4 | Not measured this round. |
+| Controls feel | 4 | Not played. |
+| Mission clarity | 5 | The objective words are unchanged. |
+| Pacing | 4 | Unchanged mission slice. |
+| Fun factor | 3 | Not played. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 4 | No new juice. |
+| Sound design | 3 | Not listened to. |
+| Variety | 3 | One clear-day street. Night still skips the dust. |
+| Performance stability | 5 | `Scripts/test_street_air.py` passed. The band is a lerp. Frame time was not remeasured. |
+
+- Aesthetics raw: 76 / 10 dimensions, index 76
+- Playability raw: 39 / 10 dimensions, index 39
+- Total: 115 / 200
+- Delta vs last round: +1

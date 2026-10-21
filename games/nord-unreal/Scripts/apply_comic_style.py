@@ -146,6 +146,15 @@ float Aerial = smoothstep(2500.0, 14000.0, DepthC);
 float Haze = Aerial * lerp(0.25, 1.0, Horizon);
 Color = lerp(Color, float3(0.62, 0.70, 0.80), Haze * 0.85 * (Sky ? 0.0 : 1.0));
 
+// Street dust under the far aerial window. Hoffman and Preetham weight a horizontal
+// ray more than a steep one; that window still starts at 25 m, so the walking street
+// has no air. This band rises from 5 m to 18 m and is gone by 70 m, before the far
+// window is full. The dust is warmer than the sky haze. NightFactor 1 leaves the colour.
+float StreetNear = smoothstep(500.0, 1800.0, DepthC);
+float StreetFar = 1.0 - smoothstep(2200.0, 7000.0, DepthC);
+float StreetAir = StreetNear * StreetFar * Horizon * (Sky ? 0.0 : 1.0) * (1.0 - saturate(NightFactor));
+Color = lerp(Color, float3(0.74, 0.71, 0.64), StreetAir * 0.62);
+
 // Afternoon cumulus on sky pixels. Schneider, "The Real-Time Volumetric Cloudscapes
 // of Horizon: Zero Dawn" (SIGGRAPH 2015), marches a cloud layer. This node has no
 // volume, so only the layer remains: the view ray projects onto a plane above the
