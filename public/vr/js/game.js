@@ -1831,7 +1831,8 @@ export function createGame({ scene, city, view, ropes, hands, ui, audio, P, save
   let jobCard = null; // the job's mission card (jobs.js), over the clogs' one
   function objectiveUpdate(dt) {
     if ((objT -= dt) > 0) return;
-    objT = 0.5;
+    // every frame: the clog card's distance has to keep up with a swing, and the compass uses this same clog
+    objT = 0;
     if (progress.trial) { progress.objective = null; progress.goal = null; return; }
     // a job or the story mission (jobs.js) has the card, and the compass points at its goal
     if (jobCard) { progress.objective = jobCard; progress.goal = jobCard.goal || null; return; }

@@ -611,3 +611,40 @@ Loop: missions, playability, controls, feel, UX, pacing and fun for In Full Swin
 - Delta vs last round: +1 (round 15 was 119). Mission clarity 7 → 8. Every other score held.
 
 ![The compass names the Market clog on the card](fullswing-r16/compass.png)
+
+### Round 17 — 2026-10-21 — rubric v1
+
+- What changed: The clog card rewrites its distance every frame. A move toward that clog changes the metres on the next frames. The compass keeps naming that same district.
+- Why it helped: The card was rewriting its metres twice a second, so the number lagged the swing. Spider-Man 2 ticks the distance as you travel. A 1280×800 play moved toward the Market clog and stepped three frames. The card read FLUSH THE CLOGS 0/12, Next: Market clog, 28 m, and the drop was already more than 8 m. The compass title stayed Market clog.
+- Screenshots: `docs/gauntlet/fullswing-r17/closer.png`.
+- Next target: controls feel (7), tied with sound. Controls is the one to change next: on a mouse, the next web only starts on a fresh press, so a swing that lets go with the button still down does not catch the next building. Sound was not the round. Performance stays at 6. This machine has no real GPU to time, so that score is not the next round.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 5 | Held. Golden-hour sun and ink shadows. |
+| Color palette | 6 | Held. Yellow, red and sludge green still separate the HUD from the blocks. |
+| Detail density | 4 | Held. Open blocks more than a dressed borough. |
+| Texture and material quality | 3 | Held. Flat fills. |
+| Composition and camera | 4 | Held. The chase camera still sits behind the hero. This frame is the card. |
+| Atmosphere | 5 | Held. The dusk skyline has a mood. The street under the card does not. |
+| Character models | 3 | Held. Simple comic figures. |
+| Animation smoothness | 4 | Scored from still frames in software GL. Continuous motion was not watched. |
+| Particles and VFX | 5 | Held. No new effect. The number on the card is the change. |
+| UI polish | 6 | Held. The same ink pill shows the live metres. |
+| Responsiveness and input latency | 8 | Moving toward the clog dropped the card's metres within three frames. The compass stayed on that clog. |
+| Controls feel | 7 | Held. The swing carry is unchanged. A held swing button still does not start the next web. |
+| Mission clarity | 8 | Held. The compass still names the district on the card. |
+| Pacing | 8 | Held. The fourth flush is still the balloon and the eighth is still the carry. |
+| Fun factor | 8 | Held. A win still hops the hero. This round changes how fast the number moves. |
+| Difficulty curve | 8 | Held. The eighth flush still counts from 36 s. An odd-job washer still has the minute. |
+| Feedback | 8 | Held. A chase that is pulling away still turns the card hot. The distance did not add a new hit. |
+| Sound design | 7 | Held. Not listened to. |
+| Variety | 8 | Held. The jobs are unchanged. |
+| Performance stability | 6 | The 1280×800 play passed with no page errors. Frame time on a real GPU was not measured. |
+
+- Aesthetics raw: 45 / 10 dimensions, index 45
+- Playability raw: 76 / 10 dimensions, index 76
+- Total: 121 / 200
+- Delta vs last round: +1 (round 16 was 120). Responsiveness 7 → 8. Every other score held.
+
+![The clog card reads 28 m after the move](fullswing-r17/closer.png)

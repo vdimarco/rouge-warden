@@ -96,6 +96,14 @@ While the card says to flush the clogs and names a district, the compass SHALL p
 - **WHEN** a job starts
 - **THEN** the compass title says it is the job
 
+### Requirement: The clog distance keeps up
+While the card says to flush the clogs and names a district, the distance on that card SHALL drop on the next frame when the hero moves toward that clog. The compass SHALL keep naming that district.
+
+#### Scenario: A step closer
+- **WHEN** the card names a clog and the hero moves toward it
+- **THEN** the distance on the card is shorter within the next few frames
+- **AND** the compass still names that district
+
 ### Requirement: Job markers
 After Mission 1, except while a story mission after the bomb is the current mission, up to four job markers (a light beam and a ring, coloured by job) SHALL wait 90 to 420 m from the player.
 Walking or swinging into a marker SHALL start its job, with a card, a timer where there is one, and the compass on its goal. A job
