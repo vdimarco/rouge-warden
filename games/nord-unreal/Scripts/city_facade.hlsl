@@ -34,6 +34,12 @@ Color *= lerp(0.78, 1.16, Mottle);
 float Chip = step(0.80, BrickNoise) * step(0.48, Face.x) * step(Face.y, 0.40) * (1.0 - Stone);
 float Pit = step(0.62, BrickNoise) * step(0.30, Face.x) * step(Face.x, 0.72) * step(0.35, Face.y) * step(Face.y, 0.70) * Stone;
 Color = lerp(Color, Color * float3(0.58, 0.54, 0.50), max(Chip, Pit));
+// Salt left where the clay dried. The crust is paler than the brick and sits above the joint.
+// Stone does not take it. Mortar is drawn after this, so the bed stays a clean colour.
+float BloomId = frac(sin(BrickId.x * 17.13 + BrickId.y * 45.32) * 43758.5453);
+float Crust = (1.0 - Stone) * step(0.64, BloomId) * step(0.08, Face.y) * step(Face.y, 0.62) * step(0.10, Face.x) * step(Face.x, 0.90);
+float Streak = step(0.42, frac(sin(floor(Face.x * 5.0) * 12.9 + BrickId.x) * 43758.5453));
+Color = lerp(Color, float3(0.84, 0.82, 0.76), Crust * lerp(0.55, 1.0, Streak));
 // The joint is its own pale bed. The top of each course catches the afternoon sun.
 float3 Mortar = lerp(float3(0.50, 0.46, 0.40), float3(0.64, 0.60, 0.52), Stone);
 float Arris = step(0.86, Along) * step(0.045, Across);

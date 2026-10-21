@@ -808,3 +808,38 @@ Unreal is not available in this environment, so in-engine frames are the last co
 - Playability raw: 39 / 10 dimensions, index 39
 - Total: 97 / 200
 - Delta vs last round: +1
+
+### Round 24 — 2026-10-21 — rubric v1
+
+- What changed: some clay bricks take a pale salt crust on the face above the joint. Stone does not. Mortar is drawn after the crust, so the bed stays its own colour. Glass, doors, rails, and the lamp apron are unchanged.
+- Why it helped: Texture was at 6. The face was a hash, a chip, and a pit, all in the clay colour.
+- Screenshots: before `docs/gauntlet/gta-graphics/round-24/before-crust.png`, after `docs/gauntlet/gta-graphics/round-24/after-crust.png`. These are a straight elevation of the facade shader. Not an Unreal capture. About 11% of the pixels moved, and those pixels went from burnt orange toward a pale deposit. `Scripts/test_facade_crust.py` passed. `Scripts/test_facade_face.py` passed. `Scripts/test_facade_trough.py` passed. `Scripts/test_facade_palette.py` passed. `Scripts/test_facade_spill.py` passed. `Scripts/test_environment_refresh.py` passed. `GET /gta/` returned 200. OpenSpec CLI is not installed, so the change files were not validated with `openspec`.
+- Next target: detail density. The courses are one running bond, and a header course can be shaded on this elevation. Animation smoothness stays at 3 and is skipped until a pose can be drawn.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 7 | The contact darkening is unchanged. The crust does not cast. |
+| Color palette | 6 | Brick stays burnt orange and stone stays cool grey. The crust is a pale deposit on the clay. |
+| Detail density | 6 | Troughs, rails, and doors are unchanged. |
+| Texture and material quality | 7 | Some clay units carry a pale salt crust above the joint. It is a flat tint, not a photographed deposit. |
+| Composition and camera | 6 | The walking socket is unchanged. |
+| Atmosphere | 6 | The horizon fade is unchanged. |
+| Character models | 6 | The crew hue grade is unchanged. |
+| Animation smoothness | 3 | Skipped. The blend space still cannot be posed here. |
+| Particles and VFX | 6 | Rain rings are unchanged. |
+| UI polish | 6 | The paper rule is unchanged. |
+| Responsiveness and input latency | 4 | Not measured this round. |
+| Controls feel | 4 | Not played. |
+| Mission clarity | 5 | The objective words are unchanged. |
+| Pacing | 4 | Unchanged mission slice. |
+| Fun factor | 3 | Not played. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 4 | No new juice. |
+| Sound design | 3 | Not listened to. |
+| Variety | 3 | One district. The crust repeats one hash. |
+| Performance stability | 5 | The facade source tests passed. The crust is a lerp on the existing face. Frame time was not remeasured. |
+
+- Aesthetics raw: 59 / 10 dimensions, index 59
+- Playability raw: 39 / 10 dimensions, index 39
+- Total: 98 / 200
+- Delta vs last round: +1
