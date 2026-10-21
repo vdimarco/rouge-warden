@@ -12,7 +12,7 @@ class TalkTest {
         assertEquals(Phase.HOLDING, pressed.model.phase)
         assertEquals(Route.PHONE, pressed.model.session?.route)
         assertEquals(
-            listOf(TalkAction.StartMic("s", Mode.TALK), TalkAction.OpenPhone("s", Mode.TALK)),
+            listOf(TalkAction.StopSpeak, TalkAction.StartMic("s", Mode.TALK), TalkAction.OpenPhone("s", Mode.TALK)),
             pressed.actions,
         )
         val acked = reduce(pressed.model, TalkEvent.Ack("s"))
@@ -76,6 +76,17 @@ class TalkTest {
         assertTrue(again.actions.contains(TalkAction.CancelRelay))
         assertEquals("next", again.model.session?.id)
         assertEquals("", again.model.reply)
+    }
+
+    @Test
+    fun newPressStopsSpeechAfterTheAgentHasFinished() {
+        var model = reduce(TalkModel(), TalkEvent.Press(false, "s")).model
+        model = reduce(model, TalkEvent.Release).model
+        model = reduce(model, TalkEvent.Delta("s", "An answer still being spoken.")).model
+        model = reduce(model, TalkEvent.Done("s")).model
+        assertEquals(Phase.IDLE, model.phase)
+        val again = reduce(model, TalkEvent.Press(false, "next"))
+        assertEquals(TalkAction.StopSpeak, again.actions.first())
     }
 
     @Test

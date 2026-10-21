@@ -138,10 +138,9 @@ fun reduce(model: TalkModel, event: TalkEvent): Step = when (event) {
 }
 
 private fun press(model: TalkModel, event: TalkEvent.Press): Step {
-    val stop = mutableListOf<TalkAction>()
+    val stop = mutableListOf<TalkAction>(TalkAction.StopSpeak)
     val previous = model.session
     if (previous != null && model.phase != Phase.IDLE) {
-        stop += TalkAction.StopSpeak
         stop += TalkAction.CancelRelay
         if (previous.capture == Capture.MIC) stop += TalkAction.StopMic(previous.id)
         if (previous.capture == Capture.RECOGNIZER) stop += TalkAction.StopRecognizer(previous.id)
