@@ -1858,3 +1858,38 @@ Unreal is not available in this environment, so in-engine frames are the last co
 - Playability raw: 39 / 10 dimensions, index 39
 - Total: 126 / 200
 - Delta vs last round: +1
+
+### Round 54 — 2026-10-21 — rubric v1
+
+- What changed: the opening shade draws the park furniture within 180 m of the spawn. A lamp is the surveyed pole, head, and cap. A bench is the wood slats on ink legs. A basket is the ink cylinder. Pitch, aim, socket, the pawn, the grove, and the coupe stay.
+- Why it helped: the avenue past the trees had no street furniture. A row of lamps now stands between the crowns. Detail stays at 9. The posts are thin at that distance, and the lawn in front of the figure is still open.
+- Screenshots: before `docs/gauntlet/gta-graphics/round-54/before-frame.png`, after `docs/gauntlet/gta-graphics/round-54/after-frame.png`. Crops of the lamp row are `before-props.png` and `after-props.png`. Both use the opening walk camera (arm 420, socket Y 70, socket Z 110, pitch −16, yaw about 110°, horizontal FOV 90) at the surveyed sidewalk spawn, with the hoodie walk at 0.75 s and the same walk-peak rock. The coupe is the seventies fastback. Foot dust is left out. Not an Unreal capture. The full-frame mean absolute delta is 0.00013 and the max is 0.395. 232 pixels change, in a band from x 275 to 639 and y 119 to 155. The crop shows the posts. `Scripts/test_opening_props.py` passed. The level builder was not recompiled. `GET /gta/` returned 200. OpenSpec CLI is not installed, so the change files were not validated with `openspec`.
+- Next target: a wet road. The asphalt in this frame is still a flat grey, and that ground is large enough to read. The surveyed signs sit hundreds of metres off this aim. The parked cars that fall in the frame are farther than these lamps.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 9 | The street shade is unchanged. |
+| Color palette | 9 | The lamps use the existing ink and cream. The street hues are unchanged. |
+| Detail density | 9 | A row of surveyed lamps stands along the avenue. They are thin posts, and the lawn in front still sets the 9. |
+| Texture and material quality | 9 | The asphalt mix is unchanged. |
+| Composition and camera | 9 | The opening aim is unchanged. The lamps sit in the gap between the crowns. |
+| Atmosphere | 9 | The street dust grade is unchanged. |
+| Character models | 9 | The hoodie is unchanged. |
+| Animation smoothness | 6 | The stride is unchanged. The sheet from the previous round still shows the cycle. |
+| Particles and VFX | 9 | The shoe puffs are unchanged. They are left out of these frames. |
+| UI polish | 9 | The radar heading is unchanged. |
+| Responsiveness and input latency | 4 | Not measured this round. |
+| Controls feel | 4 | Not played. |
+| Mission clarity | 5 | The objective words are unchanged. |
+| Pacing | 4 | Unchanged mission slice. |
+| Fun factor | 3 | Not played. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 4 | The lamps are the new mark. No new juice. |
+| Sound design | 3 | Not listened to. |
+| Variety | 3 | One row of lamps. The benches at this distance do not read. |
+| Performance stability | 5 | `Scripts/test_opening_props.py` passed. Twenty-four pieces within 180 m. Frame time was not remeasured. |
+
+- Aesthetics raw: 87 / 10 dimensions, index 87
+- Playability raw: 39 / 10 dimensions, index 39
+- Total: 126 / 200
+- Delta vs last round: 0
