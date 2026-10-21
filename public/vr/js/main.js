@@ -782,6 +782,16 @@ function goalFrame(phone) {
   const crew = ob.tag === "sludge" && /crew/i.test(ob.detail || "");
   return { x: place.x, y: place.y, off: place.off, angle: place.angle, name: crew ? "CREW" : (GOAL_NAMES[ob.tag] || "GOAL"), dist: Math.round(dh), trend: GOAL_CHASE[ob.tag] && !crew ? goalTrack.trend : "" };
 }
+// The chase bed: quiet while you are gaining, a clock while the distance holds, faster once you fall behind.
+// The first lesson holds the runner, so the clock stays quiet until the chase actually starts. A fight keeps its own pulse.
+function chaseBed() {
+  const A = jobs.active;
+  if (!A || !GOAL_CHASE[A.type] || (A.data && A.data.hold)) return 0;
+  if (A.type === "sludge" && A.data && A.data.crew) return 0;
+  if (goalTrack.trend === "FALLING BEHIND") return 1;
+  if (goalTrack.trend === "CLOSING") return 0;
+  return 0.4;
+}
 // the warning: a red mark on the screen over the goon who winds up near the hero (the prompt line says how to dodge)
 const WARN_V = new THREE.Vector3(), WARN_OUT = { x: 0, y: 0 };
 function warnFrame() {
@@ -1863,6 +1873,7 @@ function after(dt, inp, yawDelta) {
   if (inp.easySwing) { D.mobile.rush(inPlay ? (speed - PHONE.lines.from) / (PHONE.lines.to - PHONE.lines.from) : 0, dt); D.mobile.climbing(inPlay && !!P.wall); }
   audio.setListener(vh.pos, vh.quat);
   audio.setWind(inPlay ? speed : 0, P.pos.y);
+  audio.chase(inPlay ? chaseBed() : 0);
   for (let i = 0; i < 2; i++) {
     const r = P.ropes[i], on = r.state === "attached";
     audio.setRope(i, on ? r.tension : 0);
