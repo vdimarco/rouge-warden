@@ -983,3 +983,38 @@ Unreal is not available in this environment, so in-engine frames are the last co
 - Playability raw: 39 / 10 dimensions, index 39
 - Total: 102 / 200
 - Delta vs last round: +1
+
+### Round 29 — 2026-10-21 — rubric v1
+
+- What changed: rough upward ground in `Scripts/apply_comic_style.py` takes a night sheen after the moon grade. Sixteen taps from the pixel toward the horizon, at the same screen x, keep the brightest warm or white sample and mix it at 0.85. Paint, glass, chrome, walls, sky, crew, foliage and the pond stay out. `NightFactor` 0 returns the colour unchanged. The puddle mask stays in the ground graph.
+- Why it helped: Color palette was at 6. The midnight road was a black fill. The orange from the windows and the white from the headlights now run down the asphalt.
+- Screenshots: before `docs/gauntlet/gta-graphics/round-29/before-mirror.png`, after `docs/gauntlet/gta-graphics/round-29/after-mirror.png`. Both are the walking-camera night plate (arm 420, socket Y 70, socket Z 110, pitch −12, horizontal FOV 90) with the moon and the spill. The coupe is a box stand-in. Not an Unreal capture. Mean absolute delta is 0.045 and the max is 0.81. The lower street mean delta is 0.089. The taps are point samples, so the streaks are hard-edged. A screen-space reflected ray was shaded first and stayed under a mean delta of 0.01, so it was not kept. `Scripts/test_street.py` passed. `Scripts/test_night.py` passed. `Scripts/test_coat.py` passed. `Scripts/test_cloud.py` passed. `Scripts/test_horizon_haze.py` passed. `Scripts/test_plateau_trees.py` passed. `Scripts/test_crew_colour.py` passed. `Scripts/test_contact.py` passed. `GET /gta/` returned 200. OpenSpec CLI is not installed, so the change files were not validated with `openspec`.
+- Next target: character models, the lowest aesthetics score that can still be drawn offline. Composition, particles and UI are tied at 6, and the walking socket, the rain displacement and the paper rule stay as they are. Animation smoothness stays at 3 and is skipped until a pose can be drawn.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 7 | The sheen repeats lights that are already in the frame. Exposure is unchanged. |
+| Color palette | 7 | The road carries the window orange and the headlight white. The streaks are sixteen hard taps, not a blurred lobe. |
+| Detail density | 7 | The English bond and the street props are unchanged. |
+| Texture and material quality | 8 | The clearcoat is unchanged. Roughness only gates who receives the sheen. |
+| Composition and camera | 6 | The walking socket is unchanged. |
+| Atmosphere | 8 | The moon and the spill are unchanged. |
+| Character models | 6 | No figure was added. |
+| Animation smoothness | 3 | Skipped. The blend space still cannot be posed here. |
+| Particles and VFX | 6 | Rain rings are unchanged. The sheen is a column of taps, not a particle. |
+| UI polish | 6 | The paper rule is unchanged. |
+| Responsiveness and input latency | 4 | Not measured this round. |
+| Controls feel | 4 | Not played. |
+| Mission clarity | 5 | The objective words are unchanged. |
+| Pacing | 4 | Unchanged mission slice. |
+| Fun factor | 3 | Not played. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 4 | No new juice. |
+| Sound design | 3 | Not listened to. |
+| Variety | 3 | One district, one midnight plate. The clear-day frame is the same shader with NightFactor 0. |
+| Performance stability | 5 | The comic source tests passed. The sheen adds sixteen scene-colour taps on top of the night gather. Frame time was not remeasured. |
+
+- Aesthetics raw: 64 / 10 dimensions, index 64
+- Playability raw: 39 / 10 dimensions, index 39
+- Total: 103 / 200
+- Delta vs last round: +1

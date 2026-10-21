@@ -274,6 +274,36 @@ NightBody = lerp(NightBody, max(NightBody, HereNeon), step(0.5, HereHot));
 NightBody = lerp(NightBody, max(NightBody, HereLamp), step(0.5, HereWhite));
 float3 NightCol = Sky ? NightSky : NightBody;
 Color = lerp(Color, NightCol, saturate(NightFactor));
+
+// Night sheen on rough ground. Sébastien Lagarde, "Water drop 3a – Physically
+// Based Wet Surfaces" (2013), stretches bright reflections down a rough plane.
+// An anisotropic lobe does not fit this node, so sixteen taps toward the
+// horizon, at this screen x, gather the same warm and white gates as the
+// spill. The puddle mask stays at zero on a clear night, so this mix follows
+// NightFactor. NightFactor 0 leaves the colour. Paint, glass and chrome stay
+// on the coat.
+float HorizonNdc = -View.ViewForward.z / max(View.ViewUp.z * TanHalf.y, 1.0e-3);
+float HorizonV = saturate(HorizonNdc * -0.5 + 0.5);
+float Below = step(HorizonV, ColorUV.y);
+float3 Sheen = float3(0, 0, 0);
+for (int SheenI = 1; SheenI <= 16; SheenI++)
+{
+    float Along = float(SheenI) / 16.0;
+    float2 SheenUV = float2(ColorUV.x, lerp(ColorUV.y, HorizonV, Along));
+    float3 SheenRgb = SceneTextureLookup(SheenUV, 14, false).rgb;
+    float SheenPeak = max(SheenRgb.r, max(SheenRgb.g, SheenRgb.b));
+    float SheenWarm = saturate((SheenRgb.r - SheenRgb.b) / max(SheenPeak, 1.0e-3));
+    float SheenHot = smoothstep(0.20, 0.48, SheenPeak) * smoothstep(0.34, 0.60, SheenWarm);
+    float SheenWhite = smoothstep(0.62, 0.88, SheenPeak) * (1.0 - smoothstep(0.25, 0.45, SheenWarm));
+    float3 SheenNeon = saturate(float3(SheenPeak * 1.2, SheenPeak * 0.40, SheenPeak * 0.16));
+    float3 SheenLamp = saturate(float3(SheenPeak, SheenPeak * 0.96, SheenPeak * 0.82));
+    Sheen = max(Sheen, SheenNeon * SheenHot + SheenLamp * SheenWhite);
+}
+float RoadUp = smoothstep(0.85, 0.96, NormalC.z);
+float RoadMat = smoothstep(0.55, 0.75, Roughness);
+float RoadMask = RoadUp * RoadMat * Below * (Sky ? 0.0 : 1.0) * (1.0 - PrintedCrew) * (1.0 - Foliage) * (1.0 - SmoothReflection);
+float RoadMix = RoadMask * 0.85 * saturate(NightFactor);
+Color = lerp(Color, saturate(Color + Sheen), RoadMix);
 return Color;
 '''
 
