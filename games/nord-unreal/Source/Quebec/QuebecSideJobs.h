@@ -58,6 +58,9 @@ public:
     float GetServerNow() const;
     int32 NumMarkers() const { return MarkerPoints.Num(); }
     FVector GetMarker(int32 Index) const { return MarkerPoints.IsValidIndex(Index) ? MarkerPoints[Index] : FVector::ZeroVector; }
+    // Free-roam guide index: the running job, else the nearest unfinished marker, else the nearest replay.
+    // INDEX_NONE while the story campaign still owns the mission card, or when no marker exists.
+    int32 GuideMarker(const FVector& From, bool bCampaignComplete) const;
     bool IsCompleted(int32 Index) const { return Index >= 0 && Index < 31 && (CompletedMask & (1 << Index)) != 0; }
     // The marker a walking pawn stands at, or INDEX_NONE. Every peer.
     int32 MarkerAt(const APawn* Pawn) const;

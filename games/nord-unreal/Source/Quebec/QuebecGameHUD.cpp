@@ -493,7 +493,9 @@ void AQuebecHUD::DrawStreetHUD(float UIScale, bool bTall, bool bTouch, float Rad
     {
         const FString Head = Jobs->bLastSucceeded ? TEXT("MISSION RÉUSSIE") : TEXT("MISSION RATÉE");
         FString Line = Jobs->bLastSucceeded ? FString::Printf(TEXT("+%d $  ·  %s"), Jobs->LastReward, *Jobs->LastResult) : Jobs->LastResult;
-        if (!Jobs->bLastSucceeded && !bTouch && Jobs->RetryUntil > ServerNow) Line += TEXT("  ·  R réessaie");
+        // Touch has no R key on the pad. Recover lives in the Menu, under GAME, and sends the same key.
+        if (!Jobs->bLastSucceeded && Jobs->RetryUntil > ServerNow)
+            Line += bTouch ? TEXT("  ·  Menu · Recover") : TEXT("  ·  R réessaie");
         Plate(Head, Line, Jobs->bLastSucceeded ? Accent : Danger, ScreenW * .5f, BannerTop, JobAge, QuebecJobRules::ResultBannerSeconds);
     }
     else if (bNotice)

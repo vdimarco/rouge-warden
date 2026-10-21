@@ -275,6 +275,16 @@ float AQuebecSideJobs::GetRemainingSeconds() const
     return QuebecJobRules::Remaining(static_cast<double>(DeadlineTime),static_cast<double>(GetServerNow()));
 }
 
+int32 AQuebecSideJobs::GuideMarker(const FVector& From, bool bCampaignComplete) const
+{
+    QuebecJobRules::FJobSpot Spots[QuebecJobRules::JobCount];
+    const int32 Count = FMath::Min(MarkerPoints.Num(), static_cast<int32>(QuebecJobRules::JobCount));
+    for (int32 Index = 0; Index < Count; ++Index)
+        Spots[Index] = {MarkerPoints[Index].X, MarkerPoints[Index].Y, 0.};
+    return QuebecJobRules::FreeRoamGuide(bCampaignComplete, IsActive(), JobIndex,
+        {From.X, From.Y, 0.}, Spots, Count, CompletedMask);
+}
+
 int32 AQuebecSideJobs::MarkerAt(const APawn* Pawn) const
 {
     if (!Cast<AQuebecCharacter>(Pawn)) return INDEX_NONE;

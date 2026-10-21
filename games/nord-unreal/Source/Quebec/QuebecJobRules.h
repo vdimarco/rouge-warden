@@ -176,4 +176,35 @@ namespace QuebecJobRules
         if (Elapsed < 2.f) return false;
         return bSawStars ? Stars <= 0 : bCarAtGarage;
     }
+
+    // Index of the nearest unfinished job. A finished job is chosen only when every listed job is finished.
+    // Equal distances keep the earlier index. -1 when Count is 0.
+    inline int NearestOpenJob(const FJobSpot& From, const FJobSpot* Spots, int Count, int CompletedMask)
+    {
+        int Open = -1;
+        int Any = -1;
+        double OpenDistance = 1e300;
+        double AnyDistance = 1e300;
+        for (int Index = 0; Index < Count; ++Index)
+        {
+            const double Distance = Distance2D(From, Spots[Index]);
+            if (Distance < AnyDistance) { AnyDistance = Distance; Any = Index; }
+            if ((CompletedMask & (1 << Index)) == 0 && Distance < OpenDistance)
+            {
+                OpenDistance = Distance;
+                Open = Index;
+            }
+        }
+        return Open >= 0 ? Open : Any;
+    }
+
+    // Which side job the free-roam mission card should name. The story card keeps its diamond until the
+    // campaign is complete. A running job wins; otherwise the nearest unfinished marker.
+    inline int FreeRoamGuide(bool bCampaignComplete, bool bJobRunning, int RunningJob,
+        const FJobSpot& From, const FJobSpot* Spots, int Count, int CompletedMask)
+    {
+        if (!bCampaignComplete) return -1;
+        if (bJobRunning) return RunningJob >= 0 && RunningJob < JobCount ? RunningJob : -1;
+        return NearestOpenJob(From, Spots, Count, CompletedMask);
+    }
 }

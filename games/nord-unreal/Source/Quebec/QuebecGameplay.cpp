@@ -2149,9 +2149,14 @@ void AQuebecHUD::DrawHUD()
     const float Right = Canvas->SizeX - Margin;
     RightText(FString::Printf(TEXT("NORD · %s  /  %d ONLINE"), District.City, State ? State->PlayerArray.Num() : 1), Paper, Right, Margin, .92f);
     if (Avatar) RightText(AQuebecParkResident::NameForStyle(Avatar->CrewStyle), Paper, Right, Margin + 23.f * Scale, 1.f);
-    // Phones have touch buttons for these keys.
+    // Phones have touch buttons for these keys. R still restarts a side job after the story, so the legend stays.
+    const AQuebecSideJobs* SideJobs = AQuebecSideJobs::Find(GetWorld());
+    const bool bSideJobRunning = SideJobs && SideJobs->IsActive();
     if (!bPortrait)
-        RightText(Campaign && !Campaign->IsCampaignComplete() ? TEXT("C  Character   /   F2  Look   /   R  Recover") : TEXT("C  Character   /   F2  Look"), Muted, Right, Margin + 48.f * Scale, .85f);
+    {
+        const bool bShowRecover = bSideJobRunning || (Campaign && !Campaign->IsCampaignComplete());
+        RightText(bShowRecover ? TEXT("C  Character   /   F2  Look   /   R  Recover") : TEXT("C  Character   /   F2  Look"), Muted, Right, Margin + 48.f * Scale, .85f);
+    }
 
     const FVector Here = Pawn->GetActorLocation();
     FString Title, Action, Status;
@@ -2170,6 +2175,34 @@ void AQuebecHUD::DrawHUD()
         Status = Campaign->GetStatusText();
         Target = Campaign->GetObjectiveLocation();
         bHasObjective = !Campaign->IsCampaignComplete();
+        // After both story scenes the card used to say the city was finished, while the four side jobs
+        // stayed off the radar until the player was within 100 m. The same gold diamond now leads to the
+        // next job. During the story the campaign objective keeps the diamond.
+        if (Campaign->IsCampaignComplete() && SideJobs)
+        {
+            const int32 Guide = SideJobs->GuideMarker(Here, true);
+            if (Guide >= 0)
+            {
+                const bool bThisJob = bSideJobRunning && Guide == SideJobs->JobIndex;
+                Title = bThisJob ? AQuebecSideJobs::JobTitle(Guide)
+                    : (SideJobs->IsCompleted(Guide) ? TEXT("REPLAY A SIDE JOB") : TEXT("NEXT SIDE JOB"));
+                Action = (bThisJob && !SideJobs->ObjectiveText.IsEmpty())
+                    ? SideJobs->ObjectiveText
+                    : FString::Printf(TEXT("Go to %s"), AQuebecSideJobs::JobTitle(Guide));
+                FVector Goal = FVector::ZeroVector;
+                const bool bGoal = bThisJob && SideJobs->GetTarget(Goal);
+                if (bGoal) Target = Goal;
+                else if (Guide < SideJobs->NumMarkers()) Target = SideJobs->GetMarker(Guide);
+                if (bGoal || Guide < SideJobs->NumMarkers()) bHasObjective = true;
+                if (bThisJob)
+                {
+                    const int32 Whole = FMath::Max(0, FMath::CeilToInt(SideJobs->GetRemainingSeconds()));
+                    const FString Clock = Whole > 0 ? FString::Printf(TEXT("%d:%02d left · "), Whole / 60, Whole % 60) : FString();
+                    Status = Clock + (bTouchControls ? FString(TEXT("Menu · Recover restarts")) : FString(TEXT("R restarts")));
+                }
+                else Status = bTouchControls ? TEXT("Use at the yellow M · Menu · Race replay") : TEXT("E at the yellow M · T replays the race");
+            }
+        }
     }
     else if (State && State->MissionIndex >= 0 && State->MissionIndex < AQuebecGameState::MissionCount)
     {

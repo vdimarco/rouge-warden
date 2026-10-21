@@ -166,6 +166,24 @@ namespace
         Expect(!EscapeWon(false, 0, true, 1.f), "not in the first two seconds");
     }
 
+    void GuideTests()
+    {
+        const FJobSpot Spawn = {38793., -7522.8, 0.};
+        const FJobSpot Terrace = {5550., 2460., 0.};
+        Expect(NearestOpenJob(Spawn, Markers, JobCount, 0) == 3, "from the spawn the nearest open job is the escape");
+        Expect(NearestOpenJob(Terrace, Markers, JobCount, 0) == 2, "from the terrace the nearest open job is the goons");
+        Expect(NearestOpenJob(Spawn, Markers, JobCount, 1 << 3) == 1, "a finished escape yields the thief, not a replay of the closer job");
+        Expect(NearestOpenJob(Spawn, Markers, JobCount, (1 << JobCount) - 1) == 3, "when every job is done the nearest replay is the escape");
+        Expect(NearestOpenJob(Spawn, Markers, 0, 0) == -1, "no markers means no guide");
+        Expect(FreeRoamGuide(false, false, -1, Terrace, Markers, JobCount, 0) == -1, "the story card keeps the diamond during the campaign");
+        Expect(FreeRoamGuide(false, true, 0, Terrace, Markers, JobCount, 0) == -1, "a side job during the story does not replace the story card");
+        Expect(FreeRoamGuide(true, false, -1, Terrace, Markers, JobCount, 0) == 2, "after the story the card points at the nearest open job");
+        Expect(FreeRoamGuide(true, true, 0, Spawn, Markers, JobCount, 0) == 0, "a running job stays on the card wherever the player is");
+        Expect(FreeRoamGuide(true, true, 9, Spawn, Markers, JobCount, 0) == -1, "a running job with a bad index does not invent a marker");
+        const FJobSpot Tied[] = {{0., 0., 0.}, {100., 0., 0.}};
+        Expect(NearestOpenJob({50., 0., 0.}, Tied, 2, 0) == 0, "an equal distance keeps the earlier job");
+    }
+
     void PrintTable()
     {
         for (const FNamedSpot& Point : JobPoints)
@@ -186,6 +204,7 @@ int main(int Count, char** Arguments)
     WaveTests();
     ThiefTests();
     EscapeTests();
+    GuideTests();
     std::printf("%d assertions, %d failures\n", Assertions, Failures);
     return Failures == 0 ? 0 : 1;
 }
