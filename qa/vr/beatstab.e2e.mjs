@@ -32,9 +32,11 @@ try {
     return {
       beatEarly: band(beat, 0.02, 0.32), beatLate: band(beat, 0.9, 1.45),
       trialEarly: band(trial, 0.02, 0.32), trialLate: band(trial, 0.9, 1.45),
+      beatHold: beat.stats && beat.stats.voiceEnd,
     };
   });
   check(tone.beatEarly > 0.02 && tone.beatLate < tone.beatEarly * 0.35, "the stab is loud at once and quiet after four fifths of a second", tone);
+  check(tone.beatHold >= 0.6, "the stab's voice lasts through the second brass note", tone);
   check(tone.trialLate > 0.01 && tone.trialLate > tone.beatLate * 3, "the trial countdown is still sounding after four fifths of a second", tone);
 
   const played = await page.evaluate(() => {

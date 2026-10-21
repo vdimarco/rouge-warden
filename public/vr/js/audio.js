@@ -479,10 +479,12 @@ const SFX = {
     return hiss(e, t, { type: "highpass", f: 7000, dur: 0.3, peak: 0.04, send: 0.2 });
   },
   // a mission takes the card: one short brass stab. A trial still counts in with trialStart.
+  // Live cleanup disconnects a voice at the time this returns. The hiss ends first; the second brass note is the one that has to finish.
   beat(e, t) {
-    brass(e, t, 659.3, 0.14, 0.16);
-    brass(e, t + 0.06, 1046.5, 0.18, 0.12);
-    return hiss(e, t, { type: "highpass", f: 5000, dur: 0.08, att: 0.001, peak: 0.08 });
+    const a = brass(e, t, 659.3, 0.14, 0.16);
+    const b = brass(e, t + 0.06, 1046.5, 0.18, 0.12);
+    const h = hiss(e, t, { type: "highpass", f: 5000, dur: 0.08, att: 0.001, peak: 0.08 });
+    return Math.max(a, b, h);
   },
   // a trial starts: three blips, then go
   trialStart(e, t) {
@@ -1333,7 +1335,7 @@ export const LOOP_NAMES = Object.keys(LOOP_SRC);
 // opts: pos, vol, pitch, at (one-shots; pos makes it spatial); speed, height, tension, side (a number, or [[t, v], ...]
 // steps); z (the listener's z, for the gulls); from + to (a loop source moves in a line over the render);
 // listener { pos, quat }; legacy (use setPosition/setOrientation); raw (skip the compressor and limiter); seed.
-// Resolves to the AudioBuffer, with .stats (voices, steals, horns, gulls).
+// Resolves to the AudioBuffer, with .stats (voices, steals, horns, gulls, and voiceEnd for one one-shot).
 export async function renderOffline(name, seconds = 2, opts = {}) {
   const OAC = globalThis.OfflineAudioContext || globalThis.webkitOfflineAudioContext;
   if (!OAC) throw new Error("no OfflineAudioContext");
@@ -1342,14 +1344,14 @@ export async function renderOffline(name, seconds = 2, opts = {}) {
   rnd = seeded(opts.seed ?? 7);
   const st = newState(true), dt = 1 / 60, at = opts.at ?? 0.25;
   st.amb = 0; // only "city" and "stress" hear the city
-  let e;
+  let e, voice = null;
   try {
     if (opts.listener) setL(st.L, opts.listener.pos, opts.listener.quat);
     e = makeEngine(ctx, { offline: true, raw: !!opts.raw, legacy: !!opts.legacy, st });
     e.out.gain.value = opts.raw ? 1 : VOL;
     const val = (v, t, d) => (typeof v === "number" ? v : typeof v === "function" ? v(t) : Array.isArray(v) ? stepAt(v, t, d) : d);
     const steps = (fn) => { for (let t = 0; t < seconds; t += dt) fn(t); };
-    if (SFX[name]) play(e, SFX[name], name, at, opts);
+    if (SFX[name]) voice = play(e, SFX[name], name, at, opts);
     else if (name === "wind") steps((t) => { const s = val(opts.speed, t, 20), h = val(opts.height, t, 60); drive(e, "wind", windLevel(s, h), t, s); });
     else if (name === "rope") { const side = opts.side === "right" || opts.side === 1 ? "ropeR" : "ropeL"; steps((t) => drive(e, side, val(opts.tension, t, 0.5), t)); }
     else if (name === "city") {
@@ -1404,7 +1406,7 @@ export async function renderOffline(name, seconds = 2, opts = {}) {
     } else throw new Error("unknown sound " + name);
   } finally { rnd = keep; }
   const buf = await ctx.startRendering();
-  try { buf.stats = { ...e.stats, voiceCap: MAX_VOICES }; } catch (err) { /* not extensible */ }
+  try { buf.stats = { ...e.stats, voiceCap: MAX_VOICES, voiceEnd: voice ? voice.end - at : null }; } catch (err) { /* not extensible */ }
   return buf;
 }
 // [[t, v], ...]: the last v whose t has passed
