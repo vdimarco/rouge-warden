@@ -594,7 +594,7 @@ Playability was scored from a flat boot and the city render check, not a full pl
 
 ### Round 17 — 2026-10-21 — rubric v1
 
-- What changed: The chase jacket keeps half its painted colour under the cel, and the map is sampled a little sharper. A cream belt is painted on the red cloth about 8 cm above the hip bone, the same belt the built-in figure already wears as geometry. The sun rim and the shade rim are a little stronger. No new mesh. The albedo warp and the rim follow Mitchell, Francke, and Eng, Illustrative Rendering in Team Fortress 2 (2007).
+- What changed: The chase jacket keeps half its painted colour under the cel, and the map is sampled a little sharper. A cream belt is painted on the red cloth about 8 cm along the hips' own up axis, and only near the torso, the same belt the built-in figure already wears as geometry. A roll carries that band with the body. The sun rim and the shade rim are a little stronger. No new mesh. The albedo warp and the rim follow Mitchell, Francke, and Eng, Illustrative Rendering in Team Fortress 2 (2007).
 - Why it helped: From behind, the jacket was one red. A cream band now breaks it at the hips, and more of the painted panels stay inside the bands. It is still a comic figure.
 - Screenshots: before `docs/gauntlet/shots/r17-before-play.png`, after `docs/gauntlet/shots/r17-after-play.png`. The street, where the hero is hidden: `docs/gauntlet/shots/r17-before-street.png`, `docs/gauntlet/shots/r17-after-street.png`.
 - Next target: Animation smoothness (5), tied with composition, particles and VFX, and UI. The chase still is one idle pose.

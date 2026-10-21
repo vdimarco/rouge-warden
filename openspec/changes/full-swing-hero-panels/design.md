@@ -7,7 +7,7 @@ Jason Mitchell, Moby Francke, and Dhabih Eng, "Illustrative Rendering in Team Fo
 ## Decisions
 
 - The mix is `mix(paint, cel, 0.5)` on the hero material only. The lit-sphere check still sees the stock cel.
-- The built-in figure already wears a cream belt on the hips. The mapped jacket's cel flattens that line, so the hero shader paints the same cream wherever the cloth is red and the pixel is about 8 cm above the hip bone. It is not a new mesh.
+- The built-in figure already wears a cream belt on the hips. The mapped jacket's cel flattens that line, so the hero shader paints the same cream on red cloth about 8 cm along the hips' own up axis, and only within about 20 cm of that axis so the sleeves do not take it. The test is not world Y, so a roll carries the belt with the torso. It is not a new mesh.
 - The ink hull is not biased and not mixed. It stays flat ink.
 - No new mesh and no new draw. The hero stays at four draws: body, hull, hair forms, outline. Skinned triangles stay the crew5 count.
 - The hair follow-through and its snap distance are unchanged. The forms are still the head-bone mesh.
