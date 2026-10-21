@@ -387,3 +387,40 @@ Loop: missions, playability, controls, feel, UX, pacing and fun for In Full Swin
 - Delta vs last round: +1 (round 9 was 113). Sound design 6 → 7. Every other score held.
 
 ![The fast clock stays on while he is pulling away](fullswing-r10/clock.png)
+
+### Round 11 — 2026-10-21 — rubric v1
+
+- What changed: A won job in flat play hops the hero off the ground: 8 m/s up and 3.5 m/s forward, and the view widens by 6 degrees. The feet leave the ground in that same moment, because a grounded step would zero the rise. Reduced motion and a headset keep the word and do not launch. A miss does not change the hero's speed.
+- Why it helped: The win was a title while the hero stood still. Spider-Man 2 throws you back into motion when a mission clears. A 1280×800 play caught the purse snatcher. The body rose from 44 m to 46.4 m, the pose was jump, the pill read GOT IT, and Mission 3 waited. A miss left the hero at the same height with no upward speed. Reduced motion kept KASPLASH and stayed on the ground. A headset was not worn.
+- Screenshots: `docs/gauntlet/fullswing-r11/hop.png`.
+- Next target: variety (7). Fun just moved. Missions 2, 3 and 4 are still a chase, a rescue and a fight, then the twelve clogs. Performance stays at 6. This machine has no real GPU to time, so that score is not the next round.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 5 | Held. Golden-hour sun and ink shadows. |
+| Color palette | 6 | Held. Yellow, red and sludge green still separate the HUD from the blocks. |
+| Detail density | 4 | Held. Open blocks more than a dressed borough. |
+| Texture and material quality | 3 | Held. Flat fills. |
+| Composition and camera | 4 | Held. The chase camera still sits behind the hero. The hop is in that same view. |
+| Atmosphere | 5 | Held. The dusk skyline has a mood. The roof under the hop does not. |
+| Character models | 3 | Held. Simple comic figures. |
+| Animation smoothness | 4 | Scored from still frames in software GL. Continuous motion was not watched. |
+| Particles and VFX | 5 | Held. The win word is unchanged. The hop is the body, not a new effect. |
+| UI polish | 6 | Held. GOT IT is the same ink pill. |
+| Responsiveness and input latency | 7 | Held. The hop was on the stepped frames after the catch. |
+| Controls feel | 7 | Held. The swing carry is unchanged. |
+| Mission clarity | 7 | Held. GOT IT names the job. Mission 3's card waits. |
+| Pacing | 7 | Held. The hang is the same length. The hop happens inside it. |
+| Fun factor | 8 | Catching the thief pops the hero 2.4 m into a jump, under the word, before the next mission. It is still one hop, not a filmed finish. |
+| Difficulty curve | 7 | Held. Falling behind still turns the jog into a run. A miss still holds the lesson. |
+| Feedback | 7 | Held. The word, the hang, and the lesson card are unchanged. The hop is the finish, not a new hit. |
+| Sound design | 7 | Held. The cheer and the miss sting are unchanged. A speaker was not used. |
+| Variety | 7 | Held. Missions 2, 3 and 4 are still a chase, a rescue and a fight. |
+| Performance stability | 6 | The 1280×800 play passed with no page errors. Frame time on a real GPU was not measured. |
+
+- Aesthetics raw: 45 / 10 dimensions, index 45
+- Playability raw: 70 / 10 dimensions, index 70
+- Total: 115 / 200
+- Delta vs last round: +1 (round 10 was 114). Fun factor 7 → 8. Every other score held.
+
+![Catching the thief hops the hero off the roof under GOT IT](fullswing-r11/hop.png)

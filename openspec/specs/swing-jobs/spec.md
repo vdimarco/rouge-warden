@@ -181,11 +181,11 @@ While a chase is running (the Sludge Run before the crew, Stop Thief, the getawa
 - **THEN** the tick stays quiet
 
 ### Requirement: A win pays off
-A won job SHALL show a comic word wider than a finisher, play a cheer, and hold a short slow moment in play. The Sludge Run's word SHALL be FLUSH. Every other won job's word SHALL be KASPLASH. The next mission card SHALL NOT open during that moment. A failed job SHALL NOT show a payoff word. After the moment, the next story mission SHALL start as before.
+A won job SHALL show a comic word wider than a finisher, play a cheer, and hold a short slow moment in play. The Sludge Run's word SHALL be FLUSH. Every other won job's word SHALL be KASPLASH. In flat play the hero SHALL leave the ground on that win, upward. A headset and reduced motion SHALL keep the word and SHALL NOT launch the body. The next mission card SHALL NOT open during that moment. A failed job SHALL NOT show a payoff word and SHALL NOT launch the hero. After the moment, the next story mission SHALL start as before.
 
 #### Scenario: Stop, Thief! pays off
-- **WHEN** the player catches the purse snatcher
-- **THEN** a KASPLASH wider than a finisher shows, the world hangs for a moment, and the Mission 3 card does not show yet
+- **WHEN** the player catches the purse snatcher in flat play
+- **THEN** a KASPLASH wider than a finisher shows, the world hangs for a moment, the hero rises off the street, and the Mission 3 card does not show yet
 
 #### Scenario: The next mission follows
 - **WHEN** that moment ends
@@ -193,7 +193,7 @@ A won job SHALL show a comic word wider than a finisher, play a cheer, and hold 
 
 #### Scenario: A miss is not a win
 - **WHEN** the purse snatcher gets away
-- **THEN** no payoff word shows
+- **THEN** no payoff word shows, and the hero is not launched upward
 
 ### Requirement: A chase pulls away
 While the purse snatcher is still running, his speed SHALL stay at 6.3 m/s while the hero is within 28 m, and SHALL rise toward 9.2 m/s while the hero is farther than 28 m. While the Sludge Run runner is still running, his speed SHALL stay at 5.4 m/s while the hero is within 46 m, and SHALL rise toward 7.4 m/s while the hero is farther than 46 m. Coming back inside that distance SHALL bring the speed back toward the jog. The card SHALL say he is pulling away once that rise is most of the way there. While Mission 1 is waiting for the first swing, the runner SHALL stay stopped.

@@ -69,6 +69,8 @@ export const MOVES = {
   release: { forward: 4, up: 3.5, kick: 7, flip: 0.55, cool: 0.6, carry: 8, carryForward: 2.2, carryUp: 1.6, carryKick: 3 },
   // the finisher: the world runs at slow speed for time s (real time) after it, and the view narrows by zoom degrees
   finisher: { slow: 0.3, time: 0.7, zoom: 10 },
+  // a won job in flat play: up m/s off the street, forward m/s along the flight, and the view widens by kick degrees. A miss does not.
+  win: { up: 8, forward: 3.5, kick: 6 },
   // the glide (hold jump in the air with no rope, after minAir s): the fall eases to sink m/s, lift of the fall it stops turns into
   // speed along the ground, which stays between min and max m/s; the move input turns it at turn rad/s
   glide: { sink: 3.2, min: 14, max: 32, lift: 0.6, turn: 1.6, minAir: 0.25, grow: 8 },
