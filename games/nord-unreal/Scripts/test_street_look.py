@@ -19,10 +19,11 @@ assert "const FRotator Target(-12.f," in GAME
 assert "const FRotator Look(-16.f, Yaw, 0.f);" in GAME
 assert "Player->FrameTheStreet(NewController->GetControlRotation().Yaw);" in GAME
 assert "FrameTheStreet(Car->GetActorRotation().Yaw);" in GAME
-assert "Player->FrameTheStreet(StartRotation.Yaw);" in GAME
+assert "Player->FrameTheStreet(QuebecStreetLook::OpeningYaw(GetWorld(), Walker->GetActorLocation(), StartRotation.Yaw));" in GAME
 assert "SetControlRotation(Car->GetActorRotation())" not in GAME
 assert "Player->FrameTheStreet(Yaw);" in COMBAT
-assert "Player->FrameTheStreet(0.f);" in COMBAT
+assert "Player->FrameTheStreet(QuebecStreetLook::OpeningYaw(World, Spot, 0.f));" in COMBAT
+assert "Player->FrameTheStreet(0.f);" not in COMBAT
 assert "SetControlRotation(FRotator::ZeroRotator)" not in COMBAT
 assert "Player->FrameTheStreet(Facing.Yaw, true);" in JOBS
 assert "void FrameTheStreet(float Yaw, bool bResetCamera = false);" in HEADER

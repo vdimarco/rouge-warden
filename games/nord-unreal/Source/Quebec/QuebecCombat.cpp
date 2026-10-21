@@ -431,7 +431,7 @@ void QuebecCombat::Respawn(AQuebecController* Player, EQuebecDownState Kind)
     {
         Character->GetCharacterMovement()->StopMovementImmediately();
         Character->TeleportTo(Spot, FRotator::ZeroRotator, false, true);
-        Player->FrameTheStreet(0.f);
+        Player->FrameTheStreet(QuebecStreetLook::OpeningYaw(World, Spot, 0.f));
     }
     Character->EndKnock();
     Character->ReleaseCombatInput();

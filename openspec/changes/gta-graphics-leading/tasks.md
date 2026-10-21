@@ -1,0 +1,4 @@
+- [x] Aim the on-foot opening yaw down the nearest avenue
+- [x] Shade the walking camera before and after at the surveyed spawn
+- [x] Run `Scripts/test_street_aim.py`, `Scripts/test_street_look.py`, and `Scripts/test_camera_shoulder.py`
+- [ ] Confirm the opening look in Unreal (editor not available here)

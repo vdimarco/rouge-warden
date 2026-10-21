@@ -1578,3 +1578,38 @@ Unreal is not available in this environment, so in-engine frames are the last co
 - Playability raw: 39 / 10 dimensions, index 39
 - Total: 119 / 200
 - Delta vs last round: +1
+
+### Round 46 — 2026-10-21 — rubric v1
+
+- What changed: on foot, the opening yaw aims at a point 18 m down the nearest avenue, a road at least 9 m wide within 25 m. At the park spawn that is about 110°, instead of the authored 77.5° that looks along the curb. The pitch stays −16. The walking socket stays. A respawn uses the same aim. Getting out of a car still uses the car's yaw. A narrower street does not count.
+- Why it helped: Composition was at 7. From the sidewalk, a look parallel to Sherbrooke left the avenue as a sliver beside the lawn.
+- Screenshots: before `docs/gauntlet/gta-graphics/round-46/before-frame.png`, after `docs/gauntlet/gta-graphics/round-46/after-frame.png`. Crops are `before-street.png` and `after-street.png`. The before yaw is the authored 77.5°. The after yaw is 110.1°. Both use the opening walk camera (arm 420, socket Y 70, socket Z 110, pitch −16, horizontal FOV 90) at the surveyed sidewalk spawn, with surveyed building footprints and a stand-in of the parked car. Not an Unreal capture. The street crop mean absolute delta is 0.082 and the max is 0.382. The full-frame mean is 0.044 and the max is 0.382. 139276 pixels change. The figure stays in frame. `Scripts/test_street_aim.py`, `Scripts/test_street_look.py`, and `Scripts/test_camera_shoulder.py` passed. `QuebecGameplay.cpp` and `QuebecCombat.cpp` were not compiled. `GET /gta/` returned 200. OpenSpec CLI is not installed, so the change files were not validated with `openspec`.
+- Next target: animation smoothness, still at 3. A procedural sway can be drawn offline. The socket and the opening pitch stay.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 9 | The street shade is unchanged. |
+| Color palette | 9 | Brick, asphalt, and the figure use the existing colours. The car in the picture is a stand-in box. |
+| Detail density | 9 | The street mesh is unchanged. The buildings are surveyed footprints. |
+| Texture and material quality | 9 | The asphalt mix is unchanged. |
+| Composition and camera | 8 | The opening look turns toward the lane, so the avenue and the parked car sit in the frame. The foreground is still the park lawn, and the figure is still a spring arm. |
+| Atmosphere | 9 | The street dust is unchanged. |
+| Character models | 8 | The figure is the same stand-in. |
+| Animation smoothness | 3 | Skipped. The blend space still cannot be posed here. |
+| Particles and VFX | 8 | The leaf cards are unchanged. Rain rings are unchanged. |
+| UI polish | 9 | The radar heading is unchanged. |
+| Responsiveness and input latency | 4 | Not measured this round. |
+| Controls feel | 4 | Not played. |
+| Mission clarity | 5 | The objective words are unchanged. |
+| Pacing | 4 | Unchanged mission slice. |
+| Fun factor | 3 | Not played. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 4 | No new juice. |
+| Sound design | 3 | Not listened to. |
+| Variety | 3 | One avenue, one opening aim. |
+| Performance stability | 5 | `Scripts/test_street_aim.py` passed. The aim is a loop over the road segments at spawn and respawn. Frame time was not remeasured. |
+
+- Aesthetics raw: 81 / 10 dimensions, index 81
+- Playability raw: 39 / 10 dimensions, index 39
+- Total: 120 / 200
+- Delta vs last round: +1

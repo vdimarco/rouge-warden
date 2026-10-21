@@ -46,6 +46,7 @@
 #include "LaFontaineMap.h"
 #include "LaFontaineExtensionMap.h"
 #include "CollegeBathurstMap.h"
+#include "QuebecStreetLook.h"
 
 #include "Animation/AnimInstance.h"
 #include "Animation/AnimSequence.h"
@@ -3328,13 +3329,42 @@ AQuebecGameMode::AQuebecGameMode()
     PlayerStateClass = AQuebecPlayerState::StaticClass(); // Street state: health, weapons, stars, cash (COMBAT).
 }
 
+float QuebecStreetLook::OpeningYaw(const UWorld* World, const FVector& Here, float FallbackYaw)
+{
+    // Same length test as RoadWidthAt: each map's width array is recognised by the road count.
+    const QuebecDistrict::FSettings& District = QuebecDistrict::ForWorld(World);
+    const int32 TorontoRoads = static_cast<int32>(UE_ARRAY_COUNT(CollegeBathurst::RoadSegments));
+    const int32 MontrealRoads = static_cast<int32>(UE_ARRAY_COUNT(LaFontaine::RoadSegmentWidths));
+    const int32 ExtensionRoads = static_cast<int32>(UE_ARRAY_COUNT(LaFontaineExtension::RoadSegmentWidths));
+    TArray<FSegment> Segments;
+    Segments.Reserve(District.RoadCount);
+    for (int32 Index = 0; Index < District.RoadCount; ++Index)
+    {
+        const FVector& A = District.RoadSegments[Index][0];
+        const FVector& B = District.RoadSegments[Index][1];
+        float Width = 0.f;
+        if (District.RoadCount == TorontoRoads)
+            Width = Index < static_cast<int32>(UE_ARRAY_COUNT(CollegeBathurst::RoadSegmentWidths)) ? CollegeBathurst::RoadSegmentWidths[Index] : 0.f;
+        else if (Index < MontrealRoads)
+            Width = LaFontaine::RoadSegmentWidths[Index];
+        else
+        {
+            const int32 Extra = Index - MontrealRoads;
+            Width = Extra < ExtensionRoads ? LaFontaineExtension::RoadSegmentWidths[Extra] : 0.f;
+        }
+        Segments.Add(FSegment{A.X, A.Y, B.X, B.Y, Width});
+    }
+    return static_cast<float>(AimYaw(Here.X, Here.Y, Segments.GetData(), Segments.Num(), FallbackYaw));
+}
+
 void AQuebecGameMode::FinishRestartPlayer(AController* NewPlayer, const FRotator& StartRotation)
 {
     Super::FinishRestartPlayer(NewPlayer, StartRotation);
     // The base class writes the start rotator after possess, which puts pitch back at 0.
+    // The start yaw looks along the avenue, which from this sidewalk leaves the street as a side sliver.
     if (AQuebecController* Player = Cast<AQuebecController>(NewPlayer))
-        if (Cast<AQuebecCharacter>(Player->GetPawn()))
-            Player->FrameTheStreet(StartRotation.Yaw);
+        if (AQuebecCharacter* Walker = Cast<AQuebecCharacter>(Player->GetPawn()))
+            Player->FrameTheStreet(QuebecStreetLook::OpeningYaw(GetWorld(), Walker->GetActorLocation(), StartRotation.Yaw));
 }
 
 AActor* AQuebecGameMode::ChoosePlayerStart_Implementation(AController* Player)

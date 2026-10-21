@@ -45,6 +45,12 @@ namespace QuebecDistrict
     QUEBEC_API const FSettings& ForWorld(const UWorld* World);
 }
 
+namespace QuebecStreetLook
+{
+    // On-foot opening yaw: down the nearest avenue when one is close, otherwise FallbackYaw.
+    QUEBEC_API float OpeningYaw(const UWorld* World, const FVector& Here, float FallbackYaw);
+}
+
 // Planar car-to-car impact between two equal-mass cars, as velocity changes (cm/s) and spin changes (deg/s).
 namespace QuebecCarImpact
 {
