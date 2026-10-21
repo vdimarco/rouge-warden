@@ -162,10 +162,21 @@ vec3 wetAsphalt(vec3 col, vec3 wp, vec3 N, float wet, float sunVis) {
   vec3 fill = vec3(1.0, 0.55, 0.28) * (1.0 - sunVis) * cover * 0.14;
   return col + sky * fres * cover * (0.55 + 0.6 * puddle) + glint + fill;
 }
+// James Gurney, Color and Light (2010): a shadow is its own hue, and the step between
+// shadow and light is not their average. Cool shade goes teal. That step goes rose.
+// Bright lamps, the sun, and near-black ink stay.
+vec3 gradeInk(vec3 c) {
+  float y = dot(c, vec3(0.299, 0.587, 0.114));
+  float hold = smoothstep(0.08, 0.12, y) * (1.0 - smoothstep(0.30, 0.44, y));
+  vec3 teal = vec3(c.r * 0.55, c.g * 1.35 + 0.055, c.b * 0.58);
+  vec3 rose = vec3(c.r * 1.30 + 0.03, c.g * 0.68, c.b * 0.90);
+  float t = smoothstep(0.16, 0.30, y);
+  return mix(c, mix(teal, rose, t), hold);
+}
 // Haze in four print-like steps toward the sky's own colour in that direction
 vec3 fogMix(vec3 col, vec3 wp, float maxF) {
   vec3 v = normalize(wp - cameraPosition);
-  return mix(col, skyHaze(v), comicPoster(fogAmount(wp) * maxF, 4.0));
+  return gradeInk(mix(col, skyHaze(v), comicPoster(fogAmount(wp) * maxF, 4.0)));
 }
 `;
 
@@ -947,7 +958,7 @@ void main() {
   col += vec3(1.0, 0.72, 0.39) * fold * foldSun * 0.22;
   if (lineY > 0.0) ink = max(ink, comicInk(abs(vW.y - lineY), wpx * 0.8));
   col = mix(col, INKC, ink);
-  gl_FragColor = vec4(mix(col, vFog.rgb, comicPoster(vFog.a, 4.0)), 1.0);
+  gl_FragColor = vec4(gradeInk(mix(col, vFog.rgb, comicPoster(vFog.a, 4.0))), 1.0);
 }`;
 
 // The Needle, the Dome, the expressway and the King's perch: one mesh, a kind per vertex.
@@ -1415,7 +1426,7 @@ void main() {
     col = mix(col, vec3(1.0, 0.72, 0.3), 1.0 - smoothstep(0.9935 - 0.0008, 0.9935 + 0.0008, s));
     col = mix(col, ${hexv(PAL.sun)}, 1.0 - smoothstep(0.9985 - 0.0004, 0.9985 + 0.0004, s));
   }
-  gl_FragColor = vec4(col, 1.0);
+  gl_FragColor = vec4(gradeInk(col), 1.0);
 }`;
 
 // Trees: a trunk and two lumpy crown lobes, one instance each. Cel colours, leaf clumps in two flat tones, and an ink hull.
@@ -1481,7 +1492,7 @@ void main() {
   vec3 col = band < 1.0 ? mix(shd, mid, band) : mix(mid, lit, band - 1.0);
   float dw = 1.0 - clamp(band - 1.0, 0.0, 1.0);
   col = mix(col, DOTC, comicDots(vW.xz + vW.y * 0.5, 0.4, mix(0.6, 0.3, clamp(band, 0.0, 1.0))) * dw * 0.45);
-  gl_FragColor = vec4(mix(col, vFog.rgb, comicPoster(vFog.a, 4.0)), 1.0);
+  gl_FragColor = vec4(gradeInk(mix(col, vFog.rgb, comicPoster(vFog.a, 4.0))), 1.0);
 }`;
 
 // Cars and streetcars: they drive their lanes in the vertex shader, from uTime, with head and tail lights and an ink hull.
@@ -1576,7 +1587,7 @@ void main() {
   float front = step(0.5, vLN.x), back = step(0.5, -vLN.x);
   col = mix(col, vec3(1.0, 0.95, 0.7), light * front);
   col = mix(col, vec3(1.0, 0.1, 0.08), light * back);
-  gl_FragColor = vec4(mix(col, vFog.rgb, comicPoster(vFog.a, 4.0)), 1.0);
+  gl_FragColor = vec4(gradeInk(mix(col, vFog.rgb, comicPoster(vFog.a, 4.0))), 1.0);
 }`;
 
 // Roof props and curb furniture. aPart: 0 plain, 2 fan top, 3 wood staves, 4 leaves, 5 metal,
@@ -1694,7 +1705,7 @@ void main() {
   // thin things (masts, poles, tower legs, curb posts) take a dark rim where they turn away from the eye
   float rim = part == 5 || part == 7 || part >= 8 ? 1.0 - smoothstep(0.2, 0.5, abs(dot(N, normalize(cameraPosition - vW)))) : 0.0;
   col = mix(col, INKC, clamp(max(ink, rim * 0.8), 0.0, 1.0));
-  gl_FragColor = vec4(mix(col, vFog.rgb, comicPoster(vFog.a, 4.0)), 1.0);
+  gl_FragColor = vec4(gradeInk(mix(col, vFog.rgb, comicPoster(vFog.a, 4.0))), 1.0);
 }`;
 
 // Sidewalk steam. aP: x, y, z, phase. aS: size, rise, cycles per second, which puff.
@@ -1810,7 +1821,7 @@ void main() {
   } else {
     col = comicCelX(vec3(0.24, 0.24, 0.42), band, vec3(1.4, 1.1, 0.8), vec3(0.06, 0.025, 0.0));
   }
-  gl_FragColor = vec4(mix(col, vFog.rgb, min(comicPoster(vFog.a, 4.0), 0.75)), 1.0);
+  gl_FragColor = vec4(gradeInk(mix(col, vFog.rgb, min(comicPoster(vFog.a, 4.0), 0.75))), 1.0);
 }`;
 
 /* ---------------- the diorama (spec §9: shared geometry, a simple unlit material, no fog) ---------------- */
