@@ -41,6 +41,7 @@ class WatchController(app: Application) : AndroidViewModel(app) {
     val state = _state.asStateFlow()
     val hasKey = MutableStateFlow(false)
     private var ackJob: Job? = null
+    private var pressGeneration = 0
     private var relay: HermesRelay? = null
     private var sessionId: String? = null
     private val sentences = SentenceBuffer()
@@ -92,8 +93,10 @@ class WatchController(app: Application) : AndroidViewModel(app) {
             dispatch(TalkEvent.Failed(model.session?.id ?: "mic", "Allow the microphone"))
             return
         }
+        val generation = ++pressGeneration
         viewModelScope.launch {
             val reachable = runCatching { link.reachable() }.getOrDefault(false)
+            if (generation != pressGeneration) return@launch
             val id = UUID.randomUUID().toString()
             sessionId = id
             dispatch(TalkEvent.Press(reachable, id))
@@ -108,6 +111,7 @@ class WatchController(app: Application) : AndroidViewModel(app) {
     }
 
     fun release() {
+        pressGeneration += 1
         releasedAt = System.currentTimeMillis()
         loggedAudio = false
         sentences.clear()
@@ -221,6 +225,7 @@ class WatchController(app: Application) : AndroidViewModel(app) {
     }
 
     override fun onCleared() {
+        pressGeneration += 1
         recognizer.destroy()
         speaker.shutdown()
         MicHub.stop(getApplication())
