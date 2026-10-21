@@ -74,3 +74,40 @@ Playability was scored from a flat boot and the city render check, not a full pl
 - Total: 87 / 200
 - Delta vs last round: +2 (85 → 87). Lighting 4 → 5, particles and VFX 3 → 4. Playability unchanged.
 
+### Round 3 — 2026-10-21 — rubric v1
+
+- What changed: A street figure keeps one instanced mesh and the same limb pivots, and now has a neck, a hair mass, shoulders wider than the waist, a chest, and a waist in the trouser colour. The hero and the crowd add a small warm rim on the sun side and a cool rim in shade, after the cel bands. The ink hull stays flat ink. The source for the rim is Jason Mitchell, Moby Francke, and Dhabih Eng, "Illustrative Rendering in Team Fortress 2" (2007).
+- Why it helped: The people were six boxes, and the hero was a flat cel cutout. A shoulder line, hair, and an edge light are what make a comic figure read as a person against this sunset. They are still boxes, not Spider-Man 2's people.
+- Screenshots: before `docs/gauntlet/shots/r03-before-chase.png`, `docs/gauntlet/shots/r03-before-crowd.png`, `docs/gauntlet/shots/r03-before-person.png`. After `docs/gauntlet/shots/r03-after-chase.png`, `docs/gauntlet/shots/r03-after-crowd.png`, `docs/gauntlet/shots/r03-after-person.png`. Named cameras hide the hero, so these are flat play on the Market sidewalk.
+- Next target: Texture and material quality (4), tied with several others. Glass and brick are still flat colours, which is the gap these street views still show.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 5 | The avenue and the shaft are unchanged. Figures now take a small rim. Walls are still flat bands. |
+| Color palette | 5 | Unchanged. The sunset inks hold, and the rim stays inside them. |
+| Detail density | 4 | Unchanged. The city is still thin on props. |
+| Texture and material quality | 4 | Unchanged. Roads are wet. Glass and brick are still flat colours. |
+| Composition and camera | 4 | Unchanged. The proof frames are a chase view and a close pedestrian, not a swinging shot. |
+| Atmosphere | 4 | Unchanged. One shaft, stepped fog, no weather. |
+| Character models | 4 | The crowd has hair, a neck, and shoulders, and the hero's edge catches the sun. Both are still simple next to Spider-Man 2. |
+| Animation smoothness | 4 | Unchanged. Stills only. The poses still drive the same pivots. |
+| Particles and VFX | 4 | Unchanged. One occluded sun shaft. No spray or debris. |
+| UI polish | 4 | Unchanged. The HUD was hidden for the shots. |
+| Responsiveness and input latency | 6 | Unchanged. The crowd is still two draws. No input timing was measured. |
+| Controls feel | 5 | Unchanged. |
+| Mission clarity | 4 | Unchanged. Not played. |
+| Pacing | 4 | Unchanged. |
+| Fun factor | 4 | Unchanged. Not played as a session. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 5 | Unchanged. |
+| Sound design | 4 | Unchanged. |
+| Variety | 4 | Unchanged. |
+| Performance stability | 6 | `qa/vr/render.mjs` passed, including flat play and the lit-sphere cel check. The pedestrian frame stayed inside the draw budget. |
+
+- Aesthetics raw: 42 / 10 dimensions, index 42
+- Playability raw: 46 / 10 dimensions, index 46
+- Total: 88 / 200
+- Delta vs last round: +1 (87 → 88). Character models 3 → 4. Playability unchanged.
+
+Playability was scored from a flat boot and the city render check, not a full playthrough. OpenSpec CLI validation was not run; the `openspec` command is not installed.
+
