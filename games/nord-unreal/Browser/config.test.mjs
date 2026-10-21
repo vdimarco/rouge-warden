@@ -85,11 +85,52 @@ test('video-buffer delay triggers adaptation even when reported FPS remains high
 });
 
 
+test('phone adaptation lowers below 29 FPS and holds the current profile from 29 to below 35', async () => {
+  const { phoneStreamState, adaptPhoneStream, receiverLagging } = await import('./config.mjs');
+  for (const fps of [20, 24.16, 28.999]) {
+    assert.equal(receiverLagging({ framesPerSecond: fps }), true);
+    const state = phoneStreamState(0);
+    for (let i = 0; i < 4; i++) {
+      assert.equal(adaptPhoneStream(state, { framesPerSecond: fps }, 5000 + i * 1000), false);
+      assert.equal(state.poor, i + 1);
+    }
+    assert.equal(adaptPhoneStream(state, { framesPerSecond: fps }, 9000), true);
+    assert.equal(state.edge, 800);
+  }
+  for (const fps of [29, 30, 34, 34.999]) {
+    assert.equal(receiverLagging({ framesPerSecond: fps }), false);
+    const state = phoneStreamState(0);
+    for (let i = 0; i < 20; i++) {
+      assert.equal(adaptPhoneStream(state, { framesPerSecond: fps }, 5000 + i * 1000), false);
+      assert.equal(state.poor, 0);
+      assert.equal(state.healthy, 0);
+    }
+    assert.equal(state.edge, 960);
+  }
+});
+
+test('phone recovery needs 15 consecutive samples at or above 35 FPS', async () => {
+  const { phoneStreamState, adaptPhoneStream } = await import('./config.mjs');
+  const state = phoneStreamState(0);
+  let now = 4000;
+  const sample = fps => adaptPhoneStream(state, { framesPerSecond: fps }, now += 1000);
+  for (let i = 0; i < 14; i++) assert.equal(sample(i % 2 ? 60 : 35), false);
+  assert.equal(state.healthy, 14);
+  assert.equal(sample(34.999), false);
+  assert.equal(state.healthy, 0);
+  assert.equal(state.edge, 960);
+  for (let i = 0; i < 14; i++) assert.equal(sample(35), false);
+  assert.equal(state.edge, 960);
+  assert.equal(sample(35), true);
+  assert.equal(state.edge, 1280);
+});
+
+
 test('phone quality ignores startup and isolated freezes, then lowers and recovers', async () => {
   const { phoneStreamState, adaptPhoneStream } = await import('./config.mjs');
   const state = phoneStreamState(0);
   let now = 0, freezes = 0;
-  const sample = (fps = 30, freeze = false) => adaptPhoneStream(state,
+  const sample = (fps = 35, freeze = false) => adaptPhoneStream(state,
     { framesPerSecond: fps, freezeCount: freezes += Number(freeze) }, now += 1000);
   for (let i = 0; i < 4; i++) assert.equal(sample(10, true), false);
   assert.equal(state.edge, 960);
@@ -118,7 +159,7 @@ test('severe receiver pressure can use the emergency profile and then recover ev
   assert.equal(state.edge, 640);
   assert.equal(state.bitrate, 1000);
   for (const edge of [800, 960, 1280]) {
-    for (let i = 0; i < 20; i++) adaptPhoneStream(state, { framesPerSecond: 30 }, now += 1000);
+    for (let i = 0; i < 20; i++) adaptPhoneStream(state, { framesPerSecond: 35 }, now += 1000);
     assert.equal(state.edge, edge);
   }
 });
