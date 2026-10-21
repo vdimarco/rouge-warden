@@ -481,3 +481,40 @@ Playability was scored from a flat boot and the city render check, not a full pl
 
 Playability was scored from a flat boot and the city render check, not a full playthrough. OpenSpec CLI validation was not run; the `openspec` command is not installed.
 
+### Round 14 — 2026-10-21 — rubric v1
+
+- What changed: Cool shade takes a teal, and the step between that shade and the sun takes a rose. Bright windows, the sun disc, and near-black ink stay. The painted sky strip is graded the same way on the dome. The lookup the tests read is still the strip. The source is James Gurney, Color and Light (2010): a shadow is its own hue, and the half-step is not the average of the light and the shadow.
+- Why it helped: The avenue was one violet family. Looking up the street, the sky and the shaded walls now read teal, and the warmer step reads rose. The sunset behind the tower stays the painted orange.
+- Screenshots: before `docs/gauntlet/shots/r14-before-street.png`, after `docs/gauntlet/shots/r14-after-street.png`. The sunset: `docs/gauntlet/shots/r14-before-needle.png`, `docs/gauntlet/shots/r14-after-needle.png`. Chase: `docs/gauntlet/shots/r14-before-play.png`, `docs/gauntlet/shots/r14-after-play.png`.
+- Next target: Atmosphere (5), tied with the other aesthetics scores still at 5. The air is still four print steps.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 6 | Unchanged. Shaded lower walls stay warm. The floors by the roof stay the cool band. |
+| Color palette | 6 | The avenue's cool colour is teal and the step toward the sun is rose. It is still three poster inks. |
+| Detail density | 5 | Unchanged. |
+| Texture and material quality | 6 | Unchanged. The masonry units from round 13. |
+| Composition and camera | 5 | Unchanged. Reported distance stayed 4.5 m and pitch stayed −0.349. |
+| Atmosphere | 5 | Unchanged. The haze is the same four steps. Only its hue moved. |
+| Character models | 5 | Unchanged. Skinned triangles stayed at 12,468. |
+| Animation smoothness | 5 | Unchanged. |
+| Particles and VFX | 5 | Unchanged. |
+| UI polish | 5 | Unchanged. The dotted score plate from round 11. |
+| Responsiveness and input latency | 6 | Unchanged. No new pass. No input timing was measured. |
+| Controls feel | 5 | Unchanged. |
+| Mission clarity | 4 | Unchanged. Not played. |
+| Pacing | 4 | Unchanged. |
+| Fun factor | 4 | Unchanged. Not played as a session. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 5 | Unchanged. |
+| Sound design | 4 | Unchanged. |
+| Variety | 4 | Unchanged. |
+| Performance stability | 6 | `qa/vr/render.mjs` passed, including flat play, the painted-sky checks, and the lit-sphere cel check. Street mean 70, from 66. Saturation 0.59. |
+
+- Aesthetics raw: 53 / 10 dimensions, index 53
+- Playability raw: 46 / 10 dimensions, index 46
+- Total: 99 / 200
+- Delta vs last round: +1 (98 → 99). Color palette 5 → 6. Playability unchanged.
+
+Playability was scored from a flat boot and the city render check, not a full playthrough. OpenSpec CLI validation was not run; the `openspec` command is not installed.
+
