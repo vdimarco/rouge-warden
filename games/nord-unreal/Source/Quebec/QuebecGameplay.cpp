@@ -240,6 +240,13 @@ AQuebecCharacter::AQuebecCharacter()
     CasualStand->SetHiddenInGame(true);
 }
 
+void AQuebecCharacter::PossessedBy(AController* NewController)
+{
+    Super::PossessedBy(NewController);
+    if (AQuebecController* Player = Cast<AQuebecController>(NewController))
+        Player->FrameTheStreet(NewController->GetControlRotation().Yaw);
+}
+
 void AQuebecCharacter::BeginPlay()
 {
     Super::BeginPlay();
@@ -1829,6 +1836,15 @@ void AQuebecController::PlayFeedback(EQuebecFeedbackCue Cue)
         ClientPlaySound(FeedbackSounds[Index], 1.f);
 }
 
+void AQuebecController::FrameTheStreet(float Yaw, bool bResetCamera)
+{
+    // An unset pitch of 0 is pulled to the upward stop at -5, so the horizon sits near the middle.
+    // -16 stays inside the -25..-5 clamp and tips the view down the street.
+    const FRotator Look(-16.f, Yaw, 0.f);
+    SetControlRotation(Look);
+    ClientSetRotation(Look, bResetCamera);
+}
+
 void AQuebecController::BeginPlay()
 {
     Super::BeginPlay();
@@ -2559,8 +2575,7 @@ void AQuebecController::ExitCar(AQuebecCar* Car)
         Car->Occupant = nullptr;
         Car->StopInput();
         Possess(WalkingCharacter);
-        SetControlRotation(Car->GetActorRotation());
-        ClientSetRotation(Car->GetActorRotation());
+        FrameTheStreet(Car->GetActorRotation().Yaw);
         const float Pace = QuebecBail::CarryPace(Car->Speed, Car->LateralSpeed);
         const FVector Planar = Car->GetActorForwardVector().GetSafeNormal2D() * Car->Speed
             + Car->GetActorRightVector().GetSafeNormal2D() * Car->LateralSpeed;
@@ -3280,6 +3295,15 @@ AQuebecGameMode::AQuebecGameMode()
     GameStateClass = AQuebecGameState::StaticClass();
     HUDClass = AQuebecHUD::StaticClass();
     PlayerStateClass = AQuebecPlayerState::StaticClass(); // Street state: health, weapons, stars, cash (COMBAT).
+}
+
+void AQuebecGameMode::FinishRestartPlayer(AController* NewPlayer, const FRotator& StartRotation)
+{
+    Super::FinishRestartPlayer(NewPlayer, StartRotation);
+    // The base class writes the start rotator after possess, which puts pitch back at 0.
+    if (AQuebecController* Player = Cast<AQuebecController>(NewPlayer))
+        if (Cast<AQuebecCharacter>(Player->GetPawn()))
+            Player->FrameTheStreet(StartRotation.Yaw);
 }
 
 AActor* AQuebecGameMode::ChoosePlayerStart_Implementation(AController* Player)

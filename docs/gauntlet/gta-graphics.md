@@ -1508,3 +1508,38 @@ Unreal is not available in this environment, so in-engine frames are the last co
 - Playability raw: 39 / 10 dimensions, index 39
 - Total: 117 / 200
 - Delta vs last round: +1
+
+### Round 44 — 2026-10-21 — rubric v1
+
+- What changed: on foot, the opening pitch is −16, inside the −25..−5 clamp. An unset pitch of 0 was landing on the upward stop at −5. Spawn, leaving a car, a respawn, and a side-job recovery on foot use that pitch. The walking socket, the clamps, the car's −12 possess pitch, and the drive look stay.
+- Why it helped: Composition was at 6. The horizon sat near the middle of the frame, so the street ahead was a short slot between the walls.
+- Screenshots: before `docs/gauntlet/gta-graphics/round-44/before-frame.png`, after `docs/gauntlet/gta-graphics/round-44/after-frame.png`. Crops are `before-road.png` and `after-road.png`. The before frame is pitch −5. The after frame is pitch −16. Both use the walking camera (arm 420, socket Y 70, socket Z 110, horizontal FOV 90) on the brick street, with a stand-in figure. Not an Unreal capture. On a 540-tall frame the horizon row moves from 227 to 131. The full-frame mean absolute delta is 0.074 and the max is 0.723. The far-street crop mean is 0.092 and the max is 0.497. The figure stays in frame. `Scripts/test_street_look.py` passed. `Scripts/test_camera_shoulder.py` passed. `QuebecGameplay.cpp` was not compiled. `GET /gta/` returned 200. OpenSpec CLI is not installed, so the change files were not validated with `openspec`.
+- Next target: particles, tied with composition at 7. Leaves can still be shown without moving the rain displacement. Animation smoothness stays at 3 and is skipped until a pose can be drawn.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 9 | The street shade is unchanged. |
+| Color palette | 9 | Brick, asphalt, and the figure use the existing colours. |
+| Detail density | 9 | The street mesh is unchanged. |
+| Texture and material quality | 9 | The asphalt mix is unchanged. |
+| Composition and camera | 7 | The horizon sits higher and the street runs farther past the figure. It is still a spring arm on a stand-in figure. |
+| Atmosphere | 9 | The street dust is unchanged. The sky wedge is smaller because the view tips down. |
+| Character models | 8 | The figure is the same stand-in. |
+| Animation smoothness | 3 | Skipped. The blend space still cannot be posed here. |
+| Particles and VFX | 7 | The tail column is unchanged. Rain rings are unchanged. |
+| UI polish | 9 | The radar heading is unchanged. |
+| Responsiveness and input latency | 4 | Not measured this round. |
+| Controls feel | 4 | Not played. |
+| Mission clarity | 5 | The objective words are unchanged. |
+| Pacing | 4 | Unchanged mission slice. |
+| Fun factor | 3 | Not played. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 4 | No new juice. |
+| Sound design | 3 | Not listened to. |
+| Variety | 3 | One street, one opening pitch. |
+| Performance stability | 5 | `Scripts/test_street_look.py` passed. The pitch is a constant. Frame time was not remeasured. |
+
+- Aesthetics raw: 79 / 10 dimensions, index 79
+- Playability raw: 39 / 10 dimensions, index 39
+- Total: 118 / 200
+- Delta vs last round: +1

@@ -163,6 +163,7 @@ class QUEBEC_API AQuebecCharacter : public ACharacter
 public:
     AQuebecCharacter();
     virtual void BeginPlay() override;
+    virtual void PossessedBy(AController* NewController) override;
     UPROPERTY(VisibleAnywhere, ReplicatedUsing=ApplyCrewAppearance) int32 CrewStyle = 9;
     void CycleCrew();
     // Picks crew style 3-10. Returns false when another player already wears it.
@@ -525,6 +526,8 @@ public:
     void ShowInteractionMessage(const FString& Message) { ClientInteractionMessage(Message); }
     // Combat: a K.-O. or a respawn took the character out of its car without ExitCar.
     void ForgetWalkingCharacter() { WalkingCharacter = nullptr; }
+    // On foot, look down the street. The pitch stays inside the -25..-5 clamp.
+    void FrameTheStreet(float Yaw, bool bResetCamera = false);
     // Console commands for the shared sky. The host applies them; they do nothing without a sky.
     UFUNCTION(Exec) void NordWeather(const FString& Weather);
     UFUNCTION(Exec) void NordTime(float Hours);
@@ -683,5 +686,6 @@ class QUEBEC_API AQuebecGameMode : public AGameModeBase
 public:
     AQuebecGameMode();
     virtual void BeginPlay() override;
+    virtual void FinishRestartPlayer(AController* NewPlayer, const FRotator& StartRotation) override;
     virtual AActor* ChoosePlayerStart_Implementation(AController* Player) override;
 };

@@ -764,8 +764,12 @@ bool AQuebecSideJobs::MovePlayerToMarker(AQuebecController* Player, int32 Index)
         if (Car) Car->ResetMotion(); else Walker->GetCharacterMovement()->StopMovementImmediately();
         if (!Body->SetActorLocationAndRotation(Destination,Facing,false,nullptr,ETeleportType::TeleportPhysics)) continue;
         if (Car) Car->ResetMotion();
-        Player->SetControlRotation(Facing);
-        Player->ClientSetRotation(Facing,true);
+        if (Walker) Player->FrameTheStreet(Facing.Yaw, true);
+        else
+        {
+            Player->SetControlRotation(Facing);
+            Player->ClientSetRotation(Facing, true);
+        }
         return true;
     }
     return false;
