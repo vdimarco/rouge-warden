@@ -446,7 +446,11 @@ export function createHero(scene, renderer) {
     b.updateWorldMatrix(true, false);
     b.getWorldPosition(READ_P);
     b.getWorldQuaternion(TQ);
-    const jump = !readReady || READ_P.distanceToSquared(readMesh.position) > 0.5;
+    // Flight on twos moves the head a whole pose between calls. 0.7 m is only about 8.5 m/s at 12 Hz,
+    // so a swing was snapping the hair every pose and the turn never followed through. The phone cap is 48 m/s.
+    const span = Math.max(dt || 1 / 60, 1 / 60);
+    const snapM = 48 * span + 1.5;
+    const jump = !readReady || READ_P.distanceToSquared(readMesh.position) > snapM * snapM;
     if (jump) READ_Q.copy(TQ);
     else READ_Q.slerp(TQ, 1 - Math.exp(-(dt || 1 / 60) * 1));
     readReady = true;
@@ -779,6 +783,7 @@ export function createHero(scene, renderer) {
         root.updateMatrixWorld(true);
         for (let sd = 0; sd < 2; sd++) { handPos[sd].add(V.c); footPos[sd].add(V.c); CL.palm[sd].add(V.c); }
         headPos.add(V.c);
+        placeRead(dt);
         return;
       }
       if (V.c.lengthSq() < 4) dt = Math.min(S.stepAcc, 0.1); // (after a teleport, the time before it does not count)
