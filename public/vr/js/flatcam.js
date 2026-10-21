@@ -194,7 +194,10 @@ export function createFlatCam(camera, city) {
         if (wall) side = Math.max(0, wall.t - 0.35);
         // A small lift at the default chase. It fades once the arm is already down by the head
         // (looking up), where more height would push the head off the bottom of the frame.
+        // On a fast rope the camera rises a little more, so the body sits in the lower third and the street ahead
+        // keeps the upper frame. The arm length and the pitch are unchanged. Haigh-Hutchinson, lead room.
         let lift = 0.22 * S.blend * Math.max(0, Math.min(1, (POS.y - EYE.y - 0.7) / 0.5));
+        if (!P.onGround && rope && hs > 8) lift += 1.15 * S.blend * smooth(8, 14, hs);
         const ceil = city.raycast(POS.x + rx * side, POS.y, POS.z + rz * side, 0, 1, 0, lift + 0.25, HIT);
         if (ceil) lift = Math.max(0, ceil.t - 0.25);
         for (let k = 0; k < 3; k++) {
