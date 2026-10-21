@@ -722,3 +722,42 @@ Loop: missions, playability, controls, feel, UX, pacing and fun for In Full Swin
 - Delta vs last round: 0 (round 18 was 122). The sixth flush is a different job, and nine clogs are still the same pump, so pacing stays at 8.
 
 ![The sixth flush is a pizza to a roof](fullswing-r19/pie.png)
+
+### Round 20 — 2026-10-21 — rubric v1
+
+- What changed: A held swing skips the whole building it just left, including another tier and the antenna. A sky rope over open water stays while the button is held. Over the city, a sky rope still lets go once a building is ahead. Letting the button up still lets the rope go.
+- Why it helped: The held chain compared collider ids, so the next web could be another piece of the same tower, and over water it dropped the sky rope and then refused to fire. Spider-Man 2 does not regrab the structure it just left, and it does not drop you while the button is still down. A 1280×800 play held E. The first web was the sky. It let go and attached to a different building (id 783) 10 frames later, with no new press and no dry fire. Letting E up left both ropes idle. Over open water the sky rope was still attached after 240 frames, at 51.9 m, with no detach.
+- Screenshots: `docs/gauntlet/fullswing-r20/chain.png`, `docs/gauntlet/fullswing-r20/water.png`.
+- Next target: performance stability (6), the lowest playability score. This machine has no real GPU to time, so that score is not the next implementation round. Sound design (7) was not listened to and is not the next implementation round either.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 5 | Held. Golden-hour sun and ink shadows. |
+| Color palette | 6 | Held. Yellow, red and sludge green still separate the HUD from the blocks. |
+| Detail density | 4 | Held. Open blocks more than a dressed borough. |
+| Texture and material quality | 3 | Held. Flat fills. |
+| Composition and camera | 4 | Held. The chase camera still sits behind the hero. This frame is the swing. |
+| Atmosphere | 5 | Held. The dusk skyline has a mood. The water under the second swing is open. |
+| Character models | 3 | Held. Simple comic figures. |
+| Animation smoothness | 4 | Scored from still frames in software GL. Continuous motion was not watched. |
+| Particles and VFX | 5 | Held. No new effect. The rope is the one already in the swing. |
+| UI polish | 6 | Held. The same ink pill and the GO cue. |
+| Responsiveness and input latency | 8 | Held. The clog card still rewrites its metres every frame. |
+| Controls feel | 8 | The chain attaches to a different building, and it skips another piece of the one just left. Over open water the sky rope stays while the button is down. The first web over open roofs can still be the sky. |
+| Mission clarity | 8 | Held. The compass still names the district on the clog card. |
+| Pacing | 8 | Held. The sixth flush is still the pizza, between the balloon and the washer. Nine clogs are still the same pump. |
+| Fun factor | 8 | Held. A win still hops the hero. This round changes which anchor a held swing accepts. |
+| Difficulty curve | 8 | Held. The eighth flush still counts from 36 s. An odd-job washer still has the minute. |
+| Feedback | 8 | Held. A chase that is pulling away still turns the card hot. |
+| Sound design | 7 | Held. Not listened to. |
+| Variety | 8 | Held. The jobs are unchanged. |
+| Performance stability | 6 | The 1280×800 play passed with no page errors. Frame time on a real GPU was not measured. |
+
+- Aesthetics raw: 45 / 10 dimensions, index 45
+- Playability raw: 77 / 10 dimensions, index 77
+- Total: 122 / 200
+- Delta vs last round: 0 (round 19 was 122). The chain no longer regrabs the building it left, and a sky rope stays over open water. That restores the held swing. It is not a new point against Spider-Man 2.
+
+![A held swing on the next building](fullswing-r20/chain.png)
+
+![A held sky rope over open water](fullswing-r20/water.png)

@@ -1667,19 +1667,21 @@ function aimAndFire(dt, inp) {
     }
   }
 }
-// The next building after a let-go. The usual point first, then a lower, farther one, skipping the building just left.
+// The next building after a let-go. The usual point first, then a lower, farther one, skipping every piece of the
+// building just left: another tier and its antenna count as that building.
 function chainAim(i) {
   easyDir();
   const avoid = chainFrom[i];
   const tries = [{ avoid }, { avoid, up: 8, ahead: 20, reach: 10 }, { avoid, up: 4, ahead: 34, reach: 16 }];
   for (let t = 0; t < tries.length; t++) {
     const a = easyAnchor(P, easyDx, easyDz, tries[t]);
-    if (a && !a.sky && a.tag === "building" && a.id !== avoid) return a;
+    if (a && !a.sky && a.tag === "building" && a.bid !== avoid) return a;
   }
   return null;
 }
 // Mouse and pad, flat play: a building rope that has shown the GO cue lets go while the button stays down, and the
-// next frame catches the building ahead. The cue stays long enough to read. A clog, a pipe, the crack and a phone rope stay.
+// next frame catches the building ahead. The cue stays long enough to read. A sky rope lets go only when a building
+// is already ahead to catch; over open water it stays. A clog, a pipe, the crack and a phone rope stay.
 function holdChainRelease(dt, inp) {
   if (driving || !flatOn || isXR() || inp.easySwing || settings.hold === "toggle") {
     cueHold[0] = cueHold[1] = 0;
@@ -1688,16 +1690,32 @@ function holdChainRelease(dt, inp) {
   for (let i = 0; i < 2; i++) {
     const h = inp.hands[i], r = P.ropes[i];
     if (!h.holding) { chainArm[i] = false; cueHold[i] = 0; continue; }
+    const sky = r.target && r.target.tag === "sky";
+    const airborne = !P.onGround && !P.wall;
+    if (sky) {
+      const liveSky = r.state === "attached" && r.easy && !r.sticky && airborne && cueAir[i] && releaseWindow(P, r, 0);
+      if (!liveSky) { cueHold[i] = 0; continue; }
+      cueHold[i] += dt;
+      if (cueHold[i] < CHAIN_SEE) continue;
+      chainFrom[i] = -1;
+      if (!chainAim(i)) continue;
+      chainArm[i] = true;
+      cueHold[i] = 0;
+      release(P, i);
+      continue;
+    }
     const building = r.state === "attached" && r.easy && !r.sticky && r.target && !SPECIAL_TAGS[r.target.tag];
-    const live = building && !P.onGround && !P.wall && releaseWindow(P, r, 0);
+    const live = building && airborne && releaseWindow(P, r, 0);
     if (live && cueAir[i]) {
       cueHold[i] += dt;
       if (cueHold[i] < CHAIN_SEE) continue;
-    } else if (!(cueHold[i] > 0 && building && !P.onGround && !P.wall && cueAir[i] && !live)) {
+    } else if (!(cueHold[i] > 0 && building && airborne && cueAir[i] && !live)) {
       cueHold[i] = 0;
       continue;
     }
-    chainFrom[i] = r.target.id;
+    const left = ropeBid(r);
+    if (left == null) { cueHold[i] = 0; continue; }
+    chainFrom[i] = left;
     chainArm[i] = true;
     cueHold[i] = 0;
     release(P, i);

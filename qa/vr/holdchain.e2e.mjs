@@ -35,7 +35,10 @@ try {
         const key = e.frame + ":" + e.type + ":" + (e.side ?? "") + ":" + (e.target && e.target.id);
         if (seen.has(key)) continue;
         seen.add(key);
-        log.push({ t: e.type, tag: e.target && e.target.tag, id: e.target && e.target.id, frame: e.frame });
+        const id = e.target && e.target.id;
+        const col = typeof id === "number" ? G.city.colliders[id] : null;
+        const bid = col && col.bid >= 0 ? col.bid : id;
+        log.push({ t: e.type, tag: e.target && e.target.tag, id, bid, frame: e.frame });
       }
     };
     let frames = 0, cue = 0, wallAt = -1;
@@ -67,7 +70,7 @@ try {
   await page.screenshot({ path: out + "/chain.png" });
   console.log("chain", JSON.stringify({ frames: held.frames, cue: held.cue, wallAt: held.wallAt, first: held.first, building: held.building, fires: held.fires, y: held.y, log: held.log }));
   const gap = held.building && held.log ? held.building.frame - (held.log.find((e) => e.t === "detach") || {}).frame : null;
-  check(held.first && held.building && held.building.id !== held.first.id && gap != null && gap < 90, "holding E through the cue catches a different building", { ...held, gap });
+  check(held.first && held.building && held.building.bid !== held.first.bid && gap != null && gap < 90, "holding E through the cue catches a different building", { ...held, gap });
   check(held.ups === 0 && held.drys === 0 && held.fires >= 2, "the next web is not a new press and not a dry fire", held);
 
   await page.keyboard.up("KeyE");
@@ -99,6 +102,31 @@ try {
     };
   }, letGo);
   check(after.attached && after.idle && after.fires === 0, "letting E up lets the rope go and does not catch another building", after);
+
+  await page.mouse.move(640, 400);
+  await page.keyboard.up("KeyE");
+  const water = await page.evaluate(() => {
+    G.test.teleport(0, 40, 400);
+    G.rigYaw = 0; G.desktop.level(0); G.flatcam.reset(0);
+    G.P.onGround = false; G.P.wall = null;
+    G.P.vel.x = 0; G.P.vel.y = 0; G.P.vel.z = 16;
+    G.test.step(1 / 60, 5);
+    window.dispatchEvent(new KeyboardEvent("keydown", { code: "KeyE" }));
+    const mark = G.frame;
+    let sky = false, dropped = false, frames = 0;
+    for (; frames < 240; frames++) {
+      G.test.step(1 / 60, 1);
+      const r = G.P.ropes.find((q) => q.state === "attached" && q.target && q.target.tag === "sky");
+      if (r) sky = true;
+      if (sky && !G.P.ropes.some((q) => q.state === "attached")) { dropped = true; break; }
+    }
+    const still = G.P.ropes.some((q) => q.state === "attached" && q.target && q.target.tag === "sky");
+    const detaches = G.test.events().filter((e) => e.frame > mark && e.type === "detach").length;
+    return { frames, sky, dropped, still, detaches, y: +G.P.pos.y.toFixed(1) };
+  });
+  await page.screenshot({ path: out + "/water.png" });
+  console.log("water", JSON.stringify(water));
+  check(water.sky && water.still && !water.dropped && water.detaches === 0, "holding over open water keeps the sky rope", water);
   check(page.errors.length === 0, "no page errors", page.errors);
 } catch (e) {
   check(false, "the hold-chain run threw", e.stack || String(e));
