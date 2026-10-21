@@ -3,7 +3,7 @@
 // load, a code-built comic figure with the same bones takes its place. Look: toonify (cel bands) plus an inked hull (comic.js).
 import * as THREE from "three";
 import { SUN_DIR } from "./config.js";
-import { toonify, INK, inkK, syncInk, smoothNormals } from "./comic.js";
+import { toonify, INK, inkK, syncInk, smoothNormals, outlineOf } from "./comic.js";
 
 const MODEL_URL = "/wild/models/crew5.glb";
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
@@ -171,8 +171,13 @@ function bodyMaterial(map, OPA, LIGHT) {
     shader.uniforms.uHeroSun = LIGHT;
     // toonify shades with the rest-pose normal; a posed body needs the skinned one
     shader.vertexShader = shader.vertexShader.replace("vec3 wn = normal;", "vec3 wn = objectNormal;");
-    // and the light: the key light leans toward the camera side so the hero's back is never a dark shape against the sunset
+    // The painted face, zipper and shoe panels are in the colour map. A full cel band, and the mip
+    // that a chase view picks, flatten them into one block. Keep a share of the paint, and sample a
+    // sharper mip. Mitchell, Francke and Eng, "Illustrative Rendering in Team Fortress 2" (2007):
+    // the warp stays a warp of the albedo, so the material still reads.
     shader.fragmentShader = shader.fragmentShader.replace(/comicLight\(wn, vec3\([^)]*\)\)/, "comicLight(wn, uHeroSun)")
+      .replace("texture2D( map, vMapUv )", "texture2D( map, vMapUv, -1.25 )")
+      .replace("vec3 col = comicCel(diffuseColor.rgb, b);", "vec3 col = mix(diffuseColor.rgb, comicCel(diffuseColor.rgb, b), 0.7);")
       .replace("void main() {", "uniform vec3 uHeroSun;\n" + DITHER + HERO_RIM + "void main() {")
       .replace("outgoingLight = col + ", "outgoingLight = heroRim(col, wn) + ")
       .replace("#include <clipping_planes_fragment>", "#include <clipping_planes_fragment>\n  if (heroGone()) discard;");
@@ -200,6 +205,51 @@ function hullMaterial(OPA) {
   };
   m.customProgramCacheKey = () => "hero-hull";
   return m;
+}
+// Hair and a collar in metres, in the Head bone's frame (+y up the skull, +z toward the face). One mesh and its ink
+// hull: the hero's draw budget is four (body, hull, this, its outline). The skinned crew mesh is not touched.
+function readForms() {
+  const parts = [];
+  const put = (geo, hex, x, y, z, sx = 1, sy = 1, sz = 1, rx = 0) => {
+    const g = geo.index ? geo.toNonIndexed() : geo;
+    if (rx) g.rotateX(rx);
+    g.scale(sx, sy, sz);
+    g.computeVertexNormals();
+    g.translate(x, y, z);
+    const c = hexRGB(hex), n = g.attributes.position.count, col = new Float32Array(n * 3);
+    for (let i = 0; i < n; i++) { col[i * 3] = c[0]; col[i * 3 + 1] = c[1]; col[i * 3 + 2] = c[2]; }
+    g.setAttribute("color", new THREE.Float32BufferAttribute(col, 3));
+    parts.push(g);
+    if (g !== geo) geo.dispose();
+  };
+  // a crown past the skull, a brow fringe, and a collar that flares wider than the neck
+  put(new THREE.SphereGeometry(0.125, 8, 6), C.hair, 0, 0.17, -0.03, 1.15, 0.72, 1.0);
+  put(new THREE.BoxGeometry(0.22, 0.05, 0.06), C.hair, 0, 0.115, 0.1);
+  put(new THREE.TorusGeometry(0.125, 0.028, 5, 8), C.white, 0, -0.01, 0.02, 1, 1, 1, Math.PI / 2);
+  let count = 0;
+  for (const g of parts) count += g.attributes.position.count;
+  const P = new Float32Array(count * 3), Nrm = new Float32Array(count * 3), Col = new Float32Array(count * 3);
+  let o = 0;
+  for (const g of parts) {
+    const n = g.attributes.position.count;
+    P.set(g.attributes.position.array, o);
+    Nrm.set(g.attributes.normal.array, o);
+    Col.set(g.attributes.color.array, o);
+    o += n * 3;
+    g.dispose();
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute("position", new THREE.BufferAttribute(P, 3));
+  geo.setAttribute("normal", new THREE.BufferAttribute(Nrm, 3));
+  geo.setAttribute("color", new THREE.BufferAttribute(Col, 3));
+  const mat = new THREE.MeshBasicMaterial({ vertexColors: true, fog: false });
+  toonify(mat, { dots: 0.035 });
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.name = "hero:read";
+  mesh.frustumCulled = false;
+  mesh.visible = false;
+  mesh.add(outlineOf(mesh, { width: 0.012, px: 2 }));
+  return mesh;
 }
 
 /* ---------------- the rig: rest data for both models ---------------- */
@@ -285,6 +335,7 @@ export function createHero(scene, renderer) {
     sq: 0, sqV: 0, // squash (−) and stretch (+) of the body, and its rate: a spring after a landing or a launch // the pose rate (0 = every frame), the time since the last pose, a pose exists to hold
   };
   const mesh = { body: null, hull: null };
+  let readMesh = null;
   // the motion capture: the loops, each limb's fix for a rig whose rest limbs point elsewhere (the built-in figure), the blend
   // weights (idle, walk, jog, run), the shared phase of the moving loops, and scratch for the sampled turns
   const MC = { data: null, corr: BONES.map(() => new THREE.Quaternion()), w: [1, 0, 0, 0], want: [1, 0, 0, 0], phase: 0, idleT: 0, on: 0,
@@ -333,7 +384,10 @@ export function createHero(scene, renderer) {
     const g = SU.clone(holder);
     const kill = [];
     let sk = null;
-    g.traverse((o) => { if (o.name === "hero:outline") kill.push(o); else if (o.isSkinnedMesh && !sk) sk = o; });
+    g.traverse((o) => {
+      if (o.name === "hero:outline" || (o.name && o.name.indexOf("hero:read") === 0)) kill.push(o);
+      else if (o.isSkinnedMesh && !sk) sk = o;
+    });
     for (const o of kill) o.parent.remove(o);
     if (!sk) return null;
     sk.material = new THREE.MeshBasicMaterial({ color: GHOST.colors[k % 2], transparent: true, opacity: 0, depthWrite: false });
@@ -357,7 +411,7 @@ export function createHero(scene, renderer) {
       if (!skinned || !skinned.material.map) throw new Error("crew5.glb has no skinned colour-mapped mesh");
       const old = skinned.material, map = old.map;
       map.colorSpace = THREE.NoColorSpace; // a display colour: no sRGB decoding (the repo's colour rule)
-      map.anisotropy = 4;
+      map.anisotropy = 8;
       map.generateMipmaps = true; map.minFilter = THREE.LinearMipmapLinearFilter;
       try { renderer.initTexture(map); } catch (e) { /* uploads on first use */ }
       // the other maps (normal, roughness, emissive) are never drawn: let them go. The glb uses one texture for the colour and the
@@ -366,6 +420,9 @@ export function createHero(scene, renderer) {
       const fit = new THREE.Box3().setFromObject(model, true).getSize(new THREE.Vector3());
       if (!(fit.y > 1.5 && fit.y < 2.2)) throw new Error("crew5.glb has an odd height " + fit.y);
       useRig(model, skinned, bodyMaterial(map, OPA, LIGHT), "glb");
+      readMesh = readForms();
+      scene.add(readMesh);
+      applyVisible();
     } catch (e) {
       console.info("crew5.glb did not load, using the built-in hero:", e && e.message);
       try { useFigure(); } catch (e2) { console.error("the built-in hero failed:", e2); H.model = "none"; }
@@ -373,7 +430,19 @@ export function createHero(scene, renderer) {
   }
   loadModel();
 
-  function applyVisible() { root.visible = !!rig && visible && opacity > 0.02 && !S.hidden; }
+  function applyVisible() {
+    const on = !!rig && visible && opacity > 0.02 && !S.hidden;
+    root.visible = on;
+    // the close fade dissolves the body into dots; these solid forms leave with it
+    if (readMesh) readMesh.visible = on && opacity > 0.9;
+  }
+  function placeRead() {
+    if (!readMesh || !rig) return;
+    const b = rig.I.Head.b;
+    b.updateWorldMatrix(true, false);
+    b.getWorldPosition(readMesh.position);
+    b.getWorldQuaternion(readMesh.quaternion);
+  }
 
   /* ---- scratch ---- */
   const E = new THREE.Euler(), EF = new THREE.Euler(0, 0, 0, "YXZ"), QA = new THREE.Quaternion(), QB = new THREE.Quaternion(), QC = new THREE.Quaternion();
@@ -1117,6 +1186,7 @@ export function createHero(scene, renderer) {
     }
     I.Head.b.getWorldPosition(headPos);
     headPos.y += 0.09;
+    placeRead();
     for (let sd = 0; sd < 2; sd++) { CL.palm[sd].copy(handPos[sd]); I[sd === 0 ? "LeftFoot" : "RightFoot"].b.getWorldPosition(footPos[sd]); }
 
     /* -- a name for the tests -- */
