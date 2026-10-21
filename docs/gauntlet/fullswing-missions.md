@@ -574,3 +574,40 @@ Loop: missions, playability, controls, feel, UX, pacing and fun for In Full Swin
 - Delta vs last round: +1 (round 14 was 118). Difficulty 7 → 8. Every other score held.
 
 ![The eighth flush counts from 36 seconds](fullswing-r15/washer.png)
+
+### Round 16 — 2026-10-21 — rubric v1
+
+- What changed: While the card says to flush the clogs, the compass points at the clog that card names, and its title names that district. A job still titles the compass as the job.
+- Why it helped: The card named one pump and the compass was finding the nearest clog on its own, so the two could disagree. Spider-Man 2 keeps the objective and the waypoint on the same place. A 1280×800 play showed FLUSH THE CLOGS 0/12 and Next: Market clog, 47 m. The compass title was Market clog, and it pointed at that clog. Starting the Sludge Run put Your job back on the compass.
+- Screenshots: `docs/gauntlet/fullswing-r16/compass.png`.
+- Next target: responsiveness (7), tied with controls and sound. Responsiveness is the one to change next: the clog card's distance waits half a second while the compass metres move every frame, so the number you steer by lags the swing. Sound was not the round. Performance stays at 6. This machine has no real GPU to time, so that score is not the next round.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 5 | Held. Golden-hour sun and ink shadows. |
+| Color palette | 6 | Held. Yellow, red and sludge green still separate the HUD from the blocks. |
+| Detail density | 4 | Held. Open blocks more than a dressed borough. |
+| Texture and material quality | 3 | Held. Flat fills. |
+| Composition and camera | 4 | Held. The chase camera still sits behind the hero. This frame is the card. |
+| Atmosphere | 5 | Held. The dusk skyline has a mood. The street under the card does not. |
+| Character models | 3 | Held. Simple comic figures. |
+| Animation smoothness | 4 | Scored from still frames in software GL. Continuous motion was not watched. |
+| Particles and VFX | 5 | Held. No new effect. The compass uses the clog that was already there. |
+| UI polish | 6 | Held. The compass title is the district already written on the card. |
+| Responsiveness and input latency | 7 | Held. The title was on the stepped frames after the card named the clog. The card's distance still waits half a second. |
+| Controls feel | 7 | Held. The swing carry is unchanged. |
+| Mission clarity | 8 | The compass title names the district on the card, and it points at that clog. A job puts Your job back. |
+| Pacing | 8 | Held. The fourth flush is still the balloon and the eighth is still the carry. |
+| Fun factor | 8 | Held. A win still hops the hero. This round changes which clog the compass follows. |
+| Difficulty curve | 8 | Held. The eighth flush still counts from 36 s. An odd-job washer still has the minute. |
+| Feedback | 8 | Held. A chase that is pulling away still turns the card hot. The compass did not add a new hit. |
+| Sound design | 7 | Held. Not listened to. |
+| Variety | 8 | Held. The jobs are unchanged. |
+| Performance stability | 6 | The 1280×800 play passed with no page errors. Frame time on a real GPU was not measured. |
+
+- Aesthetics raw: 45 / 10 dimensions, index 45
+- Playability raw: 75 / 10 dimensions, index 75
+- Total: 120 / 200
+- Delta vs last round: +1 (round 15 was 119). Mission clarity 7 → 8. Every other score held.
+
+![The compass names the Market clog on the card](fullswing-r16/compass.png)
