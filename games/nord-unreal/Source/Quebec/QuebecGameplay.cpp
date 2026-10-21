@@ -3,6 +3,7 @@
 #include "QuebecCampaign.h"
 #include "QuebecChain.h"
 #include "QuebecPace.h"
+#include "QuebecBail.h"
 #include "QuebecRouteLine.h"
 #include "QuebecCourtRules.h"
 #include "QuebecCourtTone.h"
@@ -396,8 +397,52 @@ void AQuebecCharacter::ServerSetSprint_Implementation(bool bSprint)
     GetCharacterMovement()->MaxSwimSpeed = bCanSprint ? 390.f : 260.f;
 }
 
+void AQuebecCharacter::BeginBail(const FVector& Direction, float Speed)
+{
+    if (bInVehicle || IsInputLocked() || !(Speed > 0.f)) return;
+    const FVector Flat = Direction.GetSafeNormal2D();
+    if (Flat.IsNearlyZero()) return;
+    BailDirection = Flat;
+    BailSpeed = Speed;
+    if (UCharacterMovementComponent* Move = GetCharacterMovement())
+    {
+        Move->MaxWalkSpeed = Speed;
+        Move->Velocity = Flat * Speed;
+    }
+}
+
+void AQuebecCharacter::EndBail()
+{
+    BailSpeed = 0.f;
+    BailDirection = FVector::ZeroVector;
+    if (bInVehicle) return;
+    UCharacterMovementComponent* Move = GetCharacterMovement();
+    if (!Move) return;
+    bool bSprint = false;
+    if (APlayerController* Player = Cast<APlayerController>(GetController()))
+        bSprint = Player->IsInputKeyDown(EKeys::LeftShift);
+    Move->MaxWalkSpeed = static_cast<float>(bSprint ? QuebecPace::SprintCmPerSecond : QuebecPace::WalkCmPerSecond);
+}
+
+void AQuebecCharacter::TickBail(float DeltaSeconds)
+{
+    if (!HasAuthority() || bInVehicle || !(BailSpeed > 0.f)) return;
+    UCharacterMovementComponent* Move = GetCharacterMovement();
+    if (!Move || IsInputLocked() || Move->IsSwimming() || Move->IsFalling() || Move->Velocity.Z > 1.f
+        || !GetPendingMovementInputVector().IsNearlyZero())
+    {
+        EndBail();
+        return;
+    }
+    Move->MaxWalkSpeed = BailSpeed;
+    Move->Velocity = BailDirection * BailSpeed;
+    BailSpeed = QuebecBail::Ease(BailSpeed, DeltaSeconds);
+    if (!(BailSpeed > 0.f)) EndBail();
+}
+
 void AQuebecCharacter::SetInVehicle(bool bNewInVehicle)
 {
+    if (bNewInVehicle) { BailSpeed = 0.f; BailDirection = FVector::ZeroVector; }
     bInVehicle = bNewInVehicle;
     OnRep_InVehicle();
     ForceNetUpdate();
@@ -418,6 +463,7 @@ void AQuebecCharacter::OnRep_InVehicle()
 void AQuebecCharacter::Tick(float DeltaSeconds)
 {
     UpdateSwimming(DeltaSeconds);
+    TickBail(DeltaSeconds);
     Super::Tick(DeltaSeconds);
     KeepCharacterInView(CameraArm, GetViewRotation());
     TickCombat(DeltaSeconds); // Combat: held weapon, aim camera, autofire, melee hits and the K.-O. respawn.
@@ -2456,6 +2502,10 @@ void AQuebecController::ExitCar(AQuebecCar* Car)
         Possess(WalkingCharacter);
         SetControlRotation(Car->GetActorRotation());
         ClientSetRotation(Car->GetActorRotation());
+        const float Pace = QuebecBail::CarryPace(Car->Speed, Car->LateralSpeed);
+        const FVector Planar = Car->GetActorForwardVector().GetSafeNormal2D() * Car->Speed
+            + Car->GetActorRightVector().GetSafeNormal2D() * Car->LateralSpeed;
+        if (Pace > 0.f) WalkingCharacter->BeginBail(Planar, Pace);
         WalkingCharacter = nullptr;
         return;
     }

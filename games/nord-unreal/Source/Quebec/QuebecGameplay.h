@@ -174,6 +174,8 @@ public:
     virtual void Jump() override;
     virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
     void SetInVehicle(bool bNewInVehicle);
+    // Getting out of a moving car: keep its planar pace for a short run-out.
+    void BeginBail(const FVector& Direction, float Speed);
     UFUNCTION() bool ConfigureCrewAnimation();
     // People: comic knockdown (QuebecPeople.cpp). Server: launch along Push (cm/s) and lie LieSeconds; bStayDown keeps the
     // player down until EndKnock (K.-O.). EndKnock starts the 0.8 s stand-up now. Every peer poses the mesh from the knock.
@@ -217,6 +219,10 @@ private:
     UFUNCTION() void StopSprint();
     UFUNCTION(Server, Reliable) void ServerSetSprint(bool bSprint);
     UFUNCTION() void OnRep_InVehicle();
+    void TickBail(float DeltaSeconds);
+    void EndBail();
+    FVector BailDirection = FVector::ZeroVector;
+    float BailSpeed = 0.f;
     // People: knock state; the mesh pose is local to each peer.
     UPROPERTY(VisibleAnywhere, ReplicatedUsing=OnRep_Knock) float KnockStartedAt = -1000.f;
     UPROPERTY(VisibleAnywhere, Replicated) FVector KnockPush = FVector::ZeroVector;
