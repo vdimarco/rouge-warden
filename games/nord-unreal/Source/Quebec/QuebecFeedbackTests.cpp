@@ -94,6 +94,10 @@ bool FQuebecRaceResultTest::RunTest(const FString& Parameters)
     TestTrue(TEXT("A banked short way opens the tail instead of the lap card"),
         Race->GetStatusText().Contains(TEXT("R recovers this tail")));
     Race->ChaseStep = AQuebecCampaign::ChaseBankedStep;
+    Race->FinaleStep = 0;
+    TestTrue(TEXT("A lost tail opens the day instead of the lap card"),
+        Race->GetStatusText().Contains(TEXT("R recovers this day")));
+    Race->FinaleStep = AQuebecCampaign::FinaleBankedStep;
     const FString Status = Race->GetStatusText();
     TestTrue(TEXT("Result presents recovered time and clean session best"),
         Status.Contains(TEXT("10.0s")) && Status.Contains(TEXT("recovered")) && Status.Contains(TEXT("60.0s")));

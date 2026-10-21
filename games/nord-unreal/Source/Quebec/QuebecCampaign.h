@@ -53,10 +53,12 @@ public:
     UPROPERTY(VisibleAnywhere) int32 CutStep = 0;
     // Chase tail. Version 7 leaves this at 0. Version 8 writes it. The tail's place on the road stays in the session.
     UPROPERTY(VisibleAnywhere) int32 ChaseStep = 0;
+    // Finale tail. Version 8 leaves this at 0. Version 9 writes it. The burn, the clocks, and the tail's place stay in the session.
+    UPROPERTY(VisibleAnywhere) int32 FinaleStep = 0;
     bool IsSupported() const;
 };
 
-/** Story encounters. All objective decisions run on authority. Missions 3 through 10 persist on the version-3 tail. Mission 11 persists on version 4. Mission 12 persists on version 5. Mission 13 persists on version 6. Mission 14 persists on version 7. Mission 15 persists on version 8. Completed missions stay 0–2. */
+/** Story encounters. All objective decisions run on authority. Missions 3 through 10 persist on the version-3 tail. Mission 11 persists on version 4. Mission 12 persists on version 5. Mission 13 persists on version 6. Mission 14 persists on version 7. Mission 15 persists on version 8. Mission 16 persists on version 9. Completed missions stay 0–2. */
 UCLASS()
 class QUEBEC_API AQuebecCampaign : public AActor
 {
@@ -108,6 +110,7 @@ public:
     static constexpr int32 GrabBankedStep = 2;
     static constexpr int32 CutBankedStep = 2;
     static constexpr int32 ChaseBankedStep = 2;
+    static constexpr int32 FinaleBankedStep = 5;
     bool IsPondOpen() const { return Phase == EQuebecCampaignPhase::Complete && PondStep < PondBankedStep; }
     bool IsCourtOpen() const { return Phase == EQuebecCampaignPhase::Complete && PondStep >= PondBankedStep && CourtStep < CourtBankedStep; }
     bool IsShowOpen() const { return Phase == EQuebecCampaignPhase::Complete && PondStep >= PondBankedStep && CourtStep >= CourtBankedStep && ShowStep < ShowBankedStep; }
@@ -177,7 +180,16 @@ public:
             && EscortStep >= EscortBankedStep && ShadeStep >= ShadeBankedStep && GrabStep >= GrabBankedStep
             && CutStep >= CutBankedStep && ChaseStep >= 0 && ChaseStep < ChaseBankedStep;
     }
-    bool IsStoryBeatOpen() const { return IsPondOpen() || IsCourtOpen() || IsShowOpen() || IsRescueOpen() || IsConvoyOpen() || IsBlankOpen() || IsTourOpen() || IsHomeOpen() || IsEscortOpen() || IsShadeOpen() || IsGrabOpen() || IsCutOpen() || IsChaseOpen(); }
+    bool IsFinaleOpen() const
+    {
+        return Phase == EQuebecCampaignPhase::Complete && PondStep >= PondBankedStep && CourtStep >= CourtBankedStep
+            && ShowStep >= ShowBankedStep && RescueMask >= RescueDone && ConvoyStep >= ConvoyBankedStep
+            && BlankStep >= BlankBankedStep && TourStep >= TourBankedStep && HomeStep >= HomeBankedStep
+            && EscortStep >= EscortBankedStep && ShadeStep >= ShadeBankedStep && GrabStep >= GrabBankedStep
+            && CutStep >= CutBankedStep && ChaseStep >= ChaseBankedStep
+            && FinaleStep >= 0 && FinaleStep < FinaleBankedStep;
+    }
+    bool IsStoryBeatOpen() const { return IsPondOpen() || IsCourtOpen() || IsShowOpen() || IsRescueOpen() || IsConvoyOpen() || IsBlankOpen() || IsTourOpen() || IsHomeOpen() || IsEscortOpen() || IsShadeOpen() || IsGrabOpen() || IsCutOpen() || IsChaseOpen() || IsFinaleOpen(); }
 
     UPROPERTY(VisibleAnywhere, ReplicatedUsing=UpdatePresentation) EQuebecCampaignPhase Phase = EQuebecCampaignPhase::AimWorklight;
     UPROPERTY(VisibleAnywhere, Replicated) int32 CompletedMissions = 0;
@@ -230,6 +242,17 @@ public:
     UPROPERTY(VisibleAnywhere, ReplicatedUsing=UpdatePresentation) int32 ChaseStep = 0;
     UPROPERTY(VisibleAnywhere, Replicated) float ChaseTailX = 55790.8f;
     UPROPERTY(VisibleAnywhere, Replicated) float ChaseTailY = 14839.1f;
+    // 0 meet, 1 dark, 2 page, 3 cut, 4 chase, 5 banked. Written on the version-9 tail. Not a chain link.
+    // The burn, the page clock, the rival's clock, and this tail's place are not saved.
+    // A reload keeps the stage and clears those.
+    UPROPERTY(VisibleAnywhere, ReplicatedUsing=UpdatePresentation) int32 FinaleStep = 0;
+    UPROPERTY(VisibleAnywhere, Replicated) bool bFinaleBurned = false;
+    UPROPERTY(VisibleAnywhere, Replicated) bool bFinaleHolding = false;
+    UPROPERTY(VisibleAnywhere, Replicated) bool bFinaleRacing = false;
+    UPROPERTY(VisibleAnywhere, Replicated) bool bFinaleTailing = false;
+    UPROPERTY(VisibleAnywhere, Replicated) float FinaleElapsed = 0.f;
+    UPROPERTY(VisibleAnywhere, Replicated) float FinaleTailX = 36946.3f;
+    UPROPERTY(VisibleAnywhere, Replicated) float FinaleTailY = -10553.7f;
     UPROPERTY(VisibleAnywhere, Replicated) TObjectPtr<APlayerState> LightOperator;
     UPROPERTY(VisibleAnywhere, Replicated) float LightYaw = 0.f;
     UPROPERTY(VisibleAnywhere, Replicated) float LightPitch = 0.f;
@@ -320,6 +343,32 @@ private:
     UPROPERTY() TObjectPtr<UTextRenderComponent> ChaseSeatCaption;
     UPROPERTY() TObjectPtr<UTextRenderComponent> ChaseHideCaption;
     UPROPERTY() TObjectPtr<UTextRenderComponent> ChaseTailCaption;
+    UPROPERTY() TObjectPtr<UStaticMeshComponent> FinaleMeet;
+    UPROPERTY() TObjectPtr<UStaticMeshComponent> FinalePocket;
+    UPROPERTY() TObjectPtr<UStaticMeshComponent> FinaleFar;
+    UPROPERTY() TObjectPtr<UStaticMeshComponent> FinaleLampA;
+    UPROPERTY() TObjectPtr<UStaticMeshComponent> FinaleLampB;
+    UPROPERTY() TObjectPtr<UStaticMeshComponent> FinaleCase;
+    UPROPERTY() TObjectPtr<UStaticMeshComponent> FinaleDrop;
+    UPROPERTY() TObjectPtr<UStaticMeshComponent> FinaleLine;
+    UPROPERTY() TObjectPtr<UStaticMeshComponent> FinaleFinish;
+    UPROPERTY() TObjectPtr<UStaticMeshComponent> FinaleRival;
+    UPROPERTY() TObjectPtr<UStaticMeshComponent> FinaleSeat;
+    UPROPERTY() TObjectPtr<UStaticMeshComponent> FinaleHide;
+    UPROPERTY() TObjectPtr<UStaticMeshComponent> FinaleTail;
+    UPROPERTY() TObjectPtr<UTextRenderComponent> FinaleMeetCaption;
+    UPROPERTY() TObjectPtr<UTextRenderComponent> FinalePocketCaption;
+    UPROPERTY() TObjectPtr<UTextRenderComponent> FinaleFarCaption;
+    UPROPERTY() TObjectPtr<UTextRenderComponent> FinaleLampACaption;
+    UPROPERTY() TObjectPtr<UTextRenderComponent> FinaleLampBCaption;
+    UPROPERTY() TObjectPtr<UTextRenderComponent> FinaleCaseCaption;
+    UPROPERTY() TObjectPtr<UTextRenderComponent> FinaleDropCaption;
+    UPROPERTY() TObjectPtr<UTextRenderComponent> FinaleLineCaption;
+    UPROPERTY() TObjectPtr<UTextRenderComponent> FinaleFinishCaption;
+    UPROPERTY() TObjectPtr<UTextRenderComponent> FinaleRivalCaption;
+    UPROPERTY() TObjectPtr<UTextRenderComponent> FinaleSeatCaption;
+    UPROPERTY() TObjectPtr<UTextRenderComponent> FinaleHideCaption;
+    UPROPERTY() TObjectPtr<UTextRenderComponent> FinaleTailCaption;
     UPROPERTY() TArray<TObjectPtr<UStaticMeshComponent>> ConvoyParts;
     UPROPERTY() TArray<TObjectPtr<UTextRenderComponent>> ConvoyCaptions;
     UPROPERTY() TArray<TObjectPtr<UStaticMeshComponent>> BlankParts;
@@ -390,6 +439,8 @@ private:
     void AdvanceCut(int32 Next, AQuebecController* Who, const TCHAR* Message, bool bFinished);
     void TickChase(float DeltaSeconds);
     void AdvanceChase(int32 Next, AQuebecController* Who, const TCHAR* Message, bool bFinished);
+    void TickFinale(float DeltaSeconds);
+    void AdvanceFinale(int32 Next, AQuebecController* Who, const TCHAR* Message, bool bFinished);
     void ChangePhase(EQuebecCampaignPhase Next, bool bFeedback = true);
     void StopAiming();
     void SaveBoundary();
