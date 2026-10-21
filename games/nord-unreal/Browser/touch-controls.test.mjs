@@ -56,8 +56,9 @@ function fixture() {
   const ui = { move: control({ stick: 'move' }), steering: control({ stick: 'steer' }),
     gas: control({ key: '16' }), brake: control({ key: '32' }), use: control({ key: '69' }),
     fire: control({ key: '70' }), aim: control({ mouse: '2' }), weapon: control({ key: '81' }), auto: control({ toggle: 'auto' }),
+    lock: control({ key: '32' }),
     combat: { hidden: false } };
-  const buttons = new Map([['touch-gas', ui.gas], ['touch-brake', ui.brake], ['touch-use', ui.use], ['touch-auto', ui.auto]]);
+  const buttons = new Map([['touch-gas', ui.gas], ['touch-brake', ui.brake], ['touch-use', ui.use], ['touch-auto', ui.auto], ['touch-lock', ui.lock]]);
   root.querySelector = selector => selector === '.touch-steering' ? ui.steering : selector === '.touch-combat' ? ui.combat : ui.move;
   const surface = Object.assign(new EventTarget(), control({}));
   surface.contains = target => target === surface || controls.includes(target);
@@ -422,6 +423,33 @@ test('double-tapped Sprint stays active with Move and vehicle/menu transitions c
   assert.ok(f.messages.some(m => m[0] === 'KeyUp' && m[1] === 16));
   assert.equal(f.ui.gas.getAttribute('aria-pressed'), 'false');
   f.releaseAll();
+});
+
+test('wheel lock holds Space while driving, keeps auto gas, and hides on foot', () => {
+  const f = fixture();
+  f.setEnabled(true);
+  f.setDriving(true);
+  assert.equal(f.ui.lock.hidden, false);
+  assert.equal(f.ui.brake.dataset.key, '83');
+  f.pointer('pointerdown', f.ui.auto);
+  f.pointer('pointerdown', f.ui.lock, 2);
+  assert.deepEqual(f.messages, [['KeyDown', 87, 0], ['KeyDown', 32, 0]]);
+  assert.equal(f.ui.auto.getAttribute('aria-pressed'), 'true');
+  f.pointer('pointerdown', f.ui.brake, 3);
+  assert.deepEqual(f.messages.slice(-2), [['KeyUp', 87], ['KeyDown', 83, 0]]);
+  assert.ok(!f.messages.slice(-2).some(message => message[1] === 32), 'a brake step leaves the lock held');
+  assert.equal(f.ui.auto.getAttribute('aria-pressed'), 'false');
+  f.pointer('pointerup', f.ui.brake, 3);
+  f.pointer('pointerup', f.ui.lock, 2);
+  assert.deepEqual(f.messages.at(-1), ['KeyUp', 32]);
+  assert.equal(f.messages.filter(message => message[0] === 'KeyDown' && message[1] === 32).length, 1);
+  f.pointer('pointerdown', f.ui.lock, 4);
+  f.setDriving(false);
+  assert.deepEqual(f.messages.at(-1), ['KeyUp', 32]);
+  assert.equal(f.ui.lock.hidden, true);
+  assert.equal(f.ui.brake.dataset.key, '32');
+  f.pointer('pointerdown', f.ui.brake, 5);
+  assert.deepEqual(f.messages.at(-1), ['KeyDown', 32, 0]);
 });
 
 test('driving pedal and Exit drags hold their actions without turning the camera', () => {

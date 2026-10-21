@@ -134,14 +134,22 @@ footer p { margin: 0; }
 #touch-controls .touch-combat button { width: var(--combat-size); height: var(--combat-size); padding: 4px; gap: 1px; font-size: 9.5px; }
 #touch-controls .touch-combat svg { width: 20px; height: 20px; }
 #touch-controls #touch-fire { border-color: #ff5a5a; }
-#touch-controls .touch-auto { position: absolute; width: 52px; height: 44px; padding: 4px;
+#touch-controls :is(.touch-auto, .touch-lock) { position: absolute; width: 52px; height: 44px; padding: 4px; }
+#touch-controls .touch-auto {
   right: calc(max(16px, env(safe-area-inset-right)) + var(--action-size) + var(--action-gap) + (var(--action-size) - 52px) / 2);
   bottom: calc(max(16px, env(safe-area-inset-bottom)) + 2 * var(--action-size) + var(--action-gap) + 10px); }
+#touch-controls .touch-lock {
+  right: calc(max(16px, env(safe-area-inset-right)) + var(--action-size) + var(--action-gap) + (var(--action-size) - 52px) / 2 + 52px + var(--action-gap));
+  bottom: calc(max(16px, env(safe-area-inset-bottom)) + 2 * var(--action-size) + var(--action-gap) + 10px);
+  border-color: var(--cyan); }
 #touch-controls .touch-auto[aria-pressed="true"] { background: var(--yellow); color: var(--ink); border-color: var(--ink); box-shadow: 1px 1px 0 #c2185b; }
 #touch-controls .touch-auto[aria-pressed="true"] span { color: var(--ink); }
 @media (orientation: landscape) {
   #touch-controls { --combat-size: 52px; }
   .touch-combat { right: calc(max(16px, env(safe-area-inset-right)) + 2 * var(--action-size) + var(--action-gap) + 12px); bottom: calc(14dvh + 8px); }
   #touch-controls .touch-auto { right: calc(max(16px, env(safe-area-inset-right)) + 2 * var(--action-size) + var(--action-gap) + 12px);
+    bottom: calc(max(16px, env(safe-area-inset-bottom)) + var(--action-size) + var(--action-gap) + (var(--action-size) - 44px) / 2); }
+  #touch-controls .touch-lock {
+    right: calc(max(16px, env(safe-area-inset-right)) + 2 * var(--action-size) + var(--action-gap) + 12px + 52px + var(--action-gap));
     bottom: calc(max(16px, env(safe-area-inset-bottom)) + var(--action-size) + var(--action-gap) + (var(--action-size) - 44px) / 2); }
 }

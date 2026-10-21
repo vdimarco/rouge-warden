@@ -64,7 +64,7 @@
             <svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="21" cy="5" r="3"/><path d="m10 13 6-5 5 7 6 1M16 8l-3 11 7 4 2 6M13 19l-5 8H3M11 12l-6 1"/></svg>
             <b>Sprint</b><span>Hold</span>
           </button>
-          <button id="touch-brake" data-key="32" aria-label="Jump on foot or hold handbrake in car">
+          <button id="touch-brake" data-key="32" aria-label="Jump on foot">
             <svg viewBox="0 0 32 32" aria-hidden="true"><path d="m9 8 7-6 7 6M16 2v9"/><circle cx="16" cy="16" r="3"/><path d="M16 19v5m-7-6 7 3 7-3m-7 6-5 6m5-6 5 6"/></svg>
             <b>Jump</b><span>On foot</span>
           </button>
@@ -92,8 +92,9 @@
             <b>Fire</b>
           </button>
         </div>
-        <!-- In a car: Auto holds Gas until Brake is touched or Auto is tapped again. -->
+        <!-- In a car: Auto holds Gas until Brake is touched or Auto is tapped again. Lock holds Space, the handbrake, and does not drop Auto. -->
         <button id="touch-auto" class="touch-auto" type="button" data-toggle="auto" aria-pressed="false" aria-label="Auto gas: keep accelerating until you brake" hidden><b>Auto</b><span>Gas</span></button>
+        <button id="touch-lock" class="touch-lock" type="button" data-key="32" aria-label="Hold to lock the wheels" hidden><b>Lock</b><span>Skid</span></button>
       </div>
       <section id="overlay" aria-labelledby="status-title">
         <!-- In fullscreen the header is out of view; this button keeps the menu reachable. -->

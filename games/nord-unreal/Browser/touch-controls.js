@@ -55,6 +55,7 @@ export function setupTouchControls({ root, surface, stream }) {
   const brakeButton = document.getElementById('touch-brake');
   const useButton = document.getElementById('touch-use');
   const autoButton = document.getElementById('touch-auto');
+  const lockButton = document.getElementById('touch-lock');
   const combatGroup = root.querySelector('.touch-combat');
   // Aim holds the right mouse button; every other control holds a key code.
   const aimInput = 'RightMouseButton';
@@ -174,8 +175,8 @@ export function setupTouchControls({ root, surface, stream }) {
     const next = new Set([...activations.keys(), ...[...pointers.values()].flatMap(pointer => pointer.keys)]);
     if (!driving && sprintLatched && [65, 68, 87, 83].some(key => next.has(key))) next.add(16);
     if (driving) {
-      // Any brake step, including a short one, drops auto gas. Full gas from the button or Auto
-      // wins over a lighter wheel step so the two do not add.
+      // Any brake step, including a short one, drops auto gas. Lock is Space and is not a brake
+      // step, so a slide can keep gas. Full gas from the button or Auto wins over a lighter wheel step.
       const gasStep = [104, 105, 87];
       const brakeStep = [99, 102, 83];
       if (brakeStep.some(key => next.has(key))) autoGas = false;
@@ -307,9 +308,10 @@ export function setupTouchControls({ root, surface, stream }) {
     root.dataset.driving = String(driving);
     root.querySelector('[data-stick="move"]').hidden = driving;
     root.querySelector('.touch-steering').hidden = !driving;
-    // Combat buttons are for walking; the Auto gas toggle is for driving.
+    // Combat buttons are for walking. Auto gas and the wheel lock are for driving.
     if (combatGroup) combatGroup.hidden = driving;
     if (autoButton) autoButton.hidden = !driving;
+    if (lockButton) lockButton.hidden = !driving;
     for (const [button, key, name, hint, label, icon] of [
       [gasButton, driving ? 87 : 16, driving ? 'Gas' : 'Sprint', driving ? 'Hold' : 'Hold / ×2', driving ? 'Hold to accelerate' : 'Hold or double-tap to sprint while moving',
         driving ? '<path d="M10 28V9l12-5v24ZM10 12h12M10 19h12"/>' : null],
