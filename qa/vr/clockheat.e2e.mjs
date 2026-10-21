@@ -23,6 +23,7 @@ try {
     G.test.step(1 / 60, 20);
     G.game.skipTutorial();
     G.test.step(1 / 60, 8);
+    window.__home = { x: G.P.pos.x, y: G.P.pos.y, z: G.P.pos.z };
     window.__pill = () => {
       const el = document.querySelector(".fs-mission");
       const s = el ? getComputedStyle(el) : null;
@@ -42,9 +43,9 @@ try {
   });
 
   const calm = await page.evaluate(() => {
-    const home = { x: G.P.pos.x, y: G.P.pos.y, z: G.P.pos.z };
     G.test.job("brawl");
-    G.test.teleport(home.x, home.y + 30, home.z);
+    const g = G.test.action().combat.list.find((q) => q.group === "job");
+    if (g) G.test.teleport(g.x + 80, g.y, g.z);
     G.test.step(1 / 60, 4);
     return window.__pill();
   });
@@ -80,7 +81,8 @@ try {
   check(won.killed && won.card.title === "GOT IT" && !won.card.pull && !won.card.hot, "a won job stays the ink pill", won);
 
   const balloon = await page.evaluate(() => {
-    G.test.teleport(G.P.pos.x, Math.max(0, G.P.pos.y - 30), G.P.pos.z);
+    const home = window.__home;
+    G.test.teleport(home.x, home.y, home.z);
     G.test.job("balloon");
     let n = 0;
     for (; n < 120; n++) {
