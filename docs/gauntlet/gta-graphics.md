@@ -1263,3 +1263,38 @@ Unreal is not available in this environment, so in-engine frames are the last co
 - Playability raw: 39 / 10 dimensions, index 39
 - Total: 110 / 200
 - Delta vs last round: +1
+
+### Round 37 — 2026-10-21 — rubric v1
+
+- What changed: The asphalt colour samples `asphalt_02` twice. One sample stays on world XY times 0.005, a 2 m repeat. The second uses times 0.013, shifted by 0.37, and a sine mixes them. A faster sine pair moves the colour between 0.78 and 1. Normals and roughness stay on the 2 m grid. The tint stays (0.82, 0.87, 0.89).
+- Why it helped: Texture and material quality was at 8. The same crack ruled the road every 2 m.
+- Screenshots: before `docs/gauntlet/gta-graphics/round-37/before-frame.png`, after `docs/gauntlet/gta-graphics/round-37/after-frame.png`. Crops are `before-tar.png` and `after-tar.png`. Both use the walking camera (arm 420, socket Y 70, socket Z 110, pitch −12, horizontal FOV 90) along a flat road. Not an Unreal capture. The road crop mean absolute delta is 0.060 and the max is 0.576. The full-frame mean is 0.058. `Scripts/test_asphalt_grain.py` passed. The material graph was not applied in Unreal. `GET /gta/` returned 200. OpenSpec CLI is not installed, so the change files were not validated with `openspec`.
+- Next target: color palette, tied at 8 with the other aesthetics a picture can still move. Composition and particles stay at 6, because the walking socket and the rain displacement stay as they are. Animation smoothness stays at 3 and is skipped until a pose can be drawn.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 8 | The sun and the night grade are unchanged. |
+| Color palette | 8 | The photo and the tint are the same grey. The mix does not add a new hue. |
+| Detail density | 8 | The street mesh is unchanged. |
+| Texture and material quality | 9 | The ruled 2 m crack is broken. The aggregate is still one photo. |
+| Composition and camera | 6 | The walking socket is unchanged. |
+| Atmosphere | 8 | The moon grade and the street sheen are unchanged. |
+| Character models | 8 | No figure changed. |
+| Animation smoothness | 3 | Skipped. The blend space still cannot be posed here. |
+| Particles and VFX | 6 | Rain rings are unchanged. |
+| UI polish | 8 | The radar is unchanged. |
+| Responsiveness and input latency | 4 | Not measured this round. |
+| Controls feel | 4 | Not played. |
+| Mission clarity | 5 | The objective words are unchanged. |
+| Pacing | 4 | Unchanged mission slice. |
+| Fun factor | 3 | Not played. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 4 | No new juice. |
+| Sound design | 3 | Not listened to. |
+| Variety | 3 | One asphalt photo, two scales. |
+| Performance stability | 5 | `Scripts/test_asphalt_grain.py` passed. The graph adds one texture sample. Frame time was not remeasured. |
+
+- Aesthetics raw: 72 / 10 dimensions, index 72
+- Playability raw: 39 / 10 dimensions, index 39
+- Total: 111 / 200
+- Delta vs last round: +1
