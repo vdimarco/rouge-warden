@@ -707,11 +707,13 @@ test("Stop, Thief!: falling behind speeds him up, and staying close keeps the jo
   assert.ok(J.active, "still chasing");
   assert.ok(g.speed > 8, "pulling at " + g.speed.toFixed(2));
   assert.match(J.card.detail, /pulling away/i);
+  assert.equal(J.card.hot, true, "hot while pulling, timer " + J.active.timer.toFixed(1));
   const near = () => hero(g.x + 2, g.y, g.z);
   for (let i = 0; i < 1.2 / DT; i++) { C.update(DT, near()); J.update(DT, i * DT, near()); C.events.length = 0; }
   assert.ok(g.speed < JOB.thief.speed + 0.45, "back to a jog at " + g.speed.toFixed(2));
   assert.match(J.card.detail, /run him down/i);
   assert.doesNotMatch(J.card.detail, /pulling away/i);
+  assert.equal(J.card.hot, false, "ink when close, timer " + J.active.timer.toFixed(1));
 });
 test("Sludge Run: falling behind speeds the runner, and the first-swing wait still holds him", () => {
   const C = createCombat(city), J = createJobs({ city, combat: C });
@@ -787,6 +789,82 @@ test("After the bomb the story is a thief, a catch, a brawl, then a pizza, and n
   assert.match(titles[3], /PIZZA/);
   assert.match(titles[3], /[Dd]eliver/);
   assert.ok(titles.every((t) => !/FLUSH THE CLOGS/.test(t)));
+});
+function startJob(type) {
+  const C = createCombat(city), J = createJobs({ city, combat: C, seed: 3 });
+  const h0 = hero(city.start.x, city.start.y, city.start.z);
+  J.update(DT, 0, h0);
+  const o = J.offers.find((q) => q.type === type) || null;
+  J.start(type, o, h0);
+  const h = hero(J.active.o.x, J.active.o.y, J.active.o.z);
+  return { C, J, h };
+}
+test("a long clock turns the card hot in the last stretch, and time put back brings the ink", () => {
+  const { J, h } = startJob("brawl");
+  assert.ok(J.active.budget >= 120, "opened at " + J.active.budget);
+  J.update(DT, 0, h);
+  assert.equal(J.card.hot, false);
+  assert.match(J.card.title, /BRAWL/);
+  J.active.budget = 16;
+  J.active.timer = 6;
+  J.update(DT, DT, h);
+  assert.equal(J.card.hot, false, "a quarter of 16 s is 4 s, timer " + J.active.timer.toFixed(2));
+  J.active.timer = 4;
+  J.update(DT, DT, h);
+  assert.equal(J.card.hot, true, "timer " + J.active.timer.toFixed(2));
+  J.active.budget = 120;
+  J.active.timer = 7;
+  J.update(DT, DT, h);
+  assert.equal(J.card.hot, true);
+  J.active.timer = 30;
+  J.update(DT, DT, h);
+  assert.equal(J.card.hot, false, "30 s on a two-minute clock, timer " + J.active.timer.toFixed(2));
+});
+test("the crew clock is a new opening, so a fresh 40 s is not already hot", () => {
+  const { J, h } = startJob("sludge");
+  J.active.timer = 5;
+  J.active.budget = 16;
+  J.active.data.runner.on = false;
+  J.update(DT, 0, h);
+  assert.ok(J.active && J.active.data.crew, "the crew is in");
+  assert.ok(J.active.budget >= 40, "budget " + J.active.budget);
+  assert.ok(J.active.timer > 39, "timer " + J.active.timer);
+  assert.equal(J.card.hot, false);
+  assert.match(J.card.detail, /crew/i);
+  J.active.timer = 7;
+  J.update(DT, DT, h);
+  assert.equal(J.card.hot, true);
+});
+test("a short edge stays ink, and a falling person turns the card hot", () => {
+  const { J, h } = startJob("catch");
+  J.update(DT, 0, h);
+  assert.ok(J.active.budget < 12, "edge budget " + J.active.budget);
+  assert.equal(J.card.hot, false);
+  J.active.timer = 1;
+  J.update(DT, DT, h);
+  assert.equal(J.active.data.falling, false);
+  assert.equal(J.card.hot, false);
+  J.active.timer = 0.01;
+  const far = hero(h.x + 80, h.y, h.z, { onGround: false });
+  J.update(DT, DT, far);
+  assert.equal(!!(J.active && J.active.data.falling), true);
+  assert.equal(J.card.hot, true);
+  assert.match(J.card.detail, /hit the street/i);
+});
+test("a low balloon stays ink, and one at 140 m turns the card hot", () => {
+  const { J, h } = startJob("balloon");
+  assert.ok(J.active.budget < 12, "slip budget " + J.active.budget);
+  for (let i = 0; i < 2 / DT && J.active; i++) J.update(DT, i * DT, h);
+  assert.ok(J.active && J.active.data.b.free, "it slipped");
+  assert.ok(J.active.data.b.y < JOB.balloon.high, "still low at " + J.active.data.b.y.toFixed(1));
+  assert.equal(J.card.hot, false);
+  J.active.data.b.y = JOB.balloon.high;
+  J.update(DT, 0, h);
+  assert.equal(J.card.hot, true);
+  assert.match(J.card.detail, /floats away/i);
+  J.active.data.b.y = 40;
+  J.update(DT, 0, h);
+  assert.equal(J.card.hot, false);
 });
 console.log(fails ? "FAIL: action (" + fails + " failed)" : "PASS: action");
 process.exitCode = fails ? 1 : 0;

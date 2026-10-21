@@ -24,7 +24,7 @@ export const JOB = {
   // beat: the eighth-flush carry. pace and climb are a swing and a wall run, not a walk. A farther tower keeps the minute.
   washer: { grip: 60, beat: 36, pace: 16, climb: 8, spare: 10, reach: 2.6, reward: 40 },
   pizza: { speed: 12, spare: 18, reach: 4.5, reward: 25, bonus: 15 },
-  balloon: { rise: 2.4, drift: 1.1, top: 170, reach: 2.6, back: 4.5, slip: 1.2, clear: 5, reward: 20 }, // clear: it can be caught once this high
+  balloon: { rise: 2.4, drift: 1.1, top: 170, high: 140, reach: 2.6, back: 4.5, slip: 1.2, clear: 5, reward: 20 }, // clear: it can be caught once this high. high: a free balloon this far up heats the card
   brawl: { time: 120, wave1: 4, wave2: 3, reward: 35 },
   // press: past this gap the runner leaves the jog. ramp: seconds to reach fast. ease: seconds to fall back to the jog.
   sludge: { speed: 5.4, fast: 7.4, press: 46, ramp: 2, ease: 0.7, crew: 3, runnerHp: 2, reward: 50, spare: 6 },
@@ -257,9 +257,16 @@ export function createJobs({ city, combat, cars = null, seed = 4711 }) {
   };
 
   /* ---------------- starting and ending ---------------- */
+  // A clock that opened at 12 s or more heats in the last 8 s, or the last quarter, whichever is sooner.
+  // A 3.5 s edge and a 1.2 s slip stay ink until the fall or the height. The crew's clock is a new opening.
+  function clockHot(A) {
+    if (!A || !(A.budget >= 12) || !(A.timer > 0)) return false;
+    return A.timer <= Math.min(8, A.budget * 0.25);
+  }
   function card(title, detail, goal, extra = {}) {
     const mission = J.active && J.active.mission;
-    return { title: mission ? mission + " · " + title : title, detail, short: extra.short || title, n: extra.n || 0, of: extra.of || 0, tag: J.active ? J.active.type : "", goal: goal ? { x: goal.x, y: goal.y, z: goal.z } : null };
+    const hot = !!(extra.hot || clockHot(J.active) || /pulling away/i.test(detail || ""));
+    return { title: mission ? mission + " · " + title : title, detail, short: extra.short || title, n: extra.n || 0, of: extra.of || 0, tag: J.active ? J.active.type : "", hot, goal: goal ? { x: goal.x, y: goal.y, z: goal.z } : null };
   }
   // The next story mission after the bomb, or null when that route is done or has not started.
   J.storyNext = function storyNext() {
@@ -296,6 +303,7 @@ export function createJobs({ city, combat, cars = null, seed = 4711 }) {
       const d = Math.hypot(A.data.p.x - h.x, A.data.p.z - h.z);
       A.timer = Math.max(A.timer, d / 14 + 6);
     }
+    A.budget = A.timer;
     emit({ type: "start", job: type, line: JOB_LINES[type], mission: A.mission });
     return A;
   };
@@ -509,6 +517,7 @@ export function createJobs({ city, combat, cars = null, seed = 4711 }) {
         D.crew = true;
         for (let i = 0; i < JOB.sludge.crew; i++) { const a = (i / JOB.sludge.crew) * 6.28; const q = combat.spawn(g.x + Math.cos(a) * 5, g.y, g.z + Math.sin(a) * 5, "job"); q.aggro = true; }
         A.timer = Math.max(A.timer, 40);
+        A.budget = Math.max(A.budget || 0, A.timer);
         emit({ type: "say", line: "Get him, boys!" });
       }
       if (D.hold && !D.crew && g.on && combat.alive(g)) {
@@ -550,7 +559,7 @@ export function createJobs({ city, combat, cars = null, seed = 4711 }) {
         carry(p, h);
         if (h.onGround) { setDown(p, h); end(true, "safe"); return; }
       }
-      A.card = card("CATCH!", D.caught ? "Land anywhere to set them down" : D.falling ? "Catch them before they hit the street!" : "They are on the edge. Get below them: " + Math.ceil(Math.max(0, A.timer)) + " s", D.caught ? null : p);
+      A.card = card("CATCH!", D.caught ? "Land anywhere to set them down" : D.falling ? "Catch them before they hit the street!" : "They are on the edge. Get below them: " + Math.ceil(Math.max(0, A.timer)) + " s", D.caught ? null : p, { hot: D.falling && !D.caught });
       J.card = A.card;
     },
     washer(A, dt, h) {
@@ -587,7 +596,7 @@ export function createJobs({ city, combat, cars = null, seed = 4711 }) {
         b.x = h.x; b.y = h.y + 2.6; b.z = h.z;
         if (Math.hypot(h.x - D.kid.x, h.z - D.kid.z) < C.back && Math.abs(h.y - D.kid.y) < 2) { D.kid.pose = 4; D.kid.poseT = 0; end(true, "returned"); return; }
       }
-      A.card = card("BALLOON CHASE", b.held ? "Give it back to the kid" : "Grab it before it floats away, " + Math.round(b.y) + " m up", b.held ? D.kid : b);
+      A.card = card("BALLOON CHASE", b.held ? "Give it back to the kid" : "Grab it before it floats away, " + Math.round(b.y) + " m up", b.held ? D.kid : b, { hot: b.free && !b.held && b.y >= C.high });
       J.card = A.card;
     },
     taxi(A, dt, h) {

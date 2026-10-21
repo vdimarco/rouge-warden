@@ -1601,12 +1601,12 @@ body:has(#phoneControls:not([hidden])) .fs-top:has(.fs-pill:not([hidden]):not(.f
       if (dd !== dh.dist) { dh.dist = dd; k.dist.textContent = dd >= 1000 ? (dd / 1000).toFixed(1) + " km" : dd + " m"; }
     }
     // the mission card, the training checklist and the pump sticker (game.progress objective, training, pump)
-    const ob = pg.objective, os = ob ? ob.title + "|" + ob.detail + "|" + ob.short + "|" + ob.n + "|" + ob.of : "";
+    const ob = pg.objective, os = ob ? ob.title + "|" + ob.detail + "|" + ob.short + "|" + ob.n + "|" + ob.of + "|" + (ob.hot ? 1 : 0) : "";
     if (dh.obj !== os) {
       dh.obj = os; k.mission.hidden = !ob;
       if (ob) { k.mTitle.textContent = ob.title + (ob.of ? " " + ob.n + "/" + ob.of : ""); k.mDetail.textContent = ob.detail; k.mDetail.hidden = !ob.detail; k.mShort.textContent = ob.short || ""; }
       k.mission.classList.toggle("no-short", !(ob && ob.short));
-      k.mission.classList.toggle("fs-pull", !!(ob && /pulling away/i.test(ob.detail || "")));
+      k.mission.classList.toggle("fs-pull", !!(ob && (ob.hot || /pulling away/i.test(ob.detail || ""))));
     }
     const trn = pg.training, ts = trn ? trn.now + "|" + (trn.done ? 1 : 0) + "|" + trn.items.map((r) => (r.done ? "1" : "0") + r.n).join("") : "";
     if (dh.train !== ts) { dh.train = ts; drawTraining(trn); }

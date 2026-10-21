@@ -1,0 +1,6 @@
+- [ ] A two-minute fight stays the ink pill, 7 seconds turns it hot, and 30 seconds brings the ink back
+- [ ] The hot card is the same warm fill and magenta edge as pulling away
+- [ ] A won job stays the ink pill
+- [ ] A balloon under 140 m stays ink, and one at 140 m turns hot
+- [ ] A short edge wait stays ink, and a falling person turns the card hot
+- [ ] A fresh crew clock of 40 seconds is not already hot
