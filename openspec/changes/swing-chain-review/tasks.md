@@ -1,3 +1,0 @@
-- [ ] The next web skips another tier and the antenna of the building just left
-- [ ] Holding a sky rope over open water does not drop it
-- [ ] Letting the button up still lets a building rope go, and a held swing still catches a different building

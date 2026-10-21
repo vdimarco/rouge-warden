@@ -1680,8 +1680,8 @@ function chainAim(i) {
   return null;
 }
 // Mouse and pad, flat play: a building rope that has shown the GO cue lets go while the button stays down, and the
-// next frame catches the building ahead. The cue stays long enough to read. A sky rope stays while the button is
-// held. A clog, a pipe, the crack and a phone rope stay.
+// next frame catches the building ahead. The cue stays long enough to read. A sky rope lets go only when a building
+// is already ahead to catch; over open water it stays. A clog, a pipe, the crack and a phone rope stay.
 function holdChainRelease(dt, inp) {
   if (driving || !flatOn || isXR() || inp.easySwing || settings.hold === "toggle") {
     cueHold[0] = cueHold[1] = 0;
@@ -1691,12 +1691,25 @@ function holdChainRelease(dt, inp) {
     const h = inp.hands[i], r = P.ropes[i];
     if (!h.holding) { chainArm[i] = false; cueHold[i] = 0; continue; }
     const sky = r.target && r.target.tag === "sky";
-    const building = r.state === "attached" && r.easy && !r.sticky && r.target && !sky && !SPECIAL_TAGS[r.target.tag];
-    const live = building && !P.onGround && !P.wall && releaseWindow(P, r, 0);
+    const airborne = !P.onGround && !P.wall;
+    if (sky) {
+      const liveSky = r.state === "attached" && r.easy && !r.sticky && airborne && cueAir[i] && releaseWindow(P, r, 0);
+      if (!liveSky) { cueHold[i] = 0; continue; }
+      cueHold[i] += dt;
+      if (cueHold[i] < CHAIN_SEE) continue;
+      chainFrom[i] = -1;
+      if (!chainAim(i)) continue;
+      chainArm[i] = true;
+      cueHold[i] = 0;
+      release(P, i);
+      continue;
+    }
+    const building = r.state === "attached" && r.easy && !r.sticky && r.target && !SPECIAL_TAGS[r.target.tag];
+    const live = building && airborne && releaseWindow(P, r, 0);
     if (live && cueAir[i]) {
       cueHold[i] += dt;
       if (cueHold[i] < CHAIN_SEE) continue;
-    } else if (!(cueHold[i] > 0 && building && !P.onGround && !P.wall && cueAir[i] && !live)) {
+    } else if (!(cueHold[i] > 0 && building && airborne && cueAir[i] && !live)) {
       cueHold[i] = 0;
       continue;
     }
