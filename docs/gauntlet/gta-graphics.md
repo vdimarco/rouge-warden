@@ -1753,3 +1753,38 @@ Unreal is not available in this environment, so in-engine frames are the last co
 - Playability raw: 39 / 10 dimensions, index 39
 - Total: 124 / 200
 - Delta vs last round: +1
+
+### Round 51 — 2026-10-21 — rubric v1
+
+- What changed: the opening shade draws the park-inventory trees whose trunks are within 50 m of the spawn. A trunk centred at 0.32 of the tree height, 0.64 of the height long, matches the level builder. The crown is an ellipsoid from about 0.23 of the height to the top, in the inventory leaf colour. The level already instances the real crowns. Pitch, aim, socket, and the pawn stay. The player car stays the box.
+- Why it helped: Composition was at 8. The opening shade was an empty lawn, so the avenue had nothing in front of it.
+- Screenshots: before `docs/gauntlet/gta-graphics/round-51/before-frame.png`, after `docs/gauntlet/gta-graphics/round-51/after-frame.png`. Crops of the avenue band are `before-grove.png` and `after-grove.png`. Both use the opening walk camera (arm 420, socket Y 70, socket Z 110, pitch −16, yaw about 110°, horizontal FOV 90) at the surveyed sidewalk spawn, with the hoodie walk at 0.75 s and the same walk-peak rock. Foot dust is left out. Not an Unreal capture. The full-frame mean absolute delta is 0.040 and the max is 0.400. 94655 pixels change. A foreground trunk stands in the middle of the avenue, and crowns sit on both sides. The figure stays in the lower lawn. `Scripts/test_opening_grove.py` passed. The vegetation actor was not recompiled. `GET /gta/` returned 200. OpenSpec CLI is not installed, so the change files were not validated with `openspec`.
+- Next target: the player car. The box on the right of this frame is still a stand-in. Animation stays at 5.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 9 | The street shade is unchanged. |
+| Color palette | 9 | The crowns use the existing leaf colours. The street hues are unchanged. |
+| Detail density | 9 | The street mesh is unchanged. The crowns are simple volumes. |
+| Texture and material quality | 9 | The asphalt mix is unchanged. |
+| Composition and camera | 9 | A foreground trunk and a row of crowns frame the avenue. The lawn in front of the figure is still open. |
+| Atmosphere | 9 | The street dust grade is unchanged. |
+| Character models | 9 | The hoodie is unchanged. |
+| Animation smoothness | 5 | The stride is unchanged. The crew blend space still cannot be posed here. |
+| Particles and VFX | 9 | The shoe puffs are unchanged. They are left out of these frames. |
+| UI polish | 9 | The radar heading is unchanged. |
+| Responsiveness and input latency | 4 | Not measured this round. |
+| Controls feel | 4 | Not played. |
+| Mission clarity | 5 | The objective words are unchanged. |
+| Pacing | 4 | Unchanged mission slice. |
+| Fun factor | 3 | Not played. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 4 | The trees are the new mark. No new juice. |
+| Sound design | 3 | Not listened to. |
+| Variety | 3 | One grove in this frame. The rest of the inventory stays where it was. |
+| Performance stability | 5 | `Scripts/test_opening_grove.py` passed. Thirty-one nearby trees. Frame time was not remeasured. |
+
+- Aesthetics raw: 86 / 10 dimensions, index 86
+- Playability raw: 39 / 10 dimensions, index 39
+- Total: 125 / 200
+- Delta vs last round: +1
