@@ -43,10 +43,12 @@ public:
     UPROPERTY(VisibleAnywhere) int32 BlankStep = 0;
     UPROPERTY(VisibleAnywhere) int32 TourStep = 0;
     UPROPERTY(VisibleAnywhere) int32 HomeStep = 0;
+    // Escort tail. Version 3 leaves this at 0. Version 4 writes it.
+    UPROPERTY(VisibleAnywhere) int32 EscortStep = 0;
     bool IsSupported() const;
 };
 
-/** Story encounters. All objective decisions run on authority. Missions 3 through 10 persist on the version-3 tail. Completed missions stay 0–2. */
+/** Story encounters. All objective decisions run on authority. Missions 3 through 10 persist on the version-3 tail. Mission 11 persists on version 4. Completed missions stay 0–2. */
 UCLASS()
 class QUEBEC_API AQuebecCampaign : public AActor
 {
@@ -93,6 +95,7 @@ public:
     static constexpr int32 BlankBankedStep = 4;
     static constexpr int32 TourBankedStep = 3;
     static constexpr int32 HomeBankedStep = 3;
+    static constexpr int32 EscortBankedStep = 2;
     bool IsPondOpen() const { return Phase == EQuebecCampaignPhase::Complete && PondStep < PondBankedStep; }
     bool IsCourtOpen() const { return Phase == EQuebecCampaignPhase::Complete && PondStep >= PondBankedStep && CourtStep < CourtBankedStep; }
     bool IsShowOpen() const { return Phase == EQuebecCampaignPhase::Complete && PondStep >= PondBankedStep && CourtStep >= CourtBankedStep && ShowStep < ShowBankedStep; }
@@ -124,7 +127,14 @@ public:
             && ShowStep >= ShowBankedStep && RescueMask >= RescueDone && ConvoyStep >= ConvoyBankedStep
             && BlankStep >= BlankBankedStep && TourStep >= TourBankedStep && HomeStep >= 0 && HomeStep < HomeBankedStep;
     }
-    bool IsStoryBeatOpen() const { return IsPondOpen() || IsCourtOpen() || IsShowOpen() || IsRescueOpen() || IsConvoyOpen() || IsBlankOpen() || IsTourOpen() || IsHomeOpen(); }
+    bool IsEscortOpen() const
+    {
+        return Phase == EQuebecCampaignPhase::Complete && PondStep >= PondBankedStep && CourtStep >= CourtBankedStep
+            && ShowStep >= ShowBankedStep && RescueMask >= RescueDone && ConvoyStep >= ConvoyBankedStep
+            && BlankStep >= BlankBankedStep && TourStep >= TourBankedStep && HomeStep >= HomeBankedStep
+            && EscortStep >= 0 && EscortStep < EscortBankedStep;
+    }
+    bool IsStoryBeatOpen() const { return IsPondOpen() || IsCourtOpen() || IsShowOpen() || IsRescueOpen() || IsConvoyOpen() || IsBlankOpen() || IsTourOpen() || IsHomeOpen() || IsEscortOpen(); }
 
     UPROPERTY(VisibleAnywhere, ReplicatedUsing=UpdatePresentation) EQuebecCampaignPhase Phase = EQuebecCampaignPhase::AimWorklight;
     UPROPERTY(VisibleAnywhere, Replicated) int32 CompletedMissions = 0;
@@ -152,8 +162,14 @@ public:
     UPROPERTY(VisibleAnywhere, ReplicatedUsing=UpdatePresentation) int32 BlankStep = 0;
     // 0 bike, 1 pedalo, 2 swim, 3 banked. Written on the version-3 tail. Not a chain link.
     UPROPERTY(VisibleAnywhere, ReplicatedUsing=UpdatePresentation) int32 TourStep = 0;
-    // 0 bike stand, 1 pedalo berth, 2 south bank, 3 banked. Written on the version-3 tail. Not a chain link.
+    // 0 bike stand, 1 pedalo berth, 2 south bank, 3 banked. Written on the story tail. Not a chain link.
     UPROPERTY(VisibleAnywhere, ReplicatedUsing=UpdatePresentation) int32 HomeStep = 0;
+    // 0 meet Grey Coat, 1 walk them to the door, 2 banked. Written on the version-4 tail. Not a chain link.
+    // The coat's place on the lawn is not saved. A reload during the walk puts them back at the meet.
+    UPROPERTY(VisibleAnywhere, ReplicatedUsing=UpdatePresentation) int32 EscortStep = 0;
+    UPROPERTY(VisibleAnywhere, Replicated) float EscortFriendX = 29600.f;
+    UPROPERTY(VisibleAnywhere, Replicated) float EscortFriendY = 16800.f;
+    UPROPERTY(VisibleAnywhere, Replicated) bool bEscortPlanted = false;
     UPROPERTY(VisibleAnywhere, Replicated) TObjectPtr<APlayerState> LightOperator;
     UPROPERTY(VisibleAnywhere, Replicated) float LightYaw = 0.f;
     UPROPERTY(VisibleAnywhere, Replicated) float LightPitch = 0.f;
@@ -217,6 +233,9 @@ private:
     UPROPERTY() TArray<TObjectPtr<UTextRenderComponent>> ShowCaptions;
     UPROPERTY() TArray<TObjectPtr<UStaticMeshComponent>> RescueParts;
     UPROPERTY() TArray<TObjectPtr<UTextRenderComponent>> RescueCaptions;
+    UPROPERTY() TObjectPtr<UTextRenderComponent> EscortCaption;
+    UPROPERTY() TObjectPtr<UStaticMeshComponent> EscortDoor;
+    UPROPERTY() TObjectPtr<UTextRenderComponent> EscortDoorCaption;
     UPROPERTY() TArray<TObjectPtr<UStaticMeshComponent>> ConvoyParts;
     UPROPERTY() TArray<TObjectPtr<UTextRenderComponent>> ConvoyCaptions;
     UPROPERTY() TArray<TObjectPtr<UStaticMeshComponent>> BlankParts;
@@ -276,6 +295,9 @@ private:
     void TickHome();
     void AdvanceHome(int32 Next, AQuebecController* Who, const TCHAR* Message, bool bFinished);
     bool NearHome(const AQuebecController* Controller, double X, double Y) const;
+    void TickEscort(float DeltaSeconds);
+    void AdvanceEscort(int32 Next, AQuebecController* Who, const TCHAR* Message, bool bFinished);
+    bool NearEscort(const AQuebecController* Controller, double X, double Y) const;
     void ChangePhase(EQuebecCampaignPhase Next, bool bFeedback = true);
     void StopAiming();
     void SaveBoundary();

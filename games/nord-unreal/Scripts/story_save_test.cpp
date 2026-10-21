@@ -49,7 +49,7 @@ namespace
 
 int main()
 {
-    Expect(Legacy == 1 && Rejected == 2 && Current == 3, "the slot versions drifted");
+    Expect(Legacy == 1 && Rejected == 2 && Story == 3 && Current == 4, "the slot versions drifted");
     Expect(Current != Rejected, "the writer would plant the unsupported fixture");
     Expect(PondBanked == QuebecPondRules::StepBanked, "the pond bank left the save");
     Expect(CourtBanked == QuebecCourtRules::StepBanked, "the court bank left the save");
@@ -66,10 +66,11 @@ int main()
     for (int Completed = 0; Completed <= 2; ++Completed)
     {
         Expect(Accept(Legacy, Completed, None), "a legacy race boundary was rejected");
+        Expect(Accept(Story, Completed, None), "a version-3 race boundary was rejected");
         Expect(Accept(Current, Completed, None), "a current race boundary with no story was rejected");
         Expect(!Accept(Rejected, Completed, None), "version 2 was accepted");
         Expect(!Accept(0, Completed, None), "version 0 was accepted");
-        Expect(!Accept(4, Completed, None), "a later schema was accepted");
+        Expect(!Accept(5, Completed, None), "a later schema was accepted");
     }
     Expect(!Accept(Legacy, -1, None), "a missing mission count was accepted");
     Expect(!Accept(Legacy, 3, None), "completed missions 3 were accepted on a legacy slot");
@@ -114,8 +115,22 @@ int main()
     Expect(Kept.Pond == PondBanked && Kept.Court == 2 && Kept.Show == 0 && Kept.Home == 0, "a current slot dropped the open beat");
     const FSteps Done = Applied(Current, Banked());
     Expect(Done.Pond == PondBanked && Done.Court == CourtBanked && Done.Show == ShowBanked && Done.Rescue == RescueDone
-        && Done.Convoy == ConvoyBanked && Done.Blank == BlankBanked && Done.Tour == TourBanked && Done.Home == HomeBanked,
+        && Done.Convoy == ConvoyBanked && Done.Blank == BlankBanked && Done.Tour == TourBanked && Done.Home == HomeBanked
+        && Done.Escort == 0,
         "a finished day did not round-trip");
+    FSteps WithCoat = Banked();
+    WithCoat.Escort = 1;
+    const FSteps FromStory = Applied(Story, WithCoat);
+    Expect(FromStory.Home == HomeBanked && FromStory.Escort == 0, "a version-3 slot copied the escort");
+    Expect(Accept(Current, 2, WithCoat), "a walk in progress was rejected");
+    Expect(!Accept(Story, 2, WithCoat), "a version-3 slot carried the walk");
+    WithCoat.Escort = EscortBanked;
+    Expect(Accept(Current, 2, WithCoat), "a finished walk was rejected");
+    WithCoat.Escort = EscortBanked + 1;
+    Expect(!Accept(Current, 2, WithCoat), "a walk past the bank was accepted");
+    WithCoat.Escort = 1;
+    WithCoat.Home = 0;
+    Expect(!Accept(Current, 2, WithCoat), "the walk started before the day was home");
 
     std::printf("%d assertions, %d failures\n", Assertions, Failures);
     return Failures == 0 ? 0 : 1;

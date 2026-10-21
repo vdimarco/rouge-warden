@@ -80,6 +80,33 @@ bool FQuebecCampaignSaveRoundTripTest::RunTest(const FString& Parameters)
     TestEqual(TEXT("Pond step survives serialization"),TailReload->PondStep,6);
     TestEqual(TEXT("Court step survives serialization"),TailReload->CourtStep,2);
     TestEqual(TEXT("Later beats stay at their start"),TailReload->HomeStep,0);
+    TestEqual(TEXT("A version-3 tail starts the escort over"),TailReload->EscortStep,0);
+    Tail->EscortStep = 1;
+    TestFalse(TEXT("A version-3 slot carrying the walk is rejected"),Tail->IsSupported());
+
+    UQuebecCampaignSaveGame* Walk = NewObject<UQuebecCampaignSaveGame>();
+    Walk->Version = 4;
+    Walk->CompletedMissions = 2;
+    Walk->PondStep = 6;
+    Walk->CourtStep = 4;
+    Walk->ShowStep = 5;
+    Walk->RescueMask = 7;
+    Walk->ConvoyStep = 4;
+    Walk->BlankStep = 4;
+    Walk->TourStep = 3;
+    Walk->HomeStep = 3;
+    Walk->EscortStep = 1;
+    TestTrue(TEXT("Escort tail is accepted before serialization"),Walk->IsSupported());
+    TArray<uint8> WalkBytes;
+    if (!TestTrue(TEXT("Escort tail serializes using engine save format"),UGameplayStatics::SaveGameToMemory(Walk,WalkBytes))) return false;
+    const UQuebecCampaignSaveGame* WalkReload = Cast<UQuebecCampaignSaveGame>(UGameplayStatics::LoadGameFromMemory(WalkBytes));
+    if (!TestNotNull(TEXT("Escort tail reloads using engine save format"),WalkReload)) return false;
+    TestTrue(TEXT("Reloaded escort tail remains supported"),WalkReload->IsSupported());
+    TestEqual(TEXT("Escort schema survives serialization"),WalkReload->Version,4);
+    TestEqual(TEXT("Escort step survives serialization"),WalkReload->EscortStep,1);
+    TestEqual(TEXT("The home day stays banked beside the walk"),WalkReload->HomeStep,3);
+    Walk->HomeStep = 0;
+    TestFalse(TEXT("A walk before the day is home is rejected"),Walk->IsSupported());
 
     UQuebecCampaignSaveGame* Skip = NewObject<UQuebecCampaignSaveGame>();
     Skip->Version = 3;
