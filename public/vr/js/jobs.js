@@ -212,7 +212,9 @@ export function createJobs({ city, combat, cars = null, seed = 4711 }) {
   };
 
   /* ---------------- starting and ending ---------------- */
-  function card(title, detail, goal, extra = {}) { return { title, detail, short: extra.short || title, n: extra.n || 0, of: extra.of || 0, goal: goal ? { x: goal.x, y: goal.y, z: goal.z } : null }; }
+  function card(title, detail, goal, extra = {}) {
+    return { title, detail, short: extra.short || title, n: extra.n || 0, of: extra.of || 0, tag: J.active ? J.active.type : "", goal: goal ? { x: goal.x, y: goal.y, z: goal.z } : null };
+  }
   // start a job of type at the offer o (or at the hero, for the story and the tests)
   J.start = function start(type, o, h) {
     if (J.active) end(false, "dropped", true);
