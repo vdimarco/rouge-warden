@@ -835,3 +835,40 @@ Loop: missions, playability, controls, feel, UX, pacing and fun for In Full Swin
 - Delta vs last round: 0 (round 21 was 123). The tenth flush breaks the three pumps before the King, and eight clogs are still the same pump, so pacing stays at 8.
 
 ![The tenth flush is a roof fight](fullswing-r22/roof.png)
+
+### Round 23 — 2026-10-21 — rubric v1
+
+- What changed: The second flush starts a falling rescue. The card says OVER THE EDGE. The fifth flush starts a purse chase. The card says PURSE RUN. The seventh flush starts a mugging. The card says THE ALLEY. The first, third, ninth, and eleventh flushes stay on the clog card. The balloon, the pizza, the 36 second washer, and the roof fight are unchanged. The King still sleeps. He still roars only at the fourth and the eighth, and he still wakes at twelve. The fall rate is unchanged.
+- Why it helped: Eight of the twelve flushes were the same pump. Spider-Man 2 does not leave a repeated objective as most of the chapter. A 1280×800 play flushed through eleven clogs. One read FLUSH THE CLOGS 1/12. Two read OVER THE EDGE, CATCH!, and the King was still asleep. After the rescue the card was FLUSH THE CLOGS 2/12. Three read FLUSH THE CLOGS 3/12. Five read PURSE RUN, STOP, THIEF!. Seven read THE ALLEY, MUGGING. Nine and eleven were the clog card again, and the King was still asleep. The eighth flush still counted from 36 s.
+- Screenshots: `docs/gauntlet/fullswing-r23/edge.png`.
+- Next target: performance stability (6), the lowest playability score. This machine has no real GPU to time, so that score is not the next implementation round. Sound design (7) was not listened to and is not the next implementation round either.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 5 | Held. Golden-hour sun and ink shadows. |
+| Color palette | 6 | Held. Yellow, red and sludge green still separate the HUD from the blocks. |
+| Detail density | 4 | Held. Open blocks more than a dressed borough. |
+| Texture and material quality | 3 | Held. Flat fills. |
+| Composition and camera | 4 | Held. The chase camera still sits behind the hero. This frame is the card. |
+| Atmosphere | 5 | Held. The dusk skyline has a mood. The street under the card does not. |
+| Character models | 3 | Held. Simple comic figures. |
+| Animation smoothness | 4 | Scored from still frames in software GL. Continuous motion was not watched. |
+| Particles and VFX | 5 | Held. No new effect. The card is the change. |
+| UI polish | 6 | Held. The same ink pill names the rescue. |
+| Responsiveness and input latency | 8 | Held. The clog card still rewrites its metres every frame. |
+| Controls feel | 9 | Held. The first web still hangs from a building at the real rope length. |
+| Mission clarity | 8 | Held. The compass still names the district on the clog card. The rescue card names the edge. |
+| Pacing | 9 | Seven of the twelve flushes are a different job, and the clog pump never runs three times in a row. Five flushes are still the same pump. |
+| Fun factor | 8 | Held. A win still hops the hero. This round changes which jobs interrupt the clogs, not the finish. |
+| Difficulty curve | 8 | Held. The eighth flush still counts from 36 s. The rescue still falls at the same rate. |
+| Feedback | 8 | Held. A chase that is pulling away still turns the card hot. |
+| Sound design | 7 | Held. Not listened to. |
+| Variety | 8 | Held. The rescue, the chase, and the mugging were already in the city. This round places them in the clog run. |
+| Performance stability | 6 | The 1280×800 play passed with no page errors. Frame time on a real GPU was not measured. |
+
+- Aesthetics raw: 45 / 10 dimensions, index 45
+- Playability raw: 79 / 10 dimensions, index 79
+- Total: 124 / 200
+- Delta vs last round: +1 (round 22 was 123). Pacing 8 → 9. Every other score held.
+
+![The second flush is a falling rescue](fullswing-r23/edge.png)
