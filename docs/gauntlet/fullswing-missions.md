@@ -237,3 +237,40 @@ Loop: missions, playability, controls, feel, UX, pacing and fun for In Full Swin
 - Delta vs last round: +1 (round 5 was 107). Sound design 5 → 6. Every other score held.
 
 ![Falling behind, the state that drives the heavier clock](fullswing-r6/falling-behind.png)
+
+### Round 7 — 2026-10-21 — rubric v1
+
+- What changed: A won job hangs in play before the next mission. A comic word fills about 62% of the view (FLUSH on the bomb, KASPLASH on every other win), a cheer plays with the old stinger, and the world slows for a short moment. The pill says GOT IT. The next mission card waits about 1.35 s, then the story scene and the next job. A miss stays a toast.
+- Why it helped: Catching the thief, the faller, or the roof used to be a toast and a coin count, and Mission 3 opened in that same moment. Spider-Man 2 lets a clear land: time slows, a big title, a cheer, then the next objective. A 1280×800 play caught the purse snatcher. KASPLASH measured 61% of the view, the slow moment and the hit were on, the pill read GOT IT, and Mission 3 started after the hang. The cheer was not heard on a speaker (the play ran with audio disabled).
+- Screenshots: `docs/gauntlet/fullswing-r7/gotcha.png`.
+- Next target: controls feel (6), tied with difficulty, sound, and performance. Controls is the one to change next: one button leaves the roof, and the swing is still one held arc. Sound just moved, and this play did not listen. Performance still has no real-GPU frame time.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 5 | Held. Golden-hour sun and ink shadows. |
+| Color palette | 6 | Held. Yellow, red and sludge green still separate the HUD from the blocks. |
+| Detail density | 4 | Held. Open blocks more than a dressed borough. |
+| Texture and material quality | 3 | Held. Flat fills. |
+| Composition and camera | 4 | Held. The chase camera still looks down the street. The word sits in the middle of that view. |
+| Atmosphere | 5 | Held. The dusk skyline has a mood. The street under the chase does not. |
+| Character models | 3 | Held. Simple comic figures at this distance. |
+| Animation smoothness | 4 | Scored from still frames in software GL. Continuous motion was not watched. |
+| Particles and VFX | 5 | The win frame is a KASPLASH across about 61% of the view. It is still one comic word, not a trail or a crowd. |
+| UI polish | 6 | Held. GOT IT uses the same ink pill. The training card still sits beside it on a skip-intro start. |
+| Responsiveness and input latency | 7 | Held. The word and the pill were on the stepped frame that ended the job. |
+| Controls feel | 6 | Held. One button still leaves the roof. The payoff does not change the swing. |
+| Mission clarity | 7 | Held. GOT IT names the job that just ended. Mission 3's card waits, then names the catch. |
+| Pacing | 7 | Held. The hang is about a second and a third, then the next mission. The twelve clogs are still after Mission 4. |
+| Fun factor | 7 | Catching the thief ends on a word bigger than a finisher, a short slow moment, and then the next mission. It is not a filmed finish. |
+| Difficulty curve | 6 | Held. The thief is the same jog. The win is louder. The miss is still a toast. |
+| Feedback | 7 | The win is a word, a hit, and a hang, not only a toast and a coin count. The cheer was not heard. |
+| Sound design | 6 | Held. The cheer is the existing stinger. This play ran with audio disabled. The chase clock is unchanged. |
+| Variety | 7 | Held. Missions 2, 3 and 4 are still a chase, a rescue and a fight. |
+| Performance stability | 6 | The 1280×800 play passed with no page errors. Frame time on a real GPU was not measured. |
+
+- Aesthetics raw: 45 / 10 dimensions, index 45
+- Playability raw: 66 / 10 dimensions, index 66
+- Total: 111 / 200
+- Delta vs last round: +3 (round 6 was 108). Fun factor 6 → 7. Feedback 6 → 7. Particles and VFX 4 → 5. Every other score held.
+
+![Catching the thief lands a KASPLASH and GOT IT before the next mission](fullswing-r7/gotcha.png)
