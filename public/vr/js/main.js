@@ -1777,21 +1777,24 @@ function phoneLetGo(i, vault) {
   if (G.time - whooshAt >= 2) { whooshAt = G.time; wordAhead("WHOOSH", P.pos, 6, 1.6, 1.2); }
   pushRing({ type: "fling", side: i, speed: Math.hypot(v.x, v.y, v.z) });
 }
-// Mouse and pad: a real let-go while the GO cue showed on that rope (last frame) boosts the hero forward and up with a flip
+// Mouse and pad: a real let-go. On the GO cue it boosts forward and up and flips. A fast let-go outside the cue still
+// carries the swing on, so one arc does not die when the release is early. A slow drop stays a drop.
 let boostAt = -9;
 function releaseBoost(i) {
   const B = MOVES.release;
-  if (!cueAir[i] || G.input.easySwing || !flatOn || G.state !== "play" || P.onGround || P.wall || G.time - boostAt < B.cool) return;
+  if (G.input.easySwing || !flatOn || G.state !== "play" || P.onGround || P.wall || G.time - boostAt < B.cool) return;
   if (P.ropes[1 - i].state === "attached") return; // the other rope still holds: it carries you on
-  boostAt = G.time;
+  const perfect = !!cueAir[i];
   const v = P.vel, hs = Math.hypot(v.x, v.z);
-  if (hs > 0.5) { v.x += (v.x / hs) * B.forward; v.z += (v.z / hs) * B.forward; }
-  v.y = Math.max(v.y, 0) + B.up;
-  fovKick = B.kick;
-  plateKick = 1; // the plates slip for a moment: a burst of speed
-  hero.flip(B.flip);
-  if (G.time - whooshAt >= 2) { whooshAt = G.time; wordAhead("WHOOSH", P.pos, 6, 1.6, 1.2); }
-  pushRing({ type: "boost", side: i, speed: Math.hypot(v.x, v.y, v.z) });
+  if (!perfect && hs < B.carry) return;
+  boostAt = G.time;
+  const forward = perfect ? B.forward : B.carryForward, up = perfect ? B.up : B.carryUp;
+  if (hs > 0.5) { v.x += (v.x / hs) * forward; v.z += (v.z / hs) * forward; }
+  if (perfect) v.y = Math.max(v.y, 0) + up; else v.y += up;
+  fovKick = perfect ? B.kick : B.carryKick;
+  if (perfect) { plateKick = 1; hero.flip(B.flip); } // the plates slip, and the hero flips, only on the cue
+  if (G.time - whooshAt >= 2) { whooshAt = G.time; wordAhead("WHOOSH", P.pos, 6, 1.6, perfect ? 1.2 : 1); }
+  pushRing({ type: "boost", side: i, speed: Math.hypot(v.x, v.y, v.z), perfect, added: forward });
 }
 // A new phone plunger on side i caught a building: the other one lets go soon, unless the two were thrown as a pair (close in
 // time, or by two fingers that were down together)

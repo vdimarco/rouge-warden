@@ -143,6 +143,11 @@ jobs:
         run: node qa/vr/swingstart.e2e.mjs
         env:
           NODE_PATH: ${{ github.workspace }}/qa/browser/node_modules
+      - name: A fast let-go carries the swing
+        run: node qa/vr/swingcarry.e2e.mjs
+        env:
+          NODE_PATH: ${{ github.workspace }}/qa/browser/node_modules
+          SHOTS: ${{ github.workspace }}/test-results/flat
       - name: Missions after the bomb
         run: node qa/vr/storyroute.e2e.mjs
         env:

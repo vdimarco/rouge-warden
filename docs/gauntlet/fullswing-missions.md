@@ -274,3 +274,40 @@ Loop: missions, playability, controls, feel, UX, pacing and fun for In Full Swin
 - Delta vs last round: +3 (round 6 was 108). Fun factor 6 → 7. Feedback 6 → 7. Particles and VFX 4 → 5. Every other score held.
 
 ![Catching the thief lands a KASPLASH and GOT IT before the next mission](fullswing-r7/gotcha.png)
+
+### Round 8 — 2026-10-21 — rubric v1
+
+- What changed: On mouse and pad, letting go of a building rope while you are already moving at least 8 m/s carries the swing: 2.2 m/s along the flight and 1.6 m/s up. It does not cancel a fall and it does not flip the hero. The GO cue still does the larger boost and the flip. Under 8 m/s, a let-go is still just a let-go. The phone's own release is unchanged.
+- Why it helped: A swing died when you let go outside the GO window, so each arc was one hold and a drop. Spider-Man 2 keeps a moving web flying into the next one. A 1280×800 play let go while falling, outside the cue, already at about 21 m/s across the rope. The carry added 2.2 m/s, the fall continued, and the pose stayed swing. A near-still let-go added nothing.
+- Screenshots: `docs/gauntlet/fullswing-r8/carry.png`.
+- Next target: difficulty curve (6), tied with sound and performance. Difficulty is the one to change next: the thief is still the same jog, and a miss is still a toast. Sound was not listened to. Performance still has no real-GPU frame time.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 5 | Held. Golden-hour sun and ink shadows. |
+| Color palette | 6 | Held. Yellow, red and sludge green still separate the HUD from the blocks. |
+| Detail density | 4 | Held. Open blocks more than a dressed borough. |
+| Texture and material quality | 3 | Held. Flat fills. |
+| Composition and camera | 4 | Held. The chase camera still sits behind the hero. This frame is the swing, not a new view. |
+| Atmosphere | 5 | Held. The dusk skyline has a mood. The street under the swing does not. |
+| Character models | 3 | Held. Simple comic figures. |
+| Animation smoothness | 4 | Scored from still frames in software GL. Continuous motion was not watched. |
+| Particles and VFX | 5 | Held. The win word is still the effect from the last round. This frame is the swing. |
+| UI polish | 6 | Held. The training card and the mission pill are the same. |
+| Responsiveness and input latency | 7 | Held. The let-go carried on the stepped frame that released the rope. |
+| Controls feel | 7 | A fast let-go outside the GO cue keeps the swing moving and does not flip. The timed let-go is still the real pop. It is not a chained web. |
+| Mission clarity | 7 | Held. The missions are unchanged. |
+| Pacing | 7 | Held. The story route and the win hang are unchanged. |
+| Fun factor | 7 | Held. The win still lands on the big word. This round changes the let-go, not the mission finish. |
+| Difficulty curve | 6 | Held. The thief is the same jog. A miss is still a toast. |
+| Feedback | 7 | Held. The carry is a speed change. The GO cue and the win word are unchanged. |
+| Sound design | 6 | Held. Not listened to. The carry can play the existing WHOOSH. The chase clock is unchanged. |
+| Variety | 7 | Held. Missions 2, 3 and 4 are still a chase, a rescue and a fight. |
+| Performance stability | 6 | The 1280×800 play passed with no page errors. Frame time on a real GPU was not measured. |
+
+- Aesthetics raw: 45 / 10 dimensions, index 45
+- Playability raw: 67 / 10 dimensions, index 67
+- Total: 112 / 200
+- Delta vs last round: +1 (round 7 was 111). Controls feel 6 → 7. Every other score held.
+
+![A fast let-go outside the GO cue, the hero still in the air](fullswing-r8/carry.png)
