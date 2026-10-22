@@ -5,8 +5,8 @@ const {check,done}=checker('adaptive resolution');watchdog(300000,'adaptive reso
 try {
  const p=await newPage({width:960,height:540});
  await p.addInitScript(()=>{window.AudioContext=window.webkitAudioContext=undefined;});
- const source=await readFile(process.env.BASELINE_MAIN||'public/vr/js/main.js','utf8');
- await p.route('**/vr/js/main.js',r=>r.fulfill({contentType:'text/javascript',body:source.replace('renderer.setAnimationLoop(loop);','window.__scaleLoop=loop; renderer.setAnimationLoop(loop);')}));
+ const baseline=process.env.BASELINE_MAIN?await readFile(process.env.BASELINE_MAIN,'utf8'):null;
+ await p.route('**/vr/js/main.js',async r=>{const response=await r.fetch();const source=baseline||await response.text();await r.fulfill({response,body:source.replace('renderer.setAnimationLoop(loop);','window.__scaleLoop=loop; renderer.setAnimationLoop(loop);')});});
  await open(p,'?nosw&skipintro');await p.waitForFunction(()=>G.viewDone);await enterXR(p,'desktop');
  await p.evaluate(()=>{G.renderer.setAnimationLoop(null);G.game.skipTutorial();window.__savedRender=G.bloom.render;G.bloom.render=()=>{};window.__scaleTime=performance.now();});
  const run=(dt,n)=>p.evaluate(({dt,n})=>{for(let i=0;i<n;i++)window.__scaleLoop(window.__scaleTime+=dt,null);return G.renderer.getPixelRatio();},{dt,n});
