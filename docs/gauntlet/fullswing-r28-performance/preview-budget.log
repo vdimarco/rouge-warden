@@ -1,0 +1,10 @@
+PASS: initial ultrawide buffer respects the pixel budget
+PASS: ultrawide canvas and camera fill the viewport
+PASS: phone restores normal high-DPI rendering
+PASS: phone layout remains viewport-sized
+PASS: resize reapplies the ultrawide budget
+PASS: flat resize leaves a presenting XR buffer alone
+PASS: normal desktop density is restored after XR
+PASS: camera aspect follows the restored desktop viewport
+PASS: no page errors
+PASS: flat render budget

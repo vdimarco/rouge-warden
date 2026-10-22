@@ -1010,3 +1010,40 @@ Round 26 shipped in [PR #619](https://github.com/vdimarco/rouge-warden/pull/619)
 Validation: deterministic tests cover elapsed FPS rather than averaged reciprocal frame times, p95/p99, two-second stalls, inactive gaps, fixed buffer limits and reset. The browser probe failed four expected diagnostic assertions before implementation and passed its no-error check. After implementation all five checks pass (real samples, keyboard timings, visible labels, held-simulation exclusion and no errors). This does not claim hardware FPS, physical input-to-display latency, headset behavior, audio listening or a full playthrough. OpenSpec CLI is unavailable; artifacts are reviewed manually. Remote review, preview and CI remain required before merge.
 
 Automated review identified hidden/blurred XR frames being counted as gameplay. The new visibility regression reproduces that finding (one failure, five passes), using actual loop progress rather than a fixed wait. The correction gates sampling on the same input visibility flag as simulation and breaks timing continuity on XR visibility events. Hardware XR latency remains unverified.
+
+Round 27 shipped in [PR #621](https://github.com/vdimarco/rouge-warden/pull/621), merge `1b216ced`, after all six fresh CI jobs, review and authenticated six-check preview passed. Rebase was up to date. Production main.js, frame-metrics.js and sw.js match the merge exactly. This provides measurements, not a slowdown fix.
+
+### Round 28 — 2026-10-22 — ultrawide render budget (in progress)
+
+Bound desktop 3D drawing buffers to 3840×2160 total pixels at initialization and resize. This machine’s 7680×2160 display at scale 2 otherwise permits a 16.6-million-pixel buffer. DOM text remains native-resolution; XR resizing retains its existing guard. Fine 3D texture sampling is softer above the cap: this is an explicit performance/quality tradeoff, not an aesthetics upgrade.
+
+First matched hardware pair: installed Chrome155, headless NVIDIA RTX4090 OpenGL, CSS3840×1080, DPR2, 10s warmup then 60s each workload. Baseline→candidate FPS: idle41.57→60.00, traversal39.56→56.17, staged auto-healed brawl39.60→60.00. Input timestamp-to-CPU-submit p95:25.1→17.4,28.7→19.9,28.3→17.4ms. Candidate traversal p95 remains33.3ms, missing20ms. Three serial repetitions are still running; these preliminary values are not acceptance. Shared GPU load and warmup variability matter. Actual user-profile Chrome and physical input-to-display latency remain unverified.
+
+Evidence: [round28 artifacts](fullswing-r28-performance/README.md). Functional baseline3fail/6pass → candidate9pass, including resize, phone/DPR restoration, camera/CSS sizing and simulated XR guard. No physical XR check.
+
+| Dimension | Score | Evidence scope |
+| --- | ---: | --- |
+| Lighting | 7 | Historical context only; no new score awarded. |
+| Color palette | 6 | Historical context only; no new score awarded. |
+| Detail density | 6 | Historical context only; no new score awarded. |
+| Texture and material quality | 7 | Historical context only; no new score awarded. |
+| Composition and camera | 6 | Historical context only; no new score awarded. |
+| Atmosphere | 6 | Historical context only; no new score awarded. |
+| Character models | 6 | Historical context only; no new score awarded. |
+| Animation smoothness | 7 | Historical context only; no new score awarded. |
+| Particles and VFX | 6 | Historical context only; no new score awarded. |
+| UI polish | 6 | Historical context only; no new score awarded. |
+| Responsiveness and input latency | Unverified | Matched repetitions and user-profile acceptance pending. |
+| Controls feel | 5 | Historical context only; no new score awarded. |
+| Mission clarity | 4 | Historical context only; no new score awarded. |
+| Pacing | 4 | Historical context only; no new score awarded. |
+| Fun factor | 4 | Historical context only; no new score awarded. |
+| Difficulty curve | 4 | Historical context only; no new score awarded. |
+| Feedback | 5 | Historical context only; no new score awarded. |
+| Sound design | 4 | Historical context only; no new score awarded. |
+| Variety | 4 | Historical context only; no new score awarded. |
+| Performance stability | Unverified | Matched repetitions and user-profile acceptance pending. |
+
+Total/delta withheld: historical aesthetics63 and eight playability dimensions34 are not current hardware acceptance. Review, CI, deployed preview, final rebase and production verification remain pending.
+
+Round28 matched repetitions completed: see the full [hardware table](fullswing-r28-performance/README.md). GPU median render time fell in all nine paired workloads; warmed baseline FPS was already near60, limiting steady-state gains. Candidate traversal56.17/59.30/60.00FPS; first traversal p9533.3ms still misses target. No repeatable >10% regression. User-profile acceptance remains open and total withheld. Fine3D sampling softness is disclosed. Automated review passed on8a3399df with no inline findings.

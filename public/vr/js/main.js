@@ -134,13 +134,17 @@ let renderer, scene, camera, rig, X, D, audio;
 let city, P, view, ropes, hands, comfort, game, ui, portal, fx, hero, flatcam, picker, cutscenes, street, streetView, bloom;
 let figures, combat, cars, jobs, actionView, actHud; // the city action (flat play): fights, cars, jobs
 let loadRing = null;
+// Bound high-DPI ultrawide fill cost; the DOM interface keeps its native resolution.
+function flatPixelRatio() {
+  return Math.min(window.devicePixelRatio || 1, 2, Math.sqrt(3840 * 2160 / (innerWidth * innerHeight)));
+}
 function createRenderer() {
   THREE.ColorManagement.enabled = false;
   const r = new THREE.WebGLRenderer({ antialias: true, alpha: true, stencil: true, multiviewStereo: !FLAGS.nomv, powerPreference: "high-performance" });
   r.outputColorSpace = THREE.LinearSRGBColorSpace;
   r.toneMapping = THREE.NoToneMapping;
   r.setClearColor(COLORS.fog, 1);
-  r.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  r.setPixelRatio(flatPixelRatio());
   r.setSize(innerWidth, innerHeight);
   r.xr.enabled = true;
   $("#view").appendChild(r.domElement);
@@ -2868,6 +2872,7 @@ function debugTick() {
 /* ---------------- boot ---------------- */
 function onResize() {
   if (!renderer || renderer.xr.isPresenting) return;
+  renderer.setPixelRatio(flatPixelRatio());
   renderer.setSize(innerWidth, innerHeight);
   camera.aspect = innerWidth / innerHeight;
   camera.updateProjectionMatrix();
