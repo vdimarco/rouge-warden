@@ -153,6 +153,10 @@ try {
         G.test.step(1 / 60, 2);
         await new Promise((res) => setTimeout(res, 40)); // the resume frame asks once more (refused too)
         G.test.step(1 / 60, 1);
+        for (let n = 0; n < 30 && document.querySelector('#lookHint').hidden; n++) {
+          await new Promise((res) => setTimeout(res, 20));
+          G.test.step(1 / 60, 1);
+        }
         return { paused, state: G.state, locked: G.desktop.locked, hint: !document.querySelector('#lookHint').hidden, t: performance.now() - window.__pl.userExitAt };
       } finally { performance.now = now; }
     });

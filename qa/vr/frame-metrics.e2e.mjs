@@ -9,7 +9,8 @@ try {
  await open(p,'?nosw&skipintro&debug');await p.waitForFunction(()=>G.viewDone);
  await enterXR(p,'desktop');await p.waitForFunction(()=>G.state==='play');
  await p.evaluate(()=>{G.game.skipTutorial();G.test.resetPerformance?.();});
- await sleep(1000);await p.keyboard.press('w');await p.keyboard.press('e');await sleep(3000);
+ await p.keyboard.press('w');await p.keyboard.press('e');
+ if(await p.evaluate(()=>typeof G.test.performance==='function')) await p.waitForFunction(()=>G.test.performance().frames>=3&&G.test.performance().inputs>0,null,{timeout:120000});
  const result=await p.evaluate(()=>({metrics:G.test.performance?.()||null,debug:document.querySelector('#debug').textContent,
   ua:navigator.userAgent,width:innerWidth,height:innerHeight,dpr:devicePixelRatio}));
  console.log('INFO software-rendered diagnostic sample '+JSON.stringify(result));
