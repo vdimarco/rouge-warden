@@ -274,8 +274,8 @@ async function swing() {
   s = await st(page);
   const sb = await page.evaluate(() => [__f.bid(0), __f.bid(1)]);
   const tags = await page.evaluate(() => G.test.state().ropes.map((r) => r.tag));
-  // A second building past the ground-clearance cap is not a hang, so that web goes to the sky instead of pulling the hero in.
-  check(s.ropes[0].state === "attached" && s.ropes[1].state === "attached" && sb[0] != null && sb[1] !== sb[0] && (sb[1] != null || tags[1] === "sky"), "E and Q in the same frame do not share a building: the second web hangs under another one, or goes to the sky", { sb, tags, ropes: s.ropes.map((r) => r.state) });
+  // Without another suitable building the second hand stays idle; it cannot attach to the sky.
+  check(s.ropes[0].state === "attached" && sb[0] != null && (s.ropes[1].state === "idle" || (s.ropes[1].state === "attached" && sb[1] != null && sb[1] !== sb[0])), "E and Q in the same frame do not share a building: the second web attaches to another building or stays idle", { sb, tags, ropes: s.ropes.map((r) => r.state) });
   await page.keyboard.up("KeyE"); await page.keyboard.up("KeyQ"); await step(page, 3);
   /* ---- the hand follows the side of the target ---- */
   const sides = [];

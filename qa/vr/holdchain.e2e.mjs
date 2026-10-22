@@ -114,20 +114,21 @@ try {
     G.test.step(1 / 60, 5);
     window.dispatchEvent(new KeyboardEvent("keydown", { code: "KeyE" }));
     const mark = G.frame;
-    let sky = false, dropped = false, frames = 0;
+    let sky = false, dropped = false, frames = 0, attached = false;
     for (; frames < 240; frames++) {
       G.test.step(1 / 60, 1);
       const r = G.P.ropes.find((q) => q.state === "attached" && q.target && q.target.tag === "sky");
       if (r) sky = true;
+      if (G.P.ropes.some(q => q.state !== "idle")) attached = true;
       if (sky && !G.P.ropes.some((q) => q.state === "attached")) { dropped = true; break; }
     }
     const still = G.P.ropes.some((q) => q.state === "attached" && q.target && q.target.tag === "sky");
     const detaches = G.test.events().filter((e) => e.frame > mark && e.type === "detach").length;
-    return { frames, sky, dropped, still, detaches, y: +G.P.pos.y.toFixed(1) };
+    return { frames, sky, dropped, still, detaches, attached, y: +G.P.pos.y.toFixed(1) };
   });
   await page.screenshot({ path: out + "/water.png" });
   console.log("water", JSON.stringify(water));
-  check(water.sky && water.still && !water.dropped && water.detaches === 0, "holding over open water keeps the sky rope", water);
+  check(!water.sky && !water.attached, "holding over open water cannot create a rope", water);
   check(page.errors.length === 0, "no page errors", page.errors);
 } catch (e) {
   check(false, "the hold-chain run threw", e.stack || String(e));

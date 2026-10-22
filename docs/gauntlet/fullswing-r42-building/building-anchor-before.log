@@ -1,0 +1,4 @@
+FAIL water: no invisible attachment [{"state":"attached","tag":"sky"},{"state":"idle"}]
+FAIL above-city: no invisible attachment [{"state":"idle"},{"state":"attached","tag":"sky"}]
+PASS: no browser errors
+FAIL: holdchain (2 failed, 1 passed)

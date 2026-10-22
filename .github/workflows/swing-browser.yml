@@ -227,7 +227,7 @@ jobs:
           NODE_PATH: ${{ github.workspace }}/qa/browser/node_modules
           SHOTS: ${{ github.workspace }}/test-results/flat-missions
       - name: A held swing catches the next building
-        run: node qa/vr/holdchain.e2e.mjs
+        run: node qa/vr/holdchain.e2e.mjs && node qa/vr/building-anchor.e2e.mjs
         env:
           NODE_PATH: ${{ github.workspace }}/qa/browser/node_modules
           SHOTS: ${{ github.workspace }}/test-results/flat-missions
