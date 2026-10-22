@@ -45,7 +45,7 @@ jobs:
         env:
           NODE_PATH: ${{ github.workspace }}/qa/browser/node_modules
       - name: Desktop mouse look (lock before full screen, no-lock edge turn)
-        run: node qa/vr/mouse-look.e2e.mjs
+        run: node qa/vr/mouse-look.e2e.mjs && node qa/vr/pad-reconnect.e2e.mjs
         env:
           NODE_PATH: ${{ github.workspace }}/qa/browser/node_modules
       - name: Training checklist, pump sticker and mission card

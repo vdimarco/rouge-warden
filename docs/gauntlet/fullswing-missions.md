@@ -1472,3 +1472,36 @@ Round 39 CI found a narrow touch-layout regression: the extra compass line expan
 The correction passes the full local `phone-controls.e2e.mjs` suite (162 checks), including all three CI failures; screenshot `docs/gauntlet/fullswing-r39/after-touch-360.png` shows the compact phone cue. Log: `/tmp/fullswing-height-phone-fixed.log`. Hardware performance remains unverified under the user's new performance priority; this correctness fix does not close that report.
 
 Round 39 shipped in [PR #620](https://github.com/vdimarco/rouge-warden/pull/620), merged as `2a134ff0` after all six corrected-head browser jobs, review and deployed preview checks passed. Rebase was up to date immediately before the exact-head merge. The preview passed all 162 phone-controls checks, including the CI regressions. Historical score remains132/200; hardware responsiveness and stability are now subject to the performance evidence supplement and are not newly established by this UI round.
+
+### Round 40 — 2026-10-22 — controller reconnect correctness, rubric v1
+
+A standard controller disconnected while an action button was pressed retained its cached edge. Reconnecting with that button pressed lost the first jump, car, yank, view, menu or throw action. The existing no-pad branch now clears all cached button edges alongside trigger state. Connected holds still emit only one action, and a disconnected pad emits none. No graphics, saves or controls mapping changed.
+
+Evidence: [before](fullswing-r40-pad/before.png), [after](fullswing-r40-pad/after.png), and corresponding logs. These are explicitly labelled synthetic-controller lifecycle probes over the title page, not physical-device or full-playthrough screenshots. Baseline fails seven reconnect expectations and passes15 other assertions; corrected code passes all22. Regression runs with the existing mouse-look CI step.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 5 | Historical mission-track context only; not re-scored in this narrow correctness round. |
+| Color palette | 6 | Historical mission-track context only; not re-scored in this narrow correctness round. |
+| Detail density | 4 | Historical mission-track context only; not re-scored in this narrow correctness round. |
+| Texture and material quality | 3 | Historical mission-track context only; not re-scored in this narrow correctness round. |
+| Composition and camera | 4 | Historical mission-track context only; not re-scored in this narrow correctness round. |
+| Atmosphere | 5 | Historical mission-track context only; not re-scored in this narrow correctness round. |
+| Character models | 3 | Historical mission-track context only; not re-scored in this narrow correctness round. |
+| Animation smoothness | 4 | Historical mission-track context only; not re-scored in this narrow correctness round. |
+| Particles and VFX | 5 | Historical mission-track context only; not re-scored in this narrow correctness round. |
+| UI polish | 6 | Historical mission-track context only; not re-scored in this narrow correctness round. |
+| Responsiveness and input latency | Unverified | Affected user-profile Chrome remains inaccessible; no inherited hardware passing score. |
+| Controls feel | 9 | Historical context only;22 synthetic checks prove lifecycle correctness, not physical feel or a score increase. |
+| Mission clarity | 9 | Historical mission-track context only; not re-scored in this narrow correctness round. |
+| Pacing | 9 | Historical mission-track context only; not re-scored in this narrow correctness round. |
+| Fun factor | 9 | Historical mission-track context only; not re-scored in this narrow correctness round. |
+| Difficulty curve | 9 | Historical mission-track context only; not re-scored in this narrow correctness round. |
+| Feedback | 9 | Historical mission-track context only; not re-scored in this narrow correctness round. |
+| Sound design | 9 | Historical mission-track context only; not re-scored in this narrow correctness round. |
+| Variety | 9 | Historical mission-track context only; not re-scored in this narrow correctness round. |
+| Performance stability | Unverified | Affected user-profile Chrome remains inaccessible; no inherited hardware passing score. |
+
+Current total/delta withheld. Historical aesthetics45 across10dimensions and eight historical playability dimensions72 are not a new acceptance score; do not normalize a partial total. The graphics track has different historical baselines and is not silently reconciled here.
+
+Performance remains a release consideration: [three prior production hardware repeats](fullswing-r28-performance/production-pacing.md) measured approximately60FPS and input-to-submit p9515.2–17.8ms. Those runs predate this controller correction and do not establish its hardware acceptance. This focused correctness change does not alter rendering or address the remaining user-Chrome report. No physical pad/headset, listening, full playthrough or OpenSpec CLI check is claimed. Specification scenarios manually reviewed. Remote review, full CI, deployed preview and a final rebase are required before merge.
