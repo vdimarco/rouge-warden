@@ -970,3 +970,5 @@ Round 25 shipped in [PR #617](https://github.com/vdimarco/rouge-warden/pull/617)
 - Delta vs last round: 0. This comfort correction does not justify an overall score increase. Unchanged dimensions are carried baselines, not a new full-playthrough judgment.
 
 Validation: all 12 browser checks pass. The baseline failed exactly the three reduced-default expectations and passed the other nine checks. The test covers both system preferences, menu selection, camera mode flags, saved Full and Off choices, legacy save behavior and page errors. Screenshot inspected at 960×540. No physical phone/headset, hardware-performance, audio-listening or OpenSpec CLI checks were run. Remote review and CI remain required before merge.
+
+Round 26 shipped in [PR #619](https://github.com/vdimarco/rouge-warden/pull/619), merged as `3a14ec73` after an up-to-date rebase check, all six browser jobs, automated review and preview checks passed. Authenticated preview confirmed Calm selection, disabled camera bank/shake, and no page errors under reduced motion. Score remains 109/200. Next: the prepared mission compass-height round.
