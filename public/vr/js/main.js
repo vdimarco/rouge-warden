@@ -2405,7 +2405,7 @@ function fightKeys(inp, mx, mz) {
 let lastTime = -1, fps = 60, titleCompiled = false;
 const frameMetrics = FLAGS.debug ? createFrameMetrics() : null;
 if (frameMetrics) for (const type of ["keydown", "pointerdown"]) addEventListener(type, (e) => {
-  if (!e.repeat && G.state === "play" && !document.hidden && !G.held) frameMetrics.input(e.timeStamp);
+  if (!e.repeat && G.state === "play" && G.input?.visible && !document.hidden && !G.held) frameMetrics.input(e.timeStamp);
 }, { capture: true, passive: true });
 if (frameMetrics) addEventListener("visibilitychange", () => frameMetrics.frame(0, 0, false));
 const lastInfo = { calls: 0, tris: 0, views: 1 };
@@ -2433,7 +2433,7 @@ function loop(time, frame) {
     hitStopT = Math.max(0, hitStopT - dt);
     if (!G.held && !stopped) tick(dt * slow, frame, time);
     render(frame, dt);
-    if (frameMetrics) frameMetrics.frame(time, performance.now(), G.state === "play" && !document.hidden && !G.held);
+    if (frameMetrics) frameMetrics.frame(time, performance.now(), G.state === "play" && G.input?.visible && !document.hidden && !G.held);
   } catch (e) {
     // an exception in the XR callback would stop three's loop for good: report it once and keep going
     const k = String(e && e.message);
@@ -2881,6 +2881,7 @@ async function boot() {
   X.onEnd(onSessionEnd);
   X.onReset(() => { pendingReset = true; });
   X.onVisibility((state) => {
+    frameMetrics?.frame(0, 0, false);
     const vis = state === "visible";
     if (!vis) {
       // hidden or blurred (a system menu): freeze, hide the hands, quiet the sound, keep the ropes

@@ -17,6 +17,10 @@ try {
  check(result.metrics?.inputs>0&&result.metrics?.inputSubmitP95Ms>=0,'keyboard events produce input-to-submit samples',result.metrics);
  check(result.debug.includes('p99')&&result.debug.includes('input→submit'),'overlay labels frame pacing and latency proxy');
  await shot(p,'frame-diagnostics');
+ const invisibleAt=await p.evaluate(()=>{window.__metricUpdate=G.desktop.update;G.desktop.update=(...args)=>{const input=window.__metricUpdate(...args);input.visible=false;return input;};G.test.resetPerformance?.();return G.frame;});
+ await p.waitForFunction(n=>G.frame>=n+3,invisibleAt);
+ check(await p.evaluate(()=>G.test.performance?.().frames===0),'invisible input frames do not count as gameplay');
+ await p.evaluate(()=>{G.desktop.update=window.__metricUpdate;delete window.__metricUpdate;});
  await p.evaluate(()=>{G.test.hold(true);G.test.resetPerformance?.();});await sleep(1000);
  check(await p.evaluate(()=>G.test.performance?.().frames===0),'held simulation does not masquerade as gameplay');
  check(p.errors.length===0,'no page errors',p.errors);
