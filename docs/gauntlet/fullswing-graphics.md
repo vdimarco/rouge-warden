@@ -1084,3 +1084,35 @@ Current total/delta withheld. Historical aesthetics63/10dimensions and eight pla
 Round29 completed54hardware workload samples: [full tables and before/after evidence](fullswing-r29-adaptive/README.md). Normal3pairs remain60FPS at full resolution. Under distinct6-draw synthetic pressure, all9paired FPS averages improve25.11–31.38→43.89–56.29 and input-to-submit p9530.5–46.8→20.8–26.4ms. Heavy p95still33.3–33.4ms fails20ms; FPSstillbelow60; p99up to33.5ms fails33.3. Four-draw cold-only gains retained/disclosed. No repeatable>10%regression. Detail softens while DOM remains native; no aesthetic increase. Responsiveness/stability/current total remain unverified for affected Chrome. Review/all6CI/12-checkcurrentpreview passed1d671ac1; evidence-only final head still needs current gates/rebase/merge/productionverify.
 
 Round29 shipped in [PR #629](https://github.com/vdimarco/rouge-warden/pull/629), merge `6f1005b1`, after all6CI jobs, current review and authenticated12-checkpreview passed on3086357f. Fresh rebase was up to date immediately before exact-head merge. Production main.js/render-scale.js/sw.js returned HTTP200 and matched merge bytes exactly. This provides a bounded response to sustained slow flat frames; affected-profile Chrome remains unverified, and no current hardware passing score/overall total is awarded. Canonical adaptive-rendering scenarios and completed archive recorded.
+
+### Round 30 — 2026-10-22 — zero-contribution sky gather (validation in progress)
+
+Skip only the16tap sun-shaft gather whose existing contribution weight is exactly zero. Content, samples/weights on partial edges, resolution, controls and XR bypass remain unchanged. [Scoped evidence](fullswing-r30-sky/README.md). Eight same-frame functional comparisons across desktop/phone and effect modes have identical RGBA bytes; full recorded hardware/visual and matched workload checks pending. Preliminary30s GPU gains are not release acceptance.
+
+| Dimension | Score | Evidence scope |
+| --- | ---: | --- |
+| Lighting | 7 | Historical context only; no current re-score or improvement awarded. |
+| Color palette | 6 | Historical context only; no current re-score or improvement awarded. |
+| Detail density | 6 | Historical context only; current focused visual acceptance remains pending. |
+| Texture and material quality | 7 | Historical context only; current focused visual acceptance remains pending. |
+| Composition and camera | 6 | Historical context only; no current re-score or improvement awarded. |
+| Atmosphere | 6 | Historical context only; no current re-score or improvement awarded. |
+| Character models | 6 | Historical context only; no current re-score or improvement awarded. |
+| Animation smoothness | 7 | Historical context only; current focused visual acceptance remains pending. |
+| Particles and VFX | 6 | Historical context only; no current re-score or improvement awarded. |
+| UI polish | 6 | Historical context only; no current re-score or improvement awarded. |
+| Responsiveness and input latency | Unverified | Current round hardware evidence pending; actual user-profile Chrome inaccessible. |
+| Controls feel | 5 | Historical context only; no current re-score or improvement awarded. |
+| Mission clarity | 4 | Historical context only; no current re-score or improvement awarded. |
+| Pacing | 4 | Historical context only; no current re-score or improvement awarded. |
+| Fun factor | 4 | Historical context only; no current re-score or improvement awarded. |
+| Difficulty curve | 4 | Historical context only; no current re-score or improvement awarded. |
+| Feedback | 5 | Historical context only; no current re-score or improvement awarded. |
+| Sound design | 4 | Historical context only; no current re-score or improvement awarded. |
+| Variety | 4 | Historical context only; no current re-score or improvement awarded. |
+| Performance stability | Unverified | Current round hardware evidence pending; actual user-profile Chrome inaccessible. |
+
+Current total/delta withheld. Historical aesthetics63/10dimensions and eight playability dimensions34 are context only. No current hardware passing points, aesthetic increase, affected-user-profile, physical-device, listening or full-playthrough claim. Require full matched evidence, review, allCI/currentpreview, rebase and production verification before release.
+
+
+Round30 measurement update:48accepted60s/35inputworkloads, fullraw/source hashes and corrected identical city images in fullswing-r30-sky. All9pressureGPU medians lower; controlled same-browser combat medianFPS37.92→42.66/input26.7→25.8ms resolves original repeated latency direction under matched launch conditions. Original normal/pressure misses retained, heavyFPS/tails still fail absolute targets. All20dimension assessments above remain historical context; responsiveness/stability unverified/currenttotalwithheld. No aesthetic/userChrome fix claim. Current preview/CI/review/rebase/production gates remain.
