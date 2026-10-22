@@ -17,7 +17,7 @@ try{
   const original=G.bloom.render,oldVerse=G.settings.verse;let args;G.bloom.render=(...x)=>{args=x;};
   const gl=G.renderer.getContext(),ext=gl.getExtension('WEBGL_debug_renderer_info');
   window.__sky={
-   prepare(camera='needle',verse='full'){G.settings.verse=verse;G.test.camera(camera);G.test.render();},
+   prepare(camera='needle',verse='full'){G.setWorldVisible(true);G.settings.verse=verse;G.test.camera(camera);G.test.render();},
    render(before){(before?reference:candidate).render(...args);},
    compare(camera,verse){
     this.prepare(camera,verse);const w=gl.drawingBufferWidth,h=gl.drawingBufferHeight,a=new Uint8Array(w*h*4),b=new Uint8Array(w*h*4);
@@ -38,12 +38,13 @@ try{
   console.log('PIXELS '+JSON.stringify({width,height,rows}));
   for(const r of rows)check(r.different===0&&r.varied>100,`${width} ${r.camera}/${r.verse}: identical RGBA output`,r);
   check(rows.some(r=>r.shaft)&&rows.some(r=>!r.shaft),`${width}: active and inactive sun paths covered`);
-  if(process.env.SHOTS){
-   await mkdir(process.env.SHOTS,{recursive:true});await p.evaluate(()=>window.__sky.prepare());
-   for(const before of [true,false]){
-    const data=await p.evaluate(before=>{window.__sky.render(before);return G.renderer.domElement.toDataURL('image/png');},before);
-    await writeFile(process.env.SHOTS+'/sky-'+(before?'before':'after')+'-'+width+'.png',Buffer.from(data.split(',')[1],'base64'));
-   }
+  if(process.env.SHOTS&&width===640){
+   await mkdir(process.env.SHOTS,{recursive:true});
+   const images=await p.evaluate(()=>{
+    window.__sky.prepare();window.__sky.render(true);const before=G.renderer.domElement.toDataURL('image/png');
+    window.__sky.render(false);return{before,after:G.renderer.domElement.toDataURL('image/png')};
+   });
+   for(const [variant,data] of Object.entries(images))await writeFile(process.env.SHOTS+'/sky-'+variant+'-'+width+'.png',Buffer.from(data.split(',')[1],'base64'));
   }
  }
  await p.evaluate(()=>window.__sky.dispose());check(p.errors.length===0,'no page errors',p.errors);

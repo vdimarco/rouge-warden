@@ -19,4 +19,6 @@ The corrected test waits for play, requires varied scene content and records the
 | Before | After |
 |---|---|
 | ![Desktop before](before-640.png) | ![Desktop after](after-640.png) |
-| ![Phone before](before-390.png) | ![Phone after](after-390.png) |
+
+
+Only inspected desktop PNGs are retained; deferred phone PNGs were cleared and are rejected. Phone coverage uses same-frame varied-scene RGBA comparisons, not those screenshots. The capture pair now runs within one browser task, and the controlled shader fixture explicitly makes the city visible.
