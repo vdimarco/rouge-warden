@@ -22,3 +22,18 @@ The corrected test waits for play, requires varied scene content and records the
 
 
 Only inspected desktop PNGs are retained; deferred phone PNGs were cleared and are rejected. Phone coverage uses same-frame varied-scene RGBA comparisons, not those screenshots. The capture pair now runs within one browser task, and the controlled shader fixture explicitly makes the city visible.
+
+
+## Completed measurements and remaining release gates
+
+All48 accepted60-second workloads completed with35 synthetic inputs each and no inactive frames/page errors:36 original normal/pressure comparisons,6 counterbalanced idle and6 same-browser counterbalanced staged-combat samples. Full JSON/source manifests and [tables](r30-final-tables.md) are retained. NVIDIA RTX4090/Chrome156 headless/OpenGL,5430×1527buffer, shared GPU load. Not actual user-profile120Hz acceptance.
+
+Normal3pairs: roughly58–60FPS except first candidate idle55.24, with frame/input misses disclosed in the tables. Initial idle input p95 worsened17.4→22.7 and15→17.6ms in2pairs. A counterbalanced C,B,B,C,C,B follow-up did not reproduce this direction: candidate50.08/59.65/59.55FPS and23.1/18.5/17.3ms; baseline48.27/50.67/44.87FPS and51.5/39.8/34.6ms. This establishes strong run-condition confounding; it does not erase original misses.
+
+Fixed-UV six-draw pressure lowers median GPU time in all9workload pairs. FPS generally improves but remains below60; p95/p99/long-frame and input targets are not uniformly met. Pair2combat input27.4→34.9ms and pair3combat37.9→50.2ms require causal follow-up, not dismissal. Pair3idle42.5→46.9ms (the transient70.4 reading in a running log belonged to traversal; final per-workload JSON is authoritative).
+
+The distinct same-browser staged-combat follow-up keeps both exact bloom implementations resident, alternates B,C,C,B,B,C, keeps fixed UV/six draws/equal fixed resolution, and uses60s/35inputs per sample. BaselineFPS37.48/37.92/38.26→candidate42.15/42.66/43.05; input p9526.7/25.7/27.8→25.8/24.3/25.8ms. MedianFPS+12.5%, medianinput26.7→25.8ms; no repeatable>10% regression in this controlled check. p95/p99 remain33.4ms, missing20/33.3ms targets. No GPU query measurements are claimed for this follow-up. Resident extra targets, changing staged enemy locations and shared load limit scope; this is synthetic render capacity, not normal gameplay or physical input-to-photon latency.
+
+The earlier pressure fixture lost shaft activation during traversal and was rejected; corrected pressure holds the first real projected sun UV for both variants. All earlier logs/source snapshots remain outside the checkout; invalid/incomplete attempts are excluded from accepted workload counts. Software deployed11-check sky regression passes; recorded hardware12-check regression has8varied scene comparisons with zero RGBA differences. Desktop images are byte-identical actual city frames; rejected blank/phone PNGs are excluded. Phone coverage is numeric same-frame readback only.
+
+Aesthetic scores do not increase. Responsiveness/stability remain unverified for the affected Chrome; currenttotal/delta withheld. No resolution/effect reduction. Exact current preview bloom bytes, final review/checks/rebase, merge and production verification remain required. Runtime shader bytes unchanged throughout QA/evidence refinements.

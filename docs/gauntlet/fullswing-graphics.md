@@ -1113,3 +1113,6 @@ Skip only the16tap sun-shaft gather whose existing contribution weight is exactl
 | Performance stability | Unverified | Current round hardware evidence pending; actual user-profile Chrome inaccessible. |
 
 Current total/delta withheld. Historical aesthetics63/10dimensions and eight playability dimensions34 are context only. No current hardware passing points, aesthetic increase, affected-user-profile, physical-device, listening or full-playthrough claim. Require full matched evidence, review, allCI/currentpreview, rebase and production verification before release.
+
+
+Round30 measurement update:48accepted60s/35inputworkloads, fullraw/source hashes and corrected identical city images in fullswing-r30-sky. All9pressureGPU medians lower; controlled same-browser combat medianFPS37.92→42.66/input26.7→25.8ms resolves original repeated latency direction under matched launch conditions. Original normal/pressure misses retained, heavyFPS/tails still fail absolute targets. All20dimension assessments above remain historical context; responsiveness/stability unverified/currenttotalwithheld. No aesthetic/userChrome fix claim. Current preview/CI/review/rebase/production gates remain.
