@@ -1507,3 +1507,35 @@ Current total/delta withheld. Historical aesthetics45 across10dimensions and eig
 Performance remains a release consideration: [three prior production hardware repeats](fullswing-r28-performance/production-pacing.md) measured approximately60FPS and input-to-submit p9515.2–17.8ms. Those runs predate this controller correction and do not establish its hardware acceptance. This focused correctness change does not alter rendering or address the remaining user-Chrome report. No physical pad/headset, listening, full playthrough or OpenSpec CLI check is claimed. Specification scenarios manually reviewed. Remote review, full CI, deployed preview and a final rebase are required before merge.
 
 Round40 shipped in [PR #625](https://github.com/vdimarco/rouge-warden/pull/625), merge `807dac35`, after all six CI jobs, review and current authenticated22-check preview passed. Rebase was up to date immediately before the exact-head merge. Production desktop.js returned HTTP200 and matched the merged file byte-for-byte. This closes the synthetic controller lifecycle regression; physical controller behavior and the reported Chrome slowdown remain unverified. Scores remain withheld as current hardware acceptance.
+
+### Round 41 — 2026-10-22 — hidden flat-page simulation, rubric v1
+
+Flat input always reported visible, bypassing the existing hidden-session simulation guard. In a controlled hidden-document probe the moving hero advanced from(3.94,198.77,0) to(11.38,189.35,0) over60callbacks. Flat input now reports document visibility, reusing that guard; position and velocity remain unchanged while hidden, then resume when visible. This applies to desktop and phone flat input. XR retains its session visibility path. No rendering technique, saved data or gameplay mapping changed.
+
+Evidence: [before desktop](fullswing-r41-hidden/before-960.png), [after desktop](fullswing-r41-hidden/after-960.png), [before narrow viewport](fullswing-r41-hidden/before-390.png), [after narrow viewport](fullswing-r41-hidden/after-390.png), plus full logs. Screenshots are labelled synthetic lifecycle probes; displayed positions are rounded, assertions use full values. Actual browser throttling, phones and hardware performance are not established. Baseline6fail/8pass → corrected14pass, covering movement,60executed hidden callbacks, visibility, unchanged position/velocity, resume and page errors at960×540 and390×844. The fixture explicitly steps simulation and stops the render loop.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 5 | Historical mission-track context only; not re-scored in this narrow correctness round. |
+| Color palette | 6 | Historical mission-track context only; not re-scored in this narrow correctness round. |
+| Detail density | 4 | Historical mission-track context only; not re-scored in this narrow correctness round. |
+| Texture and material quality | 3 | Historical mission-track context only; not re-scored in this narrow correctness round. |
+| Composition and camera | 4 | Historical mission-track context only; not re-scored in this narrow correctness round. |
+| Atmosphere | 5 | Historical mission-track context only; not re-scored in this narrow correctness round. |
+| Character models | 3 | Historical mission-track context only; not re-scored in this narrow correctness round. |
+| Animation smoothness | 4 | Historical mission-track context only; not re-scored in this narrow correctness round. |
+| Particles and VFX | 5 | Historical mission-track context only; not re-scored in this narrow correctness round. |
+| UI polish | 6 | Historical mission-track context only; not re-scored in this narrow correctness round. |
+| Responsiveness and input latency | Unverified | Affected user-profile Chrome remains inaccessible; no inherited hardware passing score. |
+| Controls feel | 9 | Historical context only;14 synthetic checks prove lifecycle correctness, not physical feel or a score increase. |
+| Mission clarity | 9 | Historical mission-track context only; not re-scored in this narrow correctness round. |
+| Pacing | 9 | Historical mission-track context only; not re-scored in this narrow correctness round. |
+| Fun factor | 9 | Historical mission-track context only; not re-scored in this narrow correctness round. |
+| Difficulty curve | 9 | Historical mission-track context only; not re-scored in this narrow correctness round. |
+| Feedback | 9 | Historical mission-track context only; not re-scored in this narrow correctness round. |
+| Sound design | 9 | Historical mission-track context only; not re-scored in this narrow correctness round. |
+| Variety | 9 | Historical mission-track context only; not re-scored in this narrow correctness round. |
+| Performance stability | Unverified | Affected user-profile Chrome remains inaccessible; no inherited hardware passing score. |
+
+
+Current total/delta withheld; historical aesthetics45 across10dimensions and eight historical playability dimensions72 are context, not current acceptance. No new score awarded, full playthrough or physical-device claim. Prior production FPS/latency evidence predates this correction and does not validate its hardware performance. This fixes an observed hidden-page correctness issue; it does not establish a fix for the affected Chrome session or reduced GPU/power use. OpenSpec scenarios manually reviewed; CLI unavailable. Review, all CI, deployed preview and final rebase remain required before merge.
