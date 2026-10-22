@@ -1,0 +1,17 @@
+import assert from 'node:assert/strict';
+import {createRenderScale} from '../../public/vr/js/render-scale.js';
+const m=createRenderScale();let t=0;
+const run=(dt,n,active=true)=>{let changes=0;for(let i=0;i<n;i++){t+=dt;if(m.frame(t,active))changes++;}return changes;};
+run(1000/60,600);assert.equal(m.scale,1,'smooth play retains detail');
+m.reset();run(40,80);assert.equal(m.scale,.85,'sustained slow play trials lower resolution');
+run(40,80);assert.equal(m.scale,1,'no improvement restores detail');
+run(60,300);assert.equal(m.scale,1,'failed trial does not repeat');
+m.reset();run(40,80);assert.equal(m.scale,.85);
+run(20,160);assert.equal(m.scale,.85,'improved frame pacing retains trial');
+run(200,30,false);run(1000/60,150);assert.equal(m.scale,.85,'inactive gaps do not trigger changes');
+m.reset();run(40,50);run(100,50,false);run(40,50);assert.equal(m.scale,1,'inactive gaps break slow-window continuity');
+m.reset();run(1000,5);run(800,5);run(600,6);run(400,9);run(250,14);run(150,24);assert.equal(m.scale,.5,'bounded minimum');
+m.reset();run(1000/60,90);run(1200,1);run(1000/60,120);assert.equal(m.scale,1,'isolated stall does not sacrifice detail');
+m.reset();assert.equal(m.scale,1,'resize/reset restores detail');
+assert.equal(m.frame(NaN,true),false);assert.equal(m.frame(0,true),false);assert.equal(m.frame(0,true),false);
+console.log('PASS adaptive scale: smooth, sustained load, rollback, stop, improvement, inactive gaps, floor, reset, invalid timestamps');

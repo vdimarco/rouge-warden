@@ -1051,3 +1051,34 @@ Round28 matched repetitions completed: see the full [hardware table](fullswing-r
 Round28 shipped in [PR #622](https://github.com/vdimarco/rouge-warden/pull/622), merge `926de76e`, after all six CI jobs, current review and deployed nine-check preview passed. Fresh rebase was up to date immediately before the exact-head merge. Production main.js returned HTTP200 and matched the merge byte-for-byte. No current rubric total awarded: actual user-profile Chrome remains unverified. Next: diagnose remaining frame pacing before more graphics. A windowed test was interrupted and rejected; no windowed acceptance claim.
 
 Post-release pacing follow-up: three direct-production hardware runs are recorded in [the production table](fullswing-r28-performance/production-pacing.md). Normal headless pacing yields about60FPS and input-to-submit p9515.2–17.8ms across idle/traversal/stagedcombat. Traversal2/3 slightly miss strict60FPS; original first-pair frame-time misses remain disclosed. The exploratory unpaced333ms input delay did not recur normally. Actual user-profile acceptance and overall scores remain unverified; no new graphics or runtime change.
+
+### Round 29 — 2026-10-22 — adaptive flat resolution (PR #629, validation in progress)
+
+Sustained slow flat gameplay trials15% lower linear3D resolution, retaining it only after at least10% frame-interval improvement. Otherwise quality rolls back and probing stops. A half-ratio floor bounds softness; resize restores original quality. Native DOM/camera and XR sizing remain unchanged. [Evidence and limits](fullswing-r29-adaptive/README.md). Unit and12 controlled browser integration checks pass; current matched hardware/visual evidence is pending. No current acceptance or score increase yet.
+
+| Dimension | Score | Evidence scope |
+| --- | ---: | --- |
+| Lighting | 7 | Historical context only; no current re-score or improvement awarded. |
+| Color palette | 6 | Historical context only; no current re-score or improvement awarded. |
+| Detail density | 6 | Historical context only; activated resolution tradeoff/visual evidence remains pending. |
+| Texture and material quality | 7 | Historical context only; activated resolution tradeoff/visual evidence remains pending. |
+| Composition and camera | 6 | Historical context only; no current re-score or improvement awarded. |
+| Atmosphere | 6 | Historical context only; no current re-score or improvement awarded. |
+| Character models | 6 | Historical context only; no current re-score or improvement awarded. |
+| Animation smoothness | 7 | Historical context only; activated resolution tradeoff/visual evidence remains pending. |
+| Particles and VFX | 6 | Historical context only; no current re-score or improvement awarded. |
+| UI polish | 6 | Historical context only; no current re-score or improvement awarded. |
+| Responsiveness and input latency | Unverified | Matched hardware evidence in progress; actual user-profile Chrome remains inaccessible. |
+| Controls feel | 5 | Historical context only; no current re-score or improvement awarded. |
+| Mission clarity | 4 | Historical context only; no current re-score or improvement awarded. |
+| Pacing | 4 | Historical context only; no current re-score or improvement awarded. |
+| Fun factor | 4 | Historical context only; no current re-score or improvement awarded. |
+| Difficulty curve | 4 | Historical context only; no current re-score or improvement awarded. |
+| Feedback | 5 | Historical context only; no current re-score or improvement awarded. |
+| Sound design | 4 | Historical context only; no current re-score or improvement awarded. |
+| Variety | 4 | Historical context only; no current re-score or improvement awarded. |
+| Performance stability | Unverified | Matched hardware evidence in progress; actual user-profile Chrome remains inaccessible. |
+
+Current total/delta withheld. Historical aesthetics63/10dimensions and eight playability dimensions34 are context only. Preliminary synthetic pressure gain35→43FPS does not satisfy all targets or establish affected-Chrome acceptance. No physical-device, listening, full-playthrough or input-to-photon claim.
+
+Round29 completed54hardware workload samples: [full tables and before/after evidence](fullswing-r29-adaptive/README.md). Normal3pairs remain60FPS at full resolution. Under distinct6-draw synthetic pressure, all9paired FPS averages improve25.11–31.38→43.89–56.29 and input-to-submit p9530.5–46.8→20.8–26.4ms. Heavy p95still33.3–33.4ms fails20ms; FPSstillbelow60; p99up to33.5ms fails33.3. Four-draw cold-only gains retained/disclosed. No repeatable>10%regression. Detail softens while DOM remains native; no aesthetic increase. Responsiveness/stability/current total remain unverified for affected Chrome. Review/all6CI/12-checkcurrentpreview passed1d671ac1; evidence-only final head still needs current gates/rebase/merge/productionverify.

@@ -139,21 +139,28 @@ try {
   /* ---------------- Chrome refuses a lock for a moment after Esc: the game asks again when that is over ---------------- */
   await page.evaluate(() => { window.__pl.cooldown = true; });
   {
-    // Esc, the pause, and RESUME at once, all in the page. A busy runner can delay the short waits, so the
-    // wall clock may pass Chrome's second. The lock must still be refused at this check; the ask-again is the wait below.
+    // Hold the stub/product clock through the initial refusal; runner stalls must not expire the cooldown before the assertion.
     const r = await page.evaluate(async () => {
-      window.__pl.userEsc();
-      await new Promise((res) => setTimeout(res, 40));
-      G.test.step(1 / 60, 2);
-      const paused = G.state === 'paused';
-      document.querySelector('#fsMenu button[data-id=resume]').click();
-      await new Promise((res) => setTimeout(res, 60));
-      G.test.step(1 / 60, 2);
-      await new Promise((res) => setTimeout(res, 40)); // the resume frame asks once more (refused too)
-      G.test.step(1 / 60, 1);
-      return { paused, state: G.state, locked: G.desktop.locked, hint: !document.querySelector('#lookHint').hidden, t: performance.now() - window.__pl.userExitAt };
+      const now = performance.now.bind(performance), at = now();
+      performance.now = () => at;
+      try {
+        window.__pl.userEsc();
+        await new Promise((res) => setTimeout(res, 40));
+        G.test.step(1 / 60, 2);
+        const paused = G.state === 'paused';
+        document.querySelector('#fsMenu button[data-id=resume]').click();
+        await new Promise((res) => setTimeout(res, 60));
+        G.test.step(1 / 60, 2);
+        await new Promise((res) => setTimeout(res, 40)); // the resume frame asks once more (refused too)
+        G.test.step(1 / 60, 1);
+        for (let n = 0; n < 30 && document.querySelector('#lookHint').hidden; n++) {
+          await new Promise((res) => setTimeout(res, 20));
+          G.test.step(1 / 60, 1);
+        }
+        return { paused, state: G.state, locked: G.desktop.locked, hint: !document.querySelector('#lookHint').hidden, t: performance.now() - window.__pl.userExitAt };
+      } finally { performance.now = now; }
     });
-    assert(r.paused && r.state === 'play' && !r.locked && r.t < 20000, 'RESUME right after Esc: play goes on, the lock is refused for now: ' + JSON.stringify(r));
+    assert(r.paused && r.state === 'play' && !r.locked && r.t === 0, 'RESUME right after Esc: play goes on, the lock is refused for now: ' + JSON.stringify(r));
     assert(r.hint, 'with no lock a prompt says how to get the mouse look back');
     await page.waitForFunction(() => G.desktop.locked, null, { timeout: 15000 });
     await settle(); await frames(1); // full screen comes on once the lock holds, and the lock is taken again
