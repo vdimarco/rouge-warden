@@ -1427,3 +1427,5 @@ Loop: missions, playability, controls, feel, UX, pacing and fun for In Full Swin
 - Delta vs last round: 0. Existing mission-track scores are explicitly carried baselines, not a fresh full-playthrough evaluation or a reconciled graphics-track score.
 
 Validation: all 16 new browser checks pass at 960×540 and 390×844, covering two player positions, zero distance, refresh, sideways overflow and unchanged travel. The original build failed the eight distance expectations while its other eight checks passed. The existing `qa/vr/rings-map.e2e.mjs` also passes: trials, compass, map hover and travel. Physical devices, audio listening, hardware performance and OpenSpec CLI validation were not run.
+
+Round 38 shipped in [PR #618](https://github.com/vdimarco/rouge-warden/pull/618), merged as `53c45f92` after rebasing onto main and passing all six fresh browser jobs, automated review and preview deployment. Authenticated preview verified startup, zero distance and map travel with no page errors. The regression waits for the travel fade to close the map. Score remains 132/200. Next: inspect another evidenced mission-guidance gap after the current graphics round.
