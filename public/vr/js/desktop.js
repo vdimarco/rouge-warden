@@ -323,7 +323,10 @@ export function createDesktop(canvas, camera, settings) {
       const up = padButton(gp, 12); // the d-pad up throws
       if (up && !pad.up) thr = true;
       pad.a = a; pad.x = x; pad.y = yb; pad.rb = rb; pad.start = st; pad.up = up;
-    } else gamepad.rt = gamepad.lt = false;
+    } else {
+      gamepad.rt = gamepad.lt = false;
+      for (const button in pad) pad[button] = false;
+    }
     inp.muteDown = Q.mute;
     Q.jump = Q.menu = Q.map = Q.yank = Q.mute = Q.car = Q.throw = false;
     wheel = Math.max(0, wheel - dt);
