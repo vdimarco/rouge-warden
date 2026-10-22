@@ -1592,7 +1592,7 @@ let noneAt = -99;
 const PICK_OPTS = { avoidBid: -1 }; // reused: the options of the second pick when both swing inputs go down in one frame
 const PHONE_DIR = new THREE.Vector3(), PROJ = { x: 0, y: 0, depth: 0, behind: false, inView: false };
 // Flat play never aims the web. Holding swing takes a point 12 body-heights ahead and 14 up; a building within 6
-// snaps, and open sky stays on that point, raised until it leaves the screen. A test aim (G.test.aimAt) and a headset
+// snaps; without a suitable building there is no attachment. A test aim (G.test.aimAt) and a headset
 // still use the old ray. A new web waits 150 ms after the last one let go.
 let easyDx = 0, easyDz = -1;
 const CAM = { cam: { x: 0, y: 0, z: 0 }, yaw: 0, pitch: 0, fov: 70, aspect: 1 };
@@ -1623,15 +1623,14 @@ function canHang(a) {
 function playerEasy(avoid) {
   easyDir();
   const tries = [{}, { up: 8, ahead: 20, reach: 10 }, { up: 4, ahead: 34, reach: 16 }];
-  let sky = null;
   for (let t = 0; t < tries.length; t++) {
     const opt = avoid != null && avoid >= 0 ? { ...tries[t], avoid } : (t ? tries[t] : undefined);
     const a = easyAnchor(P, easyDx, easyDz, opt);
-    if (!a || a.sky) { if (a && a.sky && !sky) sky = aimCopy(a); continue; }
+    if (!a || a.sky) continue;
     if (canHang(a) && !(avoid != null && a.bid === avoid)) return aimCopy(a);
   }
   // The point ahead is the building already held. The lock-on knows another one; take it only when the hero can hang under it.
-  // A point past the ground-clearance cap would attach short and pull the hero in, so that shot goes to the sky instead.
+  // Reject points that would shorten the rope and pull the hero into the ground-clearance cap.
   if (avoid != null && avoid >= 0 && pickerOn) {
     const res = picker.pick(TCTX, { avoidBid: avoid });
     if (res && res.valid && res.tag === "building" && res.bid !== avoid) {
@@ -1640,9 +1639,7 @@ function playerEasy(avoid) {
       if (canHang(copy)) return copy;
     }
   }
-  if (!sky) sky = aimCopy(easyAnchor(P, easyDx, easyDz, avoid != null && avoid >= 0 ? { avoid } : undefined));
-  if (sky.sky) { fillCam(); for (let n = 0; n < 8 && project(CAM, sky.x, sky.y, sky.z, PROJ).inView; n++) sky.y += sky.easyH * 3; }
-  return sky;
+  return null;
 }
 // The building the other rope already holds, or the one this frame's first shot just took.
 function otherWeb(i) {
