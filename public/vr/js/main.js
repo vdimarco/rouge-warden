@@ -1627,16 +1627,17 @@ function playerEasy(avoid) {
     const opt = avoid != null && avoid >= 0 ? { ...tries[t], avoid } : (t ? tries[t] : undefined);
     const a = easyAnchor(P, easyDx, easyDz, opt);
     if (!a || a.sky) continue;
-    if (canHang(a) && !(avoid != null && a.bid === avoid)) return aimCopy(a);
+    if (!(avoid != null && a.bid === avoid)) return { ...aimCopy(a), easy: canHang(a) };
   }
-  // The point ahead is the building already held. The lock-on knows another one; take it only when the hero can hang under it.
+  // The visible lock-on may find a real building beyond the automatic search samples.
   // Reject points that would shorten the rope and pull the hero into the ground-clearance cap.
-  if (avoid != null && avoid >= 0 && pickerOn) {
-    const res = picker.pick(TCTX, { avoidBid: avoid });
+  if (pickerOn) {
+    const res = picker.pick(TCTX, { avoidBid: avoid ?? -1 });
     if (res && res.valid && res.tag === "building" && res.bid !== avoid) {
       const copy = aimCopy(res);
       if (copy.easyH == null) copy.easyH = (P.cfg && P.cfg.bodyH) || SWING.bodyH;
-      if (canHang(copy)) return copy;
+      copy.easy = canHang(copy);
+      return copy;
     }
   }
   return null;

@@ -1546,3 +1546,5 @@ Round41 shipped in [PR #627](https://github.com/vdimarco/rouge-warden/pull/627),
 ## Round42 — building-supported flat swings (pending release)
 
 User reports overly easy swinging and asks for attachment to buildings. Removed playerEasy sky fallback; existing real-surface choices retained. Browser baseline2fail/1pass→3pass; integrated hold chain6pass includes actual building endpoints/different nextbuilding and no open-water rope. Evidence: fullswing-r42-building. No physics/rendering change or performance claim. All20dimension assessments remain as round41 historical context; responsiveness/stability unverified, total/delta withheld. Height wording still awaiting clarification; no arbitrary ceiling introduced. Review/CI/deployedpreview/rebase/production pending.
+
+Round42 clarification: above-rooftop attachment allowed to reachable real buildings; tested113.5m player to111.5m roof. Ordinary rope physics handles real surfaces unsuitable for assisted clearance. Focused swing/bot54checks pass with original3building/30s goal (16.6/17.4/17.4s), plus4building-anchor checks and6chainchecks. Fresh remote gates pending.

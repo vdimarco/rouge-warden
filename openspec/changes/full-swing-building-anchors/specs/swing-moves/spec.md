@@ -14,3 +14,7 @@ Flat automatic swings SHALL attach only to a reachable building surface.
 ### Scenario: Release momentum
 - WHEN the player releases a real building rope
 - THEN existing momentum continues, including travel above rooftops.
+
+### Scenario: Above a reachable rooftop
+- WHEN the player is above a rooftop but a real building surface remains reachable
+- THEN attachment is allowed without an artificial height ceiling.

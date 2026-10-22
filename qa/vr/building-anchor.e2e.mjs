@@ -2,8 +2,8 @@
 import { mkdir } from "node:fs/promises";
 import { newPage, open, close, enterXR, checker, watchdog, SHOTS } from "./lib.mjs";
 
-const { check, done } = checker("holdchain");
-watchdog(240000, "holdchain");
+const { check, done } = checker("building-anchor");
+watchdog(240000, "building-anchor");
 const out = SHOTS || "/tmp/swing-holdchain";
 await mkdir(out, { recursive: true });
 
@@ -29,6 +29,24 @@ try {
     },y);
     check(result.every(r=>r.state==='idle'),label+': no invisible attachment '+JSON.stringify(result));
   }
+  const rooftop = await page.evaluate(() => {
+    const candidates=G.city.colliders.filter(c=>c.type==='box'&&c.tag==='building'&&c.maxY>100);
+    for(const c of candidates){
+      const y=c.maxY+2,z=(c.minZ+c.maxZ)/2,x=c.minX-55;
+      G.test.teleport(x,y,z);G.P.onGround=false;G.P.wall=null;
+      G.test.face(x+100,z);G.P.vel.x=8;G.P.vel.z=0;
+      G.test.step(1/60,1);
+      window.dispatchEvent(new KeyboardEvent('keydown',{code:'KeyE'}));G.test.step(1/60,4);
+      const rope=G.P.ropes.find(r=>r.state==='attached'&&r.target?.tag==='building');
+      const col=rope&&G.city.colliders[rope.target.id];
+      const result=col&&col.maxY<y ? {playerY:y,roofY:col.maxY,anchor:{...rope.anchor},tag:rope.target.tag}:null;
+      window.dispatchEvent(new KeyboardEvent('keyup',{code:'KeyE'}));G.test.step(1/60,2);
+      if(result)return result;
+    }
+    return null;
+  });
+  console.log('ROOFTOP',JSON.stringify(rooftop));
+  check(!!rooftop,'a reachable real building can attach below the player above its rooftop');
   check(page.errors.length===0,'no browser errors');
   done();
 } finally {await close();}

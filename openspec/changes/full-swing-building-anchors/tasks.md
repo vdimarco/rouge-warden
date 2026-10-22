@@ -1,5 +1,5 @@
 - [x] Inspect playerEasy callers and existing easy-swing specs.
 - [x] Reproduce sky attachment and verify building-only behavior in browser.
 - [x] Remove flat-play sky fallback.
-- [ ] Clarify above-rooftop wording and implement any additional agreed rule.
+- [x] User clarified real-building attachments above rooftops are allowed; no artificial height ceiling.
 - [ ] Review, CI, preview, rebase, merge and production verification.
