@@ -32,7 +32,7 @@ try {
       await shot(page, `map-distance-${width}-${offset}`);
     }
     await page.locator('.fs-map button[data-id="pin:start"]').click();
-    await page.evaluate(() => G.test.step(1 / 60, 2));
+    await page.waitForFunction(() => !G.ui.info().map.open);
     check(await page.evaluate(() => !G.ui.info().map.open && Math.hypot(G.P.pos.x - G.city.start.x, G.P.pos.z - G.city.start.z) < 1), `${width}: start destination still travels and closes the map`);
     check(page.errors.length === 0, `${width}: no page errors`, page.errors);
     await page.context().close();
