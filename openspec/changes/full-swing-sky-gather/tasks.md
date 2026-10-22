@@ -1,0 +1,5 @@
+- [x] Implement zero-contribution guard
+- [ ] Functional pixel equivalence and recorded hardware/visual checks
+- [ ] Three paired full-length normal/pressure comparisons and honest rubric report
+- [ ] PR, current review/CI/preview, rebase and merge
+- [ ] Production verification and canonical spec/archive
