@@ -932,6 +932,8 @@ Validation: the new browser regression failed its four contrast assertions befor
 
 The existing `SIZE=960x540 node qa/vr/layout.e2e.mjs` regression also passed, including HUD, pause and Comfort geometry.
 
+Round 25 shipped in [PR #617](https://github.com/vdimarco/rouge-warden/pull/617), merged as `1c976f5f` after rebase confirmation, all six browser QA jobs, automated review and preview deployment passed. Authenticated preview play verified focus; production UI matched the merged file exactly. Score remains 109/200. Next: the reduced-motion default below.
+
 ### Round 26 — 2026-10-21 — rubric v1
 
 - What changed: new games and legacy saves without a comic motion choice select the existing Calm mode when the system requests reduced motion. Saved Full, Calm and Off choices continue to take precedence; ordinary defaults remain Full.
