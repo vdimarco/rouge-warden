@@ -1603,7 +1603,7 @@ body:has(#phoneControls:not([hidden])) .fs-top:has(.fs-pill:not([hidden]):not(.f
       const dx = tg.x - Pl.pos.x, dz = tg.z - Pl.pos.z, d = Math.sqrt(dx * dx + dz * dz), a = Math.round(wrap(Math.atan2(-dx, -dz) - HD.yaw) / DEG / 3) * 3;
       if (a !== dh.ang) { dh.ang = a; k.arrow.style.transform = "rotate(" + -a + "deg)"; }
       const dy = tg.y - Pl.pos.y, elevation = Math.abs(dy) >= 5 ? Math.round(Math.abs(dy) / 5) * 5 + " m " + (dy > 0 ? "above" : "below") : "";
-      if (elevation !== dh.elev) { dh.elev = elevation; k.elev.textContent = elevation; }
+      if (elevation !== dh.elev) { dh.elev = elevation; k.elev.textContent = elevation; k.elev.dataset.short = elevation ? (dy > 0 ? "↑" : "↓") + Math.round(Math.abs(dy) / 5) * 5 + "m" : ""; }
       const dd = Math.round(d / 5) * 5;
       if (dd !== dh.dist) { dh.dist = dd; k.dist.textContent = dd >= 1000 ? (dd / 1000).toFixed(1) + " km" : dd + " m"; }
     }

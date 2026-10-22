@@ -260,6 +260,9 @@ body:has(#phoneControls:not([hidden])) .fs-sub { max-width:calc(100vw - 16px); p
   body:has(#phoneControls:not([hidden])) .fs-top { flex-wrap:nowrap; gap:8px; max-width:calc(100vw - 16px); }
   body:has(#phoneControls:not([hidden])) .fs-pill { padding:4px 9px 1px 7px; gap:6px; white-space:nowrap; }
   body:has(#phoneControls:not([hidden])) .fs-pill b { font-size:24px; }
+  body:has(#phoneControls:not([hidden])) .fs-compass small { line-height:14px; }
+  body:has(#phoneControls:not([hidden])) .fs-compass [data-k=elev] { font-size:0; line-height:0; }
+  body:has(#phoneControls:not([hidden])) .fs-compass [data-k=elev]::after { content:attr(data-short); font-size:12px; line-height:12px; }
   body:has(#phoneControls:not([hidden])) .fs-pill em { font-size:16px; }
 }
 @media (max-width:479px) {

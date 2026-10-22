@@ -6,7 +6,7 @@ Help flat-screen players locate targets vertically while preserving the horizont
 ## Requirements
 
 ### Requirement: Flat compass indicates vertical separation
-For a selected target at least five metres above or below the player, the flat compass SHALL show the vertical separation rounded to five metres with the word above or below. Near the same height it SHALL omit this cue. The existing horizontal distance, bearing and target selection SHALL remain unchanged, as SHALL headset behavior.
+For a selected target at least five metres above or below the player, the flat compass SHALL show the vertical separation rounded to five metres with the word above or below. Narrow touch layouts MAY show an up/down arrow and metre count while retaining the full text for assistive technology. Near the same height it SHALL omit this cue. The existing horizontal distance, bearing and target selection SHALL remain unchanged, as SHALL headset behavior.
 
 #### Scenario: Target above or below
 - **WHEN** the player is thirty metres below or above the selected target
@@ -21,5 +21,5 @@ For a selected target at least five metres above or below the player, the flat c
 - **THEN** the height cue is empty
 
 #### Scenario: Portrait display
-- **WHEN** a player views the compass at 390 pixels wide
-- **THEN** both distance lines fit inside the viewport without horizontal scrolling
+- **WHEN** a player views the compass at 360 or 390 pixels wide
+- **THEN** both distance lines fit inside the viewport without horizontal scrolling, including with the King heart row; phone target arrows still point at their targets

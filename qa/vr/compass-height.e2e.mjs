@@ -14,10 +14,10 @@ try {
     G.test.teleport(goal.x-40,goal.y+offset,goal.z-30);
     G.ui.update(0,G.input,G.P,G.game.progress);
     const box=document.querySelector('[data-k=compassBox]'),r=box.getBoundingClientRect();
-    return {label:document.querySelector('[data-k=elev]')?.textContent||'',distance:document.querySelector('[data-k=dist]').textContent,
+    return {label:document.querySelector('[data-k=elev]')?.textContent||'',distance:document.querySelector('[data-k=dist]').textContent,short:document.querySelector('[data-k=elev]')?.dataset.short,
      fits:r.left>=0&&r.right<=innerWidth&&r.top>=0&&r.bottom<=innerHeight};
    },{goal,offset});
-   check(result.label===label,`${width}: height ${offset} reads "${label}"`,result);
+   check(result.label===label && result.short === (offset === -30 ? '↑30m' : offset === 30 ? '↓30m' : ''),`${width}: height ${offset} reads "${label}"`,result);
    check(result.distance==='50 m'&&result.fits,`${width}: horizontal distance stays 50 m and compass fits`,result);
    if(offset===-30)await shot(p,`height-${width}`);
   }
