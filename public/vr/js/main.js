@@ -2,6 +2,7 @@
 // the app starts from its icon), owns the rig and the body, runs the 14 steps of every frame, routes events to the
 // portal, the game and the feedback table, saves, and exposes window.G and G.test (spec §6 and §12).
 import * as THREE from "three";
+import { createRenderScale } from "./render-scale.js";
 import { createFrameMetrics } from "./frame-metrics.js";
 import { VERSION, SAVE_KEY, WORLD, SWING, COMFORT, PERF, COLORS, PHONE, CLIMB, TARGET, DESKTOP, PAD, HINT, MOVES, SUN_DIR } from "./config.js";
 import { generate } from "./city.js";
@@ -134,9 +135,11 @@ let renderer, scene, camera, rig, X, D, audio;
 let city, P, view, ropes, hands, comfort, game, ui, portal, fx, hero, flatcam, picker, cutscenes, street, streetView, bloom;
 let figures, combat, cars, jobs, actionView, actHud; // the city action (flat play): fights, cars, jobs
 let loadRing = null;
+const renderScale = createRenderScale();
+addEventListener("visibilitychange", () => renderScale.frame(0, false));
 // Bound high-DPI ultrawide fill cost; the DOM interface keeps its native resolution.
 function flatPixelRatio() {
-  return Math.min(window.devicePixelRatio || 1, 2, Math.sqrt(3840 * 2160 / (innerWidth * innerHeight)));
+  return Math.min(window.devicePixelRatio || 1, 2, Math.sqrt(3840 * 2160 / (innerWidth * innerHeight))) * renderScale.scale;
 }
 function createRenderer() {
   THREE.ColorManagement.enabled = false;
@@ -2436,6 +2439,7 @@ function loop(time, frame) {
     const stopped = hitStopT > 0 && G.state === "play";
     hitStopT = Math.max(0, hitStopT - dt);
     if (!G.held && !stopped) tick(dt * slow, frame, time);
+    if (renderScale.frame(time, G.state === "play" && G.input?.visible && !document.hidden && !G.held && !renderer.xr.isPresenting)) renderer.setPixelRatio(flatPixelRatio());
     render(frame, dt);
     if (frameMetrics) frameMetrics.frame(time, performance.now(), G.state === "play" && G.input?.visible && !document.hidden && !G.held);
   } catch (e) {
@@ -2866,12 +2870,13 @@ function debugTick() {
   dbgT = now;
   const m = frameMetrics.report(), ms = n => n === null ? "n/a" : n.toFixed(1);
   const p = P ? P.pos : { x: 0, y: 0, z: 0 };
-  dbgEl.textContent = `${lastInfo.calls} calls  ${(lastInfo.tris / 1000).toFixed(0)}k tris  ${lastInfo.views} view(s)\n${G.mode} / ${G.state}  pos ${p.x.toFixed(1)} ${p.y.toFixed(1)} ${p.z.toFixed(1)}\nPlay: ${ms(m.fps)} fps • p95 ${ms(m.p95Ms)} / p99 ${ms(m.p99Ms)} ms\n>50ms: ${m.over50}/${m.frames} • input→submit p95 ${ms(m.inputSubmitP95Ms)} ms (${m.inputs})`;
+  dbgEl.textContent = `${lastInfo.calls} calls  ${(lastInfo.tris / 1000).toFixed(0)}k tris  ${lastInfo.views} view(s)\n${G.mode} / ${G.state}  pos ${p.x.toFixed(1)} ${p.y.toFixed(1)} ${p.z.toFixed(1)}\nPlay: ${ms(m.fps)} fps • p95 ${ms(m.p95Ms)} / p99 ${ms(m.p99Ms)} ms\n>50ms: ${m.over50}/${m.frames} • input→submit p95 ${ms(m.inputSubmitP95Ms)} ms (${m.inputs})\n3D: ${renderer.domElement.width}×${renderer.domElement.height} • scale ${renderScale.scale.toFixed(2)}`;
 }
 
 /* ---------------- boot ---------------- */
 function onResize() {
   if (!renderer || renderer.xr.isPresenting) return;
+  renderScale.reset();
   renderer.setPixelRatio(flatPixelRatio());
   renderer.setSize(innerWidth, innerHeight);
   camera.aspect = innerWidth / innerHeight;
