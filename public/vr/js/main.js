@@ -2,6 +2,7 @@
 // the app starts from its icon), owns the rig and the body, runs the 14 steps of every frame, routes events to the
 // portal, the game and the feedback table, saves, and exposes window.G and G.test (spec §6 and §12).
 import * as THREE from "three";
+import { createFrameMetrics } from "./frame-metrics.js";
 import { VERSION, SAVE_KEY, WORLD, SWING, COMFORT, PERF, COLORS, PHONE, CLIMB, TARGET, DESKTOP, PAD, HINT, MOVES, SUN_DIR } from "./config.js";
 import { generate } from "./city.js";
 import { createPlayer, fire, release, step, teleport, easyAnchor, armEasy, easyBoost } from "./physics.js";
@@ -2402,6 +2403,11 @@ function fightKeys(inp, mx, mz) {
 
 /* ---------------- the loop ---------------- */
 let lastTime = -1, fps = 60, titleCompiled = false;
+const frameMetrics = FLAGS.debug ? createFrameMetrics() : null;
+if (frameMetrics) for (const type of ["keydown", "pointerdown"]) addEventListener(type, (e) => {
+  if (!e.repeat && G.state === "play" && !document.hidden && !G.held) frameMetrics.input(e.timeStamp);
+}, { capture: true, passive: true });
+if (frameMetrics) addEventListener("visibilitychange", () => frameMetrics.frame(0, 0, false));
 const lastInfo = { calls: 0, tris: 0, views: 1 };
 const samples = [];
 const errSeen = new Set();
@@ -2427,6 +2433,7 @@ function loop(time, frame) {
     hitStopT = Math.max(0, hitStopT - dt);
     if (!G.held && !stopped) tick(dt * slow, frame, time);
     render(frame, dt);
+    if (frameMetrics) frameMetrics.frame(time, performance.now(), G.state === "play" && !document.hidden && !G.held);
   } catch (e) {
     // an exception in the XR callback would stop three's loop for good: report it once and keep going
     const k = String(e && e.message);
@@ -2689,6 +2696,8 @@ function inputSnapshot() {
   };
 }
 G.test = {
+  performance: () => frameMetrics ? frameMetrics.report() : null,
+  resetPerformance: () => frameMetrics?.reset(),
   // logic without rendering; while held the loop only renders, so step owns time
   step(dt = 1 / 60, n = 1) { for (let i = 0; i < n; i++) tick(dt, null, null); return G.test.state(); },
   hold(on = true) { G.held = !!on; return G.held; },
@@ -2851,8 +2860,9 @@ function debugTick() {
   const now = performance.now();
   if (now - dbgT < 500) return;
   dbgT = now;
+  const m = frameMetrics.report(), ms = n => n === null ? "n/a" : n.toFixed(1);
   const p = P ? P.pos : { x: 0, y: 0, z: 0 };
-  dbgEl.textContent = `${fps.toFixed(0)} fps  ${lastInfo.calls} calls  ${(lastInfo.tris / 1000).toFixed(0)}k tris  ${lastInfo.views} view(s)\n${G.mode} / ${G.state}  pos ${p.x.toFixed(1)} ${p.y.toFixed(1)} ${p.z.toFixed(1)}`;
+  dbgEl.textContent = `${lastInfo.calls} calls  ${(lastInfo.tris / 1000).toFixed(0)}k tris  ${lastInfo.views} view(s)\n${G.mode} / ${G.state}  pos ${p.x.toFixed(1)} ${p.y.toFixed(1)} ${p.z.toFixed(1)}\nPlay: ${ms(m.fps)} fps • p95 ${ms(m.p95Ms)} / p99 ${ms(m.p99Ms)} ms\n>50ms: ${m.over50}/${m.frames} • input→submit p95 ${ms(m.inputSubmitP95Ms)} ms (${m.inputs})`;
 }
 
 /* ---------------- boot ---------------- */

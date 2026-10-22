@@ -19,7 +19,7 @@ jobs:
           node-version: '22'
       - run: npm ci --prefix qa/browser
       - run: cd qa/browser && npx playwright install --with-deps chromium
-      - run: node qa/vr/physics.test.mjs && node qa/vr/city.test.mjs && node qa/vr/mobile.test.mjs && node qa/vr/target.test.mjs && node qa/vr/mobile-panel.test.mjs && node qa/vr/street.test.mjs && node qa/vr/action.test.mjs && node qa/vr/chainbid.test.mjs
+      - run: node qa/vr/frame-metrics.test.mjs && node qa/vr/physics.test.mjs && node qa/vr/city.test.mjs && node qa/vr/mobile.test.mjs && node qa/vr/target.test.mjs && node qa/vr/mobile-panel.test.mjs && node qa/vr/street.test.mjs && node qa/vr/action.test.mjs && node qa/vr/chainbid.test.mjs
       - name: Compile city shaders and exercise one-thumb play
         run: node qa/vr/mobile.e2e.mjs
         env:
@@ -212,7 +212,7 @@ jobs:
           NODE_PATH: ${{ github.workspace }}/qa/browser/node_modules
           SHOTS: ${{ github.workspace }}/test-results/flat-missions
       - name: The compass names the clog on the card
-        run: node qa/vr/clogcompass.e2e.mjs && node qa/vr/compass-height.e2e.mjs
+        run: node qa/vr/clogcompass.e2e.mjs && node qa/vr/compass-height.e2e.mjs && node qa/vr/frame-metrics.e2e.mjs
         env:
           NODE_PATH: ${{ github.workspace }}/qa/browser/node_modules
           SHOTS: ${{ github.workspace }}/test-results/flat-missions
