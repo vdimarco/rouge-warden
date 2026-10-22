@@ -1045,3 +1045,5 @@ Evidence: [round28 artifacts](fullswing-r28-performance/README.md). Functional b
 | Performance stability | Unverified | Matched repetitions and user-profile acceptance pending. |
 
 Total/delta withheld: historical aesthetics63 and eight playability dimensions34 are not current hardware acceptance. Review, CI, deployed preview, final rebase and production verification remain pending.
+
+Round28 matched repetitions completed: see the full [hardware table](fullswing-r28-performance/README.md). GPU median render time fell in all nine paired workloads; warmed baseline FPS was already near60, limiting steady-state gains. Candidate traversal56.17/59.30/60.00FPS; first traversal p9533.3ms still misses target. No repeatable >10% regression. User-profile acceptance remains open and total withheld. Fine3D sampling softness is disclosed. Automated review passed on8a3399df with no inline findings.
