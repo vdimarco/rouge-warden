@@ -972,3 +972,41 @@ Round 25 shipped in [PR #617](https://github.com/vdimarco/rouge-warden/pull/617)
 Validation: all 12 browser checks pass. The baseline failed exactly the three reduced-default expectations and passed the other nine checks. The test covers both system preferences, menu selection, camera mode flags, saved Full and Off choices, legacy save behavior and page errors. Screenshot inspected at 960×540. No physical phone/headset, hardware-performance, audio-listening or OpenSpec CLI checks were run. Remote review and CI remain required before merge.
 
 Round 26 shipped in [PR #619](https://github.com/vdimarco/rouge-warden/pull/619), merged as `3a14ec73` after an up-to-date rebase check, all six browser jobs, automated review and preview checks passed. Authenticated preview confirmed Calm selection, disabled camera bank/shake, and no page errors under reduced motion. Score remains 109/200. Next: the prepared mission compass-height round.
+
+### Round 27 — 2026-10-21 — rubric v1, performance evidence supplement
+
+- What changed: the existing opt-in debug overlay now measures elapsed-time gameplay FPS, frame-time p95/p99, frames over 50 ms and event-to-render-submission p95. The old smoothed FPS could ignore stalls over a second. Normal play does not collect diagnostics. The new module is included in the offline precache.
+- Why it helped: the user reports slow Chrome on this machine. Measurements and explicit hardware acceptance are now the next priority; these diagnostics do not themselves fix the slowdown. [Mandatory performance evidence](fullswing-performance.md) governs future rounds, using the existing two rubric dimensions without changing rubric v1 weights.
+- Screenshots: `docs/gauntlet/fullswing-r27-performance/before.png`, `after.png`. Software-rendered instrumentation probes only. Different short runs are not a performance before/after comparison.
+- Next target: obtain a matched hardware Chrome baseline and diagnose the reported slowdown before further graphics expansion. The browser connector currently exposes no Chrome tab.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 7 | Historical baseline carried for context; this diagnostic round does not re-evaluate the dimension. |
+| Color palette | 6 | Historical baseline carried for context; this diagnostic round does not re-evaluate the dimension. |
+| Detail density | 6 | Historical baseline carried for context; this diagnostic round does not re-evaluate the dimension. |
+| Texture and material quality | 7 | Historical baseline carried for context; this diagnostic round does not re-evaluate the dimension. |
+| Composition and camera | 6 | Historical baseline carried for context; this diagnostic round does not re-evaluate the dimension. |
+| Atmosphere | 6 | Historical baseline carried for context; this diagnostic round does not re-evaluate the dimension. |
+| Character models | 6 | Historical baseline carried for context; this diagnostic round does not re-evaluate the dimension. |
+| Animation smoothness | 7 | Historical baseline carried for context; this diagnostic round does not re-evaluate the dimension. |
+| Particles and VFX | 6 | Historical baseline carried for context; this diagnostic round does not re-evaluate the dimension. |
+| UI polish | 6 | Historical baseline carried for context; this diagnostic round does not re-evaluate the dimension. |
+| Responsiveness and input latency | Unverified | Hardware evidence missing; user reports slow Chrome. Software instrumentation checks cannot establish this score. |
+| Controls feel | 5 | Historical baseline carried for context; this diagnostic round does not re-evaluate the dimension. |
+| Mission clarity | 4 | Historical baseline carried for context; this diagnostic round does not re-evaluate the dimension. |
+| Pacing | 4 | Historical baseline carried for context; this diagnostic round does not re-evaluate the dimension. |
+| Fun factor | 4 | Historical baseline carried for context; this diagnostic round does not re-evaluate the dimension. |
+| Difficulty curve | 4 | Historical baseline carried for context; this diagnostic round does not re-evaluate the dimension. |
+| Feedback | 5 | Historical baseline carried for context; this diagnostic round does not re-evaluate the dimension. |
+| Sound design | 4 | Historical baseline carried for context; this diagnostic round does not re-evaluate the dimension. |
+| Variety | 4 | Historical baseline carried for context; this diagnostic round does not re-evaluate the dimension. |
+| Performance stability | Unverified | Hardware evidence missing; user reports slow Chrome. Software instrumentation checks cannot establish this score. |
+
+- Aesthetics historical raw: 63 / 10 dimensions, index 63; no new visual quality claim.
+- Playability: 8 carried dimensions sum to 34; responsiveness and performance stability are unverified. Do not normalize the partial sum into a passing score.
+- Current total and delta: withheld pending hardware evidence. Previous historical total was 109/200; it is not a current performance acceptance result.
+
+Validation: deterministic tests cover elapsed FPS rather than averaged reciprocal frame times, p95/p99, two-second stalls, inactive gaps, fixed buffer limits and reset. The browser probe failed four expected diagnostic assertions before implementation and passed its no-error check. After implementation all five checks pass (real samples, keyboard timings, visible labels, held-simulation exclusion and no errors). This does not claim hardware FPS, physical input-to-display latency, headset behavior, audio listening or a full playthrough. OpenSpec CLI is unavailable; artifacts are reviewed manually. Remote review, preview and CI remain required before merge.
+
+Automated review identified hidden/blurred XR frames being counted as gameplay. The new visibility regression reproduces that finding (one failure, five passes), using actual loop progress rather than a fixed wait. The correction gates sampling on the same input visibility flag as simulation and breaks timing continuity on XR visibility events. Hardware XR latency remains unverified.
