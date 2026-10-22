@@ -1286,6 +1286,8 @@ dialog.fs-menu::backdrop{background:radial-gradient(circle at 50% 50%,rgba(255,2
 .fs-map .fs-key{display:grid;grid-template-columns:auto 1fr;gap:4px 8px;align-items:center;margin:0 0 10px;font-size:16px;font-weight:700}
 .fs-map .fs-key i{display:inline-block;width:16px;height:16px;border-radius:50%;border:4px solid currentColor;box-shadow:0 0 0 2px var(--ink,#140a18)}
 .fs-map .btn{display:block;width:100%;margin:8px 0;min-height:42px;padding:6px 12px 3px;font-size:18px;text-align:left;box-shadow:4px 4px 0 var(--ink,#140a18)}
+.fs-map .btn[data-id^="pin:"]{min-height:60px}
+.fs-map .btn small{display:block;margin-top:3px;font:600 14px/1.2 var(--ui,"Barlow Condensed",sans-serif);letter-spacing:.03em}
 .fs-map-tip{position:absolute;left:0;top:0;pointer-events:none;padding:4px 10px 2px;border:3px solid var(--ink,#140a18);background:var(--yellow,#ffd84a);color:var(--ink,#140a18);box-shadow:3px 3px 0 var(--ink,#140a18);font:400 18px/1.1 var(--comic,"Bangers",Impact,"Arial Black",sans-serif);letter-spacing:.06em;white-space:nowrap;transform:translate(-50%,-140%)}
 @media (max-aspect-ratio:1/1){.fs-map{grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr) auto}.fs-map-side{max-height:38dvh}.fs-map h2{font-size:24px}}
 .fs-tip{position:fixed;z-index:15;pointer-events:none;padding:5px 12px 2px;background:var(--yellow,#ffd84a);border:3px solid var(--ink,#140a18);border-radius:3px;box-shadow:4px 4px 0 var(--ink,#140a18);color:var(--ink,#140a18);font:400 20px/1.15 var(--comic,"Bangers",Impact,"Arial Black",sans-serif);letter-spacing:.06em;text-transform:uppercase;transform:rotate(1deg)}
@@ -1439,7 +1441,7 @@ body:has(#phoneControls:not([hidden])) .fs-top:has(.fs-pill:not([hidden]):not(.f
     plan.append(cv, tip);
     const side = el("div", "fs-map-side");
     side.appendChild(el("h2", null, "City map"));
-    side.appendChild(el("p", null, isTouchNow() ? "Tap a pin or a place to go there." : "Click a pin or a place to go there."));
+    side.appendChild(el("p", null, (isTouchNow() ? "Tap a pin or a place to go there." : "Click a pin or a place to go there.") + " Distances are across the map."));
     const key = el("div", "fs-key");
     for (const [col, txt] of [[C.sludge, "A clog to plunge"], [C.blue, "A clean roof"], [C.coin, "The Porcelain King"], [C.magenta, "An odd job"], ["#6cff73", "A trial: fly through its green ring"], [C.cream, "The start roof, and you"]]) {
       const dot = el("i"); dot.style.color = col; key.append(dot, el("span", null, txt));
@@ -1448,6 +1450,7 @@ body:has(#phoneControls:not([hidden])) .fs-top:has(.fs-pill:not([hidden]):not(.f
     for (const p of map.pins) {
       if (!p.spot) continue;
       const b = el("button", "btn", p.name); b.type = "button"; b.dataset.id = "pin:" + p.spot.id;
+      if (Pl) b.appendChild(el("small", null, Math.round(Math.hypot(p.spot.x - Pl.pos.x, p.spot.z - Pl.pos.z)) + " m"));
       b.addEventListener("click", () => act("pin:" + p.spot.id));
       // a place in the list lights its pin on the plan (the plan's own name tag, not the headset table's)
       b.addEventListener("pointerenter", () => showTip(map.pins.indexOf(p)));
