@@ -1116,3 +1116,6 @@ Current total/delta withheld. Historical aesthetics63/10dimensions and eight pla
 
 
 Round30 measurement update:48accepted60s/35inputworkloads, fullraw/source hashes and corrected identical city images in fullswing-r30-sky. All9pressureGPU medians lower; controlled same-browser combat medianFPS37.92→42.66/input26.7→25.8ms resolves original repeated latency direction under matched launch conditions. Original normal/pressure misses retained, heavyFPS/tails still fail absolute targets. All20dimension assessments above remain historical context; responsiveness/stability unverified/currenttotalwithheld. No aesthetic/userChrome fix claim. Current preview/CI/review/rebase/production gates remain.
+
+
+Round30 shipped in PR#631, merge45b0243e, after all6freshintegratedCI/review/currentauthenticated11checkpreview/exactbloombytes and finalfreshrebase. Productionbloom HTTP200 exactSHAda57af013327ae283503ddc5a29416d9847057ce478c35b582f03bfa1fcc4b04. Zero-contribution guard preserves pixels and lowers measured pressureGPUtime; original frame/tail misses and shared-load limits remain. No userChrome fix/passingscore. Canonical sky-gather scenarios published and OpenSpec archived.
