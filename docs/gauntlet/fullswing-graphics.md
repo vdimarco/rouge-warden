@@ -892,3 +892,42 @@ Playability was scored from a flat boot and the city render check, not a full pl
 #### Round 24 review correction — 2026-10-21
 
 PR #611 review found that blank bays and incomplete top-floor rows could emit light from suppressed windows. The spill now uses the same `inFloors` mask as the window. Before and after renders passed all 50 existing checks after restoring both shared character models to the local checkout. Street mean 70.6, saturation 0.59; canyon ink 26.9%. City, physics, target and mobile Node checks also passed. Before: `docs/gauntlet/shots/r24-review-before-street.png`; after: `docs/gauntlet/shots/r24-review-after-street.png`. The correction earns no additional points: retain the round's recorded 109/200 (+0 for review repair), with the same playthrough and hardware limits. Fresh remote review, CI and preview checks remain required before merge.
+
+### Round 25 — 2026-10-21 — rubric v1
+
+- What changed: keyboard focus in the flat pause and Comfort menus uses the existing dark ink instead of white on paper. No layout or input behavior changes.
+- Why it helped: before, all four desktop/portrait panel cases had 1.05:1 outline contrast; after, all reach 18.40:1, with Tab traversal and viewport bounds preserved. The focused control is now visible on the cream panel.
+- Screenshots: `docs/gauntlet/fullswing-r25-focus/` contains before/after pause and Comfort panels at 960×540 and 390×844.
+- Next target: continue the weakest evidenced UI or camera issue after checking open rounds. The map Tab shortcut was inspected and left unchanged.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 7 | Carried baseline; this focus-only round does not re-evaluate this dimension. |
+| Color palette | 6 | Carried baseline; this focus-only round does not re-evaluate this dimension. |
+| Detail density | 6 | Carried baseline; this focus-only round does not re-evaluate this dimension. |
+| Texture and material quality | 7 | Carried baseline; this focus-only round does not re-evaluate this dimension. |
+| Composition and camera | 6 | Carried baseline; this focus-only round does not re-evaluate this dimension. |
+| Atmosphere | 6 | Carried baseline; this focus-only round does not re-evaluate this dimension. |
+| Character models | 6 | Carried baseline; this focus-only round does not re-evaluate this dimension. |
+| Animation smoothness | 7 | Carried baseline; this focus-only round does not re-evaluate this dimension. |
+| Particles and VFX | 6 | Carried baseline; this focus-only round does not re-evaluate this dimension. |
+| UI polish | 6 | Focus outline now measures 18.40:1 against paper in pause/Comfort at both tested widths; overall UI score held. |
+| Responsiveness and input latency | 6 | Carried baseline; this focus-only round does not re-evaluate this dimension. |
+| Controls feel | 5 | Carried baseline; this focus-only round does not re-evaluate this dimension. |
+| Mission clarity | 4 | Carried baseline; this focus-only round does not re-evaluate this dimension. |
+| Pacing | 4 | Carried baseline; this focus-only round does not re-evaluate this dimension. |
+| Fun factor | 4 | Carried baseline; this focus-only round does not re-evaluate this dimension. |
+| Difficulty curve | 4 | Carried baseline; this focus-only round does not re-evaluate this dimension. |
+| Feedback | 5 | Carried baseline; this focus-only round does not re-evaluate this dimension. |
+| Sound design | 4 | Carried baseline; this focus-only round does not re-evaluate this dimension. |
+| Variety | 4 | Carried baseline; this focus-only round does not re-evaluate this dimension. |
+| Performance stability | 6 | Carried baseline; this focus-only round does not re-evaluate this dimension. |
+
+- Aesthetics raw: 63 / 10 dimensions, index 63
+- Playability raw: 46 / 10 dimensions, index 46
+- Total: 109 / 200
+- Delta vs last round: 0. One accessibility correction is not enough evidence to raise the overall UI score. Other dimension scores are explicitly carried baselines, not fresh full-playthrough judgments.
+
+Validation: the new browser regression failed its four contrast assertions before the change and passed all 14 checks after. Tested desktop keyboard operation at desktop and portrait viewport sizes, not a physical phone or headset. No hardware performance or listening claim.
+
+The existing `SIZE=960x540 node qa/vr/layout.e2e.mjs` regression also passed, including HUD, pause and Comfort geometry.
