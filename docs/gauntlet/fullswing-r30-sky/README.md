@@ -11,3 +11,12 @@ Functional same-frame reference/candidate comparisons pass at640×360 and390×84
 Actual user-profile Chrome/high-refresh/input-to-photon behavior remains unverified. Prior performance target misses remain disclosed; no inherited passing hardware scores or current rubric total. Full raw data, visual evidence and all review/CI/current-preview/rebase gates remain required before merge. OpenSpec CLI unavailable; proportional scenario artifacts reviewed manually.
 
 Evidence capture reads PNG data in the same browser task as rendering because the canvas does not preserve its drawing buffer. Deferred screenshots can capture a cleared canvas; those initial PNGs are rejected. Equivalence checks also require varied scene pixels, so two blank frames cannot pass. Final corrected hardware capture remains required after the active timing queue.
+
+## Corrected pixel evidence
+
+The corrected test waits for play, requires varied scene content and records the actual NVIDIA renderer. All8 desktop/phone×sun/effect-mode comparisons have zero differing RGBA bytes,12hardware checks pass and there are no page errors. Same-task canvas-only before/after PNGs show actual city geometry; initial cleared-buffer PNGs are rejected. These captures exclude DOM UI. Full timing evidence remains pending.
+
+| Before | After |
+|---|---|
+| ![Desktop before](before-640.png) | ![Desktop after](after-640.png) |
+| ![Phone before](before-390.png) | ![Phone after](after-390.png) |

@@ -10,7 +10,7 @@ try{
   if(!source.includes('if (here < 1.0)'))throw Error('Expected sky guard missing from deployed module');
   await r.fulfill({response,body:source.replace('if (here < 1.0)','if (true)')});
  });
- await open(p,'?nosw&skipintro');await p.waitForFunction(()=>G.viewDone);await enterXR(p,'desktop');
+ await open(p,'?nosw&skipintro');await p.waitForFunction(()=>G.viewDone);await enterXR(p,'desktop');await p.waitForFunction(()=>G.state==='play');
  const environment=await p.evaluate(async()=>{
   G.renderer.setAnimationLoop(null);G.test.hold(true);G.game.skipTutorial();G.time=100;
   const reference=(await import('./js/bloom.js?sky-reference')).createBloom(G.renderer),candidate=(await import('./js/bloom.js')).createBloom(G.renderer);
