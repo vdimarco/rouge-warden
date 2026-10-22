@@ -212,7 +212,7 @@ jobs:
           NODE_PATH: ${{ github.workspace }}/qa/browser/node_modules
           SHOTS: ${{ github.workspace }}/test-results/flat-missions
       - name: The compass names the clog on the card
-        run: node qa/vr/clogcompass.e2e.mjs
+        run: node qa/vr/clogcompass.e2e.mjs && node qa/vr/compass-height.e2e.mjs
         env:
           NODE_PATH: ${{ github.workspace }}/qa/browser/node_modules
           SHOTS: ${{ github.workspace }}/test-results/flat-missions
