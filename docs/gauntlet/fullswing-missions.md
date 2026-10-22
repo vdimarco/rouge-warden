@@ -1429,3 +1429,44 @@ Loop: missions, playability, controls, feel, UX, pacing and fun for In Full Swin
 Validation: all 16 new browser checks pass at 960×540 and 390×844, covering two player positions, zero distance, refresh, sideways overflow and unchanged travel. The original build failed the eight distance expectations while its other eight checks passed. The existing `qa/vr/rings-map.e2e.mjs` also passes: trials, compass, map hover and travel. Physical devices, audio listening, hardware performance and OpenSpec CLI validation were not run.
 
 Round 38 shipped in [PR #618](https://github.com/vdimarco/rouge-warden/pull/618), merged as `53c45f92` after rebasing onto main and passing all six fresh browser jobs, automated review and preview deployment. Authenticated preview verified startup, zero distance and map travel with no page errors. The regression waits for the travel fade to close the map. Score remains 132/200. Next: inspect another evidenced mission-guidance gap after the current graphics round.
+
+### Round 39 — 2026-10-21 — rubric v1
+
+- What changed: the flat compass shows a second line such as “30 m above” or “30 m below” when its selected target is at least five metres away vertically. The number is rounded to five metres. Near the same height, that line is empty. Horizontal distance, bearing, target selection and the headset HUD stay unchanged.
+- Why it helped: the prior compass read 50 m both below and above a roof target; it now identifies which direction to move vertically. Height updates independently when horizontal distance stays constant.
+- Screenshots: `docs/gauntlet/fullswing-r39/{before,after}-{960,390}.png`. These are held-frame UI probes using a real clog goal and controlled player heights, not full playthrough evidence.
+- Next target: another evidenced navigation or mission-feedback weakness after pending rounds merge.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 5 | Carried mission-track baseline; not independently re-scored in this compass-height round. |
+| Color palette | 6 | Carried mission-track baseline; not independently re-scored in this compass-height round. |
+| Detail density | 4 | Carried mission-track baseline; not independently re-scored in this compass-height round. |
+| Texture and material quality | 3 | Carried mission-track baseline; not independently re-scored in this compass-height round. |
+| Composition and camera | 4 | Carried mission-track baseline; not independently re-scored in this compass-height round. |
+| Atmosphere | 5 | Carried mission-track baseline; not independently re-scored in this compass-height round. |
+| Character models | 3 | Carried mission-track baseline; not independently re-scored in this compass-height round. |
+| Animation smoothness | 4 | Carried mission-track baseline; not independently re-scored in this compass-height round. |
+| Particles and VFX | 5 | Carried mission-track baseline; not independently re-scored in this compass-height round. |
+| UI polish | 6 | Carried mission-track baseline; not independently re-scored in this compass-height round. |
+| Responsiveness and input latency | 9 | Carried mission-track baseline; not independently re-scored in this compass-height round. |
+| Controls feel | 9 | Carried mission-track baseline; not independently re-scored in this compass-height round. |
+| Mission clarity | 9 | The compass now distinguishes above, below and near-height targets while retaining horizontal distance; overall score held. |
+| Pacing | 9 | Carried mission-track baseline; not independently re-scored in this compass-height round. |
+| Fun factor | 9 | Carried mission-track baseline; not independently re-scored in this compass-height round. |
+| Difficulty curve | 9 | Carried mission-track baseline; not independently re-scored in this compass-height round. |
+| Feedback | 9 | Carried mission-track baseline; not independently re-scored in this compass-height round. |
+| Sound design | 9 | Carried mission-track baseline; not independently re-scored in this compass-height round. |
+| Variety | 9 | Carried mission-track baseline; not independently re-scored in this compass-height round. |
+| Performance stability | 6 | Carried mission-track baseline; not independently re-scored in this compass-height round. |
+
+- Aesthetics raw: 45 / 10 dimensions, index 45
+- Playability raw: 87 / 10 dimensions, index 87
+- Total: 132 / 200
+- Delta vs last round: 0. Unchanged dimensions retain the mission track's baseline; this does not reconcile that baseline with the graphics track or claim a fresh full-playthrough score.
+
+Validation: all 16 targeted browser checks pass at 960×540 and 390×844: real clog goal, above/below/near height, constant horizontal distance, viewport fit and page errors. The baseline failed exactly four above/below expectations and passed 12 other checks. The existing King-compass suite and portrait layout suite also pass. OpenSpec structure and canonical scenarios were reviewed manually; CLI, physical-device, listening and hardware-performance checks were not run. Remote review, preview and CI remain required before merge.
+
+Round 39 CI found a narrow touch-layout regression: the extra compass line expanded the score row, affected four near-border arrow angles, and overflowed the boss-heart row at 360 pixels. The correction keeps the existing 28-pixel compass height on compact phones, displaying ↑/↓ plus metres with the full above/below text retained. The full phone-controls suite is required again before merge; no CI tolerances were weakened.
+
+The correction passes the full local `phone-controls.e2e.mjs` suite (162 checks), including all three CI failures; screenshot `docs/gauntlet/fullswing-r39/after-touch-360.png` shows the compact phone cue. Log: `/tmp/fullswing-height-phone-fixed.log`. Hardware performance remains unverified under the user's new performance priority; this correctness fix does not close that report.

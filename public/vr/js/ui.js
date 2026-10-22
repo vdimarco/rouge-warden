@@ -1242,6 +1242,7 @@ body[data-mode="desktop"] .fs-hud{display:block}
 .fs-drop{width:16px;height:21px;border-radius:50% 50% 50% 50%/62% 62% 38% 38%;background:linear-gradient(155deg,#f4ffd4 0%,#9cff3a 46%,#2f8a14 100%);border:3px solid var(--ink,#140a18);box-sizing:border-box}
 .fs-heart{color:#ff3a4a;font-size:26px;margin:0 1px;text-shadow:2px 0 var(--ink,#140a18),-2px 0 var(--ink,#140a18),0 2px var(--ink,#140a18),0 -2px var(--ink,#140a18)}.fs-heart.off{color:#d9cfb8}
 .fs-compass svg{width:28px;height:28px;border-radius:50%;background:#fff9ea;box-shadow:0 0 0 2.5px var(--ink,#140a18);fill:var(--red,#e0482c);stroke:var(--ink,#140a18);stroke-width:2.6;stroke-linejoin:round;transition:transform .08s linear}
+.fs-compass [data-k=elev]{display:block;font-size:14px;line-height:1.1}
 .fs-time b{color:var(--red,#e0482c)}
 .fs-flash{position:absolute;inset:0;opacity:0;pointer-events:none;box-shadow:inset 0 0 90px 30px rgba(110,255,120,.75)}
 .fs-flash.gold{box-shadow:inset 0 0 140px 50px rgba(255,200,70,.85)}
@@ -1352,7 +1353,7 @@ body:has(#phoneControls:not([hidden])) .fs-top:has(.fs-pill:not([hidden]):not(.f
       '<div class="fs-pill" title="Clogs"><i class="fs-drop"></i><b data-k="clog">0</b><small data-k="clogT">/12</small></div>' +
       '<div class="fs-pill fs-time" data-k="trialBox" hidden><b data-k="trial">0.0</b><small>s</small></div>' +
       '<div class="fs-pill" data-k="heartBox" hidden></div>' +
-      '<div class="fs-pill fs-compass" data-k="compassBox" title="The nearest clog"><svg viewBox="-12 -12 24 24" data-k="arrow"><path d="M0 -10 L7 8 L0 4 L-7 8 Z"/></svg><small data-k="dist"></small></div>' +
+      '<div class="fs-pill fs-compass" data-k="compassBox" title="The nearest clog"><svg viewBox="-12 -12 24 24" data-k="arrow"><path d="M0 -10 L7 8 L0 4 L-7 8 Z"/></svg><small><span data-k="dist"></span><span data-k="elev"></span></small></div>' +
       '<div class="fs-pill fs-mission" data-k="mission" hidden><b data-k="mTitle"></b><small data-k="mDetail"></small><span class="fs-m-short" data-k="mShort"></span></div>' +
       '<div class="fs-pill fs-train-now" data-k="trainNow" hidden></div>' +
       '</div><p class="fs-sub" data-k="sub" role="status"></p><p class="fs-toast" data-k="toast" role="status"></p>';
@@ -1601,6 +1602,8 @@ body:has(#phoneControls:not([hidden])) .fs-top:has(.fs-pill:not([hidden]):not(.f
     if (tg && Pl) {
       const dx = tg.x - Pl.pos.x, dz = tg.z - Pl.pos.z, d = Math.sqrt(dx * dx + dz * dz), a = Math.round(wrap(Math.atan2(-dx, -dz) - HD.yaw) / DEG / 3) * 3;
       if (a !== dh.ang) { dh.ang = a; k.arrow.style.transform = "rotate(" + -a + "deg)"; }
+      const dy = tg.y - Pl.pos.y, elevation = Math.abs(dy) >= 5 ? Math.round(Math.abs(dy) / 5) * 5 + " m " + (dy > 0 ? "above" : "below") : "";
+      if (elevation !== dh.elev) { dh.elev = elevation; k.elev.textContent = elevation; k.elev.dataset.short = elevation ? (dy > 0 ? "↑" : "↓") + Math.round(Math.abs(dy) / 5) * 5 + "m" : ""; }
       const dd = Math.round(d / 5) * 5;
       if (dd !== dh.dist) { dh.dist = dd; k.dist.textContent = dd >= 1000 ? (dd / 1000).toFixed(1) + " km" : dd + " m"; }
     }
