@@ -931,3 +931,40 @@ PR #611 review found that blank bays and incomplete top-floor rows could emit li
 Validation: the new browser regression failed its four contrast assertions before the change and passed all 14 checks after. Tested desktop keyboard operation at desktop and portrait viewport sizes, not a physical phone or headset. No hardware performance or listening claim.
 
 The existing `SIZE=960x540 node qa/vr/layout.e2e.mjs` regression also passed, including HUD, pause and Comfort geometry.
+
+### Round 26 — 2026-10-21 — rubric v1
+
+- What changed: new games and legacy saves without a comic motion choice select the existing Calm mode when the system requests reduced motion. Saved Full, Calm and Off choices continue to take precedence; ordinary defaults remain Full.
+- Why it helped: the game already offers a calmer camera, but ignored the system preference when choosing its initial mode. One default expression now selects that existing mode. This is not a promise that all game motion is disabled or that media-query changes are followed live.
+- Screenshots: `docs/gauntlet/fullswing-r26-motion/before-reduce.png` and `docs/gauntlet/fullswing-r26-motion/after-reduce.png` show Full before and Calm after under the same system preference.
+- Next target: inspect another evidenced graphics or camera issue after the pending rounds merge.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 7 | Carried baseline; this motion-default round does not re-evaluate this dimension. |
+| Color palette | 6 | Carried baseline; this motion-default round does not re-evaluate this dimension. |
+| Detail density | 6 | Carried baseline; this motion-default round does not re-evaluate this dimension. |
+| Texture and material quality | 7 | Carried baseline; this motion-default round does not re-evaluate this dimension. |
+| Composition and camera | 6 | Carried baseline; this motion-default round does not re-evaluate this dimension. |
+| Atmosphere | 6 | Carried baseline; this motion-default round does not re-evaluate this dimension. |
+| Character models | 6 | Carried baseline; this motion-default round does not re-evaluate this dimension. |
+| Animation smoothness | 7 | Carried baseline; this motion-default round does not re-evaluate this dimension. |
+| Particles and VFX | 6 | Carried baseline; this motion-default round does not re-evaluate this dimension. |
+| UI polish | 6 | The Comfort menu now selects Calm for fresh reduced-motion users and preserves saved choices; overall UI score held. |
+| Responsiveness and input latency | 6 | Carried baseline; this motion-default round does not re-evaluate this dimension. |
+| Controls feel | 5 | Carried baseline; this motion-default round does not re-evaluate this dimension. |
+| Mission clarity | 4 | Carried baseline; this motion-default round does not re-evaluate this dimension. |
+| Pacing | 4 | Carried baseline; this motion-default round does not re-evaluate this dimension. |
+| Fun factor | 4 | Carried baseline; this motion-default round does not re-evaluate this dimension. |
+| Difficulty curve | 4 | Carried baseline; this motion-default round does not re-evaluate this dimension. |
+| Feedback | 5 | Carried baseline; this motion-default round does not re-evaluate this dimension. |
+| Sound design | 4 | Carried baseline; this motion-default round does not re-evaluate this dimension. |
+| Variety | 4 | Carried baseline; this motion-default round does not re-evaluate this dimension. |
+| Performance stability | 6 | Carried baseline; this motion-default round does not re-evaluate this dimension. |
+
+- Aesthetics raw: 63 / 10 dimensions, index 63
+- Playability raw: 46 / 10 dimensions, index 46
+- Total: 109 / 200
+- Delta vs last round: 0. This comfort correction does not justify an overall score increase. Unchanged dimensions are carried baselines, not a new full-playthrough judgment.
+
+Validation: all 12 browser checks pass. The baseline failed exactly the three reduced-default expectations and passed the other nine checks. The test covers both system preferences, menu selection, camera mode flags, saved Full and Off choices, legacy save behavior and page errors. Screenshot inspected at 960×540. No physical phone/headset, hardware-performance, audio-listening or OpenSpec CLI checks were run. Remote review and CI remain required before merge.

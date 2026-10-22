@@ -51,7 +51,7 @@ const store = {
 };
 function defaultSettings() {
   const p = COMFORT.presets[COMFORT.defaultPreset];
-  return { preset: COMFORT.defaultPreset, vignette: p.vignette, turn: p.turn, snap: p.snap, aim: p.aim, vignetteLook: "room", seated: false, height: 0, hand: "right", hold: "hold", cue: true, hz: PERF.hz, foveation: PERF.foveation, music: true, speedLines: true, verse: "full" };
+  return { preset: COMFORT.defaultPreset, vignette: p.vignette, turn: p.turn, snap: p.snap, aim: p.aim, vignetteLook: "room", seated: false, height: 0, hand: "right", hold: "hold", cue: true, hz: PERF.hz, foveation: PERF.foveation, music: true, speedLines: true, verse: REDUCED ? "calm" : "full" };
 }
 // seen: the comic scenes already played (cutscene.js), so each plays once, and the phone's gesture card (mobile.js)
 function blankSave() { return { v: 1, intro: false, tutorial: false, clogs: [], loonies: [], bonus: 0, king: "sleeping", pipes: [], best: {}, seen: { opening: false, king: false, finale: false, mission2: false, mission3: false, mission4: false, mission5: false, phoneCoach: false, districts: [] }, jobs: { sludge: false, route: 0, done: {} }, settings: defaultSettings() }; }
