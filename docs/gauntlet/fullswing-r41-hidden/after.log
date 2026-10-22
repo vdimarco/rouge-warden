@@ -1,0 +1,15 @@
+PASS: visible gameplay moves the hero
+PASS: hidden probe executes sixty simulation callbacks
+PASS: hidden flat input reports not visible
+PASS: hidden callbacks preserve hero position
+PASS: hidden callbacks preserve hero velocity
+PASS: returning to the page resumes physics
+PASS: no page errors at 960
+PASS: visible gameplay moves the hero
+PASS: hidden probe executes sixty simulation callbacks
+PASS: hidden flat input reports not visible
+PASS: hidden callbacks preserve hero position
+PASS: hidden callbacks preserve hero velocity
+PASS: returning to the page resumes physics
+PASS: no page errors at 390
+PASS: flat page visibility

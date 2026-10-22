@@ -336,7 +336,7 @@ export function createDesktop(canvas, camera, settings) {
     inp.move.x = mx; inp.move.y = my;
     inp.turn = turn; inp.pitch = pitch;
     inp.jumpDown = jump; inp.menuDown = menu; inp.mapDown = map; inp.viewDown = view; inp.carDown = car; inp.throwDown = thr; inp.sprintHeld = sprint; inp.jumpHeld = keys.has("Space") || (gp ? padButton(gp, 0) : false);
-    inp.visible = true;
+    inp.visible = !document.hidden;
     // which device the player holds, for the tutorial words: a phone, the pad (once it moves), else the mouse
     const kind = inp.kind = mobile.enabled ? "touch" : usingPad ? "pad" : "mouse";
 
