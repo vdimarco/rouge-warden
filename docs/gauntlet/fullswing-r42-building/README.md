@@ -7,3 +7,5 @@ Baseline browser: two failures show attached sky ropes over water and1500m above
 No score increase. Responsiveness and stability remain unverified; total withheld. Rendering and physics unchanged. All review/CI/deployed-preview/rebase/production gates remain pending.
 
 Follow-up: reachable surfaces that cannot support assisted ground clearance use the existing ordinary rope physics, rather than an invisible sky anchor or a rejection. The visible lock-on is a fallback for building searches. No physics constants changed. Roof113.5m→real roof111.5m attachment verified. All54 focused swing/bot assertions pass, including three real buildings in16.6/17.4/17.4s at original±10° headings. The three-building goal and30s limit remain unchanged. Updated simultaneous-input assertion allows idle secondhand when no different building qualifies.
+
+Released PR#632/5d0cd1ca; all remote gates and production verification complete. See production-verification.json. Canonical spec archived; CLI unavailable, structure/scenarios manually reviewed.
