@@ -21,6 +21,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 PROPS = ROOT / 'Data/Plateau/ReplicaGeometry/Props'
 GENERATOR = ROOT / 'Scripts/blender/plateau_props.py'
+SHEET = ROOT / 'Preview/Replica/props_contact_sheet.png'
 REQUIRED = {
     'lamp_cobra', 'lamp_park', 'hydrant', 'sign_stop', 'sign_street', 'sign_oneway', 'sign_parking',
     'bixi_dock', 'bixi_bike', 'bin_recycling', 'bin_compost', 'bin_garbage', 'cone', 'barrier_chantier',
@@ -249,6 +250,17 @@ def determinism(python, reference):
         return len(outs[0])
 
 
+def check_sheet(manifest):
+    """The contact sheet holds every prop: 200 x 250 px tiles, 8 per row, one tile per prop plus the six detail
+    tiles (dog parts, coat variants, lamp head, sign blades, street corner, gallery deck)."""
+    data = SHEET.read_bytes()
+    assert data[:8] == b'\x89PNG\r\n\x1a\n', SHEET
+    size = int.from_bytes(data[16:20], 'big'), int.from_bytes(data[20:24], 'big')
+    tiles = manifest['counts']['props'] + 6
+    assert size == (1600, 250 * -(-tiles // 8)), (size, tiles)
+    assert SHEET.stat().st_mtime >= (PROPS / 'manifest.json').stat().st_mtime - 600, 'contact sheet older than the build'
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--blender', default=os.environ.get('NORD_BLENDER_PYTHON'))
@@ -258,6 +270,9 @@ def main():
         reference = check(PROPS)
         counts = reference['counts']
         print(f"on-disk props ok: {counts['props']} props, {counts['meshes']} meshes")
+        if SHEET.is_file():
+            check_sheet(reference)
+            print('contact sheet ok:', SHEET.name)
     else:
         print('no built OBJs on disk; pass --blender to build and check')
     if args.blender:
