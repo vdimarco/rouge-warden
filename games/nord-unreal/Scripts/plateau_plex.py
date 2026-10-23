@@ -2772,7 +2772,8 @@ class Rear:
     # ------------------------------------------------------------------ authoring
     def author(self, mesh):
         record = {'walls': [], 'wall_top_cm': round(self.zt, 1), 'galleries': 0, 'stair': None, 'flights': [],
-                  'decks': [], 'guards': [], 'partitions': [], 'fence': None, 'shed': None, 'yard': None, 'reason': self.reason,
+                  'decks': [], 'guards': [], 'partitions': [], 'fence': None, 'shed': None, 'yard': None,
+                  'reason': self.reason,
                   'yard_reason': None if self.yard_plan else self.yard_reason}
         for wall in self.lot.get('backs', []):
             if self.stack and wall is self.stack['wall']:
@@ -3268,7 +3269,8 @@ class Rear:
             'foot': [round(v, 1) for v in P(sc, dF + (risers - 1.5) * going, rise)],
             'head': [round(v, 1) for v in P(sc, (D_FACE + dF) / 2, z)], 'guard': z >= 60, 'skirts': skirts,
             'door': [round(v, 1) for v in P(xd, D_FACE + 45, z)[:2]],
-            **self._free_record(P, free, z, edge, P(0, 1, 0)[:2] if False else self.stack_out)})
+            **self._free_record(P, free, z, edge, ((edge[0][0] - corners[0][0]) / (dF - 3 - D_FACE),
+                                                   (edge[0][1] - corners[0][1]) / (dF - 3 - D_FACE)))})
         self.count('ground_galleries')
         self.count('lattice_skirts', skirts)
 
