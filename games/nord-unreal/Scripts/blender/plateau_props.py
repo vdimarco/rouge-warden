@@ -1036,7 +1036,8 @@ def bike_locked():
     P.part('lock', 'LockYellow').add(tube_geo(lock, 1.1, 6), M)
     P.part('lock', 'LockYellow').add(box_geo((14, 4, 4), 1), M @ T((-36, 0, 50)))
     P.anchors['lean_contact_cm'] = _ue(M @ Vector((-10, 22, 80)))
-    P.colliders.append({'center': [0, 8, 55], 'size': [180, 34, 110]})
+    # Unreal-local, like bounds_cm: the 9 degree lean puts the bike between Y -43 and +10.
+    P.colliders.append({'center': [0, -16, 55], 'size': [176, 54, 110]})
     return P
 
 
@@ -1225,16 +1226,22 @@ def satellite_dish():
     rim = [(25, front[-1][1]), (25, back[-1][1])]
     P.part('dish', 'DishWhite').add(lathe_geo(rim, 20, cap0=False, cap1=False), M)
     axis = (M.to_3x3() @ Vector((0, 0, 1))).normalized()
-    down = (M.to_3x3() @ Vector((-1, 0, 0))).normalized()
+    # Offset-fed dish: the feed arm leaves the lower rim and holds the LNB in front of and below the reflector
+    # centre. Local +X of the tilted dish is its lower edge (local -X would put the arm on top).
+    down = (M.to_3x3() @ Vector((1, 0, 0))).normalized()
     lower = centre + down * 21
     focus = centre + axis * 34 + down * 9
     P.tube('SteelDark', [tuple(lower), tuple(lower + axis * 12), tuple(focus - axis * 3)], 1.1, 6, part='mount')
     P.part('lnb', 'PlasticBlack').add(lathe_geo([(2.6, -6), (2.6, 2), (3.6, 3), (3.6, 5), (0, 5.2)], 10),
                                        Matrix.Translation(focus) @ axis.to_track_quat('Z', 'Y').to_matrix().to_4x4())
-    P.box('SteelDark', tuple(centre - axis * 4), (8, 8, 10), (0, tilt, 0), bevel=.8, part='mount')
-    P.tube('SteelDark', [(0, 0, 44), tuple(centre - axis * 4)], 1.3, 6, part='mount')
+    # The bracket sits wholly behind the reflector's back skin (0.7 cm), so nothing pokes through its face.
+    bracket = centre - axis * 6
+    P.box('SteelDark', tuple(bracket), (8, 8, 10), (0, tilt, 0), bevel=.8, part='mount')
+    P.tube('SteelDark', [(0, 0, 44), tuple(bracket)], 1.3, 6, part='mount')
     P.anchors['clamp_cm'] = [0, 0, 0]
     P.anchors['aim_cm'] = _ue(tuple(axis * 100))
+    P.anchors['reflector_cm'] = _ue(centre)
+    P.anchors['lnb_cm'] = _ue(focus)
     P.extra['mount_note'] = ('clamp on a gallery guard cap rail (top of the 107 cm guard) or screw to a wall; '
                              'yaw +X toward 190-230 degrees azimuth (Bell 91 W, Shaw 107.3 W from Montreal)')
     return P
@@ -1290,7 +1297,8 @@ def bike_gallery():
     for name, data in tmp.parts.items():
         P.part(name, data['material']).merged(data['geo'], M)
     P.anchors['lean_contact_cm'] = _ue(M @ Vector((-24, 0, 95)))
-    P.colliders.append({'center': [0, 10, 58], 'size': [182, 46, 116]})
+    # Colliders are Unreal-local like the bounds: the lean puts the bike on the -Y side.
+    P.colliders.append({'center': [0, -22, 58], 'size': [182, 54, 116]})
     return P
 
 

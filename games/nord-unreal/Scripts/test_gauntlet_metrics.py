@@ -8,7 +8,6 @@ a known blur, a brute-force reference and the constant-image closed form), the o
 """
 import importlib.util
 import json
-import math
 from pathlib import Path
 import sys
 import tempfile
