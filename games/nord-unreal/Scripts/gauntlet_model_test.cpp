@@ -258,7 +258,7 @@ namespace
         const int Spur = static_cast<int>(Segments.size()) - 3;
         Expect(!Roads.IsThrough(Spur) && !Roads.IsThrough(Spur + 1) && !Roads.IsThrough(Spur + 2) && Roads.IsThrough(0), "dead-end and closed segments are not through roads");
         FVec2 Road;
-        Expect(Roads.Nearest({10100.0, -5000.0}, Road) >= 0 && QuebecPursuit::Distance(Road, {10000.0, 0.0}) < 1e-9, "a stop by the dead end gets the junction it leaves from");
+        Expect(Roads.Nearest({10000.0, -5000.0}, Road) >= 0 && QuebecPursuit::Distance(Road, {10000.0, 0.0}) < 1e-9, "a stop by the dead end gets the junction it leaves from");
 
         // The goal is 30 m behind on the start segment: FRoadGraph::Route goes straight back, FForwardRoads round a block.
         std::vector<FVec2> Path;
@@ -271,11 +271,11 @@ namespace
         Expect(Roads.Route({5000.0, 0.0}, {1.0, 0.0}, {8000.0, 0.0}, {-1.0, 0.0}, Path, Cost) && Cost < NoUTurn && Cost > 3000.0,
             "arriving westbound goes round (%.0f m)", Cost / 100.0);
         // FRoadGraph::Route charges a U-turn only at its start, so it runs to the junction ahead and back along the street.
-        Expect(Graph.Route({5000.0, 0.0}, {1.0, 0.0}, {3000.0, 10000.0}, Path, 1.0e7) && Path.size() >= 2
+        Expect(Graph.Route({5000.0, 0.0}, {1.0, 0.0}, {0.0, 3000.0}, Path, 1.0e7) && Path.size() == 3
             && QuebecPursuit::Distance(Path[0], {10000.0, 0.0}) < 1e-9 && QuebecPursuit::Distance(Path[1], {0.0, 0.0}) < 1e-9,
             "FRoadGraph::Route turns back at the junction ahead");
-        Expect(Roads.Route({5000.0, 0.0}, {1.0, 0.0}, {3000.0, 10000.0}, FVec2{}, Path, Cost) && Near(Cost, 5000.0 + 10000.0 + 7000.0, 1e-6),
-            "FForwardRoads turns left there instead (%.0f m)", Cost / 100.0);
+        Expect(Roads.Route({5000.0, 0.0}, {1.0, 0.0}, {0.0, 3000.0}, FVec2{}, Path, Cost) && Near(Cost, 5000.0 + 10000.0 + 10000.0 + 7000.0, 1e-6),
+            "FForwardRoads goes round the block from there instead (%.0f m)", Cost / 100.0);
         // Standing on a junction counts as having come along any street that ends there.
         Expect(Roads.Route({10000.0, 10000.0}, {0.0, 1.0}, {10000.0, 15000.0}, FVec2{}, Path, Cost) && Near(Cost, 5000.0, 1e-6), "from a junction straight on");
         Expect(!FForwardRoads(FRoadGraph()).Route({0.0, 0.0}, {}, {1.0, 1.0}, FVec2{}, Path, Cost), "no roads, no route");
