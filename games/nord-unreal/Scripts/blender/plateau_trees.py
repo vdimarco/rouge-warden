@@ -63,11 +63,11 @@ SPECIES = {
     'norway_maple': {
         'name': 'Norway maple (Acer platanoides)', 'seed': 4101, 'height_cm': 1450., 'dbh_cm': 48., 'prune_cm': 300.,
         'shape': 1, 'flare': .55, 'ratio_power': 1.25, 'lean_deg': 2.5,
-        'trunk': {'split_cm': 470., 'leaders': 3, 'split_angle': 27., 'split_angle_v': 7., 'curve_v': 6.,
-                  'leader_res': 6, 'leader_attraction': .3, 'leader_curve_v': 14., 'sides': 14},
+        'trunk': {'split_cm': 450., 'leaders': 3, 'split_angle': 31., 'split_angle_v': 7., 'curve_v': 6.,
+                  'leader_res': 6, 'leader_attraction': .25, 'leader_curve_v': 14., 'sides': 14},
         'levels': [
-            {'length': .5, 'length_v': .08, 'branches': 24, 'down': 64., 'down_v': -26., 'rotate': 140., 'rotate_v': 35.,
-             'curve_res': 6, 'curve': -6., 'curve_back': 0., 'curve_v': 30., 'attraction': .45, 'sides': 7},
+            {'length': .6, 'length_v': .08, 'branches': 24, 'down': 68., 'down_v': -24., 'rotate': 140., 'rotate_v': 35.,
+             'curve_res': 6, 'curve': -6., 'curve_back': 0., 'curve_v': 30., 'attraction': .32, 'sides': 7},
             {'length': .46, 'length_v': .1, 'branches': 13, 'down': 48., 'down_v': 14., 'rotate': 140., 'rotate_v': 30.,
              'curve_res': 4, 'curve': 0., 'curve_back': 0., 'curve_v': 40., 'attraction': .12, 'sides': 4},
         ],
@@ -87,7 +87,7 @@ SPECIES = {
             {'length': .5, 'length_v': .1, 'branches': 12, 'down': 56., 'down_v': 15., 'rotate': 140., 'rotate_v': 30.,
              'curve_res': 4, 'curve': 14., 'curve_back': 0., 'curve_v': 30., 'attraction': -.35, 'sides': 4},
         ],
-        'leaves': {'cards': 8, 'retention': .56, 'card_cm': 62., 'down': 60., 'down_v': 22., 'rotate': 137.5,
+        'leaves': {'cards': 8, 'retention': .62, 'card_cm': 62., 'down': 60., 'down_v': 22., 'rotate': 137.5,
                    'rotate_v': 12., 'twist_v': 35., 'cells': {'sm_yellow': .44, 'sm_orange': .26, 'sm_sparse': .3}},
         'bark': {'colour': '#8A857C', 'note': 'light grey, long loose plates on old trunks'},
     },
@@ -102,17 +102,17 @@ SPECIES = {
             {'length': .46, 'length_v': .1, 'branches': 11, 'down': 50., 'down_v': 15., 'rotate': 140., 'rotate_v': 30.,
              'curve_res': 4, 'curve': 0., 'curve_back': 0., 'curve_v': 40., 'attraction': .05, 'sides': 4},
         ],
-        'leaves': {'cards': 7, 'retention': .4, 'card_cm': 70., 'down': 50., 'down_v': 25., 'rotate': 137.5,
+        'leaves': {'cards': 7, 'retention': .46, 'card_cm': 70., 'down': 50., 'down_v': 25., 'rotate': 137.5,
                    'rotate_v': 15., 'twist_v': 40., 'cells': {'hl_gold': .55, 'hl_sparse': .45}},
         'bark': {'colour': '#4D433B', 'note': 'dark grey-brown, scaly plates'},
     },
     'linden': {
         'name': 'Linden (Tilia cordata / T. americana)', 'seed': 4404, 'height_cm': 1400., 'dbh_cm': 42.,
-        'prune_cm': 300., 'shape': 0, 'flare': .45, 'ratio_power': 1.3, 'lean_deg': 1.5,
+        'prune_cm': 300., 'shape': 7, 'flare': .45, 'ratio_power': 1.3, 'lean_deg': 1.5,
         'trunk': {'split_cm': None, 'leaders': 1, 'curve_v': 4., 'sides': 13},
         'levels': [
-            {'length': .38, 'length_v': .06, 'branches': 34, 'down': 74., 'down_v': -22., 'rotate': 140., 'rotate_v': 20.,
-             'curve_res': 6, 'curve': -10., 'curve_back': 0., 'curve_v': 20., 'attraction': .42, 'sides': 7},
+            {'length': .4, 'length_v': .06, 'branches': 32, 'down': 58., 'down_v': -20., 'rotate': 140., 'rotate_v': 20.,
+             'curve_res': 6, 'curve': -8., 'curve_back': 0., 'curve_v': 22., 'attraction': .5, 'sides': 7},
             {'length': .46, 'length_v': .1, 'branches': 12, 'down': 50., 'down_v': 12., 'rotate': 140., 'rotate_v': 25.,
              'curve_res': 4, 'curve': 0., 'curve_back': 0., 'curve_v': 30., 'attraction': .18, 'sides': 4},
         ],
@@ -133,7 +133,7 @@ SPECIES = {
              'rotate': 90., 'rotate_v': 15., 'curve_res': 4, 'curve': 0., 'curve_back': 0., 'curve_v': 25.,
              'attraction': .3, 'sides': 4},
         ],
-        'leaves': {'cards': 7, 'retention': .46, 'card_cm': 75., 'down': 48., 'down_v': 20., 'rotate': 137.5,
+        'leaves': {'cards': 8, 'retention': .54, 'card_cm': 75., 'down': 48., 'down_v': 20., 'rotate': 137.5,
                    'rotate_v': 12., 'twist_v': 30., 'cells': {'as_yellow': .45, 'as_maroon': .2, 'as_sparse': .35}},
         'bark': {'colour': '#77726A', 'note': 'grey, interlacing diamond ridges'},
     },
@@ -159,6 +159,7 @@ PUFFINESS = .55          # card normal -> crown ellipsoid normal blend (SpeedTre
 MIN_NORMAL_Z = -.3       # no card normal points further down than this (SpeedTree's normal range)
 FOLD = .14               # card centre line raised by this share of the card width: a shallow V
 MIN_RADIUS_CM = .45
+CARD_HANG_CM = 25.      # no leaf card corner hangs more than this below the pruned height
 
 # ------------------------------------------------------------------------------------------------ vectors
 
@@ -321,11 +322,12 @@ def child_frame(parent_frame, spin, down):
     return rotate_frame(f, f[0], math.radians(down))
 
 
-def generate(kind):
-    """The stems and leaf cards of one kind, deterministic from its seed."""
+def generate(kind, height=None):
+    """The stems and leaf cards of one kind, deterministic from its seed; height overrides the stem length
+    scale (build_kind calibrates it so the finished tree, leaves included, stands at height_cm)."""
     P = SPECIES[kind]
     rng = random.Random(P['seed'])
-    H, prune, T = P['height_cm'], P['prune_cm'], P['trunk']
+    H, prune, T = height or P['height_cm'], P['prune_cm'], P['trunk']
     clearance = prune - 15.
     t130 = 130. / H
     r_base = P['dbh_cm'] / 2. / ((1. - t130) * flare_factor(P['flare'], t130))
@@ -745,42 +747,47 @@ def atlas_maps():
 
 
 def bark_maps():
-    """Bark: vertically stretched Worley plates (F2 - F1 furrows), fibrous striations and lichen patches."""
+    """Bark: Worley plates stretched 8x along the stem (F2 - F1 gives the furrows), the rows sheared by a slow
+    noise so the furrows wander and interlace, fibrous striations along the plates and lichen on some tops."""
     W, H = BARK['size_px']
     seed = BARK['seed']
     px = W / (BARK['tile_m'][0] * 100.)
-    stretch = 4
-    ids, border, _ = PT.cells(seed, W, H // stretch, 9. * px, .9)
-    fine = PT.noise1d(seed + 5, W, 96)
+    stretch = 8
+    h2 = H // stretch
+    ids, border, _ = PT.cells(seed, W, h2, 6.5 * px, .95)
+    fine = PT.noise1d(seed + 5, W, 128)
+    shear = PT.noise1d(seed + 6, H, 6)
     fbm = PT.field(PT.Fbm(seed + 7, W, H, ((8, 16), (16, 32), (64, 128)), (.5, .3, .2)), H)
     lichen = PT.field(PT.Fbm(seed + 9, W, H, ((4, 8), (8, 16)), (.6, .4)), H)
     cv = PT.Canvas(W, H, (110., 100., 90.), 0., .85)
-    h2 = H // stretch
+    furrow = (58., 50., 44.)
     for y in range(H):
         t = (y + .5) / stretch - .5
         j0 = math.floor(t)
         f = t - j0
         r0, r1 = (j0 % h2) * W, ((j0 + 1) % h2) * W
+        dx = int((shear[y] - .5) * 7. * px)
         for x in range(W):
             i = y * W + x
-            b = border[r0 + x] * (1. - f) + border[r1 + x] * f
-            cell = ids[r0 + x] if f < .5 else ids[r1 + x]
-            tone = .86 + .28 * PT.unit(seed, 77, cell)
-            plate = PT.smooth(0., 7., b)
-            stri = fine[x]
-            hgt = 1.4 * plate + .35 * stri * plate + .3 * fbm[i]
-            k = tone * (.9 + .2 * fbm[i]) * (.92 + .16 * stri)
-            cr, cg, cb = 128. * k, 118. * k, 106. * k
-            furrow = (52., 45., 40.)
-            cr, cg, cb = furrow[0] + (cr - furrow[0]) * plate, furrow[1] + (cg - furrow[1]) * plate, \
-                furrow[2] + (cb - furrow[2]) * plate
-            moss = PT.smooth(.62, .74, lichen[i]) * plate * .55
-            cr, cg, cb = cr + (126. - cr) * moss, cg + (134. - cg) * moss, cb + (108. - cb) * moss
+            xs = (x + dx) % W
+            b = border[r0 + xs] * (1. - f) + border[r1 + xs] * f
+            cell = ids[r0 + xs] if f < .5 else ids[r1 + xs]
+            tone = .88 + .24 * PT.unit(seed, 77, cell)
+            plate = PT.smooth(0., 4.5, b)
+            stri = fine[xs]
+            hgt = 1.3 * plate + .45 * stri * plate + .25 * fbm[i]
+            k = tone * (.9 + .2 * fbm[i]) * (.86 + .28 * stri)
+            cr, cg, cb = 132. * k, 122. * k, 110. * k
+            cr, cg, cb = (furrow[0] + (cr - furrow[0]) * plate, furrow[1] + (cg - furrow[1]) * plate,
+                          furrow[2] + (cb - furrow[2]) * plate)
+            moss = PT.smooth(.64, .76, lichen[i]) * plate * .5
+            cr, cg, cb = cr + (128. - cr) * moss, cg + (136. - cg) * moss, cb + (110. - cb) * moss
             cv.r[i], cv.g[i], cv.b[i] = cr, cg, cb
             cv.height[i] = hgt
             cv.rough[i] = .97 - .12 * plate
-            cv.cavity[i] = 1. - PT.smooth(0., 4., b)
-    return cv.result(px, px, {'plates_cm': [9., 36.], 'stretch': stretch, 'furrow': 'Worley F2 - F1 < 1.4 cm'})
+            cv.cavity[i] = 1. - PT.smooth(0., 3., b)
+    return cv.result(px, px, {'plates_cm': [6.5, 52.], 'stretch': stretch, 'furrow': 'Worley F2 - F1 under 0.9 cm',
+                              'shear_cm': 7.})
 
 
 def texture_set(spec, g, surface, uv, tile_m, keys):
@@ -929,8 +936,8 @@ def choose_cell(kind, card, centre, radii):
     return table[-1][0]
 
 
-def add_card(mesh, card, cell_index, centre, radii):
-    """A folded cluster card: 2 rows x 3 columns, 4 triangles, the front facing out of the crown."""
+def card_points(card, centre, radii):
+    """The six corners of a folded card and its front normal (facing out of the crown)."""
     d, size, b = card['dir'], card['size'], card['base']
     n0 = sub(UP, mul(d, dot(UP, d)))
     if length(n0) < 1e-3:
@@ -942,8 +949,15 @@ def add_card(mesh, card, cell_index, centre, radii):
     w = norm(cross(d, n0))
     half = size * .5
     fold = mul(n0, size * FOLD)
+    top = add(b, mul(d, size))
     pts = [add(b, mul(w, -half * .8)), add(b, mul(fold, .3)), add(b, mul(w, half * .8)),
-           add(add(b, mul(d, size)), mul(w, -half)), add(add(b, mul(d, size)), fold), add(add(b, mul(d, size)), mul(w, half))]
+           add(top, mul(w, -half)), add(top, fold), add(top, mul(w, half))]
+    return pts, n0
+
+
+def add_card(mesh, card, cell_index, centre, radii):
+    """A folded cluster card: 2 rows x 3 columns, 4 triangles, the front facing out of the crown."""
+    pts, n0 = card_points(card, centre, radii)
     u0, v0, u1, v1 = cell_uv(cell_index)
     um = (u0 + u1) * .5
     du = (u1 - u0) * .5
@@ -962,15 +976,28 @@ def add_card(mesh, card, cell_index, centre, radii):
     return n0
 
 
+def tree_top(stems, cards):
+    tops = [p[2] for s in stems for p in s.points]
+    tops += [c['base'][2] + max(0., c['dir'][2]) * c['size'] for c in cards]
+    return max(tops)
+
+
 def build_kind(kind):
-    """Mesh and statistics of one kind."""
+    """Mesh and statistics of one kind; the stem length scale is calibrated twice so the tree's top (leaf cards
+    included) lands on height_cm, while the trunk diameter and the pruned height stay absolute."""
     P = SPECIES[kind]
-    stems, cards = generate(kind)
+    scale = P['height_cm']
+    for _ in range(3):
+        stems, cards = generate(kind, scale)
+        scale *= P['height_cm'] / tree_top(stems, cards)
+    stems, cards = generate(kind, scale)
     mesh = Mesh()
     rng = random.Random(P['seed'] + 99)
     for stem in stems:
         add_stem(mesh, stem, sides_for(stem, P), BARK['tile_m'][0], round(rng.random() * 2., 3))
     centre, radii = crown_ellipsoid(cards)
+    floor_z = P['prune_cm'] - CARD_HANG_CM
+    cards = [c for c in cards if min(p[2] for p in card_points(c, centre, radii)[0]) >= floor_z]
     usage = {}
     outward = 0
     for card in cards:
