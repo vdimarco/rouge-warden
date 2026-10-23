@@ -472,7 +472,7 @@ export function createJobs({ city, combat, cars = null, seed = 4711 }) {
     if (J.offersOn && !J.active && (!offerAt || Math.hypot(h.x - offerAt.x, h.z - offerAt.z) > JOB.refresh)) refreshOffers(h.x, h.z);
     // crimes: one now and then near the hero, with a shout; it is over after a minute if nobody comes
     if (J.offersOn && !J.active && !h.busy) {
-      J.offers = J.offers.filter((o) => !(o.crime && t > o.until && (emit({ type: "crimeover", job: o.type, x: o.x, z: o.z }), true)));
+      if (J.offers.some((o) => o.crime && t > o.until)) J.offers = J.offers.filter((o) => !(o.crime && t > o.until && (emit({ type: "crimeover", job: o.type, x: o.x, z: o.z }), true)));
       if (J.crimesOn && !J.offers.some((o) => o.crime) && (crimeT -= dt) <= 0) J.crime(null, h, t);
     }
     // a marker you walk or swing into starts its job
