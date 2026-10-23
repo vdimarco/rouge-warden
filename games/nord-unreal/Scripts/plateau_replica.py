@@ -2256,7 +2256,7 @@ def _passage_walk(world, L, surfaces, strip, counts, stops, oa, u, out, xs, i, j
         b = world.building_ray(add(q, out, s + 1.), out, PASSAGE_LONG)
         if b is not None:
             e = min(e, s + 1. + b)
-        t = s + 50.
+        t = max(s, left, right) + 50.
         while t < e:                                    # the passage opens out where a side wall ends
             c = add(q, out, t)
             if world.building_ray(c, u, PASSAGE_WIDE) is None or world.building_ray(c, (-u[0], -u[1]), PASSAGE_WIDE) is None:

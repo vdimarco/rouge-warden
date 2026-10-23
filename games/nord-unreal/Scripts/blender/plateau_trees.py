@@ -982,15 +982,21 @@ def tree_top(stems, cards):
     return max(tops)
 
 
-def build_kind(kind):
-    """Mesh and statistics of one kind; the stem length scale is calibrated twice so the tree's top (leaf cards
-    included) lands on height_cm, while the trunk diameter and the pruned height stay absolute."""
+def calibrated(kind):
+    """Stems and cards of one kind with the stem length scale calibrated (three passes) so the tree's top, leaf
+    cards included, lands on height_cm; the trunk diameter and the pruned height stay absolute."""
     P = SPECIES[kind]
     scale = P['height_cm']
     for _ in range(3):
         stems, cards = generate(kind, scale)
         scale *= P['height_cm'] / tree_top(stems, cards)
-    stems, cards = generate(kind, scale)
+    return generate(kind, scale)
+
+
+def build_kind(kind):
+    """Mesh and statistics of one kind."""
+    P = SPECIES[kind]
+    stems, cards = calibrated(kind)
     mesh = Mesh()
     rng = random.Random(P['seed'] + 99)
     for stem in stems:
