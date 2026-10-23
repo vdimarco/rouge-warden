@@ -494,6 +494,9 @@ def check_report_and_profile(group, tune):
     assert "co-op guard unverified" in results[tune["winner"]]["reasons"]
     verdict = json.loads((group / "verdict.json").read_text())
     assert gates(verdict)["confirmed"]["result"] == "unverified" and gates(verdict)["look_vs_baseline"]["result"] == "pass"
+    # One repeat gate, from the tune's two ceiling renders: a second, unverified copy would hold every round at unverified.
+    assert [gate["name"] for gate in verdict["gates"]].count("repeat_ssim_min") == 1, verdict["gates"]
+    assert gates(verdict)["repeat_ssim_min"]["result"] == "pass" and gates(verdict)["repeat_ssim_min"]["value"] == 1.0
     assert verdict["status"] == "unverified" and (group / "report.json").is_file() and (group / "review.html").is_file()
     page = (group / "review.html").read_text()
     assert page.count('class="row"') == 20 and page.count('class="flip"') == 20 and "S1-frame.png" in page

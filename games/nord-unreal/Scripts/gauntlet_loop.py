@@ -1096,7 +1096,7 @@ def round_report(group, loop):
     record = records.get(chosen) or {}
     repeat = (tune.get("ties") or {}).get("repeat") or {}
     gates = M.look_gates(loop, record.get("images"), baseline_mean=(tune.get("baseline") or {}).get("look"),
-                         repeat={"ceiling": repeat["min"]} if repeat.get("min") is not None else None)
+                         repeat_min=repeat.get("min"))
     results = tune["confirmation"]["results"]
     open_only = all(reason.startswith(missing_evidence) for result in results if result["id"] != "baseline"
                     for reason in result.get("reasons", []))

@@ -473,17 +473,18 @@ def stream_gates(loop, summary=None, intervals=None, native_windows=None):
                  stream["decoded_vs_native_max_fps"], unit="fps")]
 
 
-def look_gates(loop, images, baseline_mean=None, repeat=None):
+def look_gates(loop, images, baseline_mean=None, repeat_min=None):
     """The visual check: every image SSIM against the ceiling, the mean against the production profile, and the
-    run-to-run SSIM of the two ceiling renders. images and repeat map view names to SSIM. Without the second ceiling
-    render the repeat gate is unverified, so the round cannot pass."""
+    run-to-run SSIM of the two ceiling renders. images maps view names to SSIM; repeat_min is the lowest SSIM of
+    ceiling run A against run B. Without the second ceiling render the repeat gate is unverified, so the round
+    cannot pass."""
     look = loop["budgets"]["look"]
     values = list((images or {}).values())
     mean = sum(values) / len(values) if values else None
     return [gate("image_ssim_min", min(values) if values else None, look["image_ssim_min"], op=">=", unit="SSIM"),
             gate("look_vs_baseline", None if mean is None or baseline_mean is None else mean - baseline_mean, 0.0, op=">=",
                  unit="SSIM", note="candidate mean minus the production profile mean"),
-            gate("repeat_ssim_min", min(repeat.values()) if repeat else None, look["repeat_ssim_min"], op=">=",
+            gate("repeat_ssim_min", repeat_min, look["repeat_ssim_min"], op=">=",
                  unit="SSIM", note="ceiling run A against run B; below the limit the round is invalid")]
 
 
