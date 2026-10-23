@@ -79,8 +79,10 @@ MAX_BATCH_TRIANGLES = 60000
 # balusters, ground cover, creeper cards) adds about 270,000 triangles. Raised to 3.15 million (the agreed ceiling is
 # 3.5 million): the walls-and-collision pass adds about 160,000, mostly the post-1945 kit's balcony slabs, guards,
 # patio doors and panels on 6 blocks and 8 towers, the 3 m window grid on the background skins, and the invisible
-# guard walls (two faces per guard run).
-TRIANGLE_BUDGET = 3150000
+# guard walls (two faces per guard run). Raised to 3.2 million: the rear-surfaces pass adds about 86,000, mostly the
+# blind or curtain cards behind some 23,000 rear, background and post-1945 windows and patio doors, plus the gallery
+# privacy screens, the roofs and roof props of the 252 background masses and the board gates' ledges and braces.
+TRIANGLE_BUDGET = 3200000
 
 D_BACK = 4.0              # glass, door leaves and recess backs: 1 cm ahead of the 3 cm OSM glass cards
 REVEAL = 12.0
