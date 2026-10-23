@@ -28,6 +28,12 @@ QUALITY = ",".join("sg." + name + "Quality 2" for name in (
     "PostProcess", "Texture", "Effects", "Foliage")) + (
     ",sg.GlobalIlluminationQuality 1,sg.ReflectionQuality 1,sg.ShadowQuality 1,"
     "r.Shadow.Virtual.Enable 0,r.ScreenPercentage 75,t.MaxFPS 60")
+# The mobile gauntlet (Scripts/gauntlet_loop.py) writes here; NORD_STREAM_QUALITY=file: and NORD_STREAM_GAUNTLET
+# accept paths in this folder only. The phone profile is opt-in until the user approves paired captures.
+GAUNTLET = PROJECT / "Saved/Gauntlet"
+PHONE_PROFILE = "NordPhoneStream"
+# A candidate file holds only "cvar number" pairs with dotted CVar names, so it cannot run a console command.
+CANDIDATE_PAIR = re.compile(r"[A-Za-z]\w*(?:\.\w+)+ [+-]?\d+(?:\.\d+)?")
 
 
 # The public host runs the live sky. A QA lifecycle may pin it, for example
@@ -176,8 +182,69 @@ def stream_settings():
             "scheduling": int(scheduling)}
 
 
+def stream_quality(value=None):
+    """NORD_STREAM_QUALITY for both players: current (QUALITY, the default), phone (the NordPhoneStream device profile
+    in Config/DefaultDeviceProfiles.ini) or file:<path> (a gauntlet candidate .execcmds file under Saved/Gauntlet)."""
+    value = os.environ.get("NORD_STREAM_QUALITY", "current") if value is None else value
+    if value == "current":
+        return {"name": "current", "execcmds": QUALITY}
+    if value == "phone":
+        quality_cvars({"device_profile": PHONE_PROFILE})
+        return {"name": "phone", "device_profile": PHONE_PROFILE}
+    path = Path(value[5:]).expanduser().resolve() if value.startswith("file:") and value[5:].strip() else None
+    require(path is not None and path.suffix == ".execcmds" and GAUNTLET.resolve() in path.parents and path.is_file(),
+            "NORD_STREAM_QUALITY accepts current, phone or file:<path> naming a candidate .execcmds file under "
+            "Saved/Gauntlet; rejected " + repr(value))
+    text = path.read_text().strip()
+    pairs = text.split(",")
+    require(all(CANDIDATE_PAIR.fullmatch(pair) for pair in pairs) and dict(pair.split(" ") for pair in pairs).get("t.MaxFPS") == "60",
+            "NORD_STREAM_QUALITY file: must hold comma-separated 'cvar number' pairs that keep t.MaxFPS 60.")
+    return {"name": "file", "path": str(path), "execcmds": text}
+
+
+def quality_cvars(quality):
+    """The CVars a stream quality sets (later entries win), which a gauntlet run reads back."""
+    import gauntlet_tune
+    if "device_profile" in quality:
+        ini = gauntlet_tune.PROFILES_INI
+        profile = gauntlet_tune.read_profile(ini.read_text(), quality["device_profile"]) if ini.is_file() else None
+        require(profile is not None and profile["listed"] and profile["cvars"],
+                f"NORD_STREAM_QUALITY=phone needs a listed [{quality['device_profile']} DeviceProfile] in Config/DefaultDeviceProfiles.ini.")
+        return profile["cvars"]
+    return gauntlet_tune.parse_execcmds(quality["execcmds"])
+
+
+def gauntlet_expect(quality):
+    """The -NordGauntletExpect= file text for a stream quality: one name=value line per CVar."""
+    import gauntlet_tune
+    return gauntlet_tune.expect_text({"id": "stream-" + quality["name"], "cvars": quality_cvars(quality)})
+
+
+def gauntlet_run():
+    """NORD_STREAM_GAUNTLET=<run dir>: NordHost drives the gauntlet loop in stream mode and writes into that folder under
+    Saved/Gauntlet. A comparable run needs the sky pinned, so -NordHour= and -NordWeather= must be in NORD_SKY_ARGS."""
+    value = os.environ.get("NORD_STREAM_GAUNTLET")
+    if value is None:
+        return None
+    run = Path(value).expanduser().resolve()
+    require(bool(value.strip()) and GAUNTLET.resolve() in run.parents, "NORD_STREAM_GAUNTLET must name a run folder under Saved/Gauntlet.")
+    sky = [argument.lower() for argument in sky_arguments()]
+    require(any(argument.startswith("-nordhour=") for argument in sky) and any(argument.startswith("-nordweather=") for argument in sky),
+            "NORD_STREAM_GAUNTLET needs a pinned sky: put -NordHour= and -NordWeather= in NORD_SKY_ARGS.")
+    return run
+
+
+def gauntlet_flags(run):
+    """NordHost's gauntlet flags and world flags from Data/Gauntlet/loop.json, plus the CSV profiler's GPU stats."""
+    loop = json.loads((PROJECT / "Data/Gauntlet/loop.json").read_text())
+    flag = loop["gauntlet_flags"]
+    return [flag["enable"], flag["mode"] + "stream", flag["run"] + str(run), flag["expect"] + str(run / "stream.expect"),
+            "-csvGpuStats", "-csvCompression=0", *loop["world_flags"]["all"]]
+
+
 def game_command(friend, log):
     settings = stream_settings()
+    quality = stream_quality()
     # shortcut: VP8 avoids this PC's stalled H264 capture; retest hardware encoding after UE/driver upgrades.
     arguments = [str(BINARY), "Quebec", "127.0.0.1:7791" if friend else "/Game/Maps/LaFontaine?listen",
                  "-RenderOffscreen", "-ForceRes", "-ResX=1280", "-ResY=720", "-AudioMixer", "-Unattended", "-NoDebugExecBindings",
@@ -185,10 +252,13 @@ def game_command(friend, log):
                  "-PixelStreamingWebRTCFps=60", f"-PixelStreamingWebRTCMaxBitrate={settings['max_bitrate']}",
                  f"-PixelStreamingWebRTCMinBitrate={settings['min_bitrate']}",
                  f"-PixelStreamingWebRTCStartBitrate={settings['start_bitrate']}", "-PixelStreamingKeyFilter=Tilde", "-PixelStreamingID=" + ("NordFriend1" if friend else "NordHost"),
-                 "-ExecCmds=" + QUALITY + f",MediaIO.EnableExperimentalScheduling {settings['scheduling']}", "-abslog=" + str(log)]
+                 *(["-DeviceProfile=" + quality["device_profile"]] if "device_profile" in quality else []),
+                 "-ExecCmds=" + (quality["execcmds"] + "," if "execcmds" in quality else "")
+                 + f"MediaIO.EnableExperimentalScheduling {settings['scheduling']}", "-abslog=" + str(log)]
     arguments += ["-NordStreamFps", "-NordTouchControls"] + [{"idle": "-NordIdleThrottle", "windowed": "-windowed"}[flag] for flag in settings["flags"]]
     arguments += ["-NordNoCampaignSave", "-saveddirsuffix=BrowserGuest"] if friend else ["-port=7791", *sky_arguments()]
-    return arguments
+    gauntlet = None if friend else gauntlet_run()
+    return arguments + (gauntlet_flags(gauntlet) if gauntlet else [])
 
 
 def run():
