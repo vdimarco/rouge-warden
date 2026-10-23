@@ -1250,7 +1250,7 @@ def build_streets(world):
         'curb_extensions_on_verges', 'curb_extensions_on_corners', 'mapped_trees_for_host',
         'yard_slabs_past_ruelle_mouths', 'curb_extension_trees_at_curb', 'sidewalk_risers', 'corner_risers',
         'yard_risers', 'yard_mouth_wedges', 'yard_mouth_wedge_square_metres', 'sidewalk_pieces_split',
-        'passages', 'passage_square_metres')}
+        'passages', 'passage_square_metres', 'passage_lead_ins', 'tree_pits_off_strip')}
     # Carriageway asphalt.
     for s in world.segs:
         if s['excluded']:
@@ -2287,6 +2287,32 @@ def _passage_walk(world, L, surfaces, strip, counts, stops, oa, u, out, xs, i, j
     if len(rows) < 2:
         return
     laid = 0
+    # The lead-in: the first row starts up to a row past what stops the walk at its near end (the parterre's far
+    # edge, a façade corner), so a quad from that edge, found to 1 cm at both ends of the first row, closes the gap
+    # where bare floor showed. A side or the near edge above lower ground gets a wall.
+    y0, l0, r0 = rows[0]
+
+    def near_edge(xc):
+        lo, hi = y0 - 2 * PASSAGE_ROW, y0
+        if blocked(at(xc, hi)) or not blocked(at(xc, lo)):
+            return y0
+        for _ in range(8):
+            mid = (lo + hi) / 2
+            lo, hi = (mid, hi) if blocked(at(xc, mid)) else (lo, mid)
+        return hi + .5
+    yl, yr = near_edge(l0 + 3.), near_edge(r0 - 3.)
+    lead = [at(l0, yl), at(r0, yr), at(r0, y0), at(l0, y0)]
+    if max(y0 - yl, y0 - yr) > 1. and len(dedupe(lead)) >= 3:
+        key = 'yard_path' if world.traffic_distance(lead) >= CLEAR else 'curb'
+        if L.flat(key, lead, Z_WALK):
+            ccw = area(lead) > 0
+            for a, b, d in ((lead[0], lead[1], (-out[0], -out[1])), (lead[1], lead[2], u), (lead[3], lead[0], back)):
+                c = add(lerp(a, b, .5), d, 4.)
+                if math.dist(a, b) > 1. and not world.in_building(c) and surfaces.floor(c) < Z_WALK - 1.:
+                    L.wall(key, a, b, 0., Z_WALK) if ccw else L.wall(key, b, a, 0., Z_WALK)
+            surfaces.add(dedupe(lead) if ccw else dedupe(lead)[::-1], Z_WALK, 'yard')
+            counts['passage_square_metres'] += abs(area(lead)) / 10000
+            counts['passage_lead_ins'] += 1
     k, last = 0, len(rows) - 1
 
     def straight(a, b):
