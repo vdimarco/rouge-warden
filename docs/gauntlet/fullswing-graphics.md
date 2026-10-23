@@ -1194,3 +1194,6 @@ Increment38 shipped #640 as69c6ecff after all6CI/review/current9checkpreview/fre
 ## Increment39 — unchanged mission marker buffers (pending release)
 
 Value-based marker dirtiness avoids static geometry rewrites/uploads whiletime animates. Focused actualzero-transfer/mutablegoal/color/count/hide/show/referenceimagechecks; no anchors/physics/height/quality change. All20dimensions historicalcontextonly,no newpoints; affectedChrome responsiveness/stability unverified,total/deltawithheld. Evidence fullswing-r39-marker-dirty; noFPSgate.
+
+
+Increment39 shipped #642 asf84e61f3 after all6CI/review/current20deployedchecks/freshrebase; productionactionview HTTP200 exactbytes verified (fullhash in fullswing-r39-marker-dirty/production-verification.json). Canonical markerdirty scenarios published and OpenSpec archived. ActualChrome/FPSbenefit unverified; totalwithheld.

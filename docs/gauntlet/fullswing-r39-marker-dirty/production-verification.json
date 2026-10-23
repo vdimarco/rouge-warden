@@ -1,0 +1,12 @@
+{
+  "stage": "production_verified",
+  "merge": "f84e61f35f159c004989b19dd9a41d28780111b7",
+  "files": [
+    {
+      "file": "js/actionview.js",
+      "status": 200,
+      "exact": true,
+      "sha256": "54482944f162629331378f847e6186c895a35992dbb248d4890fd8e3e29dc646"
+    }
+  ]
+}
