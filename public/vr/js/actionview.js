@@ -201,6 +201,7 @@ export function createActionView(scene, { cars, jobs, traffic = null }) {
       im.setMatrixAt(n, M); im.instanceColor.setXYZ(n, TQ.paint[0], TQ.paint[1], TQ.paint[2]);
     }
   }
+  const markerState = new Float64Array(MAX_MARK * 6).fill(NaN);
   const upload = (a, n) => { a.clearUpdateRanges(); if (n > 0) { a.addUpdateRange(0, n * a.itemSize); a.needsUpdate = true; } };
   const V = {
     root,
@@ -246,21 +247,30 @@ export function createActionView(scene, { cars, jobs, traffic = null }) {
       }
       carMesh.count = nb; carMesh.visible = nb > 0; upload(carMesh.instanceMatrix, nb); upload(carMesh.instanceColor, nb);
       // markers: the offers, or the running job's goal
-      let m = 0;
+      let m = 0, markersDirty = false;
       const put = (x, y, z, col) => {
         if (m >= MAX_MARK) return;
-        M.makeTranslation(x, y + 0.05, z);
-        beams.setMatrixAt(m, M); rings.setMatrixAt(m, M);
-        bCol.setXYZ(m, col[0], col[1], col[2]); rings.geometry.attributes.aCol.setXYZ(m, col[0], col[1], col[2]);
+        const i = m * 6;
+        if (markerState[i] !== x || markerState[i + 1] !== y || markerState[i + 2] !== z || markerState[i + 3] !== col[0] || markerState[i + 4] !== col[1] || markerState[i + 5] !== col[2]) {
+          markerState[i] = x; markerState[i + 1] = y; markerState[i + 2] = z;
+          markerState[i + 3] = col[0]; markerState[i + 4] = col[1]; markerState[i + 5] = col[2];
+          M.makeTranslation(x, y + 0.05, z);
+          beams.setMatrixAt(m, M); rings.setMatrixAt(m, M);
+          bCol.setXYZ(m, col[0], col[1], col[2]); rings.geometry.attributes.aCol.setXYZ(m, col[0], col[1], col[2]);
+          markersDirty = true;
+        }
         m++;
       };
       if (opts.markers !== false) {
         if (!jobs.active) for (const o of jobs.offers) put(o.x, o.y, o.z, JOB_COL[o.type] || JOB_COL.goal);
         else if (jobs.card && jobs.card.goal) { const g = jobs.card.goal; put(g.x, g.y, g.z, JOB_COL.goal); }
       }
+      markersDirty ||= beams.count !== m;
       beams.count = rings.count = m;
-      upload(beams.instanceMatrix, m); upload(rings.instanceMatrix, m);
-      upload(bCol, m); upload(rings.geometry.attributes.aCol, m);
+      if (markersDirty) {
+        upload(beams.instanceMatrix, m); upload(rings.instanceMatrix, m);
+        upload(bCol, m); upload(rings.geometry.attributes.aCol, m);
+      }
       // the balloon
       const b = jobs.balloons && jobs.balloons[0];
       balloon.visible = !!b;

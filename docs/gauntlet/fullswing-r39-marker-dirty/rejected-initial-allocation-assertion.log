@@ -1,0 +1,12 @@
+{"rows":[{"n":3,"bounded":true,"bytes":228,"expected":684,"cars":3,"markers":3,"fallback":0},{"n":1,"bounded":true,"bytes":76,"expected":76,"cars":1,"markers":1,"fallback":0},{"n":0,"bounded":true,"bytes":0,"expected":0,"cars":0,"markers":0,"fallback":0},{"n":7,"bounded":true,"bytes":532,"expected":532,"cars":7,"markers":7,"fallback":3},{"n":20,"bounded":true,"bytes":1520,"expected":1520,"cars":20,"markers":8,"fallback":16},{"n":2,"bounded":true,"bytes":152,"expected":152,"cars":2,"markers":2,"fallback":0}],"different":0,"varied":25974,"maxDelta":0}
+FAIL bounded action transfer 3
+  {"n":3,"bounded":true,"bytes":228,"expected":684,"cars":3,"markers":3,"fallback":0}
+PASS: bounded action transfer 1
+PASS: bounded action transfer 0
+PASS: bounded action transfer 7
+PASS: bounded action transfer 20
+PASS: bounded action transfer 2
+PASS: model and fallback cars both exercised
+PASS: unchanged nonblank car and marker image
+PASS: no page errors
+FAIL: action uploads (1 failed, 8 passed)
