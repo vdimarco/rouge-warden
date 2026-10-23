@@ -2,5 +2,5 @@
 - [x] Inspect HUD duplicate queries and read-only combat selector.
 - [x] Baseline proof and focused prompt/button equivalence tests.
 - [x] Minimal per-HUD query reuse; browser checks.
-- [ ] Evidence/review/CI/current preview/rebases/exact merge/production.
-- [ ] Canonical spec/archive.
+- [x] Evidence/review/CI/current preview/rebases/exact merge/production.
+- [x] Canonical spec/archive.

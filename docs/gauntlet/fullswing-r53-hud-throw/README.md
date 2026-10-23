@@ -3,3 +3,6 @@ HUD computes current throwable availability once and shares it with prompt selec
 
 All20dimensions assessed: Lighting, Color palette, Detail density, Texture/material, Composition/camera, Atmosphere, Character models, Animation smoothness, Particles/VFX, UI polish, Responsiveness/input latency, Controls feel, Mission clarity, Pacing, Fun factor, Difficulty curve, Feedback, Sound design, Variety, Performance stability: no new points awarded. Existing visuals/input/content unchanged; actual Chrome120Hz, physical devices/listening/full-playthrough unverified. No FPS claim; total/delta withheld.
 Review/CI/authenticated preview/rebases/merge/production pending.
+
+
+Increment53 shipped #670 asff8861c5 after all6CI/review/current4HUDdeployedchecks/exactmainbytes/rebase before AND afterpreview/exactmerge. Productionmain HTTP200 exactSHA d58ec0ebbad7a244cc85beabfcee1bef89b41c3bb44741021227c8f41e85f9c9 verified. Canonical HUD throw-query scenarios published and OpenSpec archived. ActualChrome/FPSbenefit unverified; totalwithheld.
