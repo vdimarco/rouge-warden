@@ -108,9 +108,9 @@
     "pad_px": 10,
     "cell_stats": {
      "nm_yellow": {
-      "cover": 0.388,
+      "cover": 0.3876,
       "mean_srgb": [
-       194.0,
+       194.1,
        155.3,
        38.8
       ]
@@ -172,15 +172,15 @@
       ]
      },
      "as_yellow": {
-      "cover": 0.2789,
+      "cover": 0.2755,
       "mean_srgb": [
        197.2,
-       158.7,
+       158.8,
        39.8
       ]
      },
      "as_maroon": {
-      "cover": 0.2409,
+      "cover": 0.2388,
       "mean_srgb": [
        117.5,
        43.7,
@@ -188,15 +188,15 @@
       ]
      },
      "as_sparse": {
-      "cover": 0.0976,
+      "cover": 0.0968,
       "mean_srgb": [
-       167.1,
-       133.5,
+       167.0,
+       133.4,
        39.2
       ]
      },
      "hl_gold": {
-      "cover": 0.2852,
+      "cover": 0.2847,
       "mean_srgb": [
        214.4,
        166.2,
@@ -204,9 +204,9 @@
       ]
      },
      "hl_sparse": {
-      "cover": 0.1252,
+      "cover": 0.1249,
       "mean_srgb": [
-       165.9,
+       166.0,
        133.0,
        34.6
       ]
@@ -243,8 +243,8 @@
      "srgb": true,
      "compression": "TC_DEFAULT",
      "sampler": "SAMPLERTYPE_COLOR",
-     "sha256": "434846e25ad1d9f0f49d6999d3018812fbd0bbec6a8678fbe60e2d27dd36d333",
-     "raw_sha256": "ab0f65acdd632901dd15764c77cfb050b9c4683d7b816c14f643f8523aa13c97",
+     "sha256": "1d235736c8b2a3aea7a724a3b8b0dca78ec951fdac47a437101c0fe8c93eb5ac",
+     "raw_sha256": "b18a25dab8f33a8a3e572a650c23543f905c69df1b43d2bd7b9234da65de042c",
      "alpha": true
     },
     "nor_dx": {
@@ -252,8 +252,8 @@
      "srgb": false,
      "compression": "TC_NORMALMAP",
      "sampler": "SAMPLERTYPE_NORMAL",
-     "sha256": "5556af1849922cc2641183ce137777b2798d32498d1f1a5181c96208e45e34da",
-     "raw_sha256": "b8a60a2c5de069aebb6343b1482a722dbb479c725a98619ebd691d4617769bb0"
+     "sha256": "c36dc7c9df0d4a277fb29d09601b00e1e3e32286c0cdd00929765c19793844ef",
+     "raw_sha256": "3489f5974890aab04c291bfde18b92c626e4cf1327a2ae8516547003175b16e1"
     },
     "rough": {
      "file": "T_Replica_TreeLeaves_rough.png",
@@ -277,7 +277,7 @@
    "uv": "atlas",
    "alpha": true,
    "base_color_srgb": "#B58D2E",
-   "coverage": 0.2546,
+   "coverage": 0.2542,
    "uv_note": "OBJ UVs address the atlas directly (0..1, v up); tiling 1"
   },
   "tree_bark": {
@@ -553,7 +553,7 @@
   "norway_maple": {
    "name": "Norway maple (Acer platanoides)",
    "obj": "Tree_norway_maple.obj",
-   "sha256": "b8eb49916ffc73340c7245d46fd98896f21f973f9b0cbf0f8a981982c1e49a1f",
+   "sha256": "03da15914dddbfc0ee497d6d14067a362e7526a0f024999de38947c998b47b8e",
    "materials": {
     "bark": "Bark_NorwayMaple",
     "leaves": "Tree_Leaves_Autumn"
@@ -562,50 +562,50 @@
     "bark": "norway_maple_bark",
     "leaves": "norway_maple_leaves"
    },
-   "height_cm": 1434.0,
+   "height_cm": 1453.8,
    "trunk_cm": 48.0,
-   "crown_width_cm": 1744.5,
-   "crown_base_cm": 304.7,
+   "crown_width_cm": 1591.6,
+   "crown_base_cm": 276.8,
    "clear_trunk_cm": 369.9,
    "prune_cm": 300.0,
    "leaf_retention": 0.8,
    "triangles": {
-    "bark": 9765,
-    "leaves": 6028,
-    "total": 15793
+    "bark": 9273,
+    "leaves": 5452,
+    "total": 14725
    },
    "triangle_target": 30000,
    "bounds_cm": [
-    -860.5,
-    -956.1,
+    -721.2,
+    -925.0,
     -2.0,
-    848.6,
-    788.4,
-    1434.0
+    780.9,
+    666.6,
+    1453.8
    ],
    "seed": 4101,
    "stems_per_level": [
     4,
-    24,
-    231
+    25,
+    216
    ],
-   "cards": 1507,
-   "outward_cards": 1495,
+   "cards": 1363,
+   "outward_cards": 1354,
    "cell_usage": {
-    "nm_green": 229,
-    "nm_mixed": 449,
-    "nm_sparse": 226,
-    "nm_yellow": 603
+    "nm_green": 183,
+    "nm_mixed": 409,
+    "nm_sparse": 237,
+    "nm_yellow": 534
    },
    "crown_centre_cm": [
-    -20.6,
-    82.5,
-    873.0
+    20.6,
+    147.1,
+    854.5
    ],
    "crown_radii_cm": [
-    802.1,
-    816.0,
-    519.9
+    686.7,
+    760.2,
+    556.8
    ],
    "weber_penn": {
     "shape": 1,
@@ -675,7 +675,7 @@
   "silver_maple": {
    "name": "Silver maple (Acer saccharinum)",
    "obj": "Tree_silver_maple.obj",
-   "sha256": "b036091465b121d5d103d6031b83c7917458e7beaf4e8e25d8e26f1c672a5cdf",
+   "sha256": "c286898bd72201b5b6e76476aff5fd949ed32b1f38dd4e4286d434852c425603",
    "materials": {
     "bark": "Bark_SilverMaple",
     "leaves": "Tree_Leaves_Autumn"
@@ -684,49 +684,49 @@
     "bark": "silver_maple_bark",
     "leaves": "silver_maple_leaves"
    },
-   "height_cm": 1702.2,
+   "height_cm": 1700.3,
    "trunk_cm": 58.0,
-   "crown_width_cm": 1628.2,
-   "crown_base_cm": 307.6,
-   "clear_trunk_cm": 384.3,
+   "crown_width_cm": 1746.5,
+   "crown_base_cm": 307.7,
+   "clear_trunk_cm": 387.5,
    "prune_cm": 330.0,
    "leaf_retention": 0.62,
    "triangles": {
-    "bark": 10343,
-    "leaves": 3848,
-    "total": 14191
+    "bark": 9695,
+    "leaves": 3424,
+    "total": 13119
    },
    "triangle_target": 30000,
    "bounds_cm": [
-    -837.5,
-    -818.9,
+    -909.6,
+    -925.5,
     -2.8,
-    734.9,
-    809.3,
-    1702.2
+    780.2,
+    821.0,
+    1700.3
    ],
    "seed": 4202,
    "stems_per_level": [
     4,
     27,
-    231
+    208
    ],
-   "cards": 962,
-   "outward_cards": 959,
+   "cards": 856,
+   "outward_cards": 855,
    "cell_usage": {
     "sm_orange": 242,
-    "sm_sparse": 296,
-    "sm_yellow": 424
+    "sm_sparse": 250,
+    "sm_yellow": 364
    },
    "crown_centre_cm": [
-    -49.5,
-    3.2,
-    980.7
+    -60.8,
+    52.8,
+    986.2
    ],
    "crown_radii_cm": [
-    722.5,
-    775.1,
-    655.5
+    791.1,
+    818.5,
+    661.1
    ],
    "weber_penn": {
     "shape": 7,
@@ -795,7 +795,7 @@
   "honey_locust": {
    "name": "Thornless honey locust (Gleditsia triacanthos var. inermis)",
    "obj": "Tree_honey_locust.obj",
-   "sha256": "fd6c1456d88f29f3c2e6d083593b04341b8687a4b8fa54df496e1782bf80aa55",
+   "sha256": "04913715e104d00528506b39a15853f6e0e2279047387bc2cc3f558092b618c6",
    "materials": {
     "bark": "Bark_HoneyLocust",
     "leaves": "Tree_Leaves_Autumn"
@@ -804,48 +804,48 @@
     "bark": "honey_locust_bark",
     "leaves": "honey_locust_leaves"
    },
-   "height_cm": 1357.5,
+   "height_cm": 1357.6,
    "trunk_cm": 40.0,
-   "crown_width_cm": 1502.4,
-   "crown_base_cm": 297.7,
+   "crown_width_cm": 1623.5,
+   "crown_base_cm": 317.3,
    "clear_trunk_cm": 368.4,
    "prune_cm": 320.0,
    "leaf_retention": 0.46,
    "triangles": {
-    "bark": 6353,
-    "leaves": 1532,
-    "total": 7885
+    "bark": 6078,
+    "leaves": 1312,
+    "total": 7390
    },
    "triangle_target": 30000,
    "bounds_cm": [
-    -822.7,
-    -726.5,
+    -899.7,
+    -803.3,
     -1.9,
-    679.7,
-    687.8,
-    1357.5
+    723.8,
+    670.4,
+    1357.6
    ],
    "seed": 4303,
    "stems_per_level": [
     3,
     19,
-    145
+    134
    ],
-   "cards": 383,
-   "outward_cards": 381,
+   "cards": 328,
+   "outward_cards": 325,
    "cell_usage": {
-    "hl_gold": 215,
-    "hl_sparse": 168
+    "hl_gold": 187,
+    "hl_sparse": 141
    },
    "crown_centre_cm": [
-    -69.1,
-    22.5,
-    842.8
+    -87.5,
+    60.5,
+    832.8
    ],
    "crown_radii_cm": [
-    698.5,
-    664.0,
-    487.8
+    736.5,
+    687.6,
+    463.4
    ],
    "weber_penn": {
     "shape": 2,
@@ -913,7 +913,7 @@
   "linden": {
    "name": "Linden (Tilia cordata / T. americana)",
    "obj": "Tree_linden.obj",
-   "sha256": "5be4a98b4a4d6b0b8dc8e2906ebb2e80597abf71ef13e3914bdcda55ba6c8d30",
+   "sha256": "44cf7e3245ebe40ab3d63858df8b02df1c844682acd01afc7f4689b8b28cdd87",
    "materials": {
     "bark": "Bark_Linden",
     "leaves": "Tree_Leaves_Autumn"
@@ -922,48 +922,48 @@
     "bark": "linden_bark",
     "leaves": "linden_leaves"
    },
-   "height_cm": 1402.0,
+   "height_cm": 1400.3,
    "trunk_cm": 42.0,
-   "crown_width_cm": 845.6,
-   "crown_base_cm": 327.0,
-   "clear_trunk_cm": 335.7,
+   "crown_width_cm": 858.5,
+   "crown_base_cm": 325.5,
+   "clear_trunk_cm": 336.7,
    "prune_cm": 300.0,
    "leaf_retention": 0.64,
    "triangles": {
-    "bark": 12201,
-    "leaves": 5336,
-    "total": 17537
+    "bark": 11832,
+    "leaves": 4924,
+    "total": 16756
    },
    "triangle_target": 30000,
    "bounds_cm": [
-    -426.8,
-    -419.3,
+    -431.8,
+    -467.8,
     -0.9,
-    418.8,
-    359.7,
-    1402.0
+    426.7,
+    381.4,
+    1400.3
    ],
    "seed": 4404,
    "stems_per_level": [
     1,
     32,
-    283
+    268
    ],
-   "cards": 1334,
-   "outward_cards": 1318,
+   "cards": 1231,
+   "outward_cards": 1218,
    "cell_usage": {
-    "li_mixed": 499,
-    "li_yellow": 835
+    "li_mixed": 439,
+    "li_yellow": 792
    },
    "crown_centre_cm": [
-    -6.0,
-    35.7,
-    866.2
+    -1.8,
+    43.5,
+    851.8
    ],
    "crown_radii_cm": [
-    370.1,
-    349.6,
-    497.3
+    372.1,
+    369.7,
+    480.7
    ],
    "weber_penn": {
     "shape": 7,
@@ -1026,7 +1026,7 @@
   "ash": {
    "name": "Green ash (Fraxinus pennsylvanica)",
    "obj": "Tree_ash.obj",
-   "sha256": "403ec70cd44186e0d26cf5b471dba8017c4a3ffa161910a746ec7e11af2204a3",
+   "sha256": "61c0c7ce5d7ccd0e67259a1c423574304f0e33c6c6aac19a8339fa485212dfd7",
    "materials": {
     "bark": "Bark_Ash",
     "leaves": "Tree_Leaves_Autumn"
@@ -1035,49 +1035,49 @@
     "bark": "ash_bark",
     "leaves": "ash_leaves"
    },
-   "height_cm": 1560.5,
+   "height_cm": 1545.6,
    "trunk_cm": 44.0,
-   "crown_width_cm": 1248.5,
-   "crown_base_cm": 387.6,
+   "crown_width_cm": 1092.1,
+   "crown_base_cm": 404.9,
    "clear_trunk_cm": 386.0,
    "prune_cm": 310.0,
-   "leaf_retention": 0.58,
+   "leaf_retention": 0.5,
    "triangles": {
-    "bark": 7019,
-    "leaves": 3004,
-    "total": 10023
+    "bark": 6746,
+    "leaves": 2160,
+    "total": 8906
    },
    "triangle_target": 30000,
    "bounds_cm": [
-    -637.1,
-    -571.3,
+    -562.5,
+    -478.3,
     -1.3,
-    611.4,
-    609.3,
-    1560.5
+    529.6,
+    545.3,
+    1545.6
    ],
    "seed": 4505,
    "stems_per_level": [
     3,
-    23,
-    162
+    22,
+    152
    ],
-   "cards": 751,
-   "outward_cards": 750,
+   "cards": 540,
+   "outward_cards": 535,
    "cell_usage": {
-    "as_maroon": 114,
-    "as_sparse": 208,
-    "as_yellow": 429
+    "as_maroon": 68,
+    "as_sparse": 169,
+    "as_yellow": 303
    },
    "crown_centre_cm": [
-    -12.0,
-    -27.4,
-    954.4
+    -0.2,
+    -40.1,
+    959.7
    ],
    "crown_radii_cm": [
-    561.3,
-    511.7,
-    533.7
+    474.7,
+    443.0,
+    517.3
    ],
    "weber_penn": {
     "shape": 1,
@@ -1129,8 +1129,8 @@
      }
     ],
     "leaves": {
-     "cards": 10,
-     "retention": 0.58,
+     "cards": 9,
+     "retention": 0.5,
      "card_cm": 80.0,
      "down": 48.0,
      "down_v": 20.0,
@@ -1148,7 +1148,7 @@
   "small": {
    "name": "Small yard tree (Amur maple / serviceberry type)",
    "obj": "Tree_small.obj",
-   "sha256": "fff4a1bfaf59de30f8b9f5672709540781f2fe0d7bccecfacaff0a8622f21f60",
+   "sha256": "991ad6597b41a4e2240a9924bd34ae11dbcffb32b007c01c8ea6878ffdd8a361",
    "materials": {
     "bark": "Bark_Small",
     "leaves": "Tree_Leaves_Autumn"
@@ -1158,47 +1158,47 @@
     "leaves": "small_leaves"
    },
    "height_cm": 654.9,
-   "trunk_cm": 17.7,
-   "crown_width_cm": 665.7,
-   "crown_base_cm": 161.0,
-   "clear_trunk_cm": 183.1,
+   "trunk_cm": 17.6,
+   "crown_width_cm": 651.9,
+   "crown_base_cm": 136.5,
+   "clear_trunk_cm": 184.3,
    "prune_cm": 160.0,
    "leaf_retention": 0.66,
    "triangles": {
-    "bark": 4123,
-    "leaves": 2256,
-    "total": 6379
+    "bark": 3486,
+    "leaves": 1732,
+    "total": 5218
    },
    "triangle_target": 15000,
    "bounds_cm": [
-    -332.4,
-    -347.4,
+    -331.0,
+    -323.2,
     -1.3,
-    307.4,
-    318.3,
+    320.9,
+    310.2,
     654.9
    ],
    "seed": 4606,
    "stems_per_level": [
     4,
     21,
-    134
+    104
    ],
-   "cards": 564,
-   "outward_cards": 557,
+   "cards": 433,
+   "outward_cards": 429,
    "cell_usage": {
-    "sx_orange": 274,
-    "sx_red": 290
+    "sx_orange": 218,
+    "sx_red": 215
    },
    "crown_centre_cm": [
-    -7.8,
-    12.7,
-    404.7
+    -0.6,
+    6.4,
+    392.6
    ],
    "crown_radii_cm": [
-    272.5,
-    282.1,
-    209.9
+    292.8,
+    271.5,
+    219.9
    ],
    "weber_penn": {
     "shape": 1,
@@ -1267,17 +1267,17 @@
  "counts": {
   "kinds": 6,
   "triangles": {
-   "norway_maple": 15793,
-   "silver_maple": 14191,
-   "honey_locust": 7885,
-   "linden": 17537,
-   "ash": 10023,
-   "small": 6379
+   "norway_maple": 14725,
+   "silver_maple": 13119,
+   "honey_locust": 7390,
+   "linden": 16756,
+   "ash": 8906,
+   "small": 5218
   },
   "textures": 6
  },
  "source_sha256": {
-  "Scripts/blender/plateau_trees.py": "52f149747e8846340bda77d726a9f6920564e23637623f622ecdd74c9a807679",
+  "Scripts/blender/plateau_trees.py": "fe2cfad3f148f891788a15c72552b8af94f538938d608d909fc6bf2a4aca9fa6",
   "Scripts/plateau_textures.py": "9dc926e15da803b557161015e73eb996ec3d2a7c1e779862e273c05dd4a9d55c"
  }
 }
