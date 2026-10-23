@@ -2316,9 +2316,11 @@ def _passage_walk(world, L, surfaces, strip, counts, stops, oa, u, out, xs, i, j
     if len(rows) < 2:
         return
     laid = 0
-    # The lead-in: the first row starts up to a row past what stops the walk at its near end (the parterre's far
-    # edge, a façade corner), so a quad from that edge, found to 1 cm at both ends of the first row, closes the gap
-    # where bare floor showed. A side or the near edge above lower ground gets a wall.
+    # The lead-in: the first row starts where the seed column clears the parterres, which may be past what stops
+    # the walk at the row's own ends (the parterre's far edge, a parterre walk reaching deeper, a façade corner), so
+    # a quad from that edge, found to 1 cm at both ends of the first row, closes the gap where bare floor showed;
+    # searched back all the way first, then a 50 cm window, and laid only where it overlaps nothing. A side or the
+    # near edge above lower ground gets a wall.
     y0, l0, r0 = rows[0]
 
     def near_edge(xc, reach):
@@ -2338,8 +2340,7 @@ def _passage_walk(world, L, surfaces, strip, counts, stops, oa, u, out, xs, i, j
 
     def clear(quad):
         """No sample inside the quad lies on a parterre, a Plex yard or a building (the lead-in would overlap)."""
-        return not any(blocked(lerp(lerp(quad[0], quad[1], f), lerp(quad[3], quad[2], g), .5 * 0 + 1.) if False else
-                               lerp(lerp(quad[0], quad[3], g), lerp(quad[1], quad[2], g), f))
+        return not any(blocked(lerp(lerp(quad[0], quad[3], g), lerp(quad[1], quad[2], g), f))
                        for f in (.15, .5, .85) for g in (.15, .5, .85))
     for reach in (y0, 2 * PASSAGE_ROW):
         yl, yr = near_edge(l0 + 3., reach), near_edge(r0 - 3., reach)
