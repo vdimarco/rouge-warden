@@ -168,10 +168,13 @@ def png_size(path):
 
 
 def run_timeout(loop, mode, laps):
-    """Seconds a native run may take: the load, the mode's delay, every lap at the lap limit and every hold."""
-    settings = loop["modes"][mode]
-    return (LOAD_S + settings["delay_s"] + (settings["warm_laps"] + laps) * loop["drive"]["max_lap_s"]
-            + len(loop["order"]) * settings["hold_s"])
+    """Seconds the game of a native run may take before it reports: the load, the mode's delay and ready grace, every
+    warm and measured lap at the lap limit, every hold (a look hold may last until its stills time out) and the wait for
+    the CSV file. The NordMobileLoop node gets the same number as maxduration, so Gauntlet never stops the game first."""
+    settings, limits = loop["modes"][mode], loop["run_limits"]
+    hold = max(settings["hold_s"], limits["stills_timeout_s"]) if mode == "look" else settings["hold_s"]
+    return (LOAD_S + settings["delay_s"] + limits["ready_grace_s"] + (settings["warm_laps"] + laps) * loop["drive"]["max_lap_s"]
+            + len(loop["order"]) * hold + limits["csv_wait_s"])
 
 
 def expected_from_file(path):
@@ -500,7 +503,7 @@ def rununreal_command(loop, plan):
     params = [f"mode={plan['mode']}", "size={}x{}".format(*plan["size"]), "sky=" + plan["sky"].replace("_", "-"),
               f"laps={plan['laps']}", f"run='{run}'"]
     params += ([f"deviceprofile={quality['device_profile']}"] if "device_profile" in quality else [f"execcmds='{run}/quality.execcmds'"])
-    params.append(f"expect='{run}/quality.expect'")
+    params += [f"expect='{run}/quality.expect'", f"maxduration={plan['max_s']}"]
     return [str(UAT), "RunUnreal", f"-project={UPROJECT}", f"-ScriptsForProject={UPROJECT}", "-platform=Linux",
             "-configuration=Development", f"-build={PACKAGE}", f"-test={TEST_NODE}({','.join(params)})"]
 
@@ -540,10 +543,11 @@ def native_run(loop, mode, size, sky, laps=None, quality="current", label=None, 
     (run / "quality.expect").write_text(T.expect_text({"id": chosen["name"], "cvars": cvars}))
     if "execcmds" in chosen:
         (run / "quality.execcmds").write_text(chosen["execcmds"])
-    plan = {"run": run, "mode": mode, "size": size_info["size"], "sky": sky_key, "sky_args": sky_args, "laps": laps, "quality": chosen}
+    plan = {"run": run, "mode": mode, "size": size_info["size"], "sky": sky_key, "sky_args": sky_args, "laps": laps, "quality": chosen,
+            "max_s": timeout or run_timeout(loop, mode, laps)}
     command = direct_command(loop, plan) if direct else rununreal_command(loop, plan)
     require_pinned(command if direct else sky_args)
-    limit = timeout or run_timeout(loop, mode, laps) + (0 if direct else UAT_S)
+    limit = plan["max_s"] + (0 if direct else UAT_S)
     meta = {"version": 1, "kind": "native", "label": run.name, "mode": mode, "size": size_info["size"], "size_key": size_key,
             "rung": size_info["rung"], "sky": sky_key, "sky_args": sky_args, "laps": laps, "warm_laps": loop["modes"][mode]["warm_laps"],
             "quality": dict(chosen, expected={name: T.format_value(value) for name, value in cvars.items()}),
@@ -786,7 +790,9 @@ def stream_run(loop, run, slot="NordHost", pin=0, portrait=False, relay=False, t
     stream.mkdir(parents=True, exist_ok=True)
     sizes = [entry["size"] for entry in loop["sizes"].values() if entry["rung"] == pin and (entry["size"][1] > entry["size"][0]) == portrait]
     mode = loop["modes"]["stream"]
-    seconds = seconds or min(3600, mode["delay_s"] + loop["drive"]["max_lap_s"] + len(loop["order"]) * mode["hold_s"] + 30)
+    # The warm lap drives first; the gated lap starts at its first leg line (lap_window).
+    seconds = seconds or min(3600, mode["delay_s"] + (mode["warm_laps"] + 1) * loop["drive"]["max_lap_s"]
+                             + len(loop["order"]) * mode["hold_s"] + 30)
     slots = [("NordHost", stream), ("NordFriend1", stream / "NordFriend1")] if two_viewers else [(slot, stream)]
     commands = []
     for name, out in slots:
@@ -1315,7 +1321,8 @@ def main(argv=None):
     native.add_argument("--label")
     native.add_argument("--direct", action="store_true", help="start Builds/Browser/Linux/Quebec.sh instead of RunUAT RunUnreal")
     native.add_argument("--ceiling", type=Path, help="score this look run's stills against a ceiling look run")
-    native.add_argument("--timeout", type=int, help="seconds before the run is killed (default from loop.json)")
+    native.add_argument("--timeout", type=int, help="seconds the game may run before it is stopped (default from loop.json); "
+                                                     "RunUnreal adds its start-up time")
     stream = commands.add_parser("stream", help="sample the stream lap of a lifecycle started with NORD_STREAM_GAUNTLET")
     stream.add_argument("--run", type=Path, required=True)
     stream.add_argument("--slot", choices=("NordHost", "NordFriend1"), default="NordHost")
