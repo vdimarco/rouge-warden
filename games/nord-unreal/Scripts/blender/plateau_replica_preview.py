@@ -22,11 +22,14 @@ Prop instances use the file coordinates of their meshes, position (x, -y, z) and
 These are previews of generated geometry, not Unreal captures. Colours come from the layer manifests
 and from the colours `upgrade_plateau.py` gives the existing materials; the four Poly Haven textures in
 Data/Art are used the way the game materials use them, and every replica texture set in
-ReplicaGeometry/Textures the way apply_plateau_replica.py uses it: the same keys, tint and tiling, the
+ReplicaGeometry/Textures (and the Trees manifest's bark and leaf atlas) the way apply_plateau_replica.py uses
+it, from the apply step's own material rows (material_row): the same keys, tint (white for a set that owns its
+colour, the tar), tiling, macro variation (Brick_Buff_Even, the roofs and the crushed stone), metallic cap, the
 DirectX normal map, roughness from R, and for the masked sets (Rail_Baluster, Rail_Lattice, Fence_Boards,
-Leaf_Creeper) the diffuse alpha clipped at the set's opacity_mask_clip, two-sided, with the creeper's
-two-sided foliage transmission (base colour x .65). The yard trees of Plex/yard_trees.json are instanced
-on the mapped trees' model with the apply step's transforms (apply_plateau_replica.plan_trees).
+Leaf_Creeper, the tree leaves) the diffuse alpha clipped at the set's opacity_mask_clip, two-sided, with the
+two-sided foliage transmission (base colour x .65). The yard trees of Plex/yard_trees.json stand on the
+species meshes of Trees/manifest.json with the apply step's transforms (apply_plateau_replica.plan_trees); the
+4,571 mapped trees keep the game's shared tree_small_02, as QuebecVegetation does.
 
     <blender-python> Scripts/blender/plateau_replica_preview.py --view ruelle_mentana --probe 640,360 990,60
 
@@ -53,8 +56,9 @@ ART = os.path.join(ROOT, 'Data', 'Art')
 CACHE = os.path.join(ROOT, 'Saved', 'ReplicaPreview')
 OUT = os.path.join(ROOT, 'Preview', 'Replica')
 sys.path.insert(0, os.path.join(ROOT, 'Scripts'))
-# The apply step's material rules and yard-tree plan.
-from apply_plateau_replica import FOLIAGE_SUBSURFACE, base_material, load_yard_trees, plan_trees  # noqa: E402
+# The apply step's material rules, texture sets and yard-tree plan.
+from apply_plateau_replica import (COLLISION_ONLY, FOLIAGE_SUBSURFACE, load_textures, load_tree_kinds,  # noqa: E402
+                                   load_yard_trees, material_row, plan_trees, tree_slot)
 
 # Labels hidden in the game: the OSM masses keep collision only, the old canopies are replaced by the
 # mapped trees, and the replica apply step hides OSM Marking.
