@@ -1878,6 +1878,93 @@ def check_planting(out, streets, soul):
     return {'card_triangles': faces}
 
 
+SLAB_KEYS = ('sidewalk', 'curb', 'Yard_Grass', 'Yard_Soil', 'yard_path', 'grass_edge', 'soil')
+OPEN_STEPS_MAX = 50         # of about 184,000 outer slab edges; 43 now (see the README's Limits)
+
+
+def check_open_steps(world, out, streets):
+    """No step opens onto the floor under a raised slab: every outer edge of a sidewalk, curb extension, apron,
+    parterre, walk or pit top that stands more than 2.5 cm over the ground just in front of it (a dropped apron, the
+    foot of a ramp, the carriageway or bare floor; a building or the park aside) has a wall under it. The critic
+    saw the old OSM path through such a gap on Fabre, between a raised sidewalk piece and the dropped apron at a
+    ruelle mouth. A few dozen short ones remain district-wide (pits on extensions cut short at a junction, slivers
+    a few cm wide); none is 2 m long, and none 1 m long within 25 m of a capture street's centreline."""
+    R = replica
+    ground_keys = SLAB_KEYS + ('asphalt', 'alley', 'alley_gutter', 'Yard_Gravel')
+    tops, ground, walls = [], [], []
+    for batch in streets['batches']:
+        if batch['material'] not in ground_keys:
+            continue
+        for face in parse_obj(out / 'Streets' / batch['file'])[1]:
+            if abs(R.area([p[:2] for p in face])) > .01:
+                ground.append(face)
+                if batch['material'] in SLAB_KEYS and max(p[2] for p in face) > R.Z_ROAD + 1.5:
+                    tops.append((batch['material'], face))
+            elif batch['material'] in SLAB_KEYS:
+                walls.append(face)
+    gi = R.Grid(250.)
+    for i, face in enumerate(ground):
+        gi.add(i, R.bbox([p[:2] for p in face]))
+
+    def height(p):
+        """The highest ground face under p (interpolated on a ramp), 0 on bare floor."""
+        best = 0.
+        for i in gi.query((p[0], p[1], p[0], p[1])):
+            (x1, y1, z1), (x2, y2, z2), (x3, y3, z3) = ground[i]
+            det = (y2 - y3) * (x1 - x3) + (x3 - x2) * (y1 - y3)
+            if abs(det) < 1e-9 or not _tri_contains([q[:2] for q in ground[i]], p):
+                continue
+            l1 = ((y2 - y3) * (p[0] - x3) + (x3 - x2) * (p[1] - y3)) / det
+            l2 = ((y3 - y1) * (p[0] - x3) + (x1 - x3) * (p[1] - y3)) / det
+            best = max(best, l1 * z1 + l2 * z2 + (1 - l1 - l2) * z3)
+        return best
+    wi, wsegs = R.Grid(250.), []
+    for face in walls:
+        pts = sorted({(round(p[0], 2), round(p[1], 2)) for p in face})
+        a, b = max(((p, q) for p in pts for q in pts), key=lambda pq: math.dist(*pq))
+        wi.add(len(wsegs), R.bbox([a, b], 2))
+        wsegs.append((a, b, min(p[2] for p in face), max(p[2] for p in face)))
+    key = lambda p: (round(p[0], 1), round(p[1], 1), round(p[2], 1))      # noqa: E731
+    seen, owner = {}, {}
+    for mat, face in tops:
+        for i in range(3):
+            a, b, c = face[i], face[(i + 1) % 3], face[(i + 2) % 3]
+            k = tuple(sorted((key(a), key(b))))
+            seen[k] = seen.get(k, 0) + 1
+            owner[k] = (a, b, c, mat)
+    capture = [s for s in world.segs if s['name'] in CAPTURE_STREETS and not s['excluded']]
+    edges, opened = 0, []
+    for k, n in seen.items():
+        a, b, c, mat = owner[k]
+        if n != 1 or math.dist(a[:2], b[:2]) < 2.:
+            continue
+        edges += 1
+        mid, z = R.lerp(a[:2], b[:2], .5), (a[2] + b[2]) / 2
+        u = R.unit(a[:2], b[:2])[0]
+        nrm = (-u[1], u[0])
+        if (c[0] - mid[0]) * nrm[0] + (c[1] - mid[1]) * nrm[1] > 0:
+            nrm = (-nrm[0], -nrm[1])                 # away from the face's third corner: out of the slab
+        o = R.add(mid, nrm, 1.)
+        g = height(o)
+        if z - g <= 2.5 or world.in_building(o) or world.in_building(R.add(o, nrm, 8.)) or world.in_park(o):
+            continue
+        if any(R.seg_dist(mid, wsegs[i][0], wsegs[i][1]) < 2. and wsegs[i][3] >= z - 1 and wsegs[i][2] <= g + 1
+               for i in wi.query((mid[0], mid[1], mid[0], mid[1]))):
+            continue
+        near = min((R.seg_dist(mid, s['pa'], s['pb']) for s in capture), default=1e9)
+        opened.append((mat, [round(v) for v in mid], round(z - g, 1), round(math.dist(a[:2], b[:2])), round(near)))
+    assert edges > 100000, edges
+    assert len(opened) <= OPEN_STEPS_MAX, (len(opened), sorted(opened, key=lambda r: -r[3])[:10])
+    assert all(r[3] < 200 for r in opened), [r for r in opened if r[3] >= 200]
+    assert all(r[3] < 100 for r in opened if r[4] < 2500), [r for r in opened if r[4] < 2500 and r[3] >= 100]
+    by = {}
+    for r in opened:
+        by[r[0]] = by.get(r[0], 0) + 1
+    return {'outer_edges': edges, 'open_steps': len(opened), 'by_material': dict(sorted(by.items())),
+            'longest_cm': max((r[3] for r in opened), default=0),
+            'on_capture_streets': sum(1 for r in opened if r[4] < 2500)}
+
+
 def main():
     report = {'lane_fixtures': check_lane_fixtures()}
     with tempfile.TemporaryDirectory() as a, tempfile.TemporaryDirectory() as b:
@@ -2048,6 +2135,7 @@ def main():
         report['ruelle_paving'] = check_ruelle_paving(world, out, streets, soul_rows['placements'])
         report['capture_coverage'] = check_capture_coverage(world, out, streets)
         report['planting'] = check_planting(out, streets, soul)
+        report['open_steps'] = check_open_steps(world, out, streets)
         bins = {}
         for row in soul_rows['placements']:
             if row['prop'].startswith('bin_'):
