@@ -1988,7 +1988,7 @@ def _yards(world, L, surfaces, strip, counts, barriers):
                 runs[-1][4].append((g0, row[0], row[1]))
             else:
                 runs.append([g0, g1, mat, row, []])
-        laid, depths, front, inset = 0, [], [], False
+        laid, depths, front, inset, own = 0, [], [], False, []
         kept = [r for r in runs if min(r[3][1] - r[3][0], r[3][3] - r[3][2]) >= 3]
         for j, (g0, g1, mat, (n0, d0, n1, d1), _) in enumerate(kept):
             q0, q1 = lerp(p0, p1, g0), lerp(p0, p1, g1)
@@ -2017,6 +2017,7 @@ def _yards(world, L, surfaces, strip, counts, barriers):
             for x, y in sides:
                 L.wall(key, x, y, 0., Z_WALK + zoff) if ccw else L.wall(key, y, x, 0., Z_WALK + zoff)
             surfaces.add(pp if ccw else pp[::-1], Z_WALK, 'yard')
+            own.append(pp)
             if mat == 'Yard_Grass' and key == mat:
                 _soft_edge(L, e0, e1, out, Rng('edge', s['way'], s['i'], strip['side'], k, round(g0, 4)), zoff)
             counts['yard_slabs'] += 1
@@ -2049,12 +2050,20 @@ def _yards(world, L, surfaces, strip, counts, barriers):
         # beside a ruelle mouth met at a slant: the wedge between the parterre's last ray and the paving
         lot_u, _ = unit(p0, p1)
         for f, sign in mouths:
-            n, res = samples[fs.index(f)]
-            if res is None or res[0] == 'mouth' or res[1] < 3:
+            i = fs.index(f)
+            n, res = samples[i]
+            if res is None or res[0] == 'mouth':
                 continue
-            mat = next(m for a, b, m in pieces if a <= f <= b)
-            _mouth_wedge(world, L, surfaces, lerp(p0, p1, f), out, (lot_u[0] * sign, lot_u[1] * sign), n, n + res[1],
-                         mat, zoff, counts)
+            far = n + res[1]
+            if 0 <= i - sign < len(fs) and samples[i - sign][1] is not None and samples[i - sign][1][0] != 'mouth':
+                i -= sign                       # from the lot's last sample before the edge, past its own slabs
+                far = max(far, samples[i][0] + samples[i][1][1])
+                n = samples[i][0]
+            if far - n < 3:
+                continue
+            mat = next(m for a, b, m in pieces if a <= fs[i] <= b)
+            _mouth_wedge(world, L, surfaces, lerp(p0, p1, fs[i]), out, (lot_u[0] * sign, lot_u[1] * sign), n, far,
+                         mat, zoff, counts, own)
         if not laid:
             strip['lots'].append({'p0': p0, 'p1': p1, 'depth': 0, 'out': out})
             continue
@@ -2079,58 +2088,78 @@ def _lower_in_front(surfaces, a, b, out, z):
     return any(surfaces.at(add(lerp(a, b, f), out, -4.))[0] < z - 1. for f in (.1, .5, .9))
 
 
-def _wedge_reach(world, p, side):
-    """How far from p along side the ground stays bare, up to a ruelle's paving, a carriageway, a sidewalk, another
-    parterre, a wall or the park (to 1 cm); 0 when nothing stops it within MOUTH_REACH."""
+def _wedge_reach(world, p, side, own):
+    """Bare ground from p along side, past the lot's own parterre (`own`: its slabs) up to a ruelle's paving, a
+    carriageway, a sidewalk, another parterre, a wall or the park, as (x0, x1) to 1 cm; (0, 0) when nothing stops
+    it within MOUTH_REACH."""
+    def mine(x):
+        c = add(p, side, x)
+        return any(point_in(c, poly) for poly in own)
+
     def stop(x):
         c = add(p, side, x)
         return any(world.surfaces.has(c, kind) for kind in ('alley', 'road', 'sidewalk', 'apron', 'yard')) or \
             world.in_building(c) or world.in_park(c)
-    x = 2.
+
+    def edge(lo, hi, test):
+        for _ in range(7):
+            mid = (lo + hi) / 2
+            lo, hi = (mid, hi) if not test(mid) else (lo, mid)
+        return lo, hi
+    x = 1.
+    while x <= MOUTH_REACH and mine(x):
+        x += 10.
+    if x > MOUTH_REACH:
+        return 0., 0.
+    x0 = edge(x - 10., x, lambda v: not mine(v))[1] if x > 1. else 0.
+    x = x0 + 2.
     while x <= MOUTH_REACH and not stop(x):
         x += 10.
     if x > MOUTH_REACH:
-        return 0.
-    lo, hi = max(0., x - 10.), x
-    for _ in range(7):
-        mid = (lo + hi) / 2
-        lo, hi = (mid, hi) if not stop(mid) else (lo, mid)
-    return max(0., lo - .5)
+        return 0., 0.
+    x1 = edge(max(x0, x - 10.), x, stop)[0] - .5
+    return (x0, x1) if x1 - x0 >= 3. else (0., 0.)
 
 
-def _mouth_wedge(world, L, surfaces, q, out, side, near, far, mat, zoff, counts):
-    """The parterre's wedge beside a ruelle mouth met at a slant: the parterre's side edge is the ray from q along
-    out (near to far behind q), and the paving's edge leans away from it, so the ground between them, out along
-    `side` to the paving (or a wall, street or other surface), is laid in the parterre's material, row by row every
-    20 cm of depth and merged where the reach runs straight. Walls face the paving, the far end and a lower apron
+def _mouth_wedge(world, L, surfaces, q, out, side, near, far, mat, zoff, counts, own):
+    """The ground a parterre leaves bare beside a ruelle mouth met at a slant. From the ray along out at the lot's
+    last sample before the mouth (q, near to far behind it), each row every 20 cm of depth runs out along `side`,
+    past the lot's own slabs (`own`), to the paving (or a wall, street or other surface); the rows are laid in the
+    parterre's material, merged where both ends run straight. Walls face the paving, the far end and a lower apron
     in front."""
     steps = max(1, math.ceil((far - near) / 20.))
     ts = [near + (far - near) * i / steps for i in range(steps + 1)]
-    xs = [_wedge_reach(world, add(q, out, t), side) for t in ts]
+    xs = [_wedge_reach(world, add(q, out, t), side, own) for t in ts]
+
+    def straight(i, j):
+        return all(abs(xs[m][e] - (xs[i][e] + (xs[j][e] - xs[i][e]) * (ts[m] - ts[i]) / (ts[j] - ts[i]))) <= 2.
+                   for m in range(i + 1, j) for e in (0, 1))
     i, last = 0, len(ts) - 1
     while i < last:
         j = i + 1
-        while j < last and all(abs(xs[m] - (xs[i] + (xs[j + 1] - xs[i]) * (ts[m] - ts[i]) / (ts[j + 1] - ts[i]))) <= 2.
-                               for m in range(i + 1, j + 1)):
+        while j < last and straight(i, j + 1) and (xs[i][1] > xs[i][0]) == (xs[j + 1][1] > xs[j + 1][0]):
             j += 1
-        if max(xs[i], xs[j]) >= 3.:
+        if xs[i][1] > xs[i][0] or xs[j][1] > xs[j][0]:
             bi, bj = add(q, out, ts[i]), add(q, out, ts[j])
-            pp = [bi, bj, add(bj, side, xs[j]), add(bi, side, xs[i])]
-            key = mat if world.traffic_distance(dedupe(pp)) >= CLEAR else \
+            pp = dedupe([add(bi, side, xs[i][0]), add(bj, side, xs[j][0]), add(bj, side, xs[j][1]),
+                         add(bi, side, xs[i][1])])
+            key = mat if len(pp) < 3 or world.traffic_distance(pp) >= CLEAR else \
                 {'Yard_Grass': 'grass_edge', 'Yard_Soil': 'soil', 'yard_path': 'curb'}[mat]
-            if L.flat(key, pp, Z_WALK + zoff):
-                ccw = area(dedupe(pp)) > 0
-                edges = [(pp[2], pp[3])]                                   # toward the paving
+            if len(pp) >= 3 and L.flat(key, pp, Z_WALK + zoff):
+                ccw = area(pp) > 0
+                a0, a1, b1, b0 = (add(bi, side, xs[i][0]), add(bj, side, xs[j][0]), add(bj, side, xs[j][1]),
+                                  add(bi, side, xs[i][1]))
+                edges = [(b1, b0)]                                          # toward the paving
                 if j == last:
-                    edges.append((pp[1], pp[2]))
-                if i == 0 and _lower_in_front(surfaces, pp[3], pp[0], out, Z_WALK + zoff):
-                    edges.append((pp[3], pp[0]))
+                    edges.append((a1, b1))
+                if i == 0 and _lower_in_front(surfaces, b0, a0, out, Z_WALK + zoff):
+                    edges.append((b0, a0))
                 for a, b in edges:
                     L.wall(key, a, b, 0., Z_WALK + zoff) if ccw else L.wall(key, b, a, 0., Z_WALK + zoff)
-                surfaces.add(dedupe(pp) if ccw else dedupe(pp)[::-1], Z_WALK, 'yard')
+                surfaces.add(pp if ccw else pp[::-1], Z_WALK, 'yard')
                 counts['yard_mouth_wedges'] += 1
-                counts['yard_mouth_wedge_square_metres'] += abs(area(dedupe(pp))) / 10000
-                counts['yard_square_metres'] += abs(area(dedupe(pp))) / 10000
+                counts['yard_mouth_wedge_square_metres'] += abs(area(pp)) / 10000
+                counts['yard_square_metres'] += abs(area(pp)) / 10000
         i = j
 
 
