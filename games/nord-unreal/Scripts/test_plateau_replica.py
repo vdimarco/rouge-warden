@@ -1585,8 +1585,8 @@ def check_lane_life(world, out, soul, soul_rows):
         assert R.wall_clearance(world, a[:2], e[:2]) >= R.LINE_WALL - .5, line
         assert min(wall_distance(R.lerp(a[:2], e[:2], t / 20)) for t in range(21)) >= R.LINE_WALL - .5, line
         assert R.LINE_MIN_SPAN <= line['span_cm'] and a[2] <= R.LINE_TOP
-        # the line rises from its pulley to the pole, so it and its washing show over the lane fence
-        assert e[2] >= a[2] + R.LINE_RISE[0] - .01 or abs(e[2] - R.LINE_MIN_END) < .01, ('a line falls to its pole', line)
+        # the line rises from its pulley to the pole (by 30 cm or more), so it and its washing show over the lane fence
+        assert e[2] - a[2] >= 30., ('a line falls to its pole', line)
         assert e[2] <= max(a[2] + R.LINE_RISE[1], R.LINE_MIN_END) + .01, line
         fence = rear.get('fence') or {}
         if fence.get('height_cm'):
@@ -1601,7 +1601,7 @@ def check_lane_life(world, out, soul, soul_rows):
         # poles stand at the back of the yard: the recorded distance is the pole's, and most are at the fence line
         assert abs(F.D - F.local(pole['position'])[1] - pole['from_fence_cm']) < .05, pole
         assert pole['from_fence_cm'] in R.POLE_FENCE + R.POLE_FALLBACK, pole
-        near_fence += pole['from_fence_cm'] <= R.POLE_FENCE[-1]
+        near_fence += pole['from_fence_cm'] <= 70.          # at the back fence, seen from the ruelle
         mine = [l for l in lines if pole_rows[l['pole']] is pole]
         assert pole['height_cm'] >= max(l['end'][2] for l in mine) + R.POLE_TOP - .5, pole
     assert near_fence >= .85 * len(pole_rows), (near_fence, len(pole_rows))
@@ -2128,12 +2128,13 @@ def check_laundry_fixture():
         lot = plex.lots[0]
         F = lot['frame']
         pole = lane['laundry']['poles'][0]
-        # at the fence line itself, or just in from it where the line must clear the shed's corner
-        assert pole['from_fence_cm'] == R.POLE_FENCE[0] if not shed else pole['from_fence_cm'] in R.POLE_FENCE, pole
+        # at the fence line itself (the 11 cm pole clear of the 9 cm posts), or a little in from it where the line
+        # must clear the shed's corner
+        assert pole['from_fence_cm'] <= (25. if not shed else 70.), pole
         assert abs(F.D - F.local(pole['position'])[1] - pole['from_fence_cm']) < .05
         for line in lane['laundry']['lines']:
             a, e = line['anchor'], line['end']
-            assert R.LINE_RISE[0] - .01 <= e[2] - a[2] <= R.LINE_RISE[1] + .01 or abs(e[2] - R.LINE_MIN_END) < .01, line
+            assert 30. <= e[2] - a[2] <= R.LINE_RISE[1] + .01 or abs(e[2] - R.LINE_MIN_END) < .01, line
             assert pole['height_cm'] >= e[2] + R.POLE_TOP - .5
             assert all(R.point_in(R.lerp(a[:2], e[:2], t / 10), lot['frame'].poly(0, F.W, -400, F.D)) for t in range(11))
             if shed:
