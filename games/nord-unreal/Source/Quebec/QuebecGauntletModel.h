@@ -60,6 +60,7 @@ namespace QuebecGauntlet
     // the turn's speed.
     inline constexpr double Simplify = 100.0;         // Douglas-Peucker tolerance: the simple line keeps within this of the road.
     inline constexpr double RoundFrom = 10.0;         // Degrees; a smaller bend stays a corner of the line.
+    inline constexpr double MaxRound = 150.0;         // Degrees; a sharper turn, alone or merged, is never rounded.
     inline constexpr double ArcStep = 10.0;           // Degrees of arc between two points.
     inline constexpr double CornerMargin = 1.3;       // Arc radius over the car's turning radius at the arc's speed.
     inline constexpr double MinCornerSpeed = 300.0;   // The slowest arc speed, for a tight arc between short segments.
@@ -380,8 +381,9 @@ namespace QuebecGauntlet
     // Finish a loop whose Points (closed: the last equals the first) and Stops are set. The road polylines have many
     // short pieces, so the line is first simplified (KeepShape, between the stops). Then each turn of RoundFrom or
     // more becomes an arc: the speed is the police CornerSpeed for the turn (at most SpeedCap), and the radius is the
-    // car's turning radius at that speed times CornerMargin. An arc takes at most half of each neighbouring segment, so
-    // a short block gets a tighter arc and a lower speed. Stops are never rounded, so each stays on its road point.
+    // car's turning radius at that speed times CornerMargin. Where a segment is too short for the arcs at both ends,
+    // same-way corners merge, and otherwise the arcs share it, so a tight spot gets a smaller arc and a lower speed.
+    // Stops are never rounded, so each stays on its road point.
     // Then Distance, Length and Limit are filled. The rounded line is the route the driver follows and the line the
     // lateral error is measured from; it cuts a junction by at most Radius * (1 - cos(turn / 2)).
     inline void FinishLoop(FLoop& Loop)
@@ -407,44 +409,102 @@ namespace QuebecGauntlet
             if (std::find(Loop.Stops.begin(), Loop.Stops.end(), Index) != Loop.Stops.end()) RawStops.push_back(Raw.size());
             Raw.push_back(Loop.Points[Index]);
         }
+        // Each inner point that is not a stop is a corner: its turn, its side and the arc it wants.
+        struct FCorner
+        {
+            double Turn = 0.0;    // Degrees.
+            double Side = 0.0;    // 1 turns left, -1 right, 0 is a stop or an end.
+            double Speed = SpeedCap;
+            double Want = 0.0;    // Tangent length of the arc at Speed.
+        };
+        const auto CornerAt = [&Raw, &RawStops](std::size_t Index)
+        {
+            FCorner Corner;
+            if (Index == 0 || Index + 1 >= Raw.size() || std::find(RawStops.begin(), RawStops.end(), Index) != RawStops.end()) return Corner;
+            const FVec2 In = Raw[Index] - Raw[Index - 1], Out = Raw[Index + 1] - Raw[Index];
+            const double Lengths = QuebecPursuit::Length(In) * QuebecPursuit::Length(Out);
+            if (Lengths <= 1e-9) return Corner;
+            Corner.Turn = std::acos(std::clamp(QuebecPursuit::Dot(In, Out) / Lengths, -1.0, 1.0)) * 180.0 / Pi;
+            Corner.Side = In.X * Out.Y - In.Y * Out.X > 0.0 ? 1.0 : -1.0;
+            if (Corner.Turn > MaxRound) return Corner;
+            Corner.Speed = std::min(SpeedCap, QuebecPursuit::CornerSpeed(Corner.Turn));
+            Corner.Want = TurnRadius(Corner.Speed) * CornerMargin * std::tan(Corner.Turn * .5 * Pi / 180.0);
+            return Corner;
+        };
+        // Two corners that turn the same way and share a segment too short for both arcs become one corner where the
+        // segments before and after them meet, so a turn split over short pieces gets one arc of the right size.
+        for (bool bMerged = true; bMerged;)
+        {
+            bMerged = false;
+            for (std::size_t Index = 1; Index + 2 < Raw.size() && !bMerged; ++Index)
+            {
+                const FCorner First = CornerAt(Index), Second = CornerAt(Index + 1);
+                if (First.Side == 0.0 || First.Side != Second.Side || First.Turn + Second.Turn > MaxRound
+                    || QuebecPursuit::Distance(Raw[Index], Raw[Index + 1]) >= First.Want + Second.Want) continue;
+                const FVec2 Before = QuebecPursuit::Normal(Raw[Index] - Raw[Index - 1]);
+                const FVec2 After = QuebecPursuit::Normal(Raw[Index + 2] - Raw[Index + 1]);
+                const double Cross = Before.X * After.Y - Before.Y * After.X;
+                if (std::fabs(Cross) < 1e-6) continue;
+                const FVec2 Gap = Raw[Index + 1] - Raw[Index - 1];
+                const double Along = (Gap.X * After.Y - Gap.Y * After.X) / Cross;   // From Raw[Index - 1] along Before.
+                const double Back = (Gap.X * Before.Y - Gap.Y * Before.X) / Cross;  // From Raw[Index + 1] along After.
+                if (Along <= 0.0 || Back >= QuebecPursuit::Distance(Raw[Index + 1], Raw[Index + 2])) continue;
+                Raw[Index] = Raw[Index - 1] + Before * Along;
+                Raw.erase(Raw.begin() + static_cast<std::ptrdiff_t>(Index) + 1);
+                for (std::size_t& Stop : RawStops)
+                    if (Stop > Index) --Stop;
+                bMerged = true;
+            }
+        }
+        std::vector<FCorner> Corners(Raw.size());
+        for (std::size_t Index = 0; Index < Raw.size(); ++Index)
+        {
+            Corners[Index] = CornerAt(Index);
+            if (Corners[Index].Turn < RoundFrom) Corners[Index].Want = 0.0;
+        }
         Loop.Points.clear();
         Loop.Stops.clear();
         Loop.Limit.clear();
+        const auto Add = [&Loop](const FVec2& Point, double Speed)
+        {
+            // Two arcs that meet share their end point; it keeps the lower speed.
+            if (!Loop.Points.empty() && QuebecPursuit::Distance(Loop.Points.back(), Point) < JoinPoints)
+                Loop.Limit.back() = std::min(Loop.Limit.back(), Speed);
+            else
+            {
+                Loop.Points.push_back(Point);
+                Loop.Limit.push_back(Speed);
+            }
+        };
         for (std::size_t Index = 0; Index < Raw.size(); ++Index)
         {
-            const bool bStop = std::find(RawStops.begin(), RawStops.end(), Index) != RawStops.end();
-            if (bStop) Loop.Stops.push_back(Loop.Points.size());
-            const FVec2 In = Index > 0 ? Raw[Index] - Raw[Index - 1] : FVec2{};
-            const FVec2 Out = Index + 1 < Raw.size() ? Raw[Index + 1] - Raw[Index] : FVec2{};
-            const double InLength = QuebecPursuit::Length(In), OutLength = QuebecPursuit::Length(Out);
-            const double Turn = InLength > 1e-9 && OutLength > 1e-9
-                ? std::acos(std::clamp(QuebecPursuit::Dot(In, Out) / (InLength * OutLength), -1.0, 1.0)) * 180.0 / Pi : 0.0;
-            if (bStop || Turn < RoundFrom || Turn > 170.0)
+            const FCorner& Corner = Corners[Index];
+            if (Corner.Want <= 0.0)
             {
-                Loop.Points.push_back(Raw[Index]);
-                Loop.Limit.push_back(SpeedCap);
+                Add(Raw[Index], SpeedCap);
+                if (std::find(RawStops.begin(), RawStops.end(), Index) != RawStops.end()) Loop.Stops.push_back(Loop.Points.size() - 1);
                 continue;
             }
-            double Speed = std::min(SpeedCap, QuebecPursuit::CornerSpeed(Turn));
-            double Radius = TurnRadius(Speed) * CornerMargin;
-            const double Half = std::tan(Turn * .5 * Pi / 180.0);
-            double Tangent = Radius * Half;
-            if (Tangent > .5 * std::min(InLength, OutLength))
+            // A segment too short for the arcs at both ends is shared in proportion to what each arc wants.
+            double Tangent = Corner.Want;
+            for (const std::size_t Neighbour : {Index - 1, Index + 1})
             {
-                Tangent = .5 * std::min(InLength, OutLength);
-                Radius = Tangent / Half;
-                Speed = SpeedForRadius(Radius, Speed);
+                const double Length = QuebecPursuit::Distance(Raw[Index], Raw[Neighbour]);
+                const double Wanted = Corner.Want + Corners[Neighbour].Want;
+                if (Wanted > Length) Tangent = std::min(Tangent, Corner.Want * Length / Wanted);
             }
-            const FVec2 Entry = Raw[Index] - In * (Tangent / InLength);
-            const double Side = In.X * Out.Y - In.Y * Out.X > 0.0 ? 1.0 : -1.0;   // Left turns are positive.
-            const FVec2 Centre = Entry + FVec2{-In.Y, In.X} * (Side * Radius / InLength);
+            const double Half = std::tan(Corner.Turn * .5 * Pi / 180.0);
+            const double Radius = Tangent / Half;
+            const double Speed = Tangent < Corner.Want ? SpeedForRadius(Radius, Corner.Speed) : Corner.Speed;
+            const FVec2 In = QuebecPursuit::Normal(Raw[Index] - Raw[Index - 1]);
+            const FVec2 Entry = Raw[Index] - In * Tangent;
+            const FVec2 Centre = Entry + FVec2{-In.Y, In.X} * (Corner.Side * Radius);
             const double From = std::atan2(Entry.Y - Centre.Y, Entry.X - Centre.X);
-            const int Steps = std::max(1, static_cast<int>(std::ceil(Turn / ArcStep)));
+            const int Steps = std::max(1, static_cast<int>(std::ceil(Corner.Turn / ArcStep)));
             for (int Step = 0; Step <= Steps; ++Step)
             {
-                const double Angle = From + Side * (Turn * Pi / 180.0) * static_cast<double>(Step) / static_cast<double>(Steps);
-                Loop.Points.push_back(Centre + FVec2{std::cos(Angle), std::sin(Angle)} * Radius);
-                Loop.Limit.push_back(Speed);
+                const double Angle = From + Corner.Side * (Corner.Turn * Pi / 180.0) * static_cast<double>(Step) / static_cast<double>(Steps);
+                Add(Centre + FVec2{std::cos(Angle), std::sin(Angle)} * Radius, Speed);
             }
         }
         Loop.Distance.assign(Loop.Points.size(), 0.0);
@@ -573,7 +633,8 @@ namespace QuebecGauntlet
         const std::size_t Count = static_cast<std::size_t>(Loop.SegmentCount());
         if (Count == 0) return 0.0;
         const std::size_t Segment = Loop.SegmentAt(Tracker.Along);
-        double Wanted = std::min(SpeedCap, Loop.LimitAt(Segment));
+        // A segment belongs to an arc when both its ends do, so the straight after an arc is not held to the arc's speed.
+        double Wanted = std::min(SpeedCap, std::max(Loop.LimitAt(Segment), Loop.LimitAt(Segment + 1)));
         double Covered = 0.0;
         FVec2 Previous = Loop.PointAt(Tracker.Along);
         for (std::size_t Step = 1; Step <= Count && Covered <= Range; ++Step)
