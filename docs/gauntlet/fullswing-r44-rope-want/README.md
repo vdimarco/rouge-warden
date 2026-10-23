@@ -4,7 +4,7 @@ syncRopeTargets reuses one private Map, clearing before every fill including dis
 
 Node100mixedreconciliations compare additions/removals/live target positions with the old implementation; baseline100newMaps fails, afterzero passes. Four browser checks record60actualactionframes/oneMap/play/noerrors. Existing action Node suite passes. Rendering unchanged; no new visual acceptance score or FPS claim.
 
-Review/allCI/currentauthenticatedpreview/finalrebase/production verification pending. OpenSpec CLI unavailable; scenarios manually checked. No physical-device/listening/full-playthrough claims.
+Released #652 as16909bd0 after all6CI/review/current14deployedchecks/rebase before AND afterpreview/exactmerge. Productionmain HTTP200 exactSHAc1c2fdf42b89e6b2ebfc72a6f74e4d7522d628768360e8cce691aa4425c9d4bd verified. OpenSpec CLI unavailable; scenarios manually checked. No physical-device/listening/full-playthrough claims.
 
 | Dimension | Assessment |
 | --- | --- |
