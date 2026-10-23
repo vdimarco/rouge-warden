@@ -471,7 +471,7 @@ function endLakeDrop() {
 }
 const HERO_FACE = { x: 0, z: -1 }, HERO_FIGHT = { x: 0, y: 0, z: 0, yaw: 0, onGround: false, safe: false, hidden: false, perch: false };
 const ropeWant = new Map(), combatTargets = [], jobTargets = [];
-const ropeIds = new Set(), GOON_POS = new Map(), firePerch = [false, false];
+const ropeIds = new Set(), GOON_ROPE = new Map(), firePerch = [false, false];
 function actionOn() { return flatOn && !isXR() && gameStarted && G.mode === "desktop"; }
 // Shift on the ground with no rope out and a direction held: sprint while the energy lasts; the gauge fills again after a pause
 function sprintFrame(dt, inp, moving) {
@@ -569,14 +569,14 @@ function syncRopeTargets() {
   want.clear();
   if (actionOn() && G.state === "play" && !driving) {
     for (const g of combat.targets(heroFight(), 40, combatTargets)) {
-      let q = GOON_POS.get(g.id);
-      if (!q) { q = { x: 0, y: 0, z: 0 }; GOON_POS.set(g.id, q); }
-      q.x = g.x; q.y = g.y + 1.1; q.z = g.z;
-      want.set("goon:" + g.id, { id: "goon:" + g.id, tag: "goon", pos: q, radius: 1.3 });
+      let t = GOON_ROPE.get(g.id);
+      if (!t) { t = { id: "goon:" + g.id, tag: "goon", pos: { x: 0, y: 0, z: 0 }, radius: 1.3 }; GOON_ROPE.set(g.id, t); }
+      t.pos.x = g.x; t.pos.y = g.y + 1.1; t.pos.z = g.z;
+      want.set(t.id, t);
     }
     for (const t of jobs.ropeTargets(P.pos, jobTargets)) want.set(t.id, t);
   }
-  for (const id of ropeIds) if (!want.has(id)) { ropes.removeTarget(id); ropeIds.delete(id); if (id.startsWith("goon:")) GOON_POS.delete(+id.slice(5)); }
+  for (const id of ropeIds) if (!want.has(id)) { ropes.removeTarget(id); ropeIds.delete(id); if (id.startsWith("goon:")) GOON_ROPE.delete(+id.slice(5)); }
   for (const [id, t] of want) if (!ropeIds.has(id)) { ropes.addTarget(t); ropeIds.add(id); }
 }
 function enterCar(c) {

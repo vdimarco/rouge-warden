@@ -1,0 +1,2 @@
+# Design
+Replace private GOON_POS map with GOON_ROPE storing complete target records. Reconciliation mutates t.pos and adds the same record to the desired Map. ropes already retains its initial target record; no public API or target lifecycle changes. Removal deletes the cached record at the same point as the old position deletion. All references to the private map are in main and the extracted QA fixture. No job-record reuse: jobs may switch IDs/position objects and retain their existing contract. No rendering technique or FPS claim.
