@@ -510,6 +510,33 @@ def check_tune_with_reference(out, reference):
     print("tune with --reference ok: the stored ceiling renders are reused, nothing is rendered twice")
 
 
+def check_tune_first_ceiling_contended(state):
+    """A foreign GPU process during the first ceiling render: the tune renders the ceiling again before it scores the
+    baseline, so the baseline keeps a Look and the round can still compare against it."""
+    real, labels, foreign = L.native_run, [], state / "foreign.json"
+    free = next(pid for pid in range(999_999, 900_000, -1) if not Path(f"/proc/{pid}").exists())
+
+    def native_run(loop, mode, *args, **kwargs):
+        labels.append(kwargs.get("label"))
+        contend = labels[-1] == "ceiling-first-look" and labels.count("ceiling-first-look") == 1
+        if contend:
+            foreign.write_text(json.dumps([{"pid": free, "name": "dota2", "mib": 3000}]))
+        try:
+            return real(loop, mode, *args, **kwargs)
+        finally:
+            if contend:
+                foreign.unlink()
+
+    with patch.object(L, "native_run", native_run):
+        group, tune = L.tune_run(SMALL, confirm=False)
+    assert labels.count("ceiling-first-look") == 2, labels
+    contended = [record["id"] for record in tune["candidates"] if record["phase"] == "baseline" and record["contended"]]
+    assert len(contended) == 1, contended
+    baseline = next(record for record in tune["candidates"] if record["id"] == "baseline")
+    assert tune["baseline"]["look"] is not None and len(baseline["aggregate_of"]) == 2, baseline
+    assert tune["ties"]["repeat"]["min"] == 1.0, tune["ties"]
+    print(f"first ceiling contended ok: {contended[0]} runs again after a second ceiling render; the baseline keeps a Look")
+
 def check_stream(out, state, group, winner):
     run = out / "20261023T230000Z-stream-winner"
     run.mkdir()
@@ -659,6 +686,7 @@ def main():
         check_look(out)
         reference = check_reference(out)
         group, tune = check_tune(out)
+        check_tune_first_ceiling_contended(state)
         check_tune_with_reference(out, reference)
         check_stream(out, state, group, tune["winner"])
         check_report_and_profile(group, tune)
