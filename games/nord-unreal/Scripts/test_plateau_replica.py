@@ -1697,6 +1697,534 @@ def check_lane_life(world, out, soul, soul_rows):
 
 
 # ------------------------------------------------------------------------------------------------
+# Lane life, fourth pass: laundry seen from the ruelle, and the galleries as outdoor rooms
+
+LAUNDRY_KEYS = ('line_rope', 'pulley', 'clothes_pole') + replica.CLOTHS
+LAUNDRY_VIEW = 'ruelle_mentana'     # Scripts/blender/plateau_replica_preview.py: the Mentana and Saint-André ruelle
+VIEW_SAMPLES = 24                   # points along each line's lower strand
+VIEW_SEEN = (.25, 60.)              # a line counts as seen with this share of its points in sight, spanning these pixels
+
+
+def preview_view(name):
+    """A view of the Blender preview script, without Blender: stub bpy and mathutils modules let it import, and its
+    views() computes the camera from the OSM ways the renders use."""
+    stubs = {'bpy': types.ModuleType('bpy'), 'mathutils': types.ModuleType('mathutils')}
+    stubs['mathutils'].Matrix = stubs['mathutils'].Vector = object
+    saved = {k: sys.modules.get(k) for k in stubs}
+    sys.modules.update(stubs)
+    try:
+        spec = importlib.util.spec_from_file_location(
+            '_replica_preview_views', replica.ROOT / 'Scripts/blender/plateau_replica_preview.py')
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        return module.views()[name]
+    finally:
+        for k, v in saved.items():
+            if v is None:
+                sys.modules.pop(k, None)
+            else:
+                sys.modules[k] = v
+
+
+class ViewCamera:
+    """The preview camera (Blender, sensor fit horizontal, no roll) in the game frame. The preview mirrors the scene
+    and the camera together, which leaves what is in frame and what hides what unchanged."""
+
+    def __init__(self, position, target, fov, res=(1280, 720)):
+        self.c = tuple(position)
+        f = [t - p for t, p in zip(target, position)]
+        n = math.sqrt(sum(v * v for v in f))
+        self.f = [v / n for v in f]
+        rn = math.hypot(self.f[1], self.f[0])
+        self.r = (self.f[1] / rn, -self.f[0] / rn, 0.)
+        self.u = (self.r[1] * self.f[2] - self.r[2] * self.f[1], self.r[2] * self.f[0] - self.r[0] * self.f[2],
+                  self.r[0] * self.f[1] - self.r[1] * self.f[0])
+        self.tx = math.tan(math.radians(fov) / 2)
+        self.ty = self.tx * res[1] / res[0]
+        self.res = res
+
+    def pixel(self, p):
+        v = [a - b for a, b in zip(p, self.c)]
+        depth = sum(a * b for a, b in zip(v, self.f))
+        if depth <= 10:
+            return None
+        x = sum(a * b for a, b in zip(v, self.r)) / depth / self.tx
+        y = sum(a * b for a, b in zip(v, self.u)) / depth / self.ty
+        return None if abs(x) > 1 or abs(y) > 1 else ((x + 1) * self.res[0] / 2, (1 - y) * self.res[1] / 2)
+
+
+def _ray_tri(o, d, tri, tmax):
+    """Moller and Trumbore's ray-triangle test: the hit parameter along o + t d for 0 < t < tmax, or None."""
+    a, b, c = tri
+    e1 = (b[0] - a[0], b[1] - a[1], b[2] - a[2])
+    e2 = (c[0] - a[0], c[1] - a[1], c[2] - a[2])
+    p = (d[1] * e2[2] - d[2] * e2[1], d[2] * e2[0] - d[0] * e2[2], d[0] * e2[1] - d[1] * e2[0])
+    det = e1[0] * p[0] + e1[1] * p[1] + e1[2] * p[2]
+    if -1e-9 < det < 1e-9:
+        return None
+    inv = 1. / det
+    s = (o[0] - a[0], o[1] - a[1], o[2] - a[2])
+    u = (s[0] * p[0] + s[1] * p[1] + s[2] * p[2]) * inv
+    if u < 0. or u > 1.:
+        return None
+    q = (s[1] * e1[2] - s[2] * e1[1], s[2] * e1[0] - s[0] * e1[2], s[0] * e1[1] - s[1] * e1[0])
+    v = (d[0] * q[0] + d[1] * q[1] + d[2] * q[2]) * inv
+    if v < 0. or u + v > 1.:
+        return None
+    t = (e2[0] * q[0] + e2[1] * q[1] + e2[2] * q[2]) * inv
+    return t if 0. < t < tmax else None
+
+
+class Occluders:
+    """Triangles in a uniform 2D grid, walked cell by cell along a sight line (Amanatides and Woo's traversal)."""
+
+    def __init__(self, box, cell=150.):
+        self.box, self.cell = box, cell
+        self.tris, self.ranges, self.cells, self.tags, self.tag, self.hit = [], [], {}, [], None, None
+
+    def add(self, tri):
+        xs, ys, zs = [p[0] for p in tri], [p[1] for p in tri], [p[2] for p in tri]
+        if max(xs) < self.box[0] or min(xs) > self.box[2] or max(ys) < self.box[1] or min(ys) > self.box[3]:
+            return
+        i = len(self.tris)
+        self.tris.append(tri)
+        self.tags.append(self.tag)
+        self.ranges.append((min(zs), max(zs)))
+        c = self.cell
+        for gx in range(math.floor(min(xs) / c), math.floor(max(xs) / c) + 1):
+            for gy in range(math.floor(min(ys) / c), math.floor(max(ys) / c) + 1):
+                self.cells.setdefault((gx, gy), []).append(i)
+
+    def add_obj(self, path):
+        vs = []
+        for line in Path(path).read_text().splitlines():
+            if line.startswith('v '):
+                x, y, z = (float(v) for v in line.split()[1:4])
+                vs.append((x, -y, z))
+            elif line.startswith('f '):
+                idx = [int(t.split('/')[0]) - 1 for t in line.split()[1:]]
+                for k in range(1, len(idx) - 1):
+                    self.add((vs[idx[0]], vs[idx[k]], vs[idx[k + 1]]))
+
+    def add_prism(self, poly, z0, z1):
+        lo, hi = [(p[0], p[1], z0) for p in poly], [(p[0], p[1], z1) for p in poly]
+        for k in range(len(poly)):
+            j = (k + 1) % len(poly)
+            self.add((lo[k], lo[j], hi[j]))
+            self.add((lo[k], hi[j], hi[k]))
+        for k in range(1, len(poly) - 1):
+            self.add((hi[0], hi[k], hi[k + 1]))
+            self.add((lo[0], lo[k], lo[k + 1]))
+
+    def blocked(self, o, p, skip_end=4.):
+        d = (p[0] - o[0], p[1] - o[1], p[2] - o[2])
+        tmax = 1. - skip_end / math.sqrt(d[0] ** 2 + d[1] ** 2 + d[2] ** 2)
+        c = self.cell
+        gx, gy = math.floor(o[0] / c), math.floor(o[1] / c)
+        ex, ey = math.floor(p[0] / c), math.floor(p[1] / c)
+        sx, sy = (1 if d[0] > 0 else -1), (1 if d[1] > 0 else -1)
+        step_x = abs(c / d[0]) if d[0] else math.inf
+        step_y = abs(c / d[1]) if d[1] else math.inf
+        next_x = ((gx + (sx > 0)) * c - o[0]) / d[0] if d[0] else math.inf
+        next_y = ((gy + (sy > 0)) * c - o[1]) / d[1] if d[1] else math.inf
+        seen, t0 = set(), 0.
+        while True:
+            t1 = min(next_x, next_y, 1.)
+            za, zb = sorted((o[2] + d[2] * t0, o[2] + d[2] * t1))
+            for i in self.cells.get((gx, gy), ()):
+                if i in seen or self.ranges[i][0] > zb + 1 or self.ranges[i][1] < za - 1:
+                    continue
+                seen.add(i)
+                if _ray_tri(o, d, self.tris[i], tmax) is not None:
+                    self.hit = self.tags[i]
+                    return True
+            if (gx, gy) == (ex, ey) or t1 >= 1.:
+                return False
+            t0 = t1
+            if next_x < next_y:
+                gx, next_x = gx + sx, next_x + step_x
+            else:
+                gy, next_y = gy + sy, next_y + step_y
+
+
+def _tree_occluders(world, occ, box):
+    """The trees as the game draws them: the Plex yard trees on the Trees species meshes with the apply step's
+    transforms (plan_trees), bark and every leaf card taken as opaque (the cards are masked, so this hides more than
+    the game does), and the mapped trees, for which the norway_maple mesh stands in at the preview's height."""
+    rows, kinds = apply_replica.load_yard_trees(replica.ROOT), apply_replica.load_tree_kinds(replica.ROOT)
+    if not kinds:
+        return 0
+    meshes = {}
+
+    def mesh(species):
+        if species not in meshes:
+            vs, fs = [], []
+            for line in (replica.OUT / kinds[species]['obj']).read_text().splitlines():
+                if line.startswith('v '):
+                    x, y, z = (float(v) for v in line.split()[1:4])
+                    vs.append((x, -y, z))           # the props convention: Unreal-local (x, -y_file, z)
+                elif line.startswith('f '):
+                    fs.append([int(t.split('/')[0]) - 1 for t in line.split()[1:]])
+            meshes[species] = (vs, fs)
+        return meshes[species]
+
+    def place(species, position, yaw, scale):
+        x, y, z = position
+        if not (box[0] - 1500 <= x <= box[2] + 1500 and box[1] - 1500 <= y <= box[3] + 1500):
+            return 0
+        vs, fs = mesh(species)
+        c, s = math.cos(math.radians(yaw)), math.sin(math.radians(yaw))
+        w = [(x + a * scale[0] * c - b * scale[1] * s, y + a * scale[0] * s + b * scale[1] * c, z + h * scale[2])
+             for a, b, h in vs]
+        occ.tag = 'tree ' + species
+        for f in fs:
+            for k in range(1, len(f) - 1):
+                occ.add((w[f[0]], w[f[k]], w[f[k + 1]]))
+        return 1
+    count = 0
+    for group in apply_replica.plan_trees(rows or [], kinds):
+        for position, yaw, scale in group['transforms']:
+            count += place(group['kind'], position, yaw, scale)
+    stand_in = kinds['norway_maple']['height_cm']
+    for node, (x, y) in replica.mapped_trees(world):
+        k = (650. + int(node) % 500) / stand_in
+        count += place('norway_maple', (x, y, 0.), int(node) % 360, (k, k, k))
+    return count
+
+
+def _strand(line, k, count):
+    """Point k of count along a laundry line's lower strand (the one the washing hangs from), as the Soul layer
+    draws it: 4 cm under the pulleys, sagging by sag_cm at mid-span."""
+    a, e = line['anchor'], line['end']
+    t = k / count
+    return (a[0] + (e[0] - a[0]) * t, a[1] + (e[1] - a[1]) * t,
+            a[2] - 4 + (e[2] - a[2]) * t - line['sag_cm'] * 4 * t * (1 - t))
+
+
+def check_laundry_view(world, out, view=LAUNDRY_VIEW, reach=6000.):
+    """At least one laundry line is in sight of the preview's ruelle camera: points along each line in frame are
+    tested for a clear sight line through the game's own geometry: the Plex layer (all but the Collision_Only walls),
+    the Streets and Soul layers just built (all but the laundry itself), the props of both placement layers (their
+    collider boxes, else their bounds) and the trees (_tree_occluders). The cards of the masked materials (balusters,
+    lattice, fence boards, leaves) count as solid, so a line seen here is seen in the game."""
+    spec = preview_view(view)
+    cam = ViewCamera(*spec['camera'], spec.get('fov', 85.))
+    lane = json.loads((out / 'Soul/lane_life.json').read_text())
+    lines = []
+    for i, line in enumerate(lane['laundry']['lines']):
+        pts = [_strand(line, k, VIEW_SAMPLES) for k in range(VIEW_SAMPLES + 1)]
+        if any(math.dist(p[:2], cam.c[:2]) <= reach and cam.pixel(p) for p in pts):
+            lines.append((i, line, pts))
+    assert lines, f'no laundry line in frame of the {view} camera'
+    xs = [p[0] for _, _, pts in lines for p in pts] + [cam.c[0]]
+    ys = [p[1] for _, _, pts in lines for p in pts] + [cam.c[1]]
+    box = (min(xs) - 50, min(ys) - 50, max(xs) + 50, max(ys) + 50)
+    occ = Occluders(box)
+    for folder in (replica.OUT / 'Plex', out / 'Streets', out / 'Soul'):
+        manifest = json.loads((folder / 'manifest.json').read_text())
+        for batch in manifest['batches']:
+            b = batch['bounds_cm']
+            if batch['material'] in ('Collision_Only',) + LAUNDRY_KEYS or \
+                    b[3] < box[0] or b[0] > box[2] or b[4] < box[1] or b[1] > box[3]:
+                continue
+            occ.tag = f'{folder.name} {batch["material"]}'
+            occ.add_obj(folder / batch['file'])
+    info = replica.props_info()
+    for layer in ('Furniture', 'Soul'):
+        for row in json.loads((out / layer / 'placements.json').read_text())['placements']:
+            p, yaw, prop = row['position'], row['yaw'], row['prop']
+            if not (box[0] - 300 <= p[0] <= box[2] + 300 and box[1] - 300 <= p[1] <= box[3] + 300):
+                continue
+            occ.tag = 'prop ' + prop
+            boxes = info.get('colliders', {}).get(prop) or []
+            for (cx, cy, cz), (sx, sy, sz) in boxes:
+                poly = [replica.local_to_world(p[:2], yaw, (cx + ax * sx / 2, cy + ay * sy / 2))
+                        for ax, ay in ((-1, -1), (1, -1), (1, 1), (-1, 1))]
+                occ.add_prism(poly, p[2] + cz - sz / 2, p[2] + cz + sz / 2)
+            if not boxes and prop in info['bounds']:
+                b = info['bounds'][prop]
+                occ.add_prism(replica._prop_poly(prop, p[:2], yaw), p[2] + b[2], p[2] + b[5])
+    trees = _tree_occluders(world, occ, box)
+    seen = []
+    for i, line, pts in lines:
+        visible = [p for p in pts if cam.pixel(p) and not occ.blocked(cam.c, p)]
+        px = [cam.pixel(p) for p in visible]
+        span = max((math.dist(a, b) for a in px for b in px), default=0.)
+        seen.append({'line': i, 'lot': line['lot'], 'deck_z': line['deck_z'], 'in_sight': len(visible),
+                     'points': len(pts), 'pixel_span': round(span), 'garments': line['garments'],
+                     'distance_m': round(math.dist(pts[len(pts) // 2][:2], cam.c[:2]) / 100, 1)})
+    good = [s for s in seen if s['in_sight'] >= VIEW_SEEN[0] * s['points'] and s['pixel_span'] >= VIEW_SEEN[1]]
+    assert good, ('no laundry line in sight of the ' + view + ' camera', seen)
+    return {'view': view, 'camera_cm': [round(v) for v in cam.c], 'occluders': len(occ.tris), 'trees': trees,
+            'lines_in_frame': len(lines), 'lines_in_sight': len(good),
+            'nearest_in_sight': min(good, key=lambda s: s['distance_m'])}
+
+
+def check_gallery_life(world, out, soul, soul_rows):
+    """Gallery props on the Plex decks: floor props inside the props floor (decks[].free), never in front of a door
+    or at a flight's head, an AC unit in a drawn window, planters hung on the outer guard, dishes clamped to a guard
+    that faces the satellite, nothing overlapping, the colliding ones with their boxes on the deck."""
+    R = replica
+    lane = json.loads((out / 'Soul/lane_life.json').read_text())
+    rows = lane['galleries']
+    placed = [r for r in soul_rows if 'gallery_of' in r]
+    assert len(placed) == len(rows) == soul['counts']['gallery_props'] > 0
+    plex = R.PlexYards.load(world)
+    lots = {lot['id']: lot for lot in plex.lots}
+    glass = R.PlexGlass()
+    info = R.props_info()
+    anchors = {}
+    for line in lane['laundry']['lines']:
+        anchors.setdefault((line['lot'], line['deck_z']), []).append(line['anchor'])
+    kinds = {k: 0 for k in R.GALLERY_PROPS}
+    by_deck = {}
+    tol = .6
+    for row, inst in zip(rows, placed):
+        assert row['prop'] == inst['prop'] and row['position'] == inst['position'] and row['yaw'] == inst['yaw'], row
+        assert inst['collision'] == (row['prop'] in R.GALLERY_COLLIDE), ('collision flag', row)
+        kinds[row['prop']] += 1
+        lot = lots[row['lot']]
+        assert lot['storeys'] < 5, ('props on a steel fire escape', row)
+        kind, index = row['deck']
+        deck = lot['rear'][kind][index]
+        F = R.deck_frame(deck)
+        rects = R.deck_rects(F, deck)
+        z, (x, d) = deck['z'], F.local(row['position'][:2])
+        poly = R._prop_poly(row['prop'], row['position'][:2], row['yaw'])
+        loc = [F.local(q) for q in poly]
+        x0, x1 = min(q[0] for q in loc), max(q[0] for q in loc)
+        d0, d1 = min(q[1] for q in loc), max(q[1] for q in loc)
+        flights = [fl for fl in lot['rear'].get('flights') or [] if fl.get('head')]
+        if row['place'] in ('floor', 'window'):
+            door = F.local(deck['door'])[0]
+            assert x1 <= door - 58 or x0 >= door + 58, ('in front of a gallery door', row)
+            for fl in flights:
+                if abs(fl['head'][2] - z) < 1:
+                    assert R.poly_point_dist(poly, fl['head'][:2]) >= 40, ('at the head of a flight', row)
+            by_deck.setdefault((row['lot'], kind, index), []).append((x0, x1, d0, d1, row))
+        if row['place'] == 'floor':
+            assert abs(row['position'][2] - z) < .01, row
+            if row['prop'] == 'bike_gallery':
+                # leaning on the cap rail: its top at the cap's inner face, its wheels on the props floor
+                assert abs(d1 - (F.D - R.CAP_FACE - .5)) < .1, row
+                assert any(r[0] - tol <= x0 and x1 <= r[1] + tol and r[2] - tol <= d0 and d <= r[3] for r in rects), row
+            else:
+                assert any(r[0] - tol <= x0 and x1 <= r[1] + tol and r[2] - tol <= d0 and d1 <= r[3] + tol
+                           for r in rects), ('off the props floor', row)
+        elif row['place'] == 'window':
+            assert row['prop'] == 'ac_unit' and abs(row['position'][2] - z - R.WINDOW_SILL) < .01, row
+            assert abs(d + info['anchors']['ac_wall_x'] - R.WINDOW_GLASS_D - .5) < .05, ('off the glass', row)
+            assert any(abs(xc - x) < .5 for xc, _ in glass.windows(F, z, x0 - 10, x1 + 10)), ('no window there', row)
+        else:
+            guards = [g for g in lot['rear'].get('guards') or [] if abs(g['z0'] - z) < 1]
+            for fl in flights:
+                a, b = (fl.get('foot') or fl['head'])[:2], fl['head'][:2]
+                assert R.poly_seg_dist(poly, a, b) >= R.STAIR_CLEAR.get(fl.get('kind'), 85.) - .5, ('over a stair', row)
+            assert not any(world.in_building(q) for q in poly), ('in a wall', row)
+            if row['place'] == 'rail':
+                assert row['prop'] == 'flower_box'
+                assert abs(d + info['anchors']['flower_wall_x'] - (F.D + R.CAP_FACE + .5)) < .05, ('off the guard', row)
+                g = [g for g in guards if all(abs(F.local(q)[1] - F.D) < 2 for q in (g['a'], g['b'])) and
+                     min(F.local(q)[0] for q in (g['a'], g['b'])) - tol <= x0 and
+                     x1 <= max(F.local(q)[0] for q in (g['a'], g['b'])) + tol]
+                assert g and abs(row['position'][2] - (g[0]['z1'] - R.RAIL_BOX_DROP)) < .01, ('not on an outer guard', row)
+                assert all(math.dist(row['position'][:2], q[:2]) >= R.HUNG_LINE + 45.5
+                           for q in anchors.get((row['lot'], z), ())), ('on a laundry pulley', row)
+            else:
+                assert row['place'] == 'guard' and row['prop'] == 'satellite_dish', row
+                g = [g for g in guards if R.seg_dist(row['position'][:2], g['a'], g['b']) < .5 and
+                     abs(row['position'][2] - (g['z1'] - info['anchors']['dish_clamp_z'])) < .01]
+                assert g, ('a dish off its guard cap', row)
+                az = row['aim_azimuth']
+                assert 190 <= az <= 230 and 25 <= row['aim_elevation'] <= 40, row
+                aim = (math.sin(math.radians(az)), math.cos(math.radians(az)))
+                assert abs((math.degrees(math.atan2(aim[1], aim[0])) - row['yaw'] + 180) % 360 - 180) < .05, row
+                u, _ = R.unit(g[0]['a'], g[0]['b'])
+                n = (u[1], -u[0])
+                centre = F.world(F.W / 2, F.D / 2)
+                if (centre[0] - g[0]['a'][0]) * n[0] + (centre[1] - g[0]['a'][1]) * n[1] > 0:
+                    n = (-n[0], -n[1])
+                assert n[0] * aim[0] + n[1] * aim[1] >= R.DISH_FACING - .01, ('a dish aimed into its gallery', row)
+    for items in by_deck.values():
+        for i, a in enumerate(items):
+            for b in items[i + 1:]:
+                assert a[1] <= b[0] or b[1] <= a[0] or a[3] <= b[2] or b[3] <= a[2], ('props overlap', a[4], b[4])
+    for row in rows:
+        if row['collision']:
+            kind, index = row['deck']
+            deck = lots[row['lot']]['rear'][kind][index]
+            F = R.deck_frame(deck)
+            for box in R.collider_polys(row['prop'], row['position'][:2], row['yaw']):
+                assert all(-1 <= F.local(q)[0] <= F.W + 1 and -1 <= F.local(q)[1] <= F.D for q in box), \
+                    ('a collider off its deck', row)
+    counts = soul['counts']
+    decks = counts['gallery_decks']
+    assert counts['gallery_decks_lived'] >= .7 * decks and decks >= 1000, counts
+    assert kinds == {k: counts['gallery_' + k] for k in R.GALLERY_PROPS}
+    for prop, least in (('chair_patio', 500), ('potted_plant', 800), ('bbq', 100), ('bike_gallery', 50),
+                        ('bin_recycling', 150), ('bin_compost', 100), ('ac_unit', 60), ('flower_box', 60)):
+        assert kinds[prop] >= least, (prop, kinds)
+    assert 4 <= kinds['satellite_dish'] <= .03 * decks, kinds
+    return {'decks': decks, 'lived': counts['gallery_decks_lived'], 'props': kinds,
+            'dishes_without_sky': counts['gallery_dishes_without_sky']}
+
+
+class FixtureWorld:
+    """Just enough of plateau_replica.World for the lane-life fixtures: one building north of y = 0, no traffic."""
+
+    def __init__(self):
+        R = replica
+        self.buildings = [{'points': [(-2000., 0.), (3000., 0.), (3000., 1500.), (-2000., 1500.)], 'height': 1100.}]
+        self.building_grid, self.edge_grid = R.Grid(2500.), R.Grid(2500.)
+        self.building_grid.add(0, R.bbox(self.buildings[0]['points']))
+        pts = self.buildings[0]['points']
+        self.building_edges = [(a, b, 0) for a, b in zip(pts, pts[1:] + pts[:1])]
+        for i, (a, b, _) in enumerate(self.building_edges):
+            self.edge_grid.add(i, R.bbox([a, b]))
+        self.utility_poles = []
+
+    def in_building(self, p, margin=0.):
+        if replica.point_in(p, self.buildings[0]['points']):
+            return True
+        return margin > 0 and any(replica.seg_dist(p, a, b) < margin for a, b, _ in self.building_edges)
+
+    def traffic_distance(self, p, limit=350.):
+        return limit
+
+
+def _fixture_rear(lot_id, shed=None):
+    """A two-gallery straight stack on a wall along y = 0 (the yard south of it, 9 m deep), with its stair at the
+    east end, a board fence with a gate on the lane and, optionally, a shed (sx0, sx1, sd0, sd1 in the yard frame)."""
+    rect = [(0., -18.), (800., -18.), (800., -918.), (0., -918.)]
+    decks = [{'z': z, 'quad': [(0., 0.), (800., 0.), (800., -180.), (0., -180.)]} for z in (330., 650.)]
+    return {'id': lot_id, 'storeys': 3, 'front': None, 'rear': {
+        'walls': [], 'footprints': [[(0., 0.), (800., 0.), (800., -200.), (0., -200.)]], 'decks': decks,
+        'guards': [{'a': (0., -177.), 'b': (800., -177.), 'z0': z, 'z1': z + 107.} for z in (330., 650.)],
+        'flights': [{'kind': 'straight', 'foot': (780., -400., 20.), 'head': (780., -190., 330.)}],
+        'yard': {'rect': rect, 'cells': [], 'trees': [], 'pad': None, 'shed': shed},
+        'shed': 'shed' if shed else None,
+        'fence': {'kind': 'boards', 'height_cm': 180., 'gate_at': 640., 'runs': [[0., 590.], [690., 800.]],
+                  'lane': True, 'shed_at': shed[:2] if shed else None}}}
+
+
+def check_laundry_fixture():
+    """The pole stands at the back fence and the line rises to it; round a shed the line runs askew to a pole beside
+    it, never over its roof."""
+    R = replica
+    world = FixtureWorld()
+    report = {}
+    for name, shed in (('open', None), ('shed', [0., 330., 640., 880.])):
+        found = None
+        for n in range(40):
+            plex = R.PlexYards({'fronts': [_fixture_rear(f'{name}-{n}', shed)]}, world)
+            S, lane = R.Layer('Soul', R.SOUL_MATERIALS), {}
+            counts = {k: 0 for k in R.LANE_COUNTS}
+            R.lane_laundry(world, plex, S, lane, counts)
+            if lane['laundry']['lines']:
+                found = (plex, lane)
+                break
+        assert found, name
+        plex, lane = found
+        lot = plex.lots[0]
+        F = lot['frame']
+        pole = lane['laundry']['poles'][0]
+        # at the fence line itself, or just in from it where the line must clear the shed's corner
+        assert pole['from_fence_cm'] == R.POLE_FENCE[0] if not shed else pole['from_fence_cm'] in R.POLE_FENCE, pole
+        assert abs(F.D - F.local(pole['position'])[1] - pole['from_fence_cm']) < .05
+        for line in lane['laundry']['lines']:
+            a, e = line['anchor'], line['end']
+            assert R.LINE_RISE[0] - .01 <= e[2] - a[2] <= R.LINE_RISE[1] + .01 or abs(e[2] - R.LINE_MIN_END) < .01, line
+            assert pole['height_cm'] >= e[2] + R.POLE_TOP - .5
+            assert all(R.point_in(R.lerp(a[:2], e[:2], t / 10), lot['frame'].poly(0, F.W, -400, F.D)) for t in range(11))
+            if shed:
+                poly = lot['shed_poly']
+                assert not any(R.segments_cross(a[:2], e[:2], p, q) for p, q in zip(poly, poly[1:] + poly[:1])), line
+                assert R.poly_point_dist(poly, pole['position']) >= 30
+        report[name] = {'from_fence_cm': pole['from_fence_cm'], 'pole_cm': pole['height_cm'],
+                        'lines': len(lane['laundry']['lines']),
+                        'skew_cm': round(abs(F.local(pole['position'])[0] - F.local(lane['laundry']['lines'][0]['anchor'][:2])[0]))}
+    assert report['shed']['skew_cm'] > 0
+    return report
+
+
+class FixtureGlass:
+    def windows(self, F, z, x0, x1):
+        return [(xc, 68.) for xc in (150., 330.) if x0 <= xc <= x1]
+
+
+def check_gallery_fixture(runs=300):
+    """Gallery life on a synthetic deck facing south (a dish can see the satellite over the yard), with a stair
+    flight alongside its outer guard, a door, two windows and a laundry pulley: over many seeds every prop stays on
+    the props floor or its rail, window or guard, away from the stair, the door and the pulley, and every kind
+    turns up."""
+    R = replica
+    world = FixtureWorld()
+    plex = R.PlexYards({'fronts': []}, world)
+    door = (560., -45.)
+    deck = {'z': 330., 'quad': [(0., 0.), (700., 0.), (700., -170.), (0., -170.)], 'out': (0., -1.),
+            'edge': [(0., -167.), (700., -167.)], 'door': door,
+            'free': [[(8., -3.), (455., -3.), (455., -155.), (8., -155.)]]}
+    guards = [{'a': (0., -167.), 'b': (700., -167.), 'z0': 330., 'z1': 437.},
+              {'a': (2., 0.), 'b': (2., -164.), 'z0': 330., 'z1': 437.},
+              {'a': (698., 0.), 'b': (698., -164.), 'z0': 330., 'z1': 437.}]
+    flight = ('straight', (330., -215., 20.), (700., -215., 330.))
+    anchor = (40., -168., 430.)
+    seen = {k: 0 for k in R.GALLERY_PROPS}
+    for n in range(runs):
+        lot = {'id': f'fixture-{n}', 'storeys': 3, 'rear': {'guards': guards}}
+        rows = []
+
+        def put(prop, p, yaw, collides, parts, extra=None, z=None):
+            row = R.placement(world, prop, p, yaw, collides and R.collision_clear(world, prop, p, yaw), parts, extra, z)
+            rows.append(row)
+            return row
+        counts = {k: 0 for k in R.LANE_COUNTS}
+        out = R._gallery_deck(world, plex, put, lot, 'decks', 0, deck, R.Rng('fixture-deck', n), [flight],
+                              FixtureGlass(), [anchor], {}, [], counts)
+        assert len(out) == len(rows)
+        F = R.deck_frame(deck)
+        boxes = []
+        for row in out:
+            seen[row['prop']] += 1
+            loc = [F.local(q) for q in row['footprint']]
+            x0, x1 = min(q[0] for q in loc), max(q[0] for q in loc)
+            d0, d1 = min(q[1] for q in loc), max(q[1] for q in loc)
+            x, d = F.local(row['position'][:2])
+            if row['place'] == 'floor':
+                top = F.D - R.CAP_FACE if row['prop'] == 'bike_gallery' else 155.
+                assert 8 - .6 <= x0 and x1 <= 455 + .6 and 3 - .6 <= d0 and d1 <= top + .6, row
+            if row['place'] in ('floor', 'window'):
+                assert x1 <= door[0] - 58 or x0 >= door[0] + 58, row
+                boxes.append((x0, x1, d0, d1))
+            if row['place'] == 'window':
+                assert x in (150., 330.) and abs(row['position'][2] - 330. - R.WINDOW_SILL) < .01
+            if row['place'] in ('rail', 'guard'):
+                assert R.poly_seg_dist(row['footprint'], flight[1][:2], flight[2][:2]) >= R.STAIR_CLEAR['straight'] - .5
+                assert not any(world.in_building(q) for q in row['footprint']), row
+            if row['place'] == 'rail':
+                assert abs(d - 11. - (F.D + R.CAP_FACE + .5)) < .05 and math.dist(row['position'][:2], anchor[:2]) >= 95.5
+                assert abs(row['position'][2] - (437. - R.RAIL_BOX_DROP)) < .01
+            if row['place'] == 'guard':
+                assert any(R.seg_dist(row['position'][:2], g['a'], g['b']) < .5 for g in guards)
+                assert 190 <= row['aim_azimuth'] <= 230 and abs(row['position'][2] - 431.) < .01
+            if row['prop'] == 'bike_gallery':
+                # it leans to its left (-Y) onto the cap rail: its +Y axis points from the guard back to the wall
+                yaw = math.radians(row['yaw'])
+                assert abs(-math.sin(yaw) - 0.) < 1e-6 and abs(math.cos(yaw) - 1.) < 1e-6, row
+        for i, a in enumerate(boxes):
+            for b in boxes[i + 1:]:
+                assert a[1] <= b[0] or b[1] <= a[0] or a[3] <= b[2] or b[3] <= a[2], (a, b)
+    assert all(v > 0 for v in seen.values()), seen
+    rng = R.Rng('shuffle')
+    items = list(range(20))
+    rng.shuffle(items)
+    again = list(range(20))
+    R.Rng('shuffle').shuffle(again)
+    assert items == again and sorted(items) == list(range(20)) and items != list(range(20))
+    return {'runs': runs, 'props': seen}
+
+
+# ------------------------------------------------------------------------------------------------
 # Streets, third pass: mapped trees off the carriageway, ruelles paved to the fences, curb-to-building coverage on
 # the capture streets, textured front lawns and card plants
 
@@ -1991,7 +2519,8 @@ def check_open_steps(world, out, streets):
 
 
 def main():
-    report = {'lane_fixtures': check_lane_fixtures()}
+    report = {'lane_fixtures': check_lane_fixtures(), 'laundry_fixture': check_laundry_fixture(),
+              'gallery_fixture': check_gallery_fixture()}
     with tempfile.TemporaryDirectory() as a, tempfile.TemporaryDirectory() as b:
         world, results = replica.prepare(a)
         replica.prepare(b)
@@ -2156,6 +2685,8 @@ def main():
                     'green_planters', 'green_murals', 'tags_fences', 'tags_doors'):
             assert so[key] > 0, key
         report['lane_life'] = check_lane_life(world, out, soul, soul_rows['placements'])
+        report['laundry_view'] = check_laundry_view(world, out)
+        report['gallery_life'] = check_gallery_life(world, out, soul, soul_rows['placements'])
         report['street_trees'] = check_street_trees(world, out, streets)
         report['ruelle_paving'] = check_ruelle_paving(world, out, streets, soul_rows['placements'])
         report['capture_coverage'] = check_capture_coverage(world, out, streets)
