@@ -27,3 +27,6 @@ PR#635 released as `3797b07fdd943b430102de6b573ef8f20f6f2e38` after review, CI, 
 PR#636 released as `9d82f8233450bc1a3c5f1e8ef841c78de731c768` after review, CI, deployed functional checks, final rebase and exact-head merge; production bytes verified. Canonical spec and archive published. FPS benefit and affected Chrome remain unverified; no FPS-benefit gate.
 
 Continue with small concrete scene-work changes; do not reinstate FPS-benefit checks or benchmark queues as merge prerequisites.
+
+
+Increment37 released in #638 as2c9d2d8f after all6CI/review/current4checkpreview/freshrebase. Production streetview HTTP200 exactSHA6a1c7c3089d596471c0cca7fae51a27b30b6bd39bdffa021a49f879fe5c64282. Canonical invisible-street scenarios published and OpenSpec archived. No FPS gain or affectedChrome acceptance claimed; currenttotal withheld.
