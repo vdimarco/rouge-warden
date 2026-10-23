@@ -2273,7 +2273,7 @@ def _passage_walk(world, L, surfaces, strip, counts, stops, oa, u, out, xs, i, j
         return min(hits) if hits else None
     # from the sidewalk's back line, past the parterre (which may stop short of the façade line: an open 2.5 m
     # parterre where the building behind the passage stands more than FRONT_MAX back)
-    x, y = (xs[i] + xs[j]) / 2, 0.
+    x, y = (xs[i] + xs[j]) / 2, 5.
     while y < max(left, right) + FRONT_MAX and blocked(at(x, y)):
         y += PASSAGE_ROW
     rows = []

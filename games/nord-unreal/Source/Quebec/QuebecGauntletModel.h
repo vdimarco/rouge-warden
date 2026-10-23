@@ -590,9 +590,10 @@ namespace QuebecGauntlet
         for (std::size_t Step = 0; Step < Size; ++Step)
         {
             // The segments behind and the current one always count; a later one only when it starts within TrackAhead.
+            // A start a rounding error behind the car is not a whole lap ahead, so only a start half a lap back wraps.
             const std::size_t Segment = (First + Step) % Size;
             double Ahead = Loop.Distance[Segment] - Here;
-            if (Ahead < 0.0) Ahead += Loop.Length;
+            if (Ahead < -.5 * Loop.Length) Ahead += Loop.Length;
             if (Step > Behind && Ahead > TrackAhead) break;
             double Alpha = 0.0;
             const FVec2 Point = QuebecPursuit::ClosestOnSegment(Position, Loop.Points[Segment], Loop.Points[Segment + 1], Alpha);
