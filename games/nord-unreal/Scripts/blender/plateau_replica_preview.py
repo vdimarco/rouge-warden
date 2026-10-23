@@ -908,16 +908,80 @@ def place_trees(trees, region, col):
     return n
 
 
+def read_obj_groups(path, scale=.01):
+    """An OBJ split by usemtl: {name: (verts, polys, uvs, loop normals)}, in file coordinates, scaled to metres."""
+    vs, vts, vns, groups, current = [], [], [], {}, None
+    with open(path, 'r') as fh:
+        for line in fh:
+            tag = line[:2]
+            if tag == 'v ':
+                p = line.split()
+                vs.append((float(p[1]) * scale, float(p[2]) * scale, float(p[3]) * scale))
+            elif tag == 'vt':
+                p = line.split()
+                vts.append((float(p[1]), float(p[2])))
+            elif tag == 'vn':
+                p = line.split()
+                vns.append((float(p[1]), float(p[2]), float(p[3])))
+            elif line.startswith('usemtl '):
+                current = line.split()[1]
+            elif tag == 'f ':
+                groups.setdefault(current, []).append([[int(x) if x else 0 for x in (t.split('/') + ['', ''])[:3]]
+                                                       for t in line.split()[1:]])
+    out = {}
+    for name, faces in groups.items():
+        remap, verts, polys, uvs, normals = {}, [], [], [], []
+        for f in faces:
+            poly = []
+            for v, t, n in f:
+                i = v - 1 if v > 0 else len(vs) + v
+                if i not in remap:
+                    remap[i] = len(verts)
+                    verts.append(vs[i])
+                poly.append(remap[i])
+                uvs.append(vts[t - 1] if t else (0., 0.))
+                normals.append(vns[n - 1] if n else None)
+            polys.append(poly)
+        out[name] = (verts, polys, uvs, normals if all(normals) else None)
+    return out
+
+
+SPECIES = {}
+
+
+def species_collection(species, kind):
+    """A species mesh of Trees/manifest.json (Scripts/blender/plateau_trees.py) as the apply step imports it: one
+    object per usemtl slot, the slot named bark or leaves (apply_plateau_replica.tree_slot) taking that kind's
+    material through the apply step's own material row (the textured bark; the masked, two-sided foliage leaf atlas),
+    and the OBJ's normals kept, so the leaf cards keep the normals the generator bent to the crown (SpeedTree's leaf
+    puffiness). File coordinates, as the props: the instance takes position (x, -y, z) and yaw -yaw."""
+    if species in SPECIES:
+        return SPECIES[species]
+    coll = bpy.data.collections.new('Tree_' + species)
+    path = os.path.join(REPLICA, kind['obj'])
+    for name, (verts, polys, uvs, normals) in sorted(read_obj_groups(path).items()):
+        slot = tree_slot(name)
+        ref = kind['materials'][slot]
+        mat = replica_material('Trees', ref['key'], ref['spec'])
+        ob = make_object(f'T_{species}_{slot}', verts, polys, uvs, mat, coll, smooth=True)
+        if normals:
+            ob.data.normals_split_custom_set(normals)
+    SPECIES[species] = coll
+    return coll
+
+
 def place_yard_trees(region, col):
-    """The Plex yard trees as the apply step instances them: one group per kind on the mapped trees' mesh, each
-    tree at its position and yaw with scale (scale x crown, scale x crown, scale) from plan_trees, so the kinds
-    widen or narrow the crown of the same model. Positions and yaw go into the file frame as (x, -y, z), -yaw."""
+    """The Plex yard trees as the apply step instances them (plan_trees). With Trees/manifest.json: one group per
+    species (the old maple and elm rows on norway_maple and linden), each tree on its species mesh, scaled uniformly
+    to the row's height. Without it: one group per kind on the mapped trees' mesh with scale (scale x crown, scale x
+    crown, scale). Positions and yaw go into the file frame as (x, -y, z), -yaw."""
     rows = load_yard_trees(ROOT)
     if not rows:
         return 0
-    coll, _ = tree_template()
+    kinds = load_tree_kinds(ROOT)
     n = 0
-    for group in plan_trees(rows):
+    for group in plan_trees(rows, kinds):
+        coll = species_collection(group['kind'], kinds[group['kind']]) if kinds else tree_template()[0]
         for (x, y, z), yaw, scale in group['transforms']:
             if not region.keep(x, y):
                 continue
