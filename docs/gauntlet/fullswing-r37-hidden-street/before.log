@@ -1,0 +1,7 @@
+{"initial":1,"hidden":{"unchanged":false,"time":61,"people":0,"count":2},"resumed":{"count":2,"time":99,"people":1,"changed":true}}
+PASS: visible initial signs
+FAIL sixty hidden updates skip visual preparation
+  {"initial":1,"hidden":{"unchanged":false,"time":61,"people":0,"count":2},"resumed":{"count":2,"time":99,"people":1,"changed":true}}
+PASS: resume refreshes current signs, time and people
+PASS: no page errors
+FAIL: hidden street (1 failed, 3 passed)

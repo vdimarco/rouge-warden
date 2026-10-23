@@ -423,6 +423,7 @@ export function createStreetView(scene, street, figures) {
     root, signs: signMesh,
     // cam: the camera's world position (the signs near it are drawn)
     update(dt, time, cam) {
+      if (!root.visible) return;
       U.uTime.value = time;
       if (cam && Math.hypot(cam.x - signAt.x, cam.z - signAt.z) > SIGN_STEP) nearSigns(cam.x, cam.z);
       if (figures && root.visible) for (const p of street.people) if (p.on) figures.add(p, "people");
