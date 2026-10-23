@@ -63,6 +63,7 @@ namespace QuebecGauntlet
     inline constexpr double MaxRound = 150.0;         // Degrees; a sharper turn, alone or merged, is never rounded.
     inline constexpr double ArcStep = 10.0;           // Degrees of arc between two points.
     inline constexpr double CornerMargin = 1.3;       // Arc radius over the car's turning radius at the arc's speed.
+    inline constexpr double MaxCut = 300.0;           // An arc passes at most this inside its junction, so it stays on a 6.8 m street.
     inline constexpr double MinCornerSpeed = 300.0;   // The slowest arc speed, for a tight arc between short segments.
 
     // Frame times. A frame counts when it is strictly over the limit.
@@ -381,11 +382,11 @@ namespace QuebecGauntlet
     // Finish a loop whose Points (closed: the last equals the first) and Stops are set. The road polylines have many
     // short pieces, so the line is first simplified (KeepShape, between the stops). Then each turn of RoundFrom or
     // more becomes an arc: the speed is the police CornerSpeed for the turn (at most SpeedCap), and the radius is the
-    // car's turning radius at that speed times CornerMargin. Where a segment is too short for the arcs at both ends,
+    // car's turning radius at that speed times CornerMargin. A sharp turn whose arc would pass more than MaxCut inside
+    // the junction gets a smaller arc and a lower speed. Where a segment is too short for the arcs at both ends,
     // same-way corners merge, and otherwise the arcs share it, so a tight spot gets a smaller arc and a lower speed.
-    // Stops are never rounded, so each stays on its road point.
-    // Then Distance, Length and Limit are filled. The rounded line is the route the driver follows and the line the
-    // lateral error is measured from; it cuts a junction by at most Radius * (1 - cos(turn / 2)).
+    // Stops are never rounded, so each stays on its road point. Then Distance, Length and Limit are filled.
+    // The rounded line is the route the driver follows and the line the lateral error is measured from.
     inline void FinishLoop(FLoop& Loop)
     {
         std::vector<bool> Keep(Loop.Points.size(), false);
@@ -428,7 +429,14 @@ namespace QuebecGauntlet
             Corner.Side = In.X * Out.Y - In.Y * Out.X > 0.0 ? 1.0 : -1.0;
             if (Corner.Turn > MaxRound) return Corner;
             Corner.Speed = std::min(SpeedCap, QuebecPursuit::CornerSpeed(Corner.Turn));
-            Corner.Want = TurnRadius(Corner.Speed) * CornerMargin * std::tan(Corner.Turn * .5 * Pi / 180.0);
+            double Radius = TurnRadius(Corner.Speed) * CornerMargin;
+            const double Cut = 1.0 - std::cos(Corner.Turn * .5 * Pi / 180.0);
+            if (Radius * Cut > MaxCut)
+            {
+                Radius = MaxCut / Cut;
+                Corner.Speed = SpeedForRadius(Radius, Corner.Speed);
+            }
+            Corner.Want = Radius * std::tan(Corner.Turn * .5 * Pi / 180.0);
             return Corner;
         };
         // Two corners that turn the same way and share a segment too short for both arcs become one corner where the
