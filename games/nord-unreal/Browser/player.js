@@ -234,7 +234,7 @@ if (endpoint) {
       reconnecting = reconnect;
       started = true;
       streamSize = '';
-      phoneStream = phoneStreamState(performance.now());
+      phoneStream = phoneStreamState(performance.now(), pinnedRung);
       disconnectButton.disabled = false;
       streamSelect.disabled = true;
       status('connecting', 'Connecting to Montréal…', 'Finding the game host and available players.');
@@ -251,7 +251,7 @@ if (endpoint) {
       if (streamSelect.disabled || !streamSelect.value) return;
       streamSelect.disabled = true;
       streamSize = '';
-      phoneStream = phoneStreamState(performance.now());
+      phoneStream = phoneStreamState(performance.now(), pinnedRung);
       status('connecting', 'Opening your player…', 'Connecting to the selected player.');
       waitForConnection();
       config.setOptionSettingValue(OptionParameters.StreamerId, streamSelect.value);

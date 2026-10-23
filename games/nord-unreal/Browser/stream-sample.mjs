@@ -5,7 +5,64 @@ import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { parseArgs } from 'node:util';
 
-export function summarize(samples) {
+// The frame budget and slow-frame limits of Data/Gauntlet/loop.json; a frame counts when strictly over a limit.
+const FRAME_BUDGET_MS = 33.3, SLOW_FRAME_MS = 50;
+const total = values => values.reduce((sum, value) => sum + value, 0);
+// The percentile of Scripts/gauntlet_metrics.py, so both sides name the same frame.
+const percentile = (sorted, fraction) => sorted[Math.ceil((sorted.length - 1) * fraction)];
+
+// Mean and maximum, in ms, of a per-second gauge reported in seconds (round-trip time, jitter).
+function gauge(samples, key) {
+  const values = samples.map(sample => sample[key]).filter(Number.isFinite).map(value => value * 1000);
+  return values.length ? { mean: total(values) / values.length, max: Math.max(...values) } : null;
+}
+
+// Decoded frame intervals from requestVideoFrameCallback entries, as decoded_intervals() in Scripts/gauntlet_metrics.py.
+// n frames presented between two callbacks share that time equally; the longest gap is the whole time, so it never hides a stall.
+export function frameIntervals(frames) {
+  const ordered = frames.filter(frame => Number.isFinite(frame.presentedFrames) && Number.isFinite(frame.expectedDisplayTime));
+  const intervals = [];
+  let longest = 0;
+  for (let i = 1; i < ordered.length; i++) {
+    const count = ordered[i].presentedFrames - ordered[i - 1].presentedFrames;
+    const gap = ordered[i].expectedDisplayTime - ordered[i - 1].expectedDisplayTime;
+    if (count <= 0 || gap < 0) continue;
+    for (let frame = 0; frame < count; frame++) intervals.push(gap / count);
+    longest = Math.max(longest, gap);
+  }
+  if (!intervals.length) return null;
+  const sorted = intervals.toSorted((a, b) => a - b);
+  const seconds = (ordered.at(-1).expectedDisplayTime - ordered[0].expectedDisplayTime) / 1000;
+  const sizes = [];
+  for (const { width, height } of frames) {
+    if (Number.isFinite(width) && Number.isFinite(height) && `${width}x${height}` !== sizes.at(-1)) sizes.push(`${width}x${height}`);
+  }
+  return { frames: intervals.length, fps: seconds > 0 ? intervals.length / seconds : 0,
+    p50Ms: percentile(sorted, .5), p95Ms: percentile(sorted, .95), p99Ms: percentile(sorted, .99),
+    over33Percent: intervals.filter(value => value > FRAME_BUDGET_MS).length * 100 / intervals.length,
+    over50Percent: intervals.filter(value => value > SLOW_FRAME_MS).length * 100 / intervals.length,
+    longestGapMs: longest, sizes };
+}
+
+// A trigger line names its shots; only file-name characters survive, so a line cannot leave the shots folder.
+export function shotName(index, line) {
+  return `${String(index).padStart(2, '0')}-${line.trim().replace(/[^\w.-]+/g, '_').slice(0, 60) || 'shot'}`;
+}
+
+// The player page may carry one ?pin=0-3 (the four phone rungs in config.mjs) and nothing else; --pin sets it.
+export function playerUrl(value, pin) {
+  const url = new URL(value), given = url.searchParams.getAll('pin');
+  assert.ok(['http:', 'https:'].includes(url.protocol) && !url.username && !url.password && !url.hash
+    && given.length === [...url.searchParams].length && given.length <= 1,
+  '--url must be an HTTP(S) player page without credentials, fragment or any query except one pin');
+  const level = pin ?? given[0];
+  if (level === undefined) return url;
+  assert.ok(/^[0-3]$/.test(level) && (!given.length || given[0] === level), '--pin must be 0–3 and match any pin in --url');
+  url.search = `?pin=${level}`;
+  return url;
+}
+
+export function summarize(samples, { frames, events } = {}) {
   assert.ok(samples.length >= 2, 'At least two media samples are required');
   const first = samples[0], last = samples.at(-1);
   const seconds = (last.timeMs - first.timeMs) / 1000;
