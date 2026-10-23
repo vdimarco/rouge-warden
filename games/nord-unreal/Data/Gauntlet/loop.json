@@ -32,7 +32,7 @@
     "fixed": "Settings no candidate changes.",
     "profiles": "baseline is today's stream profile: execcmds is Scripts/browser_streaming.py QUALITY verbatim, and cvars is its effective value per CVar (later entries win). ceiling is the desktop release look used as the visual reference.",
     "search": "The greedy climb: candidate limit, the smallest ms cost used in the efficiency ratio, repeat counts, tie rules and the GPU target used when steps are combined.",
-    "durations": "Estimates used for planning a GPU window."
+    "durations": "Estimates used for planning a GPU window. lap_estimate_s is the driving time of one lap of the kinematic car in Scripts/gauntlet_model_test.cpp (296 s in perf mode, 307 s with the stop easing of look and stream mode). candidate_estimate_s is one perf run (load, delay, warm and measured lap) plus one look run (load, delay, one lap with a 24 s hold at each stop). Both are estimates until the host measures a lap."
   },
   "version": 1,
   "map": "/Game/Maps/LaFontaine",
@@ -248,7 +248,7 @@
     "ms_tie_repeat_factor": 2
   },
   "durations": {
-    "lap_estimate_s": 210,
-    "candidate_estimate_s": 600
+    "lap_estimate_s": 300,
+    "candidate_estimate_s": 1200
   }
 }

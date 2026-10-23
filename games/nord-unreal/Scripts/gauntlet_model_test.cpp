@@ -1,6 +1,7 @@
 // Standalone test for Source/Quebec/QuebecGauntletModel.h and QuebecGauntletRoute.h. Built and run by Scripts/test_gauntlet_model.py.
 // argv[1] is Data/Gauntlet/fixtures/frametimes.csv. The route checks read the real LaFontaine road set straight from
 // Source/Quebec/LaFontaineMap.h and LaFontaineExtensionMap.h through one-line FVector and int8 stubs, so they cannot go stale.
+// The driven laps use a kinematic copy of AQuebecCar's player step (no road assist, collision or slip) at 30 and 120 Hz.
 // With QUEBEC_GAUNTLET_STRICT the Unreal macro names are poisoned before the model headers are read, so they cannot use them.
 
 #ifdef QUEBEC_GAUNTLET_STRICT
