@@ -149,7 +149,8 @@ def read_profiler_csv(source):
 
 
 def assign_legs(frames, loop):
-    """Give each frame its lap and leg from the leg-start events. Returns (samples, discarded counts, notes).
+    """Give each frame its lap and leg from the leg-start events. Returns (samples, discarded counts, notes, legs in
+    drive order).
 
     Frames before the first leg event are the warm-up (the capture should start after the warm lap). Frames after a
     hold, warm or end event and before the next leg event leave the lap. The final PROFILE_TAIL frames are dropped as
@@ -456,7 +457,7 @@ def stream_gates(loop, summary=None, intervals=None, native_windows=None):
     and native_windows is parse_stream_fps() over the lap."""
     stream = loop["budgets"]["stream"]
     s = summary or {}
-    decoded = s.get("decodedFps")
+    decoded = s.get("decodedFps") if s.get("decodedFps") is not None else (intervals or {}).get("fps")
     gap = intervals["longest_gap_ms"] if intervals else s.get("longestFrameGapMs")
     native_min = min(w["fps"] for w in native_windows) if native_windows else None
     native_mean = (sum(w["frames"] for w in native_windows) / sum(w["seconds"] for w in native_windows)) if native_windows else None

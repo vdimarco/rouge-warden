@@ -734,6 +734,7 @@ class Search:
         base_look = self.baseline["look"] if self.baseline and self.baseline["feasible"] else None
         eligible = []
         for record in self.records:
+            record.pop("rank", None)
             record["ranked"] = not record["look_only"] and record["phase"] != "baseline" or record["id"] == "baseline"
             record["look_reasons"] = look_check(self.loop, record, base_look) if record["ranked"] else []
             record["eligible"] = bool(record["ranked"] and record["feasible"] and not record["contended"]

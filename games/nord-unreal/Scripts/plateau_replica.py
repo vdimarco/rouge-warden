@@ -1774,6 +1774,7 @@ def _corner(world, L, surfaces, row, counts):
         if world.traffic_distance(quad) < CLEAR:
             for tri in ([p0, p1, q1], [p0, q1, q0]):
                 L.flat('curb', tri, Z_DROP)
+            surfaces.add(quad if area(quad) > 0 else quad[::-1], Z_DROP, 'apron')
             counts['dropped_aprons'] += 1
             continue
         ccw = area(quad) > 0
@@ -2936,13 +2937,15 @@ def _with_crossings(front, level):
 
 
 PIT_SLIDE = 35.            # a pit slides at most this far along the curb from its trunk (which stays 20 cm inside it)
+PIT_SHORTER = (90., 70.)  # ...and on an extension too short for it, it is laid this long instead
 
 
 def _pit_slide(e, ext, t, back, z, surfaces):
-    """How far along the curb a tree's pit slides to stay on its extension: one cut short at the strip's end (a
-    trunk by the corner) leaves no room on one side, and the pit would hang over the carriageway. The smallest
-    shift, in 5 cm steps up to PIT_SLIDE, whose pit lies within the extension's length and under its front, with
-    the part behind the curb on the extension's back or on ground at its height; else 0."""
+    """Where along the curb a tree's pit lies and how long it is, to stay on its extension: one cut short at the
+    strip's end (a trunk by the corner) leaves no room on one side, and the pit would hang over the carriageway.
+    The smallest shift, in 5 cm steps up to PIT_SLIDE, whose pit lies within the extension's length and under its
+    front, with the part behind the curb on the extension's back or on ground at its height, at the full PIT_L if
+    any fits, else at a shorter length (PIT_SHORTER), the trunk always inside the pit; else (0, PIT_L)."""
     lo, hi = ext['x']
     front = ext['front']
 
@@ -2952,19 +2955,20 @@ def _pit_slide(e, ext, t, back, z, surfaces):
                 return d0 + (d1 - d0) * (x - x0) / (x1 - x0)
         return -1e9
 
-    def fits(sx):
-        x0, x1 = sx - PIT_L / 2, sx + PIT_L / 2
+    def fits(sx, length):
+        x0, x1 = sx - length / 2, sx + length / 2
         if x0 < lo - .01 or x1 > hi + .01:
             return False
         n0, n1 = t['d'] - PIT_D / 2, t['d'] + PIT_D / 2
         if any(depth(x) < n1 - .5 for x in (x0 + .01, sx, x1 - .01)):
             return False
         return n0 >= -back - .01 or all(surfaces.floor(_local(e, x, n0)) >= z - 1. for x in (x0, sx, x1))
-    for shift in sorted({k * 5. * sign for k in range(int(PIT_SLIDE // 5) + 1) for sign in (1, -1)},
-                        key=lambda v: (abs(v), v)):
-        if fits(t['s'] + shift):
-            return shift
-    return 0.
+    for length in (PIT_L,) + PIT_SHORTER:
+        for shift in sorted({k * 5. * sign for k in range(int(PIT_SLIDE // 5) + 1) for sign in (1, -1)},
+                            key=lambda v: (abs(v), v)):
+            if abs(shift) <= length / 2 - 20. and fits(t['s'] + shift, length):
+                return shift, length
+    return 0., PIT_L
 
 
 def _draw_extensions(world, L, surfaces, extensions, counts):
@@ -3052,11 +3056,13 @@ def _draw_extensions(world, L, surfaces, extensions, counts):
         yaw = math.degrees(math.atan2(e['u'][1], e['u'][0]))
         for t in ext['trees']:
             z = Z_WALK if t['d'] + PIT_D / 2 + 15 <= raised else Z_DROP
-            sx = t['s'] + _pit_slide(e, ext, t, back, z, surfaces)
+            shift, pit_l = _pit_slide(e, ext, t, back, z, surfaces)
+            sx = t['s'] + shift
+            counts['tree_pits_narrowed'] += pit_l < PIT_L
             q = lambda x, y: _local(e, sx + x, t['d'] + y)            # noqa: E731
-            L.flat('soil', [q(-PIT_L / 2, -PIT_D / 2), q(PIT_L / 2, -PIT_D / 2), q(PIT_L / 2, PIT_D / 2),
-                            q(-PIT_L / 2, PIT_D / 2)], z + .15)
-            for x0, y0, x1, y1 in ((-55, -50, 55, -50), (55, -50, 55, 50), (55, 50, -55, 50), (-55, 50, -55, -50)):
+            hx, hy = pit_l / 2, PIT_D / 2
+            L.flat('soil', [q(-hx, -hy), q(hx, -hy), q(hx, hy), q(-hx, hy)], z + .15)
+            for x0, y0, x1, y1 in ((-hx, -hy, hx, -hy), (hx, -hy, hx, hy), (hx, hy, -hx, hy), (-hx, hy, -hx, -hy)):
                 L.rod('iron', (*q(x0, y0), z + 2), (*q(x1, y1), z + 2), 1.6, 4)
             world.extension_pits.append((t['node'], t['p'], yaw, z))
             counts['tree_pits'] += 1
