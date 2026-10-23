@@ -1210,3 +1210,6 @@ Increment40 shipped #644 as8b5a4565 after freshall6CI/review/current25deployedch
 ## Increment41 — reusable traffic paint arrays (pending release)
 
 Reuse per-output paint storage during traffic sampling; fresh results and fallbackpalette independent. Focused identity/value/alias checks plus action and visualselectionintegration. No art/physics/anchor/height change/noFPSgate. All20dimensions historicalcontextonly,no newpoints; affectedChrome responsiveness/stabilityunverified,total/deltawithheld. Evidence fullswing-r41-traffic-paint.
+
+
+Increment41 shipped #646 as2d254f7d after freshall6CI/review/current10deployedchecks/rebase; productioncars HTTP200 exactbytes verified (hash in fullswing-r41-traffic-paint/production-verification.json). Canonical traffic-paint scenarios published and OpenSpec archived. ActualChrome/FPSbenefit unverified; totalwithheld.
