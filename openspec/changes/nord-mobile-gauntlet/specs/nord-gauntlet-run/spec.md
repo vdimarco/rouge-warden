@@ -1,0 +1,118 @@
+## ADDED Requirements
+
+### Requirement: Fixed Plateau loop
+A gauntlet run SHALL drive the player's car with no player input through five fixed stops in the Plateau part of `/Game/Maps/LaFontaine` (S1 Sherbrooke, S2 Papineau, S3 Fabre, S4 RachelPark, S5 Mentana) and back to S1 on the LaFontaine road graph, with the sky pinned and frozen.
+
+#### Scenario: Loop completes
+- **WHEN** the host runs a stream-mode gauntlet and one phone-sized viewer watches NordHost
+- **THEN** the viewer sees the player's car drive from S1 to S5 and back to S1 with no input, pause at each stop, and stop within 8 m of where it started
+- **AND** the game log has one `NORD_GAUNTLET stop=` line per stop in route order, the lap takes at most 6 minutes with no stall longer than 10 s, and the run folder holds `native/route.json`
+- **AND** offline, `test_gauntlet_model.py` passes: the route closes, its length is 2.5 to 3.5 km, and a kinematic car at 30 Hz and at 120 Hz completes the loop with a lateral error under 2.5 m and no stall
+
+#### Scenario: Viewer input ignored
+- **WHEN** the viewer drags and taps on the stream during the lap (the sampler's `--look` sweep)
+- **THEN** the car keeps its path, and the lateral error in `native/route.json` stays at most 2.5 m
+
+#### Scenario: Gameplay state during a run
+- **WHEN** a perf or stream run starts
+- **THEN** ambient traffic and residents move as in normal play, and no police unit, campaign step, side job or save write happens, because `run.json` records `-NordNoPolice -NordNoCampaign -NordNoSideJobs -NordNoCampaignSave`
+- **AND** a look run also records `-NordNoAmbient`, so its stills show an empty street and repeat
+
+#### Scenario: Sky not pinned
+- **WHEN** a gauntlet run starts without both `-NordHour=` and `-NordWeather=`
+- **THEN** the game exits with code 3 before the car moves, and `browser_streaming.py` refuses `NORD_STREAM_GAUNTLET` unless `NORD_SKY_ARGS` has both flags
+- **AND** `test_gauntlet_loop.py` and `browser_streaming.py self-check` cover both refusals
+
+#### Scenario: Stops follow the replica cameras
+- **WHEN** the camera list in `Data/Plateau/ReplicaGeometry/Streets/manifest.json` changes, for example after the mirror fix flips Y
+- **THEN** `test_gauntlet_route.py` fails until `make_gauntlet_route.py` regenerates `QuebecGauntletRoute.h`
+
+### Requirement: Phone-stream frame budget
+With the phone profile at phone-stream sizes, the native render SHALL hold a 33.3 ms frame budget over the measured lap and on each leg, while the 60 FPS cap stays on.
+
+#### Scenario: Night rain, top phone frame
+- **WHEN** a perf run renders 1412x652 at 22:00 in rain with the phone profile, and the warm-up lap is discarded
+- **THEN** FrameTime p95 is at most 33.3 ms over the lap and on each of the five legs
+- **AND** FrameTime p99 is at most 50 ms, at most 1% of frames take longer than 50 ms, there is at most one hitch (a frame longer than 66.7 ms) per 30 s, and no frame takes longer than 250 ms
+- **AND** peak VRAM per game process is at most 6,000 MiB, `render_log_guard.py` finds no errors, and every profile CVar reads back as requested
+- **AND** `verdict.json` from a 3-lap confirmation (median of the per-lap p95 values) shows each of these gates as pass
+
+#### Scenario: Portrait
+- **WHEN** the same run renders 652x1412
+- **THEN** the same limits hold, and `verdict.json` shows them as pass
+
+#### Scenario: Day
+- **WHEN** the run is pinned to 15:00 with clear weather, in landscape and in portrait
+- **THEN** the same limits hold, and `verdict.json` shows them as pass
+
+#### Scenario: The 60 FPS cap stays on
+- **WHEN** any gauntlet run starts
+- **THEN** `run.json` records `t.MaxFPS 60` in the CVar readback, and `verdict.json` reports GPUTime next to FrameTime, so the headroom below the 16.7 ms floor is visible
+
+### Requirement: Stream delivery to a phone-sized client
+A phone-sized client watching NordHost alone over a direct connection SHALL receive at least 29 real decoded frames per second over the loop at both pinned phone rungs, in landscape and in portrait.
+
+#### Scenario: Solo, landscape and portrait, both rungs
+- **WHEN** one phone-sized sampler watches NordHost over a direct connection during a stream-mode lap, with NordFriend1 asleep, pinned first to rung 0 (1412x652 and 652x1412) and then to rung 1 (1058x488 and 488x1058)
+- **THEN** mean decoded FPS is at least 29 over the lap, there are zero WebRTC freezes, at most 1% of decoded frame intervals are longer than 50 ms, the longest gap is at most 500 ms, and the jitter buffer averages at most 120 ms per frame
+- **AND** `NORD_STREAM_FPS` is at least 29 in every 5 s window, decoded FPS is within 3 FPS of it, and `stream/sample.json` and `verdict.json` record each value
+
+#### Scenario: Pinned frame size
+- **WHEN** a sample runs with `?pin=` on a player built with `NORD_QA_PIN`
+- **THEN** the requested and received frame size stay the same for the whole lap, and the sample records every size change
+- **AND** a production player build ignores `?pin=`, which `config.test.mjs` checks
+
+#### Scenario: Two viewers and relay
+- **WHEN** one sampler watches each slot at the same time, or a sampler forces the TURN relay
+- **THEN** `review.html` and `verdict.json` show these results in a section labelled "report-only", and they do not change the gate result
+
+### Requirement: Delay reported apart from frame rate
+Each stream run SHALL report delay (round-trip time, jitter buffer, decode, processing and end-to-end delay) in its own section, apart from frame-rate results.
+
+#### Scenario: Delay section
+- **WHEN** a stream run finishes
+- **THEN** round-trip time, jitter buffer, decode, processing and end-to-end delay appear in their own section of `review.html` and `verdict.json`, labelled "host-PC headless Chromium with --disable-gpu, not a phone, not off-LAN"
+- **AND** no frame-rate result cites a delay figure, and no delay figure is gated
+
+### Requirement: Fixed views and a repeatable look run
+A look run SHALL capture the same fixed views at each stop for each sky and size, and the reference capture SHALL repeat closely enough to compare candidates.
+
+#### Scenario: Stills
+- **WHEN** a look run finishes
+- **THEN** the run folder holds 10 views per sky at each size, an eye view and a chase view at each stop, with the HUD off, named `look/<sky>/<stop>-<view>-<WxH>.png`
+
+#### Scenario: Repeatable reference
+- **WHEN** the ceiling profile is rendered twice with the same build, sizes and skies
+- **THEN** the luma SSIM between the two runs is at least 0.98 on every image, otherwise the round is marked invalid in `verdict.json`
+
+#### Scenario: Review page
+- **WHEN** the user opens `review.html` for a round
+- **THEN** each view has one row with the ceiling, baseline, candidate and decoded stream frame, each tile shows its SSIM and a difference map, and a click flips between baseline and candidate
+- **AND** the user's verdict on the look is final
+
+### Requirement: Honest evidence
+Every gauntlet result SHALL state whether it passed, failed, was not measured or ran under contention, and failing results SHALL stay on record.
+
+#### Scenario: Missing host run
+- **WHEN** a round has no host run for a gate
+- **THEN** `verdict.json` marks that gate "unverified", and the round report says "unverified, not pass"
+
+#### Scenario: Foreign GPU process
+- **WHEN** another GPU process runs before or during a run
+- **THEN** `verdict.json` marks the run "contended", lists the processes, and the tuner never ranks it
+
+#### Scenario: Failing result
+- **WHEN** a committed round fails a gate
+- **THEN** its `Verification/Gauntlet/<YYYYMMDD>-<label>.json` stays in the repository with the failing value and limit
+
+#### Scenario: Physical phone
+- **WHEN** a person plays the loop on a physical phone
+- **THEN** the result goes in its own phone record with device, browser and network, and no host-PC sample is reported as a phone result
+
+### Requirement: Rounds logged
+Each gauntlet round SHALL be logged in `docs/gauntlet/gta-mobile.md` with a rubric v1 scorecard whose performance scores cite the round's evidence.
+
+#### Scenario: Round scorecard
+- **WHEN** a round ends
+- **THEN** `docs/gauntlet/gta-mobile.md` has a rubric v1 scorecard for it, and "Performance stability" cites the round's `verdict.json` summary in `Verification/Gauntlet/`
+- **AND** a dimension with no host evidence reads "unverified" and is left out of its group sum, with the dimension count recorded

@@ -1116,14 +1116,14 @@ def read_obj(path):
     return v, vt, vn, faces
 
 
-def render_sheet(out_dir, manifest, sheet_path):  # pragma: no cover - needs bpy
+def render_sheet(out_dir, manifest, sheet_path, samples=40):  # pragma: no cover - needs bpy
     import bpy
     from mathutils import Euler, Vector
     bpy.ops.wm.read_factory_settings(use_empty=True)
     scene = bpy.context.scene
     scene.render.engine = 'CYCLES'
     scene.cycles.device = 'CPU'
-    scene.cycles.samples = 40
+    scene.cycles.samples = samples
     scene.cycles.use_denoising = True
     scene.cycles.transparent_max_bounces = 32
     scene.cycles.max_bounces = 6
@@ -1284,7 +1284,7 @@ def render_sheet(out_dir, manifest, sheet_path):  # pragma: no cover - needs bpy
         curve = bpy.data.curves.new('label', 'FONT')
         curve.body = text
         curve.align_x = 'CENTER'
-        curve.size = .036
+        curve.size = .026
         obj = bpy.data.objects.new('label', curve)
         m = bpy.data.materials.new('label')
         m.use_nodes = True
@@ -1309,13 +1309,13 @@ def render_sheet(out_dir, manifest, sheet_path):  # pragma: no cover - needs bpy
     tiles = []
     for kind in KINDS:
         k = manifest['kinds'][kind]
-        text = (f'{kind}  {k["height_cm"] / 100:.1f} m, trunk {k["trunk_cm"]:.0f} cm, '
+        text = (f'{kind}\n{k["height_cm"] / 100:.1f} m, trunk {k["trunk_cm"]:.0f} cm, '
                 f'{k["triangles"]["total"]:,} tris')
         tiles.append((text, [(kind, (0, 0, 0), 0.)], k['height_cm'] / 100))
     row = [('norway_maple', -9.), ('linden', -1.5), ('ash', 6.)]
-    tiles.append(('street row, 3 m clearance and a 1.75 m figure', [(k, (x, 0, 0), 30. * i) for i, (k, x) in
+    tiles.append(('street row\n3 m clearance line, 1.75 m figure', [(k, (x, 0, 0), 30. * i) for i, (k, x) in
                                                                      enumerate(row)], 'row'))
-    tiles.append(('leaf atlas (4 x 4 cells) and bark', [], 'atlas'))
+    tiles.append(('leaf atlas (4 x 4 cells)\nand bark (2 m tile)', [], 'atlas'))
     sheet = np.full((th * rows, tw * cols, 4), .3, dtype=np.float32)
     import tempfile
     tmp = Path(tempfile.mkdtemp(prefix='plateau_trees_'))
@@ -1343,24 +1343,21 @@ def render_sheet(out_dir, manifest, sheet_path):  # pragma: no cover - needs bpy
             bm.node_tree.nodes['Principled BSDF'].inputs['Emission Strength'].default_value = 2.
             bar.materials.append(bm)
             coll.objects.link(bpy.data.objects.new('clearance', bar))
-            aim((-1.5, 0, 5.5), 34., -90., 6.)
+            aim((-1.5, 0, 7.), 50., -90., 5.)
         elif view == 'atlas':
             plane = bpy.data.meshes.new('atlas')
-            plane.from_pydata([(-3, 0, .3), (3, 0, .3), (3, 0, 6.3), (-3, 0, 6.3)], [], [(0, 1, 2, 3)])
+            plane.from_pydata([(-3, 0, 2.4), (3, 0, 2.4), (3, 0, 8.4), (-3, 0, 8.4)], [], [(0, 1, 2, 3)])
             uv = plane.uv_layers.new(name='UVMap')
             uv.data.foreach_set('uv', [0, 0, 1, 0, 1, 1, 0, 1])
             plane.materials.append(leaf_mat)
             coll.objects.link(bpy.data.objects.new('atlas', plane))
             strip = bpy.data.meshes.new('bark')
-            strip.from_pydata([(-3, 0, -3.6), (3, 0, -3.6), (3, 0, -.4), (-3, 0, -.4)], [], [(0, 1, 2, 3)])
+            strip.from_pydata([(-3, 0, .2), (3, 0, .2), (3, 0, 2.2), (-3, 0, 2.2)], [], [(0, 1, 2, 3)])
             uv = strip.uv_layers.new(name='UVMap')
-            uv.data.foreach_set('uv', [0, 0, 6, 0, 6, 3.2, 0, 3.2])
+            uv.data.foreach_set('uv', [0, 0, 6, 0, 6, 2, 0, 2])
             strip.materials.append(bark_mats['norway_maple'])
-            so = bpy.data.objects.new('bark', strip)
-            so.location = (0, 0, 4.)
-            so.scale = (1, 1, 1)
-            coll.objects.link(so)
-            aim((0, 0, 3.2), 16.5, -90., 0.)
+            coll.objects.link(bpy.data.objects.new('bark', strip))
+            aim((0, 0, 4.3), 14., -90., 0.)
         else:
             k = manifest['kinds'][items[0][0]]
             aim((0, 0, k['height_cm'] / 200 + .4), k['height_cm'] / 100 * 1.85, -60., 8.)
@@ -1391,6 +1388,7 @@ def main(argv):
     parser.add_argument('--sheet', default=str(SHEET))
     parser.add_argument('--no-render', action='store_true')
     parser.add_argument('--render-only', action='store_true', help='render the sheet from the files on disk')
+    parser.add_argument('--samples', type=int, default=40)
     args = parser.parse_args(argv)
     out = Path(args.out)
     if args.render_only:
@@ -1404,7 +1402,7 @@ def main(argv):
                   f'({k["cards"]} cards)')
         print('->', out)
     if not args.no_render:
-        render_sheet(out, manifest, Path(args.sheet))
+        render_sheet(out, manifest, Path(args.sheet), args.samples)
         print('contact sheet ->', args.sheet)
     over = [k for k, v in manifest['kinds'].items() if v['triangles']['total'] > v['triangle_target']]
     return 1 if over else 0
