@@ -1950,7 +1950,8 @@ def _modern_roof(lot, record, W, depth, R, masonry, box, fits, free, placed, cou
     """The roof of a post-1945 block: a brick lift penthouse (machine room and stair head) with a metal coping near
     the middle, two on a block over 30 m deep, and a few galvanised mushroom vents. Own seed, after the roof draws."""
     mr = random.Random(_seed('plex-modern-roof', lot['id']))
-    pw, pd = min(600., W * .45), min(420., depth * .3)
+    # 30% of the depth, at least 3 m where the roof is 5 m deep (a slab tower 7.5 m deep still has its machine room)
+    pw, pd = min(600., W * .45), min(420., max(depth * .3, min(300., depth - 200.)))
     heights = [mr.uniform(280., 340.) for _ in range(2)]
     record['penthouses'] = 0
     for k, t in enumerate((depth * .5,) if depth < 3000 else (depth * .3, depth * .7)):
