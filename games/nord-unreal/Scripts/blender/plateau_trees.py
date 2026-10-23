@@ -347,7 +347,7 @@ def generate(kind):
     trunk_p = {'curve': 0., 'curve_v': T.get('curve_v', 0.), 'attraction': .0}
     pts, frames = grow(0, (0., 0., 0.), frame0, trunk_len, None, trunk_p, rng, None, fractions)
     # The trunk radius follows the absolute height fraction so that leaders continue its taper.
-    trunk = Stem(0, pts, frames, lambda t, L=trunk_len: trunk_radius(t * L / H), offset=0.)
+    trunk = Stem(0, pts, frames, lambda t, L=trunk_len: max(.6, trunk_radius(t * L / H)), offset=0.)
     stems.append(trunk)
     level0 = [trunk]
     if split:
@@ -1002,10 +1002,14 @@ def write_obj(path, kind, mesh):
         body.append(f'usemtl {kind}_{slot}')
         counts[slot] = len(mesh.faces[slot])
         for face in mesh.faces[slot]:
+            keys = [f'v {_fmt(mesh.v[vi][0], 2)} {_fmt(mesh.v[vi][1], 2)} {_fmt(mesh.v[vi][2], 2)}' for vi, _, _ in face]
+            if len(set(keys)) < 3:
+                counts[slot] -= 1                 # a triangle that collapses at print precision
+                continue
             refs = []
-            for vi, ti, ni in face:
-                p, t, n = mesh.v[vi], mesh.vt[ti], mesh.vn[ni]
-                a = ref(vmap, vl, f'v {_fmt(p[0], 2)} {_fmt(p[1], 2)} {_fmt(p[2], 2)}')
+            for key, (vi, ti, ni) in zip(keys, face):
+                t, n = mesh.vt[ti], mesh.vn[ni]
+                a = ref(vmap, vl, key)
                 b = ref(vtmap, vtl, f'vt {_fmt(t[0], 4)} {_fmt(t[1], 4)}')
                 c = ref(vnmap, vnl, f'vn {_fmt(n[0], 4)} {_fmt(n[1], 4)} {_fmt(n[2], 4)}')
                 refs.append(f'{a}/{b}/{c}')
