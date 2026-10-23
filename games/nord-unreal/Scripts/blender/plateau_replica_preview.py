@@ -474,38 +474,72 @@ MASKED = {}  # material name -> (diff image, (u tiling, v tiling), clip): what -
 
 
 def texture_sets():
+    """The apply step's texture sets (apply_plateau_replica.load_textures): textures.json and the Trees manifest's
+    bark and leaf atlas, each entry with the folder its maps are in ('directory')."""
     if not TEXTURE_INDEX:
-        TEXTURE_INDEX.update(json.load(open(os.path.join(TEXTURES, 'textures.json')))['sets'])
+        TEXTURE_INDEX.update(load_textures(ROOT))
     return TEXTURE_INDEX
 
 
-def replica_set_material(name, color, set_name, metal=0.):
-    """A replica texture-set key as the apply step builds it (apply_plateau_replica.textured_graph): the maps of
-    the set, UV tiling from textures.json (1 / tile_m on metre UVs; 1 / tile_u by 1 on card UVs), base colour =
-    diff x (colour / mean_linear) capped at TINT_LIMIT, normal from the DirectX-convention map, roughness from
-    the R of the rough map and the manifest's metallic. A masked set (the cut-out cards and the creeper) keeps
-    only the texels whose diffuse alpha reaches its opacity_mask_clip and shows both faces; the two-sided
-    foliage set also transmits base colour x FOLIAGE_SUBSURFACE, as the foliage parent's SubsurfaceColor."""
+def macro_factor(nt, coord, macro):
+    """The apply step's macro variation (apply_plateau_replica.add_macro) as a grey factor: lerp(1 - s, 1 + s,
+    mask channel) at each macro tile (17.3 m on R, 5.3 m on G), multiplied together, on the raw metre UVs."""
+    mask = image(os.path.basename(macro['texture']) + '.png', TEXTURES)
+    mask.colorspace_settings.name = 'Non-Color'
+    factor = None
+    for tiling, strength, channel in zip(macro['tiling'], macro['strength'], macro['channels']):
+        mapping = nt.nodes.new('ShaderNodeMapping')
+        mapping.inputs['Scale'].default_value = (tiling[0], tiling[1], 1)
+        nt.links.new(coord.outputs['UV'], mapping.inputs['Vector'])
+        sample = nt.nodes.new('ShaderNodeTexImage')
+        sample.image = mask
+        nt.links.new(mapping.outputs['Vector'], sample.inputs['Vector'])
+        split = nt.nodes.new('ShaderNodeSeparateColor')
+        nt.links.new(sample.outputs['Color'], split.inputs['Color'])
+        lerp = nt.nodes.new('ShaderNodeMath')  # (1 - s) + 2 s x mask = lerp(1 - s, 1 + s, mask)
+        lerp.operation = 'MULTIPLY_ADD'
+        nt.links.new(split.outputs[{'R': 'Red', 'G': 'Green', 'B': 'Blue'}[channel]], lerp.inputs[0])
+        lerp.inputs[1].default_value = 2. * strength
+        lerp.inputs[2].default_value = 1. - strength
+        if factor is None:
+            factor = lerp.outputs['Value']
+        else:
+            both = nt.nodes.new('ShaderNodeMath')
+            both.operation = 'MULTIPLY'
+            nt.links.new(factor, both.inputs[0])
+            nt.links.new(lerp.outputs['Value'], both.inputs[1])
+            factor = both.outputs['Value']
+    return factor
+
+
+def replica_set_material(name, row):
+    """A replica texture-set key as the apply step builds it (apply_plateau_replica.textured_graph), from its plan
+    row (material_row): the maps of the set (Textures/, or Trees/ for the bark and leaf atlas), the row's UV tiling
+    (1 / tile_m on metre UVs; 1 / tile_u by 1 on card UVs; 1 on the leaf atlas), base colour = diff x the row's tint
+    (colour / mean_linear capped at TINT_LIMIT, white for a set that owns its colour) x the macro variation, normal
+    from the DirectX-convention map, roughness from the R of the rough map and the row's metallic (the manifest's,
+    capped at the set's). A masked set (the cut-out cards, the creeper, the tree leaves) keeps only the texels whose
+    diffuse alpha reaches its opacity_mask_clip and shows both faces; a two-sided foliage set also transmits base
+    colour x FOLIAGE_SUBSURFACE, as the foliage parent's SubsurfaceColor."""
     if name in MATS:
         return MATS[name]
-    entry = texture_sets()[set_name]
-    mode = entry.get('material') or {}
-    masked = mode.get('blend_mode') == 'masked'
-    foliage = mode.get('shading_model') == 'two_sided_foliage'
-    tint = tuple(min(TINT_LIMIT, c / m) for c, m in zip(color, entry['mean_linear']))
+    entry = texture_sets()[row['texture_set']]
+    folder = os.path.join(REPLICA, entry.get('directory', 'Textures'))
+    masked = row.get('blend_mode') == 'masked'
+    foliage = row.get('shading_model') == 'two_sided_foliage'
     m = bpy.data.materials.new(name)
     nt = m.node_tree
     bsdf = nt.nodes['Principled BSDF']
     out = [x for x in nt.nodes if x.type == 'OUTPUT_MATERIAL'][0]
-    bsdf.inputs['Metallic'].default_value = metal
+    bsdf.inputs['Metallic'].default_value = float(row.get('metallic', 0.))
     coord = nt.nodes.new('ShaderNodeTexCoord')
     mapping = nt.nodes.new('ShaderNodeMapping')
-    mapping.inputs['Scale'].default_value = (entry['tiling'][0], entry['tiling'][1], 1)
+    mapping.inputs['Scale'].default_value = (row['tiling'][0], row['tiling'][1], 1)
     nt.links.new(coord.outputs['UV'], mapping.inputs['Vector'])
     tex = {}
     for role in ('diff', 'nor_dx', 'rough'):
         node = nt.nodes.new('ShaderNodeTexImage')
-        node.image = image(entry['maps'][role]['file'], TEXTURES)
+        node.image = image(entry['maps'][role]['file'], folder)
         node.image.colorspace_settings.name = 'sRGB' if entry['maps'][role]['srgb'] else 'Non-Color'
         if role == 'diff' and entry.get('alpha'):
             # Colour and mask are independent channels: the colour under a hole is the surface's own, so
@@ -518,8 +552,17 @@ def replica_set_material(name, color, set_name, metal=0.):
     mul.blend_type = 'MULTIPLY'
     sock(mul.inputs, 'Factor', 'VALUE').default_value = 1.
     nt.links.new(tex['diff'].outputs['Color'], sock(mul.inputs, 'A'))
-    sock(mul.inputs, 'B').default_value = (*tint, 1)
-    nt.links.new(sock(mul.outputs, 'Result'), bsdf.inputs['Base Color'])
+    sock(mul.inputs, 'B').default_value = (*row['tint'], 1)
+    base = sock(mul.outputs, 'Result')
+    if row.get('macro'):
+        vary = nt.nodes.new('ShaderNodeMix')
+        vary.data_type = 'RGBA'
+        vary.blend_type = 'MULTIPLY'
+        sock(vary.inputs, 'Factor', 'VALUE').default_value = 1.
+        nt.links.new(base, sock(vary.inputs, 'A'))
+        nt.links.new(macro_factor(nt, coord, row['macro']), sock(vary.inputs, 'B'))
+        base = sock(vary.outputs, 'Result')
+    nt.links.new(base, bsdf.inputs['Base Color'])
     nmap = nt.nodes.new('ShaderNodeNormalMap')
     nmap.convention = 'DIRECTX'  # Blender 5.1: green points down, as Unreal reads these maps
     nmap.inputs['Strength'].default_value = 1.
@@ -534,7 +577,7 @@ def replica_set_material(name, color, set_name, metal=0.):
         transmit.data_type = 'RGBA'
         transmit.blend_type = 'MULTIPLY'
         sock(transmit.inputs, 'Factor', 'VALUE').default_value = 1.
-        nt.links.new(sock(mul.outputs, 'Result'), sock(transmit.inputs, 'A'))
+        nt.links.new(base, sock(transmit.inputs, 'A'))
         sock(transmit.inputs, 'B').default_value = (FOLIAGE_SUBSURFACE,) * 3 + (1,)
         translucent = nt.nodes.new('ShaderNodeBsdfTranslucent')
         nt.links.new(sock(transmit.outputs, 'Result'), translucent.inputs['Color'])
@@ -544,7 +587,7 @@ def replica_set_material(name, color, set_name, metal=0.):
         nt.links.new(translucent.outputs['BSDF'], add.inputs[1])
         shader = add.outputs['Shader']
     if masked:
-        clip = float(mode.get('opacity_mask_clip', .5))
+        clip = float(row.get('opacity_mask_clip') or .5)
         keep = nt.nodes.new('ShaderNodeMath')  # Unreal keeps a texel when its mask is at or over the clip
         keep.operation = 'GREATER_THAN'
         keep.inputs[1].default_value = clip - 1 / 1024
