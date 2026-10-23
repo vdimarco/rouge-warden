@@ -133,7 +133,7 @@ This rewrites only `[NordPhoneStream DeviceProfile]`. The stream default stays `
 Start one stream lifecycle as in step 8 with the winner profile, and also set the demo's `NORD_ICE_CONFIG`, so a phone on carrier data can use the relay. Watch one full lap on NordHost on a real phone:
 - Android Chrome and iOS Safari, each on Wi-Fi and on carrier data, through the public page.
 - Note: video starts, no visible freeze over the lap, the car drives the whole loop, the picture matches the paired captures, and the HUD fits in landscape and portrait.
-- Then drive one lap by hand on the default profile and note the perceived input delay.
+- Then stop the lifecycle, restore the demo (step 0), drive one lap by hand on it, and note the perceived input delay. The gauntlet drives the car itself, so a hand lap needs the normal demo.
 
 Record the date, device, OS, browser, network and deployment ID in its own file, `Verification/Gauntlet/<YYYYMMDD>-phone.md`. Never put phone results in a `verdict.json`.
 
