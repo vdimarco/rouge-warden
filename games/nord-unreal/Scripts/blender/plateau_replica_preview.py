@@ -222,15 +222,43 @@ def views():
 # ------------------------------------------------------------------------------------------------
 # Loading
 
+def _segment_distance(px, py, a, b):
+    """Distance from (px, py) to the segment a-b (2D)."""
+    ex, ey = b[0] - a[0], b[1] - a[1]
+    n = ex * ex + ey * ey
+    t = 0. if n == 0. else max(0., min(1., ((px - a[0]) * ex + (py - a[1]) * ey) / n))
+    return math.hypot(a[0] + ex * t - px, a[1] + ey * t - py)
+
+
+def _inside(px, py, pts):
+    """Even-odd test: is (px, py) inside the polygon pts (2D)?"""
+    inside = False
+    for k in range(len(pts)):
+        (x0, y0), (x1, y1) = pts[k - 1], pts[k]
+        if (y0 > py) != (y1 > py) and px < x0 + (py - y0) * (x1 - x0) / (y1 - y0):
+            inside = not inside
+    return inside
+
+
 class Region:
+    """What a view loads, in the game frame (x east, y north): a disc of radius `near` around the camera plus a
+    wedge (the field of view widened by 22 degrees a side) out to `far`; or, with `circle` (x, y, r), a disc."""
+
     def __init__(self, cam, target, fov, far, circle=None):
         self.cx, self.cy = cam[0], cam[1]
         d = (target[0] - cam[0], target[1] - cam[1])
         n = math.hypot(*d) or 1.
         self.dx, self.dy = d[0] / n, d[1] / n
-        self.cos = math.cos(math.radians(min(89., fov / 2 + 22.)))
+        half = math.radians(min(89., fov / 2 + 22.))
+        self.cos = math.cos(half)
         self.far, self.near = far, 4500.
         self.circle = circle
+        # The wedge (under 90 degrees a side) is the meet of two half-planes through the camera, each bounded by an
+        # edge ray of the wedge: (nx, ny) . (p - camera) >= 0 on the inner side.
+        c, s = math.cos(half), math.sin(half)
+        b1 = (self.dx * c - self.dy * s, self.dx * s + self.dy * c)
+        b2 = (self.dx * c + self.dy * s, -self.dx * s + self.dy * c)
+        self.normals = ((b1[1], -b1[0]), (-b2[1], b2[0]))
 
     def keep(self, x, y):
         if self.circle:
@@ -241,29 +269,58 @@ class Region:
             return True
         return d < self.far and (ex * self.dx + ey * self.dy) > self.cos * d
 
-    def box(self, b):
-        """Could an OBJ with game-frame bounds b = [x0, y0, z0, x1, y1, z1] hold kept vertices?"""
+    def crosses(self, pts):
+        """Does the polygon pts [(x, y), ...] reach the region though none of its corners is kept? True when the
+        polygon holds the camera (or the circle's centre), or an edge crosses the near disc, the circle, or the wedge
+        inside the far distance: a 188 m lane quad with its corners behind the camera and past `far` is kept."""
         if self.circle:
             cx, cy, r = self.circle
-            qx, qy = min(max(cx, b[0]), b[3]), min(max(cy, b[1]), b[4])
-            return math.hypot(qx - cx, qy - cy) < r
-        qx, qy = min(max(self.cx, b[0]), b[3]), min(max(self.cy, b[1]), b[4])
-        if math.hypot(qx - self.cx, qy - self.cy) > self.far:
+        else:
+            cx, cy, r = self.cx, self.cy, max(self.far, self.near)
+        xs, ys = [p[0] for p in pts], [p[1] for p in pts]
+        x0, x1, y0, y1 = min(xs), max(xs), min(ys), max(ys)
+        if math.hypot(min(max(cx, x0), x1) - cx, min(max(cy, y0), y1) - cy) >= r:
             return False
-        corners = [(b[0], b[1]), (b[3], b[1]), (b[0], b[4]), (b[3], b[4]), (qx, qy)]
-        if any(self.keep(x, y) for x, y in corners):
+        if x0 <= cx <= x1 and y0 <= cy <= y1 and _inside(cx, cy, pts):
             return True
-        # A box straddling the wedge: test points along the view ray.
-        for k in range(1, 40):
-            t = self.far * k / 40
-            x, y = self.cx + self.dx * t, self.cy + self.dy * t
-            if b[0] <= x <= b[3] and b[1] <= y <= b[4]:
+        edges = [(pts[k - 1], pts[k]) for k in range(len(pts))]
+        if self.circle:
+            return any(_segment_distance(cx, cy, a, b) < r for a, b in edges)
+        if any(_segment_distance(cx, cy, a, b) < self.near for a, b in edges):
+            return True
+        for a, b in edges:
+            # Clip the edge to the two half-planes of the wedge, then ask whether what is left comes within far.
+            t0, t1 = 0., 1.
+            for nx, ny in self.normals:
+                fa = (a[0] - cx) * nx + (a[1] - cy) * ny
+                fb = (b[0] - cx) * nx + (b[1] - cy) * ny
+                if fa < 0. and fb < 0.:
+                    t0 = 2.
+                    break
+                if fa < 0.:
+                    t0 = max(t0, fa / (fa - fb))
+                elif fb < 0.:
+                    t1 = min(t1, fa / (fa - fb))
+            if t0 > t1:
+                continue
+            p0 = (a[0] + (b[0] - a[0]) * t0, a[1] + (b[1] - a[1]) * t0)
+            p1 = (a[0] + (b[0] - a[0]) * t1, a[1] + (b[1] - a[1]) * t1)
+            if _segment_distance(cx, cy, p0, p1) < self.far:
                 return True
         return False
 
+    def face(self, pts):
+        """Does the polygon pts [(x, y), ...] reach the region (a corner kept, or crosses)?"""
+        return any(self.keep(x, y) for x, y in pts) or self.crosses(pts)
+
+    def box(self, b):
+        """Could an OBJ with game-frame bounds b = [x0, y0, z0, x1, y1, z1] hold faces the region keeps?"""
+        return self.face([(b[0], b[1]), (b[3], b[1]), (b[3], b[4]), (b[0], b[4])])
+
 
 def read_obj(path, region, scale=.01, want_uv=True):
-    """Faces of an OBJ with at least one vertex kept by the region (None keeps all)."""
+    """Faces of an OBJ that reach the region (None keeps all): a corner kept, an edge crossing the region, or the
+    face holding the camera (Region.crosses), so long quads that span the view keep their faces."""
     vs, vts, faces = [], [], []
     with open(path, 'r') as fh:
         for line in fh:
@@ -288,7 +345,7 @@ def read_obj(path, region, scale=.01, want_uv=True):
             if want_uv and len(parts) > 1 and parts[1]:
                 t = int(parts[1])
                 tex.append(t - 1 if t > 0 else len(vts) + t)
-        if not any(keep[i] for i in idx):
+        if not any(keep[i] for i in idx) and not region.crosses([(vs[i][0], -vs[i][1]) for i in idx]):
             continue
         poly = []
         for i in idx:
