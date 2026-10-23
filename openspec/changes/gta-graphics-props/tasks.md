@@ -1,0 +1,5 @@
+- [x] Draw the benches, lamps, and baskets within 180 m in the opening shade
+- [x] Keep the opening pitch, the aim, and the socket
+- [x] Check that a row of lamp heads falls in the frame
+- [x] Run `Scripts/test_opening_props.py`
+- [ ] Confirm the saved furniture instances in Unreal (editor not available here)
