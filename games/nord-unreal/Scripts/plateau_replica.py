@@ -1799,11 +1799,17 @@ def _tree_pits(world, L, strip, trees, tree_grid, pit_trees, counts):
             continue
         if any(abs(along - r) < 300 for r in strip.get('ramps', [])):
             continue
-        pit_trees.add(i)
         lat = max(60., min(width - 55, lat))
         c = add(add(ca, u, along), inward, lat)
         size = (110, 100)
         q = lambda x, y: (c[0] + u[0] * x + inward[0] * y, c[1] + u[1] * x + inward[1] * y)
+        # the pit lies on its own strip, or it would hang over the carriageway where a short strip's curb and back
+        # lines converge at a junction (the trunk then stands on the sidewalk without one)
+        strip_poly = [ca, cb, ob, oa]
+        if not all(point_in(q(x * size[0] / 2, y * size[1] / 2), strip_poly) for x, y in ((-1, -1), (1, -1), (1, 1), (-1, 1))):
+            counts['tree_pits_off_strip'] += 1
+            continue
+        pit_trees.add(i)
         L.flat('soil', [q(-size[0] / 2, -size[1] / 2), q(size[0] / 2, -size[1] / 2),
                         q(size[0] / 2, size[1] / 2), q(-size[0] / 2, size[1] / 2)], Z_WALK + .15)
         for x0, y0, x1, y1 in ((-55, -50, 55, -50), (55, -50, 55, 50), (55, 50, -55, 50), (-55, 50, -55, -50)):

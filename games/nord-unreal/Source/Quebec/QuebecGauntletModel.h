@@ -56,7 +56,9 @@ namespace QuebecGauntlet
     inline constexpr double JoinPoints = 1.0;         // Route points closer than this to the last one are dropped.
     inline constexpr double TrackAhead = 4000.0;      // The tracker looks for the car this far ahead of its last place.
 
-    // Corners. A junction turn of RoundFrom or more becomes an arc that the car can drive at the turn's speed.
+    // Corners. The route is first simplified, then a turn of RoundFrom or more becomes an arc that the car can drive at
+    // the turn's speed.
+    inline constexpr double Simplify = 100.0;         // Douglas-Peucker tolerance: the simple line keeps within this of the road.
     inline constexpr double RoundFrom = 10.0;         // Degrees; a smaller bend stays a corner of the line.
     inline constexpr double ArcStep = 10.0;           // Degrees of arc between two points.
     inline constexpr double CornerMargin = 1.3;       // Arc radius over the car's turning radius at the arc's speed.
@@ -358,16 +360,53 @@ namespace QuebecGauntlet
         return std::max(Speed, MinCornerSpeed);
     }
 
-    // Finish a loop whose Points (closed: the last equals the first) and Stops are set. Each junction turn of RoundFrom
-    // or more becomes an arc: the speed is the police CornerSpeed for the turn (at most SpeedCap), and the radius is the
+    // Douglas-Peucker: mark the points between First and Last that keep the line within Simplify of Points.
+    inline void KeepShape(const std::vector<FVec2>& Points, std::size_t First, std::size_t Last, std::vector<bool>& Keep)
+    {
+        if (Last <= First + 1) return;
+        double Worst = 0.0, Alpha = 0.0;
+        std::size_t At = First;
+        for (std::size_t Index = First + 1; Index < Last; ++Index)
+        {
+            const double Gap = QuebecPursuit::Distance(Points[Index], QuebecPursuit::ClosestOnSegment(Points[Index], Points[First], Points[Last], Alpha));
+            if (Gap > Worst) { Worst = Gap; At = Index; }
+        }
+        if (Worst <= Simplify) return;
+        Keep[At] = true;
+        KeepShape(Points, First, At, Keep);
+        KeepShape(Points, At, Last, Keep);
+    }
+
+    // Finish a loop whose Points (closed: the last equals the first) and Stops are set. The road polylines have many
+    // short pieces, so the line is first simplified (KeepShape, between the stops). Then each turn of RoundFrom or
+    // more becomes an arc: the speed is the police CornerSpeed for the turn (at most SpeedCap), and the radius is the
     // car's turning radius at that speed times CornerMargin. An arc takes at most half of each neighbouring segment, so
     // a short block gets a tighter arc and a lower speed. Stops are never rounded, so each stays on its road point.
     // Then Distance, Length and Limit are filled. The rounded line is the route the driver follows and the line the
     // lateral error is measured from; it cuts a junction by at most Radius * (1 - cos(turn / 2)).
     inline void FinishLoop(FLoop& Loop)
     {
-        const std::vector<FVec2> Raw = std::move(Loop.Points);
-        const std::vector<std::size_t> RawStops = std::move(Loop.Stops);
+        std::vector<bool> Keep(Loop.Points.size(), false);
+        if (!Keep.empty()) Keep.front() = Keep.back() = true;
+        for (const std::size_t Stop : Loop.Stops)
+            if (Stop < Keep.size()) Keep[Stop] = true;
+        for (std::size_t First = 0, Index = 1; Index < Keep.size(); ++Index)
+            if (Keep[Index] && Index > First)
+            {
+                // The stops are kept, so each run between two kept points simplifies on its own.
+                std::vector<bool> Run(Keep);
+                KeepShape(Loop.Points, First, Index, Run);
+                for (std::size_t Inner = First + 1; Inner < Index; ++Inner) Keep[Inner] = Run[Inner];
+                First = Index;
+            }
+        std::vector<FVec2> Raw;
+        std::vector<std::size_t> RawStops;
+        for (std::size_t Index = 0; Index < Keep.size(); ++Index)
+        {
+            if (!Keep[Index]) continue;
+            if (std::find(Loop.Stops.begin(), Loop.Stops.end(), Index) != Loop.Stops.end()) RawStops.push_back(Raw.size());
+            Raw.push_back(Loop.Points[Index]);
+        }
         Loop.Points.clear();
         Loop.Stops.clear();
         Loop.Limit.clear();
