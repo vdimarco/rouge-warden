@@ -3526,9 +3526,20 @@ class Rear:
         return posts
 
     def _gate(self, mesh, F, g, fd, kind, h):
-        """A gate leaf in its own paint (never the fence's colour), hung between two taller gate posts."""
+        """A board gate hung between two taller gate posts: the leaf is one Fence_Boards cut-out card (the picket
+        card on a low fence), with its two ledges and the brace between them on the yard side in the gate's own paint
+        (never the fence's colour), the way a ledged-and-braced board gate is built. The old leaf was one flat painted
+        panel. Returns the post count."""
         top = h - 6 if kind != 'low' else h - 5
-        F.box(self.gate_paint, g - 46, g + 46, fd - 1.5, fd + 1.5, 4, top, 'lr')
+        leaf = 'Rail_Baluster' if kind == 'low' else 'Fence_Boards'
+        cutout(mesh, leaf, F.p(g - 46, fd, 0)[:2], F.p(g + 46, fd, 0)[:2], 4, top)
+        zl = [4 + (top - 4) * f for f in GATE_LEDGES]
+        for z in zl:
+            F.box(self.gate_paint, g - 44, g + 44, fd - 4.8, fd - 1, z - 6, z + 6, 'flr')
+        # the brace climbs from the bottom ledge at the hinge side to the top ledge at the latch side
+        beam(mesh, self.gate_paint, F.p(g - 38, fd - 2.9, zl[0] + 6), F.p(g + 38, fd - 2.9, zl[1] - 6), 3.8, 9,
+             bottom=False)
+        self.count('gate_leaf_cards')
         post = self.fence_paint if kind != 'slats' else 'Sheet_Metal'
         for x in (g - 50, g + 50):
             F.box(post, x - 5, x + 5, fd - 5, fd + 5, 0, h + 8, 'b')
