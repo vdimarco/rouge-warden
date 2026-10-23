@@ -21,7 +21,7 @@ A round passes a gate only with a host measurement for it.
 - Peak VRAM at most 6,000 MiB per game process.
 - No render log errors, and every profile CVar reads back as requested.
 
-**Stream, solo, direct, both rungs, landscape and portrait:**
+**Stream, solo, direct, both rungs, landscape and portrait, over the lap after the warm-up lap:**
 - Mean decoded FPS at least 29, and zero WebRTC freezes.
 - At most 1% of decoded frame intervals over 50 ms, and a longest gap of at most 500 ms.
 - Jitter buffer at most 120 ms per frame on average.
