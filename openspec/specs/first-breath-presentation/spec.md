@@ -47,7 +47,7 @@ The canvas SHALL draw no text. The place slot, the prompt line, the captions, th
 - **CHECK** `qa/first-breath/visual.e2e.mjs`
 
 ### Requirement: One draw list for both tiers
-Every stage SHALL describe its frame as one draw list of plain data within the limits: at most 32 splats with the baby figure included, 600 points, 6 strips, 24 marks and 8 rings, plus the action part (bullets, foes, pickups, tells and pops) within the caps of `core/draw.js` that `contract.md` sets. The renderer SHALL add at most 150 decorative motes in the full tier and none in the low tier. The full paper tier and the low tier SHALL both draw only that list, with Canvas 2D. Still sheets SHALL be baked into offscreen canvases, and frames that bake SHALL be left out of the frame cost.
+Each stage SHALL describe its frame as one plain-data draw list: at most 32 splats (baby figure included), 600 points, 6 strips, 24 marks and 8 rings, plus the action part (bullets, foes, pickups, tells, pops) within the `core/draw.js` caps `contract.md` sets. Both tiers SHALL draw only that list in Canvas 2D. The renderer SHALL add up to 150 decorative motes in the full paper tier, none in the low. Still sheets SHALL bake to offscreen canvases, and frame cost SHALL skip baking frames.
 
 #### Scenario: Draw lists stay in budget
 - **WHEN** every 30th view of each stage's reference and idle runs is validated in node
@@ -72,7 +72,7 @@ The frame cost SHALL be the JavaScript time of one frame, from the start of its 
 - **CHECK** `qa/first-breath/perf.e2e.mjs`
 
 ### Requirement: Frame budgets
-Under `?probe=1`, with the scale step pinned (`?res=0.5` on the two phone sizes, `?res=0.35` on desktop, whose base is capped at 0.6 MP), the 95th percentile of the frame cost over 120 frames SHALL be 16 ms or less in the full tier and 10 ms or less in the low tier, in every stage, measured at each stage's busiest moment: stage 1 at Gate 2 with the pack bunched, stage 2 in the swarm's third phase with 6 glows, stage 3 in the Knot's second phase, stage 4 while a tunnel is cut, stage 5 at the big germ, stage 6 in the sing-along, stage 7 in the Big Germ wave and stage 8 in wave 8.
+Under `?probe=1`, with the scale step pinned (`?res=0.5` on both phone sizes, `?res=0.35` on desktop, whose base is capped at 0.6 MP), the 95th percentile frame cost over 120 frames SHALL be at most 16 ms in the full tier and 10 ms in the low tier, in every stage at its busiest moment, from stage 1 to 8: Gate 2 with the pack bunched, the swarm's third phase with 6 glows, the Knot's second phase, a tunnel being cut, the big germ, the sing-along, the Big Germ wave and wave 8.
 
 #### Scenario: Pinned scale
 - **WHEN** each stage is stepped to its busiest moment and then runs 120 more frames at 390 × 844, 844 × 390 and 1440 × 900 with its pinned step and `?probe=1`, in the full tier and then with `?q=low`, in runs with no luminance probes
@@ -137,7 +137,7 @@ In portrait, the bottom 40% of the screen is the thumb zone. During play (the st
 - **CHECK** `qa/first-breath/layout.e2e.mjs`
 
 ### Requirement: The HUD and prompt line
-The HUD SHALL show the stage name and the clock label at the top left and the score and the pause button at the top right. In stage 1 a slot under the score SHALL show the place, such as "3rd of 20", with small tags under it for how many still race, the next gate when it is near, and the item you hold. In stages 2, 3, 4, 5 and 7 the hp pips SHALL sit under the score, with shield sparks as brighter pips. A boss bar SHALL show under the prompt line while a boss is on screen. The scale bar SHALL sit at the top left under the clock in portrait, and at the bottom left in landscape and desktop. A prompt line under the HUD SHALL name the live gesture with an icon. Text SHALL be at least 16 px, and 20 px with Large text.
+The HUD SHALL show the stage name and the clock label at the top left and the score and the pause button at the top right. In stage 1 a slot under the score SHALL show the place, such as "3rd of 20", with small tags under it for how many still race, the next gate when it is near, and the item you hold. A prompt line under the HUD SHALL name the live gesture with an icon. Text SHALL be at least 16 px, and 20 px with Large text.
 
 #### Scenario: Large text
 - **WHEN** the player turns on Large text at 390 × 844
@@ -149,6 +149,9 @@ The HUD SHALL show the stage name and the clock label at the top left and the sc
 - **WHEN** the race is under way
 - **THEN** the slot reads the same place as `__fb.race()`, sits under the score inside the safe area, above 60% of the height in portrait, and overlaps no HUD, prompt or caption box
 - **CHECK** `qa/first-breath/layout.e2e.mjs`
+
+### Requirement: HUD: hp, boss bar and scale bar
+In stages 2, 3, 4, 5 and 7 the hp pips SHALL sit under the score, with shield sparks as brighter pips. A boss bar SHALL show under the prompt line while a boss is on screen. The scale bar SHALL sit at the top left under the clock in portrait, and at the bottom left in landscape and desktop.
 
 #### Scenario: Hp and the boss bar
 - **GIVEN** stage 3's Knot at 390 × 844 with `?inset=47,0,34,0`
@@ -291,7 +294,7 @@ The game SHALL make one swell per heartbeat, never one each for "lub" and "dub".
 - **CHECK** `qa/first-breath/visual.e2e.mjs`
 
 ### Requirement: Colour-blind safe cues
-No goal SHALL depend on hue alone. Cues SHALL differ by shape and brightness: solid and dashed rings with a dot for the two hearts, dotted rims for gland pools, wavy rims for blood pools, chevrons for the racing line, cut dashes for the gates, drift sparks counted by pieces, round shots, diamond sparks, zigzag germs, dashed lanes and words for grades. Every cue SHALL be drawn as a sticker: a 2 px ink keyline outside (its halo; cream in the ending), a cream margin when the cue is not cream, then the cue.
+No goal SHALL depend on hue alone. Cues SHALL differ by shape and brightness: solid and dashed rings with a dot for both hearts, dotted rims for gland pools, wavy for blood pools, chevrons for the racing line, cut dashes for gates, drift sparks counted by pieces, round shots, diamond sparks, zigzag germs, dashed lanes and words for grades. Each cue SHALL be a sticker: a 2 px ink keyline halo outside (cream in the ending), a cream margin unless the cue is cream, then the cue.
 
 #### Scenario: Shapes, not hue
 - **WHEN** each stage is frozen and shown in greyscale

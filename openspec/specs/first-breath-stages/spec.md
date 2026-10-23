@@ -58,7 +58,7 @@ Stage 1's goal SHALL be to reach the meeting place in the top 3 before the 117 s
 - **CHECK** `qa/first-breath/stage-swim.test.mjs`
 
 ### Requirement: Rivals race, and nobody is harmed
-The 19 rivals SHALL race by the same rules as you, by a seeded policy with a spread of skill: they follow the racing line, drift, use items and draft as their skill allows. Contact SHALL be a soft bump, a spark SHALL only spin a sperm out for 0.8 s, and goo SHALL only make it slip. A sperm left behind by a gate or the tide SHALL rest. The catch-up SHALL stay as before (rivals ahead of you ease by up to 10% and rivals behind gain up to 6%, over 400 u), with the item table on top. Nothing SHALL be killed.
+The 19 rivals SHALL race by the same rules as you, with a seeded policy and a spread of skill: they follow the racing line, drift, use items and draft as their skill allows. Contact SHALL be a soft bump, a spark SHALL only spin a sperm out for 0.8 s, and goo SHALL only make it slip. A sperm left behind by a gate or the tide SHALL rest. In the catch-up, rivals ahead of you SHALL ease by up to 10% and rivals behind gain up to 6%, over 400 u, with the item table on top. Nothing SHALL be killed.
 
 #### Scenario: The same race for the same seed
 - **WHEN** stage 1 runs twice in node with the same seed and the same input
@@ -287,7 +287,7 @@ Before week 12 every pool around the roots SHALL be milk-white with a dotted rim
 - **CHECK** `qa/first-breath/stage-grow.test.mjs`
 
 ### Requirement: Stage 6, Second Trimester
-Stage 6 SHALL be the one rhythm stage, at the mother's 78 bpm, with three lanes. It SHALL turn the mother's heartbeat from felt to heard at week 15 and ask for 6 kicks with it, in the middle lane, in weeks 15 to 18. From week 19 it SHALL play 6 hummed phrases, each a 4-beat call with its notes in lanes and a 4-beat answer echoed in the same lanes, then the sing-along: the 16 call notes back to back and a jump note across all lanes. No phrase SHALL start before week 19. A kick SHALL count when it is in time and in the note's lane. The eyes SHALL open by themselves at week 26.
+Stage 6 SHALL be the one rhythm stage: three lanes at the mother's 78 bpm. At week 15 it SHALL turn her heartbeat from felt to heard and ask for 6 middle-lane kicks on it through week 18. From week 19, not before, 6 hummed phrases SHALL play, each a 4-beat call in lanes and a 4-beat answer echoed in the same lanes, then a sing-along: all 16 call notes back to back and a jump note across all lanes. A kick SHALL count if in time and in the note's lane. The eyes SHALL open on their own at week 26.
 
 #### Scenario: Phrases start at week 19
 - **WHEN** stage 6 runs with any input

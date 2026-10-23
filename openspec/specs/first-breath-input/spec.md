@@ -63,7 +63,7 @@ Only the first pointer SHALL steer, in portrait and landscape. Another pointer's
 - **CHECK** `qa/first-breath/input.e2e.mjs`
 
 ### Requirement: Desktop with keys only
-On desktop, the arrows or WASD SHALL move (8 directions, smoothed over 0.12 s), and Space, Enter or Z SHALL press on keydown and release on keyup: a dash in a move moment, a drift or an item in stage 1, a seal charge or the seal in stage 2, a kick in stage 6. In stage 2's guard the left and right arrows or A and D SHALL turn the arc, as before. Key repeats SHALL be ignored. Esc or P SHALL pause, M SHALL mute and C SHALL toggle captions. Tab and Enter SHALL move through every menu with a visible focus ring. No moment SHALL need the mouse. The left mouse button SHALL act as the pointer.
+On desktop, arrows or WASD SHALL move (8-way, 0.12 s smoothing). Space, Enter or Z SHALL press on keydown, release on keyup: a move moment's dash, stage 1's drift or item, stage 2's seal charge or seal, stage 6's kick. Key repeats SHALL be ignored. In stage 2's guard Left/Right arrows or A/D SHALL turn the arc. Esc or P SHALL pause, M mute, C toggle captions. Tab and Enter SHALL navigate every menu with a visible focus ring. No moment SHALL need a mouse; its left button SHALL act as the pointer.
 
 #### Scenario: A whole run with keys
 - **GIVEN** 1440 × 900 with no mouse events
@@ -182,7 +182,7 @@ Settings SHALL offer a Tap test of 8 taps that sets the timing offset to their m
 - **CHECK** `qa/first-breath/track.test.mjs`
 
 ### Requirement: One-button mode
-One-button mode SHALL let every stage be played with one key or tap. In a move moment, while the button is held the run SHALL set the move vector and the dash (in stage 1 the drift and the item) from the stage's `botSteer` at full skill, and when it is let go you SHALL stand still while auto-fire goes on. In stage 2's guard the arc SHALL track by itself only while the button is held, as before, and the bot SHALL release the seal charge. In stage 6 the run SHALL put you in the next note's lane, so the button only kicks on the beat. It SHALL be in Settings and through `?one=1`.
+One-button mode SHALL let every stage be played with one key or tap. In a move moment, while the button is held the run SHALL set the move vector and the dash (in stage 1 the drift and the item) from the stage's `botSteer` at full skill, and when it is let go you SHALL stand still while auto-fire goes on. In stage 2's guard the arc SHALL track by itself only while the button is held, and the bot SHALL release the seal charge. It SHALL be in Settings and through `?one=1`.
 
 #### Scenario: One button through the steering stages
 - **GIVEN** one-button mode
@@ -195,6 +195,9 @@ One-button mode SHALL let every stage be played with one key or tap. In a move m
 - **WHEN** the player lets go of the button
 - **THEN** the move vector is zero and the cell coasts
 - **CHECK** `qa/first-breath/run.test.mjs`
+
+### Requirement: One-button mode in stage 6
+In stage 6, one-button mode SHALL put you in the next note's lane, so the button only kicks on the beat.
 
 #### Scenario: One button in the rhythm stage
 - **GIVEN** one-button mode in stage 6

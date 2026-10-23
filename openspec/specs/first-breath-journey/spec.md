@@ -128,7 +128,7 @@ From stage 2 onward, every stage SHALL end by its cap or sooner, whatever the in
 - **CHECK** `qa/first-breath/stage-<id>.test.mjs`
 
 ### Requirement: A gentle retry before fertilization
-Stage 1 SHALL end without its goal when a knockout gate closes before you pass it, when the cool tide reaches you, when you reach the meeting place outside the top 3, or at the 117 s cap. Then the game SHALL show "Almost. Try again?" with the place ("You were 9th of 20." when you were out or at the cap; "You came 4th of 20." after a finish), "Your run and points are kept.", a focused Try again and Go on. Try again SHALL recreate stage 1 at once with the same seed and carry. From stage 2 on, the knock-out card SHALL follow the same pattern.
+Stage 1 SHALL end without its goal if a knockout gate closes before you pass it, the cool tide reaches you, you reach the meeting place outside the top 3, or at the 117 s cap. Then "Almost. Try again?" SHALL show with the place ("You were 9th of 20." if out or at the cap, "You came 4th of 20." after a finish), "Your run and points are kept.", a focused Try again and Go on. Try again SHALL restart stage 1 at once, same seed and carry. From stage 2 on, knock-out cards SHALL work the same.
 
 #### Scenario: Try again
 - **GIVEN** stage 1 with Gate 1 closed before you passed it
@@ -166,12 +166,7 @@ In stage 1, Go on SHALL carry the cell to the meeting place in 3 s ("The waves c
 - **CHECK** `qa/first-breath/run.test.mjs`
 
 ### Requirement: Carry-over joins the stages
-Stages SHALL pass one carry object from each result to the next stage, with a default for every field. The sperm raced in stage 1 SHALL come to the egg in stage 2 as the gold sperm, with its tint, sooner the higher it placed, brighter if it took a warm glow. The embryo's nestle spot in stage 4 SHALL be where the placenta grows in stages 5 to 7. The phrases answered in stage 6 SHALL become the song hummed in stage 7 and heard clearly in the ending. The side of the stage 8 Turn gate SHALL set the side of its Turn back gate. Each Glowing grade SHALL add a spark to the rim for the rest of the run, and each spark SHALL also be a shield pip, up to 2 per action stage. No gift or upgrade SHALL carry from one stage to the next.
-
-#### Scenario: Your sperm comes to you
-- **WHEN** stage 1 ends in 2nd place, and in another run in 3rd place
-- **THEN** in stage 2 the gold sperm has stage 1's tint and comes in 0.3 s sooner after 2nd than after 3rd, and it is the one that enters
-- **CHECK** `qa/first-breath/run.test.mjs`
+Stages SHALL pass one carry object from each result to the next stage, with a default for every field. Each Glowing grade SHALL add a spark to the rim for the rest of the run, and each spark SHALL also be a shield pip, up to 2 per action stage. No gift or upgrade SHALL carry from one stage to the next.
 
 #### Scenario: A stage alone uses defaults
 - **WHEN** a test opens stage 6 or the ending through `goto` with no carry
@@ -189,6 +184,14 @@ Stages SHALL pass one carry object from each result to the next stage, with a de
 - **THEN** stage 4 starts with the default grapple, speed and fire
 - **CHECK** `qa/first-breath/run.test.mjs`
 
+### Requirement: Carry-over: what each stage passes on
+The sperm raced in stage 1 SHALL come to the egg in stage 2 as the gold sperm, with its tint, sooner the higher it placed, brighter if it took a warm glow. The embryo's nestle spot in stage 4 SHALL be where the placenta grows in stages 5 to 7. The phrases answered in stage 6 SHALL become the song hummed in stage 7 and heard clearly in the ending. The side of the stage 8 Turn gate SHALL set the side of its Turn back gate.
+
+#### Scenario: Your sperm comes to you
+- **WHEN** stage 1 ends in 2nd place, and in another run in 3rd place
+- **THEN** in stage 2 the gold sperm has stage 1's tint and comes in 0.3 s sooner after 2nd than after 3rd, and it is the one that enters
+- **CHECK** `qa/first-breath/run.test.mjs`
+
 ### Requirement: The rivals of the first two stages
 The other sperm in stages 1 and 2 SHALL be seeded from each stage's seed, so a Try again or a replay with the same seed brings the same rivals doing the same things. They SHALL look alike in both stages, mauve paper sperm with beating tails and no faces. Nobody SHALL be harmed in either stage: rivals bump, spin out, slip, rest when a gate or the tide leaves them behind, bounce off and drift away. In a whole run, only the player's own sperm SHALL enter the egg.
 
@@ -203,7 +206,7 @@ The other sperm in stages 1 and 2 SHALL be seeded from each stage's seed, so a T
 - **CHECK** `qa/first-breath/run.test.mjs`
 
 ### Requirement: Points, grades and the run total
-Each stage SHALL score Goal (3,000), Skill (up to 6,000) and Flourish (up to 1,000), for a total up to 10,000. A stage with its goal met SHALL get Good, Great at 6,500 or more, and Glowing at 8,500 or more. A knocked-out stage SHALL score no Goal points and get no grade word. The run total SHALL be the sum of the eight stages plus 500 per Glowing, and the run time SHALL be the core time from Play to the end of Birth with pauses left out. A retried stage SHALL keep its better attempt. Assist and one-button runs SHALL carry a mark and still count.
+Each stage SHALL score Goal (3,000), Skill (up to 6,000) and Flourish (up to 1,000), at most 10,000. A stage that meets its goal SHALL be Good, Great from 6,500 or Glowing from 8,500. A knocked-out stage SHALL get no Goal points or grade word. The run total SHALL sum the eight stages plus 500 per Glowing. The run time SHALL be core time from Play to Birth's end, less pauses. A retried stage SHALL keep its better attempt. Assist and one-button runs SHALL count, with a mark.
 
 #### Scenario: Grades
 - **WHEN** a stage ends with 8,620 points
