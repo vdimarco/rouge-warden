@@ -1,0 +1,6 @@
+- [x] Profile and two matched30s preliminary probes; not acceptance.
+- [x] Implement scoped clear suppression with state restoration.
+- [x] Pixel equivalence and true/false/error restoration checks.
+- [ ] Three matched normal/pressure60s35inputpairs and honest rubric report.
+- [ ] Review, allCI, deployed preview, rebase, exact merge, production verification.
+- [ ] Canonical spec/archive after release.

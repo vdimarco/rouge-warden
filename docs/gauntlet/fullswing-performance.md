@@ -1,6 +1,6 @@
 # Full Swing performance acceptance — rubric v1 evidence supplement
 
-Performance is a release gate for Full Swing, not a cosmetic score that can be carried forward without evidence. This protocol applies to the existing **Responsiveness and input latency** and **Performance stability** dimensions of [rubric v1](RUBRIC.md); it does not change the shared dimensions, weights or historical score scale. The user's report of slow Chrome gameplay on this machine remains unresolved until measured and corrected.
+Performance metrics guide the Full Swing improvement plan. Per the user instruction on2026-10-22, a measured FPS gain or a completed hardware comparison is not a merge prerequisite for an incremental optimization. Correctness, focused tests, review, deployed preview and CI remain release checks. Never claim a measured improvement or affected-browser fix without evidence. This protocol applies to the existing **Responsiveness and input latency** and **Performance stability** dimensions of [rubric v1](RUBRIC.md); it does not change the shared dimensions, weights or historical score scale. The user's report of slow Chrome gameplay on this machine remains unresolved until measured and corrected.
 
 ## Required round evidence
 
@@ -15,7 +15,7 @@ Measure after loading and shader warmup, with the tab visible, for at least 60 s
 
 Desktop engineering targets are at least 60 FPS, p95 frame time at most 20 ms, p99 at most 33.3 ms, fewer than 1% of frames over 50 ms, and input-to-submit p95 at most 50 ms across at least 30 intentional key/pointer presses. These are project targets, not measured claims. Refresh rate can limit FPS; report that explicitly rather than calling a slower display a game regression. Headset acceptance uses the device's actual refresh budget and requires separate hardware evidence.
 
-A repeatable degradation greater than 10% in FPS or frame-time/input-delay percentiles under matched conditions blocks a candidate; absolute target failures must remain visible even if a candidate improves them. Revert a verified shipped regression. Do not merge a rendering/performance change as a performance improvement on the basis of SwiftShader functional checks. Missing hardware evidence is **unverified**, not pass. A narrow unrelated correctness fix can still ship with that limitation, but cannot close the slowdown report or earn performance points.
+Matched measurements remain diagnostic rather than an automatic merge gate; absolute target failures must remain visible even if a candidate improves them. Revert a verified shipped regression. Incremental engineering improvements can ship after functional checks without a proven FPS gain; describe the engineering change and keep performance outcomes unverified. Missing hardware evidence is **unverified**, not pass. A narrow unrelated correctness fix can still ship with that limitation, but cannot close the slowdown report or earn performance points.
 
 ## Existing debug capture
 
