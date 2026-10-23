@@ -506,6 +506,10 @@ class Search:
     def level(self, levels, knob_id):
         return effective(levels, self.resolved, knob_id)
 
+    def contains(self, outer, inner):
+        """True when outer holds every knob inner moved from the baseline, at the same step or higher."""
+        return all(self.level(outer, k) is not None and self.level(outer, k) >= v for k, v in changed_knobs(self.loop, inner).items())
+
     # -- phases
 
     def measure_references(self):
@@ -586,14 +590,19 @@ class Search:
             self.sensitivity.append(entry)
         kept = sorted((e for e in self.sensitivity if e["kept"]),
                       key=lambda e: (-e["efficiency"], -e["gain"], self.order[e["knob"]], e["step"]))
-        # Step 4: add steps in efficiency order while the additive GPU prediction stays within the target.
-        chosen, predicted = [], base["gpu_p95_ms"]
+        # Step 4: add steps in efficiency order while the additive GPU prediction stays within the target. A step the
+        # combination already holds adds nothing; a bundled step does not count again the steps it contains.
+        chosen, predicted, union = [], base["gpu_p95_ms"], dict(self.base)
         for entry in kept:
-            extra = max(entry["cost_used_ms"], 0.0)
+            if levels_key(merge(union, entry["levels"], 1)) == levels_key(union):
+                continue
+            inside = sum(max(c["cost_used_ms"], 0.0) for c in chosen if self.contains(entry["levels"], c["levels"]))
+            extra = max(entry["cost_used_ms"] - inside, 0.0)
             if predicted + extra > self.limits["combine_gpu_p95_max_ms"]:
                 break
             chosen.append(entry)
             predicted += extra
+            union = merge(union, entry["levels"], 1)
         self.combine = {"order": [e["id"] for e in kept], "chosen": [e["id"] for e in chosen],
                         "predicted_gpu_p95_ms": predicted, "dropped": []}
         current = base
@@ -717,7 +726,11 @@ class Search:
     # -- result
 
     def result(self):
-        base_look = self.baseline["look"] if self.baseline else None
+        # "Never worse than today" needs a feasible today. When the baseline misses the budget, every feasible
+        # candidate is a change of look for frame time, so only the per-image floor applies.
+        base_look = self.baseline["look"] if self.baseline and self.baseline["feasible"] else None
+        if self.baseline and not self.baseline["feasible"]:
+            self.notes.append("the baseline is not feasible, so the never-worse-than-today Look rule does not apply")
         eligible = []
         for record in self.records:
             record["ranked"] = not record["look_only"] and record["phase"] != "baseline" or record["id"] == "baseline"
