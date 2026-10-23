@@ -1305,3 +1305,7 @@ HUD passes current threat to warning instead of scanning twice.4096stateequivale
 
 
 Increment54 shipped #672 as05750289 after freshall6CI/review/current8HUDdeployedchecks/exactmainbytes/rebase before AND afterpreview/exactmerge. Productionmain HTTP200 exactSHA11e1f28fb3cb50f199caf8d630a9825ae6af40ab5eed34bb54f914fd94c7df67 verified. Canonical HUD threat-query scenarios published and OpenSpec archived. Concurrent unrelated main changes preserved by rebase; all checks rerun on rebased head. ActualChrome/FPSbenefit unverified; totalwithheld.
+
+
+### Increment55 — phone finish guard
+Skipdesktop-onlyFINISHreachquerybeforephonefallback.4096outputequivalencePASS/712→456queries;actualbrowser60phonePUNCH+60desktopFINISHqueries/removalPASS;HUD/action suitesPASS. Evidence r55-phone-finish/all20limits/noFPSclaim/totalwithheld. Releasepending.

@@ -191,6 +191,8 @@ async function hintState(page, tag, state, tally) {
   // and the fade itself takes 0.25 s of real time
   await sleep(250);
   await page.evaluate(() => G.test.step(1 / 60, 12));
+  // A held simulation can end the line in step() while its CSS fade is still running.
+  await page.waitForFunction(() => [".fs-sub", ".fs-toast"].every((s) => { const e = document.querySelector(s); return getComputedStyle(e).opacity === (e.classList.contains("on") ? "1" : "0"); }));
   await page.waitForFunction(() => { const e = document.querySelector("#lookHint"); return getComputedStyle(e).opacity === (e.classList.contains("covered") ? "0" : "1"); });
   const [H, S] = await page.evaluate(() => [LAY.hintNow(), LAY.scan()]);
   const line = S.items["spoken line with its tail"], toast = S.items["toast"];

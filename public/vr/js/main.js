@@ -921,7 +921,7 @@ function hudFrame(dt, inp) {
   // in a fight, the dodge and the finisher come before a car in reach
   if (driving) prompt = phone ? "" : key("B", "R", "") + "GET OUT";
   else if (threat) prompt = phone ? "" : key("A", "SPACE", "") + "DODGE"; // (a phone shows its DODGE button)
-  else if (combat.focus >= 1 && combat.inReach(heroFight()) && !phone) prompt = key("RB", "F", "") + "FINISH";
+  else if (combat.focus >= 1 && !phone && combat.inReach(heroFight())) prompt = key("RB", "F", "") + "FINISH";
   else if (near) prompt = phone ? "" : key("B", "R", "") + (near.traffic ? "STEAL" : "GET IN");
   else if (takedownAim()) prompt = key("RT", "CLICK", "TAP") + "TAKEDOWN";
   else if (throwable && !phone) prompt = key("D-PAD UP", "G", "") + "THROW";
