@@ -101,6 +101,7 @@ const VICTIM = { shirt: [0.9, 0.35, 0.45], pants: [0.3, 0.3, 0.4], skin: [0.92, 
 const FALLER = { shirt: [0.95, 0.9, 0.3], pants: [0.3, 0.2, 0.15], skin: [0.96, 0.78, 0.62] };
 
 export function createJobs({ city, combat, cars = null, seed = 4711 }) {
+  const crewScratch = [];
   const r = rng(seed);
   const J = {
     active: null, offers: [], events: [], crimesOn: false, people: [], balloons: [], done: {}, failed: {}, story: { sludge: false, route: 0 }, offersOn: true,
@@ -537,7 +538,7 @@ export function createJobs({ city, combat, cars = null, seed = 4711 }) {
         return;
       }
       A.timer -= dt;
-      const crew = combat.group("job");
+      const crew = combat.group("job", crewScratch);
       const left = crew.filter((q) => combat.alive(q)).length;
       if (D.crew && left === 0) { end(true, "defused"); return; }
       if (!D.crew && combat.events.some((e) => e.type === "arrived" && e.id === g.id)) { end(false, "drain"); return; }
@@ -643,7 +644,7 @@ export function createJobs({ city, combat, cars = null, seed = 4711 }) {
     },
     mugging(A, dt, h) {
       A.timer -= dt;
-      const crew = combat.group("job"), left = crew.filter((q) => combat.alive(q)).length;
+      const crew = combat.group("job", crewScratch), left = crew.filter((q) => combat.alive(q)).length;
       if (left === 0) { A.data.victim.pose = 4; A.data.victim.poseT = 0; emit({ type: "say", line: "Thank you! My hero!" }); end(true, "cleared"); return; }
       if (A.timer <= 0) { end(false, "time"); return; }
       A.card = card("MUGGING " + fmt(A.timer), left + " goons left", crew.find((q) => combat.alive(q)) || A.o, { short: fmt(A.timer), n: left });
@@ -663,7 +664,7 @@ export function createJobs({ city, combat, cars = null, seed = 4711 }) {
           for (let i = 0; i < JOB.getaway.crew; i++) { const g = combat.spawn(D.pos.x + (i ? 2 : -2), 0, D.pos.z + 1.5, "job"); g.aggro = true; }
           emit({ type: "say", line: "Get the plumber!" });
         }
-        const crew = combat.group("job"), left = crew.filter((q) => combat.alive(q)).length;
+        const crew = combat.group("job", crewScratch), left = crew.filter((q) => combat.alive(q)).length;
         if (D.crew && left === 0) { end(true, "stopped"); return; }
         A.card = card("GETAWAY CAR", D.crew ? left + " robbers left" : "Stopping...", crew.find((q) => combat.alive(q)) || D.pos, { n: left });
       }
@@ -671,7 +672,7 @@ export function createJobs({ city, combat, cars = null, seed = 4711 }) {
     },
     tanker(A, dt, h) {
       A.timer -= dt;
-      const D = A.data, crew = combat.group("job"), left = crew.filter((q) => combat.alive(q)).length, sealed = D.seals >= JOB.tanker.seals;
+      const D = A.data, crew = combat.group("job", crewScratch), left = crew.filter((q) => combat.alive(q)).length, sealed = D.seals >= JOB.tanker.seals;
       if (!sealed && (D.glugT -= dt) <= 0) { D.glugT = 1.6; emit({ type: "leak", x: D.leak.x, y: D.leak.y, z: D.leak.z }); }
       if (sealed && left === 0) { emit({ type: "say", line: "Tanker's stable. A plunger patch works every time." }); end(true, "sealed"); return; }
       if (A.timer <= 0) { end(false, "flood"); return; }
@@ -681,7 +682,7 @@ export function createJobs({ city, combat, cars = null, seed = 4711 }) {
     },
     brawl(A, dt, h) {
       A.timer -= dt;
-      const crew = combat.group("job"), left = crew.filter((q) => combat.alive(q)).length;
+      const crew = combat.group("job", crewScratch), left = crew.filter((q) => combat.alive(q)).length;
       if (left === 0 && A.data.wave === 1) { A.data.wave = 2; spawnRing(A.o, JOB.brawl.wave2); emit({ type: "say", line: "More of them!" }); }
       else if (left === 0 && A.data.wave === 2) { end(true, "cleared"); return; }
       if (A.timer <= 0) { end(false, "time"); return; }
