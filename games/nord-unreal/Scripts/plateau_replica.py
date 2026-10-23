@@ -2219,17 +2219,20 @@ def _passages(world, L, surfaces, strip, counts, stops):
         if left is None or deep[i] is None or left == math.inf or deep[i] < left + PASSAGE_DEEP:
             i += 1
             continue
-        j = i
-        while j + 1 < len(xs) and deep[j + 1] is not None and deep[j + 1] >= left + PASSAGE_DEEP and \
-                xs[j + 1] - xs[i - 1] <= PASSAGE_WIDE:
-            j += 1
-        right = deep[j + 1] if j + 1 < len(xs) else None
-        if right is None or right == math.inf or min(deep[i:j + 1]) < right + PASSAGE_DEEP or \
-                xs[j + 1] - xs[i - 1] > PASSAGE_WIDE + PASSAGE_STEP:
-            i = j + 1
+        # the passage ends at the first sample PASSAGE_DEEP shallower than all of it (the next façade), if one
+        # comes within PASSAGE_WIDE of the last façade
+        lowest, k, right = deep[i], i + 1, None
+        while k < len(xs) and deep[k] is not None and xs[k] - xs[i - 1] <= PASSAGE_WIDE + PASSAGE_STEP:
+            if deep[k] < math.inf and deep[k] + PASSAGE_DEEP <= lowest:
+                right = deep[k]
+                break
+            lowest = min(lowest, deep[k])
+            k += 1
+        if right is None:
+            i += 1
             continue
-        _passage_walk(world, L, surfaces, strip, counts, stops, oa, u, out, xs, i, j, left, right)
-        i = j + 1
+        _passage_walk(world, L, surfaces, strip, counts, stops, oa, u, out, xs, i, k - 1, left, right)
+        i = k
 
 
 def _passage_walk(world, L, surfaces, strip, counts, stops, oa, u, out, xs, i, j, left, right):

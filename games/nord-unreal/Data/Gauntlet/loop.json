@@ -1,0 +1,254 @@
+{
+  "_doc": {
+    "what": "The NORD mobile gauntlet loop (docs/gauntlet/gta-mobile.md): one driven lap through the five replica capture streets, measured against a 33.3 ms frame budget while the stream keeps its 60 fps caps. Source: openspec/changes/nord-mobile-gauntlet.",
+    "units": "Lengths in metres (_m), speeds in m/s (_m_s), times in seconds (_s), frame times in milliseconds (_ms), memory in MiB (_mib), bitrates in kbit/s (_kbps). Sizes are [width, height] in pixels.",
+    "sync": "Source/Quebec/QuebecGauntletModel.h holds the same driving numbers, mode settings, frame thresholds and exit codes. Scripts/test_gauntlet_model.py fails when they differ. Scripts/make_gauntlet_route.py reads stops, order and eye_fov_deg and writes Source/Quebec/QuebecGauntletRoute.h.",
+    "version": "Schema version. Raise it when a key changes meaning.",
+    "map": "The map every run loads. The Plateau replica is merged into it.",
+    "road_set": "The road segments the route follows: the set QuebecDistrict::ForWorld gives the LaFontaine map.",
+    "camera_manifest": "The file that holds the stop cameras (its 'cameras' list). Eye positions and targets live only there.",
+    "route_header": "The generated C++ header with the stops in drive order.",
+    "stops": "One entry per stop: label (used in logs, leg names and shot names), name (the street) and camera (the 'name' of a camera in camera_manifest).",
+    "order": "Drive order by label. The loop returns from the last stop to the first.",
+    "eye_fov_deg": "Horizontal field of view of the <stop>-eye views: the game camera's 85 degrees (Preview/Replica/README.md).",
+    "names": "How logs and files name a leg, a stop and a still. {from} and {to} are stop labels, {sky} is a key of skies, {view} is an entry of views.per_stop.",
+    "route": "Checks on the generated route: total length in metres, the largest distance from a stop eye to its road point, and the end position.",
+    "drive": "The in-game driver: speed cap, the police stuck rule (reverse_for_s after stuck_after_s below stuck_speed_m_s with throttle), the stall rule (less than stall_progress_m along the loop in stall_s fails with exit stuck), the lap time limit (driving time, holds excluded) and the largest lateral error from the route.",
+    "modes": "Per -NordGauntletMode: delay_s after the subsystem starts before driving (stream waits for the 60 s idle warm-up plus the 30 s grace, so NordFriend1 is asleep), warm_laps driven and discarded (shader compiles), laps measured (-NordGauntletLaps overrides it), hold_s at each stop (0 drives through), ambient false adds world_flags.look, and sky_switch true takes both skies at each hold.",
+    "confirm_laps": "Measured laps per run when a winner and the baseline are confirmed. The result is the median of the per-lap p95 values.",
+    "world_flags": "Command-line flags. 'all' goes on every run, 'look' on look runs only.",
+    "gauntlet_flags": "The flags the game reads. Each value is the flag text before its argument.",
+    "exit_codes": "Process exit codes from the subsystem. Python judges budgets; the game never does.",
+    "skies": "Pinned sky presets. Every run passes one 'args' list. A run without both -NordHour= and -NordWeather= exits with exit_codes.no_sky.",
+    "sky_order": "The order of skies in reports and look runs.",
+    "views": "Fixed stills at each stop: per_stop names, settle times before the shot, and whether the HUD shows.",
+    "sizes": "Render and stream sizes from Browser/config.mjs streamDimensions for the 844x390 and 390x844 phone viewports. rung 0 is the 1280 edge, rung 1 the 960 edge.",
+    "size_use": "Which sizes each pass uses: tune (the search), confirm (winner and baseline) and stream (stream runs).",
+    "stream": "Stream rungs measured in the stream run only. A change to the ladder in Browser/config.mjs is a recommendation for the user, never automatic.",
+    "budgets": "native: the per-run and per-leg gate after the warm laps (frames strictly over a threshold count). feasible: the tuner's 10 percent margin on the night-rain landscape lap; the gate itself stays at 33.3 ms. stream: the stream gate and the two-viewer guard. look: the visual check.",
+    "knobs": "Ladders for the tuner, cheapest step first. Each step is a {cvar: value} object; a candidate is the baseline profile with one step of each knob applied. baseline_step indexes the step equal to today's stream profile, or is null when the stream profile does not set the CVar (the host readback gives today's value). A knob with enabled false is skipped until its enable_when note is true.",
+    "requires": "Knob dependencies the tuner never breaks: when knob is at from_step or higher, needs_knob must be at needs_from_step or higher. verified false means the rule was written from memory of the engine and needs a host check.",
+    "pending_knobs": "Knobs named in the design that have no ladder yet.",
+    "fixed": "Settings no candidate changes.",
+    "profiles": "baseline is today's stream profile: execcmds is Scripts/browser_streaming.py QUALITY verbatim, and cvars is its effective value per CVar (later entries win). ceiling is the desktop release look used as the visual reference.",
+    "search": "The greedy climb: candidate limit, the smallest ms cost used in the efficiency ratio, repeat counts, tie rules and the GPU target used when steps are combined.",
+    "durations": "Estimates used for planning a GPU window."
+  },
+  "version": 1,
+  "map": "/Game/Maps/LaFontaine",
+  "road_set": "LaFontaineExtension::RadarRoadSegments",
+  "camera_manifest": "Data/Plateau/ReplicaGeometry/Streets/manifest.json",
+  "route_header": "Source/Quebec/QuebecGauntletRoute.h",
+  "stops": [
+    {"label": "S1", "name": "Sherbrooke", "camera": "ReplicaSherbrooke"},
+    {"label": "S2", "name": "Papineau", "camera": "ReplicaPapineau"},
+    {"label": "S3", "name": "Fabre", "camera": "ReplicaFabre"},
+    {"label": "S4", "name": "RachelPark", "camera": "ReplicaRachelPark"},
+    {"label": "S5", "name": "Mentana", "camera": "ReplicaMentana"}
+  ],
+  "order": ["S1", "S2", "S3", "S4", "S5"],
+  "eye_fov_deg": 85,
+  "names": {
+    "leg": "{from}-{to}",
+    "stop": "{label}",
+    "still": "look/{sky}/{label}-{view}-{width}x{height}.png"
+  },
+  "route": {
+    "length_min_m": 2500,
+    "length_max_m": 3500,
+    "stop_road_max_m": 50,
+    "end_within_m": 8
+  },
+  "drive": {
+    "speed_cap_m_s": 15,
+    "stuck_after_s": 1.2,
+    "reverse_for_s": 1.1,
+    "stuck_speed_m_s": 0.6,
+    "stall_s": 10,
+    "stall_progress_m": 5,
+    "max_lap_s": 360,
+    "max_lateral_error_m": 2.5
+  },
+  "modes": {
+    "perf": {"delay_s": 10, "warm_laps": 1, "laps": 1, "hold_s": 0, "ambient": true, "sky_switch": false},
+    "look": {"delay_s": 10, "warm_laps": 0, "laps": 1, "hold_s": 24, "ambient": false, "sky_switch": true},
+    "stream": {"delay_s": 95, "warm_laps": 0, "laps": 1, "hold_s": 4, "ambient": true, "sky_switch": false}
+  },
+  "confirm_laps": 3,
+  "world_flags": {
+    "all": ["-NordNoPolice", "-NordNoCampaign", "-NordNoSideJobs", "-NordNoCampaignSave"],
+    "look": ["-NordNoAmbient"]
+  },
+  "gauntlet_flags": {
+    "enable": "-NordGauntlet",
+    "mode": "-NordGauntletMode=",
+    "run": "-NordGauntletRun=",
+    "laps": "-NordGauntletLaps=",
+    "expect": "-NordGauntletExpect=",
+    "delay": "-NordGauntletDelay="
+  },
+  "exit_codes": {"done": 0, "stuck": 2, "no_sky": 3, "cvar_mismatch": 4, "timeout": 5},
+  "skies": {
+    "day": {"hour": 15, "weather": "Clear", "args": ["-NordHour=15", "-NordWeather=Clear", "-NordFreezeTime", "-NordFreezeWeather"]},
+    "night_rain": {"hour": 22, "weather": "Rain", "args": ["-NordHour=22", "-NordWeather=Rain", "-NordFreezeTime", "-NordFreezeWeather"]}
+  },
+  "sky_order": ["day", "night_rain"],
+  "views": {
+    "per_stop": ["eye", "chase"],
+    "chase_settle_s": 2.5,
+    "tsr_settle_frames": 120,
+    "hud": false
+  },
+  "sizes": {
+    "top_landscape": {"size": [1412, 652], "rung": 0, "viewport": [844, 390]},
+    "top_portrait": {"size": [652, 1412], "rung": 0, "viewport": [390, 844]},
+    "start_landscape": {"size": [1058, 488], "rung": 1, "viewport": [844, 390]},
+    "start_portrait": {"size": [488, 1058], "rung": 1, "viewport": [390, 844]}
+  },
+  "size_use": {
+    "tune": ["top_landscape"],
+    "confirm": ["top_landscape", "top_portrait"],
+    "stream": ["top_landscape", "top_portrait", "start_landscape", "start_portrait"]
+  },
+  "stream": {
+    "rungs": [
+      {"rung": 0, "edge": 1280, "bitrate_kbps": 6000},
+      {"rung": 1, "edge": 960, "bitrate_kbps": 2000}
+    ],
+    "codec": "VP8",
+    "lap_start_after_begin_play_s": 95
+  },
+  "budgets": {
+    "native": {
+      "frame_budget_ms": 33.3,
+      "p95_max_ms": 33.3,
+      "p99_max_ms": 50.0,
+      "slow_frame_ms": 50.0,
+      "slow_max_percent": 1.0,
+      "hitch_ms": 66.7,
+      "hitches_per_30s_max": 1,
+      "long_frame_ms": 250.0,
+      "long_frames_max": 0,
+      "vram_max_mib": 6000,
+      "vram_guard_mib": 12000,
+      "summary_p95_max_diff_ms": 1.0,
+      "fps_cap_floor_ms": 16.7
+    },
+    "feasible": {
+      "sky": "night_rain",
+      "size": "top_landscape",
+      "frame_p95_max_ms": 30.0,
+      "gpu_p95_max_ms": 28.0
+    },
+    "stream": {
+      "decoded_fps_min": 29,
+      "freezes_max": 0,
+      "over_50ms_max_percent": 1.0,
+      "longest_gap_max_ms": 500,
+      "jitter_buffer_max_ms": 120,
+      "native_fps_min": 29,
+      "native_window_s": 5,
+      "decoded_vs_native_max_fps": 3,
+      "two_viewer_drop_max_fps": 2
+    },
+    "look": {
+      "image_ssim_min": 0.85,
+      "repeat_ssim_min": 0.98,
+      "images": 20,
+      "ssim": {"channel": "luma", "window": 11, "sigma": 1.5, "k1": 0.01, "k2": 0.03},
+      "flip_pixels_per_degree": 40
+    }
+  },
+  "knobs": [
+    {"id": "shadows", "enabled": true, "baseline_step": 0, "steps": [
+      {"sg.ShadowQuality": 1, "r.Shadow.Virtual.Enable": 0},
+      {"sg.ShadowQuality": 2, "r.Shadow.Virtual.Enable": 0},
+      {"sg.ShadowQuality": 2, "r.Shadow.Virtual.Enable": 1},
+      {"sg.ShadowQuality": 3, "r.Shadow.Virtual.Enable": 1}]},
+    {"id": "gi", "enabled": true, "baseline_step": 0, "steps": [
+      {"sg.GlobalIlluminationQuality": 1}, {"sg.GlobalIlluminationQuality": 2}, {"sg.GlobalIlluminationQuality": 3}]},
+    {"id": "reflections", "enabled": true, "baseline_step": 0, "steps": [
+      {"sg.ReflectionQuality": 1}, {"sg.ReflectionQuality": 2}, {"sg.ReflectionQuality": 3}]},
+    {"id": "screen_percentage", "enabled": true, "baseline_step": 2, "note": "TSR; its guide floor is 50.", "steps": [
+      {"r.ScreenPercentage": 60}, {"r.ScreenPercentage": 67}, {"r.ScreenPercentage": 75}, {"r.ScreenPercentage": 85}, {"r.ScreenPercentage": 100}]},
+    {"id": "view_distance", "enabled": true, "baseline_step": 0, "steps": [
+      {"sg.ViewDistanceQuality": 2}, {"sg.ViewDistanceQuality": 3}]},
+    {"id": "foliage", "enabled": true, "baseline_step": 0, "steps": [
+      {"sg.FoliageQuality": 2}, {"sg.FoliageQuality": 3}]},
+    {"id": "effects", "enabled": true, "baseline_step": 0, "steps": [
+      {"sg.EffectsQuality": 2}, {"sg.EffectsQuality": 3}]},
+    {"id": "post_process", "enabled": true, "baseline_step": 0, "steps": [
+      {"sg.PostProcessQuality": 2}, {"sg.PostProcessQuality": 3}]},
+    {"id": "shading", "enabled": true, "baseline_step": null, "note": "QUALITY does not set sg.ShadingQuality, so today's value is the engine default. Read it back on the host before the baseline run.", "steps": [
+      {"sg.ShadingQuality": 2}, {"sg.ShadingQuality": 3}]},
+    {"id": "anti_aliasing", "enabled": true, "baseline_step": 0, "note": "TSR history cost.", "steps": [
+      {"sg.AntiAliasingQuality": 2}, {"sg.AntiAliasingQuality": 3}]},
+    {"id": "textures", "enabled": true, "baseline_step": 0, "note": "VRAM only.", "steps": [
+      {"sg.TextureQuality": 2}, {"sg.TextureQuality": 3}]},
+    {"id": "nanite_edge", "enabled": false, "baseline_step": 1, "enable_when": "r.Nanite.ShowStats shows Nanite meshes on the route.", "note": "Higher values are coarser and cheaper. Step 1 is the engine default (unverified).", "steps": [
+      {"r.Nanite.MaxPixelsPerEdge": 2}, {"r.Nanite.MaxPixelsPerEdge": 1}]}
+  ],
+  "requires": [
+    {"knob": "reflections", "from_step": 1, "needs_knob": "gi", "needs_from_step": 1, "verified": false,
+     "why": "sg.ReflectionQuality 2 and up selects Lumen reflections, which expect Lumen GI (sg.GlobalIlluminationQuality 2 and up)."}
+  ],
+  "pending_knobs": [
+    {"id": "stream_budget", "flag": "-NordStreamBudget", "enable_when": "nord-stream-speed task 2.7 lands."}
+  ],
+  "fixed": {
+    "t.MaxFPS": 60,
+    "anti_aliasing_method": "TSR (r.AntiAliasingMethod=4 in Config/DefaultEngine.ini)",
+    "codec": "VP8"
+  },
+  "profiles": {
+    "baseline": {
+      "execcmds": "sg.ViewDistanceQuality 2,sg.AntiAliasingQuality 2,sg.ShadowQuality 2,sg.GlobalIlluminationQuality 2,sg.ReflectionQuality 2,sg.PostProcessQuality 2,sg.TextureQuality 2,sg.EffectsQuality 2,sg.FoliageQuality 2,sg.GlobalIlluminationQuality 1,sg.ReflectionQuality 1,sg.ShadowQuality 1,r.Shadow.Virtual.Enable 0,r.ScreenPercentage 75,t.MaxFPS 60",
+      "cvars": {
+        "sg.ViewDistanceQuality": 2,
+        "sg.AntiAliasingQuality": 2,
+        "sg.ShadowQuality": 1,
+        "sg.GlobalIlluminationQuality": 1,
+        "sg.ReflectionQuality": 1,
+        "sg.PostProcessQuality": 2,
+        "sg.TextureQuality": 2,
+        "sg.EffectsQuality": 2,
+        "sg.FoliageQuality": 2,
+        "r.Shadow.Virtual.Enable": 0,
+        "r.ScreenPercentage": 75,
+        "t.MaxFPS": 60
+      }
+    },
+    "ceiling": {
+      "cvars": {
+        "sg.ViewDistanceQuality": 3,
+        "sg.AntiAliasingQuality": 3,
+        "sg.ShadowQuality": 3,
+        "sg.GlobalIlluminationQuality": 3,
+        "sg.ReflectionQuality": 3,
+        "sg.PostProcessQuality": 3,
+        "sg.TextureQuality": 3,
+        "sg.EffectsQuality": 3,
+        "sg.FoliageQuality": 3,
+        "sg.ShadingQuality": 3,
+        "r.Shadow.Virtual.Enable": 1,
+        "r.ScreenPercentage": 100,
+        "t.MaxFPS": 60
+      }
+    }
+  },
+  "search": {
+    "max_candidates": 24,
+    "efficiency_min_ms": 0.25,
+    "baseline_repeats": 2,
+    "ceiling_repeats": 2,
+    "combine_gpu_p95_max_ms": 28.0,
+    "look_tie_min": 0.005,
+    "look_tie_repeat_factor": 2,
+    "ms_tie_min": 0.5,
+    "ms_tie_repeat_factor": 2
+  },
+  "durations": {
+    "lap_estimate_s": 210,
+    "candidate_estimate_s": 600
+  }
+}
