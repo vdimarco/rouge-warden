@@ -1398,7 +1398,9 @@ def test_gallery_partitions_and_props_floor():
                     assert all(_poly_dist(q, quad) < .2 for q in free), (record['id'], free)
                     assert _area_xy([(q[0], q[1], 0) for q in free]) >= 2500 - 1
                     assert _poly_dist(tuple(deck['door']), free) >= CAPSULE_R + 10, (record['id'], 'props at the door')
-                    assert not any(_overlap(free, t) for t in treads), (record['id'], 'props on a flight')
+                    # no tread of a flight over it lower than head height (a flight higher up may pass overhead)
+                    assert not any(_overlap(free, t) for t in treads if deck['z'] - 1 < t[0][2] < deck['z'] + 210), \
+                        (record['id'], 'props on a flight')
                     area += _area_xy([(q[0], q[1], 0) for q in free])
                 assert abs(area / 1e4 - deck['free_m2']) < .011, (area, deck['free_m2'])
                 assert abs(math.hypot(*deck['out']) - 1) < 1e-3 and len(deck['edge']) == 2
