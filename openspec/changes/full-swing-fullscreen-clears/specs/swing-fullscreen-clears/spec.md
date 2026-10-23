@@ -13,4 +13,5 @@ Opaque full-screen bloom passes SHALL avoid redundant automatic clears and SHALL
 
 #### Scenario: Release evidence
 - **WHEN** proposed for release
-- **THEN** matchedFPS/tails/longframes/input-to-CPU-submit/GPU measurements disclose targets and reject repeatable regressions
+- **THEN** focused correctness tests, review, CI and deployed-preview checks pass
+- **AND** available measurements disclose targets and limits without requiring an FPS gain to merge incremental progress

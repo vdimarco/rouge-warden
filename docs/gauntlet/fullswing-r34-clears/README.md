@@ -13,3 +13,7 @@ No current aesthetic or performance score increase. AffectedChrome120Hzprofile u
 All42full60s/35inputworkloads completed with no inactive frames/errors. Normal comparisons retain60FPS; original pressurepair2 regresses whilepairs1/3 improve. Same-browser counterbalanced follow-up baselineFPS26.08/25.15/24.66 versuscandidate25.44/25.24/26.15; median25.15→25.44(~1.2%), too small to establish a reliable capacity improvement under shared load. Medianinput40.8→37.4ms improves, but individual samples overlap andabsoluteFPS/tailtargets fail. This does not establish the initial pressure regression as causal, nor justify a performance release. Candidate is rejected, not merged to create activity.
 
 Fullraw/manifests/tables and identical inspected cityimages retained here. All6CI/review/deployed15checks/exactbytes passed, but that does not replace performance evidence. Main retains originalclear behavior. No graphics, physics, anchor, height or quality change reachesproduction. No currentscoreincrease; userChrome report remainsopen.
+
+## Updated release decision under user direction
+
+The user explicitly removed the performance-benefit merge check and requested an implementation plan with incremental commits/merges. Reopen this change as removal of redundant clear commands, not a proven FPS improvement. The42-workload mixed results remain disclosed. Correctness, review, CI, current preview, rebase and production verification still apply. See ../FULLSWING-PERFORMANCE-PLAN.md.

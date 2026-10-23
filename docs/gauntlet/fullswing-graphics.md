@@ -1151,3 +1151,6 @@ Current total/delta withheld. Historical scores above are context only, no aesth
 
 
 Round34 rejected beforemerge:42fullworkloads/35inputs each; normal60FPS but pressure results mixed, same-browser medianFPS25.15→25.44(~1.2%) insufficient reliable gain. CI/review/pixel/statechecks pass but do not justify shipping. Fullraw/tables/limits retained in fullswing-r34-clears. No current score increase, totalwithheld; no productionchange or Chrome fixclaim.
+
+
+User-directed workflow update: performance measurements are diagnostic, not an FPS-benefit merge gate. Round34 reopens as removal of redundant render commands with actual FPS benefit unverified; original mixed results remain recorded. Focused correctness/review/CI/preview/rebase/production checks retained. Delivery plan: FULLSWING-PERFORMANCE-PLAN.md.
