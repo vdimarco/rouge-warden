@@ -1148,3 +1148,6 @@ One scoped pass helper suppresses redundant clears and restores renderer.autoCle
 
 
 Current total/delta withheld. Historical scores above are context only, no aesthetic improvement, affecteduserChrome/physicaldevice/listening/fullplaythrough claim. Requirefullhardwareevidence/review/currentpreview/allCI/rebase/production before release.
+
+
+Round34 rejected beforemerge:42fullworkloads/35inputs each; normal60FPS but pressure results mixed, same-browser medianFPS25.15→25.44(~1.2%) insufficient reliable gain. CI/review/pixel/statechecks pass but do not justify shipping. Fullraw/tables/limits retained in fullswing-r34-clears. No current score increase, totalwithheld; no productionchange or Chrome fixclaim.

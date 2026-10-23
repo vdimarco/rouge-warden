@@ -1,0 +1,20 @@
+ENV {"renderer":"ANGLE (NVIDIA Corporation, NVIDIA GeForce RTX 4090/PCIe/SSE2, OpenGL ES 3.2)","ua":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.0.0 Safari/537.36"}
+PASS: recorded NVIDIA hardware renderer
+PIXELS {"width":640,"height":360,"rows":[{"camera":"needle","verse":"full","shaft":true,"bytes":3686400,"different":0,"max":0,"varied":2745146},{"camera":"needle","verse":"off","shaft":true,"bytes":3686400,"different":0,"max":0,"varied":2737742},{"camera":"street","verse":"full","shaft":false,"bytes":3686400,"different":0,"max":0,"varied":2742880},{"camera":"street","verse":"off","shaft":false,"bytes":3686400,"different":0,"max":0,"varied":2741351}]}
+PASS: 640 needle/full: identical RGBA output
+PASS: 640 needle/off: identical RGBA output
+PASS: 640 street/full: identical RGBA output
+PASS: 640 street/off: identical RGBA output
+PASS: 640: active and inactive sun paths covered
+PIXELS {"width":390,"height":844,"rows":[{"camera":"needle","verse":"full","shaft":true,"bytes":5266560,"different":0,"max":0,"varied":3918129},{"camera":"needle","verse":"off","shaft":true,"bytes":5266560,"different":0,"max":0,"varied":3921918},{"camera":"street","verse":"full","shaft":false,"bytes":5266560,"different":0,"max":0,"varied":3906368},{"camera":"street","verse":"off","shaft":false,"bytes":5266560,"different":0,"max":0,"varied":3912528}]}
+PASS: 390 needle/full: identical RGBA output
+PASS: 390 needle/off: identical RGBA output
+PASS: 390 street/full: identical RGBA output
+PASS: 390 street/off: identical RGBA output
+PASS: 390: active and inactive sun paths covered
+PASS: autoClear restored {"initial":true,"fail":false,"restored":true,"caught":false}
+PASS: autoClear restored {"initial":true,"fail":true,"restored":true,"caught":true}
+PASS: autoClear restored {"initial":false,"fail":false,"restored":true,"caught":false}
+PASS: autoClear restored {"initial":false,"fail":true,"restored":true,"caught":true}
+PASS: no page errors
+PASS: fullscreen clears
