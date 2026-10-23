@@ -400,7 +400,7 @@ def check_rununreal_perf(out, package):
     assert command == [str(L.UAT), "RunUnreal", f"-project={L.UPROJECT}", f"-ScriptsForProject={L.UPROJECT}", "-platform=Linux",
                        "-configuration=Development", f"-build={package}",
                        f"-test=NordMobileLoop(mode=perf,size=96x48,sky=night-rain,laps=2,run='{run}',"
-                       f"execcmds='{run}/quality.execcmds',expect='{run}/quality.expect')"], command
+                       f"execcmds='{run}/quality.execcmds',expect='{run}/quality.expect',maxduration={L.run_timeout(SMALL, 'perf', 2)})"], command
     assert json.loads((run / "fake-argv.json").read_text())["role"] == "uat"
     assert [path.name for path in (run / "native").glob("*.csv")] == ["NordGauntlet-perf-night_rain.csv"], "copied from the csv= line"
     assert verdict["status"] == "pass", failing(verdict)
