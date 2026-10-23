@@ -2347,9 +2347,11 @@ def _passage_walk(world, L, surfaces, strip, counts, stops, oa, u, out, xs, i, j
         lead = [at(l0, yl), at(r0, yr), at(r0, y0), at(l0, y0)]
         if clear(lead):
             break
+    lead_laid = False
     if max(y0 - yl, y0 - yr) > 1. and len(dedupe(lead)) >= 3 and clear(lead):
         key = 'yard_path' if world.traffic_distance(lead) >= CLEAR else 'curb'
         if L.flat(key, lead, Z_WALK):
+            lead_laid = True
             ccw = area(lead) > 0
             for a, b, d in ((lead[0], lead[1], (-out[0], -out[1])), (lead[1], lead[2], u), (lead[3], lead[0], back)):
                 c = add(lerp(a, b, .5), d, 1.5)       # close in: the parterre's far edge may run a few cm off it
@@ -2373,6 +2375,10 @@ def _passage_walk(world, L, surfaces, strip, counts, stops, oa, u, out, xs, i, j
         if L.flat(key, pp, Z_WALK):
             ccw = area(pp) > 0
             edges = [(pp[2], pp[3])] if m == last else []            # the far end, toward the yard
+            if k == 0 and not lead_laid and any(
+                    surfaces.floor(add(lerp(pp[0], pp[1], f), out, -1.5)) < Z_WALK - 1. and
+                    not world.in_building(add(lerp(pp[0], pp[1], f), out, -1.5)) for f in (.1, .5, .9)):
+                edges.append((pp[0], pp[1]))                         # the near end over a sliver of bare floor
             for a, b in ((pp[1], pp[2]), (pp[3], pp[0])):            # a side on a fence or Plex ground
                 mid = lerp(a, b, .5)
                 c = add(mid, (u[0] if a is pp[1] else -u[0], u[1] if a is pp[1] else -u[1]), 4.)
