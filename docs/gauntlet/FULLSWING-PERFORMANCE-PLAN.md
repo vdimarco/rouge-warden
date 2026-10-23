@@ -45,3 +45,6 @@ Increment41 shipped #646 as2d254f7d after freshall6CI/review/current10deployedch
 
 
 Increment42 shipped #648 as853fed7a after all6CI/review/current9deployedchecks/rebase; productioncars+main HTTP200 exactbytes verified (hashes in fullswing-r42-hazard-scratch/production-verification.json). Canonical hazard-output scenarios published and OpenSpec archived. ActualChrome/FPSbenefit unverified; totalwithheld.
+
+
+Increment43 shipped #650 as5f5c85f5 after all6CI/review/current10deployedchecks/freshrebase/exactmerge. Productionmain HTTP200 exactbytes verified (hash in fullswing-r43-clog-guards/production-verification.json). Canonical guard-selection scenarios published and OpenSpec archived. ActualChrome/FPSbenefit unverified; totalwithheld.

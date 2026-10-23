@@ -4,7 +4,7 @@ The recurring guard selector reads city.clogs and completed save IDs instead of 
 
 Node reference equivalence covers all generated clogs, completed IDs, repeated calls, fresh sessions and the 140m boundary:20 spawns identical,96 target snapshots before versus zero after. Five browser checks exercise actual main guard code and real game.clearClog synchronization. Existing action Node suite passes. Fixture development initially captured city/combat before initialization; test-only getters fixed that, with failure logs retained externally. No runtime fix was needed.
 
-Review, all CI, authenticated current preview, final rebase and production verification pending. No FPS benefit claim or benchmark gate. OpenSpec CLI unavailable; scenarios manually checked. No physical-device, listening or full-playthrough acceptance.
+Released in PR#650 as5f5c85f5 after review/all6CI/current10deployedchecks/fresh rebase before and after preview. Production main.js HTTP200 exactly matches the merged bytes; SHA2569ea7f755a4e6a8ec8d7ef33b7c5fcef657f5f22e5cd06bd1bb0aa422070ffee7. No FPS benefit claim or benchmark gate. OpenSpec CLI unavailable; scenarios manually checked. No physical-device, listening or full-playthrough acceptance.
 
 | Dimension | Assessment |
 | --- | --- |
