@@ -1284,3 +1284,7 @@ Five missionupdates reducealivecounts directly, preservingpredicate/firstlivegoa
 
 
 Increment51 shipped #666 as2035c0b8 after all6CI/review/current13deployedchecks/rebase before AND afterpreview/exactmerge. Productionjobs HTTP200 exactSHA c714f2e6fbb50390ceab1bb75dece1c794fa2946c98deb8c992a8b37167d69ac verified. Canonical crew-count scenarios published and OpenSpec archived. ActualChrome/FPSbenefit unverified; totalwithheld.
+
+
+### Increment52 — idle offer array
+Skip replacement filtering until an actual expired crime exists. Node60updates/strict deadline/busy/ordered events/previous-array independence and action suite PASS; browser four checks PASS using separate actual module instance. All20limits in r52-offer-expiry; no FPS claim/total withheld. Release pending.
