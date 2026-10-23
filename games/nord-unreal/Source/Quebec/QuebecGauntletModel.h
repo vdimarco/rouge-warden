@@ -415,7 +415,7 @@ namespace QuebecGauntlet
         struct FCorner
         {
             double Turn = 0.0;    // Degrees.
-            double Side = 0.0;    // 1 turns left, -1 right, 0 is a stop or an end.
+            double Side = 0.0;    // 1 turns from +X toward +Y, -1 the other way, 0 is a stop or an end.
             double Speed = SpeedCap;
             double Want = 0.0;    // Tangent length of the arc at Speed.
         };
@@ -526,10 +526,10 @@ namespace QuebecGauntlet
     inline constexpr int MaxLoopStops = 12;
 
     // Each eye's road point is the nearest point on a through road (FForwardRoads). The car leaves each stop the way it
-    // arrived, so it never turns back there. Each leg is an FForwardRoads route from one road point to the next, and the loop keeps the
-    // arrival directions (along or against each stop's segment) that give the lowest total cost: the shortest loop that
-    // never turns back, when one exists. Ties go to the first combination tried, so the loop is the same on every build.
-    // FinishLoop then rounds the junctions.
+    // arrived, so it never turns back there. Each leg is an FForwardRoads route from one road point to the next, and the
+    // loop keeps the arrival directions (along or against each stop's segment) that give the lowest total cost: the
+    // shortest loop that never turns back, when one exists. Ties go to the first combination tried, so the loop is the
+    // same on every build. FinishLoop then rounds the junctions.
     inline bool BuildLoop(const QuebecPursuit::FRoadGraph& Graph, const std::vector<FVec2>& Eyes, FLoop& Out)
     {
         Out = FLoop();
