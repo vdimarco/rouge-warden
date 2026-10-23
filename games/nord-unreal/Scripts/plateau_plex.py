@@ -3257,10 +3257,18 @@ class Rear:
             guard(gx1 - 2, D_FACE, gx1 - 2, dF - 3 - CAP_W / 2, z, (0., 0., 0.))
         corners = [P(gx0, D_FACE, z), P(gx1, D_FACE, z), P(gx1, dF, z), P(gx0, dF, z)]
         sc = (sx0 + sx1) / 2
+        xd = module['xd']
+        # props floor: the outer band between the steps' landing and the door, the inner band kept as the way between
+        free = _free_floor((gx0 + 8, gx1 - 8, D_FACE + 3, dF - 12),
+                           [(gx0 - 10, sx1 + HEAD_CLEAR, -1e9, 1e9), (xd - DOOR_CLEAR, xd + DOOR_CLEAR, -1e9, 1e9),
+                            (sx1, xd, -1e9, D_FACE + 100)])
+        edge = (P(gx0, dF - 3, z), P(gx1, dF - 3, z))
         record.setdefault('ground_decks', []).append({
             'z': round(z, 1), 'quad': [[round(p[0], 1), round(p[1], 1)] for p in corners], 'steps': risers - 1,
             'foot': [round(v, 1) for v in P(sc, dF + (risers - 1.5) * going, rise)],
-            'head': [round(v, 1) for v in P(sc, (D_FACE + dF) / 2, z)], 'guard': z >= 60, 'skirts': skirts})
+            'head': [round(v, 1) for v in P(sc, (D_FACE + dF) / 2, z)], 'guard': z >= 60, 'skirts': skirts,
+            'door': [round(v, 1) for v in P(xd, D_FACE + 45, z)[:2]],
+            **self._free_record(P, free, z, edge, P(0, 1, 0)[:2] if False else self.stack_out)})
         self.count('ground_galleries')
         self.count('lattice_skirts', skirts)
 
