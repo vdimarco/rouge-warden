@@ -926,12 +926,13 @@ def _guard_planes(mesh):
     return out
 
 
-def _deck_reachability(rear, step=10.):
+def _deck_reachability(rear, step=10., props=False):
     """On every gallery deck a capsule of CAPSULE_R, kept that far from the mass wall and from every guard of that
     deck (guards collide now), walks from the head of the flight arriving there to the gallery door, and from the
     door to the foot of the flight leaving it. Walkable: the deck quad, and 1 m round each head and foot (landings,
-    spiral bays, flight ends); each flight end counts on the nearest deck of its level (one per module). Returns the
-    failures as (z, what)."""
+    spiral bays, flight ends); each flight end counts on the nearest deck of its level (one per module). With `props`,
+    the deck's whole props floor (`free`) is taken as filled, so the props the lane life puts there can never block
+    the way. Returns the failures as (z, what)."""
     failures = []
 
     def owner(point, z):
@@ -957,6 +958,9 @@ def _deck_reachability(rear, step=10.):
                 and owner(f['foot'], z) is deck]
         door = local(deck['door'])
         guards = [(local(g['a']), local(g['b'])) for g in rear['guards'] if abs(g['z0'] - z) < 1]
+        filled = [[local(p) for p in q] for q in deck.get('free', ())] if props else []
+        filled = [(q, min(p[0] for p in q), max(p[0] for p in q), min(p[1] for p in q), max(p[1] for p in q))
+                  for q in filled]
         x0 = min([0.] + [p[0] for p in heads + feet]) - 110
         x1 = max([length] + [p[0] for p in heads + feet]) + 110
         d1 = max([P.D_FACE + depth] + [p[1] for p in heads + feet]) + 110
@@ -973,6 +977,10 @@ def _deck_reachability(rear, step=10.):
                 if min(a[0], b[0]) - CAPSULE_R <= x <= max(a[0], b[0]) + CAPSULE_R and \
                         min(a[1], b[1]) - CAPSULE_R <= d <= max(a[1], b[1]) + CAPSULE_R and \
                         _seg_dist((x, d), a, b) < CAPSULE_R - 1:
+                    return False
+            for q, qx0, qx1, qd0, qd1 in filled:
+                if qx0 - CAPSULE_R < x < qx1 + CAPSULE_R and qd0 - CAPSULE_R < d < qd1 + CAPSULE_R and \
+                        _poly_dist((x, d), q) < CAPSULE_R - 1:
                     return False
             return True
         cells = {(i, j) for i in range(nx) for j in range(nd) if free(i, j)}
@@ -1245,7 +1253,9 @@ def _check_collision_district(manifest, fronts, groups, keep):
     guards = sum(len(r['rear']['guards']) for r in fronts['fronts'])
     assert counts['rear_guard_collision_runs'] == guards and 'Collision_Only' in manifest['materials']
     assert all(b['collision'] == 'complex' for b in manifest['batches'] if b['material'] == 'Collision_Only')
-    failures = [(r['id'], f) for r in fronts['fronts'] if r['rear']['galleries'] for f in _deck_reachability(r['rear'], 12.)]
+    # the walk keeps every deck's props floor as filled (the lane life's chairs, barbecues and plants stand there)
+    failures = [(r['id'], f) for r in fronts['fronts'] if r['rear']['galleries']
+                for f in _deck_reachability(r['rear'], 12., props=True)]
     assert not failures, failures[:10]
     return {'collision_triangles_checked': faces, 'min_collision_to_traffic_cm': round(worst, 1),
             'traffic_band_units': counts.get('traffic_band_units', 0), 'guard_collision_runs': guards}
