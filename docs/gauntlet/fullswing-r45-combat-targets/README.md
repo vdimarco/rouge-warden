@@ -4,7 +4,7 @@ combat.targets accepts optional third-argument output storage after its unchange
 
 Baseline ignores the output and fails identity. Node100samples cover radius/perch/fighting/order/live references/empty/regrow/default list independence. Existing action and100cycle reconciliation suites pass (extracted reconciliation fixture now supplies the new scratch binding). Four browser checks record60actualframes/onearray/play/noerrors. No image or FPS acceptance claim.
 
-Review/allCI/currentauthenticatedpreview/finalrebase/production verification pending. OpenSpec CLI unavailable; scenarios manually checked. No physical-device/listening/full-playthrough claims.
+Released #654 as8005f88d after all6CI/review/current18deployedchecks/rebase before AND afterpreview/exactmerge. Productionmain+combat HTTP200 exactbytes verified; hashes in production-verification.json. OpenSpec CLI unavailable; scenarios manually checked. No physical-device/listening/full-playthrough claims.
 
 | Dimension | Assessment |
 | --- | --- |
