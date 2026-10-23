@@ -3016,13 +3016,13 @@
     -5.1,
     -4.0,
     0.0,
-    34.02,
+    42.62,
     4.0,
-    81.07
+    62.0
    ],
    "prop": "satellite_dish",
    "part": "mount",
-   "sha256": "157f261b64410392be825a6928cf42fa27c95ff60db5cee0568e5ae2c21b593a"
+   "sha256": "34c555f7bae5ef717c053323e0a728f9d207cf6aab8cfbe98c242aa54662d35d"
   },
   {
    "file": "satellite_dish_dish.obj",
@@ -3053,16 +3053,16 @@
    "collision": "none",
    "triangles": 78,
    "bounds_cm": [
-    30.14,
+    38.03,
     -3.6,
-    74.14,
-    42.61,
+    57.96,
+    50.5,
     3.6,
-    84.26
+    68.08
    ],
    "prop": "satellite_dish",
    "part": "lnb",
-   "sha256": "1a516d4acb5ea0cc8fa4acbd99ff8582b88a2efa69652fba36cb89dda98a77b1"
+   "sha256": "44dce6ba691a49af42b4b95221912d22707c96d90a0354a368c2021a63e298cd"
   },
   {
    "file": "potted_plant_pot.obj",
@@ -3109,58 +3109,76 @@
    "mesh": "SM_Props_potted_plant_leaves",
    "material": "PlantGreen",
    "collision": "none",
-   "triangles": 576,
+   "triangles": 664,
    "bounds_cm": [
-    -15.67,
-    -14.27,
-    31.05,
-    14.68,
-    14.54,
-    53.0
+    -16.52,
+    -15.24,
+    28.66,
+    15.62,
+    15.81,
+    49.48
    ],
    "prop": "potted_plant",
    "part": "leaves",
-   "sha256": "279545cf845518566901060f72d9e89665bf72cb039d0170a9286b8f8056a9df",
+   "sha256": "23251d990add2c5a873fe48c903eb9465909a92702a6b4c57a2912e4bae5be4b",
    "variants": [
     "PlantDry",
     "PlantRust"
    ]
   },
   {
+   "file": "potted_plant_leaves_dry.obj",
+   "mesh": "SM_Props_potted_plant_leaves_dry",
+   "material": "PlantDry",
+   "collision": "none",
+   "triangles": 96,
+   "bounds_cm": [
+    -10.57,
+    -13.46,
+    30.45,
+    13.0,
+    12.89,
+    46.52
+   ],
+   "prop": "potted_plant",
+   "part": "leaves_dry",
+   "sha256": "2533fa017ed8b15655322b384be4020f35d86d6c85cac5e698e0e1246b09945b"
+  },
+  {
    "file": "potted_plant_stems.obj",
    "mesh": "SM_Props_potted_plant_stems",
    "material": "PlantDry",
    "collision": "none",
-   "triangles": 72,
+   "triangles": 36,
    "bounds_cm": [
-    -8.68,
-    -9.32,
-    28.85,
-    8.68,
-    9.32,
-    56.19
+    -6.34,
+    -3.96,
+    28.9,
+    6.49,
+    7.3,
+    57.91
    ],
    "prop": "potted_plant",
    "part": "stems",
-   "sha256": "0b80bf4607d698c119f2dd6123cc017caa0f497ad7a6a3a9d790a2e72d859f30"
+   "sha256": "710ab6ff9f37ad40c9790ac0bdfddd009815e04fb451b5b8aa7b0d8e256beb41"
   },
   {
    "file": "potted_plant_flowers.obj",
    "mesh": "SM_Props_potted_plant_flowers",
    "material": "FlowerRed",
    "collision": "none",
-   "triangles": 126,
+   "triangles": 144,
    "bounds_cm": [
-    -10.24,
-    -8.74,
-    46.69,
-    11.69,
-    12.25,
-    58.37
+    -10.0,
+    -7.61,
+    53.2,
+    10.14,
+    10.96,
+    63.06
    ],
    "prop": "potted_plant",
    "part": "flowers",
-   "sha256": "32da52e9f08147de7880fe7194a03a51825925cfa349989e18bb2dfcd14f9b20",
+   "sha256": "2968141fbe5bf81cb6230ab03df618caa8d7a16886a7e3699a01de8217af90bc",
    "variants": [
     "FlowerPink",
     "FlowerWhite"
@@ -5023,12 +5041,12 @@
     {
      "center": [
       0,
-      8,
+      -16,
       55
      ],
      "size": [
-      180,
-      34,
+      176,
+      54,
       110
      ]
     }
@@ -6017,9 +6035,9 @@
     -5.1,
     -23.0,
     0.0,
-    42.61,
+    50.5,
     23.0,
-    84.26
+    80.75
    ],
    "parts": {
     "mount": {
@@ -6045,6 +6063,16 @@
      89.88,
      0.0,
      49.84
+    ],
+    "reflector_cm": [
+     10.0,
+     0.0,
+     56.0
+    ],
+    "lnb_cm": [
+     44.5,
+     0.0,
+     62.82
     ]
    },
    "mount_note": "clamp on a gallery guard cap rail (top of the 107 cm guard) or screw to a wall; yaw +X toward 190-230 degrees azimuth (Bell 91 W, Shaw 107.3 W from Montreal)"
@@ -6053,7 +6081,7 @@
    "kind": "gallery",
    "description": "Terracotta pot on a saucer with a geranium past its season: a loose mound of leaves, a few late flowers and some yellowing stems.",
    "pivot": "base centre",
-   "triangles": 1010,
+   "triangles": 1176,
    "budget": 1500,
    "bounds_cm": [
     -17.8,
@@ -6061,7 +6089,7 @@
     0.0,
     17.8,
     17.8,
-    58.37
+    63.06
    ],
    "parts": {
     "pot": {
@@ -6075,6 +6103,10 @@
     "leaves": {
      "mesh": "SM_Props_potted_plant_leaves",
      "material": "PlantGreen"
+    },
+    "leaves_dry": {
+     "mesh": "SM_Props_potted_plant_leaves_dry",
+     "material": "PlantDry"
     },
     "stems": {
      "mesh": "SM_Props_potted_plant_stems",
@@ -6134,12 +6166,12 @@
     {
      "center": [
       0,
-      10,
+      -22,
       58.03
      ],
      "size": [
       182,
-      46,
+      54,
       116
      ]
     }
@@ -6148,7 +6180,7 @@
  },
  "counts": {
   "props": 32,
-  "meshes": 167,
+  "meshes": 168,
   "triangles_per_prop": {
    "lamp_cobra": 468,
    "lamp_park": 630,
@@ -6180,12 +6212,12 @@
    "chair_patio": 472,
    "bbq": 1000,
    "satellite_dish": 818,
-   "potted_plant": 1010,
+   "potted_plant": 1176,
    "bike_gallery": 1524
   },
-  "triangles_all_meshes": 26914
+  "triangles_all_meshes": 27080
  },
  "source_sha256": {
-  "Scripts/blender/plateau_props.py": "5b4089932fea5f171d446bc1e7be060257595e6ed43624a416f35b1887f885f0"
+  "Scripts/blender/plateau_props.py": "8fa11064928692911814274f2d42d78fa6c36b511cde71a7111aebeadbb3c178"
  }
 }

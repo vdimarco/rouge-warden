@@ -163,6 +163,7 @@ def check(directory):
             assert abs(sum(a * b for a, b in zip(n, r))) < 1e-6 and cross_z < 0, face
     assert len(props['bixi_dock']['slots']) == 6
     check_gallery(props)
+    check_colliders(props)
     stop = props['sign_stop']['parts']
     assert {'face_red', 'face_white'} <= set(stop)
     return manifest
@@ -187,9 +188,40 @@ def check_gallery(props):
     assert len(clamp) == 3 and 0 <= clamp[2] <= 15, clamp
     elevation = math.degrees(math.atan2(aim[2], math.hypot(aim[0], aim[1])))
     assert aim[0] > 0 and abs(aim[1]) < 1e-6 and 15 <= elevation <= 40, (aim, elevation)
+    # Offset-fed dish: the LNB hangs in front of the reflector and below its axis (the feed arm leaves the lower
+    # rim), never above it.
+    reflector = props['satellite_dish']['anchors']['reflector_cm']
+    lnb = props['satellite_dish']['anchors']['lnb_cm']
+    unit = [c / math.hypot(*aim) for c in aim]
+    rel = [b - a for a, b in zip(reflector, lnb)]
+    ahead = sum(r * u for r, u in zip(rel, unit))
+    off_axis = [r - ahead * u for r, u in zip(rel, unit)]
+    assert 25 <= ahead <= 45 and off_axis[2] < -5, ('LNB in front of and below the dish axis', ahead, off_axis)
+    assert lnb[2] < reflector[2] + ahead * unit[2], lnb
     lean = props['bike_gallery']['anchors']['lean_contact_cm']
     assert lean[1] < -10 and 80 <= lean[2] <= 110, ('the bike leans toward Unreal -Y onto the guard', lean)
     assert props['bike_gallery']['bounds_cm'][1] < -30 < props['bike_gallery']['bounds_cm'][4] + 30
+    # The geranium is a dome of separate leaves on petioles, with some yellowed ones and flowers above it.
+    plant = props['potted_plant']['parts']
+    assert {'pot', 'soil', 'leaves', 'leaves_dry', 'stems', 'flowers'} <= set(plant), sorted(plant)
+    assert plant['leaves_dry']['material'] == 'PlantDry' and plant['leaves']['material'] == 'PlantGreen'
+
+
+def check_colliders(props):
+    """Collider boxes are Unreal-local like bounds_cm: none sticks out of its prop by more than 10 cm, and the
+    leaning bikes' boxes sit on the lean (-Y) side, covering the frame within 6 cm."""
+    for key, entry in props.items():
+        b = entry['bounds_cm']
+        for box in entry.get('colliders_cm', []):
+            lo = [c - s / 2 for c, s in zip(box['center'], box['size'])]
+            hi = [c + s / 2 for c, s in zip(box['center'], box['size'])]
+            over = max(max(bl - l, h - bh) for l, h, bl, bh in zip(lo, hi, b[:3], b[3:]))
+            assert over <= 10, (key, 'collider outside the prop', box, b, round(over, 1))
+    for key in ('bike_locked', 'bike_gallery'):
+        b = props[key]['bounds_cm']
+        (box,) = props[key]['colliders_cm']
+        y0, y1 = box['center'][1] - box['size'][1] / 2, box['center'][1] + box['size'][1] / 2
+        assert abs(y0 - b[1]) <= 6 and abs(y1 - b[4]) <= 6, (key, 'collider off the leaning frame', (y0, y1), b)
 
 
 def blender_command(python):

@@ -19,18 +19,25 @@ HEADER = ROOT / 'Source/Quebec/QuebecGauntletRoute.h'
 def stops(loop, manifest):
     """The stops in drive order as (label, name, camera, eye, target), with eye and target as (x, y, z) in cm."""
     cameras = {camera['name']: camera for camera in manifest['cameras']}
-    assert len(cameras) == len(manifest['cameras']), 'duplicate camera names in the manifest'
+    if len(cameras) != len(manifest['cameras']):
+        raise SystemExit('duplicate camera names in the manifest')
     by_label = {stop['label']: stop for stop in loop['stops']}
-    assert len(by_label) == len(loop['stops']), 'duplicate stop labels in loop.json'
-    assert sorted(loop['order']) == sorted(by_label), 'loop.json order must name every stop once'
+    if len(by_label) != len(loop['stops']):
+        raise SystemExit('duplicate stop labels in loop.json')
+    if sorted(loop['order']) != sorted(by_label):
+        raise SystemExit('loop.json order must name every stop once')
     rows = []
     for label in loop['order']:
         stop = by_label[label]
-        assert stop['camera'] in cameras, f"camera {stop['camera']} is not in the manifest"
+        if stop['camera'] not in cameras:
+            raise SystemExit(f"camera {stop['camera']} of stop {label} is not in the manifest")
         camera = cameras[stop['camera']]
         eye, target = (tuple(float(v) for v in camera[key]) for key in ('position', 'target'))
-        assert len(eye) == 3 and len(target) == 3, stop['camera']
-        assert label.isascii() and stop['name'].isascii() and stop['camera'].isascii() and '"' not in label + stop['name'] + stop['camera']
+        if len(eye) != 3 or len(target) != 3:
+            raise SystemExit(f"camera {stop['camera']} needs a 3D position and target")
+        text = label + stop['name'] + stop['camera']
+        if not text.isascii() or not text.replace('_', '').isalnum():
+            raise SystemExit(f'stop {label}: label, name and camera must be ASCII letters, digits or _')
         rows.append((label, stop['name'], stop['camera'], eye, target))
     return rows
 

@@ -270,13 +270,13 @@ namespace QuebecGauntlet
             {
                 const int State = 2 * StartSegment + Side;
                 const int Node = Arrive(State);
-                Push(Lead + QuebecPursuit::Distance(Start, Nodes[Node]) + Against(Heading, Nodes[Node] - Nodes[Depart(State)]), State, -1);
+                Push(Lead + QuebecPursuit::Distance(Start, Junction(Node)) + Against(Heading, Junction(Node) - Junction(Depart(State))), State, -1);
                 // Standing on a junction: as if the car had come along any segment that ends there.
-                if (QuebecPursuit::Distance(Start, Nodes[Node]) <= JoinPoints)
+                if (QuebecPursuit::Distance(Start, Junction(Node)) <= JoinPoints)
                     for (const int Segment : Links[static_cast<std::size_t>(Node)])
                     {
                         const int Into = Toward(Segment, Node);
-                        Push(Lead + Against(Heading, Nodes[Node] - Nodes[Depart(Into)]), Into, -1);
+                        Push(Lead + Against(Heading, Junction(Node) - Junction(Depart(Into))), Into, -1);
                     }
             }
             while (!Heap.empty())
@@ -286,13 +286,13 @@ namespace QuebecGauntlet
                 Heap.pop_back();
                 if (Top.first > Reach[static_cast<std::size_t>(Top.second)]) continue;
                 const int Node = Arrive(Top.second);
-                const FVec2 In = Nodes[Node] - Nodes[Depart(Top.second)];
+                const FVec2 In = Junction(Node) - Junction(Depart(Top.second));
                 for (const int Segment : Links[static_cast<std::size_t>(Node)])
                 {
                     if (Segment == Top.second / 2) continue;
                     const std::pair<int, int>& Pair = Ends[static_cast<std::size_t>(Segment)];
                     const int Next = Toward(Segment, Pair.first == Node ? Pair.second : Pair.first);
-                    const FVec2 Leave = Nodes[Arrive(Next)] - Nodes[Node];
+                    const FVec2 Leave = Junction(Arrive(Next)) - Junction(Node);
                     Push(Top.first + QuebecPursuit::Length(Leave) + TurnCost(In, Leave), Next, Top.second);
                 }
             }
@@ -306,8 +306,8 @@ namespace QuebecGauntlet
                 {
                     const int State = Toward(Segment, Node);
                     if (Segment == GoalSegment || Reach[static_cast<std::size_t>(State)] == std::numeric_limits<double>::max()) continue;
-                    const FVec2 In = Nodes[Node] - Nodes[Depart(State)];
-                    const FVec2 Rest = Goal - Nodes[Node];
+                    const FVec2 In = Junction(Node) - Junction(Depart(State));
+                    const FVec2 Rest = Goal - Junction(Node);
                     const bool bRest = QuebecPursuit::Length(Rest) > JoinPoints;
                     const double Value = Reach[static_cast<std::size_t>(State)] + QuebecPursuit::Length(Rest) + (bRest ? TurnCost(In, Rest) : 0.0)
                         + Against(GoalHeading, bRest ? Rest : In);
@@ -315,7 +315,7 @@ namespace QuebecGauntlet
                 }
             }
             if (Best == std::numeric_limits<double>::max()) return false;
-            for (int State = Last; State >= 0; State = Previous[static_cast<std::size_t>(State)]) Out.push_back(Nodes[Arrive(State)]);
+            for (int State = Last; State >= 0; State = Previous[static_cast<std::size_t>(State)]) Out.push_back(Junction(Arrive(State)));
             std::reverse(Out.begin(), Out.end());
             Out.push_back(Goal);
             Cost = Best;
@@ -323,6 +323,7 @@ namespace QuebecGauntlet
         }
 
     private:
+        const FVec2& Junction(int Node) const { return Nodes[static_cast<std::size_t>(Node)]; }
         int Arrive(int State) const
         {
             const std::pair<int, int>& Pair = Ends[static_cast<std::size_t>(State / 2)];

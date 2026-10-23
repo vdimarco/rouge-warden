@@ -740,7 +740,9 @@ class Search:
                                       and not record["look_reasons"] and record["gpu_p95_ms"] is not None)
             if record["eligible"]:
                 eligible.append(record)
-        ranking = rank(eligible, self.look_tie, self.ms_tie)
+        # A ceiling that does not repeat makes the round invalid: nothing is ranked.
+        invalid = self.stop_reason == "reference_not_repeatable"
+        ranking = [] if invalid else rank(eligible, self.look_tie, self.ms_tie)
         for position, record in enumerate(ranking):
             record["rank"] = position + 1
         finished = self.clock()

@@ -2336,7 +2336,7 @@ def _passage_walk(world, L, surfaces, strip, counts, stops, oa, u, out, xs, i, j
         if L.flat(key, lead, Z_WALK):
             ccw = area(lead) > 0
             for a, b, d in ((lead[0], lead[1], (-out[0], -out[1])), (lead[1], lead[2], u), (lead[3], lead[0], back)):
-                c = add(lerp(a, b, .5), d, 4.)
+                c = add(lerp(a, b, .5), d, 1.5)       # close in: the parterre's far edge may run a few cm off it
                 if math.dist(a, b) > 1. and not world.in_building(c) and surfaces.floor(c) < Z_WALK - 1.:
                     L.wall(key, a, b, 0., Z_WALK) if ccw else L.wall(key, b, a, 0., Z_WALK)
             surfaces.add(dedupe(lead) if ccw else dedupe(lead)[::-1], Z_WALK, 'yard')

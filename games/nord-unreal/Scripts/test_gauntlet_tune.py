@@ -32,8 +32,8 @@ GAIN = {"shadows": [0, .004, .03, .04], "gi": [0, .02, .03], "reflections": [0, 
 class FakeHost:
     """measure(candidate) with additive costs. The host reads sg.ShadingQuality back as 3 (step 1 of its ladder)."""
 
-    def __init__(self, base_gpu=22.0, noise=0.0, contended=(), errors=(), clock=None, readback=True):
-        self.base_gpu, self.noise, self.readback = base_gpu, noise, readback
+    def __init__(self, base_gpu=22.0, noise=0.0, contended=(), errors=(), clock=None, readback=True, repeat=REPEAT):
+        self.base_gpu, self.noise, self.readback, self.repeat = base_gpu, noise, readback, repeat
         self.contended, self.errors = set(contended), set(errors)
         self.reported = set()
         self.calls = []
@@ -46,7 +46,7 @@ class FakeHost:
         assert candidate["execcmds"] == T.execcmds_text(candidate["cvars"])
         if candidate["look_only"]:
             assert candidate["phase"] == "ceiling"
-            return {"repeat_ssim": {f"view{i}": REPEAT for i in range(20)}}
+            return {"repeat_ssim": {f"view{i}": self.repeat for i in range(20)}}
         levels = dict(candidate["levels"])
         assert not T.violations(LOOP, levels, {"shading": 1}), (candidate["id"], levels)
         if levels["shading"] is None:
@@ -241,6 +241,10 @@ def check_stop_rule():
     assert tune["resolved_baseline_steps"] == {}
     tune = T.search(LOOP, FakeHost(readback=False))
     assert [r["id"] for r in tune["candidates"] if r["changed"] and set(r["changed"]) == {"shading"}] == ["12-shading0", "13-shading1"]
+    # A ceiling whose two renders differ (images under 0.98) makes the round invalid: no winner.
+    tune = T.search(LOOP, FakeHost(repeat=.975))
+    assert tune["stop_reason"] == "reference_not_repeatable" and tune["measured"] == 4 and tune["winner"] is None
+    assert tune["ties"]["repeat"]["min"] == .975 and tune["ranking"] == []
     # Window end: each candidate takes 600 s; a window of 6 candidates and one second measures 6.
     clock = FakeClock()
     host = FakeHost(clock=clock)

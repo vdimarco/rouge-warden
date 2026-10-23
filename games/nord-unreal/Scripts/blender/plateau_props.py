@@ -1255,19 +1255,29 @@ def potted_plant():
     P.lathe('Terracotta', pot, 16, part='pot', cap1=False)
     P.lathe('Soil', [(16.4, 28), (0, 28.4)], 16, part='soil', cap0=False)
     rng = random.Random(311)
-    for i in range(8):
-        a = i * math.tau / 8 + rng.uniform(-.3, .3)
-        r = rng.uniform(5, 11)
-        h = rng.uniform(10, 17)
-        P.ellipsoid('PlantGreen', (r * math.cos(a), r * math.sin(a), 30 + h * .55), (8.5, 7.5, h * .45), 8, 5,
-                    (0, 0, rng.uniform(0, 90)), part='leaves')
-    P.ellipsoid('PlantGreen', (0, 0, 44), (10, 10, 9), 8, 5, part='leaves')
-    for i in range(6):
-        a = i * math.tau / 6 + .4
-        top = (math.cos(a) * 9, math.sin(a) * 9, 52 + rng.uniform(-3, 6))
-        P.tube('PlantDry', [(math.cos(a) * 3, math.sin(a) * 3, 29), top], [.6, .4], 4, part='stems')
-        if i % 2 == 0:
-            P.ellipsoid('FlowerRed', top, (3.4, 3.4, 2.8), 7, 4, part='flowers')
+    # A zonal geranium is a loose dome of round leaves, each held flat on its own petiole and tilted out more
+    # toward the rim (not a few solid blobs): 19 thin leaf discs on a golden-angle spiral over a dome, with every
+    # sixth leaf yellowed and drooping, and three flower umbels on long stalks above the leaves.
+    leaves = 19
+    for i in range(leaves):
+        f = (i + .5) / leaves
+        a = i * 2.39996 + rng.uniform(-.15, .15)
+        r = 2.5 + 12.5 * math.sqrt(f)
+        z = 31.5 + 17 * (1 - (r / 17.5) ** 2) + rng.uniform(-1.5, 1.5)
+        tilt = 10 + 55 * r / 15 + rng.uniform(-8, 8)
+        dry = i % 6 == 4
+        if dry:
+            z, tilt = z - 3, tilt + 25
+        centre = (r * math.cos(a), r * math.sin(a), z)
+        P.ellipsoid('PlantDry' if dry else 'PlantGreen', centre, (6.2 - 1.2 * f, 6. - 1.2 * f, .7), 8, 3,
+                    (0, tilt, math.degrees(a) + rng.uniform(-10, 10)), part='leaves_dry' if dry else 'leaves')
+        stalk = (math.cos(a) * 1.5, math.sin(a) * 1.5, 29)
+        tip = (centre[0] - math.cos(a) * 3, centre[1] - math.sin(a) * 3, centre[2] - .8)
+        P.tube('PlantGreen', [stalk, tip], [.45, .3], 3, part='leaves')
+    for j, a in enumerate((.5, 2.6, 4.6)):
+        top = (math.cos(a) * 7, math.sin(a) * 7, 55 + 3 * (j % 2) + rng.uniform(-1, 1))
+        P.tube('PlantDry', [(math.cos(a) * 2, math.sin(a) * 2, 29), top], [.55, .35], 4, part='stems')
+        P.ellipsoid('FlowerRed', (top[0], top[1], top[2] + 2), (4., 4., 3.2), 8, 4, part='flowers')
     P.extra['season_note'] = 'late October: the PlantDry and PlantRust variants read as frost-bitten'
     return P
 
