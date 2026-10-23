@@ -51,3 +51,6 @@ Increment43 shipped #650 as5f5c85f5 after all6CI/review/current10deployedchecks/
 
 
 Increment44 shipped #652 as16909bd0 after all6CI/review/current14deployedchecks/rebase before AND afterpreview/exactmerge. Productionmain HTTP200 exactbytes verified (hash in fullswing-r44-rope-want/production-verification.json). Canonical desired-map scenarios published and OpenSpec archived. ActualChrome/FPSbenefit unverified; totalwithheld.
+
+
+Increment45 shipped #654 as8005f88d after all6CI/review/current18deployedchecks/rebase before AND afterpreview/exactmerge. Productionmain+combat HTTP200 exactbytes verified (hashes in fullswing-r45-combat-targets/production-verification.json). Canonical combat-target-storage scenarios published and OpenSpec archived. ActualChrome/FPSbenefit unverified; totalwithheld.

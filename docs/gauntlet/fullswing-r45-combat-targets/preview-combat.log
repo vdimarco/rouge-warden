@@ -1,0 +1,6 @@
+{"calls":60,"arrays":1,"state":"play"}
+PASS: sixty real frames query combat targets
+PASS: main reuses one combat output array
+PASS: play remains active
+PASS: no page errors
+PASS: combat target scratch

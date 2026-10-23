@@ -1239,3 +1239,6 @@ Increment44 shipped #652 as16909bd0 after all6CI/review/current14deployedchecks/
 
 ### Increment45 — combat rope target scratch — 2026-10-23
 Optional combat.targets output reused by main; fresh default arrays/live goon references and filtering unchanged. Node100sample identity/value/radius/perch/countchecks, existingaction/reconciliation suites and4browserchecks60realframes/onearrayPASS. Evidence fullswing-r45-combat-targets/all20dimensionlimits; total/delta withheld, actualChrome/stability unverified. No art/physics/anchor/ceiling change or FPS claim. Review/CI/preview/rebase/production pending.
+
+
+Increment45 shipped #654 as8005f88d after all6CI/review/current18deployedchecks/rebase before AND afterpreview/exactmerge. Productionmain+combat HTTP200 exactbytes verified (hashes in fullswing-r45-combat-targets/production-verification.json). Canonical combat-target-storage scenarios published and OpenSpec archived. ActualChrome/FPSbenefit unverified; totalwithheld.
