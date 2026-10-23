@@ -2448,6 +2448,7 @@ function loop(time, frame) {
 }
 function render(frame, rdt = 0) {
   const xr = renderer.xr.isPresenting;
+  if (!xr && document.hidden) return;
   if (loadRing.visible) loadRing.rotation.z -= 0.08;
   if (shot && !xr) applyShot();
   if (xr && frame && !compiledXR) {
