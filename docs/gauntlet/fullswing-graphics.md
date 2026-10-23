@@ -1228,3 +1228,7 @@ Guard selection uses static city clogs and synchronized saved completion IDs, av
 
 
 Increment43 shipped #650 as5f5c85f5 after all6CI/review/current10deployedchecks/freshrebase/exactmerge. Productionmain HTTP200 exactbytes verified (hash in fullswing-r43-clog-guards/production-verification.json). Canonical guard-selection scenarios published and OpenSpec archived. ActualChrome/FPSbenefit unverified; totalwithheld.
+
+
+### Increment44 — desired rope Map reuse — 2026-10-23
+One private cleared Map replaces per-frame construction in target reconciliation. Node100cycles match target add/remove/positions under goon/job transitions/disabled/pause/driving;100→0Mapobjects after initialization. Browser60realframes/oneMap/4checksPASS, action Node suitePASS. Evidence fullswing-r44-rope-want includes20dimensionlimits; total/delta withheld, actualChrome/stability unverified. No image/physics/anchor/ceiling change or FPS claim. Review/CI/preview/rebase/production pending.

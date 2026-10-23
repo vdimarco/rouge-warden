@@ -470,6 +470,7 @@ function endLakeDrop() {
   lakeDrop = null;
 }
 const HERO_FACE = { x: 0, z: -1 }, HERO_FIGHT = { x: 0, y: 0, z: 0, yaw: 0, onGround: false, safe: false, hidden: false, perch: false };
+const ropeWant = new Map();
 const ropeIds = new Set(), GOON_POS = new Map(), firePerch = [false, false];
 function actionOn() { return flatOn && !isXR() && gameStarted && G.mode === "desktop"; }
 // Shift on the ground with no rope out and a direction held: sprint while the energy lasts; the gauge fills again after a pause
@@ -564,7 +565,8 @@ function ropeCatch(i, r) {
 // The rope targets: the fighting goons near the hero and a job's falling person or balloon. They are added and taken away as
 // they come and go; a goon's target point is his chest.
 function syncRopeTargets() {
-  const want = new Map();
+  const want = ropeWant;
+  want.clear();
   if (actionOn() && G.state === "play" && !driving) {
     for (const g of combat.targets(heroFight())) {
       let q = GOON_POS.get(g.id);
