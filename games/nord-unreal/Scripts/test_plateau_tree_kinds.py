@@ -289,9 +289,12 @@ class TreeFiles(unittest.TestCase):
                 self.assertTrue(25. <= k['trunk_cm'] <= 60., kind)
             else:
                 self.assertTrue(500. <= k['height_cm'] <= 800. and 10. <= k['trunk_cm'] <= 25., kind)
-            # The trunk diameter at breast height, measured on the mesh, is the manifest's trunk_cm.
+            # The trunk diameter at breast height (1.3 m, or just under a lower fork), measured on the mesh, is the
+            # manifest's trunk_cm.
+            bh = k['trunk_at_cm']
+            self.assertEqual(bh, min(130., (P['trunk']['split_cm'] or 1e9) - 15.))
             bark_v = {c[0] for f in bark for c in f}
-            ring = [v[i] for i in bark_v if 126. < v[i][2] < 134. and math.hypot(v[i][0], v[i][1]) < 60.]
+            ring = [v[i] for i in bark_v if bh - 4. < v[i][2] < bh + 4. and math.hypot(v[i][0], v[i][1]) < 60.]
             cx, cy = sum(p[0] for p in ring) / len(ring), sum(p[1] for p in ring) / len(ring)
             dbh = 2. * sum(math.hypot(p[0] - cx, p[1] - cy) for p in ring) / len(ring)
             self.assertLess(abs(dbh - k['trunk_cm']) / k['trunk_cm'], .03, (kind, dbh))

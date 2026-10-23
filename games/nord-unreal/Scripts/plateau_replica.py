@@ -2187,6 +2187,7 @@ PASSAGE_STEP = 50.        # side passages between buildings: the back line is sa
 PASSAGE_WIDE = 900.       # a gap between two buildings this wide or less is a passage (wider: a lot or a yard)
 PASSAGE_DEEP = 150.       # its floor runs at least this much deeper than the façades either side
 PASSAGE_LONG = 3000.      # and its walk at most this far behind the sidewalk
+PASSAGE_ROW = 25.         # the walk is laid in rows across the passage this far apart
 
 
 def _passages(world, L, surfaces, strip, counts, stops):
@@ -2236,68 +2237,70 @@ def _passages(world, L, surfaces, strip, counts, stops):
 
 
 def _passage_walk(world, L, surfaces, strip, counts, stops, oa, u, out, xs, i, j, left, right):
-    """One passage (samples i..j, façades `left` and `right` deep at samples i-1 and j+1): per sample, the walk's
-    start (the parterre's end, or the façade line) and end, laid from wall to wall."""
+    """One passage (samples i..j between façades `left` and `right` deep at samples i-1 and j+1), laid row by row
+    every PASSAGE_ROW of depth: each row runs across from a seed (the passage's middle, which follows a slanted
+    passage) to the walls, a parterre or a Plex yard on either side, from the parterre's end until the passage
+    opens out (a side reaches nothing within PASSAGE_WIDE), meets a building, a Plex yard, a ruelle or a street, or
+    runs PASSAGE_LONG behind the sidewalk."""
+    at = lambda x, y: add(add(oa, u, x), out, y)                     # noqa: E731
+    back = (-u[0], -u[1])
+
+    def blocked(p):
+        return world.in_building(p) or stops.on_plex(p) or \
+            any(surfaces.has(p, k) for k in ('alley', 'road', 'sidewalk', 'apron', 'yard'))
+
+    def reach(p, d):
+        hits = [h for h in (world.building_ray(p, d, PASSAGE_WIDE), stops.ray(p, d, PASSAGE_WIDE)) if h is not None]
+        return min(hits) if hits else None
+    x, y = (xs[i] + xs[j]) / 2, max(0., min(left, right) - 30.)
+    while y < max(left, right) + FRONT_MAX and blocked(at(x, y)):
+        y += PASSAGE_ROW                                             # past the parterres
     rows = []
-    for m in range(i, j + 1):
-        q = add(oa, u, xs[m])
-        f = (xs[m] - xs[i - 1]) / (xs[j + 1] - xs[i - 1])
-        s = max(0., left + (right - left) * f - 30.)   # the façade line across the passage, a little in front
-        while s < FRONT_MAX + 300 and surfaces.has(add(q, out, s + 5.), 'yard'):
-            s += 10.                                    # past the parterre
-        p = add(q, out, s + 5.)
-        if any(surfaces.has(p, k) for k in ('alley', 'road', 'sidewalk', 'apron')) or world.in_building(p) or \
-                stops.on_plex(p):
-            rows.append(None)
-            continue
-        e = PASSAGE_LONG
-        hit = stops.ray(add(q, out, s + 1.), out, PASSAGE_LONG)
-        if hit is not None:
-            e = min(e, s + 1. + hit)
-        b = world.building_ray(add(q, out, s + 1.), out, PASSAGE_LONG)
-        if b is not None:
-            e = min(e, s + 1. + b)
-        t = max(s, left, right) + 50.
-        while t < e:                                    # the passage opens out where a side wall ends
-            c = add(q, out, t)
-            if world.building_ray(c, u, PASSAGE_WIDE) is None or world.building_ray(c, (-u[0], -u[1]), PASSAGE_WIDE) is None:
-                e = t
-                break
-            t += 50.
-        rows.append((s, e) if e - s >= 30. else None)
-    # the walls either side: where the passage's floor meets a building between samples i-1, i and j, j+1
-    def wall_at(x0, x1, s, e):
-        mid = (s + e) / 2
-        inside = lambda x: world.in_building(add(add(oa, u, x), out, mid))        # noqa: E731
-        lo, hi = x0, x1
-        if not inside(lo):
-            return x0
-        for _ in range(7):
-            m = (lo + hi) / 2
-            lo, hi = (m, hi) if inside(m) else (lo, m)
-        return lo
-    pts = []
-    if rows[0] is not None:
-        pts.append((wall_at(xs[i - 1], xs[i], *rows[0]), rows[0]))
-    for m, row in zip(range(i, j + 1), rows):
-        pts.append((xs[m], row))
-    if rows[-1] is not None:
-        pts.append((wall_at(xs[j + 1], xs[j], *rows[-1]), rows[-1]))
-    laid = False
-    for (x0, r0), (x1, r1) in zip(pts, pts[1:]):
-        if r0 is None or r1 is None or abs(x1 - x0) < 1.:
-            continue
-        q0, q1 = add(oa, u, x0), add(oa, u, x1)
-        pp = [add(q0, out, r0[0]), add(q1, out, r1[0]), add(q1, out, r1[1]), add(q0, out, r0[1])]
+    while y < PASSAGE_LONG:
+        p = at(x, y)
+        if blocked(p):
+            break
+        lo, hi = reach(p, back), reach(p, u)
+        if lo is None or hi is None or lo + hi > PASSAGE_WIDE + PASSAGE_STEP:
+            break                                                    # the passage opens out
+        rows.append((y, x - lo, x + hi))
+        x = x + (hi - lo) / 2
+        nxt = stops.ray(at(x, y), out, PASSAGE_ROW)
+        if nxt is not None:                                          # a Plex yard, a ruelle or a street ahead
+            if nxt > 1.:
+                rows.append((y + nxt - .5, rows[-1][1], rows[-1][2]))
+            break
+        y += PASSAGE_ROW
+    if len(rows) < 2:
+        return
+    laid = 0
+    k, last = 0, len(rows) - 1
+
+    def straight(a, b):
+        return all(abs(rows[m][e] - (rows[a][e] + (rows[b][e] - rows[a][e]) * (rows[m][0] - rows[a][0]) /
+                                    (rows[b][0] - rows[a][0]))) <= 3. for m in range(a + 1, b) for e in (1, 2))
+    while k < last:
+        m = k + 1
+        while m < last and straight(k, m + 1):
+            m += 1
+        (y0, l0, r0), (y1, l1, r1) = rows[k], rows[m]
+        pp = [at(l0, y0), at(r0, y0), at(r1, y1), at(l1, y1)]
         key = 'yard_path' if world.traffic_distance(pp) >= CLEAR else 'curb'
         if L.flat(key, pp, Z_WALK):
             ccw = area(pp) > 0
-            a, b = pp[2], pp[3]                          # the far end, toward the yard
-            L.wall(key, a, b, 0., Z_WALK) if ccw else L.wall(key, b, a, 0., Z_WALK)
+            edges = [(pp[2], pp[3])] if m == last else []            # the far end, toward the yard
+            for a, b in ((pp[1], pp[2]), (pp[3], pp[0])):            # a side on a fence or Plex ground
+                mid = lerp(a, b, .5)
+                c = add(mid, (u[0] if a is pp[1] else -u[0], u[1] if a is pp[1] else -u[1]), 4.)
+                if not world.in_building(c) and not surfaces.has(c, 'yard'):
+                    edges.append((a, b))
+            for a, b in edges:
+                L.wall(key, a, b, 0., Z_WALK) if ccw else L.wall(key, b, a, 0., Z_WALK)
             surfaces.add(pp if ccw else pp[::-1], Z_WALK, 'yard')
             counts['passage_square_metres'] += abs(area(pp)) / 10000
-            laid = True
-    counts['passages'] += laid
+            laid += 1
+        k = m
+    counts['passages'] += laid > 0
 
 
 def _soft_edge(L, a, b, out, rng, zoff=0.):

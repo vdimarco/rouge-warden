@@ -331,8 +331,9 @@ def generate(kind, height=None):
     rng = random.Random(P['seed'])
     H, prune, T = height or P['height_cm'], P['prune_cm'], P['trunk']
     clearance = prune - 15.
-    t130 = 130. / H
-    r_base = P['dbh_cm'] / 2. / ((1. - t130) * flare_factor(P['flare'], t130))
+    bh = breast_height(P)
+    t_bh = bh / H
+    r_base = P['dbh_cm'] / 2. / ((1. - t_bh) * flare_factor(P['flare'], t_bh))
 
     def trunk_radius(t_abs):
         return r_base * (1. - t_abs) * flare_factor(P['flare'], t_abs)
@@ -343,8 +344,8 @@ def generate(kind, height=None):
     split = T.get('split_cm')
     trunk_len = split if split else H
     # Rings at the flare, at the 1.3 m breast height (the DBH the manifest records) and evenly above.
-    marks = [0., 20., 50., 90., 130., 180.]
-    marks = [m for m in marks if m < trunk_len - 30.]
+    marks = sorted({0., 20., 50., 90., 180.} | {bh})
+    marks = [m for m in marks if m <= bh or m < trunk_len - 30.]
     rest = max(1, round((trunk_len - marks[-1]) / 110.))
     marks += [marks[-1] + (trunk_len - marks[-1]) * (i + 1) / rest for i in range(rest)]
     fractions = [(b - a) / trunk_len for a, b in zip(marks, marks[1:])]
@@ -1073,10 +1074,17 @@ def write_obj(path, kind, mesh):
     return hashlib.sha256(data.encode()).hexdigest(), counts, verts
 
 
-def trunk_dbh(stems):
-    """Diameter of the trunk mesh at 1.3 m, from its ring radius (the trunk has a ring at 130 cm)."""
+def breast_height(P):
+    """Where the trunk diameter is measured: 1.3 m, or 15 cm under a fork that comes lower (multi-stem trees)."""
+    split = P['trunk'].get('split_cm')
+    return min(130., split - 15.) if split else 130.
+
+
+def trunk_dbh(stems, P):
+    """Diameter of the trunk mesh at breast height, from its ring radius (the trunk has a ring there)."""
     trunk = stems[0]
-    i = min(range(len(trunk.points)), key=lambda k: abs(trunk.points[k][2] - 130.))
+    bh = breast_height(P)
+    i = min(range(len(trunk.points)), key=lambda k: abs(trunk.points[k][2] - bh))
     return 2. * trunk.radius(trunk.cum[i] / trunk.length)
 
 
@@ -1106,7 +1114,8 @@ def build(out_dir, textures=True):
             'name': P['name'], 'obj': file_name, 'sha256': digest,
             'materials': {'bark': bk, 'leaves': LEAF_KEY},
             'slots': {'bark': f'{kind}_bark', 'leaves': f'{kind}_leaves'},
-            'height_cm': round(height, 1), 'trunk_cm': round(trunk_dbh(stems), 1),
+            'height_cm': round(height, 1), 'trunk_cm': round(trunk_dbh(stems, P), 1),
+            'trunk_at_cm': breast_height(P),
             'crown_width_cm': round(max(bounds[3] - bounds[0], bounds[4] - bounds[1]), 1),
             'crown_base_cm': stats['crown_base_cm'], 'clear_trunk_cm': stats['clear_trunk_cm'],
             'prune_cm': P['prune_cm'], 'leaf_retention': P['leaves']['retention'], 'triangles': tris,
