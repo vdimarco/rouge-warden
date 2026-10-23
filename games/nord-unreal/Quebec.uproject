@@ -10,6 +10,7 @@
     {"Name": "ModelContextProtocol", "Enabled": true},
     {"Name": "AllToolsets", "Enabled": true},
     {"Name": "PixelStreaming2", "Enabled": true},
+    {"Name": "Gauntlet", "Enabled": true},
     {"Name": "AndroidFileServer", "Enabled": false}
   ]
 }

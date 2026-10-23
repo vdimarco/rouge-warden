@@ -17,12 +17,13 @@ through Browser/stream-sample.mjs. Each second nvidia-smi gives the GPU processe
 CPU use of the game processes; any other GPU process (desktop servers aside) marks the run contended. Every run needs a
 pinned sky.
 
-The game log lines this runner reads, the contract with QuebecGauntlet.cpp:
-  NORD_GAUNTLET leg=S1-S2 lap=1                 a leg starts; the first one starts the stream lap window
-  NORD_GAUNTLET stop=S1 hold=begin              a hold starts; the stream sampler saves the decoded frame
-  NORD_GAUNTLET cvar name=t.MaxFPS value=60     one readback line per expected CVar (and sg.ShadingQuality)
-  NORD_GAUNTLET summary frames=... p95_ms=...   whole-run frame statistics, with no leg= or lap= key
-  NORD_GAUNTLET exit=0 reason=done              the end of the run; it ends the stream lap window
+The game log lines this runner reads (Source/Quebec/QuebecGauntlet.cpp writes them):
+  NORD_GAUNTLET cvar name=t.MaxFPS expected=60 actual=60.000000 match=1   one readback line per expected CVar
+  NORD_GAUNTLET leg=S1-S2 lap=1 begin           a leg starts; the first one opens the stream lap window
+  NORD_GAUNTLET stop=S2 lap=1 pass|hold=begin   a stop in drive order; at a hold the stream sampler saves the frame
+  NORD_GAUNTLET done laps=1 | fail exit=2 ...   the drive ends; this closes the stream lap window
+  NORD_GAUNTLET summary leg=all lap=all ...     whole-run frame statistics (gauntlet_metrics.run_summary)
+  NORD_GAUNTLET result exit=0 reason=done ...   the game's exit code, logged last
 
 Run from games/nord-unreal:
   python3 Scripts/gauntlet_loop.py self-check
@@ -73,12 +74,14 @@ UAT_S = 300   # RunUAT start-up (script build, Gauntlet set-up) on top of a run'
 COVER_GRACE_MS = 1500  # A per-second sample and the log follower's delay may end this much before the lap.
 LABEL = re.compile(r"[A-Za-z0-9][A-Za-z0-9._+-]{0,159}")
 FOLLOWED = re.compile(r"NORD_GAUNTLET\b|NORD_STREAM_FPS\b")
-LEG_START = re.compile(r"NORD_GAUNTLET\b.*\bleg=S\d+-S\d+")
-HOLD_BEGIN = re.compile(r"NORD_GAUNTLET\b.*\bstop=(\w+)\b.*\bhold=begin")
-STOP_LINE = re.compile(r"NORD_GAUNTLET\b.*\bstop=(\w+)")
+# The key must follow NORD_GAUNTLET directly: "route stop=", "still stop=" and "summary leg=" lines are not events.
+LEG_START = re.compile(r"NORD_GAUNTLET leg=S\d+-S\d+")
+HOLD_BEGIN = re.compile(r"NORD_GAUNTLET stop=(\w+)\b.*\bhold=begin")
+STOP_LINE = re.compile(r"NORD_GAUNTLET stop=(\w+)")
+LAP_END = re.compile(r"NORD_GAUNTLET (?:done|fail|result)\b")
 RUN_END = re.compile(r"NORD_GAUNTLET\b.*\bexit=(\w+)")
-READBACK = re.compile(r"NORD_GAUNTLET cvar (?:name=(\S+) value=(\S*)|([^\s=]+)=(\S*))")
-CSV_WRITTEN = re.compile(r"Writing CSV to file : ([^\r\n]+\.csv)")
+READBACK = re.compile(r"NORD_GAUNTLET cvar (.*)")
+CSV_WRITTEN = re.compile(r"Writing CSV to file : ([^\r\n]+\.csv)|NORD_GAUNTLET csv=(/[^\s]+\.csv)\b")
 DELAY_KEY = re.compile(r"rtt|roundtrip|jitter|processing|latency|e2e|delay|decodems", re.IGNORECASE)
 # The gates of a native run that also apply to a look run, which holds and switches skies instead of being timed.
 LOOK_GATES = {"vram_peak_mib", "render_log_errors", "cvar_mismatches", "fps_cap"}
@@ -272,7 +275,7 @@ def parse_pmon(text):
 class GpuWatch:
     """GPU processes, GPU use and the own processes' CPU use every SAMPLE_S seconds in a thread, a snapshot before the
     launch and after the run, and per-process GPU use from a background nvidia-smi pmon. Own processes are those in one
-    of the sessions, or whose command line holds the marker (-NordGauntletRun=<run folder>)."""
+    of the sessions, or whose command line holds the marker (the run folder)."""
 
     def __init__(self, sessions=(), marker=None, pmon_path=None):
         self.sessions = set(sessions)
@@ -334,6 +337,7 @@ class GpuWatch:
         if self.pmon_path:
             try:
                 self.pmon_output = Path(self.pmon_path).open("w")
+                # pmon -s um (SM and memory use) -d 1 (each second) prints until stopped; flags from memory (unverified).
                 self.pmon = subprocess.Popen(SMI + ["pmon", "-s", "um", "-d", "1"], stdin=subprocess.DEVNULL, stdout=self.pmon_output,
                                              stderr=subprocess.STDOUT, start_new_session=True)
             except OSError as error:
@@ -396,11 +400,12 @@ def gpu_findings(gpu):
 # ---------------------------------------------------------------- the game log
 
 def parse_readback(log_text):
-    """{cvar: value} from the NORD_GAUNTLET cvar lines; the last line for a CVar wins."""
+    """{cvar: value read back} from the NORD_GAUNTLET cvar lines (name= and actual=); the last line for a CVar wins."""
     out = {}
     for match in READBACK.finditer(log_text or ""):
-        name, value = (match.group(1), match.group(2)) if match.group(1) else (match.group(3), match.group(4))
-        out[name] = value
+        pairs = dict(re.findall(r"(\w+)=(\S*)", match.group(1)))
+        if pairs.get("name") and ("actual" in pairs or "value" in pairs):
+            out[pairs["name"]] = pairs.get("actual", pairs.get("value"))
     return out
 
 
@@ -436,10 +441,10 @@ def run_error(meta):
 
 def collect_csv(run, log_text):
     """The CSV profiler files in native/. The test node copies them there; otherwise the file the log names is copied
-    from the package's Saved/Profiling/CSV, where profile_package.py finds it."""
+    from the package's Quebec/Saved/Profiling/CSV, by analogy with profile_package.py's Builds/Linux (unverified)."""
     native = run / "native"
     if not any(native.glob("*.csv")):
-        for written in CSV_WRITTEN.findall(log_text or ""):
+        for written in (first or second for first, second in CSV_WRITTEN.findall(log_text or "")):
             path = Path(written.strip())
             for source in ([path] if path.is_absolute() else []) + [PACKAGE / "Quebec/Saved/Profiling/CSV" / path.name]:
                 if source.is_file():
@@ -475,7 +480,8 @@ def native_flags(loop, mode, run, laps):
 
 def direct_command(loop, plan):
     """The packaged game started as Scripts/profile_package.py:49-56 does, with the gauntlet flags instead of a fixed
-    CSV frame count: the subsystem starts and stops the CSV capture and quits by itself."""
+    CSV frame count: the subsystem starts and stops the CSV capture and quits by itself. The -DeviceProfile= override
+    of the phone quality is written from memory of the engine (unverified until the host reads every CVar back)."""
     width, height = plan["size"]
     quality = plan["quality"]
     return (["bash", str(PACKAGE / "Quebec.sh"), loop["map"], "-RenderOffscreen", "-windowed", "-ForceRes", f"-ResX={width}",
@@ -546,7 +552,8 @@ def native_run(loop, mode, size, sky, laps=None, quality="current", label=None, 
             "build": build_state(), "gpu": gpu_identity(), "started_at": iso_now(), "finished_at": None, "exit": None,
             "readback": None}
     write_json(run / "run.json", meta)
-    watch = GpuWatch(marker=loop["gauntlet_flags"]["run"] + str(run), pmon_path=run / "native/pmon.log")
+    # The run folder marks the game in any launch: the NordMobileLoop node quotes it, the direct launch does not.
+    watch = GpuWatch(marker=str(run), pmon_path=run / "native/pmon.log")
     watch.start()
     code = timed_out = None
     try:
@@ -674,11 +681,11 @@ class LogTail:
 
 
 def lap_window(events):
-    """((start ms, end ms), notes) of the stream lap in the followed log: the first leg start to the exit line after it."""
+    """((start ms, end ms), notes) of the stream lap in the followed log: the first leg start to the end of the drive."""
     start = next((n for n, event in enumerate(events) if LEG_START.search(event["line"])), None)
-    end = next((n for n, event in enumerate(events) if start is not None and n > start and RUN_END.search(event["line"])), None)
+    end = next((n for n, event in enumerate(events) if start is not None and n > start and LAP_END.search(event["line"])), None)
     if start is None or end is None:
-        return None, ["the host log has no lap start (leg=) or no end (exit=) line: the stream gates are unverified"]
+        return None, ["the host log has no lap start (leg=) or no end (done, fail or result) line: the stream gates are unverified"]
     if events[start]["late"]:
         return None, ["the lap started before the runner followed the host log: the stream gates are unverified"]
     return (events[start]["ms"], events[end]["ms"]), []
@@ -720,7 +727,8 @@ def load_frames(report, out):
 
 def frame_clock(report, frames):
     """Wall-clock ms of a frame entry: its wallMs or timeMs, or the page's performance.timeOrigin plus
-    expectedDisplayTime. None when the sampler recorded neither, so frames cannot be cut to the lap."""
+    expectedDisplayTime. None when the sampler recorded neither, so frames cannot be cut to the lap. Browser/
+    stream-sample.mjs records neither today (its frames carry only performance.now() times)."""
     for key in ("wallMs", "timeMs"):
         if frames and isinstance(frames[0].get(key), (int, float)):
             return lambda frame: frame.get(key)
@@ -753,7 +761,10 @@ def lap_sample(report, out, window):
         result["notes"].append("decoded frames carry no wall clock: the intervals cover the whole sample, not only the lap")
     result["intervals"] = M.decoded_intervals(frames) if frames else None
     if lap:
-        result["size_changes"] = len({(sample.get("requested"), sample.get("width"), sample.get("height")) for sample in lap}) - 1
+        # The sampler's requested and received events (--latency) catch every change; without them, the per-second sizes.
+        events = [event for event in report.get("events") or [] if event.get("kind") in ("requested", "received")]
+        result["size_changes"] = (sum(start <= event.get("timeMs", -1) <= end for event in events) if events else
+                                  len({(sample.get("requested"), sample.get("width"), sample.get("height")) for sample in lap}) - 1)
         result["received_size"] = [lap[-1].get("width"), lap[-1].get("height")]
     return result
 
@@ -836,9 +847,13 @@ def delay_values(sample):
 
 
 def stream_shot(run, label):
-    """A stream run's decoded frame at one stop: shots/<label>*.png, preferring a name without 'page' (the full page)."""
-    shots = sorted((Path(run) / "stream/shots").glob(label + "*.png")) if run else []
-    return next((shot for shot in shots if "page" not in shot.name.lower()), shots[0] if shots else None)
+    """A stream run's decoded frame at one stop: the video shot sample.json lists for that trigger line (the sampler
+    names it shots/<NN>-<line>-video.png, beside a full-page shot), or None."""
+    report = read_json(Path(run) / "stream/sample.json") if run else None
+    for shot in (report or {}).get("shots") or []:
+        if str(shot.get("line", "")).strip() == label and shot.get("video") and (Path(run) / "stream" / shot["video"]).is_file():
+            return Path(run) / "stream" / shot["video"]
+    return None
 
 
 def judge_stream(run, loop, meta):
@@ -862,9 +877,18 @@ def judge_stream(run, loop, meta):
               M.gate("cvar_mismatches", None if mismatches is None else len(mismatches), 0, unit="cvars",
                      note=", ".join(f"{m['name']}={m['actual']} (want {m['expected']})" for m in mismatches or []) or None),
               samples_gate]
-    shots = sorted(path.name for path in (stream / "shots").glob("*.png")) if (stream / "shots").is_dir() else []
-    report_only.update(received_size=primary["received_size"], expected_size=meta.get("size"), shots=shots,
-                       native_fps_windows=native, candidate=(primary["summary"] or {}).get("candidate"))
+    shots = {label: stream_shot(run, label) for label in loop["order"]}
+    report_only.update(received_size=primary["received_size"], expected_size=meta.get("size"),
+                       stop_frames={label: shot and str(shot.relative_to(run)) for label, shot in shots.items()},
+                       native_fps_windows=native, candidate=(primary["summary"] or {}).get("candidate"),
+                       encoder_qp=((primary["report"] or {}).get("summary") or {}).get("encoderQp"))
+    if not all(shots.values()):
+        notes.append("no decoded frame for " + ", ".join(label for label, shot in shots.items() if not shot))
+    csvs = sorted((run / "native").glob("*.csv"))
+    if csvs:
+        # The host's CSV profiler file of the stream lap: native frame times next to the decoded ones, report-only.
+        analysis = M.analyze_csv(csvs[-1], loop)
+        report_only.update(native_frames_ms=M.native_report(analysis), native_legs_by_p95=M.legs_ranked(analysis))
     values = {"decoded_fps": (primary["summary"] or {}).get("decodedFps")}
     notes += [note for sample in slots.values() for note in sample["notes"]] + gpu_notes
     if meta["row"] == "two_viewer":
@@ -881,7 +905,7 @@ def judge_stream(run, loop, meta):
     verdict = M.verdict(gates, foreign=foreign, report_only=report_only, delay=M.delay_section(delay_values(primary)),
                         values=values, notes=notes)
     write_json(run / "verdict.json", verdict)
-    rows = [{"view": label, "stream": stream_shot(run, label)} for label in loop["order"]]
+    rows = [{"view": label, "stream": shot} for label, shot in shots.items()]
     M.write_review(run, rows, loop, title="NORD mobile gauntlet stream: " + run.name, verdict_data=verdict)
     return verdict
 
@@ -948,26 +972,42 @@ def tune_run(loop, direct=False, until=None, reference=None, confirm=True):
     stored = read_json(Path(reference) / "reference.json") if reference else None
     require(reference is None or (stored and (stored.get("sizes") or {}).get(size_key, {}).get("repeat")),
             "--reference must name a judged reference folder that holds the tune size")
-    index, ceilings = {}, []
+    ceiling = T.make_candidate(loop, None, "ceiling", 0, "ceiling", cvars=loop["profiles"]["ceiling"]["cvars"], look_only=True)
+    ceiling_file, _ = T.write_candidate_files(candidates, ceiling)
+    names = still_names(loop, "look", first_sky, loop["sizes"][size_key]["size"])
+    # The search measures the baseline before the ceiling, but a Look needs the ceiling stills. So ceiling A is rendered
+    # (or taken from --reference) before the first scored candidate, and the search's first ceiling record claims it.
+    index, looked, early = {}, [], {"result": None, "claimed": False, "repeat": False}
+    ceilings = [Path(stored["sizes"][size_key][tag]["run"]) for tag in "ab"] if stored else []
+
+    def render_ceiling(label):
+        run, verdict = native_run(loop, "look", size_key, first_sky, quality=f"file:{ceiling_file}", label=label, direct=direct,
+                                  parent=runs)
+        result = {"contended": verdict["status"] == "contended", "error": run_error(read_json(run / "run.json")), "run": str(run)}
+        if not result["contended"] and not result["error"]:
+            ceilings.append(run)
+        return result
 
     def measure(candidate):
         execcmds, _ = T.write_candidate_files(candidates, candidate)
         quality, entry = f"file:{execcmds}", index.setdefault(candidate["id"], {})
         if candidate["look_only"]:
+            looked.append(candidate["id"])
             if stored:
-                ceilings.append(Path(stored["sizes"][size_key]["a" if not ceilings else "b"]["run"]))
-                entry.update(look=str(ceilings[-1]), reference=str(reference))
-                return {"repeat_ssim": stored["sizes"][size_key]["repeat"]} if len(ceilings) == 2 else {}
-            run, verdict = native_run(loop, "look", size_key, first_sky, quality=quality, label=candidate["id"] + "-look",
-                                      direct=direct, parent=runs)
-            entry["look"] = str(run)
-            result = {"contended": verdict["status"] == "contended", "error": run_error(read_json(run / "run.json"))}
-            if not result["contended"] and not result["error"]:
-                ceilings.append(run)
-                if len(ceilings) == 2:
-                    names = still_names(loop, "look", first_sky, loop["sizes"][size_key]["size"])
-                    result["repeat_ssim"] = look_scores(loop, ceilings[1], ceilings[0], names)
+                entry.update(look=str(ceilings[min(len(looked), 2) - 1]), reference=str(reference))
+                return {"repeat_ssim": stored["sizes"][size_key]["repeat"]} if len(looked) == 2 else {}
+            if early["result"] and not early["claimed"]:
+                early["claimed"] = True
+                result = dict(early["result"])
+            else:
+                result = render_ceiling(candidate["id"] + "-look")
+            entry["look"] = result.pop("run")
+            if len(ceilings) == 2 and not early["repeat"]:
+                early["repeat"] = True
+                result["repeat_ssim"] = look_scores(loop, ceilings[1], ceilings[0], names)
             return result
+        if not ceilings and early["result"] is None:
+            early["result"] = render_ceiling("ceiling-first-look")
         run, verdict = native_run(loop, "perf", feasible["size"], feasible["sky"], quality=quality, label=candidate["id"] + "-perf",
                                   direct=direct, parent=runs)
         entry["perf"] = str(run)
@@ -1116,8 +1156,9 @@ def round_report(group, loop):
 # ---------------------------------------------------------------- route, profile write and the self-check
 
 def route_report(loop, run=None):
-    """The stops in drive order, the generated header check, and when a run is given its native/route.json checks.
-    route.json keys length_m, end_m and max_lateral_m (or samples with lateral_m) are the contract with QuebecGauntlet.cpp."""
+    """The stops in drive order, the generated header check, and when a run is given its native/route.json checks:
+    loop length, lateral error (max_offset_m over every lap), the end within reach of S1, and the stop lines in drive
+    order. The keys are those QuebecGauntlet.cpp WriteRoute writes."""
     import make_gauntlet_route
     manifest = json.loads((ROOT / loop["camera_manifest"]).read_text())
     check = subprocess.run([sys.executable, str(ROOT / "Scripts/make_gauntlet_route.py"), "--check"], capture_output=True, text=True)
@@ -1132,15 +1173,22 @@ def route_report(loop, run=None):
     for label in STOP_LINE.findall(log_path.read_text(errors="replace") if log_path.is_file() else ""):
         if not stops or stops[-1] != label:
             stops.append(label)
-    lateral = data.get("max_lateral_m")
-    if lateral is None and data.get("samples"):
-        lateral = max((sample.get("lateral_m") or 0 for sample in data["samples"]), default=None)
+    samples = [sample for sample in data.get("samples") or [] if isinstance(sample.get("x_m"), (int, float))]
+    lateral = data.get("max_offset_m")
+    if lateral is None and samples:
+        lateral = max(abs(sample.get("offset_m") or 0) for sample in samples)
+    first = next((stop for stop in data.get("stops") or [] if stop.get("label") == loop["order"][0]), None)
+    end = (((samples[-1]["x_m"] - first["x_m"]) ** 2 + (samples[-1]["y_m"] - first["y_m"]) ** 2) ** .5
+           if samples and first and data.get("exit") == loop["exit_codes"]["done"] else None)
     order = loop["order"]
-    in_order = stops == (order * (len(stops) // len(order) + 1))[:len(stops)] if stops else None
+    # Each stop line names the next stop of the loop (a lap starts at S1 without a line).
+    in_order = None
+    if stops:
+        in_order = set(stops) == set(order) and all(order[(order.index(a) + 1) % len(order)] == b for a, b in zip(stops, stops[1:]))
     route, drive = loop["route"], loop["drive"]
-    gates = [M.gate("length_min_m", data.get("length_m"), route["length_min_m"], op=">=", unit="m"),
-             M.gate("length_max_m", data.get("length_m"), route["length_max_m"], unit="m"),
-             M.gate("end_m", data.get("end_m"), route["end_within_m"], unit="m"),
+    gates = [M.gate("length_min_m", data.get("loop_length_m"), route["length_min_m"], op=">=", unit="m"),
+             M.gate("length_max_m", data.get("loop_length_m"), route["length_max_m"], unit="m"),
+             M.gate("end_m", end, route["end_within_m"], unit="m", note="the last pose of a finished run against the S1 stop point"),
              M.gate("max_lateral_m", lateral, drive["max_lateral_error_m"], unit="m"),
              M.gate("stop_order", in_order, True, op="==", unit="", note=" ".join(stops) or None)]
     out["run"] = {"folder": str(run), "gates": gates, "route_json": bool(data)}
@@ -1214,18 +1262,22 @@ def self_check():
     assert size_entry(loop, "652x1412")[0] == "top_portrait" and sky_entry(loop, "day")[0] == "day"
     assert still_names(loop, "look", "day", [1412, 652])[:2] == ["look/day/S1-eye-1412x652.png", "look/day/S1-chase-1412x652.png"]
     assert len(still_names(loop, "look", "day", [1412, 652])) == loop["budgets"]["look"]["images"]
-    log = ("NORD_GAUNTLET cvar name=t.MaxFPS value=60.000000\nNORD_GAUNTLET cvar sg.ShadingQuality=3\n"
-           "NORD_GAUNTLET leg=S1-S2 lap=1\nNORD_GAUNTLET exit=4 reason=cvar_mismatch\n")
+    log = ("NORD_GAUNTLET cvar name=t.MaxFPS expected=60 actual=60.000000 match=1\nNORD_GAUNTLET cvars checked=1 mismatches=0\n"
+           "NORD_GAUNTLET cvar name=sg.ShadingQuality expected=3 actual=3 match=1\nNORD_GAUNTLET route stop=S1 leg=S1-S2 leg_m=513.0\n"
+           "NORD_GAUNTLET leg=S1-S2 lap=1 begin\nNORD_GAUNTLET fail exit=4 reason=cvar_mismatch\n"
+           "NORD_GAUNTLET result exit=4 reason=cvar_mismatch mode=perf laps=1 max_offset_m=0.000\n")
     assert parse_readback(log) == {"t.MaxFPS": "60.000000", "sg.ShadingQuality": "3"}
     assert cvar_mismatches({"t.MaxFPS": "60"}, parse_readback(log)) == [] and cvar_mismatches({"t.MaxFPS": "60"}, {}) is None
     assert cvar_mismatches({"r.ScreenPercentage": "75"}, {"t.MaxFPS": "60"}) == [{"name": "r.ScreenPercentage", "expected": "75", "actual": "missing"}]
     assert game_exit(loop, log, None, False, "rununreal") == {"code": 4, "name": "cvar_mismatch", "source": "log"}
     assert game_exit(loop, "", None, True, "direct")["code"] == loop["exit_codes"]["timeout"]
     assert game_exit(loop, "", 0, False, "rununreal")["code"] is None and game_exit(loop, "", 2, False, "direct")["name"] == "stuck"
-    events = [{"ms": 1000.0, "late": False, "line": "NORD_GAUNTLET leg=S1-S2 lap=1"},
-              {"ms": 9000.0, "late": False, "line": "NORD_GAUNTLET exit=0 reason=done"}]
-    assert lap_window(events) == ((1000.0, 9000.0), []) and lap_window([dict(events[0], late=True), events[1]])[0] is None
-    assert lap_window(events[1:])[0] is None
+    events = [{"ms": 500.0, "late": True, "line": "NORD_GAUNTLET route stop=S1 x_m=360.00 y_m=62.00 along_m=0.0 leg=S1-S2 leg_m=513.0"},
+              {"ms": 1000.0, "late": False, "line": "NORD_GAUNTLET leg=S1-S2 lap=1 begin"},
+              {"ms": 9000.0, "late": False, "line": "NORD_GAUNTLET done laps=1"},
+              {"ms": 9500.0, "late": False, "line": "NORD_GAUNTLET result exit=0 reason=done mode=stream laps=1 max_offset_m=0.800"}]
+    assert lap_window(events) == ((1000.0, 9000.0), []) and lap_window([events[0], dict(events[1], late=True), events[2]])[0] is None
+    assert lap_window(events[2:])[0] is None
     counters = {"framesDecoded": 0, "bytesReceived": 0, "jitterBufferDelay": 0, "jitterBufferEmittedCount": 0, "totalDecodeTime": 0}
     summary = window_summary([dict(counters, timeMs=0), dict(counters, timeMs=2000, framesDecoded=60, jitterBufferDelay=3.0,
                                                                jitterBufferEmittedCount=60, totalDecodeTime=.3)])

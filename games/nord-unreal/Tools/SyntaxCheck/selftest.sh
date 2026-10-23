@@ -12,6 +12,8 @@ STUBS="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CASES="$STUBS/selftest/cases"
 TMP="$(mktemp -d "${TMPDIR:-/tmp}/uestubs-selftest.XXXXXX")"
 trap 'rm -rf "$TMP"' EXIT
+# A header-only case gives check.sh no .cpp, and its xargs then writes .log and .status into the working folder.
+cd "$TMP" || exit 1
 
 OK=0
 BAD=0

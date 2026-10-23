@@ -53,7 +53,7 @@ namespace
     constexpr float SkyCommandBlend = 10.f;
     const FVector SkyRainBox(2000., 2000., 1200.);
     const TCHAR* const SkyQAFlags[] = { TEXT("NordCapture"), TEXT("NordCampaignQA"), TEXT("NordNoCampaign"), TEXT("NordNoCampaignSave"),
-        TEXT("NordStoryRenderChecks"), TEXT("NordRenderChecks"), TEXT("NordFixedSky") };
+        TEXT("NordStoryRenderChecks"), TEXT("NordRenderChecks"), TEXT("NordFixedSky"), TEXT("NordGauntlet") };
 
     // Editor Python runs (captures, verification, PIE regressions) count as QA, whatever Nord flags they pass.
     bool SkyQARun()

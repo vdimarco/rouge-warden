@@ -27,9 +27,10 @@ import gauntlet_tune as T  # noqa: E402
 LOOP = L.M.load_loop()
 PINNED = "-NordHour=22 -NordWeather=Rain -NordFreezeTime -NordFreezeWeather"
 
-# The packaged game and the NordMobileLoop node in one fake: it reads the gauntlet flags (or the -test= params), echoes
-# the expected CVars back, writes a CSV profiler file with leg events (to the package's CSV folder when started
-# directly, to native/ as the node copies it), the stills of a look run, route.json and the NORD_GAUNTLET lines.
+# The packaged game and the NordMobileLoop node in one fake: it reads the gauntlet flags (or the -test= params), reads
+# the expected CVars back, and writes what Source/Quebec/QuebecGauntlet.cpp writes: the NORD_GAUNTLET lines, a CSV
+# profiler file with leg events in native/, the stills of a look run and native/route.json. Under the RunUnreal role the
+# CSV lands outside the run folder, so the runner's copy from the "csv=" log line is checked too.
 FAKE_GAME = r'''
 import json, math, os, re, sys, time, zlib
 from pathlib import Path
@@ -63,26 +64,36 @@ else:
     log, csv_dir = Path(flag("-abslog")), Path(os.environ["FAKE_CSV_DIR"])
 (run / "fake-argv.json").write_text(json.dumps({"role": role, "argv": args}))
 lines = []
-say = lambda text: lines.append("[2026.10.23-22.00.00:000][  0]LogQuebec: Display: " + text)
+say = lambda text: lines.append("[2026.10.23-22.00.00:000][  0]LogTemp: Display: " + text)
+order = loop["order"]
+legs = [f"{order[n]}-{order[(n + 1) % len(order)]}" for n in range(len(order))]
+say(f"NORD_GAUNTLET begin mode={mode} laps={laps} run={run}")
 if not (any(a.startswith("-NordHour=") for a in sky) and any(a.startswith("-NordWeather=") for a in sky)):
-    say("NORD_GAUNTLET exit=3 reason=no_sky")
+    say("NORD_GAUNTLET error=no_sky (pass -NordHour= and -NordWeather=, or the run measures no sky)")
+    say("NORD_GAUNTLET result exit=3 reason=no_sky mode=perf laps=1 max_offset_m=0.000")
     log.write_text("\n".join(lines) + "\n")
     sys.exit(3)
+for n, leg in enumerate(legs):
+    say(f"NORD_GAUNTLET route stop={order[n]} x_m={360 - n * 100:.2f} y_m={62 + n * 50:.2f} along_m={n * 700:.1f} leg={leg} leg_m=700.0")
 mismatch = os.environ.get("FAKE_MISMATCH")
+checked = 0
 for row in expect.read_text().splitlines():
     if row and not row.startswith("#"):
         name, _, value = row.partition("=")
-        say(f"NORD_GAUNTLET cvar name={name} value={'50' if name == mismatch else value + '.000000'}")
+        checked += 1
+        actual = "50" if name == mismatch else value + ".000000"
+        say(f"NORD_GAUNTLET cvar name={name} expected={value} actual={actual} match={int(name != mismatch)}")
+say(f"NORD_GAUNTLET cvars checked={checked} mismatches={int(bool(mismatch))} file={expect}")
 time.sleep(float(os.environ.get("FAKE_RUN_S", ".35")))
 if mismatch:
-    say("NORD_GAUNTLET exit=4 reason=cvar_mismatch")
+    say("NORD_GAUNTLET fail exit=4 reason=cvar_mismatch lap=0 leg=0 along_m=0.0 x_m=360.00 y_m=62.00 reversals=0")
+    say("NORD_GAUNTLET result exit=4 reason=cvar_mismatch mode=perf laps=1 max_offset_m=0.000")
     log.write_text("\n".join(lines) + "\n")
     sys.exit(4)
 cvars = dict(pair.split(" ") for pair in execcmds.split(",") if pair)
 total = sum(int(value) for name, value in cvars.items() if name.startswith("sg."))
 load = .3 * (total - 15) + .05 * (float(cvars.get("r.ScreenPercentage", 75)) - 75)
-order = loop["order"]
-legs = [f"{order[n]}-{order[(n + 1) % len(order)]}" for n in range(len(order))]
+sky_name = "night_rain" if "-NordWeather=Rain" in sky else "day"
 if mode == "perf":
     rows = ["FrameTime,GameThreadTime,RenderThreadTime,RHIThreadTime,GPUTime,EVENTS"]
     row = lambda ms, event="": rows.append(f"{ms:.3f},{ms * .5:.3f},{ms * .6:.3f},{ms * .4:.3f},{ms - 4:.3f},{event}")
@@ -99,36 +110,48 @@ if mode == "perf":
     row(91.0)
     rows += [rows[0], "[platform],Linux,[cpu],fake,[gpu],NVIDIA GeForce RTX 4090,[gpudriver],610.57,[engineversion],5.8.3,"
                       "[shaderplatform],VULKAN_SM6"]
-    name = f"Profile(fake_{os.getpid()}).csv"
-    csv_dir.mkdir(parents=True, exist_ok=True)
-    (csv_dir / name).write_text("\n".join(rows) + "\n")
-    say(f"LogCsvProfiler: Display: Writing CSV to file : {csv_dir / name}")
     for lap in range(1 + laps):
-        say(f"NORD_GAUNTLET stop={order[0]} start lap={lap}")
+        if lap == 0:
+            say("NORD_GAUNTLET lap=0 warm=begin")
         for leg_index, leg in enumerate(legs):
-            say(f"NORD_GAUNTLET leg={leg} lap={lap}")
-            say(f"NORD_GAUNTLET stop={order[(leg_index + 1) % len(order)]} pass")
+            say(f"NORD_GAUNTLET leg={leg} lap={lap} begin")
+            say(f"NORD_GAUNTLET stop={order[(leg_index + 1) % len(order)]} lap={lap} pass")
+    say(f"NORD_GAUNTLET done laps={laps}")
+    csv_path = (run / "native" if role == "direct" else csv_dir) / f"NordGauntlet-{mode}-{sky_name}.csv"
+    csv_path.parent.mkdir(parents=True, exist_ok=True)
+    csv_path.write_text("\n".join(rows) + "\n")
+    say(f"NORD_GAUNTLET csv={csv_path}")
     ordered = sorted(measured)
     pick = lambda f: ordered[math.ceil((len(ordered) - 1) * f)]
-    say(f"NORD_GAUNTLET summary frames={len(measured)} seconds={sum(measured) / 1000:.3f} p50_ms={pick(.5):.3f} "
+    say(f"NORD_GAUNTLET summary leg=all lap=all mode={mode} frames={len(measured)} seconds={sum(measured) / 1000:.3f} p50_ms={pick(.5):.3f} "
         f"p95_ms={pick(.95):.3f} p99_ms={pick(.99):.3f} max_ms={ordered[-1]:.3f} over_33_3ms=0 over_50ms=0 over_66_7ms=0 over_250ms=0")
+    say(f"NORD_GAUNTLET summary leg={legs[0]} lap=all frames=60 seconds=1.200 p50_ms=1.000 p95_ms=99.000 p99_ms=99.000 max_ms=99.000 "
+        "over_33_3ms=9 over_50ms=9 over_66_7ms=9 over_250ms=0")
 else:
     sigma = max(0.0, .15 * (30 - total))
     y, x = np.mgrid[0:height, 0:width]
-    for sky_name in loop["sky_order"]:
+    for shown in loop["sky_order"]:
+        say(f"NORD_GAUNTLET sky={shown} hour=15.0 weather=Clear")
         for label in order:
-            say(f"NORD_GAUNTLET stop={label} hold=begin")
+            say(f"NORD_GAUNTLET stop={label} lap=1 hold=begin hold_s=24.0")
             for view in loop["views"]["per_stop"]:
-                seed = zlib.crc32(f"{sky_name}{label}{view}".encode())
+                seed = zlib.crc32(f"{shown}{label}{view}".encode())
                 base = 128 + 40 * np.sin(x / 40 + seed % 7) * np.cos(y / 30 + seed % 5)
                 image = np.clip(base + np.random.default_rng(seed).normal(0, 1, base.shape) * sigma, 0, 255).astype(np.uint8)
-                path = run / loop["names"]["still"].format(sky=sky_name, label=label, view=view, width=width, height=height)
+                path = run / loop["names"]["still"].format(sky=shown, label=label, view=view, width=width, height=height)
                 path.parent.mkdir(parents=True, exist_ok=True)
                 Image.fromarray(np.stack([image] * 3, -1)).save(path)
-            say(f"NORD_GAUNTLET stop={label} hold=end")
+                say(f"NORD_GAUNTLET still stop={label} view={view} sky={shown} file={path}")
+    say("NORD_GAUNTLET done laps=1")
 (run / "native").mkdir(exist_ok=True)
-(run / "native/route.json").write_text(json.dumps({"length_m": 3475.0, "end_m": 2.4, "max_lateral_m": 1.2}))
-say("NORD_GAUNTLET exit=0 reason=done")
+stops = [{"label": label, "x_m": 360.0 - n * 100, "y_m": 62.0 + n * 50, "yaw_deg": 0.0, "along_m": n * 700.0, "leg_m": 700.0}
+         for n, label in enumerate(order)]
+(run / "native/route.json").write_text(json.dumps({"version": 1, "mode": mode, "exit": 0, "exit_name": "done", "loop_length_m": 3475.0,
+                                                   "max_offset_m": 1.2, "max_measured_offset_m": 1.0, "reversals": 0, "stops": stops,
+                                                   "samples": [{"t": 0.0, "x_m": 360.5, "y_m": 62.5, "offset_m": .3},
+                                                               {"t": 0.1, "x_m": 362.0, "y_m": 64.0, "offset_m": .2}]}))
+say(f"NORD_GAUNTLET route={run / 'native/route.json'} samples=2 max_offset_m=1.200")
+say(f"NORD_GAUNTLET result exit=0 reason=done mode={mode} laps={laps} max_offset_m=1.200")
 log.write_text("\n".join(lines) + "\n")
 sys.exit(int(os.environ.get("FAKE_EXIT", "0")))
 '''
@@ -177,8 +200,9 @@ elif args[0] == "pmon":
 '''
 
 # stream-sample.mjs: it plays the host's part too (the NORD_GAUNTLET lines go to the host log), waits for each stop in
-# the trigger file before it saves that stop's frame, samples 30 decoded frames per second, and writes sample.json and
-# frames.json with the page's timeOrigin so the runner can cut the frames to the lap.
+# the trigger file before it saves that stop's shots, samples 30 decoded frames per second, and writes sample.json and
+# frames.json in the sampler's own layout: shots/<NN>-<line>-video.png and -page.png listed in sample.json, the
+# requested and received size events, and frames with performance.now() times only (no wall clock).
 FAKE_SAMPLER = r'''
 import json, os, sys, time
 from pathlib import Path
@@ -195,7 +219,8 @@ loop = json.loads(Path(os.environ["FAKE_LOOP"]).read_text())
 width, height = next(e["size"] for e in loop["sizes"].values()
                      if e["rung"] == int(value("--pin")) and (e["size"][1] > e["size"][0]) == ("--portrait" in args))
 start = time.time() * 1000
-samples = []
+samples, shots = [], []
+events = [{"timeMs": start, "kind": "received", "width": width, "height": height}]
 
 def tick(seconds):
     end = time.time() + seconds
@@ -214,37 +239,55 @@ def say(text):
             handle.write("[2026.10.23-23.00.00:000][  0]LogQuebec: Display: " + text + "\n")
 
 tick(.2)
+order = loop["order"]
+for n, label in enumerate(order):
+    say(f"NORD_GAUNTLET route stop={label} x_m=0.00 y_m=0.00 along_m={n * 700:.1f} leg={label}-{order[(n + 1) % len(order)]} leg_m=700.0")
 for row in Path(os.environ["FAKE_EXPECT"]).read_text().splitlines():
     if row and not row.startswith("#"):
-        say("NORD_GAUNTLET cvar name={} value={}".format(*row.split("=", 1)))
-order = loop["order"]
-say(f"NORD_GAUNTLET leg={order[0]}-{order[1]} lap=1")
+        name, want = row.split("=", 1)
+        say(f"NORD_GAUNTLET cvar name={name} expected={want} actual={want} match=1")
+tick(.3)
+say(f"NORD_GAUNTLET leg={order[0]}-{order[1]} lap=1 begin")
 tick(.3)
 for label in order[1:] + order[:1]:
-    say(f"NORD_GAUNTLET stop={label} hold=begin")
+    say(f"NORD_GAUNTLET stop={label} lap=1 hold=begin hold_s=4.0")
     say("NORD_STREAM_FPS frames=150 seconds=5.00 sleeping=0 streamer=NordHost")
     deadline = time.time() + 4
     while label not in trigger.read_text().split() and time.time() < deadline:
         tick(.05)
     if label in trigger.read_text().split():
         (out / "shots").mkdir(exist_ok=True)
-        frame = np.full((height, width, 3), 90, np.uint8)
-        Image.fromarray(frame).save(out / "shots" / f"{label}-frame.png")
-        Image.fromarray(frame).save(out / "shots" / f"{label}-page.png")
+        name = f"{len(shots) + 1:02d}-{label}"
+        Image.fromarray(np.full((height, width, 3), 90, np.uint8)).save(out / "shots" / f"{name}-video.png")
+        Image.fromarray(np.full((390, 844, 3), 30, np.uint8)).save(out / "shots" / f"{name}-page.png")
+        shots.append({"line": label, "timeMs": time.time() * 1000, "video": f"shots/{name}-video.png", "page": f"shots/{name}-page.png",
+                      "width": width, "height": height})
     tick(.15)
-    say(f"NORD_GAUNTLET stop={label} hold=end")
     if label != order[0]:
-        say(f"NORD_GAUNTLET leg={label}-{order[(order.index(label) + 1) % len(order)]} lap=1")
-say("NORD_GAUNTLET exit=0 reason=done")
-tick(.8)
-origin = start - 1000.0
+        say(f"NORD_GAUNTLET leg={label}-{order[(order.index(label) + 1) % len(order)]} lap=1 begin")
+say("NORD_GAUNTLET done laps=1")
+if value("--slot") == "NordHost":
+    native = Path(os.environ["FAKE_EXPECT"]).parent / "native"
+    native.mkdir(exist_ok=True)
+    rows = ["FrameTime,GameThreadTime,RenderThreadTime,RHIThreadTime,GPUTime,EVENTS"]
+    for n, label in enumerate(order):
+        event = f"NordGauntlet leg={label}-{order[(n + 1) % len(order)]} lap=1"
+        rows += [f"{16.7 + k % 3 * .1:.3f},8.000,9.000,6.000,{12 + n:.3f},{event if k == 0 else ''}" for k in range(30)]
+    rows += ["16.7,8,9,6,12,", "16.7,8,9,6,12,"]
+    (native / "NordGauntlet-stream-night_rain.csv").write_text("\n".join(rows) + "\n")
+tick(.4)
+say("NORD_GAUNTLET summary leg=S1-S2 lap=all frames=30 p95_ms=16.900")
+say("NORD_GAUNTLET result exit=0 reason=done mode=stream laps=1 max_offset_m=0.900")
+tick(.4)
 count = int((samples[-1]["timeMs"] - start) / 1000 * 30)
 frames = [{"presentedFrames": n, "expectedDisplayTime": 1000.0 + n * 1000 / 30, "mediaTime": n / 30, "width": width, "height": height}
           for n in range(count)]
 (out / "frames.json").write_text(json.dumps(frames))
-(out / "sample.json").write_text(json.dumps({"slot": value("--slot"), "timeOrigin": origin, "samples": samples,
-                                             "summary": {"decodedFps": 30.0, "roundTripTimeMs": 2.1, "jitterBufferMsPerFrame": 50.0,
-                                                         "e2eLatencyMs": 38.0}}))
+(out / "sample.json").write_text(json.dumps({"slot": value("--slot"), "samples": samples, "events": events, "shots": shots,
+                                             "summary": {"decodedFps": 30.0, "jitterBufferMsPerFrame": 50.0, "decodeMsPerFrame": 4.0,
+                                                         "delay": {"rttMs": {"mean": 2.1, "max": 3.0}, "jitterMs": {"mean": 1.0, "max": 2.0},
+                                                                   "frontend": {"events": 3, "averageE2ELatency": 38.0}},
+                                                         "encoderQp": {"events": 3, "mean": 20.0, "max": 24}}}))
 '''
 
 
@@ -322,7 +365,7 @@ def check_direct_perf(out, package):
     for name in ("run.json", "quality.expect", "quality.execcmds", "native/game.log", "native/stdout.log", "native/gpu.json",
                  "native/pmon.log", "native/legs.json", "native/route.json", "verdict.json", "review.html"):
         assert (run / name).is_file(), name
-    assert len(list((run / "native").glob("*.csv"))) == 1, "the CSV named in the log is copied from the package"
+    assert [path.name for path in (run / "native").glob("*.csv")] == ["NordGauntlet-perf-night_rain.csv"]
     meta = json.loads((run / "run.json").read_text())
     command = meta["command"]
     assert command[:3] == ["bash", str(package / "Quebec.sh"), "/Game/Maps/LaFontaine"] and command[-1] == f"-abslog={run}/native/game.log"
@@ -348,7 +391,7 @@ def check_direct_perf(out, package):
     assert L.main(["report", str(run)]) == 0 and json.loads((run / "verdict.json").read_text())["status"] == "pass"
     route, passed = L.route_report(SMALL, run)
     assert passed and route["header_current"] and [g["result"] for g in route["run"]["gates"]] == ["pass"] * 5, route["run"]
-    print("direct perf ok: profile_package-style command, folder layout, CSV copy, readback, pass verdict, route checks")
+    print("direct perf ok: profile_package-style command, folder layout, readback, pass verdict, route checks")
 
 
 def check_rununreal_perf(out, package):
@@ -359,9 +402,10 @@ def check_rununreal_perf(out, package):
                        f"-test=NordMobileLoop(mode=perf,size=96x48,sky=night-rain,laps=2,run='{run}',"
                        f"execcmds='{run}/quality.execcmds',expect='{run}/quality.expect')"], command
     assert json.loads((run / "fake-argv.json").read_text())["role"] == "uat"
+    assert [path.name for path in (run / "native").glob("*.csv")] == ["NordGauntlet-perf-night_rain.csv"], "copied from the csv= line"
     assert verdict["status"] == "pass", failing(verdict)
     assert gates(verdict)["frame_p95"]["note"] == "median of the per-lap values"
-    print("RunUnreal perf ok: RunUAT command and -test= params, two laps judged by the median of per-lap p95")
+    print("RunUnreal perf ok: RunUAT command and -test= params, CSV copied from the csv= line, two laps by the median per-lap p95")
 
 
 def check_contended(out, state):
@@ -385,13 +429,32 @@ def check_mismatch_and_phone():
     assert verdict["status"] == "fail" and gates(verdict)["game_exit"]["value"] == 4, failing(verdict)
     assert gates(verdict)["cvar_mismatches"]["result"] == "fail" and "r.ScreenPercentage=50 (want 75)" in gates(verdict)["cvar_mismatches"]["note"]
     assert L.run_error(json.loads((run / "run.json").read_text())) == "game exit 4 (cvar_mismatch)"
+    with patch.dict(os.environ, {"FAKE_RUN_S": "30"}):
+        run, verdict = L.native_run(SMALL, "perf", "top_landscape", "night-rain", label="timeout", direct=True, timeout=1)
+    meta = json.loads((run / "run.json").read_text())
+    assert meta["exit"] == {"code": 5, "name": "timeout", "source": "runner", "process": None, "timed_out": True}, meta["exit"]
+    assert verdict["status"] == "fail" and gates(verdict)["game_exit"]["result"] == "fail"
     run, verdict = L.native_run(SMALL, "perf", "top_landscape", "day", quality="phone", label="phone", direct=True)
     command = json.loads((run / "run.json").read_text())["command"]
     assert "-DeviceProfile=NordPhoneStream" in command and not any(a.startswith("-ExecCmds=") for a in command)
     assert not (run / "quality.execcmds").exists() and "-NordHour=15" in command and "-NordWeather=Clear" in command
     expected = L.expected_from_file(run / "quality.expect")
     assert T.same_cvars(expected, T.read_profile(T.PROFILES_INI.read_text())["cvars"]) and verdict["status"] == "pass", failing(verdict)
-    print("readback ok: a CVar mismatch fails the run with exit 4; phone passes -DeviceProfile and reads the section back")
+    print("readback ok: a CVar mismatch fails the run with exit 4, a hung game is killed as a timeout (exit 5), "
+          "phone passes -DeviceProfile and reads the section back")
+
+
+def check_reference(out):
+    group, verdict = L.reference_run(SMALL, direct=True)
+    result = json.loads((group / "reference.json").read_text())
+    assert group.parent == out and set(result["sizes"]) == set(SMALL["size_use"]["confirm"]), result["sizes"]
+    for size_key, entry in result["sizes"].items():
+        assert len(entry["repeat"]) == 20 and entry["min"] == 1.0 and Path(entry["a"]["run"]).parent == group / "runs", size_key
+        assert json.loads((Path(entry["b"]["run"]) / "run.json").read_text())["quality"]["path"] == str(group / "candidates/00-ceiling.execcmds")
+    assert verdict["status"] == "pass" and set(gates(verdict)) == {"repeat_ssim_min:top_landscape", "repeat_ssim_min:top_portrait"}
+    assert (group / "review.html").read_text().count('class="row"') == 40 and L.main(["report", str(group)]) == 0
+    print("reference ok: the ceiling twice at both confirm sizes, run-to-run SSIM 1.0 on all 40 stills")
+    return group
 
 
 def check_look(out):
@@ -426,7 +489,9 @@ def check_tune(out):
         assert set(folders) == ({"look"} if record["look_only"] else {"perf", "look"}), (record["id"], folders)
         assert all(Path(folder).parent == group / "runs" for folder in folders.values())
     winner = next(record for record in tune["candidates"] if record["id"] == tune["winner"])
+    assert tune["baseline"]["look"] is not None, "the baseline Look needs the ceiling stills before it runs"
     assert winner["look"] > tune["baseline"]["look"] and len(winner["images"]) == 20
+    assert Path(tune["runs"][next(r["id"] for r in tune["candidates"] if r["phase"] == "ceiling")]["look"]).name.endswith("ceiling-first-look")
     confirmation = tune["native_confirmation"]
     assert [result["id"] for result in confirmation["results"]] == ["baseline", tune["winner"]], confirmation
     assert confirmation["confirmed_native"] == tune["winner"] and all(len(result["runs"]) == 4 for result in confirmation["results"])
@@ -434,6 +499,15 @@ def check_tune(out):
         (sky, size) for sky in SMALL["sky_order"] for size in SMALL["size_use"]["confirm"]}
     print(f"tune ok: 6 candidates ({tune['winner']} wins), every run kept, native confirmation of the baseline and the winner")
     return group, tune
+
+
+def check_tune_with_reference(out, reference):
+    group, tune = L.tune_run(SMALL, reference=reference, confirm=False)
+    sizes = json.loads((reference / "reference.json").read_text())["sizes"]["top_landscape"]
+    ceilings = [tune["runs"][r["id"]]["look"] for r in tune["candidates"] if r["phase"] == "ceiling"]
+    assert ceilings == [sizes["a"]["run"], sizes["b"]["run"]] and not any((group / "runs").glob("*ceiling*")), ceilings
+    assert tune["ties"]["repeat"]["min"] == 1.0 and tune["baseline"]["look"] is not None and "native_confirmation" not in tune
+    print("tune with --reference ok: the stored ceiling renders are reused, nothing is rendered twice")
 
 
 def check_stream(out, state, group, winner):
@@ -458,18 +532,41 @@ def check_stream(out, state, group, winner):
     assert argv == ["--slot", "NordHost", "--url", "http://127.0.0.1:8100/", "--seconds", "5", "--warmup", "2", "--frames", "--latency",
                     "--pin", "0", "--trigger", str(run / "stream/trigger.txt"), "--out", str(run / "stream")], argv
     assert (run / "stream/trigger.txt").read_text().split() == SMALL["order"][1:] + SMALL["order"][:1], "one trigger line per hold"
-    assert sorted(path.name for path in (run / "stream/shots").glob("*-frame.png")) == sorted(f"{s}-frame.png" for s in SMALL["order"])
+    assert sorted(path.name for path in (run / "stream/shots").glob("*-video.png")) == sorted(
+        f"{n:02d}-{s}-video.png" for n, s in enumerate(SMALL["order"][1:] + SMALL["order"][:1], 1))
     for name in ("run.json", "stream/sample.json", "stream/frames.json", "stream/events.json", "stream/gpu.json", "stream/host.log",
                  "verdict.json", "review.html"):
         assert (run / name).is_file(), name
     assert verdict["status"] == "pass", (failing(verdict), verdict.get("notes"))
+    assert verdict["report_only"]["stop_frames"]["S1"] == "stream/shots/05-S1-video.png" and verdict["report_only"]["encoder_qp"]["mean"] == 20.0
+    assert any("no wall clock" in note for note in verdict["notes"]), "intervals over the whole sample are named as such"
+    assert gates(verdict)["size_changes"]["value"] == 0, "the received event before the lap is outside the window"
+    assert verdict["report_only"]["native_frames_ms"]["frame"]["p95_ms"] == 16.9 and len(verdict["report_only"]["native_legs_by_p95"]) == 5
     assert {"decoded_fps_mean", "freezes", "decoded_over_50ms_percent", "longest_gap_ms", "jitter_buffer_ms_per_frame",
             "native_fps_min", "decoded_vs_native_fps", "size_changes", "game_exit", "cvar_mismatches"} <= set(gates(verdict))
     assert 29 <= verdict["values"]["decoded_fps"] <= 31 and gates(verdict)["longest_gap_ms"]["value"] < 40
-    assert verdict["delay"]["gated"] is False and verdict["delay"]["values"]["roundTripTimeMs"] == 2.1
+    assert verdict["delay"]["gated"] is False and verdict["delay"]["values"]["delay"]["rttMs"]["mean"] == 2.1
+    assert verdict["delay"]["label"].startswith("host-PC headless Chromium")
+    # With the page's performance.timeOrigin, the decoded frames are cut to the lap.
+    report = json.loads((run / "stream/sample.json").read_text())
+    window = L.lap_window(json.loads((run / "stream/events.json").read_text()))[0]
+    origin = report["samples"][0]["timeMs"] - 1000.0
+    cut = L.lap_sample(dict(report, timeOrigin=origin), run / "stream", window)
+    whole = L.lap_sample(report, run / "stream", window)
+    assert cut["intervals"]["frames"] < whole["intervals"]["frames"] and not cut["notes"], (cut["intervals"], whole["intervals"])
     assert not any("ms" in gate["unit"] and "rtt" in gate["name"].lower() for gate in verdict["gates"]), "no gate cites a delay"
     meta = json.loads((run / "run.json").read_text())
     assert meta["row"] == "solo" and meta["size"] == [96, 48] and meta["quality"]["name"] == "file"
+    two = out / "20261023T230500Z-two-viewers"
+    (two / "stream/NordFriend1").mkdir(parents=True)
+    for name in ("stream/events.json", "stream/gpu.json", "stream/sample.json", "stream/frames.json"):
+        (two / name).write_text((run / name).read_text())
+    for name in ("sample.json", "frames.json"):
+        (two / "stream/NordFriend1" / name).write_text((run / "stream" / name).read_text())
+    L.write_json(two / "run.json", dict(meta, label=two.name, row="two_viewer", slots=["NordHost", "NordFriend1"]))
+    paired = L.judge(two, SMALL)
+    assert paired["status"] == "unverified" and paired["gates"] == [], "a two-viewer row gates nothing"
+    assert 29 <= paired["values"]["two_viewer_fps"] <= 31 and set(paired["report_only"]["two_viewer"]["per_slot"]) == {"NordHost", "NordFriend1"}
     try:
         L.stream_run(SMALL, run)
     except RuntimeError as error:
@@ -499,7 +596,7 @@ def check_report_and_profile(group, tune):
     assert gates(verdict)["repeat_ssim_min"]["result"] == "pass" and gates(verdict)["repeat_ssim_min"]["value"] == 1.0
     assert verdict["status"] == "unverified" and (group / "report.json").is_file() and (group / "review.html").is_file()
     page = (group / "review.html").read_text()
-    assert page.count('class="row"') == 20 and page.count('class="flip"') == 20 and "S1-frame.png" in page
+    assert page.count('class="row"') == 20 and page.count('class="flip"') == 20 and "05-S1-video.png" in page
     ini = L.PROFILES_INI.read_text()
     real = T.PROFILES_INI.read_text()
     for arguments in (["write-profile", str(group), "--candidate", tune["winner"]],):
@@ -557,7 +654,9 @@ def main():
         check_contended(out, state)
         check_mismatch_and_phone()
         check_look(out)
+        reference = check_reference(out)
         group, tune = check_tune(out)
+        check_tune_with_reference(out, reference)
         check_stream(out, state, group, tune["winner"])
         check_report_and_profile(group, tune)
     print("NORD_GAUNTLET_LOOP_OK")

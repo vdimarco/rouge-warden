@@ -189,6 +189,7 @@ def stream_quality(value=None):
     if value == "current":
         return {"name": "current", "execcmds": QUALITY}
     if value == "phone":
+        # -DeviceProfile= is written from memory of the engine: unverified until the host reads every CVar back.
         quality_cvars({"device_profile": PHONE_PROFILE})
         return {"name": "phone", "device_profile": PHONE_PROFILE}
     path = Path(value[5:]).expanduser().resolve() if value.startswith("file:") and value[5:].strip() else None

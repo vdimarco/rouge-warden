@@ -31,6 +31,13 @@ never rises above the 2nd storey or onto a block over 4; lots with no yard get l
 Gallery guards, inner flights' open sides and stair-head balcony rails get invisible Collision_Only walls, and
 clear_traffic_band takes every collision unit that comes within 300 cm of a traffic centreline out of collision.
 
+Rear surfaces: solid gallery guards are lap siding (cream or grey, a sided lot's own), gate leaves are board cards on a
+painted ledge-and-brace frame, rear window frames are white with a blind or curtains in front of the glass (blind; the
+post-1945 kit's windows and patio doors too), side-by-side galleries get lattice or board privacy screens at their
+shared posts (plan_partitions), every deck records the floor left for props (decks[].free, free_m2, edge, out), and the
+background masses get white membrane or gravel roofs with a chimney and hatch, or a tower's penthouse and vents
+(author_background_roof).
+
 Rules follow research-plateau.md §3-§6 and §9 (Plateau heritage sheets, Dec 2015) and the
 CGA split idea of Müller et al. 2006 (mass -> facade -> floors -> bays). Storeys come from
 OSM building:levels, then the municipal assessment roll joined by address, then the 2016

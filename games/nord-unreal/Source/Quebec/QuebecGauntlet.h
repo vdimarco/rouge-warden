@@ -12,10 +12,14 @@ class APlayerController;
 class AQuebecCar;
 class UWorld;
 
+// Where the subsystem is: waiting for a game world, running, waiting for the CSV file, finished. Outside the UCLASS,
+// so the header tool sees no nested type.
+enum class EQuebecGauntletStage : uint8 { Idle, Running, Ending, Finished };
+
 // One step of the stills taken at a look-run hold (QuebecGauntlet.cpp BuildShots).
 struct FQuebecGauntletShot
 {
-    enum class EKind : uint8 { Chase, Eye, Sky, Seconds, Frames, Shot };
+    enum class EKind : uint8 { Chase, Eye, Sky, Stream, Seconds, Frames, Shot };
     EKind Kind = EKind::Frames;
     int32 Sky = 0;          // Sky: the preset to switch to. Shot: the preset the still is filed under.
     double Seconds = 0.;    // Seconds: how long to wait.
@@ -60,10 +64,8 @@ public:
     int32 GetExitCode() const { return ExitCode; }
 
 private:
-    enum class EStage : uint8 { Idle, Running, Ending, Finished };
-
     FTSTicker::FDelegateHandle Ticker;
-    EStage Stage = EStage::Idle;
+    EQuebecGauntletStage Stage = EQuebecGauntletStage::Idle;
     TWeakObjectPtr<UWorld> RunWorld;
     TWeakObjectPtr<AQuebecCar> Car;
     TWeakObjectPtr<ACameraActor> EyeCamera;
