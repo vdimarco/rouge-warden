@@ -50,7 +50,9 @@ TEXTURE_MEAN = {'asphalt_02': (.1162, .1143, .1020), 'concrete_pavement': (.2170
                 'brick_wall_001': (.1402, .0776, .0516), 'grass_ground': (.1593, .1198, .0498)}
 # Replica texture sets: tileable PNGs from Scripts/plateau_textures.py, imported next to the replica materials.
 # Each material duplicates the parent of its set's surface with the three texture samples swapped and the UV
-# tiling set to 1 / tile_m (replica OBJ UVs are metres; cards are metres along the run by 0..1 up the card):
+# tiling set to 1 / tile_m (replica OBJ UVs are metres; cards are metres along the run by 0..1 up the card). Its
+# tint is the manifest colour / the set's mean colour, except that a set that owns its colour (tar) keeps a white
+# tint, and a set's metallic caps the manifest's (galvanised sheet); see textured_tint and textured_metallic.
 #   wall    M_BrickRed (greystone, slate, siding, parging, sheet metal): the brick graph, no NordSky wrapper
 #   ground  M_Gravel (roofs and yards): the same graph with the NordSky wet-ground wrapper, so they darken in rain
 #   cutout  M_Replica_CutoutParent, built here: masked, two-sided, OpacityMask from the diffuse alpha
@@ -261,11 +263,16 @@ def set_material(name, entry):
     """
     surface = entry.get('surface') or plateau_textures.SETS[name]['surface']
     material = entry.get('material') or plateau_textures.SURFACES[surface]
+    generator = plateau_textures.SETS.get(name, {})
     out = {'texture_set': name, 'surface': surface, 'mean_linear': entry['mean_linear'], 'tiling': entry['tiling'],
            'uv': entry.get('uv', 'metres'),
            'textures': {role: f'{TEXTURE_ASSETS}/{Path(entry["maps"][role]["file"]).stem}' for role in TEXTURE_ROLES},
            'blend_mode': material['blend_mode'], 'two_sided': bool(material['two_sided']),
-           'shading_model': material['shading_model'], 'opacity_mask_clip': material.get('opacity_mask_clip')}
+           'shading_model': material['shading_model'], 'opacity_mask_clip': material.get('opacity_mask_clip'),
+           # The set's own colour wins over the manifest's (tar), and its metallic caps the manifest's (galvanised
+           # sheet): plateau_textures.SETS own_colour and metallic, recorded in textures.json.
+           'own_colour': bool(entry.get('own_colour', generator.get('own_colour', False))),
+           'metallic_max': entry.get('metallic', generator.get('metallic'))}
     macro = entry.get('macro')
     if macro:
         # Macro variation: the tint x lerp(1 - s, 1 + s, R) at the first macro tile x lerp(...) of G at the second.
@@ -404,6 +411,10 @@ def shared_key_plan(root=ROOT):
             row.update({k: fields[k] for k in ('blend_mode', 'two_sided', 'shading_model', 'opacity_mask_clip',
                                                 'tiling', 'uv')})
             row['texture_base_color_srgb'] = sets[name].get('base_color_srgb')
+            if fields['own_colour']:
+                row['own_colour'] = True        # the material shows the texture's own colour (tint white)
+            if fields['metallic_max'] is not None:
+                row['metallic_max'] = fields['metallic_max']
             if fields.get('macro'):
                 row['macro_strength'] = fields['macro']['strength']
             if fields['uv'] == 'card':
@@ -427,9 +438,30 @@ def material_row(layer, key, spec, texture_sets, used_sets):
         assert name in texture_sets, f'{layer} {key} needs the {name} textures; run python3 Scripts/plateau_textures.py'
         used_sets.add(name)
         row.update(set_material(name, texture_sets[name]))
-        row['metallic'] = float(spec.get('metallic', 0.))
+        row['metallic'] = textured_metallic(row, spec)
         row['wet'] = base == WET_PARENT
+    if row['mean_linear'] is not None:
+        row['tint'] = textured_tint(row, spec)
+        row['colour_source'] = 'texture' if row.get('own_colour') else 'manifest'
     return row
+
+
+def textured_tint(row, spec):
+    """Linear tint of a textured duplicate (diff x tint): the manifest colour / the texture's mean, capped at
+    TINT_LIMIT, so the surface averages the manifest colour; white for a replica set that owns its colour
+    (plateau_textures.SETS own_colour: the tar roof keeps its grey pea gravel on black tar, about #4A4744, where the
+    Plex colour #2C2B29 multiplied it down to flat black)."""
+    if row.get('own_colour'):
+        return (1., 1., 1.)
+    return tuple(min(TINT_LIMIT, c / m) for c, m in zip(linear(spec['base_color_srgb']), row['mean_linear']))
+
+
+def textured_metallic(row, spec):
+    """Metallic of a replica-set duplicate: the manifest's, capped at the set's own (plateau_textures.SETS metallic:
+    weathered galvanised sheet at .3 reads light grey in shade, where Plex's .6 read brown)."""
+    value = float(spec.get('metallic', 0.))
+    cap = row.get('metallic_max')
+    return min(value, float(cap)) if cap is not None else value
 
 
 def texture_rows(name, entry):
@@ -941,7 +973,8 @@ def make_material(u, row, spec, textures=None):
     assets, lib = u.EditorAssetLibrary, u.MaterialEditingLibrary
     colour = linear(spec['base_color_srgb'])
     if row['texture_mean']:
-        textured_colour = tuple(min(TINT_LIMIT, c / m) for c, m in zip(colour, row['mean_linear']))
+        # The plan's tint (textured_tint): colour / texture mean, or white for a set that owns its colour.
+        textured_colour = tuple(row['tint']) if row.get('tint') else textured_tint(row, spec)
     mat = assets.duplicate_asset(row['duplicate_of'], row['asset'])
     tints = authored_tints(u, mat) if mat else []
     duplicated = bool(mat) and len(tints) == 1 and (not row.get('textures') or
@@ -1291,6 +1324,18 @@ def check_macro_nodes(u, mat, row):
     return len(samples)
 
 
+def check_tint(u, mat, row):
+    """verify: a textured duplicate's one authored tint is the planned tint (textured_tint: the manifest colour /
+    the texture mean, or white for a set that owns its colour, so the tar roof keeps its grey gravel)."""
+    tints = authored_tints(u, mat)
+    assert len(tints) == 1, f'{row["asset"]} has {len(tints)} authored tints'
+    c = tints[0].get_editor_property('constant')
+    got = (c.r, c.g, c.b) if hasattr(c, 'r') else tuple(c[:3])
+    assert all(abs(a - b) < 1e-3 for a, b in zip(got, row['tint'])), \
+        f'{row["asset"]} tint {[round(v, 4) for v in got]}, planned {[round(v, 4) for v in row["tint"]]}'
+    return True
+
+
 def check_foliage(u, mat, row):
     """verify: an untextured leaves material is two-sided foliage with transmission."""
     assert bool(mat.get_editor_property('two_sided')), row['asset'] + ' is one-sided'
@@ -1520,8 +1565,11 @@ def verify(u, root, backup):
                 parents[row['duplicate_of']] = nord_parameters(assets.load_asset(row['duplicate_of']))
             assert nord_parameters(mat) == parents[row['duplicate_of']], \
                 row['asset'] + ' NordSky wrappers differ from ' + row['duplicate_of']
-            # Blend mode and sidedness of the set (cards and creeper masked and two-sided), and its metallic.
+            # Blend mode and sidedness of the set (cards and creeper masked and two-sided), its metallic (capped
+            # by the set) and its tint (white where the set owns its colour).
             check_material_mode(u, mat, row)
+            if not row['emissive_srgb']:
+                check_tint(u, mat, row)
     trees = check_yard_trees_placed(u, actors, the_plan['trees'])
     texts = sum(1 for label in actors if label.startswith(PREFIX + 'street name '))
     assert texts == report['texts'], 'Street-name text count changed'
@@ -1550,7 +1598,10 @@ def main():
                           'textures': {t['asset']: t['sha256'] for t in the_plan['textures']},
                           'textured_materials': {m['asset']: {'set': m['texture_set'], 'duplicate_of': m['duplicate_of'],
                                                               'tiling': m['tiling'], 'blend_mode': m['blend_mode'],
-                                                              'two_sided': m['two_sided']}
+                                                              'two_sided': m['two_sided'],
+                                                              'tint': [round(t, 4) for t in m['tint']],
+                                                              'colour_source': m['colour_source'],
+                                                              'metallic': m['metallic']}
                                                  for m in the_plan['materials'] if m.get('texture_set')},
                           'parents': {p['asset']: {k: p[k] for k in ('texture_set', 'blend_mode', 'two_sided',
                                                                       'shading_model', 'opacity_mask_clip')}

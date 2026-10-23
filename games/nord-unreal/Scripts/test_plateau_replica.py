@@ -178,7 +178,14 @@ def check_textures(the_plan):
         assert m['duplicate_of'] == A.SURFACE_PARENTS[surface] and m['texture_mean'] == 'replica_' + m['texture_set']
         assert (m['blend_mode'], m['two_sided']) == (entry['material']['blend_mode'], entry['material']['two_sided'])
         spec = m['spec'] if m['layer'] == A.TREES else specs[m['layer']][m['key']]
-        assert m['wet'] == (surface == 'ground') and m['metallic'] == spec.get('metallic', 0.)
+        # Metallic: the manifest's, capped by the set's own (galvanised sheet); tint: the manifest colour over the
+        # texture mean, or white where the set owns its colour (tar).
+        want_metal = spec.get('metallic', 0.) if 'metallic' not in entry else min(spec.get('metallic', 0.), entry['metallic'])
+        assert m['wet'] == (surface == 'ground') and m['metallic'] == want_metal, (m['asset'], m['metallic'])
+        own = bool(entry.get('own_colour'))
+        want_tint = (1., 1., 1.) if own else tuple(min(A.TINT_LIMIT, c / mm) for c, mm in
+                                                    zip(A.linear(spec['base_color_srgb']), entry['mean_linear']))
+        assert m['tint'] == want_tint and m['colour_source'] == ('texture' if own else 'manifest'), m['asset']
         assert sorted(m['textures']) == sorted(A.TEXTURE_ROLES) and all(a in textures for a in m['textures'].values())
         assert all(textures[a]['set'] == m['texture_set'] and textures[a]['role'] == r for r, a in m['textures'].items())
         assert m['mean_linear'] == entry['mean_linear'] and m['tiling'] == entry['tiling']
@@ -210,6 +217,18 @@ def check_textures(the_plan):
         for key, name in A.SHARED_TEXTURE_KEYS.items():
             if key in keys:
                 assert keys[key].get('texture_set') == name, (key, keys[key].get('texture_set'))
+        # The tar roof shows its own grey gravel (about #4A4744) whatever Plex calls its colour, and galvanised
+        # sheet stays at most .3 metallic, so it reads light grey in shade.
+        if 'Roof_Tar' in keys:
+            tar = keys['Roof_Tar']
+            assert tar['tint'] == (1., 1., 1.) and tar['colour_source'] == 'texture', tar['tint']
+            shown = plateau_textures.to_srgb_hex([c * t for c, t in zip(tar['mean_linear'], tar['tint'])])
+            assert all(abs(int(shown[i:i + 2], 16) - int('4A4744'[i - 1:i + 1], 16)) <= 6 for i in (1, 3, 5)), shown
+        if 'Sheet_Metal' in keys:
+            sheet = keys['Sheet_Metal']
+            assert sheet['metallic'] <= plateau_textures.SETS['sheet_metal']['metallic'] <= .35, sheet['metallic']
+            grey = [c * t for c, t in zip(sheet['mean_linear'], sheet['tint'])]
+            assert .25 < sum(grey) / 3 < .5 and max(grey) / min(grey) < 1.15, ('Sheet_Metal reads light grey', grey)
     return {'textures': {t['asset'].rsplit('/', 1)[1]: {'size_px': t['size_px'], 'sha256': t['sha256'][:16],
                                                         'raw_sha256': t['raw_sha256'][:16], 'address_y': t['address_y']}
                          for t in the_plan['textures']},
@@ -1038,8 +1057,10 @@ def check_editor_side():
             coords = [n for n in plain if isinstance(n, FakeCoords)]
             assert len(coords) == 1 and [coords[0].get_editor_property(k) for k in ('u_tiling', 'v_tiling')] == row['tiling']
             (tint,) = A.authored_tints(u, mat)
-            want = [min(A.TINT_LIMIT, c / m) for c, m in zip(A.linear(spec['base_color_srgb']), row['mean_linear'])]
+            want = ([1., 1., 1.] if row.get('own_colour') else
+                    [min(A.TINT_LIMIT, c / m) for c, m in zip(A.linear(spec['base_color_srgb']), row['mean_linear'])])
             assert all(abs(a - b) < 1e-9 for a, b in zip(tint.get_editor_property('constant')[:3], want)), row['key']
+            assert A.check_tint(u, mat, row), row['key']
             wet = [n.get_editor_property('parameter_name') for n in mat.nodes if isinstance(n, FakeCollection)]
             assert ('Wetness' in wet) == row['wet'], row['key']
             if row['shading_model'] == 'two_sided_foliage':
@@ -1190,6 +1211,62 @@ def check_editor_trees():
         assert A.check_yard_trees_placed(u, actors, the_plan['trees']) == len(TREE_ROWS_FIXTURE)
         assert all(a.component.static_mesh is meshes[t['mesh']] for a, t in zip(editor.actors, the_plan['trees']))
         return {label: placed[label]['count'] for label in sorted(placed)}
+
+
+def check_set_authority():
+    """With Plex's own colours (#2C2B29 tar, .6-metallic sheet): the tar set owns its colour, so its tint stays white
+    and the roof shows its grey gravel (about #4A4744), not black; the sheet set caps metallic at .3; the other sets
+    follow the manifest. Checked in the plan, the dry-run key table, the material the editor side builds (duplicate
+    and fresh fallback), and verify, which rejects a black-tinted tar roof and a .6-metallic sheet."""
+    A = apply_replica
+    extra = {'Roof_Tar': ({'base_color_srgb': '#2C2B29', 'roughness': .9, 'metallic': 0}, 'none'),
+             'Sheet_Metal': ({'base_color_srgb': '#A4A8AA', 'roughness': .4, 'metallic': .6}, 'none'),
+             'Siding_Lap_Grey': ({'base_color_srgb': '#8E9091', 'roughness': .6, 'metallic': .05}, 'none'),
+             'Roof_Gravel': ({'base_color_srgb': '#C8C4BA', 'roughness': .95, 'metallic': 0}, 'none')}
+    with tempfile.TemporaryDirectory() as tmp:
+        synthetic_plex(tmp, [], extra=extra)
+        the_plan = A.plan(tmp)
+        specs = {k: v[0] for k, v in extra.items()}
+        rows = {m['key']: m for m in the_plan['materials']}
+        tar, sheet, siding, gravel = (rows[k] for k in ('Roof_Tar', 'Sheet_Metal', 'Siding_Lap_Grey', 'Roof_Gravel'))
+        assert tar['own_colour'] and tar['tint'] == (1., 1., 1.) and tar['colour_source'] == 'texture', tar['tint']
+        shown = plateau_textures.to_srgb_hex(tar['mean_linear'])
+        assert all(abs(int(shown[i:i + 2], 16) - int('4A4744'[i - 1:i + 1], 16)) <= 6 for i in (1, 3, 5)), shown
+        black = A.textured_tint(dict(tar, own_colour=False), specs['Roof_Tar'])
+        assert max(black) < .45, ('the Plex colour would multiply the gravel down to black', black)
+        assert not gravel['own_colour'] and gravel['colour_source'] == 'manifest'
+        assert gravel['tint'] == tuple(min(A.TINT_LIMIT, c / m) for c, m in zip(A.linear('#C8C4BA'), gravel['mean_linear']))
+        assert sheet['metallic_max'] == plateau_textures.SETS['sheet_metal']['metallic'] == sheet['metallic'] == .3
+        assert A.textured_metallic(sheet, {'metallic': .1}) == .1, 'the cap never raises a lower metallic'
+        assert siding['metallic_max'] is None and siding['metallic'] == .05
+        shared = A.shared_key_plan(tmp)
+        assert shared['Roof_Tar'].get('own_colour') and not shared['Roof_Gravel'].get('own_colour')
+        assert shared['Sheet_Metal'].get('metallic_max') == .3 and 'metallic_max' not in shared['Siding_Lap_Grey']
+        u = fake_unreal()
+        registry = u.EditorAssetLibrary.registry
+        fake_parent(u, A.TEXTURED_PARENT, 'brick_wall_001')
+        fake_parent(u, A.WET_PARENT, 'concrete_pavement', wet=True)
+        textures = {row['asset']: dict(row, object=A.import_texture(u, Path(tmp), row)) for row in the_plan['textures']}
+        for key, row in rows.items():
+            mat, fresh = A.make_material(u, row, specs[key], textures)
+            assert not fresh, key
+            assert A.check_tint(u, mat, row) and A.check_material_mode(u, mat, row) is None, key
+        tar_mat = registry[tar['asset']]
+        (tint,) = A.authored_tints(u, tar_mat)
+        assert tint.get_editor_property('constant')[:3] == (1., 1., 1.)
+        tint.set_editor_property('constant', (*black, 1.))
+        expect_rejected(lambda: A.check_tint(u, tar_mat, tar), 'a tar roof tinted down to black')
+        sheet_mat = registry[sheet['asset']]
+        metal = FakeLibrary.get_material_property_input_node(sheet_mat, 'MP_METALLIC')
+        assert abs(metal.get_editor_property('r') - .3) < 1e-9, metal.get_editor_property('r')
+        metal.set_editor_property('r', .6)
+        expect_rejected(lambda: A.check_material_mode(u, sheet_mat, sheet), 'galvanised sheet at the manifest .6')
+        fresh_row = dict(tar, asset=tar['asset'] + '_Fresh', duplicate_of='/Game/Plateau/Materials/M_Missing')
+        mat, fresh = A.make_material(u, fresh_row, specs['Roof_Tar'], textures)
+        assert fresh and A.check_tint(u, mat, fresh_row), 'the fresh fallback keeps the white tar tint'
+        return {'Roof_Tar': {'tint': list(tar['tint']), 'shows': shown, 'plex_tint_would_be': [round(t, 3) for t in black]},
+                'Sheet_Metal': {'manifest_metallic': .6, 'metallic': sheet['metallic']},
+                'Roof_Gravel': {'tint': [round(t, 3) for t in gravel['tint']]}}
 
 
 # ------------------------------------------------------------------------------------------------
@@ -1820,6 +1897,7 @@ def main():
         report['shared_keys'] = check_shared_plan()
         report['yard_trees'] = check_yard_trees(the_plan)
         report['editor_side'] = check_editor_side()
+        report['set_authority'] = check_set_authority()
         ini = (replica.ROOT / 'Config/DefaultGame.ini').read_text()
         assert '+DirectoriesToAlwaysCook=(Path="/Game/Plateau/Replica/Props")' in ini, 'Props folder is not always cooked'
         header = (replica.ROOT / 'Source/Quebec/QuebecReplicaInstances.h').read_text()

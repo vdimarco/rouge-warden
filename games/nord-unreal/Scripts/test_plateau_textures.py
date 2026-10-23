@@ -431,13 +431,22 @@ def main():
                 sets[key].update(check_cutout(key, spec, entry, maps['diff']))
             if key == 'sheet_metal':
                 assert entry['metallic'] == T.SETS['sheet_metal']['metallic'] <= .35, 'galvanised sheet reads grey'
+            # Only the tar set owns its colour: whatever colour a manifest gives Roof_Tar, the roof shows the
+            # texture's own grey gravel (the EXPECT range above, about #4A4744).
+            assert entry.get('own_colour', False) == (key == 'tar') == bool(spec.get('own_colour')), key
             # Tints the apply step derives from the Plex colours stay in range and keep the texture's contrast.
             for name, spec_m in plex_materials.items():
                 if apply_replica.texture_set(name, spec_m) == key:
-                    tint = [c / m for c, m in zip(apply_replica.linear(spec_m['base_color_srgb']), mean)]
+                    row = apply_replica.set_material(key, entry)
+                    tint = list(apply_replica.textured_tint(row, spec_m))
+                    if row['own_colour']:
+                        assert tint == [1., 1., 1.], (name, tint)
                     floor_ = spec.get('tint_floor', .2)
                     assert floor_ <= min(tint) and max(tint) <= apply_replica.TINT_LIMIT, \
                         (name, tint, f'set base_color_srgb near {entry["base_color_srgb"]}')
+                    metal = apply_replica.textured_metallic(row, spec_m)
+                    assert metal <= entry.get('metallic', 1.), (name, metal)
+                    summary[f'metallic {name}'] = {'manifest': spec_m.get('metallic', 0.), 'material': metal}
                     if key in ('limestone', 'slate'):
                         assert abs(entry['roughness_mean'] - spec_m['roughness']) < .08, (name, entry['roughness_mean'])
                     summary[f'tint {name}'] = [round(t, 3) for t in tint]
@@ -458,6 +467,9 @@ def main():
                     assert hashlib.sha256(raw).hexdigest() == m['raw_sha256'], f'{m["file"]} is stale'
                 assert stored['sets'][key]['mean_linear'] == index['sets'][key]['mean_linear']
                 assert stored['sets'][key]['material'] == index['sets'][key]['material']
+                for field in ('own_colour', 'metallic'):
+                    assert stored['sets'][key].get(field) == index['sets'][key].get(field), \
+                        f'{key} {field}: rerun python3 Scripts/plateau_textures.py'
             assert stored['macro']['raw_sha256'] == index['macro']['raw_sha256'], 'rerun python3 Scripts/plateau_textures.py'
             raw = T.read_png((T.OUT / stored['macro']['file']).read_bytes())[2]
             assert hashlib.sha256(raw).hexdigest() == stored['macro']['raw_sha256'], 'The macro mask is stale'
