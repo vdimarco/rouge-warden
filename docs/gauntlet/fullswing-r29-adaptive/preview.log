@@ -1,0 +1,13 @@
+PASS: sustained slow callbacks lower the flat buffer
+PASS: improving callbacks retain the reduction
+PASS: canvas CSS and camera aspect remain native
+PASS: paused callbacks cannot change resolution
+PASS: hidden callbacks cannot change resolution
+PASS: phone resize restores normal device ratio
+PASS: phone CSS and camera stay viewport-sized
+PASS: new viewport can trial a reduction
+PASS: unchanged pacing rolls back the trial
+PASS: failed trial stops further quality reductions
+PASS: XR callbacks cannot change flat resolution
+PASS: no page errors
+PASS: adaptive resolution

@@ -58,14 +58,16 @@ float fogAmt(vec3 wp) {
   float f = 1.0 - exp(-${FOG_K} * max(d - ${FOG_N}, 0.0) * hf);
   float Hs = 18.0;
   float hs = abs(dy) < 1.0 ? exp(-0.5 * (yc + yp) / Hs) : Hs * (exp(-yp / Hs) - exp(-yc / Hs)) / dy;
-  f = max(f, (1.0 - exp(-0.012 * max(d - 28.0, 0.0))) * hs * 0.40);
+  f = max(f, (1.0 - exp(-0.022 * max(d - 28.0, 0.0))) * hs * 0.70);
   return max(f, 0.06 * smoothstep(12.0, ${FOG_N}, d));
 }
 vec3 fogCol(vec3 wp) {
   vec3 v = normalize(wp - cameraPosition);
   vec3 h = normalize(vec3(v.x, clamp(v.y, 0.0, 0.1) * length(v.xz) * 10.0, v.z));
   vec3 c = uHaveSky > 0.5 ? textureLod(uSky, vec2(atan(-h.x, h.z) * 0.15915494 + uSkyU, clamp(asin(h.y) * 0.7958, 0.0, 1.0)), 3.0).rgb : skyEnv(vec3(v.x, clamp(v.y, 0.0, 0.1), v.z));
-  return mix(c, vec3(0.3, 0.16, 0.5), 0.42);
+  c = mix(c, vec3(0.3, 0.16, 0.5), 0.42);
+  float level = 1.0 - smoothstep(0.02, 0.22, v.y);
+  return mix(c, vec3(0.78, 0.42, 0.26), level * 0.78);
 }
 vec3 fogMix(vec3 col, vec3 wp, float k) { return mix(col, fogCol(wp), comicPoster(fogAmt(wp) * k, 4.0)); }
 `;
@@ -1347,9 +1349,11 @@ export function createGame({ scene, city, view, ropes, hands, ui, audio, P, save
     state: save.king === "beaten" ? "gone" : save.king, // sleeping | awake | gone (flushed)
     t: 0, yaw: perch.yaw + Math.PI, wake: 9, windT: 0, cd: KING.firstDelay, grace: 0, recoil: 0, react: 0,
     snore: null, ball: null, zzz: 0, respawn: 0, whistle: null, lean: 0.16, rise: 0, stretch: 0.955, flash: 0, glow: 0,
+    kind: "throw", turn: 0, mark: null, lane: null, // after a pipe is off, attacks cycle: throw, stomp, pull, belch, sweep, grab
   };
   const deck = { x: nd.x, y: nd.deck.y, z: nd.z }; // where you go when the hearts run out: the deck, out of his sight
-  const kingLog = { balls: [], throws: 0, hits: 0, misses: 0 };
+  const kingLog = { balls: [], throws: 0, hits: 0, misses: 0, stomps: 0, pulls: 0, belches: 0, sweeps: 0, grabs: 0 };
+  const KING_CYCLE = ["throw", "stomp", "pull", "belch", "sweep", "grab"];
   const mouthWorld = (out) => { kingRig.updateMatrixWorld(true); return out.copy(mouthLocal).applyMatrix4(kingRig.matrixWorld); };
   const losClear = (o, x, y, z) => {
     const dx = x - o.x, dy = y - o.y, dz = z - o.z, d = Math.sqrt(dx * dx + dy * dy + dz * dz);
@@ -1562,7 +1566,15 @@ export function createGame({ scene, city, view, ropes, hands, ui, audio, P, save
     if (K.wake < 2.5) return;
     if (K.windT > 0) {
       K.windT -= dt;
-      if (K.windT <= 0) { K.windT = 0; releaseBall(); }
+      if (K.windT <= 0) {
+        K.windT = 0;
+        if (K.kind === "stomp") releaseStomp();
+        else if (K.kind === "pull") releasePull();
+        else if (K.kind === "belch") releaseBelch();
+        else if (K.kind === "sweep") releaseSweep();
+        else if (K.kind === "grab") releaseGrab();
+        else releaseBall();
+      }
       return;
     }
     K.cd -= dt;
@@ -1570,11 +1582,132 @@ export function createGame({ scene, city, view, ropes, hands, ui, audio, P, save
       // wind up only with a clear line to you, close enough to matter
       mouthWorld(MOUTHP);
       if (BODY.distanceTo(MOUTHP) <= KING_RANGE && losClear(MOUTHP, BODY.x, BODY.y, BODY.z)) {
+        K.kind = pipes.some((p) => p.ripped) ? KING_CYCLE[K.turn % KING_CYCLE.length] : "throw";
         K.windT = KING.windUp;
         sfx("kingRoar", MOUTHP, 0.9);
-        ringWave(MOUTHP, C_SLUDGE, 9, 0.9);
+        if (K.kind === "stomp") {
+          word("STOMP", perch.x, deck.y + 4, perch.z, { scale: 1.8 });
+          ringWave({ x: perch.x, y: deck.y + 0.3, z: perch.z }, C_SLUDGE, 16, 0.9);
+        } else if (K.kind === "pull") {
+          word("PULL", perch.x, deck.y + 6, perch.z, { scale: 1.8 });
+          ringWave(MOUTHP, C_SLUDGE, 12, 0.9);
+        } else if (K.kind === "belch") {
+          markBelch();
+          word("BELCH", K.mark.x, deck.y + 5, K.mark.z, { scale: 1.8 });
+          ringWave({ x: K.mark.x, y: deck.y + 0.3, z: K.mark.z }, C_SLUDGE, 10, 0.9);
+        } else if (K.kind === "sweep") {
+          markSweep();
+          word("SWEEP", perch.x, deck.y + 5, perch.z, { scale: 1.8 });
+          ringWave({ x: perch.x, y: deck.y + 0.3, z: perch.z }, C_SLUDGE, 18, 0.9);
+        } else if (K.kind === "grab") {
+          word("GRAB", perch.x, deck.y + 6, perch.z, { scale: 1.8 });
+          ringWave({ x: perch.x, y: deck.y + 0.4, z: perch.z }, C_SLUDGE, 8, 0.9);
+        } else ringWave(MOUTHP, C_SLUDGE, 9, 0.9);
       } else K.cd = 0.5;
     }
+  }
+  // A pipe is off, so the attacks cycle. A throw that never leaves does not take a turn.
+  function advanceTurn() {
+    if (pipes.some((p) => p.ripped)) K.turn = (K.turn + 1) % KING_CYCLE.length;
+  }
+  function ropeHolds() {
+    for (const r of P.ropes) if (r.state === "attached") return true;
+    return false;
+  }
+  // The spot he paints when the belch starts. Leaving it during the wind-up is the way out.
+  function markBelch() {
+    K.mark = { x: P.pos.x, z: P.pos.z };
+  }
+  // A pipe is off, so every third attack is a stomp. On the deck it costs a heart. In the air it does not.
+  function releaseStomp() {
+    const dist = Math.hypot(BODY.x - perch.x, BODY.z - perch.z);
+    const hit = P.onGround && dist <= KING.stompRadius;
+    ringWave({ x: perch.x, y: deck.y + 0.2, z: perch.z }, C_SLUDGE, 22, 0.4);
+    kingLog.stomps++;
+    if (hit) word("GLUG", BODY.x, BODY.y + 1.6, BODY.z, { scale: 1.3 });
+    else { kingLog.misses++; word("SAFE", BODY.x, BODY.y + 2.2, BODY.z, { scale: 1.2 }); }
+    K.cd = KING.throwEvery;
+    advanceTurn();
+    if (hit) hurt();
+  }
+  // In the air with no rope, he drags you in. A rope holds. On the ground you stay put. Close enough costs a heart.
+  function releasePull() {
+    const dx = perch.x - P.pos.x, dz = perch.z - P.pos.z;
+    const dist = Math.hypot(dx, dz);
+    const held = ropeHolds();
+    const drag = !P.onGround && !held && dist > 0.05;
+    if (drag) {
+      const step = Math.min(KING.pullDrag, dist);
+      let go = step;
+      const rad = (P.cfg && P.cfg.chestRadius) || 0.35;
+      const cy = P.pos.y + (P.chest || 0);
+      const wall = city.raycast(P.pos.x, cy, P.pos.z, dx, 0, dz, step + rad, HIT);
+      // Stop short of the Needle. A straight drag would leave the hero inside the pod, and the next step would snap them out.
+      if (wall && wall.t < step + rad) go = Math.max(0, wall.t - rad - 0.2);
+      P.pos.x += (dx / dist) * go;
+      P.pos.z += (dz / dist) * go;
+      P.vel.x = P.vel.y = P.vel.z = 0;
+      // A cling would keep the old wall at the new spot, so the drag lets go of it.
+      if (P.wall) {
+        P.wall = null; P.wallRun = null;
+        P.wallCool = (P.cfg && P.cfg.climb && P.cfg.climb.regrab) || 0.4;
+        P.pullVel.x = P.pullVel.y = P.pullVel.z = 0;
+      }
+    }
+    const after = Math.hypot(P.pos.x - perch.x, P.pos.z - perch.z);
+    const hit = drag && after <= KING.pullRadius;
+    ringWave({ x: perch.x, y: deck.y + 0.4, z: perch.z }, C_SLUDGE, 18, 0.55);
+    kingLog.pulls++;
+    if (hit) word("GLUG", P.pos.x, P.pos.y + 1.6, P.pos.z, { scale: 1.3 });
+    else { kingLog.misses++; word(held ? "HELD" : "SAFE", P.pos.x, P.pos.y + 2.2, P.pos.z, { scale: 1.2 }); }
+    K.cd = KING.throwEvery;
+    advanceTurn();
+    if (hit) hurt();
+  }
+  // The spot was painted when the wind-up began. Still standing on it costs a heart. The air, and a step outside the circle, do not.
+  function releaseBelch() {
+    const mark = K.mark || { x: P.pos.x, z: P.pos.z };
+    const dist = Math.hypot(P.pos.x - mark.x, P.pos.z - mark.z);
+    const hit = P.onGround && dist <= KING.belchRadius;
+    ringWave({ x: mark.x, y: deck.y + 0.2, z: mark.z }, C_SLUDGE, 14, 0.4);
+    kingLog.belches++;
+    if (hit) word("GLUG", P.pos.x, P.pos.y + 1.6, P.pos.z, { scale: 1.3 });
+    else { kingLog.misses++; word("SAFE", P.pos.x, P.pos.y + 2.2, P.pos.z, { scale: 1.2 }); }
+    K.cd = KING.throwEvery;
+    K.mark = null;
+    advanceTurn();
+    if (hit) hurt();
+  }
+  // The heading he saw when the sweep started. It does not follow. Stepping out of that lane is the way out. A jump in the lane is not.
+  function markSweep() {
+    K.lane = Math.atan2(P.pos.z - perch.z, P.pos.x - perch.x);
+  }
+  function releaseSweep() {
+    const dx = P.pos.x - perch.x, dz = P.pos.z - perch.z;
+    const dist = Math.hypot(dx, dz);
+    const lane = K.lane == null ? Math.atan2(dz, dx) : K.lane;
+    const inLane = dist < 1 || Math.abs(wrapPi(Math.atan2(dz, dx) - lane)) <= KING.sweepHalf;
+    const hit = dist <= KING.sweepRadius && inLane;
+    ringWave({ x: perch.x, y: deck.y + 0.2, z: perch.z }, C_SLUDGE, 20, 0.4);
+    kingLog.sweeps++;
+    if (hit) word("GLUG", P.pos.x, P.pos.y + 1.6, P.pos.z, { scale: 1.3 });
+    else { kingLog.misses++; word("SAFE", P.pos.x, P.pos.y + 2.2, P.pos.z, { scale: 1.2 }); }
+    K.cd = KING.throwEvery;
+    K.lane = null;
+    advanceTurn();
+    if (hit) hurt();
+  }
+  // Close to him, on the ground or in the air, a grab takes a heart. A rope does not hold. Farther out, it does not.
+  function releaseGrab() {
+    const dist = Math.hypot(P.pos.x - perch.x, P.pos.z - perch.z);
+    const hit = dist <= KING.grabRadius;
+    ringWave({ x: perch.x, y: deck.y + 0.3, z: perch.z }, C_SLUDGE, 10, 0.4);
+    kingLog.grabs++;
+    if (hit) word("GLUG", P.pos.x, P.pos.y + 1.6, P.pos.z, { scale: 1.3 });
+    else { kingLog.misses++; word("SAFE", P.pos.x, P.pos.y + 2.2, P.pos.z, { scale: 1.2 }); }
+    K.cd = KING.throwEvery;
+    advanceTurn();
+    if (hit) hurt();
   }
   // the ball leaves at the end of the wind-up, and only if the line is still clear
   function releaseBall() {
@@ -1587,6 +1720,7 @@ export function createGame({ scene, city, view, ropes, hands, ui, audio, P, save
     if (kingLog.balls.length > 40) kingLog.balls.shift();
     makeBall(MOUTHP, BODY, Math.max(0.8, d / KING.ballSpeed), false);
     K.recoil = 1; K.cd = KING.throwEvery;
+    advanceTurn();
     sfx("kingRoar", MOUTHP, 0.5, 1.4);
   }
   function moveTo(x, y, z) {
@@ -1839,8 +1973,24 @@ export function createGame({ scene, city, view, ropes, hands, ui, audio, P, save
     progress.goal = null;
     if (progress.king === "beaten" || K.state === "gone") { OBJ.title = "ALL CLEAR"; OBJ.detail = "Free roam: trials and Loonies"; OBJ.short = ""; OBJ.n = OBJ.of = 0; }
     else if (K.state === "awake") {
-      OBJ.title = "FLUSH THE KING"; OBJ.detail = "Rope his pipes and pump them off";
-      OBJ.n = pipes.filter((q) => q.ripped).length; OBJ.of = pipes.length; OBJ.short = "PIPES " + OBJ.n + "/" + OBJ.of;
+      let pipe = null, pd = Infinity;
+      for (const p of pipes) {
+        if (p.ripped) continue;
+        const d = Math.hypot(p.tip.x - CHEST.x, p.tip.z - CHEST.z);
+        if (d < pd) { pd = d; pipe = p; }
+      }
+      OBJ.title = "FLUSH THE KING";
+      OBJ.n = pipes.filter((q) => q.ripped).length; OBJ.of = pipes.length;
+      OBJ.detail = pipe ? "Next pipe, " + Math.round(pd) + " m" : "Rope his pipes and pump them off";
+      OBJ.short = "PIPES " + OBJ.n + "/" + OBJ.of;
+      // a stomp or a pull is already winding up: the card says so for that second, then the pipe distance comes back
+      if (K.kind === "stomp" && K.windT > 0) { OBJ.detail = "He's stomping. Get off the deck"; OBJ.short = "JUMP"; }
+      else if (K.kind === "pull" && K.windT > 0) { OBJ.detail = "He's pulling. Shoot a web"; OBJ.short = "WEB"; }
+      else if (K.kind === "belch" && K.windT > 0) { OBJ.detail = "He's belching. Leave the spot"; OBJ.short = "MOVE"; }
+      else if (K.kind === "sweep" && K.windT > 0) { OBJ.detail = "He's sweeping. Step aside"; OBJ.short = "SIDE"; }
+      else if (K.kind === "grab" && K.windT > 0) { OBJ.detail = "He's grabbing. Get back"; OBJ.short = "BACK"; }
+      // the compass uses this same pipe, so a leftover clog cannot point somewhere else
+      progress.goal = pipe ? { x: pipe.tip.x, y: pipe.tip.y, z: pipe.tip.z, kind: "pipe", name: "King" } : null;
     } else {
       let best = null, bd = Infinity;
       for (const c of clogs) { if (c.done) continue; const d = Math.hypot(c.x - CHEST.x, c.z - CHEST.z); if (d < bd) { bd = d; best = c; } }
@@ -1986,7 +2136,24 @@ export function createGame({ scene, city, view, ropes, hands, ui, audio, P, save
     if (beamDirty) { beams.a.aLvl.needsUpdate = true; beamDirty = false; }
     if (ringDirty) { rings.a.aC.needsUpdate = rings.a.aN.needsUpdate = rings.a.aF.needsUpdate = true; ringDirty = false; }
     if (splatT > 0) { splatT = Math.max(0, splatT - dt); splatMat.uniforms.uAmt.value = splatT / 0.6; splat.visible = splatT > 0; }
+    swingWind(dt);
     fxUpdate();
+  }
+  // a fast rope leaves a few cream puffs behind the body. The puff and the pool are the ones already drawn.
+  let windT = 0;
+  function swingWind(dt) {
+    const vx = P.vel.x, vy = P.vel.y, vz = P.vel.z, sp = Math.hypot(vx, vy, vz);
+    let rope = false;
+    if (!P.onGround && !P.wall && sp > 10) for (const r of P.ropes) if (r.state === "attached") rope = true;
+    if (!rope) { windT = 0; return; }
+    windT += dt;
+    if (windT < 0.08) return;
+    windT -= 0.08;
+    const inv = 1 / sp, bx = -vx * inv, by = -vy * inv, bz = -vz * inv, sx = -bz, sz = bx;
+    const side = (rand() < 0.5 ? -1 : 1) * (0.9 + rand() * 0.9);
+    const back = 0.5 + rand() * 0.8;
+    const drift = 1.8 + rand() * 2.4;
+    spawn(T_PUFF, P.pos.x + bx * back + sx * side, P.pos.y + 0.85 + rand() * 1.35, P.pos.z + bz * back + sz * side, bx * drift, by * drift * 0.2 + (rand() - 0.5) * 0.5, bz * drift, 0.9, 1.05 + rand() * 0.55, rand() < 0.3 ? C_GOLD : C_CREAM, 0, 1.4, 0);
   }
   // "That's a clog. Plunge it.", once, when the first one is close
   function clogsHint() {
@@ -2080,6 +2247,26 @@ export function createGame({ scene, city, view, ropes, hands, ui, audio, P, save
     // test and portal hooks
     wakeKing() { if (K.state === "sleeping") { wakeKing(false); } },
     clearClog(id) { const c = clogs.find((q) => q.id === id); if (c) { lastFlushed = c; flush(c, -1, true); } },
+    // a pipe comes off, the way three pumps would
+    ripPipe(i = 0) { const p = pipes[i]; if (!p || p.ripped) return false; p.pumps = GAME.pumpsToFlush; ripPipe(p); return true; },
+    // the next frames may wind up at once (the fight still picks throw, stomp, pull, belch, sweep, or grab)
+    kingReady() {
+      if (K.state !== "awake") return false;
+      if (K.ball) endBall(null, false);
+      K.wake = Math.max(K.wake, 3); K.grace = 0; K.respawn = 0; K.cd = 0; K.windT = 0;
+      return true;
+    },
+    // a stomp, a pull, or a throw already winding up, so a test can stand on the deck or leave it
+    kingWind(kind) {
+      if (K.state !== "awake") return false;
+      if (K.ball) endBall(null, false);
+      K.wake = Math.max(K.wake, 3); K.grace = 0; K.respawn = 0; K.cd = KING.throwEvery;
+      K.kind = kind === "stomp" ? "stomp" : kind === "pull" ? "pull" : kind === "belch" ? "belch" : kind === "sweep" ? "sweep" : kind === "grab" ? "grab" : "throw";
+      K.windT = KING.windUp;
+      if (K.kind === "belch") markBelch();
+      if (K.kind === "sweep") markSweep();
+      return K.kind;
+    },
     // He wakes for a moment: the portal calls it at the burst
     stir(secs = 3) { if (K.state === "sleeping") { K.react = secs; beamWant[KING_BEAM] = 1; kingBeamPlace(); mouthWorld(MOUTHP); sfx("kingRoar", MOUTHP, 1); } },
     info() {
@@ -2087,7 +2274,7 @@ export function createGame({ scene, city, view, ropes, hands, ui, audio, P, save
         started, T, kind, model: kingModel, deck: { ...deck },
         clogs: clogs.map((c) => ({ id: c.id, pumps: c.pumps, done: c.done, level: c.level })),
         bonus: save.bonus, bank: progress.bank,
-        king: { state: K.state, wake: K.wake, windT: K.windT, cd: K.cd, grace: K.grace, hearts: progress.hearts, respawn: K.respawn, ball: K.ball ? { x: K.ball.pos.x, y: K.ball.pos.y, z: K.ball.pos.z, t: K.ball.t, cosmetic: K.ball.cosmetic } : null, throws: kingLog.throws, hits: kingLog.hits, misses: kingLog.misses, balls: kingLog.balls.map((b) => ({ ...b })), mouth: mouthWorld(new THREE.Vector3()).toArray(), visible: kingRig.visible, glow: kingUniforms.uGlow.value, react: K.react },
+        king: { state: K.state, wake: K.wake, windT: K.windT, cd: K.cd, grace: K.grace, hearts: progress.hearts, respawn: K.respawn, kind: K.kind, turn: K.turn, stomps: kingLog.stomps, pulls: kingLog.pulls, belches: kingLog.belches, sweeps: kingLog.sweeps, grabs: kingLog.grabs, mark: K.mark ? [K.mark.x, K.mark.z] : null, lane: K.lane, perch: [perch.x, perch.y, perch.z], ball: K.ball ? { x: K.ball.pos.x, y: K.ball.pos.y, z: K.ball.pos.z, t: K.ball.t, cosmetic: K.ball.cosmetic } : null, throws: kingLog.throws, hits: kingLog.hits, misses: kingLog.misses, balls: kingLog.balls.map((b) => ({ ...b })), mouth: mouthWorld(new THREE.Vector3()).toArray(), visible: kingRig.visible, glow: kingUniforms.uGlow.value, react: K.react },
         pipes: pipes.map((p) => ({ id: p.id, pumps: p.pumps, ripped: p.ripped, tip: p.tip.toArray() })),
         finale: { on: fin.on, t: fin.t, credits: fin.credits },
         trial: trial ? { id: trial.t.id, ring: trial.ring, time: trial.time } : null,

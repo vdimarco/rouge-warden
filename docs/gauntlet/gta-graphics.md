@@ -1298,3 +1298,598 @@ Unreal is not available in this environment, so in-engine frames are the last co
 - Playability raw: 39 / 10 dimensions, index 39
 - Total: 111 / 200
 - Delta vs last round: +1
+
+### Round 38 — 2026-10-21 — rubric v1
+
+- What changed: After the clearcoat and before the night grade, a matte midtone is multiplied by a tint from (0.62, 0.96, 1.18) in shade to (1.55, 1.12, 0.42) toward the sun, then scaled back to that pixel's luminance. The split is the crew key's half-lambert. Pixels the cool wash already owns, glossy bodywork, the sky and printed crew stay. NightFactor 1 leaves the colour.
+- Why it helped: Color palette was at 8. A clear day held one temperature, so the wall facing the sun matched the wall in shade and the road stayed a neutral grey.
+- Screenshots: before `docs/gauntlet/gta-graphics/round-38/before-frame.png`, after `docs/gauntlet/gta-graphics/round-38/after-frame.png`. Crops are `before-street.png` and `after-street.png`. Both use the walking camera (arm 420, socket Y 70, socket Z 110, pitch −12, horizontal FOV 90) looking down a street of the burnt-orange brick paper and the two-scale asphalt. Not an Unreal capture. The street crop mean absolute delta is 0.046 and the max is 0.267. The full-frame mean is 0.044. The shade wall goes duller brown, the sunlit wall stays burnt orange, and the road goes warm. `Scripts/test_day_grade.py` passed. The comic material was not applied in Unreal. `GET /gta/` returned 200. OpenSpec CLI is not installed, so the change files were not validated with `openspec`.
+- Next target: detail density, tied at 8 with lighting, atmosphere, character models and UI polish. Composition and particles stay at 6, because the walking socket and the rain displacement stay as they are. Animation smoothness stays at 3 and is skipped until a pose can be drawn.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 8 | The sun vector and the exposure are unchanged. The grade puts the luminance back. |
+| Color palette | 9 | Shade brick, sunlit brick and the road are three hues. It is still one multiply, and the shade is brown rather than skylight. |
+| Detail density | 8 | The street mesh is unchanged. |
+| Texture and material quality | 9 | The asphalt mix and the brick paper are unchanged. |
+| Composition and camera | 6 | The walking socket is unchanged. |
+| Atmosphere | 8 | The moon grade and the street sheen are unchanged. |
+| Character models | 8 | No figure changed. |
+| Animation smoothness | 3 | Skipped. The blend space still cannot be posed here. |
+| Particles and VFX | 6 | Rain rings are unchanged. |
+| UI polish | 8 | The radar is unchanged. |
+| Responsiveness and input latency | 4 | Not measured this round. |
+| Controls feel | 4 | Not played. |
+| Mission clarity | 5 | The objective words are unchanged. |
+| Pacing | 4 | Unchanged mission slice. |
+| Fun factor | 3 | Not played. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 4 | No new juice. |
+| Sound design | 3 | Not listened to. |
+| Variety | 3 | One street grade. |
+| Performance stability | 5 | `Scripts/test_day_grade.py` passed. The grade adds no texture taps. Frame time was not remeasured. |
+
+- Aesthetics raw: 73 / 10 dimensions, index 73
+- Playability raw: 39 / 10 dimensions, index 39
+- Total: 112 / 200
+- Delta vs last round: +1
+
+### Round 39 — 2026-10-21 — rubric v1
+
+- What changed: Each road at least 9 m wide and 15 m long gets eight bars across its middle, on the same white plane pool as the center dashes. A bar is 40 cm along the road, stops 80 cm short of each curb, and the next bar is 90 cm further on. The dash loop, the 9 m gate and the return count stay. Narrow streets stay bare.
+- Why it helped: Detail density was at 8. The avenue had a broken line down the middle and no crossing.
+- Screenshots: before `docs/gauntlet/gta-graphics/round-39/before-frame.png`, after `docs/gauntlet/gta-graphics/round-39/after-frame.png`. Crops are `before-bars.png` and `after-bars.png`. Both use the walking camera (arm 420, socket Y 70, socket Z 110, pitch −12, horizontal FOV 90) a few metres before the ladder on a 14 m road. Not an Unreal capture. The bar crop mean absolute delta is 0.183 and the max is 0.929. The full-frame mean is 0.079. The center dashes are in both frames. `Scripts/test_crosswalk.py` and `Scripts/test_lane_paint.py` passed. `QuebecTraces.cpp` was not compiled. `GET /gta/` returned 200. OpenSpec CLI is not installed, so the change files were not validated with `openspec`. The bars were not confirmed in Unreal.
+- Next target: lighting, tied at 8 with atmosphere, character models and UI polish. Composition and particles stay at 6, because the walking socket and the rain displacement stay as they are. Animation smoothness stays at 3 and is skipped until a pose can be drawn.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 8 | The sun and the night grade are unchanged. |
+| Color palette | 9 | The bars are the existing white under the day grade. No new hue. |
+| Detail density | 9 | The ladder crosses the avenue. The bars are flat planes, not worn paint. |
+| Texture and material quality | 9 | The asphalt mix is unchanged. The bar is one white material. |
+| Composition and camera | 6 | The walking socket is unchanged. |
+| Atmosphere | 8 | The moon grade and the street sheen are unchanged. |
+| Character models | 8 | No figure changed. |
+| Animation smoothness | 3 | Skipped. The blend space still cannot be posed here. |
+| Particles and VFX | 6 | Rain rings are unchanged. |
+| UI polish | 8 | The radar is unchanged. |
+| Responsiveness and input latency | 4 | Not measured this round. |
+| Controls feel | 4 | Not played. |
+| Mission clarity | 5 | The objective words are unchanged. |
+| Pacing | 4 | Unchanged mission slice. |
+| Fun factor | 3 | Not played. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 4 | No new juice. |
+| Sound design | 3 | Not listened to. |
+| Variety | 3 | The ladder is on the wide park roads. A narrow street stays bare. |
+| Performance stability | 5 | `Scripts/test_crosswalk.py` passed. Twenty-eight roads would add 224 bars when the ground trace hits. Frame time was not remeasured. |
+
+- Aesthetics raw: 74 / 10 dimensions, index 74
+- Playability raw: 39 / 10 dimensions, index 39
+- Total: 113 / 200
+- Delta vs last round: +1
+
+### Round 40 — 2026-10-21 — rubric v1
+
+- What changed: After the clear-day hue grade and before the night grade, a matte surface is multiplied by a half-lambert shade from 0.58 in shade to 1 toward the sun. The hue grade still puts the luminance back first. Gloss, the sky and printed crew stay. NightFactor 1 leaves the colour. There is no shadow ray, so the road under a wall is not darkened.
+- Why it helped: Lighting was at 8. The shade wall and the sunlit wall were the same brightness, because the hue grade gives the luminance back.
+- Screenshots: before `docs/gauntlet/gta-graphics/round-40/before-frame.png`, after `docs/gauntlet/gta-graphics/round-40/after-frame.png`. Crops are `before-shade.png` and `after-shade.png`. Both use the walking camera (arm 420, socket Y 70, socket Z 110, pitch −12, horizontal FOV 90) on the brick street from the hue round. Not an Unreal capture. The shade-wall crop mean absolute delta is 0.076 and the max is 0.267. The full-frame mean is 0.026. The sunlit wall and the road are unchanged. `Scripts/test_key_shade.py` passed. The comic material was not applied in Unreal. `GET /gta/` returned 200. OpenSpec CLI is not installed, so the change files were not validated with `openspec`.
+- Next target: atmosphere, tied at 8 with character models and UI polish. Composition and particles stay at 6, because the walking socket and the rain displacement stay as they are. Animation smoothness stays at 3 and is skipped until a pose can be drawn.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 9 | The shade wall goes darker. The sunlit wall and the road stay. There is still no cast shadow on the street. |
+| Color palette | 9 | The hues are the round-38 grade. This multiply changes value. |
+| Detail density | 9 | The street mesh and the ladder are unchanged. |
+| Texture and material quality | 9 | The asphalt mix and the brick paper are unchanged. |
+| Composition and camera | 6 | The walking socket is unchanged. |
+| Atmosphere | 8 | The moon grade, the haze and the clouds are unchanged. |
+| Character models | 8 | No figure changed. |
+| Animation smoothness | 3 | Skipped. The blend space still cannot be posed here. |
+| Particles and VFX | 6 | Rain rings are unchanged. |
+| UI polish | 8 | The radar is unchanged. |
+| Responsiveness and input latency | 4 | Not measured this round. |
+| Controls feel | 4 | Not played. |
+| Mission clarity | 5 | The objective words are unchanged. |
+| Pacing | 4 | Unchanged mission slice. |
+| Fun factor | 3 | Not played. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 4 | No new juice. |
+| Sound design | 3 | Not listened to. |
+| Variety | 3 | One street, one sun direction. |
+| Performance stability | 5 | `Scripts/test_key_shade.py` passed. The shade is a scalar. Frame time was not remeasured. |
+
+- Aesthetics raw: 75 / 10 dimensions, index 75
+- Playability raw: 39 / 10 dimensions, index 39
+- Total: 114 / 200
+- Delta vs last round: +1
+
+### Round 41 — 2026-10-21 — rubric v1
+
+- What changed: After the far aerial mix and before the clouds, a clear-day surface lerps toward warm dust `(0.74, 0.71, 0.64)`. The band rises from 5 m to 18 m, dies by 70 m, and uses the same horizon weight as the far haze. Sky pixels stay. NightFactor 1 leaves the colour. The far window, from 25 m to 140 m, is unchanged.
+- Why it helped: Atmosphere was at 8. The far haze is zero inside 25 m, and the walking street lives inside that. The road ahead now pales and warms with distance. The foreground crosswalk does not.
+- Screenshots: before `docs/gauntlet/gta-graphics/round-41/before-frame.png`, after `docs/gauntlet/gta-graphics/round-41/after-frame.png`. Distance crops are `before-dust.png` and `after-dust.png`. Both use the walking camera (arm 420, socket Y 70, socket Z 110, pitch −12, horizontal FOV 90) on the brick street. Not an Unreal capture. The distance-crop mean absolute delta is 0.074 and the full-frame mean is 0.021 (max 0.256). The bottom of the frame, nearer than 5 m, stays (mean 0.00014). A road pixel at 13.9 m goes from about (0.36, 0.31, 0.17) to (0.48, 0.40, 0.22). `Scripts/test_street_air.py` passed, and the locked comic tests still passed. The comic material was not applied in Unreal. `GET /gta/` returned 200. OpenSpec CLI is not installed, so the change files were not validated with `openspec`.
+- Next target: character models, tied at 8 with UI polish. Composition and particles stay at 6, because the walking socket and the rain displacement stay as they are. Animation smoothness stays at 3 and is skipped until a pose can be drawn.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 9 | The shade wall is unchanged. Dust is a depth mix, not a new light. |
+| Color palette | 9 | The foreground keeps the round-38 hues. The distance warms because it is in the dust. |
+| Detail density | 9 | The street mesh, the dashes and the ladder are unchanged. |
+| Texture and material quality | 9 | The asphalt mix and the brick paper are unchanged. |
+| Composition and camera | 6 | The walking socket is unchanged. |
+| Atmosphere | 9 | The road ahead pales into warm dust. The foreground stays sharp. Past 70 m the cool haze still owns the view. There is no light shaft. |
+| Character models | 8 | No figure changed. |
+| Animation smoothness | 3 | Skipped. The blend space still cannot be posed here. |
+| Particles and VFX | 6 | Rain rings are unchanged. |
+| UI polish | 8 | The radar is unchanged. |
+| Responsiveness and input latency | 4 | Not measured this round. |
+| Controls feel | 4 | Not played. |
+| Mission clarity | 5 | The objective words are unchanged. |
+| Pacing | 4 | Unchanged mission slice. |
+| Fun factor | 3 | Not played. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 4 | No new juice. |
+| Sound design | 3 | Not listened to. |
+| Variety | 3 | One clear-day street. Night still skips the dust. |
+| Performance stability | 5 | `Scripts/test_street_air.py` passed. The band is a lerp. Frame time was not remeasured. |
+
+- Aesthetics raw: 76 / 10 dimensions, index 76
+- Playability raw: 39 / 10 dimensions, index 39
+- Total: 115 / 200
+- Delta vs last round: +1
+
+### Round 42 — 2026-10-21 — rubric v1
+
+- What changed: the radar heading is filled. An ink wedge, the same triangle grown by 1.55 about its centre, is drawn first. The paper wedge is the original tip and tails. The three paper outline strokes stay. Avenue casing and the grey side streets stay.
+- Why it helped: UI polish was at 8. The heading was a paper outline and the avenue centre is paper, so the point of the arrow fell into the wide road.
+- Screenshots: before `docs/gauntlet/gta-graphics/round-42/before-frame.png`, after `docs/gauntlet/gta-graphics/round-42/after-frame.png`. Crops are `before-arrow.png` and `after-arrow.png`, a 4× nearest enlargement of the heading. The disc is scale 1. Not an Unreal capture. At scale 1, 59 pixels change. The heading crop mean absolute delta is 0.227 and the max is 0.967. The full disc mean is 0.0007. `Scripts/test_radar_arrow.py` passed. `Scripts/test_radar_rank.py` passed. `QuebecGameplay.cpp` was not compiled. `GET /gta/` returned 200. OpenSpec CLI is not installed, so the change files were not validated with `openspec`.
+- Next target: character models, the remaining aesthetics score at 8. Composition and particles stay at 6, because the walking socket and the rain displacement stay as they are. Animation smoothness stays at 3 and is skipped until a pose can be drawn.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 9 | The street shade is unchanged. |
+| Color palette | 9 | The arrow uses the existing ink and paper. |
+| Detail density | 9 | The street mesh is unchanged. |
+| Texture and material quality | 9 | The asphalt mix is unchanged. |
+| Composition and camera | 6 | The walking socket is unchanged. |
+| Atmosphere | 9 | The street dust is unchanged. |
+| Character models | 8 | No figure changed. |
+| Animation smoothness | 3 | Skipped. The blend space still cannot be posed here. |
+| Particles and VFX | 6 | Rain rings are unchanged. |
+| UI polish | 9 | The heading is a solid paper wedge, and the ink edge cuts the avenue. It is still a flat triangle. |
+| Responsiveness and input latency | 4 | Not measured this round. |
+| Controls feel | 4 | Not played. |
+| Mission clarity | 5 | The objective words are unchanged. The diamond is unchanged. |
+| Pacing | 4 | Unchanged mission slice. |
+| Fun factor | 3 | Not played. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 4 | The heading is easier to see. No new juice. |
+| Sound design | 3 | Not listened to. |
+| Variety | 3 | One disc, one heading. |
+| Performance stability | 5 | `Scripts/test_radar_arrow.py` passed. The fill is thirty line strokes. Frame time was not remeasured. |
+
+- Aesthetics raw: 77 / 10 dimensions, index 77
+- Playability raw: 39 / 10 dimensions, index 39
+- Total: 116 / 200
+- Delta vs last round: +1
+
+### Round 43 — 2026-10-21 — rubric v1
+
+- What changed: a car (ride kind 0) that is not a wreck, and is faster than 80 cm/s or holding throttle, grows a column of six pale spheres from the tail. A new puff every 0.16 s lives 1.1 s, drifts back at 160 cm/s and rises at 180 cm/s, swelling from scale 0.16 to 0.55. A stopped car stays clear. A wreck still uses the bonnet smoke. The pond pedalo and the park bicycle do not.
+- Why it helped: Particles were at 6. The only smoke was the wreck column off the bonnet, and a healthy car left no trail.
+- Screenshots: before `docs/gauntlet/gta-graphics/round-43/before-frame.png`, after `docs/gauntlet/gta-graphics/round-43/after-frame.png`. Crops are `before-plume.png` and `after-plume.png`. Both use the walking camera (arm 420, socket Y 70, socket Z 110, pitch −12, horizontal FOV 90) behind a stand-in car. Not an Unreal capture. The plume crop mean absolute delta is 0.184 and the max is 0.573. The full-frame mean is 0.0016. 2276 pixels change. `Scripts/test_exhaust.py` passed. `QuebecDrive.cpp` was not compiled. `GET /gta/` returned 200. OpenSpec CLI is not installed, so the change files were not validated with `openspec`.
+- Next target: composition, still at 6. The walking socket stays. Particles can move again after this column is in. Animation smoothness stays at 3 and is skipped until a pose can be drawn.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 9 | The street shade is unchanged. The puffs use the same sun. |
+| Color palette | 9 | The puffs are the existing white material. |
+| Detail density | 9 | The street mesh is unchanged. The car in the picture is a stand-in box. |
+| Texture and material quality | 9 | The asphalt mix is unchanged. |
+| Composition and camera | 6 | The walking socket is unchanged. |
+| Atmosphere | 9 | The street dust is unchanged. |
+| Character models | 8 | No figure changed. |
+| Animation smoothness | 3 | Skipped. The blend space still cannot be posed here. |
+| Particles and VFX | 7 | A running car leaves a rising column at the tail. The puffs are spheres, not a volume, and a parked car stays clear. |
+| UI polish | 9 | The radar heading is unchanged. |
+| Responsiveness and input latency | 4 | Not measured this round. |
+| Controls feel | 4 | Not played. |
+| Mission clarity | 5 | The objective words are unchanged. |
+| Pacing | 4 | Unchanged mission slice. |
+| Fun factor | 3 | Not played. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 4 | The column is the new mark. No new juice. |
+| Sound design | 3 | Not listened to. |
+| Variety | 3 | One car, one column. Rain rings are unchanged. |
+| Performance stability | 5 | `Scripts/test_exhaust.py` passed. Six spheres. Frame time was not remeasured. |
+
+- Aesthetics raw: 78 / 10 dimensions, index 78
+- Playability raw: 39 / 10 dimensions, index 39
+- Total: 117 / 200
+- Delta vs last round: +1
+
+### Round 44 — 2026-10-21 — rubric v1
+
+- What changed: on foot, the opening pitch is −16, inside the −25..−5 clamp. An unset pitch of 0 was landing on the upward stop at −5. Spawn, leaving a car, a respawn, and a side-job recovery on foot use that pitch. The walking socket, the clamps, the car's −12 possess pitch, and the drive look stay.
+- Why it helped: Composition was at 6. The horizon sat near the middle of the frame, so the street ahead was a short slot between the walls.
+- Screenshots: before `docs/gauntlet/gta-graphics/round-44/before-frame.png`, after `docs/gauntlet/gta-graphics/round-44/after-frame.png`. Crops are `before-road.png` and `after-road.png`. The before frame is pitch −5. The after frame is pitch −16. Both use the walking camera (arm 420, socket Y 70, socket Z 110, horizontal FOV 90) on the brick street, with a stand-in figure. Not an Unreal capture. On a 540-tall frame the horizon row moves from 227 to 131. The full-frame mean absolute delta is 0.074 and the max is 0.723. The far-street crop mean is 0.092 and the max is 0.497. The figure stays in frame. `Scripts/test_street_look.py` passed. `Scripts/test_camera_shoulder.py` passed. `QuebecGameplay.cpp` was not compiled. `GET /gta/` returned 200. OpenSpec CLI is not installed, so the change files were not validated with `openspec`.
+- Next target: particles, tied with composition at 7. Leaves can still be shown without moving the rain displacement. Animation smoothness stays at 3 and is skipped until a pose can be drawn.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 9 | The street shade is unchanged. |
+| Color palette | 9 | Brick, asphalt, and the figure use the existing colours. |
+| Detail density | 9 | The street mesh is unchanged. |
+| Texture and material quality | 9 | The asphalt mix is unchanged. |
+| Composition and camera | 7 | The horizon sits higher and the street runs farther past the figure. It is still a spring arm on a stand-in figure. |
+| Atmosphere | 9 | The street dust is unchanged. The sky wedge is smaller because the view tips down. |
+| Character models | 8 | The figure is the same stand-in. |
+| Animation smoothness | 3 | Skipped. The blend space still cannot be posed here. |
+| Particles and VFX | 7 | The tail column is unchanged. Rain rings are unchanged. |
+| UI polish | 9 | The radar heading is unchanged. |
+| Responsiveness and input latency | 4 | Not measured this round. |
+| Controls feel | 4 | Not played. |
+| Mission clarity | 5 | The objective words are unchanged. |
+| Pacing | 4 | Unchanged mission slice. |
+| Fun factor | 3 | Not played. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 4 | No new juice. |
+| Sound design | 3 | Not listened to. |
+| Variety | 3 | One street, one opening pitch. |
+| Performance stability | 5 | `Scripts/test_street_look.py` passed. The pitch is a constant. Frame time was not remeasured. |
+
+- Aesthetics raw: 79 / 10 dimensions, index 79
+- Playability raw: 39 / 10 dimensions, index 39
+- Total: 118 / 200
+- Delta vs last round: +1
+
+### Round 45 — 2026-10-21 — rubric v1
+
+- What changed: the nearest tree within 18 m sheds ten autumn cards from the lower crown. A new card every 0.22 s lives 2.2 s, drifts across at 120 cm/s and down at 140 cm/s. Ten slots cover that life, so a card fades before its slot is reused. A farther tree stays still. The rain streak shader stays.
+- Why it helped: Particles were at 7. The tail column is the only loose smoke, and a crown did not shed.
+- Screenshots: before `docs/gauntlet/gta-graphics/round-45/before-frame.png`, after `docs/gauntlet/gta-graphics/round-45/after-frame.png`. Crops are `before-leaves.png` and `after-leaves.png`. Both use the opening walk camera (arm 420, socket Y 70, socket Z 110, pitch −16, horizontal FOV 90) with one sidewalk tree. Not an Unreal capture. The leaf crop mean absolute delta is 0.069 and the max is 0.350. The full-frame mean is 0.0037. 8193 pixels change. `Scripts/test_leaves.py` passed. `QuebecVegetation.cpp` was not compiled. `GET /gta/` returned 200. OpenSpec CLI is not installed, so the change files were not validated with `openspec`.
+- Next target: composition, back to the lowest aesthetics score at 7. The opening pitch is in, and the socket stays. Animation smoothness stays at 3 and is skipped until a pose can be drawn.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 9 | The street shade is unchanged. |
+| Color palette | 9 | The cards use the autumn leaf material. |
+| Detail density | 9 | The street mesh is unchanged. The tree in the picture is a stand-in. |
+| Texture and material quality | 9 | The asphalt mix is unchanged. |
+| Composition and camera | 7 | The opening pitch is unchanged. |
+| Atmosphere | 9 | The street dust is unchanged. |
+| Character models | 8 | No figure changed. |
+| Animation smoothness | 3 | Skipped. The blend space still cannot be posed here. |
+| Particles and VFX | 8 | Ochre cards leave the lower crown and drift down across the street. They are flat cards, not a canopy, and a distant tree stays still. |
+| UI polish | 9 | The radar heading is unchanged. |
+| Responsiveness and input latency | 4 | Not measured this round. |
+| Controls feel | 4 | Not played. |
+| Mission clarity | 5 | The objective words are unchanged. |
+| Pacing | 4 | Unchanged mission slice. |
+| Fun factor | 3 | Not played. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 4 | The cards are the new mark. No new juice. |
+| Sound design | 3 | Not listened to. |
+| Variety | 3 | One tree, one drift. Rain rings are unchanged. |
+| Performance stability | 5 | `Scripts/test_leaves.py` passed. Ten cards. Frame time was not remeasured. |
+
+- Aesthetics raw: 80 / 10 dimensions, index 80
+- Playability raw: 39 / 10 dimensions, index 39
+- Total: 119 / 200
+- Delta vs last round: +1
+
+### Round 46 — 2026-10-21 — rubric v1
+
+- What changed: on foot, the opening yaw aims at a point 18 m down the nearest avenue, a road at least 9 m wide within 25 m. At the park spawn that is about 110°, instead of the authored 77.5° that looks along the curb. The pitch stays −16. The walking socket stays. A respawn uses the same aim. Getting out of a car still uses the car's yaw. A narrower street does not count.
+- Why it helped: Composition was at 7. From the sidewalk, a look parallel to Sherbrooke left the avenue as a sliver beside the lawn.
+- Screenshots: before `docs/gauntlet/gta-graphics/round-46/before-frame.png`, after `docs/gauntlet/gta-graphics/round-46/after-frame.png`. Crops are `before-street.png` and `after-street.png`. The before yaw is the authored 77.5°. The after yaw is 110.1°. Both use the opening walk camera (arm 420, socket Y 70, socket Z 110, pitch −16, horizontal FOV 90) at the surveyed sidewalk spawn, with surveyed building footprints and a stand-in of the parked car. Not an Unreal capture. The street crop mean absolute delta is 0.082 and the max is 0.382. The full-frame mean is 0.044 and the max is 0.382. 139276 pixels change. The figure stays in frame. `Scripts/test_street_aim.py`, `Scripts/test_street_look.py`, and `Scripts/test_camera_shoulder.py` passed. `QuebecGameplay.cpp` and `QuebecCombat.cpp` were not compiled. `GET /gta/` returned 200. OpenSpec CLI is not installed, so the change files were not validated with `openspec`.
+- Next target: animation smoothness, still at 3. A procedural sway can be drawn offline. The socket and the opening pitch stay.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 9 | The street shade is unchanged. |
+| Color palette | 9 | Brick, asphalt, and the figure use the existing colours. The car in the picture is a stand-in box. |
+| Detail density | 9 | The street mesh is unchanged. The buildings are surveyed footprints. |
+| Texture and material quality | 9 | The asphalt mix is unchanged. |
+| Composition and camera | 8 | The opening look turns toward the lane, so the avenue and the parked car sit in the frame. The foreground is still the park lawn, and the figure is still a spring arm. |
+| Atmosphere | 9 | The street dust is unchanged. |
+| Character models | 8 | The figure is the same stand-in. |
+| Animation smoothness | 3 | Skipped. The blend space still cannot be posed here. |
+| Particles and VFX | 8 | The leaf cards are unchanged. Rain rings are unchanged. |
+| UI polish | 9 | The radar heading is unchanged. |
+| Responsiveness and input latency | 4 | Not measured this round. |
+| Controls feel | 4 | Not played. |
+| Mission clarity | 5 | The objective words are unchanged. |
+| Pacing | 4 | Unchanged mission slice. |
+| Fun factor | 3 | Not played. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 4 | No new juice. |
+| Sound design | 3 | Not listened to. |
+| Variety | 3 | One avenue, one opening aim. |
+| Performance stability | 5 | `Scripts/test_street_aim.py` passed. The aim is a loop over the road segments at spawn and respawn. Frame time was not remeasured. |
+
+- Aesthetics raw: 81 / 10 dimensions, index 81
+- Playability raw: 39 / 10 dimensions, index 39
+- Total: 120 / 200
+- Delta vs last round: +1
+
+### Round 47 — 2026-10-21 — rubric v1
+
+- What changed: on foot, when the crew anim instance is absent, the body rocks with an integrated phase and planar speed. A walk at 180 cm/s leans 12° and shifts 4 cm at the side peak. An idle is 0.34 of that. Starting or stopping does not snap the phase or the lean. The mesh keeps its yaw. A swim, a knockdown, a fall, a vehicle, and the crew blend space leave the mesh alone. The feet do not step.
+- Why it helped: Animation smoothness was at 3. The blend space still cannot be posed, and the stand-in was rigid.
+- Screenshots: before `docs/gauntlet/gta-graphics/round-47/before-frame.png`, after `docs/gauntlet/gta-graphics/round-47/after-frame.png`. Crops are `before-sway.png` and `after-sway.png`. The before frame is the rest pose. The after frame is the walk peak. Both use the opening walk camera (arm 420, socket Y 70, socket Z 110, pitch −16, yaw about 110°, horizontal FOV 90) at the surveyed sidewalk spawn. Not an Unreal capture. The figure crop mean absolute delta is 0.034 and the max is 0.319. The full-frame mean is 0.0020 and the max is 0.319. 7035 pixels change. `Scripts/test_sway.py` and `Scripts/test_street_aim.py` passed. `QuebecGameplay.cpp` was not compiled. `GET /gta/` returned 200. OpenSpec CLI is not installed, so the change files were not validated with `openspec`.
+- Next target: animation smoothness, still the lowest aesthetics score at 4. The rock is in. A step needs a pose the blend space cannot give here.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 9 | The street shade is unchanged. |
+| Color palette | 9 | The figure uses the same stand-in colours. |
+| Detail density | 9 | The street mesh is unchanged. |
+| Texture and material quality | 9 | The asphalt mix is unchanged. |
+| Composition and camera | 8 | The opening aim is unchanged. |
+| Atmosphere | 9 | The street dust is unchanged. |
+| Character models | 8 | The figure is the same stand-in, leaned. |
+| Animation smoothness | 4 | The body rocks to the side while walking, and the idle rock is smaller. The feet do not step. The crew blend space still cannot be posed here. |
+| Particles and VFX | 8 | The leaf cards are unchanged. Rain rings are unchanged. |
+| UI polish | 9 | The radar heading is unchanged. |
+| Responsiveness and input latency | 4 | Not measured this round. |
+| Controls feel | 4 | Not played. |
+| Mission clarity | 5 | The objective words are unchanged. |
+| Pacing | 4 | Unchanged mission slice. |
+| Fun factor | 3 | Not played. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 4 | The lean is the new mark. No new juice. |
+| Sound design | 3 | Not listened to. |
+| Variety | 3 | One rock, walk and idle. |
+| Performance stability | 5 | `Scripts/test_sway.py` passed. The sway is one sine. Frame time was not remeasured. |
+
+- Aesthetics raw: 82 / 10 dimensions, index 82
+- Playability raw: 39 / 10 dimensions, index 39
+- Total: 121 / 200
+- Delta vs last round: +1
+
+### Round 48 — 2026-10-21 — rubric v1
+
+- What changed: when the crew body is missing and the casual skeleton, its idle, and its walk all load, the player mesh stays visible and plays that walk above a walk speed. Nearly still, it plays the idle. The body rock still leans the whole mesh. The static clothed stand remains the fallback when those clips are missing, and that stand does not step. A sprint has no casual run clip, so it keeps the walk. The opening pitch, the socket, and the sway amplitudes stay.
+- Why it helped: Animation smoothness was at 4. The rock leaned the whole body, and the feet stayed together.
+- Screenshots: before `docs/gauntlet/gta-graphics/round-48/before-frame.png`, after `docs/gauntlet/gta-graphics/round-48/after-frame.png`. Crops are `before-stride.png` and `after-stride.png`. The before frame is the casual idle, first key. The after frame is the walk at 0.75 s, where the foot centers are about 79 cm apart. Both use the opening walk camera (arm 420, socket Y 70, socket Z 110, pitch −16, yaw about 110°, horizontal FOV 90) at the surveyed sidewalk spawn, with the same walk-peak rock (12° and 4 cm). Not an Unreal capture. The figure crop mean absolute delta is 0.040 and the max is 0.393. The full-frame mean is 0.0021 and the max is 0.393. 5042 pixels change. One foot is ahead and the near arm swings back. `Scripts/test_stride.py`, `Scripts/test_player_stand.py`, and `Scripts/test_sway.py` passed. `QuebecGameplay.cpp` was not compiled. `GET /gta/` returned 200. OpenSpec CLI is not installed, so the change files were not validated with `openspec`.
+- Next target: character models, tied at 8 with particles. Animation stays at 5. Another frame of this same walk will not move it. The crew blend space still cannot be posed.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 9 | The street shade is unchanged. |
+| Color palette | 9 | The civilian uses the casual cloth colors. The street hues are unchanged. |
+| Detail density | 9 | The street mesh is unchanged. |
+| Texture and material quality | 9 | The asphalt mix is unchanged. |
+| Composition and camera | 8 | The opening aim is unchanged. |
+| Atmosphere | 9 | The street dust is unchanged. |
+| Character models | 8 | The figure is the same casual civilian, now mid-stride. It is still one clothed mesh. |
+| Animation smoothness | 5 | The feet take a stride and the near arm swings back. It is one walk clip on the missing-rig path, and the crew blend space still cannot be posed here. |
+| Particles and VFX | 8 | The leaf cards are unchanged. Rain rings are unchanged. |
+| UI polish | 9 | The radar heading is unchanged. |
+| Responsiveness and input latency | 4 | Not measured this round. |
+| Controls feel | 4 | Not played. |
+| Mission clarity | 5 | The objective words are unchanged. |
+| Pacing | 4 | Unchanged mission slice. |
+| Fun factor | 3 | Not played. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 4 | The stride is the new mark. No new juice. |
+| Sound design | 3 | Not listened to. |
+| Variety | 3 | One civilian, idle and walk. |
+| Performance stability | 5 | `Scripts/test_stride.py` passed. The clip is the existing walk. Frame time was not remeasured. |
+
+- Aesthetics raw: 83 / 10 dimensions, index 83
+- Playability raw: 39 / 10 dimensions, index 39
+- Total: 122 / 200
+- Delta vs last round: +1
+
+### Round 49 — 2026-10-21 — rubric v1
+
+- What changed: on foot, faster than 80 cm/s, five pale spheres are born at the rear shoe. A new puff every 0.16 s lives 0.7 s, so a slot is free before it is reused. It drifts back, rises, and grows from a 12 cm radius, then fades. The walker leaves it behind. A slow step, a swim, a knockdown, a fall, and a vehicle do not birth one. The rain streak shader and the leaf slots stay.
+- Why it helped: Particles were at 8. The leaf cards, the rain, and the tail column were already in, and a planted shoe left nothing.
+- Screenshots: before `docs/gauntlet/gta-graphics/round-49/before-frame.png`, after `docs/gauntlet/gta-graphics/round-49/after-frame.png`. Crops are `before-scuff.png` and `after-scuff.png`. Both are the casual stride at 0.75 s. The after frame adds puffs aged 0.04, 0.20, 0.36, and 0.52 s, with the walker moving at 180 cm/s. Both use the opening walk camera (arm 420, socket Y 70, socket Z 110, pitch −16, yaw about 110°, horizontal FOV 90) at the surveyed sidewalk spawn, with the same walk-peak rock. Not an Unreal capture. The foot crop mean absolute delta is 0.080 and the max is 0.426. The full-frame mean is 0.00046 and the max is 0.426. 949 pixels change. `Scripts/test_scuff.py` and `Scripts/test_stride.py` passed. `QuebecGameplay.cpp` was not compiled. `GET /gta/` returned 200. OpenSpec CLI is not installed, so the change files were not validated with `openspec`.
+- Next target: character models, tied at 8 with composition. Animation stays at 5. Another frame of the same walk will not move it. The crew blend space still cannot be posed.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 9 | The street shade is unchanged. |
+| Color palette | 9 | The puffs use the existing white material. |
+| Detail density | 9 | The street mesh is unchanged. |
+| Texture and material quality | 9 | The asphalt mix is unchanged. |
+| Composition and camera | 8 | The opening aim is unchanged. |
+| Atmosphere | 9 | The street dust grade is unchanged. The puffs are spheres, not that grade. |
+| Character models | 8 | The figure is the same casual civilian. |
+| Animation smoothness | 5 | The stride is unchanged. The crew blend space still cannot be posed here. |
+| Particles and VFX | 9 | A pale puff sits at the planted shoe and is left behind. The spheres are soft blobs, not a kicked sheet, and a standing walker stays clear. |
+| UI polish | 9 | The radar heading is unchanged. |
+| Responsiveness and input latency | 4 | Not measured this round. |
+| Controls feel | 4 | Not played. |
+| Mission clarity | 5 | The objective words are unchanged. |
+| Pacing | 4 | Unchanged mission slice. |
+| Fun factor | 3 | Not played. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 4 | The puff is the new mark. No new juice. |
+| Sound design | 3 | Not listened to. |
+| Variety | 3 | One shoe, one trail. Rain rings and leaf cards are unchanged. |
+| Performance stability | 5 | `Scripts/test_scuff.py` passed. Five spheres. Frame time was not remeasured. |
+
+- Aesthetics raw: 84 / 10 dimensions, index 84
+- Playability raw: 39 / 10 dimensions, index 39
+- Total: 123 / 200
+- Delta vs last round: +1
+
+### Round 50 — 2026-10-21 — rubric v1
+
+- What changed: when the crew body is missing and the hoodie skeleton, its idle, and its walk all load, the player mesh stays visible and plays that walk above a walk speed. Nearly still, it plays the idle. The imported cloth colours stay, so the hood, the sleeve cuffs, the hem, and the bare calves remain. A sprint has no hoodie run clip, so it keeps the walk. The casual walk remains when the hoodie assets are missing, and the static stand remains after that. The opening pitch, the socket, and the sway amplitudes stay. Goons still repaint their own copy of this mesh.
+- Why it helped: Character models were at 8. From the opening camera the lead was the back of a flat t-shirt.
+- Screenshots: before `docs/gauntlet/gta-graphics/round-50/before-frame.png`, after `docs/gauntlet/gta-graphics/round-50/after-frame.png`. Crops are `before-garment.png` and `after-garment.png`. Both are a walk at 0.75 s. The before frame is the casual body. The after frame is the hoodie. Both use the opening walk camera (arm 420, socket Y 70, socket Z 110, pitch −16, yaw about 110°, horizontal FOV 90) at the surveyed sidewalk spawn, with the same walk-peak rock (12° and 4 cm). Foot dust is left out of both frames. Not an Unreal capture. The figure crop mean absolute delta is 0.030 and the max is 0.396. The full-frame mean is 0.0011 and the max is 0.396. 4511 pixels change. The back shows a hood, sleeve cuffs, and a hem, and the calves are bare. `Scripts/test_garment.py`, `Scripts/test_stride.py`, and `Scripts/test_player_stand.py` passed. `QuebecGameplay.cpp` was not compiled. `GET /gta/` returned 200. OpenSpec CLI is not installed, so the change files were not validated with `openspec`.
+- Next target: composition, the lowest aesthetics score that can still move. Animation stays at 5. Another frame of this walk will not move it. The crew blend space still cannot be posed.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 9 | The street shade is unchanged. |
+| Color palette | 9 | The street hues are unchanged. The hoodie keeps its imported cloth colours. |
+| Detail density | 9 | The street mesh is unchanged. |
+| Texture and material quality | 9 | The asphalt mix is unchanged. |
+| Composition and camera | 8 | The opening aim is unchanged. |
+| Atmosphere | 9 | The street dust grade is unchanged. |
+| Character models | 9 | The back of the figure has a hood, sleeve cuffs, and a hem, and the calves are bare. It is still one CC0 body. |
+| Animation smoothness | 5 | The stride is the hoodie walk, the same kind of clip as before. The crew blend space still cannot be posed here. |
+| Particles and VFX | 9 | The shoe puffs are unchanged. They are left out of these frames. |
+| UI polish | 9 | The radar heading is unchanged. |
+| Responsiveness and input latency | 4 | Not measured this round. |
+| Controls feel | 4 | Not played. |
+| Mission clarity | 5 | The objective words are unchanged. |
+| Pacing | 4 | Unchanged mission slice. |
+| Fun factor | 3 | Not played. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 4 | The garment is the new mark. No new juice. |
+| Sound design | 3 | Not listened to. |
+| Variety | 3 | One lead outfit. The casual walk remains only when the hoodie is missing. |
+| Performance stability | 5 | `Scripts/test_garment.py` passed. The mesh is the existing hoodie. Frame time was not remeasured. |
+
+- Aesthetics raw: 85 / 10 dimensions, index 85
+- Playability raw: 39 / 10 dimensions, index 39
+- Total: 124 / 200
+- Delta vs last round: +1
+
+### Round 51 — 2026-10-21 — rubric v1
+
+- What changed: the opening shade draws the park-inventory trees whose trunks are within 50 m of the spawn. A trunk centred at 0.32 of the tree height, 0.64 of the height long, matches the level builder. The crown is an ellipsoid from about 0.23 of the height to the top, in the inventory leaf colour. The level already instances the real crowns. Pitch, aim, socket, and the pawn stay. The player car stays the box.
+- Why it helped: Composition was at 8. The opening shade was an empty lawn, so the avenue had nothing in front of it.
+- Screenshots: before `docs/gauntlet/gta-graphics/round-51/before-frame.png`, after `docs/gauntlet/gta-graphics/round-51/after-frame.png`. Crops of the avenue band are `before-grove.png` and `after-grove.png`. Both use the opening walk camera (arm 420, socket Y 70, socket Z 110, pitch −16, yaw about 110°, horizontal FOV 90) at the surveyed sidewalk spawn, with the hoodie walk at 0.75 s and the same walk-peak rock. Foot dust is left out. Not an Unreal capture. The full-frame mean absolute delta is 0.040 and the max is 0.400. 94655 pixels change. A foreground trunk stands in the middle of the avenue, and crowns sit on both sides. The figure stays in the lower lawn. `Scripts/test_opening_grove.py` passed. The vegetation actor was not recompiled. `GET /gta/` returned 200. OpenSpec CLI is not installed, so the change files were not validated with `openspec`.
+- Next target: the player car. The box on the right of this frame is still a stand-in. Animation stays at 5.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 9 | The street shade is unchanged. |
+| Color palette | 9 | The crowns use the existing leaf colours. The street hues are unchanged. |
+| Detail density | 9 | The street mesh is unchanged. The crowns are simple volumes. |
+| Texture and material quality | 9 | The asphalt mix is unchanged. |
+| Composition and camera | 9 | A foreground trunk and a row of crowns frame the avenue. The lawn in front of the figure is still open. |
+| Atmosphere | 9 | The street dust grade is unchanged. |
+| Character models | 9 | The hoodie is unchanged. |
+| Animation smoothness | 5 | The stride is unchanged. The crew blend space still cannot be posed here. |
+| Particles and VFX | 9 | The shoe puffs are unchanged. They are left out of these frames. |
+| UI polish | 9 | The radar heading is unchanged. |
+| Responsiveness and input latency | 4 | Not measured this round. |
+| Controls feel | 4 | Not played. |
+| Mission clarity | 5 | The objective words are unchanged. |
+| Pacing | 4 | Unchanged mission slice. |
+| Fun factor | 3 | Not played. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 4 | The trees are the new mark. No new juice. |
+| Sound design | 3 | Not listened to. |
+| Variety | 3 | One grove in this frame. The rest of the inventory stays where it was. |
+| Performance stability | 5 | `Scripts/test_opening_grove.py` passed. Thirty-one nearby trees. Frame time was not remeasured. |
+
+- Aesthetics raw: 86 / 10 dimensions, index 86
+- Playability raw: 39 / 10 dimensions, index 39
+- Total: 125 / 200
+- Delta vs last round: +1
+
+### Round 52 — 2026-10-21 — rubric v1
+
+- What changed: the opening shade draws the seventies fastback instead of the constructor box. Profile 0 is the body, the cabin, the roof, four tires, and four rims, in the default teal paint. It sits on the surveyed car spawn at the layout yaw. Wheels keep the constructor locals, and the rims sit at Y ±106.5. The game already loads those meshes in `ApplyPaint`. Pitch, aim, socket, the pawn, and the grove stay.
+- Why it helped: the box on the right of the opening frame was a stand-in. The picture now shows a coupe with glass, a lamp, and a wheel. Detail and texture stay at 9. The coupe is one object at the edge of the frame, and its own facets still read as a game mesh. This is not a categorical jump of the frame.
+- Screenshots: before `docs/gauntlet/gta-graphics/round-52/before-frame.png`, after `docs/gauntlet/gta-graphics/round-52/after-frame.png`. Crops of the car are `before-coupe.png` and `after-coupe.png`. Both use the opening walk camera (arm 420, socket Y 70, socket Z 110, pitch −16, yaw about 110°, horizontal FOV 90) at the surveyed sidewalk spawn, with the hoodie walk at 0.75 s and the same walk-peak rock. Foot dust is left out. Not an Unreal capture. The full-frame mean absolute delta is 0.0049 and the max is 0.584. 15324 pixels change, in a box from x 764 to 959 and y 206 to 311. The red box is gone. A teal fastback sits on the road, clipped at the right edge the way the box was. `Scripts/test_opening_car.py` passed. `QuebecGameplay.cpp` was not compiled. `GET /gta/` returned 200. OpenSpec CLI is not installed, so the change files were not validated with `openspec`.
+- Next target: animation stays at 5. A still of this walk will not move it. Every other aesthetics score is 9, and a 10 needs a categorical picture. This frame is not one.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 9 | The street shade is unchanged. |
+| Color palette | 9 | The coupe is the default teal. The street hues are unchanged. |
+| Detail density | 9 | The box is now the coupe: glass, a lamp, and a wheel. The rest of the frame, and the coupe's own facets, still set the 9. |
+| Texture and material quality | 9 | The coupe uses the authored paint, glass, and rubber. The asphalt mix is unchanged, and the body is still flat shade. |
+| Composition and camera | 9 | The opening aim is unchanged. The coupe sits where the box sat, still cut off at the right edge. |
+| Atmosphere | 9 | The street dust grade is unchanged. |
+| Character models | 9 | The hoodie is unchanged. |
+| Animation smoothness | 5 | The stride is unchanged. The crew blend space still cannot be posed here. |
+| Particles and VFX | 9 | The shoe puffs are unchanged. They are left out of these frames. |
+| UI polish | 9 | The radar heading is unchanged. |
+| Responsiveness and input latency | 4 | Not measured this round. |
+| Controls feel | 4 | Not played. |
+| Mission clarity | 5 | The objective words are unchanged. |
+| Pacing | 4 | Unchanged mission slice. |
+| Fun factor | 3 | Not played. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 4 | The coupe is the new mark. No new juice. |
+| Sound design | 3 | Not listened to. |
+| Variety | 3 | One coupe in this frame. The sedan and the wagon stay on their own profiles. |
+| Performance stability | 5 | `Scripts/test_opening_car.py` passed. The body file has more than 5000 faces. Frame time was not remeasured. |
+
+- Aesthetics raw: 86 / 10 dimensions, index 86
+- Playability raw: 39 / 10 dimensions, index 39
+- Total: 125 / 200
+- Delta vs last round: 0
+
+### Round 53 — 2026-10-21 — rubric v1
+
+- What changed: a contact sheet samples the hoodie walk at six times across its 1.333 s cycle. The before row repeats the 0.75 s pose. The after row is 0.00, 0.22, 0.44, 0.67, 0.89, and 1.11 s, side on, feet on one ground line. The opening pitch, the socket, and the sway stay off this sheet and stay as they were. A sprint still plays this walk. No run clip is imported.
+- Why it helped: Animation was at 5 because a still cannot show the cycle. The six poses trade the feet and swing the arms.
+- Screenshots: before `docs/gauntlet/gta-graphics/round-53/before-cycle.png`, after `docs/gauntlet/gta-graphics/round-53/after-cycle.png`. The loop is `walk.gif`. Both rows are the prepared hoodie walk, skinned from the CC0 glTF. Not an Unreal capture. The sheet mean absolute delta is 0.049 and the max is 0.737. 51503 pixels change. `Scripts/test_walk_cycle.py` passed. The upper leg turns 48° from the first sample and the upper arm turns 59°. `QuebecGameplay.cpp` was not compiled. `GET /gta/` returned 200. OpenSpec CLI is not installed, so the change files were not validated with `openspec`.
+- Next target: street props and signage. The opening avenue is still a lawn, trees, and one coupe. The source glTF also has a run, and it is not imported, so a sprint still plays this walk.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 9 | The street shade is unchanged. |
+| Color palette | 9 | The street hues are unchanged. |
+| Detail density | 9 | The street mesh is unchanged. |
+| Texture and material quality | 9 | The asphalt mix is unchanged. |
+| Composition and camera | 9 | The opening aim is unchanged. This sheet is a side view of the clip. |
+| Atmosphere | 9 | The street dust grade is unchanged. |
+| Character models | 9 | The hoodie is unchanged. |
+| Animation smoothness | 6 | Six samples trade the feet and swing the arms. It is one clip, with no blend into a run. |
+| Particles and VFX | 9 | The shoe puffs are unchanged. They are left out of this sheet. |
+| UI polish | 9 | The radar heading is unchanged. |
+| Responsiveness and input latency | 4 | Not measured this round. |
+| Controls feel | 4 | Not played. |
+| Mission clarity | 5 | The objective words are unchanged. |
+| Pacing | 4 | Unchanged mission slice. |
+| Fun factor | 3 | Not played. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 4 | The cycle is the new mark. No new juice. |
+| Sound design | 3 | Not listened to. |
+| Variety | 3 | One walk. A sprint still plays it. |
+| Performance stability | 5 | `Scripts/test_walk_cycle.py` passed. Six poses of the existing clip. Frame time was not remeasured. |
+
+- Aesthetics raw: 87 / 10 dimensions, index 87
+- Playability raw: 39 / 10 dimensions, index 39
+- Total: 126 / 200
+- Delta vs last round: +1
+
+### Round 54 — 2026-10-21 — rubric v1
+
+- What changed: the opening shade draws the park furniture within 180 m of the spawn. A lamp is the surveyed pole, head, and cap. A bench is the wood slats on ink legs. A basket is the ink cylinder. Pitch, aim, socket, the pawn, the grove, and the coupe stay.
+- Why it helped: the avenue past the trees had no street furniture. A row of lamps now stands between the crowns. Detail stays at 9. The posts are thin at that distance, and the lawn in front of the figure is still open.
+- Screenshots: before `docs/gauntlet/gta-graphics/round-54/before-frame.png`, after `docs/gauntlet/gta-graphics/round-54/after-frame.png`. Crops of the lamp row are `before-props.png` and `after-props.png`. Both use the opening walk camera (arm 420, socket Y 70, socket Z 110, pitch −16, yaw about 110°, horizontal FOV 90) at the surveyed sidewalk spawn, with the hoodie walk at 0.75 s and the same walk-peak rock. The coupe is the seventies fastback. Foot dust is left out. Not an Unreal capture. The full-frame mean absolute delta is 0.00013 and the max is 0.395. 232 pixels change, in a band from x 275 to 639 and y 119 to 155. The crop shows the posts. `Scripts/test_opening_props.py` passed. The level builder was not recompiled. `GET /gta/` returned 200. OpenSpec CLI is not installed, so the change files were not validated with `openspec`.
+- Next target: a wet road. The asphalt in this frame is still a flat grey, and that ground is large enough to read. The surveyed signs sit hundreds of metres off this aim. The parked cars that fall in the frame are farther than these lamps.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 9 | The street shade is unchanged. |
+| Color palette | 9 | The lamps use the existing ink and cream. The street hues are unchanged. |
+| Detail density | 9 | A row of surveyed lamps stands along the avenue. They are thin posts, and the lawn in front still sets the 9. |
+| Texture and material quality | 9 | The asphalt mix is unchanged. |
+| Composition and camera | 9 | The opening aim is unchanged. The lamps sit in the gap between the crowns. |
+| Atmosphere | 9 | The street dust grade is unchanged. |
+| Character models | 9 | The hoodie is unchanged. |
+| Animation smoothness | 6 | The stride is unchanged. The sheet from the previous round still shows the cycle. |
+| Particles and VFX | 9 | The shoe puffs are unchanged. They are left out of these frames. |
+| UI polish | 9 | The radar heading is unchanged. |
+| Responsiveness and input latency | 4 | Not measured this round. |
+| Controls feel | 4 | Not played. |
+| Mission clarity | 5 | The objective words are unchanged. |
+| Pacing | 4 | Unchanged mission slice. |
+| Fun factor | 3 | Not played. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 4 | The lamps are the new mark. No new juice. |
+| Sound design | 3 | Not listened to. |
+| Variety | 3 | One row of lamps. The benches at this distance do not read. |
+| Performance stability | 5 | `Scripts/test_opening_props.py` passed. Twenty-four pieces within 180 m. Frame time was not remeasured. |
+
+- Aesthetics raw: 87 / 10 dimensions, index 87
+- Playability raw: 39 / 10 dimensions, index 39
+- Total: 126 / 200
+- Delta vs last round: 0

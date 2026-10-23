@@ -1,0 +1,13 @@
+FAIL initial ultrawide buffer respects the pixel budget
+  {"w":7680,"h":2160,"ratio":2,"cssW":3840,"cssH":1080,"aspect":3.5555555555555554}
+PASS: ultrawide canvas and camera fill the viewport
+PASS: phone restores normal high-DPI rendering
+PASS: phone layout remains viewport-sized
+FAIL resize reapplies the ultrawide budget
+  {"w":7680,"h":2160,"ratio":2,"cssW":3840,"cssH":1080,"aspect":3.5555555555555554}
+PASS: flat resize leaves a presenting XR buffer alone
+FAIL normal desktop density is restored after XR
+  {"w":2560,"h":1440,"ratio":2,"cssW":1280,"cssH":720,"aspect":1.7777777777777777}
+PASS: camera aspect follows the restored desktop viewport
+PASS: no page errors
+FAIL: flat render budget (3 failed, 6 passed)

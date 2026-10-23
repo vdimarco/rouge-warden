@@ -3,7 +3,7 @@
 // Engine-independent rules for mission 6, Nobody Left in the Picture.
 // No Unreal includes, so Scripts/test_rescue_rules.py can build this with the system compiler.
 // Three short pulls, any order, on dry ground near the terrace, the pond and the court.
-// RescueMask is session state. The v1 save still stores CompletedMissions 0–2.
+// RescueMask is stored on the version-3 tail. A version-1 slot still stores CompletedMissions 0–2 and starts this beat over.
 
 #include <cmath>
 #include <cstdint>

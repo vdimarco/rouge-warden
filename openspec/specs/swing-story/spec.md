@@ -48,7 +48,7 @@ In a headset no scene SHALL play. The mission scenes SHALL show their mission as
 - **THEN** a toast says "The King: rip off his three pipes, then flush him."
 
 ### Requirement: Mission card
-In flat play a mission card in the score row SHALL show the current mission and what to do next. While the story route is not the current mission, the card SHALL show the clogs flushed out of twelve and the district and distance of the nearest clog. While Mission 2, 3, 4 or 5 is current, the card SHALL name that mission and SHALL NOT say to flush the clogs. When the King is awake the card SHALL show the pipes ripped out of three. After the finale it SHALL say "ALL CLEAR". It SHALL hide during a trial.
+In flat play a mission card in the score row SHALL show the current mission and what to do next. It SHALL show the objective written in that same frame, including a clock that just changed and whether the card is hot. While the story route is not the current mission, the card SHALL show the clogs flushed out of twelve and the district and distance of the nearest clog. While Mission 2, 3, 4 or 5 is current, the card SHALL name that mission and SHALL NOT say to flush the clogs. When the King is awake the card SHALL show the pipes ripped out of three. After the finale it SHALL say "ALL CLEAR". It SHALL hide during a trial.
 
 #### Scenario: Mission 1
 - **WHEN** the player has flushed one clog and the story route is not the current mission
@@ -61,6 +61,11 @@ In flat play a mission card in the score row SHALL show the current mission and 
 #### Scenario: Mission card on a phone or a small window
 - **WHEN** the player plays on a phone, or in a window under 820 by 520 pixels, after the training
 - **THEN** the score row shows a short label (the district of the next clog, or the pipes left) and stays one row
+
+#### Scenario: The card matches this frame
+- **WHEN** a fight's clock is set to seven seconds and one frame passes
+- **THEN** the card in the score row already says 7 s and uses the hot card
+- **AND** that text matches the objective from this frame, not the time from the frame before
 
 ### Requirement: Painted scene panels
 The opening, the King waking and the finale SHALL show painted pictures of the game's city, King and hero in their panels. A
@@ -82,3 +87,110 @@ A panel whose picture has not loaded when the panel starts SHALL show the live c
 #### Scenario: Offline before the cache
 - **WHEN** a picture cannot load
 - **THEN** its panel shows the live shot and the scene plays on
+
+### Requirement: The King stomps the deck
+While every pipe is still on, the King SHALL only throw. After a pipe is off, and before the finale, his attacks SHALL cycle a throw, then a stomp, then a pull, then a belch, then a sweep, then a grab, and then a throw again. During a stomp's wind-up the mission card SHALL say he is stomping and to get off the deck. A stomp SHALL take a heart when the hero is on the ground within 28 m of him. A stomp SHALL NOT take a heart when the hero is in the air.
+
+#### Scenario: A throw, then a stomp
+- **WHEN** one pipe is off and the King finishes a throw
+- **THEN** his next attack is a stomp and the card says to get off the deck
+
+#### Scenario: The deck and the air
+- **WHEN** that stomp lands
+- **THEN** a hero on the deck loses a heart, and a hero in the air does not
+
+### Requirement: The King pulls you in
+After a pipe is off, the attack after a stomp SHALL be a pull. During that wind-up the mission card SHALL say he is pulling and to shoot a web. A hero in the air with no rope attached SHALL be dragged up to 14 m toward him, and SHALL stop short of a solid so the drag does not leave them inside it. That drag SHALL take a heart when it leaves the hero within 16 m, and SHALL NOT take a heart when the hero is still farther than 16 m. A hero clinging to a wall SHALL be dragged the same way and SHALL let go of the wall. A hero on the ground SHALL NOT be pulled and SHALL NOT lose a heart. A hero in the air with a rope attached SHALL NOT be pulled and SHALL NOT lose a heart.
+
+#### Scenario: A stomp, then a pull
+- **WHEN** one pipe is off and the King finishes a stomp
+- **THEN** his next attack is a pull and the card says to shoot a web
+
+#### Scenario: In the air with no web
+- **WHEN** that pull lands on a hero in the air with no rope, 20 m away, clear of the tower
+- **THEN** the hero is dragged toward him and loses a heart
+
+#### Scenario: Too far to hurt
+- **WHEN** that pull lands on a hero in the air with no rope, 40 m away
+- **THEN** the hero is dragged toward him and does not lose a heart
+
+#### Scenario: On the ground
+- **WHEN** that pull lands on a hero on the ground
+- **THEN** the hero stays put and does not lose a heart
+
+#### Scenario: A web holds
+- **WHEN** that pull lands on a hero in the air with a rope attached
+- **THEN** the hero stays put and does not lose a heart
+
+#### Scenario: A wall lets go
+- **WHEN** that pull lands on a hero clinging to a wall, in the air, with no rope, 20 m away, clear of the tower
+- **THEN** the hero is dragged toward him, is no longer on the wall, and loses a heart
+
+#### Scenario: The tower stops the drag
+- **WHEN** that pull lands on a hero in the air beside the Needle pod, with no rope
+- **THEN** the hero stops at the tower and is not left inside it
+
+### Requirement: The King belches on a spot
+After a pipe is off, the attack after a pull SHALL be a belch. During that wind-up the mission card SHALL say he is belching and to leave the spot. The spot SHALL be the hero's place when the wind-up begins, and it SHALL NOT follow the hero. A hero still on the ground within 8 m of that spot when the belch lands SHALL lose a heart. A hero on the ground farther than 8 m SHALL NOT lose a heart. A hero in the air SHALL NOT lose a heart.
+
+#### Scenario: A pull, then a belch
+- **WHEN** one pipe is off and the King finishes a pull
+- **THEN** his next attack is a belch and the card says to leave the spot
+
+#### Scenario: Still on the spot
+- **WHEN** that belch lands on a hero standing on the marked spot
+- **THEN** the hero loses a heart
+
+#### Scenario: Off the spot
+- **WHEN** that belch lands on a hero on the ground more than 8 m from the marked spot
+- **THEN** the hero does not lose a heart
+
+#### Scenario: In the air
+- **WHEN** that belch lands on a hero in the air over the marked spot
+- **THEN** the hero does not lose a heart
+
+### Requirement: The King sweeps a lane
+After a pipe is off, the attack after a belch SHALL be a sweep. During that wind-up the mission card SHALL say he is sweeping and to step aside. The lane SHALL be the heading from him to the hero when the wind-up begins, and it SHALL NOT follow the hero. A hero still within 36 m of him and within 0.45 radians of that heading when the sweep lands SHALL lose a heart, on the ground or in the air. A hero on the ground outside that heading SHALL NOT lose a heart. A hero farther than 36 m along that heading SHALL NOT lose a heart.
+
+#### Scenario: A belch, then a sweep
+- **WHEN** one pipe is off and the King finishes a belch
+- **THEN** his next attack is a sweep and the card says to step aside
+
+#### Scenario: Still in the lane
+- **WHEN** that sweep lands on a hero standing in the marked lane, within 36 m
+- **THEN** the hero loses a heart
+
+#### Scenario: Out of the lane
+- **WHEN** that sweep lands on a hero on the ground, within 36 m, and more than 0.45 radians off the marked heading
+- **THEN** the hero does not lose a heart
+
+#### Scenario: Past his reach
+- **WHEN** that sweep lands on a hero farther than 36 m along the marked heading
+- **THEN** the hero does not lose a heart
+
+#### Scenario: A jump in the lane
+- **WHEN** that sweep lands on a hero in the air, still in the marked lane and within 36 m
+- **THEN** the hero loses a heart
+
+### Requirement: The King grabs up close
+After a pipe is off, the attack after a sweep SHALL be a grab. During that wind-up the mission card SHALL say he is grabbing and to get back. A hero within 8 m of him when the grab lands SHALL lose a heart, on the ground or in the air, and a rope SHALL NOT stop it. The grab SHALL NOT move the hero. A hero farther than 8 m SHALL NOT lose a heart.
+
+#### Scenario: A sweep, then a grab
+- **WHEN** one pipe is off and the King finishes a sweep
+- **THEN** his next attack is a grab and the card says to get back
+
+#### Scenario: Up close
+- **WHEN** that grab lands on a hero standing within 8 m
+- **THEN** the hero loses a heart and stays put
+
+#### Scenario: Farther out
+- **WHEN** that grab lands on a hero on the ground farther than 8 m
+- **THEN** the hero does not lose a heart
+
+#### Scenario: A jump
+- **WHEN** that grab lands on a hero in the air within 8 m
+- **THEN** the hero loses a heart
+
+#### Scenario: A web
+- **WHEN** that grab lands on a hero within 8 m with a rope attached
+- **THEN** the hero loses a heart and stays put

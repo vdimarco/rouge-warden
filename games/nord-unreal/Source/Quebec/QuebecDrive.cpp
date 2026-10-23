@@ -23,6 +23,10 @@ namespace
     constexpr float SmokeDamage = 60.f;
     constexpr int32 SmokePuffCount = 7;
     constexpr float SmokePuffLife = 1.4f;
+    // A running tailpipe, smaller and shorter than the bonnet smoke. Six puffs, a new one every 0.16 s.
+    constexpr int32 ExhaustPuffCount = 6;
+    constexpr float ExhaustPuffLife = 1.1f;
+    constexpr float ExhaustInterval = 0.16f;
 
     constexpr int32 TorontoRoads = static_cast<int32>(UE_ARRAY_COUNT(CollegeBathurst::RoadSegments));
     constexpr int32 MontrealRoads = static_cast<int32>(UE_ARRAY_COUNT(LaFontaine::RoadSegmentWidths));
@@ -206,8 +210,8 @@ void AQuebecCar::OnCarImpact(AQuebecCar* Other, float Closing, const FVector& Wh
     const float Damage = QuebecSteer::ImpactDamage(Closing,false);
     if (Damage > 0.f)
     {
-        AddBodyDamage(Damage,Other->GetDriverController());
-        Other->AddBodyDamage(Damage,Driver);
+        if (!IsPedalo() && !IsBike() && !IsScoot()) AddBodyDamage(Damage,Other->GetDriverController());
+        if (!Other->IsPedalo() && !Other->IsBike() && !Other->IsScoot()) Other->AddBodyDamage(Damage,Driver);
     }
     // Ramming a car with someone at the wheel is a crime; a parked car is only a dent.
     const bool bOtherDriven = Other->bPolice || Other->bTraffic || Other->bAutopilot || Other->Occupant || Other->GetController();
@@ -226,7 +230,7 @@ void AQuebecCar::OnWallImpact(const FVector& Normal, float Closing, float Step)
     PlayImpactThud(Closing, true);
     LastWallNormal = Normal;
     const float Damage = QuebecSteer::ImpactDamage(Closing,true);
-    if (Damage > 0.f && !bTraffic) AddBodyDamage(Damage,GetDriverController());
+    if (Damage > 0.f && !bTraffic && !IsPedalo() && !IsBike() && !IsScoot()) AddBodyDamage(Damage,GetDriverController());
     if (!bSteerAssist || KnockTime > 0.f) return;
     // A glancing scrape along a street wall turns the nose along it instead of grinding the bumper into it.
     const FVector Forward = GetActorForwardVector().GetSafeNormal2D();
@@ -371,4 +375,53 @@ void AQuebecCar::UpdateDamageSmoke(float DeltaSeconds)
     Puff->SetWorldScale3D(FVector(.25));
     Puff->SetVisibility(true);
     SmokePuffBorn[Slot] = Now;
+}
+
+void AQuebecCar::UpdateExhaust(float DeltaSeconds)
+{
+    if (GetNetMode() == NM_DedicatedServer) return;
+    const float Now = GetWorld()->GetTimeSeconds();
+    // Idling in gear and rolling both turn the engine. A wreck keeps the bonnet smoke and skips this.
+    const bool bRunning = RideKind == 0 && !IsWrecked() && (FMath::Abs(Speed) > 80.f || FMath::Abs(Throttle) > 0.05f);
+    for (int32 I = 0; I < ExhaustPuffs.Num(); ++I)
+    {
+        UStaticMeshComponent* Puff = ExhaustPuffs[I];
+        if (!Puff || !Puff->IsVisible()) continue;
+        const float Age = Now - ExhaustBorn[I];
+        if (Age >= ExhaustPuffLife) { Puff->SetVisibility(false); continue; }
+        const float Life = Age / ExhaustPuffLife;
+        const float Swell = FMath::Lerp(0.16f, 0.55f, FMath::Min(1.f, Life * 1.4f)) * (Life > 0.75f ? 1.f - (Life - 0.75f) / 0.25f : 1.f);
+        Puff->SetWorldScale3D(FVector(FMath::Max(0.02f, Swell)));
+        // Back along the car and up, so the column leaves the tail instead of climbing off the bonnet.
+        Puff->AddWorldOffset((-GetActorForwardVector() * 160.f + FVector(0.f, 0.f, 180.f)) * DeltaSeconds);
+    }
+    if (!bRunning || Now < NextExhaustAt || !WasRecentlyRendered(1.f)) return;
+    NextExhaustAt = Now + ExhaustInterval;
+    int32 Slot = ExhaustPuffs.Num() < ExhaustPuffCount ? ExhaustPuffs.Num() : NextExhaust % ExhaustPuffCount;
+    ++NextExhaust;
+    if (Slot == ExhaustPuffs.Num())
+    {
+        UStaticMesh* Sphere = LoadObject<UStaticMesh>(nullptr, TEXT("/Engine/BasicShapes/Sphere.Sphere"));
+        if (!Sphere) return;
+        UStaticMeshComponent* NewPuff = NewObject<UStaticMeshComponent>(this);
+        NewPuff->SetStaticMesh(Sphere);
+        NewPuff->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+        NewPuff->SetCastShadow(false);
+        NewPuff->SetUsingAbsoluteLocation(true);
+        NewPuff->SetUsingAbsoluteRotation(true);
+        NewPuff->SetUsingAbsoluteScale(true);
+        NewPuff->SetupAttachment(RootComponent);
+        NewPuff->RegisterComponent();
+        Slot = ExhaustPuffs.Add(NewPuff);
+        ExhaustBorn.Add(Now);
+    }
+    UStaticMeshComponent* Puff = ExhaustPuffs[Slot];
+    if (!Puff) return;
+    if (UMaterialInterface* Material = LoadObject<UMaterialInterface>(nullptr, TEXT("/Game/Materials/M_White.M_White")))
+        Puff->SetMaterial(0, Material);
+    // Just behind the tail lamps, a little to either side.
+    Puff->SetWorldLocation(GetActorTransform().TransformPosition(FVector(-240.f, 14.f * static_cast<float>(NextExhaust % 3 - 1), 18.f)));
+    Puff->SetWorldScale3D(FVector(0.16f));
+    Puff->SetVisibility(true);
+    ExhaustBorn[Slot] = Now;
 }

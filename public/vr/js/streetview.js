@@ -336,7 +336,7 @@ export function createFigures(scene, max = 240, reach = PEOPLE_REACH) {
   const R2 = reach * reach;
   const F = {
     root, mesh, hull,
-    begin(c, time) { n = 0; cam = c; counts = {}; if (time != null) U.uTime.value = time; },
+    begin(c, time) { n = 0; cam = c; for (const tag in counts) delete counts[tag]; if (time != null) U.uTime.value = time; },
     // tag: a name to count by (people, goons, jobs) for the tests
     add(p, tag = "people") {
       if (n >= max) return false;
@@ -355,7 +355,11 @@ export function createFigures(scene, max = 240, reach = PEOPLE_REACH) {
     },
     end() {
       g.instanceCount = n;
-      for (const k in A) A[k].needsUpdate = true;
+      for (const k in A) {
+        const a = A[k];
+        a.clearUpdateRanges();
+        if (n > 0) { a.addUpdateRange(0, n * a.itemSize); a.needsUpdate = true; }
+      }
     },
     setVisible(v) { root.visible = !!v; },
     info: () => ({ drawn: g.instanceCount, counts: { ...counts }, visible: root.visible }),
@@ -402,7 +406,11 @@ export function createStreetView(scene, street, figures) {
       n++;
     }
     sg.instanceCount = n;
-    for (const k in sA) sA[k].needsUpdate = true;
+    for (const k in sA) {
+      const a = sA[k];
+      a.clearUpdateRanges();
+      if (n > 0) { a.addUpdateRange(0, n * a.itemSize); a.needsUpdate = true; }
+    }
   }
   const signMat = new THREE.ShaderMaterial({ vertexShader: SIGN_VS, fragmentShader: SIGN_FS, uniforms: U, fog: false });
   const signMesh = new THREE.Mesh(sg, signMat);
@@ -415,6 +423,7 @@ export function createStreetView(scene, street, figures) {
     root, signs: signMesh,
     // cam: the camera's world position (the signs near it are drawn)
     update(dt, time, cam) {
+      if (!root.visible) return;
       U.uTime.value = time;
       if (cam && Math.hypot(cam.x - signAt.x, cam.z - signAt.z) > SIGN_STEP) nearSigns(cam.x, cam.z);
       if (figures && root.visible) for (const p of street.people) if (p.on) figures.add(p, "people");

@@ -1,0 +1,14 @@
+[
+  {
+    "name": "main.js",
+    "status": 200,
+    "sha256": "928c2d941d6ac53c5c3c686eb44fb6c91d2c6edb970679799914c0de6bb48988",
+    "exact": true
+  },
+  {
+    "name": "jobs.js",
+    "status": 200,
+    "sha256": "1aee5044601aa95503753f13e8e1e7a3adfcd2a056b862012f3e3228ed57f485",
+    "exact": true
+  }
+]

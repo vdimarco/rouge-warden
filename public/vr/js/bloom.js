@@ -132,21 +132,23 @@ void main() {
   if (uShaft > 0.0) {
     // the sky is pinned just short of the far plane; a tower a few hundred metres off is still short of that
     float here = smoothstep(0.99985, 0.99997, texture2D(uDepth, vUv).r);
-    vec2 stepUV = (vUv - uSunUV) * 0.022;
-    vec2 q = vUv;
-    vec3 shafts = vec3(0.0);
-    float illum = 0.07;
-    for (int i = 0; i < 16; i++) {
-      q -= stepUV;
-      vec2 qq = clamp(q, vec2(0.001), vec2(0.999));
-      float sky = smoothstep(0.99985, 0.99997, texture2D(uDepth, qq).r);
-      vec3 s = texture2D(uScene, qq).rgb;
-      float warm = smoothstep(0.25, 0.85, s.r - s.b);
-      shafts += s * sky * warm * illum;
-      illum *= 0.9;
+    if (here < 1.0) { // Fully sky pixels contribute zero; avoid their radial gather.
+      vec2 stepUV = (vUv - uSunUV) * 0.022;
+      vec2 q = vUv;
+      vec3 shafts = vec3(0.0);
+      float illum = 0.07;
+      for (int i = 0; i < 16; i++) {
+        q -= stepUV;
+        vec2 qq = clamp(q, vec2(0.001), vec2(0.999));
+        float sky = smoothstep(0.99985, 0.99997, texture2D(uDepth, qq).r);
+        vec3 s = texture2D(uScene, qq).rgb;
+        float warm = smoothstep(0.25, 0.85, s.r - s.b);
+        shafts += s * sky * warm * illum;
+        illum *= 0.9;
+      }
+      // on the city, not piled onto the sun disc
+      c += min(shafts, vec3(0.22)) * (1.0 - here) * uShaft;
     }
-    // on the city, not piled onto the sun disc
-    c += min(shafts, vec3(0.22)) * (1.0 - here) * uShaft;
   }
   gl_FragColor = vec4(c, 1.0);
 }
@@ -178,7 +180,7 @@ export function createBloom(renderer) {
   black.needsUpdate = true;
   const size = new THREE.Vector2();
   let w = 0, h = 0;
-  const pass = (mat, target) => { quad.material = mat; renderer.setRenderTarget(target); renderer.render(quad, cam); };
+  const pass = (mat, target) => { quad.material = mat; renderer.setRenderTarget(target); const clear = renderer.autoClear; renderer.autoClear = false; try { renderer.render(quad, cam); } finally { renderer.autoClear = clear; } };
 
   const B = {
     level: "off", frames: 0, last: { calls: 0, triangles: 0 }, // last: the scene's own draw counts (the passes after it would reset them)

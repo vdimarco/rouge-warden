@@ -835,3 +835,719 @@ Loop: missions, playability, controls, feel, UX, pacing and fun for In Full Swin
 - Delta vs last round: 0 (round 21 was 123). The tenth flush breaks the three pumps before the King, and eight clogs are still the same pump, so pacing stays at 8.
 
 ![The tenth flush is a roof fight](fullswing-r22/roof.png)
+
+### Round 23 — 2026-10-21 — rubric v1
+
+- What changed: The second flush starts a falling rescue. The card says OVER THE EDGE. The fifth flush starts a purse chase. The card says PURSE RUN. The seventh flush starts a mugging. The card says THE ALLEY. The first, third, ninth, and eleventh flushes stay on the clog card. The balloon, the pizza, the 36 second washer, and the roof fight are unchanged. The King still sleeps. He still roars only at the fourth and the eighth, and he still wakes at twelve. The fall rate is unchanged.
+- Why it helped: Eight of the twelve flushes were the same pump. Spider-Man 2 does not leave a repeated objective as most of the chapter. A 1280×800 play flushed through eleven clogs. One read FLUSH THE CLOGS 1/12. Two read OVER THE EDGE, CATCH!, and the King was still asleep. After the rescue the card was FLUSH THE CLOGS 2/12. Three read FLUSH THE CLOGS 3/12. Five read PURSE RUN, STOP, THIEF!. Seven read THE ALLEY, MUGGING. Nine and eleven were the clog card again, and the King was still asleep. The eighth flush still counted from 36 s.
+- Screenshots: `docs/gauntlet/fullswing-r23/edge.png`.
+- Next target: performance stability (6), the lowest playability score. This machine has no real GPU to time, so that score is not the next implementation round. Sound design (7) was not listened to and is not the next implementation round either.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 5 | Held. Golden-hour sun and ink shadows. |
+| Color palette | 6 | Held. Yellow, red and sludge green still separate the HUD from the blocks. |
+| Detail density | 4 | Held. Open blocks more than a dressed borough. |
+| Texture and material quality | 3 | Held. Flat fills. |
+| Composition and camera | 4 | Held. The chase camera still sits behind the hero. This frame is the card. |
+| Atmosphere | 5 | Held. The dusk skyline has a mood. The street under the card does not. |
+| Character models | 3 | Held. Simple comic figures. |
+| Animation smoothness | 4 | Scored from still frames in software GL. Continuous motion was not watched. |
+| Particles and VFX | 5 | Held. No new effect. The card is the change. |
+| UI polish | 6 | Held. The same ink pill names the rescue. |
+| Responsiveness and input latency | 8 | Held. The clog card still rewrites its metres every frame. |
+| Controls feel | 9 | Held. The first web still hangs from a building at the real rope length. |
+| Mission clarity | 8 | Held. The compass still names the district on the clog card. The rescue card names the edge. |
+| Pacing | 9 | Seven of the twelve flushes are a different job, and the clog pump never runs three times in a row. Five flushes are still the same pump. |
+| Fun factor | 8 | Held. A win still hops the hero. This round changes which jobs interrupt the clogs, not the finish. |
+| Difficulty curve | 8 | Held. The eighth flush still counts from 36 s. The rescue still falls at the same rate. |
+| Feedback | 8 | Held. A chase that is pulling away still turns the card hot. |
+| Sound design | 7 | Held. Not listened to. |
+| Variety | 8 | Held. The rescue, the chase, and the mugging were already in the city. This round places them in the clog run. |
+| Performance stability | 6 | The 1280×800 play passed with no page errors. Frame time on a real GPU was not measured. |
+
+- Aesthetics raw: 45 / 10 dimensions, index 45
+- Playability raw: 79 / 10 dimensions, index 79
+- Total: 124 / 200
+- Delta vs last round: +1 (round 22 was 123). Pacing 8 → 9. Every other score held.
+
+![The second flush is a falling rescue](fullswing-r23/edge.png)
+
+### Round 24 — 2026-10-21 — rubric v1
+
+- What changed: While the King is awake, the card says FLUSH THE KING and names the nearest pipe that is still on him, with the distance in metres. That distance drops on the next frames when the hero moves toward the pipe. The compass title is The King's pipe and it points at that same pipe. A clog still in the city does not take the compass.
+- Why it helped: The King card said to rope his pipes and did not say which one or how far, and the compass still hunted a clog. Spider-Man 2 points at the thing the mission just asked for. A 1280×800 play woke him. The card read FLUSH THE KING 0/3 and Next pipe. The compass title was The King's pipe, on a pipe that was still on him. Moving toward it dropped the metres by more than 8 within three frames. He was awake. The clogs were still in the city and did not take the compass.
+- Screenshots: `docs/gauntlet/fullswing-r24/pipe.png`.
+- Next target: performance stability (6), the lowest playability score. This machine has no real GPU to time, so that score is not the next implementation round. Sound design (7) was not listened to and is not the next implementation round either.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 5 | Held. Golden-hour sun and ink shadows. |
+| Color palette | 6 | Held. Yellow, red and sludge green still separate the HUD from the blocks. |
+| Detail density | 4 | Held. Open blocks more than a dressed borough. |
+| Texture and material quality | 3 | Held. Flat fills. |
+| Composition and camera | 4 | Held. The chase camera still sits behind the hero. This frame is the card. |
+| Atmosphere | 5 | Held. The dusk skyline has a mood. The street under the card does not. |
+| Character models | 3 | Held. Simple comic figures. |
+| Animation smoothness | 4 | Scored from still frames in software GL. Continuous motion was not watched. |
+| Particles and VFX | 5 | Held. No new effect. The card is the change. |
+| UI polish | 6 | Held. The same ink pill names the pipe. |
+| Responsiveness and input latency | 8 | Held. The clog card still rewrites its metres every frame. The King card now does the same. |
+| Controls feel | 9 | Held. The first web still hangs from a building at the real rope length. |
+| Mission clarity | 9 | The card said FLUSH THE KING 0/3 and Next pipe, and the compass was The King's pipe. The metres dropped by more than 8 within three frames. The three pipes are still one marker. |
+| Pacing | 9 | Held. Seven of the twelve flushes are a different job, and the clog pump never runs three times in a row. |
+| Fun factor | 8 | Held. A win still hops the hero. This round changes where the King card points, not the finish. |
+| Difficulty curve | 8 | Held. The eighth flush still counts from 36 s. The rescue still falls at the same rate. |
+| Feedback | 8 | Held. A chase that is pulling away still turns the card hot. |
+| Sound design | 7 | Held. Not listened to. |
+| Variety | 8 | Held. The rescue, the chase, and the mugging are in the clog run. The King fight is the same three pipes. |
+| Performance stability | 6 | The 1280×800 play passed with no page errors. Frame time on a real GPU was not measured. |
+
+- Aesthetics raw: 45 / 10 dimensions, index 45
+- Playability raw: 80 / 10 dimensions, index 80
+- Total: 125 / 200
+- Delta vs last round: +1 (round 23 was 124). Mission clarity 8 → 9. Every other score held.
+
+![The King card points at a pipe](fullswing-r24/pipe.png)
+
+### Round 25 — 2026-10-21 — rubric v1
+
+- What changed: A job that carries a mission name plays a short brass stab when it starts. A job with no mission name, a crime, and a trial still play the one-second countdown. The first flush plays neither. The second flush, the falling rescue, plays the stab.
+- Why it helped: A clog beat took the card with the same countdown a trial uses, a full second of blips. Spider-Man 2 marks a mission change with a short sting. A rendered stab measured 0.051 in the first third of a second and 0.00005 after four fifths. The countdown was still at 0.024 then. A 1280×800 play flushed one clog with neither cue, then the second flush read OVER THE EDGE, CATCH!, and played the stab. An odd-job pizza still played the countdown. A speaker was not used.
+- Screenshots: `docs/gauntlet/fullswing-r25/stab.png`.
+- Next target: performance stability (6), the lowest playability score. This machine has no real GPU to time, so that score is not the next implementation round.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 5 | Held. Golden-hour sun and ink shadows. |
+| Color palette | 6 | Held. Yellow, red and sludge green still separate the HUD from the blocks. |
+| Detail density | 4 | Held. Open blocks more than a dressed borough. |
+| Texture and material quality | 3 | Held. Flat fills. |
+| Composition and camera | 4 | Held. The chase camera still sits behind the hero. This frame is the card. |
+| Atmosphere | 5 | Held. The dusk skyline has a mood. The street under the card does not. |
+| Character models | 3 | Held. Simple comic figures. |
+| Animation smoothness | 4 | Scored from still frames in software GL. Continuous motion was not watched. |
+| Particles and VFX | 5 | Held. No new effect. The card is the change on screen. |
+| UI polish | 6 | Held. The same ink pill names the rescue. |
+| Responsiveness and input latency | 8 | Held. The clog card still rewrites its metres every frame. |
+| Controls feel | 9 | Held. The first web still hangs from a building at the real rope length. |
+| Mission clarity | 9 | Held. The King card still names the nearest pipe, and the compass still says The King's pipe. |
+| Pacing | 9 | Held. Seven of the twelve flushes are a different job, and the clog pump never runs three times in a row. |
+| Fun factor | 8 | Held. A win still hops the hero. This round changes the cue when a mission starts. |
+| Difficulty curve | 8 | Held. The eighth flush still counts from 36 s. The rescue still falls at the same rate. |
+| Feedback | 8 | Held. A chase that is pulling away still turns the card hot. |
+| Sound design | 8 | The stab measured 0.051 in the first third of a second and 0.00005 after four fifths, while the trial countdown was still at 0.024. The second flush played the stab. An odd job still played the countdown. A speaker was not used. Every win is still the same fanfare. |
+| Variety | 8 | Held. The rescue, the chase, and the mugging are in the clog run. This round changes the cue, not the jobs. |
+| Performance stability | 6 | The 1280×800 play passed with no page errors. Frame time on a real GPU was not measured. |
+
+- Aesthetics raw: 45 / 10 dimensions, index 45
+- Playability raw: 81 / 10 dimensions, index 81
+- Total: 126 / 200
+- Delta vs last round: +1 (round 24 was 125). Sound design 7 → 8. Every other score held.
+
+![The second flush plays the stab](fullswing-r25/stab.png)
+
+### Round 26 — 2026-10-21 — rubric v1
+
+- What changed: A won flush plays a wet sting, a won fight plays a hit, a won chase or delivery plays a dash, and a won rescue plays a lift. A won job does not play the ring-trial fanfare. A finished ring trial still does. A miss plays none of the win stings. The cheer, the comic word, and the hop stay.
+- Why it helped: Every won job played the same brass fanfare a finished ring trial plays. Spider-Man 2 marks a finished mission with a sting that fits it. A rendered flush, fight, dash and lift measured 0.030, 0.030, 0.025 and 0.046 in the first half-second, and under 0.0002 after eight tenths. The ring fanfare was still at 0.072 then. The closest two stings matched at 0.055. A 1280×800 play won the purse snatcher on GOT IT, Stop, Thief! done, and played the dash. The rescue played the lift, the roof fight played the hit, and the Sludge Run played the wet sting. A miss played the low sting and none of those. A speaker was not used.
+- Screenshots: `docs/gauntlet/fullswing-r26/got.png`.
+- Next target: performance stability (6), the lowest playability score. This machine has no real GPU to time, so that score is not the next implementation round.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 5 | Held. Golden-hour sun and ink shadows. |
+| Color palette | 6 | Held. Yellow, red and sludge green still separate the HUD from the blocks. |
+| Detail density | 4 | Held. Open blocks more than a dressed borough. |
+| Texture and material quality | 3 | Held. Flat fills. |
+| Composition and camera | 4 | Held. The chase camera still sits behind the hero. This frame is the win card. |
+| Atmosphere | 5 | Held. The dusk skyline has a mood. The street under the card does not. |
+| Character models | 3 | Held. Simple comic figures. |
+| Animation smoothness | 4 | Scored from still frames in software GL. Continuous motion was not watched. |
+| Particles and VFX | 5 | Held. No new effect. The card is the change on screen. |
+| UI polish | 6 | Held. The same ink pill says GOT IT. |
+| Responsiveness and input latency | 8 | Held. The clog card still rewrites its metres every frame. |
+| Controls feel | 9 | Held. The first web still hangs from a building at the real rope length. |
+| Mission clarity | 9 | Held. The King card still names the nearest pipe, and the compass still says The King's pipe. |
+| Pacing | 9 | Held. Seven of the twelve flushes are a different job, and the clog pump never runs three times in a row. |
+| Fun factor | 8 | Held. A win still hops the hero. This round changes the sting, not the hop. |
+| Difficulty curve | 8 | Held. The eighth flush still counts from 36 s. The rescue still falls at the same rate. |
+| Feedback | 8 | Held. A chase that is pulling away still turns the card hot. |
+| Sound design | 9 | A flush, a fight, a dash and a lift measured 0.030, 0.030, 0.025 and 0.046 in the first half-second, and under 0.0002 after eight tenths, while the ring fanfare was still at 0.072. The closest two matched at 0.055. The purse snatcher played the dash, the rescue the lift, the roof fight the hit, and the Sludge Run the wet sting. A miss played none of them. A speaker was not used. |
+| Variety | 8 | Held. The rescue, the chase, and the mugging are in the clog run. This round changes the sting, not the jobs. |
+| Performance stability | 6 | The 1280×800 play passed with no page errors. Frame time on a real GPU was not measured. |
+
+- Aesthetics raw: 45 / 10 dimensions, index 45
+- Playability raw: 82 / 10 dimensions, index 82
+- Total: 127 / 200
+- Delta vs last round: +1 (round 25 was 126). Sound design 8 → 9. Every other score held.
+
+![The purse snatcher pays off with its own sting](fullswing-r26/got.png)
+
+### Round 27 — 2026-10-21 — rubric v1
+
+- What changed: The ninth flush starts a getaway car to rope. The card names STOP THAT CAR and does not say to flush the clogs. The King still sleeps. Stopping the car brings the clog card back at 9/12. The tenth flush is still the roof fight. The first, the third, and the eleventh stay clogs.
+- Why it helped: The ninth flush was another clog, the same pump as the first and the third, just before the roof fight. Spider-Man 2 puts a different activity in front of a finale. A 1280×800 play read STOP THAT CAR, GETAWAY CAR, rope the car to stop it, 92 m, on a 38 s clock. The King was still asleep. Stopping the car returned FLUSH THE CLOGS 9/12, and the tenth flush was still the roof fight.
+- Screenshots: `docs/gauntlet/fullswing-r27/car.png`.
+- Next target: performance stability (6), the lowest playability score. This machine has no real GPU to time, so that score is not the next implementation round.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 5 | Held. Golden-hour sun and ink shadows. |
+| Color palette | 6 | Held. Yellow, red and sludge green still separate the HUD from the blocks. |
+| Detail density | 4 | Held. Open blocks more than a dressed borough. |
+| Texture and material quality | 3 | Held. Flat fills. |
+| Composition and camera | 4 | Held. The chase camera still sits behind the hero. This frame is the car card. |
+| Atmosphere | 5 | Held. The dusk skyline has a mood. The street under the card does not. |
+| Character models | 3 | Held. Simple comic figures. |
+| Animation smoothness | 4 | Scored from still frames in software GL. Continuous motion was not watched. |
+| Particles and VFX | 5 | Held. No new effect. The card is the change on screen. |
+| UI polish | 6 | Held. The same ink pill names the car. |
+| Responsiveness and input latency | 8 | Held. The clog card still rewrites its metres every frame. |
+| Controls feel | 9 | Held. The first web still hangs from a building at the real rope length. |
+| Mission clarity | 9 | Held. The King card still names the nearest pipe, and the compass still says The King's pipe. |
+| Pacing | 9 | Held. Eight of the twelve flushes are a different job, and the clog pump never runs three times in a row. Three flushes are still the same clog. |
+| Fun factor | 8 | Held. A win still hops the hero. This round changes the ninth flush, not the hop. |
+| Difficulty curve | 8 | Held. The eighth flush still counts from 36 s. The rescue still falls at the same rate. |
+| Feedback | 8 | Held. A chase that is pulling away still turns the card hot. |
+| Sound design | 9 | Held. A flush, a fight, a dash and a lift are still different stings, and the ring fanfare is still the trial. |
+| Variety | 9 | The ninth flush read STOP THAT CAR, rope the car, 92 m. The rescue, the chase, the mugging and the roof fight are still in the run, and this one is a car none of them ask for. Three flushes are still the same clog. |
+| Performance stability | 6 | The 1280×800 play passed with no page errors. Frame time on a real GPU was not measured. |
+
+- Aesthetics raw: 45 / 10 dimensions, index 45
+- Playability raw: 83 / 10 dimensions, index 83
+- Total: 128 / 200
+- Delta vs last round: +1 (round 26 was 127). Variety 8 → 9. Every other score held.
+
+![The ninth flush is a getaway car](fullswing-r27/car.png)
+
+### Round 28 — 2026-10-21 — rubric v1
+
+- What changed: A job whose opening clock is at least 12 seconds turns the card hot once 8 seconds remain, or a quarter of that opening, whichever is less. Putting time back above that line brings the ink pill back. A falling person, and a free balloon at or above 140 m, use that same card. A 3.5 second edge and a 1.2 second slip do not heat from the clock. A won job stays the ink pill. Pulling away still heats the card.
+- Why it helped: A clock about to run out looked like any other card. Spider-Man 2 uses one urgent treatment when the objective is getting away. A 1280×800 play left the two-minute roof fight on the ink pill, turned it hot at 7 seconds (warm fill rgb(255, 214, 196), magenta edge rgb(216, 69, 122)), and brought the ink pill back at 30 seconds. The win card stayed GOT IT on the ink pill. A balloon under 140 m stayed ink and one at 140 m turned hot. The edge wait stayed ink, and a falling person turned the card hot. Closing a chase that is pulling away still brings the ink pill back.
+- Screenshots: `docs/gauntlet/fullswing-r28/hot.png`.
+- Next target: performance stability (6), the lowest playability score. This machine has no real GPU to time, so that score is not the next implementation round.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 5 | Held. Golden-hour sun and ink shadows. |
+| Color palette | 6 | Held. Yellow, red and sludge green still separate the HUD from the blocks. |
+| Detail density | 4 | Held. Open blocks more than a dressed borough. |
+| Texture and material quality | 3 | Held. Flat fills. |
+| Composition and camera | 4 | Held. The chase camera still sits behind the hero. This frame is the hot clock. |
+| Atmosphere | 5 | Held. The dusk skyline has a mood. The street under the card does not. |
+| Character models | 3 | Held. Simple comic figures. |
+| Animation smoothness | 4 | Scored from still frames in software GL. Continuous motion was not watched. |
+| Particles and VFX | 5 | Held. No new effect. The card is the change on screen. |
+| UI polish | 6 | Held. The hot pill is the one a chase already uses. |
+| Responsiveness and input latency | 8 | Held. The clog card still rewrites its metres every frame. |
+| Controls feel | 9 | Held. The first web still hangs from a building at the real rope length. |
+| Mission clarity | 9 | Held. The King card still names the nearest pipe, and the compass still says The King's pipe. |
+| Pacing | 9 | Held. Eight of the twelve flushes are a different job, and the clog pump never runs three times in a row. Three flushes are still the same clog. |
+| Fun factor | 8 | Held. A win still hops the hero. This round changes the card, not the hop. |
+| Difficulty curve | 8 | Held. The eighth flush still counts from 36 s. The rescue still falls at the same rate. |
+| Feedback | 9 | Seven seconds left on the roof fight turned the card hot, warm fill rgb(255, 214, 196) and magenta edge rgb(216, 69, 122). Thirty seconds brought the ink pill back. A falling person and a balloon at 140 m used that same card. A win stayed on the ink pill. |
+| Sound design | 9 | Held. A flush, a fight, a dash and a lift are still different stings, and the ring fanfare is still the trial. |
+| Variety | 9 | Held. The ninth flush is still the getaway car. This round changes the card, not the jobs. |
+| Performance stability | 6 | The 1280×800 play passed with no page errors. Frame time on a real GPU was not measured. |
+
+- Aesthetics raw: 45 / 10 dimensions, index 45
+- Playability raw: 84 / 10 dimensions, index 84
+- Total: 129 / 200
+- Delta vs last round: +1 (round 27 was 128). Feedback 8 → 9. Every other score held.
+
+![Seven seconds left turns the card hot](fullswing-r28/hot.png)
+
+### Round 29 — 2026-10-21 — rubric v1
+
+- What changed: A roof fight, a getaway, a sludge tanker, and the Sludge Run launch the hero at 14 m/s, hold the slow moment for 0.9 s, and keep the card up for 1.9 s. A chase, a rescue, and a delivery stay at 8 m/s, 0.55 s, and 1.35 s. Reduced motion still does not launch. A miss still does not. The comic word and the sting stay as they are.
+- Why it helped: Every win hopped the same height, so a roof fight ended like a pizza delivery. Spider-Man 2 makes a set-piece finish bigger than an errand. A 1280×800 play caught the purse snatcher at 8 m/s with the card under 1.5 s, and cleared the roof fight at 14 m/s with the card past 1.7 s. After the same 18 frames the roof fight was more than a metre higher, and its slow moment was longer. The word was still KASPLASH.
+- Screenshots: `docs/gauntlet/fullswing-r29/hop.png`.
+- Next target: performance stability (6), the lowest playability score. This machine has no real GPU to time, so that score is not the next implementation round.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 5 | Held. Golden-hour sun and ink shadows. |
+| Color palette | 6 | Held. Yellow, red and sludge green still separate the HUD from the blocks. |
+| Detail density | 4 | Held. Open blocks more than a dressed borough. |
+| Texture and material quality | 3 | Held. Flat fills. |
+| Composition and camera | 4 | Held. The chase camera still sits behind the hero. This frame is the higher hop. |
+| Atmosphere | 5 | Held. The dusk skyline has a mood. The street under the card does not. |
+| Character models | 3 | Held. Simple comic figures. |
+| Animation smoothness | 4 | Scored from still frames in software GL. Continuous motion was not watched. |
+| Particles and VFX | 5 | Held. No new effect. The hop is the change. |
+| UI polish | 6 | Held. The win card is still GOT IT. |
+| Responsiveness and input latency | 8 | Held. The clog card still rewrites its metres every frame. |
+| Controls feel | 9 | Held. The first web still hangs from a building at the real rope length. |
+| Mission clarity | 9 | Held. The King card still names the nearest pipe, and the compass still says The King's pipe. |
+| Pacing | 9 | Held. Eight of the twelve flushes are a different job, and the clog pump never runs three times in a row. Three flushes are still the same clog. |
+| Fun factor | 9 | The roof fight launched at 14 m/s and the card stayed past 1.7 s. The purse snatcher stayed at 8 m/s and under 1.5 s. After the same 18 frames the roof fight was more than a metre higher. |
+| Difficulty curve | 8 | Held. The eighth flush still counts from 36 s. The rescue still falls at the same rate. |
+| Feedback | 9 | Held. Seven seconds left still turns the card hot, and time put back still brings the ink pill. |
+| Sound design | 9 | Held. A flush, a fight, a dash and a lift are still different stings, and the ring fanfare is still the trial. |
+| Variety | 9 | Held. The ninth flush is still the getaway car. This round changes the hop, not the jobs. |
+| Performance stability | 6 | The 1280×800 play passed with no page errors. Frame time on a real GPU was not measured. |
+
+- Aesthetics raw: 45 / 10 dimensions, index 45
+- Playability raw: 85 / 10 dimensions, index 85
+- Total: 130 / 200
+- Delta vs last round: +1 (round 28 was 129). Fun factor 8 → 9. Every other score held.
+
+![The roof fight hops higher than the chase](fullswing-r29/hop.png)
+
+### Round 30 — 2026-10-21 — rubric v1
+
+- What changed: A getaway started as a mission cruises at 24 m/s, and its clock is the length of the road at that pace plus the same 8 seconds of spare. An odd-job getaway stays at 17 m/s. The card still names STOP THAT CAR. The King still sleeps. The eighth flush still counts from 36 s, and the rescue still falls at the same rate.
+- Why it helped: The car before the roof fight drove at the same speed as a fare across town. Spider-Man 2 makes the chase in front of a finale pull away harder. A 1280×800 play read an odd-job getaway at 17 m/s, then STOP THAT CAR at 24 m/s, with the card saying to rope the car. On one shared road the faster car had less time on the clock.
+- Screenshots: `docs/gauntlet/fullswing-r30/car.png`.
+- Next target: performance stability (6), the lowest playability score. This machine has no real GPU to time, so that score is not the next implementation round.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 5 | Held. Golden-hour sun and ink shadows. |
+| Color palette | 6 | Held. Yellow, red and sludge green still separate the HUD from the blocks. |
+| Detail density | 4 | Held. Open blocks more than a dressed borough. |
+| Texture and material quality | 3 | Held. Flat fills. |
+| Composition and camera | 4 | Held. The chase camera still sits behind the hero. This frame is the faster car. |
+| Atmosphere | 5 | Held. The dusk skyline has a mood. The street under the card does not. |
+| Character models | 3 | Held. Simple comic figures. |
+| Animation smoothness | 4 | Scored from still frames in software GL. Continuous motion was not watched. |
+| Particles and VFX | 5 | Held. No new effect. The car is the change. |
+| UI polish | 6 | Held. The card still names the car in the ink pill. |
+| Responsiveness and input latency | 8 | Held. The clog card still rewrites its metres every frame. |
+| Controls feel | 9 | Held. The first web still hangs from a building at the real rope length. |
+| Mission clarity | 9 | Held. The King card still names the nearest pipe, and the compass still says The King's pipe. |
+| Pacing | 9 | Held. Eight of the twelve flushes are a different job, and the clog pump never runs three times in a row. Three flushes are still the same clog. |
+| Fun factor | 9 | Held. The roof fight still launches at 14 m/s and a chase still launches at 8. |
+| Difficulty curve | 9 | The ninth-flush car cruises at 24 m/s. An odd-job getaway stays at 17 m/s, and the same road gives the faster car less time. The eighth flush still counts from 36 s, and the rescue still falls at the same rate. |
+| Feedback | 9 | Held. Seven seconds left still turns the card hot, and time put back still brings the ink pill. |
+| Sound design | 9 | Held. A flush, a fight, a dash and a lift are still different stings, and the ring fanfare is still the trial. |
+| Variety | 9 | Held. The ninth flush is still the getaway car. This round changes its pace, not the job. |
+| Performance stability | 6 | The 1280×800 play passed with no page errors. Frame time on a real GPU was not measured. |
+
+- Aesthetics raw: 45 / 10 dimensions, index 45
+- Playability raw: 86 / 10 dimensions, index 86
+- Total: 131 / 200
+- Delta vs last round: +1 (round 29 was 130). Difficulty curve 8 → 9. Every other score held.
+
+![The ninth-flush car drives faster](fullswing-r30/car.png)
+
+### Round 31 — 2026-10-21 — rubric v1
+
+- What changed: The score-row card is painted again after the objective is written. A clock, the hot card, and a clog's metres are the ones from that frame. The HUD still reads input at the start of the frame.
+- Why it helped: The pill was a frame behind the objective. One step after a fight clock was set to 7 seconds, the pill still said ROOFTOP BRAWL 120 s and stayed ink, while the objective already said 7 s and was hot. Spider-Man 2 shows the objective on the frame it changes. A 1280×800 play stepped once toward a clog and the metres on the pill dropped in that frame, then set the fight to 7 seconds and that same frame painted 7 s with the hot card.
+- Screenshots: `docs/gauntlet/fullswing-r31/now.png`.
+- Next target: a new mission type, then more than one way for the King to fight. Performance stability stays at 6. This machine has no real GPU to time, so that score is not the next implementation round.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 5 | Held. Golden-hour sun and ink shadows. |
+| Color palette | 6 | Held. Yellow, red and sludge green still separate the HUD from the blocks. |
+| Detail density | 4 | Held. Open blocks more than a dressed borough. |
+| Texture and material quality | 3 | Held. Flat fills. |
+| Composition and camera | 4 | Held. The chase camera still sits behind the hero. This frame is the hot card. |
+| Atmosphere | 5 | Held. The dusk skyline has a mood. The street under the card does not. |
+| Character models | 3 | Held. Simple comic figures. |
+| Animation smoothness | 4 | Scored from still frames in software GL. Continuous motion was not watched. |
+| Particles and VFX | 5 | Held. No new effect. The card is the change. |
+| UI polish | 6 | Held. The hot card is still the warm fill with the magenta edge. |
+| Responsiveness and input latency | 9 | One frame after the clock dropped to 7 s, the pill said 7 s and was the hot card, matching the objective. One step toward a clog shortened the metres on that same pill. Before, that frame still said 120 s. |
+| Controls feel | 9 | Held. The first web still hangs from a building at the real rope length. |
+| Mission clarity | 9 | Held. The King card still names the nearest pipe, and the compass still says The King's pipe. |
+| Pacing | 9 | Held. Eight of the twelve flushes are a different job, and the clog pump never runs three times in a row. Three flushes are still the same clog. |
+| Fun factor | 9 | Held. The roof fight still launches at 14 m/s and a chase still launches at 8. |
+| Difficulty curve | 9 | Held. The ninth-flush car still cruises at 24 m/s. An odd-job getaway stays at 17 m/s. |
+| Feedback | 9 | Held. Seven seconds left still turns the card hot, and it does so on that same frame. |
+| Sound design | 9 | Held. A flush, a fight, a dash and a lift are still different stings, and the ring fanfare is still the trial. |
+| Variety | 9 | Held. The ninth flush is still the getaway car. This round changes when the card paints, not the jobs. |
+| Performance stability | 6 | The 1280×800 play passed with no page errors. Frame time on a real GPU was not measured. |
+
+- Aesthetics raw: 45 / 10 dimensions, index 45
+- Playability raw: 87 / 10 dimensions, index 87
+- Total: 132 / 200
+- Delta vs last round: +1 (round 30 was 131). Responsiveness and input latency 8 → 9. Every other score held.
+
+![Seven seconds is already on the card](fullswing-r31/now.png)
+
+### Round 32 — 2026-10-21 — rubric v1
+
+- What changed: After a pipe comes off, the King still throws, then he stomps the deck, and he keeps alternating. With every pipe on he only throws. On the ground within 28 m the stomp takes a heart. In the air it does not. During the wind-up the card says "He's stomping. Get off the deck".
+- Why it helped: The King only threw sludge, so the fight after the first pipe was the same attack again. Spider-Man 2 gives a boss more than one move, and a ground attack you can leave by being in the air. A 1280×800 play watched a throw while every pipe was on, then one pipe came off and the attack after the next throw was a stomp. The card said to get off the deck. On the deck that stomp took a heart. The same stomp in the air took none.
+- Screenshots: `docs/gauntlet/fullswing-r32/stomp.png`.
+- Next target: a new mission type. Performance stability stays at 6. This machine has no real GPU to time, so that score is not the next implementation round.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 5 | Held. Golden-hour sun and ink shadows. |
+| Color palette | 6 | Held. Yellow, red and sludge green still separate the HUD from the blocks. |
+| Detail density | 4 | Held. Open blocks more than a dressed borough. |
+| Texture and material quality | 3 | Held. Flat fills. |
+| Composition and camera | 4 | Held. The chase camera still sits behind the hero. This frame is the stomp card. |
+| Atmosphere | 5 | Held. The dusk skyline has a mood. The street under the card does not. |
+| Character models | 3 | Held. Simple comic figures. The King is still the same model. |
+| Animation smoothness | 4 | Scored from still frames in software GL. Continuous motion was not watched. |
+| Particles and VFX | 5 | Held. The stomp uses the ring and the comic words that were already there. |
+| UI polish | 6 | Held. The card is still the ink pill. It names the stomp for that wind-up. |
+| Responsiveness and input latency | 9 | Held. One frame after a clock drop, the pill still matches the objective. |
+| Controls feel | 9 | Held. The first web still hangs from a building at the real rope length. |
+| Mission clarity | 9 | Held. During a stomp the card says to get off the deck. The rest of the time it still names the nearest pipe. |
+| Pacing | 9 | Held. Eight of the twelve flushes are a different job, and the clog pump never runs three times in a row. Three flushes are still the same clog. |
+| Fun factor | 9 | Held. The roof fight still launches at 14 m/s and a chase still launches at 8. The stomp is a second King attack, and the fight is still those two moves. |
+| Difficulty curve | 9 | Held. The ninth-flush car still cruises at 24 m/s. An odd-job getaway stays at 17 m/s. |
+| Feedback | 9 | Held. Seven seconds left still turns the card hot on that same frame. |
+| Sound design | 9 | Held. A flush, a fight, a dash and a lift are still different stings, and the ring fanfare is still the trial. |
+| Variety | 9 | Held. The King now stomps between throws after a pipe is off, and with every pipe on he only throws. Two attacks on one boss is not the spread of a 2023 boss fight, so the score stays. |
+| Performance stability | 6 | The 1280×800 play passed with no page errors. Frame time on a real GPU was not measured. |
+
+- Aesthetics raw: 45 / 10 dimensions, index 45
+- Playability raw: 87 / 10 dimensions, index 87
+- Total: 132 / 200
+- Delta vs last round: 0 (round 31 was 132). The stomp is a second King attack. No score moved.
+
+![The card says to get off the deck](fullswing-r32/stomp.png)
+
+### Round 33 — 2026-10-21 — rubric v1
+
+- What changed: The eleventh flush starts a lid to stand on. Standing on the ground within 4 m fills a 6 s hold. Leaving the circle or the ground slips that hold at twice the rate. Filling it seats the lid. A 24 s clock that runs out pops it. The card says HOLD IT DOWN and SEAT THE LID, and it does not say to flush the clogs. The King still sleeps. After the lid seats, the clog card returns at 11/12. The first and third flushes stay on the clog card.
+- Why it helped: The eleventh flush was the same clog card as the first and the third. Spider-Man 2 breaks a repeated objective with a stay-in-place verb before the finale. A 1280×800 play cleared the roof fight and the next card said HOLD IT DOWN · SEAT THE LID, with the line "Stand on the lid." The King was still asleep. Seating it brought FLUSH THE CLOGS at 11/12.
+- Screenshots: `docs/gauntlet/fullswing-r33/lid.png`.
+- Next target: another King attack, past the throw and the stomp. Performance stability stays at 6. This machine has no real GPU to time, so that score is not the next implementation round.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 5 | Held. Golden-hour sun and ink shadows. |
+| Color palette | 6 | Held. Yellow, red and sludge green still separate the HUD from the blocks. |
+| Detail density | 4 | Held. Open blocks more than a dressed borough. |
+| Texture and material quality | 3 | Held. Flat fills. |
+| Composition and camera | 4 | Held. The chase camera still sits behind the hero. This frame is the lid card. |
+| Atmosphere | 5 | Held. The dusk skyline has a mood. The street under the card does not. |
+| Character models | 3 | Held. Simple comic figures. |
+| Animation smoothness | 4 | Scored from still frames in software GL. Continuous motion was not watched. |
+| Particles and VFX | 5 | Held. The lid uses the gold goal beam that was already there. |
+| UI polish | 6 | Held. The card is still the ink pill. It names the lid for that flush. |
+| Responsiveness and input latency | 9 | Held. One frame after a clock drop, the pill still matches the objective. |
+| Controls feel | 9 | Held. The first web still hangs from a building at the real rope length. |
+| Mission clarity | 9 | Held. The lid card says to stand on the lid, and it does not say to flush the clogs. |
+| Pacing | 9 | Nine of the twelve flushes are a different job. The first and the third are still the clog card, and the pump never runs three times in a row. Nine different jobs is not a 2023 mission list, so the score stays. |
+| Fun factor | 9 | Held. The roof fight still launches at 14 m/s and a chase still launches at 8. The eleventh flush is a stay on the ground. |
+| Difficulty curve | 9 | Held. The ninth-flush car still cruises at 24 m/s. An odd-job getaway stays at 17 m/s. |
+| Feedback | 9 | Held. Seven seconds left still turns the card hot on that same frame. The lid clock is 24 s, so it heats in the last 6 s. |
+| Sound design | 9 | Held. A flush, a fight, a dash and a lift are still different stings, and the ring fanfare is still the trial. |
+| Variety | 9 | Held. The eleventh flush is a new job, standing on a lid until it seats. One new verb is not a 2023 mission list, so the score stays. |
+| Performance stability | 6 | The 1280×800 play passed with no page errors. Frame time on a real GPU was not measured. |
+
+- Aesthetics raw: 45 / 10 dimensions, index 45
+- Playability raw: 87 / 10 dimensions, index 87
+- Total: 132 / 200
+- Delta vs last round: 0 (round 32 was 132). The eleventh flush is a new job. No score moved.
+
+![The eleventh flush is a lid to stand on](fullswing-r33/lid.png)
+
+### Round 34 — 2026-10-21 — rubric v1
+
+- What changed: After a pipe comes off, the King throws, then stomps, then pulls, and then throws again. With every pipe on he only throws. During the pull the card says "He's pulling. Shoot a web". In the air with no rope he drags you 14 m toward him. Ending within 16 m takes a heart. Farther out, the drag still happens and the heart stays. On the ground, or with a rope attached, you stay put and lose no heart.
+- Why it helped: After the stomp the fight was the same two attacks again. Spider-Man 2 gives a boss a grab you answer by shooting a web. A 1280×800 play watched a throw while every pipe was on, then one pipe came off and the attack after the next throw was still a stomp. The attack after that stomp was a pull, and the card said to shoot a web. In the air with no web, 20 m out, that pull dragged the hero in and took a heart. At 40 m it dragged him and took none. On the deck, and in the air with a rope, he stayed put.
+- Screenshots: `docs/gauntlet/fullswing-r34/pull.png`.
+- Next target: performance stability (6). This machine has no real GPU to time, so that score is not the next implementation round.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 5 | Held. Golden-hour sun and ink shadows. |
+| Color palette | 6 | Held. Yellow, red and sludge green still separate the HUD from the blocks. |
+| Detail density | 4 | Held. Open blocks more than a dressed borough. |
+| Texture and material quality | 3 | Held. Flat fills. |
+| Composition and camera | 4 | Held. The chase camera still sits behind the hero. This frame is the pull card. |
+| Atmosphere | 5 | Held. The dusk skyline has a mood. The street under the card does not. |
+| Character models | 3 | Held. Simple comic figures. The King is still the same model. |
+| Animation smoothness | 4 | Scored from still frames in software GL. Continuous motion was not watched. |
+| Particles and VFX | 5 | Held. The pull uses the ring and the comic words that were already there. |
+| UI polish | 6 | Held. The card is still the ink pill. It names the pull for that wind-up. |
+| Responsiveness and input latency | 9 | Held. One frame after a clock drop, the pill still matches the objective. |
+| Controls feel | 9 | Held. The first web still hangs from a building at the real rope length. A rope that is still attached holds against the pull. |
+| Mission clarity | 9 | Held. During a pull the card says to shoot a web. The rest of the time it still names the nearest pipe. |
+| Pacing | 9 | Held. Nine of the twelve flushes are a different job. The first and the third are still the clog card, and the pump never runs three times in a row. Nine different jobs is not a 2023 mission list, so the score stays. |
+| Fun factor | 9 | Held. The roof fight still launches at 14 m/s and a chase still launches at 8. The King now has a third attack, and the fight is still one boss. |
+| Difficulty curve | 9 | Held. The ninth-flush car still cruises at 24 m/s. An odd-job getaway stays at 17 m/s. |
+| Feedback | 9 | Held. Seven seconds left still turns the card hot on that same frame. |
+| Sound design | 9 | Held. A flush, a fight, a dash and a lift are still different stings, and the ring fanfare is still the trial. |
+| Variety | 9 | Held. The King now pulls after a stomp, once a pipe is off, and with every pipe on he only throws. Three attacks on one boss is not the spread of a 2023 boss fight, so the score stays. |
+| Performance stability | 6 | The 1280×800 play passed with no page errors. Frame time on a real GPU was not measured. |
+
+- Aesthetics raw: 45 / 10 dimensions, index 45
+- Playability raw: 87 / 10 dimensions, index 87
+- Total: 132 / 200
+- Delta vs last round: 0 (round 33 was 132). The pull is a third King attack. No score moved.
+
+![The card says to shoot a web](fullswing-r34/pull.png)
+
+### Round 35 — 2026-10-21 — rubric v1
+
+- What changed: After a pipe comes off, the King throws, then stomps, then pulls, then belches, and then throws again. With every pipe on he only throws. During the belch he paints the spot under the hero, and the card says "He's belching. Leave the spot". The spot does not follow. Still standing on the ground within 8 m of it takes a heart. A step outside that circle, or being in the air, keeps the heart.
+- Why it helped: After the pull the fight was the same three attacks again. Spider-Man 2 gives a boss a ground tell you leave before it lands. A 1280×800 play watched a throw while every pipe was on, then one pipe came off and the attacks ran throw, stomp, pull, belch. The belch card said to leave the spot. Standing on it took a heart. Twelve metres out on the deck, and in the air over the spot, it took none.
+- Screenshots: `docs/gauntlet/fullswing-r35/belch.png`.
+- Next target: another King answer. Performance stability stays at 6. This machine has no real GPU to time, so that score is not the next implementation round.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 5 | Held. Golden-hour sun and ink shadows. |
+| Color palette | 6 | Held. Yellow, red and sludge green still separate the HUD from the blocks. |
+| Detail density | 4 | Held. Open blocks more than a dressed borough. |
+| Texture and material quality | 3 | Held. Flat fills. |
+| Composition and camera | 4 | Held. The chase camera still sits behind the hero, off to his right. This frame is the belch card. |
+| Atmosphere | 5 | Held. The dusk skyline has a mood. The street under the card does not. |
+| Character models | 3 | Held. Simple comic figures. The King is still the same model. |
+| Animation smoothness | 4 | Scored from still frames in software GL. Continuous motion was not watched. |
+| Particles and VFX | 5 | Held. The belch uses the ring and the comic words that were already there. |
+| UI polish | 6 | Held. The card is still the ink pill. It names the belch for that wind-up. |
+| Responsiveness and input latency | 9 | Held. One frame after a clock drop, the pill still matches the objective. |
+| Controls feel | 9 | Held. The first web still hangs from a building at the real rope length. A rope that is still attached holds against the pull. |
+| Mission clarity | 9 | Held. During a belch the card says to leave the spot. The rest of the time it still names the nearest pipe. |
+| Pacing | 9 | Held. Nine of the twelve flushes are a different job. The first and the third are still the clog card, and the pump never runs three times in a row. Nine different jobs is not a 2023 mission list, so the score stays. |
+| Fun factor | 9 | Held. The roof fight still launches at 14 m/s and a chase still launches at 8. The King now has a fourth attack, and the fight is still one boss. |
+| Difficulty curve | 9 | Held. The ninth-flush car still cruises at 24 m/s. An odd-job getaway stays at 17 m/s. |
+| Feedback | 9 | Held. Seven seconds left still turns the card hot on that same frame. |
+| Sound design | 9 | Held. A flush, a fight, a dash and a lift are still different stings, and the ring fanfare is still the trial. |
+| Variety | 9 | Held. The King now belches after a pull, once a pipe is off, and with every pipe on he only throws. Four attacks on one boss is not the spread of a 2023 boss fight, so the score stays. |
+| Performance stability | 6 | The 1280×800 play passed with no page errors. Frame time on a real GPU was not measured. |
+
+- Aesthetics raw: 45 / 10 dimensions, index 45
+- Playability raw: 87 / 10 dimensions, index 87
+- Total: 132 / 200
+- Delta vs last round: 0 (round 34 was 132). The belch is a fourth King attack. No score moved.
+
+![The card says to leave the spot](fullswing-r35/belch.png)
+
+### Round 36 — 2026-10-21 — rubric v1
+
+- What changed: After a pipe comes off, the King throws, then stomps, then pulls, then belches, then sweeps, and then throws again. With every pipe on he only throws. During the sweep he takes the heading from himself to the hero, and the card says "He's sweeping. Step aside". That heading does not follow. Still in that lane within 36 m takes a heart, on the ground or in the air. A step outside the lane, or a place farther than 36 m along the heading, keeps the heart. The sweep does not move the hero.
+- Why it helped: After the belch the fight was the same four attacks again. Spider-Man 2 gives a boss a sweep you leave by stepping out of the lane. A jump in that lane still lands. A 1280×800 play watched a throw while every pipe was on, then one pipe came off and the attacks ran throw, stomp, pull, belch, sweep. The sweep card said to step aside. Standing in the lane took a heart. A step outside the lane kept it. Fifty metres along the same heading kept it. A jump in the lane took a heart.
+- Screenshots: `docs/gauntlet/fullswing-r36/sweep.png`.
+- Next target: another King answer. Performance stability stays at 6. This machine has no real GPU to time, so that score is not the next implementation round.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 5 | Held. Golden-hour sun and ink shadows. |
+| Color palette | 6 | Held. Yellow, red and sludge green still separate the HUD from the blocks. |
+| Detail density | 4 | Held. Open blocks more than a dressed borough. |
+| Texture and material quality | 3 | Held. Flat fills. |
+| Composition and camera | 4 | Held. The chase camera still sits behind the hero, off to his right. This frame is the sweep card. |
+| Atmosphere | 5 | Held. The dusk skyline has a mood. The street under the card does not. |
+| Character models | 3 | Held. Simple comic figures. The King is still the same model. |
+| Animation smoothness | 4 | Scored from still frames in software GL. Continuous motion was not watched. |
+| Particles and VFX | 5 | Held. The sweep uses the ring and the comic words that were already there. |
+| UI polish | 6 | Held. The card is still the ink pill. It names the sweep for that wind-up. |
+| Responsiveness and input latency | 9 | Held. One frame after a clock drop, the pill still matches the objective. |
+| Controls feel | 9 | Held. The first web still hangs from a building at the real rope length. A rope that is still attached holds against the pull. |
+| Mission clarity | 9 | Held. During a sweep the card says to step aside. The rest of the time it still names the nearest pipe. |
+| Pacing | 9 | Held. Nine of the twelve flushes are a different job. The first and the third are still the clog card, and the pump never runs three times in a row. Nine different jobs is not a 2023 mission list, so the score stays. |
+| Fun factor | 9 | Held. The roof fight still launches at 14 m/s and a chase still launches at 8. The King now has a fifth attack, and the fight is still one boss. |
+| Difficulty curve | 9 | Held. The ninth-flush car still cruises at 24 m/s. An odd-job getaway stays at 17 m/s. |
+| Feedback | 9 | Held. Seven seconds left still turns the card hot on that same frame. |
+| Sound design | 9 | Held. A flush, a fight, a dash and a lift are still different stings, and the ring fanfare is still the trial. |
+| Variety | 9 | Held. The King now sweeps after a belch, once a pipe is off, and with every pipe on he only throws. Five attacks on one boss is not the spread of a 2023 boss fight, so the score stays. |
+| Performance stability | 6 | The 1280×800 play passed with no page errors. Frame time on a real GPU was not measured. |
+
+- Aesthetics raw: 45 / 10 dimensions, index 45
+- Playability raw: 87 / 10 dimensions, index 87
+- Total: 132 / 200
+- Delta vs last round: 0 (round 35 was 132). The sweep is a fifth King attack. No score moved.
+
+![The card says to step aside](fullswing-r36/sweep.png)
+
+### Round 37 — 2026-10-21 — rubric v1
+
+- What changed: After a pipe comes off, the King throws, then stomps, then pulls, then belches, then sweeps, then grabs, and then throws again. With every pipe on he only throws. During the grab the card says "He's grabbing. Get back". Within 8 m it takes a heart, on the ground or in the air, and a rope does not stop it. The grab does not move the hero. Farther than 8 m keeps the heart.
+- Why it helped: After the sweep the fight was the same five attacks again. Spider-Man 2 gives a boss a close grab. A jump does not save you, and a web does not save you. A 1280×800 play watched a throw while every pipe was on, then one pipe came off and the attacks ran throw, stomp, pull, belch, sweep, grab. The grab card said to get back. Standing within 8 m took a heart and did not move the hero. Fourteen metres out kept the heart. In the air within 8 m, and with a rope, it still took a heart.
+- Screenshots: `docs/gauntlet/fullswing-r37/grab.png`.
+- Next target: another King answer. Performance stability stays at 6. This machine has no real GPU to time, so that score is not the next implementation round.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 5 | Held. Golden-hour sun and ink shadows. |
+| Color palette | 6 | Held. Yellow, red and sludge green still separate the HUD from the blocks. |
+| Detail density | 4 | Held. Open blocks more than a dressed borough. |
+| Texture and material quality | 3 | Held. Flat fills. |
+| Composition and camera | 4 | Held. The chase camera still sits behind the hero, off to his right. This frame is the grab card. |
+| Atmosphere | 5 | Held. The dusk skyline has a mood. The street under the card does not. |
+| Character models | 3 | Held. Simple comic figures. The King is still the same model. |
+| Animation smoothness | 4 | Scored from still frames in software GL. Continuous motion was not watched. |
+| Particles and VFX | 5 | Held. The grab uses the ring and the comic words that were already there. |
+| UI polish | 6 | Held. The card is still the ink pill. It names the grab for that wind-up. |
+| Responsiveness and input latency | 9 | Held. One frame after a clock drop, the pill still matches the objective. |
+| Controls feel | 9 | Held. The first web still hangs from a building at the real rope length. A rope that is still attached holds against the pull. |
+| Mission clarity | 9 | Held. During a grab the card says to get back. The rest of the time it still names the nearest pipe. |
+| Pacing | 9 | Held. Nine of the twelve flushes are a different job. The first and the third are still the clog card, and the pump never runs three times in a row. Nine different jobs is not a 2023 mission list, so the score stays. |
+| Fun factor | 9 | Held. The roof fight still launches at 14 m/s and a chase still launches at 8. The King now has a sixth attack, and the fight is still one boss. |
+| Difficulty curve | 9 | Held. The ninth-flush car still cruises at 24 m/s. An odd-job getaway stays at 17 m/s. |
+| Feedback | 9 | Held. Seven seconds left still turns the card hot on that same frame. |
+| Sound design | 9 | Held. A flush, a fight, a dash and a lift are still different stings, and the ring fanfare is still the trial. |
+| Variety | 9 | Held. The King now grabs after a sweep, once a pipe is off, and with every pipe on he only throws. Six attacks on one boss is not the spread of a 2023 boss fight, so the score stays. |
+| Performance stability | 6 | The 1280×800 play passed with no page errors. Frame time on a real GPU was not measured. |
+
+- Aesthetics raw: 45 / 10 dimensions, index 45
+- Playability raw: 87 / 10 dimensions, index 87
+- Total: 132 / 200
+- Delta vs last round: 0 (round 36 was 132). The grab is a sixth King attack. No score moved.
+
+![The card says to get back](fullswing-r37/grab.png)
+
+### Round 38 — 2026-10-21 — rubric v1
+
+- What changed: flat map destinations show whole-metre horizontal distance below their names. The map labels this as distance across the map; ordering and travel actions stay the same.
+- Why it helped: a player can compare nearby trials and other travel destinations without interpreting only the pins. Reopening at another location refreshes the distances.
+- Screenshots: `docs/gauntlet/fullswing-r38/before-960.png`, `after-960.png`, `before-390.png`, `after-390.png`.
+- Next target: a new evidenced navigation or mission-feedback weakness after outstanding reviews clear; preserve Tab-to-close.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 5 | Carried mission-track baseline; not independently re-scored in this map-only round. |
+| Color palette | 6 | Carried mission-track baseline; not independently re-scored in this map-only round. |
+| Detail density | 4 | Carried mission-track baseline; not independently re-scored in this map-only round. |
+| Texture and material quality | 3 | Carried mission-track baseline; not independently re-scored in this map-only round. |
+| Composition and camera | 4 | Carried mission-track baseline; not independently re-scored in this map-only round. |
+| Atmosphere | 5 | Carried mission-track baseline; not independently re-scored in this map-only round. |
+| Character models | 3 | Carried mission-track baseline; not independently re-scored in this map-only round. |
+| Animation smoothness | 4 | Carried mission-track baseline; not independently re-scored in this map-only round. |
+| Particles and VFX | 5 | Carried mission-track baseline; not independently re-scored in this map-only round. |
+| UI polish | 6 | Carried mission-track baseline; not independently re-scored in this map-only round. |
+| Responsiveness and input latency | 9 | Carried mission-track baseline; not independently re-scored in this map-only round. |
+| Controls feel | 9 | Carried mission-track baseline; not independently re-scored in this map-only round. |
+| Mission clarity | 9 | Destination distance is now explicit and refreshes after movement; overall clarity score held. |
+| Pacing | 9 | Carried mission-track baseline; not independently re-scored in this map-only round. |
+| Fun factor | 9 | Carried mission-track baseline; not independently re-scored in this map-only round. |
+| Difficulty curve | 9 | Carried mission-track baseline; not independently re-scored in this map-only round. |
+| Feedback | 9 | Carried mission-track baseline; not independently re-scored in this map-only round. |
+| Sound design | 9 | Carried mission-track baseline; not independently re-scored in this map-only round. |
+| Variety | 9 | Carried mission-track baseline; not independently re-scored in this map-only round. |
+| Performance stability | 6 | Carried mission-track baseline; not independently re-scored in this map-only round. |
+
+- Aesthetics raw: 45 / 10 dimensions, index 45
+- Playability raw: 87 / 10 dimensions, index 87
+- Total: 132 / 200
+- Delta vs last round: 0. Existing mission-track scores are explicitly carried baselines, not a fresh full-playthrough evaluation or a reconciled graphics-track score.
+
+Validation: all 16 new browser checks pass at 960×540 and 390×844, covering two player positions, zero distance, refresh, sideways overflow and unchanged travel. The original build failed the eight distance expectations while its other eight checks passed. The existing `qa/vr/rings-map.e2e.mjs` also passes: trials, compass, map hover and travel. Physical devices, audio listening, hardware performance and OpenSpec CLI validation were not run.
+
+Round 38 shipped in [PR #618](https://github.com/vdimarco/rouge-warden/pull/618), merged as `53c45f92` after rebasing onto main and passing all six fresh browser jobs, automated review and preview deployment. Authenticated preview verified startup, zero distance and map travel with no page errors. The regression waits for the travel fade to close the map. Score remains 132/200. Next: inspect another evidenced mission-guidance gap after the current graphics round.
+
+### Round 39 — 2026-10-21 — rubric v1
+
+- What changed: the flat compass shows a second line such as “30 m above” or “30 m below” when its selected target is at least five metres away vertically. The number is rounded to five metres. Near the same height, that line is empty. Horizontal distance, bearing, target selection and the headset HUD stay unchanged.
+- Why it helped: the prior compass read 50 m both below and above a roof target; it now identifies which direction to move vertically. Height updates independently when horizontal distance stays constant.
+- Screenshots: `docs/gauntlet/fullswing-r39/{before,after}-{960,390}.png`. These are held-frame UI probes using a real clog goal and controlled player heights, not full playthrough evidence.
+- Next target: another evidenced navigation or mission-feedback weakness after pending rounds merge.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 5 | Carried mission-track baseline; not independently re-scored in this compass-height round. |
+| Color palette | 6 | Carried mission-track baseline; not independently re-scored in this compass-height round. |
+| Detail density | 4 | Carried mission-track baseline; not independently re-scored in this compass-height round. |
+| Texture and material quality | 3 | Carried mission-track baseline; not independently re-scored in this compass-height round. |
+| Composition and camera | 4 | Carried mission-track baseline; not independently re-scored in this compass-height round. |
+| Atmosphere | 5 | Carried mission-track baseline; not independently re-scored in this compass-height round. |
+| Character models | 3 | Carried mission-track baseline; not independently re-scored in this compass-height round. |
+| Animation smoothness | 4 | Carried mission-track baseline; not independently re-scored in this compass-height round. |
+| Particles and VFX | 5 | Carried mission-track baseline; not independently re-scored in this compass-height round. |
+| UI polish | 6 | Carried mission-track baseline; not independently re-scored in this compass-height round. |
+| Responsiveness and input latency | 9 | Carried mission-track baseline; not independently re-scored in this compass-height round. |
+| Controls feel | 9 | Carried mission-track baseline; not independently re-scored in this compass-height round. |
+| Mission clarity | 9 | The compass now distinguishes above, below and near-height targets while retaining horizontal distance; overall score held. |
+| Pacing | 9 | Carried mission-track baseline; not independently re-scored in this compass-height round. |
+| Fun factor | 9 | Carried mission-track baseline; not independently re-scored in this compass-height round. |
+| Difficulty curve | 9 | Carried mission-track baseline; not independently re-scored in this compass-height round. |
+| Feedback | 9 | Carried mission-track baseline; not independently re-scored in this compass-height round. |
+| Sound design | 9 | Carried mission-track baseline; not independently re-scored in this compass-height round. |
+| Variety | 9 | Carried mission-track baseline; not independently re-scored in this compass-height round. |
+| Performance stability | 6 | Carried mission-track baseline; not independently re-scored in this compass-height round. |
+
+- Aesthetics raw: 45 / 10 dimensions, index 45
+- Playability raw: 87 / 10 dimensions, index 87
+- Total: 132 / 200
+- Delta vs last round: 0. Unchanged dimensions retain the mission track's baseline; this does not reconcile that baseline with the graphics track or claim a fresh full-playthrough score.
+
+Validation: all 16 targeted browser checks pass at 960×540 and 390×844: real clog goal, above/below/near height, constant horizontal distance, viewport fit and page errors. The baseline failed exactly four above/below expectations and passed 12 other checks. The existing King-compass suite and portrait layout suite also pass. OpenSpec structure and canonical scenarios were reviewed manually; CLI, physical-device, listening and hardware-performance checks were not run. Remote review, preview and CI remain required before merge.
+
+Round 39 CI found a narrow touch-layout regression: the extra compass line expanded the score row, affected four near-border arrow angles, and overflowed the boss-heart row at 360 pixels. The correction keeps the existing 28-pixel compass height on compact phones, displaying ↑/↓ plus metres with the full above/below text retained. The full phone-controls suite is required again before merge; no CI tolerances were weakened.
+
+The correction passes the full local `phone-controls.e2e.mjs` suite (162 checks), including all three CI failures; screenshot `docs/gauntlet/fullswing-r39/after-touch-360.png` shows the compact phone cue. Log: `/tmp/fullswing-height-phone-fixed.log`. Hardware performance remains unverified under the user's new performance priority; this correctness fix does not close that report.
+
+Round 39 shipped in [PR #620](https://github.com/vdimarco/rouge-warden/pull/620), merged as `2a134ff0` after all six corrected-head browser jobs, review and deployed preview checks passed. Rebase was up to date immediately before the exact-head merge. The preview passed all 162 phone-controls checks, including the CI regressions. Historical score remains132/200; hardware responsiveness and stability are now subject to the performance evidence supplement and are not newly established by this UI round.
+
+### Round 40 — 2026-10-22 — controller reconnect correctness, rubric v1
+
+A standard controller disconnected while an action button was pressed retained its cached edge. Reconnecting with that button pressed lost the first jump, car, yank, view, menu or throw action. The existing no-pad branch now clears all cached button edges alongside trigger state. Connected holds still emit only one action, and a disconnected pad emits none. No graphics, saves or controls mapping changed.
+
+Evidence: [before](fullswing-r40-pad/before.png), [after](fullswing-r40-pad/after.png), and corresponding logs. These are explicitly labelled synthetic-controller lifecycle probes over the title page, not physical-device or full-playthrough screenshots. Baseline fails seven reconnect expectations and passes15 other assertions; corrected code passes all22. Regression runs with the existing mouse-look CI step.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 5 | Historical mission-track context only; not re-scored in this narrow correctness round. |
+| Color palette | 6 | Historical mission-track context only; not re-scored in this narrow correctness round. |
+| Detail density | 4 | Historical mission-track context only; not re-scored in this narrow correctness round. |
+| Texture and material quality | 3 | Historical mission-track context only; not re-scored in this narrow correctness round. |
+| Composition and camera | 4 | Historical mission-track context only; not re-scored in this narrow correctness round. |
+| Atmosphere | 5 | Historical mission-track context only; not re-scored in this narrow correctness round. |
+| Character models | 3 | Historical mission-track context only; not re-scored in this narrow correctness round. |
+| Animation smoothness | 4 | Historical mission-track context only; not re-scored in this narrow correctness round. |
+| Particles and VFX | 5 | Historical mission-track context only; not re-scored in this narrow correctness round. |
+| UI polish | 6 | Historical mission-track context only; not re-scored in this narrow correctness round. |
+| Responsiveness and input latency | Unverified | Affected user-profile Chrome remains inaccessible; no inherited hardware passing score. |
+| Controls feel | 9 | Historical context only;22 synthetic checks prove lifecycle correctness, not physical feel or a score increase. |
+| Mission clarity | 9 | Historical mission-track context only; not re-scored in this narrow correctness round. |
+| Pacing | 9 | Historical mission-track context only; not re-scored in this narrow correctness round. |
+| Fun factor | 9 | Historical mission-track context only; not re-scored in this narrow correctness round. |
+| Difficulty curve | 9 | Historical mission-track context only; not re-scored in this narrow correctness round. |
+| Feedback | 9 | Historical mission-track context only; not re-scored in this narrow correctness round. |
+| Sound design | 9 | Historical mission-track context only; not re-scored in this narrow correctness round. |
+| Variety | 9 | Historical mission-track context only; not re-scored in this narrow correctness round. |
+| Performance stability | Unverified | Affected user-profile Chrome remains inaccessible; no inherited hardware passing score. |
+
+Current total/delta withheld. Historical aesthetics45 across10dimensions and eight historical playability dimensions72 are not a new acceptance score; do not normalize a partial total. The graphics track has different historical baselines and is not silently reconciled here.
+
+Performance remains a release consideration: [three prior production hardware repeats](fullswing-r28-performance/production-pacing.md) measured approximately60FPS and input-to-submit p9515.2–17.8ms. Those runs predate this controller correction and do not establish its hardware acceptance. This focused correctness change does not alter rendering or address the remaining user-Chrome report. No physical pad/headset, listening, full playthrough or OpenSpec CLI check is claimed. Specification scenarios manually reviewed. Remote review, full CI, deployed preview and a final rebase are required before merge.
+
+Round40 shipped in [PR #625](https://github.com/vdimarco/rouge-warden/pull/625), merge `807dac35`, after all six CI jobs, review and current authenticated22-check preview passed. Rebase was up to date immediately before the exact-head merge. Production desktop.js returned HTTP200 and matched the merged file byte-for-byte. This closes the synthetic controller lifecycle regression; physical controller behavior and the reported Chrome slowdown remain unverified. Scores remain withheld as current hardware acceptance.
+
+### Round 41 — 2026-10-22 — hidden flat-page simulation, rubric v1
+
+Flat input always reported visible, bypassing the existing hidden-session simulation guard. In a controlled hidden-document probe the moving hero advanced from(3.94,198.77,0) to(11.38,189.35,0) over60callbacks. Flat input now reports document visibility, reusing that guard; position and velocity remain unchanged while hidden, then resume when visible. This applies to desktop and phone flat input. XR retains its session visibility path. No rendering technique, saved data or gameplay mapping changed.
+
+Evidence: [before desktop](fullswing-r41-hidden/before-960.png), [after desktop](fullswing-r41-hidden/after-960.png), [before narrow viewport](fullswing-r41-hidden/before-390.png), [after narrow viewport](fullswing-r41-hidden/after-390.png), plus full logs. Screenshots are labelled synthetic lifecycle probes; displayed positions are rounded, assertions use full values. Actual browser throttling, phones and hardware performance are not established. Baseline6fail/8pass → corrected14pass, covering movement,60executed hidden callbacks, visibility, unchanged position/velocity, resume and page errors at960×540 and390×844. The fixture explicitly steps simulation and stops the render loop.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 5 | Historical mission-track context only; not re-scored in this narrow correctness round. |
+| Color palette | 6 | Historical mission-track context only; not re-scored in this narrow correctness round. |
+| Detail density | 4 | Historical mission-track context only; not re-scored in this narrow correctness round. |
+| Texture and material quality | 3 | Historical mission-track context only; not re-scored in this narrow correctness round. |
+| Composition and camera | 4 | Historical mission-track context only; not re-scored in this narrow correctness round. |
+| Atmosphere | 5 | Historical mission-track context only; not re-scored in this narrow correctness round. |
+| Character models | 3 | Historical mission-track context only; not re-scored in this narrow correctness round. |
+| Animation smoothness | 4 | Historical mission-track context only; not re-scored in this narrow correctness round. |
+| Particles and VFX | 5 | Historical mission-track context only; not re-scored in this narrow correctness round. |
+| UI polish | 6 | Historical mission-track context only; not re-scored in this narrow correctness round. |
+| Responsiveness and input latency | Unverified | Affected user-profile Chrome remains inaccessible; no inherited hardware passing score. |
+| Controls feel | 9 | Historical context only;14 synthetic checks prove lifecycle correctness, not physical feel or a score increase. |
+| Mission clarity | 9 | Historical mission-track context only; not re-scored in this narrow correctness round. |
+| Pacing | 9 | Historical mission-track context only; not re-scored in this narrow correctness round. |
+| Fun factor | 9 | Historical mission-track context only; not re-scored in this narrow correctness round. |
+| Difficulty curve | 9 | Historical mission-track context only; not re-scored in this narrow correctness round. |
+| Feedback | 9 | Historical mission-track context only; not re-scored in this narrow correctness round. |
+| Sound design | 9 | Historical mission-track context only; not re-scored in this narrow correctness round. |
+| Variety | 9 | Historical mission-track context only; not re-scored in this narrow correctness round. |
+| Performance stability | Unverified | Affected user-profile Chrome remains inaccessible; no inherited hardware passing score. |
+
+
+Current total/delta withheld; historical aesthetics45 across10dimensions and eight historical playability dimensions72 are context, not current acceptance. No new score awarded, full playthrough or physical-device claim. Prior production FPS/latency evidence predates this correction and does not validate its hardware performance. This fixes an observed hidden-page correctness issue; it does not establish a fix for the affected Chrome session or reduced GPU/power use. OpenSpec scenarios manually reviewed; CLI unavailable. Review, all CI, deployed preview and final rebase remain required before merge.
+
+Round41 shipped in [PR #627](https://github.com/vdimarco/rouge-warden/pull/627), merge `4fdb704a`, after all six CI jobs, review and current authenticated14-check preview passed. Fresh rebase was up to date immediately before the exact-head merge. Production desktop.js HTTP200 and byte-for-byte match verified. This closes the deterministic hidden-page physics regression; actual browser throttling, physical-device behavior and the reported Chrome slowdown remain unverified. Current performance scores remain withheld.
+
+
+## Round42 — building-supported flat swings (pending release)
+
+User reports overly easy swinging and asks for attachment to buildings. Removed playerEasy sky fallback; existing real-surface choices retained. Browser baseline2fail/1pass→3pass; integrated hold chain6pass includes actual building endpoints/different nextbuilding and no open-water rope. Evidence: fullswing-r42-building. No physics/rendering change or performance claim. All20dimension assessments remain as round41 historical context; responsiveness/stability unverified, total/delta withheld. Height wording still awaiting clarification; no arbitrary ceiling introduced. Review/CI/deployedpreview/rebase/production pending.
+
+Round42 clarification: above-rooftop attachment allowed to reachable real buildings; tested113.5m player to111.5m roof. Ordinary rope physics handles real surfaces unsuitable for assisted clearance. Focused swing/bot54checks pass with original3building/30s goal (16.6/17.4/17.4s), plus4building-anchor checks and6chainchecks. Fresh remote gates pending.
+
+
+Round42 shipped in PR#632, merge5d0cd1ca, after all6CI/review/exactauthenticatedpreview/rebase. Productionmain HTTP200 exactSHAedd1226e70c3f2fb08137e283d8d770a056c7db0f0df3f40724977d3f4780a41. Realbuildinganchors,noartificialceiling,reachableaboverooftopattachment. Canonical swing-moves scenarios published and OpenSpec archived. No affectedChrome/physicalcontroller/phone/performance claim.

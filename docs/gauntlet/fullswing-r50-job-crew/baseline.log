@@ -1,0 +1,189 @@
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: provided storage returned
++ actual - expected
+
++ [
++   {
++     aggro: false,
++     bp: 0,
++     br: 0,
++     cool: 0.9889519904308696,
++     from: null,
++     group: 'job',
++     height: 1.0707647515382739,
++     hitBy: '',
++     home: {
++       x: 0,
++       y: 0,
++       z: 0
++     },
++     hp: 3,
++     id: 0,
++     lift: 0,
++     on: true,
++     pants: [
++       0.12,
++       0.12,
++       0.15
++     ],
++     path: null,
++     pathI: 0,
++     phase: 2.828621627719926,
++     pose: 1,
++     poseT: 0,
++     pullT: 0,
++     runner: false,
++     shirt: [
++       0.2,
++       0.46,
++       0.18
++     ],
++     skin: [
++       0.55,
++       0.8,
++       0.22
++     ],
++     speed: 0,
++     state: 'idle',
++     stride: 0,
++     t: 0,
++     x: 0,
++     y: 0,
++     yaw: 3.733113609479633,
++     z: 0
++   },
++   {
++     aggro: false,
++     bp: 0,
++     br: 0,
++     cool: 1.4798880240995103,
++     from: null,
++     group: 'job',
++     height: 1.1034987329647816,
++     hitBy: '',
++     home: {
++       x: 2,
++       y: 0,
++       z: 0
++     },
++     hp: 3,
++     id: 2,
++     lift: 0,
++     on: true,
++     pants: [
++       0.12,
++       0.12,
++       0.15
++     ],
++     path: null,
++     pathI: 0,
++     phase: 0.4873668430685685,
++     pose: 1,
++     poseT: 0,
++     pullT: 0,
++     runner: false,
++     shirt: [
++       0.2,
++       0.46,
++       0.18
++     ],
++     skin: [
++       0.55,
++       0.8,
++       0.22
++     ],
++     speed: 0,
++     state: 'idle',
++     stride: 0,
++     t: 0,
++     x: 2,
++     y: 0,
++     yaw: 3.3186337732065905,
++     z: 0
++   }
++ ]
+- []
+
+    at file:///home/von/Work/rouge-warden-fullswing-gauntlet/qa/vr/job-crew-scratch.test.mjs:5:8
+    at ModuleJob.run (node:internal/modules/esm/module_job:569:25)
+    at async node:internal/modules/esm/loader:650:26
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5) {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: [
+    {
+      id: 0,
+      on: true,
+      group: 'job',
+      runner: false,
+      x: 0,
+      y: 0,
+      z: 0,
+      yaw: 3.733113609479633,
+      hp: 3,
+      state: 'idle',
+      t: 0,
+      home: { x: 0, y: 0, z: 0 },
+      aggro: false,
+      cool: 0.9889519904308696,
+      phase: 2.828621627719926,
+      stride: 0,
+      pose: 1,
+      poseT: 0,
+      height: 1.0707647515382739,
+      shirt: [ 0.2, 0.46, 0.18 ],
+      pants: [ 0.12, 0.12, 0.15 ],
+      skin: [ 0.55, 0.8, 0.22 ],
+      bp: 0,
+      br: 0,
+      lift: 0,
+      path: null,
+      pathI: 0,
+      speed: 0,
+      from: null,
+      pullT: 0,
+      hitBy: ''
+    },
+    {
+      id: 2,
+      on: true,
+      group: 'job',
+      runner: false,
+      x: 2,
+      y: 0,
+      z: 0,
+      yaw: 3.3186337732065905,
+      hp: 3,
+      state: 'idle',
+      t: 0,
+      home: { x: 2, y: 0, z: 0 },
+      aggro: false,
+      cool: 1.4798880240995103,
+      phase: 0.4873668430685685,
+      stride: 0,
+      pose: 1,
+      poseT: 0,
+      height: 1.1034987329647816,
+      shirt: [ 0.2, 0.46, 0.18 ],
+      pants: [ 0.12, 0.12, 0.15 ],
+      skin: [ 0.55, 0.8, 0.22 ],
+      bp: 0,
+      br: 0,
+      lift: 0,
+      path: null,
+      pathI: 0,
+      speed: 0,
+      from: null,
+      pullT: 0,
+      hitBy: ''
+    }
+  ],
+  expected: [],
+  operator: 'strictEqual',
+  diff: 'simple'
+}
+
+Node.js v26.7.0

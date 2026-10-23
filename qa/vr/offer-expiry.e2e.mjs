@@ -1,0 +1,8 @@
+import {newPage,open,close,enterXR,checker,watchdog} from './lib.mjs';
+const {check,done}=checker('offer expiry');watchdog(240000,'offer expiry');
+try{
+ const p=await newPage({width:640,height:360});await p.addInitScript(()=>{window.AudioContext=window.webkitAudioContext=undefined;});
+ await open(p,'?nosw&skipintro&nocut');await p.waitForFunction(()=>G.viewDone);await enterXR(p,'desktop');await p.waitForFunction(()=>G.state==='play');
+ const r=await p.evaluate(async()=>{G.renderer.setAnimationLoop(null);G.test.hold(true);G.test.step(1/60,20);G.game.skipTutorial();G.test.step(1/60,8);const [{generate},{createCombat},{createCars},{createJobs}]=await Promise.all(['city','combat','cars','jobs'].map(n=>import('/vr/js/'+n+'.js')));const city=generate(),J=createJobs({city,combat:createCombat(city),cars:createCars(city)}),h={x:-150,y:0,z:2,onGround:true};J.crimesOn=false;J.update(0,0,h);const normal={id:991,type:'catch',x:1000,y:0,z:1000},crime={...normal,id:992,crime:true,until:60};J.offers=[normal,crime];const before=J.offers;for(let i=0;i<=60;i++)J.update(0,i,h);const stable=J.offers===before;J.update(0,61,{...h,busy:true});const deferred=J.offers===before;const n=J.events.length;J.update(0,61,h);return{stable,deferred,expired:J.offers.length===1&&J.offers[0]===normal&&before.length===2,events:J.events.slice(n).filter(e=>e.type==='crimeover').length,state:G.state};});
+ console.log(JSON.stringify(r));check(r.stable,'sixty idle updates and exact deadline retain array',r);check(r.deferred,'busy hero defers expiration',r);check(r.expired&&r.events===1,'expiration preserves survivors and prior array, emits once',r);check(r.state==='play'&&p.errors.length===0,'play and no page errors',p.errors);
+}finally{await close();}done();

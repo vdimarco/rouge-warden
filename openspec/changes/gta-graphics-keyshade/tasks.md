@@ -1,0 +1,4 @@
+- [x] Darken clear-day shade after the hue grade and before the night grade
+- [x] Shade the walking camera before and after
+- [x] Run `Scripts/test_key_shade.py`
+- [ ] Confirm the shade in Unreal (editor not available here)

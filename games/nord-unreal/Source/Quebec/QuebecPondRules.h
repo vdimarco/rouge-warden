@@ -3,7 +3,7 @@
 // Engine-independent rules for mission 3, Still Life, Moving Target.
 // No Unreal includes, so Scripts/test_pond_rules.py can build this with the system compiler.
 // Positions are game-frame centimetres (X east, Y north), north of the surveyed west pond.
-// The campaign keeps PondStep in the session only. The v1 save still stores CompletedMissions 0–2.
+// PondStep is stored on the version-3 tail. A version-1 slot still stores CompletedMissions 0–2 and starts this beat over.
 // Display text lives in QuebecCampaign.cpp.
 
 #include <cmath>

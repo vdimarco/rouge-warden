@@ -1,0 +1,4 @@
+- [x] Set the on-foot opening pitch to −16 inside the existing clamp
+- [x] Shade the walking camera before and after
+- [x] Run `Scripts/test_street_look.py` and `Scripts/test_camera_shoulder.py`
+- [ ] Confirm the opening look in Unreal (editor not available here)

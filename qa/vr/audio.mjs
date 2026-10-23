@@ -45,7 +45,7 @@ await test("node: loads and every call is a no-op", async (ok) => {
   ok(A.toggle() === true && settings.sound === true, "toggle() on does not reach settings.sound");
   ok(mod.createAudio({ sound: false }).isOn === false, "settings.sound = false does not start muted");
   ok(mod.createAudio(null).isOn === true, "createAudio(null) is not on by default");
-  const want = ["fire", "dry", "stick", "release", "yank", "pump", "flush", "loonie", "bank", "land", "splash", "bump", "snap", "ring", "trialStart", "trialEnd", "crack", "burst", "gurgle", "drip", "splat", "kingRoar", "kingSnore", "whistle", "pipeRip", "fireworks", "ui", "uiBack", "travel", "unlock"];
+  const want = ["fire", "dry", "stick", "release", "yank", "pump", "flush", "loonie", "bank", "land", "splash", "bump", "snap", "ring", "beat", "winWet", "winFight", "winDash", "winLift", "trialStart", "trialEnd", "crack", "burst", "gurgle", "drip", "splat", "kingRoar", "kingSnore", "whistle", "pipeRip", "fireworks", "ui", "uiBack", "travel", "unlock"];
   for (const n of want) ok(mod.SOUND_NAMES.includes(n), "spec §10 sound " + n + " is missing");
 });
 

@@ -1,0 +1,41 @@
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: Expected "actual" to be reference-equal to "expected":
++ actual - expected
+
++ [
++   {
++     r: 3.2,
++     vx: 1,
++     vz: 2,
++     x: 10,
++     z: 18.4
++   },
++   {
++     r: 3.2,
++     vx: -2,
++     vz: 0,
++     x: 31.6,
++     z: 40
++   }
++ ]
+- []
+
+    at file:///home/von/Work/fullswing-performance-evidence-20261022/hazard-scratch-baseline-test.mjs:7:8
+    at ModuleJob.run (node:internal/modules/esm/module_job:569:25)
+    at async node:internal/modules/esm/loader:650:26
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5) {
+  generatedMessage: true,
+  code: 'ERR_ASSERTION',
+  actual: [
+    { x: 10, z: 18.4, vx: 1, vz: 2, r: 3.2 },
+    { x: 31.6, z: 40, vx: -2, vz: 0, r: 3.2 }
+  ],
+  expected: [],
+  operator: 'strictEqual',
+  diff: 'simple'
+}
+
+Node.js v26.7.0

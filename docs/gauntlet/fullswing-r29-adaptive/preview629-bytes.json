@@ -1,0 +1,14 @@
+[
+  {
+    "name": "main.js",
+    "status": 200,
+    "sha256": "1aa0e02fcbd7632973a05344134d162738255b50dacb4d5fdfdc2b84af24872e",
+    "exact": true
+  },
+  {
+    "name": "render-scale.js",
+    "status": 200,
+    "sha256": "0dc1caf07cf8fe0e0f3c9a956ba36e7059ca277be4b45d7284108bf558ce34a8",
+    "exact": true
+  }
+]

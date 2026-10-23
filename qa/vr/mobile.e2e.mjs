@@ -232,7 +232,8 @@ try {
   assert(r.id===t.id&&miss<8,label+': the rope anchors on the tapped building, not the centre target '+JSON.stringify({tapped:t.id,centre:t.centre,got:r.id,miss,nx:t.nx,ny:t.ny}));
   return t;
  };
- const at3=await findAt();assert(at3,'portrait third person: a roof and a turn show two buildings off the screen centre');
+ const at3=await findAt();assert(at3&&at3.roof>=0,'portrait third person: a roof and a turn show two buildings off the screen centre '+JSON.stringify(at3));
+ console.log('portrait search, third person',JSON.stringify(at3));
  const ptp=await uprightTap('portrait third person',at3);console.log('PASS tap a building off the screen centre in portrait, third person',JSON.stringify({...at3,nx:+ptp.nx.toFixed(2),ny:+ptp.ny.toFixed(2),id:ptp.id}));
  // with a rope attached, a tap on another building off the centre switches to that building
  const pcur=await page.evaluate(()=>G.test.state().ropes[window.__side].id);
@@ -242,7 +243,8 @@ try {
  assert(psw.state==='attached'&&psw.id===pt2.id,'portrait: a tap on another building switches the rope to it '+JSON.stringify({want:pt2.id,got:psw}));
  console.log('PASS tap another building to switch ropes in portrait');
  await page.evaluate(()=>{G.test.press(1,false);G.flatcam.setFirstPerson(true);G.test.step(1/60,60);});
- const at1=await findAt();assert(at1,'portrait first person: a roof and a turn show two buildings off the screen centre');
+ const at1=await findAt();assert(at1&&at1.roof>=0,'portrait first person: a roof and a turn show two buildings off the screen centre '+JSON.stringify(at1));
+ console.log('portrait search, first person',JSON.stringify(at1));
  const pfp=await uprightTap('portrait first person',at1);console.log('PASS tap a building off the screen centre in portrait, first person',JSON.stringify({...at1,nx:+pfp.nx.toFixed(2),ny:+pfp.ny.toFixed(2),id:pfp.id}));
  await page.evaluate(()=>{G.flatcam.setFirstPerson(false);G.test.step(1/60,30);});
  // back to landscape for the checks below

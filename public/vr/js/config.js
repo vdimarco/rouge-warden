@@ -70,7 +70,9 @@ export const MOVES = {
   // the finisher: the world runs at slow speed for time s (real time) after it, and the view narrows by zoom degrees
   finisher: { slow: 0.3, time: 0.7, zoom: 10 },
   // a won job in flat play: up m/s off the street, forward m/s along the flight, and the view widens by kick degrees. A miss does not.
+  // winBig: a roof fight, a getaway, a tanker, or the Sludge Run. An errand keeps win.
   win: { up: 8, forward: 3.5, kick: 6 },
+  winBig: { up: 14, forward: 5, kick: 9 },
   // the glide (hold jump in the air with no rope, after minAir s): the fall eases to sink m/s, lift of the fall it stops turns into
   // speed along the ground, which stays between min and max m/s; the move input turns it at turn rad/s
   glide: { sink: 3.2, min: 14, max: 32, lift: 0.6, turn: 1.6, minAir: 0.25, grow: 8 },
@@ -195,7 +197,7 @@ export const GAME = {
   clogRadius: 2.5,
   loonieRadius: 2.2,
   looniesPerFlush: 5,
-  king: { unlock: 12, pipes: 3, hearts: 3, throwEvery: 3.5, windUp: 1, ballSpeed: 14, ballGravity: 4, ballRadius: 0.5, hitRadius: 0.3, grace: 3, firstDelay: 5, height: 16, reactAt: [4, 8] },
+  king: { unlock: 12, pipes: 3, hearts: 3, throwEvery: 3.5, windUp: 1, ballSpeed: 14, ballGravity: 4, ballRadius: 0.5, hitRadius: 0.3, grace: 3, firstDelay: 5, height: 16, reactAt: [4, 8], stompRadius: 28, pullRadius: 16, pullDrag: 14, belchRadius: 8, sweepRadius: 36, sweepHalf: 0.45, grabRadius: 8 },
   bankMax: 140,
   unlocks: { stripe: 30, cup: 60, launcher: 100, fireworks: 140 },
   tutorialRepeat: 8, tutorialTimeout: 30,

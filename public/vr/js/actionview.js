@@ -171,7 +171,11 @@ export function createActionView(scene, { cars, jobs, traffic = null }) {
   // The nearest street cars as models: pick them (lanes on the ground, so not the expressway nor a stolen car, clear of their
   // lane's ends, where the shader shrinks them), veil their shader cars, draw the models where trafficAt puts them, and give back the ones
   // that lose their slot. The model is picked by the index, as for the parked cars.
-  const promoted = new Set(), pick = [], TQ = {}, slots = [], keep = new Set(), BOX = new THREE.Box3();
+  const promoted = new Set(), pick = [], TQ = {}, slots = [], slotPool = [], keep = new Set(), BOX = new THREE.Box3();
+  const addSlot = (c, i, d) => {
+    const slot = slotPool[slots.length] ||= { c: null, i: 0, d: 0 };
+    slot.c = c; slot.i = i; slot.d = d; slots.push(slot);
+  };
   // the street cars within TRAFFIC_REACH, into pick as index, distance² pairs
   function streetNear(cam, time) {
     pick.length = 0;
@@ -201,6 +205,8 @@ export function createActionView(scene, { cars, jobs, traffic = null }) {
       im.setMatrixAt(n, M); im.instanceColor.setXYZ(n, TQ.paint[0], TQ.paint[1], TQ.paint[2]);
     }
   }
+  const markerState = new Float64Array(MAX_MARK * 6).fill(NaN);
+  const upload = (a, n) => { a.clearUpdateRanges(); if (n > 0) { a.addUpdateRange(0, n * a.itemSize); a.needsUpdate = true; } };
   const V = {
     root,
     update(dt, time, opts = {}) {
@@ -212,10 +218,10 @@ export function createActionView(scene, { cars, jobs, traffic = null }) {
       const cam = opts.cam, R2 = CAR_REACH * CAR_REACH;
       // the nearest MODEL_N cars, job cars and street cars together (the one you drive first), show their model
       near.length = 0; slots.length = 0; keep.clear();
-      const T = modelsOk && cam ? streetNear(cam, time) : null;
+      const T = modelsOk ? streetNear(cam, time) : null;
       for (const c of cars.cars) if (c.on && (c === cars.driving || !cam || (c.x - cam.x) ** 2 + (c.z - cam.z) ** 2 < MODEL_REACH * MODEL_REACH))
-        slots.push({ c, d: !cam || c === cars.driving ? -1 : (c.x - cam.x) ** 2 + (c.z - cam.z) ** 2 });
-      for (let k = 0; k < pick.length; k += 2) slots.push({ i: pick[k], d: pick[k + 1] });
+        addSlot(c, 0, !cam || c === cars.driving ? -1 : (c.x - cam.x) ** 2 + (c.z - cam.z) ** 2);
+      for (let k = 0; k < pick.length; k += 2) addSlot(null, pick[k], pick[k + 1]);
       slots.sort((a, b) => a.d - b.d);
       for (let k = 0; k < Math.min(MODEL_N, slots.length); k++) if (slots[k].c) near.push(slots[k].c); else keep.add(slots[k].i);
       let nb = 0;
@@ -237,29 +243,38 @@ export function createActionView(scene, { cars, jobs, traffic = null }) {
       if (modelsOk && traffic) streetModels(T, time);
       if (modelsOk) for (let k = 0; k < models.length; k++) {
         const im = models[k];
-        im.count = counts[k]; im.instanceMatrix.needsUpdate = true; im.instanceColor.needsUpdate = true;
+        im.count = counts[k]; upload(im.instanceMatrix, im.count); upload(im.instanceColor, im.count);
         BOX.makeEmpty();
         for (let i = 0; i < im.count; i++) BOX.expandByPoint(Pv.fromArray(im.instanceMatrix.array, i * 16 + 12));
         if (im.count) BOX.getBoundingSphere(im.boundingSphere).radius += 4; // half a van and its ink
         else im.boundingSphere.set(Pv.set(0, -1e4, 0), 0);
       }
-      carMesh.count = nb; carMesh.visible = nb > 0; carMesh.instanceMatrix.needsUpdate = true; carMesh.instanceColor.needsUpdate = true;
+      carMesh.count = nb; carMesh.visible = nb > 0; upload(carMesh.instanceMatrix, nb); upload(carMesh.instanceColor, nb);
       // markers: the offers, or the running job's goal
-      let m = 0;
+      let m = 0, markersDirty = false;
       const put = (x, y, z, col) => {
         if (m >= MAX_MARK) return;
-        M.makeTranslation(x, y + 0.05, z);
-        beams.setMatrixAt(m, M); rings.setMatrixAt(m, M);
-        bCol.setXYZ(m, col[0], col[1], col[2]); rings.geometry.attributes.aCol.setXYZ(m, col[0], col[1], col[2]);
+        const i = m * 6;
+        if (markerState[i] !== x || markerState[i + 1] !== y || markerState[i + 2] !== z || markerState[i + 3] !== col[0] || markerState[i + 4] !== col[1] || markerState[i + 5] !== col[2]) {
+          markerState[i] = x; markerState[i + 1] = y; markerState[i + 2] = z;
+          markerState[i + 3] = col[0]; markerState[i + 4] = col[1]; markerState[i + 5] = col[2];
+          M.makeTranslation(x, y + 0.05, z);
+          beams.setMatrixAt(m, M); rings.setMatrixAt(m, M);
+          bCol.setXYZ(m, col[0], col[1], col[2]); rings.geometry.attributes.aCol.setXYZ(m, col[0], col[1], col[2]);
+          markersDirty = true;
+        }
         m++;
       };
       if (opts.markers !== false) {
         if (!jobs.active) for (const o of jobs.offers) put(o.x, o.y, o.z, JOB_COL[o.type] || JOB_COL.goal);
         else if (jobs.card && jobs.card.goal) { const g = jobs.card.goal; put(g.x, g.y, g.z, JOB_COL.goal); }
       }
+      markersDirty ||= beams.count !== m;
       beams.count = rings.count = m;
-      beams.instanceMatrix.needsUpdate = rings.instanceMatrix.needsUpdate = true;
-      bCol.needsUpdate = true; rings.geometry.attributes.aCol.needsUpdate = true;
+      if (markersDirty) {
+        upload(beams.instanceMatrix, m); upload(rings.instanceMatrix, m);
+        upload(bCol, m); upload(rings.geometry.attributes.aCol, m);
+      }
       // the balloon
       const b = jobs.balloons && jobs.balloons[0];
       balloon.visible = !!b;

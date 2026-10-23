@@ -4,7 +4,7 @@
 // No Unreal includes, so Scripts/test_convoy_rules.py can build this with the system compiler.
 // Three authored stops on the street ring, beside the race gates: read the beam, pull the feeder
 // in the gap, invert the plate, then choose a wagon. The clear gate banks. The one he called does not.
-// ConvoyStep is session state. The v1 save still stores CompletedMissions 0–2.
+// ConvoyStep is stored on the version-3 tail. A version-1 slot still stores CompletedMissions 0–2 and starts this beat over.
 
 #include <cmath>
 #include <cstdint>

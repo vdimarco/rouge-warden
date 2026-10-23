@@ -1,0 +1,4 @@
+- [x] Put street dust after the far haze and before the clouds
+- [x] Shade the walking camera before and after
+- [x] Run `Scripts/test_street_air.py`
+- [ ] Confirm the dust in Unreal (editor not available here)

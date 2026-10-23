@@ -478,11 +478,45 @@ const SFX = {
     mallet(e, t + 0.06, 2093, 0.13, 0.7);
     return hiss(e, t, { type: "highpass", f: 7000, dur: 0.3, peak: 0.04, send: 0.2 });
   },
+  // a mission takes the card: one short brass stab. A trial still counts in with trialStart.
+  // Live cleanup disconnects a voice at the time this returns. The hiss ends first; the second brass note is the one that has to finish.
+  beat(e, t) {
+    const a = brass(e, t, 659.3, 0.14, 0.16);
+    const b = brass(e, t + 0.06, 1046.5, 0.18, 0.12);
+    const h = hiss(e, t, { type: "highpass", f: 5000, dur: 0.08, att: 0.001, peak: 0.08 });
+    return Math.max(a, b, h);
+  },
   // a trial starts: three blips, then go
   trialStart(e, t) {
     for (const at of [0, 0.35, 0.7]) tone(e, t + at, { type: "triangle", f: 784, dur: 0.12, peak: 0.16 });
     hiss(e, t + 0.9, { buf: e.pink, type: "bandpass", f: 500, f2: 2500, sweep: 0.3, q: 1, dur: 0.35, att: 0.15, peak: 0.12 });
     return tone(e, t + 1.05, { type: "triangle", f: 1568, dur: 0.4, peak: 0.18, send: 0.2 });
+  },
+  // a won flush: the splash of the job, not the ring-trial fanfare. The voice lasts through the longer part.
+  winWet(e, t) {
+    const s = splashAt(e, t, 0.5);
+    const b = brass(e, t + 0.02, 392, 0.12, 0.1);
+    return Math.max(s, b);
+  },
+  // a won fight: one crack and a short punch
+  winFight(e, t) {
+    const h = hiss(e, t, { type: "highpass", f: 1800, dur: 0.03, att: 0.0004, peak: 0.42 });
+    const p = tone(e, t, { f: 140, f2: 70, dur: 0.14, peak: 0.32 });
+    const b = brass(e, t + 0.01, 220, 0.1, 0.14);
+    return Math.max(h, p, b);
+  },
+  // a won chase or delivery: a rush, then a high ding
+  winDash(e, t) {
+    const h = hiss(e, t, { type: "bandpass", f: 700, f2: 3400, sweep: 0.16, q: 0.7, dur: 0.22, att: 0.004, peak: 0.3 });
+    const n = tone(e, t + 0.05, { type: "triangle", f: 988, f2: 1760, glide: 0.08, dur: 0.16, peak: 0.2 });
+    const b = brass(e, t + 0.08, 1318.5, 0.1, 0.1);
+    return Math.max(h, n, b);
+  },
+  // a won rescue: two rising notes, shorter than the ring-trial fanfare
+  winLift(e, t) {
+    const a = brass(e, t, 523.3, 0.1, 0.13);
+    const b = brass(e, t + 0.1, 1046.5, 0.18, 0.15);
+    return Math.max(a, b);
   },
   // a trial ends: a little brass fanfare (after fish's record)
   trialEnd(e, t) {
@@ -1327,7 +1361,7 @@ export const LOOP_NAMES = Object.keys(LOOP_SRC);
 // opts: pos, vol, pitch, at (one-shots; pos makes it spatial); speed, height, tension, side (a number, or [[t, v], ...]
 // steps); z (the listener's z, for the gulls); from + to (a loop source moves in a line over the render);
 // listener { pos, quat }; legacy (use setPosition/setOrientation); raw (skip the compressor and limiter); seed.
-// Resolves to the AudioBuffer, with .stats (voices, steals, horns, gulls).
+// Resolves to the AudioBuffer, with .stats (voices, steals, horns, gulls, and voiceEnd for one one-shot).
 export async function renderOffline(name, seconds = 2, opts = {}) {
   const OAC = globalThis.OfflineAudioContext || globalThis.webkitOfflineAudioContext;
   if (!OAC) throw new Error("no OfflineAudioContext");
@@ -1336,14 +1370,14 @@ export async function renderOffline(name, seconds = 2, opts = {}) {
   rnd = seeded(opts.seed ?? 7);
   const st = newState(true), dt = 1 / 60, at = opts.at ?? 0.25;
   st.amb = 0; // only "city" and "stress" hear the city
-  let e;
+  let e, voice = null;
   try {
     if (opts.listener) setL(st.L, opts.listener.pos, opts.listener.quat);
     e = makeEngine(ctx, { offline: true, raw: !!opts.raw, legacy: !!opts.legacy, st });
     e.out.gain.value = opts.raw ? 1 : VOL;
     const val = (v, t, d) => (typeof v === "number" ? v : typeof v === "function" ? v(t) : Array.isArray(v) ? stepAt(v, t, d) : d);
     const steps = (fn) => { for (let t = 0; t < seconds; t += dt) fn(t); };
-    if (SFX[name]) play(e, SFX[name], name, at, opts);
+    if (SFX[name]) voice = play(e, SFX[name], name, at, opts);
     else if (name === "wind") steps((t) => { const s = val(opts.speed, t, 20), h = val(opts.height, t, 60); drive(e, "wind", windLevel(s, h), t, s); });
     else if (name === "rope") { const side = opts.side === "right" || opts.side === 1 ? "ropeR" : "ropeL"; steps((t) => drive(e, side, val(opts.tension, t, 0.5), t)); }
     else if (name === "city") {
@@ -1398,7 +1432,7 @@ export async function renderOffline(name, seconds = 2, opts = {}) {
     } else throw new Error("unknown sound " + name);
   } finally { rnd = keep; }
   const buf = await ctx.startRendering();
-  try { buf.stats = { ...e.stats, voiceCap: MAX_VOICES }; } catch (err) { /* not extensible */ }
+  try { buf.stats = { ...e.stats, voiceCap: MAX_VOICES, voiceEnd: voice ? voice.end - at : null }; } catch (err) { /* not extensible */ }
   return buf;
 }
 // [[t, v], ...]: the last v whose t has passed

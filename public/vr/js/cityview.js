@@ -82,7 +82,11 @@ vec3 skyHaze(vec3 d) {
   vec3 h = vec3(d.x, clamp(d.y, 0.0, 0.1) * length(d.xz) * 10.0, d.z);
   vec3 c = uHaveSky > 0.5 ? textureLod(uSky, skyUV(h), 3.0).rgb : skyRamp(skyT(h));
   // far things go violet, like the far shore in the key art: darker than the sky behind them
-  return mix(c, vec3(0.3, 0.16, 0.5), 0.42);
+  c = mix(c, vec3(0.3, 0.16, 0.5), 0.42);
+  // street dust: level air takes the avenue's warm light. Above that it stays the sky.
+  // The height split is the 18 m layer below (Wenzel, SIGGRAPH 2006, the height only).
+  float level = 1.0 - smoothstep(0.02, 0.22, normalize(d).y);
+  return mix(c, vec3(0.78, 0.42, 0.26), level * 0.78);
 }
 // Haze toward the sky colour behind the point. It is thick near the ground and thin up high (height fog), so the Needle
 // and the aerial view keep their shapes. The fragment stage snaps it to four print-like steps.
@@ -96,7 +100,7 @@ float fogAmount(vec3 wp) {
   // a shorter layer: street air on the walks and the lower floors, gone by the roofs (Wenzel 2006, the height split only)
   float Hs = 18.0;
   float hs = abs(dy) < 1.0 ? exp(-0.5 * (yc + yp) / Hs) : Hs * (exp(-yp / Hs) - exp(-yc / Hs)) / dy;
-  f = max(f, (1.0 - exp(-0.012 * max(d - 28.0, 0.0))) * hs * 0.40);
+  f = max(f, (1.0 - exp(-0.022 * max(d - 28.0, 0.0))) * hs * 0.70);
   return max(f, 0.06 * smoothstep(12.0, uFog.x, d));
 }
 // Metres under the shadow surface at a point (the map's shadow height minus its height): above 0 in another tower's shadow
@@ -162,10 +166,21 @@ vec3 wetAsphalt(vec3 col, vec3 wp, vec3 N, float wet, float sunVis) {
   vec3 fill = vec3(1.0, 0.55, 0.28) * (1.0 - sunVis) * cover * 0.14;
   return col + sky * fres * cover * (0.55 + 0.6 * puddle) + glint + fill;
 }
+// James Gurney, Color and Light (2010): a shadow is its own hue, and the step between
+// shadow and light is not their average. Cool shade goes teal. That step goes rose.
+// Bright lamps, the sun, and near-black ink stay.
+vec3 gradeInk(vec3 c) {
+  float y = dot(c, vec3(0.299, 0.587, 0.114));
+  float hold = smoothstep(0.08, 0.12, y) * (1.0 - smoothstep(0.30, 0.44, y));
+  vec3 teal = vec3(c.r * 0.55, c.g * 1.35 + 0.055, c.b * 0.58);
+  vec3 rose = vec3(c.r * 1.30 + 0.03, c.g * 0.68, c.b * 0.90);
+  float t = smoothstep(0.16, 0.30, y);
+  return mix(c, mix(teal, rose, t), hold);
+}
 // Haze in four print-like steps toward the sky's own colour in that direction
 vec3 fogMix(vec3 col, vec3 wp, float maxF) {
   vec3 v = normalize(wp - cameraPosition);
-  return mix(col, skyHaze(v), comicPoster(fogAmount(wp) * maxF, 4.0));
+  return mix(gradeInk(col), skyHaze(v), comicPoster(fogAmount(wp) * maxF, 4.0));
 }
 `;
 
@@ -305,7 +320,9 @@ vec3 roomTint(float c, float s) {
   if (c < 0.8) return vec3(1.08, 0.88, 0.66);
   return vec3(0.94, 0.94, 0.9);
 }
-vec3 wallColor(int k, float shop, float sd, float salt, float h1, float h2, float h3, vec3 N, vec3 V, float dist, out float lineY) {
+vec3 wallColor(int k, float shop, float sd, float salt, float h1, float h2, float h3, vec3 N, vec3 V, float dist, out float lineY, out vec4 awning, out vec3 clay, out vec4 spill) {
+  clay = vec3(1.0);
+  spill = vec4(0.0);
   float fh = vInfo.z, bay = vInfo.w;
   float u = vFace.x, faceW = vFace.y, top = vFace.w, y = vW.y;
   bool glassy = k <= 1;
@@ -452,6 +469,14 @@ vec3 wallColor(int k, float shop, float sd, float salt, float h1, float h2, floa
   #endif
   // masonry joints on brick, stone, concrete and loft. A course smaller than a pixel fades out
   // so the far wall stays a flat comic tone. Glass towers are left alone.
+  // Each unit then keeps its own clay, stone or panel (Lake, Marshall, Harris, Blackstein, NPAR 2000:
+  // the cel ramp shades that colour). A coarser batch remains once a single course has faded.
+  vec3 mason = vec3(1.0);
+  vec3 batchM = vec3(1.0);
+  float masonOn = 0.0;
+  // Printed on the graded colour, after the cel. The cel and the grade pull a unit back into one band.
+  vec3 clayPrint = vec3(1.0);
+  float clayOn = 0.0;
   if (st >= 2 && st <= 5) {
     float pitch = st == 3 ? 0.42 : st == 4 ? 0.85 : 0.16;
     float run = pitch * (st >= 4 ? 2.2 : 2.0);
@@ -461,7 +486,48 @@ vec3 wallColor(int k, float shop, float sd, float salt, float h1, float h2, floa
     float jy = 1.0 - smoothstep(0.07, 0.07 + wy * 2.2, fract(cy));
     float jx = 1.0 - smoothstep(0.06, 0.06 + wx * 2.2, fract(cx));
     float joint = max(jy, jx) * (1.0 - smoothstep(0.22, 0.5, max(wy, wx)));
+    vec2 buv = vec2(u / 1.7, y / 1.15);
+    vec2 bf = fract(buv), bw = max(fwidth(buv), vec2(0.004));
+    vec2 bid = floor(buv);
+    float b00 = hash13(vec3(bid.x, bid.y, sd));
+    float b10 = hash13(vec3(bid.x + 1.0, bid.y, sd));
+    float b01 = hash13(vec3(bid.x, bid.y + 1.0, sd));
+    float b11 = hash13(vec3(bid.x + 1.0, bid.y + 1.0, sd));
+    float ax = smoothstep(1.0 - bw.x * 2.0, 1.0, bf.x);
+    float ay = smoothstep(1.0 - bw.y * 2.0, 1.0, bf.y);
+    // all four corners, so the seam matches the next cell when both axes are blending
+    float batch = mix(mix(b00, b10, ax), mix(b01, b11, ax), ay);
+    float unit = hash13(vec3(floor(cx) + 17.0, floor(cy), sd + 4.0));
+    vec3 batchT = st == 3 ? mix(vec3(0.72, 0.70, 0.66), vec3(1.28, 1.22, 1.12), batch)
+      : st == 4 ? mix(vec3(0.70, 0.74, 0.80), vec3(1.24, 1.18, 1.10), batch)
+      : mix(vec3(0.48, 0.36, 0.32), vec3(1.42, 1.05, 0.78), batch);
+    vec3 unitT = st == 3 ? mix(vec3(0.86, 0.84, 0.80), vec3(1.16, 1.12, 1.06), unit)
+      : st == 4 ? mix(vec3(0.88, 0.90, 0.94), vec3(1.12, 1.08, 1.04), unit)
+      : mix(vec3(0.70, 0.56, 0.48), vec3(1.28, 1.04, 0.86), unit);
+    float e = max(wy, 0.02);
+    float fy = fract(cy);
+    float up = smoothstep(0.58 - e, 0.94, fy);
+    float down = 1.0 - smoothstep(0.08, 0.30 + e, fy);
+    float lip = mix(1.0, 1.18, up) * mix(1.0, 0.76, down);
+    float unitNear = 1.0 - smoothstep(0.18, 0.42, max(wy, wx));
+    float batchNear = 1.0 - smoothstep(0.45, 0.9, max(bw.x, bw.y));
+    batchM = mix(vec3(1.0), batchT, batchNear);
+    mason = batchM * mix(vec3(1.0), unitT * lip, unitNear);
+    masonOn = 1.0;
+    wallP *= mix(vec3(1.0), mason, 1.0 - joint);
     wallP = mix(wallP, vec3(0.2, 0.15, 0.17), joint * 0.82);
+    // Barla, Thollot, Markosian, X-Toon (NPAR 2006): the lighting band stays. A second tone, this unit's clay,
+    // is printed after the grade so that grade cannot pull every brick back to one hue. The course crest holds
+    // until the course is only a few pixels, past the point where the unit tint itself fades.
+    float grain = mix(batch, unit, unitNear);
+    // Every channel stays at or above 1. A darker bed, and a lo clay under 1, pushed shade faces
+    // under the ink test (max channel 46) and flooded the canyon rows. Hue is the clay.
+    vec3 loC = st == 3 ? vec3(1.00, 1.06, 1.28) : st == 4 ? vec3(1.00, 1.08, 1.22) : vec3(1.42, 1.08, 1.00);
+    vec3 hiC = st == 3 ? vec3(1.30, 1.16, 1.04) : st == 4 ? vec3(1.24, 1.14, 1.02) : vec3(1.18, 1.28, 1.06);
+    clayPrint = mix(loC, hiC, grain);
+    float courseHold = 1.0 - smoothstep(0.30, 0.80, max(wy, wx));
+    clayPrint *= mix(1.0, mix(1.0, 1.18, up), courseHold);
+    clayOn = max(unitNear, batchNear) * (1.0 - joint);
   }
   vec3 celWall = comicCelX(wallP, band, LITMUL, LITADD);
   vec3 green = vec3(0.5, 0.9, 0.25);
@@ -501,6 +567,7 @@ vec3 wallColor(int k, float shop, float sd, float salt, float h1, float h2, floa
   float rcut = mix(roundAvg, round0, detail);
   float wmask = wa.x * wa.y * rcut * inFloors;
   float wSharp = ww.x * ww.y * round0;
+  clayOn *= 1.0 - wmask;
   vec3 glassDark = mix(glassC, skyR, mirror);
   vec3 roomDark = comicCelX(glassDark * (0.85 + 0.4 * f.y), band, LITMUL, LITADD);
   vec3 roomNow = lit > 0.5 ? litWin : roomDark;
@@ -509,12 +576,6 @@ vec3 wallColor(int k, float shop, float sd, float salt, float h1, float h2, floa
   float emBlock = wmask * mix(litAvg, lit, detail);
   vec3 col = mix(celWall, room, wmask);
   float em = emBlock;
-  // an awning over the shop windows in the flat look
-  if (shopRow && nearD < 0.5) {
-    float ay = smoothstep(0.58 - aa.y, 0.58 + aa.y, f.y) * (1.0 - smoothstep(0.96 - aa.y, 0.96 + aa.y, f.y));
-    vec3 aw = comicCelX(rs < 0.5 ? vec3(0.7, 0.14, 0.1) : vec3(0.1, 0.4, 0.4), band, LITMUL, LITADD);
-    col = mix(col, aw, ay * detail);
-  }
   // -- the painted tile: the atlas cell for this window, lit or dark. The painted family shows the whole tile in the
   // building's own wall paint; the other families show only the tile's window, stretched into their own window shape.
   if (nearD > 0.001) {
@@ -540,7 +601,11 @@ vec3 wallColor(int k, float shop, float sd, float salt, float h1, float h2, floa
     float yy = min(tc.r, tc.g) - tc.b;
     float e = lit * smoothstep(0.12, 0.34, yy);
     if (tl > 12.5 && tl < 13.5) e = max(e, smoothstep(0.3, 0.55, max(tc.r, max(tc.g, tc.b))));
-    if (painted) { if (!shopRow) tc = max(tc + wallShift * (1.0 - win) * (1.0 - e), 0.0); }
+    if (painted) {
+      if (!shopRow) tc = max(tc + wallShift * (1.0 - win) * (1.0 - e), 0.0);
+      // the painted tile is one flat brick. The same batch that colours the far wall tints the tile's wall, not its glass.
+      tc *= mix(vec3(1.0), batchM, (1.0 - win) * masonOn);
+    }
     else { e *= win; tc = mix(wallP, tc, win); }
     // the dark glass takes the building's tint, and shows the sky, the way the towers in the key art do
     tc = max(tc + (glassC - darkWin) * win * (1.0 - e) * 0.9, 0.0);
@@ -552,6 +617,7 @@ vec3 wallColor(int k, float shop, float sd, float salt, float h1, float h2, floa
     vec3 tcol = comicCelX(tc * (1.0 - e), band, LITMUL, LITADD) + glow;
     col = mix(col, mix(celWall, tcol, inFloors), nearD);
     em = mix(em, e * inFloors, nearD);
+    clayOn *= mix(1.0, 1.0 - win, nearD);
   }
   float upper = street ? 0.0 : inFloors * step(y, top);
   // a pixel's step in window metres, each screen axis (for the painted rooms' mip level)
@@ -689,6 +755,7 @@ vec3 wallColor(int k, float shop, float sd, float salt, float h1, float h2, floa
     vec3 roomC = lit > 0.5 ? litC : mix(comicCelX(darkC, band, LITMUL, LITADD), comicCelX(glassDark, band, LITMUL, LITADD), 0.35 + 0.4 * mirror);
     col = mix(col, roomC, inM);
     em = mix(em, lit, inM);
+    clayOn *= 1.0 - inM;
   }
   #endif
   #ifndef LOW
@@ -768,7 +835,7 @@ vec3 wallColor(int k, float shop, float sd, float salt, float h1, float h2, floa
   }
   // -- the building's own structure, which fades to its average tone: piers between window groups, pilasters on the
   // corners, a spandrel band in a contrasting tone every few floors, balcony rails, and a fire escape on some brick faces
-  vec3 pierCol = comicCelX(wallAlb * (grp > 1.5 ? 0.86 : 1.0), band, LITMUL, LITADD);
+  vec3 pierCol = comicCelX(wallAlb * (grp > 1.5 ? 0.86 : 1.0) * mix(vec3(1.0), mason, masonOn), band, LITMUL, LITADD);
   col = mix(col, pierCol, pier * upper);
   em *= 1.0 - pier * upper;
   float wl = dot(wallAlb, LUMW);
@@ -811,6 +878,7 @@ vec3 wallColor(int k, float shop, float sd, float salt, float h1, float h2, floa
     vec3 railCol = mix(comicCelX(vec3(0.16, 0.14, 0.18), band, LITMUL, LITADD), comicCelX(vec3(0.66, 0.63, 0.6), band, LITMUL, LITADD), slab * (1.0 - bar));
     col = mix(col, mix(comicCelX(vec3(0.3, 0.28, 0.32), band, LITMUL, LITADD), railCol, detail), rv);
     em *= 1.0 - rv;
+    clayOn *= 1.0 - rv;
   }
   // a fire escape: a landing at each floor and a stair zigzagging between them, two bays wide
   if (brickish && hr > 0.55 && fract(salt * 0.618) < 0.5 && cols >= 3.0) {
@@ -830,6 +898,7 @@ vec3 wallColor(int k, float shop, float sd, float salt, float h1, float h2, floa
     float fe = mix(feAvg, max(max(slab, rail), max(post, stair)), detail) * inX * inFloors0 * step(y, top);
     col = mix(col, comicCelX(vec3(0.17, 0.13, 0.17), band, LITMUL, LITADD), fe);
     em *= 1.0 - fe;
+    clayOn *= 1.0 - fe;
   }
   // world-anchored Ben-Day dots on the walls that are not fully lit, in face metres so they hold still in both eyes
   float dw = 1.0 - clamp(band - 1.0, 0.0, 1.0);
@@ -848,6 +917,35 @@ vec3 wallColor(int k, float shop, float sd, float salt, float h1, float h2, floa
   float shade = 1.0 - smoothstep(0.25, 1.15, band);
   float low = 1.0 - smoothstep(8.0, 20.0, y);
   col = mix(col, col * vec3(1.7, 1.05, 0.5) + vec3(0.08, 0.02, 0.0), shade * low * (1.0 - em) * 0.85);
+  // A cloth band over the shop windows. The flat look used to paint this only while the window atlas
+  // was off, and the street camera is inside that atlas, so the near shops had no awning.
+  // It sits above the shop glass (the window ends at 0.56 of the street floor). The caller mixes it
+  // on after the teal grade, or that grade would repaint the shaded cloth.
+  awning = vec4(0.0);
+  if (shopRow) {
+    float y0 = 0.58;
+    float y1 = 0.96;
+    float ay = smoothstep(y0 - aa.y, y0 + aa.y, f.y) * (1.0 - smoothstep(y1 - aa.y, y1 + aa.y, f.y));
+    float hem = smoothstep(y0 - aa.y, y0 + aa.y, f.y) * (1.0 - smoothstep(0.70 - aa.y, 0.70 + aa.y, f.y));
+    vec3 cloth = rs < 0.5 ? vec3(0.92, 0.10, 0.08) : vec3(0.06, 0.48, 0.58);
+    cloth = mix(cloth, cloth * vec3(0.45, 0.40, 0.42), hem);
+    cloth = mix(cloth, cloth * 0.72, stripe(u / cw, 0.04));
+    // The shop lamp hits the cloth from below. The hem, nearest the glass, takes the warm light.
+    // The top of the cloth stays its own red or teal. A dark shop leaves the cloth alone.
+    float fromGlass = (1.0 - smoothstep(y0, 0.90, f.y)) * lit;
+    cloth = mix(cloth, cloth * vec3(1.55, 0.78, 0.36) + vec3(0.20, 0.06, 0.0), fromGlass);
+    awning = vec4(comicCelX(cloth, band, LITMUL, LITADD), ay * detail);
+  }
+  // James Gurney, Color and Light (2010): a local light colours the nearby surface and dies with distance.
+  // The pool is printed after the grade, so the teal paper cannot take the lamp's colour. It stays off the
+  // glass, and a face in the sun keeps only a little of it.
+  vec2 outd = max(wr.xy - fc, fc - wr.zw);
+  float gap = max(outd.x, outd.y);
+  float nearWin = 1.0 - smoothstep(0.0, 0.28, gap);
+  float spillA = nearWin * lit * inFloors * (1.0 - wmask) * detail;
+  spillA *= mix(1.0, 0.28, smoothstep(0.15, 1.05, band));
+  spill = vec4(1.55, 0.92, 0.42, clamp(spillA, 0.0, 1.0));
+  clay = mix(vec3(1.0), clayPrint, clamp(clayOn, 0.0, 1.0));
   return col;
 }
 vec3 roofColor(int k, float h1, float h2, vec3 N) {
@@ -890,8 +988,11 @@ void main() {
   float h1 = fract(sd * 0.0913), h2 = fract(sd * 0.3771), h3 = fract(sd * 0.1313);
   vec3 col;
   float lineY = -1.0;
+  vec4 awn = vec4(0.0);
+  vec3 clay = vec3(1.0);
+  vec4 spill = vec4(0.0);
   if (N.y > 0.5) col = roofColor(k, h1, h2, N);
-  else col = wallColor(k, shop, sd, salt, h1, h2, h3, N, V, dist, lineY);
+  else col = wallColor(k, shop, sd, salt, h1, h2, h3, N, V, dist, lineY, awn, clay, spill);
   // a clogged district goes grey-green; the finale warms everything
   col = mix(col, vec3(dot(col, vec3(0.3, 0.5, 0.2))) * vec3(0.82, 0.98, 0.62), vClog * 0.38);
   col *= mix(vec3(1.0), vec3(1.08, 1.0, 0.9), uFinale);
@@ -909,7 +1010,12 @@ void main() {
   col += vec3(1.0, 0.72, 0.39) * fold * foldSun * 0.22;
   if (lineY > 0.0) ink = max(ink, comicInk(abs(vW.y - lineY), wpx * 0.8));
   col = mix(col, INKC, ink);
-  gl_FragColor = vec4(mix(col, vFog.rgb, comicPoster(vFog.a, 4.0)), 1.0);
+  // The clay is printed on the graded wall, the way the awning is. The grade itself stays the teal and rose paper.
+  // The lamp pool is printed after that, and it stays off the ink line.
+  vec3 graded = gradeInk(col) * clay;
+  graded = mix(graded, graded * spill.rgb + vec3(0.07, 0.025, 0.0), spill.a * (1.0 - ink));
+  vec3 shown = mix(graded, mix(awn.rgb, INKC, ink), awn.a);
+  gl_FragColor = vec4(mix(shown, vFog.rgb, comicPoster(vFog.a, 4.0)), 1.0);
 }`;
 
 // The Needle, the Dome, the expressway and the King's perch: one mesh, a kind per vertex.
@@ -1377,7 +1483,7 @@ void main() {
     col = mix(col, vec3(1.0, 0.72, 0.3), 1.0 - smoothstep(0.9935 - 0.0008, 0.9935 + 0.0008, s));
     col = mix(col, ${hexv(PAL.sun)}, 1.0 - smoothstep(0.9985 - 0.0004, 0.9985 + 0.0004, s));
   }
-  gl_FragColor = vec4(col, 1.0);
+  gl_FragColor = vec4(gradeInk(col), 1.0);
 }`;
 
 // Trees: a trunk and two lumpy crown lobes, one instance each. Cel colours, leaf clumps in two flat tones, and an ink hull.
@@ -1443,7 +1549,7 @@ void main() {
   vec3 col = band < 1.0 ? mix(shd, mid, band) : mix(mid, lit, band - 1.0);
   float dw = 1.0 - clamp(band - 1.0, 0.0, 1.0);
   col = mix(col, DOTC, comicDots(vW.xz + vW.y * 0.5, 0.4, mix(0.6, 0.3, clamp(band, 0.0, 1.0))) * dw * 0.45);
-  gl_FragColor = vec4(mix(col, vFog.rgb, comicPoster(vFog.a, 4.0)), 1.0);
+  gl_FragColor = vec4(mix(gradeInk(col), vFog.rgb, comicPoster(vFog.a, 4.0)), 1.0);
 }`;
 
 // Cars and streetcars: they drive their lanes in the vertex shader, from uTime, with head and tail lights and an ink hull.
@@ -1538,7 +1644,7 @@ void main() {
   float front = step(0.5, vLN.x), back = step(0.5, -vLN.x);
   col = mix(col, vec3(1.0, 0.95, 0.7), light * front);
   col = mix(col, vec3(1.0, 0.1, 0.08), light * back);
-  gl_FragColor = vec4(mix(col, vFog.rgb, comicPoster(vFog.a, 4.0)), 1.0);
+  gl_FragColor = vec4(mix(gradeInk(col), vFog.rgb, comicPoster(vFog.a, 4.0)), 1.0);
 }`;
 
 // Roof props and curb furniture. aPart: 0 plain, 2 fan top, 3 wood staves, 4 leaves, 5 metal,
@@ -1656,7 +1762,7 @@ void main() {
   // thin things (masts, poles, tower legs, curb posts) take a dark rim where they turn away from the eye
   float rim = part == 5 || part == 7 || part >= 8 ? 1.0 - smoothstep(0.2, 0.5, abs(dot(N, normalize(cameraPosition - vW)))) : 0.0;
   col = mix(col, INKC, clamp(max(ink, rim * 0.8), 0.0, 1.0));
-  gl_FragColor = vec4(mix(col, vFog.rgb, comicPoster(vFog.a, 4.0)), 1.0);
+  gl_FragColor = vec4(mix(gradeInk(col), vFog.rgb, comicPoster(vFog.a, 4.0)), 1.0);
 }`;
 
 // Sidewalk steam. aP: x, y, z, phase. aS: size, rise, cycles per second, which puff.
@@ -1772,7 +1878,7 @@ void main() {
   } else {
     col = comicCelX(vec3(0.24, 0.24, 0.42), band, vec3(1.4, 1.1, 0.8), vec3(0.06, 0.025, 0.0));
   }
-  gl_FragColor = vec4(mix(col, vFog.rgb, min(comicPoster(vFog.a, 4.0), 0.75)), 1.0);
+  gl_FragColor = vec4(mix(gradeInk(col), vFog.rgb, min(comicPoster(vFog.a, 4.0), 0.75)), 1.0);
 }`;
 
 /* ---------------- the diorama (spec §9: shared geometry, a simple unlit material, no fog) ---------------- */

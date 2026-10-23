@@ -34,10 +34,31 @@ class QUEBEC_API UQuebecCampaignSaveGame : public USaveGame
 public:
     UPROPERTY(VisibleAnywhere) int32 Version = 0;
     UPROPERTY(VisibleAnywhere) int32 CompletedMissions = -1;
-    bool IsSupported() const { return Version == 1 && CompletedMissions >= 0 && CompletedMissions <= 2; }
+    // Story tail. A version-1 slot leaves these at 0. Version 3 writes them. Version 2 is never written.
+    UPROPERTY(VisibleAnywhere) int32 PondStep = 0;
+    UPROPERTY(VisibleAnywhere) int32 CourtStep = 0;
+    UPROPERTY(VisibleAnywhere) int32 ShowStep = 0;
+    UPROPERTY(VisibleAnywhere) int32 RescueMask = 0;
+    UPROPERTY(VisibleAnywhere) int32 ConvoyStep = 0;
+    UPROPERTY(VisibleAnywhere) int32 BlankStep = 0;
+    UPROPERTY(VisibleAnywhere) int32 TourStep = 0;
+    UPROPERTY(VisibleAnywhere) int32 HomeStep = 0;
+    // Escort tail. Version 3 leaves this at 0. Version 4 writes it.
+    UPROPERTY(VisibleAnywhere) int32 EscortStep = 0;
+    // Crossing tail. Version 4 leaves this at 0. Version 5 writes it. The lamp burn stays in the session.
+    UPROPERTY(VisibleAnywhere) int32 ShadeStep = 0;
+    // Grab tail. Version 5 leaves this at 0. Version 6 writes it. The clock stays in the session.
+    UPROPERTY(VisibleAnywhere) int32 GrabStep = 0;
+    // Short-way tail. Version 6 leaves this at 0. Version 7 writes it. The rival's clock stays in the session.
+    UPROPERTY(VisibleAnywhere) int32 CutStep = 0;
+    // Chase tail. Version 7 leaves this at 0. Version 8 writes it. The tail's place on the road stays in the session.
+    UPROPERTY(VisibleAnywhere) int32 ChaseStep = 0;
+    // Finale tail. Version 8 leaves this at 0. Version 9 writes it. The burn, the clocks, and the tail's place stay in the session.
+    UPROPERTY(VisibleAnywhere) int32 FinaleStep = 0;
+    bool IsSupported() const;
 };
 
-/** Story encounters. All objective decisions run on authority. Missions 3, 4 and 5 are session state on top of a finished race. */
+/** Story encounters. All objective decisions run on authority. Missions 3 through 10 persist on the version-3 tail. Mission 11 persists on version 4. Mission 12 persists on version 5. Mission 13 persists on version 6. Mission 14 persists on version 7. Mission 15 persists on version 8. Mission 16 persists on version 9. Completed missions stay 0–2. */
 UCLASS()
 class QUEBEC_API AQuebecCampaign : public AActor
 {
@@ -74,14 +95,22 @@ public:
     int32 ApplyJobChain(int32 BasePay, bool bSucceeded);
     int32 GetCompletedMissionCount() const { return CompletedMissions; }
     bool IsCampaignComplete() const { return Phase == EQuebecCampaignPhase::Complete; }
-    // Banked indexes from the rules headers. Kept here so the save header stays free of those headers.
-    // A boundary-2 save offers mission 3 again each session. PondStep, CourtStep, ShowStep, RescueMask, ConvoyStep and BlankStep are not written to the slot.
+    // Banked indexes from the rules headers. Kept here so this header stays free of those headers.
+    // A version-1 boundary offers mission 3 again. A version-3 slot resumes these steps. The chain is not in the slot.
     static constexpr int32 PondBankedStep = 6;
     static constexpr int32 CourtBankedStep = 4;
     static constexpr int32 ShowBankedStep = 5;
     static constexpr int32 RescueDone = 7;
     static constexpr int32 ConvoyBankedStep = 4;
     static constexpr int32 BlankBankedStep = 4;
+    static constexpr int32 TourBankedStep = 3;
+    static constexpr int32 HomeBankedStep = 3;
+    static constexpr int32 EscortBankedStep = 2;
+    static constexpr int32 ShadeBankedStep = 2;
+    static constexpr int32 GrabBankedStep = 2;
+    static constexpr int32 CutBankedStep = 2;
+    static constexpr int32 ChaseBankedStep = 2;
+    static constexpr int32 FinaleBankedStep = 5;
     bool IsPondOpen() const { return Phase == EQuebecCampaignPhase::Complete && PondStep < PondBankedStep; }
     bool IsCourtOpen() const { return Phase == EQuebecCampaignPhase::Complete && PondStep >= PondBankedStep && CourtStep < CourtBankedStep; }
     bool IsShowOpen() const { return Phase == EQuebecCampaignPhase::Complete && PondStep >= PondBankedStep && CourtStep >= CourtBankedStep && ShowStep < ShowBankedStep; }
@@ -101,15 +130,76 @@ public:
             && ShowStep >= ShowBankedStep && RescueMask >= RescueDone && ConvoyStep >= ConvoyBankedStep
             && BlankStep >= 0 && BlankStep < BlankBankedStep;
     }
-    bool IsStoryBeatOpen() const { return IsPondOpen() || IsCourtOpen() || IsShowOpen() || IsRescueOpen() || IsConvoyOpen() || IsBlankOpen(); }
+    bool IsTourOpen() const
+    {
+        return Phase == EQuebecCampaignPhase::Complete && PondStep >= PondBankedStep && CourtStep >= CourtBankedStep
+            && ShowStep >= ShowBankedStep && RescueMask >= RescueDone && ConvoyStep >= ConvoyBankedStep
+            && BlankStep >= BlankBankedStep && TourStep >= 0 && TourStep < TourBankedStep;
+    }
+    bool IsHomeOpen() const
+    {
+        return Phase == EQuebecCampaignPhase::Complete && PondStep >= PondBankedStep && CourtStep >= CourtBankedStep
+            && ShowStep >= ShowBankedStep && RescueMask >= RescueDone && ConvoyStep >= ConvoyBankedStep
+            && BlankStep >= BlankBankedStep && TourStep >= TourBankedStep && HomeStep >= 0 && HomeStep < HomeBankedStep;
+    }
+    bool IsEscortOpen() const
+    {
+        return Phase == EQuebecCampaignPhase::Complete && PondStep >= PondBankedStep && CourtStep >= CourtBankedStep
+            && ShowStep >= ShowBankedStep && RescueMask >= RescueDone && ConvoyStep >= ConvoyBankedStep
+            && BlankStep >= BlankBankedStep && TourStep >= TourBankedStep && HomeStep >= HomeBankedStep
+            && EscortStep >= 0 && EscortStep < EscortBankedStep;
+    }
+    bool IsShadeOpen() const
+    {
+        return Phase == EQuebecCampaignPhase::Complete && PondStep >= PondBankedStep && CourtStep >= CourtBankedStep
+            && ShowStep >= ShowBankedStep && RescueMask >= RescueDone && ConvoyStep >= ConvoyBankedStep
+            && BlankStep >= BlankBankedStep && TourStep >= TourBankedStep && HomeStep >= HomeBankedStep
+            && EscortStep >= EscortBankedStep && ShadeStep >= 0 && ShadeStep < ShadeBankedStep;
+    }
+    bool IsGrabOpen() const
+    {
+        return Phase == EQuebecCampaignPhase::Complete && PondStep >= PondBankedStep && CourtStep >= CourtBankedStep
+            && ShowStep >= ShowBankedStep && RescueMask >= RescueDone && ConvoyStep >= ConvoyBankedStep
+            && BlankStep >= BlankBankedStep && TourStep >= TourBankedStep && HomeStep >= HomeBankedStep
+            && EscortStep >= EscortBankedStep && ShadeStep >= ShadeBankedStep
+            && GrabStep >= 0 && GrabStep < GrabBankedStep;
+    }
+    bool IsCutOpen() const
+    {
+        return Phase == EQuebecCampaignPhase::Complete && PondStep >= PondBankedStep && CourtStep >= CourtBankedStep
+            && ShowStep >= ShowBankedStep && RescueMask >= RescueDone && ConvoyStep >= ConvoyBankedStep
+            && BlankStep >= BlankBankedStep && TourStep >= TourBankedStep && HomeStep >= HomeBankedStep
+            && EscortStep >= EscortBankedStep && ShadeStep >= ShadeBankedStep && GrabStep >= GrabBankedStep
+            && CutStep >= 0 && CutStep < CutBankedStep;
+    }
+    bool IsChaseOpen() const
+    {
+        return Phase == EQuebecCampaignPhase::Complete && PondStep >= PondBankedStep && CourtStep >= CourtBankedStep
+            && ShowStep >= ShowBankedStep && RescueMask >= RescueDone && ConvoyStep >= ConvoyBankedStep
+            && BlankStep >= BlankBankedStep && TourStep >= TourBankedStep && HomeStep >= HomeBankedStep
+            && EscortStep >= EscortBankedStep && ShadeStep >= ShadeBankedStep && GrabStep >= GrabBankedStep
+            && CutStep >= CutBankedStep && ChaseStep >= 0 && ChaseStep < ChaseBankedStep;
+    }
+    bool IsFinaleOpen() const
+    {
+        return Phase == EQuebecCampaignPhase::Complete && PondStep >= PondBankedStep && CourtStep >= CourtBankedStep
+            && ShowStep >= ShowBankedStep && RescueMask >= RescueDone && ConvoyStep >= ConvoyBankedStep
+            && BlankStep >= BlankBankedStep && TourStep >= TourBankedStep && HomeStep >= HomeBankedStep
+            && EscortStep >= EscortBankedStep && ShadeStep >= ShadeBankedStep && GrabStep >= GrabBankedStep
+            && CutStep >= CutBankedStep && ChaseStep >= ChaseBankedStep
+            && FinaleStep >= 0 && FinaleStep < FinaleBankedStep;
+    }
+    bool IsStoryBeatOpen() const { return IsPondOpen() || IsCourtOpen() || IsShowOpen() || IsRescueOpen() || IsConvoyOpen() || IsBlankOpen() || IsTourOpen() || IsHomeOpen() || IsEscortOpen() || IsShadeOpen() || IsGrabOpen() || IsCutOpen() || IsChaseOpen() || IsFinaleOpen(); }
 
     UPROPERTY(VisibleAnywhere, ReplicatedUsing=UpdatePresentation) EQuebecCampaignPhase Phase = EQuebecCampaignPhase::AimWorklight;
     UPROPERTY(VisibleAnywhere, Replicated) int32 CompletedMissions = 0;
+    // Written on the version-3 tail. The hold clocks below stay in the session.
     UPROPERTY(VisibleAnywhere, ReplicatedUsing=UpdatePresentation) int32 PondStep = 0;
     // Session-only clock for the steady beam. Not written to the v1 slot.
     UPROPERTY(VisibleAnywhere, Replicated) bool bPondTagHolding = false;
     UPROPERTY(VisibleAnywhere, Replicated) float PondTagInside = 0.f;
     UPROPERTY(VisibleAnywhere, Replicated) float PondTagOutside = 0.f;
+    // Written on the version-3 tail. The miss count below stays in the session.
     UPROPERTY(VisibleAnywhere, ReplicatedUsing=UpdatePresentation) int32 CourtStep = 0;
     // Session-only. A spoiled bank increments it so the local rasp can hear the miss. Not written to the v1 slot.
     UPROPERTY(VisibleAnywhere, Replicated) int32 CourtMisses = 0;
@@ -117,13 +207,52 @@ public:
     UPROPERTY(VisibleAnywhere, Replicated) int32 Chain = 0;
     UPROPERTY(VisibleAnywhere, Replicated) int32 ChainMask = 0;
     UPROPERTY(VisibleAnywhere, Replicated) bool bChainSpoiled = false;
+    // Written on the version-3 tail.
     UPROPERTY(VisibleAnywhere, ReplicatedUsing=UpdatePresentation) int32 ShowStep = 0;
-    // Session-only bitfield. Bits 0–2 are the terrace, the pond and the court. 7 means every group is out. Not written to the v1 slot.
+    // Bitfield. Bits 0–2 are the terrace, the pond and the court. 7 means every group is out. Written on the version-3 tail.
     UPROPERTY(VisibleAnywhere, ReplicatedUsing=UpdatePresentation) int32 RescueMask = 0;
-    // Session-only. 0 walk-up, 1 beam gap, 2 invert the plate, 3 escape gate, 4 banked. Not written to the v1 slot.
+    // 0 walk-up, 1 beam gap, 2 invert the plate, 3 escape gate, 4 banked. Written on the version-3 tail.
     UPROPERTY(VisibleAnywhere, ReplicatedUsing=UpdatePresentation) int32 ConvoyStep = 0;
-    // Session-only. 0–2 are the projection gates, 3 is the blank-page pull, 4 is banked. Not written to the v1 slot.
+    // 0–2 are the projection gates, 3 is the blank-page pull, 4 is banked. Written on the version-3 tail.
     UPROPERTY(VisibleAnywhere, ReplicatedUsing=UpdatePresentation) int32 BlankStep = 0;
+    // 0 bike, 1 pedalo, 2 swim, 3 banked. Written on the version-3 tail. Not a chain link.
+    UPROPERTY(VisibleAnywhere, ReplicatedUsing=UpdatePresentation) int32 TourStep = 0;
+    // 0 bike stand, 1 pedalo berth, 2 south bank, 3 banked. Written on the story tail. Not a chain link.
+    UPROPERTY(VisibleAnywhere, ReplicatedUsing=UpdatePresentation) int32 HomeStep = 0;
+    // 0 meet Grey Coat, 1 walk them to the door, 2 banked. Written on the version-4 tail. Not a chain link.
+    // The coat's place on the lawn is not saved. A reload during the walk puts them back at the meet.
+    UPROPERTY(VisibleAnywhere, ReplicatedUsing=UpdatePresentation) int32 EscortStep = 0;
+    UPROPERTY(VisibleAnywhere, Replicated) float EscortFriendX = 29600.f;
+    UPROPERTY(VisibleAnywhere, Replicated) float EscortFriendY = 16800.f;
+    UPROPERTY(VisibleAnywhere, Replicated) bool bEscortPlanted = false;
+    // 0 dark pocket, 1 crossing, 2 banked. Written on the version-5 tail. Not a chain link.
+    // The lamp burn is not saved. A reload clears it and leaves the step where it was.
+    UPROPERTY(VisibleAnywhere, ReplicatedUsing=UpdatePresentation) int32 ShadeStep = 0;
+    UPROPERTY(VisibleAnywhere, Replicated) bool bShadeBurned = false;
+    // 0 the case, 1 the window, 2 banked. Written on the version-6 tail. Not a chain link.
+    // The clock is not saved. A reload during the run gives the full window again.
+    UPROPERTY(VisibleAnywhere, ReplicatedUsing=UpdatePresentation) int32 GrabStep = 0;
+    UPROPERTY(VisibleAnywhere, Replicated) float GrabElapsed = 0.f;
+    // 0 the line, 1 the race, 2 banked. Written on the version-7 tail. Not a chain link.
+    // The rival's clock is not saved. A reload during the race puts them back on the line.
+    UPROPERTY(VisibleAnywhere, ReplicatedUsing=UpdatePresentation) int32 CutStep = 0;
+    UPROPERTY(VisibleAnywhere, Replicated) float CutElapsed = 0.f;
+    // 0 the seat, 1 the tail, 2 banked. Written on the version-8 tail. Not a chain link.
+    // The tail's place on the road is not saved. A reload during the chase puts them back behind the seat.
+    UPROPERTY(VisibleAnywhere, ReplicatedUsing=UpdatePresentation) int32 ChaseStep = 0;
+    UPROPERTY(VisibleAnywhere, Replicated) float ChaseTailX = 55790.8f;
+    UPROPERTY(VisibleAnywhere, Replicated) float ChaseTailY = 14839.1f;
+    // 0 meet, 1 dark, 2 page, 3 cut, 4 chase, 5 banked. Written on the version-9 tail. Not a chain link.
+    // The burn, the page clock, the rival's clock, and this tail's place are not saved.
+    // A reload keeps the stage and clears those.
+    UPROPERTY(VisibleAnywhere, ReplicatedUsing=UpdatePresentation) int32 FinaleStep = 0;
+    UPROPERTY(VisibleAnywhere, Replicated) bool bFinaleBurned = false;
+    UPROPERTY(VisibleAnywhere, Replicated) bool bFinaleHolding = false;
+    UPROPERTY(VisibleAnywhere, Replicated) bool bFinaleRacing = false;
+    UPROPERTY(VisibleAnywhere, Replicated) bool bFinaleTailing = false;
+    UPROPERTY(VisibleAnywhere, Replicated) float FinaleElapsed = 0.f;
+    UPROPERTY(VisibleAnywhere, Replicated) float FinaleTailX = 36946.3f;
+    UPROPERTY(VisibleAnywhere, Replicated) float FinaleTailY = -10553.7f;
     UPROPERTY(VisibleAnywhere, Replicated) TObjectPtr<APlayerState> LightOperator;
     UPROPERTY(VisibleAnywhere, Replicated) float LightYaw = 0.f;
     UPROPERTY(VisibleAnywhere, Replicated) float LightPitch = 0.f;
@@ -187,6 +316,59 @@ private:
     UPROPERTY() TArray<TObjectPtr<UTextRenderComponent>> ShowCaptions;
     UPROPERTY() TArray<TObjectPtr<UStaticMeshComponent>> RescueParts;
     UPROPERTY() TArray<TObjectPtr<UTextRenderComponent>> RescueCaptions;
+    UPROPERTY() TObjectPtr<UTextRenderComponent> EscortCaption;
+    UPROPERTY() TObjectPtr<UStaticMeshComponent> EscortDoor;
+    UPROPERTY() TObjectPtr<UTextRenderComponent> EscortDoorCaption;
+    UPROPERTY() TObjectPtr<UStaticMeshComponent> ShadePocket;
+    UPROPERTY() TObjectPtr<UStaticMeshComponent> ShadeFar;
+    UPROPERTY() TObjectPtr<UStaticMeshComponent> ShadeLampA;
+    UPROPERTY() TObjectPtr<UStaticMeshComponent> ShadeLampB;
+    UPROPERTY() TObjectPtr<UTextRenderComponent> ShadePocketCaption;
+    UPROPERTY() TObjectPtr<UTextRenderComponent> ShadeFarCaption;
+    UPROPERTY() TObjectPtr<UTextRenderComponent> ShadeLampACaption;
+    UPROPERTY() TObjectPtr<UTextRenderComponent> ShadeLampBCaption;
+    UPROPERTY() TObjectPtr<UStaticMeshComponent> GrabCase;
+    UPROPERTY() TObjectPtr<UStaticMeshComponent> GrabDrop;
+    UPROPERTY() TObjectPtr<UTextRenderComponent> GrabCaseCaption;
+    UPROPERTY() TObjectPtr<UTextRenderComponent> GrabDropCaption;
+    UPROPERTY() TObjectPtr<UStaticMeshComponent> CutLine;
+    UPROPERTY() TObjectPtr<UStaticMeshComponent> CutFinish;
+    UPROPERTY() TObjectPtr<UStaticMeshComponent> CutRival;
+    UPROPERTY() TObjectPtr<UTextRenderComponent> CutLineCaption;
+    UPROPERTY() TObjectPtr<UTextRenderComponent> CutFinishCaption;
+    UPROPERTY() TObjectPtr<UTextRenderComponent> CutRivalCaption;
+    UPROPERTY() TObjectPtr<UStaticMeshComponent> ChaseSeat;
+    UPROPERTY() TObjectPtr<UStaticMeshComponent> ChaseHide;
+    UPROPERTY() TObjectPtr<UStaticMeshComponent> ChaseTail;
+    UPROPERTY() TObjectPtr<UTextRenderComponent> ChaseSeatCaption;
+    UPROPERTY() TObjectPtr<UTextRenderComponent> ChaseHideCaption;
+    UPROPERTY() TObjectPtr<UTextRenderComponent> ChaseTailCaption;
+    UPROPERTY() TObjectPtr<UStaticMeshComponent> FinaleMeet;
+    UPROPERTY() TObjectPtr<UStaticMeshComponent> FinalePocket;
+    UPROPERTY() TObjectPtr<UStaticMeshComponent> FinaleFar;
+    UPROPERTY() TObjectPtr<UStaticMeshComponent> FinaleLampA;
+    UPROPERTY() TObjectPtr<UStaticMeshComponent> FinaleLampB;
+    UPROPERTY() TObjectPtr<UStaticMeshComponent> FinaleCase;
+    UPROPERTY() TObjectPtr<UStaticMeshComponent> FinaleDrop;
+    UPROPERTY() TObjectPtr<UStaticMeshComponent> FinaleLine;
+    UPROPERTY() TObjectPtr<UStaticMeshComponent> FinaleFinish;
+    UPROPERTY() TObjectPtr<UStaticMeshComponent> FinaleRival;
+    UPROPERTY() TObjectPtr<UStaticMeshComponent> FinaleSeat;
+    UPROPERTY() TObjectPtr<UStaticMeshComponent> FinaleHide;
+    UPROPERTY() TObjectPtr<UStaticMeshComponent> FinaleTail;
+    UPROPERTY() TObjectPtr<UTextRenderComponent> FinaleMeetCaption;
+    UPROPERTY() TObjectPtr<UTextRenderComponent> FinalePocketCaption;
+    UPROPERTY() TObjectPtr<UTextRenderComponent> FinaleFarCaption;
+    UPROPERTY() TObjectPtr<UTextRenderComponent> FinaleLampACaption;
+    UPROPERTY() TObjectPtr<UTextRenderComponent> FinaleLampBCaption;
+    UPROPERTY() TObjectPtr<UTextRenderComponent> FinaleCaseCaption;
+    UPROPERTY() TObjectPtr<UTextRenderComponent> FinaleDropCaption;
+    UPROPERTY() TObjectPtr<UTextRenderComponent> FinaleLineCaption;
+    UPROPERTY() TObjectPtr<UTextRenderComponent> FinaleFinishCaption;
+    UPROPERTY() TObjectPtr<UTextRenderComponent> FinaleRivalCaption;
+    UPROPERTY() TObjectPtr<UTextRenderComponent> FinaleSeatCaption;
+    UPROPERTY() TObjectPtr<UTextRenderComponent> FinaleHideCaption;
+    UPROPERTY() TObjectPtr<UTextRenderComponent> FinaleTailCaption;
     UPROPERTY() TArray<TObjectPtr<UStaticMeshComponent>> ConvoyParts;
     UPROPERTY() TArray<TObjectPtr<UTextRenderComponent>> ConvoyCaptions;
     UPROPERTY() TArray<TObjectPtr<UStaticMeshComponent>> BlankParts;
@@ -240,6 +422,25 @@ private:
     void TickBlank();
     void AdvanceBlank(int32 Next, AQuebecController* Who, const TCHAR* Message, bool bFinished);
     bool NearBlank(const AQuebecController* Controller, double X, double Y) const;
+    void TickTour();
+    void AdvanceTour(int32 Next, AQuebecController* Who, const TCHAR* Message, bool bFinished);
+    bool NearTour(const AQuebecController* Controller, double X, double Y) const;
+    void TickHome();
+    void AdvanceHome(int32 Next, AQuebecController* Who, const TCHAR* Message, bool bFinished);
+    bool NearHome(const AQuebecController* Controller, double X, double Y) const;
+    void TickEscort(float DeltaSeconds);
+    void AdvanceEscort(int32 Next, AQuebecController* Who, const TCHAR* Message, bool bFinished);
+    bool NearEscort(const AQuebecController* Controller, double X, double Y) const;
+    void TickShade();
+    void AdvanceShade(int32 Next, AQuebecController* Who, const TCHAR* Message, bool bFinished);
+    void TickGrab(float DeltaSeconds);
+    void AdvanceGrab(int32 Next, AQuebecController* Who, const TCHAR* Message, bool bFinished);
+    void TickCut(float DeltaSeconds);
+    void AdvanceCut(int32 Next, AQuebecController* Who, const TCHAR* Message, bool bFinished);
+    void TickChase(float DeltaSeconds);
+    void AdvanceChase(int32 Next, AQuebecController* Who, const TCHAR* Message, bool bFinished);
+    void TickFinale(float DeltaSeconds);
+    void AdvanceFinale(int32 Next, AQuebecController* Who, const TCHAR* Message, bool bFinished);
     void ChangePhase(EQuebecCampaignPhase Next, bool bFeedback = true);
     void StopAiming();
     void SaveBoundary();

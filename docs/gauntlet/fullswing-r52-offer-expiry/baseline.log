@@ -1,0 +1,87 @@
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: unchanged idle updates retain one offer array
+
+[
+  {
+    id: 991,
+    type: 'catch',
+    x: 1000,
+    y: 0,
+    z: 1000
+  },
+  {
+    crime: true,
+    id: 992,
+    type: 'catch',
+    until: 60,
+    x: 1000,
+    y: 0,
+    z: 1000
+  },
+  {
+    crime: true,
+    id: 993,
+    type: 'catch',
+    until: 60,
+    x: 1000,
+    y: 0,
+    z: 1000
+  }
+]
+
+    at file:///home/von/Work/rouge-warden-fullswing-gauntlet/qa/vr/offer-expiry.test.mjs:10:8
+    at ModuleJob.run (node:internal/modules/esm/module_job:569:25)
+    at async node:internal/modules/esm/loader:650:26
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5) {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: [
+    { id: 991, type: 'catch', x: 1000, y: 0, z: 1000 },
+    {
+      id: 992,
+      type: 'catch',
+      x: 1000,
+      y: 0,
+      z: 1000,
+      crime: true,
+      until: 60
+    },
+    {
+      id: 993,
+      type: 'catch',
+      x: 1000,
+      y: 0,
+      z: 1000,
+      crime: true,
+      until: 60
+    }
+  ],
+  expected: [
+    { id: 991, type: 'catch', x: 1000, y: 0, z: 1000 },
+    {
+      id: 992,
+      type: 'catch',
+      x: 1000,
+      y: 0,
+      z: 1000,
+      crime: true,
+      until: 60
+    },
+    {
+      id: 993,
+      type: 'catch',
+      x: 1000,
+      y: 0,
+      z: 1000,
+      crime: true,
+      until: 60
+    }
+  ],
+  operator: 'strictEqual',
+  diff: 'simple'
+}
+
+Node.js v26.7.0

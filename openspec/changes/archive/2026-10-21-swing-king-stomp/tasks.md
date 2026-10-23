@@ -1,0 +1,4 @@
+- [x] With every pipe on, the next attack is a throw
+- [x] After a pipe is off, the attack after a throw is a stomp and the card says to get off the deck
+- [x] That stomp takes a heart on the deck and none in the air
+- [x] Check it in a 1280×800 play

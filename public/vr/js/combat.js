@@ -71,7 +71,11 @@ export function createCombat(city) {
   C.alive = (g) => g.on && g.state !== "down" && g.state !== "out" && g.state !== "pulled" && g.state !== "hung";
   // a blow landed: the combo count goes up and the meter fills
   const scored = (k) => { C.hits = C.hitsT < 2 ? C.hits + 1 : 1; C.hitsT = 0; C.focus = Math.min(1, C.focus + (FIGHT.focus[k] || 0)); };
-  C.group = (name) => goons.filter((g) => g.on && g.group === name);
+  C.group = function group(name, out = []) {
+    out.length = 0;
+    for (const g of goons) if (g.on && g.group === name) out.push(g);
+    return out;
+  };
   C.clearGroup = (name) => { for (const g of goons) if (g.group === name) g.on = false; prune(); };
   C.heal = () => { C.hp = FIGHT.hp; C.quiet = 99; };
   function prune() { for (let i = goons.length - 1; i >= 0; i--) if (!goons[i].on) goons.splice(i, 1); }
@@ -523,8 +527,8 @@ export function createCombat(city) {
   }
   // the rope targets: the living goons near the hero that are fighting (so a quiet guard never steals a swing), and the guards
   // below a perched hero (a takedown)
-  C.targets = function targets(h, R = 40) {
-    const out = [];
+  C.targets = function targets(h, R = 40, out = []) {
+    out.length = 0;
     for (const g of goons) if (C.alive(g) && (g.aggro || g.runner || C.perched(g, h)) && Math.hypot(g.x - h.x, g.z - h.z) < R) out.push(g);
     return out;
   };

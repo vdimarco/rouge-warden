@@ -63,7 +63,19 @@ After the Sludge Run is won, the story SHALL be four missions in order: Stop, Th
 - **THEN** a lesson card names the miss, the same mission starts again after that card, and the card still does not say to flush the clogs
 
 ### Requirement: Clog beats
-While the King is still asleep, the fourth flush SHALL start a balloon to bring back, the sixth flush SHALL start a pizza to deliver to a roof, the eighth flush SHALL start a washer to carry down, and the tenth flush SHALL start a rooftop brawl. Each of those jobs SHALL take the mission card, and that card SHALL NOT say to flush the clogs. The fifth, the seventh, the ninth, and the eleventh flushes SHALL keep the clog card, counting toward twelve. When a beat ends, the clog card SHALL return. One flush SHALL NOT start a beat. Flushing all twelve SHALL still wake the King. The tenth flush SHALL NOT wake him. A beat SHALL wait while a story mission is the current job. The washer on the eighth flush SHALL give less time than an odd-job washer when he hangs within a swing. The King SHALL still roar only on the fourth and the eighth flush.
+While the King is still asleep, the second flush SHALL start a falling rescue, the fourth flush SHALL start a balloon to bring back, the fifth flush SHALL start a purse snatcher to run down, the sixth flush SHALL start a pizza to deliver to a roof, the seventh flush SHALL start a mugging to clear, the eighth flush SHALL start a washer to carry down, the ninth flush SHALL start a getaway car to rope, the tenth flush SHALL start a rooftop brawl, and the eleventh flush SHALL start a lid to stand on until it seats. Each of those jobs SHALL take the mission card, and that card SHALL NOT say to flush the clogs. Standing on the ground within 4 m of that lid SHALL fill a 6 s hold. Leaving the lid, or leaving the ground, SHALL slip that hold at twice the rate. Filling the hold SHALL end the job seated. The clock SHALL be 24 s, and running it out SHALL miss as popped. The first and the third flushes SHALL keep the clog card, counting toward twelve. When a beat ends, the clog card SHALL return. Flushing all twelve SHALL still wake the King. The second, the fifth, the seventh, the ninth, the tenth, and the eleventh flushes SHALL NOT wake him. A beat SHALL wait while a story mission is the current job. A beat SHALL NOT move the story route. The washer on the eighth flush SHALL give less time than an odd-job washer when he hangs within a swing. The King SHALL still roar only on the fourth and the eighth flush. The falling rescue SHALL keep its fall rate.
+
+#### Scenario: One flush
+- **WHEN** one clog is flushed and no story mission is running
+- **THEN** the card says FLUSH THE CLOGS 1/12
+
+#### Scenario: The second flush
+- **WHEN** the second clog is flushed
+- **THEN** the card names a person to catch and does not say to flush the clogs, and the King is still asleep
+
+#### Scenario: After the rescue
+- **WHEN** that person is set down
+- **THEN** the card says FLUSH THE CLOGS 2/12
 
 #### Scenario: Three flushes
 - **WHEN** three clogs are flushed and no story mission is running
@@ -77,13 +89,25 @@ While the King is still asleep, the fourth flush SHALL start a balloon to bring 
 - **WHEN** that balloon is brought back
 - **THEN** the clog card returns
 
-#### Scenario: Five flushes
-- **WHEN** five clogs are flushed and the balloon beat has ended
+#### Scenario: The fifth flush
+- **WHEN** the fifth clog is flushed
+- **THEN** the card names a purse snatcher and does not say to flush the clogs, and the King is still asleep
+
+#### Scenario: After the chase
+- **WHEN** that chase ends
 - **THEN** the card says FLUSH THE CLOGS 5/12
 
 #### Scenario: The sixth flush
 - **WHEN** the sixth clog is flushed
 - **THEN** the card names a pizza to deliver to a roof and does not say to flush the clogs
+
+#### Scenario: The seventh flush
+- **WHEN** the seventh clog is flushed
+- **THEN** the card names a mugging and does not say to flush the clogs, and the King is still asleep
+
+#### Scenario: After the alley
+- **WHEN** that mugging is cleared
+- **THEN** the card says FLUSH THE CLOGS 7/12
 
 #### Scenario: The eighth flush
 - **WHEN** the eighth clog is flushed
@@ -93,16 +117,44 @@ While the King is still asleep, the fourth flush SHALL start a balloon to bring 
 - **WHEN** the eighth flush starts that washer within a swing
 - **THEN** the card counts from 36 s, not from a minute
 
-#### Scenario: Nine flushes
-- **WHEN** nine clogs are flushed and the washer beat has ended
+#### Scenario: After the washer
+- **WHEN** that washer is set down
+- **THEN** the card says FLUSH THE CLOGS 8/12
+
+#### Scenario: The ninth flush
+- **WHEN** the ninth clog is flushed
+- **THEN** the card names a getaway car to rope and does not say to flush the clogs, and the King is still asleep
+
+#### Scenario: After the car
+- **WHEN** that car is stopped
 - **THEN** the card says FLUSH THE CLOGS 9/12
 
 #### Scenario: The tenth flush
 - **WHEN** the tenth clog is flushed
 - **THEN** the card names a rooftop brawl and does not say to flush the clogs, and the King is still asleep
 
-#### Scenario: Eleven flushes
-- **WHEN** eleven clogs are flushed and the brawl has ended
+#### Scenario: The eleventh flush
+- **WHEN** the eleventh clog is flushed and the brawl has ended
+- **THEN** the card names a lid to stand on and does not say to flush the clogs, and the King is still asleep
+
+#### Scenario: On the lid
+- **WHEN** the hero stands on the ground within 4 m of that lid
+- **THEN** the card says to stay on the lid and the hold climbs
+
+#### Scenario: Off the lid
+- **WHEN** the hero leaves that lid or leaves the ground before the hold is full
+- **THEN** the hold slips
+
+#### Scenario: The lid seats
+- **WHEN** the hold reaches 6 s
+- **THEN** the job ends seated
+
+#### Scenario: The lid pops
+- **WHEN** the 24 s clock runs out first
+- **THEN** the lesson card says the lid popped and to stay on it
+
+#### Scenario: After the lid
+- **WHEN** that lid has seated
 - **THEN** the card says FLUSH THE CLOGS 11/12 and the King is still asleep
 
 ### Requirement: The clog compass names the card's clog
@@ -123,6 +175,19 @@ While the card says to flush the clogs and names a district, the distance on tha
 - **WHEN** the card names a clog and the hero moves toward it
 - **THEN** the distance on the card is shorter within the next few frames
 - **AND** the compass still names that district
+
+### Requirement: The King compass names a pipe
+While the card says FLUSH THE KING, the compass SHALL point at the nearest pipe that is still on him, and its title SHALL name that pipe. The card SHALL give the distance to that pipe in metres, and that distance SHALL drop on the next frames when the hero moves toward it. A clog that is still in the city SHALL NOT take the compass while the King is awake.
+
+#### Scenario: The King is awake
+- **WHEN** the King is awake and a pipe is still on him
+- **THEN** the card says FLUSH THE KING and names the distance to a pipe
+- **AND** the compass title names the King's pipe and points at that pipe
+
+#### Scenario: A step toward the pipe
+- **WHEN** the card names that pipe and the hero moves toward it
+- **THEN** the distance on the card is shorter within the next few frames
+- **AND** the compass still names the King's pipe
 
 ### Requirement: Job markers
 After Mission 1, except while a story mission after the bomb is the current mission, up to four job markers (a light beam and a ring, coloured by job) SHALL wait 90 to 420 m from the player.
@@ -257,7 +322,7 @@ While a chase is running (the Sludge Run before the crew, Stop Thief, the getawa
 - **THEN** the tick stays quiet
 
 ### Requirement: A win pays off
-A won job SHALL show a comic word wider than a finisher, play a cheer, and hold a short slow moment in play. The Sludge Run's word SHALL be FLUSH. Every other won job's word SHALL be KASPLASH. In flat play the hero SHALL leave the ground on that win, upward. A headset and reduced motion SHALL keep the word and SHALL NOT launch the body. The next mission card SHALL NOT open during that moment. A failed job SHALL NOT show a payoff word and SHALL NOT launch the hero. After the moment, the next story mission SHALL start as before.
+A won job SHALL show a comic word wider than a finisher, play a cheer, and hold a short slow moment in play. The Sludge Run's word SHALL be FLUSH. Every other won job's word SHALL be KASPLASH. In flat play the hero SHALL leave the ground on that win, upward. A roof fight, a getaway, a sludge tanker, and the Sludge Run SHALL launch the hero higher, and SHALL hold that moment longer, than a chase, a rescue, or a delivery. A headset and reduced motion SHALL keep the word and SHALL NOT launch the body. The next mission card SHALL NOT open during that moment. A failed job SHALL NOT show a payoff word and SHALL NOT launch the hero. After the moment, the next story mission SHALL start as before.
 
 #### Scenario: Stop, Thief! pays off
 - **WHEN** the player catches the purse snatcher in flat play
@@ -270,6 +335,10 @@ A won job SHALL show a comic word wider than a finisher, play a cheer, and hold 
 #### Scenario: A miss is not a win
 - **WHEN** the purse snatcher gets away
 - **THEN** no payoff word shows, and the hero is not launched upward
+
+#### Scenario: The roof fight is a bigger hop
+- **WHEN** the rooftop brawl is won in flat play
+- **THEN** the hero is launched higher than catching the purse snatcher, and the payoff stays up longer
 
 ### Requirement: A chase pulls away
 While the purse snatcher is still running, his speed SHALL stay at 6.3 m/s while the hero is within 28 m, and SHALL rise toward 9.2 m/s while the hero is farther than 28 m. While the Sludge Run runner is still running, his speed SHALL stay at 5.4 m/s while the hero is within 46 m, and SHALL rise toward 7.4 m/s while the hero is farther than 46 m. Coming back inside that distance SHALL bring the speed back toward the jog. The card SHALL say he is pulling away once that rise is most of the way there, and the card itself SHALL turn hot (a warm fill and a magenta edge) for as long as that line is up. Closing the gap SHALL bring the ink pill back with the jog line. While Mission 1 is waiting for the first swing, the runner SHALL stay stopped.
@@ -307,3 +376,57 @@ A failed job SHALL play a short low falling sting, and SHALL NOT play the win fa
 - **WHEN** the purse snatcher gets away
 - **THEN** a low falling sting plays
 - **AND** the win fanfare does not
+
+### Requirement: A job about to slip turns the card hot
+A job whose opening clock is at least 12 seconds SHALL turn the card hot once 8 seconds remain or a quarter of that opening clock remains, whichever is less. The card SHALL use the same warm fill and magenta edge as a chase that is pulling away. Putting time back above that line SHALL bring the ink pill back. A clock that opened under 12 seconds SHALL NOT turn hot from time alone. When the Sludge Run's crew arrives, that stretch's opening clock SHALL be the longer of the clock the job opened with and the time now on it. A falling person who has not been caught SHALL turn the card hot. A free balloon at or above 140 m SHALL turn the card hot. A won job's card and a clog card SHALL stay the ink pill.
+
+#### Scenario: A long fight still has time
+- **WHEN** the rooftop brawl has most of its two minutes left
+- **THEN** the card is the ink pill
+
+#### Scenario: The clock is about to run out
+- **WHEN** that brawl has 7 seconds left
+- **THEN** the card turns hot, with a warm fill and a magenta edge
+
+#### Scenario: Time comes back
+- **WHEN** that brawl is given 30 seconds again
+- **THEN** the card is the ink pill
+
+#### Scenario: The payoff is not a warning
+- **WHEN** that brawl is won
+- **THEN** the card says GOT IT and is the ink pill
+
+#### Scenario: A short edge does not heat from the clock
+- **WHEN** the falling rescue still has someone on the edge and under 12 seconds were given
+- **THEN** the card is the ink pill
+
+#### Scenario: They are falling
+- **WHEN** that person is falling and has not been caught
+- **THEN** the card turns hot
+
+#### Scenario: The balloon is still low
+- **WHEN** the balloon has slipped and is still under 140 m
+- **THEN** the card is the ink pill
+
+#### Scenario: The balloon is getting away
+- **WHEN** that balloon is free and at least 140 m up
+- **THEN** the card turns hot
+
+#### Scenario: The crew gets a fresh clock
+- **WHEN** the runner is down and the crew's clock has just been raised to 40 seconds
+- **THEN** the card is the ink pill
+
+### Requirement: The ninth-flush car is faster
+A getaway started as a mission SHALL cruise faster than an odd-job getaway. An odd-job getaway SHALL keep its slower cruise. The mission car's clock SHALL be the length of its road at that faster cruise, plus the same spare an odd job gets. The card SHALL name the mission.
+
+#### Scenario: An odd job stays slower
+- **WHEN** a getaway starts with no mission name
+- **THEN** the car cruises at 17 m/s
+
+#### Scenario: The flush before the roof fight
+- **WHEN** the getaway is the ninth flush
+- **THEN** the car cruises at 24 m/s and the card names STOP THAT CAR
+
+#### Scenario: The clock matches the pace
+- **WHEN** both cars are given the same road
+- **THEN** the faster car has less time on the clock

@@ -1,0 +1,12 @@
+{
+  "stage": "production_verified",
+  "merge": "2035c0b828fc356643c01e28be6ad37be561bda1",
+  "files": [
+    {
+      "file": "js/jobs.js",
+      "status": 200,
+      "exact": true,
+      "sha256": "c714f2e6fbb50390ceab1bb75dece1c794fa2946c98deb8c992a8b37167d69ac"
+    }
+  ]
+}

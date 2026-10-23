@@ -648,6 +648,7 @@ export function createUI({ scene, camera, rig, renderer, city, view, save, setti
     // a job's goal (jobs.js) first
     const jg = g.progress && g.progress.goal;
     if (jg && jg.kind === "clog") return { kind: "clog", name: jg.name || "", x: jg.x, y: jg.y, z: jg.z };
+    if (jg && jg.kind === "pipe") return { kind: "pipe", name: jg.name || "King", x: jg.x, y: jg.y, z: jg.z };
     if (jg) return { kind: "job", x: jg.x, y: jg.y, z: jg.z };
     // in a trial the compass points to the next ring
     const tr = g.progress && g.progress.trial;
@@ -1229,18 +1230,19 @@ body[data-mode="desktop"] .fs-hud{display:block}
 .fs-cross i:nth-child(3){top:50%;left:-14px;height:4px;width:9px;margin-top:-2px}
 .fs-cross i:nth-child(4){top:50%;right:-14px;height:4px;width:9px;margin-top:-2px}
 .fs-top{position:absolute;top:calc(env(safe-area-inset-top,0px) + 12px);left:50%;transform:translateX(-50%);display:flex;gap:12px;flex-wrap:wrap;justify-content:center;width:max-content;max-width:96vw;isolation:isolate}
-.fs-top::before{content:"";position:absolute;z-index:-1;inset:-3px -5px -4px -5px;pointer-events:none;border:3px solid var(--ink,#140a18);border-radius:8px;box-shadow:3px 3px 0 var(--ink,#140a18);background:radial-gradient(circle at 50% 50%,rgba(216,69,122,.55) 0 1.4px,rgba(216,69,122,0) 2.1px) 0 0/7px 7px,#fff9ea}
-.fs-pill{display:flex;align-items:center;gap:8px;padding:6px 16px 3px 10px;background:radial-gradient(circle at 50% 50%,rgba(20,10,24,.4) 0 1.25px,rgba(20,10,24,0) 1.85px) 0 0/6px 6px,var(--yellow,#ffd84a);border:3px solid var(--ink,#140a18);border-radius:3px;box-shadow:4px 4px 0 var(--ink,#140a18);transform:rotate(-1.4deg)}
-.fs-pill:nth-child(2){transform:rotate(1deg);background:radial-gradient(circle at 50% 50%,rgba(216,69,122,.5) 0 1.3px,rgba(216,69,122,0) 1.9px) 0 0/6px 6px,var(--cream,#fff4d8)}
+.fs-top::before{content:"";position:absolute;z-index:-1;inset:-3px -5px -4px -5px;pointer-events:none;border:3px solid var(--ink,#140a18);border-radius:8px;box-shadow:3px 3px 0 var(--ink,#140a18),inset 0 4px 0 #fffef8,inset 0 -8px 0 #e7a0b4;background:linear-gradient(#fffef8 0 6px,rgba(255,254,248,0) 13px),linear-gradient(0deg,#e7a0b4 0 8px,rgba(231,160,180,0) 16px),radial-gradient(circle at 50% 50%,rgba(216,69,122,.55) 0 1.4px,rgba(216,69,122,0) 2.1px) 0 0/7px 7px,#fff9ea}
+.fs-pill{display:flex;align-items:center;gap:8px;padding:6px 16px 3px 10px;background:linear-gradient(#fffef8,#fffef8) 0 0/100% 4px no-repeat,linear-gradient(#c45a78,#c45a78) 0 100%/100% 5px no-repeat,radial-gradient(circle at 50% 50%,rgba(20,10,24,.4) 0 1.25px,rgba(20,10,24,0) 1.85px) 0 0/6px 6px,var(--yellow,#ffd84a);border:3px solid var(--ink,#140a18);border-radius:3px;box-shadow:4px 4px 0 var(--ink,#140a18),inset 0 2px 0 rgba(255,252,244,.8),inset 0 -3px 0 rgba(20,10,24,.16);transform:rotate(-1.4deg)}
+.fs-pill:nth-child(2){transform:rotate(1deg);background:linear-gradient(#fffef8,#fffef8) 0 0/100% 4px no-repeat,linear-gradient(#c45a78,#c45a78) 0 100%/100% 5px no-repeat,radial-gradient(circle at 50% 50%,rgba(216,69,122,.5) 0 1.3px,rgba(216,69,122,0) 1.9px) 0 0/6px 6px,var(--cream,#fff4d8)}
 .fs-pill:nth-child(3){transform:rotate(-0.6deg)}
 .fs-pill:nth-child(n+4){transform:rotate(1.2deg)}
 .fs-pill b{font:400 30px/1 var(--comic,"Bangers",Impact,"Arial Black",sans-serif)}
 .fs-pill small{font:700 21px/1 var(--ui,"Barlow Condensed","Arial Narrow",system-ui,sans-serif);opacity:1;color:var(--ink,#140a18)}
 .fs-pill em{font-style:normal;font-size:21px;letter-spacing:.1em;color:var(--magenta,#d8457a)}
-.fs-coin{width:24px;height:24px;border-radius:50%;background:radial-gradient(circle at 34% 30%,#fff3bf 0 26%,#f2c14e 52%,#a87412 100%);border:3px solid var(--ink,#140a18);box-sizing:border-box;box-shadow:inset 0 -2px 0 rgba(20,10,24,.45)}
+.fs-coin{width:24px;height:24px;border-radius:50%;background:radial-gradient(circle at 32% 28%,#fff6d0 0 16%,rgba(255,246,208,0) 34%),radial-gradient(circle at 70% 76%,rgba(80,36,8,.5) 0 20%,rgba(80,36,8,0) 42%),radial-gradient(circle at 34% 30%,#fff3bf 0 26%,#f2c14e 52%,#a87412 100%);border:3px solid var(--ink,#140a18);box-sizing:border-box;box-shadow:inset 0 -2px 0 rgba(20,10,24,.45)}
 .fs-drop{width:16px;height:21px;border-radius:50% 50% 50% 50%/62% 62% 38% 38%;background:linear-gradient(155deg,#f4ffd4 0%,#9cff3a 46%,#2f8a14 100%);border:3px solid var(--ink,#140a18);box-sizing:border-box}
 .fs-heart{color:#ff3a4a;font-size:26px;margin:0 1px;text-shadow:2px 0 var(--ink,#140a18),-2px 0 var(--ink,#140a18),0 2px var(--ink,#140a18),0 -2px var(--ink,#140a18)}.fs-heart.off{color:#d9cfb8}
 .fs-compass svg{width:28px;height:28px;border-radius:50%;background:#fff9ea;box-shadow:0 0 0 2.5px var(--ink,#140a18);fill:var(--red,#e0482c);stroke:var(--ink,#140a18);stroke-width:2.6;stroke-linejoin:round;transition:transform .08s linear}
+.fs-compass [data-k=elev]{display:block;font-size:14px;line-height:1.1}
 .fs-time b{color:var(--red,#e0482c)}
 .fs-flash{position:absolute;inset:0;opacity:0;pointer-events:none;box-shadow:inset 0 0 90px 30px rgba(110,255,120,.75)}
 .fs-flash.gold{box-shadow:inset 0 0 140px 50px rgba(255,200,70,.85)}
@@ -1256,6 +1258,7 @@ dialog.fs-menu{width:min(660px,calc(100vw - 32px));max-height:calc(100dvh - 28px
 dialog.fs-menu::before{content:"";position:absolute;right:0;top:0;width:46%;height:150px;background:radial-gradient(circle at 50% 50%,rgba(216,69,122,.55) 0 1.4px,rgba(216,69,122,0) 2.1px) 0 0/7px 7px;-webkit-mask-image:radial-gradient(ellipse at 100% 0%,#000 0%,rgba(0,0,0,0) 72%);mask-image:radial-gradient(ellipse at 100% 0%,#000 0%,rgba(0,0,0,0) 72%);pointer-events:none}
 dialog.fs-menu::backdrop{background:radial-gradient(circle at 50% 50%,rgba(255,216,74,.2) 0 1.3px,rgba(255,216,74,0) 1.9px) 0 0/9px 9px,rgba(20,10,24,.78)}
 .fs-menu>*{position:relative}
+.fs-menu .btn:focus-visible{outline-color:var(--ink,#140a18)}
 .fs-menu h2,.fs-map h2{display:inline-block;margin:0 0 10px;padding:6px 18px 3px;background:var(--yellow,#ffd84a);border:4px solid var(--ink,#140a18);box-shadow:5px 5px 0 var(--ink,#140a18);transform:rotate(-1.4deg);font:400 clamp(28px,3.8vw,40px)/1.05 var(--comic,"Bangers",Impact,"Arial Black",sans-serif);letter-spacing:.06em;color:var(--ink,#140a18);text-transform:uppercase}
 .fs-menu .lead{margin:0 0 14px;font-weight:700;font-size:19px}
 .fs-menu .btn,.fs-map .btn{--tilt:-.8deg;min-height:52px;padding:8px 14px 5px;border:4px solid var(--ink,#140a18);border-radius:3px;background:var(--cream,#fff4d8);color:var(--ink,#140a18);font:400 clamp(19px,2.1vw,23px)/1 var(--comic,"Bangers",Impact,"Arial Black",sans-serif);letter-spacing:.08em;text-transform:uppercase;cursor:pointer;box-shadow:5px 5px 0 var(--ink,#140a18);transform:rotate(var(--tilt));transition:transform .1s,box-shadow .1s,background .12s}
@@ -1284,14 +1287,16 @@ dialog.fs-menu::backdrop{background:radial-gradient(circle at 50% 50%,rgba(255,2
 .fs-map .fs-key{display:grid;grid-template-columns:auto 1fr;gap:4px 8px;align-items:center;margin:0 0 10px;font-size:16px;font-weight:700}
 .fs-map .fs-key i{display:inline-block;width:16px;height:16px;border-radius:50%;border:4px solid currentColor;box-shadow:0 0 0 2px var(--ink,#140a18)}
 .fs-map .btn{display:block;width:100%;margin:8px 0;min-height:42px;padding:6px 12px 3px;font-size:18px;text-align:left;box-shadow:4px 4px 0 var(--ink,#140a18)}
+.fs-map .btn[data-id^="pin:"]{min-height:60px}
+.fs-map .btn small{display:block;margin-top:3px;font:600 14px/1.2 var(--ui,"Barlow Condensed",sans-serif);letter-spacing:.03em}
 .fs-map-tip{position:absolute;left:0;top:0;pointer-events:none;padding:4px 10px 2px;border:3px solid var(--ink,#140a18);background:var(--yellow,#ffd84a);color:var(--ink,#140a18);box-shadow:3px 3px 0 var(--ink,#140a18);font:400 18px/1.1 var(--comic,"Bangers",Impact,"Arial Black",sans-serif);letter-spacing:.06em;white-space:nowrap;transform:translate(-50%,-140%)}
 @media (max-aspect-ratio:1/1){.fs-map{grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr) auto}.fs-map-side{max-height:38dvh}.fs-map h2{font-size:24px}}
 .fs-tip{position:fixed;z-index:15;pointer-events:none;padding:5px 12px 2px;background:var(--yellow,#ffd84a);border:3px solid var(--ink,#140a18);border-radius:3px;box-shadow:4px 4px 0 var(--ink,#140a18);color:var(--ink,#140a18);font:400 20px/1.15 var(--comic,"Bangers",Impact,"Arial Black",sans-serif);letter-spacing:.06em;text-transform:uppercase;transform:rotate(1deg)}
 @media (pointer:coarse) and (min-height:461px){.fs-menu .btn{min-height:58px}.fs-menu .fs-seg .btn{min-height:52px}}
 @media (max-height:460px){.fs-pill b{font-size:24px}.fs-pill small,.fs-pill em{font-size:17px}.fs-sub{font-size:22px}
 dialog.fs-menu{padding:10px 18px 8px;box-shadow:7px 7px 0 var(--ink,#140a18)}.fs-menu>:last-child{margin-bottom:0}.fs-menu h2{font-size:24px;padding:4px 14px 1px;margin-bottom:4px}.fs-menu .lead{margin-bottom:6px}.fs-menu .fs-row,.fs-menu .fs-seg{margin:8px 0;gap:10px}.fs-menu .btn{min-height:42px;padding:5px 10px 2px;font-size:18px;border-width:3px;box-shadow:4px 4px 0 var(--ink,#140a18)}.fs-menu .fs-seg .btn{min-height:38px;font-size:16px}.fs-menu .fs-seg>span{font-size:16px}.fs-menu p{margin:6px 0}}
-.fs-pill.fs-mission{order:-1;align-items:baseline;gap:10px;padding:6px 14px 3px;background:radial-gradient(circle at 50% 50%,rgba(216,69,122,.5) 0 1.3px,rgba(216,69,122,0) 1.9px) 0 0/6px 6px,var(--cream,#fff4d8);transform:rotate(-0.8deg);white-space:nowrap}
-.fs-pill.fs-mission.fs-pull{background:radial-gradient(circle at 50% 50%,rgba(216,69,122,.55) 0 1.3px,rgba(216,69,122,0) 1.9px) 0 0/6px 6px,#ffd6c4;border-color:var(--magenta,#d8457a);box-shadow:4px 4px 0 var(--magenta,#d8457a)}
+.fs-pill.fs-mission{order:-1;align-items:baseline;gap:10px;padding:6px 14px 3px;background:linear-gradient(#fffef8,#fffef8) 0 0/100% 4px no-repeat,linear-gradient(#c45a78,#c45a78) 0 100%/100% 5px no-repeat,radial-gradient(circle at 50% 50%,rgba(216,69,122,.5) 0 1.3px,rgba(216,69,122,0) 1.9px) 0 0/6px 6px,var(--cream,#fff4d8);transform:rotate(-0.8deg);white-space:nowrap}
+.fs-pill.fs-mission.fs-pull{background:linear-gradient(#fffef8,#fffef8) 0 0/100% 4px no-repeat,linear-gradient(#c45a78,#c45a78) 0 100%/100% 5px no-repeat,radial-gradient(circle at 50% 50%,rgba(216,69,122,.55) 0 1.3px,rgba(216,69,122,0) 1.9px) 0 0/6px 6px,#ffd6c4;border-color:var(--magenta,#d8457a);box-shadow:4px 4px 0 var(--magenta,#d8457a),inset 0 2px 0 rgba(255,252,244,.8),inset 0 -3px 0 rgba(20,10,24,.16)}
 .fs-mission b{font-size:23px;letter-spacing:.04em}.fs-mission small{font-size:18px;opacity:1}.fs-m-short{display:none}
 .fs-train{position:absolute;left:14px;bottom:14px;transform:rotate(-0.6deg);width:min(360px,38vw);padding:8px 10px 6px;background:#fffdf5;border:4px solid var(--ink,#140a18);border-radius:4px;box-shadow:6px 6px 0 var(--ink,#140a18)}
 .fs-train h3{margin:0 0 3px;font:400 20px/1 var(--comic,"Bangers",Impact,sans-serif);letter-spacing:.06em}
@@ -1348,7 +1353,7 @@ body:has(#phoneControls:not([hidden])) .fs-top:has(.fs-pill:not([hidden]):not(.f
       '<div class="fs-pill" title="Clogs"><i class="fs-drop"></i><b data-k="clog">0</b><small data-k="clogT">/12</small></div>' +
       '<div class="fs-pill fs-time" data-k="trialBox" hidden><b data-k="trial">0.0</b><small>s</small></div>' +
       '<div class="fs-pill" data-k="heartBox" hidden></div>' +
-      '<div class="fs-pill fs-compass" data-k="compassBox" title="The nearest clog"><svg viewBox="-12 -12 24 24" data-k="arrow"><path d="M0 -10 L7 8 L0 4 L-7 8 Z"/></svg><small data-k="dist"></small></div>' +
+      '<div class="fs-pill fs-compass" data-k="compassBox" title="The nearest clog"><svg viewBox="-12 -12 24 24" data-k="arrow"><path d="M0 -10 L7 8 L0 4 L-7 8 Z"/></svg><small><span data-k="dist"></span><span data-k="elev"></span></small></div>' +
       '<div class="fs-pill fs-mission" data-k="mission" hidden><b data-k="mTitle"></b><small data-k="mDetail"></small><span class="fs-m-short" data-k="mShort"></span></div>' +
       '<div class="fs-pill fs-train-now" data-k="trainNow" hidden></div>' +
       '</div><p class="fs-sub" data-k="sub" role="status"></p><p class="fs-toast" data-k="toast" role="status"></p>';
@@ -1437,7 +1442,7 @@ body:has(#phoneControls:not([hidden])) .fs-top:has(.fs-pill:not([hidden]):not(.f
     plan.append(cv, tip);
     const side = el("div", "fs-map-side");
     side.appendChild(el("h2", null, "City map"));
-    side.appendChild(el("p", null, isTouchNow() ? "Tap a pin or a place to go there." : "Click a pin or a place to go there."));
+    side.appendChild(el("p", null, (isTouchNow() ? "Tap a pin or a place to go there." : "Click a pin or a place to go there.") + " Distances are across the map."));
     const key = el("div", "fs-key");
     for (const [col, txt] of [[C.sludge, "A clog to plunge"], [C.blue, "A clean roof"], [C.coin, "The Porcelain King"], [C.magenta, "An odd job"], ["#6cff73", "A trial: fly through its green ring"], [C.cream, "The start roof, and you"]]) {
       const dot = el("i"); dot.style.color = col; key.append(dot, el("span", null, txt));
@@ -1446,6 +1451,7 @@ body:has(#phoneControls:not([hidden])) .fs-top:has(.fs-pill:not([hidden]):not(.f
     for (const p of map.pins) {
       if (!p.spot) continue;
       const b = el("button", "btn", p.name); b.type = "button"; b.dataset.id = "pin:" + p.spot.id;
+      if (Pl) b.appendChild(el("small", null, Math.round(Math.hypot(p.spot.x - Pl.pos.x, p.spot.z - Pl.pos.z)) + " m"));
       b.addEventListener("click", () => act("pin:" + p.spot.id));
       // a place in the list lights its pin on the plan (the plan's own name tag, not the headset table's)
       b.addEventListener("pointerenter", () => showTip(map.pins.indexOf(p)));
@@ -1591,22 +1597,19 @@ body:has(#phoneControls:not([hidden])) .fs-top:has(.fs-pill:not([hidden]):not(.f
     if (dh.trial !== tr) { dh.trial = tr; k.trialBox.hidden = !tr; if (tr) k.trial.textContent = tr; }
     const tg = nearestTarget();
     k.compassBox.hidden = !tg;
-    const compassTitle = !tg ? "" : tg.kind === "job" ? "Your job" : tg.kind === "ring" ? "The next ring" : (tg.name ? tg.name + " clog" : "The nearest clog");
+    const compassTitle = !tg ? "" : tg.kind === "job" ? "Your job" : tg.kind === "ring" ? "The next ring" : tg.kind === "pipe" ? "The King's pipe" : (tg.name ? tg.name + " clog" : "The nearest clog");
     if (k.compassBox.title !== compassTitle) k.compassBox.title = compassTitle;
     if (tg && Pl) {
       const dx = tg.x - Pl.pos.x, dz = tg.z - Pl.pos.z, d = Math.sqrt(dx * dx + dz * dz), a = Math.round(wrap(Math.atan2(-dx, -dz) - HD.yaw) / DEG / 3) * 3;
       if (a !== dh.ang) { dh.ang = a; k.arrow.style.transform = "rotate(" + -a + "deg)"; }
+      const dy = tg.y - Pl.pos.y, elevation = Math.abs(dy) >= 5 ? Math.round(Math.abs(dy) / 5) * 5 + " m " + (dy > 0 ? "above" : "below") : "";
+      if (elevation !== dh.elev) { dh.elev = elevation; k.elev.textContent = elevation; k.elev.dataset.short = elevation ? (dy > 0 ? "↑" : "↓") + Math.round(Math.abs(dy) / 5) * 5 + "m" : ""; }
       const dd = Math.round(d / 5) * 5;
       if (dd !== dh.dist) { dh.dist = dd; k.dist.textContent = dd >= 1000 ? (dd / 1000).toFixed(1) + " km" : dd + " m"; }
     }
     // the mission card, the training checklist and the pump sticker (game.progress objective, training, pump)
-    const ob = pg.objective, os = ob ? ob.title + "|" + ob.detail + "|" + ob.short + "|" + ob.n + "|" + ob.of : "";
-    if (dh.obj !== os) {
-      dh.obj = os; k.mission.hidden = !ob;
-      if (ob) { k.mTitle.textContent = ob.title + (ob.of ? " " + ob.n + "/" + ob.of : ""); k.mDetail.textContent = ob.detail; k.mDetail.hidden = !ob.detail; k.mShort.textContent = ob.short || ""; }
-      k.mission.classList.toggle("no-short", !(ob && ob.short));
-      k.mission.classList.toggle("fs-pull", !!(ob && /pulling away/i.test(ob.detail || "")));
-    }
+    // the objective is written later in the same frame (game.update): paintMission writes this card again then
+    const os = syncMission(pg, k);
     const trn = pg.training, ts = trn ? trn.now + "|" + (trn.done ? 1 : 0) + "|" + trn.items.map((r) => (r.done ? "1" : "0") + r.n).join("") : "";
     if (dh.train !== ts) { dh.train = ts; drawTraining(trn); }
     const pu = pg.pump, touch = !!(inp && inp.easySwing), ps = pu ? pu.kind + pu.n + "/" + pu.of + (touch ? "t" : "m") : "";
@@ -1638,6 +1641,23 @@ body:has(#phoneControls:not([hidden])) .fs-top:has(.fs-pill:not([hidden]):not(.f
       }
     }
     if (map.on) { map.root.updateMatrixWorld(true); tipPlace(); }
+  }
+
+  // The score-row card. Called at the start of the frame and again after the objective is written, so a clock,
+  // a hot state, or a clog's metres are the ones from this frame.
+  function syncMission(pg, k) {
+    const ob = pg.objective, os = ob ? ob.title + "|" + ob.detail + "|" + ob.short + "|" + ob.n + "|" + ob.of + "|" + (ob.hot ? 1 : 0) : "";
+    if (dh.obj !== os) {
+      dh.obj = os; k.mission.hidden = !ob;
+      if (ob) { k.mTitle.textContent = ob.title + (ob.of ? " " + ob.n + "/" + ob.of : ""); k.mDetail.textContent = ob.detail; k.mDetail.hidden = !ob.detail; k.mShort.textContent = ob.short || ""; }
+      k.mission.classList.toggle("no-short", !(ob && ob.short));
+      k.mission.classList.toggle("fs-pull", !!(ob && (ob.hot || /pulling away/i.test(ob.detail || ""))));
+    }
+    return os;
+  }
+  function paintMission() {
+    if (!dom.built || !dom.k) return;
+    syncMission(prog || NOPROG, dom.k);
   }
 
   /* ---------------- the frame ---------------- */
@@ -1693,6 +1713,7 @@ body:has(#phoneControls:not([hidden])) .fs-top:has(.fs-pill:not([hidden]):not(.f
     get hudVisible() { return hud.a > 0.5; },
     get hudShown() { return hud.shownFor; },
     update,
+    paintMission,
     blocking: (side) => blocked[sideOf(side)],
     say, sayLine, toast: toastSay, flash: domFlash,
     // draw the open pause page again (main.js after M changes the sound)

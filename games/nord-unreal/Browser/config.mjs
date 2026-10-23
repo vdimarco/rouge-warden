@@ -36,7 +36,7 @@ export function receiverFps(stats, previous) {
 }
 
 export function receiverLagging(stats, previous) {
-  if (receiverFps(stats, previous) < 24) return true;
+  if (receiverFps(stats, previous) < 29) return true;
   if (!previous || !(stats.jitterBufferEmittedCount > previous.jitterBufferEmittedCount)) return false;
   return (stats.jitterBufferDelay - previous.jitterBufferDelay)
     / (stats.jitterBufferEmittedCount - previous.jitterBufferEmittedCount) > .12;
@@ -58,7 +58,8 @@ export function adaptPhoneStream(state, video, now) {
   const poor = video.freezeCount > previous?.freezeCount || receiverLagging(video, previous);
   state.poor = poor ? state.poor + 1 : 0;
   state.critical = receiverFps(video, previous) < 12 ? state.critical + 1 : 0;
-  state.healthy = !poor && receiverFps(video, previous) >= 28 ? state.healthy + 1 : 0;
+  // Require headroom above 30 FPS before restoring a more demanding profile.
+  state.healthy = !poor && receiverFps(video, previous) >= 35 ? state.healthy + 1 : 0;
   if ((state.poor >= 5 || state.critical >= 2) && state.level < phoneProfiles.length - 1) state.level++;
   else if (state.healthy >= 15 && state.level > 0) state.level--;
   else return false;

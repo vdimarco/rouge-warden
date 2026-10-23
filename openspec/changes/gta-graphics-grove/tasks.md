@@ -1,0 +1,5 @@
+- [x] Draw the inventory trees within 50 m in the opening shade
+- [x] Keep the opening pitch, the aim, and the socket
+- [x] Check that a foreground trunk and crowns on both sides fall in the frame
+- [x] Run `Scripts/test_opening_grove.py`
+- [ ] Confirm the saved tree instances in Unreal (editor not available here)

@@ -1,0 +1,6 @@
+{"calls":60,"arrays":1,"state":"play"}
+PASS: sixty real street frames sample hazards
+PASS: main reuses one scratch array
+PASS: play remains active
+PASS: no page errors
+PASS: hazard scratch

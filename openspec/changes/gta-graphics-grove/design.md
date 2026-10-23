@@ -1,0 +1,5 @@
+# Opening grove
+
+A new camera does not fit. The opening pitch is −16, the aim is about 110°, and the socket stays at Y 70 and Z 110. The empty lawn is the shade, not the survey. `Data/ParkComic/layout.json` is the Ville de Montréal public-tree inventory (CC BY 4.0). `Scripts/build_park_comic.py` already instances every tree: a trunk centred at 0.32 of the height and 0.64 of the height long, and a crown mesh scaled to the inventory radius and height. The canopy mesh used there starts about a quarter of the way up, which is the ellipsoid in the shade (bottom at 0.23 of the height, top at the height). A lobed crown rebuild does not fit this shot; round 1 already shaped those meshes, and this frame is about where the masses sit.
+
+The shade keeps trees whose trunks are within 50 m of the spawn. Farther inventory trees stay in the level and out of this frame. The player car remains the box. It is not an engine capture. Unreal is not installed, so confirming the saved instances in a viewport is unchecked.

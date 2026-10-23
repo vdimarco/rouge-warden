@@ -1,0 +1,5 @@
+- [x] Play the casual idle and walk when the crew body is missing and those assets load
+- [x] Keep the static stand when the casual skeleton or its clips are missing
+- [x] Sample the idle and the stride at the opening camera
+- [x] Run `Scripts/test_stride.py`, `Scripts/test_player_stand.py`, and `Scripts/test_sway.py`
+- [ ] Confirm the walk in Unreal (editor not available here)

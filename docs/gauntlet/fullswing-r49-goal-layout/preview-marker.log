@@ -1,0 +1,10 @@
+PASS: with no job the sticker is hidden
+PASS: looking at the runner shows RUNNER and the distance on him
+PASS: the on-screen sticker stays inside the window
+PASS: the compass names the job, not a clog
+PASS: with the runner behind you the sticker stays up and marks the edge
+PASS: the edge sticker stays inside the window
+PASS: moving toward the runner says CLOSING
+PASS: leaving the runner says FALLING BEHIND
+PASS: no page errors
+PASS: goalmark

@@ -1,0 +1,23 @@
+PASS: connected button 0 emits one action per press
+PASS: disconnected button 0 emits no action
+PASS: reconnected button 0 starts a fresh edge
+PASS: connected button 1 emits one action per press
+PASS: disconnected button 1 emits no action
+PASS: reconnected button 1 starts a fresh edge
+PASS: connected button 2 emits one action per press
+PASS: disconnected button 2 emits no action
+PASS: reconnected button 2 starts a fresh edge
+PASS: connected button 3 emits one action per press
+PASS: disconnected button 3 emits no action
+PASS: reconnected button 3 starts a fresh edge
+PASS: connected button 5 emits one action per press
+PASS: disconnected button 5 emits no action
+PASS: reconnected button 5 starts a fresh edge
+PASS: connected button 9 emits one action per press
+PASS: disconnected button 9 emits no action
+PASS: reconnected button 9 starts a fresh edge
+PASS: connected button 12 emits one action per press
+PASS: disconnected button 12 emits no action
+PASS: reconnected button 12 starts a fresh edge
+PASS: no page errors
+PASS: pad reconnect

@@ -1,0 +1,4 @@
+- [x] Add the warm-cool grade after the clearcoat and before the night grade
+- [x] Shade the walking camera before and after
+- [x] Run `Scripts/test_day_grade.py`
+- [ ] Confirm the grade in Unreal (editor not available here)

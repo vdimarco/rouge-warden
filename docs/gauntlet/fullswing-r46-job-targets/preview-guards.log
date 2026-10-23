@@ -1,0 +1,7 @@
+{"first":[[-358,125.5,166.25,"clog:0"],[-350,125.5,160.25,"clog:0"]],"expected":[[-358,125.5,166.25,"clog:0"],[-350,125.5,160.25,"clog:0"]],"once":true,"synchronized":true,"completedSkipped":true,"snapshots":0}
+PASS: real city guard offsets preserved
+PASS: guards spawn once per session
+PASS: real game flush synchronizes completion and prevents guards
+PASS: guard path never requests target snapshots
+PASS: no page errors
+PASS: clog guards

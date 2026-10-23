@@ -1,0 +1,8 @@
+{"desktop":{"sizes":60,"pads":60,"values":true,"pad":{"l":80,"t":108,"r":80,"b":96},"fresh":true,"finite":true,"w":960,"h":540},"phone":{"sizes":60,"pads":60,"values":true,"pad":{"l":110,"t":108,"r":140,"b":168},"fresh":true,"finite":true,"w":390,"h":844},"restored":{"sizes":60,"pads":60,"values":true,"pad":{"l":80,"t":108,"r":80,"b":96},"fresh":true,"finite":true,"w":390,"h":844}}
+FAIL sixty projections reuse layout objects
+  {"desktop":{"sizes":60,"pads":60,"values":true,"pad":{"l":80,"t":108,"r":80,"b":96},"fresh":true,"finite":true,"w":960,"h":540},"phone":{"sizes":60,"pads":60,"values":true,"pad":{"l":110,"t":108,"r":140,"b":168},"fresh":true,"finite":true,"w":390,"h":844},"restored":{"sizes":60,"pads":60,"values":true,"pad":{"l":80,"t":108,"r":80,"b":96},"fresh":true,"finite":true,"w":390,"h":844}}
+PASS: resize uses current viewport
+PASS: phone and desktop safe areas unchanged
+PASS: placement results remain fresh and finite
+PASS: no page errors
+FAIL: goal layout scratch (1 failed, 4 passed)

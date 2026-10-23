@@ -1,0 +1,7 @@
+{"filters":0,"calls":60,"arrays":1,"type":"brawl","state":"play"}
+PASS: actual brawl counts avoid filtered arrays
+PASS: sixty real brawl frames query crew
+PASS: job reuses one crew array
+PASS: mission remains active
+PASS: no page errors
+PASS: crew count

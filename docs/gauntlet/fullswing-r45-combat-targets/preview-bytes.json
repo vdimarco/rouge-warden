@@ -1,0 +1,14 @@
+[
+  {
+    "name": "main.js",
+    "status": 200,
+    "sha256": "d87a0f3a2a044e463e5f36e4ac7961532a45909ac832a71da9eae3058c49e177",
+    "exact": true
+  },
+  {
+    "name": "combat.js",
+    "status": 200,
+    "sha256": "12c487fd65dcdebfc0a43f86fbf751fd541c6d679013bd882023e94c5713aa72",
+    "exact": true
+  }
+]

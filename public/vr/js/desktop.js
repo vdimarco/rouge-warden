@@ -323,7 +323,10 @@ export function createDesktop(canvas, camera, settings) {
       const up = padButton(gp, 12); // the d-pad up throws
       if (up && !pad.up) thr = true;
       pad.a = a; pad.x = x; pad.y = yb; pad.rb = rb; pad.start = st; pad.up = up;
-    } else gamepad.rt = gamepad.lt = false;
+    } else {
+      gamepad.rt = gamepad.lt = false;
+      for (const button in pad) pad[button] = false;
+    }
     inp.muteDown = Q.mute;
     Q.jump = Q.menu = Q.map = Q.yank = Q.mute = Q.car = Q.throw = false;
     wheel = Math.max(0, wheel - dt);
@@ -333,7 +336,7 @@ export function createDesktop(canvas, camera, settings) {
     inp.move.x = mx; inp.move.y = my;
     inp.turn = turn; inp.pitch = pitch;
     inp.jumpDown = jump; inp.menuDown = menu; inp.mapDown = map; inp.viewDown = view; inp.carDown = car; inp.throwDown = thr; inp.sprintHeld = sprint; inp.jumpHeld = keys.has("Space") || (gp ? padButton(gp, 0) : false);
-    inp.visible = true;
+    inp.visible = !document.hidden;
     // which device the player holds, for the tutorial words: a phone, the pad (once it moves), else the mouse
     const kind = inp.kind = mobile.enabled ? "touch" : usingPad ? "pad" : "mouse";
 

@@ -1,0 +1,3 @@
+- [x] One frame after a clock drops to 7 s, the pill says 7 s and is the hot card
+- [x] One step toward a clog shortens the metres on that same pill
+- [x] Check both in a 1280×800 play

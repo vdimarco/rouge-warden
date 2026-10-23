@@ -605,6 +605,12 @@ export function createRopes(scene, city, settings) {
       cupOut[i] = r.state !== "idle" || st.cupOn;
       st.segs = 0;
       // an easy swing, and a chase-view gold-ring rope, draw the ink line; the mesh stays for a headset, first person, and a test aim
+      // an easy swing draws its own ink line; the reported ends are still the hand and the anchor
+      if (r.easy && r.state !== "idle") {
+        st.rope.a.set(r.anchor.x, r.anchor.y, r.anchor.z);
+        st.rope.b.set(tip.x, tip.y, tip.z);
+      }
+      // the mesh rope stays for a headset and a test aim
       if (st.cupOn && visible && !r.easy && !r.inkLine) {
         const tie = putCup(nCup++, st.cup, st.out, head);
         st.rope.a.copy(tie); st.rope.b.copy(tip);

@@ -1,0 +1,4 @@
+- [x] Apply the procedural sway when the crew rig is not driving
+- [x] Shade the rest pose and the walk peak at the opening camera
+- [x] Run `Scripts/test_sway.py` and `Scripts/test_street_aim.py`
+- [ ] Confirm the sway in Unreal (editor not available here)

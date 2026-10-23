@@ -1,0 +1,3 @@
+- [x] Implement dirty marker buffers
+- [x] Validate unchanged/moving/color/count/visibility and image behavior
+- [x] Review, CI, deployed preview, rebase, merge and production verification

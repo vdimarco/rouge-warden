@@ -6,6 +6,9 @@ import { SUN_DIR } from "./config.js";
 import { toonify, INK, inkK, syncInk, smoothNormals, outlineOf } from "./comic.js";
 
 const MODEL_URL = "/wild/models/crew5.glb";
+const HERO_HIP = new THREE.Vector3();
+const HERO_UP = new THREE.Vector3(0, 1, 0);
+const HIP_Q = new THREE.Quaternion();
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 const smooth = (a, b, x) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
 const ease = (dt, rate) => 1 - Math.exp(-dt * rate);
@@ -150,15 +153,24 @@ bool heroGone() {
 }
 `;
 // A view-dependent rim after the cel bands, so the hero is not a flat cutout on the sunset.
-// Mitchell, Francke, Eng, "Illustrative Rendering in Team Fortress 2", 2007. Kept small so the bands stay.
+// Mitchell, Francke, Eng, "Illustrative Rendering in Team Fortress 2", 2007. The rim stays inside the bands.
 const HERO_RIM = /* glsl */ `
 vec3 heroRim(vec3 col, vec3 wn) {
   vec3 N = normalize(wn);
   float nd = clamp(dot(N, normalize(cameraPosition - vComicW)), 0.0, 1.0);
   float rim = pow(1.0 - nd, 3.0);
   float key = clamp(dot(N, normalize(uHeroSun)), 0.0, 1.0);
-  return col + vec3(1.0, 0.55, 0.28) * rim * mix(0.45, 1.0, key) * 0.32
-    + vec3(0.32, 0.46, 0.78) * rim * (1.0 - key) * 0.16;
+  // The built-in figure has a cream belt on the hips. The mapped jacket's cel flattens that belt,
+  // so paint it back on the red cloth, in the hips' own up axis, and only near the torso.
+  // A world-Y test would stay horizontal through a roll.
+  vec3 rel = vComicW - uHeroHip;
+  float along = dot(rel, uHeroUp);
+  float radial = length(rel - uHeroUp * along);
+  float belt = (1.0 - smoothstep(0.04, 0.10, abs(along - 0.08))) * (1.0 - smoothstep(0.16, 0.28, radial));
+  float jacket = smoothstep(0.04, 0.14, col.r - max(col.g, col.b));
+  col = mix(col, vec3(0.95, 0.91, 0.82), belt * jacket);
+  return col + vec3(1.0, 0.55, 0.28) * rim * mix(0.45, 1.0, key) * 0.48
+    + vec3(0.32, 0.46, 0.78) * rim * (1.0 - key) * 0.28;
 }
 `;
 function bodyMaterial(map, OPA, LIGHT) {
@@ -169,16 +181,18 @@ function bodyMaterial(map, OPA, LIGHT) {
     base(shader, r);
     shader.uniforms.uHeroOpa = OPA;
     shader.uniforms.uHeroSun = LIGHT;
+    shader.uniforms.uHeroHip = { value: HERO_HIP };
+    shader.uniforms.uHeroUp = { value: HERO_UP };
     // toonify shades with the rest-pose normal; a posed body needs the skinned one
     shader.vertexShader = shader.vertexShader.replace("vec3 wn = normal;", "vec3 wn = objectNormal;");
     // The painted face, zipper and shoe panels are in the colour map. A full cel band, and the mip
-    // that a chase view picks, flatten them into one block. Keep a share of the paint, and sample a
-    // sharper mip. Mitchell, Francke and Eng, "Illustrative Rendering in Team Fortress 2" (2007):
+    // that a chase view picks, flatten them into one block. Half the colour stays the paint, and the
+    // sample is a sharper mip. Mitchell, Francke and Eng, "Illustrative Rendering in Team Fortress 2" (2007):
     // the warp stays a warp of the albedo, so the material still reads.
     shader.fragmentShader = shader.fragmentShader.replace(/comicLight\(wn, vec3\([^)]*\)\)/, "comicLight(wn, uHeroSun)")
-      .replace("texture2D( map, vMapUv )", "texture2D( map, vMapUv, -1.25 )")
-      .replace("vec3 col = comicCel(diffuseColor.rgb, b);", "vec3 col = mix(diffuseColor.rgb, comicCel(diffuseColor.rgb, b), 0.7);")
-      .replace("void main() {", "uniform vec3 uHeroSun;\n" + DITHER + HERO_RIM + "void main() {")
+      .replace("texture2D( map, vMapUv )", "texture2D( map, vMapUv, -1.6 )")
+      .replace("vec3 col = comicCel(diffuseColor.rgb, b);", "vec3 col = mix(diffuseColor.rgb, comicCel(diffuseColor.rgb, b), 0.5);")
+      .replace("void main() {", "uniform vec3 uHeroSun;\nuniform vec3 uHeroHip;\nuniform vec3 uHeroUp;\n" + DITHER + HERO_RIM + "void main() {")
       .replace("outgoingLight = col + ", "outgoingLight = heroRim(col, wn) + ")
       .replace("#include <clipping_planes_fragment>", "#include <clipping_planes_fragment>\n  if (heroGone()) discard;");
   };
@@ -444,6 +458,9 @@ export function createHero(scene, renderer) {
     if (!readMesh || !rig) return;
     const b = rig.I.Head.b;
     b.updateWorldMatrix(true, false);
+    rig.I.Hips.b.getWorldPosition(HERO_HIP);
+    rig.I.Hips.b.getWorldQuaternion(HIP_Q);
+    HERO_UP.set(0, 1, 0).applyQuaternion(HIP_Q);
     b.getWorldPosition(READ_P);
     b.getWorldQuaternion(TQ);
     // Flight on twos moves the head a whole pose between calls. 0.7 m is only about 8.5 m/s at 12 Hz,
@@ -501,6 +518,7 @@ export function createHero(scene, renderer) {
   const setArm = (i, ux, uy, uz, fx, fy, fz) => { arm[i].up.set(ux, uy, uz).normalize(); arm[i].fore.set(fx, fy, fz).normalize(); };
   const POLE = [new THREE.Vector3(0.1, 0, 1), new THREE.Vector3(-0.1, 0, 1)];
   const pole = [new THREE.Vector3(), new THREE.Vector3()]; // this frame's knee poles (POLE, or out wide on a wall)
+  const kneeRest = [null, null]; // the knee's rest local position, so a run can step it out and the next pose puts it back
   const ikArm = [0, 1].map(() => ({ up: new THREE.Vector3(), fore: new THREE.Vector3() }));
   const hipW = [new THREE.Vector3(), new THREE.Vector3()]; // the hip joints where the posed hips put them (model frame)
 
@@ -749,6 +767,9 @@ export function createHero(scene, renderer) {
       else if (/UpLeg|Leg|Foot|ToeBase/.test(n)) w = legW;
       else if (side >= 0) w = bodyW * (1 - S.reach[side]) * (side === 0 ? 1 - S.carry : 1); // a rope arm keeps reaching for its anchor (its yank is part of the reach); the carrying arm holds on
       else w = bodyW;
+      // At a full run the captured loop foreshortens to a stand from behind the chase. Keep the opened stride instead.
+      // Walk and jog stay on the clip. Lasseter 1987, exaggeration.
+      if (MC.w[3] > 0.45 && n !== "Head" && n !== "neck") w *= 1 - MC.w[3];
       // a bone the code-built pose leaves alone (the neck, the shoulders, the hands, the toes) has no turn of its own there
       const own = d.q;
       if (n === "neck" || /Shoulder|Hand$|ToeBase/.test(n)) own.identity();
@@ -756,7 +777,7 @@ export function createHero(scene, renderer) {
       d.D.copy(p < 0 ? TQ.identity() : I[BONES[p]].D).multiply(own);
       setBone(d, own);
     }
-    WP.set(hx, hy, hz).lerp(MC.hips, legW);
+    WP.set(hx, hy, hz).lerp(MC.hips, legW * (1 - MC.w[3]));
     rig.hips.position.copy(rig.hipsRest).add(WP.applyMatrix3(rig.armInv));
   }
 
@@ -965,7 +986,7 @@ export function createHero(scene, renderer) {
 
     /* -- the pose, layer by layer -- */
     const I = rig.I, wR = S.run, wA = S.air, wS = S.swing, cr = S.crouch;
-    const ampR = clamp(hs * 0.085, 0.05, 0.3);
+    for (let sd = 0; sd < 2; sd++) if (kneeRest[sd]) I[(sd ? "Right" : "Left") + "Leg"].b.position.copy(kneeRest[sd]);
     let hipsDx = 0, hipsDy = -0.02 + Math.sin(t * 1.9) * 0.004, hipsDz = 0, lean = 0.02 + Math.sin(t * 1.9 + 0.4) * 0.01, twist = 0, bank = 0, hipTw = 0;
     const stanceX = 0.12, ay = rig.ankleY, az = -0.05;
     for (let sd = 0; sd < 2; sd++) {
@@ -974,19 +995,28 @@ export function createHero(scene, renderer) {
       foot[sd].p.set(sx * stanceX, ay, az); foot[sd].pitch = 0; foot[sd].yaw = 0; pole[sd].copy(POLE[sd]);
       setArm(sd, sx * 0.1, -1, 0.05, sx * 0.14, -1, 0.42);
     }
-    // run: a two-beat cycle, the arms against the legs
+    // run: a two-beat cycle, the arms against the legs. The chase camera sits behind the facing, so a stride
+    // along z foreshortens to a stand. The lifted foot and its knee step out to the side, where the frame can see them.
     if (wR > 0.001) {
-      const ph = S.phase, lift = 0.05 + 0.13 * clamp(hs / 3.5, 0.3, 1);
-      hipsDy = (-0.02 - 0.02 * wR - 0.03 * wR * (0.5 + 0.5 * Math.cos(2 * ph))) * 1 + hipsDy * (1 - wR);
-      lean = lean * (1 - wR) + (0.08 + 0.14 * clamp(hs / 4, 0, 1)) * wR;
-      hipTw += 0.16 * wR * Math.sin(ph); twist += -0.2 * wR * Math.sin(ph);
+      const ph = S.phase, lift = 0.62 * clamp(hs / 3.5, 0.55, 1);
+      hipsDy = (-0.04 - 0.06 * wR) + hipsDy * (1 - wR);
+      lean = lean * (1 - wR) + 0.22 * wR;
+      hipTw += 0.2 * wR * Math.sin(ph); twist += -0.28 * wR * Math.sin(ph);
       for (let sd = 0; sd < 2; sd++) {
-        const sx = sd === 0 ? 1 : -1, th = ph + (sd ? Math.PI : 0);
-        foot[sd].p.z += wR * ampR * Math.sin(th);
-        foot[sd].p.y += wR * lift * Math.max(0, Math.cos(th));
-        const psi = 0.8 * wR * Math.sin(th + Math.PI) * clamp(hs / 3, 0.3, 1);
-        V.a.set(sx * 0.12, -Math.cos(psi), Math.sin(psi)).normalize();
-        V.b.set(sx * 0.1, -Math.cos(psi + 0.8 + 0.4 * wR), Math.sin(psi + 0.8 + 0.4 * wR)).normalize();
+        const sx = sd === 0 ? 1 : -1, th = ph + (sd ? Math.PI : 0), n = sd === 0 ? "Left" : "Right";
+        const s = Math.sin(th), up = Math.max(0, Math.cos(th));
+        foot[sd].p.set(sx * (0.12 + 0.38 * up * wR), ay + lift * up * wR, az + 0.5 * s * wR);
+        pole[sd].set(sx * (0.25 + 1.05 * up), 0.25 + 0.2 * up, 0.35);
+        // The knee joint itself steps out. A rotation alone stays inside the silhouette from behind the chase.
+        // Walk and jog stay on the captured loop (or the code pose, when the clips never loaded). The step waits
+        // for the run band, the same 2.9–3.3 m/s the run clip uses, so a jog does not shove the shin out by 22 cm.
+        const knee = I[n + "Leg"].b;
+        if (!kneeRest[sd]) kneeRest[sd] = knee.position.clone();
+        const runOpen = MC.data ? MC.w[3] : smooth(2.9, 3.3, hs);
+        if (up > 0.2 && runOpen > 0.45) knee.position.x += sx * 0.22 * up * runOpen;
+        const psi = (s > 0 ? -0.9 : 0.7) * wR;
+        V.a.set(sx * (0.15 + 0.55 * (s > 0 ? 1 : 0.2)), -Math.cos(psi), Math.sin(psi)).normalize();
+        V.b.set(sx * 0.2, -Math.cos(psi + 0.6), Math.sin(psi + 0.6)).normalize();
         arm[sd].up.lerp(V.a, wR).normalize(); arm[sd].fore.lerp(V.b, wR).normalize();
       }
     }
@@ -1063,18 +1093,48 @@ export function createHero(scene, renderer) {
       arm[0].up.lerp(V.a, S.carry).normalize(); arm[0].fore.lerp(V.b, S.carry).normalize();
       lean += 0.1 * S.carry;
     }
-    // swing: legs trail, the hero hangs a little lower, the free arm goes out for balance
+    // swing: the chest leads through the bottom and the legs follow; the knees tuck on the way up.
+    // Lasseter, SIGGRAPH 1987 (arcs, follow-through, overlapping action). A quiet hang keeps the mild trail.
     if (wS > 0.001) {
+      let tw = 0, kw = 0;
+      if (nAtt) {
+        const rx = anchorMix.x - pos.x, ry = anchorMix.y - (pos.y + chestH), rz = anchorMix.z - pos.z;
+        const rl = Math.hypot(rx, ry, rz) || 1;
+        const hang = clamp(ry / rl, 0, 1);
+        const along = (vel.x * rx + vel.y * ry + vel.z * rz) / rl;
+        const across = Math.hypot(hs, vel.y);
+        // A taut rope keeps the radial speed near zero, so the tuck follows the rise and how far the
+        // rope is off vertical, not the speed toward the anchor. The bottom is the fast pass under it.
+        const rising = smooth(0.5, 4, vel.y);
+        const bottom = hang * (1 - smooth(1.5, 8, Math.abs(along))) * smooth(5, 12, across) * (1 - rising);
+        const rise = Math.max(smooth(-2, 3, vel.y), 1 - smooth(1, 7, across));
+        kw = clamp((1 - hang) * rise, 0, 1);
+        tw = clamp(Math.max(bottom, (1 - kw) * hang * smooth(5, 14, across) * (1 - rising)), 0, 1);
+      }
+      let hw = Math.max(0, 1 - tw - kw);
+      const keyed = tw + kw;
+      if (keyed > 0.2) hw *= 1 - smooth(0.2, 0.55, keyed);
+      const sw = tw + kw + hw || 1;
+      tw /= sw; kw /= sw; hw /= sw;
       for (let sd = 0; sd < 2; sd++) {
-        const sx = sd === 0 ? 1 : -1, ph = t * 3.1 + sd * 1.7;
-        V.k.set(sx * 0.14, ay + (sd === 0 ? 0.36 : 0.2) + 0.03 * Math.sin(ph), az - (sd === 0 ? 0.3 : 0.44) - 0.03 * Math.sin(ph + 1));
+        const sx = sd === 0 ? 1 : -1;
+        const yH = ay + (sd === 0 ? 0.36 : 0.2), zH = az - (sd === 0 ? 0.3 : 0.44);
+        // The chase is behind the facing, so the trail also steps out to the side. One heel stays low and wide, the other lifts.
+        const yT = ay + (sd === 0 ? 0.06 : 0.62), zT = az - (sd === 0 ? 0.72 : 0.48);
+        const yK = ay + (sd === 0 ? 0.62 : 0.5), zK = az + (sd === 0 ? 0.62 : 0.42);
+        const xSwing = sx * (0.14 * hw + (sd === 0 ? 0.48 : 0.2) * tw + 0.12 * kw);
+        V.k.set(xSwing, yH * hw + yT * tw + yK * kw, zH * hw + zT * tw + zK * kw);
         foot[sd].p.lerp(V.k, wS);
-        foot[sd].pitch += 0.4 * wS;
-        V.a.set(sx * 0.8, -0.1, -0.3).normalize(); V.b.set(sx * 0.85, 0.05, 0.0).normalize();
+        foot[sd].pitch += (0.4 * hw + 0.95 * tw + 0.25 * kw) * wS;
+        pole[sd].lerp(V.a.set(sx * 0.2, tw > kw ? -0.25 : 0.35, tw > kw ? -1 : 1), wS);
+        const ax = sx * (0.8 * hw + 0.95 * tw + 0.4 * kw), ayA = -0.1 * hw + 0.05 * tw + 0.45 * kw, azA = -0.3 * hw - 0.85 * tw + 0.55 * kw;
+        V.a.set(ax, ayA, azA).normalize(); V.b.set(ax * 0.85, ayA + 0.15, azA * 0.65).normalize();
         arm[sd].up.lerp(V.a, wS).normalize(); arm[sd].fore.lerp(V.b, wS).normalize();
       }
-      hipsDy = hipsDy * (1 - wS) + (-0.06) * wS;
-      lean = lean * (1 - wS) + 0.12 * wS;
+      hipsDy = hipsDy * (1 - wS) + (-0.06 * hw - 0.12 * tw - 0.02 * kw) * wS;
+      hipsDz += (0.1 * tw - 0.03 * kw) * wS;
+      lean = lean * (1 - wS) + (0.12 * hw + 0.72 * tw - 0.06 * kw) * wS;
+      bank += 0.28 * tw * wS;
     }
     // land: a crouch, arms out, a forward lean
     if (cr > 0.001) {

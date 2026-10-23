@@ -1,0 +1,15 @@
+import assert from 'node:assert/strict';
+import {generate} from '../../public/vr/js/city.js';
+import {createCombat} from '../../public/vr/js/combat.js';
+import {createCars} from '../../public/vr/js/cars.js';
+import {createJobs} from '../../public/vr/js/jobs.js';
+const city=generate(),h={x:-150,y:0,z:2,onGround:true},J=createJobs({city,combat:createCombat(city),cars:createCars(city)});
+J.crimesOn=false;J.update(0,0,h);
+const normal={id:991,type:'catch',x:1000,y:0,z:1000},a={...normal,id:992,crime:true,until:60},b={...normal,id:993,crime:true,until:60};J.offers=[normal,a,b];const before=J.offers;
+for(let i=0;i<60;i++)J.update(0,i,h);
+assert.equal(J.offers,before,'unchanged idle updates retain one offer array');
+J.update(0,60,h);assert.equal(J.offers,before,'expiry comparison stays strict');
+J.update(0,61,{...h,busy:true});assert.equal(J.offers,before,'busy hero defers expiration');
+const n=J.events.length;J.update(0,61,h);assert.deepEqual(J.offers,[normal]);assert.notEqual(J.offers,before);assert.deepEqual(before,[normal,a,b]);assert.deepEqual(J.events.slice(n).filter(e=>e.type==='crimeover').map(e=>e.job),['catch','catch']);
+const after=J.offers;J.update(0,62,h);assert.equal(J.offers,after);assert.equal(J.events.slice(n).filter(e=>e.type==='crimeover').length,2);
+console.log('PASS: 60 idle frames retain array; strict expiry, busy deferral, ordered events and previous-array independence');

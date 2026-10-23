@@ -1,0 +1,4 @@
+PASS: water: no invisible attachment [{"state":"idle"},{"state":"idle"}]
+PASS: above-city: no invisible attachment [{"state":"idle"},{"state":"idle"}]
+PASS: no browser errors
+PASS: holdchain

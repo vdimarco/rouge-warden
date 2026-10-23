@@ -1,0 +1,12 @@
+{
+  "stage": "production_verified",
+  "merge": "2c9d2d8f5e348459f22453ef203dab6dca2de1ed",
+  "files": [
+    {
+      "file": "js/streetview.js",
+      "status": 200,
+      "exact": true,
+      "sha256": "6a1c7c3089d596471c0cca7fae51a27b30b6bd39bdffa021a49f879fe5c64282"
+    }
+  ]
+}

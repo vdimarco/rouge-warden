@@ -11,7 +11,7 @@ permissions:
 jobs:
   city-and-one-thumb:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -19,7 +19,7 @@ jobs:
           node-version: '22'
       - run: npm ci --prefix qa/browser
       - run: cd qa/browser && npx playwright install --with-deps chromium
-      - run: node qa/vr/physics.test.mjs && node qa/vr/city.test.mjs && node qa/vr/mobile.test.mjs && node qa/vr/target.test.mjs && node qa/vr/mobile-panel.test.mjs && node qa/vr/street.test.mjs && node qa/vr/action.test.mjs && node qa/vr/chainbid.test.mjs && node qa/vr/headset-comfort.test.mjs && node qa/vr/easy.test.mjs
+      - run: node qa/vr/render-scale.test.mjs && node qa/vr/frame-metrics.test.mjs && node qa/vr/physics.test.mjs && node qa/vr/city.test.mjs && node qa/vr/mobile.test.mjs && node qa/vr/target.test.mjs && node qa/vr/mobile-panel.test.mjs && node qa/vr/street.test.mjs && node qa/vr/action.test.mjs && node qa/vr/chainbid.test.mjs && node qa/vr/headset-comfort.test.mjs && node qa/vr/easy.test.mjs
       - name: Compile city shaders and exercise one-thumb play
         run: node qa/vr/mobile.e2e.mjs
         env:
@@ -36,7 +36,7 @@ jobs:
           NODE_PATH: ${{ github.workspace }}/qa/browser/node_modules
           SHOTS: ${{ github.workspace }}/test-results/swing
       - name: Trial rings, full screen and the flat map
-        run: node qa/vr/rings-map.e2e.mjs
+        run: node qa/vr/rings-map.e2e.mjs && node qa/vr/map-distance.e2e.mjs
         env:
           NODE_PATH: ${{ github.workspace }}/qa/browser/node_modules
           SHOTS: ${{ github.workspace }}/test-results/swing
@@ -45,7 +45,7 @@ jobs:
         env:
           NODE_PATH: ${{ github.workspace }}/qa/browser/node_modules
       - name: Desktop mouse look (lock before full screen, no-lock edge turn)
-        run: node qa/vr/mouse-look.e2e.mjs
+        run: node qa/vr/mouse-look.e2e.mjs && node qa/vr/pad-reconnect.e2e.mjs && node qa/vr/hidden-page.e2e.mjs && node qa/vr/hidden-render.e2e.mjs
         env:
           NODE_PATH: ${{ github.workspace }}/qa/browser/node_modules
       - name: Gold-ring tower, button sides
@@ -75,9 +75,12 @@ jobs:
           path: test-results/swing
           retention-days: 14
 
+  # One desktop job used to run every suite. On a software renderer it was
+  # still passing when the 45 minute cap cancelled it, so the check stayed red.
+  # The suites are split so each job can finish inside its own cap.
   flat-play:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -101,7 +104,7 @@ jobs:
           NODE_PATH: ${{ github.workspace }}/qa/browser/node_modules
           SHOTS: ${{ github.workspace }}/test-results/flat
       - name: The HUD, a toast, the phone buttons and the pause menu inside the window
-        run: node qa/vr/layout.e2e.mjs
+        run: node qa/vr/layout.e2e.mjs && node qa/vr/focus.e2e.mjs && node qa/vr/motion-default.e2e.mjs
         env:
           NODE_PATH: ${{ github.workspace }}/qa/browser/node_modules
           SHOTS: ${{ github.workspace }}/test-results/flat
@@ -115,36 +118,87 @@ jobs:
         env:
           NODE_PATH: ${{ github.workspace }}/qa/browser/node_modules
           SHOTS: ${{ github.workspace }}/test-results/flat
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: swing-flat-controls
+          path: test-results/flat
+          retention-days: 14
+
+  flat-scenes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm ci --prefix qa/browser
+      - run: cd qa/browser && npx playwright install --with-deps chromium
       - name: Interface, words and menus
         run: node qa/vr/ui.mjs
         env:
           NODE_PATH: ${{ github.workspace }}/qa/browser/node_modules
-          SHOTS: ${{ github.workspace }}/test-results/flat
+          SHOTS: ${{ github.workspace }}/test-results/flat-scenes
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: swing-flat-scenes
+          path: test-results/flat-scenes
+          retention-days: 14
+
+  flat-world:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm ci --prefix qa/browser
+      - run: cd qa/browser && npx playwright install --with-deps chromium
       - name: Third-person hero and chase camera
         run: node qa/vr/hero.mjs
         env:
           NODE_PATH: ${{ github.workspace }}/qa/browser/node_modules
-          SHOTS: ${{ github.workspace }}/test-results/flat
+          SHOTS: ${{ github.workspace }}/test-results/flat-world
       - name: Street people, neon signs, bloom and the dive
-        run: node qa/vr/street.e2e.mjs
+        run: node qa/vr/street.e2e.mjs && node qa/vr/sky-gather.e2e.mjs && node qa/vr/fullscreen-clears.e2e.mjs && node qa/vr/instance-uploads.e2e.mjs && node qa/vr/figure-count-scratch.e2e.mjs && node qa/vr/goal-layout-scratch.e2e.mjs && node qa/vr/goon-rope-records.test.mjs && node qa/vr/goon-rope-records.e2e.mjs && node qa/vr/hud-throw-query.test.mjs && node qa/vr/hud-throw-query.e2e.mjs && node qa/vr/offer-expiry.test.mjs && node qa/vr/offer-expiry.e2e.mjs && node qa/vr/crew-count.test.mjs && node qa/vr/crew-count.e2e.mjs && node qa/vr/job-crew-scratch.test.mjs && node qa/vr/job-crew-scratch.e2e.mjs && node qa/vr/job-target-scratch.test.mjs && node qa/vr/job-target-scratch.e2e.mjs && node qa/vr/combat-target-scratch.test.mjs && node qa/vr/combat-target-scratch.e2e.mjs && node qa/vr/rope-want.test.mjs && node qa/vr/rope-want.e2e.mjs && node qa/vr/clog-guards.test.mjs && node qa/vr/clog-guards.e2e.mjs && node qa/vr/hazard-scratch.test.mjs && node qa/vr/hazard-scratch.e2e.mjs && node qa/vr/traffic-paint.test.mjs && node qa/vr/traffic-paint.e2e.mjs && node qa/vr/selection-slots.test.mjs && node qa/vr/selection-slots.e2e.mjs && node qa/vr/action-uploads.e2e.mjs && node qa/vr/marker-dirty.e2e.mjs && node qa/vr/hidden-street.e2e.mjs
         env:
           NODE_PATH: ${{ github.workspace }}/qa/browser/node_modules
-          SHOTS: ${{ github.workspace }}/test-results/flat
+          SHOTS: ${{ github.workspace }}/test-results/flat-world
       - name: City action (sprint, the roll, fights, cars, jobs, the opening)
         run: node qa/vr/action.e2e.mjs
         env:
           NODE_PATH: ${{ github.workspace }}/qa/browser/node_modules
-          SHOTS: ${{ github.workspace }}/test-results/flat
+          SHOTS: ${{ github.workspace }}/test-results/flat-world
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: swing-flat-world
+          path: test-results/flat-world
+          retention-days: 14
+
+  flat-missions:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm ci --prefix qa/browser
+      - run: cd qa/browser && npx playwright install --with-deps chromium
       - name: The job sticker on a chase
         run: node qa/vr/goalmark.e2e.mjs
         env:
           NODE_PATH: ${{ github.workspace }}/qa/browser/node_modules
-          SHOTS: ${{ github.workspace }}/test-results/flat
+          SHOTS: ${{ github.workspace }}/test-results/flat-missions
       - name: Mission 1 waits out the first swing
         run: node qa/vr/chasehold.e2e.mjs
         env:
           NODE_PATH: ${{ github.workspace }}/qa/browser/node_modules
-          SHOTS: ${{ github.workspace }}/test-results/flat
+          SHOTS: ${{ github.workspace }}/test-results/flat-missions
       - name: The chase clock in the music
         run: node qa/vr/chasebed.e2e.mjs
         env:
@@ -157,7 +211,7 @@ jobs:
         run: node qa/vr/swingcarry.e2e.mjs
         env:
           NODE_PATH: ${{ github.workspace }}/qa/browser/node_modules
-          SHOTS: ${{ github.workspace }}/test-results/flat
+          SHOTS: ${{ github.workspace }}/test-results/flat-missions
       - name: Missions after the bomb
         run: node qa/vr/storyroute.e2e.mjs
         env:
@@ -166,50 +220,97 @@ jobs:
         run: node qa/vr/clogbeat.e2e.mjs
         env:
           NODE_PATH: ${{ github.workspace }}/qa/browser/node_modules
-          SHOTS: ${{ github.workspace }}/test-results/flat
+          SHOTS: ${{ github.workspace }}/test-results/flat-missions
       - name: The compass names the clog on the card
-        run: node qa/vr/clogcompass.e2e.mjs
+        run: node qa/vr/clogcompass.e2e.mjs && node qa/vr/compass-height.e2e.mjs && node qa/vr/frame-metrics.e2e.mjs && node qa/vr/render-budget.e2e.mjs && node qa/vr/render-scale.e2e.mjs
         env:
           NODE_PATH: ${{ github.workspace }}/qa/browser/node_modules
-          SHOTS: ${{ github.workspace }}/test-results/flat
+          SHOTS: ${{ github.workspace }}/test-results/flat-missions
       - name: The clog distance keeps up with a swing
         run: node qa/vr/clogdist.e2e.mjs
         env:
           NODE_PATH: ${{ github.workspace }}/qa/browser/node_modules
-          SHOTS: ${{ github.workspace }}/test-results/flat
+          SHOTS: ${{ github.workspace }}/test-results/flat-missions
+      - name: The compass names the King's pipe
+        run: node qa/vr/kingcompass.e2e.mjs
+        env:
+          NODE_PATH: ${{ github.workspace }}/qa/browser/node_modules
+          SHOTS: ${{ github.workspace }}/test-results/flat-missions
       - name: A held swing stays until the button comes up
         run: node qa/vr/holdchain.e2e.mjs
         env:
           NODE_PATH: ${{ github.workspace }}/qa/browser/node_modules
-          SHOTS: ${{ github.workspace }}/test-results/flat
+          SHOTS: ${{ github.workspace }}/test-results/flat-missions
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: swing-flat-missions
+          path: test-results/flat-missions
+          retention-days: 14
+
+  flat-payoff:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm ci --prefix qa/browser
+      - run: cd qa/browser && npx playwright install --with-deps chromium
       - name: A win pays off
         run: node qa/vr/winpay.e2e.mjs
         env:
           NODE_PATH: ${{ github.workspace }}/qa/browser/node_modules
-          SHOTS: ${{ github.workspace }}/test-results/flat
+          SHOTS: ${{ github.workspace }}/test-results/flat-payoff
       - name: A win launches off the street
         run: node qa/vr/winlaunch.e2e.mjs
         env:
           NODE_PATH: ${{ github.workspace }}/qa/browser/node_modules
-          SHOTS: ${{ github.workspace }}/test-results/flat
+          SHOTS: ${{ github.workspace }}/test-results/flat-payoff
+      - name: A roof fight hops higher than a chase
+        run: node qa/vr/winbig.e2e.mjs
+        env:
+          NODE_PATH: ${{ github.workspace }}/qa/browser/node_modules
+          SHOTS: ${{ github.workspace }}/test-results/flat-payoff
       - name: A chase pulls away, and a miss teaches
         run: node qa/vr/chasepress.e2e.mjs
         env:
           NODE_PATH: ${{ github.workspace }}/qa/browser/node_modules
-          SHOTS: ${{ github.workspace }}/test-results/flat
+          SHOTS: ${{ github.workspace }}/test-results/flat-payoff
       - name: Pulling away turns the card hot
         run: node qa/vr/pullheat.e2e.mjs
         env:
           NODE_PATH: ${{ github.workspace }}/qa/browser/node_modules
-          SHOTS: ${{ github.workspace }}/test-results/flat
+          SHOTS: ${{ github.workspace }}/test-results/flat-payoff
+      - name: A clock about to run out turns the card hot
+        run: node qa/vr/clockheat.e2e.mjs
+        env:
+          NODE_PATH: ${{ github.workspace }}/qa/browser/node_modules
+          SHOTS: ${{ github.workspace }}/test-results/flat-payoff
+      - name: The ninth-flush car is faster
+        run: node qa/vr/fastcar.e2e.mjs
+        env:
+          NODE_PATH: ${{ github.workspace }}/qa/browser/node_modules
+          SHOTS: ${{ github.workspace }}/test-results/flat-payoff
       - name: A miss has its own sting
         run: node qa/vr/misssting.e2e.mjs
         env:
           NODE_PATH: ${{ github.workspace }}/qa/browser/node_modules
-          SHOTS: ${{ github.workspace }}/test-results/flat
+          SHOTS: ${{ github.workspace }}/test-results/flat-payoff
+      - name: A mission stabs, a trial counts in
+        run: node qa/vr/beatstab.e2e.mjs
+        env:
+          NODE_PATH: ${{ github.workspace }}/qa/browser/node_modules
+          SHOTS: ${{ github.workspace }}/test-results/flat-payoff
+      - name: A job win has its own sting
+        run: node qa/vr/wincue.e2e.mjs
+        env:
+          NODE_PATH: ${{ github.workspace }}/qa/browser/node_modules
+          SHOTS: ${{ github.workspace }}/test-results/flat-payoff
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: swing-flat-controls
-          path: test-results/flat
+          name: swing-flat-payoff
+          path: test-results/flat-payoff
           retention-days: 14

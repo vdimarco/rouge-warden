@@ -1,0 +1,4 @@
+- [x] A second easy web skips the building the first holds, including two swings in one frame
+- [x] A second web does not kick while the first is already attached
+- [x] The reported end of an easy web is the hero's hand
+- [x] `qa/vr/flat.mjs` swing, pad, marker, camera, lock, title, bot, and headset parts pass

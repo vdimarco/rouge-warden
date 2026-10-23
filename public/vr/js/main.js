@@ -2,6 +2,8 @@
 // the app starts from its icon), owns the rig and the body, runs the 14 steps of every frame, routes events to the
 // portal, the game and the feedback table, saves, and exposes window.G and G.test (spec §6 and §12).
 import * as THREE from "three";
+import { createRenderScale } from "./render-scale.js";
+import { createFrameMetrics } from "./frame-metrics.js";
 import { VERSION, SAVE_KEY, WORLD, SWING, COMFORT, PERF, COLORS, PHONE, CLIMB, TARGET, DESKTOP, PAD, HINT, MOVES, SUN_DIR } from "./config.js";
 import { generate } from "./city.js";
 import { createPlayer, fire, release, step, teleport, easyAnchor, armEasy, easyBoost } from "./physics.js";
@@ -23,7 +25,7 @@ import { createStreet, STREET } from "./street.js";
 import { createStreetView, createFigures } from "./streetview.js";
 import { createCombat, FIGHT } from "./combat.js";
 import { createCars, nearTraffic, trafficAt, CAR } from "./cars.js";
-import { createJobs, JOB_NAMES, MISS, STORY_ROUTE, STORY_NEAR } from "./jobs.js";
+import { createJobs, JOB, JOB_NAMES, MISS, STORY_ROUTE, STORY_NEAR } from "./jobs.js";
 import { createActionView } from "./actionview.js";
 import { createActionHud, placeGoal } from "./actionhud.js";
 import { createBloom } from "./bloom.js";
@@ -52,7 +54,7 @@ const store = {
 };
 function defaultSettings() {
   const p = COMFORT.presets[COMFORT.defaultPreset];
-  return { preset: COMFORT.defaultPreset, vignette: p.vignette, turn: p.turn, snap: p.snap, aim: p.aim, vignetteLook: "room", seated: false, height: 0, hand: "right", hold: "hold", cue: true, hz: PERF.hz, foveation: PERF.foveation, music: true, speedLines: true, verse: "full" };
+  return { preset: COMFORT.defaultPreset, vignette: p.vignette, turn: p.turn, snap: p.snap, aim: p.aim, vignetteLook: "room", seated: false, height: 0, hand: "right", hold: "hold", cue: true, hz: PERF.hz, foveation: PERF.foveation, music: true, speedLines: true, verse: REDUCED ? "calm" : "full" };
 }
 // seen: the comic scenes already played (cutscene.js), so each plays once, and the phone's gesture card (mobile.js)
 function blankSave() { return { v: 1, intro: false, tutorial: false, clogs: [], loonies: [], bonus: 0, king: "sleeping", pipes: [], best: {}, seen: { opening: false, king: false, finale: false, mission2: false, mission3: false, mission4: false, mission5: false, phoneCoach: false, districts: [] }, jobs: { sludge: false, route: 0, done: {} }, settings: defaultSettings() }; }
@@ -134,13 +136,19 @@ let renderer, scene, camera, rig, X, D, audio;
 let city, P, view, ropes, hands, comfort, game, ui, portal, fx, hero, flatcam, picker, cutscenes, street, streetView, bloom;
 let figures, combat, cars, jobs, actionView, actHud; // the city action (flat play): fights, cars, jobs
 let loadRing = null;
+const renderScale = createRenderScale();
+addEventListener("visibilitychange", () => renderScale.frame(0, false));
+// Bound high-DPI ultrawide fill cost; the DOM interface keeps its native resolution.
+function flatPixelRatio() {
+  return Math.min(window.devicePixelRatio || 1, 2, Math.sqrt(3840 * 2160 / (innerWidth * innerHeight))) * renderScale.scale;
+}
 function createRenderer() {
   THREE.ColorManagement.enabled = false;
   const r = new THREE.WebGLRenderer({ antialias: true, alpha: true, stencil: true, multiviewStereo: !FLAGS.nomv, powerPreference: "high-performance" });
   r.outputColorSpace = THREE.LinearSRGBColorSpace;
   r.toneMapping = THREE.NoToneMapping;
   r.setClearColor(COLORS.fog, 1);
-  r.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  r.setPixelRatio(flatPixelRatio());
   r.setSize(innerWidth, innerHeight);
   r.xr.enabled = true;
   $("#view").appendChild(r.domElement);
@@ -389,13 +397,14 @@ function cutsceneFrame(dt, inp) {
 }
 // The people on the sidewalks: they walk on round the player, and see the hero (in play only). The murmur follows them.
 const CAMW = new THREE.Vector3();
+const STREET_HAZARDS = [];
 const HERO_SEEN = { x: 0, y: 0, z: 0, vx: 0, vy: 0, vz: 0, onGround: false };
 function streetFrame(dt, inPlay) {
   street.limit = isXR() ? STREET.maxXR : STREET.max;
   HERO_SEEN.x = P.pos.x; HERO_SEEN.y = P.pos.y; HERO_SEEN.z = P.pos.z;
   HERO_SEEN.vx = P.vel.x; HERO_SEEN.vy = P.vel.y; HERO_SEEN.vz = P.vel.z; HERO_SEEN.onGround = !!P.onGround;
   const act = actionOn();
-  street.update(dt, G.time, P.pos, inPlay ? HERO_SEEN : null, act ? cars.hazards() : null);
+  street.update(dt, G.time, P.pos, inPlay ? HERO_SEEN : null, act ? cars.hazards(STREET_HAZARDS) : null);
   figures.begin(camera.getWorldPosition(CAMW), G.time);
   streetView.update(dt, G.time, CAMW);
   if (act) {
@@ -415,12 +424,17 @@ let winHold = 0, winCard = null, winStory = null, lastWin = null;
 let missHold = 0, missCard = null, missJob = null, lastMiss = null;
 // A test can run the story route under ?nocut. Real play runs it only after Mission 1, and the tests leave it off.
 let routeForce = false;
-// The fourth, sixth, eighth and tenth flushes each break the clog run with a different job. The queue waits out a story mission.
+// Eight flushes break the clog run, so the pump never runs three times in a row. The queue waits out a story mission.
 const CLOG_BEAT = {
+  2: { type: "catch", mission: "OVER THE EDGE", near: [36, 130] },
   4: { type: "balloon", mission: "UP FOR AIR", near: [18, 80] },
+  5: { type: "thief", mission: "PURSE RUN", near: [18, 55] },
   6: { type: "pizza", mission: "HOT PIE", near: [18, 80] },
+  7: { type: "mugging", mission: "THE ALLEY", near: [18, 80] },
   8: { type: "washer", mission: "GET HIM DOWN", near: [24, 140] },
+  9: { type: "getaway", mission: "STOP THAT CAR", near: [20, 120] },
   10: { type: "brawl", mission: "ROOF CREW", near: [24, 140] },
+  11: { type: "lid", mission: "HOLD IT DOWN", near: [16, 80] },
 };
 const clogQueue = [];
 function noteClogBeat(n) {
@@ -458,7 +472,8 @@ function endLakeDrop() {
   lakeDrop = null;
 }
 const HERO_FACE = { x: 0, z: -1 }, HERO_FIGHT = { x: 0, y: 0, z: 0, yaw: 0, onGround: false, safe: false, hidden: false, perch: false };
-const ropeIds = new Set(), GOON_POS = new Map(), firePerch = [false, false];
+const ropeWant = new Map(), combatTargets = [], jobTargets = [];
+const ropeIds = new Set(), GOON_ROPE = new Map(), firePerch = [false, false];
 function actionOn() { return flatOn && !isXR() && gameStarted && G.mode === "desktop"; }
 // Shift on the ground with no rope out and a direction held: sprint while the energy lasts; the gauge fills again after a pause
 function sprintFrame(dt, inp, moving) {
@@ -552,17 +567,18 @@ function ropeCatch(i, r) {
 // The rope targets: the fighting goons near the hero and a job's falling person or balloon. They are added and taken away as
 // they come and go; a goon's target point is his chest.
 function syncRopeTargets() {
-  const want = new Map();
+  const want = ropeWant;
+  want.clear();
   if (actionOn() && G.state === "play" && !driving) {
-    for (const g of combat.targets(heroFight())) {
-      let q = GOON_POS.get(g.id);
-      if (!q) { q = { x: 0, y: 0, z: 0 }; GOON_POS.set(g.id, q); }
-      q.x = g.x; q.y = g.y + 1.1; q.z = g.z;
-      want.set("goon:" + g.id, { id: "goon:" + g.id, tag: "goon", pos: q, radius: 1.3 });
+    for (const g of combat.targets(heroFight(), 40, combatTargets)) {
+      let t = GOON_ROPE.get(g.id);
+      if (!t) { t = { id: "goon:" + g.id, tag: "goon", pos: { x: 0, y: 0, z: 0 }, radius: 1.3 }; GOON_ROPE.set(g.id, t); }
+      t.pos.x = g.x; t.pos.y = g.y + 1.1; t.pos.z = g.z;
+      want.set(t.id, t);
     }
-    for (const t of jobs.ropeTargets(P.pos)) want.set(t.id, t);
+    for (const t of jobs.ropeTargets(P.pos, jobTargets)) want.set(t.id, t);
   }
-  for (const id of ropeIds) if (!want.has(id)) { ropes.removeTarget(id); ropeIds.delete(id); if (id.startsWith("goon:")) GOON_POS.delete(+id.slice(5)); }
+  for (const id of ropeIds) if (!want.has(id)) { ropes.removeTarget(id); ropeIds.delete(id); if (id.startsWith("goon:")) GOON_ROPE.delete(+id.slice(5)); }
   for (const [id, t] of want) if (!ropeIds.has(id)) { ropes.addTarget(t); ropeIds.add(id); }
 }
 function enterCar(c) {
@@ -720,8 +736,8 @@ function actionFrame(dt, inp) {
 // two goons on each clogged roof near the hero, once (they come back after a reload)
 const guarded = new Set();
 function guardClogs() {
-  for (const t of game.targets()) {
-    if (t.kind !== "clog" || t.done || guarded.has(t.id)) continue;
+  for (const t of city.clogs) {
+    if (save.clogs.includes(t.id) || guarded.has(t.id)) continue;
     if (Math.hypot(t.x - P.pos.x, t.z - P.pos.z) > 140) continue;
     guarded.add(t.id);
     for (let k = 0; k < 2; k++) combat.spawn(t.x + (k ? 4 : -4), t.y, t.z + (k ? -3 : 3), "clog:" + t.id);
@@ -754,6 +770,15 @@ function combatEvent(e) {
 }
 // A won job, in this game's own words. The sheet has no new title, so a flush and a kasplash carry the moment.
 function winWord(job) { return job === "sludge" ? "FLUSH" : "KASPLASH"; }
+// A won job gets a sting that fits it. The ring-trial fanfare stays on a finished trial.
+const WIN_CUE = {
+  sludge: "winWet", tanker: "winWet",
+  brawl: "winFight", mugging: "winFight",
+  thief: "winDash", pizza: "winDash", getaway: "winDash", taxi: "winDash",
+  catch: "winLift", washer: "winLift", balloon: "winLift",
+  lid: "winWet",
+};
+function winCue(job) { return WIN_CUE[job] || "winLift"; }
 const WIN_HIT = { t: 0 };
 // In front of the camera, short of the first wall, so the word sits in the view and not inside a block.
 function winSpot(out) {
@@ -765,10 +790,12 @@ function winSpot(out) {
   if (hit && WIN_HIT.t < dist + 0.3) dist = Math.max(1.45, WIN_HIT.t * 0.5);
   return out.copy(camera.position).addScaledVector(FXD, dist);
 }
+// A roof fight, a getaway, a tanker, and the bomb hop higher and hang longer than a chase, a rescue, or a delivery.
+const WIN_BIG = { sludge: 1, brawl: 1, getaway: 1, tanker: 1 };
 // The payoff: a comic word wider than a finisher, a cheer, a short slow moment, and a hop off the street. The next card waits.
-function winLaunch() {
+function winLaunch(job) {
   if (REDUCED || driving || !flatOn || isXR() || !P) return 0;
-  const B = MOVES.win, v = P.vel, hs = Math.hypot(v.x, v.z);
+  const B = WIN_BIG[job] ? MOVES.winBig : MOVES.win, v = P.vel, hs = Math.hypot(v.x, v.z);
   if (hs > 0.5) { v.x += (v.x / hs) * B.forward; v.z += (v.z / hs) * B.forward; }
   else { v.x += -Math.sin(G.rigYaw) * B.forward; v.z += -Math.cos(G.rigYaw) * B.forward; }
   v.y = Math.max(v.y, 0) + B.up;
@@ -783,14 +810,15 @@ function winPayoff(e) {
   const at = winSpot(FXP);
   const wide = flatOn && !isXR();
   const shown = !!fx.word(word, at, { scale: 2.4, size: wide ? screenWide(at, 0.62) : 0, life: 3.2 });
-  audio.sfx("trialEnd");
+  const big = !!WIN_BIG[e.job];
+  audio.sfx(winCue(e.job));
   audio.sfx("cheer", { vol: 1.1 });
   haptic(0, 1, 160); haptic(1, 1, 160);
-  if (!REDUCED) { impact({ stop: 0.14, shake: 0.55, frame: true }); slowT = Math.max(slowT, 0.55); }
-  const up = winLaunch();
-  lastWin = { job: e.job, word, shown, up };
+  if (!REDUCED) { impact({ stop: 0.14, shake: 0.55, frame: true }); slowT = Math.max(slowT, big ? 0.9 : 0.55); }
+  const up = winLaunch(e.job);
+  lastWin = { job: e.job, word, shown, up, big };
   winCard = { title: "GOT IT", detail: (JOB_NAMES[e.job] || "Job") + " done. +" + (e.reward || 0) + " Loonies", short: "GOT IT", n: 0, of: 0, tag: "win", goal: null };
-  winHold = 1.35;
+  winHold = big ? 1.9 : 1.35;
   winStory = null;
 }
 // A miss is a lesson, not a cheer. The card names the miss and one thing to do, and the retry waits it out.
@@ -809,10 +837,11 @@ const FAIL_LINES = {
   knockout: "You were knocked out. The job is lost.", left: "You left the job behind.",
   walked: "The fare got bored and walked off.", late: "Too slow! The fare jumped out at a red light.", away: "They got away. Next time!",
   flood: "The tanker burst! Sludge everywhere. Next time!",
+  popped: "The lid popped. Stand on it until it seats.",
 };
 function jobEvent(e) {
   switch (e.type) {
-    case "start": ui.toast(e.line); audio.sfx("trialStart"); break;
+    case "start": ui.toast(e.line); audio.sfx(e.mission ? "beat" : "trialStart"); break;
     case "say": ui.say(e.line, 2.5); break;
     // a crime near the hero: the hero's shout, and a marker (actionview draws the offer)
     case "crime": ui.say(e.line, 3); ui.toast("Crime: " + JOB_NAMES[e.job] + ". Swing over there!"); audio.sfx("trialStart"); break;
@@ -885,6 +914,7 @@ function startStoryStep() {
 }
 function hudFrame(dt, inp) {
   const phone = !!inp.easySwing, near = !driving ? carInReach() : null;
+  const throwable = combat.fighting > 0 && !!combat.throwTarget(throwFrom());
   const key = (k, m, t) => "<b>" + (phone ? t : inp.kind === "pad" ? k : m) + "</b>";
   let prompt = "";
   // in a fight, the dodge and the finisher come before a car in reach
@@ -893,7 +923,7 @@ function hudFrame(dt, inp) {
   else if (combat.focus >= 1 && combat.inReach(heroFight()) && !phone) prompt = key("RB", "F", "") + "FINISH";
   else if (near) prompt = phone ? "" : key("B", "R", "") + (near.traffic ? "STEAL" : "GET IN");
   else if (takedownAim()) prompt = key("RT", "CLICK", "TAP") + "TAKEDOWN";
-  else if (combat.throwTarget(throwFrom()) && combat.fighting > 0 && !phone) prompt = key("D-PAD UP", "G", "") + "THROW";
+  else if (throwable && !phone) prompt = key("D-PAD UP", "G", "") + "THROW";
   else if (combat.inReach(heroFight()) && fightHints < 3) prompt = key("RT", "CLICK", "TAP") + "PUNCH";
   const fight = combat.hits > 0 || combat.focus > 0 || combat.fighting > 0;
   actHud.update(dt, { on: G.state === "play" || G.state === "paused", hp: combat.hp, max: FIGHT.hp, energy: energy < 0.999 || sprinting ? energy : -1, prompt, phone, nearCar: !!near, driving, shout: shoutFrame(dt),
@@ -901,11 +931,12 @@ function hudFrame(dt, inp) {
     combo: combat.hits, focus: fight ? combat.focus : -1, warn: warnFrame(),
     wall: !!P.wall,
     air: G.state === "play" && !P.onGround && !P.wall && !driving && P.ropes[0].state !== "attached" && P.ropes[1].state !== "attached",
-    throwable: combat.fighting > 0 && !!combat.throwTarget(throwFrom()) });
+    throwable });
 }
 // the job sticker: the goal's name and distance, on the goal, or on the screen edge when it is off the view.
 // A chase says CLOSING or FALLING BEHIND from how the distance changed over the last half second.
 const GOAL_V = new THREE.Vector3(), GOAL_CAM = new THREE.Vector3(), GOAL_LOOK = new THREE.Vector3();
+const GOAL_SIZE = { w: 0, h: 0 }, GOAL_PAD = { l: 80, t: 108, r: 80, b: 96 }, GOAL_PHONE_PAD = { l: 110, t: 108, r: 140, b: 168 };
 const GOAL_NAMES = { sludge: "RUNNER", thief: "THIEF", getaway: "CAR", balloon: "BALLOON", catch: "FALLING", washer: "WASHER", pizza: "DROP", taxi: "DROP", brawl: "FIGHT", mugging: "MUGGING", tanker: "LEAK" };
 const GOAL_CHASE = { sludge: true, thief: true, getaway: true, balloon: true };
 let goalTrack = { tag: "", d: 0, t: -1, trend: "" };
@@ -919,8 +950,8 @@ function goalFrame(phone) {
   camera.getWorldDirection(GOAL_LOOK);
   const gx = g.x - camera.position.x, gz = g.z - camera.position.z;
   const turn = Math.atan2(-GOAL_LOOK.z * gx + GOAL_LOOK.x * gz, GOAL_LOOK.x * gx + GOAL_LOOK.z * gz);
-  const pad = phone ? { l: 110, t: 108, r: 140, b: 168 } : { l: 80, t: 108, r: 80, b: 96 };
-  const place = placeGoal(GOAL_CAM, ndc, { w: innerWidth, h: innerHeight }, pad, turn);
+  GOAL_SIZE.w = innerWidth; GOAL_SIZE.h = innerHeight;
+  const place = placeGoal(GOAL_CAM, ndc, GOAL_SIZE, phone ? GOAL_PHONE_PAD : GOAL_PAD, turn);
   const dh = Math.hypot(g.x - P.pos.x, g.z - P.pos.z);
   if (ob.tag !== goalTrack.tag) goalTrack = { tag: ob.tag, d: dh, t: G.time, trend: "" };
   else {
@@ -1487,8 +1518,7 @@ function tick(dt, frame, time) {
   if (resumeGrace > 0 && !paused) resumeGrace -= dt;
   // 8. the opening (it may place the rig: then the world poses follow at once)
   if (G.state === "intro") { portal.update(dt, G.time, G.frame, inp); toWorld(inp); }
-  // 9. aim and fire. A held mouse or pad button that has seen the GO cue lets that rope go before physics,
-  // so the let-go is the one the cue showed, and the next frame can catch the building ahead.
+  // 9. aim and fire
   if (!paused && (G.state === "play" || G.state === "intro")) aimAndFire(dt, inp);
   // 10. the body follows the head, then the physics substeps
   if (G.state === "intro") {
@@ -1560,12 +1590,13 @@ function couple(inp) {
 // target and both hands aim at it: a mouse or pad press fires at it, and a phone tap goes through the tap rules. A held press
 // still fires if a target shows up within SWING.fireHold; with none it is a dry fire along the view. A test aim override on a hand
 // wins: for that hand ropes.aim decides, as before.
-const latch = [false, false], realWait = [false, false], swingCool = [0, 0];
+const latch = [false, false], realWait = [false, false], swingCool = [0, 0], otherHeld = [false, false];
+let easyAvoid = -1;
 let noneAt = -99;
 const PICK_OPTS = { avoidBid: -1 }; // reused: the options of the second pick when both swing inputs go down in one frame
 const PHONE_DIR = new THREE.Vector3(), PROJ = { x: 0, y: 0, depth: 0, behind: false, inView: false };
 // Flat play never aims the web. Holding swing takes a point 12 body-heights ahead and 14 up; a building within 6
-// snaps, and open sky stays on that point, raised until it leaves the screen. A test aim (G.test.aimAt) and a headset
+// snaps; without a suitable building there is no attachment. A test aim (G.test.aimAt) and a headset
 // still use the old ray. A new web waits 150 ms after the last one let go.
 let easyDx = 0, easyDz = -1;
 const CAM = { cam: { x: 0, y: 0, z: 0 }, yaw: 0, pitch: 0, fov: 70, aspect: 1 };
@@ -1601,14 +1632,21 @@ function markedCup() {
   const cap = 16 * bodyH();
   return res.dist <= cap && (res.special || res.prio || goalNear(res, cap));
 }
-function playerEasy() {
+function playerEasy(avoid) {
   easyDir();
-  const a = easyAnchor(P, easyDx, easyDz);
+  const a = easyAnchor(P, easyDx, easyDz, avoid != null && avoid >= 0 ? { avoid } : undefined);
   if (a.sky) { fillCam(); for (let n = 0; n < 8 && project(CAM, a.x, a.y, a.z, PROJ).inView; n++) a.y += a.easyH * 3; }
   return a;
 }
+// The building the other rope already holds, or the one this frame's first shot just took.
+function otherWeb(i) {
+  const held = ropeBid(P.ropes[1 - i]);
+  if (held != null && held >= 0) return held;
+  return i === 1 && easyAvoid >= 0 ? easyAvoid : undefined;
+}
 function aimAndFire(dt, inp) {
   if (driving) return;
+  easyAvoid = -1;
   for (let i = 0; i < 2; i++) {
     if (swingCool[i] > 0) swingCool[i] = Math.max(0, swingCool[i] - dt);
     const h = inp.hands[i], r = P.ropes[i];
@@ -1645,13 +1683,13 @@ function aimAndFire(dt, inp) {
     // nothing: a new shot would cancel the cup before it lands.
     if (tap && r.state !== "idle") {
       if (r.state === "flying") continue;
-      const next = useEasy ? playerEasy() : phoneAim(i, h, inp);
+      const next = useEasy ? playerEasy(otherWeb(i)) : phoneAim(i, h, inp);
       if (next?.valid && !next.same && !ui.blocking(i) && !(next.easy && swingCool[i] > 0)) shoot(i, h, next);
       else D.mobile.miss(i, true);
       continue;
     }
     if (tap && h.connected && !ui.blocking(i)) {
-      const a = (lastAim[i] = useEasy ? playerEasy() : phoneAim(i, h, inp));
+      const a = (lastAim[i] = useEasy ? playerEasy(otherWeb(i)) : phoneAim(i, h, inp));
       D.mobile.target(!!a?.valid && !a.same, false);
       // only the building the other rope holds is in reach: that rope stays, and this plunger stays home.
       // an easy web that just let go waits out its 150 ms before the next one
@@ -1671,7 +1709,7 @@ function aimAndFire(dt, inp) {
     if (useEasy && !h.triggerDown && fireWait[i] <= 0) { ropes.aim(i, h.aimPos, h.aimDir, P.vel); lastAim[i] = null; continue; }
     const pk = pickerOn && !ov.aim[i] && !useEasy;
     let a;
-    if (useEasy) a = playerEasy();
+    if (useEasy) a = playerEasy(otherWeb(i));
     else if (pk) { ropes.aim(i, h.aimPos, h.aimDir, P.vel); a = picker.result(); } // the reticle follows the aim; the picker decides
     else a = ropes.aim(i, h.aimPos, h.aimDir, P.vel);
     lastAim[i] = a;
@@ -1684,6 +1722,8 @@ function aimAndFire(dt, inp) {
         shoot(i, h, a);
         // The other hand fires in this same frame (two swing inputs went down together). The picker learns of this rope only next
         // frame, so ask it again for a building that does not hold it. pick() rewrites the result in place: after shoot, never in it.
+        // An easy web has the same rule: the second shot this frame skips the building the first just took.
+        if (useEasy && i === 0 && bid >= 0) easyAvoid = bid;
         if (pk && i === 0 && bid >= 0 && handFiresRope(inp.hands[1]) && P.ropes[1].state === "idle") { PICK_OPTS.avoidBid = bid; picker.pick(TCTX, PICK_OPTS); }
       } else { fireWait[i] = SWING.fireHold; realWait[i] = !!h.swingDown; }
     } else if (fireWait[i] > 0) {
@@ -1723,6 +1763,7 @@ function shoot(i, h, a) {
   realWait[i] = false;
   if (flatOn && !isXR() && pickerOn && P.wall && flatcam.opacity > 0.5 && (phone || real)) turnToSwing(a); // before fire: it lets go of the wall. A headset does not turn the view.
   firePerch[i] = heroFight().perch; // a rope fired from a roof or a wall: the takedown is judged from here, not where the cup lands
+  otherHeld[i] = P.ropes[1 - i].state === "attached";
   fire(P, i, h.aimPos, a);
   if (a.easy) armEasy(P.ropes[i], a.easyH);
   toggled[i] = true;
@@ -1961,7 +2002,7 @@ function feedback(ev) {
       // the rope can already be gone in the same step (the chest grabbed a wall and let go of the ropes): no kick then
       if (G.state === "play" && r.state === "attached" && !SPECIAL_TAGS[r.target.tag] && !r.sticky) {
         if (G.input.easySwing) { phoneRopeT[i] = 0; phoneCatch(r); boost(i, PHONE.attachSpeed); phoneHandoff(i); }
-        else if (latch[i] && flatOn) boost(i, DESKTOP.attachSpeed); // a real press only: a test hook gets no kick
+        else if (latch[i] && flatOn && !otherHeld[i]) boost(i, DESKTOP.attachSpeed); // a real press only, and not a second web: a test hook gets no kick
       }
       catchFeedback(i, "attach");
       break;
@@ -2072,6 +2113,7 @@ function after(dt, inp, yawDelta) {
   markGoldInk(dt);
   ropes.update(dt, P, TIPS, G.time);
   game.update(dt, G.time, P, inp); // before the hand-off it only lets the sleeping King breathe
+  ui.paintMission(); // the score-row card was drawn at the start of the frame, before this objective existed
   view.update(dt, G.time, vh.pos);
   streetFrame(dt, inPlay);
   // comfort: the 50 ms low-passed acceleration, the smooth-turn rate, and whether a snap happened
@@ -2509,6 +2551,11 @@ function fightKeys(inp, mx, mz) {
 
 /* ---------------- the loop ---------------- */
 let lastTime = -1, fps = 60, titleCompiled = false;
+const frameMetrics = FLAGS.debug ? createFrameMetrics() : null;
+if (frameMetrics) for (const type of ["keydown", "pointerdown"]) addEventListener(type, (e) => {
+  if (!e.repeat && G.state === "play" && G.input?.visible && !document.hidden && !G.held) frameMetrics.input(e.timeStamp);
+}, { capture: true, passive: true });
+if (frameMetrics) addEventListener("visibilitychange", () => frameMetrics.frame(0, 0, false));
 const lastInfo = { calls: 0, tris: 0, views: 1 };
 const samples = [];
 const errSeen = new Set();
@@ -2533,7 +2580,9 @@ function loop(time, frame) {
     const stopped = hitStopT > 0 && G.state === "play";
     hitStopT = Math.max(0, hitStopT - dt);
     if (!G.held && !stopped) tick(dt * slow, frame, time);
+    if (renderScale.frame(time, G.state === "play" && G.input?.visible && !document.hidden && !G.held && !renderer.xr.isPresenting)) renderer.setPixelRatio(flatPixelRatio());
     render(frame, dt);
+    if (frameMetrics) frameMetrics.frame(time, performance.now(), G.state === "play" && G.input?.visible && !document.hidden && !G.held);
   } catch (e) {
     // an exception in the XR callback would stop three's loop for good: report it once and keep going
     const k = String(e && e.message);
@@ -2542,6 +2591,7 @@ function loop(time, frame) {
 }
 function render(frame, rdt = 0) {
   const xr = renderer.xr.isPresenting;
+  if (!xr && document.hidden) return;
   if (loadRing.visible) loadRing.rotation.z -= 0.08;
   if (shot && !xr) applyShot();
   if (xr && frame && !compiledXR) {
@@ -2796,6 +2846,8 @@ function inputSnapshot() {
   };
 }
 G.test = {
+  performance: () => frameMetrics ? frameMetrics.report() : null,
+  resetPerformance: () => frameMetrics?.reset(),
   // logic without rendering; while held the loop only renders, so step owns time
   step(dt = 1 / 60, n = 1) { for (let i = 0; i < n; i++) tick(dt, null, null); return G.test.state(); },
   hold(on = true) { G.held = !!on; return G.held; },
@@ -2872,7 +2924,22 @@ G.test = {
   // the goon as the figures draw him (on threes in flat play)
   goonView(id) { const g = combat.goons.find((q) => q.id === id); if (!g) return null; const v = goonOnThrees(g); return { phase: v.phase, poseT: v.poseT, pose: v.pose, x: v.x, z: v.z }; },
   // start a job (type: sludge, catch, washer, pizza, balloon, brawl, taxi, thief) at the nearest offer of that type, or at the hero
-  job(type) { const o = jobs.offers.find((q) => q.type === type) || null; jobs.start(type, o, heroFight()); return jobs.info(); },
+  job(type, mission) { const o = jobs.offers.find((q) => q.type === type) || null; jobs.start(type, o, heroFight(), mission ? { mission } : undefined); return jobs.info(); },
+  // The live getaway's cruise speed, or 0 when the job has no car.
+  jobPace() { const c = jobs.active && jobs.active.data && jobs.active.data.car; return c && c.auto ? c.auto.speed : 0; },
+  // Set the live job clock. The copy from action() is not the live one. Returns the timer, or false when nothing is running.
+  jobClock(t) { const A = jobs.active; if (!A) return false; A.timer = +t; return A.timer; },
+  // A free balloon, this many metres up. Returns false when the live job is not a balloon still in the air.
+  jobFloat(y) { const A = jobs.active; if (!A || A.type !== "balloon" || !A.data || !A.data.b || A.data.b.held) return false; A.data.b.free = true; A.data.b.y = +y; return A.data.b.y; },
+  // The person on the edge lets go. Returns false when the live job is not a rescue still in the air.
+  jobFall() {
+    const A = jobs.active;
+    if (!A || A.type !== "catch" || !A.data || A.data.caught || A.data.falling) return false;
+    const D = A.data;
+    D.falling = true;
+    if (D.p && D.out) { D.p.x = D.out.x; D.p.z = D.out.z; D.p.pose = 12; }
+    return true;
+  },
   // Start story mission i (0 thief, 1 catch, 2 brawl, 3 pizza). 4 or more ends the route and the clog card can show.
   storyMission(i = 0) {
     const n = Math.max(0, Math.min(STORY_ROUTE.length, i | 0));
@@ -2922,6 +2989,7 @@ G.test = {
       P.pos.x = D.drop.x; P.pos.y = D.drop.y; P.pos.z = D.drop.z;
       P.onGround = true;
     }
+    else if (A.type === "lid") D.held = JOB.lid.hold;
     else return false;
     return true;
   },
@@ -2942,13 +3010,16 @@ function debugTick() {
   const now = performance.now();
   if (now - dbgT < 500) return;
   dbgT = now;
+  const m = frameMetrics.report(), ms = n => n === null ? "n/a" : n.toFixed(1);
   const p = P ? P.pos : { x: 0, y: 0, z: 0 };
-  dbgEl.textContent = `${fps.toFixed(0)} fps  ${lastInfo.calls} calls  ${(lastInfo.tris / 1000).toFixed(0)}k tris  ${lastInfo.views} view(s)\n${G.mode} / ${G.state}  pos ${p.x.toFixed(1)} ${p.y.toFixed(1)} ${p.z.toFixed(1)}`;
+  dbgEl.textContent = `${lastInfo.calls} calls  ${(lastInfo.tris / 1000).toFixed(0)}k tris  ${lastInfo.views} view(s)\n${G.mode} / ${G.state}  pos ${p.x.toFixed(1)} ${p.y.toFixed(1)} ${p.z.toFixed(1)}\nPlay: ${ms(m.fps)} fps • p95 ${ms(m.p95Ms)} / p99 ${ms(m.p99Ms)} ms\n>50ms: ${m.over50}/${m.frames} • input→submit p95 ${ms(m.inputSubmitP95Ms)} ms (${m.inputs})\n3D: ${renderer.domElement.width}×${renderer.domElement.height} • scale ${renderScale.scale.toFixed(2)}`;
 }
 
 /* ---------------- boot ---------------- */
 function onResize() {
   if (!renderer || renderer.xr.isPresenting) return;
+  renderScale.reset();
+  renderer.setPixelRatio(flatPixelRatio());
   renderer.setSize(innerWidth, innerHeight);
   camera.aspect = innerWidth / innerHeight;
   camera.updateProjectionMatrix();
@@ -2962,6 +3033,7 @@ async function boot() {
   X.onEnd(onSessionEnd);
   X.onReset(() => { pendingReset = true; });
   X.onVisibility((state) => {
+    frameMetrics?.frame(0, 0, false);
     const vis = state === "visible";
     if (!vis) {
       // hidden or blurred (a system menu): freeze, hide the hands, quiet the sound, keep the ropes

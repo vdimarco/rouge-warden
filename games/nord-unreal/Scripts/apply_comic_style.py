@@ -146,6 +146,15 @@ float Aerial = smoothstep(2500.0, 14000.0, DepthC);
 float Haze = Aerial * lerp(0.25, 1.0, Horizon);
 Color = lerp(Color, float3(0.62, 0.70, 0.80), Haze * 0.85 * (Sky ? 0.0 : 1.0));
 
+// Street dust under the far aerial window. Hoffman and Preetham weight a horizontal
+// ray more than a steep one; that window still starts at 25 m, so the walking street
+// has no air. This band rises from 5 m to 18 m and is gone by 70 m, before the far
+// window is full. The dust is warmer than the sky haze. NightFactor 1 leaves the colour.
+float StreetNear = smoothstep(500.0, 1800.0, DepthC);
+float StreetFar = 1.0 - smoothstep(2200.0, 7000.0, DepthC);
+float StreetAir = StreetNear * StreetFar * Horizon * (Sky ? 0.0 : 1.0) * (1.0 - saturate(NightFactor));
+Color = lerp(Color, float3(0.74, 0.71, 0.64), StreetAir * 0.62);
+
 // Afternoon cumulus on sky pixels. Schneider, "The Real-Time Volumetric Cloudscapes
 // of Horizon: Zero Dawn" (SIGGRAPH 2015), marches a cloud layer. This node has no
 // volume, so only the layer remains: the view ray projects onto a plane above the
@@ -227,6 +236,35 @@ float CoatNdV = saturate(dot(NormalC, -Ray));
 float CoatEdge = pow(1.0 - CoatNdV, 5.0);
 float Coat = Clear * (0.62 + 0.38 * CoatEdge) * SkyHit;
 Color = lerp(Color, SkyRefl, Coat);
+
+// Warm sun, cool shade, on the clear day. Johannes Itten, The Art of Color
+// (1961), the warm-cool contrast. The crew key already has the half-lambert
+// and this node has no shadow ray, so that term is the split. The multiply
+// is put back to the pixel's luminance, so the exposure stays and only the
+// hue moves. Pixels the cool wash already owns stay. Gloss, the sky and the
+// printed crew stay. NightFactor 1 leaves the colour for the night grade.
+float DayLum = dot(Color, float3(0.299, 0.587, 0.114));
+float DayOpen = smoothstep(0.08, 0.16, DayLum);
+float DayMatte = smoothstep(0.28, 0.62, Roughness);
+float3 DayCool = float3(0.62, 0.96, 1.18);
+float3 DayWarm = float3(1.55, 1.12, 0.42);
+float3 DayTint = lerp(DayCool, DayWarm, Half);
+float DayShare = DayMatte * DayOpen * (1.0 - saturate(NightFactor)) * (Sky ? 0.0 : 1.0) * (1.0 - PrintedCrew);
+float3 DayGraded = saturate(Color * DayTint);
+float DayKept = dot(DayGraded, float3(0.299, 0.587, 0.114));
+DayGraded *= DayLum / max(DayKept, 1.0e-3);
+Color = lerp(Color, saturate(DayGraded), DayShare);
+
+// Directional shade on that same clear day. Mitchell, Francke and Eng,
+// "Illustrative Rendering in Team Fortress 2" (2007), the half-lambert
+// already used for the crew. The hue above keeps its luminance. This term
+// is the value: shade goes darker, and a surface toward the sun stays at 1
+// so the clear-day exposure does not move. Gloss, the sky and the printed
+// crew stay. NightFactor 1 leaves the colour for the night grade.
+float KeyOpen = smoothstep(0.12, 0.48, Half);
+float KeyShade = lerp(0.58, 1.0, KeyOpen);
+float KeyShare = DayMatte * (1.0 - saturate(NightFactor)) * (Sky ? 0.0 : 1.0) * (1.0 - PrintedCrew);
+Color *= lerp(1.0, KeyShade, KeyShare);
 
 // Night grade. Masaki Kawase, "Frame Buffer Postprocessing Effects in
 // DOUBLE-S.T.E.A.L (Wreckless)" (GDC 2003), gathers bloom from wide taps.

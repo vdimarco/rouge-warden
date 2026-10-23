@@ -1,0 +1,2 @@
+# Design
+Inspected hudFrame, throwFrom, heroFight and combat.throwTarget. throwTarget is a read-only scan; throwFrom updates the private hero scratch orientation. HUD consumers are synchronous. Avoid a persistent cache or shared frame state; scope result to one hudFrame invocation. Check all priority branches and fighting/phone/driving states before implementation. Existing combat.throw must retain its own fresh query.

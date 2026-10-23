@@ -66,6 +66,38 @@ bool FQuebecRaceResultTest::RunTest(const FString& Parameters)
     TestTrue(TEXT("A banked convoy opens the last page instead of the lap card"),
         Race->GetStatusText().Contains(TEXT("R recovers this page")));
     Race->BlankStep = AQuebecCampaign::BlankBankedStep;
+    Race->TourStep = 0;
+    TestTrue(TEXT("A blank page opens the tour instead of the lap card"),
+        Race->GetStatusText().Contains(TEXT("R recovers this tour")));
+    Race->TourStep = AQuebecCampaign::TourBankedStep;
+    Race->HomeStep = 0;
+    TestTrue(TEXT("A banked tour opens the home beat instead of the lap card"),
+        Race->GetStatusText().Contains(TEXT("R recovers this home")));
+    Race->HomeStep = AQuebecCampaign::HomeBankedStep;
+    Race->EscortStep = 0;
+    TestTrue(TEXT("A home day opens the walk instead of the lap card"),
+        Race->GetStatusText().Contains(TEXT("R recovers this walk")));
+    Race->EscortStep = AQuebecCampaign::EscortBankedStep;
+    Race->ShadeStep = 0;
+    TestTrue(TEXT("A finished walk opens the crossing instead of the lap card"),
+        Race->GetStatusText().Contains(TEXT("R recovers this dark")));
+    Race->ShadeStep = AQuebecCampaign::ShadeBankedStep;
+    Race->GrabStep = 0;
+    TestTrue(TEXT("A dark lawn opens the window instead of the lap card"),
+        Race->GetStatusText().Contains(TEXT("R recovers this window")));
+    Race->GrabStep = AQuebecCampaign::GrabBankedStep;
+    Race->CutStep = 0;
+    TestTrue(TEXT("A banked grab opens the short way instead of the lap card"),
+        Race->GetStatusText().Contains(TEXT("R recovers this cut")));
+    Race->CutStep = AQuebecCampaign::CutBankedStep;
+    Race->ChaseStep = 0;
+    TestTrue(TEXT("A banked short way opens the tail instead of the lap card"),
+        Race->GetStatusText().Contains(TEXT("R recovers this tail")));
+    Race->ChaseStep = AQuebecCampaign::ChaseBankedStep;
+    Race->FinaleStep = 0;
+    TestTrue(TEXT("A lost tail opens the day instead of the lap card"),
+        Race->GetStatusText().Contains(TEXT("R recovers this day")));
+    Race->FinaleStep = AQuebecCampaign::FinaleBankedStep;
     const FString Status = Race->GetStatusText();
     TestTrue(TEXT("Result presents recovered time and clean session best"),
         Status.Contains(TEXT("10.0s")) && Status.Contains(TEXT("recovered")) && Status.Contains(TEXT("60.0s")));

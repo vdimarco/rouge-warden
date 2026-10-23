@@ -235,8 +235,7 @@ namespace
         if (!Player) return;
         if (Player->GetPawn() == Car) Player->Possess(Character);
         Player->ForgetWalkingCharacter();
-        Player->SetControlRotation(Facing);
-        Player->ClientSetRotation(Facing);
+        Player->FrameTheStreet(Yaw);
     }
 
     // Server: the target of a shot or swing, through QuebecAimModel. Lock and LockSince carry the hysteresis.
@@ -432,8 +431,7 @@ void QuebecCombat::Respawn(AQuebecController* Player, EQuebecDownState Kind)
     {
         Character->GetCharacterMovement()->StopMovementImmediately();
         Character->TeleportTo(Spot, FRotator::ZeroRotator, false, true);
-        Player->SetControlRotation(FRotator::ZeroRotator);
-        Player->ClientSetRotation(FRotator::ZeroRotator);
+        Player->FrameTheStreet(QuebecStreetLook::OpeningYaw(World, Spot, 0.f));
     }
     Character->EndKnock();
     Character->ReleaseCombatInput();

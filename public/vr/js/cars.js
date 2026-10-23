@@ -51,7 +51,10 @@ export function trafficAt(T, i, t, out = {}) {
   const h = HEAD[Math.min(3, Math.max(0, Math.round(L[o + 3])))];
   out.i = i; out.s = s; out.len = len;
   out.x = L[o] + h[0] * s; out.y = L[o + 1]; out.z = L[o + 2] + h[1] * s; out.yaw = h[2]; out.fx = h[0]; out.fz = h[1]; out.speed = v;
-  out.paint = T.color ? [T.color[i * 3], T.color[i * 3 + 1], T.color[i * 3 + 2]] : CAR_PAINT[0];
+  const paint = out.paint ||= [0, 0, 0];
+  paint[0] = T.color ? T.color[i * 3] : CAR_PAINT[0][0];
+  paint[1] = T.color ? T.color[i * 3 + 1] : CAR_PAINT[0][1];
+  paint[2] = T.color ? T.color[i * 3 + 2] : CAR_PAINT[0][2];
   return out;
 }
 // The street car whose body (a 4.4 m segment) is closest to (x, z) and within reach, or null. Expressway cars (y over 1), hidden
@@ -305,9 +308,15 @@ export function createCars(city, opts = {}) {
     return out;
   };
   // the moving cars, for the people to jump out of the way and the goons to be knocked over
-  K.hazards = function hazards() {
-    const out = [];
-    for (const c of cars) if (c.on && Math.abs(c.speed) > 2) out.push({ x: c.x + -Math.sin(c.yaw) * 1.6 * Math.sign(c.speed), z: c.z + -Math.cos(c.yaw) * 1.6 * Math.sign(c.speed), vx: c.vx, vz: c.vz, r: 3.2 });
+  K.hazards = function hazards(out = []) {
+    let n = 0;
+    for (const c of cars) if (c.on && Math.abs(c.speed) > 2) {
+      const q = out[n++] ||= {};
+      q.x = c.x + -Math.sin(c.yaw) * 1.6 * Math.sign(c.speed);
+      q.z = c.z + -Math.cos(c.yaw) * 1.6 * Math.sign(c.speed);
+      q.vx = c.vx; q.vz = c.vz; q.r = 3.2;
+    }
+    out.length = n;
     return out;
   };
   K.info = () => ({ cars: cars.filter((c) => c.on).length, driving: K.driving ? { id: K.driving.id, x: K.driving.x, z: K.driving.z, yaw: K.driving.yaw, speed: K.driving.speed } : null, stats: { ...K.stats },

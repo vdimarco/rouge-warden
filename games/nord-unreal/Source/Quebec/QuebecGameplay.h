@@ -45,6 +45,12 @@ namespace QuebecDistrict
     QUEBEC_API const FSettings& ForWorld(const UWorld* World);
 }
 
+namespace QuebecStreetLook
+{
+    // On-foot opening yaw: down the nearest avenue when one is close, otherwise FallbackYaw.
+    QUEBEC_API float OpeningYaw(const UWorld* World, const FVector& Here, float FallbackYaw);
+}
+
 // Planar car-to-car impact between two equal-mass cars, as velocity changes (cm/s) and spin changes (deg/s).
 namespace QuebecCarImpact
 {
@@ -163,6 +169,7 @@ class QUEBEC_API AQuebecCharacter : public ACharacter
 public:
     AQuebecCharacter();
     virtual void BeginPlay() override;
+    virtual void PossessedBy(AController* NewController) override;
     UPROPERTY(VisibleAnywhere, ReplicatedUsing=ApplyCrewAppearance) int32 CrewStyle = 9;
     void CycleCrew();
     // Picks crew style 3-10. Returns false when another player already wears it.
@@ -174,6 +181,8 @@ public:
     virtual void Jump() override;
     virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
     void SetInVehicle(bool bNewInVehicle);
+    // Getting out of a moving car: keep its planar pace for a short run-out.
+    void BeginBail(const FVector& Direction, float Speed);
     UFUNCTION() bool ConfigureCrewAnimation();
     // People: comic knockdown (QuebecPeople.cpp). Server: launch along Push (cm/s) and lie LieSeconds; bStayDown keeps the
     // player down until EndKnock (K.-O.). EndKnock starts the 0.8 s stand-up now. Every peer poses the mesh from the knock.
@@ -203,6 +212,19 @@ private:
     float CrewLandingTime = 1.f;
     float CrewAnimationTime = 0.f;
     float CrewPoseElapsed = 0.f;
+    float SwayPhase = 0.f;
+    bool bSwayApplied = false;
+    void ApplyStreetSway(float DeltaSeconds);
+    void RestoreStreetSway();
+    // Pale spheres left at the rear shoe while walking. Five slots cover the puff life.
+    UPROPERTY() TArray<TObjectPtr<UStaticMeshComponent>> FootDust;
+    UPROPERTY() TArray<FVector> FootDustOrigin;
+    UPROPERTY() TArray<FVector> FootDustForward;
+    UPROPERTY() TArray<FVector> FootDustRight;
+    TArray<float> FootDustBorn;
+    float NextFootDustAt = 0.f;
+    int32 NextFootDust = 0;
+    void UpdateFootDust(float DeltaSeconds);
     UPROPERTY() TObjectPtr<UAnimSequence> CrewAnimation;
     UPROPERTY() TObjectPtr<APhysicsVolume> SwimVolume;
     UPROPERTY() TArray<TObjectPtr<AActor>> SwimFloors;
@@ -217,6 +239,10 @@ private:
     UFUNCTION() void StopSprint();
     UFUNCTION(Server, Reliable) void ServerSetSprint(bool bSprint);
     UFUNCTION() void OnRep_InVehicle();
+    void TickBail(float DeltaSeconds);
+    void EndBail();
+    FVector BailDirection = FVector::ZeroVector;
+    float BailSpeed = 0.f;
     // People: knock state; the mesh pose is local to each peer.
     UPROPERTY(VisibleAnywhere, ReplicatedUsing=OnRep_Knock) float KnockStartedAt = -1000.f;
     UPROPERTY(VisibleAnywhere, Replicated) FVector KnockPush = FVector::ZeroVector;
@@ -292,6 +318,9 @@ private:
     UFUNCTION(NetMulticast, Unreliable) void MulticastImpact(FVector_NetQuantize Point, uint8 Slot);
 };
 
+// True in a pond, and false on a bridge deck or the street. Defined in QuebecSwimming.cpp.
+bool QuebecPondContains(float X, float Y);
+
 UCLASS()
 class QUEBEC_API AQuebecCar : public APawn
 {
@@ -311,6 +340,11 @@ public:
     UPROPERTY(VisibleAnywhere, Replicated) bool bHandbrake = false;
     UPROPERTY(EditAnywhere, ReplicatedUsing=ApplyPaint) int32 PaintStyle = 0;
     UPROPERTY(EditAnywhere, ReplicatedUsing=ApplyPaint) int32 BodyProfile = 0;
+    // 0 is a car. 1 is the pond pedalo. 2 is the park bike. 3 is the kick scooter. Cars keep the driving model.
+    UPROPERTY(VisibleAnywhere, Replicated) int32 RideKind = 0;
+    bool IsPedalo() const { return RideKind == 1; }
+    bool IsBike() const { return RideKind == 2; }
+    bool IsScoot() const { return RideKind == 3; }
     UPROPERTY(VisibleAnywhere, Replicated) bool bTraffic = false;
     void SetTrafficRoute(int32 Segment, bool bForward, const TArray<bool>& AllowedRoads);
     void StopInput();
@@ -376,6 +410,9 @@ private:
     bool bJunctionEntered = false;
     void UpdateTraffic();
     void SimulateDrive(float Step, bool bFailsafe);
+    void SimulatePedalo(float Step, bool bFailsafe);
+    void SimulateBike(float Step, bool bFailsafe);
+    void SimulateScoot(float Step, bool bFailsafe);
     void MoveWithCollision(float Step, const FVector& Travel);
     bool WheelSupport(const FVector& Point, FRotator& Rotation, double& Height, bool& bTooHigh) const;
     bool bGrounded = false;
@@ -411,6 +448,10 @@ private:
     float SmokeSince = -1000.f;
     float NextSmokeAt = 0.f;
     int32 NextSmokePuff = 0;
+    UPROPERTY() TArray<TObjectPtr<UStaticMeshComponent>> ExhaustPuffs;
+    TArray<float> ExhaustBorn;
+    float NextExhaustAt = 0.f;
+    int32 NextExhaust = 0;
     // The tick interval the car rested at before SetAutopilot. ClearAutopilot restores it once the car is at rest;
     // until then bRestoreRestTick is set and the car keeps every-frame ticks while it brakes.
     float AutopilotRestTick = .1f;
@@ -426,6 +467,7 @@ private:
     void FinishAutopilotRelease();
     void NudgeStuckCar();
     void UpdateDamageSmoke(float DeltaSeconds);
+    void UpdateExhaust(float DeltaSeconds);
 
     // Traffic street life (QuebecTrafficLife.cpp), ambient traffic only: full stops at mapped ARRÊT junctions,
     // yielding to people in the lane ahead, and now and then a curb stop with signals and hazard lights.
@@ -492,6 +534,7 @@ public:
     void PlayFeedback(EQuebecFeedbackCue Cue);
     void PlayRank(int32 ChainAfter, bool bWasSpoiled);
     void PlayImpact();
+    void PlayLoss();
     virtual void BeginPlay() override;
     virtual void SetupInputComponent() override;
     virtual void PlayerTick(float DeltaTime) override;
@@ -504,6 +547,8 @@ public:
     void ShowInteractionMessage(const FString& Message) { ClientInteractionMessage(Message); }
     // Combat: a K.-O. or a respawn took the character out of its car without ExitCar.
     void ForgetWalkingCharacter() { WalkingCharacter = nullptr; }
+    // On foot, look down the street. The pitch stays inside the -25..-5 clamp.
+    void FrameTheStreet(float Yaw, bool bResetCamera = false);
     // Console commands for the shared sky. The host applies them; they do nothing without a sky.
     UFUNCTION(Exec) void NordWeather(const FString& Weather);
     UFUNCTION(Exec) void NordTime(float Hours);
@@ -610,6 +655,10 @@ private:
     void PlayImpactTone();
     UPROPERTY() TObjectPtr<class UAudioComponent> ImpactAudio;
     UPROPERTY() TObjectPtr<class USoundWaveProcedural> ImpactWave;
+    UFUNCTION(Client, Unreliable) void ClientPlayLoss();
+    void PlayLossTone();
+    UPROPERTY() TObjectPtr<class UAudioComponent> LossAudio;
+    UPROPERTY() TObjectPtr<class USoundWaveProcedural> LossWave;
     void ExitCar(AQuebecCar* Car);
 };
 
@@ -658,5 +707,6 @@ class QUEBEC_API AQuebecGameMode : public AGameModeBase
 public:
     AQuebecGameMode();
     virtual void BeginPlay() override;
+    virtual void FinishRestartPlayer(AController* NewPlayer, const FRotator& StartRotation) override;
     virtual AActor* ChoosePlayerStart_Implementation(AController* Player) override;
 };
