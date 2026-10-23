@@ -1636,6 +1636,34 @@ def author_front(mesh, lot, front, kit, primary=True, top_override=None):
     return record, top
 
 
+def blind(F, x0, x1, z0, z1, counts=None):
+    """A blind or curtains behind the glass of an applied window or patio door (the pane x0..x1 by z0..z1 in frame F),
+    so it does not read as a black hole: a roller blind pulled a quarter to three quarters down (55%), a pair of
+    curtains drawn to the sides (30%), or a blind let down almost to the sill (15%), in white, cream or beige (a few
+    curtains coloured). The glass is an opaque dark key, so the card stands just in front of it, under the meeting rail
+    or sash (BLIND_D), as the street fronts' curtains do. Seeded by the window's own place, so it takes no draw from a
+    lot's sequence. Returns the kind, or None for a pane too small."""
+    if x1 - x0 < 20 or z1 - z0 < 30:
+        return None
+    c = F.p((x0 + x1) / 2, 0, 0)
+    r = random.Random(_seed('plex-blind', round(c[0]), round(c[1]), round(z0)))
+    roll, drop, share = r.random(), r.uniform(.25, .75), r.uniform(.22, .34)
+    h = z1 - z0
+    if roll < .55:
+        kind = 'roller'
+        F.quad_d(r.choice(BLINDS), x0, x1, z1 - drop * h, z1, BLIND_D)
+    elif roll < .85:
+        kind, mat, w = 'curtains', r.choice(CURTAINS), (x1 - x0) * share
+        F.quad_d(mat, x0, x0 + w, z0, z1, BLIND_D)
+        F.quad_d(mat, x1 - w, x1, z0, z1, BLIND_D)
+    else:
+        kind = 'lowered'
+        F.quad_d(r.choice(BLINDS), x0, x1, z0 + .1 * h, z1, BLIND_D)
+    if counts is not None:
+        counts['blinds_' + kind] = counts.get('blinds_' + kind, 0) + 1
+    return kind
+
+
 def modern_bays(mesh, F, W, floors, zt, paints, counts, balconies=True, every=1, entrance=False):
     """The post-1945 apartment kit on one wall plane in frame F (x from 0 to W along the wall, the brick face at
     D_FACE): bays of about MODERN_BAY. On each upper floor a balcony bay (every `every`-th bay when `balconies`) has a
