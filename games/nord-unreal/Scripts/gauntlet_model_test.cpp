@@ -279,13 +279,14 @@ namespace
             && TurnRadius(SharpSpeed) <= MaxCut / (1.0 - std::cos(Pi / 3.0)), "at the floor speed, whose turning circle fits the arc (%.0f cm/s)", SharpSpeed);
         Expect(SpeedForRadius(1.0, 800.0) == MinCornerSpeed && SpeedForRadius(1.0e6, 800.0) == 800.0, "speed for a radius is between MinCornerSpeed and the start");
 
-        // A short side shared by two right-angle arcs: each takes half, so both shrink and slow down.
+        // A 16 m side between two left turns (180 degrees together, so they never merge): each arc takes 8 m of it, so
+        // both shrink and slow down. The other four corners keep their 9.4 m arcs at 8 m/s.
         FLoop Narrow;
-        Narrow.Points = {{5000.0, 0.0}, {10000.0, 0.0}, {10000.0, 1000.0}, {0.0, 1000.0}, {0.0, 0.0}, {5000.0, 0.0}};
+        Narrow.Points = {{5000.0, 0.0}, {20000.0, 0.0}, {20000.0, 1600.0}, {10000.0, 1600.0}, {10000.0, 20000.0}, {0.0, 20000.0}, {0.0, 0.0}, {5000.0, 0.0}};
         Narrow.Stops = {0};
         FinishLoop(Narrow);
-        Expect(SlowestLimit(Narrow) < 800.0 && SegmentsAt(Narrow, 800.0) == 18 && QuebecPursuit::Distance(Narrow.Points[Narrow.Stops[0]], {5000.0, 0.0}) < 1e-9,
-            "a 10 m side halves the two arcs at its ends and slows them (%.0f cm/s)", SlowestLimit(Narrow));
+        Expect(SlowestLimit(Narrow) > MinCornerSpeed && SlowestLimit(Narrow) < 800.0 && SegmentsAt(Narrow, 800.0) == 36
+            && SlowestLimit(Narrow) == SpeedForRadius(800.0, 800.0), "a 16 m side halves the two arcs at its ends and slows them (%.0f cm/s)", SlowestLimit(Narrow));
     }
 
     // The tracker keeps to its own pass of a street the loop drives twice, 3 m apart.

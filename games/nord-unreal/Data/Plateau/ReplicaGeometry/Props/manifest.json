@@ -3042,7 +3042,8 @@
    "part": "dish",
    "sha256": "ad378a35c5da09a8090b9caf210fa11f461a0129e6ef759048ca1a1a54ec96c5",
    "variants": [
-    "DishGrey"
+    "DishGrey",
+    "DishDark"
    ]
   },
   {
@@ -3821,6 +3822,11 @@
   },
   "DishGrey": {
    "base_color_srgb": "#aeb0af",
+   "roughness": 0.45,
+   "metallic": 0.3
+  },
+  "DishDark": {
+   "base_color_srgb": "#45484b",
    "roughness": 0.45,
    "metallic": 0.3
   },
@@ -6180,6 +6186,6 @@
   "triangles_all_meshes": 26914
  },
  "source_sha256": {
-  "Scripts/blender/plateau_props.py": "20b45785e138276ac2b1a843b354c6cc1a7d1b526b9cded37227fb22668111a8"
+  "Scripts/blender/plateau_props.py": "5b4089932fea5f171d446bc1e7be060257595e6ed43624a416f35b1887f885f0"
  }
 }
