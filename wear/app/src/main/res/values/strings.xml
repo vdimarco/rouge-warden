@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Hermes</string>
+    <string name="tile_talk">Hermes</string>
+    <string name="tile_food">Log food</string>
+    <string name="complication_label">Hermes</string>
+    <string name="mic_channel">Hermes listening</string>
+    <string name="mic_notice">Hermes is listening</string>
+</resources>
