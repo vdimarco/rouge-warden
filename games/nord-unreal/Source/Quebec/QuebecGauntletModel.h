@@ -402,16 +402,19 @@ namespace QuebecGauntlet
         const int Count = Loop.SegmentCount();
         if (Count <= 0) return;
         const std::size_t Size = static_cast<std::size_t>(Count);
-        const std::size_t First = (Tracker.Segment % Size + Size - std::min<std::size_t>(2, Size - 1)) % Size;
+        const std::size_t Behind = std::min<std::size_t>(2, Size - 1);
+        const std::size_t First = (Tracker.Segment % Size + Size - Behind) % Size;
+        const double Here = Loop.Wrap(Tracker.Along);
         double Best = std::numeric_limits<double>::max(), BestAlpha = 0.0;
         std::size_t BestSegment = Tracker.Segment % Size;
         FVec2 BestPoint;
         for (std::size_t Step = 0; Step < Size; ++Step)
         {
+            // The segments behind and the current one always count; a later one only when it starts within TrackAhead.
             const std::size_t Segment = (First + Step) % Size;
-            double Ahead = Loop.Distance[Segment] - Loop.Distance[Tracker.Segment % Size];
+            double Ahead = Loop.Distance[Segment] - Here;
             if (Ahead < 0.0) Ahead += Loop.Length;
-            if (Step > 2 && Ahead > TrackAhead) break;
+            if (Step > Behind && Ahead > TrackAhead) break;
             double Alpha = 0.0;
             const FVec2 Point = QuebecPursuit::ClosestOnSegment(Position, Loop.Points[Segment], Loop.Points[Segment + 1], Alpha);
             const double Gap = QuebecPursuit::Distance(Position, Point);

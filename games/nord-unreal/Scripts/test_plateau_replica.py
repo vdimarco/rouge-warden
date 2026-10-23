@@ -436,6 +436,7 @@ def check_shared_plan():
                 continue
             raise AssertionError(f'A bad yard tree was accepted: {bad}')
     out['species_meshes'] = check_tree_species_plan()
+    out['tree_textures'] = check_tree_texture_plan()
     return out
 
 
@@ -509,6 +510,118 @@ def check_tree_species_plan():
     return out
 
 
+TREE_TEXTURED_KINDS = {
+    'norway_maple': {'materials': {'bark': 'Bark_Grey', 'leaves': 'Tree_Leaves_Autumn'}, 'height_cm': 1500,
+                     'trunk_cm': 45},
+    'linden': {'materials': {'bark': 'Bark_Grey', 'leaves': 'Tree_Leaves_Autumn'}, 'height_cm': 1600, 'trunk_cm': 50},
+}
+
+
+def write_tree_texture_sets(root, sets=None, materials=None):
+    """Small RGB(A) bark and leaf-atlas PNGs in the synthetic Trees folder, with their texture_sets entries in the
+    textures.json format (Scripts/blender/plateau_trees.py writes the real ones), and materials naming them. Returns
+    the manifest; sets and materials override its entries."""
+    A, PT = apply_replica, plateau_textures
+    folder = Path(root) / 'Data/Plateau/ReplicaGeometry' / A.TREES
+    manifest = json.loads((folder / 'manifest.json').read_text())
+    table = {}
+    for name, stem, (w, h), surface, uv, tile, alpha, keys, mean in (
+            ('tree_leaves', 'TreeLeaves', (8, 8), 'foliage', 'atlas', [1., 1.], True, ['Tree_Leaves_Autumn'],
+             [.4618, .2679, .0268]),
+            ('tree_bark', 'TreeBark', (8, 16), 'wall', 'metres', [1., 2.], False, ['Bark_Grey'], [.1807, .1525, .1211])):
+        maps = {}
+        for role in A.TEXTURE_ROLES:
+            channels = 4 if role == 'diff' and alpha else 3
+            rows = [bytes((255 if (x // 2 + y // 2) % 2 else 0) if c == 3 else (x * 29 + y * 13 + c * 61) % 256
+                          for x in range(w) for c in range(channels)) for y in range(h)]
+            raw = PT.raw_stream(rows)
+            data = PT.png(w, h, raw, channels)
+            file = f'T_Replica_{stem}_{role}.png'
+            (folder / file).write_bytes(data)
+            maps[role] = dict(PT.IMPORT[role], file=file, sha256=hashlib.sha256(data).hexdigest(),
+                              raw_sha256=hashlib.sha256(raw).hexdigest(), **({'alpha': True} if channels == 4 else {}))
+        table[name] = {'name': stem, 'size_px': [w, h], 'tile_m': tile, 'tiling': [1. / t for t in tile],
+                       'mean_linear': mean, 'maps': maps, 'surface': surface, 'material': PT.SURFACES[surface],
+                       'keys': keys, 'uv': uv, 'alpha': alpha}
+    manifest[A.TREE_TEXTURE_SETS] = dict(table, **(sets or {}))
+    manifest['materials'] = dict({
+        'Bark_Grey': {'base_color_srgb': '#5A534B', 'roughness': .92, 'metallic': 0,
+                      'texture': 'Trees/T_Replica_TreeBark_diff.png'},
+        'Tree_Leaves_Autumn': {'base_color_srgb': '#B58D2E', 'roughness': .6, 'metallic': 0, 'foliage': True,
+                               'texture': 'Trees/T_Replica_TreeLeaves_diff.png'}}, **(materials or {}))
+    (folder / 'manifest.json').write_text(json.dumps(manifest))
+    return manifest
+
+
+def check_tree_texture_plan():
+    """Trees/manifest.json with its own texture sets (the bark and the autumn leaf atlas): the bark is a textured
+    duplicate of the wall parent at its metre tiling, the leaves a masked, two-sided foliage duplicate (clip .5) of the
+    built foliage parent, whose maps import from the Trees folder with alpha-coverage mips and clamp U and V (atlas);
+    a stale map, a set that reuses a replica set name, a set with an unknown surface, or a tree material naming a map
+    that no set covers fails the plan."""
+    A = apply_replica
+    rows = [{'x': 100. * n, 'y': 0., 'z': 0., 'yaw': 10. * n, 'scale': 3., 'kind': k}
+            for n, k in enumerate(['maple', 'elm', 'linden', 'norway_maple'])]
+    with tempfile.TemporaryDirectory() as tmp:
+        synthetic_plex(tmp, ['Yard_Grass'], {'trees': rows}, tree_kinds=TREE_TEXTURED_KINDS)
+        manifest = write_tree_texture_sets(tmp)
+        the_plan = A.plan(tmp)
+        trees = {m['key']: m for m in the_plan['materials'] if m['layer'] == A.TREES}
+        bark, leaves = trees['Bark_Grey'], trees['Tree_Leaves_Autumn']
+        assert bark['texture_set'] == 'tree_bark' and bark['duplicate_of'] == A.TEXTURED_PARENT, bark['duplicate_of']
+        assert (bark['blend_mode'], bark['two_sided'], bark['uv'], bark['tiling']) == ('opaque', False, 'metres', [1., .5])
+        assert bark['tint'] == tuple(min(A.TINT_LIMIT, c / m) for c, m in zip(A.linear('#5A534B'), bark['mean_linear']))
+        assert not bark['wet'] and not bark['foliage'] and bark['metallic'] == 0
+        assert leaves['texture_set'] == 'tree_leaves' and leaves['duplicate_of'] == A.FOLIAGE_PARENT
+        assert (leaves['blend_mode'], leaves['two_sided'], leaves['shading_model'], leaves['opacity_mask_clip'],
+                leaves['uv']) == ('masked', True, 'two_sided_foliage', .5, 'atlas'), leaves
+        assert not leaves['foliage'], 'the masked foliage parent lights the leaves; no second transmission graph'
+        parents = {p['asset']: p for p in the_plan['parents']}
+        assert sorted(parents) == [A.FOLIAGE_PARENT] and parents[A.FOLIAGE_PARENT]['texture_set'] == 'tree_leaves'
+        tex = {(t['set'], t['role']): t for t in the_plan['textures']}
+        assert sorted(tex) == sorted((s, r) for s in ('tree_bark', 'tree_leaves', 'lawn') for r in A.TEXTURE_ROLES)
+        assert the_plan['counts']['tree_textures'] == 6
+        for (name, role), t in tex.items():
+            if name == 'lawn':
+                assert t['file'].startswith(A.TEXTURES + '/') and (t['address_x'], t['address_y']) == ('TA_WRAP',) * 2
+                continue
+            stored = manifest[A.TREE_TEXTURE_SETS][name]['maps'][role]
+            assert t['file'] == f'{A.TREES}/{stored["file"]}' and t['raw_sha256'] == stored['raw_sha256'], t['file']
+            assert t['asset'] == f'{A.TEXTURE_ASSETS}/{Path(stored["file"]).stem}'
+            atlas = name == 'tree_leaves'
+            assert (t['address_x'], t['address_y']) == (('TA_CLAMP',) * 2 if atlas else ('TA_WRAP',) * 2), t['asset']
+            assert t['alpha'] == (atlas and role == 'diff')
+            assert t['alpha_coverage_threshold'] == (.5 if t['alpha'] else None), t['asset']
+        assert the_plan['counts']['clamped_textures'] == 3
+        assert the_plan['yard_trees']['texture_sets'] == ['tree_bark', 'tree_leaves']
+        meshes = {m['species']: m for m in the_plan['tree_meshes']}
+        assert meshes['linden']['materials'] == {'bark': bark['asset'], 'leaves': leaves['asset']}
+        assert [t['count'] for t in the_plan['trees']] == [2, 2] and the_plan['counts']['tree_materials'] == 2
+        out = {'bark': {'parent': bark['duplicate_of'].rsplit('/', 1)[1], 'tiling': bark['tiling']},
+               'leaves': {'parent': leaves['duplicate_of'].rsplit('/', 1)[1], 'blend_mode': leaves['blend_mode'],
+                          'address': [tex[('tree_leaves', 'diff')]['address_x'], tex[('tree_leaves', 'diff')]['address_y']]}}
+    stale = lambda m: m[A.TREE_TEXTURE_SETS]['tree_bark']['maps']['rough'].update(raw_sha256='0' * 64)  # noqa: E731
+    bad_cases = (
+        ('a stale bark map', {'edit': stale}),
+        ('a tree set named like a replica set', {'rename': 'creeper'}),
+        ('a tree set with an unknown surface', {'edit': lambda m: m[A.TREE_TEXTURE_SETS]['tree_bark'].update(
+            surface='glass')}),
+        ('a tree material naming a map no set covers', {'edit': lambda m: m['materials']['Bark_Grey'].update(
+            texture='Trees/T_Replica_TreeNeedles_diff.png')}),
+        ('tree materials naming maps with no texture_sets', {'edit': lambda m: m.pop(A.TREE_TEXTURE_SETS)}))
+    for message, case in bad_cases:
+        with tempfile.TemporaryDirectory() as tmp:
+            synthetic_plex(tmp, ['Yard_Grass'], {'trees': rows}, tree_kinds=TREE_TEXTURED_KINDS)
+            manifest = write_tree_texture_sets(tmp)
+            if 'rename' in case:
+                manifest[A.TREE_TEXTURE_SETS][case['rename']] = manifest[A.TREE_TEXTURE_SETS].pop('tree_bark')
+            else:
+                case['edit'](manifest)
+            (Path(tmp) / 'Data/Plateau/ReplicaGeometry' / A.TREES / 'manifest.json').write_text(json.dumps(manifest))
+            expect_rejected(lambda: A.plan(tmp), 'a Trees manifest with ' + message)
+    return out
+
+
 def check_yard_trees(the_plan):
     """Plex/yard_trees.json as plateau_plex.py wrote it: kinds, counts and positions inside the Plex layer; species
     meshes when Trees/manifest.json exists."""
@@ -531,8 +644,22 @@ def check_yard_trees(the_plan):
     if kinds:
         assert {t['kind'] for t in the_plan['trees']} <= set(kinds) and all(
             t['mesh'] == A.tree_mesh_asset(t['kind']) for t in the_plan['trees'])
+        # The generated trees' own texture sets: every tree material that names a map is textured, the leaves are
+        # masked two-sided foliage on the leaf atlas (clamped U and V), the bark a textured wall duplicate.
+        tree_mats = [m for m in the_plan['materials'] if m['layer'] == A.TREES]
+        for m in tree_mats:
+            assert not m['spec'].get('texture') or m.get('texture_set'), m['asset'] + ' renders flat'
+            if m.get('texture_set') and m['spec'].get('foliage'):
+                assert m['duplicate_of'] == A.FOLIAGE_PARENT and m['blend_mode'] == 'masked' and m['two_sided'], m['asset']
+                assert m['shading_model'] == 'two_sided_foliage' and m['uv'] == 'atlas', m['asset']
+            elif m.get('texture_set'):
+                assert m['duplicate_of'] == A.TEXTURED_PARENT and m['blend_mode'] == 'opaque', m['asset']
+        atlas = [t for t in the_plan['textures'] if t['file'].startswith(A.TREES + '/') and t['address_x'] == 'TA_CLAMP']
+        assert all(t['address_y'] == 'TA_CLAMP' for t in atlas)
+        assert the_plan['counts']['tree_textures'] == 3 * len(the_plan['yard_trees']['texture_sets'])
     return {'present': True, 'mode': the_plan['yard_trees']['mode'],
-            'trees': {t['kind']: t['count'] for t in the_plan['trees']}}
+            'trees': {t['kind']: t['count'] for t in the_plan['trees']},
+            'tree_texture_sets': the_plan['yard_trees'].get('texture_sets', [])}
 
 
 # ------------------------------------------------------------------------------------------------
@@ -1177,6 +1304,7 @@ def check_editor_side():
         out['yard_tree_actors'] = {label: placed[label]['count'] for label in sorted(placed)}
         out['fresh_fallback'] = 'masked, foliage, opaque and macro fallbacks keep their mode'
     out['species_trees'] = check_editor_trees()
+    out['tree_textures'] = check_editor_tree_textures()
     return out
 
 
@@ -1223,6 +1351,81 @@ def check_editor_trees():
         assert A.check_yard_trees_placed(u, actors, the_plan['trees']) == len(TREE_ROWS_FIXTURE)
         assert all(a.component.static_mesh is meshes[t['mesh']] for a, t in zip(editor.actors, the_plan['trees']))
         return {label: placed[label]['count'] for label in sorted(placed)}
+
+
+def check_editor_tree_textures():
+    """The trees' own texture sets against the fake: the leaf atlas imports clamped in U and V with alpha-coverage
+    mips, the foliage parent is built from it, the leaves duplicate it masked and two-sided with OpacityMask from the
+    atlas alpha, the bark retextures the wall parent; the species meshes wear both; verify rejects a wrapping atlas,
+    an opaque leaf material and leaves masked by the bark."""
+    A = apply_replica
+    rows = [{'x': 100. * n, 'y': 0., 'z': 0., 'yaw': 10. * n, 'scale': 3., 'kind': k}
+            for n, k in enumerate(['maple', 'elm', 'linden'])]
+    with tempfile.TemporaryDirectory() as tmp:
+        synthetic_plex(tmp, ['Yard_Grass'], {'trees': rows}, tree_kinds=TREE_TEXTURED_KINDS)
+        write_tree_texture_sets(tmp)
+        the_plan = A.plan(tmp)
+        specs = json.loads((Path(tmp) / 'Data/Plateau/ReplicaGeometry/Plex/manifest.json').read_text())['materials']
+        u = fake_unreal()
+        registry = u.EditorAssetLibrary.registry
+        fake_parent(u, A.TEXTURED_PARENT, 'brick_wall_001')
+        fake_parent(u, A.WET_PARENT, 'concrete_pavement', wet=True)
+        fake_trim(u)
+        textures = {}
+        for row in the_plan['textures']:
+            textures[row['asset']] = dict(row, object=A.import_texture(u, Path(tmp), row))
+            A.check_texture(u, registry[row['asset']], row)
+        atlas = textures[f'{A.TEXTURE_ASSETS}/T_Replica_TreeLeaves_diff']['object']
+        assert atlas.get_editor_property('address_x') == atlas.get_editor_property('address_y') == 'TA_CLAMP'
+        assert atlas.get_editor_property('do_scale_mips_for_alpha_coverage') and \
+            atlas.get_editor_property('alpha_coverage_thresholds').w == .5
+        bark_map = textures[f'{A.TEXTURE_ASSETS}/T_Replica_TreeBark_diff']['object']
+        assert bark_map.get_editor_property('address_x') == bark_map.get_editor_property('address_y') == 'TA_WRAP'
+        for row in the_plan['parents']:
+            A.check_material_mode(u, A.build_parent(u, row, textures), row)
+        materials = {}
+        for row in the_plan['materials']:
+            spec = row['spec'] if row['layer'] == A.TREES else specs[row['key']]
+            materials[row['asset']], fresh = A.make_material(u, row, spec, textures)
+            assert not fresh, row['key'] + ' fell back to a fresh material'
+            A.check_material_mode(u, materials[row['asset']], row)
+            assert A.check_tint(u, materials[row['asset']], row), row['key']
+        leaves = next(m for m in the_plan['materials'] if m['key'] == 'Tree_Leaves_Autumn')
+        bark = next(m for m in the_plan['materials'] if m['key'] == 'Bark_Grey')
+        leaf_mat, bark_mat = materials[leaves['asset']], materials[bark['asset']]
+        assert leaf_mat.get_editor_property('blend_mode') == 'BLEND_MASKED' and leaf_mat.get_editor_property('two_sided')
+        assert leaf_mat.get_editor_property('shading_model') == 'MSM_TWO_SIDED_FOLIAGE'
+        assert FakeLibrary.get_material_property_input_node(leaf_mat, 'MP_SUBSURFACE_COLOR') is not None
+        mask = FakeLibrary.get_material_property_input_node(leaf_mat, 'MP_OPACITY_MASK')
+        assert mask.get_editor_property('texture').path == leaves['textures']['diff']
+        assert bark_mat.get_editor_property('blend_mode') == 'BLEND_OPAQUE'
+        coords = [n for n in bark_mat.nodes if isinstance(n, FakeCoords)]
+        assert [coords[0].get_editor_property(k) for k in ('u_tiling', 'v_tiling')] == [1., .5]
+        meshes = {}
+        for row in the_plan['tree_meshes']:
+            slots = {slot: materials[a] for slot, a in row['materials'].items()}
+            meshes[row['asset']] = A.import_tree_mesh(u, Path(tmp), row, slots)
+            A.check_tree_mesh(u, meshes[row['asset']], row)
+            assert meshes[row['asset']].get_material(1) is leaf_mat and meshes[row['asset']].get_material(0) is bark_mat
+        # verify rejects an atlas that wraps, an opaque leaf material and leaves masked by the bark's map.
+        leaf_row = next(t for t in the_plan['textures'] if t['asset'].endswith('TreeLeaves_diff'))
+        atlas.set_editor_property('address_x', 'TA_WRAP')
+        expect_rejected(lambda: A.check_texture(u, atlas, leaf_row), 'a leaf atlas that wraps in U')
+        atlas.set_editor_property('address_x', 'TA_CLAMP')
+        leaf_mat.set_editor_property('blend_mode', 'BLEND_OPAQUE')
+        expect_rejected(lambda: A.check_material_mode(u, leaf_mat, leaves), 'opaque leaf cards')
+        leaf_mat.set_editor_property('blend_mode', 'BLEND_MASKED')
+        bark_sample = next(n for n in bark_mat.nodes if isinstance(n, FakeSample)
+                           and n.get_editor_property('texture').path == bark['textures']['diff'])
+        good = leaf_mat.inputs['MP_OPACITY_MASK']
+        stray = FakeLibrary.create_material_expression(leaf_mat, FakeSample)
+        stray.set_editor_property('texture', bark_sample.get_editor_property('texture'))
+        leaf_mat.inputs['MP_OPACITY_MASK'] = (stray, 'A')
+        expect_rejected(lambda: A.check_material_mode(u, leaf_mat, leaves), 'leaves masked by the bark map')
+        leaf_mat.inputs['MP_OPACITY_MASK'] = good
+        A.check_material_mode(u, leaf_mat, leaves)
+        return {'textures': len(the_plan['textures']), 'parents': [p['asset'].rsplit('/', 1)[1] for p in the_plan['parents']],
+                'leaves': leaf_mat.get_editor_property('blend_mode'), 'tree_meshes': len(meshes)}
 
 
 def check_set_authority():
