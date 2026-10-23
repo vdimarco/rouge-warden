@@ -1232,3 +1232,6 @@ Increment43 shipped #650 as5f5c85f5 after all6CI/review/current10deployedchecks/
 
 ### Increment44 — desired rope Map reuse — 2026-10-23
 One private cleared Map replaces per-frame construction in target reconciliation. Node100cycles match target add/remove/positions under goon/job transitions/disabled/pause/driving;100→0Mapobjects after initialization. Browser60realframes/oneMap/4checksPASS, action Node suitePASS. Evidence fullswing-r44-rope-want includes20dimensionlimits; total/delta withheld, actualChrome/stability unverified. No image/physics/anchor/ceiling change or FPS claim. Review/CI/preview/rebase/production pending.
+
+
+Increment44 shipped #652 as16909bd0 after all6CI/review/current14deployedchecks/rebase before AND afterpreview/exactmerge. Productionmain HTTP200 exactbytes verified (hash in fullswing-r44-rope-want/production-verification.json). Canonical desired-map scenarios published and OpenSpec archived. ActualChrome/FPSbenefit unverified; totalwithheld.
