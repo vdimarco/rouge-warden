@@ -2917,6 +2917,38 @@ def _with_crossings(front, level):
     return out
 
 
+PIT_SLIDE = 35.            # a pit slides at most this far along the curb from its trunk (which stays 20 cm inside it)
+
+
+def _pit_slide(e, ext, t, back, z, surfaces):
+    """How far along the curb a tree's pit slides to stay on its extension: one cut short at the strip's end (a
+    trunk by the corner) leaves no room on one side, and the pit would hang over the carriageway. The smallest
+    shift, in 5 cm steps up to PIT_SLIDE, whose pit lies within the extension's length and under its front, with
+    the part behind the curb on the extension's back or on ground at its height; else 0."""
+    lo, hi = ext['x']
+    front = ext['front']
+
+    def depth(x):
+        for (x0, d0), (x1, d1) in zip(front, front[1:]):
+            if x0 <= x <= x1 and x1 > x0:
+                return d0 + (d1 - d0) * (x - x0) / (x1 - x0)
+        return -1e9
+
+    def fits(sx):
+        x0, x1 = sx - PIT_L / 2, sx + PIT_L / 2
+        if x0 < lo - .01 or x1 > hi + .01:
+            return False
+        n0, n1 = t['d'] - PIT_D / 2, t['d'] + PIT_D / 2
+        if any(depth(x) < n1 - .5 for x in (x0 + .01, sx, x1 - .01)):
+            return False
+        return n0 >= -back - .01 or all(surfaces.floor(_local(e, x, n0)) >= z - 1. for x in (x0, sx, x1))
+    for shift in sorted({k * 5. * sign for k in range(int(PIT_SLIDE // 5) + 1) for sign in (1, -1)},
+                        key=lambda v: (abs(v), v)):
+        if fits(t['s'] + shift):
+            return shift
+    return 0.
+
+
 def _draw_extensions(world, L, surfaces, extensions, counts):
     """The curb extensions planned by curb_extensions, their tree pits, and the Streets/street_trees.json rows."""
     rows = []
@@ -2924,6 +2956,9 @@ def _draw_extensions(world, L, surfaces, extensions, counts):
     A = PIT_L / 2 + BUMP_MARGIN
     for ext in extensions:
         e, raised, back = ext['edge'], ext['raised'], ext['edge']['back']
+        if e['kind'] == 'verge':
+            # a verge reaches far enough behind the carriageway edge to hold the pit of a trunk right at it
+            back = max(back, PIT_D / 2 + 10. - min(t['d'] for t in ext['trees']))
         top_key = 'Yard_Grass' if e['kind'] == 'verge' else 'sidewalk'
         front = ext['front']
         lo, hi = ext['x']
@@ -2999,7 +3034,8 @@ def _draw_extensions(world, L, surfaces, extensions, counts):
         yaw = math.degrees(math.atan2(e['u'][1], e['u'][0]))
         for t in ext['trees']:
             z = Z_WALK if t['d'] + PIT_D / 2 + 15 <= raised else Z_DROP
-            q = lambda x, y: _local(e, t['s'] + x, t['d'] + y)        # noqa: E731
+            sx = t['s'] + _pit_slide(e, ext, t, back, z, surfaces)
+            q = lambda x, y: _local(e, sx + x, t['d'] + y)            # noqa: E731
             L.flat('soil', [q(-PIT_L / 2, -PIT_D / 2), q(PIT_L / 2, -PIT_D / 2), q(PIT_L / 2, PIT_D / 2),
                             q(-PIT_L / 2, PIT_D / 2)], z + .15)
             for x0, y0, x1, y1 in ((-55, -50, 55, -50), (55, -50, 55, 50), (55, 50, -55, 50), (-55, 50, -55, -50)):
