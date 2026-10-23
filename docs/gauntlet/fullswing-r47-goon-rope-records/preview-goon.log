@@ -1,0 +1,6 @@
+{"records":1,"positions":true,"registered":true,"removed":true,"fresh":true}
+PASS: moving actual goon reuses one record and live chest
+PASS: rope system retains the reused record
+PASS: ineligible removal and return release/recreate record
+PASS: no page errors
+PASS: goon rope records
