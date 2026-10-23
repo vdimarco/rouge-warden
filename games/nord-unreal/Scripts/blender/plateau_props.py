@@ -95,6 +95,14 @@ MATERIALS = {
     'FabricBurgundy': ('#6A1E2A', .9, 0, 0), 'FabricSand': ('#C4A27A', .9, 0, 0),
     'Kraft': ('#B08A5A', .9, 0, 0), 'KraftDark': ('#5A4632', 1.0, 0, 0),
     'Bread': ('#C88B45', .8, 0, 0), 'LeekWhite': ('#E5E3C9', .7, 0, 0),
+    # Gallery life (back galleries in late October): resin chairs, a propane grill, a small satellite dish,
+    # potted plants past their season.
+    'ResinWhite': ('#E6E4DC', .55, 0, 0), 'ResinGreen': ('#2E5A3D', .55, 0, 0), 'ResinBeige': ('#CDBFA2', .55, 0, 0),
+    'GrillBlack': ('#1C1D1E', .45, .3, 0), 'GrillRed': ('#6E1D1A', .4, .3, 0), 'GrillSteel': ('#9EA3A6', .3, .85, 0),
+    'PropaneWhite': ('#E2E2DC', .45, .2, 0),
+    'DishWhite': ('#E2E2DD', .45, .1, 0), 'DishGrey': ('#AEB0AF', .45, .3, 0),
+    'Terracotta': ('#B0613B', .85, 0, 0), 'PotBlack': ('#232425', .6, 0, 0), 'PotGrey': ('#8A8985', .7, 0, 0),
+    'PlantGreen': ('#4D6A33', .7, 0, 0), 'PlantDry': ('#8B7442', .8, 0, 0), 'PlantRust': ('#97492A', .75, 0, 0),
 }
 
 # Colour variant groups: a part authored with the first key may be swapped for the others.
@@ -112,6 +120,8 @@ VARIANTS = [
     ['CollarRed', 'CollarBlue', 'CollarGreen'], ['StrollerFrame', 'StrollerSilver'],
     ['FabricNavy', 'FabricGrey', 'FabricOlive'], ['FabricCharcoal', 'FabricBurgundy', 'FabricSand'],
     ['PoleGalv', 'PoleGrey'],
+    ['ResinWhite', 'ResinGreen', 'ResinBeige'], ['GrillBlack', 'GrillRed', 'GrillSteel'], ['DishWhite', 'DishGrey'],
+    ['Terracotta', 'PotBlack', 'PotGrey'], ['PlantGreen', 'PlantDry', 'PlantRust'],
 ]
 VARIANT_OF = {group[0]: group[1:] for group in VARIANTS}
 
@@ -1143,6 +1153,146 @@ def police_lightbar():
     return P
 
 
+# --------------------------------------------------------------------- gallery life
+# The outdoor rooms of the back galleries (Plex records each deck): a resin armchair, a propane grill on its cart, a
+# small satellite dish clamped to the guard, a potted plant and a bike stored against the guard. All face +X; the
+# lane-life layer places them on the deck quads and yaws them.
+
+def chair_patio():
+    P = Prop('chair_patio', 'gallery', 'Moulded resin stacking armchair (the monobloc patio chair): splayed legs, '
+             'seat at 44 cm, slatted back, arms at 63 cm.', 'base centre; the seat faces +X')
+    for x, y in ((21, 23), (21, -23), (-20, 24), (-20, -24)):
+        P.tube('ResinWhite', [(x * 1.12, y * 1.1, 0), (x, y, 42)], [2.6, 2.1], 6, part='shell')
+    P.box('ResinWhite', (1, 0, 43.5), (46, 48, 3), (0, -4, 0), bevel=1.2, part='shell')
+    P.box('ResinWhite', (23.5, 0, 42), (2.5, 48, 4), bevel=1, part='shell')
+    for side in (-1, 1):
+        P.tube('ResinWhite', [(21, side * 24, 43), (20, side * 25.5, 60), (12, side * 26, 63.5), (-19, side * 25, 64)],
+               2.1, 6, part='shell')
+        P.tube('ResinWhite', [(-20, side * 24, 42), (-26, side * 23, 84)], 2.4, 6, part='shell')
+    for k in range(4):
+        z = 52 + k * 8.5
+        P.box('ResinWhite', (-21 - (z - 44) * .14, 0, z), (2.4, 46, 5.2), (0, -10, 0), bevel=1., part='shell')
+    P.colliders.append({'center': [0, 0, 42], 'size': [58, 60, 84]})
+    P.extra['seat_cm'] = 44
+    return P
+
+
+def bbq():
+    P = Prop('bbq', 'gallery', 'Two-burner propane grill on a cart: black hood and firebox, steel side shelves and '
+             'control panel with knobs, a white 20 lb propane tank on the bottom shelf, two wheels.',
+             'base centre; the knobs face +X')
+    for x, y in ((21, 28), (21, -28), (-21, 28), (-21, -28)):
+        P.tube('GrillBlack', [(x, y, 2), (x, y, 80)], 1.6, 6, part='cart')
+    P.box('GrillBlack', (0, 0, 16), (46, 60, 2), bevel=.5, part='cart')
+    for y in (-28, 28):
+        P.lathe('Rubber', [(8, -2), (8, 2)], 12, (-21, y + (3 if y > 0 else -3), 8), AXIS_Y, part='wheels')
+    P.box('GrillBlack', (0, 0, 91), (50, 64, 22), bevel=1.5, part='hood')
+    hood = [(25 * math.cos(math.radians(a)), 17 * math.sin(math.radians(a))) for a in range(0, 181, 15)]
+    P.prism('GrillBlack', hood, 62, T((0, 0, 102), (90, 0, 0)), part='hood')
+    P.tube('GrillSteel', [(31, -22, 112), (33, -20, 112), (33, 20, 112), (31, 22, 112)], 1.1, 6, part='steel')
+    P.lathe('Chrome', [(3, -.5), (3, .5)], 10, (24.8, 0, 112), AXIS_X, part='steel')
+    P.box('GrillSteel', (26.2, 0, 88), (2.5, 64, 11), (0, -12, 0), bevel=.6, part='steel')
+    for y in (-15, 0, 15):
+        P.lathe('PlasticBlack', [(2.4, 0), (2.4, 3), (1.6, 4), (0, 4.2)], 10, (27.5, y, 88), AXIS_X, part='knobs')
+    for side in (-1, 1):
+        P.box('GrillSteel', (0, side * 46, 97), (44, 28, 1.6), bevel=.4, part='steel')
+        P.tube('GrillBlack', [(-18, side * 34, 80), (-18, side * 52, 96)], 1., 4, part='cart')
+        P.tube('GrillBlack', [(18, side * 34, 80), (18, side * 52, 96)], 1., 4, part='cart')
+    tank = [(0, 17), (8, 17.5), (13.5, 19.5), (15.5, 24), (15.5, 52), (13.5, 56.5), (8, 58.5), (0, 59)]
+    P.lathe('PropaneWhite', tank, 12, (0, 0, 0), part='tank')
+    P.lathe('PropaneWhite', [(9, 59), (9, 66), (8, 66), (8, 60)], 12, part='tank', cap0=False, cap1=False)
+    P.lathe('GrillSteel', [(2, 59), (2, 63), (3.5, 64), (0, 65)], 8, part='steel')
+    P.colliders.append({'center': [0, 0, 56], 'size': [56, 120, 112]})
+    return P
+
+
+def satellite_dish():
+    P = Prop('satellite_dish', 'gallery', 'Small offset satellite dish (about 50 x 46 cm, the Bell or Shaw '
+             'kind): grey reflector tilted up, LNB on its arm, on a short mast with a clamp for a gallery guard '
+             'cap rail or a wall.', 'clamp centre at the base; the dish faces +X (aim it south-southwest)')
+    P.box('SteelDark', (0, 0, 4), (9, 7, 8), bevel=.6, part='mount')
+    P.box('SteelDark', (-4.6, 0, 1), (1, 7, 14), part='mount')
+    P.tube('SteelDark', [(0, 0, 8), (0, 0, 46)], 2.1, 8, part='mount')
+    centre = Vector((10, 0, 50))
+    tilt = 64.
+    M = T(tuple(centre), (0, tilt, 0), (1, .92, 1))
+    f = 30.
+    front = [(r, r * r / (4 * f)) for r in (0, 4, 8, 12, 16, 20, 24, 25)]
+    back = [(r, z - .7) for r, z in front]
+    P.part('dish', 'DishWhite').add(lathe_geo(front, 20, cap0=False, cap1=False), M)
+    P.part('dish', 'DishWhite').add(lathe_geo(back[::-1], 20, cap0=False, cap1=False), M)
+    rim = [(25, front[-1][1]), (25, back[-1][1])]
+    P.part('dish', 'DishWhite').add(lathe_geo(rim, 20, cap0=False, cap1=False), M)
+    axis = (M.to_3x3() @ Vector((0, 0, 1))).normalized()
+    down = (M.to_3x3() @ Vector((-1, 0, 0))).normalized()
+    lower = centre + down * 21
+    focus = centre + axis * 34 + down * 9
+    P.tube('SteelDark', [tuple(lower), tuple(lower + axis * 12), tuple(focus - axis * 3)], 1.1, 6, part='mount')
+    P.part('lnb', 'PlasticBlack').add(lathe_geo([(2.6, -6), (2.6, 2), (3.6, 3), (3.6, 5), (0, 5.2)], 10),
+                                       Matrix.Translation(focus) @ axis.to_track_quat('Z', 'Y').to_matrix().to_4x4())
+    P.box('SteelDark', tuple(centre - axis * 4), (8, 8, 10), (0, tilt, 0), bevel=.8, part='mount')
+    P.tube('SteelDark', [(0, 0, 44), tuple(centre - axis * 4)], 1.3, 6, part='mount')
+    P.anchors['clamp_cm'] = [0, 0, 0]
+    P.anchors['aim_cm'] = _ue(tuple(axis * 100))
+    P.extra['mount_note'] = ('clamp on a gallery guard cap rail (top of the 107 cm guard) or screw to a wall; '
+                             'yaw +X toward 190-230 degrees azimuth (Bell 91 W, Shaw 107.3 W from Montreal)')
+    return P
+
+
+def potted_plant():
+    P = Prop('potted_plant', 'gallery', 'Terracotta pot on a saucer with a geranium past its season: a loose '
+             'mound of leaves, a few late flowers and some yellowing stems.', 'base centre')
+    P.lathe('Terracotta', [(15, 0), (16, 1.6), (15, 2)], 16, part='pot', cap0=True, cap1=False)
+    pot = [(11.5, 1.8), (16, 26), (17.8, 26.5), (17.8, 30), (16.5, 30)]
+    P.lathe('Terracotta', pot, 16, part='pot', cap1=False)
+    P.lathe('Soil', [(16.4, 28), (0, 28.4)], 16, part='soil', cap0=False)
+    rng = random.Random(311)
+    for i in range(8):
+        a = i * math.tau / 8 + rng.uniform(-.3, .3)
+        r = rng.uniform(5, 11)
+        h = rng.uniform(10, 17)
+        P.ellipsoid('PlantGreen', (r * math.cos(a), r * math.sin(a), 30 + h * .55), (8.5, 7.5, h * .45), 8, 5,
+                    (0, 0, rng.uniform(0, 90)), part='leaves')
+    P.ellipsoid('PlantGreen', (0, 0, 44), (10, 10, 9), 8, 5, part='leaves')
+    for i in range(6):
+        a = i * math.tau / 6 + .4
+        top = (math.cos(a) * 9, math.sin(a) * 9, 52 + rng.uniform(-3, 6))
+        P.tube('PlantDry', [(math.cos(a) * 3, math.sin(a) * 3, 29), top], [.6, .4], 4, part='stems')
+        if i % 2 == 0:
+            P.ellipsoid('FlowerRed', top, (3.4, 3.4, 2.8), 7, 4, part='flowers')
+    P.extra['season_note'] = 'late October: the PlantDry and PlantRust variants read as frost-bitten'
+    return P
+
+
+def bike_gallery():
+    P = Prop('bike_gallery', 'gallery', 'Commuter bike stored on a back gallery, leaning 12 degrees toward '
+             'Unreal -Y (its left) against the guard: fenders, a rear rack and a wire front basket.',
+             'midpoint between the tyre contact points; front wheel +X; lean contact toward Unreal -Y')
+    tmp = Prop('tmp', '', '', '')
+    _bicycle(tmp, 'BikeRed')
+    R = 33
+    _fender(tmp, 'PlasticBlack', 54, R, R + 3, 15, 165, 5.5, 'fenders')
+    _fender(tmp, 'PlasticBlack', -54, R, R + 3, 20, 175, 5.5, 'fenders')
+    for side in (-1, 1):
+        tmp.tube('SteelDark', [(-54, side * 7, R), (-50, side * 9, 76), (-26, side * 7, 80)], .8, 4, part='rack')
+    tmp.box('SteelDark', (-48, 0, 79), (40, 15, 1.2), bevel=.3, part='rack')
+    basket = [(40 + x, y, z) for z in (92, 116) for x, y in ((0, -16), (30, -16), (30, 16), (0, 16))]
+    for ring in (basket[:4], basket[4:]):
+        tmp.tube('SteelDark', ring, .5, 4, part='rack', closed=True)
+    for k in range(4):
+        tmp.tube('SteelDark', [basket[k], basket[k + 4]], .5, 4, part='rack')
+    for x in (47, 55, 63):
+        tmp.tube('SteelDark', [(x, -16, 92), (x, -16, 116)], .35, 3, part='rack')
+        tmp.tube('SteelDark', [(x, 16, 92), (x, 16, 116)], .35, 3, part='rack')
+    tmp.tube('SteelDark', [(40, 0, 92), (54, 0, R + 4)], .7, 4, part='rack')
+    M = T((0, 0, 0), (-12, 0, 0))
+    for name, data in tmp.parts.items():
+        P.part(name, data['material']).merged(data['geo'], M)
+    P.anchors['lean_contact_cm'] = _ue(M @ Vector((-24, 0, 95)))
+    P.colliders.append({'center': [0, 10, 58], 'size': [182, 46, 116]})
+    return P
+
+
 # ----------------------------------------------------------------------- companions
 
 DOGS = {
@@ -1371,9 +1521,10 @@ BUILDERS = [lamp_cobra, lamp_park, hydrant, sign_stop, sign_street, sign_oneway,
             bixi_bike, bin_recycling, bin_compost, bin_garbage, cone, barrier_chantier, utility_pole,
             laundry_line, bike_locked, ac_unit, flower_box, bench, mailbox, police_lightbar,
             lambda: dog('dog_small'), lambda: dog('dog_medium'), lambda: dog('dog_large'), stroller,
-            grocery_bag]
+            grocery_bag, chair_patio, bbq, satellite_dish, potted_plant, bike_gallery]
 BUDGETS = {'lamp_cobra': 800, 'lamp_park': 800, 'hydrant': 500, 'dog_small': 1500, 'dog_medium': 1500,
-           'dog_large': 1500, 'stroller': 1500}
+           'dog_large': 1500, 'stroller': 1500, 'chair_patio': 700, 'bbq': 1600, 'satellite_dish': 1200,
+           'potted_plant': 1500}
 DEFAULT_BUDGET = 2500
 
 
