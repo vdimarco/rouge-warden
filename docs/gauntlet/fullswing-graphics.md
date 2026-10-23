@@ -1267,3 +1267,6 @@ Increment48 shipped #660 as09966956 after all6CI/review/current18deployedchecks/
 
 ### Increment49 — goal projection layout inputs — 2026-10-23
 Reuse viewport/paddinginputs; livereaddimensions and originalphone/desktopsafeareas preserved. Baseline60size+60padobjects perlayout→oneeach/5browserchecksPASS acrossresize/layoutchanges/freshresults. ExistinggoalmarkerNode/browser suitesPASS. Evidence fullswing-r49-goal-layout/all20dimensionlimits; total/delta withheld, actualChrome/stability unverified. No art/physics/anchor/ceiling change or FPS claim. Review/CI/preview/rebase/production pending.
+
+
+Increment49 shipped #662 asa51930fe after all6CI/review/currentlayout+goalmarkdeployedchecks/rebase before AND afterpreview/exactmerge. Productionmain HTTP200 exactbytes verified (hash in fullswing-r49-goal-layout/production-verification.json). Canonical goal-layout scenarios published and OpenSpec archived. ActualChrome/FPSbenefit unverified; totalwithheld.
