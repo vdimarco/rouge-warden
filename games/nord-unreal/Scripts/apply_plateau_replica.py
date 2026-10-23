@@ -174,15 +174,15 @@ def material_name(layer, key):
     return f'M_Replica_{layer}_{key}'
 
 
-def texture_set(key, spec):
+def texture_set(key, spec, sets=None):
     """The replica texture set ('limestone', 'slate', 'siding', 'creeper'...) a material key takes, else None.
 
     A manifest texture path naming a replica map wins; then the shared rear-pass keys (exact names); then the
     older greystone and slate name rule.
     """
     texture = (spec.get('texture') or '').lower()
-    for name, entry in plateau_textures.SETS.items():
-        if f't_replica_{entry["name"].lower()}_' in texture or f'replica_{name}' in texture:
+    for name, entry in {**plateau_textures.SETS, **(sets or {})}.items():
+        if f't_replica_{entry.get("name", plateau_textures.SETS.get(name, {}).get("name", name)).lower()}_' in texture or f'replica_{name}' in texture:
             return name
     if key in SHARED_TEXTURE_KEYS:
         return SHARED_TEXTURE_KEYS[key]
@@ -193,7 +193,7 @@ def texture_set(key, spec):
     return None
 
 
-def base_material(key, spec):
+def base_material(key, spec, sets=None):
     texture = spec.get('texture') or ''
     if spec.get('emissive_srgb'):
         # Emissive-capable parent (constant tint wired to base colour and emissive); duplicated, never edited.
@@ -202,9 +202,9 @@ def base_material(key, spec):
         return '/Game/Plateau/Materials/M_Asphalt', 'asphalt_02'
     if 'brick' in texture:
         return '/Game/Plateau/Materials/M_BrickRed', 'brick_wall_001'
-    textured = texture_set(key, spec)
+    textured = texture_set(key, spec, sets)
     if textured:
-        return SURFACE_PARENTS[plateau_textures.SETS[textured]['surface']], 'replica_' + textured
+        return SURFACE_PARENTS[{**plateau_textures.SETS, **(sets or {})}[textured]['surface']], 'replica_' + textured
     if any(key.startswith(g) for g in GROUND_KEYS):
         return '/Game/Plateau/Materials/M_ConcreteDark', None
     return '/Game/Plateau/Materials/M_Trim', None
@@ -217,22 +217,28 @@ def load_textures(root=ROOT):
     passes; the plan records the file's own sha256 as well. Returns {} when the folder was never built.
     """
     import plateau_textures
-    folder = Path(root) / 'Data/Plateau/ReplicaGeometry' / TEXTURES
-    if not (folder / TEXTURE_INDEX).is_file():
-        return {}
-    index = json.loads((folder / TEXTURE_INDEX).read_text())
+    data_root = Path(root) / 'Data/Plateau/ReplicaGeometry'
+    indexes = []
+    path = data_root / TEXTURES / TEXTURE_INDEX
+    if path.is_file():
+        indexes.append((TEXTURES, json.loads(path.read_text())['sets']))
+    tree_path = data_root / TREES / 'manifest.json'
+    if tree_path.is_file():
+        indexes.append((TREES, json.loads(tree_path.read_text()).get('texture_sets', {})))
     sets = {}
-    for name, entry in sorted(index['sets'].items()):
-        for role in TEXTURE_ROLES:
-            row = entry['maps'][role]
-            path = folder / row['file']
-            assert path.is_file(), f'Missing {path}; run python3 Scripts/plateau_textures.py'
-            data = path.read_bytes()
-            width, height, raw = plateau_textures.read_png(data)
-            assert [width, height] == entry['size_px'], f'Wrong size {path}'
-            assert hashlib.sha256(raw).hexdigest() == row['raw_sha256'], f'Stale texture {path}'
-            row['file_sha256'] = hashlib.sha256(data).hexdigest()
-        sets[name] = entry
+    for directory, entries in indexes:
+        for name, entry in sorted(entries.items()):
+            entry['directory'] = directory
+            for role in TEXTURE_ROLES:
+                row = entry['maps'][role]
+                path = data_root / directory / row['file']
+                assert path.is_file(), f'Missing {path}; run the layer generator first'
+                data = path.read_bytes()
+                width, height, raw = plateau_textures.read_png(data)
+                assert [width, height] == entry['size_px'], f'Wrong size {path}'
+                assert hashlib.sha256(raw).hexdigest() == row['raw_sha256'], f'Stale texture {path}'
+                row['file_sha256'] = hashlib.sha256(data).hexdigest()
+            sets[name] = entry
     return sets
 
 
@@ -426,7 +432,7 @@ def shared_key_plan(root=ROOT):
 def material_row(layer, key, spec, texture_sets, used_sets):
     """The plan row of one material key: the parent it duplicates, its tint basis and, for a replica texture set,
     the set's maps, tiling, blend mode, macro variation and the manifest's metallic."""
-    base, texture = base_material(key, spec)
+    base, texture = base_material(key, spec, texture_sets)
     row = {'layer': layer, 'key': key, 'asset': f'{MATERIALS}/{material_name(layer, key)}',
            'duplicate_of': base, 'texture_mean': texture,
            'mean_linear': list(TEXTURE_MEAN[texture]) if texture in TEXTURE_MEAN else None,
@@ -471,7 +477,7 @@ def texture_rows(name, entry):
     for role in TEXTURE_ROLES:
         m = entry['maps'][role]
         alpha = bool(m.get('alpha'))
-        rows.append({'set': name, 'role': role, 'file': f'{TEXTURES}/{m["file"]}',
+        rows.append({'set': name, 'role': role, 'file': f'{entry.get("directory", TEXTURES)}/{m["file"]}',
                      'asset': f'{TEXTURE_ASSETS}/{Path(m["file"]).stem}', 'size_px': entry['size_px'],
                      'srgb': m['srgb'], 'compression': m['compression'], 'sampler': m['sampler'],
                      'sha256': m['file_sha256'], 'raw_sha256': m['raw_sha256'], 'alpha': alpha,
