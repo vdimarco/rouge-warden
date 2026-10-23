@@ -401,12 +401,30 @@ def check_review():
     print("review ok: 3 rows, SSIM per tile, 4x diff maps, A/B flip, delay section")
 
 
+def check_look_gates():
+    images = {f"view{i}": .97 for i in range(20)}
+    by_name = lambda rows: {g["name"]: g for g in rows}
+    passed = M.look_gates(LOOP, images, baseline_mean=.96, repeat={f"view{i}": .99 for i in range(20)})
+    assert [g["name"] for g in passed] == ["image_ssim_min", "look_vs_baseline", "repeat_ssim_min"]
+    assert M.verdict(passed)["status"] == "pass", passed
+    # No second ceiling render, or an empty one: the repeat gate stays and is unverified, never a pass.
+    for repeat in (None, {}):
+        rows = by_name(M.look_gates(LOOP, images, baseline_mean=.96, repeat=repeat))
+        assert rows["repeat_ssim_min"]["result"] == "unverified", rows
+        assert M.verdict(list(rows.values()))["status"] == "unverified"
+    # A reference that does not repeat fails the round.
+    low = by_name(M.look_gates(LOOP, images, baseline_mean=.96, repeat={"view0": .975, "view1": .99}))
+    assert low["repeat_ssim_min"]["result"] == "fail" and low["repeat_ssim_min"]["value"] == .975
+    print("look gates ok: repeat gate always present, unverified without the second ceiling render")
+
+
 def main():
     check_fixture()
     check_profiler_csv()
     check_missing_columns()
     check_hitch_rule()
     check_gates()
+    check_look_gates()
     check_stream_and_processes()
     check_ssim()
     check_flip()

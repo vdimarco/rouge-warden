@@ -1879,7 +1879,7 @@ def check_planting(out, streets, soul):
 
 
 SLAB_KEYS = ('sidewalk', 'curb', 'Yard_Grass', 'Yard_Soil', 'yard_path', 'grass_edge', 'soil')
-OPEN_STEPS_MAX = 50         # of about 184,000 outer slab edges; 43 now (see the README's Limits)
+OPEN_STEPS_MAX = 50         # of about 184,000 outer slab edges; 41 now (see the README's Limits)
 
 
 def check_open_steps(world, out, streets):
