@@ -470,7 +470,7 @@ function endLakeDrop() {
   lakeDrop = null;
 }
 const HERO_FACE = { x: 0, z: -1 }, HERO_FIGHT = { x: 0, y: 0, z: 0, yaw: 0, onGround: false, safe: false, hidden: false, perch: false };
-const ropeWant = new Map();
+const ropeWant = new Map(), combatTargets = [];
 const ropeIds = new Set(), GOON_POS = new Map(), firePerch = [false, false];
 function actionOn() { return flatOn && !isXR() && gameStarted && G.mode === "desktop"; }
 // Shift on the ground with no rope out and a direction held: sprint while the energy lasts; the gauge fills again after a pause
@@ -568,7 +568,7 @@ function syncRopeTargets() {
   const want = ropeWant;
   want.clear();
   if (actionOn() && G.state === "play" && !driving) {
-    for (const g of combat.targets(heroFight())) {
+    for (const g of combat.targets(heroFight(), 40, combatTargets)) {
       let q = GOON_POS.get(g.id);
       if (!q) { q = { x: 0, y: 0, z: 0 }; GOON_POS.set(g.id, q); }
       q.x = g.x; q.y = g.y + 1.1; q.z = g.z;

@@ -1,0 +1,271 @@
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: supplied output is returned
++ actual - expected
+
++ [
++   {
++     aggro: true,
++     bp: 0,
++     br: 0,
++     cool: 1.4230791309751276,
++     from: null,
++     group: 'test',
++     height: 1.0944117129313813,
++     hitBy: '',
++     home: {
++       x: -150,
++       y: 0,
++       z: 2
++     },
++     hp: 3,
++     id: 0,
++     lift: 0,
++     on: true,
++     pants: [
++       0.12,
++       0.12,
++       0.15
++     ],
++     path: null,
++     pathI: 0,
++     phase: 1.0846395590199343,
++     pose: 1,
++     poseT: 0,
++     pullT: 0,
++     runner: false,
++     shirt: [
++       0.2,
++       0.46,
++       0.18
++     ],
++     skin: [
++       0.55,
++       0.8,
++       0.22
++     ],
++     speed: 0,
++     state: 'idle',
++     stride: 0,
++     t: 0,
++     x: -150,
++     y: 0,
++     yaw: 3.922789751452782,
++     z: 2
++   },
++   {
++     aggro: true,
++     bp: 0,
++     br: 0,
++     cool: 1.0536757235752037,
++     from: null,
++     group: 'test',
++     height: 1.0255084526469067,
++     hitBy: '',
++     home: {
++       x: -130,
++       y: 0,
++       z: 2
++     },
++     hp: 3,
++     id: 2,
++     lift: 0,
++     on: true,
++     pants: [
++       0.12,
++       0.12,
++       0.15
++     ],
++     path: null,
++     pathI: 0,
++     phase: 4.494562213195882,
++     pose: 1,
++     poseT: 0,
++     pullT: 0,
++     runner: false,
++     shirt: [
++       0.2,
++       0.46,
++       0.18
++     ],
++     skin: [
++       0.55,
++       0.8,
++       0.22
++     ],
++     speed: 0,
++     state: 'idle',
++     stride: 0,
++     t: 0,
++     x: -130,
++     y: 0,
++     yaw: 2.356171188217032,
++     z: 2
++   },
++   {
++     aggro: false,
++     bp: 0,
++     br: 0,
++     cool: 1.5963496363819636,
++     from: null,
++     group: 'test',
++     height: 1.1268282190099586,
++     hitBy: '',
++     home: {
++       x: -120,
++       y: 0,
++       z: 2
++     },
++     hp: 3,
++     id: 3,
++     lift: 0,
++     on: true,
++     pants: [
++       0.12,
++       0.12,
++       0.15
++     ],
++     path: null,
++     pathI: 0,
++     phase: 5.089778927009166,
++     pose: 1,
++     poseT: 0,
++     pullT: 0,
++     runner: true,
++     shirt: [
++       0.2,
++       0.46,
++       0.18
++     ],
++     skin: [
++       0.55,
++       0.8,
++       0.22
++     ],
++     speed: 0,
++     state: 'idle',
++     stride: 0,
++     t: 0,
++     x: -120,
++     y: 0,
++     yaw: 2.7872246270585768,
++     z: 2
++   }
++ ]
+- []
+
+    at file:///home/von/Work/rouge-warden-fullswing-gauntlet/qa/vr/combat-target-scratch.test.mjs:8:8
+    at ModuleJob.run (node:internal/modules/esm/module_job:569:25)
+    at async node:internal/modules/esm/loader:650:26
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5) {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: [
+    {
+      id: 0,
+      on: true,
+      group: 'test',
+      runner: false,
+      x: -150,
+      y: 0,
+      z: 2,
+      yaw: 3.922789751452782,
+      hp: 3,
+      state: 'idle',
+      t: 0,
+      home: { x: -150, y: 0, z: 2 },
+      aggro: true,
+      cool: 1.4230791309751276,
+      phase: 1.0846395590199343,
+      stride: 0,
+      pose: 1,
+      poseT: 0,
+      height: 1.0944117129313813,
+      shirt: [ 0.2, 0.46, 0.18 ],
+      pants: [ 0.12, 0.12, 0.15 ],
+      skin: [ 0.55, 0.8, 0.22 ],
+      bp: 0,
+      br: 0,
+      lift: 0,
+      path: null,
+      pathI: 0,
+      speed: 0,
+      from: null,
+      pullT: 0,
+      hitBy: ''
+    },
+    {
+      id: 2,
+      on: true,
+      group: 'test',
+      runner: false,
+      x: -130,
+      y: 0,
+      z: 2,
+      yaw: 2.356171188217032,
+      hp: 3,
+      state: 'idle',
+      t: 0,
+      home: { x: -130, y: 0, z: 2 },
+      aggro: true,
+      cool: 1.0536757235752037,
+      phase: 4.494562213195882,
+      stride: 0,
+      pose: 1,
+      poseT: 0,
+      height: 1.0255084526469067,
+      shirt: [ 0.2, 0.46, 0.18 ],
+      pants: [ 0.12, 0.12, 0.15 ],
+      skin: [ 0.55, 0.8, 0.22 ],
+      bp: 0,
+      br: 0,
+      lift: 0,
+      path: null,
+      pathI: 0,
+      speed: 0,
+      from: null,
+      pullT: 0,
+      hitBy: ''
+    },
+    {
+      id: 3,
+      on: true,
+      group: 'test',
+      runner: true,
+      x: -120,
+      y: 0,
+      z: 2,
+      yaw: 2.7872246270585768,
+      hp: 3,
+      state: 'idle',
+      t: 0,
+      home: { x: -120, y: 0, z: 2 },
+      aggro: false,
+      cool: 1.5963496363819636,
+      phase: 5.089778927009166,
+      stride: 0,
+      pose: 1,
+      poseT: 0,
+      height: 1.1268282190099586,
+      shirt: [ 0.2, 0.46, 0.18 ],
+      pants: [ 0.12, 0.12, 0.15 ],
+      skin: [ 0.55, 0.8, 0.22 ],
+      bp: 0,
+      br: 0,
+      lift: 0,
+      path: null,
+      pathI: 0,
+      speed: 0,
+      from: null,
+      pullT: 0,
+      hitBy: ''
+    }
+  ],
+  expected: [],
+  operator: 'strictEqual',
+  diff: 'simple'
+}
+
+Node.js v26.7.0

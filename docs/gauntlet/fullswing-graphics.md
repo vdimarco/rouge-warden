@@ -1235,3 +1235,7 @@ One private cleared Map replaces per-frame construction in target reconciliation
 
 
 Increment44 shipped #652 as16909bd0 after all6CI/review/current14deployedchecks/rebase before AND afterpreview/exactmerge. Productionmain HTTP200 exactbytes verified (hash in fullswing-r44-rope-want/production-verification.json). Canonical desired-map scenarios published and OpenSpec archived. ActualChrome/FPSbenefit unverified; totalwithheld.
+
+
+### Increment45 — combat rope target scratch — 2026-10-23
+Optional combat.targets output reused by main; fresh default arrays/live goon references and filtering unchanged. Node100sample identity/value/radius/perch/countchecks, existingaction/reconciliation suites and4browserchecks60realframes/onearrayPASS. Evidence fullswing-r45-combat-targets/all20dimensionlimits; total/delta withheld, actualChrome/stability unverified. No art/physics/anchor/ceiling change or FPS claim. Review/CI/preview/rebase/production pending.
