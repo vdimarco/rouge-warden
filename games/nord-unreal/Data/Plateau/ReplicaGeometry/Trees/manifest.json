@@ -1,0 +1,1283 @@
+{
+ "layer": "Trees",
+ "generator": "Scripts/blender/plateau_trees.py",
+ "frame": "tree-local: x east, y north, z up, cm; pivot at the trunk base. OBJ stores (x, y, z) as authored (the plateau_props.py convention); bounds_cm are Unreal-local (x, -y, z)",
+ "unreal_destination": "/Game/Plateau/Replica/Trees",
+ "technique": {
+  "branching": "Weber & Penn, \"Creation and Rendering of Realistic Trees\", SIGGRAPH 1995 (the model of Blender's Sapling add-on; recursion written here because Sapling is not bundled)",
+  "leaves": "alpha-masked leaf cluster cards from an atlas (SpeedTree-style leaf cards), normals bent to the crown ellipsoid (SpeedTree leaf puffiness) and clamped from pointing down",
+  "textures": "Scripts/plateau_textures.py primitives: signed-distance serrated leaflets, Worley bark plates"
+ },
+ "aliases": {
+  "maple": "norway_maple",
+  "elm": "linden"
+ },
+ "materials": {
+  "Bark_NorwayMaple": {
+   "base_color_srgb": "#5E564D",
+   "roughness": 0.92,
+   "metallic": 0.0,
+   "texture": "Trees/T_Replica_TreeBark_diff.png",
+   "note": "grey-brown, shallow interlacing ridges"
+  },
+  "Bark_SilverMaple": {
+   "base_color_srgb": "#8A857C",
+   "roughness": 0.92,
+   "metallic": 0.0,
+   "texture": "Trees/T_Replica_TreeBark_diff.png",
+   "note": "light grey, long loose plates on old trunks"
+  },
+  "Bark_HoneyLocust": {
+   "base_color_srgb": "#4D433B",
+   "roughness": 0.92,
+   "metallic": 0.0,
+   "texture": "Trees/T_Replica_TreeBark_diff.png",
+   "note": "dark grey-brown, scaly plates"
+  },
+  "Bark_Linden": {
+   "base_color_srgb": "#6A6157",
+   "roughness": 0.92,
+   "metallic": 0.0,
+   "texture": "Trees/T_Replica_TreeBark_diff.png",
+   "note": "grey-brown, narrow vertical ridges"
+  },
+  "Bark_Ash": {
+   "base_color_srgb": "#77726A",
+   "roughness": 0.92,
+   "metallic": 0.0,
+   "texture": "Trees/T_Replica_TreeBark_diff.png",
+   "note": "grey, interlacing diamond ridges"
+  },
+  "Bark_Small": {
+   "base_color_srgb": "#6E655B",
+   "roughness": 0.92,
+   "metallic": 0.0,
+   "texture": "Trees/T_Replica_TreeBark_diff.png",
+   "note": "smooth grey-brown"
+  },
+  "Tree_Leaves_Autumn": {
+   "base_color_srgb": "#B58D2E",
+   "roughness": 0.6,
+   "metallic": 0.0,
+   "texture": "Trees/T_Replica_TreeLeaves_diff.png",
+   "foliage": true,
+   "note": "one autumn atlas for every kind; masked (clip .5), two-sided foliage"
+  }
+ },
+ "texture_sets": {
+  "tree_leaves": {
+   "name": "TreeLeaves",
+   "size_px": [
+    1024,
+    1024
+   ],
+   "tile_m": [
+    1.0,
+    1.0
+   ],
+   "tiling": [
+    1.0,
+    1.0
+   ],
+   "mean_linear": [
+    0.4618,
+    0.2679,
+    0.0268
+   ],
+   "roughness_mean": 0.6074,
+   "layout": {
+    "cells": [
+     "nm_yellow",
+     "nm_mixed",
+     "nm_green",
+     "nm_sparse",
+     "sm_yellow",
+     "sm_orange",
+     "li_yellow",
+     "li_mixed",
+     "as_yellow",
+     "as_maroon",
+     "as_sparse",
+     "hl_gold",
+     "hl_sparse",
+     "sx_red",
+     "sx_orange",
+     "sm_sparse"
+    ],
+    "grid": 4,
+    "pad_px": 10,
+    "cell_stats": {
+     "nm_yellow": {
+      "cover": 0.388,
+      "mean_srgb": [
+       194.0,
+       155.3,
+       38.8
+      ]
+     },
+     "nm_mixed": {
+      "cover": 0.3443,
+      "mean_srgb": [
+       182.8,
+       158.5,
+       43.6
+      ]
+     },
+     "nm_green": {
+      "cover": 0.3633,
+      "mean_srgb": [
+       124.4,
+       129.0,
+       42.0
+      ]
+     },
+     "nm_sparse": {
+      "cover": 0.1402,
+      "mean_srgb": [
+       180.7,
+       144.7,
+       40.9
+      ]
+     },
+     "sm_yellow": {
+      "cover": 0.2998,
+      "mean_srgb": [
+       195.4,
+       168.4,
+       68.0
+      ]
+     },
+     "sm_orange": {
+      "cover": 0.3118,
+      "mean_srgb": [
+       181.7,
+       98.8,
+       29.7
+      ]
+     },
+     "li_yellow": {
+      "cover": 0.3118,
+      "mean_srgb": [
+       187.9,
+       160.5,
+       53.4
+      ]
+     },
+     "li_mixed": {
+      "cover": 0.2944,
+      "mean_srgb": [
+       154.6,
+       118.6,
+       44.1
+      ]
+     },
+     "as_yellow": {
+      "cover": 0.2789,
+      "mean_srgb": [
+       197.2,
+       158.7,
+       39.8
+      ]
+     },
+     "as_maroon": {
+      "cover": 0.2409,
+      "mean_srgb": [
+       117.5,
+       43.7,
+       51.0
+      ]
+     },
+     "as_sparse": {
+      "cover": 0.0976,
+      "mean_srgb": [
+       167.1,
+       133.5,
+       39.2
+      ]
+     },
+     "hl_gold": {
+      "cover": 0.2852,
+      "mean_srgb": [
+       214.4,
+       166.2,
+       37.7
+      ]
+     },
+     "hl_sparse": {
+      "cover": 0.1252,
+      "mean_srgb": [
+       165.9,
+       133.0,
+       34.6
+      ]
+     },
+     "sx_red": {
+      "cover": 0.2578,
+      "mean_srgb": [
+       161.5,
+       61.9,
+       28.3
+      ]
+     },
+     "sx_orange": {
+      "cover": 0.2306,
+      "mean_srgb": [
+       175.2,
+       111.4,
+       31.8
+      ]
+     },
+     "sm_sparse": {
+      "cover": 0.1044,
+      "mean_srgb": [
+       189.4,
+       160.8,
+       75.8
+      ]
+     }
+    }
+   },
+   "maps": {
+    "diff": {
+     "file": "T_Replica_TreeLeaves_diff.png",
+     "srgb": true,
+     "compression": "TC_DEFAULT",
+     "sampler": "SAMPLERTYPE_COLOR",
+     "sha256": "434846e25ad1d9f0f49d6999d3018812fbd0bbec6a8678fbe60e2d27dd36d333",
+     "raw_sha256": "ab0f65acdd632901dd15764c77cfb050b9c4683d7b816c14f643f8523aa13c97",
+     "alpha": true
+    },
+    "nor_dx": {
+     "file": "T_Replica_TreeLeaves_nor_dx.png",
+     "srgb": false,
+     "compression": "TC_NORMALMAP",
+     "sampler": "SAMPLERTYPE_NORMAL",
+     "sha256": "5556af1849922cc2641183ce137777b2798d32498d1f1a5181c96208e45e34da",
+     "raw_sha256": "b8a60a2c5de069aebb6343b1482a722dbb479c725a98619ebd691d4617769bb0"
+    },
+    "rough": {
+     "file": "T_Replica_TreeLeaves_rough.png",
+     "srgb": false,
+     "compression": "TC_DEFAULT",
+     "sampler": "SAMPLERTYPE_LINEAR_COLOR",
+     "sha256": "4b167348d9e038c9a9a1444309e99f458afa2bb8b9fbe94a87e769a221a8b947",
+     "raw_sha256": "aee7db76aa75b5025af397da66241ecb769b8c175d376867994c578c94a19929"
+    }
+   },
+   "surface": "foliage",
+   "material": {
+    "blend_mode": "masked",
+    "two_sided": true,
+    "shading_model": "two_sided_foliage",
+    "opacity_mask_clip": 0.5
+   },
+   "keys": [
+    "Tree_Leaves_Autumn"
+   ],
+   "uv": "atlas",
+   "alpha": true,
+   "base_color_srgb": "#B58D2E",
+   "coverage": 0.2546,
+   "uv_note": "OBJ UVs address the atlas directly (0..1, v up); tiling 1"
+  },
+  "tree_bark": {
+   "name": "TreeBark",
+   "size_px": [
+    512,
+    1024
+   ],
+   "tile_m": [
+    1.0,
+    2.0
+   ],
+   "tiling": [
+    1.0,
+    0.5
+   ],
+   "mean_linear": [
+    0.1807,
+    0.1525,
+    0.1211
+   ],
+   "roughness_mean": 0.8819,
+   "layout": {
+    "plates_cm": [
+     6.5,
+     52.0
+    ],
+    "stretch": 8,
+    "furrow": "Worley F2 - F1 under 1.3 cm",
+    "shear_cm": 3.5
+   },
+   "maps": {
+    "diff": {
+     "file": "T_Replica_TreeBark_diff.png",
+     "srgb": true,
+     "compression": "TC_DEFAULT",
+     "sampler": "SAMPLERTYPE_COLOR",
+     "sha256": "7fd3f0a16594c4d2e0bcedae8cfbc4e86fb748d4dcf2234566b1e26c4d4a2482",
+     "raw_sha256": "40360a1336eec6454177eeec952e99586f60a5fc1afaa3f682d5a13773e3a77f"
+    },
+    "nor_dx": {
+     "file": "T_Replica_TreeBark_nor_dx.png",
+     "srgb": false,
+     "compression": "TC_NORMALMAP",
+     "sampler": "SAMPLERTYPE_NORMAL",
+     "sha256": "f032abbe3e7b75bb53b480880d43c884d0d79cbcf04a735c8898314254c9a73f",
+     "raw_sha256": "0ad816e64e1f6c18c00cb826207ab6d7d35ba43db4649a99ca6b3c1c218ffa2a"
+    },
+    "rough": {
+     "file": "T_Replica_TreeBark_rough.png",
+     "srgb": false,
+     "compression": "TC_DEFAULT",
+     "sampler": "SAMPLERTYPE_LINEAR_COLOR",
+     "sha256": "ddf9e5f8b42f6f22ff9e7573bb484fd39a7ee7dd283b9f600b7868587d341601",
+     "raw_sha256": "a489416f1f5736b865a1b679f0814cde3a4ae932475038ed8374f040ff7ae12a"
+    }
+   },
+   "surface": "wall",
+   "material": {
+    "blend_mode": "opaque",
+    "two_sided": false,
+    "shading_model": "default_lit"
+   },
+   "keys": [
+    "Bark_NorwayMaple",
+    "Bark_SilverMaple",
+    "Bark_HoneyLocust",
+    "Bark_Linden",
+    "Bark_Ash",
+    "Bark_Small"
+   ],
+   "uv": "metres",
+   "alpha": false,
+   "base_color_srgb": "#766D62",
+   "uv_note": "u metres around the stem in whole tiles, v metres along it"
+  }
+ },
+ "atlas_cells": {
+  "nm_yellow": {
+   "index": 0,
+   "uv": [
+    0.009766,
+    0.759766,
+    0.240234,
+    0.990234
+   ],
+   "form": "norway",
+   "stage": 0.9,
+   "sparse": false
+  },
+  "nm_mixed": {
+   "index": 1,
+   "uv": [
+    0.259766,
+    0.759766,
+    0.490234,
+    0.990234
+   ],
+   "form": "norway",
+   "stage": 0.5,
+   "sparse": false
+  },
+  "nm_green": {
+   "index": 2,
+   "uv": [
+    0.509766,
+    0.759766,
+    0.740234,
+    0.990234
+   ],
+   "form": "norway",
+   "stage": 0.15,
+   "sparse": false
+  },
+  "nm_sparse": {
+   "index": 3,
+   "uv": [
+    0.759766,
+    0.759766,
+    0.990234,
+    0.990234
+   ],
+   "form": "norway",
+   "stage": 1.0,
+   "sparse": true
+  },
+  "sm_yellow": {
+   "index": 4,
+   "uv": [
+    0.009766,
+    0.509766,
+    0.240234,
+    0.740234
+   ],
+   "form": "silver",
+   "stage": 0.8,
+   "sparse": false
+  },
+  "sm_orange": {
+   "index": 5,
+   "uv": [
+    0.259766,
+    0.509766,
+    0.490234,
+    0.740234
+   ],
+   "form": "silver",
+   "stage": 1.0,
+   "sparse": false
+  },
+  "li_yellow": {
+   "index": 6,
+   "uv": [
+    0.509766,
+    0.509766,
+    0.740234,
+    0.740234
+   ],
+   "form": "linden",
+   "stage": 0.85,
+   "sparse": false
+  },
+  "li_mixed": {
+   "index": 7,
+   "uv": [
+    0.759766,
+    0.509766,
+    0.990234,
+    0.740234
+   ],
+   "form": "linden",
+   "stage": 0.4,
+   "sparse": false
+  },
+  "as_yellow": {
+   "index": 8,
+   "uv": [
+    0.009766,
+    0.259766,
+    0.240234,
+    0.490234
+   ],
+   "form": "ash",
+   "stage": 0.8,
+   "sparse": false
+  },
+  "as_maroon": {
+   "index": 9,
+   "uv": [
+    0.259766,
+    0.259766,
+    0.490234,
+    0.490234
+   ],
+   "form": "ash",
+   "stage": 1.0,
+   "sparse": false
+  },
+  "as_sparse": {
+   "index": 10,
+   "uv": [
+    0.509766,
+    0.259766,
+    0.740234,
+    0.490234
+   ],
+   "form": "ash",
+   "stage": 1.0,
+   "sparse": true
+  },
+  "hl_gold": {
+   "index": 11,
+   "uv": [
+    0.759766,
+    0.259766,
+    0.990234,
+    0.490234
+   ],
+   "form": "locust",
+   "stage": 0.9,
+   "sparse": false
+  },
+  "hl_sparse": {
+   "index": 12,
+   "uv": [
+    0.009766,
+    0.009766,
+    0.240234,
+    0.240234
+   ],
+   "form": "locust",
+   "stage": 0.8,
+   "sparse": true
+  },
+  "sx_red": {
+   "index": 13,
+   "uv": [
+    0.259766,
+    0.009766,
+    0.490234,
+    0.240234
+   ],
+   "form": "amur",
+   "stage": 1.0,
+   "sparse": false
+  },
+  "sx_orange": {
+   "index": 14,
+   "uv": [
+    0.509766,
+    0.009766,
+    0.740234,
+    0.240234
+   ],
+   "form": "amur",
+   "stage": 0.6,
+   "sparse": false
+  },
+  "sm_sparse": {
+   "index": 15,
+   "uv": [
+    0.759766,
+    0.009766,
+    0.990234,
+    0.240234
+   ],
+   "form": "silver",
+   "stage": 1.0,
+   "sparse": true
+  }
+ },
+ "kinds": {
+  "norway_maple": {
+   "name": "Norway maple (Acer platanoides)",
+   "obj": "Tree_norway_maple.obj",
+   "sha256": "b8eb49916ffc73340c7245d46fd98896f21f973f9b0cbf0f8a981982c1e49a1f",
+   "materials": {
+    "bark": "Bark_NorwayMaple",
+    "leaves": "Tree_Leaves_Autumn"
+   },
+   "slots": {
+    "bark": "norway_maple_bark",
+    "leaves": "norway_maple_leaves"
+   },
+   "height_cm": 1434.0,
+   "trunk_cm": 48.0,
+   "crown_width_cm": 1744.5,
+   "crown_base_cm": 304.7,
+   "clear_trunk_cm": 369.9,
+   "prune_cm": 300.0,
+   "leaf_retention": 0.8,
+   "triangles": {
+    "bark": 9765,
+    "leaves": 6028,
+    "total": 15793
+   },
+   "triangle_target": 30000,
+   "bounds_cm": [
+    -860.5,
+    -956.1,
+    -2.0,
+    848.6,
+    788.4,
+    1434.0
+   ],
+   "seed": 4101,
+   "stems_per_level": [
+    4,
+    24,
+    231
+   ],
+   "cards": 1507,
+   "outward_cards": 1495,
+   "cell_usage": {
+    "nm_green": 229,
+    "nm_mixed": 449,
+    "nm_sparse": 226,
+    "nm_yellow": 603
+   },
+   "crown_centre_cm": [
+    -20.6,
+    82.5,
+    873.0
+   ],
+   "crown_radii_cm": [
+    802.1,
+    816.0,
+    519.9
+   ],
+   "weber_penn": {
+    "shape": 1,
+    "flare": 0.55,
+    "ratio_power": 1.25,
+    "trunk": {
+     "split_cm": 450.0,
+     "leaders": 3,
+     "split_angle": 31.0,
+     "split_angle_v": 7.0,
+     "curve_v": 6.0,
+     "leader_res": 6,
+     "leader_attraction": 0.25,
+     "leader_curve_v": 14.0,
+     "sides": 14
+    },
+    "levels": [
+     {
+      "length": 0.6,
+      "length_v": 0.08,
+      "branches": 24,
+      "down": 68.0,
+      "down_v": -24.0,
+      "rotate": 140.0,
+      "rotate_v": 35.0,
+      "curve_res": 6,
+      "curve": -6.0,
+      "curve_back": 0.0,
+      "curve_v": 30.0,
+      "attraction": 0.32,
+      "sides": 7
+     },
+     {
+      "length": 0.46,
+      "length_v": 0.1,
+      "branches": 13,
+      "down": 48.0,
+      "down_v": 14.0,
+      "rotate": 140.0,
+      "rotate_v": 30.0,
+      "curve_res": 4,
+      "curve": 0.0,
+      "curve_back": 0.0,
+      "curve_v": 40.0,
+      "attraction": 0.12,
+      "sides": 4
+     }
+    ],
+    "leaves": {
+     "cards": 10,
+     "retention": 0.8,
+     "card_cm": 62.0,
+     "down": 52.0,
+     "down_v": 22.0,
+     "rotate": 137.5,
+     "rotate_v": 12.0,
+     "twist_v": 32.0,
+     "cells": {
+      "nm_yellow": 0.38,
+      "nm_mixed": 0.3,
+      "nm_green": 0.16,
+      "nm_sparse": 0.16
+     }
+    }
+   }
+  },
+  "silver_maple": {
+   "name": "Silver maple (Acer saccharinum)",
+   "obj": "Tree_silver_maple.obj",
+   "sha256": "b036091465b121d5d103d6031b83c7917458e7beaf4e8e25d8e26f1c672a5cdf",
+   "materials": {
+    "bark": "Bark_SilverMaple",
+    "leaves": "Tree_Leaves_Autumn"
+   },
+   "slots": {
+    "bark": "silver_maple_bark",
+    "leaves": "silver_maple_leaves"
+   },
+   "height_cm": 1702.2,
+   "trunk_cm": 58.0,
+   "crown_width_cm": 1628.2,
+   "crown_base_cm": 307.6,
+   "clear_trunk_cm": 384.3,
+   "prune_cm": 330.0,
+   "leaf_retention": 0.62,
+   "triangles": {
+    "bark": 10343,
+    "leaves": 3848,
+    "total": 14191
+   },
+   "triangle_target": 30000,
+   "bounds_cm": [
+    -837.5,
+    -818.9,
+    -2.8,
+    734.9,
+    809.3,
+    1702.2
+   ],
+   "seed": 4202,
+   "stems_per_level": [
+    4,
+    27,
+    231
+   ],
+   "cards": 962,
+   "outward_cards": 959,
+   "cell_usage": {
+    "sm_orange": 242,
+    "sm_sparse": 296,
+    "sm_yellow": 424
+   },
+   "crown_centre_cm": [
+    -49.5,
+    3.2,
+    980.7
+   ],
+   "crown_radii_cm": [
+    722.5,
+    775.1,
+    655.5
+   ],
+   "weber_penn": {
+    "shape": 7,
+    "flare": 0.6,
+    "ratio_power": 1.2,
+    "trunk": {
+     "split_cm": 270.0,
+     "leaders": 3,
+     "split_angle": 29.0,
+     "split_angle_v": 6.0,
+     "curve_v": 5.0,
+     "leader_res": 7,
+     "leader_attraction": 0.22,
+     "leader_curve_v": 12.0,
+     "sides": 14
+    },
+    "levels": [
+     {
+      "length": 0.42,
+      "length_v": 0.08,
+      "branches": 27,
+      "down": 50.0,
+      "down_v": -18.0,
+      "rotate": 140.0,
+      "rotate_v": 40.0,
+      "curve_res": 6,
+      "curve": 12.0,
+      "curve_back": 0.0,
+      "curve_v": 28.0,
+      "attraction": 0.2,
+      "sides": 7
+     },
+     {
+      "length": 0.5,
+      "length_v": 0.1,
+      "branches": 12,
+      "down": 56.0,
+      "down_v": 15.0,
+      "rotate": 140.0,
+      "rotate_v": 30.0,
+      "curve_res": 4,
+      "curve": 14.0,
+      "curve_back": 0.0,
+      "curve_v": 30.0,
+      "attraction": -0.35,
+      "sides": 4
+     }
+    ],
+    "leaves": {
+     "cards": 9,
+     "retention": 0.62,
+     "card_cm": 62.0,
+     "down": 60.0,
+     "down_v": 22.0,
+     "rotate": 137.5,
+     "rotate_v": 12.0,
+     "twist_v": 35.0,
+     "cells": {
+      "sm_yellow": 0.44,
+      "sm_orange": 0.26,
+      "sm_sparse": 0.3
+     }
+    }
+   }
+  },
+  "honey_locust": {
+   "name": "Thornless honey locust (Gleditsia triacanthos var. inermis)",
+   "obj": "Tree_honey_locust.obj",
+   "sha256": "fd6c1456d88f29f3c2e6d083593b04341b8687a4b8fa54df496e1782bf80aa55",
+   "materials": {
+    "bark": "Bark_HoneyLocust",
+    "leaves": "Tree_Leaves_Autumn"
+   },
+   "slots": {
+    "bark": "honey_locust_bark",
+    "leaves": "honey_locust_leaves"
+   },
+   "height_cm": 1357.5,
+   "trunk_cm": 40.0,
+   "crown_width_cm": 1502.4,
+   "crown_base_cm": 297.7,
+   "clear_trunk_cm": 368.4,
+   "prune_cm": 320.0,
+   "leaf_retention": 0.46,
+   "triangles": {
+    "bark": 6353,
+    "leaves": 1532,
+    "total": 7885
+   },
+   "triangle_target": 30000,
+   "bounds_cm": [
+    -822.7,
+    -726.5,
+    -1.9,
+    679.7,
+    687.8,
+    1357.5
+   ],
+   "seed": 4303,
+   "stems_per_level": [
+    3,
+    19,
+    145
+   ],
+   "cards": 383,
+   "outward_cards": 381,
+   "cell_usage": {
+    "hl_gold": 215,
+    "hl_sparse": 168
+   },
+   "crown_centre_cm": [
+    -69.1,
+    22.5,
+    842.8
+   ],
+   "crown_radii_cm": [
+    698.5,
+    664.0,
+    487.8
+   ],
+   "weber_penn": {
+    "shape": 2,
+    "flare": 0.45,
+    "ratio_power": 1.3,
+    "trunk": {
+     "split_cm": 390.0,
+     "leaders": 2,
+     "split_angle": 31.0,
+     "split_angle_v": 6.0,
+     "curve_v": 8.0,
+     "leader_res": 6,
+     "leader_attraction": 0.2,
+     "leader_curve_v": 16.0,
+     "sides": 13
+    },
+    "levels": [
+     {
+      "length": 0.56,
+      "length_v": 0.08,
+      "branches": 18,
+      "down": 66.0,
+      "down_v": -20.0,
+      "rotate": 140.0,
+      "rotate_v": 40.0,
+      "curve_res": 6,
+      "curve": -10.0,
+      "curve_back": 0.0,
+      "curve_v": 34.0,
+      "attraction": 0.3,
+      "sides": 7
+     },
+     {
+      "length": 0.46,
+      "length_v": 0.1,
+      "branches": 11,
+      "down": 50.0,
+      "down_v": 15.0,
+      "rotate": 140.0,
+      "rotate_v": 30.0,
+      "curve_res": 4,
+      "curve": 0.0,
+      "curve_back": 0.0,
+      "curve_v": 40.0,
+      "attraction": 0.05,
+      "sides": 4
+     }
+    ],
+    "leaves": {
+     "cards": 7,
+     "retention": 0.46,
+     "card_cm": 70.0,
+     "down": 50.0,
+     "down_v": 25.0,
+     "rotate": 137.5,
+     "rotate_v": 15.0,
+     "twist_v": 40.0,
+     "cells": {
+      "hl_gold": 0.55,
+      "hl_sparse": 0.45
+     }
+    }
+   }
+  },
+  "linden": {
+   "name": "Linden (Tilia cordata / T. americana)",
+   "obj": "Tree_linden.obj",
+   "sha256": "5be4a98b4a4d6b0b8dc8e2906ebb2e80597abf71ef13e3914bdcda55ba6c8d30",
+   "materials": {
+    "bark": "Bark_Linden",
+    "leaves": "Tree_Leaves_Autumn"
+   },
+   "slots": {
+    "bark": "linden_bark",
+    "leaves": "linden_leaves"
+   },
+   "height_cm": 1402.0,
+   "trunk_cm": 42.0,
+   "crown_width_cm": 845.6,
+   "crown_base_cm": 327.0,
+   "clear_trunk_cm": 335.7,
+   "prune_cm": 300.0,
+   "leaf_retention": 0.64,
+   "triangles": {
+    "bark": 12201,
+    "leaves": 5336,
+    "total": 17537
+   },
+   "triangle_target": 30000,
+   "bounds_cm": [
+    -426.8,
+    -419.3,
+    -0.9,
+    418.8,
+    359.7,
+    1402.0
+   ],
+   "seed": 4404,
+   "stems_per_level": [
+    1,
+    32,
+    283
+   ],
+   "cards": 1334,
+   "outward_cards": 1318,
+   "cell_usage": {
+    "li_mixed": 499,
+    "li_yellow": 835
+   },
+   "crown_centre_cm": [
+    -6.0,
+    35.7,
+    866.2
+   ],
+   "crown_radii_cm": [
+    370.1,
+    349.6,
+    497.3
+   ],
+   "weber_penn": {
+    "shape": 7,
+    "flare": 0.45,
+    "ratio_power": 1.3,
+    "trunk": {
+     "split_cm": null,
+     "leaders": 1,
+     "curve_v": 4.0,
+     "sides": 13
+    },
+    "levels": [
+     {
+      "length": 0.4,
+      "length_v": 0.06,
+      "branches": 32,
+      "down": 58.0,
+      "down_v": -20.0,
+      "rotate": 140.0,
+      "rotate_v": 20.0,
+      "curve_res": 6,
+      "curve": -8.0,
+      "curve_back": 0.0,
+      "curve_v": 22.0,
+      "attraction": 0.5,
+      "sides": 7
+     },
+     {
+      "length": 0.46,
+      "length_v": 0.1,
+      "branches": 12,
+      "down": 50.0,
+      "down_v": 12.0,
+      "rotate": 140.0,
+      "rotate_v": 25.0,
+      "curve_res": 4,
+      "curve": 0.0,
+      "curve_back": 0.0,
+      "curve_v": 30.0,
+      "attraction": 0.18,
+      "sides": 4
+     }
+    ],
+    "leaves": {
+     "cards": 9,
+     "retention": 0.64,
+     "card_cm": 50.0,
+     "down": 52.0,
+     "down_v": 20.0,
+     "rotate": 137.5,
+     "rotate_v": 12.0,
+     "twist_v": 30.0,
+     "cells": {
+      "li_yellow": 0.56,
+      "li_mixed": 0.44
+     }
+    }
+   }
+  },
+  "ash": {
+   "name": "Green ash (Fraxinus pennsylvanica)",
+   "obj": "Tree_ash.obj",
+   "sha256": "403ec70cd44186e0d26cf5b471dba8017c4a3ffa161910a746ec7e11af2204a3",
+   "materials": {
+    "bark": "Bark_Ash",
+    "leaves": "Tree_Leaves_Autumn"
+   },
+   "slots": {
+    "bark": "ash_bark",
+    "leaves": "ash_leaves"
+   },
+   "height_cm": 1560.5,
+   "trunk_cm": 44.0,
+   "crown_width_cm": 1248.5,
+   "crown_base_cm": 387.6,
+   "clear_trunk_cm": 386.0,
+   "prune_cm": 310.0,
+   "leaf_retention": 0.58,
+   "triangles": {
+    "bark": 7019,
+    "leaves": 3004,
+    "total": 10023
+   },
+   "triangle_target": 30000,
+   "bounds_cm": [
+    -637.1,
+    -571.3,
+    -1.3,
+    611.4,
+    609.3,
+    1560.5
+   ],
+   "seed": 4505,
+   "stems_per_level": [
+    3,
+    23,
+    162
+   ],
+   "cards": 751,
+   "outward_cards": 750,
+   "cell_usage": {
+    "as_maroon": 114,
+    "as_sparse": 208,
+    "as_yellow": 429
+   },
+   "crown_centre_cm": [
+    -12.0,
+    -27.4,
+    954.4
+   ],
+   "crown_radii_cm": [
+    561.3,
+    511.7,
+    533.7
+   ],
+   "weber_penn": {
+    "shape": 1,
+    "flare": 0.45,
+    "ratio_power": 1.25,
+    "trunk": {
+     "split_cm": 560.0,
+     "leaders": 2,
+     "split_angle": 22.0,
+     "split_angle_v": 5.0,
+     "curve_v": 5.0,
+     "leader_res": 6,
+     "leader_attraction": 0.3,
+     "leader_curve_v": 12.0,
+     "sides": 13
+    },
+    "levels": [
+     {
+      "length": 0.45,
+      "length_v": 0.07,
+      "branches": 22,
+      "opposite": true,
+      "down": 56.0,
+      "down_v": -20.0,
+      "rotate": 90.0,
+      "rotate_v": 15.0,
+      "curve_res": 6,
+      "curve": -6.0,
+      "curve_back": 0.0,
+      "curve_v": 22.0,
+      "attraction": 0.5,
+      "sides": 7
+     },
+     {
+      "length": 0.42,
+      "length_v": 0.1,
+      "branches": 10,
+      "opposite": true,
+      "down": 46.0,
+      "down_v": 10.0,
+      "rotate": 90.0,
+      "rotate_v": 15.0,
+      "curve_res": 4,
+      "curve": 0.0,
+      "curve_back": 0.0,
+      "curve_v": 25.0,
+      "attraction": 0.3,
+      "sides": 4
+     }
+    ],
+    "leaves": {
+     "cards": 10,
+     "retention": 0.58,
+     "card_cm": 80.0,
+     "down": 48.0,
+     "down_v": 20.0,
+     "rotate": 137.5,
+     "rotate_v": 12.0,
+     "twist_v": 30.0,
+     "cells": {
+      "as_yellow": 0.55,
+      "as_maroon": 0.15,
+      "as_sparse": 0.3
+     }
+    }
+   }
+  },
+  "small": {
+   "name": "Small yard tree (Amur maple / serviceberry type)",
+   "obj": "Tree_small.obj",
+   "sha256": "fff4a1bfaf59de30f8b9f5672709540781f2fe0d7bccecfacaff0a8622f21f60",
+   "materials": {
+    "bark": "Bark_Small",
+    "leaves": "Tree_Leaves_Autumn"
+   },
+   "slots": {
+    "bark": "small_bark",
+    "leaves": "small_leaves"
+   },
+   "height_cm": 654.9,
+   "trunk_cm": 17.7,
+   "crown_width_cm": 665.7,
+   "crown_base_cm": 161.0,
+   "clear_trunk_cm": 183.1,
+   "prune_cm": 160.0,
+   "leaf_retention": 0.66,
+   "triangles": {
+    "bark": 4123,
+    "leaves": 2256,
+    "total": 6379
+   },
+   "triangle_target": 15000,
+   "bounds_cm": [
+    -332.4,
+    -347.4,
+    -1.3,
+    307.4,
+    318.3,
+    654.9
+   ],
+   "seed": 4606,
+   "stems_per_level": [
+    4,
+    21,
+    134
+   ],
+   "cards": 564,
+   "outward_cards": 557,
+   "cell_usage": {
+    "sx_orange": 274,
+    "sx_red": 290
+   },
+   "crown_centre_cm": [
+    -7.8,
+    12.7,
+    404.7
+   ],
+   "crown_radii_cm": [
+    272.5,
+    282.1,
+    209.9
+   ],
+   "weber_penn": {
+    "shape": 1,
+    "flare": 0.35,
+    "ratio_power": 1.25,
+    "trunk": {
+     "split_cm": 115.0,
+     "leaders": 3,
+     "split_angle": 30.0,
+     "split_angle_v": 8.0,
+     "curve_v": 6.0,
+     "leader_res": 5,
+     "leader_attraction": 0.2,
+     "leader_curve_v": 16.0,
+     "sides": 10
+    },
+    "levels": [
+     {
+      "length": 0.5,
+      "length_v": 0.08,
+      "branches": 20,
+      "down": 56.0,
+      "down_v": -20.0,
+      "rotate": 140.0,
+      "rotate_v": 35.0,
+      "curve_res": 5,
+      "curve": -6.0,
+      "curve_back": 0.0,
+      "curve_v": 30.0,
+      "attraction": 0.35,
+      "sides": 6
+     },
+     {
+      "length": 0.46,
+      "length_v": 0.1,
+      "branches": 9,
+      "down": 46.0,
+      "down_v": 15.0,
+      "rotate": 140.0,
+      "rotate_v": 30.0,
+      "curve_res": 3,
+      "curve": 0.0,
+      "curve_back": 0.0,
+      "curve_v": 35.0,
+      "attraction": 0.12,
+      "sides": 4
+     }
+    ],
+    "leaves": {
+     "cards": 8,
+     "retention": 0.66,
+     "card_cm": 44.0,
+     "down": 52.0,
+     "down_v": 22.0,
+     "rotate": 137.5,
+     "rotate_v": 12.0,
+     "twist_v": 32.0,
+     "cells": {
+      "sx_red": 0.5,
+      "sx_orange": 0.5
+     }
+    }
+   }
+  }
+ },
+ "counts": {
+  "kinds": 6,
+  "triangles": {
+   "norway_maple": 15793,
+   "silver_maple": 14191,
+   "honey_locust": 7885,
+   "linden": 17537,
+   "ash": 10023,
+   "small": 6379
+  },
+  "textures": 6
+ },
+ "source_sha256": {
+  "Scripts/blender/plateau_trees.py": "09974273a6936c7ff540c5c9459c394f8afd62c387624b29d1f94f993c15a4c8",
+  "Scripts/plateau_textures.py": "9dc926e15da803b557161015e73eb996ec3d2a7c1e779862e273c05dd4a9d55c"
+ }
+}
