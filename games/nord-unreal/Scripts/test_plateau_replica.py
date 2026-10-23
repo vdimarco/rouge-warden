@@ -144,11 +144,17 @@ def check_textures(the_plan):
     assert A.base_material('Brick_Buff_Even', {'base_color_srgb': '#CCB07F'}) == (A.TEXTURED_PARENT, 'replica_buff_brick')
     folder = replica.OUT / A.TEXTURES
     index = json.loads((folder / A.TEXTURE_INDEX).read_text())
+    # The Trees manifest's own sets (bark, autumn leaf atlas) sit beside the textures.json sets.
+    trees = replica.OUT / A.TREES / 'manifest.json'
+    tree_sets = json.loads(trees.read_text()).get(A.TREE_TEXTURE_SETS) or {} if trees.is_file() else {}
+    assert not set(tree_sets) & set(index['sets']), 'A tree texture set reuses a replica set name'
+    sets_index = dict(index['sets'], **tree_sets)
     textures = {t['asset']: t for t in the_plan['textures']}
     assert len(textures) == len(the_plan['textures']) == the_plan['counts']['textures']
     for t in the_plan['textures']:
         macro = t['set'] == 'macro'
-        entry = index['macro'] if macro else index['sets'][t['set']]
+        entry = index['macro'] if macro else sets_index[t['set']]
+        assert t['file'].startswith((A.TREES if t['set'] in tree_sets else A.TEXTURES) + '/'), t['file']
         stored = entry if macro else entry['maps'][t['role']]
         path = replica.OUT / t['file']
         data = path.read_bytes()
@@ -159,8 +165,11 @@ def check_textures(the_plan):
         assert t['asset'] == f'{A.TEXTURE_ASSETS}/{path.stem}' and t['asset'].startswith(A.ASSETS + '/')
         assert (t['srgb'], t['compression'], t['sampler']) == (stored['srgb'], stored['compression'], stored['sampler'])
         assert t['srgb'] == (t['role'] == 'diff') and (t['compression'] == 'TC_NORMALMAP') == (t['role'] == 'nor_dx')
-        # Cards span their texture once in V: all three maps clamp V; every tiling map wraps.
-        assert t['address_y'] == ('TA_CLAMP' if not macro and entry.get('uv') == 'card' else 'TA_WRAP'), t['asset']
+        # Cards span their texture once in V: all three maps clamp V; the leaf atlas clamps both axes; every tiling
+        # map wraps.
+        uv = None if macro else entry.get('uv')
+        assert t['address_y'] == ('TA_CLAMP' if uv in ('card', 'atlas') else 'TA_WRAP'), t['asset']
+        assert t['address_x'] == ('TA_CLAMP' if uv == 'atlas' else 'TA_WRAP'), t['asset']
         if macro:
             assert t['role'] == A.MACRO_ROLE and (t['compression'], t['sampler']) == ('TC_MASKS', 'SAMPLERTYPE_MASKS')
     textured = [m for m in the_plan['materials'] if m.get('texture_set')]
@@ -169,12 +178,15 @@ def check_textures(the_plan):
              for layer in {m['layer'] for m in the_plan['materials']} if layer != A.TREES}
     for m in the_plan['materials']:
         spec = m['spec'] if m['layer'] == A.TREES else specs[m['layer']][m['key']]
-        assert bool(m.get('texture_set')) == bool(A.texture_set(m['key'], spec) and not spec.get('emissive_srgb')
+        assert bool(m.get('texture_set')) == bool(A.texture_set(m['key'], spec, sets_index)
+                                                   and not spec.get('emissive_srgb')
                                                    and 'brick' not in (spec.get('texture') or '')
                                                    and 'asphalt' not in (spec.get('texture') or '')), m['asset']
+        if m['layer'] == A.TREES and spec.get('texture'):
+            assert m.get('texture_set') in tree_sets, (m['asset'], 'a tree map with no texture set renders flat')
     for m in textured:
-        entry = index['sets'][m['texture_set']]
-        surface = plateau_textures.SETS[m['texture_set']]['surface']
+        entry = sets_index[m['texture_set']]
+        surface = entry['surface']
         assert m['duplicate_of'] == A.SURFACE_PARENTS[surface] and m['texture_mean'] == 'replica_' + m['texture_set']
         assert (m['blend_mode'], m['two_sided']) == (entry['material']['blend_mode'], entry['material']['two_sided'])
         spec = m['spec'] if m['layer'] == A.TREES else specs[m['layer']][m['key']]

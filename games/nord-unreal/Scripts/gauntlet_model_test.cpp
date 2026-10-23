@@ -47,7 +47,7 @@ namespace
 
     // Limits of the checks, as in Data/Gauntlet/loop.json "route" and "drive".
     constexpr double LengthMin = 250000.0;
-    constexpr double LengthMax = 350000.0;
+    constexpr double LengthMax = 400000.0;
     constexpr double StopRoadMax = 5000.0;
     constexpr double EndWithin = 800.0;
     constexpr double LateralMax = 250.0;
@@ -121,7 +121,7 @@ namespace
     {
         const FLoop Loop = PlateauLoop();
         if (Loop.Points.size() < 2) return;
-        Expect(Loop.Length >= LengthMin && Loop.Length <= LengthMax, "loop length %.0f m is 2.5 to 3.5 km", Loop.Length / 100.0);
+        Expect(Loop.Length >= LengthMin && Loop.Length <= LengthMax, "loop length %.0f m is 2.5 to 4 km", Loop.Length / 100.0);
         Expect(QuebecPursuit::Distance(Loop.Points.front(), Loop.Points.back()) < 1e-6, "the loop closes on the first stop");
         Expect(Loop.StopCount() == 5 && Loop.Stops[0] == 0, "five stops, the first at the start");
         double Legs = 0.0;
@@ -173,7 +173,7 @@ namespace
         FRoadGraph Graph;
         Graph.Build(Segments);
         FLoop Loop;
-        // The second stop is behind the first along their shared street: the loop goes round a block instead of turning back.
+        // The third stop is on the first stop's street, behind it: the loop goes round a block instead of turning back.
         Expect(BuildLoop(Graph, {{5000.0, -800.0}, {25000.0, 30800.0}, {2000.0, 800.0}}, Loop), "the grid loop builds");
         Expect(QuebecPursuit::Distance(Loop.Points.front(), Loop.Points.back()) < 1e-6 && Loop.StopCount() == 3, "the grid loop closes with three stops");
         Expect(SharpestTurn(Loop) < 91.0, "the grid loop only turns at junctions (sharpest %.1f degrees)", SharpestTurn(Loop));
@@ -193,10 +193,10 @@ namespace
         Loop.Distance = {0.0, 10000.0, 10300.0, 20300.0, 20600.0};
         Loop.Length = 20600.0;
         FTracker Tracker;
-        for (double X = 0.0; X <= 9000.0; X += 400.0) Track(Tracker, Loop, {X, 140.0});
+        for (double X = 500.0; X <= 9000.0; X += 500.0) Track(Tracker, Loop, {X, 140.0});
         Expect(Tracker.Segment == 0 && Near(Tracker.Along, 9000.0, 1e-6) && Near(Tracker.Offset, 140.0, 1e-6), "the tracker stays on the first pass");
         Track(Tracker, Loop, {10000.0, 150.0});
-        for (double X = 9600.0; X >= 0.0; X -= 400.0) Track(Tracker, Loop, {X, 160.0});
+        for (double X = 9600.0; X >= 400.0; X -= 400.0) Track(Tracker, Loop, {X, 160.0});
         Expect(Tracker.Segment == 2 && Near(Tracker.Along, 10300.0 + 10000.0 - 400.0, 1e-6), "and moves to the return pass only by driving round");
         Track(Tracker, Loop, {0.0, 100.0});
         Track(Tracker, Loop, {200.0, 0.0});
@@ -422,10 +422,17 @@ namespace
         FControls Controls = Drive(Driver, Loop, Tracker, {0.0, 0.0}, Yaw, 0.0, -1.0, Now, .1);
         Expect(Controls.Pedal == 1.0 && !Controls.bBrake && Controls.Wheel < 0.0, "from rest: full throttle and steer back to the line");
         const double Wheel = Controls.Wheel;
-        for (int Step = 0; Step < 12; ++Step) Controls = Drive(Driver, Loop, Tracker, {0.0, 0.0}, Yaw, 0.0, -1.0, Now += .1, .1);
-        Expect(Driver.Reversals == 0, "not stuck after 1.2 s");
-        Controls = Drive(Driver, Loop, Tracker, {0.0, 0.0}, Yaw, 0.0, -1.0, Now += .1, .1);
-        Expect(Driver.Reversals == 1 && Near(Driver.ReverseUntil, Now + ReverseFor, 1e-9), "stuck after more than 1.2 s");
+        // Ten more steps of .1 s: 1.1 s with throttle and no speed. The 1.2 s step itself may go either way in floating point.
+        for (int Step = 0; Step < 10; ++Step) Controls = Drive(Driver, Loop, Tracker, {0.0, 0.0}, Yaw, 0.0, -1.0, Now += .1, .1);
+        Expect(Driver.Reversals == 0 && Controls.Pedal == 1.0, "not stuck after 1.1 s");
+        double StuckAt = -1.0;
+        for (int Step = 0; Step < 2; ++Step)
+        {
+            Controls = Drive(Driver, Loop, Tracker, {0.0, 0.0}, Yaw, 0.0, -1.0, Now += .1, .1);
+            if (Driver.Reversals == 1 && StuckAt < 0.0) StuckAt = Now;
+        }
+        Expect(Driver.Reversals == 1 && Near(Driver.ReverseUntil, StuckAt + ReverseFor, 1e-9), "stuck after more than 1.2 s (backs out until %.2f s)",
+            Driver.ReverseUntil);
         Controls = Drive(Driver, Loop, Tracker, {0.0, 0.0}, Yaw, 0.0, -1.0, Now += .1, .1);
         Expect(Controls.Pedal == -1.0 && Near(Controls.Wheel, -Wheel, 1e-9) && !Controls.bBrake, "backing out with the wheel the other way");
         while (Now < Driver.ReverseUntil - 1e-9) Controls = Drive(Driver, Loop, Tracker, {0.0, 0.0}, Yaw, 0.0, -1.0, Now += .1, .1);

@@ -49,7 +49,8 @@ namespace QuebecGauntlet
     inline constexpr double ReadyGrace = 60.0;        // The car and the CVar readback must be ready this long after the delay.
 
     // Loop building and tracking.
-    inline constexpr double NoUTurn = 1.0e7;          // FRoadGraph::Route U-turn cost that rules turning back out.
+    inline constexpr double NoUTurn = 1.0e7;          // Extra cost of turning back, larger than any route.
+    inline constexpr double MaxTurn = 135.0;          // A turn sharper than this at a junction costs NoUTurn, in degrees.
     inline constexpr double JoinPoints = 1.0;         // Route points closer than this to the last one are dropped.
     inline constexpr double TrackAhead = 4000.0;      // The tracker looks for the car this far ahead of its last place.
 
@@ -140,47 +141,250 @@ namespace QuebecGauntlet
         double StartYaw() const { return YawOf(DirectionAt(0.0)); }
     };
 
-    // Each eye's road point is the nearest point on an open segment. Each leg is FRoadGraph::Route from one road point to
-    // the next, leaving along the direction the car arrived from, so the loop never turns back at a stop. The first leg
-    // leaves along the last leg's arrival, which needs a second pass; passes repeat until that direction holds.
+    // Routes for a car that cannot turn back, over the through roads of an FRoadGraph: its open segments without the
+    // dead-end branches, which a car can leave only by turning back (Rue Rachel along the park ends at the map edge).
+    // FRoadGraph::Route charges a U-turn only where it starts, so a route may run to the junction ahead and straight back
+    // along the same street, and it reaches a goal on its start segment directly even when the goal is behind. The loop
+    // uses this search instead. It never leaves a junction along the segment it arrived on, and it charges NoUTurn for a
+    // start against the heading or a turn sharper than MaxTurn. It reads the graph through its public functions and
+    // keeps a pointer to it, so the graph must outlive it and must not be rebuilt meanwhile.
+    class FForwardRoads
+    {
+    public:
+        explicit FForwardRoads(const QuebecPursuit::FRoadGraph& InGraph) : Graph(&InGraph)
+        {
+            // FRoadGraph gives each joined junction one position, so equal positions are one junction.
+            std::vector<std::pair<FVec2, int>> Known;
+            const auto NodeAt = [this, &Known](const FVec2& Point)
+            {
+                for (const std::pair<FVec2, int>& Entry : Known)
+                    if (Entry.first.X == Point.X && Entry.first.Y == Point.Y) return Entry.second;
+                Known.push_back({Point, static_cast<int>(Nodes.size())});
+                Nodes.push_back(Point);
+                Links.emplace_back();
+                return static_cast<int>(Nodes.size() - 1);
+            };
+            Ends.assign(static_cast<std::size_t>(Graph->SegmentCount()), {-1, -1});
+            for (int Segment = 0; Segment < Graph->SegmentCount(); ++Segment)
+            {
+                if (!Graph->IsOpen(Segment)) continue;
+                const int First = NodeAt(Graph->SegmentStart(Segment));
+                const int Second = NodeAt(Graph->SegmentEnd(Segment));
+                if (First == Second) continue;
+                Ends[static_cast<std::size_t>(Segment)] = {First, Second};
+                Links[static_cast<std::size_t>(First)].push_back(Segment);
+                Links[static_cast<std::size_t>(Second)].push_back(Segment);
+            }
+            // Drop dead-end branches: take away each segment at a junction with one segment left, until none is left.
+            std::vector<int> Ends1;
+            for (std::size_t Node = 0; Node < Links.size(); ++Node)
+                if (Links[Node].size() == 1) Ends1.push_back(static_cast<int>(Node));
+            while (!Ends1.empty())
+            {
+                const std::size_t Node = static_cast<std::size_t>(Ends1.back());
+                Ends1.pop_back();
+                if (Links[Node].size() != 1) continue;
+                const int Segment = Links[Node].front();
+                const std::pair<int, int> Pair = Ends[static_cast<std::size_t>(Segment)];
+                const std::size_t Other = static_cast<std::size_t>(Pair.first == static_cast<int>(Node) ? Pair.second : Pair.first);
+                Links[Node].clear();
+                Links[Other].erase(std::find(Links[Other].begin(), Links[Other].end(), Segment));
+                Ends[static_cast<std::size_t>(Segment)] = {-1, -1};
+                if (Links[Other].size() == 1) Ends1.push_back(static_cast<int>(Other));
+            }
+        }
+
+        bool IsThrough(int Segment) const { return Segment >= 0 && Segment < static_cast<int>(Ends.size()) && Ends[static_cast<std::size_t>(Segment)].first >= 0; }
+
+        // FRoadGraph::Nearest over the through roads only.
+        int Nearest(const FVec2& Point, FVec2& Closest) const
+        {
+            int Best = -1;
+            double BestDistance = std::numeric_limits<double>::max();
+            for (int Segment = 0; Segment < static_cast<int>(Ends.size()); ++Segment)
+            {
+                if (!IsThrough(Segment)) continue;
+                double Alpha = 0.0;
+                const FVec2 Candidate = QuebecPursuit::ClosestOnSegment(Point, Graph->SegmentStart(Segment), Graph->SegmentEnd(Segment), Alpha);
+                const double Gap = QuebecPursuit::Distance(Point, Candidate);
+                if (Gap < BestDistance) { BestDistance = Gap; Best = Segment; Closest = Candidate; }
+            }
+            return Best;
+        }
+
+        // From (moving along Heading) to the road point nearest To, arriving along GoalHeading. A zero heading allows either
+        // way. Out receives the junctions to pass and ends at that road point, as FRoadGraph::Route does. Cost is the length
+        // plus NoUTurn for each turn back, start against Heading or arrival against GoalHeading.
+        bool Route(const FVec2& From, const FVec2& Heading, const FVec2& To, const FVec2& GoalHeading, std::vector<FVec2>& Out, double& Cost) const
+        {
+            Out.clear();
+            Cost = std::numeric_limits<double>::max();
+            FVec2 Start, Goal;
+            const int StartSegment = Nearest(From, Start);
+            const int GoalSegment = Nearest(To, Goal);
+            if (StartSegment < 0 || GoalSegment < 0) return false;
+            const double Lead = QuebecPursuit::Distance(From, Start);
+            const auto Against = [](const FVec2& Want, const FVec2& Direction)
+            {
+                return QuebecPursuit::Length(Want) > 1e-9 && QuebecPursuit::Dot(Want, Direction) <= 0.0 ? NoUTurn : 0.0;
+            };
+            if (QuebecPursuit::Distance(Start, Goal) <= JoinPoints)
+            {
+                Out.push_back(Goal);
+                Cost = Lead + QuebecPursuit::Distance(Start, Goal) + (Against(Heading, GoalHeading) > 0.0 ? NoUTurn : 0.0);
+                return true;
+            }
+            double Direct = std::numeric_limits<double>::max();
+            if (StartSegment == GoalSegment)
+                Direct = Lead + QuebecPursuit::Distance(Start, Goal) + Against(Heading, Goal - Start) + Against(GoalHeading, Goal - Start);
+            // A state is a segment driven toward one of its ends: 2 * Segment + 0 arrives at its second junction, + 1 at its first.
+            std::vector<double> Reach(2 * Ends.size(), std::numeric_limits<double>::max());
+            std::vector<int> Previous(Reach.size(), -1);
+            using FEntry = std::pair<double, int>;
+            std::vector<FEntry> Heap;
+            const auto Push = [&Heap, &Reach, &Previous](double Value, int State, int Parent)
+            {
+                if (Value >= Reach[static_cast<std::size_t>(State)]) return;
+                Reach[static_cast<std::size_t>(State)] = Value;
+                Previous[static_cast<std::size_t>(State)] = Parent;
+                Heap.emplace_back(Value, State);
+                std::push_heap(Heap.begin(), Heap.end(), std::greater<FEntry>());
+            };
+            for (const int Side : {0, 1})
+            {
+                const int State = 2 * StartSegment + Side;
+                const int Node = Arrive(State);
+                Push(Lead + QuebecPursuit::Distance(Start, Nodes[Node]) + Against(Heading, Nodes[Node] - Nodes[Depart(State)]), State, -1);
+                // Standing on a junction: as if the car had come along any segment that ends there.
+                if (QuebecPursuit::Distance(Start, Nodes[Node]) <= JoinPoints)
+                    for (const int Segment : Links[static_cast<std::size_t>(Node)])
+                    {
+                        const int Into = Toward(Segment, Node);
+                        Push(Lead + Against(Heading, Nodes[Node] - Nodes[Depart(Into)]), Into, -1);
+                    }
+            }
+            while (!Heap.empty())
+            {
+                std::pop_heap(Heap.begin(), Heap.end(), std::greater<FEntry>());
+                const FEntry Top = Heap.back();
+                Heap.pop_back();
+                if (Top.first > Reach[static_cast<std::size_t>(Top.second)]) continue;
+                const int Node = Arrive(Top.second);
+                const FVec2 In = Nodes[Node] - Nodes[Depart(Top.second)];
+                for (const int Segment : Links[static_cast<std::size_t>(Node)])
+                {
+                    if (Segment == Top.second / 2) continue;
+                    const std::pair<int, int>& Pair = Ends[static_cast<std::size_t>(Segment)];
+                    const int Next = Toward(Segment, Pair.first == Node ? Pair.second : Pair.first);
+                    const FVec2 Leave = Nodes[Arrive(Next)] - Nodes[Node];
+                    Push(Top.first + QuebecPursuit::Length(Leave) + TurnCost(In, Leave), Next, Top.second);
+                }
+            }
+            // Enter the goal segment at either end from any other segment, and turn toward the goal there.
+            int Last = -1;
+            double Best = Direct;
+            for (const int Node : {Ends[static_cast<std::size_t>(GoalSegment)].first, Ends[static_cast<std::size_t>(GoalSegment)].second})
+            {
+                if (Node < 0) continue;
+                for (const int Segment : Links[static_cast<std::size_t>(Node)])
+                {
+                    const int State = Toward(Segment, Node);
+                    if (Segment == GoalSegment || Reach[static_cast<std::size_t>(State)] == std::numeric_limits<double>::max()) continue;
+                    const FVec2 In = Nodes[Node] - Nodes[Depart(State)];
+                    const FVec2 Rest = Goal - Nodes[Node];
+                    const bool bRest = QuebecPursuit::Length(Rest) > JoinPoints;
+                    const double Value = Reach[static_cast<std::size_t>(State)] + QuebecPursuit::Length(Rest) + (bRest ? TurnCost(In, Rest) : 0.0)
+                        + Against(GoalHeading, bRest ? Rest : In);
+                    if (Value < Best) { Best = Value; Last = State; }
+                }
+            }
+            if (Best == std::numeric_limits<double>::max()) return false;
+            for (int State = Last; State >= 0; State = Previous[static_cast<std::size_t>(State)]) Out.push_back(Nodes[Arrive(State)]);
+            std::reverse(Out.begin(), Out.end());
+            Out.push_back(Goal);
+            Cost = Best;
+            return true;
+        }
+
+    private:
+        int Arrive(int State) const
+        {
+            const std::pair<int, int>& Pair = Ends[static_cast<std::size_t>(State / 2)];
+            return State % 2 == 0 ? Pair.second : Pair.first;
+        }
+        int Depart(int State) const
+        {
+            const std::pair<int, int>& Pair = Ends[static_cast<std::size_t>(State / 2)];
+            return State % 2 == 0 ? Pair.first : Pair.second;
+        }
+        // The state that drives Segment toward its junction Node.
+        int Toward(int Segment, int Node) const { return 2 * Segment + (Ends[static_cast<std::size_t>(Segment)].second == Node ? 0 : 1); }
+
+        static double TurnCost(const FVec2& In, const FVec2& Out)
+        {
+            const double Cosine = std::clamp(QuebecPursuit::Dot(QuebecPursuit::Normal(In), QuebecPursuit::Normal(Out)), -1.0, 1.0);
+            return std::acos(Cosine) * 180.0 / Pi > MaxTurn ? NoUTurn : 0.0;
+        }
+
+        const QuebecPursuit::FRoadGraph* Graph;
+        std::vector<FVec2> Nodes;
+        std::vector<std::pair<int, int>> Ends;      // Junctions of each segment; -1 for a closed one.
+        std::vector<std::vector<int>> Links;        // Open segments at each junction.
+    };
+
+    // The loop tries every arrival direction at every stop, so this many stops at most.
+    inline constexpr int MaxLoopStops = 12;
+
+    // Each eye's road point is the nearest point on a through road (FForwardRoads). The car leaves each stop the way it
+    // arrived, so it never turns back there. Each leg is an FForwardRoads route from one road point to the next, and the loop keeps the
+    // arrival directions (along or against each stop's segment) that give the lowest total cost: the shortest loop that
+    // never turns back, when one exists. Ties go to the first combination tried, so the loop is the same on every build.
     inline bool BuildLoop(const QuebecPursuit::FRoadGraph& Graph, const std::vector<FVec2>& Eyes, FLoop& Out)
     {
         Out = FLoop();
-        if (Eyes.size() < 2) return false;
-        std::vector<FVec2> Road(Eyes.size());
+        const int Count = static_cast<int>(Eyes.size());
+        if (Count < 2 || Count > MaxLoopStops) return false;
+        const FForwardRoads Roads(Graph);
+        std::vector<FVec2> Road(Eyes.size()), Along(Eyes.size());
         for (std::size_t Index = 0; Index < Eyes.size(); ++Index)
-            if (Graph.Nearest(Eyes[Index], Road[Index]) < 0) return false;
-        FVec2 Arrival;
-        for (int Pass = 0; Pass < 4; ++Pass)
         {
-            FLoop Loop;
-            Loop.Points.push_back(Road[0]);
-            Loop.Stops.push_back(0);
-            FVec2 Heading = Arrival;
-            for (std::size_t Leg = 0; Leg < Road.size(); ++Leg)
+            const int Segment = Roads.Nearest(Eyes[Index], Road[Index]);
+            if (Segment < 0) return false;
+            Along[Index] = QuebecPursuit::Normal(Graph.SegmentEnd(Segment) - Graph.SegmentStart(Segment));
+        }
+        double Best = std::numeric_limits<double>::max();
+        std::vector<std::vector<FVec2>> Legs, Paths(Eyes.size());
+        for (unsigned Mask = 0; Mask < (1u << Count); ++Mask)
+        {
+            const auto HeadingAt = [&Along, Mask](std::size_t Stop) { return Mask & (1u << Stop) ? Along[Stop] * -1.0 : Along[Stop]; };
+            double Total = 0.0;
+            for (std::size_t Leg = 0; Leg < Eyes.size() && Total < Best; ++Leg)
             {
-                const std::size_t Next = (Leg + 1) % Road.size();
-                std::vector<FVec2> Path;
-                if (!Graph.Route(Road[Leg], Heading, Road[Next], Path, NoUTurn)) return false;
-                const std::size_t Before = Loop.Points.size();
-                for (const FVec2& Point : Path)
-                    if (QuebecPursuit::Distance(Point, Loop.Points.back()) > JoinPoints) Loop.Points.push_back(Point);
-                if (Loop.Points.size() == Before) return false;
-                // The leg ends exactly on the next road point, so the loop closes on Road[0].
-                Loop.Points.back() = Road[Next];
-                Heading = Loop.Points.back() - Loop.Points[Loop.Points.size() - 2];
-                if (Next != 0) Loop.Stops.push_back(Loop.Points.size() - 1);
+                const std::size_t Next = (Leg + 1) % Eyes.size();
+                double Cost = 0.0;
+                if (!Roads.Route(Road[Leg], HeadingAt(Leg), Road[Next], HeadingAt(Next), Paths[Leg], Cost)) return false;
+                Total += Cost;
             }
-            const bool bSettled = Pass > 0 && QuebecPursuit::Dot(QuebecPursuit::Normal(Heading), QuebecPursuit::Normal(Arrival)) > .999;
-            Arrival = Heading;
-            Out = std::move(Loop);
-            if (bSettled) break;
+            if (Total < Best) { Best = Total; Legs = Paths; }
+        }
+        Out.Points.push_back(Road[0]);
+        Out.Stops.push_back(0);
+        for (std::size_t Leg = 0; Leg < Legs.size(); ++Leg)
+        {
+            const std::size_t Next = (Leg + 1) % Legs.size();
+            const std::size_t Before = Out.Points.size();
+            for (const FVec2& Point : Legs[Leg])
+                if (QuebecPursuit::Distance(Point, Out.Points.back()) > JoinPoints) Out.Points.push_back(Point);
+            if (Out.Points.size() == Before) { Out = FLoop(); return false; }
+            // The leg ends exactly on the next road point, so the loop closes on Road[0].
+            Out.Points.back() = Road[Next];
+            if (Next != 0) Out.Stops.push_back(Out.Points.size() - 1);
         }
         Out.Distance.assign(Out.Points.size(), 0.0);
         for (std::size_t Index = 1; Index < Out.Points.size(); ++Index)
             Out.Distance[Index] = Out.Distance[Index - 1] + QuebecPursuit::Distance(Out.Points[Index - 1], Out.Points[Index]);
         Out.Length = Out.Distance.back();
-        return Out.Length > 0.0 && Out.StopCount() == static_cast<int>(Eyes.size());
+        return Out.Length > 0.0 && Out.StopCount() == Count;
     }
 
     // Where the car is on the loop: the nearest point on the segments from just behind its last place to TrackAhead
