@@ -1135,9 +1135,16 @@ def test_lap_siding_stays_low():
             if w['material'] in P.SIDING:
                 assert w['upper'] in P.BRICKS and abs(w['siding_top_cm'] - P._floor_levels(lot)[2]) < .1, w
                 tops[record['id']] = w['siding_top_cm']
+    # wall siding stops at the third floor; the only siding above it is the infill of solid gallery guards, between
+    # a guard's bottom rail and its cap (test_rear_surfaces covers those)
+    infill = P.GUARD_H - P.RAIL_LOW[1] - P.CAP_H
+    guards = [g for r in records for g in r['rear']['guards']]
     for key in P.SIDING:
         for face in rear.get(key, []):
-            assert max(p[2] for p in face) <= max(tops.values()) + .01, face
+            z0, z1 = min(p[2] for p in face), max(p[2] for p in face)
+            if z1 - z0 <= infill + .01 and any(abs(z0 - g['z0'] - P.RAIL_LOW[1]) < .01 for g in guards):
+                continue
+            assert z1 <= max(tops.values()) + .01, face
     _, _, lots5, mesh5, records5, _ = _yard_row(20, levels='5')
     assert any(P.Rear(lot, r['front']['top_cm']).siding is False for lot, r in zip(lots5, records5))
     assert not any(mesh5.groups.get(k) for k in P.SIDING), 'no siding on a block over four storeys'
