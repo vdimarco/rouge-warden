@@ -1,0 +1,70 @@
+# Tasks
+
+Read `design.md` first. `notes-host.md` gives the exact host commands. The lead checks off cloud tasks after their checks pass. Host and person tasks stay open until they run.
+
+## 1. Spec and plan
+- [x] 1.1 Read the gauntlet docs, the stream and perf code, and the existing NORD specs; settle the design (`design.md`).
+- [x] 1.2 Write `proposal.md`, `design.md`, both capability specs, `tasks.md` and `notes-host.md`.
+- [x] 1.3 Validate the structure: `OPENSPEC_TELEMETRY=0 npx -y @fission-ai/openspec@1.14.3 validate nord-mobile-gauntlet --strict`.
+
+## 2. Engine-free model
+- [ ] 2.1 `Source/Quebec/QuebecGauntletModel.h`: route assembly from stops over `FRoadGraph`, driver step, run state machine, frame-stat accumulator (p50, p95, p99, hitches, per leg) and the expected-CVar parser.
+- [ ] 2.2 `Scripts/gauntlet_model_test.cpp` and `Scripts/test_gauntlet_model.py`: the route closes and is 2.5 to 3.5 km; a kinematic car at 30 Hz and 120 Hz completes it with lateral error under 2.5 m and no stall; percentiles match `Data/Gauntlet/fixtures/frametimes.csv`. Passes with g++ and clang++ under `-Wshadow -Werror`.
+
+## 3. Route
+- [ ] 3.1 `Scripts/make_gauntlet_route.py` generates `Source/Quebec/QuebecGauntletRoute.h` from the replica manifest cameras.
+- [ ] 3.2 `Scripts/test_gauntlet_route.py` fails when the header and the manifest disagree.
+
+## 4. Game module
+- [ ] 4.1 `QuebecGauntlet.h/.cpp`: `UQuebecGauntletSubsystem` with the `-NordGauntlet*` flags, car seating and driving, CSV capture, holds and stills, `NORD_GAUNTLET` log lines, `route.json` and the exit codes.
+- [ ] 4.2 `QuebecGauntletController.h/.cpp`: `UQuebecGauntletController`, built only with `QUEBEC_WITH_GAUNTLET`.
+- [ ] 4.3 `Quebec.Build.cs` (Gauntlet module and define in non-Shipping), `Quebec.uproject` (Gauntlet plugin), `QuebecSky.cpp` (`NordGauntlet` QA flag).
+- [ ] 4.4 Stub `CsvProfiler.h` and the Gauntlet stub headers, marked unverified, plus a selftest case.
+- [ ] 4.5 `Tools/SyntaxCheck/check.sh --both` and `link.sh --both -j 2` pass.
+
+## 5. C# test node (host compile)
+- [ ] 5.1 `Build/Scripts/NordGauntlet.Automation.csproj` and `Build/Scripts/NordMobileLoop.cs` with the `mode`, `size`, `sky`, `laps`, `run` and `execcmds` params.
+
+## 6. Python runner
+- [ ] 6.1 `Scripts/gauntlet_loop.py` with `self-check`, `route`, `native` (RunUnreal or `--direct`), `stream`, `reference`, `tune`, `report` and `write-profile`.
+- [ ] 6.2 `Scripts/gauntlet_metrics.py`: CSV parse, legs, hitch rule, gate verdicts with pass, fail, unverified and contended, numpy SSIM, optional FLIP, `review.html`.
+- [ ] 6.3 `Scripts/gauntlet_tune.py`: knob ladders and dependencies, candidate ExecCmds and expected-CVar files, profile section read and write, greedy search, stop rule.
+- [ ] 6.4 `Data/Gauntlet/loop.json` with stops, speeds, holds, delays, laps, skies, sizes, budgets, knobs, ceiling and baseline.
+- [ ] 6.5 `test_gauntlet_metrics.py`, `test_gauntlet_tune.py` (fake measure: search order, stop rule, fallback, ties) and `test_gauntlet_loop.py` (fake RunUAT and sampler: command lines, folder layout, sky refusal, contention label) pass, and `gauntlet_loop.py self-check` passes.
+
+## 7. Browser sampler
+- [ ] 7.1 `stream-sample.mjs`: `--frames`, `--pin`, `--trigger`, `--out`, `--latency`, and the new summary fields.
+- [ ] 7.2 `config.mjs` `pinnedLevel`, `player.js` skips adaptation when pinned, `build.mjs` defines `NORD_QA_PIN` (false by default).
+- [ ] 7.3 `stream-sample.test.mjs` and `config.test.mjs` cover the new fields and the sizes 1412x652, 652x1412, 1058x488 and 488x1058; `npm test` passes in `Browser/`.
+
+## 8. Launcher
+- [ ] 8.1 `browser_streaming.py`: `NORD_STREAM_QUALITY=current|phone|file:<path>` and `NORD_STREAM_GAUNTLET=<run dir>`, recorded in `lifecycle.json`.
+- [ ] 8.2 `browser_streaming.py self-check` covers the unchanged default line, the phone and file values, the path refusal and the sky refusal.
+
+## 9. Phone profile
+- [ ] 9.1 `Config/DefaultDeviceProfiles.ini` with `[NordPhoneStream DeviceProfile]` equal to today's `QUALITY`.
+- [ ] 9.2 A parse test checks that the section and `QUALITY` hold the same CVars.
+
+## 10. Docs
+- [x] 10.1 `Verification/QAPlan.md` names the 60 FPS cap and points to the gauntlet gates.
+- [x] 10.2 `docs/gauntlet/gta-mobile.md` protocol header, with no scored rounds.
+
+## 11. Host and person (owner's PC with UE 5.8.3)
+- [ ] 11.1 Build both targets with the Gauntlet plugin, compile the C# node, and package the Browser build.
+- [ ] 11.2 RunUnreal smoke on Linux (one lap). If it fails, record why and use `--direct`.
+- [ ] 11.3 `-DeviceProfile=NordPhoneStream` reads back in the Browser package, or the launcher falls back to `-ExecCmds`.
+- [ ] 11.4 Confirm the CSV column names, including GPUTime.
+- [ ] 11.5 First measured lap: loop length, per-leg p95 ranking, and the summary line against the CSV.
+- [ ] 11.6 Ceiling references twice; run-to-run SSIM at least 0.98.
+- [ ] 11.7 Baseline twice at the start of the window.
+- [ ] 11.8 Overnight tune in an agreed GPU window.
+- [ ] 11.9 Confirmation: 3 laps each for the winner and the baseline, both skies, landscape and portrait.
+- [ ] 11.10 Stream runs: solo at rung 0 and rung 1, landscape and portrait, plus the two-viewer and relay rows.
+- [ ] 11.11 Manual phone run on a physical Android and iOS phone, recorded on its own.
+- [ ] 11.12 User review of `review.html`; run `write-profile` only after approval.
+- [ ] 11.13 Commit the round evidence and score round 1 in `docs/gauntlet/gta-mobile.md`.
+- [ ] 11.14 Archive this change and review the canonical specs.
+
+## Follow-up
+- [ ] Flip the stream default to `phone` in a separate change, after the user approves paired captures.
+- [ ] Bring canonical `nord-camera-touch` (24 and 28 FPS) in line with the shipped 29 and 35 FPS ladder.
