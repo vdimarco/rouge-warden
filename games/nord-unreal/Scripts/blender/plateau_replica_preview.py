@@ -634,7 +634,7 @@ def index():
     idx = json.load(open(path)) if os.path.exists(path) else {}
     changed = False
     for dirpath, _, names in os.walk(DATA):
-        if '/ReplicaGeometry/Props' in dirpath:
+        if '/ReplicaGeometry/Props' in dirpath or '/ReplicaGeometry/Trees' in dirpath:
             continue
         for n in names:
             if not n.endswith('.obj'):
@@ -1026,6 +1026,7 @@ def build(name, spec, before=False, res=(1280, 720)):
     MATS.clear()
     MASKED.clear()
     TREE.clear()
+    SPECIES.clear()
     scene = bpy.context.scene
     scene.unit_settings.scale_length = 1.
     cam_pos, target = spec['camera']
