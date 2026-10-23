@@ -1181,3 +1181,8 @@ Skip hidden street sign-list/uniform work with existing root visibility. Focused
 
 
 Increment37 released in #638 as2c9d2d8f after all6CI/review/current4checkpreview/freshrebase. Production streetview HTTP200 exactSHA6a1c7c3089d596471c0cca7fae51a27b30b6bd39bdffa021a49f879fe5c64282. Canonical invisible-street scenarios published and OpenSpec archived. No FPS gain or affectedChrome acceptance claimed; currenttotal withheld.
+
+
+## Increment38 — populated car and marker transfers (pending release)
+
+Bound matrix/color buffer uploads to populated model/fallback cars and mission markers using the established update-range policy. Focused actual WebGL byte/range/count tests cover shrink/grow/empty plus same-frame image comparison. No physics/anchor/height/quality changes. All20dimensions historical context only, no newpoints; affectedChrome responsiveness/stability unverified, currenttotal/deltawithheld. Evidence fullswing-r38-action-uploads. No FPS gate.
