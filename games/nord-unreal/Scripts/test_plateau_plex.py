@@ -680,7 +680,8 @@ def test_ground_galleries_on_lattice_skirts():
     with_deck = [r for r in records if r['rear'].get('ground_decks')]
     assert 3 <= len(with_deck) <= 30 and counts['rear_ground_galleries'] == sum(len(r['rear']['ground_decks']) for r in with_deck)
     lattice = rear['Rail_Lattice']
-    assert len(lattice) == counts['rear_lattice_skirts']
+    # the other lattice cards are the gallery privacy screens, two 1 m cards each
+    assert len(lattice) == counts['rear_lattice_skirts'] + 2 * counts.get('rear_partitions_lattice', 0)
     for record in with_deck:
         assert record['rear']['stair'] == 'straight' and len(record['rear']['decks']) == 2
         for g in record['rear']['ground_decks']:
