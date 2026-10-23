@@ -1251,7 +1251,7 @@ def build_streets(world):
         'yard_slabs_past_ruelle_mouths', 'curb_extension_trees_at_curb', 'sidewalk_risers', 'corner_risers',
         'yard_risers', 'yard_mouth_wedges', 'yard_mouth_wedge_square_metres', 'sidewalk_pieces_split',
         'passages', 'passage_square_metres', 'passage_lead_ins', 'tree_pits_off_strip',
-        'curb_extension_back_walls')}
+        'curb_extension_back_walls', 'apron_walls', 'tree_pits_narrowed')}
     # Carriageway asphalt.
     for s in world.segs:
         if s['excluded']:
@@ -1474,6 +1474,7 @@ def build_streets(world):
     for strip in world.sidewalk_strips:
         _tree_pits(world, L, strip, trees, tree_grid, pit_trees, counts)
     extensions = curb_extensions(world, counts, {trees[i] for i in pit_trees})
+    world.apron_outlines = []
     for strip in world.sidewalk_strips:
         _sidewalk_strip(world, L, surfaces, strip, counts)
     for row in world.corners:
@@ -1485,6 +1486,7 @@ def build_streets(world):
     for strip in world.sidewalk_strips:
         _passages(world, L, surfaces, strip, counts, stops)
     _draw_extensions(world, L, surfaces, extensions, counts)
+    _apron_walls(world, L, surfaces, counts)
     _legacy_dashes(world, L, counts)
     world.pit_trees = pit_trees
     for k in ('sidewalk_metres', 'yard_square_metres', 'fence_metres', 'centre_line_metres', 'lane_line_metres',
@@ -1684,6 +1686,7 @@ def _sidewalk_strip(world, L, surfaces, strip, counts):
             for tri in (quad_triangles(poly if area(poly) > 0 else poly[::-1]) if concave else [poly]):
                 L.flat('curb', tri, Z_DROP)
             surfaces.add(poly, Z_DROP, 'apron')
+            world.apron_outlines.append(poly if area(poly) > 0 else poly[::-1])
             counts['dropped_aprons'] += 1
             status[k] = 'apron'
             continue
@@ -1733,6 +1736,21 @@ def _sidewalk_strip(world, L, surfaces, strip, counts):
             if other < 0 or other >= pieces or status[other] != 'raised':
                 L.wall('sidewalk', a, b, 0., z)
                 counts['sidewalk_risers'] += 0 <= other < pieces      # not the strip's own two ends
+
+
+def _apron_walls(world, L, surfaces, counts):
+    """A dropped apron's edge over lower ground (bare floor behind it where no parterre was laid, the gap at a
+    ruelle mouth) gets a 9 cm wall once everything else is down, so no step opens onto the floor under it."""
+    for poly in world.apron_outlines:
+        for a, b in zip(poly, poly[1:] + poly[:1]):
+            if math.dist(a, b) < 5.:
+                continue
+            u, _ = unit(a, b)
+            c = add(lerp(a, b, .5), (u[1], -u[0]), 4.)          # right of a->b: outside a CCW outline
+            if world.in_building(c) or surfaces.floor(c) >= Z_DROP - 1.:
+                continue
+            L.wall('curb', a, b, 0., Z_DROP)
+            counts['apron_walls'] += 1
 
 
 def _corner(world, L, surfaces, row, counts):

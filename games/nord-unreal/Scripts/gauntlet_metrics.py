@@ -9,7 +9,9 @@ and frametimes_expected.json pin the statistics for this module and for the C++ 
 
 SSIM follows Wang, Bovik, Sheikh and Simoncelli, "Image Quality Assessment: From Error Visibility to Structural
 Similarity" (IEEE TIP, 2004): luma, an 11x11 Gaussian window with sigma 1.5, K1 0.01, K2 0.03, the mean over the
-valid window positions and no automatic downsampling. It is numpy only, because skimage is not installed here.
+valid window positions and no automatic downsampling. It is numpy only, because skimage is not installed here. A
+one-off check in a scratch venv agreed with skimage 0.26 structural_similarity(gaussian_weights=True, sigma=1.5,
+use_sample_covariance=False, data_range=255) to 1e-15, on random images and a 1280x720 still.
 NVIDIA FLIP (Andersson et al. 2020, pip flip-evaluator) is report-only and used only when it imports.
 
 Run from games/nord-unreal:
