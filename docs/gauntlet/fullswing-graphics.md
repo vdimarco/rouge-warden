@@ -1178,3 +1178,6 @@ PR#636 released as `9d82f8233450bc1a3c5f1e8ef841c78de731c768` after review, CI, 
 ## Increment37 — invisible street preparation (pending release)
 
 Skip hidden street sign-list/uniform work with existing root visibility. Focused hide/move/resume regression validates attribute versions, sign counts, current time and people; street simulation/quality/anchors/height rules unchanged. No FPS claim or gate. All20dimensions retain historical context only, no newpoints; responsiveness/stability unverified, currenttotal/delta withheld. Evidence fullswing-r37-hidden-street.
+
+
+Increment37 released in #638 as2c9d2d8f after all6CI/review/current4checkpreview/freshrebase. Production streetview HTTP200 exactSHA6a1c7c3089d596471c0cca7fae51a27b30b6bd39bdffa021a49f879fe5c64282. Canonical invisible-street scenarios published and OpenSpec archived. No FPS gain or affectedChrome acceptance claimed; currenttotal withheld.
