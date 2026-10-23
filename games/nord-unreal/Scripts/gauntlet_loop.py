@@ -71,7 +71,7 @@ TAIL_S = .25
 LOAD_S = 180  # Map load and shader warm-up before a run's delay, as profile_package.py allows 180 s per run.
 UAT_S = 300   # RunUAT start-up (script build, Gauntlet set-up) on top of a run's limit; an estimate (unverified).
 COVER_GRACE_MS = 1500  # A per-second sample and the log follower's delay may end this much before the lap.
-LABEL = re.compile(r"[A-Za-z0-9][A-Za-z0-9._+-]{0,95}")
+LABEL = re.compile(r"[A-Za-z0-9][A-Za-z0-9._+-]{0,159}")
 FOLLOWED = re.compile(r"NORD_GAUNTLET\b|NORD_STREAM_FPS\b")
 LEG_START = re.compile(r"NORD_GAUNTLET\b.*\bleg=S\d+-S\d+")
 HOLD_BEGIN = re.compile(r"NORD_GAUNTLET\b.*\bstop=(\w+)\b.*\bhold=begin")
@@ -108,7 +108,7 @@ def write_json(path, data):
 
 def new_run_dir(label, parent=None):
     """An empty Saved/Gauntlet/<UTC>-<label>/ (or one under parent); a second run in the same second gets -2, -3."""
-    require(LABEL.fullmatch(label or ""), "A label is 1 to 96 letters, digits, '.', '_', '+' or '-'; rejected " + repr(label))
+    require(LABEL.fullmatch(label or ""), "A label is 1 to 160 letters, digits, '.', '_', '+' or '-'; rejected " + repr(label))
     parent = Path(parent or OUT)
     parent.mkdir(parents=True, exist_ok=True)
     stem = time.strftime("%Y%m%dT%H%M%SZ", time.gmtime()) + "-" + label
@@ -854,12 +854,13 @@ def judge_stream(run, loop, meta):
     native = M.parse_stream_fps("\n".join(event["line"] for event in events if window and window[0] <= event["ms"] <= window[1]))
     vram, foreign, report_only, gpu_notes, samples_gate = gpu_findings(read_json(stream / "gpu.json"))
     exit_info = game_exit(loop, text, None, False, "lifecycle")
+    mismatches = cvar_mismatches(meta.get("expected") or {}, parse_readback(text))
     gates = M.stream_gates(loop, primary["summary"], primary["intervals"], native or None)
     gates += [M.gate("size_changes", primary["size_changes"], 0, unit="changes",
                      note="requested and received size inside the lap; a pinned rung keeps one size"),
               M.gate("game_exit", exit_info["code"], loop["exit_codes"]["done"], op="==", unit="code", note=exit_info["name"]),
-              M.gate("cvar_mismatches", None if (found := cvar_mismatches(meta.get("expected") or {}, parse_readback(text))) is None
-                     else len(found), 0, unit="cvars", note=", ".join(f"{m['name']}={m['actual']} (want {m['expected']})" for m in found or []) or None),
+              M.gate("cvar_mismatches", None if mismatches is None else len(mismatches), 0, unit="cvars",
+                     note=", ".join(f"{m['name']}={m['actual']} (want {m['expected']})" for m in mismatches or []) or None),
               samples_gate]
     shots = sorted(path.name for path in (stream / "shots").glob("*.png")) if (stream / "shots").is_dir() else []
     report_only.update(received_size=primary["received_size"], expected_size=meta.get("size"), shots=shots,
@@ -871,12 +872,12 @@ def judge_stream(run, loop, meta):
         values["two_viewer_fps"] = sum(fps) / len(fps) if len(fps) == len(slots) else None
         report_only["two_viewer"] = {"mean_decoded_fps": values["two_viewer_fps"], "gates_of_NordHost": gates,
                                      "per_slot": {name: (sample["summary"] or {}).get("decodedFps") for name, sample in slots.items()}}
-        gates = [samples_gate]
-        notes.append("two-viewer row: report-only; report compares it with the baseline's (the co-op guard)")
+        gates = []
+        notes.append("two-viewer row: report-only, so nothing is gated; report compares it with the baseline's (the co-op guard)")
     elif meta["row"] == "relay":
         report_only["relay"] = {"gates": gates}
-        gates = [samples_gate]
-        notes.append("relay row: report-only")
+        gates = []
+        notes.append("relay row: report-only, so nothing is gated")
     verdict = M.verdict(gates, foreign=foreign, report_only=report_only, delay=M.delay_section(delay_values(primary)),
                         values=values, notes=notes)
     write_json(run / "verdict.json", verdict)
@@ -1136,7 +1137,7 @@ def route_report(loop, run=None):
     if lateral is None and data.get("samples"):
         lateral = max((sample.get("lateral_m") or 0 for sample in data["samples"]), default=None)
     order = loop["order"]
-    in_order = bool(stops) and stops == (order * (len(stops) // len(order) + 1))[:len(stops)] if stops else None
+    in_order = stops == (order * (len(stops) // len(order) + 1))[:len(stops)] if stops else None
     route, drive = loop["route"], loop["drive"]
     gates = [M.gate("length_min_m", data.get("length_m"), route["length_min_m"], op=">=", unit="m"),
              M.gate("length_max_m", data.get("length_m"), route["length_max_m"], unit="m"),

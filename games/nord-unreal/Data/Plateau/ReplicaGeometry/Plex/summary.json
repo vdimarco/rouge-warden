@@ -185,7 +185,7 @@
     "max": 18.0
    }
   },
-  "triangles": 702667
+  "triangles": 743427
  },
  "background": {
   "masses": 252,
@@ -205,7 +205,17 @@
   },
   "windows": 10775,
   "party_skins": 26,
-  "triangles": 171758
+  "roofs": {
+   "materials": {
+    "Roof_Gravel": 90,
+    "Roof_Membrane": 151,
+    "Roof_Tar": 11
+   },
+   "chimneys": 240,
+   "hatches": 234,
+   "penthouses": 8
+  },
+  "triangles": 215260
  },
  "glass_cards": {
   "status": {
