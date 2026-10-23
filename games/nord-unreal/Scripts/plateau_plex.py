@@ -120,8 +120,12 @@ MATERIALS = {
     # Shared keys of the walls-and-roofs pass; the apply step maps each to a textured material.
     'Roof_Membrane':   {'base_color_srgb': '#D6D7D3', 'roughness': .7, 'metallic': 0},     # white or light-grey membrane
     'Roof_Gravel':     {'base_color_srgb': '#C8C4BA', 'roughness': .95, 'metallic': 0},    # white gravel ballast
-    'Roof_Tar':        {'base_color_srgb': '#2C2B29', 'roughness': .9, 'metallic': 0},     # black tar and gravel
-    'Sheet_Metal':     {'base_color_srgb': '#A4A8AA', 'roughness': .4, 'metallic': .6},    # galvanised roof sheet
+    # Tar and sheet metal follow the replica texture sets (Textures/textures.json): tar and gravel is grey pea gravel
+    # sunk in black tar, about #4A4744 (the set owns its colour; #2C2B29 rendered flat black), and weathered galvanised
+    # sheet is the set's mean grey at metallic .3 and roughness .59 (at metallic .6 and roughness .4 it read brown in
+    # shade).
+    'Roof_Tar':        {'base_color_srgb': '#4A4744', 'roughness': .66, 'metallic': 0},    # tar and grey pea gravel
+    'Sheet_Metal':     {'base_color_srgb': '#9CA0A1', 'roughness': .59, 'metallic': .3},   # galvanised roof sheet
     'Siding_Lap_Cream': {'base_color_srgb': '#D8CDB0', 'roughness': .6, 'metallic': 0},    # clapboard with visible laps
     'Siding_Lap_Grey': {'base_color_srgb': '#8B8E8F', 'roughness': .6, 'metallic': 0},
     'Parged':          {'base_color_srgb': '#A09B92', 'roughness': .9, 'metallic': 0},     # parged concrete foundation
@@ -1973,6 +1977,17 @@ BALUSTER_SHARE = .7         # guards with baluster cards; the rest are solid boa
 GROUND_DECK_SHARE = .4      # straight stacks whose ground-floor stoop is a low gallery on a lattice skirt
 SKIRT_H = 100.              # the lattice card is drawn 1 m tall; a skirt keeps that and runs below grade
 GATE_PAINT = ('Wood_Green', 'Wood_Burgundy', 'Iron', 'Wood_Cream', 'Wood_Grey', 'Wood_Green')
+# Rear-surfaces pass. Solid guards are clapboard or aluminium lap siding with visible laps, not a flat painted board
+# (on a sided lot, the lot's own siding); gate leaves are board cards on a painted ledge-and-brace frame; side-by-side
+# galleries have a privacy screen at their shared posts; rear windows have white frames and a blind or curtains.
+GUARD_CREAM = .45           # solid guards in cream lap siding; the rest grey
+PARTITION_LATTICE = .6      # privacy screens of lattice (two 1 m cards, as drawn); the rest a 1.8 m board card
+PARTITION_H = {'lattice': 200., 'boards': 180.}     # screen heights over the deck, under the 2x4 cap rail
+PARTITION_GAP = 60.         # neighbouring lots' gallery ends this close (along the wall line) share a screen
+GATE_LEDGES = (.2, .78)     # the gate's two painted ledges, as fractions of the leaf height, with a brace between
+BLIND_D = D_FACE + 3.       # blinds and curtains: just over the glass (D_FACE + 2.5), under the meeting rail (+ 3.5)
+BLINDS = ('Trim', 'Trim', 'Trim', 'Wood_Cream', 'Wood_Cream', 'Stone_Cast')     # white, cream and beige
+CURTAINS = ('Trim', 'Wood_Cream', 'Wood_Cream', 'Stone_Cast', 'Wood_Burgundy', 'Wood_Green')
 POST_SPACING = 244.         # 8 ft fence bays
 OPEN_SHARE, LOW_SHARE = .24, .14    # lane edges left open as a parking pad, or closed by a low picket fence
 PAD_W, PAD_D = 270., 480.   # a parking pad (crushed stone) off the ruelle, one small car deep
@@ -2248,6 +2263,15 @@ class Rear:
         self.pad_first = yr.random() < .5
         self.gate_alt = yr.choice(GATE_PAINT)
         self.vine_seed = yr.getrandbits(32)
+        # draws of the rear-surfaces pass, from a seed of their own, so every draw above stays put: the lap siding of the
+        # solid guards (the lot's own siding where its walls are sided) and the partition kind between side-by-side
+        # galleries (a lattice screen or a board screen)
+        sr = random.Random(_seed('plex-rear-surfaces', lot['id']))
+        self.guard_siding = 'Siding_Lap_Cream' if sr.random() < GUARD_CREAM else 'Siding_Lap_Grey'
+        self.partition = 'lattice' if sr.random() < PARTITION_LATTICE else 'boards'
+        # rear windows and doors are white PVC or aluminium (the old draw is kept above so later draws stay put)
+        self.frame = 'Trim'
+        self.partitions = []        # (x, kind, neighbour id or None) at the stack wall's shared posts (plan_partitions)
         if lot['storeys'] >= 5:
             self.paint, self.roofed = 'Iron', False     # apartment blocks: steel fire-escape galleries
             self.infill = 'iron'
@@ -2272,6 +2296,8 @@ class Rear:
                 self.brick = self.street_brick = 'Brick_Brown'
             if not lot.get('skin_wall'):
                 self.wall = self.street_brick = self.brick = lot['masonry'] if lot['masonry'] in BRICKS else self.brick
+        if self.siding and self.wall in SIDING:
+            self.guard_siding = self.wall               # a sided lot boards its solid guards in its own siding
         # the roof under a parapet: the skins rise over it with an inner face and a metal coping
         self.parapet_from = lot.get('parapet_from')
         self.background = bool(lot.get('background'))
