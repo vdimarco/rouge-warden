@@ -1,3 +1,3 @@
 - [x] Implement populated transfer ranges
 - [x] Validate shrink/grow/empty and visible equivalence
-- [ ] Review, CI, deployed preview, rebase, merge and production verification
+- [x] Review, CI, deployed preview, rebase, merge and production verification

@@ -1186,3 +1186,6 @@ Increment37 released in #638 as2c9d2d8f after all6CI/review/current4checkpreview
 ## Increment38 — populated car and marker transfers (pending release)
 
 Bound matrix/color buffer uploads to populated model/fallback cars and mission markers using the established update-range policy. Focused actual WebGL byte/range/count tests cover shrink/grow/empty plus same-frame image comparison. No physics/anchor/height/quality changes. All20dimensions historical context only, no newpoints; affectedChrome responsiveness/stability unverified, currenttotal/deltawithheld. Evidence fullswing-r38-action-uploads. No FPS gate.
+
+
+Increment38 shipped #640 as69c6ecff after all6CI/review/current9checkpreview/freshrebase. Productionactionview HTTP200 exactSHA8390a157dc9c3ccd40b16968f869791f8ea7713cd2d81fd114b12d885c276a38. Canonical populated-car/marker scenarios published and OpenSpec archived. ActualChrome/FPSbenefit unverified; totalwithheld.
