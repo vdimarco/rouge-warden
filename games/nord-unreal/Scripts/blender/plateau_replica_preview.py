@@ -216,7 +216,66 @@ def views():
     cx, cy = tx + 9500 * math.cos(a), ty + 9500 * math.sin(a)
     v['aerial'] = dict(title='High three-quarter view over two plex blocks on Mentana', far=26000,
                        camera=((cx, cy, 6000.), (tx, ty, 0.)), fov=62, circle=(tx, ty, 19000))
+    fronts = plex_fronts()
+    if GALLERY_LOT in fronts:
+        v['gallery_closeup'] = dict(title='A yard behind Rue de Mentana: a three-storey gallery stack with chairs, '
+                                          'plants and barbecues, laundry lines to the poles at the back fence',
+                                    far=9000, exposure=.8, camera=gallery_camera(fronts[GALLERY_LOT]))
+    if HLM_LOT in fronts:
+        v['hlm_mentana'] = dict(title='Habitations De Mentana (OMHM, 1974) from the far sidewalk of Rue de Mentana',
+                                far=17000, camera=hlm_camera(fronts[HLM_LOT]))
     return v
+
+
+# The two close views of the post-pass work: a gallery stack with lane life, and the OMHM block.
+GALLERY_LOT = '356349231'  # Rue de Mentana, 4 storeys, two gallery modules, 23 gallery props and 6 laundry lines
+HLM_LOT = '356220851'      # Habitations De Mentana (OSM way 356220851), the post-1945 apartment kit
+FRONTS = {}
+
+
+def plex_fronts():
+    """Plex/fronts.json rows by lot id (the generator's own record of each lot's walls, decks and fence)."""
+    if not FRONTS:
+        path = os.path.join(REPLICA, 'Plex', 'fronts.json')
+        if os.path.exists(path):
+            FRONTS.update({f['id']: f for f in json.load(open(path))['fronts']})
+    return FRONTS
+
+
+def gallery_camera(front):
+    """Eye height in the yard, 2.3 m in from the back fence and 4.5 m along it from the yard's middle, looking at
+    the middle of the gallery stack 6.2 m up: the decks' props show between the balusters, and the lines run from the
+    deck guards over the camera to the poles at the fence."""
+    rear = front['rear']
+    wall = max((w for w in rear['walls'] if w['kind'] == 'rear'), key=lambda w: w.get('galleries', 0))
+    (ax, ay), (bx, by) = wall['a'], wall['b']
+    n = math.hypot(bx - ax, by - ay)
+    along = ((bx - ax) / n, (by - ay) / n)
+    out = rear['decks'][0]['out']
+    mx, my = (ax + bx) / 2, (ay + by) / 2
+    depth = rear['fence']['distance_cm'] - 230.
+    cam = (mx + out[0] * depth - along[0] * 450., my + out[1] * depth - along[1] * 450., 175.)
+    target = (mx + out[0] * 150. + along[0] * 150., my + out[1] * 150. + along[1] * 150., 620.)
+    return cam, target
+
+
+def hlm_camera(front):
+    """The far sidewalk of Mentana, 19 m out from the block's Mentana front and 16 m along the street, at eye height
+    over the 18 cm sidewalk, looking at the front's middle 11 m up: the end wall, the entrance and one long wall of
+    stacked balconies."""
+    (ax, ay), (bx, by) = front['front']['a'], front['front']['b']
+    n = math.hypot(bx - ax, by - ay)
+    along = ((bx - ax) / n, (by - ay) / n)
+    mx, my = (ax + bx) / 2, (ay + by) / 2
+    # The street side: away from the block's other walls.
+    walls = [p for w in front['rear']['walls'] for p in (w['a'], w['b'])]
+    gx, gy = sum(p[0] for p in walls) / len(walls), sum(p[1] for p in walls) / len(walls)
+    normal = (-along[1], along[0])
+    if (gx - mx) * normal[0] + (gy - my) * normal[1] > 0:
+        normal = (-normal[0], -normal[1])
+    cam = (mx + normal[0] * 1900. + along[0] * 1600., my + normal[1] * 1900. + along[1] * 1600., 188.)
+    target = (mx - normal[0] * 300., my - normal[1] * 300., 1100.)
+    return cam, target
 
 
 # ------------------------------------------------------------------------------------------------
