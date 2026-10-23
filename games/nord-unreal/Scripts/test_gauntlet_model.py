@@ -1,14 +1,16 @@
 """Build and run the engine-independent NORD mobile gauntlet model test with every available system compiler.
 
 Scripts/gauntlet_model_test.cpp checks the Plateau loop over the real LaFontaine road set, a kinematic car at 30 and
-120 Hz, the run phases, the stuck rule and the expected-CVar parser. This script then checks three things. The shared
+120 Hz, the run phases, the stuck rule and the expected-CVar parser. This script then checks four things. The shared
 fixture Data/Gauntlet/fixtures/frametimes_expected.json matches its CSV. The model's frame statistics match that JSON.
-The numbers the model repeats match Data/Gauntlet/loop.json.
+The numbers the model repeats match Data/Gauntlet/loop.json. The Gauntlet controller in Source/QuebecGauntletTest
+repeats the setup exit code and the console variable names of the subsystem.
 """
 import csv
 import json
 import math
 from pathlib import Path
+import re
 import shutil
 import subprocess
 import tempfile
@@ -116,5 +118,15 @@ with tempfile.TemporaryDirectory() as directory:
         outputs[name] = run.stdout.strip()
         print(f"{name} ({version}): {lines[-1]}")
 assert len(set(outputs.values())) == 1, f"results differ between compilers: {sorted(outputs)}"
+
+# The Gauntlet controller module needs no Quebec header, so it repeats the setup exit code and the two console variable
+# names of the subsystem. They must agree with loop.json and Source/Quebec/QuebecGauntlet.cpp.
+CONTROLLER = (ROOT / "Source/QuebecGauntletTest/QuebecGauntletController.cpp").read_text()
+SUBSYSTEM = (ROOT / "Source/Quebec/QuebecGauntlet.cpp").read_text()
+assert f"constexpr int32 SetupExit = {LOOP['exit_codes']['setup']};" in CONTROLLER, "the controller's SetupExit differs from loop.json"
+for variable in ("ExitVariableName", "ControllerVariableName"):
+    pattern = rf'{variable} = TEXT\("([\w.]+)"\)'
+    names = [re.search(pattern, text).group(1) for text in (CONTROLLER, SUBSYSTEM)]
+    assert names[0] == names[1], f"{variable} is {names[0]} in the controller and {names[1]} in the subsystem"
 print("\n".join(line for line in outputs[compilers[0]].splitlines() if not line.startswith("NORD_GAUNTLET_CONSTANTS")))
 print("NORD_GAUNTLET_MODEL_OK", len(compilers), "compilers,", len(names), "legs,", len(wanted) + len(stops), "loop.json numbers")
