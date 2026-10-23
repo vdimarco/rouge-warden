@@ -14,6 +14,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <functional>
+#include <limits>
 #include <string>
 #include <utility>
 #include <vector>
@@ -161,9 +162,10 @@ namespace QuebecGauntlet
                 const std::size_t Next = (Leg + 1) % Road.size();
                 std::vector<FVec2> Path;
                 if (!Graph.Route(Road[Leg], Heading, Road[Next], Path, NoUTurn)) return false;
+                const std::size_t Before = Loop.Points.size();
                 for (const FVec2& Point : Path)
                     if (QuebecPursuit::Distance(Point, Loop.Points.back()) > JoinPoints) Loop.Points.push_back(Point);
-                if (Loop.Points.size() < 2) return false;
+                if (Loop.Points.size() == Before) return false;
                 // The leg ends exactly on the next road point, so the loop closes on Road[0].
                 Loop.Points.back() = Road[Next];
                 Heading = Loop.Points.back() - Loop.Points[Loop.Points.size() - 2];
@@ -245,10 +247,11 @@ namespace QuebecGauntlet
         std::vector<FVec2> Ahead;
         double Covered = 0.0;
         const FVec2 Here = Loop.PointAt(Tracker.Along);
+        const std::size_t Segment = Loop.SegmentAt(Tracker.Along);
         FVec2 Previous = Here;
         for (int Step = 1; Step <= Count && Covered <= Range; ++Step)
         {
-            const FVec2& Point = Loop.Points[(Loop.SegmentAt(Tracker.Along) + static_cast<std::size_t>(Step)) % static_cast<std::size_t>(Count)];
+            const FVec2& Point = Loop.Points[(Segment + static_cast<std::size_t>(Step)) % static_cast<std::size_t>(Count)];
             Covered += QuebecPursuit::Distance(Previous, Point);
             Ahead.push_back(Point);
             Previous = Point;
