@@ -3820,6 +3820,7 @@ POLE_FENCE = (22., 40., 70.)    # first tries: this far in from the fence line (
 POLE_FALLBACK = (110., 180.)    # then deeper in the yard, where a shed, pad, gate or tree holds the fence line
 LINE_RISE = (35., 130.)         # the line's end on the pole stands this much over its pulley on the rail
 LINE_MIN_END = 330.             # and never lower than this (washing hangs up to 1.1 m under it, over a 1.95 m fence)
+LINE_END_TOP = 1200.            # nor higher than this, so no pole stands over 12.35 m
 LINE_SKEW = 1.                  # a line runs at most 45 degrees off square to the gallery (round a shed, past a gate)
 LINE_MIN_SPAN = 250.            # pulley to pulley (the pole's pulley hangs 9 cm off the pole)
 GATE_PROPS = (('bin_recycling', .55), ('bin_compost', .4), ('flower_box', .22), ('bike_locked', .15))
@@ -4104,7 +4105,7 @@ def lane_laundry(world, plex, S, lane, counts):
                 span = math.dist(A, P)
                 za = dk['z'] + LINE_ABOVE_DECK
                 mine.append({'deck_z': dk['z'], 'guard': guard, 'A': (A[0], A[1], za),
-                             'zb': max(LINE_MIN_END, za + rng.uniform(*LINE_RISE)), 'span': span})
+                             'zb': min(LINE_END_TOP, max(LINE_MIN_END, za + rng.uniform(*LINE_RISE))), 'span': span})
             if not mine:
                 continue
             height = max(m['zb'] for m in mine) + POLE_TOP

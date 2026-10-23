@@ -1597,7 +1597,7 @@ def check_lane_life(world, out, soul, soul_rows):
     for pole in pole_rows:
         F = lots[pole['lot']]['frame']
         assert not world.in_building(pole['position'], 40)
-        assert 330 <= pole['height_cm'] <= R.LINE_TOP + R.LINE_RISE[1] + R.POLE_TOP, pole
+        assert 330 <= pole['height_cm'] <= R.LINE_END_TOP + R.POLE_TOP, pole
         # poles stand at the back of the yard: the recorded distance is the pole's, and most are at the fence line
         assert abs(F.D - F.local(pole['position'])[1] - pole['from_fence_cm']) < .05, pole
         assert pole['from_fence_cm'] in R.POLE_FENCE + R.POLE_FALLBACK, pole
