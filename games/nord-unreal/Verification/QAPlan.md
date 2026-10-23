@@ -129,7 +129,7 @@ node stream-sample.mjs --slot NordFriend1 --seconds 60 --look --relay
 
 | Measure | Reference | Pass condition |
 | --- | --- | --- |
-| Decoded FPS | 30 FPS cap | Mean at or above 27 over 60 s on the camera sweep, both slots occupied. |
+| Decoded FPS | 60 FPS cap, 30 FPS floor | Mean at or above 27 over 60 s on the camera sweep, both slots occupied. |
 | Freezes | `freezeCount` | Zero over 60 s. |
 | Frame gaps | `longestFrameGapMs` | Under 500 ms. |
 | Bitrate | 2 Mbps start, 12 Mbps desktop ceiling, 1.5 Mbps phone | Settles under the ceiling and does not fall back without a recorded cause. |
