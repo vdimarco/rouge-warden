@@ -598,7 +598,7 @@ def replica_set_material(name, row):
         nt.links.new(clear.outputs['BSDF'], mix.inputs[1])
         nt.links.new(shader, mix.inputs[2])
         shader = mix.outputs['Shader']
-        MASKED[name] = (tex['diff'].image, tuple(entry['tiling']), clip)
+        MASKED[name] = (tex['diff'].image, tuple(row['tiling']), clip)
     nt.links.new(shader, out.inputs['Surface'])
     MATS[name] = m
     return m
@@ -606,11 +606,11 @@ def replica_set_material(name, row):
 
 def replica_material(layer, key, spec):
     color = srgb_to_linear(spec['base_color_srgb'])
-    # The apply step's own rule decides which keys take the greystone or slate maps (Stone, Slate...).
-    parent_texture = base_material(key, spec)[1] or ''
-    if parent_texture.startswith('replica_'):
-        return replica_set_material(f'R_{layer}_{key}', color, parent_texture[len('replica_'):],
-                                    spec.get('metallic', 0.))
+    # The apply step's own plan row decides which keys take a replica texture set (Stone, Slate, the shared keys,
+    # Brick_Buff_Even, the tree bark and leaves) and with what tint, macro variation and metallic.
+    row = material_row(layer, key, spec, texture_sets(), set())
+    if row.get('texture_set'):
+        return replica_set_material(f'R_{layer}_{key}', row)
     texture = spec.get('texture') or ''
     tex = None
     tiling = 1.
@@ -686,6 +686,12 @@ def load_existing(idx, region, col, before):
     return count
 
 
+def drawn(batch):
+    """Is a layer batch visible in game? Collision_Only batches (the gallery guards' invisible walls) are spawned
+    hidden in game by the apply step, so the preview never draws them."""
+    return batch['material'] != COLLISION_ONLY
+
+
 def load_replica(region, col, layers=('Streets', 'Plex', 'Soul'), dirs=None):
     count = 0
     for layer in layers:
@@ -693,7 +699,7 @@ def load_replica(region, col, layers=('Streets', 'Plex', 'Soul'), dirs=None):
         man = json.load(open(os.path.join(folder, 'manifest.json')))
         for batch in man['batches']:
             b = batch['bounds_cm']
-            if not region.box(b):
+            if not drawn(batch) or not region.box(b):
                 continue
             verts, polys, uvs = read_obj(os.path.join(folder, batch['file']), region)
             if polys:
