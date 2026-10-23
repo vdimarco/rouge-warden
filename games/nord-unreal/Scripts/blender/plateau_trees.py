@@ -376,11 +376,9 @@ def generate(kind, height=None):
     p1 = levels[0]
     spans = []
     for s in level0:
-        start_abs = max(prune + 20., s.offset)
-        a = (start_abs - s.offset) / s.length if s.length else 1.
-        if s is trunk and split:
-            a = min(1., (prune + 20.) / s.length)
-        spans.append((s, min(1., max(0., a)), .97 if s is not trunk or not split else 1.))
+        # Limbs start 20 cm above the pruned height, measured as height on the trunk or a leaning leader.
+        a = height_fraction(s, prune + 20.)
+        spans.append((s, a, .97 if s is not trunk or not split else 1.))
     usable = [(s, a, b) for s, a, b in spans if b - a > .02]
     total = sum((b - a) * s.length for s, a, b in usable)
     limbs = []
@@ -399,6 +397,16 @@ def generate(kind, height=None):
     stems += twigs
     cards = leaf_cards(kind, twigs, rng, clearance)
     return stems, cards
+
+
+def height_fraction(stem, z):
+    """The first fraction of a stem's length at which it reaches height z (1 if it never does)."""
+    for i in range(len(stem.seg)):
+        z0, z1 = stem.points[i][2], stem.points[i + 1][2]
+        if z1 >= z:
+            f = 0. if z0 >= z or z1 - z0 < 1e-9 else (z - z0) / (z1 - z0)
+            return (stem.cum[i] + f * stem.seg[i]) / stem.length
+    return 1.
 
 
 def spawn(parent, n, a, b, level, p, P, rng, L0, prune, clearance):
