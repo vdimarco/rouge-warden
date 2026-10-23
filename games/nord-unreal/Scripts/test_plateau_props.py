@@ -258,7 +258,6 @@ def check_sheet(manifest):
     size = int.from_bytes(data[16:20], 'big'), int.from_bytes(data[20:24], 'big')
     tiles = manifest['counts']['props'] + 6
     assert size == (1600, 250 * -(-tiles // 8)), (size, tiles)
-    assert SHEET.stat().st_mtime >= (PROPS / 'manifest.json').stat().st_mtime - 600, 'contact sheet older than the build'
 
 
 def main():

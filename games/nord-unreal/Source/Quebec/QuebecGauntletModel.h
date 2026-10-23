@@ -247,7 +247,7 @@ namespace QuebecGauntlet
             if (QuebecPursuit::Distance(Start, Goal) <= JoinPoints)
             {
                 Out.push_back(Goal);
-                Cost = Lead + QuebecPursuit::Distance(Start, Goal) + (Against(Heading, GoalHeading) > 0.0 ? NoUTurn : 0.0);
+                Cost = Lead + QuebecPursuit::Distance(Start, Goal) + Against(Heading, GoalHeading);
                 return true;
             }
             double Direct = std::numeric_limits<double>::max();
