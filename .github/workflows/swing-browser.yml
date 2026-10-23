@@ -153,7 +153,7 @@ jobs:
           NODE_PATH: ${{ github.workspace }}/qa/browser/node_modules
           SHOTS: ${{ github.workspace }}/test-results/flat-world
       - name: Street people, neon signs, bloom and the dive
-        run: node qa/vr/street.e2e.mjs && node qa/vr/sky-gather.e2e.mjs && node qa/vr/fullscreen-clears.e2e.mjs && node qa/vr/instance-uploads.e2e.mjs && node qa/vr/hazard-scratch.test.mjs && node qa/vr/hazard-scratch.e2e.mjs && node qa/vr/traffic-paint.test.mjs && node qa/vr/traffic-paint.e2e.mjs && node qa/vr/selection-slots.test.mjs && node qa/vr/selection-slots.e2e.mjs && node qa/vr/action-uploads.e2e.mjs && node qa/vr/marker-dirty.e2e.mjs && node qa/vr/hidden-street.e2e.mjs
+        run: node qa/vr/street.e2e.mjs && node qa/vr/sky-gather.e2e.mjs && node qa/vr/fullscreen-clears.e2e.mjs && node qa/vr/instance-uploads.e2e.mjs && node qa/vr/clog-guards.test.mjs && node qa/vr/clog-guards.e2e.mjs && node qa/vr/hazard-scratch.test.mjs && node qa/vr/hazard-scratch.e2e.mjs && node qa/vr/traffic-paint.test.mjs && node qa/vr/traffic-paint.e2e.mjs && node qa/vr/selection-slots.test.mjs && node qa/vr/selection-slots.e2e.mjs && node qa/vr/action-uploads.e2e.mjs && node qa/vr/marker-dirty.e2e.mjs && node qa/vr/hidden-street.e2e.mjs
         env:
           NODE_PATH: ${{ github.workspace }}/qa/browser/node_modules
           SHOTS: ${{ github.workspace }}/test-results/flat-world
