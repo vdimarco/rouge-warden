@@ -104,10 +104,10 @@ work and its checks are done.
 
 ## 9. Pull request
 
-- [ ] 9.1 The pull request lists what changed, the music credit, the checks run on the committed tree and their results, and states plainly whether a person has listened on a phone and on speakers; it includes screenshots of Settings with the Music switch at 390 × 844, 844 × 390 and 1440 × 900.
-- [ ] 9.2 The lead commits, publishes and merges as the user asks.
+- [x] 9.1 The pull request lists what changed, the music credit, the checks run on the committed tree and their results, and states plainly whether a person has listened on a phone and on speakers; it includes screenshots of Settings with the Music switch at 390 × 844, 844 × 390 and 1440 × 900.
+- [x] 9.2 The lead commits, publishes and merges as the user asks. Done: #427 and #430 are merged.
 
 ## 10. Archive
 
-- [ ] 10.1 After the merge, archive `first-breath-action-genres` first if it is still open (both changes touch `first-breath-presentation` and `first-breath-journey`; their changed requirements do not overlap), then this change.
-- [ ] 10.2 Review `openspec/specs/first-breath-*/spec.md` after the archive: the score requirements are in, "Womb sound", "Sound follows the arcade" and "The Sources screen" read as modified, and nothing from the action-genres change was lost.
+- [x] 10.1 After the merge, archive `first-breath-action-genres` first if it is still open (both changes touch `first-breath-presentation` and `first-breath-journey`; their changed requirements do not overlap), then this change. Done on 2026-10-23, with 8.1 to 8.6 open: they need a person and a phone.
+- [x] 10.2 Review `openspec/specs/first-breath-*/spec.md` after the archive: the score requirements are in, "Womb sound", "Sound follows the arcade" and "The Sources screen" read as modified, and nothing from the action-genres change was lost.
