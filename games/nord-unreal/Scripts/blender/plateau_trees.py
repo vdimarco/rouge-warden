@@ -87,7 +87,7 @@ SPECIES = {
             {'length': .5, 'length_v': .1, 'branches': 12, 'down': 56., 'down_v': 15., 'rotate': 140., 'rotate_v': 30.,
              'curve_res': 4, 'curve': 14., 'curve_back': 0., 'curve_v': 30., 'attraction': -.35, 'sides': 4},
         ],
-        'leaves': {'cards': 8, 'retention': .62, 'card_cm': 62., 'down': 60., 'down_v': 22., 'rotate': 137.5,
+        'leaves': {'cards': 9, 'retention': .62, 'card_cm': 62., 'down': 60., 'down_v': 22., 'rotate': 137.5,
                    'rotate_v': 12., 'twist_v': 35., 'cells': {'sm_yellow': .44, 'sm_orange': .26, 'sm_sparse': .3}},
         'bark': {'colour': '#8A857C', 'note': 'light grey, long loose plates on old trunks'},
     },
@@ -133,8 +133,8 @@ SPECIES = {
              'rotate': 90., 'rotate_v': 15., 'curve_res': 4, 'curve': 0., 'curve_back': 0., 'curve_v': 25.,
              'attraction': .3, 'sides': 4},
         ],
-        'leaves': {'cards': 8, 'retention': .54, 'card_cm': 75., 'down': 48., 'down_v': 20., 'rotate': 137.5,
-                   'rotate_v': 12., 'twist_v': 30., 'cells': {'as_yellow': .45, 'as_maroon': .2, 'as_sparse': .35}},
+        'leaves': {'cards': 10, 'retention': .58, 'card_cm': 80., 'down': 48., 'down_v': 20., 'rotate': 137.5,
+                   'rotate_v': 12., 'twist_v': 30., 'cells': {'as_yellow': .55, 'as_maroon': .15, 'as_sparse': .3}},
         'bark': {'colour': '#77726A', 'note': 'grey, interlacing diamond ridges'},
     },
     'small': {
@@ -580,14 +580,14 @@ def _leaf(cv, form, x, y, size, turn, colour, edge, amount, blotch, shade, z, u)
         s, c = PT.sin_cos(turn)
         rach = size
         _petiole(cv, x, y, x + c * rach, y + s * rach, .9, tuple(v * .75 for v in colour), z - .1)
-        leaflet = size * .34
-        PT.leaflet(cv, x + c * rach * .98, y + s * rach * .98, turn, leaflet, leaflet * .22, z, colour, edge, amount,
+        leaflet = size * .38
+        PT.leaflet(cv, x + c * rach * .98, y + s * rach * .98, turn, leaflet, leaflet * .27, z, colour, edge, amount,
                    blotch, 8, .6, shade)
         for k in range(F['pinnate']):
-            f = .32 + .22 * k
+            f = .3 + .23 * k
             for side in (-1., 1.):
-                PT.leaflet(cv, x + c * rach * f, y + s * rach * f, turn + side * .16, leaflet * (.82 + .06 * k),
-                           leaflet * .2, z, colour, edge, amount, blotch, 8, .6, shade)
+                PT.leaflet(cv, x + c * rach * f, y + s * rach * f, turn + side * .15, leaflet * (.84 + .06 * k),
+                           leaflet * .26, z, colour, edge, amount, blotch, 8, .6, shade)
     elif F.get('bipinnate'):
         s, c = PT.sin_cos(turn)
         rach = size
@@ -766,14 +766,14 @@ def bark_maps():
         j0 = math.floor(t)
         f = t - j0
         r0, r1 = (j0 % h2) * W, ((j0 + 1) % h2) * W
-        dx = int((shear[y] - .5) * 7. * px)
+        dx = int((shear[y] - .5) * 3.5 * px)
         for x in range(W):
             i = y * W + x
             xs = (x + dx) % W
             b = border[r0 + xs] * (1. - f) + border[r1 + xs] * f
             cell = ids[r0 + xs] if f < .5 else ids[r1 + xs]
             tone = .88 + .24 * PT.unit(seed, 77, cell)
-            plate = PT.smooth(0., 4.5, b)
+            plate = PT.smooth(1., 6.5, b)
             stri = fine[xs]
             hgt = 1.3 * plate + .45 * stri * plate + .25 * fbm[i]
             k = tone * (.9 + .2 * fbm[i]) * (.86 + .28 * stri)
@@ -786,8 +786,8 @@ def bark_maps():
             cv.height[i] = hgt
             cv.rough[i] = .97 - .12 * plate
             cv.cavity[i] = 1. - PT.smooth(0., 3., b)
-    return cv.result(px, px, {'plates_cm': [6.5, 52.], 'stretch': stretch, 'furrow': 'Worley F2 - F1 under 0.9 cm',
-                              'shear_cm': 7.})
+    return cv.result(px, px, {'plates_cm': [6.5, 52.], 'stretch': stretch, 'furrow': 'Worley F2 - F1 under 1.3 cm',
+                              'shear_cm': 3.5})
 
 
 def texture_set(spec, g, surface, uv, tile_m, keys):
@@ -1401,7 +1401,8 @@ def render_sheet(out_dir, manifest, sheet_path, samples=40):  # pragma: no cover
             aim((0, 0, 4.3), 14., -90., 0.)
         else:
             k = manifest['kinds'][items[0][0]]
-            aim((0, 0, k['height_cm'] / 200 + .4), k['height_cm'] / 100 * 1.85, -60., 8.)
+            size = max(k['height_cm'] / 100, k['crown_width_cm'] / 100 * 1.3)
+            aim((0, 0, k['height_cm'] / 200 + .4), size * 1.85, -60., 8.)
         lab = label(text)
         for other in bpy.data.collections:
             other.hide_render = other is not coll

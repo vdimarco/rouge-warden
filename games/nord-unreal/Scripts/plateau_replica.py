@@ -2239,10 +2239,9 @@ def _passage_walk(world, L, surfaces, strip, counts, stops, oa, u, out, xs, i, j
     for m in range(i, j + 1):
         q = add(oa, u, xs[m])
         f = (xs[m] - xs[i - 1]) / (xs[j + 1] - xs[i - 1])
-        s = left + (right - left) * f - 30.            # the façade line across the passage, a little in front
+        s = max(0., left + (right - left) * f - 30.)   # the façade line across the passage, a little in front
         while s < FRONT_MAX + 300 and surfaces.has(add(q, out, s + 5.), 'yard'):
-            s += 10.
-        s = max(0., s)
+            s += 10.                                    # past the parterre
         p = add(q, out, s + 5.)
         if any(surfaces.has(p, k) for k in ('alley', 'road', 'sidewalk', 'apron')) or world.in_building(p):
             rows.append(None)
