@@ -4,7 +4,7 @@ createFigures.begin clears private tag-count keys instead of creating a new obje
 
 Baseline61begin calls create61objects with four behavior checks passing and reuse failing; afteroneobject/allfivePASS. Covers dynamic tags, far/capacity rejection, empty frame and previous info snapshots. Existing instance upload suite passes populated/shrink/grow/zero byte checks and exact nonblank figure/sign image comparisons. Initial fixture tried clearing an uninitialized instrumentation Set; corrected before baseline proof, failure retained externally.
 
-Review/allCI/currentauthenticatedpreview/finalrebase/production verification pending. OpenSpec CLI unavailable; scenarios manually checked. No physical-device/listening/full-playthrough claims.
+Released #660 as09966956 after all6CI/review/current18deployedchecks/rebase before AND afterpreview/exactmerge. Productionstreetview HTTP200 exactbytes verified; SHA25674285e2fed10a2e8abf34b2d74c45fafa7437da5661c8e552c3db88064cddffe. OpenSpec CLI unavailable; scenarios manually checked. No physical-device/listening/full-playthrough claims.
 
 | Dimension | Assessment |
 | --- | --- |
