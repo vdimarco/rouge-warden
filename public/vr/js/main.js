@@ -732,8 +732,8 @@ function actionFrame(dt, inp) {
 // two goons on each clogged roof near the hero, once (they come back after a reload)
 const guarded = new Set();
 function guardClogs() {
-  for (const t of game.targets()) {
-    if (t.kind !== "clog" || t.done || guarded.has(t.id)) continue;
+  for (const t of city.clogs) {
+    if (save.clogs.includes(t.id) || guarded.has(t.id)) continue;
     if (Math.hypot(t.x - P.pos.x, t.z - P.pos.z) > 140) continue;
     guarded.add(t.id);
     for (let k = 0; k < 2; k++) combat.spawn(t.x + (k ? 4 : -4), t.y, t.z + (k ? -3 : 3), "clog:" + t.id);

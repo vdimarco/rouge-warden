@@ -1221,3 +1221,7 @@ Optionaloutputstorage reusedbyrealstreetframe; defaultfreshresultsunchanged. Nod
 
 
 Increment42 shipped #648 as853fed7a after all6CI/review/current9deployedchecks/rebase; productioncars+main HTTP200 exactbytes verified (hashes in fullswing-r42-hazard-scratch/production-verification.json). Canonical hazard-output scenarios published and OpenSpec archived. ActualChrome/FPSbenefit unverified; totalwithheld.
+
+
+### Increment43 — clog guard source reuse — 2026-10-23
+Guard selection uses static city clogs and synchronized saved completion IDs, avoiding full target snapshots. Node20spawns match the snapshot reference with96→0snapshot calls; browser5checks verify actual guard offsets/once/real completion, existing action suite passes. Evidence fullswing-r43-clog-guards includes all20dimension limits; no newpoints, total/delta withheld, affectedChrome/stability unverified. Review/CI/currentpreview/rebase/production pending. No art/anchor/ceiling changes or FPS claim.
