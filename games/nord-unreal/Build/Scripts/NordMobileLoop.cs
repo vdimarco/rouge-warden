@@ -6,15 +6,17 @@
 //     -test="NordMobileLoop(mode=perf,size=1412x652,sky=night-rain,laps=1,run='<run dir>',execcmds='<file>',expect='<file>')"
 //
 // Parameters: mode (perf, look or stream), size (WxH), sky (day or night_rain, '-' or '_'), laps, run (absolute run
-// folder), execcmds (a file read verbatim into -ExecCmds=) or deviceprofile (a -DeviceProfile= name), and expect (the
-// -NordGauntletExpect= file; without it, <execcmds file>.expect when that exists). The flags match
-// Scripts/gauntlet_loop.py direct_command, so a RunUnreal run and a --direct run start the same game.
+// folder), execcmds (a file read verbatim into -ExecCmds=) or deviceprofile (a -DeviceProfile= name), expect (the
+// -NordGauntletExpect= file; without it, <execcmds file>.expect when that exists) and maxduration (seconds before
+// Gauntlet stops the client; Scripts/gauntlet_loop.py run_timeout). The flags match Scripts/gauntlet_loop.py
+// direct_command, so a RunUnreal run and a --direct run start the same game.
 //
 // The game does the work (Source/Quebec/QuebecGauntlet.cpp); this node only launches it with the right flags and
 // keeps its files. It was written from memory of the UE 5.x Gauntlet API and never compiled, because the cloud
 // container has no dotnet. Every engine API that may differ on the host is marked "unverified".
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using Gauntlet;
@@ -32,9 +34,22 @@ namespace NordGauntlet.Automation
         };
         const string WorldFlags = "-NordNoPolice -NordNoCampaign -NordNoSideJobs -NordNoCampaignSave";
         const string LookFlags = "-NordNoAmbient";
-        // A perf run is a warm-up lap and one measured lap; each further lap adds the 360 s lap limit and a margin.
-        const float MaxDurationSeconds = 900;
-        const float ExtraLapSeconds = 420;
+
+        // The default MaxDuration, for a -test= typed by hand: the game's own limits, so Gauntlet never stops the client
+        // before the game reports and writes its CSV. The load is gauntlet_loop.py LOAD_S (an estimate); the others are
+        // Data/Gauntlet/loop.json modes, drive.max_lap_s and run_limits. gauntlet_loop.py passes the same sum as maxduration.
+        const float LoadSeconds = 180;
+        const float ReadyGraceSeconds = 60;
+        const float LapSeconds = 360;
+        const float StillsTimeoutSeconds = 90;
+        const float CsvWaitSeconds = 30;
+        const int StopCount = 5;
+        static readonly Dictionary<string, (float Delay, int WarmLaps, float Hold)> Modes = new Dictionary<string, (float Delay, int WarmLaps, float Hold)>
+        {
+            { "perf", (10, 1, 0) },
+            { "look", (10, 0, 24) },
+            { "stream", (95, 1, 4) },
+        };
 
         string RunDir;
 
@@ -52,7 +67,7 @@ namespace NordGauntlet.Automation
             string ExpectFile = Value("expect", "");
             string DeviceProfile = Value("deviceprofile", "");
             RunDir = Value("run", "");
-            if (Mode != "perf" && Mode != "look" && Mode != "stream")
+            if (!Modes.ContainsKey(Mode))
             {
                 throw new ArgumentException($"NordMobileLoop: mode must be perf, look or stream, not '{Mode}'");
             }
@@ -72,6 +87,12 @@ namespace NordGauntlet.Automation
             if (string.IsNullOrEmpty(RunDir) || !Path.IsPathRooted(RunDir))
             {
                 throw new ArgumentException("NordMobileLoop: run must be an absolute folder (Saved/Gauntlet/<UTC>-<label>)");
+            }
+            float MaxDuration = DefaultMaxDuration(Mode, Laps);
+            string MaxText = Value("maxduration", "");
+            if (MaxText.Length > 0 && (!float.TryParse(MaxText, NumberStyles.Float, CultureInfo.InvariantCulture, out MaxDuration) || MaxDuration <= 0))
+            {
+                throw new ArgumentException($"NordMobileLoop: maxduration must be a positive number of seconds, not '{MaxText}'");
             }
             Directory.CreateDirectory(Path.Combine(RunDir, "native"));
 
@@ -109,9 +130,17 @@ namespace NordGauntlet.Automation
             Client.MapOverride = Map; // unverified property name
             Client.CommandLine += " " + string.Join(" ", Args); // unverified: newer engines also have CommandLineParams
             Client.Controllers.Add("QuebecGauntletController");
-            Config.MaxDuration = MaxDurationSeconds + (Laps - 1) * ExtraLapSeconds; // unverified: seconds as a float
-            Log.Info("NordMobileLoop: mode={0} size={1}x{2} sky={3} laps={4} run={5}", Mode, Width, Height, Sky, Laps, RunDir);
+            Config.MaxDuration = MaxDuration; // unverified: seconds as a float
+            Log.Info("NordMobileLoop: mode={0} size={1}x{2} sky={3} laps={4} run={5} max_duration_s={6}", Mode, Width, Height, Sky, Laps, RunDir, MaxDuration);
             return Config;
+        }
+
+        // A look hold may last until its stills time out, so it counts at the stills timeout.
+        static float DefaultMaxDuration(string Mode, int Laps)
+        {
+            (float Delay, int WarmLaps, float Hold) = Modes[Mode];
+            float HoldLimit = Mode == "look" ? Math.Max(Hold, StillsTimeoutSeconds) : Hold;
+            return LoadSeconds + Delay + ReadyGraceSeconds + (WarmLaps + Laps) * LapSeconds + StopCount * HoldLimit + CsvWaitSeconds;
         }
 
         public override void StopTest(StopReason InReason) // unverified signature
