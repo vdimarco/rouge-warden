@@ -2772,7 +2772,7 @@ class Rear:
     # ------------------------------------------------------------------ authoring
     def author(self, mesh):
         record = {'walls': [], 'wall_top_cm': round(self.zt, 1), 'galleries': 0, 'stair': None, 'flights': [],
-                  'decks': [], 'guards': [], 'fence': None, 'shed': None, 'yard': None, 'reason': self.reason,
+                  'decks': [], 'guards': [], 'partitions': [], 'fence': None, 'shed': None, 'yard': None, 'reason': self.reason,
                   'yard_reason': None if self.yard_plan else self.yard_reason}
         for wall in self.lot.get('backs', []):
             if self.stack and wall is self.stack['wall']:
@@ -2990,6 +2990,12 @@ class Rear:
             mesh.unit = ('rear', self.lot['id'])       # the stack goes out of collision as one, never in part
             self._gallery_module(mesh, F, module, record)
             mesh.unit = None
+        # privacy screens where galleries meet side by side: at the posts the modules share, and at a lot end that
+        # meets a neighbour's gallery (plan_partitions); the steel fire escapes of tall blocks have none
+        if self.infill != 'iron':
+            for p in self.partitions:
+                for z in p['zs']:
+                    self._partition(mesh, F, p['x'], p['d1'], z, p['kind'], p['neighbour'], record)
         if wall['kind'] == 'long':
             # the rest of a long wall keeps its window per 4.5 m bay and floor
             used0, used1 = min(m['mx0'] for m in st['modules']), max(m['mx1'] for m in st['modules'])
