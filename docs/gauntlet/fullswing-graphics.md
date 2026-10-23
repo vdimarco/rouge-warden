@@ -1202,3 +1202,6 @@ Increment39 shipped #642 asf84e61f3 after all6CI/review/current20deployedchecks/
 ## Increment40 — reusable car selection records (pending release)
 
 Reuse high-water candidate records with allfieldsreset; nearest/driving/tie/streetpromotion behavior preserved. Browser regression also fixes stale streetpicks on cameraremoval. Node/reference selection checks and actual loadedmodel/trafficmatrix/pixel checks. No quality/physics/anchor/height change; noFPSgate. All20dimensions historicalcontextonly, no newpoints; responsiveness/stabilityunverified,total/deltawithheld. Evidence fullswing-r40-selection-slots.
+
+
+Increment40 shipped #644 as8b5a4565 after freshall6CI/review/current25deployedchecks/rebase; productionactionview HTTP200 exactbytes verified (hash in fullswing-r40-selection-slots/production-verification.json). Canonical selection/no-camera scenarios published and OpenSpec archived. ActualChrome/FPSbenefit unverified; totalwithheld.
