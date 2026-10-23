@@ -31,12 +31,12 @@
  "source_sha256": {
   "Data/LaFontaine/osm.xml": "fe4410d45007a627bf6d9b9ddeeae329fa9cdd7492dfb5fa6beff851e7cf8f86",
   "Data/LaFontaine/layout.json": "4238d6ed45d5fb890e0f8dbcb672de0803c6dc7079b0b6a86b386d82ebbb4250",
-  "Scripts/plateau_replica.py": "dfb9dfe81ceb71058efa2bf5520cc87496e0c429a7f6cbdba676a965fad8d473",
+  "Scripts/plateau_replica.py": "f76f7d657d06d72a25f2a76f81085c921ca073dec93031920a044bb0acc8c7b3",
   "Scripts/prepare_lafontaine.py": "e7b6e5f068a96ee7306b1fff247fa73158f5cf7c343dc5510ab8cce92ee3c924",
   "Data/Plateau/BaseGeometry/Marking.obj": "2d82cbca59041aa6af5e6f3fffaf6a01b2c3e672eea9732e8a5fecbb7cee35dd",
   "Data/Plateau/ReplicaGeometry/Plex/fronts.json": "0bdac58607f918b7ca11706a4f9c1317687093ab2528e9adeef558ccee7febe9",
   "Data/Plateau/ReplicaGeometry/Soul/ruelles_vertes_clip.json": "6ca991f5b585f4f0567baed799c37db2d3476f451e0b88fdb315a959e2d7d216"
  },
- "placements_sha256": "13485560d43c9270a4a81d185d1c08c19a4631f15fe87ee1022b6911e2b9d596",
- "props_manifest_sha256": "ea2a9befc950366fee28955a00dc3c419d3df5791e32ddd75ff538d3e7c7a735"
+ "placements_sha256": "789c6ac72596ce99fe74f2dbb78e48e502600509d571dea750dae1198f6689f4",
+ "props_manifest_sha256": "92d3a4c8811dd7adf5d0ca51701d308e1373361a46a346737104247ecfd417da"
 }

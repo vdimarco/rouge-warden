@@ -27,8 +27,10 @@ and `card_height_m` is the height the texture was drawn for.
   row below, so a butt steps down by the slate thickness and shades the slate under it.
 - membrane, ballast, tar: flat roofs. A white single-ply sheet with a lap seam, board joints showing
   through and ponding stains; white gravel ballast; dusty grey pea gravel sunk in black tar (mean about
-  #4A4744). Ballast, tar and crushed stone tile at 2 m with large-scale zones (scour, grime, bare tar).
-- sheet_metal: corrugated weathered galvanised steel: faded spangle, light-grey patina, fasteners, rust runs.
+  #4A4744; the set owns its colour, so a dark manifest colour cannot turn it black). Ballast, tar and crushed
+  stone tile at 2 m with large-scale zones (scour, grime, bare tar).
+- sheet_metal: corrugated weathered galvanised steel: faded spangle, light-grey patina, fasteners, rust runs;
+  metallic at most .3, so it reads light grey in shade.
 - buff_brick: even yellow-tan brick in running bond with 1 cm concave grey mortar joints (Brick_Buff_Even).
 - siding, parging: lap siding with 10 cm laps and staggered butt joints; parged concrete with trowel
   arcs and hairline cracks.
@@ -86,6 +88,10 @@ SURFACES = {
 # keys: the shared material keys (plateau_plex.py) that take the set; Stone and Slate are matched by the
 # apply step's older name rule. tint_floor: the smallest per-channel tint the CPU test accepts; the
 # neutral sets are made to be painted any colour, so a saturated paint may scale one channel far down.
+# own_colour: the set's own mean colour is the material colour, whatever colour a manifest gives its key (the
+# apply step leaves the tint white): tar and gravel is grey pea gravel on black tar, and the Plex roof colour
+# (#2C2B29) multiplied it down to flat black. metallic: the most metallic the set renders; a manifest asking for
+# more is capped (weathered galvanised sheet at .3 reads light grey in shade, where .6 read brown).
 SETS = {
     'limestone': {'name': 'Limestone', 'size_px': (1024, 1024), 'tile_m': (2.56, 2.56), 'seed': 1871,
                   'surface': 'wall', 'keys': ()},
@@ -96,7 +102,7 @@ SETS = {
     'ballast': {'name': 'Ballast', 'size_px': (1024, 1024), 'tile_m': (2.0, 2.0), 'seed': 1962,
                 'surface': 'ground', 'keys': ('Roof_Gravel',), 'macro': .14},
     'tar': {'name': 'TarGravel', 'size_px': (1024, 1024), 'tile_m': (2.0, 2.0), 'seed': 1931,
-            'surface': 'ground', 'keys': ('Roof_Tar',), 'macro': .16},
+            'surface': 'ground', 'keys': ('Roof_Tar',), 'macro': .16, 'own_colour': True},
     'sheet_metal': {'name': 'SheetMetal', 'size_px': (512, 512), 'tile_m': (1.0, 1.0), 'seed': 1920,
                     'surface': 'wall', 'keys': ('Sheet_Metal',), 'metallic': .3, 'tint_floor': .02},
     'siding': {'name': 'Siding', 'size_px': (1024, 512), 'tile_m': (2.4, 1.2), 'seed': 1958,
@@ -1009,8 +1015,9 @@ def tar(spec):
 
     About two thirds of the surface is weathered grey, tan and dark gravel; scoured patches of bare tar with old
     shrinkage cracks show where wind and foot traffic moved the gravel, and grimier lots sit beside cleaner ones
-    (zones of 25 cm to 1 m inside the 2 m tile). The mean is about #4A4744, so the manifest colour of a tar roof
-    can sit near it and the gravel keeps its own contrast instead of being multiplied down to black.
+    (zones of 25 cm to 1 m inside the 2 m tile). The mean is about #4A4744, and the set owns its colour
+    (SETS own_colour): the apply step leaves the tint white, so the gravel keeps its own tone and contrast instead
+    of being multiplied down to black by a dark manifest colour.
     """
     W, H = spec['size_px']
     seed = spec['seed']
@@ -2102,6 +2109,8 @@ def build(key):
         entry['coverage'] = round(sum(sum(1 for v in a if v >= 128) for a in alpha) / (width * height), 4)
     if 'metallic' in spec:
         entry['metallic'] = spec['metallic']
+    if spec.get('own_colour'):
+        entry['own_colour'] = True
     if 'macro' in spec:
         entry['macro'] = {'strength': [spec['macro'], round(spec['macro'] * MACRO['second_scale'], 6)],
                           'tile_m': list(MACRO['tile_m']), 'channels': ['R', 'G'], 'file': macro_file()}
@@ -2169,6 +2178,8 @@ def check(out=OUT):
             _, _, raw = read_png((Path(out) / b['file']).read_bytes())
             assert hashlib.sha256(raw).hexdigest() == b['raw_sha256'], f'{b["file"]} is stale'
         assert entry['mean_linear'] == stored['mean_linear'], key
+        for field in ('own_colour', 'metallic'):
+            assert entry.get(field) == stored.get(field), f'{key} {field}: rerun plateau_textures.py'
     return index
 
 

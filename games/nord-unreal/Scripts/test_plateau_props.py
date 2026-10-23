@@ -11,6 +11,7 @@ Stdlib only.
 import argparse
 import hashlib
 import json
+import math
 import os
 import subprocess
 import sys
@@ -20,16 +21,25 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 PROPS = ROOT / 'Data/Plateau/ReplicaGeometry/Props'
 GENERATOR = ROOT / 'Scripts/blender/plateau_props.py'
+SHEET = ROOT / 'Preview/Replica/props_contact_sheet.png'
 REQUIRED = {
     'lamp_cobra', 'lamp_park', 'hydrant', 'sign_stop', 'sign_street', 'sign_oneway', 'sign_parking',
     'bixi_dock', 'bixi_bike', 'bin_recycling', 'bin_compost', 'bin_garbage', 'cone', 'barrier_chantier',
     'utility_pole', 'laundry_line', 'bike_locked', 'ac_unit', 'flower_box', 'bench', 'mailbox',
-    'police_lightbar', 'dog_small', 'dog_medium', 'dog_large', 'stroller', 'grocery_bag'}
+    'police_lightbar', 'dog_small', 'dog_medium', 'dog_large', 'stroller', 'grocery_bag',
+    'chair_patio', 'bbq', 'satellite_dish', 'potted_plant', 'bike_gallery'}
+# Gallery life (the outdoor rooms of the back galleries): kind, (min, max) size in cm along Unreal X, Y and Z of
+# the assembled prop, and whether it carries box colliders (things a player bumps into on a 1.2-1.8 m deck).
+GALLERY = {'chair_patio': ((45, 70), (50, 70), (75, 95), True), 'bbq': ((45, 70), (100, 135), (100, 125), True),
+           'satellite_dish': ((30, 60), (40, 60), (60, 100), False),
+           'potted_plant': ((25, 50), (25, 50), (40, 90), False), 'bike_gallery': ((165, 195), (35, 65), (100, 125), True)}
 TARGETS = {'lamp_cobra': 800, 'lamp_park': 800, 'hydrant': 500, 'dog_small': 1500, 'dog_medium': 1500,
-           'dog_large': 1500, 'stroller': 1500}
+           'dog_large': 1500, 'stroller': 1500, 'chair_patio': 700, 'bbq': 1600, 'satellite_dish': 1200,
+           'potted_plant': 1500, 'bike_gallery': 2500}
 DOG_PARTS = {'body', 'head', 'leg_fl', 'leg_fr', 'leg_rl', 'leg_rr', 'tail'}
 VARIANT_PROPS = {'bin_recycling', 'bin_compost', 'bin_garbage', 'utility_pole', 'ac_unit', 'flower_box',
-                 'bench', 'bike_locked', 'laundry_line', 'dog_small', 'dog_medium', 'dog_large', 'stroller'}
+                 'bench', 'bike_locked', 'laundry_line', 'dog_small', 'dog_medium', 'dog_large', 'stroller',
+                 'chair_patio', 'bbq', 'satellite_dish', 'potted_plant', 'bike_gallery'}
 
 
 def read_obj(path):
@@ -126,7 +136,7 @@ def check(directory):
             assert entry['triangles'] <= TARGETS[key], (key, entry['triangles'])
         b = entry['bounds_cm']
         assert abs(b[2]) < .05, (key, 'pivot must sit on the base', b)
-        if entry['kind'] in ('street', 'works', 'park', 'ruelle', 'companion') and key != 'laundry_line':
+        if entry['kind'] in ('street', 'works', 'park', 'ruelle', 'companion', 'gallery') and key != 'laundry_line':
             assert b[0] <= 0 <= b[3] and b[1] <= 0 <= b[4], (key, 'pivot outside the footprint', b)
         assert b[5] - b[2] < 1100, key
     for key in ('dog_small', 'dog_medium', 'dog_large'):
@@ -153,9 +163,66 @@ def check(directory):
             # right = (n.y, -n.x), so text laid along +right reads left to right.
             assert abs(sum(a * b for a, b in zip(n, r))) < 1e-6 and cross_z < 0, face
     assert len(props['bixi_dock']['slots']) == 6
+    check_gallery(props)
+    check_colliders(props)
     stop = props['sign_stop']['parts']
     assert {'face_red', 'face_white'} <= set(stop)
     return manifest
+
+
+def check_gallery(props):
+    """The gallery-life props: real sizes, colliders only on what a player bumps into, mount and lean anchors."""
+    for key, (sx, sy, sz, collides) in GALLERY.items():
+        entry = props[key]
+        assert entry['kind'] == 'gallery', key
+        b = entry['bounds_cm']
+        for (lo, hi), size, axis in zip((sx, sy, sz), (b[3] - b[0], b[4] - b[1], b[5] - b[2]), 'XYZ'):
+            assert lo <= size <= hi, (key, axis, round(size, 1), (lo, hi))
+        assert bool(entry.get('colliders_cm')) == collides, (key, 'colliders')
+        for box in entry.get('colliders_cm', []):
+            lo = [c - s / 2 for c, s in zip(box['center'], box['size'])]
+            hi = [c + s / 2 for c, s in zip(box['center'], box['size'])]
+            assert all(l <= bl + 15 and h >= bh - 15 for l, h, bl, bh in zip(lo, hi, b[:3], b[3:])), (key, box, b)
+    assert 40 <= props['chair_patio']['seat_cm'] <= 48
+    clamp = props['satellite_dish']['anchors']['clamp_cm']
+    aim = props['satellite_dish']['anchors']['aim_cm']
+    assert len(clamp) == 3 and 0 <= clamp[2] <= 15, clamp
+    elevation = math.degrees(math.atan2(aim[2], math.hypot(aim[0], aim[1])))
+    assert aim[0] > 0 and abs(aim[1]) < 1e-6 and 15 <= elevation <= 40, (aim, elevation)
+    # Offset-fed dish: the LNB hangs in front of the reflector and below its axis (the feed arm leaves the lower
+    # rim), never above it.
+    reflector = props['satellite_dish']['anchors']['reflector_cm']
+    lnb = props['satellite_dish']['anchors']['lnb_cm']
+    unit = [c / math.hypot(*aim) for c in aim]
+    rel = [b - a for a, b in zip(reflector, lnb)]
+    ahead = sum(r * u for r, u in zip(rel, unit))
+    off_axis = [r - ahead * u for r, u in zip(rel, unit)]
+    assert 25 <= ahead <= 45 and off_axis[2] < -5, ('LNB in front of and below the dish axis', ahead, off_axis)
+    assert lnb[2] < reflector[2] + ahead * unit[2], lnb
+    lean = props['bike_gallery']['anchors']['lean_contact_cm']
+    assert lean[1] < -10 and 80 <= lean[2] <= 110, ('the bike leans toward Unreal -Y onto the guard', lean)
+    assert props['bike_gallery']['bounds_cm'][1] < -30 < props['bike_gallery']['bounds_cm'][4] + 30
+    # The geranium is a dome of separate leaves on petioles, with some yellowed ones and flowers above it.
+    plant = props['potted_plant']['parts']
+    assert {'pot', 'soil', 'leaves', 'leaves_dry', 'stems', 'flowers'} <= set(plant), sorted(plant)
+    assert plant['leaves_dry']['material'] == 'PlantDry' and plant['leaves']['material'] == 'PlantGreen'
+
+
+def check_colliders(props):
+    """Collider boxes are Unreal-local like bounds_cm: none sticks out of its prop by more than 10 cm, and the
+    leaning bikes' boxes sit on the lean (-Y) side, covering the frame within 6 cm."""
+    for key, entry in props.items():
+        b = entry['bounds_cm']
+        for box in entry.get('colliders_cm', []):
+            lo = [c - s / 2 for c, s in zip(box['center'], box['size'])]
+            hi = [c + s / 2 for c, s in zip(box['center'], box['size'])]
+            over = max(max(bl - l, h - bh) for l, h, bl, bh in zip(lo, hi, b[:3], b[3:]))
+            assert over <= 10, (key, 'collider outside the prop', box, b, round(over, 1))
+    for key in ('bike_locked', 'bike_gallery'):
+        b = props[key]['bounds_cm']
+        (box,) = props[key]['colliders_cm']
+        y0, y1 = box['center'][1] - box['size'][1] / 2, box['center'][1] + box['size'][1] / 2
+        assert abs(y0 - b[1]) <= 6 and abs(y1 - b[4]) <= 6, (key, 'collider off the leaning frame', (y0, y1), b)
 
 
 def blender_command(python):
@@ -183,6 +250,16 @@ def determinism(python, reference):
         return len(outs[0])
 
 
+def check_sheet(manifest):
+    """The contact sheet holds every prop: 200 x 250 px tiles, 8 per row, one tile per prop plus the six detail
+    tiles (dog parts, coat variants, lamp head, sign blades, street corner, gallery deck)."""
+    data = SHEET.read_bytes()
+    assert data[:8] == b'\x89PNG\r\n\x1a\n', SHEET
+    size = int.from_bytes(data[16:20], 'big'), int.from_bytes(data[20:24], 'big')
+    tiles = manifest['counts']['props'] + 6
+    assert size == (1600, 250 * -(-tiles // 8)), (size, tiles)
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--blender', default=os.environ.get('NORD_BLENDER_PYTHON'))
@@ -192,6 +269,9 @@ def main():
         reference = check(PROPS)
         counts = reference['counts']
         print(f"on-disk props ok: {counts['props']} props, {counts['meshes']} meshes")
+        if SHEET.is_file():
+            check_sheet(reference)
+            print('contact sheet ok:', SHEET.name)
     else:
         print('no built OBJs on disk; pass --blender to build and check')
     if args.blender:

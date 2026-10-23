@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { spawnSync } from 'node:child_process';
-import { summarize } from './stream-sample.mjs';
+import { frameIntervals, playerUrl, shotName, summarize } from './stream-sample.mjs';
 
 test('stream summary uses measured time and counter differences, including freezes', () => {
   const before = { timeMs: 1000, framesDecoded: 100, bytesReceived: 1000000, framesDropped: 2, freezeCount: 1, totalFreezesDuration: 1 };
@@ -40,5 +40,93 @@ test('invalid benchmark warmups are rejected before launching a browser', () => 
     const result = spawnSync(process.execPath, ['stream-sample.mjs', '--warmup', value], { encoding: 'utf8' });
     assert.notEqual(result.status, 0);
     assert.match(result.stderr, /--warmup must be/);
+  }
+});
+
+test('decoded frame intervals split presented frames, keep the longest gap and list each frame size', () => {
+  const frames = [{ presentedFrames: 0, mediaTime: 0, expectedDisplayTime: 1000, width: 1058, height: 488 }];
+  const add = (count, gap, presented = 1) => {
+    for (let i = 0; i < count; i++) {
+      const before = frames.at(-1);
+      frames.push({ presentedFrames: before.presentedFrames + presented, mediaTime: before.mediaTime + gap / 1000,
+        expectedDisplayTime: before.expectedDisplayTime + gap, width: 1412, height: 652 });
+    }
+  };
+  // 90 on time, three at 40 ms, two frames shown in one 80 ms gap, four at 60 ms and one 200 ms stall: 100 intervals in 2.08 s.
+  add(90, 16); add(3, 40); add(1, 80, 2); add(4, 60); add(1, 200);
+  const expected = { frames: 100, fps: 100 / 2.08, p50Ms: 16, p95Ms: 60, p99Ms: 200, over33Percent: 10, over50Percent: 5,
+    longestGapMs: 200, sizes: ['1058x488', '1412x652'] };
+  assert.deepEqual(frameIntervals(frames), expected);
+  assert.deepEqual(frameIntervals([...frames.slice(0, 50), { mediaTime: 1 }, ...frames.slice(50)]), expected, 'entries without counters are skipped');
+  assert.equal(frameIntervals(frames.slice(0, 1)), null);
+  const before = { timeMs: 1000, framesDecoded: 100, bytesReceived: 0, framesDropped: 0, freezeCount: 0, totalFreezesDuration: 0 };
+  const after = { ...before, timeMs: 3000, framesDecoded: 160 };
+  assert.deepEqual(summarize([before, after], { frames }).frameIntervals, expected);
+  for (const key of ['frameIntervals', 'delay', 'encoderQp', 'sizeChanges']) assert.equal(key in summarize([before, after]), false);
+});
+
+test('delay statistics stay in their own section and use per-frame counter differences', () => {
+  const first = { timeMs: 1000, framesDecoded: 100, bytesReceived: 0, framesDropped: 0, freezeCount: 0, totalFreezesDuration: 0,
+    jitterBufferEmittedCount: 100, roundTripTime: .0078125, jitter: .001953125, totalProcessingDelay: 2, jitterBufferTargetDelay: 1 };
+  const middle = { ...first, timeMs: 2000, framesDecoded: 130, jitterBufferEmittedCount: 130, roundTripTime: null, jitter: .005859375,
+    totalProcessingDelay: 2.75, jitterBufferTargetDelay: 1.375 };
+  const last = { ...first, timeMs: 3000, framesDecoded: 160, jitterBufferEmittedCount: 160, roundTripTime: .015625, jitter: .00390625,
+    totalProcessingDelay: 3.5, jitterBufferTargetDelay: 1.75 };
+  const result = summarize([first, middle, last]);
+  assert.deepEqual(result.delay, { rttMs: { mean: 11.71875, max: 15.625 }, jitterMs: { mean: 3.90625, max: 5.859375 },
+    processingMsPerFrame: 25, jitterBufferTargetMsPerFrame: 12.5 });
+  assert.equal(result.decodedFps, 30);
+  for (const key of ['frameIntervals', 'encoderQp', 'sizeChanges']) assert.equal(key in result, false);
+});
+
+test('frontend latency, encoder QP and size changes count only inside the sample', () => {
+  const first = { timeMs: 1000, framesDecoded: 100, bytesReceived: 0, framesDropped: 0, freezeCount: 0, totalFreezesDuration: 0 };
+  const last = { ...first, timeMs: 3000, framesDecoded: 160 };
+  const events = [
+    { timeMs: 500, kind: 'requested', width: 1412, height: 652 }, { timeMs: 600, kind: 'received', width: 1412, height: 652 },
+    { timeMs: 900, kind: 'qp', avgQP: 25 }, { timeMs: 1200, kind: 'qp', avgQP: 30 },
+    { timeMs: 1500, kind: 'latency', rttMs: 4, averageJitterBufferDelayMs: 40, averageE2ELatency: 50 },
+    { timeMs: 2000, kind: 'received', width: 1058, height: 488 }, { timeMs: 2200, kind: 'qp', avgQP: 40 },
+    { timeMs: 2500, kind: 'latency', rttMs: 6, averageE2ELatency: 70, captureToSendLatencyMs: 9 },
+    { timeMs: 2800, kind: 'qp', avgQP: -1 }, { timeMs: 2900, kind: 'qp', avgQP: 0 },
+    { timeMs: 3500, kind: 'latency', rttMs: 100 }, { timeMs: 3600, kind: 'requested', width: 1058, height: 488 }
+  ];
+  const result = summarize([first, last], { events });
+  assert.deepEqual(result.delay, { rttMs: null, jitterMs: null, processingMsPerFrame: null, jitterBufferTargetMsPerFrame: null,
+    frontend: { events: 2, rttMs: 5, averageJitterBufferDelayMs: 40, averageE2ELatency: 60, captureToSendLatencyMs: 9 } });
+  assert.deepEqual(result.encoderQp, { events: 2, mean: 35, max: 40 });
+  assert.deepEqual(result.sizeChanges, { requested: 0, received: 1 });
+  const quiet = summarize([first, last], { events: [] });
+  assert.deepEqual(quiet.delay.frontend, { events: 0 });
+  assert.deepEqual(quiet.encoderQp, { events: 0, mean: null, max: null });
+  assert.deepEqual(quiet.sizeChanges, { requested: 0, received: 0 });
+});
+
+test('the player URL may carry one rung pin and nothing else', () => {
+  assert.equal(playerUrl('http://127.0.0.1:8100/').href, 'http://127.0.0.1:8100/');
+  assert.equal(playerUrl('http://127.0.0.1:8100/', '0').href, 'http://127.0.0.1:8100/?pin=0');
+  assert.equal(playerUrl('https://nord.example/?pin=3').href, 'https://nord.example/?pin=3');
+  assert.equal(playerUrl('https://nord.example/?pin=2', '2').href, 'https://nord.example/?pin=2');
+  for (const value of ['http://127.0.0.1:8100/?slot=NordHost', 'http://127.0.0.1:8100/?pin=1&slot=NordHost',
+    'http://127.0.0.1:8100/?pin=1&pin=2', 'http://127.0.0.1:8100/#pin=1', 'http://user:secret@127.0.0.1:8100/', 'ws://127.0.0.1:8100/']) {
+    assert.throws(() => playerUrl(value, '1'), /--url must be/);
+  }
+  for (const [value, pin] of [['http://127.0.0.1:8100/', '4'], ['http://127.0.0.1:8100/', '-1'], ['http://127.0.0.1:8100/', '1&slot=x'],
+    ['http://127.0.0.1:8100/', ''], ['http://127.0.0.1:8100/?pin=', undefined], ['http://127.0.0.1:8100/?pin=1', '2']]) {
+    assert.throws(() => playerUrl(value, pin), /--pin must be/);
+  }
+});
+
+test('trigger lines become safe shot names', () => {
+  assert.equal(shotName(1, 'NORD_GAUNTLET stop=S1 hold=begin'), '01-NORD_GAUNTLET_stop_S1_hold_begin');
+  assert.equal(shotName(12, ' ../../etc/passwd '), '12-.._.._etc_passwd');
+  assert.equal(shotName(3, '   '), '03-shot');
+});
+
+test('invalid pins and queries are rejected before launching a browser', () => {
+  for (const [args, message] of [[['--pin', '4'], /--pin must be/], [['--url', 'http://127.0.0.1:8100/?slot=NordHost'], /--url must be/]]) {
+    const result = spawnSync(process.execPath, ['stream-sample.mjs', ...args], { encoding: 'utf8' });
+    assert.notEqual(result.status, 0);
+    assert.match(result.stderr, message);
   }
 });

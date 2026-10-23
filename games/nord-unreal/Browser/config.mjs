@@ -44,8 +44,15 @@ export function receiverLagging(stats, previous) {
 
 const phoneProfiles = [{ edge: 1280, bitrate: 6000 }, { edge: 960, bitrate: 2000 }, { edge: 800, bitrate: 1500 }, { edge: 640, bitrate: 1000 }];
 
-export function phoneStreamState(now) {
-  return { ...phoneProfiles[1], level: 1, changedAt: now, poor: 0, healthy: 0, critical: 0 };
+// A QA build (NORD_QA_PIN) holds one phone rung from ?pin=0-3 for a whole gauntlet sample; production ignores the query.
+export function pinnedLevel(search, qaBuild) {
+  const pin = qaBuild ? new URLSearchParams(search).get('pin') : null;
+  return /^\d$/.test(pin) && Number(pin) < phoneProfiles.length ? Number(pin) : null;
+}
+
+export function phoneStreamState(now, pinned = null) {
+  const level = pinned ?? 1;
+  return { ...phoneProfiles[level], level, changedAt: now, poor: 0, healthy: 0, critical: 0 };
 }
 
 export function adaptPhoneStream(state, video, now) {

@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
 import { signallingUrl } from './config.mjs';
 import { Logger, LogLevel } from '@epicgames-ps/lib-pixelstreamingcommon-ue5.8';
@@ -161,5 +162,33 @@ test('severe receiver pressure can use the emergency profile and then recover ev
   for (const edge of [800, 960, 1280]) {
     for (let i = 0; i < 20; i++) adaptPhoneStream(state, { framesPerSecond: 35 }, now += 1000);
     assert.equal(state.edge, edge);
+  }
+});
+
+test('a gauntlet pin holds one phone rung in a QA build, and a production build ignores it', async () => {
+  const { pinnedLevel, phoneStreamState } = await import('./config.mjs');
+  for (const level of [0, 1, 2, 3]) {
+    assert.equal(pinnedLevel(`?pin=${level}`, true), level);
+    assert.equal(pinnedLevel(`?pin=${level}`, false), null);
+  }
+  for (const search of ['', '?', '?pin', '?pin=', '?pin=4', '?pin=-1', '?pin=01', '?pin=1.5', '?pin=x', '?slot=1']) {
+    assert.equal(pinnedLevel(search, true), null);
+  }
+  assert.deepEqual(phoneStreamState(7, 0), { edge: 1280, bitrate: 6000, level: 0, changedAt: 7, poor: 0, healthy: 0, critical: 0 });
+  assert.deepEqual(phoneStreamState(7, null), phoneStreamState(7));
+});
+
+test('gauntlet frame sizes match the sampler viewports at phone rungs 0 and 1 and Data/Gauntlet/loop.json', async () => {
+  const { streamDimensions, phoneStreamState } = await import('./config.mjs');
+  assert.deepEqual(streamDimensions(true, 844, 390, true, 1280), [1412, 652]);
+  assert.deepEqual(streamDimensions(true, 390, 844, true, 1280), [652, 1412]);
+  assert.deepEqual(streamDimensions(true, 844, 390, true, 960), [1058, 488]);
+  assert.deepEqual(streamDimensions(true, 390, 844, true, 960), [488, 1058]);
+  const loop = JSON.parse(await readFile(new URL('../Data/Gauntlet/loop.json', import.meta.url), 'utf8'));
+  assert.deepEqual(Object.values(loop.sizes).map(({ size }) => size), [[1412, 652], [652, 1412], [1058, 488], [488, 1058]]);
+  for (const { size, rung, viewport: [width, height] } of Object.values(loop.sizes)) {
+    const { edge, bitrate } = phoneStreamState(0, rung), listed = loop.stream.rungs.find(entry => entry.rung === rung);
+    assert.deepEqual([listed.edge, listed.bitrate_kbps], [edge, bitrate]);
+    assert.deepEqual(streamDimensions(true, width, height, true, edge), size);
   }
 });

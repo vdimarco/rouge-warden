@@ -9,20 +9,20 @@
   "crack_lines": 1055,
   "potholes": 77,
   "gutter_leaf_drifts": 1296,
-  "pit_leaf_covers": 838,
-  "loose_leaves": 3226,
-  "weed_tufts": 8277,
+  "pit_leaf_covers": 836,
+  "loose_leaves": 3197,
+  "weed_tufts": 7901,
   "rust_streaks": 2031,
   "murals": 22,
   "chantier_zones": 1,
   "utility_poles": 151,
   "wire_spans": 79,
   "laundry_lines": 312,
-  "curb_bins": 1693,
+  "curb_bins": 1695,
   "locked_bikes": 225,
-  "flower_boxes": 248,
+  "flower_boxes": 247,
   "ac_units": 0,
-  "ruelle_fence_weeds": 1806,
+  "ruelle_fence_weeds": 1430,
   "chantier_street": "Rue Fabre",
   "laundry_poles": 208,
   "garments": 1283,
@@ -46,12 +46,12 @@
   "green_murals": 13,
   "tags_fences": 27,
   "tags_doors": 15,
-  "placements": 2860
+  "placements": 2861
  },
  "source_sha256": {
   "Data/LaFontaine/osm.xml": "fe4410d45007a627bf6d9b9ddeeae329fa9cdd7492dfb5fa6beff851e7cf8f86",
   "Data/LaFontaine/layout.json": "4238d6ed45d5fb890e0f8dbcb672de0803c6dc7079b0b6a86b386d82ebbb4250",
-  "Scripts/plateau_replica.py": "dfb9dfe81ceb71058efa2bf5520cc87496e0c429a7f6cbdba676a965fad8d473",
+  "Scripts/plateau_replica.py": "f76f7d657d06d72a25f2a76f81085c921ca073dec93031920a044bb0acc8c7b3",
   "Scripts/prepare_lafontaine.py": "e7b6e5f068a96ee7306b1fff247fa73158f5cf7c343dc5510ab8cce92ee3c924",
   "Data/Plateau/BaseGeometry/Marking.obj": "2d82cbca59041aa6af5e6f3fffaf6a01b2c3e672eea9732e8a5fecbb7cee35dd",
   "Data/Plateau/ReplicaGeometry/Plex/fronts.json": "0bdac58607f918b7ca11706a4f9c1317687093ab2528e9adeef558ccee7febe9",
@@ -14425,8 +14425,8 @@
   {
    "prop": "flower_box",
    "position": [
-    54706.74,
-    46722.27,
+    54677.66,
+    46678.33,
     6.8
    ],
    "yaw": 234.64,
@@ -22826,8 +22826,8 @@
   {
    "prop": "flower_box",
    "position": [
-    -6419.81,
-    57451.12,
+    -6456.74,
+    57394.99,
     18.0
    ],
    "yaw": 191.95,
@@ -23114,8 +23114,8 @@
   {
    "prop": "flower_box",
    "position": [
-    -20303.83,
-    64347.17,
+    -20303.26,
+    64348.04,
     18.0
    ],
    "yaw": 56.39,
@@ -25314,19 +25314,6 @@
    "variant_seed": 847683,
    "collision": false,
    "ground": "sidewalk"
-  },
-  {
-   "prop": "flower_box",
-   "position": [
-    -39446.7,
-    55842.13,
-    18.0
-   ],
-   "yaw": 56.37,
-   "scale": 1.0,
-   "variant_seed": 172744,
-   "collision": false,
-   "ground": "yard"
   },
   {
    "prop": "bin_recycling",
@@ -28083,13 +28070,13 @@
    "position": [
     -20924.09,
     -28981.1,
-    0.0
+    18.0
    ],
    "yaw": 227.88,
    "scale": 1.0,
    "variant_seed": 282071,
    "collision": false,
-   "ground": "ground"
+   "ground": "sidewalk"
   },
   {
    "prop": "bin_compost",
@@ -28890,13 +28877,13 @@
    "position": [
     -28377.0,
     -23853.78,
-    18.0
+    0.0
    ],
    "yaw": 225.82,
    "scale": 1.0,
    "variant_seed": 937730,
    "collision": false,
-   "ground": "sidewalk"
+   "ground": "ground"
   },
   {
    "prop": "bin_recycling",
@@ -33403,13 +33390,13 @@
    "position": [
     -41688.64,
     -28491.72,
-    0.0
+    18.0
    ],
    "yaw": 232.97,
    "scale": 1.0,
    "variant_seed": 256342,
    "collision": false,
-   "ground": "ground"
+   "ground": "sidewalk"
   },
   {
    "prop": "bin_recycling",
@@ -34434,8 +34421,8 @@
   {
    "prop": "flower_box",
    "position": [
-    40822.52,
-    63863.9,
+    40820.4,
+    63860.74,
     18.0
    ],
    "yaw": 191.05,
@@ -35014,6 +35001,32 @@
    "yaw": 63.82,
    "scale": 1.0,
    "variant_seed": 491137,
+   "collision": false,
+   "ground": "sidewalk"
+  },
+  {
+   "prop": "bin_recycling",
+   "position": [
+    32392.74,
+    59941.26,
+    18.0
+   ],
+   "yaw": 55.74,
+   "scale": 1.0,
+   "variant_seed": 8732,
+   "collision": false,
+   "ground": "sidewalk"
+  },
+  {
+   "prop": "bin_garbage",
+   "position": [
+    32330.44,
+    59983.01,
+    18.0
+   ],
+   "yaw": 49.24,
+   "scale": 1.0,
+   "variant_seed": 474156,
    "collision": false,
    "ground": "sidewalk"
   },

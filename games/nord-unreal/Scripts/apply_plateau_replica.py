@@ -10,7 +10,8 @@ upgrade_plateau.import_mesh semantics, enables Nanite (Preserve Area on masked b
 under the 'Replica' folder (Collision_Only batches on actors hidden in game that block pawns and ignore the camera
 and visibility), instances Furniture/Soul placements of the MAP-PROPS meshes on HISM components, and instances
 the Plex yard trees (Plex/yard_trees.json, when present): on one imported mesh per species when
-Trees/manifest.json exists, else on the mapped trees' mesh.
+Trees/manifest.json exists (its bark and clamped autumn leaf atlas imported as texture sets, the leaves on the
+masked two-sided foliage parent), else on the mapped trees' mesh.
 The only change to an existing actor: the visual 'OSM Marking' dashes are hidden (collision and
 transform unchanged) because they would poke through the new asphalt.
 
@@ -50,7 +51,9 @@ TEXTURE_MEAN = {'asphalt_02': (.1162, .1143, .1020), 'concrete_pavement': (.2170
                 'brick_wall_001': (.1402, .0776, .0516), 'grass_ground': (.1593, .1198, .0498)}
 # Replica texture sets: tileable PNGs from Scripts/plateau_textures.py, imported next to the replica materials.
 # Each material duplicates the parent of its set's surface with the three texture samples swapped and the UV
-# tiling set to 1 / tile_m (replica OBJ UVs are metres; cards are metres along the run by 0..1 up the card):
+# tiling set to 1 / tile_m (replica OBJ UVs are metres; cards are metres along the run by 0..1 up the card). Its
+# tint is the manifest colour / the set's mean colour, except that a set that owns its colour (tar) keeps a white
+# tint, and a set's metallic caps the manifest's (galvanised sheet); see textured_tint and textured_metallic.
 #   wall    M_BrickRed (greystone, slate, siding, parging, sheet metal): the brick graph, no NordSky wrapper
 #   ground  M_Gravel (roofs and yards): the same graph with the NordSky wet-ground wrapper, so they darken in rain
 #   cutout  M_Replica_CutoutParent, built here: masked, two-sided, OpacityMask from the diffuse alpha
@@ -64,6 +67,10 @@ MACRO_DESC = 'Replica macro'               # desc of the nodes add_macro adds, s
 # Card sets (u along the run, v 0..1 up the card) clamp V: the top row of a baluster card is opaque and the bottom
 # row (the drain gap) clear, and with the default wrap the lower mips would blend the two into a dashed line.
 CARD_ADDRESS_Y = 'TA_CLAMP'
+# Atlas sets (the trees' autumn leaf atlas: each leaf card addresses one padded cell, UVs inside 0..1) clamp both
+# axes, so filtering at the atlas border never pulls in the cell on the opposite edge.
+ATLAS_ADDRESS = 'TA_CLAMP'
+UV_MODES = ('metres', 'card', 'atlas')
 TEXTURED_PARENT = '/Game/Plateau/Materials/M_BrickRed'
 WET_PARENT = '/Game/Plateau/Materials/M_Gravel'
 CUTOUT_PARENT = MATERIALS + '/M_Replica_CutoutParent'
@@ -90,6 +97,10 @@ TREE_CULL_CM = (40000, 65000)              # QuebecVegetation's cull distances f
 # Species meshes (Trees/manifest.json, from the Blender tree generator): when present, each yard tree uses its
 # species' own mesh, uniformly scaled to the row's height, instead of the shared mesh with a crown factor.
 TREES = 'Trees'
+# Trees/manifest.json also carries its own texture sets in the textures.json format (the bark and the autumn leaf
+# atlas, PNGs in the Trees folder). A tree material whose texture names one of their maps takes that set: the bark a
+# textured duplicate of the wall parent, the leaves one of the masked two-sided foliage parent.
+TREE_TEXTURE_SETS = 'texture_sets'
 TREE_SPECIES = ('norway_maple', 'silver_maple', 'honey_locust', 'linden', 'ash', 'small')
 TREE_ALIASES = {'maple': 'norway_maple', 'elm': 'linden'}
 TREE_SLOTS = ('bark', 'leaves')
@@ -172,15 +183,20 @@ def material_name(layer, key):
     return f'M_Replica_{layer}_{key}'
 
 
-def texture_set(key, spec):
-    """The replica texture set ('limestone', 'slate', 'siding', 'creeper'...) a material key takes, else None.
+def texture_set(key, spec, sets=None):
+    """The replica texture set ('limestone', 'slate', 'siding', 'creeper', 'tree_leaves'...) a material key takes,
+    else None.
 
-    A manifest texture path naming a replica map wins; then the shared rear-pass keys (exact names); then the
-    older greystone and slate name rule.
+    A manifest texture path naming a replica map wins (the sets of plateau_textures.SETS, then sets: the loaded
+    sets, which add the Trees manifest's bark and leaf atlas); then the shared rear-pass keys (exact names); then
+    the older greystone and slate name rule.
     """
     texture = (spec.get('texture') or '').lower()
-    for name, entry in plateau_textures.SETS.items():
-        if f't_replica_{entry["name"].lower()}_' in texture or f'replica_{name}' in texture:
+    # The generator's sets first, in their order; a loaded set with another name (a tree set) after them.
+    candidates = list(plateau_textures.SETS.items()) + [(n, e) for n, e in sorted((sets or {}).items())
+                                                        if n not in plateau_textures.SETS]
+    for name, entry in candidates:
+        if f't_replica_{(entry.get("name") or name).lower()}_' in texture or f'replica_{name}' in texture:
             return name
     if key in SHARED_TEXTURE_KEYS:
         return SHARED_TEXTURE_KEYS[key]
@@ -191,7 +207,24 @@ def texture_set(key, spec):
     return None
 
 
-def base_material(key, spec):
+def set_surface(name, sets=None):
+    """The surface ('wall', 'ground', 'cutout', 'foliage') of a texture set: the loaded entry's, else the generator's."""
+    entry = (sets or {}).get(name) or plateau_textures.SETS[name]
+    return entry.get('surface') or plateau_textures.SETS[name]['surface']
+
+
+def address_modes(entry):
+    """(address_x, address_y) of a set's three maps: cards clamp V (they span the drawing once up the card), an atlas
+    clamps both axes (each leaf card addresses one padded cell inside 0..1), tiling sets wrap."""
+    uv = entry.get('uv', 'metres')
+    if uv == 'card':
+        return 'TA_WRAP', CARD_ADDRESS_Y
+    if uv == 'atlas':
+        return ATLAS_ADDRESS, ATLAS_ADDRESS
+    return 'TA_WRAP', 'TA_WRAP'
+
+
+def base_material(key, spec, sets=None):
     texture = spec.get('texture') or ''
     if spec.get('emissive_srgb'):
         # Emissive-capable parent (constant tint wired to base colour and emissive); duplicated, never edited.
@@ -200,37 +233,51 @@ def base_material(key, spec):
         return '/Game/Plateau/Materials/M_Asphalt', 'asphalt_02'
     if 'brick' in texture:
         return '/Game/Plateau/Materials/M_BrickRed', 'brick_wall_001'
-    textured = texture_set(key, spec)
+    textured = texture_set(key, spec, sets)
     if textured:
-        return SURFACE_PARENTS[plateau_textures.SETS[textured]['surface']], 'replica_' + textured
+        return SURFACE_PARENTS[set_surface(textured, sets)], 'replica_' + textured
     if any(key.startswith(g) for g in GROUND_KEYS):
         return '/Game/Plateau/Materials/M_ConcreteDark', None
     return '/Game/Plateau/Materials/M_Trim', None
 
 
 def load_textures(root=ROOT):
-    """textures.json of Scripts/plateau_textures.py, with each PNG's image stream checked against it.
+    """The texture sets of textures.json (Scripts/plateau_textures.py) and of Trees/manifest.json's texture_sets (the
+    bark and the autumn leaf atlas of Scripts/blender/plateau_trees.py, in the same format), each PNG's image stream
+    checked against its index.
 
-    The check hashes the decompressed stream (raw_sha256), so a PNG rebuilt with another zlib still
-    passes; the plan records the file's own sha256 as well. Returns {} when the folder was never built.
+    The check hashes the decompressed stream (raw_sha256), so a PNG rebuilt with another zlib still passes; the plan
+    records the file's own sha256 as well. Each entry records the folder its maps are in ('directory'). A tree set may
+    not reuse a textures.json name, and needs a known surface and UV mode. Returns {} when neither was ever built.
     """
     import plateau_textures
-    folder = Path(root) / 'Data/Plateau/ReplicaGeometry' / TEXTURES
-    if not (folder / TEXTURE_INDEX).is_file():
-        return {}
-    index = json.loads((folder / TEXTURE_INDEX).read_text())
+    data_root = Path(root) / 'Data/Plateau/ReplicaGeometry'
+    indexes = []
+    path = data_root / TEXTURES / TEXTURE_INDEX
+    if path.is_file():
+        indexes.append((TEXTURES, json.loads(path.read_text())['sets']))
+    tree_path = data_root / TREES / 'manifest.json'
+    if tree_path.is_file():
+        indexes.append((TREES, json.loads(tree_path.read_text()).get(TREE_TEXTURE_SETS) or {}))
     sets = {}
-    for name, entry in sorted(index['sets'].items()):
-        for role in TEXTURE_ROLES:
-            row = entry['maps'][role]
-            path = folder / row['file']
-            assert path.is_file(), f'Missing {path}; run python3 Scripts/plateau_textures.py'
-            data = path.read_bytes()
-            width, height, raw = plateau_textures.read_png(data)
-            assert [width, height] == entry['size_px'], f'Wrong size {path}'
-            assert hashlib.sha256(raw).hexdigest() == row['raw_sha256'], f'Stale texture {path}'
-            row['file_sha256'] = hashlib.sha256(data).hexdigest()
-        sets[name] = entry
+    for directory, entries in indexes:
+        for name, entry in sorted(entries.items()):
+            if directory == TREES:
+                assert name not in sets and name not in plateau_textures.SETS, \
+                    f'{TREES}/manifest.json texture set {name!r} reuses a replica texture set name'
+                assert entry.get('surface') in SURFACE_PARENTS and entry.get('uv', 'metres') in UV_MODES, \
+                    f'{TREES} texture set {name}: surface {entry.get("surface")!r}, uv {entry.get("uv")!r}'
+            entry['directory'] = directory
+            for role in TEXTURE_ROLES:
+                row = entry['maps'][role]
+                path = data_root / directory / row['file']
+                assert path.is_file(), f'Missing {path}; run the layer generator first'
+                data = path.read_bytes()
+                width, height, raw = plateau_textures.read_png(data)
+                assert [width, height] == entry['size_px'], f'Wrong size {path}'
+                assert hashlib.sha256(raw).hexdigest() == row['raw_sha256'], f'Stale texture {path}'
+                row['file_sha256'] = hashlib.sha256(data).hexdigest()
+            sets[name] = entry
     return sets
 
 
@@ -261,11 +308,16 @@ def set_material(name, entry):
     """
     surface = entry.get('surface') or plateau_textures.SETS[name]['surface']
     material = entry.get('material') or plateau_textures.SURFACES[surface]
+    generator = plateau_textures.SETS.get(name, {})
     out = {'texture_set': name, 'surface': surface, 'mean_linear': entry['mean_linear'], 'tiling': entry['tiling'],
            'uv': entry.get('uv', 'metres'),
            'textures': {role: f'{TEXTURE_ASSETS}/{Path(entry["maps"][role]["file"]).stem}' for role in TEXTURE_ROLES},
            'blend_mode': material['blend_mode'], 'two_sided': bool(material['two_sided']),
-           'shading_model': material['shading_model'], 'opacity_mask_clip': material.get('opacity_mask_clip')}
+           'shading_model': material['shading_model'], 'opacity_mask_clip': material.get('opacity_mask_clip'),
+           # The set's own colour wins over the manifest's (tar), and its metallic caps the manifest's (galvanised
+           # sheet): plateau_textures.SETS own_colour and metallic, recorded in textures.json.
+           'own_colour': bool(entry.get('own_colour', generator.get('own_colour', False))),
+           'metallic_max': entry.get('metallic', generator.get('metallic'))}
     macro = entry.get('macro')
     if macro:
         # Macro variation: the tint x lerp(1 - s, 1 + s, R) at the first macro tile x lerp(...) of G at the second.
@@ -404,6 +456,10 @@ def shared_key_plan(root=ROOT):
             row.update({k: fields[k] for k in ('blend_mode', 'two_sided', 'shading_model', 'opacity_mask_clip',
                                                 'tiling', 'uv')})
             row['texture_base_color_srgb'] = sets[name].get('base_color_srgb')
+            if fields['own_colour']:
+                row['own_colour'] = True        # the material shows the texture's own colour (tint white)
+            if fields['metallic_max'] is not None:
+                row['metallic_max'] = fields['metallic_max']
             if fields.get('macro'):
                 row['macro_strength'] = fields['macro']['strength']
             if fields['uv'] == 'card':
@@ -415,7 +471,7 @@ def shared_key_plan(root=ROOT):
 def material_row(layer, key, spec, texture_sets, used_sets):
     """The plan row of one material key: the parent it duplicates, its tint basis and, for a replica texture set,
     the set's maps, tiling, blend mode, macro variation and the manifest's metallic."""
-    base, texture = base_material(key, spec)
+    base, texture = base_material(key, spec, texture_sets)
     row = {'layer': layer, 'key': key, 'asset': f'{MATERIALS}/{material_name(layer, key)}',
            'duplicate_of': base, 'texture_mean': texture,
            'mean_linear': list(TEXTURE_MEAN[texture]) if texture in TEXTURE_MEAN else None,
@@ -427,26 +483,50 @@ def material_row(layer, key, spec, texture_sets, used_sets):
         assert name in texture_sets, f'{layer} {key} needs the {name} textures; run python3 Scripts/plateau_textures.py'
         used_sets.add(name)
         row.update(set_material(name, texture_sets[name]))
-        row['metallic'] = float(spec.get('metallic', 0.))
+        row['metallic'] = textured_metallic(row, spec)
         row['wet'] = base == WET_PARENT
+    if row['mean_linear'] is not None:
+        row['tint'] = textured_tint(row, spec)
+        row['colour_source'] = 'texture' if row.get('own_colour') else 'manifest'
     return row
 
 
+def textured_tint(row, spec):
+    """Linear tint of a textured duplicate (diff x tint): the manifest colour / the texture's mean, capped at
+    TINT_LIMIT, so the surface averages the manifest colour; white for a replica set that owns its colour
+    (plateau_textures.SETS own_colour: the tar roof keeps its grey pea gravel on black tar, about #4A4744, where the
+    Plex colour #2C2B29 multiplied it down to flat black)."""
+    if row.get('own_colour'):
+        return (1., 1., 1.)
+    return tuple(min(TINT_LIMIT, c / m) for c, m in zip(linear(spec['base_color_srgb']), row['mean_linear']))
+
+
+def textured_metallic(row, spec):
+    """Metallic of a replica-set duplicate: the manifest's, capped at the set's own (plateau_textures.SETS metallic:
+    weathered galvanised sheet at .3 reads light grey in shade, where Plex's .6 read brown)."""
+    value = float(spec.get('metallic', 0.))
+    cap = row.get('metallic_max')
+    return min(value, float(cap)) if cap is not None else value
+
+
 def texture_rows(name, entry):
-    """Import rows of a set's three maps: colour space, compression, sampler, hashes, alpha mips, V addressing."""
+    """Import rows of a set's three maps (from the set's folder: Textures, or Trees for the bark and leaf atlas):
+    colour space, compression, sampler, hashes, alpha mips, U and V addressing."""
     clip = set_material(name, entry)['opacity_mask_clip']
+    address_x, address_y = address_modes(entry)
     rows = []
     for role in TEXTURE_ROLES:
         m = entry['maps'][role]
         alpha = bool(m.get('alpha'))
-        rows.append({'set': name, 'role': role, 'file': f'{TEXTURES}/{m["file"]}',
+        rows.append({'set': name, 'role': role, 'file': f'{entry.get("directory", TEXTURES)}/{m["file"]}',
                      'asset': f'{TEXTURE_ASSETS}/{Path(m["file"]).stem}', 'size_px': entry['size_px'],
                      'srgb': m['srgb'], 'compression': m['compression'], 'sampler': m['sampler'],
                      'sha256': m['file_sha256'], 'raw_sha256': m['raw_sha256'], 'alpha': alpha,
                      # Mips keep the clip coverage (Castano), so thin balusters do not fade away.
                      'alpha_coverage_threshold': clip if alpha else None,
-                     # Cards span their texture once in V: clamp, so no mip blends the top row into the bottom.
-                     'address_y': CARD_ADDRESS_Y if entry.get('uv') == 'card' else 'TA_WRAP'})
+                     # Cards span their texture once in V: clamp, so no mip blends the top row into the bottom;
+                     # the leaf atlas clamps both axes.
+                     'address_x': address_x, 'address_y': address_y})
     return rows
 
 
@@ -468,6 +548,10 @@ def plan_tree_assets(kinds, species_used, texture_sets, used_sets):
                 assert seen[key][0] == spec and seen[key][1] == slot, f'{TREES} material {key} differs between kinds'
             else:
                 row = material_row(TREES, key, spec, texture_sets, used_sets)
+                # A material that names a map must get its set (else bark renders flat and leaf cards as solid
+                # squares): the Trees manifest's texture_sets, loaded with the replica sets.
+                assert not spec.get('texture') or row.get('texture_set'), \
+                    f'{TREES} material {key}: no texture set has {spec["texture"]}; add it to {TREE_TEXTURE_SETS}'
                 # Leaves without a masked foliage texture set still light as foliage: two-sided, with transmission.
                 row['foliage'] = slot == 'leaves' and bool(spec.get('foliage', True)) and not row.get('texture_set')
                 row['spec'] = spec
@@ -511,6 +595,8 @@ def plan(root=ROOT):
                          'mode': 'species meshes' if kinds else 'shared mesh',
                          'mesh': TREE_MESH if not kinds else None,
                          'species_meshes': {m['species']: m['asset'] for m in out['tree_meshes']},
+                         'texture_sets': sorted({m['texture_set'] for m in out['materials']
+                                                 if m['layer'] == TREES and m.get('texture_set')}),
                          'aliases': dict(TREE_ALIASES)}
     parents = {}
     for m in out['materials']:
@@ -529,7 +615,9 @@ def plan(root=ROOT):
                                 'asset': f'{TEXTURE_ASSETS}/{Path(macro["file"]).stem}', 'size_px': macro['size_px'],
                                 'srgb': macro['srgb'], 'compression': macro['compression'], 'sampler': macro['sampler'],
                                 'sha256': macro['file_sha256'], 'raw_sha256': macro['raw_sha256'], 'alpha': False,
-                                'alpha_coverage_threshold': None, 'address_y': 'TA_WRAP'})
+                                'alpha_coverage_threshold': None, 'address_x': 'TA_WRAP', 'address_y': 'TA_WRAP'})
+    assets = [t['asset'] for t in out['textures']]
+    assert len(assets) == len(set(assets)), 'Two texture sets import a map to the same asset'
     by_material = {m['asset']: m for m in out['materials']}
     for layer, manifest in manifests.items():
         for batch in manifest.get('batches', []):
@@ -579,6 +667,7 @@ def plan(root=ROOT):
                      'emissive_materials': sum(1 for m in out['materials'] if m['emissive_srgb']),
                      'textures': len(out['textures']),
                      'clamped_textures': sum(1 for t in out['textures'] if t['address_y'] == 'TA_CLAMP'),
+                     'tree_textures': sum(1 for t in out['textures'] if t['file'].startswith(TREES + '/')),
                      'textured_replica_materials': sum(1 for m in out['materials'] if m.get('texture_set')),
                      'masked_materials': sum(1 for m in out['materials'] if m.get('blend_mode') == 'masked'),
                      'macro_materials': sum(1 for m in out['materials'] if m.get('macro')),
@@ -679,7 +768,8 @@ def preflight(u, root, backup, the_plan):
     for row in the_plan['textures']:
         assert getattr(u.TextureCompressionSettings, row['compression'], None) is not None, row['compression']
         assert getattr(u.MaterialSamplerType, row['sampler'], None) is not None, row['sampler']
-        assert getattr(u.TextureAddress, row['address_y'], None) is not None, row['address_y']
+        for axis in ('address_x', 'address_y'):
+            assert getattr(u.TextureAddress, row.get(axis, 'TA_WRAP'), None) is not None, row.get(axis)
     if any(m['nanite_shape_preservation'] for m in the_plan['meshes'] + the_plan['tree_meshes']):
         assert getattr(u.NaniteShapePreservation, PRESERVE_AREA, None) is not None, 'Missing Unreal API ' + PRESERVE_AREA
     if any(a['collision_only'] for a in the_plan['actors']):
@@ -747,9 +837,11 @@ def import_texture(u, root, row):
                     None)
     if group is not None:
         texture.set_editor_property('lod_group', group)
-    if row.get('address_y', 'TA_WRAP') != 'TA_WRAP':
-        # Cards span their texture once in V: clamp, so the lower mips never blend the top row into the bottom one.
-        texture.set_editor_property('address_y', getattr(u.TextureAddress, row['address_y']))
+    for axis in ('address_x', 'address_y'):
+        if row.get(axis, 'TA_WRAP') != 'TA_WRAP':
+            # Cards span their texture once in V, and the leaf atlas's cells sit inside 0..1: clamp, so filtering
+            # never blends the top row into the bottom one, or a border cell into the opposite edge.
+            texture.set_editor_property(axis, getattr(u.TextureAddress, row[axis]))
     if row.get('alpha'):
         # Cut-out diffuse (RGBA): keep the alpha (BC3), and scale each mip's alpha so the share of texels over the
         # material's clip stays that of the top mip (Castaño, "Computing Alpha Mipmaps"); without it, balusters
@@ -941,7 +1033,8 @@ def make_material(u, row, spec, textures=None):
     assets, lib = u.EditorAssetLibrary, u.MaterialEditingLibrary
     colour = linear(spec['base_color_srgb'])
     if row['texture_mean']:
-        textured_colour = tuple(min(TINT_LIMIT, c / m) for c, m in zip(colour, row['mean_linear']))
+        # The plan's tint (textured_tint): colour / texture mean, or white for a set that owns its colour.
+        textured_colour = tuple(row['tint']) if row.get('tint') else textured_tint(row, spec)
     mat = assets.duplicate_asset(row['duplicate_of'], row['asset'])
     tints = authored_tints(u, mat) if mat else []
     duplicated = bool(mat) and len(tints) == 1 and (not row.get('textures') or
@@ -1261,6 +1354,8 @@ def check_texture(u, texture, row):
     assert [texture.blueprint_get_size_x(), texture.blueprint_get_size_y()] == row['size_px'], row['asset']
     assert texture.get_editor_property('address_y') == getattr(u.TextureAddress, row.get('address_y', 'TA_WRAP')), \
         row['asset'] + ' V addressing (cards clamp, so the mips do not wrap the top row into the bottom)'
+    assert texture.get_editor_property('address_x') == getattr(u.TextureAddress, row.get('address_x', 'TA_WRAP')), \
+        row['asset'] + ' U addressing (the leaf atlas clamps, so a border cell does not pick up the opposite edge)'
     if row['alpha']:
         assert not texture.get_editor_property('compression_no_alpha'), row['asset'] + ' dropped its alpha'
         assert texture.get_editor_property('do_scale_mips_for_alpha_coverage'), row['asset'] + ' mips lose coverage'
@@ -1289,6 +1384,18 @@ def check_macro_nodes(u, mat, row):
                    for n in nodes if isinstance(n, u.MaterialExpressionLinearInterpolate))
     assert lerps == sorted((round(1. - s, 6), round(1. + s, 6)) for s in macro['strength']), row['asset'] + ' strength'
     return len(samples)
+
+
+def check_tint(u, mat, row):
+    """verify: a textured duplicate's one authored tint is the planned tint (textured_tint: the manifest colour /
+    the texture mean, or white for a set that owns its colour, so the tar roof keeps its grey gravel)."""
+    tints = authored_tints(u, mat)
+    assert len(tints) == 1, f'{row["asset"]} has {len(tints)} authored tints'
+    c = tints[0].get_editor_property('constant')
+    got = (c.r, c.g, c.b) if hasattr(c, 'r') else tuple(c[:3])
+    assert all(abs(a - b) < 1e-3 for a, b in zip(got, row['tint'])), \
+        f'{row["asset"]} tint {[round(v, 4) for v in got]}, planned {[round(v, 4) for v in row["tint"]]}'
+    return True
 
 
 def check_foliage(u, mat, row):
@@ -1520,8 +1627,11 @@ def verify(u, root, backup):
                 parents[row['duplicate_of']] = nord_parameters(assets.load_asset(row['duplicate_of']))
             assert nord_parameters(mat) == parents[row['duplicate_of']], \
                 row['asset'] + ' NordSky wrappers differ from ' + row['duplicate_of']
-            # Blend mode and sidedness of the set (cards and creeper masked and two-sided), and its metallic.
+            # Blend mode and sidedness of the set (cards and creeper masked and two-sided), its metallic (capped
+            # by the set) and its tint (white where the set owns its colour).
             check_material_mode(u, mat, row)
+            if not row['emissive_srgb']:
+                check_tint(u, mat, row)
     trees = check_yard_trees_placed(u, actors, the_plan['trees'])
     texts = sum(1 for label in actors if label.startswith(PREFIX + 'street name '))
     assert texts == report['texts'], 'Street-name text count changed'
@@ -1550,7 +1660,10 @@ def main():
                           'textures': {t['asset']: t['sha256'] for t in the_plan['textures']},
                           'textured_materials': {m['asset']: {'set': m['texture_set'], 'duplicate_of': m['duplicate_of'],
                                                               'tiling': m['tiling'], 'blend_mode': m['blend_mode'],
-                                                              'two_sided': m['two_sided']}
+                                                              'two_sided': m['two_sided'],
+                                                              'tint': [round(t, 4) for t in m['tint']],
+                                                              'colour_source': m['colour_source'],
+                                                              'metallic': m['metallic']}
                                                  for m in the_plan['materials'] if m.get('texture_set')},
                           'parents': {p['asset']: {k: p[k] for k in ('texture_set', 'blend_mode', 'two_sided',
                                                                       'shading_model', 'opacity_mask_clip')}
@@ -1565,6 +1678,9 @@ def main():
                                                           for a in the_plan['actors'] if not a['shadow']}),
                           'tree_meshes': {m['species']: {'file': m['file'], 'height_cm': m['height_cm'],
                                                          'materials': m['materials']} for m in the_plan['tree_meshes']},
+                          'tree_textures': {t['asset']: {'file': t['file'], 'address': [t['address_x'], t['address_y']],
+                                                         'alpha_coverage_threshold': t['alpha_coverage_threshold']}
+                                            for t in the_plan['textures'] if t['file'].startswith(TREES + '/')},
                           'yard_trees': dict(the_plan['yard_trees'],
                                              actors={t['label']: {'count': t['count'], 'crown': t['crown'],
                                                                   'mesh': t['mesh'], 'collision': t['collision'],

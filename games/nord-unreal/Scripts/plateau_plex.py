@@ -79,8 +79,10 @@ MAX_BATCH_TRIANGLES = 60000
 # balusters, ground cover, creeper cards) adds about 270,000 triangles. Raised to 3.15 million (the agreed ceiling is
 # 3.5 million): the walls-and-collision pass adds about 160,000, mostly the post-1945 kit's balcony slabs, guards,
 # patio doors and panels on 6 blocks and 8 towers, the 3 m window grid on the background skins, and the invisible
-# guard walls (two faces per guard run).
-TRIANGLE_BUDGET = 3150000
+# guard walls (two faces per guard run). Raised to 3.2 million: the rear-surfaces pass adds about 86,000, mostly the
+# blind or curtain cards behind some 23,000 rear, background and post-1945 windows and patio doors, plus the gallery
+# privacy screens, the roofs and roof props of the 252 background masses and the board gates' ledges and braces.
+TRIANGLE_BUDGET = 3200000
 
 D_BACK = 4.0              # glass, door leaves and recess backs: 1 cm ahead of the 3 cm OSM glass cards
 REVEAL = 12.0
@@ -120,8 +122,12 @@ MATERIALS = {
     # Shared keys of the walls-and-roofs pass; the apply step maps each to a textured material.
     'Roof_Membrane':   {'base_color_srgb': '#D6D7D3', 'roughness': .7, 'metallic': 0},     # white or light-grey membrane
     'Roof_Gravel':     {'base_color_srgb': '#C8C4BA', 'roughness': .95, 'metallic': 0},    # white gravel ballast
-    'Roof_Tar':        {'base_color_srgb': '#2C2B29', 'roughness': .9, 'metallic': 0},     # black tar and gravel
-    'Sheet_Metal':     {'base_color_srgb': '#A4A8AA', 'roughness': .4, 'metallic': .6},    # galvanised roof sheet
+    # Tar and sheet metal follow the replica texture sets (Textures/textures.json): tar and gravel is grey pea gravel
+    # sunk in black tar, about #4A4744 (the set owns its colour; #2C2B29 rendered flat black), and weathered galvanised
+    # sheet is the set's mean grey at metallic .3 and roughness .59 (at metallic .6 and roughness .4 it read brown in
+    # shade).
+    'Roof_Tar':        {'base_color_srgb': '#4A4744', 'roughness': .66, 'metallic': 0},    # tar and grey pea gravel
+    'Sheet_Metal':     {'base_color_srgb': '#9CA0A1', 'roughness': .59, 'metallic': .3},   # galvanised roof sheet
     'Siding_Lap_Cream': {'base_color_srgb': '#D8CDB0', 'roughness': .6, 'metallic': 0},    # clapboard with visible laps
     'Siding_Lap_Grey': {'base_color_srgb': '#8B8E8F', 'roughness': .6, 'metallic': 0},
     'Parged':          {'base_color_srgb': '#A09B92', 'roughness': .9, 'metallic': 0},     # parged concrete foundation
@@ -1632,6 +1638,34 @@ def author_front(mesh, lot, front, kit, primary=True, top_override=None):
     return record, top
 
 
+def blind(F, x0, x1, z0, z1, counts=None):
+    """A blind or curtains behind the glass of an applied window or patio door (the pane x0..x1 by z0..z1 in frame F),
+    so it does not read as a black hole: a roller blind pulled a quarter to three quarters down (55%), a pair of
+    curtains drawn to the sides (30%), or a blind let down almost to the sill (15%), in white, cream or beige (a few
+    curtains coloured). The glass is an opaque dark key, so the card stands just in front of it, under the meeting rail
+    or sash (BLIND_D), as the street fronts' curtains do. Seeded by the window's own place, so it takes no draw from a
+    lot's sequence. Returns the kind, or None for a pane too small."""
+    if x1 - x0 < 20 or z1 - z0 < 30:
+        return None
+    c = F.p((x0 + x1) / 2, 0, 0)
+    r = random.Random(_seed('plex-blind', round(c[0]), round(c[1]), round(z0)))
+    roll, drop, share = r.random(), r.uniform(.25, .75), r.uniform(.22, .34)
+    h = z1 - z0
+    if roll < .55:
+        kind = 'roller'
+        F.quad_d(r.choice(BLINDS), x0, x1, z1 - drop * h, z1, BLIND_D)
+    elif roll < .85:
+        kind, mat, w = 'curtains', r.choice(CURTAINS), (x1 - x0) * share
+        F.quad_d(mat, x0, x0 + w, z0, z1, BLIND_D)
+        F.quad_d(mat, x1 - w, x1, z0, z1, BLIND_D)
+    else:
+        kind = 'lowered'
+        F.quad_d(r.choice(BLINDS), x0, x1, z0 + .1 * h, z1, BLIND_D)
+    if counts is not None:
+        counts['blinds_' + kind] = counts.get('blinds_' + kind, 0) + 1
+    return kind
+
+
 def modern_bays(mesh, F, W, floors, zt, paints, counts, balconies=True, every=1, entrance=False):
     """The post-1945 apartment kit on one wall plane in frame F (x from 0 to W along the wall, the brick face at
     D_FACE): bays of about MODERN_BAY. On each upper floor a balcony bay (every `every`-th bay when `balconies`) has a
@@ -1649,6 +1683,7 @@ def modern_bays(mesh, F, W, floors, zt, paints, counts, balconies=True, every=1,
         nonlocal windows
         F.quad_d(frame, xa, xb, z + 90, z + 210, D_FACE + 1)
         F.quad_d('Glass', xa + 5, xb - 5, z + 95, z + 205, D_FACE + 2.5)
+        blind(F, xa + 5, xb - 5, z + 95, z + 205, counts)
         F.quad_d(frame, (xa + xb) / 2 - 2, (xa + xb) / 2 + 2, z + 95, z + 205, D_FACE + 3.5)   # sliding sash
         F.quad_d(panel, xa, xb, z + 12, z + 86, D_FACE + 1)                                     # wall panel
         windows += 1
@@ -1657,6 +1692,8 @@ def modern_bays(mesh, F, W, floors, zt, paints, counts, balconies=True, every=1,
         nonlocal doors
         F.quad_d(frame, xa, xb, z, z + height, D_FACE + 1)
         F.quad_d('Glass', xa + 5, xb - 5, z + 3, z + height - 5, D_FACE + 2.5)
+        if patio:
+            blind(F, xa + 5, xb - 5, z + 3, z + height - 5, counts)
         F.quad_d(frame, (xa + xb) / 2 - 2.5, (xa + xb) / 2 + 2.5, z + 3, z + height - 5, D_FACE + 3.5)
         doors += patio
 
@@ -1913,7 +1950,8 @@ def _modern_roof(lot, record, W, depth, R, masonry, box, fits, free, placed, cou
     """The roof of a post-1945 block: a brick lift penthouse (machine room and stair head) with a metal coping near
     the middle, two on a block over 30 m deep, and a few galvanised mushroom vents. Own seed, after the roof draws."""
     mr = random.Random(_seed('plex-modern-roof', lot['id']))
-    pw, pd = min(600., W * .45), min(420., depth * .3)
+    # 30% of the depth, at least 3 m where the roof is 5 m deep (a slab tower 7.5 m deep still has its machine room)
+    pw, pd = min(600., W * .45), min(420., max(depth * .3, min(300., depth - 200.)))
     heights = [mr.uniform(280., 340.) for _ in range(2)]
     record['penthouses'] = 0
     for k, t in enumerate((depth * .5,) if depth < 3000 else (depth * .3, depth * .7)):
@@ -1973,6 +2011,20 @@ BALUSTER_SHARE = .7         # guards with baluster cards; the rest are solid boa
 GROUND_DECK_SHARE = .4      # straight stacks whose ground-floor stoop is a low gallery on a lattice skirt
 SKIRT_H = 100.              # the lattice card is drawn 1 m tall; a skirt keeps that and runs below grade
 GATE_PAINT = ('Wood_Green', 'Wood_Burgundy', 'Iron', 'Wood_Cream', 'Wood_Grey', 'Wood_Green')
+# Rear-surfaces pass. Solid guards are clapboard or aluminium lap siding with visible laps, not a flat painted board
+# (on a sided lot, the lot's own siding); gate leaves are board cards on a painted ledge-and-brace frame; side-by-side
+# galleries have a privacy screen at their shared posts; rear windows have white frames and a blind or curtains.
+GUARD_CREAM = .45           # solid guards in cream lap siding; the rest grey
+PARTITION_LATTICE = .6      # privacy screens of lattice (two 1 m cards, as drawn); the rest a 1.8 m board card
+PARTITION_H = {'lattice': 200., 'boards': 180.}     # screen heights over the deck, under the 2x4 cap rail
+PARTITION_GAP = 60.         # neighbouring lots' gallery ends this close (along the wall line) share a screen
+GATE_LEDGES = (.2, .78)     # the gate's two painted ledges, as fractions of the leaf height, with a brace between
+DOOR_CLEAR = 101.           # deck kept clear of props this far either side of a gallery door's centre (43 + 58)
+HEAD_CLEAR = 100.           # and this far past a flight's head, so the 42 cm player capsule still turns round the
+                            # end of the opening guard there and walks every way with the props floor filled
+BLIND_D = D_FACE + 3.       # blinds and curtains: just over the glass (D_FACE + 2.5), under the meeting rail (+ 3.5)
+BLINDS = ('Trim', 'Trim', 'Trim', 'Wood_Cream', 'Wood_Cream', 'Stone_Cast')     # white, cream and beige
+CURTAINS = ('Trim', 'Wood_Cream', 'Wood_Cream', 'Stone_Cast', 'Wood_Burgundy', 'Wood_Green')
 POST_SPACING = 244.         # 8 ft fence bays
 OPEN_SHARE, LOW_SHARE = .24, .14    # lane edges left open as a parking pad, or closed by a low picket fence
 PAD_W, PAD_D = 270., 480.   # a parking pad (crushed stone) off the ruelle, one small car deep
@@ -2154,6 +2206,29 @@ def _subtract(interval, cuts, minimum=20.):
     return [(p0, p1) for p0, p1 in pieces if p1 - p0 >= minimum]
 
 
+def _free_floor(base, reserved, minimum=40., min_area=2500.):
+    """Axis-aligned rectangles (x0, x1, d0, d1) of `base` left after cutting out every `reserved` rectangle, keeping
+    pieces at least `minimum` on each side and `min_area` cm² (a chair or a plant pot fits)."""
+    rects = [base] if base[1] > base[0] and base[3] > base[2] else []
+    for c0, c1, e0, e1 in reserved:
+        out = []
+        for x0, x1, d0, d1 in rects:
+            if c1 <= x0 or c0 >= x1 or e1 <= d0 or e0 >= d1:
+                out.append((x0, x1, d0, d1))
+                continue
+            if c0 > x0:
+                out.append((x0, c0, d0, d1))
+            if c1 < x1:
+                out.append((c1, x1, d0, d1))
+            m0, m1 = max(x0, c0), min(x1, c1)
+            if e0 > d0:
+                out.append((m0, m1, d0, e0))
+            if e1 < d1:
+                out.append((m0, m1, e1, d1))
+        rects = out
+    return [r for r in rects if r[1] - r[0] >= minimum and r[3] - r[2] >= minimum and (r[1] - r[0]) * (r[3] - r[2]) >= min_area]
+
+
 class Occupancy:
     """World footprints of planned rear structures (galleries, stairs, sheds) for free-space checks."""
 
@@ -2248,6 +2323,15 @@ class Rear:
         self.pad_first = yr.random() < .5
         self.gate_alt = yr.choice(GATE_PAINT)
         self.vine_seed = yr.getrandbits(32)
+        # draws of the rear-surfaces pass, from a seed of their own, so every draw above stays put: the lap siding of the
+        # solid guards (the lot's own siding where its walls are sided) and the partition kind between side-by-side
+        # galleries (a lattice screen or a board screen)
+        sr = random.Random(_seed('plex-rear-surfaces', lot['id']))
+        self.guard_siding = 'Siding_Lap_Cream' if sr.random() < GUARD_CREAM else 'Siding_Lap_Grey'
+        self.partition = 'lattice' if sr.random() < PARTITION_LATTICE else 'boards'
+        # rear windows and doors are white PVC or aluminium (the old draw is kept above so later draws stay put)
+        self.frame = 'Trim'
+        self.partitions = []        # (x, kind, neighbour id or None) at the stack wall's shared posts (plan_partitions)
         if lot['storeys'] >= 5:
             self.paint, self.roofed = 'Iron', False     # apartment blocks: steel fire-escape galleries
             self.infill = 'iron'
@@ -2272,6 +2356,8 @@ class Rear:
                 self.brick = self.street_brick = 'Brick_Brown'
             if not lot.get('skin_wall'):
                 self.wall = self.street_brick = self.brick = lot['masonry'] if lot['masonry'] in BRICKS else self.brick
+        if self.siding and self.wall in SIDING:
+            self.guard_siding = self.wall               # a sided lot boards its solid guards in its own siding
         # the roof under a parapet: the skins rise over it with an inner face and a metal coping
         self.parapet_from = lot.get('parapet_from')
         self.background = bool(lot.get('background'))
@@ -2690,7 +2776,8 @@ class Rear:
     # ------------------------------------------------------------------ authoring
     def author(self, mesh):
         record = {'walls': [], 'wall_top_cm': round(self.zt, 1), 'galleries': 0, 'stair': None, 'flights': [],
-                  'decks': [], 'guards': [], 'fence': None, 'shed': None, 'yard': None, 'reason': self.reason,
+                  'decks': [], 'guards': [], 'partitions': [], 'fence': None, 'shed': None, 'yard': None,
+                  'reason': self.reason,
                   'yard_reason': None if self.yard_plan else self.yard_reason}
         for wall in self.lot.get('backs', []):
             if self.stack and wall is self.stack['wall']:
@@ -2752,10 +2839,12 @@ class Rear:
         return upper
 
     def _window(self, F, x0, x1, z0, z1, rail=True, sill=None, lintel=None):
-        """Applied window: frame field, glass, meeting rail and a proud sill (the wall is not cut). A street wall
-        window takes the front's deeper stone sill and its lintel (stone, cast stone or painted wood)."""
+        """Applied window: frame field (white, Trim), glass with a blind or curtains behind it, meeting rail and a proud
+        sill (the wall is not cut). A street wall window takes the front's deeper stone sill and its lintel (stone,
+        cast stone or painted wood)."""
         F.quad_d(self.frame, x0, x1, z0, z1, D_FACE + 1)
         F.quad_d('Glass', x0 + 6, x1 - 6, z0 + 6, z1 - 6, D_FACE + 2.5)
+        blind(F, x0 + 6, x1 - 6, z0 + 6, z1 - 6, self.counts)
         if rail:
             zm = (z0 + z1) / 2
             F.quad_d(self.frame, x0 + 6, x1 - 6, zm - 2.5, zm + 2.5, D_FACE + 3.5)
@@ -2906,6 +2995,12 @@ class Rear:
             mesh.unit = ('rear', self.lot['id'])       # the stack goes out of collision as one, never in part
             self._gallery_module(mesh, F, module, record)
             mesh.unit = None
+        # privacy screens where galleries meet side by side: at the posts the modules share, and at a lot end that
+        # meets a neighbour's gallery (plan_partitions); the steel fire escapes of tall blocks have none
+        if self.infill != 'iron':
+            for p in self.partitions:
+                for z in p['zs']:
+                    self._partition(mesh, F, p['x'], p['d1'], z, p['kind'], p['neighbour'], record)
         if wall['kind'] == 'long':
             # the rest of a long wall keeps its window per 4.5 m bay and floor
             used0, used1 = min(m['mx0'] for m in st['modules']), max(m['mx1'] for m in st['modules'])
@@ -2956,8 +3051,9 @@ class Rear:
     def _guard(self, mesh, pa, pb, z, out, top=GUARD_H, infill=None):
         """One straight guard run between world points pa and pb, standing on a deck top z: a 2x4 bottom rail over
         a drain gap, the top rail and its flat cap as one box, and the lot's infill between them: a baluster card
-        (the masked material is two-sided, so one face), solid boards, or iron pickets facing `out` on the steel
-        galleries. A guard cut lower than GUARD_H takes boards, since the card draws its rails for 107 cm."""
+        (the masked material is two-sided, so one face), a solid guard of lap siding (self.guard_siding: the laps
+        show, where the old flat Wood_Grey board read as concrete), or iron pickets facing `out` on the steel
+        galleries. A guard cut lower than GUARD_H is solid, since the card draws its rails for 107 cm."""
         length = math.dist(pa[:2], pb[:2])
         if length < 8 or top < RAIL_LOW[1] + CAP_H + 5:
             return 0
@@ -2981,9 +3077,45 @@ class Rear:
                 x = length * k / count
                 G.quad_d('Iron', x - .9, x + .9, z + RAIL_LOW[1], z + top - CAP_H, 1.0 * facing, facing)
         else:
-            G.box(paint, 0, length, -1., 1., z + RAIL_LOW[1], z + top - CAP_H, 'tblr')
+            # a solid guard is lap siding (clapboard or aluminium) between the rails, laps showing, both faces
+            G.box(self.guard_siding, 0, length, -1., 1., z + RAIL_LOW[1], z + top - CAP_H, 'tblr')
         self.count('guard_' + kind)
         return 1
+
+    def _free_record(self, P, free, z, edge, out):
+        """The props floor of one deck for fronts.json: `free`, quads in map coordinates (cm) at the deck top `z`,
+        `free_m2`, the outer guard line `edge` (for a dish or a flower box on the guard) and `out`, the unit vector
+        from the wall toward the yard."""
+        quads = [[[round(v, 1) for v in P(x, d, z)[:2]] for x, d in ((x0, d0), (x1, d0), (x1, d1), (x0, d1))]
+                 for x0, x1, d0, d1 in free]
+        area = sum((x1 - x0) * (d1 - d0) for x0, x1, d0, d1 in free) / 1e4
+        if free:
+            self.count('decks_with_free_floor')
+        return {'free': quads, 'free_m2': round(area, 2),
+                'edge': [[round(v, 1) for v in p[:2]] for p in edge], 'out': [round(out[0], 4), round(out[1], 4)]}
+
+    def _partition(self, mesh, F, x, d1, z, kind, neighbour, record):
+        """A privacy screen across the gallery at a shared post (frame F of the stack wall, at x, from the wall face
+        to d1, standing on the deck top z): two 1 m lattice cards, as drawn, or one 1.8 m board card, as drawn, under a
+        2x4 cap rail, with a 2x4 stile at the guard end, in the gallery paint. No collision (the end guards collide)."""
+        a, b = F.p(x, D_FACE, 0)[:2], F.p(x, d1, 0)[:2]
+        H = PARTITION_H[kind]
+        if kind == 'lattice':
+            cutout(mesh, 'Rail_Lattice', a, b, z, z + SKIRT_H)
+            cutout(mesh, 'Rail_Lattice', a, b, z + SKIRT_H, z + H)
+        else:
+            cutout(mesh, 'Fence_Boards', a, b, z, z + H)
+        G = Frame(mesh, a, b)
+        L = math.dist(a, b)
+        G.box(self.paint, 0, L, -1.9, 1.9, z + H, z + H + 3.8, 'bl')
+        G.box(self.paint, L - 8.9, L, -1.9, 1.9, z, z + H, 'tbl')
+        record.setdefault('partitions', []).append({
+            'a': [round(v, 1) for v in a], 'b': [round(v, 1) for v in b], 'z0': round(z, 1), 'z1': round(z + H, 1),
+            'kind': kind, 'neighbour': neighbour})
+        self.count('partitions')
+        self.count('partitions_' + kind)
+        if neighbour:
+            self.count('partitions_between_lots')
 
     def _gallery_module(self, mesh, F, module, record):
         st = self.stack
@@ -3058,8 +3190,24 @@ class Rear:
                 fascia(gx0, xh if straight else deck_end, dF, z)
             corners = [P(gx0, D_FACE, z), P(deck_end, D_FACE, z), P(deck_end, dF, z), P(gx0, dF, z)]
             door = P(module['xd'], D_FACE + 45, z)       # where a player stands in front of the gallery door
+            # the floor left for props (chairs, a barbecue, plants, a bike): the deck inside its guards and posts, less
+            # the stair opening, the flights, the landing at each flight head and foot, the door and the way between
+            if straight:
+                reserved = [(module['xd'] - DOOR_CLEAR, gx1 + 10, -1e9, 1e9)]    # door, landing, next flight's foot
+                if i == 0 and len(zs) > 1:
+                    reserved.append((xh - run2 - 10, xh + 10, bi - 10, 1e9))     # under the flight to the next deck
+                if i > 0:
+                    head_x = xh - run2 - going2 / 2
+                    reserved += [(xo0 - 2, xo1 + 2, bi - 2, 1e9),                # the opening the flight comes up
+                                 (head_x - HEAD_CLEAR, xo0, -1e9, 1e9),          # the landing at its head
+                                 (head_x - HEAD_CLEAR, module['xd'], -1e9, bi + 10)]   # the way to the door
+            else:
+                reserved = [(module['xd'] - DOOR_CLEAR, gx1 + 10, -1e9, 1e9)]    # door, spiral exit, spiral
+            free = _free_floor((gx0 + 8, deck_end - 8, D_FACE + 3, dF - 12), reserved)
+            edge = (P(gx0, dF - 3, z), P(deck_end, dF - 3, z))
             record['decks'].append({'z': round(z, 1), 'quad': [[round(p[0], 1), round(p[1], 1)] for p in corners],
-                                    'door': [round(door[0], 1), round(door[1], 1)]})
+                                    'door': [round(door[0], 1), round(door[1], 1)],
+                                    **self._free_record(P, free, z, edge, out_d)})
             # the outer guard, open where the first flight lands
             gaps = [(xh - 2, gx1 + 1)] if straight and i == 0 else []
             for a0, a1 in _subtract((gx0, gx1), gaps):
@@ -3114,10 +3262,19 @@ class Rear:
             guard(gx1 - 2, D_FACE, gx1 - 2, dF - 3 - CAP_W / 2, z, (0., 0., 0.))
         corners = [P(gx0, D_FACE, z), P(gx1, D_FACE, z), P(gx1, dF, z), P(gx0, dF, z)]
         sc = (sx0 + sx1) / 2
+        xd = module['xd']
+        # props floor: the outer band between the steps' landing and the door, the inner band kept as the way between
+        free = _free_floor((gx0 + 8, gx1 - 8, D_FACE + 3, dF - 12),
+                           [(gx0 - 10, sx1 + HEAD_CLEAR, -1e9, 1e9), (xd - DOOR_CLEAR, xd + DOOR_CLEAR, -1e9, 1e9),
+                            (sx1, xd, -1e9, D_FACE + 100)])
+        edge = (P(gx0, dF - 3, z), P(gx1, dF - 3, z))
         record.setdefault('ground_decks', []).append({
             'z': round(z, 1), 'quad': [[round(p[0], 1), round(p[1], 1)] for p in corners], 'steps': risers - 1,
             'foot': [round(v, 1) for v in P(sc, dF + (risers - 1.5) * going, rise)],
-            'head': [round(v, 1) for v in P(sc, (D_FACE + dF) / 2, z)], 'guard': z >= 60, 'skirts': skirts})
+            'head': [round(v, 1) for v in P(sc, (D_FACE + dF) / 2, z)], 'guard': z >= 60, 'skirts': skirts,
+            'door': [round(v, 1) for v in P(xd, D_FACE + 45, z)[:2]],
+            **self._free_record(P, free, z, edge, ((edge[0][0] - corners[0][0]) / (dF - 3 - D_FACE),
+                                                   (edge[0][1] - corners[0][1]) / (dF - 3 - D_FACE)))})
         self.count('ground_galleries')
         self.count('lattice_skirts', skirts)
 
@@ -3465,9 +3622,20 @@ class Rear:
         return posts
 
     def _gate(self, mesh, F, g, fd, kind, h):
-        """A gate leaf in its own paint (never the fence's colour), hung between two taller gate posts."""
+        """A board gate hung between two taller gate posts: the leaf is one Fence_Boards cut-out card (the picket
+        card on a low fence), with its two ledges and the brace between them on the yard side in the gate's own paint
+        (never the fence's colour), the way a ledged-and-braced board gate is built. The old leaf was one flat painted
+        panel. Returns the post count."""
         top = h - 6 if kind != 'low' else h - 5
-        F.box(self.gate_paint, g - 46, g + 46, fd - 1.5, fd + 1.5, 4, top, 'lr')
+        leaf = 'Rail_Baluster' if kind == 'low' else 'Fence_Boards'
+        cutout(mesh, leaf, F.p(g - 46, fd, 0)[:2], F.p(g + 46, fd, 0)[:2], 4, top)
+        zl = [4 + (top - 4) * f for f in GATE_LEDGES]
+        for z in zl:
+            F.box(self.gate_paint, g - 44, g + 44, fd - 4.8, fd - 1, z - 6, z + 6, 'flr')
+        # the brace climbs from the bottom ledge at the hinge side to the top ledge at the latch side
+        beam(mesh, self.gate_paint, F.p(g - 38, fd - 2.9, zl[0] + 6), F.p(g + 38, fd - 2.9, zl[1] - 6), 3.8, 9,
+             bottom=False)
+        self.count('gate_leaf_cards')
         post = self.fence_paint if kind != 'slats' else 'Sheet_Metal'
         for x in (g - 50, g + 50):
             F.box(post, x - 5, x + 5, fd - 5, fd + 5, 0, h + 8, 'b')
@@ -3671,6 +3839,52 @@ def plan_yard_trees(rears, records, occupancy, canopy, traffic=(), mapped=()):
     return placed
 
 
+def plan_partitions(rears):
+    """Privacy screens between side-by-side galleries (the Plateau's back galleries are outdoor rooms, screened from
+    the neighbours by lattice or boards): one at every post two modules of a lot share, and one where a neighbouring
+    lot's gallery ends within PARTITION_GAP of this lot's along the same wall line, halfway between the two ends. A
+    screen between lots is drawn once: by the lot with the lower id at its own deck levels, and by the other only at
+    its levels with no deck of the first within 60 cm. Sets each Rear's `partitions`."""
+    ends = []
+    for rear in rears:
+        st = rear.stack
+        if not st or rear.infill == 'iron':
+            continue
+        wall = st['wall']
+        F = Frame(None, wall['a'], wall['b'])
+        dF = D_FACE + st['gd']
+        zs = [rear.floor_z[k] for k in st['levels']]
+        modules = st['modules']
+        for module in modules[:-1]:
+            rear.partitions.append({'x': module['mx1'], 'd1': dF - 3, 'zs': zs, 'kind': rear.partition,
+                                    'neighbour': None})
+        for x, sign in ((modules[0]['gx0'], -1), (modules[-1]['gx1'], 1)):
+            ends.append({'rear': rear, 'x': x, 'sign': sign, 'mid': F.p(x, (D_FACE + dF) / 2, 0)[:2], 'u': F.u,
+                         'zs': zs, 'dF': dF})
+    grid = Grid(1000)
+    for end in ends:
+        grid.add(end, [end['mid'][0]], [end['mid'][1]])
+    for end in ends:
+        rear = end['rear']
+        found = []
+        for other in grid.near(end['mid'][0], end['mid'][1], PARTITION_GAP + 40):
+            if other['rear'] is rear or abs(end['u'][0] * other['u'][0] + end['u'][1] * other['u'][1]) < .95:
+                continue
+            v = (other['mid'][0] - end['mid'][0], other['mid'][1] - end['mid'][1])
+            along = (v[0] * end['u'][0] + v[1] * end['u'][1]) * end['sign']
+            back = -(v[0] * other['u'][0] + v[1] * other['u'][1]) * other['sign']
+            across = abs(v[1] * end['u'][0] - v[0] * end['u'][1])
+            if 0 <= along <= PARTITION_GAP and back >= 0 and across <= 40:
+                found.append((math.hypot(*v), other['rear'].lot['id'], along, other))
+        if not found:
+            continue
+        _, nid, along, other = min(found, key=lambda f: f[:2])
+        zs = end['zs'] if rear.lot['id'] < nid else [z for z in end['zs'] if all(abs(z - w) >= 60 for w in other['zs'])]
+        if zs:
+            rear.partitions.append({'x': end['x'] + end['sign'] * along / 2, 'd1': min(end['dF'], other['dF']) - 3,
+                                    'zs': zs, 'kind': rear.partition, 'neighbour': nid})
+
+
 def build_rears(mesh, lots, tops, canopy=None, traffic=(), mapped=()):
     """Plan every lot's galleries first (so yards see their neighbours' structures), then fences, then author."""
     rears = [Rear(lot, tops[lot['id']]) for lot in lots]
@@ -3678,6 +3892,7 @@ def build_rears(mesh, lots, tops, canopy=None, traffic=(), mapped=()):
     occupancy = Occupancy()
     for rear in rears:
         rear.plan_stack(occupancy)
+    plan_partitions(rears)
     side_fences = []
     for rear in rears:
         rear.plan_yard(occupancy, side_fences)
@@ -3940,9 +4155,72 @@ def background_masses(buildings, roads, lot_ids, skipped, cards, owners):
     return masses
 
 
+BACKGROUND_ROOF_MIX = ((.58, 'Roof_Membrane'), (.93, 'Roof_Gravel'), (1.01, 'Roof_Tar'))
+
+
+def author_background_roof(mesh, mass, counts):
+    """The roof of a background mass (the park-perimeter row and the skipped buildings), which the old map left as its
+    dark grey mass top: white membrane or white gravel ballast, a few tar and gravel (the borough's white-roof rule, as
+    on the plex lots), as a skin ROOF_SKIN over the mass top; a brick chimney and a galvanised hatch on a mass of four
+    storeys or fewer, the post-1945 kit's lift penthouse and vents on a tower, and nothing on a cast-stone park
+    pavilion or government building. The props stand in the frame of the mass's longest edge. Own seed. Returns the
+    roof record."""
+    rng = random.Random(_seed('plex-background-roof', mass['id']))
+    pick, chimney_t, chimney_h, hatch_f = rng.random(), rng.uniform(.25, .5), rng.uniform(100., 160.), rng.random()
+    roof = next(key for limit, key in BACKGROUND_ROOF_MIX if pick < limit)
+    points = mass['points']
+    R = mass['height_cm'] + ROOF_SKIN
+    xs, ys = [p[0] for p in points], [p[1] for p in points]
+    for triangle in triangulate([list(points)], (min(xs) - 1, min(ys) - 1, max(xs) + 1, max(ys) + 1)):
+        mesh.face(roof, [(p[0], p[1], R) for p in triangle], (0, 0, 1))
+
+    def count(key, n=1):
+        counts[key] = counts.get(key, 0) + n
+    count('roof_' + roof)
+    record = {'material': roof, 'z_cm': round(R, 1), 'chimney': False, 'hatch': False}
+    n = len(points)
+    i = max(range(n), key=lambda k: (math.dist(points[k], points[(k + 1) % n]), -k))
+    a, b = points[i], points[(i + 1) % n]
+    if _area(points) < 0:
+        a, b = b, a                     # the frame's n points out of the mass
+    Ff = Frame(mesh, a, b)
+    W = math.dist(a, b)
+    depth = max(-((p[0] - a[0]) * Ff.n[0] + (p[1] - a[1]) * Ff.n[1]) for p in points)
+
+    def fits(x0, x1, t0, t1, margin=30.):
+        corners = [(x, t) for x in (x0 - margin, (x0 + x1) / 2, x1 + margin) for t in (t0 - margin, (t0 + t1) / 2, t1 + margin)]
+        return all(_inside(Ff.p(x, -t, 0)[:2], points) for x, t in corners)
+    placed = []
+
+    def free(x0, x1, t0, t1):
+        return all(x1 + 40 <= q[0] or x0 - 40 >= q[1] or t1 + 40 <= q[2] or t0 - 40 >= q[3] for q in placed)
+
+    def box(mat, x0, x1, t0, t1, z0, z1, skip='b'):
+        Ff.box(mat, x0, x1, -t1, -t0, z0, z1, skip)
+    masonry = mass['masonry'] if mass['masonry'] in BRICKS else 'Brick_Red'
+    if mass.get('modern'):
+        _modern_roof(mass, record, W, depth, R, mass.get('skin_wall') or masonry, box, fits, free, placed, count)
+    elif mass.get('skin_wall') != 'Stone_Cast' and mass['storeys'] <= 4:
+        for x, t in [(x, t) for t in (chimney_t * depth, depth * .5) for x in (70., W - 70., W / 2)]:
+            if W >= 160 and fits(x - 30, x + 30, t - 22, t + 22, 25):
+                box(masonry, x - 30, x + 30, t - 22, t + 22, R, R + chimney_h)
+                box('Stone_Cast', x - 35, x + 35, t - 27, t + 27, R + chimney_h, R + chimney_h + 6)
+                placed.append((x - 35, x + 35, t - 27, t + 27))
+                record['chimney'] = True
+                count('chimneys')
+                break
+        for xh, th in ((W * (.35 + .3 * hatch_f), depth * .55), (W / 2, depth * .5), (W * .3, depth * .4)):
+            if W >= 200 and fits(xh - 40, xh + 40, th - 40, th + 40, 20) and free(xh - 40, xh + 40, th - 40, th + 40):
+                box('Sheet_Metal', xh - 40, xh + 40, th - 40, th + 40, R, R + 45)
+                record['hatch'] = True
+                count('roof_hatches')
+                break
+    return record
+
+
 def build_background(mesh, masses, levels):
-    """Skin and window the backs of the background masses, and skin any part of a party wall left above a lower
-    neighbour (a plex neighbour counts with its parapet coping)."""
+    """Skin and window the backs of the background masses, roof them (author_background_roof), and skin any part of a
+    party wall left above a lower neighbour (a plex neighbour counts with its parapet coping)."""
     mesh.background_start = {material: len(faces) for material, faces in mesh.groups.items()}
     records, counts = [], {}
     for mass in masses:
@@ -3950,6 +4228,7 @@ def build_background(mesh, masses, levels):
         rear = Rear(mass, mass['height_cm'])
         rear.zt = mass['wall_top']
         record = rear.author(mesh)
+        roof = author_background_roof(mesh, mass, rear.counts)
         party = []
         for edge in mass['party']:
             neighbour = edge['neighbour']
@@ -3969,7 +4248,7 @@ def build_background(mesh, masses, levels):
             counts[key] = counts.get(key, 0) + value
         records.append({'id': mass['id'], 'kind': mass['kind'], 'storeys': mass['storeys'],
                         'mass_height_cm': round(mass['height_cm'], 1), 'cards_showing': mass['cards'],
-                        'walls': record['walls'], 'party': party, 'triangles': mesh.triangles() - before,
+                        'walls': record['walls'], 'party': party, 'roof': roof, 'triangles': mesh.triangles() - before,
                         **({'kit': 'post-1945 apartment', 'brick': rear.brick} if mass.get('modern') else {})})
     counts['masses'] = len(records)
     counts['triangles'] = sum(r['triangles'] for r in records)
@@ -4343,6 +4622,10 @@ def prepare(directory=OUT, write=True, keep=None):
                            'walls': dict(sorted(Counter(w['kind'] for r in background for w in r['walls']).items())),
                            'windows': sum(w['windows'] for r in background for w in r['walls']),
                            'party_skins': sum(len(r['party']) for r in background),
+                           'roofs': {'materials': dict(sorted(Counter(r['roof']['material'] for r in background).items())),
+                                     'chimneys': sum(r['roof']['chimney'] for r in background),
+                                     'hatches': sum(r['roof']['hatch'] for r in background),
+                                     'penthouses': sum(r['roof'].get('penthouses', 0) for r in background)},
                            'triangles': sum(r['triangles'] for r in background)}
     stats['glass_cards'] = {'status': audit, 'floating_on': floating}
     stats['walls_pass'] = {

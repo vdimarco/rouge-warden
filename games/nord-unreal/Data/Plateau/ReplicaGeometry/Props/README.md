@@ -6,7 +6,7 @@ kit of low-poly, comic-friendly meshes with real dimensions, built from code in 
 - Generator: `Scripts/blender/plateau_props.py` (Blender 5.1 Python module or `blender -b`).
 - Output: one OBJ per prop part (one material each) and `manifest.json` in this folder. The
   OBJs are git-ignored and rebuild byte for byte; the manifest records each OBJ's SHA-256.
-- Preview: `Preview/Replica/props_contact_sheet.png` (Cycles CPU, 1600 x 1000).
+- Preview: `Preview/Replica/props_contact_sheet.png` (Cycles CPU, 1600 x 1250).
 - Check: `Scripts/test_plateau_props.py` (stdlib).
 
 ```bash
@@ -65,6 +65,14 @@ The manifest follows the shared ReplicaGeometry contract (`layer`, `generator`, 
   - `bike_locked`: `anchors.lean_contact_cm` is where the post or railing touches.
   - `police_lightbar`: `anchors.light_red_cm` and `light_blue_cm`.
   - `grocery_bag` and `stroller`: `anchors.hand_grip_cm`.
+  - `chair_patio`: `seat_cm` (44).
+  - `satellite_dish`: `anchors.clamp_cm` is the clamp centre; set it on the gallery guard's cap rail
+    (107 cm) or a wall. `anchors.aim_cm` is the beam direction (+X, 26° up), so yaw +X to 190–230°
+    azimuth. `anchors.reflector_cm` and `lnb_cm` place the reflector centre and the feed: the arm
+    leaves the lower rim and holds the LNB in front of and below the axis, as on an offset dish.
+  - `bike_gallery`: `anchors.lean_contact_cm` is where the guard touches (12° lean toward -Y).
+- `colliders_cm` boxes are Unreal-local like `bounds_cm`, so the leaning bikes' boxes sit on their
+  -Y side. The check keeps every box within 10 cm of its prop's bounds.
 - Material keys are new. The apply step creates them by duplicating an existing material, such
   as a `M_*` constant-colour material, and setting the manifest colour. Never rebuild the
   existing `M_*` materials, because that removes their weather wrappers. Variants are extra
@@ -103,16 +111,32 @@ Each triangle count is for one assembled prop and excludes the duplicate merged 
 | `dog_large` | 1,136 | 9 | 120 x 34 x 76 |
 | `stroller` | 1,376 | 7 | 87 x 61 x 108 |
 | `grocery_bag` | 320 | 5 | 26 x 31 x 61 |
+| `chair_patio` | 472 | 1 | 54 x 58 x 85 |
+| `bbq` | 1,000 | 7 | 63 x 120 x 119 |
+| `satellite_dish` | 818 | 3 | 56 x 46 x 81 |
+| `potted_plant` | 1,176 | 6 | 36 x 36 x 63 |
+| `bike_gallery` | 1,524 | 5 | 181 x 53 x 117 |
 
-Targets met: each lamp has at most 800 triangles, the hydrant at most 500, each dog at most 1,500
-and the stroller at most 1,500. The folder holds 146 meshes, 22,090 triangles in all and 101
-material keys. Every mesh is under 65,000 triangles.
+Targets met: each lamp has at most 800 triangles, the hydrant at most 500, each dog at most 1,500,
+the stroller at most 1,500, the patio chair at most 700, the barbecue at most 1,600, the dish at
+most 1,200 and the potted plant at most 1,500. The folder holds 168 meshes, 27,080 triangles in
+all and 117 material keys. Every mesh is under 65,000 triangles.
+
+Gallery life (`kind: gallery`) furnishes the back galleries, the outdoor rooms the Plex layer
+records on each deck: a white resin stacking armchair, a two-burner propane grill on its cart with
+a 20 lb tank, a small offset satellite dish with a guard clamp, a terracotta pot with a geranium
+past its season (a dome of leaf discs on petioles, a few yellowed, three flower umbels), and a
+commuter bike with fenders, a rack and a wire basket leaning on the guard. The chair, the grill
+and the bike have box colliders; the dish and the plant do not. The contact sheet's
+"gallery deck" tile shows them together.
 
 Colour variants (first key is the default): blue and brown bins (3 each), garbage bags
 (black, green, grey), the cone (fresh, faded), the wooden pole (3), insulators (green glass,
 white), the AC case (3), the flower box and flowers (3 each), bench wood (3), locked-bike frames
 (4), laundry garments (3 per garment), dog coats (3 per dog), collars (3), the stroller frame
-(2), the stroller seat and canopy fabric (3 each), and the lamp pole (galvanised, grey).
+(2), the stroller seat and canopy fabric (3 each), the lamp pole (galvanised, grey), the resin chair
+(white, green, beige), the grill body (black, red, steel), the dish (white, grey, dark), the pot
+(terracotta, black, grey) and the geranium leaves (green, dry, rust).
 
 ## Street-name sign text
 

@@ -80,80 +80,80 @@
    "mesh": "SM_Asphalt_Replica_Alley_XM001_YM001",
    "material": "alley",
    "collision": "none",
-   "triangles": 559,
-   "faces": 226,
+   "triangles": 913,
+   "faces": 403,
    "tile_cm": 1000000,
    "bounds_cm": [
-    -43889.72,
-    -46998.62,
+    -43983.69,
+    -47168.33,
     6.75,
-    -4.55,
-    239.22,
+    207.43,
+    157.22,
     6.8
    ],
-   "sha256": "788aab37047fe102933dbb30e21aea8dc4cf026a953c1c19f0db55a3ef0cbeeb"
+   "sha256": "b9d1c00698ed5af959b4ee367a84bcc0c1ecf6ddf48113a85940f189073e30cb"
   },
   {
    "file": "Asphalt_Replica_Alley_XM001_YP000.obj",
    "mesh": "SM_Asphalt_Replica_Alley_XM001_YP000",
    "material": "alley",
    "collision": "none",
-   "triangles": 1275,
-   "faces": 496,
+   "triangles": 2157,
+   "faces": 937,
    "tile_cm": 1000000,
    "bounds_cm": [
-    -43919.08,
-    -72.54,
+    -43940.34,
+    -154.49,
     6.75,
-    755.34,
-    69260.1,
+    531.66,
+    69374.68,
     6.8
    ],
-   "sha256": "ef3f124c9981203e9bc611181937b8884b25e9753a5291381b2b40823446ccff"
+   "sha256": "f61a6bb775f3518b90ecdb464d54f1617d6ee72b8347a28c06cb4c205457cc44"
   },
   {
    "file": "Asphalt_Replica_Alley_XP000_YM001.obj",
    "mesh": "SM_Asphalt_Replica_Alley_XP000_YM001",
    "material": "alley",
    "collision": "none",
-   "triangles": 399,
-   "faces": 171,
+   "triangles": 649,
+   "faces": 296,
    "tile_cm": 1000000,
    "bounds_cm": [
-    -661.65,
+    -319.97,
     -46958.88,
     6.75,
     26178.07,
-    -23431.92,
+    -23576.93,
     6.8
    ],
-   "sha256": "7f7becd809189bcf2b164f25c9e4f7bec65d4855499741e9a4117440a8fc981c"
+   "sha256": "0d50d4271fef2be42f181158a0891610b9686765ac9589fc084b4e5392a98e2a"
   },
   {
    "file": "Asphalt_Replica_Alley_XP000_YP000.obj",
    "mesh": "SM_Asphalt_Replica_Alley_XP000_YP000",
    "material": "alley",
    "collision": "none",
-   "triangles": 1175,
-   "faces": 414,
+   "triangles": 1719,
+   "faces": 686,
    "tile_cm": 1000000,
    "bounds_cm": [
-    267.74,
+    -83.87,
     269.75,
     6.75,
-    55612.0,
-    69260.32,
+    55776.03,
+    69465.06,
     6.8
    ],
-   "sha256": "915ca97065dd2cebf426b89f68049f98415844728907aaf98b3ea8224bd510b7"
+   "sha256": "850465d292e3b706628d30fdc893b3aecd88ddbdafc5bd3afab0225a051a47d6"
   },
   {
    "file": "Concrete_Collision_Replica_XM002_YM002.obj",
    "mesh": "SM_Concrete_Collision_Replica_XM002_YM002",
    "material": "sidewalk",
    "collision": "complex",
-   "triangles": 1046,
-   "faces": 552,
+   "triangles": 1264,
+   "faces": 661,
    "tile_cm": 38000,
    "bounds_cm": [
     -44179.37,
@@ -163,15 +163,15 @@
     -37931.72,
     18.0
    ],
-   "sha256": "90d765cf6621e3381ed322d2d13d02c83b6ee7308a7f0731ea8ea3cf30ca7a72"
+   "sha256": "ee3758c88f7cdae4d89aecb8225b9f7cdd9dc3090b6f2b2dc5f4eb3809409cac"
   },
   {
    "file": "Concrete_Collision_Replica_XM002_YM001.obj",
    "mesh": "SM_Concrete_Collision_Replica_XM002_YM001",
    "material": "sidewalk",
    "collision": "complex",
-   "triangles": 3336,
-   "faces": 1692,
+   "triangles": 3834,
+   "faces": 1941,
    "tile_cm": 38000,
    "bounds_cm": [
     -44554.75,
@@ -181,15 +181,15 @@
     168.92,
     18.0
    ],
-   "sha256": "f7c23e260ca4fae120c7945bc553841e6c98ce6e8a34c80a8552c8f2b9edfae3"
+   "sha256": "ae526696b49bb316f3f65836721ebe0f463af881a1dd1fadd14fabb244a6269c"
   },
   {
    "file": "Concrete_Collision_Replica_XM002_YP000.obj",
    "mesh": "SM_Concrete_Collision_Replica_XM002_YP000",
    "material": "sidewalk",
    "collision": "complex",
-   "triangles": 2629,
-   "faces": 1326,
+   "triangles": 2753,
+   "faces": 1388,
    "tile_cm": 38000,
    "bounds_cm": [
     -44124.83,
@@ -199,15 +199,15 @@
     38111.3,
     18.0
    ],
-   "sha256": "5d4528f966e63015a923c86086507963d454759f1706fea2b5a309f0c0aa980d"
+   "sha256": "8b012d0483e08fc75aa3160b8bd0b03ae24feed7aad92f4b90edb06512c1cc94"
   },
   {
    "file": "Concrete_Collision_Replica_XM002_YP001.obj",
    "mesh": "SM_Concrete_Collision_Replica_XM002_YP001",
    "material": "sidewalk",
    "collision": "complex",
-   "triangles": 2758,
-   "faces": 1436,
+   "triangles": 3040,
+   "faces": 1577,
    "tile_cm": 38000,
    "bounds_cm": [
     -44355.36,
@@ -217,33 +217,33 @@
     69697.62,
     18.0
    ],
-   "sha256": "679f84ca0b1f4a4ce1e11f820c5985e83409d6c082940f6811489a550c3e5e5f"
+   "sha256": "638b9a6ed06e59c1c3c9a50428d81158b93151a24a8eb94096c82fc37362d638"
   },
   {
    "file": "Concrete_Collision_Replica_XM001_YM002.obj",
    "mesh": "SM_Concrete_Collision_Replica_XM001_YM002",
    "material": "sidewalk",
    "collision": "complex",
-   "triangles": 4706,
-   "faces": 2429,
+   "triangles": 5220,
+   "faces": 2686,
    "tile_cm": 38000,
    "bounds_cm": [
     -38086.21,
     -47703.95,
     0.0,
-    30.64,
+    40.15,
     -37885.58,
     18.0
    ],
-   "sha256": "9398b88be3d1c86527867e08557b8d163ef094868c41d809d759a7e7e43dc40c"
+   "sha256": "a0c6b3919769aae6aef6b95e0ecd1a0093ed20a037d1db5b881941488e78a102"
   },
   {
    "file": "Concrete_Collision_Replica_XM001_YM001.obj",
    "mesh": "SM_Concrete_Collision_Replica_XM001_YM001",
    "material": "sidewalk",
    "collision": "complex",
-   "triangles": 17935,
-   "faces": 9299,
+   "triangles": 20141,
+   "faces": 10402,
    "tile_cm": 38000,
    "bounds_cm": [
     -38172.57,
@@ -253,15 +253,15 @@
     48.0,
     18.0
    ],
-   "sha256": "d83beb1a2bce038196ffc6aeb91cbe374b0073c4d061ad6ee95cd2485dd8e4b6"
+   "sha256": "ed10965bc515658e3d663219e01bc3f3fdc00024fe040015a2b257db6234019c"
   },
   {
    "file": "Concrete_Collision_Replica_XM001_YP000.obj",
    "mesh": "SM_Concrete_Collision_Replica_XM001_YP000",
    "material": "sidewalk",
    "collision": "complex",
-   "triangles": 10905,
-   "faces": 5519,
+   "triangles": 11197,
+   "faces": 5665,
    "tile_cm": 38000,
    "bounds_cm": [
     -38107.34,
@@ -271,15 +271,15 @@
     38099.12,
     18.0
    ],
-   "sha256": "4733a28dd6181b179128b81e3ea4367797194c3fdcf9133dff027fa0e8b58935"
+   "sha256": "c483705632175808240ca22b97dd9f57365181a3f7fc28852262061b744eaa4a"
   },
   {
    "file": "Concrete_Collision_Replica_XM001_YP001.obj",
    "mesh": "SM_Concrete_Collision_Replica_XM001_YP001",
    "material": "sidewalk",
    "collision": "complex",
-   "triangles": 14570,
-   "faces": 7487,
+   "triangles": 14724,
+   "faces": 7564,
    "tile_cm": 38000,
    "bounds_cm": [
     -38110.54,
@@ -289,15 +289,15 @@
     69882.54,
     18.0
    ],
-   "sha256": "a9717c20007aa9152786b684adedaa6b1fcabb512f3c3b55eefb94e300d85a3e"
+   "sha256": "56db5123257cb446a08d6d648d342a2f332546b9177251ba1a21f83764fceabf"
   },
   {
    "file": "Concrete_Collision_Replica_XP000_YM002.obj",
    "mesh": "SM_Concrete_Collision_Replica_XP000_YM002",
    "material": "sidewalk",
    "collision": "complex",
-   "triangles": 4484,
-   "faces": 2279,
+   "triangles": 4952,
+   "faces": 2513,
    "tile_cm": 38000,
    "bounds_cm": [
     -95.59,
@@ -307,15 +307,15 @@
     -37770.27,
     18.0
    ],
-   "sha256": "c18eb40f6e3428baa890754ac058de899fb52049100e5c44fb85117af7952f29"
+   "sha256": "1fdce27074567743cfff1e15a2c4a06cb4758aa2762921e0927bbad01eba1a5b"
   },
   {
    "file": "Concrete_Collision_Replica_XP000_YM001.obj",
    "mesh": "SM_Concrete_Collision_Replica_XP000_YM001",
    "material": "sidewalk",
    "collision": "complex",
-   "triangles": 7699,
-   "faces": 3973,
+   "triangles": 8027,
+   "faces": 4137,
    "tile_cm": 38000,
    "bounds_cm": [
     -68.35,
@@ -325,15 +325,15 @@
     -18607.47,
     18.0
    ],
-   "sha256": "ef56dae0c7a79e0c80f2f49ea276e79545cf5ed765d22241f1863ab4ede7d4da"
+   "sha256": "3c3c536d6bb35fe8fb1c00a4e26ddeedf31f7f4be6a4a2bd40ab41bb0842a451"
   },
   {
    "file": "Concrete_Collision_Replica_XP000_YP000.obj",
    "mesh": "SM_Concrete_Collision_Replica_XP000_YP000",
    "material": "sidewalk",
    "collision": "complex",
-   "triangles": 932,
-   "faces": 466,
+   "triangles": 940,
+   "faces": 470,
    "tile_cm": 38000,
    "bounds_cm": [
     20047.69,
@@ -343,15 +343,15 @@
     38122.07,
     18.0
    ],
-   "sha256": "2a563ae97920dfe21f4b463f5df7894dca604c8cf48c0733a9234728453d81c2"
+   "sha256": "ac4a489beaa9047358ce2aa7cdfb5fabb359bf1a0271b76c88b935aa601e904d"
   },
   {
    "file": "Concrete_Collision_Replica_XP000_YP001.obj",
    "mesh": "SM_Concrete_Collision_Replica_XP000_YP001",
    "material": "sidewalk",
    "collision": "complex",
-   "triangles": 11233,
-   "faces": 5739,
+   "triangles": 11917,
+   "faces": 6083,
    "tile_cm": 38000,
    "bounds_cm": [
     -148.42,
@@ -361,15 +361,15 @@
     69528.67,
     18.0
    ],
-   "sha256": "9eeb88a0aa69dfa6b2dbcf9b7b3f22f85d8a3d8b02a927c5caa39f6508bf9413"
+   "sha256": "5aa6cfa56fcaa9109e3499c91578222ff4f4cb1b51dd688a0c8f1c8268a15b3d"
   },
   {
    "file": "Concrete_Collision_Replica_XP001_YM002.obj",
    "mesh": "SM_Concrete_Collision_Replica_XP001_YM002",
    "material": "sidewalk",
    "collision": "complex",
-   "triangles": 2749,
-   "faces": 1402,
+   "triangles": 2885,
+   "faces": 1470,
    "tile_cm": 38000,
    "bounds_cm": [
     37850.87,
@@ -379,15 +379,15 @@
     -37876.58,
     18.0
    ],
-   "sha256": "28c438860699b912dde1950942be6289e7632aef1015ce956a60c28d14f35dcb"
+   "sha256": "1df2ef2c010107debbe16c0254088c9a1fe672b7644480c22ec6479ce1b9bb41"
   },
   {
    "file": "Concrete_Collision_Replica_XP001_YM001.obj",
    "mesh": "SM_Concrete_Collision_Replica_XP001_YM001",
    "material": "sidewalk",
    "collision": "complex",
-   "triangles": 5757,
-   "faces": 2928,
+   "triangles": 5991,
+   "faces": 3045,
    "tile_cm": 38000,
    "bounds_cm": [
     37840.09,
@@ -397,15 +397,15 @@
     120.24,
     18.0
    ],
-   "sha256": "de78ce7b2aa3dd1558ffd5d15199d4ce2ea50ae25212757879231aa073519f7a"
+   "sha256": "a19e38225a72b18d23b69c7a45da0aeabcf84da99c0e9925ef48d350489d4ded"
   },
   {
    "file": "Concrete_Collision_Replica_XP001_YP000.obj",
    "mesh": "SM_Concrete_Collision_Replica_XP001_YP000",
    "material": "sidewalk",
    "collision": "complex",
-   "triangles": 5705,
-   "faces": 2941,
+   "triangles": 5831,
+   "faces": 3004,
    "tile_cm": 38000,
    "bounds_cm": [
     37959.53,
@@ -415,15 +415,15 @@
     38147.91,
     18.0
    ],
-   "sha256": "817fa1688cde94c97bd91bfddc643a7d9bda1fac68dfb9dc693e61ef5d501ff9"
+   "sha256": "15a696ec9c92ad7d338a8782b02baff0fe474d56e055de7dc4e3804d0ed818e2"
   },
   {
    "file": "Concrete_Collision_Replica_XP001_YP001.obj",
    "mesh": "SM_Concrete_Collision_Replica_XP001_YP001",
    "material": "sidewalk",
    "collision": "complex",
-   "triangles": 7636,
-   "faces": 3905,
+   "triangles": 8344,
+   "faces": 4259,
    "tile_cm": 38000,
    "bounds_cm": [
     37897.01,
@@ -433,33 +433,33 @@
     69865.9,
     18.0
    ],
-   "sha256": "b93679640c4472b5b508484c29eb9f927e29cab95d09f94322b3cb6990c75223"
+   "sha256": "17b6c4be9c4d8ada2c6b951d84db05c9a05d3cdba051649710da9bb8f329d718"
   },
   {
    "file": "Streets_curb_XM001_YM001.obj",
    "mesh": "SM_Streets_curb_XM001_YM001",
    "material": "curb",
    "collision": "none",
-   "triangles": 9018,
-   "faces": 4826,
+   "triangles": 10435,
+   "faces": 5535,
    "tile_cm": 1000000,
    "bounds_cm": [
     -44330.51,
     -47498.81,
-    9.0,
+    0.0,
     53.36,
     41.13,
     18.1
    ],
-   "sha256": "ab130c191bd85189bd41b92b14b249bbca4da568aefbae2c9895a9ffb6c32f43"
+   "sha256": "862bcd184a09ab92ac607ff84537fe76584de3b19085d5fc614d50f7b6e59a9e"
   },
   {
    "file": "Streets_curb_XM001_YP000.obj",
    "mesh": "SM_Streets_curb_XM001_YP000",
    "material": "curb",
    "collision": "none",
-   "triangles": 10194,
-   "faces": 5262,
+   "triangles": 10847,
+   "faces": 5589,
    "tile_cm": 1000000,
    "bounds_cm": [
     -44209.21,
@@ -469,15 +469,15 @@
     69662.35,
     18.1
    ],
-   "sha256": "0c9392296da68538b57ebe6d9d8b7efe32ce07efb85e296251913ab23e22cc68"
+   "sha256": "e02c26fa241c0461c14400701c747b62f73528004e57e2557e5ab2b40b4afdb4"
   },
   {
    "file": "Streets_curb_XP000_YM001.obj",
    "mesh": "SM_Streets_curb_XP000_YM001",
    "material": "curb",
    "collision": "none",
-   "triangles": 6918,
-   "faces": 3601,
+   "triangles": 7426,
+   "faces": 3855,
    "tile_cm": 1000000,
    "bounds_cm": [
     -61.93,
@@ -487,15 +487,15 @@
     37.97,
     18.1
    ],
-   "sha256": "6ad697676a7f0cd2629647eef7d2106816e13c981e56a37e900a14002ca74167"
+   "sha256": "99489d464a390165a3863897f479a7dd11371e5f897f0efc98fc39975eeec6ad"
   },
   {
    "file": "Streets_curb_XP000_YP000.obj",
    "mesh": "SM_Streets_curb_XP000_YP000",
    "material": "curb",
    "collision": "none",
-   "triangles": 8706,
-   "faces": 4561,
+   "triangles": 9809,
+   "faces": 5115,
    "tile_cm": 1000000,
    "bounds_cm": [
     -81.65,
@@ -505,15 +505,15 @@
     69647.73,
     18.1
    ],
-   "sha256": "d8d2ab26313dbe392f05069a03906fa746fb68ec04c95d38b9ca6c4fc001cbcd"
+   "sha256": "362a012102c1108ec8e5f2c5e639d8b50c189a7517f23e68ebb4fa522e6c204b"
   },
   {
    "file": "Streets_joint_XM001_YM001.obj",
    "mesh": "SM_Streets_joint_XM001_YM001",
    "material": "joint",
    "collision": "none",
-   "triangles": 8056,
-   "faces": 4028,
+   "triangles": 8064,
+   "faces": 4032,
    "tile_cm": 1000000,
    "bounds_cm": [
     -44482.14,
@@ -523,15 +523,15 @@
     59.76,
     18.12
    ],
-   "sha256": "8a29a846eafdf5a9813bed8b0dffc08498ea68fa30684f7bd52322c46d98f39c"
+   "sha256": "24c3ac3af353e59f90cb003e92f31e35afa68353034e9beba8d5e636013b2b92"
   },
   {
    "file": "Streets_joint_XM001_YP000.obj",
    "mesh": "SM_Streets_joint_XM001_YP000",
    "material": "joint",
    "collision": "none",
-   "triangles": 9454,
-   "faces": 4727,
+   "triangles": 9458,
+   "faces": 4729,
    "tile_cm": 1000000,
    "bounds_cm": [
     -44274.52,
@@ -541,15 +541,15 @@
     69799.72,
     18.12
    ],
-   "sha256": "4e302c387f254acc2ef8115cfa645797030cc1345cfeb2ec2dcc20ab6336242a"
+   "sha256": "6fc85152a4167c42a864979eeb8982db4e9c297854fcec538245e3e9cbaacae4"
   },
   {
    "file": "Streets_joint_XP000_YM001.obj",
    "mesh": "SM_Streets_joint_XP000_YM001",
    "material": "joint",
    "collision": "none",
-   "triangles": 6522,
-   "faces": 3261,
+   "triangles": 6528,
+   "faces": 3264,
    "tile_cm": 1000000,
    "bounds_cm": [
     -52.78,
@@ -559,7 +559,7 @@
     36.69,
     18.12
    ],
-   "sha256": "34cc6a8560e685168f90ed5c12e6a1ef1ce5a7b1564ba2539e9284a4aeb3b567"
+   "sha256": "98b8041e11f698470a2f89ec0da95bfd2ed3531cbeacd906b3b0a85fe0aa7b1d"
   },
   {
    "file": "Streets_joint_XP000_YP000.obj",
@@ -980,8 +980,8 @@
    "mesh": "SM_Streets_Yard_Grass_XM001_YM001",
    "material": "Yard_Grass",
    "collision": "complex",
-   "triangles": 8864,
-   "faces": 4432,
+   "triangles": 9103,
+   "faces": 4555,
    "tile_cm": 1000000,
    "bounds_cm": [
     -44215.16,
@@ -991,15 +991,15 @@
     175.15,
     18.3
    ],
-   "sha256": "6c6010abcbb9038c5215f36b2a4e294208cbeed4ea23f833aa74d05ad464713a"
+   "sha256": "bb63a41a5977a691a1e3dd1a701adff77af937eb83e0b21697741ebb3fb2dc6a"
   },
   {
    "file": "Streets_Yard_Grass_XM001_YP000.obj",
    "mesh": "SM_Streets_Yard_Grass_XM001_YP000",
    "material": "Yard_Grass",
    "collision": "complex",
-   "triangles": 9448,
-   "faces": 4724,
+   "triangles": 9580,
+   "faces": 4800,
    "tile_cm": 1000000,
    "bounds_cm": [
     -44320.73,
@@ -1009,15 +1009,15 @@
     70115.06,
     18.3
    ],
-   "sha256": "af34b27e813be751047828e059a6b87c426b6c628ae566fb302c1074b2e09c69"
+   "sha256": "32ce115c6a7b10a531244af4209dc885a5c70b350f825ca25ee8c801c9d40ce4"
   },
   {
    "file": "Streets_Yard_Grass_XP000_YM001.obj",
    "mesh": "SM_Streets_Yard_Grass_XP000_YM001",
    "material": "Yard_Grass",
    "collision": "complex",
-   "triangles": 8534,
-   "faces": 4267,
+   "triangles": 8601,
+   "faces": 4302,
    "tile_cm": 1000000,
    "bounds_cm": [
     -536.39,
@@ -1027,15 +1027,15 @@
     4.41,
     18.3
    ],
-   "sha256": "8cbd6c550ed2dce10eeab4ec9343e77ac0981e8712f3b55ed93e36728621b183"
+   "sha256": "89f6dbfe070dbfb9dfc2adc127c3c4554c7e06cdb3dace10e9b0abd028c9ab78"
   },
   {
    "file": "Streets_Yard_Grass_XP000_YP000.obj",
    "mesh": "SM_Streets_Yard_Grass_XP000_YP000",
    "material": "Yard_Grass",
    "collision": "complex",
-   "triangles": 8906,
-   "faces": 4453,
+   "triangles": 9081,
+   "faces": 4543,
    "tile_cm": 1000000,
    "bounds_cm": [
     -235.77,
@@ -1045,15 +1045,15 @@
     70055.41,
     18.3
    ],
-   "sha256": "7c3ad34b1a99b2005d161353fe111be6c0002714b038ca6179a201a46594d3ca"
+   "sha256": "c6266f68c08682076783bf4b130c6dd7eee2a54f528ca28654a23332c6aa6f14"
   },
   {
    "file": "Streets_Yard_Soil_XM001_YM001.obj",
    "mesh": "SM_Streets_Yard_Soil_XM001_YM001",
    "material": "Yard_Soil",
    "collision": "complex",
-   "triangles": 5380,
-   "faces": 2690,
+   "triangles": 5443,
+   "faces": 2722,
    "tile_cm": 1000000,
    "bounds_cm": [
     -44590.55,
@@ -1063,15 +1063,15 @@
     263.76,
     18.3
    ],
-   "sha256": "b86aae59ad658f0f0eaf5f680cda7f55451430884ef9cea4089de83c28ada585"
+   "sha256": "96189294fd2ca9ce13807430b4b845f56c42250d3c754d586b35b7a2a4f57c83"
   },
   {
    "file": "Streets_Yard_Soil_XM001_YP000.obj",
    "mesh": "SM_Streets_Yard_Soil_XM001_YP000",
    "material": "Yard_Soil",
    "collision": "complex",
-   "triangles": 5654,
-   "faces": 2827,
+   "triangles": 5684,
+   "faces": 2843,
    "tile_cm": 1000000,
    "bounds_cm": [
     -44386.11,
@@ -1081,15 +1081,15 @@
     70535.65,
     18.3
    ],
-   "sha256": "2bcba3e1552d806ba3cc772b3ce2d2000214d457d18ba17a8be52b19640528f1"
+   "sha256": "20688f2fc13ae7441e3c7288c4d0215c96189d30a726387caa9cf8c1df9b0997"
   },
   {
    "file": "Streets_Yard_Soil_XP000_YM001.obj",
    "mesh": "SM_Streets_Yard_Soil_XP000_YM001",
    "material": "Yard_Soil",
    "collision": "complex",
-   "triangles": 4556,
-   "faces": 2278,
+   "triangles": 4630,
+   "faces": 2317,
    "tile_cm": 1000000,
    "bounds_cm": [
     -87.11,
@@ -1099,15 +1099,15 @@
     160.19,
     18.3
    ],
-   "sha256": "fe34e9d515600fe0edf04a9ededfc7395ffe5e67aabb9d80339507f836448454"
+   "sha256": "da53c4b003c30a4fa57fb9bfd17b2fa8a127850e3e715e1b3a96bf2a6fa202c8"
   },
   {
    "file": "Streets_Yard_Soil_XP000_YP000.obj",
    "mesh": "SM_Streets_Yard_Soil_XP000_YP000",
    "material": "Yard_Soil",
    "collision": "complex",
-   "triangles": 4966,
-   "faces": 2483,
+   "triangles": 5032,
+   "faces": 2519,
    "tile_cm": 1000000,
    "bounds_cm": [
     -214.2,
@@ -1117,51 +1117,51 @@
     70448.17,
     18.3
    ],
-   "sha256": "5671c7adeeee1db86c94d49df61d72a76156c5abcfbe09ed80fc82f0c2ecc4cd"
+   "sha256": "61870ed7b425e4ca33fb6aad6e49697b64c3f2891afd5c4515fcca1c40c0bd3e"
   },
   {
    "file": "Streets_yard_path_XM001_YM001.obj",
    "mesh": "SM_Streets_yard_path_XM001_YM001",
    "material": "yard_path",
    "collision": "complex",
-   "triangles": 2402,
-   "faces": 1201,
+   "triangles": 3217,
+   "faces": 1610,
    "tile_cm": 1000000,
    "bounds_cm": [
     -43953.3,
-    -47488.67,
+    -47866.69,
     0.0,
     36.89,
     324.43,
     18.3
    ],
-   "sha256": "5c60abf80589677cfce3285c52780deaa5d7b695e708c78ce4b3464eff97d31c"
+   "sha256": "402076a6d2794c4c294357db537d9bab5364caa96c7d2a4e3e07a4a39575a20d"
   },
   {
    "file": "Streets_yard_path_XM001_YP000.obj",
    "mesh": "SM_Streets_yard_path_XM001_YP000",
    "material": "yard_path",
    "collision": "complex",
-   "triangles": 2442,
-   "faces": 1221,
+   "triangles": 2806,
+   "faces": 1406,
    "tile_cm": 1000000,
    "bounds_cm": [
-    -44282.21,
+    -44677.68,
     315.24,
     0.0,
-    -3155.32,
+    75.13,
     70027.24,
     18.3
    ],
-   "sha256": "8c55fa462ca048bb0d629a5101e2c2baf7bf78381387c09cf5d28051cbe2b8e9"
+   "sha256": "c4641a9f8d8dde90bf011b17028a2abc8c0bda609a9748223a3285a94d7f875c"
   },
   {
    "file": "Streets_yard_path_XP000_YM001.obj",
    "mesh": "SM_Streets_yard_path_XP000_YM001",
    "material": "yard_path",
    "collision": "complex",
-   "triangles": 2222,
-   "faces": 1111,
+   "triangles": 2540,
+   "faces": 1270,
    "tile_cm": 1000000,
    "bounds_cm": [
     -56.44,
@@ -1171,51 +1171,51 @@
     29.39,
     18.3
    ],
-   "sha256": "150c5cf17993fd174d725a81b502a5d7991ce5466f14964e28bcef9acd011f36"
+   "sha256": "2cf78c5244f73e9a1e6cca03acfaefc00e1e959b411f174e6b2803db3bb31907"
   },
   {
    "file": "Streets_yard_path_XP000_YP000.obj",
    "mesh": "SM_Streets_yard_path_XP000_YP000",
    "material": "yard_path",
    "collision": "complex",
-   "triangles": 1590,
-   "faces": 795,
+   "triangles": 2053,
+   "faces": 1027,
    "tile_cm": 1000000,
    "bounds_cm": [
-    9289.11,
+    -305.61,
     -48.54,
     0.0,
-    55693.39,
-    69761.63,
+    55880.44,
+    70553.48,
     18.3
    ],
-   "sha256": "bc6b85e5d0eaa0a9259cc06fe856ff1e063db2eb3097b3142ca9f6aefced06c1"
+   "sha256": "030ce85dc4a0e4f9fea186f77e192efa7287fb8de6b0f406aff9a4a11257d08d"
   },
   {
    "file": "Streets_grass_edge_XM001_YM001.obj",
    "mesh": "SM_Streets_grass_edge_XM001_YM001",
    "material": "grass_edge",
    "collision": "none",
-   "triangles": 15944,
-   "faces": 7972,
+   "triangles": 15265,
+   "faces": 7636,
    "tile_cm": 1000000,
    "bounds_cm": [
     -44188.64,
-    -47709.85,
+    -47688.49,
     0.0,
     9.56,
     -3.39,
     18.44
    ],
-   "sha256": "89153b933a3d0c31ad693bba39b506f01d3c5c5902595fa60271958fe162f975"
+   "sha256": "14022064c0c477f042980bf4184ed23c11b645b0ac51efc3020cbf1e81ab9b4c"
   },
   {
    "file": "Streets_grass_edge_XM001_YP000.obj",
    "mesh": "SM_Streets_grass_edge_XM001_YP000",
    "material": "grass_edge",
    "collision": "none",
-   "triangles": 20169,
-   "faces": 10085,
+   "triangles": 19628,
+   "faces": 9824,
    "tile_cm": 1000000,
    "bounds_cm": [
     -44133.77,
@@ -1225,51 +1225,51 @@
     69709.95,
     18.44
    ],
-   "sha256": "70bfd0d409281bf3de2f02c900f9ad33074f0aec078109afd416c25b1b7a78e9"
+   "sha256": "bab3b1058810a33d634cff7f4e01005f7fb964824f4957023125f856c24eb419"
   },
   {
    "file": "Streets_grass_edge_XP000_YM001.obj",
    "mesh": "SM_Streets_grass_edge_XP000_YM001",
    "material": "grass_edge",
    "collision": "none",
-   "triangles": 12814,
-   "faces": 6407,
+   "triangles": 12391,
+   "faces": 6197,
    "tile_cm": 1000000,
    "bounds_cm": [
     -16.04,
-    -47359.64,
+    -47336.52,
     0.0,
     55909.62,
     -196.44,
     18.44
    ],
-   "sha256": "db99a8a6a7461311517217cf4bfcc2eb16530691251f4a85bf5d751ed4a98807"
+   "sha256": "aeadfe7b90118910821001af69be8091f52c500481b54a4bb2b1ad006de75705"
   },
   {
    "file": "Streets_grass_edge_XP000_YP000.obj",
    "mesh": "SM_Streets_grass_edge_XP000_YP000",
    "material": "grass_edge",
    "collision": "none",
-   "triangles": 17788,
-   "faces": 8894,
+   "triangles": 17706,
+   "faces": 8864,
    "tile_cm": 1000000,
    "bounds_cm": [
-    -1.95,
+    -20.54,
     213.13,
     0.0,
-    56054.66,
-    69838.2,
+    56016.69,
+    69520.59,
     18.44
    ],
-   "sha256": "8bfcba9ff5f8014d8dbb706b4600c1b664d9a21e0807f2fb976f1edffcea6adb"
+   "sha256": "abe09c72da9d4f3f832130bca76285452af513288530f7025e40a84674e0fcdb"
   },
   {
    "file": "Streets_soil_XM001_YM001.obj",
    "mesh": "SM_Streets_soil_XM001_YM001",
    "material": "soil",
    "collision": "none",
-   "triangles": 696,
-   "faces": 348,
+   "triangles": 772,
+   "faces": 389,
    "tile_cm": 1000000,
    "bounds_cm": [
     -43409.37,
@@ -1279,15 +1279,15 @@
     -1432.19,
     18.15
    ],
-   "sha256": "3ad8964761ba613d42e9e7bdcf530371345268f953111c3274f7197486b7a27d"
+   "sha256": "2c8df7553f517af049bb768d4c5e88a5145d621f7c6435cea856da2aa5cc3f64"
   },
   {
    "file": "Streets_soil_XM001_YP000.obj",
    "mesh": "SM_Streets_soil_XM001_YP000",
    "material": "soil",
    "collision": "none",
-   "triangles": 1032,
-   "faces": 516,
+   "triangles": 1156,
+   "faces": 583,
    "tile_cm": 1000000,
    "bounds_cm": [
     -43967.36,
@@ -1297,15 +1297,15 @@
     69341.39,
     18.15
    ],
-   "sha256": "ac63c9605ee0324bad6b27ab5db0d2b1450b4e374a2ffa36b0cd727faf2610b7"
+   "sha256": "8f638d411d6ae78f1effac8850793c1e69ca04602c224fa5382f762c7583bb54"
   },
   {
    "file": "Streets_soil_XP000_YM001.obj",
    "mesh": "SM_Streets_soil_XP000_YM001",
    "material": "soil",
    "collision": "none",
-   "triangles": 508,
-   "faces": 254,
+   "triangles": 531,
+   "faces": 266,
    "tile_cm": 1000000,
    "bounds_cm": [
     215.2,
@@ -1315,15 +1315,15 @@
     76.21,
     18.15
    ],
-   "sha256": "a52069a80a01dd230ce3cd4d76d3db529f0e0fca6ab997e56fc64f2219a6e312"
+   "sha256": "13a75370d2289d2d78984471ffc1bdba78a48c739fc6779580ecef7e894483db"
   },
   {
    "file": "Streets_soil_XP000_YP000.obj",
    "mesh": "SM_Streets_soil_XP000_YP000",
    "material": "soil",
    "collision": "none",
-   "triangles": 638,
-   "faces": 319,
+   "triangles": 784,
+   "faces": 396,
    "tile_cm": 1000000,
    "bounds_cm": [
     66.13,
@@ -1333,79 +1333,79 @@
     68205.82,
     18.15
    ],
-   "sha256": "fd996d80eced57a028d4e1875e2e408f65c8073b5d52293037fed53676897b7f"
+   "sha256": "c9a9825e66fc235c1e2d4cde43940979ee4e6a165696389b44a6f6c9fa71f5e4"
   },
   {
    "file": "Streets_Yard_Gravel_XM001_YM001.obj",
    "mesh": "SM_Streets_Yard_Gravel_XM001_YM001",
    "material": "Yard_Gravel",
    "collision": "none",
-   "triangles": 1284,
-   "faces": 642,
+   "triangles": 1348,
+   "faces": 674,
    "tile_cm": 1000000,
    "bounds_cm": [
-    -42361.16,
-    -46997.77,
+    -43526.3,
+    -46604.42,
     7.05,
-    20.76,
-    -162.37,
+    25.81,
+    -138.02,
     7.05
    ],
-   "sha256": "c17f76dd7c6da42833135ba8181e9aaa965ddcd1d2bc33d3cc900a0a1c1c3dce"
+   "sha256": "e70f638edc2e92e9582f8208ad7fcdf554ea0220ccdf7b4b2b515eff174ad7f7"
   },
   {
    "file": "Streets_Yard_Gravel_XM001_YP000.obj",
    "mesh": "SM_Streets_Yard_Gravel_XM001_YP000",
    "material": "Yard_Gravel",
    "collision": "none",
-   "triangles": 5480,
-   "faces": 2740,
+   "triangles": 4438,
+   "faces": 2219,
    "tile_cm": 1000000,
    "bounds_cm": [
     -43836.6,
-    583.63,
+    2581.23,
     7.05,
-    9.7,
+    11.28,
     69259.26,
     7.05
    ],
-   "sha256": "54adde19ce4c7690b4ecb9d4baa5d0924d8f0140f47977b70369e1374107f50c"
+   "sha256": "0cf3354e7ffbbe15da6bd5fdc024e42729efa92332db9321eb4ed32f2cfbe364"
   },
   {
    "file": "Streets_Yard_Gravel_XP000_YM001.obj",
    "mesh": "SM_Streets_Yard_Gravel_XP000_YM001",
    "material": "Yard_Gravel",
    "collision": "none",
-   "triangles": 902,
-   "faces": 451,
+   "triangles": 904,
+   "faces": 452,
    "tile_cm": 1000000,
    "bounds_cm": [
-    -20.76,
+    9.03,
     -46917.82,
     7.05,
     26177.24,
-    -23649.87,
+    -24326.15,
     7.05
    ],
-   "sha256": "38f330fdfba9d5c0daa767c4d3ac700f40da3d9bbe43697bf65f978fe77122c2"
+   "sha256": "2295324b4c85c0608a596bfddb2c48efc3e372e5836b5947241c25cbdb83b8bd"
   },
   {
    "file": "Streets_Yard_Gravel_XP000_YP000.obj",
    "mesh": "SM_Streets_Yard_Gravel_XP000_YP000",
    "material": "Yard_Gravel",
    "collision": "none",
-   "triangles": 2456,
-   "faces": 1228,
+   "triangles": 2044,
+   "faces": 1022,
    "tile_cm": 1000000,
    "bounds_cm": [
-    -12.54,
+    -1.53,
     528.16,
     7.05,
     55538.21,
     69178.56,
     7.05
    ],
-   "sha256": "e9b96ba5b72bf911cf5fdba339bfad20a7a4ed97ddc2e2a48e99d7a2a09bc98f"
+   "sha256": "fc095f3251adc1385eef278e0ab8d03b44e8768afbaa2d82fbe9399f84a9de94"
   },
   {
    "file": "Streets_iron_XM003_YM003.obj",
@@ -1420,10 +1420,10 @@
     -44809.0,
     18.0,
     -38051.25,
-    -38558.84,
+    -38539.74,
     99.0
    ],
-   "sha256": "8f7172774135435a8ed9b0212dcd22d51613352215305602b793760957697454"
+   "sha256": "11cf9d6e1e01cbbb93baf1cb5ec2f153f1b98e3c7bab0dd89f171a4783353bf2"
   },
   {
    "file": "Streets_iron_XM003_YM002.obj",
@@ -1477,7 +1477,7 @@
     15647.84,
     107.0
    ],
-   "sha256": "434aec39975b589468e9f873cb624140e54bbf7f9133c9a7e204dfc333d873a9"
+   "sha256": "2cd244c85db0db26cbb6fe2d1e68b1ad855ba9a4d49d4fe8bcd828f94e05b466"
   },
   {
    "file": "Streets_iron_XM003_YP001.obj",
@@ -1502,18 +1502,18 @@
    "mesh": "SM_Streets_iron_XM003_YP002",
    "material": "iron",
    "collision": "none",
-   "triangles": 4856,
-   "faces": 2594,
+   "triangles": 4772,
+   "faces": 2548,
    "tile_cm": 19000,
    "bounds_cm": [
     -44006.0,
     38002.21,
     9.4,
     -37917.59,
-    56030.88,
+    55952.72,
     107.0
    ],
-   "sha256": "001f383d52979a79431185a519585ec3502c1247f958dfb695b661a0ed53fe40"
+   "sha256": "5296812d93a5101dd9f05404ce038871e6417e8ea05cffdca5a37c4640efc234"
   },
   {
    "file": "Streets_iron_XM003_YP003.obj",
@@ -1592,8 +1592,8 @@
    "mesh": "SM_Streets_iron_XM002_YP000",
    "material": "iron",
    "collision": "none",
-   "triangles": 5532,
-   "faces": 2972,
+   "triangles": 5478,
+   "faces": 2943,
    "tile_cm": 19000,
    "bounds_cm": [
     -37995.61,
@@ -1603,15 +1603,15 @@
     18999.82,
     107.0
    ],
-   "sha256": "904994e6f65b60e0a3b9a6cda49f8aa2e172c8ea749572939fd717551d9512de"
+   "sha256": "4f3766c6a0f3542d6475e994a4cdf2df3b4543d33cfaecb9e50b691442eeec79"
   },
   {
    "file": "Streets_iron_XM002_YP001.obj",
    "mesh": "SM_Streets_iron_XM002_YP001",
    "material": "iron",
    "collision": "none",
-   "triangles": 16976,
-   "faces": 9098,
+   "triangles": 16982,
+   "faces": 9101,
    "tile_cm": 19000,
    "bounds_cm": [
     -38103.8,
@@ -1621,15 +1621,15 @@
     38126.45,
     107.0
    ],
-   "sha256": "9bcbeb537ad562062340ca08b6cd3cd56e022d113fcd7613161a30f1a62ec3e1"
+   "sha256": "4e0ad352b74dafcd700460531891410347f8ad0a9d988cd6694bcc3c2c49c156"
   },
   {
    "file": "Streets_iron_XM002_YP002.obj",
    "mesh": "SM_Streets_iron_XM002_YP002",
    "material": "iron",
    "collision": "none",
-   "triangles": 22238,
-   "faces": 11969,
+   "triangles": 22028,
+   "faces": 11854,
    "tile_cm": 19000,
    "bounds_cm": [
     -38030.6,
@@ -1639,15 +1639,15 @@
     57088.96,
     107.0
    ],
-   "sha256": "3997744225bf72561f9e42662270cb4a33ab2ac29184663a525bd24f04ee60c8"
+   "sha256": "c10cf4d103cf5c5e9add4788031c070cce7aafa06fe7502412ce32ba86788580"
   },
   {
    "file": "Streets_iron_XM002_YP003.obj",
    "mesh": "SM_Streets_iron_XM002_YP003",
    "material": "iron",
    "collision": "none",
-   "triangles": 11472,
-   "faces": 6162,
+   "triangles": 11142,
+   "faces": 5981,
    "tile_cm": 19000,
    "bounds_cm": [
     -38056.25,
@@ -1657,7 +1657,7 @@
     69639.27,
     107.0
    ],
-   "sha256": "6cbb52d80b9f8e1e12319ae72b0d5cd60c2966e53a1ddd0681b52b27d6759926"
+   "sha256": "8a2c7948c356b37e3eb4bd7295d0471c2bdf3e05ddf29aea637a38c17a662671"
   },
   {
    "file": "Streets_iron_XM001_YM003.obj",
@@ -1693,7 +1693,7 @@
     -18962.82,
     107.0
    ],
-   "sha256": "b2ce04ffa8254986237a0ce7d8df67c0dcc4d4e6a019ebc2158a7e6548d6c60f"
+   "sha256": "7240af6d461b3fa9e322c6dcbcb403c1d25c884757727cfd4e9bc1ae5ece387f"
   },
   {
    "file": "Streets_iron_XM001_YM001.obj",
@@ -1736,8 +1736,8 @@
    "mesh": "SM_Streets_iron_XM001_YP002",
    "material": "iron",
    "collision": "none",
-   "triangles": 12278,
-   "faces": 6591,
+   "triangles": 12008,
+   "faces": 6442,
    "tile_cm": 19000,
    "bounds_cm": [
     -19052.65,
@@ -1747,15 +1747,15 @@
     57028.89,
     107.0
    ],
-   "sha256": "fc143bfee4e73c1d0a4138632f7cba91d94ebd6d8ecc0a9d2b12b3993d14dc43"
+   "sha256": "cc4a6ea2e01ee0c886c9cb39ce3d366a95f69e13e42d339a79537bcfb47fb708"
   },
   {
    "file": "Streets_iron_XM001_YP003.obj",
    "mesh": "SM_Streets_iron_XM001_YP003",
    "material": "iron",
    "collision": "none",
-   "triangles": 7450,
-   "faces": 4003,
+   "triangles": 7462,
+   "faces": 4009,
    "tile_cm": 19000,
    "bounds_cm": [
     -19156.08,
@@ -1765,7 +1765,7 @@
     67934.15,
     107.0
    ],
-   "sha256": "516fabb89ec3e3482fce0b1ce5ed3c8d30bb660970af9e3fa2b5f492fbf02732"
+   "sha256": "2a6a61785794d48ab6eb7bed9295637032988758b1ca9bc12142fd7d974ecb4e"
   },
   {
    "file": "Streets_iron_XP000_YM003.obj",
@@ -1790,8 +1790,8 @@
    "mesh": "SM_Streets_iron_XP000_YM002",
    "material": "iron",
    "collision": "none",
-   "triangles": 9364,
-   "faces": 5044,
+   "triangles": 9370,
+   "faces": 5047,
    "tile_cm": 19000,
    "bounds_cm": [
     7.96,
@@ -1801,7 +1801,7 @@
     -19260.31,
     107.0
    ],
-   "sha256": "cb1df1543262a68140b066a90627cef4d3fb406255aa589f30c5e7afadf8353d"
+   "sha256": "80a529c64d160ac0c375860b056a6f52e4adb4ac3e3b41ed3bf7dd5ca6da7951"
   },
   {
    "file": "Streets_iron_XP000_YM001.obj",
@@ -1844,8 +1844,8 @@
    "mesh": "SM_Streets_iron_XP000_YP003",
    "material": "iron",
    "collision": "none",
-   "triangles": 5104,
-   "faces": 2774,
+   "triangles": 5110,
+   "faces": 2777,
    "tile_cm": 19000,
    "bounds_cm": [
     193.44,
@@ -1855,7 +1855,7 @@
     68335.05,
     107.0
    ],
-   "sha256": "e605b1effc50247e421efd3e929d02d86630bdcb5d9ece3df1b2e03e592fca97"
+   "sha256": "1ca5295d0b3136c9c4508a0539fb0a77553a917f3c2f0d5db3d1f6750b6239ad"
   },
   {
    "file": "Streets_iron_XP001_YM003.obj",
@@ -1873,15 +1873,15 @@
     -37880.75,
     107.0
    ],
-   "sha256": "1b34be4cf6138878dc8ec2086027fea8a1dfe88684ba00935c09fd2428cc5050"
+   "sha256": "2c986d9a7fc7a431733b0aa4904c8df7a30e75f60b60d10ff649372a58b212da"
   },
   {
    "file": "Streets_iron_XP001_YM002.obj",
    "mesh": "SM_Streets_iron_XP001_YM002",
    "material": "iron",
    "collision": "none",
-   "triangles": 12464,
-   "faces": 6774,
+   "triangles": 12248,
+   "faces": 6656,
    "tile_cm": 19000,
    "bounds_cm": [
     19006.19,
@@ -1891,7 +1891,7 @@
     -20571.77,
     107.0
    ],
-   "sha256": "dbd18c4719b878a84237b3afb1e0e99395dac2a3b0c6f1ae164c440cb9dcc2d2"
+   "sha256": "be5fb60a2090aadfe7d2d6400acfa0692805358e7bddf737ddf577e71707120d"
   },
   {
    "file": "Streets_iron_XP001_YP000.obj",
@@ -1934,8 +1934,8 @@
    "mesh": "SM_Streets_iron_XP001_YP002",
    "material": "iron",
    "collision": "none",
-   "triangles": 10970,
-   "faces": 5921,
+   "triangles": 10892,
+   "faces": 5874,
    "tile_cm": 19000,
    "bounds_cm": [
     19478.5,
@@ -1945,15 +1945,15 @@
     57021.63,
     107.0
    ],
-   "sha256": "fb466ade8d5a8c53beb794eb35136e3a2ee51841a4359a18c43948d7a17fe186"
+   "sha256": "a9d61448f38a70d523179d290ad3a317e93d6794b421ffd2fc72753657b0719a"
   },
   {
    "file": "Streets_iron_XP001_YP003.obj",
    "mesh": "SM_Streets_iron_XP001_YP003",
    "material": "iron",
    "collision": "none",
-   "triangles": 13450,
-   "faces": 7325,
+   "triangles": 13424,
+   "faces": 7312,
    "tile_cm": 19000,
    "bounds_cm": [
     18975.33,
@@ -1963,7 +1963,7 @@
     69837.03,
     107.0
    ],
-   "sha256": "a2e22bc9905dad071b0bc76b524aa7db8ff4e067e1e24d24da6fe7db9fdedd4c"
+   "sha256": "387e12add18f606b460cb93328ab7f403153dcad28bca4b6589e2bcebce69e4f"
   },
   {
    "file": "Streets_iron_XP002_YM003.obj",
@@ -2060,8 +2060,8 @@
    "mesh": "SM_Streets_iron_XP002_YP002",
    "material": "iron",
    "collision": "none",
-   "triangles": 11518,
-   "faces": 6215,
+   "triangles": 11630,
+   "faces": 6277,
    "tile_cm": 19000,
    "bounds_cm": [
     37886.27,
@@ -2071,15 +2071,15 @@
     56705.72,
     107.0
    ],
-   "sha256": "423b8f4d32af33709518cb634a42a22a637b69287ea5fd4b4f29c5d6f007ec3d"
+   "sha256": "e716440f0e1ab04333245944009531e5a392ee6ede5afe5d50ebb67ee22d2938"
   },
   {
    "file": "Streets_iron_XP002_YP003.obj",
    "mesh": "SM_Streets_iron_XP002_YP003",
    "material": "iron",
    "collision": "none",
-   "triangles": 7496,
-   "faces": 4042,
+   "triangles": 7502,
+   "faces": 4045,
    "tile_cm": 19000,
    "bounds_cm": [
     37708.19,
@@ -2089,7 +2089,7 @@
     68207.38,
     107.0
    ],
-   "sha256": "5a3b23c4800c3c57c4bb7e5fabd9ce80f56a7aba82838ca2be9f34959b25a684"
+   "sha256": "5f98c2fdbf966332aed2ae63aab4e8f6275ac22cfc40ba0030f8a4e3a46bbe88"
   },
   {
    "file": "Streets_bollard_green_XM001_YP000.obj",
@@ -2270,17 +2270,17 @@
  "counts": {
   "carriageway_quads": 238,
   "junction_polygons": 89,
-  "sidewalk_pieces": 14926,
+  "sidewalk_pieces": 15906,
   "concave_pieces": 2,
   "bowtie_pieces_dropped": 15,
-  "sidewalk_metres": 22383,
+  "sidewalk_metres": 22398,
   "curb_ramps": 112,
-  "dropped_aprons": 415,
+  "dropped_aprons": 500,
   "corner_pieces": 801,
-  "yards": 2744,
-  "yard_square_metres": 67079,
-  "fence_metres": 6964,
-  "tree_pits": 1221,
+  "yards": 2741,
+  "yard_square_metres": 67060,
+  "fence_metres": 6937,
+  "tree_pits": 1219,
   "stop_bars": 71,
   "stop_bars_signal": 50,
   "stop_bars_osm_stop": 21,
@@ -2300,26 +2300,39 @@
   "ruelle_metres": 6924,
   "skipped_route_segments": 8,
   "stop_nodes_off_network": 5,
-  "yard_slabs": 9875,
-  "yard_slabs_in_traffic_band": 189,
-  "ruelle_square_metres": 39261,
-  "ruelle_pieces": 1161,
-  "ruelle_edge_metres": 9984,
+  "yard_slabs": 9888,
+  "yard_slabs_in_traffic_band": 208,
+  "ruelle_square_metres": 40727,
+  "ruelle_pieces": 2176,
+  "ruelle_edge_metres": 7812,
   "ruelle_joint_wedges": 16,
   "mapped_trees": 4571,
   "mapped_trees_on_carriageway": 664,
-  "curb_extensions": 584,
-  "curb_extension_trees": 778,
+  "curb_extensions": 586,
+  "curb_extension_trees": 780,
   "curb_extensions_merged": 114,
   "curb_extensions_flush": 7,
   "curb_extensions_part_flush": 14,
-  "curb_extension_metres": 3173,
+  "curb_extension_metres": 3179,
   "curb_extensions_on_verges": 28,
   "curb_extensions_on_corners": 8,
   "mapped_trees_for_host": 16,
-  "yard_slabs_past_ruelle_mouths": 54,
-  "curb_extension_trees_at_curb": 130,
-  "sidewalk_pieces_to_walls": 220,
+  "yard_slabs_past_ruelle_mouths": 51,
+  "curb_extension_trees_at_curb": 132,
+  "sidewalk_risers": 223,
+  "corner_risers": 14,
+  "yard_risers": 517,
+  "yard_mouth_wedges": 248,
+  "yard_mouth_wedge_square_metres": 54,
+  "sidewalk_pieces_split": 237,
+  "passages": 118,
+  "passage_square_metres": 5707,
+  "passage_lead_ins": 115,
+  "tree_pits_off_strip": 4,
+  "curb_extension_back_walls": 23,
+  "apron_walls": 794,
+  "tree_pits_slid": 4,
+  "sidewalk_pieces_to_walls": 291,
   "legacy_route_dashes": 41,
   "curb_measurement": {
    "measured_sides": 204,
@@ -2329,14 +2342,14 @@
   "osm_stop_nodes_inside": 26,
   "osm_crossings_on_replica": 179,
   "signalised_approaches": 69,
-  "osm_trees_in_pits": 443,
+  "osm_trees_in_pits": 439,
   "batches": 118,
-  "triangles": 643144
+  "triangles": 654795
  },
  "source_sha256": {
   "Data/LaFontaine/osm.xml": "fe4410d45007a627bf6d9b9ddeeae329fa9cdd7492dfb5fa6beff851e7cf8f86",
   "Data/LaFontaine/layout.json": "4238d6ed45d5fb890e0f8dbcb672de0803c6dc7079b0b6a86b386d82ebbb4250",
-  "Scripts/plateau_replica.py": "dfb9dfe81ceb71058efa2bf5520cc87496e0c429a7f6cbdba676a965fad8d473",
+  "Scripts/plateau_replica.py": "f76f7d657d06d72a25f2a76f81085c921ca073dec93031920a044bb0acc8c7b3",
   "Scripts/prepare_lafontaine.py": "e7b6e5f068a96ee7306b1fff247fa73158f5cf7c343dc5510ab8cce92ee3c924",
   "Data/Plateau/BaseGeometry/Marking.obj": "2d82cbca59041aa6af5e6f3fffaf6a01b2c3e672eea9732e8a5fecbb7cee35dd",
   "Data/Plateau/ReplicaGeometry/Plex/fronts.json": "0bdac58607f918b7ca11706a4f9c1317687093ab2528e9adeef558ccee7febe9",
@@ -2425,5 +2438,5 @@
   }
  ],
  "street_trees": "street_trees.json",
- "street_trees_sha256": "3c97a696fd8897d3290d2633b0920bf3eb6ae4ebc22c73eba757b95b4320d3a5"
+ "street_trees_sha256": "af0e0c9d7e1f4dbb5f243e528b21c28bbda9fa15f8b9a0f2dff6aff5c3461fee"
 }

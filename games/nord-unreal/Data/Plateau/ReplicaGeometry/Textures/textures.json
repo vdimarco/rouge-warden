@@ -1299,6 +1299,7 @@
     0.0625,
     0.0529
    ],
+   "own_colour": true,
    "roughness_mean": 0.6603,
    "size_px": [
     1024,
