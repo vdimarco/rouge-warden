@@ -1,0 +1,1 @@
+PASS: 100 hazard lists reuse records; reverse values, fresh outputs, shrink/empty/grow preserved
