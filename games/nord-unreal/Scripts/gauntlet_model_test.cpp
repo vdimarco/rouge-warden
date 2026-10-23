@@ -237,6 +237,50 @@ namespace
         Expect(!BuildLoop(Graph, {{5000.0, 0.0}}, Short), "one stop is no loop");
     }
 
+    // FForwardRoads against FRoadGraph::Route on the grid with a dead-end spur.
+    void TestForwardRoads()
+    {
+        std::vector<FSegment> Segments;
+        for (int Line = 0; Line <= 3; ++Line)
+            for (int Block = 0; Block < 3; ++Block)
+            {
+                Segments.push_back({{Block * 10000.0, Line * 10000.0}, {(Block + 1) * 10000.0, Line * 10000.0}});
+                Segments.push_back({{Line * 10000.0, Block * 10000.0}, {Line * 10000.0, (Block + 1) * 10000.0}});
+            }
+        // A 60 m dead end south from (10000, 0), in two pieces, and a closed segment.
+        Segments.push_back({{10000.0, 0.0}, {10000.0, -3000.0}});
+        Segments.push_back({{10000.0, -3000.0}, {10000.0, -6000.0}});
+        Segments.push_back({{30000.0, 30000.0}, {40000.0, 30000.0}});
+        FRoadGraph Graph;
+        Graph.Build(Segments);
+        Graph.SetOpen(static_cast<int>(Segments.size()) - 1, false);
+        const FForwardRoads Roads(Graph);
+        const int Spur = static_cast<int>(Segments.size()) - 3;
+        Expect(!Roads.IsThrough(Spur) && !Roads.IsThrough(Spur + 1) && !Roads.IsThrough(Spur + 2) && Roads.IsThrough(0), "dead-end and closed segments are not through roads");
+        FVec2 Road;
+        Expect(Roads.Nearest({10100.0, -5000.0}, Road) >= 0 && QuebecPursuit::Distance(Road, {10000.0, 0.0}) < 1e-9, "a stop by the dead end gets the junction it leaves from");
+
+        // The goal is 30 m behind on the start segment: FRoadGraph::Route goes straight back, FForwardRoads round a block.
+        std::vector<FVec2> Path;
+        Expect(Graph.Route({5000.0, 0.0}, {-1.0, 0.0}, {8000.0, 0.0}, Path) && Path.size() == 1, "FRoadGraph::Route turns back to a goal on its start segment");
+        double Cost = 0.0;
+        Expect(Roads.Route({5000.0, 0.0}, {-1.0, 0.0}, {8000.0, 0.0}, FVec2{}, Path, Cost) && Near(Cost, 37000.0, 1e-6) && Path.size() == 5,
+            "FForwardRoads goes round the block instead (%.0f m, %d points)", Cost / 100.0, static_cast<int>(Path.size()));
+        // Ahead on the same segment: straight there. Arriving the other way round costs NoUTurn, so it goes round.
+        Expect(Roads.Route({5000.0, 0.0}, {1.0, 0.0}, {8000.0, 0.0}, {1.0, 0.0}, Path, Cost) && Near(Cost, 3000.0, 1e-6) && Path.size() == 1, "a goal ahead is reached directly");
+        Expect(Roads.Route({5000.0, 0.0}, {1.0, 0.0}, {8000.0, 0.0}, {-1.0, 0.0}, Path, Cost) && Cost < NoUTurn && Cost > 3000.0,
+            "arriving westbound goes round (%.0f m)", Cost / 100.0);
+        // FRoadGraph::Route charges a U-turn only at its start, so it runs to the junction ahead and back along the street.
+        Expect(Graph.Route({5000.0, 0.0}, {1.0, 0.0}, {3000.0, 10000.0}, Path, 1.0e7) && Path.size() >= 2
+            && QuebecPursuit::Distance(Path[0], {10000.0, 0.0}) < 1e-9 && QuebecPursuit::Distance(Path[1], {0.0, 0.0}) < 1e-9,
+            "FRoadGraph::Route turns back at the junction ahead");
+        Expect(Roads.Route({5000.0, 0.0}, {1.0, 0.0}, {3000.0, 10000.0}, FVec2{}, Path, Cost) && Near(Cost, 5000.0 + 10000.0 + 7000.0, 1e-6),
+            "FForwardRoads turns left there instead (%.0f m)", Cost / 100.0);
+        // Standing on a junction counts as having come along any street that ends there.
+        Expect(Roads.Route({10000.0, 10000.0}, {0.0, 1.0}, {10000.0, 15000.0}, FVec2{}, Path, Cost) && Near(Cost, 5000.0, 1e-6), "from a junction straight on");
+        Expect(!FForwardRoads(FRoadGraph()).Route({0.0, 0.0}, {}, {1.0, 1.0}, FVec2{}, Path, Cost), "no roads, no route");
+    }
+
     // FinishLoop: arcs at the police corner speed, merged corners, the cut limit, and stops that never move.
     void TestCorners()
     {
@@ -322,7 +366,8 @@ namespace
         float DriveThrottle = 0.f;
     };
 
-    // AQuebecCar's player step (QuebecGameplay.cpp, the !bTraffic branch) without the road assist, collision or slip.
+    // AQuebecCar's player step (QuebecGameplay.cpp SimulateDrive, the !bTraffic branch) without the road assist, collision
+    // or sideways slip.
     void StepCar(FCar& Car, const FControls& Controls, float Step, float SpeedLimit)
     {
         const float Throttle = static_cast<float>(Controls.Pedal);
@@ -415,7 +460,13 @@ namespace
                 Result.LongestCrawl = std::max(Result.LongestCrawl, Crawl);
             }
             if (Run.Phase == EPhase::Measure) Result.MeasuredDriving += Step;
-            if (!bBlocked) StepCar(Car, Out.Controls, static_cast<float>(Step), SpeedLimit);
+            // AQuebecCar::Tick drives a frame in steps of at most 1/60 s, and at most .15 s in all.
+            for (float Remaining = std::min(static_cast<float>(Step), .15f); !bBlocked && Remaining > 1.e-6f;)
+            {
+                const float Part = std::min(Remaining, 1.f / 60.f);
+                StepCar(Car, Out.Controls, Part, SpeedLimit);
+                Remaining -= Part;
+            }
         }
         Result.Exit = Run.Exit;
         Result.FinishedAt = Now;
@@ -740,6 +791,7 @@ int main(int Count, char** Arguments)
     TestRouteHeader();
     TestPlateauLoop();
     TestGridLoop();
+    TestForwardRoads();
     TestCorners();
     TestTracker();
     TestStuckRule();
