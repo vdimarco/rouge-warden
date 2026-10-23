@@ -1233,7 +1233,10 @@ def self_check():
     assert profile and profile["listed"] and profile["cvars"].get("t.MaxFPS") == 60, "the listed NordPhoneStream section keeps t.MaxFPS 60"
     run = OUT / "20261023T220000Z-self-check"
     plan = {"run": run, "mode": "perf", "size": [1412, 652], "sky": "night_rain", "sky_args": sky_entry(loop, "night-rain")[1],
-            "laps": 1, "quality": browser_streaming.stream_quality("current")}
+            "laps": 1, "quality": browser_streaming.stream_quality("current"), "max_s": run_timeout(loop, "perf", 1)}
+    # The game's own limits: load 180 + delay 10 + ready 60 + warm and measured laps 2 x 360 + CSV 30, and a look run's
+    # five holds at the 90 s stills timeout.
+    assert plan["max_s"] == 1000 and run_timeout(loop, "look", 1) == 1090, (plan["max_s"], run_timeout(loop, "look", 1))
     direct = direct_command(loop, plan)
     assert direct[:3] == ["bash", str(PACKAGE / "Quebec.sh"), "/Game/Maps/LaFontaine"] and direct[-1] == f"-abslog={run}/native/game.log"
     for flag in ("-RenderOffscreen", "-ForceRes", "-ResX=1412", "-ResY=652", "-unattended", "-nosound", "-csvGpuStats",
@@ -1248,7 +1251,7 @@ def self_check():
     uat = rununreal_command(loop, plan)
     assert uat[:2] == [str(UAT), "RunUnreal"] and f"-build={PACKAGE}" in uat and "-platform=Linux" in uat
     assert uat[-1] == (f"-test=NordMobileLoop(mode=perf,size=1412x652,sky=night-rain,laps=1,run='{run}',"
-                       f"execcmds='{run}/quality.execcmds',expect='{run}/quality.expect')"), uat[-1]
+                       f"execcmds='{run}/quality.execcmds',expect='{run}/quality.expect',maxduration=1000)"), uat[-1]
 
     def refused(function, *arguments):
         try:
@@ -1280,12 +1283,15 @@ def self_check():
     assert game_exit(loop, log, None, False, "rununreal") == {"code": 4, "name": "cvar_mismatch", "source": "log"}
     assert game_exit(loop, "", None, True, "direct")["code"] == loop["exit_codes"]["timeout"]
     assert game_exit(loop, "", 0, False, "rununreal")["code"] is None and game_exit(loop, "", 2, False, "direct")["name"] == "stuck"
+    no_run = "NORD_GAUNTLET error=no_run exit=6 reason=setup (the client command line needs -NordGauntlet)"
+    assert game_exit(loop, no_run, None, False, "rununreal") == {"code": 6, "name": "setup", "source": "log"}
     events = [{"ms": 500.0, "late": True, "line": "NORD_GAUNTLET route stop=S1 x_m=360.00 y_m=62.00 along_m=0.0 leg=S1-S2 leg_m=513.0"},
+              {"ms": 700.0, "late": False, "line": "NORD_GAUNTLET lap=0 warm=begin"},
               {"ms": 1000.0, "late": False, "line": "NORD_GAUNTLET leg=S1-S2 lap=1 begin"},
               {"ms": 9000.0, "late": False, "line": "NORD_GAUNTLET done laps=1"},
               {"ms": 9500.0, "late": False, "line": "NORD_GAUNTLET result exit=0 reason=done mode=stream laps=1 max_offset_m=0.800"}]
-    assert lap_window(events) == ((1000.0, 9000.0), []) and lap_window([events[0], dict(events[1], late=True), events[2]])[0] is None
-    assert lap_window(events[2:])[0] is None
+    assert lap_window(events) == ((1000.0, 9000.0), []) and lap_window([events[0], dict(events[2], late=True), events[3]])[0] is None
+    assert lap_window(events[3:])[0] is None
     counters = {"framesDecoded": 0, "bytesReceived": 0, "jitterBufferDelay": 0, "jitterBufferEmittedCount": 0, "totalDecodeTime": 0}
     summary = window_summary([dict(counters, timeMs=0), dict(counters, timeMs=2000, framesDecoded=60, jitterBufferDelay=3.0,
                                                                jitterBufferEmittedCount=60, totalDecodeTime=.3)])
