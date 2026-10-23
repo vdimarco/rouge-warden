@@ -1197,3 +1197,8 @@ Value-based marker dirtiness avoids static geometry rewrites/uploads whiletime a
 
 
 Increment39 shipped #642 asf84e61f3 after all6CI/review/current20deployedchecks/freshrebase; productionactionview HTTP200 exactbytes verified (fullhash in fullswing-r39-marker-dirty/production-verification.json). Canonical markerdirty scenarios published and OpenSpec archived. ActualChrome/FPSbenefit unverified; totalwithheld.
+
+
+## Increment40 — reusable car selection records (pending release)
+
+Reuse high-water candidate records with allfieldsreset; nearest/driving/tie/streetpromotion behavior preserved. Browser regression also fixes stale streetpicks on cameraremoval. Node/reference selection checks and actual loadedmodel/trafficmatrix/pixel checks. No quality/physics/anchor/height change; noFPSgate. All20dimensions historicalcontextonly, no newpoints; responsiveness/stabilityunverified,total/deltawithheld. Evidence fullswing-r40-selection-slots.

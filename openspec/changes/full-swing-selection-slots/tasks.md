@@ -1,0 +1,3 @@
+- [x] Implement reusable slots
+- [x] Validate selection equivalence, ties, type reuse and allocation identities
+- [ ] Review, CI, current preview, rebase, merge and production verification

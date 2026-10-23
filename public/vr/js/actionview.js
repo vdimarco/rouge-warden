@@ -171,7 +171,11 @@ export function createActionView(scene, { cars, jobs, traffic = null }) {
   // The nearest street cars as models: pick them (lanes on the ground, so not the expressway nor a stolen car, clear of their
   // lane's ends, where the shader shrinks them), veil their shader cars, draw the models where trafficAt puts them, and give back the ones
   // that lose their slot. The model is picked by the index, as for the parked cars.
-  const promoted = new Set(), pick = [], TQ = {}, slots = [], keep = new Set(), BOX = new THREE.Box3();
+  const promoted = new Set(), pick = [], TQ = {}, slots = [], slotPool = [], keep = new Set(), BOX = new THREE.Box3();
+  const addSlot = (c, i, d) => {
+    const slot = slotPool[slots.length] ||= { c: null, i: 0, d: 0 };
+    slot.c = c; slot.i = i; slot.d = d; slots.push(slot);
+  };
   // the street cars within TRAFFIC_REACH, into pick as index, distance² pairs
   function streetNear(cam, time) {
     pick.length = 0;
@@ -214,10 +218,10 @@ export function createActionView(scene, { cars, jobs, traffic = null }) {
       const cam = opts.cam, R2 = CAR_REACH * CAR_REACH;
       // the nearest MODEL_N cars, job cars and street cars together (the one you drive first), show their model
       near.length = 0; slots.length = 0; keep.clear();
-      const T = modelsOk && cam ? streetNear(cam, time) : null;
+      const T = modelsOk ? streetNear(cam, time) : null;
       for (const c of cars.cars) if (c.on && (c === cars.driving || !cam || (c.x - cam.x) ** 2 + (c.z - cam.z) ** 2 < MODEL_REACH * MODEL_REACH))
-        slots.push({ c, d: !cam || c === cars.driving ? -1 : (c.x - cam.x) ** 2 + (c.z - cam.z) ** 2 });
-      for (let k = 0; k < pick.length; k += 2) slots.push({ i: pick[k], d: pick[k + 1] });
+        addSlot(c, 0, !cam || c === cars.driving ? -1 : (c.x - cam.x) ** 2 + (c.z - cam.z) ** 2);
+      for (let k = 0; k < pick.length; k += 2) addSlot(null, pick[k], pick[k + 1]);
       slots.sort((a, b) => a.d - b.d);
       for (let k = 0; k < Math.min(MODEL_N, slots.length); k++) if (slots[k].c) near.push(slots[k].c); else keep.add(slots[k].i);
       let nb = 0;
