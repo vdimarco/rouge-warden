@@ -494,37 +494,37 @@ PALE = (222., 202., 104.)
 BROWN = (142., 98., 52.)
 CELLS = {
     # name: (leaf form, leaves, palette [(weight, colour, edge colour, edge amount)], sparse twig, stage)
-    'nm_yellow': ('norway', 9, [(.6, YELLOW, ORANGE, .2), (.25, GOLD, BROWN, .25), (.15, LIME, YELLOW, .4)], False, .9),
-    'nm_mixed': ('norway', 9, [(.4, YELLOW, YELLOW, 0.), (.35, LIME, YELLOW, .45), (.25, GREEN, YELLOW, .5)], False, .5),
-    'nm_green': ('norway', 8, [(.6, GREEN, LIME, .35), (.4, LIME, YELLOW, .4)], False, .15),
+    'nm_yellow': ('norway', 13, [(.6, YELLOW, ORANGE, .2), (.25, GOLD, BROWN, .25), (.15, LIME, YELLOW, .4)], False, .9),
+    'nm_mixed': ('norway', 13, [(.4, YELLOW, YELLOW, 0.), (.35, LIME, YELLOW, .45), (.25, GREEN, YELLOW, .5)], False, .5),
+    'nm_green': ('norway', 11, [(.6, GREEN, LIME, .35), (.4, LIME, YELLOW, .4)], False, .15),
     'nm_sparse': ('norway', 3, [(.7, YELLOW, BROWN, .3), (.3, ORANGE, BROWN, .3)], True, 1.),
-    'sm_yellow': ('silver', 9, [(.55, PALE, YELLOW, .3), (.3, YELLOW, ORANGE, .3), (.15, LIME, PALE, .3)], False, .8),
-    'sm_orange': ('silver', 8, [(.45, ORANGE, RED, .35), (.3, YELLOW, ORANGE, .4), (.25, RED, MAROON, .2)], False, 1.),
-    'li_yellow': ('linden', 10, [(.6, YELLOW, BROWN, .2), (.25, PALE, YELLOW, .2), (.15, LIME, YELLOW, .3)], False, .85),
-    'li_mixed': ('linden', 9, [(.4, LIME, YELLOW, .4), (.3, YELLOW, BROWN, .3), (.15, GREEN, LIME, .3),
+    'sm_yellow': ('silver', 13, [(.55, PALE, YELLOW, .3), (.3, YELLOW, ORANGE, .3), (.15, LIME, PALE, .3)], False, .8),
+    'sm_orange': ('silver', 11, [(.45, ORANGE, RED, .35), (.3, YELLOW, ORANGE, .4), (.25, RED, MAROON, .2)], False, 1.),
+    'li_yellow': ('linden', 13, [(.6, YELLOW, BROWN, .2), (.25, PALE, YELLOW, .2), (.15, LIME, YELLOW, .3)], False, .85),
+    'li_mixed': ('linden', 12, [(.4, LIME, YELLOW, .4), (.3, YELLOW, BROWN, .3), (.15, GREEN, LIME, .3),
                                (.15, BROWN, BROWN, 0.)], False, .4),
-    'as_yellow': ('ash', 3, [(.7, YELLOW, GOLD, .2), (.3, LIME, YELLOW, .4)], False, .8),
-    'as_maroon': ('ash', 3, [(.55, MAROON, RED, .3), (.45, YELLOW, MAROON, .4)], False, 1.),
+    'as_yellow': ('ash', 5, [(.7, YELLOW, GOLD, .2), (.3, LIME, YELLOW, .4)], False, .8),
+    'as_maroon': ('ash', 4, [(.55, MAROON, RED, .3), (.45, YELLOW, MAROON, .4)], False, 1.),
     'as_sparse': ('ash', 1, [(1., YELLOW, BROWN, .3)], True, 1.),
-    'hl_gold': ('locust', 3, [(.75, GOLD, YELLOW, .1), (.25, YELLOW, LIME, .2)], False, .9),
-    'hl_sparse': ('locust', 1, [(.7, GOLD, BROWN, .2), (.3, LIME, GOLD, .3)], True, .8),
-    'sx_red': ('amur', 10, [(.55, RED, MAROON, .3), (.3, ORANGE, RED, .4), (.15, MAROON, RED, .2)], False, 1.),
-    'sx_orange': ('amur', 10, [(.5, ORANGE, RED, .4), (.3, YELLOW, ORANGE, .5), (.2, GREEN, ORANGE, .5)], False, .6),
+    'hl_gold': ('locust', 5, [(.75, GOLD, YELLOW, .1), (.25, YELLOW, LIME, .2)], False, .9),
+    'hl_sparse': ('locust', 2, [(.7, GOLD, BROWN, .2), (.3, LIME, GOLD, .3)], True, .8),
+    'sx_red': ('amur', 13, [(.55, RED, MAROON, .3), (.3, ORANGE, RED, .4), (.15, MAROON, RED, .2)], False, 1.),
+    'sx_orange': ('amur', 13, [(.5, ORANGE, RED, .4), (.3, YELLOW, ORANGE, .5), (.2, GREEN, ORANGE, .5)], False, .6),
     'sm_sparse': ('silver', 3, [(.6, PALE, BROWN, .3), (.4, YELLOW, ORANGE, .3)], True, 1.),
 }
 CELL_ORDER = list(CELLS)
 # Leaf forms: lobes (turn offset, length share, half-width share, teeth) drawn with plateau_textures.leaflet, and
 # the leaf length as a share of the cell.
 FORMS = {
-    'norway': {'size': .2, 'lobes': [(-.24, .42, .27, 3), (.24, .42, .27, 3), (-.12, .8, .3, 3), (.12, .8, .3, 3),
-                                     (0., .95, .3, 3)], 'petiole': .55, 'opposite': True},
-    'silver': {'size': .2, 'lobes': [(-.23, .45, .16, 6), (.23, .45, .16, 6), (-.11, .85, .18, 7), (.11, .85, .18, 7),
-                                     (0., 1., .17, 8)], 'petiole': .6, 'opposite': True},
-    'amur': {'size': .19, 'lobes': [(-.1, .52, .2, 6), (.1, .52, .2, 6), (0., 1., .2, 9)], 'petiole': .35,
+    'norway': {'size': .26, 'lobes': [(-.24, .42, .27, 3), (.24, .42, .27, 3), (-.12, .8, .3, 3), (.12, .8, .3, 3),
+                                     (0., .95, .3, 3)], 'petiole': .45, 'opposite': True},
+    'silver': {'size': .26, 'lobes': [(-.23, .45, .16, 6), (.23, .45, .16, 6), (-.11, .85, .18, 7), (.11, .85, .18, 7),
+                                     (0., 1., .17, 8)], 'petiole': .5, 'opposite': True},
+    'amur': {'size': .25, 'lobes': [(-.1, .52, .22, 6), (.1, .52, .22, 6), (0., 1., .22, 9)], 'petiole': .3,
              'opposite': True},
-    'linden': {'size': .19, 'cordate': True, 'petiole': .35, 'opposite': False},
-    'ash': {'size': .5, 'pinnate': 3, 'petiole': .12, 'opposite': True},
-    'locust': {'size': .46, 'bipinnate': 5, 'petiole': .08, 'opposite': False},
+    'linden': {'size': .24, 'cordate': True, 'petiole': .35, 'opposite': False},
+    'ash': {'size': .56, 'pinnate': 3, 'petiole': .08, 'opposite': True},
+    'locust': {'size': .52, 'bipinnate': 5, 'petiole': .06, 'opposite': False},
 }
 
 
@@ -622,8 +622,7 @@ def paint_cell(cv, index, blotch):
     twig_colour = (92., 70., 52.)
     bx, by = x0 + S * .5, y1 - pad - 2
     top_x = x0 + S * (.5 + (rng.random() - .5) * .16)
-    top_y = y0 + pad + S * (.42 if F['size'] > .4 else .3)
-    nodes = []
+    top_y = y0 + pad + S * (.5 if F['size'] > .4 else .36)
     # The twig: a gently bowed line, thinning toward the tip; sparse cards fork once or twice.
     segs = 24
     pts = []
@@ -642,47 +641,58 @@ def paint_cell(cv, index, blotch):
             _petiole(cv, fx, fy, ex, ey, 1.3, twig_colour, .2)
             forks.append((fx, fy, ex, ey))
     size = S * F['size']
+    # Leaf anchors along the upper twig, in opposite pairs (maples, ash) or alternate (linden, locust), fanned
+    # 30-75 degrees off the twig and smaller toward its tip, plus a terminal leaf; compound leaves radiate from
+    # the tip. Later anchors sit lower and are drawn first, so the tip leaves overlap them as on a real shoot.
+    anchors = []
     if F.get('pinnate') or F.get('bipinnate'):
-        positions = [(k, side) for k, side in ((segs, 0.), (int(segs * .62), -1.), (int(segs * .62), 1.))][:count]
-    elif F['opposite']:
-        positions = [(segs, 0.)]
-        k = segs - 4
-        while len(positions) < count and k > 4:
-            positions += [(k, -1.), (k, 1.)]
-            k -= 5
-        positions = positions[:count]
+        fan = [0., -.13, .13, -.24, .24][:count]
+        for a in fan:
+            anchors.append((segs, a, 1. - .25 * abs(a) / .24))
     else:
-        positions = [(segs, 0.)]
-        k, side = segs - 3, -1.
-        while len(positions) < count and k > 3:
-            positions.append((k, side))
-            side, k = -side, k - 3
+        anchors.append((segs, 0., .85))
+        k, side, step = segs - 2, -1., 3 if count > 6 else 5
+        while len(anchors) < count and k > 5:
+            f = k / segs
+            spread = .085 + .12 * (1. - f) + (rng.random() - .5) * .04
+            scale = .8 + .35 * (1. - f)
+            if F['opposite']:
+                anchors += [(k, -spread, scale), (k, spread, scale)]
+                k -= step
+            else:
+                anchors.append((k, side * spread, scale))
+                side, k = -side, k - max(2, step - 1)
+        anchors = anchors[:count]
     leaves = []
-    for k, side in positions:
+    for k, offset, scale in anchors:
         px, py = pts[min(k, segs)]
-        if sparse and forks and side:
-            fx, fy, ex, ey = forks[0 if side < 0 else -1]
+        if sparse and forks and offset:
+            fx, fy, ex, ey = forks[0 if offset < 0 else -1]
             px, py = ex, ey
         tx, ty = pts[min(segs, k + 1)][0] - pts[max(0, k - 1)][0], pts[min(segs, k + 1)][1] - pts[max(0, k - 1)][1]
-        base_turn = _turn(tx, ty)
-        turn = base_turn + side * (.12 + .08 * rng.random()) + (rng.random() - .5) * .04
-        leaves.append((rng.random(), px, py, turn, rng.random(), rng.random(), rng.random()))
-    leaves.sort(key=lambda r: (r[0], r[1]))
-    for z, px, py, turn, u1, u2, u3 in leaves:
-        entry = _pick(palette, u1)
-        _, colour, edge, amount = entry
+        turn = _turn(tx, ty) + offset + (rng.random() - .5) * .03
+        leaves.append((k + rng.random() * 3., px, py, turn, scale, rng.random(), rng.random(), rng.random()))
+    leaves.sort(key=lambda r: r[0])
+    for order, (_, px, py, turn, scale, u1, u2, u3) in enumerate(leaves):
+        z = order / max(1, len(leaves) - 1)
+        _, colour, edge, amount = _pick(palette, u1)
         tone = .9 + .2 * u2
         colour = tuple(min(255., c * tone) for c in colour)
         s, c = PT.sin_cos(turn)
-        stalk = size * F['petiole']
+        lsize = size * scale * (.9 + .2 * u3)
+        stalk = lsize * F['petiole']
         lx, ly = px + c * stalk, py + s * stalk
-        lsize = size * (.82 + .3 * u3)
-        # Keep the leaf inside the cell padding.
-        reach = lsize * (1.15 if 'lobes' in FORMS[form] else 1.)
-        lx = min(x1 - pad - reach * .55, max(x0 + pad + reach * .55, lx))
-        ly = min(y1 - pad - reach * .5, max(y0 + pad + reach * .9, ly))
-        _petiole(cv, px, py, lx, ly, .8, tuple(v * .7 for v in colour), .3 + z)
-        shade = .78 + .22 * z
+        # Keep the blade inside the cell: pull the blade base back along its petiole until its far end fits.
+        reach = lsize * (1.05 if 'lobes' in F else 1.)
+        for _ in range(12):
+            ex, ey = lx + c * reach, ly + s * reach
+            if x0 + pad + 4 <= ex <= x1 - pad - 4 and y0 + pad + 4 <= ey <= y1 - pad - 4:
+                break
+            lx, ly = lx - c * reach * .08, ly - s * reach * .08
+            reach *= .96
+            lsize *= .96
+        _petiole(cv, px, py, lx, ly, .9, tuple(v * .62 for v in colour), .3 + z)
+        shade = .8 + .2 * z
         _leaf(cv, form, lx, ly, lsize, turn, colour, edge, amount * (.6 + .8 * u2), blotch, shade, 1. + z, u3)
 
 
