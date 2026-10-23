@@ -1249,3 +1249,7 @@ Optional jobs.ropeTargets output reused by main; defaultfresharrays/records and 
 
 
 Increment46 shipped #656 as5536c923 after all6CI/review/current22deployedchecks/rebase before AND afterpreview/exactmerge. Productionmain+jobs HTTP200 exactbytes verified (hashes in fullswing-r46-job-targets/production-verification.json). Canonical job-target-storage scenarios published and OpenSpec archived. ActualChrome/FPSbenefit unverified; totalwithheld.
+
+
+### Increment47 — registered goon rope record reuse — 2026-10-23
+Private cache retains complete goon target records, updating existing chest positions. Baseline60records→one across60movingreconciliations; removal/return freshidentity preserved. Node/action/reconciliation+4actualgoonbrowserchecks+4realframechecksPASS. Evidence fullswing-r47-goon-rope-records/all20dimensionlimits; total/delta withheld, actualChrome/stability unverified. No art/physics/anchor/ceiling change or FPS claim. Review/CI/preview/rebase/production pending.

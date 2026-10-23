@@ -1,0 +1,1 @@
+PASS: 60 moving frames reuse target and chest position; disabled removal clears cache, return registers fresh record
