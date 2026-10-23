@@ -106,7 +106,8 @@ namespace QuebecGauntlet
 
     // A closed loop through the stops in order. Points[0] is the first stop's road point and the last point is that
     // point again. Distance[i] is the arc length at Points[i]; Stops[k] is the Points index of stop k's road point.
-    // Limit[i] is the speed for the corner arc at Points[i] (FinishLoop fills it); a point without one allows SpeedCap.
+    // Limit[i] is the speed on the segment from Points[i] to Points[i + 1]: an arc's speed on its chords, SpeedCap on a
+    // straight. FinishLoop fills it; a loop without it allows SpeedCap everywhere.
     struct FLoop
     {
         std::vector<FVec2> Points;
@@ -116,7 +117,7 @@ namespace QuebecGauntlet
         double Length = 0.0;
 
         int StopCount() const { return static_cast<int>(Stops.size()); }
-        double LimitAt(std::size_t Point) const { return Point < Limit.size() ? Limit[Point] : SpeedCap; }
+        double LimitAt(std::size_t Segment) const { return Segment < Limit.size() ? Limit[Segment] : SpeedCap; }
         int SegmentCount() const { return Points.size() > 1 ? static_cast<int>(Points.size()) - 1 : 0; }
         double StopAlong(int Stop) const { return Distance[Stops[static_cast<std::size_t>(Stop)]]; }
         double LegLength(int Leg) const { return (Leg + 1 < StopCount() ? StopAlong(Leg + 1) : Length) - StopAlong(Leg); }
@@ -473,15 +474,15 @@ namespace QuebecGauntlet
         Loop.Points.clear();
         Loop.Stops.clear();
         Loop.Limit.clear();
-        const auto Add = [&Loop](const FVec2& Point, double Speed)
+        // Add a point with the speed on the segment that starts there. Two arcs that meet share their end point, and the
+        // segment from it belongs to the second arc.
+        const auto Add = [&Loop](const FVec2& Point, double Outgoing)
         {
-            // Two arcs that meet share their end point; it keeps the lower speed.
-            if (!Loop.Points.empty() && QuebecPursuit::Distance(Loop.Points.back(), Point) < JoinPoints)
-                Loop.Limit.back() = std::min(Loop.Limit.back(), Speed);
+            if (!Loop.Points.empty() && QuebecPursuit::Distance(Loop.Points.back(), Point) < JoinPoints) Loop.Limit.back() = Outgoing;
             else
             {
                 Loop.Points.push_back(Point);
-                Loop.Limit.push_back(Speed);
+                Loop.Limit.push_back(Outgoing);
             }
         };
         for (std::size_t Index = 0; Index < Raw.size(); ++Index)
@@ -512,7 +513,7 @@ namespace QuebecGauntlet
             for (int Step = 0; Step <= Steps; ++Step)
             {
                 const double Angle = From + Corner.Side * (Corner.Turn * Pi / 180.0) * static_cast<double>(Step) / static_cast<double>(Steps);
-                Add(Centre + FVec2{std::cos(Angle), std::sin(Angle)} * Radius, Speed);
+                Add(Centre + FVec2{std::cos(Angle), std::sin(Angle)} * Radius, Step < Steps ? Speed : SpeedCap);
             }
         }
         Loop.Distance.assign(Loop.Points.size(), 0.0);
@@ -633,7 +634,7 @@ namespace QuebecGauntlet
         int Reversals = 0;
     };
 
-    // Wanted speed at the tracker's place: the slowest corner arc that starts within the police bend range ahead (the
+    // Wanted speed at the tracker's place: the slowest segment that starts within the police bend range ahead (the
     // police follower slows for the sharpest bend in that range), and an even stop StopShort before StopAt (an unwrapped
     // arc length; negative when the car drives through).
     inline double WantedSpeed(const FLoop& Loop, const FTracker& Tracker, double Speed, double StopAt)
@@ -642,16 +643,13 @@ namespace QuebecGauntlet
         const std::size_t Count = static_cast<std::size_t>(Loop.SegmentCount());
         if (Count == 0) return 0.0;
         const std::size_t Segment = Loop.SegmentAt(Tracker.Along);
-        // A segment belongs to an arc when both its ends do, so the straight after an arc is not held to the arc's speed.
-        double Wanted = std::min(SpeedCap, std::max(Loop.LimitAt(Segment), Loop.LimitAt(Segment + 1)));
-        double Covered = 0.0;
-        FVec2 Previous = Loop.PointAt(Tracker.Along);
-        for (std::size_t Step = 1; Step <= Count && Covered <= Range; ++Step)
+        double Wanted = std::min(SpeedCap, Loop.LimitAt(Segment));
+        double Covered = QuebecPursuit::Distance(Loop.PointAt(Tracker.Along), Loop.Points[Segment + 1]);
+        for (std::size_t Step = 1; Step < Count && Covered <= Range; ++Step)
         {
-            const std::size_t Point = (Segment + Step) % Count;
-            Covered += QuebecPursuit::Distance(Previous, Loop.Points[Point]);
-            if (Covered <= Range) Wanted = std::min(Wanted, Loop.LimitAt(Point));
-            Previous = Loop.Points[Point];
+            const std::size_t Next = (Segment + Step) % Count;
+            Wanted = std::min(Wanted, Loop.LimitAt(Next));
+            Covered += Loop.Distance[Next + 1] - Loop.Distance[Next];
         }
         if (StopAt >= 0.0) Wanted = std::min(Wanted, std::sqrt(2.0 * StopDeceleration * std::max(0.0, StopAt - Tracker.Along - StopShort)));
         return Wanted;

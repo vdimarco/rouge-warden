@@ -124,6 +124,7 @@ def read_profiler_csv(source):
     found = [name for name in FIELDS.values() if name in index]
     missing = [name for name in FIELDS.values() if name not in index]
     events_at = next((position for name, position in index.items() if name.upper() == EVENTS_COLUMN), None)
+    # Memory stats such as PhysicalUsedMB or MemoryFreeMB: names from memory (unverified), so match them loosely.
     memory = [name for name in index if name not in FIELDS.values() and (name.endswith("MB") or "memory" in name.lower())]
     frames = []
     if "FrameTime" in index:
@@ -482,6 +483,14 @@ def look_gates(loop, images, baseline_mean=None, repeat=None):
         gates.append(gate("repeat_ssim_min", min(repeat.values()) if repeat else None, look["repeat_ssim_min"], op=">=",
                           unit="SSIM", note="ceiling run A against run B; below the limit the round is invalid"))
     return gates
+
+
+def two_viewer_row(loop, candidate_fps, baseline_fps):
+    """The co-op guard, report-only in verdict.json: two-viewer mean decoded FPS against the baseline's in the same
+    window. The tuner's confirmation uses the same limit to fall back to the next candidate."""
+    drop = None if candidate_fps is None or baseline_fps is None else baseline_fps - candidate_fps
+    return gate("two_viewer_drop_fps", drop, loop["budgets"]["stream"]["two_viewer_drop_max_fps"], unit="fps",
+                note="report-only; baseline minus candidate, both with two viewers")
 
 
 def delay_section(latency):

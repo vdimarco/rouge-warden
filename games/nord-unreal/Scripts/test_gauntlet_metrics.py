@@ -247,6 +247,9 @@ def check_stream_and_processes():
     assert bad["decoded_over_50ms_percent"]["result"] == "unverified" and bad["longest_gap_ms"]["value"] == 90.0
     assert bad["native_fps_min"]["result"] == "pass" and abs(bad["native_fps_min"]["value"] - 30.2) < 1e-9
     assert all(g["result"] == "unverified" for g in M.stream_gates(LOOP))
+    # The two-viewer co-op guard is a report-only row: at most 2 FPS below the baseline in the same window.
+    assert M.two_viewer_row(LOOP, 16.5, 17.8)["result"] == "pass" and M.two_viewer_row(LOOP, 15.5, 17.8)["result"] == "fail"
+    assert M.two_viewer_row(LOOP, None, 17.8)["result"] == "unverified"
     # Delay stays apart and is never gated.
     delay = M.delay_section({"rttMs": 4.2, "averageJitterBufferDelayMs": 43.0})
     assert delay == {"label": M.DELAY_LABEL, "gated": False, "values": {"rttMs": 4.2, "averageJitterBufferDelayMs": 43.0}}

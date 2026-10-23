@@ -426,8 +426,9 @@ def _plain(value):
 # ---------------------------------------------------------------- the search
 
 class Search:
-    def __init__(self, loop, measure, until=None, clock=time.time, readback=None, log=None):
+    def __init__(self, loop, measure, until=None, clock=time.time, readback=None, log=None, save=None):
         self.loop = loop
+        self.save = save
         self.measure = measure
         self.until = until
         self.clock = clock
@@ -492,6 +493,8 @@ class Search:
                 record["feasible"], record["reasons"] = feasibility(self.loop, result)
             self.records.append(record)
             self.log(f"{record['id']}: feasible={record['feasible']} look={record['look']} gpu={record['gpu_p95_ms']}")
+            if self.save:
+                self.save(self.result(running=True))
             if not record["contended"]:
                 break
             self.notes.append(f"{record['id']} was contended and is not ranked")
@@ -725,12 +728,10 @@ class Search:
 
     # -- result
 
-    def result(self):
+    def result(self, running=False):
         # "Never worse than today" needs a feasible today. When the baseline misses the budget, every feasible
-        # candidate is a change of look for frame time, so only the per-image floor applies.
+        # candidate trades look for frame time, so only the per-image floor applies (noted in search()).
         base_look = self.baseline["look"] if self.baseline and self.baseline["feasible"] else None
-        if self.baseline and not self.baseline["feasible"]:
-            self.notes.append("the baseline is not feasible, so the never-worse-than-today Look rule does not apply")
         eligible = []
         for record in self.records:
             record["ranked"] = not record["look_only"] and record["phase"] != "baseline" or record["id"] == "baseline"
@@ -744,7 +745,8 @@ class Search:
             record["rank"] = position + 1
         finished = self.clock()
         return {"version": 1, "loop_version": self.loop.get("version"), "started_at": iso(self.started),
-                "finished_at": iso(finished), "until": iso(self.until), "stop_reason": self.stop_reason or "converged",
+                "finished_at": None if running else iso(finished), "until": iso(self.until),
+                "stop_reason": "running" if running else self.stop_reason or "converged",
                 "measured": self.measured, "max_candidates": self.limits["max_candidates"],
                 "baseline": {key: self.baseline.get(key) for key in ("look", "gpu_p95_ms", "frame_p95_ms", "feasible", "reasons")}
                 if self.baseline else None,
@@ -755,16 +757,21 @@ class Search:
                 "notes": self.notes}
 
 
-def search(loop, measure, until=None, clock=time.time, readback=None, log=None):
-    """Run the whole greedy search and return the tune.json content. Every measured candidate is in "candidates"."""
-    state = Search(loop, measure, until=until, clock=clock, readback=readback, log=log)
+def search(loop, measure, until=None, clock=time.time, readback=None, log=None, save=None):
+    """Run the whole greedy search and return the tune.json content. Every measured candidate is in "candidates".
+    save(tune) runs after each measured candidate (stop_reason "running"), so a run cut short keeps its records."""
+    state = Search(loop, measure, until=until, clock=clock, readback=readback, log=log, save=save)
     if state.measure_references():
         if state.baseline["feasible"]:
             state.climb_up()
         else:
-            state.notes.append("the baseline is not feasible; the search went downward first")
+            state.notes.append("the baseline is not feasible; the search went downward first, and the "
+                               "never-worse-than-today Look rule does not apply")
             state.climb_down()
-    return state.result()
+    tune = state.result()
+    if save:
+        save(tune)
+    return tune
 
 
 def confirm(tune, loop, confirm_fn):

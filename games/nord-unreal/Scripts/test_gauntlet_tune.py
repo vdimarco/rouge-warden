@@ -32,8 +32,8 @@ GAIN = {"shadows": [0, .004, .03, .04], "gi": [0, .02, .03], "reflections": [0, 
 class FakeHost:
     """measure(candidate) with additive costs. The host reads sg.ShadingQuality back as 3 (step 1 of its ladder)."""
 
-    def __init__(self, base_gpu=22.0, noise=0.0, contended=(), errors=(), clock=None):
-        self.base_gpu, self.noise = base_gpu, noise
+    def __init__(self, base_gpu=22.0, noise=0.0, contended=(), errors=(), clock=None, readback=True):
+        self.base_gpu, self.noise, self.readback = base_gpu, noise, readback
         self.contended, self.errors = set(contended), set(errors)
         self.reported = set()
         self.calls = []
@@ -64,7 +64,7 @@ class FakeHost:
         self.reported.add(name)
         return {"frame_p95_ms": max(16.7, gpu + 2.0), "gpu_p95_ms": gpu, "hitches_ok": True, "vram_ok": True, "cvars_ok": True,
                 "look": look, "images": {f"view{i}": look - .01 * (i % 2) for i in range(20)}, "contended": contended,
-                "readback": {"sg.ShadingQuality": "3"}}
+                "readback": {"sg.ShadingQuality": "3"} if self.readback else None}
 
 
 class FakeClock:
@@ -174,8 +174,11 @@ def check_ties():
 
 def check_search():
     host = FakeHost()
-    tune = T.search(LOOP, host)
-    json.dumps(tune)
+    saved = []
+    tune = T.search(LOOP, host, save=lambda partial: saved.append(json.loads(json.dumps(partial))))
+    # tune.json is saved after every measured candidate, then once at the end.
+    assert len(saved) == len(host.calls) + 1 and saved[0]["stop_reason"] == "running" and saved[-1] == json.loads(json.dumps(tune))
+    assert [len([r for r in s["candidates"] if r["id"] != "baseline"]) for s in saved[:-1]] == list(range(1, len(host.calls) + 1))
     measured = [r for r in tune["candidates"] if r["id"] != "baseline"]
     assert tune["measured"] == len(host.calls) == len(measured) == 18, tune["measured"]
     # Order: baseline twice, ceiling twice, then one step up per knob in loop.json order.
@@ -233,6 +236,11 @@ def check_stop_rule():
     assert tune["stop_reason"] == "max_candidates" and tune["measured"] == len(host.calls) == 8
     assert ids(tune, "step") == ["04-shadows1", "05-gi1", "06-gi1+reflections1", "07-screen_percentage3"]
     assert tune["winner"] == "06-gi1+reflections1", "the best measured feasible candidate still wins"
+    # Without the host readback, today's sg.ShadingQuality is unknown, so each of its steps is measured once.
+    tune = T.search(limited, FakeHost(readback=False))
+    assert tune["resolved_baseline_steps"] == {}
+    tune = T.search(LOOP, FakeHost(readback=False))
+    assert [r["id"] for r in tune["candidates"] if r["changed"] and set(r["changed"]) == {"shading"}] == ["12-shading0", "13-shading1"]
     # Window end: each candidate takes 600 s; a window of 6 candidates and one second measures 6.
     clock = FakeClock()
     host = FakeHost(clock=clock)

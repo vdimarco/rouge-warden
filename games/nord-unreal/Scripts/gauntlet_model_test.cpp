@@ -102,6 +102,21 @@ namespace
         return Farthest;
     }
 
+    double SlowestLimit(const FLoop& Loop)
+    {
+        double Slowest = SpeedCap;
+        for (std::size_t Segment = 0; Segment < Loop.Points.size(); ++Segment) Slowest = std::min(Slowest, Loop.LimitAt(Segment));
+        return Slowest;
+    }
+
+    // Segments of Loop driven at Speed.
+    int SegmentsAt(const FLoop& Loop, double Speed)
+    {
+        int Count = 0;
+        for (int Segment = 0; Segment < Loop.SegmentCount(); ++Segment) Count += Near(Loop.LimitAt(static_cast<std::size_t>(Segment)), Speed, 1e-9);
+        return Count;
+    }
+
     std::vector<FSegment> Polyline(const std::vector<FVec2>& Points)
     {
         std::vector<FSegment> Segments;
@@ -167,9 +182,8 @@ namespace
         Expect(Turn <= RoundFrom + 1e-6, "every corner is an arc and the loop never turns back (sharpest step %.1f degrees)", Turn);
         const double Off = FarthestFrom(Loop, RadarSegments());
         Expect(Off <= MaxCut + Simplify, "the driven line keeps within 4 m of a road centre line (%.2f m)", Off / 100.0);
-        double Slowest = SpeedCap;
-        for (std::size_t Point = 0; Point < Loop.Points.size(); ++Point) Slowest = std::min(Slowest, Loop.LimitAt(Point));
-        std::printf("Plateau loop: farthest from a road centre line %.2f m, slowest corner %.1f m/s\n", Off / 100.0, Slowest / 100.0);
+        Expect(static_cast<int>(Loop.Limit.size()) == static_cast<int>(Loop.Points.size()) && SlowestLimit(Loop) >= MinCornerSpeed, "every segment has a speed");
+        std::printf("Plateau loop: farthest from a road centre line %.2f m, slowest corner %.1f m/s\n", Off / 100.0, SlowestLimit(Loop) / 100.0);
         // How much of the loop runs on the east extension, which LaFontaineExtensionMap.h appends after the original roads.
         const std::size_t Original = sizeof(LaFontaine::RoadSegments) / sizeof(LaFontaine::RoadSegments[0]);
         const std::vector<FSegment> Radar = RadarSegments();
@@ -210,8 +224,12 @@ namespace
         const FVec2 Road[] = {{5000.0, 0.0}, {25000.0, 30000.0}, {2000.0, 0.0}};
         for (int Stop = 0; Stop < Loop.StopCount(); ++Stop)
             Expect(QuebecPursuit::Distance(Loop.Points[Loop.Stops[static_cast<std::size_t>(Stop)]], Road[Stop]) < 1e-6, "grid stop %d stays on its road point", Stop);
-        // Turning round the block: 50 m west and 120 m round three sides less the corner arcs, then 30 m east.
-        Expect(Loop.LegLength(2) > 15000.0 && Loop.LegLength(2) < 20000.0, "the last leg goes round a block (%.0f m)", Loop.LegLength(2) / 100.0);
+        // The loop reaches the third stop from the west, so the last leg runs straight on to the first: a 1200 m tour
+        // with eight right-angle arcs.
+        const double Radius = TurnRadius(800.0) * CornerMargin;
+        Expect(Near(Loop.LegLength(2), 3000.0, 1e-6) && SegmentsAt(Loop, 800.0) == 8 * 9, "the third stop is reached from the west (%.0f m on, %d arc chords)",
+            Loop.LegLength(2) / 100.0, SegmentsAt(Loop, 800.0));
+        Expect(Near(Loop.Length, 120000.0 - 8.0 * (2.0 - Pi / 2.0) * Radius, 50.0), "the grid tour is 1200 m less the arcs (%.1f m)", Loop.Length / 100.0);
         Expect(Near(Loop.StopAlong(0), 0.0, 1e-9) && Near(Loop.LegLength(0) + Loop.LegLength(1) + Loop.LegLength(2), Loop.Length, 1e-6), "leg lengths");
         Expect(Near(Loop.PointAt(Loop.Length + 100.0).X, Loop.PointAt(100.0).X, 1e-6) && Near(Loop.PointAt(-100.0).Y, Loop.PointAt(Loop.Length - 100.0).Y, 1e-6),
             "arc lengths wrap onto the loop");
@@ -229,10 +247,9 @@ namespace
         Square.Stops = {0};
         FinishLoop(Square);
         const double Radius = TurnRadius(800.0) * CornerMargin;
-        int ArcPoints = 0;
-        for (std::size_t Point = 0; Point < Square.Points.size(); ++Point) ArcPoints += Near(Square.LimitAt(Point), 800.0, 1e-9);
         Expect(Square.Stops.size() == 1 && Square.Stops[0] == 0 && QuebecPursuit::Distance(Square.Points[0], {5000.0, 0.0}) < 1e-9, "the stop stays on its road point");
-        Expect(ArcPoints == 40 && Square.Limit.size() == Square.Points.size(), "four arcs of ten points at 8 m/s (%d)", ArcPoints);
+        Expect(SegmentsAt(Square, 800.0) == 36 && SegmentsAt(Square, SpeedCap) == 5 && Square.Limit.size() == Square.Points.size(),
+            "four arcs of nine chords at 8 m/s and five straights at the cap (%d, %d)", SegmentsAt(Square, 800.0), SegmentsAt(Square, SpeedCap));
         Expect(Near(Square.Length, 40000.0 - 4.0 * (2.0 - Pi / 2.0) * Radius, 20.0), "the arcs shorten the square by 4 (2 - pi / 2) R (%.1f cm)", Square.Length);
         Expect(Near(Gap({10000.0, 0.0}, Polyline(Square.Points)), Radius * (std::sqrt(2.0) - 1.0), .01 * Radius), "a right-angle arc passes R (sqrt 2 - 1) from the corner");
         Expect(Near(FarthestFrom(Square, Polyline(SquareLine)), Radius * (1.0 - std::cos(Pi / 4.0)), .01 * Radius), "and cuts the corner by R (1 - cos 45)");
@@ -244,9 +261,8 @@ namespace
         Chamfer.Points = {{5000.0, 0.0}, {10000.0, 0.0}, {10200.0, 200.0}, {10200.0, 10000.0}, {0.0, 10000.0}, {0.0, 0.0}, {5000.0, 0.0}};
         Chamfer.Stops = {0};
         FinishLoop(Chamfer);
-        ArcPoints = 0;
-        for (std::size_t Point = 0; Point < Chamfer.Points.size(); ++Point) ArcPoints += Near(Chamfer.LimitAt(Point), 800.0, 1e-9);
-        Expect(ArcPoints == 40, "two 45 degree turns 2.8 m apart become one right-angle arc (%d points at 8 m/s)", ArcPoints);
+        Expect(SegmentsAt(Chamfer, 800.0) == 36 && SlowestLimit(Chamfer) == 800.0, "two 45 degree turns 2.8 m apart become one right-angle arc (%d chords at 8 m/s)",
+            SegmentsAt(Chamfer, 800.0));
         Expect(Near(Gap({10200.0, 0.0}, Polyline(Chamfer.Points)), Radius * (std::sqrt(2.0) - 1.0), .01 * Radius), "centred on the corner where the long sides meet");
 
         // A 120 degree turn: the police radius would pass 4.7 m inside, so the arc shrinks to pass 3 m inside, more slowly.
@@ -256,9 +272,11 @@ namespace
         Sharp.Stops = {0};
         FinishLoop(Sharp);
         Expect(Near(FarthestFrom(Sharp, Polyline(SharpLine)), MaxCut, 2.0), "a sharp arc passes MaxCut inside its corner (%.1f cm)", FarthestFrom(Sharp, Polyline(SharpLine)));
-        const double SharpSpeed = Sharp.LimitAt(2);
-        Expect(SharpSpeed < 800.0 && SharpSpeed >= MinCornerSpeed && TurnRadius(SharpSpeed) * CornerMargin <= MaxCut / (1.0 - std::cos(Pi / 3.0)) + 1e-9,
-            "at a speed whose turning circle fits the smaller arc (%.0f cm/s)", SharpSpeed);
+        // The 6 m arc is tighter than any turning circle with CornerMargin to spare, so it gets the floor speed, at which
+        // the car still turns inside it.
+        const double SharpSpeed = SlowestLimit(Sharp);
+        Expect(SharpSpeed == SpeedForRadius(MaxCut / (1.0 - std::cos(Pi / 3.0)), 800.0) && SharpSpeed == MinCornerSpeed
+            && TurnRadius(SharpSpeed) <= MaxCut / (1.0 - std::cos(Pi / 3.0)), "at the floor speed, whose turning circle fits the arc (%.0f cm/s)", SharpSpeed);
         Expect(SpeedForRadius(1.0, 800.0) == MinCornerSpeed && SpeedForRadius(1.0e6, 800.0) == 800.0, "speed for a radius is between MinCornerSpeed and the start");
 
         // A short side shared by two right-angle arcs: each takes half, so both shrink and slow down.
@@ -266,8 +284,8 @@ namespace
         Narrow.Points = {{5000.0, 0.0}, {10000.0, 0.0}, {10000.0, 1000.0}, {0.0, 1000.0}, {0.0, 0.0}, {5000.0, 0.0}};
         Narrow.Stops = {0};
         FinishLoop(Narrow);
-        Expect(Narrow.LimitAt(3) < 800.0 && QuebecPursuit::Distance(Narrow.Points[Narrow.Stops[0]], {5000.0, 0.0}) < 1e-9,
-            "a 10 m side halves each arc and slows it (%.0f cm/s)", Narrow.LimitAt(3));
+        Expect(SlowestLimit(Narrow) < 800.0 && SegmentsAt(Narrow, 800.0) == 18 && QuebecPursuit::Distance(Narrow.Points[Narrow.Stops[0]], {5000.0, 0.0}) < 1e-9,
+            "a 10 m side halves the two arcs at its ends and slows them (%.0f cm/s)", SlowestLimit(Narrow));
     }
 
     // The tracker keeps to its own pass of a street the loop drives twice, 3 m apart.
