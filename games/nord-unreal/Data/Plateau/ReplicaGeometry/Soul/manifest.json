@@ -800,18 +800,18 @@
    "mesh": "SM_Soul_cloth_b_XM001_YM001",
    "material": "cloth_b",
    "collision": "none",
-   "triangles": 636,
-   "faces": 318,
+   "triangles": 624,
+   "faces": 312,
    "tile_cm": 1000000,
    "bounds_cm": [
     -43080.9,
     -47068.02,
     353.99,
-    -1743.48,
+    -1781.23,
     -2567.18,
     1210.37
    ],
-   "sha256": "31be3943f236c915ad11fcd210565a25b5f0c671ba1e7858881d2dc1937b3e07"
+   "sha256": "53c904da7b0e2a10c70eb14426440e3054d8278dd7638c8165453dba30aa8044"
   },
   {
    "file": "Soul_cloth_b_XM001_YP000.obj",
@@ -908,18 +908,18 @@
    "mesh": "SM_Soul_cloth_c_XP000_YM001",
    "material": "cloth_c",
    "collision": "none",
-   "triangles": 364,
-   "faces": 182,
+   "triangles": 360,
+   "faces": 180,
    "tile_cm": 1000000,
    "bounds_cm": [
-    739.02,
+    1827.6,
     -46140.19,
     345.77,
     54114.68,
     -25532.09,
     891.12
    ],
-   "sha256": "15ae96786d2b61ae4442f60b6736e338413937a0d5b37f6960f31ff6c3ffb162"
+   "sha256": "a8717b748112e78f02211c1b24eeed2a6da98e6f8794512032860ca3f0a2cc50"
   },
   {
    "file": "Soul_cloth_c_XP000_YP000.obj",
@@ -998,8 +998,8 @@
    "mesh": "SM_Soul_cloth_d_XP000_YP000",
    "material": "cloth_d",
    "collision": "none",
-   "triangles": 256,
-   "faces": 128,
+   "triangles": 248,
+   "faces": 124,
    "tile_cm": 1000000,
    "bounds_cm": [
     8587.82,
@@ -1007,9 +1007,9 @@
     389.1,
     54247.65,
     69276.09,
-    888.96
+    879.39
    ],
-   "sha256": "ac22f1354db855cd0b2968135cbe9affb0bc6d6181eae6152fe3bfd0ade2eefe"
+   "sha256": "ec55e9e8b9f5d07943c16eae8da20b1fba2f49270da993cc7c3a3ec4cb601fa0"
   },
   {
    "file": "Soul_chantier_dirt_XM001_YP000.obj",
@@ -1466,18 +1466,18 @@
    "mesh": "SM_Soul_line_rope_XM001_YM001",
    "material": "line_rope",
    "collision": "none",
-   "triangles": 10080,
-   "faces": 5040,
+   "triangles": 9936,
+   "faces": 4968,
    "tile_cm": 1000000,
    "bounds_cm": [
     -43650.83,
     -47305.51,
     433.08,
-    -1640.35,
+    -1686.09,
     -2369.06,
     1269.91
    ],
-   "sha256": "808b85edb9c713ba0c0df44a0b270b482c848f1c8dce63693ebdae5a960f7ea0"
+   "sha256": "be173ee37489672d4cea4599ec9f2e107464c335a5cc18844ec96a147c602be1"
   },
   {
    "file": "Soul_line_rope_XM001_YP000.obj",
@@ -1502,8 +1502,8 @@
    "mesh": "SM_Soul_line_rope_XP000_YM001",
    "material": "line_rope",
    "collision": "none",
-   "triangles": 6264,
-   "faces": 3132,
+   "triangles": 6192,
+   "faces": 3096,
    "tile_cm": 1000000,
    "bounds_cm": [
     333.73,
@@ -1513,15 +1513,15 @@
     -25386.07,
     1201.69
    ],
-   "sha256": "23bf5a2dfb197e4436b9e5024190abc02480996bc94717de6a7850bf42e9adfb"
+   "sha256": "b4a2df4204e1296c6aba0240d0a2436b29a0caa8c054530ddabaee8e4dba43b4"
   },
   {
    "file": "Soul_line_rope_XP000_YP000.obj",
    "mesh": "SM_Soul_line_rope_XP000_YP000",
    "material": "line_rope",
    "collision": "none",
-   "triangles": 6336,
-   "faces": 3168,
+   "triangles": 5760,
+   "faces": 2880,
    "tile_cm": 1000000,
    "bounds_cm": [
     8508.09,
@@ -1531,25 +1531,25 @@
     69623.24,
     978.14
    ],
-   "sha256": "43828017eb57b5e6d28d1a4f245023f43ebc90178453b636a50cc45586150d04"
+   "sha256": "c3b89d83fcab2aa44a070fca8c0366a7c9211f349d72635a54ae74bcea773269"
   },
   {
    "file": "Soul_pulley_XM001_YM001.obj",
    "mesh": "SM_Soul_pulley_XM001_YM001",
    "material": "pulley",
    "collision": "none",
-   "triangles": 3892,
-   "faces": 1946,
+   "triangles": 3822,
+   "faces": 1911,
    "tile_cm": 1000000,
    "bounds_cm": [
     -43686.39,
     -47319.42,
     0.0,
-    -1605.7,
+    -1682.31,
     -2365.27,
     1294.3
    ],
-   "sha256": "49d2ea857dc9d63bf0016b6e4a1a4b910b7e0ca909e92815feb93dddd89958fe"
+   "sha256": "a8a972b224b62846885669213f930bae881be4dc6fe1d45a26418ce84e586914"
   },
   {
    "file": "Soul_pulley_XM001_YP000.obj",
@@ -1574,8 +1574,8 @@
    "mesh": "SM_Soul_pulley_XP000_YM001",
    "material": "pulley",
    "collision": "none",
-   "triangles": 2536,
-   "faces": 1268,
+   "triangles": 2512,
+   "faces": 1256,
    "tile_cm": 1000000,
    "bounds_cm": [
     331.19,
@@ -1585,15 +1585,15 @@
     -25382.49,
     1203.31
    ],
-   "sha256": "da7545a5d741742d3d18d7dd0cacf7b770c0e718b8beb4ba3a1d45f2bded24ea"
+   "sha256": "ee457d89b415a23344790ddfb6859e96e8414465bc99ef08a02d18272e120084"
   },
   {
    "file": "Soul_pulley_XP000_YP000.obj",
    "mesh": "SM_Soul_pulley_XP000_YP000",
    "material": "pulley",
    "collision": "none",
-   "triangles": 2528,
-   "faces": 1264,
+   "triangles": 2248,
+   "faces": 1124,
    "tile_cm": 1000000,
    "bounds_cm": [
     8505.25,
@@ -1603,7 +1603,7 @@
     69648.73,
     1004.85
    ],
-   "sha256": "5e917b91f536aa5d96793a0aabea417dda648f09a7dc9d138a9347deb9b2465e"
+   "sha256": "25d1370e7c0eb12ba18f61b25eb15b88f6c5e1a7589ff9aa82c0b5b960c4ba58"
   },
   {
    "file": "Soul_clothes_pole_XM001_YM001.obj",
@@ -1646,26 +1646,26 @@
    "mesh": "SM_Soul_clothes_pole_XP000_YM001",
    "material": "clothes_pole",
    "collision": "none",
-   "triangles": 666,
-   "faces": 333,
+   "triangles": 656,
+   "faces": 328,
    "tile_cm": 1000000,
    "bounds_cm": [
-    646.46,
+    2062.71,
     -46882.24,
     0.0,
     53565.27,
-    -25966.38,
+    -26548.88,
     1232.31
    ],
-   "sha256": "7ae3492365af9a3e47e5282a5f1d7f989e960e398ec9e048d1b8eeea2262191f"
+   "sha256": "e329202dfd5ad2ec378a2977cf74178070a14fb953b7e764483c832c8f6125ad"
   },
   {
    "file": "Soul_clothes_pole_XP000_YP000.obj",
    "mesh": "SM_Soul_clothes_pole_XP000_YP000",
    "material": "clothes_pole",
    "collision": "none",
-   "triangles": 736,
-   "faces": 368,
+   "triangles": 714,
+   "faces": 357,
    "tile_cm": 1000000,
    "bounds_cm": [
     9270.43,
@@ -1675,25 +1675,25 @@
     68841.79,
     1008.78
    ],
-   "sha256": "6e6e1c0f9089d887e8ff154497ba04357e78f1d3c2d97eaf24165e6b269d2887"
+   "sha256": "9169ec02e753b3e9e03dea57f2a2fbe98bf21620fefdb26764f49167bc608048"
   },
   {
    "file": "Soul_cloth_e_XM001_YM001.obj",
    "mesh": "SM_Soul_cloth_e_XM001_YM001",
    "material": "cloth_e",
    "collision": "none",
-   "triangles": 632,
-   "faces": 316,
+   "triangles": 616,
+   "faces": 308,
    "tile_cm": 1000000,
    "bounds_cm": [
     -42879.79,
     -47147.36,
     380.9,
-    -1684.36,
+    -1736.99,
     -2851.26,
     1199.83
    ],
-   "sha256": "d2c3ba0e6286995c23b8c0bbaf46023f30cba5669f5b1cf2614d222237e5c6e9"
+   "sha256": "f3a0fc7940420261c8afe7b844e2dcab8f424224868851e61e9c7b86e6746a7b"
   },
   {
    "file": "Soul_cloth_e_XM001_YP000.obj",
@@ -1808,8 +1808,8 @@
    "mesh": "SM_Soul_cloth_f_XP000_YP000",
    "material": "cloth_f",
    "collision": "none",
-   "triangles": 336,
-   "faces": 168,
+   "triangles": 328,
+   "faces": 164,
    "tile_cm": 1000000,
    "bounds_cm": [
     13704.06,
@@ -1819,7 +1819,7 @@
     68594.96,
     937.36
    ],
-   "sha256": "7cdfc1f923bcdaeeb8521aa6c0d08f0529d7091b0ab80c9c6e40d3e54afaa307"
+   "sha256": "c44fb8bac0365124cb86f5f97dd997f2071fe58b36d161d72f2adfc33000a344"
   },
   {
    "file": "Soul_Yard_Soil_XM001_YM001.obj",
@@ -3407,36 +3407,36 @@
   "chantier_zones": 1,
   "utility_poles": 151,
   "wire_spans": 79,
-  "laundry_lines": 489,
+  "laundry_lines": 478,
   "curb_bins": 1695,
   "locked_bikes": 225,
   "flower_boxes": 247,
   "ac_units": 0,
   "ruelle_fence_weeds": 1430,
   "chantier_street": "Rue Fabre",
-  "laundry_poles": 330,
-  "garments": 2040,
-  "laundry_modules_without_room": 184,
+  "laundry_poles": 323,
+  "garments": 2034,
+  "laundry_modules_without_room": 191,
   "gallery_decks": 1510,
   "gallery_decks_lived": 1242,
-  "gallery_props": 3774,
+  "gallery_props": 3776,
   "gallery_chair_patio": 976,
   "gallery_bbq": 266,
   "gallery_bike_gallery": 113,
   "gallery_bin_recycling": 278,
   "gallery_bin_compost": 231,
-  "gallery_potted_plant": 1567,
+  "gallery_potted_plant": 1568,
   "gallery_ac_unit": 154,
-  "gallery_flower_box": 175,
+  "gallery_flower_box": 176,
   "gallery_satellite_dish": 14,
   "gallery_dishes_without_sky": 18,
-  "gate_bin_recycling": 254,
-  "gate_bin_compost": 185,
+  "gate_bin_recycling": 255,
+  "gate_bin_compost": 186,
   "gate_flower_box": 46,
   "gate_bike_locked": 18,
   "gate_props_lane_side": 251,
-  "gate_props_yard_side": 252,
-  "gate_props_without_room": 223,
+  "gate_props_yard_side": 254,
+  "gate_props_without_room": 221,
   "ruelles_vertes_osm_ways": 27,
   "ruelles_vertes_ids": 14,
   "green_bed_metres": 2231,
@@ -3449,14 +3449,14 @@
   "green_murals": 13,
   "tags_fences": 27,
   "tags_doors": 15,
-  "placements": 6615,
+  "placements": 6619,
   "batches": 170,
-  "triangles": 260518
+  "triangles": 259272
  },
  "source_sha256": {
   "Data/LaFontaine/osm.xml": "fe4410d45007a627bf6d9b9ddeeae329fa9cdd7492dfb5fa6beff851e7cf8f86",
   "Data/LaFontaine/layout.json": "4238d6ed45d5fb890e0f8dbcb672de0803c6dc7079b0b6a86b386d82ebbb4250",
-  "Scripts/plateau_replica.py": "f7746b13c6a6e393b5a2a46077f04a1bfed790cd98c75fcfa8ba507f8990e1e5",
+  "Scripts/plateau_replica.py": "fa38cb7bd6252ce64d1ffe08c01a21df9b433fcdcdd9f4040268b4327cb4d0da",
   "Scripts/prepare_lafontaine.py": "e7b6e5f068a96ee7306b1fff247fa73158f5cf7c343dc5510ab8cce92ee3c924",
   "Data/Plateau/BaseGeometry/Marking.obj": "2d82cbca59041aa6af5e6f3fffaf6a01b2c3e672eea9732e8a5fecbb7cee35dd",
   "Data/Plateau/ReplicaGeometry/Plex/fronts.json": "c572a535a248f94d70d6ec2237d9a89419eb98b2e5f209c4122aeda65d9db201",
@@ -3466,7 +3466,7 @@
  },
  "attribution": "© OpenStreetMap contributors, ODbL 1.0; authored street details and original murals",
  "placements": "placements.json",
- "placements_sha256": "197cf2b41464934fcd9b6f3a583f65a50ccbde86d7f2e6d4cb54a5b2f2245976",
+ "placements_sha256": "0d631685accfdd7355fb600dd5257cfd512d8c5d4bdc0bd28294489dfdf56889",
  "lane_life": "lane_life.json",
- "lane_life_sha256": "e144566864aec4b78394a8488f1cdd898a55b2f7318973d4295fd17498f7e5b3"
+ "lane_life_sha256": "3663f00c1a2158d7e5bd5b681412043ffd80a1aa21659d107915162243447647"
 }

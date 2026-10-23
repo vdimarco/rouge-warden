@@ -31,7 +31,7 @@
  "source_sha256": {
   "Data/LaFontaine/osm.xml": "fe4410d45007a627bf6d9b9ddeeae329fa9cdd7492dfb5fa6beff851e7cf8f86",
   "Data/LaFontaine/layout.json": "4238d6ed45d5fb890e0f8dbcb672de0803c6dc7079b0b6a86b386d82ebbb4250",
-  "Scripts/plateau_replica.py": "f7746b13c6a6e393b5a2a46077f04a1bfed790cd98c75fcfa8ba507f8990e1e5",
+  "Scripts/plateau_replica.py": "fa38cb7bd6252ce64d1ffe08c01a21df9b433fcdcdd9f4040268b4327cb4d0da",
   "Scripts/prepare_lafontaine.py": "e7b6e5f068a96ee7306b1fff247fa73158f5cf7c343dc5510ab8cce92ee3c924",
   "Data/Plateau/BaseGeometry/Marking.obj": "2d82cbca59041aa6af5e6f3fffaf6a01b2c3e672eea9732e8a5fecbb7cee35dd",
   "Data/Plateau/ReplicaGeometry/Plex/fronts.json": "c572a535a248f94d70d6ec2237d9a89419eb98b2e5f209c4122aeda65d9db201",
@@ -39,6 +39,6 @@
   "Data/Plateau/ReplicaGeometry/Plex/manifest.json": "85603475766169d6ab94b74236d8a111822c4ca1b07c9a90cdcca8bb4d90c24b",
   "Data/Plateau/ReplicaGeometry/Props/manifest.json": "92d3a4c8811dd7adf5d0ca51701d308e1373361a46a346737104247ecfd417da"
  },
- "placements_sha256": "299936e1a2505da37b001fcaa3c1d5fda839ca99aeb240c242bf6737d80efc7f",
+ "placements_sha256": "1828efc4dc39b000b805e8f338e911a9bfaa373b4388679ec38dabd3b8193ca7",
  "props_manifest_sha256": "92d3a4c8811dd7adf5d0ca51701d308e1373361a46a346737104247ecfd417da"
 }
