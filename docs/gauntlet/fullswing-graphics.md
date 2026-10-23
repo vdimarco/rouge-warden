@@ -1205,3 +1205,8 @@ Reuse high-water candidate records with allfieldsreset; nearest/driving/tie/stre
 
 
 Increment40 shipped #644 as8b5a4565 after freshall6CI/review/current25deployedchecks/rebase; productionactionview HTTP200 exactbytes verified (hash in fullswing-r40-selection-slots/production-verification.json). Canonical selection/no-camera scenarios published and OpenSpec archived. ActualChrome/FPSbenefit unverified; totalwithheld.
+
+
+## Increment41 — reusable traffic paint arrays (pending release)
+
+Reuse per-output paint storage during traffic sampling; fresh results and fallbackpalette independent. Focused identity/value/alias checks plus action and visualselectionintegration. No art/physics/anchor/height change/noFPSgate. All20dimensions historicalcontextonly,no newpoints; affectedChrome responsiveness/stabilityunverified,total/deltawithheld. Evidence fullswing-r41-traffic-paint.
