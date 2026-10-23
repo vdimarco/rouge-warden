@@ -2321,17 +2321,32 @@ def _passage_walk(world, L, surfaces, strip, counts, stops, oa, u, out, xs, i, j
     # where bare floor showed. A side or the near edge above lower ground gets a wall.
     y0, l0, r0 = rows[0]
 
-    def near_edge(xc):
-        lo, hi = y0 - 2 * PASSAGE_ROW, y0
-        if blocked(at(xc, hi)) or not blocked(at(xc, lo)):
+    def near_edge(xc, reach):
+        """Depth of what stops the walk at xc, searched back from the first row in 10 cm steps up to reach."""
+        if blocked(at(xc, y0)):
             return y0
+        y = y0
+        while y0 - y < reach and y > 5. and not blocked(at(xc, y - 10.)):
+            y -= 10.
+        if y0 - y >= reach or y <= 5.:
+            return y0
+        lo, hi = y - 10., y
         for _ in range(8):
             mid = (lo + hi) / 2
             lo, hi = (mid, hi) if blocked(at(xc, mid)) else (lo, mid)
         return hi + .5
-    yl, yr = near_edge(l0 + 3.), near_edge(r0 - 3.)
-    lead = [at(l0, yl), at(r0, yr), at(r0, y0), at(l0, y0)]
-    if max(y0 - yl, y0 - yr) > 1. and len(dedupe(lead)) >= 3:
+
+    def clear(quad):
+        """No sample inside the quad lies on a parterre, a Plex yard or a building (the lead-in would overlap)."""
+        return not any(blocked(lerp(lerp(quad[0], quad[1], f), lerp(quad[3], quad[2], g), .5 * 0 + 1.) if False else
+                               lerp(lerp(quad[0], quad[3], g), lerp(quad[1], quad[2], g), f))
+                       for f in (.15, .5, .85) for g in (.15, .5, .85))
+    for reach in (y0, 2 * PASSAGE_ROW):
+        yl, yr = near_edge(l0 + 3., reach), near_edge(r0 - 3., reach)
+        lead = [at(l0, yl), at(r0, yr), at(r0, y0), at(l0, y0)]
+        if clear(lead):
+            break
+    if max(y0 - yl, y0 - yr) > 1. and len(dedupe(lead)) >= 3 and clear(lead):
         key = 'yard_path' if world.traffic_distance(lead) >= CLEAR else 'curb'
         if L.flat(key, lead, Z_WALK):
             ccw = area(lead) > 0
