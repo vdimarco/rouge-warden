@@ -1469,7 +1469,7 @@ def build_streets(world):
     barriers = YardBarriers(world)
     for strip in world.sidewalk_strips:
         _yards(world, L, surfaces, strip, counts, barriers)
-    stops = PaveStops(world, world.plex, alleys=True)
+    stops = PaveStops(world, world.plex, alleys=True, yards=True)
     for strip in world.sidewalk_strips:
         _passages(world, L, surfaces, strip, counts, stops)
     _draw_extensions(world, L, surfaces, extensions, counts)
@@ -2378,7 +2378,7 @@ class PaveStops:
     """Lines a ruelle's paving stops at on its way out to a wall past the fence line: the Plex yards (their rect,
     lane and side fences, sheds and the ground on lots with no yard), the sidewalks and the carriageways."""
 
-    def __init__(self, world, plex, alleys=False):
+    def __init__(self, world, plex, alleys=False, yards=False):
         self.segs, self.grid = [], Grid(1000.)
 
         def line(points, closed=False):
@@ -2420,7 +2420,7 @@ class PaveStops:
         for poly, _, kind in world.surfaces.items:
             if kind == 'road':
                 zone(list(poly))
-            elif kind == 'alley' and alleys:
+            elif kind == 'alley' and alleys or kind == 'yard' and yards:
                 line(poly, True)
 
     def inside(self, p):

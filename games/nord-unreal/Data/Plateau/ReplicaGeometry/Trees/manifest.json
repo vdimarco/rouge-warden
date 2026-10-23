@@ -564,6 +564,7 @@
    },
    "height_cm": 1453.8,
    "trunk_cm": 48.0,
+   "trunk_at_cm": 130.0,
    "crown_width_cm": 1591.6,
    "crown_base_cm": 276.8,
    "clear_trunk_cm": 369.9,
@@ -686,6 +687,7 @@
    },
    "height_cm": 1700.3,
    "trunk_cm": 58.0,
+   "trunk_at_cm": 130.0,
    "crown_width_cm": 1746.5,
    "crown_base_cm": 307.7,
    "clear_trunk_cm": 387.5,
@@ -806,6 +808,7 @@
    },
    "height_cm": 1357.6,
    "trunk_cm": 40.0,
+   "trunk_at_cm": 130.0,
    "crown_width_cm": 1623.5,
    "crown_base_cm": 317.3,
    "clear_trunk_cm": 368.4,
@@ -924,6 +927,7 @@
    },
    "height_cm": 1400.3,
    "trunk_cm": 42.0,
+   "trunk_at_cm": 130.0,
    "crown_width_cm": 858.5,
    "crown_base_cm": 325.5,
    "clear_trunk_cm": 336.7,
@@ -1037,6 +1041,7 @@
    },
    "height_cm": 1545.6,
    "trunk_cm": 44.0,
+   "trunk_at_cm": 130.0,
    "crown_width_cm": 1092.1,
    "crown_base_cm": 404.9,
    "clear_trunk_cm": 386.0,
@@ -1148,7 +1153,7 @@
   "small": {
    "name": "Small yard tree (Amur maple / serviceberry type)",
    "obj": "Tree_small.obj",
-   "sha256": "4559818b4c342821c85878411757c6ba8fa4a81675f84ecbad25381dbdad588c",
+   "sha256": "946b1c64382b3232278acdf7573080e30e5280097c342cdde978f1e7fa8f4c53",
    "materials": {
     "bark": "Bark_Small",
     "leaves": "Tree_Leaves_Autumn"
@@ -1157,48 +1162,49 @@
     "bark": "small_bark",
     "leaves": "small_leaves"
    },
-   "height_cm": 654.9,
-   "trunk_cm": 17.6,
-   "crown_width_cm": 651.9,
-   "crown_base_cm": 136.5,
-   "clear_trunk_cm": 184.3,
+   "height_cm": 653.6,
+   "trunk_cm": 17.0,
+   "trunk_at_cm": 100.0,
+   "crown_width_cm": 785.4,
+   "crown_base_cm": 166.1,
+   "clear_trunk_cm": 172.0,
    "prune_cm": 160.0,
    "leaf_retention": 0.66,
    "triangles": {
-    "bark": 3486,
-    "leaves": 1732,
-    "total": 5218
+    "bark": 3495,
+    "leaves": 1704,
+    "total": 5199
    },
    "triangle_target": 15000,
    "bounds_cm": [
-    -331.0,
-    -323.2,
-    -1.3,
-    320.9,
-    310.2,
-    654.9
+    -377.1,
+    -442.1,
+    -1.0,
+    302.1,
+    343.3,
+    653.6
    ],
    "seed": 4606,
    "stems_per_level": [
     4,
     21,
-    104
+    102
    ],
-   "cards": 433,
-   "outward_cards": 429,
+   "cards": 426,
+   "outward_cards": 424,
    "cell_usage": {
-    "sx_orange": 218,
-    "sx_red": 215
+    "sx_orange": 202,
+    "sx_red": 224
    },
    "crown_centre_cm": [
-    -0.6,
-    6.4,
-    392.6
+    -36.4,
+    45.2,
+    401.4
    ],
    "crown_radii_cm": [
-    292.8,
-    271.5,
-    219.9
+    297.6,
+    351.8,
+    227.1
    ],
    "weber_penn": {
     "shape": 1,
@@ -1272,12 +1278,12 @@
    "honey_locust": 7390,
    "linden": 16756,
    "ash": 8906,
-   "small": 5218
+   "small": 5199
   },
   "textures": 6
  },
  "source_sha256": {
-  "Scripts/blender/plateau_trees.py": "613fd0d4f672a513eb5339be684d6443a4805c0555d043541931cf385f4a7e0c",
+  "Scripts/blender/plateau_trees.py": "fdd8a53b09b3b86cda905ca1ad32081b92ac7063b474fd6b47844e369e15f818",
   "Scripts/plateau_textures.py": "9dc926e15da803b557161015e73eb996ec3d2a7c1e779862e273c05dd4a9d55c"
  }
 }
