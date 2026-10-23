@@ -29,10 +29,12 @@ GOLD_TINT = (1.8, 1.2, .5)
 MASK_CLIP = 1. / 3.
 AUTUMN_FLAG = '-NordTreeAutumn'
 # Late October on the Plateau: per-instance random value r -> linear tint of the leaf luminance. Lerp between
-# neighbouring stops: the first eighth of the trees keeps some green, most are yellow, a third orange, a few red.
-AUTUMN_STOPS = ((0., (.62, 1.0, .3)), (.12, (2.2, 1.55, .26)), (.55, (2.25, 1.3, .2)), (.85, (2.1, .72, .14)),
-                (1., (1.55, .36, .14)))
-AUTUMN_LIFT = (.03, .02, .004)
+# neighbouring stops: the first eighth of the trees keeps some green, most are yellow to amber, then orange and a
+# few red. The leaf texture's linear luminance is about .40 over its opaque texels (tree_small_02_leaves_diff_1k,
+# p10-p90 .31-.49), so yellow lands near sRGB #C4982B, orange near #CB6A1E, red near #A5381E.
+AUTUMN_STOPS = ((0., (.5, .68, .1)), (.12, (1.4, .8, .06)), (.55, (1.5, .62, .05)), (.85, (1.5, .36, .035)),
+                (1., (.95, .1, .035)))
+AUTUMN_LIFT = (.01, .006, .001)
 AUTUMN_MASK_CLIP = .45     # thinner crowns: many leaves are down by late October
 
 
