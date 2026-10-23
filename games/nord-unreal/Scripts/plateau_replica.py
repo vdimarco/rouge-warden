@@ -1238,7 +1238,8 @@ def build_streets(world):
         'curb_extensions_merged', 'curb_extensions_flush', 'curb_extensions_part_flush', 'curb_extension_metres',
         'curb_extensions_on_verges', 'curb_extensions_on_corners', 'mapped_trees_for_host',
         'yard_slabs_past_ruelle_mouths', 'curb_extension_trees_at_curb', 'sidewalk_risers', 'corner_risers',
-        'yard_risers', 'yard_mouth_wedges', 'yard_mouth_wedge_square_metres', 'sidewalk_pieces_split')}
+        'yard_risers', 'yard_mouth_wedges', 'yard_mouth_wedge_square_metres', 'sidewalk_pieces_split',
+        'passages', 'passage_square_metres')}
     # Carriageway asphalt.
     for s in world.segs:
         if s['excluded']:
@@ -1468,12 +1469,15 @@ def build_streets(world):
     barriers = YardBarriers(world)
     for strip in world.sidewalk_strips:
         _yards(world, L, surfaces, strip, counts, barriers)
+    stops = PaveStops(world, world.plex, alleys=True)
+    for strip in world.sidewalk_strips:
+        _passages(world, L, surfaces, strip, counts, stops)
     _draw_extensions(world, L, surfaces, extensions, counts)
     _legacy_dashes(world, L, counts)
     world.pit_trees = pit_trees
     for k in ('sidewalk_metres', 'yard_square_metres', 'fence_metres', 'centre_line_metres', 'lane_line_metres',
               'parking_line_metres', 'bike_track_metres', 'ruelle_metres', 'ruelle_square_metres',
-              'ruelle_edge_metres', 'curb_extension_metres', 'yard_mouth_wedge_square_metres'):
+              'ruelle_edge_metres', 'curb_extension_metres', 'yard_mouth_wedge_square_metres', 'passage_square_metres'):
         counts[k] = round(counts[k])
     counts['curb_measurement'] = world.curb_stats
     counts['osm_stop_nodes_inside'] = len(world.stop_nodes)
@@ -2179,6 +2183,120 @@ def _mouth_wedge(world, L, surfaces, q, out, side, near, far, mat, zoff, counts,
         i = j
 
 
+PASSAGE_STEP = 50.        # side passages between buildings: the back line is sampled this often
+PASSAGE_WIDE = 600.       # a gap between two buildings this wide or less is a passage (wider: a lot or a yard)
+PASSAGE_DEEP = 150.       # its floor runs at least this much deeper than the façades either side
+PASSAGE_LONG = 3000.      # and its walk at most this far behind the sidewalk
+
+
+def _passages(world, L, surfaces, strip, counts, stops):
+    """Concrete walks in the side passages between neighbouring buildings (the gap between two plexes that leads to
+    the yards): where the building line steps back more than PASSAGE_DEEP for no more than PASSAGE_WIDE between two
+    façades, a walk runs from the end of the parterre to where the passage opens out (its side walls end), a
+    building, a Plex yard, fence or ground, a ruelle, a sidewalk or a street, at most PASSAGE_LONG behind the
+    sidewalk. The parterres stop at the building line; the walk carries on, so no bare floor shows between the
+    houses from the street."""
+    (ca, cb), (oa, ob) = strip['curb'], strip['outer']
+    u, olen = unit(oa, ob)
+    out = (-u[1], u[0]) if (oa[0] - ca[0]) * -u[1] + (oa[1] - ca[1]) * u[0] > 0 else (u[1], -u[0])
+    steps = int(olen // PASSAGE_STEP)
+    if steps < 3:
+        return
+    xs = [olen * i / steps for i in range(steps + 1)]
+    deep = []                            # distance to the building behind each sample (0 at a wall, inf with none)
+    for x in xs:
+        q = add(oa, u, x)
+        if world.in_park(add(q, out, 20.)):
+            deep.append(None)
+        elif world.in_building(add(q, out, 3.)):
+            deep.append(0.)
+        else:
+            b = world.building_ray(add(q, out, 2.), out, PASSAGE_LONG)
+            deep.append(math.inf if b is None else b + 2.)
+    i = 1
+    while i < len(xs) - 1:
+        left = deep[i - 1]
+        if left is None or deep[i] is None or left == math.inf or deep[i] < left + PASSAGE_DEEP:
+            i += 1
+            continue
+        j = i
+        while j + 1 < len(xs) and deep[j + 1] is not None and deep[j + 1] >= left + PASSAGE_DEEP and \
+                xs[j + 1] - xs[i - 1] <= PASSAGE_WIDE:
+            j += 1
+        right = deep[j + 1] if j + 1 < len(xs) else None
+        if right is None or right == math.inf or min(deep[i:j + 1]) < right + PASSAGE_DEEP or \
+                xs[j + 1] - xs[i - 1] > PASSAGE_WIDE + PASSAGE_STEP:
+            i = j + 1
+            continue
+        _passage_walk(world, L, surfaces, strip, counts, stops, oa, u, out, xs, i, j, left, right)
+        i = j + 1
+
+
+def _passage_walk(world, L, surfaces, strip, counts, stops, oa, u, out, xs, i, j, left, right):
+    """One passage (samples i..j, façades `left` and `right` deep at samples i-1 and j+1): per sample, the walk's
+    start (the parterre's end, or the façade line) and end, laid from wall to wall."""
+    rows = []
+    for m in range(i, j + 1):
+        q = add(oa, u, xs[m])
+        f = (xs[m] - xs[i - 1]) / (xs[j + 1] - xs[i - 1])
+        s = left + (right - left) * f - 30.            # the façade line across the passage, a little in front
+        while s < FRONT_MAX + 300 and surfaces.has(add(q, out, s + 5.), 'yard'):
+            s += 10.
+        s = max(0., s)
+        p = add(q, out, s + 5.)
+        if any(surfaces.has(p, k) for k in ('alley', 'road', 'sidewalk', 'apron')) or world.in_building(p):
+            rows.append(None)
+            continue
+        e = PASSAGE_LONG
+        hit = stops.ray(add(q, out, s + 1.), out, PASSAGE_LONG)
+        if hit is not None:
+            e = min(e, s + 1. + hit)
+        b = world.building_ray(add(q, out, s + 1.), out, PASSAGE_LONG)
+        if b is not None:
+            e = min(e, s + 1. + b)
+        t = s + 50.
+        while t < e:                                    # the passage opens out where a side wall ends
+            c = add(q, out, t)
+            if world.building_ray(c, u, PASSAGE_WIDE) is None or world.building_ray(c, (-u[0], -u[1]), PASSAGE_WIDE) is None:
+                e = t
+                break
+            t += 50.
+        rows.append((s, e) if e - s >= 30. else None)
+    # the walls either side: where the passage's floor meets a building between samples i-1, i and j, j+1
+    def wall_at(x0, x1, s, e):
+        mid = (s + e) / 2
+        inside = lambda x: world.in_building(add(add(oa, u, x), out, mid))        # noqa: E731
+        lo, hi = x0, x1
+        if not inside(lo):
+            return x0
+        for _ in range(7):
+            m = (lo + hi) / 2
+            lo, hi = (m, hi) if inside(m) else (lo, m)
+        return lo
+    pts = []
+    if rows[0] is not None:
+        pts.append((wall_at(xs[i - 1], xs[i], *rows[0]), rows[0]))
+    for m, row in zip(range(i, j + 1), rows):
+        pts.append((xs[m], row))
+    if rows[-1] is not None:
+        pts.append((wall_at(xs[j + 1], xs[j], *rows[-1]), rows[-1]))
+    laid = False
+    for (x0, r0), (x1, r1) in zip(pts, pts[1:]):
+        if r0 is None or r1 is None or abs(x1 - x0) < 1.:
+            continue
+        q0, q1 = add(oa, u, x0), add(oa, u, x1)
+        pp = [add(q0, out, r0[0]), add(q1, out, r1[0]), add(q1, out, r1[1]), add(q0, out, r0[1])]
+        key = 'yard_path' if world.traffic_distance(pp) >= CLEAR else 'curb'
+        if L.flat(key, pp, Z_WALK):
+            ccw = area(pp) > 0
+            a, b = pp[2], pp[3]                          # the far end, toward the yard
+            L.wall(key, a, b, 0., Z_WALK) if ccw else L.wall(key, b, a, 0., Z_WALK)
+            surfaces.add(pp if ccw else pp[::-1], Z_WALK, 'yard')
+            counts['passage_square_metres'] += abs(area(pp)) / 10000
+            laid = True
+    counts['passages'] += laid
+
+
 def _soft_edge(L, a, b, out, rng, zoff=0.):
     """Jittered grass spill over the sidewalk edge so the seam is not a ruler line."""
     length = math.dist(a, b)
@@ -2254,7 +2372,7 @@ class PaveStops:
     """Lines a ruelle's paving stops at on its way out to a wall past the fence line: the Plex yards (their rect,
     lane and side fences, sheds and the ground on lots with no yard), the sidewalks and the carriageways."""
 
-    def __init__(self, world, plex):
+    def __init__(self, world, plex, alleys=False):
         self.segs, self.grid = [], Grid(1000.)
 
         def line(points, closed=False):
@@ -2289,6 +2407,8 @@ class PaveStops:
         for poly, _, kind in world.surfaces.items:
             if kind == 'road':
                 zone(list(poly))
+            elif kind == 'alley' and alleys:
+                line(poly, True)
 
     def inside(self, p):
         return any(point_in(p, self.zones[i]) for i in self.zone_grid.query((p[0], p[1], p[0], p[1])))
