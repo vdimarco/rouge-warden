@@ -4215,8 +4215,8 @@ def author_background_roof(mesh, mass, counts):
 
 
 def build_background(mesh, masses, levels):
-    """Skin and window the backs of the background masses, and skin any part of a party wall left above a lower
-    neighbour (a plex neighbour counts with its parapet coping)."""
+    """Skin and window the backs of the background masses, roof them (author_background_roof), and skin any part of a
+    party wall left above a lower neighbour (a plex neighbour counts with its parapet coping)."""
     mesh.background_start = {material: len(faces) for material, faces in mesh.groups.items()}
     records, counts = [], {}
     for mass in masses:
@@ -4618,6 +4618,10 @@ def prepare(directory=OUT, write=True, keep=None):
                            'walls': dict(sorted(Counter(w['kind'] for r in background for w in r['walls']).items())),
                            'windows': sum(w['windows'] for r in background for w in r['walls']),
                            'party_skins': sum(len(r['party']) for r in background),
+                           'roofs': {'materials': dict(sorted(Counter(r['roof']['material'] for r in background).items())),
+                                     'chimneys': sum(r['roof']['chimney'] for r in background),
+                                     'hatches': sum(r['roof']['hatch'] for r in background),
+                                     'penthouses': sum(r['roof'].get('penthouses', 0) for r in background)},
                            'triangles': sum(r['triangles'] for r in background)}
     stats['glass_cards'] = {'status': audit, 'floating_on': floating}
     stats['walls_pass'] = {

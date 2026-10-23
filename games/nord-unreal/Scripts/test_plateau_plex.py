@@ -613,7 +613,8 @@ def test_gallery_guards_rails_cards_and_fascia():
     share = sum(r.infill == 'balusters' for r in rears) / len(rears)
     assert .55 <= share <= .85 and {r.infill for r in rears} == {'balusters', 'boards'}, share
     cards = rear['Rail_Baluster']
-    low_runs = sum(len(r['rear']['fence']['runs']) for r in records if r['rear']['fence'] and r['rear']['fence']['edge'] == 'low')
+    low = [r['rear']['fence'] for r in records if r['rear']['fence'] and r['rear']['fence']['edge'] == 'low']
+    low_runs = sum(len(f['runs']) for f in low) + sum(f['gate'] for f in low)      # a low fence's gate is a picket card
     assert len(cards) == counts['rear_guard_balusters'] + low_runs, (len(cards), counts['rear_guard_balusters'], low_runs)
     keys = [tuple(sorted(tuple(round(v, 2) for v in p) for p in f)) for f in cards]
     assert len(keys) == len(set(keys)), 'a card is drawn once (the masked material is two-sided)'
