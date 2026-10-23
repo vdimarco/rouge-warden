@@ -336,7 +336,7 @@ export function createFigures(scene, max = 240, reach = PEOPLE_REACH) {
   const R2 = reach * reach;
   const F = {
     root, mesh, hull,
-    begin(c, time) { n = 0; cam = c; counts = {}; if (time != null) U.uTime.value = time; },
+    begin(c, time) { n = 0; cam = c; for (const tag in counts) delete counts[tag]; if (time != null) U.uTime.value = time; },
     // tag: a name to count by (people, goons, jobs) for the tests
     add(p, tag = "people") {
       if (n >= max) return false;

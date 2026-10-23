@@ -1256,3 +1256,7 @@ Private cache retains complete goon target records, updating existing chest posi
 
 
 Increment47 shipped #658 as6aa20d58 after all6CI/review/current26deployedchecks/rebase before AND afterpreview/exactmerge. Productionmain HTTP200 exactbytes verified (hash in fullswing-r47-goon-rope-records/production-verification.json). Canonical registered-goon-record scenarios published and OpenSpec archived. ActualChrome/FPSbenefit unverified; totalwithheld.
+
+
+### Increment48 — private figure count storage — 2026-10-23
+Private count dictionary cleared/reused acrossframes; info snapshotsremaincloned. Baseline61objects→one/5browserchecksPASS dynamiccounts/culling/capacity/empty/snapshotindependence; existingupload13checks/exactnonblankpixelsPASS. Evidence fullswing-r48-figure-counts/all20dimensionlimits; total/delta withheld, actualChrome/stability unverified. No art/physics/anchor/ceiling change or FPS claim; deletioncost unmeasured. Review/CI/preview/rebase/production pending.
