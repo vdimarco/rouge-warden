@@ -243,10 +243,10 @@ async function main() {
     await page.screenshot({ path: resolve(output, 'first-world.png') });
     // Warm playback before the measurement; retain all one-second observations after this point.
     await page.waitForTimeout(warmup * 1000);
-    await page.evaluate(frames => {
+    await page.evaluate(recordFrames => {
       const video = document.querySelector('#video video');
       window.__sampleGap = { previous: performance.now(), longest: 0, active: true };
-      if (frames) window.__sampleFrames = [];
+      if (recordFrames) window.__sampleFrames = [];
       const frame = (now, metadata) => {
         const gap = window.__sampleGap;
         if (!gap.active) return;
