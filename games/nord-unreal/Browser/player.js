@@ -1,6 +1,6 @@
 import { Config, Flags, NumericParameters, OptionParameters, PixelStreaming, TextParameters } from '@epicgames-ps/lib-pixelstreamingfrontend-ue5.8';
 import { Logger, LogLevel } from '@epicgames-ps/lib-pixelstreamingcommon-ue5.8';
-import { signallingUrl, streamDimensions, phoneStreamState, adaptPhoneStream } from './config.mjs';
+import { signallingUrl, streamDimensions, phoneStreamState, adaptPhoneStream, pinnedLevel } from './config.mjs';
 import { setupTouchControls } from './touch-controls.js';
 
 Logger.InitLogging(LogLevel.Warning, false);
@@ -27,7 +27,10 @@ let timeout;
 let muted = false;
 let streamSize = '';
 let resizeTimer;
-let phoneStream = phoneStreamState(performance.now());
+// A pinned rung never adapts, so a gauntlet sample keeps one frame size; the sampler reads the pin back.
+const pinnedRung = pinnedLevel(location.search, NORD_QA_PIN);
+if (pinnedRung !== null) document.body.dataset.streamPin = String(pinnedRung);
+let phoneStream = phoneStreamState(performance.now(), pinnedRung);
 
 function status(state, title, detail) {
   document.body.dataset.state = state;
@@ -181,7 +184,7 @@ if (endpoint) {
       queueMicrotask(() => config.setNumericSetting(NumericParameters.WebRTCMaxBitrate, touchMode ? phoneStream.bitrate : 12000));
     });
     stream.addEventListener('statsReceived', event => {
-      if (!touchMode || document.hidden || document.body.dataset.state !== 'playing') return;
+      if (!touchMode || pinnedRung !== null || document.hidden || document.body.dataset.state !== 'playing') return;
       const video = event.data.aggregatedStats.inboundVideoStats;
       if (!adaptPhoneStream(phoneStream, video, performance.now())) return;
       config.setNumericSetting(NumericParameters.WebRTCMaxBitrate, phoneStream.bitrate);
