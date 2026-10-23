@@ -71,7 +71,7 @@ SPECIES = {
             {'length': .46, 'length_v': .1, 'branches': 13, 'down': 48., 'down_v': 14., 'rotate': 140., 'rotate_v': 30.,
              'curve_res': 4, 'curve': 0., 'curve_back': 0., 'curve_v': 40., 'attraction': .12, 'sides': 4},
         ],
-        'leaves': {'cards': 9, 'retention': .76, 'card_cm': 62., 'down': 52., 'down_v': 22., 'rotate': 137.5,
+        'leaves': {'cards': 10, 'retention': .8, 'card_cm': 62., 'down': 52., 'down_v': 22., 'rotate': 137.5,
                    'rotate_v': 12., 'twist_v': 32.,
                    'cells': {'nm_yellow': .38, 'nm_mixed': .3, 'nm_green': .16, 'nm_sparse': .16}},
         'bark': {'colour': '#5E564D', 'note': 'grey-brown, shallow interlacing ridges'},
