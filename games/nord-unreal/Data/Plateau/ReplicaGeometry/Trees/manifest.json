@@ -553,7 +553,7 @@
   "norway_maple": {
    "name": "Norway maple (Acer platanoides)",
    "obj": "Tree_norway_maple.obj",
-   "sha256": "03da15914dddbfc0ee497d6d14067a362e7526a0f024999de38947c998b47b8e",
+   "sha256": "c025149b0ad3d8865c227119e52c3b78f9df1f080bdb10313c37d798edfebb8e",
    "materials": {
     "bark": "Bark_NorwayMaple",
     "leaves": "Tree_Leaves_Autumn"
@@ -675,7 +675,7 @@
   "silver_maple": {
    "name": "Silver maple (Acer saccharinum)",
    "obj": "Tree_silver_maple.obj",
-   "sha256": "c286898bd72201b5b6e76476aff5fd949ed32b1f38dd4e4286d434852c425603",
+   "sha256": "092d1da1792cdbf8ad3f199d42963e1b71490d05f0b6db10fa4dcb2f905a0e42",
    "materials": {
     "bark": "Bark_SilverMaple",
     "leaves": "Tree_Leaves_Autumn"
@@ -693,8 +693,8 @@
    "leaf_retention": 0.62,
    "triangles": {
     "bark": 9695,
-    "leaves": 3424,
-    "total": 13119
+    "leaves": 3428,
+    "total": 13123
    },
    "triangle_target": 30000,
    "bounds_cm": [
@@ -711,12 +711,12 @@
     27,
     208
    ],
-   "cards": 856,
-   "outward_cards": 855,
+   "cards": 857,
+   "outward_cards": 856,
    "cell_usage": {
-    "sm_orange": 242,
+    "sm_orange": 279,
     "sm_sparse": 250,
-    "sm_yellow": 364
+    "sm_yellow": 328
    },
    "crown_centre_cm": [
     -60.8,
@@ -785,8 +785,8 @@
      "rotate_v": 12.0,
      "twist_v": 35.0,
      "cells": {
-      "sm_yellow": 0.44,
-      "sm_orange": 0.26,
+      "sm_yellow": 0.4,
+      "sm_orange": 0.3,
       "sm_sparse": 0.3
      }
     }
@@ -795,7 +795,7 @@
   "honey_locust": {
    "name": "Thornless honey locust (Gleditsia triacanthos var. inermis)",
    "obj": "Tree_honey_locust.obj",
-   "sha256": "04913715e104d00528506b39a15853f6e0e2279047387bc2cc3f558092b618c6",
+   "sha256": "600bc30732831b3bdbaa3fb2fb9201b0da61d812dba90988de9974b8ec2c989c",
    "materials": {
     "bark": "Bark_HoneyLocust",
     "leaves": "Tree_Leaves_Autumn"
@@ -913,7 +913,7 @@
   "linden": {
    "name": "Linden (Tilia cordata / T. americana)",
    "obj": "Tree_linden.obj",
-   "sha256": "44cf7e3245ebe40ab3d63858df8b02df1c844682acd01afc7f4689b8b28cdd87",
+   "sha256": "6c3fc1b86e0d04f485c99fd759928c73a32b10c25ee6c5c93b57953293cc1de1",
    "materials": {
     "bark": "Bark_Linden",
     "leaves": "Tree_Leaves_Autumn"
@@ -1026,7 +1026,7 @@
   "ash": {
    "name": "Green ash (Fraxinus pennsylvanica)",
    "obj": "Tree_ash.obj",
-   "sha256": "61c0c7ce5d7ccd0e67259a1c423574304f0e33c6c6aac19a8339fa485212dfd7",
+   "sha256": "deaee9048d5bd7dfec33d8c95b1c6f6698984cbc3b9354f3df210f7cc7bd58a9",
    "materials": {
     "bark": "Bark_Ash",
     "leaves": "Tree_Leaves_Autumn"
@@ -1148,7 +1148,7 @@
   "small": {
    "name": "Small yard tree (Amur maple / serviceberry type)",
    "obj": "Tree_small.obj",
-   "sha256": "991ad6597b41a4e2240a9924bd34ae11dbcffb32b007c01c8ea6878ffdd8a361",
+   "sha256": "4559818b4c342821c85878411757c6ba8fa4a81675f84ecbad25381dbdad588c",
    "materials": {
     "bark": "Bark_Small",
     "leaves": "Tree_Leaves_Autumn"
@@ -1268,7 +1268,7 @@
   "kinds": 6,
   "triangles": {
    "norway_maple": 14725,
-   "silver_maple": 13119,
+   "silver_maple": 13123,
    "honey_locust": 7390,
    "linden": 16756,
    "ash": 8906,
@@ -1277,7 +1277,7 @@
   "textures": 6
  },
  "source_sha256": {
-  "Scripts/blender/plateau_trees.py": "fe2cfad3f148f891788a15c72552b8af94f538938d608d909fc6bf2a4aca9fa6",
+  "Scripts/blender/plateau_trees.py": "613fd0d4f672a513eb5339be684d6443a4805c0555d043541931cf385f4a7e0c",
   "Scripts/plateau_textures.py": "9dc926e15da803b557161015e73eb996ec3d2a7c1e779862e273c05dd4a9d55c"
  }
 }
