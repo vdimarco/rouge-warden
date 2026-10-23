@@ -1154,3 +1154,8 @@ Round34 rejected beforemerge:42fullworkloads/35inputs each; normal60FPS but pres
 
 
 User-directed workflow update: performance measurements are diagnostic, not an FPS-benefit merge gate. Round34 reopens as removal of redundant render commands with actual FPS benefit unverified; original mixed results remain recorded. Focused correctness/review/CI/preview/rebase/production checks retained. Delivery plan: FULLSWING-PERFORMANCE-PLAN.md.
+
+
+## Increment35 — populated character/sign uploads (pending release)
+
+Range-limited dynamic GPU transfers reuse existing Three APIs.13focused browser checks pass, verifying actual upload bytes after shrink/grow/zero and identical populatedimages. Threeof240figures upload264instead of21120bytes; threeof100signs156instead of5200. No FPSgain claim or benchmarkmergegate. All20dimension historical assessments from prior round remain context only; no new aestheticpoints, responsiveness/stabilityunverified,total/deltawithheld. Review/CI/deployedpreview/rebase/production pending; realbuildinganchors/noheightceiling unchanged.
