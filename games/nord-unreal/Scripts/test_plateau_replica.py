@@ -146,7 +146,7 @@ def check_textures(the_plan):
     index = json.loads((folder / A.TEXTURE_INDEX).read_text())
     # The Trees manifest's own sets (bark, autumn leaf atlas) sit beside the textures.json sets.
     trees = replica.OUT / A.TREES / 'manifest.json'
-    tree_sets = json.loads(trees.read_text()).get(A.TREE_TEXTURE_SETS) or {} if trees.is_file() else {}
+    tree_sets = (json.loads(trees.read_text()).get(A.TREE_TEXTURE_SETS) or {}) if trees.is_file() else {}
     assert not set(tree_sets) & set(index['sets']), 'A tree texture set reuses a replica set name'
     sets_index = dict(index['sets'], **tree_sets)
     textures = {t['asset']: t for t in the_plan['textures']}
@@ -215,7 +215,7 @@ def check_textures(the_plan):
     assert the_plan['counts']['macro_materials'] == sum(1 for m in textured if m.get('macro'))
     for t in the_plan['textures']:
         # The cut-out diffuse maps carry alpha, and their mips keep the clip coverage.
-        alpha = t['set'] != 'macro' and t['role'] == 'diff' and index['sets'][t['set']]['alpha']
+        alpha = t['set'] != 'macro' and t['role'] == 'diff' and sets_index[t['set']]['alpha']
         assert t['alpha'] == alpha and (t['alpha_coverage_threshold'] == .5 if alpha else t['alpha_coverage_threshold'] is None)
     check_plan_meshes(the_plan)
     plex = replica.OUT / 'Plex/manifest.json'
