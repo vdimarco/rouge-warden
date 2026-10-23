@@ -1225,3 +1225,6 @@ Increment42 shipped #648 as853fed7a after all6CI/review/current9deployedchecks/r
 
 ### Increment43 — clog guard source reuse — 2026-10-23
 Guard selection uses static city clogs and synchronized saved completion IDs, avoiding full target snapshots. Node20spawns match the snapshot reference with96→0snapshot calls; browser5checks verify actual guard offsets/once/real completion, existing action suite passes. Evidence fullswing-r43-clog-guards includes all20dimension limits; no newpoints, total/delta withheld, affectedChrome/stability unverified. Review/CI/currentpreview/rebase/production pending. No art/anchor/ceiling changes or FPS claim.
+
+
+Increment43 shipped #650 as5f5c85f5 after all6CI/review/current10deployedchecks/freshrebase/exactmerge. Productionmain HTTP200 exactbytes verified (hash in fullswing-r43-clog-guards/production-verification.json). Canonical guard-selection scenarios published and OpenSpec archived. ActualChrome/FPSbenefit unverified; totalwithheld.
