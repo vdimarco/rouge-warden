@@ -395,13 +395,14 @@ function cutsceneFrame(dt, inp) {
 }
 // The people on the sidewalks: they walk on round the player, and see the hero (in play only). The murmur follows them.
 const CAMW = new THREE.Vector3();
+const STREET_HAZARDS = [];
 const HERO_SEEN = { x: 0, y: 0, z: 0, vx: 0, vy: 0, vz: 0, onGround: false };
 function streetFrame(dt, inPlay) {
   street.limit = isXR() ? STREET.maxXR : STREET.max;
   HERO_SEEN.x = P.pos.x; HERO_SEEN.y = P.pos.y; HERO_SEEN.z = P.pos.z;
   HERO_SEEN.vx = P.vel.x; HERO_SEEN.vy = P.vel.y; HERO_SEEN.vz = P.vel.z; HERO_SEEN.onGround = !!P.onGround;
   const act = actionOn();
-  street.update(dt, G.time, P.pos, inPlay ? HERO_SEEN : null, act ? cars.hazards() : null);
+  street.update(dt, G.time, P.pos, inPlay ? HERO_SEEN : null, act ? cars.hazards(STREET_HAZARDS) : null);
   figures.begin(camera.getWorldPosition(CAMW), G.time);
   streetView.update(dt, G.time, CAMW);
   if (act) {

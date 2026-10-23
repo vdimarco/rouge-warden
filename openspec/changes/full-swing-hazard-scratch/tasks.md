@@ -1,0 +1,3 @@
+- [x] Implement optional scratch output and main caller
+- [x] Validate values, identity, counts, reverse driving and avoidance
+- [ ] Review, CI, current preview, rebase, merge and production verification

@@ -308,9 +308,15 @@ export function createCars(city, opts = {}) {
     return out;
   };
   // the moving cars, for the people to jump out of the way and the goons to be knocked over
-  K.hazards = function hazards() {
-    const out = [];
-    for (const c of cars) if (c.on && Math.abs(c.speed) > 2) out.push({ x: c.x + -Math.sin(c.yaw) * 1.6 * Math.sign(c.speed), z: c.z + -Math.cos(c.yaw) * 1.6 * Math.sign(c.speed), vx: c.vx, vz: c.vz, r: 3.2 });
+  K.hazards = function hazards(out = []) {
+    let n = 0;
+    for (const c of cars) if (c.on && Math.abs(c.speed) > 2) {
+      const q = out[n++] ||= {};
+      q.x = c.x + -Math.sin(c.yaw) * 1.6 * Math.sign(c.speed);
+      q.z = c.z + -Math.cos(c.yaw) * 1.6 * Math.sign(c.speed);
+      q.vx = c.vx; q.vz = c.vz; q.r = 3.2;
+    }
+    out.length = n;
     return out;
   };
   K.info = () => ({ cars: cars.filter((c) => c.on).length, driving: K.driving ? { id: K.driving.id, x: K.driving.x, z: K.driving.z, yaw: K.driving.yaw, speed: K.driving.speed } : null, stats: { ...K.stats },

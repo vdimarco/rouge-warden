@@ -1213,3 +1213,8 @@ Reuse per-output paint storage during traffic sampling; fresh results and fallba
 
 
 Increment41 shipped #646 as2d254f7d after freshall6CI/review/current10deployedchecks/rebase; productioncars HTTP200 exactbytes verified (hash in fullswing-r41-traffic-paint/production-verification.json). Canonical traffic-paint scenarios published and OpenSpec archived. ActualChrome/FPSbenefit unverified; totalwithheld.
+
+
+## Increment42 — reusable street hazard samples (pending release)
+
+Optionaloutputstorage reusedbyrealstreetframe; defaultfreshresultsunchanged. Node100listidentity/value/count/reverse/avoidancechecksand4realframebrowserchecksPASS; noFPSgate. All20dimensions historicalcontextonly,no newpoints; responsiveness/stabilityunverified,total/deltawithheld. Evidence fullswing-r42-hazard-scratch; noanchor/height/artchange.
