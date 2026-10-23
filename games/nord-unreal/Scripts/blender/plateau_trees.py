@@ -88,7 +88,7 @@ SPECIES = {
              'curve_res': 4, 'curve': 14., 'curve_back': 0., 'curve_v': 30., 'attraction': -.35, 'sides': 4},
         ],
         'leaves': {'cards': 9, 'retention': .62, 'card_cm': 62., 'down': 60., 'down_v': 22., 'rotate': 137.5,
-                   'rotate_v': 12., 'twist_v': 35., 'cells': {'sm_yellow': .44, 'sm_orange': .26, 'sm_sparse': .3}},
+                   'rotate_v': 12., 'twist_v': 35., 'cells': {'sm_yellow': .4, 'sm_orange': .3, 'sm_sparse': .3}},
         'bark': {'colour': '#8A857C', 'note': 'light grey, long loose plates on old trunks'},
     },
     'honey_locust': {
@@ -214,7 +214,9 @@ def bend_toward_up(frame, angle):
     z = frame[2]
     axis = cross(z, UP)
     if length(axis) < 1e-9:
-        return frame
+        if z[2] > 0.:
+            return frame                  # already vertical
+        axis = frame[0]                   # straight down: any horizontal axis turns it up
     return rotate_frame(frame, norm(axis), angle)
 
 
@@ -970,7 +972,11 @@ def add_card(mesh, card, cell_index, centre, radii):
     for p, (u, v) in zip(pts, uvs):
         nrm = norm(lerp(n0, ellipsoid_normal(p, centre, radii), PUFFINESS))
         if nrm[2] < MIN_NORMAL_Z:
-            nrm = norm((nrm[0], nrm[1], MIN_NORMAL_Z))
+            # Keep the heading, lift the normal to MIN_NORMAL_Z (SpeedTree's normal range), still unit length.
+            h = math.hypot(nrm[0], nrm[1])
+            hx, hy = (nrm[0] / h, nrm[1] / h) if h > 1e-6 else (1., 0.)
+            k = math.sqrt(1. - MIN_NORMAL_Z * MIN_NORMAL_Z)
+            nrm = (hx * k, hy * k, MIN_NORMAL_Z)
         ids.append((mesh.vert(p), mesh.uv(u, v), mesh.normal(nrm)))
     f = mesh.faces['leaves']
     # (b0, b1, t1, t0) runs counter-clockwise about +n0: (b1 - b0) is +w, (t0 - b0) is +d and w x d = n0.

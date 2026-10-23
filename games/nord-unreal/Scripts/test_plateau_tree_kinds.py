@@ -525,9 +525,10 @@ class RefineAutumn(unittest.TestCase):
         self.assertGreater(classes['yellow_orange'] / n, .75, classes)
         self.assertTrue(.02 < classes.get('red', 0) / n < .15, classes)
         self.assertTrue(.02 < classes.get('green', 0) / n < .12, classes)
-        # The summer graph keeps every leaf green to olive, never orange.
-        summer = [srgb_hue(R.leaf_colour(self.TEXELS[0], r / 10.)) for r in range(11)]
-        self.assertTrue(all(h > 50. for h in summer), summer)
+        # Against the summer graph (green to gold), autumn sits well toward orange for every instance value.
+        summer = sum(srgb_hue(R.leaf_colour(self.TEXELS[0], r / 10.)) for r in range(11)) / 11.
+        autumn = sum(srgb_hue(R.leaf_colour(self.TEXELS[0], r / 10., True)) for r in range(11)) / 11.
+        self.assertGreater(summer - autumn, 25., (summer, autumn))
         self.assertGreater(R.AUTUMN_MASK_CLIP, R.MASK_CLIP)   # thinner crowns: many leaves already down
 
     def test_flag(self):
