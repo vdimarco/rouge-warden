@@ -126,7 +126,7 @@ SUBSYSTEM = (ROOT / "Source/Quebec/QuebecGauntlet.cpp").read_text()
 assert f"constexpr int32 SetupExit = {LOOP['exit_codes']['setup']};" in CONTROLLER, "the controller's SetupExit differs from loop.json"
 for variable in ("ExitVariableName", "ControllerVariableName"):
     pattern = rf'{variable} = TEXT\("([\w.]+)"\)'
-    names = [re.search(pattern, text).group(1) for text in (CONTROLLER, SUBSYSTEM)]
-    assert names[0] == names[1], f"{variable} is {names[0]} in the controller and {names[1]} in the subsystem"
+    found = [re.search(pattern, text).group(1) for text in (CONTROLLER, SUBSYSTEM)]
+    assert found[0] == found[1], f"{variable} is {found[0]} in the controller and {found[1]} in the subsystem"
 print("\n".join(line for line in outputs[compilers[0]].splitlines() if not line.startswith("NORD_GAUNTLET_CONSTANTS")))
 print("NORD_GAUNTLET_MODEL_OK", len(compilers), "compilers,", len(names), "legs,", len(wanted) + len(stops), "loop.json numbers")

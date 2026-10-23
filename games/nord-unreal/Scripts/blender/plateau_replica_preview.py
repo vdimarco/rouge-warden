@@ -9,7 +9,10 @@ Run with a Python that can `import bpy` (Blender 5.1), from games/nord-unreal:
 Each view loads, inside a camera wedge, the committed Data/Plateau layers that are visible in the game
 (background masses, OSM road, path, glass cards, ground, park, perimeter and context batches) and,
 unless --before is given, the ReplicaGeometry layers: Streets, Plex, Soul, and the Furniture and Soul
-placements instanced from the Props meshes, with the street-name text the apply step adds.
+placements instanced from the Props meshes in the colour variant the apply step picks from each row's seed,
+with the street-name text the apply step adds. Collision_Only batches (the gallery guards' invisible walls)
+are never drawn: the apply step hides them in game. A face is loaded when a corner lies inside the wedge or
+an edge crosses it, so a long lane quad whose corners lie behind the camera and past the far distance stays.
 
 Frame: every OBJ stores (x, -y, z) of a game-frame point (x east, y north, cm). Blender is
 right-handed, so placing the file coordinates unchanged shows the world as Unreal's left-handed view
