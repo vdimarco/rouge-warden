@@ -1260,3 +1260,6 @@ Increment47 shipped #658 as6aa20d58 after all6CI/review/current26deployedchecks/
 
 ### Increment48 — private figure count storage — 2026-10-23
 Private count dictionary cleared/reused acrossframes; info snapshotsremaincloned. Baseline61objects→one/5browserchecksPASS dynamiccounts/culling/capacity/empty/snapshotindependence; existingupload13checks/exactnonblankpixelsPASS. Evidence fullswing-r48-figure-counts/all20dimensionlimits; total/delta withheld, actualChrome/stability unverified. No art/physics/anchor/ceiling change or FPS claim; deletioncost unmeasured. Review/CI/preview/rebase/production pending.
+
+
+Increment48 shipped #660 as09966956 after all6CI/review/current18deployedchecks/rebase before AND afterpreview/exactmerge. Productionstreetview HTTP200 exactbytes verified (hash in fullswing-r48-figure-counts/production-verification.json). Canonical figure-count scenarios published and OpenSpec archived. ActualChrome/FPSbenefit and deletioncost unverified; totalwithheld.

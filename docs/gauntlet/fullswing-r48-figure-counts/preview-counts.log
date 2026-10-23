@@ -1,0 +1,7 @@
+{"objects":1,"counts":true,"empty":true,"snapshot":{"drawn":1,"counts":{"people":1},"visible":true}}
+PASS: sixty frames reuse private count storage
+PASS: dynamic tags count accepted figures only, preserving culling and capacity
+PASS: empty frame removes stale count keys
+PASS: previous info snapshot stays independent
+PASS: no page errors
+PASS: figure count scratch
