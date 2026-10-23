@@ -1189,3 +1189,8 @@ Bound matrix/color buffer uploads to populated model/fallback cars and mission m
 
 
 Increment38 shipped #640 as69c6ecff after all6CI/review/current9checkpreview/freshrebase. Productionactionview HTTP200 exactSHA8390a157dc9c3ccd40b16968f869791f8ea7713cd2d81fd114b12d885c276a38. Canonical populated-car/marker scenarios published and OpenSpec archived. ActualChrome/FPSbenefit unverified; totalwithheld.
+
+
+## Increment39 — unchanged mission marker buffers (pending release)
+
+Value-based marker dirtiness avoids static geometry rewrites/uploads whiletime animates. Focused actualzero-transfer/mutablegoal/color/count/hide/show/referenceimagechecks; no anchors/physics/height/quality change. All20dimensions historicalcontextonly,no newpoints; affectedChrome responsiveness/stability unverified,total/deltawithheld. Evidence fullswing-r39-marker-dirty; noFPSgate.
