@@ -1218,3 +1218,6 @@ Increment41 shipped #646 as2d254f7d after freshall6CI/review/current10deployedch
 ## Increment42 — reusable street hazard samples (pending release)
 
 Optionaloutputstorage reusedbyrealstreetframe; defaultfreshresultsunchanged. Node100listidentity/value/count/reverse/avoidancechecksand4realframebrowserchecksPASS; noFPSgate. All20dimensions historicalcontextonly,no newpoints; responsiveness/stabilityunverified,total/deltawithheld. Evidence fullswing-r42-hazard-scratch; noanchor/height/artchange.
+
+
+Increment42 shipped #648 as853fed7a after all6CI/review/current9deployedchecks/rebase; productioncars+main HTTP200 exactbytes verified (hashes in fullswing-r42-hazard-scratch/production-verification.json). Canonical hazard-output scenarios published and OpenSpec archived. ActualChrome/FPSbenefit unverified; totalwithheld.
