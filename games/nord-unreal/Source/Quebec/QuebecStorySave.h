@@ -9,9 +9,11 @@
 // Version 5 adds the crossing and starts the grab and the short way over.
 // Version 6 adds the grab and starts the short way over.
 // Version 7 adds the short way and starts the chase over.
-// Version 8 adds the chase. The chain, the hold clocks, the court misses, cash,
+// Version 8 adds the chase and starts the finale over.
+// Version 9 adds the finale. The chain, the hold clocks, the court misses, cash,
 // the friend's place on the lawn, the lamp burn, the grab clock, the rival's clock,
-// the tail's place on the road, and the side errands are not in this record.
+// the tail's place on the road, the finale burn, the page clock, the cut clock,
+// the finale tail's place, and the side errands are not in this record.
 
 namespace QuebecStorySave
 {
@@ -22,7 +24,8 @@ namespace QuebecStorySave
     inline constexpr int Shade = 5;
     inline constexpr int Grab = 6;
     inline constexpr int Cut = 7;
-    inline constexpr int Current = 8;
+    inline constexpr int Chase = 8;
+    inline constexpr int Current = 9;
 
     inline constexpr int PondBanked = 6;
     inline constexpr int CourtBanked = 4;
@@ -37,6 +40,7 @@ namespace QuebecStorySave
     inline constexpr int GrabBanked = 2;
     inline constexpr int CutBanked = 2;
     inline constexpr int ChaseBanked = 2;
+    inline constexpr int FinaleBanked = 5;
 
     struct FSteps
     {
@@ -53,6 +57,7 @@ namespace QuebecStorySave
         int Grab = 0;
         int Cut = 0;
         int Chase = 0;
+        int Finale = 0;
     };
 
     inline bool InRange(int Value, int Hi)
@@ -65,7 +70,7 @@ namespace QuebecStorySave
         return Steps.Pond == 0 && Steps.Court == 0 && Steps.Show == 0 && Steps.Rescue == 0
             && Steps.Convoy == 0 && Steps.Blank == 0 && Steps.Tour == 0 && Steps.Home == 0
             && Steps.Escort == 0 && Steps.Shade == 0 && Steps.Grab == 0 && Steps.Cut == 0
-            && Steps.Chase == 0;
+            && Steps.Chase == 0 && Steps.Finale == 0;
     }
 
     // A later beat may move only after the one before it is banked.
@@ -79,7 +84,8 @@ namespace QuebecStorySave
             || !InRange(Steps.Shade, ShadeBanked)
             || !InRange(Steps.Grab, GrabBanked)
             || !InRange(Steps.Cut, CutBanked)
-            || !InRange(Steps.Chase, ChaseBanked))
+            || !InRange(Steps.Chase, ChaseBanked)
+            || !InRange(Steps.Finale, FinaleBanked))
             return false;
         if (Steps.Court > 0 && Steps.Pond != PondBanked) return false;
         if (Steps.Show > 0 && (Steps.Pond != PondBanked || Steps.Court != CourtBanked)) return false;
@@ -94,6 +100,7 @@ namespace QuebecStorySave
         if (Steps.Grab > 0 && Steps.Shade != ShadeBanked) return false;
         if (Steps.Cut > 0 && Steps.Grab != GrabBanked) return false;
         if (Steps.Chase > 0 && Steps.Cut != CutBanked) return false;
+        if (Steps.Finale > 0 && Steps.Chase != ChaseBanked) return false;
         return true;
     }
 
@@ -127,7 +134,13 @@ namespace QuebecStorySave
         }
         if (Version == Cut)
         {
-            if (Steps.Chase != 0) return false;
+            if (Steps.Chase != 0 || Steps.Finale != 0) return false;
+            if (Completed < 2 && !Fresh(Steps)) return false;
+            return StepsFit(Steps);
+        }
+        if (Version == Chase)
+        {
+            if (Steps.Finale != 0) return false;
             if (Completed < 2 && !Fresh(Steps)) return false;
             return StepsFit(Steps);
         }
@@ -138,7 +151,8 @@ namespace QuebecStorySave
 
     // A legacy slot never copies a story tail. A version-3 slot never copies the escort, the crossing, the grab, or the short way.
     // A version-4 slot never copies the crossing, the grab, or the short way. A version-5 slot never copies the grab or the short way.
-    // A version-6 slot never copies the short way. A version-7 slot never copies the chase. Call this only after Accept.
+    // A version-6 slot never copies the short way. A version-7 slot never copies the chase.
+    // A version-8 slot never copies the finale. Call this only after Accept.
     inline FSteps Applied(int Version, const FSteps& Steps)
     {
         if (Version == Legacy) return {};
@@ -150,6 +164,7 @@ namespace QuebecStorySave
             Copy.Grab = 0;
             Copy.Cut = 0;
             Copy.Chase = 0;
+            Copy.Finale = 0;
             return Copy;
         }
         if (Version == Escort)
@@ -159,6 +174,7 @@ namespace QuebecStorySave
             Copy.Grab = 0;
             Copy.Cut = 0;
             Copy.Chase = 0;
+            Copy.Finale = 0;
             return Copy;
         }
         if (Version == Shade)
@@ -167,6 +183,7 @@ namespace QuebecStorySave
             Copy.Grab = 0;
             Copy.Cut = 0;
             Copy.Chase = 0;
+            Copy.Finale = 0;
             return Copy;
         }
         if (Version == Grab)
@@ -174,12 +191,20 @@ namespace QuebecStorySave
             FSteps Copy = Steps;
             Copy.Cut = 0;
             Copy.Chase = 0;
+            Copy.Finale = 0;
             return Copy;
         }
         if (Version == Cut)
         {
             FSteps Copy = Steps;
             Copy.Chase = 0;
+            Copy.Finale = 0;
+            return Copy;
+        }
+        if (Version == Chase)
+        {
+            FSteps Copy = Steps;
+            Copy.Finale = 0;
             return Copy;
         }
         return Steps;

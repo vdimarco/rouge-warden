@@ -2967,6 +2967,8 @@ void AQuebecHUD::DrawHUD()
             Status = TEXT("Menu · Recover restores this cut");
         else if (Campaign->IsChaseOpen() && bTouchControls)
             Status = TEXT("Menu · Recover restores this tail");
+        else if (Campaign->IsFinaleOpen() && bTouchControls)
+            Status = TEXT("Menu · Recover restores this day");
         else if (Campaign->IsCampaignComplete() && !Campaign->IsStoryBeatOpen() && SideJobs)
         {
             const int32 Guide = SideJobs->GuideMarker(Here, true);
