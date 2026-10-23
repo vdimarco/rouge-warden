@@ -75,3 +75,6 @@ Increment51 shipped #666 as2035c0b8 after all6CI/review/current13deployedchecks/
 
 
 Increment52 shipped #668 as2264dc92 after all6CI/review/current12deployedchecks/rebase before AND afterpreview/exactmerge. Productionjobs HTTP200 exactSHA9ed9b41552376e9930dd0b4a2dc25da4da69b828f9b1cad866d729f9f09abb04 verified. Canonical idle-offer scenarios published and OpenSpec archived. ActualChrome/FPSbenefit unverified; totalwithheld; expiryextrascanunmeasured.
+
+
+Increment53 shipped #670 asff8861c5 after all6CI/review/current4HUDdeployedchecks/exactmainbytes/rebase before AND afterpreview/exactmerge. Productionmain HTTP200 exactSHA d58ec0ebbad7a244cc85beabfcee1bef89b41c3bb44741021227c8f41e85f9c9 verified. Canonical HUD throw-query scenarios published and OpenSpec archived. ActualChrome/FPSbenefit unverified; totalwithheld.
