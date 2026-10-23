@@ -292,8 +292,9 @@ async function swing() {
     sides.push({ yawOff, side: t1.side, hand: t1.hand, fired });
     await page.mouse.up(); await step(page, 3);
   }
-  const ok = sides.filter((q) => !q.none && Math.abs(q.side) > 8).every((q) => q.fired === (q.side > 0 ? 0 : 1));
-  check(sides.filter((q) => !q.none && Math.abs(q.side) > 8).length >= 1 && ok, "the hand on the side of the target fires: left for a target to the left, right for one to the right", sides);
+  const aimed = sides.filter((q) => !q.none);
+  const ok = aimed.length >= 1 && aimed.every((q) => q.fired === 0);
+  check(ok, "the left button fires the left rope every time", sides);
   /* ---- Space in each state ---- */
   await R();
   await page.keyboard.press("Space"); await step(page, 1);

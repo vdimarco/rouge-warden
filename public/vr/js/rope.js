@@ -541,7 +541,7 @@ export function createRopes(scene, city, settings) {
       if (r.state !== "idle") { st.dry = -1; st.ret = -1; }
       if (r.state === "flying" && st.prev !== "flying") st.from.copy(tip);
       if (r.state === "attached" && st.prev !== "attached") { st.tw = Math.min(0.5, 0.025 * st.from.distanceTo(r.anchor)); st.twT = 0; st.lenT = r.lenTarget; }
-      if (r.state === "idle" && st.prev !== "idle" && st.cupOn && !P.dead && st.cup.distanceTo(tip) < 150) { st.ret = 0; st.retFrom.copy(st.cup); }
+      if (r.state === "idle" && st.prev !== "idle" && st.cupOn && !r.easy && !r.inkLine && !P.dead && st.cup.distanceTo(tip) < 150) { st.ret = 0; st.retFrom.copy(st.cup); }
       st.prev = r.state;
       st.cupOn = false;
       let h = 0;
@@ -604,13 +604,14 @@ export function createRopes(scene, city, settings) {
       }
       cupOut[i] = r.state !== "idle" || st.cupOn;
       st.segs = 0;
+      // an easy swing, and a chase-view gold-ring rope, draw the ink line; the mesh stays for a headset, first person, and a test aim
       // an easy swing draws its own ink line; the reported ends are still the hand and the anchor
       if (r.easy && r.state !== "idle") {
         st.rope.a.set(r.anchor.x, r.anchor.y, r.anchor.z);
         st.rope.b.set(tip.x, tip.y, tip.z);
       }
       // the mesh rope stays for a headset and a test aim
-      if (st.cupOn && visible && !r.easy) {
+      if (st.cupOn && visible && !r.easy && !r.inkLine) {
         const tie = putCup(nCup++, st.cup, st.out, head);
         st.rope.a.copy(tie); st.rope.b.copy(tip);
         st.twT += dt; // before drawing, so a pluck bends the rope in the frame it starts

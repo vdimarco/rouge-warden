@@ -19,7 +19,7 @@ jobs:
           node-version: '22'
       - run: npm ci --prefix qa/browser
       - run: cd qa/browser && npx playwright install --with-deps chromium
-      - run: node qa/vr/render-scale.test.mjs && node qa/vr/frame-metrics.test.mjs && node qa/vr/physics.test.mjs && node qa/vr/city.test.mjs && node qa/vr/mobile.test.mjs && node qa/vr/target.test.mjs && node qa/vr/mobile-panel.test.mjs && node qa/vr/street.test.mjs && node qa/vr/action.test.mjs && node qa/vr/chainbid.test.mjs
+      - run: node qa/vr/render-scale.test.mjs && node qa/vr/frame-metrics.test.mjs && node qa/vr/physics.test.mjs && node qa/vr/city.test.mjs && node qa/vr/mobile.test.mjs && node qa/vr/target.test.mjs && node qa/vr/mobile-panel.test.mjs && node qa/vr/street.test.mjs && node qa/vr/action.test.mjs && node qa/vr/chainbid.test.mjs && node qa/vr/headset-comfort.test.mjs && node qa/vr/easy.test.mjs
       - name: Compile city shaders and exercise one-thumb play
         run: node qa/vr/mobile.e2e.mjs
         env:
@@ -48,6 +48,16 @@ jobs:
         run: node qa/vr/mouse-look.e2e.mjs && node qa/vr/pad-reconnect.e2e.mjs && node qa/vr/hidden-page.e2e.mjs && node qa/vr/hidden-render.e2e.mjs
         env:
           NODE_PATH: ${{ github.workspace }}/qa/browser/node_modules
+      - name: Gold-ring tower, button sides
+        run: node qa/vr/gold-ring.e2e.mjs
+        env:
+          NODE_PATH: ${{ github.workspace }}/qa/browser/node_modules
+          SHOTS: ${{ github.workspace }}/test-results/swing
+      - name: World-space web line
+        run: node qa/vr/web-line.e2e.mjs
+        env:
+          NODE_PATH: ${{ github.workspace }}/qa/browser/node_modules
+          SHOTS: ${{ github.workspace }}/test-results/swing
       - name: Training checklist, pump sticker and mission card
         run: node qa/vr/training.e2e.mjs
         env:
@@ -226,8 +236,8 @@ jobs:
         env:
           NODE_PATH: ${{ github.workspace }}/qa/browser/node_modules
           SHOTS: ${{ github.workspace }}/test-results/flat-missions
-      - name: A held swing catches the next building
-        run: node qa/vr/holdchain.e2e.mjs && node qa/vr/building-anchor.e2e.mjs
+      - name: A held swing stays until the button comes up
+        run: node qa/vr/holdchain.e2e.mjs
         env:
           NODE_PATH: ${{ github.workspace }}/qa/browser/node_modules
           SHOTS: ${{ github.workspace }}/test-results/flat-missions

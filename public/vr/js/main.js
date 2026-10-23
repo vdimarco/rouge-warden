@@ -30,6 +30,7 @@ import { createActionView } from "./actionview.js";
 import { createActionHud, placeGoal } from "./actionhud.js";
 import { createBloom } from "./bloom.js";
 import { createTarget, bidOf, project, releaseWindow, kick } from "./target.js";
+import { playYaw, handFiresRope, buttonHand } from "./playturn.js";
 
 const $ = (s) => document.querySelector(s);
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
@@ -189,6 +190,7 @@ function createWorld() {
   actionView = G.actionView = createActionView(scene, { cars, jobs, traffic: { cars: () => view.traffic && view.traffic(), hide: (i, on) => view.veilTraffic && view.veilTraffic(i, on) } });
   actHud = G.actHud = createActionHud();
   ropes = G.ropes = createRopes(scene, city, settings);
+  ensureWeb(); // the easy web's world-space line, compiled with the city so the first swing does not hitch
   hands = G.hands = createHands(rig, scene, settings);
   comfort = G.comfort = createComfort(camera, rig, settings);
   fx = G.fx = createFX(scene, renderer); // the comic sound words; game.js reaches it as G.fx
@@ -1423,14 +1425,14 @@ function flatHud(dt, inp) {
   D.cue(cue);
   D.hints(play && !save.tutorial && hintT < HINT.seconds);
 }
-// Which hand a swing input fires (desktop.js asks when the input goes down): the free hand on the side of the target, or the right
-// hand for the second-rope input. With one rope out, the idle hand fires. In the opening there is no answer: the old mapping holds.
-// "Toggle": the next press of an input lets go of its own rope.
+// Which hand a swing input fires (desktop.js asks when the input goes down). Both ropes free: the left button
+// is the left rope and the right button is the right rope. With one rope out, the idle hand fires. In the opening
+// there is no answer: the old mapping holds. "Toggle": the next press of an input lets go of its own rope.
 function chooseHand(which, last, busy) {
   if (G.state !== "play" || !flatOn || D.mobile.enabled) return undefined;
   if (settings.hold === "toggle" && last >= 0 && P.ropes[last].state !== "idle") return last;
   const f0 = !busy[0] && P.ropes[0].state === "idle", f1 = !busy[1] && P.ropes[1].state === "idle";
-  if (f0 && f1) return which === 1 ? 1 : picker.hand(picker.result(), TCTX);
+  if (f0 && f1) return buttonHand(which);
   return f0 ? 0 : f1 ? 1 : -1;
 }
 // The pose the ears, the comic words and the far city follow: the camera in flat play, the head otherwise.
@@ -1516,10 +1518,8 @@ function tick(dt, frame, time) {
   if (resumeGrace > 0 && !paused) resumeGrace -= dt;
   // 8. the opening (it may place the rig: then the world poses follow at once)
   if (G.state === "intro") { portal.update(dt, G.time, G.frame, inp); toWorld(inp); }
-  // 9. aim and fire. A held mouse or pad button that has seen the GO cue lets that rope go before physics,
-  // so the let-go is the one the cue showed, and the next frame can catch the building ahead.
+  // 9. aim and fire
   if (!paused && (G.state === "play" || G.state === "intro")) aimAndFire(dt, inp);
-  if (!paused && G.state === "play") holdChainRelease(dt, inp);
   // 10. the body follows the head, then the physics substeps
   if (G.state === "intro") {
     P.pos.x = inp.head.pos.x; P.pos.y = city.start.y; P.pos.z = inp.head.pos.z;
@@ -1532,8 +1532,11 @@ function tick(dt, frame, time) {
   // 12. turning, the rig, world poses again
   let yawDelta = 0;
   if (G.state === "play") {
-    yawDelta = inp.mode === "desktop" ? inp.turn : comfort.turn(inp, dt);
-    if (inp.easySwing) yawDelta += phoneFollow(dt, inp);
+    // A headset never yaws to follow a swing. The stick snap or smooth turn still does: that is the player.
+    const xrPlay = isXR() || inp.mode === "xr";
+    const turn = inp.mode === "desktop" && !xrPlay ? inp.turn : comfort.turn(inp, dt);
+    const follow = !xrPlay && inp.easySwing ? phoneFollow(dt, inp) : 0;
+    yawDelta = playYaw({ xr: xrPlay, turn, follow });
     G.rigYaw += yawDelta;
     syncRig();
     toWorld(inp);
@@ -1589,10 +1592,6 @@ function couple(inp) {
 // wins: for that hand ropes.aim decides, as before.
 const latch = [false, false], realWait = [false, false], swingCool = [0, 0], otherHeld = [false, false];
 let easyAvoid = -1;
-// A held swing lets go after the GO cue has been readable, then catches the next building. chainArm is that catch.
-// chainFrom is the building just left, so the next web does not grab it again. cueHold is how long this rope's cue has shown.
-const CHAIN_SEE = 0.33;
-const chainArm = [false, false], chainFrom = [null, null], cueHold = [0, 0];
 let noneAt = -99;
 const PICK_OPTS = { avoidBid: -1 }; // reused: the options of the second pick when both swing inputs go down in one frame
 const PHONE_DIR = new THREE.Vector3(), PROJ = { x: 0, y: 0, depth: 0, behind: false, inView: false };
@@ -1614,38 +1613,30 @@ function easyDir() {
     easyDx = -Math.sin(yaw); easyDz = -Math.cos(yaw);
   }
 }
-function aimCopy(a) {
-  return { x: a.x, y: a.y, z: a.z, nx: a.nx, ny: a.ny, nz: a.nz, tag: a.tag, id: a.id, bid: a.bid, easy: true, easyH: a.easyH, sky: !!a.sky, valid: true, same: false, special: false };
+function bodyH() { return (P.cfg && P.cfg.bodyH) || SWING.bodyH; }
+// The mission card's goal, when the aim is already on it and it sits within `limit` metres of the chest.
+function goalNear(res, limit) {
+  const goal = game && game.progress && game.progress.goal;
+  if (!goal || goal.x == null || !res || !res.valid) return false;
+  const d = Math.hypot(goal.x - P.pos.x, (goal.y || 0) - (P.pos.y + P.chest), goal.z - P.pos.z);
+  if (!(d <= limit) || d < 1) return false;
+  return Math.hypot(res.x - goal.x, res.y - (goal.y == null ? res.y : goal.y), res.z - goal.z) < 15;
 }
-// A building the hero can hang under: the rope is the real distance, and the bottom of that arc stays 1.5 body-heights up.
-function canHang(a) {
-  if (!a || a.sky || a.tag !== "building") return false;
-  const H = a.easyH || SWING.bodyH;
-  const d = Math.hypot(a.x - P.pos.x, a.y - (P.pos.y + P.chest), a.z - P.pos.z);
-  const gy = city.isWater(P.pos.x, P.pos.z) ? 0 : city.groundY(P.pos.x, P.pos.z);
-  return d <= a.y - P.chest - (gy + 1.5 * H);
+// A tutorial or mission target within 16h, or the gold ring while the picker still has it in range.
+// Those shots fly the aimed cup. An easy web would land at once and cap the rope at 16h.
+function markedCup() {
+  if (!pickerOn) return false;
+  const res = picker.result();
+  if (!res || !res.valid || res.same) return false;
+  if (res.kind === "ring") return true;
+  const cap = 16 * bodyH();
+  return res.dist <= cap && (res.special || res.prio || goalNear(res, cap));
 }
 function playerEasy(avoid) {
   easyDir();
-  const tries = [{}, { up: 8, ahead: 20, reach: 10 }, { up: 4, ahead: 34, reach: 16 }];
-  for (let t = 0; t < tries.length; t++) {
-    const opt = avoid != null && avoid >= 0 ? { ...tries[t], avoid } : (t ? tries[t] : undefined);
-    const a = easyAnchor(P, easyDx, easyDz, opt);
-    if (!a || a.sky) continue;
-    if (!(avoid != null && a.bid === avoid)) return { ...aimCopy(a), easy: canHang(a) };
-  }
-  // The visible lock-on may find a real building beyond the automatic search samples.
-  // Reject points that would shorten the rope and pull the hero into the ground-clearance cap.
-  if (pickerOn) {
-    const res = picker.pick(TCTX, { avoidBid: avoid ?? -1 });
-    if (res && res.valid && res.tag === "building" && res.bid !== avoid) {
-      const copy = aimCopy(res);
-      if (copy.easyH == null) copy.easyH = (P.cfg && P.cfg.bodyH) || SWING.bodyH;
-      copy.easy = canHang(copy);
-      return copy;
-    }
-  }
-  return null;
+  const a = easyAnchor(P, easyDx, easyDz, avoid != null && avoid >= 0 ? { avoid } : undefined);
+  if (a.sky) { fillCam(); for (let n = 0; n < 8 && project(CAM, a.x, a.y, a.z, PROJ).inView; n++) a.y += a.easyH * 3; }
+  return a;
 }
 // The building the other rope already holds, or the one this frame's first shot just took.
 function otherWeb(i) {
@@ -1662,13 +1653,31 @@ function aimAndFire(dt, inp) {
     // a goon in reach: the swing input punches (punch, punch, kick) instead of firing a rope
     const tap = tapped(inp, i);
     if (actionOn() && G.state === "play" && (inp.easySwing ? tap : h.triggerDown) && tryAttack()) { h.triggerDown = false; fireWait[i] = 0; continue; }
-    // Chase view, no test aim, not on a wall: a held mouse or pad swing takes the auto anchor.
-    // A phone finger aims at the building under it, tap or hold. First person keeps the crosshair.
-    // A headset and G.test.aimAt keep the old ray.
-    const useEasy = flatOn && !isXR() && G.state === "play" && !ov.aim[i] && !P.wall
+    // Chase view, no test aim, not on a wall: a held swing takes the auto anchor. A phone tap still
+    // aims (the building under the finger). A finger that holds the right half does not. First person
+    // keeps the crosshair. A headset and G.test.aimAt keep the old ray.
+    // A goon in reach makes this button a punch. An easy web here would carry the hero off the fight.
+    const melee = actionOn() && combat.inReach(heroFight());
+    let useEasy = flatOn && !isXR() && G.state === "play" && !ov.aim[i] && !P.wall && !melee
       && !(pickerOn && picker.result()?.special)
       && !(flatcam && flatcam.firstPerson)
-      && !inp.easySwing;
+      && !(inp.easySwing && !(inp.phoneHeld && inp.phoneHeld[i]));
+    // Mouse and pad: a tutorial or mission target within 16h, and the gold ring while it is in range, keep the aimed cup.
+    // A 6h building still takes the easy web. Over open water an empty 6h ball stays sky, even when the aim can still
+    // see a building across the shore. Over the city, that same empty ball uses the aimed building, and on the ground
+    // with nothing aimed the cup dry-fires.
+    if (useEasy && !inp.easySwing) {
+      if (markedCup()) useEasy = false;
+      else {
+        easyDir();
+        const probe = easyAnchor(P, easyDx, easyDz);
+        if (probe.sky) {
+          const res = pickerOn ? picker.result() : null;
+          const openWater = !P.onGround && P.city.isWater(P.pos.x, P.pos.z);
+          if (!openWater && ((res && res.valid && !res.same) || P.onGround)) useEasy = false;
+        }
+      }
+    }
     // phone: a tap on a side with that side's rope out moves it to the tapped building, or the next one ahead: one tap, one swing,
     // with no let-go between. With nothing new in reach the rope stays. A tap while the cup still flies (0.3 s at most) does
     // nothing: a new shot would cancel the cup before it lands.
@@ -1696,16 +1705,8 @@ function aimAndFire(dt, inp) {
       continue;
     }
     latch[i] = false; // an idle rope has nothing to keep
-    // A held button, after the GO cue let the last rope go, catches the next building. It does not dry-fire while none is ahead.
-    if (useEasy && chainArm[i] && h.holding && !h.triggerDown && settings.hold !== "toggle") {
-      if (swingCool[i] > 0) { lastAim[i] = null; continue; }
-      const next = chainAim(i);
-      lastAim[i] = next;
-      if (next && !ui.blocking(i)) { realWait[i] = true; shoot(i, h, next); }
-      continue;
-    }
-    // easy swing only looks for an anchor on the press. The rest of the time the old ray stays for a headset and for G.test.aimAt.
-    if (useEasy && !h.triggerDown && fireWait[i] <= 0) { lastAim[i] = null; continue; }
+    // easy swing only looks for an anchor on the press. The reticle still follows the aim, so the ring and the world mark agree.
+    if (useEasy && !h.triggerDown && fireWait[i] <= 0) { ropes.aim(i, h.aimPos, h.aimDir, P.vel); lastAim[i] = null; continue; }
     const pk = pickerOn && !ov.aim[i] && !useEasy;
     let a;
     if (useEasy) a = playerEasy(otherWeb(i));
@@ -1715,7 +1716,7 @@ function aimAndFire(dt, inp) {
     const blocked = ui.blocking(i), cooling = !!(a && a.easy && swingCool[i] > 0);
     const ok = !!a && a.valid && !blocked && !cooling && !(inp.easySwing && a.same);
     if (inp.easySwing && i === 1) D.mobile.target(ok, false);
-    if (h.triggerDown && !blocked) {
+    if (handFiresRope(h) && !blocked) {
       if (ok) {
         const bid = a.bid;
         shoot(i, h, a);
@@ -1723,7 +1724,7 @@ function aimAndFire(dt, inp) {
         // frame, so ask it again for a building that does not hold it. pick() rewrites the result in place: after shoot, never in it.
         // An easy web has the same rule: the second shot this frame skips the building the first just took.
         if (useEasy && i === 0 && bid >= 0) easyAvoid = bid;
-        if (pk && i === 0 && bid >= 0 && inp.hands[1].triggerDown && P.ropes[1].state === "idle") { PICK_OPTS.avoidBid = bid; picker.pick(TCTX, PICK_OPTS); }
+        if (pk && i === 0 && bid >= 0 && handFiresRope(inp.hands[1]) && P.ropes[1].state === "idle") { PICK_OPTS.avoidBid = bid; picker.pick(TCTX, PICK_OPTS); }
       } else { fireWait[i] = SWING.fireHold; realWait[i] = !!h.swingDown; }
     } else if (fireWait[i] > 0) {
       if (blocked) fireWait[i] = 0;
@@ -1734,60 +1735,6 @@ function aimAndFire(dt, inp) {
         fireWait[i] = 0; realWait[i] = false;
       }
     }
-  }
-}
-// The next building after a let-go. The usual point first, then a lower, farther one, skipping every piece of the
-// building just left: another tier and its antenna count as that building.
-function chainAim(i) {
-  easyDir();
-  const avoid = chainFrom[i];
-  const tries = [{ avoid }, { avoid, up: 8, ahead: 20, reach: 10 }, { avoid, up: 4, ahead: 34, reach: 16 }];
-  for (let t = 0; t < tries.length; t++) {
-    const a = easyAnchor(P, easyDx, easyDz, tries[t]);
-    if (a && !a.sky && a.tag === "building" && a.bid !== avoid && canHang(a)) return a;
-  }
-  return null;
-}
-// Mouse and pad, flat play: a building rope that has shown the GO cue lets go while the button stays down, and the
-// next frame catches the building ahead. The cue stays long enough to read. A sky rope lets go only when a building
-// is already ahead to catch; over open water it stays. A clog, a pipe, the crack and a phone rope stay.
-function holdChainRelease(dt, inp) {
-  if (driving || !flatOn || isXR() || inp.easySwing || settings.hold === "toggle") {
-    cueHold[0] = cueHold[1] = 0;
-    return;
-  }
-  for (let i = 0; i < 2; i++) {
-    const h = inp.hands[i], r = P.ropes[i];
-    if (!h.holding) { chainArm[i] = false; cueHold[i] = 0; continue; }
-    const sky = r.target && r.target.tag === "sky";
-    const airborne = !P.onGround && !P.wall;
-    if (sky) {
-      const liveSky = r.state === "attached" && r.easy && !r.sticky && airborne && cueAir[i] && releaseWindow(P, r, 0);
-      if (!liveSky) { cueHold[i] = 0; continue; }
-      cueHold[i] += dt;
-      if (cueHold[i] < CHAIN_SEE) continue;
-      chainFrom[i] = -1;
-      if (!chainAim(i)) continue;
-      chainArm[i] = true;
-      cueHold[i] = 0;
-      release(P, i);
-      continue;
-    }
-    const building = r.state === "attached" && r.easy && !r.sticky && r.target && !SPECIAL_TAGS[r.target.tag];
-    const live = building && airborne && releaseWindow(P, r, 0);
-    if (live && cueAir[i]) {
-      cueHold[i] += dt;
-      if (cueHold[i] < CHAIN_SEE) continue;
-    } else if (!(cueHold[i] > 0 && building && airborne && cueAir[i] && !live)) {
-      cueHold[i] = 0;
-      continue;
-    }
-    const left = ropeBid(r);
-    if (left == null) { cueHold[i] = 0; continue; }
-    chainFrom[i] = left;
-    chainArm[i] = true;
-    cueHold[i] = 0;
-    release(P, i);
   }
 }
 // a phone tap on side i (0 the left half of the screen, 1 the right) this frame
@@ -1814,7 +1761,7 @@ function turnToSwing(a) {
 function shoot(i, h, a) {
   const phone = G.input.easySwing, real = !phone && !!(h.swingDown || realWait[i]);
   realWait[i] = false;
-  if (flatOn && pickerOn && P.wall && flatcam.opacity > 0.5 && (phone || real)) turnToSwing(a); // before fire: it lets go of the wall
+  if (flatOn && !isXR() && pickerOn && P.wall && flatcam.opacity > 0.5 && (phone || real)) turnToSwing(a); // before fire: it lets go of the wall. A headset does not turn the view.
   firePerch[i] = heroFight().perch; // a rope fired from a roof or a wall: the takedown is judged from here, not where the cup lands
   otherHeld[i] = P.ropes[1 - i].state === "attached";
   fire(P, i, h.aimPos, a);
@@ -2163,6 +2110,7 @@ function after(dt, inp, yawDelta) {
   TIPS[0] = hands.tip(0); TIPS[1] = hands.tip(1);
   // third person: the ropes leave the hero's own hands (the old muzzles stay for first person)
   if (flatOn && flatcam.opacity > 0.5) { TIPS[0] = hero.hand(0); TIPS[1] = hero.hand(1); }
+  markGoldInk(dt);
   ropes.update(dt, P, TIPS, G.time);
   game.update(dt, G.time, P, inp); // before the hand-off it only lets the sleeping King breathe
   ui.paintMission(); // the score-row card was drawn at the start of the frame, before this objective existed
@@ -2224,15 +2172,163 @@ function after(dt, inp, yawDelta) {
   publishSwing();
 }
 
-// The easy web, drawn in CSS pixels over the view. Ink #2B2A33, 2 px, a slight sag that pulls
-// straight as the rope goes taut (the same parabola rope.js uses, here in screen space). It fades
-// in 150 ms on the let-go. At the top of the swing, 3 or 4 paper lines trail the body.
+// Chase view only: a normal cup on the gold-ring tower is drawn as the ink web. The flight and the length
+// stay the aimed cup (easy stays false). The flag lingers 150 ms after release so the hemp cup does not
+// zip back across that fade. A headset and first person keep the mesh rope.
+function markGoldInk(dt) {
+  if (!P) return;
+  const chase = flatOn && !isXR() && !(flatcam && flatcam.firstPerson);
+  const g = city && city.goldRing;
+  for (const r of P.ropes) {
+    const on = !!(chase && g && r.state === "attached"
+      && Math.abs(r.anchor.x - g.x) < 2
+      && Math.abs(r.anchor.y - g.y) < 6
+      && Math.abs(r.anchor.z - g.z) < 8);
+    if (on) { r.inkLine = true; r.inkFade = 0; }
+    else if (r.inkLine && chase && r.state === "idle") {
+      r.inkFade = (r.inkFade || 0) + (dt || 0);
+      if (r.inkFade > 0.15) r.inkLine = false;
+    } else r.inkLine = false;
+  }
+}
+
+// The easy web. In the 3D scene it is a line in the world from the hand toward the anchor, ink #2B2A33,
+// about 2 CSS px wide at every distance (so a far anchor does not thin away). At the start, the middle
+// of the part you can see sits about 16 px off that chord, toward the bottom of the screen, and
+// tension pulls it straight. The bow is unprojected, and the line keeps going to the anchor past the
+// edge. A hang at the middle of the whole rope does not show: on a sky web that point is off the
+// screen. It fades over 150 ms on the let-go. The paper speed lines stay a 2D overlay. A scene that
+// is not the perspective view keeps the old screen stroke, clipped to the edge.
 let webCv = null, webCx = null, webW = 0, webH = 0, peakSp = 0;
 const webWas = [false, false], webFade = [0, 0], webSag = [0, 0];
 const webA = [{ x: 0, y: 0, z: 0 }, { x: 0, y: 0, z: 0 }];
 const WEB_A = { x: 0, y: 0, depth: 0, behind: false, inView: false };
 const WEB_B = { x: 0, y: 0, depth: 0, behind: false, inView: false };
 const SWING_VIEW = { attached: false, anchor: { x: 0, y: 0, z: 0, offscreen: false }, ropeLength: 0, speed: 0 };
+const WEB_MAX = 16, WEB_N = 8, WEB_SCAN = 16;
+const WEB_PTS = Array.from({ length: WEB_N + 1 }, () => new THREE.Vector3());
+const WEB_HAND = new THREE.Vector3(), WEB_ANCH = new THREE.Vector3(), WEB_DIR = new THREE.Vector3();
+const WEB_G = new THREE.Vector3(), WEB_AXIS = new THREE.Vector3(), WEB_FROM = new THREE.Vector3();
+const WEB_QT = new THREE.Quaternion(), WEB_M = new THREE.Matrix4(), WEB_SC = new THREE.Vector3(1, 1, 1);
+const WEB_Y = new THREE.Vector3(0, 1, 0);
+let webMesh = null, webFadeAttr = null, webSeg = 0;
+function webCss() {
+  const e5 = camera.projectionMatrix.elements[5];
+  const h = innerHeight || renderer.domElement.clientHeight || 1;
+  return e5 > 0 && h > 0 ? (2 / e5) / h : 0.001;
+}
+function ensureWeb() {
+  if (webMesh || !scene) return;
+  const geo = new THREE.CylinderGeometry(1, 1, 1, 6, 1, true).translate(0, 0.5, 0);
+  webFadeAttr = new THREE.InstancedBufferAttribute(new Float32Array(WEB_MAX), 1);
+  geo.setAttribute("aFade", webFadeAttr);
+  const mat = new THREE.ShaderMaterial({
+    transparent: true, depthWrite: false, toneMapped: false, fog: false,
+    uniforms: { uPix: { value: 0.001 } },
+    vertexShader: `
+      attribute float aFade;
+      uniform float uPix;
+      varying float vFade;
+      void main() {
+        mat4 m = modelMatrix * instanceMatrix;
+        vec3 axis = (m * vec4(0.0, position.y, 0.0, 1.0)).xyz;
+        vec3 rad = normalize(mat3(m) * vec3(position.x, 0.0, position.z));
+        float r = uPix * distance(axis, cameraPosition);
+        vFade = aFade;
+        gl_Position = projectionMatrix * viewMatrix * vec4(axis + rad * max(r, 1e-4), 1.0);
+      }`,
+    fragmentShader: `
+      varying float vFade;
+      void main() { gl_FragColor = vec4(${(0x2b / 255).toFixed(5)}, ${(0x2a / 255).toFixed(5)}, ${(0x33 / 255).toFixed(5)}, vFade); }`,
+  });
+  webMesh = new THREE.InstancedMesh(geo, mat, WEB_MAX);
+  webMesh.name = "easyWeb";
+  webMesh.frustumCulled = false;
+  webMesh.visible = false;
+  webMesh.count = 0;
+  webMesh.renderOrder = 2;
+  webMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+  webFadeAttr.setUsage(THREE.DynamicDrawUsage);
+  webMesh.onBeforeRender = () => { mat.uniforms.uPix.value = webCss(); };
+  scene.add(webMesh);
+}
+function webSagPx(tension) {
+  const ten = tension < 0 ? 0 : tension > 1 ? 1 : tension;
+  return (1 - ten) * 16;
+}
+function putWeb(hand, anchor, sagPx, alpha) {
+  if (!(alpha > 0.01) || !webMesh) return;
+  WEB_HAND.set(hand.x, hand.y, hand.z);
+  WEB_ANCH.set(anchor.x, anchor.y, anchor.z);
+  WEB_DIR.copy(WEB_ANCH).sub(WEB_HAND);
+  if (WEB_DIR.length() < 1e-3) return;
+  camera.updateMatrixWorld();
+  const w = innerWidth || 1, h = innerHeight || 1;
+  const inv = camera.matrixWorldInverse;
+  // Where the straight rope crosses the view. The belly of a sky web is often off the screen, so the
+  // sag is measured on the part you can see, then the line still runs out to the anchor.
+  let ua = 1, ub = 0, saw = false;
+  let ax = 0, ay = 0, bx = 0, by = 0;
+  for (let i = 0; i <= WEB_SCAN; i++) {
+    const u = i / WEB_SCAN;
+    WEB_AXIS.copy(WEB_HAND).lerp(WEB_ANCH, u);
+    WEB_FROM.copy(WEB_AXIS).applyMatrix4(inv);
+    const inFront = WEB_FROM.z < -0.05;
+    WEB_FROM.copy(WEB_AXIS).project(camera);
+    const sx = (WEB_FROM.x * 0.5 + 0.5) * w, sy = (0.5 - WEB_FROM.y * 0.5) * h;
+    const vis = inFront && sx >= 0 && sy >= 0 && sx < w && sy < h;
+    if (vis) {
+      if (!saw || u < ua) { ua = u; ax = sx; ay = sy; }
+      if (!saw || u > ub) { ub = u; bx = sx; by = sy; }
+      saw = true;
+    }
+  }
+  let tx = bx - ax, ty = by - ay, tl = Math.hypot(tx, ty);
+  if (!saw || ub - ua < 0.02 || tl < 8) { tx = 0; ty = 1; tl = 0; }
+  else { tx /= tl; ty /= tl; }
+  let nx = -ty, ny = tx;
+  if (ny < 0) { nx = -nx; ny = -ny; }
+  const n = WEB_N;
+  for (let k = 0; k <= n; k++) {
+    const t = k / n;
+    let u;
+    if (!saw || ub - ua < 0.02) u = t;
+    else if (t < 0.15) u = ua > 0 ? (t / 0.15) * ua : 0;
+    else if (t > 0.85) u = ub + ((t - 0.85) / 0.15) * (1 - ub);
+    else u = ua + ((t - 0.15) / 0.7) * (ub - ua);
+    const p = WEB_PTS[k].copy(WEB_HAND).lerp(WEB_ANCH, u);
+    let drop = 0;
+    if (saw && u > ua + 1e-4 && u < ub - 1e-4 && tl >= 8) {
+      const s = (u - ua) / (ub - ua);
+      // The visible ends sit partway off the rope, so the bow the eye measures is shallower than
+      // this offset. 1.65 brings that bow back to about (1 - tension) * 16 px.
+      drop = sagPx * 1.65 * (0.5 - 0.5 * Math.cos(s * Math.PI * 2));
+    }
+    if (drop > 0.05) {
+      WEB_FROM.copy(p).project(camera);
+      const nz = WEB_FROM.z;
+      const sx = (WEB_FROM.x * 0.5 + 0.5) * w + nx * drop;
+      const sy = (0.5 - WEB_FROM.y * 0.5) * h + ny * drop;
+      WEB_FROM.x = (sx / w) * 2 - 1;
+      WEB_FROM.y = 1 - (sy / h) * 2;
+      WEB_FROM.z = nz;
+      p.copy(WEB_FROM).unproject(camera);
+    }
+  }
+  for (let k = 0; k < n && webSeg < WEB_MAX; k++) {
+    const p = WEB_PTS[k], q = WEB_PTS[k + 1];
+    WEB_AXIS.copy(q).sub(p);
+    const l = WEB_AXIS.length();
+    if (l < 1e-5) continue;
+    WEB_AXIS.multiplyScalar(1 / l);
+    WEB_FROM.copy(p).addScaledVector(WEB_AXIS, -0.004);
+    WEB_QT.setFromUnitVectors(WEB_Y, WEB_AXIS);
+    WEB_M.compose(WEB_FROM, WEB_QT, WEB_SC.set(1, l + 0.008, 1));
+    webMesh.setMatrixAt(webSeg, WEB_M);
+    webFadeAttr.setX(webSeg, alpha);
+    webSeg++;
+  }
+}
 function webCanvas() {
   if (!webCv) {
     webCv = document.createElement("canvas");
@@ -2284,37 +2380,73 @@ function strokeWeb(ctx, hand, anchor, sag, alpha, w, h) {
   ctx.globalAlpha = 1;
 }
 function drawWeb(dt) {
-  if (!flatOn || isXR() || !P) { if (webCx) { webCx.setTransform(1, 0, 0, 1, 0, 0); webCx.clearRect(0, 0, webCv.width, webCv.height); } return; }
-  const ctx = webCanvas(), w = webW, h = webH;
-  fillCam();
-  let any = false;
+  // An empty full-screen canvas, cleared every frame, sits in the compositor and can stall the next
+  // frame for seconds (the mouse-look resume timer). The 3D line is a mesh. The canvas stays hidden
+  // until the paper speed lines are actually drawn.
+  const threeD = !!(camera && camera.isPerspectiveCamera);
+  if (!flatOn || isXR() || !P) {
+    if (webCv) webCv.hidden = true;
+    if (webMesh) { webMesh.visible = false; webMesh.count = 0; }
+    return;
+  }
+  let pending = false;
   for (let i = 0; i < 2; i++) {
-    const r = P.ropes[i], on = !!(r.easy && r.state === "attached");
+    if ((P.ropes[i].easy || P.ropes[i].inkLine) && P.ropes[i].state === "attached") pending = true;
+    else if (webWas[i] || webFade[i] > 0) pending = true;
+  }
+  if (!pending) {
+    if (webCv) webCv.hidden = true;
+    if (webMesh) { webMesh.visible = false; webMesh.count = 0; }
+    peakSp = 0;
+    return;
+  }
+  if (threeD) ensureWeb();
+  else fillCam();
+  webSeg = 0;
+  const ctx2 = threeD ? null : webCanvas();
+  if (!threeD) webCv.hidden = false;
+  const w = webW, h = webH;
+  let any = false;
+  const handOf = (i) => TIPS[i] || { x: P.pos.x, y: P.pos.y + P.chest, z: P.pos.z };
+  for (let i = 0; i < 2; i++) {
+    const r = P.ropes[i], on = !!((r.easy || r.inkLine) && r.state === "attached");
     if (on) {
       webWas[i] = true; webFade[i] = 0;
       webA[i].x = r.anchor.x; webA[i].y = r.anchor.y; webA[i].z = r.anchor.z;
       const ten = r.tension < 0 ? 0 : r.tension > 1 ? 1 : r.tension;
-      webSag[i] = (1 - ten) * 16;
-      const hand = TIPS[i] || { x: P.pos.x, y: P.pos.y + P.chest, z: P.pos.z };
-      strokeWeb(ctx, hand, webA[i], webSag[i], 1, w, h);
+      const hand = handOf(i);
+      webSag[i] = webSagPx(ten);
+      if (threeD) putWeb(hand, webA[i], webSag[i], 1);
+      else strokeWeb(ctx2, hand, webA[i], webSag[i], 1, w, h);
       any = true;
     } else if (webWas[i]) { webWas[i] = false; webFade[i] = 0.15; }
     if (!on && webFade[i] > 0) {
       webFade[i] = Math.max(0, webFade[i] - dt);
-      const hand = TIPS[i] || { x: P.pos.x, y: P.pos.y + P.chest, z: P.pos.z };
-      strokeWeb(ctx, hand, webA[i], webSag[i] * (webFade[i] / 0.15), webFade[i] / 0.15, w, h);
+      const k = webFade[i] / 0.15, hand = handOf(i);
+      if (threeD) putWeb(hand, webA[i], webSag[i] * k, k);
+      else strokeWeb(ctx2, hand, webA[i], webSag[i] * k, k, w, h);
     }
+  }
+  if (threeD && webMesh) {
+    webMesh.count = webSeg;
+    webMesh.visible = webSeg > 0;
+    webMesh.userData.fade = Math.max(webFade[0], webFade[1]);
+    if (webSeg) { webMesh.instanceMatrix.needsUpdate = true; webFadeAttr.needsUpdate = true; }
   }
   const sp = Math.hypot(P.vel.x, P.vel.y, P.vel.z);
   if (!any) peakSp = 0;
   else if (sp > peakSp) peakSp = sp;
   if (any && peakSp > 12 && sp > 0.88 * peakSp) {
+    fillCam();
     project(CAM, P.pos.x, P.pos.y + P.chest, P.pos.z, WEB_A);
     if (!WEB_A.behind) {
-      const bx = (WEB_A.x * 0.5 + 0.5) * w, by = (0.5 - WEB_A.y * 0.5) * h;
+      const ctx = threeD ? webCanvas() : ctx2;
+      if (threeD) webCv.hidden = false;
+      const bw = webW, bh = webH;
+      const bx = (WEB_A.x * 0.5 + 0.5) * bw, by = (0.5 - WEB_A.y * 0.5) * bh;
       const k = 2 / (sp || 1);
       project(CAM, P.pos.x - P.vel.x * k, P.pos.y + P.chest - P.vel.y * k, P.pos.z - P.vel.z * k, WEB_B);
-      let dx = ((WEB_B.x - WEB_A.x) * 0.5) * w, dy = ((WEB_A.y - WEB_B.y) * 0.5) * h;
+      let dx = ((WEB_B.x - WEB_A.x) * 0.5) * bw, dy = ((WEB_A.y - WEB_B.y) * 0.5) * bh;
       const len = Math.hypot(dx, dy) || 1; dx /= len; dy /= len;
       const n = sp > 0.95 * peakSp ? 4 : 3;
       ctx.strokeStyle = "#F3E9D6"; ctx.globalAlpha = 0.25; ctx.lineWidth = 1; ctx.lineCap = "round";
@@ -2323,14 +2455,20 @@ function drawWeb(dt) {
         ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x0 + dx * reach, y0 + dy * reach); ctx.stroke();
       }
       ctx.globalAlpha = 1;
-    }
-  }
+    } else if (threeD && webCv) webCv.hidden = true;
+  } else if (threeD && webCv) webCv.hidden = true;
 }
 function publishSwing() {
   window.__test = window.__test || {};
   window.__test.swing = SWING_VIEW;
   let r = null;
-  if (P) { if (P.ropes[0].easy && P.ropes[0].state === "attached") r = P.ropes[0]; else if (P.ropes[1].easy && P.ropes[1].state === "attached") r = P.ropes[1]; }
+  if (P) {
+    const live = (q) => q.state === "attached";
+    if (live(P.ropes[0]) && P.ropes[0].easy) r = P.ropes[0];
+    else if (live(P.ropes[1]) && P.ropes[1].easy) r = P.ropes[1];
+    else if (live(P.ropes[0]) && P.ropes[0].inkLine) r = P.ropes[0];
+    else if (live(P.ropes[1]) && P.ropes[1].inkLine) r = P.ropes[1];
+  }
   SWING_VIEW.attached = !!r;
   SWING_VIEW.ropeLength = r ? r.len : 0;
   SWING_VIEW.speed = P ? Math.hypot(P.vel.x, P.vel.y, P.vel.z) : 0;
