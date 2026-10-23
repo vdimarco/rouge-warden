@@ -21,17 +21,40 @@ The `gauntlet_loop.py` flags below follow `design.md`. If `python3 Scripts/gaunt
 ```bash
 "$ue_root/Engine/Build/BatchFiles/Linux/Build.sh" QuebecEditor Linux Development "$uproject" -WaitMutex -NoUBA -NoHotReloadFromIDE
 "$ue_root/Engine/Build/BatchFiles/Linux/Build.sh" Quebec Linux Development "$uproject" -WaitMutex -NoUBA
+"$ue_root/Engine/Build/BatchFiles/Linux/Build.sh" Quebec Linux Shipping "$uproject" -WaitMutex -NoUBA
 ```
-The cloud stub check compiled and linked the new C++ against stub headers. The Gauntlet and CSV profiler stubs were written from memory **(unverified)**. Fix what the real build finds. Check that the plugin name in `Quebec.uproject` and the module name in `Quebec.Build.cs` match the engine's Gauntlet plugin **(unverified)**: `find "$ue_root/Engine/Plugins" -name 'Gauntlet*.uplugin'`.
+The cloud stub check compiled and linked the new C++ against stub headers. The Gauntlet and CSV profiler stubs were written from memory **(unverified)**. Fix what the real build finds. Check that the plugin name in `Quebec.uproject` and the module name in `Source/QuebecGauntletTest/QuebecGauntletTest.Build.cs` match the engine's Gauntlet plugin **(unverified)**: `find "$ue_root/Engine/Plugins" -name 'Gauntlet*.uplugin'`.
 
-Back up the live package, then package the Browser build. The new package is the same game plus the Gauntlet code, which runs only with `-NordGauntlet`:
+The Gauntlet controller is in its own module, `QuebecGauntletTest`. `Quebec.uproject` lists it and keeps it and the Gauntlet plugin out of Shipping with `TargetConfigurationDenyList` **(unverified field name)**. Check each build:
+- The Development builds compile `QuebecGauntletController.cpp`. UBT builds the modules that `Quebec.uproject` lists **(unverified)**. If the module is missing, add `if (Configuration != UnrealTargetConfiguration.Shipping) ExtraModuleNames.Add("QuebecGauntletTest");` to both `Source/*.Target.cs` files.
+- The Shipping build succeeds and does not compile `QuebecGauntletController.cpp`. This is the only Shipping check; nothing else here builds Shipping.
+- The editor opens the project with the Gauntlet plugin enabled: `"$ue_root/Engine/Binaries/Linux/UnrealEditor" "$uproject"`.
+
+Package the Browser build into a staging folder first. `Builds/Browser/Linux` is the live demo, so replace it only after the staged package passes. The new package is the same game plus the Gauntlet code, which runs only with `-NordGauntlet`:
 ```bash
-cp -a Builds/Browser/Linux "Builds/Browser/Linux-BeforeGauntlet-$(date -u +%Y%m%d)"
+stage="$(pwd)/Builds/BrowserGauntletStage"
 "$uat" BuildCookRun -project="$uproject" -noP4 -platform=Linux \
   -clientconfig=Development -build -cook -map=/Game/Maps/LaFontaine -stage -pak -archive \
-  -archivedirectory="$(pwd)/Builds/Browser" -utf8output -unattended \
+  -archivedirectory="$stage" -utf8output -unattended \
   -AdditionalCookerOptions=-NullRHI -NoUBA
 ```
+In the GPU window, start the staged package without any gauntlet flag for 90 s, then read its log:
+```bash
+timeout 90 "$stage/Linux/Quebec.sh" /Game/Maps/LaFontaine -RenderOffscreen -windowed -ResX=1280 -ResY=720 -unattended -nosound \
+  -abslog="$stage/no-gauntlet.log"
+grep -n "NORD_GAUNTLET\|nord.Gauntlet" "$stage/no-gauntlet.log"
+grep -in "gauntlet" "$stage/no-gauntlet.log"
+```
+- The first `grep` finds nothing.
+- The second `grep` finds only plugin and module mount lines. No Gauntlet controller, ticker or heartbeat line appears **(unverified log categories)**.
+
+Then, with the demo stopped (step 0), keep the old package and put the staged one in its place:
+```bash
+mv Builds/Browser/Linux "Builds/Browser/Linux-BeforeGauntlet-$(date -u +%Y%m%d)"
+cp -a "$stage/Linux" Builds/Browser/Linux
+```
+Start the demo again (step 0) and check that the public page still streams. If it does not, move the old package back.
+
 Then run the offline checks on the host:
 ```bash
 python3 Scripts/gauntlet_loop.py self-check
@@ -58,7 +81,9 @@ If RunUnreal or the Gauntlet plugin does not work on Linux, record the error in 
 python3 Scripts/gauntlet_loop.py native --direct --mode perf --size 1412x652 --sky night-rain --laps 1 --label smoke
 ```
 Check the smoke run:
-- The exit code is 0. Codes: 2 stuck over 10 s, 3 sky flags missing, 4 CVar mismatch, 5 timeout.
+- The exit code is 0. Codes: 2 stuck over 10 s, 3 sky flags missing, 4 CVar mismatch, 5 timeout, 6 setup (a bad mode, the wrong map, no loop, a stop off the road or a lost world; the `error=` line says which).
+- The CSV is `native/NordGauntlet-perf-night_rain.csv`. If the engine added its own extension, the name ends in `.csv.csv`, which the runner also reads **(unverified)**.
+- Under RunUnreal, the log shows the controller ending the test with the run's exit code, and the game did not quit before that. The two meet through the console variables `nord.GauntletController` and `nord.GauntletExit`.
 - The log has `NORD_GAUNTLET stop=` lines for S1 to S5 in order and a `NORD_GAUNTLET summary` line.
 - `native/route.json` exists. The measured loop length is near 3.0 km (2.5 to 3.5 km). Note the heaviest leg in `native/legs.json`.
 - The CSV has FrameTime, GameThreadTime, RenderThreadTime, RHIThreadTime and GPUTime **(unverified names)**. `verdict.json` lists any missing column.
@@ -75,7 +100,7 @@ python3 Scripts/gauntlet_loop.py native --direct --quality phone --mode perf --s
 ```bash
 python3 Scripts/gauntlet_loop.py reference
 ```
-This renders the ceiling look (all `sg.*` at 3, screen percentage 100, VSM on, Lumen at Epic, TSR) twice, at 1412x652 and 652x1412, in both skies, with `-NordNoAmbient`. Every image pair must have SSIM at least 0.98, or the round is invalid. Install `flip-evaluator` with pip if you want the report-only FLIP map.
+This renders the ceiling look (all `sg.*` at 3, screen percentage 100, VSM on, Lumen at Epic, TSR) twice, at 1412x652 and 652x1412, in both skies, with `-NordNoAmbient`. Every image pair must have SSIM at least 0.98, or the round is invalid. Each sky switch at a stop must log `NORD_SKY_WEATHER command <weather> settled`: the new weather and the street wetness then start settled, so the day stills show dry streets and no still depends on the frame rate. Install `flip-evaluator` with pip if you want the report-only FLIP map.
 
 ## 6. Baseline twice
 ```bash
@@ -98,7 +123,7 @@ python3 -m http.server 8100 --bind 127.0.0.1 --directory dist
 ```
 Do not deploy this `dist`. Rebuild the normal player before any deploy.
 
-Each sample needs a fresh lifecycle start, because the lap begins 95 s after the first BeginPlay, when NordFriend1 is asleep. Sample the winner and the baseline at rung 0 and rung 1, in landscape and in portrait: eight rows. For one row, start the lifecycle with the gauntlet on NordHost. From `games/nord-unreal/`:
+Each sample needs a fresh lifecycle start. The car starts 95 s after the first BeginPlay, when NordFriend1 is asleep. It drives one warm-up lap, which is not gated, and the gated lap starts at the first `NORD_GAUNTLET leg=` line, about 5 minutes later. Sample the winner and the baseline at rung 0 and rung 1, in landscape and in portrait: eight rows. For one row, start the lifecycle with the gauntlet on NordHost. From `games/nord-unreal/`:
 ```bash
 run="$(pwd)/Saved/Gauntlet/$(date -u +%Y%m%dT%H%M%SZ)-stream-winner-r0-land"
 NORD_SKY_ARGS="-NordHour=22 -NordWeather=Rain -NordFreezeTime -NordFreezeWeather" \
@@ -149,3 +174,5 @@ Record the date, device, OS, browser, network and deployment ID in its own file,
 - C++ driving of a possessed, rendered car with pawn input disabled.
 - The loop length, and which leg is heaviest.
 - Whether UAT finds `Build/Scripts/NordGauntlet.Automation.csproj`.
+- Whether UBT builds `QuebecGauntletTest` from `Quebec.uproject`, and whether Shipping builds without it and without the Gauntlet plugin.
+- Whether `BeginCapture` keeps the given CSV file name as it is.
