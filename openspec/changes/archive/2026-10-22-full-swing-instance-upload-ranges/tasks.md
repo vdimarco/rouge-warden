@@ -1,5 +1,5 @@
 - [x] Inspect callers and existing city update-range pattern.
 - [x] Apply bounded figures/sign uploads.
 - [x] Focused browser range/upload/image checks and CI.
-- [ ] PR/review/currentpreview/rebase/merge/production.
-- [ ] Archive canonical spec after release.
+- [x] PR/review/currentpreview/rebase/merge/production.
+- [x] Archive canonical spec after release.

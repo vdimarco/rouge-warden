@@ -17,3 +17,13 @@ Each increment gets a small commit/PR, honest limitations, automated review and 
 
 ## Current evidence
 The shipped render budget, bounded adaptive feedback and zero-contribution shaft guard are live. Fullscreen-clear measurements were mixed: this increment removes redundant render commands, with FPS benefit unverified. The new user-directed workflow supersedes the earlier rejection based solely on an unproven throughput gain.
+
+## Released increments
+
+PR#634 released as `8608ff629f30ec911edab0ad6c12f77606b6fc9c` after review, CI, deployed functional checks, final rebase and exact-head merge; production bytes verified. Canonical spec and archive published. FPS benefit and affected Chrome remain unverified; no FPS-benefit gate.
+
+PR#635 released as `3797b07fdd943b430102de6b573ef8f20f6f2e38` after review, CI, deployed functional checks, final rebase and exact-head merge; production bytes verified. Canonical spec and archive published. FPS benefit and affected Chrome remain unverified; no FPS-benefit gate.
+
+PR#636 released as `9d82f8233450bc1a3c5f1e8ef841c78de731c768` after review, CI, deployed functional checks, final rebase and exact-head merge; production bytes verified. Canonical spec and archive published. FPS benefit and affected Chrome remain unverified; no FPS-benefit gate.
+
+Continue with small concrete scene-work changes; do not reinstate FPS-benefit checks or benchmark queues as merge prerequisites.
