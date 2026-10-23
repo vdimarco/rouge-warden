@@ -39,8 +39,10 @@ GENERATOR = 'Scripts/plateau_replica.py'
 FRAME = 'x east, y north, cm, z up'
 SOURCES = ('Data/LaFontaine/osm.xml', 'Data/LaFontaine/layout.json', GENERATOR,
            'Scripts/prepare_lafontaine.py', 'Data/Plateau/BaseGeometry/Marking.obj',
-           # the lane-life part of the Soul layer reads the Plex yard records and the city's ruelles vertes
-           'Data/Plateau/ReplicaGeometry/Plex/fronts.json', 'Data/Plateau/ReplicaGeometry/Soul/ruelles_vertes_clip.json')
+           # the lane-life part of the Soul layer reads the Plex yard records and the city's ruelles vertes, the Plex
+           # manifest (its Glass batches: the rear windows the AC units sit in) and the props' bounds and anchors
+           'Data/Plateau/ReplicaGeometry/Plex/fronts.json', 'Data/Plateau/ReplicaGeometry/Soul/ruelles_vertes_clip.json',
+           'Data/Plateau/ReplicaGeometry/Plex/manifest.json', 'Data/Plateau/ReplicaGeometry/Props/manifest.json')
 LEGACY_MARKING = ROOT / 'Data/Plateau/BaseGeometry/Marking.obj'
 # The existing Panet/Visitation walking route already has detailed streets (plateau_streets.py).
 ROUTE = [(37400, -3280), (38405, -3924), (42703, -6819), (41685, -11320), (40636, -15933), (35500, -14300)]
@@ -174,7 +176,7 @@ SOUL_MATERIALS = {
 PROP_KEYS = ('lamp_cobra', 'lamp_park', 'hydrant', 'sign_stop', 'sign_street', 'sign_oneway', 'sign_parking',
              'bixi_dock', 'bixi_bike', 'bin_recycling', 'bin_compost', 'bin_garbage', 'cone',
              'barrier_chantier', 'utility_pole', 'laundry_line', 'bike_locked', 'ac_unit', 'flower_box',
-             'bench', 'mailbox')
+             'bench', 'mailbox', 'chair_patio', 'bbq', 'satellite_dish', 'potted_plant', 'bike_gallery')
 PARKING_TEXTS = [('R-PF', '\\P 9h-23h EXCEPTÉ S3R'), ('AD-TT', '\\A EN TOUT TEMPS'),
                  ('SU-MA-A', '\\P 8h-9h MARDI 1 AVRIL AU 1 DÉC'), ('SD-TT', '\\P EN TOUT TEMPS'),
                  ('SU-ME-A', '\\P 9h-10h MERCREDI 1 AVRIL AU 1 DÉC'), ('R-PF', '\\P 9h-23h EXCEPTÉ S3R')]
@@ -191,7 +193,10 @@ def props_info():
                 'bounds': {'bin_recycling': (-42.55, -32., 0., 38., 32., 104.5),
                            'bin_compost': (-22., -25.15, 0., 23.9, 25.17, 53.73),
                            'flower_box': (-11.8, -46., 0., 14.24, 46., 41.42),
-                           'bike_locked': (-86.91, -42.9, 0., 86.91, 10.39, 108.1)}}
+                           'bike_locked': (-86.91, -42.9, 0., 86.91, 10.39, 108.1)},
+                # MAP-PROPS anchors the gallery life hangs props by: the AC's and the flower box's wall planes (x),
+                # the dish clamp's centre over the clamp plate (z)
+                'anchors': {'ac_wall_x': -18., 'flower_wall_x': -11., 'dish_clamp_z': 6.}}
     try:
         props = json.loads(PROPS_MANIFEST.read_text())['props']
         dock = props['bixi_dock']
@@ -205,6 +210,9 @@ def props_info():
         defaults['colliders'] = {k: [(c['center'], c['size']) for c in v.get('colliders_cm', [])]
                                  for k, v in props.items()}
         defaults['bounds'] = {k: tuple(v['bounds_cm']) for k, v in props.items() if len(v.get('bounds_cm', ())) == 6}
+        defaults['anchors'] = {'ac_wall_x': props['ac_unit']['anchors']['wall_plane_x_cm'],
+                               'flower_wall_x': props['flower_box']['anchors']['wall_plane_x_cm'],
+                               'dish_clamp_z': props['satellite_dish']['anchors']['clamp_cm'][2]}
     except (OSError, KeyError, ValueError, IndexError):
         pass
     return defaults
@@ -270,6 +278,12 @@ class Rng:
 
     def randint(self, a, b):
         return a + min(b - a, int(self.random() * (b - a + 1)))
+
+    def shuffle(self, items):
+        """Fisher-Yates in place, from this generator's own draws."""
+        for i in range(len(items) - 1, 0, -1):
+            j = self.randint(0, i)
+            items[i], items[j] = items[j], items[i]
 
 
 def area(poly):
@@ -3778,6 +3792,7 @@ def _mural(S, edge, building, rng, off=6., z0=130., margin=60., min_h=300., min_
 # of the ruelles is green.
 
 PLEX_FRONTS = OUT / 'Plex/fronts.json'
+PLEX_MANIFEST = OUT / 'Plex/manifest.json'
 RUELLES_VERTES = OUT / 'Soul/ruelles_vertes_clip.json'
 RUELLES_VERTES_SOURCE = {
     'title': 'Ruelles vertes', 'publisher': 'Ville de Montréal', 'licence': 'CC BY 4.0',
@@ -3792,12 +3807,21 @@ PLEX_POSTS = {'boards': (244., 4.5), 'slats': (300., 3.), 'low': (180., 3.)}   #
 ALLEY_HALF = 215.               # half the 430 cm ruelle strip (_ruelles)
 GATE_KEEP = 62.                 # gate leaf (46), its post (5) and a hand: no prop stands closer to the gate axis...
 GATE_SWING = 100.               # ... within this depth either side of the fence, so the leaf swings free
-LAUNDRY_SHARE = .4              # gallery modules with a clothesline pole (half as many on the steel blocks)
+LAUNDRY_SHARE = .6              # gallery modules with a clothesline pole (half as many on the steel blocks)
 LAUNDRY_DECK = .75              # decks of such a module with their own line
 LINE_ABOVE_DECK = 100.          # the pulley clamps to the guard's cap rail (94.3-107 cm over the deck)
 POLE_TOP = 35.                  # the pole stands this far over its highest pulley
 LINE_WALL = 60.                 # a line keeps this far from every wall along its run
 LINE_TOP = 1150.                # no line from a gallery higher than this (the steel fire-escape decks of tall blocks)
+# The pole stands at the back of the yard, just inside the lane fence, and is taller than the gallery it serves:
+# each line rises from its pulley on the rail to the pole, so the lines and the washing on them show over the fences
+# from the ruelle (the old poles stood up to 1.8 m in from the fence and the lines fell toward them).
+POLE_FENCE = (22., 40., 70.)    # first tries: this far in from the fence line (the 11 cm pole clears the 9 cm posts)
+POLE_FALLBACK = (110., 180.)    # then deeper in the yard, where a shed, pad, gate or tree holds the fence line
+LINE_RISE = (35., 130.)         # the line's end on the pole stands this much over its pulley on the rail
+LINE_MIN_END = 330.             # and never lower than this (washing hangs up to 1.1 m under it, over a 1.95 m fence)
+LINE_SKEW = 1.                  # a line runs at most 45 degrees off square to the gallery (round a shed, past a gate)
+LINE_MIN_SPAN = 250.            # pulley to pulley (the pole's pulley hangs 9 cm off the pole)
 GATE_PROPS = (('bin_recycling', .55), ('bin_compost', .4), ('flower_box', .22), ('bike_locked', .15))
 GREEN_SHARE = .3                # share of ruelles marked green, seeded, when the open-data clip is missing
 TAG_FENCE, TAG_SHED, TAG_GARAGE = .16, .25, .7   # lane fences, shed and garage doors with a tag (halved on a
@@ -4032,7 +4056,7 @@ def lane_laundry(world, plex, S, lane, counts):
             ad = dF + 1.
 
             def pole_ok(ax, px, pd):
-                if not 40 <= px <= F.W - 40 or pd - ad < 250 or abs(px - ax) > .6 * (pd - ad):
+                if not 40 <= px <= F.W - 40 or pd - ad < LINE_MIN_SPAN + 9 or abs(px - ax) > LINE_SKEW * (pd - ad):
                     return False
                 if fence.get('gate_at') is not None and abs(px - fence['gate_at']) < 90:
                     return False
@@ -4046,18 +4070,22 @@ def lane_laundry(world, plex, S, lane, counts):
                 if any(math.dist(p, q) < 100 for q in world.utility_poles):     # never mistaken for one on a Hydro pole
                     return False
                 # the line runs out over the yard, clear of every wall (never back to the mass behind the gallery,
-                # never along a wing or a yard building) and over no other gallery or stair
+                # never along a wing or a yard building), over no other gallery or stair and not over the shed, whose
+                # roof the washing would brush
                 A = F.world(ax, ad)
                 span = math.dist(A, p)
+                shed = lot['shed_poly']
+                if shed and (point_in(A, shed) or any(segments_cross(A, p, a, b) for a, b in zip(shed, shed[1:] + shed[:1]))):
+                    return False
                 return wall_clearance(world, A, p) >= LINE_WALL and not any(
                     plex.footprint_hit(q, 0., (lot['id'], k)) for q in (lerp(A, p, s / span) for s in range(0, int(span) + 1, 50)))
-            # the pulley on the rail near the gallery's free end (or a little in from it), the pole near the back
-            # fence about in line with it, then further along the yard or nearer the house (only toward the module's
-            # middle, never over the neighbouring module's stair)
+            # the pulley on the rail near the gallery's free end (or a little in from it), the pole at the back fence
+            # about in line with it, then further along the yard (only toward the module's middle, never over the
+            # neighbouring module's stair); only where the fence line has no room, deeper in the yard
             first = rng.uniform(0., 160.)
-            pick = next(((ax, ax + inward * dx, F.D - dd) for off in (25., 70., 115.)
-                         for ax in (x0 + off if inward > 0 else x1 - off,)
-                         for dd in (45., 110., 180.) for dx in (first, 0., 80., 160., 240.)
+            pick = next(((ax, ax + inward * dx, F.D - dd) for depths in (POLE_FENCE, POLE_FALLBACK)
+                         for off in (25., 70., 115.) for ax in (x0 + off if inward > 0 else x1 - off,)
+                         for dd in depths for dx in (first, 0., 80., 160., 240., 320., 400.)
                          if pole_ok(ax, ax + inward * dx, F.D - dd)), None)
             if pick is None:
                 counts['laundry_modules_without_room'] += 1
@@ -4076,7 +4104,7 @@ def lane_laundry(world, plex, S, lane, counts):
                 span = math.dist(A, P)
                 za = dk['z'] + LINE_ABOVE_DECK
                 mine.append({'deck_z': dk['z'], 'guard': guard, 'A': (A[0], A[1], za),
-                             'zb': max(330., za - rng.uniform(10., 90.)), 'span': span})
+                             'zb': max(LINE_MIN_END, za + rng.uniform(*LINE_RISE)), 'span': span})
             if not mine:
                 continue
             height = max(m['zb'] for m in mine) + POLE_TOP
@@ -4086,15 +4114,16 @@ def lane_laundry(world, plex, S, lane, counts):
                 S.box(pole_mat, (P[0], P[1], height - 18), (64, 7, 7), F.yaw())
             index = len(poles)
             poles.append({'lot': lot['id'], 'module': k, 'xy': P, 'position': [r2(P[0]), r2(P[1])],
-                          'height_cm': r2(height), 'material': pole_mat, 'lines': len(mine)})
+                          'height_cm': r2(height), 'material': pole_mat, 'lines': len(mine),
+                          'from_fence_cm': r2(F.D - pick[2])})
             for m in mine:
                 toward, _ = unit(P, m['A'])
                 B = (P[0] + toward[0] * 9, P[1] + toward[1] * 9, m['zb'])
                 start = max(60., extent - ad + 50.)
-                garments = _laundry_line(S, m['A'], B, rng, start, 60.)
+                garments, sag = _laundry_line(S, m['A'], B, rng, start, 60.)
                 lines.append({'lot': lot['id'], 'module': k, 'deck_z': r2(m['deck_z']), 'guard': m['guard'],
                               'anchor': [r2(v) for v in m['A']], 'end': [r2(v) for v in B], 'pole': index,
-                              'span_cm': r2(math.dist(m['A'][:2], B[:2])), 'garments': garments})
+                              'span_cm': r2(math.dist(m['A'][:2], B[:2])), 'sag_cm': r2(sag), 'garments': garments})
                 counts['laundry_lines'] += 1
                 counts['garments'] += garments
     counts['laundry_poles'] = len(poles)
@@ -4121,7 +4150,8 @@ def _guard_covers(F, g, x, d):
 
 def _laundry_line(S, A, B, rng, start, stop):
     """The pulley loop from A to B (two strands 8 cm apart, the lower one sagging more), pulleys at both ends and,
-    on most lines, garments pegged on the lower strand between `start` and `stop` cm from the ends."""
+    on most lines, garments pegged on the lower strand between `start` and `stop` cm from the ends. Returns the
+    garment count and the lower strand's sag (cm at mid-span)."""
     span = math.dist(A[:2], B[:2])
     sag = span * rng.uniform(.018, .03)
     yaw = math.degrees(math.atan2(B[1] - A[1], B[0] - A[0]))
@@ -4134,7 +4164,7 @@ def _laundry_line(S, A, B, rng, start, stop):
         t = max(0., min(1., s / span))
         return (A[0] + (B[0] - A[0]) * t, A[1] + (B[1] - A[1]) * t, A[2] - 4 + (B[2] - A[2]) * t - sag * 4 * t * (1 - t))
     if not rng.chance(.65):        # late October: a third of the lines hang empty
-        return 0
+        return 0, sag
     s, count = start, 0
     while True:
         kind = rng.choice(('sheet', 'towel', 'towel', 'shirt', 'shirt', 'pants', 'socks'))
@@ -4145,7 +4175,7 @@ def _laundry_line(S, A, B, rng, start, stop):
         _garment(S, at, s, width, kind, rng)
         count += 1
         s += width + rng.uniform(8., 35.)
-    return count
+    return count, sag
 
 
 def _garment(S, at, s0, width, kind, rng):
@@ -4170,6 +4200,368 @@ def _garment(S, at, s0, width, kind, rng):
                 (pa[0], pa[1], pa[2] - zb)]
         S.face(colour, quad)
         S.face(colour, quad[::-1])
+
+
+# -- life on the galleries ----------------------------------------------------------------------
+# A Plateau gallery is an outdoor room: patio chairs against the wall, geraniums in pots, a barbecue and a bike against
+# the guard, the blue and brown bins, a window air conditioner, planters hung on the rail and, now and then, a dish
+# clamped to a guard. The floor props stand only on the props floor Plex records per deck (decks[].free: clear of the
+# stair openings, the flight heads, the door and the way between them; Plex walks its player capsule over every deck
+# with that floor filled), so none blocks a stair or a door. The layout follows Germer and Schwarz's furniture agents
+# (each kind seeks its parent surface, the wall, the guard, a window or the rail, and keeps its clearance).
+
+GALLERY_LIVED = .82             # decks with any life on them (the rest stand bare)
+GALLERY_EDGE = 2.               # a floor prop keeps this far inside its free quad
+GALLERY_GAP = 6.                # and this far from the next prop on the deck
+CAP_FACE = 3.                   # plateau_plex CAP_W / 2: the cap rail's faces stand this far either side of the guard line
+WINDOW_GLASS_D = 2.5            # plateau_plex._window: glass at D_FACE + 2.5, the deck's wall line being D_FACE
+WINDOW_SILL = 80.               # ... over an opening that starts 80 cm over the floor (glass from 86 to 209 cm)
+STAIR_CLEAR = {'straight': 60., 'spiral': 85.}   # hung props keep this far from a flight's centre line (90 cm stairs,
+                                                 # 70 cm spirals, and a hand)
+HUNG_LINE = 50.                 # and a rail prop this far from a laundry pulley on the same rail
+RAIL_BOX_DROP = 25.             # a planter on the rail hangs with its rim (22.8 cm over its base) just under the rail top
+# Dish aims from the Plateau (45.52 N, 73.58 W): Bell at 91.1 W (most dishes) and Shaw Direct at 107.3 W, azimuth
+# and elevation in degrees (satsig.net pointing formula), with the share of dishes on each.
+DISH_AIM = ((203.9, 34.8, .75), (223.1, 28.0, .25))
+DISH_SHARE = .06                # lived decks with a dish tried on a guard (OMHM asks tenants to take them off)
+DISH_FACING = .34               # the guard's outer side within 70 degrees of the aim
+DISH_SKY = 3000.                # and the line to the satellite clear of buildings, galleries and trees this far
+GALLERY_COLLIDE = ('chair_patio', 'bbq', 'bin_recycling', 'bin_compost')   # the bike, pots and hung props are knocked
+
+
+def deck_frame(deck):
+    """The frame of a Plex deck record: x along its wall line (quad[0] -> quad[1]), d out toward the yard along its
+    `out`, d 0 on the wall line (D_FACE); D is the outer guard line (`edge`)."""
+    q = deck['quad']
+    u, width = unit(q[0], q[1])
+    F = Frame2(q[0], u, tuple(deck['out']), width)
+    F.D = F.local(deck['edge'][0])[1]
+    return F
+
+
+def deck_rects(F, deck):
+    """The deck's free quads (its props floor) as rectangles (x0, x1, d0, d1) in its frame."""
+    out = []
+    for quad in deck.get('free') or ():
+        loc = [F.local(p) for p in quad]
+        out.append((min(x for x, _ in loc), max(x for x, _ in loc), min(d for _, d in loc), max(d for _, d in loc)))
+    return out
+
+
+def prop_extent(F, prop, yaw):
+    """A prop's bounds about its pivot in a deck frame: (x0, x1, d0, d1)."""
+    loc = [F.local(q) for q in _prop_poly(prop, F.o, yaw)]
+    return min(x for x, _ in loc), max(x for x, _ in loc), min(d for _, d in loc), max(d for _, d in loc)
+
+
+def facing_yaw(F, a, b):
+    """Yaw that points a prop's +X along a * u + b * n of the frame."""
+    return math.degrees(math.atan2(F.u[1] * a + F.n[1] * b, F.u[0] * a + F.n[0] * b))
+
+
+class PlexGlass:
+    """Rear windows over the gallery decks, read from the Plex layer's Glass batches (the generated quads, so the AC
+    units sit in windows that are drawn): triangles indexed by their box in map coordinates (the OBJ stores x, -y)."""
+
+    def __init__(self, path=None):
+        self.tris, self.grid = [], Grid(1000.)
+        path = Path(path or PLEX_MANIFEST)
+        try:
+            manifest = json.loads(path.read_text())
+        except (OSError, ValueError):
+            return
+        for batch in manifest.get('batches', []):
+            if batch.get('material') != 'Glass':
+                continue
+            vs = []
+            for line in (path.parent / batch['file']).read_text().splitlines():
+                if line.startswith('v '):
+                    x, y, z = (float(v) for v in line.split()[1:4])
+                    vs.append((x, -y, z))
+                elif line.startswith('f '):
+                    tri = [vs[int(t.split('/')[0]) - 1] for t in line.split()[1:]]
+                    self.grid.add(len(self.tris), bbox([p[:2] for p in tri]))
+                    self.tris.append(tri)
+
+    def windows(self, F, z, x0, x1):
+        """Windows on the deck's wall line between x0 and x1 whose opening starts WINDOW_SILL over the deck top z:
+        [(x centre, glass width)], merged from the glass triangles; door lights (at D_FACE + 3.5) are left out."""
+        spans = []
+        for i in self.grid.query(bbox([F.world(x0, 0.), F.world(x1, 0.)], 10.)):
+            tri = self.tris[i]
+            loc = [F.local(p) for p in tri]
+            zs = [p[2] - z for p in tri]
+            if not all(abs(d - WINDOW_GLASS_D) < .4 for _, d in loc):
+                continue
+            if not (WINDOW_SILL + 3 <= min(zs) <= WINDOW_SILL + 9 and 200 <= max(zs) <= 215):
+                continue
+            xs = [x for x, _ in loc]
+            if min(xs) >= x0 - 1 and max(xs) <= x1 + 1:
+                spans.append((min(xs), max(xs)))
+        merged = []
+        for a, b in sorted(spans):
+            if merged and a <= merged[-1][1] + .5:
+                merged[-1][1] = max(merged[-1][1], b)
+            else:
+                merged.append([a, b])
+        return [((a + b) / 2, b - a) for a, b in merged if b - a >= 40]
+
+
+def _sky_clear(world, plex, p, z, azimuth, elevation, tops, trees):
+    """The line from a dish at p (height z) toward the satellite: clear of OSM buildings, Plex gallery stacks (as
+    tall as their top deck plus its roof) and yard-tree crowns for DISH_SKY cm."""
+    aim = (math.sin(math.radians(azimuth)), math.cos(math.radians(azimuth)))
+    rise = math.tan(math.radians(elevation))
+    for step in range(1, int(DISH_SKY / 50) + 1):
+        t = 50. * step
+        q = add(p, aim, t)
+        h = z + t * rise
+        for i in world.building_grid.query((q[0], q[1], q[0], q[1])):
+            b = world.buildings[i]
+            if b['height'] > h and point_in(q, b['points']):
+                return False
+        for i in plex.fp_grid.query((q[0], q[1], q[0], q[1])):
+            poly, owner, _ = plex.footprints[i]
+            if tops.get(owner, 0.) > h and point_in(q, poly):
+                return False
+        for tx, ty, r, z0, z1 in trees:
+            if z0 <= h <= z1 and math.dist(q, (tx, ty)) < r:
+                return False
+    return True
+
+
+def lane_galleries(world, plex, put, lane, counts, glass, laundry):
+    """Gallery life on every deck of the Plex rear stacks (decks[] and ground_decks[]) with a props floor."""
+    rows = []
+    anchors = {}
+    for line in laundry:
+        anchors.setdefault(line['lot'], []).append(line['anchor'])
+    tops = {}
+    for lot in plex.lots:
+        zs = [dk['z'] for dk in (lot['rear'].get('decks') or []) + (lot['rear'].get('ground_decks') or [])]
+        if zs:
+            tops[lot['id']] = max(zs) + 300.          # the top gallery and its roof
+    trees = []
+    for lot in plex.lots:
+        for t in ((lot['rear'].get('yard') or {}).get('trees') or []):
+            h = t.get('height_m', 10.) * 100
+            trees.append((t['x'], t['y'], t.get('crown_m', 8.) * 50, t.get('z', 0.) + .3 * h, t.get('z', 0.) + h))
+    tree_grid = Grid(2500.)
+    for i, t in enumerate(trees):
+        tree_grid.add(i, bbox([t[:2]], t[2]))
+    for lot in plex.lots:
+        if lot['storeys'] >= 5:          # the steel fire escapes of tall blocks stay clear
+            continue
+        rear = lot['rear']
+        flights = [(fl.get('kind', 'straight'), fl.get('foot'), fl.get('head')) for fl in rear.get('flights') or []]
+        for kind in ('ground_decks', 'decks'):
+            for i, deck in enumerate(rear.get(kind) or []):
+                if not deck.get('free'):
+                    continue
+                counts['gallery_decks'] += 1
+                rng = Rng('gallery', lot['id'], kind, i)
+                if not rng.chance(GALLERY_LIVED):
+                    continue
+                counts['gallery_decks_lived'] += 1
+                placed = _gallery_deck(world, plex, put, lot, kind, i, deck, rng, flights, glass,
+                                       [a for a in anchors.get(lot['id'], ()) if abs(a[2] - deck['z'] - LINE_ABOVE_DECK) < 1],
+                                       tops, [trees[j] for j in tree_grid.query(bbox([deck['edge'][0]], DISH_SKY))],
+                                       counts)
+                for row in placed:
+                    counts['gallery_' + row['prop']] += 1
+                    counts['gallery_props'] += 1
+                rows += placed
+    lane['galleries'] = rows
+
+
+def _gallery_deck(world, plex, put, lot, kind, index, deck, rng, flights, glass, anchors, tops, trees, counts):
+    """The props of one deck (frame from deck_frame): floor props on the free quads, an AC unit in a window over the
+    deck, planters hung on the outer guard, a dish on a guard; rows for lane_life.json."""
+    F = deck_frame(deck)
+    z = deck['z']
+    rects = deck_rects(F, deck)
+    taken = []                                  # (x0, x1, d0, d1) of the floor and window props on this deck
+    hung = []                                   # world points of the rail and guard props
+    rows = []
+    low = z < 500.                              # the ground gallery and the first floor: the bikes and barbecues
+
+    def free_of(r):
+        return not any(r[0] < t[1] + GALLERY_GAP and t[0] < r[1] + GALLERY_GAP and
+                       r[2] < t[3] + GALLERY_GAP and t[2] < r[3] + GALLERY_GAP for t in taken)
+
+    def record(prop, x, d, yaw, z_base, place, extra=None):
+        p = F.world(x, d)
+        poly = _prop_poly(prop, p, yaw)
+        row = put(prop, p, yaw, prop in GALLERY_COLLIDE, ('gallery', lot['id'], kind, index, prop, round(x)),
+                  {'gallery_of': lot['id'], 'place': place, **(extra or {})}, z=z_base)
+        rows.append({'lot': lot['id'], 'deck': [kind, index], 'deck_z': r2(z), 'prop': prop, 'place': place,
+                     'position': [r2(p[0]), r2(p[1]), r2(z_base)], 'yaw': r2(yaw % 360),
+                     'collision': row['collision'], 'footprint': [[r2(v) for v in q] for q in poly], **(extra or {})})
+        return p
+
+    def floor(prop, band, yaw, lean=None):
+        """The first spot along a band of a free rect (seeded end first) that holds the prop; band 'wall' sets its
+        back 2 cm inside the rect's wall side, 'guard' its back inside the guard side; a leaning prop (lean = how far
+        its pivot stands in from the cap rail's inner face) rests on the cap instead."""
+        ex = prop_extent(F, prop, yaw)
+        order = list(range(len(rects)))
+        rng.shuffle(order)
+        for k in order:
+            x0, x1, d0, d1 = rects[k]
+            if lean is not None:
+                d = F.D - CAP_FACE - .5 - lean          # the top of the lean (handlebar, saddle) on the cap's face
+                if d + ex[2] < d0 + GALLERY_EDGE - .01 or d > d1 - GALLERY_EDGE:
+                    continue
+            elif band == 'wall':
+                d = d0 + GALLERY_EDGE - ex[2]
+            else:
+                d = d1 - GALLERY_EDGE - ex[3]
+            if lean is None and d + ex[3] > d1 - GALLERY_EDGE + .01 or d + ex[2] < d0 + GALLERY_EDGE - .01:
+                continue
+            lo, hi = x0 + GALLERY_EDGE - ex[0], x1 - GALLERY_EDGE - ex[1]
+            if hi < lo:
+                continue
+            steps = int((hi - lo) / 5.)
+            xs = [lo + 5. * s for s in range(steps + 1)] + [hi]
+            if rng.chance(.5):
+                xs.reverse()
+            for x in xs:
+                r = (x + ex[0], x + ex[1], d + ex[2], d + ex[3])
+                if free_of(r):
+                    taken.append(r)
+                    return x, d
+        return None
+
+    out_yaw, in_yaw = facing_yaw(F, 0., 1.), facing_yaw(F, 0., -1.)
+    if rng.chance(.3 if low else .18):
+        spot = floor('bbq', 'guard', in_yaw)            # the knobs toward the house, the cook on the deck
+        if spot:
+            record('bbq', *spot, in_yaw, z, 'floor')
+    if rng.chance(.2 if low else .06):
+        yaw = math.degrees(math.atan2(F.n[0], -F.n[1]))      # its left (-Y), the lean side, toward the guard (+n)
+        spot = floor('bike_gallery', 'guard', yaw, lean=prop_extent(F, 'bike_gallery', yaw)[3])
+        if spot:
+            record('bike_gallery', *spot, yaw, z, 'floor')
+    if rng.chance(.55):
+        n = 2 if rng.chance(.55) else 1
+        for _ in range(n):
+            yaw = out_yaw + rng.uniform(-14., 14.)      # the chairs face the yard, set down a little askew
+            spot = floor('chair_patio', 'wall' if rng.chance(.75) else 'guard', yaw)
+            if spot:
+                record('chair_patio', *spot, yaw, z, 'floor')
+    for prop, share in (('bin_recycling', .3), ('bin_compost', .22)):
+        if rng.chance(share):
+            band = 'wall' if rng.chance(.6) else 'guard'
+            yaw = out_yaw if band == 'wall' else in_yaw          # handle and wheels to the wall or the guard
+            spot = floor(prop, band, yaw)
+            if spot:
+                record(prop, *spot, yaw, z, 'floor')
+    for _ in range(rng.choice((0, 1, 1, 2, 2, 3))):
+        yaw = rng.uniform(0., 360.)
+        spot = floor('potted_plant', 'guard' if rng.chance(.6) else 'wall', yaw)
+        if spot:
+            record('potted_plant', *spot, yaw, z, 'floor')
+    # a window air conditioner in a rear window over the deck, wall plane on the glass, sitting on the sill
+    if glass is not None and rects:
+        ex = prop_extent(F, 'ac_unit', out_yaw)
+        d = WINDOW_GLASS_D + .5 - props_cached()['anchors']['ac_wall_x']
+        for xc, _ in glass.windows(F, z, min(r[0] for r in rects) - 60, max(r[1] for r in rects) + 60):
+            if not rng.chance(.22):
+                continue
+            r = (xc + ex[0], xc + ex[1], max(d + ex[2], min(rr[2] for rr in rects)), d + ex[3])
+            if not any(rr[0] + GALLERY_EDGE <= r[0] and r[1] <= rr[1] - GALLERY_EDGE and rr[2] <= WINDOW_GLASS_D + 1 and
+                       r[3] <= rr[3] - GALLERY_EDGE for rr in rects) or not free_of(r):
+                continue
+            taken.append(r)
+            record('ac_unit', xc, d, out_yaw, z + WINDOW_SILL, 'window')
+
+    def clear_of_stairs(poly):
+        for kind_, foot, head in flights:
+            pts = [q[:2] for q in (foot, head) if q]
+            if not pts:
+                continue
+            reach = STAIR_CLEAR.get(kind_, 85.)
+            a, b = pts[0], pts[-1]
+            if min(seg_dist(q, a, b) for q in poly) < reach or poly_seg_dist(poly, a, b) < reach:
+                return False
+        return not any(world.in_building(q) for q in poly) and not any(
+            plex.footprint_hit(q, 0.) and not _own_footprint(plex, lot['id'], q) for q in poly)
+
+    # this deck's own guard runs: along or across it, overlapping its quad (which stops short of a spiral stair the
+    # gallery's guards run round); a lot's other modules have runs at the same height further along the wall
+    guards = []
+    for g in lot['rear'].get('guards') or []:
+        (xa, da), (xb, db) = F.local(g['a']), F.local(g['b'])
+        if abs(g['z0'] - z) < 1 and max(xa, xb) >= -10 and min(xa, xb) <= F.W + 10 and \
+                -10 <= min(da, db) and max(da, db) <= F.D + 10:
+            guards.append(g)
+    # planters hung on the outside of the outer guard, their tops at the rail
+    if rng.chance(.16):
+        outer = [g for g in guards if all(abs(F.local(p)[1] - F.D) < 2 for p in (g['a'], g['b']))]
+        ex = prop_extent(F, 'flower_box', out_yaw)
+        d = F.D + CAP_FACE + .5 - props_cached()['anchors']['flower_wall_x']
+        for _ in range(1 if rng.chance(.6) else 2):
+            spots = []
+            for g in outer:
+                xa, xb = sorted(F.local(p)[0] for p in (g['a'], g['b']))
+                lo, hi = xa + 12 - ex[0], xb - 12 - ex[1]
+                spots += [lo + (hi - lo) * s / 8 for s in range(9)] if hi >= lo else []
+            rng.shuffle(spots)
+            for x in spots:
+                p = F.world(x, d)
+                poly = _prop_poly('flower_box', p, out_yaw)
+                if any(math.dist(p, q[:2]) < HUNG_LINE + 46 for q in anchors) or \
+                        any(math.dist(p, q) < 100 for q in hung) or not clear_of_stairs(poly):
+                    continue
+                hung.append(p)
+                g = next(g for g in outer if min(F.local(q)[0] for q in (g['a'], g['b'])) - 1 <= x <=
+                         max(F.local(q)[0] for q in (g['a'], g['b'])) + 1)
+                record('flower_box', x, d, out_yaw, g['z1'] - RAIL_BOX_DROP, 'rail')
+                break
+    # a satellite dish clamped to the cap of a guard that faces the satellite, with a clear line to it
+    if rng.chance(DISH_SHARE):
+        r, azimuth, elevation = rng.random(), DISH_AIM[-1][0], DISH_AIM[-1][1]
+        for az, el, share in DISH_AIM:
+            if r < share:
+                azimuth, elevation = az, el
+                break
+            r -= share
+        azimuth += rng.uniform(-3., 3.)
+        aim = (math.sin(math.radians(azimuth)), math.cos(math.radians(azimuth)))
+        yaw = math.degrees(math.atan2(aim[1], aim[0]))
+        centre = F.world(F.W / 2, F.D / 2)
+        clamp = props_cached()['anchors']['dish_clamp_z']
+        options = []
+        for g in guards:
+            u, length = unit(g['a'], g['b'])
+            if length < 60:
+                continue
+            n = (u[1], -u[0])
+            if (centre[0] - g['a'][0]) * n[0] + (centre[1] - g['a'][1]) * n[1] > 0:
+                n = (-n[0], -n[1])
+            if n[0] * aim[0] + n[1] * aim[1] < DISH_FACING:
+                continue
+            for s in (.15, .5, .85):
+                options.append((g, add(g['a'], u, 25 + (length - 50) * s)))
+        rng.shuffle(options)
+        for g, p in options:
+            poly = _prop_poly('satellite_dish', p, yaw)
+            if any(math.dist(p, q[:2]) < HUNG_LINE for q in anchors) or any(math.dist(p, q) < 60 for q in hung) or \
+                    not clear_of_stairs(poly):
+                continue
+            if not _sky_clear(world, plex, p, g['z1'] + 55., azimuth, elevation, tops, trees):
+                counts['gallery_dishes_without_sky'] += 1
+                continue
+            hung.append(p)
+            record('satellite_dish', *F.local(p), yaw, g['z1'] - clamp, 'guard',
+                   {'aim_azimuth': r2(azimuth), 'aim_elevation': r2(elevation)})
+            break
+    return rows
+
+
+def _own_footprint(plex, owner, q):
+    return any(o == owner and point_in(q, poly) for poly, o, _ in
+               (plex.footprints[i] for i in plex.fp_grid.query((q[0], q[1], q[0], q[1]))))
 
 
 # -- life at the gates --------------------------------------------------------------------------
@@ -4886,7 +5278,11 @@ def lane_tags(world, plex, S, lane, counts, green):
     lane['tags'] = rows
 
 
-LANE_COUNTS = ('laundry_lines', 'laundry_poles', 'garments', 'laundry_modules_without_room', 'gate_bin_recycling',
+GALLERY_PROPS = ('chair_patio', 'bbq', 'bike_gallery', 'bin_recycling', 'bin_compost', 'potted_plant', 'ac_unit',
+                 'flower_box', 'satellite_dish')
+LANE_COUNTS = ('laundry_lines', 'laundry_poles', 'garments', 'laundry_modules_without_room', 'gallery_decks',
+               'gallery_decks_lived', 'gallery_props', *('gallery_' + k for k in GALLERY_PROPS),
+               'gallery_dishes_without_sky', 'gate_bin_recycling',
                'gate_bin_compost', 'gate_flower_box', 'gate_bike_locked', 'gate_props_lane_side', 'gate_props_yard_side',
                'gate_props_without_room', 'ruelles_vertes_osm_ways', 'ruelles_vertes_ids', 'green_bed_metres',
                'green_plants', 'green_creeper_strips', 'green_arches', 'green_entries_without_room', 'green_planters',
@@ -4894,13 +5290,16 @@ LANE_COUNTS = ('laundry_lines', 'laundry_poles', 'garments', 'laundry_modules_wi
 
 
 def build_lane_life(world, S, put, counts, lane, plex):
-    """Laundry, gate props, ruelles vertes and tags, in that order (each later step keeps clear of the earlier)."""
+    """Laundry, gallery life, gate props, ruelles vertes and tags, in that order (each later step keeps clear of the
+    earlier)."""
     for key in LANE_COUNTS:
         counts.setdefault(key, 0)
     if plex is None:
-        lane['note'] = 'Plex/fronts.json missing: no laundry, gate props, ruelles vertes or tags'
+        lane['note'] = 'Plex/fronts.json missing: no laundry, gallery life, gate props, ruelles vertes or tags'
         return
     poles = lane_laundry(world, plex, S, lane, counts)
+    if all(k in props_cached()['bounds'] for k in GALLERY_PROPS):
+        lane_galleries(world, plex, put, lane, counts, PlexGlass(), lane['laundry']['lines'])
     lane_gates(world, plex, put, lane, counts, poles)
     green = lane_green(world, plex, S, lane, counts)
     lane_tags(world, plex, S, lane, counts, green)

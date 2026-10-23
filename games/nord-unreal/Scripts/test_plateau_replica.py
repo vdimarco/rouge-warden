@@ -10,9 +10,13 @@ maps, macro variation, Preserve Area meshes, hidden Collision_Only walls, the wh
 collision clear of traffic, and the yard-tree actors from Plex/yard_trees.json (species meshes from
 Trees/manifest.json, else the shared mesh), the editor side against a fake unreal module; and the third streets pass: no mapped trunk on carriageway asphalt
 (curb extensions, the host list), ruelles paved to the fences, curb-to-building coverage on the capture streets,
-textured front lawns and card plants, and no open step at a raised slab's edge (risers at aprons and ramps).
+textured front lawns and card plants, and no open step at a raised slab's edge (risers at aprons and ramps); and the
+lane life: laundry poles at the back fence with lines rising to them, at least one line in sight of the Mentana and
+Saint-André ruelle camera (a ray cast through the game's own geometry and tree meshes), and the gallery props (chairs,
+pots, barbecues, bikes, bins, AC units, rail planters, dishes) on the decks' props floor, clear of stairs and doors.
 """
 import hashlib
+import importlib.util
 import json
 import math
 from pathlib import Path
@@ -20,6 +24,7 @@ import re
 import struct
 import sys
 import tempfile
+import types
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import plateau_replica as replica  # noqa: E402
@@ -1579,10 +1584,27 @@ def check_lane_life(world, out, soul, soul_rows):
         # it runs out from the gallery, never to the mass wall behind it
         assert R.wall_clearance(world, a[:2], e[:2]) >= R.LINE_WALL - .5, line
         assert min(wall_distance(R.lerp(a[:2], e[:2], t / 20)) for t in range(21)) >= R.LINE_WALL - .5, line
-        assert 250 <= line['span_cm'] and a[2] <= R.LINE_TOP
+        assert R.LINE_MIN_SPAN <= line['span_cm'] and a[2] <= R.LINE_TOP
+        # the line rises from its pulley to the pole, so it and its washing show over the lane fence
+        assert e[2] >= a[2] + R.LINE_RISE[0] - .01 or abs(e[2] - R.LINE_MIN_END) < .01, ('a line falls to its pole', line)
+        assert e[2] <= max(a[2] + R.LINE_RISE[1], R.LINE_MIN_END) + .01, line
+        fence = rear.get('fence') or {}
+        if fence.get('height_cm'):
+            assert e[2] - 110 >= fence['height_cm'], ('washing would hang into the fence', line)
+        shed = lots[line['lot']]['shed_poly']
+        assert not shed or not any(R.segments_cross(a[:2], e[:2], p, q) for p, q in zip(shed, shed[1:] + shed[:1]))
+    near_fence = 0
     for pole in pole_rows:
         F = lots[pole['lot']]['frame']
-        assert not world.in_building(pole['position'], 40) and 330 <= pole['height_cm'] <= R.LINE_TOP + R.POLE_TOP
+        assert not world.in_building(pole['position'], 40)
+        assert 330 <= pole['height_cm'] <= R.LINE_TOP + R.LINE_RISE[1] + R.POLE_TOP, pole
+        # poles stand at the back of the yard: the recorded distance is the pole's, and most are at the fence line
+        assert abs(F.D - F.local(pole['position'])[1] - pole['from_fence_cm']) < .05, pole
+        assert pole['from_fence_cm'] in R.POLE_FENCE + R.POLE_FALLBACK, pole
+        near_fence += pole['from_fence_cm'] <= R.POLE_FENCE[-1]
+        mine = [l for l in lines if pole_rows[l['pole']] is pole]
+        assert pole['height_cm'] >= max(l['end'][2] for l in mine) + R.POLE_TOP - .5, pole
+    assert near_fence >= .85 * len(pole_rows), (near_fence, len(pole_rows))
     # Gate props: blue and brown bins, flower boxes and bikes at the gates, never in the traffic band, a gate's
     # swing or another prop.
     gates = [r for r in soul_rows if 'gate_of' in r]
@@ -1662,6 +1684,9 @@ def check_lane_life(world, out, soul, soul_rows):
         else:
             assert abs(d0 - lot['door'][2] - 1.6) < .15 and lot['door'][0] <= tag['x_cm'][0] < tag['x_cm'][1] <= lot['door'][1]
     return {'laundry_lines': len(lines), 'laundry_poles': len(pole_rows), 'garments': soul['counts']['garments'],
+            'poles_at_fence': near_fence,
+            'line_rise_cm': [round(min(l['end'][2] - l['anchor'][2] for l in lines)),
+                             round(max(l['end'][2] - l['anchor'][2] for l in lines))],
             'gate_props': kinds, 'gate_sides': {s: sum(1 for r in gates if r['side'] == s) for s in ('lane', 'yard')},
             'ruelles_vertes': {'osm_ways': len(rv['alleys']), 'ids': len({r for a in rv['alleys'] for r in a['ruelles']}),
                                'bed_metres': soul['counts']['green_bed_metres'], 'arches': len(rv['arches']),

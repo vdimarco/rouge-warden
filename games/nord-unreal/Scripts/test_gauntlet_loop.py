@@ -549,7 +549,10 @@ def check_stream(out, state, group, winner):
     assert verdict["delay"]["label"].startswith("host-PC headless Chromium")
     # With the page's performance.timeOrigin, the decoded frames are cut to the lap.
     report = json.loads((run / "stream/sample.json").read_text())
-    window = L.lap_window(json.loads((run / "stream/events.json").read_text()))[0]
+    events = json.loads((run / "stream/events.json").read_text())
+    window = L.lap_window(events)[0]
+    assert window == (next(e["ms"] for e in events if "NORD_GAUNTLET leg=S1-S2 lap=1 begin" in e["line"]),
+                      next(e["ms"] for e in events if "NORD_GAUNTLET done laps=1" in e["line"])), "route and summary lines are not the lap"
     origin = report["samples"][0]["timeMs"] - 1000.0
     cut = L.lap_sample(dict(report, timeOrigin=origin), run / "stream", window)
     whole = L.lap_sample(report, run / "stream", window)

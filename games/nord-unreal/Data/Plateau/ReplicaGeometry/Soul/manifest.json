@@ -728,288 +728,288 @@
    "mesh": "SM_Soul_cloth_a_XM001_YM001",
    "material": "cloth_a",
    "collision": "none",
-   "triangles": 448,
-   "faces": 224,
+   "triangles": 748,
+   "faces": 374,
    "tile_cm": 1000000,
    "bounds_cm": [
-    -40715.73,
-    -47202.71,
-    280.85,
-    -1900.51,
-    -2445.98,
-    1119.03
+    -43005.1,
+    -47205.29,
+    357.78,
+    -1900.55,
+    -2444.78,
+    1240.49
    ],
-   "sha256": "cfdef60f42556db7d8a7d3b82ccd6b857e433e8905d26159b3dcd092a5a23447"
+   "sha256": "3177bafe85b772aa0a32cf0d248a2eac7868f147969b88dae92d9f7e34ea5aae"
   },
   {
    "file": "Soul_cloth_a_XM001_YP000.obj",
    "mesh": "SM_Soul_cloth_a_XM001_YP000",
    "material": "cloth_a",
    "collision": "none",
-   "triangles": 824,
-   "faces": 412,
+   "triangles": 1284,
+   "faces": 642,
    "tile_cm": 1000000,
    "bounds_cm": [
-    -42711.04,
-    15085.97,
-    306.6,
-    -7664.19,
-    67611.56,
-    1068.7
+    -42709.96,
+    15085.92,
+    352.58,
+    -7663.71,
+    67612.96,
+    1225.38
    ],
-   "sha256": "b46126bf072d1178964735e8c22c87fa7478f1c5e61087aab71c79a7a78f79a5"
+   "sha256": "39bf273a751a69a086635a4bd2362204f04c96e12d923764507c6451bb908896"
   },
   {
    "file": "Soul_cloth_a_XP000_YM001.obj",
    "mesh": "SM_Soul_cloth_a_XP000_YM001",
    "material": "cloth_a",
    "collision": "none",
-   "triangles": 268,
-   "faces": 134,
+   "triangles": 424,
+   "faces": 212,
    "tile_cm": 1000000,
    "bounds_cm": [
     1883.81,
-    -46299.0,
-    332.03,
-    53372.87,
-    -26147.82,
-    834.18
+    -46298.97,
+    357.74,
+    53590.51,
+    -25618.7,
+    940.88
    ],
-   "sha256": "db4827b8641428544c15ed1462194430fa66dda530dd145a1e75f05d731956a4"
+   "sha256": "fc13ed889f28fc64a14353e6d51c532274af04896bc52b02f379044457b75629"
   },
   {
    "file": "Soul_cloth_a_XP000_YP000.obj",
    "mesh": "SM_Soul_cloth_a_XP000_YP000",
    "material": "cloth_a",
    "collision": "none",
-   "triangles": 224,
-   "faces": 112,
+   "triangles": 376,
+   "faces": 188,
    "tile_cm": 1000000,
    "bounds_cm": [
     9041.67,
-    36528.01,
-    341.4,
-    55717.88,
-    69286.29,
-    820.23
+    20103.78,
+    391.97,
+    55717.72,
+    69578.18,
+    920.56
    ],
-   "sha256": "1430beddc9556b7c15ce64ecc28f934399fc4e908339410505898a8088478545"
+   "sha256": "7b0f74ade8c9bde04448c78ed59e971322bd3e80b04e1ab6b9f11973bd275945"
   },
   {
    "file": "Soul_cloth_b_XM001_YM001.obj",
    "mesh": "SM_Soul_cloth_b_XM001_YM001",
    "material": "cloth_b",
    "collision": "none",
-   "triangles": 320,
-   "faces": 160,
+   "triangles": 636,
+   "faces": 318,
    "tile_cm": 1000000,
    "bounds_cm": [
-    -40679.65,
-    -47069.2,
-    344.58,
-    -1781.22,
-    -2568.12,
-    1119.06
+    -43080.9,
+    -47068.02,
+    353.99,
+    -1743.48,
+    -2567.18,
+    1210.37
    ],
-   "sha256": "003eaed4f5e7f2665ed8955d52b3e84c42dcc75116d60a84fe565b5dc104bbb6"
+   "sha256": "31be3943f236c915ad11fcd210565a25b5f0c671ba1e7858881d2dc1937b3e07"
   },
   {
    "file": "Soul_cloth_b_XM001_YP000.obj",
    "mesh": "SM_Soul_cloth_b_XM001_YP000",
    "material": "cloth_b",
    "collision": "none",
-   "triangles": 560,
-   "faces": 280,
+   "triangles": 912,
+   "faces": 456,
    "tile_cm": 1000000,
    "bounds_cm": [
-    -43593.57,
-    15056.68,
-    307.58,
-    -4668.79,
-    67647.57,
-    1102.39
+    -43595.97,
+    15056.56,
+    355.16,
+    -4669.74,
+    67990.48,
+    1165.2
    ],
-   "sha256": "982568aea68bcda1ec52a5a89657dfdce92617bdbda40a581672c517ffa78f1f"
+   "sha256": "6e0900a639405b746cbaef8541c710af3d10422971e355564433e565a98a6e78"
   },
   {
    "file": "Soul_cloth_b_XP000_YM001.obj",
    "mesh": "SM_Soul_cloth_b_XP000_YM001",
    "material": "cloth_b",
    "collision": "none",
-   "triangles": 264,
-   "faces": 132,
+   "triangles": 392,
+   "faces": 196,
    "tile_cm": 1000000,
    "bounds_cm": [
     1859.27,
-    -46544.19,
-    279.19,
-    55155.3,
-    -27521.35,
-    844.42
+    -46544.07,
+    353.77,
+    55156.87,
+    -25486.8,
+    921.01
    ],
-   "sha256": "93b37326ac5d761e8260db78eff036908a9444de285bf283acb84c00c593c5c8"
+   "sha256": "500bea70a88bd8e57bb705c3d45a69206d0b4d2beafbe8f90bf0cd7f5e3304ef"
   },
   {
    "file": "Soul_cloth_b_XP000_YP000.obj",
    "mesh": "SM_Soul_cloth_b_XP000_YP000",
    "material": "cloth_b",
    "collision": "none",
-   "triangles": 136,
-   "faces": 68,
+   "triangles": 344,
+   "faces": 172,
    "tile_cm": 1000000,
    "bounds_cm": [
     9143.15,
-    39338.64,
-    374.01,
-    55286.41,
-    69523.86,
-    852.89
+    20288.12,
+    377.39,
+    55286.36,
+    69423.37,
+    925.71
    ],
-   "sha256": "cb01b5d8c7b00e17a69e7552249440eadf8ecbf51390055d23c7f254c5ff0233"
+   "sha256": "4cf5c1c3a295d530ad93e9ce0c3027e3fe8198ae01cf99a2646e7a6c15c5c902"
   },
   {
    "file": "Soul_cloth_c_XM001_YM001.obj",
    "mesh": "SM_Soul_cloth_c_XM001_YM001",
    "material": "cloth_c",
    "collision": "none",
-   "triangles": 384,
-   "faces": 192,
+   "triangles": 612,
+   "faces": 306,
    "tile_cm": 1000000,
    "bounds_cm": [
-    -41394.82,
-    -47199.9,
-    309.42,
-    -2110.82,
-    -2525.79,
-    1113.53
+    -43120.85,
+    -47198.43,
+    352.49,
+    -2043.98,
+    -2524.75,
+    1223.02
    ],
-   "sha256": "50073cbe8ecd7a062c02e5501986a0ebb370aae9e65bea3b438f1c70b192596e"
+   "sha256": "83cfd6fd79d8b69cd6dc4e730d1b921700cd5ab260a24e57f0cda85a9bf08d42"
   },
   {
    "file": "Soul_cloth_c_XM001_YP000.obj",
    "mesh": "SM_Soul_cloth_c_XM001_YP000",
    "material": "cloth_c",
    "collision": "none",
-   "triangles": 732,
-   "faces": 366,
+   "triangles": 1072,
+   "faces": 536,
    "tile_cm": 1000000,
    "bounds_cm": [
-    -43613.1,
-    15060.26,
-    312.98,
-    -4488.59,
-    66953.61,
-    1114.84
+    -43615.84,
+    15060.13,
+    355.76,
+    -4490.45,
+    68275.66,
+    1212.02
    ],
-   "sha256": "ce2a3e01018be91bbbaf40242e6a0b6d56fc929466bb9614fa4428d791dab106"
+   "sha256": "89b0f133a585e02b69c6349a2b214d83ad7b558ce936cbabf77206f1a90e2598"
   },
   {
    "file": "Soul_cloth_c_XP000_YM001.obj",
    "mesh": "SM_Soul_cloth_c_XP000_YM001",
    "material": "cloth_c",
    "collision": "none",
-   "triangles": 244,
-   "faces": 122,
+   "triangles": 364,
+   "faces": 182,
    "tile_cm": 1000000,
    "bounds_cm": [
-    1827.6,
-    -43368.93,
-    337.39,
-    54112.94,
-    -26419.55,
-    829.05
+    739.02,
+    -46140.19,
+    345.77,
+    54114.68,
+    -25532.09,
+    891.12
    ],
-   "sha256": "41eca2cb8dfce5b6b45913c950f25faae70b646ef845b1d4d849ec14167f791b"
+   "sha256": "15ae96786d2b61ae4442f60b6736e338413937a0d5b37f6960f31ff6c3ffb162"
   },
   {
    "file": "Soul_cloth_c_XP000_YP000.obj",
    "mesh": "SM_Soul_cloth_c_XP000_YP000",
    "material": "cloth_c",
    "collision": "none",
-   "triangles": 176,
-   "faces": 88,
+   "triangles": 320,
+   "faces": 160,
    "tile_cm": 1000000,
    "bounds_cm": [
-    10263.13,
-    36743.34,
-    337.15,
-    55666.39,
-    69598.46,
-    826.79
+    10263.69,
+    20243.28,
+    423.31,
+    55666.25,
+    69478.97,
+    925.79
    ],
-   "sha256": "51428569ce3d3c8a5ba8655ac9a86592eae1b7996d44a5d9a703083ffe2ceb13"
+   "sha256": "fc5e07c0821f88cd5f8d5b36e3ef58aea5a270a4d3625db2039b8bead4d38638"
   },
   {
    "file": "Soul_cloth_d_XM001_YM001.obj",
    "mesh": "SM_Soul_cloth_d_XM001_YM001",
    "material": "cloth_d",
    "collision": "none",
-   "triangles": 404,
-   "faces": 202,
+   "triangles": 600,
+   "faces": 300,
    "tile_cm": 1000000,
    "bounds_cm": [
-    -41365.3,
-    -47010.34,
-    332.13,
-    -2831.34,
-    -2462.41,
-    1106.81
+    -43092.24,
+    -47259.91,
+    359.21,
+    -2246.63,
+    -2461.24,
+    1181.14
    ],
-   "sha256": "b9704c430566ce419be1f4ef5c16ca32dbbee6ea784a052bc91cd7d1dcc8a776"
+   "sha256": "f0b6958b6c5ce436cd388cec829c5f9a7790ff85d6cb4bd6539c9473a496ed95"
   },
   {
    "file": "Soul_cloth_d_XM001_YP000.obj",
    "mesh": "SM_Soul_cloth_d_XM001_YP000",
    "material": "cloth_d",
    "collision": "none",
-   "triangles": 548,
-   "faces": 274,
+   "triangles": 832,
+   "faces": 416,
    "tile_cm": 1000000,
    "bounds_cm": [
-    -43498.76,
-    15020.71,
-    287.64,
-    -4614.4,
-    67621.2,
-    829.8
+    -43499.57,
+    15020.67,
+    386.37,
+    -4615.62,
+    67747.52,
+    961.42
    ],
-   "sha256": "d866a828f89b5d7e06b60455f9c703e2f33e8f1a935899612cd901872e75cd08"
+   "sha256": "44e4aca44d142e398939084f6f1dc694c2df87bd9b4354693951b37375043869"
   },
   {
    "file": "Soul_cloth_d_XP000_YM001.obj",
    "mesh": "SM_Soul_cloth_d_XP000_YM001",
    "material": "cloth_d",
    "collision": "none",
-   "triangles": 216,
-   "faces": 108,
+   "triangles": 316,
+   "faces": 158,
    "tile_cm": 1000000,
    "bounds_cm": [
-    3542.14,
-    -46780.28,
-    306.96,
-    55135.19,
-    -27571.55,
-    838.08
+    2015.71,
+    -46780.08,
+    353.92,
+    55125.65,
+    -25584.1,
+    922.28
    ],
-   "sha256": "04e43dab43ee035eb2a107868637615828e38b851bbefdd749f2a06b25bde81a"
+   "sha256": "be5a73c04b1c0855f6f11ffa1ca99eab60638c183ec0333268b14f9473fd963e"
   },
   {
    "file": "Soul_cloth_d_XP000_YP000.obj",
    "mesh": "SM_Soul_cloth_d_XP000_YP000",
    "material": "cloth_d",
    "collision": "none",
-   "triangles": 104,
-   "faces": 52,
+   "triangles": 256,
+   "faces": 128,
    "tile_cm": 1000000,
    "bounds_cm": [
-    8587.21,
-    36487.73,
-    356.5,
-    52053.01,
-    69326.27,
-    820.72
+    8587.82,
+    20103.78,
+    389.1,
+    54247.65,
+    69276.09,
+    888.96
    ],
-   "sha256": "41ffa4b975ba1938d1748b22f8e9336d3ba4e2cb86c67c06f0d2d4af17d82726"
+   "sha256": "ac22f1354db855cd0b2968135cbe9affb0bc6d6181eae6152fe3bfd0ade2eefe"
   },
   {
    "file": "Soul_chantier_dirt_XM001_YP000.obj",
@@ -1466,386 +1466,386 @@
    "mesh": "SM_Soul_line_rope_XM001_YM001",
    "material": "line_rope",
    "collision": "none",
-   "triangles": 6264,
-   "faces": 3132,
+   "triangles": 10080,
+   "faces": 5040,
    "tile_cm": 1000000,
    "bounds_cm": [
-    -43638.0,
-    -47286.12,
-    369.25,
-    -1686.09,
-    -2388.44,
-    1154.39
+    -43650.83,
+    -47305.51,
+    433.08,
+    -1640.35,
+    -2369.06,
+    1269.91
    ],
-   "sha256": "417d48ae4a4906f29f4f851fe6b3713c50789965e10be3ad95a3fed57f9e8912"
+   "sha256": "808b85edb9c713ba0c0df44a0b270b482c848f1c8dce63693ebdae5a960f7ea0"
   },
   {
    "file": "Soul_line_rope_XM001_YP000.obj",
    "mesh": "SM_Soul_line_rope_XM001_YP000",
    "material": "line_rope",
    "collision": "none",
-   "triangles": 8136,
-   "faces": 4068,
+   "triangles": 12528,
+   "faces": 6264,
    "tile_cm": 1000000,
    "bounds_cm": [
-    -43640.21,
+    -43652.61,
     14898.73,
-    362.06,
-    -4385.14,
-    67697.1,
-    1132.39
+    435.76,
+    -4372.03,
+    68559.9,
+    1251.35
    ],
-   "sha256": "6bc046c865184f84be814896f52c984f2c458b7ee0fe382291a5d227ab8ea33f"
+   "sha256": "5a3fd09843a1738f1d7c61e65bd4c4c7af695c678b5d7d6b398674ea10297e5e"
   },
   {
    "file": "Soul_line_rope_XP000_YM001.obj",
    "mesh": "SM_Soul_line_rope_XP000_YM001",
    "material": "line_rope",
    "collision": "none",
-   "triangles": 4392,
-   "faces": 2196,
+   "triangles": 6264,
+   "faces": 3132,
    "tile_cm": 1000000,
    "bounds_cm": [
-    333.72,
-    -46834.98,
-    361.48,
-    55193.42,
-    -26040.45,
-    1109.38
+    333.73,
+    -46854.08,
+    443.35,
+    55177.42,
+    -25386.07,
+    1201.69
    ],
-   "sha256": "124b643b563c7a4fd8d3a64d87b5b8d5ecf85562fae8607eae62ad21b04769e1"
+   "sha256": "23bf5a2dfb197e4436b9e5024190abc02480996bc94717de6a7850bf42e9adfb"
   },
   {
    "file": "Soul_line_rope_XP000_YP000.obj",
    "mesh": "SM_Soul_line_rope_XP000_YP000",
    "material": "line_rope",
    "collision": "none",
-   "triangles": 3672,
-   "faces": 1836,
+   "triangles": 6336,
+   "faces": 3168,
    "tile_cm": 1000000,
    "bounds_cm": [
-    8483.21,
-    20403.6,
-    417.15,
-    55831.87,
-    69730.86,
-    869.39
+    8508.09,
+    20056.81,
+    470.61,
+    55854.42,
+    69623.24,
+    978.14
    ],
-   "sha256": "eb067b8f8053fd7db09cd16db22f25e175b8c808fff6645b8b9217ae5c191106"
+   "sha256": "43828017eb57b5e6d28d1a4f245023f43ebc90178453b636a50cc45586150d04"
   },
   {
    "file": "Soul_pulley_XM001_YM001.obj",
    "mesh": "SM_Soul_pulley_XM001_YM001",
    "material": "pulley",
    "collision": "none",
-   "triangles": 2336,
-   "faces": 1168,
+   "triangles": 3892,
+   "faces": 1946,
    "tile_cm": 1000000,
    "bounds_cm": [
-    -43673.63,
-    -47300.03,
+    -43686.39,
+    -47319.42,
     0.0,
-    -1682.31,
-    -2384.6,
-    1156.0
+    -1605.7,
+    -2365.27,
+    1294.3
    ],
-   "sha256": "762df5d7a3722ae536bb2084b05b8037ddd2073de8e5192d1ba3041c492eec31"
+   "sha256": "49d2ea857dc9d63bf0016b6e4a1a4b910b7e0ca909e92815feb93dddd89958fe"
   },
   {
    "file": "Soul_pulley_XM001_YP000.obj",
    "mesh": "SM_Soul_pulley_XM001_YP000",
    "material": "pulley",
    "collision": "none",
-   "triangles": 3136,
-   "faces": 1568,
+   "triangles": 4868,
+   "faces": 2434,
    "tile_cm": 1000000,
    "bounds_cm": [
-    -43643.03,
+    -43655.44,
     14894.93,
     0.0,
-    -4381.62,
-    67700.16,
-    1134.0
+    -4368.51,
+    68563.67,
+    1252.97
    ],
-   "sha256": "ce4935da61df8d0590e7c80cdb6513f36b9e370b4f11e19cee58970b0b54977f"
+   "sha256": "7ccd0a8a8cf268873339fc04180b6f0aae5f1b4517a70aad74e155f7adeff051"
   },
   {
    "file": "Soul_pulley_XP000_YM001.obj",
    "mesh": "SM_Soul_pulley_XP000_YM001",
    "material": "pulley",
    "collision": "none",
-   "triangles": 1736,
-   "faces": 868,
+   "triangles": 2536,
+   "faces": 1268,
    "tile_cm": 1000000,
    "bounds_cm": [
-    331.24,
-    -46838.86,
+    331.19,
+    -46857.94,
     0.0,
-    55224.19,
-    -26036.78,
-    1111.0
+    55207.49,
+    -25382.49,
+    1203.31
    ],
-   "sha256": "c52a70c986ca214410ceaba1430a40f2bfcfa3ff09ef063c744ce5b7bb979d33"
+   "sha256": "da7545a5d741742d3d18d7dd0cacf7b770c0e718b8beb4ba3a1d45f2bded24ea"
   },
   {
    "file": "Soul_pulley_XP000_YP000.obj",
    "mesh": "SM_Soul_pulley_XP000_YP000",
    "material": "pulley",
    "collision": "none",
-   "triangles": 1476,
-   "faces": 738,
+   "triangles": 2528,
+   "faces": 1264,
    "tile_cm": 1000000,
    "bounds_cm": [
-    8480.03,
-    20400.0,
+    8505.25,
+    20053.11,
     0.0,
-    55835.58,
-    69758.18,
-    871.0
+    55858.08,
+    69648.73,
+    1004.85
    ],
-   "sha256": "d81ef06e2f544b22a706cdc394e57ac4d0f322472887d3b649d84abc21179c8a"
+   "sha256": "5e917b91f536aa5d96793a0aabea417dda648f09a7dc9d138a9347deb9b2465e"
   },
   {
    "file": "Soul_clothes_pole_XM001_YM001.obj",
    "mesh": "SM_Soul_clothes_pole_XM001_YM001",
    "material": "clothes_pole",
    "collision": "none",
-   "triangles": 744,
-   "faces": 372,
+   "triangles": 1078,
+   "faces": 539,
    "tile_cm": 1000000,
    "bounds_cm": [
-    -41458.51,
-    -47310.29,
+    -43220.66,
+    -47329.5,
     0.0,
-    -2329.92,
-    -2361.28,
-    1101.66
+    -1926.47,
+    -2341.93,
+    1300.53
    ],
-   "sha256": "72181828cd55a42f0282bee865366235e3f075469733124389730f780a3c8f2d"
+   "sha256": "d4e22a5a6bf70d5296efc37e3115d1639256d662b88d5e9a67b34d4f72f3113c"
   },
   {
    "file": "Soul_clothes_pole_XM001_YP000.obj",
    "mesh": "SM_Soul_clothes_pole_XM001_YP000",
    "material": "clothes_pole",
    "collision": "none",
-   "triangles": 1050,
-   "faces": 525,
+   "triangles": 1648,
+   "faces": 824,
    "tile_cm": 1000000,
    "bounds_cm": [
-    -43672.19,
-    15911.88,
+    -43684.64,
+    15931.33,
     0.0,
-    -4351.0,
-    67729.37,
-    1082.29
+    -4337.92,
+    68587.48,
+    1281.97
    ],
-   "sha256": "1a6d12d780ae93fe2347494b35e25d359c288e476f34269befaea1bd572affaf"
+   "sha256": "31bf3a7eeb9e4f99de0b647590dc3ca7480240710da51fe7c21ed4b60d3906c4"
   },
   {
    "file": "Soul_clothes_pole_XP000_YM001.obj",
    "mesh": "SM_Soul_clothes_pole_XP000_YM001",
    "material": "clothes_pole",
    "collision": "none",
-   "triangles": 502,
-   "faces": 251,
+   "triangles": 666,
+   "faces": 333,
    "tile_cm": 1000000,
    "bounds_cm": [
-    2050.25,
-    -46863.16,
+    646.46,
+    -46882.24,
     0.0,
-    53552.79,
-    -26608.05,
-    1081.74
+    53565.27,
+    -25966.38,
+    1232.31
    ],
-   "sha256": "05e5be70fe63f3b680a0db04c3566425c6ad1eb22d5a0cd3c276b8bb72df481e"
+   "sha256": "7ae3492365af9a3e47e5282a5f1d7f989e960e398ec9e048d1b8eeea2262191f"
   },
   {
    "file": "Soul_clothes_pole_XP000_YP000.obj",
    "mesh": "SM_Soul_clothes_pole_XP000_YP000",
    "material": "clothes_pole",
    "collision": "none",
-   "triangles": 388,
-   "faces": 194,
+   "triangles": 736,
+   "faces": 368,
    "tile_cm": 1000000,
    "bounds_cm": [
-    9251.27,
-    21499.53,
+    9270.43,
+    21518.42,
     0.0,
-    55850.75,
-    68822.4,
-    884.01
+    55873.26,
+    68841.79,
+    1008.78
    ],
-   "sha256": "c5aabba760fee684491f1e0db2334ffa01a01a2b1352bd725bcbe7ec583e53be"
+   "sha256": "6e6e1c0f9089d887e8ff154497ba04357e78f1d3c2d97eaf24165e6b269d2887"
   },
   {
    "file": "Soul_cloth_e_XM001_YM001.obj",
    "mesh": "SM_Soul_cloth_e_XM001_YM001",
    "material": "cloth_e",
    "collision": "none",
-   "triangles": 420,
-   "faces": 210,
+   "triangles": 632,
+   "faces": 316,
    "tile_cm": 1000000,
    "bounds_cm": [
-    -41350.09,
-    -47148.71,
-    338.48,
-    -1736.98,
-    -2851.6,
-    1125.7
+    -42879.79,
+    -47147.36,
+    380.9,
+    -1684.36,
+    -2851.26,
+    1199.83
    ],
-   "sha256": "3f0dfe560b7478625a5ddf78d848e688f890c04684bbef0fd1c2ba7386f008fd"
+   "sha256": "d2c3ba0e6286995c23b8c0bbaf46023f30cba5669f5b1cf2614d222237e5c6e9"
   },
   {
    "file": "Soul_cloth_e_XM001_YP000.obj",
    "mesh": "SM_Soul_cloth_e_XM001_YP000",
    "material": "cloth_e",
    "collision": "none",
-   "triangles": 516,
-   "faces": 258,
+   "triangles": 836,
+   "faces": 418,
    "tile_cm": 1000000,
    "bounds_cm": [
-    -40862.86,
-    15147.56,
-    308.88,
-    -7577.89,
-    67503.42,
-    1073.61
+    -41791.08,
+    15147.35,
+    384.56,
+    -7577.35,
+    68160.37,
+    1143.22
    ],
-   "sha256": "3955e3fa968914c99853cf9aea82d1e44d24955835b63064a92859bd98347e62"
+   "sha256": "b80d3ded60fc420354d044b7ddd809978609bfdbd812b562d728194feae5ca77"
   },
   {
    "file": "Soul_cloth_e_XP000_YM001.obj",
    "mesh": "SM_Soul_cloth_e_XP000_YM001",
    "material": "cloth_e",
    "collision": "none",
-   "triangles": 300,
-   "faces": 150,
+   "triangles": 448,
+   "faces": 224,
    "tile_cm": 1000000,
    "bounds_cm": [
     1936.84,
-    -46605.81,
-    328.78,
-    55034.6,
-    -27627.04,
-    826.7
+    -46605.67,
+    365.14,
+    55053.17,
+    -25486.8,
+    900.69
    ],
-   "sha256": "2b81dfdc5b73918449dc7ddcb23fa80bad92ca8703eae445dc1163f2290dbe2c"
+   "sha256": "707035735f366d918e295666a2afc9f296b785e2ed812481a12dd556ca0f1439"
   },
   {
    "file": "Soul_cloth_e_XP000_YP000.obj",
    "mesh": "SM_Soul_cloth_e_XP000_YP000",
    "material": "cloth_e",
    "collision": "none",
-   "triangles": 136,
-   "faces": 68,
+   "triangles": 248,
+   "faces": 124,
    "tile_cm": 1000000,
    "bounds_cm": [
-    8558.77,
-    49080.34,
-    342.89,
-    55509.55,
-    69370.01,
-    824.16
+    8566.05,
+    20176.08,
+    398.19,
+    55509.44,
+    69308.69,
+    882.86
    ],
-   "sha256": "7a01de93f53a00e34d23387f7a8f82b3e179af3b1d205522050846ceefcd6b70"
+   "sha256": "db6fab90ce86004116e5d3ab727c13284da4791a301197888081554f2b135f52"
   },
   {
    "file": "Soul_cloth_f_XM001_YM001.obj",
    "mesh": "SM_Soul_cloth_f_XM001_YM001",
    "material": "cloth_f",
    "collision": "none",
-   "triangles": 440,
-   "faces": 220,
+   "triangles": 692,
+   "faces": 346,
    "tile_cm": 1000000,
    "bounds_cm": [
-    -41370.5,
-    -46961.92,
-    286.3,
-    -2897.09,
-    -2701.33,
-    1124.12
+    -41615.87,
+    -46963.14,
+    353.84,
+    -2869.25,
+    -2700.67,
+    1238.55
    ],
-   "sha256": "ef90687a549cfb1adbfee77bd8e2263ca9349ca395a482175928b2015c9f03f8"
+   "sha256": "15f72a28675d6994b7c8db15bb8e7970737fa9e0cef0d72392a571f63d2e6799"
   },
   {
    "file": "Soul_cloth_f_XM001_YP000.obj",
    "mesh": "SM_Soul_cloth_f_XM001_YP000",
    "material": "cloth_f",
    "collision": "none",
-   "triangles": 568,
-   "faces": 284,
+   "triangles": 864,
+   "faces": 432,
    "tile_cm": 1000000,
    "bounds_cm": [
-    -40925.38,
-    15105.58,
-    269.22,
-    -7620.44,
-    67656.86,
-    824.46
+    -41977.22,
+    15105.4,
+    370.38,
+    -4422.72,
+    68334.3,
+    958.25
    ],
-   "sha256": "d556fe5be08d754b768719ef23cc64e48fcb55f5d0c8d40cd07e4d803c1f7c4d"
+   "sha256": "3f0220c049d3647a6907f32e649d87105a3ec77cd2ac2fcb963be73934c4fc3b"
   },
   {
    "file": "Soul_cloth_f_XP000_YM001.obj",
    "mesh": "SM_Soul_cloth_f_XP000_YM001",
    "material": "cloth_f",
    "collision": "none",
-   "triangles": 276,
-   "faces": 138,
+   "triangles": 448,
+   "faces": 224,
    "tile_cm": 1000000,
    "bounds_cm": [
     1827.6,
-    -46739.6,
-    308.43,
-    55120.7,
-    -26256.37,
-    820.15
+    -46739.42,
+    374.17,
+    55115.21,
+    -25571.77,
+    927.6
    ],
-   "sha256": "8e6c323d505b27f2351ad16847b2a4cb1b39ef523be92728dec5c0af01255473"
+   "sha256": "2fcddeef76be1b7b42a87a339bf9421f118a60b216b64381777a780db4cab687"
   },
   {
    "file": "Soul_cloth_f_XP000_YP000.obj",
    "mesh": "SM_Soul_cloth_f_XP000_YP000",
    "material": "cloth_f",
    "collision": "none",
-   "triangles": 172,
-   "faces": 86,
+   "triangles": 336,
+   "faces": 168,
    "tile_cm": 1000000,
    "bounds_cm": [
-    14383.88,
-    36570.53,
-    351.96,
-    55437.88,
-    66671.29,
-    838.28
+    13704.06,
+    20347.65,
+    405.05,
+    55437.8,
+    68594.96,
+    937.36
    ],
-   "sha256": "aec37d4c653ba3ee959175bffea70556cbc5619a8b5a3b11fe5f24e1513afeee"
+   "sha256": "7cdfc1f923bcdaeeb8521aa6c0d08f0529d7091b0ab80c9c6e40d3e54afaa307"
   },
   {
    "file": "Soul_Yard_Soil_XM001_YM001.obj",
    "mesh": "SM_Soul_Yard_Soil_XM001_YM001",
    "material": "Yard_Soil",
    "collision": "none",
-   "triangles": 258,
-   "faces": 129,
+   "triangles": 260,
+   "faces": 130,
    "tile_cm": 1000000,
    "bounds_cm": [
-    -43527.32,
+    -43722.9,
     -37915.96,
     9.0,
     -215.97,
     -154.04,
     42.0
    ],
-   "sha256": "8de1d120357f51432e905fad818ea37b77146ebe561c64162eb2bf9d925a1984"
+   "sha256": "de8e511f71a5772b4e043d48211e64e12f21be9847079158f87d6853333535cb"
   },
   {
    "file": "Soul_Yard_Soil_XM001_YP000.obj",
    "mesh": "SM_Soul_Yard_Soil_XM001_YP000",
    "material": "Yard_Soil",
    "collision": "none",
-   "triangles": 318,
-   "faces": 159,
+   "triangles": 320,
+   "faces": 160,
    "tile_cm": 1000000,
    "bounds_cm": [
     -43791.75,
@@ -1855,7 +1855,7 @@
     68068.4,
     42.0
    ],
-   "sha256": "32075554e286ea1bb8d315489def2d7124184cab27bbe5998eb3bfd4285b47c9"
+   "sha256": "a2e1bbc4f06b07e4d8ff47ad2fa259d51197ef474a6bc8ff829453e3745ba6e0"
   },
   {
    "file": "Soul_Yard_Soil_XP000_YM001.obj",
@@ -1880,8 +1880,8 @@
    "mesh": "SM_Soul_Yard_Soil_XP000_YP000",
    "material": "Yard_Soil",
    "collision": "none",
-   "triangles": 564,
-   "faces": 282,
+   "triangles": 566,
+   "faces": 283,
    "tile_cm": 1000000,
    "bounds_cm": [
     13119.33,
@@ -1891,7 +1891,7 @@
     69337.71,
     42.0
    ],
-   "sha256": "74051905cd21e76e41b5227789be6823aff11a3517a2b6ceae6f6ec5d81da259"
+   "sha256": "b900b580d3d3864221ae9b35b8eeccfc33283da704028b1e85ef2c2e1cb97de5"
   },
   {
    "file": "Soul_Yard_Grass_XM001_YP000.obj",
@@ -1952,18 +1952,18 @@
    "mesh": "SM_Soul_Leaf_Creeper_XM001_YP000",
    "material": "Leaf_Creeper",
    "collision": "none",
-   "triangles": 501,
-   "faces": 167,
+   "triangles": 510,
+   "faces": 170,
    "tile_cm": 1000000,
    "bounds_cm": [
-    -43416.08,
+    -43369.58,
     21119.79,
     0.0,
     -19205.01,
     67011.62,
     587.66
    ],
-   "sha256": "73351f0efa0d8f78b37906f0a5f63985f102243d18cd0581535a8033f5bbae6a"
+   "sha256": "0cbf42cf84c0c9e06e92504e0a70e69a9d5ab41b2164c2db66359f23fed1a88c"
   },
   {
    "file": "Soul_Leaf_Creeper_XP000_YM001.obj",
@@ -1988,8 +1988,8 @@
    "mesh": "SM_Soul_Leaf_Creeper_XP000_YP000",
    "material": "Leaf_Creeper",
    "collision": "none",
-   "triangles": 1416,
-   "faces": 472,
+   "triangles": 1440,
+   "faces": 480,
    "tile_cm": 1000000,
    "bounds_cm": [
     13807.02,
@@ -1999,7 +1999,7 @@
     68816.01,
     475.72
    ],
-   "sha256": "f032b2f6e1390fd0f0e103f7c0a0576e4870d554632262554d05577a65332816"
+   "sha256": "61eecf7530a1109c3dfc7badea49b5992314eb7b3f6f9585d68e575fd9ce3384"
   },
   {
    "file": "Soul_Rail_Lattice_XM001_YM001.obj",
@@ -2150,26 +2150,26 @@
    "mesh": "SM_Soul_bed_edge_XM001_YM001",
    "material": "bed_edge",
    "collision": "none",
-   "triangles": 1270,
-   "faces": 635,
+   "triangles": 1280,
+   "faces": 640,
    "tile_cm": 1000000,
    "bounds_cm": [
-    -43529.54,
+    -43725.12,
     -37922.45,
     0.0,
     -213.85,
     -185.96,
     45.0
    ],
-   "sha256": "6684036b13ca6bef5329f9fd04955441f3df505917f26dd36abd06a4ecb17f37"
+   "sha256": "453184e58445cf0c1a5a00ff5adf8f5d4a43999127a8057b237a0215d07fad36"
   },
   {
    "file": "Soul_bed_edge_XM001_YP000.obj",
    "mesh": "SM_Soul_bed_edge_XM001_YP000",
    "material": "bed_edge",
    "collision": "none",
-   "triangles": 1550,
-   "faces": 775,
+   "triangles": 1560,
+   "faces": 780,
    "tile_cm": 1000000,
    "bounds_cm": [
     -43793.92,
@@ -2179,7 +2179,7 @@
     68071.73,
     12.0
    ],
-   "sha256": "c0eb2da2f1971298ecfa83869871b6c9149559acf8a575e31b0470dd15e0d28a"
+   "sha256": "ab894c5f428ab12e19fa5990fe4ab5cdf5b0850f94f0eaa0e51a83b49071ad9a"
   },
   {
    "file": "Soul_bed_edge_XP000_YM001.obj",
@@ -2204,8 +2204,8 @@
    "mesh": "SM_Soul_bed_edge_XP000_YP000",
    "material": "bed_edge",
    "collision": "none",
-   "triangles": 2760,
-   "faces": 1380,
+   "triangles": 2770,
+   "faces": 1385,
    "tile_cm": 1000000,
    "bounds_cm": [
     13142.64,
@@ -2215,7 +2215,7 @@
     69341.01,
     45.0
    ],
-   "sha256": "a59e736c590aa9d673c6aa2aa6e8e385d2868b498cca2fa78bc8b7df4359f2e4"
+   "sha256": "a837a464bbcbb96a7e56c45f0298a494663b414eae6c3a0b9a7a1254e3ec8a7f"
   },
   {
    "file": "Soul_arch_wood_XM001_YM001.obj",
@@ -2348,8 +2348,8 @@
    "mesh": "SM_Soul_plant_green_XM001_YP000",
    "material": "plant_green",
    "collision": "none",
-   "triangles": 2652,
-   "faces": 663,
+   "triangles": 2636,
+   "faces": 659,
    "tile_cm": 1000000,
    "bounds_cm": [
     -43725.15,
@@ -2359,7 +2359,7 @@
     68031.99,
     124.57
    ],
-   "sha256": "4699401b8ba86a1321db3723fc06e962f3fbabfd32676e2ee9c0cd4f88d92e2d"
+   "sha256": "2c7a771f028398578a90ed15fa1c4eb07598c66d2b0d853ec2bdd54522c8363d"
   },
   {
    "file": "Soul_plant_green_XP000_YM001.obj",
@@ -2384,8 +2384,8 @@
    "mesh": "SM_Soul_plant_green_XP000_YP000",
    "material": "plant_green",
    "collision": "none",
-   "triangles": 4612,
-   "faces": 1153,
+   "triangles": 4632,
+   "faces": 1158,
    "tile_cm": 1000000,
    "bounds_cm": [
     13180.16,
@@ -2395,7 +2395,7 @@
     69284.67,
     122.12
    ],
-   "sha256": "5652c69b1c51fb0ace59dffd11610481b5a8dd1b031da4a784ab212e35bbaeed"
+   "sha256": "687d9825770648f100185a2934de3fac5e84735ed5c318951f92269c0c0dc25f"
   },
   {
    "file": "Soul_plant_gold_XM001_YM001.obj",
@@ -2420,18 +2420,18 @@
    "mesh": "SM_Soul_plant_gold_XM001_YP000",
    "material": "plant_gold",
    "collision": "none",
-   "triangles": 608,
-   "faces": 152,
+   "triangles": 632,
+   "faces": 158,
    "tile_cm": 1000000,
    "bounds_cm": [
-    -43647.97,
+    -43668.99,
     22154.55,
     9.0,
     -18743.41,
     47322.21,
     83.18
    ],
-   "sha256": "f38e794f7853d51e0bd64368045f12899255d4566da6c1501d835fefa47cae96"
+   "sha256": "03daf238463d791ee25792af8764a0c0613b9b5d60a75b64a0f03138c8d7d939"
   },
   {
    "file": "Soul_plant_gold_XP000_YM001.obj",
@@ -2474,36 +2474,36 @@
    "mesh": "SM_Soul_plant_rust_XM001_YM001",
    "material": "plant_rust",
    "collision": "none",
-   "triangles": 1760,
-   "faces": 440,
+   "triangles": 1748,
+   "faces": 437,
    "tile_cm": 1000000,
    "bounds_cm": [
-    -43523.99,
+    -43457.62,
     -37704.7,
     9.0,
     -333.65,
     -1402.2,
     57.46
    ],
-   "sha256": "6e814b5436140dd41e1d87890956b7d1b7143e467a1ad4f44679c90731df01ec"
+   "sha256": "71daf5964592084dce710af8ea93c7fac10447535f8cc27c125ca184763a1b57"
   },
   {
    "file": "Soul_plant_rust_XM001_YP000.obj",
    "mesh": "SM_Soul_plant_rust_XM001_YP000",
    "material": "plant_rust",
    "collision": "none",
-   "triangles": 1344,
-   "faces": 336,
+   "triangles": 1380,
+   "faces": 345,
    "tile_cm": 1000000,
    "bounds_cm": [
-    -42372.59,
+    -43367.75,
     21061.62,
     9.0,
     -18614.47,
     67807.92,
     78.91
    ],
-   "sha256": "346b76d0c9ca89ffd5c791350c3e8900f1cffdef9a744c68d090bee1a8fa80bb"
+   "sha256": "a2cc20fdda9883a1af67b90e11bee315eca9a2ff45381b2c16014c3615960c3d"
   },
   {
    "file": "Soul_plant_rust_XP000_YM001.obj",
@@ -2546,18 +2546,18 @@
    "mesh": "SM_Soul_plant_purple_XM001_YM001",
    "material": "plant_purple",
    "collision": "none",
-   "triangles": 640,
-   "faces": 160,
+   "triangles": 648,
+   "faces": 162,
    "tile_cm": 1000000,
    "bounds_cm": [
-    -35740.92,
-    -31607.17,
+    -43511.65,
+    -36727.47,
     9.0,
     -218.59,
     -457.95,
     67.93
    ],
-   "sha256": "c79f4d849edfbc97449c312ad434dbdc13756d2df07e38715665edde01c64231"
+   "sha256": "9c48d36809b4e8a55a12908e9f86eddedf158779c9cb6dfc7dd509ed0610c186"
   },
   {
    "file": "Soul_plant_purple_XM001_YP000.obj",
@@ -2568,14 +2568,14 @@
    "faces": 168,
    "tile_cm": 1000000,
    "bounds_cm": [
-    -43438.68,
+    -43265.9,
     21626.64,
     9.0,
     -18768.26,
     67960.31,
     81.82
    ],
-   "sha256": "6b5d464ab8d5bd6bfabceee22e18b20ff380292ee1609eae31118de24264779a"
+   "sha256": "4751ed56a070da5c09c51373a4b5de6ee257d310a53404a21822eb897fdbe01c"
   },
   {
    "file": "Soul_plant_purple_XP000_YM001.obj",
@@ -2600,8 +2600,8 @@
    "mesh": "SM_Soul_plant_purple_XP000_YP000",
    "material": "plant_purple",
    "collision": "none",
-   "triangles": 1288,
-   "faces": 322,
+   "triangles": 1304,
+   "faces": 326,
    "tile_cm": 1000000,
    "bounds_cm": [
     17432.1,
@@ -2611,7 +2611,7 @@
     67997.1,
     84.24
    ],
-   "sha256": "36e7c87b591a87b88c22a0ba0efec3bad24638d8855acde074a678159b46ede6"
+   "sha256": "fd51c1bab5563761c47920a75ffef589ebbac8be011906f80e63d5ca23bccf2d"
   },
   {
    "file": "Soul_plant_red_XM001_YM001.obj",
@@ -2636,18 +2636,18 @@
    "mesh": "SM_Soul_plant_red_XM001_YP000",
    "material": "plant_red",
    "collision": "none",
-   "triangles": 1140,
-   "faces": 285,
+   "triangles": 1116,
+   "faces": 279,
    "tile_cm": 1000000,
    "bounds_cm": [
-    -43360.87,
+    -42509.22,
     21095.97,
     9.0,
     -18539.75,
     47893.87,
     98.58
    ],
-   "sha256": "0d8285e7b77eb2b65d5c15c943cb6bf1dba64f22c78179a607279f2f3a1365fd"
+   "sha256": "8ff49c1ebec33fcdbf54e979822fe75fd2479e9828fb48a662a510495fe92bc8"
   },
   {
    "file": "Soul_plant_red_XP000_YM001.obj",
@@ -2690,26 +2690,26 @@
    "mesh": "SM_Soul_plant_straw_XM001_YM001",
    "material": "plant_straw",
    "collision": "none",
-   "triangles": 1836,
-   "faces": 1836,
+   "triangles": 1848,
+   "faces": 1848,
    "tile_cm": 1000000,
    "bounds_cm": [
-    -42357.48,
+    -43713.14,
     -37493.62,
     9.0,
     -412.84,
     -194.81,
     125.53
    ],
-   "sha256": "81b36ff85acf77557c9e1ebcb53cde01dd7ba97bc9288c245e802ef3b8cd2e47"
+   "sha256": "b2c7513ee076681251546839d933a5d41130f78febec0d293ba51cf09574dcf3"
   },
   {
    "file": "Soul_plant_straw_XM001_YP000.obj",
    "mesh": "SM_Soul_plant_straw_XM001_YP000",
    "material": "plant_straw",
    "collision": "none",
-   "triangles": 1548,
-   "faces": 1548,
+   "triangles": 1560,
+   "faces": 1560,
    "tile_cm": 1000000,
    "bounds_cm": [
     -43766.03,
@@ -2719,7 +2719,7 @@
     67768.77,
     93.94
    ],
-   "sha256": "1fadbec45bf50f7e198fffc3a3609b2ecc18a5b93bd5ed6d2b5b0548fb23524f"
+   "sha256": "22caf2580bbb984ccfef2eb66e35324ffdacb96495f05488cfd5a86e2b251eb2"
   },
   {
    "file": "Soul_plant_straw_XP000_YM001.obj",
@@ -2755,7 +2755,7 @@
     69325.56,
     125.85
    ],
-   "sha256": "ff5fcdbe74a1a7640fa3c5c36d23dc16c6a115e68b6a1c47139d21188bf75f45"
+   "sha256": "db14d3c0f6751f287bb6f7accbbb6e6348b8ae8f903f4c2d8f0fd015ac14ee00"
   },
   {
    "file": "Soul_tag_black_XM001_YM001.obj",
@@ -3407,28 +3407,41 @@
   "chantier_zones": 1,
   "utility_poles": 151,
   "wire_spans": 79,
-  "laundry_lines": 312,
+  "laundry_lines": 489,
   "curb_bins": 1695,
   "locked_bikes": 225,
   "flower_boxes": 247,
   "ac_units": 0,
   "ruelle_fence_weeds": 1430,
   "chantier_street": "Rue Fabre",
-  "laundry_poles": 208,
-  "garments": 1283,
-  "laundry_modules_without_room": 137,
-  "gate_bin_recycling": 261,
-  "gate_bin_compost": 193,
-  "gate_flower_box": 49,
-  "gate_bike_locked": 20,
-  "gate_props_lane_side": 264,
-  "gate_props_yard_side": 259,
-  "gate_props_without_room": 203,
+  "laundry_poles": 330,
+  "garments": 2040,
+  "laundry_modules_without_room": 184,
+  "gallery_decks": 1510,
+  "gallery_decks_lived": 1242,
+  "gallery_props": 3774,
+  "gallery_chair_patio": 976,
+  "gallery_bbq": 266,
+  "gallery_bike_gallery": 113,
+  "gallery_bin_recycling": 278,
+  "gallery_bin_compost": 231,
+  "gallery_potted_plant": 1567,
+  "gallery_ac_unit": 154,
+  "gallery_flower_box": 175,
+  "gallery_satellite_dish": 14,
+  "gallery_dishes_without_sky": 18,
+  "gate_bin_recycling": 254,
+  "gate_bin_compost": 185,
+  "gate_flower_box": 46,
+  "gate_bike_locked": 18,
+  "gate_props_lane_side": 251,
+  "gate_props_yard_side": 252,
+  "gate_props_without_room": 223,
   "ruelles_vertes_osm_ways": 27,
   "ruelles_vertes_ids": 14,
-  "green_bed_metres": 2224,
-  "green_plants": 3273,
-  "green_creeper_strips": 903,
+  "green_bed_metres": 2231,
+  "green_plants": 3284,
+  "green_creeper_strips": 914,
   "green_arches": 13,
   "green_entries_without_room": 1,
   "green_planters": 26,
@@ -3436,22 +3449,24 @@
   "green_murals": 13,
   "tags_fences": 27,
   "tags_doors": 15,
-  "placements": 2861,
+  "placements": 6615,
   "batches": 170,
-  "triangles": 235733
+  "triangles": 260518
  },
  "source_sha256": {
   "Data/LaFontaine/osm.xml": "fe4410d45007a627bf6d9b9ddeeae329fa9cdd7492dfb5fa6beff851e7cf8f86",
   "Data/LaFontaine/layout.json": "4238d6ed45d5fb890e0f8dbcb672de0803c6dc7079b0b6a86b386d82ebbb4250",
-  "Scripts/plateau_replica.py": "f76f7d657d06d72a25f2a76f81085c921ca073dec93031920a044bb0acc8c7b3",
+  "Scripts/plateau_replica.py": "f7746b13c6a6e393b5a2a46077f04a1bfed790cd98c75fcfa8ba507f8990e1e5",
   "Scripts/prepare_lafontaine.py": "e7b6e5f068a96ee7306b1fff247fa73158f5cf7c343dc5510ab8cce92ee3c924",
   "Data/Plateau/BaseGeometry/Marking.obj": "2d82cbca59041aa6af5e6f3fffaf6a01b2c3e672eea9732e8a5fecbb7cee35dd",
-  "Data/Plateau/ReplicaGeometry/Plex/fronts.json": "0bdac58607f918b7ca11706a4f9c1317687093ab2528e9adeef558ccee7febe9",
-  "Data/Plateau/ReplicaGeometry/Soul/ruelles_vertes_clip.json": "6ca991f5b585f4f0567baed799c37db2d3476f451e0b88fdb315a959e2d7d216"
+  "Data/Plateau/ReplicaGeometry/Plex/fronts.json": "c572a535a248f94d70d6ec2237d9a89419eb98b2e5f209c4122aeda65d9db201",
+  "Data/Plateau/ReplicaGeometry/Soul/ruelles_vertes_clip.json": "6ca991f5b585f4f0567baed799c37db2d3476f451e0b88fdb315a959e2d7d216",
+  "Data/Plateau/ReplicaGeometry/Plex/manifest.json": "85603475766169d6ab94b74236d8a111822c4ca1b07c9a90cdcca8bb4d90c24b",
+  "Data/Plateau/ReplicaGeometry/Props/manifest.json": "92d3a4c8811dd7adf5d0ca51701d308e1373361a46a346737104247ecfd417da"
  },
  "attribution": "© OpenStreetMap contributors, ODbL 1.0; authored street details and original murals",
  "placements": "placements.json",
- "placements_sha256": "3399d0bbc8354b4d2f8db238969aefdf63723ebeb7754250720447b674299346",
+ "placements_sha256": "197cf2b41464934fcd9b6f3a583f65a50ccbde86d7f2e6d4cb54a5b2f2245976",
  "lane_life": "lane_life.json",
- "lane_life_sha256": "6d5f797aecb85d2a331eb5cb7d53518ae2a90d964941590da06f49c0b7de95da"
+ "lane_life_sha256": "e144566864aec4b78394a8488f1cdd898a55b2f7318973d4295fd17498f7e5b3"
 }
