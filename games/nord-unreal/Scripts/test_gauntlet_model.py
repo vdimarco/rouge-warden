@@ -60,6 +60,7 @@ for limit in (33.3, 50.0, 66.7, 250.0):
 wanted = {f"drive.{key}": value for key, value in LOOP["drive"].items()}
 wanted.update({f"route.{key}": value for key, value in LOOP["route"].items()})
 wanted.update({f"exit_codes.{key}": value for key, value in LOOP["exit_codes"].items()})
+wanted.update({f"run_limits.{key}": value for key, value in LOOP["run_limits"].items()})
 for mode, settings in LOOP["modes"].items():
     wanted.update({f"modes.{mode}.{key}": float(value) for key, value in settings.items()})
 native = LOOP["budgets"]["native"]

@@ -29,7 +29,7 @@
 //   leg=<S1-S2> lap=<n> begin, lap=<n> warm=begin, still, sky, csv, summary (leg=all lap=all first), result.
 // CSV events (EVENTS column): "NordGauntlet leg=S1-S2 lap=1", "... hold stop=S2 lap=1", "... warm lap=0",
 //   "... done" and "... fail exit=<code>", as gauntlet_metrics.py classify_event expects.
-// Files under -NordGauntletRun=<dir>: native/NordGauntlet-<mode>-<sky>*.csv, native/route.json and
+// Files under -NordGauntletRun=<dir>: native/NordGauntlet-<mode>-<sky>.csv, native/route.json and
 //   look/<sky>/<stop>-<eye|chase>-<W>x<H>.png (Data/Gauntlet/loop.json names.still).
 // Engine APIs written from memory and not yet built against UE 5.8 (unverified): FCsvProfiler (BeginCapture,
 //   EndCapture, IsCapturing, CSV_EVENT_GLOBAL, CSV_METADATA), FPlatformMisc::RequestExitWithStatus,
@@ -63,13 +63,17 @@ namespace
     constexpr double CaptureLead = 30000.;  // Perf: the CSV capture starts this far before the warm laps end.
     constexpr double ChaseSettle = 2.5;     // loop.json views.chase_settle_s; the chase camera re-centres after 1.8 s.
     constexpr int32 TsrFrames = 120;        // loop.json views.tsr_settle_frames.
-    constexpr double SkyBlend = 10.5;       // QuebecSky.cpp SkyCommandBlend (10 s) plus half a second.
+    constexpr double SkyBlend = 10.5;       // QuebecSky.cpp SkyCommandBlend (10 s) plus half a second (see SwitchSky).
     constexpr int32 ShotFrames = 2;         // Frames after a still before the view may change.
     constexpr int32 ViewFrames = 2;         // Frames for a new view to reach the texture streamer.
     constexpr float StreamLimit = 10.f;     // Longest wait for texture streaming before a still.
-    constexpr double ShotsTimeout = 90.;    // One hold's stills; a screenshot that never lands fails the run as a timeout.
-    constexpr double CsvTimeout = 30.;      // Wait this long (real time) for the CSV file before quitting anyway.
     constexpr float ChasePitch = -12.f;     // AQuebecCar's chase camera pitch at rest.
+
+    // The Gauntlet controller (Source/QuebecGauntletTest) reads the run through console variables, so its module needs
+    // no Quebec header. nord.GauntletExit exists while the subsystem does: -1 during the run, then the exit code. The
+    // controller sets nord.GauntletController to 1, and then it ends the test instead of the game quitting by itself.
+    const TCHAR* const ExitVariableName = TEXT("nord.GauntletExit");
+    const TCHAR* const ControllerVariableName = TEXT("nord.GauntletController");
 
     FString ToFString(const std::string& Text) { return FString(Text.c_str()); }
     std::string ToStd(const FString& Text) { return std::string(TCHAR_TO_UTF8(*Text)); }
@@ -138,6 +142,8 @@ bool UQuebecGauntletSubsystem::ShouldCreateSubsystem(UObject* Outer) const
 void UQuebecGauntletSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
     Super::Initialize(Collection);
+    RunExit = IConsoleManager::Get().RegisterConsoleVariable(ExitVariableName, -1,
+        TEXT("NORD mobile gauntlet: -1 while the run goes on, then its exit code (read by the Gauntlet controller)."), ECVF_Default);
     // Every frame: the run steers the car with inputs that the world tick reads, as a player's axes do.
     Ticker = FTSTicker::GetCoreTicker().AddTicker(FTickerDelegate::CreateUObject(this, &UQuebecGauntletSubsystem::Tick));
 }
@@ -147,13 +153,9 @@ void UQuebecGauntletSubsystem::Deinitialize()
     FTSTicker::GetCoreTicker().RemoveTicker(Ticker);
     if (Stage == EQuebecGauntletStage::Running || Stage == EQuebecGauntletStage::Ending)
         UE_LOG(LogTemp, Warning, TEXT("NORD_GAUNTLET abandoned phase=%s lap=%d leg=%d"), PhaseName(Run.Phase), Run.Lap, Run.Leg);
+    if (RunExit) IConsoleManager::Get().UnregisterConsoleObject(RunExit, false);
+    RunExit = nullptr;
     Super::Deinitialize();
-}
-
-void UQuebecGauntletSubsystem::StartRun(UWorld* World, bool bControllerEnds)
-{
-    bEndedByController |= bControllerEnds;
-    if (Stage == EQuebecGauntletStage::Idle && World) RunWorld = World;
 }
 
 bool UQuebecGauntletSubsystem::Tick(float DeltaSeconds)
@@ -165,22 +167,25 @@ bool UQuebecGauntletSubsystem::Tick(float DeltaSeconds)
     if (Stage == EQuebecGauntletStage::Finished) return true;
     if (Stage == EQuebecGauntletStage::Idle)
     {
-        UWorld* World = RunWorld.IsValid() ? RunWorld.Get() : GetGameInstance()->GetWorld();
+        UWorld* World = GetGameInstance()->GetWorld();
         if (World && World->HasBegunPlay()) BeginRun(World, World->GetTimeSeconds());
+        return true;
+    }
+    // Waits for the CSV file, also when the world is gone.
+    if (Stage == EQuebecGauntletStage::Ending)
+    {
+        ApplyControls(QuebecGauntlet::FControls());
+        if (!CsvFile.IsValid() || CsvFile.IsReady() || Wall - EndingSince > QuebecGauntlet::CsvWait) Complete();
         return true;
     }
     UWorld* World = RunWorld.Get();
     if (!World)
     {
-        UE_LOG(LogTemp, Error, TEXT("NORD_GAUNTLET error=world_lost"));
-        QuebecGauntlet::Abort(Run, EExit::Stuck);
-        Complete();
-        return true;
-    }
-    if (Stage == EQuebecGauntletStage::Ending)
-    {
-        ApplyControls(QuebecGauntlet::FControls());
-        if (!CsvFile.IsValid() || CsvFile.IsReady() || Wall - EndingSince > CsvTimeout) Complete();
+        // A map reload or travel mid-run. The CSV capture still ends, so the failed run keeps its frame times.
+        UE_LOG(LogTemp, Error, TEXT("NORD_GAUNTLET error=world_lost phase=%s lap=%d leg=%d"), PhaseName(Run.Phase), Run.Lap, Run.Leg);
+        QuebecGauntlet::Abort(Run, EExit::Setup);
+        CsvEvent(FString::Printf(TEXT("NordGauntlet fail exit=%d"), static_cast<int32>(Run.Exit)));
+        Finish(LastWorld);
         return true;
     }
     TickRun(World, World->GetTimeSeconds(), FrameMs);
@@ -231,8 +236,8 @@ void UQuebecGauntletSubsystem::BeginRun(UWorld* World, double Now)
         FarthestStop = FMath::Max(FarthestStop, QuebecPursuit::Distance(Loop.Points[Loop.Stops[static_cast<size_t>(Stop)]], Eyes[static_cast<size_t>(Stop)]));
     const bool bDrivable = bPlateau && bLoop && FarthestStop <= StopRoadMax;
 
-    QuebecGauntlet::Begin(Run, bDrivable ? Loop : QuebecGauntlet::FLoop(), Settings, Now, bSkyArgs, bExpect);
-    if (!bModeKnown) QuebecGauntlet::Abort(Run, EExit::NoSky);
+    // A bad mode, the wrong map, no loop or a stop off the road leaves no loop to drive: Begin fails it with exit setup.
+    QuebecGauntlet::Begin(Run, bDrivable && bModeKnown ? Loop : QuebecGauntlet::FLoop(), Settings, Now, bSkyArgs, bExpect);
     UE_LOG(LogTemp, Display, TEXT("NORD_GAUNTLET begin mode=%s laps=%d warm_laps=%d hold_s=%.1f delay_s=%.1f sky=%s map=%s loop_m=%.1f stops=%d farthest_stop_m=%.1f expect=%d run=%s"),
         *FString(QuebecGauntlet::ModeName(Mode)), Run.Settings.Laps, Run.Settings.WarmLaps, Run.Settings.Hold, Run.Settings.Delay, *StartSkyName,
         *MapName, Loop.Length / 100., Loop.StopCount(), FarthestStop / 100., bExpect ? 1 : 0, *RunDir);
@@ -283,7 +288,7 @@ void UQuebecGauntletSubsystem::TickRun(UWorld* World, double Now, double FrameMs
             Shots.Reset();
             ShotStop = -1;
         }
-        else if (Now - ShotsStartedAt > ShotsTimeout)
+        else if (Now - ShotsStartedAt > QuebecGauntlet::StillsTimeout)
         {
             UE_LOG(LogTemp, Error, TEXT("NORD_GAUNTLET error=stills_timeout stop=%s step=%d"), *ToFString(QuebecGauntlet::StopLabel(ShotStop)), ShotIndex);
             QuebecGauntlet::Abort(Run, EExit::Timeout);
@@ -601,9 +606,10 @@ void UQuebecGauntletSubsystem::SwitchSky(APlayerController* Player, int32 Sky)
 {
     AQuebecController* Host = Cast<AQuebecController>(Player);
     if (!Host || Sky < 0 || Sky >= GauntletSkyCount) return;
-    // The host's sky console commands. The hour changes at once and the weather blends over SkyCommandBlend. Street
-    // wetness follows rain slowly (QuebecSkyModel.h FWetness: 45 s to wet, 240 s to dry), so a still after a switch
-    // keeps the wetness the switch left. The schedule is the same on every run, so the stills still repeat.
+    // The host's sky console commands. The hour changes at once. Under -NordGauntlet, QuebecSky.cpp HostSetWeather also
+    // settles the new weather and the street wetness at once, as a -NordWeather= start does, so a still never depends
+    // on how long the streets had to wet or dry, which would differ with the frame rate. SkyBlend still waits out the
+    // usual blend, in world seconds, in case the settle did not apply; the log then lacks "NORD_SKY_WEATHER ... settled".
     Host->NordTime(GauntletSkies[Sky].Hour);
     Host->NordWeather(GauntletSkies[Sky].Weather);
     ShownSky = Sky;
@@ -620,9 +626,11 @@ void UQuebecGauntletSubsystem::StartCsv()
     {
         bCsvStarted = true;
         const FString Folder = FPaths::Combine(RunDir, TEXT("native")) + TEXT("/");
-        const FString File = FString::Printf(TEXT("NordGauntlet-%s-%s"), *FString(QuebecGauntlet::ModeName(Mode)), *StartSkyName);
+        const FString File = FString::Printf(TEXT("NordGauntlet-%s-%s.csv"), *FString(QuebecGauntlet::ModeName(Mode)), *StartSkyName);
         IFileManager::Get().MakeDirectory(*Folder, true);
-        // Unverified: whether BeginCapture adds ".csv" to the file name; the runner globs native/*.csv*.
+        // A given file name is used as it is (unverified; only the default "Profile(<date>)" name gets ".csv" added), and
+        // the runner reads native/*.csv. Should the engine add ".csv" anyway, ".csv.csv" still matches. -csvCompression=0
+        // on the command line keeps the file plain text.
         Profiler->BeginCapture(-1, Folder, File);
         CSV_METADATA(TEXT("NordGauntletMode"), *FString(QuebecGauntlet::ModeName(Mode)));
         CSV_METADATA(TEXT("NordGauntletSky"), *StartSkyName);
@@ -698,15 +706,16 @@ void UQuebecGauntletSubsystem::Complete()
     }
     else if (bCsvStarted)
     {
-        UE_LOG(LogTemp, Warning, TEXT("NORD_GAUNTLET csv=unfinished (not written within %.0f s)"), CsvTimeout);
+        UE_LOG(LogTemp, Warning, TEXT("NORD_GAUNTLET csv=unfinished (not written within %.0f s)"), QuebecGauntlet::CsvWait);
     }
     LogSummaries();
     WriteRoute();
     UE_LOG(LogTemp, Display, TEXT("NORD_GAUNTLET result exit=%d reason=%s mode=%s laps=%d max_offset_m=%.3f"), ExitCode,
         *FString(QuebecGauntlet::ExitName(Run.Exit)), *FString(QuebecGauntlet::ModeName(Mode)), Run.Settings.Laps, MaxOffset / 100.);
-    bFinished = true;
+    if (RunExit) RunExit->Set(*FString::FromInt(ExitCode));
     // A Gauntlet controller ends the test with this code; a direct launch quits here.
-    if (!bEndedByController) FPlatformMisc::RequestExitWithStatus(false, static_cast<uint8>(ExitCode));
+    const IConsoleVariable* Controller = IConsoleManager::Get().FindConsoleVariable(ControllerVariableName);
+    if (!Controller || Controller->GetInt() != 1) FPlatformMisc::RequestExitWithStatus(false, static_cast<uint8>(ExitCode));
 }
 
 void UQuebecGauntletSubsystem::LogSummaries() const

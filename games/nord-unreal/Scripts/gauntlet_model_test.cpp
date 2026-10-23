@@ -238,6 +238,27 @@ namespace
         Expect(!BuildLoop(Graph, {{5000.0, 0.0}}, Short), "one stop is no loop");
     }
 
+    // A loop that can close only by turning back is no loop: BuildLoop fails, so the game exits at setup.
+    void TestTurnBack()
+    {
+        // Two stops on the base of a triangle. Round a thin triangle each base corner turns 170 degrees (over MaxTurn),
+        // so every way back to the first stop turns back. Round a wide triangle the corners turn 120 degrees.
+        const std::vector<FVec2> Eyes = {{3000.0, -500.0}, {7000.0, -500.0}};
+        for (const double Apex : {900.0, 8660.0})
+        {
+            const std::vector<FSegment> Segments = {{{0.0, 0.0}, {10000.0, 0.0}}, {{10000.0, 0.0}, {5000.0, Apex}}, {{5000.0, Apex}, {0.0, 0.0}}};
+            FRoadGraph Graph;
+            Graph.Build(Segments);
+            FLoop Loop;
+            const bool bBuilt = BuildLoop(Graph, Eyes, Loop);
+            if (Apex < 1000.0)
+                Expect(!bBuilt && Loop.Points.empty() && Loop.StopCount() == 0, "a loop that must turn back does not build");
+            else
+                Expect(bBuilt && Loop.StopCount() == 2 && SharpestTurn(Loop) <= RoundFrom + 1e-6, "the wide triangle builds a loop (sharpest step %.1f degrees)",
+                    SharpestTurn(Loop));
+        }
+    }
+
     // FForwardRoads against FRoadGraph::Route on the grid with a dead-end spur.
     void TestForwardRoads()
     {
@@ -553,7 +574,9 @@ namespace
         Expect(Run.Exit == EExit::Timeout && Step.Event == EEvent::Fail, "a car never ready exits 5");
 
         Begin(Run, FLoop(), Quick, 0.0, true, false);
-        Expect(Run.Exit == EExit::Stuck, "a loop that does not build fails as stuck");
+        Expect(Run.Exit == EExit::Setup && static_cast<int>(Run.Exit) == 6, "a loop that does not build exits 6 at setup");
+        Begin(Run, FLoop(), Quick, 0.0, false, false);
+        Expect(Run.Exit == EExit::Setup, "no loop is reported before a missing sky");
         Begin(Run, Loop, Quick, 0.0, true, false);
         Abort(Run, EExit::Timeout);
         Abort(Run, EExit::Stuck);
@@ -763,7 +786,10 @@ namespace
         Add("budgets.native.slow_frame_ms", SlowFrameMs);
         Add("budgets.native.hitch_ms", HitchMs);
         Add("budgets.native.long_frame_ms", LongFrameMs);
-        for (const EExit Exit : {EExit::Done, EExit::Stuck, EExit::NoSky, EExit::CVarMismatch, EExit::Timeout})
+        Add("run_limits.ready_grace_s", ReadyGrace);
+        Add("run_limits.stills_timeout_s", StillsTimeout);
+        Add("run_limits.csv_wait_s", CsvWait);
+        for (const EExit Exit : {EExit::Done, EExit::Stuck, EExit::NoSky, EExit::CVarMismatch, EExit::Timeout, EExit::Setup})
             Add(("exit_codes." + std::string(ExitName(Exit))).c_str(), static_cast<double>(static_cast<int>(Exit)));
         for (const EMode Mode : {EMode::Perf, EMode::Look, EMode::Stream})
         {
@@ -792,6 +818,7 @@ int main(int Count, char** Arguments)
     TestRouteHeader();
     TestPlateauLoop();
     TestGridLoop();
+    TestTurnBack();
     TestForwardRoads();
     TestCorners();
     TestTracker();

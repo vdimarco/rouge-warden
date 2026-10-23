@@ -10,6 +10,7 @@
 class ACameraActor;
 class APlayerController;
 class AQuebecCar;
+class IConsoleVariable;
 class UWorld;
 
 // Where the subsystem is: waiting for a game world, running, waiting for the CSV file, finished. Outside the UCLASS,
@@ -46,6 +47,8 @@ struct FQuebecGauntletPose
  * NORD mobile gauntlet (openspec/changes/nord-mobile-gauntlet): drives the player's car round the Plateau loop of
  * QuebecGauntletModel.h, records frame times and stills, and quits with the run's exit code. Created only with
  * -NordGauntlet. It never judges a budget; Scripts/gauntlet_metrics.py does.
+ * The run starts on the first tick after the game world has begun play. Under RunUnreal, UQuebecGauntletController
+ * (Source/QuebecGauntletTest) reads the console variable nord.GauntletExit and ends the test; a direct launch quits here.
  */
 UCLASS()
 class QUEBEC_API UQuebecGauntletSubsystem : public UGameInstanceSubsystem
@@ -56,21 +59,13 @@ public:
     virtual void Initialize(FSubsystemCollectionBase& Collection) override;
     virtual void Deinitialize() override;
 
-    // The run starts on the first tick after World has begun play. A direct launch needs no call: the ticker then
-    // starts in the game world and quits the process itself. bControllerEnds hands the end of the run to the Gauntlet
-    // controller, which calls EndTest with GetExitCode once IsFinished is true.
-    void StartRun(UWorld* World, bool bControllerEnds);
-    bool IsFinished() const { return bFinished; }
-    int32 GetExitCode() const { return ExitCode; }
-
 private:
     FTSTicker::FDelegateHandle Ticker;
     EQuebecGauntletStage Stage = EQuebecGauntletStage::Idle;
     TWeakObjectPtr<UWorld> RunWorld;
     TWeakObjectPtr<AQuebecCar> Car;
     TWeakObjectPtr<ACameraActor> EyeCamera;
-    bool bEndedByController = false;
-    bool bFinished = false;
+    IConsoleVariable* RunExit = nullptr;   // nord.GauntletExit: -1 during the run, then ExitCode.
     int32 ExitCode = -1;
 
     // Settings from the command line.

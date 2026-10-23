@@ -4403,10 +4403,21 @@ def _gallery_deck(world, plex, put, lot, kind, index, deck, rng, flights, glass,
                      'collision': row['collision'], 'footprint': [[r2(v) for v in q] for q in poly], **(extra or {})})
         return p
 
+    # this deck's own guard runs: along or across it, overlapping its quad (which stops short of a spiral stair the
+    # gallery's guards run round); a lot's other modules have runs at the same height further along the wall
+    guards = []
+    for g in lot['rear'].get('guards') or []:
+        (xa, da), (xb, db) = F.local(g['a']), F.local(g['b'])
+        if abs(g['z0'] - z) < 1 and max(xa, xb) >= -10 and min(xa, xb) <= F.W + 10 and \
+                -10 <= min(da, db) and max(da, db) <= F.D + 10:
+            guards.append(g)
+    outer = [(min(xa, xb), max(xa, xb), g) for g in guards
+             for (xa, da), (xb, db) in [(F.local(g['a']), F.local(g['b']))] if abs(da - F.D) < 2 and abs(db - F.D) < 2]
+
     def floor(prop, band, yaw, lean=None):
         """The first spot along a band of a free rect (seeded end first) that holds the prop; band 'wall' sets its
         back 2 cm inside the rect's wall side, 'guard' its back inside the guard side; a leaning prop (lean = how far
-        its pivot stands in from the cap rail's inner face) rests on the cap instead."""
+        its pivot stands in from the cap rail's inner face) rests on the cap instead, where an outer guard runs."""
         ex = prop_extent(F, prop, yaw)
         order = list(range(len(rects)))
         rng.shuffle(order)
@@ -4431,6 +4442,8 @@ def _gallery_deck(world, plex, put, lot, kind, index, deck, rng, flights, glass,
                 xs.reverse()
             for x in xs:
                 r = (x + ex[0], x + ex[1], d + ex[2], d + ex[3])
+                if lean is not None and not any(a - 1 <= r[0] and r[1] <= b + 1 for a, b, _ in outer):
+                    continue
                 if free_of(r):
                     taken.append(r)
                     return x, d
@@ -4491,23 +4504,13 @@ def _gallery_deck(world, plex, put, lot, kind, index, deck, rng, flights, glass,
         return not any(world.in_building(q) for q in poly) and not any(
             plex.footprint_hit(q, 0.) and not _own_footprint(plex, lot['id'], q) for q in poly)
 
-    # this deck's own guard runs: along or across it, overlapping its quad (which stops short of a spiral stair the
-    # gallery's guards run round); a lot's other modules have runs at the same height further along the wall
-    guards = []
-    for g in lot['rear'].get('guards') or []:
-        (xa, da), (xb, db) = F.local(g['a']), F.local(g['b'])
-        if abs(g['z0'] - z) < 1 and max(xa, xb) >= -10 and min(xa, xb) <= F.W + 10 and \
-                -10 <= min(da, db) and max(da, db) <= F.D + 10:
-            guards.append(g)
     # planters hung on the outside of the outer guard, their tops at the rail
     if rng.chance(.16):
-        outer = [g for g in guards if all(abs(F.local(p)[1] - F.D) < 2 for p in (g['a'], g['b']))]
         ex = prop_extent(F, 'flower_box', out_yaw)
         d = F.D + CAP_FACE + .5 - props_cached()['anchors']['flower_wall_x']
         for _ in range(1 if rng.chance(.6) else 2):
             spots = []
-            for g in outer:
-                xa, xb = sorted(F.local(p)[0] for p in (g['a'], g['b']))
+            for xa, xb, _g in outer:
                 lo, hi = xa + 12 - ex[0], xb - 12 - ex[1]
                 spots += [lo + (hi - lo) * s / 8 for s in range(9)] if hi >= lo else []
             rng.shuffle(spots)
@@ -4518,8 +4521,7 @@ def _gallery_deck(world, plex, put, lot, kind, index, deck, rng, flights, glass,
                         any(math.dist(p, q) < 100 for q in hung) or not clear_of_stairs(poly):
                     continue
                 hung.append(p)
-                g = next(g for g in outer if min(F.local(q)[0] for q in (g['a'], g['b'])) - 1 <= x <=
-                         max(F.local(q)[0] for q in (g['a'], g['b'])) + 1)
+                g = next(g for xa, xb, g in outer if xa - 1 <= x <= xb + 1)
                 record('flower_box', x, d, out_yaw, g['z1'] - RAIL_BOX_DROP, 'rail')
                 break
     # a satellite dish clamped to the cap of a guard that faces the satellite, with a clear line to it

@@ -14,11 +14,12 @@
     "names": "How logs and files name a leg, a stop and a still. {from} and {to} are stop labels, {sky} is a key of skies, {view} is an entry of views.per_stop.",
     "route": "Checks on the loop that QuebecGauntletModel.h BuildLoop makes over road_set: total length in metres, the largest distance from a stop eye to its road point, and the end position. The loop never turns back. Rachel at the park (S4) is a dead-end branch in road_set, so the S4 road point is on the nearest through road. The car turns round the block south of Sherbrooke (S1). The junction-to-junction path was 3568 m and the driven line with rounded corners 3475 m on the road set of October 2026.",
     "drive": "The in-game driver: speed cap, the police stuck rule (reverse_for_s after stuck_after_s below stuck_speed_m_s with throttle), the stall rule (less than stall_progress_m along the loop in stall_s fails with exit stuck), the lap time limit (driving time, holds excluded) and the largest lateral error from the driven line. The driven line is the loop with each junction rounded into an arc the car can drive (QuebecGauntletModel.h FinishLoop).",
-    "modes": "Per -NordGauntletMode: delay_s after the subsystem starts before driving (stream waits for the 60 s idle warm-up plus the 30 s grace, so NordFriend1 is asleep), warm_laps driven and discarded (shader compiles), laps measured (-NordGauntletLaps overrides it), hold_s at each stop (0 drives through), ambient false adds world_flags.look, and sky_switch true takes both skies at each hold.",
+    "modes": "Per -NordGauntletMode: delay_s after the subsystem starts before driving (stream waits for the 60 s idle warm-up plus the 30 s grace, so NordFriend1 is asleep), warm_laps driven and discarded (shader compiles and first texture loads; the stream gate starts at the first measured leg), laps measured (-NordGauntletLaps overrides it), hold_s at each stop (0 drives through), ambient false adds world_flags.look, and sky_switch true takes both skies at each hold.",
     "confirm_laps": "Measured laps per run when a winner and the baseline are confirmed. The result is the median of the per-lap p95 values.",
     "world_flags": "Command-line flags. 'all' goes on every run, 'look' on look runs only.",
     "gauntlet_flags": "The flags the game reads. Each value is the flag text before its argument.",
-    "exit_codes": "Process exit codes from the subsystem. Python judges budgets; the game never does.",
+    "exit_codes": "Process exit codes from the subsystem. Python judges budgets; the game never does. setup: a bad mode, the wrong map, no loop, a stop off the road or a lost world.",
+    "run_limits": "How long the game waits before it fails or quits: the car and the CVar readback must be ready ready_grace_s after the delay, one look hold's stills fail as a timeout after stills_timeout_s, and the game waits csv_wait_s (real time) for the CSV profiler file. Scripts/gauntlet_loop.py and Build/Scripts/NordMobileLoop.cs add them to a run's time limit.",
     "skies": "Pinned sky presets. Every run passes one 'args' list. A run without both -NordHour= and -NordWeather= exits with exit_codes.no_sky.",
     "sky_order": "The order of skies in reports and look runs.",
     "views": "Fixed stills at each stop: per_stop names, settle times before the shot, and whether the HUD shows.",
@@ -72,7 +73,7 @@
   "modes": {
     "perf": {"delay_s": 10, "warm_laps": 1, "laps": 1, "hold_s": 0, "ambient": true, "sky_switch": false},
     "look": {"delay_s": 10, "warm_laps": 0, "laps": 1, "hold_s": 24, "ambient": false, "sky_switch": true},
-    "stream": {"delay_s": 95, "warm_laps": 0, "laps": 1, "hold_s": 4, "ambient": true, "sky_switch": false}
+    "stream": {"delay_s": 95, "warm_laps": 1, "laps": 1, "hold_s": 4, "ambient": true, "sky_switch": false}
   },
   "confirm_laps": 3,
   "world_flags": {
@@ -87,7 +88,8 @@
     "expect": "-NordGauntletExpect=",
     "delay": "-NordGauntletDelay="
   },
-  "exit_codes": {"done": 0, "stuck": 2, "no_sky": 3, "cvar_mismatch": 4, "timeout": 5},
+  "exit_codes": {"done": 0, "stuck": 2, "no_sky": 3, "cvar_mismatch": 4, "timeout": 5, "setup": 6},
+  "run_limits": {"ready_grace_s": 60, "stills_timeout_s": 90, "csv_wait_s": 30},
   "skies": {
     "day": {"hour": 15, "weather": "Clear", "args": ["-NordHour=15", "-NordWeather=Clear", "-NordFreezeTime", "-NordFreezeWeather"]},
     "night_rain": {"hour": 22, "weather": "Rain", "args": ["-NordHour=22", "-NordWeather=Rain", "-NordFreezeTime", "-NordFreezeWeather"]}

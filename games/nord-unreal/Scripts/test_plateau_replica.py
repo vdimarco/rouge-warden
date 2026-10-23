@@ -2008,6 +2008,10 @@ def check_gallery_life(world, out, soul, soul_rows):
                 # leaning on the cap rail: its top at the cap's inner face, its wheels on the props floor
                 assert abs(d1 - (F.D - R.CAP_FACE - .5)) < .1, row
                 assert any(r[0] - tol <= x0 and x1 <= r[1] + tol and r[2] - tol <= d0 and d <= r[3] for r in rects), row
+                assert any(all(abs(F.local(q)[1] - F.D) < 2 for q in (g['a'], g['b'])) and
+                           min(F.local(q)[0] for q in (g['a'], g['b'])) - 1 <= x0 and
+                           x1 <= max(F.local(q)[0] for q in (g['a'], g['b'])) + 1
+                           for g in lot['rear'].get('guards') or [] if abs(g['z0'] - z) < 1), ('a bike on no guard', row)
             else:
                 assert any(r[0] - tol <= x0 and x1 <= r[1] + tol and r[2] - tol <= d0 and d1 <= r[3] + tol
                            for r in rects), ('off the props floor', row)
