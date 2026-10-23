@@ -1681,6 +1681,7 @@ def modern_bays(mesh, F, W, floors, zt, paints, counts, balconies=True, every=1,
         nonlocal windows
         F.quad_d(frame, xa, xb, z + 90, z + 210, D_FACE + 1)
         F.quad_d('Glass', xa + 5, xb - 5, z + 95, z + 205, D_FACE + 2.5)
+        blind(F, xa + 5, xb - 5, z + 95, z + 205, counts)
         F.quad_d(frame, (xa + xb) / 2 - 2, (xa + xb) / 2 + 2, z + 95, z + 205, D_FACE + 3.5)   # sliding sash
         F.quad_d(panel, xa, xb, z + 12, z + 86, D_FACE + 1)                                     # wall panel
         windows += 1
@@ -1689,6 +1690,8 @@ def modern_bays(mesh, F, W, floors, zt, paints, counts, balconies=True, every=1,
         nonlocal doors
         F.quad_d(frame, xa, xb, z, z + height, D_FACE + 1)
         F.quad_d('Glass', xa + 5, xb - 5, z + 3, z + height - 5, D_FACE + 2.5)
+        if patio:
+            blind(F, xa + 5, xb - 5, z + 3, z + height - 5, counts)
         F.quad_d(frame, (xa + xb) / 2 - 2.5, (xa + xb) / 2 + 2.5, z + 3, z + height - 5, D_FACE + 3.5)
         doors += patio
 
@@ -2806,10 +2809,12 @@ class Rear:
         return upper
 
     def _window(self, F, x0, x1, z0, z1, rail=True, sill=None, lintel=None):
-        """Applied window: frame field, glass, meeting rail and a proud sill (the wall is not cut). A street wall
-        window takes the front's deeper stone sill and its lintel (stone, cast stone or painted wood)."""
+        """Applied window: frame field (white, Trim), glass with a blind or curtains behind it, meeting rail and a proud
+        sill (the wall is not cut). A street wall window takes the front's deeper stone sill and its lintel (stone,
+        cast stone or painted wood)."""
         F.quad_d(self.frame, x0, x1, z0, z1, D_FACE + 1)
         F.quad_d('Glass', x0 + 6, x1 - 6, z0 + 6, z1 - 6, D_FACE + 2.5)
+        blind(F, x0 + 6, x1 - 6, z0 + 6, z1 - 6, self.counts)
         if rail:
             zm = (z0 + z1) / 2
             F.quad_d(self.frame, x0 + 6, x1 - 6, zm - 2.5, zm + 2.5, D_FACE + 3.5)
@@ -3010,8 +3015,9 @@ class Rear:
     def _guard(self, mesh, pa, pb, z, out, top=GUARD_H, infill=None):
         """One straight guard run between world points pa and pb, standing on a deck top z: a 2x4 bottom rail over
         a drain gap, the top rail and its flat cap as one box, and the lot's infill between them: a baluster card
-        (the masked material is two-sided, so one face), solid boards, or iron pickets facing `out` on the steel
-        galleries. A guard cut lower than GUARD_H takes boards, since the card draws its rails for 107 cm."""
+        (the masked material is two-sided, so one face), a solid guard of lap siding (self.guard_siding: the laps
+        show, where the old flat Wood_Grey board read as concrete), or iron pickets facing `out` on the steel
+        galleries. A guard cut lower than GUARD_H is solid, since the card draws its rails for 107 cm."""
         length = math.dist(pa[:2], pb[:2])
         if length < 8 or top < RAIL_LOW[1] + CAP_H + 5:
             return 0
@@ -3035,7 +3041,8 @@ class Rear:
                 x = length * k / count
                 G.quad_d('Iron', x - .9, x + .9, z + RAIL_LOW[1], z + top - CAP_H, 1.0 * facing, facing)
         else:
-            G.box(paint, 0, length, -1., 1., z + RAIL_LOW[1], z + top - CAP_H, 'tblr')
+            # a solid guard is lap siding (clapboard or aluminium) between the rails, laps showing, both faces
+            G.box(self.guard_siding, 0, length, -1., 1., z + RAIL_LOW[1], z + top - CAP_H, 'tblr')
         self.count('guard_' + kind)
         return 1
 
