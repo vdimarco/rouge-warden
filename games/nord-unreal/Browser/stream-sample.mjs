@@ -86,6 +86,32 @@ export function summarize(samples, { frames, events } = {}) {
     result.packetsLost = last.packetsLost - first.packetsLost;
     result.framesReceived = last.framesReceived - first.framesReceived;
   }
+  // Delay stays in its own section; no frame-rate figure above uses it.
+  const measured = (events || []).filter(event => event.timeMs >= first.timeMs && event.timeMs <= last.timeMs);
+  if (events || 'totalProcessingDelay' in last) {
+    const decoded = last.framesDecoded - first.framesDecoded;
+    const emitted = last.jitterBufferEmittedCount - first.jitterBufferEmittedCount;
+    result.delay = { rttMs: gauge(samples, 'roundTripTime'), jitterMs: gauge(samples, 'jitter'),
+      processingMsPerFrame: decoded > 0 && Number.isFinite(last.totalProcessingDelay - first.totalProcessingDelay)
+        ? (last.totalProcessingDelay - first.totalProcessingDelay) * 1000 / decoded : null,
+      jitterBufferTargetMsPerFrame: emitted > 0 && Number.isFinite(last.jitterBufferTargetDelay - first.jitterBufferTargetDelay)
+        ? (last.jitterBufferTargetDelay - first.jitterBufferTargetDelay) * 1000 / emitted : null };
+  }
+  if (events) {
+    // Means over the frontend's latencyCalculated events; its average* values already average since the connection opened.
+    const latency = measured.filter(event => event.kind === 'latency');
+    result.delay.frontend = { events: latency.length };
+    for (const key of new Set(latency.flatMap(Object.keys))) {
+      const values = latency.map(event => event[key]).filter(Number.isFinite);
+      if (key !== 'timeMs' && values.length) result.delay.frontend[key] = total(values) / values.length;
+    }
+    // The frontend reports 0 when a stream closes and -1 before the first value; neither is an encoder QP.
+    const qp = measured.filter(event => event.kind === 'qp' && event.avgQP > 0).map(event => event.avgQP);
+    result.encoderQp = { events: qp.length, mean: qp.length ? total(qp) / qp.length : null, max: qp.length ? Math.max(...qp) : null };
+    result.sizeChanges = { requested: measured.filter(event => event.kind === 'requested').length,
+      received: measured.filter(event => event.kind === 'received').length };
+  }
+  if (frames) result.frameIntervals = frameIntervals(frames);
   return result;
 }
 
