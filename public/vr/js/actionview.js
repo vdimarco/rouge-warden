@@ -201,6 +201,7 @@ export function createActionView(scene, { cars, jobs, traffic = null }) {
       im.setMatrixAt(n, M); im.instanceColor.setXYZ(n, TQ.paint[0], TQ.paint[1], TQ.paint[2]);
     }
   }
+  const upload = (a, n) => { a.clearUpdateRanges(); if (n > 0) { a.addUpdateRange(0, n * a.itemSize); a.needsUpdate = true; } };
   const V = {
     root,
     update(dt, time, opts = {}) {
@@ -237,13 +238,13 @@ export function createActionView(scene, { cars, jobs, traffic = null }) {
       if (modelsOk && traffic) streetModels(T, time);
       if (modelsOk) for (let k = 0; k < models.length; k++) {
         const im = models[k];
-        im.count = counts[k]; im.instanceMatrix.needsUpdate = true; im.instanceColor.needsUpdate = true;
+        im.count = counts[k]; upload(im.instanceMatrix, im.count); upload(im.instanceColor, im.count);
         BOX.makeEmpty();
         for (let i = 0; i < im.count; i++) BOX.expandByPoint(Pv.fromArray(im.instanceMatrix.array, i * 16 + 12));
         if (im.count) BOX.getBoundingSphere(im.boundingSphere).radius += 4; // half a van and its ink
         else im.boundingSphere.set(Pv.set(0, -1e4, 0), 0);
       }
-      carMesh.count = nb; carMesh.visible = nb > 0; carMesh.instanceMatrix.needsUpdate = true; carMesh.instanceColor.needsUpdate = true;
+      carMesh.count = nb; carMesh.visible = nb > 0; upload(carMesh.instanceMatrix, nb); upload(carMesh.instanceColor, nb);
       // markers: the offers, or the running job's goal
       let m = 0;
       const put = (x, y, z, col) => {
@@ -258,8 +259,8 @@ export function createActionView(scene, { cars, jobs, traffic = null }) {
         else if (jobs.card && jobs.card.goal) { const g = jobs.card.goal; put(g.x, g.y, g.z, JOB_COL.goal); }
       }
       beams.count = rings.count = m;
-      beams.instanceMatrix.needsUpdate = rings.instanceMatrix.needsUpdate = true;
-      bCol.needsUpdate = true; rings.geometry.attributes.aCol.needsUpdate = true;
+      upload(beams.instanceMatrix, m); upload(rings.instanceMatrix, m);
+      upload(bCol, m); upload(rings.geometry.attributes.aCol, m);
       // the balloon
       const b = jobs.balloons && jobs.balloons[0];
       balloon.visible = !!b;
