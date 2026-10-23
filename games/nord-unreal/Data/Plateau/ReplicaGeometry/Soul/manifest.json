@@ -3443,7 +3443,7 @@
  "source_sha256": {
   "Data/LaFontaine/osm.xml": "fe4410d45007a627bf6d9b9ddeeae329fa9cdd7492dfb5fa6beff851e7cf8f86",
   "Data/LaFontaine/layout.json": "4238d6ed45d5fb890e0f8dbcb672de0803c6dc7079b0b6a86b386d82ebbb4250",
-  "Scripts/plateau_replica.py": "b36a562e123b8593ad3ebd58269e782bcda1ca8869705430c0cdc451d6314aba",
+  "Scripts/plateau_replica.py": "f76f7d657d06d72a25f2a76f81085c921ca073dec93031920a044bb0acc8c7b3",
   "Scripts/prepare_lafontaine.py": "e7b6e5f068a96ee7306b1fff247fa73158f5cf7c343dc5510ab8cce92ee3c924",
   "Data/Plateau/BaseGeometry/Marking.obj": "2d82cbca59041aa6af5e6f3fffaf6a01b2c3e672eea9732e8a5fecbb7cee35dd",
   "Data/Plateau/ReplicaGeometry/Plex/fronts.json": "0bdac58607f918b7ca11706a4f9c1317687093ab2528e9adeef558ccee7febe9",
@@ -3451,7 +3451,7 @@
  },
  "attribution": "© OpenStreetMap contributors, ODbL 1.0; authored street details and original murals",
  "placements": "placements.json",
- "placements_sha256": "eac752980e35d0a5fec1b8e544c958e98440154aa37463072a9a21a9b3f12560",
+ "placements_sha256": "3399d0bbc8354b4d2f8db238969aefdf63723ebeb7754250720447b674299346",
  "lane_life": "lane_life.json",
  "lane_life_sha256": "6d5f797aecb85d2a331eb5cb7d53518ae2a90d964941590da06f49c0b7de95da"
 }
