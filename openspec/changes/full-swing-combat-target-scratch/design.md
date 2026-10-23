@@ -1,0 +1,2 @@
+# Design
+combat.targets(h,R=40,out=[]) clears the output and pushes the same eligible live goon objects in existing order. The only production caller is syncRopeTargets, which consumes synchronously and keeps chest coordinates separately in GOON_POS. It owns a scratch array. Existing tests/default callers keep fresh arrays. No target object cloning, pooling, new filtering rules or API change to the first two arguments. No rendering technique or FPS claim.

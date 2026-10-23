@@ -523,8 +523,8 @@ export function createCombat(city) {
   }
   // the rope targets: the living goons near the hero that are fighting (so a quiet guard never steals a swing), and the guards
   // below a perched hero (a takedown)
-  C.targets = function targets(h, R = 40) {
-    const out = [];
+  C.targets = function targets(h, R = 40, out = []) {
+    out.length = 0;
     for (const g of goons) if (C.alive(g) && (g.aggro || g.runner || C.perched(g, h)) && Math.hypot(g.x - h.x, g.z - h.z) < R) out.push(g);
     return out;
   };

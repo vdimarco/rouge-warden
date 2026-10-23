@@ -8,7 +8,7 @@ function run(reference=false){
  const ropes={addTarget(t){active.set(t.id,t);events.push(['add',t.id,t.tag,t.radius]);},removeTarget(id){active.delete(id);events.push(['remove',id]);}};
  const combat={targets:()=>goons},jobs={ropeTargets:()=>jobTargets},heroFight=()=>({});
  const code=reference?body.replace('const want = ropeWant;\n  want.clear();','const want = new Map();'):body;
- const sync=Function('Map','ropeWant','actionOn','G','isDriving','combat','heroFight','GOON_POS','jobs','P','ropeIds','ropes',code.replace('!driving','!isDriving()')+';return syncRopeTargets')(CountMap,ropeWant,()=>on,G,()=>driving,combat,heroFight,GOON_POS,jobs,P,ropeIds,ropes);
+ const sync=Function('Map','ropeWant','combatTargets','actionOn','G','isDriving','combat','heroFight','GOON_POS','jobs','P','ropeIds','ropes',code.replace('!driving','!isDriving()')+';return syncRopeTargets')(CountMap,ropeWant,[],()=>on,G,()=>driving,combat,heroFight,GOON_POS,jobs,P,ropeIds,ropes);
  const warm=allocations,snapshots=[];
  for(let i=0;i<100;i++){
   goons.length=0;jobTargets.length=0;if(i%5)goons.push({id:i%3,x:i,y:2,z:-i});if(i%4)jobTargets.push({id:'job:1',tag:'balloon',pos:{x:1,y:i,z:2},radius:2});
