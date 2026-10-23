@@ -709,28 +709,51 @@ def load_replica(region, col, layers=('Streets', 'Plex', 'Soul'), dirs=None):
     return count
 
 
-def prop_collections(keys):
+def prop_variants(parts, seed):
+    """The material of each part for a placement's variant_seed, as the apply step picks it (plan: options =
+    [material] + variants, options[seed % len(options)])."""
+    out = []
+    for batch in parts:
+        options = [batch['material']] + list(batch.get('variants', []))
+        out.append(options[seed % len(options)])
+    return tuple(out)
+
+
+def prop_collections(rows):
+    """One collection per prop and colour variant the rows use: the prop's parts (not the merged dog meshes), each in
+    the variant material its rows' seeds pick. Returns ({(prop, variants): collection}, the Props manifest)."""
     man = json.load(open(os.path.join(REPLICA, 'Props', 'manifest.json')))
-    out = {}
+    parts = {}
     for batch in man['batches']:
-        key = batch.get('prop')
-        if key not in keys or 'merged' in batch.get('part', ''):
+        if batch.get('prop') and 'merged' not in batch.get('part', ''):
+            parts.setdefault(batch['prop'], []).append(batch)
+    meshes, out = {}, {}
+    for r in rows:
+        key = r['prop']
+        if key not in parts:
             continue
-        if key not in out:
-            c = bpy.data.collections.new('P_' + key)
-            out[key] = c
-        verts, polys, uvs = read_obj(os.path.join(REPLICA, 'Props', batch['file']), None, want_uv=False)
-        mat = replica_material('Props', batch['material'], man['materials'][batch['material']])
-        ob = make_object('P_' + batch['file'][:-4], verts, polys, [], mat, out[key])
+        variants = prop_variants(parts[key], r.get('variant_seed', 0))
+        if (key, variants) in out:
+            continue
+        c = out[key, variants] = bpy.data.collections.new(f'P_{key}_{len(out)}')
+        for batch, variant in zip(parts[key], variants):
+            if batch['file'] not in meshes:
+                meshes[batch['file']] = read_obj(os.path.join(REPLICA, 'Props', batch['file']), None, want_uv=False)
+            verts, polys, _ = meshes[batch['file']]
+            mat = replica_material('Props', variant, man['materials'][variant])
+            make_object(f'P_{batch["file"][:-4]}_{variant}', verts, polys, [], mat, c)
     return out, man
 
 
 def place_props(rows, region, col):
     rows = [r for r in rows if region.keep(r['position'][0], r['position'][1])]
-    keys = sorted({r['prop'] for r in rows})
-    colls, man = prop_collections(keys)
+    colls, man = prop_collections(rows)
+    parts = {}
+    for batch in man['batches']:
+        if batch.get('prop') and 'merged' not in batch.get('part', ''):
+            parts.setdefault(batch['prop'], []).append(batch)
     for i, r in enumerate(rows):
-        c = colls.get(r['prop'])
+        c = colls.get((r['prop'], prop_variants(parts.get(r['prop'], []), r.get('variant_seed', 0))))
         if not c:
             continue
         e = bpy.data.objects.new(f'I_{r["prop"]}_{i}', None)
