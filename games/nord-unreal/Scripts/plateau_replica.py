@@ -4234,7 +4234,10 @@ def deck_frame(deck):
     `out`, d 0 on the wall line (D_FACE); D is the outer guard line (`edge`)."""
     q = deck['quad']
     u, width = unit(q[0], q[1])
-    F = Frame2(q[0], u, tuple(deck['out']), width)
+    n = (-u[1], u[0])                   # exactly square to the wall line, on the side `out` (rounded) points to
+    if n[0] * deck['out'][0] + n[1] * deck['out'][1] < 0:
+        n = (u[1], -u[0])
+    F = Frame2(q[0], u, n, width)
     F.D = F.local(deck['edge'][0])[1]
     return F
 
