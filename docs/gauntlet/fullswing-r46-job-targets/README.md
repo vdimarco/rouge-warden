@@ -4,7 +4,7 @@ jobs.ropeTargets accepts optional output array storage, cleared before every que
 
 Baseline ignores the supplied output and fails identity. Node100cycles cover catch/balloon/getaway/tanker, caught/held/stopped/sealed/empty/regrowth, independent default records and live positions. Existing action and reconciliation suites pass. Four browser checks record60actualframes/onearray/play/noerrors. No graphics or FPS claim; no extra target record pool.
 
-Review/allCI/currentauthenticatedpreview/finalrebase/production verification pending. OpenSpec CLI unavailable; scenarios manually checked. No physical-device/listening/full-playthrough claims.
+Released #656 as5536c923 after all6CI/review/current22deployedchecks/rebase before AND afterpreview/exactmerge. Productionmain+jobs HTTP200 exactbytes verified; hashes in production-verification.json. OpenSpec CLI unavailable; scenarios manually checked. No physical-device/listening/full-playthrough claims.
 
 | Dimension | Assessment |
 | --- | --- |
