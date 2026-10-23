@@ -1,0 +1,6 @@
+{"samples":[{"calls":60,"prompt":"<b>TAP</b>PUNCH","phone":true},{"calls":60,"prompt":"<b>F</b>FINISH","phone":false}],"removed":true,"state":"play"}
+PASS: phone skips finish scan and keeps punch fallback
+PASS: desktop finish keeps priority and one reach query
+PASS: phone punch fallback and next-update removal unchanged
+PASS: play and no page errors
+PASS: phone finish query
