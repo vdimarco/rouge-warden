@@ -10,7 +10,7 @@ maps, macro variation, Preserve Area meshes, hidden Collision_Only walls, the wh
 collision clear of traffic, and the yard-tree actors from Plex/yard_trees.json (species meshes from
 Trees/manifest.json, else the shared mesh), the editor side against a fake unreal module; and the third streets pass: no mapped trunk on carriageway asphalt
 (curb extensions, the host list), ruelles paved to the fences, curb-to-building coverage on the capture streets,
-textured front lawns and card plants.
+textured front lawns and card plants, and no open step at a raised slab's edge (risers at aprons and ramps).
 """
 import hashlib
 import json
