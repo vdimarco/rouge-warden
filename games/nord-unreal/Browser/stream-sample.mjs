@@ -243,25 +243,50 @@ async function main() {
     await page.screenshot({ path: resolve(output, 'first-world.png') });
     // Warm playback before the measurement; retain all one-second observations after this point.
     await page.waitForTimeout(warmup * 1000);
-    await page.evaluate(() => {
+    await page.evaluate(frames => {
       const video = document.querySelector('#video video');
       window.__sampleGap = { previous: performance.now(), longest: 0, active: true };
-      const frame = now => {
+      if (frames) window.__sampleFrames = [];
+      const frame = (now, metadata) => {
         const gap = window.__sampleGap;
         if (!gap.active) return;
         gap.longest = Math.max(gap.longest, now - gap.previous);
         gap.previous = now;
+        window.__sampleFrames?.push({ presentedFrames: metadata.presentedFrames, mediaTime: metadata.mediaTime,
+          expectedDisplayTime: metadata.expectedDisplayTime, width: metadata.width, height: metadata.height });
         video.requestVideoFrameCallback(frame);
       };
       video.requestVideoFrameCallback(frame);
-    });
+    }, values.frames);
+    // Lines already in the trigger file belong to an earlier run; only new lines take shots.
+    const triggerLines = async () => values.trigger
+      ? (await readFile(resolve(values.trigger), 'utf8').catch(() => '')).split('\n').slice(0, -1) : [];
+    let triggered = (await triggerLines()).length;
+    const shoot = async line => {
+      const name = shotName(report.shots.length + 1, line), timeMs = Date.now();
+      await mkdir(resolve(output, 'shots'), { recursive: true });
+      const shot = await page.evaluate(async () => {
+        const video = document.querySelector('#video video'), canvas = document.createElement('canvas');
+        if (!video?.videoWidth) return null;
+        canvas.width = video.videoWidth; canvas.height = video.videoHeight;
+        canvas.getContext('2d').drawImage(video, 0, 0);
+        // toBlob encodes asynchronously, so the page stalls less than with toDataURL (not measured).
+        const blob = await new Promise(done => canvas.toBlob(done, 'image/png'));
+        const data = await new Promise(done => { const reader = new FileReader(); reader.onload = () => done(reader.result); reader.readAsDataURL(blob); });
+        return { width: canvas.width, height: canvas.height, data };
+      });
+      if (shot) await writeFile(resolve(output, 'shots', name + '-video.png'), Buffer.from(shot.data.slice(shot.data.indexOf(',') + 1), 'base64'));
+      await page.screenshot({ path: resolve(output, 'shots', name + '-page.png'), fullPage: true });
+      report.shots.push({ line, timeMs, video: shot ? `shots/${name}-video.png` : null, page: `shots/${name}-page.png`,
+        width: shot?.width ?? null, height: shot?.height ?? null });
+    };
     const image = values.look ? await page.locator('#video').boundingBox() : null;
     const touch = values.look ? await context.newCDPSession(page) : null;
     const point = () => ({ x: image.x + image.width / 2, y: image.y + image.height / 2, id: 9 });
     if (touch) await touch.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [point()] });
     const started = Date.now();
     do {
-      const sample = await page.evaluate(async () => {
+      const { frameBatch, eventBatch, ...sample } = await page.evaluate(async latency => {
         const video = document.querySelector('#video video'), gap = window.__sampleGap;
         const result = { timeMs: Date.now(), width: video.videoWidth, height: video.videoHeight,
           framesDecoded: 0, framesReceived: 0, framesDropped: 0, bytesReceived: 0, freezeCount: 0, totalFreezesDuration: 0,
