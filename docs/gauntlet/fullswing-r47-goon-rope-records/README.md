@@ -4,7 +4,7 @@ Private GOON_ROPE stores each complete target record rather than just its chest 
 
 Baseline60movingframes produce60desiredrecords; corrected Node test producesone, with stable live chest coordinates and fresh record/position after removal and return. Existing100cycle target reconciliation and action suites pass. Four browser checks use an actual spawned goon, real combat selection and real rope registration across60manualreconciliations, checking position/identity/removal/return/noerrors. Existing4realframechecks also pass. No FPS claim.
 
-Review/allCI/currentauthenticatedpreview/finalrebase/production verification pending. OpenSpec CLI unavailable; scenarios manually checked. No physical-device/listening/full-playthrough claims.
+Released #658 as6aa20d58 after all6CI/review/current26deployedchecks/rebase before AND afterpreview/exactmerge. Productionmain HTTP200 exactbytes verified; SHA256a0ea0e75ff5f569a142b19b95458a03f651b95cf9172fb6ec57c3ec539718f95. OpenSpec CLI unavailable; scenarios manually checked. No physical-device/listening/full-playthrough claims.
 
 | Dimension | Assessment |
 | --- | --- |
