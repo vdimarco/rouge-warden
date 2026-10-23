@@ -1250,7 +1250,8 @@ def build_streets(world):
         'curb_extensions_on_verges', 'curb_extensions_on_corners', 'mapped_trees_for_host',
         'yard_slabs_past_ruelle_mouths', 'curb_extension_trees_at_curb', 'sidewalk_risers', 'corner_risers',
         'yard_risers', 'yard_mouth_wedges', 'yard_mouth_wedge_square_metres', 'sidewalk_pieces_split',
-        'passages', 'passage_square_metres', 'passage_lead_ins', 'tree_pits_off_strip')}
+        'passages', 'passage_square_metres', 'passage_lead_ins', 'tree_pits_off_strip',
+        'curb_extension_back_walls')}
     # Carriageway asphalt.
     for s in world.segs:
         if s['excluded']:
@@ -2964,6 +2965,28 @@ def _draw_extensions(world, L, surfaces, extensions, counts):
                 band = [(x0, n0), (x1, n1), (x1 - 15 * outward[0], n1 - 15 * outward[1]),
                         (x0 - 15 * outward[0], n0 - 15 * outward[1])]
                 L.flat('curb', [_local(e, x, n) for x, n in band], Z_WALK + .1)
+            # the part behind the curb line (back cm over the sidewalk, or past a corner arc that curves away from
+            # the extension's frame) gets a wall on a side or along its back wherever the ground there lies lower,
+            # so no step opens onto the floor under the slab
+            if e['kind'] != 'verge':
+                behind = [((lo, -back), (lo, 0.)), ((hi, 0.), (hi, -back))] + \
+                         [((x1, -back), (x0, -back)) for (x0, _), (x1, _) in zip(pts, pts[1:]) if x1 - x0 >= .5]
+                for (x0, n0), (x1, n1) in behind:
+                    length = math.hypot(x1 - x0, n1 - n0)
+                    if length < 1.:
+                        continue
+                    cand = ((n1 - n0) / length, -(x1 - x0) / length)
+                    mx, mn = (x0 + x1) / 2, (n0 + n1) / 2
+                    outward = cand if not inside_raised(mx + 2 * cand[0], mn + 2 * cand[1]) else (-cand[0], -cand[1])
+                    P, Q = _local(e, x0, n0), _local(e, x1, n1)
+                    ow = (e['u'][0] * outward[0] + e['n'][0] * outward[1], e['u'][1] * outward[0] + e['n'][1] * outward[1])
+                    c = add(lerp(P, Q, .5), ow, 4.)
+                    if world.in_building(c) or surfaces.floor(c) >= Z_WALK - 1.:
+                        continue
+                    if (Q[1] - P[1]) * ow[0] - (Q[0] - P[0]) * ow[1] < 0:
+                        P, Q = Q, P
+                    L.wall(top_key, P, Q, 0., Z_WALK)
+                    counts['curb_extension_back_walls'] += 1
         # the flush part: in the traffic band, across a ramp, or the whole extension
         level = raised if raised > 0 else -back
         flush = [(x, d) for x, d in _with_crossings(front, level)]
