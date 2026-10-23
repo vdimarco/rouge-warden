@@ -47,7 +47,7 @@ namespace
 
     // Limits of the checks, as in Data/Gauntlet/loop.json "route" and "drive".
     constexpr double LengthMin = 250000.0;
-    constexpr double LengthMax = 400000.0;
+    constexpr double LengthMax = 350000.0;
     constexpr double StopRoadMax = 5000.0;
     constexpr double EndWithin = 800.0;
     constexpr double LateralMax = 250.0;
@@ -121,7 +121,7 @@ namespace
     {
         const FLoop Loop = PlateauLoop();
         if (Loop.Points.size() < 2) return;
-        Expect(Loop.Length >= LengthMin && Loop.Length <= LengthMax, "loop length %.0f m is 2.5 to 4 km", Loop.Length / 100.0);
+        Expect(Loop.Length >= LengthMin && Loop.Length <= LengthMax, "loop length %.0f m is 2.5 to 3.5 km", Loop.Length / 100.0);
         Expect(QuebecPursuit::Distance(Loop.Points.front(), Loop.Points.back()) < 1e-6, "the loop closes on the first stop");
         Expect(Loop.StopCount() == 5 && Loop.Stops[0] == 0, "five stops, the first at the start");
         double Legs = 0.0;
