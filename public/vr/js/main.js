@@ -933,6 +933,7 @@ function hudFrame(dt, inp) {
 // the job sticker: the goal's name and distance, on the goal, or on the screen edge when it is off the view.
 // A chase says CLOSING or FALLING BEHIND from how the distance changed over the last half second.
 const GOAL_V = new THREE.Vector3(), GOAL_CAM = new THREE.Vector3(), GOAL_LOOK = new THREE.Vector3();
+const GOAL_SIZE = { w: 0, h: 0 }, GOAL_PAD = { l: 80, t: 108, r: 80, b: 96 }, GOAL_PHONE_PAD = { l: 110, t: 108, r: 140, b: 168 };
 const GOAL_NAMES = { sludge: "RUNNER", thief: "THIEF", getaway: "CAR", balloon: "BALLOON", catch: "FALLING", washer: "WASHER", pizza: "DROP", taxi: "DROP", brawl: "FIGHT", mugging: "MUGGING", tanker: "LEAK" };
 const GOAL_CHASE = { sludge: true, thief: true, getaway: true, balloon: true };
 let goalTrack = { tag: "", d: 0, t: -1, trend: "" };
@@ -946,8 +947,8 @@ function goalFrame(phone) {
   camera.getWorldDirection(GOAL_LOOK);
   const gx = g.x - camera.position.x, gz = g.z - camera.position.z;
   const turn = Math.atan2(-GOAL_LOOK.z * gx + GOAL_LOOK.x * gz, GOAL_LOOK.x * gx + GOAL_LOOK.z * gz);
-  const pad = phone ? { l: 110, t: 108, r: 140, b: 168 } : { l: 80, t: 108, r: 80, b: 96 };
-  const place = placeGoal(GOAL_CAM, ndc, { w: innerWidth, h: innerHeight }, pad, turn);
+  GOAL_SIZE.w = innerWidth; GOAL_SIZE.h = innerHeight;
+  const place = placeGoal(GOAL_CAM, ndc, GOAL_SIZE, phone ? GOAL_PHONE_PAD : GOAL_PAD, turn);
   const dh = Math.hypot(g.x - P.pos.x, g.z - P.pos.z);
   if (ob.tag !== goalTrack.tag) goalTrack = { tag: ob.tag, d: dh, t: G.time, trend: "" };
   else {
