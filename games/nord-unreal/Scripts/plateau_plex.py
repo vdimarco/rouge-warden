@@ -4151,6 +4151,69 @@ def background_masses(buildings, roads, lot_ids, skipped, cards, owners):
     return masses
 
 
+BACKGROUND_ROOF_MIX = ((.58, 'Roof_Membrane'), (.93, 'Roof_Gravel'), (1.01, 'Roof_Tar'))
+
+
+def author_background_roof(mesh, mass, counts):
+    """The roof of a background mass (the park-perimeter row and the skipped buildings), which the old map left as its
+    dark grey mass top: white membrane or white gravel ballast, a few tar and gravel (the borough's white-roof rule, as
+    on the plex lots), as a skin ROOF_SKIN over the mass top; a brick chimney and a galvanised hatch on a mass of four
+    storeys or fewer, the post-1945 kit's lift penthouse and vents on a tower, and nothing on a cast-stone park
+    pavilion or government building. The props stand in the frame of the mass's longest edge. Own seed. Returns the
+    roof record."""
+    rng = random.Random(_seed('plex-background-roof', mass['id']))
+    pick, chimney_t, chimney_h, hatch_f = rng.random(), rng.uniform(.25, .5), rng.uniform(100., 160.), rng.random()
+    roof = next(key for limit, key in BACKGROUND_ROOF_MIX if pick < limit)
+    points = mass['points']
+    R = mass['height_cm'] + ROOF_SKIN
+    xs, ys = [p[0] for p in points], [p[1] for p in points]
+    for triangle in triangulate([list(points)], (min(xs) - 1, min(ys) - 1, max(xs) + 1, max(ys) + 1)):
+        mesh.face(roof, [(p[0], p[1], R) for p in triangle], (0, 0, 1))
+
+    def count(key, n=1):
+        counts[key] = counts.get(key, 0) + n
+    count('roof_' + roof)
+    record = {'material': roof, 'z_cm': round(R, 1), 'chimney': False, 'hatch': False}
+    n = len(points)
+    i = max(range(n), key=lambda k: (math.dist(points[k], points[(k + 1) % n]), -k))
+    a, b = points[i], points[(i + 1) % n]
+    if _area(points) < 0:
+        a, b = b, a                     # the frame's n points out of the mass
+    Ff = Frame(mesh, a, b)
+    W = math.dist(a, b)
+    depth = max(-((p[0] - a[0]) * Ff.n[0] + (p[1] - a[1]) * Ff.n[1]) for p in points)
+
+    def fits(x0, x1, t0, t1, margin=30.):
+        corners = [(x, t) for x in (x0 - margin, (x0 + x1) / 2, x1 + margin) for t in (t0 - margin, (t0 + t1) / 2, t1 + margin)]
+        return all(_inside(Ff.p(x, -t, 0)[:2], points) for x, t in corners)
+    placed = []
+
+    def free(x0, x1, t0, t1):
+        return all(x1 + 40 <= q[0] or x0 - 40 >= q[1] or t1 + 40 <= q[2] or t0 - 40 >= q[3] for q in placed)
+
+    def box(mat, x0, x1, t0, t1, z0, z1, skip='b'):
+        Ff.box(mat, x0, x1, -t1, -t0, z0, z1, skip)
+    masonry = mass['masonry'] if mass['masonry'] in BRICKS else 'Brick_Red'
+    if mass.get('modern'):
+        _modern_roof(mass, record, W, depth, R, mass.get('skin_wall') or masonry, box, fits, free, placed, count)
+    elif mass.get('skin_wall') != 'Stone_Cast' and mass['storeys'] <= 4:
+        for x, t in [(x, t) for t in (chimney_t * depth, depth * .5) for x in (70., W - 70., W / 2)]:
+            if W >= 160 and fits(x - 30, x + 30, t - 22, t + 22, 25):
+                box(masonry, x - 30, x + 30, t - 22, t + 22, R, R + chimney_h)
+                box('Stone_Cast', x - 35, x + 35, t - 27, t + 27, R + chimney_h, R + chimney_h + 6)
+                placed.append((x - 35, x + 35, t - 27, t + 27))
+                record['chimney'] = True
+                count('chimneys')
+                break
+        for xh, th in ((W * (.35 + .3 * hatch_f), depth * .55), (W / 2, depth * .5), (W * .3, depth * .4)):
+            if W >= 200 and fits(xh - 40, xh + 40, th - 40, th + 40, 20) and free(xh - 40, xh + 40, th - 40, th + 40):
+                box('Sheet_Metal', xh - 40, xh + 40, th - 40, th + 40, R, R + 45)
+                record['hatch'] = True
+                count('roof_hatches')
+                break
+    return record
+
+
 def build_background(mesh, masses, levels):
     """Skin and window the backs of the background masses, and skin any part of a party wall left above a lower
     neighbour (a plex neighbour counts with its parapet coping)."""
@@ -4161,6 +4224,7 @@ def build_background(mesh, masses, levels):
         rear = Rear(mass, mass['height_cm'])
         rear.zt = mass['wall_top']
         record = rear.author(mesh)
+        roof = author_background_roof(mesh, mass, rear.counts)
         party = []
         for edge in mass['party']:
             neighbour = edge['neighbour']
@@ -4180,7 +4244,7 @@ def build_background(mesh, masses, levels):
             counts[key] = counts.get(key, 0) + value
         records.append({'id': mass['id'], 'kind': mass['kind'], 'storeys': mass['storeys'],
                         'mass_height_cm': round(mass['height_cm'], 1), 'cards_showing': mass['cards'],
-                        'walls': record['walls'], 'party': party, 'triangles': mesh.triangles() - before,
+                        'walls': record['walls'], 'party': party, 'roof': roof, 'triangles': mesh.triangles() - before,
                         **({'kit': 'post-1945 apartment', 'brick': rear.brick} if mass.get('modern') else {})})
     counts['masses'] = len(records)
     counts['triangles'] = sum(r['triangles'] for r in records)
