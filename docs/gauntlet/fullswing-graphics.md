@@ -1173,3 +1173,8 @@ PR#634 released as `8608ff629f30ec911edab0ad6c12f77606b6fc9c` after review, CI, 
 PR#635 released as `3797b07fdd943b430102de6b573ef8f20f6f2e38` after review, CI, deployed functional checks, final rebase and exact-head merge; production bytes verified. Canonical spec and archive published. FPS benefit and affected Chrome remain unverified; no FPS-benefit gate.
 
 PR#636 released as `9d82f8233450bc1a3c5f1e8ef841c78de731c768` after review, CI, deployed functional checks, final rebase and exact-head merge; production bytes verified. Canonical spec and archive published. FPS benefit and affected Chrome remain unverified; no FPS-benefit gate.
+
+
+## Increment37 — invisible street preparation (pending release)
+
+Skip hidden street sign-list/uniform work with existing root visibility. Focused hide/move/resume regression validates attribute versions, sign counts, current time and people; street simulation/quality/anchors/height rules unchanged. No FPS claim or gate. All20dimensions retain historical context only, no newpoints; responsiveness/stability unverified, currenttotal/delta withheld. Evidence fullswing-r37-hidden-street.
