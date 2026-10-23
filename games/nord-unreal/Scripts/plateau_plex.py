@@ -2202,6 +2202,29 @@ def _subtract(interval, cuts, minimum=20.):
     return [(p0, p1) for p0, p1 in pieces if p1 - p0 >= minimum]
 
 
+def _free_floor(base, reserved, minimum=40., min_area=2500.):
+    """Axis-aligned rectangles (x0, x1, d0, d1) of `base` left after cutting out every `reserved` rectangle, keeping
+    pieces at least `minimum` on each side and `min_area` cm² (a chair or a plant pot fits)."""
+    rects = [base] if base[1] > base[0] and base[3] > base[2] else []
+    for c0, c1, e0, e1 in reserved:
+        out = []
+        for x0, x1, d0, d1 in rects:
+            if c1 <= x0 or c0 >= x1 or e1 <= d0 or e0 >= d1:
+                out.append((x0, x1, d0, d1))
+                continue
+            if c0 > x0:
+                out.append((x0, c0, d0, d1))
+            if c1 < x1:
+                out.append((c1, x1, d0, d1))
+            m0, m1 = max(x0, c0), min(x1, c1)
+            if e0 > d0:
+                out.append((m0, m1, d0, e0))
+            if e1 < d1:
+                out.append((m0, m1, e1, d1))
+        rects = out
+    return [r for r in rects if r[1] - r[0] >= minimum and r[3] - r[2] >= minimum and (r[1] - r[0]) * (r[3] - r[2]) >= min_area]
+
+
 class Occupancy:
     """World footprints of planned rear structures (galleries, stairs, sheds) for free-space checks."""
 
@@ -3047,6 +3070,41 @@ class Rear:
             G.box(self.guard_siding, 0, length, -1., 1., z + RAIL_LOW[1], z + top - CAP_H, 'tblr')
         self.count('guard_' + kind)
         return 1
+
+    def _free_record(self, P, free, z, edge, out):
+        """The props floor of one deck for fronts.json: `free`, quads in map coordinates (cm) at the deck top `z`,
+        `free_m2`, the outer guard line `edge` (for a dish or a flower box on the guard) and `out`, the unit vector
+        from the wall toward the yard."""
+        quads = [[[round(v, 1) for v in P(x, d, z)[:2]] for x, d in ((x0, d0), (x1, d0), (x1, d1), (x0, d1))]
+                 for x0, x1, d0, d1 in free]
+        area = sum((x1 - x0) * (d1 - d0) for x0, x1, d0, d1 in free) / 1e4
+        if free:
+            self.count('decks_with_free_floor')
+        return {'free': quads, 'free_m2': round(area, 2),
+                'edge': [[round(v, 1) for v in p[:2]] for p in edge], 'out': [round(out[0], 4), round(out[1], 4)]}
+
+    def _partition(self, mesh, F, x, d1, z, kind, neighbour, record):
+        """A privacy screen across the gallery at a shared post (frame F of the stack wall, at x, from the wall face
+        to d1, standing on the deck top z): two 1 m lattice cards, as drawn, or one 1.8 m board card, as drawn, under a
+        2x4 cap rail, with a 2x4 stile at the guard end, in the gallery paint. No collision (the end guards collide)."""
+        a, b = F.p(x, D_FACE, 0)[:2], F.p(x, d1, 0)[:2]
+        H = PARTITION_H[kind]
+        if kind == 'lattice':
+            cutout(mesh, 'Rail_Lattice', a, b, z, z + SKIRT_H)
+            cutout(mesh, 'Rail_Lattice', a, b, z + SKIRT_H, z + H)
+        else:
+            cutout(mesh, 'Fence_Boards', a, b, z, z + H)
+        G = Frame(mesh, a, b)
+        L = math.dist(a, b)
+        G.box(self.paint, 0, L, -1.9, 1.9, z + H, z + H + 3.8, 'bl')
+        G.box(self.paint, L - 8.9, L, -1.9, 1.9, z, z + H, 'tbl')
+        record.setdefault('partitions', []).append({
+            'a': [round(v, 1) for v in a], 'b': [round(v, 1) for v in b], 'z0': round(z, 1), 'z1': round(z + H, 1),
+            'kind': kind, 'neighbour': neighbour})
+        self.count('partitions')
+        self.count('partitions_' + kind)
+        if neighbour:
+            self.count('partitions_between_lots')
 
     def _gallery_module(self, mesh, F, module, record):
         st = self.stack

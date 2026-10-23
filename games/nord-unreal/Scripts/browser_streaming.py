@@ -454,6 +454,80 @@ def self_check():
                 assert "NORD_SKY_ARGS" in str(error)
             else:
                 raise AssertionError("Unsupported sky arguments must prevent launch: " + rejected)
+    # Without NORD_STREAM_QUALITY (or with current) both players keep today's launch line byte for byte.
+    today_quality = ("sg.ViewDistanceQuality 2,sg.AntiAliasingQuality 2,sg.ShadowQuality 2,sg.GlobalIlluminationQuality 2,"
+                     "sg.ReflectionQuality 2,sg.PostProcessQuality 2,sg.TextureQuality 2,sg.EffectsQuality 2,sg.FoliageQuality 2,"
+                     "sg.GlobalIlluminationQuality 1,sg.ReflectionQuality 1,sg.ShadowQuality 1,r.Shadow.Virtual.Enable 0,"
+                     "r.ScreenPercentage 75,t.MaxFPS 60,MediaIO.EnableExperimentalScheduling 0")
+    common = ["-RenderOffscreen", "-ForceRes", "-ResX=1280", "-ResY=720", "-AudioMixer", "-Unattended", "-NoDebugExecBindings",
+              "-PixelStreamingConnectionURL=ws://127.0.0.1:8888", "-PixelStreamingEncoderCodec=VP8", "-PixelStreamingWebRTCFps=60",
+              "-PixelStreamingWebRTCMaxBitrate=12000000", "-PixelStreamingWebRTCMinBitrate=100000",
+              "-PixelStreamingWebRTCStartBitrate=2000000", "-PixelStreamingKeyFilter=Tilde"]
+    today = {False: [str(BINARY), "Quebec", "/Game/Maps/LaFontaine?listen", *common, "-PixelStreamingID=NordHost",
+                     "-ExecCmds=" + today_quality, "-abslog=host.log", "-NordStreamFps", "-NordTouchControls", "-NordIdleThrottle",
+                     "-port=7791", "-NordHour=15", "-NordFreezeTime"],
+             True: [str(BINARY), "Quebec", "127.0.0.1:7791", *common, "-PixelStreamingID=NordFriend1", "-ExecCmds=" + today_quality,
+                    "-abslog=friend.log", "-NordStreamFps", "-NordTouchControls", "-NordIdleThrottle", "-NordNoCampaignSave",
+                    "-saveddirsuffix=BrowserGuest"]}
+    for environment in ({}, {"NORD_STREAM_QUALITY": "current"}):
+        with patch.dict(os.environ, environment, clear=True):
+            for friend_slot, line in today.items():
+                assert game_command(friend_slot, Path("friend.log" if friend_slot else "host.log")) == line, environment
+    assert "t.MaxFPS=60\n" in gauntlet_expect(stream_quality("current"))
+
+    def refused(variable, environment):
+        with patch.dict(os.environ, environment, clear=True):
+            try:
+                game_command(False, Path("host.log"))
+            except RuntimeError as error:
+                assert variable in str(error), error
+            else:
+                raise AssertionError(f"{variable} must prevent launch: {environment}")
+
+    with TemporaryDirectory() as directory, patch.object(sys.modules[__name__], "GAUNTLET", Path(directory) / "Saved/Gauntlet"):
+        gauntlet = Path(directory) / "Saved/Gauntlet"
+        candidate = gauntlet / "20261023T220000Z-tune/candidates/05-gi1.execcmds"
+        candidate.parent.mkdir(parents=True)
+        candidate.write_text("sg.GlobalIlluminationQuality 2,r.ScreenPercentage 85,t.MaxFPS 60")
+        with patch.dict(os.environ, {"NORD_STREAM_QUALITY": f"file:{candidate}"}, clear=True):
+            for friend_slot in (False, True):
+                command = game_command(friend_slot, Path("test.log"))
+                assert ("-ExecCmds=sg.GlobalIlluminationQuality 2,r.ScreenPercentage 85,t.MaxFPS 60,"
+                        "MediaIO.EnableExperimentalScheduling 0") in command
+                assert not any(argument.startswith("-DeviceProfile=") for argument in command)
+        with patch.dict(os.environ, {"NORD_STREAM_QUALITY": "phone"}, clear=True):
+            for friend_slot in (False, True):
+                command = game_command(friend_slot, Path("test.log"))
+                assert "-DeviceProfile=NordPhoneStream" in command and "-ExecCmds=MediaIO.EnableExperimentalScheduling 0" in command
+            assert quality_cvars(stream_quality())["t.MaxFPS"] == 60
+        outside = Path(directory) / "elsewhere.execcmds"
+        outside.write_text("t.MaxFPS 60")
+        renamed = candidate.with_suffix(".txt")
+        renamed.write_text("t.MaxFPS 60")
+        for value in ("", "Current", "low", "phone;quit", "file:", f"file:{outside}", f"file:{renamed}",
+                      f"file:{candidate.with_name('missing.execcmds')}"):
+            refused("NORD_STREAM_QUALITY", {"NORD_STREAM_QUALITY": value})
+        for contents in ("t.MaxFPS 60,quit", "exec evil.txt,t.MaxFPS 60", "open 127.0.0.1,t.MaxFPS 60", "sg.ShadowQuality 2",
+                         "t.MaxFPS 30", "t.MaxFPS 60;quit", "r.ScreenPercentage high,t.MaxFPS 60", ""):
+            candidate.write_text(contents)
+            refused("NORD_STREAM_QUALITY", {"NORD_STREAM_QUALITY": f"file:{candidate}"})
+        # NORD_STREAM_GAUNTLET adds the gauntlet flags to NordHost only, after its pinned sky.
+        run_folder = gauntlet / "20261023T220000Z-stream"
+        pinned = "-NordHour=22 -NordWeather=Rain -NordFreezeTime -NordFreezeWeather"
+        flags = ["-NordGauntlet", "-NordGauntletMode=stream", f"-NordGauntletRun={run_folder}",
+                 f"-NordGauntletExpect={run_folder / 'stream.expect'}", "-csvGpuStats", "-csvCompression=0",
+                 "-NordNoPolice", "-NordNoCampaign", "-NordNoSideJobs", "-NordNoCampaignSave"]
+        with patch.dict(os.environ, {"NORD_STREAM_GAUNTLET": str(run_folder), "NORD_SKY_ARGS": pinned}, clear=True):
+            host = game_command(False, Path("host.log"))
+            assert host[-len(flags):] == flags and host[-len(flags) - 4:-len(flags)] == pinned.split()
+            assert host[:-len(flags) - 4] == today[False][:-2]
+            assert game_command(True, Path("friend.log")) == today[True]
+        for environment in ({"NORD_STREAM_GAUNTLET": str(run_folder)},
+                            {"NORD_STREAM_GAUNTLET": str(run_folder), "NORD_SKY_ARGS": "-NordWeather=Rain -NordFreezeWeather"},
+                            {"NORD_STREAM_GAUNTLET": str(run_folder), "NORD_SKY_ARGS": "-NordHour=22 -NordFreezeTime"},
+                            {"NORD_STREAM_GAUNTLET": str(Path(directory) / "elsewhere"), "NORD_SKY_ARGS": pinned},
+                            {"NORD_STREAM_GAUNTLET": "", "NORD_SKY_ARGS": pinned}):
+            refused("NORD_STREAM_GAUNTLET", environment)
     with patch("shutil.which", return_value="/usr/bin/nvidia-smi"):
         with patch("subprocess.check_output", return_value="13000\n"):
             check_gpu_memory()
@@ -474,7 +548,8 @@ def self_check():
             else:
                 raise AssertionError("Occupied ports must be rejected")
     print("Self-check passed: ICE configuration validation, rendered job/GPU memory guards, separate players/save ownership, "
-          "validated bitrate/scheduling/idle options, optional pinned host sky, occupied-port rejection.")
+          "validated bitrate/scheduling/idle options, optional pinned host sky, occupied-port rejection, "
+          "unchanged default launch line, phone and candidate quality options, gauntlet host flags and sky refusal.")
 
 
 if __name__ == "__main__":
