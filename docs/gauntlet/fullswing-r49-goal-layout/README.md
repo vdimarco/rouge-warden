@@ -4,7 +4,7 @@ Main updates a private viewport object every projection and uses fixed phone/des
 
 Baseline60projections create60viewport+60paddingobjects per layout; afteroneeach. Five browser checks cover repeated projections,960x540→390x844resize,desktop/phone/desktop padding transitions,freshfinite results/noerrors. Existing goalmark Node/browser suites pass including actual runner CLOSING/FALLING BEHIND behavior. No FPS claim.
 
-Review/allCI/currentauthenticatedpreview/finalrebase/production verification pending. OpenSpec CLI unavailable; scenarios manually checked. No physical-device/listening/full-playthrough claims.
+Released #662 asa51930fe after all6CI/review/currentlayout+goalmarkdeployedchecks/rebase before AND afterpreview/exactmerge. Productionmain HTTP200 exactbytes verified; SHA25626b6cbe45a9a8e67398f43e21ed59de05e97517c234c8214efb868179688d7fc. OpenSpec CLI unavailable; scenarios manually checked. No physical-device/listening/full-playthrough claims.
 
 | Dimension | Assessment |
 | --- | --- |
