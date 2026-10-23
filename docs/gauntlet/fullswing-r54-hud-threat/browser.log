@@ -1,0 +1,6 @@
+{"samples":[{"calls":60,"warning":true},{"calls":60,"warning":true}],"changed":true,"idleCalls":1,"state":"play"}
+PASS: one actual threat query per HUD update on desktop and phone
+PASS: actual threatening goon projects a finite warning
+PASS: state and removal hide warning on the next update
+PASS: play and no page errors
+PASS: HUD threat query

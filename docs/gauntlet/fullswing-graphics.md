@@ -1298,3 +1298,7 @@ Current HUD availability shared between prompt and button.4096 output-equivalenc
 
 
 Increment53 shipped #670 asff8861c5 after all6CI/review/current4HUDdeployedchecks/exactmainbytes/rebase before AND afterpreview/exactmerge. Productionmain HTTP200 exactSHA d58ec0ebbad7a244cc85beabfcee1bef89b41c3bb44741021227c8f41e85f9c9 verified. Canonical HUD throw-query scenarios published and OpenSpec archived. ActualChrome/FPSbenefit unverified; totalwithheld.
+
+
+### Increment54 — share HUD threat selection
+HUD passes current threat to warning instead of scanning twice.4096stateequivalencePASS,6144→4096queries acrossfixture; browser60desktop+60phoneactualHUDupdates/realwindupgoon/warning/state+removalPASS;action/throwquerysuitePASS. Evidence r54-hud-threat/all20limits/noFPSclaim/totalwithheld. Releasepending.
