@@ -2016,6 +2016,8 @@ PARTITION_LATTICE = .6      # privacy screens of lattice (two 1 m cards, as draw
 PARTITION_H = {'lattice': 200., 'boards': 180.}     # screen heights over the deck, under the 2x4 cap rail
 PARTITION_GAP = 60.         # neighbouring lots' gallery ends this close (along the wall line) share a screen
 GATE_LEDGES = (.2, .78)     # the gate's two painted ledges, as fractions of the leaf height, with a brace between
+DOOR_CLEAR = 101.           # deck kept clear of props this far either side of a gallery door's centre (43 + 58)
+HEAD_CLEAR = 60.            # and this far past a flight's head, so the 42 cm player capsule still walks every way
 BLIND_D = D_FACE + 3.       # blinds and curtains: just over the glass (D_FACE + 2.5), under the meeting rail (+ 3.5)
 BLINDS = ('Trim', 'Trim', 'Trim', 'Wood_Cream', 'Wood_Cream', 'Stone_Cast')     # white, cream and beige
 CURTAINS = ('Trim', 'Wood_Cream', 'Wood_Cream', 'Stone_Cast', 'Wood_Burgundy', 'Wood_Green')
@@ -3119,8 +3121,24 @@ class Rear:
                 fascia(gx0, xh if straight else deck_end, dF, z)
             corners = [P(gx0, D_FACE, z), P(deck_end, D_FACE, z), P(deck_end, dF, z), P(gx0, dF, z)]
             door = P(module['xd'], D_FACE + 45, z)       # where a player stands in front of the gallery door
+            # the floor left for props (chairs, a barbecue, plants, a bike): the deck inside its guards and posts, less
+            # the stair opening, the flights, the landing at each flight head and foot, the door and the way between
+            if straight:
+                reserved = [(module['xd'] - DOOR_CLEAR, gx1 + 10, -1e9, 1e9)]    # door, landing, next flight's foot
+                if i == 0 and len(zs) > 1:
+                    reserved.append((xh - run2 - 10, xh + 10, bi - 10, 1e9))     # under the flight to the next deck
+                if i > 0:
+                    head_x = xh - run2 - going2 / 2
+                    reserved += [(xo0 - 2, xo1 + 2, bi - 2, 1e9),                # the opening the flight comes up
+                                 (head_x - HEAD_CLEAR, xo0, -1e9, 1e9),          # the landing at its head
+                                 (head_x - HEAD_CLEAR, module['xd'], -1e9, bi + 10)]   # the way to the door
+            else:
+                reserved = [(module['xd'] - DOOR_CLEAR, gx1 + 10, -1e9, 1e9)]    # door, spiral exit, spiral
+            free = _free_floor((gx0 + 8, deck_end - 8, D_FACE + 3, dF - 12), reserved)
+            edge = (P(gx0, dF - 3, z), P(deck_end, dF - 3, z))
             record['decks'].append({'z': round(z, 1), 'quad': [[round(p[0], 1), round(p[1], 1)] for p in corners],
-                                    'door': [round(door[0], 1), round(door[1], 1)]})
+                                    'door': [round(door[0], 1), round(door[1], 1)],
+                                    **self._free_record(P, free, z, edge, out_d)})
             # the outer guard, open where the first flight lands
             gaps = [(xh - 2, gx1 + 1)] if straight and i == 0 else []
             for a0, a1 in _subtract((gx0, gx1), gaps):

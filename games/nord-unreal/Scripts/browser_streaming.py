@@ -269,15 +269,23 @@ def run():
         except BlockingIOError as error:
             raise RuntimeError("Another browser streaming lifecycle is already running.") from error
         settings = stream_settings()
+        quality, gauntlet = stream_quality(), gauntlet_run()
         ice_config = preflight()
         stamp = time.strftime("%Y%m%d-%H%M%S", time.gmtime()) + f"-{os.getpid()}"
         ice = OUT / ("ice-" + stamp + ".json")
         with os.fdopen(os.open(ice, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600), "w") as handle:
             json.dump(ice_config, handle)
+        host_log = OUT / ("host-" + stamp + ".log")
+        if gauntlet:
+            gauntlet.mkdir(parents=True, exist_ok=True)
+            (gauntlet / "stream.expect").write_text(gauntlet_expect(quality))
         children = []
         logs = []
         state = {"launcher_pid": os.getpid(), "phase": "starting", "infrastructure_sha": INFRA_SHA,
-                 "stream_settings": settings, "children": []}
+                 "stream_settings": settings, "stream_quality": quality,
+                 "gauntlet": None if gauntlet is None else {"run": str(gauntlet), "host_log": str(host_log),
+                                                            "expect": str(gauntlet / "stream.expect"), "sky": sky_arguments()},
+                 "children": []}
         state_path = OUT / "lifecycle.json"
 
         def record():
@@ -327,7 +335,6 @@ def run():
                    "--player_port", "9010", "--max_players", "1", "--peer_options_file", str(ice),
                    "--player_keepalive_timeout", "30000", "--log_level_console", "info", "--log_folder", str(OUT / "server-logs")])
             wait_for(signalling_ready, "signalling")
-            host_log = OUT / ("host-" + stamp + ".log")
             launch("host", game_command(False, host_log))
             wait_for(lambda: log_contains(host_log, "IpNetDriver listening on port 7791"), "the native host")
             friend_log = OUT / ("friend-" + stamp + ".log")
