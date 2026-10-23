@@ -100,7 +100,7 @@ MATERIALS = {
     'ResinWhite': ('#E6E4DC', .55, 0, 0), 'ResinGreen': ('#2E5A3D', .55, 0, 0), 'ResinBeige': ('#CDBFA2', .55, 0, 0),
     'GrillBlack': ('#1C1D1E', .45, .3, 0), 'GrillRed': ('#6E1D1A', .4, .3, 0), 'GrillSteel': ('#9EA3A6', .3, .85, 0),
     'PropaneWhite': ('#E2E2DC', .45, .2, 0),
-    'DishWhite': ('#E2E2DD', .45, .1, 0), 'DishGrey': ('#AEB0AF', .45, .3, 0),
+    'DishWhite': ('#E2E2DD', .45, .1, 0), 'DishGrey': ('#AEB0AF', .45, .3, 0), 'DishDark': ('#45484B', .45, .3, 0),
     'Terracotta': ('#B0613B', .85, 0, 0), 'PotBlack': ('#232425', .6, 0, 0), 'PotGrey': ('#8A8985', .7, 0, 0),
     'PlantGreen': ('#4D6A33', .7, 0, 0), 'PlantDry': ('#8B7442', .8, 0, 0), 'PlantRust': ('#97492A', .75, 0, 0),
 }
@@ -120,7 +120,7 @@ VARIANTS = [
     ['CollarRed', 'CollarBlue', 'CollarGreen'], ['StrollerFrame', 'StrollerSilver'],
     ['FabricNavy', 'FabricGrey', 'FabricOlive'], ['FabricCharcoal', 'FabricBurgundy', 'FabricSand'],
     ['PoleGalv', 'PoleGrey'],
-    ['ResinWhite', 'ResinGreen', 'ResinBeige'], ['GrillBlack', 'GrillRed', 'GrillSteel'], ['DishWhite', 'DishGrey'],
+    ['ResinWhite', 'ResinGreen', 'ResinBeige'], ['GrillBlack', 'GrillRed', 'GrillSteel'], ['DishWhite', 'DishGrey', 'DishDark'],
     ['Terracotta', 'PotBlack', 'PotGrey'], ['PlantGreen', 'PlantDry', 'PlantRust'],
 ]
 VARIANT_OF = {group[0]: group[1:] for group in VARIANTS}
@@ -1209,7 +1209,8 @@ def bbq():
 def satellite_dish():
     P = Prop('satellite_dish', 'gallery', 'Small offset satellite dish (about 50 x 46 cm, the Bell or Shaw '
              'kind): grey reflector tilted up, LNB on its arm, on a short mast with a clamp for a gallery guard '
-             'cap rail or a wall.', 'clamp centre at the base; the dish faces +X (aim it south-southwest)')
+             'cap rail or a wall.', 'bottom of the clamp plate; anchors.clamp_cm is the clamp centre (set it on the '
+             'rail top); the dish faces +X (aim it south-southwest)')
     P.box('SteelDark', (0, 0, 4), (9, 7, 8), bevel=.6, part='mount')
     P.box('SteelDark', (-4.6, 0, 1), (1, 7, 14), part='mount')
     P.tube('SteelDark', [(0, 0, 8), (0, 0, 46)], 2.1, 8, part='mount')
@@ -1890,7 +1891,7 @@ def render_sheet(props, finals, sheet_path, tmp_dir):
     import numpy as np
     bpy.ops.wm.read_factory_settings(use_empty=True)
     scene, cam, label_mat = setup_scene()
-    tw, th, cols, rows = 200, 250, 8, 4
+    tw, th, cols, rows = 200, 250, 8, 5
     scene.render.resolution_x, scene.render.resolution_y = tw, th
     scene.render.resolution_percentage = 100
     demo = sign_street(demo=True)
@@ -1944,6 +1945,13 @@ def render_sheet(props, finals, sheet_path, tmp_dir):
         for key, (x, y), yaw in corner:
             items += placements(key, T((x / 100, y / 100, 0), (0, 0, yaw)))
         tiles.append(('street corner', items, (((-120, -420, 0), (230, 120, 260)), -62, 9)))
+    gallery = [('bbq', (0, -95), 0), ('chair_patio', (15, 25), 25), ('chair_patio', (-5, 85), -20),
+               ('potted_plant', (55, 120), 0), ('potted_plant', (-45, 140), 40), ('satellite_dish', (-60, -10), 30)]
+    if all(k in by_key for k, _, _ in gallery):
+        items = []
+        for n, (key, (x, y), yaw) in enumerate(gallery):
+            items += placements(key, T((x / 100, y / 100, 0), (0, 0, yaw)), n % 3)
+        tiles.append(('gallery deck', items, None))
     tiles = tiles[:cols * rows]
     sheet = np.full((th * rows, tw * cols, 4), .3, dtype=np.float32)
     for idx, (label, items, view) in enumerate(tiles):
@@ -1962,7 +1970,7 @@ def render_sheet(props, finals, sheet_path, tmp_dir):
                 hi = Vector([max(hi[i], w[i]) for i in range(3)])
         az, el = -38, 14
         key = label.split()[0]
-        if key in ('police_lightbar', 'laundry_line', 'barrier_chantier', 'bench', 'bixi_dock', 'sign_oneway'):
+        if key in ('police_lightbar', 'laundry_line', 'barrier_chantier', 'bench', 'bixi_dock', 'sign_oneway', 'gallery'):
             az = -30
         if view:
             (blo, bhi), az, el = view

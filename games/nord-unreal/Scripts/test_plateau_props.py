@@ -11,6 +11,7 @@ Stdlib only.
 import argparse
 import hashlib
 import json
+import math
 import os
 import subprocess
 import sys
@@ -24,12 +25,20 @@ REQUIRED = {
     'lamp_cobra', 'lamp_park', 'hydrant', 'sign_stop', 'sign_street', 'sign_oneway', 'sign_parking',
     'bixi_dock', 'bixi_bike', 'bin_recycling', 'bin_compost', 'bin_garbage', 'cone', 'barrier_chantier',
     'utility_pole', 'laundry_line', 'bike_locked', 'ac_unit', 'flower_box', 'bench', 'mailbox',
-    'police_lightbar', 'dog_small', 'dog_medium', 'dog_large', 'stroller', 'grocery_bag'}
+    'police_lightbar', 'dog_small', 'dog_medium', 'dog_large', 'stroller', 'grocery_bag',
+    'chair_patio', 'bbq', 'satellite_dish', 'potted_plant', 'bike_gallery'}
+# Gallery life (the outdoor rooms of the back galleries): kind, (min, max) size in cm along Unreal X, Y and Z of
+# the assembled prop, and whether it carries box colliders (things a player bumps into on a 1.2-1.8 m deck).
+GALLERY = {'chair_patio': ((45, 70), (50, 70), (75, 95), True), 'bbq': ((45, 70), (100, 135), (100, 125), True),
+           'satellite_dish': ((30, 60), (40, 60), (60, 100), False),
+           'potted_plant': ((25, 50), (25, 50), (40, 90), False), 'bike_gallery': ((165, 195), (35, 65), (100, 125), True)}
 TARGETS = {'lamp_cobra': 800, 'lamp_park': 800, 'hydrant': 500, 'dog_small': 1500, 'dog_medium': 1500,
-           'dog_large': 1500, 'stroller': 1500}
+           'dog_large': 1500, 'stroller': 1500, 'chair_patio': 700, 'bbq': 1600, 'satellite_dish': 1200,
+           'potted_plant': 1500, 'bike_gallery': 2500}
 DOG_PARTS = {'body', 'head', 'leg_fl', 'leg_fr', 'leg_rl', 'leg_rr', 'tail'}
 VARIANT_PROPS = {'bin_recycling', 'bin_compost', 'bin_garbage', 'utility_pole', 'ac_unit', 'flower_box',
-                 'bench', 'bike_locked', 'laundry_line', 'dog_small', 'dog_medium', 'dog_large', 'stroller'}
+                 'bench', 'bike_locked', 'laundry_line', 'dog_small', 'dog_medium', 'dog_large', 'stroller',
+                 'chair_patio', 'bbq', 'satellite_dish', 'potted_plant', 'bike_gallery'}
 
 
 def read_obj(path):
@@ -126,7 +135,7 @@ def check(directory):
             assert entry['triangles'] <= TARGETS[key], (key, entry['triangles'])
         b = entry['bounds_cm']
         assert abs(b[2]) < .05, (key, 'pivot must sit on the base', b)
-        if entry['kind'] in ('street', 'works', 'park', 'ruelle', 'companion') and key != 'laundry_line':
+        if entry['kind'] in ('street', 'works', 'park', 'ruelle', 'companion', 'gallery') and key != 'laundry_line':
             assert b[0] <= 0 <= b[3] and b[1] <= 0 <= b[4], (key, 'pivot outside the footprint', b)
         assert b[5] - b[2] < 1100, key
     for key in ('dog_small', 'dog_medium', 'dog_large'):
@@ -153,9 +162,34 @@ def check(directory):
             # right = (n.y, -n.x), so text laid along +right reads left to right.
             assert abs(sum(a * b for a, b in zip(n, r))) < 1e-6 and cross_z < 0, face
     assert len(props['bixi_dock']['slots']) == 6
+    check_gallery(props)
     stop = props['sign_stop']['parts']
     assert {'face_red', 'face_white'} <= set(stop)
     return manifest
+
+
+def check_gallery(props):
+    """The gallery-life props: real sizes, colliders only on what a player bumps into, mount and lean anchors."""
+    for key, (sx, sy, sz, collides) in GALLERY.items():
+        entry = props[key]
+        assert entry['kind'] == 'gallery', key
+        b = entry['bounds_cm']
+        for (lo, hi), size, axis in zip((sx, sy, sz), (b[3] - b[0], b[4] - b[1], b[5] - b[2]), 'XYZ'):
+            assert lo <= size <= hi, (key, axis, round(size, 1), (lo, hi))
+        assert bool(entry.get('colliders_cm')) == collides, (key, 'colliders')
+        for box in entry.get('colliders_cm', []):
+            lo = [c - s / 2 for c, s in zip(box['center'], box['size'])]
+            hi = [c + s / 2 for c, s in zip(box['center'], box['size'])]
+            assert all(l <= bl + 15 and h >= bh - 15 for l, h, bl, bh in zip(lo, hi, b[:3], b[3:])), (key, box, b)
+    assert 40 <= props['chair_patio']['seat_cm'] <= 48
+    clamp = props['satellite_dish']['anchors']['clamp_cm']
+    aim = props['satellite_dish']['anchors']['aim_cm']
+    assert len(clamp) == 3 and 0 <= clamp[2] <= 15, clamp
+    elevation = math.degrees(math.atan2(aim[2], math.hypot(aim[0], aim[1])))
+    assert aim[0] > 0 and abs(aim[1]) < 1e-6 and 15 <= elevation <= 40, (aim, elevation)
+    lean = props['bike_gallery']['anchors']['lean_contact_cm']
+    assert lean[1] < -10 and 80 <= lean[2] <= 110, ('the bike leans toward Unreal -Y onto the guard', lean)
+    assert props['bike_gallery']['bounds_cm'][1] < -30 < props['bike_gallery']['bounds_cm'][4] + 30
 
 
 def blender_command(python):
