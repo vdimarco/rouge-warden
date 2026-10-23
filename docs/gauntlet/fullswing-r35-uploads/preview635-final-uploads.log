@@ -1,0 +1,15 @@
+{"rows":[{"kind":"figures","n":3,"bounded":true,"bytes":264,"expected":264,"count":3},{"kind":"figures","n":1,"bounded":true,"bytes":88,"expected":88,"count":1},{"kind":"figures","n":0,"bounded":true,"bytes":0,"expected":0,"count":0},{"kind":"figures","n":7,"bounded":true,"bytes":616,"expected":616,"count":7},{"kind":"figures","n":2,"bounded":true,"bytes":176,"expected":176,"count":2},{"kind":"signs","n":3,"bounded":true,"bytes":156,"expected":156,"count":3},{"kind":"signs","n":1,"bounded":true,"bytes":52,"expected":52,"count":1},{"kind":"signs","n":0,"bounded":true,"bytes":0,"expected":0,"count":0},{"kind":"signs","n":96,"bounded":true,"bytes":4992,"expected":4992,"count":96},{"kind":"signs","n":3,"bounded":true,"bytes":156,"expected":156,"count":3}],"images":[{"kind":"figures","different":0,"varied":37856},{"kind":"signs","different":0,"varied":5808}]}
+PASS: figures: 3 entries upload 264 bytes
+PASS: figures: 1 entries upload 88 bytes
+PASS: figures: 0 entries upload 0 bytes
+PASS: figures: 7 entries upload 616 bytes
+PASS: figures: 2 entries upload 176 bytes
+PASS: signs: 3 entries upload 156 bytes
+PASS: signs: 1 entries upload 52 bytes
+PASS: signs: 0 entries upload 0 bytes
+PASS: signs: 96 entries upload 4992 bytes
+PASS: signs: 3 entries upload 156 bytes
+PASS: figures: unchanged nonblank image
+PASS: signs: unchanged nonblank image
+PASS: no page errors
+PASS: instance uploads

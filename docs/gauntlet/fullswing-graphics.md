@@ -1164,3 +1164,12 @@ Range-limited dynamic GPU transfers reuse existing Three APIs.13focused browser 
 ## Increment36 — hidden flat rendering (pending release)
 
 One guard skips hidden flat city/bloom draws. Baseline2fail/8pass→10pass in focused synthetic desktop/phone checks:60hidden callbacks0pipelineentriesafter,visible/resume/XRroutingunchanged. Evidence fullswing-r36-hidden-render. No FPSclaim/gate; all20historicaldimensionassessmentsremaincontext,responsiveness/stabilityunverified,totalwithheld. Review/CI/currentpreview/rebase/production pending. No affected-user/physicaldevice/playthroughclaim.
+
+
+## Incremental rendering releases
+
+PR#634 released as `8608ff629f30ec911edab0ad6c12f77606b6fc9c` after review, CI, deployed functional checks, final rebase and exact-head merge; production bytes verified. Canonical spec and archive published. FPS benefit and affected Chrome remain unverified; no FPS-benefit gate.
+
+PR#635 released as `3797b07fdd943b430102de6b573ef8f20f6f2e38` after review, CI, deployed functional checks, final rebase and exact-head merge; production bytes verified. Canonical spec and archive published. FPS benefit and affected Chrome remain unverified; no FPS-benefit gate.
+
+PR#636 released as `9d82f8233450bc1a3c5f1e8ef841c78de731c768` after review, CI, deployed functional checks, final rebase and exact-head merge; production bytes verified. Canonical spec and archive published. FPS benefit and affected Chrome remain unverified; no FPS-benefit gate.
