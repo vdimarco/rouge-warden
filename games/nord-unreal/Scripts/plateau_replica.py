@@ -1238,7 +1238,7 @@ def build_streets(world):
         'curb_extensions_merged', 'curb_extensions_flush', 'curb_extensions_part_flush', 'curb_extension_metres',
         'curb_extensions_on_verges', 'curb_extensions_on_corners', 'mapped_trees_for_host',
         'yard_slabs_past_ruelle_mouths', 'curb_extension_trees_at_curb', 'sidewalk_risers', 'corner_risers',
-        'yard_risers', 'yard_mouth_wedges', 'yard_mouth_wedge_square_metres')}
+        'yard_risers', 'yard_mouth_wedges', 'yard_mouth_wedge_square_metres', 'sidewalk_pieces_split')}
     # Carriageway asphalt.
     for s in world.segs:
         if s['excluded']:
@@ -1601,6 +1601,9 @@ def _strip_ramps(strip, ramp_grid, ramp_points):
     return stops
 
 
+SIDEWALK_SPLIT = 6        # parts of a 1.5 m sidewalk piece that a building corner cuts across
+
+
 def _sidewalk_strip(world, L, surfaces, strip, counts):
     (ca, cb), (oa, ob), length = strip['curb'], strip['outer'], strip['len']
     pieces = max(1, round(length / 150))
@@ -1619,9 +1622,22 @@ def _sidewalk_strip(world, L, surfaces, strip, counts):
     # 'raised' (a colliding slab at the curb height or on a ramp) or 'apron' per piece; a raised piece gets an end
     # wall wherever the next piece is not raised (an apron 9 cm down, a gap or the strip's end), so no step between
     # a slab and a dropped apron opens onto the ground underneath
-    status, ends = [None] * pieces, {}
+    # A piece whose one end runs into a building and the other not (a building corner in the sidewalk band) is cut
+    # into SIDEWALK_SPLIT parts, so the part outside the wall is laid instead of the whole piece being dropped.
+    spans = []
     for k in range(pieces):
         f0, f1 = k / pieces, (k + 1) / pieces
+        ends_in = [any(world.in_building(q) for q in (c, o, lerp(c, o, .5)))
+                   for c, o in ((lerp(ca, cb, f0), lerp(oa, ob, f0)), (lerp(ca, cb, f1), lerp(oa, ob, f1)))]
+        if ends_in[0] != ends_in[1]:
+            spans += [(f0 + (f1 - f0) * j / SIDEWALK_SPLIT, f0 + (f1 - f0) * (j + 1) / SIDEWALK_SPLIT, j == 0)
+                      for j in range(SIDEWALK_SPLIT)]
+            counts['sidewalk_pieces_split'] += 1
+        else:
+            spans.append((f0, f1, True))
+    pieces = len(spans)
+    status, ends = [None] * pieces, {}
+    for k, (f0, f1, joint) in enumerate(spans):
         c0, c1, o1, o0 = lerp(ca, cb, f0), lerp(ca, cb, f1), lerp(oa, ob, f1), lerp(oa, ob, f0)
         poly = [c0, c1, o1, o0]
         if segments_cross(c0, c1, o1, o0) or segments_cross(c1, o1, o0, c0):
@@ -1694,7 +1710,7 @@ def _sidewalk_strip(world, L, surfaces, strip, counts):
             band = band if area([p[:2] for p in band]) > 0 else band[::-1]
             for tri in (quad_triangles(band) if not convex([p[:2] for p in band]) else [band]):
                 L.face('curb', tri)
-        if k > 0 and za == Z_WALK:
+        if k > 0 and joint and za == Z_WALK:
             L.strip('joint', lerp(c0, o0, 16 / d), o0, 1.3, za + .12)
     for k, (start, end) in sorted(ends.items()):
         for (a, b, z), other in ((start, k - 1), (end, k + 1)):

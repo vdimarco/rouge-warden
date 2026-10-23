@@ -490,26 +490,26 @@ RED = (176., 46., 30.)
 MAROON = (118., 44., 58.)
 GREEN = (98., 124., 46.)
 LIME = (166., 160., 48.)
-PALE = (222., 202., 104.)
+PALE = (228., 200., 92.)
 BROWN = (142., 98., 52.)
 CELLS = {
     # name: (leaf form, leaves, palette [(weight, colour, edge colour, edge amount)], sparse twig, stage)
-    'nm_yellow': ('norway', 13, [(.6, YELLOW, ORANGE, .2), (.25, GOLD, BROWN, .25), (.15, LIME, YELLOW, .4)], False, .9),
-    'nm_mixed': ('norway', 13, [(.4, YELLOW, YELLOW, 0.), (.35, LIME, YELLOW, .45), (.25, GREEN, YELLOW, .5)], False, .5),
-    'nm_green': ('norway', 11, [(.6, GREEN, LIME, .35), (.4, LIME, YELLOW, .4)], False, .15),
+    'nm_yellow': ('norway', 15, [(.6, YELLOW, ORANGE, .2), (.25, GOLD, BROWN, .25), (.15, LIME, YELLOW, .4)], False, .9),
+    'nm_mixed': ('norway', 15, [(.4, YELLOW, YELLOW, 0.), (.35, LIME, YELLOW, .45), (.25, GREEN, YELLOW, .5)], False, .5),
+    'nm_green': ('norway', 13, [(.6, GREEN, LIME, .35), (.4, LIME, YELLOW, .4)], False, .15),
     'nm_sparse': ('norway', 3, [(.7, YELLOW, BROWN, .3), (.3, ORANGE, BROWN, .3)], True, 1.),
-    'sm_yellow': ('silver', 13, [(.55, PALE, YELLOW, .3), (.3, YELLOW, ORANGE, .3), (.15, LIME, PALE, .3)], False, .8),
-    'sm_orange': ('silver', 11, [(.45, ORANGE, RED, .35), (.3, YELLOW, ORANGE, .4), (.25, RED, MAROON, .2)], False, 1.),
-    'li_yellow': ('linden', 13, [(.6, YELLOW, BROWN, .2), (.25, PALE, YELLOW, .2), (.15, LIME, YELLOW, .3)], False, .85),
-    'li_mixed': ('linden', 12, [(.4, LIME, YELLOW, .4), (.3, YELLOW, BROWN, .3), (.15, GREEN, LIME, .3),
+    'sm_yellow': ('silver', 15, [(.55, PALE, YELLOW, .3), (.3, YELLOW, ORANGE, .3), (.15, LIME, PALE, .3)], False, .8),
+    'sm_orange': ('silver', 13, [(.45, ORANGE, RED, .35), (.3, YELLOW, ORANGE, .4), (.25, RED, MAROON, .2)], False, 1.),
+    'li_yellow': ('linden', 15, [(.6, YELLOW, BROWN, .2), (.25, PALE, YELLOW, .2), (.15, LIME, YELLOW, .3)], False, .85),
+    'li_mixed': ('linden', 14, [(.4, LIME, YELLOW, .4), (.3, YELLOW, BROWN, .3), (.15, GREEN, LIME, .3),
                                (.15, BROWN, BROWN, 0.)], False, .4),
     'as_yellow': ('ash', 5, [(.7, YELLOW, GOLD, .2), (.3, LIME, YELLOW, .4)], False, .8),
     'as_maroon': ('ash', 4, [(.55, MAROON, RED, .3), (.45, YELLOW, MAROON, .4)], False, 1.),
     'as_sparse': ('ash', 1, [(1., YELLOW, BROWN, .3)], True, 1.),
     'hl_gold': ('locust', 5, [(.75, GOLD, YELLOW, .1), (.25, YELLOW, LIME, .2)], False, .9),
     'hl_sparse': ('locust', 2, [(.7, GOLD, BROWN, .2), (.3, LIME, GOLD, .3)], True, .8),
-    'sx_red': ('amur', 13, [(.55, RED, MAROON, .3), (.3, ORANGE, RED, .4), (.15, MAROON, RED, .2)], False, 1.),
-    'sx_orange': ('amur', 13, [(.5, ORANGE, RED, .4), (.3, YELLOW, ORANGE, .5), (.2, GREEN, ORANGE, .5)], False, .6),
+    'sx_red': ('amur', 15, [(.55, RED, MAROON, .3), (.3, ORANGE, RED, .4), (.15, MAROON, RED, .2)], False, 1.),
+    'sx_orange': ('amur', 15, [(.5, ORANGE, RED, .4), (.3, YELLOW, ORANGE, .5), (.2, GREEN, ORANGE, .5)], False, .6),
     'sm_sparse': ('silver', 3, [(.6, PALE, BROWN, .3), (.4, YELLOW, ORANGE, .3)], True, 1.),
 }
 CELL_ORDER = list(CELLS)
@@ -594,16 +594,16 @@ def _leaf(cv, form, x, y, size, turn, colour, edge, amount, blotch, shade, z, u)
             f = .2 + .17 * k
             px, py = x + c * rach * f, y + s * rach * f
             for side in (-1., 1.):
-                pt = turn + side * .19
+                pt = turn + side * .16
                 ps, pc = PT.sin_cos(pt)
-                pin = rach * (.36 - .03 * k)
-                _petiole(cv, px, py, px + pc * pin, py + ps * pin, .45, tuple(v * .7 for v in colour), z - .1)
-                n = 7
+                pin = rach * (.38 - .04 * k)
+                _petiole(cv, px, py, px + pc * pin, py + ps * pin, .4, tuple(v * .7 for v in colour), z - .1)
+                n = 6
                 for m in range(n):
-                    g = .18 + .8 * m / n
+                    g = .2 + .78 * m / n
                     for side2 in (-1., 1.):
-                        PT.leaflet(cv, px + pc * pin * g, py + ps * pin * g, pt + side2 * .21, size * .09,
-                                   size * .09 * .38, z, colour, edge, amount, blotch, 0, .6, shade, lift=.08)
+                        PT.leaflet(cv, px + pc * pin * g, py + ps * pin * g, pt + side2 * .15, size * .085,
+                                   size * .085 * .3, z, colour, edge, amount, blotch, 0, .6, shade, lift=.08)
 
 
 CELL_MARGIN = 64        # each cell is painted on its own canvas this much larger on every side, then cropped
@@ -654,7 +654,7 @@ def paint_cell(cv, index, blotch):
         k, side, step = segs - 2, -1., 3 if count > 6 else 5
         while len(anchors) < count and k > 5:
             f = k / segs
-            spread = .085 + .12 * (1. - f) + (rng.random() - .5) * .04
+            spread = .11 + .14 * (1. - f) + (rng.random() - .5) * .05
             scale = .8 + .35 * (1. - f)
             if F['opposite']:
                 anchors += [(k, -spread, scale), (k, spread, scale)]
