@@ -17,10 +17,10 @@ Read `design.md` first. `notes-host.md` gives the exact host commands. The lead 
 
 ## 4. Game module
 - [ ] 4.1 `QuebecGauntlet.h/.cpp`: `UQuebecGauntletSubsystem` with the `-NordGauntlet*` flags, car seating and driving, CSV capture, holds and stills, `NORD_GAUNTLET` log lines, `route.json` and the exit codes.
-- [ ] 4.2 `QuebecGauntletController.h/.cpp`: `UQuebecGauntletController`, built only with `QUEBEC_WITH_GAUNTLET`.
-- [ ] 4.3 `Quebec.Build.cs` (Gauntlet module and define in non-Shipping), `Quebec.uproject` (Gauntlet plugin), `QuebecSky.cpp` (`NordGauntlet` QA flag).
+- [ ] 4.2 `Source/QuebecGauntletTest/QuebecGauntletController.h/.cpp`: `UQuebecGauntletController` in its own module, which depends on Gauntlet and is left out of Shipping. It meets the subsystem only through the console variables `nord.GauntletController` and `nord.GauntletExit`.
+- [ ] 4.3 `Quebec.uproject` (the `QuebecGauntletTest` module and the Gauntlet plugin, both denied in Shipping), `QuebecSky.cpp` (`NordGauntlet` QA flag, and a settled weather switch under that flag).
 - [ ] 4.4 Stub `CsvProfiler.h` and the Gauntlet stub headers, marked unverified, plus a selftest case.
-- [ ] 4.5 `Tools/SyntaxCheck/check.sh --both` and `link.sh --both -j 2` pass.
+- [ ] 4.5 `Tools/SyntaxCheck/check.sh --both` and `link.sh --both -j 2` pass, for `Source/Quebec` and with `--src ../../Source/QuebecGauntletTest`.
 
 ## 5. C# test node (host compile)
 - [ ] 5.1 `Build/Scripts/NordGauntlet.Automation.csproj` and `Build/Scripts/NordMobileLoop.cs` with the `mode`, `size`, `sky`, `laps`, `run` and `execcmds` params.
@@ -50,7 +50,7 @@ Read `design.md` first. `notes-host.md` gives the exact host commands. The lead 
 - [x] 10.2 `docs/gauntlet/gta-mobile.md` protocol header, with no scored rounds.
 
 ## 11. Host and person (owner's PC with UE 5.8.3)
-- [ ] 11.1 Build both targets with the Gauntlet plugin, compile the C# node, and package the Browser build.
+- [ ] 11.1 Build both targets with the Gauntlet plugin and a Shipping build without it, compile the C# node, and package the Browser build into a staging folder. Replace the live package only after the staged one starts without Gauntlet log lines.
 - [ ] 11.2 RunUnreal smoke on Linux (one lap). If it fails, record why and use `--direct`.
 - [ ] 11.3 `-DeviceProfile=NordPhoneStream` reads back in the Browser package, or the launcher falls back to `-ExecCmds`.
 - [ ] 11.4 Confirm the CSV column names, including GPUTime.

@@ -23,6 +23,10 @@ A gauntlet run SHALL drive the player's car with no player input through five fi
 - **THEN** the game exits with code 3 before the car moves, and `browser_streaming.py` refuses `NORD_STREAM_GAUNTLET` unless `NORD_SKY_ARGS` has both flags
 - **AND** `test_gauntlet_loop.py` and `browser_streaming.py self-check` cover both refusals
 
+#### Scenario: Run cannot be set up
+- **WHEN** a gauntlet run starts with an unknown mode, on another map, or where no loop through the stops avoids turning back
+- **THEN** the car does not move, and the game exits with code 6 (setup) and an `error=` log line that names the reason, not with a driving failure
+
 #### Scenario: Stops follow the replica cameras
 - **WHEN** the camera list in `Data/Plateau/ReplicaGeometry/Streets/manifest.json` changes, for example after the mirror fix flips Y
 - **THEN** `test_gauntlet_route.py` fails until `make_gauntlet_route.py` regenerates `QuebecGauntletRoute.h`
@@ -53,7 +57,7 @@ With the phone profile at phone-stream sizes, the native render SHALL hold a 33.
 A phone-sized client watching NordHost alone over a direct connection SHALL receive at least 29 real decoded frames per second over the loop at both pinned phone rungs, in landscape and in portrait.
 
 #### Scenario: Solo, landscape and portrait, both rungs
-- **WHEN** one phone-sized sampler watches NordHost over a direct connection during a stream-mode lap, with NordFriend1 asleep, pinned first to rung 0 (1412x652 and 652x1412) and then to rung 1 (1058x488 and 488x1058)
+- **WHEN** one phone-sized sampler watches NordHost over a direct connection during the gated stream-mode lap, which follows a warm-up lap that is not gated, with NordFriend1 asleep, pinned first to rung 0 (1412x652 and 652x1412) and then to rung 1 (1058x488 and 488x1058)
 - **THEN** mean decoded FPS is at least 29 over the lap, there are zero WebRTC freezes, at most 1% of decoded frame intervals are longer than 50 ms, the longest gap is at most 500 ms, and the jitter buffer averages at most 120 ms per frame
 - **AND** `NORD_STREAM_FPS` is at least 29 in every 5 s window, decoded FPS is within 3 FPS of it, and `stream/sample.json` and `verdict.json` record each value
 
@@ -80,6 +84,11 @@ A look run SHALL capture the same fixed views at each stop for each sky and size
 #### Scenario: Stills
 - **WHEN** a look run finishes
 - **THEN** the run folder holds 10 views per sky at each size, an eye view and a chase view at each stop, with the HUD off, named `look/<sky>/<stop>-<view>-<WxH>.png`
+
+#### Scenario: Settled sky at each stop
+- **WHEN** a look run switches between day and night rain at a stop
+- **THEN** the new weather and the street wetness are settled before the stills, as at a start with `-NordWeather=`, so the day stills show dry streets and no still changes with the frame rate
+- **AND** the game log has a `NORD_SKY_WEATHER command <weather> settled` line for each switch
 
 #### Scenario: Repeatable reference
 - **WHEN** the ceiling profile is rendered twice with the same build, sizes and skies
