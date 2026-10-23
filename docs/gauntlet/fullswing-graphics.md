@@ -1246,3 +1246,6 @@ Increment45 shipped #654 as8005f88d after all6CI/review/current18deployedchecks/
 
 ### Increment46 — job rope target scratch — 2026-10-23
 Optional jobs.ropeTargets output reused by main; defaultfresharrays/records and livepositions unchanged. Node100fourtype/statecycles +action/reconciliation suites and4browserchecks60realframes/onearrayPASS. Evidence fullswing-r46-job-targets/all20dimensionlimits; total/delta withheld, actualChrome/stability unverified. No art/physics/anchor/ceiling change or FPS claim. Review/CI/preview/rebase/production pending.
+
+
+Increment46 shipped #656 as5536c923 after all6CI/review/current22deployedchecks/rebase before AND afterpreview/exactmerge. Productionmain+jobs HTTP200 exactbytes verified (hashes in fullswing-r46-job-targets/production-verification.json). Canonical job-target-storage scenarios published and OpenSpec archived. ActualChrome/FPSbenefit unverified; totalwithheld.
