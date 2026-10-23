@@ -1281,3 +1281,6 @@ Increment50 shipped #664 asfba485ea after freshall6CI/review/current12deployedch
 
 ### Increment51 — count-only crew filters — 2026-10-23
 Five missionupdates reducealivecounts directly, preservingpredicate/firstlivegoals/completionrules. Node100updates/all5missionsPASS with100→0filteredarrays;actionmissionsuite+5browserchecks60brawlframes/zerofiltersPASS. Evidence fullswing-r51-crew-count/all20dimensionlimits; total/delta withheld, actualChrome/stability unverified. No art/physics/anchor/ceiling change or FPS claim. Review/CI/preview/rebase/production pending.
+
+
+Increment51 shipped #666 as2035c0b8 after all6CI/review/current13deployedchecks/rebase before AND afterpreview/exactmerge. Productionjobs HTTP200 exactSHA c714f2e6fbb50390ceab1bb75dece1c794fa2946c98deb8c992a8b37167d69ac verified. Canonical crew-count scenarios published and OpenSpec archived. ActualChrome/FPSbenefit unverified; totalwithheld.
