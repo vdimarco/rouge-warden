@@ -1119,3 +1119,32 @@ Round30 measurement update:48accepted60s/35inputworkloads, fullraw/source hashes
 
 
 Round30 shipped in PR#631, merge45b0243e, after all6freshintegratedCI/review/currentauthenticated11checkpreview/exactbloombytes and finalfreshrebase. Productionbloom HTTP200 exactSHAda57af013327ae283503ddc5a29416d9847057ce478c35b582f03bfa1fcc4b04. Zero-contribution guard preserves pixels and lowers measured pressureGPUtime; original frame/tail misses and shared-load limits remain. No userChrome fix/passingscore. Canonical sky-gather scenarios published and OpenSpec archived.
+
+
+## Full-screen clear round34 (pending)
+
+One scoped pass helper suppresses redundant clears and restores renderer.autoClear in finally. Preliminary2paired30sGPU/FPS/input improvements justify full measurement, not acceptance. Functional15checks pass. Sources/evidence fullswing-r34-clears; full3pairsnormalpressure60s35inputs queued. Realbuildinganchors/noceiling preserved; no resolution/effect change.
+
+| Lighting | 7 | Historical context only; no current re-score or improvement awarded. |
+| Color palette | 6 | Historical context only; no current re-score or improvement awarded. |
+| Detail density | 6 | Historical context only; current focused visual acceptance remains pending. |
+| Texture and material quality | 7 | Historical context only; current focused visual acceptance remains pending. |
+| Composition and camera | 6 | Historical context only; no current re-score or improvement awarded. |
+| Atmosphere | 6 | Historical context only; no current re-score or improvement awarded. |
+| Character models | 6 | Historical context only; no current re-score or improvement awarded. |
+| Animation smoothness | 7 | Historical context only; current focused visual acceptance remains pending. |
+| Particles and VFX | 6 | Historical context only; no current re-score or improvement awarded. |
+| UI polish | 6 | Historical context only; no current re-score or improvement awarded. |
+| Responsiveness and input latency | Unverified | Current full-clear round hardware evidence pending; actual user-profile Chrome inaccessible. |
+| Controls feel | 5 | Historical context only; no current re-score or improvement awarded. |
+| Mission clarity | 4 | Historical context only; no current re-score or improvement awarded. |
+| Pacing | 4 | Historical context only; no current re-score or improvement awarded. |
+| Fun factor | 4 | Historical context only; no current re-score or improvement awarded. |
+| Difficulty curve | 4 | Historical context only; no current re-score or improvement awarded. |
+| Feedback | 5 | Historical context only; no current re-score or improvement awarded. |
+| Sound design | 4 | Historical context only; no current re-score or improvement awarded. |
+| Variety | 4 | Historical context only; no current re-score or improvement awarded. |
+| Performance stability | Unverified | Current full-clear round hardware evidence pending; actual user-profile Chrome inaccessible. |
+
+
+Current total/delta withheld. Historical scores above are context only, no aesthetic improvement, affecteduserChrome/physicaldevice/listening/fullplaythrough claim. Requirefullhardwareevidence/review/currentpreview/allCI/rebase/production before release.

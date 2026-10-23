@@ -180,7 +180,7 @@ export function createBloom(renderer) {
   black.needsUpdate = true;
   const size = new THREE.Vector2();
   let w = 0, h = 0;
-  const pass = (mat, target) => { quad.material = mat; renderer.setRenderTarget(target); renderer.render(quad, cam); };
+  const pass = (mat, target) => { quad.material = mat; renderer.setRenderTarget(target); const clear = renderer.autoClear; renderer.autoClear = false; try { renderer.render(quad, cam); } finally { renderer.autoClear = clear; } };
 
   const B = {
     level: "off", frames: 0, last: { calls: 0, triangles: 0 }, // last: the scene's own draw counts (the passes after it would reset them)
