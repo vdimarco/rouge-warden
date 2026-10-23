@@ -3835,6 +3835,52 @@ def plan_yard_trees(rears, records, occupancy, canopy, traffic=(), mapped=()):
     return placed
 
 
+def plan_partitions(rears):
+    """Privacy screens between side-by-side galleries (the Plateau's back galleries are outdoor rooms, screened from
+    the neighbours by lattice or boards): one at every post two modules of a lot share, and one where a neighbouring
+    lot's gallery ends within PARTITION_GAP of this lot's along the same wall line, halfway between the two ends. A
+    screen between lots is drawn once: by the lot with the lower id at its own deck levels, and by the other only at
+    its levels with no deck of the first within 60 cm. Sets each Rear's `partitions`."""
+    ends = []
+    for rear in rears:
+        st = rear.stack
+        if not st or rear.infill == 'iron':
+            continue
+        wall = st['wall']
+        F = Frame(None, wall['a'], wall['b'])
+        dF = D_FACE + st['gd']
+        zs = [rear.floor_z[k] for k in st['levels']]
+        modules = st['modules']
+        for module in modules[:-1]:
+            rear.partitions.append({'x': module['mx1'], 'd1': dF - 3, 'zs': zs, 'kind': rear.partition,
+                                    'neighbour': None})
+        for x, sign in ((modules[0]['gx0'], -1), (modules[-1]['gx1'], 1)):
+            ends.append({'rear': rear, 'x': x, 'sign': sign, 'mid': F.p(x, (D_FACE + dF) / 2, 0)[:2], 'u': F.u,
+                         'zs': zs, 'dF': dF})
+    grid = Grid(1000)
+    for end in ends:
+        grid.add(end, [end['mid'][0]], [end['mid'][1]])
+    for end in ends:
+        rear = end['rear']
+        found = []
+        for other in grid.near(end['mid'][0], end['mid'][1], PARTITION_GAP + 40):
+            if other['rear'] is rear or abs(end['u'][0] * other['u'][0] + end['u'][1] * other['u'][1]) < .95:
+                continue
+            v = (other['mid'][0] - end['mid'][0], other['mid'][1] - end['mid'][1])
+            along = (v[0] * end['u'][0] + v[1] * end['u'][1]) * end['sign']
+            back = -(v[0] * other['u'][0] + v[1] * other['u'][1]) * other['sign']
+            across = abs(v[1] * end['u'][0] - v[0] * end['u'][1])
+            if 0 <= along <= PARTITION_GAP and back >= 0 and across <= 40:
+                found.append((math.hypot(*v), other['rear'].lot['id'], along, other))
+        if not found:
+            continue
+        _, nid, along, other = min(found, key=lambda f: f[:2])
+        zs = end['zs'] if rear.lot['id'] < nid else [z for z in end['zs'] if all(abs(z - w) >= 60 for w in other['zs'])]
+        if zs:
+            rear.partitions.append({'x': end['x'] + end['sign'] * along / 2, 'd1': min(end['dF'], other['dF']) - 3,
+                                    'zs': zs, 'kind': rear.partition, 'neighbour': nid})
+
+
 def build_rears(mesh, lots, tops, canopy=None, traffic=(), mapped=()):
     """Plan every lot's galleries first (so yards see their neighbours' structures), then fences, then author."""
     rears = [Rear(lot, tops[lot['id']]) for lot in lots]
@@ -3842,6 +3888,7 @@ def build_rears(mesh, lots, tops, canopy=None, traffic=(), mapped=()):
     occupancy = Occupancy()
     for rear in rears:
         rear.plan_stack(occupancy)
+    plan_partitions(rears)
     side_fences = []
     for rear in rears:
         rear.plan_yard(occupancy, side_fences)
