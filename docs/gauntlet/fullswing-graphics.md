@@ -1274,3 +1274,6 @@ Increment49 shipped #662 asa51930fe after all6CI/review/currentlayout+goalmarkde
 
 ### Increment50 — mission crew list scratch — 2026-10-23
 Optional combat.group output reused by five synchronous jobqueries. Defaultfresharrays/order/goonrefs/countfilters/goals unchanged. Baselineidentityfails→Node100cyclesPASS;existingactionmissionsuite+4browserchecks60brawlframes/onearrayPASS. Evidence fullswing-r50-job-crew/all20dimensionlimits; total/delta withheld, actualChrome/stability unverified. No art/physics/anchor/ceiling change or FPS claim. Review/CI/preview/rebase/production pending.
+
+
+Increment50 shipped #664 asfba485ea after freshall6CI/review/current12deployedchecks/rebase before AND afterpreview/exactmerge. Productioncombat+jobs HTTP200 exactbytes verified (hashes in fullswing-r50-job-crew/production-verification.json). Canonical crew-storage scenarios published and OpenSpec archived. Initial incomplete review retried successfully, never accepted as passing. ActualChrome/FPSbenefit unverified; totalwithheld.
