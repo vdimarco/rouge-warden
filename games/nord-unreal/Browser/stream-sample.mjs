@@ -295,28 +295,47 @@ async function main() {
           requested: document.body.dataset.streamSize, framesPerSecond: null, qpSum: null,
           playerState: document.body.dataset.state, status: document.querySelector('#status-title')?.textContent,
           peerStates: window.__samplePeers.map(peer => peer.connectionState), socketCloses: window.__sampleSocketCloses.slice() };
+        const counters = ['framesDecoded', 'framesReceived', 'framesDropped', 'bytesReceived', 'freezeCount', 'totalFreezesDuration',
+          'totalDecodeTime', 'jitterBufferDelay', 'jitterBufferEmittedCount', 'packetsLost'];
+        if (latency) {
+          Object.assign(result, { roundTripTime: null, jitter: null, totalProcessingDelay: 0, jitterBufferTargetDelay: 0 });
+          counters.push('totalProcessingDelay', 'jitterBufferTargetDelay');
+        }
         for (const peer of window.__samplePeers.filter(peer => peer.connectionState === 'connected')) {
           const stats = await peer.getStats();
           for (const stat of stats.values()) {
             if (stat.type === 'transport' && stat.selectedCandidatePairId) {
               const pair = stats.get(stat.selectedCandidatePairId), local = stats.get(pair?.localCandidateId);
               result.candidate = { type: local?.candidateType, protocol: local?.protocol, relayProtocol: local?.relayProtocol };
+              if (latency) result.roundTripTime = pair?.currentRoundTripTime ?? null;
             }
             if (stat.type !== 'inbound-rtp' || (stat.kind || stat.mediaType) !== 'video') continue;
-            for (const key of ['framesDecoded', 'framesReceived', 'framesDropped', 'bytesReceived', 'freezeCount', 'totalFreezesDuration',
-              'totalDecodeTime', 'jitterBufferDelay', 'jitterBufferEmittedCount', 'packetsLost']) result[key] += stat[key] || 0;
+            for (const key of counters) result[key] += stat[key] || 0;
             result.framesPerSecond = stat.framesPerSecond ?? null;
             result.qpSum = Number.isFinite(stat.qpSum) ? (result.qpSum || 0) + stat.qpSum : result.qpSum;
             result.codec = stats.get(stat.codecId)?.mimeType;
+            if (latency) result.jitter = stat.jitter ?? null;
           }
         }
+        // Hand over the frames and events gathered since the previous sample, so they line up with the samples.
+        if (window.__sampleFrames) result.frameBatch = window.__sampleFrames.splice(0);
+        if (window.__sampleEvents) result.eventBatch = window.__sampleEvents.splice(0);
         return result;
-      });
+      }, values.latency);
       report.samples.push(sample);
+      if (frameBatch) frames.push(...frameBatch);
+      if (eventBatch) report.events.push(...eventBatch);
       if (Date.now() - started >= seconds * 1000) break;
       for (let step = 0; step < 10; step++) {
         if (touch) await touch.send('Input.dispatchTouchEvent', { type: 'touchMove',
           touchPoints: [{ ...point(), x: point().x + 30 * Math.sin((Date.now() - started) / 250) }] });
+        if (values.trigger) {
+          const lines = await triggerLines();
+          // A shorter file was rewritten, so its lines are all new.
+          if (lines.length < triggered) triggered = 0;
+          for (const line of lines.slice(triggered)) if (line.trim()) await shoot(line);
+          triggered = lines.length;
+        }
         await page.waitForTimeout(100);
       }
     } while (true);
@@ -326,7 +345,9 @@ async function main() {
       await touch.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
       await page.waitForTimeout(200);
     }
-    report.summary = summarize(report.samples);
+    // Keep every size change, including any after the last sample; the summary counts only those inside the sample.
+    if (values.latency) report.events.push(...await page.evaluate(() => window.__sampleEvents.splice(0)));
+    report.summary = summarize(report.samples, { frames: values.frames ? frames : undefined, events: report.events });
     assert.ok(report.summary.decodedFps > 0, 'Video must decode new frames during the sample');
     if (values.relay) assert.equal(report.summary.candidate?.type, 'relay');
     await page.screenshot({ path: resolve(output, 'player.png') });
@@ -340,6 +361,7 @@ async function main() {
     await browser.close();
     report.finishedAt = new Date().toISOString();
     await writeFile(resolve(output, 'sample.json'), JSON.stringify(report, null, 2) + '\n');
+    if (values.frames) await writeFile(resolve(output, 'frames.json'), JSON.stringify(frames) + '\n');
   }
 }
 
