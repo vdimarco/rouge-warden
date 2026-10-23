@@ -31,7 +31,7 @@ export function frameIntervals(frames) {
     longest = Math.max(longest, gap);
   }
   if (!intervals.length) return null;
-  const sorted = intervals.toSorted((a, b) => a - b);
+  const sorted = [...intervals].sort((a, b) => a - b);
   const seconds = (ordered.at(-1).expectedDisplayTime - ordered[0].expectedDisplayTime) / 1000;
   const sizes = [];
   for (const { width, height } of frames) {
@@ -272,6 +272,7 @@ async function main() {
         canvas.getContext('2d').drawImage(video, 0, 0);
         // toBlob encodes asynchronously, so the page stalls less than with toDataURL (not measured).
         const blob = await new Promise(done => canvas.toBlob(done, 'image/png'));
+        if (!blob) return null;
         const data = await new Promise(done => { const reader = new FileReader(); reader.onload = () => done(reader.result); reader.readAsDataURL(blob); });
         return { width: canvas.width, height: canvas.height, data };
       });
