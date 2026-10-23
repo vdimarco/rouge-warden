@@ -2444,30 +2444,46 @@ def _alley_profile(world, pa, pb, stops=None):
     """Paving reach either side of a ruelle segment, sampled every metre: the yard fence line (ALLEY_PAVE) or the
     nearest wall, never inside the 430 cm lane strip; past the fence line, out to a wall within WALL_PAVE where no
     Plex yard, fence, shed or ground, sidewalk or carriageway lies before it (a building's side or rear wall on the
-    lane, a garage). Returns the sample distances and reaches {1: left, -1: right} (left of pa->pb)."""
+    lane, a garage). Where the reach jumps between two samples (a wall begins or ends), two more samples bracket
+    the jump to 1 cm. Returns the sample distances and reaches {1: left, -1: right} (left of pa->pb)."""
     u, length = unit(pa, pb)
     n = (-u[1], u[0])
-    steps = max(1, math.ceil(length / PAVE_STEP))
-    ts = [length * i / steps for i in range(steps + 1)]
-    reach, under = {1: [], -1: []}, []
-    for t in ts:
+
+    def sample(t):
         c = add(pa, u, t)
-        inside = world.in_building(c)
-        under.append(inside)
+        if world.in_building(c):
+            return True, ALLEY_HALF, ALLEY_HALF
+        out = []
         for k in (1, -1):
-            if inside:
-                reach[k].append(ALLEY_HALF)
-                continue
             d = (n[0] * k, n[1] * k)
             hit = world.building_ray(c, d, WALL_PAVE)
             if hit is not None and hit <= ALLEY_PAVE:
-                reach[k].append(max(ALLEY_HALF, hit))
-                continue
-            if hit is not None and stops is not None and not stops.inside(c):
+                out.append(max(ALLEY_HALF, hit))
+            elif hit is not None and stops is not None and not stops.inside(c):
                 stop = stops.ray(c, d, WALL_PAVE)
-                reach[k].append(hit if stop is None or stop > hit else ALLEY_PAVE)
+                out.append(hit if stop is None or stop > hit else ALLEY_PAVE)
             else:
-                reach[k].append(ALLEY_PAVE)
+                out.append(ALLEY_PAVE)
+        return False, out[0], out[1]
+    steps = max(1, math.ceil(length / PAVE_STEP))
+    rows = [(length * i / steps, sample(length * i / steps)) for i in range(steps + 1)]
+    fine = [rows[0]]
+    for (ta, a), (tb, b) in zip(rows, rows[1:]):
+        for side in (1, 2):
+            if abs(a[side] - b[side]) > 20. and not a[0] and not b[0]:
+                lo, hi = ta, tb
+                for _ in range(7):
+                    mid = (lo + hi) / 2
+                    m = sample(mid)
+                    lo, hi = (mid, hi) if abs(m[side] - a[side]) < abs(m[side] - b[side]) else (lo, mid)
+                for tt in (lo, hi):
+                    if ta < tt < tb and all(abs(tt - f[0]) > .1 for f in fine):
+                        fine.append((tt, sample(tt)))
+        fine.append((tb, b))
+    fine.sort(key=lambda r: r[0])
+    ts = [r[0] for r in fine]
+    under = [r[1][0] for r in fine]
+    reach = {1: [r[1][1] for r in fine], -1: [r[1][2] for r in fine]}
     # at a building corner between two samples the wider reach holds over the interval (the rest runs under the
     # building), so no bare wedge opens where a wall ends; a reach past the fence line spreads no farther than it
     for k in (1, -1):
