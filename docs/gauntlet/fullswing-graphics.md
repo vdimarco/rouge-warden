@@ -1291,3 +1291,7 @@ Skip replacement filtering until an actual expired crime exists. Node60updates/s
 
 
 Increment52 shipped #668 as2264dc92 after all6CI/review/current12deployedchecks/rebase before AND afterpreview/exactmerge. Productionjobs HTTP200 exactSHA9ed9b41552376e9930dd0b4a2dc25da4da69b828f9b1cad866d729f9f09abb04 verified. Canonical idle-offer scenarios published and OpenSpec archived. ActualChrome/FPSbenefit unverified; totalwithheld; expiryextrascanunmeasured.
+
+
+### Increment53 — share HUD throw query
+Current HUD availability shared between prompt and button.4096 output-equivalence statesPASS,worstcase2→1selectorcalls; actualbrowser60desktop+60phoneupdates/currentcooldown/nofightPASS/action suitePASS. Evidence r53-hud-throw/all20limits; noFPSclaim/totalwithheld. Releasepending.
