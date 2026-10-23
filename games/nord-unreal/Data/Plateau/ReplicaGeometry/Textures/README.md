@@ -39,6 +39,7 @@ The keys are the shared material keys of the rear pass. `plateau_plex.py` and `S
 - The macro mask is imported with `TC_MASKS` and sampled as masks; it wraps both ways.
 - Image row 0 is the top of the tile. Replica OBJ UVs are in metres (u along the face and v = z on walls; u = x and v = y on roofs and the ground), so the tiling is 1 / tile size.
 - Cards (`uv: "card"`): u is metres along the run and v runs from 0 at the bottom of the card to 1 at its top, so the v tiling is 1 and the texture spans the card once. `card_height_m` is the height it was drawn for; a much shorter or taller card squashes or stretches the drawing (the lattice diamonds most). The apply step clamps V (`address_y = TA_CLAMP`) on all three maps of a card set: the top row of the baluster card is opaque and the bottom row (the drain gap) clear, and with the default wrap the lower mips would blend them into a dashed line across every gap.
+- Atlas (`uv: "atlas"`, the trees' autumn leaf atlas in `Trees/manifest.json`): each leaf card's UVs address one padded cell inside 0..1, so the tiling is 1 and the apply step clamps both axes (`address_x` and `address_y` = `TA_CLAMP`) on all three maps: filtering at the atlas border never pulls in the cell on the opposite edge. The 10 px transparent padding round each cell keeps neighbouring cells apart in the first mips.
 - `sheet_metal`: the crests run along v, so on a roof whose v runs up the slope the corrugations run down it, as they are laid. The rust runs go toward increasing image rows, down the slope.
 
 ## In the apply step
@@ -47,10 +48,12 @@ The keys are the shared material keys of the rear pass. `plateau_plex.py` and `S
 
 | Surface | Parent | Sets |
 | --- | --- | --- |
-| wall | `/Game/Plateau/Materials/M_BrickRed` | limestone, slate, buff_brick, sheet_metal, siding, parging |
+| wall | `/Game/Plateau/Materials/M_BrickRed` | limestone, slate, buff_brick, sheet_metal, siding, parging; the trees' `tree_bark` |
 | ground | `/Game/Plateau/Materials/M_Gravel`, which carries the NordSky wet-ground wrapper, so roofs and yards darken in rain | membrane, ballast, tar, lawn, pavers, soil, crushed_stone |
 | cutout | `/Game/Plateau/Replica/Materials/M_Replica_CutoutParent`, built by the apply step: masked, two-sided, clip 0.5, OpacityMask from the `diff` alpha | balusters, lattice, fence_boards |
-| foliage | `/Game/Plateau/Replica/Materials/M_Replica_FoliageParent`, built the same way with the two-sided foliage shading model and SubsurfaceColor = base colour x 0.65, as the mapped trees' leaves | creeper |
+| foliage | `/Game/Plateau/Replica/Materials/M_Replica_FoliageParent`, built the same way with the two-sided foliage shading model and SubsurfaceColor = base colour x 0.65, as the mapped trees' leaves | creeper; the trees' `tree_leaves` atlas |
+
+`Trees/manifest.json` (Scripts/blender/plateau_trees.py) carries two more sets in the same format, `tree_bark` and `tree_leaves`, with their PNGs in the Trees folder. The apply step loads them with these (a tree set may not reuse a name from this folder), imports their maps from `Trees/` to the same texture folder, and gives each tree material whose `texture` names one of their maps that set: the six barks are textured wall duplicates at a 1 m x 2 m tile, and the shared autumn leaves a masked, two-sided foliage duplicate whose OpacityMask is the atlas alpha. A tree material that names a map no set covers fails the plan, so leaf cards never import as solid squares.
 
 Content has no masked parent that fits: `M_DetailedAutumnLeaves` is the tree foliage graph with a per-instance tint. The cut-out `diff` textures keep their alpha and get Unreal's alpha-coverage mips (`do_scale_mips_for_alpha_coverage`, threshold 0.5 on A), so the share of texels over the clip stays the same in every mip and thin balusters and laths do not fade away at a distance. Textured duplicates take the manifest's metallic, capped at the set's own (0.3 for galvanised sheet), and the tint the plan records (white for tar). Batches with a masked material (cards, creeper, card plants) are imported with Nanite shape preservation Preserve Area, as the mapped trees are, so their thin pieces keep their area at a distance. `verify` checks every texture's colour space, compression, size, V addressing and alpha-coverage setting, every material's samples, samplers, tiling, macro nodes, NordSky wrappers, blend mode, sidedness, clip, shading model, OpacityMask source, metallic and tint, and every masked batch's Preserve Area.
 

@@ -1121,11 +1121,13 @@ class Surfaces:
 
     def __init__(self):
         self.items, self.grid = [], Grid(2000.)
+        self.lows = []             # the lowest point of each item's top: a ramp piece's foot, else its z
         self.kinds = {}            # kind -> (polygons, Grid(1000)) for has()
 
-    def add(self, poly, z, kind):
+    def add(self, poly, z, kind, low=None):
         self.grid.add(len(self.items), bbox(poly))
         self.items.append((poly, z, kind))
+        self.lows.append(z if low is None else low)
         polys, grid = self.kinds.setdefault(kind, ([], Grid(1000.)))
         grid.add(len(polys), bbox(poly))
         polys.append(poly)
@@ -1136,6 +1138,15 @@ class Surfaces:
             poly, z, kind = self.items[i]
             if point_in(p, poly) and z >= best[0]:
                 best = (z, kind)
+        return best
+
+    def floor(self, p):
+        """The height the ground under p keeps everywhere: the highest foot of the surfaces there (a ramp piece
+        counts at its low end, where at() gives its top), 0 on bare ground."""
+        best = 0.
+        for i in self.grid.query((p[0], p[1], p[0], p[1])):
+            if self.lows[i] > best and point_in(p, self.items[i][0]):
+                best = self.lows[i]
         return best
 
     def has(self, p, kind):
@@ -1693,7 +1704,7 @@ def _sidewalk_strip(world, L, surfaces, strip, counts):
             L.wall('sidewalk', o0, o1, 0., za, 0., zb)
             ends[k] = ((c0, o0, za), (o1, c1, zb))
         status[k] = 'raised'
-        surfaces.add(poly, max(za, zb), 'sidewalk')
+        surfaces.add(poly, max(za, zb), 'sidewalk', min(za, zb))
         counts['sidewalk_pieces'] += 1
         counts['sidewalk_metres'] += math.dist(c0, c1) / 100
         if min(za, zb) < Z_WALK - .01 and max(za, zb) >= Z_WALK - .01:
@@ -2039,7 +2050,8 @@ def _yards(world, L, surfaces, strip, counts, barriers):
             surfaces.add(pp if ccw else pp[::-1], Z_WALK, 'yard')
             own.append(pp)
             if mat == 'Yard_Grass' and key == mat:
-                _soft_edge(L, e0, e1, out, Rng('edge', s['way'], s['i'], strip['side'], k, round(g0, 4)), zoff)
+                _soft_edge(L, e0, e1, out, Rng('edge', s['way'], s['i'], strip['side'], k, round(g0, 4)), zoff,
+                           surfaces)
             counts['yard_slabs'] += 1
             counts['yard_square_metres'] += abs(area(pp)) / 10000
             laid += 1
@@ -2104,8 +2116,9 @@ MOUTH_REACH = 400.        # a parterre's wedge beside a ruelle mouth runs at mos
 
 
 def _lower_in_front(surfaces, a, b, out, z):
-    """Whether the ground just in front of edge ab (against out) lies lower than z anywhere along it."""
-    return any(surfaces.at(add(lerp(a, b, f), out, -4.))[0] < z - 1. for f in (.1, .5, .9))
+    """Whether the ground just in front of edge ab (against out) lies lower than z anywhere along it (a dropped
+    apron, the foot of a ramp, a ruelle or bare floor)."""
+    return any(surfaces.floor(add(lerp(a, b, f), out, -4.)) < z - 1. for f in (.1, .5, .9))
 
 
 def _wedge_reach(world, p, side, own):
@@ -2303,16 +2316,22 @@ def _passage_walk(world, L, surfaces, strip, counts, stops, oa, u, out, xs, i, j
     counts['passages'] += laid > 0
 
 
-def _soft_edge(L, a, b, out, rng, zoff=0.):
-    """Jittered grass spill over the sidewalk edge so the seam is not a ruler line."""
+def _soft_edge(L, a, b, out, rng, zoff=0., surfaces=None):
+    """Jittered grass spill over the sidewalk edge so the seam is not a ruler line; a tuft spills only over a
+    sidewalk top at the parterre's height, never over a dropped apron, a ramp or bare floor, where it would
+    float."""
     length = math.dist(a, b)
     steps = max(2, int(length / 38))
-    pts_in, pts_out = [], []
+    pts_in, pts_out, base = [], [], []
     for i in range(steps + 1):
         p = lerp(a, b, i / steps)
+        base.append(p)
         pts_in.append(add(p, out, -rng.uniform(0., 9.)))
         pts_out.append(add(p, out, rng.uniform(6., 16.)))
-    for p0, p1, q1, q0 in zip(pts_in, pts_in[1:], pts_out[1:], pts_out[:-1]):
+    for i, (p0, p1, q1, q0) in enumerate(zip(pts_in, pts_in[1:], pts_out[1:], pts_out[:-1])):
+        if surfaces is not None and any(surfaces.floor(add(q, out, -5.)) < Z_WALK + zoff - 1. for q in
+                                        (base[i], lerp(base[i], base[i + 1], .5), base[i + 1])):
+            continue
         poly = [p0, p1, q1, q0]
         if area(poly) < 0:
             poly = poly[::-1]

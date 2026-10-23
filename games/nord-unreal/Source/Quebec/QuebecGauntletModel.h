@@ -1,13 +1,15 @@
 #pragma once
 
 // Engine-independent NORD mobile gauntlet: the Plateau loop over the road graph, the driver that steers the player's
-// car around it, the run phases, frame-time statistics and the expected-CVar file.
+// car around it, the run phases, frame-time statistics and the expected-CVar file. The driver and the corner arcs use
+// the player car's steering lock from QuebecSteerAssist.h.
 // No Unreal includes, so Scripts/test_gauntlet_model.py can build and run it with the system compiler.
 // Positions are planar map centimetres, speeds cm/s, times seconds and frame times milliseconds.
 // Yaw follows Unreal: atan2(Y, X) in degrees. Data/Gauntlet/loop.json holds the same numbers; the test compares them.
 
 #include "QuebecGauntletRoute.h"
 #include "QuebecPursuitModel.h"
+#include "QuebecSteerAssist.h"
 
 #include <algorithm>
 #include <cmath>
@@ -27,7 +29,7 @@ namespace QuebecGauntlet
     inline constexpr double SpeedCap = 1500.0;
     inline constexpr double AimBase = 350.0;          // Aim this far ahead along the loop...
     inline constexpr double AimPerSpeed = .3;         // ...plus this many cm per cm/s.
-    inline constexpr double BendRangeBase = 600.0;    // Slow for the sharpest bend within this...
+    inline constexpr double BendRangeBase = 600.0;    // Slow for the slowest corner within this...
     inline constexpr double BendRangePerSpeed = .9;   // ...plus this many cm per cm/s.
     inline constexpr double WheelDegrees = 32.0;      // Heading error that gives full lock.
     inline constexpr double PedalSpeed = 500.0;       // Speed error that gives full throttle or brake.
@@ -53,6 +55,12 @@ namespace QuebecGauntlet
     inline constexpr double MaxTurn = 135.0;          // A turn sharper than this at a junction costs NoUTurn, in degrees.
     inline constexpr double JoinPoints = 1.0;         // Route points closer than this to the last one are dropped.
     inline constexpr double TrackAhead = 4000.0;      // The tracker looks for the car this far ahead of its last place.
+
+    // Corners. A junction turn of RoundFrom or more becomes an arc that the car can drive at the turn's speed.
+    inline constexpr double RoundFrom = 10.0;         // Degrees; a smaller bend stays a corner of the line.
+    inline constexpr double ArcStep = 10.0;           // Degrees of arc between two points.
+    inline constexpr double CornerMargin = 1.3;       // Arc radius over the car's turning radius at the arc's speed.
+    inline constexpr double MinCornerSpeed = 300.0;   // The slowest arc speed, for a tight arc between short segments.
 
     // Frame times. A frame counts when it is strictly over the limit.
     inline constexpr double FrameBudgetMs = 33.3;
@@ -94,14 +102,17 @@ namespace QuebecGauntlet
 
     // A closed loop through the stops in order. Points[0] is the first stop's road point and the last point is that
     // point again. Distance[i] is the arc length at Points[i]; Stops[k] is the Points index of stop k's road point.
+    // Limit[i] is the speed for the corner arc at Points[i] (FinishLoop fills it); a point without one allows SpeedCap.
     struct FLoop
     {
         std::vector<FVec2> Points;
         std::vector<double> Distance;
         std::vector<std::size_t> Stops;
+        std::vector<double> Limit;
         double Length = 0.0;
 
         int StopCount() const { return static_cast<int>(Stops.size()); }
+        double LimitAt(std::size_t Point) const { return Point < Limit.size() ? Limit[Point] : SpeedCap; }
         int SegmentCount() const { return Points.size() > 1 ? static_cast<int>(Points.size()) - 1 : 0; }
         double StopAlong(int Stop) const { return Distance[Stops[static_cast<std::size_t>(Stop)]]; }
         double LegLength(int Leg) const { return (Leg + 1 < StopCount() ? StopAlong(Leg + 1) : Length) - StopAlong(Leg); }
@@ -332,6 +343,77 @@ namespace QuebecGauntlet
         std::vector<std::vector<int>> Links;        // Open segments at each junction.
     };
 
+    // The player car's turning radius at a speed: the bicycle model of QuebecSteer::YawRateFor at full lock.
+    inline double TurnRadius(double Speed)
+    {
+        const double Lock = static_cast<double>(QuebecSteer::LockDegrees(static_cast<float>(Speed)));
+        return static_cast<double>(QuebecSteer::Wheelbase) / std::tan(Lock * Pi / 180.0);
+    }
+
+    // The fastest speed up to Highest at which the car turns inside Radius with CornerMargin to spare.
+    inline double SpeedForRadius(double Radius, double Highest)
+    {
+        double Speed = Highest;
+        while (Speed > MinCornerSpeed && TurnRadius(Speed) * CornerMargin > Radius) Speed -= 25.0;
+        return std::max(Speed, MinCornerSpeed);
+    }
+
+    // Finish a loop whose Points (closed: the last equals the first) and Stops are set. Each junction turn of RoundFrom
+    // or more becomes an arc: the speed is the police CornerSpeed for the turn (at most SpeedCap), and the radius is the
+    // car's turning radius at that speed times CornerMargin. An arc takes at most half of each neighbouring segment, so
+    // a short block gets a tighter arc and a lower speed. Stops are never rounded, so each stays on its road point.
+    // Then Distance, Length and Limit are filled. The rounded line is the route the driver follows and the line the
+    // lateral error is measured from; it cuts a junction by at most Radius * (1 - cos(turn / 2)).
+    inline void FinishLoop(FLoop& Loop)
+    {
+        const std::vector<FVec2> Raw = std::move(Loop.Points);
+        const std::vector<std::size_t> RawStops = std::move(Loop.Stops);
+        Loop.Points.clear();
+        Loop.Stops.clear();
+        Loop.Limit.clear();
+        for (std::size_t Index = 0; Index < Raw.size(); ++Index)
+        {
+            const bool bStop = std::find(RawStops.begin(), RawStops.end(), Index) != RawStops.end();
+            if (bStop) Loop.Stops.push_back(Loop.Points.size());
+            const FVec2 In = Index > 0 ? Raw[Index] - Raw[Index - 1] : FVec2{};
+            const FVec2 Out = Index + 1 < Raw.size() ? Raw[Index + 1] - Raw[Index] : FVec2{};
+            const double InLength = QuebecPursuit::Length(In), OutLength = QuebecPursuit::Length(Out);
+            const double Turn = InLength > 1e-9 && OutLength > 1e-9
+                ? std::acos(std::clamp(QuebecPursuit::Dot(In, Out) / (InLength * OutLength), -1.0, 1.0)) * 180.0 / Pi : 0.0;
+            if (bStop || Turn < RoundFrom || Turn > 170.0)
+            {
+                Loop.Points.push_back(Raw[Index]);
+                Loop.Limit.push_back(SpeedCap);
+                continue;
+            }
+            double Speed = std::min(SpeedCap, QuebecPursuit::CornerSpeed(Turn));
+            double Radius = TurnRadius(Speed) * CornerMargin;
+            const double Half = std::tan(Turn * .5 * Pi / 180.0);
+            double Tangent = Radius * Half;
+            if (Tangent > .5 * std::min(InLength, OutLength))
+            {
+                Tangent = .5 * std::min(InLength, OutLength);
+                Radius = Tangent / Half;
+                Speed = SpeedForRadius(Radius, Speed);
+            }
+            const FVec2 Entry = Raw[Index] - In * (Tangent / InLength);
+            const double Side = In.X * Out.Y - In.Y * Out.X > 0.0 ? 1.0 : -1.0;   // Left turns are positive.
+            const FVec2 Centre = Entry + FVec2{-In.Y, In.X} * (Side * Radius / InLength);
+            const double From = std::atan2(Entry.Y - Centre.Y, Entry.X - Centre.X);
+            const int Steps = std::max(1, static_cast<int>(std::ceil(Turn / ArcStep)));
+            for (int Step = 0; Step <= Steps; ++Step)
+            {
+                const double Angle = From + Side * (Turn * Pi / 180.0) * static_cast<double>(Step) / static_cast<double>(Steps);
+                Loop.Points.push_back(Centre + FVec2{std::cos(Angle), std::sin(Angle)} * Radius);
+                Loop.Limit.push_back(Speed);
+            }
+        }
+        Loop.Distance.assign(Loop.Points.size(), 0.0);
+        for (std::size_t Index = 1; Index < Loop.Points.size(); ++Index)
+            Loop.Distance[Index] = Loop.Distance[Index - 1] + QuebecPursuit::Distance(Loop.Points[Index - 1], Loop.Points[Index]);
+        Loop.Length = Loop.Distance.empty() ? 0.0 : Loop.Distance.back();
+    }
+
     // The loop tries every arrival direction at every stop, so this many stops at most.
     inline constexpr int MaxLoopStops = 12;
 
@@ -339,6 +421,7 @@ namespace QuebecGauntlet
     // arrived, so it never turns back there. Each leg is an FForwardRoads route from one road point to the next, and the loop keeps the
     // arrival directions (along or against each stop's segment) that give the lowest total cost: the shortest loop that
     // never turns back, when one exists. Ties go to the first combination tried, so the loop is the same on every build.
+    // FinishLoop then rounds the junctions.
     inline bool BuildLoop(const QuebecPursuit::FRoadGraph& Graph, const std::vector<FVec2>& Eyes, FLoop& Out)
     {
         Out = FLoop();
@@ -380,10 +463,7 @@ namespace QuebecGauntlet
             Out.Points.back() = Road[Next];
             if (Next != 0) Out.Stops.push_back(Out.Points.size() - 1);
         }
-        Out.Distance.assign(Out.Points.size(), 0.0);
-        for (std::size_t Index = 1; Index < Out.Points.size(); ++Index)
-            Out.Distance[Index] = Out.Distance[Index - 1] + QuebecPursuit::Distance(Out.Points[Index - 1], Out.Points[Index]);
-        Out.Length = Out.Distance.back();
+        FinishLoop(Out);
         return Out.Length > 0.0 && Out.StopCount() == Count;
     }
 
@@ -445,26 +525,25 @@ namespace QuebecGauntlet
         int Reversals = 0;
     };
 
-    // Wanted speed at the tracker's place: the cap, the police CornerSpeed for the sharpest bend ahead, and an even stop
-    // StopShort before StopAt (an unwrapped arc length; negative when the car drives through).
+    // Wanted speed at the tracker's place: the slowest corner arc that starts within the police bend range ahead (the
+    // police follower slows for the sharpest bend in that range), and an even stop StopShort before StopAt (an unwrapped
+    // arc length; negative when the car drives through).
     inline double WantedSpeed(const FLoop& Loop, const FTracker& Tracker, double Speed, double StopAt)
     {
         const double Range = BendRangeBase + std::fabs(Speed) * BendRangePerSpeed;
-        const int Count = Loop.SegmentCount();
-        std::vector<FVec2> Ahead;
-        double Covered = 0.0;
-        const FVec2 Here = Loop.PointAt(Tracker.Along);
+        const std::size_t Count = static_cast<std::size_t>(Loop.SegmentCount());
+        if (Count == 0) return 0.0;
         const std::size_t Segment = Loop.SegmentAt(Tracker.Along);
-        FVec2 Previous = Here;
-        for (int Step = 1; Step <= Count && Covered <= Range; ++Step)
+        double Wanted = std::min(SpeedCap, Loop.LimitAt(Segment));
+        double Covered = 0.0;
+        FVec2 Previous = Loop.PointAt(Tracker.Along);
+        for (std::size_t Step = 1; Step <= Count && Covered <= Range; ++Step)
         {
-            const FVec2& Point = Loop.Points[(Segment + static_cast<std::size_t>(Step)) % static_cast<std::size_t>(Count)];
-            Covered += QuebecPursuit::Distance(Previous, Point);
-            Ahead.push_back(Point);
-            Previous = Point;
+            const std::size_t Point = (Segment + Step) % Count;
+            Covered += QuebecPursuit::Distance(Previous, Loop.Points[Point]);
+            if (Covered <= Range) Wanted = std::min(Wanted, Loop.LimitAt(Point));
+            Previous = Loop.Points[Point];
         }
-        const double Bend = QuebecPursuit::TurnAhead(Ahead, 0, Here, Loop.DirectionAt(Tracker.Along), Range);
-        double Wanted = std::min(SpeedCap, QuebecPursuit::CornerSpeed(Bend));
         if (StopAt >= 0.0) Wanted = std::min(Wanted, std::sqrt(2.0 * StopDeceleration * std::max(0.0, StopAt - Tracker.Along - StopShort)));
         return Wanted;
     }
