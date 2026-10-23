@@ -1,0 +1,3 @@
+- [x] Implement paint reuse
+- [x] Verify values/identity/independence/fallback and integration
+- [ ] Review, CI, current preview, rebase, merge and production verification

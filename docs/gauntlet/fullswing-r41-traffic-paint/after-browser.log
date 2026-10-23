@@ -1,0 +1,7 @@
+{"one":true,"values":true,"isolated":true,"fallback":true}
+PASS: one
+PASS: values
+PASS: isolated
+PASS: fallback
+PASS: no page errors
+PASS: traffic paint
