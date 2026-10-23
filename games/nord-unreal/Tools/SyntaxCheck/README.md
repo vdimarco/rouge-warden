@@ -227,14 +227,15 @@ When code needs an engine API that the stubs lack, add it to the matching header
 real signature: same constness, same default arguments, same access level. Do not add
 catch-all variadic templates.
 
-## Current results (2026-10-23, Source/Quebec with 47 .cpp files)
+## Current results (2026-10-23, Source/Quebec with 46 .cpp files)
 
 | Check | Result |
 | --- | --- |
 | `check.sh --both` | Every file passes in both the game and the editor configuration, including all `*Tests.cpp`. No test file is failing. |
 | `link.sh --both` | Every used game symbol is defined, in both configurations. |
 | `selftest.sh` | 21 checks pass, 0 unexpected. |
-| `check.sh --no-pch` | 46 files pass and 1 fails: `QuebecVegetation.cpp` names `UMaterialInterface` in a nested name specifier without its header, so it compiles only through the shared PCH. |
+| `check.sh --src ../../Source/QuebecGauntletTest --both` and `link.sh` with the same `--src` | Both files of the gauntlet controller module pass in both configurations, and every used game symbol is defined. |
+| `check.sh --no-pch` | 45 files pass and 1 fails: `QuebecVegetation.cpp` names `UMaterialInterface` in a nested name specifier without its header, so it compiles only through the shared PCH. |
 
 ## Uncertain APIs
 
