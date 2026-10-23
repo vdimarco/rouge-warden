@@ -4,7 +4,7 @@ combat.group accepts optional output storage, clearing and filling on/group memb
 
 Baseline ignores supplied storage and fails identity. Node100cycles cover on/group/state membership, order/live references, fresh default independence and empty/regrow. Existing action suite passes mission completion and waves. Four browser checks record60actualbrawlframes/onearray/activemission/noerrors. Initial fixture started before tutorial settled and mission ended; using the existing clockheat setup (skip tutorial, settle, move80m from crew) corrected fixture, failure retained externally.
 
-Review/allCI/currentauthenticatedpreview/finalrebase/production verification pending. OpenSpec CLI unavailable; scenarios manually checked. No physical-device/listening/full-playthrough claims.
+Released #664 asfba485ea after freshall6CI/review/current12deployedchecks/rebase before AND afterpreview/exactmerge. Productioncombat+jobs HTTP200 exactbytes verified; hashes in production-verification.json. Initial automated review failed before workspace preparation (neutral, not acceptance); documented comment retry produced no response. An empty CI-only commit retriggered successful review and fresh CI. Runtime bytes unchanged by retry. OpenSpec CLI unavailable; scenarios manually checked. No physical-device/listening/full-playthrough claims.
 
 | Dimension | Assessment |
 | --- | --- |

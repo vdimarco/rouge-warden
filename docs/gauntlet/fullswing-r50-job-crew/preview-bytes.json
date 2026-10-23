@@ -1,0 +1,14 @@
+[
+  {
+    "name": "combat.js",
+    "status": 200,
+    "sha256": "1c5351d66b0fc5d0a7623e24c37d8e2aed2055599c442b6f76cd8e6302e79e08",
+    "exact": true
+  },
+  {
+    "name": "jobs.js",
+    "status": 200,
+    "sha256": "ade22b569235c85993b115d908ca83eb10ae2668621ec2c9229d22fcbf74f14d",
+    "exact": true
+  }
+]
