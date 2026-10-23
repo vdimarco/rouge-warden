@@ -1159,3 +1159,8 @@ User-directed workflow update: performance measurements are diagnostic, not an F
 ## Increment35 — populated character/sign uploads (pending release)
 
 Range-limited dynamic GPU transfers reuse existing Three APIs.13focused browser checks pass, verifying actual upload bytes after shrink/grow/zero and identical populatedimages. Threeof240figures upload264instead of21120bytes; threeof100signs156instead of5200. No FPSgain claim or benchmarkmergegate. All20dimension historical assessments from prior round remain context only; no new aestheticpoints, responsiveness/stabilityunverified,total/deltawithheld. Review/CI/deployedpreview/rebase/production pending; realbuildinganchors/noheightceiling unchanged.
+
+
+## Increment36 — hidden flat rendering (pending release)
+
+One guard skips hidden flat city/bloom draws. Baseline2fail/8pass→10pass in focused synthetic desktop/phone checks:60hidden callbacks0pipelineentriesafter,visible/resume/XRroutingunchanged. Evidence fullswing-r36-hidden-render. No FPSclaim/gate; all20historicaldimensionassessmentsremaincontext,responsiveness/stabilityunverified,totalwithheld. Review/CI/currentpreview/rebase/production pending. No affected-user/physicaldevice/playthroughclaim.
