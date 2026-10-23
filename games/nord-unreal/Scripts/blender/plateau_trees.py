@@ -261,6 +261,7 @@ class Stem:
         self.length = self.cum[-1]
         self.radius0 = radius_at(0.)
         self.children = 0
+        self.t = 0.
 
     def radius(self, t):
         return self._radius(min(1., max(0., t)))
@@ -440,8 +441,10 @@ def spawn(parent, n, a, b, level, p, P, rng, L0, prune, clearance):
         r0 = max(MIN_RADIUS_CM, min(r0, .82 * r_here))
         # Start on the parent's axis, so the child grows out of the parent's surface.
         pts, frames = grow(level, point, f, child_len, None, p, rng, clearance)
-        out.append(Stem(level, pts, frames, lambda tt, r0=r0: max(.12, r0 * (1. - tt)), parent=parent,
-                        offset=0., index=len(out)))
+        child = Stem(level, pts, frames, lambda tt, r0=r0: max(.12, r0 * (1. - tt)), parent=parent, offset=0.,
+                     index=len(out))
+        child.t = t                       # where it grows out of its parent (fraction of the parent's length)
+        out.append(child)
         parent.children += 1
     return out
 
@@ -452,13 +455,8 @@ def leaf_cards(kind, twigs, rng, clearance):
     L = SPECIES[kind]['leaves']
     cards = []
     for s in twigs:
-        parent = s.parent
         # Where the twig sits along its limb (0 at the limb base, 1 at its tip): outer twigs carry more cards.
-        frac = 0.
-        if parent is not None and parent.length > 0:
-            best = min(range(len(parent.points)), key=lambda i: length(sub(parent.points[i], s.points[0])))
-            frac = parent.cum[best] / parent.length
-        n = round(L['cards'] * shape_ratio(4, frac))
+        n = round(L['cards'] * shape_ratio(4, s.t))
         phi = rng.random() * 360.
         for j in range(n):
             keep = rng.random() < L['retention']
@@ -608,14 +606,18 @@ def _leaf(cv, form, x, y, size, turn, colour, edge, amount, blotch, shade, z, u)
                                    size * .09 * .38, z, colour, edge, amount, blotch, 0, .6, shade, lift=.08)
 
 
+CELL_MARGIN = 64        # each cell is painted on its own canvas this much larger on every side, then cropped
+
+
 def paint_cell(cv, index, blotch):
-    """One cluster: a twig from the bottom centre with leaves (opposite pairs or alternate) on petioles."""
+    """One cluster on a cell canvas: a twig from the bottom centre with leaves (opposite pairs or alternate)."""
     name = CELL_ORDER[index]
     form, count, palette, sparse, _ = CELLS[name]
     F = FORMS[form]
-    x0, y0, x1, y1 = cell_rect(index)
+    S = ATLAS['size_px'][0] // ATLAS['grid']
+    x0 = y0 = CELL_MARGIN
+    x1 = y1 = CELL_MARGIN + S
     pad = ATLAS['pad_px']
-    S = x1 - x0
     rng = random.Random(ATLAS['seed'] * 100 + index)
     twig_colour = (92., 70., 52.)
     bx, by = x0 + S * .5, y1 - pad - 2
@@ -687,10 +689,25 @@ def paint_cell(cv, index, blotch):
 def atlas_maps():
     """The leaf atlas canvas result (diff RGBA rows, heights, roughness, cavity) and per-cell statistics."""
     W, H = ATLAS['size_px']
+    S = W // ATLAS['grid']
+    C = S + 2 * CELL_MARGIN
+    pad = ATLAS['pad_px']
     cv = PT.Canvas(W, H, (196., 146., 60.), 0., .7, alpha=0.)
-    blotch = PT.field(PT.Fbm(ATLAS['seed'] + 1, W, H, ((32, 32), (64, 64), (128, 128)), (.5, .3, .2)), H)
+    blotch = PT.field(PT.Fbm(ATLAS['seed'] + 1, C, C, ((12, 12), (24, 24), (48, 48)), (.5, .3, .2)), C)
     for index in range(len(CELL_ORDER)):
-        paint_cell(cv, index, blotch)
+        cell = PT.Canvas(C, C, (196., 146., 60.), 0., .7, alpha=0.)
+        paint_cell(cell, index, blotch)
+        x0, y0, _, _ = cell_rect(index)
+        for y in range(S):
+            src = (y + CELL_MARGIN) * C + CELL_MARGIN
+            dst = (y0 + y) * W + x0
+            fy = min(y, S - 1 - y)
+            for x in range(S):
+                fade = PT.smooth(1., pad - 2., min(fy, x, S - 1 - x))
+                i, j = dst + x, src + x
+                cv.r[i], cv.g[i], cv.b[i] = cell.r[j], cell.g[j], cell.b[j]
+                cv.height[i], cv.rough[i], cv.cavity[i] = cell.height[j], cell.rough[j], cell.cavity[j]
+                cv.alpha[i] = cell.alpha[j] * fade
     # Edge padding: transparent texels take their cell's mean leaf colour, so mips and bilinear filtering never
     # pull a halo of another colour into the cut-out edge.
     stats = {}
@@ -836,9 +853,7 @@ def add_stem(mesh, stem, sides, tile_u, v_offset):
     circ_m = math.tau * stem.radius0 / 100.
     reps = max(1, round(circ_m / tile_u))
     rings, uvs, normals = [], [], []
-    tip_closed = stem.radius(1.) < .2 or True
-    last = n - 1 if tip_closed else n
-    for i in range(last):
+    for i in range(n):
         x, y, z = stem.ring_frame(i)
         r = stem.radius(stem.cum[i] / stem.length if stem.length else 0.)
         ring, nring = [], []
@@ -859,11 +874,12 @@ def add_stem(mesh, stem, sides, tile_u, v_offset):
             a, b, c, d = (A[k], UA[k], NA[k]), (A[k2], UA[k + 1], NA[k2]), (B[k2], UB[k + 1], NB[k2]), (B[k], UB[k], NB[k])
             faces.append((a, b, c))
             faces.append((a, c, d))
-    # Tip: a cone to the stem's last point.
-    tip = mesh.vert(stem.points[-1])
+    # Tip: a short cone beyond the last ring (a full-width cap where the trunk splits into leaders).
     tz = stem.frames[-1][2]
+    r_end = stem.radius(1.)
+    tip = mesh.vert(add(stem.points[-1], mul(tz, max(.3, r_end * .7))))
     tn = mesh.normal(tz)
-    tuv = mesh.uv(reps * tile_u * .5, v_offset + stem.length / 100.)
+    tuv = mesh.uv(reps * tile_u * .5, v_offset + (stem.length + max(.3, r_end * .7)) / 100.)
     A, NA, UA = rings[-1], normals[-1], uvs[-1]
     for k in range(sides):
         k2 = (k + 1) % sides
