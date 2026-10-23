@@ -33,8 +33,9 @@
 //   look/<sky>/<stop>-<eye|chase>-<W>x<H>.png (Data/Gauntlet/loop.json names.still).
 // Engine APIs written from memory and not yet built against UE 5.8 (unverified): FCsvProfiler (BeginCapture,
 //   EndCapture, IsCapturing, CSV_EVENT_GLOBAL, CSV_METADATA), FPlatformMisc::RequestExitWithStatus,
-//   IStreamingManager::StreamAllResources, ACameraActor, FScreenshotRequest with a full path, and that DisableInput on
-//   the controller itself drops a viewer's input.
+//   IStreamingManager::StreamAllResources, ACameraActor, FScreenshotRequest with a full path, console variables
+//   registered at run time (RegisterConsoleVariable, UnregisterConsoleObject, IConsoleVariable::Set), and that
+//   DisableInput on the controller itself drops a viewer's input.
 
 namespace
 {
