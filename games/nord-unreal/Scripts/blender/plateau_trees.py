@@ -133,7 +133,7 @@ SPECIES = {
              'rotate': 90., 'rotate_v': 15., 'curve_res': 4, 'curve': 0., 'curve_back': 0., 'curve_v': 25.,
              'attraction': .3, 'sides': 4},
         ],
-        'leaves': {'cards': 10, 'retention': .58, 'card_cm': 80., 'down': 48., 'down_v': 20., 'rotate': 137.5,
+        'leaves': {'cards': 9, 'retention': .5, 'card_cm': 80., 'down': 48., 'down_v': 20., 'rotate': 137.5,
                    'rotate_v': 12., 'twist_v': 30., 'cells': {'as_yellow': .55, 'as_maroon': .15, 'as_sparse': .3}},
         'bark': {'colour': '#77726A', 'note': 'grey, interlacing diamond ridges'},
     },
@@ -440,7 +440,11 @@ def spawn(parent, n, a, b, level, p, P, rng, L0, prune, clearance):
             down = p['down'] + p['down_v'] * (1. - 2. * shape_ratio(0, r)) + (rng.random() - .5) * 8.
         f = child_frame(frame, angle, down)
         r0 = parent.radius0 * (child_len / parent_len) ** P['ratio_power']
-        r0 = max(MIN_RADIUS_CM, min(r0, .82 * r_here))
+        # Paper: a child is never thicker than its parent where it grows; no twig thinner than MIN_RADIUS_CM either,
+        # so the parent's thin tip spawns nothing.
+        r0 = min(max(MIN_RADIUS_CM, r0), .82 * r_here)
+        if r0 < MIN_RADIUS_CM * .5:
+            continue
         # Start on the parent's axis, so the child grows out of the parent's surface.
         pts, frames = grow(level, point, f, child_len, None, p, rng, clearance)
         child = Stem(level, pts, frames, lambda tt, r0=r0: max(.12, r0 * (1. - tt)), parent=parent, offset=0.,
@@ -715,7 +719,7 @@ def atlas_maps():
             dst = (y0 + y) * W + x0
             fy = min(y, S - 1 - y)
             for x in range(S):
-                fade = PT.smooth(1., pad - 2., min(fy, x, S - 1 - x))
+                fade = PT.smooth(pad * .5, pad - 1., min(fy, x, S - 1 - x))
                 i, j = dst + x, src + x
                 cv.r[i], cv.g[i], cv.b[i] = cell.r[j], cell.g[j], cell.b[j]
                 cv.height[i], cv.rough[i], cv.cavity[i] = cell.height[j], cell.rough[j], cell.cavity[j]

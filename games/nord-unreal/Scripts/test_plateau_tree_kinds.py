@@ -71,6 +71,14 @@ def tri_area(a, b, c):
     return .5 * math.sqrt(sum(k * k for k in x)), x
 
 
+def segment_distance(p, a, b):
+    ab = [b[i] - a[i] for i in range(3)]
+    ap = [p[i] - a[i] for i in range(3)]
+    d = sum(x * x for x in ab)
+    t = 0. if d < 1e-12 else max(0., min(1., sum(x * y for x, y in zip(ap, ab)) / d))
+    return math.dist(p, [a[i] + ab[i] * t for i in range(3)])
+
+
 def cell_of(uv, cells):
     for name, cell in cells.items():
         u0, v0, u1, v1 = cell['uv']
@@ -274,7 +282,7 @@ class TreeFiles(unittest.TestCase):
                 self.assertGreater(tri_area(*(v[i] for i in ids))[0], 1e-4, (kind, 'zero-area triangle'))
             top = max(p[2] for p in v)
             self.assertAlmostEqual(top, k['height_cm'], delta=.06)
-            self.assertAlmostEqual(min(p[2] for p in v), 0., delta=1.)
+            self.assertTrue(-5. <= min(p[2] for p in v) <= 0., (kind, 'the trunk base sits on or just under the pivot'))
             self.assertLess(abs(k['height_cm'] - P['height_cm']) / P['height_cm'], .04, kind)
             if kind in T.MATURE:
                 self.assertTrue(1200. <= k['height_cm'] <= 1800., kind)
@@ -305,9 +313,14 @@ class TreeFiles(unittest.TestCase):
             v, vt, vn, groups = obj(kind)
             bark, leaves = groups[f'{kind}_bark'], groups[f'{kind}_leaves']
             grid = {}
-            for i in {c[0] for f in bark for c in f}:
-                p = v[i]
-                grid.setdefault((int(p[0] // 25), int(p[1] // 25), int(p[2] // 25)), []).append(p)
+            for f in bark:                      # every bark edge, filed under each 25 cm cell its box touches
+                for a, b in ((f[0][0], f[1][0]), (f[1][0], f[2][0]), (f[2][0], f[0][0])):
+                    lo = [int(min(v[a][k], v[b][k]) // 25) for k in range(3)]
+                    hi = [int(max(v[a][k], v[b][k]) // 25) for k in range(3)]
+                    for gx in range(lo[0], hi[0] + 1):
+                        for gy in range(lo[1], hi[1] + 1):
+                            for gz in range(lo[2], hi[2] + 1):
+                                grid.setdefault((gx, gy, gz), set()).add((a, b) if a < b else (b, a))
             allowed = set(T.SPECIES[kind]['leaves']['cells'])
             for n in range(0, len(leaves), 4):
                 card = leaves[n:n + 4]
@@ -315,10 +328,12 @@ class TreeFiles(unittest.TestCase):
                 self.assertEqual(len(names), 1, (kind, 'card UVs span cells', names))
                 self.assertTrue(names <= allowed, (kind, names))
                 base = v[card[0][1][0]]          # the bottom-centre corner, where the card meets its twig
-                near = min((math.dist(base, p) for dx in (-1, 0, 1) for dy in (-1, 0, 1) for dz in (-1, 0, 1)
-                            for p in grid.get((int(base[0] // 25) + dx, int(base[1] // 25) + dy,
-                                               int(base[2] // 25) + dz), ())), default=1e9)
-                self.assertLess(near, 25., (kind, 'leaf card floating off its twig', base))
+                key = tuple(int(base[k] // 25) for k in range(3))
+                near = min((segment_distance(base, v[a], v[b]) for dx in (-1, 0, 1) for dy in (-1, 0, 1)
+                            for dz in (-1, 0, 1) for a, b in grid.get((key[0] + dx, key[1] + dy, key[2] + dz), ())),
+                           default=1e9)
+                # The card starts on the twig surface, lifted by the fold: within a few cm of a bark edge.
+                self.assertLess(near, 8., (kind, 'leaf card floating off its twig', base))
 
     def test_late_october_colours(self):
         hues = cell_hues()

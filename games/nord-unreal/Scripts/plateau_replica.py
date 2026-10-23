@@ -2184,7 +2184,7 @@ def _mouth_wedge(world, L, surfaces, q, out, side, near, far, mat, zoff, counts,
 
 
 PASSAGE_STEP = 50.        # side passages between buildings: the back line is sampled this often
-PASSAGE_WIDE = 600.       # a gap between two buildings this wide or less is a passage (wider: a lot or a yard)
+PASSAGE_WIDE = 900.       # a gap between two buildings this wide or less is a passage (wider: a lot or a yard)
 PASSAGE_DEEP = 150.       # its floor runs at least this much deeper than the façades either side
 PASSAGE_LONG = 3000.      # and its walk at most this far behind the sidewalk
 
@@ -2246,7 +2246,8 @@ def _passage_walk(world, L, surfaces, strip, counts, stops, oa, u, out, xs, i, j
         while s < FRONT_MAX + 300 and surfaces.has(add(q, out, s + 5.), 'yard'):
             s += 10.                                    # past the parterre
         p = add(q, out, s + 5.)
-        if any(surfaces.has(p, k) for k in ('alley', 'road', 'sidewalk', 'apron')) or world.in_building(p):
+        if any(surfaces.has(p, k) for k in ('alley', 'road', 'sidewalk', 'apron')) or world.in_building(p) or \
+                stops.on_plex(p):
             rows.append(None)
             continue
         e = PASSAGE_LONG
@@ -2383,19 +2384,26 @@ class PaveStops:
                 if math.dist(a, b) > .5:
                     self.grid.add(len(self.segs), bbox([a, b]))
                     self.segs.append((a, b))
+        self.grounds, self.ground_grid = [], Grid(1000.)
+
+        def ground(poly):
+            poly = [tuple(q[:2]) for q in poly]
+            line(poly, True)
+            self.ground_grid.add(len(self.grounds), bbox(poly))
+            self.grounds.append(poly)
         for lot in (plex.lots if plex else []):
             rear = lot['rear']
             yard, fence = rear.get('yard') or {}, rear.get('fence') or {}
             if yard.get('rect'):
-                line(yard['rect'], True)
+                ground(yard['rect'])
             if fence.get('line'):
                 line(fence['line'])
             for side in rear.get('side_fences') or []:
                 line(side)
             for cell in (rear.get('open_ground') or {}).get('cells') or []:
-                line(cell[1:], True)
+                ground(cell[1:])
             if lot['shed_poly']:
-                line(lot['shed_poly'], True)
+                ground(lot['shed_poly'])
         # ...and a sample on a sidewalk or a carriageway (a ruelle's mouth) keeps the fence-line reach, so the
         # paving never runs along a sidewalk band
         self.zones, self.zone_grid = [], Grid(1000.)
@@ -2414,6 +2422,10 @@ class PaveStops:
 
     def inside(self, p):
         return any(point_in(p, self.zones[i]) for i in self.zone_grid.query((p[0], p[1], p[0], p[1])))
+
+    def on_plex(self, p):
+        """Whether p lies in a Plex yard, shed or ground cell."""
+        return any(point_in(p, self.grounds[i]) for i in self.ground_grid.query((p[0], p[1], p[0], p[1])))
 
     def ray(self, origin, direction, limit):
         end = add(origin, direction, limit)
