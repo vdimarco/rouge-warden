@@ -1006,8 +1006,10 @@ def tune_run(loop, direct=False, until=None, reference=None, confirm=True):
                 early["repeat"] = True
                 result["repeat_ssim"] = look_scores(loop, ceilings[1], ceilings[0], names)
             return result
-        if not ceilings and early["result"] is None:
+        if not ceilings:
             early["result"] = render_ceiling("ceiling-first-look")
+            if early["result"]["contended"] or early["result"]["error"]:
+                return dict(early["result"])
         run, verdict = native_run(loop, "perf", feasible["size"], feasible["sky"], quality=quality, label=candidate["id"] + "-perf",
                                   direct=direct, parent=runs)
         entry["perf"] = str(run)
