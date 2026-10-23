@@ -912,12 +912,13 @@ function startStoryStep() {
 }
 function hudFrame(dt, inp) {
   const phone = !!inp.easySwing, near = !driving ? carInReach() : null;
+  const threat = combat.threat(heroFight());
   const throwable = combat.fighting > 0 && !!combat.throwTarget(throwFrom());
   const key = (k, m, t) => "<b>" + (phone ? t : inp.kind === "pad" ? k : m) + "</b>";
   let prompt = "";
   // in a fight, the dodge and the finisher come before a car in reach
   if (driving) prompt = phone ? "" : key("B", "R", "") + "GET OUT";
-  else if (combat.threat(heroFight())) prompt = phone ? "" : key("A", "SPACE", "") + "DODGE"; // (a phone shows its DODGE button)
+  else if (threat) prompt = phone ? "" : key("A", "SPACE", "") + "DODGE"; // (a phone shows its DODGE button)
   else if (combat.focus >= 1 && combat.inReach(heroFight()) && !phone) prompt = key("RB", "F", "") + "FINISH";
   else if (near) prompt = phone ? "" : key("B", "R", "") + (near.traffic ? "STEAL" : "GET IN");
   else if (takedownAim()) prompt = key("RT", "CLICK", "TAP") + "TAKEDOWN";
@@ -926,7 +927,7 @@ function hudFrame(dt, inp) {
   const fight = combat.hits > 0 || combat.focus > 0 || combat.fighting > 0;
   actHud.update(dt, { on: G.state === "play" || G.state === "paused", hp: combat.hp, max: FIGHT.hp, energy: energy < 0.999 || sprinting ? energy : -1, prompt, phone, nearCar: !!near, driving, shout: shoutFrame(dt),
     goal: goalFrame(phone),
-    combo: combat.hits, focus: fight ? combat.focus : -1, warn: warnFrame(),
+    combo: combat.hits, focus: fight ? combat.focus : -1, warn: warnFrame(threat),
     wall: !!P.wall,
     air: G.state === "play" && !P.onGround && !P.wall && !driving && P.ropes[0].state !== "attached" && P.ropes[1].state !== "attached",
     throwable });
@@ -981,8 +982,7 @@ function chaseBed() {
 }
 // the warning: a red mark on the screen over the goon who winds up near the hero (the prompt line says how to dodge)
 const WARN_V = new THREE.Vector3(), WARN_OUT = { x: 0, y: 0 };
-function warnFrame() {
-  const g = combat.threat(heroFight());
+function warnFrame(g) {
   if (!g) return null;
   WARN_V.set(g.x, g.y + 2.3, g.z).project(camera);
   if (WARN_V.z > 1 || Math.abs(WARN_V.x) > 1.1 || Math.abs(WARN_V.y) > 1.1) return null;
