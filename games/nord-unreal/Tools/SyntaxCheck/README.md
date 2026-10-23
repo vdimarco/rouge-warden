@@ -21,7 +21,8 @@ $STUBS/selftest.sh                  # the checkers still catch known mistakes
 
 Requirements: `clang++` (tested with clang 18.1.3), `python3`, `bash` 4 or later, and
 `nm`/`c++filt` from binutils for `link.sh`. Set `QUEBEC_SRC` or pass `--src DIR` to check
-another module directory. `check.sh -h` and `link.sh -h` list every option.
+another module directory, such as `--src ../../Source/QuebecGauntletTest` (the NORD mobile gauntlet
+controller, which needs no Quebec header). `check.sh -h` and `link.sh -h` list every option.
 
 Each file prints `PASS` or `FAIL`, followed by clang's diagnostics. A summary line comes
 last. The exit status is non-zero when any file fails or when UHT reports an error.
