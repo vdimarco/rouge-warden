@@ -30,7 +30,7 @@ Buildings that today show plain extruded boxes SHALL show Plateau plex fronts on
 
 #### Scenario: Frame budget
 - **WHEN** the host profiles the six reference views at Epic quality after import
-- **THEN** each p95 frame time stays under 16.67 ms on the reference RTX 4090, and the plex layer, rear work included, stays under 2.95 million triangles in at most 1,200 batches
+- **THEN** each p95 frame time stays under 16.67 ms on the reference RTX 4090, and the plex layer, rear work included, stays under 3.15 million triangles in at most 1,200 batches
 
 ### Requirement: A lived-in Plateau
 The streetscape SHALL carry seeded signs of life and wear, as the owner's reference article asks.

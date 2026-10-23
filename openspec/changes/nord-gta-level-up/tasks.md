@@ -21,7 +21,8 @@
 - [x] Roofs (membrane, gravel, tar, copings, chimneys, hatches), windowed long walls, skins on background backs, solid front steps.
 - [x] Yards (ground cover, creepers, Canopée yard trees), gallery balusters, board fences, denser spirals, 15 textured material keys.
 - [x] Lane life: laundry from galleries, bins and bikes at gates, ruelles vertes from open data, tags.
-- [ ] Third pass: porch collision outside the traffic band, gallery guard collision, street trees off the asphalt, ruelle edges paved to the fences, the Habitations De Mentana block, the Fabre front yard and sidewalk, gallery life, rear surfaces, brick and tower walls, background roofs, front planting.
+- [x] Third pass, first part: porch collision outside the traffic band, gallery guard collision, street trees off the asphalt, ruelle edges paved to the fences, the Habitations De Mentana block, brick and tower walls, macro variation on gravel and tar.
+- [ ] Third pass, second part: the Fabre front yard and sidewalk, gallery life, rear surfaces, background roofs, front planting, species trees, re-rendered previews and a critic review.
 
 ## Cloud verification
 - [x] Every new and changed `.cpp` passes the stub-header syntax check with UE's Linux warnings.
