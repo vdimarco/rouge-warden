@@ -21,7 +21,7 @@ await page.addInitScript(() => {
   // mode: 'grant', 'noraw' (no raw mouse on this system: unadjustedMovement is refused with NotSupportedError) or 'refuse'.
   // cooldown: refuse for 1.25 s after the user's own Esc, as Chrome does. Answers come a few ms later, as from a browser.
   // plat: the system (only a Mac lets go of the lock and takes it again once full screen is on)
-  const S = window.__pl = { mode: 'grant', cooldown: false, fsDelay: 300, plat: 'MacIntel', log: [], el: null, fs: null, userExitAt: -1e9 };
+  const S = window.__pl = { mode: 'grant', cooldown: false, fsDelay: 300, plat: 'MacIntel', log: [], el: null, fs: null, userExitAt: -1e9, pending: 0 };
   Object.defineProperty(Navigator.prototype, 'platform', { configurable: true, get: () => S.plat });
   const later = (f, ms = 5) => setTimeout(f, ms);
   const fire = (name) => document.dispatchEvent(new Event(name));
@@ -36,10 +36,11 @@ await page.addInitScript(() => {
       window.dispatchEvent(new PointerEvent('pointermove', { pointerType: 'mouse', clientX: 0, clientY: 0, bubbles: true }));
       window.dispatchEvent(new MouseEvent('mousemove', { movementX: -480, movementY: -270, clientX: 0, clientY: 0 }));
     }, 1);
-    return new Promise((res) => later(() => { S.el = el; fire('pointerlockchange'); res(); }));
+    S.pending++;
+    return new Promise((res) => later(() => { S.el = el; S.pending--; fire('pointerlockchange'); res(); }));
   };
   Object.defineProperty(Document.prototype, 'pointerLockElement', { configurable: true, get: () => S.el });
-  Document.prototype.exitPointerLock = function () { S.log.push('exit'); if (S.el) later(() => { S.el = null; fire('pointerlockchange'); }); };
+  Document.prototype.exitPointerLock = function () { S.log.push('exit'); if (S.el) { S.pending++; later(() => { S.el = null; S.pending--; fire('pointerlockchange'); }); } };
   Element.prototype.requestFullscreen = function () {
     S.log.push('fs'); const el = this;
     // the change animates (macOS: most of a second) and here it ends once the lock is taken (or after 30 looks with none),
@@ -80,7 +81,8 @@ try {
   /* ---------------- (b) PLAY: the lock before full screen, raw mouse with a fallback, the lock again after full screen ---------------- */
   await page.evaluate(() => { window.__pl.mode = 'noraw'; });
   await page.locator('#playFlat').click({ noWaitAfter: true });
-  await page.waitForFunction(() => G.state === 'play' && window.__pl.fs && window.__pl.log.includes('exit') && G.desktop.locked && window.__pl.el);
+  // The old lock can still be held while its queued exit/reacquire callbacks are pending.
+  await page.waitForFunction(() => G.state === 'play' && window.__pl.fs && window.__pl.log.includes('exit') && G.desktop.locked && window.__pl.el && window.__pl.pending === 0);
   await settle();
   let s = await pl();
   const ex = s.log.indexOf('exit');
