@@ -2271,9 +2271,11 @@ def _passage_walk(world, L, surfaces, strip, counts, stops, oa, u, out, xs, i, j
     def reach(p, d):
         hits = [h for h in (world.building_ray(p, d, PASSAGE_WIDE), stops.ray(p, d, PASSAGE_WIDE)) if h is not None]
         return min(hits) if hits else None
-    x, y = (xs[i] + xs[j]) / 2, max(0., min(left, right) - 30.)
+    # from the sidewalk's back line, past the parterre (which may stop short of the façade line: an open 2.5 m
+    # parterre where the building behind the passage stands more than FRONT_MAX back)
+    x, y = (xs[i] + xs[j]) / 2, 0.
     while y < max(left, right) + FRONT_MAX and blocked(at(x, y)):
-        y += PASSAGE_ROW                                             # past the parterres
+        y += PASSAGE_ROW
     rows = []
     while y < PASSAGE_LONG:
         p = at(x, y)
