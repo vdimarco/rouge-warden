@@ -1242,3 +1242,7 @@ Optional combat.targets output reused by main; fresh default arrays/live goon re
 
 
 Increment45 shipped #654 as8005f88d after all6CI/review/current18deployedchecks/rebase before AND afterpreview/exactmerge. Productionmain+combat HTTP200 exactbytes verified (hashes in fullswing-r45-combat-targets/production-verification.json). Canonical combat-target-storage scenarios published and OpenSpec archived. ActualChrome/FPSbenefit unverified; totalwithheld.
+
+
+### Increment46 — job rope target scratch — 2026-10-23
+Optional jobs.ropeTargets output reused by main; defaultfresharrays/records and livepositions unchanged. Node100fourtype/statecycles +action/reconciliation suites and4browserchecks60realframes/onearrayPASS. Evidence fullswing-r46-job-targets/all20dimensionlimits; total/delta withheld, actualChrome/stability unverified. No art/physics/anchor/ceiling change or FPS claim. Review/CI/preview/rebase/production pending.

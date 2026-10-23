@@ -706,8 +706,9 @@ export function createJobs({ city, combat, cars = null, seed = 4711 }) {
   // the hero was knocked out: a fight job is lost
   J.knockedOut = () => { if (J.active && ["brawl", "sludge", "thief", "mugging", "getaway", "tanker"].includes(J.active.type)) end(false, "knockout"); };
   // a rope that catches a falling person or the balloon catches them
-  J.ropeTargets = function ropeTargets(h) {
-    const A = J.active, out = [];
+  J.ropeTargets = function ropeTargets(h, out = []) {
+    out.length = 0;
+    const A = J.active;
     if (!A) return out;
     if (A.type === "catch" && A.data.falling && !A.data.caught) out.push({ id: "person", tag: "person", pos: A.data.p, radius: 1.4 });
     if (A.type === "balloon" && A.data.b.free && !A.data.b.held) out.push({ id: "balloon", tag: "balloon", pos: A.data.b, radius: 1.4 });
