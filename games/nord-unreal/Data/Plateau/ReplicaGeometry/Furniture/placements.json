@@ -29,7 +29,7 @@
  "source_sha256": {
   "Data/LaFontaine/osm.xml": "fe4410d45007a627bf6d9b9ddeeae329fa9cdd7492dfb5fa6beff851e7cf8f86",
   "Data/LaFontaine/layout.json": "4238d6ed45d5fb890e0f8dbcb672de0803c6dc7079b0b6a86b386d82ebbb4250",
-  "Scripts/plateau_replica.py": "dfb9dfe81ceb71058efa2bf5520cc87496e0c429a7f6cbdba676a965fad8d473",
+  "Scripts/plateau_replica.py": "b36a562e123b8593ad3ebd58269e782bcda1ca8869705430c0cdc451d6314aba",
   "Scripts/prepare_lafontaine.py": "e7b6e5f068a96ee7306b1fff247fa73158f5cf7c343dc5510ab8cce92ee3c924",
   "Data/Plateau/BaseGeometry/Marking.obj": "2d82cbca59041aa6af5e6f3fffaf6a01b2c3e672eea9732e8a5fecbb7cee35dd",
   "Data/Plateau/ReplicaGeometry/Plex/fronts.json": "0bdac58607f918b7ca11706a4f9c1317687093ab2528e9adeef558ccee7febe9",
@@ -24704,13 +24704,13 @@
    "position": [
     -26906.58,
     -24855.64,
-    0.0
+    18.0
    ],
    "yaw": 324.58,
    "scale": 1.0,
    "variant_seed": 135925,
    "collision": true,
-   "ground": "ground",
+   "ground": "sidewalk",
    "code": "SU-ME-A",
    "text": "\\P 9h-10h MERCREDI 1 AVRIL AU 1 DÉC",
    "arrow": "left"

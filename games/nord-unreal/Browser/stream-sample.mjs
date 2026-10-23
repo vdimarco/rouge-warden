@@ -119,21 +119,29 @@ async function main() {
   const { values } = parseArgs({ options: {
     seconds: { type: 'string', default: '60' }, warmup: { type: 'string', default: '2' }, slot: { type: 'string', default: 'NordFriend1' },
     url: { type: 'string', default: 'http://127.0.0.1:8100/' }, relay: { type: 'boolean', default: false },
-    look: { type: 'boolean', default: false }, portrait: { type: 'boolean', default: false }
+    look: { type: 'boolean', default: false }, portrait: { type: 'boolean', default: false },
+    // Gauntlet options: every decoded frame, delay statistics, a held phone rung, stop shots and the output folder.
+    frames: { type: 'boolean', default: false }, latency: { type: 'boolean', default: false },
+    pin: { type: 'string' }, trigger: { type: 'string' }, out: { type: 'string' }
   } });
-  const seconds = Number(values.seconds), warmup = Number(values.warmup), url = new URL(values.url);
+  const seconds = Number(values.seconds), warmup = Number(values.warmup);
   assert.ok(Number.isInteger(seconds) && seconds >= 5 && seconds <= 3600, '--seconds must be 5–3600');
   assert.ok(Number.isInteger(warmup) && warmup >= 2 && warmup <= 60, '--warmup must be 2–60');
   assert.ok(['NordHost', 'NordFriend1'].includes(values.slot), '--slot must be NordHost or NordFriend1');
-  assert.ok(['http:', 'https:'].includes(url.protocol) && !url.username && !url.password && !url.search && !url.hash,
-    '--url must be an HTTP(S) player page without credentials, query or fragment');
+  assert.ok(values.trigger !== '' && values.out !== '', '--trigger and --out need a path');
+  const url = playerUrl(values.url, values.pin), pin = url.searchParams.get('pin');
   const { chromium } = await import(pathToFileURL(resolve(process.env.NORD_PLAYWRIGHT_PATH || '../../../qa/browser/node_modules/playwright/index.mjs')));
-  const output = resolve('../Saved/BrowserStreaming/samples', new Date().toISOString().replace(/[:.]/g, '-') + '-' + values.slot);
+  const output = values.out ? resolve(values.out)
+    : resolve('../Saved/BrowserStreaming/samples', new Date().toISOString().replace(/[:.]/g, '-') + '-' + values.slot);
   await mkdir(output, { recursive: true });
   const report = { startedAt: new Date().toISOString(), playerUrl: url.href, slot: values.slot,
     mode: values.relay ? 'forced-relay-scoped-turn-dns' : 'ordinary', cameraSweep: values.look, portrait: values.portrait, warmupSeconds: warmup, passed: false, samples: [],
     limits: ['Host-PC Chromium is not a physical phone or an off-LAN network.',
       'No walking, driving, campaign input or audible playback is checked.'] };
+  if (pin !== null) report.pinnedRung = Number(pin);
+  if (values.latency) report.events = [];
+  if (values.trigger) report.shots = [];
+  const frames = [];
   const args = ['--disable-gpu'];
   // The published TURN route resolves privately on this PC; preserve browser security and map only that hostname.
   if (values.relay) args.push('--host-resolver-rules=MAP omarchy.tail7b97f6.ts.net 199.38.181.54');
@@ -166,12 +174,47 @@ async function main() {
         }
       };
     }, values.relay);
+    if (values.latency) await context.addInitScript(() => {
+      const events = window.__sampleEvents = [];
+      const record = (kind, data) => events.push({ timeMs: Date.now(), kind, ...data });
+      // The Epic frontend dispatches these on its own EventTarget, and the player keeps no global handle to it
+      // (checked against lib-pixelstreamingfrontend-ue5.8 0.1.2; other frontend versions are unverified).
+      const nativeDispatch = EventTarget.prototype.dispatchEvent;
+      EventTarget.prototype.dispatchEvent = function (event) {
+        if (event.type === 'latencyCalculated') {
+          const info = event.data?.latencyInfo || {}, row = {};
+          for (const [key, value] of Object.entries(info)) if (Number.isFinite(value)) row[key] = value;
+          for (const key of ['encoderLatencyMs', 'packetizeLatencyMs', 'pacerLatencyMs', 'captureToSendLatencyMs']) {
+            if (Number.isFinite(info.frameTiming?.[key])) row[key] = info.frameTiming[key];
+          }
+          record('latency', row);
+        } else if (event.type === 'videoEncoderAvgQP') record('qp', { avgQP: event.data?.avgQP });
+        return nativeDispatch.call(this, event);
+      };
+      // The player writes each requested size to data-stream-size; the video element reports each received size.
+      document.addEventListener('DOMContentLoaded', () => {
+        let requested = document.body.dataset.streamSize;
+        new MutationObserver(() => {
+          const size = document.body.dataset.streamSize;
+          if (!size || size === requested) return;
+          requested = size;
+          const [width, height] = size.split('x').map(Number);
+          record('requested', { width, height });
+        }).observe(document.body, { attributes: true, attributeFilter: ['data-stream-size'] });
+      });
+      // Media resize events do not bubble, but a capturing listener still sees the stream's video element.
+      document.addEventListener('resize', event => {
+        if (event.target instanceof HTMLVideoElement) record('received', { width: event.target.videoWidth, height: event.target.videoHeight });
+      }, true);
+    });
     const page = await context.newPage();
     page.setDefaultTimeout(30000);
     // Suppress unrelated title/trailer downloads during the measurement.
     await page.route('https://d2ol7oe51mr4n9.cloudfront.net/**', route => route.abort());
     await page.goto(url.href);
     await page.waitForFunction(() => document.body.dataset.state === 'idle');
+    if (pin !== null) assert.equal(await page.evaluate(() => document.body.dataset.streamPin), pin,
+      'Build the sample page with NORD_QA_PIN=1 so ?pin= holds the phone rung');
     await page.locator('#connect').click();
     await page.waitForFunction(slot => Array.from(document.querySelector('#streamer').options).some(option => option.value === slot), values.slot);
     const autoSlot = await page.evaluate(() => window.__sampleSubscribed);

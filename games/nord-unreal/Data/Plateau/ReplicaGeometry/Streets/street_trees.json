@@ -6,9 +6,9 @@
  "counts": {
   "mapped_trees": 4571,
   "mapped_trees_on_carriageway": 664,
-  "curb_extensions": 584,
-  "curb_extension_trees": 778,
-  "curb_extension_trees_at_curb": 130,
+  "curb_extensions": 586,
+  "curb_extension_trees": 780,
+  "curb_extension_trees_at_curb": 132,
   "curb_extensions_merged": 114,
   "curb_extensions_flush": 7,
   "curb_extensions_part_flush": 14,
@@ -20546,6 +20546,80 @@
     [
      41406.75,
      54045.86,
+     18.0
+    ]
+   ]
+  },
+  {
+   "trees": [
+    "12034358153"
+   ],
+   "edge": "strip",
+   "on_sidewalk_at_curb": [
+    "12034358153"
+   ],
+   "street": "Rue Dorion",
+   "curb": [
+    [
+     35811.95,
+     57695.64
+    ],
+    [
+     35559.41,
+     57864.87
+    ]
+   ],
+   "road_normal": [
+    0.5567,
+    0.8307
+   ],
+   "from_curb_cm": [
+    -38.39
+   ],
+   "depth_cm": 90.0,
+   "raised_cm": 90.0,
+   "flush_reason": null,
+   "pits": [
+    [
+     35664.31,
+     57748.36,
+     18.0
+    ]
+   ]
+  },
+  {
+   "trees": [
+    "12034358152"
+   ],
+   "edge": "strip",
+   "on_sidewalk_at_curb": [
+    "12034358152"
+   ],
+   "street": "Rue Dorion",
+   "curb": [
+    [
+     33132.39,
+     59491.33
+    ],
+    [
+     32879.86,
+     59660.56
+    ]
+   ],
+   "road_normal": [
+    0.5567,
+    0.8307
+   ],
+   "from_curb_cm": [
+    -33.15
+   ],
+   "depth_cm": 90.0,
+   "raised_cm": 90.0,
+   "flush_reason": null,
+   "pits": [
+    [
+     32987.67,
+     59548.41,
      18.0
     ]
    ]
