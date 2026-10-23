@@ -737,9 +737,9 @@
     357.78,
     -1900.55,
     -2444.78,
-    1240.49
+    1182.73
    ],
-   "sha256": "3177bafe85b772aa0a32cf0d248a2eac7868f147969b88dae92d9f7e34ea5aae"
+   "sha256": "79e923d016512e71a09f8754420fa12c78af62409f8ec17d0b75b7ced751225c"
   },
   {
    "file": "Soul_cloth_a_XM001_YP000.obj",
@@ -755,9 +755,9 @@
     352.58,
     -7663.71,
     67612.96,
-    1225.38
+    1182.25
    ],
-   "sha256": "39bf273a751a69a086635a4bd2362204f04c96e12d923764507c6451bb908896"
+   "sha256": "e5d028ed293f5e2a956b7053918b0db10742b713bc2d9d3cc7e1583d92c5fb5f"
   },
   {
    "file": "Soul_cloth_a_XP000_YM001.obj",
@@ -809,9 +809,9 @@
     353.99,
     -1781.23,
     -2567.18,
-    1210.37
+    1165.22
    ],
-   "sha256": "53c904da7b0e2a10c70eb14426440e3054d8278dd7638c8165453dba30aa8044"
+   "sha256": "14113c61a34388a94a6896673fedd376213211874fbefba385a4236ee2c3b421"
   },
   {
    "file": "Soul_cloth_b_XM001_YP000.obj",
@@ -827,9 +827,9 @@
     355.16,
     -4669.74,
     67990.48,
-    1165.2
+    1138.77
    ],
-   "sha256": "6e0900a639405b746cbaef8541c710af3d10422971e355564433e565a98a6e78"
+   "sha256": "ac1bd58db9411b4beed19a589eeb0201e249f1601a789fb4c5f134e5f60a1314"
   },
   {
    "file": "Soul_cloth_b_XP000_YM001.obj",
@@ -881,9 +881,9 @@
     352.49,
     -2043.98,
     -2524.75,
-    1223.02
+    1172.33
    ],
-   "sha256": "83cfd6fd79d8b69cd6dc4e730d1b921700cd5ab260a24e57f0cda85a9bf08d42"
+   "sha256": "4d84e22fdc367cd0fecec491bb762c515e14432f2e8981093aa36d0ce0540d15"
   },
   {
    "file": "Soul_cloth_c_XM001_YP000.obj",
@@ -899,9 +899,9 @@
     355.76,
     -4490.45,
     68275.66,
-    1212.02
+    1172.04
    ],
-   "sha256": "89b0f133a585e02b69c6349a2b214d83ad7b558ce936cbabf77206f1a90e2598"
+   "sha256": "0837bb6573962d26e757a4176f6d6de1b54eecff368bda44a00e67a4b3bbbb9f"
   },
   {
    "file": "Soul_cloth_c_XP000_YM001.obj",
@@ -953,9 +953,9 @@
     359.21,
     -2246.63,
     -2461.24,
-    1181.14
+    1175.57
    ],
-   "sha256": "f0b6958b6c5ce436cd388cec829c5f9a7790ff85d6cb4bd6539c9473a496ed95"
+   "sha256": "f1a05e43ee4e2991af1bd3d941502c8839744538dfcaeae096fdfe7f94bfee44"
   },
   {
    "file": "Soul_cloth_d_XM001_YP000.obj",
@@ -1475,9 +1475,9 @@
     433.08,
     -1686.09,
     -2369.06,
-    1269.91
+    1204.39
    ],
-   "sha256": "be173ee37489672d4cea4599ec9f2e107464c335a5cc18844ec96a147c602be1"
+   "sha256": "9f40536f152f2661f8683861445f878b9e29c5a37db3448030ebae0d28716831"
   },
   {
    "file": "Soul_line_rope_XM001_YP000.obj",
@@ -1493,9 +1493,9 @@
     435.76,
     -4372.03,
     68559.9,
-    1251.35
+    1204.39
    ],
-   "sha256": "5a3fd09843a1738f1d7c61e65bd4c4c7af695c678b5d7d6b398674ea10297e5e"
+   "sha256": "a4548d23eeffaf23cc09f943eccd1a71af69d8565552ae61d2bc9f7e7d5b41fe"
   },
   {
    "file": "Soul_line_rope_XP000_YM001.obj",
@@ -1547,9 +1547,9 @@
     0.0,
     -1682.31,
     -2365.27,
-    1294.3
+    1235.0
    ],
-   "sha256": "a8a972b224b62846885669213f930bae881be4dc6fe1d45a26418ce84e586914"
+   "sha256": "651bcbb84d05c020783639d13cbdee8054c44e17be9dc7e913f2abd68feaf094"
   },
   {
    "file": "Soul_pulley_XM001_YP000.obj",
@@ -1565,9 +1565,9 @@
     0.0,
     -4368.51,
     68563.67,
-    1252.97
+    1206.0
    ],
-   "sha256": "7ccd0a8a8cf268873339fc04180b6f0aae5f1b4517a70aad74e155f7adeff051"
+   "sha256": "25a3ba85df7810a4fbe52a9cb37be9782ed32bd295f126cc4dd36eaa8d787d7e"
   },
   {
    "file": "Soul_pulley_XP000_YM001.obj",
@@ -1619,9 +1619,9 @@
     0.0,
     -1926.47,
     -2341.93,
-    1300.53
+    1235.0
    ],
-   "sha256": "d4e22a5a6bf70d5296efc37e3115d1639256d662b88d5e9a67b34d4f72f3113c"
+   "sha256": "1f6cf2a19fcc01ced0e03c53a329ebe2a1ba55941a21e567ea7cd0db59603df2"
   },
   {
    "file": "Soul_clothes_pole_XM001_YP000.obj",
@@ -1637,9 +1637,9 @@
     0.0,
     -4337.92,
     68587.48,
-    1281.97
+    1235.0
    ],
-   "sha256": "31bf3a7eeb9e4f99de0b647590dc3ca7480240710da51fe7c21ed4b60d3906c4"
+   "sha256": "2e871b58319e788f5fffb59bd8cf652f7357de4936bf5251a5eb60ec33dd4819"
   },
   {
    "file": "Soul_clothes_pole_XP000_YM001.obj",
@@ -1691,9 +1691,9 @@
     380.9,
     -1736.99,
     -2851.26,
-    1199.83
+    1156.52
    ],
-   "sha256": "f3a0fc7940420261c8afe7b844e2dcab8f424224868851e61e9c7b86e6746a7b"
+   "sha256": "508944b18581200a06ef739ac47eb42e8aa5f3e2afcfc8884160e67e1cef7f89"
   },
   {
    "file": "Soul_cloth_e_XM001_YP000.obj",
@@ -1709,9 +1709,9 @@
     384.56,
     -7577.35,
     68160.37,
-    1143.22
+    1126.06
    ],
-   "sha256": "b80d3ded60fc420354d044b7ddd809978609bfdbd812b562d728194feae5ca77"
+   "sha256": "e48f26e132129020e217add8e8f117eca83f9452390adf385335315769a1701d"
   },
   {
    "file": "Soul_cloth_e_XP000_YM001.obj",
@@ -1763,9 +1763,9 @@
     353.84,
     -2869.25,
     -2700.67,
-    1238.55
+    1185.85
    ],
-   "sha256": "15f72a28675d6994b7c8db15bb8e7970737fa9e0cef0d72392a571f63d2e6799"
+   "sha256": "8a0a9317e2d0b2dd17e261f9e7481b004223d46d0616f05c41bfd41e18f1c63c"
   },
   {
    "file": "Soul_cloth_f_XM001_YP000.obj",
@@ -3456,7 +3456,7 @@
  "source_sha256": {
   "Data/LaFontaine/osm.xml": "fe4410d45007a627bf6d9b9ddeeae329fa9cdd7492dfb5fa6beff851e7cf8f86",
   "Data/LaFontaine/layout.json": "4238d6ed45d5fb890e0f8dbcb672de0803c6dc7079b0b6a86b386d82ebbb4250",
-  "Scripts/plateau_replica.py": "fa38cb7bd6252ce64d1ffe08c01a21df9b433fcdcdd9f4040268b4327cb4d0da",
+  "Scripts/plateau_replica.py": "728d4104a487d97e2d8028a4b8715766b7e363212ba284a305eaa121d243028d",
   "Scripts/prepare_lafontaine.py": "e7b6e5f068a96ee7306b1fff247fa73158f5cf7c343dc5510ab8cce92ee3c924",
   "Data/Plateau/BaseGeometry/Marking.obj": "2d82cbca59041aa6af5e6f3fffaf6a01b2c3e672eea9732e8a5fecbb7cee35dd",
   "Data/Plateau/ReplicaGeometry/Plex/fronts.json": "c572a535a248f94d70d6ec2237d9a89419eb98b2e5f209c4122aeda65d9db201",
@@ -3466,7 +3466,7 @@
  },
  "attribution": "© OpenStreetMap contributors, ODbL 1.0; authored street details and original murals",
  "placements": "placements.json",
- "placements_sha256": "0d631685accfdd7355fb600dd5257cfd512d8c5d4bdc0bd28294489dfdf56889",
+ "placements_sha256": "040d8ea603253d1f3fa0c20e6c0548517380591a785be101ff6c1b501ec418ed",
  "lane_life": "lane_life.json",
- "lane_life_sha256": "3663f00c1a2158d7e5bd5b681412043ffd80a1aa21659d107915162243447647"
+ "lane_life_sha256": "f9bc8ecb44ffa832867aef0e988d4036c00db0b1cb9bbb354e4e1b13892c324e"
 }
