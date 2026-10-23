@@ -1803,10 +1803,11 @@ def _tree_pits(world, L, strip, trees, tree_grid, pit_trees, counts):
         c = add(add(ca, u, along), inward, lat)
         size = (110, 100)
         q = lambda x, y: (c[0] + u[0] * x + inward[0] * y, c[1] + u[1] * x + inward[1] * y)
-        # the pit lies on its own strip, or it would hang over the carriageway where a short strip's curb and back
-        # lines converge at a junction (the trunk then stands on the sidewalk without one)
+        # the pit lies on its own strip and off every other carriageway, or it would hang over the asphalt where a
+        # short strip's curb and back lines converge at a junction (the trunk then stands on the sidewalk without one)
         strip_poly = [ca, cb, ob, oa]
-        if not all(point_in(q(x * size[0] / 2, y * size[1] / 2), strip_poly) for x, y in ((-1, -1), (1, -1), (1, 1), (-1, 1))):
+        corners = [q(x * size[0] / 2, y * size[1] / 2) for x, y in ((-1, -1), (1, -1), (1, 1), (-1, 1))]
+        if not all(point_in(r, strip_poly) and not on_pavement(world, r, strip['seg']['i']) for r in corners):
             counts['tree_pits_off_strip'] += 1
             continue
         pit_trees.add(i)
