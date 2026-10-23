@@ -2017,7 +2017,8 @@ PARTITION_H = {'lattice': 200., 'boards': 180.}     # screen heights over the de
 PARTITION_GAP = 60.         # neighbouring lots' gallery ends this close (along the wall line) share a screen
 GATE_LEDGES = (.2, .78)     # the gate's two painted ledges, as fractions of the leaf height, with a brace between
 DOOR_CLEAR = 101.           # deck kept clear of props this far either side of a gallery door's centre (43 + 58)
-HEAD_CLEAR = 60.            # and this far past a flight's head, so the 42 cm player capsule still walks every way
+HEAD_CLEAR = 100.           # and this far past a flight's head, so the 42 cm player capsule still turns round the
+                            # end of the opening guard there and walks every way with the props floor filled
 BLIND_D = D_FACE + 3.       # blinds and curtains: just over the glass (D_FACE + 2.5), under the meeting rail (+ 3.5)
 BLINDS = ('Trim', 'Trim', 'Trim', 'Wood_Cream', 'Wood_Cream', 'Stone_Cast')     # white, cream and beige
 CURTAINS = ('Trim', 'Wood_Cream', 'Wood_Cream', 'Stone_Cast', 'Wood_Burgundy', 'Wood_Green')
