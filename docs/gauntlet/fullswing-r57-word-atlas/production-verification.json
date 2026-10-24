@@ -1,0 +1,12 @@
+{
+  "stage": "production_verified",
+  "merge": "f548a6b7e3e6eed540d2fc470c2c4f42ea088b9b",
+  "files": [
+    {
+      "file": "js/fx.js",
+      "status": 200,
+      "exact": true,
+      "sha256": "03095f3bb17ef5d1078d601045c5cad9e29a34c81c230785df95f2a5c014e9c7"
+    }
+  ]
+}

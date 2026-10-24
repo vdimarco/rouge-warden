@@ -1322,3 +1322,6 @@ Increment56 shipped #679 as c4c37bd9 after all6CI/review/current46deployedchecks
 
 
 Increment57 — atlas uploads omitted on animation-only word updates; pending spawn/removal ranges preserved. Actual one-word animated uploads96→80bytes, baseline assertion fails;16browserchecks/exactnonblankpixels/fullreplacement/swap/hiddenaging PASS;32FXchecksPASS. Evidence r57-word-atlas/all20limits/noFPSclaim/totalwithheld. Releasepending.
+
+
+Increment57 shipped #681 as f548a6b7 after all6CI/review/current48deployedchecks/exactfxbytes/rebase before AND afterpreview/exactmerge. Productionfx HTTP200 exactSHA03095f3bb17ef5d1078d601045c5cad9e29a34c81c230785df95f2a5c014e9c7 verified. Canonical atlas-update scenarios published and OpenSpec archived. ActualChrome/FPSbenefit unverified; totalwithheld.
