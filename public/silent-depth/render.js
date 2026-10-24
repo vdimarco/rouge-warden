@@ -47,7 +47,7 @@ export class Renderer {
   commandRoom() {
     const {ctx,width:w,height:h}=this;
     ctx.fillStyle='#142324';ctx.fillRect(0,0,w,h);
-    if(this.room.complete&&this.room.naturalWidth){const scale=Math.max(w/this.room.width,h/this.room.height);ctx.drawImage(this.room,(w-this.room.width*scale)/2,(h-this.room.height*scale)/2,this.room.width*scale,this.room.height*scale);}
+    if(this.room.complete&&this.room.naturalWidth){const scale=w/this.room.width;ctx.drawImage(this.room,(w-this.room.width*scale)/2,(h-this.room.height*scale)/2,this.room.width*scale,this.room.height*scale);}
   }
   text(text, x, y, color = COLORS.muted, size = 10, align = 'left') {
     const ctx = this.ctx; ctx.fillStyle = color; ctx.font = `${size}px ui-monospace, Consolas, monospace`; ctx.textAlign = align; ctx.fillText(text, x, y);

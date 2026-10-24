@@ -9,10 +9,17 @@ await fs.mkdir(OUT,{recursive:true});
 const browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||undefined,args:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader','--ignore-gpu-blocklist']});
 const errors=[];
 function watch(p){p.on('pageerror',e=>errors.push(e.message));p.on('console',m=>{if(m.type()==='error'&&!m.text().includes('Failed to load resource'))errors.push(m.text());});}
+async function checkRoom(p){
+  const zones=await p.locator('.room-stations>button').evaluateAll(bs=>bs.map(b=>{const r=b.getBoundingClientRect(),v=b.closest('.viewport').getBoundingClientRect();return {name:b.textContent.trim(),width:r.width,height:r.height,visibleWidth:Math.min(r.right,v.right)-Math.max(r.left,v.left),visibleHeight:Math.min(r.bottom,v.bottom)-Math.max(r.top,v.top),labelOpacity:getComputedStyle(b.querySelector('span')).opacity};}));
+  assert.equal(zones.length,5);
+  for(const zone of zones){assert.ok(zone.name&&zone.width>=44&&zone.height>=44&&zone.visibleWidth>=43&&zone.visibleHeight>=43,JSON.stringify(zone));assert.equal(zone.labelOpacity,'0');}
+}
 const context=await browser.newContext({viewport:{width:1440,height:960}});
 const page=await context.newPage();watch(page);
 await page.goto(`${BASE}/silent-depth/`);await page.locator('#modal-action').click();
 assert.equal(await page.locator('#control-room').isVisible(),true);
+await page.mouse.move(0,0);await checkRoom(page);
+await page.locator('.room-scope').focus();await page.waitForFunction(()=>getComputedStyle(document.querySelector('.room-scope span')).opacity==='1');assert.equal(await page.locator('.room-scope span').evaluate(e=>getComputedStyle(e).opacity),'1');await page.keyboard.press('Tab');
 await page.screenshot({path:path.join(OUT,'control-room-desktop.png'),fullPage:true});
 await page.locator('.room-chart').click();assert.equal(await page.locator('[data-station="chart"]').first().getAttribute('aria-pressed'),'true');
 await page.locator('[data-turn="5"]').click();await page.waitForTimeout(150);assert.match(await page.locator('#heading-order').innerText(),/STEER/);
@@ -55,6 +62,7 @@ for(const width of [320,390,1280]){
   await Promise.all([p.waitForURL('**/silent-depth/'),p.locator('.cab.silent-depth .start').click()]);
   await p.locator('#modal-action').click();assert.equal(await p.locator('#control-room').isVisible(),true);
   assert.ok(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),`overflow ${width}`);
+  await p.mouse.move(0,0);await checkRoom(p);
   if(width===390){
     await p.screenshot({path:path.join(OUT,'control-room-mobile.png'),fullPage:true});
     await p.tap('.room-scope');await p.tap('[data-rate="12"]');await p.waitForFunction(()=>!document.querySelector('#fire').disabled);
