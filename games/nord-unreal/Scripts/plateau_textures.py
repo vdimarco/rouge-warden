@@ -2808,16 +2808,17 @@ LITTER_LEAFLETS = {'ash': (.27, 8), 'locust': (.3, 0)}   # half-width share and 
 LITTER_YELLOW, LITTER_GOLD, LITTER_PALE = (214., 172., 58.), (206., 146., 44.), (218., 192., 112.)
 LITTER_ORANGE, LITTER_RED, LITTER_MAROON = (196., 104., 40.), (160., 50., 36.), (108., 44., 48.)
 LITTER_RUSSET, LITTER_TAN, LITTER_LIME = (142., 78., 40.), (170., 132., 82.), (156., 150., 62.)
+LITTER_GREEN = (112., 130., 54.)       # a Norway or silver maple leaf the first hard frost brought down still green
 LITTER_BROWN = (112., 78., 48.)        # dried brown: the middle layer turns toward it
 LITTER_ROT = (70., 50., 34.)           # damp, rotting brown: the bottom layer
 LITTER_MARGIN = (118., 74., 40.)       # the brown that creeps in from a fallen leaf's margin
 LITTER_UNDERSIDE = (206., 198., 172.)  # a silver maple's pale underside; other leaves are paler and duller below
 LITTER_TAR = (26., 24., 22.)           # tar spot (Rhytisma acerinum), common on Montréal's Norway maples
 LITTER_PALETTES = {
-    'silver': ((.25, LITTER_PALE), (.24, LITTER_YELLOW), (.12, LITTER_ORANGE), (.14, LITTER_TAN), (.1, LITTER_RUSSET),
-               (.09, LITTER_RED), (.06, LITTER_LIME)),       # red: the Freeman and red maples on silver meshes
-    'norway': ((.4, LITTER_YELLOW), (.2, LITTER_GOLD), (.08, LITTER_PALE), (.1, LITTER_LIME), (.12, LITTER_TAN),
-               (.1, LITTER_ORANGE)),
+    'silver': ((.23, LITTER_PALE), (.22, LITTER_YELLOW), (.12, LITTER_ORANGE), (.13, LITTER_TAN), (.1, LITTER_RUSSET),
+               (.12, LITTER_RED), (.05, LITTER_LIME), (.03, LITTER_GREEN)),  # red: the Freeman and red maples
+    'norway': ((.36, LITTER_YELLOW), (.18, LITTER_GOLD), (.07, LITTER_PALE), (.07, LITTER_LIME), (.06, LITTER_GREEN),
+               (.1, LITTER_TAN), (.1, LITTER_ORANGE), (.06, LITTER_RED)),   # red: the sugar and red maples
     'linden': ((.4, LITTER_YELLOW), (.25, LITTER_TAN), (.1, LITTER_LIME), (.15, LITTER_RUSSET), (.1, LITTER_PALE)),
     'elm': ((.45, LITTER_YELLOW), (.25, LITTER_TAN), (.15, LITTER_RUSSET), (.15, LITTER_PALE)),
     'amur': ((.4, LITTER_RED), (.3, LITTER_ORANGE), (.2, LITTER_MAROON), (.1, LITTER_YELLOW)),
