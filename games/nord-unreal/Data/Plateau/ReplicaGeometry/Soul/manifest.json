@@ -296,72 +296,72 @@
    "mesh": "SM_Soul_Leaf_Litter_XM001_YM001",
    "material": "Leaf_Litter",
    "collision": "none",
-   "triangles": 10874,
-   "faces": 1773,
+   "triangles": 17598,
+   "faces": 2771,
    "tile_cm": 1000000,
    "bounds_cm": [
     -44236.94,
-    -47365.08,
-    2.4,
+    -47619.07,
+    2.8,
     707.11,
     867.52,
     18.75
    ],
-   "sha256": "bd544c11715b089f58274e310ac123d9109416400b6ff1794b1b012c2f1f7f6f"
+   "sha256": "94482826d62df0b3522ef9e6b8c642d6f70ddde708181ff889abd77b89d92411"
   },
   {
    "file": "Soul_Leaf_Litter_XM001_YP000.obj",
    "mesh": "SM_Soul_Leaf_Litter_XM001_YP000",
    "material": "Leaf_Litter",
    "collision": "none",
-   "triangles": 19787,
-   "faces": 3241,
+   "triangles": 32484,
+   "faces": 5135,
    "tile_cm": 1000000,
    "bounds_cm": [
     -44189.26,
     -983.32,
-    2.4,
+    2.8,
     1069.21,
     69467.07,
     18.75
    ],
-   "sha256": "f1de4a993362244e83ea2a4e886dc0bbb69a30291be82e8080dc9094609b7222"
+   "sha256": "440b69e86c0c079e551148b7d84fe59d64cb822f3147a3964d10a696e5abfbd4"
   },
   {
    "file": "Soul_Leaf_Litter_XP000_YM001.obj",
    "mesh": "SM_Soul_Leaf_Litter_XP000_YM001",
    "material": "Leaf_Litter",
    "collision": "none",
-   "triangles": 12340,
-   "faces": 1679,
+   "triangles": 16069,
+   "faces": 2257,
    "tile_cm": 1000000,
    "bounds_cm": [
     -826.94,
-    -46862.74,
-    2.4,
-    55459.71,
+    -46964.18,
+    2.8,
+    55488.95,
     539.72,
     18.75
    ],
-   "sha256": "61573a31353ba32c287d0f8fe5d0cdb3ce9e708f1eb6c6633d5b9d0302d88d0b"
+   "sha256": "575620b1d7e161a5c5e51d893f0090fbab0c7392e5f34c0c068bf7838c96e9a7"
   },
   {
    "file": "Soul_Leaf_Litter_XP000_YP000.obj",
    "mesh": "SM_Soul_Leaf_Litter_XP000_YP000",
    "material": "Leaf_Litter",
    "collision": "none",
-   "triangles": 23669,
-   "faces": 3148,
+   "triangles": 29332,
+   "faces": 3948,
    "tile_cm": 1000000,
    "bounds_cm": [
     -581.11,
     -247.48,
-    2.4,
-    55505.16,
+    2.8,
+    55592.13,
     69338.54,
     18.75
    ],
-   "sha256": "8dbcc0a186003e63fd765a308d8b558612d41ede9a9d4b5f013c63f1dab834e2"
+   "sha256": "f429696a479587804d3b33d3a00684ae43235faadbc73e91c8ab202f38ba359b"
   },
   {
    "file": "Soul_weed_XM001_YM001.obj",
@@ -2774,9 +2774,9 @@
   "crack_lines": 1055,
   "potholes": 77,
   "gutter_leaf_drifts": 991,
-  "litter_patches": 6166,
-  "litter_trees_without_ground": 355,
-  "litter_triangles": 66670,
+  "litter_patches": 9614,
+  "litter_trees_without_ground": 327,
+  "litter_triangles": 95483,
   "weed_tufts": 7916,
   "rust_streaks": 2031,
   "murals": 23,
@@ -2788,7 +2788,8 @@
   "locked_bikes": 209,
   "flower_boxes": 229,
   "ac_units": 0,
-  "ruelle_gutter_leaf_drifts": 328,
+  "ruelle_gutter_leaf_drifts": 426,
+  "litter_lane_trees": 266,
   "ruelle_fence_weeds": 1271,
   "chantier_street": "Rue Fabre",
   "laundry_poles": 126,
@@ -2830,20 +2831,21 @@
   "tags_doors": 30,
   "placements": 6486,
   "batches": 138,
-  "triangles": 253602
+  "triangles": 282415
  },
  "source_sha256": {
   "Data/LaFontaine/osm.xml": "fe4410d45007a627bf6d9b9ddeeae329fa9cdd7492dfb5fa6beff851e7cf8f86",
   "Data/LaFontaine/layout.json": "4238d6ed45d5fb890e0f8dbcb672de0803c6dc7079b0b6a86b386d82ebbb4250",
-  "Scripts/plateau_replica.py": "27ac76e7155458590eb3abf4c23958329070ccbba3fa9e257dd887045c6b6116",
+  "Scripts/plateau_replica.py": "31e1e8738b935be66b50d0bcfda92946f25ba960a6328fff26325d1949bc9165",
   "Scripts/prepare_lafontaine.py": "e7b6e5f068a96ee7306b1fff247fa73158f5cf7c343dc5510ab8cce92ee3c924",
   "Data/Plateau/BaseGeometry/Marking.obj": "2d82cbca59041aa6af5e6f3fffaf6a01b2c3e672eea9732e8a5fecbb7cee35dd",
-  "Data/Plateau/ReplicaGeometry/Plex/fronts.json": "c22c35ac4dac8ef8f2fbe9fc7ee2f29dc25bf694b59be2e77edaeb6324e5cabd",
+  "Data/Plateau/ReplicaGeometry/Plex/fronts.json": "8bdf83fd2a2d15b5b57f0f9f8431f67b33bcaf2e44c856c521d16ff937f629ed",
   "Data/Plateau/ReplicaGeometry/Soul/ruelles_vertes_clip.json": "6ca991f5b585f4f0567baed799c37db2d3476f451e0b88fdb315a959e2d7d216",
-  "Data/Plateau/ReplicaGeometry/Plex/manifest.json": "ddf26e9596011c1cdf2c37fbbd545b64715454ee705dc4da4145e4ce0afbf748",
-  "Data/Plateau/ReplicaGeometry/Props/manifest.json": "92d3a4c8811dd7adf5d0ca51701d308e1373361a46a346737104247ecfd417da",
+  "Data/Plateau/ReplicaGeometry/Plex/manifest.json": "9f5efd744734c8962e4592f7c8f4163efbf52c97b0bda95601d6bc216a3d783e",
+  "Data/Plateau/ReplicaGeometry/Props/manifest.json": "273d2fb16e61ea99d5c5230ebd3bf86719b5035510ab08bbdf62663f214d5d92",
   "Data/Plateau/Inventory/trees_pmr.json": "78ee70b8165af47cdee11a56c9653b69a1543c42cf78ab618145441d756831c1",
   "Data/Plateau/Inventory/trees_vm.json": "103be208d2135cbb989198a8b33cff081584a40792323fab2d2cd65ca2a8fc35",
+  "Data/Plateau/Inventory/sign_poles.json": "3d77a221def94a78024c587148cfa86a3dcfb385d7c9db118714735771283cfd",
   "Data/Plateau/ReplicaGeometry/Textures/textures.json": "17cb2c5d7b7714e7138708cfc44d00537198a30ab0067ce08191e2664f426885",
   "Data/Plateau/ReplicaGeometry/Trees/manifest.json": "dbf6352cb5dfd117521a2d7f1971ae06cf9b3c28d9a492b46bc4a62a96fd391d",
   "Data/Plateau/ReplicaGeometry/Plex/yard_trees.json": "c2b001bf09e28051f1b2c31cec565bfda3ed80b0b8947bdf036c8d6e80b8f106"
@@ -2853,118 +2855,141 @@
   "key": "Leaf_Litter",
   "uv": "world metres (u = x / 100, v = y / 100)",
   "lift_cm": {
-   "park_lawn": 0.4,
+   "park_lawn": 0.8,
    "streets": 0.75,
-   "ruelle_gutter": 0.4
+   "ruelle_gutter": 0.4,
+   "ruelle_paving": 0.65
   },
   "road_z_cm": 7.5,
   "cover": "min(0.9, 1.6 x (1 - leaf_retention)) of the crown",
+  "outline_cm": {
+   "park": 110.0,
+   "fine": 60.0
+  },
+  "fringe": {
+   "clumps": [
+    3,
+    5
+   ],
+   "per_outline_cm": 400.0,
+   "points": 4,
+   "radius_cm": [
+    22.0,
+    40.0
+   ],
+   "beyond_edge": 0.55
+  },
   "kinds": {
    "ash": {
     "trees": 389,
     "fallen": 0.5,
     "cover": 0.8,
-    "patches": 522,
+    "patches": 987,
     "trees_covered": 2,
     "trees_without_ground": 23,
     "crown_m2": 35310.0,
     "target_m2": 28248.0,
-    "drawn_m2": 11051.8
+    "drawn_m2": 11570.5
    },
    "conifer": {
     "trees": 180,
     "fallen": 0.06,
     "cover": 0.096,
-    "patches": 185,
-    "trees_covered": 3,
-    "trees_without_ground": 8,
+    "patches": 225,
+    "trees_covered": 2,
+    "trees_without_ground": 4,
     "crown_m2": 3780.7,
     "target_m2": 363.0,
-    "drawn_m2": 297.2
+    "drawn_m2": 310.0
    },
    "elm": {
     "trees": 548,
     "fallen": 0.4,
     "cover": 0.64,
-    "patches": 857,
+    "patches": 1109,
     "trees_covered": 2,
-    "trees_without_ground": 61,
+    "trees_without_ground": 59,
     "crown_m2": 32061.2,
     "target_m2": 20519.2,
-    "drawn_m2": 8143.7
+    "drawn_m2": 8453.8
    },
    "honey_locust": {
     "trees": 445,
     "fallen": 0.54,
     "cover": 0.864,
-    "patches": 797,
+    "patches": 1101,
     "trees_covered": 2,
-    "trees_without_ground": 51,
+    "trees_without_ground": 49,
     "crown_m2": 25529.6,
     "target_m2": 22057.6,
-    "drawn_m2": 8073.0
+    "drawn_m2": 8553.5
    },
    "larch": {
     "trees": 83,
     "fallen": 0.26,
     "cover": 0.416,
-    "patches": 82,
+    "patches": 85,
     "trees_covered": 0,
     "trees_without_ground": 1,
     "crown_m2": 1936.9,
     "target_m2": 805.8,
-    "drawn_m2": 734.0
+    "drawn_m2": 734.8
    },
    "linden": {
     "trees": 665,
     "fallen": 0.36,
     "cover": 0.576,
-    "patches": 875,
+    "patches": 1022,
     "trees_covered": 8,
-    "trees_without_ground": 48,
+    "trees_without_ground": 46,
     "crown_m2": 16044.4,
     "target_m2": 9241.6,
-    "drawn_m2": 6393.6
+    "drawn_m2": 6559.6
    },
    "norway_maple": {
     "trees": 640,
     "fallen": 0.2,
     "cover": 0.32,
-    "patches": 710,
+    "patches": 946,
     "trees_covered": 3,
-    "trees_without_ground": 24,
+    "trees_without_ground": 23,
     "crown_m2": 108878.9,
     "target_m2": 34841.2,
-    "drawn_m2": 20255.7
+    "drawn_m2": 20505.4
    },
    "silver_maple": {
     "trees": 1305,
     "fallen": 0.38,
     "cover": 0.608,
-    "patches": 1553,
-    "trees_covered": 3,
-    "trees_without_ground": 67,
+    "patches": 2261,
+    "trees_covered": 2,
+    "trees_without_ground": 65,
     "crown_m2": 328496.6,
     "target_m2": 199726.0,
-    "drawn_m2": 90797.7
+    "drawn_m2": 92140.5
    },
    "small": {
     "trees": 427,
     "fallen": 0.34,
     "cover": 0.544,
-    "patches": 585,
+    "patches": 750,
     "trees_covered": 6,
-    "trees_without_ground": 72,
+    "trees_without_ground": 57,
     "crown_m2": 10430.6,
     "target_m2": 5674.3,
-    "drawn_m2": 3105.8
+    "drawn_m2": 3360.8
    }
   },
+  "yard_trees_over_ruelles": {
+   "trees": 266,
+   "patches": 1128,
+   "drawn_m2": 2460.1
+  },
   "curb_drifts_m2": 1053.4,
-  "ruelle_drifts_m2": 144.0
+  "ruelle_drifts_m2": 188.3
  },
  "placements": "placements.json",
- "placements_sha256": "1b28df2dec593deb768614fc5be59b8e5410c7a05bf3a3cae95ab5acbfc3ac53",
+ "placements_sha256": "652c795db02318a3d45e33fd748b96189ffee659f88df5526a90d56b79bedb8c",
  "lane_life": "lane_life.json",
  "lane_life_sha256": "ff07e7299653d94260e4530891eef3daca751021957e8dfa641974e6a225a053"
 }
