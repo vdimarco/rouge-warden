@@ -22,6 +22,7 @@
     { id: "primordia", name: "Primordia", sub: "A Lenia arcade", url: "/primordia/", art: "/arcade/key/primordia.webp", color: "#3ff0e0" },
     { id: "breakthrough", name: "Breakthrough", sub: "Climate strategy", url: "/breakthrough2/", art: "/arcade/key/breakthrough.webp", color: "#f0c56a" },
     { id: "follow-suit", name: "Follow Suit", sub: "A card roguelike", url: "/follow-suit/", art: "/arcade/key/follow-suit.webp", color: "#e9c46a" },
+    { id: "silent-depth", name: "Silent Depth", sub: "Pacific submarine patrol", url: "/silent-depth/", art: "/arcade/key/silent-depth.webp", color: "#b0cbb8" },
     { id: "river-rush", name: "River Rush", sub: "Three wild rivers", url: "/river-rush/", art: "/arcade/key/river-rush.webp", color: "#f9c65b" },
     { id: "light-years-home", name: "Light Years Home", sub: "Drive on", url: "/light-years-home/", art: "/arcade/key/light-years-home.webp", color: "#cfe0ff" },
     { id: "ahead-of-the-light", name: "Ahead of the Light", sub: "Run home", url: "/ahead-of-the-light/", art: "/arcade/key/ahead-of-the-light.webp", color: "#f08a2c" },

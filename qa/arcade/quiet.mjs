@@ -372,6 +372,7 @@ class CdpTab {
 // music is for pages with a song of their own made with chip.js or a scheduler: nothing new is scheduled while hidden.
 const click = (sel) => (t) => t.tapEl(sel);
 const PAGES = [
+  { id: "silent-depth", path: "/silent-depth/", boot: () => document.querySelector("#modal")?.open, start: async (t) => { await t.tapEl("#modal-action"); await t.tapEl("#sound"); }, sound: "ctx" },
   { id: "arcade", path: "/", start: (t) => t.tap(5, 5), sound: "ctx", music: true },
   { id: "fall", path: "/fall/", start: (t) => t.key("Enter"), sound: "ctx", music: true },
   { id: "wild", path: "/wild/", boot: () => document.querySelector("#title") && !document.querySelector("#title").hidden && !document.querySelector("#tpress").hidden, start: (t) => t.key("Enter"), sound: "ctx", music: true, slow: true },

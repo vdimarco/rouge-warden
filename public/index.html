@@ -118,6 +118,12 @@ button { font: inherit; color: inherit; }
 .cab.tilt { --c1: #66328c; --c2: #f5a6e5; --glow: rgba(245, 166, 229, 0.45); }
 .cab.rules { --c1: #93632e; --c2: #ffd56b; --glow: rgba(255, 213, 107, 0.45); }
 .cab.follow-suit { --c1: #1f4b40; --c2: #e9c46a; --glow: rgba(233, 196, 106, 0.45); }
+.cab.silent-depth { --c1: #162324; --c2: #b0cbb8; --glow: rgba(176, 203, 184, 0.45); }
+.cab.silent-depth .marquee { container-type: inline-size; }
+.cab.silent-depth .marquee b { display: block; font-size: max(12px, calc(var(--h) * 0.03)); line-height: max(11px, calc(var(--h) * 0.03)); }
+.cab.silent-depth .marquee small { font-size: max(8px, calc(var(--h) * 0.018)); margin-top: 0; }
+@container (width < 100px) { .cab.silent-depth .marquee small { display: none; } }
+@media (max-height: 660px) { .cab.silent-depth .marquee small { display: none; } }
 .cab.lighthouse-keeper { --c1: #253f63; --c2: #bdd5eb; --glow: #bdd5eb66; }
 .cab.echoes-under-ice { --c1: #234c56; --c2: #b6e5ce; --glow: #b6e5ce66; }
 .cab.last-train-home { --c1: #352551; --c2: #ff85b5; --glow: #ff85b566; }
@@ -575,6 +581,16 @@ button { font: inherit; color: inherit; }
       <div class="door"><button class="slot" type="button" aria-label="Drop a token into Follow Suit"><i></i><span>25¢</span></button><button class="slot" type="button" aria-label="Drop a token into Follow Suit"><i></i><span>25¢</span></button></div>
       <div class="kick"></div>
       </article>
+      <article class="cab silent-depth" data-game="silent-depth" data-url="/silent-depth/" aria-label="Silent Depth: a Pacific submarine patrol">
+      <div class="marquee"><div><b>SILENT DEPTH</b><small>PATROL</small></div></div>
+      <div class="bezel"><div class="screen">
+      <img src="arcade/key/silent-depth.webp" alt="Silent Depth periscope looking across moving Pacific waves at a convoy" loading="lazy" decoding="async">
+      <div class="osd"><p class="hi">TRACK · FIRE · EVADE</p><p class="press">INSERT COIN</p><p class="credit">CREDIT 0</p></div>
+      </div></div>
+      <div class="panel"><span class="stick"></span><span class="pbtn a"></span><span class="pbtn b"></span><button class="start" type="button">START</button></div>
+      <div class="door"><button class="slot" type="button" aria-label="Drop a token into Silent Depth"><i></i><span>25¢</span></button><button class="slot" type="button" aria-label="Drop a token into Silent Depth"><i></i><span>25¢</span></button></div>
+      <div class="kick"></div>
+      </article>
       <article class="cab river-rush" data-game="river-rush" data-url="/river-rush/" aria-label="River Rush: a three-map whitewater adventure">
       <div class="marquee"><div><b>RIVER RUSH</b><small>THREE WILD RIVERS</small></div></div>
       <div class="bezel"><div class="screen">
@@ -805,7 +821,7 @@ const GROUPS = [
   { id: "cottage", label: "Cottage", games: ["plungerd", "drain", "brawl", "wild", "fish", "vr", "pingpong"], c1: "#d2332a", c2: "#ffcf4a", glow: "rgba(255, 90, 60, 0.55)", art: "arcade/plungerd.webp", art2: "arcade/plungerd-bosses.webp" },
   { id: "action", label: "Action", games: ["olympus", "crimson", "tidebreak", "moonwell", "primordia", "river-rush", "ahead-of-the-light", "light-years-home", "first-breath"], c1: "#7a0a10", c2: "#ff2a2a", glow: "rgba(255, 30, 30, 0.45)", art: "crimson/art/keyart2.webp", art2: "olympus/art/asphodel.webp" },
   { id: "ascii", label: "ASCII Scenes", games: ["ascii-front", "battle-tanks"], c1: "#344238", c2: "#d2f584", glow: "rgba(210, 245, 132, 0.45)", art: "ascii-front/key.svg", art2: "battle-tanks/key.svg" },
-  { id: "strategy", label: "Strategy", games: ["breakthrough", "follow-suit"], c1: "#3e5c44", c2: "#f0c56a", glow: "rgba(232, 176, 84, 0.62)", art: "arcade/follow-suit.webp", art2: "arcade/breakthrough.webp" },
+  { id: "strategy", label: "Strategy", games: ["breakthrough", "follow-suit", "silent-depth"], c1: "#3e5c44", c2: "#f0c56a", glow: "rgba(232, 176, 84, 0.62)", art: "arcade/follow-suit.webp", art2: "arcade/breakthrough.webp" },
   { id: "gta", label: "GTA", games: ["gta"], c1: "#5a3410", c2: "#f2c14e", glow: "rgba(242, 193, 78, 0.5)", art: "arcade/gta.webp" },
   { id: "lab", label: "Lab", games: ["lab", "worlds", "neon", "echo", "tellme", "plunge", "creek", "tilt", "rules", "afterlight", "last-light", "lighthouse-keeper", "echoes-under-ice", "last-train-home", "firefly-courier", "mirage-runner", "orbital-gardener"], c1: "#17414c", c2: "#f0b848", glow: "rgba(240, 184, 72, 0.5)", art: "arcade/lab.webp", art2: "arcade/worlds.webp" },
 ];
