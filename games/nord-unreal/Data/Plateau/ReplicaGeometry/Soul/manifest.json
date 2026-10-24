@@ -2840,12 +2840,12 @@
   "Data/Plateau/BaseGeometry/Marking.obj": "2d82cbca59041aa6af5e6f3fffaf6a01b2c3e672eea9732e8a5fecbb7cee35dd",
   "Data/Plateau/ReplicaGeometry/Plex/fronts.json": "c22c35ac4dac8ef8f2fbe9fc7ee2f29dc25bf694b59be2e77edaeb6324e5cabd",
   "Data/Plateau/ReplicaGeometry/Soul/ruelles_vertes_clip.json": "6ca991f5b585f4f0567baed799c37db2d3476f451e0b88fdb315a959e2d7d216",
-  "Data/Plateau/ReplicaGeometry/Plex/manifest.json": "97194c670b3f8f0a0efc6b6c9dec8a55389f6a034e6b4a1e00aaffb0e2f866a6",
+  "Data/Plateau/ReplicaGeometry/Plex/manifest.json": "ddf26e9596011c1cdf2c37fbbd545b64715454ee705dc4da4145e4ce0afbf748",
   "Data/Plateau/ReplicaGeometry/Props/manifest.json": "92d3a4c8811dd7adf5d0ca51701d308e1373361a46a346737104247ecfd417da",
   "Data/Plateau/Inventory/trees_pmr.json": "78ee70b8165af47cdee11a56c9653b69a1543c42cf78ab618145441d756831c1",
   "Data/Plateau/Inventory/trees_vm.json": "103be208d2135cbb989198a8b33cff081584a40792323fab2d2cd65ca2a8fc35",
   "Data/Plateau/ReplicaGeometry/Textures/textures.json": "17cb2c5d7b7714e7138708cfc44d00537198a30ab0067ce08191e2664f426885",
-  "Data/Plateau/ReplicaGeometry/Trees/manifest.json": "c2abcadfb6d1fa61d8507874d7e3e6cb9ba6e2c71bd943e937123092a68ea8dd",
+  "Data/Plateau/ReplicaGeometry/Trees/manifest.json": "dbf6352cb5dfd117521a2d7f1971ae06cf9b3c28d9a492b46bc4a62a96fd391d",
   "Data/Plateau/ReplicaGeometry/Plex/yard_trees.json": "c2b001bf09e28051f1b2c31cec565bfda3ed80b0b8947bdf036c8d6e80b8f106"
  },
  "attribution": "© OpenStreetMap contributors, ODbL 1.0; authored street details and original murals",
@@ -2964,7 +2964,7 @@
   "ruelle_drifts_m2": 144.0
  },
  "placements": "placements.json",
- "placements_sha256": "c1d1f4a8c94f0860b3a5828d799b1563359477860753d732c05eef9fec94d661",
+ "placements_sha256": "1b28df2dec593deb768614fc5be59b8e5410c7a05bf3a3cae95ab5acbfc3ac53",
  "lane_life": "lane_life.json",
  "lane_life_sha256": "ff07e7299653d94260e4530891eef3daca751021957e8dfa641974e6a225a053"
 }
