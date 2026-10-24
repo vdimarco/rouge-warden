@@ -93,6 +93,9 @@ LOOK_GATES = {"vram_peak_mib", "render_log_errors", "cvar_mismatches", "fps_cap"
 # confirm runs it again, unless it also holds a failed run.
 CONFIRM_CUT = "the window ended before every confirmation run"
 CONFIRM_CONTENDED = "a foreign GPU process shared a confirmation run twice"
+# The round's reasons that are missing evidence, not a failure (round_confirmation): a result with only these can pass.
+MISSING_EVIDENCE = ("native confirmation not run", CONFIRM_CUT, CONFIRM_CONTENDED, "stream rows missing",
+                    "stream row unverified", "co-op guard unverified")
 CLOCK_TICKS = os.sysconf("SC_CLK_TCK")
 require = browser_streaming.require
 
@@ -886,6 +889,10 @@ def stream_run(loop, run, slot="NordHost", pin=0, portrait=False, relay=False, t
     gauntlet = state.get("gauntlet") or {}
     require(state.get("phase") in ("starting", "running") and gauntlet.get("run") and Path(gauntlet["run"]).resolve() == run,
             "The running lifecycle is not a gauntlet lifecycle for this run; start it with NORD_STREAM_GAUNTLET=" + str(run))
+    # The launcher starts NordFriend1 once the host listens, and writes phase running once NordFriend1 is welcomed.
+    # GpuWatch reads the children once, so a NordFriend1 started after this command would count as a foreign process.
+    require(state.get("phase") == "running", "The lifecycle is still starting. Wait until the first terminal prints \"NORD host "
+                                             "and friend are connected\", then run stream again; nothing was started.")
     require_pinned(gauntlet.get("sky") or [])
     require(pin in range(4), "--pin must be 0 to 3")
     # The gauntlet drives NordHost. A row of NordFriend1 alone wakes NordFriend1, so it could never pass.
@@ -1314,21 +1321,29 @@ def confirm_candidate(loop, record, group, direct=False, until=None, plan=None):
 
 def confirm_next(loop, group, candidate_id=None, direct=False, until=None):
     """Step 7 again, after a stream row or the co-op guard dropped a candidate, or after the window cut a confirmation:
-    the native confirmation of the best ranked candidate without a finished one (or of candidate_id), added to
-    tune.json, with the baseline first if it has none. A result the window cut, or that a foreign GPU process shared
-    twice, is run again and replaced, unless it holds a failed run. It writes no profile; only write-profile with
-    --approved does. Returns the last outcome; when the window cuts the baseline, that is the baseline's, and the
-    candidate does not run."""
+    the native confirmation of the best ranked candidate without a finished one that the round has not dropped (or of
+    candidate_id), added to tune.json, with the baseline first if it has none. A result the window cut, or that a
+    foreign GPU process shared twice, is run again and replaced, unless it holds a failed run. It writes no profile;
+    only write-profile with --approved does. Returns the last outcome; when the window cuts the baseline, that is the
+    baseline's, and the candidate does not run."""
     group = Path(group)
     tune = read_json(group / "tune.json")
     require(tune is not None, f"{group} has no tune.json")
     native = tune.setdefault("native_confirmation", {"results": [], "confirmed_native": None, "stop_reason": None,
                                                      "note": "native gates only; report adds the stream rows and the co-op guard"})
     done = {result["id"] for result in native["results"] if confirmation_finished(loop, result)}
-    candidate_id = candidate_id or next((ranked for ranked in tune["ranking"] if ranked not in done), None)
-    require(candidate_id is not None, "Every ranked candidate already has a native confirmation; nothing was run.")
+    # A candidate that a failed stream row or the co-op guard dropped stays dropped, so its native confirmation cannot
+    # change the verdict. The round is judged as report judges it, but on through every ranked candidate.
+    judged, _ = round_confirmation(group, loop, dict(tune), still_open=lambda result: False)
+    dropped = {result["id"]: [reason for reason in result["reasons"] if not reason.startswith(MISSING_EVIDENCE)]
+               for result in judged["confirmation"]["results"] if not result["passed"] and not open_result(result)}
+    candidate_id = candidate_id or next((ranked for ranked in tune["ranking"] if ranked not in done | dropped.keys()), None)
+    require(candidate_id is not None, "Every ranked candidate already has a native confirmation, or a stream row or the co-op "
+                                      "guard dropped it; nothing was run.")
     require(candidate_id in tune["ranking"], f"candidate {candidate_id} is not ranked in {group / 'tune.json'}; nothing was run.")
     require(candidate_id not in done, f"candidate {candidate_id} already has a native confirmation; nothing was run.")
+    require(candidate_id not in dropped, f"candidate {candidate_id} is dropped ({'; '.join(dropped.get(candidate_id, []))}), "
+                                         "so its native confirmation cannot change the verdict; nothing was run.")
     records = {record["id"]: record for record in tune["candidates"]}
     outcome, plan = None, confirm_plan(loop, tune)
     # The baseline runs first, and once only when it is the ranked candidate itself.
@@ -1372,16 +1387,19 @@ def stream_evidence(group, tune):
     return evidence
 
 
-def round_report(group, loop):
-    """Confirm the round with gauntlet_tune.confirm from the recorded evidence (native confirmation and stream runs),
-    then write report.json, verdict.json and review.html. Nothing is launched."""
-    tune = read_json(group / "tune.json")
+def open_result(result):
+    """True for a confirmation result whose reasons are all missing evidence, which confirm and the stream rows can
+    still give, so it can still pass."""
+    return all(reason.startswith(MISSING_EVIDENCE) for reason in result.get("reasons", []))
+
+
+def round_confirmation(group, loop, tune, still_open=open_result):
+    """gauntlet_tune.confirm from the recorded evidence: the native confirmation and the stream runs made after the
+    tune started. It sets tune["confirmation"] and returns (tune, the stream evidence). Nothing is launched."""
     native = {result["id"]: result for result in (tune.get("native_confirmation") or {}).get("results", [])}
     streams = stream_evidence(group, tune)
     needed = {(loop["sizes"][key]["rung"], loop["sizes"][key]["size"][1] > loop["sizes"][key]["size"][0])
               for key in loop["size_use"]["stream"]}
-    missing_evidence = ("native confirmation not run", CONFIRM_CUT, CONFIRM_CONTENDED, "stream rows missing",
-                        "stream row unverified", "co-op guard unverified")
 
     def confirm_fn(record):
         rows = streams.get(record["id"], [])
@@ -1404,9 +1422,14 @@ def round_report(group, loop):
                and row["status"] != "contended"]
         return {"passed": not reasons, "reasons": reasons, "two_viewer_fps": two[-1] if two else None}
 
+    return T.confirm(tune, loop, confirm_fn, still_open=still_open), streams
+
+
+def round_report(group, loop):
+    """Confirm the round with gauntlet_tune.confirm from the recorded evidence (native confirmation and stream runs),
+    then write report.json, verdict.json and review.html. Nothing is launched."""
     # A result with only missing evidence can still pass, so no lower ranked candidate is confirmed in its place.
-    open_result = lambda result: all(reason.startswith(missing_evidence) for reason in result.get("reasons", []))
-    tune = T.confirm(tune, loop, confirm_fn, still_open=open_result)
+    tune, streams = round_confirmation(group, loop, read_json(group / "tune.json"))
     tune["stream_evidence"] = streams
     T.write_tune(group / "tune.json", tune)
     confirmed = tune["confirmation"]["confirmed"]
@@ -1659,8 +1682,9 @@ def main(argv=None):
                                                   "or the co-op guard dropped one; writes no profile")
     confirm.add_argument("folder", type=Path)
     confirm.add_argument("--candidate", help="a ranked candidate (default: the best ranked one without a finished native "
-                                             "confirmation; one the window cut, or a foreign GPU process shared twice, "
-                                             "is run again unless it holds a failed run)")
+                                             "confirmation that no failed stream row or co-op guard dropped; one the window "
+                                             "cut, or a foreign GPU process shared twice, is run again unless it holds a "
+                                             "failed run)")
     confirm.add_argument("--until", help="local HH:MM when the GPU window ends")
     confirm.add_argument("--direct", action="store_true")
     report = commands.add_parser("report", help="judge a run, reference or tune folder again from its files")
