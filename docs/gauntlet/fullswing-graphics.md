@@ -1312,3 +1312,7 @@ Skipdesktop-onlyFINISHreachquerybeforephonefallback.4096outputequivalencePASS/71
 
 
 Increment55 shipped #676 asd1867b18 after freshall6CI/review/current63deployedchecks/exactmain+ropebytes/rebase before AND afterpreview/exactmerge. Productionmain+rope HTTP200 exactbytes verified (hashes in r55-phone-finish/production-verification.json). Canonical phone-finish and ink-rope endpoint scenarios published and both changes archived. Shipped stale endpoint regression restored without changing physics/renderedink; layout fixture waits CSS fade completion, assertions unchanged. Concurrent NORD/buildingrope work preserved. ActualChrome/FPSbenefit unverified; totalwithheld.
+
+
+### Increment56 — comic-word populated GPU uploads
+Spawn/updateboundmatrix+atlas+tintprefixesto livewords. Actualuploads1536→96bytesforoneword/288for3/672for7/full1536for16.14browserchecks/exactnonblankreferencepixels/shrink/swap/zero/regrow/hiddenagingPASS;existing32FXchecksPASS afterisolatingWHOOSHcooldownfixture. Evidence r56-word-uploads/all20limits/noFPSclaim/totalwithheld. Releasepending.
