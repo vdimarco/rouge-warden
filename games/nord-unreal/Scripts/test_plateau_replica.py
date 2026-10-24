@@ -689,16 +689,19 @@ def check_missing_plex_glass():
     return message[message.index('Glass_XM001_YM001.obj'):]
 
 
-def check_host_steps():
-    """Both host blocks of the README build the git-ignored tree OBJs (plateau_trees.py) before plateau_replica.py,
-    whose test and the apply step read them."""
-    readme = (replica.OUT / 'README.md').read_text()
+def check_host_steps(readme=None):
+    """Both host blocks of the README build the git-ignored tree OBJs (plateau_trees.py), Plex OBJs (plateau_plex.py)
+    and prop OBJs (the Blender props build) before plateau_replica.py, whose test and the apply step read them."""
+    readme = (replica.OUT / 'README.md').read_text() if readme is None else readme
     blocks = re.findall(r'```bash\n(.*?)```', readme, re.S)
     hosts = [b for b in blocks if 'python3 Scripts/plateau_replica.py' in b]
     assert len(hosts) >= 2, f'{len(hosts)} host blocks run plateau_replica.py'
     for block in hosts:
-        trees, replica_at = block.find('Scripts/blender/plateau_trees.py --no-render'), block.find('Scripts/plateau_replica.py')
-        assert 0 <= trees < replica_at, ('a host block runs plateau_replica.py before building the tree OBJs', block)
+        replica_at = block.find('Scripts/plateau_replica.py')
+        for step, what in (('python3 Scripts/blender/plateau_trees.py --no-render', 'tree'),
+                           ('python3 Scripts/plateau_plex.py', 'Plex'),
+                           ('Scripts/blender/plateau_props.py --no-render', 'prop')):
+            assert 0 <= block.find(step) < replica_at, (f'a host block runs plateau_replica.py before building the {what} OBJs', block)
     return len(hosts)
 
 
