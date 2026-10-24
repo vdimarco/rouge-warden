@@ -1518,6 +1518,7 @@ def build_streets(world):
     for strip in world.sidewalk_strips:
         _passages(world, L, surfaces, strip, counts, stops)
     _draw_extensions(world, L, surfaces, extensions, counts)
+    draw_sidewalk_pits(world, L, counts)
     _apron_walls(world, L, surfaces, counts)
     _legacy_dashes(world, L, counts)
     finish_street_trees(world, counts)
@@ -3028,10 +3029,11 @@ def _pit_rect(frame, s, d, hl=PIT_L / 2, hd=PIT_D / 2):
     return [_frame_at(frame, s + x, d + y) for x, y in ((-hl, -hd), (hl, -hd), (hl, hd), (-hl, hd))]
 
 
-def _fit_pit(world, frame, s0, d, obstacles):
+def _fit_pit(world, frame, s0, d, obstacles, laid=False):
     """The along-curb place nearest s0 (10 cm steps, up to PIT_SLIDE_MAX) where a pit centred d behind the curb lies
-    on its strip, off every other carriageway and building, clear of the crossing ramps, the OSM street furniture and
-    the strip's other pits; None if there is none."""
+    on its strip, off every other carriageway and building, on raised sidewalk pieces, clear of the crossing ramps, the
+    OSM street furniture and the strip's other pits; None if there is none. With `laid`, the sidewalk is down and the
+    pit's corners must stand on it at the curb height."""
     length = frame['len']
     ramps = frame['strip'].get('ramps', [])
     seg = frame['strip']['seg']['i']
@@ -3050,6 +3052,9 @@ def _fit_pit(world, frame, s0, d, obstacles):
                    for c in rect + [_frame_at(frame, s, d)]):
             continue
         if not all(_raised_piece(world, frame, k) for k in _pieces_under(frame, s - PIT_L / 2, s + PIT_L / 2)):
+            continue
+        if laid and not all(world.surfaces.floor(c) >= Z_WALK - .01 and world.surfaces.has(c, 'sidewalk')
+                            for c in _pit_rect(frame, s, d, PIT_L / 2 + 2., PIT_D / 2 + 2.)):
             continue
         if any(poly_point_dist(rect, q) < r or point_in(q, rect) for q, r in obstacles.near(rect)):
             continue
@@ -3180,19 +3185,8 @@ def place_street_trees(world, L, counts):
         c = _frame_at(f, s, lat)
         t.update(pit=True, at=c, moved_cm=math.dist(c, t['p']), pit_yaw=math.degrees(math.atan2(f['u'][1], f['u'][0])),
                  pit_z=Z_WALK + .15, curb_cm=lat, strip=f['strip'])
-        pits.append((f, s, lat, t))
-    for f, s, lat, t in pits:
-        q = lambda x, y, f=f, s=s, lat=lat: _frame_at(f, s + x, lat + y)      # noqa: E731
-        _pit(L, q, Z_WALK, Rng('pit', t['id']), counts)
-        f['strip'].setdefault('pits', []).append((s, t['at'], t['pit_yaw']))
-        counts['sidewalk_pits'] += 1
-        counts['tree_pits'] += 1
-        if t['moved_cm'] > 1.:
-            counts['sidewalk_pits_moved'] += 1
-            counts['sidewalk_pit_metres_moved'] += t['moved_cm'] / 100.
-    for f in frames:
-        if f['strip'].get('pits'):
-            f['strip']['pits'].sort(key=lambda r: r[0])
+        pits.append([f, s, lat, t])
+    world.sidewalk_pit_plan, world.pit_obstacles = pits, obstacles
     # Curb extensions: only where the data shows one or at a corner; every other covered trunk goes to the host.
     ext_trees = []
     for t in kept:
@@ -3214,6 +3208,38 @@ def place_street_trees(world, L, counts):
     counts['street_trees_inventory'] = sum(1 for t in kept if t['source'] == 'inventory')
     counts['street_trees_osm'] = sum(1 for t in kept if t['source'] == 'osm')
     return curb_extensions(world, counts, ext_trees)
+
+
+def draw_sidewalk_pits(world, L, counts):
+    """Lay the planned sidewalk pits once the sidewalks are down: a pit whose corners do not all stand on the raised
+    sidewalk (the last piece before a junction dropped as a sliver, a corner ring's apron) slides along the curb to the
+    nearest place where they do; a tree with none stands on the sidewalk without a pit."""
+    for plan in world.sidewalk_pit_plan:
+        f, s, lat, t = plan
+        f['claims'].remove(s)
+        s2 = _fit_pit(world, f, s, lat, world.pit_obstacles, laid=True)
+        if s2 is None:
+            t.update(pit=False, no_pit=True, pit_z=None)
+            counts['trees_on_sidewalk_without_pit'] += 1
+            f['claims'].append(s)
+            continue
+        f['claims'].append(s2)
+        if s2 != s:
+            counts['tree_pits_slid'] += 1
+            t['at'] = _frame_at(f, s2, lat)
+            t['moved_cm'] = math.dist(t['at'], t['p'])
+        plan[1] = s2
+        q = lambda x, y, f=f, s=s2, lat=lat: _frame_at(f, s + x, lat + y)      # noqa: E731
+        _pit(L, q, Z_WALK, Rng('pit', t['id']), counts)
+        f['strip'].setdefault('pits', []).append((s2, t['at'], t['pit_yaw']))
+        counts['sidewalk_pits'] += 1
+        counts['tree_pits'] += 1
+        if t['moved_cm'] > 1.:
+            counts['sidewalk_pits_moved'] += 1
+            counts['sidewalk_pit_metres_moved'] += t['moved_cm'] / 100.
+    for strip in world.sidewalk_strips:
+        if strip.get('pits'):
+            strip['pits'].sort(key=lambda r: r[0])
 
 
 def _pit(L, q, z, rng, counts):
