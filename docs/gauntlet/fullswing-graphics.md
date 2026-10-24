@@ -1379,3 +1379,6 @@ Increment66 pending — private sun-screen result60fresh→1 across90camera fram
 
 
 Increment66 shipped #699 as74357132 after all6CI/review/current authenticated sun+sky checks/exactmainbytes/rebase before AND afterpreview/exactmerge. Productionmain HTTP200 exactSHA86d220e1ef9114da119d3e6980f9926fb10e95ef1c1d13b4ff810efc8cf0f979 verified. Canonical sun-screen scenarios published and OpenSpec archived. ActualChrome/FPSbenefit unverified; totalwithheld.
+
+
+Increment67 pending — unchangedhandOf hoistedoutside drawWeb60functionidentities→1;4endpointchecks+8webuploadpixel+11weblinechecksPASS. Evidence r67-web-hand/all20limits/noFPSclaim/totalwithheld.

@@ -2416,6 +2416,7 @@ function strokeWeb(ctx, hand, anchor, sag, alpha, w, h) {
   ctx.stroke();
   ctx.globalAlpha = 1;
 }
+const handOf = (i) => TIPS[i] || { x: P.pos.x, y: P.pos.y + P.chest, z: P.pos.z };
 function drawWeb(dt) {
   // An empty full-screen canvas, cleared every frame, sits in the compositor and can stall the next
   // frame for seconds (the mouse-look resume timer). The 3D line is a mesh. The canvas stays hidden
@@ -2444,7 +2445,6 @@ function drawWeb(dt) {
   if (!threeD) webCv.hidden = false;
   const w = webW, h = webH;
   let any = false;
-  const handOf = (i) => TIPS[i] || { x: P.pos.x, y: P.pos.y + P.chest, z: P.pos.z };
   for (let i = 0; i < 2; i++) {
     const r = P.ropes[i], on = !!((r.easy || r.inkLine) && r.state === "attached");
     if (on) {
