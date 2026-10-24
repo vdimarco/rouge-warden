@@ -1233,10 +1233,16 @@ def confirm_native(loop, tune, group, direct=False, until=None):
         if results[candidate_id]["passed"]:
             confirmed = candidate_id
             break
-    cut = any(CONFIRM_CUT in result["reasons"] for result in results.values())
-    return {"results": list(results.values()), "confirmed_native": confirmed,
-            "stop_reason": None if finished() else "window_end" if cut else "contended",
+    return {"results": list(results.values()), "confirmed_native": confirmed, "stop_reason": confirm_stop(loop, results.values()),
             "note": "native gates only; report adds the stream rows and the co-op guard"}
+
+
+def confirm_stop(loop, results):
+    """native_confirmation stop_reason: None when every result finished, else window_end when the window cut one, else
+    contended."""
+    if all(confirmation_finished(loop, result) for result in results):
+        return None
+    return "window_end" if any(CONFIRM_CUT in result["reasons"] for result in results) else "contended"
 
 
 def confirmation_finished(loop, result):
@@ -1304,8 +1310,10 @@ def confirm_next(loop, group, candidate_id=None, direct=False, until=None):
     for wanted in first + [candidate_id]:
         outcome = dict(confirm_candidate(loop, records[wanted], group, direct, until, plan), added_at=iso_now())
         native["results"] = [result for result in native["results"] if result["id"] != wanted] + [outcome]
-        if outcome["passed"] and wanted != "baseline" and not native.get("confirmed_native"):
-            native["confirmed_native"] = wanted
+        # As confirm_native: the best ranked candidate that passed (a ranked baseline too), and why it stopped.
+        passed = {result["id"] for result in native["results"] if result["passed"]}
+        native.update(confirmed_native=next((ranked for ranked in tune["ranking"] if ranked in passed), None),
+                      stop_reason=confirm_stop(loop, native["results"]))
         T.write_tune(group / "tune.json", tune)
         if not confirmation_finished(loop, outcome):
             break
