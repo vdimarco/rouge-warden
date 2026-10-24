@@ -1358,3 +1358,6 @@ Increment62 shipped #691 as b6763a7a after all6CI/review/current authenticated o
 
 
 Increment63 pending — crowd height rejection before horizontal distance:240actualupdates equivalent state/crowd across boundary/movement,19200hypotcalls skipped/6400roof. Existing street and5hidden-figure browser checksPASS. Evidence r63-crowd-height/all20limits/noFPSclaim/totalwithheld.
+
+
+Increment63 shipped #693 as a3710180 after all6CI/review/current5authenticatedbrowserchecks/exactstreetbytes/rebase before AND afterpreview/exactmerge. Productionstreet HTTP200 exactSHA20e474654fbd99fc37eafc02afc3abc77de05ce7d79641498983a715a1d51c89 verified. Canonical crowd-height scenarios published and OpenSpec archived. ActualChrome/FPSbenefit/listening unverified; totalwithheld.

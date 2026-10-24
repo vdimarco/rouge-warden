@@ -1,0 +1,12 @@
+{
+  "stage": "production_verified",
+  "merge": "a3710180d126a85b3c326d8e7e4dcb3d4a783fa3",
+  "files": [
+    {
+      "file": "js/street.js",
+      "status": 200,
+      "exact": true,
+      "sha256": "20e474654fbd99fc37eafc02afc3abc77de05ce7d79641498983a715a1d51c89"
+    }
+  ]
+}
