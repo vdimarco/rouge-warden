@@ -1,10 +1,11 @@
 """Build and run the engine-independent NORD mobile gauntlet model test with every available system compiler.
 
 Scripts/gauntlet_model_test.cpp checks the Plateau loop over the real LaFontaine road set, a kinematic car at 30 and
-120 Hz, the run phases, the stuck rule and the expected-CVar parser. This script then checks four things. The shared
+120 Hz, the run phases, the stuck rule and the expected-CVar parser. This script then checks five things. The shared
 fixture Data/Gauntlet/fixtures/frametimes_expected.json matches its CSV. The model's frame statistics match that JSON.
-The numbers the model repeats match Data/Gauntlet/loop.json. The Gauntlet controller in Source/QuebecGauntletTest
-repeats the setup exit code and the console variable names of the subsystem.
+The numbers the model repeats match Data/Gauntlet/loop.json. The loop.json duration estimates cover the modelled runs.
+The Gauntlet controller in Source/QuebecGauntletTest repeats the setup exit code and the console variable names of the
+subsystem.
 """
 import csv
 import json
@@ -13,7 +14,11 @@ from pathlib import Path
 import re
 import shutil
 import subprocess
+import sys
 import tempfile
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import gauntlet_tune  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = Path(__file__).resolve().with_name("gauntlet_model_test.cpp")
@@ -89,6 +94,23 @@ with tempfile.TemporaryDirectory() as directory:
         for mode in LOOP["modes"]:
             for rate in (30, 120):
                 assert any(line.startswith(f"{mode} at {rate} Hz: lap") for line in lines), f"{name} skipped the {mode} lap at {rate} Hz"
+
+        # The modelled loop sits a quarter of the range inside each loop.json length limit, so a small road-data change
+        # (one more segment, the Y flip) does not fail the route gate.
+        length = float(re.search(r"^Plateau loop (\d+) m", run.stdout, re.M).group(1))
+        low, high = LOOP["route"]["length_min_m"], LOOP["route"]["length_max_m"]
+        assert low + (high - low) / 4 <= length <= high - (high - low) / 4, f"{name}: the {length} m loop is near the {low} to {high} m limits"
+
+        # The planning estimates cover the modelled runs: lap_estimate_s each lap, and gauntlet_tune.run_estimate_s
+        # without its start-up the time from BeginPlay to done. Otherwise tune --until could overrun the GPU window.
+        durations = LOOP["durations"]
+        for line in lines:
+            found = re.match(r"(\w+) at \d+ Hz: lap ([\d.]+) s driving, finished at ([\d.]+) s", line)
+            if found:
+                mode, lap, finished = found.group(1), float(found.group(2)), float(found.group(3))
+                in_game = gauntlet_tune.run_estimate_s(LOOP, mode) - durations["start_estimate_s"]
+                assert lap <= durations["lap_estimate_s"] <= LOOP["drive"]["max_lap_s"], f"{name}: {line} against {durations}"
+                assert finished <= in_game, f"{name}: the {mode} run ends at {finished} s, after its {in_game} s estimate"
 
         # The model's frame statistics against the expected JSON. It prints times with 3 decimals.
         printed = {}

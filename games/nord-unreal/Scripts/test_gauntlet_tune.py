@@ -20,45 +20,53 @@ import gauntlet_tune as T  # noqa: E402
 LOOP = T.load_loop()
 REPEAT = .996  # Ceiling run-to-run SSIM: the Look tie is max(0.005, 2 * (1 - 0.996)) = 0.008.
 
-# Cumulative GPU ms and Look per step index, relative to the baseline profile (22 ms, Look 0.900).
-COST = {"shadows": [0, .8, 3.0, 5.0], "gi": [0, 2.0, 4.5], "reflections": [0, 1.0, 2.5],
-        "screen_percentage": [-3.0, -1.5, 0, 2.5, 5.5], "view_distance": [0, .3], "foliage": [0, 1.2], "effects": [0, .2],
-        "post_process": [0, .4], "shading": [-.5, 0], "anti_aliasing": [0, .5], "textures": [0, .1]}
-GAIN = {"shadows": [0, .004, .03, .04], "gi": [0, .02, .03], "reflections": [0, .014, .024],
-        "screen_percentage": [-.04, -.02, 0, .025, .035], "view_distance": [0, .01], "foliage": [0, .006], "effects": [0, .001],
-        "post_process": [0, .003], "shading": [-.01, 0], "anti_aliasing": [0, .009], "textures": [0, .002]}
+# GPU ms and Look per CVar value, relative to the baseline profile (22 ms, Look 0.900). A candidate adds up its CVars,
+# so the fake host fits any ladder. The baseline leaves sg.ShadingQuality unset, and the host default is 3.
+COST = {"sg.ShadowQuality": {0: -1.5, 1: 0, 2: .8, 3: 2.8}, "r.Shadow.Virtual.Enable": {0: 0, 1: 2.2},
+        "sg.GlobalIlluminationQuality": {1: 0, 2: 2.0, 3: 4.5}, "sg.ReflectionQuality": {1: 0, 2: 1.0, 3: 2.5},
+        "r.ScreenPercentage": {50: -5.0, 60: -3.0, 67: -1.5, 75: 0, 85: 2.5, 100: 5.5},
+        "sg.ViewDistanceQuality": {1: -.6, 2: 0, 3: .3}, "sg.FoliageQuality": {1: -1.0, 2: 0, 3: 1.2},
+        "sg.EffectsQuality": {1: -.8, 2: 0, 3: .2}, "sg.PostProcessQuality": {1: -.5, 2: 0, 3: .4},
+        "sg.ShadingQuality": {2: -.5, 3: 0}, "sg.AntiAliasingQuality": {2: 0, 3: .5}, "sg.TextureQuality": {2: 0, 3: .1}}
+GAIN = {"sg.ShadowQuality": {0: -.015, 1: 0, 2: .004, 3: .014}, "r.Shadow.Virtual.Enable": {0: 0, 1: .026},
+        "sg.GlobalIlluminationQuality": {1: 0, 2: .02, 3: .03}, "sg.ReflectionQuality": {1: 0, 2: .014, 3: .024},
+        "r.ScreenPercentage": {50: -.07, 60: -.04, 67: -.02, 75: 0, 85: .025, 100: .035},
+        "sg.ViewDistanceQuality": {1: -.006, 2: 0, 3: .01}, "sg.FoliageQuality": {1: -.008, 2: 0, 3: .006},
+        "sg.EffectsQuality": {1: -.002, 2: 0, 3: .001}, "sg.PostProcessQuality": {1: -.004, 2: 0, 3: .003},
+        "sg.ShadingQuality": {2: -.01, 3: 0}, "sg.AntiAliasingQuality": {2: 0, 3: .009}, "sg.TextureQuality": {2: 0, 3: .002}}
 
 
 class FakeHost:
-    """measure(candidate) with additive costs. The host reads sg.ShadingQuality back as 3 (step 1 of its ladder)."""
+    """measure(candidate) with additive costs. The host reads sg.ShadingQuality back as 3 (step 1 of its ladder).
+    With a clock, each candidate takes seconds (default: the loop.json estimate of a perf and a look run)."""
 
-    def __init__(self, base_gpu=22.0, noise=0.0, contended=(), errors=(), clock=None, readback=True, repeat=REPEAT):
-        self.base_gpu, self.noise, self.readback, self.repeat = base_gpu, noise, readback, repeat
+    def __init__(self, base_gpu=22.0, noise=0.0, contended=(), errors=(), clock=None, readback=True, repeat=REPEAT, loop=LOOP,
+                 seconds=None):
+        self.base_gpu, self.noise, self.readback, self.repeat, self.loop = base_gpu, noise, readback, repeat, loop
         self.contended, self.errors = set(contended), set(errors)
         self.reported = set()
         self.calls = []
         self.clock = clock
+        self.seconds = T.candidate_estimate_s(loop) if seconds is None else seconds
 
     def __call__(self, candidate):
         self.calls.append(candidate)
         if self.clock:
-            self.clock.now += LOOP["durations"]["candidate_estimate_s"]
+            self.clock.now += self.seconds
         assert candidate["execcmds"] == T.execcmds_text(candidate["cvars"])
         if candidate["look_only"]:
             assert candidate["phase"] == "ceiling"
             return {"repeat_ssim": {f"view{i}": self.repeat for i in range(20)}}
-        levels = dict(candidate["levels"])
-        assert not T.violations(LOOP, levels, {"shading": 1}), (candidate["id"], levels)
-        if levels["shading"] is None:
-            levels["shading"] = 1
-        name = T.describe(LOOP, candidate["levels"])
+        assert not T.violations(self.loop, candidate["levels"], {"shading": 1}), (candidate["id"], candidate["levels"])
+        name = T.describe(self.loop, candidate["levels"])
         if name in self.errors:
             raise RuntimeError("RunUnreal exited with code 2")
-        gpu = self.base_gpu + sum(COST[k][v] for k, v in levels.items())
+        cvars = {k: v for k, v in candidate["cvars"].items() if k in COST}
+        gpu = self.base_gpu + sum(COST[k][v] for k, v in cvars.items())
         # The second baseline run reads noise ms slower: the ms tie is max(0.5, 2 * noise).
         if candidate["id"].endswith("baseline-b"):
             gpu += self.noise
-        look = .9 + sum(GAIN[k][v] for k, v in levels.items())
+        look = .9 + sum(GAIN[k][v] for k, v in cvars.items())
         # A contended name is contended on its first run only.
         contended = name in self.contended and name not in self.reported
         self.reported.add(name)
@@ -83,6 +91,14 @@ def check_files_and_profile():
     base = T.baseline_levels(LOOP)
     quality = T.parse_execcmds(browser_streaming.QUALITY)
     assert T.check_loop(LOOP) == [], T.check_loop(LOOP)
+    # Fixed settings are CVar names, so a knob step that changes TSR is refused.
+    tsr = copy.deepcopy(LOOP)
+    tsr["knobs"][0]["steps"][-1]["r.AntiAliasingMethod"] = 2
+    assert "knob shadows changes the fixed r.AntiAliasingMethod" in T.check_loop(tsr), T.check_loop(tsr)
+    # A knob at the bottom of its ladder must say why it has no lower step, or the downward search could not use it.
+    floorless = copy.deepcopy(LOOP)
+    floorless["knobs"][1].pop("floor")
+    assert "knob gi has no step below today's and no floor reason" in T.check_loop(floorless), T.check_loop(floorless)
     # The baseline candidate is today's QUALITY, CVar for CVar, with t.MaxFPS 60 kept.
     cvars = T.candidate_cvars(LOOP, base)
     assert T.same_cvars(cvars, quality), (cvars, quality)
@@ -93,8 +109,8 @@ def check_files_and_profile():
             assert T.candidate_cvars(LOOP, dict(base, **{knob["id"]: step}))["t.MaxFPS"] == 60
     # Candidate files: one ExecCmds line with no newline, and one name=value per CVar for -NordGauntletExpect=.
     with tempfile.TemporaryDirectory() as tmp:
-        candidate = T.make_candidate(LOOP, dict(base, shadows=2, screen_percentage=4), "step", 7)
-        assert candidate["id"] == "07-shadows2+screen_percentage4"
+        candidate = T.make_candidate(LOOP, dict(base, shadows=3, screen_percentage=5), "step", 7)
+        assert candidate["id"] == "07-shadows3+screen_percentage5"
         execcmds, expect = T.write_candidate_files(tmp, candidate)
         line = execcmds.read_text()
         assert "\n" not in line and line.endswith("t.MaxFPS 60"), line
@@ -131,15 +147,23 @@ def check_files_and_profile():
     assert "; Equal to QUALITY" in T.write_profile(commented, tuned)
     with tempfile.TemporaryDirectory() as tmp:
         path = Path(tmp) / "DefaultDeviceProfiles.ini"
+        assert T.profile_state(path, quality) == "missing"
         T.write_profile_file(cvars, path)
+        assert T.profile_state(path, quality) == "equals QUALITY"
         tune_path = T.write_tune(Path(tmp) / "tune.json", {"candidates": [dict(T.make_candidate(LOOP, dict(base, gi=2), "step", 3))]})
         T.write_candidate_profile(tune_path, "03-gi2", path)
         assert T.read_profile(path.read_text())["cvars"]["sg.GlobalIlluminationQuality"] == 3
-    # The checked-in profile, once Config/DefaultDeviceProfiles.ini exists, must still equal QUALITY.
-    if T.PROFILES_INI.is_file():
-        checked_in = T.read_profile(T.PROFILES_INI.read_text())
-        assert checked_in and T.same_cvars(checked_in["cvars"], quality), "the NordPhoneStream section differs from QUALITY"
-    print("profile ok: first profile equals QUALITY;", "checked-in ini compared" if T.PROFILES_INI.is_file() else "no checked-in ini yet")
+        # write-profile records the approval next to the ini, so the approved profile is not a broken one.
+        approval = json.loads(T.approval_path(path).read_text())
+        assert approval["candidate"] == "03-gi2" and approval["cvars"]["sg.GlobalIlluminationQuality"] == 3, approval
+        assert T.profile_state(path, quality) == "approved 03-gi2"
+        # A hand edit after the approval matches neither QUALITY nor the approved candidate.
+        path.write_text(path.read_text().replace("+CVars=sg.GlobalIlluminationQuality=3", "+CVars=sg.GlobalIlluminationQuality=2"))
+        assert T.profile_state(path, quality) == "differs"
+    # The checked-in profile equals QUALITY until the user approves a candidate, then that candidate.
+    state = T.profile_state(T.PROFILES_INI, quality)
+    assert state in ("missing", "equals QUALITY") or state.startswith("approved "), f"the NordPhoneStream section {state}"
+    print("profile ok: first profile equals QUALITY; checked-in ini", state)
 
 
 def check_dependencies():
@@ -182,33 +206,33 @@ def check_search():
     measured = [r for r in tune["candidates"] if r["id"] != "baseline"]
     assert tune["measured"] == len(host.calls) == len(measured) == 18, tune["measured"]
     # Order: baseline twice, ceiling twice, then one step up per knob in loop.json order.
-    expected = ["00-baseline-a", "01-baseline-b", "02-ceiling-a", "03-ceiling-b", "04-shadows1", "05-gi1",
-                "06-gi1+reflections1", "07-screen_percentage3", "08-view_distance1", "09-foliage1", "10-effects1",
-                "11-post_process1", "12-anti_aliasing1", "13-textures1"]
+    expected = ["00-baseline-a", "01-baseline-b", "02-ceiling-a", "03-ceiling-b", "04-shadows2", "05-gi1",
+                "06-gi1+reflections1", "07-screen_percentage4", "08-view_distance2", "09-foliage2", "10-effects2",
+                "11-post_process2", "12-anti_aliasing1", "13-textures1"]
     assert [c["id"] for c in host.calls][:14] == expected, [c["id"] for c in host.calls]
     assert tune["resolved_baseline_steps"] == {"shading": 1}, "sg.ShadingQuality 3 read back is the top of its ladder"
     assert tune["ties"]["ms"] == .5 and abs(tune["ties"]["look"] - .008) < 1e-12
     # Sensitivity: steps without a visible gain are dropped; efficiency is gain / max(ms, 0.25).
     by_id = {e["id"]: e for e in tune["sensitivity"]}
-    assert not by_id["04-shadows1"]["kept"] and by_id["04-shadows1"]["why"] == "no visible Look gain"
-    assert by_id["08-view_distance1"]["cost_used_ms"] == 0.0, "0.3 ms is inside the 0.5 ms noise tie"
-    assert abs(by_id["08-view_distance1"]["efficiency"] - .04) < 1e-9
-    assert tune["combine"]["order"] == ["08-view_distance1", "12-anti_aliasing1", "06-gi1+reflections1", "07-screen_percentage3",
+    assert not by_id["04-shadows2"]["kept"] and by_id["04-shadows2"]["why"] == "no visible Look gain"
+    assert by_id["08-view_distance2"]["cost_used_ms"] == 0.0, "0.3 ms is inside the 0.5 ms noise tie"
+    assert abs(by_id["08-view_distance2"]["efficiency"] - .04) < 1e-9
+    assert tune["combine"]["order"] == ["08-view_distance2", "12-anti_aliasing1", "06-gi1+reflections1", "07-screen_percentage4",
                                         "05-gi1"]
     # Combine: gi1 is inside the reflections bundle, so it adds nothing; the prediction is 22 + 0.5 + 3 + 2.5 = 28 ms.
-    assert tune["combine"]["chosen"] == ["08-view_distance1", "12-anti_aliasing1", "06-gi1+reflections1", "07-screen_percentage3"]
+    assert tune["combine"]["chosen"] == ["08-view_distance2", "12-anti_aliasing1", "06-gi1+reflections1", "07-screen_percentage4"]
     assert abs(tune["combine"]["predicted_gpu_p95_ms"] - 28.0) < 1e-9
     # Fallback: the measured combination is 28.3 ms (view distance was a noise-tied 0.3 ms), so the last step is dropped.
-    assert ids(tune, "combine") == ["14-gi1+reflections1+screen_percentage3+view_distance1+anti_aliasing1",
-                                    "15-gi1+reflections1+view_distance1+anti_aliasing1"]
+    assert ids(tune, "combine") == ["14-gi1+reflections1+screen_percentage4+view_distance2+anti_aliasing1",
+                                    "15-gi1+reflections1+view_distance2+anti_aliasing1"]
     records = {r["id"]: r for r in tune["candidates"]}
     assert not records[ids(tune, "combine")[0]]["feasible"] and records[ids(tune, "combine")[1]]["feasible"]
-    assert tune["combine"]["dropped"] == ["07-screen_percentage3"]
+    assert tune["combine"]["dropped"] == ["07-screen_percentage4"]
     # Climb: screen 85 on top is the cached infeasible combination (not measured again); then the next rung of each
     # raised knob: reflections 2 is feasible and visibly better, gi 2 is over budget.
-    assert ids(tune, "climb") == ["16-gi1+reflections2+view_distance1+anti_aliasing1", "17-gi2+reflections2+view_distance1+anti_aliasing1"]
+    assert ids(tune, "climb") == ["16-gi1+reflections2+view_distance2+anti_aliasing1", "17-gi2+reflections2+view_distance2+anti_aliasing1"]
     assert tune["stop_reason"] == "converged"
-    assert tune["winner"] == "16-gi1+reflections2+view_distance1+anti_aliasing1", tune["winner"]
+    assert tune["winner"] == "16-gi1+reflections2+view_distance2+anti_aliasing1", tune["winner"]
     winner = records[tune["winner"]]
     assert winner["feasible"] and winner["frame_p95_ms"] <= 30.0 and winner["gpu_p95_ms"] <= 28.0
     # Spec "Search": no measured feasible candidate beats the winner's Look by more than the tie.
@@ -234,7 +258,7 @@ def check_stop_rule():
     host = FakeHost()
     tune = T.search(limited, host)
     assert tune["stop_reason"] == "max_candidates" and tune["measured"] == len(host.calls) == 8
-    assert ids(tune, "step") == ["04-shadows1", "05-gi1", "06-gi1+reflections1", "07-screen_percentage3"]
+    assert ids(tune, "step") == ["04-shadows2", "05-gi1", "06-gi1+reflections1", "07-screen_percentage4"]
     assert tune["winner"] == "06-gi1+reflections1", "the best measured feasible candidate still wins"
     # Without the host readback, today's sg.ShadingQuality is unknown, so each of its steps is measured once.
     tune = T.search(limited, FakeHost(readback=False))
@@ -245,12 +269,23 @@ def check_stop_rule():
     tune = T.search(LOOP, FakeHost(repeat=.975))
     assert tune["stop_reason"] == "reference_not_repeatable" and tune["measured"] == 4 and tune["winner"] is None
     assert tune["ties"]["repeat"]["min"] == .975 and tune["ranking"] == []
-    # Window end: each candidate takes 600 s; a window of 6 candidates and one second measures 6.
+    # Window end: a candidate is a perf and a look run, from the loop.json lap and start-up estimates (1190 s, the
+    # modelled laps in Scripts/gauntlet_model_test.cpp). A window of 6 candidates and one second measures 6.
+    estimate = T.candidate_estimate_s(LOOP)
+    assert estimate == T.run_estimate_s(LOOP, "perf") + T.run_estimate_s(LOOP, "look") == 1190, estimate
+    assert T.run_estimate_s(LOOP, "perf", LOOP["confirm_laps"]) == 1310, "a confirmation run: 1 warm and 3 measured laps"
     clock = FakeClock()
     host = FakeHost(clock=clock)
-    tune = T.search(LOOP, host, until=clock.now + 6 * 600 + 1, clock=clock)
+    tune = T.search(LOOP, host, until=clock.now + 6 * estimate + 1, clock=clock)
     assert tune["stop_reason"] == "window_end" and tune["measured"] == 6, (tune["stop_reason"], tune["measured"])
-    assert tune["until"] == T.iso(1_000_000.0 + 3601)
+    assert tune["until"] == T.iso(1_000_000.0 + 6 * estimate + 1) and clock.now <= 1_000_000.0 + 6 * estimate + 1
+    # A host 1.5 times slower than the estimate: after the first candidate the search plans with the longest one
+    # measured, so it does not start a candidate that would end after the window.
+    clock = FakeClock()
+    until = clock.now + 2.6 * estimate
+    tune = T.search(LOOP, FakeHost(clock=clock, seconds=1.5 * estimate), until=until, clock=clock)
+    assert tune["stop_reason"] == "window_end" and tune["measured"] == 1 and clock.now <= until, (tune["measured"], clock.now - until)
+    assert tune["planned_candidate_s"] == 1.5 * estimate
     now = datetime(2026, 10, 23, 23, 15, tzinfo=timezone.utc)
     assert T.parse_until("06:30", now) == datetime(2026, 10, 24, 6, 30, tzinfo=timezone.utc).timestamp()
     assert T.parse_until("23:45", now) == datetime(2026, 10, 23, 23, 45, tzinfo=timezone.utc).timestamp()
@@ -259,7 +294,7 @@ def check_stop_rule():
 
 def check_noise_and_contention():
     # The second baseline reads 0.4 ms slower: the ms tie becomes 0.8, so anti-aliasing's 0.5 ms counts as free.
-    host = FakeHost(noise=.4, contended={"textures1"}, errors={"effects1"})
+    host = FakeHost(noise=.4, contended={"textures1"}, errors={"effects2"})
     tune = T.search(LOOP, host)
     assert abs(tune["ties"]["ms"] - .8) < 1e-9, tune["ties"]
     entry = next(e for e in tune["sensitivity"] if e["knob"] == "anti_aliasing")
@@ -269,24 +304,36 @@ def check_noise_and_contention():
     assert [r["contended"] for r in textures] == [True, False], textures
     assert not textures[0]["eligible"] and textures[0]["reasons"] == ["contended: a foreign GPU process ran"]
     # A run that fails on the host is a recorded, infeasible candidate.
-    failed = next(r for r in tune["candidates"] if r["changed"] == {"effects": 1})
+    failed = next(r for r in tune["candidates"] if r["changed"] == {"effects": 2})
     assert not failed["feasible"] and failed["reasons"][0].startswith("run failed: RuntimeError")
     assert tune["measured"] == len(host.calls)
     print("noise and contention ok: ms tie", round(tune["ties"]["ms"], 3))
 
 
 def check_downward():
-    # 29 ms on the GPU misses the 28 ms target: only screen percentage and shading can step down.
+    # 29 ms on the GPU misses the 28 ms target. Every knob with a step below today's steps down once, not only
+    # screen percentage and shading.
     host = FakeHost(base_gpu=29.0)
     tune = T.search(LOOP, host)
     records = {r["id"]: r for r in tune["candidates"]}
     assert not records["baseline"]["feasible"] and tune["notes"][0].startswith("the baseline is not feasible")
-    assert ids(tune, "down") == ["04-screen_percentage1", "05-shading0"], ids(tune, "down")
+    assert ids(tune, "down") == ["04-shadows0", "05-screen_percentage2", "06-view_distance0", "07-foliage0", "08-effects0",
+                                 "09-post_process0", "10-shading0"], ids(tune, "down")
     down = {e["id"]: e for e in tune["sensitivity"]}
-    assert abs(down["04-screen_percentage1"]["efficiency"] - 1.5 / .02) < 1e-6
-    # screen 67 alone is predicted (and measured) feasible, so it is the start; raising it back is today's profile.
-    assert tune["combine"]["result"] == "04-screen_percentage1" and tune["winner"] == "04-screen_percentage1"
+    assert abs(down["05-screen_percentage2"]["efficiency"] - 1.5 / .02) < 1e-6
+    # Effects (0.8 ms for a 0.002 loss) and foliage are the most efficient, and together they are the start. Raising
+    # either back is a measured single step that does not look visibly better.
+    assert tune["combine"]["applied"] == ["08-effects0", "07-foliage0"], tune["combine"]
+    assert tune["combine"]["result"] == "11-foliage0+effects0" == tune["winner"]
     assert ids(tune, "climb") == [] and tune["stop_reason"] == "converged"
+    # The review's probe: a 32 ms baseline. Screen percentage 67 and shading alone save 2 ms and the old ladders stopped
+    # with no feasible start; the cheap knobs now reach 27.6 ms.
+    tune = T.search(LOOP, FakeHost(base_gpu=32.0))
+    records = {r["id"]: r for r in tune["candidates"]}
+    assert tune["stop_reason"] == "converged" and tune["winner"] == "11-shadows0+view_distance0+foliage0+effects0+post_process0", (
+        tune["stop_reason"], tune["winner"])
+    winner = records[tune["winner"]]
+    assert winner["feasible"] and winner["gpu_p95_ms"] <= 28.0 and min(winner["images"].values()) >= .85, winner
     # Nothing can step down far enough: no feasible start.
     host = FakeHost(base_gpu=40.0)
     tune = T.search(LOOP, host)
@@ -319,6 +366,22 @@ def check_confirmation(tune):
     print("confirmation ok: fell back to", second)
 
 
+def check_partial_stills():
+    """A look run that kept 2 of its 20 stills has a high mean on the views it kept. It must not rank or win."""
+    class PartialHost(FakeHost):
+        def __call__(self, candidate):
+            result = super().__call__(candidate)
+            if candidate["id"].split("-", 1)[1] == "foliage2":
+                result.update(look=.97, images={"day/S1-eye": .97, "day/S1-chase": .97})
+            return result
+
+    tune = T.search(LOOP, PartialHost())
+    partial = next(r for r in tune["candidates"] if r["id"].endswith("-foliage2"))
+    assert partial["feasible"] and "2 of 20 stills" in partial["look_reasons"] and not partial["eligible"], partial["look_reasons"]
+    assert tune["winner"] != partial["id"] and partial["id"] not in tune["ranking"], tune["winner"]
+    print("partial stills ok:", partial["id"], "with 2 of 20 stills is not ranked; the winner is", tune["winner"])
+
+
 def check_result_from_verdict():
     verdict = {"status": "pass", "values": {"frame_p95_ms": 24.0, "gpu_p95_ms": 21.0, "hitches_ok": True, "vram_ok": True,
                                             "cvars_ok": None}}
@@ -342,6 +405,7 @@ def main():
     check_noise_and_contention()
     check_downward()
     check_confirmation(tune)
+    check_partial_stills()
     check_result_from_verdict()
     print("NORD_GAUNTLET_TUNE_OK")
 

@@ -17,7 +17,8 @@ the ceiling), images ({view: SSIM}), and optional contended, readback ({cvar: va
 result_from_verdict() builds that dict from Scripts/gauntlet_metrics.py output.
 
 Run from games/nord-unreal:
-  python3 Scripts/gauntlet_tune.py check          loop.json consistency, and the profile section against QUALITY
+  python3 Scripts/gauntlet_tune.py check          loop.json consistency, and the profile section against QUALITY or
+                                                  the approved candidate
   python3 Scripts/gauntlet_tune.py files <dir>    write the baseline and ceiling ExecCmds and expected-CVar files
 """
 import argparse
@@ -308,13 +309,38 @@ def write_profile_file(cvars, path=PROFILES_INI, name=PROFILE):
     return path
 
 
+def approval_path(path=PROFILES_INI, name=PROFILE):
+    """The approval record next to the profile ini, written with the section by write_candidate_profile."""
+    return Path(path).with_name(f"{name}.approval.json")
+
+
 def write_candidate_profile(tune_path, candidate_id, path=PROFILES_INI):
-    """Rewrite the profile section with one candidate from tune.json. Run only after the user approves its captures."""
+    """Rewrite the profile section with one candidate from tune.json and record the approval next to the ini, so the
+    checked-in section may equal that candidate instead of QUALITY. Run only after the user approves its captures."""
     tune = json.loads(Path(tune_path).read_text())
     record = next((r for r in tune["candidates"] if r["id"] == candidate_id), None)
     if record is None:
         raise KeyError(f"candidate {candidate_id} is not in {tune_path}")
-    return write_profile_file(record["cvars"], path)
+    written = write_profile_file(record["cvars"], path)
+    approval = {"candidate": candidate_id, "tune": str(tune_path), "approved_at": iso(time.time()), "cvars": record["cvars"]}
+    approval_path(path).write_text(json.dumps(approval, indent=1) + "\n")
+    return written
+
+
+def profile_state(path=PROFILES_INI, quality=None, name=PROFILE):
+    """"missing", "equals QUALITY" (quality is its CVar dict), "approved <candidate>" when the section equals the CVars of
+    the approval record next to the ini, or "differs"."""
+    path = Path(path)
+    profile = read_profile(path.read_text(), name) if path.is_file() else None
+    if profile is None:
+        return "missing"
+    if quality is not None and same_cvars(profile["cvars"], quality):
+        return "equals QUALITY"
+    record = approval_path(path, name)
+    approval = json.loads(record.read_text()) if record.is_file() else None
+    if approval and same_cvars(profile["cvars"], approval.get("cvars") or {}):
+        return f"approved {approval['candidate']}"
+    return "differs"
 
 
 # ---------------------------------------------------------------- feasibility, look floor and ranking
@@ -343,8 +369,9 @@ def feasibility(loop, result):
 
 
 def look_check(loop, record, baseline_look):
-    """Reasons a feasible candidate may not win on looks: every image at the floor, and never worse than today."""
-    floor = loop["budgets"]["look"]["image_ssim_min"]
+    """Reasons a feasible candidate may not win on looks: every still scored, every image at the floor, and never worse
+    than today. A partial still set does not count, or a run that lost its hard views would rank on its easy ones."""
+    floor, need = loop["budgets"]["look"]["image_ssim_min"], loop["budgets"]["look"]["images"]
     reasons = []
     images = record.get("images")
     values = list(images.values()) if isinstance(images, dict) else list(images or [])
@@ -354,8 +381,11 @@ def look_check(loop, record, baseline_look):
         reasons.append(f"Look {record['look']:.4f} below today's {baseline_look:.4f}")
     if not values:
         reasons.append("image SSIM unverified")
-    elif min(values) < floor:
-        reasons.append(f"an image SSIM {min(values):.4f} under the {floor} floor")
+    else:
+        if len(values) != need:
+            reasons.append(f"{len(values)} of {need} stills")
+        if min(values) < floor:
+            reasons.append(f"an image SSIM {min(values):.4f} under the {floor} floor")
     return reasons
 
 
@@ -398,6 +428,20 @@ def result_from_verdict(verdict, look=None, images=None, readback=None):
             "contended": verdict.get("status") == "contended", "look": look, "images": images, "readback": readback}
 
 
+def run_estimate_s(loop, mode, laps=None):
+    """Planning seconds of one native run: the start-up, the mode's delay, every warm and measured lap and every hold.
+    test_gauntlet_model.py checks that all but the start-up covers the modelled run of each mode."""
+    settings, durations = loop["modes"][mode], loop["durations"]
+    laps = settings["laps"] if laps is None else laps
+    return (durations["start_estimate_s"] + settings["delay_s"] + (settings["warm_laps"] + laps) * durations["lap_estimate_s"]
+            + len(loop["order"]) * settings["hold_s"])
+
+
+def candidate_estimate_s(loop):
+    """A tune candidate: the night-rain perf run and the look run."""
+    return run_estimate_s(loop, "perf") + run_estimate_s(loop, "look")
+
+
 def parse_until(text, now=None):
     """The next local time HH:MM after now, as epoch seconds (--until 06:30)."""
     hours, minutes = (int(part) for part in text.split(":"))
@@ -433,7 +477,7 @@ class Search:
         self.clock = clock
         self.log = log or (lambda text: None)
         self.limits = loop["search"]
-        self.candidate_s = loop.get("durations", {}).get("candidate_estimate_s", 0)
+        self.candidate_s = candidate_estimate_s(loop)
         self.order = {knob["id"]: n for n, knob in enumerate(enabled_knobs(loop))}
         self.steps = {knob["id"]: len(knob["steps"]) for knob in enabled_knobs(loop)}
         self.base = baseline_levels(loop)
@@ -476,10 +520,13 @@ class Search:
                 return None
             candidate = make_candidate(self.loop, levels, phase, self.measured, label, cvars, look_only)
             self.measured += 1
+            started = self.clock()
             try:
                 result = self.measure(json.loads(json.dumps(candidate)))
             except Exception as error:  # A failed host run is a failed candidate; the night goes on.
                 result = {"error": f"{type(error).__name__}: {error}"}
+            # The window plans with the longest candidate so far, so a host slower than the estimate does not overrun it.
+            self.candidate_s = max(self.candidate_s, self.clock() - started)
             record = dict(candidate, result=_plain(result or {}))
             record["contended"] = bool((result or {}).get("contended"))
             record["look"] = (result or {}).get("look")
@@ -748,6 +795,7 @@ class Search:
         finished = self.clock()
         return {"version": 1, "loop_version": self.loop.get("version"), "started_at": iso(self.started),
                 "finished_at": None if running else iso(finished), "until": iso(self.until),
+                "planned_candidate_s": self.candidate_s,
                 "stop_reason": "running" if running else self.stop_reason or "converged",
                 "measured": self.measured, "max_candidates": self.limits["max_candidates"],
                 "baseline": {key: self.baseline.get(key) for key in ("look", "gpu_p95_ms", "frame_p95_ms", "feasible", "reasons")}
@@ -838,6 +886,9 @@ def check_loop(loop):
         if knob.get("enabled", True) and step is not None and not all(
                 name in baseline["cvars"] and values_match(value, baseline["cvars"][name]) for name, value in knob["steps"][step].items()):
             problems.append(f"knob {knob['id']} baseline step {step} is not today's profile")
+        # The downward search lowers each knob one step below today's; a knob at the bottom must say why.
+        if knob.get("enabled", True) and step == 0 and not knob.get("floor"):
+            problems.append(f"knob {knob['id']} has no step below today's and no floor reason")
     for rule in loop.get("requires", []):
         if rule["knob"] not in ids or rule["needs_knob"] not in ids:
             problems.append(f"requires names an unknown knob: {rule}")
@@ -851,7 +902,7 @@ def check_loop(loop):
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     commands = parser.add_subparsers(dest="command", required=True)
-    commands.add_parser("check", help="loop.json consistency and the profile section against QUALITY")
+    commands.add_parser("check", help="loop.json consistency and the profile section against QUALITY or the approved candidate")
     files = commands.add_parser("files", help="write the baseline and ceiling ExecCmds and expected-CVar files")
     files.add_argument("directory", type=Path)
     args = parser.parse_args(argv)
@@ -862,9 +913,7 @@ def main(argv=None):
         problems = check_loop(loop)
         if not same_cvars(parse_execcmds(browser_streaming.QUALITY), loop["profiles"]["baseline"]["cvars"]):
             problems.append("loop.json baseline differs from browser_streaming.QUALITY")
-        profile = read_profile(PROFILES_INI.read_text(), PROFILE) if PROFILES_INI.is_file() else None
-        state = "missing" if profile is None else (
-            "equals QUALITY" if same_cvars(profile["cvars"], parse_execcmds(browser_streaming.QUALITY)) else "differs from QUALITY")
+        state = profile_state(PROFILES_INI, parse_execcmds(browser_streaming.QUALITY))
         print(json.dumps({"problems": problems, "profile_section": state}, indent=1))
         return 1 if problems else 0
     baseline = make_candidate(loop, baseline_levels(loop), "baseline", 0, "baseline")

@@ -1,7 +1,49 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { spawnSync } from 'node:child_process';
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { frameIntervals, playerUrl, shotName, summarize } from './stream-sample.mjs';
+
+// A stand-in for Playwright (NORD_PLAYWRIGHT_PATH): one page with a connected peer and 30 fps video.
+// waitForTimeout moves the wall clock and the page clock on together, so a sample takes no real time.
+const FAKE_PLAYWRIGHT = `
+const realNow = Date.now, realPerf = performance.now.bind(performance);
+let skipped = 0, presented = 0, shown;
+Date.now = () => realNow() + skipped;
+// The page opened an hour before the sampler process, so its clock origin is not the sampler's own.
+const clock = { timeOrigin: performance.timeOrigin - 3600000, now: () => realPerf() + 3600000 + skipped };
+const video = { videoWidth: 1412, videoHeight: 652, readyState: 4, waiting: [], requestVideoFrameCallback(done) { this.waiting.push(done); } };
+const document = { body: { dataset: { state: 'idle' } }, querySelector: selector => selector === '#video video' ? video : null };
+const window = { WebSocket: class { addEventListener() {} send() {} }, RTCPeerConnection: class {
+  connectionState = 'connected';
+  async getStats() { return new Map([['video', { type: 'inbound-rtp', kind: 'video', framesDecoded: presented }]]); }
+} };
+// Playwright sends a function to the page as source text, so the function cannot use the sampler's module scope.
+const run = (fn, arg) => new Function('window', 'document', 'performance', 'return (' + fn + ')')(window, document, clock)(arg);
+const scripts = [], locator = { click: async () => {}, inputValue: async () => 'NordFriend1' };
+const page = { setDefaultTimeout() {}, route: async () => {}, goto: async () => {}, waitForFunction: async () => {},
+  screenshot: async () => {}, locator: () => locator, evaluate: async (fn, arg) => run(fn, arg),
+  waitForTimeout: async ms => {
+    const until = clock.now() + ms;
+    skipped += ms;
+    for (shown ??= until - ms; shown + 1000 / 30 <= until;) {
+      const time = shown += 1000 / 30;
+      presented++;
+      for (const done of video.waiting.splice(0)) {
+        done(time, { presentedFrames: presented, mediaTime: time / 1000, expectedDisplayTime: time, width: 1412, height: 652 });
+      }
+    }
+  } };
+export const chromium = { launch: async () => ({ close: async () => {}, newContext: async () => ({
+  addInitScript: async (fn, arg) => scripts.push([fn, arg]),
+  newPage: async () => {
+    for (const [fn, arg] of scripts) run(fn, arg);
+    new window.RTCPeerConnection({});
+    return page;
+  } }) }) };
+`;
 
 test('stream summary uses measured time and counter differences, including freezes', () => {
   const before = { timeMs: 1000, framesDecoded: 100, bytesReceived: 1000000, framesDropped: 2, freezeCount: 1, totalFreezesDuration: 1 };
@@ -128,5 +170,28 @@ test('invalid pins and queries are rejected before launching a browser', () => {
     const result = spawnSync(process.execPath, ['stream-sample.mjs', ...args], { encoding: 'utf8' });
     assert.notEqual(result.status, 0);
     assert.match(result.stderr, message);
+  }
+});
+
+test('a frames sample records the page clock origin, so each frame time maps to wall time', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'nord-sample-'));
+  try {
+    await writeFile(join(dir, 'playwright.mjs'), FAKE_PLAYWRIGHT);
+    const result = spawnSync(process.execPath, ['stream-sample.mjs', '--seconds', '5', '--frames', '--out', join(dir, 'out')],
+      { encoding: 'utf8', env: { ...process.env, NORD_PLAYWRIGHT_PATH: join(dir, 'playwright.mjs') } });
+    assert.equal(result.status, 0, result.stderr);
+    const report = JSON.parse(await readFile(join(dir, 'out/sample.json'), 'utf8'));
+    const frames = JSON.parse(await readFile(join(dir, 'out/frames.json'), 'utf8'));
+    assert.equal(typeof report.timeOrigin, 'number', 'sample.json names the page clock origin');
+    assert.ok(frames.length >= 140, `${frames.length} frames in 5 s at 30 fps`);
+    // Frames keep their page times; timeOrigin + t is the wall time that the runner compares with the host log.
+    const start = report.samples[0].timeMs, end = report.samples.at(-1).timeMs;
+    for (const { expectedDisplayTime } of frames) {
+      assert.ok(expectedDisplayTime < 1e9, 'a page clock time, not a wall time');
+      const wall = report.timeOrigin + expectedDisplayTime;
+      assert.ok(wall >= start - 5 && wall <= end + 5, `frame at ${wall} is outside the sample, ${start} to ${end}`);
+    }
+  } finally {
+    await rm(dir, { recursive: true, force: true });
   }
 });

@@ -243,9 +243,9 @@ def plex_fronts():
 
 
 def gallery_camera(front):
-    """Eye height in the yard, 2.3 m in from the back fence and 4.5 m along it from the yard's middle, looking at
-    the middle of the gallery stack 6.2 m up: the decks' props show between the balusters, and the lines run from the
-    deck guards over the camera to the poles at the fence."""
+    """Eye height in the yard, 1.2 m in from the back fence and 3.5 m along it from the yard's middle, looking at
+    the gallery stack 4.8 m up, 1.5 m out from the rear wall: the ground deck's chair and plants, the decks above
+    behind their balusters, and the laundry lines running from the deck guards over the yard to the fence poles."""
     rear = front['rear']
     wall = max((w for w in rear['walls'] if w['kind'] == 'rear'), key=lambda w: w.get('galleries', 0))
     (ax, ay), (bx, by) = wall['a'], wall['b']
@@ -253,16 +253,16 @@ def gallery_camera(front):
     along = ((bx - ax) / n, (by - ay) / n)
     out = rear['decks'][0]['out']
     mx, my = (ax + bx) / 2, (ay + by) / 2
-    depth = rear['fence']['distance_cm'] - 230.
-    cam = (mx + out[0] * depth - along[0] * 450., my + out[1] * depth - along[1] * 450., 175.)
-    target = (mx + out[0] * 150. + along[0] * 150., my + out[1] * 150. + along[1] * 150., 620.)
+    depth = rear['fence']['distance_cm'] - 120.
+    cam = (mx + out[0] * depth - along[0] * 350., my + out[1] * depth - along[1] * 350., 175.)
+    target = (mx + out[0] * 150. + along[0] * 150., my + out[1] * 150. + along[1] * 150., 480.)
     return cam, target
 
 
 def hlm_camera(front):
-    """The far sidewalk of Mentana, 19 m out from the block's Mentana front and 16 m along the street, at eye height
-    over the 18 cm sidewalk, looking at the front's middle 11 m up: the end wall, the entrance and one long wall of
-    stacked balconies."""
+    """The far sidewalk of Mentana (the centreline runs 10.3 m out from the block's front, the far fronts 19.3 m), 16.6 m
+    out and 16 m along the street, at eye height over the 18 cm sidewalk, looking at the front's middle 11 m up: the
+    Mentana end wall, the entrance and one long wall of stacked balconies."""
     (ax, ay), (bx, by) = front['front']['a'], front['front']['b']
     n = math.hypot(bx - ax, by - ay)
     along = ((bx - ax) / n, (by - ay) / n)
@@ -273,7 +273,7 @@ def hlm_camera(front):
     normal = (-along[1], along[0])
     if (gx - mx) * normal[0] + (gy - my) * normal[1] > 0:
         normal = (-normal[0], -normal[1])
-    cam = (mx + normal[0] * 1900. + along[0] * 1600., my + normal[1] * 1900. + along[1] * 1600., 188.)
+    cam = (mx + normal[0] * 1660. + along[0] * 1600., my + normal[1] * 1660. + along[1] * 1600., 188.)
     target = (mx - normal[0] * 300., my - normal[1] * 300., 1100.)
     return cam, target
 

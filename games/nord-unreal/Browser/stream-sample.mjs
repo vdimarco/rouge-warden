@@ -243,7 +243,9 @@ async function main() {
     await page.screenshot({ path: resolve(output, 'first-world.png') });
     // Warm playback before the measurement; retain all one-second observations after this point.
     await page.waitForTimeout(warmup * 1000);
-    await page.evaluate(recordFrames => {
+    // Frame times are the page's performance.now() ms. The page's clock origin turns a frame time t into
+    // timeOrigin + t ms since the epoch, so the runner can keep only the frames of the lap (Scripts/gauntlet_loop.py).
+    report.timeOrigin = await page.evaluate(recordFrames => {
       const video = document.querySelector('#video video');
       window.__sampleGap = { previous: performance.now(), longest: 0, active: true };
       if (recordFrames) window.__sampleFrames = [];
@@ -257,6 +259,8 @@ async function main() {
         video.requestVideoFrameCallback(frame);
       };
       video.requestVideoFrameCallback(frame);
+      // Unverified from memory: rVFC times use the same clock as performance.now().
+      return performance.timeOrigin;
     }, values.frames);
     // Lines already in the trigger file belong to an earlier run; only new lines take shots.
     const triggerLines = async () => values.trigger

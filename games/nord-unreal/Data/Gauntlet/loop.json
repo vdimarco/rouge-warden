@@ -12,7 +12,7 @@
     "order": "Drive order by label. The loop returns from the last stop to the first.",
     "eye_fov_deg": "Horizontal field of view of the <stop>-eye views: the game camera's 85 degrees (Preview/Replica/README.md).",
     "names": "How logs and files name a leg, a stop and a still. {from} and {to} are stop labels, {sky} is a key of skies, {view} is an entry of views.per_stop.",
-    "route": "Checks on the loop that QuebecGauntletModel.h BuildLoop makes over road_set: total length in metres, the largest distance from a stop eye to its road point, and the end position. The loop never turns back. Rachel at the park (S4) is a dead-end branch in road_set, so the S4 road point is on the nearest through road. The car turns round the block south of Sherbrooke (S1). The junction-to-junction path was 3568 m and the driven line with rounded corners 3475 m on the road set of October 2026.",
+    "route": "Checks on the loop that QuebecGauntletModel.h BuildLoop makes over road_set: total length in metres, the largest distance from a stop eye to its road point, and the end position. The loop never turns back. Rachel at the park (S4) is a dead-end branch in road_set, so the S4 road point is on the nearest through road. The car turns round the block south of Sherbrooke (S1). The length range is centred on the modelled driven line (3488 m on the road set of October 2026; the junction-to-junction path is longer), so a small road-data change does not fail it.",
     "drive": "The in-game driver: speed cap, the police stuck rule (reverse_for_s after stuck_after_s below stuck_speed_m_s with throttle), the stall rule (less than stall_progress_m along the loop in stall_s fails with exit stuck), the lap time limit (driving time, holds excluded) and the largest lateral error from the driven line. The driven line is the loop with each junction rounded into an arc the car can drive (QuebecGauntletModel.h FinishLoop).",
     "modes": "Per -NordGauntletMode: delay_s after the subsystem starts before driving (stream waits for the 60 s idle warm-up plus the 30 s grace, so NordFriend1 is asleep), warm_laps driven and discarded (shader compiles and first texture loads; the stream gate starts at the first measured leg), laps measured (-NordGauntletLaps overrides it), hold_s at each stop (0 drives through), ambient false adds world_flags.look, and sky_switch true takes both skies at each hold.",
     "confirm_laps": "Measured laps per run when a winner and the baseline are confirmed. The result is the median of the per-lap p95 values.",
@@ -26,14 +26,14 @@
     "sizes": "Render and stream sizes from Browser/config.mjs streamDimensions for the 844x390 and 390x844 phone viewports. rung 0 is the 1280 edge, rung 1 the 960 edge.",
     "size_use": "Which sizes each pass uses: tune (the search), confirm (winner and baseline) and stream (stream runs).",
     "stream": "Stream rungs measured in the stream run only. A change to the ladder in Browser/config.mjs is a recommendation for the user, never automatic.",
-    "budgets": "native: the per-run and per-leg gate after the warm laps (frames strictly over a threshold count). feasible: the tuner's 10 percent margin on the night-rain landscape lap; the gate itself stays at 33.3 ms. stream: the stream gate and the two-viewer guard. look: the visual check.",
-    "knobs": "Ladders for the tuner, cheapest step first. Each step is a {cvar: value} object; a candidate is the baseline profile with one step of each knob applied. baseline_step indexes the step equal to today's stream profile, or is null when the stream profile does not set the CVar (the host readback gives today's value). A knob with enabled false is skipped until its enable_when note is true.",
+    "budgets": "native: the per-run and per-leg gate after the warm laps (frames strictly over a threshold count; the hitch rule counts hitches in any hitch_window_s of frame time, not the lap average). feasible: the tuner's 10 percent margin on the night-rain landscape lap; the gate itself stays at 33.3 ms. stream: the stream gate and the two-viewer guard. look: the visual check.",
+    "knobs": "Ladders for the tuner, cheapest step first. Each step is a {cvar: value} object; a candidate is the baseline profile with one step of each knob applied. baseline_step indexes the step equal to today's stream profile, or is null when the stream profile does not set the CVar (the host readback gives today's value). An enabled knob has a step below today's for the downward search, or a floor reason. A knob with enabled false is skipped until its enable_when note is true.",
     "requires": "Knob dependencies the tuner never breaks: when knob is at from_step or higher, needs_knob must be at needs_from_step or higher. verified false means the rule was written from memory of the engine and needs a host check.",
     "pending_knobs": "Knobs named in the design that have no ladder yet.",
-    "fixed": "Settings no candidate changes.",
+    "fixed": "CVars no candidate changes, by name, so Scripts/gauntlet_tune.py check_loop refuses a knob step that sets one: t.MaxFPS 60, and TSR (r.AntiAliasingMethod 4, set in Config/DefaultEngine.ini). The stream codec (stream.codec, VP8) is fixed too.",
     "profiles": "baseline is today's stream profile: execcmds is Scripts/browser_streaming.py QUALITY verbatim, and cvars is its effective value per CVar (later entries win). ceiling is the desktop release look used as the visual reference.",
     "search": "The greedy climb: candidate limit, the smallest ms cost used in the efficiency ratio, repeat counts, tie rules and the GPU target used when steps are combined.",
-    "durations": "Estimates used for planning a GPU window, from the design (a 3.0 km lap at 12 to 15 m/s). The kinematic car in Scripts/gauntlet_model_test.cpp drives the 3.49 km loop in about 300 s, so the host lap may be longer than lap_estimate_s."
+    "durations": "Estimates for planning a GPU window. lap_estimate_s covers the modelled lap of every mode (296 to 308 s for the kinematic car in Scripts/gauntlet_model_test.cpp; test_gauntlet_model.py checks it). start_estimate_s is the launch, map load and exit around a run: the Browser package starts in about 31 s (Verification/CityQuality.md), doubled. Scripts/gauntlet_tune.py run_estimate_s adds the delay, the warm and measured laps and the holds; a tune candidate is a perf and a look run (1190 s). The search plans with the longest candidate it has measured when that is longer."
   },
   "version": 1,
   "map": "/Game/Maps/LaFontaine",
@@ -55,8 +55,8 @@
     "still": "look/{sky}/{label}-{view}-{width}x{height}.png"
   },
   "route": {
-    "length_min_m": 2500,
-    "length_max_m": 3500,
+    "length_min_m": 3000,
+    "length_max_m": 4000,
     "stop_road_max_m": 50,
     "end_within_m": 8
   },
@@ -128,6 +128,7 @@
       "slow_frame_ms": 50.0,
       "slow_max_percent": 1.0,
       "hitch_ms": 66.7,
+      "hitch_window_s": 30,
       "hitches_per_30s_max": 1,
       "long_frame_ms": 250.0,
       "long_frames_max": 0,
@@ -162,30 +163,31 @@
     }
   },
   "knobs": [
-    {"id": "shadows", "enabled": true, "baseline_step": 0, "steps": [
+    {"id": "shadows", "enabled": true, "baseline_step": 1, "steps": [
+      {"sg.ShadowQuality": 0, "r.Shadow.Virtual.Enable": 0},
       {"sg.ShadowQuality": 1, "r.Shadow.Virtual.Enable": 0},
       {"sg.ShadowQuality": 2, "r.Shadow.Virtual.Enable": 0},
       {"sg.ShadowQuality": 2, "r.Shadow.Virtual.Enable": 1},
       {"sg.ShadowQuality": 3, "r.Shadow.Virtual.Enable": 1}]},
-    {"id": "gi", "enabled": true, "baseline_step": 0, "steps": [
+    {"id": "gi", "enabled": true, "baseline_step": 0, "floor": "Step 0 and step 1 both leave Lumen GI off (unverified), so a lower step saves little.", "steps": [
       {"sg.GlobalIlluminationQuality": 1}, {"sg.GlobalIlluminationQuality": 2}, {"sg.GlobalIlluminationQuality": 3}]},
-    {"id": "reflections", "enabled": true, "baseline_step": 0, "steps": [
+    {"id": "reflections", "enabled": true, "baseline_step": 0, "floor": "Step 0 and step 1 both leave Lumen reflections off (unverified), so a lower step saves little.", "steps": [
       {"sg.ReflectionQuality": 1}, {"sg.ReflectionQuality": 2}, {"sg.ReflectionQuality": 3}]},
-    {"id": "screen_percentage", "enabled": true, "baseline_step": 2, "note": "TSR; its guide floor is 50.", "steps": [
-      {"r.ScreenPercentage": 60}, {"r.ScreenPercentage": 67}, {"r.ScreenPercentage": 75}, {"r.ScreenPercentage": 85}, {"r.ScreenPercentage": 100}]},
-    {"id": "view_distance", "enabled": true, "baseline_step": 0, "steps": [
-      {"sg.ViewDistanceQuality": 2}, {"sg.ViewDistanceQuality": 3}]},
-    {"id": "foliage", "enabled": true, "baseline_step": 0, "steps": [
-      {"sg.FoliageQuality": 2}, {"sg.FoliageQuality": 3}]},
-    {"id": "effects", "enabled": true, "baseline_step": 0, "steps": [
-      {"sg.EffectsQuality": 2}, {"sg.EffectsQuality": 3}]},
-    {"id": "post_process", "enabled": true, "baseline_step": 0, "steps": [
-      {"sg.PostProcessQuality": 2}, {"sg.PostProcessQuality": 3}]},
+    {"id": "screen_percentage", "enabled": true, "baseline_step": 3, "note": "TSR; 50 is the floor in Epic's TSR guide.", "steps": [
+      {"r.ScreenPercentage": 50}, {"r.ScreenPercentage": 60}, {"r.ScreenPercentage": 67}, {"r.ScreenPercentage": 75}, {"r.ScreenPercentage": 85}, {"r.ScreenPercentage": 100}]},
+    {"id": "view_distance", "enabled": true, "baseline_step": 1, "steps": [
+      {"sg.ViewDistanceQuality": 1}, {"sg.ViewDistanceQuality": 2}, {"sg.ViewDistanceQuality": 3}]},
+    {"id": "foliage", "enabled": true, "baseline_step": 1, "steps": [
+      {"sg.FoliageQuality": 1}, {"sg.FoliageQuality": 2}, {"sg.FoliageQuality": 3}]},
+    {"id": "effects", "enabled": true, "baseline_step": 1, "steps": [
+      {"sg.EffectsQuality": 1}, {"sg.EffectsQuality": 2}, {"sg.EffectsQuality": 3}]},
+    {"id": "post_process", "enabled": true, "baseline_step": 1, "steps": [
+      {"sg.PostProcessQuality": 1}, {"sg.PostProcessQuality": 2}, {"sg.PostProcessQuality": 3}]},
     {"id": "shading", "enabled": true, "baseline_step": null, "note": "QUALITY does not set sg.ShadingQuality, so today's value is the engine default. Read it back on the host before the baseline run.", "steps": [
       {"sg.ShadingQuality": 2}, {"sg.ShadingQuality": 3}]},
-    {"id": "anti_aliasing", "enabled": true, "baseline_step": 0, "note": "TSR history cost.", "steps": [
+    {"id": "anti_aliasing", "enabled": true, "baseline_step": 0, "note": "TSR history cost.", "floor": "Not lowered: screen percentage is the TSR cost the search lowers first.", "steps": [
       {"sg.AntiAliasingQuality": 2}, {"sg.AntiAliasingQuality": 3}]},
-    {"id": "textures", "enabled": true, "baseline_step": 0, "note": "VRAM only.", "steps": [
+    {"id": "textures", "enabled": true, "baseline_step": 0, "note": "VRAM only.", "floor": "VRAM only: a lower step saves no frame time.", "steps": [
       {"sg.TextureQuality": 2}, {"sg.TextureQuality": 3}]},
     {"id": "nanite_edge", "enabled": false, "baseline_step": 1, "enable_when": "r.Nanite.ShowStats shows Nanite meshes on the route.", "note": "Higher values are coarser and cheaper. Step 1 is the engine default (unverified).", "steps": [
       {"r.Nanite.MaxPixelsPerEdge": 2}, {"r.Nanite.MaxPixelsPerEdge": 1}]}
@@ -199,8 +201,7 @@
   ],
   "fixed": {
     "t.MaxFPS": 60,
-    "anti_aliasing_method": "TSR (r.AntiAliasingMethod=4 in Config/DefaultEngine.ini)",
-    "codec": "VP8"
+    "r.AntiAliasingMethod": 4
   },
   "profiles": {
     "baseline": {
@@ -250,7 +251,7 @@
     "ms_tie_repeat_factor": 2
   },
   "durations": {
-    "lap_estimate_s": 210,
-    "candidate_estimate_s": 600
+    "lap_estimate_s": 310,
+    "start_estimate_s": 60
   }
 }

@@ -4,9 +4,11 @@ stream sampler (no Unreal, no GPU, no browser).
 Run from games/nord-unreal:  python3 Scripts/test_gauntlet_loop.py
 Checks both command lines (direct and RunUnreal), the run folder layout, the sky and label refusals, the contention
 label, the CVar readback, the phone profile flag, a look run scored against a ceiling, a short tune with its native
-confirmation and round report, a stream lap with its trigger file and lap window, the write-profile refusal without
---approved, and that browser_streaming.py without NORD_STREAM_QUALITY keeps today's exact launch line. Everything is
-written to a temporary folder; the real Saved/Gauntlet and Config/DefaultDeviceProfiles.ini are never written.
+confirmation and round report, a partial look run that gives no Look, a stale --reference refused, a stream lap with
+its trigger file, lap window and page clock, the input row, the next candidate's confirmation, the write-profile
+refusal without --approved, and that browser_streaming.py without NORD_STREAM_QUALITY keeps today's exact launch line.
+Everything is written to a temporary folder; the real Saved/Gauntlet and Config/DefaultDeviceProfiles.ini are never
+written.
 """
 import contextlib
 import copy
@@ -14,6 +16,7 @@ import json
 import os
 from pathlib import Path
 import re
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -130,11 +133,19 @@ if mode == "perf":
 else:
     sigma = max(0.0, .15 * (30 - total))
     y, x = np.mgrid[0:height, 0:width]
+    # FAKE_LOOK_STUCK_AFTER=n: the car is stuck after n stops (exit 2). FAKE_LOOK_SKIP_SKY: that sky's stills never land,
+    # and the run still exits 0, as when a sky switch fails without an error line.
+    stuck_after, skip = int(os.environ.get("FAKE_LOOK_STUCK_AFTER", "0")), os.environ.get("FAKE_LOOK_SKIP_SKY")
     for shown in loop["sky_order"]:
         say(f"NORD_GAUNTLET sky={shown} hour=15.0 weather=Clear")
-        for label in order:
+        for number, label in enumerate(order):
+            if stuck_after and number == stuck_after:
+                say(f"NORD_GAUNTLET fail exit=2 reason=stuck lap=1 leg={number} along_m=700.0 x_m=0.00 y_m=0.00 reversals=0")
+                say("NORD_GAUNTLET result exit=2 reason=stuck mode=look laps=1 max_offset_m=0.000")
+                log.write_text("\n".join(lines) + "\n")
+                sys.exit(2)
             say(f"NORD_GAUNTLET stop={label} lap=1 hold=begin hold_s=24.0")
-            for view in loop["views"]["per_stop"]:
+            for view in loop["views"]["per_stop"] if shown != skip else []:
                 seed = zlib.crc32(f"{shown}{label}{view}".encode())
                 base = 128 + 40 * np.sin(x / 40 + seed % 7) * np.cos(y / 30 + seed % 5)
                 image = np.clip(base + np.random.default_rng(seed).normal(0, 1, base.shape) * sigma, 0, 255).astype(np.uint8)
@@ -199,10 +210,12 @@ elif args[0] == "pmon":
         time.sleep(.05)
 '''
 
-# stream-sample.mjs: it plays the host's part too (the NORD_GAUNTLET lines go to the host log), waits for each stop in
-# the trigger file before it saves that stop's shots, samples 30 decoded frames per second, and writes sample.json and
-# frames.json in the sampler's own layout: shots/<NN>-<line>-video.png and -page.png listed in sample.json, the
-# requested and received size events, and frames with performance.now() times only (no wall clock).
+# stream-sample.mjs: it plays the host's part too (the NORD_GAUNTLET lines go to the host log, NordFriend1's
+# NORD_STREAM_FPS lines to the friend log), waits for each stop in the trigger file before it saves that stop's shots,
+# and decodes 30 frames per second with one 600 ms stall before the lap. It writes sample.json and frames.json in the
+# sampler's own layout: shots/<NN>-<line>-video.png and -page.png listed in sample.json, the size, latency and QP
+# events, the page's performance.timeOrigin, and frames with performance.now() times. After the done line it samples
+# until the runner writes END to the trigger file, as the sampler stops before the host quits.
 FAKE_SAMPLER = r'''
 import json, os, sys, time
 from pathlib import Path
@@ -214,28 +227,39 @@ value = lambda name: args[args.index(name) + 1] if name in args else None
 out = Path(value("--out"))
 out.mkdir(parents=True, exist_ok=True)
 (out / "sampler-argv.json").write_text(json.dumps(args))
-trigger, host_log = Path(value("--trigger")), Path(os.environ["FAKE_HOST_LOG"])
+trigger, host_log, friend_log = Path(value("--trigger")), Path(os.environ["FAKE_HOST_LOG"]), Path(os.environ["FAKE_FRIEND_LOG"])
 loop = json.loads(Path(os.environ["FAKE_LOOP"]).read_text())
 width, height = next(e["size"] for e in loop["sizes"].values()
                      if e["rung"] == int(value("--pin")) and (e["size"][1] > e["size"][0]) == ("--portrait" in args))
 start = time.time() * 1000
-samples, shots = [], []
-events = [{"timeMs": start, "kind": "received", "width": width, "height": height}]
+origin = start - 1000.0  # performance.timeOrigin: the page loaded a second before the measurement
+samples, shots, frames, shown = [], [], [], [start]
+# The QP of 40 comes before the lap, so only the lap's 20 counts.
+events = [{"timeMs": start, "kind": "received", "width": width, "height": height}, {"timeMs": start, "kind": "qp", "avgQP": 40}]
 
 def tick(seconds):
     end = time.time() + seconds
     while time.time() < end:
         now = time.time() * 1000
-        decoded = int((now - start) / 1000 * 30)
+        while shown[0] + 1000 / 30 <= now:
+            shown[0] += 1000 / 30
+            frames.append({"presentedFrames": len(frames), "expectedDisplayTime": shown[0] - origin, "mediaTime": len(frames) / 30,
+                           "width": width, "height": height})
+        decoded = len(frames)
         samples.append({"timeMs": now, "framesDecoded": decoded, "framesReceived": decoded, "framesDropped": 0,
                         "bytesReceived": decoded * 20000, "freezeCount": 0, "totalFreezesDuration": 0, "totalDecodeTime": decoded * .004,
-                        "jitterBufferDelay": decoded * .05, "jitterBufferEmittedCount": decoded, "packetsLost": 0, "longestFrameGapMs": 34,
+                        "jitterBufferDelay": decoded * .05, "jitterBufferEmittedCount": decoded, "packetsLost": 0,
+                        "roundTripTime": .002, "jitter": .001, "totalProcessingDelay": decoded * .03, "jitterBufferTargetDelay": decoded * .04,
                         "width": width, "height": height, "requested": f"{width}x{height}", "candidate": {"type": "host"}, "codec": "video/VP8"})
         time.sleep(.05)
 
-def say(text):
+def stall(seconds):
+    time.sleep(seconds)
+    shown[0] = time.time() * 1000
+
+def say(text, log=None):
     if value("--slot") == "NordHost":
-        with host_log.open("a") as handle:
+        with (log or host_log).open("a") as handle:
             handle.write("[2026.10.23-23.00.00:000][  0]LogQuebec: Display: " + text + "\n")
 
 tick(.2)
@@ -246,12 +270,19 @@ for row in Path(os.environ["FAKE_EXPECT"]).read_text().splitlines():
     if row and not row.startswith("#"):
         name, want = row.split("=", 1)
         say(f"NORD_GAUNTLET cvar name={name} expected={want} actual={want} match=1")
+# Before the lap NordFriend1 is still awake, and the first keyframe after the resize stalls the decoder for 600 ms.
+say("NORD_STREAM_FPS frames=150 seconds=5.00 sleeping=0 streamer=NordFriend1", friend_log)
+tick(.1)
+stall(.6)
 tick(.3)
 say(f"NORD_GAUNTLET leg={order[0]}-{order[1]} lap=1 begin")
 tick(.3)
 for label in order[1:] + order[:1]:
     say(f"NORD_GAUNTLET stop={label} lap=1 hold=begin hold_s=4.0")
     say("NORD_STREAM_FPS frames=150 seconds=5.00 sleeping=0 streamer=NordHost")
+    say("NORD_STREAM_FPS frames=5 seconds=5.00 sleeping=1 streamer=NordFriend1", friend_log)
+    events += [{"timeMs": time.time() * 1000, "kind": "latency", "averageE2ELatency": 40.0},
+               {"timeMs": time.time() * 1000, "kind": "qp", "avgQP": 20}]
     deadline = time.time() + 4
     while label not in trigger.read_text().split() and time.time() < deadline:
         tick(.05)
@@ -266,6 +297,9 @@ for label in order[1:] + order[:1]:
     if label != order[0]:
         say(f"NORD_GAUNTLET leg={label}-{order[(order.index(label) + 1) % len(order)]} lap=1 begin")
 say("NORD_GAUNTLET done laps=1")
+deadline = time.time() + 4
+while "END" not in trigger.read_text().split() and time.time() < deadline:
+    tick(.05)
 if value("--slot") == "NordHost":
     native = Path(os.environ["FAKE_EXPECT"]).parent / "native"
     native.mkdir(exist_ok=True)
@@ -275,19 +309,17 @@ if value("--slot") == "NordHost":
         rows += [f"{16.7 + k % 3 * .1:.3f},8.000,9.000,6.000,{12 + n:.3f},{event if k == 0 else ''}" for k in range(30)]
     rows += ["16.7,8,9,6,12,", "16.7,8,9,6,12,"]
     (native / "NordGauntlet-stream-night_rain.csv").write_text("\n".join(rows) + "\n")
-tick(.4)
+    stops = [{"label": label, "x_m": 0.0, "y_m": 0.0, "along_m": n * 700.0, "leg_m": 700.0} for n, label in enumerate(order)]
+    (native / "route.json").write_text(json.dumps({"version": 1, "mode": "stream", "exit": 0, "exit_name": "done", "loop_length_m": 3475.0,
+                                                   "max_offset_m": 0.9, "stops": stops, "samples": [{"t": 0.0, "x_m": 0.2, "y_m": 0.1, "offset_m": .2}]}))
 say("NORD_GAUNTLET summary leg=S1-S2 lap=all frames=30 p95_ms=16.900")
 say("NORD_GAUNTLET result exit=0 reason=done mode=stream laps=1 max_offset_m=0.900")
-tick(.4)
-count = int((samples[-1]["timeMs"] - start) / 1000 * 30)
-frames = [{"presentedFrames": n, "expectedDisplayTime": 1000.0 + n * 1000 / 30, "mediaTime": n / 30, "width": width, "height": height}
-          for n in range(count)]
 (out / "frames.json").write_text(json.dumps(frames))
-(out / "sample.json").write_text(json.dumps({"slot": value("--slot"), "samples": samples, "events": events, "shots": shots,
+(out / "sample.json").write_text(json.dumps({"slot": value("--slot"), "timeOrigin": origin, "samples": samples, "events": events, "shots": shots,
                                              "summary": {"decodedFps": 30.0, "jitterBufferMsPerFrame": 50.0, "decodeMsPerFrame": 4.0,
                                                          "delay": {"rttMs": {"mean": 2.1, "max": 3.0}, "jitterMs": {"mean": 1.0, "max": 2.0},
                                                                    "frontend": {"events": 3, "averageE2ELatency": 38.0}},
-                                                         "encoderQp": {"events": 3, "mean": 20.0, "max": 24}}}))
+                                                         "encoderQp": {"events": 6, "mean": 23.3, "max": 40}}}))
 '''
 
 
@@ -507,7 +539,42 @@ def check_tune_with_reference(out, reference):
     ceilings = [tune["runs"][r["id"]]["look"] for r in tune["candidates"] if r["phase"] == "ceiling"]
     assert ceilings == [sizes["a"]["run"], sizes["b"]["run"]] and not any((group / "runs").glob("*ceiling*")), ceilings
     assert tune["ties"]["repeat"]["min"] == 1.0 and tune["baseline"]["look"] is not None and "native_confirmation" not in tune
-    print("tune with --reference ok: the stored ceiling renders are reused, nothing is rendered twice")
+    # A reference from another commit or another build would score every Look against an outdated ceiling.
+    stale = out.parent / "stale-reference"
+    shutil.copytree(reference, stale)
+    stored = json.loads((reference / "reference.json").read_text())
+    for change in ({"commit": dict(stored["commit"], commit="0" * 40)}, {"build": dict(stored["build"], bytes=1)}):
+        (stale / "reference.json").write_text(json.dumps(dict(stored, **change)))
+        before = sorted(out.iterdir())
+        try:
+            L.tune_run(SMALL, reference=stale, confirm=False)
+        except RuntimeError as error:
+            assert "render a new reference" in str(error), error
+        else:
+            raise AssertionError("a reference from another commit or build must be refused: " + ", ".join(change))
+        assert sorted(out.iterdir()) == before, "a refused tune makes no folder"
+    print("tune with --reference ok: the stored ceiling renders are reused, nothing is rendered twice; another commit or build is refused")
+
+
+def check_tune_partial_look():
+    """A look run stuck after S1 (2 of 20 stills, exit 2), or one whose night stills never land (10 of 20, exit 0),
+    gives its candidate an error and no Look, so the tune never ranks it on the views it kept."""
+    real = L.native_run
+    broken = {"04": {"FAKE_LOOK_STUCK_AFTER": "1"}, "05": {"FAKE_LOOK_SKIP_SKY": "night_rain"}}
+
+    def native_run(loop, mode, *args, **kwargs):
+        label = kwargs.get("label") or ""
+        with patch.dict(os.environ, broken.get(label[:2], {}) if label.endswith("-look") else {}):
+            return real(loop, mode, *args, **kwargs)
+
+    with patch.object(L, "native_run", native_run):
+        group, tune = L.tune_run(SMALL, confirm=False)
+    records = {record["id"][:2]: record for record in tune["candidates"]}
+    stuck, dark = records["04"], records["05"]
+    assert stuck["result"]["error"] == "game exit 2 (stuck)" and stuck["look"] is None and stuck["images"] is None, stuck["result"]
+    assert dark["result"]["error"] == "look run: stills fail, 10 of 20 stills scored" and dark["look"] is None, dark["result"]
+    assert not stuck["eligible"] and not dark["eligible"] and tune["ranking"] == ["baseline"], tune["ranking"]
+    print("partial look ok: a stuck look run and one without its night stills give an error and no Look")
 
 
 def check_tune_first_ceiling_contended(state):
@@ -537,56 +604,107 @@ def check_tune_first_ceiling_contended(state):
     assert tune["ties"]["repeat"]["min"] == 1.0, tune["ties"]
     print(f"first ceiling contended ok: {contended[0]} runs again after a second ceiling render; the baseline keeps a Look")
 
-def check_stream(out, state, group, winner):
-    run = out / "20261023T230000Z-stream-winner"
-    run.mkdir()
-    quality = browser_streaming.stream_quality(f"file:{group / 'candidates' / (winner + '.execcmds')}")
+def start_stream(out, state, run, quality, **options):
+    """A gauntlet lifecycle for run, with an idle fake host whose command line carries the world flags, and one
+    stream_run on it. Returns the verdict."""
     (run / "stream.expect").write_text(browser_streaming.gauntlet_expect(quality))
-    host_log = out / "host-test.log"
+    host_log, friend_log = out.parent / f"host-{run.name}.log", out.parent / f"friend-{run.name}.log"
     host_log.write_text("LogInit: Display: the native host started\n")
-    host = subprocess.Popen([sys.executable, str(state.parent / "game.py"), "idle"], start_new_session=True)
+    host = subprocess.Popen([sys.executable, str(state.parent / "game.py"), "idle", *PINNED.split(), "-NordGauntlet",
+                             "-NordGauntletMode=stream", *SMALL["world_flags"]["all"]], start_new_session=True)
     lifecycle = {"launcher_pid": 1, "phase": "running", "stream_quality": quality, "stream_settings": {},
                  "gauntlet": {"run": str(run), "host_log": str(host_log), "expect": str(run / "stream.expect"), "sky": PINNED.split()},
                  "children": [{"name": "host", "pid": host.pid, "stdout": "host.stdout.log"}]}
     L.write_json(L.LIFECYCLE, lifecycle)
     try:
-        with patch.dict(os.environ, {"FAKE_HOST_LOG": str(host_log), "FAKE_EXPECT": str(run / "stream.expect")}):
-            folder, verdict = L.stream_run(SMALL, run, slot="NordHost", pin=0, seconds=5)
+        with patch.dict(os.environ, {"FAKE_HOST_LOG": str(host_log), "FAKE_FRIEND_LOG": str(friend_log),
+                                     "FAKE_EXPECT": str(run / "stream.expect")}):
+            return L.stream_run(SMALL, run, slot="NordHost", pin=0, **options)[1]
     finally:
         host.kill()
         host.wait()
+
+
+def rejudge(run, name, change):
+    """A copy of a judged stream run, outside Saved/Gauntlet so no round counts it, with change(folder) applied."""
+    copied = run.parent.parent / "rejudged" / name
+    shutil.copytree(run, copied)
+    change(copied)
+    return L.judge(copied, SMALL)
+
+
+def edit_json(path, change):
+    data = json.loads(Path(path).read_text())
+    Path(path).write_text(json.dumps(change(data)))
+
+
+def check_stream(out, state, group, winner):
+    run = out / "20261023T230000Z-stream-winner"
+    run.mkdir()
+    quality = browser_streaming.stream_quality(f"file:{group / 'candidates' / (winner + '.execcmds')}")
+    verdict = start_stream(out, state, run, quality, seconds=5)
     argv = json.loads((run / "stream/sampler-argv.json").read_text())
     assert argv == ["--slot", "NordHost", "--url", "http://127.0.0.1:8100/", "--seconds", "5", "--warmup", "2", "--frames", "--latency",
                     "--pin", "0", "--trigger", str(run / "stream/trigger.txt"), "--out", str(run / "stream")], argv
-    assert (run / "stream/trigger.txt").read_text().split() == SMALL["order"][1:] + SMALL["order"][:1], "one trigger line per hold"
+    holds = SMALL["order"][1:] + SMALL["order"][:1]
+    assert (run / "stream/trigger.txt").read_text().split() == holds + ["END"], "one trigger line per hold, then END at the done line"
     assert sorted(path.name for path in (run / "stream/shots").glob("*-video.png")) == sorted(
-        f"{n:02d}-{s}-video.png" for n, s in enumerate(SMALL["order"][1:] + SMALL["order"][:1], 1))
+        f"{n:02d}-{s}-video.png" for n, s in enumerate(holds, 1))
     for name in ("run.json", "stream/sample.json", "stream/frames.json", "stream/events.json", "stream/gpu.json", "stream/host.log",
-                 "verdict.json", "review.html"):
+                 "stream/friend-events.json", "stream/friend.log", "verdict.json", "review.html"):
         assert (run / name).is_file(), name
     assert verdict["status"] == "pass", (failing(verdict), verdict.get("notes"))
-    assert verdict["report_only"]["stop_frames"]["S1"] == "stream/shots/05-S1-video.png" and verdict["report_only"]["encoder_qp"]["mean"] == 20.0
-    assert any("no wall clock" in note for note in verdict["notes"]), "intervals over the whole sample are named as such"
+    assert verdict["report_only"]["stop_frames"]["S1"] == "stream/shots/05-S1-video.png"
+    assert verdict["report_only"]["encoder_qp"]["mean"] == 20.0, "the lap's QP events, not the whole sample's"
     assert gates(verdict)["size_changes"]["value"] == 0, "the received event before the lap is outside the window"
+    assert gates(verdict)["received_size"]["value"] == "96x48" and gates(verdict)["received_size"]["result"] == "pass"
+    assert gates(verdict)["friend_awake_windows"]["value"] == 0, "NordFriend1 was awake only before the lap"
     assert verdict["report_only"]["native_frames_ms"]["frame"]["p95_ms"] == 16.9 and len(verdict["report_only"]["native_legs_by_p95"]) == 5
     assert {"decoded_fps_mean", "freezes", "decoded_over_50ms_percent", "longest_gap_ms", "jitter_buffer_ms_per_frame",
             "native_fps_min", "decoded_vs_native_fps", "size_changes", "game_exit", "cvar_mismatches"} <= set(gates(verdict))
-    assert 29 <= verdict["values"]["decoded_fps"] <= 31 and gates(verdict)["longest_gap_ms"]["value"] < 40
+    assert 29 <= verdict["values"]["decoded_fps"] <= 31 and gates(verdict)["longest_gap_ms"]["value"] < 40, "the 600 ms stall is before the lap"
     assert verdict["delay"]["gated"] is False and verdict["delay"]["values"]["delay"]["rttMs"]["mean"] == 2.1
+    lap_delay = verdict["delay"]["values"]["lap_delay"]
+    assert abs(lap_delay["rttMs"]["mean"] - 2.0) < 1e-9 and abs(lap_delay["processingMsPerFrame"] - 30) < 1e-6, lap_delay
+    assert lap_delay["frontend"] == {"events": 5, "averageE2ELatency": 40.0}, lap_delay["frontend"]
     assert verdict["delay"]["label"].startswith("host-PC headless Chromium")
-    # With the page's performance.timeOrigin, the decoded frames are cut to the lap.
+    assert not any("ms" in gate["unit"] and "rtt" in gate["name"].lower() for gate in verdict["gates"]), "no gate cites a delay"
+    meta = json.loads((run / "run.json").read_text())
+    assert meta["row"] == "solo" and meta["size"] == [96, 48] and meta["quality"]["name"] == "file"
+    assert meta["world_flags"] == SMALL["world_flags"]["all"] and "-NordGauntletMode=stream" in meta["host_command"], meta["host_command"]
+    assert meta["readback"]["t.MaxFPS"] == "60" and meta["friend_log"].endswith("friend-" + run.name + ".log")
+    # The page's performance.timeOrigin cuts the decoded frames to the lap. An older sample without it keeps the
+    # whole-sample intervals as report-only, and its interval gates are unverified, never pass.
     report = json.loads((run / "stream/sample.json").read_text())
     events = json.loads((run / "stream/events.json").read_text())
     window = L.lap_window(events)[0]
     assert window == (next(e["ms"] for e in events if "NORD_GAUNTLET leg=S1-S2 lap=1 begin" in e["line"]),
                       next(e["ms"] for e in events if "NORD_GAUNTLET done laps=1" in e["line"])), "route and summary lines are not the lap"
-    origin = report["samples"][0]["timeMs"] - 1000.0
-    cut = L.lap_sample(dict(report, timeOrigin=origin), run / "stream", window)
-    whole = L.lap_sample(report, run / "stream", window)
-    assert cut["intervals"]["frames"] < whole["intervals"]["frames"] and not cut["notes"], (cut["intervals"], whole["intervals"])
-    assert not any("ms" in gate["unit"] and "rtt" in gate["name"].lower() for gate in verdict["gates"]), "no gate cites a delay"
-    meta = json.loads((run / "run.json").read_text())
-    assert meta["row"] == "solo" and meta["size"] == [96, 48] and meta["quality"]["name"] == "file"
+    cut = L.lap_sample(report, run / "stream", window)
+    old = L.lap_sample({key: value for key, value in report.items() if key != "timeOrigin"}, run / "stream", window)
+    assert old["intervals"] is None and old["whole_intervals"]["frames"] > cut["intervals"]["frames"] and old["notes"] and not cut["notes"]
+    assert old["whole_intervals"]["longest_gap_ms"] >= 600 > 40 > cut["intervals"]["longest_gap_ms"], (old["whole_intervals"], cut["intervals"])
+    unclocked = rejudge(run, "no-time-origin", lambda folder: edit_json(folder / "stream/sample.json",
+                                                                       lambda data: {k: v for k, v in data.items() if k != "timeOrigin"}))
+    assert {name: gates(unclocked)[name]["result"] for name in ("decoded_over_50ms_percent", "longest_gap_ms")} == {
+        "decoded_over_50ms_percent": "unverified", "longest_gap_ms": "unverified"}, failing(unclocked)
+    assert unclocked["status"] == "unverified" and unclocked["report_only"]["whole_sample_intervals"]["longest_gap_ms"] >= 600
+    # The sampler's own summary is missing when the host quit before it (its counters drop): the lap still has delay.
+    unsummed = rejudge(run, "no-summary", lambda folder: edit_json(folder / "stream/sample.json",
+                                                                  lambda data: {k: v for k, v in data.items() if k != "summary"}))
+    assert unsummed["status"] == "pass" and unsummed["delay"]["values"]["lap_delay"]["rttMs"]["max"] == 2.0, unsummed["delay"]
+    assert unsummed["report_only"]["encoder_qp"]["mean"] == 20.0
+    # The streamer ignored the pinned rung and sent 1280x720 all lap: one size, so size_changes stays 0, but the size fails.
+    def resize(folder, width, height):
+        edit_json(folder / "stream/sample.json", lambda data: dict(data, samples=[dict(s, width=width, height=height) for s in data["samples"]]))
+    wrong = rejudge(run, "wrong-size", lambda folder: resize(folder, 1280, 720))
+    assert gates(wrong)["received_size"]["value"] == "1280x720" and gates(wrong)["received_size"]["result"] == "fail"
+    assert gates(wrong)["size_changes"]["value"] == 0 and wrong["status"] == "fail"
+    assert gates(rejudge(run, "no-size", lambda folder: resize(folder, 0, 0)))["received_size"]["result"] == "unverified"
+    # NordFriend1 woke during the lap, so two games rendered: the solo row fails.
+    awake = rejudge(run, "friend-awake", lambda folder: edit_json(folder / "stream/friend-events.json", lambda rows: [
+        dict(row, line=row["line"].replace("sleeping=1", "sleeping=0")) for row in rows]))
+    assert gates(awake)["friend_awake_windows"]["value"] == 5 and awake["status"] == "fail", gates(awake)["friend_awake_windows"]
     two = out / "20261023T230500Z-two-viewers"
     (two / "stream/NordFriend1").mkdir(parents=True)
     for name in ("stream/events.json", "stream/gpu.json", "stream/sample.json", "stream/frames.json"):
@@ -609,7 +727,33 @@ def check_stream(out, state, group, winner):
         assert "NORD_STREAM_GAUNTLET" in str(error)
     else:
         raise AssertionError("the lifecycle must belong to the run")
-    print("stream ok: sampler flags, a trigger line and a decoded frame per hold, the lap window, pass verdict, delay apart")
+    print("stream ok: sampler flags, a trigger line and a decoded frame per hold, END at the lap end, the lap window and clock, "
+          "received size, NordFriend1 asleep, world flags and readback, pass verdict, the lap's delay apart")
+
+
+def check_stream_input(out, state, group, winner):
+    """The input row: the sampler drags on the stream all lap (--look); the car must keep its path."""
+    run = out / "20261023T231000Z-stream-input"
+    run.mkdir()
+    quality = browser_streaming.stream_quality(f"file:{group / 'candidates' / (winner + '.execcmds')}")
+    verdict = start_stream(out, state, run, quality, look=True)
+    argv = json.loads((run / "stream/sampler-argv.json").read_text())
+    assert argv[argv.index("--seconds") + 1] == str(L.stream_seconds(SMALL)) == "925" and argv[-1] == "--look", argv
+    assert json.loads((run / "run.json").read_text())["row"] == "input"
+    assert [gate["name"] for gate in verdict["gates"]] == ["max_lateral_m", "game_exit"] and verdict["status"] == "pass", failing(verdict)
+    assert gates(verdict)["max_lateral_m"]["value"] == .9 and verdict["report_only"]["input"]["gates"], verdict["report_only"].keys()
+    route, _ = L.route_report(SMALL, run)
+    assert {gate["name"]: gate["result"] for gate in route["run"]["gates"]}["max_lateral_m"] == "pass"
+    assert {gate["name"]: gate["result"] for gate in route["run"]["gates"]}["stop_order"] == "pass", "the stream host log has the stops"
+    off = rejudge(run, "input-off-path", lambda folder: edit_json(folder / "native/route.json", lambda data: dict(data, max_offset_m=3.1)))
+    assert gates(off)["max_lateral_m"]["result"] == "fail" and off["status"] == "fail"
+    try:
+        L.stream_run(SMALL, run, look=True, relay=True)
+    except RuntimeError as error:
+        assert "--look is its own row" in str(error)
+    else:
+        raise AssertionError("--look with --relay must be refused")
+    print("input row ok: --look reaches the sampler, the default sample length is 925 s, the lateral error is gated")
 
 
 def check_report_and_profile(group, tune):
@@ -654,6 +798,34 @@ def check_report_and_profile(group, tune):
     print("report and profile ok: unconfirmed without stream rows, review rows with A/B flip, write-profile only with --approved")
 
 
+def check_confirm_next(group, tune):
+    """The winner passed natively but a stream row dropped it: confirm runs the next ranked candidate's native
+    confirmation and adds it to tune.json. It writes no profile."""
+    before = json.loads((group / "tune.json").read_text())
+    done = [result["id"] for result in before["native_confirmation"]["results"]]
+    following = next((candidate for candidate in tune["ranking"] if candidate not in done), None)
+    assert following is not None, (tune["ranking"], done)
+    profile = L.PROFILES_INI.read_text()
+    assert L.main(["confirm", str(group)]) == 0
+    after = json.loads((group / "tune.json").read_text())["native_confirmation"]
+    assert [result["id"] for result in after["results"]] == done + [following], after["results"]
+    added = after["results"][-1]
+    assert added["passed"] and len(added["runs"]) == 4 and added["added_at"] and after["confirmed_native"] == tune["winner"]
+    assert L.PROFILES_INI.read_text() == profile, "confirm writes no profile"
+    L.main(["report", str(group)])
+    results = {result["id"]: result for result in json.loads((group / "tune.json").read_text())["confirmation"]["results"]}
+    assert "native confirmation not run" not in results[following]["reasons"], results[following]
+    for arguments, text in ((["--candidate", following], "already has"), (["--candidate", "02-ceiling-a"], "not ranked")):
+        try:
+            L.main(["confirm", str(group), *arguments])
+        except SystemExit as error:
+            assert error.code == 1, (arguments, error.code)
+        else:
+            raise AssertionError("confirm must refuse " + " ".join(arguments))
+    assert [result["id"] for result in json.loads((group / "tune.json").read_text())["native_confirmation"]["results"]] == done + [following]
+    print(f"confirm ok: {following} confirmed natively after the winner, added to tune.json, no profile written")
+
+
 def main():
     with tempfile.TemporaryDirectory() as directory, contextlib.ExitStack() as stack:
         root = Path(directory)
@@ -675,7 +847,9 @@ def main():
         for target, name, value in ((L, "OUT", out), (browser_streaming, "GAUNTLET", out), (L, "PACKAGE", package), (L, "UAT", uat),
                                     (L, "SMI", [sys.executable, str(root / "fake/smi.py")]),
                                     (L, "SAMPLER", [sys.executable, str(root / "fake/sampler.py")]), (L, "SAMPLE_S", .1),
-                                    (L, "TAIL_S", .05), (L, "LIFECYCLE", root / "BrowserStreaming/lifecycle.json"), (L, "PROFILES_INI", ini)):
+                                    (L, "TAIL_S", .05), (L, "LIFECYCLE", root / "BrowserStreaming/lifecycle.json"), (L, "PROFILES_INI", ini),
+                                    # A fixed commit: the checkpoint job may commit while this runs, which would refuse the reference.
+                                    (L, "git_state", lambda: {"commit": "f" * 40, "dirty": False})):
             stack.enter_context(patch.object(target, name, value))
         check_default_line()
         check_refusals(out, state)
@@ -688,8 +862,11 @@ def main():
         group, tune = check_tune(out)
         check_tune_first_ceiling_contended(state)
         check_tune_with_reference(out, reference)
+        check_tune_partial_look()
         check_stream(out, state, group, tune["winner"])
+        check_stream_input(out, state, group, tune["winner"])
         check_report_and_profile(group, tune)
+        check_confirm_next(group, tune)
     print("NORD_GAUNTLET_LOOP_OK")
 
 

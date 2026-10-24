@@ -1,6 +1,10 @@
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
+import { spawnSync } from 'node:child_process';
+import { mkdtemp, readdir, readFile, rm, symlink } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { test } from 'node:test';
+import { fileURLToPath } from 'node:url';
 import { signallingUrl } from './config.mjs';
 import { Logger, LogLevel } from '@epicgames-ps/lib-pixelstreamingcommon-ue5.8';
 
@@ -176,6 +180,35 @@ test('a gauntlet pin holds one phone rung in a QA build, and a production build 
   }
   assert.deepEqual(phoneStreamState(7, 0), { edge: 1280, bitrate: 6000, level: 0, changedAt: 7, poor: 0, healthy: 0, critical: 0 });
   assert.deepEqual(phoneStreamState(7, null), phoneStreamState(7));
+});
+
+test('a Vercel build bundles the pin call with the production define and refuses NORD_QA_PIN=1', async () => {
+  const folder = fileURLToPath(new URL('.', import.meta.url));
+  // Without NORD_* and VERCEL from the shell, so a leftover NORD_QA_PIN=1 cannot change the result.
+  const env = Object.fromEntries(Object.entries(process.env).filter(([key]) => !key.startsWith('NORD_') && key !== 'VERCEL'));
+  const build = async extra => {
+    // build.mjs builds in its working folder. Links to the sources let it build in a temporary folder, not in dist/.
+    const dir = await mkdtemp(join(tmpdir(), 'nord-build-'));
+    try {
+      for (const name of await readdir(folder)) if (name !== 'dist') await symlink(join(folder, name), join(dir, name));
+      const result = spawnSync(process.execPath, ['build.mjs'], { cwd: dir, encoding: 'utf8', env: { ...env, ...extra } });
+      return { status: result.status, stderr: result.stderr, bundle: await readFile(join(dir, 'dist/player.js'), 'utf8').catch(() => null) };
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  };
+  // player.js calls pinnedLevel(location.search, NORD_QA_PIN). The minified bundle keeps that call with the define as !1 or !0.
+  const pinArguments = bundle => [...bundle.matchAll(/\w\(location\.search,([^)]*)\)/g)].map(match => match[1]);
+  const production = await build({ VERCEL: '1' });
+  assert.equal(production.status, 0, production.stderr);
+  assert.deepEqual(pinArguments(production.bundle), ['!1'], 'a production build ignores ?pin=');
+  const qa = await build({ NORD_QA_PIN: '1' });
+  assert.equal(qa.status, 0, qa.stderr);
+  assert.deepEqual(pinArguments(qa.bundle), ['!0'], 'the check sees a build that honours ?pin=');
+  const refused = await build({ VERCEL: '1', NORD_QA_PIN: '1' });
+  assert.notEqual(refused.status, 0);
+  assert.match(refused.stderr, /NORD_QA_PIN=1 is for a local QA build/);
+  assert.equal(refused.bundle, null);
 });
 
 test('gauntlet frame sizes match the sampler viewports at phone rungs 0 and 1 and Data/Gauntlet/loop.json', async () => {

@@ -1,17 +1,26 @@
-"""CPU checks for the Blender preview's replica materials and yard trees (Scripts/blender/plateau_replica_preview.py).
+"""CPU checks for the Blender preview's replica materials, trees, props and loading (Scripts/blender/plateau_replica_preview.py).
 
 Run from games/nord-unreal:  python3 Scripts/test_plateau_replica_preview.py
 No Blender needed: a small fake `bpy` records the node graphs the preview builds. The checks follow the apply
-step (apply_plateau_replica.textured_graph and plan_trees): every key that takes a replica texture set gets its
-three maps, the textures.json tiling, the capped tint, the DirectX normal map and roughness from R; the masked
-sets (Rail_Baluster, Rail_Lattice, Fence_Boards, Leaf_Creeper) are clipped at their opacity_mask_clip with the
-alpha read channel-packed; the foliage set transmits base colour x FOLIAGE_SUBSURFACE; the opaque sets have no
-transparency; and the yard trees take the apply step's positions, yaws and per-kind crown scales.
+step (apply_plateau_replica.material_row, textured_graph, add_macro and plan_trees):
+- every key that takes a replica texture set (Stone, Slate, the shared keys with Brick_Buff_Even, the tree bark and
+  leaf atlas) gets its three maps from its own folder, the row's tiling, the row's tint (white for the tar, which
+  owns its colour), the macro variation where the set has one, the DirectX normal map, roughness from R and the
+  row's capped metallic; the masked sets (Rail_Baluster, Rail_Lattice, Fence_Boards, Leaf_Creeper, the tree leaves)
+  are clipped at their opacity_mask_clip with the alpha read channel-packed; the foliage sets transmit base colour x
+  FOLIAGE_SUBSURFACE; the opaque sets have no transparency;
+- the yard trees stand on their species meshes (maple on norway_maple, elm on linden) at the apply step's
+  positions, yaws and uniform scales, and each species OBJ splits into a bark and a leaves slot;
+- faces are kept when an edge crosses the view, so the ruelle_mentana lane asphalt (one 188 m quad) is loaded;
+- Collision_Only batches are never drawn;
+- every placement gets the colour variant the apply step gives it;
+- the gallery_closeup and hlm_mentana cameras stand in the yard and on the far sidewalk.
 """
 import json
 import math
 from pathlib import Path
 import sys
+import tempfile
 import types
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -170,102 +179,341 @@ def source(links, socket):
     return next((a for a, b in links if b is socket), None)
 
 
+def check_material(preview, layer, key, spec, sets):
+    """One replica-set material against the apply step's plan row for it; returns the row."""
+    row = apply_replica.material_row(layer, key, spec, sets, set())
+    set_name = row['texture_set']
+    entry = sets[set_name]
+    mat = preview.replica_material(layer, key, spec)
+    nodes, links = list(mat.node_tree.nodes), mat.node_tree.links.items
+    maps = [entry['maps'][r]['file'] for r in ('diff', 'nor_dx', 'rough')]
+    images = {Path(n.image.filepath).name: n for n in nodes if n.bl_idname == 'ShaderNodeTexImage'
+              and Path(n.image.filepath).name in maps}
+    assert sorted(images) == sorted(maps), (key, images)
+    # Each map from its set's own folder: Textures, or Trees for the bark and the leaf atlas.
+    for n in images.values():
+        assert Path(n.image.filepath).parent.name == entry.get('directory', 'Textures'), (key, n.image.filepath)
+    role = {r: images[entry['maps'][r]['file']] for r in ('diff', 'nor_dx', 'rough')}
+    mapping = source(links, role['diff'].inputs['Vector']).node
+    assert tuple(mapping.inputs['Scale'].default_value[:2]) == tuple(row['tiling']), key
+    for n in role.values():
+        assert source(links, n.inputs['Vector']).node is mapping, key + ' map not tiled'
+    assert role['diff'].image.colorspace_settings.name == 'sRGB', key
+    assert role['nor_dx'].image.colorspace_settings.name == role['rough'].image.colorspace_settings.name == 'Non-Color'
+    # Base colour = diff x the row's tint (colour / mean_linear capped at TINT_LIMIT; white when the set owns its
+    # colour), x the macro variation where the set has one.
+    bsdf = mat.node_tree.nodes['Principled BSDF']
+    base = source(links, bsdf.inputs['Base Color'])
+    if row.get('macro'):
+        vary = base.node
+        assert vary.blend_type == 'MULTIPLY', key
+        mul = source(links, preview.sock(vary.inputs, 'A')).node
+        factor = source(links, preview.sock(vary.inputs, 'B'))
+        # lerp(1 - s, 1 + s, mask channel) per macro tile, the two multiplied: (1 - s) + 2 s x channel.
+        lerps = [factor.node] if factor.node.operation == 'MULTIPLY_ADD' else \
+            [source(links, factor.node.inputs[i]).node for i in (0, 1)]
+        assert len(lerps) == len(row['macro']['strength']), key
+        for lerp, s, tiling, channel in zip(lerps, row['macro']['strength'], row['macro']['tiling'],
+                                            row['macro']['channels']):
+            assert lerp.operation == 'MULTIPLY_ADD', key
+            assert abs(lerp.inputs[1].default_value - 2 * s) < 1e-9 and abs(lerp.inputs[2].default_value - (1 - s)) < 1e-9
+            split = source(links, lerp.inputs[0])
+            assert split.name == {'R': 'Red', 'G': 'Green'}[channel], key
+            sample = source(links, split.node.inputs['Color']).node
+            assert Path(sample.image.filepath).name == Path(row['macro']['texture']).name + '.png', key
+            assert sample.image.colorspace_settings.name == 'Non-Color', key
+            scale = source(links, sample.inputs['Vector']).node
+            assert tuple(scale.inputs['Scale'].default_value[:2]) == tuple(tiling), key
+        base_result = preview.sock(vary.outputs, 'Result')
+    else:
+        mul = base.node
+        base_result = preview.sock(mul.outputs, 'Result')
+    assert mul.blend_type == 'MULTIPLY' and source(links, preview.sock(mul.inputs, 'A')).node is role['diff'], key
+    tint = row['tint']
+    if row.get('own_colour'):
+        assert tint == (1., 1., 1.), key
+    else:
+        colour = preview.srgb_to_linear(spec['base_color_srgb'])
+        assert all(abs(t - min(apply_replica.TINT_LIMIT, c / m)) < 1e-9
+                   for t, c, m in zip(tint, colour, entry['mean_linear'])), key
+    assert all(abs(a - b) < 1e-9 for a, b in zip(preview.sock(mul.inputs, 'B').default_value[:3], tint)), key
+    # Normal: the DirectX map through a DirectX normal-map node, as Unreal reads it. Roughness: R of rough.
+    nmap = source(links, bsdf.inputs['Normal']).node
+    assert nmap.convention == 'DIRECTX' and source(links, nmap.inputs['Color']).node is role['nor_dx'], key
+    split = source(links, bsdf.inputs['Roughness'])
+    assert split.name == 'Red' and source(links, split.node.inputs['Color']).node is role['rough'], key
+    assert bsdf.inputs['Metallic'].default_value == row['metallic'], key
+    # Surface: masked sets clip on the diffuse alpha; opaque sets go straight to the output.
+    out = mat.node_tree.nodes['Material Output']
+    surface = source(links, out.inputs['Surface'])
+    if row['blend_mode'] == 'masked':
+        assert role['diff'].image.alpha_mode == 'CHANNEL_PACKED', key + ' alpha must not be premultiplied'
+        mix = surface.node
+        assert mix.bl_idname == 'ShaderNodeMixShader', key
+        assert source(links, mix.inputs[1]).node.bl_idname == 'ShaderNodeBsdfTransparent', key
+        keep = source(links, mix.inputs['Fac']).node
+        assert keep.operation == 'GREATER_THAN', key
+        assert source(links, keep.inputs[0]) is role['diff'].outputs['Alpha'], key + ' mask is not the diff alpha'
+        assert abs(keep.inputs[1].default_value - row['opacity_mask_clip']) < 2e-3, key
+        lit = source(links, mix.inputs[2]).node
+        assert key in entry['keys'] and preview.MASKED[mat.name][2] == row['opacity_mask_clip']
+        if row['shading_model'] == 'two_sided_foliage':
+            assert lit.bl_idname == 'ShaderNodeAddShader', key + ' needs the foliage transmission'
+            translucent = source(links, lit.inputs[1]).node
+            assert translucent.bl_idname == 'ShaderNodeBsdfTranslucent', key
+            scale = source(links, translucent.inputs['Color']).node
+            assert source(links, preview.sock(scale.inputs, 'A')) is base_result, key
+            assert preview.sock(scale.inputs, 'B').default_value[:3] == (apply_replica.FOLIAGE_SUBSURFACE,) * 3
+        else:
+            assert lit is bsdf, key
+    else:
+        assert row['blend_mode'] == 'opaque', key
+        assert surface is bsdf.outputs['BSDF'], key + ' should be opaque'
+        assert not any(n.bl_idname == 'ShaderNodeBsdfTransparent' for n in nodes), key
+    return row
+
+
 def check_set_materials(preview):
-    textures = json.loads((ROOT / 'Data/Plateau/ReplicaGeometry/Textures/textures.json').read_text())['sets']
+    sets = apply_replica.load_textures(ROOT)
     plex = json.loads((ROOT / 'Data/Plateau/ReplicaGeometry/Plex/manifest.json').read_text())['materials']
     keys = sorted(apply_replica.SHARED_TEXTURE_KEYS) + ['Stone', 'Slate']
     checked = {}
     for key in keys:
         spec = plex.get(key) or {'base_color_srgb': '#808080', 'roughness': .8, 'metallic': 0.}
-        mat = preview.replica_material('Plex', key, spec)
-        set_name = apply_replica.base_material(key, spec)[1][len('replica_'):]
-        entry = textures[set_name]
-        nodes, links = list(mat.node_tree.nodes), mat.node_tree.links.items
-        images = {Path(n.image.filepath).name: n for n in nodes if n.bl_idname == 'ShaderNodeTexImage'}
-        assert sorted(images) == sorted(entry['maps'][r]['file'] for r in ('diff', 'nor_dx', 'rough')), (key, images)
-        mapping = next(n for n in nodes if n.bl_idname == 'ShaderNodeMapping')
-        assert tuple(mapping.inputs['Scale'].default_value[:2]) == tuple(entry['tiling']), key
-        for n in images.values():
-            assert source(links, n.inputs['Vector']) is mapping.outputs['Vector'], key + ' map not tiled'
-        role = {r: images[entry['maps'][r]['file']] for r in ('diff', 'nor_dx', 'rough')}
-        assert role['diff'].image.colorspace_settings.name == 'sRGB', key
-        assert role['nor_dx'].image.colorspace_settings.name == role['rough'].image.colorspace_settings.name == 'Non-Color'
-        # Base colour = diff x tint, tint = colour / mean_linear capped at the apply step's limit.
-        bsdf = mat.node_tree.nodes['Principled BSDF']
-        mul = source(links, bsdf.inputs['Base Color']).node
-        assert mul.blend_type == 'MULTIPLY' and source(links, preview.sock(mul.inputs, 'A')).node is role['diff'], key
-        colour = preview.srgb_to_linear(spec['base_color_srgb'])
-        tint = tuple(min(apply_replica.TINT_LIMIT, c / m) for c, m in zip(colour, entry['mean_linear']))
-        assert all(abs(a - b) < 1e-9 for a, b in zip(preview.sock(mul.inputs, 'B').default_value[:3], tint)), key
-        # Normal: the DirectX map through a DirectX normal-map node, as Unreal reads it. Roughness: R of rough.
-        nmap = source(links, bsdf.inputs['Normal']).node
-        assert nmap.convention == 'DIRECTX' and source(links, nmap.inputs['Color']).node is role['nor_dx'], key
-        split = source(links, bsdf.inputs['Roughness'])
-        assert split.name == 'Red' and source(links, split.node.inputs['Color']).node is role['rough'], key
-        assert bsdf.inputs['Metallic'].default_value == spec.get('metallic', 0.), key
-        # Surface: masked sets clip on the diffuse alpha; opaque sets go straight to the output.
-        out = mat.node_tree.nodes['Material Output']
-        surface = source(links, out.inputs['Surface'])
-        mode = entry.get('material') or {}
-        if key in MASKED_KEYS:
-            assert mode.get('blend_mode') == 'masked', key
-            assert role['diff'].image.alpha_mode == 'CHANNEL_PACKED', key + ' alpha must not be premultiplied'
-            mix = surface.node
-            assert mix.bl_idname == 'ShaderNodeMixShader', key
-            assert source(links, mix.inputs[1]).node.bl_idname == 'ShaderNodeBsdfTransparent', key
-            keep = source(links, mix.inputs['Fac']).node
-            assert keep.operation == 'GREATER_THAN', key
-            assert source(links, keep.inputs[0]) is role['diff'].outputs['Alpha'], key + ' mask is not the diff alpha'
-            assert abs(keep.inputs[1].default_value - mode['opacity_mask_clip']) < 2e-3, key
-            lit = source(links, mix.inputs[2]).node
-            assert key in [k for k in entry['keys']] and preview.MASKED[mat.name][2] == mode['opacity_mask_clip']
-            if mode.get('shading_model') == 'two_sided_foliage':
-                assert lit.bl_idname == 'ShaderNodeAddShader', key + ' needs the foliage transmission'
-                translucent = source(links, lit.inputs[1]).node
-                assert translucent.bl_idname == 'ShaderNodeBsdfTranslucent', key
-                scale = source(links, translucent.inputs['Color']).node
-                assert source(links, preview.sock(scale.inputs, 'A')) is preview.sock(mul.outputs, 'Result'), key
-                assert preview.sock(scale.inputs, 'B').default_value[:3] == (apply_replica.FOLIAGE_SUBSURFACE,) * 3
-            else:
-                assert lit is bsdf, key
-        else:
-            assert mode.get('blend_mode', 'opaque') == 'opaque', key
-            assert surface is bsdf.outputs['BSDF'], key + ' should be opaque'
-            assert not any(n.bl_idname == 'ShaderNodeBsdfTransparent' for n in nodes), key
-        checked[key] = set_name
+        row = check_material(preview, 'Plex', key, spec, sets)
+        checked[key] = row['texture_set'] + (' +macro' if row.get('macro') else '')
     masked = sorted(k for k in checked if k in MASKED_KEYS)
     assert masked == sorted(MASKED_KEYS), masked
+    # Buff brick is the even buff set with its macro variation, never the red brick photo tinted up.
+    assert checked['Brick_Buff_Even'] == 'buff_brick +macro', checked['Brick_Buff_Even']
+    # The tar owns its colour; galvanised sheet keeps the set's metallic cap.
+    assert apply_replica.material_row('Plex', 'Roof_Tar', plex['Roof_Tar'], sets, set())['tint'] == (1., 1., 1.)
+    sheet = preview.replica_material('Capped', 'Sheet_Metal', dict(plex['Sheet_Metal'], metallic=.9))
+    assert sheet.node_tree.nodes['Principled BSDF'].inputs['Metallic'].default_value == .3
+    # The species trees' bark and autumn leaf atlas, from the Trees folder.
+    kinds = apply_replica.load_tree_kinds(ROOT)
+    assert kinds, 'Trees/manifest.json is missing; run Scripts/blender/plateau_trees.py --no-render'
+    for species, kind in sorted(kinds.items()):
+        for slot in ('bark', 'leaves'):
+            ref = kind['materials'][slot]
+            row = check_material(preview, 'Trees', ref['key'], ref['spec'], sets)
+            assert row['texture_set'] == {'bark': 'tree_bark', 'leaves': 'tree_leaves'}[slot], (species, slot)
+            assert (row['blend_mode'], row['shading_model']) == \
+                {'bark': ('opaque', 'default_lit'), 'leaves': ('masked', 'two_sided_foliage')}[slot], (species, slot)
+            checked[ref['key']] = row['texture_set']
     return checked
 
 
 def check_yard_trees(preview):
+    """The yard trees on the species meshes, as apply_plateau_replica.plan_trees places them, and each species OBJ
+    split into its bark and leaves slots with the OBJ's normals."""
     rows = apply_replica.load_yard_trees(ROOT)
     assert rows, 'Plex/yard_trees.json is missing; run python3 Scripts/plateau_plex.py'
-    template = Collection('TreeTemplate')
-    preview.tree_template = lambda: (template, 4.55)
-    world = Collection('World')
-    everything = preview.Region((0., 0., 0.), (1., 0., 0.), 85., 1e9, circle=(0., 0., 1e9))
-    n = preview.place_yard_trees(everything, world)
-    assert n == len(rows) == len(world.linked), (n, len(rows))
-    expected = [t for group in apply_replica.plan_trees(rows) for t in group['transforms']]
-    kinds = {}
-    for ob, ((x, y, z), yaw, scale) in zip(world.linked, expected):
-        assert ob.instance_type == 'COLLECTION' and ob.instance_collection is template, ob.name
-        assert ob.location == (x / 100, -y / 100, z / 100), ob.name
-        assert abs(ob.rotation_euler[2] + math.radians(yaw)) < 1e-12, ob.name
-        assert tuple(ob.scale) == tuple(scale), ob.name
-        kind = ob.name.split('_')[1]
-        kinds[kind] = kinds.get(kind, 0) + 1
-        assert abs(scale[0] / scale[2] - apply_replica.TREE_KINDS[kind]) < 1e-9, ob.name
-    # The region filter keeps only trees inside the view.
-    far = preview.Region((0., 0., 0.), (1., 0., 0.), 85., 1e9, circle=(1e7, 1e7, 100.))
-    assert preview.place_yard_trees(far, Collection('Empty')) == 0
-    return {'trees': n, 'kinds': kinds}
+    kinds = apply_replica.load_tree_kinds(ROOT)
+    assert kinds, 'Trees/manifest.json is missing; run Scripts/blender/plateau_trees.py --no-render'
+    made = {}
+    saved = preview.species_collection, preview.tree_template
+    preview.species_collection = lambda species, kind: made.setdefault(species, Collection('Tree_' + species))
+    preview.tree_template = lambda: (_ for _ in ()).throw(AssertionError('yard trees fell back to tree_small_02'))
+    try:
+        world = Collection('World')
+        everything = preview.Region((0., 0., 0.), (1., 0., 0.), 85., 1e9, circle=(0., 0., 1e9))
+        n = preview.place_yard_trees(everything, world)
+        assert n == len(rows) == len(world.linked), (n, len(rows))
+        groups = apply_replica.plan_trees(rows, kinds)
+        expected = [(g['kind'], t) for g in groups for t in g['transforms']]
+        counts = {}
+        for ob, (species, ((x, y, z), yaw, scale)) in zip(world.linked, expected):
+            assert ob.instance_type == 'COLLECTION' and ob.instance_collection is made[species], ob.name
+            assert ob.location == (x / 100, -y / 100, z / 100), ob.name
+            assert abs(ob.rotation_euler[2] + math.radians(yaw)) < 1e-12, ob.name
+            assert tuple(ob.scale) == tuple(scale) and scale[0] == scale[1] == scale[2], ob.name
+            assert ob.name[len('YardTree_'):].rsplit('_', 1)[0] == species, ob.name
+            counts[species] = counts.get(species, 0) + 1
+        # The old kinds stand on their species: maple on norway_maple, elm on linden.
+        by_species = {}
+        for r in rows:
+            by_species[apply_replica.TREE_ALIASES.get(r['kind'], r['kind'])] = \
+                by_species.get(apply_replica.TREE_ALIASES.get(r['kind'], r['kind']), 0) + 1
+        assert counts == by_species, (counts, by_species)
+        # Each tree stands at its row's height on its species mesh.
+        for g in groups:
+            for (p, yaw, scale), r in zip(g['transforms'], [r for r in rows if r['species'] == g['kind']]):
+                assert abs(scale[2] * kinds[g['kind']]['height_cm'] - r['height_cm']) < 1e-6, g['kind']
+        # The region filter keeps only trees inside the view.
+        far = preview.Region((0., 0., 0.), (1., 0., 0.), 85., 1e9, circle=(1e7, 1e7, 100.))
+        assert preview.place_yard_trees(far, Collection('Empty')) == 0
+    finally:
+        preview.species_collection, preview.tree_template = saved
+    # Each species OBJ: a bark and a leaves group (the slots the apply step maps by name), every corner with a UV
+    # and a normal, and the manifest's triangle counts.
+    manifest = json.loads((ROOT / 'Data/Plateau/ReplicaGeometry/Trees/manifest.json').read_text())['kinds']
+    slots = {}
+    for species, kind in sorted(kinds.items()):
+        groups = preview.read_obj_groups(str(ROOT / 'Data/Plateau/ReplicaGeometry' / kind['obj']))
+        found = {apply_replica.tree_slot(name): g for name, g in groups.items()}
+        assert sorted(found) == ['bark', 'leaves'], (species, sorted(groups))
+        for slot, (verts, polys, uvs, normals) in found.items():
+            corners = sum(len(q) for q in polys)
+            assert len(uvs) == corners and normals and len(normals) == corners, (species, slot)
+            tris = sum(len(q) - 2 for q in polys)
+            assert tris == manifest[species]['triangles'][slot], (species, slot, tris)
+        slots[species] = {k: len(v[1]) for k, v in found.items()}
+    return {'trees': n, 'species': counts, 'species_faces': slots}
+
+
+def check_region(preview):
+    """Faces reach the view when an edge crosses it (Region.crosses); the old any-corner rule dropped long quads."""
+    region = preview.Region((0., 0., 170.), (1000., 0., 170.), 85., 9000.)
+    # The ruelle case: one lane quad 4.3 m wide whose ends lie 65 m behind and 123 m ahead of the camera.
+    lane = [(-6500., -215.), (12300., -215.), (12300., 215.), (-6500., 215.)]
+    assert not any(region.keep(x, y) for x, y in lane), 'the fixture must have no corner in view'
+    assert region.face(lane), 'a lane quad under the camera must be kept'
+    # A wall run that crosses the wedge 60 m ahead, both ends outside it.
+    across = [(6000., -9000.), (6000., 9000.), (6020., 9000.), (6020., -9000.)]
+    assert not any(region.keep(x, y) for x, y in across) and region.face(across)
+    # A face that holds the camera, all of it outside the region's reach otherwise.
+    ground = [(-60000., -60000.), (60000., -60000.), (60000., 60000.), (-60000., 60000.)]
+    assert region.face(ground)
+    # Faces that stay outside: behind the camera past the near disc, beyond the far distance, beside the wedge.
+    for out in ([(-8000., -100.), (-6000., -100.), (-6000., 100.), (-8000., 100.)],
+                [(9500., -100.), (12000., -100.), (12000., 100.), (9500., 100.)],
+                [(100., 8000.), (300., 8000.), (300., 8800.), (100., 8800.)]):
+        assert not region.face(out), out
+    # A batch box crossing the wedge sideways: no corner, no nearest point and no point of the view ray in view.
+    side = [1000., 5000., 0., 8000., 5100., 100.]
+    assert not any(region.keep(x, y) for x, y in ((side[0], side[1]), (side[3], side[1]), (side[0], side[4]),
+                                                  (side[3], side[4]), (1000., 5000.)))
+    assert region.box(side)
+    assert not region.box([-9000., -100., 0., -7000., 100., 100.])
+    circle = preview.Region((0., 0., 0.), (1., 0., 0.), 85., 1e9, circle=(0., 0., 1000.))
+    assert circle.face([(-5000., -10.), (5000., -10.), (5000., 10.), (-5000., 10.)])
+    assert not circle.face([(2000., 2000.), (3000., 2000.), (3000., 3000.)])
+    # read_obj keeps that lane quad (OBJ y is -y) and drops a far one.
+    with tempfile.TemporaryDirectory() as tmp:
+        path = Path(tmp) / 'lane.obj'
+        far = [(x + 40000., y) for x, y in lane]
+        path.write_text(''.join(f'v {x} {-y} 6.8\n' for x, y in lane + far) + 'f 1 2 3 4\nf 5 6 7 8\n')
+        verts, polys, _ = preview.read_obj(str(path), region, want_uv=False)
+        assert len(polys) == 1 and len(verts) == 4, polys
+    # The real case: the ruelle_mentana camera stands on the lane asphalt of Streets, which is one long quad.
+    view = preview.views()['ruelle_mentana']
+    cam, target = view['camera']
+    real = preview.Region(cam, target, view.get('fov', 85.), view['far'], view.get('circle'))
+    streets = json.loads((ROOT / 'Data/Plateau/ReplicaGeometry/Streets/manifest.json').read_text())
+    ahead = (cam[0] + (target[0] - cam[0]) * 1500. / math.dist(cam[:2], target[:2]),
+             cam[1] + (target[1] - cam[1]) * 1500. / math.dist(cam[:2], target[:2]))
+    hit = None
+    for batch in streets['batches']:
+        if not batch['material'].startswith('alley') and 'Alley' not in batch['file']:
+            continue
+        path = ROOT / 'Data/Plateau/ReplicaGeometry/Streets' / batch['file']
+        vs = [tuple(map(float, line.split()[1:4])) for line in path.read_text().splitlines() if line.startswith('v ')]
+        for line in path.read_text().splitlines():
+            if not line.startswith('f '):
+                continue
+            pts = [(vs[int(t.split('/')[0]) - 1][0], -vs[int(t.split('/')[0]) - 1][1]) for t in line.split()[1:]]
+            if preview._inside(ahead[0], ahead[1], pts):
+                hit = (batch['file'], pts)
+                break
+        if hit:
+            break
+    assert hit, 'no alley face under the ruelle_mentana view 15 m ahead'
+    assert real.face(hit[1])
+    return {'lane_quad': 'kept', 'ruelle_mentana_alley_face': hit[0],
+            'corner_in_view': any(real.keep(x, y) for x, y in hit[1])}
+
+
+def check_collision_only(preview):
+    """Collision_Only batches (the gallery guards' invisible walls) are never drawn; every other batch is."""
+    plex = json.loads((ROOT / 'Data/Plateau/ReplicaGeometry/Plex/manifest.json').read_text())
+    invisible = [b for b in plex['batches'] if b['material'] == apply_replica.COLLISION_ONLY]
+    assert invisible, 'the Plex layer has no Collision_Only batches to leave out'
+    drawn, read = [], []
+    saved = preview.make_object, preview.read_obj, preview.replica_material
+    preview.make_object = lambda name, verts, polys, uvs, material, collection, smooth=False: drawn.append(name)
+    preview.read_obj = lambda path, region, scale=.01, want_uv=True: (read.append(path), ([(0, 0, 0)] * 3, [[0, 1, 2]], []))[1]
+    preview.replica_material = lambda layer, key, spec: key
+    try:
+        everything = preview.Region((0., 0., 0.), (1., 0., 0.), 85., 1e9, circle=(0., 0., 1e9))
+        preview.load_replica(everything, Collection('World'), layers=('Plex',))
+    finally:
+        preview.make_object, preview.read_obj, preview.replica_material = saved
+    names = {f'Plex_{b["file"][:-4]}' for b in invisible}
+    assert not names & set(drawn), sorted(names & set(drawn))[:3]
+    assert not any(Path(p).name in {b['file'] for b in invisible} for p in read), 'a Collision_Only OBJ was read'
+    assert len(drawn) == len(plex['batches']) - len(invisible), (len(drawn), len(plex['batches']), len(invisible))
+    return {'collision_only_batches': len(invisible), 'drawn_batches': len(drawn)}
+
+
+def check_prop_variants(preview):
+    """Every placement's parts take the colour variant the apply step gives them (plan instances)."""
+    the_plan = apply_replica.plan(ROOT)
+    picked = {}
+    for inst in the_plan['instances']:
+        mesh = inst['mesh'].rsplit('/', 1)[1]
+        for position, yaw, scale in inst['transforms']:
+            picked[(inst['layer'], inst['prop'], mesh, tuple(position), yaw)] = inst['variant']
+    props = json.loads((ROOT / 'Data/Plateau/ReplicaGeometry/Props/manifest.json').read_text())
+    parts = {}
+    for batch in props['batches']:
+        if batch.get('prop') and 'merged' not in batch.get('part', ''):
+            parts.setdefault(batch['prop'], []).append(batch)
+    checked = varied = 0
+    for layer in ('Furniture', 'Soul'):
+        rows = json.loads((ROOT / f'Data/Plateau/ReplicaGeometry/{layer}/placements.json').read_text())['placements']
+        for r in rows:
+            if r['prop'] not in parts:
+                continue
+            chosen = preview.prop_variants(parts[r['prop']], r.get('variant_seed', 0))
+            for batch, variant in zip(parts[r['prop']], chosen):
+                key = (layer, r['prop'], batch['mesh'], tuple(r['position']), r['yaw'])
+                assert picked[key] == variant, (key, picked[key], variant)
+                checked += 1
+                varied += variant != batch['material']
+    assert varied, 'no placement took a colour variant'
+    return {'parts_checked': checked, 'parts_in_a_variant': varied}
+
+
+def check_views(preview):
+    """The two new views: the gallery camera stands in its lot's yard at eye height and looks at the gallery stack;
+    the HLM camera stands on the far sidewalk of Mentana and looks at the OMHM block."""
+    v = preview.views()
+    for name in ('ruelle', 'ruelle_mentana', 'aerial', 'corner', 'mentana', 'rachel', 'papineau', 'fabre',
+                 'gallery_closeup', 'hlm_mentana'):
+        assert name in v, name
+    fronts = preview.plex_fronts()
+    lot = fronts[preview.GALLERY_LOT]
+    rear = lot['rear']
+    (cx, cy, cz), (tx, ty, tz) = v['gallery_closeup']['camera']
+    assert preview._inside(cx, cy, rear['yard']['rect']), 'the gallery camera is not in the yard'
+    (f0, f1) = rear['fence']['line']
+    assert preview._segment_distance(cx, cy, f0, f1) >= 100., 'the gallery camera stands in the fence'
+    out = rear['decks'][0]['out']
+    assert (tx - cx) * out[0] + (ty - cy) * out[1] < 0, 'the gallery camera looks away from the house'
+    assert 150. <= cz <= 200. and len(rear['decks']) >= 4
+    soul = json.loads((ROOT / 'Data/Plateau/ReplicaGeometry/Soul/lane_life.json').read_text())
+    assert any(line['lot'] == preview.GALLERY_LOT and line['garments'] for line in soul['laundry']['lines'])
+    hlm = fronts[preview.HLM_LOT]
+    assert hlm['kit'] == 'post-1945 apartment' and hlm['year'] == 1974, (hlm['kit'], hlm['year'])
+    (cx, cy, cz), (tx, ty, tz) = v['hlm_mentana']['camera']
+    a, b = hlm['front']['a'], hlm['front']['b']
+    d = preview._segment_distance(cx, cy, a, b)
+    assert 1500. < d < 2000., d
+    assert cz == 188., cz
+    # On the sidewalk: no Plex front of Mentana within 1 m of the camera, and outside every front yard.
+    for f in fronts.values():
+        if f['street'] == 'Rue de Mentana' and f['id'] != preview.HLM_LOT:
+            assert preview._segment_distance(cx, cy, f['front']['a'], f['front']['b']) > 100. + f['front']['yard_cm'] \
+                or preview._segment_distance(cx, cy, f['front']['a'], f['front']['b']) > 4000., f['id']
+    return {'gallery_closeup': v['gallery_closeup']['camera'], 'hlm_mentana': v['hlm_mentana']['camera']}
 
 
 def main():
     preview = load_preview()
-    report = {'materials': check_set_materials(preview), 'yard_trees': check_yard_trees(preview)}
+    report = {'materials': check_set_materials(preview), 'yard_trees': check_yard_trees(preview),
+              'region': check_region(preview), 'collision_only': check_collision_only(preview),
+              'prop_variants': check_prop_variants(preview), 'views': check_views(preview)}
     print(json.dumps(report, indent=1, sort_keys=True))
     print('Plateau replica preview checks passed')
 
