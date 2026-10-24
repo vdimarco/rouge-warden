@@ -736,8 +736,9 @@ def lap_window(events):
 def window_summary(samples, events=None):
     """stream-sample.mjs summarize() over the per-second samples and the --latency events inside the lap, with the
     same counters and formulas, delay and encoder QP included. So the verdict does not need the sampler's own summary,
-    which covers its whole sample and is missing when the host quit first. The sampler's longestFrameGapMs is left out:
-    it is a running maximum since the sample started, and only the decoded intervals give the lap's own longest gap."""
+    which covers its whole sample, the warm lap too. When the host quit first, that summary ends at the stream end
+    (streamEndedTimeMs). The sampler's longestFrameGapMs is left out: it is a running maximum since the sample started,
+    and only the decoded intervals give the lap's own longest gap."""
     if len(samples) < 2:
         return None
     first, last = samples[0], samples[-1]
@@ -1312,8 +1313,8 @@ def confirm_next(loop, group, candidate_id=None, direct=False, until=None):
 
 
 def stream_evidence(group, tune):
-    """Stream runs made after the tune started, by candidate: a file: quality from the tune's candidates folder names
-    its candidate, and current names the baseline."""
+    """Stream runs made after the tune started, by candidate, oldest first (run.json started_at, then the folder): a
+    file: quality from the tune's candidates folder names its candidate, and current names the baseline."""
     evidence = {}
     for path in sorted(OUT.glob("*/run.json")):
         meta = read_json(path)
@@ -1329,8 +1330,11 @@ def stream_evidence(group, tune):
         verdict = read_json(path.parent / "verdict.json", {}) or {}
         evidence.setdefault(candidate_id, []).append(
             {"run": str(path.parent), "label": meta["label"], "row": meta.get("row"), "pin": meta.get("pin"),
-             "portrait": meta.get("portrait"), "status": verdict.get("status"),
+             "portrait": meta.get("portrait"), "status": verdict.get("status"), "started_at": meta.get("started_at"),
              "two_viewer_fps": (verdict.get("values") or {}).get("two_viewer_fps")})
+    # The user names a stream run's folder, so the folder name alone does not give the order.
+    for rows in evidence.values():
+        rows.sort(key=lambda row: (row["started_at"] or "", row["run"]))
     return evidence
 
 
@@ -1342,18 +1346,22 @@ def round_report(group, loop):
     streams = stream_evidence(group, tune)
     needed = {(loop["sizes"][key]["rung"], loop["sizes"][key]["size"][1] > loop["sizes"][key]["size"][0])
               for key in loop["size_use"]["stream"]}
-    missing_evidence = ("native confirmation not run", CONFIRM_CUT, CONFIRM_CONTENDED, "stream rows missing", "co-op guard unverified")
+    missing_evidence = ("native confirmation not run", CONFIRM_CUT, CONFIRM_CONTENDED, "stream rows missing",
+                        "stream row unverified", "co-op guard unverified")
 
     def confirm_fn(record):
         rows = streams.get(record["id"], [])
         outcome = native.get(record["id"])
         reasons = ["native confirmation not run"] if outcome is None else list(outcome["reasons"])
-        solo = [row for row in rows if row["row"] == "solo"]
+        # The newest solo row per rung and orientation: a row sampled again replaces the older one.
+        solo = list({(row["pin"], row["portrait"]): row for row in rows if row["row"] == "solo"}.values())
         missing = needed - {(row["pin"], row["portrait"]) for row in solo}
         if missing:
             reasons.append("stream rows missing: " + ", ".join(f"rung {pin} {'portrait' if tall else 'landscape'}"
                                                                for pin, tall in sorted(missing)))
-        reasons += [f"stream {row['label']}: {row['status']}" for row in solo if row["status"] != "pass"]
+        # Only a failed row fails; a contended or unverified row is missing evidence until that rung is sampled again.
+        reasons += [f"stream {row['label']}: fail" if row["status"] == "fail" else
+                    f"stream row unverified: {row['label']} ({row['status'] or 'no verdict'})" for row in solo if row["status"] != "pass"]
         # A two-viewer row that a foreign GPU process shared measures that process too, so the co-op guard skips it.
         two = [row["two_viewer_fps"] for row in rows if row["row"] == "two_viewer" and row["two_viewer_fps"] is not None
                and row["status"] != "contended"]

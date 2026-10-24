@@ -789,7 +789,7 @@ def check_stream(out, state, group, winner):
     assert {name: gates(unclocked)[name]["result"] for name in ("decoded_over_50ms_percent", "longest_gap_ms")} == {
         "decoded_over_50ms_percent": "unverified", "longest_gap_ms": "unverified"}, failing(unclocked)
     assert unclocked["status"] == "unverified" and unclocked["report_only"]["whole_sample_intervals"]["longest_gap_ms"] >= 600
-    # The sampler's own summary is missing when the host quit before it (its counters drop): the lap still has delay.
+    # The verdict does not need the sampler's own summary (missing when the sampler failed first): the lap still has delay.
     unsummed = rejudge(run, "no-summary", lambda folder: edit_json(folder / "stream/sample.json",
                                                                   lambda data: {k: v for k, v in data.items() if k != "summary"}))
     assert unsummed["status"] == "pass" and unsummed["delay"]["values"]["lap_delay"]["rttMs"]["max"] == 2.0, unsummed["delay"]
