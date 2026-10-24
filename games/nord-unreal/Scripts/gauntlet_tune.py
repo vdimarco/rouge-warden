@@ -212,10 +212,19 @@ def make_candidate(loop, levels, phase, seq, label=None, cvars=None, look_only=F
             "cvars": cvars, "execcmds": execcmds_text(cvars)}
 
 
-def expect_text(candidate):
+def expected_cvars(candidate, fixed=None):
+    """The CVars a run reads back: the candidate's own, then each loop.json fixed CVar it does not set. Every run kind
+    gets them: t.MaxFPS 60 is in every candidate and the phone profile, and r.AntiAliasingMethod 4 is in the
+    RendererSettings of Config/DefaultEngine.ini, which the packaged game applies in native, RunUnreal and stream runs
+    alike (from memory of the engine; unverified until the host reads it back)."""
+    fixed = load_loop()["fixed"] if fixed is None else fixed
+    return {**candidate["cvars"], **{name: value for name, value in fixed.items() if name not in candidate["cvars"]}}
+
+
+def expect_text(candidate, fixed=None):
     """The -NordGauntletExpect= file: one name=value per line, as QuebecGauntlet::ParseExpectedCVars reads it."""
     return (f"# NORD gauntlet expected CVars for candidate {candidate['id']}\n"
-            + "".join(f"{name}={format_value(value)}\n" for name, value in candidate["cvars"].items()))
+            + "".join(f"{name}={format_value(value)}\n" for name, value in expected_cvars(candidate, fixed).items()))
 
 
 def write_candidate_files(directory, candidate):

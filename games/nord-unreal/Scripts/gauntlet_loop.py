@@ -554,7 +554,8 @@ def native_run(loop, mode, size, sky, laps=None, quality="current", label=None, 
     preflight_native(loop, direct)
     run = new_run_dir(label or f"{mode}-{sky_key}-{size_key}", parent)
     (run / "native").mkdir()
-    (run / "quality.expect").write_text(T.expect_text({"id": chosen["name"], "cvars": cvars}))
+    expected = T.expected_cvars({"cvars": cvars}, loop["fixed"])
+    (run / "quality.expect").write_text(T.expect_text({"id": chosen["name"], "cvars": cvars}, loop["fixed"]))
     if "execcmds" in chosen:
         (run / "quality.execcmds").write_text(chosen["execcmds"])
     plan = {"run": run, "mode": mode, "size": size_info["size"], "sky": sky_key, "sky_args": sky_args, "laps": laps, "quality": chosen,
@@ -564,7 +565,7 @@ def native_run(loop, mode, size, sky, laps=None, quality="current", label=None, 
     limit = plan["max_s"] + (0 if direct else UAT_S)
     meta = {"version": 1, "kind": "native", "label": run.name, "mode": mode, "size": size_info["size"], "size_key": size_key,
             "rung": size_info["rung"], "sky": sky_key, "sky_args": sky_args, "laps": laps, "warm_laps": loop["modes"][mode]["warm_laps"],
-            "quality": dict(chosen, expected={name: T.format_value(value) for name, value in cvars.items()}),
+            "quality": dict(chosen, expected={name: T.format_value(value) for name, value in expected.items()}),
             "world_flags": native_flags(loop, mode, run, laps)[5:], "launch": "direct" if direct else "rununreal",
             "command": command, "timeout_s": limit, "ceiling": str(ceiling) if ceiling else None, "commit": git_state(),
             "build": build_state(), "gpu": gpu_identity(), "started_at": iso_now(), "finished_at": None, "exit": None,
