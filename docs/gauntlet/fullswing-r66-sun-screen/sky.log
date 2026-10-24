@@ -1,0 +1,15 @@
+ENV {"renderer":"ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)","ua":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/134.0.0.0 Safari/537.36"}
+PIXELS {"width":640,"height":360,"rows":[{"camera":"needle","verse":"full","shaft":true,"bytes":665856,"different":0,"max":0,"varied":494773},{"camera":"needle","verse":"off","shaft":true,"bytes":665856,"different":0,"max":0,"varied":494855},{"camera":"street","verse":"full","shaft":false,"bytes":665856,"different":0,"max":0,"varied":494522},{"camera":"street","verse":"off","shaft":false,"bytes":665856,"different":0,"max":0,"varied":495009}]}
+PASS: 640 needle/full: identical RGBA output
+PASS: 640 needle/off: identical RGBA output
+PASS: 640 street/full: identical RGBA output
+PASS: 640 street/off: identical RGBA output
+PASS: 640: active and inactive sun paths covered
+PIXELS {"width":390,"height":844,"rows":[{"camera":"needle","verse":"full","shaft":true,"bytes":1316640,"different":0,"max":0,"varied":981769},{"camera":"needle","verse":"off","shaft":true,"bytes":1316640,"different":0,"max":0,"varied":980471},{"camera":"street","verse":"full","shaft":false,"bytes":1316640,"different":0,"max":0,"varied":967224},{"camera":"street","verse":"off","shaft":false,"bytes":1316640,"different":0,"max":0,"varied":977453}]}
+PASS: 390 needle/full: identical RGBA output
+PASS: 390 needle/off: identical RGBA output
+PASS: 390 street/full: identical RGBA output
+PASS: 390 street/off: identical RGBA output
+PASS: 390: active and inactive sun paths covered
+PASS: no page errors
+PASS: sky gather

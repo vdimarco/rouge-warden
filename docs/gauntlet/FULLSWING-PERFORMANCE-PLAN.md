@@ -141,3 +141,6 @@ Increment65 pending — goal placement+HUD output share private record/twoactive
 
 
 Increment65 shipped #697 as765d5da0 after all6CI/review/current7authenticatedbrowserchecks/exactmain+actionhudbytes/rebase before AND afterpreview/exactmerge. Productionboth HTTP200 exactSHA main8224627aa0816c71eba6778e777b5bc39e318e85da3faa9137a921a7e4b8afa7/actionhud0f995bd08ad348c929818e50b1fd7c19948a9e489160cdf2ddebc9a9c7441693 verified. Canonical goal-record scenarios published and OpenSpec archived. ActualChrome/FPSbenefit unverified; totalwithheld.
+
+
+Increment66 pending — private sun-screen result60fresh→1 across90camera frames/60visible30behind/exactprojection;3browser+existingdesktop/phone sky-gather RGBAchecksPASS. Evidence r66-sun-screen/all20limits/noFPSclaim/totalwithheld.

@@ -1,0 +1,6 @@
+{"identities":60,"exact":true,"visible":60,"hidden":30}
+FAIL visible frames reuse one private result
+  {"identities":60,"exact":true,"visible":60,"hidden":30}
+PASS: exact coordinates and behind/resume rejection across camera movement
+PASS: no page errors
+FAIL: sun screen record (1 failed, 2 passed)
