@@ -73,6 +73,13 @@ export function createFX(scene, renderer, opts = {}) {
   mesh.count = 0;
   mesh.visible = false;
   scene.add(mesh);
+  const uploads = [mesh.instanceMatrix, aRect, aTint];
+  function dirty() {
+    for (const a of uploads) {
+      a.clearUpdateRanges();
+      if (n > 0) { a.addUpdateRange(0, n * a.itemSize); a.needsUpdate = true; }
+    }
+  }
 
   /* ---------------- the words ---------------- */
   // A pool of MAX slots. The live ones sit in slots 0 .. n − 1 (a dead one is swapped out by the last).
@@ -179,7 +186,7 @@ export function createFX(scene, renderer, opts = {}) {
       place(i, s);
       mesh.count = n;
       mesh.visible = worldOn;
-      mesh.instanceMatrix.needsUpdate = true; aRect.needsUpdate = true; aTint.needsUpdate = true;
+      dirty();
       return true;
     },
 
@@ -208,7 +215,7 @@ export function createFX(scene, renderer, opts = {}) {
       }
       mesh.count = n;
       if (n === 0) mesh.visible = false;
-      mesh.instanceMatrix.needsUpdate = true; aRect.needsUpdate = true; aTint.needsUpdate = true;
+      dirty();
     },
 
     clear() {
