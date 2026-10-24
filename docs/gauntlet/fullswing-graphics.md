@@ -1346,3 +1346,6 @@ Increment60 shipped #687 as8b4f724a after all6CI/review/currentVersepreview/exac
 
 
 Increment61 pending — sharedfigure root followsworldvisibility;hiddenvisualprep180→0calls/60frames/bufferversionsunchanged. Simulation+crowd60/60 retained;firstresumeactualmovedgoon/currenttime/jobpopulationPASS.5browser+4hiddenstreet+6goonposeequivalencecasesPASS. Evidence r61-hidden-figures/all20limits/noFPSclaim/totalwithheld.
+
+
+Increment61 shipped #689 asb123bc2f after all6CI/review/current9deployedchecks/exactmainbytes/rebase before AND afterpreview/exactmerge. Productionmain HTTP200 exactSHA5850d940312c64eef14db15acf1f1a6a6ed3a64e25ac3950b8fd45d1e6a29e11 verified. Canonical hidden-figure scenarios published and OpenSpec archived. PhysicalAR/actualChrome/FPSbenefit unverified; totalwithheld.
