@@ -1331,3 +1331,6 @@ Increment58 pending: populated web matrix/fade uploads1088→408bytesone6segment
 
 
 Increment58 shipped #683 as b05703d1 after all6CI/review/current63deployedchecks/exactmainbytes/rebase before AND afterpreview/exactmerge. Productionmain HTTP200 exactSHA220d0f069b4d893723e7bda74bec3a0131d7d940b2d21bf9341a02f3716b026c verified. Canonical web-upload and real-anchor-restoration scenarios published; both OpenSpecs archived. Realbuilding-only/above-roof restoration preserves newer goldring/melee/wall/heldrope behavior; legacyfixtures corrected to realanchor contract. NoFPSclaim/actualChromeunverified/totalwithheld.
+
+
+Increment59 pending — sharedcamera.updateMatrixWorld onceper3Dwebdraw vsperrope;actualtwo/fading2→1call.8upload/pixel+11web-line+4buildingchecksPASS. Evidence r59-web-camera/all20limits/noFPSclaim/totalwithheld.
