@@ -22,6 +22,7 @@ The Montréal map SHALL show Plateau streets as a local would know them: dark as
 #### Scenario: Curb parking and traffic still work
 - **WHEN** the replica layer is imported and the host runs the curb, car-collision and traffic checks
 - **THEN** curb tops measure 17–25 cm, runtime parked cars still find curb spaces, the 18 cm curb test passes, and no new collision lies within 300 cm of a traffic lane centreline
+- **AND** no car drives through a tree trunk: no trunk stands within 300 cm of a traffic lane centreline unless it is in a sidewalk or curb-extension pit or at a ruelle's edge, and none stands within 200 cm of one
 
 ### Requirement: Plateau plex fronts
 Buildings that today show plain extruded boxes SHALL show Plateau plex fronts on their street side.
@@ -48,9 +49,15 @@ The streetscape SHALL carry seeded signs of life and wear, as the owner's refere
 - **THEN** at least some of these are visible: asphalt patches or potholes, leaves in the gutter, weeds at wall bases, bins at the curb, a bike locked to a railing, rust streaks under iron stairs
 - **AND** two neighbouring blocks do not repeat the same arrangement
 
+#### Scenario: Late-October leaf litter
+- **WHEN** a player walks a sidewalk, a parterre or the park lawn under the street and park trees
+- **THEN** fallen leaves lie under every crown, in ragged patches of leaf shapes that thin out toward the drip line, denser under the trees that have dropped more of their leaves (honey locusts and ashes more than Norway maples, conifers almost none), and leaves drift against the curbs, more under the crowns, and along the ruelle gutters
+- **AND** the leaves are never a flat one-colour polygon that reads as paint, never hang over a curb, a ramp, a dropped curb or a park path, and never sink under a slab (checked in `test_plateau_replica.py`: every litter vertex lies 0.2 to 0.8 cm over its ground, on world metre UVs of the `Leaf_Litter` set, within 70,000 triangles of the Soul budget)
+
 #### Scenario: Walk a ruelle
 - **WHEN** a player walks a mapped ruelle
 - **THEN** wooden utility poles and sagging wires cross overhead, and laundry hangs from the galleries over the yards, never from a utility pole or across the lane, as the city's clothesline rules require
+- **AND** no line or garment passes through a tree: every rope and every garment keeps out of the inner 0.7 of each crown the game draws, above its crown base, and 1.5 m from every trunk; a yard under a big tree hangs its line elsewhere or none
 - **AND** each pulley line sags between its gallery and a pole at the back fence and rises to the pole, with sheets, towels, shirts and jeans pegged along it whose tops follow the rope's sag and whose hems fold, never flat boards; from the ruelle preview camera a line with washing is in sight within 15 m, above the fences (checked by a ray cast through the game's geometry and tree meshes)
 - **AND** the centre gutter is a strip of aged, stained concrete with joints, slightly sunken and darker than a sidewalk, with leaves along it, never a painted white line or a double line where an older surface shows through
 - **AND** the lane is paved from lot line to lot line: no bare floor lies between the lane and the first fence, yard or wall beside it

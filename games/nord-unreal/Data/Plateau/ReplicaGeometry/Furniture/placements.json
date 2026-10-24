@@ -29,7 +29,7 @@
  "source_sha256": {
   "Data/LaFontaine/osm.xml": "fe4410d45007a627bf6d9b9ddeeae329fa9cdd7492dfb5fa6beff851e7cf8f86",
   "Data/LaFontaine/layout.json": "4238d6ed45d5fb890e0f8dbcb672de0803c6dc7079b0b6a86b386d82ebbb4250",
-  "Scripts/plateau_replica.py": "5bf1c08c376ada92d4fe935e1950c16d9a31b8be1bb04c181102c096fa5a2ba8",
+  "Scripts/plateau_replica.py": "27ac76e7155458590eb3abf4c23958329070ccbba3fa9e257dd887045c6b6116",
   "Scripts/prepare_lafontaine.py": "e7b6e5f068a96ee7306b1fff247fa73158f5cf7c343dc5510ab8cce92ee3c924",
   "Data/Plateau/BaseGeometry/Marking.obj": "2d82cbca59041aa6af5e6f3fffaf6a01b2c3e672eea9732e8a5fecbb7cee35dd",
   "Data/Plateau/ReplicaGeometry/Plex/fronts.json": "c22c35ac4dac8ef8f2fbe9fc7ee2f29dc25bf694b59be2e77edaeb6324e5cabd",
@@ -38,7 +38,9 @@
   "Data/Plateau/ReplicaGeometry/Props/manifest.json": "92d3a4c8811dd7adf5d0ca51701d308e1373361a46a346737104247ecfd417da",
   "Data/Plateau/Inventory/trees_pmr.json": "78ee70b8165af47cdee11a56c9653b69a1543c42cf78ab618145441d756831c1",
   "Data/Plateau/Inventory/trees_vm.json": "103be208d2135cbb989198a8b33cff081584a40792323fab2d2cd65ca2a8fc35",
-  "Data/Plateau/ReplicaGeometry/Textures/textures.json": "17cb2c5d7b7714e7138708cfc44d00537198a30ab0067ce08191e2664f426885"
+  "Data/Plateau/ReplicaGeometry/Textures/textures.json": "17cb2c5d7b7714e7138708cfc44d00537198a30ab0067ce08191e2664f426885",
+  "Data/Plateau/ReplicaGeometry/Trees/manifest.json": "c2abcadfb6d1fa61d8507874d7e3e6cb9ba6e2c71bd943e937123092a68ea8dd",
+  "Data/Plateau/ReplicaGeometry/Plex/yard_trees.json": "c2b001bf09e28051f1b2c31cec565bfda3ed80b0b8947bdf036c8d6e80b8f106"
  },
  "placements": [
   {

@@ -1,7 +1,8 @@
 """Judge a NORD mobile gauntlet run: frame times, legs, hitches, gate verdicts, still SSIM and the review page.
 
 Data/Gauntlet/loop.json holds every limit. The game only reports (Source/Quebec/QuebecGauntletModel.h); this module
-judges. A gate is pass, fail or unverified (no host value), and a run with a foreign GPU process is contended.
+judges. A gate is pass, fail or unverified (no host value), and a run with a foreign GPU process is contended. A
+row that gates nothing (two viewers, relay) is report-only once its report-only values are whole.
 
 The percentile and the CSV frame-row rule are copied from Scripts/profile_package.py (lines 30-34 and 76-79), not
 imported, because importing profile_package.py starts the desktop profile. Data/Gauntlet/fixtures/frametimes.csv
@@ -523,12 +524,13 @@ def delay_section(latency):
     return {"label": DELAY_LABEL, "gated": False, "values": dict(latency or {})}
 
 
-def verdict(gates, foreign=None, report_only=None, delay=None, values=None, notes=None, missing_columns=None):
+def verdict(gates, foreign=None, report_only=None, delay=None, values=None, notes=None, missing_columns=None, complete=None):
     """verdict.json: every gate with value, limit and result. Status is contended when a foreign GPU process ran, else
-    fail when any gate failed, else unverified when any gate has no value (or there are none), else pass."""
+    fail when any gate failed, else unverified when any gate has no value, else pass. Without gates it is report-only
+    when complete is true (a two-viewer or relay row whose report-only values are whole), else unverified."""
     results = [g["result"] for g in gates]
-    status = ("contended" if foreign else "fail" if "fail" in results else
-              "unverified" if "unverified" in results or not gates else "pass")
+    status = ("contended" if foreign else "fail" if "fail" in results else "unverified" if "unverified" in results else
+              "pass" if gates else "report-only" if complete else "unverified")
     out = {"status": status, "gates": gates,
            "counts": {key: results.count(key) for key in ("pass", "fail", "unverified")}}
     if foreign:
@@ -651,6 +653,7 @@ p.note { color: var(--muted); margin: 4px 0 12px; }
 table.gates { border-collapse: collapse; } table.gates td, table.gates th { border-bottom: 1px solid var(--line);
   padding: 3px 10px 3px 0; text-align: left; font-variant-numeric: tabular-nums; }
 .pass { color: var(--pass); } .fail { color: var(--fail); } .unverified, .contended { color: var(--warn); }
+.report-only { color: var(--muted); }
 .row { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; margin: 0 0 16px;
   border-top: 1px solid var(--line); padding-top: 8px; }
 .row h3 { grid-column: 1 / -1; font-size: 14px; margin: 0; }

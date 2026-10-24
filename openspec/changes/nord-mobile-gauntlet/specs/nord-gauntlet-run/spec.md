@@ -85,6 +85,8 @@ A phone-sized client watching NordHost alone over a direct connection SHALL rece
 #### Scenario: Two viewers and relay
 - **WHEN** one sampler watches each slot at the same time, or a sampler forces the TURN relay
 - **THEN** `review.html` and `verdict.json` show these results in a section labelled "report-only", and they do not change the gate result
+- **AND** the row's status is "report-only", and `stream` exits 0, when its values are whole: for two viewers, every slot decoded and NordHost's drive ended with exit 0, so the co-op guard counts it; for the relay, every stream figure has a value
+- **AND** a row that is not whole is "unverified", and a row that a foreign GPU process shared is "contended", so the host samples only those again, which `test_gauntlet_loop.py` checks
 - **AND** one `gauntlet_loop.py stream --two-viewers` command starts one sampler per slot and records the two-viewer row
 - **AND** `stream` offers only `--slot NordHost` and refuses `--slot NordFriend1`, because a NordFriend1 row alone wakes NordFriend1, and refuses a second `stream` command on a run that already has a `stream/` folder, which `test_gauntlet_loop.py` checks
 

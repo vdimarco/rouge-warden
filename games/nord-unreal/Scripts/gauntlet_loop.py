@@ -1044,6 +1044,9 @@ def judge_stream(run, loop, meta):
         report_only.update(native_frames_ms=M.native_report(analysis), native_legs_by_p95=M.legs_ranked(analysis))
     values = {"decoded_fps": (primary["summary"] or {}).get("decodedFps")}
     notes += [note for sample in slots.values() for note in sample["notes"]] + gpu_notes
+    # A two-viewer or relay row gates nothing. It is report-only once the values it reports are whole, so notes-host
+    # step 8 samples it again only when it is contended or unverified, as it does a solo row.
+    complete = None
     if meta["row"] == "two_viewer":
         fps = [sample["summary"]["decodedFps"] for sample in slots.values() if sample["summary"]]
         mean = sum(fps) / len(fps) if len(fps) == len(slots) else None
@@ -1051,6 +1054,9 @@ def judge_stream(run, loop, meta):
         # does not compare with a whole one.
         finished = next(gate for gate in gates if gate["name"] == "game_exit")["result"] == "pass"
         values["two_viewer_fps"] = mean if finished else None
+        # Whole when the co-op guard counts it (round_confirmation): every slot decoded and NordHost's drive ended with
+        # exit 0.
+        complete = values["two_viewer_fps"] is not None
         report_only["two_viewer"] = {"mean_decoded_fps": mean, "gates_of_NordHost": gates,
                                      "per_slot": {name: (sample["summary"] or {}).get("decodedFps") for name, sample in slots.items()}}
         gates = []
@@ -1060,6 +1066,7 @@ def judge_stream(run, loop, meta):
                          "count this row")
     elif meta["row"] == "relay":
         report_only["relay"] = {"gates": gates}
+        complete = all(gate["result"] != "unverified" for gate in gates)
         gates = []
         notes.append("relay row: report-only, so nothing is gated")
     elif meta["row"] == "input":
@@ -1070,7 +1077,7 @@ def judge_stream(run, loop, meta):
                  next(gate for gate in gates if gate["name"] == "game_exit")]
         notes.append("input row: the stream figures are report-only; the lateral error and the exit are gated")
     verdict = M.verdict(gates, foreign=foreign, report_only=report_only, delay=M.delay_section(delay_values(primary)),
-                        values=values, notes=notes)
+                        values=values, notes=notes, complete=complete)
     write_json(run / "verdict.json", verdict)
     rows = [{"view": label, "stream": shot} for label, shot in shots.items()]
     M.write_review(run, rows, loop, title="NORD mobile gauntlet stream: " + run.name, verdict_data=verdict)
@@ -1326,7 +1333,9 @@ def confirm_next(loop, group, candidate_id=None, direct=False, until=None):
     foreign GPU process shared twice, is run again and replaced, unless it holds a failed run. It writes no profile;
     only write-profile with --approved does. Returns the last outcome; when the window cuts the baseline, that is the
     baseline's, and the candidate does not run."""
-    group = Path(group)
+    # The host names the folder from games/nord-unreal/ (notes-host step 9). Resolved, it matches the stream rows'
+    # quality paths, which browser_streaming resolves, and the runs it launches get absolute folders.
+    group = Path(group).resolve()
     tune = read_json(group / "tune.json")
     require(tune is not None, f"{group} has no tune.json")
     native = tune.setdefault("native_confirmation", {"results": [], "confirmed_native": None, "stop_reason": None,
@@ -1364,7 +1373,7 @@ def confirm_next(loop, group, candidate_id=None, direct=False, until=None):
 def stream_evidence(group, tune):
     """Stream runs made after the tune started, by candidate, oldest first (run.json started_at, then the folder): a
     file: quality from the tune's candidates folder names its candidate, and current names the baseline."""
-    evidence = {}
+    evidence, candidates = {}, (Path(group) / "candidates").resolve()
     for path in sorted(OUT.glob("*/run.json")):
         meta = read_json(path)
         if not meta or meta.get("kind") != "stream" or (meta.get("started_at") or "") < (tune.get("started_at") or ""):
@@ -1372,7 +1381,8 @@ def stream_evidence(group, tune):
         quality = meta.get("quality") or {}
         if quality.get("name") == "current":
             candidate_id = "baseline"
-        elif quality.get("name") == "file" and Path(quality.get("path", "")).parent == group / "candidates":
+        # Both resolved: browser_streaming resolves the quality path, and the host may name the group relative.
+        elif quality.get("name") == "file" and Path(quality.get("path", "")).resolve().parent == candidates:
             candidate_id = Path(quality["path"]).stem
         else:
             continue
@@ -1385,6 +1395,17 @@ def stream_evidence(group, tune):
     for rows in evidence.values():
         rows.sort(key=lambda row: (row["started_at"] or "", row["run"]))
     return evidence
+
+
+def waiting_on(tune):
+    """The ranked candidate whose evidence the round waits on, from tune["confirmation"] (round_confirmation): the best
+    ranked one with only missing evidence, where report stops. notes-host step 8 samples its stream rows, and confirm
+    runs its native confirmation when that is missing. A winner that failed its native confirmation is not it. None
+    when a candidate is confirmed, or when a failure dropped every ranked candidate."""
+    confirmation = tune["confirmation"]
+    results = {result["id"]: result for result in confirmation["results"]}
+    return None if confirmation["confirmed"] else next(
+        (ranked for ranked in tune["ranking"] if ranked in results and open_result(results[ranked])), None)
 
 
 def open_result(result):
@@ -1456,11 +1477,13 @@ def round_report(group, loop):
     still_open = any(open_result(result) for result in results if result["id"] in tune["ranking"])
     gates.append(M.gate("confirmed", 1 if confirmed else (None if still_open else 0), 1, op="==", unit="candidate",
                         note=confirmed or "; ".join(f"{r['id']}: {', '.join(r.get('reasons', [])[:3])}" for r in results[:4]) or None))
-    report = {"version": 1, "tune": str(group / "tune.json"), "winner": tune.get("winner"), "confirmed": confirmed, "shown": chosen,
+    report = {"version": 1, "tune": str(group / "tune.json"), "winner": tune.get("winner"), "confirmed": confirmed,
+              "waiting_on": waiting_on(tune), "shown": chosen,
               "stop_reason": tune.get("stop_reason"), "measured": tune.get("measured"), "ranking": tune.get("ranking"),
               "confirmation": tune["confirmation"], "stream_evidence": streams, "made_at": iso_now()}
     verdict = M.verdict(gates, values={"look": record.get("look"), "baseline_look": (tune.get("baseline") or {}).get("look")},
                         notes=[f"tiles show {chosen or 'no candidate'}; the user's verdict on the look is final"])
+    verdict["waiting_on"] = report["waiting_on"]
     write_json(group / "report.json", report)
     write_json(group / "verdict.json", verdict)
     M.write_review(group, rows, loop, title="NORD mobile gauntlet round: " + group.name, verdict_data=verdict)
@@ -1712,8 +1735,11 @@ def main(argv=None):
         if args.command == "tune":
             group, result = tune_run(loop, args.direct, T.parse_until(args.until) if args.until else None, args.reference,
                                      not args.no_confirm)
+            # waiting_on is the candidate whose stream rows step 8 samples: not a winner that failed natively.
+            judged, _ = round_confirmation(group, loop, dict(result))
             print(json.dumps({"folder": str(group), "winner": result["winner"], "stop_reason": result["stop_reason"],
-                              "confirmed_native": (result.get("native_confirmation") or {}).get("confirmed_native")}))
+                              "confirmed_native": (result.get("native_confirmation") or {}).get("confirmed_native"),
+                              "waiting_on": waiting_on(judged)}))
             return 0 if result["winner"] else 1
         if args.command == "confirm":
             outcome = confirm_next(loop, args.folder, args.candidate, args.direct, T.parse_until(args.until) if args.until else None)
@@ -1732,8 +1758,13 @@ def main(argv=None):
             folder = args.folder.resolve()
             verdict = (round_report(folder, loop) if (folder / "tune.json").is_file() else
                        judge_reference(folder, loop) if (folder / "reference.json").is_file() else judge(folder, loop))
-        print(json.dumps({"folder": str(folder), "status": verdict["status"], "counts": verdict["counts"]}))
-        return 0 if verdict["status"] == "pass" else 1
+        out = {"folder": str(folder), "status": verdict["status"], "counts": verdict["counts"]}
+        if "waiting_on" in verdict:
+            # A round's verdict also names the candidate it waits on (notes-host steps 8 and 9).
+            out["waiting_on"] = verdict["waiting_on"]
+        print(json.dumps(out))
+        # A two-viewer or relay row gates nothing: report-only is its whole result, as pass is a gated row's.
+        return 0 if verdict["status"] in ("pass", "report-only") else 1
     except (RuntimeError, OSError, subprocess.SubprocessError, ValueError, KeyError) as error:
         parser.exit(1, f"NORD gauntlet: {error}\n")
 

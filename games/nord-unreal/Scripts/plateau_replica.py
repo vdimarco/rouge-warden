@@ -10,7 +10,7 @@ Writes three layers under Data/Plateau/ReplicaGeometry/ (frame: x east, y north,
 * Furniture - placements.json only: lamps, hydrants, ARRÊT signs, white street-name signs,
               one-way and parking signs, BIXI docks, benches, bins and mail boxes. The meshes
               come from the MAP-PROPS layer (ReplicaGeometry/Props).
-* Soul      - seeded wear and life (asphalt patches, sealed cracks, potholes, leaf drifts, weeds,
+* Soul      - seeded wear and life (asphalt patches, sealed cracks, potholes, fallen leaf litter, weeds,
               rust streaks, original colour-block murals, ruelle wires) and the lane life read from the
               Plex yard records: pulley clotheslines from the gallery rails to yard poles, bins, flower
               boxes and bikes at the gates, the ruelles vertes (city open data: beds, plants, creeper,
@@ -50,7 +50,10 @@ SOURCES = ('Data/LaFontaine/osm.xml', 'Data/LaFontaine/layout.json', GENERATOR,
            # the street and park trees: the city's public tree inventory, clipped by --clip-trees
            'Data/Plateau/Inventory/trees_pmr.json', 'Data/Plateau/Inventory/trees_vm.json',
            # the laundry atlas's cells (UV rect, size, pegs) the garments address (Scripts/plateau_textures.py)
-           'Data/Plateau/ReplicaGeometry/Textures/textures.json')
+           'Data/Plateau/ReplicaGeometry/Textures/textures.json',
+           # the crowns the washing keeps out of and the leaf litter lies under: the tree meshes' crowns and leaf
+           # retention, and the Plex yard trees
+           'Data/Plateau/ReplicaGeometry/Trees/manifest.json', 'Data/Plateau/ReplicaGeometry/Plex/yard_trees.json')
 LEGACY_MARKING = ROOT / 'Data/Plateau/BaseGeometry/Marking.obj'
 # The existing Panet/Visitation walking route already has detailed streets (plateau_streets.py).
 ROUTE = [(37400, -3280), (38405, -3924), (42703, -6819), (41685, -11320), (40636, -15933), (35500, -14300)]
@@ -142,9 +145,9 @@ SOUL_MATERIALS = {
     # asphalt round them, so only their colour shows. The pothole's broken base is as dull (it was .3, a wet glare).
     'crack_seal': ('Soul_crack_seal', '#0f1011', .88, 0., 'none', None),
     'pothole': ('Soul_pothole', '#1f1d1b', .88, 0., 'none', None),
-    'leaf_gold': ('Soul_leaf_gold', '#c9932c', .9, 0., 'none', None),
-    'leaf_rust': ('Soul_leaf_rust', '#9a4422', .9, 0., 'none', None),
-    'leaf_brown': ('Soul_leaf_brown', '#6b4a2b', .9, 0., 'none', None),
+    # Fallen leaves: the Leaf_Litter set (plateau_textures.leaf_litter), masked and two-sided on world metre UVs. The
+    # set owns its colours (the material's tint is white); this colour is the set's mean, the flat fallback.
+    'Leaf_Litter': ('Soul_Leaf_Litter', '#96733d', .7, 0., 'none', None),
     'weed': ('Soul_weed', '#4f6b2f', .95, 0., 'none', None),
     'rust': ('Soul_rust', '#7a3e1d', .9, 0., 'none', None),
     'wire': ('Soul_wire', '#121212', .5, .3, 'none', None),
@@ -2670,6 +2673,7 @@ def _ruelles(world, L, surfaces, counts):
     pieces of 20 m or less, with a concrete centre gutter, wedges on the outside of the bends and, at the fence
     foot, a thin weedy edge of crushed stone or grass (mostly grass on the ruelles vertes)."""
     world.alleys = []
+    world.alley_pieces = []       # (paving polygon, its segment): the Soul's gutter leaves lie only under their own
     box = world.box
     world.plex = PlexYards.load(world)
     stops = PaveStops(world, world.plex, lots=True)
@@ -2703,6 +2707,7 @@ def _ruelles(world, L, surfaces, counts):
                           [add(add(pa, u, ts[i]), n, GUTTER_HALF), add(add(pa, u, ts[j]), n, GUTTER_HALF), poly[2], poly[3]])
                 if all(L.flat('alley', half, Z_ALLEY) for half in halves):
                     surfaces.add(poly, Z_ALLEY, 'alley')
+                    world.alley_pieces.append((poly, (pa, pb)))
                     counts['ruelle_pieces'] += 1
                     counts['ruelle_square_metres'] += abs(area(poly)) / 10000
             pieces = max(1, math.ceil(length / PAVE_PIECE))
@@ -2731,6 +2736,7 @@ def _ruelles(world, L, surfaces, counts):
                                     for s in range(steps + 1)]
                     if L.flat('alley', wedge, Z_ALLEY - .05):
                         surfaces.add(wedge, Z_ALLEY, 'alley')
+                        world.alley_pieces.append((wedge, None))
                         counts['ruelle_joint_wedges'] += 1
         # free ends keep the old round cap of the lane strip, as a half disc past the end so the gutter shows
         for k, (pa, pb) in enumerate(segs):
@@ -4103,7 +4109,8 @@ def build_furniture(world):
 def build_soul(world):
     S = Layer('Soul', SOUL_MATERIALS)
     rows, counts = [], {k: 0 for k in ('asphalt_patches', 'trench_patches', 'crack_lines', 'potholes', 'gutter_leaf_drifts',
-                                        'pit_leaf_covers', 'loose_leaves', 'weed_tufts', 'rust_streaks', 'murals',
+                                        'litter_patches', 'litter_trees_without_ground', 'litter_triangles',
+                                        'weed_tufts', 'rust_streaks', 'murals',
                                         'chantier_zones', 'utility_poles', 'wire_spans', 'laundry_lines',
                                         'curb_bins', 'locked_bikes', 'flower_boxes', 'ac_units')}
 
@@ -4112,6 +4119,11 @@ def build_soul(world):
         row = placement(world, prop, p, yaw, clear, parts, extra, z)
         rows.append(row)
         return row
+    # The crowns the game draws (the Plex yard trees, the street and park trees): the washing keeps out of them and
+    # the leaf litter lies under them.
+    world.crowns = crowns = tree_crowns(world)
+    ground = LitterGround(world)
+    curb_litter = 0.
 
     # Asphalt patches, trench repairs, sealed cracks and potholes per street segment.
     for s in world.segs:
@@ -4163,48 +4175,33 @@ def build_soul(world):
             S.flat('patch_light', [(c[0] + (p[0] - c[0]) * 1.35, c[1] + (p[1] - c[1]) * 1.35) for p in ring], Z_PATCH + .02)
             S.flat('pothole', ring, Z_CRACK + .01)
             counts['potholes'] += 1
-        # Autumn leaf drifts along the curbs (gutter band).
+        # Leaves drifted against the curbs (the gutter band), more often and wider under the crowns.
         for side, sign in (('L', 1), ('R', -1)):
             if s['w' + side] <= 0:
                 continue
             x = a0 + rng.uniform(0, 600)
             while x < a1 - 150:
                 run = rng.uniform(150, 650)
-                if rng.chance(.55):
-                    key = rng.choice(('leaf_gold', 'leaf_rust', 'leaf_brown', 'leaf_gold'))
-                    steps = max(2, int(run / 50))
-                    inner, outer = [], []
-                    for k in range(steps + 1):
-                        xx = x + run * k / steps
-                        width = math.sin(math.pi * k / steps) * rng.uniform(18, 46) + 4
-                        inner.append(seg_point(s, xx, sign * (s['curb' + side] - 2)))
-                        outer.append(seg_point(s, xx, sign * (s['curb' + side] - 2 - width)))
-                    for p0, p1, q1, q0 in zip(inner, inner[1:], outer[1:], outer[:-1]):
-                        S.flat(key, [p0, p1, q1, q0], Z_PAINT2 + .03)
-                    counts['gutter_leaf_drifts'] += 1
-                x += run + rng.uniform(200, 900)
+                fall = leaves_over(crowns, seg_point(s, x + run / 2, sign * s['curb' + side]))
+                if rng.chance(CURB_DRIFT[0] + CURB_DRIFT[1] * fall):
+                    drawn, tris = _curb_drift(world, S, s, side, sign, x, run, rng.uniform(18, 46) * (1. + fall), rng)
+                    curb_litter += drawn / 1e4
+                    counts['litter_triangles'] += tris
+                    counts['gutter_leaf_drifts'] += tris > 0
+                x += run + rng.uniform(200, 900) * (1. - .5 * fall)
 
-    # Leaves drifted along the ruelles' sunken centre gutters.
-    _gutter_drifts(world, S, counts)
+    # Leaves drifted along the ruelles' sunken centre gutters, and fallen under every street and park crown.
+    ruelle_litter = _gutter_drifts(world, S, counts, crowns)
+    litter_kinds = tree_litter(world, S, crowns, ground, counts)
+    world.leaf_litter = {
+        'key': 'Leaf_Litter', 'uv': 'world metres (u = x / 100, v = y / 100)',
+        'lift_cm': {'park_lawn': LITTER_LIFT, 'streets': LITTER_WALK, 'ruelle_gutter': LITTER_LIFT},
+        'road_z_cm': Z_LITTER_ROAD, 'cover': f'min({LITTER_COVER}, {LITTER_GAIN} x (1 - leaf_retention)) of the crown',
+        'kinds': litter_kinds, 'curb_drifts_m2': round(curb_litter, 1), 'ruelle_drifts_m2': round(ruelle_litter, 1)}
 
-    # Leaves in and around tree pits; weeds at curb joints.
+    # Weeds at curb joints.
     for strip in world.sidewalk_strips:
         s = strip['seg']
-        for along, c, yaw in strip.get('pits', []):
-            rng = Rng('pit-leaves', s['i'], round(along))
-            if rng.chance(.7):
-                key = rng.choice(('leaf_gold', 'leaf_rust', 'leaf_brown'))
-                pts = [(c[0] + rng.uniform(30, 50) * math.cos(i * math.tau / 8 + .3),
-                        c[1] + rng.uniform(30, 47) * math.sin(i * math.tau / 8 + .3)) for i in range(8)]
-                S.flat(key, pts, Z_WALK + .3)
-                counts['pit_leaf_covers'] += 1
-            for _ in range(rng.randint(4, 14)):
-                p = (c[0] + rng.uniform(-150, 150), c[1] + rng.uniform(-150, 150))
-                ground = world.surfaces.at(p)
-                if ground[1] not in ('sidewalk', 'yard'):
-                    continue
-                _leaf(S, p, rng, ground[0] + .35)
-                counts['loose_leaves'] += 1
         (ca, cb), length = strip['curb'], strip['len']
         rng = Rng('curb-weeds', s['i'], strip['side'])
         cuts = strip.get('bump_cuts', [])
@@ -4215,14 +4212,6 @@ def build_soul(world):
                 _tuft(S, (p[0], p[1], Z_ROAD), rng, .7)
                 counts['weed_tufts'] += 1
             x += rng.uniform(300, 1500)
-    # Leaves on and round the pits of the curb extensions (at the pit's own height, raised or flush).
-    for node, c, yaw, z in getattr(world, 'extension_pits', []):
-        rng = Rng('extension-leaves', node)
-        if rng.chance(.7):
-            key = rng.choice(('leaf_gold', 'leaf_rust', 'leaf_brown'))
-            S.flat(key, [(c[0] + rng.uniform(30, 50) * math.cos(i * math.tau / 8 + .3),
-                          c[1] + rng.uniform(30, 47) * math.sin(i * math.tau / 8 + .3)) for i in range(8)], z + .3)
-            counts['pit_leaf_covers'] += 1
     # Weeds at the ruelle fence feet, along the weedy edge.
     for edge in getattr(world, 'alley_edges', []):
         u, _ = unit(edge['a'], edge['b'])
@@ -4416,10 +4405,291 @@ def lock_bikes_to_signs(world, furniture_rows, soul_rows, counts):
         counts['locked_bikes'] += 1
 
 
-def _gutter_drifts(world, S, counts):
-    """Autumn leaves drifted into the ruelles' centre gutters, as the curb drifts: runs of 1 to 4.5 m along under
-    half of each segment, up to 32 cm across, lying in the gutter's V 4 mm over it."""
+# -- leaf litter ----------------------------------------------------------------------------------
+# Late October: the leaves are coming down. The litter is the Leaf_Litter set (plateau_textures.leaf_litter: the tree
+# atlas's own leaf shapes stamped in drifts, masked and two-sided), laid as ragged patches: one under every street and
+# park crown, drifts along the curbs and drifts in the ruelles' centre gutters. A patch is a fan round its centre. Its
+# outline wanders (two waves and a seeded jitter), and each ray is cut back to the flat ground the patch starts on, so
+# no patch hangs over a curb, a ramp or a path. Every patch carries world metre UVs (u = x, v = y, the set's 2 m tile),
+# so two patches that overlap show the same leaves and no seam: the idea of Unreal's WorldAlignedTexture function (Epic,
+# "Texturing Material Functions"), baked into the UVs. The share of a crown's ground the leaves cover follows
+# how much of the crown has fallen: the kind's 1 - leaf_retention (Trees/manifest.json) times LITTER_GAIN, at most
+# LITTER_COVER. The curb drifts thicken where crowns stand over the curb. The technique: Adam Sharp, "Making a Fallen
+# Leaves Material in Substance 3D Designer" (80.lv, 2022), a splatter of leaf shapes, here on the tree atlas's leaves.
+LITTER_LIFT = .4                # cm over the ground under it (over the 3 mm a coplanar layer needs); over the Streets
+LITTER_WALK = .75               # sidewalks and lawns, over their dressing too (joints at 1.2 mm, pit soil at 1.5 mm,
+                                # the lawn edges at 1.4 mm and the corner lots' lawns 3 mm up, their edges at 4.4 mm)
+Z_LITTER_ROAD = Z_PAINT2 + .3   # a curb drift lies over the asphalt, its paint and the Soul patches
+LITTER_GAIN = 1.6               # cover of a crown's ground per share of its leaves down...
+LITTER_COVER = .9               # ... up to this
+LITTER_EDGE = 110.              # cm of outline per vertex round a patch,
+LITTER_RING = (8, 12)           # within these counts
+LITTER_STRAYS = (2, .25, 5)     # a street tree's leaves: this many strays share this part, each a ring of this many
+                                # points, out toward the drip line round the main patch, on whatever ground is there
+LITTER_COVERED = .6             # a main patch whose centre lies this far into a patch as big already drawn on the
+                                # same ground is left out (a grove's patches overlap into one carpet anyway)
+LITTER_WOBBLE = (.2, .12, .14)  # the outline's two waves and its jitter, as shares of the radius
+LITTER_PROBES = (.3, .55, .8, 1.)   # each ray is tried at these shares of its length, out from the centre,
+LITTER_PROBE = 90.              # then each triangle of the fan on points this far apart (cm)
+CURB_DRIFT = (.4, 1.)           # a curb stretch's chance of a drift: this, plus this times the leaves overhead
+RUELLE_DRIFT = (.4, 1.2)        # a ruelle gutter stretch's chance of a drift: this, plus this times the leaves overhead
+BASE_GROUND = ROOT / 'Data/Plateau/BaseGeometry'
+
+
+class LitterGround:
+    """The flat ground fallen leaves can lie on, at a point: a level Streets sidewalk, lawn or dropped curb (never a
+    ramp or the roadway), or the park's lawn (BaseGeometry/Grass.obj) where no path, pond, court or old road lies over
+    it and no building stands. at(p) gives the height the leaves lie at there (LITTER_WALK over a Streets surface,
+    LITTER_LIFT over the lawn), or None."""
+
+    def __init__(self, world, base=None):
+        self.world, self.memo = world, {}
+        self.fine = Grid(250.)                  # the Streets surfaces again, on a finer grid for point lookups
+        for i, (poly, _, _) in enumerate(getattr(getattr(world, 'surfaces', None), 'items', ())):
+            self.fine.add(i, bbox(poly))
+        base = Path(base or BASE_GROUND)
+        self.lawn, self.covers = self._polys(base, ('Grass.obj',)), self._polys(base, ('Path.obj', 'Water.obj',
+                                                                                         'Court.obj', 'Road.obj'))
+
+    @staticmethod
+    def _polys(base, names):
+        polys, grid = [], Grid(1000.)
+        for name in names:
+            path = base / name
+            if not path.is_file():
+                continue
+            vs = []
+            for line in path.read_text().splitlines():
+                if line.startswith('v '):
+                    _, x, y, z = line.split()
+                    vs.append((float(x), -float(y), float(z)))     # the OBJ stores -y
+                elif line.startswith('f '):
+                    face = [vs[int(t.split('/')[0]) - 1] for t in line.split()[1:]]
+                    grid.add(len(polys), bbox(face))
+                    polys.append(([q[:2] for q in face], max(q[2] for q in face)))
+        return polys, grid
+
+    @staticmethod
+    def _cell(grid, p):
+        """The items of the grid cell holding p (a point lies in one cell, so no item repeats)."""
+        return grid.cells.get((math.floor(p[0] / grid.cell), math.floor(p[1] / grid.cell)), ())
+
+    @staticmethod
+    def _top(index, p):
+        polys, grid = index
+        best = None
+        for i in LitterGround._cell(grid, p):
+            poly, z = polys[i]
+            if (best is None or z > best) and point_in(p, poly):
+                best = z
+        return best
+
+    def at(self, p):
+        return self.lookup(p)[0]
+
+    def on_streets(self, p):
+        """Whether the ground at p is a Streets sidewalk, lawn or dropped curb (not the park's lawn)."""
+        return self.lookup(p)[1]
+
+    def lookup(self, p):
+        key = (round(p[0], 1), round(p[1], 1))
+        if key not in self.memo:
+            self.memo[key] = self._at(p)
+        return self.memo[key]
+
+    def _at(self, p):
+        surfaces = self.world.surfaces
+        z, kind, low = 0., 'ground', 0.          # Surfaces.at and Surfaces.floor in one pass over p's cell
+        for i in self._cell(self.fine, p):
+            poly, zi, ki = surfaces.items[i]
+            if point_in(p, poly):
+                if zi >= z:
+                    z, kind = zi, ki
+                low = max(low, surfaces.lows[i])
+        if kind in ('sidewalk', 'yard', 'apron'):
+            return (z + LITTER_WALK if abs(low - z) < .05 else None), True
+        if kind != 'ground' or self.world.in_building(p) or self._top(self.covers, p) is not None:
+            return None, False
+        lawn = self._top(self.lawn, p)
+        return (None if lawn is None else lawn + LITTER_LIFT), False
+
+
+def _litter_face(S, pts, z=None):
+    """One Leaf_Litter fan, pts[0] its centre (or a point every other point sees), wound up, on world metre UVs."""
+    pts = [(p[0], p[1], z if z is not None else p[2]) for p in pts]
+    if area([p[:2] for p in pts]) < 0:
+        pts = [pts[0]] + pts[1:][::-1]
+    S.uvface('Leaf_Litter', pts, [(p[0] / 100., p[1] / 100.) for p in pts])
+    return len(pts) - 2
+
+
+def litter_patch(ground, c, radius, rng, z0=None, ring_size=None):
+    """A ragged patch of fallen leaves round c on the flat ground there: the outline, a ring of points round c whose
+    radius wanders, each cut back along its ray to the last probe on the same ground as c, then pulled in where a
+    triangle of the fan would leave that ground (closed up round c where pulling in does not help). Returns (centre,
+    ring, the leaves' height), or None where c has no such ground or stands at its very edge."""
+    z0 = ground.at(c) if z0 is None else z0
+    if z0 is None:
+        return None
+    same = lambda p: (lambda z: z is not None and abs(z - z0) < .05)(ground.at(p))   # noqa: E731
+    n = ring_size or max(LITTER_RING[0], min(LITTER_RING[1], round(math.tau * radius / LITTER_EDGE)))
+    a1, a2, jitter = LITTER_WOBBLE
+    p1, p2, turn = rng.uniform(0., math.tau), rng.uniform(0., math.tau), rng.uniform(0., math.tau)
+    ring = []
+    for i in range(n):
+        th = turn + math.tau * (i + rng.uniform(-.25, .25)) / n
+        r = radius * (1. + a1 * math.sin(2. * th + p1) + a2 * math.sin(3. * th + p2) + rng.uniform(-jitter, jitter))
+        d = (math.cos(th), math.sin(th))
+        keep = 0.
+        for f in LITTER_PROBES:
+            if not same(add(c, d, r * f)):
+                break
+            keep = f
+        ring.append([d, r * keep])
+
+    def wedge_ok(i):
+        """The fan's triangle between ring points i and i + 1 lies on the same ground: tried on a grid of points no
+        more than LITTER_PROBE apart over it (a driveway's dropped curb or a ramp is wider), its centroid and its
+        corners."""
+        a, b = (add(c, ring[k % n][0], max(ring[k % n][1], 4.)) for k in (i, i + 1))
+        across = max(1, math.ceil(math.dist(a, b) / LITTER_PROBE))
+        out = max(1, math.ceil(max(math.dist(c, a), math.dist(c, b)) / LITTER_PROBE))
+        points = [lerp(c, lerp(a, b, j / across), k / out) for j in range(across + 1) for k in range(1, out + 1)]
+        return all(same(q) for q in points + [((c[0] + a[0] + b[0]) / 3, (c[1] + a[1] + b[1]) / 3)])
+    good = set()
+    for _ in range(4):              # a triangle that leaves the ground pulls both its outer points in
+        bad = [i for i in range(n) if i not in good and not wedge_ok(i)]
+        good.update(i for i in range(n) if i not in bad)
+        for i in bad:
+            ring[i][1] *= .6
+            ring[(i + 1) % n][1] *= .6
+            good.difference_update(((i - 1) % n, (i + 1) % n))
+        if not bad:
+            break
+    for i in range(n):              # what still leaves it closes up round the centre
+        if not wedge_ok(i):
+            ring[i][1] = ring[(i + 1) % n][1] = 0.
+    if sum(1 for _, r in ring if r >= 20.) < 3 or not all(wedge_ok(i) for i in range(n)):
+        return None                 # a centre at the very edge of its ground
+    return c, [add(c, d, max(r, 4.)) for d, r in ring], z0
+
+
+def tree_litter(world, S, crowns, ground, counts):
+    """Fallen leaves under every street and park crown (the Plex yard trees stand on the Plex yards, which keep their
+    own ground): a patch whose area is the crown's ground (radius R) times the share of the leaves down, round the
+    trunk, or round a seeded spot under the crown when the trunk stands on no flat ground (a pond edge, a path).
+    Under a tree on a street's sidewalk or lawn, seen from close by, LITTER_STRAYS of the leaves lie apart in small
+    strays out toward the drip line, on whatever flat ground is there (the park lawn beside a sidewalk, a parterre),
+    so the litter thins out rather than ending at one edge. In a grove, a main patch that would lie inside one already
+    drawn is left out. Returns the per-kind record: trees, fallen share, cover, patches, trees covered by a
+    neighbour's patch, trees with no flat ground, crown, target and drawn area."""
+    kinds, drawn, grid = {}, [], Grid(1500.)
+
+    def covered(c, r, z0):
+        return any(dz == z0 and dr >= .8 * r and math.dist(c, dc) <= LITTER_COVERED * dr
+                   for dc, dr, dz in (drawn[i] for i in grid.query((c[0], c[1], c[0], c[1]))))
+    for x, y, z, radius, base, top, fallen, kind, source in crowns.items:
+        if source == 'yard':
+            continue
+        rec = kinds.setdefault(kind, {'trees': 0, 'fallen': round(fallen, 3), 'cover': 0., 'patches': 0,
+                                      'trees_covered': 0, 'trees_without_ground': 0, 'crown_m2': 0., 'target_m2': 0.,
+                                      'drawn_m2': 0.})
+        cover = min(LITTER_COVER, LITTER_GAIN * fallen)
+        rec['trees'] += 1
+        rec['cover'] = round(cover, 3)
+        rec['crown_m2'] += math.pi * radius ** 2 / 1e4
+        target = cover * math.pi * radius ** 2
+        rec['target_m2'] += target / 1e4
+        if target < 100.:
+            continue
+        rng = Rng('litter', source)          # a street tree's source is its street_trees.json id
+        spots = [(x, y)] + [add((x, y), (math.cos(a), math.sin(a)), radius * .4)
+                            for a in (rng.uniform(0., math.tau) + k * math.tau / 5 for k in range(5))]
+        count, share, size = LITTER_STRAYS
+        patch, skip = None, False
+        for c in spots:
+            z0 = ground.at(c)
+            if z0 is None:
+                continue
+            if not ground.on_streets(c):
+                count, share = 0, 0.            # in the park: one patch, the grove's carpet
+            main = math.sqrt(target * (1. - share) / math.pi)
+            skip = covered(c, main, z0)
+            patch = None if skip else litter_patch(ground, c, main, rng, z0)
+            if patch or skip:
+                break
+        if patch is None and not skip:
+            rec['trees_without_ground'] += 1
+            counts['litter_trees_without_ground'] += 1
+            continue
+        rec['trees_covered'] += skip
+        patches = [patch] if patch else []
+        for _ in range(count):
+            a = rng.uniform(0., math.tau)
+            spot = add((x, y), (math.cos(a), math.sin(a)), rng.uniform(.5, .9) * max(radius, 1.4 * main))
+            stray = litter_patch(ground, spot, math.sqrt(target * share / count / math.pi) * rng.uniform(.8, 1.2),
+                                 rng, None, size)
+            patches += [stray] if stray else []
+        for c, ring, z0 in patches:
+            grid.add(len(drawn), bbox([c], max(math.dist(c, q) for q in ring)))
+            drawn.append((c, sum(math.dist(c, q) for q in ring) / len(ring), z0))
+            counts['litter_triangles'] += _litter_face(S, [c] + ring + [ring[0]], z0)
+            rec['drawn_m2'] += area(ring) / 1e4
+            rec['patches'] += 1
+            counts['litter_patches'] += 1
+    for rec in kinds.values():
+        for key in ('crown_m2', 'target_m2', 'drawn_m2'):
+            rec[key] = round(rec[key], 1)
+    return dict(sorted(kinds.items()))
+
+
+def leaves_over(crowns, p):
+    """How much leaf fall reaches p: the fallen shares of the crowns over it, each weighted by how near p stands to
+    its trunk (1 at the trunk, 0 at the drip line), at most 1."""
+    total = 0.
+    for x, y, z, radius, base, top, fallen, _, _ in crowns.near(p):
+        d = math.dist(p[:2], (x, y))
+        if d < radius:
+            total += fallen * (1. - d / radius)
+    return min(1., total)
+
+
+def _curb_drift(world, S, s, side, sign, x, run, width, rng):
+    """Leaves drifted against a curb: a fan from the middle of its foot, the curb side straight 1 cm off the curb face,
+    the street side a ragged bulge up to `width` cm out, at Z_LITTER_ROAD. Only on the replica asphalt (not where a
+    curb extension, a dropped curb or the end of the drawn street takes its place). Returns its area (cm2) and
+    triangles, both 0 when it is not drawn."""
+    curb = s['curb' + side] - 1.
+    k = max(3, int(run / 70.))
+    out = []
+    for i in range(k, -1, -1):
+        f = i / k
+        w = 3. + width * math.sin(math.pi * f) ** .6 * (rng.uniform(.7, 1.2) if 0 < i < k else .2)
+        out.append(seg_point(s, x + run * f + (rng.uniform(-10., 10.) if 0 < i < k else 0.), sign * (curb - w)))
+    pts = [seg_point(s, x + run / 2, sign * curb), seg_point(s, x + run, sign * curb)] + out + \
+        [seg_point(s, x, sign * curb)]
+    if not all(world.surfaces.at(q) == (Z_ROAD, 'road') for q in pts + [lerp(a, b, .5) for a, b in zip(pts, pts[1:])]) \
+            or not all(world.surfaces.at(seg_point(s, x + run * f, sign * (curb + 10.)))[1] in ('sidewalk', 'apron')
+                       for f in (0., .25, .5, .75, 1.)):
+        return 0., 0                # off the asphalt, or with no curb to drift against
+    tris = _litter_face(S, pts, Z_LITTER_ROAD)
+    return abs(area(pts)), tris
+
+
+def _gutter_drifts(world, S, counts, crowns):
+    """Fallen leaves drifted into the ruelles' centre gutters: runs of 1 to 4.5 m along a third of each stretch, more
+    under the yard trees' crowns, up to 32 cm across with a ragged edge, lying in the gutter's V LITTER_LIFT over it, only where the ruelle's own
+    paving lies on top (not at a mouth under a street's asphalt or a sidewalk, under a building, or where another
+    ruelle's paving, or the next stretch's at a bend, crosses it)."""
     counts.setdefault('ruelle_gutter_leaf_drifts', 0)
+    drawn = 0.
+    pieces, grid = getattr(world, 'alley_pieces', []), Grid(2000.)
+    for i, (poly, _) in enumerate(pieces):
+        grid.add(i, bbox(poly))
+
+    def own(p, seg):
+        return world.surfaces.at(p)[1] == 'alley' and all(
+            pieces[i][1] == seg for i in grid.query((p[0], p[1], p[0], p[1])) if point_in(p, pieces[i][0]))
     for alley in getattr(world, 'alleys', []):
         for pa, pb in alley['segments']:
             u, length = unit(pa, pb)
@@ -4428,30 +4698,28 @@ def _gutter_drifts(world, S, counts):
             x = rng.uniform(0., 500.)
             while x < length - 120.:
                 run = min(rng.uniform(100., 450.), length - 20. - x)
-                if run > 60. and rng.chance(.45):
-                    key = rng.choice(('leaf_gold', 'leaf_rust', 'leaf_brown', 'leaf_brown'))
-                    steps = max(2, int(run / 75.))
-                    widths = [math.sin(math.pi * k / steps) * rng.uniform(7., GUTTER_HALF - 2.) + 2. for k in range(steps + 1)]
+                fall = leaves_over(crowns, add(pa, u, x + run / 2))
+                if run > 60. and rng.chance(RUELLE_DRIFT[0] + RUELLE_DRIFT[1] * fall):
+                    steps = max(2, int(run / 60.))
+                    peak = rng.uniform(7., GUTTER_HALF - 2.)
+                    sides = [[max(2., math.sin(math.pi * k / steps) * peak * rng.uniform(.6, 1.15) + 2.)
+                              for k in range(steps + 1)] for _ in (0, 1)]
+                    sides[0][0] = sides[0][-1] = sides[1][0] = sides[1][-1] = 2.
 
                     def at(t, lat):
                         p = add(add(pa, u, t), n, lat)
-                        return (p[0], p[1], gutter_z(lat) + .4)
-                    for k in range(steps):
+                        return (p[0], p[1], gutter_z(lat) + LITTER_LIFT)
+                    paved = all(own(add(add(pa, u, x + run * k / (2 * steps)), n, lat), (pa, pb))
+                                for k in range(2 * steps + 1) for lat in (-GUTTER_HALF, 0., GUTTER_HALF))
+                    for k in range(steps if paved else 0):
                         t0, t1 = x + run * k / steps, x + run * (k + 1) / steps
-                        w0, w1 = widths[k], widths[k + 1]
-                        S.face(key, [at(t0, 0.), at(t1, 0.), at(t1, w1), at(t0, w0)])
-                        S.face(key, [at(t0, -w0), at(t1, -w1), at(t1, 0.), at(t0, 0.)])
-                    counts['ruelle_gutter_leaf_drifts'] += 1
+                        for sgn, w in ((1., sides[0]), (-1., sides[1])):
+                            quad = [at(t0, 0.), at(t1, 0.), at(t1, sgn * w[k + 1]), at(t0, sgn * w[k])]
+                            counts['litter_triangles'] += _litter_face(S, quad)
+                            drawn += abs(area([q[:2] for q in quad]))
+                    counts['ruelle_gutter_leaf_drifts'] += paved
                 x += run + rng.uniform(150., 700.)
-
-
-def _leaf(S, p, rng, z):
-    key = rng.choice(('leaf_gold', 'leaf_rust', 'leaf_brown'))
-    a = rng.uniform(0, math.tau)
-    l, w = rng.uniform(5, 9), rng.uniform(3, 6)
-    c, s = math.cos(a), math.sin(a)
-    S.flat(key, [(p[0] + c * l, p[1] + s * l), (p[0] - s * w, p[1] + c * w),
-                 (p[0] - c * l, p[1] - s * l), (p[0] + s * w, p[1] - c * w)], z + rng.uniform(0, .05))
+    return drawn / 1e4
 
 
 def _tuft(S, base, rng, scale):
@@ -4704,6 +4972,7 @@ HEM_FREE = 2.                   # and this far under its hem
 HEM_GROUND = 45.                # a hem stays this high over the yard...
 HEM_FENCE = (100., 10.)         # ... and, within 1 m of the back fence, 10 cm over the fence top
 GARMENT_GAP = (8., 35.)         # bare rope between two garments
+LINE_SAG = (.018, .03)          # the lower strand's mid-span sag, a share of the span
 LINE_LOADED = .65               # lines with washing on them (late October: a third hang empty)
 TAG_COLOURS = ('tag_black', 'tag_black', 'tag_silver', 'tag_red', 'tag_blue', 'tag_white')
 
@@ -4899,12 +5168,137 @@ def _yard_z(lot, x, d):
     return 0.
 
 
+# -- tree crowns ----------------------------------------------------------------------------------
+# The crowns the game draws, for the washing and the leaf litter. The apply step stands each Plex yard tree on its
+# species mesh scaled to the row's height, and each street and park tree on its kind's mature or young mesh with the
+# height and spread of street_tree_scale. The same scaling is mirrored here, so the Soul build needs no apply step;
+# test_plateau_replica checks that the two agree on every row. A crown is a cylinder round the trunk: its radius is
+# half the mesh's crown width, from its crown base up to the tree's top (Trees/manifest.json, at the instance's scale).
+TREES_MANIFEST = OUT / 'Trees/manifest.json'
+YARD_TREES = OUT / 'Plex/yard_trees.json'
+YARD_TREE_MESH_CM = 455.        # apply_plateau_replica.TREE_MESH_HEIGHT_CM: a yard row's scale is on this height
+YARD_TREE_ALIASES = {'maple': 'norway_maple'}   # apply_plateau_replica.TREE_ALIASES (Plex's old yard kind)
+TREE_SCALE, YOUNG_SCALE = (.55, 1.65), (.6, 1.6)      # apply_plateau_replica: the mature and young height scales,
+YOUNG_BELOW, CROWN_SPREAD = .55, (.8, 1.25)           # the young-mesh threshold and the crown spread limits
+CROWN_KEEP = .7                 # washing keeps out of this share of a crown's radius, from its crown base up,
+TRUNK_KEEP = 150.               # and this far from every trunk (the local review: lines strung through the crowns)
+
+
+def tree_kinds(path=None):
+    """The Trees manifest's kinds (Scripts/blender/plateau_trees.py): crown width and base, height, trunk and leaf
+    retention per kind and its young mesh."""
+    path = Path(path or TREES_MANIFEST)
+    try:
+        return json.loads(path.read_text())['kinds']
+    except (OSError, KeyError, ValueError) as error:
+        raise AssertionError(f'No tree kinds in {path}; run Scripts/blender/plateau_trees.py --no-render') from error
+
+
+def street_tree_mesh(row, kind):
+    """(mesh, horizontal scale, vertical scale) of a street_trees.json row on its kind's meshes, as
+    apply_plateau_replica.street_tree_scale stands it: the young mesh under YOUNG_BELOW of the mature height, the
+    height scale within the mesh's limits, the crown spread from the trunk."""
+    young = kind.get('young')
+    height = row['height_cm'] if row.get('height_cm') is not None else \
+        kind['height_cm'] * row['dbh_cm'] / kind['trunk_cm']
+    mesh, limits = kind, TREE_SCALE
+    if young and height < YOUNG_BELOW * kind['height_cm']:
+        mesh, limits = young, YOUNG_SCALE
+    sz = min(limits[1], max(limits[0], height / mesh['height_cm']))
+    spread = math.sqrt((row['dbh_cm'] / mesh['trunk_cm']) / sz)
+    return mesh, round(sz * min(CROWN_SPREAD[1], max(CROWN_SPREAD[0], spread)), 4), round(sz, 4)
+
+
+def load_yard_tree_rows(path=None):
+    """Plex/yard_trees.json rows ({x, y, z, yaw, scale, kind}), or none when plateau_plex.py has not written it."""
+    try:
+        doc = json.loads(Path(path or YARD_TREES).read_text())
+    except (OSError, ValueError):
+        return []
+    return doc.get('trees', []) if isinstance(doc, dict) else doc
+
+
+class Crowns:
+    """Tree crowns as upright cylinders round their trunks, indexed in the plane: (x, y, z, radius, base, top,
+    fallen share, kind, source), source 'yard' for a Plex yard tree, else the street tree's id. The crown base and
+    top are over the ground under the trunk (z)."""
+
+    def __init__(self):
+        self.items, self.grid = [], Grid(2000.)
+
+    def add(self, x, y, z, radius, base, top, fallen=0., kind='', source=''):
+        self.grid.add(len(self.items), bbox([(x, y)], max(radius, TRUNK_KEEP)))
+        self.items.append((x, y, z, radius, base, top, fallen, kind, source))
+
+    def near(self, p, pad=0.):
+        return [self.items[i] for i in self.grid.query(bbox([p], pad))]
+
+    def clash(self, p, z_lo, z_hi):
+        """The first crown whose inner part (CROWN_KEEP of its radius, from its base up) the upright band z_lo..z_hi
+        over p enters, or whose trunk stands within TRUNK_KEEP of p; None when clear."""
+        for t in self.near(p):
+            x, y, z, radius, base, top = t[:6]
+            d = math.dist(p[:2], (x, y))
+            if d < TRUNK_KEEP and z_lo < z + top:
+                return t
+            if d < CROWN_KEEP * radius and z_hi > z + base and z_lo < z + top:
+                return t
+        return None
+
+
+def tree_crowns(world, kinds=None, yard_rows=None):
+    """Every crown the game draws: the Plex yard trees (Plex/yard_trees.json) and the street and park trees
+    (world.street_tree_rows), each on its species mesh at the apply step's scale."""
+    kinds = tree_kinds() if kinds is None else kinds
+    crowns = Crowns()
+    for row in load_yard_tree_rows() if yard_rows is None else yard_rows:
+        kind = YARD_TREE_ALIASES.get(row['kind'], row['kind'])
+        mesh = kinds[kind]
+        height = float(row.get('height_cm', row['scale'] * YARD_TREE_MESH_CM))
+        s = height / mesh['height_cm']
+        crowns.add(row['x'], row['y'], row.get('z', 0.), mesh['crown_width_cm'] / 2 * s, mesh['crown_base_cm'] * s,
+                   height, 1. - mesh['leaf_retention'], kind, 'yard')
+    for row in getattr(world, 'street_tree_rows', []):
+        mesh, sxy, sz = street_tree_mesh(row, kinds[row['kind']])
+        crowns.add(row['x_cm'], row['y_cm'], row['z_cm'], mesh['crown_width_cm'] / 2 * sxy, mesh['crown_base_cm'] * sz,
+                   mesh['height_cm'] * sz, 1. - mesh['leaf_retention'], row['kind'], row['id'])
+    return crowns
+
+
+def line_clear(crowns, a, b, sag, drop, step=40.):
+    """Whether a laundry line from a to b (x, y, z: the pulleys) stands clear of the crowns and trunks: its two strands
+    (4 cm over and under the pulleys, the lower sagging up to `sag` at mid-span) and the washing on it, up to `drop`
+    under the lower strand, sampled every `step` cm along it."""
+    span = math.dist(a[:2], b[:2])
+    n = max(2, math.ceil(span / step))
+    for i in range(n + 1):
+        t = i / n
+        p = lerp(a[:2], b[:2], t)
+        z = a[2] + (b[2] - a[2]) * t
+        if crowns.clash(p, z - 4. - 4. * sag * t * (1. - t) - drop, z + 4.):
+            return False
+    return True
+
+
 # -- laundry ------------------------------------------------------------------------------------
 
-def lane_laundry(world, plex, S, lane, counts):
+def lane_laundry(world, plex, S, lane, counts, crowns=None):
     """Pulley clotheslines (cordes à linge) as Montréal hangs them: each from a pulley on a gallery's top rail at
     the end of the module away from its stair, out over the lot's own yard to a clothesline pole near the back
-    fence, one pulley per floor on the pole. Never to a utility pole and never over the ruelle (city rules)."""
+    fence, one pulley per floor on the pole. Never to a utility pole and never over the ruelle (city rules), and
+    never through a tree: a line and the washing it can carry keep out of every crown and away from every trunk
+    (line_clear), so a spot whose line would pass through a tree gives way to the module's next spot. Where every
+    spot clashes, the pole serves only the floors whose lines are clear, or the module hangs no washing at all.
+    Without `crowns` (the lane fixtures), the lots' own yard-tree records stand in for the Trees meshes."""
+    if crowns is None:
+        crowns = Crowns()
+        for lot in plex.lots:
+            for t in ((lot['rear'].get('yard') or {}).get('trees') or []):
+                h = t.get('height_m', 10.) * 100
+                crowns.add(t['x'], t['y'], t.get('z', 0.), t.get('crown_m', 8.) * 50, .25 * h, h)
+    drop = max(min(c['size_cm'][1] - .5, c['garment_cm'][1] + HEM_FREE) for c in laundry_cells().values())
+    counts.setdefault('laundry_modules_under_trees', 0)
+    counts.setdefault('laundry_lines_left_in_trees', 0)
     poles, lines = [], []
     for lot in plex.lots:
         rear, F = lot['rear'], lot['frame']
@@ -4958,32 +5352,48 @@ def lane_laundry(world, plex, S, lane, counts):
                     plex.footprint_hit(q, 0., (lot['id'], k)) for q in (lerp(A, p, s / span) for s in range(0, int(span) + 1, 50)))
             # the pulley on the rail near the gallery's free end (or a little in from it), the pole at the back fence
             # about in line with it, then further along the yard (only toward the module's middle, never over the
-            # neighbouring module's stair); only where the fence line has no room, deeper in the yard
+            # neighbouring module's stair); only where the fence line has no room, deeper in the yard. The floors
+            # with a line and each line's rise are drawn first, so trying a spot draws nothing.
             first = rng.uniform(0., 160.)
-            pick = next(((ax, ax + inward * dx, F.D - dd) for depths in (POLE_FENCE, POLE_FALLBACK)
-                         for off in (25., 70., 115.) for ax in (x0 + off if inward > 0 else x1 - off,)
-                         for dd in depths for dx in (first, 0., 80., 160., 240., 320., 400.)
-                         if pole_ok(ax, ax + inward * dx, F.D - dd)), None)
+            wanted = [(dk, rng.uniform(*LINE_RISE)) for dk in mdecks
+                      if rng.chance(LAUNDRY_DECK) and dk['z'] + LINE_ABOVE_DECK <= LINE_TOP]
+
+            def lines_at(ax, P):
+                out = []
+                for dk, rise in wanted:
+                    guard = next((i for i, g in enumerate(rear.get('guards') or [])
+                                  if abs(g['z0'] - dk['z']) < 1 and _guard_covers(F, g, ax, dF)), None)
+                    if guard is None:
+                        continue
+                    A = F.world(ax, ad)
+                    za = dk['z'] + LINE_ABOVE_DECK
+                    zb = min(LINE_END_TOP, max(LINE_MIN_END, za + rise))
+                    toward, span = unit(P, A)
+                    end = (P[0] + toward[0] * 9, P[1] + toward[1] * 9, zb)
+                    out.append({'deck_z': dk['z'], 'guard': guard, 'A': (A[0], A[1], za), 'zb': zb, 'span': span,
+                                'clear': line_clear(crowns, (A[0], A[1], za), end, LINE_SAG[1] * span, drop)})
+                return out
+            spots = ((ax, ax + inward * dx, F.D - dd) for depths in (POLE_FENCE, POLE_FALLBACK)
+                     for off in (25., 70., 115.) for ax in (x0 + off if inward > 0 else x1 - off,)
+                     for dd in depths for dx in (first, 0., 80., 160., 240., 320., 400.))
+            pick, room = None, False
+            for ax, px, pd in spots:
+                if not pole_ok(ax, px, pd):
+                    continue
+                room = True
+                P = F.world(px, pd)
+                found = lines_at(ax, P)
+                clear = [m for m in found if m['clear']]
+                if found and len(clear) == len(found):
+                    pick = (ax, P, pd, clear, 0)
+                    break
+                if clear and (pick is None or len(clear) > len(pick[3])):
+                    pick = (ax, P, pd, clear, len(found) - len(clear))   # so far the best: its clear floors only
             if pick is None:
-                counts['laundry_modules_without_room'] += 1
+                counts['laundry_modules_under_trees' if room else 'laundry_modules_without_room'] += 1
                 continue
-            ax = pick[0]
-            P = F.world(pick[1], pick[2])
-            mine = []
-            for dk in mdecks:
-                if not rng.chance(LAUNDRY_DECK) or dk['z'] + LINE_ABOVE_DECK > LINE_TOP:
-                    continue
-                guard = next((i for i, g in enumerate(rear.get('guards') or [])
-                              if abs(g['z0'] - dk['z']) < 1 and _guard_covers(F, g, ax, dF)), None)
-                if guard is None:
-                    continue
-                A = F.world(ax, ad)
-                span = math.dist(A, P)
-                za = dk['z'] + LINE_ABOVE_DECK
-                mine.append({'deck_z': dk['z'], 'guard': guard, 'A': (A[0], A[1], za),
-                             'zb': min(LINE_END_TOP, max(LINE_MIN_END, za + rng.uniform(*LINE_RISE))), 'span': span})
-            if not mine:
-                continue
+            ax, P, pd, mine, dropped = pick
+            counts['laundry_lines_left_in_trees'] += dropped
             height = max(m['zb'] for m in mine) + POLE_TOP
             pole_mat = rng.choice(('clothes_pole', 'clothes_pole', 'pulley'))          # wood, or a galvanised pipe
             S.box(pole_mat, (P[0], P[1], height / 2), (11, 11, height), F.yaw(), bottom=False)
@@ -4992,7 +5402,7 @@ def lane_laundry(world, plex, S, lane, counts):
             index = len(poles)
             poles.append({'lot': lot['id'], 'module': k, 'xy': P, 'position': [r2(P[0]), r2(P[1])],
                           'height_cm': r2(height), 'material': pole_mat, 'lines': len(mine),
-                          'from_fence_cm': r2(F.D - pick[2])})
+                          'from_fence_cm': r2(F.D - pd)})
             fence_top = float(fence.get('height_cm') or 0.)
 
             def hem_floor(p, F=F, fence_top=fence_top):
@@ -5062,7 +5472,7 @@ def _laundry_line(S, A, B, rng, start, stop, hem_floor):
     at both ends; on most lines, garments pegged on the lower strand between `start` and `stop` cm from the ends,
     their hems over hem_floor(xy). Returns the garment records and the lower strand (a Catenary)."""
     span = math.dist(A[:2], B[:2])
-    sag = span * rng.uniform(.018, .03)
+    sag = span * rng.uniform(*LINE_SAG)
     yaw = math.degrees(math.atan2(B[1] - A[1], B[0] - A[0]))
     for p in (A, B):
         S.box('pulley', (p[0], p[1], p[2]), (7, 4, 12), yaw)
@@ -6246,7 +6656,8 @@ def lane_tags(world, plex, S, lane, counts, green):
 
 GALLERY_PROPS = ('chair_patio', 'bbq', 'bike_gallery', 'bin_recycling', 'bin_compost', 'potted_plant', 'ac_unit',
                  'flower_box', 'satellite_dish')
-LANE_COUNTS = ('laundry_lines', 'laundry_poles', 'garments', 'laundry_modules_without_room', 'gallery_decks',
+LANE_COUNTS = ('laundry_lines', 'laundry_poles', 'garments', 'laundry_modules_without_room',
+               'laundry_modules_under_trees', 'laundry_lines_left_in_trees', 'gallery_decks',
                'gallery_decks_lived', 'gallery_props', *('gallery_' + k for k in GALLERY_PROPS),
                'gallery_dishes_without_sky', 'gate_bin_recycling',
                'gate_bin_compost', 'gate_flower_box', 'gate_bike_locked', 'gate_props_lane_side', 'gate_props_yard_side',
@@ -6263,7 +6674,7 @@ def build_lane_life(world, S, put, counts, lane, plex):
     if plex is None:
         lane['note'] = 'Plex/fronts.json missing: no laundry, gallery life, gate props, ruelles vertes or tags'
         return
-    poles = lane_laundry(world, plex, S, lane, counts)
+    poles = lane_laundry(world, plex, S, lane, counts, getattr(world, 'crowns', None))
     if all(k in props_cached()['bounds'] for k in GALLERY_PROPS):
         lane_galleries(world, plex, put, lane, counts, PlexGlass(), lane['laundry']['lines'])
     lane_gates(world, plex, put, lane, counts, poles)
@@ -6386,7 +6797,7 @@ def prepare(directory=None):
                                             'traffic_clear_cm': CLEAR},
                                 'cameras': cameras}),
         'Furniture': write_placements(directory / 'Furniture', 'Furniture', furniture_rows, furniture_counts),
-        'Soul': write_layer(soul, directory / 'Soul', soul_counts),
+        'Soul': write_layer(soul, directory / 'Soul', soul_counts, {'leaf_litter': getattr(world, 'leaf_litter', None)}),
     }
     write_placements(directory / 'Soul', 'Soul', soul_rows, soul_counts)
     # Every street and park tree the game shows, one row each (the contract the apply step's tree actors read), the

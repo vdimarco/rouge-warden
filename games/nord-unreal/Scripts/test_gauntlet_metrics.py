@@ -219,8 +219,13 @@ def check_gates():
     contended = M.verdict(gates, foreign=foreign)
     assert contended["status"] == "contended" and contended["contended_by"][0]["pid"] == 7777
     assert M.verdict(list(failing.values()), foreign=foreign)["status"] == "contended"
+    # Report-only: a row that gates nothing (two viewers, relay) with whole values. Gates or contention still decide.
+    whole = M.verdict([], complete=True)
+    assert whole["status"] == "report-only" and "summary" not in whole and M.verdict([], complete=False)["status"] == "unverified"
+    assert M.verdict([], foreign=foreign, complete=True)["status"] == "contended"
+    assert M.verdict(missing, complete=True)["status"] == "unverified" and M.verdict(gates, complete=True)["status"] == "pass"
     assert M.parse_summaries(log)[1]["frames"] == 2000.0 and M.run_summary(M.parse_summaries(log))["frames"] == 2000.0
-    print("gates ok: pass, fail, unverified, contended")
+    print("gates ok: pass, fail, unverified, contended, report-only")
 
 
 def check_stream_and_processes():
