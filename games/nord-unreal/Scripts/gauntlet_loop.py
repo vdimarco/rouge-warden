@@ -78,6 +78,11 @@ COVER_GRACE_MS = 1500  # A per-second sample and the log follower's delay may en
 # Two-viewer rows compare only within one GPU window: the co-op guard pairs rows that started at most this far apart.
 # An overnight window is shorter, and the same hours of the next night are further apart.
 PAIR_S = 12 * 3600
+# A forward pair (the first counted baseline row after the candidate's, when the baseline's last row before it does not
+# count) starts at most this long after the candidate's row: longer than a confirm and a lifecycle (about 2 hours),
+# shorter than the gap between two agreed windows, such as an evening and the next morning. A forward pair from the next
+# window would compare rows that were not measured together, and a failed pair drops the candidate for good.
+PAIR_FORWARD_S = 4 * 3600
 LABEL = re.compile(r"[A-Za-z0-9][A-Za-z0-9._+-]{0,159}")
 FOLLOWED = re.compile(r"NORD_GAUNTLET\b|NORD_STREAM_FPS\b")
 # The key must follow NORD_GAUNTLET directly: "route stop=", "still stop=" and "summary leg=" lines are not events.
@@ -92,8 +97,8 @@ CSV_WRITTEN = re.compile(r"Writing CSV to file : ([^\r\n]+\.csv)|NORD_GAUNTLET c
 DELAY_KEY = re.compile(r"rtt|roundtrip|jitter|processing|latency|e2e|delay|decodems", re.IGNORECASE)
 # The gates of a native run that also apply to a look run, which holds and switches skies instead of being timed.
 LOOK_GATES = {"vram_peak_mib", "render_log_errors", "cvar_mismatches", "fps_cap"}
-# A confirmation the window cut, one a foreign GPU process shared twice, or one with an unverified run (a gate without
-# a value) is missing evidence, not a failure: confirm runs it again, unless it also holds a failed run.
+# A confirmation the window cut, one a foreign GPU process shared twice, or one with a run unverified twice (a gate
+# without a value) is missing evidence, not a failure: confirm runs it again, unless it also holds a failed run.
 CONFIRM_CUT = "the window ended before every confirmation run"
 CONFIRM_CONTENDED = "a foreign GPU process shared a confirmation run twice"
 CONFIRM_UNVERIFIED = "a confirmation run was unverified"
@@ -932,6 +937,11 @@ def stream_run(loop, run, slot="NordHost", pin=0, portrait=False, relay=False, t
     require(state.get("phase") == "running", "The lifecycle is still starting. Wait until the first terminal prints \"NORD host "
                                              "and friend are connected\", then run stream again; nothing was started.")
     require_pinned(gauntlet.get("sky") or [])
+    # Without the idle flag (-NordIdleThrottle) NordFriend1 never sleeps, so every row with one viewer would read
+    # contended (judge_stream), and sampling it again would never help.
+    require("idle" in ((state.get("stream_settings") or {}).get("flags") or []),
+            "The lifecycle started without the idle flag, so NordFriend1 never sleeps and the row would read contended. Stop "
+            "it and start it again with NORD_STREAM_FLAGS unset or holding idle; nothing was started.")
     # The gauntlet drives NordHost. A row of NordFriend1 alone wakes NordFriend1, so it could never pass.
     require(slot == "NordHost", "Every gauntlet row samples NordHost; --two-viewers samples NordFriend1 too. Leave --slot NordHost.")
     require(not look or not (relay or two_viewers), "--look is its own row; leave out --relay and --two-viewers")
@@ -1065,23 +1075,25 @@ def judge_stream(run, loop, meta):
     exit_gate = next(gate for gate in gates if gate["name"] == "game_exit")
     lost = next(gate for gate in gates if gate["name"] == "stream_lost_in_lap")
     if meta["row"] != "two_viewer":
-        # A solo lap needs NordFriend1 asleep (only NordHost renders); its 5 s windows say so as they are logged.
+        # A lap with one viewer (a solo, input or relay row) needs NordFriend1 asleep (only NordHost renders); its 5 s
+        # windows say so as they are logged.
         friend = M.parse_stream_fps("\n".join(event["line"] for event in read_json(stream / "friend-events.json", []) or []
                                               if window and window[0] <= event["ms"] <= window[1]), sleeping=True)
         awake = sum(not row["sleeping"] for row in friend) if friend else None
         gates.append(M.gate("friend_awake_windows", awake, 0,
                             unit="windows", note="NordFriend1's NORD_STREAM_FPS windows inside the lap that were awake"))
-        if awake and meta["row"] == "solo":
+        if awake:
             # QuebecStreamIdle wakes NordFriend1 only for a viewer or a lost signalling connection, never for a render
             # CVar, so the profile did not cause it: a viewer did, such as a visitor of the public page. NordFriend1 then
-            # rendered beside NordHost, as a foreign GPU process does, so the row is contended (missing evidence that
-            # notes-host step 8 samples again), not a failure that drops the candidate.
+            # rendered beside NordHost, as a foreign GPU process does, and its player shared NordHost's world, so the row
+            # is contended (missing evidence that notes-host step 8 samples again), not a failure that drops the
+            # candidate. stream_run refuses a lifecycle without the idle flag, where NordFriend1 never sleeps.
             friend_pid = next((child.get("pid") for child in (meta.get("lifecycle") or {}).get("children") or []
                                if child.get("name") == "friend"), None)
             foreign = [*foreign, {"pid": friend_pid, "name": "NordFriend1",
-                                  "note": f"awake in {awake} of its 5 s windows inside the solo lap"}]
-            notes.append("NordFriend1 woke inside the solo lap, so it rendered beside NordHost: the row is contended, "
-                         "sample it again")
+                                  "note": f"awake in {awake} of its 5 s windows inside the lap"}]
+            notes.append(f"NordFriend1 woke inside the lap of this {meta['row']} row, so it rendered beside NordHost: the row "
+                         "is contended, sample it again")
     shots = {label: stream_shot(run, label) for label in loop["order"]}
     report_only.update(received_size=received, expected_size=expected,
                        stop_frames={label: shot and str(shot.relative_to(run)) for label, shot in shots.items()},
@@ -1339,9 +1351,9 @@ def confirm_native(loop, tune, group, direct=False, until=None):
     landscape and portrait, until one passes every native gate. The baseline runs only when it is ranked, in its place:
     report reads the baseline's native result only when it reaches the baseline in the ranking, so an unranked
     baseline's runs would change no verdict and only take window time. A result without a failed run that the window
-    cut (stop_reason window_end), that a foreign GPU process shared twice (stop_reason contended) or with an unverified
-    run (stop_reason unverified) is not finished, and it stops the confirmation (holds_back). The stream rows and the
-    co-op guard come from the stream runs; report adds them through gauntlet_tune.confirm."""
+    cut (stop_reason window_end), that a foreign GPU process shared twice (stop_reason contended) or with a run
+    unverified twice (stop_reason unverified) is not finished, and it stops the confirmation (holds_back). The stream
+    rows and the co-op guard come from the stream runs; report adds them through gauntlet_tune.confirm."""
     records = {record["id"]: record for record in tune["candidates"]}
     results, confirmed = {}, None
     plan = confirm_plan(loop, tune)
@@ -1357,9 +1369,17 @@ def confirm_native(loop, tune, group, direct=False, until=None):
             "note": "native gates only; report adds the stream rows and the co-op guard"}
 
 
-def confirm_stop(loop, results):
+def confirm_stop(loop, results, ranking=None, dropped=()):
     """native_confirmation stop_reason: None when every result finished, else window_end when the window cut an
-    unfinished one, else contended when a foreign GPU process shared one twice, else unverified."""
+    unfinished one, else contended when a foreign GPU process shared one twice, else unverified. With ranking, only the
+    results that report can still read count: a ranked one that the round has not dropped, and not ranked below one
+    that passed and that the round has not dropped (confirmed_native, unless the round dropped it). A dropped result can
+    never finish, because confirm refuses to run it, and report reads no result below a passed one."""
+    if ranking is not None:
+        passed = {result["id"] for result in results if result["passed"]}
+        last = next((ranked for ranked in ranking if ranked in passed and ranked not in dropped), None)
+        readable = [ranked for ranked in ranking[:ranking.index(last) + 1 if last else None] if ranked not in dropped]
+        results = [result for result in results if result["id"] in readable]
     unfinished = [result for result in results if not confirmation_finished(loop, result)]
     if not unfinished:
         return None
@@ -1371,8 +1391,9 @@ def confirm_stop(loop, results):
 def confirmation_finished(loop, result):
     """True when a native confirmation ran in every sky at every confirm size without a foreign GPU process and every
     run gave a verdict, or when it holds a failed run. A result the window cut, that a foreign GPU process shared twice
-    or with an unverified run, without a failed run, is not finished, so confirm runs that candidate again. A failed
-    run is final, as round_report counts it. A contended or unverified run that was run again does not count."""
+    or with a run unverified twice (a CONFIRM_UNVERIFIED reason), without a failed run, is not finished, so confirm runs
+    that candidate again. A failed run is final, as round_report counts it. A contended or unverified run that was run
+    again does not count."""
     clean = [run for run in result["runs"] if run["status"] not in ("contended", "unverified")]
     failed = any(not reason.startswith(CONFIRM_OPEN) for reason in result["reasons"])
     return failed or (not result["reasons"] and len(clean) == len(loop["sky_order"]) * len(loop["size_use"]["confirm"]))
@@ -1440,9 +1461,9 @@ def confirm_next(loop, group, candidate_id=None, direct=False, until=None):
     the native confirmation of the best ranked candidate without a finished one that the round has not dropped (or of
     candidate_id), added to tune.json, with the baseline first only when it is ranked above the candidate, has no
     finished result and the round has not dropped it. A result the window cut, that a foreign GPU process shared twice
-    or with an unverified run is run again and replaced, unless it holds a failed run. It writes no profile;
-    only write-profile with --approved does. Returns the last outcome; when the baseline's result holds the candidate
-    back (it did not finish), that is the baseline's, and the candidate does not run."""
+    or with a run unverified twice (a CONFIRM_UNVERIFIED reason) is run again and replaced, unless it holds a failed
+    run. It writes no profile; only write-profile with --approved does. Returns the last outcome; when the baseline's
+    result holds the candidate back (it did not finish), that is the baseline's, and the candidate does not run."""
     # The host names the folder from games/nord-unreal/ (notes-host step 9). Resolved, it matches the stream rows'
     # quality paths, which browser_streaming resolves, and the runs it launches get absolute folders.
     group = Path(group).resolve()
@@ -1474,10 +1495,11 @@ def confirm_next(loop, group, candidate_id=None, direct=False, until=None):
     for wanted in first + [candidate_id]:
         outcome = dict(confirm_candidate(loop, records[wanted], group, direct, until, plan), added_at=iso_now())
         native["results"] = [result for result in native["results"] if result["id"] != wanted] + [outcome]
-        # As confirm_native: the best ranked candidate that passed (a ranked baseline too), and why it stopped.
+        # As confirm_native: the best ranked candidate that passed (a ranked baseline too), and why it stopped, over the
+        # results that report can still read, so a dropped candidate's unfinished result does not keep a stop reason.
         passed = {result["id"] for result in native["results"] if result["passed"]}
         native.update(confirmed_native=next((ranked for ranked in tune["ranking"] if ranked in passed), None),
-                      stop_reason=confirm_stop(loop, native["results"]))
+                      stop_reason=confirm_stop(loop, native["results"], tune["ranking"], dropped))
         T.write_tune(group / "tune.json", tune)
         if holds_back(loop, tune["ranking"], outcome, candidate_id):
             break
@@ -1540,9 +1562,10 @@ def coop_guard(loop, rows, baseline_rows):
     """The co-op guard's reasons for one candidate, none when it passed. A two-viewer row counts when it reads
     report-only (whole and not contended, judge_stream). Each counted row of the candidate is paired with the baseline's
     row at the same rung and orientation from the same window: the baseline's two-viewer row started last before it
-    (or at the same time) when that row counts, else the first counted one after it, at most PAIR_S apart. A counted
-    baseline row older than the baseline's last row before the candidate can come from an earlier window, so the guard
-    never reaches back past that last row. Rows at another size do not compare. Rows are added in the order they are
+    (or at the same time), at most PAIR_S before it, when that row counts, else the first counted one after it, at most
+    PAIR_FORWARD_S after it. A counted baseline row older than the baseline's last row before the candidate can come
+    from an earlier window, so the guard never reaches back past that last row, and a forward pair stays in the
+    candidate row's window. Rows at another size do not compare. Rows are added in the order they are
     sampled, so a pair never changes once it is made. A pair more than two_viewer_drop_max_fps apart drops the candidate
     for good, as a failed solo row does, also when another pair passed. Without any pair the guard is unverified, which
     is missing evidence."""
@@ -1553,7 +1576,7 @@ def coop_guard(loop, rows, baseline_rows):
     for when, row in [(when, row) for when, row in timed(rows) if counts(row)]:
         same = [(moment, other) for moment, other in base if (other["pin"], other["portrait"]) == (row["pin"], row["portrait"])]
         before = [other for moment, other in same if when - PAIR_S <= moment <= when]
-        after = [other for moment, other in same if when < moment <= when + PAIR_S and counts(other)]
+        after = [other for moment, other in same if when < moment <= when + PAIR_FORWARD_S and counts(other)]
         pair = before[-1] if before and counts(before[-1]) else after[0] if after else None
         if pair:
             pairs += 1
@@ -1626,9 +1649,10 @@ def round_report(group, loop):
     repeat = (tune.get("ties") or {}).get("repeat") or {}
     gates = M.look_gates(loop, record.get("images"), baseline_mean=(tune.get("baseline") or {}).get("look"),
                          repeat_min=repeat.get("min"))
-    results = tune["confirmation"]["results"]
+    # Only ranked results: report reads no unranked baseline's result, so its reasons need no evidence.
+    results = [result for result in tune["confirmation"]["results"] if result["id"] in tune["ranking"]]
     # Unverified while a ranked candidate has only missing evidence, which confirm and the stream rows can still give.
-    still_open = any(open_result(result) for result in results if result["id"] in tune["ranking"])
+    still_open = any(open_result(result) for result in results)
     gates.append(M.gate("confirmed", 1 if confirmed else (None if still_open else 0), 1, op="==", unit="candidate",
                         note=confirmed or "; ".join(f"{r['id']}: {', '.join(r.get('reasons', [])[:3])}" for r in results[:4]) or None))
     report = {"version": 1, "tune": str(group / "tune.json"), "winner": tune.get("winner"), "confirmed": confirmed,
@@ -1864,8 +1888,8 @@ def main(argv=None):
     confirm.add_argument("folder", type=Path)
     confirm.add_argument("--candidate", help="a ranked candidate (default: the best ranked one without a finished native "
                                              "confirmation that no failed stream row or co-op guard dropped; one the window "
-                                             "cut, that a foreign GPU process shared twice or with an unverified run is "
-                                             "run again unless it holds a failed run)")
+                                             "cut, that a foreign GPU process shared twice or with a run unverified twice "
+                                             "is run again unless it holds a failed run)")
     confirm.add_argument("--until", help="local HH:MM when the GPU window ends")
     confirm.add_argument("--direct", action="store_true")
     report = commands.add_parser("report", help="judge a run, reference or tune folder again from its files")

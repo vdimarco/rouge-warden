@@ -22,7 +22,9 @@ far and with the search's slower host), a cut, twice contended or twice unverifi
 unverified in the round report until then unless it holds a failed run, a contended or unverified run run once more, a
 ranked baseline confirmed once and named as confirm_native names it, and not run first once the round dropped it, a
 baseline confirmed only when it is ranked, and first only when it is ranked above the candidate, confirm's stop reason
-kept current, the
+kept current over the results that report can still read, a lifecycle without the idle flag refused by the launcher
+and by stream, an awake NordFriend1 that makes a solo, input or relay row contended, a forward co-op pair that stays in
+its window, the round's confirmed gate note from ranked results only, the
 write-profile refusal without --approved, and that browser_streaming.py without NORD_STREAM_QUALITY keeps today's
 exact launch line.
 The fake game quits only after the fake nvidia-smi listed it twice, so the VRAM and contention checks do not depend
@@ -433,7 +435,18 @@ def check_refusals(out, state):
             assert "NORD_STREAM_GAUNTLET" in str(error) and "-NordWeather=" in str(error)
         else:
             raise AssertionError("the launcher must refuse NORD_STREAM_GAUNTLET without a pinned weather")
-    print("refusals ok: unpinned sky, label, quality path and laps launch nothing; the launcher refuses an unpinned gauntlet")
+    # Without idle in NORD_STREAM_FLAGS NordFriend1 never sleeps, so every row with one viewer would read contended.
+    for flags in ("", "windowed"):
+        with patch.dict(os.environ, {"NORD_STREAM_GAUNTLET": str(out / "run"), "NORD_SKY_ARGS": PINNED, "NORD_STREAM_FLAGS": flags},
+                        clear=True):
+            try:
+                browser_streaming.game_command(False, Path("host.log"))
+            except RuntimeError as error:
+                assert "NORD_STREAM_GAUNTLET" in str(error) and "idle" in str(error), (flags, error)
+            else:
+                raise AssertionError(f"the launcher must refuse NORD_STREAM_GAUNTLET with NORD_STREAM_FLAGS={flags!r}")
+    print("refusals ok: unpinned sky, label, quality path and laps launch nothing; the launcher refuses an unpinned gauntlet "
+          "and one without the idle flag")
 
 
 def check_direct_perf(out, package):
@@ -793,7 +806,7 @@ def start_stream(out, state, run, quality, **options):
     deadline = time.monotonic() + 10
     while not Path(f"/proc/{host.pid}/cmdline").read_bytes() and time.monotonic() < deadline:
         time.sleep(.01)
-    lifecycle = {"launcher_pid": 1, "phase": "running", "stream_quality": quality, "stream_settings": {},
+    lifecycle = {"launcher_pid": 1, "phase": "running", "stream_quality": quality, "stream_settings": {"flags": ["idle"]},
                  "gauntlet": {"run": str(run), "host_log": str(host_log), "expect": str(run / "stream.expect"), "sky": PINNED.split()},
                  "children": [{"name": "host", "pid": host.pid, "stdout": "host.stdout.log"}]}
     L.write_json(L.LIFECYCLE, lifecycle)
@@ -817,6 +830,12 @@ def rejudge(run, name, change):
 def edit_json(path, change):
     data = json.loads(Path(path).read_text())
     Path(path).write_text(json.dumps(change(data)))
+
+
+def wake_friend(folder):
+    """NordFriend1 awake in every one of its windows inside the lap, as when a viewer picked Player 2."""
+    edit_json(folder / "stream/friend-events.json", lambda rows: [
+        dict(row, line=row["line"].replace("sleeping=1", "sleeping=0")) for row in rows])
 
 
 def check_stream(out, state, group, winner):
@@ -888,13 +907,10 @@ def check_stream(out, state, group, winner):
     # NordFriend1 woke during the lap, so two games rendered. Only a viewer wakes it (QuebecStreamIdle), never the
     # profile, so the solo row is contended, missing evidence that the host samples again, not a failure that drops the
     # candidate, also when a NordHost gate fails beside it.
-    def wake(folder):
-        edit_json(folder / "stream/friend-events.json", lambda rows: [
-            dict(row, line=row["line"].replace("sleeping=1", "sleeping=0")) for row in rows])
-    awake = rejudge(run, "friend-awake", wake)
+    awake = rejudge(run, "friend-awake", wake_friend)
     assert gates(awake)["friend_awake_windows"]["value"] == 5 and awake["status"] == "contended", gates(awake)["friend_awake_windows"]
     assert [entry["name"] for entry in awake["contended_by"]] == ["NordFriend1"], awake["contended_by"]
-    woken = rejudge(run, "friend-awake-wrong-size", lambda folder: (wake(folder), resize(folder, 1280, 720)))
+    woken = rejudge(run, "friend-awake-wrong-size", lambda folder: (wake_friend(folder), resize(folder, 1280, 720)))
     assert woken["status"] == "contended" and gates(woken)["received_size"]["result"] == "fail", failing(woken)
     two = out / "20261023T230500Z-two-viewers"
     (two / "stream/NordFriend1").mkdir(parents=True)
@@ -932,6 +948,11 @@ def check_stream(out, state, group, winner):
     relay_unclocked = rejudge(relay, "relay-no-time-origin", lambda folder: edit_json(
         folder / "stream/sample.json", lambda data: {k: v for k, v in data.items() if k != "timeOrigin"}))
     assert relay_unclocked["status"] == "unverified", relay_unclocked["status"]
+    # NordFriend1 woke inside the relay lap, so it rendered beside NordHost: the report-only figures were measured under
+    # that load, so the row is contended and sampled again, as a solo row is.
+    relay_awake = rejudge(relay, "relay-friend-awake", wake_friend)
+    assert relay_awake["status"] == "contended" and [entry["name"] for entry in relay_awake["contended_by"]] == ["NordFriend1"], (
+        relay_awake["status"], relay_awake.get("contended_by"))
     try:
         L.stream_run(SMALL, run)
     except RuntimeError as error:
@@ -1078,11 +1099,12 @@ def check_follow_to_result(out):
 
 
 def check_stream_input(out, state, group, winner):
-    """The input row: the sampler drags on the stream all lap (--look); the car must keep its path. The lateral error
-    and the exit come from the car's own drive, so a row without drags through the whole gated lap is unverified,
-    never pass: a sampler killed at the runner's limit (no sample.json, as SIGKILL skips its finally block), one that
-    never reached the page, one that crashed in the middle of the lap with its peer connected, a sample without the
-    --look sweep, and a stream command started after the lap began."""
+    """The input row: the sampler drags on the stream all lap (--look); the car must keep its path. An awake NordFriend1
+    makes the row contended, as in a solo row. The lateral error and the exit come from the car's own drive, so a row
+    without drags through the whole gated lap is unverified, never pass: a sampler killed at the runner's limit (no
+    sample.json, as SIGKILL skips its finally block), one that never reached the page, one that crashed in the middle
+    of the lap with its peer connected, a sample without the --look sweep, and a stream command started after the lap
+    began."""
     run = out / "20261023T231000Z-stream-input"
     run.mkdir()
     quality = browser_streaming.stream_quality(f"file:{group / 'candidates' / (winner + '.execcmds')}")
@@ -1096,8 +1118,16 @@ def check_stream_input(out, state, group, winner):
     route, _ = L.route_report(SMALL, run)
     assert {gate["name"]: gate["result"] for gate in route["run"]["gates"]}["max_lateral_m"] == "pass"
     assert {gate["name"]: gate["result"] for gate in route["run"]["gates"]}["stop_order"] == "pass", "the stream host log has the stops"
-    off = rejudge(run, "input-off-path", lambda folder: edit_json(folder / "native/route.json", lambda data: dict(data, max_offset_m=3.1)))
+    off_path = lambda folder: edit_json(folder / "native/route.json", lambda data: dict(data, max_offset_m=3.1))
+    off = rejudge(run, "input-off-path", off_path)
     assert gates(off)["max_lateral_m"]["result"] == "fail" and off["status"] == "fail"
+    # NordFriend1 woke inside the input lap: a viewer of Player 2 rendered beside NordHost and shared its world, so the
+    # row is contended, also when the car left its path beside it, not a failure that drops the candidate.
+    for name, change in (("input-friend-awake", wake_friend),
+                         ("input-friend-awake-off-path", lambda folder: (wake_friend(folder), off_path(folder)))):
+        found = rejudge(run, name, change)
+        assert found["status"] == "contended" and [entry["name"] for entry in found["contended_by"]] == ["NordFriend1"], (
+            name, found["status"], failing(found))
     window = L.lap_window(json.loads((run / "stream/events.json").read_text()))[0]
     middle = (window[0] + window[1]) / 2
 
@@ -1129,8 +1159,8 @@ def check_stream_input(out, state, group, winner):
         assert "--look is its own row" in str(error)
     else:
         raise AssertionError("--look with --relay must be refused")
-    print("input row ok: --look reaches the sampler, the default sample length is 925 s, the lateral error is gated, and "
-          "a row without drags through the whole lap is unverified")
+    print("input row ok: --look reaches the sampler, the default sample length is 925 s, the lateral error is gated, "
+          "an awake NordFriend1 makes the row contended, and a row without drags through the whole lap is unverified")
 
 
 def check_stream_one_command(out):
@@ -1142,7 +1172,7 @@ def check_stream_one_command(out):
     host_log.write_text("")
     gone = next(pid for pid in range(999_999, 900_000, -1) if not Path(f"/proc/{pid}").exists())
     lifecycle = {"launcher_pid": 1, "phase": "running", "stream_quality": browser_streaming.stream_quality("current"),
-                 "gauntlet": {"run": str(run), "host_log": str(host_log), "sky": PINNED.split()},
+                 "stream_settings": {"flags": ["idle"]}, "gauntlet": {"run": str(run), "host_log": str(host_log), "sky": PINNED.split()},
                  "children": [{"name": "host", "pid": gone}]}
     # Phase starting: the launcher has not started NordFriend1 yet, or not seen it welcomed. GpuWatch reads the children
     # once, so a NordFriend1 started after the stream command would make the row contended. The runner waits for running.
@@ -1154,6 +1184,17 @@ def check_stream_one_command(out):
     else:
         raise AssertionError("a lifecycle that is still starting must be refused")
     assert not (run / "stream").exists() and not (run / "run.json").exists(), "a refused row starts nothing"
+    # A lifecycle started without the idle flag (NORD_STREAM_FLAGS '' or windowed, or a lifecycle.json without it):
+    # NordFriend1 never sleeps, so the row would read contended however often it is sampled again.
+    for settings in ({"flags": []}, {"flags": ["windowed"]}, None):
+        L.write_json(L.LIFECYCLE, dict(lifecycle, stream_settings=settings))
+        try:
+            L.stream_run(SMALL, run, pin=0, seconds=1)
+        except RuntimeError as error:
+            assert "without the idle flag" in str(error) and "NordFriend1 never sleeps" in str(error), (settings, error)
+        else:
+            raise AssertionError(f"a lifecycle without the idle flag must be refused: {settings}")
+        assert not (run / "stream").exists() and not (run / "run.json").exists(), "a refused row starts nothing"
     L.write_json(L.LIFECYCLE, lifecycle)
     for options, text in (({"slot": "NordFriend1"}, "Every gauntlet row samples NordHost"),
                           ({"slot": "NordFriend1", "relay": True}, "Every gauntlet row samples NordHost"),
@@ -1202,8 +1243,8 @@ def check_stream_one_command(out):
     else:
         raise AssertionError("a second stream command on one run must be refused")
     assert not (run / "run.json").exists() and list((run / "stream").iterdir()) == []
-    print("one command ok: a lifecycle still starting, NordFriend1 alone (also by the command line), a rung without a "
-          "size in loop.json and a second stream command on one run are refused")
+    print("one command ok: a lifecycle still starting or without the idle flag, NordFriend1 alone (also by the command "
+          "line), a rung without a size in loop.json and a second stream command on one run are refused")
 
 
 def check_report_and_profile(group, tune):
@@ -1430,16 +1471,24 @@ def check_report_better_open(out):
 
 def check_report_coop_window(out):
     """The co-op guard pairs each two-viewer row of a candidate with the baseline's from the same window: the one
-    sampled last before it, else the first after it, at most 12 hours apart. A pair more than 2 FPS apart drops the
-    candidate for good. So the baseline row that notes-host step 8 samples with the next candidate, in the same window
-    or the next one, does not bring back a dropped candidate, nor does a newer row of that candidate. Rows more than 12
-    hours apart, or at another rung or orientation, do not pair, and the guard is unverified. When the baseline's last
-    row before the candidate does not count (unverified here, in a morning window 10 hours after the night's), the
-    guard does not reach back to the night's counted row: it pairs with the morning's counted row after the candidate.
-    confirm reads the round as report does, so it runs the next candidate and not the dropped one."""
+    sampled last before it, at most 12 hours before, else the first after it, at most 4 hours after (PAIR_FORWARD_S).
+    A pair more than 2 FPS apart drops the candidate for good. So the baseline row that notes-host step 8 samples with
+    the next candidate, in the same window or the next one, does not bring back a dropped candidate, nor does a newer
+    row of that candidate. Rows more than 12 hours apart, or at another rung or orientation, do not pair, and the guard
+    is unverified. When the baseline's last row before the candidate does not count (unverified here, in a morning
+    window 10 hours after the night's), the guard does not reach back to the night's counted row: it pairs with the
+    morning's counted row after the candidate. A forward pair stays in the candidate row's window: when the night's
+    baseline row before the candidate is contended, the next morning's baseline row, 7 hours later, does not pair with
+    the night's candidate row, which stays unpaired, and the morning's own pair decides. confirm reads the round as
+    report does, so it runs the next candidate and not the dropped one."""
     night, next_night = "2026-10-23T", "2026-10-24T"
     drop = "two-viewer FPS 27.5 is 2.5 below the baseline's 30.0"
     dropped = [("baseline", night + "22:00:00Z", 30.0), ("04-shadows2", night + "22:30:00Z", 27.5)]
+    # The night window: the baseline's 22:00 row counts, its 00:40 row is contended, and 04-shadows2 is sampled right
+    # after it. The next morning: the baseline first, then 04-shadows2, 0.5 FPS below it.
+    contended_night = [("baseline", night + "22:00:00Z", 30.0), ("baseline", next_night + "00:40:00Z", None, {"status": "contended"}),
+                       ("04-shadows2", next_night + "00:55:00Z", 29.5)]
+    next_morning = [("baseline", next_night + "08:00:00Z", 32.0), ("04-shadows2", next_night + "08:20:00Z", 31.5)]
     # (case, two-viewer rows as (candidate, started_at, FPS), confirmed, 04-shadows2's reasons)
     cases = (("next-window", dropped + [("baseline", next_night + "22:00:00Z", 29.0), ("05-gi2", next_night + "22:30:00Z", 29.0)],
               "05-gi2", [drop]),
@@ -1455,7 +1504,9 @@ def check_report_coop_window(out):
              ("morning-baseline-unverified", [("baseline", night + "22:00:00Z", 32.0),
                                               ("baseline", next_night + "08:00:00Z", None, {"status": "unverified"}),
                                               ("04-shadows2", next_night + "08:20:00Z", 29.5), ("baseline", next_night + "08:40:00Z", 30.0)],
-              "04-shadows2", []))
+              "04-shadows2", []),
+             ("night-baseline-contended", contended_night, None, ["co-op guard unverified"]),
+             ("next-morning", contended_night + next_morning, "04-shadows2", []))
     for name, twos, confirmed, reasons in cases:
         hall = out.parent / "coop-window" / name
         group, row = report_hall(hall, ranking=("04-shadows2", "05-gi2"))
@@ -1491,7 +1542,8 @@ def check_report_coop_window(out):
         assert L.main(["confirm", str(group)]) == 0
     assert calls == [f"confirm-05-gi2-{sky}-{size}" for sky in SMALL["sky_order"] for size in SMALL["size_use"]["confirm"]], calls
     print("co-op window ok: each two-viewer row pairs with the baseline's from its window, also after an unverified "
-          "baseline row, a failed pair drops the candidate for good, and confirm runs the next candidate")
+          "baseline row, a forward pair never reaches the next window, a failed pair drops the candidate for good, and "
+          "confirm runs the next candidate")
 
 
 def check_report_coop_failed_drive(out):
@@ -1726,10 +1778,12 @@ def check_confirm_window(out):
             assert [run["status"] for run in winner["runs"]].count("contended") == times and len(winner["runs"]) == full + 1
             if times == 1:
                 assert winner["passed"] and native["confirmed_native"] == "04-shadows2" and native["stop_reason"] is None, native
-                # The window cuts the next candidate's confirmation: the stop reason says so, and the winner stays confirmed.
+                # The window cuts the next candidate's confirmation, and the winner stays confirmed. report reads no
+                # result ranked below a passed one that the round has not dropped, so the cut sets no stop reason.
                 L.confirm_next(SMALL, group, until=clock[0] + 1)
                 after = json.loads((group / "tune.json").read_text())["native_confirmation"]
-                assert after["stop_reason"] == "window_end" and after["confirmed_native"] == "04-shadows2", after
+                assert after["results"][-1]["reasons"] == [L.CONFIRM_CUT], after["results"]
+                assert after["stop_reason"] is None and after["confirmed_native"] == "04-shadows2", after
                 continue
             assert winner["reasons"] == [f"{L.CONFIRM_CONTENDED}: night_rain top_portrait"] and not L.confirmation_finished(SMALL, winner)
             assert native["confirmed_native"] is None and native["stop_reason"] == "contended", native
@@ -1941,6 +1995,78 @@ def check_confirm_unverified(out):
           "confirm runs it again; with a failed run the result is final")
 
 
+def check_confirm_stop_dropped(out):
+    """native_confirmation.stop_reason counts only the results that report can still read. The tune's confirmation of
+    04-shadows2 holds a run unverified twice, so it stops with stop_reason unverified. A failed solo row then drops
+    04-shadows2, whose result can never finish, because confirm refuses to run it. confirm runs 05-gi2, which passes:
+    the stop reason clears, and report confirms 05-gi2. When 04-shadows2 passed natively before a failed row dropped
+    it, it is still confirmed_native, but it does not hide a cut of 05-gi2, which report then reads: window_end."""
+    unverified, calls = {}, []
+
+    def native_run(loop, mode, size_key, sky, laps=1, quality="current", label=None, direct=False, parent=None, **_):
+        calls.append(label)
+        unverified[label] = unverified.get(label, 0) - 1
+        status = "unverified" if unverified[label] >= 0 else "pass"
+        return L.new_run_dir(label, parent), {"status": status, "gates": [{"name": "vram_peak_mib", "result": "unverified"}]
+                                              if status == "unverified" else []}
+
+    hall = out.parent / "confirm-stop-dropped" / "unverified-twice"
+    group, row = report_hall(hall, ranking=("04-shadows2", "05-gi2"))
+    tune = {key: value for key, value in json.loads((group / "tune.json").read_text()).items() if key != "native_confirmation"}
+    unverified["confirm-04-shadows2-day-top_landscape"] = 2
+    with patch.object(L, "OUT", hall), patch.object(L, "native_run", native_run), contextlib.redirect_stdout(io.StringIO()):
+        native = L.confirm_native(SMALL, tune, group)
+        assert native["stop_reason"] == "unverified" and native["confirmed_native"] is None, native
+        T.write_tune(group / "tune.json", dict(tune, native_confirmation=native))
+        stream_rows(row, "baseline")
+        stream_rows(row, "04-shadows2", failed="top_landscape")
+        stream_rows(row, "05-gi2")
+        calls.clear()
+        outcome = L.confirm_next(SMALL, group)
+        L.round_report(group, SMALL)
+    after = json.loads((group / "tune.json").read_text())["native_confirmation"]
+    assert outcome["id"] == "05-gi2" and outcome["passed"] and all(label.startswith("confirm-05-gi2-") for label in calls), calls
+    assert after["confirmed_native"] == "05-gi2" and after["stop_reason"] is None, after
+    assert not L.confirmation_finished(SMALL, after["results"][0]), "04-shadows2's result stays unfinished"
+    assert json.loads((group / "report.json").read_text())["confirmed"] == "05-gi2"
+    # 04-shadows2 passed natively, then a failed row dropped it, and the window cuts 05-gi2's confirmation.
+    hall = out.parent / "confirm-stop-dropped" / "passed-then-dropped"
+    group, row = report_hall(hall, ranking=("04-shadows2", "05-gi2"))
+    edit_json(group / "tune.json", lambda data: dict(data, native_confirmation={"results": [
+        result for result in data["native_confirmation"]["results"] if result["id"] == "04-shadows2"],
+        "confirmed_native": "04-shadows2", "stop_reason": None}))
+    stream_rows(row, "baseline")
+    stream_rows(row, "04-shadows2", failed="top_landscape")
+    with patch.object(L, "OUT", hall), patch.object(L, "native_run", native_run):
+        outcome = L.confirm_next(SMALL, group, until=time.time() + 1)
+    after = json.loads((group / "tune.json").read_text())["native_confirmation"]
+    assert outcome["id"] == "05-gi2" and outcome["reasons"] == [L.CONFIRM_CUT], outcome
+    assert after["stop_reason"] == "window_end" and after["confirmed_native"] == "04-shadows2", after
+    print("confirm stop reason ok: a dropped candidate's unfinished result keeps no stop reason, and a dropped "
+          "confirmed_native does not hide the next candidate's cut")
+
+
+def check_report_note(out):
+    """The round's confirmed gate note lists only ranked results. The tune never confirms an unranked baseline, and
+    step 8 samples its solo rows only when it is waiting_on, so its missing native result and rows need no evidence."""
+    hall = out.parent / "report-note"
+    group, row = report_hall(hall, ranking=("04-shadows2", "05-gi2"))
+    edit_json(group / "tune.json", lambda data: dict(data, native_confirmation={"results": [
+        result for result in data["native_confirmation"]["results"] if result["id"] == "04-shadows2"],
+        "confirmed_native": "04-shadows2", "stop_reason": None}))
+    row("baseline", "baseline-two", "two_viewer", "report-only", 30.0, started="2026-10-23T22:50:00Z")
+    for key in SMALL["size_use"]["stream"][:3]:
+        entry = SMALL["sizes"][key]
+        row("04-shadows2", f"04-{key}", "solo", "pass", pin=entry["rung"], portrait=entry["size"][1] > entry["size"][0])
+    row("04-shadows2", "04-input", "input", "pass")
+    row("04-shadows2", "04-two", "two_viewer", "report-only", 29.5)
+    with patch.object(L, "OUT", hall):
+        verdict = L.round_report(group, SMALL)
+    assert verdict["waiting_on"] == "04-shadows2" and gates(verdict)["confirmed"]["result"] == "unverified", verdict["waiting_on"]
+    assert gates(verdict)["confirmed"]["note"] == "04-shadows2: stream rows missing: rung 1 portrait", gates(verdict)["confirmed"]
+    print("report note ok: the confirmed gate note names only ranked results, not the unranked baseline")
+
+
 def check_confirm_baseline_open(out):
     """Report reads the baseline's native result only when it reaches the baseline in the ranking. So tune and confirm
     run the baseline's native confirmation only when report reads it before the candidate's: when the baseline is
@@ -2134,11 +2260,13 @@ def main():
         check_report_coop_window(out)
         check_report_coop_failed_drive(out)
         check_report_input_row(out)
+        check_report_note(out)
         check_confirm_next(group, tune)
         check_confirm_window(out)
         check_confirm_dropped(out)
         check_confirm_dropped_baseline(out)
         check_confirm_unverified(out)
+        check_confirm_stop_dropped(out)
         check_confirm_baseline_open(out)
         check_waiting_on(out)
     print("NORD_GAUNTLET_LOOP_OK")

@@ -223,7 +223,9 @@ def gauntlet_expect(quality):
 
 def gauntlet_run():
     """NORD_STREAM_GAUNTLET=<run dir>: NordHost drives the gauntlet loop in stream mode and writes into that folder under
-    Saved/Gauntlet. A comparable run needs the sky pinned, so -NordHour= and -NordWeather= must be in NORD_SKY_ARGS."""
+    Saved/Gauntlet. A comparable run needs the sky pinned, so -NordHour= and -NordWeather= must be in NORD_SKY_ARGS. It
+    also needs NordFriend1 asleep, so NORD_STREAM_FLAGS must keep idle (-NordIdleThrottle): without it NordFriend1 never
+    sleeps, and every gauntlet row with one viewer would read contended."""
     value = os.environ.get("NORD_STREAM_GAUNTLET")
     if value is None:
         return None
@@ -232,6 +234,8 @@ def gauntlet_run():
     sky = [argument.lower() for argument in sky_arguments()]
     require(any(argument.startswith("-nordhour=") for argument in sky) and any(argument.startswith("-nordweather=") for argument in sky),
             "NORD_STREAM_GAUNTLET needs a pinned sky: put -NordHour= and -NordWeather= in NORD_SKY_ARGS.")
+    require("idle" in stream_settings()["flags"],
+            "NORD_STREAM_GAUNTLET needs NordFriend1 asleep: keep idle in NORD_STREAM_FLAGS, or leave it unset.")
     return run
 
 
@@ -527,7 +531,10 @@ def self_check():
                             {"NORD_STREAM_GAUNTLET": str(run_folder), "NORD_SKY_ARGS": "-NordWeather=Rain -NordFreezeWeather"},
                             {"NORD_STREAM_GAUNTLET": str(run_folder), "NORD_SKY_ARGS": "-NordHour=22 -NordFreezeTime"},
                             {"NORD_STREAM_GAUNTLET": str(Path(directory) / "elsewhere"), "NORD_SKY_ARGS": pinned},
-                            {"NORD_STREAM_GAUNTLET": "", "NORD_SKY_ARGS": pinned}):
+                            {"NORD_STREAM_GAUNTLET": "", "NORD_SKY_ARGS": pinned},
+                            # Without idle, NordFriend1 never sleeps, so every row with one viewer would read contended.
+                            {"NORD_STREAM_GAUNTLET": str(run_folder), "NORD_SKY_ARGS": pinned, "NORD_STREAM_FLAGS": ""},
+                            {"NORD_STREAM_GAUNTLET": str(run_folder), "NORD_SKY_ARGS": pinned, "NORD_STREAM_FLAGS": "windowed"}):
             refused("NORD_STREAM_GAUNTLET", environment)
     with patch("shutil.which", return_value="/usr/bin/nvidia-smi"):
         with patch("subprocess.check_output", return_value="13000\n"):
@@ -550,7 +557,7 @@ def self_check():
                 raise AssertionError("Occupied ports must be rejected")
     print("Self-check passed: ICE configuration validation, rendered job/GPU memory guards, separate players/save ownership, "
           "validated bitrate/scheduling/idle options, optional pinned host sky, occupied-port rejection, "
-          "unchanged default launch line, phone and candidate quality options, gauntlet host flags and sky refusal.")
+          "unchanged default launch line, phone and candidate quality options, gauntlet host flags, sky and idle refusals.")
 
 
 if __name__ == "__main__":

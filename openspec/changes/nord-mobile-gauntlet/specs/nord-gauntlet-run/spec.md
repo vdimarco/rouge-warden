@@ -66,7 +66,12 @@ A phone-sized client watching NordHost alone over a direct connection SHALL rece
 - **AND** `NORD_STREAM_FPS` is at least 29 in every 5 s window, decoded FPS is within 3 FPS of it, and `stream/sample.json` and `verdict.json` record each value
 - **AND** the 120 ms jitter buffer limit is the player's own lag rule (`receiverLagging` in `Browser/config.mjs`), a check of stream health and not a delay target, and it is the only delay figure with a limit
 - **AND** NordFriend1 logs no awake `NORD_STREAM_FPS` window inside the lap
-- **AND** a solo row in which NordFriend1 logged an awake window inside the lap is "contended", with NordFriend1 in `contended_by`, not "fail", also when a NordHost gate failed beside it, because only a viewer wakes NordFriend1 and never a render CVar, so the row is missing evidence that the host samples again and does not drop the candidate, which `test_gauntlet_loop.py` checks
+- **AND** a solo, input or relay row in which NordFriend1 logged an awake window inside the lap is "contended", with NordFriend1 in `contended_by`, not "fail" or "report-only", also when a NordHost gate failed beside it, such as a received size in a solo row or a lateral error in an input row, because only a viewer wakes NordFriend1 and never a render CVar, so the row is missing evidence that the host samples again and does not drop the candidate, which `test_gauntlet_loop.py` checks
+
+#### Scenario: Lifecycle without the idle flag
+- **WHEN** the host starts a gauntlet lifecycle (`NORD_STREAM_GAUNTLET`) with `NORD_STREAM_FLAGS` set without `idle`, so NordFriend1 would never sleep
+- **THEN** `browser_streaming.py` refuses it before it starts any process, as it refuses an unpinned sky
+- **AND** `gauntlet_loop.py stream` refuses a lifecycle whose recorded stream settings lack `idle` and starts nothing, so no row reads contended again and again, which `browser_streaming.py self-check` and `test_gauntlet_loop.py` check
 
 #### Scenario: Frames cut to the lap
 - **WHEN** the runner judges a stream sample

@@ -19,7 +19,7 @@ step (apply_plateau_replica.material_row, textured_graph, add_macro and plan_tre
 - the OBJ index forgets removed OBJs and never caches tree positions;
 - faces are kept when an edge crosses the view, so the ruelle_mentana lane asphalt (one 188 m quad) is loaded;
 - Collision_Only batches are never drawn;
-- shadows follow the apply step (casts_shadow for the layer batches, the five shadowed props), and the Leaf_Litter
+- shadows follow the apply step (casts_shadow for the layer batches, its PROP_SHADOW props), and the Leaf_Litter
   patches, which overlap at one height, are seen by camera rays only;
 - every placement gets the colour variant the apply step gives it;
 - the gallery_closeup and hlm_mentana cameras stand in the yard and on the far sidewalk.
@@ -638,7 +638,8 @@ def check_collision_only(preview):
 def check_shadows(preview):
     """Only what casts a shadow in game casts one here. A layer batch follows apply_plateau_replica.casts_shadow (the
     fifth pass's Leaf_Litter patches, the paint, joints and the gutter cast none). A prop casts one only when the apply
-    step's prop instances do: the lamps, poles, BIXI docks and benches."""
+    step's prop instances do (PROP_SHADOW): the lamps, poles, BIXI docks, benches and, since the fifth pass, the
+    hydrants, signs, bikes, bins, mailboxes, cones and the chantier fence."""
     shown = {}
 
     def make(name, verts, polys, uvs, material, collection, smooth=False):
