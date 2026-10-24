@@ -1,4 +1,4 @@
-import {angleDiff, bearing, clamp, distance, radians, wrap} from './engine.js';
+import {angleDiff, bearing, clamp, distance, radians, wrap, scopeFov} from './engine.js';
 import {Ocean} from './ocean.js';
 
 const COLORS = {ink: '#dbe4d7', green: '#aecbb4', amber: '#ddb173', muted: '#668b80', grid: '#284b49', sea: '#122c30'};
@@ -34,7 +34,7 @@ export class Renderer {
   }
   draw(g, wallTime) {
     if (!this.width || !this.height) return;
-    this.hitTargets = [];
+    this.hitTargets = [];this.scopeAperture=null;
     const ctx = this.ctx;
     ctx.clearRect(0, 0, this.width, this.height);
     ctx.lineWidth = 1; ctx.setLineDash([]);
@@ -54,7 +54,13 @@ export class Renderer {
   }
   scope(g, wallTime) {
     const {ctx, width: w, height: h} = this;
-    const horizon = h * .5;
+    const cx=w/2,cy=h/2,r=Math.min(w*.45,w<430?h/2-84:h*.4),horizon=cy;
+    this.scopeAperture={x:cx,y:cy,radius:r};
+    ctx.fillStyle='#060a0a';ctx.fillRect(0,0,w,h);
+    const housing=ctx.createRadialGradient(cx,cy,r,cx,cy,r+24);
+    housing.addColorStop(0,'#080c0b');housing.addColorStop(.25,'#58615a');housing.addColorStop(.35,'#171f1c');housing.addColorStop(.65,'#101613');housing.addColorStop(1,'#060a0a');
+    ctx.fillStyle=housing;ctx.beginPath();ctx.arc(cx,cy,r+24,0,Math.PI*2);ctx.fill();
+    ctx.save();ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.clip();
     if (this.ocean.complete && this.ocean.naturalWidth) {
       const scale = Math.max(w / this.ocean.width, h / this.ocean.height) * 1.03;
       const iw = this.ocean.width * scale, ih = this.ocean.height * scale;
@@ -80,41 +86,52 @@ export class Renderer {
         ctx.beginPath();ctx.ellipse(p[0] + Math.sin(i * 7) * size * .4, p[1] - size * (i * .3 + effect.life * .08), size * (.7 - i * .06), size * (1 + i * .12), 0, 0, Math.PI * 2);ctx.fill();
       }ctx.restore();
     }
-    // Instrument marks stay sharp above the scene and are never baked into the artwork.
-    const crossColor = '#d8e6d37a';
-    line(ctx, [[w / 2, 108], [w / 2, h - 62]], crossColor);
-    line(ctx, [[w * .22, horizon], [w * .78, horizon]], crossColor);
-    for (let i = -5; i <= 5; i++) {
-      if (i === 0) continue;
-      const x = w / 2 + i * w * .049;
-      line(ctx, [[x, horizon - (i % 2 ? 3 : 5)], [x, horizon + (i % 2 ? 3 : 5)]], crossColor);
+    // Etched angular marks share the scene's optical projection.
+    ctx.fillStyle='#a3ad8420';ctx.fillRect(0,0,w,h);
+    const vignette=ctx.createRadialGradient(cx,cy,r*.45,cx,cy,r);
+    vignette.addColorStop(0,'#08171100');vignette.addColorStop(.8,'#06100b12');vignette.addColorStop(1,'#020705bd');ctx.fillStyle=vignette;ctx.fillRect(0,0,w,h);
+    ctx.beginPath();ctx.arc(cx-r*.08,cy+r*.05,r*.91,Math.PI*1.08,Math.PI*1.63);ctx.strokeStyle='#e5efd210';ctx.lineWidth=r*.035;ctx.stroke();
+    const focal=r/Math.tan(radians(scopeFov(g)/2)),ink='#182320cf';
+    line(ctx,[[cx-r*.9,cy],[cx+r*.9,cy]],ink,.8);
+    line(ctx,[[cx,cy-r*.7],[cx,cy+r*.8]],ink,.8);
+    for(let a=-10;a<=10;a++){
+      if(!a)continue;const x=cx+Math.tan(radians(a))*focal;
+      if(Math.abs(x-cx)>r*.86)continue;
+      const tick=a%5===0?8:4;line(ctx,[[x,cy-tick],[x,cy+tick]],ink,.8);
+      if(a%5===0)this.text(String(Math.abs(a)),x,cy+21,ink,9,'center');
     }
-    for (let i = -3; i <= 3; i++) {
-      if (i === 0) continue;
-      const y = horizon + i * 22;
-      line(ctx, [[w / 2 - 5, y], [w / 2 + 5, y]], crossColor);
+    for(let a=-4;a<=4;a++){
+      if(!a)continue;const y=cy+Math.tan(radians(a*.5))*focal;
+      if(Math.abs(y-cy)<r*.7)line(ctx,[[cx-4, y],[cx+4,y]],ink,.8);
     }
-    const fov = 68 / g.zoom;
-    for (let a = Math.floor((g.viewBearing - fov / 2) / 5) * 5; a < g.viewBearing + fov / 2; a += 5) {
-      const x = w / 2 + (a - g.viewBearing) / fov * w;
-      line(ctx, [[x, 81], [x, a % 10 ? 88 : 94]], '#c2d4ca88');
-      if (a % 10 === 0) this.text(String(wrap(a)).padStart(3, '0'), x, 105, '#d2dfd1bb', 8, 'center');
+    const rulerY=cy-r*.72,span=r*.65;
+    line(ctx,[[cx-span,rulerY],[cx+span,rulerY]],ink,.8);
+    for(let a=Math.floor(g.viewBearing-scopeFov(g)/2);a<=g.viewBearing+scopeFov(g)/2;a++){
+      const x=cx+Math.tan(radians(a-g.viewBearing))*focal;
+      if(Math.abs(x-cx)>span)continue;
+      line(ctx,[[x,rulerY],[x,rulerY+(a%5===0?9:4)]],ink,.8);
+      if(a%5===0)this.text(String(wrap(a)).padStart(3,'0'),x,rulerY+21,ink,8,'center');
     }
-    const shade = ctx.createRadialGradient(w/2, h/2, w*.15, w/2, h/2, w*.72);
-    shade.addColorStop(0, 'transparent');shade.addColorStop(1, '#07171c69');ctx.fillStyle=shade;ctx.fillRect(0,0,w,h);
-    if (g.sub.depth > 16) {ctx.fillStyle='#10252c';ctx.fillRect(0,0,w,h);}
+    ctx.restore();
+    ctx.beginPath();ctx.arc(cx,cy,r+2,0,Math.PI*2);ctx.strokeStyle='#abb59966';ctx.lineWidth=1;ctx.stroke();
+    for(const a of [-.8,.8,Math.PI-.8,Math.PI+.8]){
+      const x=cx+Math.cos(a)*(r+15),y=cy+Math.sin(a)*(r+15);
+      ctx.beginPath();ctx.arc(x,y,2.5,0,Math.PI*2);ctx.fillStyle='#485046';ctx.fill();line(ctx,[[x-1.5,y],[x+1.5,y]],'#111813');
+    }
+    this.text(g.zoom===1?'LOW POWER · 1.5×':'HIGH POWER · 6×',cx,h-12,'#91a08d',w<430?8:9,'center');
   }
+
   project(g, point, altitude, horizon) {
     const dx = point.x - g.sub.x, dz = point.z - g.sub.z, a = radians(g.viewBearing);
     const forward = dx * Math.sin(a) + dz * Math.cos(a), right = dx * Math.cos(a) - dz * Math.sin(a);
     if (forward < 20) return null;
-    const focal = this.width / (2 * Math.tan(radians(34 / g.zoom)));
+    const focal = (this.scopeAperture?.radius || this.width / 2) / Math.tan(radians(scopeFov(g) / 2));
     return [this.width / 2 + right / forward * focal, horizon - (altitude - 4) / forward * focal];
   }
   ship(g, ship, horizon, motion) {
     const {ctx, width: w} = this;
     const d = distance(g.sub, ship);
-    if (d > 6500 || Math.abs(angleDiff(bearing(g.sub, ship), g.viewBearing)) > 50 / g.zoom) return;
+    if (d > 6500 || Math.abs(angleDiff(bearing(g.sub, ship), g.viewBearing)) > scopeFov(g) / 2 + 6) return;
     const origin = this.project(g, ship, 0, horizon);
     if (!origin || origin[0] < -120 || origin[0] > w + 120) return;
     const sunk = ship.sunk ? ship.sinking / 22 : 0;
@@ -162,13 +179,8 @@ export class Renderer {
     if(!center)return;
     const radius=clamp(65000/d*g.zoom,24,100);
     if(!ship.sunk)this.hitTargets.push({id:ship.id,x:center[0],y:center[1],radius:Math.max(radius*.7,24)});
-    if(ship.id===g.selected&&!ship.sunk){
-      const half=radius, top=center[1]-radius*.48, bottom=center[1]+radius*.35;
-      const color='#c4d4acb0';
-      for(const [x,y,sx,sy] of [[center[0]-half,top,1,1],[center[0]+half,top,-1,1],[center[0]-half,bottom,1,-1],[center[0]+half,bottom,-1,-1]])line(ctx,[[x,y+sy*7],[x,y],[x+sx*7,y]],color);
-      this.text(`CONTACT ${String(ship.id).padStart(2,'0')}`,center[0],top-10,'#dbe4cb',8,'center');
-    }
   }
+
   chartPosition(g, p) {
     const scale=Math.min(this.width,this.height)/5600;
     return {x:this.width/2+(p.x-g.sub.x)*scale,y:this.height*.64-(p.z-g.sub.z)*scale,scale};
@@ -227,6 +239,6 @@ export class Renderer {
     this.text(quiet?'PASSIVE LISTENING · ENGINES QUIET':'ENGINE NOISE · REDUCE SPEED TO LISTEN',cx,h-73,quiet?'#91ae95':'#ddb173',w<430?8:10,'center');
     for(let i=0;i<52;i++){const x=cx-104+i*4;const amp=quiet?Math.sin(i*2.3+wallTime*2)*5:Math.sin(i*1.7+wallTime*6)*11;line(ctx,[[x,h-58-amp],[x,h-58+amp]],'#9fbd9644');}
   }
-  hitTest(x,y){return this.hitTargets.filter(t=>Math.hypot(x-t.x,y-t.y)<=t.radius).sort((a,b)=>Math.hypot(x-a.x,y-a.y)-Math.hypot(x-b.x,y-b.y))[0]?.id;}
+  hitTest(x,y){if(this.scopeAperture&&Math.hypot(x-this.scopeAperture.x,y-this.scopeAperture.y)>this.scopeAperture.radius)return;return this.hitTargets.filter(t=>Math.hypot(x-t.x,y-t.y)<=t.radius).sort((a,b)=>Math.hypot(x-a.x,y-a.y)-Math.hypot(x-b.x,y-b.y))[0]?.id;}
   plotCourse(g,x,y){const p=this.chartPosition(g,g.sub);return wrap(Math.atan2(x-p.x,p.y-y)*180/Math.PI);}
 }

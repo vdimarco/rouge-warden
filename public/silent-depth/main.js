@@ -1,4 +1,4 @@
-import {createGame, command, step, selectedShip, fireStatus, selectContact, bearing, distance, wrap, clamp, angleDiff, intercept} from './engine.js';
+import {createGame, command, step, selectedShip, fireStatus, selectContact, bearing, distance, wrap, clamp, angleDiff, intercept, scopeFov} from './engine.js';
 import {Renderer} from './render.js';
 import {PatrolAudio} from './audio.js';
 
@@ -80,7 +80,7 @@ canvas.addEventListener('pointerdown',e=>{
 canvas.addEventListener('pointermove',e=>{
   if(!pointer||pointer.id!==e.pointerId)return;
   if(Math.hypot(e.clientX-pointer.x,e.clientY-pointer.y)>6)pointer.moved=true;
-  if(game.station==='scope'&&pointer.moved)game.viewBearing=wrap(game.viewBearing-(e.clientX-pointer.lastX)/renderer.width*68/game.zoom);
+  if(game.station==='scope'&&pointer.moved)game.viewBearing=wrap(game.viewBearing-(e.clientX-pointer.lastX)/(renderer.scopeAperture?.radius*2||renderer.width)*scopeFov(game));
   pointer.lastX=e.clientX;
 });
 canvas.addEventListener('pointerup',e=>{
@@ -106,6 +106,7 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden&&game.phase
 
 function updateUI(){
   const g=game,s=g.sub,target=selectedShip(g),deep=s.depth>16,scopeDown=deep||!g.periscopeRaised;
+  $('viewport').dataset.view=g.station;
   $('clock').textContent=clock(g.time);
   for(const b of document.querySelectorAll('[data-station]')){const active=b.dataset.station===g.station;b.classList.toggle('active',active);b.setAttribute('aria-pressed',active);}
   $('station-title').textContent={command:'Control room · Commander’s station',scope:'Observation periscope',chart:'Tactical chart · Patrol sector',torpedo:'Torpedo control · Bow compartment',sonar:'Hydrophone · Passive bearings'}[g.station];
@@ -123,13 +124,13 @@ function updateUI(){
   $('scope-toggle').hidden=g.station!=='scope'||deep;
   $('scope-toggle').textContent=g.periscopeRaised?'Lower scope':'Raise scope';
   $('zoom').hidden=g.station!=='scope'||scopeDown;
-  $('zoom').textContent=`${g.zoom}×`;$('zoom').setAttribute('aria-label',g.zoom===1?'Zoom in':'Zoom out');
+  $('zoom').textContent=g.zoom===1?'1.5×':'6×';$('zoom').setAttribute('aria-label',g.zoom===1?'Switch to high power, 6 times magnification':'Switch to low power, 1.5 times magnification');
   canvas.setAttribute('aria-label',g.station==='scope'?'Periscope. Drag to look or tap a ship. Next contact also selects a ship.':g.station==='chart'?'Tactical chart. Tap a ship to track or open water to set course.':g.station==='command'?'Submarine control room. Choose a station to take command.':g.station==='torpedo'?'Bow torpedo compartment. Select a ready tube and fire.':'Hydrophone. Tap a contact bearing to track.');
   if(target){
     $('contact-number').textContent=`Contact ${String(target.id).padStart(2,'0')}`;
     $('contact-type').textContent=target.sunk?'SUNK':target.type==='escort'?'ESCORT':target.type==='tanker'?'TANKER':'MERCHANT';
     $('contact-name').textContent=target.name;
-    $('contact-status').textContent=target.sunk?'Sinking · Tonnage confirmed':scopeDown?'Hydrophone contact · Bearing only':Math.abs(angleDiff(bearing(s,target),g.viewBearing))<40/g.zoom?'Visual contact · Tracking':'Contact outside periscope view';
+    $('contact-status').textContent=target.sunk?'Sinking · Tonnage confirmed':scopeDown?'Hydrophone contact · Bearing only':Math.abs(angleDiff(bearing(s,target),g.viewBearing))<scopeFov(g)/2?'Visual contact · Tracking':'Contact outside periscope view';
     $('range').innerHTML=scopeDown?'— <small>m</small>':`${number(distance(s,target))} <small>m</small>`;
     $('bearing').textContent=heading(bearing(s,target));
     $('course').innerHTML=scopeDown?'—':`${heading(target.heading)} <span>${cardinal(target.heading)}</span>`;
