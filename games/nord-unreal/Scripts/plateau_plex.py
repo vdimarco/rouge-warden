@@ -5049,6 +5049,7 @@ def prepare(directory=OUT, write=True, keep=None):
     sources.append('Data/LaFontaine/layout.json')
     if CANOPY.exists():
         sources.append(str(CANOPY.relative_to(ROOT)))
+    sources.append('Data/Plateau/ReplicaGeometry/Streets/street_trees.json')   # yard trees clear tree_positions()
     trees = yard_trees_document(records)
     tree_bytes = (json.dumps(trees, ensure_ascii=False, separators=(',', ':')) + '\n').encode()
     if keep is not None:
