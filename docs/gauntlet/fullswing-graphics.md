@@ -1309,3 +1309,6 @@ Increment54 shipped #672 as05750289 after freshall6CI/review/current8HUDdeployed
 
 ### Increment55 — phone finish guard
 Skipdesktop-onlyFINISHreachquerybeforephonefallback.4096outputequivalencePASS/712→456queries;actualbrowser60phonePUNCH+60desktopFINISHqueries/removalPASS;HUD/action suitesPASS. Evidence r55-phone-finish/all20limits/noFPSclaim/totalwithheld. Releasepending.
+
+
+Increment55 shipped #676 asd1867b18 after freshall6CI/review/current63deployedchecks/exactmain+ropebytes/rebase before AND afterpreview/exactmerge. Productionmain+rope HTTP200 exactbytes verified (hashes in r55-phone-finish/production-verification.json). Canonical phone-finish and ink-rope endpoint scenarios published and both changes archived. Shipped stale endpoint regression restored without changing physics/renderedink; layout fixture waits CSS fade completion, assertions unchanged. Concurrent NORD/buildingrope work preserved. ActualChrome/FPSbenefit unverified; totalwithheld.

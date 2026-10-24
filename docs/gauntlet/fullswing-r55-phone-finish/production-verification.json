@@ -1,0 +1,18 @@
+{
+  "stage": "production_verified",
+  "merge": "d1867b18ed8350312b38f7386c19b9285e383bf2",
+  "files": [
+    {
+      "file": "js/main.js",
+      "status": 200,
+      "exact": true,
+      "sha256": "1b979b2df37d35a5b717c6c3a1794668b0e387674b116a847f13ad777ed5d10e"
+    },
+    {
+      "file": "js/rope.js",
+      "status": 200,
+      "exact": true,
+      "sha256": "034e95bfb6c41709c5688f54a1e7911fd41048df86466692266f7b986e77e2c4"
+    }
+  ]
+}
