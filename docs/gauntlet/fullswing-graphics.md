@@ -1328,3 +1328,6 @@ Increment57 shipped #681 as f548a6b7 after all6CI/review/current48deployedchecks
 
 
 Increment58 pending: populated web matrix/fade uploads1088→408bytesone6segments/816two12 with exactnonblankpixels; existing building checks caught shippedsky-anchor regression/currentmainbaseline3fail. Restored prior shared realbuilding selector preserving newer gold-ring/melee/wall/heldrope behavior;4building+51swing checksPASS. Evidence r58-web-ranges/all20limits/noFPSclaim.
+
+
+Increment58 shipped #683 as b05703d1 after all6CI/review/current63deployedchecks/exactmainbytes/rebase before AND afterpreview/exactmerge. Productionmain HTTP200 exactSHA220d0f069b4d893723e7bda74bec3a0131d7d940b2d21bf9341a02f3716b026c verified. Canonical web-upload and real-anchor-restoration scenarios published; both OpenSpecs archived. Realbuilding-only/above-roof restoration preserves newer goldring/melee/wall/heldrope behavior; legacyfixtures corrected to realanchor contract. NoFPSclaim/actualChromeunverified/totalwithheld.
