@@ -1,10 +1,12 @@
 """Offline checks for Scripts/gauntlet_tune.py with a fake host (no Unreal, no GPU).
 
 Run from games/nord-unreal:  python3 Scripts/test_gauntlet_tune.py
-A fake measure function with known additive GPU costs and Look gains per knob step checks the search order, the
-combination and its fallback, the climb, the stop rule (candidate limit and window end), the downward search, tie and
-noise handling, contended runs, dependency safety and the confirmation order. The DeviceProfiles writer must round-trip,
-and the first profile it writes must equal today's QUALITY in Scripts/browser_streaming.py.
+A fake measure function with known additive GPU costs and Look gains per CVar value checks the search order, the
+combination and its fallback, the climb, the stop rule (candidate limit, and a window end planned with the longest
+candidate), the downward search, tie and noise handling, contended runs, dependency safety and the confirmation order.
+The DeviceProfiles writer must round-trip, and the first profile it writes must equal today's QUALITY in
+Scripts/browser_streaming.py. The checked-in section equals QUALITY, or the candidate in the approval record that
+write-profile writes next to it.
 """
 import copy
 from datetime import datetime, timezone

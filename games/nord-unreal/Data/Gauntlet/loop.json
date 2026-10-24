@@ -173,7 +173,7 @@
       {"sg.GlobalIlluminationQuality": 1}, {"sg.GlobalIlluminationQuality": 2}, {"sg.GlobalIlluminationQuality": 3}]},
     {"id": "reflections", "enabled": true, "baseline_step": 0, "floor": "Step 0 and step 1 both leave Lumen reflections off (unverified), so a lower step saves little.", "steps": [
       {"sg.ReflectionQuality": 1}, {"sg.ReflectionQuality": 2}, {"sg.ReflectionQuality": 3}]},
-    {"id": "screen_percentage", "enabled": true, "baseline_step": 3, "note": "TSR; 50 is the floor in Epic's TSR guide.", "steps": [
+    {"id": "screen_percentage", "enabled": true, "baseline_step": 3, "note": "TSR; 50 is the floor in Epic's TSR guide (from memory; unverified).", "steps": [
       {"r.ScreenPercentage": 50}, {"r.ScreenPercentage": 60}, {"r.ScreenPercentage": 67}, {"r.ScreenPercentage": 75}, {"r.ScreenPercentage": 85}, {"r.ScreenPercentage": 100}]},
     {"id": "view_distance", "enabled": true, "baseline_step": 1, "steps": [
       {"sg.ViewDistanceQuality": 1}, {"sg.ViewDistanceQuality": 2}, {"sg.ViewDistanceQuality": 3}]},
@@ -185,7 +185,7 @@
       {"sg.PostProcessQuality": 1}, {"sg.PostProcessQuality": 2}, {"sg.PostProcessQuality": 3}]},
     {"id": "shading", "enabled": true, "baseline_step": null, "note": "QUALITY does not set sg.ShadingQuality, so today's value is the engine default. Read it back on the host before the baseline run.", "steps": [
       {"sg.ShadingQuality": 2}, {"sg.ShadingQuality": 3}]},
-    {"id": "anti_aliasing", "enabled": true, "baseline_step": 0, "note": "TSR history cost.", "floor": "Not lowered: screen percentage is the TSR cost the search lowers first.", "steps": [
+    {"id": "anti_aliasing", "enabled": true, "baseline_step": 0, "note": "TSR history cost.", "floor": "Not lowered: screen percentage cuts the TSR cost first.", "steps": [
       {"sg.AntiAliasingQuality": 2}, {"sg.AntiAliasingQuality": 3}]},
     {"id": "textures", "enabled": true, "baseline_step": 0, "note": "VRAM only.", "floor": "VRAM only: a lower step saves no frame time.", "steps": [
       {"sg.TextureQuality": 2}, {"sg.TextureQuality": 3}]},
