@@ -1,0 +1,18 @@
+{
+  "stage": "production_verified",
+  "merge": "013e0bbcdbf45c32995667acefd6e7d63ba60b31",
+  "files": [
+    {
+      "file": "js/main.js",
+      "status": 200,
+      "exact": true,
+      "sha256": "00ebd4da21a1c12c01d7c04038c4a52ce94f9be631533bfab2d02c69f1a138b3"
+    },
+    {
+      "file": "js/cityview.js",
+      "status": 200,
+      "exact": true,
+      "sha256": "634fdd52adfe4935feb960e34f29d4c6bbe0ccf38969f952d6d641e3e0438601"
+    }
+  ]
+}

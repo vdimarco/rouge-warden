@@ -1,0 +1,42 @@
+PASS: Shift sprints: 3.5 m/s walking, 7.7 m/s sprinting
+PASS: the energy gauge shows and drains while you sprint
+PASS: an empty gauge ends the sprint (back to walking pace; it starts to fill again 0.8 s later)
+PASS: the gauge fills again after you stop
+PASS: a dive lands in a roll
+PASS: the roll keeps the speed along the ground (6.0 m/s)
+PASS: in reach the swing input punches instead of firing a rope
+PASS: punch, punch, kick knocks the goon down
+PASS: a fighting goon is a rope target
+PASS: a rope that catches a goon yanks him off his feet
+PASS: four goons knock the hero out; the hero wakes up with full hearts
+PASS: and wakes up away from the fight (on a safe roof)
+PASS: next to a parked car the prompt says R GET IN
+PASS: R gets in and W drives (14.4 m/s)
+PASS: R gets out again
+PASS: a street car drives near the sidewalk of the z = 14 avenue
+PASS: next to a street car the prompt says R STEAL
+PASS: R steals it: the hero is in a stopped car in the traffic car's colour
+PASS: the stolen car's traffic instance is hidden
+PASS: the driver jumps out and runs off shouting (HEY!)
+PASS: W drives the stolen car (14.4 m/s)
+PASS: R gets out; the stolen car stays parked and its traffic car stays hidden
+PASS: at the stolen car's door the prompt says R GET IN
+PASS: job markers wait round the city once Mission 1 is done (brawl,thief,balloon,washer)
+PASS: walking into a marker starts its job, with its card and a compass goal
+PASS: on foot at a taxi marker the fare only shouts for a car
+PASS: driving into the taxi marker takes the fare, with a card and a goal pin
+PASS: the map has a pin and a list entry for each job marker (Odd job: Catch!83 m,Odd job: Balloon Chase278 m,Odd job: Window Washer341 m,Odd job: Rooftop Brawl379 m)
+PASS: a click on a job pin travels there and takes the job
+PASS: while you are on a job the map pins that job, and no other markers
+PASS: no errors in flat play
+PASS: a first run opens with the King's comic before the cottage room
+PASS: after the comic the cottage room starts
+PASS: after the hand-off Mission 1, the Sludge Run, starts at once
+PASS: no errors in the first run
+PASS: the toilet erupts and play starts (gurgle, overflow, shoot, yank, erupt, done)
+PASS: the blast throws the hero high over the lake shore
+PASS: he falls into the lake: KASPLASH
+PASS: the lake gives him back on the start roof
+PASS: then Mission 1, the Sludge Run, starts
+PASS: no errors in the eruption
+PASS: action

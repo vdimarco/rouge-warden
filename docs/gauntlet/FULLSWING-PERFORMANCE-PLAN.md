@@ -132,3 +132,6 @@ Increment63 shipped #693 as a3710180 after all6CI/review/current5authenticatedbr
 
 
 Increment64 pending — traffic wrapper optionaloutput/private runtime scratch60fresh→1 direct+street frames;4browser+actualaccessor null/replacementchecks+existingactionbrowserPASS. Evidence r64-traffic-record/all20limits/noFPSclaim/totalwithheld.
+
+
+Increment64 shipped #695 as013e0bbc after all6CI/review/current authenticated traffic+action checks/exactmain+cityviewbytes/rebase before AND afterpreview/exactmerge. Productionboth HTTP200 exactSHA main00ebd4da21a1c12c01d7c04038c4a52ce94f9be631533bfab2d02c69f1a138b3/cityview634fdd52adfe4935feb960e34f29d4c6bbe0ccf38969f952d6d641e3e0438601 verified. Canonical traffic-record scenarios published and OpenSpec archived. ActualChrome/FPSbenefit unverified; totalwithheld.
