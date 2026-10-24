@@ -63,6 +63,11 @@ export function playerUrl(value, pin) {
 }
 
 export function summarize(samples, { frames, events } = {}) {
+  // When the host quits first, the samples after the stream ended have no connected peer and so no counters
+  // (unverified against a real host exit). Leave out those at the end; the summary stops where the stream did.
+  const live = samples.findLastIndex(sample => !Array.isArray(sample.peerStates) || sample.peerStates.includes('connected'));
+  const ended = samples[live + 1];
+  samples = samples.slice(0, live + 1);
   assert.ok(samples.length >= 2, 'At least two media samples are required');
   const first = samples[0], last = samples.at(-1);
   const seconds = (last.timeMs - first.timeMs) / 1000;
@@ -76,6 +81,7 @@ export function summarize(samples, { frames, events } = {}) {
     longestFrameGapMs: last.longestFrameGapMs,
     width: last.width, height: last.height, candidate: last.candidate, codec: last.codec
   };
+  if (ended) result.streamEndedTimeMs = ended.timeMs;
   if (Number.isFinite(last.totalDecodeTime) && last.framesDecoded > first.framesDecoded) {
     result.decodeMsPerFrame = (last.totalDecodeTime - first.totalDecodeTime) * 1000 / (last.framesDecoded - first.framesDecoded);
     const emitted = last.jitterBufferEmittedCount - first.jitterBufferEmittedCount;
@@ -262,7 +268,7 @@ async function main() {
       // Unverified from memory: rVFC times use the same clock as performance.now().
       return performance.timeOrigin;
     }, values.frames);
-    // Lines already in the trigger file belong to an earlier run; only new lines take shots.
+    // Lines already in the trigger file belong to an earlier run; only new lines take shots or stop the sample.
     const triggerLines = async () => values.trigger
       ? (await readFile(resolve(values.trigger), 'utf8').catch(() => '')).split('\n').slice(0, -1) : [];
     let triggered = (await triggerLines()).length;
@@ -290,6 +296,7 @@ async function main() {
     const point = () => ({ x: image.x + image.width / 2, y: image.y + image.height / 2, id: 9 });
     if (touch) await touch.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [point()] });
     const started = Date.now();
+    let ended = false;
     do {
       const { frameBatch, eventBatch, ...sample } = await page.evaluate(async latency => {
         const video = document.querySelector('#video video'), gap = window.__sampleGap;
@@ -330,18 +337,22 @@ async function main() {
       report.samples.push(sample);
       if (frameBatch) frames.push(...frameBatch);
       if (eventBatch) report.events.push(...eventBatch);
-      if (Date.now() - started >= seconds * 1000) break;
-      for (let step = 0; step < 10; step++) {
+      if (ended || Date.now() - started >= seconds * 1000) break;
+      for (let step = 0; step < 10 && !ended; step++) {
         if (touch) await touch.send('Input.dispatchTouchEvent', { type: 'touchMove',
           touchPoints: [{ ...point(), x: point().x + 30 * Math.sin((Date.now() - started) / 250) }] });
         if (values.trigger) {
           const lines = await triggerLines();
           // A shorter file was rewritten, so its lines are all new.
           if (lines.length < triggered) triggered = 0;
-          for (const line of lines.slice(triggered)) if (line.trim()) await shoot(line);
+          for (const line of lines.slice(triggered)) {
+            // The runner writes END once when the drive ends: take one last sample and stop before the host quits.
+            if (line.trim() === 'END') { ended = true; break; }
+            if (line.trim()) await shoot(line);
+          }
           triggered = lines.length;
         }
-        await page.waitForTimeout(100);
+        if (!ended) await page.waitForTimeout(100);
       }
     } while (true);
     if (touch) {
