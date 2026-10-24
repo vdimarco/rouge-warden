@@ -1477,10 +1477,10 @@ def check_report_coop_window(out):
     row of that candidate. Rows more than 12 hours apart, or at another rung or orientation, do not pair, and the guard
     is unverified. When the baseline's last row before the candidate does not count (unverified here, in a morning
     window 10 hours after the night's), the guard does not reach back to the night's counted row: it pairs with the
-    morning's counted row after the candidate. A forward pair stays in the candidate row's window: when the night's
-    baseline row before the candidate is contended, the next morning's baseline row, 7 hours later, does not pair with
-    the night's candidate row, which stays unpaired, and the morning's own pair decides. confirm reads the round as
-    report does, so it runs the next candidate and not the dropped one."""
+    morning's counted row after the candidate. A forward pair starts at most 4 hours after the candidate's row: when the
+    night's baseline row before the candidate is contended, the next morning's baseline row, 7 hours later, does not
+    pair with the night's candidate row, which stays unpaired, and the morning's own pair decides. confirm reads the
+    round as report does, so it runs the next candidate and not the dropped one."""
     night, next_night = "2026-10-23T", "2026-10-24T"
     drop = "two-viewer FPS 27.5 is 2.5 below the baseline's 30.0"
     dropped = [("baseline", night + "22:00:00Z", 30.0), ("04-shadows2", night + "22:30:00Z", 27.5)]
@@ -1542,7 +1542,7 @@ def check_report_coop_window(out):
         assert L.main(["confirm", str(group)]) == 0
     assert calls == [f"confirm-05-gi2-{sky}-{size}" for sky in SMALL["sky_order"] for size in SMALL["size_use"]["confirm"]], calls
     print("co-op window ok: each two-viewer row pairs with the baseline's from its window, also after an unverified "
-          "baseline row, a forward pair never reaches the next window, a failed pair drops the candidate for good, and "
+          "baseline row, a forward pair never reaches the next morning, a failed pair drops the candidate for good, and "
           "confirm runs the next candidate")
 
 

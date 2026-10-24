@@ -80,8 +80,9 @@ COVER_GRACE_MS = 1500  # A per-second sample and the log follower's delay may en
 PAIR_S = 12 * 3600
 # A forward pair (the first counted baseline row after the candidate's, when the baseline's last row before it does not
 # count) starts at most this long after the candidate's row: longer than a confirm and a lifecycle (about 2 hours),
-# shorter than the gap between two agreed windows, such as an evening and the next morning. A forward pair from the next
-# window would compare rows that were not measured together, and a failed pair drops the candidate for good.
+# shorter than the gap between an evening window and the next morning's. A forward pair from the next window would
+# compare rows that were not measured together, and a failed pair drops the candidate for good. The limit is a time, not
+# a window: two windows less than this apart can still pair forward.
 PAIR_FORWARD_S = 4 * 3600
 LABEL = re.compile(r"[A-Za-z0-9][A-Za-z0-9._+-]{0,159}")
 FOLLOWED = re.compile(r"NORD_GAUNTLET\b|NORD_STREAM_FPS\b")
@@ -1564,11 +1565,11 @@ def coop_guard(loop, rows, baseline_rows):
     row at the same rung and orientation from the same window: the baseline's two-viewer row started last before it
     (or at the same time), at most PAIR_S before it, when that row counts, else the first counted one after it, at most
     PAIR_FORWARD_S after it. A counted baseline row older than the baseline's last row before the candidate can come
-    from an earlier window, so the guard never reaches back past that last row, and a forward pair stays in the
-    candidate row's window. Rows at another size do not compare. Rows are added in the order they are
-    sampled, so a pair never changes once it is made. A pair more than two_viewer_drop_max_fps apart drops the candidate
-    for good, as a failed solo row does, also when another pair passed. Without any pair the guard is unverified, which
-    is missing evidence."""
+    from an earlier window, so the guard never reaches back past that last row. A forward pair is limited by time, not
+    by window: it keeps out the next morning's rows, not those of a window less than PAIR_FORWARD_S later. Rows at
+    another size do not compare. Rows are added in the order they are sampled, so a pair never changes once it is made.
+    A pair more than two_viewer_drop_max_fps apart drops the candidate for good, as a failed solo row does, also when
+    another pair passed. Without any pair the guard is unverified, which is missing evidence."""
     timed = lambda found: [(when, row) for row in found if row["row"] == "two_viewer" and (when := started_s(row)) is not None]
     counts = lambda row: row["status"] == "report-only" and row["two_viewer_fps"] is not None
     base = sorted(timed(baseline_rows), key=lambda item: item[0])
