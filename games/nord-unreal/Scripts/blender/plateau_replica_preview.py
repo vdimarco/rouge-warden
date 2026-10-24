@@ -13,6 +13,8 @@ placements instanced from the Props meshes in the colour variant the apply step 
 with the street-name text the apply step adds. Collision_Only batches (the gallery guards' invisible walls)
 are never drawn: the apply step hides them in game. A face is loaded when a corner lies inside the wedge or
 an edge crosses it, so a long lane quad whose corners lie behind the camera and past the far distance stays.
+The street and park trees of Streets/street_trees.json and the Plex yard trees stand on the species meshes of
+Trees/manifest.json (each kind's young mesh for a young street tree), placed by the apply step's plan_trees.
 
 Frame: every OBJ stores (x, -y, z) of a game-frame point (x east, y north, cm). Blender is
 right-handed, so placing the file coordinates unchanged shows the world as Unreal's left-handed view
@@ -25,11 +27,13 @@ Data/Art are used the way the game materials use them, and every replica texture
 ReplicaGeometry/Textures (and the Trees manifest's bark and leaf atlas) the way apply_plateau_replica.py uses
 it, from the apply step's own material rows (material_row): the same keys, tint (white for a set that owns its
 colour, the tar), tiling, macro variation (Brick_Buff_Even, the roofs and the crushed stone), metallic cap, the
-DirectX normal map, roughness from R, and for the masked sets (Rail_Baluster, Rail_Lattice, Fence_Boards,
-Leaf_Creeper, the tree leaves) the diffuse alpha clipped at the set's opacity_mask_clip, two-sided, with the
-two-sided foliage transmission (base colour x .65). The yard trees of Plex/yard_trees.json stand on the
-species meshes of Trees/manifest.json with the apply step's transforms (apply_plateau_replica.plan_trees); the
-4,571 mapped trees keep the game's shared tree_small_02, as QuebecVegetation does.
+DirectX normal map, roughness from R, the set's address modes (cards clamp V, the laundry and leaf atlases
+clamp both axes), and for the masked sets (the cut-out cards, the creeper, cedar, fountain grass, pit flowers, the
+wrought iron, the laundry, the tree leaves) the diffuse alpha clipped at the set's opacity_mask_clip, two-sided,
+with the two-sided foliage transmission (base colour x .65). The street and park trees and the yard trees stand on
+the species meshes of Trees/manifest.json with the apply step's transforms (apply_plateau_replica.plan_trees). The
+old summer tree (tree_small_02, at plateau_rendering.tree_positions) appears only in --before images, or when
+Streets/street_trees.json does not exist: the apply step clears QuebecVegetation's instances once it does.
 
     <blender-python> Scripts/blender/plateau_replica_preview.py --view ruelle_mentana --probe 640,360 990,60
 
@@ -57,8 +61,9 @@ CACHE = os.path.join(ROOT, 'Saved', 'ReplicaPreview')
 OUT = os.path.join(ROOT, 'Preview', 'Replica')
 sys.path.insert(0, os.path.join(ROOT, 'Scripts'))
 # The apply step's material rules, texture sets and yard-tree plan.
-from apply_plateau_replica import (COLLISION_ONLY, FOLIAGE_SUBSURFACE, load_textures, load_tree_kinds,  # noqa: E402
-                                   load_yard_trees, material_row, plan_trees, tree_slot)
+from apply_plateau_replica import (COLLISION_ONLY, FOLIAGE_SUBSURFACE, YOUNG, address_modes,  # noqa: E402
+                                   load_street_trees, load_textures, load_tree_kinds, load_yard_trees, material_row,
+                                   plan_trees, tree_slot)
 
 # Labels hidden in the game: the OSM masses keep collision only, the old canopies are replaced by the
 # mapped trees, and the replica apply step hides OSM Marking.
@@ -573,6 +578,31 @@ def macro_factor(nt, coord, macro):
     return factor
 
 
+def address_vector(nt, vector, address, size_px):
+    """The texture lookup for a set's address modes (apply_plateau_replica.address_modes), as (image extension, UV
+    socket). Tiling sets wrap both axes (REPEAT on the tiled UVs). An atlas clamps both (EXTEND: the laundry and leaf
+    cells never pull in the opposite edge). A card wraps U and clamps V (TA_WRAP, TA_CLAMP): Blender has one extension
+    for both axes, so V is clamped to the centres of the first and last texel rows before a REPEAT lookup, which is
+    what a clamped V samples, and the top of a fence, grass or flower card never blends in the bottom row's texels."""
+    if address == ('TA_WRAP', 'TA_WRAP'):
+        return 'REPEAT', vector
+    if address == ('TA_CLAMP', 'TA_CLAMP'):
+        return 'EXTEND', vector
+    assert address == ('TA_WRAP', 'TA_CLAMP'), address
+    half = .5 / size_px[1]
+    split = nt.nodes.new('ShaderNodeSeparateXYZ')
+    nt.links.new(vector, split.inputs['Vector'])
+    clamp = nt.nodes.new('ShaderNodeClamp')
+    clamp.inputs['Min'].default_value = half
+    clamp.inputs['Max'].default_value = 1. - half
+    nt.links.new(split.outputs['Y'], clamp.inputs['Value'])
+    join = nt.nodes.new('ShaderNodeCombineXYZ')
+    nt.links.new(split.outputs['X'], join.inputs['X'])
+    nt.links.new(clamp.outputs['Result'], join.inputs['Y'])
+    nt.links.new(split.outputs['Z'], join.inputs['Z'])
+    return 'REPEAT', join.outputs['Vector']
+
+
 def replica_set_material(name, row):
     """A replica texture-set key as the apply step builds it (apply_plateau_replica.textured_graph), from its plan
     row (material_row): the maps of the set (Textures/, or Trees/ for the bark and leaf atlas), the row's UV tiling
@@ -597,6 +627,8 @@ def replica_set_material(name, row):
     mapping = nt.nodes.new('ShaderNodeMapping')
     mapping.inputs['Scale'].default_value = (row['tiling'][0], row['tiling'][1], 1)
     nt.links.new(coord.outputs['UV'], mapping.inputs['Vector'])
+    address = address_modes(entry)
+    extension, vector = address_vector(nt, mapping.outputs['Vector'], address, entry['size_px'])
     tex = {}
     for role in ('diff', 'nor_dx', 'rough'):
         node = nt.nodes.new('ShaderNodeTexImage')
@@ -606,7 +638,8 @@ def replica_set_material(name, row):
             # Colour and mask are independent channels: the colour under a hole is the surface's own, so
             # nothing is premultiplied or darkened at the clip edge (Textures/README.md).
             node.image.alpha_mode = 'CHANNEL_PACKED'
-        nt.links.new(mapping.outputs['Vector'], node.inputs['Vector'])
+        node.extension = extension
+        nt.links.new(vector, node.inputs['Vector'])
         tex[role] = node
     mul = nt.nodes.new('ShaderNodeMix')
     mul.data_type = 'RGBA'
@@ -659,7 +692,7 @@ def replica_set_material(name, row):
         nt.links.new(clear.outputs['BSDF'], mix.inputs[1])
         nt.links.new(shader, mix.inputs[2])
         shader = mix.outputs['Shader']
-        MASKED[name] = (tex['diff'].image, tuple(row['tiling']), clip)
+        MASKED[name] = (tex['diff'].image, tuple(row['tiling']), clip, address)
     nt.links.new(shader, out.inputs['Surface'])
     MATS[name] = m
     return m
@@ -693,7 +726,11 @@ def replica_material(layer, key, spec):
 def index():
     path = os.path.join(CACHE, 'index.json')
     idx = json.load(open(path)) if os.path.exists(path) else {}
-    changed = False
+    # Forget OBJs a generator has since removed, so no view tries to read one.
+    gone = [rel for rel in idx if not rel.startswith('__') and not os.path.exists(os.path.join(ROOT, rel))]
+    for rel in gone:
+        del idx[rel]
+    changed = bool(gone)
     for dirpath, _, names in os.walk(DATA):
         if '/ReplicaGeometry/Props' in dirpath or '/ReplicaGeometry/Trees' in dirpath:
             continue
@@ -715,10 +752,9 @@ def index():
                         b = [min(b[0], x), min(b[1], y), min(b[2], z), max(b[3], x), max(b[4], y), max(b[5], z)]
             idx[rel] = {'mtime': st.st_mtime, 'size': st.st_size, 'b': b}
             changed = True
-    if '__trees__' not in idx:
-        sys.path.insert(0, os.path.join(ROOT, 'Scripts'))
-        from plateau_rendering import tree_positions
-        idx['__trees__'] = [list(t) for t in tree_positions()]
+    # Tree positions are never cached here: an earlier index kept the 4,571 OSM positions after Streets moved the
+    # trees into the inventory's sidewalk pits, so the old summer trees stood where no tree is any more.
+    if idx.pop('__trees__', None) is not None:
         changed = True
     if changed:
         os.makedirs(CACHE, exist_ok=True)
@@ -874,8 +910,8 @@ TREE = {}
 
 
 def tree_template():
-    """The mapped trees' model (Poly Haven tree_small_02, 4.55 m tall) with the game's leaf material, loaded once
-    per scene; the mapped trees and the yard trees both instance it, as the game does."""
+    """The old summer tree (Poly Haven tree_small_02, 4.55 m tall) with the game's leaf material, loaded once per
+    scene: what QuebecVegetation draws before the apply step (--before), or when no street_trees.json exists."""
     if 'coll' not in TREE:
         TREE['coll'], TREE['height'] = load_tree_template()
     return TREE['coll'], TREE['height']
@@ -951,7 +987,15 @@ def load_tree_template():
     return coll, height
 
 
+def old_tree_positions():
+    """Where QuebecVegetation puts the old summer tree before the apply step: plateau_rendering.tree_positions(), read
+    fresh each time (the street_trees.json rows), never from a cache."""
+    from plateau_rendering import tree_positions
+    return tree_positions()
+
+
 def place_trees(trees, region, col):
+    """The old summer tree at (x, y, seed) points, scaled and turned by seed as plateau_rendering does."""
     coll, height = tree_template()
     n = 0
     for x, y, seed in trees:
@@ -1010,43 +1054,68 @@ def read_obj_groups(path, scale=.01):
 SPECIES = {}
 
 
-def species_collection(species, kind):
-    """A species mesh of Trees/manifest.json (Scripts/blender/plateau_trees.py) as the apply step imports it: one
-    object per usemtl slot, the slot named bark or leaves (apply_plateau_replica.tree_slot) taking that kind's
-    material through the apply step's own material row (the textured bark; the masked, two-sided foliage leaf atlas),
-    and the OBJ's normals kept, so the leaf cards keep the normals the generator bent to the crown (SpeedTree's leaf
-    puffiness). File coordinates, as the props: the instance takes position (x, -y, z) and yaw -yaw."""
-    if species in SPECIES:
-        return SPECIES[species]
-    coll = bpy.data.collections.new('Tree_' + species)
-    path = os.path.join(REPLICA, kind['obj'])
-    for name, (verts, polys, uvs, normals) in sorted(read_obj_groups(path).items()):
-        slot = tree_slot(name)
+def species_collection(species, kind, variant=None):
+    """A species mesh of Trees/manifest.json (Scripts/blender/plateau_trees.py) as the apply step imports it: the
+    kind's mature mesh, or its young street tree with variant 'young' (kind['young']['obj'], wearing the kind's
+    materials). One object per usemtl slot, the slot named bark or leaves (apply_plateau_replica.tree_slot) taking that
+    kind's material through the apply step's own material row (the textured bark; the masked, two-sided foliage leaf
+    atlas), and the OBJ's normals kept, so the leaf cards keep the normals the generator bent to the crown (SpeedTree's
+    leaf puffiness). File coordinates, as the props: the instance takes position (x, -y, z) and yaw -yaw."""
+    name = species + (f'_{variant}' if variant else '')
+    if name in SPECIES:
+        return SPECIES[name]
+    coll = bpy.data.collections.new('Tree_' + name)
+    path = os.path.join(REPLICA, (kind[variant] if variant else kind)['obj'])
+    for group, (verts, polys, uvs, normals) in sorted(read_obj_groups(path).items()):
+        slot = tree_slot(group)
         ref = kind['materials'][slot]
         mat = replica_material('Trees', ref['key'], ref['spec'])
-        ob = make_object(f'T_{species}_{slot}', verts, polys, uvs, mat, coll, smooth=True)
+        ob = make_object(f'T_{name}_{slot}', verts, polys, uvs, mat, coll, smooth=True)
         if normals:
             ob.data.normals_split_custom_set(normals)
-    SPECIES[species] = coll
+    SPECIES[name] = coll
     return coll
 
 
 def place_yard_trees(region, col):
     """The Plex yard trees as the apply step instances them (plan_trees). With Trees/manifest.json: one group per
-    species (the old maple and elm rows on norway_maple and linden), each tree on its species mesh, scaled uniformly
-    to the row's height. Without it: one group per kind on the mapped trees' mesh with scale (scale x crown, scale x
+    species (the old maple rows on norway_maple, elm on the elm vase), each tree on its species mesh, scaled uniformly
+    to the row's height. Without it: one group per kind on the old tree's mesh with scale (scale x crown, scale x
     crown, scale). Positions and yaw go into the file frame as (x, -y, z), -yaw."""
     rows = load_yard_trees(ROOT)
     if not rows:
         return 0
     kinds = load_tree_kinds(ROOT)
+    return place_tree_groups(plan_trees(rows, kinds), kinds, region, col, 'YardTree')
+
+
+def place_street_trees(region, col):
+    """Every street and park tree of Streets/street_trees.json as the apply step instances it (plan_trees, group
+    'street'): each row on its kind's species mesh, or the kind's young mesh under YOUNG_BELOW of the mature height,
+    at the ground under its trunk (the pit soil, sidewalk or lawn), its yaw, and the height and trunk spread scale of
+    apply_plateau_replica.street_tree_scale. Returns the number placed, or None when the file does not exist (the game
+    then still draws the old summer tree)."""
+    rows = load_street_trees(ROOT)
+    if rows is None:
+        return None
+    kinds = load_tree_kinds(ROOT)
+    assert kinds, 'Streets/street_trees.json needs Trees/manifest.json: run Scripts/blender/plateau_trees.py --no-render'
+    return place_tree_groups(plan_trees(rows, kinds), kinds, region, col, 'StreetTree')
+
+
+def place_tree_groups(groups, kinds, region, col, prefix):
+    """Instance each planned tree group's transforms inside the region, on its species (and variant) mesh; a mesh is
+    read only when one of its trees is in the region."""
     n = 0
-    for group in plan_trees(rows, kinds):
-        coll = species_collection(group['kind'], kinds[group['kind']]) if kinds else tree_template()[0]
-        for (x, y, z), yaw, scale in group['transforms']:
-            if not region.keep(x, y):
-                continue
-            e = bpy.data.objects.new(f'YardTree_{group["kind"]}_{n}', None)
+    for group in groups:
+        variant = group.get('variant')
+        kept = [t for t in group['transforms'] if region.keep(t[0][0], t[0][1])]
+        if not kept:
+            continue
+        coll = species_collection(group['kind'], kinds[group['kind']], variant) if kinds else tree_template()[0]
+        name = group['kind'] + (f'_{variant}' if variant else '')
+        for (x, y, z), yaw, scale in kept:
+            e = bpy.data.objects.new(f'{prefix}_{name}_{n}', None)
             e.instance_type = 'COLLECTION'
             e.instance_collection = coll
             e.location = (x / 100, -y / 100, z / 100)
@@ -1055,6 +1124,16 @@ def place_yard_trees(region, col):
             col.objects.link(e)
             n += 1
     return n
+
+
+def place_all_trees(region, col, before=False):
+    """(species street trees, old summer trees, yard trees) placed in the region. After the apply step the street and
+    park trees stand on their species meshes and QuebecVegetation holds no old tree; before it (--before), or with no
+    street_trees.json, the old summer tree stands at the current tree positions, and there are no yard trees."""
+    street = None if before else place_street_trees(region, col)
+    old = place_trees(old_tree_positions(), region, col) if street is None else 0
+    yard = 0 if before else place_yard_trees(region, col)
+    return street, old, yard
 
 
 def setup_world(scene, sun_azimuth=215., sun_elevation=31.):
@@ -1103,8 +1182,7 @@ def build(name, spec, before=False, res=(1280, 720)):
     g = 60000
     make_object('DistrictGround', [(-g / 100, -g / 100, -.002), (g / 100, -g / 100, -.002), (g / 100, g / 100, -.002),
                                    (-g / 100, g / 100, -.002)], [[0, 1, 2, 3]], [], existing_material('Ground', 'Gravel'), col)
-    trees = place_trees(idx['__trees__'], region, col)
-    yard_trees = 0 if before else place_yard_trees(region, col)
+    street, trees, yard_trees = place_all_trees(region, col, before)
     texts = 0
     placed = []
     if not before:
@@ -1124,8 +1202,8 @@ def build(name, spec, before=False, res=(1280, 720)):
     setup_world(scene, *spec.get('sun', (215., 31.)))
     scene.render.resolution_x, scene.render.resolution_y = res
     scene.render.resolution_percentage = 100
-    summary = (f'PREVIEW {name} before={before} loaded {tris} faces, {trees} trees, {yard_trees} yard trees, '
-               f'{len(placed)} props, {texts} texts in {time.time() - t0:.0f}s')
+    summary = (f'PREVIEW {name} before={before} loaded {tris} faces, {street or 0} species street trees, {trees} old '
+               f'summer trees, {yard_trees} yard trees, {len(placed)} props, {texts} texts in {time.time() - t0:.0f}s')
     return scene, summary
 
 
@@ -1170,8 +1248,9 @@ def render(name, spec, before=False, samples=40, threads=3, res=(1280, 720), out
 PIXELS = {}
 
 
-def pixel_alpha(img, u, v):
-    """Diffuse alpha of a cut-out map at UV (u, v), tiled; Blender stores image rows bottom up, as UV v runs."""
+def pixel_alpha(img, u, v, address=('TA_WRAP', 'TA_WRAP')):
+    """Diffuse alpha of a cut-out map at UV (u, v), wrapped or clamped per axis as the set addresses it; Blender stores
+    image rows bottom up, as UV v runs."""
     import numpy as np
     key = img.name
     if key not in PIXELS:
@@ -1181,7 +1260,9 @@ def pixel_alpha(img, u, v):
         PIXELS[key] = buf.reshape(h, w, 4)
     a = PIXELS[key]
     h, w = a.shape[:2]
-    return float(a[int((v % 1.) * h) % h, int((u % 1.) * w) % w, 3])
+    u = min(max(u, 0.), 1. - 1e-9) if address[0] == 'TA_CLAMP' else u % 1.
+    v = min(max(v, 0.), 1. - 1e-9) if address[1] == 'TA_CLAMP' else v % 1.
+    return float(a[int(v * h) % h, int(u * w) % w, 3])
 
 
 def face_uv(ob, index, local):
@@ -1230,7 +1311,7 @@ def probe(scene, pixels):
             cut = MASKED.get(material)
             if cut and ob.type == 'MESH':
                 uv = face_uv(ob, index, mat.inverted() @ loc)
-                if uv is not None and pixel_alpha(cut[0], uv.x * cut[1][0], uv.y * cut[1][1]) < cut[2]:
+                if uv is not None and pixel_alpha(cut[0], uv.x * cut[1][0], uv.y * cut[1][1], cut[3]) < cut[2]:
                     origin, passes = loc + direction * .002, passes + 1
                     continue
             row['hit'] = {'object': ob.name, 'material': material, 'distance_m': round(travelled, 2),

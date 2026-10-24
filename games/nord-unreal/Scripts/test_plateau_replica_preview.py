@@ -3,14 +3,19 @@
 Run from games/nord-unreal:  python3 Scripts/test_plateau_replica_preview.py
 No Blender needed: a small fake `bpy` records the node graphs the preview builds. The checks follow the apply
 step (apply_plateau_replica.material_row, textured_graph, add_macro and plan_trees):
-- every key that takes a replica texture set (Stone, Slate, the shared keys with Brick_Buff_Even, the tree bark and
-  leaf atlas) gets its three maps from its own folder, the row's tiling, the row's tint (white for the tar, which
-  owns its colour), the macro variation where the set has one, the DirectX normal map, roughness from R and the
-  row's capped metallic; the masked sets (Rail_Baluster, Rail_Lattice, Fence_Boards, Leaf_Creeper, the tree leaves)
-  are clipped at their opacity_mask_clip with the alpha read channel-packed; the foliage sets transmit base colour x
-  FOLIAGE_SUBSURFACE; the opaque sets have no transparency;
-- the yard trees stand on their species meshes (maple on norway_maple, elm on linden) at the apply step's
-  positions, yaws and uniform scales, and each species OBJ splits into a bark and a leaves slot;
+- every key that takes a replica texture set (Stone, Slate, the shared keys with Brick_Buff_Even and the fourth pass's
+  Concrete_Lane_Aged, Leaf_Cedar, Plant_Grass_Fountain, Plant_Pit_Flowers, Iron_Wrought and Cloth_Laundry, each from
+  the layer manifest that uses it, the tree bark and leaf atlas) gets its three maps from its own folder, the row's
+  tiling, the set's address modes (cards clamp V to the first and last texel rows, atlases clamp both axes), the row's
+  tint (white for a set that owns its colour), the macro variation where the set has one, the DirectX normal map,
+  roughness from R and the row's capped metallic; the masked sets are clipped at their opacity_mask_clip with the
+  alpha read channel-packed; the foliage sets transmit base colour x FOLIAGE_SUBSURFACE; the opaque sets have no
+  transparency;
+- the yard trees stand on their species meshes (maple on norway_maple) at the apply step's positions, yaws and
+  uniform scales, and each species OBJ, mature and young, splits into a bark and a leaves slot;
+- every street and park tree of Streets/street_trees.json stands on its kind's species or young mesh with the apply
+  step's transform, and the old summer tree appears only before the apply step, at the current tree positions;
+- the OBJ index forgets removed OBJs and never caches tree positions;
 - faces are kept when an edge crosses the view, so the ruelle_mentana lane asphalt (one 188 m quad) is loaded;
 - Collision_Only batches are never drawn;
 - every placement gets the colour variant the apply step gives it;
@@ -28,7 +33,13 @@ sys.path.insert(0, str(ROOT / 'Scripts'))
 sys.path.insert(0, str(ROOT / 'Scripts' / 'blender'))
 import apply_plateau_replica as apply_replica  # noqa: E402
 
-MASKED_KEYS = ('Rail_Baluster', 'Rail_Lattice', 'Fence_Boards', 'Leaf_Creeper')
+MASKED_KEYS = ('Rail_Baluster', 'Rail_Lattice', 'Fence_Boards', 'Leaf_Creeper', 'Leaf_Cedar', 'Plant_Grass_Fountain',
+               'Plant_Pit_Flowers', 'Iron_Wrought', 'Cloth_Laundry')
+# The fourth pass's keys (the shared contract), the layer whose manifest uses each, and how the set is addressed.
+NEW_KEYS = {'Concrete_Lane_Aged': ('Streets', 'REPEAT'), 'Leaf_Cedar': ('Plex', 'clamp V'),
+            'Plant_Grass_Fountain': ('Soul', 'clamp V'), 'Plant_Pit_Flowers': ('Streets', 'clamp V'),
+            'Iron_Wrought': ('Streets', 'clamp V'), 'Cloth_Laundry': ('Soul', 'EXTEND')}
+LAYERS = ('Plex', 'Streets', 'Soul')
 
 
 # ------------------------------------------------------------------------------------------------
@@ -75,6 +86,7 @@ class Node:
         fixed_in, fixed_out = FIXED.get(kind, ((), ()))
         self.inputs, self.outputs = Sockets(self, fixed_in), Sockets(self, fixed_out)
         self.image = None
+        self.extension = 'REPEAT'  # Blender's default for an image texture node
 
 
 class Nodes:
@@ -194,10 +206,33 @@ def check_material(preview, layer, key, spec, sets):
     for n in images.values():
         assert Path(n.image.filepath).parent.name == entry.get('directory', 'Textures'), (key, n.image.filepath)
     role = {r: images[entry['maps'][r]['file']] for r in ('diff', 'nor_dx', 'rough')}
-    mapping = source(links, role['diff'].inputs['Vector']).node
-    assert tuple(mapping.inputs['Scale'].default_value[:2]) == tuple(row['tiling']), key
+    # The three maps share one lookup, addressed as the apply step addresses the set (address_modes): tiling sets
+    # wrap, an atlas clamps both axes (EXTEND), a card wraps U and clamps V to its first and last texel rows.
+    address = apply_replica.address_modes(entry)
+    lookup = source(links, role['diff'].inputs['Vector'])
     for n in role.values():
-        assert source(links, n.inputs['Vector']).node is mapping, key + ' map not tiled'
+        assert source(links, n.inputs['Vector']) is lookup, key + ' maps sampled at different UVs'
+        assert n.extension == ('EXTEND' if address == ('TA_CLAMP', 'TA_CLAMP') else 'REPEAT'), (key, n.extension)
+    if address == ('TA_WRAP', 'TA_CLAMP'):
+        join = lookup.node
+        assert join.bl_idname == 'ShaderNodeCombineXYZ', key + ': the card V is not clamped'
+        clamp = source(links, join.inputs['Y']).node
+        half = .5 / entry['size_px'][1]
+        assert clamp.bl_idname == 'ShaderNodeClamp', key
+        assert abs(clamp.inputs['Min'].default_value - half) < 1e-12, key
+        assert abs(clamp.inputs['Max'].default_value - (1. - half)) < 1e-12, key
+        y = source(links, clamp.inputs['Value'])
+        split = y.node
+        assert y.name == 'Y' and split.bl_idname == 'ShaderNodeSeparateXYZ', key
+        assert source(links, join.inputs['X']) is split.outputs['X'], key + ': U must wrap as it tiles'
+        assert source(links, join.inputs['Z']) is split.outputs['Z'], key
+        mapping = source(links, split.inputs['Vector']).node
+    else:
+        assert address in (('TA_WRAP', 'TA_WRAP'), ('TA_CLAMP', 'TA_CLAMP')), (key, address)
+        mapping = lookup.node
+    assert mapping.bl_idname == 'ShaderNodeMapping', key
+    assert tuple(mapping.inputs['Scale'].default_value[:2]) == tuple(row['tiling']), key
+    row = dict(row, address=address)
     assert role['diff'].image.colorspace_settings.name == 'sRGB', key
     assert role['nor_dx'].image.colorspace_settings.name == role['rough'].image.colorspace_settings.name == 'Non-Color'
     # Base colour = diff x the row's tint (colour / mean_linear capped at TINT_LIMIT; white when the set owns its
@@ -257,6 +292,7 @@ def check_material(preview, layer, key, spec, sets):
         assert abs(keep.inputs[1].default_value - row['opacity_mask_clip']) < 2e-3, key
         lit = source(links, mix.inputs[2]).node
         assert key in entry['keys'] and preview.MASKED[mat.name][2] == row['opacity_mask_clip']
+        assert preview.MASKED[mat.name][3] == address, key + ': --probe must address the mask as the material does'
         if row['shading_model'] == 'two_sided_foliage':
             assert lit.bl_idname == 'ShaderNodeAddShader', key + ' needs the foliage transmission'
             translucent = source(links, lit.inputs[1]).node
@@ -275,15 +311,27 @@ def check_material(preview, layer, key, spec, sets):
 
 def check_set_materials(preview):
     sets = apply_replica.load_textures(ROOT)
-    plex = json.loads((ROOT / 'Data/Plateau/ReplicaGeometry/Plex/manifest.json').read_text())['materials']
+    manifests = {layer: json.loads((ROOT / f'Data/Plateau/ReplicaGeometry/{layer}/manifest.json').read_text())['materials']
+                 for layer in LAYERS}
+    plex = manifests['Plex']
     keys = sorted(apply_replica.SHARED_TEXTURE_KEYS) + ['Stone', 'Slate']
-    checked = {}
+    checked, rows = {}, {}
     for key in keys:
-        spec = plex.get(key) or {'base_color_srgb': '#808080', 'roughness': .8, 'metallic': 0.}
-        row = check_material(preview, 'Plex', key, spec, sets)
+        # Each key from the layer manifest that uses it (the fourth pass's keys live in Streets and Soul too).
+        layer = next((name for name in LAYERS if key in manifests[name]), 'Plex')
+        spec = manifests[layer].get(key) or {'base_color_srgb': '#808080', 'roughness': .8, 'metallic': 0.}
+        row = rows[key] = check_material(preview, layer, key, spec, sets)
         checked[key] = row['texture_set'] + (' +macro' if row.get('macro') else '')
-    masked = sorted(k for k in checked if k in MASKED_KEYS)
+    masked = sorted(k for k in checked if rows[k]['blend_mode'] == 'masked')
     assert masked == sorted(MASKED_KEYS), masked
+    # The fourth pass's keys, each read from the manifest that uses it, addressed as the contract asks.
+    for key, (layer, lookup) in NEW_KEYS.items():
+        assert key in manifests[layer], f'{layer} does not use {key}'
+        want = {'REPEAT': ('TA_WRAP', 'TA_WRAP'), 'clamp V': ('TA_WRAP', 'TA_CLAMP'),
+                'EXTEND': ('TA_CLAMP', 'TA_CLAMP')}[lookup]
+        assert rows[key]['address'] == want, (key, rows[key]['address'])
+        assert (rows[key]['blend_mode'] == 'masked') == apply_replica.CONTRACT_KEYS[key]['masked'], key
+        checked[key] += f' ({layer}, {lookup})'
     # Buff brick is the even buff set with its macro variation, never the red brick photo tinted up.
     assert checked['Brick_Buff_Even'] == 'buff_brick +macro', checked['Brick_Buff_Even']
     # The tar owns its colour; galvanised sheet keeps the set's metallic cap.
@@ -313,7 +361,8 @@ def check_yard_trees(preview):
     assert kinds, 'Trees/manifest.json is missing; run Scripts/blender/plateau_trees.py --no-render'
     made = {}
     saved = preview.species_collection, preview.tree_template
-    preview.species_collection = lambda species, kind: made.setdefault(species, Collection('Tree_' + species))
+    preview.species_collection = lambda species, kind, variant=None: made.setdefault(
+        species if variant is None else (species, variant), Collection('Tree_' + species))
     preview.tree_template = lambda: (_ for _ in ()).throw(AssertionError('yard trees fell back to tree_small_02'))
     try:
         world = Collection('World')
@@ -345,21 +394,118 @@ def check_yard_trees(preview):
         assert preview.place_yard_trees(far, Collection('Empty')) == 0
     finally:
         preview.species_collection, preview.tree_template = saved
-    # Each species OBJ: a bark and a leaves group (the slots the apply step maps by name), every corner with a UV
-    # and a normal, and the manifest's triangle counts.
+    # Each species OBJ, mature and young: a bark and a leaves group (the slots the apply step maps by name), every
+    # corner with a UV and a normal, and the manifest's triangle counts.
     manifest = json.loads((ROOT / 'Data/Plateau/ReplicaGeometry/Trees/manifest.json').read_text())['kinds']
     slots = {}
     for species, kind in sorted(kinds.items()):
-        groups = preview.read_obj_groups(str(ROOT / 'Data/Plateau/ReplicaGeometry' / kind['obj']))
-        found = {apply_replica.tree_slot(name): g for name, g in groups.items()}
-        assert sorted(found) == ['bark', 'leaves'], (species, sorted(groups))
-        for slot, (verts, polys, uvs, normals) in found.items():
-            corners = sum(len(q) for q in polys)
-            assert len(uvs) == corners and normals and len(normals) == corners, (species, slot)
-            tris = sum(len(q) - 2 for q in polys)
-            assert tris == manifest[species]['triangles'][slot], (species, slot, tris)
-        slots[species] = {k: len(v[1]) for k, v in found.items()}
+        for variant in (None, apply_replica.YOUNG):
+            mesh = kind.get(variant) if variant else kind
+            if not mesh:
+                continue
+            spec = manifest[species][variant] if variant else manifest[species]
+            groups = preview.read_obj_groups(str(ROOT / 'Data/Plateau/ReplicaGeometry' / mesh['obj']))
+            found = {apply_replica.tree_slot(name): g for name, g in groups.items()}
+            assert sorted(found) == ['bark', 'leaves'], (species, variant, sorted(groups))
+            for slot, (verts, polys, uvs, normals) in found.items():
+                corners = sum(len(q) for q in polys)
+                assert len(uvs) == corners and normals and len(normals) == corners, (species, variant, slot)
+                tris = sum(len(q) - 2 for q in polys)
+                assert tris == spec['triangles'][slot], (species, variant, slot, tris)
+            slots[species + (f'_{variant}' if variant else '')] = {k: len(v[1]) for k, v in found.items()}
     return {'trees': n, 'species': counts, 'species_faces': slots}
+
+
+def check_street_trees(preview):
+    """Every street and park tree of Streets/street_trees.json on its kind's species mesh (or the kind's young mesh) at
+    the apply step's transform (plan_trees: position, yaw, height and trunk spread), with no old summer tree; and the
+    old summer tree only in a --before image, at the current tree positions (plateau_rendering.tree_positions)."""
+    rows = apply_replica.load_street_trees(ROOT)
+    assert rows, 'Streets/street_trees.json is missing; run python3 Scripts/plateau_replica.py'
+    kinds = apply_replica.load_tree_kinds(ROOT)
+    doc = json.loads((ROOT / 'Data/Plateau/ReplicaGeometry/Streets/street_trees.json').read_text())
+    made, old_calls = {}, []
+    saved = preview.species_collection, preview.tree_template, preview.place_trees
+    preview.species_collection = lambda species, kind, variant=None: made.setdefault(
+        (species, variant), Collection(f'Tree_{species}_{variant}'))
+    preview.tree_template = lambda: (_ for _ in ()).throw(AssertionError('a tree fell back to tree_small_02'))
+    preview.place_trees = lambda trees, region, col: (old_calls.append(list(trees)), len(trees))[1]
+    try:
+        everything = preview.Region((0., 0., 0.), (1., 0., 0.), 85., 1e9, circle=(0., 0., 1e9))
+        world = Collection('World')
+        street, old, yard = preview.place_all_trees(everything, world)
+        assert street == len(rows) == doc['counts']['street_trees'], (street, len(rows))
+        assert old == 0 and not old_calls, 'the old summer tree is drawn next to the species street trees'
+        assert yard == len(apply_replica.load_yard_trees(ROOT)), yard
+        planned = [((g['kind'], g['variant']), t) for g in apply_replica.plan_trees(rows, kinds)
+                   if g['group'] == 'street' for t in g['transforms']]
+        placed = [ob for ob in world.linked if ob.name.startswith('StreetTree_')]
+        assert len(placed) == len(planned) == len(rows), (len(placed), len(planned))
+        counts = {}
+        for ob, (key, ((x, y, z), yaw, scale)) in zip(placed, planned):
+            assert ob.instance_type == 'COLLECTION' and ob.instance_collection is made[key], ob.name
+            assert ob.location == (x / 100, -y / 100, z / 100), ob.name
+            assert abs(ob.rotation_euler[2] + math.radians(yaw)) < 1e-12, ob.name
+            assert tuple(ob.scale) == tuple(scale), ob.name
+            counts[key[0]] = counts.get(key[0], 0) + 1
+        assert counts == doc['kinds'], (counts, doc['kinds'])
+        assert counts.get('elm'), 'no elm or hackberry on the vase mesh'
+        young = sum(1 for key, _ in planned if key[1])
+        assert young and all(kinds[k].get(apply_replica.YOUNG) for (k, v) in made if v), young
+        meshes = len(made)
+        # Before the apply step: the old summer tree at the current positions, no species or yard tree.
+        made.clear()
+        before = Collection('Before')
+        street, old, yard = preview.place_all_trees(everything, before, before=True)
+        from plateau_rendering import tree_positions
+        assert street is None and yard == 0 and not made and not before.linked
+        assert len(old_calls) == 1 and old_calls[0] == list(tree_positions()) and old == len(rows), \
+            'the --before trees are not at the current positions'
+    finally:
+        preview.species_collection, preview.tree_template, preview.place_trees = saved
+    # A young street tree reads its kind's young OBJ and wears the kind's bark and leaves.
+    read, objects = [], []
+    saved = preview.read_obj_groups, preview.make_object, preview.replica_material
+    preview.read_obj_groups = lambda path: (read.append(Path(path).name),
+                                            {'elm_young_bark': ([], [], [], None), 'elm_young_leaves': ([], [], [], None)})[1]
+    preview.make_object = lambda name, verts, polys, uvs, material, collection, smooth=False: \
+        objects.append((name, material)) or types.SimpleNamespace(data=None)
+    preview.replica_material = lambda layer, key, spec: (layer, key)
+    preview.SPECIES.clear()
+    try:
+        preview.species_collection('elm', kinds['elm'], apply_replica.YOUNG)
+        preview.species_collection('elm', kinds['elm'])
+    finally:
+        preview.read_obj_groups, preview.make_object, preview.replica_material = saved
+        preview.SPECIES.clear()
+    assert read == [Path(kinds['elm']['young']['obj']).name, Path(kinds['elm']['obj']).name], read
+    assert dict(objects[:2]) == {'T_elm_young_bark': ('Trees', kinds['elm']['materials']['bark']['key']),
+                                 'T_elm_young_leaves': ('Trees', kinds['elm']['materials']['leaves']['key'])}, objects
+    return {'street_trees': len(rows), 'kinds': counts, 'young': young, 'meshes': meshes}
+
+
+def check_index(preview):
+    """The OBJ index forgets OBJs a generator removed and holds no tree positions (an older index kept the 4,571 OSM
+    positions after Streets moved the trees into the inventory's pits)."""
+    with tempfile.TemporaryDirectory() as tmp:
+        root = Path(tmp)
+        data, cache = root / 'Data' / 'Plateau', root / 'Saved' / 'ReplicaPreview'
+        (data / 'BaseGeometry').mkdir(parents=True)
+        cache.mkdir(parents=True)
+        (data / 'BaseGeometry' / 'Road.obj').write_text('v 0 0 0\nv 100 -200 5\nv 0 -200 0\nf 1 2 3\n')
+        gone = 'Data/Plateau/BaseGeometry/Gone.obj'
+        (cache / 'index.json').write_text(json.dumps({gone: {'mtime': 0, 'size': 1, 'b': [0] * 6},
+                                                      '__trees__': [[35192.46, -26144.62, 4851822679]]}))
+        saved = preview.ROOT, preview.DATA, preview.CACHE
+        preview.ROOT, preview.DATA, preview.CACHE = str(root), str(data), str(cache)
+        try:
+            idx = preview.index()
+        finally:
+            preview.ROOT, preview.DATA, preview.CACHE = saved
+        assert sorted(idx) == ['Data/Plateau/BaseGeometry/Road.obj'], sorted(idx)
+        assert idx['Data/Plateau/BaseGeometry/Road.obj']['b'] == [0., 0., 0., 100., 200., 5.]
+        assert json.loads((cache / 'index.json').read_text()) == idx
+    return {'removed_obj': 'forgotten', 'tree_positions': 'not cached'}
 
 
 def check_region(preview):
@@ -512,6 +658,7 @@ def check_views(preview):
 def main():
     preview = load_preview()
     report = {'materials': check_set_materials(preview), 'yard_trees': check_yard_trees(preview),
+              'street_trees': check_street_trees(preview), 'index': check_index(preview),
               'region': check_region(preview), 'collision_only': check_collision_only(preview),
               'prop_variants': check_prop_variants(preview), 'views': check_views(preview)}
     print(json.dumps(report, indent=1, sort_keys=True))

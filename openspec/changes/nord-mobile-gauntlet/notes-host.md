@@ -134,13 +134,14 @@ Use `NORD_STREAM_QUALITY=current` for the baseline. The launcher refuses `NORD_S
 ```bash
 python3 Scripts/gauntlet_loop.py stream --run "$run" --slot NordHost --pin 0
 ```
-The sampler drives `Browser/stream-sample.mjs` with `--frames --latency --trigger --out`, saves a decoded frame at each stop hold, and judges the stream gate over the gated lap only. It also follows NordFriend1's log, so the verdict shows whether NordFriend1 slept through the lap, and it records the host command line, its world flags and the CVar readback in `run.json`. When the lap ends, the runner writes `END` to the trigger file, and the sampler takes one last sample and stops. The runner then follows the host log on to its `result` line, which comes after `native/route.json`, for at most 45 s, and then judges the run. If the host stops before its `done`, `fail` or `result` line, no `END` comes, and the sampler runs to `--seconds`, 925 s by default. The verdict reads only the samples inside the lap. When the sampler ends, stop the lifecycle with Ctrl-C and start the next row.
+The sampler drives `Browser/stream-sample.mjs` with `--frames --latency --trigger --out`, saves a decoded frame at each stop hold, and judges the stream gate over the gated lap only. It also follows NordFriend1's log, so the verdict shows whether NordFriend1 slept through the lap, and it records the host command line, its world flags and the CVar readback in `run.json`. When the lap ends, the runner writes `END` to the trigger file, and the sampler takes one last sample and stops. The runner then follows the host log on to its `result` line, which comes after `native/route.json`, for at most 45 s, and then judges the run. If the host stops before its `done`, `fail` or `result` line, no `END` comes. The sampler then stops 10 s after its last sample with a connected peer, and otherwise at `--seconds`, 925 s by default. A real host exit is expected to leave no connected peer **(unverified)**. If a peer stays connected, the sampler runs on to `--seconds`. A stream that drops for 10 s before `END` also stops the sample. Such a sample does not pass and exits non-zero. The verdict reads only the samples inside the lap. When the sampler ends, stop the lifecycle with Ctrl-C and start the next row.
 
 Check each stream verdict:
 - `received_size` is the pinned rung's size in that orientation, and `size_changes` is 0.
 - `friend_awake_windows` is 0. If it is unverified, the runner found no NordFriend1 window inside the lap.
 - `decoded_over_50ms_percent` and `longest_gap_ms` are unverified when `stream/sample.json` has no `timeOrigin`. The sampler writes it once the page starts recording frames. That the frame times and the host log share one clock is written from memory and unverified: check one run by eye, for example that the frames of the first stop hold fall inside that hold's log lines.
 - `python3 Scripts/gauntlet_loop.py route "$run"` checks the stop order and the lateral error of the stream run.
+- If the verdict is contended or unverified, sample that row again. `report` reads only the newest solo row of each candidate at each rung and orientation, by `started_at` in `run.json`. A newest row that failed drops the candidate. A newest row that is contended, unverified or has no verdict is missing evidence.
 
 Input row: drag on the stream during the whole lap, with the winner at rung 0 in landscape. Start the lifecycle as above, then:
 ```bash
@@ -162,7 +163,7 @@ python3 Scripts/gauntlet_loop.py report Saved/Gauntlet/<tune run>
 ```bash
 python3 Scripts/gauntlet_loop.py confirm Saved/Gauntlet/<tune run> --until 06:30
 ```
-Add `--candidate <id>` to pick a ranked candidate, and `--direct` if RunUnreal failed in step 3. `confirm` also confirms the baseline first if it has no finished native result. When the baseline is the candidate, it runs once. A result that the window cut, or that a foreign GPU process shared twice, counts as not run: `confirm` runs that candidate again and replaces its result, and `--candidate` accepts it. `confirm` adds each result to `tune.json` and writes no profile.
+Add `--candidate <id>` to pick a ranked candidate, and `--direct` if RunUnreal failed in step 3. `confirm` also confirms the baseline first if it has no finished native result. When the baseline is the candidate, it runs once. A result that the window cut, or that a foreign GPU process shared twice, counts as not run: `confirm` runs that candidate again and replaces its result, and `--candidate` accepts it. `confirm` adds each result to `tune.json` and writes no profile. It also updates `native_confirmation` there: `confirmed_native` names the best ranked candidate that passed, a ranked baseline too, and `stop_reason` is empty once every result finished.
 
 Open `review.html` with the user. It shows the ceiling, baseline, candidate and decoded frame for each view, with SSIM, a difference map and an A/B flip. Only after the user approves the winner's paired captures:
 ```bash
@@ -190,7 +191,7 @@ Record the date, device, OS, browser, network and deployment ID in its own file,
 - `-DeviceProfile=` in a Development Browser package, and `GameUserSettings.ini` overrides.
 - The CSV column names, and GPUTime with `-csvGpuStats`.
 - Whether `r.AntiAliasingMethod` reads back as 4 in every run kind.
-- Whether a host exit leaves the sampler with no connected peer, so its summary ends at the stream end.
+- Whether a host exit leaves the sampler with no connected peer, so the sampler stops about 10 s later and its summary ends at the stream end.
 - C++ driving of a possessed, rendered car with pawn input disabled.
 - The loop length against the modelled 3,488 m, and which leg is heaviest.
 - Whether UAT finds `Build/Scripts/NordGauntlet.Automation.csproj`.

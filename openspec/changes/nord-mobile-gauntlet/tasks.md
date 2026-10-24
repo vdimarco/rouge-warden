@@ -20,7 +20,7 @@ Read `design.md` first. `notes-host.md` gives the exact host commands. The lead 
 - [x] 4.2 `Source/QuebecGauntletTest/QuebecGauntletController.h/.cpp`: `UQuebecGauntletController` in its own module, which depends on Gauntlet and is left out of Shipping. It meets the subsystem only through the console variables `nord.GauntletController` and `nord.GauntletExit`.
 - [x] 4.3 `Quebec.uproject` (the `QuebecGauntletTest` module and the Gauntlet plugin, both denied in Shipping), `QuebecSky.cpp` (`NordGauntlet` QA flag, and a settled weather switch under that flag).
 - [x] 4.4 Stub `CsvProfiler.h` and the Gauntlet stub headers, marked unverified, plus a selftest case.
-- [x] 4.5 `Tools/SyntaxCheck/check.sh --both` and `link.sh --both -j 2` pass, for `Source/Quebec` and with `--src ../../Source/QuebecGauntletTest`.
+- [x] 4.5 From `games/nord-unreal/`, `Tools/SyntaxCheck/check.sh --both` and `Tools/SyntaxCheck/link.sh --both -j 2` pass for `Source/Quebec`. The same two commands with `--src Source/QuebecGauntletTest` pass for the controller module. `--src` is relative to the current folder, so from `Tools/SyntaxCheck/` it is `--src ../../Source/QuebecGauntletTest`.
 
 ## 5. C# test node (host compile)
 - [ ] 5.1 `Build/Scripts/NordGauntlet.Automation.csproj` and `Build/Scripts/NordMobileLoop.cs` with the `mode`, `size`, `sky`, `laps`, `run` and `execcmds` params.
@@ -35,12 +35,15 @@ Read `design.md` first. `notes-host.md` gives the exact host commands. The lead 
 - [x] 6.7 Every run's expected-CVar file also holds the `loop.json` `fixed` CVars that the candidate does not set, so the readback checks `r.AntiAliasingMethod 4`. `test_gauntlet_loop.py` compares the phone run's expect file with the profile section without the fixed names, and checks that the fixed names are there.
 - [x] 6.8 After the sampler stops at `END`, `stream_run` follows the host log on to its `result` line, until the host quits or for at most the CSV wait and 15 s, so the exit code and `native/route.json` reach the verdict. The fake host in `test_gauntlet_loop.py` logs its result line 2 s after the sampler quit.
 - [x] 6.9 A contended confirmation run runs once more. After a second one the result counts as not run, so `confirm` runs it again and `report` leaves the `confirmed` gate unverified. The co-op guard skips a contended two-viewer row. `test_gauntlet_loop.py` checks both.
+- [x] 6.10 `report` reads only the newest solo stream row of each candidate at each rung and orientation, by `run.json` `started_at`. A newest row that failed is a failure. A newest row that is contended, unverified or has no verdict is missing evidence (`stream row unverified`), so the `confirmed` gate is unverified, not failed. `test_gauntlet_loop.py` checks seven pairs of an older and a newer row, where the newer row's folder name sorts first (`check_report_stream_latest`).
+- [x] 6.11 `confirm` keeps `native_confirmation` current after each result: `stop_reason` is empty when every result finished, else `window_end` or `contended`, and `confirmed_native` names the best ranked candidate that passed, a ranked baseline too. `test_gauntlet_loop.py` checks both (`check_confirm_window`).
 
 ## 7. Browser sampler
 - [x] 7.1 `stream-sample.mjs`: `--frames`, `--pin`, `--trigger`, `--out`, `--latency`, and the new summary fields.
 - [x] 7.2 `config.mjs` `pinnedLevel`, `player.js` skips adaptation when pinned, `build.mjs` defines `NORD_QA_PIN` (false by default) and refuses `NORD_QA_PIN=1` when `VERCEL` is set.
 - [x] 7.3 `stream-sample.test.mjs` and `config.test.mjs` cover the new fields, the page clock origin (`timeOrigin`), the production pin define and the sizes 1412x652, 652x1412, 1058x488 and 488x1058; `npm test` passes in `Browser/`.
 - [x] 7.4 `stream-sample.mjs` stops sampling at a trigger line equal to `END`, which the runner writes when the lap ends, instead of taking a shot named `END` and running on to `--seconds`. When the host quit first, the summary ends at the stream end (`streamEndedTimeMs`), and the sample does not pass and exits non-zero, also as a standalone sample without a trigger file. `stream-sample.test.mjs` covers these.
+- [x] 7.5 Without `END`, `stream-sample.mjs` stops 10 s after its last sample with a connected peer (`STREAM_GONE_MS`), and the sample does not pass and exits non-zero. A peer that connects again within 10 s keeps the sample going until `END`. `stream-sample.test.mjs` covers both with the fake plan. That a real host exit leaves no connected peer is unverified (task 11.10).
 
 ## 8. Launcher
 - [x] 8.1 `browser_streaming.py`: `NORD_STREAM_QUALITY=current|phone|file:<path>` and `NORD_STREAM_GAUNTLET=<run dir>`, recorded in `lifecycle.json`.
@@ -64,7 +67,7 @@ Read `design.md` first. `notes-host.md` gives the exact host commands. The lead 
 - [ ] 11.7 Baseline twice at the start of the window: the tune's own `baseline-a` and `baseline-b` runs set the noise tie. Run no separate baseline runs (notes-host step 6).
 - [ ] 11.8 Overnight tune in an agreed GPU window.
 - [ ] 11.9 Confirmation: 3 laps each for the winner and the baseline, both skies, landscape and portrait. After a stream row or the co-op guard drops a candidate, `gauntlet_loop.py confirm <tune folder>` confirms the next one.
-- [ ] 11.10 Stream runs: solo at rung 0 and rung 1, landscape and portrait, the input row (`stream --look`, lateral error at most 2.5 m), plus the two-viewer and relay rows. Check by eye that the frame times line up with the host log (the shared clock is unverified).
+- [ ] 11.10 Stream runs: solo at rung 0 and rung 1, landscape and portrait, the input row (`stream --look`, lateral error at most 2.5 m), plus the two-viewer and relay rows. Check by eye that the frame times line up with the host log (the shared clock is unverified). Sample a contended or unverified row again, because `report` reads only the newest one. If a host exit happens, check that the sampler stopped about 10 s after the stream ended.
 - [ ] 11.11 Manual phone run on a physical Android and iOS phone, recorded on its own.
 - [ ] 11.12 User review of `review.html`; run `write-profile --approved` only after approval, and commit the ini and its approval record.
 - [ ] 11.13 Commit the round evidence and score round 1 in `docs/gauntlet/gta-mobile.md`.

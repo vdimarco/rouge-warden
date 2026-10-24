@@ -75,6 +75,7 @@ A phone-sized client watching NordHost alone over a direct connection SHALL rece
 - **THEN** the runner writes `END` to the sampler's trigger file, and the sampler takes one last sample and stops
 - **AND** the runner follows the host log on to its `result` line, for at most the CSV wait and 15 s, before it judges the run, so the verdict has the exit code and `native/route.json`, which `test_gauntlet_loop.py` checks with a host that logs its result line after the sampler quit
 - **AND** a sample whose stream ended before `END`, or before `--seconds` without a trigger file, keeps its summary up to the stream end but does not pass and exits non-zero, which `stream-sample.test.mjs` checks
+- **AND** when no `END` comes, for example after a host crash before its `done`, `fail` or `result` line, the sampler stops 10 s after its last sample with a connected peer, not at `--seconds`, and a peer that connects again within 10 s keeps the sample going, which `stream-sample.test.mjs` checks with the fake plan
 
 #### Scenario: Pinned frame size
 - **WHEN** a sample runs with `?pin=` on a player built with `NORD_QA_PIN`

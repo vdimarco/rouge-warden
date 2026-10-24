@@ -28,13 +28,20 @@ The tuner SHALL choose, among the candidates it measured, the phone profile with
 - **WHEN** the winner fails any gate in the 3-lap confirmation or in the stream runs
 - **THEN** the tuner confirms the next feasible candidate, and `tune.json` records why the first one was dropped
 - **AND** after a stream row or the co-op guard drops a candidate, `gauntlet_loop.py confirm <tune folder>` confirms the next ranked candidate natively, adds the result to `tune.json` and writes no profile
+- **AND** after each result, `confirm` sets `native_confirmation.confirmed_native` in `tune.json` to the best ranked candidate whose native confirmation passed, a ranked baseline too, which `test_gauntlet_loop.py` checks
+
+#### Scenario: Stream row sampled again
+- **WHEN** a candidate's solo stream row at one rung and orientation is sampled more than once
+- **THEN** the round report reads only the newest of those rows, by `started_at` in its `run.json`, so a row sampled again replaces the older one
+- **AND** a newest row that failed drops the candidate, and a newest row that is contended, unverified or has no verdict is missing evidence, so the `confirmed` gate is unverified, not fail, which `test_gauntlet_loop.py` checks
 
 #### Scenario: Window ends during the confirmation
 - **WHEN** the agreed window (`--until`) ends before every confirmation run of a candidate
 - **THEN** no confirmation run starts unless its planned time ends before `--until`, and the confirmation stops at that candidate
 - **AND** the planned time starts at the model estimate, made longer by as much as the search found the host slower than its own plan, and rises to the longest confirmation run measured so far, so a host slower than the estimate does not overrun the window
-- **AND** the round report marks the `confirmed` gate unverified, not fail, while a ranked candidate has only missing evidence (a cut or missing confirmation, missing stream rows, an unverified co-op guard), also after a better ranked candidate failed; a cut result that also holds a failed run counts as failed
+- **AND** the round report marks the `confirmed` gate unverified, not fail, while a ranked candidate has only missing evidence (a cut or missing confirmation, missing stream rows, a newest stream row that is contended, unverified or has no verdict, an unverified co-op guard), also after a better ranked candidate failed; a cut result that also holds a failed run counts as failed
 - **AND** `gauntlet_loop.py confirm <tune folder>` in a later window runs that candidate again, the baseline first when its result was cut too, and replaces its result in `tune.json`, which `test_gauntlet_loop.py` checks with a fake clock
+- **AND** `native_confirmation.stop_reason` in `tune.json` reads `window_end` while a cut result is not run again, and is empty once `confirm` has finished every result, which `test_gauntlet_loop.py` checks
 - **AND** the baseline runs once when it is itself the ranked candidate
 
 #### Scenario: Contended confirmation run
