@@ -1,22 +1,28 @@
 """Nanite city surfaces and surveyed instanced trees without kilometre-wide shadow batches.
 
-The surveyed trees are the street and park trees of Data/Plateau/ReplicaGeometry/Streets/street_trees.json
+The game's street and park trees are the rows of Data/Plateau/ReplicaGeometry/Streets/street_trees.json
 (Scripts/plateau_replica.py: every tree of the Ville de Montreal inventory over the district, CC BY 4.0, then the
 OpenStreetMap trees it lacks), one row each, at the position the Streets layer gives it (in its sidewalk pit).
-tree_positions() is what every consumer reads (the park leaves, the Plex yard trees' clearance, verify_plateau, the
-previews). The game draws them on their species meshes through Scripts/apply_plateau_replica.py; this pass's
-QuebecVegetation instances of the old summer tree are a stand-in until that step runs, and it places none once the
-replica street trees exist.
+tree_positions() reads them for the Plex yard trees' clearance and the previews. Scripts/apply_plateau_replica.py
+draws them on their species meshes.
+
+Until that step runs, the saved map's QuebecVegetation holds the old summer tree on the 4,571 OSM tree nodes
+(osm_tree_positions(), as upgrade_plateau.py placed them through apply() below), and the committed park's fallen
+leaves follow those nodes too. So the park build, this stand-in and verify_plateau's check before the apply step read
+osm_tree_positions(). Once the replica street trees exist, the stand-in holds none.
 """
 import hashlib
 import json
 import math
 from pathlib import Path
 import sys
+import xml.etree.ElementTree as ET
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT/'Scripts'))
+from prepare_lafontaine import inside, tags, xy
 STREET_TREES = ROOT/'Data/Plateau/ReplicaGeometry/Streets/street_trees.json'
+OSM = ROOT/'Data/LaFontaine/osm.xml'
 REPLICA_STREET_TREES = 'Plateau replica Street trees '   # apply_plateau_replica.py's street-tree actors
 
 
@@ -39,15 +45,26 @@ def tree_positions(path=STREET_TREES):
     return [(float(r['x_cm']), float(r['y_cm']), tree_seed(r['id'])) for r in street_trees(path)]
 
 
+def osm_tree_positions(path=OSM):
+    """The OSM natural=tree nodes inside the district as (x, y, node id): map frame, cm, in file order. The saved
+    map's QuebecVegetation stand-in and the committed park leaves stand on these 4,571 nodes."""
+    trees = []
+    for e in ET.parse(path).getroot().findall('node'):
+        lat, lon = float(e.get('lat')), float(e.get('lon'))
+        if tags(e).get('natural') == 'tree' and inside((lat, lon)):
+            trees.append((*xy(lat, lon), int(e.get('id'))))
+    return trees
+
+
 def species_street_trees(actors):
     """The replica street-tree actors (apply_plateau_replica.py) already in the level."""
     return [a for a in actors if a.get_actor_label().startswith(REPLICA_STREET_TREES)]
 
 
 def planned_vegetation(actors):
-    """How many old summer trees QuebecVegetation holds: one per surveyed tree, none once the species street trees
+    """How many old summer trees QuebecVegetation holds: one per OSM tree node, none once the species street trees
     stand (apply_plateau_replica.py clears them and this pass places none after it)."""
-    return 0 if species_street_trees(actors) else len(tree_positions())
+    return 0 if species_street_trees(actors) else len(osm_tree_positions())
 
 
 def warden_tree_inventory(actors):
@@ -127,10 +144,11 @@ def apply(u, preserve_warden_trees=False):
         component = vegetation.get_editor_property('trees'); assert component.set_static_mesh(tree)
         height = tree.get_bounds().box_extent.z*2
         transforms = []
-        # Once apply_plateau_replica.py has put the street trees on their species meshes, the old summer tree has no
-        # place: the actor stays (upgrade_plateau and verify_plateau expect one), empty.
+        # The stand-in stands on the OSM tree nodes, as the saved map and its backups hold it. Once
+        # apply_plateau_replica.py has put the street trees on their species meshes, the old summer tree has no place:
+        # the actor stays (upgrade_plateau and verify_plateau expect one), empty.
         if not species_street_trees(actors):
-            for x,y,seed in tree_positions():
+            for x,y,seed in osm_tree_positions():
                 scale = (650+seed%500)/height
                 transforms.append(u.Transform(u.Vector(x,y,0),u.Rotator(yaw=seed%360),u.Vector(scale,scale,scale)))
             component.add_instances(transforms,False,False,False)
