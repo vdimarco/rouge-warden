@@ -966,7 +966,8 @@ def check_stream_one_command(out):
     else:
         raise AssertionError("a second stream command on one run must be refused")
     assert not (run / "run.json").exists() and list((run / "stream").iterdir()) == []
-    print("one command ok: NordFriend1 alone (also by the command line) and a second stream command on one run are refused")
+    print("one command ok: a lifecycle still starting, NordFriend1 alone (also by the command line) and a second stream "
+          "command on one run are refused")
 
 
 def check_report_and_profile(group, tune):
@@ -1351,6 +1352,79 @@ def check_confirm_window(out):
           "the stop reason current")
 
 
+def check_confirm_dropped(out):
+    """A failed stream row or the co-op guard dropped the winner while its native confirmation was cut, or never ran
+    (tune --no-confirm). Its native confirmation cannot change the verdict, so confirm runs the next ranked candidate
+    (the baseline first when it has no result) and refuses --candidate for the dropped one, as report reads the round."""
+    calls = []
+
+    def native_run(loop, mode, size_key, sky, laps=1, quality="current", label=None, direct=False, parent=None, **_):
+        calls.append(label)
+        return L.new_run_dir(label, parent), {"status": "pass", "gates": []}
+
+    def refused(arguments):
+        errors = io.StringIO()
+        try:
+            with contextlib.redirect_stderr(errors):
+                L.main(["confirm", *arguments])
+        except SystemExit as error:
+            assert error.code == 1, (arguments, error.code)
+            return errors.getvalue()
+        raise AssertionError("confirm must refuse " + " ".join(arguments))
+
+    def stream_rows(row, candidate, failed=None, two=30.0):
+        for key in SMALL["size_use"]["stream"]:
+            entry = SMALL["sizes"][key]
+            row(candidate, f"{candidate}-{key}", "solo", "fail" if key == failed else "pass", pin=entry["rung"],
+                portrait=entry["size"][1] > entry["size"][0])
+        row(candidate, f"{candidate}-two", "two_viewer", "unverified", two)
+
+    # The window cut the winner's confirmation after one run, and 05-gi2 never ran; or tune --no-confirm ran none.
+    cut = lambda data: dict(data, native_confirmation={"results": [
+        dict(result, runs=result["runs"][:1], reasons=[L.CONFIRM_CUT], passed=False) if result["id"] == "04-shadows2" else result
+        for result in data["native_confirmation"]["results"] if result["id"] != "05-gi2"], "confirmed_native": None,
+        "stop_reason": "window_end"})
+    unconfirmed = lambda data: {key: value for key, value in data.items() if key != "native_confirmation"}
+    drops = {"row": ("top_landscape", 30.0, "stream 20261023T230000Z-04-shadows2-top_landscape: fail"),
+             "coop": (None, 25.0, "two-viewer FPS 25.0 is 5.0 below the baseline's 30.0")}
+    labels = lambda candidates: [f"confirm-{candidate}-{sky}-{size}" for candidate in candidates for sky in SMALL["sky_order"]
+                                 for size in SMALL["size_use"]["confirm"]]
+    with patch.object(L, "native_run", native_run):
+        for native_name, change, missing, ran in (("cut", cut, L.CONFIRM_CUT, ["05-gi2"]),
+                                                  ("no-confirm", unconfirmed, "native confirmation not run", ["baseline", "05-gi2"])):
+            for drop, (failed, two, reason) in drops.items():
+                name = f"{native_name}-{drop}"
+                hall = out.parent / "dropped-hall" / name
+                group, row = report_hall(hall, ranking=("04-shadows2", "05-gi2"))
+                edit_json(group / "tune.json", change)
+                stream_rows(row, "baseline")
+                stream_rows(row, "04-shadows2", failed, two)
+                with patch.object(L, "OUT", hall):
+                    L.round_report(group, SMALL)
+                    results = {result["id"]: result["reasons"] for result in
+                               json.loads((group / "tune.json").read_text())["confirmation"]["results"]}
+                    assert results["04-shadows2"] == [missing, reason], (name, results)
+                    calls.clear()
+                    assert L.main(["confirm", str(group)]) == 0, name
+                    assert calls == labels(ran), (name, calls)
+                    native = json.loads((group / "tune.json").read_text())["native_confirmation"]
+                    assert native["confirmed_native"] == "05-gi2", (name, native)
+                    assert next(result for result in native["results"] if result["id"] == "04-shadows2")["reasons"][:1] == \
+                        ([L.CONFIRM_CUT] if native_name == "cut" else []), (name, native["results"])
+                    calls.clear()
+                    message = refused([str(group), "--candidate", "04-shadows2"])
+                    assert "is dropped" in message and reason in message and not calls, (name, message, calls)
+                    message = refused([str(group)])
+                    assert "Every ranked candidate" in message and not calls, (name, message, calls)
+                    # 05-gi2's stream rows then pass: report confirms it.
+                    stream_rows(row, "05-gi2")
+                    verdict = L.round_report(group, SMALL)
+                    assert json.loads((group / "tune.json").read_text())["confirmation"]["confirmed"] == "05-gi2", name
+                    assert gates(verdict)["confirmed"]["result"] == "pass", (name, gates(verdict)["confirmed"])
+    print("confirm after a drop ok: a winner that a failed stream row or the co-op guard dropped is not confirmed again "
+          "when its confirmation was cut or never ran; confirm runs the next ranked candidate and refuses --candidate for it")
+
+
 def main():
     with tempfile.TemporaryDirectory() as directory, contextlib.ExitStack() as stack:
         root = Path(directory)
@@ -1403,6 +1477,7 @@ def main():
         check_report_better_open(out)
         check_confirm_next(group, tune)
         check_confirm_window(out)
+        check_confirm_dropped(out)
     print("NORD_GAUNTLET_LOOP_OK")
 
 
