@@ -1,0 +1,5 @@
+{"identities":1,"exact":true,"visible":60,"hidden":30}
+PASS: visible frames reuse one private result
+PASS: exact coordinates and behind/resume rejection across camera movement
+PASS: no page errors
+PASS: sun screen record

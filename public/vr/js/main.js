@@ -2600,13 +2600,14 @@ if (frameMetrics) addEventListener("visibilitychange", () => frameMetrics.frame(
 const lastInfo = { calls: 0, tris: 0, views: 1 };
 const samples = [];
 const errSeen = new Set();
-const SUN_PT = new THREE.Vector3();
+const SUN_PT = new THREE.Vector3(), SUN_OUT = { x: 0, y: 0 };
 // Where the sun sits on the screen, for the shaft pass. Null when it is behind the camera. Flat play only.
 function sunShaft() {
   SUN_PT.set(camera.position.x + SUN_DIR.x * 800, camera.position.y + SUN_DIR.y * 800, camera.position.z + SUN_DIR.z * 800);
   SUN_PT.project(camera);
   if (SUN_PT.z > 1) return null;
-  return { x: SUN_PT.x * 0.5 + 0.5, y: SUN_PT.y * 0.5 + 0.5 };
+  SUN_OUT.x = SUN_PT.x * 0.5 + 0.5; SUN_OUT.y = SUN_PT.y * 0.5 + 0.5;
+  return SUN_OUT;
 }
 function loop(time, frame) {
   try {
