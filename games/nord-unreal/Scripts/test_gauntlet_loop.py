@@ -583,6 +583,36 @@ def check_reference_missing_sky(out):
     print("reference without the night stills ok: its stills gate fails, and tune --reference refuses it")
 
 
+def check_reference_contended(out, state):
+    """A foreign GPU process during the second ceiling render at the tune size. tune --reference refuses the stored
+    reference before any run, as the tune refuses a contended ceiling that it renders itself."""
+    real, foreign = L.native_run, state / "foreign.json"
+    free = next(pid for pid in range(999_999, 900_000, -1) if not Path(f"/proc/{pid}").exists())
+
+    def native_run(loop, mode, *args, **kwargs):
+        contend = kwargs.get("label") == "ceiling-b-top_landscape"
+        if contend:
+            foreign.write_text(json.dumps([{"pid": free, "name": "dota2", "mib": 3000}]))
+        try:
+            return real(loop, mode, *args, **kwargs)
+        finally:
+            if contend:
+                foreign.unlink()
+
+    with patch.object(L, "native_run", native_run):
+        group, verdict = L.reference_run(SMALL, direct=True)
+    assert verdict["status"] == "contended" and not failing(verdict), failing(verdict)
+    before = sorted(out.iterdir())
+    try:
+        L.tune_run(SMALL, reference=group, confirm=False)
+    except RuntimeError as error:
+        assert "ceiling run b" in str(error) and "contended" in str(error) and "No run was started" in str(error), error
+    else:
+        raise AssertionError("a reference with a contended ceiling run must be refused")
+    assert sorted(out.iterdir()) == before, "a refused tune makes no folder"
+    print("contended reference ok: tune --reference refuses a stored ceiling run that a foreign GPU process shared")
+
+
 def check_tune_partial_look():
     """A look run stuck after S1 (2 of 20 stills, exit 2), or one whose night stills never land (10 of 20, exit 0),
     gives its candidate an error and no Look, so the tune never ranks it on the views it kept."""
@@ -823,6 +853,26 @@ def check_report_and_profile(group, tune):
         raise AssertionError("a look-only candidate never becomes the phone profile")
     assert L.PROFILES_INI.read_text() == written and T.PROFILES_INI.read_text() == real, "the checked-in profile is never written here"
     print("report and profile ok: unconfirmed without stream rows, review rows with A/B flip, write-profile only with --approved")
+
+
+def check_report_window_cut(group, tune):
+    """A native confirmation that the window cut is missing evidence, as one that did not run: the round's confirmed
+    gate is unverified until confirm runs it again. A cut result that also holds a failed run still fails."""
+    for name, failed, result in (("cut", [], "unverified"), ("cut-after-fail", ["day top_landscape: fail (frame_p95)"], "fail")):
+        copied = group.parent.parent / "report-window" / name
+        shutil.copytree(group, copied)
+
+        def cut(data):
+            data["native_confirmation"]["results"] = [
+                dict(row, runs=row["runs"][:1], reasons=failed + [L.CONFIRM_CUT], passed=False) if row["id"] == tune["winner"] else row
+                for row in data["native_confirmation"]["results"]]
+            return data
+
+        edit_json(copied / "tune.json", cut)
+        verdict = L.round_report(copied, SMALL)
+        assert gates(verdict)["confirmed"]["result"] == result and verdict["status"] == result, (name, failing(verdict))
+        assert L.CONFIRM_CUT in gates(verdict)["confirmed"]["note"], gates(verdict)["confirmed"]
+    print("window-cut report ok: a cut confirmation leaves the round unverified, a failed run before the cut fails it")
 
 
 def check_confirm_next(group, tune):
