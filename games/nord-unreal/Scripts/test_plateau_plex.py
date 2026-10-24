@@ -1833,6 +1833,9 @@ def _check_yards_district(manifest, stats, fronts, keep):
     assert set(manifest['yard_trees']['kinds']) == {'maple', 'elm', 'ash', 'small'}
     assert P.CANOPY.is_file() and 'CC BY 4.0' in json.loads(P.CANOPY.read_text())['license']
     assert str(P.CANOPY.relative_to(P.ROOT)) in manifest['source_sha256']
+    # the yard trees keep clear of the street and park trees (plateau_rendering.tree_positions reads the Streets
+    # layer's street_trees.json), so the manifest hashes that file and a moved street tree shows this layer as stale
+    assert 'Data/Plateau/ReplicaGeometry/Streets/street_trees.json' in manifest['source_sha256']
     layout = json.loads((P.ROOT / 'Data/LaFontaine/layout.json').read_text())
     traffic = P.Grid(2000)
     for road in layout['roads']:
