@@ -10,7 +10,7 @@ This is the third NORD loop, next to [gta-graphics](gta-graphics.md) and [gta-mi
 - **Sky.** Always pinned and frozen. Day is 15:00, clear. Night rain is 22:00, rain, the worst case.
 - **Sizes.** Rung 0 is 1412x652 (landscape) and 652x1412 (portrait). Rung 1 is 1058x488 and 488x1058, in the stream pass only.
 - **Caps.** The stream keeps `t.MaxFPS 60` and `-PixelStreamingWebRTCFps=60`. The 30 FPS target is a floor judged against a 33.3 ms frame budget. It is not a cap.
-- **Viewers.** The gate is one phone-sized viewer on NordHost, with NordFriend1 asleep. Two viewers and the TURN relay are report-only.
+- **Viewers.** The gate is one phone-sized viewer on NordHost, with NordFriend1 asleep. Two viewers and the TURN relay are report-only. The input row (`gauntlet_loop.py stream --look`) drags on the stream for the whole lap and gates only the exit code and the car's largest lateral error, at most 2.5 m.
 
 ## Gates
 A round passes a gate only with a host measurement for it.
@@ -55,7 +55,7 @@ Missing host evidence is **unverified, not pass**. A round may still change code
 - Leave those dimensions out of the playability sum, and record the dimension count you used, as the rubric allows.
 - Do not carry an older measured score forward as if it were new.
 
-A confirmation that the agreed window cut, or that a foreign GPU process shared twice, is missing evidence too. The round's `confirmed` gate stays unverified while a ranked candidate has only missing evidence, also after a better ranked candidate failed, until `gauntlet_loop.py confirm <tune folder>` runs that candidate again. A contended two-viewer row does not count for the co-op guard.
+A confirmation that the agreed window cut, or that a foreign GPU process shared twice, is missing evidence too. The round's `confirmed` gate stays unverified while a ranked candidate has only missing evidence, also after a better ranked candidate failed, until `gauntlet_loop.py confirm <tune folder>` runs that candidate again. The round report reads only the newest solo stream row of each candidate at each rung and orientation. A newest row that is contended or unverified is missing evidence until that row is sampled again, and only a newest row that failed counts as failed. A contended two-viewer row does not count for the co-op guard.
 
 ## Scoring
 - Copy the scorecard block from [RUBRIC.md](RUBRIC.md) for each round, and add the evidence list above.

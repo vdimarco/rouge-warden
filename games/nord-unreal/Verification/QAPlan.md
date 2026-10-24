@@ -127,7 +127,7 @@ node stream-sample.mjs --slot NordFriend1 --seconds 60 --look
 node stream-sample.mjs --slot NordFriend1 --seconds 60 --look --relay
 ```
 
-A sample passes only when the stream lasts the whole 60 s. When the stream ends first, `sample.json` keeps the summary up to the stream end (`streamEndedTimeMs`), with `passed: false`, and the sampler exits non-zero.
+A sample passes only when the stream lasts the whole 60 s. When the stream ends first, `sample.json` keeps the summary up to the stream end (`streamEndedTimeMs`), with `passed: false`, and the sampler exits non-zero. The sampler stops 10 s after its last sample with a connected peer, so a lost stream does not hold it for the rest of the 60 s. That a lost stream leaves no peer in the connected state is unverified.
 
 | Measure | Reference | Pass condition |
 | --- | --- | --- |

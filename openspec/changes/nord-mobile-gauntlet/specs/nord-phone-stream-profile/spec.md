@@ -41,7 +41,7 @@ The tuner SHALL choose, among the candidates it measured, the phone profile with
 - **AND** the planned time starts at the model estimate, made longer by as much as the search found the host slower than its own plan, and rises to the longest confirmation run measured so far, so a host slower than the estimate does not overrun the window
 - **AND** the round report marks the `confirmed` gate unverified, not fail, while a ranked candidate has only missing evidence (a cut or missing confirmation, missing stream rows, a newest stream row that is contended, unverified or has no verdict, an unverified co-op guard), also after a better ranked candidate failed; a cut result that also holds a failed run counts as failed
 - **AND** `gauntlet_loop.py confirm <tune folder>` in a later window runs that candidate again, the baseline first when its result was cut too, and replaces its result in `tune.json`, which `test_gauntlet_loop.py` checks with a fake clock
-- **AND** `native_confirmation.stop_reason` in `tune.json` reads `window_end` while a cut result is not run again, and is empty once `confirm` has finished every result, which `test_gauntlet_loop.py` checks
+- **AND** `native_confirmation.stop_reason` in `tune.json` reads `window_end` while a result that the window cut is still not finished, and is empty once `confirm` has finished every result, which `test_gauntlet_loop.py` checks
 - **AND** the baseline runs once when it is itself the ranked candidate
 
 #### Scenario: Contended confirmation run
