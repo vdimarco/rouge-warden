@@ -28,6 +28,18 @@ await page.locator('.room-scope').click();await page.waitForFunction(()=>!docume
 await page.locator('#scope-toggle').click();assert.equal(await page.locator('#submerged').isVisible(),true);assert.equal(await page.locator('#submerged-title').innerText(),'Periscope lowered');
 await page.locator('#raise-scope').click();assert.equal(await page.locator('#submerged').isVisible(),false);
 await page.screenshot({path:path.join(OUT,'periscope-desktop.png'),fullPage:true});
+const optics=await page.evaluate(async()=>{
+  const {Renderer}=await import('/silent-depth/render.js'),{createGame,command}=await import('/silent-depth/engine.js');
+  const canvas=document.createElement('canvas');canvas.style.cssText='position:absolute;left:-1000px;width:640px;height:480px';document.body.append(canvas);
+  const renderer=new Renderer(canvas),g=createGame();command(g,'start');command(g,'station','scope');await renderer.ocean.decode();renderer.draw(g,0);
+  const ctx=canvas.getContext('2d'),dpr=canvas.width/640,corner=[...ctx.getImageData(2*dpr,2*dpr,1,1).data].slice(0,3),sea=[...ctx.getImageData(350*dpr,290*dpr,1,1).data].slice(0,3);
+  const p={x:g.sub.x+100,z:g.sub.z+1000};g.viewBearing=0;const low=renderer.project(g,p,4,240)[0]-320;g.zoom=2;const high=renderer.project(g,p,4,240)[0]-320;
+  renderer.hitTargets=[{id:99,x:2,y:2,radius:20},{id:1,x:320,y:240,radius:20}];const outside=renderer.hitTest(2,2),inside=renderer.hitTest(320,240);renderer.resizeObserver.disconnect();canvas.remove();
+  return {corner,sea,scale:high/low,outside:outside??null,inside};
+});
+assert.ok(optics.corner.every(n=>n<15)&&optics.sea.some(n=>n>35),JSON.stringify(optics));assert.ok(optics.scale>4&&optics.scale<4.2);assert.equal(optics.outside,null);assert.equal(optics.inside,1);
+await page.locator('#zoom').click();assert.equal(await page.locator('#zoom').textContent(),'6×');await page.locator('#zoom').click();assert.equal(await page.locator('#zoom').textContent(),'1.5×');
+
 const wave=await page.evaluate(async()=>{
   const {Ocean}=await import('/silent-depth/ocean.js');const ocean=new Ocean();
   if(!ocean.gl)throw new Error('WebGL did not initialize');
@@ -65,7 +77,8 @@ for(const width of [320,390,1280]){
   await p.mouse.move(0,0);await checkRoom(p);
   if(width===390){
     await p.screenshot({path:path.join(OUT,'control-room-mobile.png'),fullPage:true});
-    await p.tap('.room-scope');await p.tap('[data-rate="12"]');await p.waitForFunction(()=>!document.querySelector('#fire').disabled);
+    const contour=await p.locator('.room-sonar').evaluate(b=>({target:b.getBoundingClientRect().height,art:b.querySelector('svg').getBoundingClientRect().height}));assert.ok(contour.target>=44&&contour.art<contour.target);
+    await p.tap('.room-scope');await p.screenshot({path:path.join(OUT,'periscope-mobile.png'),fullPage:true});await p.tap('[data-rate="12"]');await p.waitForFunction(()=>!document.querySelector('#fire').disabled);
     await p.locator('[data-station="torpedo"]').first().tap();await p.tap('[data-tube="2"]');assert.equal(await p.locator('#scene-tip').isVisible(),false);assert.match(await p.locator('#torpedo-fire-label').innerText(),/3/);await p.tap('#torpedo-fire');
     assert.match(await p.locator('[data-tube="2"] .tube-state').innerText(),/s/);
     await p.tap('#next-contact');await p.waitForFunction(()=>!document.querySelector('#torpedo-fire').disabled);await p.tap('#torpedo-fire');
@@ -81,5 +94,5 @@ const fallback=await browser.newContext({viewport:{width:390,height:844},reduced
 const fp=await fallback.newPage();watch(fp);
 await fp.addInitScript(()=>{const original=HTMLCanvasElement.prototype.getContext;HTMLCanvasElement.prototype.getContext=function(type,...args){return type==='webgl'?null:original.call(this,type,...args);};});
 await fp.goto(`${BASE}/silent-depth/`);await fp.locator('#modal-action').click();await fp.locator('.room-scope').click();await fp.waitForFunction(()=>!document.querySelector('#fire').disabled);assert.equal(await fp.locator('#submerged').isVisible(),false);await fallback.close();
-assert.deepEqual(errors,[]);console.log(JSON.stringify({passed:true,waves:wave,checks:['commander hub and persistent helm','scope raise/lower','GPU waves change water only','same-time repeat stable','context loss/restoration','switcher pauses patrol','cabinet and launch 320/390/1280','touch-selected tube 3 launches','full touch patrol victory/replay','reduced-motion static WebGL fallback'],errors},null,2));
+assert.deepEqual(errors,[]);console.log(JSON.stringify({passed:true,optics,waves:wave,checks:['commander hub and persistent helm','scope raise/lower','GPU waves change water only','same-time repeat stable','context loss/restoration','switcher pauses patrol','cabinet and launch 320/390/1280','touch-selected tube 3 launches','full touch patrol victory/replay','reduced-motion static WebGL fallback'],errors},null,2));
 await browser.close();

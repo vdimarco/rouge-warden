@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {createGame, command, step, fire, fireStatus, selectContact, intercept, distance, bearing, angleDiff, wrap} from '../../public/silent-depth/engine.js';
+import {createGame, command, step, fire, fireStatus, selectContact, intercept, distance, bearing, angleDiff, wrap, scopeFov} from '../../public/silent-depth/engine.js';
 
 function advance(g,seconds){for(let t=0;t<seconds;t+=.25)step(g,Math.min(.25,seconds-t));}
 function underway(){const g=createGame();command(g,'start');command(g,'station','scope');return g;}
@@ -97,4 +97,12 @@ test('torpedo control fires the individually selected tube',()=>{
   assert.equal(fire(g),true);assert.ok(g.tubes[2]>0);assert.equal(g.tubes[0],0);assert.equal(g.ammo,7);
   command(g,'tube',2);assert.equal(fire(g),false);assert.match(fireStatus(g),/Tube 3/);
   command(g,'tube',9);assert.equal(g.armedTube,2);
+});
+
+test('optical power narrows observation to the visible lens field',()=>{
+  const g=underway();assert.equal(scopeFov(g),32);g.zoom=2;assert.equal(scopeFov(g),8);
+  const target=g.ships[0];target.speed=0;g.sub.speed=0;g.sub.orderedSpeed=0;
+  g.viewBearing=bearing(g.sub,target)+6;advance(g,1);assert.equal(g.solution,0);
+  g.zoom=1;advance(g,1);assert.ok(g.solution>0);
+  g.viewBearing=bearing(g.sub,target)+18;const before=g.solution;advance(g,1);assert.ok(g.solution<before);
 });

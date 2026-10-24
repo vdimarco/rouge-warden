@@ -22,3 +22,7 @@ Cabinet art is a crop of the actual periscope screenshot, encoded as a 480px Web
 ## Moving sea
 
 The ocean is now a live GPU texture-displacement/reflection pass (`public/silent-depth/ocean.js`), informed by the sine-wave height/slope method in [NVIDIA GPU Gems ch. 1](https://developer.nvidia.com/gpugems/gpugems/part-i-natural-effects/chapter-1-effective-water-simulation-physical-models). Independent swells and ripples advect the fine photograph detail below a stable horizon. The image's sky is unchanged. No added library or provider calls are needed at runtime. A static ocean remains available after graphics loss or when WebGL cannot initialize.
+
+## Optical eyepiece and equipment contours
+
+The periscope uses native Canvas clipping, etched angular marks, a metal/rubber surround, a subtle lens coating/reflection and radial falloff. Low/high power and their fields follow the [US Navy periscope manual](https://www.maritime.org/doc/fleetsub/pscope/chap7a.php): 1.5×/6×, 32°/8°. This is an in-game visual approximation. Equipment highlight paths are hand-traced from the retained control-room image, with separate minimum native touch targets. No new generated assets or dependencies were added.

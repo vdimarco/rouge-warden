@@ -4,6 +4,7 @@ export const angleDiff = (a, b) => ((a - b + 540) % 360) - 180;
 export const radians = n => n * Math.PI / 180;
 export const distance = (a, b) => Math.hypot(a.x - b.x, a.z - b.z);
 export const bearing = (a, b) => wrap(Math.atan2(b.x - a.x, b.z - a.z) * 180 / Math.PI);
+export const scopeFov = g => g.zoom === 1 ? 32 : 8;
 const knots = 0.514444;
 const velocity = (heading, speed) => ({x: Math.sin(radians(heading)) * speed, z: Math.cos(radians(heading)) * speed});
 
@@ -135,7 +136,7 @@ function tick(g, dt) {
   if (sub.air <= 0 || sub.battery <= 0) sub.hull = Math.max(0, sub.hull - 0.16 * dt);
   g.tubes = g.tubes.map(t => Math.max(0, t - dt));
   const target = selectedShip(g);
-  if (target && isVisible(g, target) && Math.abs(angleDiff(bearing(sub, target), g.viewBearing)) < 40 / g.zoom) {
+  if (target && isVisible(g, target) && Math.abs(angleDiff(bearing(sub, target), g.viewBearing)) < scopeFov(g) / 2) {
     g.solution = clamp(g.solution + dt * (sub.speed > 9 ? 2 : 6), 0, 100);
   } else g.solution = clamp(g.solution - dt * 2, 0, 100);
 
