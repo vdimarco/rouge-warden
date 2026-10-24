@@ -8,14 +8,20 @@ import { frameIntervals, playerUrl, shotName, summarize } from './stream-sample.
 
 // A stand-in for Playwright (NORD_PLAYWRIGHT_PATH): one page with a connected peer and 30 fps video.
 // waitForTimeout moves the wall clock and the page clock on together, so a sample takes no real time.
+// FAKE_PLAN plays the runner and the host: at each fake ms after launch, a line goes to the --trigger file or the peer
+// changes state. A peer that is not connected presents no frames, as after the host quit.
 const FAKE_PLAYWRIGHT = `
+import { appendFileSync } from 'node:fs';
 const realNow = Date.now, realPerf = performance.now.bind(performance);
-let skipped = 0, presented = 0, shown;
+let skipped = 0, presented = 0, shown, peer;
+const plan = JSON.parse(process.env.FAKE_PLAN || '[]'), trigger = process.argv[process.argv.indexOf('--trigger') + 1];
 Date.now = () => realNow() + skipped;
 // The page opened an hour before the sampler process, so its clock origin is not the sampler's own.
 const clock = { timeOrigin: performance.timeOrigin - 3600000, now: () => realPerf() + 3600000 + skipped };
 const video = { videoWidth: 1412, videoHeight: 652, readyState: 4, waiting: [], requestVideoFrameCallback(done) { this.waiting.push(done); } };
-const document = { body: { dataset: { state: 'idle' } }, querySelector: selector => selector === '#video video' ? video : null };
+// The canvas encodes no image, so a shot keeps only its page screenshot.
+const document = { body: { dataset: { state: 'idle' } }, querySelector: selector => selector === '#video video' ? video : null,
+  createElement: () => ({ getContext: () => ({ drawImage() {} }), toBlob: done => done(null) }) };
 const window = { WebSocket: class { addEventListener() {} send() {} }, RTCPeerConnection: class {
   connectionState = 'connected';
   async getStats() { return new Map([['video', { type: 'inbound-rtp', kind: 'video', framesDecoded: presented }]]); }
@@ -30,20 +36,41 @@ const page = { setDefaultTimeout() {}, route: async () => {}, goto: async () => 
     skipped += ms;
     for (shown ??= until - ms; shown + 1000 / 30 <= until;) {
       const time = shown += 1000 / 30;
+      if (peer.connectionState !== 'connected') continue;
       presented++;
       for (const done of video.waiting.splice(0)) {
         done(time, { presentedFrames: presented, mediaTime: time / 1000, expectedDisplayTime: time, width: 1412, height: 652 });
       }
+    }
+    while (plan[0]?.atMs <= skipped) {
+      const step = plan.shift();
+      if (step.line) appendFileSync(trigger, step.line + '\\n');
+      if (step.peer) peer.connectionState = step.peer;
     }
   } };
 export const chromium = { launch: async () => ({ close: async () => {}, newContext: async () => ({
   addInitScript: async (fn, arg) => scripts.push([fn, arg]),
   newPage: async () => {
     for (const [fn, arg] of scripts) run(fn, arg);
-    new window.RTCPeerConnection({});
+    peer = new window.RTCPeerConnection({});
     return page;
   } }) }) };
 `;
+
+// Run the sampler on the fake Playwright with an empty trigger file, as the runner starts it, and check its sample.json.
+async function sampleWithFake(args, plan, check) {
+  const dir = await mkdtemp(join(tmpdir(), 'nord-sample-'));
+  try {
+    await writeFile(join(dir, 'playwright.mjs'), FAKE_PLAYWRIGHT);
+    await writeFile(join(dir, 'trigger.txt'), '');
+    const result = spawnSync(process.execPath, ['stream-sample.mjs', ...args, '--trigger', join(dir, 'trigger.txt'), '--out', join(dir, 'out')],
+      { encoding: 'utf8', env: { ...process.env, NORD_PLAYWRIGHT_PATH: join(dir, 'playwright.mjs'), FAKE_PLAN: JSON.stringify(plan) } });
+    assert.equal(result.status, 0, result.stderr);
+    check(JSON.parse(await readFile(join(dir, 'out/sample.json'), 'utf8')));
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+}
 
 test('stream summary uses measured time and counter differences, including freezes', () => {
   const before = { timeMs: 1000, framesDecoded: 100, bytesReceived: 1000000, framesDropped: 2, freezeCount: 1, totalFreezesDuration: 1 };
