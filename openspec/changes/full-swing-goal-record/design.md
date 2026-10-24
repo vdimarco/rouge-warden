@@ -1,0 +1,2 @@
+# Design
+Private goalFrame calls placeGoal then returns another record. Sole runtime consumer actionhud.update reads fields synchronously. Inspect all placeGoal callers/tests and consumer retention before code. Prefer optional output argument to placeGoal using one private full goal record in main, default fresh unchanged. No geometry/control/gameplay changes or rendering technique. Baseline actual identities and output equivalence across screen/layout/state/mission transitions before implementation.

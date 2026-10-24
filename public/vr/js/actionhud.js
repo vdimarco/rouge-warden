@@ -60,20 +60,21 @@ body.cutscene #actHud,body.cutscene #actPrompt,body.cutscene #actTouch,body.cuts
 // turn is the horizontal angle from the view to the goal, in radians, positive to the right.
 // On the goal, the sticker sits on the projected point. Off to the side, or behind you, it sits on the left or right
 // edge, the way you have to turn. In front but off the top or bottom, it sits on that edge.
-export function placeGoal(dir, ndc, size, pad, turn = 0) {
+export function placeGoal(dir, ndc, size, pad, turn = 0, out = {}) {
   const w = size.w, h = size.h;
   const L = pad.l, T = pad.t, R = w - pad.r, B = h - pad.b;
   const sx = (ndc.x * 0.5 + 0.5) * w, sy = (0.5 - ndc.y * 0.5) * h;
   const forward = -dir.z;
   const on = forward > 0.4 && ndc.z < 1 && sx >= L && sx <= R && sy >= T && sy <= B;
-  if (on) return { x: sx, y: sy, off: false, angle: 0 };
+  if (on) { out.x = sx; out.y = sy; out.off = false; out.angle = 0; return out; }
   const side = Math.abs(turn) > 0.35 || forward <= 0.4;
   const ang = side ? (turn > 0 ? 0 : Math.PI) : (dir.y >= 0 ? -Math.PI / 2 : Math.PI / 2);
   const c = Math.cos(ang), s = Math.sin(ang);
   const cx = (L + R) / 2, cy = (T + B) / 2;
   const rx = Math.max(8, (R - L) / 2), ry = Math.max(8, (B - T) / 2);
   const t = Math.min(rx / Math.max(1e-4, Math.abs(c)), ry / Math.max(1e-4, Math.abs(s)));
-  return { x: cx + c * t, y: cy + s * t, off: true, angle: ang };
+  out.x = cx + c * t; out.y = cy + s * t; out.off = true; out.angle = ang;
+  return out;
 }
 
 export function createActionHud() {

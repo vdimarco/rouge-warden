@@ -1367,3 +1367,6 @@ Increment64 pending — traffic wrapper optionaloutput/private runtime scratch60
 
 
 Increment64 shipped #695 as013e0bbc after all6CI/review/current authenticated traffic+action checks/exactmain+cityviewbytes/rebase before AND afterpreview/exactmerge. Productionboth HTTP200 exactSHA main00ebd4da21a1c12c01d7c04038c4a52ce94f9be631533bfab2d02c69f1a138b3/cityview634fdd52adfe4935feb960e34f29d4c6bbe0ccf38969f952d6d641e3e0438601 verified. Canonical traffic-record scenarios published and OpenSpec archived. ActualChrome/FPSbenefit unverified; totalwithheld.
+
+
+Increment65 pending — goal placement+HUD output share private record/twoactivegoalrecords→0;1920exactplacementcomparisons/defaultfresh+goalmark+7browserchecksPASS includinglayout/state/mission/trendreset. Evidence r65-goal-record/all20limits/noFPSclaim/totalwithheld.
