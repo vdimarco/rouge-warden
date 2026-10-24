@@ -34,7 +34,7 @@ sys.path.insert(0, str(ROOT / 'Scripts' / 'blender'))
 import apply_plateau_replica as apply_replica  # noqa: E402
 
 MASKED_KEYS = ('Rail_Baluster', 'Rail_Lattice', 'Fence_Boards', 'Leaf_Creeper', 'Leaf_Cedar', 'Plant_Grass_Fountain',
-               'Plant_Pit_Flowers', 'Iron_Wrought', 'Cloth_Laundry')
+               'Plant_Pit_Flowers', 'Iron_Wrought', 'Cloth_Laundry', 'Leaf_Litter')
 # The fourth pass's keys (the shared contract), the layer whose manifest uses each, and how the set is addressed.
 NEW_KEYS = {'Concrete_Lane_Aged': ('Streets', 'REPEAT'), 'Leaf_Cedar': ('Plex', 'clamp V'),
             'Plant_Grass_Fountain': ('Soul', 'clamp V'), 'Plant_Pit_Flowers': ('Streets', 'clamp V'),
