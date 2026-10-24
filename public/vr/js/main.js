@@ -408,7 +408,8 @@ function streetFrame(dt, inPlay) {
   figures.begin(camera.getWorldPosition(CAMW), G.time);
   streetView.update(dt, G.time, CAMW);
   if (act) {
-    for (const g of combat.goons) if (g.on) figures.add(goonOnThrees(g), "goons");
+    const tick = verseMode() === "off" || !flatOn ? null : Math.floor(G.time * VERSE.goons);
+    for (const g of combat.goons) if (g.on) figures.add(goonOnThrees(g, tick), "goons");
     for (const q of jobs.people) if (q.on) figures.add(q, "jobs");
   }
   figures.end();
@@ -1003,11 +1004,10 @@ function takedownAim() {
 // The gang moves on threes (8 poses a second) while the hero moves on twos: two rates in one shot, as in the film. A goon's
 // place moves every frame; his pose (the walk, the pose clock, the fall) holds between steps, and a new pose shows at once.
 const GOON_VIEW = new Map();
-function goonOnThrees(g) {
-  if (verseMode() === "off" || !flatOn) return g;
+function goonOnThrees(g, k = verseMode() === "off" || !flatOn ? null : Math.floor(G.time * VERSE.goons)) {
+  if (k === null) return g;
   let v = GOON_VIEW.get(g);
   if (!v) { v = { k: -1, pose: -1 }; GOON_VIEW.set(g, v); if (GOON_VIEW.size > 64) for (const q of GOON_VIEW.keys()) if (!q.on) GOON_VIEW.delete(q); }
-  const k = Math.floor(G.time * VERSE.goons);
   if (k !== v.k || g.pose !== v.pose || g.state !== v.state) {
     v.k = k; v.pose = g.pose; v.state = g.state;
     v.phase = g.phase; v.poseT = g.poseT; v.stride = g.stride; v.yaw = g.yaw; v.bp = g.bp; v.br = g.br; v.lift = g.lift; v.delay = g.delay;

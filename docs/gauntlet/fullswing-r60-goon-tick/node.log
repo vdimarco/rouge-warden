@@ -1,0 +1,6 @@
+PASS full/flat=true: equivalent frames/diagnostics; ticks 400->40
+PASS full/flat=false: equivalent frames/diagnostics; ticks 0->0
+PASS calm/flat=true: equivalent frames/diagnostics; ticks 400->40
+PASS calm/flat=false: equivalent frames/diagnostics; ticks 0->0
+PASS off/flat=true: equivalent frames/diagnostics; ticks 200->20
+PASS off/flat=false: equivalent frames/diagnostics; ticks 0->0
