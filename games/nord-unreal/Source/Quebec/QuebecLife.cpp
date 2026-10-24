@@ -2,6 +2,7 @@
 #include "QuebecVegetation.h"
 
 #include "Components/HierarchicalInstancedStaticMeshComponent.h"
+#include "Components/InstancedStaticMeshComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Engine/StaticMesh.h"
 #include "Engine/World.h"
@@ -253,13 +254,13 @@ void UQuebecCompanionRig::Pose(const FQuebecCompanionFrame& Frame)
 
 bool UQuebecCompanionRig::FindSniffSpot(const FVector& Near, FVector& OutSpot) const
 {
-    // The nearest street or park tree within leash reach, read from the saved tree instances.
+    // The nearest street or park tree within leash reach, read from the saved tree instances: the old summer trees on
+    // QuebecVegetation, and the species street trees on the actors apply_plateau_replica.py tags NordStreetTree.
     double Best = FMath::Square(450.);
     bool bFound = false;
-    for (TActorIterator<AQuebecVegetation> It(GetWorld()); It; ++It)
+    const auto Nearest = [&Near, &OutSpot, &Best, &bFound](const UInstancedStaticMeshComponent* Trees)
     {
-        const UHierarchicalInstancedStaticMeshComponent* Trees = It->Trees;
-        if (!Trees || !Trees->GetInstanceCount()) continue;
+        if (!Trees || !Trees->GetInstanceCount()) return;
         for (int32 Instance : Trees->GetInstancesOverlappingSphere(Near, 450.f, true))
         {
             FTransform Tree;
@@ -270,6 +271,13 @@ bool UQuebecCompanionRig::FindSniffSpot(const FVector& Near, FVector& OutSpot) c
             OutSpot = FVector(Tree.GetLocation().X, Tree.GetLocation().Y, Near.Z);
             bFound = true;
         }
+    };
+    for (TActorIterator<AQuebecVegetation> It(GetWorld()); It; ++It) Nearest(It->Trees);
+    for (TActorIterator<AActor> It(GetWorld()); It; ++It)
+    {
+        if (!It->ActorHasTag(TEXT("NordStreetTree"))) continue;
+        const TInlineComponentArray<UInstancedStaticMeshComponent*> StreetTrees(*It);
+        for (const UInstancedStaticMeshComponent* StreetTree : StreetTrees) Nearest(StreetTree);
     }
     return bFound;
 }
