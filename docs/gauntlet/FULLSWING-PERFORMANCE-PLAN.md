@@ -87,3 +87,6 @@ Increment55 shipped #676 asd1867b18 after freshall6CI/review/current63deployedch
 
 
 Increment56 shipped #679 as c4c37bd9 after all6CI/review/current46deployedchecks/exactfxbytes/rebase before AND afterpreview/exactmerge. Productionfx HTTP200 exactSHA3a67361da1a3e08fb75b31b3fcd65f890708e49f79dfb364a3347058a38e19f8 verified. Canonical comic-word upload scenarios published and OpenSpec archived. Initial full GPU allocation unchanged; actualChrome/FPSbenefit unverified; totalwithheld.
+
+
+Increment57 — atlas uploads omitted on animation-only word updates; pending spawn/removal ranges preserved. Actual one-word animated uploads96→80bytes, baseline assertion fails;16browserchecks/exactnonblankpixels/fullreplacement/swap/hiddenaging PASS;32FXchecksPASS. Evidence r57-word-atlas/all20limits/noFPSclaim/totalwithheld. Releasepending.
