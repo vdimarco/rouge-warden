@@ -1105,12 +1105,14 @@ def tune_run(loop, direct=False, until=None, reference=None, confirm=True):
         here, there = (git_state()["commit"], build_state()), ((stored.get("commit") or {}).get("commit"), stored.get("build"))
         require(here == there, f"--reference was rendered at commit {there[0]} with build {there[1]}, but this package is commit "
                                f"{here[0]} with build {here[1]}; render a new reference. No run was started.")
-        # Every candidate is scored on all its stills against ceiling A, so each stored ceiling run needs every still and
-        # a clean exit, as render_ceiling requires of a new one.
+        # Every candidate is scored on all its stills against ceiling A, so each stored ceiling run needs every still, a
+        # clean exit and no foreign GPU process, as render_ceiling requires of a new one.
         for tag in "ab":
             folder = Path(stored["sizes"][size_key][tag]["run"])
-            error = look_error(loop, read_json(folder / "verdict.json") or {"gates": []}, scored=False)
-            require(error is None, f"--reference ceiling run {tag} ({folder}): {error}; render a new reference. No run was started.")
+            verdict = read_json(folder / "verdict.json") or {"gates": []}
+            error = look_error(loop, verdict, scored=False)
+            require(error is None and verdict.get("status") != "contended", f"--reference ceiling run {tag} ({folder}): "
+                    f"{error or 'contended by a foreign GPU process'}; render a new reference. No run was started.")
     group = new_run_dir("tune")
     candidates, runs, tune_path = group / "candidates", group / "runs", group / "tune.json"
     ceiling = T.make_candidate(loop, None, "ceiling", 0, "ceiling", cvars=loop["profiles"]["ceiling"]["cvars"], look_only=True)
@@ -1244,7 +1246,9 @@ def confirm_next(loop, group, candidate_id=None, direct=False, until=None):
     require(candidate_id not in done, f"candidate {candidate_id} already has a native confirmation; nothing was run.")
     records = {record["id"]: record for record in tune["candidates"]}
     outcome = None
-    for wanted in (["baseline"] if "baseline" in records and "baseline" not in done else []) + [candidate_id]:
+    # The baseline runs first, and once only when it is the ranked candidate itself.
+    first = ["baseline"] if "baseline" in records and "baseline" not in done and candidate_id != "baseline" else []
+    for wanted in first + [candidate_id]:
         outcome = dict(confirm_candidate(loop, records[wanted], group, direct, until), added_at=iso_now())
         native["results"] = [result for result in native["results"] if result["id"] != wanted] + [outcome]
         if outcome["passed"] and wanted != "baseline" and not native.get("confirmed_native"):

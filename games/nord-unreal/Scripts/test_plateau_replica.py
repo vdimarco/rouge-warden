@@ -345,10 +345,18 @@ def check_shared_plan():
     keys = sorted(A.SHARED_TEXTURE_KEYS)
     assert keys == sorted(['Roof_Membrane', 'Roof_Gravel', 'Roof_Tar', 'Sheet_Metal', 'Siding_Lap_Cream',
                            'Siding_Lap_Grey', 'Parged', 'Rail_Baluster', 'Rail_Lattice', 'Fence_Boards', 'Leaf_Creeper',
-                           'Yard_Grass', 'Yard_Pavers', 'Yard_Soil', 'Yard_Gravel', 'Brick_Buff_Even'])
-    masked = {'Rail_Baluster', 'Rail_Lattice', 'Fence_Boards', 'Leaf_Creeper'}
-    ground = {'Roof_Membrane', 'Roof_Gravel', 'Roof_Tar', 'Yard_Grass', 'Yard_Pavers', 'Yard_Soil', 'Yard_Gravel'}
-    macro = {'Roof_Membrane', 'Roof_Gravel', 'Roof_Tar', 'Yard_Gravel', 'Brick_Buff_Even'}
+                           'Yard_Grass', 'Yard_Pavers', 'Yard_Soil', 'Yard_Gravel', 'Brick_Buff_Even',
+                           'Concrete_Lane_Aged', 'Leaf_Cedar', 'Plant_Grass_Fountain', 'Plant_Pit_Flowers',
+                           'Iron_Wrought', 'Cloth_Laundry'])
+    # cards (V clamped), the laundry atlas (both axes clamped), the foliage-lit keys
+    cards = {'Rail_Baluster', 'Rail_Lattice', 'Fence_Boards', 'Leaf_Cedar', 'Plant_Grass_Fountain', 'Plant_Pit_Flowers',
+             'Iron_Wrought'}
+    atlas = {'Cloth_Laundry'}
+    foliage = {'Leaf_Creeper', 'Leaf_Cedar', 'Plant_Grass_Fountain', 'Plant_Pit_Flowers'}
+    masked = cards | atlas | foliage
+    ground = {'Roof_Membrane', 'Roof_Gravel', 'Roof_Tar', 'Yard_Grass', 'Yard_Pavers', 'Yard_Soil', 'Yard_Gravel',
+              'Concrete_Lane_Aged'}
+    macro = {'Roof_Membrane', 'Roof_Gravel', 'Roof_Tar', 'Yard_Gravel', 'Brick_Buff_Even', 'Concrete_Lane_Aged'}
     plain = {'Collision_Only': ({'base_color_srgb': '#FF00FF', 'roughness': 1., 'metallic': 0}, 'complex'),
              'plant_rust': ({'base_color_srgb': '#8A3A20', 'roughness': .8, 'metallic': 0}, 'none'),
              'rust': ({'base_color_srgb': '#6A3A20', 'roughness': .8, 'metallic': 0}, 'none')}
@@ -366,13 +374,14 @@ def check_shared_plan():
             entry = index[name]
             assert m['texture_set'] == name and m['texture_mean'] == 'replica_' + name, key
             assert m['asset'] == f'{A.MATERIALS}/M_Replica_Plex_{key}'
-            want_parent = (A.FOLIAGE_PARENT if key == 'Leaf_Creeper' else A.CUTOUT_PARENT if key in masked
+            want_parent = (A.FOLIAGE_PARENT if key in foliage else A.CUTOUT_PARENT if key in masked
                            else A.WET_PARENT if key in ground else A.TEXTURED_PARENT)
             assert m['duplicate_of'] == want_parent, (key, m['duplicate_of'])
             assert (m['blend_mode'] == 'masked') == (key in masked) and m['two_sided'] == (key in masked), key
-            assert m['shading_model'] == ('two_sided_foliage' if key == 'Leaf_Creeper' else 'default_lit'), key
+            assert m['shading_model'] == ('two_sided_foliage' if key in foliage else 'default_lit'), key
             assert m['opacity_mask_clip'] == (.5 if key in masked else None) and m['wet'] == (key in ground), key
-            assert m['tiling'] == entry['tiling'] and m['uv'] == ('card' if key in masked - {'Leaf_Creeper'} else 'metres')
+            assert m['tiling'] == entry['tiling'] and m['uv'] == ('card' if key in cards else 'atlas' if key in atlas
+                                                                  else 'metres'), key
             if m['uv'] == 'card':
                 assert m['tiling'][1] == 1., key            # v runs 0..1 up the card once
             assert m['metallic'] == entry.get('metallic', 0.), key
@@ -387,14 +396,17 @@ def check_shared_plan():
         assert sorted(parents) == sorted(A.BUILT_PARENTS)
         assert parents[A.FOLIAGE_PARENT]['shading_model'] == 'two_sided_foliage'
         assert all(p['blend_mode'] == 'masked' and p['two_sided'] and p['opacity_mask_clip'] == .5 for p in parents.values())
-        assert parents[A.CUTOUT_PARENT]['textures'] == rows[min(masked - {'Leaf_Creeper'})]['textures']
+        assert parents[A.CUTOUT_PARENT]['textures'] == rows[min(masked - foliage)]['textures']
         sets = {A.SHARED_TEXTURE_KEYS[k] for k in keys}
         assert len(the_plan['textures']) == 3 * len(sets) + 1 == the_plan['counts']['textures'], 'three maps a set + macro'
         alpha = sorted(t['set'] for t in the_plan['textures'] if t['alpha'])
-        assert alpha == sorted(['balusters', 'lattice', 'fence_boards', 'creeper'])
+        assert alpha == sorted(['balusters', 'lattice', 'fence_boards', 'creeper', 'cedar', 'fountain_grass',
+                                'pit_flowers', 'iron_wrought', 'laundry'])
         clamped = sorted({t['set'] for t in the_plan['textures'] if t['address_y'] == 'TA_CLAMP'})
-        assert clamped == sorted(['balusters', 'lattice', 'fence_boards']) and the_plan['counts']['clamped_textures'] == 9
-        assert the_plan['counts']['masked_materials'] == 4 and the_plan['counts']['built_parents'] == 2
+        assert clamped == sorted(A.SHARED_TEXTURE_KEYS[k] for k in cards | atlas)
+        assert the_plan['counts']['clamped_textures'] == 3 * len(cards | atlas)
+        assert sorted({t['set'] for t in the_plan['textures'] if t['address_x'] == 'TA_CLAMP'}) == ['laundry']
+        assert the_plan['counts']['masked_materials'] == len(masked) and the_plan['counts']['built_parents'] == 2
         assert the_plan['counts']['macro_materials'] == len(macro)
         preserve = sorted(m['material'].rsplit('_Plex_', 1)[1] for m in the_plan['meshes'] if m['nanite_shape_preservation'])
         assert preserve == sorted(masked), preserve
@@ -408,7 +420,7 @@ def check_shared_plan():
         assert the_plan['counts']['yard_tree_actors'] == the_plan['counts']['yard_tree_instances'] == 0
         shared = A.shared_key_plan(tmp)
         assert sorted(shared) == keys
-        assert all((shared[k].get('address_y') == 'TA_CLAMP') == (k in masked - {'Leaf_Creeper'}) for k in keys)
+        assert all((shared[k].get('address_y') == 'TA_CLAMP') == (k in cards) for k in keys)
         assert all(bool(shared[k].get('macro_strength')) == (k in macro) for k in keys)
     # Yard trees: grouped by kind in a fixed order, the shared crown factor on X and Y only, no collision.
     trees = [{'x': 100. * n, 'y': -50. * n, 'z': 12., 'yaw': 400. + n, 'scale': 1.5 + .1 * n, 'kind': kind}
