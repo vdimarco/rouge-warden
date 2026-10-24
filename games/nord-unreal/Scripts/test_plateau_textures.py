@@ -5,8 +5,9 @@ Builds the textures twice into temporary directories (about a minute on four cor
 output (also against a build in this process), the PNG structure, seamless tiling, the ashlar, slate, siding,
 herringbone, buff-brick and card layouts, the cut-out alpha (coverage, anti-aliased edges, guard openings), the
 normal maps, colour and roughness means, the large-scale variation of the gravel, ballast and tar tiles, the macro
-mask, the shared material keys, the tints the apply step will need, and that the committed folder matches the
-generator.
+mask, the shared material keys, the tints the apply step will need, the fallen-leaf litter (the tree atlas's leaf
+shapes, mixed colours, darker and damper lower leaves, drifts, a tiling mask, and --check naming a change in the
+tree leaf forms), and that the committed folder matches the generator.
 """
 import hashlib
 import json
@@ -25,15 +26,18 @@ SHARED_KEYS = ('Roof_Membrane', 'Roof_Gravel', 'Roof_Tar', 'Sheet_Metal', 'Sidin
                'Yard_Soil', 'Yard_Gravel', 'Brick_Buff_Even',
                # fourth pass: the ruelle gutter, cedars, fountain grass, tree-pit planting and guards, laundry
                'Concrete_Lane_Aged', 'Leaf_Cedar', 'Plant_Grass_Fountain', 'Plant_Pit_Flowers', 'Iron_Wrought',
-               'Cloth_Laundry')
+               'Cloth_Laundry',
+               # fifth pass: fallen leaves on sidewalks, gutters and lawns
+               'Leaf_Litter')
 # Cards (uv "card": u metres along the run, v 0..1 up the card, V clamped), the masked keys, the foliage-lit keys,
 # the atlas keys (each quad addresses one cell; both axes clamped) and the sets that own their colour.
 CUTOUT_KEYS = ('Rail_Baluster', 'Rail_Lattice', 'Fence_Boards', 'Leaf_Cedar', 'Plant_Grass_Fountain',
                'Plant_Pit_Flowers', 'Iron_Wrought')
 FOLIAGE_KEYS = ('Leaf_Creeper', 'Leaf_Cedar', 'Plant_Grass_Fountain', 'Plant_Pit_Flowers')
 ATLAS_KEYS = ('Cloth_Laundry',)
-MASKED_KEYS = CUTOUT_KEYS + ('Leaf_Creeper',) + ATLAS_KEYS
-OWN_COLOUR = ('tar', 'pit_flowers', 'laundry')
+# Tiling masked sets on metre UVs (wrap both ways): the creeper on walls and the leaf litter on the ground.
+MASKED_KEYS = CUTOUT_KEYS + ('Leaf_Creeper', 'Leaf_Litter') + ATLAS_KEYS
+OWN_COLOUR = ('tar', 'pit_flowers', 'laundry', 'leaf_litter')
 
 
 def files(directory):
@@ -357,6 +361,9 @@ def check_cutout(key, spec, entry, rows):
         out['picket_gap_cm'] = round(max(gaps) / px_cm, 2)
     elif key == 'laundry':
         out.update(check_laundry(entry, rows))
+    elif key == 'leaf_litter':
+        # a carpet with gaps: the patch's ground shows between the leaves
+        assert .68 <= entry['coverage'] <= .88, entry['coverage']
     elif key == 'creeper':
         assert .7 <= entry['coverage'] <= .9, entry['coverage']
         green = sum(1 for r, a in zip(rows, alpha) for x in range(width) if a[x] >= 128 and r[4 * x + 1] > r[4 * x])
@@ -424,6 +431,120 @@ def check_lane_concrete(spec, entry, diff, rough):
             'channel_roughness': round(centre[1], 3), 'edge_roughness': round(min(edge_a[1], edge_b[1]), 3)}
 
 
+def hue_family(r, g, b):
+    """'yellow' (yellow and gold), 'red' (orange, red and maroon), 'brown' (tan, russet and rotting brown), 'green'
+    (lime and green) or 'dark' (tar spots, deep shade) for an sRGB colour."""
+    hi, lo = max(r, g, b), min(r, g, b)
+    if hi < 40:
+        return 'dark'
+    sat = (hi - lo) / hi
+    if g >= r:
+        return 'green'
+    if sat < .45:
+        return 'brown'
+    return 'yellow' if g > .66 * r else 'red'
+
+
+def check_leaf_litter(spec, entry, diff, rough):
+    """Fallen leaves (Leaf_Litter): the tree atlas's own leaf shapes (plateau_trees.FORMS, broadleaf only) stamped at
+    their real size, in mixed late-October colours, the lower leaves darker and damper than the ones on top (Adam
+    Sharp's fallen-leaves material), in drifts rather than an even film, and a mask that tiles: leaves cross every
+    edge of the tile and run on across the seam."""
+    width, height = spec['size_px']
+    layout = entry['layout']
+    trees = T.tree_module()
+    assert layout['px_per_cm'] == width / (spec['tile_m'][0] * 100.) and layout['stamp_px_per_cm'] > layout['px_per_cm']
+    assert set(layout['stamps']) == set(T.LITTER_STAMPS)
+    for name, s in layout['stamps'].items():
+        form, kind, blade, share = T.LITTER_STAMPS[name]
+        assert form in trees.FORMS and 'needles' not in trees.FORMS[form], (name, form)
+        assert s['form'] == form and s['blade_cm'] == list(blade) and s['count'] > 0, (name, s)
+    # Real sizes: a maple blade 9 to 14 cm, a honey locust leaflet about 2 cm.
+    assert 9. <= T.LITTER_STAMPS['silver'][2][0] and T.LITTER_STAMPS['silver'][2][1] <= 15.
+    assert T.LITTER_STAMPS['locust_leaflet'][2][1] <= 3.
+    assert layout['leaves'] == sum(s['count'] for s in layout['stamps'].values()) >= 1500, layout['leaves']
+    alpha = [r[3::4] for r in diff]
+    heights = [r[1::3] for r in rough]
+    rough_r = [r[0::3] for r in rough]
+    fam, n = {}, 0
+    low, high = [], []
+    for y in range(0, height, 2):
+        r_ = diff[y]
+        for x in range(0, width, 2):
+            if alpha[y][x] < 250:
+                continue
+            c = r_[4 * x:4 * x + 3]
+            f = hue_family(*c)
+            fam[f] = fam.get(f, 0) + 1
+            n += 1
+            low.append((heights[y][x], .2126 * T.SRGB_TO_LINEAR[c[0]] + .7152 * T.SRGB_TO_LINEAR[c[1]]
+                        + .0722 * T.SRGB_TO_LINEAR[c[2]], rough_r[y][x] / 255.))
+    share = {k: round(v / n, 4) for k, v in sorted(fam.items())}
+    # Mixed late-October colours: mostly yellow and gold, plenty of brown, a good share of orange and red, a little
+    # green, and the black tar spots of Norway maples (Rhytisma), none of them taking over.
+    assert .25 <= share.get('yellow', 0) <= .6, share
+    assert .15 <= share.get('brown', 0) <= .55, share
+    assert .06 <= share.get('red', 0) <= .35, share
+    assert .005 <= share.get('green', 0) <= .12, share
+    assert .0005 <= share.get('dark', 0) <= .03, share
+    # Lower leaves (the lowest third of the height map) are darker and damper (glossier) than the top third.
+    low.sort()
+    third = len(low) // 3
+    bottom, top = low[:third], low[-third:]
+    lum = [sum(v[1] for v in part) / len(part) for part in (bottom, top)]
+    gloss = [sum(v[2] for v in part) / len(part) for part in (bottom, top)]
+    assert lum[0] < .8 * lum[1], ('lower leaves darker', lum)
+    assert gloss[0] < gloss[1] - .06, ('lower leaves damper', gloss)
+    layers = layout['layers']
+    assert layers['bottom']['luminance'] < layers['middle']['luminance'] < layers['top']['luminance'], layers
+    assert all(layers[k]['visible_share'] > .1 for k in ('bottom', 'middle', 'top')), layers
+    # The splat wraps: leaves cross all four edges, and the mask runs on across the seam like any neighbour step.
+    edges = [alpha[0], alpha[-1], [a[0] for a in alpha], [a[-1] for a in alpha]]
+    crossing = [sum(1 for v in e if v >= 128) / len(e) for e in edges]
+    assert min(crossing) > .4, ('leaves cross the tile edges', crossing)
+    step_x = sum(abs(a[x] - a[x + 1]) for a in alpha[::3] for x in range(width - 1)) / ((width - 1) * len(alpha[::3]))
+    seam_x = sum(abs(a[-1] - a[0]) for a in alpha[::3]) / len(alpha[::3])
+    step_y = sum(abs(p - q) for y in range(0, height - 1, 3) for p, q in zip(alpha[y], alpha[y + 1])) / (
+        width * len(range(0, height - 1, 3)))
+    seam_y = sum(abs(p - q) for p, q in zip(alpha[-1], alpha[0])) / width
+    assert seam_x < 1.6 * step_x and seam_y < 1.6 * step_y, ('mask seam', seam_x, step_x, seam_y, step_y)
+    # Drifts: 25 cm blocks differ in cover (clumped, not an even film), and no block of a patch is bare.
+    px = layout['px_per_cm']
+    b = round(25. * px)
+    blocks = []
+    for by in range(0, height - b + 1, b):
+        for bx in range(0, width - b + 1, b):
+            blocks.append(sum(1 for y in range(by, by + b, 2) for v in alpha[y][bx:bx + b:2] if v >= 128)
+                          / (len(range(by, by + b, 2)) * len(range(bx, bx + b, 2))))
+    mean = sum(blocks) / len(blocks)
+    cv = (sum((v - mean) ** 2 for v in blocks) / len(blocks)) ** .5 / mean
+    assert .06 < cv < .4 and min(blocks) > .3, ('drifts', round(cv, 3), round(min(blocks), 3))
+    return {'hue_share': share, 'lower_to_upper_luminance': round(lum[0] / lum[1], 3),
+            'lower_upper_roughness': [round(v, 3) for v in gloss], 'edge_cover': [round(v, 3) for v in crossing],
+            'block_cover_cv_25cm': round(cv, 3), 'leaves': layout['leaves'], 'layers': layers}
+
+
+def check_litter_forms_watch():
+    """--check names a change in the tree leaf forms: the litter stamps the atlas's shapes, so editing a form in
+    Scripts/blender/plateau_trees.py must ask for a texture rebuild, in words, before any pixel hash differs."""
+    trees = T.tree_module()
+    stored = T.litter_stamp_digest()
+    assert T.check_litter_stamps({'layout': {'stamps_sha256': stored}}) is None
+    old = trees.FORMS['elm']
+    try:
+        trees.FORMS['elm'] = dict(old, lobes=[(-.03, 1., .3, 11), (.03, .9, .24, 11)])
+        try:
+            T.check_litter_stamps({'layout': {'stamps_sha256': stored}})
+        except AssertionError as error:
+            assert 'plateau_trees.py' in str(error) and 'rerun' in str(error), error
+        else:
+            raise AssertionError('--check missed a change in the tree leaf forms')
+    finally:
+        trees.FORMS['elm'] = old
+    assert T.litter_stamp_digest() == stored
+    return {'stamps_sha256': stored[:16]}
+
+
 # Expected colour (mean linear) and roughness per set.
 EXPECT = {
     'limestone': lambda m, r: .18 < sum(m) / 3 < .38 and max(m) / min(m) < 1.2 and .8 <= r <= .92,
@@ -454,6 +575,8 @@ EXPECT = {
     # black paint with rust at the feet; paint is not metal
     'iron_wrought': lambda m, r: sum(m) / 3 < .04 and m[0] >= m[2] and .4 <= r <= .6,
     'laundry': lambda m, r: .3 < sum(m) / 3 < .6 and .85 <= r <= .95,
+    # Fallen leaves: warm (red over green over blue, little blue), mid-dark from above, dry on top and damp below.
+    'leaf_litter': lambda m, r: m[0] > m[1] > m[2] and m[2] < .35 * m[0] and .1 < sum(m) / 3 < .3 and .62 <= r <= .82,
 }
 # Sets whose tile must not read as a grid on a large roof or yard: 2 m tiles with 25 cm to 1 m zones. Minimum
 # coefficient of variation of the mean luminance of 25 cm and 50 cm blocks (the 1 m tiles of the last pass had
@@ -488,7 +611,7 @@ def check_shared_keys(index):
 
 
 def main():
-    report = {'layouts': check_layouts()}
+    report = {'layouts': check_layouts(), 'litter_forms_watch': check_litter_forms_watch()}
     with tempfile.TemporaryDirectory() as a, tempfile.TemporaryDirectory() as b:
         index = T.prepare(a)
         T.prepare(b)
@@ -549,6 +672,8 @@ def main():
                 sets[key].update(check_buff_brick(spec, maps['diff'], maps['rough']))
             if key == 'lane_concrete':
                 sets[key].update(check_lane_concrete(spec, entry, maps['diff'], maps['rough']))
+            if key == 'leaf_litter':
+                sets[key].update(check_leaf_litter(spec, entry, maps['diff'], maps['rough']))
             if key in LARGE_SCALE:
                 # Large-scale variation: the tile is 2 m, and 25 cm and 50 cm blocks differ in tone (zones).
                 assert spec['tile_m'] == (2., 2.) and spec['size_px'] == (1024, 1024), key

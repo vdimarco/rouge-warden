@@ -292,3 +292,11 @@ test('without END, a sample stops 10 s after its last connected peer, and does n
     assert.ok(seconds > 12, `the sample stopped after ${seconds} s, before END`);
   });
 });
+
+test('README.md says a trigger sample stops at END, or after the stream-gone limit of stream-sample.mjs and fails', async () => {
+  const limit = Number((await readFile('stream-sample.mjs', 'utf8')).match(/^const STREAM_GONE_MS = (\d+);$/m)[1]);
+  // A sentence ends at a full stop and a space, so file names such as stream-sample.mjs stay inside it.
+  const sentence = (await readFile('README.md', 'utf8')).split(/(?<=\.)\s+/).find(text => text.includes('`STREAM_GONE_MS`'));
+  assert.ok(sentence, 'README.md names STREAM_GONE_MS');
+  assert.match(sentence, new RegExp(`^With \`--trigger.*\\bEND\\b.*\\bwithout END\\b.*\\b${limit / 1000} s after it last saw a connected peer.*\\bfails\\.$`));
+});

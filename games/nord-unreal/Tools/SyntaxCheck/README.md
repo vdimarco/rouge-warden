@@ -234,7 +234,7 @@ catch-all variadic templates.
 | `check.sh --both` | Every file passes in both the game and the editor configuration, including all `*Tests.cpp`. No test file is failing. |
 | `link.sh --both` | Every used game symbol is defined, in both configurations. |
 | `selftest.sh` | 21 checks pass, 0 unexpected. |
-| `check.sh --src ../../Source/QuebecGauntletTest --both` and `link.sh` with the same `--src` | Both files of the gauntlet controller module pass in both configurations, and every used game symbol is defined. |
+| From `games/nord-unreal`: `Tools/SyntaxCheck/check.sh --src Source/QuebecGauntletTest --both`, and `link.sh` with the same options | Both files of the gauntlet controller module pass in both configurations, and every used game symbol is defined. |
 | `check.sh --no-pch` | 45 files pass and 1 fails: `QuebecVegetation.cpp` names `UMaterialInterface` in a nested name specifier without its header, so it compiles only through the shared PCH. |
 
 ## Uncertain APIs
