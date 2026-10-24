@@ -167,10 +167,11 @@ def apply(u, preserve_warden_trees=False):
 
 if __name__ == '__main__':
     if '--self-check' in sys.argv:
-        points = tree_positions()
+        points, nodes = tree_positions(), osm_tree_positions()
         assert len(points) == len(street_trees()) >= 4571 and len({p[2] for p in points}) == len(points)
-        assert all(math.isfinite(v) for p in points for v in p)
-        print('PLATEAU_VEGETATION_SOURCE_OK',len(points))
+        assert len(nodes) == 4571 and len({p[2] for p in nodes}) == len(nodes)
+        assert all(math.isfinite(v) for p in points + nodes for v in p)
+        print('PLATEAU_VEGETATION_SOURCE_OK',len(points),'street trees,',len(nodes),'OSM stand-in trees')
     else:
         import unreal as u
         assert u.get_editor_subsystem(u.LevelEditorSubsystem).get_current_level().get_outer().get_name() == 'LaFontaine'

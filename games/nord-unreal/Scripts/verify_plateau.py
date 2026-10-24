@@ -306,21 +306,22 @@ def verify_sky_water():
 
 def verify_vegetation(actors, labels, tree_mesh):
     """The one saved QuebecVegetation actor and its old summer trees on tree_mesh. Returns the instance count."""
-    from plateau_rendering import planned_vegetation, tree_positions
+    from plateau_rendering import osm_tree_positions, planned_vegetation
     assert sum(actor.get_class().get_name() == 'QuebecVegetation' for actor in actors) == 1, 'Duplicate surveyed vegetation actors'
     assert sum(actor.get_actor_label() == 'Plateau mapped vegetation' for actor in actors) == 1, 'Duplicate mapped tree labels'
     vegetation = labels['Plateau mapped vegetation']
     trees = vegetation.get_editor_property('trees')
-    # One instance per Streets/street_trees.json row until apply_plateau_replica.py puts the street trees on their
-    # species meshes; none after it (it clears them, and plateau_rendering places none once those exist).
+    # One instance per OSM tree node (4,571, as upgrade_plateau.py placed them and a restored backup holds them) until
+    # apply_plateau_replica.py puts the street trees on their species meshes; none after it (it clears them, and
+    # plateau_rendering places none once those exist).
     expected = planned_vegetation(actors)
     assert trees.static_mesh == tree_mesh and trees.get_instance_count() == expected
     assert trees.get_collision_enabled() == u.CollisionEnabled.NO_COLLISION
-    for i, (x, y, seed) in enumerate(tree_positions()[:expected]):
+    for i, (x, y, seed) in enumerate(osm_tree_positions()[:expected]):
         transform = trees.get_instance_transform(i, True)
         assert math.dist((transform.translation.x, transform.translation.y), (x, y)) < .1, seed
     REPORT['tree_layer'] = {'mapped_tree_instances': trees.get_instance_count()}
-    REPORT['checks'].append(f'{expected:,} saved surveyed tree instances at the street_trees.json coordinates'
+    REPORT['checks'].append(f'{expected:,} saved surveyed tree instances at the OSM tree nodes'
                             if expected else 'surveyed trees on the replica species meshes; the old summer trees cleared')
     return expected
 
