@@ -66,6 +66,7 @@ A phone-sized client watching NordHost alone over a direct connection SHALL rece
 - **AND** `NORD_STREAM_FPS` is at least 29 in every 5 s window, decoded FPS is within 3 FPS of it, and `stream/sample.json` and `verdict.json` record each value
 - **AND** the 120 ms jitter buffer limit is the player's own lag rule (`receiverLagging` in `Browser/config.mjs`), a check of stream health and not a delay target, and it is the only delay figure with a limit
 - **AND** NordFriend1 logs no awake `NORD_STREAM_FPS` window inside the lap
+- **AND** a solo row in which NordFriend1 logged an awake window inside the lap is "contended", with NordFriend1 in `contended_by`, not "fail", also when a NordHost gate failed beside it, because only a viewer wakes NordFriend1 and never a render CVar, so the row is missing evidence that the host samples again and does not drop the candidate, which `test_gauntlet_loop.py` checks
 
 #### Scenario: Frames cut to the lap
 - **WHEN** the runner judges a stream sample

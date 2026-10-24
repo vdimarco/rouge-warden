@@ -1068,8 +1068,20 @@ def judge_stream(run, loop, meta):
         # A solo lap needs NordFriend1 asleep (only NordHost renders); its 5 s windows say so as they are logged.
         friend = M.parse_stream_fps("\n".join(event["line"] for event in read_json(stream / "friend-events.json", []) or []
                                               if window and window[0] <= event["ms"] <= window[1]), sleeping=True)
-        gates.append(M.gate("friend_awake_windows", sum(not row["sleeping"] for row in friend) if friend else None, 0,
+        awake = sum(not row["sleeping"] for row in friend) if friend else None
+        gates.append(M.gate("friend_awake_windows", awake, 0,
                             unit="windows", note="NordFriend1's NORD_STREAM_FPS windows inside the lap that were awake"))
+        if awake and meta["row"] == "solo":
+            # QuebecStreamIdle wakes NordFriend1 only for a viewer or a lost signalling connection, never for a render
+            # CVar, so the profile did not cause it: a viewer did, such as a visitor of the public page. NordFriend1 then
+            # rendered beside NordHost, as a foreign GPU process does, so the row is contended (missing evidence that
+            # notes-host step 8 samples again), not a failure that drops the candidate.
+            friend_pid = next((child.get("pid") for child in (meta.get("lifecycle") or {}).get("children") or []
+                               if child.get("name") == "friend"), None)
+            foreign = [*foreign, {"pid": friend_pid, "name": "NordFriend1",
+                                  "note": f"awake in {awake} of its 5 s windows inside the solo lap"}]
+            notes.append("NordFriend1 woke inside the solo lap, so it rendered beside NordHost: the row is contended, "
+                         "sample it again")
     shots = {label: stream_shot(run, label) for label in loop["order"]}
     report_only.update(received_size=received, expected_size=expected,
                        stop_frames={label: shot and str(shot.relative_to(run)) for label, shot in shots.items()},
@@ -1382,7 +1394,8 @@ def confirm_candidate(loop, record, group, direct=False, until=None, plan=None):
     A contended run is run once more, as in the search; a second contended run stops the confirmation as missing
     evidence, not as a failure. An unverified run is run once more too, so one missed nvidia-smi listing does not leave
     the rest of the window idle. A second unverified run is missing evidence (CONFIRM_UNVERIFIED); the other runs go
-    on, so a failed one still makes the result final."""
+    on, so a failed one still makes the result final. A failed run makes the result final, so the confirmation of this
+    candidate stops there and the next ranked candidate starts at once."""
     candidate_id = record["id"]
     execcmds, _ = T.write_candidate_files(group / "candidates", record)
     outcome = {"id": candidate_id, "runs": [], "reasons": [], "passed": False}
@@ -1414,6 +1427,10 @@ def confirm_candidate(loop, record, group, direct=False, until=None, plan=None):
                 # A run with a gate that has no value, and none that failed, is missing evidence, not a failure.
                 prefix = f"{CONFIRM_UNVERIFIED}: " if verdict["status"] == "unverified" else ""
                 outcome["reasons"].append(f"{prefix}{sky} {size_key}: {verdict['status']} ({', '.join(failing[:6])})")
+                # A failed run makes the result final, so the candidate's other runs would feed no verdict: the window
+                # time goes to the next ranked candidate instead.
+                if verdict["status"] != "unverified":
+                    return outcome
     outcome["passed"] = not outcome["reasons"]
     return outcome
 

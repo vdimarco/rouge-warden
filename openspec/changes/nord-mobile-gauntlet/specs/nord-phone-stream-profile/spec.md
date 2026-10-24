@@ -31,6 +31,7 @@ The tuner SHALL choose, among the candidates it measured, the phone profile with
 #### Scenario: Confirmation fails
 - **WHEN** the winner fails any gate in the 3-lap confirmation or in the stream runs
 - **THEN** the tuner confirms the next feasible candidate, and `tune.json` records why the first one was dropped
+- **AND** a failed native confirmation run ends that candidate's confirmation at once, in `tune` and in `confirm`, because its result is then final, so the next ranked candidate starts right after it: with room for 5.5 runs, a winner that fails its first run and the next candidate, which passes, both finish their confirmation in one window, which `test_gauntlet_loop.py` checks
 - **AND** after a stream row or the co-op guard drops a candidate, `gauntlet_loop.py confirm <tune folder>` confirms the next ranked candidate natively, adds the result to `tune.json` and writes no profile
 - **AND** `confirm` skips a ranked candidate that a failed stream row or the co-op guard dropped, as the round report judges it, also when that candidate's native confirmation was cut or never ran, and refuses `--candidate` for it, because a new native result cannot change its verdict, which `test_gauntlet_loop.py` checks also with the tune folder given relative to `games/nord-unreal/`
 - **AND** when the round dropped a ranked baseline whose native confirmation is not finished, `confirm` does not run that baseline first and confirms the next ranked candidate, because the baseline's result cannot change the verdict and a cut there would stop the candidate, which `test_gauntlet_loop.py` checks
@@ -64,7 +65,7 @@ The tuner SHALL choose, among the candidates it measured, the phone profile with
 #### Scenario: Unverified confirmation run
 - **WHEN** a native confirmation run is unverified: a gate has no value and none failed
 - **THEN** that run runs once more, as a contended run does, so when the second run gives a verdict the candidate can be confirmed in the same window, which `test_gauntlet_loop.py` checks
-- **AND** after a second unverified run, the candidate's other confirmation runs go on, and its result gets a reason that starts with "a confirmation run was unverified" and counts as not run
+- **AND** after a second unverified run, the candidate's other confirmation runs go on, so a later failed run can still make the result final, and its result gets a reason that starts with "a confirmation run was unverified" and, without a failed run, counts as not run
 - **AND** the confirmation then stops at that candidate with `native_confirmation.stop_reason` `unverified`, the round report marks the `confirmed` gate unverified, not fail, and waits on that candidate, and `gauntlet_loop.py confirm <tune folder>` runs it again and replaces its result, which `test_gauntlet_loop.py` checks
 - **AND** when that result also holds a failed run, it counts as failed, and the next ranked candidate is confirmed, which `test_gauntlet_loop.py` checks
 

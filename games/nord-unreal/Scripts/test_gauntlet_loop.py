@@ -885,10 +885,17 @@ def check_stream(out, state, group, winner):
     assert gates(wrong)["received_size"]["value"] == "1280x720" and gates(wrong)["received_size"]["result"] == "fail"
     assert gates(wrong)["size_changes"]["value"] == 0 and wrong["status"] == "fail"
     assert gates(rejudge(run, "no-size", lambda folder: resize(folder, 0, 0)))["received_size"]["result"] == "unverified"
-    # NordFriend1 woke during the lap, so two games rendered: the solo row fails.
-    awake = rejudge(run, "friend-awake", lambda folder: edit_json(folder / "stream/friend-events.json", lambda rows: [
-        dict(row, line=row["line"].replace("sleeping=1", "sleeping=0")) for row in rows]))
-    assert gates(awake)["friend_awake_windows"]["value"] == 5 and awake["status"] == "fail", gates(awake)["friend_awake_windows"]
+    # NordFriend1 woke during the lap, so two games rendered. Only a viewer wakes it (QuebecStreamIdle), never the
+    # profile, so the solo row is contended, missing evidence that the host samples again, not a failure that drops the
+    # candidate, also when a NordHost gate fails beside it.
+    def wake(folder):
+        edit_json(folder / "stream/friend-events.json", lambda rows: [
+            dict(row, line=row["line"].replace("sleeping=1", "sleeping=0")) for row in rows])
+    awake = rejudge(run, "friend-awake", wake)
+    assert gates(awake)["friend_awake_windows"]["value"] == 5 and awake["status"] == "contended", gates(awake)["friend_awake_windows"]
+    assert [entry["name"] for entry in awake["contended_by"]] == ["NordFriend1"], awake["contended_by"]
+    woken = rejudge(run, "friend-awake-wrong-size", lambda folder: (wake(folder), resize(folder, 1280, 720)))
+    assert woken["status"] == "contended" and gates(woken)["received_size"]["result"] == "fail", failing(woken)
     two = out / "20261023T230500Z-two-viewers"
     (two / "stream/NordFriend1").mkdir(parents=True)
     for name in ("stream/events.json", "stream/gpu.json", "stream/sample.json", "stream/frames.json"):
@@ -1588,7 +1595,8 @@ def check_confirm_window(out):
     launches nothing. No run starts unless its estimate ends before --until. The baseline here is not ranked, so it
     takes no window time. A result the window cut is not done: confirm runs it again and replaces it, and --candidate
     accepts it. A cut result that also holds a failed run is done, so confirm keeps it and runs the next ranked
-    candidate. A ranked baseline below the candidate runs only after the candidate failed."""
+    candidate. A failed run ends the candidate's confirmation, so the next ranked candidate starts at once. A ranked
+    baseline below the candidate runs only after the candidate failed."""
     run_s = T.run_estimate_s(SMALL, "perf", SMALL["confirm_laps"])
     full = len(SMALL["sky_order"]) * len(SMALL["size_use"]["confirm"])
     clock, calls, took, shared, failing = [1_000_000.0], [], [run_s], {}, set()
@@ -1654,16 +1662,38 @@ def check_confirm_window(out):
         native = L.confirm_native(SMALL, low, out.parent / "confirm-window" / "baseline-below-native")
         assert [result["id"] for result in after["results"]] == ["04-shadows2", "baseline"], after["results"]
         assert after["confirmed_native"] == native["confirmed_native"] == "baseline", (after["confirmed_native"], native["confirmed_native"])
+        # The winner fails its first run. That makes its result final, so its other runs would feed no verdict: the
+        # confirmation goes straight on to 05-gi2, which a window with room for 5.5 runs then confirms, in tune and in
+        # two confirm calls (notes-host step 9).
+        full_labels = lambda candidate: [f"confirm-{candidate}-{sky}-{size}" for sky in SMALL["sky_order"]
+                                         for size in SMALL["size_use"]["confirm"]]
+        for name in ("failed-first-tune", "failed-first-confirm"):
+            group, until = out.parent / "confirm-window" / name, clock[0] + 5.5 * run_s
+            calls.clear()
+            if name == "failed-first-tune":
+                after = L.confirm_native(SMALL, tune, group, until=until)
+            else:
+                T.write_tune(group / "tune.json", tune)
+                L.confirm_next(SMALL, group, until=until)
+                L.confirm_next(SMALL, group, until=until)
+                after = json.loads((group / "tune.json").read_text())["native_confirmation"]
+            assert [label for label, _ in calls] == ["confirm-04-shadows2-day-top_landscape"] + full_labels("05-gi2"), (name, calls)
+            assert all(end <= until for _, end in calls), f"{name}: a run ended after --until"
+            assert after["confirmed_native"] == "05-gi2" and after["stop_reason"] is None, (name, after)
+            winner = after["results"][0]
+            assert winner["reasons"] == ["day top_landscape: fail ()"] and len(winner["runs"]) == 1, (name, winner)
         # A host 1.5 times slower than the estimate: each run is planned with the longest one measured so far, within one
-        # candidate (room for 2.6 estimates) and from the failed winner to the next candidate (room for 7.2), as the
-        # search plans.
+        # candidate (room for 2.6 estimates: the winner's second run does not start) and from a winner that failed its
+        # last run to the next candidate (room for 7.2), as the search plans.
         took[0] = 1.5 * run_s
-        for name, room in (("slow", 2.6 * run_s), ("slow-winner", 7.2 * run_s)):
+        failing.clear()
+        failing.add("confirm-04-shadows2-night_rain-top_portrait")
+        for name, room, ids in (("slow", 2.6 * run_s, ["04-shadows2"]), ("slow-winner", 7.2 * run_s, ["04-shadows2", "05-gi2"])):
             group, until = out.parent / "confirm-window" / name, clock[0] + room
             calls.clear()
             native = L.confirm_native(SMALL, tune, group, until=until)
             assert all(end <= until for _, end in calls), f"{name}: a run ended {max(e for _, e in calls) - until:.0f} s after --until"
-            assert [result["id"] for result in native["results"]] == ["04-shadows2", "05-gi2"] and native["stop_reason"] == "window_end", native
+            assert [result["id"] for result in native["results"]] == ids and native["stop_reason"] == "window_end", native
             assert native["results"][-1]["reasons"] == [L.CONFIRM_CUT], native["results"][-1]
         failing.clear()
         # The search found the host 1.5 times slower than its plan (planned_candidate_s), with and without --reference:
@@ -1739,8 +1769,8 @@ def check_confirm_window(out):
                 raise AssertionError(f"{name}: confirm --candidate must refuse a result that holds a failed run")
     print("confirm window ok: no run ends after --until, a slow host raises the plan (also the first run, from the search), "
           "confirm runs a cut result again and replaces it, a ranked baseline runs once and can be the confirmed one, "
-          "a contended run runs once more, a failed run is final also in a cut or contended result, and confirm keeps "
-          "the stop reason current")
+          "a contended run runs once more, a failed run ends the candidate's confirmation and is final also in a cut or "
+          "contended result, and confirm keeps the stop reason current")
 
 
 def check_confirm_dropped(out):
