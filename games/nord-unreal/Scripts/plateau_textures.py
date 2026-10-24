@@ -62,9 +62,9 @@ tileable value noise on an integer hash, and the normals come from the height fi
 differences. The leaf litter is a Shape Splatter, after Adam Sharp's fallen-leaves material in Substance 3D Designer
 (80.lv, 2022): a few leaf shapes scattered with random place, rotation and scale, each with its own colour, saturation
 and luminance, the darker leaves laid under the lighter ones for depth, the splatter's mask kept as the alpha, and
-an ambient occlusion from the height darkening the leaves under an edge. The card plants are crossed billboards (Pelzer, "Rendering Countless Blades of Waving Grass", GPU
-Gems ch. 7; klamtii's tree sprites; Kevin Quinn's plant cards for God of War Ragnarok): the cards carry the whole
-silhouette, drawn back to front from signed-distance blades, fronds, leaves and bristles. The garments' folds fan
+an ambient occlusion from the height darkening the leaves under an edge. The card plants are crossed billboards
+(Pelzer, "Rendering Countless Blades of Waving Grass", GPU Gems ch. 7; klamtii's tree sprites; Kevin Quinn's plant
+cards for God of War Ragnarok): the cards carry the whole silhouette, drawn back to front from signed-distance blades, fronds, leaves and bristles. The garments' folds fan
 down from the pegs, as cloth hung from points does (Weil, "The Synthesis of Cloth Objects", SIGGRAPH 1986). The
 textures are generated, not scanned.
 

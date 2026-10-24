@@ -2823,7 +2823,8 @@ def alley_paving_z(world, p):
 # curb between them would not take a parked car (5.4 m) merge into one. Any part in the 300 cm traffic band is laid
 # flush at the dropped-curb height without collision, as the sidewalk's own dropped aprons are, and so is an
 # extension across a crossing ramp. On a side with no sidewalk the extension is a raised lawn verge; on a corner arc
-# it follows the arc piece nearest the trunk. Any other trunk the carriageway covers is listed for the host.
+# it follows the arc piece nearest the trunk. Any other trunk the carriageway covers is re-seated from the
+# inventory's own side, place and distance, or left out and listed for the host (see CARDINAL below).
 # Adapted from the City of Minneapolis Street Design Guide, "Curb extensions" (tapers of 3:1 to 5:1 where they guide
 # traffic, so these short ones only chamfer), and the Ville de Montréal's "Saillies de trottoir" (planted saillies,
 # mostly at corners).
