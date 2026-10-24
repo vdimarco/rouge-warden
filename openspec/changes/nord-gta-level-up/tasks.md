@@ -36,7 +36,9 @@
 - [x] Fifth pass, apply step: the conifer and larch kinds, one actor per kind, mesh and late-October colour with tinted leaves, the `NordStreetTree` tag, no trunk in the traffic band, and `Leaf_Litter` as a contract key.
 - [x] Fifth pass, host steps: both host blocks build the Plex and prop OBJs first, the park, stand-in and pre-apply verify read the OSM tree nodes again, and dogs sniff the tagged street trees (stub syntax check and link only).
 - [x] Fifth pass, integration: every layer rebuilt in dependency order and byte-identical on a second build.
-- [ ] Fifth pass previews and review: draw the red and russet leaf tints in the preview, re-render the views that show the gutter, the litter, the conifers, the re-seated trees and the moved ruelle camera (`ruelle_mentana`, `ruelle`, `gallery_closeup`, `mentana`, `rachel`, `papineau`, `corner`, `aerial`), update `Preview/Replica/README.md`, then a critic review.
+- [x] Fifth pass previews and review: draw the red and russet leaf tints in the preview, re-render the views that show the gutter, the litter, the conifers, the re-seated trees and the moved ruelle camera (`ruelle_mentana`, `ruelle`, `gallery_closeup`, `mentana`, `rachel`, `papineau`, `corner`, `aerial`), update `Preview/Replica/README.md`, then a critic review.
+- [x] Fifth pass repair: serrated litter outlines with a thinning fringe of clumps, leaves on the ruelles under the yard trees and a gutter drift under every crown over a gutter, park litter over the park's own leaves, the city's wooden poles with cobra heads and its steel light standards from the sign-pole inventory with the junction signs hung on them, a back door on every lane wall, shadows on the street props, the larch genera in gold, and the dog sniff walk narrowed to the replica instance actors; every layer rebuilt in order.
+- [ ] Re-render the views the repair changes (`rachel`, `mentana`, `papineau`, `fabre`, `corner`, `ruelle`, `ruelle_mentana`) and review them.
 
 ## Cloud verification
 - [x] Every new and changed `.cpp` passes the stub-header syntax check with UE's Linux warnings.
@@ -52,7 +54,8 @@
 - [ ] Run `Automation RunTests Quebec.` (the existing tests plus 36 new ones), `car_collision_test.py`, `smoke_test.py`, `population_test.py`, `test_resident_feedback.py` and the story-slice suite with and without `-NordLag`.
 - [ ] Run `Scripts/apply_plateau_replica.py` on a backed-up map, verify on a fresh load, capture the six reference views and profile them.
 - [ ] Check that UE 5.8's OBJ importer names the tree meshes' bark and leaves slots from `usemtl` and the `.mtl` libraries, that `clear_instances` empties the vegetation's `Trees` component, that the red and russet groups show their tinted leaves, and the frame time with about 5,300 masked Nanite trees casting shadows and the `Leaf_Litter` patches.
-- [ ] Check that a dog sniffs a street tree after the import (`FindSniffSpot` on the `NordStreetTree` actors), that `GetInstancesOverlappingSphere` returns the right instances on 5.8, and what the per-pause actor walk costs.
+- [ ] Check that a dog sniffs a street tree after the import (`FindSniffSpot` on the `NordStreetTree` replica instance actors) and that `GetInstancesOverlappingSphere` returns the right instances on 5.8.
+- [ ] Check the cobra heads on the city's wooden poles, the signs hung on poles and the street props' shadows in the editor, and the residential streets' light at night.
 - [ ] Play on a phone over the stream: graded steering, assists, combat buttons, HUD fit at 667×375 and 800×360.
 - [ ] Cook, package, install with saves preserved, and check the public stream.
 
@@ -63,4 +66,8 @@
 - [ ] Make a chain-link texture set; a small-scale grey lattice stands in for it.
 - [ ] Count the street trees, not only the yard trees, as obstacles in the laundry sight test.
 - [ ] Check the 424 street-name `TextRender` signs in the editor after import.
+- [ ] Fill the residential curbs with parked cars (instanced, on the spaces `CurbParking` finds; C++ for the host).
+- [ ] Give the conifer kind a pine and a cedar form, and the Colorado blue spruce a glaucous tint (a new colour group in the `fall` contract).
+- [ ] Late-October dressing: kraft leaf bags beside the curb bins, and pumpkins on stoops if a better source confirms them.
+- [ ] Fade the litter's edge by vertex colour if UE 5.8's OBJ import keeps vertex colour on masked Nanite (a host check first).
 - [ ] Fix the mirrored world: negate Y across map layers, gameplay headers, campaign positions, saved actors and QA scripts, then rerun the full host QA.
