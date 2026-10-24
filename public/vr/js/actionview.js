@@ -59,6 +59,8 @@ export function createActionView(scene, { cars, jobs, traffic = null }) {
   carMesh.frustumCulled = false;
   carMesh.count = 0;
   carMesh.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(cars.cars.length * 3), 3);
+  // Initial bufferData consumes colors too; clear ranges only after an actual upload.
+  carMesh.instanceColor.onUpload(() => carMesh.instanceColor.clearUpdateRanges());
   root.add(carMesh);
   carMesh.add(outlineOf(carMesh, { width: 0.03 }));
   // The models: front to -z (they come facing +z), scaled into the game's car (4.4 m long, 2 m wide at most), wheels on the ground.
@@ -108,6 +110,7 @@ export function createActionView(scene, { cars, jobs, traffic = null }) {
         // culled as a whole by a sphere round its instances (set in update), and its ink with it, so a view away from the cars skips them
         im.name = "car-" + m.src; im.count = 0; im.boundingSphere = new THREE.Sphere();
         im.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array((cars.cars.length + MODEL_N) * 3), 3);
+        im.instanceColor.onUpload(() => im.instanceColor.clearUpdateRanges());
         const ink = outlineOf(im, { width: 0.03, geometry: hull.g });
         ink.boundingSphere = im.boundingSphere;
         im.add(ink);
@@ -202,8 +205,13 @@ export function createActionView(scene, { cars, jobs, traffic = null }) {
       Q.setFromAxisAngle(UP, TQ.yaw);
       M.compose(Pv.set(TQ.x, 0, TQ.z), Q, S1);
       const k = i % models.length, im = models[k], n = counts[k]++;
-      im.setMatrixAt(n, M); im.instanceColor.setXYZ(n, TQ.paint[0], TQ.paint[1], TQ.paint[2]);
+      im.setMatrixAt(n, M); paint(im.instanceColor, n, TQ.paint);
     }
+  }
+  function paint(a, i, col) {
+    const o = i * 3, r = Math.fround(col[0]), g = Math.fround(col[1]), b = Math.fround(col[2]);
+    if (a.array[o] === r && a.array[o + 1] === g && a.array[o + 2] === b) return;
+    a.setXYZ(i, r, g, b); a.addUpdateRange(o, 3); a.needsUpdate = true;
   }
   const markerState = new Float64Array(MAX_MARK * 6).fill(NaN);
   const upload = (a, n) => { a.clearUpdateRanges(); if (n > 0) { a.addUpdateRange(0, n * a.itemSize); a.needsUpdate = true; } };
@@ -232,10 +240,10 @@ export function createActionView(scene, { cars, jobs, traffic = null }) {
         M.compose(Pv.set(c.x, c.y, c.z), Q, S1);
         if (modelsOk && near.includes(c)) {
           const k = c.id % models.length, im = models[k], i = counts[k]++;
-          im.setMatrixAt(i, M); im.instanceColor.setXYZ(i, c.paint[0], c.paint[1], c.paint[2]);
+          im.setMatrixAt(i, M); paint(im.instanceColor, i, c.paint);
         } else {
           carMesh.setMatrixAt(nb, M);
-          carMesh.instanceColor.setXYZ(nb, c.paint[0], c.paint[1], c.paint[2]);
+          paint(carMesh.instanceColor, nb, c.paint);
           nb++;
         }
         n++;
@@ -243,13 +251,13 @@ export function createActionView(scene, { cars, jobs, traffic = null }) {
       if (modelsOk && traffic) streetModels(T, time);
       if (modelsOk) for (let k = 0; k < models.length; k++) {
         const im = models[k];
-        im.count = counts[k]; upload(im.instanceMatrix, im.count); upload(im.instanceColor, im.count);
+        im.count = counts[k]; upload(im.instanceMatrix, im.count);
         BOX.makeEmpty();
         for (let i = 0; i < im.count; i++) BOX.expandByPoint(Pv.fromArray(im.instanceMatrix.array, i * 16 + 12));
         if (im.count) BOX.getBoundingSphere(im.boundingSphere).radius += 4; // half a van and its ink
         else im.boundingSphere.set(Pv.set(0, -1e4, 0), 0);
       }
-      carMesh.count = nb; carMesh.visible = nb > 0; upload(carMesh.instanceMatrix, nb); upload(carMesh.instanceColor, nb);
+      carMesh.count = nb; carMesh.visible = nb > 0; upload(carMesh.instanceMatrix, nb);
       // markers: the offers, or the running job's goal
       let m = 0, markersDirty = false;
       const put = (x, y, z, col) => {

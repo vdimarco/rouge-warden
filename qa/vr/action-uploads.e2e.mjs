@@ -19,9 +19,9 @@ try{
     cars.cars.forEach((c,i)=>c.on=i<n);jobs.offers=Array.from({length:Math.min(n,8)},(_,i)=>({x:i*10,y:0,z:-8,type:'catch'}));
     view.update(0,0,{cam:{x:0,y:0,z:0}});r.render(scene,camera); // Allocate every newly used buffer once.
     view.update(0,0,{cam:{x:0,y:0,z:0}});
-    const seen=new Set(),attrs=[];scene.traverse(o=>{if(!o.isInstancedMesh)return;for(const a of [o.instanceMatrix,o.instanceColor,o.geometry.attributes.aCol])if(a&&!seen.has(a)){seen.add(a);attrs.push({a,n:o.count,marker:o.name.startsWith("job-")});}});
-    const bounded=attrs.every(({a,n,marker})=>marker&&a.updateRanges.length===0?true:n===0?a.updateRanges.length===0:a.updateRanges.length===1&&a.updateRanges[0].start===0&&a.updateRanges[0].count===n*a.itemSize);
-    const expected=n*19*4; // The repeated update changes cars only; marker geometry is unchanged.
+    const seen=new Set(),attrs=[];scene.traverse(o=>{if(!o.isInstancedMesh)return;for(const a of [o.instanceMatrix,o.instanceColor,o.geometry.attributes.aCol])if(a&&!seen.has(a)){seen.add(a);attrs.push({a,n:o.count,marker:o.name.startsWith("job-"),color:a===o.instanceColor});}});
+    const bounded=attrs.every(({a,n,marker,color})=>color?a.updateRanges.every(r=>r.start>=0&&r.count>0&&r.start+r.count<=a.array.length):marker&&a.updateRanges.length===0?true:n===0?a.updateRanges.length===0:a.updateRanges.length===1&&a.updateRanges[0].start===0&&a.updateRanges[0].count===n*a.itemSize);
+    const expected=n*16*4; // Only moving matrices upload; unchanged paint and markers stay on the GPU.
     bytes=0;r.render(scene,camera);rows.push({n,bounded,bytes,expected,cars:view.info().cars,markers:view.info().markers,fallback:scene.getObjectByName("cars").count});
    }
    referenceView.update(0,0,{cam:{x:0,y:0,z:0}});r.render(referenceScene,camera);r.render(scene,camera);
