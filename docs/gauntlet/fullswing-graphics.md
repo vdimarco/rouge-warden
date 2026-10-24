@@ -1382,3 +1382,6 @@ Increment66 shipped #699 as74357132 after all6CI/review/current authenticated su
 
 
 Increment67 pending — unchangedhandOf hoistedoutside drawWeb60functionidentities→1;4endpointchecks+8webuploadpixel+11weblinechecksPASS. Evidence r67-web-hand/all20limits/noFPSclaim/totalwithheld.
+
+
+Increment67 shipped #701 asd3984338 after all6CI/review/current23authenticatedchecks/exactmainbytes/rebase before AND afterpreview/exactmerge. Productionmain HTTP200 exactSHA302c7cc1189f94481abc0696892f1a649ab8cb5ea1e64aa067d6568515853aca verified. Canonical web-hand scenarios published and OpenSpec archived. ActualChrome/FPSbenefit unverified; totalwithheld.
