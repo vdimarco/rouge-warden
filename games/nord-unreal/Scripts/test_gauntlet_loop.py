@@ -6,19 +6,22 @@ Checks both command lines (direct and RunUnreal), the run folder layout, the sky
 label, the CVar readback with the fixed CVars, the phone profile flag, a look run scored against a ceiling, a short tune
 with its native confirmation and round report, a partial look run that gives no Look, a stale --reference or one
 without every still or with a contended ceiling run refused, a tune whose first candidate plan holds the ceiling
-render, a stream lap with its trigger file, lap window and page clock and the host's result line after the sampler
-stopped, the input row, one stream command per run and on NordHost only, the co-op guard without contended
-two-viewer rows, only the newest solo stream row per rung and orientation in the round report, no runner-up confirmed
-while a better ranked candidate has only missing evidence, the next candidate's confirmation, confirmation runs that end before --until
-(planned with the longest run so far and with the search's slower host), a cut or twice contended confirmation run
-again and unverified in the round report until then, a contended run run once more, a ranked baseline confirmed once
-and named as confirm_native names it, confirm's stop reason kept current, the write-profile refusal without
---approved, and that browser_streaming.py without NORD_STREAM_QUALITY keeps today's exact launch line.
+render, a slow host found from its slowest run, a stream lap with its trigger file, lap window and page clock and the
+host's result line after the sampler stopped, a two-viewer row whose drive failed left out of the co-op guard, the
+input row, one stream command per run and on NordHost only (also on the command line), the co-op guard without
+contended two-viewer rows, only the newest solo stream row per rung and orientation in the round report while a failed
+row stays a failure, no runner-up confirmed while a better ranked candidate has only missing evidence, the next
+candidate's confirmation, confirmation runs that end before --until (planned with the longest run so far and with the
+search's slower host), a cut or twice contended confirmation run again and unverified in the round report until then
+unless it holds a failed run, a contended run run once more, a ranked baseline confirmed once and named as
+confirm_native names it, confirm's stop reason kept current, the write-profile refusal without --approved, and that
+browser_streaming.py without NORD_STREAM_QUALITY keeps today's exact launch line.
 Everything is written to a temporary folder; the real Saved/Gauntlet and Config/DefaultDeviceProfiles.ini are never
 written.
 """
 import contextlib
 import copy
+import io
 import json
 import os
 from pathlib import Path
@@ -698,6 +701,32 @@ def check_tune_window():
     print(f"tune window ok: the first candidate is planned with the ceiling look run ({first} s), so no run ends after --until")
 
 
+def check_tune_slow_host():
+    """Every native run takes 1.3 times its estimate, and a foreign GPU process shares the first baseline perf run. The
+    ceiling render and the perf and look runs then fall in separate search attempts, none longer than the first
+    candidate's plan, so planned_candidate_s shows no slowdown. The tune keeps its slowest run against that run's
+    estimate (host_slowdown), so the confirmation plans each run 1.3 times longer than the estimate."""
+    clock, real_native, real_search, labels = [3_000_000.0], L.native_run, T.search, []
+    first = L.first_candidate_s(SMALL, None)
+
+    def native_run(loop, mode, *args, **kwargs):
+        run, verdict = real_native(loop, mode, *args, **kwargs)
+        clock[0] += 1.3 * T.run_estimate_s(loop, mode, kwargs.get("laps"))
+        labels.append(kwargs.get("label"))
+        return run, dict(verdict, status="contended") if labels[-1] == "00-baseline-a-perf" else verdict
+
+    with patch.object(L, "native_run", native_run), patch.object(L.time, "time", lambda: clock[0]), \
+            patch.object(T, "search", lambda *a, **k: real_search(*a, clock=lambda: clock[0], **k)):
+        group, tune = L.tune_run(SMALL, until=clock[0] + 2.5 * first, confirm=False)
+    assert labels == ["ceiling-first-look", "00-baseline-a-perf", "01-baseline-a-perf", "01-baseline-a-look"], labels
+    assert tune["planned_candidate_s"] == first, "no search attempt is longer than the first candidate's plan"
+    estimate = T.run_estimate_s(SMALL, "perf", SMALL["confirm_laps"])
+    plan = L.confirm_plan(SMALL, tune)["run_s"]
+    assert abs(tune["host_slowdown"] - 1.3) < 1e-9 and abs(plan - 1.3 * estimate) < 1e-6, (tune.get("host_slowdown"), plan, estimate)
+    print(f"slow host ok: a contended first perf run hides the slowdown from planned_candidate_s, and host_slowdown "
+          f"plans each confirmation run at {plan:.0f} s, not {estimate} s")
+
+
 def start_stream(out, state, run, quality, **options):
     """A gauntlet lifecycle for run, with an idle fake host whose command line carries the world flags, and one
     stream_run on it. Returns the verdict."""
@@ -817,6 +846,12 @@ def check_stream(out, state, group, winner):
     paired = L.judge(two, SMALL)
     assert paired["status"] == "unverified" and paired["gates"] == [], "a two-viewer row gates nothing"
     assert 29 <= paired["values"]["two_viewer_fps"] <= 31 and set(paired["report_only"]["two_viewer"]["per_slot"]) == {"NordHost", "NordFriend1"}
+    # NordHost's drive failed: the lap window ends at the fail line, so the co-op guard does not count that part of a lap.
+    stuck = rejudge(two, "two-viewers-stuck", lambda folder: edit_json(folder / "stream/events.json", lambda rows: [
+        dict(row, line=row["line"].replace("done laps=1", "fail exit=2 reason=stuck").replace("exit=0 reason=done", "exit=2 reason=stuck"))
+        for row in rows]))
+    assert stuck["values"]["two_viewer_fps"] is None and 29 <= stuck["report_only"]["two_viewer"]["mean_decoded_fps"] <= 31, stuck["values"]
+    assert any("co-op guard does not count" in note for note in stuck["notes"]), stuck["notes"]
     try:
         L.stream_run(SMALL, run)
     except RuntimeError as error:
@@ -901,6 +936,16 @@ def check_stream_one_command(out):
         else:
             raise AssertionError(f"must be refused: {options}")
         assert not (run / "stream").exists() and not (run / "run.json").exists(), "a refused row starts nothing"
+    # The command line offers NordHost only, so stream --help does not list a slot that stream_run refuses.
+    errors = io.StringIO()
+    try:
+        with contextlib.redirect_stderr(errors):
+            L.main(["stream", "--run", str(run), "--slot", "NordFriend1", "--pin", "0"])
+    except SystemExit as error:
+        assert error.code == 2 and "invalid choice: 'NordFriend1'" in errors.getvalue(), (error.code, errors.getvalue())
+    else:
+        raise AssertionError("the stream command line must refuse --slot NordFriend1")
+    assert not (run / "stream").exists() and not (run / "run.json").exists(), "a refused row starts nothing"
     # A first command is still sampling: its folder exists, but it has no sample.json yet.
     (run / "stream").mkdir()
     try:
@@ -910,7 +955,7 @@ def check_stream_one_command(out):
     else:
         raise AssertionError("a second stream command on one run must be refused")
     assert not (run / "run.json").exists() and list((run / "stream").iterdir()) == []
-    print("one command ok: NordFriend1 alone and a second stream command on one run are refused")
+    print("one command ok: NordFriend1 alone (also by the command line) and a second stream command on one run are refused")
 
 
 def check_report_and_profile(group, tune):
@@ -966,7 +1011,8 @@ def check_report_window_cut(group, tune):
     cases = (("cut", {winner: [L.CONFIRM_CUT]}, None, "unverified", L.CONFIRM_CUT),
              ("cut-after-fail", {winner: [fail, L.CONFIRM_CUT]}, [winner], "fail", L.CONFIRM_CUT),
              ("failed-then-cut", {winner: [fail], following: [L.CONFIRM_CUT]}, None, "unverified", L.CONFIRM_CUT),
-             ("contended", {winner: [shared]}, [winner], "unverified", L.CONFIRM_CONTENDED))
+             ("contended", {winner: [shared]}, [winner], "unverified", L.CONFIRM_CONTENDED),
+             ("contended-after-fail", {winner: [fail, shared]}, [winner], "fail", L.CONFIRM_CONTENDED))
     for name, reasons, ranking, result, note in cases:
         copied = group.parent.parent / "report-window" / name
         shutil.copytree(group, copied)
@@ -985,7 +1031,7 @@ def check_report_window_cut(group, tune):
         assert gates(verdict)["confirmed"]["result"] == result and verdict["status"] == result, (name, failing(verdict))
         assert note in gates(verdict)["confirmed"]["note"], (name, gates(verdict)["confirmed"])
     print("window-cut report ok: a cut or twice contended confirmation leaves the round unverified, also after a better "
-          "ranked candidate failed; a failed run before the cut fails it")
+          "ranked candidate failed; a failed run before the cut or the second contended run fails it")
 
 
 def report_hall(hall, ranking=("04-shadows2",)):
@@ -1043,14 +1089,15 @@ def check_report_coop_contended(out):
 
 
 def check_report_stream_latest(out):
-    """Only the newest solo row per rung and orientation counts, by run.json started_at: a row sampled again replaces
-    an older one. A newest row that is contended, unverified or without a verdict is missing evidence, so the round is
-    unverified; a newest failed row fails it. The newer row's folder name sorts first, as the user names the folders."""
+    """The newest solo row per rung and orientation counts, by run.json started_at: a row sampled again replaces an
+    older one that is contended or unverified. A failed row stays a failure, also when a newer row passed. A newest row
+    that is contended, unverified or without a verdict is missing evidence, so the round is unverified; a newest failed
+    row fails it. The newer row's folder name sorts first, as the user names the folders."""
     newer = "20261023T230000Z-a-newer"
     # (case, older and newer status of 04-shadows2's rung 0 landscape row, confirmed gate, 04-shadows2's reasons)
     cases = (("contended-then-pass", ("contended", "pass"), "pass", []),
              ("unverified-then-pass", ("unverified", "pass"), "pass", []),
-             ("fail-then-pass", ("fail", "pass"), "pass", []),
+             ("fail-then-pass", ("fail", "pass"), "fail", ["stream 20261023T230000Z-z-older: fail"]),
              ("pass-then-contended", ("pass", "contended"), "unverified", [f"stream row unverified: {newer} (contended)"]),
              ("pass-then-unverified", ("pass", "unverified"), "unverified", [f"stream row unverified: {newer} (unverified)"]),
              ("pass-then-no-verdict", ("pass", None), "unverified", [f"stream row unverified: {newer} (no verdict)"]),
@@ -1072,8 +1119,8 @@ def check_report_stream_latest(out):
         found = next(result["reasons"] for result in confirmation["results"] if result["id"] == "04-shadows2")
         assert found == reasons and gates(verdict)["confirmed"]["result"] == gate, (name, found, gates(verdict)["confirmed"])
         assert confirmation["confirmed"] == ("04-shadows2" if gate == "pass" else None), (name, confirmation)
-    print("latest stream row ok: a row sampled again replaces an older one; a newest contended or unverified row is "
-          "missing evidence, a newest failed row fails")
+    print("latest stream row ok: a row sampled again replaces an older contended or unverified one; a failed row stays "
+          "a failure; a newest contended or unverified row is missing evidence")
 
 
 def check_report_better_open(out):
@@ -1143,7 +1190,8 @@ def check_confirm_next(group, tune):
 def check_confirm_window(out):
     """Confirmation against --until, with a fake clock and a fake native_run that takes the planned run time and
     launches nothing. No run starts unless its estimate ends before --until. A result the window cut is not done:
-    confirm runs it again (the baseline first) and replaces it, and --candidate accepts it."""
+    confirm runs it again (the baseline first) and replaces it, and --candidate accepts it. A cut result that also holds
+    a failed run is done, so confirm keeps it and runs the next ranked candidate."""
     run_s = T.run_estimate_s(SMALL, "perf", SMALL["confirm_laps"])
     full = len(SMALL["sky_order"]) * len(SMALL["size_use"]["confirm"])
     clock, calls, took, shared, failing = [1_000_000.0], [], [run_s], {}, set()
@@ -1257,9 +1305,39 @@ def check_confirm_window(out):
             after = json.loads((group / "tune.json").read_text())["native_confirmation"]
             assert after["confirmed_native"] == "04-shadows2" and after["results"][-1]["passed"] and len(calls) == full, (after, calls)
             assert after["stop_reason"] is None, after["stop_reason"]
+        # 04-shadows2 failed a run before the window cut its confirmation, or before a foreign GPU process shared a later
+        # run twice. Report counts that result as failed, so confirm keeps it and runs the next ranked candidate. When a
+        # foreign GPU process then shares 05-gi2's first run twice, the stop reason is contended, not window_end.
+        passed = {"id": "baseline", "reasons": [], "passed": True,
+                  "runs": [{"run": "x", "sky": sky, "size": size, "status": "pass"} for sky in SMALL["sky_order"]
+                           for size in SMALL["size_use"]["confirm"]]}
+        first = {"run": "x", "sky": "day", "size": "top_landscape", "status": "fail"}
+        twice = [{"run": "y", "sky": "day", "size": "top_portrait", "status": "contended"}] * 2
+        for name, runs, tail, contend, code, stop in (
+                ("failed-then-cut", [first], L.CONFIRM_CUT, 2, 1, "contended"),
+                ("failed-then-contended", [first] + twice, f"{L.CONFIRM_CONTENDED}: day top_portrait", 0, 0, None)):
+            group = out.parent / "confirm-window" / name
+            failed = {"id": "04-shadows2", "runs": runs, "reasons": ["day top_landscape: fail (frame_p95)", tail], "passed": False}
+            T.write_tune(group / "tune.json", dict(tune, native_confirmation={"results": [passed, failed], "confirmed_native": None,
+                                                                              "stop_reason": "window_end"}))
+            shared.clear()
+            shared["confirm-05-gi2-day-top_landscape"] = contend
+            calls.clear()
+            assert L.main(["confirm", str(group)]) == code, name
+            after = json.loads((group / "tune.json").read_text())["native_confirmation"]
+            assert [result["id"] for result in after["results"]] == ["baseline", "04-shadows2", "05-gi2"], (name, after["results"])
+            assert after["results"][1] == failed and all("confirm-04-shadows2" not in label for label, _ in calls), (name, calls)
+            assert after["stop_reason"] == stop and after["confirmed_native"] == (None if contend else "05-gi2"), (name, after)
+            try:
+                L.main(["confirm", str(group), "--candidate", "04-shadows2"])
+            except SystemExit as error:
+                assert error.code == 1, (name, error.code)
+            else:
+                raise AssertionError(f"{name}: confirm --candidate must refuse a result that holds a failed run")
     print("confirm window ok: no run ends after --until, a slow host raises the plan (also the first run, from the search), "
           "confirm runs a cut result again and replaces it, a ranked baseline runs once and can be the confirmed one, "
-          "a contended run runs once more, and confirm keeps the stop reason current")
+          "a contended run runs once more, a failed run is final also in a cut or contended result, and confirm keeps "
+          "the stop reason current")
 
 
 def main():
@@ -1302,6 +1380,7 @@ def main():
         check_reference_contended(out, state)
         check_tune_partial_look()
         check_tune_window()
+        check_tune_slow_host()
         check_stream(out, state, group, tune["winner"])
         check_follow_to_result(out)
         check_stream_input(out, state, group, tune["winner"])

@@ -90,7 +90,7 @@ DELAY_KEY = re.compile(r"rtt|roundtrip|jitter|processing|latency|e2e|delay|decod
 # The gates of a native run that also apply to a look run, which holds and switches skies instead of being timed.
 LOOK_GATES = {"vram_peak_mib", "render_log_errors", "cvar_mismatches", "fps_cap"}
 # A confirmation the window cut, or one a foreign GPU process shared twice, is missing evidence, not a failure:
-# confirm runs it again.
+# confirm runs it again, unless it also holds a failed run.
 CONFIRM_CUT = "the window ended before every confirmation run"
 CONFIRM_CONTENDED = "a foreign GPU process shared a confirmation run twice"
 CLOCK_TICKS = os.sysconf("SC_CLK_TCK")
@@ -887,7 +887,7 @@ def stream_run(loop, run, slot="NordHost", pin=0, portrait=False, relay=False, t
     require(state.get("phase") in ("starting", "running") and gauntlet.get("run") and Path(gauntlet["run"]).resolve() == run,
             "The running lifecycle is not a gauntlet lifecycle for this run; start it with NORD_STREAM_GAUNTLET=" + str(run))
     require_pinned(gauntlet.get("sky") or [])
-    require(slot in ("NordHost", "NordFriend1") and pin in range(4), "--slot must be NordHost or NordFriend1 and --pin 0 to 3")
+    require(pin in range(4), "--pin must be 0 to 3")
     # The gauntlet drives NordHost. A row of NordFriend1 alone wakes NordFriend1, so it could never pass.
     require(slot == "NordHost", "Every gauntlet row samples NordHost; --two-viewers samples NordFriend1 too. Leave --slot NordHost.")
     require(not look or not (relay or two_viewers), "--look is its own row; leave out --relay and --two-viewers")
@@ -1039,11 +1039,18 @@ def judge_stream(run, loop, meta):
     notes += [note for sample in slots.values() for note in sample["notes"]] + gpu_notes
     if meta["row"] == "two_viewer":
         fps = [sample["summary"]["decodedFps"] for sample in slots.values() if sample["summary"]]
-        values["two_viewer_fps"] = sum(fps) / len(fps) if len(fps) == len(slots) else None
-        report_only["two_viewer"] = {"mean_decoded_fps": values["two_viewer_fps"], "gates_of_NordHost": gates,
+        mean = sum(fps) / len(fps) if len(fps) == len(slots) else None
+        # Only a drive that ended with exit 0 counts: a failed drive ends the lap window early, and that part of a lap
+        # does not compare with a whole one.
+        finished = next(gate for gate in gates if gate["name"] == "game_exit")["result"] == "pass"
+        values["two_viewer_fps"] = mean if finished else None
+        report_only["two_viewer"] = {"mean_decoded_fps": mean, "gates_of_NordHost": gates,
                                      "per_slot": {name: (sample["summary"] or {}).get("decodedFps") for name, sample in slots.items()}}
         gates = []
         notes.append("two-viewer row: report-only, so nothing is gated; report compares it with the baseline's (the co-op guard)")
+        if not finished:
+            notes.append(f"NordHost's game exit is {exit_info['name'] or 'unverified'}, not done, so the co-op guard does not "
+                         "count this row")
     elif meta["row"] == "relay":
         report_only["relay"] = {"gates": gates}
         gates = []
@@ -1148,10 +1155,19 @@ def tune_run(loop, direct=False, until=None, reference=None, confirm=True):
     # (or taken from --reference) before the first scored candidate, and the search's first ceiling record claims it.
     index, looked, early = {}, [], {"result": None, "claimed": False, "repeat": False}
     ceilings = [Path(stored["sizes"][size_key][tag]["run"]) for tag in "ab"] if stored else []
+    # host_slowdown: the slowest native run against its own estimate; confirm_plan plans with it. The search's longest
+    # candidate can miss the slowdown, when a contended or failed run puts the first candidate's runs in separate attempts.
+    extra = {"runs": index, "reference": str(reference) if reference else None, "folder": str(group), "host_slowdown": None}
+
+    def timed_run(mode, *args, **kwargs):
+        started = time.time()
+        out = native_run(loop, mode, *args, **kwargs)
+        ratio = (time.time() - started) / T.run_estimate_s(loop, mode, kwargs.get("laps"))
+        extra["host_slowdown"] = max(extra["host_slowdown"] or 0, ratio)
+        return out
 
     def render_ceiling(label):
-        run, verdict = native_run(loop, "look", size_key, first_sky, quality=f"file:{ceiling_file}", label=label, direct=direct,
-                                  parent=runs)
+        run, verdict = timed_run("look", size_key, first_sky, quality=f"file:{ceiling_file}", label=label, direct=direct, parent=runs)
         result = {"contended": verdict["status"] == "contended", "run": str(run),
                   "error": run_error(read_json(run / "run.json")) or look_error(loop, verdict, scored=False)}
         if not result["contended"] and not result["error"]:
@@ -1180,14 +1196,14 @@ def tune_run(loop, direct=False, until=None, reference=None, confirm=True):
             early["result"] = render_ceiling("ceiling-first-look")
             if early["result"]["contended"] or early["result"]["error"]:
                 return dict(early["result"])
-        run, verdict = native_run(loop, "perf", feasible["size"], feasible["sky"], quality=quality, label=candidate["id"] + "-perf",
-                                  direct=direct, parent=runs)
+        run, verdict = timed_run("perf", feasible["size"], feasible["sky"], quality=quality, label=candidate["id"] + "-perf",
+                                 direct=direct, parent=runs)
         entry["perf"] = str(run)
         meta = read_json(run / "run.json")
         result = dict(T.result_from_verdict(verdict, readback=meta.get("readback") or None), error=run_error(meta))
         if not result["contended"] and not result["error"]:
-            look, look_verdict = native_run(loop, "look", size_key, first_sky, quality=quality, label=candidate["id"] + "-look",
-                                            direct=direct, parent=runs, ceiling=ceilings[0] if ceilings else None)
+            look, look_verdict = timed_run("look", size_key, first_sky, quality=quality, label=candidate["id"] + "-look",
+                                           direct=direct, parent=runs, ceiling=ceilings[0] if ceilings else None)
             entry["look"] = str(look)
             images = (look_verdict.get("values") or {}).get("images")
             error = run_error(read_json(look / "run.json")) or look_error(loop, look_verdict)
@@ -1195,7 +1211,6 @@ def tune_run(loop, direct=False, until=None, reference=None, confirm=True):
                           error=error, contended=look_verdict["status"] == "contended")
         return result
 
-    extra = {"runs": index, "reference": str(reference) if reference else None, "folder": str(group)}
     tune = dict(T.search(loop, measure, until=until, log=lambda text: print(text, flush=True),
                          save=lambda partial: T.write_tune(tune_path, dict(partial, **extra)),
                          first_s=first_candidate_s(loop, reference)), **extra)
@@ -1213,16 +1228,19 @@ def first_candidate_s(loop, reference):
 
 def confirm_plan(loop, tune):
     """The confirmation's first plan per run: gauntlet_tune.run_estimate_s, made longer by as much as the search found
-    this host slower than its own plan (tune.json planned_candidate_s against first_candidate_s)."""
-    slower = (tune.get("planned_candidate_s") or 0) / first_candidate_s(loop, tune.get("reference"))
+    this host slower: its slowest native run against that run's estimate (tune.json host_slowdown), or its longest
+    candidate against its own plan (planned_candidate_s against first_candidate_s)."""
+    slower = max((tune.get("planned_candidate_s") or 0) / first_candidate_s(loop, tune.get("reference")),
+                 tune.get("host_slowdown") or 0)
     return {"run_s": T.run_estimate_s(loop, "perf", loop["confirm_laps"]) * max(1.0, slower)}
 
 
 def confirm_native(loop, tune, group, direct=False, until=None):
     """Step 7, native part: the baseline, then the ranked candidates best first, each for confirm_laps measured laps in
     both skies, landscape and portrait, until one passes every native gate. It stops at the first result the window
-    cut (stop_reason window_end), or that a foreign GPU process shared twice (stop_reason contended). The stream rows
-    and the co-op guard come from the stream runs; report adds them through gauntlet_tune.confirm."""
+    cut (stop_reason window_end), or that a foreign GPU process shared twice (stop_reason contended), when that result
+    holds no failed run. The stream rows and the co-op guard come from the stream runs; report adds them through
+    gauntlet_tune.confirm."""
     records = {record["id"]: record for record in tune["candidates"]}
     results, confirmed = {}, None
     plan = confirm_plan(loop, tune)
@@ -1242,18 +1260,21 @@ def confirm_native(loop, tune, group, direct=False, until=None):
 
 
 def confirm_stop(loop, results):
-    """native_confirmation stop_reason: None when every result finished, else window_end when the window cut one, else
-    contended."""
-    if all(confirmation_finished(loop, result) for result in results):
+    """native_confirmation stop_reason: None when every result finished, else window_end when the window cut an
+    unfinished one, else contended."""
+    unfinished = [result for result in results if not confirmation_finished(loop, result)]
+    if not unfinished:
         return None
-    return "window_end" if any(CONFIRM_CUT in result["reasons"] for result in results) else "contended"
+    return "window_end" if any(CONFIRM_CUT in result["reasons"] for result in unfinished) else "contended"
 
 
 def confirmation_finished(loop, result):
-    """True when a native confirmation ran in every sky at every confirm size without a foreign GPU process. A result
-    the window cut, or that a foreign GPU process shared twice, is not finished, so confirm runs that candidate again."""
+    """True when a native confirmation ran in every sky at every confirm size without a foreign GPU process, or when it
+    holds a failed run. A result the window cut, or that a foreign GPU process shared twice, without a failed run is
+    not finished, so confirm runs that candidate again. A failed run is final, as round_report counts it."""
     clean = [run for run in result["runs"] if run["status"] != "contended"]
-    return len(clean) == len(loop["sky_order"]) * len(loop["size_use"]["confirm"])
+    failed = any(not reason.startswith((CONFIRM_CUT, CONFIRM_CONTENDED)) for reason in result["reasons"])
+    return failed or len(clean) == len(loop["sky_order"]) * len(loop["size_use"]["confirm"])
 
 
 def confirm_candidate(loop, record, group, direct=False, until=None, plan=None):
@@ -1295,8 +1316,9 @@ def confirm_next(loop, group, candidate_id=None, direct=False, until=None):
     """Step 7 again, after a stream row or the co-op guard dropped a candidate, or after the window cut a confirmation:
     the native confirmation of the best ranked candidate without a finished one (or of candidate_id), added to
     tune.json, with the baseline first if it has none. A result the window cut, or that a foreign GPU process shared
-    twice, is run again and replaced. It writes no profile; only write-profile with --approved does. Returns the last
-    outcome; when the window cuts the baseline, that is the baseline's, and the candidate does not run."""
+    twice, is run again and replaced, unless it holds a failed run. It writes no profile; only write-profile with
+    --approved does. Returns the last outcome; when the window cuts the baseline, that is the baseline's, and the
+    candidate does not run."""
     group = Path(group)
     tune = read_json(group / "tune.json")
     require(tune is not None, f"{group} has no tune.json")
@@ -1365,15 +1387,18 @@ def round_report(group, loop):
         rows = streams.get(record["id"], [])
         outcome = native.get(record["id"])
         reasons = ["native confirmation not run"] if outcome is None else list(outcome["reasons"])
-        # The newest solo row per rung and orientation: a row sampled again replaces the older one.
-        solo = list({(row["pin"], row["portrait"]): row for row in rows if row["row"] == "solo"}.values())
-        missing = needed - {(row["pin"], row["portrait"]) for row in solo}
+        # The newest solo row per rung and orientation: a row sampled again replaces an older contended or unverified one.
+        solo = [row for row in rows if row["row"] == "solo"]
+        newest = list({(row["pin"], row["portrait"]): row for row in solo}.values())
+        missing = needed - {(row["pin"], row["portrait"]) for row in newest}
         if missing:
             reasons.append("stream rows missing: " + ", ".join(f"rung {pin} {'portrait' if tall else 'landscape'}"
                                                                for pin, tall in sorted(missing)))
-        # Only a failed row fails; a contended or unverified row is missing evidence until that rung is sampled again.
-        reasons += [f"stream {row['label']}: fail" if row["status"] == "fail" else
-                    f"stream row unverified: {row['label']} ({row['status'] or 'no verdict'})" for row in solo if row["status"] != "pass"]
+        # A failed row stays a failure, as a failed native confirmation does, also when a newer row passed. A newest row
+        # that is contended or unverified is missing evidence until that rung is sampled again.
+        reasons += [f"stream {row['label']}: fail" for row in solo if row["status"] == "fail"]
+        reasons += [f"stream row unverified: {row['label']} ({row['status'] or 'no verdict'})" for row in newest
+                    if row["status"] not in ("pass", "fail")]
         # A two-viewer row that a foreign GPU process shared measures that process too, so the co-op guard skips it.
         two = [row["two_viewer_fps"] for row in rows if row["row"] == "two_viewer" and row["two_viewer_fps"] is not None
                and row["status"] != "contended"]
@@ -1612,7 +1637,8 @@ def main(argv=None):
                                                      "RunUnreal adds its start-up time")
     stream = commands.add_parser("stream", help="sample the stream lap of a lifecycle started with NORD_STREAM_GAUNTLET")
     stream.add_argument("--run", type=Path, required=True)
-    stream.add_argument("--slot", choices=("NordHost", "NordFriend1"), default="NordHost")
+    stream.add_argument("--slot", choices=("NordHost",), default="NordHost",
+                        help="the gauntlet drives NordHost; --two-viewers samples NordFriend1 too")
     stream.add_argument("--pin", type=int, choices=range(4), default=0, help="the pinned phone rung: 0 is the 1280 edge, 1 the 960 edge")
     stream.add_argument("--portrait", action="store_true")
     stream.add_argument("--relay", action="store_true", help="force the TURN relay (a report-only row)")
@@ -1634,7 +1660,7 @@ def main(argv=None):
     confirm.add_argument("folder", type=Path)
     confirm.add_argument("--candidate", help="a ranked candidate (default: the best ranked one without a finished native "
                                              "confirmation; one the window cut, or a foreign GPU process shared twice, "
-                                             "is run again)")
+                                             "is run again unless it holds a failed run)")
     confirm.add_argument("--until", help="local HH:MM when the GPU window ends")
     confirm.add_argument("--direct", action="store_true")
     report = commands.add_parser("report", help="judge a run, reference or tune folder again from its files")

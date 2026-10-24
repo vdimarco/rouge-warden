@@ -6,7 +6,9 @@
  "technique": {
   "branching": "Weber & Penn, \"Creation and Rendering of Realistic Trees\", SIGGRAPH 1995 (the model of Blender's Sapling add-on; recursion written here because Sapling is not bundled)",
   "leaves": "alpha-masked leaf cluster cards from an atlas (SpeedTree-style leaf cards), normals bent to the crown ellipsoid (SpeedTree leaf puffiness) and clamped from pointing down",
-  "textures": "Scripts/plateau_textures.py primitives: signed-distance serrated leaflets, Worley bark plates"
+  "textures": "Scripts/plateau_textures.py primitives: signed-distance serrated leaflets, Worley bark plates",
+  "conifers": "Weber & Penn shape 0 (conical) on one leader; limbs in whorls after the Branch Rings option of Blender's Sapling add-on (add_curve_sapling/utils.py); planar spruce laterals; needle-cluster cards on twigs and outer limbs; Wesslen and Seipel, \"The Virtual Forest\", SIGRAD 2004 (Weber & Penn for spruce and pine, health = leaf_retention)",
+  "palmate": "silver maple lobes joined over a central blade with Inigo Quilez's polynomial smooth minimum (iquilezles.org/articles/smin)"
  },
  "aliases": {
   "maple": "norway_maple"
@@ -61,8 +63,22 @@
    "texture": "Trees/T_Replica_TreeBark_diff.png",
    "note": "smooth grey-brown"
   },
+  "Bark_Conifer": {
+   "base_color_srgb": "#56483F",
+   "roughness": 0.92,
+   "metallic": 0.0,
+   "texture": "Trees/T_Replica_TreeBark_diff.png",
+   "note": "dark grey-brown, furrowed plates (Austrian pine) and thin scales (spruce)"
+  },
+  "Bark_Larch": {
+   "base_color_srgb": "#6A4F42",
+   "roughness": 0.92,
+   "metallic": 0.0,
+   "texture": "Trees/T_Replica_TreeBark_diff.png",
+   "note": "reddish brown, thin flaking scales"
+  },
   "Tree_Leaves_Autumn": {
-   "base_color_srgb": "#B48E2E",
+   "base_color_srgb": "#AE8B33",
    "roughness": 0.6,
    "metallic": 0.0,
    "texture": "Trees/T_Replica_TreeLeaves_diff.png",
@@ -86,11 +102,11 @@
     1.0
    ],
    "mean_linear": [
-    0.4581,
-    0.2705,
-    0.0271
+    0.424,
+    0.2602,
+    0.0333
    ],
-   "roughness_mean": 0.6075,
+   "roughness_mean": 0.6116,
    "layout": {
     "cells": [
      "nm_yellow",
@@ -111,7 +127,14 @@
      "sm_sparse",
      "el_yellow",
      "el_mixed",
-     "el_sparse"
+     "el_sparse",
+     "cf_spruce",
+     "cf_blue",
+     "cf_pine",
+     "cf_inner",
+     "lx_gold",
+     "lx_amber",
+     "lx_sparse"
     ],
     "cell_px": 256,
     "cols": 8,
@@ -151,19 +174,19 @@
       ]
      },
      "sm_yellow": {
-      "cover": 0.2998,
+      "cover": 0.2587,
       "mean_srgb": [
-       195.4,
-       168.4,
-       68.0
+       194.8,
+       168.0,
+       68.2
       ]
      },
      "sm_orange": {
-      "cover": 0.3118,
+      "cover": 0.2712,
       "mean_srgb": [
-       181.7,
-       98.8,
-       29.7
+       182.8,
+       101.0,
+       29.9
       ]
      },
      "li_yellow": {
@@ -239,11 +262,11 @@
       ]
      },
      "sm_sparse": {
-      "cover": 0.1044,
+      "cover": 0.0871,
       "mean_srgb": [
-       189.4,
-       160.8,
-       75.8
+       190.1,
+       161.7,
+       76.2
       ]
      },
      "el_yellow": {
@@ -269,6 +292,62 @@
        112.1,
        47.4
       ]
+     },
+     "cf_spruce": {
+      "cover": 0.2451,
+      "mean_srgb": [
+       67.7,
+       86.6,
+       47.0
+      ]
+     },
+     "cf_blue": {
+      "cover": 0.2273,
+      "mean_srgb": [
+       99.6,
+       121.8,
+       103.7
+      ]
+     },
+     "cf_pine": {
+      "cover": 0.1493,
+      "mean_srgb": [
+       65.6,
+       84.3,
+       54.4
+      ]
+     },
+     "cf_inner": {
+      "cover": 0.0887,
+      "mean_srgb": [
+       98.0,
+       97.5,
+       49.5
+      ]
+     },
+     "lx_gold": {
+      "cover": 0.1315,
+      "mean_srgb": [
+       227.9,
+       181.5,
+       65.7
+      ]
+     },
+     "lx_amber": {
+      "cover": 0.1324,
+      "mean_srgb": [
+       211.4,
+       161.3,
+       52.2
+      ]
+     },
+     "lx_sparse": {
+      "cover": 0.0489,
+      "mean_srgb": [
+       198.4,
+       147.8,
+       51.6
+      ]
      }
     }
    },
@@ -278,8 +357,8 @@
      "srgb": true,
      "compression": "TC_DEFAULT",
      "sampler": "SAMPLERTYPE_COLOR",
-     "sha256": "2eb9ce13a5a39128d4953be971fd5a0cd15d1b256b1b1cd2a47b5693bd779e0b",
-     "raw_sha256": "d82a29a361b416c95c402411467055af6737382f7b12f81993ee52dbda8abce2",
+     "sha256": "615efc540d2d03c1fc3e9e0c8d5611d4f01cacaec5860965421f73c32117f916",
+     "raw_sha256": "540e9ec042193fe9ea4f4512669b1467021efa7b05d6f433d9adc16c3f5ff30c",
      "alpha": true
     },
     "nor_dx": {
@@ -287,16 +366,16 @@
      "srgb": false,
      "compression": "TC_NORMALMAP",
      "sampler": "SAMPLERTYPE_NORMAL",
-     "sha256": "d3ebe8b5babc3601895f2d5c2025bd85a8f43c63b647a3cfd6acfd7fd0066447",
-     "raw_sha256": "a0d2c6ebb01dae646426f758bb25b2c5650a7085e28c10203a5b183541cf8e2e"
+     "sha256": "792a9faa98566fa71ac601f76591d1b61de55c0e4542f174c475a3cb49bf2c99",
+     "raw_sha256": "f760f38b20621f6f855731675e71cff1458f31527bcf167c2e160dbad6f2c14a"
     },
     "rough": {
      "file": "T_Replica_TreeLeaves_rough.png",
      "srgb": false,
      "compression": "TC_DEFAULT",
      "sampler": "SAMPLERTYPE_LINEAR_COLOR",
-     "sha256": "059c446a803678e47fcda87d2efb0aa8271467f6fbae10290eb2e5b41e91d651",
-     "raw_sha256": "cf6363aa77a98f0b359cd9146e1d008e4576c87f26f59b7e3c47c0732fdffe5b"
+     "sha256": "b4e7158d07d158441cca2b543b8eca931e818191decd0c3299d216be4d6ceaf8",
+     "raw_sha256": "77e2a7b5dd310158d40a630348c21806a6b224486eec862e3aaf244dc7f22499"
     }
    },
    "surface": "foliage",
@@ -311,8 +390,8 @@
    ],
    "uv": "atlas",
    "alpha": true,
-   "base_color_srgb": "#B48E2E",
-   "coverage": 0.1413,
+   "base_color_srgb": "#AE8B33",
+   "coverage": 0.1702,
    "uv_note": "OBJ UVs address the atlas directly (0..1, v up); tiling 1"
   },
   "tree_bark": {
@@ -383,7 +462,9 @@
     "Bark_Linden",
     "Bark_Ash",
     "Bark_Elm",
-    "Bark_Small"
+    "Bark_Small",
+    "Bark_Conifer",
+    "Bark_Larch"
    ],
    "uv": "metres",
    "alpha": false,
@@ -619,13 +700,99 @@
    "form": "elm",
    "stage": 1.0,
    "sparse": true
+  },
+  "cf_spruce": {
+   "index": 19,
+   "uv": [
+    0.379883,
+    0.259766,
+    0.495117,
+    0.490234
+   ],
+   "form": "spruce",
+   "stage": 1.0,
+   "sparse": false
+  },
+  "cf_blue": {
+   "index": 20,
+   "uv": [
+    0.504883,
+    0.259766,
+    0.620117,
+    0.490234
+   ],
+   "form": "spruce",
+   "stage": 1.0,
+   "sparse": false
+  },
+  "cf_pine": {
+   "index": 21,
+   "uv": [
+    0.629883,
+    0.259766,
+    0.745117,
+    0.490234
+   ],
+   "form": "pine",
+   "stage": 1.0,
+   "sparse": false
+  },
+  "cf_inner": {
+   "index": 22,
+   "uv": [
+    0.754883,
+    0.259766,
+    0.870117,
+    0.490234
+   ],
+   "form": "spruce",
+   "stage": 0.3,
+   "sparse": true
+  },
+  "lx_gold": {
+   "index": 23,
+   "uv": [
+    0.879883,
+    0.259766,
+    0.995117,
+    0.490234
+   ],
+   "form": "larch",
+   "stage": 1.0,
+   "sparse": false
+  },
+  "lx_amber": {
+   "index": 24,
+   "uv": [
+    0.004883,
+    0.009766,
+    0.120117,
+    0.240234
+   ],
+   "form": "larch",
+   "stage": 0.7,
+   "sparse": false
+  },
+  "lx_sparse": {
+   "index": 25,
+   "uv": [
+    0.129883,
+    0.009766,
+    0.245117,
+    0.240234
+   ],
+   "form": "larch",
+   "stage": 1.0,
+   "sparse": true
   }
  },
  "kinds": {
   "norway_maple": {
    "name": "Norway maple (Acer platanoides)",
    "obj": "Tree_norway_maple.obj",
-   "sha256": "811438da5b33c01a4044d95fe2274a2ab6585fa1348b5f59afab5e5d53a254f5",
+   "sha256": "3a1ef883d6dd7ea50645513a7d020fab02bf864ad07b0cc71d3dddf8633149af",
+   "mtl": "Tree_norway_maple.mtl",
+   "mtl_sha256": "9c58aaa8364ceea5beb7ee8041fe4fa09ff448e73e13d422eda47d93027fd690",
    "materials": {
     "bark": "Bark_NorwayMaple",
     "leaves": "Tree_Leaves_Autumn"
@@ -747,7 +914,9 @@
    "young": {
     "name": "Norway maple (Acer platanoides), young street tree",
     "obj": "Tree_norway_maple_young.obj",
-    "sha256": "88bf0c589ce70a75685496269fe6d3242fdcb72068ce695f77f4628afbc1883e",
+    "sha256": "c156f8839b86bbe07f71b359fbbb2bd89cdab275a6f891b791922276eee2a0bb",
+    "mtl": "Tree_norway_maple_young.mtl",
+    "mtl_sha256": "06a8b9a3e39de4ed9b093d8ba2ae6f1f5a1003b68c94f1ffc9a9f4ed72c09d16",
     "materials": {
      "bark": "Bark_NorwayMaple",
      "leaves": "Tree_Leaves_Autumn"
@@ -866,7 +1035,9 @@
   "silver_maple": {
    "name": "Silver maple (Acer saccharinum)",
    "obj": "Tree_silver_maple.obj",
-   "sha256": "39f41184751645fb57d48360ac00165d01ec7db9cf318ed3208a57bd21501869",
+   "sha256": "3cfb771ecf18eba2f6eb5d153d4330c29dedadc42b1b9a885ed6904694f9cc72",
+   "mtl": "Tree_silver_maple.mtl",
+   "mtl_sha256": "98cc6887c88a461a3bcb4cb42648bdd6a892b62b09b3374ce7c1f5611916ece9",
    "materials": {
     "bark": "Bark_SilverMaple",
     "leaves": "Tree_Leaves_Autumn"
@@ -986,7 +1157,9 @@
    "young": {
     "name": "Silver maple (Acer saccharinum), young street tree",
     "obj": "Tree_silver_maple_young.obj",
-    "sha256": "d8c93874b7506804eb9e9da8d09947776ebf820dc7e6705cdafffb32809f9812",
+    "sha256": "8b1759c2a9abb4e05361a7bc8fe61d4060dd20026f45d2bb230a38c50e065776",
+    "mtl": "Tree_silver_maple_young.mtl",
+    "mtl_sha256": "0f5450e7f118dc461bb8bea6f5c5edd9a40f6254fee49a0609a0fd79af04b68d",
     "materials": {
      "bark": "Bark_SilverMaple",
      "leaves": "Tree_Leaves_Autumn"
@@ -1103,7 +1276,9 @@
   "honey_locust": {
    "name": "Thornless honey locust (Gleditsia triacanthos var. inermis)",
    "obj": "Tree_honey_locust.obj",
-   "sha256": "9f0c3b7973e69e7dc37b334253aa5b8550554c96f556359f9af33df93585c20e",
+   "sha256": "2505e45c7e1f7136d34c99571e7d2facee4d02ee5a8e656e1a007e964b38683b",
+   "mtl": "Tree_honey_locust.mtl",
+   "mtl_sha256": "184f121556b8cc91fe4c7df85588e6fbd20e4bef92e7f12cb14fa605018555dc",
    "materials": {
     "bark": "Bark_HoneyLocust",
     "leaves": "Tree_Leaves_Autumn"
@@ -1221,7 +1396,9 @@
    "young": {
     "name": "Thornless honey locust (Gleditsia triacanthos var. inermis), young street tree",
     "obj": "Tree_honey_locust_young.obj",
-    "sha256": "388d3174d788b415fcc71aca051dee27d058129b8861c93be8c1c81053ae12e5",
+    "sha256": "286256a3ce325230d82b79fa0c922adea8cd8c0190aceb9aea3dae337da3a37a",
+    "mtl": "Tree_honey_locust_young.mtl",
+    "mtl_sha256": "64825d1e27e1cb939ba68e420c615b3d0e0017e70ceaefa12ea1edbf6c948bb0",
     "materials": {
      "bark": "Bark_HoneyLocust",
      "leaves": "Tree_Leaves_Autumn"
@@ -1336,7 +1513,9 @@
   "linden": {
    "name": "Linden (Tilia cordata / T. americana)",
    "obj": "Tree_linden.obj",
-   "sha256": "da389371548b0914387909a515ef2899eabd7ba5ccf36f73b376b60914ab12ac",
+   "sha256": "429fb5d57406ac31b3ab055b274db5ff6094250537571de52046ac0310f3eac7",
+   "mtl": "Tree_linden.mtl",
+   "mtl_sha256": "bcbc49fc6a505a3a71a02deb7a22f6d7696919d8a25208808533ffee0c3fce98",
    "materials": {
     "bark": "Bark_Linden",
     "leaves": "Tree_Leaves_Autumn"
@@ -1449,7 +1628,9 @@
    "young": {
     "name": "Linden (Tilia cordata / T. americana), young street tree",
     "obj": "Tree_linden_young.obj",
-    "sha256": "696854834beab7331b4b8fbfee057769ca6b26982f8b68fa7ef3b305e50e5ef1",
+    "sha256": "c2c629fc9ac66c0e3f9d5245c11d9348d06b5307860eac3ff96b9815f5dc2286",
+    "mtl": "Tree_linden_young.mtl",
+    "mtl_sha256": "66c5397c387b49afc54ae4bae4d90af223a0f1668c2d859f194ae951d6f5cd9b",
     "materials": {
      "bark": "Bark_Linden",
      "leaves": "Tree_Leaves_Autumn"
@@ -1564,7 +1745,9 @@
   "ash": {
    "name": "Green ash (Fraxinus pennsylvanica)",
    "obj": "Tree_ash.obj",
-   "sha256": "b5f3a7b751c363c6aaa97058716892f423888f162fb954657103715423a6d185",
+   "sha256": "79c3316f65398c16e6297e966a06af08290fbeff1d4d53ffa29916bd2539e1a4",
+   "mtl": "Tree_ash.mtl",
+   "mtl_sha256": "18f3ace8c04a5512ae6682c7e335a1b3a5baf3897881c4701c0de8899f0e9871",
    "materials": {
     "bark": "Bark_Ash",
     "leaves": "Tree_Leaves_Autumn"
@@ -1686,7 +1869,9 @@
    "young": {
     "name": "Green ash (Fraxinus pennsylvanica), young street tree",
     "obj": "Tree_ash_young.obj",
-    "sha256": "250139282d22038a76affa8f140512f54bd304d6c7b46f704e726d4ae36b111b",
+    "sha256": "b4e47d13846bbf381025ce0f6d6a64bf1a5646c9b11e261480095669f498bffd",
+    "mtl": "Tree_ash_young.mtl",
+    "mtl_sha256": "4528f3df1a4a2a6473e8b7ac0890169ca424c21c102dce0089b4008b1ccaf73a",
     "materials": {
      "bark": "Bark_Ash",
      "leaves": "Tree_Leaves_Autumn"
@@ -1805,7 +1990,9 @@
   "elm": {
    "name": "Elm and hackberry, vase form (Ulmus americana, U. pumila, Celtis occidentalis)",
    "obj": "Tree_elm.obj",
-   "sha256": "3c0b47bdbb84068b7c969cb8e28ab28fbf3c71919cac2dafb7ec4d4090b2d19a",
+   "sha256": "b141b1b3b0b3d04b00077e7f4d61587374d7a275b97643d655d3b1226ec3ccd1",
+   "mtl": "Tree_elm.mtl",
+   "mtl_sha256": "96665e9b54658d0e452c927c6d04b7a1f8c1eeed111e5a8a502999268134b811",
    "materials": {
     "bark": "Bark_Elm",
     "leaves": "Tree_Leaves_Autumn"
@@ -1925,7 +2112,9 @@
    "young": {
     "name": "Elm and hackberry, vase form (Ulmus americana, U. pumila, Celtis occidentalis), young street tree",
     "obj": "Tree_elm_young.obj",
-    "sha256": "cdc68d742a2671d20e6b74fe8bee0e68500a3b0b8ce80bc4ddbfab97ece8967b",
+    "sha256": "c89f911b66908ffb036a1bb0710bffd59daa12d8b1ab9e48f655dd949f817891",
+    "mtl": "Tree_elm_young.mtl",
+    "mtl_sha256": "9a023737824f66ff79b4e9338ed916416d485c4dc6d07962f814c4a6a1303540",
     "materials": {
      "bark": "Bark_Elm",
      "leaves": "Tree_Leaves_Autumn"
@@ -2042,7 +2231,9 @@
   "small": {
    "name": "Small yard tree (Amur maple / serviceberry type)",
    "obj": "Tree_small.obj",
-   "sha256": "97ddb3bfb6bbf1a38f5ca20b10952178feda47f6e4c3b9971d54ae23086f3688",
+   "sha256": "de198ca71b6bcc29ca00aa7e942eb31e9e7c202724116ec68df860f0b0d09968",
+   "mtl": "Tree_small.mtl",
+   "mtl_sha256": "5219248a4b5742321d8535c3c6a257411b2e9c71f5edf658633c889640605fec",
    "materials": {
     "bark": "Bark_Small",
     "leaves": "Tree_Leaves_Autumn"
@@ -2157,11 +2348,497 @@
      }
     }
    }
+  },
+  "conifer": {
+   "name": "Conifer: pine, spruce, fir, cedar and hemlock (Pinus nigra, P. sylvestris, Picea glauca, P. pungens, Abies, Thuja occidentalis, Tsuga canadensis)",
+   "obj": "Tree_conifer.obj",
+   "sha256": "a2f2291fd7b337b34d408045d5f122bfb041add85e6084e37c124a97137a4bd0",
+   "mtl": "Tree_conifer.mtl",
+   "mtl_sha256": "7482de8b91c622532dd0872b9fe114e5b30b1fc1ffff266a16c1012372640d52",
+   "materials": {
+    "bark": "Bark_Conifer",
+    "leaves": "Tree_Leaves_Autumn"
+   },
+   "slots": {
+    "bark": "conifer_bark",
+    "leaves": "conifer_leaves"
+   },
+   "height_cm": 1400.4,
+   "trunk_cm": 38.0,
+   "trunk_at_cm": 130.0,
+   "crown_width_cm": 821.6,
+   "crown_base_cm": 165.5,
+   "clear_trunk_cm": 248.9,
+   "prune_cm": 190.0,
+   "leaf_retention": 0.94,
+   "triangles": {
+    "bark": 10156,
+    "leaves": 8792,
+    "total": 18948
+   },
+   "triangle_target": 30000,
+   "bounds_cm": [
+    -399.5,
+    -398.7,
+    -0.5,
+    422.1,
+    415.4,
+    1400.4
+   ],
+   "seed": 4808,
+   "stems_per_level": [
+    1,
+    82,
+    272
+   ],
+   "cards": 2198,
+   "outward_cards": 2198,
+   "cell_usage": {
+    "cf_blue": 450,
+    "cf_inner": 345,
+    "cf_pine": 722,
+    "cf_spruce": 681
+   },
+   "crown_centre_cm": [
+    16.2,
+    -5.6,
+    760.7
+   ],
+   "crown_radii_cm": [
+    345.7,
+    343.9,
+    575.6
+   ],
+   "weber_penn": {
+    "shape": 0,
+    "flare": 0.45,
+    "ratio_power": 1.3,
+    "trunk": {
+     "split_cm": null,
+     "leaders": 1,
+     "curve_v": 2.0,
+     "sides": 12
+    },
+    "levels": [
+     {
+      "length": 0.27,
+      "length_v": 0.03,
+      "branches": 80,
+      "whorls": 16,
+      "down": 88.0,
+      "down_v": -28.0,
+      "rotate": 137.5,
+      "rotate_v": 16.0,
+      "curve_res": 5,
+      "curve": 24.0,
+      "curve_back": -36.0,
+      "curve_v": 12.0,
+      "attraction": 0.06,
+      "sides": 5
+     },
+     {
+      "length": 0.4,
+      "length_v": 0.08,
+      "branches": 6,
+      "planar": true,
+      "down": 56.0,
+      "down_v": 10.0,
+      "rotate": 180.0,
+      "rotate_v": 14.0,
+      "curve_res": 3,
+      "curve": 0.0,
+      "curve_back": 0.0,
+      "curve_v": 16.0,
+      "attraction": 0.04,
+      "sides": 3
+     }
+    ],
+    "leaves": {
+     "cards": 8,
+     "limb_cards": 10,
+     "retention": 0.94,
+     "card_cm": 70.0,
+     "down": 28.0,
+     "down_v": 14.0,
+     "rotate": 137.5,
+     "rotate_v": 25.0,
+     "twist_v": 16.0,
+     "cells": {
+      "cf_spruce": 0.3,
+      "cf_pine": 0.32,
+      "cf_blue": 0.2,
+      "cf_inner": 0.18
+     }
+    }
+   },
+   "young": {
+    "name": "Conifer: pine, spruce, fir, cedar and hemlock (Pinus nigra, P. sylvestris, Picea glauca, P. pungens, Abies, Thuja occidentalis, Tsuga canadensis), young",
+    "obj": "Tree_conifer_young.obj",
+    "sha256": "96f11ab9088d7bf38eb1fcfe669138aca748849573fdddf71b0df3a41efad524",
+    "mtl": "Tree_conifer_young.mtl",
+    "mtl_sha256": "748e9e88d9c3e3226808d0f0ef89a45bd7b71d1dc9f44dfe15a0dcb01e5827a3",
+    "materials": {
+     "bark": "Bark_Conifer",
+     "leaves": "Tree_Leaves_Autumn"
+    },
+    "slots": {
+     "bark": "conifer_young_bark",
+     "leaves": "conifer_young_leaves"
+    },
+    "height_cm": 500.7,
+    "trunk_cm": 7.0,
+    "trunk_at_cm": 130.0,
+    "crown_width_cm": 310.1,
+    "crown_base_cm": 22.1,
+    "clear_trunk_cm": 86.3,
+    "prune_cm": 45.0,
+    "leaf_retention": 0.94,
+    "triangles": {
+     "bark": 2452,
+     "leaves": 2292,
+     "total": 4744
+    },
+    "triangle_target": 8000,
+    "bounds_cm": [
+     -154.1,
+     -142.0,
+     -0.0,
+     156.0,
+     161.6,
+     500.7
+    ],
+    "seed": 4858,
+    "stems_per_level": [
+     1,
+     42,
+     52
+    ],
+    "cards": 573,
+    "outward_cards": 573,
+    "cell_usage": {
+     "cf_blue": 133,
+     "cf_inner": 95,
+     "cf_pine": 169,
+     "cf_spruce": 176
+    },
+    "crown_centre_cm": [
+     3.4,
+     -5.5,
+     254.0
+    ],
+    "crown_radii_cm": [
+     117.4,
+     115.1,
+     213.9
+    ],
+    "weber_penn": {
+     "shape": 0,
+     "flare": 0.25,
+     "ratio_power": 1.3,
+     "trunk": {
+      "split_cm": null,
+      "leaders": 1,
+      "curve_v": 2.0,
+      "sides": 8
+     },
+     "levels": [
+      {
+       "length": 0.32,
+       "length_v": 0.03,
+       "branches": 44,
+       "whorls": 11,
+       "down": 88.0,
+       "down_v": -28.0,
+       "rotate": 137.5,
+       "rotate_v": 16.0,
+       "curve_res": 4,
+       "curve": 24.0,
+       "curve_back": -36.0,
+       "curve_v": 12.0,
+       "attraction": 0.06,
+       "sides": 4
+      },
+      {
+       "length": 0.42,
+       "length_v": 0.08,
+       "branches": 4,
+       "planar": true,
+       "down": 56.0,
+       "down_v": 10.0,
+       "rotate": 180.0,
+       "rotate_v": 14.0,
+       "curve_res": 3,
+       "curve": 0.0,
+       "curve_back": 0.0,
+       "curve_v": 16.0,
+       "attraction": 0.04,
+       "sides": 3
+      }
+     ],
+     "leaves": {
+      "cards": 7,
+      "limb_cards": 9,
+      "retention": 0.94,
+      "card_cm": 35.0,
+      "down": 28.0,
+      "down_v": 14.0,
+      "rotate": 137.5,
+      "rotate_v": 25.0,
+      "twist_v": 16.0,
+      "cells": {
+       "cf_spruce": 0.3,
+       "cf_pine": 0.32,
+       "cf_blue": 0.2,
+       "cf_inner": 0.18
+      }
+     }
+    }
+   }
+  },
+  "larch": {
+   "name": "Larch, gold in late October (Larix laricina, L. decidua)",
+   "obj": "Tree_larch.obj",
+   "sha256": "e5807db8a850208294c3e9379376cb66e03825d340e625f814940464a1db20cd",
+   "mtl": "Tree_larch.mtl",
+   "mtl_sha256": "bfdfa9d48c068a7b0dd326c38898d21d0185cb11f6c5c3e8c69912bceeab1b15",
+   "materials": {
+    "bark": "Bark_Larch",
+    "leaves": "Tree_Leaves_Autumn"
+   },
+   "slots": {
+    "bark": "larch_bark",
+    "leaves": "larch_leaves"
+   },
+   "height_cm": 1443.4,
+   "trunk_cm": 34.0,
+   "trunk_at_cm": 130.0,
+   "crown_width_cm": 816.4,
+   "crown_base_cm": 195.7,
+   "clear_trunk_cm": 286.4,
+   "prune_cm": 220.0,
+   "leaf_retention": 0.74,
+   "triangles": {
+    "bark": 6659,
+    "leaves": 4824,
+    "total": 11483
+   },
+   "triangle_target": 30000,
+   "bounds_cm": [
+    -389.5,
+    -450.6,
+    -0.7,
+    426.9,
+    364.5,
+    1443.4
+   ],
+   "seed": 4909,
+   "stems_per_level": [
+    1,
+    56,
+    172
+   ],
+   "cards": 1206,
+   "outward_cards": 1206,
+   "cell_usage": {
+    "lx_amber": 374,
+    "lx_gold": 598,
+    "lx_sparse": 234
+   },
+   "crown_centre_cm": [
+    20.2,
+    38.9,
+    798.8
+   ],
+   "crown_radii_cm": [
+    344.5,
+    334.4,
+    583.6
+   ],
+   "weber_penn": {
+    "shape": 0,
+    "flare": 0.4,
+    "ratio_power": 1.3,
+    "trunk": {
+     "split_cm": null,
+     "leaders": 1,
+     "curve_v": 3.0,
+     "sides": 12
+    },
+    "levels": [
+     {
+      "length": 0.25,
+      "length_v": 0.05,
+      "branches": 56,
+      "whorls": 14,
+      "down": 84.0,
+      "down_v": -22.0,
+      "rotate": 137.5,
+      "rotate_v": 24.0,
+      "curve_res": 5,
+      "curve": 12.0,
+      "curve_back": -18.0,
+      "curve_v": 16.0,
+      "attraction": 0.04,
+      "sides": 5
+     },
+     {
+      "length": 0.48,
+      "length_v": 0.1,
+      "branches": 6,
+      "down": 58.0,
+      "down_v": 14.0,
+      "rotate": 140.0,
+      "rotate_v": 30.0,
+      "curve_res": 3,
+      "curve": 10.0,
+      "curve_back": 0.0,
+      "curve_v": 24.0,
+      "attraction": -0.3,
+      "sides": 3
+     }
+    ],
+    "leaves": {
+     "cards": 10,
+     "limb_cards": 8,
+     "retention": 0.74,
+     "card_cm": 64.0,
+     "down": 36.0,
+     "down_v": 18.0,
+     "rotate": 137.5,
+     "rotate_v": 25.0,
+     "twist_v": 24.0,
+     "cells": {
+      "lx_gold": 0.5,
+      "lx_amber": 0.3,
+      "lx_sparse": 0.2
+     }
+    }
+   },
+   "young": {
+    "name": "Larch, gold in late October (Larix laricina, L. decidua), young",
+    "obj": "Tree_larch_young.obj",
+    "sha256": "3d3f4dc33ae12cc127374132cc77da8b93ed348770752f5e93626c09362b6d94",
+    "mtl": "Tree_larch_young.mtl",
+    "mtl_sha256": "d9f5139dfe113a823b587369a6a8f9d9c5810ec5f5143239d3fd7e14b7948c0c",
+    "materials": {
+     "bark": "Bark_Larch",
+     "leaves": "Tree_Leaves_Autumn"
+    },
+    "slots": {
+     "bark": "larch_young_bark",
+     "leaves": "larch_young_leaves"
+    },
+    "height_cm": 500.4,
+    "trunk_cm": 7.0,
+    "trunk_at_cm": 130.0,
+    "crown_width_cm": 249.7,
+    "crown_base_cm": 34.5,
+    "clear_trunk_cm": 89.0,
+    "prune_cm": 55.0,
+    "leaf_retention": 0.74,
+    "triangles": {
+     "bark": 1510,
+     "leaves": 1152,
+     "total": 2662
+    },
+    "triangle_target": 8000,
+    "bounds_cm": [
+     -130.9,
+     -116.8,
+     -0.1,
+     117.8,
+     132.9,
+     500.4
+    ],
+    "seed": 4959,
+    "stems_per_level": [
+     1,
+     33,
+     23
+    ],
+    "cards": 288,
+    "outward_cards": 288,
+    "cell_usage": {
+     "lx_amber": 83,
+     "lx_gold": 150,
+     "lx_sparse": 55
+    },
+    "crown_centre_cm": [
+     -1.3,
+     -4.4,
+     261.6
+    ],
+    "crown_radii_cm": [
+     93.1,
+     91.8,
+     206.8
+    ],
+    "weber_penn": {
+     "shape": 0,
+     "flare": 0.25,
+     "ratio_power": 1.3,
+     "trunk": {
+      "split_cm": null,
+      "leaders": 1,
+      "curve_v": 2.0,
+      "sides": 8
+     },
+     "levels": [
+      {
+       "length": 0.24,
+       "length_v": 0.05,
+       "branches": 33,
+       "whorls": 10,
+       "down": 84.0,
+       "down_v": -22.0,
+       "rotate": 137.5,
+       "rotate_v": 24.0,
+       "curve_res": 4,
+       "curve": 12.0,
+       "curve_back": -18.0,
+       "curve_v": 16.0,
+       "attraction": 0.04,
+       "sides": 4
+      },
+      {
+       "length": 0.48,
+       "length_v": 0.1,
+       "branches": 4,
+       "down": 58.0,
+       "down_v": 14.0,
+       "rotate": 140.0,
+       "rotate_v": 30.0,
+       "curve_res": 3,
+       "curve": 10.0,
+       "curve_back": 0.0,
+       "curve_v": 24.0,
+       "attraction": -0.3,
+       "sides": 3
+      }
+     ],
+     "leaves": {
+      "cards": 9,
+      "limb_cards": 8,
+      "retention": 0.74,
+      "card_cm": 32.0,
+      "down": 36.0,
+      "down_v": 18.0,
+      "rotate": 137.5,
+      "rotate_v": 25.0,
+      "twist_v": 24.0,
+      "cells": {
+       "lx_gold": 0.5,
+       "lx_amber": 0.3,
+       "lx_sparse": 0.2
+      }
+     }
+    }
+   }
   }
  },
  "counts": {
-  "kinds": 7,
-  "young": 6,
+  "kinds": 9,
+  "young": 8,
   "triangles": {
    "norway_maple": 14716,
    "silver_maple": 13177,
@@ -2169,7 +2846,9 @@
    "linden": 16756,
    "ash": 8939,
    "elm": 14231,
-   "small": 5188
+   "small": 5188,
+   "conifer": 18948,
+   "larch": 11483
   },
   "young_triangles": {
    "norway_maple": 2360,
@@ -2177,12 +2856,14 @@
    "honey_locust": 1688,
    "linden": 1761,
    "ash": 2058,
-   "elm": 2281
+   "elm": 2281,
+   "conifer": 4744,
+   "larch": 2662
   },
   "textures": 6
  },
  "source_sha256": {
-  "Scripts/blender/plateau_trees.py": "9ba39a715561532c12a33befc7889776d06a16aa4a01c40651cbc37f94cf1835",
+  "Scripts/blender/plateau_trees.py": "2908f7746b8bad79317ff60732e7ac83f89e45b95ff8ea53955bccd95ea00ba1",
   "Scripts/plateau_textures.py": "4ac34010e74f78e15eac7854f2cf46c42a8c3755d5aa5f4fb7e82170b4d9bdb5"
  }
 }

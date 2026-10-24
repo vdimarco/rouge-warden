@@ -1,6 +1,6 @@
-"""Checks for the species trees (Data/Plateau/ReplicaGeometry/Trees, from Scripts/blender/plateau_trees.py: seven
-kinds, the vase elm among them, and a young street tree for every kind but small) and for the late-October leaves of
-Scripts/refine_plateau_trees.py, its default. Stdlib only; no Blender or Unreal needed.
+"""Checks for the species trees (Data/Plateau/ReplicaGeometry/Trees, from Scripts/blender/plateau_trees.py: nine
+kinds, the vase elm and the two whorled conifers among them, and a young tree for every kind but small) and for the
+late-October leaves of Scripts/refine_plateau_trees.py, its default. Stdlib only; no Blender or Unreal needed.
 
     python3 Scripts/test_plateau_tree_kinds.py            # the files on disk, the generator's rules, the refine graph
     python3 Scripts/test_plateau_tree_kinds.py --rebuild  # also two fresh builds, byte for byte, and against disk
@@ -38,7 +38,9 @@ def read_obj(path):
     v, vt, vn, groups, current = [], [], [], {}, None
     for line in path.read_text().splitlines():
         tag, _, rest = line.partition(' ')
-        if tag == 'v':
+        if tag == 'mtllib':
+            assert current is None, (path, 'mtllib after a usemtl')
+        elif tag == 'v':
             v.append(tuple(float(c) for c in rest.split()))
         elif tag == 'vt':
             vt.append(tuple(float(c) for c in rest.split()))
@@ -192,6 +194,32 @@ class GeneratorRules(unittest.TestCase):
             for leader in [s for s in stems if s.level == 0][1:]:
                 self.assertLess(math.dist(leader.points[0], trunk.points[-1]), 1e-6, kind)
 
+    def test_smooth_minimum_is_quilez_polynomial(self):
+        self.assertEqual(T.smin(1., 9., 2.), 1.)            # far apart: the plain minimum
+        self.assertAlmostEqual(T.smin(3., 3., 2.), 2.5)     # equal: rounded down by k / 4
+        self.assertLess(T.smin(2., 2.5, 2.), 2.)
+
+    def test_silver_maple_leaf_is_palmately_lobed_not_compound(self):
+        """Local 9: the five deep lobes of a silver maple leaf join over a central blade (palmately lobed), not five
+        leaflets from one point (palmately compound, like a buckeye). One leaf pointing up, sampled on the bisectors
+        between its lobes."""
+        size, W, H = 120., 320, 320
+        bx, by = 160., 230.
+        cv = PT.Canvas(W, H, (0., 0., 0.), 0., .7, alpha=0.)
+        T._leaf(cv, 'silver', bx, by, size, .75, T.YELLOW, T.ORANGE, .3, [.5] * (W * H), 1., 1., .5)
+
+        def alpha_at(turn_offset, r):
+            s, c = PT.sin_cos(.75 + turn_offset)
+            return cv.alpha[int(by + s * r * size) * W + int(bx + c * r * size)]
+        lobes = sorted(lobe[0] for lobe in T.FORMS['silver']['lobes'])
+        for a, b in zip(lobes, lobes[1:]):
+            for r in (.15, .25, .3):
+                self.assertGreaterEqual(alpha_at((a + b) / 2., r), .5, ('no blade between two lobes', (a + b) / 2., r))
+        # The sinuses stay deep: 70 % out, between the terminal and an upper lateral lobe, there is no blade.
+        upper = min(o for o in lobes if o > 0.)
+        for side in (-1., 1.):
+            self.assertLess(alpha_at(side * upper / 2., .7), .5, 'the sinuses are cut deep')
+
 
 class TreeFiles(unittest.TestCase):
     def test_manifest_matches_the_apply_step_contract(self):
@@ -245,6 +273,79 @@ class TreeFiles(unittest.TestCase):
             for r in plan:
                 model = r['kind'] + (T.YOUNG if r['variant'] else '')
                 self.assertEqual(r['mesh_height_cm'], entry(model)['height_cm'])
+
+    def test_each_obj_names_its_material_library(self):
+        """Tech 5: each OBJ has one mtllib line before its first usemtl. The .mtl sits next to it, and its newmtl names
+        are the OBJ's usemtl names in order, so an importer that reads the library still names the bark and leaves
+        slots."""
+        for model in T.MODELS:
+            k = entry(model)
+            path = TREES / k['obj']
+            lines = path.read_text().splitlines()
+            libs = [i for i, line in enumerate(lines) if line.startswith('mtllib ')]
+            self.assertEqual(len(libs), 1, (model, 'one mtllib line'))
+            used = [line.split(None, 1)[1] for line in lines if line.startswith('usemtl ')]
+            self.assertLess(libs[0], next(i for i, line in enumerate(lines) if line.startswith('usemtl ')), model)
+            name = lines[libs[0]].split(None, 1)[1]
+            self.assertEqual(name, k['mtl'], model)
+            library = path.parent / name
+            self.assertTrue(library.is_file(), library)
+            defined = [line.split(None, 1)[1] for line in library.read_text().splitlines()
+                       if line.startswith('newmtl ')]
+            self.assertEqual(defined, used, model)
+            self.assertEqual(defined, [k['slots']['bark'], k['slots']['leaves']], model)
+            self.assertEqual(hashlib.sha256(library.read_bytes()).hexdigest(), k['mtl_sha256'], model)
+
+    def test_conifers_are_whorled_cones(self):
+        """Local 5: the conifer kind (pines, spruces, firs, cedars, hemlocks) and the larch are Weber and Penn's conical
+        shape 0 on one leader, with their limbs in whorls (Sapling's Branch Rings) and needle-cluster cards: a dark
+        evergreen cone and a gold one, each with a young tree."""
+        m = manifest()
+        for kind in ('conifer', 'larch'):
+            self.assertIn(kind, T.KINDS)
+            self.assertIn(kind, T.CONIFERS)
+            self.assertIn(kind, m['kinds'])
+            self.assertIn('young', m['kinds'][kind])
+            for model in (kind, kind + T.YOUNG):
+                P = T.SPECIES[model]
+                self.assertEqual(P['shape'], 0, model)
+                stems, cards = T.calibrated(model)
+                self.assertEqual(sum(1 for s in stems if s.level == 0), 1, (model, 'one leader to the top'))
+                limbs = [s for s in stems if s.level == 1]
+                rings = {}
+                for s in limbs:
+                    rings.setdefault(round(s.t, 9), []).append(s)
+                self.assertTrue(8 <= len(rings) <= P['levels'][0]['whorls'], (model, len(rings)))
+                sizes = [len(r) for r in rings.values()]
+                self.assertGreater(sum(3 <= n <= 7 for n in sizes) / len(sizes), .8, (model, sizes))
+                for ring in rings.values():
+                    if len(ring) < 3:
+                        continue
+                    angles = sorted(math.degrees(math.atan2(s.frames[0][2][1], s.frames[0][2][0])) % 360. for s in ring)
+                    gaps = [b - a for a, b in zip(angles, angles[1:])] + [angles[0] + 360. - angles[-1]]
+                    self.assertLess(max(gaps), 200., (model, 'a whorl on one side of the trunk', angles))
+                # A cone: wide low down, narrow at the top (a young tree's needle cards are large for its crown).
+                zs = sorted(c['base'][2] for c in cards)
+                third = (zs[-1] - zs[0]) / 3.
+
+                def radius(z0, z1):
+                    r = sorted(math.hypot(c['base'][0], c['base'][1]) for c in cards if z0 <= c['base'][2] < z1)
+                    return r[int(.9 * (len(r) - 1))]
+                taper = 1.6 if model.endswith(T.YOUNG) else 2.
+                self.assertGreater(radius(zs[0], zs[0] + third), taper * radius(zs[-1] - third, zs[-1] + 1.), model)
+                # The low whorls sweep out and down, the high ones rise.
+                order = sorted(rings)
+                n = max(1, len(order) // 3)
+
+                def heading(keys):
+                    hs = [T.norm(T.sub(s.points[-1], s.points[0]))[2] for k in keys for s in rings[k]]
+                    return sum(hs) / len(hs)
+                self.assertGreater(heading(order[-n:]) - heading(order[:n]), .3, model)
+                # Needle cards only.
+                self.assertTrue(all(T.CELLS[c][0] in T.NEEDLE_FORMS for c in P['leaves']['cells']), model)
+        for kind in T.KINDS:
+            if kind not in T.CONIFERS:
+                self.assertFalse(any(T.CELLS[c][0] in T.NEEDLE_FORMS for c in T.SPECIES[kind]['leaves']['cells']), kind)
 
     def test_texture_sets(self):
         m = manifest()
@@ -325,7 +426,10 @@ class TreeFiles(unittest.TestCase):
             # manifest's trunk_cm.
             bh = k['trunk_at_cm']
             self.assertEqual(bh, min(130., (P['trunk']['split_cm'] or 1e9) - 15.))
-            bark_v = {c[0] for f in bark for c in f}
+            # The trunk is the first stem written: its ring vertices are the first sides x rings bark vertices, so a
+            # conifer's low whorl at breast height does not count toward the trunk.
+            trunk_n = P['trunk']['sides'] * len(T.calibrated(kind)[0][0].points)
+            bark_v = list(dict.fromkeys(c[0] for f in bark for c in f))[:trunk_n]
             ring = [v[i] for i in bark_v if bh - 4. < v[i][2] < bh + 4. and math.hypot(v[i][0], v[i][1]) < 60.]
             cx, cy = sum(p[0] for p in ring) / len(ring), sum(p[1] for p in ring) / len(ring)
             dbh = 2. * sum(math.hypot(p[0] - cx, p[1] - cy) for p in ring) / len(ring)
@@ -333,11 +437,18 @@ class TreeFiles(unittest.TestCase):
             # Crowns pruned up: no leaf card hangs more than CARD_HANG_CM below the pruned height.
             leaf_v = {c[0] for f in leaves for c in f}
             self.assertGreaterEqual(min(v[i][2] for i in leaf_v), P['prune_cm'] - T.CARD_HANG_CM - .01, kind)
-            if kind in T.MATURE:
+            conifer = T.kind_of(kind) in T.CONIFERS
+            if kind in T.MATURE and not conifer:
                 self.assertGreaterEqual(min(v[i][2] for i in leaf_v), 270., kind)
-            if kind.endswith(T.YOUNG):
+            if kind in T.MATURE and conifer:
+                # Lawn conifers in a park are limbed up for mowing and sight lines, lower than a street tree.
+                self.assertTrue(150. <= min(v[i][2] for i in leaf_v) < 270., kind)
+            if kind.endswith(T.YOUNG) and not conifer:
                 # A young street tree's crown clears a pedestrian: no leaf under 1.85 m at full scale.
                 self.assertGreaterEqual(min(v[i][2] for i in leaf_v), 185., kind)
+            if kind.endswith(T.YOUNG) and conifer:
+                # A nursery conifer on a lawn keeps its branches almost to the ground.
+                self.assertLess(min(v[i][2] for i in leaf_v), 100., kind)
             # Leaf normals are unit, never point fully down, and mostly lean out of the crown.
             for i in {c[2] for f in leaves for c in f}:
                 self.assertAlmostEqual(math.sqrt(sum(x * x for x in vn[i])), 1., delta=2e-3)
@@ -383,12 +494,17 @@ class TreeFiles(unittest.TestCase):
             for name, n in per.items():
                 for k, share in hues[name].items():
                     mix[k] = mix.get(k, 0.) + share * n
-                    if kind in T.KINDS:              # the district-wide mix: the seven mature kinds
+                    if kind in T.KINDS and kind not in T.CONIFERS:   # the district-wide mix: the broadleaf kinds
                         total[k] = total.get(k, 0.) + share * n
             s = sum(mix.values())
             mix = {k: c / s for k, c in mix.items()}
-            if kind == 'small':
+            if T.kind_of(kind) == 'small':
                 self.assertGreater(mix.get('red', 0.), .3, (kind, mix))
+            elif T.kind_of(kind) == 'conifer':
+                # Pines, spruces and cedars stay dark green; a few old inner needles yellow before they drop.
+                self.assertGreater(mix.get('green', 0.), .75, (kind, mix))
+                self.assertGreater(mix.get('yellow_orange', 0.), .02, (kind, mix))
+                continue
             else:
                 self.assertGreater(mix.get('yellow_orange', 0.), .6, (kind, mix))
             self.assertLess(mix.get('green', 0.), .3, (kind, mix))
@@ -397,14 +513,17 @@ class TreeFiles(unittest.TestCase):
         s = sum(total.values())
         total = {k: c / s for k, c in total.items()}
         self.assertGreater(total['yellow_orange'], .6, total)
-        # Some red (Amur maples, silver maples): 4 % of the seven kinds' cards since the all-yellow elm joined.
+        # Some red (Amur maples, silver maples): 4 % of the broadleaf kinds' cards since the all-yellow elm joined.
         self.assertGreater(total['red'], .04, total)
         self.assertTrue(.02 < total['green'] < .25, total)
         # On the street, weighted by the inventory's trees on each mesh: yellow to orange, some red, a little green.
+        # The evergreen conifers are left out of this mix; they are green by design (checked above).
         rows, kinds = A.load_street_trees(ROOT), A.load_tree_kinds(ROOT)
         if rows:
             street = {}
             for group in A.plan_trees(rows, kinds):
+                if group['kind'] == 'conifer':
+                    continue
                 model = group['kind'] + (T.YOUNG if group['variant'] else '')
                 for name, n in cards_per_cell(model).items():
                     for k, share in hues[name].items():
@@ -421,7 +540,10 @@ class TreeFiles(unittest.TestCase):
         index = {}
         for kind in T.KINDS:
             k = m['kinds'][kind]
-            self.assertLess(k['leaf_retention'], .85, kind)
+            if kind == 'conifer':
+                self.assertGreater(k['leaf_retention'], .85, 'an evergreen keeps most of its needles')
+            else:
+                self.assertLess(k['leaf_retention'], .85, kind)
             v, vt, vn, groups = obj(kind)
             leaves = groups[f'{kind}_leaves']
             area = 0.
@@ -431,9 +553,13 @@ class TreeFiles(unittest.TestCase):
                 area += sum(tri_area(*(v[c[0]] for c in f))[0] for f in card) * stats[name]['cover']
             r = k['crown_width_cm'] / 2.
             index[kind] = area / (math.pi * r * r)
-            self.assertTrue(.15 < index[kind] < 3., (kind, index[kind]))
+            if kind != 'conifer':
+                self.assertTrue(.15 < index[kind] < 3., (kind, index[kind]))
         self.assertLess(index['honey_locust'], index['norway_maple'])
         self.assertLess(index['ash'], index['norway_maple'])
+        # In late October the evergreen is the densest crown, and the larch, dropping its needles, is thinner.
+        self.assertGreater(index['conifer'], index['norway_maple'], index)
+        self.assertLess(index['larch'], index['conifer'], index)
 
     def test_elm_is_a_vase(self):
         """The elm forks low into five leaders that keep spreading; its crown is widest at the top (the inverse-conical
@@ -471,8 +597,9 @@ class TreeFiles(unittest.TestCase):
         self.assertGreater(k['crown_width_cm'], .9 * k['height_cm'], 'a vase is about as wide as it is tall')
 
     def test_young_trees_are_slim_nursery_trees(self):
-        """Each young tree: one straight leader (no fork), a 7 cm trunk, about 5 m, every limb above the 2.1 m
-        clearance, its kind's leaf cells, and a fraction of the mature triangles."""
+        """Each young tree: one straight leader (no fork), a 7 cm trunk, about 5 m, every limb above its clearance
+        (2.1 m for a street tree, low for a lawn conifer), its kind's leaf cells, and a fraction of the mature
+        triangles."""
         for kind in T.YOUNG_KINDS:
             model = kind + T.YOUNG
             P = T.SPECIES[model]
@@ -503,7 +630,8 @@ class TreeFiles(unittest.TestCase):
                 T.build(out)
                 outs.append({p.name: p.read_bytes() for p in sorted(out.iterdir())})
             self.assertEqual(outs[0], outs[1])
-            disk = {p.name: p.read_bytes() for p in sorted(TREES.iterdir()) if p.suffix in ('.obj', '.json', '.png')}
+            disk = {p.name: p.read_bytes() for p in sorted(TREES.iterdir())
+                    if p.suffix in ('.obj', '.mtl', '.json', '.png')}
             self.assertEqual(sorted(outs[0]), sorted(n for n in disk if n != 'README.md'))
             fresh = json.loads(outs[0]['manifest.json'])
             self.assertEqual({k: v['sha256'] for k, v in fresh['kinds'].items()},

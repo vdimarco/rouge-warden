@@ -6,12 +6,25 @@ Run from games/nord-unreal:
     python3 Scripts/test_plateau_tree_kinds.py               # checks; --rebuild also builds twice and compares bytes
 
 Writes Data/Plateau/ReplicaGeometry/Trees/: one OBJ per kind (norway_maple, silver_maple, honey_locust, linden,
-ash, elm, small) with two material groups (usemtl <kind>_bark and <kind>_leaves), and for every kind but small a
-young street tree (Tree_<kind>_young.obj: a nursery tree a few years after planting, single leader, crown raised to
-2.1 m), the autumn leaf atlas and the bark texture (three PNG maps each, in the Scripts/plateau_textures.py format)
-and manifest.json in the shared Trees format {kinds: {kind: {obj, materials {bark, leaves}, height_cm, trunk_cm,
-..., young {obj, materials, height_cm, trunk_cm, ...}}}, materials, texture_sets}. The contact sheet goes to
+ash, elm, small, conifer, larch) with two material groups (usemtl <kind>_bark and <kind>_leaves) and a mtllib line
+naming its Tree_<model>.mtl (the two newmtl names, so an importer that reads the library names the same slots), and
+for every kind but small a young tree (Tree_<kind>_young.obj: a nursery tree a few years after planting, single
+leader; a street tree's crown is raised to 2.1 m, a lawn conifer keeps its low branches), the autumn leaf atlas and
+the bark texture (three PNG maps each, in the Scripts/plateau_textures.py format) and manifest.json in the shared
+Trees format {kinds: {kind: {obj, materials {bark, leaves}, height_cm, trunk_cm, ..., young {obj, materials,
+height_cm, trunk_cm, ...}}}, materials, texture_sets}. The contact sheet goes to
 Preview/Replica/trees_contact_sheet.png.
+
+The conifer kind stands for the inventory's pines, spruces, firs, cedars and hemlocks (Pinus, Picea, Abies, Thuja,
+Tsuga), the larch kind for its tamaracks and European larches (Larix). Both are Weber & Penn's conical shape 0 on
+one leader to the top. Their limbs grow in whorls, as in the Branch Rings option of Blender's Sapling add-on
+(add_curve_sapling/utils.py snaps the trunk's child points to nrings heights). The low whorls sweep down and their
+tips turn up (nCurve, then nCurveBack), and the laterals lie flat, alternately left and right, as spruce sprays do.
+Needle-cluster cards cover the twigs and the outer limbs. The conifer stays dark green, with a few old inner needles
+yellowing. The larch is gold in late October and has dropped a quarter of its needles. Its cards show short-shoot
+rosettes. Daniel Wesslén and Stefan Seipel adapted Weber & Penn to spruce and pine in "The Virtual Forest" (SIGRAD
+2004, https://ep.liu.se/ecp/013/016/ecp01316.pdf); their health parameter, which drops leaves at random, is this
+generator's leaf_retention.
 
 The elm kind is the vase: American elm (Ulmus americana) and the other elms, and hackberry (Celtis occidentalis),
 whose crowns the city prunes the same way. Its trunk forks low into five ascending leaders that keep their angle
@@ -38,6 +51,9 @@ it, as the borough prunes street trees over sidewalks. Late October: most leaves
 some red, the inner and lower ones stay greener longer, and many have fallen (leaf_retention keeps a share of
 the cards; sparse cards show bare twigs). The atlas and the bark are painted with the plateau_textures.py
 primitives (serrated leaflets from signed distances, Worley cells), so the textures are generated, not scanned.
+The silver maple's five deep lobes join over a central blade: the lobes' signed distances and an ellipse round the
+leaf base are merged with Inigo Quilez's polynomial smooth minimum (https://iquilezles.org/articles/smin), so the
+sinuses end in a rounded crease two thirds of the way in instead of running to the petiole.
 
 Axes: centimetres, x east, y north, z up, pivot at the trunk base. The OBJ stores Blender/game-local (x, y, z)
 unchanged (the Scripts/blender/plateau_props.py convention); Unreal's OBJ import flips Y, which a tree does not
@@ -60,10 +76,11 @@ import plateau_textures as PT  # noqa: E402  (stdlib texture primitives: Canvas,
 LAYER = 'Trees'
 OUT = ROOT / 'Data/Plateau/ReplicaGeometry/Trees'
 SHEET = ROOT / 'Preview/Replica/trees_contact_sheet.png'
-SHEET_GRID = (5, 2)          # contact sheet tiles (400 x 500 px each): the kinds, the young trees, a street row, the atlas
+SHEET_GRID = (6, 2)          # contact sheet tiles (400 x 500 px): the kinds, the young trees, a street row, the atlas
 GENERATOR = 'Scripts/blender/plateau_trees.py'
-KINDS = ('norway_maple', 'silver_maple', 'honey_locust', 'linden', 'ash', 'elm', 'small')
-MATURE = KINDS[:-1]
+KINDS = ('norway_maple', 'silver_maple', 'honey_locust', 'linden', 'ash', 'elm', 'small', 'conifer', 'larch')
+MATURE = tuple(k for k in KINDS if k != 'small')
+CONIFERS = ('conifer', 'larch')     # whorled cones with needle cards; the conifer is evergreen, the larch turns gold
 # Plex yard-tree kinds that are not species: maple is the Norway maple. (elm was linden until the vase kind came.)
 ALIASES = {'maple': 'norway_maple'}
 TRIANGLE_TARGET = {'mature': 30000, 'small': 15000, 'young': 8000}
@@ -187,17 +204,80 @@ SPECIES = {
                    'rotate_v': 12., 'twist_v': 32., 'cells': {'sx_red': .5, 'sx_orange': .5}},
         'bark': {'colour': '#6E655B', 'note': 'smooth grey-brown'},
     },
+    'conifer': {
+        # Weber & Penn shape 0 (conical) on one leader. Level 1 grows in whorls (Sapling's Branch Rings): about
+        # five limbs a ring, each ring turned by about the golden angle. The negative DownAngleV gives low limbs
+        # about 115 degrees and high ones about 70. nCurve then nCurveBack droops a limb and turns its tip up.
+        # The laterals are planar, so each limb ends in a flat spray. Cards sit on the twigs and the outer limbs.
+        # Park conifers are limbed up to about 2 m for mowing and sight lines. Pines shed some inner needles in
+        # October.
+        'name': 'Conifer: pine, spruce, fir, cedar and hemlock (Pinus nigra, P. sylvestris, Picea glauca, '
+                'P. pungens, Abies, Thuja occidentalis, Tsuga canadensis)', 'seed': 4808,
+        'height_cm': 1400., 'dbh_cm': 38., 'prune_cm': 190., 'shape': 0, 'flare': .45, 'ratio_power': 1.3,
+        'lean_deg': 1.,
+        'trunk': {'split_cm': None, 'leaders': 1, 'curve_v': 2., 'sides': 12},
+        'levels': [
+            {'length': .27, 'length_v': .03, 'branches': 80, 'whorls': 16, 'down': 88., 'down_v': -28.,
+             'rotate': 137.5, 'rotate_v': 16., 'curve_res': 5, 'curve': 24., 'curve_back': -36., 'curve_v': 12.,
+             'attraction': .06, 'sides': 5},
+            {'length': .4, 'length_v': .08, 'branches': 6, 'planar': True, 'down': 56., 'down_v': 10.,
+             'rotate': 180., 'rotate_v': 14., 'curve_res': 3, 'curve': 0., 'curve_back': 0., 'curve_v': 16.,
+             'attraction': .04, 'sides': 3},
+        ],
+        'leaves': {'cards': 8, 'limb_cards': 10, 'retention': .94, 'card_cm': 70., 'down': 28., 'down_v': 14.,
+                   'rotate': 137.5, 'rotate_v': 25., 'twist_v': 16.,
+                   'cells': {'cf_spruce': .3, 'cf_pine': .32, 'cf_blue': .2, 'cf_inner': .18}},
+        'bark': {'colour': '#56483F',
+                 'note': 'dark grey-brown, furrowed plates (Austrian pine) and thin scales (spruce)'},
+    },
+    'larch': {
+        # The same whorled cone, more open: fewer limbs, held nearer level, branchlets that hang (negative
+        # AttractionUp) and short-shoot rosettes of gold needles. Tamaracks turn in late October and drop their
+        # needles into November, so a quarter are down.
+        'name': 'Larch, gold in late October (Larix laricina, L. decidua)', 'seed': 4909, 'height_cm': 1450.,
+        'dbh_cm': 34., 'prune_cm': 220., 'shape': 0, 'flare': .4, 'ratio_power': 1.3, 'lean_deg': 1.5,
+        'trunk': {'split_cm': None, 'leaders': 1, 'curve_v': 3., 'sides': 12},
+        'levels': [
+            {'length': .25, 'length_v': .05, 'branches': 56, 'whorls': 14, 'down': 84., 'down_v': -22.,
+             'rotate': 137.5, 'rotate_v': 24., 'curve_res': 5, 'curve': 12., 'curve_back': -18., 'curve_v': 16.,
+             'attraction': .04, 'sides': 5},
+            {'length': .48, 'length_v': .1, 'branches': 6, 'down': 58., 'down_v': 14., 'rotate': 140.,
+             'rotate_v': 30., 'curve_res': 3, 'curve': 10., 'curve_back': 0., 'curve_v': 24., 'attraction': -.3,
+             'sides': 3},
+        ],
+        'leaves': {'cards': 10, 'limb_cards': 8, 'retention': .74, 'card_cm': 64., 'down': 36., 'down_v': 18.,
+                   'rotate': 137.5, 'rotate_v': 25., 'twist_v': 24.,
+                   'cells': {'lx_gold': .5, 'lx_amber': .3, 'lx_sparse': .2}},
+        'bark': {'colour': '#6A4F42', 'note': 'reddish brown, thin flaking scales'},
+    },
 }
 
 # Young street trees: the inventory's new plantings (DHP 5 cm, about 4.3 m), one per mature kind. A nursery tree a
 # few years in the ground: one straight leader, no fork, a narrow crown raised to 2.1 m over the sidewalk, fewer and
 # shorter limbs, smaller leaf cards; the species' own leaf cells, retention and bark. Crown shape per kind.
-YOUNG_SHAPE = {'norway_maple': 7, 'silver_maple': 7, 'honey_locust': 2, 'linden': 0, 'ash': 7, 'elm': 4}
+YOUNG_SHAPE = {'norway_maple': 7, 'silver_maple': 7, 'honey_locust': 2, 'linden': 0, 'ash': 7, 'elm': 4,
+               'conifer': 0, 'larch': 0}
+# A young conifer is a nursery tree on a lawn: the same whorled cone at 5 m, furnished almost to the ground, as
+# nursery spruces, pines and larches are. These replace the mature kind's values.
+YOUNG_CONIFER = {
+    'conifer': {'prune_cm': 45., 'l1': {'length': .32, 'branches': 44, 'whorls': 11, 'curve_res': 4, 'sides': 4},
+                'l2': {'length': .42, 'branches': 4}, 'leaves': {'cards': 7, 'limb_cards': 9}},
+    'larch': {'prune_cm': 55., 'l1': {'length': .24, 'branches': 33, 'whorls': 10, 'curve_res': 4, 'sides': 4},
+              'l2': {'length': .48, 'branches': 4}, 'leaves': {'cards': 9, 'limb_cards': 8}},
+}
 
 
 def young_species(kind):
     P = SPECIES[kind]
     l1, l2 = P['levels']
+    if kind in YOUNG_CONIFER:
+        Y = YOUNG_CONIFER[kind]
+        return {'name': P['name'] + ', young', 'seed': P['seed'] + 50, 'height_cm': 500., 'dbh_cm': 7.,
+                'prune_cm': Y['prune_cm'], 'shape': YOUNG_SHAPE[kind], 'flare': .25, 'ratio_power': 1.3,
+                'lean_deg': .5, 'trunk': {'split_cm': None, 'leaders': 1, 'curve_v': 2., 'sides': 8},
+                'levels': [dict(l1, **Y['l1']), dict(l2, **Y['l2'])],
+                'leaves': dict(P['leaves'], card_cm=round(P['leaves']['card_cm'] * .5, 1), **Y['leaves']),
+                'bark': P['bark'], 'mature': kind}
     return {'name': P['name'] + ', young street tree', 'seed': P['seed'] + 50, 'height_cm': 500., 'dbh_cm': 7.,
             'prune_cm': 210., 'shape': YOUNG_SHAPE[kind], 'flare': .25, 'ratio_power': 1.3, 'lean_deg': 1.,
             'trunk': {'split_cm': None, 'leaders': 1, 'curve_v': 3., 'sides': 8},
@@ -462,6 +542,9 @@ def generate(kind, height=None):
         twigs += spawn(s, n, .25, .98, 2, p2, P, rng, L0, prune, clearance)
     stems += twigs
     cards = leaf_cards(kind, twigs, rng, clearance)
+    if P['leaves'].get('limb_cards'):
+        # Needles clothe a conifer's limbs too, from a bare inner third out to the tip.
+        cards += leaf_cards(kind, limbs, rng, clearance, P['leaves']['limb_cards'])
     return stems, cards
 
 
@@ -480,8 +563,28 @@ def spawn(parent, n, a, b, level, p, P, rng, L0, prune, clearance):
     out = []
     spin = rng.random() * 360.
     opposite = p.get('opposite', False)
+    whorls = p.get('whorls') if level == 1 else None
     slots = []
-    if opposite:
+    if whorls:
+        # Sapling's Branch Rings (add_curve_sapling/utils.py snaps the trunk's child points to nrings heights): the
+        # limbs grow in whorls at even heights, n / whorls a ring give or take one, spread evenly round the stem,
+        # each ring turned from the one below by rotate.
+        rings = max(1, min(whorls, n))
+        for k in range(rings):
+            t = a + (b - a) * (k + .5 + (rng.random() - .5) * .3) / rings
+            count = max(2, round(n / rings + (rng.random() - .5) * 2.))
+            spin += p['rotate'] + (rng.random() * 2. - 1.) * p['rotate_v']
+            for j in range(count):
+                slots.append((t, spin + j * 360. / count + (rng.random() - .5) * p['rotate_v']))
+    elif p.get('planar'):
+        # Spruce and fir laterals: alternately left and right of their limb, in its plane (a spin of 90 degrees
+        # turns the limb's horizontal x axis into the tilt axis), so the limb ends in a flat spray.
+        spin = 90. + (rng.random() - .5) * 20.
+        for k in range(n):
+            t = a + (b - a) * (k + .5 + (rng.random() - .5) * .7) / n
+            spin += p['rotate'] + (rng.random() * 2. - 1.) * p['rotate_v']
+            slots.append((t, spin))
+    elif opposite:
         pairs = max(1, (n + 1) // 2)
         for k in range(pairs):
             t = a + (b - a) * (k + .5 + (rng.random() - .5) * .5) / pairs
@@ -532,14 +635,16 @@ def spawn(parent, n, a, b, level, p, P, rng, L0, prune, clearance):
     return out
 
 
-def leaf_cards(kind, twigs, rng, clearance):
+def leaf_cards(kind, twigs, rng, clearance, per_stem=None):
     """Leaf cards along the last level (paper: leaves_per_branch = Leaves * ShapeRatio(4, offset / length_parent)),
-    each kept with the kind's late-October retention."""
+    each kept with the kind's late-October retention; per_stem gives every stem that many cards instead (a
+    conifer's limbs)."""
     L = SPECIES[kind]['leaves']
+    needles = kind_of(kind) in CONIFERS
     cards = []
     for s in twigs:
         # Where the twig sits along its limb (0 at the limb base, 1 at its tip): outer twigs carry more cards.
-        n = round(L['cards'] * shape_ratio(4, s.t))
+        n = per_stem if per_stem is not None else round(L['cards'] * shape_ratio(4, s.t))
         phi = rng.random() * 360.
         for j in range(n):
             keep = rng.random() < L['retention']
@@ -556,15 +661,20 @@ def leaf_cards(kind, twigs, rng, clearance):
             base = add(point, mul(d, r * .8))
             if base[2] < clearance + 10.:
                 continue
-            cards.append({'base': base, 'dir': d, 'twist': twist, 'size': size, 'pick': pick})
+            card = {'base': base, 'dir': d, 'twist': twist, 'size': size, 'pick': pick}
+            if needles:
+                card['at_base'] = True        # a needle spray faces out of the crown where it joins its twig
+            cards.append(card)
     return cards
 
 
 # ------------------------------------------------------------------------------------------------ atlas cells
-# The leaf atlas: 8 x 4 cells of 256 px (2048 x 1024, row-major from the top left; 19 used, the rest left clear for
+# The leaf atlas: 8 x 4 cells of 256 px (2048 x 1024, row-major from the top left; 26 used, the rest left clear for
 # later kinds), each a twig with leaves seen face-on, base at the bottom centre. Colours are sRGB; 'stage' is how
 # far the cell's leaves have turned (green 0 .. fully turned 1): the inner and lower cards of a crown take the
-# greener cells more often, the outer and upper ones the turned cells.
+# greener cells more often, the outer and upper ones the turned cells. A needle cell's stage is its exposure
+# instead: the fresh sprays (1) take the outer cards and the old inner needles that yellow before they drop (0.3)
+# the sheltered ones, the reverse of a broadleaf.
 ATLAS = {'name': 'TreeLeaves', 'key': 'tree_leaves', 'size_px': (2048, 1024), 'cell_px': 256, 'seed': 2611,
          'pad_px': 10}
 BARK = {'name': 'TreeBark', 'key': 'tree_bark', 'size_px': (512, 1024), 'tile_m': (1.0, 2.0), 'seed': 2612}
@@ -577,6 +687,18 @@ GREEN = (98., 124., 46.)
 LIME = (166., 160., 48.)
 PALE = (228., 200., 92.)
 BROWN = (142., 98., 52.)
+# Needles: dark Austrian pine and Norway spruce, mid and light green, the glaucous blue-green of Colorado and white
+# spruce and Scots pine, an old inner needle yellowing before it drops, and the tamarack's late-October golds.
+NEEDLE_DARK = (38., 60., 36.)
+NEEDLE = (56., 82., 46.)
+NEEDLE_LIGHT = (86., 110., 58.)
+GLAUCOUS = (104., 132., 118.)
+GLAUCOUS_DARK = (70., 98., 88.)
+NEEDLE_OLD = (178., 146., 66.)
+LARCH_GOLD = (230., 180., 50.)
+LARCH_PALE = (240., 206., 98.)
+LARCH_AMBER = (206., 140., 42.)
+LARCH_LIME = (186., 174., 72.)
 CELLS = {
     # name: (leaf form, leaves, palette [(weight, colour, edge colour, edge amount)], sparse twig, stage)
     'nm_yellow': ('norway', 15, [(.6, YELLOW, ORANGE, .2), (.25, GOLD, BROWN, .25), (.15, LIME, YELLOW, .4)], False, .9),
@@ -600,15 +722,35 @@ CELLS = {
     'el_yellow': ('elm', 15, [(.6, YELLOW, GOLD, .25), (.25, PALE, YELLOW, .3), (.15, GOLD, BROWN, .3)], False, .85),
     'el_mixed': ('elm', 14, [(.4, LIME, YELLOW, .4), (.35, YELLOW, BROWN, .3), (.25, GREEN, LIME, .3)], False, .45),
     'el_sparse': ('elm', 4, [(.6, YELLOW, BROWN, .35), (.4, BROWN, BROWN, 0.)], True, 1.),
+    # Needle cells. The leaves column counts the laterals of a spray, the shoots of a pine tuft and the side shoots
+    # of a larch branchlet. The edge colour is the needle tip's.
+    'cf_spruce': ('spruce', 10, [(.45, NEEDLE, NEEDLE_LIGHT, .3), (.35, NEEDLE_DARK, NEEDLE, .25),
+                                (.2, NEEDLE_LIGHT, NEEDLE_LIGHT, 0.)], False, 1.),
+    'cf_blue': ('spruce', 10, [(.55, GLAUCOUS, (138., 160., 140.), .35), (.45, GLAUCOUS_DARK, GLAUCOUS, .3)], False,
+                1.),
+    'cf_pine': ('pine', 4, [(.5, NEEDLE_DARK, NEEDLE, .35), (.3, NEEDLE, NEEDLE_LIGHT, .3),
+                            (.2, GLAUCOUS_DARK, GLAUCOUS, .3)], False, 1.),
+    'cf_inner': ('spruce', 6, [(.5, NEEDLE_DARK, NEEDLE, .2), (.3, NEEDLE_OLD, BROWN, .3),
+                               (.2, NEEDLE, NEEDLE_OLD, .4)], True, .3),
+    'lx_gold': ('larch', 4, [(.55, LARCH_GOLD, LARCH_PALE, .3), (.3, LARCH_PALE, LARCH_GOLD, .2),
+                              (.15, LARCH_AMBER, LARCH_GOLD, .3)], False, 1.),
+    'lx_amber': ('larch', 4, [(.45, LARCH_AMBER, LARCH_GOLD, .3), (.35, LARCH_GOLD, LARCH_AMBER, .3),
+                               (.2, LARCH_LIME, LARCH_GOLD, .3)], False, .7),
+    'lx_sparse': ('larch', 1, [(.6, LARCH_GOLD, BROWN, .3), (.4, LARCH_AMBER, BROWN, .3)], True, 1.),
 }
 CELL_ORDER = list(CELLS)
 # Leaf forms: lobes (turn offset, length share, half-width share, teeth) drawn with plateau_textures.leaflet, and
-# the leaf length as a share of the cell.
+# the leaf length as a share of the cell. A form with a palm joins its lobes over a central blade: an ellipse
+# (centre along the midrib, half-width, half-length, as shares of the leaf length) merged with the lobes by a
+# smooth minimum of blend x the leaf length (_palmate).
 FORMS = {
     'norway': {'size': .26, 'lobes': [(-.24, .42, .27, 3), (.24, .42, .27, 3), (-.12, .8, .3, 3), (.12, .8, .3, 3),
                                      (0., .95, .3, 3)], 'petiole': .45, 'opposite': True},
+    # Silver maple: five deep, narrow lobes; the sinuses run two thirds of the way to the base, then the blade is
+    # whole (palmately lobed, not compound).
     'silver': {'size': .26, 'lobes': [(-.23, .45, .16, 6), (.23, .45, .16, 6), (-.11, .85, .18, 7), (.11, .85, .18, 7),
-                                     (0., 1., .17, 8)], 'petiole': .5, 'opposite': True},
+                                     (0., 1., .17, 8)], 'palm': (.1, .23, .17), 'blend': .05, 'acute': True,
+               'petiole': .5, 'opposite': True},
     'amur': {'size': .25, 'lobes': [(-.1, .52, .22, 6), (.1, .52, .22, 6), (0., 1., .22, 9)], 'petiole': .3,
              'opposite': True},
     'linden': {'size': .24, 'cordate': True, 'petiole': .35, 'opposite': False},
@@ -617,7 +759,17 @@ FORMS = {
     # Elm: a small ovate, doubly serrate blade with a lopsided base, alternate in two ranks along the twig (two
     # overlapping blades a hair apart in angle and width give the asymmetry).
     'elm': {'size': .24, 'lobes': [(-.012, 1., .27, 11), (.016, .93, .21, 11)], 'petiole': .18, 'opposite': False},
+    # Needle forms (_needle_cell), seen from above. needle: the needle length range as shares of the cell. A mature
+    # tree's 65-70 cm card is about 3.4 px a cm, so the needles are drawn a little long for it (spruce and larch 3
+    # to 4.5 cm, pine 13 to 19 cm) to hold up in the mips. A spruce spray: laterals alternately left and right,
+    # longest low down, every twig clothed in needles on both sides and over the top. A pine tuft: a leading shoot
+    # and up to three side shoots, each a brush of long needles leaning forward toward a brown bud. A larch
+    # branchlet: a long shoot and side shoots with a short shoot every 9 px, each a rosette of 22 to 36 soft needles.
+    'spruce': {'needles': 'spray', 'needle': (.04, .058)},
+    'pine': {'needles': 'tuft', 'needle': (.18, .25)},
+    'larch': {'needles': 'rosette', 'needle': (.042, .062)},
 }
+NEEDLE_FORMS = tuple(f for f, F in FORMS.items() if 'needles' in F)
 COLS, ROWS = ATLAS['size_px'][0] // ATLAS['cell_px'], ATLAS['size_px'][1] // ATLAS['cell_px']
 assert len(CELLS) <= COLS * ROWS
 
@@ -656,9 +808,92 @@ def _turn(dx, dy):
     return (math.atan2(dy, dx) / math.tau) % 1.
 
 
+def smin(a, b, k):
+    """Inigo Quilez's polynomial smooth minimum (https://iquilezles.org/articles/smin): min(a, b) with the crease
+    where the two meet rounded over a band of width k."""
+    h = min(1., max(0., .5 + .5 * (b - a) / k))
+    return b + (a - b) * h - k * h * (1. - h)
+
+
+def _palmate(cv, x, y, size, turn, colour, edge_colour, edge_amount, blotch, shade, z, F, u, rough=.6, lift=.25,
+             vein=(1.18, 1.12, 1.)):
+    """A palmately lobed blade from (x, y) toward `turn` (px): the form's lobes, each the plateau_textures.leaflet
+    profile with its saw teeth, joined over a central blade (an ellipse round the base) by smin, so each sinus ends
+    in a rounded crease. Signed distances in px, negative inside. The edge colour creeps in from the margin and
+    toward the lobe tips, and the midribs run lighter to the base, as leaflet paints them."""
+    W, H = cv.w, cv.h
+    R, G, B, HT, RO, CA, AL = cv.r, cv.g, cv.b, cv.height, cv.rough, cv.cavity, cv.alpha
+    lobes = []
+    acute = F.get('acute', False)      # lobes widest halfway, tapering straight to a point (t (1 - t))
+    for offset, scale, width, teeth in F['lobes']:
+        s_, c_ = PT.sin_cos(turn + offset + (u - .5) * .02)
+        L = size * scale
+        lobes.append((c_, s_, L, 1. / L, width * L * (3.3 if acute else 2.598), teeth))
+    along, half_w, half_l = F['palm']
+    s0, c0 = PT.sin_cos(turn)
+    pcx, pcy = c0 * size * along, s0 * size * along
+    rw, rl = size * half_w, size * half_l
+    r_min = min(rw, rl)
+    k = size * F['blend']
+    band = size * .08                  # the margin band the edge colour lives in
+    reach = size * max(lobe[1] for lobe in F['lobes']) + 2.
+    for py in range(max(0, math.floor(y - reach)), min(H, math.floor(y + reach) + 2)):
+        qy = py + .5 - y
+        row = py * W
+        for px in range(max(0, math.floor(x - reach)), min(W, math.floor(x + reach) + 2)):
+            qx = px + .5 - x
+            ex, ey = qx - pcx, qy - pcy
+            pa, pb = (ex * c0 + ey * s0) / rl, (ey * c0 - ex * s0) / rw
+            d = (math.sqrt(pa * pa + pb * pb) - 1.) * r_min
+            best, tip, mid = d, 0., 0.
+            for dx, dy, L, inv_l, kw, teeth in lobes:
+                tl = qx * dx + qy * dy
+                s = qy * dx - qx * dy
+                s = s if s >= 0. else -s
+                t = tl * inv_l
+                if t <= 0.:
+                    dl = math.sqrt(tl * tl + s * s)
+                elif t >= 1.:
+                    dl = math.sqrt((tl - L) * (tl - L) + s * s)
+                else:
+                    w = kw * t * ((1. - t) if acute else math.sqrt(1. - t))
+                    if teeth and t > .2:
+                        saw = t * teeth
+                        w *= 1. - .1 * (saw - math.floor(saw))
+                    dl = s - w
+                    m = 1. - PT.smooth(0., 1.3, s)
+                    if m > mid:
+                        mid = m
+                if dl < best:
+                    best, tip = dl, min(1., max(0., t))
+                d = smin(d, dl, k)
+            if d >= .5:
+                continue
+            a = 1. if d <= -.5 else .5 - d
+            i = row + px
+            rel = 1. - min(1., -d / band) if d < 0. else 1.
+            e = edge_amount * PT.smooth(.45, 1., max(rel, tip * tip))
+            kk = shade * (1. + .28 * (blotch[i] - .5))
+            vr, vg, vb = 1. + (vein[0] - 1.) * mid, 1. + (vein[1] - 1.) * mid, 1. + (vein[2] - 1.) * mid
+            cr = (colour[0] + (edge_colour[0] - colour[0]) * e) * kk * vr
+            cg = (colour[1] + (edge_colour[1] - colour[1]) * e) * kk * vg
+            cb = (colour[2] + (edge_colour[2] - colour[2]) * e) * kk * vb
+            hgt = z + lift * (1. - rel * rel) - .05 * mid
+            R[i] += (cr - R[i]) * a
+            G[i] += (cg - G[i]) * a
+            B[i] += (cb - B[i]) * a
+            HT[i] += (hgt - HT[i]) * a
+            RO[i] += (rough - RO[i]) * a
+            CA[i] -= CA[i] * a
+            if AL is not None and a > AL[i]:
+                AL[i] = a
+
+
 def _leaf(cv, form, x, y, size, turn, colour, edge, amount, blotch, shade, z, u):
     F = FORMS[form]
-    if 'lobes' in F:
+    if 'palm' in F:
+        _palmate(cv, x, y, size, turn, colour, edge, amount, blotch, shade, z, F, u)
+    elif 'lobes' in F:
         for offset, scale, width, teeth in F['lobes']:
             PT.leaflet(cv, x, y, turn + offset + (u - .5) * .02, size * scale, size * scale * width, z, colour, edge,
                        amount, blotch, teeth, .6, shade)
@@ -703,6 +938,208 @@ def _leaf(cv, form, x, y, size, turn, colour, edge, amount, blotch, shade, z, u)
 CELL_MARGIN = 64        # each cell is painted on its own canvas this much larger on every side, then cropped
 
 
+def _strand(cv, pts, r0, r1, colour, tip, tip_amount, z, blotch, shade, rough=.62, gloss=.16, lift=.12):
+    """A tapered stroke along the polyline pts (px), radius r0 to r1: a needle or a twig, painted over what is below
+    in short capsules, anti-aliased. Its colour turns toward tip along its length (by tip_amount at the end), and
+    its middle line is lighter and raised (a glossy needle)."""
+    W, H = cv.w, cv.h
+    R, G, B, HT, RO, CA, AL = cv.r, cv.g, cv.b, cv.height, cv.rough, cv.cavity, cv.alpha
+    seg = [math.dist(p, q) for p, q in zip(pts, pts[1:])]
+    total = sum(seg) or 1.
+    nodes, fr, acc = [pts[0]], [0.], 0.
+    for (p, q), L in zip(zip(pts, pts[1:]), seg):
+        n = max(1, math.ceil(L / 4.))
+        for j in range(1, n + 1):
+            nodes.append((p[0] + (q[0] - p[0]) * j / n, p[1] + (q[1] - p[1]) * j / n))
+            fr.append((acc + L * j / n) / total)
+        acc += L
+    for (ax, ay), (bx, by), fa, fb in zip(nodes, nodes[1:], fr, fr[1:]):
+        ra, rb = r0 + (r1 - r0) * fa, r0 + (r1 - r0) * fb
+        ex, ey = bx - ax, by - ay
+        ll = ex * ex + ey * ey
+        rm = max(ra, rb) + 1.
+        for py in range(max(0, math.floor(min(ay, by) - rm)), min(H, math.floor(max(ay, by) + rm) + 1)):
+            qy = py + .5 - ay
+            row = py * W
+            for px in range(max(0, math.floor(min(ax, bx) - rm)), min(W, math.floor(max(ax, bx) + rm) + 1)):
+                qx = px + .5 - ax
+                h = (qx * ex + qy * ey) / ll if ll > 1e-12 else 0.
+                h = 0. if h < 0. else 1. if h > 1. else h
+                dx, dy = qx - ex * h, qy - ey * h
+                dist = math.sqrt(dx * dx + dy * dy)
+                r = ra + (rb - ra) * h
+                sd = r - dist
+                if sd <= -.5:
+                    continue
+                a = 1. if sd >= .5 else sd + .5
+                i = row + px
+                f = fa + (fb - fa) * h
+                e = tip_amount * f * f
+                c = 1. - dist / r if dist < r else 0.
+                kk = shade * (1. + .28 * (blotch[i] - .5)) * (1. + gloss * c)
+                cr = (colour[0] + (tip[0] - colour[0]) * e) * kk
+                cg = (colour[1] + (tip[1] - colour[1]) * e) * kk
+                cb = (colour[2] + (tip[2] - colour[2]) * e) * kk
+                hgt = z + lift * c
+                R[i] += (cr - R[i]) * a
+                G[i] += (cg - G[i]) * a
+                B[i] += (cb - B[i]) * a
+                HT[i] += (hgt - HT[i]) * a
+                RO[i] += (rough - RO[i]) * a
+                CA[i] -= CA[i] * a
+                if AL is not None and a > AL[i]:
+                    AL[i] = a
+
+
+def _needle_cell(cv, F, count, palette, sparse, rng, blotch):
+    """A needle cluster on a cell canvas, seen from above, base at the bottom centre (the FORMS notes): a spruce or
+    fir spray, a pine tuft or a larch twig of short-shoot rosettes. Needles that would leave the cell are
+    shortened, then dropped."""
+    S, pad = ATLAS['cell_px'], ATLAS['pad_px']
+    lo, hi = CELL_MARGIN + pad + 4, CELL_MARGIN + S - pad - 4
+    bx, by = CELL_MARGIN + S * .5, CELL_MARGIN + S - pad - 2
+    nl0, nl1 = F['needle']
+    form = F['needles']
+    state = {'z': .2}
+
+    def inside(x, y):
+        return lo <= x <= hi and lo <= y <= hi
+
+    def polyline(x, y, turn, length, bend=0., steps=6):
+        """Points from (x, y) toward turn, curving by bend turns over the length."""
+        pts = [(x, y)]
+        for k in range(steps):
+            s, c = PT.sin_cos(turn + bend * (k + .5) / steps)
+            x, y = x + c * length / steps, y + s * length / steps
+            pts.append((x, y))
+        return pts
+
+    def needle(x, y, turn, length, r0=.8, r1=.28, bend=0.):
+        _, colour, tip, amount = _pick(palette, rng.random())
+        tone = .86 + .28 * rng.random()
+        colour = tuple(min(255., v * tone) for v in colour)
+        for _ in range(6):
+            pts = polyline(x, y, turn, length, bend, 2 if length < 16. else 5)
+            if all(inside(*p) for p in pts):
+                _strand(cv, pts, r0, r1, colour, tip, amount, state['z'], blotch, .92 + .08 * rng.random())
+                state['z'] += .0003
+                return
+            length *= .8
+            if length < 4.:
+                return
+
+    def twig(pts, r0, r1, colour):
+        _strand(cv, pts, r0, r1, colour, colour, 0., .1, blotch, 1., rough=.8, gloss=.1, lift=.3)
+
+    def along(pts):
+        """(x, y, heading turn, fraction) every 1.7 px along a polyline."""
+        out, total = [], sum(math.dist(p, q) for p, q in zip(pts, pts[1:]))
+        acc = 0.
+        for p, q in zip(pts, pts[1:]):
+            L = math.dist(p, q)
+            heading = _turn(q[0] - p[0], q[1] - p[1])
+            n = max(1, round(L / 1.7))
+            for j in range(n):
+                f = (acc + L * j / n) / total
+                out.append((p[0] + (q[0] - p[0]) * j / n, p[1] + (q[1] - p[1]) * j / n, heading, f))
+            acc += L
+        return out
+
+    up = .75 + (rng.random() - .5) * .04          # the main axis heads up the cell (y down), a little askew
+    if form == 'spray':
+        main = polyline(bx, by, up, by - lo - 8., (rng.random() - .5) * .05, 12)
+        axes = [(main, 1.)]
+        for k in range(count):
+            f = .12 + .74 * (k + .3 + .4 * rng.random()) / count
+            px, py = main[min(12, round(f * 12))]
+            side = -1. if k % 2 else 1.
+            heading = up + side * (.13 + .04 * rng.random())
+            L = S * (.46 - .3 * f) * (.85 + .3 * rng.random())
+            lateral = polyline(px, py, heading, L, -side * .03, 6)
+            while not all(inside(*p) for p in lateral) and L > 12.:
+                L *= .85
+                lateral = polyline(px, py, heading, L, -side * .03, 6)
+            axes.append((lateral, .75))
+            if not sparse and L > S * .18:
+                for g in (.35, .6, .85):
+                    qx, qy = lateral[round(g * 6)]
+                    sub = polyline(qx, qy, heading + side * .12, L * .38 * (1.1 - .4 * g), 0., 3)
+                    if all(inside(*p) for p in sub):
+                        axes.append((sub, .55))
+        for pts, w in axes:
+            twig(pts, 2.2 * w, .9 * w, (118., 84., 54.))
+        for pts, w in axes:
+            for k, (x, y, heading, f) in enumerate(along(pts)):
+                length = S * (nl0 + (nl1 - nl0) * rng.random()) * (1. - .3 * f) * (.8 + .2 * w)
+                for side in (-1., 1.):
+                    if sparse and rng.random() < .35:
+                        continue
+                    needle(x, y, heading + side * (.1 + .08 * rng.random()), length * (.85 + .3 * rng.random()))
+                if k % 2 == 0:
+                    needle(x, y, heading + (rng.random() - .5) * .08, length * .8)
+    elif form == 'tuft':
+        # A pine shoot cluster: a leading shoot and count - 1 side shoots fanning from low on it, each a dense
+        # brush of long paired needles that spread wide at its base and lean forward toward the tip, and a bud.
+        L0 = S * .4
+        main = polyline(bx, by, up, L0, (rng.random() - .5) * .04, 8)
+        shoots = [main]
+        for k in range(count - 1):
+            side = -1. if k % 2 else 1.
+            px, py = main[2]
+            shoots.append(polyline(px, py, up + side * (.075 + .03 * rng.random()), L0 * (.68 + .1 * rng.random()),
+                                   -side * .025, 6))
+        for pts in shoots:
+            twig(pts, 2.6, 1.6, (112., 86., 60.))
+        for pts in shoots:
+            for x, y, heading, f in along(pts):
+                if f < .12:
+                    continue
+                for side in (-1., 1.):
+                    if sparse and rng.random() < .35:
+                        continue
+                    spread = (.03 + .17 * rng.random()) * (1.25 - .7 * f)
+                    length = S * (nl0 + (nl1 - nl0) * rng.random()) * (.8 + .2 * f)
+                    needle(x, y, heading + side * spread, length, .95, .3, side * (rng.random() - .3) * .03)
+        for pts in shoots:
+            ex, ey = pts[-1]
+            PT.disc(cv, ex, ey, 3.2, (138., 92., 54.), state['z'] + .3, .7)
+    else:
+        # A larch branchlet: a long shoot and count side shoots (pendulous, seen from above), with a short shoot
+        # every 10 px or so, alternately left and right, each a rosette of soft needles all round; on a sparse
+        # card many short shoots are already bare.
+        main = polyline(bx, by, up, by - lo - 12., (rng.random() - .5) * .06, 12)
+        twigs = [main]
+        for k in range(count):
+            side = -1. if k % 2 else 1.
+            f = .22 + .5 * (k + .5) / max(1, count)
+            fork = main[round(f * 12)]
+            L = S * (.34 + .1 * rng.random()) * (1. - .45 * f)
+            twigs.append(polyline(fork[0], fork[1], up + side * (.11 + .05 * rng.random()), L, -side * .03, 8))
+        for k, pts in enumerate(twigs):
+            twig(pts, 1.9 if k == 0 else 1.3, .7, (104., 82., 66.))
+        for pts in twigs:
+            total = sum(math.dist(a, b) for a, b in zip(pts, pts[1:]))
+            spurs = max(2, round(total / 9.))
+            n = len(pts) - 1
+            heading = _turn(pts[-1][0] - pts[0][0], pts[-1][1] - pts[0][1])
+            for k in range(spurs):
+                f = .08 + .86 * (k + .5) / spurs
+                x, y = pts[min(n, round(f * n))]
+                side = -1. if k % 2 else 1.
+                s_, c_ = PT.sin_cos(heading + side * .17)
+                sx, sy = x + c_ * 3., y + s_ * 3.
+                PT.disc(cv, sx, sy, 1.6, (96., 74., 58.), state['z'] + .2, .8)
+                if sparse and rng.random() < .4:
+                    continue                # a bare short shoot: its needles are down
+                for j in range(22 + int(rng.random() * 15) - (10 if sparse else 0)):
+                    turn = heading + side * .17 + (rng.random() - .5) * .9
+                    needle(sx, sy, turn, S * (nl0 + (nl1 - nl0) * rng.random()), .7, .25)
+            # Single needles round the growing tip of the long shoot.
+            for x, y, h, f in along(pts):
+                if f > .88:
+                    for side in (-1., 1.):
+                        needle(x, y, h + side * (.09 + .06 * rng.random()), S * nl0 * .9, .6, .22)
+
 def paint_cell(cv, index, blotch):
     """One cluster on a cell canvas: a twig from the bottom centre with leaves (opposite pairs or alternate)."""
     name = CELL_ORDER[index]
@@ -713,6 +1150,8 @@ def paint_cell(cv, index, blotch):
     x1 = y1 = CELL_MARGIN + S
     pad = ATLAS['pad_px']
     rng = random.Random(ATLAS['seed'] * 100 + index)
+    if 'needles' in F:
+        return _needle_cell(cv, F, count, palette, sparse, rng, blotch)
     twig_colour = (92., 70., 52.)
     bx, by = x0 + S * .5, y1 - pad - 2
     top_x = x0 + S * (.5 + (rng.random() - .5) * .16)
@@ -1036,7 +1475,7 @@ def card_points(card, centre, radii):
     if length(n0) < 1e-3:
         n0 = cross(d, (1., 0., 0.))
     n0 = rotate(norm(n0), d, math.radians(card['twist']))
-    radial = ellipsoid_normal(add(b, mul(d, size * .5)), centre, radii)
+    radial = ellipsoid_normal(b if card.get('at_base') else add(b, mul(d, size * .5)), centre, radii)
     if dot(n0, radial) < 0.:
         n0 = mul(n0, -1.)
     w = norm(cross(d, n0))
@@ -1125,9 +1564,31 @@ def _fmt(x, digits):
     return '0.' + '0' * digits if s.lstrip('-').strip('0.') == '' else s
 
 
+def mtl_name(model):
+    return f'Tree_{model}.mtl'
+
+
+def write_mtl(path, model):
+    """The model's material library: one newmtl per usemtl of its OBJ (bark, then leaves) with a plain diffuse
+    colour, the bark tint and the main colour of the kind's commonest leaf cell. It only names the slots: the apply
+    step imports without materials and sets the bark and leaves materials by slot name."""
+    P = SPECIES[model]
+    bark = P['bark']['colour']
+    cell = max(P['leaves']['cells'].items(), key=lambda kv: kv[1])[0]
+    leaf = CELLS[cell][2][0][1]
+    colours = {'bark': [int(bark[i:i + 2], 16) for i in (1, 3, 5)], 'leaves': leaf}
+    lines = [f'# {GENERATOR}: material slots of Tree_{model}.obj']
+    for slot in ('bark', 'leaves'):
+        lines += [f'newmtl {model}_{slot}', 'Kd ' + ' '.join(_fmt(c / 255., 4) for c in colours[slot])]
+    data = ('\n'.join(lines) + '\n').encode()
+    path.write_bytes(data)
+    return hashlib.sha256(data).hexdigest()
+
+
 def write_obj(path, kind, mesh):
-    """Triangles per material group; v, vt and vn deduplicated by their printed form, so the file is stable."""
-    lines = [f'# {GENERATOR}: {SPECIES[kind]["name"]}', f'o SM_Tree_{kind}']
+    """Triangles per material group; v, vt and vn deduplicated by their printed form, so the file is stable. The
+    mtllib line names the model's material library (write_mtl), written next to it."""
+    lines = [f'# {GENERATOR}: {SPECIES[kind]["name"]}', f'mtllib {mtl_name(kind)}', f'o SM_Tree_{kind}']
     vmap, vtmap, vnmap = {}, {}, {}
     vl, vtl, vnl = [], [], []
 
@@ -1181,13 +1642,14 @@ def model_entry(out_dir, model):
     mesh, stems, stats = build_kind(model)
     file_name = f'Tree_{model}.obj'
     digest, counts, verts = write_obj(out_dir / file_name, model, mesh)
+    mtl_digest = write_mtl(out_dir / mtl_name(model), model)
     height = max(v[2] for v in verts)
     xs, ys = [v[0] for v in verts], [v[1] for v in verts]
     bounds = [round(min(xs), 1), round(-max(ys), 1), round(min(v[2] for v in verts), 1), round(max(xs), 1),
               round(-min(ys), 1), round(height, 1)]
     tris = {'bark': counts['bark'], 'leaves': counts['leaves'], 'total': counts['bark'] + counts['leaves']}
     return {
-        'name': P['name'], 'obj': file_name, 'sha256': digest,
+        'name': P['name'], 'obj': file_name, 'sha256': digest, 'mtl': mtl_name(model), 'mtl_sha256': mtl_digest,
         'materials': {'bark': bark_key(kind), 'leaves': LEAF_KEY},
         'slots': {'bark': f'{model}_bark', 'leaves': f'{model}_leaves'},
         'height_cm': round(height, 1), 'trunk_cm': round(trunk_dbh(stems, P), 1),
@@ -1238,6 +1700,12 @@ def build(out_dir, textures=True):
             'leaves': 'alpha-masked leaf cluster cards from an atlas (SpeedTree-style leaf cards), normals bent to '
                       'the crown ellipsoid (SpeedTree leaf puffiness) and clamped from pointing down',
             'textures': 'Scripts/plateau_textures.py primitives: signed-distance serrated leaflets, Worley bark plates',
+            'conifers': 'Weber & Penn shape 0 (conical) on one leader; limbs in whorls after the Branch Rings option '
+                        'of Blender\'s Sapling add-on (add_curve_sapling/utils.py); planar spruce laterals; '
+                        'needle-cluster cards on twigs and outer limbs; Wesslen and Seipel, "The Virtual Forest", '
+                        'SIGRAD 2004 (Weber & Penn for spruce and pine, health = leaf_retention)',
+            'palmate': 'silver maple lobes joined over a central blade with Inigo Quilez\'s polynomial smooth minimum '
+                       '(iquilezles.org/articles/smin)',
         },
         'aliases': ALIASES,
         'materials': materials,
@@ -1483,8 +1951,9 @@ def render_sheet(out_dir, manifest, sheet_path, samples=40):  # pragma: no cover
                 f'{k["triangles"]["total"]:,} tris')
         tiles.append((text, [(kind, (0, 0, 0), 0.)], k['height_cm'] / 100))
     young = [m for m in entries if m.endswith(YOUNG)]
-    tiles.append((f'young street trees ({len(young)})\n{entries[young[0]]["height_cm"] / 100:.0f} m, crowns over 2.1 m',
-                  [(m, (-1.1 * (len(young) - 1) + 2.2 * i, 2.5 * (i % 2), 0), 25. * i) for i, m in enumerate(young)],
+    tiles.append((f'young trees ({len(young)}), {entries[young[0]]["height_cm"] / 100:.0f} m\n'
+                  'street crowns over 2.1 m, lawn conifers low',
+                  [(m, (-.95 * (len(young) - 1) + 1.9 * i, 2.5 * (i % 2), 0), 25. * i) for i, m in enumerate(young)],
                   'young'))
     row = [('elm', -10.), ('linden', -2.), ('ash_young', 3.), ('norway_maple', 9.)]
     tiles.append(('street row\n3 m clearance line, 1.75 m figure', [(k, (x, 0, 0), 30. * i) for i, (k, x) in
@@ -1520,7 +1989,7 @@ def render_sheet(out_dir, manifest, sheet_path, samples=40):  # pragma: no cover
             coll.objects.link(bpy.data.objects.new('clearance', bar))
             aim((-1., 0, 7.), 52., -90., 5.)
         elif view == 'young':
-            aim((0, 1.2, 2.6), 27., -90., 6.)
+            aim((0, 1.2, 2.6), 31., -90., 6.)
         elif view == 'atlas':
             plane = bpy.data.meshes.new('atlas')
             plane.from_pydata([(-3.6, 0, 3.), (3.6, 0, 3.), (3.6, 0, 6.6), (-3.6, 0, 6.6)], [], [(0, 1, 2, 3)])

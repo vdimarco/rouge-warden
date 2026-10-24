@@ -86,7 +86,7 @@ A phone-sized client watching NordHost alone over a direct connection SHALL rece
 - **WHEN** one sampler watches each slot at the same time, or a sampler forces the TURN relay
 - **THEN** `review.html` and `verdict.json` show these results in a section labelled "report-only", and they do not change the gate result
 - **AND** one `gauntlet_loop.py stream --two-viewers` command starts one sampler per slot and records the two-viewer row
-- **AND** `stream` refuses `--slot NordFriend1`, because a NordFriend1 row alone wakes NordFriend1, and refuses a second `stream` command on a run that already has a `stream/` folder, which `test_gauntlet_loop.py` checks
+- **AND** `stream` offers only `--slot NordHost` and refuses `--slot NordFriend1`, because a NordFriend1 row alone wakes NordFriend1, and refuses a second `stream` command on a run that already has a `stream/` folder, which `test_gauntlet_loop.py` checks
 
 ### Requirement: Delay reported apart from frame rate
 Each stream run SHALL report delay (round-trip time, jitter, jitter buffer delay and target, decode, processing and end-to-end delay) in its own section, apart from frame-rate results. The delay section SHALL NOT be gated. The only delay figure with a limit SHALL be the mean jitter buffer delay per frame, which the stream gate also checks as stream health.

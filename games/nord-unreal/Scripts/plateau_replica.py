@@ -30,6 +30,7 @@ import json
 import math
 from pathlib import Path
 import sys
+import unicodedata
 import xml.etree.ElementTree as ET
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -93,7 +94,9 @@ VERGE_BACK = 40.          # an extension on a side with no sidewalk reaches this
 CORNER_BACK = 30.         # one on a corner arc overlaps the corner sidewalk by this much
 # Ruelles are paved from fence to fence (or wall to wall where nearer), in pieces of 20 m or less.
 ALLEY_PAVE = 290.         # plateau_plex.FENCE_FROM_ALLEY: the yard fences stand this far from the centreline
-WALL_PAVE = 600.          # past it, with no yard or fence between, the paving runs out to a wall this near
+WALL_PAVE = 1500.         # past it, with nothing on the ground between, the paving runs out to the first Plex lot
+                          # line, fence, shed or wall this near (lanes are paved lot line to lot line)
+WALL_SNAP = 30.           # a first stop this near the fence line is the fence line
 PAVE_PIECE = 2000.
 PAVE_STEP = 100.          # the wall-to-wall reach is sampled every metre
 TEXTURES_PATH = '/Game/Plateau/Replica/Textures/T_Replica_'   # a manifest texture naming a replica set picks it
@@ -133,10 +136,11 @@ STREETS_MATERIALS = {
 SOUL_MATERIALS = {
     'patch_dark': ('Soul_patch_dark', '#2c2d31', .9, 0., 'none', None),
     'patch_light': ('Soul_patch_light', '#5e5f62', .95, 0., 'none', None),
-    # Sealed cracks: dull, near-black bitumen. At roughness .35 the sky's highlight turned them into white paint
-    # strokes at a grazing view (the corner capture's "white hook"); .62 keeps them a dark, dull line.
-    'crack_seal': ('Soul_crack_seal', '#0f1011', .62, 0., 'none', None),
-    'pothole': ('Soul_pothole', '#1f1d1b', .3, 0., 'none', None),
+    # Sealed cracks: dull, near-black bitumen. At roughness .35, then .62, the sky's highlight still turned them into
+    # white paint strokes at a grazing view (the corner capture's "white hook"); at .88 they are as rough as the
+    # asphalt round them, so only their colour shows. The pothole's broken base is as dull (it was .3, a wet glare).
+    'crack_seal': ('Soul_crack_seal', '#0f1011', .88, 0., 'none', None),
+    'pothole': ('Soul_pothole', '#1f1d1b', .88, 0., 'none', None),
     'leaf_gold': ('Soul_leaf_gold', '#c9932c', .9, 0., 'none', None),
     'leaf_rust': ('Soul_leaf_rust', '#9a4422', .9, 0., 'none', None),
     'leaf_brown': ('Soul_leaf_brown', '#6b4a2b', .9, 0., 'none', None),
@@ -1291,7 +1295,8 @@ def build_streets(world):
         'yard_slabs_past_ruelle_mouths', 'sidewalk_risers', 'corner_risers',
         'yard_risers', 'yard_mouth_wedges', 'yard_mouth_wedge_square_metres', 'sidewalk_pieces_split',
         'passages', 'passage_square_metres', 'passage_lead_ins', 'pit_guard_cards', 'pit_flower_cards',
-        'curb_extension_back_walls', 'apron_walls', 'tree_pits_slid', 'ruelle_gutter_metres')}
+        'curb_extension_back_walls', 'apron_walls', 'tree_pits_slid', 'ruelle_gutter_metres', 'trees_reseated',
+        'trees_reseated_pit', 'trees_reseated_parterre', 'trees_reseated_median')}
     # Carriageway asphalt.
     for s in world.segs:
         if s['excluded']:
@@ -2464,14 +2469,15 @@ class PaveStops:
     lane and side fences, sheds and the ground on lots with no yard), the sidewalks and the carriageways."""
 
     def __init__(self, world, plex, alleys=False, yards=False):
-        self.segs, self.grid = [], Grid(1000.)
+        self.segs, self.kinds, self.grid = [], [], Grid(1000.)
 
-        def line(points, closed=False):
+        def line(points, closed=False, kind='plex'):
             points = [tuple(q[:2]) for q in points]
             for a, b in zip(points, points[1:] + (points[:1] if closed else [])):
                 if math.dist(a, b) > .5:
                     self.grid.add(len(self.segs), bbox([a, b]))
                     self.segs.append((a, b))
+                    self.kinds.append(kind)
         self.grounds, self.ground_grid = [], Grid(1000.)
 
         def ground(poly):
@@ -2492,21 +2498,26 @@ class PaveStops:
                 ground(cell[1:])
             if lot['shed_poly']:
                 ground(lot['shed_poly'])
-        # ...and a sample on a sidewalk or a carriageway (a ruelle's mouth) keeps the fence-line reach, so the
-        # paving never runs along a sidewalk band
+        for fp, _, _ in (plex.footprints if plex else []):
+            ground(fp)
+        # ...and a sample on a sidewalk or a carriageway (a ruelle's mouth) or in a park keeps the fence-line reach,
+        # so the paving never runs along a sidewalk band or onto a park lawn
         self.zones, self.zone_grid = [], Grid(1000.)
 
         def zone(poly):
-            line(poly, True)
+            line(poly, True, 'zone')
             self.zone_grid.add(len(self.zones), bbox(poly))
             self.zones.append(poly)
         for strip in world.sidewalk_strips:
             zone([strip['curb'][0], strip['curb'][1], strip['outer'][1], strip['outer'][0]])
+        for w in world.ways:
+            if w['tags'].get('leisure') == 'park' and len(w['refs']) > 3 and w['refs'][0] == w['refs'][-1]:
+                zone([world.nodes[r] for r in w['refs'][:-1] if r in world.nodes])
         for poly, _, kind in world.surfaces.items:
             if kind == 'road':
                 zone(list(poly))
             elif kind == 'alley' and alleys or kind == 'yard' and yards:
-                line(poly, True)
+                line(poly, True, kind)
 
     def inside(self, p):
         return any(point_in(p, self.zones[i]) for i in self.zone_grid.query((p[0], p[1], p[0], p[1])))
@@ -2516,21 +2527,28 @@ class PaveStops:
         return any(point_in(p, self.grounds[i]) for i in self.ground_grid.query((p[0], p[1], p[0], p[1])))
 
     def ray(self, origin, direction, limit):
+        return self.first(origin, direction, limit)[0]
+
+    def first(self, origin, direction, limit):
+        """(distance, kind) of the first line a ray meets within limit: kind 'plex' (a Plex yard, fence, shed,
+        ground or rear building), 'zone' (a sidewalk, carriageway or park edge) or a surface kind; (None, None)."""
         end = add(origin, direction, limit)
-        best = None
+        best = (None, None)
         for i in self.grid.query(bbox([origin, end])):
             t = ray_seg(origin, direction, *self.segs[i])
-            if t is not None and t <= limit and (best is None or t < best):
-                best = t
+            if t is not None and t <= limit and (best[0] is None or (t, self.kinds[i]) < best):
+                best = (t, self.kinds[i])
         return best
 
 
 def _alley_profile(world, pa, pb, stops=None):
     """Paving reach either side of a ruelle segment, sampled every metre: the yard fence line (ALLEY_PAVE) or the
-    nearest wall, never inside the 430 cm lane strip; past the fence line, out to a wall within WALL_PAVE where no
-    Plex yard, fence, shed or ground, sidewalk or carriageway lies before it (a building's side or rear wall on the
-    lane, a garage). Where the reach jumps between two samples (a wall begins or ends), two more samples bracket
-    the jump to 1 cm. Returns the sample distances and reaches {1: left, -1: right} (left of pa->pb)."""
+    nearest wall, never inside the 430 cm lane strip; past the fence line, where the ground lies bare, out to the
+    first thing within WALL_PAVE that covers or bounds it: a Plex yard, fence, shed, ground or rear building, a
+    building's wall (a side or rear wall on the lane, a garage), a sidewalk, carriageway or park. So a lot set back
+    from the lane (a car park, the open ground beside a block) is paved to its lot line, not left bare. Where the
+    reach jumps between two samples (a wall begins or ends), two more samples bracket the jump to 1 cm. Returns the
+    sample distances and reaches {1: left, -1: right} (left of pa->pb)."""
     u, length = unit(pa, pb)
     n = (-u[1], u[0])
 
@@ -2544,9 +2562,14 @@ def _alley_profile(world, pa, pb, stops=None):
             hit = world.building_ray(c, d, WALL_PAVE)
             if hit is not None and hit <= ALLEY_PAVE:
                 out.append(max(ALLEY_HALF, hit))
-            elif hit is not None and stops is not None and not stops.inside(c):
-                stop = stops.ray(c, d, WALL_PAVE)
-                out.append(hit if stop is None or stop > hit else ALLEY_PAVE)
+            elif stops is not None and not stops.inside(c):
+                stop, kind = stops.first(c, d, WALL_PAVE)
+                if hit is not None and (stop is None or hit <= stop):
+                    out.append(hit)                             # a wall first: paved to its foot
+                elif kind == 'plex' and stop > ALLEY_PAVE + WALL_SNAP:
+                    out.append(stop)                            # a lot set back from the lane: to its line
+                else:
+                    out.append(ALLEY_PAVE)                      # the fence line (a street's front yards past it)
             else:
                 out.append(ALLEY_PAVE)
         return False, out[0], out[1]
@@ -2578,7 +2601,9 @@ def _alley_profile(world, pa, pb, stops=None):
 
 
 GUTTER_HALF = 18.          # the ruelle's centre gutter: 36 cm of aged concrete...
-GUTTER_DEPTH = 1.5         # ...sunk in a shallow V below the asphalt either side
+GUTTER_DEPTH = .5          # ...sunk in a shallow V below the asphalt either side. The old OSM road (BaseGeometry
+                           # Road.obj, z 6.0) stays in the map under the ruelles, so the V's bottom (6.3) and the
+                           # leaves in it keep 3 mm over it; the texture, not the depth, makes the gutter dark.
 
 
 def gutter_z(lateral):
@@ -2587,8 +2612,8 @@ def gutter_z(lateral):
 
 
 def _gutter(L, pa, u, n, t0, t1):
-    """One piece of the ruelle's centre gutter from t0 to t1 cm along pa + u t: two faces sloping 1.5 cm down to the
-    centre line, on the aged lane concrete with their own UVs (u metres along the ruelle, v metres across it with the
+    """One piece of the ruelle's centre gutter from t0 to t1 cm along pa + u t: two faces sloping GUTTER_DEPTH down to
+    the centre line, on the aged lane concrete with their own UVs (u metres along the ruelle, v metres across it with the
     centre line at v = 0.5, where the texture's damp channel runs)."""
     for lo, hi in ((-GUTTER_HALF, 0.), (0., GUTTER_HALF)):
         pts, uv = [], []
@@ -2812,8 +2837,9 @@ PIT_CLEAR_OF = {('highway', 'street_lamp'): 60., ('emergency', 'fire_hydrant'): 
                 ('amenity', 'post_box'): 60., ('amenity', 'waste_basket'): 50., ('amenity', 'recycling'): 60.,
                 ('amenity', 'bicycle_rental'): 450., ('highway', 'stop'): 40.}
 # Species to the Trees manifest kinds. A species row (a prefix of the Latin name) wins over its genus; an unknown
-# species or genus, and the conifers (no conifer kind yet), take a kind by crown size from the trunk (DHP).
-TREE_KINDS = ('norway_maple', 'silver_maple', 'honey_locust', 'linden', 'ash', 'small', 'elm')
+# species or genus takes a kind by crown size from the trunk (DHP). Spruces, pines, firs, cedars, hemlocks and yews
+# take the conical conifer; larches take the same form with gold needles.
+TREE_KINDS = ('norway_maple', 'silver_maple', 'honey_locust', 'linden', 'ash', 'small', 'elm', 'conifer', 'larch')
 TREE_SPECIES = (('acer saccharinum', 'silver_maple'), ('acer x freemanii', 'silver_maple'), ('acer ginnala', 'small'),
                 ('acer tataricum', 'small'), ('acer palmatum', 'small'), ('acer spicatum', 'small'),
                 ('acer campestre', 'small'), ('acer miyabei', 'small'), ('acer negundo', 'small'))
@@ -2827,9 +2853,23 @@ TREE_GENERA = {'Acer': 'norway_maple', 'Platanus': 'norway_maple', 'Populus': 's
                'Malus': 'small', 'Prunus': 'small', 'Pyrus': 'small', 'Amelanchier': 'small', 'Syringa': 'small',
                'Crataegus': 'small', 'Cercis': 'small', 'Cornus': 'small', 'Magnolia': 'small', 'Sorbus': 'small',
                'Morus': 'small', 'Cercidiphyllum': 'small', 'Rhamnus': 'small', 'Maackia': 'small',
-               'Cladrastis': 'small'}
-CONIFERS = ('Pinus', 'Picea', 'Larix', 'Thuja', 'Taxus', 'Tsuga', 'Abies', 'Juniperus', 'Pseudotsuga',
-            'Metasequoia', 'Taxodium', 'Chamaecyparis')
+               'Cladrastis': 'small',
+               'Picea': 'conifer', 'Pinus': 'conifer', 'Abies': 'conifer', 'Thuja': 'conifer', 'Tsuga': 'conifer',
+               'Taxus': 'conifer', 'Juniperus': 'conifer', 'Pseudotsuga': 'conifer', 'Chamaecyparis': 'conifer',
+               'Larix': 'larch', 'Metasequoia': 'larch', 'Taxodium': 'larch'}
+# Late-October colour per tree, the "fall" of each street_trees.json row: the apply step and the preview tint each
+# (kind, fall) group's leaves. A species row (a prefix of the Latin name) wins; else the kind's own (needles) or
+# yellow, the common Plateau note (silver and Norway maples, ash, honey locust, linden, elm, hackberry, ginkgo).
+# Red maples, sugar maples, Freeman maples, Amur and Tatarian maples and serviceberries turn scarlet to orange-red;
+# red, pin and white oaks a russet to wine red. Sources: the Morton Arboretum tree pages (northern red oak
+# "russet-red to bright red", white oak "wine-red"), University of Illinois Extension on oaks in fall (pin oak red),
+# and the Jardin botanique de Montréal (Espace pour la vie) on trees and shrubs for fall colour.
+TREE_FALLS = ('yellow', 'red', 'russet', 'gold', 'evergreen')
+TREE_FALL = (('acer rubrum', 'red'), ('acer saccharum', 'red'), ('acer x freemanii', 'red'), ('acer ginnala', 'red'),
+             ('acer tataricum', 'red'), ('amelanchier', 'red'), ('quercus rubra', 'russet'),
+             ('quercus palustris', 'russet'), ('quercus alba', 'russet'), ('metasequoia', 'russet'),
+             ('taxodium', 'russet'))
+KIND_FALL = {'conifer': 'evergreen', 'larch': 'gold'}
 # Height from trunk diameter (DHP, cm -> cm), research-plateau.md §10.4 for silver and Norway maple: 10 cm about 6 m,
 # 30 cm 13 m, 60 cm 20 m, 100 cm and over 24 to 28 m. The small kinds stay at 70% of it, under 11 m.
 DBH_HEIGHT = ((0., 250.), (10., 600.), (30., 1300.), (60., 2000.), (100., 2500.), (230., 2800.))
@@ -2848,6 +2888,15 @@ def tree_kind(species, dbh):
         return TREE_GENERA[genus]
     d = dbh if dbh is not None else OSM_DBH_DEFAULT
     return 'silver_maple' if d >= 45. else 'norway_maple' if d >= 20. else 'small'
+
+
+def tree_fall(species, kind):
+    """The late-October colour of a tree (one of TREE_FALLS) from its Latin name and its kind (see TREE_FALL)."""
+    low = ' '.join((species or '').strip().lower().split())
+    for prefix, fall in TREE_FALL:
+        if low == prefix or low.startswith(prefix + ' '):
+            return fall
+    return KIND_FALL.get(kind, 'yellow')
 
 
 def tree_height(kind, dbh):
@@ -2934,7 +2983,7 @@ def street_tree_rows(world):
                      'dbh_from': 'inventory' if dbh is not None else 'default',
                      'placement': r.get('Emplacement') or '', 'street': r.get('Rue') or r.get('NOM_PARC') or '',
                      'pave_cm': None if _number(r.get('Distance_pave')) is None else 100. * _number(r['Distance_pave']),
-                     'inv_type': r.get('INV_TYPE')})
+                     'side': r.get('Rue_cote'), 'inv_type': r.get('INV_TYPE')})
     inventory = len(rows)
     for node, p in mapped_trees(world):
         near = [rows[i] for i in grid.query(bbox([p], OSM_TREE_SAME))]
@@ -2945,7 +2994,7 @@ def street_tree_rows(world):
         dbh = around[len(around) // 2] if around else OSM_DBH_DEFAULT
         rows.append({'id': f'osm:{node}', 'p': p, 'source': 'osm', 'species': 'unknown', 'species_fr': None,
                      'dbh_cm': dbh, 'dbh_from': 'neighbours' if around else 'default', 'placement': 'osm',
-                     'street': '', 'pave_cm': None, 'inv_type': None})
+                     'street': '', 'pave_cm': None, 'side': None, 'inv_type': None})
     world.tree_inventory_rows = inventory
     return rows
 
@@ -3031,15 +3080,15 @@ def _pit_rect(frame, s, d, hl=PIT_L / 2, hd=PIT_D / 2):
     return [_frame_at(frame, s + x, d + y) for x, y in ((-hl, -hd), (hl, -hd), (hl, hd), (-hl, hd))]
 
 
-def _fit_pit(world, frame, s0, d, obstacles, laid=False):
-    """The along-curb place nearest s0 (10 cm steps, up to PIT_SLIDE_MAX) where a pit centred d behind the curb lies
-    on its strip, off every other carriageway and building, on raised sidewalk pieces, clear of the crossing ramps, the
-    OSM street furniture and the strip's other pits; None if there is none. With `laid`, the sidewalk is down and the
+def _fit_pit(world, frame, s0, d, obstacles, laid=False, slide=PIT_SLIDE_MAX):
+    """The along-curb place nearest s0 (10 cm steps, up to `slide`) where a pit centred d behind the curb lies on its
+    strip, off every other carriageway and building, on raised sidewalk pieces, clear of the crossing ramps, the OSM
+    street furniture and the strip's other pits; None if there is none. With `laid`, the sidewalk is down and the
     pit's corners must stand on it at the curb height."""
     length = frame['len']
     ramps = frame['strip'].get('ramps', [])
     seg = frame['strip']['seg']['i']
-    steps = int(PIT_SLIDE_MAX // 10)
+    steps = int(slide // 10)
     for k in sorted(range(-steps, steps + 1), key=lambda v: (abs(v), v)):
         s = s0 + 10. * k
         if s - PIT_L / 2 < PIT_EDGE or s + PIT_L / 2 > length - PIT_EDGE:
@@ -3102,9 +3151,180 @@ class _Obstacles:
         return [self.items[i] for i in self.grid.query(bbox(poly, 10.))]
 
 
+# Trees the inventory puts where the replica has carriageway or parking asphalt (the curb pushed out for curb
+# parking, or a position a few metres off) are re-seated from the inventory's own fields: the side of the street
+# (Rue_cote: N, S, E or O on Montréal's street grid, which is turned about 34 degrees from true north, so the side
+# is the curb whose outward normal leans to that compass point), the place (Emplacement) and the distance from the
+# pavement edge (Distance_pave). A sidewalk tree goes to a pit 65 to 80 cm behind the curb of its own side, sliding
+# up to RESEAT_SLIDE along it; a parterre tree to the lawn Distance_pave behind the curb of its side (behind the
+# sidewalk); a median tree (Terre-plein) onto a curb extension of the mapped median of its street, or onto that
+# median's ground. A tree with no such seat is dropped and listed for the host (host_review). So no trunk stands on
+# carriageway or parking asphalt outside a curb extension.
+CARDINAL = {'N': (0., 1.), 'S': (0., -1.), 'E': (1., 0.), 'O': (-1., 0.)}
+SIDE_DOT = .1             # a curb side is the compass side when its outward normal leans at least this far to it
+RESEAT_SLIDE = 1200.      # a re-seated sidewalk tree's pit slides at most this far along its own curb
+RESEAT_REACH = 2000.      # ...on a sidewalk of its own street and side this near the trunk
+PARTERRES = ('PaRterre', 'Parterre Gazonné', 'Parterre aSphalté', 'Parterre aMénagé', 'Parterre avec Pavé uni')
+PARTERRE_BACK = 50.       # a re-seated parterre trunk stands at least this far behind its sidewalk
+PARTERRE_DEFAULT = 150.   # ...or this far, when the inventory gives no distance from the pavement
+PARTERRE_WALL = 60.       # ...and this far from any building
+MEDIAN_REACH = 1000.      # a median tree moves at most this far to the middle of its street's mapped median
+MEDIAN_GROUND = 120.      # a median holds a trunk on its own ground when it is this wide between the curbs
+MEDIAN_PARALLEL = .97     # a median's two carriageways run within about 14 degrees of each other
+MEDIAN_SPAN = 3000.       # ...with their centre lines at most 30 m apart
+
+
+def street_key(name):
+    """A street name for matching: no accents, case or extra spaces (the inventory's 'Rue de Champlain' is OSM's
+    'Rue De Champlain')."""
+    text = unicodedata.normalize('NFKD', name or '')
+    return ' '.join(''.join(c for c in text if not unicodedata.combining(c)).casefold().split())
+
+
+def side_faces(normal, card):
+    """Whether a curb whose outward normal is `normal` can be the inventory's compass side `card`: it leans to it,
+    or the street runs toward the compass point and either side might be meant."""
+    return normal[0] * card[0] + normal[1] * card[1] > -SIDE_DOT
+
+
+def _pit_back(t, width):
+    """How far behind the curb a tree's pit centre stands: the inventory's distance from the pavement within
+    PIT_BACK (seeded in it when the inventory gives none), at the back of the walk for a Fond de Trottoir tree."""
+    if t['placement'] in BACK_OF_WALK:
+        return max(PIT_BACK[0], width - PIT_D / 2 - 15.)
+    return min(PIT_BACK[1], max(PIT_BACK[0], t['pave_cm'] if t['pave_cm'] is not None else
+                                PIT_BACK[0] + (PIT_BACK[1] - PIT_BACK[0]) * Rng('pit-back', t['id']).random()))
+
+
+def _strip_place(frame, p):
+    """(along, across, width there, gap) of p in a strip frame; gap is how far p lies off the strip across it."""
+    rel = (p[0] - frame['a'][0], p[1] - frame['a'][1])
+    s, d = rel[0] * frame['u'][0] + rel[1] * frame['u'][1], rel[0] * frame['n'][0] + rel[1] * frame['n'][1]
+    width = frame['wa'] + (frame['wb'] - frame['wa']) * max(0., min(1., s / frame['len']))
+    return s, d, width, (-d if d < 0 else d - width if d > width else 0.)
+
+
+def reseat_pit(world, frames, grid, t, obstacles):
+    """A pit for a tree off the carriageway: on a sidewalk of its own street on its inventory side within
+    RESEAT_REACH, the nearest strip first, sliding up to RESEAT_SLIDE along the curb. (frame index, along, across)
+    or None."""
+    key, p = street_key(t['street']), t['p']
+    found = []
+    for i in grid.query(bbox([p], RESEAT_REACH)):
+        f = frames[i]
+        if street_key(f['strip']['seg']['name']) != key or not side_faces(f['n'], t['card']):
+            continue
+        gap = 0. if point_in(p, f['poly']) else poly_point_dist(f['poly'], p)
+        if gap <= RESEAT_REACH:
+            found.append((gap, i))
+    for _, i in sorted(found):
+        f = frames[i]
+        s0, _, width, _ = _strip_place(f, p)
+        lat = _pit_back(t, width)
+        s = _fit_pit(world, f, max(PIT_L / 2 + PIT_EDGE, min(f['len'] - PIT_L / 2 - PIT_EDGE, s0)), lat, obstacles,
+                     slide=RESEAT_SLIDE)
+        if s is not None:
+            return i, s, lat
+    return None
+
+
+def curb_sides(world, p, street, card):
+    """The curbs of a street on the inventory's compass side at p's place along it: (segment, sign of the side
+    (1 left, -1 right), along, curb offset, sidewalk width), the outermost first (on a street of two carriageways,
+    the outer side of the far one), then the nearest."""
+    key = street_key(street)
+    out = []
+    for i in world.seg_grid.query(bbox([p], RESEAT_REACH)):
+        s = world.segs[i]
+        if s['excluded'] or not s['quad'] or street_key(s['name']) != key:
+            continue
+        along, lat = seg_local(s, p)
+        if not -100. <= along <= s['len'] + 100. or abs(lat) > RESEAT_REACH:
+            continue
+        along = min(s['len'], max(0., along))
+        for side, sign in (('L', 1.), ('R', -1.)):
+            o = (s['n'][0] * sign, s['n'][1] * sign)
+            if o[0] * card[0] + o[1] * card[1] < SIDE_DOT and not (side_faces(o, card) and lat * sign > 0):
+                continue                      # the other side, or an unclear side the trunk is not on
+            c = seg_point(s, along, sign * s['curb' + side])
+            out.append((-(c[0] * card[0] + c[1] * card[1]), abs(lat - sign * s['curb' + side]), s['i'], sign, along,
+                        s['curb' + side], s['w' + side]))
+    out.sort()
+    return [(world.segs[i], sign, along, curb, width) for _, _, i, sign, along, curb, width in out]
+
+
+def parterre_spot(world, frames, grid, t):
+    """The lawn place of a parterre tree off the carriageway: Distance_pave behind the outermost curb of its street
+    on its inventory side, at least PARTERRE_BACK behind the sidewalk, on open ground (no carriageway, ruelle,
+    sidewalk or building within PARTERRE_WALL) clear of the traffic band; None if there is none."""
+    sides = curb_sides(world, t['p'], t['street'], t['card'])
+    if not sides:
+        return None
+    s, sign, along, curb, width = sides[0]
+    back = width + PARTERRE_DEFAULT if t['pave_cm'] is None else max(t['pave_cm'], width + PARTERRE_BACK)
+    q = seg_point(s, along, sign * (curb + back))
+    if world.in_building(q, PARTERRE_WALL) or world.surfaces.has(q, 'road') or world.surfaces.has(q, 'alley') or \
+            on_pavement(world, q) or world.traffic_distance(q) < CLEAR or \
+            any(point_in(q, frames[i]['poly']) for i in grid.query(bbox([q]))):
+        return None
+    return q
+
+
+def mapped_median(world, p, street, reach=MEDIAN_REACH):
+    """The mapped median of a street nearest p: two near-parallel carriageways of that name (OSM ways), their
+    facing sides without sidewalks, centre lines at most MEDIAN_SPAN apart. {'at': the middle of the ground between
+    their curbs at p's place, 'width': that ground's width (under 0 where the carriageways, pushed out for curb
+    parking, overlap it), 'segs'}; None when there is none within reach of p."""
+    key = street_key(street)
+    same = [world.segs[i] for i in world.seg_grid.query(bbox([p], reach + MEDIAN_SPAN))]
+    same = sorted((s for s in same if not s['excluded'] and s['quad'] and street_key(s['name']) == key),
+                  key=lambda s: s['i'])
+    best = None
+    for a in same:
+        ta, _ = seg_local(a, p)
+        if not 0. <= ta <= a['len']:
+            continue
+        for b in same:
+            if b is a or abs(a['u'][0] * b['u'][0] + a['u'][1] * b['u'][1]) < MEDIAN_PARALLEL:
+                continue
+            tb, _ = seg_local(b, p)
+            if not 0. <= tb <= b['len']:
+                continue
+            _, off = seg_local(a, seg_point(b, tb, 0.))
+            if not 0. < abs(off) <= MEDIAN_SPAN:
+                continue
+            sa = 1. if off > 0 else -1.
+            side_a = 'L' if sa > 0 else 'R'
+            side_b = 'L' if -sa * (b['n'][0] * a['n'][0] + b['n'][1] * a['n'][1]) > 0 else 'R'
+            if a['w' + side_a] > 0 or b['w' + side_b] > 0:
+                continue                      # a sidewalk between them: two streets, not one with a median
+            lo, hi = a['curb' + side_a], abs(off) - b['curb' + side_b]
+            centre = seg_point(a, ta, sa * (lo + hi) / 2)
+            d = math.dist(p, centre)
+            if d <= reach and (best is None or (d, a['i'], b['i']) < best[0]):
+                best = ((d, a['i'], b['i']), {'at': centre, 'width': hi - lo, 'segs': (a['i'], b['i'])})
+    return best[1] if best else None
+
+
+def median_ground(world, m):
+    """Whether a mapped median holds a trunk at its middle: wide enough, off every carriageway and building, clear
+    of the traffic band."""
+    q = m['at']
+    return m['width'] >= MEDIAN_GROUND and not world.surfaces.has(q, 'road') and not on_pavement(world, q) and \
+        not world.in_building(q, PARTERRE_WALL) and world.traffic_distance(q) >= CLEAR
+
+
+def _reseat(t, q, how, counts):
+    t.update(at=q, moved_cm=math.dist(q, t['p']), reseated=how)
+    counts['trees_reseated'] += 1
+    counts['trees_reseated_' + how.split(' ')[-1]] += 1
+
+
 def place_street_trees(world, L, counts):
     """Place every street and park tree (see above): sidewalk pits drawn here with their guards and planting, the
-    rows kept for street_trees.json, and the curb extensions planned for _draw_extensions."""
+    rows kept for street_trees.json, and the curb extensions planned for _draw_extensions. Trees the carriageway
+    covers are re-seated from the inventory's side, place and distance first (see reseat_pit, parterre_spot and
+    mapped_median)."""
     rows = street_tree_rows(world)
     frames = _strip_frames(world)
     grid = Grid(1500.)
@@ -3139,43 +3359,54 @@ def place_street_trees(world, L, counts):
         # median lawn or a sidewalk laid later, which finish_street_trees checks.
         on_road = world.surfaces.has(p, 'road')
         t['on_road'] = on_road
+        kind = t['placement']
+        median = kind.startswith('Terre-plein')
+        # a trunk on the carriageway with the inventory's side of the street is re-seated on that side
+        t['card'] = CARDINAL.get(t['side']) if on_road and not median and kind not in SAILLIES else None
+        if t['card'] and kind in PARTERRES:
+            q = parterre_spot(world, frames, grid, t)
+            if q is not None:
+                _reseat(t, q, 'parterre', counts)
+                continue
         best = None
+        key = street_key(t['street'])
         for i in grid.query(bbox([p])):
             f = frames[i]
-            rel = (p[0] - f['a'][0], p[1] - f['a'][1])
-            s, d = rel[0] * f['u'][0] + rel[1] * f['u'][1], rel[0] * f['n'][0] + rel[1] * f['n'][1]
+            if t['card'] and not side_faces(f['n'], t['card']):
+                continue
+            s, d, width, gap = _strip_place(f, p)
             if not -50. <= s <= f['len'] + 50.:
                 continue
-            width = f['wa'] + (f['wb'] - f['wa']) * max(0., min(1., s / f['len']))
-            gap = -d if d < 0 else d - width if d > width else 0.
-            if gap <= PIT_REACH and (best is None or (gap, abs(d)) < best[0]):
-                best = ((gap, abs(d)), i, s, d, width)
-        on_walk = best is not None and best[0][0] == 0.
-        kind = t['placement']
+            other = t['card'] is not None and street_key(f['strip']['seg']['name']) != key
+            if gap <= PIT_REACH and (best is None or (other, gap, abs(d)) < best[0]):
+                best = ((other, gap, abs(d)), i, s, d, width)
+        on_walk = best is not None and best[0][1] == 0.
         lat = None
-        median = kind.startswith('Terre-plein')
         if best is not None and not (kind in SAILLIES and on_road) and not median:
             _, i, s, d, width = best
-            back = min(PIT_BACK[1], max(PIT_BACK[0], t['pave_cm'] if t['pave_cm'] is not None else
-                                        PIT_BACK[0] + (PIT_BACK[1] - PIT_BACK[0]) * Rng('pit-back', t['id']).random()))
-            if kind in SIDEWALK_PITS:
-                lat = back
-            elif kind in BACK_OF_WALK:
-                lat = max(PIT_BACK[0], width - PIT_D / 2 - 15.)
-            elif on_road:
-                lat = back
+            if kind in SIDEWALK_PITS or kind in BACK_OF_WALK or on_road:
+                lat = _pit_back(t, width)
             elif on_walk:
                 lat = max(PIT_BACK[0], min(width - PIT_D / 2 - 5., d))
         if lat is not None:
             wanted.append((best[1], best[2], lat, t))
+        elif t['card']:
+            wanted.append((None, 0., None, t))           # no strip of its side within reach: re-seat it below
         elif on_road:
             t['extension_wanted'] = True
-    # Pits, strip by strip along the curb (the order fixes which tree slides when two want one place).
-    wanted.sort(key=lambda w: (w[0], w[1], w[3]['id']))
-    pits = []
+    # Pits, strip by strip along the curb (the order fixes which tree slides when two want one place); the trunks
+    # re-seated from the carriageway after them, so they take what room is left on their own curb.
+    wanted.sort(key=lambda w: (w[0] is None, -1 if w[0] is None else w[0], w[1], w[3]['id']))
+    pits, retry = [], []
     for i, s0, lat, t in wanted:
-        f = frames[i]
-        s = _fit_pit(world, f, max(PIT_L / 2 + PIT_EDGE, min(f['len'] - PIT_L / 2 - PIT_EDGE, s0)), lat, obstacles)
+        s = None
+        if i is not None:
+            f = frames[i]
+            s = _fit_pit(world, f, max(PIT_L / 2 + PIT_EDGE, min(f['len'] - PIT_L / 2 - PIT_EDGE, s0)), lat,
+                         obstacles)
+        if s is None and t['card']:
+            retry.append(t)
+            continue
         if s is None:
             if t['on_road']:
                 t['extension_wanted'] = True
@@ -3183,33 +3414,58 @@ def place_street_trees(world, L, counts):
                 t['no_pit'] = True
                 counts['trees_on_sidewalk_without_pit'] += 1
             continue
-        f['claims'].append(s)
-        c = _frame_at(f, s, lat)
-        t.update(pit=True, at=c, moved_cm=math.dist(c, t['p']), pit_yaw=math.degrees(math.atan2(f['u'][1], f['u'][0])),
-                 pit_z=Z_WALK + .15, curb_cm=lat, strip=f['strip'])
-        pits.append([f, s, lat, t])
+        pits.append(_claim_pit(f, s, lat, t))
+    for t in sorted(retry, key=lambda t: t['id']):
+        hit = reseat_pit(world, frames, grid, t, obstacles)
+        if hit is None:
+            t['extension_wanted'] = True
+            continue
+        i, s, lat = hit
+        pits.append(_claim_pit(frames[i], s, lat, t))
+        counts['trees_reseated'] += 1
+        counts['trees_reseated_pit'] += 1
+        t['reseated'] = 'sidewalk pit'
     world.sidewalk_pit_plan, world.pit_obstacles = pits, obstacles
-    # Curb extensions: only where the data shows one or at a corner; every other covered trunk goes to the host.
+    # Curb extensions: only where the data shows one or at a corner (a median one on a mapped median); every other
+    # covered trunk is dropped and listed for the host.
     ext_trees = []
     for t in kept:
-        if t['pit'] or not t['on_road']:
+        if t['pit'] or not t['on_road'] or t.get('reseated'):
             continue
         reason = None
         if t.get('extension_wanted'):
             reason = 'inventory saillie' if t['placement'] in SAILLIES else \
                 'inventory median' if t['placement'].startswith('Terre-plein') else \
                 'osm choker' if near_choker(t['p']) else 'corner' if near_corner(t['p']) else None
+        if reason == 'inventory median':
+            t['median'] = mapped_median(world, t['p'], t['street'])
+            if t['median'] is None:
+                t['host'] = 'a median tree on the carriageway, and its street has no mapped median within ' \
+                            f'{MEDIAN_REACH / 100:g} m'
+                continue
         if reason is None:
-            # resolved in finish_street_trees: on a sidewalk or lawn laid later, or for the host
-            t['host'] = 'on the carriageway mid-block: no extension in the data there, and not at a corner'
+            # resolved in finish_street_trees: on a sidewalk or lawn laid later, or dropped for the host
+            t['host'] = 'on the carriageway mid-block: no room on its side, no extension in the data, not at a corner'
             continue
         t['extension_reason'] = reason
         ext_trees.append(t)
     world.street_tree_list, world.street_tree_dropped = kept, dropped
-    counts['street_trees'] = len(kept)
-    counts['street_trees_inventory'] = sum(1 for t in kept if t['source'] == 'inventory')
-    counts['street_trees_osm'] = sum(1 for t in kept if t['source'] == 'osm')
-    return curb_extensions(world, counts, ext_trees)
+    extensions = curb_extensions(world, counts, ext_trees)
+    # a median tree too far from the curbs for an extension stands on its median's own ground, if it has some
+    for t in ext_trees:
+        if t.get('host') and t.get('median') and median_ground(world, t['median']):
+            t['host'] = None
+            _reseat(t, t['median']['at'], 'median', counts)
+    return extensions
+
+
+def _claim_pit(f, s, lat, t):
+    """Book a planned sidewalk pit on its strip and move the tree's trunk into it."""
+    f['claims'].append(s)
+    c = _frame_at(f, s, lat)
+    t.update(pit=True, at=c, moved_cm=math.dist(c, t['p']), pit_yaw=math.degrees(math.atan2(f['u'][1], f['u'][0])),
+             pit_z=Z_WALK + .15, curb_cm=lat, strip=f['strip'])
+    return [f, s, lat, t]
 
 
 def draw_sidewalk_pits(world, L, counts):
@@ -3386,8 +3642,9 @@ def curb_extensions(world, counts, trees):
 
 
 def finish_street_trees(world, counts):
-    """The street_trees.json rows, once every surface is down: each tree's final place, its ground height and the
-    host list."""
+    """The street_trees.json rows, once every surface is down: each tree's final place, its ground height and its
+    late-October colour. A trunk still on carriageway or parking asphalt outside a curb extension is dropped and
+    listed for the host (host_review), with its reason."""
     rows, host = [], []
     for t in world.street_tree_list:
         x, y = t['at']
@@ -3396,22 +3653,25 @@ def finish_street_trees(world, counts):
             z, top = world.surfaces.at(t['at'])
             if t.get('host') and top != 'road' and z >= Z_DROP - .5:
                 t['host'] = None                    # it stands on a median lawn or a sidewalk after all
-        if t['on_road'] and (t.get('host') or t.get('extension') is not None):
+        if t.get('host'):
+            host.append({'id': t['id'], 'position': [r2(t['p'][0]), r2(t['p'][1])], 'street': t['street'],
+                         'side': t.get('side'), 'placement': t['placement'], 'from_curb_cm': t.get('from_curb_cm'),
+                         'traffic_centreline_cm': r2(world.traffic_distance(t['p'], 2000)), 'reason': t['host']})
+            continue
+        if t['on_road'] and (t.get('extension') is not None or t.get('reseated')):
             counts['trees_on_carriageway'] += 1
-        if not t['pit'] and not t.get('host') and t.get('extension') is None and not t.get('no_pit'):
+        if not t['pit'] and not t.get('reseated') and t.get('extension') is None and not t.get('no_pit'):
             counts['trees_kept_in_place'] += 1
         kind = tree_kind(t['species'] if t['source'] == 'inventory' else None, t['dbh_cm'])
-        genus = (t['species'] or '').split(' ')[0]
         row = {'id': t['id'], 'x_cm': r2(x), 'y_cm': r2(y), 'z_cm': r2(z), 'species': t['species'],
-               'species_fr': t['species_fr'], 'kind': kind, 'dbh_cm': t['dbh_cm'],
+               'species_fr': t['species_fr'], 'kind': kind,
+               'fall': tree_fall(t['species'] if t['source'] == 'inventory' else None, kind), 'dbh_cm': t['dbh_cm'],
                'height_cm': round(tree_height(kind, t['dbh_cm'] if t['dbh_cm'] is not None else OSM_DBH_DEFAULT)),
                'height_from': 'dbh' if t['dbh_from'] == 'inventory' else 'dbh_' + t['dbh_from'],
                'source': t['source'], 'placement': t['placement'], 'street': t['street'], 'pit': bool(t['pit']),
                'yaw_deg': seed('tree-yaw', t['id']) % 360}
         if t['dbh_from'] != 'inventory':
             row['dbh_from'] = t['dbh_from']
-        if genus in CONIFERS:
-            row['conifer'] = True
         if t['pit']:
             row['pit_yaw_deg'] = r2(t['pit_yaw'] % 360)
             if t.get('curb_cm') is not None:
@@ -3419,15 +3679,16 @@ def finish_street_trees(world, counts):
         if t['moved_cm'] > 1.:
             row['moved_cm'] = r2(t['moved_cm'])
             row['mapped_xy_cm'] = [r2(t['p'][0]), r2(t['p'][1])]
+        if t.get('reseated'):
+            row['reseated'] = t['reseated']
         if t.get('extension') is not None:
             row['extension'] = t['extension']
-        if t.get('host'):
-            host.append({'id': t['id'], 'position': [r2(t['p'][0]), r2(t['p'][1])], 'street': t['street'],
-                         'placement': t['placement'], 'from_curb_cm': t.get('from_curb_cm'),
-                         'traffic_centreline_cm': r2(world.traffic_distance(t['p'], 2000)), 'reason': t['host']})
         rows.append(row)
     world.street_tree_rows, world.tree_host = rows, host
     counts['trees_for_host'] = len(host)
+    counts['street_trees'] = len(rows)
+    counts['street_trees_inventory'] = sum(1 for r in rows if r['source'] == 'inventory')
+    counts['street_trees_osm'] = sum(1 for r in rows if r['source'] == 'osm')
 
 
 def _local(e, x, n):
@@ -4354,6 +4615,7 @@ def _mural(S, edge, building, rng, off=6., z0=130., margin=60., min_h=300., min_
 
 PLEX_FRONTS = OUT / 'Plex/fronts.json'
 PLEX_MANIFEST = OUT / 'Plex/manifest.json'
+PLEX_GENERATOR = 'Scripts/plateau_plex.py'
 RUELLES_VERTES = OUT / 'Soul/ruelles_vertes_clip.json'
 RUELLES_VERTES_SOURCE = {
     'title': 'Ruelles vertes', 'publisher': 'Ville de Montréal', 'licence': 'CC BY 4.0',
@@ -4917,7 +5179,9 @@ def facing_yaw(F, a, b):
 
 class PlexGlass:
     """Rear windows over the gallery decks, read from the Plex layer's Glass batches (the generated quads, so the AC
-    units sit in windows that are drawn): triangles indexed by their box in map coordinates (the OBJ stores x, -y)."""
+    units sit in windows that are drawn): triangles indexed by their box in map coordinates (the OBJ stores x, -y).
+    The Plex OBJs are git-ignored: a manifest whose Glass OBJ is missing (a fresh checkout) stops the build with an
+    error that names the Plex generator."""
 
     def __init__(self, path=None):
         self.tris, self.grid = [], Grid(1000.)
@@ -4929,8 +5193,12 @@ class PlexGlass:
         for batch in manifest.get('batches', []):
             if batch.get('material') != 'Glass':
                 continue
+            obj = path.parent / batch['file']
+            if not obj.is_file():
+                raise FileNotFoundError(f'Missing {obj}, a Glass batch of {path}: the Plex OBJs are git-ignored, so '
+                                        f'run python3 {PLEX_GENERATOR} before {GENERATOR}')
             vs = []
-            for line in (path.parent / batch['file']).read_text().splitlines():
+            for line in obj.read_text().splitlines():
                 if line.startswith('v '):
                     x, y, z = (float(v) for v in line.split()[1:4])
                     vs.append((x, -y, z))
@@ -6031,28 +6299,37 @@ def write_street_trees(world, path, counts):
             'curb_extensions_saillie', 'curb_extensions_median', 'curb_extensions_choker', 'curb_extensions_corner',
             'curb_extensions_merged',
             'curb_extensions_flush', 'curb_extensions_part_flush', 'curb_extensions_on_verges',
-            'curb_extensions_on_corners', 'trees_for_host', 'tree_pits', 'pit_guard_cards', 'pit_flower_cards')
-    kinds = {}
+            'curb_extensions_on_corners', 'trees_reseated', 'trees_reseated_pit', 'trees_reseated_parterre',
+            'trees_reseated_median', 'trees_for_host', 'tree_pits', 'pit_guard_cards', 'pit_flower_cards')
+    kinds, falls = {}, {}
     for row in world.street_tree_rows:
         kinds[row['kind']] = kinds.get(row['kind'], 0) + 1
+        group = row['kind'] + ' ' + row['fall']
+        falls[group] = falls.get(group, 0) + 1
     head = {'layer': 'Streets', 'generator': GENERATOR, 'frame': FRAME + ' (the map frame; Unreal x and y alike)',
             'note': 'Every street and park tree the game shows, one row per tree: id (inv:<borough>-<EMP_NO> from '
                     'the city inventory, osm:<node> for an OSM tree the inventory lacks), x_cm, y_cm, z_cm (ground '
                     'under the trunk: the pit soil, a sidewalk, lawn or bare ground), species (the inventory\'s '
                     'Latin name, or unknown), kind (a Trees manifest kind, from TREE_SPECIES and TREE_GENERA in '
-                    'plateau_replica.py, else by crown size), dbh_cm (trunk diameter at breast height; dbh_from '
-                    'says when it is estimated), height_cm (from the trunk, research-plateau.md 10.4), source '
-                    '(inventory or osm), placement (the inventory\'s Emplacement), pit (in a sidewalk or extension '
-                    'pit), yaw_deg (seeded); moved_cm and mapped_xy_cm when the tree moved into a sidewalk pit, '
-                    'extension (index into extensions), conifer (no conifer kind yet).',
+                    'plateau_replica.py, else by crown size), fall (its late-October colour: yellow, red, russet, '
+                    'gold or evergreen, from TREE_FALL), dbh_cm (trunk diameter at breast height; dbh_from says when '
+                    'it is estimated), height_cm (from the trunk, research-plateau.md 10.4), source (inventory or '
+                    'osm), placement (the inventory\'s Emplacement), pit (in a sidewalk or extension pit), yaw_deg '
+                    '(seeded); moved_cm and mapped_xy_cm when the tree moved (into a sidewalk pit, or off the '
+                    'carriageway), reseated (sidewalk pit, parterre or median: moved off the carriageway from the '
+                    'inventory\'s side, place and distance), extension (index into extensions). host_review lists the '
+                    'trees left out because they stand on carriageway asphalt with no seat on their side of the '
+                    'street; dropped lists those inside a building.',
             'sources': {'inventory': dict(TREE_SOURCE, files=['Data/Plateau/Inventory/' + n for n in TREE_FILES]),
                         'osm': '\u00a9 OpenStreetMap contributors, ODbL 1.0 (natural=tree nodes the inventory lacks)'},
             'rules_cm': {'pit': [PIT_L, PIT_D], 'pit_from_curb': list(PIT_BACK), 'pit_gap': PIT_GAP,
                          'ramp_keep': RAMP_KEEP, 'pit_slide_max': PIT_SLIDE_MAX, 'osm_same_tree': OSM_TREE_SAME,
                          'extension_corner_reach': CORNER_REACH, 'extension_choker_reach': CHOKER_REACH,
                          'extension_reach': BUMP_REACH, 'margin': BUMP_MARGIN, 'park_gap': PARK_GAP,
-                         'traffic_clear': CLEAR, 'raised_top': Z_WALK, 'flush_top': Z_DROP},
-            'kinds': dict(sorted(kinds.items())),
+                         'traffic_clear': CLEAR, 'raised_top': Z_WALK, 'flush_top': Z_DROP,
+                         'reseat_slide': RESEAT_SLIDE, 'reseat_reach': RESEAT_REACH, 'parterre_back': PARTERRE_BACK,
+                         'median_reach': MEDIAN_REACH, 'median_ground': MEDIAN_GROUND},
+            'kinds': dict(sorted(kinds.items())), 'falls': dict(sorted(falls.items())),
             'counts': {k: counts[k] for k in keys},
             'extensions': world.extension_rows, 'host_review': world.tree_host,
             'dropped': [{'id': t['id'], 'position': [r2(t['p'][0]), r2(t['p'][1])], 'reason': t['why']}
