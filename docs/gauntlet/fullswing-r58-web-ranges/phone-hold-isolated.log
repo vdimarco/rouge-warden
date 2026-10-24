@@ -1,0 +1,12 @@
+PASS: phone play opens with the card: left thumb moves, right thumb swings
+PASS: the first touch on the city puts the card away
+PASS: a tap throws, catches, and its rope lets go by itself with a fling
+PASS: a finger held still throws while it is down, with a yellow R ring under it
+PASS: while the finger stays down the rope holds past the bottom of the arc
+PASS: the hint says to lift the thumb to let go: Holding on. Lift your thumb to let go.
+PASS: the lift lets go of the rope
+PASS: the lift in the air flings the hero on
+PASS: a drag turns the view with a blue LOOK ring and throws nothing, however long it stays down
+PASS: the save remembers the card was seen
+PASS: no page errors
+PASS: phone-hold
