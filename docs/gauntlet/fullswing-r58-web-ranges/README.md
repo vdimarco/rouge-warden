@@ -1,0 +1,7 @@
+# Increment58 — populated web uploads and anchor regression restoration
+
+Web matrix/fade uploads use live segment ranges. Actual one6segment web uploads1088→408bytes;two12segments816bytes; exact nonblank reference pixels preserved across shrink/fade/zero/regrow/hidden/resume. Initial allocation unchanged. The isolated test manually sets inkLine states against a real building face; it is a renderer check, not a physics acceptance claim.
+
+Existing building-anchor checks exposed a shipped regression: current-main baseline3fail1pass (invisible sky attachments and no reachable above-roof attachment). Restored prior playerEasy/aimCopy/canHang selector from #632, preserving newer aimAndFire gold-ring/melee priorities and wall/held-rope physics. Existing4buildingchecks nowPASS including149mplayer/147mroof, and51swingchecksPASS. No artificial ceiling.
+
+All20dimensions: Lighting, Color palette, Detail density, Texture/material, Composition/camera, Atmosphere, Character models, Animation smoothness, Particles/VFX, UI polish, Responsiveness/input latency, Controls feel, Mission clarity, Pacing, Fun factor, Difficulty curve, Feedback, Sound design, Variety, Performance stability: no new points awarded. Actual affected Chrome120Hz, physical devices, listening and full playthrough unverified; no FPS claim; total/delta withheld. OpenSpec structure checked manually; CLI unavailable. Review/CI/current authenticated preview/both rebases/exactmerge/production pending.

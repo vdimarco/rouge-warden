@@ -1632,11 +1632,38 @@ function markedCup() {
   const cap = 16 * bodyH();
   return res.dist <= cap && (res.special || res.prio || goalNear(res, cap));
 }
+function aimCopy(a) {
+  return { x: a.x, y: a.y, z: a.z, nx: a.nx, ny: a.ny, nz: a.nz, tag: a.tag, id: a.id, bid: a.bid, easy: true, easyH: a.easyH, sky: !!a.sky, valid: true, same: false, special: false };
+}
+// A building the hero can hang under: the rope is the real distance, and the bottom of that arc stays 1.5 body-heights up.
+function canHang(a) {
+  if (!a || a.sky || a.tag !== "building") return false;
+  const H = a.easyH || SWING.bodyH;
+  const d = Math.hypot(a.x - P.pos.x, a.y - (P.pos.y + P.chest), a.z - P.pos.z);
+  const gy = city.isWater(P.pos.x, P.pos.z) ? 0 : city.groundY(P.pos.x, P.pos.z);
+  return d <= a.y - P.chest - (gy + 1.5 * H);
+}
 function playerEasy(avoid) {
   easyDir();
-  const a = easyAnchor(P, easyDx, easyDz, avoid != null && avoid >= 0 ? { avoid } : undefined);
-  if (a.sky) { fillCam(); for (let n = 0; n < 8 && project(CAM, a.x, a.y, a.z, PROJ).inView; n++) a.y += a.easyH * 3; }
-  return a;
+  const tries = [{}, { up: 8, ahead: 20, reach: 10 }, { up: 4, ahead: 34, reach: 16 }];
+  for (let t = 0; t < tries.length; t++) {
+    const opt = avoid != null && avoid >= 0 ? { ...tries[t], avoid } : (t ? tries[t] : undefined);
+    const a = easyAnchor(P, easyDx, easyDz, opt);
+    if (!a || a.sky) continue;
+    if (!(avoid != null && a.bid === avoid)) return { ...aimCopy(a), easy: canHang(a) };
+  }
+  // The visible lock-on may find a real building beyond the automatic search samples.
+  // Reject points that would shorten the rope and pull the hero into the ground-clearance cap.
+  if (pickerOn) {
+    const res = picker.pick(TCTX, { avoidBid: avoid ?? -1 });
+    if (res && res.valid && res.tag === "building" && res.bid !== avoid) {
+      const copy = aimCopy(res);
+      if (copy.easyH == null) copy.easyH = (P.cfg && P.cfg.bodyH) || SWING.bodyH;
+      copy.easy = canHang(copy);
+      return copy;
+    }
+  }
+  return null;
 }
 // The building the other rope already holds, or the one this frame's first shot just took.
 function otherWeb(i) {
@@ -2431,7 +2458,11 @@ function drawWeb(dt) {
     webMesh.count = webSeg;
     webMesh.visible = webSeg > 0;
     webMesh.userData.fade = Math.max(webFade[0], webFade[1]);
-    if (webSeg) { webMesh.instanceMatrix.needsUpdate = true; webFadeAttr.needsUpdate = true; }
+    webMesh.instanceMatrix.clearUpdateRanges(); webFadeAttr.clearUpdateRanges();
+    if (webSeg > 0) {
+      webMesh.instanceMatrix.addUpdateRange(0, webSeg * 16); webMesh.instanceMatrix.needsUpdate = true;
+      webFadeAttr.addUpdateRange(0, webSeg); webFadeAttr.needsUpdate = true;
+    }
   }
   const sp = Math.hypot(P.vel.x, P.vel.y, P.vel.z);
   if (!any) peakSp = 0;

@@ -93,3 +93,6 @@ Increment57 — atlas uploads omitted on animation-only word updates; pending sp
 
 
 Increment57 shipped #681 as f548a6b7 after all6CI/review/current48deployedchecks/exactfxbytes/rebase before AND afterpreview/exactmerge. Productionfx HTTP200 exactSHA03095f3bb17ef5d1078d601045c5cad9e29a34c81c230785df95f2a5c014e9c7 verified. Canonical atlas-update scenarios published and OpenSpec archived. ActualChrome/FPSbenefit unverified; totalwithheld.
+
+
+Increment58 pending: populated web matrix/fade uploads1088→408bytesone6segments/816two12 with exactnonblankpixels; existing building checks caught shippedsky-anchor regression/currentmainbaseline3fail. Restored prior shared realbuilding selector preserving newer gold-ring/melee/wall/heldrope behavior;4building+51swing checksPASS. Evidence r58-web-ranges/all20limits/noFPSclaim.
