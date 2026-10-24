@@ -1408,9 +1408,10 @@ def check_confirm_dropped(out):
                     assert L.main(["confirm", str(group)]) == 0, name
                     assert calls == labels(ran), (name, calls)
                     native = json.loads((group / "tune.json").read_text())["native_confirmation"]
-                    assert native["confirmed_native"] == "05-gi2", (name, native)
-                    assert next(result for result in native["results"] if result["id"] == "04-shadows2")["reasons"][:1] == \
-                        ([L.CONFIRM_CUT] if native_name == "cut" else []), (name, native["results"])
+                    kept = {result["id"]: result["reasons"] for result in native["results"]}
+                    # The dropped winner's cut result stays as it was, and a winner without one gets none.
+                    assert native["confirmed_native"] == "05-gi2" and kept["05-gi2"] == [], (name, native)
+                    assert kept.get("04-shadows2") == ([L.CONFIRM_CUT] if native_name == "cut" else None), (name, kept)
                     calls.clear()
                     message = refused([str(group), "--candidate", "04-shadows2"])
                     assert "is dropped" in message and reason in message and not calls, (name, message, calls)
