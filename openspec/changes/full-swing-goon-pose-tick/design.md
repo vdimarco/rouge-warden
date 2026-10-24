@@ -1,0 +1,2 @@
+# Design
+streetFrame is the recurring caller of goonOnThrees; G.test.goonView is the diagnostic caller. Inspect both before code. Mode/time are unchanged during the synchronous figure loop. Pass the current tick or bypass state explicitly, with diagnostic caller computing its current value; no persistent frame cache. Baseline actual sampling computation count with multiple active goons and check all fields across tick/pose/state/position/mode changes. Reuse existing Verse tests.

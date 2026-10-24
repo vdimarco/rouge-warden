@@ -1337,3 +1337,6 @@ Increment59 pending — sharedcamera.updateMatrixWorld onceper3Dwebdraw vsperrop
 
 
 Increment59 shipped #685 as d7b7c8bf after all6CI/review/current23deployedchecks/exactmainbytes/rebase before AND afterpreview/exactmerge. Productionmain HTTP200 exactSHA2602aa95c69c6a447f93048b39fac22d9740bb5bd6700be776953ef3e2c96a27 verified. Canonical shared-web-camera scenarios published and OpenSpec archived. ActualChrome/FPSbenefit unverified; totalwithheld.
+
+
+Increment60 pending — goonpose tick shared perstreetframe/currentdiagnosticdefault. Actualfunctions60frames10goons/6mode-layout runs equivalent allfields+pose/state/position/modechanges;400→40ticksfull/calm,200→20offtransition,nonflat0. ExistingVersebrowserchecksPASS. Emptyframeoneextratick/aggregateeffectunmeasured. Evidence r60-goon-tick/all20limits/noFPSclaim/totalwithheld.
