@@ -18,4 +18,3 @@ Patrols SHALL begin in a central control-room hub with accessible navigation to 
 #### Scenario: Manage a torpedo tube
 - **WHEN** the commander selects a ready tube and fires from Torpedo Control
 - **THEN** that tube launches, ammunition decreases once, its reload timer begins, and another ready tube can be selected
-
