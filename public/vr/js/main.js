@@ -2289,7 +2289,6 @@ function putWeb(hand, anchor, sagPx, alpha) {
   WEB_ANCH.set(anchor.x, anchor.y, anchor.z);
   WEB_DIR.copy(WEB_ANCH).sub(WEB_HAND);
   if (WEB_DIR.length() < 1e-3) return;
-  camera.updateMatrixWorld();
   const w = innerWidth || 1, h = innerHeight || 1;
   const inv = camera.matrixWorldInverse;
   // Where the straight rope crosses the view. The belly of a sky web is often off the screen, so the
@@ -2427,7 +2426,7 @@ function drawWeb(dt) {
     peakSp = 0;
     return;
   }
-  if (threeD) ensureWeb();
+  if (threeD) { ensureWeb(); camera.updateMatrixWorld(); }
   else fillCam();
   webSeg = 0;
   const ctx2 = threeD ? null : webCanvas();

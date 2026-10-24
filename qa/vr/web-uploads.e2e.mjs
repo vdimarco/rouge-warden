@@ -19,13 +19,13 @@ try {
   try{
    set(2);__drawWeb(0);pixels();
    for(const [label,n,dt,hidden] of [['one',1,.2,false],['two',2,.2,false],['fading',0,.05,false],['expired',0,.2,false],['regrow',1,.2,false],['hidden',1,.01,true],['resume',1,.01,false]]){
-    set(n);__drawWeb(dt);if(hidden)mesh.visible=false;bytes=0;const a=pixels(),uploaded=bytes;
+    set(n);let cameraUpdates=0;const update=G.camera.updateMatrixWorld;G.camera.updateMatrixWorld=function(...args){cameraUpdates++;return update.apply(this,args)};try{__drawWeb(dt)}finally{G.camera.updateMatrixWorld=update;}if(hidden)mesh.visible=false;bytes=0;const a=pixels(),uploaded=bytes;
     for(const attr of [mesh.instanceMatrix,fade]){attr.clearUpdateRanges();attr.needsUpdate=true;}const b=pixels();
     let diff=0,varied=0;for(let i=0;i<a.length;i++){if(a[i]!==b[i])diff++;if(i%4!==3&&a[i]!==a[i%4])varied++;}
-    rows.push({label,n,count:mesh.count,bytes:uploaded,expected:mesh.visible?mesh.count*68:0,diff,varied});
+    rows.push({label,n,cameraUpdates,count:mesh.count,bytes:uploaded,expected:mesh.visible?mesh.count*68:0,diff,varied});
    }
    return rows;
   }finally{gl.bufferSubData=original;G.scene.add(mesh);}
  });
- console.log(JSON.stringify(rows));for(const r of rows)check(r.bytes===r.expected&&r.diff===0&&(r.expected===0||r.varied>20),'live web segment uploads and pixels',r);check(p.errors.length===0,'no page errors',p.errors);
+ console.log(JSON.stringify(rows));for(const r of rows)check(r.cameraUpdates<=1&&r.bytes===r.expected&&r.diff===0&&(r.expected===0||r.varied>20),'live web segment uploads and pixels',r);check(p.errors.length===0,'no page errors',p.errors);
 }finally{await close();}done();
