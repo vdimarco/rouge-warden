@@ -403,7 +403,7 @@ export function createStreet(city, opts = {}) {
         }
       }
       if (p.stride > 0) p.phase = (p.phase + dt * p.stride * 2.2) % (Math.PI * 200);
-      if (Math.hypot(p.x - fx, p.z - fz) < STREET.crowdNear && (focus.y - p.y) < 12) near++;
+      if ((focus.y - p.y) < 12 && Math.hypot(p.x - fx, p.z - fz) < STREET.crowdNear) near++;
     }
     // two people who meet stop to talk now and then
     if (r() < dt * 2) {

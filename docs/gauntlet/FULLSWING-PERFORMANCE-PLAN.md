@@ -123,3 +123,6 @@ Increment62 pending — privateaction-viewoptions64fresh→1record inactualbrows
 
 
 Increment62 shipped #691 as b6763a7a after all6CI/review/current authenticated options+marker checks/exactmainbytes/rebase before AND afterpreview/exactmerge. Productionmain HTTP200 exactSHA074d5e80ccfcc386336c3cc1b4a545fc0e85b8f6bf8bb32bd99c4ef7f8a45898 verified. Canonical action-view options scenarios published and OpenSpec archived. ActualChrome/FPSbenefit unverified; totalwithheld.
+
+
+Increment63 pending — crowd height rejection before horizontal distance:240actualupdates equivalent state/crowd across boundary/movement,19200hypotcalls skipped/6400roof. Existing street and5hidden-figure browser checksPASS. Evidence r63-crowd-height/all20limits/noFPSclaim/totalwithheld.
