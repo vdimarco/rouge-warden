@@ -1,0 +1,5 @@
+# Increment68 — unused web speed guard
+
+During fade-only draws no attached rope can trigger speed lines, and peakSp resets to zero. Guard the existing player-velocity Math.hypot with any; no state/cache changes. Actual browser baseline fade/expired1query→0, attached remains1. Existing exact nonblank web pixels/uploads/fade/regrow/hidden/resume PASS plus peak20→0release→15reattach check;10web checks and11web-line checksPASS. Baseline new work-reduction assertion fails with8existingchecksPASS. No render/physics thresholds changed.
+
+All20dimensions: Lighting, Color palette, Detail density, Texture/material, Composition/camera, Atmosphere, Character models, Animation smoothness, Particles/VFX, UI polish, Responsiveness/input latency, Controls feel, Mission clarity, Pacing, Fun factor, Difficulty curve, Feedback, Sound design, Variety, Performance stability: no new points. Actual affected Chrome120Hz, physical devices, listening and full playthrough unverified; no FPS claim; total/delta withheld. OpenSpec checked manually; CLI unavailable. Review/CI/currentauthenticatedpreview/bothrebases/exactmerge/production pending.

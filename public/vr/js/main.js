@@ -2474,7 +2474,7 @@ function drawWeb(dt) {
       webFadeAttr.addUpdateRange(0, webSeg); webFadeAttr.needsUpdate = true;
     }
   }
-  const sp = Math.hypot(P.vel.x, P.vel.y, P.vel.z);
+  const sp = any ? Math.hypot(P.vel.x, P.vel.y, P.vel.z) : 0;
   if (!any) peakSp = 0;
   else if (sp > peakSp) peakSp = sp;
   if (any && peakSp > 12 && sp > 0.88 * peakSp) {
