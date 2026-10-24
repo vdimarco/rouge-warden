@@ -222,3 +222,38 @@ test('a frames sample records the page clock origin, so each frame time maps to 
     await rm(dir, { recursive: true, force: true });
   }
 });
+
+test('a summary leaves out the samples after the stream ended, as when the host quit first', () => {
+  const live = { timeMs: 1000, framesDecoded: 100, bytesReceived: 0, framesDropped: 0, freezeCount: 0, totalFreezesDuration: 0,
+    candidate: { type: 'relay' }, peerStates: ['closed', 'connected'] };
+  // A sample with no connected peer holds no counters. One inside the sample stays; those at its end are left out.
+  const blip = { ...live, timeMs: 2000, framesDecoded: 0, candidate: null, peerStates: ['closed', 'disconnected'] };
+  const last = { ...live, timeMs: 3000, framesDecoded: 160 }, gone = { ...blip, timeMs: 4000, peerStates: ['closed', 'closed'] };
+  const result = summarize([live, blip, last, gone, { ...gone, timeMs: 5000 }]);
+  assert.deepEqual([result.seconds, result.decodedFps, result.candidate, result.streamEndedTimeMs], [2, 30, { type: 'relay' }, 4000]);
+  assert.equal('streamEndedTimeMs' in summarize([live, blip, last]), false);
+  assert.throws(() => summarize([live, gone, gone]), /At least two media samples/);
+});
+
+test('END in the trigger file stops the sample without a shot, and the report is written as at a normal end', async () => {
+  // The runner writes a stop label at each hold and END once when the drive ends; --seconds alone would run a minute.
+  await sampleWithFake(['--seconds', '60'], [{ atMs: 2450, line: 'S1' }, { atMs: 3250, line: 'END' }], report => {
+    assert.deepEqual(report.shots.map(shot => shot.line), ['S1']);
+    const seconds = (report.samples.at(-1).timeMs - report.samples[0].timeMs) / 1000;
+    assert.ok(seconds < 2, `the sample ran on ${seconds} s`);
+    assert.equal(report.passed, true);
+    assert.ok(Math.abs(report.summary.decodedFps - 30) < 1, `${report.summary.decodedFps} fps`);
+  });
+});
+
+test('a host that quits before END still leaves a passed report with a summary up to the stream end', async () => {
+  // The host quits at 4.5 s: its peer closes and no frame follows, so the samples from 5 s on hold no counters.
+  await sampleWithFake(['--seconds', '5'], [{ atMs: 4500, peer: 'closed' }], report => {
+    assert.equal(report.passed, true);
+    const ended = report.samples.findIndex(sample => !sample.peerStates.includes('connected'));
+    assert.equal(ended, 3);
+    assert.equal(report.summary.streamEndedTimeMs, report.samples[ended].timeMs);
+    assert.ok(Math.abs(report.summary.seconds - 2) < .1 && Math.abs(report.summary.decodedFps - 30) < 1,
+      `${report.summary.decodedFps} fps over ${report.summary.seconds} s`);
+  });
+});
