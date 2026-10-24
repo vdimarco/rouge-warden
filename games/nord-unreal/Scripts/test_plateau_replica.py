@@ -3265,7 +3265,7 @@ def check_lane_corridor(world, out, streets, lane='204859680', step=200.):
     yards is no corridor), nothing shows the bare floor (YardGround). The Mentana and Saint-André lane (OSM way
     204859680), where a strip 6 to 12 m out lay bare beside the Habitations De Mentana, has no bare sample at all."""
     R = replica
-    stops = R.PaveStops(world, world.plex)
+    stops = R.PaveStops(world, world.plex, lots=True)
     ground = ground_tris(out / 'Streets', streets, lambda m, z: True)
     total = bare = lane_total = lane_bare = 0
     misses = []

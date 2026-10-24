@@ -2467,9 +2467,10 @@ def _legacy_dashes(world, L, counts):
 
 class PaveStops:
     """Lines a ruelle's paving stops at on its way out to a wall past the fence line: the Plex yards (their rect,
-    lane and side fences, sheds and the ground on lots with no yard), the sidewalks and the carriageways."""
+    lane and side fences, sheds and the ground on lots with no yard), the sidewalks and the carriageways; with `lots`
+    (the ruelle paving out to the lot lines), also the Plex rear buildings and the parks."""
 
-    def __init__(self, world, plex, alleys=False, yards=False):
+    def __init__(self, world, plex, alleys=False, yards=False, lots=False):
         self.segs, self.kinds, self.grid = [], [], Grid(1000.)
 
         def line(points, closed=False, kind='plex'):
@@ -2499,7 +2500,7 @@ class PaveStops:
                 ground(cell[1:])
             if lot['shed_poly']:
                 ground(lot['shed_poly'])
-        for fp, _, _ in (plex.footprints if plex else []):
+        for fp, _, _ in (plex.footprints if plex and lots else []):
             ground(fp)
         # ...and a sample on a sidewalk or a carriageway (a ruelle's mouth) or in a park keeps the fence-line reach,
         # so the paving never runs along a sidewalk band or onto a park lawn
@@ -2514,7 +2515,7 @@ class PaveStops:
             zone([strip['curb'][0], strip['curb'][1], strip['outer'][1], strip['outer'][0]])
             self.front_grid.add(len(self.fronts), bbox(strip['outer'], FRONT_MAX))
             self.fronts.append(strip['outer'])
-        for w in world.ways:
+        for w in (world.ways if lots else []):
             if w['tags'].get('leisure') == 'park' and len(w['refs']) > 3 and w['refs'][0] == w['refs'][-1]:
                 zone([world.nodes[r] for r in w['refs'][:-1] if r in world.nodes])
         for poly, _, kind in world.surfaces.items:
@@ -2671,7 +2672,7 @@ def _ruelles(world, L, surfaces, counts):
     world.alleys = []
     box = world.box
     world.plex = PlexYards.load(world)
-    stops = PaveStops(world, world.plex)
+    stops = PaveStops(world, world.plex, lots=True)
     for w in world.ways:
         t = w['tags']
         if t.get('highway') != 'service' or t.get('service') != 'alley':

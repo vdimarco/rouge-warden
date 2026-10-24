@@ -151,6 +151,9 @@ SETS = {
                      'seed': 1890, 'surface': 'cutout', 'keys': ('Iron_Wrought',), 'tint_floor': .02},
     'laundry': {'name': 'Laundry', 'size_px': (1024, 1024), 'tile_m': (1.0, 1.0), 'seed': 1949, 'surface': 'cutout',
                 'keys': ('Cloth_Laundry',), 'uv': 'atlas', 'own_colour': True},
+    # Fifth pass. Fallen leaves for the litter patches on metre UVs (u = x, v = y on the ground), tiling both ways.
+    'leaf_litter': {'name': 'LeafLitter', 'size_px': (1024, 1024), 'tile_m': (2.0, 2.0), 'seed': 2031,
+                    'surface': 'cutout', 'keys': ('Leaf_Litter',), 'own_colour': True, 'macro': .1},
 }
 # Macro variation (the Kite demo / Starter Content T_MacroVariation approach): one small tileable mask of three
 # independent low-frequency noises. The apply step samples it twice, R at MACRO['tile_m'][0] and G at [1] (metres,
@@ -2774,11 +2777,471 @@ def laundry(spec):
                               'cover': round(cover, 4)}, wrap_y=False)
 
 
+# ------------------------------------------------------------------------------------------------
+# Fifth pass: fallen leaf litter (Leaf_Litter)
+
+LITTER_STAMP_PX_CM = 8.      # each leaf shape is drawn once at 8 px a cm, then stamped down to the set's 5.12
+TREES_SCRIPT = Path(__file__).resolve().parent / 'blender' / 'plateau_trees.py'
+# The stamps (a Shape Splatter's pattern inputs): the broadleaf shapes of the tree atlas, drawn by plateau_trees._leaf
+# from its FORMS, and the single leaflets an ash or a honey locust drops, drawn with the leaflet proportions _leaf
+# uses for those forms. name: (FORMS name, 'leaf' or 'leaflet', blade length in cm (lo, hi), share of the leaves).
+# The shares follow the street inventory (silver and Norway maples first) and how each tree drops its leaves: a honey
+# locust leaf falls apart into many 2 cm leaflets, an ash leaf mostly into its leaflets.
+LITTER_STAMPS = {
+    'silver': ('silver', 'leaf', (9., 14.), .21),
+    'norway': ('norway', 'leaf', (9., 13.), .17),
+    'linden': ('linden', 'leaf', (6., 10.), .12),
+    'elm': ('elm', 'leaf', (6., 10.), .1),
+    'amur': ('amur', 'leaf', (5., 8.), .05),
+    'ash': ('ash', 'leaf', (14., 19.), .02),          # a whole compound leaf (rachis length; about 25 cm overall)
+    'ash_leaflet': ('ash', 'leaflet', (6., 10.), .09),
+    'locust_leaflet': ('locust', 'leaflet', (1.6, 2.6), .24),
+}
+LITTER_LEAFLETS = {'ash': (.27, 8), 'locust': (.3, 0)}   # half-width share and saw teeth, as _leaf draws them
+# Fallen-leaf colours (sRGB), a little duller than on the tree, and a palette of (weight, colour) per leaf form.
+LITTER_YELLOW, LITTER_GOLD, LITTER_PALE = (214., 172., 58.), (206., 146., 44.), (218., 192., 112.)
+LITTER_ORANGE, LITTER_RED, LITTER_MAROON = (196., 104., 40.), (160., 50., 36.), (108., 44., 48.)
+LITTER_RUSSET, LITTER_TAN, LITTER_LIME = (142., 78., 40.), (170., 132., 82.), (156., 150., 62.)
+LITTER_BROWN = (112., 78., 48.)        # dried brown: the middle layer turns toward it
+LITTER_ROT = (70., 50., 34.)           # damp, rotting brown: the bottom layer
+LITTER_MARGIN = (118., 74., 40.)       # the brown that creeps in from a fallen leaf's margin
+LITTER_UNDERSIDE = (206., 198., 172.)  # a silver maple's pale underside; other leaves are paler and duller below
+LITTER_TAR = (26., 24., 22.)           # tar spot (Rhytisma acerinum), common on Montréal's Norway maples
+LITTER_PALETTES = {
+    'silver': ((.25, LITTER_PALE), (.24, LITTER_YELLOW), (.12, LITTER_ORANGE), (.14, LITTER_TAN), (.1, LITTER_RUSSET),
+               (.09, LITTER_RED), (.06, LITTER_LIME)),       # red: the Freeman and red maples on silver meshes
+    'norway': ((.4, LITTER_YELLOW), (.2, LITTER_GOLD), (.08, LITTER_PALE), (.1, LITTER_LIME), (.12, LITTER_TAN),
+               (.1, LITTER_ORANGE)),
+    'linden': ((.4, LITTER_YELLOW), (.25, LITTER_TAN), (.1, LITTER_LIME), (.15, LITTER_RUSSET), (.1, LITTER_PALE)),
+    'elm': ((.45, LITTER_YELLOW), (.25, LITTER_TAN), (.15, LITTER_RUSSET), (.15, LITTER_PALE)),
+    'amur': ((.4, LITTER_RED), (.3, LITTER_ORANGE), (.2, LITTER_MAROON), (.1, LITTER_YELLOW)),
+    'ash': ((.45, LITTER_YELLOW), (.25, LITTER_MAROON), (.15, LITTER_TAN), (.15, LITTER_PALE)),
+    'locust': ((.55, LITTER_GOLD), (.35, LITTER_YELLOW), (.1, LITTER_TAN)),
+}
+# Three layers, painted bottom up; Sharp lays darker leaves under the lighter ones "to create more depth". area: leaf
+# area per tile area; z: base height (cm); age: (brown, amount lo, amount hi) the colour turns toward; tone: luminance
+# factor; rough: (lo, hi), damp below and dry on top; curl: edge lift in cm (lo, hi; below 0 the leaf domes instead);
+# decay: (lo, hi) how far the blade is eaten into holes.
+LITTER_LAYERS = (
+    ('bottom', {'area': .95, 'z': 0., 'age': (LITTER_ROT, .45, .75), 'tone': .82, 'rough': (.5, .62),
+                'curl': (-.05, .12), 'decay': (.5, 1.)}),
+    ('middle', {'area': .55, 'z': .08, 'age': (LITTER_BROWN, .15, .45), 'tone': .92, 'rough': (.66, .78),
+                'curl': (-.15, .35), 'decay': (0., .45)}),
+    ('top', {'area': .32, 'z': .16, 'age': (LITTER_BROWN, 0., .15), 'tone': 1., 'rough': (.76, .88),
+             'curl': (-.2, .55), 'decay': (0., .2)}),
+)
+LITTER_TWIGS = 9                 # small fallen twigs per tile, between the bottom and middle layers
+LITTER_TAR_SPOT = .45            # share of Norway maple leaves with tar spot
+LITTER_FACE_DOWN = .3            # share of leaves lying underside up
+
+
+def tree_module():
+    """Scripts/blender/plateau_trees.py, whose atlas leaf shapes the litter stamps (loaded late: it imports this
+    module for its texture primitives)."""
+    mod = sys.modules.get('plateau_trees')
+    if mod is None:
+        import importlib.util
+        spec = importlib.util.spec_from_file_location('plateau_trees', TREES_SCRIPT)
+        mod = importlib.util.module_from_spec(spec)
+        sys.modules['plateau_trees'] = mod
+        try:
+            spec.loader.exec_module(mod)
+        except BaseException:
+            del sys.modules['plateau_trees']
+            raise
+    return mod
+
+
+def litter_stamp(name):
+    """One leaf shape as a pattern input: drawn once in neutral grey on its own canvas (the base of the blade at the
+    origin, the blade along +x, its petiole behind), then read back over its bounding box into four maps: a (cover),
+    m (midribs, 0..1), s (petiole or rachis, 0..1) and d (the dome: 1 along a lobe's midrib, 0 at the margin, so
+    1 - d is the squared distance to the midrib that the edge colour and the curl use)."""
+    trees = tree_module()
+    form, kind, (lo, hi), _ = LITTER_STAMPS[name]
+    F = trees.FORMS[form]
+    size = (lo + hi) / 2. * LITTER_STAMP_PX_CM
+    stalk = size * F['petiole'] * .8 if kind == 'leaf' else size * .06
+    back = max(stalk, .32 * size) + 10.
+    W, H = int(back + 1.5 * size) + 12, int(1.5 * size) + 24
+    bx, by = back, H / 2.
+    grey = (100., 100., 100.)
+    cv = Canvas(W, H, grey, 0., .7, alpha=0.)
+    flat = [.5] * (W * H)
+    steps = int(stalk / .7) + 1
+    for k in range(steps + 1):
+        f = k / steps
+        disc(cv, bx - stalk * (1. - f), by, (.08 + .05 * f) * LITTER_STAMP_PX_CM, (62., 62., 62.), 1., .7)
+    if kind == 'leaf':
+        trees._leaf(cv, form, bx, by, size, 0., grey, grey, 0., flat, 1., 1., .5)
+    else:
+        share, teeth = LITTER_LEAFLETS[form]
+        leaflet(cv, bx, by, 0., size, size * share, 1., grey, grey, 0., flat, teeth, .6, lift=.25)
+    AL = cv.alpha
+    used = [i for i in range(W * H) if AL[i] > 1e-3]
+    xs, ys = [i % W for i in used], [i // W for i in used]
+    x0, x1, y0, y1 = min(xs) - 1, max(xs) + 1, min(ys) - 1, max(ys) + 1
+    assert x0 >= 0 and y0 >= 0 and x1 < W and y1 < H, f'{name}: the leaf leaves its stamp canvas'
+    w, h = x1 - x0 + 1, y1 - y0 + 1
+    a, m, s, d, inside = [0.] * (w * h), [0.] * (w * h), [0.] * (w * h), [0.] * (w * h), []
+    for y in range(h):
+        for x in range(w):
+            i = (y + y0) * W + x + x0
+            al = AL[i]
+            if al <= 1e-3:
+                continue
+            j = y * w + x
+            b = cv.b[i]
+            st = min(1., max(0., (100. - b) / 25.))
+            mid = min(1., max(0., (cv.r[i] - b) / 18.)) * (1. - st)
+            dome = 0. if st > .5 else min(1., max(0., (cv.height[i] / al - 1. + .05 * mid) / .25))
+            a[j], m[j], s[j], d[j] = al, mid, st, dome
+            if al > .99 and dome > .4 and st < .05 and mid < .3 and (x + y) % 3 == 0:
+                inside.append((x + .5, y + .5))
+    return {'w': w, 'h': h, 'ox': bx - x0, 'oy': by - y0, 'a': a, 'm': m, 's': s, 'd': d, 'inside': inside,
+            'area': sum(a), 'blade_cm': (lo, hi)}
+
+
+def litter_stamps():
+    return {name: litter_stamp(name) for name in LITTER_STAMPS}
+
+
+def litter_stamp_digest(stamps=None):
+    """sha256 of the litter stamps (their size and four maps at 8 bits): it changes when a leaf form of the tree atlas
+    (plateau_trees.FORMS, _leaf) changes."""
+    stamps = litter_stamps() if stamps is None else stamps
+    h = hashlib.sha256()
+    for name in LITTER_STAMPS:
+        S = stamps[name]
+        h.update(f'{name} {S["w"]} {S["h"]} {S["ox"]:.3f} {S["oy"]:.3f}'.encode())
+        for channel in 'amsd':
+            h.update(bytes(byte(v * 255.) for v in S[channel]))
+    return h.hexdigest()
+
+
+def check_litter_stamps(stored):
+    """--check, first for the litter: the tree leaf forms it stamps still draw the stamps the committed set was made
+    from (stored: the leaf_litter entry of textures.json). Names the cause before any pixel hash differs."""
+    if stored.get('layout', {}).get('stamps_sha256') != litter_stamp_digest():
+        raise AssertionError('leaf_litter: the tree leaf forms changed (FORMS or _leaf in Scripts/blender/plateau_trees.py)'
+                             '; rerun python3 Scripts/plateau_textures.py')
+
+
+def box_blur(values, W, H, r):
+    """The mean over a (2 r + 1) square box round each texel, wrapping at every edge (running sums)."""
+    tmp = [0.] * (W * H)
+    for y in range(H):
+        o = y * W
+        row = values[o:o + W]
+        s = 0.
+        for x in range(-r, r + 1):
+            s += row[x % W]
+        for x in range(W):
+            tmp[o + x] = s
+            s += row[(x + r + 1) % W] - row[(x - r) % W]
+    out = [0.] * (W * H)
+    area = float((2 * r + 1) * (2 * r + 1))
+    for x in range(W):
+        col = tmp[x::W]
+        s = 0.
+        for y in range(-r, r + 1):
+            s += col[y % H]
+        for y in range(H):
+            out[y * W + x] = s / area
+            s += col[(y + r + 1) % H] - col[(y - r) % H]
+    return out
+
+
+def stamp_leaf(cv, owner, layer, S, cx, cy, scale, turn, mirror, look, blotch, decay):
+    """One leaf stamped on the litter canvas (wrapping at every edge): the stamp S rotated by turn, scaled by scale
+    (litter px per stamp px) and mirrored across its midrib when mirror is -1, its cover sampled bilinearly and its
+    other maps from the nearest texel. look: the leaf's colours, height, roughness, decay and spots. A leaf drapes
+    over the leaves already there (at least 0.04 cm above them), so later leaves always lie on top."""
+    W, H = cv.w, cv.h
+    R, G, B, HT, RO, CA, AL = cv.r, cv.g, cv.b, cv.height, cv.rough, cv.cavity, cv.alpha
+    w, h, ox, oy = S['w'], S['h'], S['ox'], S['oy']
+    A, M, ST, D = S['a'], S['m'], S['s'], S['d']
+    s_, c_ = sin_cos(turn)
+    inv = 1. / scale
+    xs, ys = [], []
+    for sx in (0., w):
+        for sy in (0., h):
+            p, q = (sx - ox) * scale, (sy - oy) * mirror * scale
+            xs.append(cx + p * c_ - q * s_)
+            ys.append(cy + p * s_ + q * c_)
+    x0, x1 = floor(min(xs)), floor(max(xs)) + 1
+    col, margin, stalk = look['colour'], look['margin'], look['stalk']
+    edge, z, curl, rough = look['edge'], look['z'], look['curl'], look['rough']
+    vein = look['vein']
+    thr, ddx, ddy = look['decay']
+    spots = look['spots']
+    down = look['down']
+    da, db = c_ * inv, -s_ * inv * mirror
+    for py in range(floor(min(ys)), floor(max(ys)) + 1):
+        dy = py + .5 - cy
+        row = (py % H) * W
+        drow = ((py + ddy) % H) * W
+        dx = x0 + .5 - cx
+        pa = (dx * c_ + dy * s_) * inv + ox - .5
+        pb = (dy * c_ - dx * s_) * inv * mirror + oy - .5
+        for px in range(x0, x1 + 1):
+            fx, fy = pa, pb
+            pa += da
+            pb += db
+            if fx < 0. or fy < 0.:
+                continue
+            ix, iy = int(fx), int(fy)
+            if ix >= w - 1 or iy >= h - 1:
+                continue
+            j = iy * w + ix
+            a00, a10, a01, a11 = A[j], A[j + 1], A[j + w], A[j + w + 1]
+            if a00 + a10 + a01 + a11 == 0.:
+                continue
+            tx, ty = fx - ix, fy - iy
+            al = (a00 + (a10 - a00) * tx) * (1. - ty) + (a01 + (a11 - a01) * tx) * ty
+            if al < .004:
+                continue
+            xw = px % W
+            dv = decay[drow + (px + ddx) % W]
+            if dv > thr:
+                al *= max(0., 1. - (dv - thr) * 40.)
+                if al < .004:
+                    continue
+            k = j + (1 if tx > .5 else 0) + (w if ty > .5 else 0)
+            mid, st, dome = M[k], ST[k], D[k]
+            rel2 = 1. - dome
+            i = row + xw
+            e = edge * smooth(.3, 1., rel2) + .6 * smooth(thr - .06, thr, dv)
+            bl = blotch[i]
+            e += edge * .8 * smooth(.6, .74, bl)
+            if e > 1.:
+                e = 1.
+            kk = 1. + .26 * (bl - .5)
+            cr = (col[0] + (margin[0] - col[0]) * e) * kk * (1. + vein[0] * mid)
+            cg = (col[1] + (margin[1] - col[1]) * e) * kk * (1. + vein[1] * mid)
+            cb = (col[2] + (margin[2] - col[2]) * e) * kk * (1. + vein[2] * mid)
+            hgt = z + (curl * rel2 if curl > 0. else -curl * dome) + (.05 if down else -.03) * mid + .05 * st
+            ro = rough - .04 * mid
+            if st > 0.:
+                cr += (stalk[0] - cr) * st
+                cg += (stalk[1] - cg) * st
+                cb += (stalk[2] - cb) * st
+            for sx0, sy0, rs in spots:
+                ex, ey = fx + .5 - sx0, fy + .5 - sy0
+                dd = ex * ex + ey * ey
+                if dd < (rs + 2.) * (rs + 2.):
+                    dist = sqrt(dd)
+                    core = min(1., max(0., rs - dist + .5)) * (1. - st)
+                    if core > 0.:
+                        cr += (LITTER_TAR[0] - cr) * core
+                        cg += (LITTER_TAR[1] - cg) * core
+                        cb += (LITTER_TAR[2] - cb) * core
+                        hgt += .04 * core
+                        ro += (.38 - ro) * core
+                    else:
+                        halo = 1. - (dist - rs) / 2.
+                        cr, cg = cr * (1. + .06 * halo), cg * (1. + .08 * halo)
+            if AL[i] > .3 and hgt < HT[i] + .04:
+                hgt = HT[i] + .04
+            R[i] += (cr - R[i]) * al
+            G[i] += (cg - G[i]) * al
+            B[i] += (cb - B[i]) * al
+            HT[i] += (hgt - HT[i]) * al
+            RO[i] += (ro - RO[i]) * al
+            CA[i] -= CA[i] * al
+            if al > AL[i]:
+                AL[i] = al
+            if al > .5:
+                owner[i] = layer
+
+
+def litter_twig(cv, owner, layer, x, y, turn, length, r0, r1, bend, colour, px_cm):
+    """A small fallen twig: a tapered, slightly bent round stick (px), wrapping at every edge, draped over the leaves
+    under it."""
+    W, H = cv.w, cv.h
+    R, G, B, HT, RO, CA, AL = cv.r, cv.g, cv.b, cv.height, cv.rough, cv.cavity, cv.alpha
+    steps = max(2, int(length / 1.5))
+    pts = [(x, y)]
+    for k in range(steps):
+        s, c = sin_cos(turn + bend * (k + .5) / steps)
+        x, y = x + c * length / steps, y + s * length / steps
+        pts.append((x, y))
+    for k, ((ax, ay), (bx, by)) in enumerate(zip(pts, pts[1:])):
+        ra = r0 + (r1 - r0) * k / steps
+        rb = r0 + (r1 - r0) * (k + 1) / steps
+        ex, ey = bx - ax, by - ay
+        ll = ex * ex + ey * ey
+        rm = max(ra, rb) + 1.
+        for py in range(floor(min(ay, by) - rm), floor(max(ay, by) + rm) + 1):
+            qy = py + .5 - ay
+            row = (py % H) * W
+            for px in range(floor(min(ax, bx) - rm), floor(max(ax, bx) + rm) + 1):
+                qx = px + .5 - ax
+                t = (qx * ex + qy * ey) / ll
+                t = 0. if t < 0. else 1. if t > 1. else t
+                gx, gy = qx - ex * t, qy - ey * t
+                dist = sqrt(gx * gx + gy * gy)
+                r = ra + (rb - ra) * t
+                sd = r - dist
+                if sd <= -.5:
+                    continue
+                al = 1. if sd >= .5 else sd + .5
+                i = row + px % W
+                prof = sqrt(max(0., 1. - (dist / r) ** 2)) if r > 0. else 0.
+                m = .72 + .28 * prof
+                hgt = .08 + 2. * r / px_cm * prof
+                if AL[i] > .3 and hgt < HT[i] + .04:
+                    hgt = HT[i] + .04
+                R[i] += (colour[0] * m - R[i]) * al
+                G[i] += (colour[1] * m - G[i]) * al
+                B[i] += (colour[2] * m - B[i]) * al
+                HT[i] += (hgt - HT[i]) * al
+                RO[i] += (.82 - RO[i]) * al
+                CA[i] -= CA[i] * al
+                if al > AL[i]:
+                    AL[i] = al
+                if al > .5:
+                    owner[i] = layer
+
+
+def leaf_litter(spec):
+    """Fallen leaves (Leaf_Litter), late October: a masked, tileable carpet of leaves for the litter patches on
+    sidewalks, gutters and lawns, built the way Substance Designer's Shape Splatter scatters a few shapes. The pattern
+    inputs are the tree atlas's own leaf shapes (litter_stamp); each leaf takes a random place, rotation, mirror, size
+    within its form's real range and its own colour, saturation and luminance, and the splat wraps at every edge. The
+    leaves lie in three layers: rotting, damp, darker and holed leaves below, dried browner ones on them and fresher
+    yellows, golds, oranges and reds on top, some curled at the edges, some face down (a silver maple shows its pale
+    underside), Norway maple leaves with tar spot, and a few twigs. Density follows a slow noise, so the leaves gather
+    in drifts. The height drives an ambient occlusion that darkens the leaves under an edge. The set owns its colours;
+    the holes between the leaves (alpha 0) show the ground under the patch."""
+    W, H = spec['size_px']
+    seed = spec['seed']
+    px = W / (spec['tile_m'][0] * 100.)
+    k_px = px / LITTER_STAMP_PX_CM
+    stamps = litter_stamps()
+    names = list(LITTER_STAMPS)
+    shares = tuple((LITTER_STAMPS[name][3], name) for name in names)
+    n = W * H
+    cv = Canvas(W, H, (150., 110., 58.), 0., .7, alpha=0.)
+    for i in range(n):
+        cv.cavity[i] = 1.
+    owner = [-1] * n
+    blotch = field(Fbm(seed + 1, W, H, ((32, 32), (64, 64), (128, 128)), (.5, .3, .2)), H)
+    decay = field(Fbm(seed + 2, W, H, ((96, 96), (192, 192)), (.6, .4)), H)
+    clump = field(Fbm(seed + 3, W, H, ((3, 3), (6, 6), (12, 12)), (.5, .3, .2)), H)
+    accept = [.3 + .7 * smooth(.34, .62, v) for v in clump]
+    mean_accept = sum(accept) / n
+    # The mean blade area of a picked leaf in litter texels (the mean of size^2 over a uniform size range).
+    mean_area = 0.
+    for name in names:
+        lo, hi = LITTER_STAMPS[name][2]
+        mid = (lo + hi) / 2.
+        mean_area += LITTER_STAMPS[name][3] * stamps[name]['area'] * k_px * k_px * (lo * lo + lo * hi + hi * hi) / (
+            3. * mid * mid)
+    counts = {name: 0 for name in names}
+    layers = {}
+    spotted = face_down = 0
+    for L, (layer, P) in enumerate(LITTER_LAYERS):
+        candidates = round(P['area'] * n / (mean_area * mean_accept))
+        placed = 0
+        for c in range(candidates):
+            u = [unit(seed, 200 + L, c, j) for j in range(22)]
+            x, y = u[0] * W, u[1] * H
+            if u[2] >= accept[int(y) * W + int(x)]:
+                continue
+            name = pick(shares, u[3])
+            form, kind, (lo, hi), _ = LITTER_STAMPS[name]
+            S = stamps[name]
+            size = lo + (hi - lo) * u[4]
+            colour = pick(LITTER_PALETTES[form], u[5])
+            brown, age_lo, age_hi = P['age']
+            age = age_lo + (age_hi - age_lo) * u[6]
+            colour = [v + (t - v) * age for v, t in zip(colour, brown)]
+            # Per-leaf luminance, saturation and hue variation, as the Shape Splatter Blend varies its colour.
+            tone = P['tone'] * (.88 + .24 * u[7])
+            grey = sum(colour) / 3.
+            sat = .82 + .3 * u[8]
+            warm = (u[9] - .5) * .08
+            colour = [(grey + (colour[0] - grey) * sat) * tone * (1. + warm),
+                      (grey + (colour[1] - grey) * sat) * tone,
+                      (grey + (colour[2] - grey) * sat) * tone * (1. - warm)]
+            down = u[10] < LITTER_FACE_DOWN
+            vein = (.12, .09, .03)
+            if down:
+                face_down += 1
+                pale = .55 if form == 'silver' else .25
+                colour = [v + (t * P['tone'] - v) * pale for v, t in zip(colour, LITTER_UNDERSIDE)]
+                vein = (.08, .08, .06)
+            margin = [v * tone for v in LITTER_MARGIN]
+            stalk = [v * .62 for v in colour]
+            curl_lo, curl_hi = P['curl']
+            rough_lo, rough_hi = P['rough']
+            decay_lo, decay_hi = P['decay']
+            level = decay_lo + (decay_hi - decay_lo) * u[11]
+            spots = []
+            if form == 'norway' and u[12] < LITTER_TAR_SPOT and S['inside']:
+                spotted += 1
+                for k in range(2 + int(5 * u[13])):
+                    sx, sy = S['inside'][int(unit(seed, 300 + L, c, k) * len(S['inside']))]
+                    spots.append((sx, sy, 3.5 + 3.5 * unit(seed, 400 + L, c, k)))
+            look = {'colour': colour, 'margin': margin, 'stalk': stalk, 'edge': .15 + .5 * u[14],
+                    'z': P['z'], 'curl': curl_lo + (curl_hi - curl_lo) * u[15],
+                    'rough': rough_lo + (rough_hi - rough_lo) * u[16], 'vein': vein, 'down': down, 'spots': spots,
+                    'decay': (1. - .32 * level, int(u[17] * W), int(u[18] * H))}
+            scale = k_px * size / ((lo + hi) / 2.)
+            stamp_leaf(cv, owner, L, S, x, y, scale, u[19], -1. if u[20] < .5 else 1., look, blotch, decay)
+            counts[name] += 1
+            placed += 1
+        layers[layer] = {'leaves': placed, 'leaf_area_per_tile_area': P['area']}
+        if layer == 'bottom':
+            for t in range(LITTER_TWIGS):
+                v = [unit(seed, 500, t, j) for j in range(8)]
+                tone = .85 + .3 * v[6]
+                litter_twig(cv, owner, L, v[0] * W, v[1] * H, v[2], (6. + 14. * v[3]) * px, (.14 + .14 * v[4]) * px,
+                            (.07 + .06 * v[4]) * px, (v[5] - .5) * .12, (84. * tone, 64. * tone, 48. * tone), px)
+    # Ambient occlusion from the height: the height under its 2.5 cm box mean darkens the leaves under an edge (the
+    # cavity channel keeps it); the holes take the mean leaf colour and cavity 1, so filtering adds no dark halo.
+    R, G, B, HT, RO, CA, AL = cv.r, cv.g, cv.b, cv.height, cv.rough, cv.cavity, cv.alpha
+    blur = box_blur(HT, W, H, 6)
+    sr = sg = sb = so = 0.
+    solid = 0
+    for i in range(n):
+        if AL[i] >= .5:
+            ao = blur[i] - HT[i]
+            ao = 0. if ao <= 0. else 1. if ao >= .3 else ao / .3
+            k = 1. - .4 * ao
+            R[i], G[i], B[i] = R[i] * k, G[i] * k, B[i] * k
+            if ao > CA[i]:
+                CA[i] = ao
+            sr, sg, sb, so = sr + R[i], sg + G[i], sb + B[i], so + RO[i]
+            solid += 1
+    mean = (sr / solid, sg / solid, sb / solid)
+    for i in range(n):
+        if AL[i] < .02:
+            R[i], G[i], B[i] = mean
+            RO[i], CA[i], HT[i] = so / solid, 1., 0.
+    for L, (layer, _) in enumerate(LITTER_LAYERS):
+        texels = [i for i in range(n) if owner[i] == L and AL[i] >= .5]
+        lin = SRGB_TO_LINEAR
+        lum = sum(.2126 * lin[byte(R[i])] + .7152 * lin[byte(G[i])] + .0722 * lin[byte(B[i])] for i in texels)
+        layers[layer]['visible_share'] = round(len(texels) / solid, 4)
+        layers[layer]['luminance'] = round(lum / max(1, len(texels)), 4)
+    cover = solid / n
+    return cv.result(px, px, {
+        'px_per_cm': px, 'stamp_px_per_cm': LITTER_STAMP_PX_CM,
+        'stamps': {name: {'form': LITTER_STAMPS[name][0], 'kind': LITTER_STAMPS[name][1],
+                          'blade_cm': list(LITTER_STAMPS[name][2]), 'share': LITTER_STAMPS[name][3],
+                          'count': counts[name]} for name in names},
+        'layers': layers, 'leaves': sum(counts.values()), 'twigs': LITTER_TWIGS, 'tar_spotted': spotted,
+        'face_down': face_down, 'cover': round(cover, 4), 'stamps_sha256': litter_stamp_digest(stamps),
+        'shapes_from': 'Scripts/blender/plateau_trees.py FORMS and _leaf (the tree leaf atlas)'})
+
+
 GENERATORS = {'membrane': membrane, 'ballast': ballast, 'tar': tar, 'sheet_metal': sheet_metal, 'siding': siding,
               'parging': parging, 'balusters': balusters, 'lattice': lattice, 'fence_boards': fence_boards,
               'creeper': creeper, 'lawn': lawn, 'pavers': pavers, 'soil': soil, 'crushed_stone': crushed_stone,
               'buff_brick': buff_brick, 'lane_concrete': lane_concrete, 'cedar': cedar, 'fountain_grass': fountain_grass,
-              'pit_flowers': pit_flowers, 'iron_wrought': iron_wrought, 'laundry': laundry}
+              'pit_flowers': pit_flowers, 'iron_wrought': iron_wrought, 'laundry': laundry, 'leaf_litter': leaf_litter}
 
 
 # ------------------------------------------------------------------------------------------------
