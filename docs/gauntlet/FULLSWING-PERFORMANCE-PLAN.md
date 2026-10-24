@@ -81,3 +81,6 @@ Increment53 shipped #670 asff8861c5 after all6CI/review/current4HUDdeployedcheck
 
 
 Increment54 shipped #672 as05750289 after freshall6CI/review/current8HUDdeployedchecks/exactmainbytes/rebase before AND afterpreview/exactmerge. Productionmain HTTP200 exactSHA11e1f28fb3cb50f199caf8d630a9825ae6af40ab5eed34bb54f914fd94c7df67 verified. Canonical HUD threat-query scenarios published and OpenSpec archived. Concurrent unrelated main changes preserved by rebase; all checks rerun on rebased head. ActualChrome/FPSbenefit unverified; totalwithheld.
+
+
+Increment55 shipped #676 asd1867b18 after freshall6CI/review/current63deployedchecks/exactmain+ropebytes/rebase before AND afterpreview/exactmerge. Productionmain+rope HTTP200 exactbytes verified (hashes in r55-phone-finish/production-verification.json). Canonical phone-finish and ink-rope endpoint scenarios published and both changes archived. Shipped stale endpoint regression restored without changing physics/renderedink; layout fixture waits CSS fade completion, assertions unchanged. Concurrent NORD/buildingrope work preserved. ActualChrome/FPSbenefit unverified; totalwithheld.
