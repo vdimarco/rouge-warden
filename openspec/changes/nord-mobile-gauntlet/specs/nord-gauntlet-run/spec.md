@@ -130,6 +130,7 @@ Every gauntlet result SHALL state whether it passed, failed, was not measured or
 #### Scenario: Foreign GPU process
 - **WHEN** another GPU process runs before or during a run
 - **THEN** `verdict.json` marks the run "contended", lists the processes, and the tuner never ranks it
+- **AND** the stream lifecycle's own processes never count as foreign: `stream` refuses a lifecycle that is still starting, before the launcher prints "NORD host and friend are connected", and starts nothing, so a NordFriend1 launched after the command cannot mark the row contended, which `test_gauntlet_loop.py` checks
 
 #### Scenario: Failing result
 - **WHEN** a committed round fails a gate

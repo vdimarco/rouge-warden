@@ -29,6 +29,7 @@ The tuner SHALL choose, among the candidates it measured, the phone profile with
 - **WHEN** the winner fails any gate in the 3-lap confirmation or in the stream runs
 - **THEN** the tuner confirms the next feasible candidate, and `tune.json` records why the first one was dropped
 - **AND** after a stream row or the co-op guard drops a candidate, `gauntlet_loop.py confirm <tune folder>` confirms the next ranked candidate natively, adds the result to `tune.json` and writes no profile
+- **AND** `confirm` skips a ranked candidate that a failed stream row or the co-op guard dropped, as the round report judges it, also when that candidate's native confirmation was cut or never ran, and refuses `--candidate` for it, because a new native result cannot change its verdict, which `test_gauntlet_loop.py` checks
 - **AND** after each result, `confirm` sets `native_confirmation.confirmed_native` in `tune.json` to the best ranked candidate whose native confirmation passed, a ranked baseline too, which `test_gauntlet_loop.py` checks
 - **AND** only a failure drops a candidate: while a better ranked candidate has only missing evidence, the round report confirms no lower ranked candidate and the `confirmed` gate is unverified, which `test_gauntlet_loop.py` checks
 
