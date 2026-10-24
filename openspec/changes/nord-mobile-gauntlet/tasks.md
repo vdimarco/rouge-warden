@@ -39,6 +39,8 @@ Read `design.md` first. `notes-host.md` gives the exact host commands. The lead 
 - [x] 6.11 `confirm` keeps `native_confirmation` current after each result: `stop_reason` is empty when every result finished, else `window_end` or `contended`, and `confirmed_native` names the best ranked candidate that passed, a ranked baseline too. `test_gauntlet_loop.py` checks both (`check_confirm_window`).
 - [x] 6.12 `report` stops at the first ranked candidate that passed or that has only missing evidence (`gauntlet_tune.confirm` with `still_open`), so a contended row, a cut confirmation or an unverified co-op guard of the winner does not confirm the runner-up. `test_gauntlet_loop.py` checks these three and a failed row that does (`check_report_better_open`).
 - [x] 6.13 `stream` offers only `--slot NordHost` on its command line and refuses `--slot NordFriend1`, and a second command on a run that already has a `stream/` folder. `--two-viewers` samples both slots in one command. `test_gauntlet_loop.py` checks these refusals (`check_stream_one_command`).
+- [x] 6.14 `confirm` judges the round as `report` does, on through every ranked candidate, and skips a candidate that a failed stream row or the co-op guard dropped, also when its native confirmation was cut or never ran. `--candidate` refuses such a candidate. `test_gauntlet_loop.py` checks a cut confirmation and `tune --no-confirm`, each with a failed row and with the co-op guard (`check_confirm_dropped`).
+- [x] 6.15 `stream` refuses a lifecycle that is still starting, before the launcher prints "NORD host and friend are connected", and starts nothing, so the run's own NordFriend1 never counts as a foreign GPU process. `test_gauntlet_loop.py` checks the refusal (`check_stream_one_command`).
 
 ## 7. Browser sampler
 - [x] 7.1 `stream-sample.mjs`: `--frames`, `--pin`, `--trigger`, `--out`, `--latency`, and the new summary fields.
@@ -68,7 +70,7 @@ Read `design.md` first. `notes-host.md` gives the exact host commands. The lead 
 - [ ] 11.6 Ceiling references twice; run-to-run SSIM at least 0.98.
 - [ ] 11.7 Baseline twice at the start of the window: the tune's own `baseline-a` and `baseline-b` runs set the noise tie. Run no separate baseline runs (notes-host step 6).
 - [ ] 11.8 Overnight tune in an agreed GPU window.
-- [ ] 11.9 Confirmation: 3 laps each for the winner and the baseline, both skies, landscape and portrait. After a stream row or the co-op guard drops a candidate, `gauntlet_loop.py confirm <tune folder>` confirms the next one.
+- [ ] 11.9 Confirmation: 3 laps each for the winner and the baseline, both skies, landscape and portrait. After a stream row or the co-op guard drops a candidate, `gauntlet_loop.py confirm <tune folder>` confirms the next one that no failure dropped.
 - [ ] 11.10 Stream runs: solo at rung 0 and rung 1, landscape and portrait, the input row (`stream --look`, lateral error at most 2.5 m), plus the two-viewer and relay rows. Check by eye that the frame times line up with the host log (the shared clock is unverified). Sample a contended or unverified row again, because `report` reads only the newest one. If a host exit happens, check that the sampler stopped about 10 s after the stream ended.
 - [ ] 11.11 Manual phone run on a physical Android and iOS phone, recorded on its own.
 - [ ] 11.12 User review of `review.html`; run `write-profile --approved` only after approval, and commit the ini and its approval record.
