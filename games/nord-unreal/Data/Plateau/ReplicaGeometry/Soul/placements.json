@@ -9,9 +9,9 @@
   "crack_lines": 1055,
   "potholes": 77,
   "gutter_leaf_drifts": 991,
-  "litter_patches": 9614,
-  "litter_trees_without_ground": 327,
-  "litter_triangles": 95483,
+  "litter_patches": 11104,
+  "litter_trees_without_ground": 341,
+  "litter_triangles": 109825,
   "weed_tufts": 7916,
   "rust_streaks": 2031,
   "murals": 23,
@@ -20,11 +20,17 @@
   "wire_spans": 79,
   "laundry_lines": 187,
   "curb_bins": 1571,
-  "locked_bikes": 209,
+  "locked_bikes": 145,
   "flower_boxes": 229,
   "ac_units": 0,
+  "leaf_bags": 246,
+  "leaf_bag_rows": 129,
+  "pumpkins": 59,
+  "pumpkin_stoops": 42,
   "ruelle_gutter_leaf_drifts": 426,
-  "litter_lane_trees": 266,
+  "ruelle_foot_leaf_drifts": 835,
+  "litter_lane_trees": 271,
+  "ruelle_gutter_drifts_beside_patches": 263,
   "ruelle_fence_weeds": 1271,
   "chantier_street": "Rue Fabre",
   "laundry_poles": 126,
@@ -64,24 +70,63 @@
   "green_murals": 14,
   "tags_fences": 15,
   "tags_doors": 30,
-  "placements": 6486
+  "locked_bikes_off_level_ground": 22,
+  "placements": 6727
  },
  "source_sha256": {
   "Data/LaFontaine/osm.xml": "fe4410d45007a627bf6d9b9ddeeae329fa9cdd7492dfb5fa6beff851e7cf8f86",
   "Data/LaFontaine/layout.json": "4238d6ed45d5fb890e0f8dbcb672de0803c6dc7079b0b6a86b386d82ebbb4250",
-  "Scripts/plateau_replica.py": "31e1e8738b935be66b50d0bcfda92946f25ba960a6328fff26325d1949bc9165",
+  "Scripts/plateau_replica.py": "12755d10d34aeca8fefc501c1023337586af1f42288acd1893f8f14c934018f8",
   "Scripts/prepare_lafontaine.py": "e7b6e5f068a96ee7306b1fff247fa73158f5cf7c343dc5510ab8cce92ee3c924",
   "Data/Plateau/BaseGeometry/Marking.obj": "2d82cbca59041aa6af5e6f3fffaf6a01b2c3e672eea9732e8a5fecbb7cee35dd",
-  "Data/Plateau/ReplicaGeometry/Plex/fronts.json": "8bdf83fd2a2d15b5b57f0f9f8431f67b33bcaf2e44c856c521d16ff937f629ed",
+  "Data/Plateau/ReplicaGeometry/Plex/fronts.json": "18f03aa2131ddab7409c92e8e42c2e21bd0f149ebcda428963bf3424ad0b5ca6",
   "Data/Plateau/ReplicaGeometry/Soul/ruelles_vertes_clip.json": "6ca991f5b585f4f0567baed799c37db2d3476f451e0b88fdb315a959e2d7d216",
-  "Data/Plateau/ReplicaGeometry/Plex/manifest.json": "9f5efd744734c8962e4592f7c8f4163efbf52c97b0bda95601d6bc216a3d783e",
-  "Data/Plateau/ReplicaGeometry/Props/manifest.json": "273d2fb16e61ea99d5c5230ebd3bf86719b5035510ab08bbdf62663f214d5d92",
+  "Data/Plateau/ReplicaGeometry/Plex/manifest.json": "918fd3495a443beeb7aef34e10a9a1d670ee52393f676bd5efebf24ef954390a",
+  "Data/Plateau/ReplicaGeometry/Props/manifest.json": "013a6b79abb563f02b1f1b767e704f517b3d9bc70e91a6a5759eb2d7f59d16de",
   "Data/Plateau/Inventory/trees_pmr.json": "78ee70b8165af47cdee11a56c9653b69a1543c42cf78ab618145441d756831c1",
   "Data/Plateau/Inventory/trees_vm.json": "103be208d2135cbb989198a8b33cff081584a40792323fab2d2cd65ca2a8fc35",
   "Data/Plateau/Inventory/sign_poles.json": "3d77a221def94a78024c587148cfa86a3dcfb385d7c9db118714735771283cfd",
-  "Data/Plateau/ReplicaGeometry/Textures/textures.json": "17cb2c5d7b7714e7138708cfc44d00537198a30ab0067ce08191e2664f426885",
-  "Data/Plateau/ReplicaGeometry/Trees/manifest.json": "dbf6352cb5dfd117521a2d7f1971ae06cf9b3c28d9a492b46bc4a62a96fd391d",
-  "Data/Plateau/ReplicaGeometry/Plex/yard_trees.json": "c2b001bf09e28051f1b2c31cec565bfda3ed80b0b8947bdf036c8d6e80b8f106"
+  "Data/Plateau/Inventory/park_signs.json": "2564aace477f46945f6250048ef8138354db2ddf251c6ccd0ab87d95c4cd8de4",
+  "Scripts/plateau_park_signs.py": "7fbf73b266a8a977281f9f315ac93bd4af4f113738d36c8965853c703f1e7bf7",
+  "Data/Plateau/ReplicaGeometry/Textures/textures.json": "d3c44cc89c3ac1027ff2b2cf4f74907dff4e567deb820161c3e48acb932c7794",
+  "Data/Plateau/ReplicaGeometry/Trees/manifest.json": "91b4e48c9a05414a1af4dc3729eb7dbd29c3312e2ccd3d243583b262af003ffb",
+  "Data/Plateau/ReplicaGeometry/Plex/yard_trees.json": "c2b001bf09e28051f1b2c31cec565bfda3ed80b0b8947bdf036c8d6e80b8f106",
+  "Data/Plateau/BaseGeometry/Grass.obj": "fefb28c0bce380bb446f387073cdc53b5041d9b2ad839fcf3de1eb18ee543f0a",
+  "Data/Plateau/BaseGeometry/Path.obj": "0778ed81724fa1adda30a18b439eb72bec0dbe85165bd37e7d49d0831fc12bc9",
+  "Data/Plateau/BaseGeometry/Water.obj": "155dd0d25631985f0a001860513276a10d586f0f4686f80f986d624b1f4d5ed6",
+  "Data/Plateau/BaseGeometry/Court.obj": "a0621b610a1f71a47d46fd854dbc699241acd0057ed203b67b0375fb45cb6fc9",
+  "Data/Plateau/BaseGeometry/Road.obj": "e4b16175fa72063c31804f71a34648c90e8cafdaea57e373de947548b3fbed71",
+  "Data/Plateau/ParkGeometry/AutumnGold_XP000_YM001.obj": "2d5b592eed24e37dd1d3cff75948db5af66758923d72f5206075be6dd64a5cf6",
+  "Data/Plateau/ParkGeometry/AutumnGold_XP000_YM002.obj": "d04edff4cd05400945e20bf570a00adab11c3b55f1ab78b04a949fb610957997",
+  "Data/Plateau/ParkGeometry/AutumnGold_XP000_YM003.obj": "6566571ffb8ce3c4bc06f4872fe35b3fd9d9ff21ced201278eb864bd26570f34",
+  "Data/Plateau/ParkGeometry/AutumnGold_XP001_YM001.obj": "a3ecd2d6b8e0e71f959db0ed37f89b6929e8db55342c8930c6cb8a1361c1b106",
+  "Data/Plateau/ParkGeometry/AutumnGold_XP001_YM002.obj": "c543d841009bfb9b67eaaac158cbdbe90e21b2b0bc9cdea63e2003637c6914e9",
+  "Data/Plateau/ParkGeometry/AutumnGold_XP001_YM003.obj": "f79f313499defb3fb3d4a0b31b3677090cbcefeb85d7bd28d2f4105057cfc22f",
+  "Data/Plateau/ParkGeometry/AutumnGold_XP001_YP000.obj": "ea92a893c863d4f45c67b356385d21b20d68863b21ec6b46ff28843a3e7ea21c",
+  "Data/Plateau/ParkGeometry/AutumnGold_XP002_YM002.obj": "3ef9cddc4257a72c44477155061ac9a4a65b36d7cd14e0225a1c72523ee5f5eb",
+  "Data/Plateau/ParkGeometry/AutumnGold_XP002_YM003.obj": "24d61dd6c6f43e9b32b40b627fa5b1cd21d3e04405fa32f0eeaacc92d8b8a8c1",
+  "Data/Plateau/ParkGeometry/AutumnGold_XP003_YP000.obj": "d5026047f0806a201568c31b1924d7c4f4ff2cae22a13b09d491ccb24b4c0304",
+  "Data/Plateau/ParkGeometry/AutumnGold_XP004_YM001.obj": "051912898249aebee4c1cd9dc5254b109c9208f425afd199424b8ec89a491c1e",
+  "Data/Plateau/ParkGeometry/AutumnGold_XP004_YP000.obj": "bffbb5fa341eee2a43c373bb6feb36e958145f357721e11cf6559d21e819628e",
+  "Data/Plateau/ParkGeometry/AutumnGold_XP004_YP001.obj": "fa7acc49a7f890bf1ccb59ff21c97f5e641b4ffbd065654db54088e199a4e4f1",
+  "Data/Plateau/ParkGeometry/AutumnGold_XP005_YM001.obj": "9de7bae8d4a022c7f4da6b7503ebf629cc666f5b3421416a15dab31c453bd226",
+  "Data/Plateau/ParkGeometry/AutumnGold_XP005_YP000.obj": "e7213f70ea262ef02800f20438c0ed625cd842a3fe55fcda4715f7f0547de4fa",
+  "Data/Plateau/ParkGeometry/AutumnGold_XP005_YP001.obj": "e1d171e5a6b1fbf3a0c608a0d95e50f570606bf5f3bed7f731922f84e9ea6f01",
+  "Data/Plateau/ParkGeometry/AutumnRust_XP000_YM001.obj": "f2803c4d9eac23ffbf29570ad91d9c2eb7ea3c220d06a94181a9450e459c0c1d",
+  "Data/Plateau/ParkGeometry/AutumnRust_XP000_YM002.obj": "22915341f041ee410733f7e77c95260781719ed869920c63c4c3a6f78d1a3840",
+  "Data/Plateau/ParkGeometry/AutumnRust_XP000_YM003.obj": "2076175bf76ebef49f1773e52cb3c8c68c170cfc0bfaaab3a4570aa75f4f6157",
+  "Data/Plateau/ParkGeometry/AutumnRust_XP001_YM001.obj": "4c720d8ff1085ea48aa76c16529b44cf8d6bfb7628ff2d105067058ca2b93cb9",
+  "Data/Plateau/ParkGeometry/AutumnRust_XP001_YM002.obj": "9135540b9dba8b53f13006bc2a0dce97cb2633fe00a4b9a4c27d15be692ce0d1",
+  "Data/Plateau/ParkGeometry/AutumnRust_XP001_YM003.obj": "265261b3a271de8300043ed460287944829913069c76aa57bc12d4bfa6ba6ad4",
+  "Data/Plateau/ParkGeometry/AutumnRust_XP001_YP000.obj": "8ff5f33930daae78e2e45c5c6e9d4232196cf75ae1411903b683f033f8d60b61",
+  "Data/Plateau/ParkGeometry/AutumnRust_XP002_YM002.obj": "824b2a630e7064cbb3ab6b14563e64a69bcbb3495656fe92245ddef91cdee909",
+  "Data/Plateau/ParkGeometry/AutumnRust_XP002_YM003.obj": "b0c82efc187156f12712fabf0681129e915a44caf3976856f0621ebf61b48995",
+  "Data/Plateau/ParkGeometry/AutumnRust_XP003_YP000.obj": "0bdc95f51d3323a6e4a1af783ee209a795ec7afef7b51d8ed2f12986b25860ee",
+  "Data/Plateau/ParkGeometry/AutumnRust_XP004_YM001.obj": "ec886734067fa67664115d1bcae50c4ccb863eef652abbb8e1345b3b015104b3",
+  "Data/Plateau/ParkGeometry/AutumnRust_XP004_YP000.obj": "451c7e4ef9542d0d892f0f3e6ede72e0e540654e1e195bfff72dd9859825ab7f",
+  "Data/Plateau/ParkGeometry/AutumnRust_XP004_YP001.obj": "38dd699d4d502f5c1b27a328ff8904e9cea67d8f4c44465d7311317c3d771eac",
+  "Data/Plateau/ParkGeometry/AutumnRust_XP005_YP000.obj": "a071df7d88341476e9148d1fcea0a445dda98556c8e2ca01f6b7181d533d1cb9",
+  "Data/Plateau/ParkGeometry/AutumnRust_XP005_YP001.obj": "a9cbc0ea7e03ee0ba6c03f33ef767c10f10fb3bdd821a1767ec603f92a592b6f"
  },
  "placements": [
   {
@@ -67097,6 +67142,950 @@
    "side": "lane"
   },
   {
+   "prop": "pumpkin",
+   "position": [
+    44404.08,
+    -29093.17,
+    95.0
+   ],
+   "yaw": 75.74,
+   "scale": 1.024,
+   "variant_seed": 317096,
+   "collision": false,
+   "ground": "given",
+   "season": "october",
+   "at": "stoop",
+   "lot": "345531360"
+  },
+  {
+   "prop": "pumpkin",
+   "position": [
+    50850.4,
+    28493.43,
+    105.0
+   ],
+   "yaw": 299.65,
+   "scale": 0.613,
+   "variant_seed": 960165,
+   "collision": false,
+   "ground": "given",
+   "season": "october",
+   "at": "stoop",
+   "lot": "345669584"
+  },
+  {
+   "prop": "pumpkin_carved",
+   "position": [
+    51011.3,
+    28381.99,
+    105.0
+   ],
+   "yaw": 32.76,
+   "scale": 0.972,
+   "variant_seed": 733179,
+   "collision": false,
+   "ground": "given",
+   "season": "october",
+   "at": "stoop",
+   "lot": "345669584"
+  },
+  {
+   "prop": "pumpkin",
+   "position": [
+    52748.21,
+    52513.1,
+    90.0
+   ],
+   "yaw": 226.35,
+   "scale": 1.032,
+   "variant_seed": 814429,
+   "collision": false,
+   "ground": "given",
+   "season": "october",
+   "at": "stoop",
+   "lot": "345818251"
+  },
+  {
+   "prop": "pumpkin",
+   "position": [
+    51155.83,
+    31464.97,
+    85.0
+   ],
+   "yaw": 84.84,
+   "scale": 0.992,
+   "variant_seed": 665317,
+   "collision": false,
+   "ground": "given",
+   "season": "october",
+   "at": "stoop",
+   "lot": "345835136"
+  },
+  {
+   "prop": "pumpkin",
+   "position": [
+    50988.58,
+    31565.76,
+    85.0
+   ],
+   "yaw": 45.34,
+   "scale": 0.622,
+   "variant_seed": 512605,
+   "collision": false,
+   "ground": "given",
+   "season": "october",
+   "at": "stoop",
+   "lot": "345835136"
+  },
+  {
+   "prop": "pumpkin_carved",
+   "position": [
+    -30611.82,
+    -37306.88,
+    75.0
+   ],
+   "yaw": 51.53,
+   "scale": 1.356,
+   "variant_seed": 339730,
+   "collision": false,
+   "ground": "given",
+   "season": "october",
+   "at": "stoop",
+   "lot": "355670767"
+  },
+  {
+   "prop": "pumpkin",
+   "position": [
+    -30485.71,
+    -37393.42,
+    75.0
+   ],
+   "yaw": 352.74,
+   "scale": 0.994,
+   "variant_seed": 669193,
+   "collision": false,
+   "ground": "given",
+   "season": "october",
+   "at": "stoop",
+   "lot": "355670767"
+  },
+  {
+   "prop": "pumpkin",
+   "position": [
+    -26859.22,
+    -37049.34,
+    85.0
+   ],
+   "yaw": 1.91,
+   "scale": 1.433,
+   "variant_seed": 327131,
+   "collision": false,
+   "ground": "given",
+   "season": "october",
+   "at": "stoop",
+   "lot": "355724539"
+  },
+  {
+   "prop": "pumpkin_carved",
+   "position": [
+    -26988.22,
+    -36968.88,
+    85.0
+   ],
+   "yaw": 236.41,
+   "scale": 1.017,
+   "variant_seed": 466815,
+   "collision": false,
+   "ground": "given",
+   "season": "october",
+   "at": "stoop",
+   "lot": "355724539"
+  },
+  {
+   "prop": "pumpkin_carved",
+   "position": [
+    -32347.08,
+    -26674.53,
+    57.0
+   ],
+   "yaw": 129.04,
+   "scale": 1.04,
+   "variant_seed": 316791,
+   "collision": false,
+   "ground": "given",
+   "season": "october",
+   "at": "stoop",
+   "lot": "355859557"
+  },
+  {
+   "prop": "pumpkin",
+   "position": [
+    -32446.1,
+    -26811.54,
+    57.0
+   ],
+   "yaw": 145.22,
+   "scale": 0.586,
+   "variant_seed": 731622,
+   "collision": false,
+   "ground": "given",
+   "season": "october",
+   "at": "stoop",
+   "lot": "355859557"
+  },
+  {
+   "prop": "pumpkin_carved",
+   "position": [
+    -14398.97,
+    -38853.93,
+    105.0
+   ],
+   "yaw": 261.01,
+   "scale": 0.6,
+   "variant_seed": 772688,
+   "collision": false,
+   "ground": "given",
+   "season": "october",
+   "at": "stoop",
+   "lot": "355885893"
+  },
+  {
+   "prop": "pumpkin",
+   "position": [
+    24998.97,
+    -40715.26,
+    75.0
+   ],
+   "yaw": 338.3,
+   "scale": 1.445,
+   "variant_seed": 516867,
+   "collision": false,
+   "ground": "given",
+   "season": "october",
+   "at": "stoop",
+   "lot": "355966365"
+  },
+  {
+   "prop": "pumpkin_carved",
+   "position": [
+    24935.68,
+    -40861.59,
+    75.0
+   ],
+   "yaw": 167.51,
+   "scale": 1.443,
+   "variant_seed": 279554,
+   "collision": false,
+   "ground": "given",
+   "season": "october",
+   "at": "stoop",
+   "lot": "355966365"
+  },
+  {
+   "prop": "pumpkin",
+   "position": [
+    -18454.55,
+    -25438.75,
+    57.0
+   ],
+   "yaw": 43.78,
+   "scale": 0.615,
+   "variant_seed": 953382,
+   "collision": false,
+   "ground": "given",
+   "season": "october",
+   "at": "stoop",
+   "lot": "356243675"
+  },
+  {
+   "prop": "pumpkin",
+   "position": [
+    -18286.1,
+    -25548.66,
+    57.0
+   ],
+   "yaw": 74.51,
+   "scale": 0.613,
+   "variant_seed": 775878,
+   "collision": false,
+   "ground": "given",
+   "season": "october",
+   "at": "stoop",
+   "lot": "356243675"
+  },
+  {
+   "prop": "pumpkin_carved",
+   "position": [
+    -22930.5,
+    -22414.52,
+    105.0
+   ],
+   "yaw": 222.21,
+   "scale": 0.578,
+   "variant_seed": 48639,
+   "collision": false,
+   "ground": "given",
+   "season": "october",
+   "at": "stoop",
+   "lot": "356251935"
+  },
+  {
+   "prop": "pumpkin",
+   "position": [
+    -22776.95,
+    -22509.22,
+    105.0
+   ],
+   "yaw": 336.15,
+   "scale": 0.966,
+   "variant_seed": 867524,
+   "collision": false,
+   "ground": "given",
+   "season": "october",
+   "at": "stoop",
+   "lot": "356251935"
+  },
+  {
+   "prop": "pumpkin",
+   "position": [
+    -9780.49,
+    -17177.29,
+    75.0
+   ],
+   "yaw": 30.44,
+   "scale": 1.023,
+   "variant_seed": 238853,
+   "collision": false,
+   "ground": "given",
+   "season": "october",
+   "at": "stoop",
+   "lot": "356288980"
+  },
+  {
+   "prop": "pumpkin_carved",
+   "position": [
+    -23645.89,
+    -10134.66,
+    76.0
+   ],
+   "yaw": 303.46,
+   "scale": 0.624,
+   "variant_seed": 283852,
+   "collision": false,
+   "ground": "given",
+   "season": "october",
+   "at": "stoop",
+   "lot": "356345648"
+  },
+  {
+   "prop": "pumpkin",
+   "position": [
+    -34278.38,
+    18754.71,
+    38.0
+   ],
+   "yaw": 301.41,
+   "scale": 0.624,
+   "variant_seed": 334563,
+   "collision": false,
+   "ground": "given",
+   "season": "october",
+   "at": "stoop",
+   "lot": "356673104"
+  },
+  {
+   "prop": "pumpkin",
+   "position": [
+    -41489.48,
+    23489.8,
+    30.0
+   ],
+   "yaw": 205.01,
+   "scale": 0.578,
+   "variant_seed": 890828,
+   "collision": false,
+   "ground": "given",
+   "season": "october",
+   "at": "stoop",
+   "lot": "356706325"
+  },
+  {
+   "prop": "pumpkin",
+   "position": [
+    -29730.7,
+    24336.95,
+    75.0
+   ],
+   "yaw": 332.68,
+   "scale": 0.592,
+   "variant_seed": 159456,
+   "collision": false,
+   "ground": "given",
+   "season": "october",
+   "at": "stoop",
+   "lot": "356740849"
+  },
+  {
+   "prop": "pumpkin",
+   "position": [
+    -36261.98,
+    31031.93,
+    38.0
+   ],
+   "yaw": 302.78,
+   "scale": 0.582,
+   "variant_seed": 827169,
+   "collision": false,
+   "ground": "given",
+   "season": "october",
+   "at": "stoop",
+   "lot": "357923342"
+  },
+  {
+   "prop": "pumpkin_carved",
+   "position": [
+    -36096.11,
+    30928.61,
+    38.0
+   ],
+   "yaw": 220.1,
+   "scale": 1.025,
+   "variant_seed": 678164,
+   "collision": false,
+   "ground": "given",
+   "season": "october",
+   "at": "stoop",
+   "lot": "357923342"
+  },
+  {
+   "prop": "pumpkin",
+   "position": [
+    -32462.58,
+    28571.17,
+    76.0
+   ],
+   "yaw": 192.63,
+   "scale": 0.615,
+   "variant_seed": 433272,
+   "collision": false,
+   "ground": "given",
+   "season": "october",
+   "at": "stoop",
+   "lot": "357924466"
+  },
+  {
+   "prop": "pumpkin_carved",
+   "position": [
+    -36596.06,
+    47002.09,
+    57.0
+   ],
+   "yaw": 126.11,
+   "scale": 1.04,
+   "variant_seed": 523908,
+   "collision": false,
+   "ground": "given",
+   "season": "october",
+   "at": "stoop",
+   "lot": "357957177"
+  },
+  {
+   "prop": "pumpkin_carved",
+   "position": [
+    -35391.24,
+    48775.33,
+    75.0
+   ],
+   "yaw": 163.46,
+   "scale": 1.036,
+   "variant_seed": 797295,
+   "collision": false,
+   "ground": "given",
+   "season": "october",
+   "at": "stoop",
+   "lot": "357957559"
+  },
+  {
+   "prop": "pumpkin_carved",
+   "position": [
+    -26025.61,
+    39867.65,
+    95.0
+   ],
+   "yaw": 215.81,
+   "scale": 0.618,
+   "variant_seed": 302819,
+   "collision": false,
+   "ground": "given",
+   "season": "october",
+   "at": "stoop",
+   "lot": "357981951"
+  },
+  {
+   "prop": "pumpkin_carved",
+   "position": [
+    -22443.73,
+    37487.7,
+    95.0
+   ],
+   "yaw": 220.52,
+   "scale": 0.62,
+   "variant_seed": 856823,
+   "collision": false,
+   "ground": "given",
+   "season": "october",
+   "at": "stoop",
+   "lot": "358129233"
+  },
+  {
+   "prop": "pumpkin_carved",
+   "position": [
+    -19643.94,
+    45428.69,
+    85.0
+   ],
+   "yaw": 251.59,
+   "scale": 1.035,
+   "variant_seed": 829639,
+   "collision": false,
+   "ground": "given",
+   "season": "october",
+   "at": "stoop",
+   "lot": "358150374"
+  },
+  {
+   "prop": "pumpkin",
+   "position": [
+    -18915.95,
+    44745.97,
+    38.0
+   ],
+   "yaw": 335.46,
+   "scale": 0.6,
+   "variant_seed": 532334,
+   "collision": false,
+   "ground": "given",
+   "season": "october",
+   "at": "stoop",
+   "lot": "358150572"
+  },
+  {
+   "prop": "pumpkin",
+   "position": [
+    -18873.04,
+    42310.38,
+    95.0
+   ],
+   "yaw": 19.02,
+   "scale": 0.964,
+   "variant_seed": 727049,
+   "collision": false,
+   "ground": "given",
+   "season": "october",
+   "at": "stoop",
+   "lot": "358151089"
+  },
+  {
+   "prop": "pumpkin_carved",
+   "position": [
+    -30850.86,
+    59291.71,
+    95.0
+   ],
+   "yaw": 324.46,
+   "scale": 1.002,
+   "variant_seed": 560604,
+   "collision": false,
+   "ground": "given",
+   "season": "october",
+   "at": "stoop",
+   "lot": "358200492"
+  },
+  {
+   "prop": "pumpkin",
+   "position": [
+    -29668.06,
+    52807.98,
+    38.0
+   ],
+   "yaw": 152.1,
+   "scale": 1.034,
+   "variant_seed": 747536,
+   "collision": false,
+   "ground": "given",
+   "season": "october",
+   "at": "stoop",
+   "lot": "358201454"
+  },
+  {
+   "prop": "pumpkin",
+   "position": [
+    -29803.0,
+    52896.03,
+    38.0
+   ],
+   "yaw": 316.71,
+   "scale": 0.992,
+   "variant_seed": 364486,
+   "collision": false,
+   "ground": "given",
+   "season": "october",
+   "at": "stoop",
+   "lot": "358201454"
+  },
+  {
+   "prop": "pumpkin",
+   "position": [
+    -28148.31,
+    50867.28,
+    57.0
+   ],
+   "yaw": 246.9,
+   "scale": 0.619,
+   "variant_seed": 454109,
+   "collision": false,
+   "ground": "given",
+   "season": "october",
+   "at": "stoop",
+   "lot": "358202044"
+  },
+  {
+   "prop": "pumpkin",
+   "position": [
+    -14574.88,
+    49861.6,
+    75.0
+   ],
+   "yaw": 28.48,
+   "scale": 0.984,
+   "variant_seed": 841528,
+   "collision": false,
+   "ground": "given",
+   "season": "october",
+   "at": "stoop",
+   "lot": "358209070"
+  },
+  {
+   "prop": "pumpkin",
+   "position": [
+    -14697.38,
+    49941.91,
+    75.0
+   ],
+   "yaw": 48.19,
+   "scale": 0.97,
+   "variant_seed": 697598,
+   "collision": false,
+   "ground": "given",
+   "season": "october",
+   "at": "stoop",
+   "lot": "358209070"
+  },
+  {
+   "prop": "pumpkin",
+   "position": [
+    -11680.19,
+    50581.75,
+    75.0
+   ],
+   "yaw": 216.47,
+   "scale": 0.97,
+   "variant_seed": 721397,
+   "collision": false,
+   "ground": "given",
+   "season": "october",
+   "at": "stoop",
+   "lot": "358265244"
+  },
+  {
+   "prop": "pumpkin",
+   "position": [
+    -5420.56,
+    51083.74,
+    105.0
+   ],
+   "yaw": 254.1,
+   "scale": 1.027,
+   "variant_seed": 324818,
+   "collision": false,
+   "ground": "given",
+   "season": "october",
+   "at": "stoop",
+   "lot": "358275549"
+  },
+  {
+   "prop": "pumpkin",
+   "position": [
+    -5494.37,
+    50964.03,
+    105.0
+   ],
+   "yaw": 250.5,
+   "scale": 0.586,
+   "variant_seed": 179914,
+   "collision": false,
+   "ground": "given",
+   "season": "october",
+   "at": "stoop",
+   "lot": "358275549"
+  },
+  {
+   "prop": "pumpkin",
+   "position": [
+    -7942.12,
+    56223.15,
+    30.0
+   ],
+   "yaw": 242.6,
+   "scale": 1.04,
+   "variant_seed": 87377,
+   "collision": false,
+   "ground": "given",
+   "season": "october",
+   "at": "stoop",
+   "lot": "358277378"
+  },
+  {
+   "prop": "pumpkin_carved",
+   "position": [
+    -4766.8,
+    65408.19,
+    85.0
+   ],
+   "yaw": 74.31,
+   "scale": 1.351,
+   "variant_seed": 6459,
+   "collision": false,
+   "ground": "given",
+   "season": "october",
+   "at": "stoop",
+   "lot": "358293871"
+  },
+  {
+   "prop": "pumpkin",
+   "position": [
+    50667.28,
+    59863.28,
+    75.0
+   ],
+   "yaw": 31.06,
+   "scale": 1.038,
+   "variant_seed": 639976,
+   "collision": false,
+   "ground": "given",
+   "season": "october",
+   "at": "stoop",
+   "lot": "359260691"
+  },
+  {
+   "prop": "pumpkin",
+   "position": [
+    50634.71,
+    59701.92,
+    75.0
+   ],
+   "yaw": 102.26,
+   "scale": 1.023,
+   "variant_seed": 892838,
+   "collision": false,
+   "ground": "given",
+   "season": "october",
+   "at": "stoop",
+   "lot": "359260691"
+  },
+  {
+   "prop": "pumpkin",
+   "position": [
+    21891.97,
+    66459.98,
+    105.0
+   ],
+   "yaw": 216.93,
+   "scale": 0.614,
+   "variant_seed": 504104,
+   "collision": false,
+   "ground": "given",
+   "season": "october",
+   "at": "stoop",
+   "lot": "359281542"
+  },
+  {
+   "prop": "pumpkin",
+   "position": [
+    30610.32,
+    55349.78,
+    85.0
+   ],
+   "yaw": 80.13,
+   "scale": 1.016,
+   "variant_seed": 649397,
+   "collision": false,
+   "ground": "given",
+   "season": "october",
+   "at": "stoop",
+   "lot": "359303532"
+  },
+  {
+   "prop": "pumpkin",
+   "position": [
+    8557.46,
+    67605.81,
+    90.0
+   ],
+   "yaw": 278.93,
+   "scale": 1.017,
+   "variant_seed": 489058,
+   "collision": false,
+   "ground": "given",
+   "season": "october",
+   "at": "stoop",
+   "lot": "359316848"
+  },
+  {
+   "prop": "pumpkin",
+   "position": [
+    8475.35,
+    67485.57,
+    90.0
+   ],
+   "yaw": 105.05,
+   "scale": 1.028,
+   "variant_seed": 739834,
+   "collision": false,
+   "ground": "given",
+   "season": "october",
+   "at": "stoop",
+   "lot": "359316848"
+  },
+  {
+   "prop": "pumpkin",
+   "position": [
+    27113.33,
+    55457.07,
+    105.0
+   ],
+   "yaw": 319.81,
+   "scale": 1.35,
+   "variant_seed": 948936,
+   "collision": false,
+   "ground": "given",
+   "season": "october",
+   "at": "stoop",
+   "lot": "359338645"
+  },
+  {
+   "prop": "pumpkin_carved",
+   "position": [
+    27278.43,
+    55362.3,
+    105.0
+   ],
+   "yaw": 41.08,
+   "scale": 0.601,
+   "variant_seed": 954516,
+   "collision": false,
+   "ground": "given",
+   "season": "october",
+   "at": "stoop",
+   "lot": "359338645"
+  },
+  {
+   "prop": "pumpkin_carved",
+   "position": [
+    13562.86,
+    64465.38,
+    75.0
+   ],
+   "yaw": 57.55,
+   "scale": 0.581,
+   "variant_seed": 600837,
+   "collision": false,
+   "ground": "given",
+   "season": "october",
+   "at": "stoop",
+   "lot": "359345164"
+  },
+  {
+   "prop": "pumpkin",
+   "position": [
+    13719.15,
+    64357.85,
+    75.0
+   ],
+   "yaw": 275.82,
+   "scale": 0.981,
+   "variant_seed": 289942,
+   "collision": false,
+   "ground": "given",
+   "season": "october",
+   "at": "stoop",
+   "lot": "359345164"
+  },
+  {
+   "prop": "pumpkin",
+   "position": [
+    8062.04,
+    67231.77,
+    90.0
+   ],
+   "yaw": 102.58,
+   "scale": 0.99,
+   "variant_seed": 59362,
+   "collision": false,
+   "ground": "given",
+   "season": "october",
+   "at": "stoop",
+   "lot": "449259060"
+  },
+  {
+   "prop": "pumpkin",
+   "position": [
+    50355.77,
+    58402.3,
+    75.0
+   ],
+   "yaw": 76.82,
+   "scale": 0.622,
+   "variant_seed": 703902,
+   "collision": false,
+   "ground": "given",
+   "season": "october",
+   "at": "stoop",
+   "lot": "450876162"
+  },
+  {
+   "prop": "pumpkin_carved",
+   "position": [
+    50386.83,
+    58572.38,
+    75.0
+   ],
+   "yaw": 7.06,
+   "scale": 1.026,
+   "variant_seed": 938619,
+   "collision": false,
+   "ground": "given",
+   "season": "october",
+   "at": "stoop",
+   "lot": "450876162"
+  },
+  {
+   "prop": "pumpkin",
+   "position": [
+    -32731.28,
+    34760.4,
+    95.0
+   ],
+   "yaw": 309.58,
+   "scale": 0.603,
+   "variant_seed": 997102,
+   "collision": false,
+   "ground": "given",
+   "season": "october",
+   "at": "stoop",
+   "lot": "453825831"
+  },
+  {
    "prop": "bin_recycling",
    "position": [
     35568.65,
@@ -67147,6 +68136,51 @@
    "variant_seed": 488352,
    "collision": false,
    "ground": "sidewalk"
+  },
+  {
+   "prop": "leaf_bag_low",
+   "position": [
+    36399.86,
+    -28005.06,
+    18.0
+   ],
+   "yaw": 225.41,
+   "scale": 1.027,
+   "variant_seed": 247468,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
+   "prop": "leaf_bag_mid",
+   "position": [
+    36438.24,
+    -28030.42,
+    18.0
+   ],
+   "yaw": 220.41,
+   "scale": 0.98,
+   "variant_seed": 294275,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
+   "prop": "leaf_bag",
+   "position": [
+    36476.62,
+    -28055.77,
+    18.0
+   ],
+   "yaw": 235.54,
+   "scale": 1.002,
+   "variant_seed": 613100,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
   },
   {
    "prop": "bin_recycling",
@@ -67278,6 +68312,21 @@
    "variant_seed": 285934,
    "collision": false,
    "ground": "sidewalk"
+  },
+  {
+   "prop": "leaf_bag_low",
+   "position": [
+    44777.7,
+    -33540.02,
+    18.0
+   ],
+   "yaw": 230.99,
+   "scale": 1.009,
+   "variant_seed": 454404,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
   },
   {
    "prop": "bin_recycling",
@@ -67542,6 +68591,21 @@
    "ground": "sidewalk"
   },
   {
+   "prop": "leaf_bag",
+   "position": [
+    52138.99,
+    -39457.69,
+    18.0
+   ],
+   "yaw": 65.72,
+   "scale": 1.012,
+   "variant_seed": 504235,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
    "prop": "bin_recycling",
    "position": [
     50250.51,
@@ -67725,6 +68789,21 @@
    "ground": "sidewalk"
   },
   {
+   "prop": "leaf_bag_mid",
+   "position": [
+    39577.93,
+    -31159.01,
+    18.0
+   ],
+   "yaw": 49.45,
+   "scale": 1.029,
+   "variant_seed": 693622,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
    "prop": "bike_locked",
    "position": [
     39327.32,
@@ -67776,6 +68855,21 @@
    "variant_seed": 292030,
    "collision": false,
    "ground": "sidewalk"
+  },
+  {
+   "prop": "leaf_bag",
+   "position": [
+    37501.77,
+    -29787.35,
+    18.0
+   ],
+   "yaw": 55.42,
+   "scale": 0.983,
+   "variant_seed": 57610,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
   },
   {
    "prop": "bin_recycling",
@@ -68183,6 +69277,21 @@
    "ground": "sidewalk"
   },
   {
+   "prop": "leaf_bag_low",
+   "position": [
+    9441.0,
+    -43912.43,
+    18.0
+   ],
+   "yaw": 238.5,
+   "scale": 0.994,
+   "variant_seed": 256390,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
    "prop": "bike_locked",
    "position": [
     9731.7,
@@ -68484,6 +69593,36 @@
    "ground": "sidewalk"
   },
   {
+   "prop": "leaf_bag_low",
+   "position": [
+    -303.45,
+    -35841.28,
+    18.0
+   ],
+   "yaw": 143.43,
+   "scale": 0.976,
+   "variant_seed": 898159,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
+   "prop": "leaf_bag_mid",
+   "position": [
+    -278.16,
+    -35802.86,
+    18.0
+   ],
+   "yaw": 142.76,
+   "scale": 1.022,
+   "variant_seed": 793351,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
    "prop": "bin_recycling",
    "position": [
     4118.3,
@@ -68575,6 +69714,51 @@
    "ground": "sidewalk"
   },
   {
+   "prop": "leaf_bag_low",
+   "position": [
+    6026.88,
+    -26114.36,
+    18.0
+   ],
+   "yaw": 134.04,
+   "scale": 0.997,
+   "variant_seed": 429393,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
+   "prop": "leaf_bag_mid",
+   "position": [
+    6001.98,
+    -26153.04,
+    18.0
+   ],
+   "yaw": 141.94,
+   "scale": 1.022,
+   "variant_seed": 261014,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
+   "prop": "leaf_bag_mid",
+   "position": [
+    5977.08,
+    -26191.72,
+    18.0
+   ],
+   "yaw": 157.11,
+   "scale": 1.01,
+   "variant_seed": 157613,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
    "prop": "bin_recycling",
    "position": [
     4376.78,
@@ -68612,6 +69796,36 @@
    "variant_seed": 452570,
    "collision": false,
    "ground": "sidewalk"
+  },
+  {
+   "prop": "leaf_bag_mid",
+   "position": [
+    4409.26,
+    -28627.25,
+    18.0
+   ],
+   "yaw": 140.93,
+   "scale": 0.988,
+   "variant_seed": 944753,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
+   "prop": "leaf_bag",
+   "position": [
+    4434.16,
+    -28588.57,
+    18.0
+   ],
+   "yaw": 141.19,
+   "scale": 1.019,
+   "variant_seed": 606164,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
   },
   {
    "prop": "bin_recycling",
@@ -68690,6 +69904,36 @@
    "variant_seed": 276195,
    "collision": false,
    "ground": "sidewalk"
+  },
+  {
+   "prop": "leaf_bag",
+   "position": [
+    -43233.33,
+    4864.12,
+    18.0
+   ],
+   "yaw": 242.36,
+   "scale": 1.003,
+   "variant_seed": 207866,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
+   "prop": "leaf_bag_mid",
+   "position": [
+    -43272.26,
+    4888.62,
+    18.0
+   ],
+   "yaw": 242.08,
+   "scale": 1.003,
+   "variant_seed": 194329,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
   },
   {
    "prop": "flower_box",
@@ -68859,6 +70103,21 @@
    "variant_seed": 188905,
    "collision": false,
    "ground": "sidewalk"
+  },
+  {
+   "prop": "leaf_bag",
+   "position": [
+    -34235.53,
+    19012.87,
+    18.0
+   ],
+   "yaw": 61.74,
+   "scale": 0.974,
+   "variant_seed": 679693,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
   },
   {
    "prop": "bin_recycling",
@@ -69109,6 +70368,51 @@
    "ground": "sidewalk"
   },
   {
+   "prop": "leaf_bag",
+   "position": [
+    -35367.56,
+    21298.35,
+    18.0
+   ],
+   "yaw": 243.67,
+   "scale": 0.998,
+   "variant_seed": 730187,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
+   "prop": "leaf_bag_mid",
+   "position": [
+    -35405.85,
+    21323.84,
+    18.0
+   ],
+   "yaw": 228.66,
+   "scale": 1.023,
+   "variant_seed": 530331,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
+   "prop": "leaf_bag_mid",
+   "position": [
+    -35444.14,
+    21349.33,
+    18.0
+   ],
+   "yaw": 229.71,
+   "scale": 0.995,
+   "variant_seed": 350238,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
    "prop": "bin_recycling",
    "position": [
     -34011.56,
@@ -69343,6 +70647,51 @@
    "ground": "sidewalk"
   },
   {
+   "prop": "leaf_bag",
+   "position": [
+    44687.87,
+    -28851.13,
+    18.0
+   ],
+   "yaw": 53.89,
+   "scale": 0.98,
+   "variant_seed": 284782,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
+   "prop": "leaf_bag_mid",
+   "position": [
+    44726.39,
+    -28876.28,
+    18.0
+   ],
+   "yaw": 63.88,
+   "scale": 1.024,
+   "variant_seed": 621623,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
+   "prop": "leaf_bag",
+   "position": [
+    44764.91,
+    -28901.43,
+    18.0
+   ],
+   "yaw": 63.95,
+   "scale": 1.009,
+   "variant_seed": 240179,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
    "prop": "bin_recycling",
    "position": [
     41941.62,
@@ -69421,6 +70770,36 @@
    "ground": "sidewalk"
   },
   {
+   "prop": "leaf_bag_mid",
+   "position": [
+    38055.92,
+    -24520.92,
+    18.0
+   ],
+   "yaw": 64.3,
+   "scale": 0.993,
+   "variant_seed": 743817,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
+   "prop": "leaf_bag",
+   "position": [
+    38017.4,
+    -24495.77,
+    18.0
+   ],
+   "yaw": 55.48,
+   "scale": 0.999,
+   "variant_seed": 415802,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
    "prop": "bin_recycling",
    "position": [
     37621.55,
@@ -69486,6 +70865,51 @@
    "ground": "sidewalk"
   },
   {
+   "prop": "leaf_bag_mid",
+   "position": [
+    38370.27,
+    -23310.77,
+    18.0
+   ],
+   "yaw": 243.12,
+   "scale": 0.971,
+   "variant_seed": 62980,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
+   "prop": "leaf_bag_mid",
+   "position": [
+    38408.78,
+    -23335.92,
+    18.0
+   ],
+   "yaw": 237.05,
+   "scale": 1.027,
+   "variant_seed": 217519,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
+   "prop": "leaf_bag_mid",
+   "position": [
+    38447.3,
+    -23361.07,
+    18.0
+   ],
+   "yaw": 228.37,
+   "scale": 0.989,
+   "variant_seed": 619989,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
    "prop": "bin_recycling",
    "position": [
     39656.49,
@@ -69510,6 +70934,21 @@
    "variant_seed": 759045,
    "collision": false,
    "ground": "sidewalk"
+  },
+  {
+   "prop": "leaf_bag",
+   "position": [
+    39769.53,
+    -24224.39,
+    18.0
+   ],
+   "yaw": 247.28,
+   "scale": 0.98,
+   "variant_seed": 873709,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
   },
   {
    "prop": "bin_recycling",
@@ -69679,6 +71118,51 @@
    "variant_seed": 588004,
    "collision": false,
    "ground": "sidewalk"
+  },
+  {
+   "prop": "leaf_bag",
+   "position": [
+    54394.3,
+    -25710.89,
+    18.0
+   ],
+   "yaw": 45.24,
+   "scale": 1.03,
+   "variant_seed": 648576,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
+   "prop": "leaf_bag",
+   "position": [
+    54432.42,
+    -25736.62,
+    18.0
+   ],
+   "yaw": 67.79,
+   "scale": 1.009,
+   "variant_seed": 658556,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
+   "prop": "leaf_bag_mid",
+   "position": [
+    54470.55,
+    -25762.36,
+    18.0
+   ],
+   "yaw": 66.08,
+   "scale": 1.011,
+   "variant_seed": 688156,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
   },
   {
    "prop": "bin_recycling",
@@ -69876,6 +71360,36 @@
    "ground": "apron"
   },
   {
+   "prop": "leaf_bag_mid",
+   "position": [
+    -20262.62,
+    34347.97,
+    18.0
+   ],
+   "yaw": 35.33,
+   "scale": 1.013,
+   "variant_seed": 467990,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
+   "prop": "leaf_bag",
+   "position": [
+    -20224.89,
+    34321.66,
+    18.0
+   ],
+   "yaw": 43.11,
+   "scale": 0.996,
+   "variant_seed": 800729,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
    "prop": "bin_recycling",
    "position": [
     -19872.31,
@@ -69991,6 +71505,21 @@
    "variant_seed": 465950,
    "collision": false,
    "ground": "sidewalk"
+  },
+  {
+   "prop": "leaf_bag_mid",
+   "position": [
+    -24882.51,
+    37416.75,
+    18.0
+   ],
+   "yaw": 50.58,
+   "scale": 1.014,
+   "variant_seed": 195920,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
   },
   {
    "prop": "bike_locked",
@@ -70148,6 +71677,21 @@
    "variant_seed": 266338,
    "collision": false,
    "ground": "sidewalk"
+  },
+  {
+   "prop": "leaf_bag",
+   "position": [
+    -34809.39,
+    45311.14,
+    18.0
+   ],
+   "yaw": 224.41,
+   "scale": 0.977,
+   "variant_seed": 311898,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
   },
   {
    "prop": "bin_recycling",
@@ -70608,6 +72152,36 @@
    "ground": "sidewalk"
   },
   {
+   "prop": "leaf_bag_low",
+   "position": [
+    52163.99,
+    40784.05,
+    18.0
+   ],
+   "yaw": 249.15,
+   "scale": 0.978,
+   "variant_seed": 916076,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
+   "prop": "leaf_bag_mid",
+   "position": [
+    52125.89,
+    40809.83,
+    18.0
+   ],
+   "yaw": 250.66,
+   "scale": 1.016,
+   "variant_seed": 669347,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
    "prop": "bin_recycling",
    "position": [
     52843.7,
@@ -70750,6 +72324,36 @@
    "variant_seed": 331787,
    "collision": false,
    "ground": "sidewalk"
+  },
+  {
+   "prop": "leaf_bag",
+   "position": [
+    54982.9,
+    44753.22,
+    18.0
+   ],
+   "yaw": 57.45,
+   "scale": 1.002,
+   "variant_seed": 545815,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
+   "prop": "leaf_bag",
+   "position": [
+    55021.26,
+    44727.83,
+    18.0
+   ],
+   "yaw": 64.83,
+   "scale": 0.997,
+   "variant_seed": 227506,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
   },
   {
    "prop": "bin_recycling",
@@ -70987,6 +72591,21 @@
    "ground": "sidewalk"
   },
   {
+   "prop": "leaf_bag_low",
+   "position": [
+    29568.45,
+    67047.01,
+    18.0
+   ],
+   "yaw": 328.65,
+   "scale": 0.971,
+   "variant_seed": 652254,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
    "prop": "flower_box",
    "position": [
     28916.12,
@@ -71066,6 +72685,51 @@
    "ground": "sidewalk"
   },
   {
+   "prop": "leaf_bag",
+   "position": [
+    26441.65,
+    60013.55,
+    18.0
+   ],
+   "yaw": 150.09,
+   "scale": 1.005,
+   "variant_seed": 439361,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
+   "prop": "leaf_bag_low",
+   "position": [
+    26416.06,
+    59975.33,
+    18.0
+   ],
+   "yaw": 158.73,
+   "scale": 0.979,
+   "variant_seed": 754869,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
+   "prop": "leaf_bag_mid",
+   "position": [
+    26390.46,
+    59937.11,
+    18.0
+   ],
+   "yaw": 135.19,
+   "scale": 1.02,
+   "variant_seed": 952470,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
    "prop": "bin_recycling",
    "position": [
     24498.3,
@@ -71117,6 +72781,21 @@
    "variant_seed": 323939,
    "collision": false,
    "ground": "sidewalk"
+  },
+  {
+   "prop": "leaf_bag_low",
+   "position": [
+    25451.53,
+    60825.79,
+    18.0
+   ],
+   "yaw": 326.59,
+   "scale": 1.002,
+   "variant_seed": 728285,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
   },
   {
    "prop": "bin_recycling",
@@ -71325,6 +73004,51 @@
    "variant_seed": 688387,
    "collision": false,
    "ground": "sidewalk"
+  },
+  {
+   "prop": "leaf_bag_mid",
+   "position": [
+    20295.68,
+    53127.74,
+    18.0
+   ],
+   "yaw": 328.93,
+   "scale": 0.978,
+   "variant_seed": 398817,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
+   "prop": "leaf_bag",
+   "position": [
+    20321.28,
+    53165.96,
+    18.0
+   ],
+   "yaw": 335.74,
+   "scale": 1.026,
+   "variant_seed": 354934,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
+   "prop": "leaf_bag",
+   "position": [
+    20346.88,
+    53204.18,
+    18.0
+   ],
+   "yaw": 325.72,
+   "scale": 0.982,
+   "variant_seed": 19451,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
   },
   {
    "prop": "bin_recycling",
@@ -71834,6 +73558,21 @@
    "ground": "sidewalk"
   },
   {
+   "prop": "leaf_bag_mid",
+   "position": [
+    -10292.34,
+    -26621.45,
+    18.0
+   ],
+   "yaw": 312.17,
+   "scale": 0.971,
+   "variant_seed": 462492,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
    "prop": "bin_recycling",
    "position": [
     -9432.22,
@@ -72314,6 +74053,36 @@
    "variant_seed": 642355,
    "collision": false,
    "ground": "sidewalk"
+  },
+  {
+   "prop": "leaf_bag_mid",
+   "position": [
+    -34297.69,
+    27990.27,
+    18.0
+   ],
+   "yaw": 51.6,
+   "scale": 1.022,
+   "variant_seed": 458684,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
+   "prop": "leaf_bag_mid",
+   "position": [
+    -34259.22,
+    27965.05,
+    18.0
+   ],
+   "yaw": 43.11,
+   "scale": 1.026,
+   "variant_seed": 519597,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
   },
   {
    "prop": "bin_recycling",
@@ -72825,6 +74594,51 @@
    "ground": "sidewalk"
   },
   {
+   "prop": "leaf_bag_low",
+   "position": [
+    -22978.08,
+    56019.23,
+    18.0
+   ],
+   "yaw": 58.26,
+   "scale": 0.985,
+   "variant_seed": 130465,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
+   "prop": "leaf_bag",
+   "position": [
+    -23016.43,
+    56044.63,
+    18.0
+   ],
+   "yaw": 57.7,
+   "scale": 0.999,
+   "variant_seed": 886224,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
+   "prop": "leaf_bag",
+   "position": [
+    -23054.79,
+    56070.02,
+    18.0
+   ],
+   "yaw": 56.21,
+   "scale": 1.012,
+   "variant_seed": 836083,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
    "prop": "bin_recycling",
    "position": [
     -23524.44,
@@ -72836,6 +74650,21 @@
    "variant_seed": 756192,
    "collision": false,
    "ground": "sidewalk"
+  },
+  {
+   "prop": "leaf_bag_mid",
+   "position": [
+    -23574.47,
+    56414.1,
+    18.0
+   ],
+   "yaw": 47.2,
+   "scale": 1.028,
+   "variant_seed": 323262,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
   },
   {
    "prop": "bin_recycling",
@@ -72862,6 +74691,51 @@
    "variant_seed": 316331,
    "collision": false,
    "ground": "sidewalk"
+  },
+  {
+   "prop": "leaf_bag_mid",
+   "position": [
+    -24694.94,
+    57155.95,
+    18.0
+   ],
+   "yaw": 51.32,
+   "scale": 1.002,
+   "variant_seed": 146320,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
+   "prop": "leaf_bag",
+   "position": [
+    -24656.59,
+    57130.56,
+    18.0
+   ],
+   "yaw": 66.8,
+   "scale": 1.007,
+   "variant_seed": 198564,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
+   "prop": "leaf_bag",
+   "position": [
+    -24618.23,
+    57105.16,
+    18.0
+   ],
+   "yaw": 61.33,
+   "scale": 1.028,
+   "variant_seed": 335015,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
   },
   {
    "prop": "flower_box",
@@ -72914,6 +74788,36 @@
    "variant_seed": 954135,
    "collision": false,
    "ground": "sidewalk"
+  },
+  {
+   "prop": "leaf_bag_low",
+   "position": [
+    -24461.44,
+    58554.2,
+    18.0
+   ],
+   "yaw": 236.12,
+   "scale": 1.022,
+   "variant_seed": 322963,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
+   "prop": "leaf_bag",
+   "position": [
+    -24499.73,
+    58579.7,
+    18.0
+   ],
+   "yaw": 238.35,
+   "scale": 0.98,
+   "variant_seed": 542722,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
   },
   {
    "prop": "flower_box",
@@ -73046,6 +74950,36 @@
    "ground": "sidewalk"
   },
   {
+   "prop": "leaf_bag",
+   "position": [
+    -13793.4,
+    51450.39,
+    18.0
+   ],
+   "yaw": 241.76,
+   "scale": 1.004,
+   "variant_seed": 6543,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
+   "prop": "leaf_bag",
+   "position": [
+    -13755.11,
+    51424.9,
+    18.0
+   ],
+   "yaw": 244.9,
+   "scale": 0.989,
+   "variant_seed": 888315,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
    "prop": "bin_recycling",
    "position": [
     -9048.65,
@@ -73070,6 +75004,21 @@
    "variant_seed": 498146,
    "collision": false,
    "ground": "sidewalk"
+  },
+  {
+   "prop": "leaf_bag",
+   "position": [
+    -9098.6,
+    48324.14,
+    18.0
+   ],
+   "yaw": 228.33,
+   "scale": 0.972,
+   "variant_seed": 881871,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
   },
   {
    "prop": "bin_recycling",
@@ -73109,6 +75058,36 @@
    "variant_seed": 305810,
    "collision": false,
    "ground": "sidewalk"
+  },
+  {
+   "prop": "leaf_bag",
+   "position": [
+    33571.62,
+    -20930.61,
+    18.0
+   ],
+   "yaw": 327.31,
+   "scale": 1.02,
+   "variant_seed": 785693,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
+   "prop": "leaf_bag_low",
+   "position": [
+    33599.08,
+    -20893.71,
+    18.0
+   ],
+   "yaw": 321.86,
+   "scale": 1.025,
+   "variant_seed": 174811,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
   },
   {
    "prop": "bin_recycling",
@@ -73255,6 +75234,36 @@
    "ground": "sidewalk"
   },
   {
+   "prop": "leaf_bag",
+   "position": [
+    29177.93,
+    -35624.24,
+    18.0
+   ],
+   "yaw": 231.89,
+   "scale": 1.015,
+   "variant_seed": 530002,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
+   "prop": "leaf_bag",
+   "position": [
+    29209.4,
+    -35657.79,
+    18.0
+   ],
+   "yaw": 216.88,
+   "scale": 1.019,
+   "variant_seed": 527051,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
    "prop": "bike_locked",
    "position": [
     28970.48,
@@ -73388,6 +75397,36 @@
    "ground": "sidewalk"
   },
   {
+   "prop": "leaf_bag",
+   "position": [
+    -29071.72,
+    -9574.49,
+    18.0
+   ],
+   "yaw": 241.46,
+   "scale": 0.98,
+   "variant_seed": 4229,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
+   "prop": "leaf_bag_mid",
+   "position": [
+    -29033.15,
+    -9599.56,
+    18.0
+   ],
+   "yaw": 228.19,
+   "scale": 0.975,
+   "variant_seed": 896558,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
    "prop": "bin_recycling",
    "position": [
     -27093.11,
@@ -73399,6 +75438,21 @@
    "variant_seed": 424512,
    "collision": false,
    "ground": "sidewalk"
+  },
+  {
+   "prop": "leaf_bag_low",
+   "position": [
+    -27042.81,
+    -10893.61,
+    18.0
+   ],
+   "yaw": 246.6,
+   "scale": 1.02,
+   "variant_seed": 887446,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
   },
   {
    "prop": "bin_recycling",
@@ -73648,6 +75702,51 @@
    "ground": "sidewalk"
   },
   {
+   "prop": "leaf_bag_low",
+   "position": [
+    -22629.25,
+    -13764.0,
+    18.0
+   ],
+   "yaw": 246.12,
+   "scale": 0.971,
+   "variant_seed": 789439,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
+   "prop": "leaf_bag_mid",
+   "position": [
+    -22590.69,
+    -13789.09,
+    18.0
+   ],
+   "yaw": 232.73,
+   "scale": 1.002,
+   "variant_seed": 960023,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
+   "prop": "leaf_bag",
+   "position": [
+    -22552.14,
+    -13814.18,
+    18.0
+   ],
+   "yaw": 231.51,
+   "scale": 0.99,
+   "variant_seed": 965249,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
    "prop": "bin_recycling",
    "position": [
     -22159.17,
@@ -73818,6 +75917,51 @@
    "ground": "sidewalk"
   },
   {
+   "prop": "leaf_bag_low",
+   "position": [
+    -15513.55,
+    -18393.99,
+    18.0
+   ],
+   "yaw": 251.84,
+   "scale": 1.003,
+   "variant_seed": 529665,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
+   "prop": "leaf_bag_mid",
+   "position": [
+    -15474.99,
+    -18419.08,
+    18.0
+   ],
+   "yaw": 230.37,
+   "scale": 1.007,
+   "variant_seed": 256702,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
+   "prop": "leaf_bag_mid",
+   "position": [
+    -15436.44,
+    -18444.16,
+    18.0
+   ],
+   "yaw": 245.8,
+   "scale": 1.027,
+   "variant_seed": 499858,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
    "prop": "bin_recycling",
    "position": [
     -14920.58,
@@ -73829,6 +75973,51 @@
    "variant_seed": 189578,
    "collision": false,
    "ground": "sidewalk"
+  },
+  {
+   "prop": "leaf_bag_low",
+   "position": [
+    -14970.87,
+    -18747.09,
+    18.0
+   ],
+   "yaw": 231.89,
+   "scale": 0.995,
+   "variant_seed": 784203,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
+   "prop": "leaf_bag_mid",
+   "position": [
+    -15009.43,
+    -18722.01,
+    18.0
+   ],
+   "yaw": 235.08,
+   "scale": 0.999,
+   "variant_seed": 140434,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
+   "prop": "leaf_bag_mid",
+   "position": [
+    -15047.98,
+    -18696.92,
+    18.0
+   ],
+   "yaw": 236.39,
+   "scale": 1.028,
+   "variant_seed": 99546,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
   },
   {
    "prop": "bin_recycling",
@@ -74221,6 +76410,36 @@
    "ground": "sidewalk"
   },
   {
+   "prop": "leaf_bag",
+   "position": [
+    -228.24,
+    -28359.07,
+    18.0
+   ],
+   "yaw": 238.48,
+   "scale": 0.987,
+   "variant_seed": 382830,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
+   "prop": "leaf_bag_mid",
+   "position": [
+    -189.68,
+    -28384.14,
+    18.0
+   ],
+   "yaw": 227.22,
+   "scale": 1.014,
+   "variant_seed": 467638,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
    "prop": "bin_recycling",
    "position": [
     967.13,
@@ -74403,6 +76622,21 @@
    "ground": "sidewalk"
   },
   {
+   "prop": "leaf_bag_mid",
+   "position": [
+    4178.21,
+    -31225.98,
+    18.0
+   ],
+   "yaw": 235.73,
+   "scale": 0.987,
+   "variant_seed": 376306,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
    "prop": "flower_box",
    "position": [
     8027.24,
@@ -74482,6 +76716,21 @@
    "ground": "sidewalk"
   },
   {
+   "prop": "leaf_bag",
+   "position": [
+    10735.27,
+    -35497.6,
+    18.0
+   ],
+   "yaw": 233.16,
+   "scale": 1.0,
+   "variant_seed": 928569,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
    "prop": "bin_recycling",
    "position": [
     11182.27,
@@ -74519,6 +76768,36 @@
    "variant_seed": 236370,
    "collision": false,
    "ground": "sidewalk"
+  },
+  {
+   "prop": "leaf_bag_mid",
+   "position": [
+    15419.93,
+    -38549.43,
+    18.0
+   ],
+   "yaw": 242.99,
+   "scale": 0.985,
+   "variant_seed": 196132,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
+   "prop": "leaf_bag_mid",
+   "position": [
+    15458.48,
+    -38574.54,
+    18.0
+   ],
+   "yaw": 248.67,
+   "scale": 0.973,
+   "variant_seed": 853289,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
   },
   {
    "prop": "bin_recycling",
@@ -74766,6 +77045,36 @@
    "variant_seed": 611035,
    "collision": false,
    "ground": "sidewalk"
+  },
+  {
+   "prop": "leaf_bag_mid",
+   "position": [
+    -7583.5,
+    -43697.49,
+    18.0
+   ],
+   "yaw": 147.44,
+   "scale": 0.996,
+   "variant_seed": 916016,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
+   "prop": "leaf_bag_low",
+   "position": [
+    -7559.38,
+    -43658.32,
+    18.0
+   ],
+   "yaw": 150.9,
+   "scale": 1.0,
+   "variant_seed": 116746,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
   },
   {
    "prop": "bin_recycling",
@@ -75383,6 +77692,51 @@
    "ground": "sidewalk"
   },
   {
+   "prop": "leaf_bag_mid",
+   "position": [
+    -40372.75,
+    44200.11,
+    18.0
+   ],
+   "yaw": 322.06,
+   "scale": 0.977,
+   "variant_seed": 607924,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
+   "prop": "leaf_bag",
+   "position": [
+    -40397.91,
+    44161.6,
+    18.0
+   ],
+   "yaw": 334.93,
+   "scale": 0.974,
+   "variant_seed": 421886,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
+   "prop": "leaf_bag_mid",
+   "position": [
+    -40423.08,
+    44123.09,
+    18.0
+   ],
+   "yaw": 317.36,
+   "scale": 1.027,
+   "variant_seed": 587392,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
    "prop": "flower_box",
    "position": [
     -40712.99,
@@ -75459,6 +77813,21 @@
    "variant_seed": 677362,
    "collision": false,
    "ground": "sidewalk"
+  },
+  {
+   "prop": "leaf_bag",
+   "position": [
+    -42430.06,
+    41058.33,
+    18.0
+   ],
+   "yaw": 316.46,
+   "scale": 0.976,
+   "variant_seed": 737985,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
   },
   {
    "prop": "bin_recycling",
@@ -75693,6 +78062,21 @@
    "variant_seed": 263067,
    "collision": false,
    "ground": "sidewalk"
+  },
+  {
+   "prop": "leaf_bag_low",
+   "position": [
+    42424.12,
+    3391.33,
+    18.0
+   ],
+   "yaw": 239.65,
+   "scale": 1.015,
+   "variant_seed": 457254,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
   },
   {
    "prop": "bin_recycling",
@@ -76163,6 +78547,51 @@
    "ground": "sidewalk"
   },
   {
+   "prop": "leaf_bag_mid",
+   "position": [
+    -43051.8,
+    43325.9,
+    18.0
+   ],
+   "yaw": 244.64,
+   "scale": 0.993,
+   "variant_seed": 196859,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
+   "prop": "leaf_bag",
+   "position": [
+    -43090.1,
+    43351.38,
+    18.0
+   ],
+   "yaw": 247.78,
+   "scale": 0.98,
+   "variant_seed": 213826,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
+   "prop": "leaf_bag",
+   "position": [
+    -43128.4,
+    43376.86,
+    18.0
+   ],
+   "yaw": 249.6,
+   "scale": 0.981,
+   "variant_seed": 881618,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
    "prop": "bin_recycling",
    "position": [
     -42082.95,
@@ -76356,6 +78785,21 @@
    "variant_seed": 90234,
    "collision": false,
    "ground": "sidewalk"
+  },
+  {
+   "prop": "leaf_bag",
+   "position": [
+    -32325.74,
+    36197.63,
+    18.0
+   ],
+   "yaw": 246.34,
+   "scale": 0.989,
+   "variant_seed": 721766,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
   },
   {
    "prop": "bin_recycling",
@@ -76711,6 +79155,51 @@
    "ground": "sidewalk"
   },
   {
+   "prop": "leaf_bag",
+   "position": [
+    -23218.59,
+    28787.61,
+    18.0
+   ],
+   "yaw": 54.38,
+   "scale": 1.016,
+   "variant_seed": 521805,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
+   "prop": "leaf_bag",
+   "position": [
+    -23256.86,
+    28813.13,
+    18.0
+   ],
+   "yaw": 48.13,
+   "scale": 0.977,
+   "variant_seed": 853013,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
+   "prop": "leaf_bag",
+   "position": [
+    -23295.14,
+    28838.65,
+    18.0
+   ],
+   "yaw": 54.5,
+   "scale": 1.022,
+   "variant_seed": 495255,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
    "prop": "bin_recycling",
    "position": [
     -23666.71,
@@ -76905,6 +79394,21 @@
    "variant_seed": 830611,
    "collision": false,
    "ground": "sidewalk"
+  },
+  {
+   "prop": "leaf_bag_mid",
+   "position": [
+    -35029.43,
+    36663.36,
+    18.0
+   ],
+   "yaw": 62.61,
+   "scale": 0.976,
+   "variant_seed": 232392,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
   },
   {
    "prop": "bin_recycling",
@@ -77180,20 +79684,6 @@
    "ground": "apron"
   },
   {
-   "prop": "bike_locked",
-   "position": [
-    47778.3,
-    58788.17,
-    9.0
-   ],
-   "yaw": 146.0,
-   "scale": 1.0,
-   "variant_seed": 532432,
-   "collision": false,
-   "ground": "apron",
-   "locked_to": "parterre_fence"
-  },
-  {
    "prop": "bin_recycling",
    "position": [
     48997.7,
@@ -77218,6 +79708,51 @@
    "variant_seed": 28524,
    "collision": false,
    "ground": "sidewalk"
+  },
+  {
+   "prop": "leaf_bag_low",
+   "position": [
+    48947.95,
+    57846.36,
+    18.0
+   ],
+   "yaw": 248.71,
+   "scale": 0.975,
+   "variant_seed": 226237,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
+   "prop": "leaf_bag_low",
+   "position": [
+    48909.82,
+    57872.09,
+    18.0
+   ],
+   "yaw": 238.45,
+   "scale": 0.988,
+   "variant_seed": 370745,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
+   "prop": "leaf_bag_mid",
+   "position": [
+    48871.68,
+    57897.81,
+    18.0
+   ],
+   "yaw": 242.97,
+   "scale": 1.026,
+   "variant_seed": 540805,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
   },
   {
    "prop": "bin_recycling",
@@ -77270,6 +79805,21 @@
    "variant_seed": 847785,
    "collision": false,
    "ground": "sidewalk"
+  },
+  {
+   "prop": "leaf_bag_mid",
+   "position": [
+    46693.31,
+    57948.75,
+    18.0
+   ],
+   "yaw": 45.86,
+   "scale": 0.973,
+   "variant_seed": 326064,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
   },
   {
    "prop": "bin_recycling",
@@ -77335,6 +79885,36 @@
    "variant_seed": 359687,
    "collision": false,
    "ground": "sidewalk"
+  },
+  {
+   "prop": "leaf_bag_mid",
+   "position": [
+    42437.46,
+    60819.24,
+    18.0
+   ],
+   "yaw": 68.13,
+   "scale": 1.024,
+   "variant_seed": 440209,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
+   "prop": "leaf_bag_low",
+   "position": [
+    42399.32,
+    60844.96,
+    18.0
+   ],
+   "yaw": 74.38,
+   "scale": 0.995,
+   "variant_seed": 290251,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
   },
   {
    "prop": "bin_recycling",
@@ -77427,6 +80007,21 @@
    "variant_seed": 312491,
    "collision": false,
    "ground": "sidewalk"
+  },
+  {
+   "prop": "leaf_bag_low",
+   "position": [
+    -43508.92,
+    -41700.44,
+    18.0
+   ],
+   "yaw": 321.52,
+   "scale": 0.992,
+   "variant_seed": 430887,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
   },
   {
    "prop": "bin_recycling",
@@ -77741,6 +80336,51 @@
    "variant_seed": 474256,
    "collision": false,
    "ground": "sidewalk"
+  },
+  {
+   "prop": "leaf_bag",
+   "position": [
+    -32199.29,
+    63589.19,
+    18.0
+   ],
+   "yaw": 239.82,
+   "scale": 1.026,
+   "variant_seed": 942197,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
+   "prop": "leaf_bag",
+   "position": [
+    -32160.95,
+    63563.77,
+    18.0
+   ],
+   "yaw": 226.47,
+   "scale": 0.993,
+   "variant_seed": 447203,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
+   "prop": "leaf_bag_mid",
+   "position": [
+    -32122.61,
+    63538.35,
+    18.0
+   ],
+   "yaw": 246.7,
+   "scale": 1.029,
+   "variant_seed": 9060,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
   },
   {
    "prop": "bin_recycling",
@@ -78342,20 +80982,6 @@
    "ground": "sidewalk"
   },
   {
-   "prop": "bike_locked",
-   "position": [
-    -6258.98,
-    57139.94,
-    9.0
-   ],
-   "yaw": 146.66,
-   "scale": 1.0,
-   "variant_seed": 51130,
-   "collision": false,
-   "ground": "apron",
-   "locked_to": "parterre_fence"
-  },
-  {
    "prop": "flower_box",
    "position": [
     -6456.74,
@@ -78513,6 +81139,21 @@
    "ground": "sidewalk"
   },
   {
+   "prop": "leaf_bag_mid",
+   "position": [
+    -10837.3,
+    58469.17,
+    18.0
+   ],
+   "yaw": 41.66,
+   "scale": 1.009,
+   "variant_seed": 848810,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
    "prop": "bin_recycling",
    "position": [
     -16932.71,
@@ -78576,6 +81217,36 @@
    "variant_seed": 795799,
    "collision": false,
    "ground": "sidewalk"
+  },
+  {
+   "prop": "leaf_bag_low",
+   "position": [
+    -17725.13,
+    62971.12,
+    18.0
+   ],
+   "yaw": 58.55,
+   "scale": 1.002,
+   "variant_seed": 395368,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
+   "prop": "leaf_bag",
+   "position": [
+    -17686.63,
+    62945.95,
+    18.0
+   ],
+   "yaw": 48.92,
+   "scale": 1.024,
+   "variant_seed": 124088,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
   },
   {
    "prop": "bike_locked",
@@ -78683,6 +81354,21 @@
    "ground": "sidewalk"
   },
   {
+   "prop": "leaf_bag_low",
+   "position": [
+    -25856.31,
+    68304.9,
+    18.0
+   ],
+   "yaw": 67.66,
+   "scale": 0.978,
+   "variant_seed": 535739,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
    "prop": "bin_recycling",
    "position": [
     -25250.04,
@@ -78746,6 +81432,21 @@
    "variant_seed": 112333,
    "collision": false,
    "ground": "sidewalk"
+  },
+  {
+   "prop": "leaf_bag_mid",
+   "position": [
+    47235.01,
+    43013.05,
+    18.0
+   ],
+   "yaw": 65.44,
+   "scale": 0.994,
+   "variant_seed": 154018,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
   },
   {
    "prop": "bin_recycling",
@@ -78931,6 +81632,36 @@
    "ground": "sidewalk"
   },
   {
+   "prop": "leaf_bag_low",
+   "position": [
+    31173.3,
+    53425.81,
+    18.0
+   ],
+   "yaw": 48.67,
+   "scale": 0.984,
+   "variant_seed": 319748,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
+   "prop": "leaf_bag_low",
+   "position": [
+    31211.84,
+    53400.7,
+    18.0
+   ],
+   "yaw": 68.59,
+   "scale": 0.991,
+   "variant_seed": 562997,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
    "prop": "bin_recycling",
    "position": [
     30288.28,
@@ -79033,6 +81764,21 @@
    "variant_seed": 914841,
    "collision": false,
    "ground": "sidewalk"
+  },
+  {
+   "prop": "leaf_bag_low",
+   "position": [
+    27667.72,
+    55709.24,
+    18.0
+   ],
+   "yaw": 65.97,
+   "scale": 0.984,
+   "variant_seed": 251347,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
   },
   {
    "prop": "bin_recycling",
@@ -79597,6 +82343,21 @@
    "ground": "sidewalk"
   },
   {
+   "prop": "leaf_bag_low",
+   "position": [
+    13590.13,
+    66137.4,
+    18.0
+   ],
+   "yaw": 234.88,
+   "scale": 1.006,
+   "variant_seed": 974010,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
    "prop": "bin_recycling",
    "position": [
     14296.46,
@@ -79688,6 +82449,36 @@
    "ground": "sidewalk"
   },
   {
+   "prop": "leaf_bag",
+   "position": [
+    16739.99,
+    64027.43,
+    18.0
+   ],
+   "yaw": 241.76,
+   "scale": 1.03,
+   "variant_seed": 355130,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
+   "prop": "leaf_bag_low",
+   "position": [
+    16778.21,
+    64001.83,
+    18.0
+   ],
+   "yaw": 226.92,
+   "scale": 0.981,
+   "variant_seed": 697976,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
    "prop": "bin_recycling",
    "position": [
     17319.64,
@@ -79712,6 +82503,21 @@
    "variant_seed": 456948,
    "collision": false,
    "ground": "sidewalk"
+  },
+  {
+   "prop": "leaf_bag_mid",
+   "position": [
+    17269.79,
+    63672.54,
+    18.0
+   ],
+   "yaw": 251.02,
+   "scale": 1.002,
+   "variant_seed": 446400,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
   },
   {
    "prop": "flower_box",
@@ -79817,20 +82623,6 @@
    "variant_seed": 121759,
    "collision": false,
    "ground": "apron"
-  },
-  {
-   "prop": "bike_locked",
-   "position": [
-    21278.0,
-    61140.16,
-    18.0
-   ],
-   "yaw": 146.18,
-   "scale": 1.0,
-   "variant_seed": 512108,
-   "collision": false,
-   "ground": "sidewalk",
-   "locked_to": "parterre_fence"
   },
   {
    "prop": "flower_box",
@@ -80263,6 +83055,21 @@
    "ground": "sidewalk"
   },
   {
+   "prop": "leaf_bag",
+   "position": [
+    -42889.01,
+    15227.46,
+    18.0
+   ],
+   "yaw": 233.58,
+   "scale": 1.011,
+   "variant_seed": 509662,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
    "prop": "bin_recycling",
    "position": [
     -42329.95,
@@ -80457,6 +83264,21 @@
    "variant_seed": 313253,
    "collision": false,
    "ground": "sidewalk"
+  },
+  {
+   "prop": "leaf_bag_mid",
+   "position": [
+    -41955.99,
+    13092.72,
+    18.0
+   ],
+   "yaw": 41.27,
+   "scale": 1.018,
+   "variant_seed": 967133,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
   },
   {
    "prop": "bin_recycling",
@@ -80953,6 +83775,36 @@
    "ground": "sidewalk"
   },
   {
+   "prop": "leaf_bag",
+   "position": [
+    -31533.42,
+    51096.64,
+    18.0
+   ],
+   "yaw": 44.43,
+   "scale": 0.985,
+   "variant_seed": 506523,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
+   "prop": "leaf_bag_low",
+   "position": [
+    -31572.22,
+    51121.35,
+    18.0
+   ],
+   "yaw": 47.47,
+   "scale": 1.028,
+   "variant_seed": 665282,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
    "prop": "bin_recycling",
    "position": [
     -32131.3,
@@ -81029,6 +83881,51 @@
    "variant_seed": 11622,
    "collision": false,
    "ground": "sidewalk"
+  },
+  {
+   "prop": "leaf_bag_mid",
+   "position": [
+    -25741.21,
+    48862.28,
+    18.0
+   ],
+   "yaw": 244.39,
+   "scale": 0.995,
+   "variant_seed": 187673,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
+   "prop": "leaf_bag_mid",
+   "position": [
+    -25702.92,
+    48836.78,
+    18.0
+   ],
+   "yaw": 231.0,
+   "scale": 1.0,
+   "variant_seed": 670272,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
+   "prop": "leaf_bag_mid",
+   "position": [
+    -25664.64,
+    48811.28,
+    18.0
+   ],
+   "yaw": 228.56,
+   "scale": 1.01,
+   "variant_seed": 569097,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
   },
   {
    "prop": "bin_recycling",
@@ -81213,6 +84110,21 @@
    "ground": "sidewalk"
   },
   {
+   "prop": "leaf_bag_mid",
+   "position": [
+    -18851.11,
+    44272.96,
+    18.0
+   ],
+   "yaw": 245.73,
+   "scale": 0.973,
+   "variant_seed": 295599,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
    "prop": "flower_box",
    "position": [
     -18669.93,
@@ -81304,6 +84216,51 @@
    "ground": "sidewalk"
   },
   {
+   "prop": "leaf_bag_mid",
+   "position": [
+    -23909.07,
+    46048.98,
+    18.0
+   ],
+   "yaw": 66.23,
+   "scale": 1.025,
+   "variant_seed": 179053,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
+   "prop": "leaf_bag_mid",
+   "position": [
+    -23870.78,
+    46023.48,
+    18.0
+   ],
+   "yaw": 65.34,
+   "scale": 1.013,
+   "variant_seed": 303818,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
+   "prop": "leaf_bag_mid",
+   "position": [
+    -23832.5,
+    45997.98,
+    18.0
+   ],
+   "yaw": 71.36,
+   "scale": 1.028,
+   "variant_seed": 749912,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
    "prop": "flower_box",
    "position": [
     -24654.8,
@@ -81341,6 +84298,21 @@
    "variant_seed": 862169,
    "collision": false,
    "ground": "sidewalk"
+  },
+  {
+   "prop": "leaf_bag_mid",
+   "position": [
+    -25817.93,
+    47320.43,
+    18.0
+   ],
+   "yaw": 71.15,
+   "scale": 0.972,
+   "variant_seed": 562839,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
   },
   {
    "prop": "bin_recycling",
@@ -81916,6 +84888,51 @@
    "ground": "sidewalk"
   },
   {
+   "prop": "leaf_bag_mid",
+   "position": [
+    51501.73,
+    16871.92,
+    18.0
+   ],
+   "yaw": 57.39,
+   "scale": 1.013,
+   "variant_seed": 506695,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
+   "prop": "leaf_bag_mid",
+   "position": [
+    51463.33,
+    16897.24,
+    18.0
+   ],
+   "yaw": 42.83,
+   "scale": 0.98,
+   "variant_seed": 796359,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
+   "prop": "leaf_bag",
+   "position": [
+    51424.92,
+    16922.55,
+    18.0
+   ],
+   "yaw": 41.96,
+   "scale": 0.989,
+   "variant_seed": 159262,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
    "prop": "bin_recycling",
    "position": [
     50319.43,
@@ -81953,6 +84970,21 @@
    "variant_seed": 588172,
    "collision": false,
    "ground": "sidewalk"
+  },
+  {
+   "prop": "leaf_bag",
+   "position": [
+    46093.77,
+    20436.28,
+    18.0
+   ],
+   "yaw": 69.84,
+   "scale": 0.987,
+   "variant_seed": 475669,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
   },
   {
    "prop": "flower_box",
@@ -82149,6 +85181,36 @@
    "variant_seed": 777394,
    "collision": false,
    "ground": "sidewalk"
+  },
+  {
+   "prop": "leaf_bag",
+   "position": [
+    42714.59,
+    -47110.73,
+    18.0
+   ],
+   "yaw": 54.3,
+   "scale": 1.021,
+   "variant_seed": 995350,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
+   "prop": "leaf_bag",
+   "position": [
+    42676.06,
+    -47085.6,
+    18.0
+   ],
+   "yaw": 60.45,
+   "scale": 0.975,
+   "variant_seed": 795331,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
   },
   {
    "prop": "bin_recycling",
@@ -82360,6 +85422,21 @@
    "ground": "sidewalk"
   },
   {
+   "prop": "leaf_bag_low",
+   "position": [
+    41494.01,
+    -44735.39,
+    18.0
+   ],
+   "yaw": 245.4,
+   "scale": 1.006,
+   "variant_seed": 20324,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
    "prop": "bin_recycling",
    "position": [
     43404.17,
@@ -82475,6 +85552,21 @@
    "variant_seed": 796513,
    "collision": false,
    "ground": "sidewalk"
+  },
+  {
+   "prop": "leaf_bag",
+   "position": [
+    5697.23,
+    -22369.96,
+    18.0
+   ],
+   "yaw": 58.02,
+   "scale": 1.015,
+   "variant_seed": 10982,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
   },
   {
    "prop": "bin_recycling",
@@ -83026,6 +86118,36 @@
    "ground": "sidewalk"
   },
   {
+   "prop": "leaf_bag_low",
+   "position": [
+    54019.92,
+    -19715.01,
+    18.0
+   ],
+   "yaw": 137.31,
+   "scale": 1.028,
+   "variant_seed": 880782,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
+   "prop": "leaf_bag",
+   "position": [
+    54039.59,
+    -19673.42,
+    18.0
+   ],
+   "yaw": 147.48,
+   "scale": 0.976,
+   "variant_seed": 75999,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
    "prop": "bin_recycling",
    "position": [
     53601.9,
@@ -83534,6 +86656,51 @@
    "ground": "sidewalk"
   },
   {
+   "prop": "leaf_bag_mid",
+   "position": [
+    -26210.43,
+    -26924.96,
+    18.0
+   ],
+   "yaw": 45.69,
+   "scale": 0.975,
+   "variant_seed": 178943,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
+   "prop": "leaf_bag",
+   "position": [
+    -26172.94,
+    -26951.62,
+    18.0
+   ],
+   "yaw": 64.02,
+   "scale": 1.001,
+   "variant_seed": 242706,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
+   "prop": "leaf_bag_mid",
+   "position": [
+    -26135.45,
+    -26978.28,
+    18.0
+   ],
+   "yaw": 55.71,
+   "scale": 0.987,
+   "variant_seed": 898323,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
    "prop": "bin_recycling",
    "position": [
     -26845.71,
@@ -83831,6 +86998,51 @@
    "variant_seed": 956821,
    "collision": false,
    "ground": "sidewalk"
+  },
+  {
+   "prop": "leaf_bag_low",
+   "position": [
+    -34044.28,
+    -20234.07,
+    18.0
+   ],
+   "yaw": 241.73,
+   "scale": 1.025,
+   "variant_seed": 81243,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
+   "prop": "leaf_bag_mid",
+   "position": [
+    -34005.73,
+    -20259.16,
+    18.0
+   ],
+   "yaw": 245.68,
+   "scale": 0.971,
+   "variant_seed": 216445,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
+   "prop": "leaf_bag",
+   "position": [
+    -33967.18,
+    -20284.25,
+    18.0
+   ],
+   "yaw": 236.21,
+   "scale": 0.972,
+   "variant_seed": 582375,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
   },
   {
    "prop": "bin_recycling",
@@ -84172,20 +87384,6 @@
    "ground": "ground"
   },
   {
-   "prop": "bike_locked",
-   "position": [
-    -28014.25,
-    -23972.41,
-    0.0
-   ],
-   "yaw": 146.45,
-   "scale": 1.0,
-   "variant_seed": 290957,
-   "collision": false,
-   "ground": "ground",
-   "locked_to": "parterre_fence"
-  },
-  {
    "prop": "flower_box",
    "position": [
     -27745.47,
@@ -84210,6 +87408,36 @@
    "variant_seed": 901615,
    "collision": false,
    "ground": "sidewalk"
+  },
+  {
+   "prop": "leaf_bag",
+   "position": [
+    53175.98,
+    -46616.91,
+    18.0
+   ],
+   "yaw": 58.46,
+   "scale": 0.984,
+   "variant_seed": 886136,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
+   "prop": "leaf_bag_mid",
+   "position": [
+    53214.4,
+    -46642.2,
+    18.0
+   ],
+   "yaw": 62.13,
+   "scale": 1.005,
+   "variant_seed": 816944,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
   },
   {
    "prop": "bike_locked",
@@ -84250,6 +87478,36 @@
    "variant_seed": 564884,
    "collision": false,
    "ground": "sidewalk"
+  },
+  {
+   "prop": "leaf_bag_mid",
+   "position": [
+    52506.84,
+    -46176.51,
+    18.0
+   ],
+   "yaw": 47.69,
+   "scale": 0.996,
+   "variant_seed": 718886,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
+   "prop": "leaf_bag_low",
+   "position": [
+    52545.27,
+    -46201.8,
+    18.0
+   ],
+   "yaw": 54.52,
+   "scale": 0.974,
+   "variant_seed": 561098,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
   },
   {
    "prop": "bin_recycling",
@@ -84395,6 +87653,21 @@
    "ground": "sidewalk"
   },
   {
+   "prop": "leaf_bag_low",
+   "position": [
+    49711.11,
+    -43188.34,
+    18.0
+   ],
+   "yaw": 249.48,
+   "scale": 1.007,
+   "variant_seed": 886136,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
    "prop": "bin_recycling",
    "position": [
     50460.09,
@@ -84499,6 +87772,21 @@
    "ground": "sidewalk"
   },
   {
+   "prop": "leaf_bag",
+   "position": [
+    52115.04,
+    -44770.5,
+    18.0
+   ],
+   "yaw": 226.84,
+   "scale": 1.027,
+   "variant_seed": 811182,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
    "prop": "bike_locked",
    "position": [
     52159.68,
@@ -84537,6 +87825,21 @@
    "variant_seed": 691464,
    "collision": false,
    "ground": "sidewalk"
+  },
+  {
+   "prop": "leaf_bag",
+   "position": [
+    53098.87,
+    -45418.01,
+    18.0
+   ],
+   "yaw": 245.4,
+   "scale": 0.999,
+   "variant_seed": 829293,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
   },
   {
    "prop": "bin_recycling",
@@ -84814,6 +88117,51 @@
    "ground": "sidewalk"
   },
   {
+   "prop": "leaf_bag_mid",
+   "position": [
+    37896.6,
+    -35413.04,
+    18.0
+   ],
+   "yaw": 233.47,
+   "scale": 1.019,
+   "variant_seed": 218290,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
+   "prop": "leaf_bag_mid",
+   "position": [
+    37858.18,
+    -35387.76,
+    18.0
+   ],
+   "yaw": 224.72,
+   "scale": 1.014,
+   "variant_seed": 840984,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
+   "prop": "leaf_bag",
+   "position": [
+    37819.75,
+    -35362.47,
+    18.0
+   ],
+   "yaw": 248.23,
+   "scale": 1.028,
+   "variant_seed": 605715,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
    "prop": "bin_recycling",
    "position": [
     39157.5,
@@ -84877,6 +88225,21 @@
    "variant_seed": 107191,
    "collision": false,
    "ground": "sidewalk"
+  },
+  {
+   "prop": "leaf_bag",
+   "position": [
+    44067.62,
+    -39474.26,
+    18.0
+   ],
+   "yaw": 231.36,
+   "scale": 0.994,
+   "variant_seed": 780396,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
   },
   {
    "prop": "bike_locked",
@@ -85192,6 +88555,36 @@
    "ground": "sidewalk"
   },
   {
+   "prop": "leaf_bag_low",
+   "position": [
+    29223.14,
+    -27934.73,
+    18.0
+   ],
+   "yaw": 332.65,
+   "scale": 1.003,
+   "variant_seed": 349264,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
+   "prop": "leaf_bag_low",
+   "position": [
+    29198.45,
+    -27973.54,
+    18.0
+   ],
+   "yaw": 314.49,
+   "scale": 0.978,
+   "variant_seed": 554053,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
    "prop": "bin_recycling",
    "position": [
     30124.2,
@@ -85203,6 +88596,36 @@
    "variant_seed": 414026,
    "collision": false,
    "ground": "sidewalk"
+  },
+  {
+   "prop": "leaf_bag",
+   "position": [
+    30156.41,
+    -28937.32,
+    18.0
+   ],
+   "yaw": 149.01,
+   "scale": 1.026,
+   "variant_seed": 418958,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
+   "prop": "leaf_bag_mid",
+   "position": [
+    30181.11,
+    -28898.51,
+    18.0
+   ],
+   "yaw": 139.18,
+   "scale": 0.998,
+   "variant_seed": 614171,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
   },
   {
    "prop": "bin_recycling",
@@ -85324,6 +88747,51 @@
    "ground": "sidewalk"
   },
   {
+   "prop": "leaf_bag_mid",
+   "position": [
+    28203.5,
+    -32006.5,
+    18.0
+   ],
+   "yaw": 124.92,
+   "scale": 0.99,
+   "variant_seed": 349264,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
+   "prop": "leaf_bag",
+   "position": [
+    28178.8,
+    -32045.31,
+    18.0
+   ],
+   "yaw": 146.61,
+   "scale": 0.975,
+   "variant_seed": 554053,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
+   "prop": "leaf_bag",
+   "position": [
+    28154.11,
+    -32084.12,
+    18.0
+   ],
+   "yaw": 132.2,
+   "scale": 0.998,
+   "variant_seed": 781764,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
    "prop": "bin_recycling",
    "position": [
     27804.48,
@@ -85348,6 +88816,51 @@
    "variant_seed": 152899,
    "collision": false,
    "ground": "sidewalk"
+  },
+  {
+   "prop": "leaf_bag_mid",
+   "position": [
+    27836.69,
+    -32582.96,
+    18.0
+   ],
+   "yaw": 150.31,
+   "scale": 0.99,
+   "variant_seed": 469788,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
+   "prop": "leaf_bag",
+   "position": [
+    27861.39,
+    -32544.15,
+    18.0
+   ],
+   "yaw": 132.11,
+   "scale": 1.021,
+   "variant_seed": 73181,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
+   "prop": "leaf_bag_mid",
+   "position": [
+    27886.08,
+    -32505.34,
+    18.0
+   ],
+   "yaw": 141.66,
+   "scale": 0.973,
+   "variant_seed": 817520,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
   },
   {
    "prop": "bin_recycling",
@@ -85675,6 +89188,51 @@
    "ground": "sidewalk"
   },
   {
+   "prop": "leaf_bag",
+   "position": [
+    -27682.71,
+    2230.59,
+    18.0
+   ],
+   "yaw": 224.35,
+   "scale": 0.985,
+   "variant_seed": 751003,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
+   "prop": "leaf_bag",
+   "position": [
+    -27721.48,
+    2255.34,
+    18.0
+   ],
+   "yaw": 227.0,
+   "scale": 1.023,
+   "variant_seed": 10621,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
+   "prop": "leaf_bag_mid",
+   "position": [
+    -27760.25,
+    2280.09,
+    18.0
+   ],
+   "yaw": 232.4,
+   "scale": 1.03,
+   "variant_seed": 964344,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
    "prop": "bin_recycling",
    "position": [
     -26982.59,
@@ -85831,6 +89389,36 @@
    "ground": "sidewalk"
   },
   {
+   "prop": "leaf_bag",
+   "position": [
+    -30482.66,
+    4091.78,
+    18.0
+   ],
+   "yaw": 233.91,
+   "scale": 1.01,
+   "variant_seed": 95524,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
+   "prop": "leaf_bag",
+   "position": [
+    -30445.81,
+    4064.24,
+    18.0
+   ],
+   "yaw": 226.43,
+   "scale": 0.995,
+   "variant_seed": 526233,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
    "prop": "bin_recycling",
    "position": [
     -29977.08,
@@ -85907,6 +89495,21 @@
    "variant_seed": 595103,
    "collision": false,
    "ground": "sidewalk"
+  },
+  {
+   "prop": "leaf_bag_low",
+   "position": [
+    -22061.56,
+    -4506.57,
+    18.0
+   ],
+   "yaw": 45.77,
+   "scale": 0.976,
+   "variant_seed": 798005,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
   },
   {
    "prop": "bike_locked",
@@ -85999,6 +89602,21 @@
    "variant_seed": 548031,
    "collision": false,
    "ground": "sidewalk"
+  },
+  {
+   "prop": "leaf_bag_mid",
+   "position": [
+    -23244.29,
+    -3724.55,
+    18.0
+   ],
+   "yaw": 67.63,
+   "scale": 1.029,
+   "variant_seed": 174258,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
   },
   {
    "prop": "flower_box",
@@ -86118,6 +89736,51 @@
    "ground": "sidewalk"
   },
   {
+   "prop": "leaf_bag",
+   "position": [
+    -31030.8,
+    1423.91,
+    18.0
+   ],
+   "yaw": 57.33,
+   "scale": 1.022,
+   "variant_seed": 210977,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
+   "prop": "leaf_bag",
+   "position": [
+    -31069.17,
+    1449.28,
+    18.0
+   ],
+   "yaw": 66.1,
+   "scale": 0.972,
+   "variant_seed": 508782,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
+   "prop": "leaf_bag",
+   "position": [
+    -31107.54,
+    1474.65,
+    18.0
+   ],
+   "yaw": 46.3,
+   "scale": 0.972,
+   "variant_seed": 426813,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
    "prop": "bin_recycling",
    "position": [
     -31576.97,
@@ -86142,6 +89805,21 @@
    "variant_seed": 119358,
    "collision": false,
    "ground": "sidewalk"
+  },
+  {
+   "prop": "leaf_bag",
+   "position": [
+    -31689.58,
+    1859.5,
+    18.0
+   ],
+   "yaw": 63.7,
+   "scale": 1.008,
+   "variant_seed": 452029,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
   },
   {
    "prop": "flower_box",
@@ -86614,6 +90292,36 @@
    "ground": "sidewalk"
   },
   {
+   "prop": "leaf_bag",
+   "position": [
+    -15454.03,
+    -27715.55,
+    18.0
+   ],
+   "yaw": 222.93,
+   "scale": 0.982,
+   "variant_seed": 609921,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
+   "prop": "leaf_bag_mid",
+   "position": [
+    -15415.55,
+    -27740.75,
+    18.0
+   ],
+   "yaw": 235.9,
+   "scale": 1.025,
+   "variant_seed": 42934,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
    "prop": "bin_recycling",
    "position": [
     -32011.79,
@@ -86716,6 +90424,21 @@
    "variant_seed": 98052,
    "collision": false,
    "ground": "sidewalk"
+  },
+  {
+   "prop": "leaf_bag_low",
+   "position": [
+    -37235.98,
+    -14878.58,
+    18.0
+   ],
+   "yaw": 42.84,
+   "scale": 0.974,
+   "variant_seed": 560436,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
   },
   {
    "prop": "bin_recycling",
@@ -86862,6 +90585,51 @@
    "ground": "sidewalk"
   },
   {
+   "prop": "leaf_bag",
+   "position": [
+    -43652.02,
+    -10711.76,
+    18.0
+   ],
+   "yaw": 46.15,
+   "scale": 1.014,
+   "variant_seed": 372319,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
+   "prop": "leaf_bag",
+   "position": [
+    -43690.6,
+    -10686.71,
+    18.0
+   ],
+   "yaw": 49.51,
+   "scale": 0.987,
+   "variant_seed": 222755,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
+   "prop": "leaf_bag_mid",
+   "position": [
+    -43729.18,
+    -10661.65,
+    18.0
+   ],
+   "yaw": 65.67,
+   "scale": 1.025,
+   "variant_seed": 820302,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
    "prop": "bin_recycling",
    "position": [
     -42257.93,
@@ -86873,6 +90641,36 @@
    "variant_seed": 587193,
    "collision": false,
    "ground": "sidewalk"
+  },
+  {
+   "prop": "leaf_bag_mid",
+   "position": [
+    -42308.25,
+    -10205.89,
+    18.0
+   ],
+   "yaw": 247.0,
+   "scale": 0.994,
+   "variant_seed": 843994,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
+   "prop": "leaf_bag",
+   "position": [
+    -42346.83,
+    -10180.84,
+    18.0
+   ],
+   "yaw": 246.68,
+   "scale": 1.026,
+   "variant_seed": 565234,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
   },
   {
    "prop": "bin_recycling",
@@ -87070,6 +90868,21 @@
    "ground": "sidewalk"
   },
   {
+   "prop": "leaf_bag",
+   "position": [
+    -30846.77,
+    -17649.42,
+    18.0
+   ],
+   "yaw": 235.61,
+   "scale": 1.029,
+   "variant_seed": 843166,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
    "prop": "bin_recycling",
    "position": [
     -5020.16,
@@ -87198,6 +91011,51 @@
    "variant_seed": 31967,
    "collision": false,
    "ground": "sidewalk"
+  },
+  {
+   "prop": "leaf_bag_low",
+   "position": [
+    -8876.83,
+    -31976.31,
+    18.0
+   ],
+   "yaw": 240.72,
+   "scale": 0.982,
+   "variant_seed": 227830,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
+   "prop": "leaf_bag",
+   "position": [
+    -8838.24,
+    -32001.35,
+    18.0
+   ],
+   "yaw": 223.26,
+   "scale": 0.989,
+   "variant_seed": 922172,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
+   "prop": "leaf_bag_mid",
+   "position": [
+    -8799.65,
+    -32026.39,
+    18.0
+   ],
+   "yaw": 249.54,
+   "scale": 0.99,
+   "variant_seed": 434699,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
   },
   {
    "prop": "bin_recycling",
@@ -87500,6 +91358,36 @@
    "ground": "sidewalk"
   },
   {
+   "prop": "leaf_bag_low",
+   "position": [
+    30882.23,
+    -27883.51,
+    18.0
+   ],
+   "yaw": 139.03,
+   "scale": 0.994,
+   "variant_seed": 102678,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
+   "prop": "leaf_bag_mid",
+   "position": [
+    30847.84,
+    -27914.06,
+    18.0
+   ],
+   "yaw": 143.85,
+   "scale": 0.99,
+   "variant_seed": 337789,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
    "prop": "bin_recycling",
    "position": [
     -38280.39,
@@ -87617,6 +91505,51 @@
    "ground": "sidewalk"
   },
   {
+   "prop": "leaf_bag_mid",
+   "position": [
+    -33213.4,
+    -40654.92,
+    18.0
+   ],
+   "yaw": 61.7,
+   "scale": 1.023,
+   "variant_seed": 15040,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
+   "prop": "leaf_bag_mid",
+   "position": [
+    -33252.27,
+    -40630.31,
+    18.0
+   ],
+   "yaw": 43.64,
+   "scale": 0.992,
+   "variant_seed": 177289,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
+   "prop": "leaf_bag",
+   "position": [
+    -33291.13,
+    -40605.71,
+    18.0
+   ],
+   "yaw": 62.53,
+   "scale": 0.977,
+   "variant_seed": 957288,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
    "prop": "bin_recycling",
    "position": [
     -34304.61,
@@ -87693,6 +91626,21 @@
    "variant_seed": 161951,
    "collision": false,
    "ground": "sidewalk"
+  },
+  {
+   "prop": "leaf_bag_mid",
+   "position": [
+    -37362.48,
+    -38028.45,
+    18.0
+   ],
+   "yaw": 43.24,
+   "scale": 1.023,
+   "variant_seed": 193584,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
   },
   {
    "prop": "bin_recycling",
@@ -87799,6 +91747,36 @@
    "ground": "sidewalk"
   },
   {
+   "prop": "leaf_bag",
+   "position": [
+    -23426.45,
+    -47002.28,
+    18.0
+   ],
+   "yaw": 55.67,
+   "scale": 0.984,
+   "variant_seed": 296674,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
+   "prop": "leaf_bag_mid",
+   "position": [
+    -23465.03,
+    -46977.23,
+    18.0
+   ],
+   "yaw": 59.15,
+   "scale": 0.977,
+   "variant_seed": 62352,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
    "prop": "bin_recycling",
    "position": [
     -25347.94,
@@ -87889,6 +91867,51 @@
    "variant_seed": 137321,
    "collision": false,
    "ground": "sidewalk"
+  },
+  {
+   "prop": "leaf_bag",
+   "position": [
+    -29091.61,
+    -43323.17,
+    18.0
+   ],
+   "yaw": 58.64,
+   "scale": 1.024,
+   "variant_seed": 537612,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
+   "prop": "leaf_bag_mid",
+   "position": [
+    -29053.03,
+    -43348.22,
+    18.0
+   ],
+   "yaw": 50.53,
+   "scale": 1.014,
+   "variant_seed": 791718,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
+   "prop": "leaf_bag",
+   "position": [
+    -29014.45,
+    -43373.28,
+    18.0
+   ],
+   "yaw": 66.52,
+   "scale": 1.016,
+   "variant_seed": 556199,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
   },
   {
    "prop": "bin_recycling",
@@ -88084,6 +92107,36 @@
    "variant_seed": 28916,
    "collision": false,
    "ground": "sidewalk"
+  },
+  {
+   "prop": "leaf_bag",
+   "position": [
+    -22374.6,
+    -8648.84,
+    18.0
+   ],
+   "yaw": 337.9,
+   "scale": 1.023,
+   "variant_seed": 345865,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
+   "prop": "leaf_bag_low",
+   "position": [
+    -22399.65,
+    -8687.41,
+    18.0
+   ],
+   "yaw": 323.24,
+   "scale": 1.011,
+   "variant_seed": 60707,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
   },
   {
    "prop": "bin_recycling",
@@ -88476,6 +92529,51 @@
    "ground": "sidewalk"
   },
   {
+   "prop": "leaf_bag",
+   "position": [
+    -39970.66,
+    -29606.23,
+    18.0
+   ],
+   "yaw": 250.44,
+   "scale": 0.981,
+   "variant_seed": 444196,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
+   "prop": "leaf_bag",
+   "position": [
+    -39932.07,
+    -29631.27,
+    18.0
+   ],
+   "yaw": 237.83,
+   "scale": 0.989,
+   "variant_seed": 715834,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
+   "prop": "leaf_bag_mid",
+   "position": [
+    -39893.48,
+    -29656.3,
+    18.0
+   ],
+   "yaw": 231.82,
+   "scale": 1.006,
+   "variant_seed": 20704,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
    "prop": "bin_recycling",
    "position": [
     -38927.28,
@@ -88541,6 +92639,51 @@
    "ground": "sidewalk"
   },
   {
+   "prop": "leaf_bag",
+   "position": [
+    -36759.36,
+    -30885.22,
+    18.0
+   ],
+   "yaw": 313.99,
+   "scale": 1.0,
+   "variant_seed": 291777,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
+   "prop": "leaf_bag_mid",
+   "position": [
+    -36734.78,
+    -30846.34,
+    18.0
+   ],
+   "yaw": 329.35,
+   "scale": 0.983,
+   "variant_seed": 622636,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
+   "prop": "leaf_bag_mid",
+   "position": [
+    -36710.2,
+    -30807.46,
+    18.0
+   ],
+   "yaw": 339.75,
+   "scale": 0.97,
+   "variant_seed": 549848,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
    "prop": "bin_recycling",
    "position": [
     -33879.02,
@@ -88604,6 +92747,51 @@
    "variant_seed": 312920,
    "collision": false,
    "ground": "sidewalk"
+  },
+  {
+   "prop": "leaf_bag_mid",
+   "position": [
+    17344.08,
+    -46161.1,
+    18.0
+   ],
+   "yaw": 327.81,
+   "scale": 0.977,
+   "variant_seed": 939856,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
+   "prop": "leaf_bag",
+   "position": [
+    17319.7,
+    -46200.11,
+    18.0
+   ],
+   "yaw": 317.03,
+   "scale": 0.981,
+   "variant_seed": 128641,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
+   "prop": "leaf_bag",
+   "position": [
+    17295.33,
+    -46239.12,
+    18.0
+   ],
+   "yaw": 327.14,
+   "scale": 0.999,
+   "variant_seed": 585552,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
   },
   {
    "prop": "flower_box",
@@ -88971,18 +93159,34 @@
    "ground": "sidewalk"
   },
   {
-   "prop": "bike_locked",
+   "prop": "leaf_bag",
    "position": [
-    21560.23,
-    67150.36,
+    21764.36,
+    67153.75,
     18.0
    ],
-   "yaw": 326.07,
-   "scale": 1.0,
-   "variant_seed": 113528,
+   "yaw": 68.53,
+   "scale": 0.975,
+   "variant_seed": 552285,
    "collision": false,
    "ground": "sidewalk",
-   "locked_to": "parterre_fence"
+   "season": "october",
+   "at": "curb"
+  },
+  {
+   "prop": "leaf_bag_low",
+   "position": [
+    21726.19,
+    67179.43,
+    18.0
+   ],
+   "yaw": 55.5,
+   "scale": 0.979,
+   "variant_seed": 823549,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
   },
   {
    "prop": "bin_recycling",
@@ -89352,6 +93556,36 @@
    "ground": "sidewalk"
   },
   {
+   "prop": "leaf_bag",
+   "position": [
+    35629.74,
+    65404.44,
+    18.0
+   ],
+   "yaw": 66.25,
+   "scale": 1.016,
+   "variant_seed": 709302,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
+   "prop": "leaf_bag",
+   "position": [
+    35591.58,
+    65430.13,
+    18.0
+   ],
+   "yaw": 52.64,
+   "scale": 1.003,
+   "variant_seed": 387232,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
    "prop": "bin_recycling",
    "position": [
     34115.35,
@@ -89625,6 +93859,36 @@
    "ground": "sidewalk"
   },
   {
+   "prop": "leaf_bag",
+   "position": [
+    43819.76,
+    52283.5,
+    18.0
+   ],
+   "yaw": 64.88,
+   "scale": 1.006,
+   "variant_seed": 322463,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
+   "prop": "leaf_bag_mid",
+   "position": [
+    43857.98,
+    52257.89,
+    18.0
+   ],
+   "yaw": 46.59,
+   "scale": 0.974,
+   "variant_seed": 564874,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
    "prop": "flower_box",
    "position": [
     43558.5,
@@ -89833,6 +94097,36 @@
    "ground": "sidewalk"
   },
   {
+   "prop": "leaf_bag_mid",
+   "position": [
+    39391.74,
+    55250.92,
+    18.0
+   ],
+   "yaw": 68.25,
+   "scale": 1.029,
+   "variant_seed": 656093,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
+   "prop": "leaf_bag",
+   "position": [
+    39429.95,
+    55225.31,
+    18.0
+   ],
+   "yaw": 48.35,
+   "scale": 1.01,
+   "variant_seed": 992734,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
    "prop": "bike_locked",
    "position": [
     39072.51,
@@ -89871,6 +94165,36 @@
    "variant_seed": 230603,
    "collision": false,
    "ground": "sidewalk"
+  },
+  {
+   "prop": "leaf_bag_mid",
+   "position": [
+    35174.24,
+    58077.25,
+    18.0
+   ],
+   "yaw": 49.33,
+   "scale": 0.992,
+   "variant_seed": 177890,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
+   "prop": "leaf_bag",
+   "position": [
+    35136.03,
+    58102.86,
+    18.0
+   ],
+   "yaw": 62.02,
+   "scale": 0.987,
+   "variant_seed": 960442,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
   },
   {
    "prop": "bin_recycling",
@@ -90118,6 +94442,21 @@
    "variant_seed": 38163,
    "collision": false,
    "ground": "sidewalk"
+  },
+  {
+   "prop": "leaf_bag",
+   "position": [
+    38520.11,
+    57250.68,
+    18.0
+   ],
+   "yaw": 230.63,
+   "scale": 0.999,
+   "variant_seed": 99970,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
   },
   {
    "prop": "flower_box",
@@ -90590,6 +94929,21 @@
    "ground": "sidewalk"
   },
   {
+   "prop": "leaf_bag_low",
+   "position": [
+    27134.48,
+    2509.33,
+    18.0
+   ],
+   "yaw": 49.78,
+   "scale": 1.007,
+   "variant_seed": 869182,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
    "prop": "flower_box",
    "position": [
     26391.89,
@@ -90708,6 +95062,21 @@
    "ground": "sidewalk"
   },
   {
+   "prop": "leaf_bag_mid",
+   "position": [
+    22555.43,
+    7017.74,
+    18.0
+   ],
+   "yaw": 245.63,
+   "scale": 0.984,
+   "variant_seed": 869182,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
    "prop": "bin_recycling",
    "position": [
     22941.83,
@@ -90771,6 +95140,36 @@
    "variant_seed": 900963,
    "collision": false,
    "ground": "sidewalk"
+  },
+  {
+   "prop": "leaf_bag_low",
+   "position": [
+    24512.01,
+    5764.23,
+    18.0
+   ],
+   "yaw": 230.26,
+   "scale": 0.995,
+   "variant_seed": 675741,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
+   "prop": "leaf_bag_mid",
+   "position": [
+    24473.27,
+    5789.05,
+    18.0
+   ],
+   "yaw": 230.46,
+   "scale": 0.988,
+   "variant_seed": 41976,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
   },
   {
    "prop": "bin_recycling",
@@ -90890,6 +95289,21 @@
    "ground": "sidewalk"
   },
   {
+   "prop": "leaf_bag",
+   "position": [
+    -27643.67,
+    11829.84,
+    18.0
+   ],
+   "yaw": 137.19,
+   "scale": 0.984,
+   "variant_seed": 171342,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
    "prop": "bin_recycling",
    "position": [
     -28053.64,
@@ -90953,6 +95367,51 @@
    "variant_seed": 922713,
    "collision": false,
    "ground": "sidewalk"
+  },
+  {
+   "prop": "leaf_bag_mid",
+   "position": [
+    -30495.23,
+    7479.47,
+    18.0
+   ],
+   "yaw": 157.57,
+   "scale": 0.989,
+   "variant_seed": 545206,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
+   "prop": "leaf_bag_mid",
+   "position": [
+    -30470.01,
+    7517.94,
+    18.0
+   ],
+   "yaw": 143.14,
+   "scale": 0.998,
+   "variant_seed": 623945,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
+   "prop": "leaf_bag_mid",
+   "position": [
+    -30444.79,
+    7556.42,
+    18.0
+   ],
+   "yaw": 141.1,
+   "scale": 0.974,
+   "variant_seed": 394376,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
   },
   {
    "prop": "bin_recycling",
@@ -91333,6 +95792,51 @@
    "ground": "sidewalk"
   },
   {
+   "prop": "leaf_bag_mid",
+   "position": [
+    11841.21,
+    -26401.99,
+    18.0
+   ],
+   "yaw": 49.89,
+   "scale": 0.998,
+   "variant_seed": 365890,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
+   "prop": "leaf_bag",
+   "position": [
+    11879.8,
+    -26427.03,
+    18.0
+   ],
+   "yaw": 64.15,
+   "scale": 0.983,
+   "variant_seed": 605027,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
+   "prop": "leaf_bag",
+   "position": [
+    11918.39,
+    -26452.07,
+    18.0
+   ],
+   "yaw": 50.6,
+   "scale": 1.004,
+   "variant_seed": 319813,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
    "prop": "bin_recycling",
    "position": [
     11164.41,
@@ -91450,6 +95954,51 @@
    "variant_seed": 382459,
    "collision": false,
    "ground": "sidewalk"
+  },
+  {
+   "prop": "leaf_bag",
+   "position": [
+    23336.31,
+    -33971.4,
+    18.0
+   ],
+   "yaw": 53.79,
+   "scale": 1.012,
+   "variant_seed": 9367,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
+   "prop": "leaf_bag_mid",
+   "position": [
+    23373.62,
+    -33998.31,
+    18.0
+   ],
+   "yaw": 54.05,
+   "scale": 1.017,
+   "variant_seed": 469607,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
+   "prop": "leaf_bag_low",
+   "position": [
+    23410.93,
+    -34025.21,
+    18.0
+   ],
+   "yaw": 64.05,
+   "scale": 0.979,
+   "variant_seed": 475897,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
   },
   {
    "prop": "bike_locked",
@@ -91649,6 +96198,36 @@
    "ground": "sidewalk"
   },
   {
+   "prop": "leaf_bag",
+   "position": [
+    -15803.15,
+    -8467.99,
+    18.0
+   ],
+   "yaw": 60.07,
+   "scale": 1.019,
+   "variant_seed": 628758,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
+   "prop": "leaf_bag",
+   "position": [
+    -15841.89,
+    -8443.2,
+    18.0
+   ],
+   "yaw": 67.84,
+   "scale": 0.978,
+   "variant_seed": 922422,
+   "collision": false,
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
+  },
+  {
    "prop": "bin_recycling",
    "position": [
     -16286.89,
@@ -91701,43 +96280,45 @@
    "ground": "sidewalk"
   },
   {
-   "prop": "bike_locked",
+   "prop": "leaf_bag",
    "position": [
-    36345.23,
-    -27972.56,
+    -17750.23,
+    -7222.13,
     18.0
    ],
-   "yaw": 236.55,
-   "scale": 1.0,
-   "variant_seed": 637376,
+   "yaw": 50.87,
+   "scale": 0.991,
+   "variant_seed": 827828,
    "collision": false,
-   "ground": "given",
-   "locked_to": "sign_parking"
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
   },
   {
-   "prop": "bike_locked",
+   "prop": "leaf_bag_mid",
    "position": [
-    38773.17,
-    -29552.66,
+    -17788.98,
+    -7197.34,
     18.0
    ],
-   "yaw": 56.55,
-   "scale": 1.0,
-   "variant_seed": 797990,
+   "yaw": 70.15,
+   "scale": 0.999,
+   "variant_seed": 31010,
    "collision": false,
-   "ground": "given",
-   "locked_to": "sign_parking"
+   "ground": "sidewalk",
+   "season": "october",
+   "at": "curb"
   },
   {
    "prop": "bike_locked",
    "position": [
-    41141.28,
-    -31117.19,
+    30621.31,
+    53687.21,
     18.0
    ],
-   "yaw": 56.55,
+   "yaw": 146.92,
    "scale": 1.0,
-   "variant_seed": 843370,
+   "variant_seed": 307619,
    "collision": false,
    "ground": "given",
    "locked_to": "sign_parking"
@@ -91745,13 +96326,13 @@
   {
    "prop": "bike_locked",
    "position": [
-    46268.85,
-    -35599.85,
+    34787.97,
+    50973.18,
     18.0
    ],
-   "yaw": 236.55,
+   "yaw": 146.92,
    "scale": 1.0,
-   "variant_seed": 650552,
+   "variant_seed": 69759,
    "collision": false,
    "ground": "given",
    "locked_to": "sign_parking"
@@ -91759,27 +96340,13 @@
   {
    "prop": "bike_locked",
    "position": [
-    1974.65,
-    -32410.68,
-    0.0
-   ],
-   "yaw": 326.65,
-   "scale": 1.0,
-   "variant_seed": 873476,
-   "collision": false,
-   "ground": "given",
-   "locked_to": "sign_parking"
-  },
-  {
-   "prop": "bike_locked",
-   "position": [
-    6043.4,
-    -23921.6,
+    21627.15,
+    -42026.85,
     18.0
    ],
-   "yaw": 327.23,
+   "yaw": 236.21,
    "scale": 1.0,
-   "variant_seed": 433571,
+   "variant_seed": 5093,
    "collision": false,
    "ground": "given",
    "locked_to": "sign_parking"
@@ -91787,13 +96354,13 @@
   {
    "prop": "bike_locked",
    "position": [
-    -40161.63,
-    24485.56,
+    23924.56,
+    -35914.23,
     18.0
    ],
-   "yaw": 236.35,
+   "yaw": 56.21,
    "scale": 1.0,
-   "variant_seed": 468209,
+   "variant_seed": 938539,
    "collision": false,
    "ground": "given",
    "locked_to": "sign_parking"
@@ -91801,13 +96368,13 @@
   {
    "prop": "bike_locked",
    "position": [
-    41309.92,
-    -26665.87,
+    28592.81,
+    1477.36,
     18.0
    ],
-   "yaw": 236.86,
+   "yaw": 147.35,
    "scale": 1.0,
-   "variant_seed": 623443,
+   "variant_seed": 718190,
    "collision": false,
    "ground": "given",
    "locked_to": "sign_parking"
@@ -91815,27 +96382,13 @@
   {
    "prop": "bike_locked",
    "position": [
-    48447.79,
-    -29894.3,
-    9.0
-   ],
-   "yaw": 236.86,
-   "scale": 1.0,
-   "variant_seed": 447137,
-   "collision": false,
-   "ground": "given",
-   "locked_to": "sign_parking"
-  },
-  {
-   "prop": "bike_locked",
-   "position": [
-    -29127.53,
-    40225.26,
+    -25209.16,
+    17878.34,
     18.0
    ],
-   "yaw": 56.55,
+   "yaw": 236.83,
    "scale": 1.0,
-   "variant_seed": 735025,
+   "variant_seed": 387998,
    "collision": false,
    "ground": "given",
    "locked_to": "sign_parking"
@@ -91843,27 +96396,13 @@
   {
    "prop": "bike_locked",
    "position": [
-    -42275.89,
-    50271.53,
-    9.0
-   ],
-   "yaw": 236.28,
-   "scale": 1.0,
-   "variant_seed": 735951,
-   "collision": false,
-   "ground": "given",
-   "locked_to": "sign_parking"
-  },
-  {
-   "prop": "bike_locked",
-   "position": [
-    25817.3,
-    59050.7,
+    -35473.71,
+    5853.9,
     18.0
    ],
-   "yaw": 326.19,
+   "yaw": 207.54,
    "scale": 1.0,
-   "variant_seed": 169552,
+   "variant_seed": 760731,
    "collision": false,
    "ground": "given",
    "locked_to": "sign_parking"
@@ -91871,13 +96410,13 @@
   {
    "prop": "bike_locked",
    "position": [
-    20269.62,
-    53119.38,
+    -14405.4,
+    36945.25,
     18.0
    ],
-   "yaw": 146.19,
+   "yaw": 55.79,
    "scale": 1.0,
-   "variant_seed": 765395,
+   "variant_seed": 115189,
    "collision": false,
    "ground": "given",
    "locked_to": "sign_parking"
@@ -91885,13 +96424,13 @@
   {
    "prop": "bike_locked",
    "position": [
-    46093.58,
-    35997.28,
+    -11925.17,
+    37666.82,
     18.0
    ],
-   "yaw": 167.41,
+   "yaw": 235.79,
    "scale": 1.0,
-   "variant_seed": 359873,
+   "variant_seed": 762353,
    "collision": false,
    "ground": "given",
    "locked_to": "sign_parking"
@@ -91899,27 +96438,13 @@
   {
    "prop": "bike_locked",
    "position": [
-    -10384.04,
-    -13843.82,
-    0.0
-   ],
-   "yaw": 147.32,
-   "scale": 1.0,
-   "variant_seed": 230431,
-   "collision": false,
-   "ground": "given",
-   "locked_to": "sign_parking"
-  },
-  {
-   "prop": "bike_locked",
-   "position": [
-    21680.24,
-    50366.57,
+    -3390.12,
+    53084.29,
     18.0
    ],
-   "yaw": 236.46,
+   "yaw": 58.51,
    "scale": 1.0,
-   "variant_seed": 945979,
+   "variant_seed": 772215,
    "collision": false,
    "ground": "given",
    "locked_to": "sign_parking"
@@ -91927,13 +96452,13 @@
   {
    "prop": "bike_locked",
    "position": [
-    37090.42,
-    40149.72,
+    -5094.88,
+    50620.57,
     18.0
    ],
-   "yaw": 236.46,
+   "yaw": 55.19,
    "scale": 1.0,
-   "variant_seed": 770894,
+   "variant_seed": 60172,
    "collision": false,
    "ground": "given",
    "locked_to": "sign_parking"
@@ -91941,13 +96466,13 @@
   {
    "prop": "bike_locked",
    "position": [
-    42045.72,
-    36888.37,
+    52026.59,
+    62346.48,
     18.0
    ],
-   "yaw": 56.46,
+   "yaw": 77.45,
    "scale": 1.0,
-   "variant_seed": 273124,
+   "variant_seed": 371994,
    "collision": false,
    "ground": "given",
    "locked_to": "sign_parking"
@@ -91955,55 +96480,13 @@
   {
    "prop": "bike_locked",
    "position": [
-    28955.19,
-    43405.75,
-    18.0
-   ],
-   "yaw": 56.47,
-   "scale": 1.0,
-   "variant_seed": 625383,
-   "collision": false,
-   "ground": "given",
-   "locked_to": "sign_parking"
-  },
-  {
-   "prop": "bike_locked",
-   "position": [
-    21558.75,
-    48283.49,
-    18.0
-   ],
-   "yaw": 236.47,
-   "scale": 1.0,
-   "variant_seed": 773267,
-   "collision": false,
-   "ground": "given",
-   "locked_to": "sign_parking"
-  },
-  {
-   "prop": "bike_locked",
-   "position": [
-    -10350.18,
-    -28861.65,
-    18.0
-   ],
-   "yaw": 146.96,
-   "scale": 1.0,
-   "variant_seed": 286027,
-   "collision": false,
-   "ground": "given",
-   "locked_to": "sign_parking"
-  },
-  {
-   "prop": "bike_locked",
-   "position": [
-    -9763.38,
-    -25813.73,
+    -42880.17,
+    -21202.28,
     18.0
    ],
    "yaw": 326.96,
    "scale": 1.0,
-   "variant_seed": 312134,
+   "variant_seed": 378538,
    "collision": false,
    "ground": "given",
    "locked_to": "sign_parking"
@@ -92011,13 +96494,13 @@
   {
    "prop": "bike_locked",
    "position": [
-    1247.92,
-    -44622.73,
+    -8609.38,
+    -43068.7,
     18.0
    ],
-   "yaw": 56.65,
+   "yaw": 58.38,
    "scale": 1.0,
-   "variant_seed": 851330,
+   "variant_seed": 750916,
    "collision": false,
    "ground": "given",
    "locked_to": "sign_parking"
@@ -92025,13 +96508,13 @@
   {
    "prop": "bike_locked",
    "position": [
-    -27023.01,
-    23223.66,
+    -37129.88,
+    9892.8,
     18.0
    ],
-   "yaw": 56.75,
+   "yaw": 147.27,
    "scale": 1.0,
-   "variant_seed": 447620,
+   "variant_seed": 455253,
    "collision": false,
    "ground": "given",
    "locked_to": "sign_parking"
@@ -92039,13 +96522,13 @@
   {
    "prop": "bike_locked",
    "position": [
-    -35198.33,
-    30036.19,
+    -31743.59,
+    35912.65,
     18.0
    ],
-   "yaw": 236.68,
+   "yaw": 326.41,
    "scale": 1.0,
-   "variant_seed": 478352,
+   "variant_seed": 481431,
    "collision": false,
    "ground": "given",
    "locked_to": "sign_parking"
@@ -92053,13 +96536,13 @@
   {
    "prop": "bike_locked",
    "position": [
-    -24772.96,
-    57211.2,
+    -13666.58,
+    61978.13,
     18.0
    ],
-   "yaw": 56.49,
+   "yaw": 326.74,
    "scale": 1.0,
-   "variant_seed": 24470,
+   "variant_seed": 56708,
    "collision": false,
    "ground": "given",
    "locked_to": "sign_parking"
@@ -92067,27 +96550,13 @@
   {
    "prop": "bike_locked",
    "position": [
-    -11277.43,
-    49771.42,
-    9.0
-   ],
-   "yaw": 236.34,
-   "scale": 1.0,
-   "variant_seed": 478130,
-   "collision": false,
-   "ground": "given",
-   "locked_to": "sign_parking"
-  },
-  {
-   "prop": "bike_locked",
-   "position": [
-    31267.06,
-    -37744.62,
+    -4086.27,
+    55698.08,
     18.0
    ],
-   "yaw": 226.3,
+   "yaw": 326.74,
    "scale": 1.0,
-   "variant_seed": 541754,
+   "variant_seed": 674057,
    "collision": false,
    "ground": "given",
    "locked_to": "sign_parking"
@@ -92095,13 +96564,13 @@
   {
    "prop": "bike_locked",
    "position": [
-    34443.01,
-    -43675.14,
+    -38276.19,
+    -30673.02,
     18.0
    ],
-   "yaw": 167.1,
+   "yaw": 327.03,
    "scale": 1.0,
-   "variant_seed": 913639,
+   "variant_seed": 549444,
    "collision": false,
    "ground": "given",
    "locked_to": "sign_parking"
@@ -92109,83 +96578,13 @@
   {
    "prop": "bike_locked",
    "position": [
-    -12498.38,
-    -21761.55,
-    18.0
-   ],
-   "yaw": 56.79,
-   "scale": 1.0,
-   "variant_seed": 412144,
-   "collision": false,
-   "ground": "given",
-   "locked_to": "sign_parking"
-  },
-  {
-   "prop": "bike_locked",
-   "position": [
-    126.63,
-    -28569.52,
-    18.0
-   ],
-   "yaw": 56.97,
-   "scale": 1.0,
-   "variant_seed": 718240,
-   "collision": false,
-   "ground": "given",
-   "locked_to": "sign_parking"
-  },
-  {
-   "prop": "bike_locked",
-   "position": [
-    -2192.97,
-    -28504.63,
-    18.0
-   ],
-   "yaw": 236.97,
-   "scale": 1.0,
-   "variant_seed": 420628,
-   "collision": false,
-   "ground": "given",
-   "locked_to": "sign_parking"
-  },
-  {
-   "prop": "bike_locked",
-   "position": [
-    -4394.58,
-    -27073.17,
-    18.0
-   ],
-   "yaw": 236.97,
-   "scale": 1.0,
-   "variant_seed": 936087,
-   "collision": false,
-   "ground": "given",
-   "locked_to": "sign_parking"
-  },
-  {
-   "prop": "bike_locked",
-   "position": [
-    18803.45,
-    -42153.59,
-    18.0
-   ],
-   "yaw": 56.92,
-   "scale": 1.0,
-   "variant_seed": 316675,
-   "collision": false,
-   "ground": "given",
-   "locked_to": "sign_parking"
-  },
-  {
-   "prop": "bike_locked",
-   "position": [
-    -24718.97,
-    65651.59,
+    -32298.63,
+    -18183.17,
     18.0
    ],
    "yaw": 147.0,
    "scale": 1.0,
-   "variant_seed": 501571,
+   "variant_seed": 556884,
    "collision": false,
    "ground": "given",
    "locked_to": "sign_parking"
@@ -92193,13 +96592,13 @@
   {
    "prop": "bike_locked",
    "position": [
-    -29302.92,
-    58628.65,
+    -2874.09,
+    -28073.98,
     18.0
    ],
-   "yaw": 146.42,
+   "yaw": 146.97,
    "scale": 1.0,
-   "variant_seed": 100418,
+   "variant_seed": 396691,
    "collision": false,
    "ground": "given",
    "locked_to": "sign_parking"
@@ -92207,13 +96606,13 @@
   {
    "prop": "bike_locked",
    "position": [
-    -35991.86,
-    50897.35,
+    -6220.81,
+    -25963.6,
     18.0
    ],
-   "yaw": 326.83,
+   "yaw": 146.97,
    "scale": 1.0,
-   "variant_seed": 890453,
+   "variant_seed": 750083,
    "collision": false,
    "ground": "given",
    "locked_to": "sign_parking"
@@ -92221,13 +96620,13 @@
   {
    "prop": "bike_locked",
    "position": [
-    -35201.77,
-    -46503.02,
+    -787.37,
+    54081.91,
     18.0
    ],
-   "yaw": 236.81,
+   "yaw": 238.86,
    "scale": 1.0,
-   "variant_seed": 581842,
+   "variant_seed": 822126,
    "collision": false,
    "ground": "given",
    "locked_to": "sign_parking"
@@ -92235,13 +96634,13 @@
   {
    "prop": "bike_locked",
    "position": [
-    42818.29,
-    3151.82,
+    22640.07,
+    49766.48,
     18.0
    ],
-   "yaw": 56.61,
+   "yaw": 326.46,
    "scale": 1.0,
-   "variant_seed": 240238,
+   "variant_seed": 333816,
    "collision": false,
    "ground": "given",
    "locked_to": "sign_parking"
@@ -92249,13 +96648,13 @@
   {
    "prop": "bike_locked",
    "position": [
-    52087.46,
-    -2958.57,
+    -25183.58,
+    -27688.59,
     18.0
    ],
-   "yaw": 56.61,
+   "yaw": 144.58,
    "scale": 1.0,
-   "variant_seed": 338478,
+   "variant_seed": 133467,
    "collision": false,
    "ground": "given",
    "locked_to": "sign_parking"
@@ -92263,13 +96662,13 @@
   {
    "prop": "bike_locked",
    "position": [
-    -34725.35,
-    37788.43,
+    -13465.62,
+    -18532.3,
     18.0
    ],
-   "yaw": 236.4,
+   "yaw": 57.32,
    "scale": 1.0,
-   "variant_seed": 723021,
+   "variant_seed": 981814,
    "collision": false,
    "ground": "given",
    "locked_to": "sign_parking"
@@ -92277,13 +96676,13 @@
   {
    "prop": "bike_locked",
    "position": [
-    -29004.01,
-    32649.07,
+    -30828.92,
+    42713.67,
     18.0
    ],
-   "yaw": 56.3,
+   "yaw": 326.55,
    "scale": 1.0,
-   "variant_seed": 518139,
+   "variant_seed": 581078,
    "collision": false,
    "ground": "given",
    "locked_to": "sign_parking"
@@ -92291,13 +96690,13 @@
   {
    "prop": "bike_locked",
    "position": [
-    -38123.49,
-    38706.12,
+    -36719.51,
+    -36952.37,
     18.0
    ],
-   "yaw": 236.3,
+   "yaw": 327.67,
    "scale": 1.0,
-   "variant_seed": 854827,
+   "variant_seed": 744051,
    "collision": false,
    "ground": "given",
    "locked_to": "sign_parking"
@@ -92305,13 +96704,13 @@
   {
    "prop": "bike_locked",
    "position": [
-    34826.47,
-    -37939.15,
+    26067.5,
+    64146.38,
     18.0
    ],
-   "yaw": 179.27,
+   "yaw": 146.17,
    "scale": 1.0,
-   "variant_seed": 100276,
+   "variant_seed": 290494,
    "collision": false,
    "ground": "given",
    "locked_to": "sign_parking"
@@ -92319,13 +96718,13 @@
   {
    "prop": "bike_locked",
    "position": [
-    46654.28,
-    59413.91,
+    -36106.46,
+    -29742.36,
     18.0
    ],
-   "yaw": 56.0,
+   "yaw": 57.7,
    "scale": 1.0,
-   "variant_seed": 313821,
+   "variant_seed": 473274,
    "collision": false,
    "ground": "given",
    "locked_to": "sign_parking"
@@ -92333,27 +96732,13 @@
   {
    "prop": "bike_locked",
    "position": [
-    47038.96,
-    57695.14,
-    9.0
-   ],
-   "yaw": 236.0,
-   "scale": 1.0,
-   "variant_seed": 708205,
-   "collision": false,
-   "ground": "given",
-   "locked_to": "sign_parking"
-  },
-  {
-   "prop": "bike_locked",
-   "position": [
-    -41462.96,
-    -40218.07,
+    -25705.51,
+    -13739.68,
     18.0
    ],
-   "yaw": 147.34,
+   "yaw": 57.36,
    "scale": 1.0,
-   "variant_seed": 374994,
+   "variant_seed": 722152,
    "collision": false,
    "ground": "given",
    "locked_to": "sign_parking"
@@ -92361,13 +96746,13 @@
   {
    "prop": "bike_locked",
    "position": [
-    -31486.8,
-    63128.4,
+    -9066.33,
+    27582.81,
     18.0
    ],
-   "yaw": 237.63,
+   "yaw": 327.4,
    "scale": 1.0,
-   "variant_seed": 535563,
+   "variant_seed": 446617,
    "collision": false,
    "ground": "given",
    "locked_to": "sign_parking"
@@ -92375,27 +96760,13 @@
   {
    "prop": "bike_locked",
    "position": [
-    -18228.88,
-    64868.48,
-    9.0
-   ],
-   "yaw": 56.66,
-   "scale": 1.0,
-   "variant_seed": 809375,
-   "collision": false,
-   "ground": "given",
-   "locked_to": "sign_parking"
-  },
-  {
-   "prop": "bike_locked",
-   "position": [
-    -15373.73,
-    62989.94,
+    -39344.24,
+    31190.13,
     18.0
    ],
-   "yaw": 56.66,
+   "yaw": 146.65,
    "scale": 1.0,
-   "variant_seed": 144813,
+   "variant_seed": 913348,
    "collision": false,
    "ground": "given",
    "locked_to": "sign_parking"
@@ -92403,13 +96774,13 @@
   {
    "prop": "bike_locked",
    "position": [
-    -8219.83,
-    58283.04,
+    20865.73,
+    54126.62,
     18.0
    ],
-   "yaw": 56.66,
+   "yaw": 56.19,
    "scale": 1.0,
-   "variant_seed": 475436,
+   "variant_seed": 62320,
    "collision": false,
    "ground": "given",
    "locked_to": "sign_parking"
@@ -92417,13 +96788,13 @@
   {
    "prop": "bike_locked",
    "position": [
-    -5355.51,
-    54865.91,
+    -10185.63,
+    59632.24,
     18.0
    ],
-   "yaw": 236.83,
+   "yaw": 326.74,
    "scale": 1.0,
-   "variant_seed": 855990,
+   "variant_seed": 888485,
    "collision": false,
    "ground": "given",
    "locked_to": "sign_parking"
@@ -92431,13 +96802,111 @@
   {
    "prop": "bike_locked",
    "position": [
-    -9865.17,
-    57837.37,
+    -34895.03,
+    -38107.31,
+    18.0
+   ],
+   "yaw": 327.67,
+   "scale": 1.0,
+   "variant_seed": 861358,
+   "collision": false,
+   "ground": "given",
+   "locked_to": "sign_parking"
+  },
+  {
+   "prop": "bike_locked",
+   "position": [
+    -33854.48,
+    -38752.56,
+    18.0
+   ],
+   "yaw": 327.67,
+   "scale": 1.0,
+   "variant_seed": 201862,
+   "collision": false,
+   "ground": "given",
+   "locked_to": "sign_parking"
+  },
+  {
+   "prop": "bike_locked",
+   "position": [
+    -39931.94,
+    22657.51,
+    18.0
+   ],
+   "yaw": 146.48,
+   "scale": 1.0,
+   "variant_seed": 889870,
+   "collision": false,
+   "ground": "given",
+   "locked_to": "sign_parking"
+  },
+  {
+   "prop": "bike_locked",
+   "position": [
+    50228.22,
+    54410.69,
+    18.0
+   ],
+   "yaw": 76.94,
+   "scale": 1.0,
+   "variant_seed": 922085,
+   "collision": false,
+   "ground": "given",
+   "locked_to": "sign_parking"
+  },
+  {
+   "prop": "bike_locked",
+   "position": [
+    48572.6,
+    56581.84,
+    18.0
+   ],
+   "yaw": 146.0,
+   "scale": 1.0,
+   "variant_seed": 335379,
+   "collision": false,
+   "ground": "given",
+   "locked_to": "sign_parking"
+  },
+  {
+   "prop": "bike_locked",
+   "position": [
+    -21371.05,
+    -7053.72,
+    18.0
+   ],
+   "yaw": 57.0,
+   "scale": 1.0,
+   "variant_seed": 397139,
+   "collision": false,
+   "ground": "given",
+   "locked_to": "sign_parking"
+  },
+  {
+   "prop": "bike_locked",
+   "position": [
+    9123.17,
+    67970.22,
+    18.0
+   ],
+   "yaw": 146.18,
+   "scale": 1.0,
+   "variant_seed": 502435,
+   "collision": false,
+   "ground": "given",
+   "locked_to": "sign_parking"
+  },
+  {
+   "prop": "bike_locked",
+   "position": [
+    -39824.14,
+    45189.83,
     18.0
    ],
    "yaw": 56.83,
    "scale": 1.0,
-   "variant_seed": 700111,
+   "variant_seed": 252807,
    "collision": false,
    "ground": "given",
    "locked_to": "sign_parking"
@@ -92445,13 +96914,13 @@
   {
    "prop": "bike_locked",
    "position": [
-    -21082.21,
-    65145.02,
+    -18473.61,
+    30975.24,
     18.0
    ],
-   "yaw": 236.83,
+   "yaw": 55.53,
    "scale": 1.0,
-   "variant_seed": 207106,
+   "variant_seed": 197589,
    "collision": false,
    "ground": "given",
    "locked_to": "sign_parking"
@@ -92459,13 +96928,13 @@
   {
    "prop": "bike_locked",
    "position": [
-    31142.52,
-    54517.61,
+    -25253.64,
+    59119.61,
     18.0
    ],
-   "yaw": 56.92,
+   "yaw": 326.43,
    "scale": 1.0,
-   "variant_seed": 515968,
+   "variant_seed": 889543,
    "collision": false,
    "ground": "given",
    "locked_to": "sign_parking"
@@ -92473,13 +96942,13 @@
   {
    "prop": "bike_locked",
    "position": [
-    20741.34,
-    60290.24,
+    -21680.39,
+    56814.14,
     18.0
    ],
-   "yaw": 56.18,
+   "yaw": 326.43,
    "scale": 1.0,
-   "variant_seed": 8674,
+   "variant_seed": 416798,
    "collision": false,
    "ground": "given",
    "locked_to": "sign_parking"
@@ -92487,13 +96956,13 @@
   {
    "prop": "bike_locked",
    "position": [
-    11337.04,
-    66589.83,
+    -10295.65,
+    -44687.92,
     18.0
    ],
-   "yaw": 56.18,
+   "yaw": 146.88,
    "scale": 1.0,
-   "variant_seed": 397223,
+   "variant_seed": 814057,
    "collision": false,
    "ground": "given",
    "locked_to": "sign_parking"
@@ -92501,13 +96970,13 @@
   {
    "prop": "bike_locked",
    "position": [
-    21151.74,
-    61092.62,
+    -40491.51,
+    69120.97,
     18.0
    ],
-   "yaw": 56.18,
+   "yaw": 326.45,
    "scale": 1.0,
-   "variant_seed": 67559,
+   "variant_seed": 648201,
    "collision": false,
    "ground": "given",
    "locked_to": "sign_parking"
@@ -92515,13 +96984,13 @@
   {
    "prop": "bike_locked",
    "position": [
-    -4601.83,
-    48465.16,
+    -35879.84,
+    53884.11,
     18.0
    ],
-   "yaw": 325.19,
+   "yaw": 146.37,
    "scale": 1.0,
-   "variant_seed": 356418,
+   "variant_seed": 840797,
    "collision": false,
    "ground": "given",
    "locked_to": "sign_parking"
@@ -92529,13 +96998,13 @@
   {
    "prop": "bike_locked",
    "position": [
-    -10681.94,
-    39523.02,
+    -41435.02,
+    1172.93,
     18.0
    ],
-   "yaw": 326.04,
+   "yaw": 56.84,
    "scale": 1.0,
-   "variant_seed": 449569,
+   "variant_seed": 845533,
    "collision": false,
    "ground": "given",
    "locked_to": "sign_parking"
@@ -92543,13 +97012,13 @@
   {
    "prop": "bike_locked",
    "position": [
-    -15319.7,
-    32727.25,
+    -33152.73,
+    19954.31,
     18.0
    ],
-   "yaw": 145.79,
+   "yaw": 326.48,
    "scale": 1.0,
-   "variant_seed": 19647,
+   "variant_seed": 158912,
    "collision": false,
    "ground": "given",
    "locked_to": "sign_parking"
@@ -92557,13 +97026,13 @@
   {
    "prop": "bike_locked",
    "position": [
-    -42644.18,
-    60027.91,
+    41726.76,
+    62781.7,
     18.0
    ],
-   "yaw": 56.37,
+   "yaw": 326.0,
    "scale": 1.0,
-   "variant_seed": 365018,
+   "variant_seed": 324843,
    "collision": false,
    "ground": "given",
    "locked_to": "sign_parking"
@@ -92571,13 +97040,13 @@
   {
    "prop": "bike_locked",
    "position": [
-    -35620.37,
-    53723.85,
+    48620.69,
+    68322.11,
     18.0
    ],
-   "yaw": 236.37,
+   "yaw": 325.41,
    "scale": 1.0,
-   "variant_seed": 480426,
+   "variant_seed": 195637,
    "collision": false,
    "ground": "given",
    "locked_to": "sign_parking"
@@ -92585,13 +97054,13 @@
   {
    "prop": "bike_locked",
    "position": [
-    -31675.13,
-    52755.17,
+    -31740.73,
+    -28489.1,
     18.0
    ],
-   "yaw": 237.51,
+   "yaw": 327.08,
    "scale": 1.0,
-   "variant_seed": 592703,
+   "variant_seed": 86594,
    "collision": false,
    "ground": "given",
    "locked_to": "sign_parking"
@@ -92599,13 +97068,13 @@
   {
    "prop": "bike_locked",
    "position": [
-    -19258.64,
-    44540.79,
+    29579.45,
+    61793.45,
     18.0
    ],
-   "yaw": 236.33,
+   "yaw": 146.18,
    "scale": 1.0,
-   "variant_seed": 773343,
+   "variant_seed": 533783,
    "collision": false,
    "ground": "given",
    "locked_to": "sign_parking"
@@ -92613,13 +97082,13 @@
   {
    "prop": "bike_locked",
    "position": [
-    -12778.5,
-    40245.72,
+    47231.02,
+    51390.21,
     18.0
    ],
-   "yaw": 236.61,
+   "yaw": 325.08,
    "scale": 1.0,
-   "variant_seed": 368500,
+   "variant_seed": 150363,
    "collision": false,
    "ground": "given",
    "locked_to": "sign_parking"
@@ -92627,13 +97096,13 @@
   {
    "prop": "bike_locked",
    "position": [
-    -16023.73,
-    40817.11,
+    3479.83,
+    -39977.35,
     18.0
    ],
-   "yaw": 57.61,
+   "yaw": 327.03,
    "scale": 1.0,
-   "variant_seed": 557337,
+   "variant_seed": 841616,
    "collision": false,
    "ground": "given",
    "locked_to": "sign_parking"
@@ -92641,13 +97110,13 @@
   {
    "prop": "bike_locked",
    "position": [
-    -3617.89,
-    65277.83,
+    1508.38,
+    63885.26,
     18.0
    ],
-   "yaw": 236.19,
+   "yaw": 326.19,
    "scale": 1.0,
-   "variant_seed": 975775,
+   "variant_seed": 13166,
    "collision": false,
    "ground": "given",
    "locked_to": "sign_parking"
@@ -92655,13 +97124,41 @@
   {
    "prop": "bike_locked",
    "position": [
-    -1100.42,
-    65553.73,
+    -17345.63,
+    64327.72,
+    18.0
+   ],
+   "yaw": 326.74,
+   "scale": 1.0,
+   "variant_seed": 741723,
+   "collision": false,
+   "ground": "given",
+   "locked_to": "sign_parking"
+  },
+  {
+   "prop": "bike_locked",
+   "position": [
+    -37633.64,
+    -36373.71,
+    18.0
+   ],
+   "yaw": 327.67,
+   "scale": 1.0,
+   "variant_seed": 95588,
+   "collision": false,
+   "ground": "given",
+   "locked_to": "sign_parking"
+  },
+  {
+   "prop": "bike_locked",
+   "position": [
+    22910.59,
+    57179.63,
     18.0
    ],
    "yaw": 56.19,
    "scale": 1.0,
-   "variant_seed": 441882,
+   "variant_seed": 282073,
    "collision": false,
    "ground": "given",
    "locked_to": "sign_parking"
@@ -92669,13 +97166,13 @@
   {
    "prop": "bike_locked",
    "position": [
-    931.31,
-    64193.18,
+    -41694.59,
+    68283.74,
     18.0
    ],
-   "yaw": 56.19,
+   "yaw": 146.45,
    "scale": 1.0,
-   "variant_seed": 370366,
+   "variant_seed": 880298,
    "collision": false,
    "ground": "given",
    "locked_to": "sign_parking"
@@ -92683,13 +97180,13 @@
   {
    "prop": "bike_locked",
    "position": [
-    49628.73,
-    51780.4,
+    14660.04,
+    52805.56,
     18.0
    ],
-   "yaw": 166.94,
+   "yaw": 146.14,
    "scale": 1.0,
-   "variant_seed": 911829,
+   "variant_seed": 200483,
    "collision": false,
    "ground": "given",
    "locked_to": "sign_parking"
@@ -92697,727 +97194,13 @@
   {
    "prop": "bike_locked",
    "position": [
-    50354.19,
-    54820.01,
+    28805.3,
+    -28438.19,
     18.0
    ],
-   "yaw": 346.94,
+   "yaw": 57.53,
    "scale": 1.0,
-   "variant_seed": 392238,
-   "collision": false,
-   "ground": "given",
-   "locked_to": "sign_parking"
-  },
-  {
-   "prop": "bike_locked",
-   "position": [
-    50092.5,
-    43860.19,
-    18.0
-   ],
-   "yaw": 347.73,
-   "scale": 1.0,
-   "variant_seed": 750117,
-   "collision": false,
-   "ground": "given",
-   "locked_to": "sign_parking"
-  },
-  {
-   "prop": "bike_locked",
-   "position": [
-    54004.78,
-    60929.93,
-    18.0
-   ],
-   "yaw": 167.45,
-   "scale": 1.0,
-   "variant_seed": 583614,
-   "collision": false,
-   "ground": "given",
-   "locked_to": "sign_parking"
-  },
-  {
-   "prop": "bike_locked",
-   "position": [
-    46899.25,
-    29885.3,
-    18.0
-   ],
-   "yaw": 347.58,
-   "scale": 1.0,
-   "variant_seed": 467159,
-   "collision": false,
-   "ground": "given",
-   "locked_to": "sign_parking"
-  },
-  {
-   "prop": "bike_locked",
-   "position": [
-    41044.65,
-    13398.41,
-    18.0
-   ],
-   "yaw": 347.36,
-   "scale": 1.0,
-   "variant_seed": 765128,
-   "collision": false,
-   "ground": "given",
-   "locked_to": "sign_parking"
-  },
-  {
-   "prop": "bike_locked",
-   "position": [
-    42848.67,
-    11404.86,
-    9.0
-   ],
-   "yaw": 167.44,
-   "scale": 1.0,
-   "variant_seed": 204510,
-   "collision": false,
-   "ground": "given",
-   "locked_to": "sign_parking"
-  },
-  {
-   "prop": "bike_locked",
-   "position": [
-    42238.48,
-    8666.62,
-    18.0
-   ],
-   "yaw": 167.44,
-   "scale": 1.0,
-   "variant_seed": 83649,
-   "collision": false,
-   "ground": "given",
-   "locked_to": "sign_parking"
-  },
-  {
-   "prop": "bike_locked",
-   "position": [
-    41654.88,
-    6047.67,
-    18.0
-   ],
-   "yaw": 167.44,
-   "scale": 1.0,
-   "variant_seed": 432203,
-   "collision": false,
-   "ground": "given",
-   "locked_to": "sign_parking"
-  },
-  {
-   "prop": "bike_locked",
-   "position": [
-    49326.66,
-    18309.09,
-    18.0
-   ],
-   "yaw": 56.61,
-   "scale": 1.0,
-   "variant_seed": 246357,
-   "collision": false,
-   "ground": "given",
-   "locked_to": "sign_parking"
-  },
-  {
-   "prop": "bike_locked",
-   "position": [
-    51024.41,
-    18771.04,
-    18.0
-   ],
-   "yaw": 236.61,
-   "scale": 1.0,
-   "variant_seed": 431167,
-   "collision": false,
-   "ground": "given",
-   "locked_to": "sign_parking"
-  },
-  {
-   "prop": "bike_locked",
-   "position": [
-    35853.96,
-    -41036.45,
-    18.0
-   ],
-   "yaw": 56.89,
-   "scale": 1.0,
-   "variant_seed": 992258,
-   "collision": false,
-   "ground": "given",
-   "locked_to": "sign_parking"
-  },
-  {
-   "prop": "bike_locked",
-   "position": [
-    -29917.68,
-    -29687.36,
-    18.0
-   ],
-   "yaw": 57.08,
-   "scale": 1.0,
-   "variant_seed": 518635,
-   "collision": false,
-   "ground": "given",
-   "locked_to": "sign_parking"
-  },
-  {
-   "prop": "bike_locked",
-   "position": [
-    -27119.62,
-    -31522.52,
-    18.0
-   ],
-   "yaw": 237.08,
-   "scale": 1.0,
-   "variant_seed": 434584,
-   "collision": false,
-   "ground": "given",
-   "locked_to": "sign_parking"
-  },
-  {
-   "prop": "bike_locked",
-   "position": [
-    -25076.61,
-    -32821.23,
-    18.0
-   ],
-   "yaw": 57.08,
-   "scale": 1.0,
-   "variant_seed": 725709,
-   "collision": false,
-   "ground": "given",
-   "locked_to": "sign_parking"
-  },
-  {
-   "prop": "bike_locked",
-   "position": [
-    -28669.19,
-    -32770.86,
-    18.0
-   ],
-   "yaw": 237.08,
-   "scale": 1.0,
-   "variant_seed": 533987,
-   "collision": false,
-   "ground": "given",
-   "locked_to": "sign_parking"
-  },
-  {
-   "prop": "bike_locked",
-   "position": [
-    -31179.27,
-    -31122.12,
-    18.0
-   ],
-   "yaw": 57.08,
-   "scale": 1.0,
-   "variant_seed": 758268,
-   "collision": false,
-   "ground": "given",
-   "locked_to": "sign_parking"
-  },
-  {
-   "prop": "bike_locked",
-   "position": [
-    199.97,
-    -18825.0,
-    18.0
-   ],
-   "yaw": 237.03,
-   "scale": 1.0,
-   "variant_seed": 97679,
-   "collision": false,
-   "ground": "given",
-   "locked_to": "sign_parking"
-  },
-  {
-   "prop": "bike_locked",
-   "position": [
-    -5038.45,
-    -37367.99,
-    18.0
-   ],
-   "yaw": 327.81,
-   "scale": 1.0,
-   "variant_seed": 704857,
-   "collision": false,
-   "ground": "given",
-   "locked_to": "sign_parking"
-  },
-  {
-   "prop": "bike_locked",
-   "position": [
-    15890.29,
-    52064.4,
-    18.0
-   ],
-   "yaw": 236.16,
-   "scale": 1.0,
-   "variant_seed": 711266,
-   "collision": false,
-   "ground": "given",
-   "locked_to": "sign_parking"
-  },
-  {
-   "prop": "bike_locked",
-   "position": [
-    -42275.75,
-    -183.27,
-    18.0
-   ],
-   "yaw": 326.84,
-   "scale": 1.0,
-   "variant_seed": 643145,
-   "collision": false,
-   "ground": "given",
-   "locked_to": "sign_parking"
-  },
-  {
-   "prop": "bike_locked",
-   "position": [
-    -15352.85,
-    -32597.6,
-    18.0
-   ],
-   "yaw": 237.04,
-   "scale": 1.0,
-   "variant_seed": 748632,
-   "collision": false,
-   "ground": "given",
-   "locked_to": "sign_parking"
-  },
-  {
-   "prop": "bike_locked",
-   "position": [
-    -24233.45,
-    -28351.64,
-    0.0
-   ],
-   "yaw": 234.58,
-   "scale": 1.0,
-   "variant_seed": 282609,
-   "collision": false,
-   "ground": "given",
-   "locked_to": "sign_parking"
-  },
-  {
-   "prop": "bike_locked",
-   "position": [
-    -33042.22,
-    -20889.77,
-    18.0
-   ],
-   "yaw": 236.95,
-   "scale": 1.0,
-   "variant_seed": 955902,
-   "collision": false,
-   "ground": "given",
-   "locked_to": "sign_parking"
-  },
-  {
-   "prop": "bike_locked",
-   "position": [
-    41142.3,
-    -37528.72,
-    18.0
-   ],
-   "yaw": 56.65,
-   "scale": 1.0,
-   "variant_seed": 469935,
-   "collision": false,
-   "ground": "given",
-   "locked_to": "sign_parking"
-  },
-  {
-   "prop": "bike_locked",
-   "position": [
-    30174.81,
-    -28902.7,
-    18.0
-   ],
-   "yaw": 147.53,
-   "scale": 1.0,
-   "variant_seed": 913683,
-   "collision": false,
-   "ground": "given",
-   "locked_to": "sign_parking"
-  },
-  {
-   "prop": "bike_locked",
-   "position": [
-    -10132.05,
-    -37475.15,
-    18.0
-   ],
-   "yaw": 237.44,
-   "scale": 1.0,
-   "variant_seed": 344167,
-   "collision": false,
-   "ground": "given",
-   "locked_to": "sign_parking"
-  },
-  {
-   "prop": "bike_locked",
-   "position": [
-    -16498.38,
-    -40624.98,
-    18.0
-   ],
-   "yaw": 57.1,
-   "scale": 1.0,
-   "variant_seed": 748242,
-   "collision": false,
-   "ground": "given",
-   "locked_to": "sign_parking"
-  },
-  {
-   "prop": "bike_locked",
-   "position": [
-    -26053.38,
-    1210.69,
-    18.0
-   ],
-   "yaw": 57.45,
-   "scale": 1.0,
-   "variant_seed": 652945,
-   "collision": false,
-   "ground": "given",
-   "locked_to": "sign_parking"
-  },
-  {
-   "prop": "bike_locked",
-   "position": [
-    -21717.79,
-    -4730.28,
-    18.0
-   ],
-   "yaw": 56.53,
-   "scale": 1.0,
-   "variant_seed": 793021,
-   "collision": false,
-   "ground": "given",
-   "locked_to": "sign_parking"
-  },
-  {
-   "prop": "bike_locked",
-   "position": [
-    -25073.18,
-    18180.78,
-    18.0
-   ],
-   "yaw": 326.6,
-   "scale": 1.0,
-   "variant_seed": 448199,
-   "collision": false,
-   "ground": "given",
-   "locked_to": "sign_parking"
-  },
-  {
-   "prop": "bike_locked",
-   "position": [
-    -20688.54,
-    -24291.69,
-    18.0
-   ],
-   "yaw": 236.78,
-   "scale": 1.0,
-   "variant_seed": 333568,
-   "collision": false,
-   "ground": "given",
-   "locked_to": "sign_parking"
-  },
-  {
-   "prop": "bike_locked",
-   "position": [
-    -32695.24,
-    -17847.79,
-    18.0
-   ],
-   "yaw": 237.0,
-   "scale": 1.0,
-   "variant_seed": 942648,
-   "collision": false,
-   "ground": "given",
-   "locked_to": "sign_parking"
-  },
-  {
-   "prop": "bike_locked",
-   "position": [
-    -40603.43,
-    -11292.8,
-    18.0
-   ],
-   "yaw": 57.0,
-   "scale": 1.0,
-   "variant_seed": 640710,
-   "collision": false,
-   "ground": "given",
-   "locked_to": "sign_parking"
-  },
-  {
-   "prop": "bike_locked",
-   "position": [
-    -27469.41,
-    -42918.53,
-    18.0
-   ],
-   "yaw": 237.0,
-   "scale": 1.0,
-   "variant_seed": 75717,
-   "collision": false,
-   "ground": "given",
-   "locked_to": "sign_parking"
-  },
-  {
-   "prop": "bike_locked",
-   "position": [
-    -23975.96,
-    -46641.83,
-    18.0
-   ],
-   "yaw": 57.0,
-   "scale": 1.0,
-   "variant_seed": 735641,
-   "collision": false,
-   "ground": "given",
-   "locked_to": "sign_parking"
-  },
-  {
-   "prop": "bike_locked",
-   "position": [
-    -30575.63,
-    -21306.67,
-    18.0
-   ],
-   "yaw": 146.63,
-   "scale": 1.0,
-   "variant_seed": 337350,
-   "collision": false,
-   "ground": "given",
-   "locked_to": "sign_parking"
-  },
-  {
-   "prop": "bike_locked",
-   "position": [
-    -20286.21,
-    -7586.98,
-    18.0
-   ],
-   "yaw": 147.0,
-   "scale": 1.0,
-   "variant_seed": 159084,
-   "collision": false,
-   "ground": "given",
-   "locked_to": "sign_parking"
-  },
-  {
-   "prop": "bike_locked",
-   "position": [
-    -39705.42,
-    -25623.13,
-    18.0
-   ],
-   "yaw": 236.96,
-   "scale": 1.0,
-   "variant_seed": 171266,
-   "collision": false,
-   "ground": "given",
-   "locked_to": "sign_parking"
-  },
-  {
-   "prop": "bike_locked",
-   "position": [
-    17828.21,
-    -45392.0,
-    18.0
-   ],
-   "yaw": 328.0,
-   "scale": 1.0,
-   "variant_seed": 15309,
-   "collision": false,
-   "ground": "given",
-   "locked_to": "sign_parking"
-  },
-  {
-   "prop": "bike_locked",
-   "position": [
-    20505.99,
-    -43635.37,
-    18.0
-   ],
-   "yaw": 328.0,
-   "scale": 1.0,
-   "variant_seed": 17994,
-   "collision": false,
-   "ground": "given",
-   "locked_to": "sign_parking"
-  },
-  {
-   "prop": "bike_locked",
-   "position": [
-    24077.83,
-    -35802.52,
-    18.0
-   ],
-   "yaw": 146.21,
-   "scale": 1.0,
-   "variant_seed": 468398,
-   "collision": false,
-   "ground": "given",
-   "locked_to": "sign_parking"
-  },
-  {
-   "prop": "bike_locked",
-   "position": [
-    23251.72,
-    -39446.16,
-    18.0
-   ],
-   "yaw": 146.21,
-   "scale": 1.0,
-   "variant_seed": 105652,
-   "collision": false,
-   "ground": "given",
-   "locked_to": "sign_parking"
-  },
-  {
-   "prop": "bike_locked",
-   "position": [
-    21284.94,
-    -42384.93,
-    18.0
-   ],
-   "yaw": 146.21,
-   "scale": 1.0,
-   "variant_seed": 820470,
-   "collision": false,
-   "ground": "given",
-   "locked_to": "sign_parking"
-  },
-  {
-   "prop": "bike_locked",
-   "position": [
-    32961.88,
-    68598.44,
-    18.0
-   ],
-   "yaw": 236.05,
-   "scale": 1.0,
-   "variant_seed": 3810,
-   "collision": false,
-   "ground": "given",
-   "locked_to": "sign_parking"
-  },
-  {
-   "prop": "bike_locked",
-   "position": [
-    29687.05,
-    63166.0,
-    18.0
-   ],
-   "yaw": 236.18,
-   "scale": 1.0,
-   "variant_seed": 200149,
-   "collision": false,
-   "ground": "given",
-   "locked_to": "sign_parking"
-  },
-  {
-   "prop": "bike_locked",
-   "position": [
-    20671.92,
-    6629.46,
-    18.0
-   ],
-   "yaw": 237.35,
-   "scale": 1.0,
-   "variant_seed": 434350,
-   "collision": false,
-   "ground": "given",
-   "locked_to": "sign_parking"
-  },
-  {
-   "prop": "bike_locked",
-   "position": [
-    -30734.25,
-    7120.31,
-    18.0
-   ],
-   "yaw": 146.76,
-   "scale": 1.0,
-   "variant_seed": 312718,
-   "collision": false,
-   "ground": "given",
-   "locked_to": "sign_parking"
-  },
-  {
-   "prop": "bike_locked",
-   "position": [
-    21114.48,
-    -32415.44,
-    18.0
-   ],
-   "yaw": 57.02,
-   "scale": 1.0,
-   "variant_seed": 141548,
-   "collision": false,
-   "ground": "given",
-   "locked_to": "sign_parking"
-  },
-  {
-   "prop": "bike_locked",
-   "position": [
-    18610.07,
-    -30790.44,
-    18.0
-   ],
-   "yaw": 57.02,
-   "scale": 1.0,
-   "variant_seed": 494346,
-   "collision": false,
-   "ground": "given",
-   "locked_to": "sign_parking"
-  },
-  {
-   "prop": "bike_locked",
-   "position": [
-    12980.22,
-    -27137.46,
-    18.0
-   ],
-   "yaw": 57.02,
-   "scale": 1.0,
-   "variant_seed": 161417,
-   "collision": false,
-   "ground": "given",
-   "locked_to": "sign_parking"
-  },
-  {
-   "prop": "bike_locked",
-   "position": [
-    -12433.65,
-    -10644.17,
-    18.0
-   ],
-   "yaw": 237.39,
-   "scale": 1.0,
-   "variant_seed": 764736,
-   "collision": false,
-   "ground": "given",
-   "locked_to": "sign_parking"
-  },
-  {
-   "prop": "bike_locked",
-   "position": [
-    -17665.03,
-    -7296.83,
-    18.0
-   ],
-   "yaw": 237.39,
-   "scale": 1.0,
-   "variant_seed": 149930,
+   "variant_seed": 862092,
    "collision": false,
    "ground": "given",
    "locked_to": "sign_parking"

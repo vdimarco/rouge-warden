@@ -3,6 +3,7 @@
 #include "QuebecGameplay.h"
 #include "QuebecHeatModel.h"
 #include "QuebecKnockModel.h"
+#include "QuebecParkedCars.h" // An officer thrown into a parked car promotes it.
 #include "QuebecPlayerState.h"
 #include "QuebecPursuitModel.h"
 
@@ -451,6 +452,12 @@ float AQuebecOfficer::KnockEndsAt() const
     Launch.Spin = KnockSpin;
     Launch.LieSeconds = KnockLieSeconds;
     return KnockStartedAt + QuebecKnock::Timeline(Launch).Total;
+}
+
+void AQuebecOfficer::MoveBlockedBy(const FHitResult& Impact)
+{
+    Super::MoveBlockedBy(Impact);
+    if (HasAuthority() && GetCharacterMovement()) AQuebecParkedCars::PromoteOnBody(Impact, GetCharacterMovement()->Velocity, this);
 }
 
 bool AQuebecOfficer::IsDown() const

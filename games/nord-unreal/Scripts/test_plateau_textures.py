@@ -7,7 +7,8 @@ herringbone, buff-brick and card layouts, the cut-out alpha (coverage, anti-alia
 normal maps, colour and roughness means, the large-scale variation of the gravel, ballast and tar tiles, the macro
 mask, the shared material keys, the tints the apply step will need, the fallen-leaf litter (the tree atlas's leaf
 shapes, mixed colours, darker and damper lower leaves, drifts, a tiling mask, and --check naming a change in the
-tree leaf forms), and that the committed folder matches the generator.
+tree leaf forms), the ruelle gutter (no paler than 1.4 times the lane asphalt, dirty uneven edges, a damp channel),
+and that the committed folder matches the generator.
 """
 import hashlib
 import json
@@ -19,6 +20,7 @@ import tempfile
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import plateau_textures as T  # noqa: E402
 import apply_plateau_replica as apply_replica  # noqa: E402
+import plateau_replica as replica  # noqa: E402  stdlib only: the gutter's width and the lane asphalt colour
 
 # The shared material keys of the rear pass (plateau_plex.py and the apply step use exactly these names).
 SHARED_KEYS = ('Roof_Membrane', 'Roof_Gravel', 'Roof_Tar', 'Sheet_Metal', 'Siding_Lap_Cream', 'Siding_Lap_Grey',
@@ -37,7 +39,10 @@ FOLIAGE_KEYS = ('Leaf_Creeper', 'Leaf_Cedar', 'Plant_Grass_Fountain', 'Plant_Pit
 ATLAS_KEYS = ('Cloth_Laundry',)
 # Tiling masked sets on metre UVs (wrap both ways): the creeper on walls and the leaf litter on the ground.
 MASKED_KEYS = CUTOUT_KEYS + ('Leaf_Creeper', 'Leaf_Litter') + ATLAS_KEYS
-OWN_COLOUR = ('tar', 'pit_flowers', 'laundry', 'leaf_litter')
+OWN_COLOUR = ('tar', 'pit_flowers', 'laundry', 'leaf_litter', 'lane_concrete')
+# The ruelle gutter in sun read as a painted white line at 1.65 times the lane asphalt (pass 5 critic, item 7).
+# Its visible strip may be paler than the asphalt, as on the real lane, but at most this much (mean linear).
+LANE_ASPHALT_RATIO = (1.1, 1.4)
 
 
 def files(directory):
@@ -405,30 +410,126 @@ def check_laundry(entry, rows):
     return {'cells': len(cells), 'cover': layout['cover']}
 
 
+def lane_asphalt_linear():
+    """The lane asphalt the gutter lies in, as the game shows it: the Streets 'alley' colour (plateau_replica), which
+    its material averages by construction (the tint is that colour over the asphalt texture's mean)."""
+    return [T.SRGB_TO_LINEAR[int(replica.STREETS_MATERIALS['alley'][1][k:k + 2], 16)] for k in (1, 3, 5)]
+
+
+LANE_DRY_ROUGH = .85        # the gutter's dry concrete at least this rough
+LANE_CHANNEL_ROUGH = .72    # and its damp channel
+
+
 def check_lane_concrete(spec, entry, diff, rough):
-    """The ruelle gutter: the tooled joint (mid-tile) reads as a dark, open line; the damp channel along the middle
-    row is darker and glossier than the concrete at the gutter's edges (18 cm out), without being black."""
+    """The ruelle gutter (Concrete_Lane_Aged) on its own UVs: only the strip within plateau_replica.GUTTER_HALF of the
+    centre line (v 0.5) shows up close, and the far mips average the whole tile. Measured as the game shows them
+    (texels x the material's tint) against the lane asphalt's colour: the tile at most LANE_ASPHALT_RATIO[1] times it,
+    the strip paler than it but within LANE_ASPHALT_RATIO, and no 2 cm band along the strip over 1.55 times it, so the
+    gutter no longer reads as a painted line in sun. The set owns its colour. Its edges are dirty and uneven: the last
+    2 cm are much darker than the concrete beside the channel, and the clean concrete stops along a line that wanders
+    along the gutter. The damp channel along the centre is darker and glossier than the concrete beside it, and the
+    tooled joint (mid-tile) reads as a dark, open line across the concrete."""
     width, height = spec['size_px']
     px = width / (spec['tile_m'][0] * 100.)
-    cavity = [r[2::3] for r in rough]
-    jx = round(entry['layout']['joint_u_m'][0] * 100. * px)
-    joint = sum(cavity[y][x] for y in range(height) for x in (jx - 1, jx)) / (2 * height)
-    away = [x for x in range(0, width, 7) if abs(x - jx) > 40]
-    field_ = sum(cavity[y][x] for y in range(0, height, 4) for x in away) / (len(range(0, height, 4)) * len(away))
-    assert joint > 200 and field_ < 140, ('the transverse joint', joint, field_)
+    centre = height / 2.
+    layout = entry['layout']
+    lin = T.SRGB_TO_LINEAR
 
-    def band(z_cm, half_cm=2.):
-        ys = range(int((50. + z_cm - half_cm) * px), int((50. + z_cm + half_cm) * px))
-        xs = [x for x in range(0, width, 5) if abs(x - jx) > 30]
-        lum = sum(luminance(diff, x, y) for y in ys for x in xs) / (len(ys) * len(xs))
+    def lat(y):
+        return (y + .5 - centre) / px
+    half = replica.GUTTER_HALF
+    # What the game shows: the texels times the material's tint (white when the set owns its colour, else the
+    # Streets colour of Concrete_Lane_Aged over the tile's mean).
+    tint = apply_replica.textured_tint(apply_replica.set_material('lane_concrete', entry),
+                                       {'base_color_srgb': replica.STREETS_MATERIALS['Concrete_Lane_Aged'][1]})
+    asphalt = lane_asphalt_linear()
+    lum = lambda m: .2126 * m[0] + .7152 * m[1] + .0722 * m[2]   # noqa: E731
+    lo, hi = LANE_ASPHALT_RATIO
+
+    def shown_mean(ys):
+        sums = [0., 0., 0.]
+        for y in ys:
+            r = diff[y]
+            for c in range(3):
+                sums[c] += sum(lin[v] for v in r[c::3])
+        return [v / (len(ys) * width) * t for v, t in zip(sums, tint)]
+    # The tile's mean is what the gutter shows from afar, where the mips average the whole tile (the strip and the
+    # texels beside it): at most LANE_ASPHALT_RATIO times the asphalt.
+    tile = [m * t for m, t in zip(entry['mean_linear'], tint)]
+    assert lum(tile) <= hi * lum(asphalt) and sum(tile) <= hi * sum(asphalt), \
+        ('the gutter tile against the lane asphalt (luminance, channel mean)', round(lum(tile) / lum(asphalt), 3),
+         round(sum(tile) / sum(asphalt), 3))
+    # The strip that shows up close: paler than the asphalt, within the same ratio, and no 2 cm band along it reads as
+    # a pale line (the old shoulders were 1.66 times the asphalt).
+    shown = [y for y in range(height) if abs(lat(y)) <= half]
+    mean = shown_mean(shown)
+    ratio, ratio_mean = lum(mean) / lum(asphalt), sum(mean) / sum(asphalt)
+    assert lo <= ratio <= hi and ratio_mean <= hi, \
+        ('the gutter strip against the lane asphalt (luminance, channel mean)', round(ratio, 3), round(ratio_mean, 3))
+    bands = [lum(shown_mean([y for y in shown if b <= lat(y) < b + 2.])) / lum(asphalt)
+             for b in range(-int(half), int(half), 2)]
+    assert max(bands) <= 1.55, ('a pale band along the gutter', [round(b, 2) for b in bands])
+    assert mean[0] > mean[1] > mean[2], ('aged concrete is a warm grey', mean)
+    assert entry.get('own_colour'), 'the gutter shows its own colour: the Streets colour is only its flat fallback'
+    assert layout['visible_half_cm'] == half and layout['visible_mean_linear'] == [round(v, 4) for v in mean]
+    assert layout['asphalt_srgb'].lower() == replica.STREETS_MATERIALS['alley'][1].lower()
+    # The tooled joint, across the concrete (not the crumbs at the edges).
+    cavity = [r[2::3] for r in rough]
+    jx = round(layout['joint_u_m'][0] * 100. * px)
+    rows = [y for y in range(height) if abs(lat(y)) <= 10.]
+    joint = sum(cavity[y][x] for y in rows for x in (jx - 1, jx)) / (2 * len(rows))
+    away = [x for x in range(0, width, 7) if abs(x - jx) > 40]
+    field_ = sum(cavity[y][x] for y in rows[::4] for x in away) / (len(rows[::4]) * len(away))
+    assert joint > 200 and field_ < 140, ('the transverse joint', joint, field_)
+    xs = [x for x in range(0, width, 5) if abs(x - jx) > 30]
+
+    def band(z_cm, half_cm=1.5):
+        ys = [y for y in range(height) if abs(lat(y) - z_cm) < half_cm]
+        lum_ = sum(luminance(diff, x, y) for y in ys for x in xs) / (len(ys) * len(xs))
         r_ = sum(rough[y][3 * x] for y in ys for x in xs) / (255. * len(ys) * len(xs))
-        return lum, r_
-    centre, edge_a, edge_b = band(0.), band(-17.), band(17.)
-    assert centre[0] < .88 * min(edge_a[0], edge_b[0]) and centre[0] > .05, ('damp channel', centre, edge_a, edge_b)
-    assert centre[1] < min(edge_a[1], edge_b[1]) - .12, ('the damp channel is glossier', centre, edge_a, edge_b)
+        return lum_, r_
+    centre_band, shoulder_a, shoulder_b = band(0.), band(-9.), band(9.)
+    shoulder = min(shoulder_a[0], shoulder_b[0])
+    assert .05 < centre_band[0] < .9 * shoulder, ('damp channel', centre_band, shoulder_a, shoulder_b)
+    assert centre_band[1] < min(shoulder_a[1], shoulder_b[1]) - .1, ('the damp channel is glossier', centre_band)
+    # The pass-6 critic still saw the strip as a white line in backlight (hlm_mentana.jpg): the dry concrete beside the
+    # channel stays matt, and the damp channel is not a mirror either.
+    dry = [band(z, 1.)[1] for z in (-12., -9.5, 9.5, 12.)]
+    assert min(dry) >= LANE_DRY_ROUGH and centre_band[1] >= LANE_CHANNEL_ROUGH, \
+        ('a glossy gutter: dry concrete, channel', [round(v, 3) for v in dry], round(centre_band[1], 3))
+    # Dirty edges: the last 2 cm of the strip are well darker than the concrete beside the channel...
+    edge = (band(-16.5, 1.)[0] + band(16.5, 1.)[0]) / 2.
+    assert edge < .8 * shoulder, ('dirty edges', edge, shoulder)
+    # ...and uneven: where the clean concrete ends wanders along the gutter (luminance 1.75 cm along u by 0.6 cm
+    # across, read outward from 9 cm), not a ruled line at a fixed offset.
+    threshold = (shoulder + edge) / 2.
+    ends = []
+    for x in range(0, width, 4):
+        cols = [(x + d) % width for d in range(-4, 5)]
+        for sign in (-1., 1.):
+            ys = sorted((y for y in range(height) if 9. <= sign * lat(y) <= half + 1.), key=lambda y: sign * lat(y))
+            for k in range(1, len(ys) - 1):
+                trio = ys[k - 1:k + 2]
+                if sum(luminance(diff, c, y) for y in trio for c in cols) / (3 * len(cols)) < threshold:
+                    ends.append(sign * lat(ys[k]))
+                    break
+            else:
+                ends.append(half + 1.)
+    ends.sort()
+    n = len(ends)
+    mean_end = sum(ends) / n
+    spread = sqrt(sum((e - mean_end) ** 2 for e in ends) / n)
+    p5, p95 = ends[n // 20], ends[n - 1 - n // 20]
+    assert 10. <= mean_end <= 17.5 and spread >= .8 and p95 - p5 >= 3., ('uneven edge', mean_end, spread, p5, p95)
     assert entry['layout']['centre_v_m'] == spec['tile_m'][1] / 2.
-    return {'joint_cavity': round(joint / 255., 3), 'channel_luminance_ratio': round(centre[0] / min(edge_a[0], edge_b[0]), 3),
-            'channel_roughness': round(centre[1], 3), 'edge_roughness': round(min(edge_a[1], edge_b[1]), 3)}
+    return {'tile_asphalt_ratio': round(lum(tile) / lum(asphalt), 3), 'strip_asphalt_ratio': [round(ratio, 3),
+                                                                                         round(ratio_mean, 3)],
+            'palest_band_ratio': round(max(bands), 3), 'visible_srgb': T.to_srgb_hex(mean),
+            'joint_cavity': round(joint / 255., 3), 'channel_luminance_ratio': round(centre_band[0] / shoulder, 3),
+            'edge_luminance_ratio': round(edge / shoulder, 3), 'clean_edge_cm': [round(p5, 1), round(mean_end, 1),
+                                                                                  round(p95, 1)],
+            'channel_roughness': round(centre_band[1], 3),
+            'shoulder_roughness': round(min(shoulder_a[1], shoulder_b[1]), 3)}
 
 
 def hue_family(r, g, b):
@@ -570,8 +671,9 @@ EXPECT = {
     'crushed_stone': lambda m, r: .15 < sum(m) / 3 < .3 and max(m) / min(m) < 1.2 and .8 <= r <= .92,
     # Even buff brick: yellow-tan (red over green over blue, blue well under red), light, matte.
     'buff_brick': lambda m, r: .3 < sum(m) / 3 < .5 and m[0] > m[1] > m[2] and m[2] / m[0] < .5 and .8 <= r <= .92,
-    # Aged lane concrete: a warm mid grey, well under a new sidewalk's (#B5B8B8, linear about .47), and matte.
-    'lane_concrete': lambda m, r: .1 < sum(m) / 3 < .22 and m[0] > m[1] > m[2] and .75 <= r <= .9,
+    # The ruelle gutter's tile: the aged concrete strip (check_lane_concrete measures it against the lane asphalt)
+    # between bands of grime and asphalt crumbs, so the whole tile is darker than the strip; warm and matte.
+    'lane_concrete': lambda m, r: .06 < sum(m) / 3 < .16 and m[0] >= m[1] >= m[2] and .75 <= r <= .92,
     'cedar': lambda m, r: m[1] > m[0] > m[2] and sum(m) / 3 < .12 and .7 <= r <= .85,
     'fountain_grass': lambda m, r: m[0] > m[1] > m[2] and .12 < sum(m) / 3 < .32 and .75 <= r <= .9,
     'pit_flowers': lambda m, r: .1 < sum(m) / 3 < .3 and .6 <= r <= .85,

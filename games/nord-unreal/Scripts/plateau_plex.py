@@ -2301,6 +2301,9 @@ LONG_WALL, LONG_CLEAR = 800., 120.    # a side wall this long with no neighbour 
 LANE_DOOR_MIN = 300.                  # a lane wall this wide or more has a ground-floor back door on the ruelle,
 LANE_DOOR_EVERY = 800.                # one per 8 m, in place of a ground-floor window (local critic, pass 5: 310 of
                                       # the 311 Plex lane walls and 135 of 140 background ones had none)
+LANE_STOOP_CLEAR = 200.               # a lane stoop keeps this far from any lane or road centreline, or its door opens
+                                      # at grade: cars drive the ruelles, and a 1.9 m car on the centreline then clears
+                                      # the steps by 1 m (tech critic, pass 5 verify: stoops stood 27 cm from one)
 
 
 def lane_door_count(width):
@@ -3276,15 +3279,24 @@ class Rear:
     def _lane_door(self, F, xd, lo, hi):
         """A back door on a lane wall at xd, in place of the ground-floor window of the bay lo..hi: at the ground floor,
         on a cast-concrete stoop whose steps run down along the wall to the side with more room (as _stoop does for a
-        gallery stack), so nothing reaches more than 85 cm into the ruelle. Where the steps do not fit in the bay, the
-        door opens at grade, as a basement door does. Returns 1."""
+        gallery stack), so nothing reaches more than 85 cm into the ruelle. Where the steps do not fit in the bay, or
+        the stoop would come within LANE_STOOP_CLEAR of a lane or road centreline (cars drive the ruelles), the door
+        opens at grade, as a basement door does. Returns 1."""
         raise_cm = self.lot['raise']
         z0 = self.floor_z[0]
         if raise_cm >= 25:
             steps = max(0, round(raise_cm / 20) - 1)
             rise = raise_cm / (steps + 1)
             left, right = xd - 55 - lo, hi - xd - 55
-            if max(left, right) >= steps * 27 + 8:
+            # the stoop's whole outline, landing and steps, on the side the steps take
+            sx0, sx1 = (xd - 55 - steps * 27, xd + 55) if left >= right else (xd - 55, xd + 55 + steps * 27)
+            outline = [F.p(x, d, 0)[:2] for x, d in ((sx0, D_FACE - 2), (sx1, D_FACE - 2), (sx1, D_FACE + 85),
+                                                      (sx0, D_FACE + 85))]
+            if any(_poly_seg(outline, c, d) < LANE_STOOP_CLEAR for c, d, _, _ in self.lot.get('roads_near', ())):
+                self.count('lane_doors_at_grade')
+                self.count('lane_doors_traffic')
+                z0 = 0.
+            elif max(left, right) >= steps * 27 + 8:
                 F.box('Stone_Cast', xd - 55, xd + 55, D_FACE - 2, D_FACE + 85, 0, raise_cm, 'kb')
                 for j in range(1, steps + 1):
                     if left >= right:

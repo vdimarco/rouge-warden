@@ -44,6 +44,10 @@ and `card_height_m` is the height the texture was drawn for.
 - Fifth pass: leaf_litter (Leaf_Litter), fallen leaves for the litter patches on sidewalks, gutters and lawns: a
   masked set on metre UVs that tiles both ways, built by stamping the tree atlas's own leaf shapes
   (Scripts/blender/plateau_trees.py FORMS and _leaf) in mixed late-October colours. It owns its colours.
+- Sixth pass: lane_concrete owns its colour and is darker, with dirty, uneven edges: in sun the old gutter read as a
+  painted white line at 1.65 times the lane asphalt. The visible strip is now about 1.15 times the asphalt and the
+  whole tile (what the far mips show) about 1.0. The clean concrete ends along a wandering, fraying line 1 to 7 cm
+  inside the strip's edge, with asphalt crumbs, grime and crack seal outside it.
 
 Methods. Greystone and slate follow Larry Gritz's RenderMan shader stone.sl (staggered courses, per-stone
 colour from the stone index, noise-perturbed joint edges, a groove profile for the relief); buff brick is the
@@ -53,7 +57,8 @@ of Epic's landscape materials (T_MacroVariation sampled at large, unrelated scal
 and crushed stone are splatted stones kept by the highest height at each texel, the way Substance
 Designer's Tile Sampler / Shape Splatter stacks pebbles (the lane concrete is built height first and coloured
 after, the order of Kai Li's "Old Stone Paver" Substance breakdown: pattern, height, damage, dirt in the low lines,
-colour, roughness); spangle and tar cracks are Worley cellular noise
+colour, roughness; its grime is a mask from the low lines and the edges broken up by a grunge noise, as the Dirt
+generator of Substance 3D Painter builds it); spangle and tar cracks are Worley cellular noise
 (F1 cells, F2 - F1 borders). Siding is the sawtooth band profile of Blender's Wave Texture (one wedge per
 lap), with the lap shadow baked under each butt. The cut-out cards are drawn from signed distances, so
 the alpha edge is anti-aliased about the 0.5 clip; the apply step turns on Unreal's alpha-coverage mips
@@ -145,8 +150,9 @@ SETS = {
     'buff_brick': {'name': 'BuffBrick', 'size_px': (1024, 1024), 'tile_m': (1.6, 1.6), 'seed': 1956,
                    'surface': 'wall', 'keys': ('Brick_Buff_Even',), 'macro': .05},
     # Fourth pass. The ruelle gutter takes its own UVs (u along it, v across it, centre at v 0.5).
+    # Sixth pass: the gutter owns its colour, darker than the Streets fallback, with dirty, uneven edges.
     'lane_concrete': {'name': 'LaneConcrete', 'size_px': (1024, 512), 'tile_m': (2.0, 1.0), 'seed': 1967,
-                      'surface': 'ground', 'keys': ('Concrete_Lane_Aged',), 'macro': .1},
+                      'surface': 'ground', 'keys': ('Concrete_Lane_Aged',), 'macro': .1, 'own_colour': True},
     'cedar': {'name': 'Cedar', 'size_px': (512, 1024), 'tile_m': (1.0, 1.0), 'card_height_m': 3.0, 'seed': 1909,
               'surface': 'foliage', 'keys': ('Leaf_Cedar',)},
     'fountain_grass': {'name': 'FountainGrass', 'size_px': (512, 512), 'tile_m': (1.0, 1.0), 'card_height_m': 1.0,
@@ -2107,18 +2113,41 @@ def poly_cover(points, W, H, rows=4):
 
 
 LANE_JOINT_CM = 1.2        # the tooled transverse joint of the gutter, once per 2 m tile (mid-tile, off the seam)
-LANE_CHANNEL_CM = (4., 14.)  # the damp, silted channel: full within 4 cm of the gutter's centre line, gone by 14
+LANE_CHANNEL_CM = (3., 11.)  # the damp, silted channel: full within 3 cm of the gutter's centre line, gone by 11
+LANE_HALF_CM = 18.         # plateau_replica.GUTTER_HALF: the strip shows 18 cm either side of its centre (v .32 to .68)
+LANE_EDGE_CM = (11., 17.)  # the clean concrete ends 1 to 7 cm inside the strip's edge, along a wandering line
+LANE_CRUMB_CM = 1.2        # the line frays by up to this much either way, crumb by crumb
+LANE_GRIME_CM = 4.         # grime fades out over up to 5 cm inside that line
+LANE_ASPHALT_SRGB = '#55565A'  # the lane asphalt the strip is judged against (plateau_replica 'alley')
+LANE_PASTE = (122., 116., 107.)
+LANE_DIRT = (74., 67., 58.)      # silt and grime: brown-grey
+LANE_CRUMBS = (88., 87., 85.)    # asphalt crumbs, sand and dirt at the joint with the lane asphalt
+LANE_SEAL = (46., 44., 42.)      # black crack seal along the joint, in places
+LANE_DAMP_GLOSS = .13            # the damp channel this much glossier than the dry concrete (0.24 read as a white line
+                                 # in backlight, pass-6 critic): the dry concrete about 0.88, the channel about 0.75
 
 
 def lane_concrete(spec):
     """The ruelle's centre gutter (Concrete_Lane_Aged): old cast concrete, darker and dirtier than a sidewalk.
 
     u runs along the gutter and v across it, so the replica gives the gutter its own UVs (u metres along, v metres
-    across with the centre line at v = 0.5) and the gutter's centre runs along the middle row of the tile. The paste
-    is worn down to its sand and small stones, most of all in the damp channel along the centre, where silt and
-    rotting leaves collect; tannin and oil stains, hairline cracks, and one tooled transverse joint per 2 m with dirt
-    and a few weeds in it. Built height first and coloured after, as a Substance concrete graph is: pattern (joint),
-    height (aggregate, cracks), damage, dirt in the low lines, colour, then roughness (the damp channel is glossier).
+    across with the centre line at v = 0.5) and the gutter's centre runs along the middle row of the tile. Only the
+    36 cm strip about the centre line shows (LANE_HALF_CM). The paste is worn down to its sand and small stones, most
+    of all in the damp channel along the centre, where silt and rotting leaves collect; tannin and oil stains, hairline
+    cracks, and one tooled transverse joint per 2 m with dirt and a few weeds in it. Built height first and coloured
+    after, as a Substance concrete graph is: pattern (joint), height (aggregate, cracks), damage, dirt in the low lines,
+    colour, then roughness (the damp channel is a little glossier; the dry concrete stays matt, at 0.85 or more, so the
+    strip never flashes as a white line against the low sun).
+
+    The strip's edges are dirty and uneven. The clean concrete stops along a line that wanders 1 to 7 cm inside the
+    edge (three octaves of 1D noise along u) and frays crumb by crumb (fine 2D noise). Outside that line lie asphalt
+    crumbs, sand and grime, with black crack seal along the joint in places, so the strip fades into the lane asphalt
+    instead of ending on a ruled line. The same crumbs fill the tile beyond the strip, which only the far mips blend in.
+    Grime follows the Dirt generator of Substance 3D Painter: a mask from the low lines (the damp channel, the paste
+    between the stones) and the edges, broken up by a grunge noise, laid over the colour. The strip stays paler than
+    the asphalt, as on the real lane, but only about 1.15 times it in linear light, and the whole tile about 1.0 (pass 5
+    critic, item 7: at 1.65 times it read as a painted white line in sun). The set owns its colour, so the Streets
+    colour cannot undo it.
     """
     W, H = spec['size_px']
     seed = spec['seed']
@@ -2133,6 +2162,18 @@ def lane_concrete(spec):
     silt = field(Fbm(seed + 4, W, H, (cells_m(6), cells_m(12), cells_m(24)), (.5, .3, .2)), H)
     crack_mask = field(Fbm(seed + 5, W, H, (cells_m(2), cells_m(4)), (.6, .4)), H)
     wave = noise1d(seed + 6, H, 12)
+    grunge = zone_field(seed + 10, W, H, (cells_m(3), cells_m(9), cells_m(27)), (.5, .3, .2))
+    crumb = field(Noise(seed + 11, W, H, *cells_m(83)), H)
+    # Where the clean concrete ends on each side: three octaves along u (40, 11 and 3 cm), each side its own.
+    ends = []
+    for side in range(2):
+        octaves = [noise1d(seed + 12 + 3 * side + k, W, n) for k, n in enumerate((5, 18, 70))]
+        line = []
+        for x in range(W):
+            f = min(1., max(0., (.55 * octaves[0][x] + .3 * octaves[1][x] + .15 * octaves[2][x] - .25) / .5))
+            line.append(LANE_EDGE_CM[1] - (LANE_EDGE_CM[1] - LANE_EDGE_CM[0]) * f)
+        ends.append(line)
+    seal = noise1d(seed + 18, W, 9)
     centre = H / 2.
 
     def damp_at(y):
@@ -2141,39 +2182,64 @@ def lane_concrete(spec):
     def keep(layer, x, y):
         return .3 + .6 * damp_at(y)
 
-    palette = ((.4, (152., 148., 140.)), (.25, (120., 116., 110.)), (.2, (170., 160., 142.)), (.15, (86., 84., 82.)))
+    palette = ((.4, (144., 140., 132.)), (.25, (114., 110., 104.)), (.2, (158., 150., 134.)), (.15, (82., 80., 78.)))
     stones, colours, roughs = gravel_stones(seed, W, H, px, ((1.3, .7, (.2, .55), -.06, .3),), palette, keep=keep)
-    cv = Canvas(W, H, (124., 117., 109.), 0., .88)
+    cv = Canvas(W, H, LANE_PASTE, 0., .86)
     owner, prof = [-1] * (W * H), [0.] * (W * H)
     splat_round(W, H, stones, cv.height, owner, prof)
     _, crack, _ = cells(seed + 9, W, H, 45. * px, .9)
     R, G, B, HT, RO, CA = cv.r, cv.g, cv.b, cv.height, cv.rough, cv.cavity
-    paste = (124., 117., 109.)
     joint_half = LANE_JOINT_CM / 2.
     for y in range(H):
         damp = damp_at(y)
+        lat = (y + .5 - centre) / px
+        line = ends[0 if lat < 0. else 1]
         jx = W / 2. + (wave[y] - .5) * .9 * px     # the joint meanders a little across the gutter
         for x in range(W):
             i = y * W + x
+            g = grunge[i]
+            d = abs(lat) - line[x] + (crumb[i] - .5) * 2. * LANE_CRUMB_CM   # cm past the end of the clean concrete
+            if d > 0.:
+                # Asphalt crumbs, sand and grime at the joint with the lane asphalt (and beyond the strip).
+                grain = unit(seed, 90, x, y)               # salt and pepper, a texel (2 mm) a grain, as asphalt
+                k = (.84 + .32 * fine[i]) * (.8 if grain < .22 else 1.2 if grain > .8 else 1.)
+                col = [LANE_CRUMBS[n] * k for n in range(3)]
+                if grain > .97:
+                    col = [118., 114., 106.]               # a sand grain or a pale chip of aggregate
+                a = .15 + .3 * g
+                col = [col[n] + (LANE_DIRT[n] - col[n]) * a for n in range(3)]
+                rough, cav = .9, .45
+                HT[i] = .1 * smooth(0., 1., d) + .06 * (fine[i] - .5)   # the asphalt lip, a hair over the concrete
+                if d < .9 and seal[x] > .55:               # black crack seal along the joint, in places
+                    f = smooth(.55, .7, seal[x])
+                    col = [col[n] + (LANE_SEAL[n] - col[n]) * f for n in range(3)]
+                    rough, cav = rough - .25 * f, max(cav, .7 * f)
+                R[i], G[i], B[i] = col
+                RO[i], CA[i] = rough, cav
+                continue
             o = owner[i]
             if o < 0:
                 k = (.9 + .2 * mottle[i]) * (1. + .1 * (fine[i] - .5))
-                col = [paste[0] * k, paste[1] * k, paste[2] * k]
-                rough, cav = .88, .35
+                col = [LANE_PASTE[0] * k, LANE_PASTE[1] * k, LANE_PASTE[2] * k]
+                rough, cav, low = .89, .35, .3
             else:
                 p = prof[i]
                 k = .72 + .28 * sqrt(p)
                 col = [colours[o][0] * k, colours[o][1] * k, colours[o][2] * k]
-                rough, cav = roughs[o] + .06, .5 * (1. - p) * (1. - p)
+                rough, cav, low = roughs[o] + .09, .5 * (1. - p) * (1. - p), .1 * (1. - p)
             s = smooth(.56, .86, stain[i])           # tannin and oil: darker, browner
             col = [col[0] * (1. - .22 * s), col[1] * (1. - .27 * s), col[2] * (1. - .33 * s)]
             sl = damp * smooth(.4, .72, silt[i])     # silt and grit left in the channel
             if sl > 0.:
-                col = [col[n] + ((88., 78., 66.)[n] - col[n]) * .6 * sl for n in range(3)]
+                col = [col[n] + ((88., 78., 66.)[n] - col[n]) * .4 * sl for n in range(3)]
                 HT[i] += .05 * sl
-            wet = 1. - .2 * damp
+            # Grime (the Dirt generator's mask): the edges and the low lines, broken up by the grunge.
+            edge = 1. - smooth(0., LANE_GRIME_CM * (.4 + .9 * g), -d)
+            dirt = min(.85, min(1., .9 * edge + .35 * (.2 * damp + low)) * (.35 + .8 * g) + .2 * smooth(.45, .9, g))
+            col = [col[n] + (LANE_DIRT[n] - col[n]) * dirt for n in range(3)]
+            wet = 1. - .08 * damp
             col = [col[0] * wet, col[1] * wet, col[2] * wet * .98]
-            rough -= .26 * damp
+            rough += .04 * dirt - LANE_DAMP_GLOSS * damp
             if crack[i] < 1. and crack_mask[i] > .6:   # hairline cracks where the mask allows
                 f = (1. - crack[i]) * smooth(.6, .7, crack_mask[i])
                 col = [c * (1. - .45 * f) for c in col]
@@ -2192,9 +2258,9 @@ def lane_concrete(spec):
     rng = Rng(seed)
     blotch = field(Noise(seed + 7, W, H, *cells_m(64)), H)
     leaves = 0
-    for n in range(12):                              # rotting leaves stuck in the channel, a few beside it
+    for n in range(12):                              # rotting leaves stuck in the channel, a few against the edges
         x = rng.next() * W
-        y = centre + (rng.next() - .5) * (24. if n < 9 else 70.) * px
+        y = centre + (rng.next() - .5) * (24. if n < 9 else 30.) * px
         colour = pick(((.45, (92., 64., 40.)), (.3, (120., 82., 44.)), (.25, (146., 104., 48.))), rng.next())
         if abs(y - centre) < 10. * px:
             colour = tuple(c * .8 for c in colour)    # wet
@@ -2206,9 +2272,21 @@ def lane_concrete(spec):
         colour = (78., 104., 48.) if rng.next() < .6 else (128., 112., 70.)
         stroke(cv, x % W, y, rng.next(), (1. + 2.5 * rng.next()) * px, colour, .5 + .3 * rng.next(), .85, .4)
     cover = sum(1 for o in owner if o >= 0) / len(owner)
+    # The strip that shows (what the game draws, the set owning its colour): its mean linear colour, summed as the
+    # test sums the PNG, so the Streets layer can take its sRGB as the gutter's flat fallback colour.
+    shown = [y for y in range(H) if abs((y + .5 - centre) / px) <= LANE_HALF_CM]
+    sums = [0., 0., 0.]
+    for y in shown:
+        o = y * W
+        for c, plane in enumerate((R, G, B)):
+            sums[c] += sum(SRGB_TO_LINEAR[byte(v)] for v in plane[o:o + W])
+    visible = [round(v / (len(shown) * W), 4) for v in sums]
     return cv.result(px, px, {'joint_cm': LANE_JOINT_CM, 'joint_u_m': [tx / 2.], 'centre_v_m': ty / 2.,
                               'channel_cm': list(LANE_CHANNEL_CM), 'stone_cover': round(cover, 4),
-                              'leaves': leaves, 'uv': 'u metres along the gutter, v metres across it, centre at v 0.5'})
+                              'leaves': leaves, 'uv': 'u metres along the gutter, v metres across it, centre at v 0.5',
+                              'visible_half_cm': LANE_HALF_CM, 'visible_mean_linear': visible,
+                              'visible_srgb': to_srgb_hex(visible), 'edge_cm': list(LANE_EDGE_CM),
+                              'crumb_cm': LANE_CRUMB_CM, 'grime_cm': LANE_GRIME_CM, 'asphalt_srgb': LANE_ASPHALT_SRGB})
 
 
 CEDAR_CROWN_CM = 285.      # tip of the drawn cedar on its 3 m card

@@ -17,6 +17,9 @@ The street and park trees of Streets/street_trees.json and the Plex yard trees s
 Trees/manifest.json (each kind's young mesh for a young street tree), placed by the apply step's plan_trees.
 Shadows follow the apply step too: a layer batch casts one when apply_plateau_replica.casts_shadow says so (the asphalt,
 paint, gutter and Leaf_Litter patches cast none), a prop only when it is one of PROP_SHADOW, and every tree casts one.
+The curb spaces of Streets/parked_cars.json hold the cars the game fills them with at runtime (AQuebecParkedCars, from
+the generated LaFontaineParking.h): the AQuebecCar fleet of Data/SeventiesCars in each slot's body and paint, laid out
+and culled as QuebecParkedRules.h says. Nothing else that moves (traffic, people, dogs) is drawn.
 
 Frame: every OBJ stores (x, -y, z) of a game-frame point (x east, y north, cm). Blender is
 right-handed, so placing the file coordinates unchanged shows the world as Unreal's left-handed view
@@ -1173,6 +1176,125 @@ def place_all_trees(region, col, before=False):
     return street, old, yard
 
 
+# ------------------------------------------------------------------------------------------------
+# Parked cars: the curb spaces of Streets/parked_cars.json (Scripts/plateau_parking.py), which the game fills at
+# runtime with AQuebecParkedCars (Source/Quebec/QuebecParkedCars.cpp) from the generated LaFontaineParking.h.
+
+PARKED = os.path.join(REPLICA, 'Streets', 'parked_cars.json')
+CARS = os.path.join(ROOT, 'Data', 'SeventiesCars')  # the AQuebecCar fleet: Car70 meshes, surfaces and paints
+PARKED_RULES = os.path.join(ROOT, 'Source', 'Quebec', 'QuebecParkedRules.h')
+RULES = {}
+CARS_BUILT = {}
+
+
+def parked_rules():
+    """The fill's layout, cull distances and style counts, read from QuebecParkedRules.h, the C++ the game runs: the
+    pivot height over the road, the wheel centres and roll, and the cull ends of the bodies, tyres and rims."""
+    if not RULES:
+        text = open(PARKED_RULES).read()
+        for name, value in re.findall(r'inline constexpr (?:float|int) (\w+) = (-?[\d.]+)f?;', text):
+            RULES[name] = float(value)
+        need = {'PivotHeight', 'WheelX', 'TireY', 'RimY', 'WheelZ', 'WheelRoll', 'BodyCullEnd', 'TireCullEnd',
+                'RimCullEnd', 'Paints', 'Bodies'}
+        assert need <= set(RULES), sorted(need - set(RULES))
+    return RULES
+
+
+def load_parked():
+    """The slots of Streets/parked_cars.json, or None when plateau_parking.py has not written it."""
+    if not os.path.exists(PARKED):
+        return None
+    return json.load(open(PARKED))['slots']
+
+
+def car_material(fleet, slot, paint=None):
+    """A Car70 surface as build_seventies_cars.py makes it: the manifest's linear colour, roughness and metallic; the
+    Paint slot in M_Car70_Paint<paint> (paints[paint], with the Paint surface's roughness and metallic)."""
+    spec = fleet['materials'][slot]
+    colour = fleet['paints'][paint] if paint is not None else spec['color']
+    name = f'Car70_{slot}' + (str(paint) if paint is not None else '')
+    return material(name, tuple(colour), spec['roughness'], spec['metallic'])
+
+
+def car_collection(key):
+    """One collection of AQuebecCar parts, as AQuebecParkedCars::Build instances them. key ('body', body, paint): the
+    Car70 body, roof and cabin of that BodyProfile at the pivot, the Paint slots of the body and roof in that paint
+    (AQuebecCar::ApplyPaint sets M_Car70_Paint on the slots named Paint); 'tires' or 'rims': four Car70Tire or Car70Rim
+    at the wheel centres (+-WheelX, +-TireY or +-RimY, WheelZ), rolled WheelRoll, one mesh shared by the four. Meshes keep
+    their file frame (x, -y, z), so a part at the C++ offset (x, y, z) sits at (x, -y, z), and the roll about the car's x
+    axis stays a roll about X. Only the body, cabin and roof cast shadows (QuebecParkedRules::CastsShadow)."""
+    if key in CARS_BUILT:
+        return CARS_BUILT[key]
+    rules = parked_rules()
+    fleet = json.load(open(os.path.join(CARS, 'manifest.json')))
+    name = 'Car_' + ('_'.join(str(k) for k in key) if isinstance(key, tuple) else key)
+    coll = CARS_BUILT[key] = bpy.data.collections.new(name)
+
+    def parts(stem, paint, shadow, places):
+        groups = read_obj_groups(os.path.join(CARS, 'Geometry', stem + '.obj'))
+        for slot, (verts, polys, uvs, normals) in groups.items():
+            mat = car_material(fleet, slot, paint if slot == 'Paint' else None)
+            first = None
+            for k, (location, roll) in enumerate(places):
+                label = f'Car_{stem}_{slot}' + (f'_{k}' if len(places) > 1 else '')
+                if first is None:
+                    ob = first = make_object(label, verts, polys, uvs, mat, coll, smooth=True)
+                    if normals:
+                        ob.data.normals_split_custom_set(normals)
+                else:
+                    ob = bpy.data.objects.new(label, first.data)
+                    coll.objects.link(ob)
+                ob.location = location
+                ob.rotation_euler = (roll, 0, 0)
+                ob.visible_shadow = shadow
+
+    if isinstance(key, tuple):
+        _, body, paint = key
+        for stem in (f'Car70Body{body}', f'Car70Roof{body}', f'Car70Cabin{body}'):
+            parts(stem, paint, True, [((0, 0, 0), 0)])
+    else:
+        y = rules['TireY'] if key == 'tires' else rules['RimY']
+        places = []
+        for wheel in range(4):  # QuebecParkedCars.cpp: front pair first, left (-y) then right (+y)
+            x = rules['WheelX'] if wheel < 2 else -rules['WheelX']
+            side = 1. if wheel % 2 else -1.
+            places.append(((x / 100, -side * y / 100, rules['WheelZ'] / 100), math.radians(rules['WheelRoll'])))
+        parts('Car70Tire' if key == 'tires' else 'Car70Rim', None, False, places)
+    return coll
+
+
+def place_parked_cars(region, col, camera=None):
+    """A car on every slot of Streets/parked_cars.json inside the region, as the game fills it: the pivot PivotHeight
+    over the slot's road point, turned to its yaw, in the file frame (x, -y, z) and -yaw as the props. Each part goes
+    past its cull end from the camera (game-frame cm), as the instanced components cull: the rims at 35 m, the tyres
+    at 60 m and the body, cabin and roof at 90 m. Without a camera nothing is culled. Returns the number of cars placed.
+    The game also leaves a space empty where something already stands in it; the preview draws every slot."""
+    slots = load_parked()
+    if not slots:
+        return 0
+    rules = parked_rules()
+    n = 0
+    for s in slots:
+        if not region.keep(s['x'], s['y']):
+            continue
+        pivot = (s['x'], s['y'], s['z'] + rules['PivotHeight'])
+        d = math.dist(camera, pivot) if camera else 0.
+        if d >= rules['BodyCullEnd']:
+            continue
+        for key, cull in ((('body', s['body'], s['paint']), rules['BodyCullEnd']), ('tires', rules['TireCullEnd']),
+                          ('rims', rules['RimCullEnd'])):
+            if d >= cull:
+                continue
+            e = bpy.data.objects.new(f'Parked_{s["id"]}_{key[0] if isinstance(key, tuple) else key}', None)
+            e.instance_type = 'COLLECTION'
+            e.instance_collection = car_collection(key)
+            e.location = (pivot[0] / 100, -pivot[1] / 100, pivot[2] / 100)
+            e.rotation_euler = (0, 0, -math.radians(s['yaw']))
+            col.objects.link(e)
+        n += 1
+    return n
+
+
 def setup_world(scene, sun_azimuth=215., sun_elevation=31.):
     world = bpy.data.worlds.new('Sky')
     scene.world = world
@@ -1204,6 +1326,7 @@ def build(name, spec, before=False, res=(1280, 720)):
     MASKED.clear()
     TREE.clear()
     SPECIES.clear()
+    CARS_BUILT.clear()
     scene = bpy.context.scene
     scene.unit_settings.scale_length = 1.
     cam_pos, target = spec['camera']
@@ -1220,13 +1343,15 @@ def build(name, spec, before=False, res=(1280, 720)):
     make_object('DistrictGround', [(-g / 100, -g / 100, -.002), (g / 100, -g / 100, -.002), (g / 100, g / 100, -.002),
                                    (-g / 100, g / 100, -.002)], [[0, 1, 2, 3]], [], existing_material('Ground', 'Gravel'), col)
     street, trees, yard_trees = place_all_trees(region, col, before)
-    texts = 0
+    texts = parked = 0
     placed = []
     if not before:
         rows = json.load(open(os.path.join(REPLICA, 'Furniture', 'placements.json')))['placements']
         rows += json.load(open(os.path.join(REPLICA, 'Soul', 'placements.json')))['placements']
         placed, man = place_props(rows, region, col)
         texts = street_name_text(placed, man, col)
+        # The parked cars the game fills the curb spaces with at runtime, culled from this camera as the game culls them.
+        parked = place_parked_cars(region, col, cam_pos)
     cam = bpy.data.objects.new('Camera', bpy.data.cameras.new('Camera'))
     scene.collection.objects.link(cam)
     cam.location = (cam_pos[0] / 100, -cam_pos[1] / 100, cam_pos[2] / 100)
@@ -1240,7 +1365,8 @@ def build(name, spec, before=False, res=(1280, 720)):
     scene.render.resolution_x, scene.render.resolution_y = res
     scene.render.resolution_percentage = 100
     summary = (f'PREVIEW {name} before={before} loaded {tris} faces, {street or 0} species street trees, {trees} old '
-               f'summer trees, {yard_trees} yard trees, {len(placed)} props, {texts} texts in {time.time() - t0:.0f}s')
+               f'summer trees, {yard_trees} yard trees, {len(placed)} props, {texts} texts, {parked} parked cars in '
+               f'{time.time() - t0:.0f}s')
     return scene, summary
 
 

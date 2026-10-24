@@ -12,16 +12,20 @@ Trees/manifest.json, else the shared mesh), the editor side against a fake unrea
 street and park tree of the city's inventory in street_trees.json, sidewalk pits 65-80 cm behind the curb and never on
 the carriageway, curb extensions only at corners or where the data lists one, no trunk on carriageway or parking
 asphalt (trees mapped there re-seated from the inventory's side, place and distance, or listed), their late-October
-colours and conifer kinds, each pit's iron guard and planting cards, the sunken aged-concrete ruelle gutter on its own
-UVs above the old OSM road, the dull asphalt overlays, ruelles paved to the fences and, behind the street-front yards,
-out to the lot lines, curb-to-building coverage on the capture streets,
+colours (the Colorado blue spruce blue) and conifer kinds, each pit's iron guard and planting cards, the on-street bike
+paint of the OSM cycleway tags (lane lines, marks within 30 m after each junction), the sunken aged-concrete ruelle
+gutter on its own UVs above the old OSM road, the dull asphalt overlays, ruelles paved to the fences and, behind the
+street-front yards, out to the lot lines, curb-to-building coverage on the capture streets,
 textured front lawns and card plants (crossed fountain-grass cards for the ornamental grass), and no open step at a
 raised slab's edge (risers at aprons and ramps); and the lane life: laundry poles at the back fence with lines rising
 to them, each strand a true catenary (closed-form fixtures and every line's record), the washing as folded strips of
 quads on the laundry atlas whose tops follow the rope, no rope or garment inside a tree crown or near a trunk (the
 crowns as the apply step stands the trees), the leaf litter (ragged Leaf_Litter patches on world metre UVs under the
 street and park crowns, as dense as each kind's leaf fall, and drifts along the curbs and ruelle gutters, lying just
-over their ground, within the Soul budget), a line with washing in sight within 15 m of the Mentana and
+over their ground, within the Soul budget; a long side only along a change in the ground, the ruelles under the yard
+crowns covered to their kind's share with leaves at the fence and wall feet, the park patches near the streets fine with
+clumps round them, and every input hashed), the late-October leaf bags at the curb bins and pumpkins standing on the
+Plex stoop landings, a line with washing in sight within 15 m of the Mentana and
 Saint-André ruelle camera over the fences (a ray cast through the game's own geometry and tree meshes), paint only on
 solid lane-fence faces, and the gallery props (chairs, pots, barbecues, bikes, bins, AC units, rail planters, dishes)
 on the decks' props floor, clear of stairs and doors.
@@ -494,6 +498,7 @@ def check_shared_plan():
     out['street_trees'] = check_street_trees_synthetic()
     out['street_tree_falls'] = check_street_tree_falls()
     out['kind_falls'] = check_kind_falls()
+    out['blue_conifer_plan'] = check_blue_conifer_plan()
     out['street_tree_traffic'] = check_street_tree_traffic()
     out['missing_tree_obj'] = check_missing_tree_obj()
     out['host_steps'] = check_host_steps()
@@ -837,12 +842,13 @@ def check_tree_texture_plan():
 # Scripts/blender/plateau_trees.py writes them), each kind's cards per cell (cell_usage), and the conifer and larch kinds.
 FALL_CELLS = {'yl': {'cover': .4, 'mean_srgb': [194.1, 155.3, 38.8]}, 'gr': {'cover': .35, 'mean_srgb': [124.4, 129., 42.]},
               'or': {'cover': .3, 'mean_srgb': [182.8, 101., 29.9]}, 'cf': {'cover': .25, 'mean_srgb': [67.7, 86.6, 47.]},
-              'lx': {'cover': .13, 'mean_srgb': [227.9, 181.5, 65.7]}}
+              'lx': {'cover': .13, 'mean_srgb': [227.9, 181.5, 65.7]},
+              'cb': {'cover': .23, 'mean_srgb': [99.6, 121.8, 103.7]}}     # the blue-green spruce spray
 TREE_FALL_KINDS = {
     'norway_maple': dict(TREE_TEXTURED_KINDS['norway_maple'], cell_usage={'yl': 50, 'gr': 10}),
     'linden': dict(TREE_TEXTURED_KINDS['linden'], cell_usage={'yl': 30, 'or': 20}),
     'conifer': {'materials': {'bark': 'Bark_Grey', 'leaves': 'Tree_Leaves_Autumn'}, 'height_cm': 1400, 'trunk_cm': 38,
-                'cell_usage': {'cf': 40}},
+                'cell_usage': {'cf': 40, 'cb': 30}},
     'larch': {'materials': {'bark': 'Bark_Grey', 'leaves': 'Tree_Leaves_Autumn'}, 'height_cm': 1440, 'trunk_cm': 34,
               'cell_usage': {'lx': 40}}}
 FALL_ROWS = [street_row(1, 'norway_maple', 1500, 45.), street_row(2, 'norway_maple', 1400, 40., fall='red'),
@@ -967,23 +973,56 @@ def check_prop_shadows(the_plan):
 
 
 def check_kind_falls():
-    """A kind with its own fall (KIND_FALL: the conifer's evergreen, the larch's gold) gets exactly that fall from every
-    species and genus row that puts a tree on it. The apply step refuses a larch tinted another colour, so a dawn
-    redwood or a bald cypress (larch genera) that TREE_FALL turned russet would stop the dry run and the import."""
+    """A kind with its own fall (KIND_FALL: the conifer's evergreen, the larch's gold) gets that fall, or one of its
+    KIND_TINTS (the conifer's blue), from every species and genus row that puts a tree on it. The apply step refuses a
+    larch tinted another colour, so a dawn redwood or a bald cypress (larch genera) that TREE_FALL turned russet would
+    stop the dry run and the import."""
     R = replica
     bad = []
     names = [prefix for prefix, _ in R.TREE_SPECIES + R.TREE_FALL] + [g.lower() for g in R.TREE_GENERA]
     for name in sorted(set(names)):
         species = name[0].upper() + name[1:]
         kind = R.tree_kind(species, 30.)
-        if kind in R.KIND_FALL and R.tree_fall(species, kind) != R.KIND_FALL[kind]:
-            bad.append((species, kind, R.tree_fall(species, kind)))
+        fall = R.tree_fall(species, kind)
+        if kind in R.KIND_FALL and fall != R.KIND_FALL[kind] and fall not in R.KIND_TINTS[kind]:
+            bad.append((species, kind, fall))
     assert not bad, ('a kind of its own fall tinted another colour', bad)
     for species in ('Metasequoia glyptostroboides', 'Taxodium distichum', 'Larix decidua'):
         kind = R.tree_kind(species, 30.)
         assert kind == 'larch' and R.tree_fall(species, kind) == 'gold', (species, kind, R.tree_fall(species, kind))
     return {'checked': len(set(names))}
 
+
+
+def check_blue_conifer_plan():
+    """The Colorado blue spruce through the apply plan: the conifer's evergreen trees wear the kind's leaves, its blue
+    trees stand on their own actor on the same mesh, and that actor's leaves duplicate the kind's with a tint that
+    brings the conifer's cells to the blue's colour. A blue maple and a blue larch fail."""
+    A = apply_replica
+    rows = [street_row(1, 'conifer', 1200, 30., fall='evergreen', species='Picea glauca'),
+            street_row(2, 'conifer', 1250, 32., fall='blue', species='Picea pungens'),
+            street_row(3, 'conifer', 1300, 34., fall='blue', species="Picea pungens 'Glauca'")]
+    with tempfile.TemporaryDirectory() as tmp:
+        fall_root(tmp, rows)
+        the_plan = A.plan(tmp)
+        street = [t for t in the_plan['trees'] if t['group'] == 'street']
+        assert [(t['kind'], t['fall'], t['ids']) for t in street] == [
+            ('conifer', 'evergreen', ['inv:5-1']), ('conifer', 'blue', ['inv:5-2', 'inv:5-3'])], street
+        assert street[0]['leaves'] is None and street[1]['label'].endswith('conifer blue'), street[1]['label']
+        assert street[0]['mesh'] == street[1]['mesh'] == A.tree_mesh_asset('conifer', None)
+        m = next(m for m in the_plan['materials'] if m['layer'] == A.TREES and m.get('fall') == 'blue')
+        assert m['key'] == 'Tree_Leaves_Autumn_conifer_blue' and m['tree_kind'] == 'conifer', m['key']
+        got = [c * t for c, t in zip(fall_cells_mean(TREE_FALL_KINDS['conifer']['cell_usage']), m['tint'])]
+        want = A.linear(A.FALL_SRGB['blue'])
+        assert all(abs(g - w) <= max(.003, .05 * w) for g, w in zip(got, want)), (got, want)
+        assert want[2] > want[0], 'the blue is no blue'
+        tint = [round(v, 3) for v in m['tint']]
+    for message, row in (('a blue maple', street_row(1, 'norway_maple', 1200, 30., fall='blue')),
+                         ('a blue larch', street_row(1, 'larch', 1200, 30., fall='blue'))):
+        with tempfile.TemporaryDirectory() as tmp:
+            fall_root(tmp, [row])
+            expect_rejected(lambda: A.plan(tmp), message)
+    return {'blue_tint': tint}
 
 TRAFFIC_FIXTURE = {'roads': [[[-5000., 0.], [5000., 0.]], [[-5000., 3000.], [5000., 3000.]]], 'road_widths': [620., 380.]}
 
@@ -1116,9 +1155,11 @@ def check_street_tree_plan(the_plan):
     # The species table and the apply step agree on the falls; the conifers and larches stand on their own kinds; the
     # red and russet trees add a few actors and no mesh (no triangle).
     assert A.TREE_FALLS == replica.TREE_FALLS and A.KIND_FALL == replica.KIND_FALL
+    assert A.KIND_TINTS == replica.KIND_TINTS and A.BROADLEAF_TINTS == replica.BROADLEAF_TINTS
     assert {'conifer', 'larch'} <= {g['kind'] for g in groups}
     tinted = [g for g in groups if g['leaves']]
-    assert {g['fall'] for g in tinted} == {'red', 'russet'} and len(tinted) <= 13, [g['label'] for g in tinted]
+    assert {g['fall'] for g in tinted} == {'red', 'russet', 'blue'} and len(tinted) <= 15, [g['label'] for g in tinted]
+    assert {g['kind'] for g in tinted if g['fall'] == 'blue'} == {'conifer'}, [g['label'] for g in tinted]
     assert len({(m['species'], m['variant']) for m in the_plan['tree_meshes']}) == len(the_plan['tree_meshes'])
     assert {(g['kind'], g['variant']) for g in the_plan['trees']} == {(m['species'], m['variant'])
                                                                        for m in the_plan['tree_meshes']}
@@ -1131,7 +1172,9 @@ def check_street_tree_plan(the_plan):
     for g in tinted:
         m = mats[g['leaves']['asset']]
         assert m['fall'] == g['fall'] and m['tree_kind'] == g['kind'] and m['blend_mode'] == 'masked', g['label']
-        assert m['tint'][1] < m['tint'][0] and m['texture_set'] == 'tree_leaves', (g['label'], m['tint'])
+        # a red or russet tint pulls green under red; the spruce's blue lifts blue over both
+        shifted = m['tint'][1] < m['tint'][0] if g['fall'] in ('red', 'russet') else m['tint'][2] > max(m['tint'][:2])
+        assert shifted and m['texture_set'] == 'tree_leaves', (g['label'], m['tint'])
     # No trunk in the traffic band but in a pit or at a ruelle's edge, and none where a car's side passes.
     band = the_plan['street_trees']['traffic']
     assert band['layout'] == A.TRAFFIC_LAYOUT and band['checked'] == len(rows), band
@@ -1246,8 +1289,9 @@ class FakeTexture(FakeAsset):
 
 
 class FakeNanite(FakeObj):
+    """MeshNaniteSettings: position_precision starts on Auto (MIN_int32), as an imported mesh does."""
     defaults = {'enabled': False, 'shape_preservation': 'NONE', 'fallback_target': None,
-                'fallback_percent_triangles': 0., 'fallback_relative_error': 1.}
+                'fallback_percent_triangles': 0., 'fallback_relative_error': 1., 'position_precision': -2 ** 31}
 
     @property
     def enabled(self):
@@ -1361,11 +1405,17 @@ class FakeAssets:
         return new
 
     def delete_asset(self, path):
-        self.registry.pop(path, None)
+        self.registry.pop(path.split('.')[0], None)
         return True
 
     def save_loaded_asset(self, asset, only_if_is_dirty=True):
         return True
+
+    def list_assets(self, directory, recursive=True, include_folder=False):
+        """Object paths of the assets under a folder (EditorAssetLibrary.list_assets)."""
+        prefix = directory.rstrip('/') + '/'
+        return sorted(f'{p}.{p.rsplit("/", 1)[1]}' for p in self.registry
+                      if p.startswith(prefix) and (recursive or '/' not in p[len(prefix):]))
 
 
 class FakeImportTask:
@@ -1375,8 +1425,12 @@ class FakeImportTask:
 
 
 class FakeTools:
+    """The asset tools' import. interchange may hold what an Interchange OBJ import can do that the legacy one does not:
+    'mtl' adds a material per newmtl of the OBJ's .mtl, listed before the mesh; 'split' makes a second mesh; 'rename'
+    names the mesh after its file and ignores destination_name."""
+
     def __init__(self, assets):
-        self.assets = assets
+        self.assets, self.interchange = assets, set()
 
     def create_asset(self, name, folder, cls, factory):
         asset = cls(f'{folder}/{name}')
@@ -1386,16 +1440,27 @@ class FakeTools:
     def import_asset_tasks(self, tasks):
         for task in tasks:
             path = f'{task.destination_path}/{task.destination_name}'
+            extra = []
             if task.filename.endswith('.obj'):
                 lines = Path(task.filename).read_text().splitlines()
                 slots = list(dict.fromkeys(line.split()[1] for line in lines if line.startswith('usemtl '))) or ['']
                 faces = sum(len(line.split()) - 3 for line in lines if line.startswith('f '))
+                if 'rename' in self.interchange:
+                    path = f'{task.destination_path}/{Path(task.filename).stem}'
                 asset = FakeMesh(path, slots, faces)
+                mtl = [line.split()[1] for line in lines if line.startswith('mtllib ')]
+                if 'mtl' in self.interchange and mtl and (Path(task.filename).parent / mtl[0]).is_file():
+                    names = [line.split()[1] for line in (Path(task.filename).parent / mtl[0]).read_text().splitlines()
+                             if line.startswith('newmtl ')]
+                    extra = [FakeMaterial(f'{task.destination_path}/{n}') for n in names]
+                if 'split' in self.interchange:
+                    extra.append(FakeMesh(path + '_1', slots, faces))
             else:
                 width, height, _, _ = plateau_textures.read_png_channels(Path(task.filename).read_bytes())
                 asset = FakeTexture(path, (width, height))
-            self.assets.registry[asset.path] = asset
-            task.imported_object_paths = [asset.get_path_name()]
+            for made in extra + [asset]:
+                self.assets.registry[made.path] = made
+            task.imported_object_paths = [made.get_path_name() for made in extra + [asset]]
 
 
 class FakeTransform:
@@ -1557,7 +1622,7 @@ def fake_unreal():
         AssetToolsHelpers=NS(get_asset_tools=lambda: tools), AssetImportTask=FakeImportTask, FbxImportUI=FakeImportUI,
         StaticMeshEditorSubsystem='StaticMeshEditorSubsystem', get_editor_subsystem=lambda cls: subsystem,
         Material=FakeMaterial, Texture2D=FakeTexture, StaticMesh=FakeMesh, StaticMeshActor=FakeMeshActor,
-        MaterialFactoryNew=lambda: None,
+        MaterialInterface=FakeMaterial, Texture=FakeTexture, MaterialFactoryNew=lambda: None,
         MaterialExpressionTextureCoordinate=FakeCoords, MaterialExpressionTextureSample=FakeSample,
         MaterialExpressionConstant3Vector=FakeVector3, MaterialExpressionConstant=FakeConstant,
         MaterialExpressionMultiply=FakeMultiply, MaterialExpressionLinearInterpolate=FakeLerp,
@@ -1770,13 +1835,15 @@ def check_editor_side():
         expect_rejected(lambda: A.check_macro_nodes(u, registry[gravel['asset']], gravel), 'a flattened macro lerp')
         expect_rejected(lambda: A.check_macro_nodes(u, registry[rows['Parged']['asset']], dict(rows['Parged'],
                         macro=gravel['macro'])), 'a macro set without its macro nodes')
-        # Meshes: every batch imported as Nanite, Preserve Area on the masked ones; layer actors and their checks.
+        # Meshes: every batch imported as Nanite, Preserve Area on the masked ones, the fine position step on all;
+        # layer actors and their checks.
         meshes, editor = {}, FakeEditor()
         for row in the_plan['meshes']:
             folder, name = row['asset'].rsplit('/', 1)
             source = Path(tmp) / 'Data/Plateau/ReplicaGeometry' / row['layer'] / row['file']
             meshes[row['asset']] = A.import_mesh(u, source, folder, name, materials[row['material']], row['collision'],
-                                                 row['colliders'], row['nanite_shape_preservation'])
+                                                 row['colliders'], row['nanite_shape_preservation'],
+                                                 row['nanite_position_precision'])
         by_mesh = {m['asset']: m for m in the_plan['meshes']}
         actors = {}
         for row in the_plan['actors']:
@@ -1901,6 +1968,234 @@ def check_import_order():
         assert not any(a.startswith(f'{A.MATERIALS}/M_Replica_Plex_') for a in u.EditorAssetLibrary.registry), \
             'layer materials were made before the tree slots were checked'
         return {'tree_imports_first': len(trees), 'layer_imports': len(layers), 'slot_failure_before_layers': True}
+
+
+def empty_report():
+    return {'textures': {}, 'parents': {}, 'materials': {}, 'fresh_materials': [], 'tree_meshes': {}}
+
+
+def nanite_step(mesh):
+    return mesh.get_editor_property('nanite_settings').get_editor_property('position_precision')
+
+
+def check_nanite_precision(the_plan):
+    """Every layer mesh (Streets, Soul, Plex, Props) gets Nanite's 1/32 cm position step; the tree meshes stay on Auto.
+    Epic's Nanite page: Auto picks the step from the mesh's size and triangle density, in object coordinates, and meshes
+    on one setting never crack at shared edges. The committed plan gives the step to every batch. On the fake, the import
+    sets it, verify reads it back on the layer actors' meshes, and it rejects a mesh left on Auto or at 1/16 cm."""
+    A = apply_replica
+    assert A.NANITE_POSITION_PRECISION == 5 and 2. ** -A.NANITE_POSITION_PRECISION == 1 / 32.
+    assert all(m['nanite_position_precision'] == 5 for m in the_plan['meshes']), 'a layer mesh on Auto'
+    assert all(m['nanite_position_precision'] is None for m in the_plan['tree_meshes'])
+    assert the_plan['counts']['fine_precision_meshes'] == len(the_plan['meshes'])
+    layers = A.tally(m['layer'] for m in the_plan['meshes'])
+    assert {'Streets', 'Soul', 'Plex', 'Props'} <= set(layers), layers
+    with tempfile.TemporaryDirectory() as tmp:
+        synthetic_plex(tmp, ['Yard_Grass', 'Rail_Lattice'], {'trees': TREE_ROWS_FIXTURE}, tree_kinds=TREE_KINDS_FIXTURE)
+        fixture = A.plan(tmp)
+        manifests, _ = A.load_manifests(Path(tmp))
+        u, _ = editor_fakes()
+        _, materials, meshes = A.import_assets(u, Path(tmp), fixture, manifests, empty_report())
+        steps = {nanite_step(meshes[m['asset']]) for m in fixture['meshes']}
+        assert steps == {5}, steps
+        assert {nanite_step(meshes[m['asset']]) for m in fixture['tree_meshes']} == {A.NANITE_AUTO}
+        by_mesh, editor, actors = {m['asset']: m for m in fixture['meshes']}, FakeEditor(), {}
+        for row in fixture['actors']:
+            actors[row['label']] = A.spawn_layer_actor(u, editor, row, meshes[row['mesh']],
+                                                       materials[by_mesh[row['mesh']]['material']])
+            A.check_layer_actor(u, actors[row['label']], row, by_mesh[row['mesh']])
+        row = fixture['actors'][0]
+        mesh = meshes[row['mesh']]
+        for step, message in ((A.NANITE_AUTO, 'a layer mesh left on Auto'), (4, 'a layer mesh at 1/16 cm')):
+            mesh.get_editor_property('nanite_settings').set_editor_property('position_precision', step)
+            expect_rejected(lambda: A.check_layer_actor(u, actors[row['label']], row, by_mesh[row['mesh']]), message)
+            expect_rejected(lambda: A.check_mesh_nanite(u, mesh, by_mesh[row['mesh']]), message)
+        mesh.get_editor_property('nanite_settings').set_editor_property('position_precision', 5)
+        A.check_mesh_nanite(u, mesh, by_mesh[row['mesh']])
+    return {'step_cm': 2. ** -A.NANITE_POSITION_PRECISION, 'layer_meshes': dict(sorted(layers.items())),
+            'tree_meshes': 'auto'}
+
+
+def tree_mtl_root(tmp):
+    """The species-tree fixture with a .mtl beside each tree OBJ, as Scripts/blender/plateau_trees.py writes them: an
+    mtllib line, and slots named <kind>_bark and <kind>_leaves in the OBJ's usemtl and the .mtl's newmtl lines."""
+    A = apply_replica
+    synthetic_plex(tmp, ['Yard_Grass'], {'trees': TREE_ROWS_FIXTURE}, tree_kinds=TREE_KINDS_FIXTURE)
+    folder = Path(tmp) / 'Data/Plateau/ReplicaGeometry' / A.TREES
+    for species in TREE_KINDS_FIXTURE:
+        obj = folder / f'Tree_{species}.obj'
+        body = obj.read_text().replace('usemtl bark', f'usemtl {species}_bark')
+        obj.write_text(f'mtllib Tree_{species}.mtl\n' + body.replace('usemtl leaves', f'usemtl {species}_leaves'))
+        (folder / f'Tree_{species}.mtl').write_text(
+            f'newmtl {species}_bark\nKd 0.4 0.4 0.4\nnewmtl {species}_leaves\nKd 0.8 0.6 0.2\n')
+    return sorted(f'{A.ASSETS}/{A.TREES}/{species}_{slot}' for species in TREE_KINDS_FIXTURE
+                  for slot in ('bark', 'leaves'))
+
+
+def check_import_strays():
+    """An Interchange OBJ import with a .mtl beside the OBJ (the species trees) may make a material per newmtl
+    (<kind>_bark, <kind>_leaves) whatever FbxImportUI's import_materials says. On the fake, each tree import does, and
+    lists them before the mesh. The step takes the one static mesh, sets its slots, then deletes the strays, so verify
+    finds nothing under the replica folder that the plan does not name. Verify rejects a stray left behind; the import
+    rejects an OBJ split into two meshes and a mesh that ignored destination_name; the sweep rejects an unplanned
+    asset that is no material or texture."""
+    A = apply_replica
+    with tempfile.TemporaryDirectory() as tmp:
+        strays = tree_mtl_root(tmp)
+        root = Path(tmp)
+        the_plan = A.plan(tmp)
+        manifests, _ = A.load_manifests(root)
+        u, _ = editor_fakes()
+        u.AssetToolsHelpers.get_asset_tools().interchange = {'mtl'}
+        report = empty_report()
+        _, materials, meshes = A.import_assets(u, root, the_plan, manifests, report)
+        registry = u.EditorAssetLibrary.registry
+        assert report['stray_import_assets'] == strays, report.get('stray_import_assets')
+        assert not any(s in registry for s in strays) and A.unplanned_assets(u, the_plan) == []
+        for row in the_plan['tree_meshes']:
+            A.check_tree_mesh(u, meshes[row['asset']], row)
+            assert meshes[row['asset']].path == row['asset']
+        registry[strays[0]] = FakeMaterial(strays[0])
+        assert A.unplanned_assets(u, the_plan) == [strays[0]], 'verify does not see a stray material'
+        registry[f'{A.ASSETS}/{A.TREES}/SM_Tree_elm_1'] = FakeMesh(f'{A.ASSETS}/{A.TREES}/SM_Tree_elm_1')
+        expect_rejected(lambda: A.remove_import_strays(u, the_plan, empty_report()), 'an unplanned second tree mesh')
+        row = the_plan['tree_meshes'][0]
+        folder, name = row['asset'].rsplit('/', 1)
+        source = root / 'Data/Plateau/ReplicaGeometry' / row['file']
+        for mode, message in (('split', 'an OBJ imported as two meshes'), ('rename', 'a mesh named after its file')):
+            fresh, _ = editor_fakes()
+            fresh.AssetToolsHelpers.get_asset_tools().interchange = {'mtl', mode}
+            expect_rejected(lambda: A.import_mesh(fresh, source, folder, name, None, 'none'), message)
+    return {'strays_removed': len(strays), 'tree_meshes': len(the_plan['tree_meshes'])}
+
+
+def check_editor_blue_conifer():
+    """The Colorado blue spruce through apply and verify on the fake: the blue group stands on the conifer's own mesh
+    with the blue leaves on its leaves slot at the planned tint, the evergreen group keeps the mesh's leaves, and verify
+    rejects a blue spruce drawn green."""
+    A = apply_replica
+    rows = [street_row(1, 'conifer', 1200, 30., fall='evergreen', species='Picea glauca'),
+            street_row(2, 'conifer', 1250, 32., fall='blue', species='Picea pungens')]
+    with tempfile.TemporaryDirectory() as tmp:
+        fall_root(tmp, rows)
+        the_plan = A.plan(tmp)
+        manifests, _ = A.load_manifests(Path(tmp))
+        u, _ = editor_fakes()
+        report = empty_report()
+        _, materials, meshes = A.import_assets(u, Path(tmp), the_plan, manifests, report)
+        assert not report['fresh_materials'], report['fresh_materials']
+        editor = FakeEditor()
+        A.spawn_yard_trees(u, editor, the_plan['trees'], meshes, materials)
+        actors = {a.label: a for a in editor.actors}
+        assert A.check_yard_trees_placed(u, actors, the_plan['trees']) == 2
+        green, blue = (actors[f'{A.PREFIX}Street trees conifer{s}'] for s in ('', ' blue'))
+        assert green.component.static_mesh is blue.component.static_mesh, 'the blue spruce needs no mesh of its own'
+        row = next(m for m in the_plan['materials'] if m.get('fall') == 'blue')
+        tint = materials[row['asset']]
+        (slot,) = A.leaves_slots(blue.component.static_mesh)
+        assert blue.component.get_material(slot) is tint and green.component.get_material(slot) is not tint
+        assert A.check_tint(u, tint, row) and row['tint'][2] > row['tint'][0], row['tint']
+        assert all(t <= A.TINT_LIMIT for t in row['tint']), row['tint']
+        overrides = dict(blue.component.overrides)
+        blue.component.overrides.clear()
+        expect_rejected(lambda: A.check_yard_trees_placed(u, actors, the_plan['trees']), 'a blue spruce drawn green')
+        blue.component.overrides.update(overrides)
+        A.check_yard_trees_placed(u, actors, the_plan['trees'])
+        return {'material': row['asset'].rsplit('/', 1)[1], 'tint': [round(t, 3) for t in row['tint']]}
+
+
+OCTOBER_FIXTURE = {   # Scripts/blender/plateau_props.py: (prop, part, material, colour variants)
+    'parts': (('pumpkin', 'body', 'PumpkinOrange', ['PumpkinDeep', 'PumpkinWhite']), ('pumpkin', 'stem', 'PumpkinStem', []),
+              ('pumpkin_carved', 'body', 'PumpkinLantern', ['PumpkinOrange', 'PumpkinDeep']),
+              ('pumpkin_carved', 'face', 'PumpkinHollow', []),
+              ('leaf_bag', 'body', 'LeafBagKraft', ['LeafBagWet', 'LeafBagPale'])),
+    'colours': {'PumpkinOrange': '#db741e', 'PumpkinDeep': '#b85a1a', 'PumpkinWhite': '#e3dac4', 'PumpkinStem': '#7b7444',
+                'PumpkinLantern': '#e88a26', 'PumpkinHollow': '#2e1608', 'LeafBagKraft': '#a27b4c',
+                'LeafBagWet': '#7c5b37', 'LeafBagPale': '#bd9f70'},
+    'props': {'pumpkin': {'kind': 'season', 'form_of': 'pumpkin', 'scale_range': [.55, 1.45],
+                          'sizes': {'pie': .6, 'carving': 1., 'large': 1.4},
+                          'forms': [{'prop': 'pumpkin', 'share': .7}, {'prop': 'pumpkin_carved', 'share': .3}]},
+              'pumpkin_carved': {'kind': 'season', 'form_of': 'pumpkin'},
+              'leaf_bag': {'kind': 'season', 'form_of': 'leaf_bag', 'scale_range': [.97, 1.03],
+                           'colliders_cm': [{'center': [0, 0, 39.04], 'size': [30., 41., 78.08]}]}}}
+
+
+def october_root(root, rows):
+    """A Props layer with pumpkins and a leaf bag as the props build writes them (parts, colour variants, forms,
+    scale_range, the bag's box collider) and a Soul layer that places the given rows."""
+    data = Path(root) / 'Data/Plateau/ReplicaGeometry'
+    for layer in ('Props', 'Soul'):
+        (data / layer).mkdir(parents=True, exist_ok=True)
+    body = b'v 0 0 0\nv 30 0 0\nv 0 0 30\nf 1 2 3\n'
+    batches = []
+    for key, part, material, variants in OCTOBER_FIXTURE['parts']:
+        (data / 'Props' / f'{key}_{part}.obj').write_bytes(body)
+        batches.append(dict({'file': f'{key}_{part}.obj', 'mesh': f'SM_Props_{key}_{part}', 'material': material,
+                             'collision': 'none', 'triangles': 1, 'bounds_cm': [0, 0, 0, 30, 0, 30], 'prop': key,
+                             'part': part, 'sha256': hashlib.sha256(body).hexdigest()},
+                            **({'variants': variants} if variants else {})))
+    materials = {k: {'base_color_srgb': v, 'roughness': .6, 'metallic': 0} for k, v in OCTOBER_FIXTURE['colours'].items()}
+    (data / 'Props/manifest.json').write_text(json.dumps({'layer': 'Props', 'batches': batches, 'materials': materials,
+                                                          'props': OCTOBER_FIXTURE['props'], 'counts': {},
+                                                          'source_sha256': {}}))
+    (data / 'Soul/manifest.json').write_text(json.dumps({'layer': 'Soul', 'batches': [], 'materials': {}, 'counts': {},
+                                                         'source_sha256': {}}))
+    (data / 'Soul/placements.json').write_text(json.dumps({'placements': rows}))
+
+
+def check_october_props(the_plan):
+    """The late-October props (verifyLocal item 5: kraft leaf bags and pumpkins) through the apply plan. In the committed
+    Props manifest every form is a season prop whose parts import on the fine Nanite step, and every placed one casts a
+    shadow inside its scale range. On a synthetic layer, a pumpkin's colour comes from its seed and its size from the
+    placement scale, and a bag keeps its box collider; the plan refuses a pumpkin, a carved one (by its parent's range)
+    or a bag outside the scale range."""
+    A = apply_replica
+    assert set(A.OCTOBER_PROPS) <= set(A.PROP_SHADOW), sorted(set(A.OCTOBER_PROPS) - set(A.PROP_SHADOW))
+    manifest = json.loads((replica.OUT / 'Props/manifest.json').read_text())
+    props = manifest['props']
+    assert set(A.OCTOBER_PROPS) <= set(props), sorted(set(A.OCTOBER_PROPS) - set(props))
+    for key in A.OCTOBER_PROPS:
+        assert props[key].get('kind') == 'season' and props[key].get('form_of') in A.OCTOBER_PROPS, key
+        assert A.prop_scale_range(props, key) == A.prop_scale_range(props, props[key]['form_of']) is not None, key
+    for key in ('leaf_bag', 'pumpkin'):
+        forms = props[key]['forms']
+        assert {f['prop'] for f in forms} <= set(A.OCTOBER_PROPS) and abs(sum(f['share'] for f in forms) - 1.) < 1e-6
+    files = {b['file'] for b in manifest['batches'] if b.get('prop') in A.OCTOBER_PROPS}
+    meshes = [m for m in the_plan['meshes'] if m['layer'] == 'Props' and m['file'] in files]
+    assert files and len(meshes) == len(files), (len(files), len(meshes))
+    assert all(m['nanite_position_precision'] == A.NANITE_POSITION_PRECISION for m in meshes)
+    placed = [i for i in the_plan['instances'] if i['prop'] in A.OCTOBER_PROPS]
+    assert all(i['shadow'] for i in placed), [i['label'] for i in placed if not i['shadow']]
+    for i in placed:
+        low, high = A.prop_scale_range(props, i['prop'])
+        assert all(low - 1e-6 <= t[2] <= high + 1e-6 for t in i['transforms']), i['label']
+    rows = [{'prop': 'pumpkin', 'position': [0., 0., 40.], 'yaw': 90., 'scale': .6, 'variant_seed': 0, 'collision': False},
+            {'prop': 'pumpkin', 'position': [50., 0., 40.], 'yaw': 90., 'scale': 1.4, 'variant_seed': 2,
+             'collision': False},
+            {'prop': 'pumpkin_carved', 'position': [100., 0., 40.], 'yaw': 180., 'scale': 1., 'variant_seed': 1,
+             'collision': False},
+            {'prop': 'leaf_bag', 'position': [0., 300., 18.], 'yaw': 0., 'scale': 1., 'variant_seed': 1, 'collision': True}]
+    with tempfile.TemporaryDirectory() as tmp:
+        october_root(tmp, rows)
+        fixture = A.plan(tmp)
+        instances = fixture['instances']
+        assert instances and all(i['shadow'] for i in instances) and not fixture['missing_props']
+        bodies = {i['variant']: [t[2] for t in i['transforms']] for i in instances
+                  if i['prop'] == 'pumpkin' and i['mesh'].endswith('_body')}
+        assert bodies == {'PumpkinOrange': [.6], 'PumpkinWhite': [1.4]}, bodies
+        carved = {i['mesh'].rsplit('_', 1)[1]: i['variant'] for i in instances if i['prop'] == 'pumpkin_carved'}
+        assert carved == {'body': 'PumpkinOrange', 'face': 'PumpkinHollow'}, carved
+        bag = [i for i in instances if i['prop'] == 'leaf_bag']
+        assert [(i['variant'], i['collision']) for i in bag] == [('LeafBagWet', True)], bag
+        assert fixture['counts']['meshes_with_box_collision'] == 1
+    for message, row in (('a pumpkin twice the size', dict(rows[0], scale=2.)),
+                         ('a carved pumpkin a third the size', dict(rows[2], scale=.3)),
+                         ('a leaf bag at half height', dict(rows[3], scale=.5))):
+        with tempfile.TemporaryDirectory() as tmp:
+            october_root(tmp, [row])
+            expect_rejected(lambda: A.plan(tmp), message)
+    return {'props': {k: props[k].get('form_of') for k in A.OCTOBER_PROPS}, 'meshes': len(meshes),
+            'placed': {i['label'][len(A.PREFIX):]: i['count'] for i in placed}}
 
 
 class FakeVegetation:
@@ -2789,9 +3084,11 @@ def check_washing(out, soul):
 
 CROWN_KEEP, TRUNK_KEEP = .7, 150.   # the local review: no washing in this share of a crown, nor this near a trunk
 LITTER_KEYS = ('leaf_gold', 'leaf_rust', 'leaf_brown')   # the flat one-colour leaf polygons the litter replaced
-LITTER_TRIANGLES = 100000           # the litter's share of the Soul layer's 300,000 triangles (70,000 before the fine
-                                    # outlines, the fringe and the ruelle litter of the fifth pass's repair)
-LITTER_GAP = (.2, .8)               # cm a litter vertex lies over the ground under it
+LITTER_TRIANGLES = 110000           # the litter's share of the Soul layer's 300,000 triangles (70,000 before the fine
+                                    # outlines, the fringe and the ruelle litter of the fifth pass's repair, 100,000
+                                    # before the sixth pass's re-spaced sides, ruelle runs and drifts and park fringe)
+LITTER_GAP = (.2, .8)               # cm a litter vertex lies over the ground under it,
+LITTER_GAP_PARK = 1.01              # or up to this over the park's lawn (over plateau_park's own leaves)
 
 
 def drawn_crowns(street_rows):
@@ -2934,8 +3231,8 @@ def check_laundry_crown_fixture():
 
 def litter_ground(out, streets):
     """p -> the height of the ground under a litter point: the highest Streets face (its plane at p) no more than 1 cm
-    over it, else the park lawn (BaseGeometry/Grass.obj) where no path, pond, court or old road covers it; and the
-    highest Streets face over it, if any (which would hide it)."""
+    over it, else the park lawn (BaseGeometry/Grass.obj) where no path, pond, court or old road covers it; the
+    highest Streets face over it, if any (which would hide it); and whether the ground is the park's lawn."""
     tris, grid = [], replica.Grid(500.)
     for batch in streets['batches']:
         for face in parse_obj(out / 'Streets' / batch['file'])[1]:
@@ -2963,9 +3260,10 @@ def litter_ground(out, streets):
                     under = z if under is None else max(under, z)
                 else:
                     over = z if over is None else max(over, z)
-        if under is None and lawn._top(lawn.covers, p) is None:
+        park = under is None and lawn._top(lawn.covers, p) is None
+        if park:
             under = lawn._top(lawn.lawn, p)
-        return under, over
+        return under, over, park
     return at
 
 
@@ -3009,11 +3307,12 @@ def check_leaf_litter(world, out, soul, streets):
             faces.append(pts)
             c = tuple(sum(q[i] for q in pts) / 3 for i in range(3))
             for q in pts + [c]:
-                under, over = at(q)
+                under, over, park = at(q)
                 assert under is not None, ('litter over no ground', q)
                 gaps.append(q[2] - under)
                 hidden += over is not None
-                assert LITTER_GAP[0] <= q[2] - under <= LITTER_GAP[1], ('litter off its ground', q, under)
+                assert LITTER_GAP[0] <= q[2] - under <= (LITTER_GAP_PARK if park else LITTER_GAP[1]), \
+                    ('litter off its ground', q, under)
             if abs(c[2] - R.Z_LITTER_ROAD) < .01:
                 road += 1
                 assert curb(c) <= 100., ('a curb drift away from the curb', c)
@@ -3032,7 +3331,7 @@ def check_leaf_litter(world, out, soul, streets):
     order = sorted(record['kinds'].values(), key=lambda r: r['fallen'])
     assert all(a['cover'] <= b['cover'] for a, b in zip(order, order[1:])) and order[0]['cover'] < order[-1]['cover']
     total = sum(r['drawn_m2'] for r in record['kinds'].values()) + record['curb_drifts_m2'] + record['ruelle_drifts_m2'] + \
-        record['yard_trees_over_ruelles']['drawn_m2']
+        record['yard_trees_over_ruelles']['drawn_m2'] + record['ruelle_foot_drifts_m2']
     assert abs(total - drawn / 1e4) <= .005 * total + 1., (total, drawn / 1e4)
     assert soul['counts']['gutter_leaf_drifts'] >= 600 and road >= 4 * soul['counts']['gutter_leaf_drifts'], road
     assert soul['counts']['ruelle_gutter_leaf_drifts'] > 100 and gutter > 1000, gutter
@@ -3048,10 +3347,7 @@ def check_leaf_litter(world, out, soul, streets):
         under += any(math.dist(q[:2], (x, y)) <= reach for i in grid.query(R.bbox([(x, y)], reach)) for q in faces[i])
     assert under >= .9 * len(rows), (under, len(rows))
     # the patches are ragged fans: grouped by their centre (each face's last vertex, as obj_text writes a fan)
-    fans = {}
-    for f in faces:
-        if abs(f[2][2] - R.Z_LITTER_ROAD) > .01 and not in_gutter(f[2][2]):
-            fans.setdefault(tuple(round(v, 2) for v in f[2]), set()).update(tuple(round(v, 2) for v in q) for q in f[:2])
+    fans = {c: ring for c, ring in litter_fans(out, soul).items() if litter_ground_kind(c[2]) not in ('road', 'gutter')}
     spreads, small = [], 0
     for c, ring in fans.items():
         radii = [math.dist(c[:2], q[:2]) for q in ring]
@@ -3067,7 +3363,8 @@ def check_leaf_litter(world, out, soul, streets):
 
 
 PARK_LEAVES = replica.ROOT / 'Data/Plateau/ParkGeometry'
-PARK_LEAF_GAP = .05           # cm: a park leaf (rim and rib) stays at least this far under the litter lying over it
+PARK_LEAF_GAP = .25           # cm: a park leaf (rim and rib) stays at least this far under the litter lying over it
+                              # (the margin over the old road, OVER_OLD_ROAD; 0.05 cm before the sixth pass)
 
 
 def check_city_poles(world, furniture_rows):
@@ -3079,6 +3376,7 @@ def check_city_poles(world, furniture_rows):
     from the city's wooden pole 65496, which carries them."""
     R = replica
     clip = json.loads(R.SIGN_POLES.read_text())
+    parking = json.loads(R.plateau_park_signs.PARK_SIGNS.read_text())
     assert clip['source']['licence'] == 'CC BY 4.0' and 'Ville de Montréal' in clip['source']['attribution']
     assert clip['count'] == len(clip['poles']) > 1000 and all(
         R.inside((float(r['LATITUDE']), float(r['LONGITUDE']))) for r in clip['poles'])
@@ -3118,7 +3416,8 @@ def check_city_poles(world, furniture_rows):
         d = math.dist(r['position'][:2], pole['position'][:2])
         assert R.MOUNT_OFF - .1 <= d <= R.MOUNT_OFF * math.sqrt(2) + .1 and r['without'] == ['post'] and not r['collision'], r
         assert abs(r['position'][2] - pole['position'][2] - R.MOUNT_RAISE[r['prop']]) < .02, r
-        assert r['code'] in json.dumps([p['signs'] for p in clip['poles'] if p['POTEAU_ID_POT'] == r['city_pole']]), r
+        source = parking['poles'] if r['prop'] == 'sign_parking' else clip['poles']
+        assert r['code'] in json.dumps([p['signs'] for p in source if p['POTEAU_ID_POT'] == r['city_pole']]), r
     # the critic's corner: the Mentana and Napoléon blades on the city's wooden pole 65496
     pole = wood.get('65496')
     blades = [r for r in furniture_rows if r['prop'] == 'sign_street' and pole
@@ -3137,13 +3436,23 @@ def check_city_poles(world, furniture_rows):
 
 def litter_fans(out, soul):
     """The Leaf_Litter fans of the Soul layer, grouped by their centre (each triangle's last vertex, as obj_text writes
-    a fan): {centre: set of ring points}."""
+    a fan): {centre: set of ring points}. A clump drawn as a quad (two triangles from one corner) is keyed by the mean
+    of its four corners, with all four as its ring."""
     fans = {}
     for batch in soul['batches']:
         if batch['material'] == 'Leaf_Litter':
             for f in parse_obj(out / 'Soul' / batch['file'])[1]:
                 fans.setdefault(tuple(round(v, 2) for v in f[2]), set()).update(tuple(round(v, 2) for v in q) for q in f[:2])
+    for c in [c for c, ring in fans.items() if len(ring) == 3]:
+        ring = fans.pop(c) | {c}
+        fans[(round(sum(q[0] for q in ring) / 4, 2), round(sum(q[1] for q in ring) / 4, 2), c[2])] = ring
     return fans
+
+
+def litter_sides(c, ring):
+    """A fan's outline sides, its ring points taken round its centre."""
+    pts = sorted(ring, key=lambda q: math.atan2(q[1] - c[1], q[0] - c[0]))
+    return list(zip(pts, pts[1:] + pts[:1]))
 
 
 def litter_ground_kind(z):
@@ -3163,34 +3472,42 @@ def litter_ground_kind(z):
 
 def check_litter_edges(out, soul):
     """The local review saw the street patches as cut rugs: 1.6 to 2 m straight sides, the leaves stopping dead at the
-    outline. A patch on a sidewalk, a lawn, a parterre or a ruelle now has a point every LITTER_EDGE_FINE cm round a
-    serrated outline, and small clumps of leaves (LITTER_FRINGE) lie just outside it, more and bigger near the edge
-    than out toward the drip line, so the litter thins out leaf clump by leaf clump."""
+    outline. A patch on a sidewalk, a lawn, a parterre or a ruelle now has a serrated outline with a point about every
+    LITTER_EDGE_FINE cm, its sides across open ground split into pieces about LITTER_SPLIT long (check_litter_straight
+    _sides checks the long ones), and small clumps of leaves (LITTER_FRINGE) lie just outside it, more and bigger near
+    the edge than out toward the drip line, so the litter thins out leaf clump by leaf clump. Under a yard crown over a
+    ruelle the patches lie in a run along the half-lane, with one fringe round the run. A drift at a fence or wall foot
+    (a half fan from the middle of its straight side) is not a patch."""
     R = replica
     fans = litter_fans(out, soul)
-    main, fringe, outlines = [], [], []
+    main, fringe, outlines, sides = [], [], [], []
     for c, ring in fans.items():
-        if litter_ground_kind(c[2]) not in ('street', 'lane'):
+        kind = litter_ground_kind(c[2])
+        if kind not in ('street', 'lane'):
             continue
-        pts = sorted(ring, key=lambda q: math.atan2(q[1] - c[1], q[0] - c[0]))
+        pts = [a for a, _ in litter_sides(c, ring)]
+        angles = [math.atan2(q[1] - c[1], q[0] - c[0]) for q in pts]
+        if max((angles[(i + 1) % len(angles)] - angles[i]) % math.tau for i in range(len(angles))) > math.radians(150):
+            continue                                    # a drift: its centre on its own straight side
         radii = [math.dist(c[:2], q[:2]) for q in pts]
         mean = sum(radii) / len(radii)
         if mean <= R.LITTER_FRINGE_SIZE[1] + 5:
             fringe.append((c, mean))
         elif mean >= 80.:
-            edge = math.tau * mean / len(pts)          # outline per point (the serration makes each chord longer)
             jag = sum(abs(radii[i] - radii[i - 1]) for i in range(len(radii))) / len(radii) / mean
-            main.append((c, mean, edge, jag, len(pts)))
+            main.append((c, mean, jag, len(pts), kind))
             outlines.append([q[:2] for q in pts])
-    edges = sorted(m[2] for m in main)
-    jags = sorted(m[3] for m in main)
-    assert len(main) > 500 and edges[len(edges) // 2] <= R.LITTER_EDGE_FINE + 15, \
-        ('street patches with long straight sides', len(main), edges[len(edges) // 2] if edges else None)
+            sides += [math.dist(a[:2], b[:2]) for a, b in zip(pts, pts[1:] + pts[:1])]
+    sides.sort()
+    jags = sorted(m[2] for m in main)
+    assert len(main) > 500 and sides[len(sides) // 2] <= R.LITTER_EDGE_FINE + 15, \
+        ('street patches with long straight sides', len(main), sides[len(sides) // 2] if sides else None)
     assert jags[len(jags) // 2] >= .12, ('street patch outlines without a serrated edge', jags[len(jags) // 2])
     grid = R.Grid(800.)
     for i, m in enumerate(main):
         grid.add(i, R.bbox([m[0]], 2 * m[1]))
     inner = outer = 0
+    by_kind = {'street': 0, 'lane': 0}
     for c, r in fringe:
         # how far the clump lies outside the nearest main patch's outline, as a share of that patch's radius
         best = None
@@ -3199,16 +3516,20 @@ def check_litter_edges(out, soul):
             if math.dist(c[:2], m[0][:2]) > 2 * m[1] or R.point_in(c[:2], ring):
                 continue
             d = min(R.seg_dist(c[:2], a, b) for a, b in zip(ring, ring[1:] + ring[:1])) / m[1]
-            best = d if best is None else min(best, d)
+            if best is None or d < best[0]:
+                best = (d, m[4])
         if best is None:
             continue
-        inner += best < R.LITTER_FRINGE_OUT / 2
-        outer += best >= R.LITTER_FRINGE_OUT / 2
-    assert inner + outer >= 2 * len(main) and inner > 1.5 * outer, ('no fringe thinning out the patches', inner, outer,
-                                                                    len(main))
-    return {'street_patches': len(main), 'median_edge_cm': round(edges[len(edges) // 2], 1),
-            'median_jag': round(jags[len(jags) // 2], 3), 'fringe_clumps': len(fringe),
-            'fringe_near_edge': inner, 'fringe_toward_drip_line': outer}
+        inner += best[0] < R.LITTER_FRINGE_OUT / 2
+        outer += best[0] >= R.LITTER_FRINGE_OUT / 2
+        by_kind[best[1]] += 1
+    patches = {k: sum(1 for m in main if m[4] == k) for k in by_kind}
+    assert by_kind['street'] >= 1.5 * patches['street'] and by_kind['lane'] >= .3 * patches['lane'] and \
+        inner > 1.5 * outer, ('no fringe thinning out the patches', inner, outer, by_kind, patches)
+    return {'street_patches': patches['street'], 'lane_patches': patches['lane'],
+            'median_side_cm': round(sides[len(sides) // 2], 1), 'median_jag': round(jags[len(jags) // 2], 3),
+            'fringe_clumps': len(fringe), 'fringe_by_kind': by_kind, 'fringe_near_edge': inner,
+            'fringe_toward_drip_line': outer}
 
 
 def check_lane_litter(world, out, soul):
@@ -3279,6 +3600,498 @@ def check_park_leaves_under_litter(out, soul, park=PARK_LEAVES):
     assert not bad, (f'{len(bad)} of the {under} park leaves under the litter cross it or lie within '
                      f'{PARK_LEAF_GAP} cm of it', bad[:5])
     return {'park_leaves': leaves, 'under_litter': under, 'closest_gap_cm': round(worst, 3) if under else None}
+
+
+# ------------------------------------------------------------------------------------------------
+# Sixth pass: litter sides that follow their ground, leaves along the ruelles, the park's edges, October props
+
+LITTER_STRAIGHT = 150.      # cm: a fine patch's side longer than this...
+LITTER_STRAIGHT_NEAR = 20.  # ... runs within this of a change in its ground at every point along it
+LANE_SHARE_MIN = .5         # every yard crown over 4 m2 or more of ruelle paving gets this share of its kind's cover,
+LANE_SHARE_TOTAL = .9       # and the crowns together this share of their paving times their cover
+LANE_FOOT_SHARE = .18       # at least this share of the ruelle paving's edge (fence and wall feet) carries leaves,
+LANE_FOOT_UNDER = .5        # and this share of it under the crowns (where 0.2 or more of a leaf fall reaches it)
+
+
+def check_litter_straight_sides(world, out, soul):
+    """The tech review rebuilt the fans from the Soul OBJs: of 2,175 fine patches, 547 had an outline side over 3 m and
+    245 over 5 m, the worst 16.7 m, left where litter_patch pulled a point in; the local review saw cut rugs with long
+    straight sides across open sidewalk. Every side of a fine patch (on a sidewalk, lawn, parterre or ruelle) longer
+    than LITTER_STRAIGHT now runs within LITTER_STRAIGHT_NEAR of a change in LitterGround at every point along it, so a
+    straight side only follows a curb, a lawn's or a path's edge, a wall or a fence foot."""
+    R = replica
+    ground = R.LitterGround(world)
+    sides = long_ = 0
+    bad = []
+    for c, ring in litter_fans(out, soul).items():
+        if litter_ground_kind(c[2]) not in ('street', 'lane'):
+            continue
+        for a, b in litter_sides(c, ring):
+            sides += 1
+            length = math.dist(a[:2], b[:2])
+            if length <= LITTER_STRAIGHT:
+                continue
+            long_ += 1
+            n = (-(b[1] - a[1]) / length, (b[0] - a[0]) / length)
+            steps = math.ceil(length / 20.)
+            for k in range(steps + 1):
+                p = R.lerp(a[:2], b[:2], k / steps)
+                if not any((lambda z: z is None or abs(z - c[2]) > .05)(ground.at(R.add(p, n, s * d)))
+                           for d in (5., 10., 15., LITTER_STRAIGHT_NEAR) for s in (1., -1.)):
+                    bad.append((round(length), [round(v) for v in p], [round(v) for v in c[:2]]))
+                    break
+    bad.sort(reverse=True)
+    assert not bad, (f'{len(bad)} fine-patch sides over {LITTER_STRAIGHT:.0f} cm cross open ground', bad[:5])
+    return {'fine_sides': sides, 'long_sides_on_ground_edges': long_}
+
+
+LITTER_RUN = 300.           # cm: a fine patch's outline over open ground that runs this far...
+LITTER_RUN_TURN = 10.       # ... turning less than this (degrees) along it is a straight run;
+LITTER_RUN_NEAR = 20.       # a side within this of a change in its ground follows it, as check_litter_straight_sides asks
+
+
+def litter_straight_runs(world, out, soul):
+    """The straight runs of the fine patches' outlines over open ground: chains of sides that do not follow a change
+    in their ground (a probe within LITTER_RUN_NEAR either side of each, every 20 cm, lies off the patch's ground)
+    and keep the first's heading within LITTER_RUN_TURN over LITTER_RUN or more (plateau_replica.litter_runs), made of
+    short sides in a line, which check_litter_straight_sides does not see. Returns (runs over open ground, outlines),
+    each run as (length, its middle, the centre)."""
+    R = replica
+    ground = R.LitterGround(world)
+    open_runs, outlines = [], 0
+
+    def hugs(a, b, z):
+        length = math.dist(a, b)
+        if length < 1.:
+            return True
+        n = (-(b[1] - a[1]) / length, (b[0] - a[0]) / length)
+        steps = math.ceil(length / 20.)
+        return all(any((lambda g: g is None or abs(g - z) > .05)(ground.at(R.add(R.lerp(a, b, k / steps), n, sgn * d)))
+                       for d in (5., 10., 15., LITTER_RUN_NEAR) for sgn in (1., -1.)) for k in range(steps + 1))
+    for c, ring in litter_fans(out, soul).items():
+        if litter_ground_kind(c[2]) not in ('street', 'lane') or len(ring) <= 4:
+            continue
+        pts = [a[:2] for a, _ in litter_sides(c, ring)]
+        angles = [math.atan2(q[1] - c[1], q[0] - c[0]) for q in pts]
+        if max((angles[(i + 1) % len(angles)] - angles[i]) % math.tau for i in range(len(angles))) > math.radians(150):
+            continue                                    # a drift along a curb, a fence or a gutter
+        outlines += 1
+        n = len(pts)
+        for i, j in R.litter_runs(pts, lambda k: not hugs(pts[k], pts[(k + 1) % n], c[2])):
+            a, b = pts[i], pts[(j + 1) % n]
+            open_runs.append((round(math.dist(a, b)), [round(v) for v in R.lerp(a, b, .5)], [round(v) for v in c[:2]]))
+    open_runs.sort(reverse=True)
+    return open_runs, outlines
+
+
+def check_litter_straight_runs(world, out, soul):
+    """The local review (pass 6) still saw straight litter edges on open sidewalk (Rachel) and the render review
+    counted 2,273 runs over 3 m of short sides in a line, which check_litter_straight_sides does not see. No fine
+    patch's outline now runs LITTER_RUN or more over open ground turning less than LITTER_RUN_TURN: such runs are
+    broken by midpoint displacement (Fournier, Fussell and Carpenter, CACM 1982). Sides along a change in the ground (a
+    curb, a lawn's or a path's edge, a fence or wall foot, the ruelle's gutter) stay straight."""
+    open_runs, outlines = litter_straight_runs(world, out, soul)
+    assert not open_runs, (f'{len(open_runs)} straight runs over {LITTER_RUN:.0f} cm cross open ground', open_runs[:5])
+    return {'outlines': outlines}
+
+
+def check_gutter_beside_lane_patches(world, out, soul):
+    """The pass-6 local review: in the ruelles the sunlit lane patches end in straight lines at a bare gutter. Leaves
+    collect in the gutter, the lane's low line, so a drift now runs in the gutter beside at least
+    GUTTER_BESIDE_SHARE of every lane patch's stretch along it (the outline within GUTTER_BESIDE of the gutter's edge
+    over 60 cm or more), where the ruelle's own paving lies on the gutter."""
+    R = replica
+    index = R.AlleyIndex(world)
+    fans = litter_fans(out, soul)
+    gutter = {}
+    for c, ring in fans.items():
+        if litter_ground_kind(c[2]) == 'gutter':
+            hit = index.nearest(c[:2], 60.)
+            if hit:
+                _, _, pa, pb = hit
+                u, _ = R.unit(pa, pb)
+                along = [(q[0] - pa[0]) * u[0] + (q[1] - pa[1]) * u[1] for q in list(ring) + [c]]
+                gutter.setdefault((pa, pb), []).append((min(along), max(along)))
+    own = R._alley_pieces_index(world)
+    patches = bare = 0
+    worst = []
+    for c, ring in fans.items():
+        if litter_ground_kind(c[2]) != 'lane' or len(ring) <= R.LITTER_FRINGE_RING:
+            continue
+        hit = index.nearest(c[:2], R.ALLEY_HALF + 100.)
+        if hit is None:
+            continue
+        _, _, pa, pb = hit
+        u, length = R.unit(pa, pb)
+        n = (-u[1], u[0])
+        near = [(q[0] - pa[0]) * u[0] + (q[1] - pa[1]) * u[1] for q in ring
+                if abs((q[0] - pa[0]) * n[0] + (q[1] - pa[1]) * n[1]) <= R.GUTTER_HALF + R.GUTTER_BESIDE]
+        if len(near) < 2 or max(near) - min(near) < 60.:
+            continue
+        t0, t1 = max(20., min(near) - 20.), min(length - 20., max(near) + 20.)
+        if t1 - t0 < 60.:
+            continue
+        # where the gutter is the ruelle's own paving (not a mouth, a crossing ruelle or a building)
+        if not R.gutter_paved(own, pa, pb, t0, t1 - t0, max(2, int((t1 - t0) / R.GUTTER_BESIDE_PIECE))):
+            continue
+        patches += 1
+        covered = sum(max(0., min(t1, b) - max(t0, a)) for a, b in gutter.get((pa, pb), ()))
+        if covered < R.GUTTER_BESIDE_SHARE * (t1 - t0) - 1.:
+            bare += 1
+            worst.append((round(covered / (t1 - t0), 2), [round(v) for v in c[:2]]))
+    worst.sort()
+    assert patches > 50 and not bare, (f'{bare} of {patches} lane patches along the gutter with a bare gutter beside them',
+                                       worst[:5])
+    return {'lane_patches_along_the_gutter': patches}
+
+
+def check_locked_bikes(world, furniture_rows, soul_rows):
+    """The pass-6 local review: bikes locked to parking signs stood square to the curb, one wheel 30 to 50 cm out over
+    the road and about 11 cm above it (122 of 123), and 4 of the 86 at parterre fences had a wheel off the sidewalk.
+    Both tyre contacts (BIKE_TYRE either side of the pivot along the bike) and its middle now lie on level ground
+    at the bike's own height, out of the tree pits; a bike at a sign post stands along the curb, on the building side
+    of its post."""
+    R = replica
+    signs = {tuple(r['position'][:2]): r for r in furniture_rows if r['prop'] == 'sign_parking' and 'mount' not in r}
+    bad, at_signs = [], 0
+    for row in soul_rows:
+        if row['prop'] != 'bike_locked' or row.get('locked_to') not in ('sign_parking', 'parterre_fence'):
+            continue
+        p, yaw, z = row['position'][:2], row['yaw'], row['position'][2]
+        for k in (-1., 0., 1.):
+            q = R.local_to_world(p, yaw, (k * R.BIKE_TYRE, 0.))
+            ground, kind = world.surfaces.at(q)
+            if abs(ground - z) > .5 or kind in ('road', 'apron', 'ground') or R.in_tree_pit(world, q):
+                bad.append((row['locked_to'], [round(v) for v in q], kind, ground, z))
+                break
+        if row['locked_to'] == 'sign_parking':
+            at_signs += 1
+            post = min(signs, key=lambda q: math.dist(q, p))
+            sign = signs[post]
+            along = abs(math.cos(math.radians(yaw - sign['yaw'])))
+            road, _ = R.facing_road(world, post)
+            inward = (-math.cos(math.radians(road)), -math.sin(math.radians(road)))
+            side = (p[0] - post[0]) * inward[0] + (p[1] - post[1]) * inward[1]
+            if along < .99 or side <= 0. or math.dist(p, post) > 60.:
+                bad.append(('square to the curb or on the road side of its post', [round(v) for v in p], round(along, 3), round(side)))
+    assert at_signs >= 40 and not bad, (at_signs, bad[:6])
+    return {'bikes_at_sign_posts': at_signs}
+
+
+def check_parking_signs(world, furniture_rows):
+    """The pass-6 local review: the parking signs were a random pick of texts at random spots (an R-PF on Rachel's park
+    side, where the city's poles carry street-cleaning signs). Every parking sign now stands at a pole of the city's
+    parking-sign inventory (Data/Plateau/Inventory/park_signs.json, CC BY 4.0) and carries that pole's signs, top first:
+    hung on the city's wooden or steel pole where the game draws it, else on its own post a short way behind the curb."""
+    R = replica
+    clip = json.loads(R.plateau_park_signs.PARK_SIGNS.read_text())
+    assert clip['source']['licence'] == 'CC BY 4.0' and 'Ville de Montréal' in clip['source']['attribution']
+    poles = {r['POTEAU_ID_POT']: r for r in clip['poles']}
+    assert clip['count'] == len(poles) > 600 and not hasattr(R, 'PARKING_TEXTS')
+    rows = [r for r in furniture_rows if r['prop'] == 'sign_parking']
+    seen = set()
+    for r in rows:
+        pole = poles.get(r.get('city_pole'))
+        assert pole is not None, ('a parking sign at no pole of the city', r)
+        assert r['city_pole'] not in seen, ('two signs on one pole', r['city_pole'])
+        seen.add(r['city_pole'])
+        top = pole['signs'][0]
+        assert (r['code'], r['text']) == (top['CODE_RPA'], top['DESCRIPTION_RPA']), (r, top)
+        assert r['arrow'] == R.plateau_park_signs.ARROWS[top['FLECHE_PAN']] and len(r['signs']) == len(pole['signs'])
+        where = R.xy(float(pole['Latitude']), float(pole['Longitude']))
+        if r.get('mount') == 'city_pole':
+            assert r['without'] == ['post'] and not r['collision']
+        else:
+            assert math.dist(where, r['position'][:2]) < 600., ('a post far from its pole', r)
+            assert not R.on_pavement(world, r['position'][:2]), ('a post on the carriageway', r)
+            if r['collision']:
+                assert world.traffic_distance(r['position'][:2], 2000) >= R.CLEAR
+    hung = sum(1 for r in rows if r.get('mount') == 'city_pole')
+    assert len(rows) >= 450 and hung >= 100, (len(rows), hung)
+    return {'parking_signs': len(rows), 'on_city_poles': hung, 'poles_in_clip': len(poles)}
+
+
+def lane_litter_cover(world, out, soul, step=50.):
+    """The leaves on the ruelles' paving, sampled every `step` cm. Per Plex yard crown that reaches a metre or more over
+    a ruelle: (paving samples under the crown, those under leaf litter, its kind's cover, trunk); and per sample of the
+    paving's edge, 10 cm in from the fence or wall: (leaves there, leaf fall overhead)."""
+    R = replica
+    ground = R.LitterGround(world)
+    lane_z = R.Z_ALLEY + R.LITTER_LANE
+    on_lane = lambda p: (lambda z: z is not None and abs(z - lane_z) < .01)(ground.at(p))   # noqa: E731
+    polys, grid = [], R.Grid(500.)
+    for c, ring in litter_fans(out, soul).items():
+        if litter_ground_kind(c[2]) == 'lane':
+            pts = [a[:2] for a, _ in litter_sides(c, ring)]
+            grid.add(len(polys), R.bbox(pts))
+            polys.append(pts)
+    covered = lambda p: any(R.point_in(p, polys[i]) for i in grid.query((p[0], p[1], p[0], p[1])))   # noqa: E731
+    crowns = R.tree_crowns(world)
+    alleys = R.AlleyIndex(world)
+    rows = []
+    for x, y, z, radius, base, top, fallen, kind, source in crowns.items:
+        hit = alleys.nearest((x, y), radius + R.ALLEY_HALF) if source == 'yard' else None
+        if hit is None or hit[0] - R.ALLEY_HALF > radius - 100.:
+            continue
+        paving = under = 0
+        n = math.ceil(radius / step)
+        for i in range(-n, n + 1):
+            for j in range(-n, n + 1):
+                p = (x + i * step, y + j * step)
+                if math.dist(p, (x, y)) <= radius and on_lane(p):
+                    paving += 1
+                    under += covered(p)
+        rows.append((paving, under, min(R.LITTER_COVER, R.LITTER_GAIN * fallen), (round(x), round(y))))
+    foot = []
+    for alley in world.alleys:
+        for (pa, pb), profile in zip(alley['segments'], alley['reach']):
+            u, _ = R.unit(pa, pb)
+            n = (-u[1], u[0])
+            for side in (1, -1):
+                for t, reach in zip(profile['t'], profile[side]):
+                    p = R.add(R.add(pa, u, t), n, side * (reach - 10.))
+                    if on_lane(p):
+                        foot.append((covered(p), R.leaves_over(crowns, p)))
+    return rows, foot
+
+
+def check_lane_litter_cover(world, out, soul):
+    """The local review found the ruelles almost bare: 296 yard crowns over 11,337 m2 of lane paving, 28% of it under
+    litter against a weighted target of 47%, 111 crowns with less than half their kind's cover and 21 with none, and
+    nothing along the fence and wall feet. Under every yard crown over 4 m2 or more of ruelle paving, leaves now cover
+    at least LANE_SHARE_MIN of its kind's cover of that paving, and the crowns together LANE_SHARE_TOTAL of their
+    paving times their cover; at least LANE_FOOT_SHARE of the paving's edge carries leaves at the fence or wall foot,
+    more under the crowns than in the open."""
+    rows, foot = lane_litter_cover(world, out, soul)
+    rows = [r for r in rows if r[0] * 50. * 50. >= 4e4]
+    low = sorted((round(u / p / t, 2), xy) for p, u, t, xy in rows if u < LANE_SHARE_MIN * t * p)
+    paving = sum(p for p, *_ in rows)
+    under = sum(u for _, u, *_ in rows)
+    target = sum(p * t for p, _, t, _ in rows)
+    assert len(rows) > 100 and not low, (f'{len(low)} of {len(rows)} yard crowns over a ruelle under half their cover',
+                                         low[:6])
+    assert under >= LANE_SHARE_TOTAL * target, ('the ruelles under the yard crowns are too bare', under, round(target))
+    share = sum(c for c, _ in foot) / len(foot)
+    leafy = [c for c, fall in foot if fall >= .2]
+    open_ = [c for c, fall in foot if fall < .05]
+    assert share >= LANE_FOOT_SHARE, ('no leaves along the ruelle fence and wall feet', round(share, 3))
+    under_share = sum(leafy) / max(1, len(leafy))
+    assert leafy and open_ and LANE_FOOT_UNDER <= under_share and under_share > sum(open_) / len(open_), \
+        ('too few leaves at the fence feet under the crowns', under_share, sum(open_) / max(1, len(open_)))
+    return {'crowns': len(rows), 'paving_m2': round(paving * .25), 'covered_share': round(under / paving, 3),
+            'target_share': round(target / paving, 3), 'lowest_share_of_target': min(round(u / p / t, 2) for p, u, t, _ in rows),
+            'edge_samples': len(foot), 'edge_share_with_leaves': round(share, 3),
+            'edge_share_under_crowns': round(sum(leafy) / len(leafy), 3),
+            'edge_share_in_the_open': round(sum(open_) / len(open_), 3)}
+
+
+def check_park_litter_edges(world, out, soul, streets):
+    """The local review saw the park litter by Rachel as a smooth tan carpet with a clean edge, where Parc La Fontaine's
+    lawns show the leaves thinning out with no clean edge. A park patch within LITTER_PARK_NEAR of a street (a Streets
+    sidewalk or carriageway, from the Streets OBJs here) is now fine, as a street's patch is: no side over
+    LITTER_STRAIGHT unless it runs along a change in its ground (a path's edge), a serrated outline, and clumps of
+    leaves on the lawn just outside it (LITTER_PARK_FRINGE), more near its edge than farther out. Farther in, the
+    patches keep a coarse ring (LITTER_EDGE), which pays for it. (Every park patch lies within 30 m of a park path, so
+    the band follows the streets, where the players see the park from.)"""
+    R = replica
+    ground = R.LitterGround(world)
+    edges, grid = [], R.Grid(1000.)
+    for batch in streets['batches']:
+        if batch['material'] in ('sidewalk', 'asphalt'):
+            for face in parse_obj(out / 'Streets' / batch['file'])[1]:
+                for a, b in zip(face, face[1:] + face[:1]):
+                    grid.add(len(edges), R.bbox([a, b]))
+                    edges.append((a[:2], b[:2]))
+
+    def street(p, reach):
+        return min((R.seg_dist(p, *edges[i]) for i in grid.query(R.bbox([p], reach))), default=1e9)
+    near, far, clumps = [], [], []
+    for c, ring in litter_fans(out, soul).items():
+        if litter_ground_kind(c[2]) != 'park':
+            continue
+        pts = [a for a, _ in litter_sides(c, ring)]
+        if len(pts) == 4:
+            clumps.append(c)
+            continue
+        d = street(c[:2], R.LITTER_PARK_NEAR + 100.)
+        if d <= R.LITTER_PARK_NEAR - 100.:
+            near.append((c, pts))
+        elif d > R.LITTER_PARK_NEAR + 100.:
+            far.append((c, pts))
+    bad, long_ = [], 0
+    for c, pts in near:
+        for a, b in zip(pts, pts[1:] + pts[:1]):
+            length = math.dist(a[:2], b[:2])
+            if length <= LITTER_STRAIGHT:
+                continue
+            long_ += 1
+            n = (-(b[1] - a[1]) / length, (b[0] - a[0]) / length)
+            steps = math.ceil(length / 20.)
+            if not all(any((lambda z: z is None or abs(z - c[2]) > .05)(ground.at(R.add(R.lerp(a[:2], b[:2], k / steps),
+                                                                                         n, s * dd)))
+                           for dd in (5., 10., 15., LITTER_STRAIGHT_NEAR) for s in (1., -1.)) for k in range(steps + 1)):
+                bad.append((round(length), [round(v) for v in c[:2]]))
+    assert len(near) > 300 and not bad, (f'{len(bad)} sides of park patches near a street cross the open lawn', bad[:5])
+    per_point = sorted(sum(math.dist(a[:2], b[:2]) for a, b in zip(pts, pts[1:] + pts[:1])) / len(pts) for _, pts in near)
+    coarse = sorted(sum(math.dist(a[:2], b[:2]) for a, b in zip(pts, pts[1:] + pts[:1])) / len(pts) for _, pts in far)
+    assert far and per_point[len(per_point) // 2] < .6 * coarse[len(coarse) // 2], \
+        ('the park patches near a street are no finer than those farther in', per_point[len(per_point) // 2],
+         coarse[len(coarse) // 2] if coarse else None)
+    grid = R.Grid(1500.)
+    for i, (c, pts) in enumerate(near):
+        grid.add(i, R.bbox(pts))
+    inner = outer = 0
+    for q in clumps:
+        best = None
+        for i in grid.query(R.bbox([q], 1500.)):
+            c, pts = near[i]
+            radius = sum(math.dist(c[:2], a[:2]) for a in pts) / len(pts)
+            if math.dist(q[:2], c[:2]) <= 2 * radius and not R.point_in(q[:2], [a[:2] for a in pts]):
+                d = min(R.seg_dist(q[:2], a[:2], b[:2]) for a, b in zip(pts, pts[1:] + pts[:1])) / radius
+                best = d if best is None else min(best, d)
+        if best is not None:
+            inner += best < R.LITTER_FRINGE_OUT / 2
+            outer += best >= R.LITTER_FRINGE_OUT / 2
+    assert inner + outer >= len(near) and inner > outer, ('no fringe round the park patches near a street', inner, outer,
+                                                          len(near))
+    return {'near_street': len(near), 'farther_in': len(far), 'long_sides_on_ground_edges': long_,
+            'outline_per_point_cm': {'near': round(per_point[len(per_point) // 2]), 'far': round(coarse[len(coarse) // 2])},
+            'clumps_near_edge': inner, 'clumps_farther_out': outer}
+
+
+def _tri_box(tri, lo, hi):
+    """Whether a triangle meets an axis-aligned box (separating axes: the box's axes, the triangle's normal and the
+    nine edge cross products; Akenine-Möller, "Fast 3D Triangle-Box Overlap Testing", 2001)."""
+    c = [(lo[i] + hi[i]) / 2 for i in range(3)]
+    h = [(hi[i] - lo[i]) / 2 for i in range(3)]
+    v = [[p[i] - c[i] for i in range(3)] for p in tri]
+    e = [[v[(k + 1) % 3][i] - v[k][i] for i in range(3)] for k in range(3)]
+    cross = lambda a, b: (a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0])   # noqa: E731
+    axes = [(1., 0., 0.), (0., 1., 0.), (0., 0., 1.), cross(e[0], e[1])]
+    axes += [cross(a, b) for a in ((1., 0., 0.), (0., 1., 0.), (0., 0., 1.)) for b in e]
+    for ax in axes:
+        if sum(abs(x) for x in ax) < 1e-9:
+            continue
+        ps = [sum(p[i] * ax[i] for i in range(3)) for p in v]
+        r = sum(h[i] * abs(ax[i]) for i in range(3))
+        if min(ps) > r or max(ps) < -r:
+            return False
+    return True
+
+
+def check_october_placements(world, out, soul_rows, streets):
+    """The local review found no late-October props: no paper leaf bags at the curbs and no pumpkins on the stoops.
+    Paper leaf bags (the Props 'leaf_bag' forms) now stand beside some curb bin rows, at the curb on the level
+    sidewalk with a wide face toward the street, never on a ramp, in a tree pit or on another prop; pumpkins (the
+    'pumpkin' forms) stand on some Plex stoop landings, on a level Wood_Deck top of the Plex layer that holds their
+    whole footprint, with no other Plex face inside their box, a carved one facing the street, and 2 m or more from
+    the carriageway (no stoop at the street's edge, where a parked car's mirror would pass). Forms, sizes and scales
+    follow the Props manifest."""
+    R = replica
+    props = json.loads((R.OUT / 'Props/manifest.json').read_text())['props']
+    bag_forms = {f['prop'] for f in props['leaf_bag']['forms']}
+    pumpkin_forms = {f['prop'] for f in props['pumpkin']['forms']}
+    bags = [r for r in soul_rows if r['prop'] in bag_forms]
+    pumpkins = [r for r in soul_rows if r['prop'] in pumpkin_forms]
+    bins = [r for r in soul_rows if r['prop'].startswith('bin_') and r.get('ground') == 'sidewalk']
+    assert len(bags) >= 100 and len(pumpkins) >= 40, (len(bags), len(pumpkins))
+    assert len({r['prop'] for r in bags}) == 3 and len({r['prop'] for r in pumpkins}) == 2
+    low, high = props['leaf_bag']['scale_range']
+    others = [r for r in soul_rows if r['prop'] not in bag_forms | pumpkin_forms]
+    for r in bags:
+        p = r['position']
+        assert low <= r['scale'] <= high and abs(p[2] - R.Z_WALK) < .01 and r['ground'] == 'sidewalk', r
+        near = [b for b in bins if math.dist(b['position'][:2], p[:2]) < 300.]
+        assert near, ('a leaf bag away from the bins', p)
+        b = min(near, key=lambda b: math.dist(b['position'][:2], p[:2]))
+        assert abs((r['yaw'] - b['yaw'] + 180.) % 360. - 180.) < 30., ('a bag not facing the street', r, b['yaw'])
+        bounds = props[r['prop']]['bounds_cm']
+        for x in (bounds[0], bounds[3]):
+            for q in (bounds[1], bounds[4]):
+                corner = R.local_to_world(p[:2], r['yaw'], (x * r['scale'], q * r['scale']))
+                assert world.surfaces.at(corner) == (R.Z_WALK, 'sidewalk'), ('a bag off the level sidewalk', p, corner)
+        clash = [o['prop'] for o in others + bags if o is not r and math.dist(o['position'][:2], p[:2]) < 40.]
+        assert not clash, ('a bag on another prop', p, clash)
+    # the pumpkins against the Plex geometry round them, each in its stoop's frame (x along the wall, d out from it)
+    manifest = json.loads((R.OUT / 'Plex/manifest.json').read_text())
+    fronts = json.loads((R.OUT / 'Plex/fronts.json').read_text())['fronts']
+    walls = {str(f['id']): f['front'] for f in fronts if f.get('front')}
+    radius = max(abs(v) for k in pumpkin_forms for v in props[k]['bounds_cm'][:2] + props[k]['bounds_cm'][3:5])
+    height = max(props[k]['bounds_cm'][5] for k in pumpkin_forms)
+    plow, phigh = props['pumpkin']['scale_range']
+    frames, reach = [], []
+    for r in pumpkins:
+        assert plow <= r['scale'] <= phigh, r
+        front = walls[r['lot']]
+        u, _ = R.unit(front['a'], front['b'])
+        frames.append((r['position'], u, radius * r['scale'], height * r['scale']))
+        reach.append(R.bbox([r['position'][:2]], 1.5 * radius * r['scale']))
+    support = [0] * len(pumpkins)
+    hits = []
+    for batch in manifest['batches']:
+        b = batch['bounds_cm']
+        near = [i for i, q in enumerate(reach) if b[0] <= q[2] and q[0] <= b[3] and b[1] <= q[3] and q[1] <= b[4] and
+                b[2] <= frames[i][0][2] + frames[i][3] and frames[i][0][2] - 2. <= b[5]]
+        if not near:
+            continue
+        vs, deck = [], batch['material'] == 'Wood_Deck'
+        for line in (R.OUT / 'Plex' / batch['file']).read_text().splitlines():
+            if line.startswith('v '):
+                _, x, y, z = line.split()
+                vs.append((float(x), -float(y), float(z)))
+            elif line.startswith('f '):
+                face = [vs[int(t.split('/')[0]) - 1] for t in line.split()[1:]]
+                x0, x1 = min(q[0] for q in face), max(q[0] for q in face)
+                y0, y1 = min(q[1] for q in face), max(q[1] for q in face)
+                for i in near:
+                    q = reach[i]
+                    if x0 > q[2] or x1 < q[0] or y0 > q[3] or y1 < q[1]:
+                        continue
+                    (px, py, pz), u, rad, top = frames[i]
+                    loc = [((v[0] - px) * u[0] + (v[1] - py) * u[1], (v[0] - px) * u[1] - (v[1] - py) * u[0], v[2] - pz)
+                           for v in face]
+                    if deck and all(abs(v[2]) < .02 for v in loc):
+                        foot = [(.75 * rad * math.cos(a), .75 * rad * math.sin(a))
+                                for a in (k * math.tau / 8 for k in range(8))] + [(0., 0.)]
+                        support[i] += sum(1 for f in foot if _tri_contains([v[:2] for v in loc], f))
+                    elif _tri_box(loc, (-rad, -rad, .5), (rad, rad, top)):
+                        hits.append((pumpkins[i]['position'], batch['material']))
+    road, road_grid = [], R.Grid(1000.)
+    for batch in streets['batches']:
+        if batch['material'] == 'asphalt':
+            for face in parse_obj(out / 'Streets' / batch['file'])[1]:
+                road_grid.add(len(road), R.bbox(face))
+                road.append([q[:2] for q in face])
+    for r in pumpkins:
+        p = r['position'][:2]
+        near = [road[i] for i in road_grid.query(R.bbox([p], 200.))]
+        assert not any(_tri_contains(t, p) or min(R.seg_dist(p, a, b) for a, b in zip(t, t[1:] + t[:1])) < 200.
+                       for t in near), ('a pumpkin by the carriageway', r['position'])
+    unsupported = [pumpkins[i]['position'] for i in range(len(pumpkins)) if support[i] < 9]
+    assert not unsupported, ('pumpkins not standing on a stoop landing', len(unsupported), unsupported[:4])
+    assert not hits, ('pumpkins inside the Plex geometry', len(hits), hits[:4])
+    for r, (_, u, _, _) in zip(pumpkins, frames):
+        out_n = (u[1], -u[0])
+        face = (math.cos(math.radians(r['yaw'])), math.sin(math.radians(r['yaw'])))
+        if r['prop'] == 'pumpkin_carved':
+            assert face[0] * out_n[0] + face[1] * out_n[1] > .8, ('a carved pumpkin facing the wall', r)
+    return {'leaf_bags': len(bags), 'bag_forms': {k: sum(1 for r in bags if r['prop'] == k) for k in sorted(bag_forms)},
+            'pumpkins': len(pumpkins), 'stoops': len({r['lot'] for r in pumpkins}),
+            'pumpkin_forms': {k: sum(1 for r in pumpkins if r['prop'] == k) for k in sorted(pumpkin_forms)},
+            'pumpkin_scales': [min(r['scale'] for r in pumpkins), max(r['scale'] for r in pumpkins)]}
+
+
+def check_litter_sources(soul):
+    """The tech review found the litter's inputs unhashed: LitterGround reads BaseGeometry's lawn and the paths, ponds,
+    courts and old roads over it, and the park litter's height clears plateau_park's own leaves, so a change to any of
+    them never marked the Soul layer stale. Every one of those files is a key of the Soul manifest's source_sha256."""
+    R = replica
+    base = R.ROOT / 'Data/Plateau/BaseGeometry'
+    read = [base / name for name in R.LitterGround.LAWN + R.LitterGround.COVERS] + sorted(PARK_LEAVES.glob('Autumn*.obj'))
+    assert len(read) > 10 and all(p.is_file() for p in read), read
+    missing = [str(p.relative_to(R.ROOT)) for p in read if str(p.relative_to(R.ROOT)) not in soul['source_sha256']]
+    assert not missing, ('litter inputs the Soul manifest does not hash', missing[:6])
+    return {'litter_inputs_hashed': len(read)}
 
 
 def check_gallery_life(world, out, soul, soul_rows):
@@ -3671,11 +4484,14 @@ def check_street_trees(world, out, streets):
                                 ('Quercus rubra', 'linden', 'russet'), ('Quercus palustris', 'linden', 'russet'),
                                 ('Quercus alba', 'linden', 'russet'), ('Acer saccharinum', 'silver_maple', 'yellow'),
                                 ('Acer platanoides', 'norway_maple', 'yellow'), ('Quercus macrocarpa', 'linden', 'yellow'),
-                                ('Larix laricina', 'larch', 'gold'), ("Picea pungens 'Glauca'", 'conifer', 'evergreen'),
-                                (None, 'norway_maple', 'yellow')):
+                                ('Larix laricina', 'larch', 'gold'), ("Picea pungens 'Glauca'", 'conifer', 'blue'),
+                                ('Picea glauca', 'conifer', 'evergreen'), (None, 'norway_maple', 'yellow')):
         assert R.tree_fall(species, kind) == fall, (species, fall, R.tree_fall(species, kind))
     conifers = [r for r in rows if r['species'].split(' ')[0] in ('Picea', 'Pinus', 'Abies', 'Thuja', 'Tsuga')]
-    assert conifers and all(r['kind'] == 'conifer' and r['fall'] == 'evergreen' for r in conifers)
+    blue = [r for r in conifers if r['species'].lower().startswith(('picea pungens', 'picea punges'))]
+    assert conifers and all(r['kind'] == 'conifer' and r['fall'] == ('blue' if r in blue else 'evergreen')
+                            for r in conifers)
+    assert len(blue) >= 15 and doc['falls'].get('conifer blue') == len(blue), (len(blue), doc['falls'])
     larches = [r for r in rows if r['species'].startswith('Larix')]
     assert larches and all(r['kind'] == 'larch' and r['fall'] == 'gold' for r in larches)
     reds = [r for r in rows if r['species'].lower().startswith(('acer rubrum', 'acer saccharum', 'acer x freemanii',
@@ -3823,7 +4639,7 @@ def check_reseated_trees(world, out, streets):
             m = R.mapped_median(world, mapped, r['street'])
             assert m is not None and math.dist(m['at'], p) < 1. and m['width'] >= R.MEDIAN_GROUND, (tid, m)
     spruce = by_id['inv:5-263258']
-    assert spruce['kind'] == 'conifer' and spruce['fall'] == 'evergreen', spruce
+    assert spruce['kind'] == 'conifer' and spruce['fall'] == 'blue', spruce
     # Roy Est: each sidewalk tree in a pit on its own side of the street, or listed with the reason
     for tid in ROY_ROWS:
         card = R.CARDINAL[inv[tid]['Rue_cote']]
@@ -4223,6 +5039,201 @@ SLAB_KEYS = ('sidewalk', 'curb', 'Yard_Grass', 'Yard_Soil', 'yard_path', 'grass_
 OPEN_STEPS_MAX = 50         # of about 174,000 outer slab edges; 25 now (see the README's Limits)
 
 
+def check_bike_paint_tags():
+    """The painted on-street cycling of a drive way, per side (OSM left L, right R), read from its cycleway tags: the
+    kind (lane for cycleway lane and opposite_lane, shared for shared_lane, busway for share_busway) and the travel
+    along the way (1) or against it (-1). A one-way street's lane runs with its traffic unless it is a contraflow
+    (opposite_lane, or a side's oneway -1); a two-way street's left side runs against the way. Separate tracks and
+    no paint nothing."""
+    R = replica
+    cases = (
+        ({'oneway': 'yes', 'cycleway:left': 'opposite_lane'}, {'L': ('lane', -1), 'R': None}),
+        ({'oneway': 'yes', 'cycleway:left': 'lane', 'cycleway:left:oneway': '-1', 'cycleway:right': 'shared_lane',
+          'cycleway:right:lane': 'pictogram'}, {'L': ('lane', -1), 'R': ('shared', 1)}),
+        ({'oneway': 'yes', 'cycleway:right': 'lane'}, {'L': None, 'R': ('lane', 1)}),
+        ({'oneway': 'yes', 'cycleway:both': 'shared_lane', 'cycleway:left:oneway': '-1'},
+         {'L': ('shared', -1), 'R': ('shared', 1)}),
+        ({'oneway': 'yes', 'cycleway': 'shared_lane'}, {'L': None, 'R': ('shared', 1)}),
+        ({'oneway': 'yes', 'cycleway': 'opposite_lane'}, {'L': ('lane', -1), 'R': None}),
+        ({'oneway': '-1', 'cycleway': 'lane'}, {'L': ('lane', -1), 'R': None}),
+        ({'cycleway:both': 'lane'}, {'L': ('lane', -1), 'R': ('lane', 1)}),
+        ({'cycleway': 'shared_lane'}, {'L': ('shared', -1), 'R': ('shared', 1)}),
+        ({'oneway': 'yes', 'cycleway:right': 'share_busway'}, {'L': None, 'R': ('busway', 1)}),
+        ({'cycleway:left': 'share_busway', 'cycleway:right': 'no'}, {'L': ('busway', -1), 'R': None}),
+        ({'cycleway:both': 'separate'}, {'L': None, 'R': None}),
+        ({'oneway': 'yes', 'cycleway:both': 'no'}, {'L': None, 'R': None}),
+        ({'oneway': 'yes'}, {'L': None, 'R': None}))
+    for tags, want in cases:
+        got = R.bike_paint_sides(tags)
+        assert got == want, (tags, got, want)
+    return {'cases': len(cases)}
+
+
+BIKE_OSM = {'lane': 'lane', 'opposite_lane': 'lane', 'shared_lane': 'shared', 'share_busway': 'busway'}
+
+
+def travel_chains(world, way_id, travel):
+    """A drive way's drawn segments in travel order, split where one is missing or excluded: lists of segments."""
+    run = next(r for w, r in world.drive_ways if w['id'] == way_id)
+    chains, cur = [], []
+    for s in run:
+        if s['excluded'] or not s['quad'] or (cur and cur[-1]['b'] != s['a']):
+            if cur:
+                chains.append(cur)
+            cur = []
+        if not s['excluded'] and s['quad']:
+            cur.append(s)
+    if cur:
+        chains.append(cur)
+    return chains if travel > 0 else [c[::-1] for c in chains[::-1]]
+
+
+def check_bike_paint(world, out, streets):
+    """On-street cycling paint from the OSM cycleway tags (verifyLocal 6). Each side tagged lane or opposite_lane
+    has two white lines along its drawn length, broken only at crosswalks and stop bars, with a diamond, a bike and an
+    arrow repeated in the lane; each shared_lane side a bike and two chevrons in the traffic lane; each share_busway
+    side the reserved-lane white diamond in its curb lane. On every block of 40 m or more between two junctions, the
+    first mark lies within 30 m after the junction's mouth (the City's rule for the shared street) and the next ones
+    follow at most BIKE_REPEAT + 10 m apart. The painted metres of each tagged way and every mark are checked in the
+    Streets OBJs."""
+    R = replica
+    assert streets.get('bike_paint') == 'bike_paint.json'
+    assert streets['bike_paint_sha256'] == R.sha_file(out / 'Streets/bike_paint.json')
+    doc = json.loads((out / 'Streets/bike_paint.json').read_text())
+    rows = {(r['way'], r['side']): r for r in doc['ways']}
+    want = set()
+    for way, run in world.drive_ways:
+        t = way['tags']
+        if not any(not s['excluded'] and s['quad'] and s['len'] - s['mouth_a'] - s['mouth_b'] > 1500 for s in run):
+            continue
+        for side, name in (('L', 'left'), ('R', 'right')):
+            v = t.get('cycleway:' + name, t.get('cycleway:both'))
+            if v in BIKE_OSM:
+                want.add((way['id'], side))
+                assert rows.get((way['id'], side), {}).get('kind') == BIKE_OSM[v], (way['id'], side, v)
+    assert want and not sorted(want - set(rows)), ('tagged sides with no paint', sorted(want - set(rows)))
+    paint = ground_tris(out / 'Streets', streets, lambda m, z: m == 'paint_white' and z < 8)
+    raised = ground_tris(out / 'Streets', streets, lambda m, z: m in SLAB_KEYS and z > R.Z_DROP - .5)
+    blocked = {}
+    for c in world.crossings:
+        blocked.setdefault(c['seg'], []).append(c['along'])
+    for m in world.stop_marks:                # a stop bar, and the crosswalk painted 2.8 m past it toward the junction
+        toward = 1 if m['forward'] else -1
+        blocked.setdefault(m['seg'], []).extend((m['along'], m['along'] + toward * 280))
+    for s, end in world.signal_arms:          # the stop bars at signals, 5.6 m behind the mouth, and their crosswalks
+        dist = s['mouth_' + end] + 560
+        if dist <= s['len'] - 100:
+            along, toward = (s['len'] - dist, 1) if end == 'b' else (dist, -1)
+            blocked.setdefault(s['i'], []).extend((along, along + toward * 260))
+    degree = {node: len(arms) for node, arms in world.graph.items()}
+    totals = {'lane': 0., 'shared': 0, 'busway': 0}
+    worst_first, worst_gap = 0., 0.
+    for (wid, side), r in sorted(rows.items()):
+        assert r['kind'] in ('lane', 'shared', 'busway') and r['travel'] in (1, -1), r
+        segs = [world.segs[k[0]] for k in r['segments']]
+        assert segs and all(s['way'] == wid and not s['excluded'] for s in segs), (wid, side)
+        # Every mark is painted, inside its side of the carriageway, clear of the curb.
+        sign = 1 if side == 'L' else -1
+        for m in r['marks']:
+            assert covered(paint, m['at'], 2.), (wid, side, 'a mark with no paint', m)
+            assert not raised.contains(m['at']) and not raised.contains(m['centre']), (wid, side, 'a mark under a slab')
+            s = min(segs, key=lambda q: R.seg_dist(m['centre'], q['pa'], q['pb']))
+            along, lat = R.seg_local(s, m['centre'])
+            assert 0 < lat * sign < s['curb' + side] - 30, (wid, side, 'a mark off its side', m, lat)
+            if r['kind'] == 'busway':          # the reserved lane runs along the curb, where no car parks
+                assert 100 <= s['curb' + side] - lat * sign <= 600, (wid, side, 'a diamond off the curb lane', lat)
+            assert all(abs(along - c) > R.BIKE_CLEAR for c in blocked.get(s['i'], [])), \
+                (wid, side, 'a mark on a crosswalk')
+        if r['kind'] == 'lane':
+            # Two white lines: the inner one at the parked cars' edge (or by the gutter), the outer one a lane width
+            # toward the traffic, both inside the carriageway, sampled every metre of the drawn length.
+            sampled = hit = 0
+            drawable = 0.
+            for (k, inner, outer), s in zip(r['segments'], segs):
+                curb = s['curb' + side]
+                assert 0 < inner * sign < curb and abs(abs(inner) - abs(outer) - R.BIKE_LANE_W) < .01, (wid, side, k)
+                assert s['curbL'] + s['curbR'] - (curb - abs(outer)) >= 300., (wid, side, 'no traffic lane left')
+                lo, hi = s['mouth_a'] + 450, s['len'] - s['mouth_b'] - 450
+                stops = blocked.get(k, [])
+                drawable += max(0., s['len'] - s['mouth_a'] - s['mouth_b'] - 2 * R.BIKE_END
+                                - 2 * R.BIKE_CLEAR * sum(1 for c in stops if s['mouth_a'] < c < s['len'] - s['mouth_b']))
+                x = lo
+                while x < hi:
+                    if all(abs(x - c) > R.BIKE_CLEAR + 50 for c in stops):
+                        for lat in (inner, outer):
+                            p = R.seg_point(s, x, lat)
+                            sampled += 1
+                            hit += covered(paint, p, 2.)
+                            assert not raised.contains(p), (wid, side, 'a lane line under a slab', p)
+                    x += 100.
+            assert hit >= .97 * sampled, (wid, side, 'lane lines missing', hit, sampled)
+            assert 2 * drawable / 100 - 1 <= r['line_m'] <= 2 * sum(s['len'] for s in segs) / 100, \
+                (wid, side, 'painted metres', r['line_m'], drawable / 100)
+            totals['lane'] += r['line_m']
+        else:
+            totals[r['kind']] += len(r['marks'])
+        # Spacing along each chain: the first mark within 30 m after each junction's mouth, then at most every
+        # BIKE_REPEAT + 10 m, on blocks of 40 m or more.
+        for chain in travel_chains(world, wid, r['travel']):
+            if not any(s['i'] == k[0] for s in chain for k in r['segments']):
+                continue
+            start, pos = {}, 0.
+            for s in chain:
+                start[s['i']] = pos
+                pos += s['len']
+
+            def travel_pos(s, along):
+                return start[s['i']] + (along if r['travel'] > 0 else s['len'] - along)
+
+            marks = []
+            for m in r['marks']:
+                s = min(chain, key=lambda q: R.seg_dist(m['at'], q['pa'], q['pb']))
+                if R.seg_dist(m['at'], s['pa'], s['pb']) < s['curb' + side] + 50:
+                    marks.append(travel_pos(s, R.seg_local(s, m['at'])[0]))
+            marks.sort()
+            ends = [(s, 'a', 'b') if r['travel'] > 0 else (s, 'b', 'a') for s in chain]
+            for k, (s, entry, _) in enumerate(ends):
+                if degree.get(s[entry], 0) < 3:
+                    continue
+                exit_at = start[s['i']] + s['mouth_' + entry]
+                block_end = None
+                for q, _, leave in ends[k:]:
+                    if degree.get(q[leave], 0) >= 3 or q is chain[-1]:
+                        block_end = start[q['i']] + q['len'] - q['mouth_' + leave]
+                        break
+                if block_end - exit_at < 4000:
+                    continue
+                inside = [x for x in marks if exit_at <= x <= block_end]
+                assert inside and inside[0] - exit_at <= 3000, \
+                    (wid, side, r['kind'], 'no mark within 30 m after the junction', s[entry], inside[:1])
+                worst_first = max(worst_first, inside[0] - exit_at)
+                for x0, x1 in zip(inside, inside[1:]):
+                    assert x1 - x0 <= R.BIKE_REPEAT + 1000, (wid, side, 'marks too far apart', x0, x1)
+                    worst_gap = max(worst_gap, x1 - x0)
+    counts = streets['counts']
+    assert counts['bike_lane_line_metres'] == round(totals['lane']) and counts['sharrows'] == totals['shared'] and \
+        counts['bus_diamonds'] == totals['busway'], (counts, totals)
+    assert totals['lane'] > 2500 and totals['shared'] >= 25 and totals['busway'] >= 8, totals
+    return {'sides': len(rows), 'lane_line_metres': round(totals['lane']), 'sharrows': totals['shared'],
+            'bus_diamonds': totals['busway'], 'worst_first_m': round(worst_first / 100, 1),
+            'worst_gap_m': round(worst_gap / 100, 1)}
+
+
+def check_blue_spruce():
+    """The Colorado blue spruce (Picea pungens, its cultivars and the inventory's misspelt 'Picea punges') wears the
+    conifer's glaucous blue (KIND_TINTS); the other spruces keep the evergreen green, and no broadleaf turns blue."""
+    R = replica
+    assert R.TREE_FALLS[-1] == 'blue' and R.KIND_TINTS['conifer'] == ('blue',), (R.TREE_FALLS, R.KIND_TINTS)
+    for species in ('Picea pungens', "Picea pungens 'Glauca'", "Picea pungens ''Baby Blue Eyes''",
+                    'Picea punges glauca Colorado'):
+        kind = R.tree_kind(species, 20.)
+        assert kind == 'conifer' and R.tree_fall(species, kind) == 'blue', (species, kind, R.tree_fall(species, kind))
+    for species in ('Picea glauca', 'Picea abies', 'Picea omorika', 'Pinus strobus', 'Thuja occidentalis'):
+        assert R.tree_fall(species, R.tree_kind(species, 20.)) == 'evergreen', species
+    assert R.tree_fall('Picea pungens', 'norway_maple') == 'yellow' and R.tree_fall('Picea pungens', 'larch') == 'gold'
+    return {'blue_species': 4}
+
+
 def check_open_steps(world, out, streets):
     """No step opens onto the floor under a raised slab: every outer edge of a sidewalk, curb extension, apron,
     parterre, walk or pit top that stands more than 2.5 cm over the ground just in front of it (a dropped apron, the
@@ -4309,7 +5320,8 @@ def check_open_steps(world, out, streets):
 def main():
     report = {'lane_fixtures': check_lane_fixtures(), 'laundry_fixture': check_laundry_fixture(),
               'laundry_crown_fixture': check_laundry_crown_fixture(), 'crown_scaling': check_crown_scaling(),
-              'gallery_fixture': check_gallery_fixture(), 'missing_plex_glass': check_missing_plex_glass()}
+              'gallery_fixture': check_gallery_fixture(), 'missing_plex_glass': check_missing_plex_glass(),
+              'bike_paint_tags': check_bike_paint_tags(), 'blue_spruce': check_blue_spruce()}
     with tempfile.TemporaryDirectory() as a, tempfile.TemporaryDirectory() as b:
         world, results = replica.prepare(a)
         replica.prepare(b)
@@ -4481,7 +5493,16 @@ def main():
         report['park_leaves'] = check_park_leaves_under_litter(out, soul)
         report['litter_edges'] = check_litter_edges(out, soul)
         report['lane_litter'] = check_lane_litter(world, out, soul)
+        report['litter_straight_sides'] = check_litter_straight_sides(world, out, soul)
+        report['litter_straight_runs'] = check_litter_straight_runs(world, out, soul)
+        report['gutter_beside_lane_patches'] = check_gutter_beside_lane_patches(world, out, soul)
+        report['lane_litter_cover'] = check_lane_litter_cover(world, out, soul)
+        report['park_litter_edges'] = check_park_litter_edges(world, out, soul, streets)
+        report['litter_sources'] = check_litter_sources(soul)
+        report['october_placements'] = check_october_placements(world, out, soul_rows['placements'], streets)
         report['city_poles'] = check_city_poles(world, furniture_rows)
+        report['parking_signs'] = check_parking_signs(world, furniture_rows)
+        report['locked_bikes'] = check_locked_bikes(world, furniture_rows, soul_rows['placements'])
         report['gallery_life'] = check_gallery_life(world, out, soul, soul_rows['placements'])
         report['street_trees'] = check_street_trees(world, out, streets)
         report['reseated_trees'] = check_reseated_trees(world, out, streets)
@@ -4494,6 +5515,7 @@ def main():
         report['capture_coverage'] = check_capture_coverage(world, out, streets)
         report['planting'] = check_planting(out, streets, soul)
         report['open_steps'] = check_open_steps(world, out, streets)
+        report['bike_paint'] = check_bike_paint(world, out, streets)
         bins = {}
         for row in soul_rows['placements']:
             if row['prop'].startswith('bin_'):
@@ -4555,6 +5577,10 @@ def main():
                 assert need <= apply_replica.TINT_LIMIT, (m['asset'], need)
         report['textures'] = check_textures(the_plan)
         report['prop_shadows'] = check_prop_shadows(the_plan)
+        report['october_props'] = check_october_props(the_plan)
+        report['nanite_precision'] = check_nanite_precision(the_plan)
+        report['import_strays'] = check_import_strays()
+        report['editor_blue_conifer'] = check_editor_blue_conifer()
         report['planned_collision'] = check_plan_clearance(world, the_plan)
         report['shared_keys'] = check_shared_plan()
         report['yard_trees'] = check_yard_trees(the_plan)

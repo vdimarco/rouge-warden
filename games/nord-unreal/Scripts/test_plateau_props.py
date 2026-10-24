@@ -27,7 +27,8 @@ REQUIRED = {
     'bixi_dock', 'bixi_bike', 'bin_recycling', 'bin_compost', 'bin_garbage', 'cone', 'barrier_chantier',
     'utility_pole', 'laundry_line', 'bike_locked', 'ac_unit', 'flower_box', 'bench', 'mailbox',
     'police_lightbar', 'dog_small', 'dog_medium', 'dog_large', 'stroller', 'grocery_bag',
-    'chair_patio', 'bbq', 'satellite_dish', 'potted_plant', 'bike_gallery'}
+    'chair_patio', 'bbq', 'satellite_dish', 'potted_plant', 'bike_gallery',
+    'leaf_bag', 'leaf_bag_mid', 'leaf_bag_low', 'pumpkin', 'pumpkin_carved'}
 # Gallery life (the outdoor rooms of the back galleries): kind, (min, max) size in cm along Unreal X, Y and Z of
 # the assembled prop, and whether it carries box colliders (things a player bumps into on a 1.2-1.8 m deck).
 GALLERY = {'chair_patio': ((45, 70), (50, 70), (75, 95), True), 'bbq': ((45, 70), (100, 135), (100, 125), True),
@@ -35,11 +36,18 @@ GALLERY = {'chair_patio': ((45, 70), (50, 70), (75, 95), True), 'bbq': ((45, 70)
            'potted_plant': ((25, 50), (25, 50), (40, 90), False), 'bike_gallery': ((165, 195), (35, 65), (100, 125), True)}
 TARGETS = {'lamp_cobra': 800, 'lamp_park': 800, 'hydrant': 500, 'dog_small': 1500, 'dog_medium': 1500,
            'dog_large': 1500, 'stroller': 1500, 'chair_patio': 700, 'bbq': 1600, 'satellite_dish': 1200,
-           'potted_plant': 1500, 'bike_gallery': 2500}
+           'potted_plant': 1500, 'bike_gallery': 2500, 'leaf_bag': 400, 'leaf_bag_mid': 400, 'leaf_bag_low': 400,
+           'pumpkin': 450, 'pumpkin_carved': 700}
+# Late-October dressing: (min, max) size in cm along Unreal X, Y and Z at scale 1. The 30 gallon kraft bag is 41 x 30 cm
+# and 89 cm of paper; filled less, it folds over more and stands lower. The carving pumpkin is about 30 cm.
+SEASON = {'leaf_bag': ((28, 35), (38, 44), (74, 86)), 'leaf_bag_mid': ((28, 35), (38, 44), (58, 70)),
+          'leaf_bag_low': ((28, 35), (38, 44), (42, 56)), 'pumpkin': ((27, 33), (26, 33), (27, 33)),
+          'pumpkin_carved': ((27, 33), (26, 33), (27, 33))}
 DOG_PARTS = {'body', 'head', 'leg_fl', 'leg_fr', 'leg_rl', 'leg_rr', 'tail'}
 VARIANT_PROPS = {'bin_recycling', 'bin_compost', 'bin_garbage', 'utility_pole', 'ac_unit', 'flower_box',
                  'bench', 'bike_locked', 'laundry_line', 'dog_small', 'dog_medium', 'dog_large', 'stroller',
-                 'chair_patio', 'bbq', 'satellite_dish', 'potted_plant', 'bike_gallery'}
+                 'chair_patio', 'bbq', 'satellite_dish', 'potted_plant', 'bike_gallery', 'leaf_bag', 'leaf_bag_mid',
+                 'leaf_bag_low', 'pumpkin', 'pumpkin_carved'}
 
 
 def read_obj(path):
@@ -136,7 +144,8 @@ def check(directory):
             assert entry['triangles'] <= TARGETS[key], (key, entry['triangles'])
         b = entry['bounds_cm']
         assert abs(b[2]) < .05, (key, 'pivot must sit on the base', b)
-        if entry['kind'] in ('street', 'works', 'park', 'ruelle', 'companion', 'gallery') and key != 'laundry_line':
+        if entry['kind'] in ('street', 'works', 'park', 'ruelle', 'companion', 'gallery', 'season') and \
+                key != 'laundry_line':
             assert b[0] <= 0 <= b[3] and b[1] <= 0 <= b[4], (key, 'pivot outside the footprint', b)
         assert b[5] - b[2] < 1100, key
     for key in ('dog_small', 'dog_medium', 'dog_large'):
@@ -165,6 +174,7 @@ def check(directory):
     assert len(props['bixi_dock']['slots']) == 6
     check_gallery(props)
     check_colliders(props)
+    check_october(directory, manifest)
     stop = props['sign_stop']['parts']
     assert {'face_red', 'face_white'} <= set(stop)
     return manifest
@@ -206,6 +216,92 @@ def check_gallery(props):
     plant = props['potted_plant']['parts']
     assert {'pot', 'soil', 'leaves', 'leaves_dry', 'stems', 'flowers'} <= set(plant), sorted(plant)
     assert plant['leaves_dry']['material'] == 'PlantDry' and plant['leaves']['material'] == 'PlantGreen'
+
+
+def _srgb(hexcol):
+    return [int(hexcol[i:i + 2], 16) for i in (1, 3, 5)]
+
+
+def _part_verts(directory, manifest, key, part):
+    (batch,) = [b for b in manifest['batches'] if b['prop'] == key and b['part'] == part]
+    return read_obj(directory / batch['file'])[1]
+
+
+def check_october(directory, manifest):
+    """Kraft leaf bags at three fill heights and pumpkins, one carved: real sizes, the forms a placement picks from,
+    the print on both wide faces, and the carved face laid on the front of the shell."""
+    props, materials = manifest['props'], manifest['materials']
+    for key, sizes in SEASON.items():
+        entry = props[key]
+        assert entry['kind'] == 'season', key
+        b = entry['bounds_cm']
+        for (lo, hi), size, axis in zip(sizes, (b[3] - b[0], b[4] - b[1], b[5] - b[2]), 'XYZ'):
+            assert lo <= size <= hi, (key, axis, round(size, 1), (lo, hi))
+        assert entry['form_of'] == ('leaf_bag' if key.startswith('leaf_bag') else 'pumpkin'), key
+    bags = ('leaf_bag', 'leaf_bag_mid', 'leaf_bag_low')
+    forms = props['leaf_bag']['forms']
+    assert [f['prop'] for f in forms] == list(bags) and abs(sum(f['share'] for f in forms) - 1) < 1e-9, forms
+    tops = [props[k]['bounds_cm'][5] for k in bags]
+    fills = [props[k]['fill_cm'] for k in bags]
+    assert all(a - b >= 8 for a, b in zip(tops, tops[1:])) and fills == sorted(fills, reverse=True), (tops, fills)
+    for key in bags:
+        parts = props[key]['parts']
+        assert {'body', 'print', 'leaves'} <= set(parts), sorted(parts)
+        assert parts['body']['material'] == 'LeafBagKraft' and parts['leaves']['material'] == 'LeafOchre'
+        r, g, bl = _srgb(materials[parts['print']['material']]['base_color_srgb'])
+        assert g > r and g > bl, ('green print', parts['print']['material'])
+        assert len(props[key]['colliders_cm']) == 1 and props[key]['fill_cm'] < props[key]['bounds_cm'][5] - 10, key
+        # The print lies on the two wide walls (Unreal ±X), within 1 cm of the body's widest point.
+        verts = _part_verts(directory, manifest, key, 'print')
+        bounds = props[key]['bounds_cm']
+        assert all(abs(x) >= 14 for x, _, _ in verts), (key, 'print off the wide faces')
+        assert {x > 0 for x, _, _ in verts} == {True, False}, (key, 'print on one face only')
+        assert all(abs(x) <= max(-bounds[0], bounds[3]) + 1 for x, _, _ in verts), (key, 'print floats off the wall')
+    pumpkin = props['pumpkin']
+    assert [f['prop'] for f in pumpkin['forms']] == ['pumpkin', 'pumpkin_carved'], pumpkin['forms']
+    assert abs(sum(f['share'] for f in pumpkin['forms']) - 1) < 1e-9
+    sizes = pumpkin['sizes']
+    lo, hi = pumpkin['scale_range']
+    assert lo <= sizes['pie'] < sizes['carving'] == 1 < sizes['large'] <= hi, (sizes, lo, hi)
+    for key in ('pumpkin', 'pumpkin_carved'):
+        assert not props[key].get('colliders_cm'), (key, 'a pumpkin on a step blocks nobody')
+        assert {'body', 'stem'} <= set(props[key]['parts']), key
+    assert 'face' not in props['pumpkin']['parts']
+    face = props['pumpkin_carved']['parts']['face']
+    assert sum(_srgb(materials[face['material']]['base_color_srgb'])) < 150, ('dark carved holes', face)
+    # The face looks along +X and sits on the shell: a level ray from the axis through each face vertex meets the
+    # shell between 0.05 and 1 cm before the vertex (not sunk into it, not floating off it).
+    (batch,) = [b for b in manifest['batches'] if b['prop'] == 'pumpkin_carved' and b['part'] == 'body']
+    _, body, tris = read_obj(directory / batch['file'])
+    decal = _part_verts(directory, manifest, 'pumpkin_carved', 'face')
+    front = [p for p in decal if p[2] < 20]
+    assert front and all(p[0] > 4 and abs(p[1]) < 14 for p in front), 'the face is not on the +X side'
+    for x, y, z in decal:
+        r = math.hypot(x, y)
+        hit = shell_hit(body, tris, (0., 0., z), (x / r, y / r, 0.))
+        assert hit is not None and .05 <= r - hit <= 1., ('face off the shell', (x, y, z), r, hit)
+
+
+def shell_hit(verts, tris, origin, direction):
+    """Farthest distance along a ray at which it meets a triangle (Moller-Trumbore), or None."""
+    best = None
+    for tri in tris:
+        a, b, c = (verts[i] for i in tri)
+        e1 = [b[k] - a[k] for k in range(3)]
+        e2 = [c[k] - a[k] for k in range(3)]
+        d = direction
+        p = [d[1] * e2[2] - d[2] * e2[1], d[2] * e2[0] - d[0] * e2[2], d[0] * e2[1] - d[1] * e2[0]]
+        det = sum(e1[k] * p[k] for k in range(3))
+        if abs(det) < 1e-12:
+            continue
+        s = [origin[k] - a[k] for k in range(3)]
+        u = sum(s[k] * p[k] for k in range(3)) / det
+        q = [s[1] * e1[2] - s[2] * e1[1], s[2] * e1[0] - s[0] * e1[2], s[0] * e1[1] - s[1] * e1[0]]
+        v = sum(d[k] * q[k] for k in range(3)) / det
+        t = sum(e2[k] * q[k] for k in range(3)) / det
+        if u >= -1e-9 and v >= -1e-9 and u + v <= 1 + 1e-9 and t > 0:
+            best = t if best is None else max(best, t)
+    return best
 
 
 def check_colliders(props):
@@ -251,12 +347,12 @@ def determinism(python, reference):
 
 
 def check_sheet(manifest):
-    """The contact sheet holds every prop: 200 x 250 px tiles, 8 per row, one tile per prop plus the six detail
-    tiles (dog parts, coat variants, lamp head, sign blades, street corner, gallery deck)."""
+    """The contact sheet holds every prop: 200 x 250 px tiles, 8 per row, one tile per prop plus the seven detail
+    tiles (dog parts, coat variants, lamp head, sign blades, street corner, gallery deck, october curb)."""
     data = SHEET.read_bytes()
     assert data[:8] == b'\x89PNG\r\n\x1a\n', SHEET
     size = int.from_bytes(data[16:20], 'big'), int.from_bytes(data[20:24], 'big')
-    tiles = manifest['counts']['props'] + 6
+    tiles = manifest['counts']['props'] + 7
     assert size == (1600, 250 * -(-tiles // 8)), (size, tiles)
 
 

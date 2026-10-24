@@ -3299,6 +3299,290 @@
    "prop": "bike_gallery",
    "part": "rack",
    "sha256": "9e4a0ea3be8e3998c6850128e08f69633e71ee5598de1071d23a1f39f2eae7ec"
+  },
+  {
+   "file": "leaf_bag_body.obj",
+   "mesh": "SM_Props_leaf_bag_body",
+   "material": "LeafBagKraft",
+   "collision": "none",
+   "triangles": 212,
+   "bounds_cm": [
+    -16.4,
+    -20.8,
+    0.0,
+    16.4,
+    20.8,
+    78.08
+   ],
+   "prop": "leaf_bag",
+   "part": "body",
+   "sha256": "b04ee940eee6e4d226e18a8a67ec3cf3f863f6c59d3ee0c36a7914c834395d8d",
+   "variants": [
+    "LeafBagWet",
+    "LeafBagPale"
+   ]
+  },
+  {
+   "file": "leaf_bag_print.obj",
+   "mesh": "SM_Props_leaf_bag_print",
+   "material": "LeafBagInk",
+   "collision": "none",
+   "triangles": 42,
+   "bounds_cm": [
+    -16.46,
+    -15.0,
+    4.4,
+    16.46,
+    15.0,
+    27.14
+   ],
+   "prop": "leaf_bag",
+   "part": "print",
+   "sha256": "bf606bc78013ea9fa0d365c4730e9a2b507d28f6378611aa62c54b51d4ba1a00"
+  },
+  {
+   "file": "leaf_bag_leaves.obj",
+   "mesh": "SM_Props_leaf_bag_leaves",
+   "material": "LeafOchre",
+   "collision": "none",
+   "triangles": 40,
+   "bounds_cm": [
+    -3.56,
+    -13.32,
+    77.1,
+    5.11,
+    11.81,
+    81.16
+   ],
+   "prop": "leaf_bag",
+   "part": "leaves",
+   "sha256": "5c4b56822fb546dbf3a9bbacfa5bf158016c951dd7cbe1cf2ead8e52d1a732f0",
+   "variants": [
+    "LeafRust",
+    "LeafBrown"
+   ]
+  },
+  {
+   "file": "leaf_bag_mid_body.obj",
+   "mesh": "SM_Props_leaf_bag_mid_body",
+   "material": "LeafBagKraft",
+   "collision": "none",
+   "triangles": 212,
+   "bounds_cm": [
+    -16.4,
+    -20.8,
+    0.0,
+    16.4,
+    20.8,
+    63.38
+   ],
+   "prop": "leaf_bag_mid",
+   "part": "body",
+   "sha256": "7b0d8651de63c2f644c769686caa29804ca334871fd55952daa36f020fedcce2",
+   "variants": [
+    "LeafBagWet",
+    "LeafBagPale"
+   ]
+  },
+  {
+   "file": "leaf_bag_mid_print.obj",
+   "mesh": "SM_Props_leaf_bag_mid_print",
+   "material": "LeafBagInk",
+   "collision": "none",
+   "triangles": 42,
+   "bounds_cm": [
+    -16.54,
+    -15.0,
+    4.4,
+    16.54,
+    15.0,
+    27.14
+   ],
+   "prop": "leaf_bag_mid",
+   "part": "print",
+   "sha256": "f598aaa594027a0aa65e367671edcc946ca68a75a92a339477e347b4d4c61b4f"
+  },
+  {
+   "file": "leaf_bag_mid_leaves.obj",
+   "mesh": "SM_Props_leaf_bag_mid_leaves",
+   "material": "LeafOchre",
+   "collision": "none",
+   "triangles": 60,
+   "bounds_cm": [
+    0.07,
+    -13.05,
+    61.85,
+    4.67,
+    8.9,
+    66.53
+   ],
+   "prop": "leaf_bag_mid",
+   "part": "leaves",
+   "sha256": "edfd98b08a64ab14d45ca23c4fbc25a2d87b43d217804a723477bafa0cb7bfa3",
+   "variants": [
+    "LeafRust",
+    "LeafBrown"
+   ]
+  },
+  {
+   "file": "leaf_bag_low_body.obj",
+   "mesh": "SM_Props_leaf_bag_low_body",
+   "material": "LeafBagKraft",
+   "collision": "none",
+   "triangles": 212,
+   "bounds_cm": [
+    -16.4,
+    -20.8,
+    0.0,
+    16.4,
+    20.8,
+    48.68
+   ],
+   "prop": "leaf_bag_low",
+   "part": "body",
+   "sha256": "9f6b5c6a9b1dd3c90d4215b08b065c81b33de7e41fab1fdce4af82e3f151123d",
+   "variants": [
+    "LeafBagWet",
+    "LeafBagPale"
+   ]
+  },
+  {
+   "file": "leaf_bag_low_print.obj",
+   "mesh": "SM_Props_leaf_bag_low_print",
+   "material": "LeafBagInk",
+   "collision": "none",
+   "triangles": 42,
+   "bounds_cm": [
+    -16.61,
+    -15.0,
+    4.4,
+    16.61,
+    15.0,
+    27.14
+   ],
+   "prop": "leaf_bag_low",
+   "part": "print",
+   "sha256": "19b08abcbac98d475dc30c6911a493d9cdd0197a15e7052a9b3242492c9f8019"
+  },
+  {
+   "file": "leaf_bag_low_leaves.obj",
+   "mesh": "SM_Props_leaf_bag_low_leaves",
+   "material": "LeafOchre",
+   "collision": "none",
+   "triangles": 80,
+   "bounds_cm": [
+    0.07,
+    -15.99,
+    46.6,
+    6.49,
+    17.65,
+    50.6
+   ],
+   "prop": "leaf_bag_low",
+   "part": "leaves",
+   "sha256": "2d6409e08f1dff1eaa5c161439691d20b293edf220524c104eca4110fe9d764c",
+   "variants": [
+    "LeafRust",
+    "LeafBrown"
+   ]
+  },
+  {
+   "file": "pumpkin_body.obj",
+   "mesh": "SM_Props_pumpkin_body",
+   "material": "PumpkinOrange",
+   "collision": "none",
+   "triangles": 358,
+   "bounds_cm": [
+    -14.95,
+    -14.01,
+    0.0,
+    15.28,
+    14.56,
+    24.0
+   ],
+   "prop": "pumpkin",
+   "part": "body",
+   "sha256": "e0a93b4f6d8aead27a396a4d9966135f94ec05ff6b4def4d65650dffa769033d",
+   "variants": [
+    "PumpkinDeep",
+    "PumpkinWhite"
+   ]
+  },
+  {
+   "file": "pumpkin_stem.obj",
+   "mesh": "SM_Props_pumpkin_stem",
+   "material": "PumpkinStem",
+   "collision": "none",
+   "triangles": 32,
+   "bounds_cm": [
+    -2.45,
+    -2.51,
+    22.69,
+    3.14,
+    2.51,
+    29.89
+   ],
+   "prop": "pumpkin",
+   "part": "stem",
+   "sha256": "aaafde0134036d74a1a64d0bbe999eb5fdc74140148ab70e49dff5c220a2514a"
+  },
+  {
+   "file": "pumpkin_carved_body.obj",
+   "mesh": "SM_Props_pumpkin_carved_body",
+   "material": "PumpkinLantern",
+   "collision": "none",
+   "triangles": 358,
+   "bounds_cm": [
+    -15.37,
+    -14.41,
+    0.0,
+    14.73,
+    14.05,
+    24.0
+   ],
+   "prop": "pumpkin_carved",
+   "part": "body",
+   "sha256": "0409a253f663b9e543eff37d6575bad7edd7110edaa6372bddf26ff6a1b2ef2f",
+   "variants": [
+    "PumpkinOrange",
+    "PumpkinDeep"
+   ]
+  },
+  {
+   "file": "pumpkin_carved_stem.obj",
+   "mesh": "SM_Props_pumpkin_carved_stem",
+   "material": "PumpkinStem",
+   "collision": "none",
+   "triangles": 32,
+   "bounds_cm": [
+    -2.21,
+    -2.59,
+    22.45,
+    3.52,
+    2.59,
+    29.89
+   ],
+   "prop": "pumpkin_carved",
+   "part": "stem",
+   "sha256": "a43a4d1b55f6b8535d6f6464bbcf785a3f8f9a5b8579633f5a14fe840c3290c0"
+  },
+  {
+   "file": "pumpkin_carved_face.obj",
+   "mesh": "SM_Props_pumpkin_carved_face",
+   "material": "PumpkinHollow",
+   "collision": "none",
+   "triangles": 206,
+   "bounds_cm": [
+    -7.52,
+    -8.03,
+    5.23,
+    15.12,
+    7.55,
+    23.12
+   ],
+   "prop": "pumpkin_carved",
+   "part": "face",
+   "sha256": "ba4d291cbc8f0e755fd0dbe936fb3fcfff51a48110cde79eb87b066bfebb0b78"
   }
  ],
  "materials": {
@@ -3897,6 +4181,71 @@
   "PlantRust": {
    "base_color_srgb": "#97492a",
    "roughness": 0.75,
+   "metallic": 0
+  },
+  "LeafBagKraft": {
+   "base_color_srgb": "#a27b4c",
+   "roughness": 0.92,
+   "metallic": 0
+  },
+  "LeafBagWet": {
+   "base_color_srgb": "#7c5b37",
+   "roughness": 0.8,
+   "metallic": 0
+  },
+  "LeafBagPale": {
+   "base_color_srgb": "#bd9f70",
+   "roughness": 0.95,
+   "metallic": 0
+  },
+  "LeafBagInk": {
+   "base_color_srgb": "#2f6a3c",
+   "roughness": 0.85,
+   "metallic": 0
+  },
+  "LeafOchre": {
+   "base_color_srgb": "#c2902e",
+   "roughness": 0.75,
+   "metallic": 0
+  },
+  "LeafRust": {
+   "base_color_srgb": "#a5482a",
+   "roughness": 0.75,
+   "metallic": 0
+  },
+  "LeafBrown": {
+   "base_color_srgb": "#7a5634",
+   "roughness": 0.8,
+   "metallic": 0
+  },
+  "PumpkinOrange": {
+   "base_color_srgb": "#db741e",
+   "roughness": 0.55,
+   "metallic": 0
+  },
+  "PumpkinDeep": {
+   "base_color_srgb": "#b85a1a",
+   "roughness": 0.55,
+   "metallic": 0
+  },
+  "PumpkinWhite": {
+   "base_color_srgb": "#e3dac4",
+   "roughness": 0.6,
+   "metallic": 0
+  },
+  "PumpkinLantern": {
+   "base_color_srgb": "#e88a26",
+   "roughness": 0.5,
+   "metallic": 0
+  },
+  "PumpkinStem": {
+   "base_color_srgb": "#7b7444",
+   "roughness": 0.85,
+   "metallic": 0
+  },
+  "PumpkinHollow": {
+   "base_color_srgb": "#2e1608",
+   "roughness": 0.9,
    "metallic": 0
   }
  },
@@ -6201,11 +6550,249 @@
      ]
     }
    ]
+  },
+  "leaf_bag": {
+   "kind": "season",
+   "description": "Kraft paper yard-waste bag (full), the 30 gallon two-ply lawn and leaf bag: 41 x 30 cm, filled to 64 cm, the side gussets tucked in and the top folded over, a green leaf print on both wide faces and a few leaves caught in the fold.",
+   "pivot": "base centre; wide faces look along ±X",
+   "triangles": 294,
+   "budget": 400,
+   "bounds_cm": [
+    -16.46,
+    -20.8,
+    0.0,
+    16.46,
+    20.8,
+    81.16
+   ],
+   "parts": {
+    "body": {
+     "mesh": "SM_Props_leaf_bag_body",
+     "material": "LeafBagKraft"
+    },
+    "print": {
+     "mesh": "SM_Props_leaf_bag_print",
+     "material": "LeafBagInk"
+    },
+    "leaves": {
+     "mesh": "SM_Props_leaf_bag_leaves",
+     "material": "LeafOchre"
+    }
+   },
+   "colliders_cm": [
+    {
+     "center": [
+      0,
+      0,
+      39.04
+     ],
+     "size": [
+      30.0,
+      41.0,
+      78.08
+     ]
+    }
+   ],
+   "fill_cm": 64.0,
+   "form_of": "leaf_bag",
+   "forms": [
+    {
+     "prop": "leaf_bag",
+     "fill": "full",
+     "fill_cm": 64.0,
+     "share": 0.45
+    },
+    {
+     "prop": "leaf_bag_mid",
+     "fill": "three quarters",
+     "fill_cm": 48.0,
+     "share": 0.35
+    },
+    {
+     "prop": "leaf_bag_low",
+     "fill": "half",
+     "fill_cm": 32.0,
+     "share": 0.2
+    }
+   ],
+   "scale_range": [
+    0.97,
+    1.03
+   ],
+   "placement_note": "on the sidewalk at the curb edge beside the bins of a collection row, or against a front fence or stoop: one to four per door, a wide face toward the street; pick the form by the forms shares and the colour by variant_seed (fresh, rain-dark, sun-bleached kraft)"
+  },
+  "leaf_bag_mid": {
+   "kind": "season",
+   "description": "Kraft paper yard-waste bag (three quarters), the 30 gallon two-ply lawn and leaf bag: 41 x 30 cm, filled to 48 cm, the side gussets tucked in and the top folded over, a green leaf print on both wide faces and a few leaves caught in the fold.",
+   "pivot": "base centre; wide faces look along ±X",
+   "triangles": 314,
+   "budget": 400,
+   "bounds_cm": [
+    -16.54,
+    -20.8,
+    0.0,
+    16.54,
+    20.8,
+    66.53
+   ],
+   "parts": {
+    "body": {
+     "mesh": "SM_Props_leaf_bag_mid_body",
+     "material": "LeafBagKraft"
+    },
+    "print": {
+     "mesh": "SM_Props_leaf_bag_mid_print",
+     "material": "LeafBagInk"
+    },
+    "leaves": {
+     "mesh": "SM_Props_leaf_bag_mid_leaves",
+     "material": "LeafOchre"
+    }
+   },
+   "colliders_cm": [
+    {
+     "center": [
+      0,
+      0,
+      31.69
+     ],
+     "size": [
+      30.0,
+      41.0,
+      63.38
+     ]
+    }
+   ],
+   "fill_cm": 48.0,
+   "form_of": "leaf_bag"
+  },
+  "leaf_bag_low": {
+   "kind": "season",
+   "description": "Kraft paper yard-waste bag (half), the 30 gallon two-ply lawn and leaf bag: 41 x 30 cm, filled to 32 cm, the side gussets tucked in and the top folded over, a green leaf print on both wide faces and a few leaves caught in the fold.",
+   "pivot": "base centre; wide faces look along ±X",
+   "triangles": 334,
+   "budget": 400,
+   "bounds_cm": [
+    -16.61,
+    -20.8,
+    0.0,
+    16.61,
+    20.8,
+    50.6
+   ],
+   "parts": {
+    "body": {
+     "mesh": "SM_Props_leaf_bag_low_body",
+     "material": "LeafBagKraft"
+    },
+    "print": {
+     "mesh": "SM_Props_leaf_bag_low_print",
+     "material": "LeafBagInk"
+    },
+    "leaves": {
+     "mesh": "SM_Props_leaf_bag_low_leaves",
+     "material": "LeafOchre"
+    }
+   },
+   "colliders_cm": [
+    {
+     "center": [
+      0,
+      0,
+      24.34
+     ],
+     "size": [
+      30.0,
+      41.0,
+      48.68
+     ]
+    }
+   ],
+   "fill_cm": 32.0,
+   "form_of": "leaf_bag"
+  },
+  "pumpkin": {
+   "kind": "season",
+   "description": "Carving pumpkin with ten ribs and a woody stem, about 30 cm across.",
+   "pivot": "base centre",
+   "triangles": 390,
+   "budget": 450,
+   "bounds_cm": [
+    -14.95,
+    -14.01,
+    0.0,
+    15.28,
+    14.56,
+    29.89
+   ],
+   "parts": {
+    "body": {
+     "mesh": "SM_Props_pumpkin_body",
+     "material": "PumpkinOrange"
+    },
+    "stem": {
+     "mesh": "SM_Props_pumpkin_stem",
+     "material": "PumpkinStem"
+    }
+   },
+   "form_of": "pumpkin",
+   "forms": [
+    {
+     "prop": "pumpkin",
+     "carved": false,
+     "share": 0.7
+    },
+    {
+     "prop": "pumpkin_carved",
+     "carved": true,
+     "share": 0.3
+    }
+   ],
+   "sizes": {
+    "pie": 0.6,
+    "carving": 1.0,
+    "large": 1.4
+   },
+   "scale_range": [
+    0.55,
+    1.45
+   ],
+   "placement_note": "on stoop steps and landings, front-yard ledges and balcony floors: one to three per door, sizes by the placement scale (pie .6, carving 1, large 1.4), a carved one with its face (+X) toward the sidewalk; the colour by variant_seed (orange, deep orange, white)"
+  },
+  "pumpkin_carved": {
+   "kind": "season",
+   "description": "Carving pumpkin with ten ribs and a woody stem, about 30 cm across, carved as a jack-o'-lantern: triangle eyes and nose, a grin with two teeth and the lid cut, facing +X.",
+   "pivot": "base centre; the face looks along +X",
+   "triangles": 596,
+   "budget": 700,
+   "bounds_cm": [
+    -15.37,
+    -14.41,
+    0.0,
+    15.12,
+    14.05,
+    29.89
+   ],
+   "parts": {
+    "body": {
+     "mesh": "SM_Props_pumpkin_carved_body",
+     "material": "PumpkinLantern"
+    },
+    "stem": {
+     "mesh": "SM_Props_pumpkin_carved_stem",
+     "material": "PumpkinStem"
+    },
+    "face": {
+     "mesh": "SM_Props_pumpkin_carved_face",
+     "material": "PumpkinHollow"
+    }
+   },
+   "form_of": "pumpkin"
   }
  },
  "counts": {
-  "props": 32,
-  "meshes": 169,
+  "props": 37,
+  "meshes": 183,
   "triangles_per_prop": {
    "lamp_cobra": 468,
    "lamp_park": 630,
@@ -6238,11 +6825,16 @@
    "bbq": 1000,
    "satellite_dish": 818,
    "potted_plant": 1176,
-   "bike_gallery": 1524
+   "bike_gallery": 1524,
+   "leaf_bag": 294,
+   "leaf_bag_mid": 314,
+   "leaf_bag_low": 334,
+   "pumpkin": 390,
+   "pumpkin_carved": 596
   },
-  "triangles_all_meshes": 27080
+  "triangles_all_meshes": 29008
  },
  "source_sha256": {
-  "Scripts/blender/plateau_props.py": "97e3b39c269d0f6efa32386c559054f4710819cc6602b6e0142121227f2e58bb"
+  "Scripts/blender/plateau_props.py": "82a95217c5b0970cc9c60344da3993ee7fb98fc6af350778eb77526a09595603"
  }
 }

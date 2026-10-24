@@ -1,4 +1,4 @@
-# Inventory: the city's public trees and sign poles over the district
+# Inventory: the city's public trees, sign poles and parking signs over the district
 
 `trees_pmr.json` (Le Plateau-Mont-Royal, 4,136 trees) and `trees_vm.json` (Ville-Marie, the 486 trees of the strip south of Sherbrooke inside the box) are a clip of the Ville de Montréal's public tree inventory: every record whose latitude and longitude fall inside the district box of `Scripts/prepare_lafontaine.py` (`BOUNDS`, latitude 45.5208 to 45.5312, longitude −73.5755 to −73.5628). `Scripts/plateau_replica.py` reads them to place every street and park tree the game shows (`ReplicaGeometry/Streets/street_trees.json`).
 
@@ -56,3 +56,27 @@ python3 Scripts/plateau_replica.py --clip-sign-poles poteaux_extract.json signal
 ```
 
 The clip is deterministic: the same extracts give byte-identical files.
+
+## Parking signs
+
+`park_signs.json` (709 poles carrying 1,158 signs) is a clip of the city's on-street parking-sign inventory over the same box: every sign that stands now (`DESCRIPTION_REP` `Réel`), grouped by its pole, the poles sorted by id and their signs by place on the pole. `Scripts/plateau_park_signs.py` writes and reads it. `Scripts/plateau_replica.py` puts a parking sign at each pole on a street the replica draws, with that pole's codes, texts and arrows, and `Scripts/plateau_parking.py` reads the signs at one moment (a Wednesday at 12:30 in late October) to decide where cars stand.
+
+**Source:** *Signalisation (stationnement sur rue)*, <https://donnees.montreal.ca/dataset/stationnement-sur-rue-signalisation-courant> (also on Données Québec, <https://donneesquebec.ca/recherche/dataset/vmtl-stationnement-sur-rue-signalisation-courant>): one row per parking sign with its pole. The extract is the borough's records as `datastore_search` returns them, read in October 2026; `source.extract_sha256` gives its hash. The city warns that the data may differ from the street in places.
+
+**Licence:** Creative Commons Attribution 4.0 International (CC BY 4.0). Attribution: *Source: Ville de Montréal, données ouvertes (CC BY 4.0).*
+
+| Field | Meaning | Used for |
+| --- | --- | --- |
+| `POTEAU_ID_POT` | pole id (the same ids as `sign_poles.json`) | the row's `city_pole`; a sign hangs on that pole where the game draws it |
+| `DESCRIPTION_RTP` | pole kind | none (the drawn poles come from `sign_poles.json`) |
+| `Latitude`, `Longitude` | WGS84 position | the pole, through `prepare_lafontaine.xy` |
+| `PAS_SUR_RUE` | `1` for a pole off the street | left out |
+| `signs` | `CODE_RPA` (`R-PF` permit parking, `SU-*` street cleaning, `AD-TT` no stopping, `SD-TT` no parking, ...), `DESCRIPTION_RPA` (the text, `\P` for no parking and `\A` for no stopping), `FLECHE_PAN` (0 no arrow, 2 left, 3 right, 8 both), `POSITION_POP`, `PANNEAU_ID_PAN`, `DESCRIPTION_CAT` | the plate's code, text and arrow; the parked cars' rules |
+
+Regenerate from a fresh extract (a JSON list of records):
+
+```bash
+python3 Scripts/plateau_park_signs.py --clip stationnement_extract.json
+```
+
+The clip is deterministic: the same extract gives a byte-identical file.

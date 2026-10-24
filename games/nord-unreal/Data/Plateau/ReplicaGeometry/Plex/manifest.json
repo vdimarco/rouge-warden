@@ -5857,7 +5857,7 @@
     -8726.673,
     1340.0
    ],
-   "sha256": "1cf8ed6c94b2b91235984c0fd837702d86f4bcaf5a3d52522980ebcc25a7fcb5"
+   "sha256": "5b01a94676134f65f974e9e3633af91f87c530d989334fbfbccad8619ab3724d"
   },
   {
    "file": "Glass_XM001_YM002.obj",
@@ -5873,7 +5873,7 @@
     -19004.436,
     1370.0
    ],
-   "sha256": "335c7b26e32557570309e69467c1a1d7669a464426020ac5850277c091aed345"
+   "sha256": "24c7cf421ba45ce3faa542abfb30ecad01ccc61101100e6d77e19ceccf068263"
   },
   {
    "file": "Glass_XM001_YM003.obj",
@@ -5916,12 +5916,12 @@
    "bounds_cm": [
     -18995.614,
     32854.808,
-    146.0,
+    110.0,
     -6710.621,
     38030.01,
     1520.0
    ],
-   "sha256": "1c2c0b2d981f09c66bf50ab42475960789ff41c2727047d4d39ef9bd4574a33f"
+   "sha256": "ca1e5f2d2ea40b472c000282cb8c182f003c042628aafedc646ed0b5b1ee54cd"
   },
   {
    "file": "Glass_XM001_YP002.obj",
@@ -5937,7 +5937,7 @@
     57019.383,
     3052.0
    ],
-   "sha256": "24bba2362ed4ac1f86d63722443bde0d259bc7640828762a464200c9368178e7"
+   "sha256": "e33eaebcb98e5a0aef3fedf3ba3bcda6a99a599ba0260848dc98ba72f2f3bdff"
   },
   {
    "file": "Glass_XM001_YP003.obj",
@@ -5953,7 +5953,7 @@
     68904.249,
     1660.0
    ],
-   "sha256": "100e318a186c8927ad44ebdcc59f572a199b559f1d1a1b905338e1e1956301eb"
+   "sha256": "ba805210d94764b2597ec4cc113ebdf1cab3d924816dd7f127f7e72ddbda4dc5"
   },
   {
    "file": "Glass_XM002_YM001.obj",
@@ -5969,7 +5969,7 @@
     16.841,
     2860.0
    ],
-   "sha256": "34dfe64288c7881f1104501c6238f5a1173b52a978a59d9aeeb59c5f31dcda3b"
+   "sha256": "0f0af5dcf2b715f750da25bb8357ceefff48c061cb27d2579007f04859b2941c"
   },
   {
    "file": "Glass_XM002_YM002.obj",
@@ -5985,7 +5985,7 @@
     -18984.601,
     1370.0
    ],
-   "sha256": "ad61fe7fff342403fb89d380d65fad9652133b0e8050ea5bd7fe580665318dfc"
+   "sha256": "5c0dd02002de4130834a41ba710ea6f2b94078ff067285dea5e817190f4e3de0"
   },
   {
    "file": "Glass_XM002_YM003.obj",
@@ -6017,7 +6017,7 @@
     19005.234,
     1955.0
    ],
-   "sha256": "015cc710b7409a12a76c3042d2ac9906a67fd641b014ce12f96e79b38fee2258"
+   "sha256": "4e58f2e1353ebe26365c6b57b876ba1a8c0f9eb4d13d88b50284329a72597113"
   },
   {
    "file": "Glass_XM002_YP001.obj",
@@ -6033,7 +6033,7 @@
     38019.126,
     5905.0
    ],
-   "sha256": "a604f583c3f5a7e60bce3df83056f82f098edd7f3e787460c52420a327cee32d"
+   "sha256": "a6d9aeb09ee35e0984d13d2ea86414256d329758a299e396e856c7bbd1bc00e6"
   },
   {
    "file": "Glass_XM002_YP002.obj",
@@ -6049,7 +6049,7 @@
     57009.476,
     5905.0
    ],
-   "sha256": "22e9227d84fca141a4a00ae8a03c7199655c7053a5944e6ec293b750dba6cee4"
+   "sha256": "0cadc83cd7f23a538201ce4965789ec42b49896b9f56d85d97cb210f7b15a70b"
   },
   {
    "file": "Glass_XM002_YP003.obj",
@@ -6065,7 +6065,7 @@
     68799.224,
     1660.0
    ],
-   "sha256": "495989cdc4608c3ad09dcbca3c4835b3b1c76a031efe757810eabdf0eb72d25b"
+   "sha256": "6dac4ddbd63a68aa1b7c983c1ac1f47419df320e81f1b49ea7d2ec2754af3bab"
   },
   {
    "file": "Glass_XM003_YM001.obj",
@@ -6081,7 +6081,7 @@
     -23.239,
     2670.0
    ],
-   "sha256": "b8022d5b500aac943d5b1beec5b44c4ee919b86b9e16f89fa5ddb1493eb9bbfe"
+   "sha256": "f925ea83e7527bdcbc3cc10acff95d1a5dc80ca1e45958785a12504accc41212"
   },
   {
    "file": "Glass_XM003_YM002.obj",
@@ -6113,7 +6113,7 @@
     -37980.766,
     1010.0
    ],
-   "sha256": "21a6628c77bfff773a41e843db0e3bb6e354c57220efdc7c800e2bff99c12f15"
+   "sha256": "245594ba907835b6cc42de2f1c2c1eebde83109ff4541c9434638e783a496575"
   },
   {
    "file": "Glass_XM003_YP000.obj",
@@ -6129,7 +6129,7 @@
     17973.833,
     1955.0
    ],
-   "sha256": "6467eae06bd997d233b6e30e0a4b7beeab00e6950fba2b339a847639f382cc64"
+   "sha256": "c88aea4c3d4e896ca62ecfbe9e632de978d8f8474190f9790544a4a3519d8545"
   },
   {
    "file": "Glass_XM003_YP001.obj",
@@ -6145,7 +6145,7 @@
     37996.865,
     1303.0
    ],
-   "sha256": "911cb0bd83554b453dd97fd3b345a3ffd41082ec5b57033409aa9b2e8e55cc65"
+   "sha256": "f7b83d4a625d144fede379a5eff108f87a3558b32985b945740ad73e38956cf4"
   },
   {
    "file": "Glass_XM003_YP002.obj",
@@ -6161,7 +6161,7 @@
     56938.759,
     1370.0
    ],
-   "sha256": "2b207c70850d535e3d128cde39abf26f38344f0a4455385b0d42b11b77dfa256"
+   "sha256": "5f875981b78cac40d813aa46a4e7f4cca97b2306a4f24845553ca3e9dc96f58b"
   },
   {
    "file": "Glass_XM003_YP003.obj",
@@ -6209,7 +6209,7 @@
     -21579.665,
     1040.0
    ],
-   "sha256": "5f2fc373cfea91591b7b9fd5ed0d084115c9385cb9b9a5e531454fc08eb194a5"
+   "sha256": "510d77cbffe1a650877599844ec62a8382b2a06eb32fcdbde808a38b4ec1d4aa"
   },
   {
    "file": "Glass_XP000_YM003.obj",
@@ -6225,7 +6225,7 @@
     -37982.315,
     1280.0
    ],
-   "sha256": "0e740f6453786226064bd5e1f20566b999b81e1ec38d52ad454084928256492a"
+   "sha256": "60a67df56079c8e6c8801ccb5c586f72f747e4968c270a7b1237c548d11ff7de"
   },
   {
    "file": "Glass_XP000_YP000.obj",
@@ -6268,12 +6268,12 @@
    "bounds_cm": [
     14481.726,
     55080.739,
-    146.0,
+    110.0,
     19018.743,
     56980.215,
     842.333
    ],
-   "sha256": "4fb7d3499f8efb9aaafc8b848d41448a8d2627a37e1181d62fd7e81dde9ae334"
+   "sha256": "89106c10dfef51665e1a575bec751113fa6ab4b48b253ad9801a26417dd60196"
   },
   {
    "file": "Glass_XP000_YP003.obj",
@@ -6289,7 +6289,7 @@
     68713.92,
     1030.0
    ],
-   "sha256": "0404d228f255019cc190b4535f38d316857926e6fbc03903dce5a7c2668d91ea"
+   "sha256": "b74a7e33f2203e61e3a2fc98f83cc76323a2b4923efbff5e616d61bb105cde81"
   },
   {
    "file": "Glass_XP001_YM002.obj",
@@ -6305,7 +6305,7 @@
     -29140.81,
     2680.0
    ],
-   "sha256": "3e849de78e3846058bb75f1252b78bc4c8cad0a5322f937334bd10f855f17fbc"
+   "sha256": "7a28b8bfaa7d20c22259b0ac8b97e12d7a5b8c61c5df4903f5686457e766161d"
   },
   {
    "file": "Glass_XP001_YM003.obj",
@@ -6353,7 +6353,7 @@
     57019.995,
     5905.0
    ],
-   "sha256": "bfaa2990306b451b038d8562d554ce223d2aed6c7a8e903f3c1bcf3a943c8703"
+   "sha256": "0c18bd63204b5d8a1aacf74049c9a4dc2184bf3806805303d710ea8a21eb5c4a"
   },
   {
    "file": "Glass_XP001_YP003.obj",
@@ -6369,7 +6369,7 @@
     68907.339,
     1040.0
    ],
-   "sha256": "e526ac3a7be0e14268460c9413de03f3a9ad3639899e425a2ebba0f7cbc87d5e"
+   "sha256": "fc096e68bc7e283febd460f58989a4ad398d0e426dd2b1d9a0ecd03dffb068dc"
   },
   {
    "file": "Glass_XP002_YM002.obj",
@@ -6433,7 +6433,7 @@
     38007.423,
     1985.0
    ],
-   "sha256": "37274a41b1df597ba8bbc02a91434c24d68f80827bca32e29230019a6a62ed01"
+   "sha256": "48ac0ec3dc34cf79c0dbfd6abc5d44d732321056d31253ec41bc390b8d44f81b"
   },
   {
    "file": "Glass_XP002_YP002.obj",
@@ -6449,7 +6449,7 @@
     57026.241,
     3690.833
    ],
-   "sha256": "6a909ad964baeb66d7827aabeebbe6e78c7964e4c10fc3e4052b6e825e45d5b9"
+   "sha256": "d5d88d73888d2499dfad4c06837c7c19bbebbc0d88937b4e54ff8c5f6de2cf6c"
   },
   {
    "file": "Glass_XP002_YP003.obj",
@@ -6465,7 +6465,7 @@
     68877.929,
     1030.0
    ],
-   "sha256": "9846b20caace575419a598aeec35607282bc3ee3a0e200a89f3b45a41d079344"
+   "sha256": "5c38b25168c2e92bb2ba66ec779d7b692b3b4fc77387a2e3e0616207a65ac02d"
   },
   {
    "file": "Iron_XM001_YM001.obj",
@@ -13960,23 +13960,23 @@
    "mesh": "SM_Plex_StoneCast_XM001_YM001",
    "material": "Stone_Cast",
    "collision": "none",
-   "triangles": 4234,
+   "triangles": 4070,
    "bounds_cm": [
-    -19025.201,
+    -18992.384,
     -19004.626,
     0.0,
     -2245.391,
     -7674.857,
     1588.526
    ],
-   "sha256": "8c184a1fff20b94ec7cddbf779dbc4005e541597805b00b98142ee579540a145"
+   "sha256": "67fc73424310289a441dc66431e470dedf8ce49c431010e5065210796ffa1393"
   },
   {
    "file": "StoneCast_XM001_YM002.obj",
    "mesh": "SM_Plex_StoneCast_XM001_YM002",
    "material": "Stone_Cast",
    "collision": "none",
-   "triangles": 15498,
+   "triangles": 15342,
    "bounds_cm": [
     -19321.456,
     -38180.558,
@@ -13985,7 +13985,7 @@
     -18979.806,
     1626.815
    ],
-   "sha256": "fcbfab8164d2493be9486f6d137f1f1ab93cd6ffa8eb713695a3cc27364237b8"
+   "sha256": "da0f3213e931f8f5e092324b25bf673edd1bb034c8be741191d97fc612b1a1fe"
   },
   {
    "file": "StoneCast_XM001_YM003.obj",
@@ -14024,7 +14024,7 @@
    "mesh": "SM_Plex_StoneCast_XM001_YP001",
    "material": "Stone_Cast",
    "collision": "none",
-   "triangles": 470,
+   "triangles": 432,
    "bounds_cm": [
     -18980.974,
     31910.567,
@@ -14033,14 +14033,14 @@
     38153.289,
     1315.0
    ],
-   "sha256": "9d9663b5952719f48ba9b532773f9a2a2e46229d7e61e64987bc6d1ef520eeb8"
+   "sha256": "8a00aa0e4096cc43afae9b707f51be60ac5ed587a2efee92eccde86845361034"
   },
   {
    "file": "StoneCast_XM001_YP002.obj",
    "mesh": "SM_Plex_StoneCast_XM001_YP002",
    "material": "Stone_Cast",
    "collision": "none",
-   "triangles": 7706,
+   "triangles": 7414,
    "bounds_cm": [
     -19024.605,
     37753.029,
@@ -14049,14 +14049,14 @@
     57145.196,
     3052.0
    ],
-   "sha256": "589769d4a53f59b5415e5e85923ac3132549db26be20581a739f2e4231a6c654"
+   "sha256": "f0597e569c3c23474eeaa67fbb30ca5ad3e9c7432b341c5b1f489c790b929b7e"
   },
   {
    "file": "StoneCast_XM001_YP003.obj",
    "mesh": "SM_Plex_StoneCast_XM001_YP003",
    "material": "Stone_Cast",
    "collision": "none",
-   "triangles": 7106,
+   "triangles": 6794,
    "bounds_cm": [
     -19035.099,
     56959.067,
@@ -14065,14 +14065,14 @@
     68904.673,
     1887.169
    ],
-   "sha256": "b7b329d9f45fe017f6a1eaa46520fb3c6daf0b60810f77539d7ee80a4b49fa26"
+   "sha256": "3cca6cd1f4aac6fe0e02667299afcd9258847c334037f2eee3fb150f8c8b1c6f"
   },
   {
    "file": "StoneCast_XM002_YM001.obj",
    "mesh": "SM_Plex_StoneCast_XM002_YM001",
    "material": "Stone_Cast",
    "collision": "none",
-   "triangles": 15888,
+   "triangles": 15464,
    "bounds_cm": [
     -38033.571,
     -19218.136,
@@ -14081,14 +14081,14 @@
     27.979,
     2860.0
    ],
-   "sha256": "42b2364d109d9597b196fcb5a0be889111b453cf83e27d4407be94701f679af6"
+   "sha256": "920d800871964f1d4f1e175c1fe9b711bbde97b851c8af9621f7ce1622e3c487"
   },
   {
    "file": "StoneCast_XM002_YM002.obj",
    "mesh": "SM_Plex_StoneCast_XM002_YM002",
    "material": "Stone_Cast",
    "collision": "none",
-   "triangles": 15638,
+   "triangles": 15388,
    "bounds_cm": [
     -38310.208,
     -38011.644,
@@ -14097,7 +14097,7 @@
     -18985.023,
     1631.983
    ],
-   "sha256": "8fc0dc83b78f8dab2b3af8cad95312a98007411200da3d482a0911e309ed2b86"
+   "sha256": "5d283f7a265cd84025f88112a616725458b41cfbc5d36ba9ee235391fe46349f"
   },
   {
    "file": "StoneCast_XM002_YM003.obj",
@@ -14120,7 +14120,7 @@
    "mesh": "SM_Plex_StoneCast_XM002_YP000",
    "material": "Stone_Cast",
    "collision": "none",
-   "triangles": 3226,
+   "triangles": 2996,
    "bounds_cm": [
     -38014.77,
     -33.35,
@@ -14129,14 +14129,14 @@
     19015.875,
     2218.991
    ],
-   "sha256": "93aed5e42a1d627bb8f6be09ef5628ee44620a8a501999109fac274a054da4a9"
+   "sha256": "d2f770bbd104565e1e22195ef34c4b8eeb83f93e5395b08f1da562c85461c5f8"
   },
   {
    "file": "StoneCast_XM002_YP001.obj",
    "mesh": "SM_Plex_StoneCast_XM002_YP001",
    "material": "Stone_Cast",
    "collision": "none",
-   "triangles": 11980,
+   "triangles": 11194,
    "bounds_cm": [
     -38090.825,
     18977.781,
@@ -14145,14 +14145,14 @@
     38114.734,
     5905.0
    ],
-   "sha256": "4713cabb44f8ab70a8511735163ec18897295055eab40c8e9da520f13a1168fe"
+   "sha256": "dd6bf5962c8f7b36923a74687cfebbe903c0bc5e9832669f027ba92e631e1ea4"
   },
   {
    "file": "StoneCast_XM002_YP002.obj",
    "mesh": "SM_Plex_StoneCast_XM002_YP002",
    "material": "Stone_Cast",
    "collision": "none",
-   "triangles": 11428,
+   "triangles": 10992,
    "bounds_cm": [
     -38000.71,
     37540.521,
@@ -14161,14 +14161,14 @@
     57036.568,
     5905.0
    ],
-   "sha256": "9256cf9d31ec5348fb48475b7214e596c70e17402f0ca7fd3fa2783b803e3019"
+   "sha256": "eeb44345f8687543c7a46cbffc849467d4cddadb9a3512c03e82a2d0bc886f9e"
   },
   {
    "file": "StoneCast_XM002_YP003.obj",
    "mesh": "SM_Plex_StoneCast_XM002_YP003",
    "material": "Stone_Cast",
    "collision": "none",
-   "triangles": 8236,
+   "triangles": 7938,
    "bounds_cm": [
     -38300.524,
     56877.485,
@@ -14177,14 +14177,14 @@
     68815.59,
     1322.38
    ],
-   "sha256": "0cb4a02513461dc16c3de92519a3c435627ae5bfafd6ff8fa1f361caa694095d"
+   "sha256": "cd4d38585f9ac2b153523e7250d2bd44a4a5c61b64b1539060b96137845361b4"
   },
   {
    "file": "StoneCast_XM003_YM001.obj",
    "mesh": "SM_Plex_StoneCast_XM003_YM001",
    "material": "Stone_Cast",
    "collision": "none",
-   "triangles": 6928,
+   "triangles": 6802,
    "bounds_cm": [
     -43064.792,
     -18812.029,
@@ -14193,7 +14193,7 @@
     459.774,
     2915.808
    ],
-   "sha256": "b53e1e93a41c7eba8d28b8240a3dd77242e403b9dff8fbf5918ad9bbf59a3b58"
+   "sha256": "07e6bd0889ae3ad8257006c66a57864d7dc8b353c707ba8e0a884871069b0fb2"
   },
   {
    "file": "StoneCast_XM003_YM002.obj",
@@ -14216,7 +14216,7 @@
    "mesh": "SM_Plex_StoneCast_XM003_YM003",
    "material": "Stone_Cast",
    "collision": "none",
-   "triangles": 2856,
+   "triangles": 2836,
    "bounds_cm": [
     -43588.033,
     -46382.877,
@@ -14225,14 +14225,14 @@
     -37969.629,
     1263.991
    ],
-   "sha256": "adfba41f07ad58eb4bf4f2f3765629c287f8eccd28768e854c80538739499f10"
+   "sha256": "d5d0a8629e14223c70c28c7fb249ac63a1a738e85b7743de1836caf904e46c68"
   },
   {
    "file": "StoneCast_XM003_YP000.obj",
    "mesh": "SM_Plex_StoneCast_XM003_YP000",
    "material": "Stone_Cast",
    "collision": "none",
-   "triangles": 2698,
+   "triangles": 2684,
    "bounds_cm": [
     -43447.042,
     -40.001,
@@ -14241,14 +14241,14 @@
     18016.781,
     1889.0
    ],
-   "sha256": "119adaaeafeab1592e7e4c69fc6ed49d9b34ed256ae73d2abb1234bf593ca6d9"
+   "sha256": "505ff05b131814296786a2df46631b72f498c0c3780ecc4f49d7c1db5771392d"
   },
   {
    "file": "StoneCast_XM003_YP001.obj",
    "mesh": "SM_Plex_StoneCast_XM003_YP001",
    "material": "Stone_Cast",
    "collision": "none",
-   "triangles": 3486,
+   "triangles": 3434,
    "bounds_cm": [
     -43625.105,
     18982.973,
@@ -14257,14 +14257,14 @@
     37857.187,
     1490.695
    ],
-   "sha256": "fc00e41f4b8c8fedffbb4c9e947f00e8cfd28d343f1fcde4621bcf5b2b4b6536"
+   "sha256": "5768edec9b43743e7006065feb716c31485f007dea4d07248e04884840ad7675"
   },
   {
    "file": "StoneCast_XM003_YP002.obj",
    "mesh": "SM_Plex_StoneCast_XM003_YP002",
    "material": "Stone_Cast",
    "collision": "none",
-   "triangles": 3902,
+   "triangles": 3796,
    "bounds_cm": [
     -43461.939,
     38006.837,
@@ -14273,7 +14273,7 @@
     57012.811,
     1572.0
    ],
-   "sha256": "d5c797bd839724adbc1d0760da35c159e73dcc53a2e46f64f2c1d1a7400f3ed6"
+   "sha256": "7e2d42829bb719ce31a3d8b5ad09e39cba2e8379148006678eed7df3ed49712e"
   },
   {
    "file": "StoneCast_XM003_YP003.obj",
@@ -14312,32 +14312,32 @@
    "mesh": "SM_Plex_StoneCast_XP000_YM002",
    "material": "Stone_Cast",
    "collision": "none",
-   "triangles": 8258,
+   "triangles": 7628,
    "bounds_cm": [
     13.743,
-    -38025.189,
+    -38012.553,
     0.0,
-    19051.757,
+    18918.865,
     -20338.932,
     1283.625
    ],
-   "sha256": "7ae74e19bf0de029947f6b50037c1c062770cf0845215aa90bd93312a57a9f53"
+   "sha256": "c8d2fe72276c45af00f6bf39755b3074516006375e1a0e1ecbdda0f88bc85bd9"
   },
   {
    "file": "StoneCast_XP000_YM003.obj",
    "mesh": "SM_Plex_StoneCast_XP000_YM003",
    "material": "Stone_Cast",
    "collision": "none",
-   "triangles": 5434,
+   "triangles": 4736,
    "bounds_cm": [
     -21.028,
     -46655.262,
     0.0,
-    18711.346,
-    -37951.825,
+    18602.552,
+    -38018.262,
     1299.2
    ],
-   "sha256": "671a084e0985f47d8d6257b032fe80b49ae01c8d48060b12157f020d42e13fbf"
+   "sha256": "bdcc5f2eae8f51a8ae22d59f6cf7fc98c85a5885026de7018556e38655ff593a"
   },
   {
    "file": "StoneCast_XP000_YP000.obj",
@@ -14376,39 +14376,39 @@
    "mesh": "SM_Plex_StoneCast_XP000_YP002",
    "material": "Stone_Cast",
    "collision": "none",
-   "triangles": 362,
+   "triangles": 342,
    "bounds_cm": [
     14472.658,
     53839.34,
-    0.0,
+    1.0,
     19029.303,
     56991.285,
     1121.355
    ],
-   "sha256": "becaecdbcd8ac67f1822c75b95f50c1ad7912554cb8be110bc4ede42cb965db6"
+   "sha256": "3784a306ab6ccf61f82bf8a260c9ecfe02bb4203a736116ffbe1d83d08944fce"
   },
   {
    "file": "StoneCast_XP000_YP003.obj",
    "mesh": "SM_Plex_StoneCast_XP000_YP003",
    "material": "Stone_Cast",
    "collision": "none",
-   "triangles": 5214,
+   "triangles": 5044,
    "bounds_cm": [
     -22.568,
     57218.987,
     0.0,
     19107.968,
-    68676.355,
+    68570.18,
     1316.404
    ],
-   "sha256": "1dd310a407f96f5340b827e2d70815005b110142ae3a43e1339c9c1459e427eb"
+   "sha256": "4d5a5b3af83f7711d69bcaeaad9020f99b94832d198be80d1b7ffae7562fcb78"
   },
   {
    "file": "StoneCast_XP001_YM002.obj",
    "mesh": "SM_Plex_StoneCast_XP001_YM002",
    "material": "Stone_Cast",
    "collision": "none",
-   "triangles": 2526,
+   "triangles": 2292,
    "bounds_cm": [
     18975.81,
     -38877.663,
@@ -14417,7 +14417,7 @@
     -29014.852,
     2840.316
    ],
-   "sha256": "6bedf1d0f04149ec0d41675018d5653ca67ae925c61545f6a8db832d73f6ca6c"
+   "sha256": "85652fbfe8c963f8e61061d954accc3e3fd3c0e5eafce843ac25bf5539675e45"
   },
   {
    "file": "StoneCast_XP001_YM003.obj",
@@ -14456,7 +14456,7 @@
    "mesh": "SM_Plex_StoneCast_XP001_YP002",
    "material": "Stone_Cast",
    "collision": "none",
-   "triangles": 16832,
+   "triangles": 16604,
    "bounds_cm": [
     19004.556,
     40800.027,
@@ -14465,14 +14465,14 @@
     57088.249,
     5905.0
    ],
-   "sha256": "ef656fb07ef460814f111abc25ee0bb35218bf5e6334bf01ab654066109bf0d5"
+   "sha256": "45b0aeafb7768d411fac44fc82ea745000bd44a8a6282d9f56879318064beab5"
   },
   {
    "file": "StoneCast_XP001_YP003.obj",
    "mesh": "SM_Plex_StoneCast_XP001_YP003",
    "material": "Stone_Cast",
    "collision": "none",
-   "triangles": 8500,
+   "triangles": 8068,
    "bounds_cm": [
     18965.692,
     56945.783,
@@ -14481,7 +14481,7 @@
     68915.482,
     1315.194
    ],
-   "sha256": "ff45de07e39038fdb6c60f55b323cd862b9ef339f932fc3cca6ef3f566b5c2d3"
+   "sha256": "0065f2494d8e5d345e39c3551709d5070c5955696c97bc98a5c17b0f7c506030"
   },
   {
    "file": "StoneCast_XP002_YM002.obj",
@@ -14536,7 +14536,7 @@
    "mesh": "SM_Plex_StoneCast_XP002_YP001",
    "material": "Stone_Cast",
    "collision": "none",
-   "triangles": 4670,
+   "triangles": 4538,
    "bounds_cm": [
     41564.956,
     19105.854,
@@ -14545,14 +14545,14 @@
     38019.902,
     2255.751
    ],
-   "sha256": "166e3d7708a91d42814607b0ecee6e507e6f6fc52afba2296054feb5284db893"
+   "sha256": "32a13ce570d5ad8f7fd93d7d42cf124b45c8629f15568688b1df0f6dc9649535"
   },
   {
    "file": "StoneCast_XP002_YP002.obj",
    "mesh": "SM_Plex_StoneCast_XP002_YP002",
    "material": "Stone_Cast",
    "collision": "none",
-   "triangles": 18548,
+   "triangles": 17818,
    "bounds_cm": [
     37982.853,
     37918.864,
@@ -14561,23 +14561,23 @@
     57061.653,
     3690.833
    ],
-   "sha256": "5c15db5cf368cc60f22a7316f161e7a9568b2d94efcc2280c97a44abb3dcbfe2"
+   "sha256": "7435474b7548ecd2d29fadce43fb82df8191fc111eb67d35ce18904cfec63832"
   },
   {
    "file": "StoneCast_XP002_YP003.obj",
    "mesh": "SM_Plex_StoneCast_XP002_YP003",
    "material": "Stone_Cast",
    "collision": "none",
-   "triangles": 7704,
+   "triangles": 7408,
    "bounds_cm": [
     37864.421,
-    56969.936,
+    56977.971,
     0.0,
     55020.286,
     68961.333,
     1302.341
    ],
-   "sha256": "ed67e9d97564e3d1aae5687c89312de8c7153b006ec432a5ed0a78f49c87053c"
+   "sha256": "f9b82f2e54df4852fc4baec4de07271dd674688eecefa3678ea7f2e745a84443"
   },
   {
    "file": "Stone_XM001_YM001.obj",
@@ -15180,12 +15180,12 @@
    "bounds_cm": [
     -18975.937,
     -19005.301,
-    30.0,
+    0.0,
     -3805.631,
     -8724.13,
     1340.0
    ],
-   "sha256": "5d5de3565c75d171243a77bb228068c9154805ae5f0b27d27f96d7bc35e5071d"
+   "sha256": "cc74a1c81c94780046951e25233d1588c31fb46a13f208d0509eab0054f4229c"
   },
   {
    "file": "Trim_XM001_YM002.obj",
@@ -15196,12 +15196,12 @@
    "bounds_cm": [
     -18996.139,
     -37991.59,
-    15.0,
+    0.0,
     286.538,
     -18999.201,
     1370.0
    ],
-   "sha256": "8a5418950b73b5168c8b3acff05644d7a7ad537f9b7217adb2bbf5738cde98ea"
+   "sha256": "594564323143546173c6f2ab725de1eea881992e679966a21b7c5e9c3cdea0b5"
   },
   {
    "file": "Trim_XM001_YM003.obj",
@@ -15244,12 +15244,12 @@
    "bounds_cm": [
     -18997.748,
     32845.762,
-    60.0,
+    0.0,
     -6708.387,
     38029.711,
     1160.0
    ],
-   "sha256": "bfb03a74e87c649da6bf3b1bb9dd6c6a05e4d08e883fefad11f09d0ee9c6f78c"
+   "sha256": "0c451599cb78c1b51c04ebbe57ab79e2e259946961781553ccb6f7e65e433a3c"
   },
   {
    "file": "Trim_XM001_YP002.obj",
@@ -15265,7 +15265,7 @@
     57025.17,
     3052.0
    ],
-   "sha256": "478ca89b6c7c710d0a2ea67ea2176d1f4d006a89c1445372f6bb3ca8fa09c17e"
+   "sha256": "e51ac50e54b33511bba6f41c52b4d3ba470d9aa15640caea4375a36d42d4b3c4"
   },
   {
    "file": "Trim_XM001_YP003.obj",
@@ -15281,7 +15281,7 @@
     68912.203,
     1660.0
    ],
-   "sha256": "1a3ce21ff66caf905a6726d0fd7fe3bfc5affc29232bc4a7411ece546318aaa2"
+   "sha256": "2b889162b6d2a64b7c160a49e91c25dd5412e3e1b6dadada9d3edcb9da241a9e"
   },
   {
    "file": "Trim_XM002_YM001.obj",
@@ -15297,7 +15297,7 @@
     22.694,
     2860.0
    ],
-   "sha256": "d7969dadc80e4f855b4ae8473867f69dd4c22e69e16728ff8fc87f0445a1bf8e"
+   "sha256": "9c1037497bac4ec3208594769c43db7522d321a5040ff2f67a812e45ac241939"
   },
   {
    "file": "Trim_XM002_YM002.obj",
@@ -15308,12 +15308,12 @@
    "bounds_cm": [
     -38075.713,
     -38008.109,
-    1.9,
+    0.0,
     -18993.026,
     -18980.109,
     1364.0
    ],
-   "sha256": "3e4386a0e49a9af24fc93737ad32177ec3d7ad44b4345aef1db7bdcc4dcafeeb"
+   "sha256": "83045321703a49f6cdc829e516b2cf8d78ef6ec0e0c1a428d4a44da771de2f22"
   },
   {
    "file": "Trim_XM002_YM003.obj",
@@ -15340,12 +15340,12 @@
    "bounds_cm": [
     -38032.712,
     -28.071,
-    15.0,
+    0.0,
     -27996.487,
     19009.37,
     1949.0
    ],
-   "sha256": "3a71d273430225cd14b29c25d282d83cf3d8dfdb7dd5523c5ce5398282f3a45d"
+   "sha256": "53f120d6c39b76d088af35db549b5b70a454d92f80be35c24ebbd644415d9b77"
   },
   {
    "file": "Trim_XM002_YP001.obj",
@@ -15361,7 +15361,7 @@
     38019.677,
     5905.0
    ],
-   "sha256": "42d5fa3956375afafb3569532f9e0a1c77076d42b2934e69e3419898c61827ab"
+   "sha256": "d3a7959bd18926a1023e86d0ef1b267652fa5370f884e7d8dda630b926bafd71"
   },
   {
    "file": "Trim_XM002_YP002.obj",
@@ -15377,7 +15377,7 @@
     57008.456,
     5905.0
    ],
-   "sha256": "6c9f6f4ded18109eb5a82c2de33ab3fa103c1eaa4370e01d90274811cb968ca1"
+   "sha256": "4d058950d0268f551ae167a311b2cc9231d8f1ad71407ca61337177c10f098af"
   },
   {
    "file": "Trim_XM002_YP003.obj",
@@ -15393,7 +15393,7 @@
     68800.889,
     1660.0
    ],
-   "sha256": "f4ba919506c9f9b9385e24e47432a8dd1d39cf4dde2522485e01cb1371dba927"
+   "sha256": "e0be95631a218bcfa8233cc2f0ba39ebe98422e73af24d54c62c0c4fc868bcfd"
   },
   {
    "file": "Trim_XM003_YM001.obj",
@@ -15409,7 +15409,7 @@
     -21.606,
     2670.0
    ],
-   "sha256": "d6a31deb35592c7b89bb5308a11d865ab6bc70a535c2c3ec9b79a62b1c7489e6"
+   "sha256": "3d0b5772027b19d1c8818b3e57e9d05fc162d9d21304d152c612dfe0fdcfd169"
   },
   {
    "file": "Trim_XM003_YM002.obj",
@@ -15441,7 +15441,7 @@
     -37974.913,
     1004.0
    ],
-   "sha256": "5b5cc0c9cba2913be57d9c112dcf64df1bb86b0d340c25caf106ea2ebac2e356"
+   "sha256": "5acde1159231a8b83bb0e93bba5a65db48c8cf3649d54716cb54eb40b7714e8d"
   },
   {
    "file": "Trim_XM003_YP000.obj",
@@ -15452,12 +15452,12 @@
    "bounds_cm": [
     -43454.648,
     103.241,
-    15.0,
+    0.0,
     -37988.251,
     17975.826,
     1955.0
    ],
-   "sha256": "beac7becd08229ea19b8798f87234fa7cf7f2823f5fa588fba93407b31ee037a"
+   "sha256": "567d9df590b191fca01df5a4c07d32d7c380fd5d0f698c4fa3b200e6a90d5242"
   },
   {
    "file": "Trim_XM003_YP001.obj",
@@ -15468,12 +15468,12 @@
    "bounds_cm": [
     -43618.737,
     18989.055,
-    15.0,
+    0.0,
     -37991.504,
     38008.078,
     1297.0
    ],
-   "sha256": "5938b29cf98b5d02077cda89fc028a2fc6bc9ebb14ccc850e16659eb0dcd629a"
+   "sha256": "2893592c00fd0072f733c12b6d3116be48922a031a61b3e7bf23369188b12cc8"
   },
   {
    "file": "Trim_XM003_YP002.obj",
@@ -15489,7 +15489,7 @@
     56935.536,
     1370.0
    ],
-   "sha256": "b716331ca4a0335499f0c97979775aaea1cdf0ddb63a1d06d583fde3f546c841"
+   "sha256": "f02e54197d748aa8e65d86b761f2f36dbec617c8637af2549a762a5050528766"
   },
   {
    "file": "Trim_XM003_YP003.obj",
@@ -15537,7 +15537,7 @@
     -21570.728,
     1040.0
    ],
-   "sha256": "b738f7e223401e65c2ffa984d9de4330242a7f685dfe27699591ea526c8f0a8e"
+   "sha256": "e108f26a3c66458fee470da2a7ef754063de417e0eb668b09da74d8c32b1f7b0"
   },
   {
    "file": "Trim_XP000_YM003.obj",
@@ -15553,7 +15553,7 @@
     -38012.143,
     1274.0
    ],
-   "sha256": "f12b5a3f78d7e2c556d27367cc6e3720311de7b78aebfb940026b4d2d681056a"
+   "sha256": "cd1f06d4722fb095d1f5af191a5c71189b06bb8e52523236b58be49917540366"
   },
   {
    "file": "Trim_XP000_YP000.obj",
@@ -15596,12 +15596,12 @@
    "bounds_cm": [
     14477.119,
     55074.903,
-    60.0,
+    0.0,
     19022.927,
     56986.024,
     848.333
    ],
-   "sha256": "07e0f3cf9fa154adc5b103e92d7de705d2e9156c84e794dfec248954f0d81403"
+   "sha256": "8809c9ab6e141432f5c406c18ee9a951e0a30d69b41d9e20aa22fba2eef6829f"
   },
   {
    "file": "Trim_XP000_YP003.obj",
@@ -15617,7 +15617,7 @@
     68716.402,
     1025.0
    ],
-   "sha256": "745690a145b845cd5e51b838fd07e3578cc233e0b6526084ac344244c1fdffe9"
+   "sha256": "247bddc224f575022016b77f167a5f7b4f254f2f7ad83bbc29a495348f42d846"
   },
   {
    "file": "Trim_XP001_YM002.obj",
@@ -15628,12 +15628,12 @@
    "bounds_cm": [
     18971.843,
     -38031.758,
-    60.0,
+    0.0,
     38003.923,
     -29140.385,
     2680.0
    ],
-   "sha256": "908842b919148ef3a0910f6323f5953a60f7c4a32077e2311179f463d43c64a5"
+   "sha256": "68ea5fcd5dbf574fb97518b656e6623bb91e363c1247da1da0fa46b61922eb30"
   },
   {
    "file": "Trim_XP001_YM003.obj",
@@ -15681,7 +15681,7 @@
     57018.337,
     5905.0
    ],
-   "sha256": "86209fafa019896a47c20757a4f42b1b5d90618c4d73f419d1f84f4c74e01f28"
+   "sha256": "aac2d1ff6fa0013e2af435f10a4185ee9fe4a943551055ab57c4ba6554c09107"
   },
   {
    "file": "Trim_XP001_YP003.obj",
@@ -15697,7 +15697,7 @@
     68909.39,
     1040.0
    ],
-   "sha256": "42ce30f098e7cbe2789b6c247fadfe29bf32f3a3d1b585a0eff25be046e16521"
+   "sha256": "173cf096b97c1cd950f73ecb79e0c45dbc9afc2d8f2056500ac4b327c1ab36e2"
   },
   {
    "file": "Trim_XP002_YM002.obj",
@@ -15761,7 +15761,7 @@
     37960.331,
     1979.0
    ],
-   "sha256": "5252285119f3cff3a35e3d39d526843f05058d2f8e5f07b4a13557beaf1c4edc"
+   "sha256": "e4acf12f790eb6e7f19c7e70bdfab3d0daf72fc456657db0e99b1a40a2049836"
   },
   {
    "file": "Trim_XP002_YP002.obj",
@@ -15777,7 +15777,7 @@
     57022.279,
     3690.833
    ],
-   "sha256": "7ce3f6cb10b157d86f471f545f98b2ab05f781cc9c424bfe63eaf46f14ea88d7"
+   "sha256": "0b64ca5984f744bdc5901acb763320721e0ef67894737502e777d898b8036aa7"
   },
   {
    "file": "Trim_XP002_YP003.obj",
@@ -15793,7 +15793,7 @@
     68884.684,
     1030.0
    ],
-   "sha256": "bbfafc3151aa636f753f510ea50b050cd7dd3e10a515326fe85d5f3009cbd9d3"
+   "sha256": "3d215f2fec41f438ab2a696de5b77756a031d9d9be9eca53ff5e03eddc176dac"
   },
   {
    "file": "WoodBurgundy_XM001_YM001.obj",
@@ -15809,7 +15809,7 @@
     -8598.176,
     1463.0
    ],
-   "sha256": "51857f4d18b8abd68b0a54248f0798889a0c6eba100feabbc43c82da84c24460"
+   "sha256": "e346d29691a0b9624e520a935a5e63b260d290375a786b3a2f0c96c4b8631487"
   },
   {
    "file": "WoodBurgundy_XM001_YM002.obj",
@@ -15905,7 +15905,7 @@
     68287.122,
     1594.0
    ],
-   "sha256": "f005024a6516f71193517cac45cc6aaf7f5c5f85274e254669a4de09b77bd738"
+   "sha256": "2549edaa7c347412209562c86703c4b075ba4930b19f7d19bc1fd7f3a358169d"
   },
   {
    "file": "WoodBurgundy_XM002_YM001.obj",
@@ -15921,7 +15921,7 @@
     -1.76,
     2860.0
    ],
-   "sha256": "264e9d0e0c3f3997917992dd7f8966ca5cd69d514f36bcacbba086752f9bf4fd"
+   "sha256": "dd5326f2df055379879ba84ae61568dc6408783a3cc09201a62c519f404a8e05"
   },
   {
    "file": "WoodBurgundy_XM002_YM002.obj",
@@ -15937,7 +15937,7 @@
     -19002.509,
     1453.0
    ],
-   "sha256": "c995204756a076f85c79b083a26769014ee523d76ffa829cf67a02b083d7b320"
+   "sha256": "b2cd69d271ea96cdf5bec952bc5b61809168dcecc62d005cbf961d565966a18b"
   },
   {
    "file": "WoodBurgundy_XM002_YM003.obj",
@@ -15969,7 +15969,7 @@
     18835.496,
     1283.0
    ],
-   "sha256": "ac7a57c4e4796baa57816205e7650b768050da1f1395048b45ef2ad656f9f51c"
+   "sha256": "bdd6d4c231405deceeba13a33597abe48ed2122d0bc4617fe6c6d4977bb5fd8f"
   },
   {
    "file": "WoodBurgundy_XM002_YP001.obj",
@@ -15985,7 +15985,7 @@
     38081.416,
     5905.0
    ],
-   "sha256": "db91614714ac41d4bd929ea17b5a8e014916ab29a33363632bd24cd561a7d696"
+   "sha256": "b02e9aa87d7bbf2a9210851b64e13c64f8ffcd30f8099189dbcebc1edd80eb13"
   },
   {
    "file": "WoodBurgundy_XM002_YP002.obj",
@@ -16001,7 +16001,7 @@
     56905.435,
     5905.0
    ],
-   "sha256": "41ef56eb7e60f9e2a2e82a131222dd8e7726eaec0501d0a3c1e94b36374ac542"
+   "sha256": "7e510f7ec6cd9bef61177aa9c059534dc0c6fe93445fb54c628d0135d94825f8"
   },
   {
    "file": "WoodBurgundy_XM002_YP003.obj",
@@ -16017,7 +16017,7 @@
     68176.132,
     1097.0
    ],
-   "sha256": "ab468eb69289b72e09baf5a6bc3384dff00b127607cf7f5c2c7643f48c545664"
+   "sha256": "700cbe86e46db3605f5e0ade2a41565c4dfeda74b912fa1e807bf78f61d4c6cf"
   },
   {
    "file": "WoodBurgundy_XM003_YM001.obj",
@@ -16113,7 +16113,7 @@
     57122.489,
     1311.0
    ],
-   "sha256": "e6b1d474c888339fee16060ec25b56ad2a4d37f5ecdd410a473980ed3f96db08"
+   "sha256": "a3b0dc440adca5f819acbea654d5ee03651c9179303b418c3f72e0c9cb256a61"
   },
   {
    "file": "WoodBurgundy_XM003_YP003.obj",
@@ -16177,7 +16177,7 @@
     -37908.689,
     1398.0
    ],
-   "sha256": "8094ec7b045f2fbac3068b3357ec4ab6c666ffda6bc4c8b30d1449374fc13042"
+   "sha256": "fdbb8c0c258294e626333dcf2d0e849a6f87a4da55c6353b8d8be821dac8c988"
   },
   {
    "file": "WoodBurgundy_XP000_YP000.obj",
@@ -16305,7 +16305,7 @@
     57079.833,
     5905.0
    ],
-   "sha256": "0e645ae45404a26c4c69791256813c66f9deaa9dcada756195a034a34c70e62d"
+   "sha256": "85c927ba33b7eaff1aea87a3e035806f2ec44858f3534b67826c8deb35bed8b4"
   },
   {
    "file": "WoodBurgundy_XP001_YP003.obj",
@@ -16321,7 +16321,7 @@
     69845.335,
     1148.0
    ],
-   "sha256": "8cb1ac20220d078e78900cdf9240e063daa79d68049cbc3eab401377f243fcd8"
+   "sha256": "96a10ecd59308a214ac53ea64d3f2f87c6f76988f9b03bf639cd62d4da679616"
   },
   {
    "file": "WoodBurgundy_XP002_YM002.obj",
@@ -16385,7 +16385,7 @@
     38223.317,
     1594.0
    ],
-   "sha256": "2dd2217b4dd07125cd77d307d822dac6221f0b602d6afec5372ed9ac91459dbb"
+   "sha256": "f4ead46ef1dca0ff8f6afce258aceff2319dca5d83ebd4fdac02df5b06634888"
   },
   {
    "file": "WoodBurgundy_XP002_YP002.obj",
@@ -16401,7 +16401,7 @@
     57139.782,
     3690.833
    ],
-   "sha256": "b5da75e64d01850cd2f2d071d60a1dbafa0908adf2d13aa7157111302f237e66"
+   "sha256": "6e60e5551347ebef49e10b463b0262b53de90f64abba2e17b0f130d2332beb5f"
   },
   {
    "file": "WoodBurgundy_XP002_YP003.obj",
@@ -16417,7 +16417,7 @@
     69334.39,
     1128.0
    ],
-   "sha256": "8a0e8b7436d8d73532c6c566b88dac30a33a0c1ae8b4ddcd1e5b2166a7f8f257"
+   "sha256": "675e405e911a1c50b4eec61ad4067514301a49608d906c58421c9539e06e3f82"
   },
   {
    "file": "WoodCream_XM001_YM001.obj",
@@ -17825,7 +17825,7 @@
     -18972.146,
     1304.0
    ],
-   "sha256": "8595a167e88cbc8e5a3c8d19d3d38eef413e4359a4d4edaf6ada1cb0dfee5686"
+   "sha256": "d17edd5ebd2c6590a852a440885d32c9b280996bccdc8a689eed80e0e2e6c9c9"
   },
   {
    "file": "WoodGreen_XM001_YM003.obj",
@@ -17868,12 +17868,12 @@
    "bounds_cm": [
     -18833.781,
     34041.412,
-    60.0,
+    0.0,
     -7255.576,
     37994.487,
     842.333
    ],
-   "sha256": "0b3289c2d244957a157ab918c1f2b68afea4adccb68d50194846dcdf1c64d284"
+   "sha256": "5d027240fec1b8d7497a5ef22e0f9c1d13e5a0f0268e87c9fdb68b3ee03864c9"
   },
   {
    "file": "WoodGreen_XM001_YP002.obj",
@@ -17889,7 +17889,7 @@
     57022.289,
     3052.0
    ],
-   "sha256": "8f67a1a2a592e1c417eccdc3041b38096fe4afaa2670a590b9a20509d6343531"
+   "sha256": "bc604c551d48813be4874f284813eb9b005fb75ef456bd23373b069f71d17055"
   },
   {
    "file": "WoodGreen_XM001_YP003.obj",
@@ -17905,7 +17905,7 @@
     68473.738,
     1325.0
    ],
-   "sha256": "90f039815ed054a184affee84648e813fd8945605d2659c487c56ee80b6e50d2"
+   "sha256": "8fb5b33ea6719983566b84dcbbf36aed0f1f097232d609180527f545f6217644"
   },
   {
    "file": "WoodGreen_XM002_YM001.obj",
@@ -17921,7 +17921,7 @@
     -27.556,
     2860.0
    ],
-   "sha256": "aa8cdfd1f2d6e41a747cc7f3a3a47207c21ea0ab076d9bebd3b5240f65c5b20a"
+   "sha256": "891f4d679d46cabf86e283196129aa419970081a27ca8520cc5c3b643363a34e"
   },
   {
    "file": "WoodGreen_XM002_YM002.obj",
@@ -17937,7 +17937,7 @@
     -18925.578,
     1382.0
    ],
-   "sha256": "eda2db46443700077f8db69bebd30fba4f385fab9ff3713457556acc5216338e"
+   "sha256": "188cea354f75f316ede02350d566cdfff1e28efa96a0f19ea54868ec8e172502"
   },
   {
    "file": "WoodGreen_XM002_YM003.obj",
@@ -17969,7 +17969,7 @@
     19359.111,
     1237.0
    ],
-   "sha256": "63172a76d37f2f81ff91f534a964febd6d21b77e010eaca599fc594a9968026e"
+   "sha256": "3c166ca03c5ddf97bef6b8cd80bdf6d05b1e2b4b91bfedc9eee9ded3ace97ed9"
   },
   {
    "file": "WoodGreen_XM002_YP001.obj",
@@ -17985,7 +17985,7 @@
     38172.018,
     5095.0
    ],
-   "sha256": "d2123a50dfbe7085ba0aaf09c2362be4bcc46e8b3e4e2851b9a6b0c54a7e372f"
+   "sha256": "eec9c5e9faf9e840d1b307c82a0963de393e2e3800d85c77d1cdb135d37dd9bf"
   },
   {
    "file": "WoodGreen_XM002_YP002.obj",
@@ -18001,7 +18001,7 @@
     57266.267,
     3475.0
    ],
-   "sha256": "6fcb876037a751154cd96094ef2320f0c1336beeb313c9238aff3d96fa2243ec"
+   "sha256": "2936feef239526826aec697558576d7f6f96c5c2b0a5eeb0ebde616771dee450"
   },
   {
    "file": "WoodGreen_XM002_YP003.obj",
@@ -18017,7 +18017,7 @@
     68686.052,
     1117.0
    ],
-   "sha256": "aff8702e3d7fa66a949c7bd076e2fe5e143889a568491f2f7d0115dc948d506c"
+   "sha256": "5993e9334bee2b0328d27fd8d74c4e971eed08acd73fb6156f6bf4af2c61254f"
   },
   {
    "file": "WoodGreen_XM003_YM001.obj",
@@ -18097,7 +18097,7 @@
     37242.305,
     1303.0
    ],
-   "sha256": "e0da2405e200351f924c15cbc01322e93afadc436fa21de8ab13c5f3b54e9e3e"
+   "sha256": "dc26c641052d83aa825e8e9a501111565b52e0bdf9455e68215709f42273e18c"
   },
   {
    "file": "WoodGreen_XM003_YP002.obj",
@@ -18113,7 +18113,7 @@
     56589.743,
     1304.0
    ],
-   "sha256": "c66fee767459515610b7af713094c76f67378a5b8aad503af566aba2a0125e09"
+   "sha256": "436cfd965976ea5b02884357e3faf93d6d9c36c42c10cb7f7a986483080f6d35"
   },
   {
    "file": "WoodGreen_XM003_YP003.obj",
@@ -18161,7 +18161,7 @@
     -23385.843,
     1097.0
    ],
-   "sha256": "ae7ac3a2d6af2174909cf050aba7d336f409bd51d47d0ff8de5490751b06aafb"
+   "sha256": "5d477820c4a54f7027358c031611c649a6f600dd73a8b096e61015bcd034eaff"
   },
   {
    "file": "WoodGreen_XP000_YM003.obj",
@@ -18257,7 +18257,7 @@
     -29667.801,
     2767.0
    ],
-   "sha256": "4303ccb362ca69cf593d5b78f13531eb3e09b402fa259592f3280bea8889dda5"
+   "sha256": "e31fcc9f6271a4e02620273599e5c03a7e6d9059a45d54e743cc8cdcb386eded"
   },
   {
    "file": "WoodGreen_XP001_YM003.obj",
@@ -18305,7 +18305,7 @@
     56966.799,
     5905.0
    ],
-   "sha256": "e96a428437566d5526f36170b9ad7f3573d4a81b476994d6338e465de0213390"
+   "sha256": "656bba9226835e909b5dbfb9ba33e66101f707768849cb1bba9d843f6b4ab775"
   },
   {
    "file": "WoodGreen_XP001_YP003.obj",
@@ -18321,7 +18321,7 @@
     68907.757,
     1128.0
    ],
-   "sha256": "97940c27a3c46155ea41ff2c4fff84a7ddcdc5c2b068dcc77f69ac1b4b3c2897"
+   "sha256": "4f1c7ffa31bcaf1cbac7e6fa6f61e1d96fec259650dc5944f5325c28e0c77733"
   },
   {
    "file": "WoodGreen_XP002_YM002.obj",
@@ -18385,7 +18385,7 @@
     38001.58,
     2103.0
    ],
-   "sha256": "abe18f65d8860984ef5bbbc31e80622e7ad972c0f9ba136ae5e3776d7aae7ab1"
+   "sha256": "b5940463882ed7fc56f407db97d165110f92d96bb259960e7d633130745a5f12"
   },
   {
    "file": "WoodGreen_XP002_YP002.obj",
@@ -18401,7 +18401,7 @@
     56957.109,
     3690.833
    ],
-   "sha256": "091d963ac99652d000ff641e596ed37e44021de5f7dc395ac91f58c53debcf8d"
+   "sha256": "e6b4b0e728a1ba201ff8a14971cbb490afc49bbc4bce486f37e3dcb8a8e74c97"
   },
   {
    "file": "WoodGreen_XP002_YP003.obj",
@@ -18417,7 +18417,7 @@
     69971.641,
     1102.0
    ],
-   "sha256": "cceea616aabc45430789853ffb69a26a7d9a9f2530f2f2249193882a24e489b7"
+   "sha256": "7434e0c969d14527be3fe596bf261e9068ed82610ee0d7f207540a318704d37f"
   },
   {
    "file": "WoodGrey_XM001_YM001.obj",
@@ -18433,7 +18433,7 @@
     -11703.023,
     990.0
    ],
-   "sha256": "0c8c9248f2167dcc23033ebf30e6692908791bf395ac6459c3bc7c7a91380e80"
+   "sha256": "ae944c5feda4591c8d7b9700e14b22133036b4adcde7e864cd08a6bb7d667538"
   },
   {
    "file": "WoodGrey_XM001_YM002.obj",
@@ -18449,7 +18449,7 @@
     -18861.059,
     1477.0
    ],
-   "sha256": "15a41375eada3c3e8ef099274fa01aee77fcb5e2d6c701b56b9590b2830d0044"
+   "sha256": "0f526dfc354b29519ced7dabcb1784d70268160fcb664bd9e37400b273432402"
   },
   {
    "file": "WoodGrey_XM001_YM003.obj",
@@ -18481,7 +18481,7 @@
     57331.205,
     2933.0
    ],
-   "sha256": "6fc14fe047738e95c78db9227014452f3178b37089118560f226d5b9dbbe2689"
+   "sha256": "03df401ef53c4de66984e66b1329c9886aaee639c9502441ff1abb87f4c1a906"
   },
   {
    "file": "WoodGrey_XM001_YP003.obj",
@@ -18497,7 +18497,7 @@
     68504.771,
     1253.8
    ],
-   "sha256": "6938f9ad6c47dafd95f5ee8eda577094238f708d9e76e9e6e1e32edaab000169"
+   "sha256": "571d723b3c99a628c07bcc7ea9a50fd76e065e855086f128cf81f0f89cc56ccd"
   },
   {
    "file": "WoodGrey_XM002_YM001.obj",
@@ -18513,7 +18513,7 @@
     -146.32,
     2741.0
    ],
-   "sha256": "34236c8b9e54df0163387097c6e150f7398f94d5cc6951b451f46eda5b42862a"
+   "sha256": "ab7409b25ab3df36b4083e4146e8ccb6d8b89e81b018942d98020ff0f767e515"
   },
   {
    "file": "WoodGrey_XM002_YM002.obj",
@@ -18577,7 +18577,7 @@
     38204.626,
     1447.0
    ],
-   "sha256": "dbc28888963c979e5a7e43abf0f142266f89617aa885337a4bd17a1c711af0e2"
+   "sha256": "70bf524a781765bb5ce02dfde6bf2d6649b3fe271be6ececbc45b2a66d4101b4"
   },
   {
    "file": "WoodGrey_XM002_YP002.obj",
@@ -18593,7 +18593,7 @@
     57265.116,
     1308.0
    ],
-   "sha256": "f2df7ef7d364e2a437c7e1154a344bc7de900821119aa0b0f5cec8d447cc089a"
+   "sha256": "e2855e484ab107c560554be33a044fea3b18966c54579ec9b2ae90be4de7b03d"
   },
   {
    "file": "WoodGrey_XM002_YP003.obj",
@@ -18609,7 +18609,7 @@
     69709.431,
     1377.0
    ],
-   "sha256": "e1513c899d7d30800f4610c8af9207044915750ea39640bbc883b49bcc3e129a"
+   "sha256": "038e5c3216b12531aef53fb425d853e70a8351d6c137bf50678253cc77655244"
   },
   {
    "file": "WoodGrey_XM003_YM001.obj",
@@ -18657,7 +18657,7 @@
     -37686.771,
     1097.0
    ],
-   "sha256": "f31b0b23db08c928d3d30a1ced0e3c6854dab6ea65f37e5e11090974fef91458"
+   "sha256": "787e09c5b0155f2ff2481c43ce7b8fae98fc5b3906121ebc59cd9c4daed2df60"
   },
   {
    "file": "WoodGrey_XM003_YP000.obj",
@@ -18689,7 +18689,7 @@
     38078.563,
     1390.0
    ],
-   "sha256": "112d69429a70044cbcf23ad2ff4e369c53962b2020fcaa5cdf8dc5c60874a88a"
+   "sha256": "8f4ee46584d429f3760cb4f3aee4743bfd552ccc7f6b4dddd48241eb2509000d"
   },
   {
    "file": "WoodGrey_XM003_YP002.obj",
@@ -18705,7 +18705,7 @@
     56159.547,
     1362.0
    ],
-   "sha256": "156f8f221e139ba15a129e0d446f2390112fcc3d38b7ff669d655fa2d9f2f8ac"
+   "sha256": "bd7200005c230af642a68e8ee0c3aef506fbe98894e05a562794d682b50ff465"
   },
   {
    "file": "WoodGrey_XM003_YP003.obj",
@@ -18737,7 +18737,7 @@
     -24696.794,
     1103.0
    ],
-   "sha256": "6dc37ce638de5ace9d2054f74b401642d431dec14d780e8e52f5c1df28017b9f"
+   "sha256": "ca9136b55ff760aa1a2edaab5751a56a268ef4b792d4d427ac4726ad3155dce1"
   },
   {
    "file": "WoodGrey_XP000_YM003.obj",
@@ -18753,7 +18753,7 @@
     -38004.461,
     1128.0
    ],
-   "sha256": "08e9cc96d9597bf372863dae21886a6c3bcfb4a45e12e5963b693debfa5a413b"
+   "sha256": "c5bd6e5727159bd28957d3ea7692bfb5978d7cee3bc3adb79f94496447bf887c"
   },
   {
    "file": "WoodGrey_XP000_YP003.obj",
@@ -18769,7 +18769,7 @@
     68855.363,
     1123.0
    ],
-   "sha256": "c99cebfff4dbfb2b0ce3cbe3b29d16b92238c53b1aa435f4f3252cbf76fd67bd"
+   "sha256": "abd528324471ed7695a2884d3ee22df6608788a698845e1f6501ff044f865f1c"
   },
   {
    "file": "WoodGrey_XP001_YM002.obj",
@@ -18785,7 +18785,7 @@
     -29811.646,
     842.0
    ],
-   "sha256": "5c2051c894fd0aa8ba383377a0944461ecc0586c40f60afe22289586121321e4"
+   "sha256": "f91bce00d70df24ccfc1f34780a1c4a7ae70e07192aba902972b21bdafddc37f"
   },
   {
    "file": "WoodGrey_XP001_YM003.obj",
@@ -18817,7 +18817,7 @@
     56947.811,
     3891.385
    ],
-   "sha256": "c413c683ea97bc012797e8db626c43844ca90d2d7b89e90034d2834435a0b0ff"
+   "sha256": "b72ca08020744769449664e7086248da1968b4faab92fd72ba0050c4752dc49b"
   },
   {
    "file": "WoodGrey_XP001_YP003.obj",
@@ -18897,7 +18897,7 @@
     38670.661,
     1683.333
    ],
-   "sha256": "3113abfbeef4cc54b6fe16996b5b836433f801d1501f1beb786f971d875d179e"
+   "sha256": "43275c2a78db539d08398c3dd299ac685a65372aa3c830aad1b116b6307285c0"
   },
   {
    "file": "WoodGrey_XP002_YP002.obj",
@@ -18913,7 +18913,7 @@
     57049.851,
     1362.0
    ],
-   "sha256": "b444d8bb9c0ec854f2de14ab26ac48f51d2a2616d947f047b8f3bad00ab67988"
+   "sha256": "ac71f63b2017b7b61faa5a07aa77aa0cf6bff909645cad600983a7cfaf9ae7c4"
   },
   {
    "file": "WoodGrey_XP002_YP003.obj",
@@ -18929,7 +18929,7 @@
     66630.457,
     1148.0
    ],
-   "sha256": "ba43c65e0cec5a1d95abe12e81f9cd244f1f1f869a566bcde111461cbbd66461"
+   "sha256": "e324f49c6be01b75d81c8f1257dc80720632d9df9522e2ad14a1b5093a4eb4d4"
   },
   {
    "file": "WoodOak_XM001_YM001.obj",
@@ -18961,7 +18961,7 @@
     -19135.073,
     1296.0
    ],
-   "sha256": "67c5540949c45faf5fb8e380226d69a216aca9701cc28e06cf78fc16748cf54b"
+   "sha256": "0e6b13b1d2cf641adf7c320ca7e39694b1cf71c2fea11696c25c9c873447510f"
   },
   {
    "file": "WoodOak_XM001_YM003.obj",
@@ -18993,7 +18993,7 @@
     57018.888,
     1301.0
    ],
-   "sha256": "7f8a2fbdad6a1820201a9729069b2433a271b858d965e0a6371d245c3e069d7c"
+   "sha256": "3ec1a3cc62f9a31dce3cc9aad9d8e29e2eac47477d21435df61155c58e3ae23a"
   },
   {
    "file": "WoodOak_XM001_YP003.obj",
@@ -19009,7 +19009,7 @@
     66684.593,
     1266.0
    ],
-   "sha256": "3adc4393bf215772791c8deb6adece3cce0da053d284866fd5e260c14f4f8846"
+   "sha256": "ca07354c239115477549ee5affef9ce26afd688a8d8a40fc66919a6004d95e2d"
   },
   {
    "file": "WoodOak_XM002_YM001.obj",
@@ -19025,7 +19025,7 @@
     -338.199,
     1431.0
    ],
-   "sha256": "b6d909c9aaa59c6a81900f024b29acf8b2da3b996d443211c5c9562075f0f541"
+   "sha256": "ee5977f05767bd829882f38aef1ef38e90a2f4c71f65a2aa2ea8ce75547cda2a"
   },
   {
    "file": "WoodOak_XM002_YM002.obj",
@@ -19041,7 +19041,7 @@
     -18899.694,
     1370.0
    ],
-   "sha256": "3d920ebb4cb6e37072506d18bdb3e2942e065d02c8e647b8763bdf0c7b8f640e"
+   "sha256": "38f174d640094620fe4d5965b641c584598026bdecdaab7f8541b728e8c290a6"
   },
   {
    "file": "WoodOak_XM002_YM003.obj",
@@ -19073,7 +19073,7 @@
     18705.73,
     1955.0
    ],
-   "sha256": "0d6727913f8f9781060b954fad28f8116f5e2d290b19a389fb357fed8326b77b"
+   "sha256": "30d71a87bcb61a166311eb11b6d40454881145a783d4caa18b62d62c995cf95f"
   },
   {
    "file": "WoodOak_XM002_YP001.obj",
@@ -19089,7 +19089,7 @@
     38041.018,
     1325.0
    ],
-   "sha256": "6622c5409009351bd8b11566a9f81ef903244b7ecd066a1ab98d1a10dfa61af2"
+   "sha256": "01a94429dd5d2a55667faa072b4750d89e85f93024dcd36815e7e8a3913b7cca"
   },
   {
    "file": "WoodOak_XM002_YP002.obj",
@@ -19105,7 +19105,7 @@
     57003.101,
     1117.0
    ],
-   "sha256": "61a5b428a8411a811456b1e59f9b07777d79bc50f29891644f9278011a6b249a"
+   "sha256": "279cba118a544c393dc9946149f57bfc257abb7adc40ae856c61993368ae3dbc"
   },
   {
    "file": "WoodOak_XM002_YP003.obj",
@@ -19121,7 +19121,7 @@
     67513.532,
     1186.0
    ],
-   "sha256": "17c75003a82e622e5483f9a2c04325384f12f5e54adb4520dd134ecd5ff1313a"
+   "sha256": "474c1178bcc12104262673a359c151b99af32f83381641fa34963bcd8988f52d"
   },
   {
    "file": "WoodOak_XM003_YM001.obj",
@@ -19185,7 +19185,7 @@
     18123.045,
     1955.0
    ],
-   "sha256": "e1ba6571126198232c967a913a54013daee1589f52db9402658416e5ed9f6030"
+   "sha256": "2c2f076db58de5bfcdcd3d219612008fa2e0844b8e9a674d0fec3fe0162b0436"
   },
   {
    "file": "WoodOak_XM003_YP001.obj",
@@ -19249,7 +19249,7 @@
     -24749.05,
     1011.0
    ],
-   "sha256": "0d1daaa48ffe6feaea1cac4d6817c7b0fedf46dc5b293674e48d84ff6b21bd93"
+   "sha256": "cd1e113cc0481b4252c01f24c12a1857123f52f4f69e4a196f0a27172a8c622e"
   },
   {
    "file": "WoodOak_XP000_YM003.obj",
@@ -19265,7 +19265,7 @@
     -37988.405,
     1040.0
    ],
-   "sha256": "4c3bc4f0881fb8b33b57c1105dba76c58f27c99f55eb263cce72cf56438322af"
+   "sha256": "f8382a7c87522a2e77d9464d96b2d5715a40774cd0a532d30688f04d4e5fd127"
   },
   {
    "file": "WoodOak_XP000_YP003.obj",
@@ -19281,7 +19281,7 @@
     69304.915,
     1020.0
    ],
-   "sha256": "6a0794d79cfd50998b3e7d7e20d46b26208a45295c5fdfd35adbd9da208f6efc"
+   "sha256": "7a26a4870a853e330cb8cfa97d73a0011f3116bea22dfbe83ff3ba50d4fa5baa"
   },
   {
    "file": "WoodOak_XP001_YM002.obj",
@@ -19292,12 +19292,12 @@
    "bounds_cm": [
     19547.179,
     -37893.338,
-    60.0,
+    0.0,
     21847.473,
     -34687.95,
     1010.0
    ],
-   "sha256": "aba20cdd09985063ec8f667dcd0783df93b38c260cd1b7031aa144315adade5f"
+   "sha256": "b30392074a279fa960c20ad9a9c15c6448fe9fc2da3eb44fa300e8bf79031a4a"
   },
   {
    "file": "WoodOak_XP001_YM003.obj",
@@ -19345,7 +19345,7 @@
     68710.476,
     1115.0
    ],
-   "sha256": "00b08a246c45793b025f43984589cf7b9a9ee2df724cbdb33690edc75ab0cfa2"
+   "sha256": "00bb66f83e321a96c4e269b28ef53f1c085e6472c86ed02f14f0f8d00e511359"
   },
   {
    "file": "WoodOak_XP002_YM002.obj",
@@ -19425,7 +19425,7 @@
     57114.675,
     1171.0
    ],
-   "sha256": "cb06606d2403d50461aed697ca04447ec020b1b7284ecf0733af9461efc53649"
+   "sha256": "fd3d66c75feadd708ee083197421760c9413a473ec71e93431fb7fa4d0e67685"
   },
   {
    "file": "WoodOak_XP002_YP003.obj",
@@ -21700,8 +21700,9 @@
   "background_creepers": 76,
   "background_doors": 162,
   "background_lane_doors": 174,
-  "background_lane_doors_at_grade": 3,
-  "background_lane_stoops": 159,
+  "background_lane_doors_at_grade": 112,
+  "background_lane_doors_traffic": 110,
+  "background_lane_stoops": 50,
   "background_masses": 252,
   "background_modern_balconies": 1533,
   "background_modern_windows": 3564,
@@ -21718,7 +21719,7 @@
   "background_skins_rear": 264,
   "background_skins_side": 613,
   "background_skins_street": 126,
-  "background_triangles": 217850,
+  "background_triangles": 215670,
   "background_wall_panels": 3564,
   "background_walls_street_seen": 31,
   "background_windows": 7037,
@@ -21785,8 +21786,9 @@
   "rear_guard_iron": 251,
   "rear_hedges": 74,
   "rear_lane_doors": 390,
-  "rear_lane_doors_at_grade": 1,
-  "rear_lane_stoops": 342,
+  "rear_lane_doors_at_grade": 220,
+  "rear_lane_doors_traffic": 220,
+  "rear_lane_stoops": 123,
   "rear_lattice_skirts": 284,
   "rear_lattice_tops": 282,
   "rear_lots_with_galleries": 830,
@@ -21822,7 +21824,7 @@
   "rear_stairs_spiral": 491,
   "rear_stairs_straight": 403,
   "rear_stoops": 745,
-  "rear_triangles": 751014,
+  "rear_triangles": 745920,
   "rear_wall_panels": 627,
   "rear_walls_street_seen": 96,
   "rear_windows": 8681,
@@ -21868,7 +21870,7 @@
   "traffic_band_lots": 64,
   "traffic_band_units": 135,
   "traffic_band_visual_faces": 2011,
-  "triangles": 3174750,
+  "triangles": 3167476,
   "wall_panels": 182,
   "windows": 8796
  },
@@ -21890,7 +21892,7 @@
   "Data/Plateau/layout.json": "819756930647bac5c66eef73dbac02e383b24fa6f8a14ff4de18b9237e6b2765",
   "Data/Plateau/PerimeterGeometry/perimeter.json": "abb1a46217d5ecf7512b91e6d0cbc70179d39e074713d9e299ac758983613e82",
   "Data/Plateau/BaseGeometry/Glass.obj": "a4eceaed1ff52c8fe4df0747fdc627bdc1ebda335afbf0e7a7ae8d5bd266ba1e",
-  "Scripts/plateau_plex.py": "139b3f27532ebb1c5a41631932bf2cf9962e7aec1a65f2c56fbcfed16369570e",
+  "Scripts/plateau_plex.py": "2c6767d1b1a0fd644894f21dc3c1c5fbb6e8b42efd1b403c91d9fc0177168b83",
   "Data/CityBuildings/Geometry/1884823.obj": "df194d7420ae7ff4d29bb8cd4b4484333b34c444795d988cbf86ff7c3f26d93f",
   "Data/CityBuildings/Geometry/1885606.obj": "444f16110a4a800201767a902f1d4d41a63e58a6c73f4d89b8ec0c2389640e34",
   "Data/CityBuildings/Geometry/1885607.obj": "eba774357e1a04cd87199407f42a9210f62c65d0460c9cc22bafe5119f86c830",
@@ -21900,7 +21902,7 @@
   "Data/Plateau/ReplicaGeometry/Plex/assessment_roll_join.json": "a45fbc3a5ee02801feb034da9b30ed37212ba2b0872ca1c7b70ac34f9c17fe26",
   "Data/LaFontaine/layout.json": "4238d6ed45d5fb890e0f8dbcb672de0803c6dc7079b0b6a86b386d82ebbb4250",
   "Data/Plateau/ReplicaGeometry/Plex/canopy_2019_clip.json": "0ad09161e188ff21940cb57a7caa65d64f1dfa5917a0edc7a3a4b79273514977",
-  "Data/Plateau/ReplicaGeometry/Streets/street_trees.json": "bd645c99c3c278e32d68b85619deec2f8659cbee45cdf8ae1fb26104ab9a651c"
+  "Data/Plateau/ReplicaGeometry/Streets/street_trees.json": "08a433fdc38a40dfab9130d51a9364fb341fba34d8cf6e48fc104a7f27849a3d"
  },
  "geometry_sha256": {
   "AsphaltLot_XM002_YM001.obj": "f925bb31237b9dcaf142b6f18b2a39c29192d336e93dd63856ca503cb06f89cf",
@@ -22268,45 +22270,45 @@
   "FenceBoards_XP002_YP001.obj": "3d3f305ba3d4e928894ff22b5dfa45520174352366f091b7d2a22c79974140d8",
   "FenceBoards_XP002_YP002.obj": "edf7c4034a60f9aad46070a19fecb8c56f0d861a682c4750db17e17e97c70fe4",
   "FenceBoards_XP002_YP003.obj": "12ae6bc6cbd42086c52a9646572b1cb20b20d13db11d2e39a19c60300501e3e1",
-  "Glass_XM001_YM001.obj": "1cf8ed6c94b2b91235984c0fd837702d86f4bcaf5a3d52522980ebcc25a7fcb5",
-  "Glass_XM001_YM002.obj": "335c7b26e32557570309e69467c1a1d7669a464426020ac5850277c091aed345",
+  "Glass_XM001_YM001.obj": "5b01a94676134f65f974e9e3633af91f87c530d989334fbfbccad8619ab3724d",
+  "Glass_XM001_YM002.obj": "24c7cf421ba45ce3faa542abfb30ecad01ccc61101100e6d77e19ceccf068263",
   "Glass_XM001_YM003.obj": "1053d8bfa67fdf88ffc4ee5359bc98c99da498ff4a0c805ab8a14c641724e428",
   "Glass_XM001_YP000.obj": "dd7c0a67f7526a11a46cca1a3c1e47d59c98e2a5cecd178a875269ad2dc8e74d",
-  "Glass_XM001_YP001.obj": "1c2c0b2d981f09c66bf50ab42475960789ff41c2727047d4d39ef9bd4574a33f",
-  "Glass_XM001_YP002.obj": "24bba2362ed4ac1f86d63722443bde0d259bc7640828762a464200c9368178e7",
-  "Glass_XM001_YP003.obj": "100e318a186c8927ad44ebdcc59f572a199b559f1d1a1b905338e1e1956301eb",
-  "Glass_XM002_YM001.obj": "34dfe64288c7881f1104501c6238f5a1173b52a978a59d9aeeb59c5f31dcda3b",
-  "Glass_XM002_YM002.obj": "ad61fe7fff342403fb89d380d65fad9652133b0e8050ea5bd7fe580665318dfc",
+  "Glass_XM001_YP001.obj": "ca1e5f2d2ea40b472c000282cb8c182f003c042628aafedc646ed0b5b1ee54cd",
+  "Glass_XM001_YP002.obj": "e33eaebcb98e5a0aef3fedf3ba3bcda6a99a599ba0260848dc98ba72f2f3bdff",
+  "Glass_XM001_YP003.obj": "ba805210d94764b2597ec4cc113ebdf1cab3d924816dd7f127f7e72ddbda4dc5",
+  "Glass_XM002_YM001.obj": "0f0af5dcf2b715f750da25bb8357ceefff48c061cb27d2579007f04859b2941c",
+  "Glass_XM002_YM002.obj": "5c0dd02002de4130834a41ba710ea6f2b94078ff067285dea5e817190f4e3de0",
   "Glass_XM002_YM003.obj": "a012312ec902d0a4e74e47ea06aff280ed360aeb325f012f7505023c64dc8e5a",
-  "Glass_XM002_YP000.obj": "015cc710b7409a12a76c3042d2ac9906a67fd641b014ce12f96e79b38fee2258",
-  "Glass_XM002_YP001.obj": "a604f583c3f5a7e60bce3df83056f82f098edd7f3e787460c52420a327cee32d",
-  "Glass_XM002_YP002.obj": "22e9227d84fca141a4a00ae8a03c7199655c7053a5944e6ec293b750dba6cee4",
-  "Glass_XM002_YP003.obj": "495989cdc4608c3ad09dcbca3c4835b3b1c76a031efe757810eabdf0eb72d25b",
-  "Glass_XM003_YM001.obj": "b8022d5b500aac943d5b1beec5b44c4ee919b86b9e16f89fa5ddb1493eb9bbfe",
+  "Glass_XM002_YP000.obj": "4e58f2e1353ebe26365c6b57b876ba1a8c0f9eb4d13d88b50284329a72597113",
+  "Glass_XM002_YP001.obj": "a6d9aeb09ee35e0984d13d2ea86414256d329758a299e396e856c7bbd1bc00e6",
+  "Glass_XM002_YP002.obj": "0cadc83cd7f23a538201ce4965789ec42b49896b9f56d85d97cb210f7b15a70b",
+  "Glass_XM002_YP003.obj": "6dac4ddbd63a68aa1b7c983c1ac1f47419df320e81f1b49ea7d2ec2754af3bab",
+  "Glass_XM003_YM001.obj": "f925ea83e7527bdcbc3cc10acff95d1a5dc80ca1e45958785a12504accc41212",
   "Glass_XM003_YM002.obj": "919ee11e2fe09027fd430c78d54d1e5d90d9c18408fb2f510064701b69febfaf",
-  "Glass_XM003_YM003.obj": "21a6628c77bfff773a41e843db0e3bb6e354c57220efdc7c800e2bff99c12f15",
-  "Glass_XM003_YP000.obj": "6467eae06bd997d233b6e30e0a4b7beeab00e6950fba2b339a847639f382cc64",
-  "Glass_XM003_YP001.obj": "911cb0bd83554b453dd97fd3b345a3ffd41082ec5b57033409aa9b2e8e55cc65",
-  "Glass_XM003_YP002.obj": "2b207c70850d535e3d128cde39abf26f38344f0a4455385b0d42b11b77dfa256",
+  "Glass_XM003_YM003.obj": "245594ba907835b6cc42de2f1c2c1eebde83109ff4541c9434638e783a496575",
+  "Glass_XM003_YP000.obj": "c88aea4c3d4e896ca62ecfbe9e632de978d8f8474190f9790544a4a3519d8545",
+  "Glass_XM003_YP001.obj": "f7b83d4a625d144fede379a5eff108f87a3558b32985b945740ad73e38956cf4",
+  "Glass_XM003_YP002.obj": "5f875981b78cac40d813aa46a4e7f4cca97b2306a4f24845553ca3e9dc96f58b",
   "Glass_XM003_YP003.obj": "c7fc187d4c26190f9ef0757169d253d33b3cce744d785c5e67f76b75c7f8b047",
   "Glass_XP000_YM001.obj": "8634df2d1340c15d7bc9f0221ac7a8dddb7fb6bccda1697461cf5268a3bb4520",
-  "Glass_XP000_YM002.obj": "5f2fc373cfea91591b7b9fd5ed0d084115c9385cb9b9a5e531454fc08eb194a5",
-  "Glass_XP000_YM003.obj": "0e740f6453786226064bd5e1f20566b999b81e1ec38d52ad454084928256492a",
+  "Glass_XP000_YM002.obj": "510d77cbffe1a650877599844ec62a8382b2a06eb32fcdbde808a38b4ec1d4aa",
+  "Glass_XP000_YM003.obj": "60a67df56079c8e6c8801ccb5c586f72f747e4968c270a7b1237c548d11ff7de",
   "Glass_XP000_YP000.obj": "8a7b7e1a2a884520718a372370939e4812c75a1f45107c2722a8701a2feb59e4",
   "Glass_XP000_YP001.obj": "7fa8e7586af5a659a701f66c5b713222a5f66cfe3bb32880a873ec21bda7e8ac",
-  "Glass_XP000_YP002.obj": "4fb7d3499f8efb9aaafc8b848d41448a8d2627a37e1181d62fd7e81dde9ae334",
-  "Glass_XP000_YP003.obj": "0404d228f255019cc190b4535f38d316857926e6fbc03903dce5a7c2668d91ea",
-  "Glass_XP001_YM002.obj": "3e849de78e3846058bb75f1252b78bc4c8cad0a5322f937334bd10f855f17fbc",
+  "Glass_XP000_YP002.obj": "89106c10dfef51665e1a575bec751113fa6ab4b48b253ad9801a26417dd60196",
+  "Glass_XP000_YP003.obj": "b74a7e33f2203e61e3a2fc98f83cc76323a2b4923efbff5e616d61bb105cde81",
+  "Glass_XP001_YM002.obj": "7a28b8bfaa7d20c22259b0ac8b97e12d7a5b8c61c5df4903f5686457e766161d",
   "Glass_XP001_YM003.obj": "13160ad52efcd8368b67758397b9b56e083dcfe0abeb58d3a66f236af0080dd6",
   "Glass_XP001_YP001.obj": "78c176a024744c70d5c6ef64b27c834178be5a08e42cf35e12ef1dead676b649",
-  "Glass_XP001_YP002.obj": "bfaa2990306b451b038d8562d554ce223d2aed6c7a8e903f3c1bcf3a943c8703",
-  "Glass_XP001_YP003.obj": "e526ac3a7be0e14268460c9413de03f3a9ad3639899e425a2ebba0f7cbc87d5e",
+  "Glass_XP001_YP002.obj": "0c18bd63204b5d8a1aacf74049c9a4dc2184bf3806805303d710ea8a21eb5c4a",
+  "Glass_XP001_YP003.obj": "fc096e68bc7e283febd460f58989a4ad398d0e426dd2b1d9a0ecd03dffb068dc",
   "Glass_XP002_YM002.obj": "8c32b4cf7a21a013919f280930b123419eb969a92a11d56e321b9b485e22d4da",
   "Glass_XP002_YM003.obj": "a163bd5e7704be63508406c47ef26860d3ead54cf7715e47a48a2dc919ac2e24",
   "Glass_XP002_YP000.obj": "4ecbc2f56de0e1c1b1f2415c18c9a84db53a8112a034fbca52b7d5e06f767018",
-  "Glass_XP002_YP001.obj": "37274a41b1df597ba8bbc02a91434c24d68f80827bca32e29230019a6a62ed01",
-  "Glass_XP002_YP002.obj": "6a909ad964baeb66d7827aabeebbe6e78c7964e4c10fc3e4052b6e825e45d5b9",
-  "Glass_XP002_YP003.obj": "9846b20caace575419a598aeec35607282bc3ee3a0e200a89f3b45a41d079344",
+  "Glass_XP002_YP001.obj": "48ac0ec3dc34cf79c0dbfd6abc5d44d732321056d31253ec41bc390b8d44f81b",
+  "Glass_XP002_YP002.obj": "d5d88d73888d2499dfad4c06837c7c19bbebbc0d88937b4e54ff8c5f6de2cf6c",
+  "Glass_XP002_YP003.obj": "5c38b25168c2e92bb2ba66ec779d7b692b3b4fc77387a2e3e0616207a65ac02d",
   "Iron_XM001_YM001.obj": "7b6a48b2c2cdd3ace5820b81491f43a1cf3171ca31c44f8c188e1aed2ac5790a",
   "Iron_XM001_YM002_S00.obj": "46dde11e0588aa1e126e7b821db75cee19868286ff12386e0e12726df277135d",
   "Iron_XM001_YM002_S01.obj": "c1f36297f452ffd504348d5d50064846cd96acde34adcb8f5b087d145b257ab9",
@@ -22775,45 +22777,45 @@
   "Slate_XP002_YM003.obj": "ad54442ef8342dfa8badc41f356ef02995696b650fa52105f6b9c985babc653c",
   "Slate_XP002_YP000.obj": "c232936bc3e23d34f1a66954544f30a8a48f3b59418e5c787860f33de9e34ae5",
   "Slate_XP002_YP002.obj": "f4070de19441ef6111991d04ce80de002ae96b100ed47d0e238a41d149de430a",
-  "StoneCast_XM001_YM001.obj": "8c184a1fff20b94ec7cddbf779dbc4005e541597805b00b98142ee579540a145",
-  "StoneCast_XM001_YM002.obj": "fcbfab8164d2493be9486f6d137f1f1ab93cd6ffa8eb713695a3cc27364237b8",
+  "StoneCast_XM001_YM001.obj": "67fc73424310289a441dc66431e470dedf8ce49c431010e5065210796ffa1393",
+  "StoneCast_XM001_YM002.obj": "da0f3213e931f8f5e092324b25bf673edd1bb034c8be741191d97fc612b1a1fe",
   "StoneCast_XM001_YM003.obj": "b75a28bb16b972ff0cf4686f43f720e02af6ac7a6592568f7731a109880b6136",
   "StoneCast_XM001_YP000.obj": "c19eff8d7935562bcdd488bfe0eae57abbe3eb9d7eff1cf1e0b689f5f48742c6",
-  "StoneCast_XM001_YP001.obj": "9d9663b5952719f48ba9b532773f9a2a2e46229d7e61e64987bc6d1ef520eeb8",
-  "StoneCast_XM001_YP002.obj": "589769d4a53f59b5415e5e85923ac3132549db26be20581a739f2e4231a6c654",
-  "StoneCast_XM001_YP003.obj": "b7b329d9f45fe017f6a1eaa46520fb3c6daf0b60810f77539d7ee80a4b49fa26",
-  "StoneCast_XM002_YM001.obj": "42b2364d109d9597b196fcb5a0be889111b453cf83e27d4407be94701f679af6",
-  "StoneCast_XM002_YM002.obj": "8fc0dc83b78f8dab2b3af8cad95312a98007411200da3d482a0911e309ed2b86",
+  "StoneCast_XM001_YP001.obj": "8a00aa0e4096cc43afae9b707f51be60ac5ed587a2efee92eccde86845361034",
+  "StoneCast_XM001_YP002.obj": "f0597e569c3c23474eeaa67fbb30ca5ad3e9c7432b341c5b1f489c790b929b7e",
+  "StoneCast_XM001_YP003.obj": "3cca6cd1f4aac6fe0e02667299afcd9258847c334037f2eee3fb150f8c8b1c6f",
+  "StoneCast_XM002_YM001.obj": "920d800871964f1d4f1e175c1fe9b711bbde97b851c8af9621f7ce1622e3c487",
+  "StoneCast_XM002_YM002.obj": "5d283f7a265cd84025f88112a616725458b41cfbc5d36ba9ee235391fe46349f",
   "StoneCast_XM002_YM003.obj": "c9248ad2816009c7b58f63747a9fb233d37880e597cdd689ddc58d48e0f22556",
-  "StoneCast_XM002_YP000.obj": "93aed5e42a1d627bb8f6be09ef5628ee44620a8a501999109fac274a054da4a9",
-  "StoneCast_XM002_YP001.obj": "4713cabb44f8ab70a8511735163ec18897295055eab40c8e9da520f13a1168fe",
-  "StoneCast_XM002_YP002.obj": "9256cf9d31ec5348fb48475b7214e596c70e17402f0ca7fd3fa2783b803e3019",
-  "StoneCast_XM002_YP003.obj": "0cb4a02513461dc16c3de92519a3c435627ae5bfafd6ff8fa1f361caa694095d",
-  "StoneCast_XM003_YM001.obj": "b53e1e93a41c7eba8d28b8240a3dd77242e403b9dff8fbf5918ad9bbf59a3b58",
+  "StoneCast_XM002_YP000.obj": "d2f770bbd104565e1e22195ef34c4b8eeb83f93e5395b08f1da562c85461c5f8",
+  "StoneCast_XM002_YP001.obj": "dd6bf5962c8f7b36923a74687cfebbe903c0bc5e9832669f027ba92e631e1ea4",
+  "StoneCast_XM002_YP002.obj": "eeb44345f8687543c7a46cbffc849467d4cddadb9a3512c03e82a2d0bc886f9e",
+  "StoneCast_XM002_YP003.obj": "cd4d38585f9ac2b153523e7250d2bd44a4a5c61b64b1539060b96137845361b4",
+  "StoneCast_XM003_YM001.obj": "07e6bd0889ae3ad8257006c66a57864d7dc8b353c707ba8e0a884871069b0fb2",
   "StoneCast_XM003_YM002.obj": "5f1a55d8cc16c2039912dfaff53ddd187f7d47e6d6cb71bd3fa7946e3986dda0",
-  "StoneCast_XM003_YM003.obj": "adfba41f07ad58eb4bf4f2f3765629c287f8eccd28768e854c80538739499f10",
-  "StoneCast_XM003_YP000.obj": "119adaaeafeab1592e7e4c69fc6ed49d9b34ed256ae73d2abb1234bf593ca6d9",
-  "StoneCast_XM003_YP001.obj": "fc00e41f4b8c8fedffbb4c9e947f00e8cfd28d343f1fcde4621bcf5b2b4b6536",
-  "StoneCast_XM003_YP002.obj": "d5c797bd839724adbc1d0760da35c159e73dcc53a2e46f64f2c1d1a7400f3ed6",
+  "StoneCast_XM003_YM003.obj": "d5d0a8629e14223c70c28c7fb249ac63a1a738e85b7743de1836caf904e46c68",
+  "StoneCast_XM003_YP000.obj": "505ff05b131814296786a2df46631b72f498c0c3780ecc4f49d7c1db5771392d",
+  "StoneCast_XM003_YP001.obj": "5768edec9b43743e7006065feb716c31485f007dea4d07248e04884840ad7675",
+  "StoneCast_XM003_YP002.obj": "7e2d42829bb719ce31a3d8b5ad09e39cba2e8379148006678eed7df3ed49712e",
   "StoneCast_XM003_YP003.obj": "e23aefffedce0140c3159eaeb3e8ed47e14527601da4218ca61a7d4f99353ca9",
   "StoneCast_XP000_YM001.obj": "04bfe517ec0ecf084d238f7ad36fa4d06566519973b8a5e93456b46656329fda",
-  "StoneCast_XP000_YM002.obj": "7ae74e19bf0de029947f6b50037c1c062770cf0845215aa90bd93312a57a9f53",
-  "StoneCast_XP000_YM003.obj": "671a084e0985f47d8d6257b032fe80b49ae01c8d48060b12157f020d42e13fbf",
+  "StoneCast_XP000_YM002.obj": "c8d2fe72276c45af00f6bf39755b3074516006375e1a0e1ecbdda0f88bc85bd9",
+  "StoneCast_XP000_YM003.obj": "bdcc5f2eae8f51a8ae22d59f6cf7fc98c85a5885026de7018556e38655ff593a",
   "StoneCast_XP000_YP000.obj": "702b18571f4a2f6d76d30492e028f08709820af1bf7b6b14912c6a80521bca09",
   "StoneCast_XP000_YP001.obj": "4ee727c5ffbdae35bf7eb0c13b25b6ea05572b3fcb03c4db3667ff7402b340d8",
-  "StoneCast_XP000_YP002.obj": "becaecdbcd8ac67f1822c75b95f50c1ad7912554cb8be110bc4ede42cb965db6",
-  "StoneCast_XP000_YP003.obj": "1dd310a407f96f5340b827e2d70815005b110142ae3a43e1339c9c1459e427eb",
-  "StoneCast_XP001_YM002.obj": "6bedf1d0f04149ec0d41675018d5653ca67ae925c61545f6a8db832d73f6ca6c",
+  "StoneCast_XP000_YP002.obj": "3784a306ab6ccf61f82bf8a260c9ecfe02bb4203a736116ffbe1d83d08944fce",
+  "StoneCast_XP000_YP003.obj": "4d5a5b3af83f7711d69bcaeaad9020f99b94832d198be80d1b7ffae7562fcb78",
+  "StoneCast_XP001_YM002.obj": "85652fbfe8c963f8e61061d954accc3e3fd3c0e5eafce843ac25bf5539675e45",
   "StoneCast_XP001_YM003.obj": "ef30178a4cf3b43eecb26b5b84b74acf3d7f85d554ad0d29ce44f343820740c2",
   "StoneCast_XP001_YP001.obj": "9d83b6c465fa0c14136edd55332a4ae962e38a68d0176e7f7f31a91164ac2eb3",
-  "StoneCast_XP001_YP002.obj": "ef656fb07ef460814f111abc25ee0bb35218bf5e6334bf01ab654066109bf0d5",
-  "StoneCast_XP001_YP003.obj": "ff45de07e39038fdb6c60f55b323cd862b9ef339f932fc3cca6ef3f566b5c2d3",
+  "StoneCast_XP001_YP002.obj": "45b0aeafb7768d411fac44fc82ea745000bd44a8a6282d9f56879318064beab5",
+  "StoneCast_XP001_YP003.obj": "0065f2494d8e5d345e39c3551709d5070c5955696c97bc98a5c17b0f7c506030",
   "StoneCast_XP002_YM002.obj": "26055d56fe024e6d27b5a11ec073ddf18f20ea96ee4d28dd5a8e44685e19cf9f",
   "StoneCast_XP002_YM003.obj": "fd811ea3ca1d5bac87391385c66eb8bc6e4928bd3cf39fc7feb14292c924b892",
   "StoneCast_XP002_YP000.obj": "7dba81348bec6804d9bc4e93dab0c8bb5c3b85df68af768ac36fce5d2c549240",
-  "StoneCast_XP002_YP001.obj": "166e3d7708a91d42814607b0ecee6e507e6f6fc52afba2296054feb5284db893",
-  "StoneCast_XP002_YP002.obj": "5c15db5cf368cc60f22a7316f161e7a9568b2d94efcc2280c97a44abb3dcbfe2",
-  "StoneCast_XP002_YP003.obj": "ed67e9d97564e3d1aae5687c89312de8c7153b006ec432a5ed0a78f49c87053c",
+  "StoneCast_XP002_YP001.obj": "32a13ce570d5ad8f7fd93d7d42cf124b45c8629f15568688b1df0f6dc9649535",
+  "StoneCast_XP002_YP002.obj": "7435474b7548ecd2d29fadce43fb82df8191fc111eb67d35ce18904cfec63832",
+  "StoneCast_XP002_YP003.obj": "f9b82f2e54df4852fc4baec4de07271dd674688eecefa3678ea7f2e745a84443",
   "Stone_XM001_YM001.obj": "707e2a4a7e043d2fe42dfd49930c53f7f87ba80a19cbef257a7450e3c5be2ba9",
   "Stone_XM001_YM002.obj": "c71b5e1b5dd11b3f4c7cacc71130bd9fa138d8bb340b839a960883425e78c995",
   "Stone_XM001_YM003.obj": "ba91514a9d7e1b04f0c6618b9f00c74be648a0fc0e0e340ef06d51648779a1a0",
@@ -22851,69 +22853,69 @@
   "Stone_XP002_YP001.obj": "f70976681518f98eaa3629210f65241ef6a10b5cd1a7bc7dbd26416c8730bcac",
   "Stone_XP002_YP002.obj": "4e26e3c9ca8cae2b730d32bab780ad174bf6ed7a37aae07621829757d1dc198b",
   "Stone_XP002_YP003.obj": "11f11f7f66e4bbea8c76b99e6f0c3c97f066bc5c5554c9df9f6eea70c22cd064",
-  "Trim_XM001_YM001.obj": "5d5de3565c75d171243a77bb228068c9154805ae5f0b27d27f96d7bc35e5071d",
-  "Trim_XM001_YM002.obj": "8a5418950b73b5168c8b3acff05644d7a7ad537f9b7217adb2bbf5738cde98ea",
+  "Trim_XM001_YM001.obj": "cc74a1c81c94780046951e25233d1588c31fb46a13f208d0509eab0054f4229c",
+  "Trim_XM001_YM002.obj": "594564323143546173c6f2ab725de1eea881992e679966a21b7c5e9c3cdea0b5",
   "Trim_XM001_YM003.obj": "6ea07150eadfeb3f19a7e0004d23c6e59a3a564247de46bf2363f34f0097a521",
   "Trim_XM001_YP000.obj": "c36bfccfe22d5d9076213a2bcbe6e2fa7962f1734ddbcf6af25b881127f7b4f0",
-  "Trim_XM001_YP001.obj": "bfb03a74e87c649da6bf3b1bb9dd6c6a05e4d08e883fefad11f09d0ee9c6f78c",
-  "Trim_XM001_YP002.obj": "478ca89b6c7c710d0a2ea67ea2176d1f4d006a89c1445372f6bb3ca8fa09c17e",
-  "Trim_XM001_YP003.obj": "1a3ce21ff66caf905a6726d0fd7fe3bfc5affc29232bc4a7411ece546318aaa2",
-  "Trim_XM002_YM001.obj": "d7969dadc80e4f855b4ae8473867f69dd4c22e69e16728ff8fc87f0445a1bf8e",
-  "Trim_XM002_YM002.obj": "3e4386a0e49a9af24fc93737ad32177ec3d7ad44b4345aef1db7bdcc4dcafeeb",
+  "Trim_XM001_YP001.obj": "0c451599cb78c1b51c04ebbe57ab79e2e259946961781553ccb6f7e65e433a3c",
+  "Trim_XM001_YP002.obj": "e51ac50e54b33511bba6f41c52b4d3ba470d9aa15640caea4375a36d42d4b3c4",
+  "Trim_XM001_YP003.obj": "2b889162b6d2a64b7c160a49e91c25dd5412e3e1b6dadada9d3edcb9da241a9e",
+  "Trim_XM002_YM001.obj": "9c1037497bac4ec3208594769c43db7522d321a5040ff2f67a812e45ac241939",
+  "Trim_XM002_YM002.obj": "83045321703a49f6cdc829e516b2cf8d78ef6ec0e0c1a428d4a44da771de2f22",
   "Trim_XM002_YM003.obj": "9cbead99950107a7a5b5b79645b1e706e23218ac0a024a76c97a166261ed2a32",
-  "Trim_XM002_YP000.obj": "3a71d273430225cd14b29c25d282d83cf3d8dfdb7dd5523c5ce5398282f3a45d",
-  "Trim_XM002_YP001.obj": "42d5fa3956375afafb3569532f9e0a1c77076d42b2934e69e3419898c61827ab",
-  "Trim_XM002_YP002.obj": "6c9f6f4ded18109eb5a82c2de33ab3fa103c1eaa4370e01d90274811cb968ca1",
-  "Trim_XM002_YP003.obj": "f4ba919506c9f9b9385e24e47432a8dd1d39cf4dde2522485e01cb1371dba927",
-  "Trim_XM003_YM001.obj": "d6a31deb35592c7b89bb5308a11d865ab6bc70a535c2c3ec9b79a62b1c7489e6",
+  "Trim_XM002_YP000.obj": "53f120d6c39b76d088af35db549b5b70a454d92f80be35c24ebbd644415d9b77",
+  "Trim_XM002_YP001.obj": "d3a7959bd18926a1023e86d0ef1b267652fa5370f884e7d8dda630b926bafd71",
+  "Trim_XM002_YP002.obj": "4d058950d0268f551ae167a311b2cc9231d8f1ad71407ca61337177c10f098af",
+  "Trim_XM002_YP003.obj": "e0be95631a218bcfa8233cc2f0ba39ebe98422e73af24d54c62c0c4fc868bcfd",
+  "Trim_XM003_YM001.obj": "3d0b5772027b19d1c8818b3e57e9d05fc162d9d21304d152c612dfe0fdcfd169",
   "Trim_XM003_YM002.obj": "07107f615eef46fdb3489de5373c1b82f88e28b0b610939ad9945e1dae97229f",
-  "Trim_XM003_YM003.obj": "5b5cc0c9cba2913be57d9c112dcf64df1bb86b0d340c25caf106ea2ebac2e356",
-  "Trim_XM003_YP000.obj": "beac7becd08229ea19b8798f87234fa7cf7f2823f5fa588fba93407b31ee037a",
-  "Trim_XM003_YP001.obj": "5938b29cf98b5d02077cda89fc028a2fc6bc9ebb14ccc850e16659eb0dcd629a",
-  "Trim_XM003_YP002.obj": "b716331ca4a0335499f0c97979775aaea1cdf0ddb63a1d06d583fde3f546c841",
+  "Trim_XM003_YM003.obj": "5acde1159231a8b83bb0e93bba5a65db48c8cf3649d54716cb54eb40b7714e8d",
+  "Trim_XM003_YP000.obj": "567d9df590b191fca01df5a4c07d32d7c380fd5d0f698c4fa3b200e6a90d5242",
+  "Trim_XM003_YP001.obj": "2893592c00fd0072f733c12b6d3116be48922a031a61b3e7bf23369188b12cc8",
+  "Trim_XM003_YP002.obj": "f02e54197d748aa8e65d86b761f2f36dbec617c8637af2549a762a5050528766",
   "Trim_XM003_YP003.obj": "38fe8106e135940b46556f4e08b82df3385f30dc1d4d7b17667d71d5f653e12c",
   "Trim_XP000_YM001.obj": "c4b6aa408ee8208f16b1ec961d2592a903a723cb809ecda5a53ec07c0164343b",
-  "Trim_XP000_YM002.obj": "b738f7e223401e65c2ffa984d9de4330242a7f685dfe27699591ea526c8f0a8e",
-  "Trim_XP000_YM003.obj": "f12b5a3f78d7e2c556d27367cc6e3720311de7b78aebfb940026b4d2d681056a",
+  "Trim_XP000_YM002.obj": "e108f26a3c66458fee470da2a7ef754063de417e0eb668b09da74d8c32b1f7b0",
+  "Trim_XP000_YM003.obj": "cd1f06d4722fb095d1f5af191a5c71189b06bb8e52523236b58be49917540366",
   "Trim_XP000_YP000.obj": "ef2a5e9fe5026e54ee9c0a2bcc63909afb64e84fedfdd4332911c369f7ed9a1d",
   "Trim_XP000_YP001.obj": "e4f1ecf07bc5dd7fdb2d4db2a344055b63d401d05d27410fd05db40708d2cb5d",
-  "Trim_XP000_YP002.obj": "07e0f3cf9fa154adc5b103e92d7de705d2e9156c84e794dfec248954f0d81403",
-  "Trim_XP000_YP003.obj": "745690a145b845cd5e51b838fd07e3578cc233e0b6526084ac344244c1fdffe9",
-  "Trim_XP001_YM002.obj": "908842b919148ef3a0910f6323f5953a60f7c4a32077e2311179f463d43c64a5",
+  "Trim_XP000_YP002.obj": "8809c9ab6e141432f5c406c18ee9a951e0a30d69b41d9e20aa22fba2eef6829f",
+  "Trim_XP000_YP003.obj": "247bddc224f575022016b77f167a5f7b4f254f2f7ad83bbc29a495348f42d846",
+  "Trim_XP001_YM002.obj": "68ea5fcd5dbf574fb97518b656e6623bb91e363c1247da1da0fa46b61922eb30",
   "Trim_XP001_YM003.obj": "7567e40aac906ca6e50b76d39e3fdf46da10e7958b4fc0d00e5c0788807d0785",
   "Trim_XP001_YP001.obj": "24aa5be3c4cd96db3716acc7167732f1bb1c53413ee5a326afe23ce7190a9bee",
-  "Trim_XP001_YP002.obj": "86209fafa019896a47c20757a4f42b1b5d90618c4d73f419d1f84f4c74e01f28",
-  "Trim_XP001_YP003.obj": "42ce30f098e7cbe2789b6c247fadfe29bf32f3a3d1b585a0eff25be046e16521",
+  "Trim_XP001_YP002.obj": "aac2d1ff6fa0013e2af435f10a4185ee9fe4a943551055ab57c4ba6554c09107",
+  "Trim_XP001_YP003.obj": "173cf096b97c1cd950f73ecb79e0c45dbc9afc2d8f2056500ac4b327c1ab36e2",
   "Trim_XP002_YM002.obj": "ad04eeb68e1fa562b71a5e7b6830b2ba417f1740747a1b69deba9b7e26a563d9",
   "Trim_XP002_YM003.obj": "a2d0be6d57cc8e1138eb86ee2412dbeba77b2a03e578e925941e7450fdb74e81",
   "Trim_XP002_YP000.obj": "266dc3c47dbce431c1bca8f080bc950938d2391e190f4c3575bcaa8d53d52f07",
-  "Trim_XP002_YP001.obj": "5252285119f3cff3a35e3d39d526843f05058d2f8e5f07b4a13557beaf1c4edc",
-  "Trim_XP002_YP002.obj": "7ce3f6cb10b157d86f471f545f98b2ab05f781cc9c424bfe63eaf46f14ea88d7",
-  "Trim_XP002_YP003.obj": "bbfafc3151aa636f753f510ea50b050cd7dd3e10a515326fe85d5f3009cbd9d3",
-  "WoodBurgundy_XM001_YM001.obj": "51857f4d18b8abd68b0a54248f0798889a0c6eba100feabbc43c82da84c24460",
+  "Trim_XP002_YP001.obj": "e4acf12f790eb6e7f19c7e70bdfab3d0daf72fc456657db0e99b1a40a2049836",
+  "Trim_XP002_YP002.obj": "0b64ca5984f744bdc5901acb763320721e0ef67894737502e777d898b8036aa7",
+  "Trim_XP002_YP003.obj": "3d215f2fec41f438ab2a696de5b77756a031d9d9be9eca53ff5e03eddc176dac",
+  "WoodBurgundy_XM001_YM001.obj": "e346d29691a0b9624e520a935a5e63b260d290375a786b3a2f0c96c4b8631487",
   "WoodBurgundy_XM001_YM002.obj": "22b2b3435e239345e755d94790ee5114e5f310daf1fa8372b0abf94f7e9fb3f3",
   "WoodBurgundy_XM001_YM003.obj": "4f112ce66518c0357c7d182f919068a61ad69c25a4b9aa45a63a2b394d87eef2",
   "WoodBurgundy_XM001_YP000.obj": "9ddfee45e13476e5b3b92b2af095d7a88f0ed37cb6c58be9fd34a4128b617ac9",
   "WoodBurgundy_XM001_YP001.obj": "883161c10bbf2b1798e148bc8c7b349d68786a69d6b78d31b0a55524858b4828",
   "WoodBurgundy_XM001_YP002.obj": "110c0f79d423585cc11cccf07cedd1d2cea1e020335c50fef8814aa0b311726d",
-  "WoodBurgundy_XM001_YP003.obj": "f005024a6516f71193517cac45cc6aaf7f5c5f85274e254669a4de09b77bd738",
-  "WoodBurgundy_XM002_YM001.obj": "264e9d0e0c3f3997917992dd7f8966ca5cd69d514f36bcacbba086752f9bf4fd",
-  "WoodBurgundy_XM002_YM002.obj": "c995204756a076f85c79b083a26769014ee523d76ffa829cf67a02b083d7b320",
+  "WoodBurgundy_XM001_YP003.obj": "2549edaa7c347412209562c86703c4b075ba4930b19f7d19bc1fd7f3a358169d",
+  "WoodBurgundy_XM002_YM001.obj": "dd5326f2df055379879ba84ae61568dc6408783a3cc09201a62c519f404a8e05",
+  "WoodBurgundy_XM002_YM002.obj": "b2cd69d271ea96cdf5bec952bc5b61809168dcecc62d005cbf961d565966a18b",
   "WoodBurgundy_XM002_YM003.obj": "c154ac6f6ea83abc5adff2195fa93a0f77b1bb5e653e060a5ba0569b6f73930e",
-  "WoodBurgundy_XM002_YP000.obj": "ac7a57c4e4796baa57816205e7650b768050da1f1395048b45ef2ad656f9f51c",
-  "WoodBurgundy_XM002_YP001.obj": "db91614714ac41d4bd929ea17b5a8e014916ab29a33363632bd24cd561a7d696",
-  "WoodBurgundy_XM002_YP002.obj": "41ef56eb7e60f9e2a2e82a131222dd8e7726eaec0501d0a3c1e94b36374ac542",
-  "WoodBurgundy_XM002_YP003.obj": "ab468eb69289b72e09baf5a6bc3384dff00b127607cf7f5c2c7643f48c545664",
+  "WoodBurgundy_XM002_YP000.obj": "bdd6d4c231405deceeba13a33597abe48ed2122d0bc4617fe6c6d4977bb5fd8f",
+  "WoodBurgundy_XM002_YP001.obj": "b02e9aa87d7bbf2a9210851b64e13c64f8ffcd30f8099189dbcebc1edd80eb13",
+  "WoodBurgundy_XM002_YP002.obj": "7e510f7ec6cd9bef61177aa9c059534dc0c6fe93445fb54c628d0135d94825f8",
+  "WoodBurgundy_XM002_YP003.obj": "700cbe86e46db3605f5e0ade2a41565c4dfeda74b912fa1e807bf78f61d4c6cf",
   "WoodBurgundy_XM003_YM001.obj": "9caafe43bd2e3378c4375841f035e52bfcb29dfdf14184b194c480e4f5536927",
   "WoodBurgundy_XM003_YM002.obj": "f64ced9c5383323b2bb8a7b755d08e203d3b3268817bb51dedea7dd6948ba6aa",
   "WoodBurgundy_XM003_YM003.obj": "b5af2cf7ae3814a748ba758b919b47d678f75e60d6367ef7c8aaeea3720f86f7",
   "WoodBurgundy_XM003_YP000.obj": "9f5f3e1f18d1e845b0f4b15adb3f7d954c447ea739ae59a0a43debce54b5ffda",
   "WoodBurgundy_XM003_YP001.obj": "c4fb126482a5964f94f5459a1b3426c3760ac3829f3552f0eecd6fa119f69723",
-  "WoodBurgundy_XM003_YP002.obj": "e6b1d474c888339fee16060ec25b56ad2a4d37f5ecdd410a473980ed3f96db08",
+  "WoodBurgundy_XM003_YP002.obj": "a3b0dc440adca5f819acbea654d5ee03651c9179303b418c3f72e0c9cb256a61",
   "WoodBurgundy_XM003_YP003.obj": "946574b1eb4352996eb1b0e9901febeb958a815c7c67d1ef38726cbeaea365b8",
   "WoodBurgundy_XP000_YM001.obj": "a96b610d54fcc96938ef6afba7f5c63be54311e309bdf7104a2da9a5bbc3a486",
   "WoodBurgundy_XP000_YM002.obj": "e2522847b674d634ee266af8057522e7fbfb8bb816bb71aa4f847b6c9395d4d3",
-  "WoodBurgundy_XP000_YM003.obj": "8094ec7b045f2fbac3068b3357ec4ab6c666ffda6bc4c8b30d1449374fc13042",
+  "WoodBurgundy_XP000_YM003.obj": "fdbb8c0c258294e626333dcf2d0e849a6f87a4da55c6353b8d8be821dac8c988",
   "WoodBurgundy_XP000_YP000.obj": "583f54c2c011d446446b5d70f3a92f5a3f83d12c693b8916e6d9d75a84749c3d",
   "WoodBurgundy_XP000_YP001.obj": "12ca67521faa110530198c1d118758d4194dee6cc9c7fc70f18346053b21ddf9",
   "WoodBurgundy_XP000_YP002.obj": "c650d73d84322fcc329a091cbd79884ba62863fad82a7a9f6bbf9e5ba6f7d5b0",
@@ -22921,14 +22923,14 @@
   "WoodBurgundy_XP001_YM002.obj": "78d92bf9db3f28146fc89091ceb659a82aba706c3fc706ae7aa94790e3a1b54a",
   "WoodBurgundy_XP001_YM003.obj": "b3d7cca1d02b028c4dabff8a4192852571ae3f95bd4a1aa41075c0c2426b946c",
   "WoodBurgundy_XP001_YP001.obj": "56212bc42c8d9973086e2ce73c5db7c7dca1697c3dff9815cd9083d82ad6d7e2",
-  "WoodBurgundy_XP001_YP002.obj": "0e645ae45404a26c4c69791256813c66f9deaa9dcada756195a034a34c70e62d",
-  "WoodBurgundy_XP001_YP003.obj": "8cb1ac20220d078e78900cdf9240e063daa79d68049cbc3eab401377f243fcd8",
+  "WoodBurgundy_XP001_YP002.obj": "85c927ba33b7eaff1aea87a3e035806f2ec44858f3534b67826c8deb35bed8b4",
+  "WoodBurgundy_XP001_YP003.obj": "96a10ecd59308a214ac53ea64d3f2f87c6f76988f9b03bf639cd62d4da679616",
   "WoodBurgundy_XP002_YM002.obj": "afa749fe4f3b39424f6235183c8ab2d03f1078f1ff73e0046aea657fd4a0ffdc",
   "WoodBurgundy_XP002_YM003.obj": "5c411232b238dd132b619b5be2fdbd8a16d4c5cf1bf2ca54308a4a4eb7a86732",
   "WoodBurgundy_XP002_YP000.obj": "28e8db5eb218b6a24497f69d947f325d240a52f24325346404de5a74f4238d81",
-  "WoodBurgundy_XP002_YP001.obj": "2dd2217b4dd07125cd77d307d822dac6221f0b602d6afec5372ed9ac91459dbb",
-  "WoodBurgundy_XP002_YP002.obj": "b5da75e64d01850cd2f2d071d60a1dbafa0908adf2d13aa7157111302f237e66",
-  "WoodBurgundy_XP002_YP003.obj": "8a0e8b7436d8d73532c6c566b88dac30a33a0c1ae8b4ddcd1e5b2166a7f8f257",
+  "WoodBurgundy_XP002_YP001.obj": "f4ead46ef1dca0ff8f6afce258aceff2319dca5d83ebd4fdac02df5b06634888",
+  "WoodBurgundy_XP002_YP002.obj": "6e60e5551347ebef49e10b463b0262b53de90f64abba2e17b0f130d2332beb5f",
+  "WoodBurgundy_XP002_YP003.obj": "675e405e911a1c50b4eec61ad4067514301a49608d906c58421c9539e06e3f82",
   "WoodCream_XM001_YM001.obj": "734a575a1f03f258cda5f1f3c2a49238bd53ad5dd6fa077ff77ca6fe3b2db4bb",
   "WoodCream_XM001_YM002.obj": "19e1e936f6ffb34218b4db77b96225ceb2fc0efcbaaceb6fa07238794dd7c317",
   "WoodCream_XM001_YM003.obj": "231699c76244589113f4e3de0ba6f0e63acb938f9bf0700293c2cc85431cad84",
@@ -23016,107 +23018,107 @@
   "WoodDeck_XP002_YP002.obj": "3fed6fdf763f27a02d8bb1e69a61e9357163a44717311b32b30e23859300a2c3",
   "WoodDeck_XP002_YP003.obj": "9ef98b70e5e1ac314ad921c13d62dcb057d9ec353db215aa4449c901617a3347",
   "WoodGreen_XM001_YM001.obj": "df9d8407339aa837928286e1a7f599bb776689085a23e9eb2f921a6eba6c81ab",
-  "WoodGreen_XM001_YM002.obj": "8595a167e88cbc8e5a3c8d19d3d38eef413e4359a4d4edaf6ada1cb0dfee5686",
+  "WoodGreen_XM001_YM002.obj": "d17edd5ebd2c6590a852a440885d32c9b280996bccdc8a689eed80e0e2e6c9c9",
   "WoodGreen_XM001_YM003.obj": "01c578602bce4a52cea61ab60924cc29897c131b5a784bbf5b65587ed64ca906",
   "WoodGreen_XM001_YP000.obj": "fe5f409e0ce76a070289e0b714469bf1096704111643ad36f4b7b8039a9b9ad2",
-  "WoodGreen_XM001_YP001.obj": "0b3289c2d244957a157ab918c1f2b68afea4adccb68d50194846dcdf1c64d284",
-  "WoodGreen_XM001_YP002.obj": "8f67a1a2a592e1c417eccdc3041b38096fe4afaa2670a590b9a20509d6343531",
-  "WoodGreen_XM001_YP003.obj": "90f039815ed054a184affee84648e813fd8945605d2659c487c56ee80b6e50d2",
-  "WoodGreen_XM002_YM001.obj": "aa8cdfd1f2d6e41a747cc7f3a3a47207c21ea0ab076d9bebd3b5240f65c5b20a",
-  "WoodGreen_XM002_YM002.obj": "eda2db46443700077f8db69bebd30fba4f385fab9ff3713457556acc5216338e",
+  "WoodGreen_XM001_YP001.obj": "5d027240fec1b8d7497a5ef22e0f9c1d13e5a0f0268e87c9fdb68b3ee03864c9",
+  "WoodGreen_XM001_YP002.obj": "bc604c551d48813be4874f284813eb9b005fb75ef456bd23373b069f71d17055",
+  "WoodGreen_XM001_YP003.obj": "8fb5b33ea6719983566b84dcbbf36aed0f1f097232d609180527f545f6217644",
+  "WoodGreen_XM002_YM001.obj": "891f4d679d46cabf86e283196129aa419970081a27ca8520cc5c3b643363a34e",
+  "WoodGreen_XM002_YM002.obj": "188cea354f75f316ede02350d566cdfff1e28efa96a0f19ea54868ec8e172502",
   "WoodGreen_XM002_YM003.obj": "c20c3a1e6bfd88e68e1242cb3305079effa0a42bcc1774ff1dd0440ad9ff6235",
-  "WoodGreen_XM002_YP000.obj": "63172a76d37f2f81ff91f534a964febd6d21b77e010eaca599fc594a9968026e",
-  "WoodGreen_XM002_YP001.obj": "d2123a50dfbe7085ba0aaf09c2362be4bcc46e8b3e4e2851b9a6b0c54a7e372f",
-  "WoodGreen_XM002_YP002.obj": "6fcb876037a751154cd96094ef2320f0c1336beeb313c9238aff3d96fa2243ec",
-  "WoodGreen_XM002_YP003.obj": "aff8702e3d7fa66a949c7bd076e2fe5e143889a568491f2f7d0115dc948d506c",
+  "WoodGreen_XM002_YP000.obj": "3c166ca03c5ddf97bef6b8cd80bdf6d05b1e2b4b91bfedc9eee9ded3ace97ed9",
+  "WoodGreen_XM002_YP001.obj": "eec9c5e9faf9e840d1b307c82a0963de393e2e3800d85c77d1cdb135d37dd9bf",
+  "WoodGreen_XM002_YP002.obj": "2936feef239526826aec697558576d7f6f96c5c2b0a5eeb0ebde616771dee450",
+  "WoodGreen_XM002_YP003.obj": "5993e9334bee2b0328d27fd8d74c4e971eed08acd73fb6156f6bf4af2c61254f",
   "WoodGreen_XM003_YM001.obj": "4518bda7827e346dd4a59a3cce0c192e0f50a2b725afccf73d61d3f585807224",
   "WoodGreen_XM003_YM002.obj": "fa84885257e20480f5c2bf365ea79a36e395f23e0b88de253d9185e39b37edf0",
   "WoodGreen_XM003_YM003.obj": "c971410b2f03e9470b591d8101ce60ddeec4ddc08c547ac0c6d9adbef2916481",
   "WoodGreen_XM003_YP000.obj": "a78a0490e7c8d73c507040a09089bb68d86dac61f36cacb917c302cb0cec323d",
-  "WoodGreen_XM003_YP001.obj": "e0da2405e200351f924c15cbc01322e93afadc436fa21de8ab13c5f3b54e9e3e",
-  "WoodGreen_XM003_YP002.obj": "c66fee767459515610b7af713094c76f67378a5b8aad503af566aba2a0125e09",
+  "WoodGreen_XM003_YP001.obj": "dc26c641052d83aa825e8e9a501111565b52e0bdf9455e68215709f42273e18c",
+  "WoodGreen_XM003_YP002.obj": "436cfd965976ea5b02884357e3faf93d6d9c36c42c10cb7f7a986483080f6d35",
   "WoodGreen_XM003_YP003.obj": "d91c2213808a0a4f738e80eb79da6ec0af0b154af1cfc9c373c90b177bbbea9c",
   "WoodGreen_XP000_YM001.obj": "3f486e32b11c215bc5ca5fc8664ffabe9aaa46e15daa7ef4bb0665ecabe2cd1e",
-  "WoodGreen_XP000_YM002.obj": "ae7ac3a2d6af2174909cf050aba7d336f409bd51d47d0ff8de5490751b06aafb",
+  "WoodGreen_XP000_YM002.obj": "5d477820c4a54f7027358c031611c649a6f600dd73a8b096e61015bcd034eaff",
   "WoodGreen_XP000_YM003.obj": "01fbdccfe1a946676a71d7719573e0ab64d827bbf3044294a8269aea66a98bfa",
   "WoodGreen_XP000_YP000.obj": "b6327b8d75843dc324369220b37b20e9ec9c7ae1970e8a5a15c8badcef5eb519",
   "WoodGreen_XP000_YP001.obj": "3084b758911e543113dee5c916aa47e0f6ff28cf80ef55e0e1b11cc46988de43",
   "WoodGreen_XP000_YP002.obj": "aefe61727150dbf4e2d052c33d3e2a573d12f08669e8224518fb86557e2305dc",
   "WoodGreen_XP000_YP003.obj": "7449dc60a479315ffff2eb48e21b4c629ecc7db2bf5b9337d69f6934b2dd589d",
-  "WoodGreen_XP001_YM002.obj": "4303ccb362ca69cf593d5b78f13531eb3e09b402fa259592f3280bea8889dda5",
+  "WoodGreen_XP001_YM002.obj": "e31fcc9f6271a4e02620273599e5c03a7e6d9059a45d54e743cc8cdcb386eded",
   "WoodGreen_XP001_YM003.obj": "3f563a972df167f9a9187ef5d9c8d2b6169383b23bf208b2227a402d593b1766",
   "WoodGreen_XP001_YP001.obj": "526cdc91bba2fdfa23bd83fdcaf3a4caeb8a45d323da095d2ceefc0934bf630e",
-  "WoodGreen_XP001_YP002.obj": "e96a428437566d5526f36170b9ad7f3573d4a81b476994d6338e465de0213390",
-  "WoodGreen_XP001_YP003.obj": "97940c27a3c46155ea41ff2c4fff84a7ddcdc5c2b068dcc77f69ac1b4b3c2897",
+  "WoodGreen_XP001_YP002.obj": "656bba9226835e909b5dbfb9ba33e66101f707768849cb1bba9d843f6b4ab775",
+  "WoodGreen_XP001_YP003.obj": "4f1c7ffa31bcaf1cbac7e6fa6f61e1d96fec259650dc5944f5325c28e0c77733",
   "WoodGreen_XP002_YM002.obj": "9c9cac22a8358263611b6c134bf226fec6e8acfd4b70905cff0c509cfb6db768",
   "WoodGreen_XP002_YM003.obj": "edb157fc09204a432c87742414ba69270a8d983989022aa139510aa60cf774bd",
   "WoodGreen_XP002_YP000.obj": "1bfc604b9b41045ef6a5989dc6da18cca296fe78cdd580aecafa0d4478f9c1d9",
-  "WoodGreen_XP002_YP001.obj": "abe18f65d8860984ef5bbbc31e80622e7ad972c0f9ba136ae5e3776d7aae7ab1",
-  "WoodGreen_XP002_YP002.obj": "091d963ac99652d000ff641e596ed37e44021de5f7dc395ac91f58c53debcf8d",
-  "WoodGreen_XP002_YP003.obj": "cceea616aabc45430789853ffb69a26a7d9a9f2530f2f2249193882a24e489b7",
-  "WoodGrey_XM001_YM001.obj": "0c8c9248f2167dcc23033ebf30e6692908791bf395ac6459c3bc7c7a91380e80",
-  "WoodGrey_XM001_YM002.obj": "15a41375eada3c3e8ef099274fa01aee77fcb5e2d6c701b56b9590b2830d0044",
+  "WoodGreen_XP002_YP001.obj": "b5940463882ed7fc56f407db97d165110f92d96bb259960e7d633130745a5f12",
+  "WoodGreen_XP002_YP002.obj": "e6b4b0e728a1ba201ff8a14971cbb490afc49bbc4bce486f37e3dcb8a8e74c97",
+  "WoodGreen_XP002_YP003.obj": "7434e0c969d14527be3fe596bf261e9068ed82610ee0d7f207540a318704d37f",
+  "WoodGrey_XM001_YM001.obj": "ae944c5feda4591c8d7b9700e14b22133036b4adcde7e864cd08a6bb7d667538",
+  "WoodGrey_XM001_YM002.obj": "0f526dfc354b29519ced7dabcb1784d70268160fcb664bd9e37400b273432402",
   "WoodGrey_XM001_YM003.obj": "2356b6ec1589da903156c2b2f3e884d53026a04b6d233d8051be3fac9aac6119",
-  "WoodGrey_XM001_YP002.obj": "6fc14fe047738e95c78db9227014452f3178b37089118560f226d5b9dbbe2689",
-  "WoodGrey_XM001_YP003.obj": "6938f9ad6c47dafd95f5ee8eda577094238f708d9e76e9e6e1e32edaab000169",
-  "WoodGrey_XM002_YM001.obj": "34236c8b9e54df0163387097c6e150f7398f94d5cc6951b451f46eda5b42862a",
+  "WoodGrey_XM001_YP002.obj": "03df401ef53c4de66984e66b1329c9886aaee639c9502441ff1abb87f4c1a906",
+  "WoodGrey_XM001_YP003.obj": "571d723b3c99a628c07bcc7ea9a50fd76e065e855086f128cf81f0f89cc56ccd",
+  "WoodGrey_XM002_YM001.obj": "ab7409b25ab3df36b4083e4146e8ccb6d8b89e81b018942d98020ff0f767e515",
   "WoodGrey_XM002_YM002.obj": "ba2a05e6eac0551c9b50f751261d8a9ae01edeacf1b21b9507c4ff9f02594e3d",
   "WoodGrey_XM002_YM003.obj": "8cc86301a8be896f6409c68a4a371ff5ff88364ec8826cf982a9bef042866fb7",
   "WoodGrey_XM002_YP000.obj": "cddd0104532eefd45cb61e00a42fd87a8e4774f6d1541c83d6f8fbb2fdab4471",
-  "WoodGrey_XM002_YP001.obj": "dbc28888963c979e5a7e43abf0f142266f89617aa885337a4bd17a1c711af0e2",
-  "WoodGrey_XM002_YP002.obj": "f2df7ef7d364e2a437c7e1154a344bc7de900821119aa0b0f5cec8d447cc089a",
-  "WoodGrey_XM002_YP003.obj": "e1513c899d7d30800f4610c8af9207044915750ea39640bbc883b49bcc3e129a",
+  "WoodGrey_XM002_YP001.obj": "70bf524a781765bb5ce02dfde6bf2d6649b3fe271be6ececbc45b2a66d4101b4",
+  "WoodGrey_XM002_YP002.obj": "e2855e484ab107c560554be33a044fea3b18966c54579ec9b2ae90be4de7b03d",
+  "WoodGrey_XM002_YP003.obj": "038e5c3216b12531aef53fb425d853e70a8351d6c137bf50678253cc77655244",
   "WoodGrey_XM003_YM001.obj": "b9008198c620ebb29c4af886527a6d079b80a9d25fde1dc56df6b68616d6a1e7",
   "WoodGrey_XM003_YM002.obj": "3d6b37b4680fe44e444306a1dcb0f34084b3b8fd26fd939de8d9de2aac34da3a",
-  "WoodGrey_XM003_YM003.obj": "f31b0b23db08c928d3d30a1ced0e3c6854dab6ea65f37e5e11090974fef91458",
+  "WoodGrey_XM003_YM003.obj": "787e09c5b0155f2ff2481c43ce7b8fae98fc5b3906121ebc59cd9c4daed2df60",
   "WoodGrey_XM003_YP000.obj": "704edeef3c096c1f82bee881acb3805a866efc9d4ad18ecd145ac98f0b0efe30",
-  "WoodGrey_XM003_YP001.obj": "112d69429a70044cbcf23ad2ff4e369c53962b2020fcaa5cdf8dc5c60874a88a",
-  "WoodGrey_XM003_YP002.obj": "156f8f221e139ba15a129e0d446f2390112fcc3d38b7ff669d655fa2d9f2f8ac",
+  "WoodGrey_XM003_YP001.obj": "8f4ee46584d429f3760cb4f3aee4743bfd552ccc7f6b4dddd48241eb2509000d",
+  "WoodGrey_XM003_YP002.obj": "bd7200005c230af642a68e8ee0c3aef506fbe98894e05a562794d682b50ff465",
   "WoodGrey_XM003_YP003.obj": "56df48c8f4511127a6a1d0a5d6db19206670965209a60641bab548b454e6909a",
-  "WoodGrey_XP000_YM002.obj": "6dc37ce638de5ace9d2054f74b401642d431dec14d780e8e52f5c1df28017b9f",
-  "WoodGrey_XP000_YM003.obj": "08e9cc96d9597bf372863dae21886a6c3bcfb4a45e12e5963b693debfa5a413b",
-  "WoodGrey_XP000_YP003.obj": "c99cebfff4dbfb2b0ce3cbe3b29d16b92238c53b1aa435f4f3252cbf76fd67bd",
-  "WoodGrey_XP001_YM002.obj": "5c2051c894fd0aa8ba383377a0944461ecc0586c40f60afe22289586121321e4",
+  "WoodGrey_XP000_YM002.obj": "ca9136b55ff760aa1a2edaab5751a56a268ef4b792d4d427ac4726ad3155dce1",
+  "WoodGrey_XP000_YM003.obj": "c5bd6e5727159bd28957d3ea7692bfb5978d7cee3bc3adb79f94496447bf887c",
+  "WoodGrey_XP000_YP003.obj": "abd528324471ed7695a2884d3ee22df6608788a698845e1f6501ff044f865f1c",
+  "WoodGrey_XP001_YM002.obj": "f91bce00d70df24ccfc1f34780a1c4a7ae70e07192aba902972b21bdafddc37f",
   "WoodGrey_XP001_YM003.obj": "5075c1488915a88dc4f984bf2456120f8fc35d94a8b404f4fbafecdc1cedd401",
-  "WoodGrey_XP001_YP002.obj": "c413c683ea97bc012797e8db626c43844ca90d2d7b89e90034d2834435a0b0ff",
+  "WoodGrey_XP001_YP002.obj": "b72ca08020744769449664e7086248da1968b4faab92fd72ba0050c4752dc49b",
   "WoodGrey_XP001_YP003.obj": "100d8af4f7ed072c3c5886fa4d5027c94c46e02e86550dc3a88590453265fa52",
   "WoodGrey_XP002_YM002.obj": "f75450b91c5cf22041b6380ab6b2ac9e8a2cc1eed46687109b6dab2cece41c51",
   "WoodGrey_XP002_YM003.obj": "b98cf178db929aa2a18e138f29b3ef2654f37621b146be34ac3a223c8001868d",
   "WoodGrey_XP002_YP000.obj": "afcfdd34cdc13fc77c97be612eae2de408c9e9937af4136a6ec89d2dd2a44552",
-  "WoodGrey_XP002_YP001.obj": "3113abfbeef4cc54b6fe16996b5b836433f801d1501f1beb786f971d875d179e",
-  "WoodGrey_XP002_YP002.obj": "b444d8bb9c0ec854f2de14ab26ac48f51d2a2616d947f047b8f3bad00ab67988",
-  "WoodGrey_XP002_YP003.obj": "ba43c65e0cec5a1d95abe12e81f9cd244f1f1f869a566bcde111461cbbd66461",
+  "WoodGrey_XP002_YP001.obj": "43275c2a78db539d08398c3dd299ac685a65372aa3c830aad1b116b6307285c0",
+  "WoodGrey_XP002_YP002.obj": "ac71f63b2017b7b61faa5a07aa77aa0cf6bff909645cad600983a7cfaf9ae7c4",
+  "WoodGrey_XP002_YP003.obj": "e324f49c6be01b75d81c8f1257dc80720632d9df9522e2ad14a1b5093a4eb4d4",
   "WoodOak_XM001_YM001.obj": "02c5b810fbac10e50110010c331c3d55512bf207e877b8f93fb26157a771b7e0",
-  "WoodOak_XM001_YM002.obj": "67c5540949c45faf5fb8e380226d69a216aca9701cc28e06cf78fc16748cf54b",
+  "WoodOak_XM001_YM002.obj": "0e6b13b1d2cf641adf7c320ca7e39694b1cf71c2fea11696c25c9c873447510f",
   "WoodOak_XM001_YM003.obj": "9f9a677642d6c1ce30a84711a3889d20806a2639c79e3adeb53f7cea1bf00c0d",
-  "WoodOak_XM001_YP002.obj": "7f8a2fbdad6a1820201a9729069b2433a271b858d965e0a6371d245c3e069d7c",
-  "WoodOak_XM001_YP003.obj": "3adc4393bf215772791c8deb6adece3cce0da053d284866fd5e260c14f4f8846",
-  "WoodOak_XM002_YM001.obj": "b6d909c9aaa59c6a81900f024b29acf8b2da3b996d443211c5c9562075f0f541",
-  "WoodOak_XM002_YM002.obj": "3d920ebb4cb6e37072506d18bdb3e2942e065d02c8e647b8763bdf0c7b8f640e",
+  "WoodOak_XM001_YP002.obj": "3ec1a3cc62f9a31dce3cc9aad9d8e29e2eac47477d21435df61155c58e3ae23a",
+  "WoodOak_XM001_YP003.obj": "ca07354c239115477549ee5affef9ce26afd688a8d8a40fc66919a6004d95e2d",
+  "WoodOak_XM002_YM001.obj": "ee5977f05767bd829882f38aef1ef38e90a2f4c71f65a2aa2ea8ce75547cda2a",
+  "WoodOak_XM002_YM002.obj": "38f174d640094620fe4d5965b641c584598026bdecdaab7f8541b728e8c290a6",
   "WoodOak_XM002_YM003.obj": "e5469e2bfc5634513bc0992e09ae24df63ab506b968ad236e1c8fabc1b8c75d0",
-  "WoodOak_XM002_YP000.obj": "0d6727913f8f9781060b954fad28f8116f5e2d290b19a389fb357fed8326b77b",
-  "WoodOak_XM002_YP001.obj": "6622c5409009351bd8b11566a9f81ef903244b7ecd066a1ab98d1a10dfa61af2",
-  "WoodOak_XM002_YP002.obj": "61a5b428a8411a811456b1e59f9b07777d79bc50f29891644f9278011a6b249a",
-  "WoodOak_XM002_YP003.obj": "17c75003a82e622e5483f9a2c04325384f12f5e54adb4520dd134ecd5ff1313a",
+  "WoodOak_XM002_YP000.obj": "30d71a87bcb61a166311eb11b6d40454881145a783d4caa18b62d62c995cf95f",
+  "WoodOak_XM002_YP001.obj": "01a94429dd5d2a55667faa072b4750d89e85f93024dcd36815e7e8a3913b7cca",
+  "WoodOak_XM002_YP002.obj": "279cba118a544c393dc9946149f57bfc257abb7adc40ae856c61993368ae3dbc",
+  "WoodOak_XM002_YP003.obj": "474c1178bcc12104262673a359c151b99af32f83381641fa34963bcd8988f52d",
   "WoodOak_XM003_YM001.obj": "de8a05deb9b9e0242f22b95c59584f3db6c383ff79db634208443e30d3f92730",
   "WoodOak_XM003_YM002.obj": "4da6d09a893f8b289b97dc48071fa28a07dccaeab3eb5711860c03beb8f4e618",
   "WoodOak_XM003_YM003.obj": "320cfb140c73207ee59a354d1a3a43c8b0fd16b67e325903da91ebecc3c9c158",
-  "WoodOak_XM003_YP000.obj": "e1ba6571126198232c967a913a54013daee1589f52db9402658416e5ed9f6030",
+  "WoodOak_XM003_YP000.obj": "2c2f076db58de5bfcdcd3d219612008fa2e0844b8e9a674d0fec3fe0162b0436",
   "WoodOak_XM003_YP001.obj": "718b91495328888161bdc5e3700603b7632b590013ccff99af5c41856c3d0a4c",
   "WoodOak_XM003_YP002.obj": "6cc116359907789dc8ed0aae12de3efbf684a19c6a7a8b977c76fa328788485c",
   "WoodOak_XM003_YP003.obj": "5372cf0a3fc08c2981c2edb7892eefaa01fb643a666fe1fda4c59df87c94e259",
-  "WoodOak_XP000_YM002.obj": "0d1daaa48ffe6feaea1cac4d6817c7b0fedf46dc5b293674e48d84ff6b21bd93",
-  "WoodOak_XP000_YM003.obj": "4c3bc4f0881fb8b33b57c1105dba76c58f27c99f55eb263cce72cf56438322af",
-  "WoodOak_XP000_YP003.obj": "6a0794d79cfd50998b3e7d7e20d46b26208a45295c5fdfd35adbd9da208f6efc",
-  "WoodOak_XP001_YM002.obj": "aba20cdd09985063ec8f667dcd0783df93b38c260cd1b7031aa144315adade5f",
+  "WoodOak_XP000_YM002.obj": "cd1e113cc0481b4252c01f24c12a1857123f52f4f69e4a196f0a27172a8c622e",
+  "WoodOak_XP000_YM003.obj": "f8382a7c87522a2e77d9464d96b2d5715a40774cd0a532d30688f04d4e5fd127",
+  "WoodOak_XP000_YP003.obj": "7a26a4870a853e330cb8cfa97d73a0011f3116bea22dfbe83ff3ba50d4fa5baa",
+  "WoodOak_XP001_YM002.obj": "b30392074a279fa960c20ad9a9c15c6448fe9fc2da3eb44fa300e8bf79031a4a",
   "WoodOak_XP001_YM003.obj": "40c0b875a6cc2d392902566d1795f0df77192e906c859e68cc7ed6fb2d063120",
   "WoodOak_XP001_YP002.obj": "f51e164ad0e518ce5c44e1e480db77532174682871ec140dd70ffa64add011a3",
-  "WoodOak_XP001_YP003.obj": "00b08a246c45793b025f43984589cf7b9a9ee2df724cbdb33690edc75ab0cfa2",
+  "WoodOak_XP001_YP003.obj": "00bb66f83e321a96c4e269b28ef53f1c085e6472c86ed02f14f0f8d00e511359",
   "WoodOak_XP002_YM002.obj": "ac35ee750cbf3764b01af15c82f3968d6ddebff745229e880887511e1b604bce",
   "WoodOak_XP002_YM003.obj": "e70bd4e62b1c8623e1f823c290e04cbce69896698d26a20fed186d569f6755fa",
   "WoodOak_XP002_YP000.obj": "292cca9df766cd7f03a0506974630d607c12b82d74a29509e68651b55c99f326",
   "WoodOak_XP002_YP001.obj": "30962b08c42581f1c59cee084cbce2d820ae078f364ee3fe38a7c8bd926d88ea",
-  "WoodOak_XP002_YP002.obj": "cb06606d2403d50461aed697ca04447ec020b1b7284ecf0733af9461efc53649",
+  "WoodOak_XP002_YP002.obj": "fd3d66c75feadd708ee083197421760c9413a473ec71e93431fb7fa4d0e67685",
   "WoodOak_XP002_YP003.obj": "090e7d95c0ffffed5de315b9e7191f94b03deccbbaef2f36a2d0d5275219f569",
   "YardGrass_XM001_YM001.obj": "f1d5bc748e4323462aab57db4f99d3996bad1a64333b33ae8ad99259ba8a05e7",
   "YardGrass_XM001_YM002.obj": "c1d4287125fb0f4b255016be29d634721cf83949a91ac1ec75e0566e834af163",

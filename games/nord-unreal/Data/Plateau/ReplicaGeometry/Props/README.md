@@ -6,7 +6,7 @@ kit of low-poly, comic-friendly meshes with real dimensions, built from code in 
 - Generator: `Scripts/blender/plateau_props.py` (Blender 5.1 Python module or `blender -b`).
 - Output: one OBJ per prop part (one material each) and `manifest.json` in this folder. The
   OBJs are git-ignored and rebuild byte for byte; the manifest records each OBJ's SHA-256.
-- Preview: `Preview/Replica/props_contact_sheet.png` (Cycles CPU, 1600 x 1250).
+- Preview: `Preview/Replica/props_contact_sheet.png` (Cycles CPU, 1600 x 1500).
 - Check: `Scripts/test_plateau_props.py` (stdlib).
 
 ```bash
@@ -72,6 +72,9 @@ The manifest follows the shared ReplicaGeometry contract (`layer`, `generator`, 
     azimuth. `anchors.reflector_cm` and `lnb_cm` place the reflector centre and the feed: the arm
     leaves the lower rim and holds the LNB in front of and below the axis, as on an offset dish.
   - `bike_gallery`: `anchors.lean_contact_cm` is where the guard touches (12° lean toward -Y).
+  - `leaf_bag` and `pumpkin`: `forms` lists the sibling keys a placement picks from, with a share
+    each (`leaf_bag_mid`, `leaf_bag_low`, `pumpkin_carved`). Each form has `form_of`. The pumpkin
+    has `sizes` and `scale_range` for the placement `scale`. Each bag has `fill_cm`.
 - `colliders_cm` boxes are Unreal-local like `bounds_cm`, so the leaning bikes' boxes sit on their
   -Y side. The check keeps every box within 10 cm of its prop's bounds.
 - Material keys are new. The apply step creates them by duplicating an existing material, such
@@ -117,11 +120,17 @@ Each triangle count is for one assembled prop and excludes the duplicate merged 
 | `satellite_dish` | 818 | 3 | 56 x 46 x 81 |
 | `potted_plant` | 1,176 | 6 | 36 x 36 x 63 |
 | `bike_gallery` | 1,524 | 5 | 181 x 53 x 117 |
+| `leaf_bag` | 294 | 3 | 33 x 42 x 81 |
+| `leaf_bag_mid` | 314 | 3 | 33 x 42 x 67 |
+| `leaf_bag_low` | 334 | 3 | 33 x 42 x 51 |
+| `pumpkin` | 390 | 2 | 30 x 29 x 30 |
+| `pumpkin_carved` | 596 | 3 | 30 x 28 x 30 |
 
 Targets met: each lamp has at most 800 triangles, the hydrant at most 500, each dog at most 1,500,
 the stroller at most 1,500, the patio chair at most 700, the barbecue at most 1,600, the dish at
-most 1,200 and the potted plant at most 1,500. The folder holds 168 meshes, 27,080 triangles in
-all and 117 material keys. Every mesh is under 65,000 triangles.
+most 1,200, the potted plant at most 1,500, each leaf bag at most 400, the pumpkin at most 450
+and the carved pumpkin at most 700. The folder holds 183 meshes, 29,008 triangles in all and
+130 material keys. Every mesh is under 65,000 triangles.
 
 Gallery life (`kind: gallery`) furnishes the back galleries, the outdoor rooms the Plex layer
 records on each deck: a white resin stacking armchair, a two-burner propane grill on its cart with
@@ -138,6 +147,31 @@ white), the AC case (3), the flower box and flowers (3 each), bench wood (3), lo
 (2), the stroller seat and canopy fabric (3 each), the lamp pole (galvanised, grey), the resin chair
 (white, green, beige), the grill body (black, red, steel), the dish (white, grey, dark), the pot
 (terracotta, black, grey) and the geranium leaves (green, dry, rust).
+
+## Late-October dressing (leaf bags and pumpkins)
+
+`kind: season`. The Soul layer places them, and the apply step instances them like any other prop.
+
+- `leaf_bag`, `leaf_bag_mid` and `leaf_bag_low` are the 30 gallon two-ply kraft lawn and leaf
+  bag, 41 x 30 cm, filled to 64, 48 and 32 cm. The side gussets tuck in above the fill line and
+  the top is folded over toward +X. A bag filled less has more paper to fold, so it stands lower
+  (81, 67 and 51 cm) under a fatter roll. Parts: `body` (kraft: fresh, rain-dark, sun-bleached),
+  `print` (a green leaf and a band on both wide faces, ±X) and `leaves` (two to four leaves
+  caught in the fold: ochre, rust, brown). One box collider on `body`.
+- Place bags on the sidewalk at the curb edge beside the bins of a collection row, or against a
+  front fence or stoop: one to four per door, a wide face toward the street. Pick the form by
+  `props.leaf_bag.forms[].share` (full .45, three quarters .35, half .2), the colour by
+  `variant_seed`, and keep `scale` within `scale_range` (.97 to 1.03). A bag is never in the
+  roadway.
+- `pumpkin` is a carving pumpkin about 30 cm across with ten ribs and a woody stem: orange, deep
+  orange or white by `variant_seed`. `pumpkin_carved` is the same pumpkin as a jack-o'-lantern:
+  triangle eyes and nose, a grin with two teeth and the lid cut, in a dark `face` part. Its
+  face looks along +X, so yaw +X toward the sidewalk. No colliders.
+- Place pumpkins on stoop steps and landings, front-yard ledges and balcony floors: one to three
+  per door, carved for .3 of them. Sizes come from the placement `scale`: `sizes` gives pie .6,
+  carving 1 and large 1.4, within `scale_range` (.55 to 1.45).
+- The contact sheet tile "october curb" shows the three bags beside a brown bin and pumpkins at
+  the three sizes.
 
 ## Street-name sign text
 
@@ -209,6 +243,19 @@ exported meshes.
   black fluted park lamps with white globes, red Montréal hydrants with marker posts, BIXI
   docks). These rest on Wikimedia Commons photos checked by eye, which were not copied into
   assets. Bins follow the City's blue recycling wheelie bin and 45 L brown organics bin.
+- Leaf bags: the 30 gallon two-ply kraft lawn and leaf bag, 16 x 12 x 35 in (Uline S-22522,
+  https://www.uline.com/Product/Detail/S-22522; Duro at Costco Business Centre). Montréal takes
+  leaves in compostable paper bags, and a borough notice on montreal.ca ("Les sacs de plastique
+  interdits dans la collecte des résidus verts", RDP-PAT) bans plastic bags from green-waste
+  collection since 1 January 2024. The leaf print is a generic shape, not a brand mark.
+- Pumpkin: adapted from bflanagin, "How to: Spooky Jack-o-Lantern (Modeling)"
+  (https://steemit.com/art/@bflanagin/how-to-spooky-jack-o-lantern-modeling): a squashed sphere,
+  every third line of vertices pulled in for the ribs, the stem drawn out of the top ring and the
+  face cut in the front. Here a lathe with a radius factor per side makes the ribs, and the face
+  is a dark decal laid 4 mm over the shell (the lid cut 1.5 mm) instead of a hole with a
+  solidified wall, which keeps the carved pumpkin under 600 triangles. The CG Cookie beginner
+  low-poly pumpkin tutorial uses the same ribbed-sphere idea. Pumpkins on stoops in the last week
+  of October are an art-direction choice; no data source places them.
 - Technique: a procedural kit of parts (lathe, swept tube, chamfered box, extruded outline, flat
   glyphs) written for this layer. No external modelling breakdown fit this small-prop
   low-poly style better than the existing `plateau_streets.py` prop helpers, which this kit

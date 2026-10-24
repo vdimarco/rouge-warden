@@ -22,7 +22,12 @@ step (apply_plateau_replica.material_row, textured_graph, add_macro and plan_tre
 - shadows follow the apply step (casts_shadow for the layer batches, its PROP_SHADOW props), and the Leaf_Litter
   patches, which overlap at one height, are seen by camera rays only;
 - every placement gets the colour variant the apply step gives it;
-- the gallery_closeup and hlm_mentana cameras stand in the yard and on the far sidewalk.
+- every curb space of Streets/parked_cars.json holds the car the game fills it with (AQuebecParkedCars): the Car70 body,
+  roof and cabin of its body profile in its paint, the tyres and rims at the wheel centres, the pivot over the road, its
+  yaw, the C++ shadow and cull rules, the layout read from QuebecParkedRules.h;
+- the (conifer, blue) group of the Colorado blue spruces is drawn on its tinted leaves;
+- the gallery_closeup and hlm_mentana cameras stand in the yard and on the far sidewalk, and no camera stands in a
+  parked car.
 """
 import json
 import math
@@ -468,6 +473,9 @@ def check_street_trees(preview):
         tinted = {(g['kind'], g['variant'], g['leaves']['key']) for g in street_groups if g['leaves']}
         assert tinted and {k for k in made if k[2]} == tinted, (sorted(k for k in made if k[2]), sorted(tinted))
         assert {g['fall'] for g in street_groups if g['leaves']} >= {'red', 'russet'}, 'no red or russet tree drawn'
+        # The sixth pass's glaucous Colorado blue spruces: the conifer's (conifer, blue) group on its tinted leaves.
+        assert any(g['kind'] == 'conifer' and g['fall'] == 'blue' and g['leaves'] for g in street_groups), \
+            'no (conifer, blue) group drawn'
         young = sum(1 for key, _, _ in planned if key[1])
         assert young and all(kinds[k].get(apply_replica.YOUNG) for (k, v, _) in made if v), young
         meshes = len(made)
@@ -736,6 +744,125 @@ def check_prop_variants(preview):
     return {'parts_checked': checked, 'parts_in_a_variant': varied, 'parts_left_out': left_out}
 
 
+def check_parked_cars(preview):
+    """The sixth pass's curb parking: every slot of Streets/parked_cars.json drawn as AQuebecParkedCars::Build draws it
+    (QuebecParkedCars.cpp, QuebecParkedRules.h), on the AQuebecCar fleet of Data/SeventiesCars. Per slot: the Car70 body,
+    roof and cabin of its BodyProfile at the pivot, PivotHeight over the road, turned to its yaw; four tyres and four
+    rims at the wheel centres, rolled 90 degrees; the body's and roof's Paint slot in M_Car70_Paint<PaintStyle>, every
+    other slot in its own surface; shadows from the body, cabin and roof only; and each part gone past its cull end."""
+    import re
+    doc = json.loads((ROOT / 'Data/Plateau/ReplicaGeometry/Streets/parked_cars.json').read_text())
+    slots = doc['slots']
+    assert len(slots) == doc['counts']['slots'] > 1000, len(slots)
+    # The C++ layout the preview copies, and the header it reads it from.
+    cpp = (ROOT / 'Source/Quebec/QuebecParkedCars.cpp').read_text()
+    for line in ('FTransform(FRotator(0., Row.Yaw, 0.), FVector(Row.X, Row.Y, Row.Z + PivotHeight))',
+                 'FTransform(Roll, FVector(X, Side * TireY, WheelZ)) * Pivot',
+                 'FTransform(Roll, FVector(X, Side * RimY, WheelZ)) * Pivot',
+                 'const double X = Wheel < 2 ? WheelX : -WheelX, Side = Wheel % 2 ? 1. : -1.;',
+                 'const FRotator Roll(0., 0., WheelRoll);', 'Group->SetCullDistances(CullStart(Index), CullEnd(Index));',
+                 'Group->SetCastShadow(CastsShadow(Index));', 'Materials[Slot].MaterialSlotName == TEXT("Paint")',
+                 'TEXT("/Game/ParkComic/M_Car70_Paint%d.M_Car70_Paint%d")', 'TEXT("Car70Body%d")', 'TEXT("Car70Roof%d")',
+                 'TEXT("Car70Cabin%d")', 'CarMesh(TEXT("Car70Tire"))', 'CarMesh(TEXT("Car70Rim"))'):
+        assert line in cpp, 'the parked fill moved; mirror it in the preview: ' + line
+    header = (ROOT / 'Source/Quebec/QuebecParkedRules.h').read_text()
+    rules = preview.parked_rules()
+    for name in ('PivotHeight', 'WheelX', 'TireY', 'RimY', 'WheelZ', 'WheelRoll', 'BodyCullEnd', 'TireCullEnd',
+                 'RimCullEnd', 'Paints', 'Bodies'):
+        value = re.search(r'inline constexpr (?:float|int) ' + name + r' = (-?[\d.]+)f?;', header).group(1)
+        assert rules[name] == float(value), (name, rules[name], value)
+    assert 'inline bool CastsShadow(int Group) { return Group < TireGroup; }' in header
+    assert 'return Group == RimGroup ? RimCullEnd : Group == TireGroup ? TireCullEnd : BodyCullEnd;' in header
+    fleet = json.loads((ROOT / 'Data/SeventiesCars/manifest.json').read_text())
+    assert all(0 <= s['paint'] < rules['Paints'] and 0 <= s['body'] < rules['Bodies'] for s in slots)
+
+    made = []
+
+    def make(name, verts, polys, uvs, material, collection, smooth=False):
+        ob = Obj(name, types.SimpleNamespace(normals_split_custom_set=lambda normals: None, polys=len(polys)))
+        ob.material = material
+        made.append(ob)
+        collection.objects.link(ob)
+        return ob
+
+    saved = preview.make_object
+    preview.make_object = make
+    preview.CARS_BUILT.clear()
+    try:
+        everything = preview.Region((0., 0., 0.), (1., 0., 0.), 85., 1e9, circle=(0., 0., 1e9))
+        world = Collection('World')
+        n = preview.place_parked_cars(everything, world)
+        assert n == len(slots) and len(world.linked) == 3 * len(slots), (n, len(world.linked))
+        colls = dict(preview.CARS_BUILT)
+        by_slot = [world.linked[3 * k:3 * k + 3] for k in range(len(slots))]
+        for s, (body, tires, rims) in zip(slots, by_slot):
+            pivot = (s['x'] / 100, -s['y'] / 100, (s['z'] + rules['PivotHeight']) / 100)
+            for e in (body, tires, rims):
+                assert e.instance_type == 'COLLECTION' and e.location == pivot, (s['id'], e.location, pivot)
+                assert e.rotation_euler == (0, 0, -math.radians(s['yaw'])), s['id']
+            assert body.instance_collection is colls['body', s['body'], s['paint']], s['id']
+            assert tires.instance_collection is colls['tires'] and rims.instance_collection is colls['rims'], s['id']
+        # Each body collection: Car70Body<b>, Car70Roof<b> and Car70Cabin<b> at the pivot, every usemtl slot one object;
+        # the Paint slots in the row's paint (M_Car70_Paint<p>: the paints[p] colour, the Paint surface's roughness and
+        # metallic), the others in their own surface; all three cast a shadow.
+        bodies = {}
+        for (kind, *style), c in colls.items():
+            if kind != 'body':
+                continue
+            b, p = style
+            bodies[b, p] = len(c.linked)
+            stems = {ob.name.split('_')[1] for ob in c.linked}
+            assert stems == {f'Car70Body{b}', f'Car70Roof{b}', f'Car70Cabin{b}'}, stems
+            for ob in c.linked:
+                slot = ob.name.split('_')[2]
+                bsdf = ob.material.node_tree.nodes['Principled BSDF']
+                colour = fleet['paints'][p] if slot == 'Paint' else fleet['materials'][slot]['color']
+                surface = fleet['materials'][slot]
+                assert tuple(bsdf.inputs['Base Color'].default_value[:3]) == tuple(colour), (ob.name, colour)
+                assert bsdf.inputs['Roughness'].default_value == surface['roughness'], ob.name
+                assert bsdf.inputs['Metallic'].default_value == surface['metallic'], ob.name
+                assert ob.location == (0, 0, 0) and ob.visible_shadow, ob.name
+        used = {(s['body'], s['paint']) for s in slots}
+        assert set(bodies) == used and len(used) == rules['Bodies'] * rules['Paints'], sorted(bodies)
+        # The wheels: four tyres at (+-WheelX, +-TireY, WheelZ) and four rims at +-RimY, rolled WheelRoll about the car's
+        # x axis (Blender's X, as the file frame keeps x), in the file frame (x, -y, z); no shadow.
+        for kind, stem, y in (('tires', 'Car70Tire', rules['TireY']), ('rims', 'Car70Rim', rules['RimY'])):
+            parts = colls[kind].linked
+            groups = preview.read_obj_groups(str(ROOT / 'Data/SeventiesCars/Geometry' / (stem + '.obj')))
+            assert len(parts) == 4 * len(groups), (kind, len(parts))
+            wheels = []
+            for wheel in range(4):
+                x = rules['WheelX'] if wheel < 2 else -rules['WheelX']
+                side = 1. if wheel % 2 else -1.
+                wheels.append((x / 100, -side * y / 100, rules['WheelZ'] / 100))
+            assert [ob.location for ob in parts] == wheels * len(groups), kind
+            assert all(ob.rotation_euler == (math.radians(rules['WheelRoll']), 0, 0) for ob in parts), kind
+            assert not any(ob.visible_shadow for ob in parts), kind + ' cast no shadow in game'
+            # The four wheels share one mesh per slot, as the instanced component draws one mesh.
+            assert len({id(ob.data) for ob in parts}) == len(groups), kind
+        # Cull ends, from the camera to each slot's pivot: the rims go first, then the tyres, then the body.
+        s = slots[0]
+        pivot = (s['x'], s['y'], s['z'] + rules['PivotHeight'])
+        kept = {}
+        for metres in (0, 30, 50, 85, 95):
+            near = Collection('Near')
+            camera = (pivot[0] + metres * 100., pivot[1], pivot[2])
+            preview.place_parked_cars(everything, near, camera)
+            kept[metres] = sorted(e.instance_collection.name.split('_')[1] for e in near.linked
+                                  if math.isclose(e.location[0], pivot[0] / 100) and
+                                  math.isclose(e.location[1], -pivot[1] / 100))
+        assert kept == {0: ['body', 'rims', 'tires'], 30: ['body', 'rims', 'tires'], 50: ['body', 'tires'],
+                        85: ['body'], 95: []}, kept
+        # A view loads only the slots in its region.
+        far = preview.Region((0., 0., 0.), (1., 0., 0.), 85., 1e9, circle=(1e7, 1e7, 100.))
+        assert preview.place_parked_cars(far, Collection('Empty')) == 0
+    finally:
+        preview.make_object = saved
+        preview.CARS_BUILT.clear()
+    return {'slots': len(slots), 'body_collections': len(bodies), 'tyre_parts': len(colls['tires'].linked),
+            'rim_parts': len(colls['rims'].linked), 'cull_m': {k: v for k, v in kept.items()}}
+
+
 def check_views(preview):
     """The two new views: the gallery camera stands in its lot's yard at eye height and looks at the gallery stack;
     the HLM camera stands on the far sidewalk of Mentana and looks at the OMHM block."""
@@ -790,8 +917,21 @@ def check_views(preview):
                  > math.cos(half) * math.dist((cx, cy), r['position'][:2])]
         nearest[name] = round(min(ahead, default=1e9))
         assert nearest[name] > 250., f'{name}: a street tree stands {nearest[name]} cm in front of the camera'
+    # No camera stands in a parked car: each is 1 m or more from every slot's 466 x 220 cm body (Data/SeventiesCars).
+    slots = json.loads((ROOT / 'Data/Plateau/ReplicaGeometry/Streets/parked_cars.json').read_text())['slots']
+    clear = {}
+    for name, spec in v.items():
+        (cx, cy, cz), _ = spec['camera']
+        best = 1e18
+        for s in slots:
+            a = math.radians(s['yaw'])
+            along = (cx - s['x']) * math.cos(a) + (cy - s['y']) * math.sin(a)
+            across = -(cx - s['x']) * math.sin(a) + (cy - s['y']) * math.cos(a)
+            best = min(best, math.hypot(max(0., abs(along) - 233.), max(0., abs(across) - 110.)))
+        clear[name] = round(best)
+        assert best >= 100. or cz > 1000., f'{name}: the camera stands {best:.0f} cm from a parked car'
     return {'gallery_closeup': v['gallery_closeup']['camera'], 'hlm_mentana': v['hlm_mentana']['camera'],
-            'nearest_tree_ahead_cm': nearest}
+            'nearest_tree_ahead_cm': nearest, 'nearest_parked_car_cm': clear}
 
 
 def main():
@@ -800,7 +940,7 @@ def main():
               'street_trees': check_street_trees(preview), 'index': check_index(preview),
               'region': check_region(preview), 'collision_only': check_collision_only(preview),
               'shadows': check_shadows(preview), 'prop_variants': check_prop_variants(preview),
-              'views': check_views(preview)}
+              'parked_cars': check_parked_cars(preview), 'views': check_views(preview)}
     print(json.dumps(report, indent=1, sort_keys=True))
     print('Plateau replica preview checks passed')
 

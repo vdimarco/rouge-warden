@@ -6,7 +6,8 @@ Scripts/plateau_textures.py that the manifests use (greystone, slate, even buff 
 siding, parging, cut-out guards and fences, creeper and yard ground) and the macro-variation mask, builds the
 masked two-sided parent the cut-out keys need, duplicates materials (never rebuilds an
 existing M_*; see the wet-street gotcha in plateau_atmosphere.py), imports each batch with the
-upgrade_plateau.import_mesh semantics, enables Nanite (Preserve Area on masked batches), spawns labelled actors
+upgrade_plateau.import_mesh semantics, enables Nanite (Preserve Area on masked batches, a 1/32 cm position step on every
+layer mesh), removes the materials an import makes from a tree OBJ's .mtl, spawns labelled actors
 under the 'Replica' folder (Collision_Only batches on actors hidden in game that block pawns and ignore the camera
 and visibility), instances Furniture/Soul placements of the MAP-PROPS meshes on HISM components, and instances
 the Plex yard trees (Plex/yard_trees.json) and every street and park tree (Streets/street_trees.json) on the species
@@ -133,11 +134,14 @@ STREET_TREE_TAG = 'NordStreetTree'
 # actor per kind, mesh and fall, on the same mesh. That actor's leaves slot takes a duplicate of the kind's leaves whose
 # tint moves the kind's cells to the fall's colour (FALL_SRGB, the mean of a crown). So there is no new mesh and no
 # per-instance data: reading that needs a VertexInterpolator, which turns masked Nanite opaque in UE 5.8.
-TREE_FALLS = ('yellow', 'red', 'russet', 'gold', 'evergreen')      # plateau_replica.TREE_FALLS
+TREE_FALLS = ('yellow', 'red', 'russet', 'gold', 'evergreen', 'blue')   # plateau_replica.TREE_FALLS
 KIND_FALL = {'conifer': 'evergreen', 'larch': 'gold'}              # plateau_replica.KIND_FALL; every other kind yellow
+KIND_TINTS = {'conifer': ('blue',), 'larch': ()}                   # plateau_replica.KIND_TINTS
+BROADLEAF_TINTS = ('red', 'russet')                                # plateau_replica.BROADLEAF_TINTS
 # Red and sugar maples and the Freeman maples turn scarlet to orange red, the oaks russet red to wine red (Morton
-# Arboretum, University of Illinois Extension, Jardin botanique de Montreal). Gold is the larch's needles.
-FALL_SRGB = {'red': '#A83A22', 'russet': '#8B4426', 'gold': '#C8962E'}
+# Arboretum, University of Illinois Extension, Jardin botanique de Montreal). Gold is the larch's needles. Blue is the
+# Colorado blue spruce's glaucous blue grey, on the conifer's cells.
+FALL_SRGB = {'red': '#A83A22', 'russet': '#8B4426', 'gold': '#C8962E', 'blue': '#6F8E9A'}
 # Traffic centrelines: the roads of the game's cars and their widths, in the street_trees.json frame. No trunk stands
 # within TRAFFIC_CLEAR_CM of one unless it is in a sidewalk or curb-extension pit, or at a ruelle's edge where every
 # centreline that near is a service lane (prepare_lafontaine.road_width_cm gives each one 380 cm). None stands within
@@ -156,6 +160,15 @@ VEGETATION_CLASS = 'QuebecVegetation'
 DETAIL_TREE_LABEL = 'Plateau detail street tree '
 PLATEAU_LAYOUT = 'Data/Plateau/layout.json'
 PRESERVE_AREA = 'PRESERVE_AREA'            # Nanite shape preservation for masked cards, creeper and tree leaves
+# Nanite position precision of every layer mesh (Streets, Soul, Plex, Props): a step of 2^-5 cm, that is 1/32 cm.
+# Epic's Nanite page says Auto picks the step from the mesh's size and triangle density, in object coordinates, and
+# that meshes on the same setting never crack along shared edges. The layers are 95 m tiles of large flat triangles
+# whose overlays lie 0.1 to 0.8 cm apart (paint, gutter, litter), and a carved pumpkin's face lies from 0.05 cm over
+# its shell. One fixed fine step keeps those apart and the tile seams closed. The step only changes the Nanite data:
+# the exact fallback, and so the complex collision of the curbs, keeps the OBJ's own positions. Tree meshes stay on
+# Auto, since they have no stacked layers.
+NANITE_POSITION_PRECISION = 5
+NANITE_AUTO = -2 ** 31                     # MeshNaniteSettings.position_precision: MIN_int32 is Auto
 COLLISION_ONLY = 'Collision_Only'          # invisible walls (gallery guards): collide, never render
 GROUND_KEYS = ('sidewalk', 'curb', 'joint', 'yard_soil', 'yard_path', 'soil', 'patch', 'chantier', 'pothole', 'crack')
 # Material keys whose batches cast no shadow (flat decals and ground), matched as a whole key or a prefix before '_'
@@ -172,10 +185,20 @@ def casts_shadow(key):
 # Props whose instances cast a shadow: the lamps, poles, docks and benches, and the street props a player sees at the
 # curb in the low October sun (hydrants, sign posts, locked and BIXI bikes, bins, mail boxes, cones and the chantier
 # fence). The local review found the hydrants, signs, bikes and bins standing with none. The small gallery props and
-# the gate flower boxes stay without one.
+# the gate flower boxes stay without one. The late-October props cast one too: the kraft leaf bags stand 50 to 81 cm
+# tall at the curb beside the bins, and a pumpkin on a sunny stoop with no shadow floats. There are only a few per door.
+OCTOBER_PROPS = ('leaf_bag', 'leaf_bag_mid', 'leaf_bag_low', 'pumpkin', 'pumpkin_carved')
 PROP_SHADOW = ('lamp_cobra', 'lamp_park', 'utility_pole', 'bixi_dock', 'bench', 'hydrant', 'sign_stop', 'sign_street',
                'sign_oneway', 'sign_parking', 'bike_locked', 'bixi_bike', 'bin_recycling', 'bin_compost',
-               'bin_garbage', 'mailbox', 'cone', 'barrier_chantier')
+               'bin_garbage', 'mailbox', 'cone', 'barrier_chantier') + OCTOBER_PROPS
+
+
+def prop_scale_range(props_meta, key):
+    """(low, high) of a prop's placement scale (Props/manifest.json scale_range), or None. A form of another prop
+    (form_of: leaf_bag_mid, pumpkin_carved) takes its parent's range when it has none of its own."""
+    meta = props_meta.get(key, {})
+    found = meta.get('scale_range') or props_meta.get(meta.get('form_of') or key, {}).get('scale_range')
+    return (float(found[0]), float(found[1])) if found else None
 
 
 # The fourth pass's shared keys, as the generators agreed them (plateau_textures.py writes the sets, any layer may
@@ -541,13 +564,13 @@ def fall_leaves(species, kind, fall):
     """The leaves a street tree of this kind (a load_tree_kinds row) and fall wears. None for the kind's own fall
     (KIND_FALL, else yellow): the kind's own leaves. Otherwise {key, fall, asset, spec}: a duplicate of the kind's leaves
     whose colour is the manifest's x the fall's colour / the kind's shade, so that its tint (textured_tint) brings the
-    kind's cells to an average of FALL_SRGB[fall]. Only a broadleaf kind turns another colour, and only from a leaves
-    spec, not an existing material."""
+    kind's cells to an average of FALL_SRGB[fall]. Only a broadleaf kind turns another colour, or a kind of its own
+    fall to one of its KIND_TINTS (the conifer's blue), and only from a leaves spec, not an existing material."""
     own = KIND_FALL.get(species, 'yellow')
     if fall == own:
         return None
-    assert species not in KIND_FALL and fall in FALL_SRGB, \
-        f'{STREET_TREES}: a {species} tree cannot turn {fall}; the kind draws {own}'
+    allowed = fall in KIND_TINTS.get(species, BROADLEAF_TINTS)
+    assert allowed and fall in FALL_SRGB, f'{STREET_TREES}: a {species} tree cannot turn {fall}; the kind draws {own}'
     ref = kind['materials']['leaves']
     assert kind.get('leaves_shade'), \
         f'{species}: its {fall} trees need leaves given as a spec to tint, not the material {ref.get("existing")}'
@@ -936,7 +959,8 @@ def plan_kind_assets(kinds, species_used, texture_sets, used_sets):
         meshes.append({'species': species, 'variant': variant, 'file': mesh['obj'],
                        'asset': tree_mesh_asset(species, variant), 'sha256': mesh['sha256'],
                        'height_cm': mesh['height_cm'], 'trunk_cm': mesh['trunk_cm'], 'materials': slots,
-                       'collision': 'none', 'nanite_shape_preservation': PRESERVE_AREA})
+                       'collision': 'none', 'nanite_shape_preservation': PRESERVE_AREA,
+                       'nanite_position_precision': None})
     return materials, meshes
 
 
@@ -988,8 +1012,10 @@ def plan(root=ROOT):
                          'crown_spread': list(CROWN_SPREAD)},
         # Late-October colours: trees per kind and fall, and the tinted leaves of each group not of its kind's own fall.
         'falls': dict(sorted(tally(f'{r["kind"]} {r["fall"]}' for r in street or []).items())),
+        # base_color_srgb is the material's colour over the atlas mean; the kind's cards average fall_srgb under it.
         'fall_leaves': {t['label'][len(PREFIX):]: {'material': t['leaves']['asset'],
-                                                   'base_color_srgb': t['leaves']['spec']['base_color_srgb']}
+                                                   'base_color_srgb': t['leaves']['spec']['base_color_srgb'],
+                                                   'fall_srgb': FALL_SRGB[t['fall']]}
                         for t in streets if t['leaves']},
         'tag': STREET_TREE_TAG,
         'traffic': trunk_clearance(street, traffic) if (street and traffic) else None}
@@ -1030,6 +1056,8 @@ def plan(root=ROOT):
                                   'collision': batch.get('collision', 'none'), 'triangles': batch['triangles'],
                                   # Masked cards and creeper: Nanite keeps their area at a distance.
                                   'nanite_shape_preservation': PRESERVE_AREA if masked else None,
+                                  # One fine step on every layer mesh, so stacked layers never cross.
+                                  'nanite_position_precision': NANITE_POSITION_PRECISION,
                                   # Simple box collision from MAP-PROPS colliders_cm, on the prop's main part only.
                                   'colliders': colliders.get(key, []) if key and main_part.get(key) == batch['mesh'] else []})
             if layer != 'Props':
@@ -1051,6 +1079,11 @@ def plan(root=ROOT):
             # on a wooden utility pole no steel pole (Furniture rows with "without").
             without = set(row.get('without', ()))
             assert without <= {b.get('part') for b in parts[key]}, f'{key}: no part {sorted(without)} to leave out'
+            # A prop that gives a scale range (a pumpkin's pie, carving and large sizes) keeps every placement in it.
+            span = prop_scale_range(props_meta, key)
+            scale = float(row.get('scale', 1.))
+            assert span is None or span[0] - 1e-6 <= scale <= span[1] + 1e-6, \
+                f'{layer} {key} at {row["position"]}: scale {scale} is outside {list(span)}'
             assert not (row.get('collision') and any(b['mesh'] == main_part[key] and b.get('part') in without
                                                      for b in parts[key])), f'{key}: collides without its main part'
             for batch in parts[key]:
@@ -1082,6 +1115,8 @@ def plan(root=ROOT):
                      'macro_materials': sum(1 for m in out['materials'] if m.get('macro')),
                      'built_parents': len(out['parents']),
                      'preserve_area_meshes': sum(1 for m in out['meshes'] if m['nanite_shape_preservation']),
+                     'fine_precision_meshes': sum(1 for m in out['meshes']
+                                                  if m['nanite_position_precision'] == NANITE_POSITION_PRECISION),
                      'hidden_collision_actors': sum(1 for a in out['actors'] if a['collision_only']),
                      'shadowless_actors': sum(1 for a in out['actors'] if not a['shadow']),
                      'tree_meshes': len(out['tree_meshes']),
@@ -1180,7 +1215,8 @@ def preflight(u, root, backup, the_plan):
     for name in ('AssetImportTask', 'FbxImportUI', 'StaticMeshEditorSubsystem', 'MaterialEditingLibrary',
                  'HierarchicalInstancedStaticMeshComponent', 'TextRenderActor', 'StaticMeshActor', 'KBoxElem',
                  'Texture2D', 'TextureCompressionSettings', 'MaterialSamplerType', 'MaterialExpressionTextureSample',
-                 'MaterialExpressionTextureCoordinate', 'BlendMode', 'MaterialShadingModel', 'Vector4'):
+                 'MaterialExpressionTextureCoordinate', 'BlendMode', 'MaterialShadingModel', 'Vector4',
+                 'MaterialInterface', 'Texture'):
         assert getattr(u, name, None) is not None, 'Missing Unreal API ' + name
     for row in the_plan['textures']:
         assert getattr(u.TextureCompressionSettings, row['compression'], None) is not None, row['compression']
@@ -1570,10 +1606,17 @@ def add_box_collision(u, mesh, colliders):
     assert len(body.get_editor_property('agg_geom').get_editor_property('box_elems')) == len(colliders), mesh.get_path_name()
 
 
-def import_mesh(u, source, destination, name, material, collision, colliders=(), shape_preservation=None):
+def import_mesh(u, source, destination, name, material, collision, colliders=(), shape_preservation=None,
+                position_precision=None):
     """Import one OBJ batch as a Nanite static mesh (upgrade_plateau.import_mesh semantics). material None leaves
     the slots to the caller (tree meshes: assign_tree_slots); shape_preservation PRESERVE_AREA keeps masked cards,
-    creeper and leaves from thinning out at a distance."""
+    creeper and leaves from thinning out at a distance; position_precision sets the Nanite step (2^-n cm), None
+    leaves it on Auto.
+
+    UE 5.8 imports OBJ through Interchange. With a .mtl beside the OBJ (the species trees) it can also make a material
+    per newmtl and list it with the mesh, in any order, so the step takes the one static mesh of the import and leaves
+    the strays to remove_import_strays. Epic notes that Interchange may ignore destination_name; the runtime finds
+    SM_Asphalt* and SM_Concrete_Collision* by name, so a mesh under another name stops the step here."""
     task = u.AssetImportTask()
     task.filename, task.destination_path, task.destination_name = str(source), destination, name
     task.automated, task.save, task.replace_existing = True, False, False
@@ -1584,9 +1627,13 @@ def import_mesh(u, source, destination, name, material, collision, colliders=(),
     options.static_mesh_import_data.auto_generate_collision = False
     task.options = options
     u.AssetToolsHelpers.get_asset_tools().import_asset_tasks([task])
-    assert task.imported_object_paths, str(source)
-    mesh = u.EditorAssetLibrary.load_asset(task.imported_object_paths[0])
-    assert isinstance(mesh, u.StaticMesh), str(source)
+    paths = list(task.imported_object_paths)
+    assert paths, str(source)
+    found = [m for m in (u.EditorAssetLibrary.load_asset(p) for p in paths) if isinstance(m, u.StaticMesh)]
+    assert len(found) == 1, f'{source}: the import made {len(found)} static meshes, want one ({paths})'
+    mesh = found[0]
+    assert mesh.get_path_name().split('.')[0] == f'{destination}/{name}', \
+        f'{source} was imported as {mesh.get_path_name()}, not {destination}/{name}'
     if material is not None:
         mesh.set_material(0, material)
     subsystem = u.get_editor_subsystem(u.StaticMeshEditorSubsystem)
@@ -1607,9 +1654,53 @@ def import_mesh(u, source, destination, name, material, collision, colliders=(),
     settings.set_editor_property('fallback_relative_error', 0.)
     if shape_preservation:
         settings.set_editor_property('shape_preservation', getattr(u.NaniteShapePreservation, shape_preservation))
+    if position_precision is not None:
+        settings.set_editor_property('position_precision', int(position_precision))
     subsystem.set_nanite_settings(mesh, settings, True)
     assert u.EditorAssetLibrary.save_loaded_asset(mesh, only_if_is_dirty=False)
     return mesh
+
+
+def check_mesh_nanite(u, mesh, row):
+    """verify: a mesh's Nanite is on, with the planned shape preservation and position precision."""
+    nanite = mesh.get_editor_property('nanite_settings')
+    assert nanite.enabled, row['asset'] + ' is not Nanite'
+    if row.get('nanite_shape_preservation'):
+        assert nanite.get_editor_property('shape_preservation') == \
+            getattr(u.NaniteShapePreservation, row['nanite_shape_preservation']), row['asset'] + ' thins out'
+    if row.get('nanite_position_precision') is not None:
+        got = nanite.get_editor_property('position_precision')
+        assert got == row['nanite_position_precision'], \
+            f'{row["asset"]}: Nanite position precision {got}, planned {row["nanite_position_precision"]}'
+    return True
+
+
+def planned_assets(the_plan):
+    """Every asset the apply step makes under ASSETS: the textures, built parents, materials and meshes."""
+    rows = the_plan['textures'] + the_plan['parents'] + the_plan['materials'] + the_plan['meshes'] + \
+        the_plan['tree_meshes']
+    return {row['asset'] for row in rows}
+
+
+def unplanned_assets(u, the_plan):
+    """The assets under ASSETS that the plan does not name, sorted (package paths)."""
+    found = {path.split('.')[0] for path in u.EditorAssetLibrary.list_assets(ASSETS, True, False)}
+    return sorted(found - planned_assets(the_plan))
+
+
+def remove_import_strays(u, the_plan, report):
+    """Delete the materials and textures that the imports made beside the meshes. With a .mtl beside an OBJ (the
+    species trees), an Interchange import can add a material per newmtl (ash_bark, ash_leaves), as FbxImportUI's
+    import_materials may not reach it. Every slot holds its planned material by now, so nothing uses them. Any other
+    unplanned asset stops the step. Returns the deleted paths, also in report['stray_import_assets']."""
+    removed = []
+    for path in unplanned_assets(u, the_plan):
+        asset = u.EditorAssetLibrary.load_asset(path)
+        assert isinstance(asset, (u.MaterialInterface, u.Texture)), f'The import made an unplanned asset {path}'
+        assert u.EditorAssetLibrary.delete_asset(path), 'Cannot delete the stray import asset ' + path
+        removed.append(path)
+    report['stray_import_assets'] = removed
+    return removed
 
 
 def instanced_actor(u, editor, label, folder):
@@ -1647,8 +1738,9 @@ def spawn_layer_actor(u, editor, row, mesh, material):
 
 
 def check_layer_actor(u, actor, row, mesh_row):
-    """verify: one layer actor's mesh, triangles, Nanite (and Preserve Area on masked batches), material, collision
-    (invisible walls: hidden in game, blocking pawns, ignoring camera and visibility), shadow and origin."""
+    """verify: one layer actor's mesh, triangles, Nanite (Preserve Area on masked batches, the fine position step on
+    all), material, collision (invisible walls: hidden in game, blocking pawns, ignoring camera and visibility), shadow
+    and origin."""
     assert actor is not None, 'Missing actor ' + row['label']
     c = actor.static_mesh_component
     mesh = c.static_mesh
@@ -1657,11 +1749,7 @@ def check_layer_actor(u, actor, row, mesh_row):
     # The CPU test rejects float32-degenerate triangles up front; allow a sliver of import-side welding.
     planned = mesh_row['triangles']
     assert abs(mesh.get_num_triangles(0) - planned) <= max(2, planned // 1000), row['label']
-    nanite = mesh.get_editor_property('nanite_settings')
-    assert nanite.enabled, row['label']
-    if mesh_row.get('nanite_shape_preservation'):
-        assert nanite.get_editor_property('shape_preservation') == \
-            getattr(u.NaniteShapePreservation, mesh_row['nanite_shape_preservation']), row['label'] + ' thins out'
+    check_mesh_nanite(u, mesh, mesh_row)
     assert c.get_material(0).get_path_name().split('.')[0] == mesh_row['material'], row['label']
     if row.get('collision_only'):
         responses = {name: c.get_collision_response_to_channel(getattr(u.CollisionChannel, name))
@@ -1707,7 +1795,8 @@ def import_tree_mesh(u, root, row, materials):
     collision (as the mapped trees), its bark and leaves slots set by name."""
     folder, name = row['asset'].rsplit('/', 1)
     source = Path(root) / 'Data/Plateau/ReplicaGeometry' / row['file']
-    mesh = import_mesh(u, source, folder, name, None, 'none', (), row['nanite_shape_preservation'])
+    mesh = import_mesh(u, source, folder, name, None, 'none', (), row['nanite_shape_preservation'],
+                       row.get('nanite_position_precision'))
     assign_tree_slots(u, mesh, materials)
     assert u.EditorAssetLibrary.save_loaded_asset(mesh, only_if_is_dirty=False)
     return mesh
@@ -1928,7 +2017,10 @@ def import_assets(u, root, the_plan, manifests, report):
         folder, name = row['asset'].rsplit('/', 1)
         source = root / 'Data/Plateau/ReplicaGeometry' / row['layer'] / row['file']
         meshes[row['asset']] = import_mesh(u, source, folder, name, materials[row['material']], row['collision'],
-                                           row['colliders'], row['nanite_shape_preservation'])
+                                           row['colliders'], row['nanite_shape_preservation'],
+                                           row['nanite_position_precision'])
+    # Every slot holds its planned material now: the materials an import made from a .mtl go.
+    remove_import_strays(u, the_plan, report)
     return textures, materials, meshes
 
 
@@ -1991,7 +2083,7 @@ def apply(u, root, backup):
     report = {'passed': False, 'map': MAP, 'backup': str(backup.relative_to(root)), 'map_package_files': map_files,
               'plan_counts': the_plan['counts'], 'textures': {}, 'materials': {}, 'fresh_materials': [],
               'parents': {}, 'actors': {}, 'instances': {}, 'trees': {}, 'tree_meshes': {}, 'texts': 0,
-              'hidden': {}, 'vegetation': None, 'missing_props': the_plan['missing_props'],
+              'hidden': {}, 'vegetation': None, 'missing_props': the_plan['missing_props'], 'stray_import_assets': [],
               'manifest_sha256': {n: sha(root / 'Data/Plateau/ReplicaGeometry' / n / 'manifest.json') for n in manifests}}
     trees_manifest = root / 'Data/Plateau/ReplicaGeometry' / TREES / 'manifest.json'
     if the_plan['tree_meshes']:
@@ -2101,6 +2193,16 @@ def verify(u, root, backup):
         check_texture(u, assets.load_asset(row['asset']), row)
     for row in the_plan['tree_meshes']:
         check_tree_mesh(u, assets.load_asset(row['asset']), row)
+    # The prop meshes have no layer actor: read their Nanite settings back here.
+    prop_meshes = 0
+    for row in the_plan['meshes']:
+        if row['layer'] == 'Props':
+            mesh = assets.load_asset(row['asset'])
+            assert isinstance(mesh, u.StaticMesh), 'Missing prop mesh ' + row['asset']
+            prop_meshes += check_mesh_nanite(u, mesh, row)
+    # Nothing under the replica folder that the plan does not name (an import's stray .mtl materials).
+    strays = unplanned_assets(u, the_plan)
+    assert not strays, f'{len(strays)} unplanned assets under {ASSETS}: {strays[:6]}'
     samplers = {t['role']: getattr(u.MaterialSamplerType, t['sampler']) for t in the_plan['textures']}
     parents = {}
 
@@ -2176,6 +2278,8 @@ def verify(u, root, backup):
               'macro_materials': the_plan['counts']['macro_materials'],
               'clamped_textures': the_plan['counts']['clamped_textures'],
               'preserve_area_meshes': the_plan['counts']['preserve_area_meshes'],
+              'fine_precision_meshes': the_plan['counts']['fine_precision_meshes'], 'prop_meshes': prop_meshes,
+              'stray_import_assets_removed': len(report.get('stray_import_assets', [])),
               'hidden_collision_actors': the_plan['counts']['hidden_collision_actors'],
               'tree_meshes': len(the_plan['tree_meshes']), 'yard_tree_mode': the_plan['yard_trees']['mode'],
               'yard_trees': trees, 'street_trees': street_trees,
@@ -2210,6 +2314,16 @@ def main():
                           'macro': {m['asset']: m['macro']['strength'] for m in the_plan['materials'] if m.get('macro')},
                           'preserve_area_meshes': sorted({m['material'] for m in the_plan['meshes']
                                                           if m['nanite_shape_preservation']}),
+                          'nanite_position_precision': {
+                              'step_cm': 2. ** -NANITE_POSITION_PRECISION,
+                              'layer_meshes': dict(sorted(tally(m['layer'] for m in the_plan['meshes']
+                                                                if m['nanite_position_precision'] ==
+                                                                NANITE_POSITION_PRECISION).items())),
+                              'tree_meshes': 'auto'},
+                          'october_props': {i['label'][len(PREFIX):]: {'count': i['count'], 'shadow': i['shadow'],
+                                                                       'scale': [min(t[2] for t in i['transforms']),
+                                                                                 max(t[2] for t in i['transforms'])]}
+                                            for i in the_plan['instances'] if i['prop'] in OCTOBER_PROPS},
                           'hidden_collision_actors': [a['label'] for a in the_plan['actors'] if a['collision_only']],
                           'shadowless_materials': sorted({meshes[a['mesh']]['material'].rsplit('/', 1)[1]
                                                           for a in the_plan['actors'] if not a['shadow']}),

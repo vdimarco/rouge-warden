@@ -6,7 +6,9 @@ Writes three layers under Data/Plateau/ReplicaGeometry/ (frame: x east, y north,
               grey concrete sidewalks with an 18 cm curb (SM_Concrete_Collision_Replica_*),
               parterres with low iron fences, the street and park trees of the city's inventory with their
               sidewalk pits (guards and planting) and the few curb extensions the data or a corner calls for
-              (street_trees.json), ruelle surfaces with a sunken aged-concrete gutter, bike-track bollards.
+              (street_trees.json), ruelle surfaces with a sunken aged-concrete gutter, bike-track bollards, and
+              the on-street bike lanes, shared-street marks and bus-lane diamonds of the OSM cycleway tags
+              (bike_paint.json).
 * Furniture - placements.json only: lamps, hydrants, ARRÊT signs, white street-name signs,
               one-way and parking signs, BIXI docks, benches, bins and mail boxes. The meshes
               come from the MAP-PROPS layer (ReplicaGeometry/Props).
@@ -15,7 +17,8 @@ Writes three layers under Data/Plateau/ReplicaGeometry/ (frame: x east, y north,
               Plex yard records: pulley clotheslines from the gallery rails to yard poles, bins, flower
               boxes and bikes at the gates, the ruelles vertes (city open data: beds, plants, creeper,
               entry arches, planters, murals) and tags; placements.json for cones, chantier fences,
-              utility poles, curb and gate bins and locked bikes; lane_life.json with the lane records.
+              utility poles, curb and gate bins, locked bikes, and late-October paper leaf bags at the
+              curbs and pumpkins on the stoops; lane_life.json with the lane records.
 
 Stdlib only and deterministic: every random choice comes from a SHA-256 seed of stable OSM ids.
 Sources: Data/LaFontaine/osm.xml (© OpenStreetMap contributors, ODbL 1.0), the read-only
@@ -35,6 +38,7 @@ import xml.etree.ElementTree as ET
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from prepare_lafontaine import BOUNDS, ROOT, inside, tags, xy  # noqa: E402
+import plateau_park_signs  # noqa: E402
 
 OUT = ROOT / 'Data/Plateau/ReplicaGeometry'
 OSM = ROOT / 'Data/LaFontaine/osm.xml'
@@ -51,11 +55,19 @@ SOURCES = ('Data/LaFontaine/osm.xml', 'Data/LaFontaine/layout.json', GENERATOR,
            'Data/Plateau/Inventory/trees_pmr.json', 'Data/Plateau/Inventory/trees_vm.json',
            # the street lights and utility poles: the city's sign poles and their signs, clipped by --clip-sign-poles
            'Data/Plateau/Inventory/sign_poles.json',
+           # the parking signs at the city's poles: its parking-sign inventory (plateau_park_signs.py --clip)
+           'Data/Plateau/Inventory/park_signs.json', 'Scripts/plateau_park_signs.py',
            # the laundry atlas's cells (UV rect, size, pegs) the garments address (Scripts/plateau_textures.py)
            'Data/Plateau/ReplicaGeometry/Textures/textures.json',
            # the crowns the washing keeps out of and the leaf litter lies under: the tree meshes' crowns and leaf
            # retention, and the Plex yard trees
            'Data/Plateau/ReplicaGeometry/Trees/manifest.json', 'Data/Plateau/ReplicaGeometry/Plex/yard_trees.json')
+# The leaf litter's ground (LitterGround): the park's lawn and the paths, ponds, courts and old roads over it; and the
+# park build's own fallen leaves, which the park litter's height clears (LITTER_PARK).
+LITTER_LAWN, LITTER_COVERS = ('Grass.obj',), ('Path.obj', 'Water.obj', 'Court.obj', 'Road.obj')
+LITTER_INPUTS = tuple(f'Data/Plateau/BaseGeometry/{name}' for name in LITTER_LAWN + LITTER_COVERS) + tuple(
+    sorted(path.relative_to(ROOT).as_posix() for path in (ROOT / 'Data/Plateau/ParkGeometry').glob('Autumn*.obj')))
+SOURCES += LITTER_INPUTS
 LEGACY_MARKING = ROOT / 'Data/Plateau/BaseGeometry/Marking.obj'
 # The existing Panet/Visitation walking route already has detailed streets (plateau_streets.py).
 ROUTE = [(37400, -3280), (38405, -3924), (42703, -6819), (41685, -11320), (40636, -15933), (35500, -14300)]
@@ -202,10 +214,9 @@ SOUL_MATERIALS = {
 PROP_KEYS = ('lamp_cobra', 'lamp_park', 'hydrant', 'sign_stop', 'sign_street', 'sign_oneway', 'sign_parking',
              'bixi_dock', 'bixi_bike', 'bin_recycling', 'bin_compost', 'bin_garbage', 'cone',
              'barrier_chantier', 'utility_pole', 'laundry_line', 'bike_locked', 'ac_unit', 'flower_box',
-             'bench', 'mailbox', 'chair_patio', 'bbq', 'satellite_dish', 'potted_plant', 'bike_gallery')
-PARKING_TEXTS = [('R-PF', '\\P 9h-23h EXCEPTÉ S3R'), ('AD-TT', '\\A EN TOUT TEMPS'),
-                 ('SU-MA-A', '\\P 8h-9h MARDI 1 AVRIL AU 1 DÉC'), ('SD-TT', '\\P EN TOUT TEMPS'),
-                 ('SU-ME-A', '\\P 9h-10h MERCREDI 1 AVRIL AU 1 DÉC'), ('R-PF', '\\P 9h-23h EXCEPTÉ S3R')]
+             'bench', 'mailbox', 'chair_patio', 'bbq', 'satellite_dish', 'potted_plant', 'bike_gallery',
+             # late October (Props kind 'season'): kraft leaf bags at the curbs and pumpkins on the stoops, by form
+             'leaf_bag', 'leaf_bag_mid', 'leaf_bag_low', 'pumpkin', 'pumpkin_carved')
 M64 = (1 << 64) - 1
 PROPS_MANIFEST = OUT / 'Props/manifest.json'
 
@@ -1302,7 +1313,8 @@ def build_streets(world):
         'yard_risers', 'yard_mouth_wedges', 'yard_mouth_wedge_square_metres', 'sidewalk_pieces_split',
         'passages', 'passage_square_metres', 'passage_lead_ins', 'pit_guard_cards', 'pit_flower_cards',
         'curb_extension_back_walls', 'apron_walls', 'tree_pits_slid', 'ruelle_gutter_metres', 'trees_reseated',
-        'trees_reseated_pit', 'trees_reseated_parterre', 'trees_reseated_median')}
+        'trees_reseated_pit', 'trees_reseated_parterre', 'trees_reseated_median', 'bike_lane_line_metres',
+        'bike_lane_marks', 'sharrows', 'bus_diamonds', 'bike_paint_sides', 'bike_paint_too_narrow')}
     # Carriageway asphalt.
     for s in world.segs:
         if s['excluded']:
@@ -1375,7 +1387,10 @@ def build_streets(world):
         L.strip('paint_white', seg_point(s, along, lo), seg_point(s, along, hi), 40, Z_PAINT)
         counts['stop_bars'] += 1
         counts['stop_bars_' + kind] += 1
+        bars.setdefault(s['i'], []).append(along)
         return travel
+
+    bars = {}     # stop bars and generated crosswalks per segment: the bike paint stops short of them
 
     painted_crossings = set()
     for mark in stop_marks:
@@ -1388,6 +1403,7 @@ def build_streets(world):
             if 150 < cw < s['len'] - 150:
                 paint_crosswalk(L, s, cw, 'lines_white', counts)
                 counts['crosswalks_generated_at_stops'] += 1
+                bars.setdefault(s['i'], []).append(cw)
                 for side in (s['curbL'], -s['curbR']):
                     ramp_points.append(seg_point(s, cw, side))
         mark['crosswalk'] = bool(near) or True
@@ -1404,6 +1420,7 @@ def build_streets(world):
         if not near:
             cw = along + toward * 260
             paint_crosswalk(L, s, cw, 'continental_white', counts)
+            bars.setdefault(s['i'], []).append(cw)
             for side in (s['curbL'], -s['curbR']):
                 ramp_points.append(seg_point(s, cw, side))
     done = []
@@ -1449,10 +1466,11 @@ def build_streets(world):
                     L.strip('paint_yellow', seg_point(s, x[0], 0), seg_point(s, x[1], 0), 11, Z_PAINT)
                     counts['centre_line_metres'] += (x[1] - x[0]) / 100
         parking = _parking_sides(s)
-        # Lane lines between same-direction lanes.
+        bike = bike_paint_sides(s['tags'])
+        # Lane lines between same-direction lanes, inside the parked cars and the bike lanes.
         if s['oneway'] and lanes >= 2 or not s['oneway'] and lanes >= 4:
-            right = -s['curbR'] + (230 if parking['R'] else 0)
-            left = s['curbL'] - (230 if parking['L'] else 0)
+            right = -s['curbR'] + bike_band(s, 'R', parking, bike)
+            left = s['curbL'] - bike_band(s, 'L', parking, bike)
             groups = [(right, left, lanes)] if s['oneway'] else [(right, 0, lanes // 2), (0, left, lanes // 2)]
             for lo, hi, n in groups:
                 for k in range(1, n):
@@ -1462,6 +1480,8 @@ def build_streets(world):
                             L.strip('paint_white', seg_point(s, x[0], off), seg_point(s, x[1], off), 10, Z_PAINT)
                             counts['lane_line_metres'] += (x[1] - x[0]) / 100
         for side, sign in (('L', 1), ('R', -1)):
+            if bike.get(side) and bike[side][0] in ('lane', 'busway'):
+                continue      # a bike lane's own inner line runs along the parked cars; a bus lane has none
             if parking[side] and (s['hw'] in ARTERIAL or 'parking:' + ('left' if side == 'L' else 'right') in s['tags']
                                   or 'parking:both' in s['tags']):
                 off = sign * (s['curb' + side] - 230)
@@ -1488,6 +1508,10 @@ def build_streets(world):
                     counts['storm_drains'] += 1
 
     _bike_tracks(world, L, counts)
+    paint_stops = {k: list(v) for k, v in cross_by_seg.items()}
+    for k, v in bars.items():
+        paint_stops.setdefault(k, []).extend(v)
+    _bike_lanes(world, L, counts, paint_stops)
 
     # Sidewalks, curb bands, joints, ramps, aprons; corners; yards and fences; tree pits.
     ramp_grid = Grid(2000.)
@@ -1538,7 +1562,7 @@ def build_streets(world):
     for k in ('sidewalk_metres', 'yard_square_metres', 'fence_metres', 'centre_line_metres', 'lane_line_metres',
               'parking_line_metres', 'bike_track_metres', 'ruelle_metres', 'ruelle_square_metres',
               'ruelle_edge_metres', 'curb_extension_metres', 'yard_mouth_wedge_square_metres', 'passage_square_metres',
-              'sidewalk_pit_metres_moved', 'ruelle_gutter_metres'):
+              'sidewalk_pit_metres_moved', 'ruelle_gutter_metres', 'bike_lane_line_metres'):
         counts[k] = round(counts[k])
     counts['curb_measurement'] = world.curb_stats
     counts['osm_stop_nodes_inside'] = len(world.stop_nodes)
@@ -1632,23 +1656,308 @@ def _bike_tracks(world, L, counts):
                     counts['green_conflict_zones'] += 1
 
 
+# On-street cycling paint from the OSM cycleway tags of the drive ways. A bike lane (cycleway lane or opposite_lane,
+# the contraflow "bande cyclable à contresens") runs between two white lines, by the parked cars or the gutter, with a
+# diamond, a bike and an arrow repeated in it. A shared street (shared_lane, the City's "chaussée désignée") has a
+# bike and two chevrons in the traffic lane. A bus lane shared with bikes (share_busway) has the reserved-lane white
+# diamond in its curb lane. The first mark lies within 30 m after each junction, then one every BIKE_REPEAT. Sources:
+# the Ville de Montréal bike presentation (diamonds, bikes and arrows between two white lines), the Réseau vélo
+# métropolitain intersection guide (bike-and-chevron marks within the first 30 m after the intersection, repeated as
+# needed), Vélo Québec's "Aménager pour les piétons et les cyclistes" (2020, 4.1.2, the bike-chevron marking) and
+# quebec.ca "Marques sur la chaussée" (white bike, white diamond for reserved lanes; research-plateau.md 11.1).
+BIKE_KINDS = {'lane': 'lane', 'opposite_lane': 'lane', 'shared_lane': 'shared', 'share_busway': 'busway',
+              'opposite_share_busway': 'busway'}
+PARKING_W = 230.          # the parked cars' band along a curb with parking (the parking line's offset)
+BIKE_LANE_W = 150.        # a painted bike lane, line centre to line centre
+BIKE_GUTTER = 30.         # the lane's inner line off a curb with no parking, past the gutter pan
+BIKE_LINE_W = 12.         # its two white lines
+BIKE_END = 300.           # paint stops this far from a junction's mouth
+BIKE_CLEAR = 330.         # and this far from a crosswalk's or stop bar's centre (as the centre lines do)
+BIKE_FIRST = 1000.        # the first mark after a junction starts this far past its mouth...
+BIKE_REPEAT = 5000.       # ...and the next ones follow this far apart
+SHARROW_FROM_EDGE = 110.  # a shared-street mark's centre this far into the traffic lane from the parked cars or curb
+BIKE_MARK_GAP = 120.      # between the diamond, the bike and the arrow of a lane mark
+LANE_DIAMOND = (160., 50., 10.)   # length, width and stroke of a bike lane's diamond
+BUS_DIAMOND = (300., 90., 15.)    # ...and of a reserved bus lane's
+ARROW = (140., 45., 60., 12.)     # an arrow's length, head width, head length and shaft width
+CHEVRON = (40., 90., 12., 25.)    # a chevron's depth, width, stroke and the gap between the two
+BIKE_SYMBOL_LEN = 156.    # _bike_pictogram: wheels' foot to the bars, stretched twice, with the strokes
+
+
+def bike_paint_sides(t):
+    """The painted on-street cycling of a drive way per side (L, the OSM left, and R): (kind, travel) with kind lane,
+    shared or busway (BIKE_KINDS) and travel 1 along the way or -1 against it, or None. A side's own tag wins over
+    cycleway:both. A bare cycleway tag paints both sides of a two-way street, and on a one-way street the side right
+    of the traffic, or its left for a contraflow (opposite_*) value. A one-way street's lane runs with the traffic
+    unless it is a contraflow or its side's oneway says -1; on a two-way street the left side runs against the way."""
+    oneway = t.get('oneway')
+    motor = -1 if oneway == '-1' else 1
+    one = oneway in ('yes', '1', 'true', '-1')
+    plain = t.get('cycleway')
+    out = {}
+    for side, name in (('L', 'left'), ('R', 'right')):
+        value = t.get('cycleway:' + name, t.get('cycleway:both'))
+        if value is None and plain in BIKE_KINDS:
+            right_of_traffic = 'R' if motor > 0 else 'L'
+            if not one or (side == right_of_traffic) != plain.startswith('opposite'):
+                value = plain
+        if value not in BIKE_KINDS:
+            out[side] = None
+            continue
+        way_dir = t.get(f'cycleway:{name}:oneway', t.get('cycleway:both:oneway', t.get('cycleway:oneway')))
+        if way_dir == '-1':
+            travel = -1
+        elif way_dir in ('yes', '1', 'true'):
+            travel = 1
+        elif value.startswith('opposite'):
+            travel = -motor
+        elif one:
+            travel = motor
+        else:
+            travel = 1 if side == 'R' else -1
+        out[side] = (BIKE_KINDS[value], travel)
+    return out
+
+
+def _lanes(s):
+    try:
+        return max(1, int(float(s['tags'].get('lanes', '1').split(';')[0])))
+    except ValueError:
+        return 1
+
+
+def bike_band(s, side, parking, bike):
+    """How far in from a side's curb its parked cars and bike lane reach (cm): the lane-line and bus-lane layout
+    starts there. A reserved bus lane runs along the curb, with no parked cars (plateau_parking.py reads it so)."""
+    if bike.get(side) and bike[side][0] == 'busway':
+        return 0.
+    reach = PARKING_W if parking[side] else 0.
+    if bike.get(side) and bike[side][0] == 'lane':
+        reach = (reach if parking[side] else BIKE_GUTTER) + BIKE_LANE_W
+    return reach
+
+
+def _free_spans(lo, hi, blocked, clear):
+    """[lo, hi] less clear on either side of each blocked position."""
+    spans = [(lo, hi)]
+    for c in sorted(blocked):
+        nxt = []
+        for a, b in spans:
+            if c + clear <= a or c - clear >= b:
+                nxt.append((a, b))
+                continue
+            if c - clear - a > 1:
+                nxt.append((a, c - clear))
+            if b - c - clear > 1:
+                nxt.append((c + clear, b))
+        spans = nxt
+    return spans
+
+
+def _diamond(L, c, u, length, width, stroke, z):
+    """A hollow white diamond (the reserved-lane mark) along u, as four mitred quads; returns a point on its paint."""
+    n = (-u[1], u[0])
+    a, b = length / 2, width / 2
+    k = math.hypot(a, b)
+    a2, b2 = a - stroke * k / b, b - stroke * k / a
+    outer = [add(c, u, a), add(c, n, b), add(c, u, -a), add(c, n, -b)]
+    inner = [add(c, u, a2), add(c, n, b2), add(c, u, -a2), add(c, n, -b2)]
+    for i in range(4):
+        j = (i + 1) % 4
+        L.flat('paint_white', [outer[i], outer[j], inner[j], inner[i]], z)
+    return add(c, u, (a + a2) / 2)
+
+
+def _arrow(L, tail, u, z):
+    """A straight white arrow from tail along u: a shaft and a triangular head."""
+    length, head_w, head_l, shaft = ARROW
+    n = (-u[1], u[0])
+    base = add(tail, u, length - head_l)
+    L.strip('paint_white', tail, add(base, u, 2.), shaft, z)
+    L.flat('paint_white', [add(base, n, head_w / 2), add(base, n, -head_w / 2), add(tail, u, length)], z)
+
+
+def _chevron(L, tip, u, z):
+    """A white chevron pointing along u, its tip at tip."""
+    depth, width, stroke, _ = CHEVRON
+    n = (-u[1], u[0])
+    for k in (1, -1):
+        back = add(add(tip, u, -depth), n, k * width / 2)
+        L.strip('paint_white', add(tip, u, stroke * .3), back, stroke, z)
+
+
+def _bike_mark(L, kind, s, along, lat, travel):
+    """One mark group from along (cm on the segment) in the travel direction; returns (length, mark record)."""
+    u = s['u'] if travel > 0 else (-s['u'][0], -s['u'][1])
+    start = seg_point(s, along, lat)
+    z = Z_PAINT
+    if kind == 'lane':
+        d_len, d_w, d_stroke = LANE_DIAMOND
+        _diamond(L, add(start, u, d_len / 2), u, d_len, d_w, d_stroke, z)
+        bike = add(start, u, d_len + BIKE_MARK_GAP + BIKE_SYMBOL_LEN / 2)
+        at = _bike_pictogram(L, bike, u, z)
+        _arrow(L, add(bike, u, BIKE_SYMBOL_LEN / 2 + BIKE_MARK_GAP), u, z)
+        length = d_len + 2 * BIKE_MARK_GAP + BIKE_SYMBOL_LEN + ARROW[0]
+    elif kind == 'shared':
+        bike = add(start, u, BIKE_SYMBOL_LEN / 2)
+        at = _bike_pictogram(L, bike, u, z)
+        depth, _, _, gap = CHEVRON
+        tip = add(bike, u, BIKE_SYMBOL_LEN / 2 + 50 + depth)
+        _chevron(L, tip, u, z)
+        _chevron(L, add(tip, u, depth + gap), u, z)
+        length = BIKE_SYMBOL_LEN + 50 + 2 * depth + gap
+    else:
+        d_len, d_w, d_stroke = BUS_DIAMOND
+        at = _diamond(L, add(start, u, d_len / 2), u, d_len, d_w, d_stroke, z)
+        length = d_len
+    centre = add(start, u, length / 2)
+    heading = math.degrees(math.atan2(u[1], u[0])) % 360.
+    return length, {'centre': [r2(centre[0]), r2(centre[1])], 'heading_deg': r2(heading), 'at': [r2(at[0]), r2(at[1])]}
+
+
+def _bike_lanes(world, L, counts, blocked):
+    """Paint the on-street cycling of every drive way side its tags give (bike_paint_sides): lane lines and marks,
+    shared-street marks and reserved bus lane diamonds. world.bike_paint keeps one record per way side."""
+    degree = {node: len(arms) for node, arms in world.graph.items()}
+    rows = []
+    for way, run in world.drive_ways:
+        sides = bike_paint_sides(way['tags'])
+        if not any(sides.values()):
+            continue
+        for side in ('L', 'R'):
+            if not sides[side]:
+                continue
+            kind, travel = sides[side]
+            sign = 1 if side == 'L' else -1
+            row = {'way': way['id'], 'name': way['tags'].get('name', ''), 'side': side,
+                   'osm_side': 'left' if side == 'L' else 'right', 'kind': kind, 'travel': travel,
+                   'segments': [], 'line_m': 0., 'marks': [], 'too_narrow': 0}
+            chains, cur = [], []
+            for s in run:
+                if s['excluded'] or not s['quad'] or (cur and cur[-1]['b'] != s['a']):
+                    if cur:
+                        chains.append(cur)
+                    cur = []
+                if not s['excluded'] and s['quad']:
+                    cur.append(s)
+            if cur:
+                chains.append(cur)
+            for chain in chains:
+                if travel < 0:
+                    chain = chain[::-1]
+                carry = None          # the next mark's place, cm past the current segment's entry end
+                for s in chain:
+                    entry, leave = ('a', 'b') if travel > 0 else ('b', 'a')
+                    parking = _parking_sides(s)
+                    bike = bike_paint_sides(s['tags'])
+                    curb = s['curb' + side]
+                    width = s['curbL'] + s['curbR']
+                    other = 'R' if side == 'L' else 'L'
+                    if kind == 'lane':
+                        inner = curb - (PARKING_W if parking[side] else BIKE_GUTTER)
+                        outer = inner - BIKE_LANE_W
+                        mark_lat = sign * (inner - BIKE_LANE_W / 2)
+                        room = width - (curb - outer) - bike_band(s, other, parking, bike)
+                    elif kind == 'shared':
+                        mark_lat = sign * (curb - (PARKING_W if parking[side] else 0.) - SHARROW_FROM_EDGE)
+                        room = width - (curb - abs(mark_lat)) - bike_band(s, other, parking, bike)
+                    else:
+                        lanes = _lanes(s) if s['oneway'] else max(1, _lanes(s) // 2)
+                        near = curb - bike_band(s, side, parking, bike)
+                        far = (-(s['curb' + other] - bike_band(s, other, parking, bike))) if s['oneway'] else 0.
+                        lane_w = (near - far) / lanes
+                        mark_lat = sign * (near - lane_w / 2)
+                        room = lane_w
+                    if room < 300.:
+                        row['too_narrow'] += 1
+                        carry = None
+                        continue
+                    junction_in, junction_out = degree.get(s[entry], 0) >= 3, degree.get(s[leave], 0) >= 3
+                    m_in, m_out = s['mouth_' + entry], s['mouth_' + leave]
+                    stops = blocked.get(s['i'], [])
+                    # in travel coordinates: cm from the segment's entry end
+                    to_along = (lambda x: x) if travel > 0 else (lambda x, n=s['len']: n - x)
+                    stops_t = [to_along(c) for c in stops]
+                    lo = m_in + (BIKE_END if junction_in else 0.)
+                    hi = s['len'] - m_out - (BIKE_END if junction_out else 0.)
+                    if kind == 'lane':
+                        row['segments'].append([s['i'], r2(sign * inner), r2(sign * outer)])
+                        for a, b in _free_spans(lo, hi, stops_t, BIKE_CLEAR):
+                            if b - a < 50:
+                                continue
+                            for lat in (inner, outer):
+                                L.strip('paint_white', seg_point(s, to_along(a), sign * lat),
+                                        seg_point(s, to_along(b), sign * lat), BIKE_LINE_W, Z_PAINT)
+                            row['line_m'] += 2 * (b - a) / 100
+                    else:
+                        row['segments'].append([s['i'], r2(mark_lat)])
+                    # marks: after a junction the first one BIKE_FIRST past its mouth, else carried on
+                    glen = {'lane': LANE_DIAMOND[0] + 2 * BIKE_MARK_GAP + BIKE_SYMBOL_LEN + ARROW[0],
+                            'shared': BIKE_SYMBOL_LEN + 50 + 2 * CHEVRON[0] + CHEVRON[3],
+                            'busway': BUS_DIAMOND[0]}[kind]
+                    x = m_in + BIKE_FIRST if junction_in or carry is None else carry
+                    lo_m = lo + (0. if junction_in else 50.)
+                    hi_m = hi - (0. if junction_out else 50.)
+                    while True:
+                        x = max(x, lo_m)
+                        if x + glen > hi_m:
+                            break
+                        if any(x - BIKE_CLEAR < c < x + glen + BIKE_CLEAR for c in stops_t):
+                            x += 100.
+                            continue
+                        along = to_along(x)
+                        _, mark = _bike_mark(L, kind, s, along, mark_lat, travel)
+                        row['marks'].append(mark)
+                        x += BIKE_REPEAT
+                    carry = x - s['len']
+            if not row['segments']:
+                continue
+            row['line_m'] = r2(row['line_m'])
+            if kind == 'lane':
+                counts['bike_lane_line_metres'] += row['line_m']
+                counts['bike_lane_marks'] += len(row['marks'])
+            else:
+                counts['sharrows' if kind == 'shared' else 'bus_diamonds'] += len(row['marks'])
+            counts['bike_paint_sides'] += 1
+            counts['bike_paint_too_narrow'] += row['too_narrow']
+            rows.append(row)
+    world.bike_paint = rows
+
+
 def _bollard(L, c):
     L.rod('bollard_green', (c[0], c[1], Z_ROAD), (c[0], c[1], Z_ROAD + 116), 6, 6, caps=False)
     L.cone('bollard_green', (c[0], c[1], Z_ROAD + 116), 6, 3, 6)
     L.rod('paint_white', (c[0], c[1], Z_ROAD + 92), (c[0], c[1], Z_ROAD + 104), 6.3, 6)
 
 
+# The white bicycle, drawn upright for the rider who comes up to it: a side view with the wheels side by side across
+# the lane and the top ahead, stretched twice along the travel to read at a low angle and narrowed to fit between a
+# bike lane's lines (about 1.2 m wide). Points are (x right, y up) in cm before the stretch; BIKE_SYMBOL_LEN is its
+# length along the travel.
+BIKE_WHEEL = 26.
+BIKE_FRAME = (((-38., -38.), (-4., -38.)), ((-4., -38.), (-16., -2.)), ((-38., -38.), (-16., -2.)),
+              ((-16., -2.), (26., -2.)), ((-4., -38.), (26., -2.)), ((26., -2.), (38., -38.)),
+              ((-16., -2.), (-18., 5.)), ((-27., 5.), (-9., 5.)), ((26., -2.), (28., 7.)), ((22., 9.), (36., 7.)))
+BIKE_STRETCH, BIKE_NARROW = 2., .88
+BIKE_STROKE = 10.
+
+
 def _bike_pictogram(L, c, u, z):
-    """White bicycle symbol (two wheels and a frame) on a cycle track."""
-    n = (-u[1], u[0])
-    for k in (-55, 55):
-        w = add(c, u, k)
-        ring = [add(w, (u[0] * math.cos(i * math.tau / 12) + n[0] * math.sin(i * math.tau / 12),
-                        u[1] * math.cos(i * math.tau / 12) + n[1] * math.sin(i * math.tau / 12)), 32) for i in range(12)]
+    """White bicycle symbol centred on c, upright for a rider travelling along u; returns a point on its paint."""
+    right = (u[1], -u[0])
+    mid = (-38. - BIKE_WHEEL + 9.) / 2        # the symbol's middle height, between the wheels' foot and the bars
+
+    def at(x, y):
+        return add(add(c, u, (y - mid) * BIKE_STRETCH), right, x * BIKE_NARROW)
+
+    for cx in (-38., 38.):
+        ring = [at(cx + BIKE_WHEEL * math.cos(i * math.tau / 14), -38. + BIKE_WHEEL * math.sin(i * math.tau / 14))
+                for i in range(14)]
         for p, q in zip(ring, ring[1:] + ring[:1]):
-            L.strip('paint_white', p, q, 6, z + .02)
-    L.strip('paint_white', add(c, u, -55), add(c, u, 10), 6, z + .02)
-    L.strip('paint_white', add(c, u, 10), add(c, u, 55), 6, z + .02)
+            L.strip('paint_white', p, q, BIKE_STROKE, z + .02)
+    for a, b in BIKE_FRAME:
+        L.strip('paint_white', at(*a), at(*b), BIKE_STROKE, z + .02)
+    return at(11., -20.)                    # the middle of the down tube
 
 
 def _strip_ramps(strip, ramp_grid, ramp_points):
@@ -2891,12 +3200,17 @@ TREE_GENERA = {'Acer': 'norway_maple', 'Platanus': 'norway_maple', 'Populus': 's
 # red, pin and white oaks a russet to wine red. Sources: the Morton Arboretum tree pages (northern red oak
 # "russet-red to bright red", white oak "wine-red"), University of Illinois Extension on oaks in fall (pin oak red),
 # and the Jardin botanique de Montréal (Espace pour la vie) on trees and shrubs for fall colour. A kind with its own
-# fall (KIND_FALL) keeps it: dawn redwoods and bald cypresses stand on the larch and wear its gold.
-TREE_FALLS = ('yellow', 'red', 'russet', 'gold', 'evergreen')
+# fall (KIND_FALL) keeps it, or wears one of its KIND_TINTS: dawn redwoods and bald cypresses stand on the larch and
+# wear its gold. The Colorado blue spruce (Picea pungens, its glaucous cultivars and the inventory's misspelt "Picea
+# punges") is the conifer's one tint: blue grey, as the Rachel spruce inv:5-263258 reads.
+TREE_FALLS = ('yellow', 'red', 'russet', 'gold', 'evergreen', 'blue')
 TREE_FALL = (('acer rubrum', 'red'), ('acer saccharum', 'red'), ('acer x freemanii', 'red'), ('acer ginnala', 'red'),
              ('acer tataricum', 'red'), ('amelanchier', 'red'), ('quercus rubra', 'russet'),
-             ('quercus palustris', 'russet'), ('quercus alba', 'russet'))
+             ('quercus palustris', 'russet'), ('quercus alba', 'russet'), ('picea pungens', 'blue'),
+             ('picea punges', 'blue'))
 KIND_FALL = {'conifer': 'evergreen', 'larch': 'gold'}
+KIND_TINTS = {'conifer': ('blue',), 'larch': ()}   # the other falls a kind of its own fall may wear
+BROADLEAF_TINTS = ('red', 'russet')                # ...and those a broadleaf kind may wear besides its yellow
 # Height from trunk diameter (DHP, cm -> cm), research-plateau.md §10.4 for silver and Norway maple: 10 cm about 6 m,
 # 30 cm 13 m, 60 cm 20 m, 100 cm and over 24 to 28 m. The small kinds stay at 70% of it, under 11 m.
 DBH_HEIGHT = ((0., 250.), (10., 600.), (30., 1300.), (60., 2000.), (100., 2500.), (230., 2800.))
@@ -2918,12 +3232,14 @@ def tree_kind(species, dbh):
 
 
 def tree_fall(species, kind):
-    """The late-October colour of a tree (one of TREE_FALLS) from its Latin name and its kind (see TREE_FALL)."""
+    """The late-October colour of a tree (one of TREE_FALLS) from its Latin name and its kind (see TREE_FALL). A
+    species row the kind cannot wear (KIND_TINTS, BROADLEAF_TINTS) gives the kind's own fall."""
     low = ' '.join((species or '').strip().lower().split())
+    own = KIND_FALL.get(kind, 'yellow')
     for prefix, fall in TREE_FALL:
         if low == prefix or low.startswith(prefix + ' '):
-            return fall
-    return KIND_FALL.get(kind, 'yellow')
+            return fall if fall in KIND_TINTS.get(kind, BROADLEAF_TINTS) else own
+    return own
 
 
 def tree_height(kind, dbh):
@@ -3020,7 +3336,9 @@ POLE_TRUNK_KEEP = 60.       # and from a trunk outside a pit
 SIGN_MOUNT_REACH = 600.     # an ARRÊT or one-way sign hangs on a city pole that carries one this near its post
 NAME_MOUNT_REACH = 2000.    # street-name blades hang on a city pole naming a street of the junction this near it
 MOUNT_OFF = 22.             # a hung sign's pivot stands this far off the pole's axis, so no plate cuts the pole
-MOUNT_RAISE = {'sign_street': 100., 'sign_oneway': 55., 'sign_stop': 0.}   # stacked: blades, one-way plate, ARRÊT
+MOUNT_RAISE = {'sign_street': 100., 'sign_oneway': 55., 'sign_stop': 0., 'sign_parking': -50.}   # stacked: blades,
+                                                        # one-way plate, ARRÊT, the parking plate under them
+PARKING_SIGN_BEHIND = (35., 90.)   # a parking-sign post stands this far behind the curb (its pole's own place, clamped)
 
 
 def clip_sign_poles(poles_path, signs_path):
@@ -4151,6 +4469,59 @@ def pole_for(poles, prop, code, p, reach, names=()):
     return best[1] if best else None
 
 
+def parking_signs(world, put, hang, poles, counts):
+    """A parking sign at each of the city's poles that carries one (Data/Plateau/Inventory/park_signs.json), where a
+    pole of the city stands on a street the replica draws. On a wooden or steel pole the game draws (city_poles) the
+    plate hangs under the junction signs, with no post; otherwise it stands on its own post, POLE_KINDS aside, at its
+    pole's place, PARKING_SIGN_BEHIND the curb and clear of the tree pits. The plate stands across the sidewalk and
+    faces the drivers coming along its curb, as the city's do. The row carries the pole's signs (code, text and
+    arrow, top first); the plate it shows is the first. Poles left out: off the street (PAS_SUR_RUE), on the walking
+    route, in a building or a ruelle, far from a street, on the park's lawn."""
+    drawn = {pole['id']: pole for pole in poles}
+    alleys = AlleyIndex(world)
+    skipped = {}
+    for pole in plateau_park_signs.load():
+        p = pole['p']
+        near = nearest_seg(world, p)
+        why = ('off street' if pole['off_street'] else 'route' if world.route_near(p) else
+               'in a building' if world.in_building(p) else
+               'far from a street' if near is None or near[0] > max(near[1]['curbL'], near[1]['curbR']) + POLE_STREET_REACH
+               else 'in a ruelle' if alleys.nearest(p, POLE_LANE_KEEP) else
+               'park' if world.in_park(p) and not on_pavement(world, p) and not world.surfaces.at(p)[1] == 'sidewalk'
+               else None)
+        if why:
+            skipped[why] = skipped.get(why, 0) + 1
+            continue
+        s = near[1]
+        along, lat = seg_local(s, p)
+        side = 1 if lat >= 0 else -1
+        travel = s['u'] if s['tags'].get('oneway') in ('yes', '1', 'true') else \
+            (-s['u'][0], -s['u'][1]) if s['tags'].get('oneway') == '-1' or side > 0 else s['u']
+        yaw = math.degrees(math.atan2(-travel[1], -travel[0]))
+        signs = pole['signs']
+        top = signs[0]
+        extra = {'city_pole': pole['id'], 'code': top['code'], 'text': top['text'],
+                 'arrow': plateau_park_signs.ARROWS.get(top['arrow'], 'none'),
+                 'signs': [[g['code'], plateau_park_signs.ARROWS.get(g['arrow'], 'none')] for g in signs]}
+        if pole['id'] in drawn and 'sign_parking' not in drawn[pole['id']]['signs']:
+            hang('sign_parking', drawn[pole['id']], yaw, ('parking', pole['id']), extra)
+            counts['parking_signs_on_city_poles'] = counts.get('parking_signs_on_city_poles', 0) + 1
+            continue
+        curb = s['curbL'] if side > 0 else s['curbR']
+        behind = max(PARKING_SIGN_BEHIND[0], min(PARKING_SIGN_BEHIND[1], abs(lat) - curb))
+        q = seg_point(s, max(0., min(s['len'], along)), side * (curb + behind))
+        q, moved = _clear_of_trees(world, q)
+        if moved > .5:
+            extra['cleared_trees_cm'] = r2(moved)
+        if on_pavement(world, q) or world.in_building(q):
+            skipped['on the carriageway'] = skipped.get('on the carriageway', 0) + 1
+            continue
+        extra['moved_cm'] = r2(math.dist(p, q))
+        put('sign_parking', q, yaw, True, ('parking', pole['id']), extra, allow_snap=False)
+    for why, n in sorted(skipped.items()):
+        counts['parking_poles_left_out_' + why.replace(' ', '_')] = n
+
+
 def build_furniture(world):
     rows, counts = [], {}
 
@@ -4305,28 +4676,8 @@ def build_furniture(world):
             else:
                 put('sign_oneway', post, heading - 90, True, ('oneway', j['node'], s['i']), extra, allow_snap=False)
 
-    # Parking signs along residential and arterial curbs.
-    for strip in world.sidewalk_strips:
-        s = strip['seg']
-        (ca, cb), length = strip['curb'], strip['len']
-        if length < 1200 or s['hw'] == 'living_street':
-            continue
-        u = ((cb[0] - ca[0]) / length, (cb[1] - ca[1]) / length)
-        inward = (strip['outer'][0][0] - ca[0], strip['outer'][0][1] - ca[1])
-        il = math.hypot(*inward) or 1.
-        inward = (inward[0] / il, inward[1] / il)
-        rng = Rng('parking', s['way'], s['i'], strip['side'])
-        x = rng.uniform(500, 1400)
-        while x < length - 500:
-            # clear of the crossing ramps and of the tree pits (a pit runs 15 to 130 cm behind the curb)
-            if all(abs(x - r) > 400 for r in strip.get('ramps', [])) and \
-                    all(abs(x - pit[0]) > PIT_L / 2 + 25. for pit in strip.get('pits', [])):
-                p = add(add(ca, u, x), inward, 45)
-                code, text = rng.choice(PARKING_TEXTS)
-                yaw = math.degrees(math.atan2(u[1], u[0])) + (180 if rng.chance(.5) else 0)
-                put('sign_parking', p, yaw, True, ('parking', s['i'], strip['side'], round(x)),
-                    {'code': code, 'text': text, 'arrow': rng.choice(('both', 'left', 'right'))}, allow_snap=False)
-            x += rng.uniform(2200, 3600)
+    # Parking signs at the city's poles (plateau_park_signs: the city's parking-sign inventory).
+    parking_signs(world, put, hang, poles, counts)
     counts['total'] = len(rows)
     counts['osm_lamps_inside'] = sum(1 for _, t in inside_nodes if t.get('highway') == 'street_lamp')
     counts['osm_hydrants_inside'] = sum(1 for _, t in inside_nodes if t.get('emergency') == 'fire_hydrant')
@@ -4349,7 +4700,8 @@ def build_soul(world):
                                         'litter_patches', 'litter_trees_without_ground', 'litter_triangles',
                                         'weed_tufts', 'rust_streaks', 'murals',
                                         'chantier_zones', 'utility_poles', 'wire_spans', 'laundry_lines',
-                                        'curb_bins', 'locked_bikes', 'flower_boxes', 'ac_units')}
+                                        'curb_bins', 'locked_bikes', 'flower_boxes', 'ac_units', 'leaf_bags',
+                                        'leaf_bag_rows', 'pumpkins', 'pumpkin_stoops')}
 
     def put(prop, p, yaw, collides, parts, extra=None, z=None):
         clear = collides and collision_clear(world, prop, p, yaw)
@@ -4429,17 +4781,28 @@ def build_soul(world):
 
     # Leaves drifted along the ruelles' sunken centre gutters, and fallen under every street and park crown.
     ruelle_litter = _gutter_drifts(world, S, counts, crowns)
+    foot_litter = _lane_drifts(world, S, ground, crowns, counts)
+    world.lane_patches = []
     litter_kinds, lane_litter_record = tree_litter(world, S, crowns, ground, counts)
+    ruelle_litter += _gutter_beside_patches(world, S, counts, world.lane_patches)
     world.leaf_litter = {
         'key': 'Leaf_Litter', 'uv': 'world metres (u = x / 100, v = y / 100)',
         'lift_cm': {'park_lawn': LITTER_PARK, 'streets': LITTER_WALK, 'ruelle_gutter': LITTER_LIFT,
                     'ruelle_paving': LITTER_LANE},
         'road_z_cm': Z_LITTER_ROAD, 'cover': f'min({LITTER_COVER}, {LITTER_GAIN} x (1 - leaf_retention)) of the crown',
-        'outline_cm': {'park': LITTER_EDGE, 'fine': LITTER_EDGE_FINE}, 'fringe': {
+        'outline_cm': {'park': LITTER_EDGE, 'fine': LITTER_EDGE_FINE, 'open_side_max': LITTER_SIDE,
+                       'split': LITTER_SPLIT, 'teeth': list(LITTER_TEETH), 'along_ground_edge': LITTER_HUG,
+                       'cut': LITTER_CUT, 'ray_step': LITTER_RAY_STEP}, 'fringe': {
             'clumps': list(LITTER_FRINGE[:2]), 'per_outline_cm': LITTER_FRINGE[2], 'points': LITTER_FRINGE_RING,
-            'radius_cm': list(LITTER_FRINGE_SIZE), 'beyond_edge': LITTER_FRINGE_OUT},
+            'radius_cm': list(LITTER_FRINGE_SIZE), 'beyond_edge': LITTER_FRINGE_OUT, 'drawn_as': 'quad'},
+        'park_near_street': {'within_cm': LITTER_PARK_NEAR, 'clumps': list(LITTER_PARK_FRINGE[:2]),
+                             'per_outline_cm': LITTER_PARK_FRINGE[2], 'radius_cm': list(LITTER_PARK_CLUMP)},
+        'ruelle_foot_drifts': {'drifts': counts.get('ruelle_foot_leaf_drifts', 0), 'stretch_cm': list(LANE_DRIFT),
+                               'gap_cm': list(LANE_DRIFT_GAP), 'width_cm': list(LANE_DRIFT_W),
+                               'chance': f'{CURB_DRIFT[0]} + {CURB_DRIFT[1]} x leaves overhead'},
         'kinds': litter_kinds, 'yard_trees_over_ruelles': lane_litter_record,
-        'curb_drifts_m2': round(curb_litter, 1), 'ruelle_drifts_m2': round(ruelle_litter, 1)}
+        'curb_drifts_m2': round(curb_litter, 1), 'ruelle_drifts_m2': round(ruelle_litter, 1),
+        'ruelle_foot_drifts_m2': round(foot_litter, 1)}
 
     # Weeds at curb joints.
     for strip in world.sidewalk_strips:
@@ -4583,7 +4946,10 @@ def build_soul(world):
     build_lane_life(world, S, put, counts, lane, plex)
     world.lane_life = lane
 
-    # Curb bins, locked bikes, flower boxes and AC units hinted on lots.
+    # Curb bins, locked bikes, flower boxes and AC units hinted on lots; in late October, paper leaf bags beside some
+    # bin rows and pumpkins on some stoops.
+    october = october_props()
+    stoop_pumpkins(world, put, counts, october, plex)
     for strip in world.sidewalk_strips:
         s = strip['seg']
         (ca, cb), length = strip['curb'], strip['len']
@@ -4611,6 +4977,8 @@ def build_soul(world):
                     p = add(curb_pt, u, (i - (len(kinds) - 1) / 2) * 75)
                     put(kind, p, yaw_street + rng.uniform(-12, 12), False, ('curb-bin', s['i'], k, i))
                     counts['curb_bins'] += 1
+                leaf_bags(world, put, counts, october, strip, (s['i'], k), curb_pt, along, u, inward, yaw_street,
+                          (len(kinds) - 1) / 2 * 75)
             if lot.get('fence') and rng.chance(.09):
                 contact = add(add(lot['p0'], lot['out'], 9), u, rng.uniform(80, max(90., math.dist(lot['p0'], lot['p1']) - 80)))
                 out_v = lot['out']
@@ -4618,8 +4986,9 @@ def build_soul(world):
                 cx, cy = props_info()['bike_contact']
                 off = local_to_world((0., 0.), yaw, (cx, cy))
                 p = (contact[0] - off[0], contact[1] - off[1])
-                put('bike_locked', p, yaw, False, ('bike-fence', s['i'], k), {'locked_to': 'parterre_fence'})
-                counts['locked_bikes'] += 1
+                if bike_on_ground(world, p, yaw, world.surfaces.at(p)[0]):
+                    put('bike_locked', p, yaw, False, ('bike-fence', s['i'], k), {'locked_to': 'parterre_fence'})
+                    counts['locked_bikes'] += 1
             if lot.get('depth', 0) >= 80 and rng.chance(.12):
                 p = add(add(lot['p0'], lot['out'], lot['depth'] - 30), u, rng.uniform(100, 300))
                 put('flower_box', p, yaw_street, False, ('flower', s['i'], k))
@@ -4631,17 +5000,240 @@ def build_soul(world):
     return S, rows, counts
 
 
+# -- late October: paper leaf bags at the curbs and pumpkins on the stoops -------------------------------
+# Montréal collects leaves in compostable paper bags (plastic bags are refused in the green-waste collection), set out
+# at the curb beside the bins; pumpkins sit on the stoops in the last week of October (an art-direction choice: no data
+# source places them). The props are the Props layer's 'season' kind (Scripts/blender/plateau_props.py): three bag
+# forms by fill and an uncarved and a carved pumpkin, picked by the manifest's form shares; a pumpkin's size is its
+# placement scale (pie, carving or large). The stoops are the Plex fronts' ground-floor landings, read from the Plex
+# layer's Wood_Deck geometry: the level top at the front's raise in front of its wall.
+LEAF_BAG_ROW = (.15, .5)        # a curb bin row's chance of leaf bags beside it: this, plus this times the leaves overhead
+LEAF_BAGS = (1, 3)              # bags in such a row, on one side of it,
+LEAF_BAG_GAP = (60., 46.)       # the first this far past the last bin's centre, then this far apart (cm)
+LEAF_BAG_KEEP = 60.             # no bag this near a Furniture prop (a hydrant, a sign post, a lamp),
+LEAF_BAG_KEEP_SIGN = 160.       # nor this near a parking sign post, where a bike may be locked (lock_bikes_to_signs)
+PUMPKIN_STOOP = .16             # a stoop landing's chance of pumpkins in late October
+PUMPKIN_SIZES = (('pie', .35), ('carving', .45), ('large', .2))   # by the Props manifest's sizes
+PUMPKIN_EDGE = 12.              # a pumpkin keeps this far (cm) inside the landing's edge (its rail and posts)
+PUMPKIN_STAIR = 40.             # a landing whose span along the wall comes this near an exterior stair's is left bare,
+PUMPKIN_ROAD = 250.             # as is one this near a carriageway (a stoop at the street's edge, by the parked cars)
+PLEX_DECKS = ('WoodDeck', 'WoodDeckVisual')   # the Plex batches whose Wood_Deck tops hold the stoop landings
+
+
+def october_props():
+    """The season props' forms, shares, sizes and scale ranges from the Props manifest (agreed defaults without it)."""
+    out = {'leaf_bag': [('leaf_bag', .45), ('leaf_bag_mid', .35), ('leaf_bag_low', .2)],
+           'pumpkin': [('pumpkin', .7), ('pumpkin_carved', .3)], 'sizes': {'pie': .6, 'carving': 1., 'large': 1.4},
+           'bag_scale': (.97, 1.03), 'pumpkin_scale': (.55, 1.45), 'pumpkin_radius': 15.4, 'bag_half': (16.6, 20.8)}
+    try:
+        props = json.loads(PROPS_MANIFEST.read_text())['props']
+        out['leaf_bag'] = [(f['prop'], f['share']) for f in props['leaf_bag']['forms']]
+        out['pumpkin'] = [(f['prop'], f['share']) for f in props['pumpkin']['forms']]
+        out['sizes'] = dict(props['pumpkin']['sizes'])
+        out['bag_scale'] = tuple(props['leaf_bag']['scale_range'])
+        out['pumpkin_scale'] = tuple(props['pumpkin']['scale_range'])
+        out['pumpkin_radius'] = max(abs(v) for key in ('pumpkin', 'pumpkin_carved')
+                                    for v in props[key]['bounds_cm'][:2] + props[key]['bounds_cm'][3:5])
+        bounds = [props[key]['bounds_cm'] for key, _ in out['leaf_bag']]     # x across the bag, y along its wide faces
+        out['bag_half'] = (max(max(-b[0], b[3]) for b in bounds), max(max(-b[1], b[4]) for b in bounds))
+    except (OSError, KeyError, ValueError, TypeError):
+        pass
+    return out
+
+
+def _pick(rng, options):
+    x, total = rng.random(), 0.
+    for key, share in options:
+        total += share
+        if x < total:
+            return key
+    return options[-1][0]
+
+
+def leaf_bags(world, put, counts, october, strip, key, curb_pt, along, u, inward, yaw, half_row):
+    """Paper leaf bags beside a curb bin row (LEAF_BAG_ROW): one to three on one side of it along the curb, a wide face
+    toward the street, each on the level sidewalk clear of the strip's ends, its ramps and tree pits and the Furniture
+    props, picked by the forms' shares."""
+    rng = Rng('leaf-bags', strip['seg']['way'], strip['seg']['i'], strip['side'], *key)
+    if not rng.chance(LEAF_BAG_ROW[0] + LEAF_BAG_ROW[1] * leaves_over(world.crowns, curb_pt)):
+        return
+    sign = 1. if rng.chance(.5) else -1.
+    furniture = getattr(world, 'furniture_grid', None)
+    laid = 0
+    x, y = october['bag_half']
+    for j in range(rng.randint(*LEAF_BAGS)):
+        off = sign * (half_row + LEAF_BAG_GAP[0] + j * LEAF_BAG_GAP[1])
+        p = add(curb_pt, u, off)
+        turn, scale = yaw + rng.uniform(-15., 15.), round(rng.uniform(*october['bag_scale']), 3)
+        if not 120. < along + off < strip['len'] - 120. or \
+                any(abs(along + off - r) < 250. for r in strip.get('ramps', [])) or \
+                any(abs(along + off - pit[0]) < 90. for pit in strip.get('pits', [])) or \
+                not all(world.surfaces.at(local_to_world(p, turn, (sx * (x * scale + 3.), sy * (y * scale + 3.)))) ==
+                        (Z_WALK, 'sidewalk') for sx in (-1., 0., 1.) for sy in (-1., 0., 1.)) or \
+                (furniture and any(math.dist(p, q) < keep for q, keep in furniture(p))):
+            break
+        row = put(_pick(rng, october['leaf_bag']), p, turn, False, ('leaf-bag', strip['seg']['i'], *key, j),
+                  {'season': 'october', 'at': 'curb'})
+        row['scale'] = scale
+        counts['leaf_bags'] += 1
+        laid += 1
+    counts['leaf_bag_rows'] += laid > 0
+
+
+def plex_stoops(world, plex_dir=None):
+    """The Plex fronts' ground-floor stoop landings: for each front raised 30 cm or more over a parterre of 60 cm or
+    more (plateau_plex.author_front builds a porch there), the level Wood_Deck tops at the front's raise in front of
+    its wall, merged into rectangles in the front's frame (x along the wall, d out from it). Returns (front id, frame,
+    x0, x1, d0, d1, z) rows; none without the Plex layer."""
+    plex_dir = Path(plex_dir or OUT / 'Plex')
+    try:
+        fronts = json.loads((plex_dir / 'fronts.json').read_text())['fronts']
+        batches = json.loads((plex_dir / 'manifest.json').read_text())['batches']
+    except (OSError, KeyError, ValueError):
+        return []
+    tris, grid = [], Grid(1000.)
+    for batch in batches:
+        if batch['material'] != 'Wood_Deck' or batch['file'].split('_')[0] not in PLEX_DECKS:
+            continue
+        vs = []
+        for line in (plex_dir / batch['file']).read_text().splitlines():
+            if line.startswith('v '):
+                _, x, y, z = line.split()
+                vs.append((float(x), -float(y), float(z)))     # the OBJ stores -y
+            elif line.startswith('f '):
+                t = [vs[int(q.split('/')[0]) - 1] for q in line.split()[1:]]
+                if 25. <= t[0][2] <= 120. and all(abs(q[2] - t[0][2]) < .01 for q in t):
+                    grid.add(len(tris), bbox(t))
+                    tris.append(t)
+    out = []
+    for f in sorted(fronts, key=lambda f: str(f['id'])):
+        front, raise_ = f.get('front') or {}, f.get('raise_cm', 0)
+        if not front.get('a') or raise_ < 30 or front.get('yard_cm', 0.) < 60:
+            continue
+        F = Frame2.from_wall(front['a'], front['b'])
+        width, yard = front['width_cm'], front['yard_cm']
+        stairs = []
+        for st in front.get('stairs') or []:
+            xs = [F.local(st[k])[0] for k in ('head', 'bottom')]
+            stairs.append((min(xs) - PUMPKIN_STAIR, max(xs) + PUMPKIN_STAIR))
+        rects = []
+        for i in grid.query(bbox([front['a'], front['b']], yard + 10.)):
+            t = tris[i]
+            if abs(t[0][2] - raise_) > .01:
+                continue
+            loc = [F.local(q) for q in t]
+            x0, x1 = min(x for x, _ in loc), max(x for x, _ in loc)
+            d0, d1 = min(d for _, d in loc), max(d for _, d in loc)
+            if x0 < -1. or x1 > width + 1. or d0 < PLEX_D_FACE - 4. or d1 > yard + 5.:
+                continue
+            for r in rects:             # the two triangles of one box top share an edge: merge touching ones
+                if x0 <= r[1] + 1. and r[0] <= x1 + 1. and d0 <= r[3] + 1. and r[2] <= d1 + 1.:
+                    r[:] = [min(r[0], x0), max(r[1], x1), min(r[2], d0), max(r[3], d1)]
+                    break
+            else:
+                rects.append([x0, x1, d0, d1])
+        for x0, x1, d0, d1 in sorted(rects):
+            if not any(x0 < b and a < x1 for a, b in stairs):
+                out.append((str(f['id']), F, x0, x1, d0, d1, float(raise_)))
+    return out
+
+
+def stoop_pumpkins(world, put, counts, october, plex):
+    """Pumpkins on some stoop landings (PUMPKIN_STOOP) away from the carriageway (PUMPKIN_ROAD): one or two, at the
+    landing's outer corners flanking its steps, PUMPKIN_EDGE inside its edge, each sized by the manifest's pie, carving or
+    large scale where the landing has room (the largest that fits), a carved one with its face toward the sidewalk."""
+    if plex is None:
+        return
+    roads, grid = world.surfaces.kinds.get('road', ([], Grid()))
+
+    def near_road(p):
+        return any(point_in(p, roads[i]) or min(seg_dist(p, a, b) for a, b in zip(roads[i], roads[i][1:] + roads[i][:1]))
+                   < PUMPKIN_ROAD for i in grid.query(bbox([p], PUMPKIN_ROAD)))
+    for lot, F, x0, x1, d0, d1, z in plex_stoops(world):
+        rng = Rng('pumpkins', lot, round(x0), round(d1))
+        if not rng.chance(PUMPKIN_STOOP) or any(near_road(F.world(x, d1)) for x in (x0, (x0 + x1) / 2, x1)):
+            continue
+        corners = [-1., 1.]
+        if rng.chance(.5):
+            corners = corners[::-1]
+        placed = 0
+        for corner in corners[:rng.randint(1, 2)]:
+            size = _pick(rng, PUMPKIN_SIZES)
+            scale = october['sizes'][size] * rng.uniform(.96, 1.04)
+            for fit in (size, 'carving', 'pie'):
+                scale = min(scale, october['sizes'][fit] * 1.04)
+                r = october['pumpkin_radius'] * scale
+                if 2. * (r + PUMPKIN_EDGE) <= min(d1 - d0, (x1 - x0) / 2.):
+                    break
+            else:
+                continue
+            scale = max(october['pumpkin_scale'][0], min(october['pumpkin_scale'][1], scale))
+            x = x0 + PUMPKIN_EDGE + r if corner < 0 else x1 - PUMPKIN_EDGE - r
+            p = F.world(x, d1 - PUMPKIN_EDGE - r)
+            prop = _pick(rng, october['pumpkin'])
+            # the carved face (+X) toward the sidewalk, out from the wall
+            yaw = math.degrees(math.atan2(F.n[1], F.n[0])) + rng.uniform(-25., 25.) if prop == 'pumpkin_carved' \
+                else rng.uniform(0., 360.)
+            row = put(prop, p, yaw, False, ('pumpkin', lot, round(x0), corner), {'season': 'october', 'at': 'stoop',
+                                                                                 'lot': lot}, z=z)
+            row['scale'] = round(scale, 3)
+            counts['pumpkins'] += 1
+            placed += 1
+        counts['pumpkin_stoops'] += placed > 0
+
+
+BIKE_TYRE = 85.     # the bike_locked tyre contacts stand this far either side of its pivot, along its +X
+BIKE_ON_SIGN = .3   # the share of the free-standing parking-sign posts with a bike locked to them
+
+
+def in_tree_pit(world, p, pad=0.):
+    """Whether p lies in a street tree's sidewalk pit (or within pad of it)."""
+    for t in getattr(world, 'street_tree_rows', ()):
+        c = (t['x_cm'], t['y_cm'])
+        if not t.get('pit') or t.get('pit_yaw_deg') is None or abs(c[0] - p[0]) > 200 or abs(c[1] - p[1]) > 200:
+            continue
+        u = (math.cos(math.radians(t['pit_yaw_deg'])), math.sin(math.radians(t['pit_yaw_deg'])))
+        along = (p[0] - c[0]) * u[0] + (p[1] - c[1]) * u[1]
+        across = -(p[0] - c[0]) * u[1] + (p[1] - c[1]) * u[0]
+        if abs(along) < PIT_L / 2 + pad and abs(across) < PIT_D / 2 + pad:
+            return True
+    return False
+
+
+def bike_on_ground(world, p, yaw, z):
+    """Whether a locked bike's two tyre contacts and its middle lie on level ground at z (no curb drop, no ramp,
+    no road), out of the tree pits."""
+    for k in (-1., 0., 1.):
+        q = local_to_world(p, yaw, (k * BIKE_TYRE, 0.))
+        ground, kind = world.surfaces.at(q)
+        if abs(ground - z) > .5 or kind in ('road', 'apron', 'ground') or in_tree_pit(world, q, 5.):
+            return False
+    return True
+
+
 def lock_bikes_to_signs(world, furniture_rows, soul_rows, counts):
+    """Bikes locked to the parking-sign posts. A bike stands along the curb, as people lock them to Plateau sign
+    posts, leaning on the post from the building side (the prop leans toward its -Y), so both wheels stay on the
+    sidewalk; a bike whose wheels would leave the level sidewalk (a ramp, a tree pit, the curb) is left out."""
     for row in furniture_rows:
-        if row['prop'] != 'sign_parking':
+        if row['prop'] != 'sign_parking' or 'mount' in row:
             continue
         rng = Rng('bike-sign', row['variant_seed'])
-        if not rng.chance(.16):
+        if not rng.chance(BIKE_ON_SIGN):
             continue
-        yaw = row['yaw'] + 90
+        post = tuple(row['position'][:2])
+        road, _ = facing_road(world, post)
+        inward = (-math.cos(math.radians(road)), -math.sin(math.radians(road)))
+        yaw = row['yaw']
+        # The prop's +Y (the side away from its lean) points to the buildings.
+        if -math.sin(math.radians(yaw)) * inward[0] + math.cos(math.radians(yaw)) * inward[1] < 0:
+            yaw += 180.
         cx, cy = props_info()['bike_contact']
         off = local_to_world((0., 0.), yaw, (cx, cy + 4))
-        p = (row['position'][0] - off[0], row['position'][1] - off[1])
+        p = (post[0] - off[0], post[1] - off[1])
+        if not bike_on_ground(world, p, yaw, row['position'][2]):
+            counts['locked_bikes_off_level_ground'] = counts.get('locked_bikes_off_level_ground', 0) + 1
+            continue
         soul_rows.append(placement(world, 'bike_locked', p, yaw, False, ('bike-sign', row['variant_seed']),
                                    {'locked_to': 'sign_parking'}, z=row['position'][2]))
         counts['locked_bikes'] += 1
@@ -4658,23 +5250,57 @@ def lock_bikes_to_signs(world, furniture_rows, soul_rows, counts):
 # how much of the crown has fallen: the kind's 1 - leaf_retention (Trees/manifest.json) times LITTER_GAIN, at most
 # LITTER_COVER. The curb drifts thicken where crowns stand over the curb. The technique: Adam Sharp, "Making a Fallen
 # Leaves Material in Substance 3D Designer" (80.lv, 2022), a splatter of leaf shapes, here on the tree atlas's leaves.
+# Sixth pass. A ray is probed at least every LITTER_RAY_STEP and its cut back to the ground then halved to within
+# LITTER_CUT: the linear search refined by a binary search of relief mapping (Policarpo, Oliveira and Comba, "Real-Time
+# Relief Mapping on Arbitrary Polygonal Surfaces", I3D 2005; GPU Gems 3, chapter 18), so an outline that meets a curb or
+# a lawn's edge follows it and a ruelle's gutter is not stepped over. Then every side across open ground longer than
+# LITTER_SIDE is split into pieces about LITTER_SPLIT long whose new points stand by turns out and in (LITTER_TEETH), so
+# a pulled-in point no longer leaves one long straight side: the Resample step of Houdini's curve tools ("Maximum
+# Segment Length", SideFX docs) with the serration carried on. A side that runs along a change in the ground stays
+# straight, and the points along it are dropped. The clumps of a fringe are quads (two triangles). Under a yard crown
+# over a ruelle, patches are laid along each half-lane until they cover its kind's share of the paving, and leaves bank
+# against the fences and walls by the curb drifts' rule; Guerrilla drives Horizon Zero Dawn's placement density from
+# distance maps to roads and objects (van Muijden, "GPU-Based Procedural Placement in Horizon Zero Dawn", GDC 2017), the
+# same idea of more litter at an edge. A park patch near a street is fine with a fringe; farther in, a coarser ring pays
+# for it (a budget rule, no outside technique).
 LITTER_LIFT = .4                # cm over the ground under it (over the 3 mm a coplanar layer needs); over the Streets
 LITTER_WALK = .75               # sidewalks and lawns, over their dressing too (joints at 1.2 mm, pit soil at 1.5 mm,
                                 # the lawn edges at 1.4 mm and the corner lots' lawns 3 mm up, their edges at 4.4 mm)
-LITTER_PARK = .8                # over the park lawn, over plateau_park's own fallen leaves too (2.30 to 2.38 cm, their
-                                # ribs 3.5 mm higher, on the 2 cm lawn): the litter clears the highest rib by 0.7 mm
+LITTER_PARK = 1.                # over the park lawn, over plateau_park's own fallen leaves too (2.30 to 2.38 cm, their
+                                # ribs 3.5 mm higher, on the 2 cm lawn): the litter clears the highest rib by 2.7 mm,
+                                # more than the 2.5 mm a gutter keeps over the old road (0.7 mm before the sixth pass)
 Z_LITTER_ROAD = Z_PAINT2 + .3   # a curb drift lies over the asphalt, its paint and the Soul patches
 LITTER_GAIN = 1.6               # cover of a crown's ground per share of its leaves down...
 LITTER_COVER = .9               # ... up to this
-LITTER_EDGE = 110.              # cm of outline per vertex round a patch on the park lawn,
-LITTER_RING = (8, 12)           # within these counts
+LITTER_EDGE = 240.              # cm of outline per vertex round a patch on the park lawn far from the streets,
+LITTER_RING = (6, 10)           # within these counts, serrated as a fine patch is
 LITTER_EDGE_FINE = 60.          # and round a patch on a sidewalk, lawn, parterre or ruelle, seen from close by,
 LITTER_RING_FINE = (10, 20)     # within these counts,
-LITTER_SERRATE = (.06, .24)     # its points by turns this far out and in (shares of the radius): a serrated edge
-LITTER_FRINGE = (3, 5, 400.)    # around such a patch, small clumps: at least, at most, one per this much outline (cm)
+LITTER_SERRATE = (.06, .24)     # its points by turns this far out and in (shares of the radius): a serrated edge,
+LITTER_SERRATE_CM = 40.         # at most this far (cm), so a big patch keeps its wobble rather than long teeth; its
+                                # jitter (LITTER_WOBBLE) stays under a third of this
+LITTER_CUT = 5.                 # a ray's cut back to its ground is found to within this (cm), probing it at least
+LITTER_RAY_STEP = 30.           # this often (cm), so a ruelle's gutter or a lawn strip is not stepped over
+LITTER_THIN = 30.               # a patch whose area over its length is less than this (cm) is a sliver: left out,
+LITTER_CLEAR = 25.              # as is one whose centre has not its own ground this far round it (at a ground's edge)
+LITTER_SIDE = 120.              # a fine patch's side across open ground longer than this (cm) is split
+LITTER_SPLIT = 90.              # into pieces about this long,
+LITTER_TEETH = (6., 22.)        # the new points by turns this far out and in (cm)
+LITTER_HUG = 12.                # a side within this (cm) of a change in its ground all along stays straight
+LITTER_RUN = 300.               # a fine patch's outline that runs this far (cm) in a line of short sides,
+LITTER_RUN_TURN = 10.           # turning less than this (degrees) along it, with no change in its ground within
+LITTER_RUN_NEAR = 20.           # this (cm) beyond it, is broken by midpoint displacement: its points by turns
+LITTER_RUN_SHIFT = (20., 40.)   # this far out and in (cm). A run along a curb, a lawn's edge, a wall or the gutter stays
+LITTER_RUN_KEEP = .6            # a point moved in keeps this share of its radius at least
+LITTER_RUN_MARGIN = 20.         # runs are broken from this much shorter than LITTER_RUN (the OBJs round to 0.01 cm)
+LITTER_FRINGE = (2, 4, 500.)    # around such a patch, small clumps: at least, at most, one per this much outline (cm)
 LITTER_FRINGE_RING = 4          # each a ring of this many points (a clump of a few leaves),
 LITTER_FRINGE_SIZE = (22., 40.) # this big (radius, cm) out toward the drip line and at the patch's edge,
-LITTER_FRINGE_OUT = .55         # lying up to this share of the patch's radius beyond its edge, fewer further out
+LITTER_FRINGE_OUT = .55         # lying up to this share of the patch's radius beyond its edge, fewer further out;
+                                # each clump is a quad (two triangles)
+LITTER_PARK_NEAR = 2000.        # a park patch this near a street (its sidewalk or carriageway) is fine, as a
+LITTER_PARK_FRINGE = (1, 2, 1200.)   # street's is, with clumps round it: one per this much outline,
+LITTER_PARK_CLUMP = (30., 60.)  # bigger ones, on the lawn only
 LITTER_LANE = .65               # lift over a ruelle's paving (Z_ALLEY; its wedges are drawn 0.5 mm lower): 7.45 cm,
                                 # clear of the gutter drifts' heights and the curb drifts' 7.5 cm
 LITTER_COVERED = .6             # a main patch whose centre lies this far into a patch as big already drawn on the
@@ -4685,6 +5311,10 @@ LITTER_PROBE = 90.              # then each triangle of the fan on points this f
 CURB_DRIFT = (.4, 1.)           # a curb stretch's chance of a drift: this, plus this times the leaves overhead
 RUELLE_DRIFT = (.4, 1.2)        # a ruelle gutter stretch's chance of a drift: this, plus this times the leaves overhead
 RUELLE_UNDER = .04              # ... and always a drift where this much leaf fall reaches the gutter (a crown over it)
+LANE_DRIFT = (150., 500.)       # leaves banked at a ruelle's fence or wall foot: stretches this long (cm),
+LANE_DRIFT_GAP = (60., 300.)    # this far apart (closer under the crowns), each drawn by the CURB_DRIFT rule,
+LANE_DRIFT_W = (16., 34.)       # reaching this far out over the paving (cm), wider under the crowns, 3 cm off the
+LANE_DRIFT_STEP = 25.           # nearest point of the paving's edge where the edge steps by less than this (cm)
 BASE_GROUND = ROOT / 'Data/Plateau/BaseGeometry'
 
 
@@ -4694,6 +5324,7 @@ class LitterGround:
     where no path, pond, court or old road lies over it and no building stands. at(p) gives the height the leaves lie
     at there (LITTER_WALK over a Streets surface, LITTER_LANE over a ruelle's paving, LITTER_PARK over the lawn), or
     None."""
+    LAWN, COVERS = LITTER_LAWN, LITTER_COVERS     # BaseGeometry: the park's lawn and what lies over it
 
     def __init__(self, world, base=None):
         self.world, self.memo = world, {}
@@ -4702,8 +5333,7 @@ class LitterGround:
         for i, (poly, _, _) in enumerate(getattr(getattr(world, 'surfaces', None), 'items', ())):
             self.fine.add(i, bbox(poly))
         base = Path(base or BASE_GROUND)
-        self.lawn, self.covers = self._polys(base, ('Grass.obj',)), self._polys(base, ('Path.obj', 'Water.obj',
-                                                                                         'Court.obj', 'Road.obj'))
+        self.lawn, self.covers = self._polys(base, self.LAWN), self._polys(base, self.COVERS)
 
     @staticmethod
     def _polys(base, names):
@@ -4740,6 +5370,18 @@ class LitterGround:
 
     def at(self, p):
         return self.lookup(p)[0]
+
+    def street_distance(self, p, reach):
+        """How far p lies from the nearest street (a Streets sidewalk or carriageway) within `reach`, else None."""
+        best = None
+        for kind in ('sidewalk', 'road'):
+            polys, grid = self.world.surfaces.kinds.get(kind, ([], Grid()))
+            for i in grid.query(bbox([p], reach)):
+                poly = polys[i]
+                d = 0. if point_in(p, poly) else min(seg_dist(p, a, b) for a, b in zip(poly, poly[1:] + poly[:1]))
+                if d <= reach and (best is None or d < best):
+                    best = d
+        return best
 
     def on_streets(self, p):
         """Whether the ground at p is a Streets sidewalk, lawn, dropped curb or ruelle paving (not the park's lawn)."""
@@ -4781,80 +5423,298 @@ def _litter_face(S, pts, z=None):
     return len(pts) - 2
 
 
+def _quad_order(pts):
+    """A four-point ring started at a corner whose diagonal lies inside it, so its fan from that corner is the quad."""
+    a, b, c, d = (q[:2] for q in pts)
+    side = lambda p, q, r: (q[0] - p[0]) * (r[1] - p[1]) - (q[1] - p[1]) * (r[0] - p[0])   # noqa: E731
+    return list(pts[1:]) + list(pts[:1]) if side(a, c, b) * side(a, c, d) >= 0 else list(pts)
+
+
+def _litter_quad(S, pts, z):
+    """A clump of leaves: a four-point ring as one quad (two triangles), split along the diagonal inside it."""
+    return _litter_face(S, _quad_order(pts), z)
+
+
 def litter_patch(ground, c, radius, rng, z0=None, ring_size=None, fine=False):
     """A ragged patch of fallen leaves round c on the flat ground there: the outline, a ring of points round c whose
-    radius wanders, each cut back along its ray to the last probe on the same ground as c, then pulled in where a
-    triangle of the fan would leave that ground (closed up round c where pulling in does not help). A fine patch (on
-    a sidewalk, lawn, parterre or ruelle, seen from close by) has a point every LITTER_EDGE_FINE cm, by turns out and
-    in (LITTER_SERRATE), so its edge is serrated rather than a few long straight sides. Returns (centre, ring, the
-    leaves' height), or None where c has no such ground or stands at its very edge."""
+    radius wanders, each cut back along its ray to where c's ground ends (the last probe on it, then halved to within
+    LITTER_CUT), then pulled in where a triangle of the fan would leave that ground (closed up round c where pulling in
+    does not help). A fine patch (on a sidewalk, lawn, parterre or ruelle, seen from close by) has a point every
+    LITTER_EDGE_FINE cm, by turns out and in (LITTER_SERRATE), so its edge is serrated rather than a few long straight
+    sides; after the cut, each of its sides across open ground longer than LITTER_SIDE is split into pieces about
+    LITTER_SPLIT long, the new points by turns out and in (LITTER_TEETH), while a side that runs along a change in the
+    ground (a curb, a lawn's edge, a fence foot) stays straight. Returns (centre, ring, the leaves' height), or None
+    where c has no such ground or stands at its very edge. A coarse patch (the park's carpet) is serrated too, with a
+    point every LITTER_EDGE cm."""
     z0 = ground.at(c) if z0 is None else z0
     if z0 is None:
         return None
     same = lambda p: (lambda z: z is not None and abs(z - z0) < .05)(ground.at(p))   # noqa: E731
+    if not ring_size and not all(same(add(c, (math.cos(k * math.tau / 8), math.sin(k * math.tau / 8)), LITTER_CLEAR))
+                                 for k in range(8)):
+        return None                 # a centre at the edge of its ground: half a fan, its outline through the centre
     edge, (lo, hi) = (LITTER_EDGE_FINE, LITTER_RING_FINE) if fine else (LITTER_EDGE, LITTER_RING)
     n = ring_size or max(lo, min(hi, round(math.tau * radius / edge)))
     a1, a2, jitter = LITTER_WOBBLE
     p1, p2, turn = rng.uniform(0., math.tau), rng.uniform(0., math.tau), rng.uniform(0., math.tau)
-    ring = []
+
+    def reach(th, r):
+        """How far from c along the ray at angle th the ground stays c's own, up to r: probed at LITTER_PROBES of r
+        and at least every LITTER_RAY_STEP, then halved between the last probe on it and the first off it."""
+        d = (math.cos(th), math.sin(th))
+        steps = sorted(set(LITTER_PROBES) | {k * LITTER_RAY_STEP / r for k in range(1, math.ceil(r / LITTER_RAY_STEP))})
+        good = 0.
+        for f in steps:
+            if not same(add(c, d, r * f)):
+                low, high = good * r, f * r
+                while high - low > LITTER_CUT:
+                    mid = (low + high) / 2
+                    low, high = (mid, high) if same(add(c, d, mid)) else (low, mid)
+                return max(0., low - 1.)    # a centimetre inside the last point found on the ground
+            good = f
+        return r
+    ring = []                       # [angle, radius kept] round c, the angle rising
     for i in range(n):
         th = turn + math.tau * (i + rng.uniform(-.25, .25)) / n
-        r = radius * (1. + a1 * math.sin(2. * th + p1) + a2 * math.sin(3. * th + p2) + rng.uniform(-jitter, jitter))
-        if fine and not ring_size:
-            r *= 1. + (1. if i % 2 else -1.) * rng.uniform(*LITTER_SERRATE)
-        d = (math.cos(th), math.sin(th))
-        keep = 0.
-        for f in LITTER_PROBES:
-            if not same(add(c, d, r * f)):
-                break
-            keep = f
-        ring.append([d, r * keep])
+        r = radius * (1. + a1 * math.sin(2. * th + p1) + a2 * math.sin(3. * th + p2))
+        if ring_size:
+            r += radius * rng.uniform(-jitter, jitter)
+        else:                       # by turns out and in, past the jitter, so the edge reads serrated
+            r += min(radius * jitter, LITTER_SERRATE_CM / 3) * rng.uniform(-1., 1.)
+            r += (1. if i % 2 else -1.) * min(r * rng.uniform(*LITTER_SERRATE), LITTER_SERRATE_CM * rng.uniform(.5, 1.))
+        ring.append([th, reach(th, r)])
+    point = lambda e: add(c, (math.cos(e[0]), math.sin(e[0])), max(e[1], 4.))   # noqa: E731
 
-    def wedge_ok(i):
-        """The fan's triangle between ring points i and i + 1 lies on the same ground: tried on a grid of points no
-        more than LITTER_PROBE apart over it (a driveway's dropped curb or a ramp is wider), its centroid and its
-        corners."""
-        a, b = (add(c, ring[k % n][0], max(ring[k % n][1], 4.)) for k in (i, i + 1))
+    def wedge_ok(e, f):
+        """The fan's triangle between ring points e and f lies on the same ground: tried on a grid of points no more
+        than LITTER_PROBE apart over it (a driveway's dropped curb or a ramp is wider), its centroid and its corners."""
+        a, b = point(e), point(f)
         across = max(1, math.ceil(math.dist(a, b) / LITTER_PROBE))
         out = max(1, math.ceil(max(math.dist(c, a), math.dist(c, b)) / LITTER_PROBE))
         points = [lerp(c, lerp(a, b, j / across), k / out) for j in range(across + 1) for k in range(1, out + 1)]
         return all(same(q) for q in points + [((c[0] + a[0] + b[0]) / 3, (c[1] + a[1] + b[1]) / 3)])
-    good = set()
-    for _ in range(4):              # a triangle that leaves the ground pulls both its outer points in
-        bad = [i for i in range(n) if i not in good and not wedge_ok(i)]
-        good.update(i for i in range(n) if i not in bad)
-        for i in bad:
-            ring[i][1] *= .6
-            ring[(i + 1) % n][1] *= .6
-            good.difference_update(((i - 1) % n, (i + 1) % n))
-        if not bad:
-            break
-    for i in range(n):              # what still leaves it closes up round the centre
-        if not wedge_ok(i):
-            ring[i][1] = ring[(i + 1) % n][1] = 0.
-    if sum(1 for _, r in ring if r >= min(20., .5 * radius)) < 3 or not all(wedge_ok(i) for i in range(n)):
+    def settle(ring):
+        """A triangle of the fan that leaves the ground pulls both its outer points in; what still leaves it closes
+        up round the centre."""
+        n, good = len(ring), set()
+        for _ in range(4):
+            bad = [i for i in range(n) if i not in good and not wedge_ok(ring[i], ring[(i + 1) % n])]
+            good.update(i for i in range(n) if i not in bad)
+            for i in bad:
+                ring[i][1] *= .6
+                ring[(i + 1) % n][1] *= .6
+                good.difference_update(((i - 1) % n, (i + 1) % n))
+            if not bad:
+                break
+        for i in range(n):
+            if not wedge_ok(ring[i], ring[(i + 1) % n]):
+                ring[i][1] = ring[(i + 1) % n][1] = 0.
+        return all(wedge_ok(ring[i], ring[(i + 1) % n]) for i in range(n))
+    if not settle(ring) or sum(1 for _, r in ring if r >= min(20., .5 * radius)) < 3:
         return None                 # a centre at the very edge of its ground
-    return c, [add(c, d, max(r, 4.)) for d, r in ring], z0
+    if fine and not ring_size:
+        def hugs(a, b):
+            """Whether the side a-b runs along a change in the ground: every 20 cm along it, a probe out of the patch
+            within LITTER_HUG lies off c's ground."""
+            length = math.dist(a, b)
+            if length < 1.:
+                return True
+            n = (-(b[1] - a[1]) / length, (b[0] - a[0]) / length)
+            m = lerp(a, b, .5)
+            if (m[0] - c[0]) * n[0] + (m[1] - c[1]) * n[1] < 0:
+                n = (-n[0], -n[1])          # out of the patch
+            steps = math.ceil(length / 20.)
+            return all(not all(same(add(lerp(a, b, k / steps), n, d)) for d in (4., 8., LITTER_HUG))
+                       for k in range(steps + 1))
+        for _ in range(3):          # until no side across open ground is longer than LITTER_SIDE
+            ring = _litter_respace(c, ring, rng, point, same, wedge_ok, hugs)
+            ring = _litter_straighten(c, ring, point, wedge_ok, hugs)
+            if not settle(ring):    # a new triangle the probes of the old ones missed a crack in
+                return None
+            pts = [point(e) for e in ring]
+            if all(math.dist(a, b) <= LITTER_SIDE or hugs(a, b) for a, b in zip(pts, pts[1:] + pts[:1])):
+                break
+        else:
+            return None             # a side a closed-up triangle left open: try the tree's next spot
+
+        def near_edge(a, b):
+            """Whether the run a-b follows a change in the ground: every 20 cm along it, a probe out of the patch
+            within LITTER_RUN_NEAR lies off c's ground."""
+            length = math.dist(a, b)
+            if length < 1.:
+                return True
+            n = (-(b[1] - a[1]) / length, (b[0] - a[0]) / length)
+            m = lerp(a, b, .5)
+            if (m[0] - c[0]) * n[0] + (m[1] - c[1]) * n[1] < 0:
+                n = (-n[0], -n[1])
+            steps = math.ceil(length / 20.)
+            return all(not all(same(add(lerp(a, b, k / steps), n, d)) for d in (5., 10., 15., LITTER_RUN_NEAR))
+                       for k in range(steps + 1))
+        ring = _litter_break_runs(c, ring, rng, point, same, wedge_ok, near_edge)
+        if not settle(ring):
+            return None
+    pts = [point(e) for e in ring]
+    if not ring_size and abs(area(pts)) < LITTER_THIN * 2. * max(math.dist(c, q) for q in pts):
+        return None                 # a sliver along the edge of its ground
+    if len(pts) == 4:               # a clump, drawn as a quad: its two triangles' centres on the ground too
+        a, b, q, d = _quad_order(pts)
+        if not all(same(((t[0][0] + t[1][0] + t[2][0]) / 3, (t[0][1] + t[1][1] + t[2][1]) / 3))
+                   for t in ((a, b, q), (a, q, d))):
+            return None
+    return c, pts, z0
 
 
-def litter_fringe(ground, c, ring, rng):
+def litter_runs(pts, open_side=None, length=LITTER_RUN):
+    """The straight runs of an outline of short sides over open ground: (i, j) where sides i to j (side k joins point k
+    to k + 1) are all open (open_side(k), default all) and keep side i's heading within LITTER_RUN_TURN, spanning
+    `length` (LITTER_RUN) or more."""
+    n = len(pts)
+    heading = [math.atan2(pts[(i + 1) % n][1] - pts[i][1], pts[(i + 1) % n][0] - pts[i][0]) for i in range(n)]
+    is_open = [open_side(i) if open_side else True for i in range(n)]
+    limit, out, done = math.radians(LITTER_RUN_TURN), [], set()
+    for i in range(n):
+        if i in done or not is_open[i]:
+            continue
+        j = i
+        while j - i < n - 1 and is_open[(j + 1) % n] and \
+                abs((heading[(j + 1) % n] - heading[i] + math.pi) % math.tau - math.pi) <= limit:
+            j += 1
+        if math.dist(pts[i], pts[(j + 1) % n]) >= length:
+            out.append((i, j))
+            done.update(k % n for k in range(i, j + 1))
+    return out
+
+
+def _litter_break_runs(c, ring, rng, point, same, wedge_ok, near_edge):
+    """Midpoint displacement for the straight runs of a fine patch's outline (Fournier, Fussell and Carpenter,
+    "Computer Rendering of Stochastic Models", CACM 1982): the points inside a run of short sides over open ground
+    move along their rays by turns out and in by LITTER_RUN_SHIFT, so the run breaks into teeth too big to read as one
+    straight edge. A point goes out only where the ground carries on and its two triangles stay on it; otherwise it
+    goes in, which keeps its triangles inside the old ones, never below LITTER_RUN_KEEP of its radius. A side along a
+    change in the ground (near_edge) is not part of a run, a point at the end of a side over LITTER_SIDE (one that
+    follows such a change) stays put, and no move makes a side longer than LITTER_SIDE. A run that still stands then
+    gets a displaced midpoint in each of its sides, as the method subdivides a segment."""
+    def fits(*chain):
+        return all(math.dist(point(a), point(b)) <= LITTER_SIDE for a, b in zip(chain, chain[1:]))
+
+    def displace(e, before, after, outward, shift):
+        """Move e along its ray: out when outward and the ground allows it, else in. Returns whether it moved."""
+        d = (math.cos(e[0]), math.sin(e[0]))
+        old = e[1]
+        if outward and same(add(c, d, old + shift / 2)) and same(add(c, d, old + shift + 2.)):
+            e[1] = old + shift
+            if fits(before, e, after) and wedge_ok(before, e) and wedge_ok(e, after):
+                return True
+        e[1] = max(old * LITTER_RUN_KEEP, old - shift)
+        if fits(before, e, after):
+            return True
+        e[1] = old
+        return False
+    for attempt in range(6):
+        pts = [point(e) for e in ring]
+        n = len(ring)
+        runs = litter_runs(pts, lambda i: not near_edge(pts[i], pts[(i + 1) % n]), LITTER_RUN - LITTER_RUN_MARGIN)
+        if not runs or attempt == 5:
+            break
+        if attempt < 3:
+            for i, j in runs:
+                out_first = rng.random() < .5
+                for m, k in enumerate(range(i + 1, j + 1)):
+                    k %= n
+                    before, after = ring[(k - 1) % n], ring[(k + 1) % n]
+                    shift = rng.uniform(*LITTER_RUN_SHIFT)
+                    if fits(before, ring[k], after):
+                        displace(ring[k], before, after, (m % 2 == 0) == out_first, shift)
+            continue
+        # The runs left: a displaced midpoint in each of their sides, inserted from the last side back.
+        sides = sorted({k % n for i, j in runs for k in range(i, j + 1)}, reverse=True)
+        out_first = rng.random() < .5
+        for m, k in enumerate(sides):
+            e, f = ring[k], ring[(k + 1) % n]
+            a, b = point(e), point(f)
+            q = lerp(a, b, .5)
+            th = e[0] + (math.atan2(q[1] - c[1], q[0] - c[0]) - e[0] + math.pi) % math.tau - math.pi
+            mid = [th, math.dist(c, q)]
+            displace(mid, e, f, (m % 2 == 0) == out_first, rng.uniform(*LITTER_RUN_SHIFT))
+            ring.insert(k + 1, mid)
+    return ring
+
+
+def _litter_straighten(c, ring, point, wedge_ok, hugs):
+    """Leave out a ring point that lies within LITTER_CUT of the side joining its neighbours where that side runs
+    along a change in the ground: a straight side along a curb, a lawn's edge or a fence foot needs only its ends."""
+    i = 0
+    while i < len(ring) and len(ring) > 6:
+        e, f, g = ring[i - 1], ring[i], ring[(i + 1) % len(ring)]
+        a, q, b = point(e), point(f), point(g)
+        turn = (g[0] - e[0]) % math.tau
+        if 0. < turn < math.pi and seg_dist(q, a, b) <= LITTER_CUT + 1. and hugs(a, b) and wedge_ok(e, g):
+            del ring[i]
+            i = max(0, i - 1)
+        else:
+            i += 1
+    return ring
+
+
+def _litter_respace(c, ring, rng, point, same, wedge_ok, hugs):
+    """A fine patch's outline after its cut back to the ground: every side across open ground longer than LITTER_SIDE
+    split into pieces about LITTER_SPLIT long. Each new point lies on the side's ray from c and stands by turns out
+    and in by LITTER_TEETH; one out that would leave the ground, or whose triangles would, goes back onto the side,
+    which lies in a triangle already on the ground. A side whose every point lies within LITTER_HUG of a change in
+    the ground (a curb, a lawn's edge, a fence foot) stays straight."""
+    out = []
+    for i, e in enumerate(ring):
+        f = ring[(i + 1) % len(ring)]
+        out.append(e)
+        a, b = point(e), point(f)
+        length = math.dist(a, b)
+        if length <= LITTER_SIDE or hugs(a, b):
+            continue
+        pieces = math.ceil(length / LITTER_SPLIT)
+        flip = rng.random() < .5
+        new = []
+        for k in range(1, pieces):
+            q = lerp(a, b, k / pieces)
+            th = e[0] + (math.atan2(q[1] - c[1], q[0] - c[0]) - e[0] + math.pi) % math.tau - math.pi
+            on = math.dist(c, q)
+            tooth = rng.uniform(*LITTER_TEETH)
+            d = (math.cos(th), math.sin(th))
+            if (k % 2 == 1) != flip:        # out, where the ground carries on past the side
+                r = on + tooth if same(add(q, d, tooth / 2)) and same(add(q, d, tooth + 1.)) else on
+            else:
+                r = max(4., on - tooth)
+            new.append([th, r, on])
+        for _ in range(2):          # out points whose triangles leave the ground go back onto the side
+            chain = [e] + new + [f]
+            moved = False
+            for k in range(len(chain) - 1):
+                if not wedge_ok(chain[k], chain[k + 1]):
+                    for g in (chain[k], chain[k + 1]):
+                        if len(g) == 3 and g[1] > g[2]:
+                            g[1], moved = g[2], True
+            if not moved:
+                break
+        out += [[th, r] for th, r, _ in new]
+    return out
+
+
+def litter_fringe(ground, c, ring, rng, z0=None, spec=LITTER_FRINGE, sizes=LITTER_FRINGE_SIZE):
     """Small clumps of leaves just outside a fine patch's edge (LITTER_FRINGE): one per LITTER_FRINGE[2] cm of outline,
     each LITTER_FRINGE_RING points round, at a seeded point of the outline, out to LITTER_FRINGE_OUT of the patch's
     radius beyond it, fewer and smaller the further out (a power law on the distance, the size shrinking from
-    LITTER_FRINGE_SIZE[1] to [0]), on whatever flat ground is there. The leaves thin out clump by clump toward the
-    drip line instead of stopping at one edge."""
+    LITTER_FRINGE_SIZE[1] to [0]), on whatever flat ground is there (only the patch's own with z0). The leaves thin out
+    clump by clump toward the drip line instead of stopping at one edge."""
     mean = sum(math.dist(c, q) for q in ring) / len(ring)
     outline = sum(math.dist(a, b) for a, b in zip(ring, ring[1:] + ring[:1]))
-    lo, hi, every = LITTER_FRINGE
+    lo, hi, every = spec
     out = []
     for _ in range(max(lo, min(hi, round(outline / every)))):
         e = ring[rng.randint(0, len(ring) - 1)]
         d = math.dist(c, e) or 1.
         u = ((e[0] - c[0]) / d, (e[1] - c[1]) / d)
         t = rng.random() ** 2. * LITTER_FRINGE_OUT
-        size = (LITTER_FRINGE_SIZE[1] + (LITTER_FRINGE_SIZE[0] - LITTER_FRINGE_SIZE[1]) * t / LITTER_FRINGE_OUT) * \
-            rng.uniform(.85, 1.05)
-        clump = litter_patch(ground, add(e, u, t * mean + .6 * size), size, rng, None, LITTER_FRINGE_RING)
+        size = (sizes[1] + (sizes[0] - sizes[1]) * t / LITTER_FRINGE_OUT) * rng.uniform(.85, 1.05)
+        clump = litter_patch(ground, add(e, u, t * mean + .6 * size), size, rng, z0, LITTER_FRINGE_RING)
         out += [clump] if clump else []
     return out
 
@@ -4870,26 +5730,39 @@ def tree_litter(world, S, crowns, ground, counts):
     (lane_litter). Returns the per-kind record: trees, fallen share, cover, patches, trees covered by a neighbour's
     patch, trees with no flat ground, crown, target and drawn area; and the ruelles' record."""
     kinds, drawn, grid = {}, [], Grid(1500.)
+    world.lane_patches = getattr(world, 'lane_patches', [])
 
     def covered(c, r, z0):
         return any(dz == z0 and dr >= .8 * r and math.dist(c, dc) <= LITTER_COVERED * dr
                    for dc, dr, dz in (drawn[i] for i in grid.query((c[0], c[1], c[0], c[1]))))
 
+    lane_z = Z_ALLEY + LITTER_LANE
+
     def lay(patches, rec):
         for c, ring, z0 in patches:
+            if abs(z0 - lane_z) < .01 and len(ring) > LITTER_FRINGE_RING:
+                world.lane_patches.append((c, ring, z0))      # the gutter beside it gets leaves too
             grid.add(len(drawn), bbox([c], max(math.dist(c, q) for q in ring)))
             drawn.append((c, sum(math.dist(c, q) for q in ring) / len(ring), z0))
-            counts['litter_triangles'] += _litter_face(S, [c] + ring + [ring[0]], z0)
-            rec['drawn_m2'] += area(ring) / 1e4
+            counts['litter_triangles'] += _litter_quad(S, ring, z0) if len(ring) == LITTER_FRINGE_RING else \
+                _litter_face(S, [c] + ring + [ring[0]], z0)
+            rec['drawn_m2'] += abs(area(ring)) / 1e4
             rec['patches'] += 1
             counts['litter_patches'] += 1
     lanes = {'trees': 0, 'patches': 0, 'drawn_m2': 0.}
+    lane_rings, lane_grid = [], Grid(500.)
+
+    def on_lane_litter(p):
+        return any(point_in(p, lane_rings[i]) for i in lane_grid.query((p[0], p[1], p[0], p[1])))
     for x, y, z, radius, base, top, fallen, kind, source in crowns.items:
         cover = min(LITTER_COVER, LITTER_GAIN * fallen)
         if source == 'yard':
-            patches = lane_litter(world, ground, (x, y), radius, cover)
+            patches = lane_litter(world, ground, (x, y), radius, cover, on_lane_litter)
             lanes['trees'] += bool(patches)
             lay(patches, lanes)
+            for _, ring, _ in patches:
+                lane_grid.add(len(lane_rings), bbox(ring))
+                lane_rings.append(ring)
             continue
         rec = kinds.setdefault(kind, {'trees': 0, 'fallen': round(fallen, 3), 'cover': 0., 'patches': 0,
                                       'trees_covered': 0, 'trees_without_ground': 0, 'crown_m2': 0., 'target_m2': 0.,
@@ -4909,10 +5782,12 @@ def tree_litter(world, S, crowns, ground, counts):
             z0 = ground.at(c)
             if z0 is None:
                 continue
-            fine = ground.on_streets(c)          # in the park: one coarse patch, the grove's carpet
+            fine = ground.on_streets(c)
+            # in the park, one patch, the grove's carpet: fine with a fringe near a street, coarse farther in
+            near = not fine and ground.street_distance(c, LITTER_PARK_NEAR) is not None
             main = math.sqrt(target / math.pi)
             skip = covered(c, main, z0)
-            patch = None if skip else litter_patch(ground, c, main, rng, z0, fine=fine)
+            patch = None if skip else litter_patch(ground, c, main, rng, z0, fine=fine or near)
             if patch or skip:
                 break
         if patch is None and not skip:
@@ -4923,6 +5798,8 @@ def tree_litter(world, S, crowns, ground, counts):
         patches = [patch] if patch else []
         if patch and fine:
             patches += litter_fringe(ground, patch[0], patch[1], rng)
+        elif patch and near:                # the park's carpet thins out clump by clump onto the lawn too
+            patches += litter_fringe(ground, patch[0], patch[1], rng, patch[2], LITTER_PARK_FRINGE, LITTER_PARK_CLUMP)
         lay(patches, rec)
     for rec in list(kinds.values()) + [lanes]:
         for key in ('crown_m2', 'target_m2', 'drawn_m2'):
@@ -4932,41 +5809,76 @@ def tree_litter(world, S, crowns, ground, counts):
     return dict(sorted(kinds.items())), lanes
 
 
-LANE_SAMPLES = 48               # points of a yard crown's disc tried for the ruelle paving under it
+LANE_SAMPLES = 120              # points of a yard crown's disc tried for the ruelle paving under it
+LANE_PATCH = (100., 260.)       # a lane patch's radius (cm): the gutter and the fence cut it to a band along the lane,
+LANE_MID = (GUTTER_HALF + 70., 160.)   # their sides straight and cheap; its centre this far from the centre line
+LANE_TRIES = 16                 # patches tried per half-lane under a crown
 
 
-def lane_litter(world, ground, trunk, radius, cover):
-    """The leaves a Plex yard tree drops on a ruelle: where its crown reaches over the lane's paving, a fine patch on
-    each half of the lane it covers (the sunken gutter between them keeps its own drifts), whose area is the paving
-    under the crown times the cover of its kind, with a fringe. The patch centres stand on the paving under the crown
-    nearest the trunk, so the leaves lie thickest on the tree's side, toward its fence. Returns the patches."""
+def lane_litter(world, ground, trunk, radius, cover, covered=None):
+    """The leaves a Plex yard tree drops on a ruelle: where its crown reaches over the lane's paving, fine patches on
+    each half of the lane it covers (the sunken gutter between them keeps its own drifts), laid one after another along
+    the half-lane until they cover the paving under the crown times the cover of its kind (sampled on LANE_SAMPLES
+    points of the crown's disc). Each next patch is centred on the half-lane's middle beside the uncovered paving
+    nearest the trunk, so the leaves lie thickest on the tree's side and thin out along the lane. Paving another
+    crown's leaves already cover (`covered`) counts toward the cover. A fringe of clumps lies outside the run (the
+    clumps that would fall inside one of its patches are left out). Returns the patches."""
     hit = ground.alleys.nearest(trunk, radius + ALLEY_HALF + 100.)
     if hit is None or hit[0] - ALLEY_HALF - 100. > radius:
         return []
     rng = Rng('litter-lane', round(trunk[0]), round(trunk[1]))
-    _, _, a, b = hit
-    u, length = unit(a, b)
-    n = (-u[1], u[0])
+    lane_z = Z_ALLEY + LITTER_LANE
     halves = {}
     for k in range(LANE_SAMPLES):
         # a sunflower spread over the crown's disc: even cover with no seeded draws
         r = radius * math.sqrt((k + .5) / LANE_SAMPLES)
         th = k * 2.39996323
         q = (trunk[0] + r * math.cos(th), trunk[1] + r * math.sin(th))
-        if ground.at(q) is None or abs(ground.at(q) - Z_ALLEY - LITTER_LANE) > .05:
+        z = ground.at(q)
+        own = ground.alleys.nearest(q, ALLEY_HALF + LOT_PAVE)
+        if z is None or abs(z - lane_z) > .05 or own is None:
             continue
-        side = 1 if (q[0] - a[0]) * n[0] + (q[1] - a[1]) * n[1] >= 0 else -1
-        halves.setdefault(side, []).append(q)
+        _, alley, a, b = own          # the half of its own ruelle stretch the sample lies on
+        u, _ = unit(a, b)
+        side = 1 if (q[0] - a[0]) * -u[1] + (q[1] - a[1]) * u[0] >= 0 else -1
+        halves.setdefault((alley, a, b, side), []).append(q)
     out = []
-    for side, points in sorted(halves.items()):
-        share = len(points) / LANE_SAMPLES
-        target = cover * share * math.pi * radius ** 2
-        if target < 2500.:
+    cell = math.pi * radius ** 2 / LANE_SAMPLES
+    for (_, a, b, side), points in sorted(halves.items()):
+        u, _ = unit(a, b)
+        n = (-u[1], u[0])
+        want = cover * len(points)
+        if want * cell < 2500.:
             continue
-        c = min(points, key=lambda q: math.dist(q, trunk))
-        patch = litter_patch(ground, c, math.sqrt(target / math.pi), rng, None, fine=True)
-        if patch:
-            out += [patch] + litter_fringe(ground, patch[0], patch[1], rng)
+        laid, tried = [], set()
+        inside = {j for j, p in enumerate(points) if covered and covered(p)}
+        for _ in range(LANE_TRIES):
+            left = [k for k in range(len(points)) if k not in inside and k not in tried]
+            if len(inside) >= want or not left:
+                break
+            k = min(left, key=lambda k: (math.dist(points[k], trunk), k))
+            tried.add(k)
+            q = points[k]
+            along = (q[0] - a[0]) * u[0] + (q[1] - a[1]) * u[1]
+            lat = abs((q[0] - a[0]) * n[0] + (q[1] - a[1]) * n[1])
+            r = max(LANE_PATCH[0], min(LANE_PATCH[1], math.sqrt((want - len(inside)) * cell / math.pi)))
+            patch = None
+            # the half-lane's middle beside q, else nearer the gutter or q itself where the paving is narrow
+            for off in (max(LANE_MID[0], min(lat, LANE_MID[1])), LANE_MID[0], lat):
+                centre = add(add(a, u, along), n, side * off)
+                z = ground.at(centre)
+                if z is not None and abs(z - lane_z) < .05:
+                    patch = litter_patch(ground, centre, r, rng, z, fine=True)
+                if patch:
+                    break
+            if patch is None:
+                continue
+            laid.append(patch)
+            inside |= {j for j, p in enumerate(points) if point_in(p, patch[1])}
+        out += laid
+        for patch in laid:
+            out += [clump for clump in litter_fringe(ground, patch[0], patch[1], rng)
+                    if not any(point_in(clump[0], other[1]) for other in laid)]
     return out
 
 
@@ -5003,13 +5915,12 @@ def _curb_drift(world, S, s, side, sign, x, run, width, rng):
     return abs(area(pts)), tris
 
 
-def _gutter_drifts(world, S, counts, crowns):
-    """Fallen leaves drifted into the ruelles' centre gutters: runs of 1 to 4.5 m along a third of each stretch, more
-    under the yard trees' crowns, up to 32 cm across with a ragged edge, lying in the gutter's V LITTER_LIFT over it, only where the ruelle's own
-    paving lies on top (not at a mouth under a street's asphalt or a sidewalk, under a building, or where another
-    ruelle's paving, or the next stretch's at a bend, crosses it)."""
-    counts.setdefault('ruelle_gutter_leaf_drifts', 0)
-    drawn = 0.
+GUTTER_BESIDE = 12.     # a lane patch whose outline comes this near (cm) the gutter's edge lies along the gutter
+GUTTER_BESIDE_SHARE = .5    # ... and a gutter drift runs beside at least this share of that stretch,
+GUTTER_BESIDE_PIECE = 100.  # its ragged edge in pieces this long (a curb drift's are 60 cm; these pay for themselves)
+
+
+def _alley_pieces_index(world):
     pieces, grid = getattr(world, 'alley_pieces', []), Grid(2000.)
     for i, (poly, _) in enumerate(pieces):
         grid.add(i, bbox(poly))
@@ -5017,35 +5928,177 @@ def _gutter_drifts(world, S, counts, crowns):
     def own(p, seg):
         return world.surfaces.at(p)[1] == 'alley' and all(
             pieces[i][1] == seg for i in grid.query((p[0], p[1], p[0], p[1])) if point_in(p, pieces[i][0]))
+    return own
+
+
+def gutter_paved(own, pa, pb, x, run, steps):
+    """Whether the ruelle's own paving lies on its gutter from x to x + run along the stretch pa-pb (not a mouth under
+    a street's asphalt or a sidewalk, a building, or another ruelle's paving), tried at 2 * steps + 1 points along
+    it, on the gutter's centre line and both edges."""
+    u, _ = unit(pa, pb)
+    n = (-u[1], u[0])
+    return all(own(add(add(pa, u, x + run * k / (2 * steps)), n, lat), (pa, pb))
+               for k in range(2 * steps + 1) for lat in (-GUTTER_HALF, 0., GUTTER_HALF))
+
+
+def _gutter_drift(S, own, pa, pb, x, run, rng, piece=60.):
+    """One drift of leaves in a ruelle's gutter from x to x + run along the stretch pa-pb: up to 32 cm across with a
+    ragged edge in pieces about `piece` long, in the gutter's V LITTER_LIFT over it, only where the ruelle's own paving
+    lies on top. Returns its triangles and area (cm2), both 0 where it is not drawn."""
+    u, _ = unit(pa, pb)
+    n = (-u[1], u[0])
+    steps = max(2, int(run / piece))
+    peak = rng.uniform(7., GUTTER_HALF - 2.)
+    sides = [[max(2., math.sin(math.pi * k / steps) * peak * rng.uniform(.6, 1.15) + 2.)
+              for k in range(steps + 1)] for _ in (0, 1)]
+    sides[0][0] = sides[0][-1] = sides[1][0] = sides[1][-1] = 2.
+
+    def at(t, lat):
+        p = add(add(pa, u, t), n, lat)
+        return (p[0], p[1], gutter_z(lat) + LITTER_LIFT)
+    paved = gutter_paved(own, pa, pb, x, run, steps)
+    tris, drawn = 0, 0.
+    for k in range(steps if paved else 0):
+        t0, t1 = x + run * k / steps, x + run * (k + 1) / steps
+        for sgn, w in ((1., sides[0]), (-1., sides[1])):
+            quad = [at(t0, 0.), at(t1, 0.), at(t1, sgn * w[k + 1]), at(t0, sgn * w[k])]
+            tris += _litter_face(S, quad)
+            drawn += abs(area([q[:2] for q in quad]))
+    return tris, drawn
+
+
+def _gutter_drifts(world, S, counts, crowns):
+    """Fallen leaves drifted into the ruelles' centre gutters: runs of 1 to 4.5 m along a third of each stretch, more
+    under the yard trees' crowns, up to 32 cm across with a ragged edge, lying in the gutter's V LITTER_LIFT over it, only where the ruelle's own
+    paving lies on top (not at a mouth under a street's asphalt or a sidewalk, under a building, or where another
+    ruelle's paving, or the next stretch's at a bend, crosses it). The drawn stretches are kept (world.gutter_spans)
+    for the drifts beside the lane patches (_gutter_beside_patches)."""
+    counts.setdefault('ruelle_gutter_leaf_drifts', 0)
+    drawn = 0.
+    own = _alley_pieces_index(world)
+    world.gutter_spans = {}
     for alley in getattr(world, 'alleys', []):
         for pa, pb in alley['segments']:
             u, length = unit(pa, pb)
-            n = (-u[1], u[0])
             rng = Rng('gutter-leaves', alley['id'], round(pa[0]), round(pa[1]))
             x = rng.uniform(0., 500.)
             while x < length - 120.:
                 run = min(rng.uniform(100., 450.), length - 20. - x)
                 fall = leaves_over(crowns, add(pa, u, x + run / 2))
                 if run > 60. and (rng.chance(RUELLE_DRIFT[0] + RUELLE_DRIFT[1] * fall) or fall >= RUELLE_UNDER):
-                    steps = max(2, int(run / 60.))
-                    peak = rng.uniform(7., GUTTER_HALF - 2.)
-                    sides = [[max(2., math.sin(math.pi * k / steps) * peak * rng.uniform(.6, 1.15) + 2.)
-                              for k in range(steps + 1)] for _ in (0, 1)]
-                    sides[0][0] = sides[0][-1] = sides[1][0] = sides[1][-1] = 2.
-
-                    def at(t, lat):
-                        p = add(add(pa, u, t), n, lat)
-                        return (p[0], p[1], gutter_z(lat) + LITTER_LIFT)
-                    paved = all(own(add(add(pa, u, x + run * k / (2 * steps)), n, lat), (pa, pb))
-                                for k in range(2 * steps + 1) for lat in (-GUTTER_HALF, 0., GUTTER_HALF))
-                    for k in range(steps if paved else 0):
-                        t0, t1 = x + run * k / steps, x + run * (k + 1) / steps
-                        for sgn, w in ((1., sides[0]), (-1., sides[1])):
-                            quad = [at(t0, 0.), at(t1, 0.), at(t1, sgn * w[k + 1]), at(t0, sgn * w[k])]
-                            counts['litter_triangles'] += _litter_face(S, quad)
-                            drawn += abs(area([q[:2] for q in quad]))
-                    counts['ruelle_gutter_leaf_drifts'] += paved
+                    tris, area_ = _gutter_drift(S, own, pa, pb, x, run, rng)
+                    counts['litter_triangles'] += tris
+                    drawn += area_
+                    counts['ruelle_gutter_leaf_drifts'] += tris > 0
+                    if tris:
+                        world.gutter_spans.setdefault((pa, pb), []).append((x, x + run))
                 x += run + rng.uniform(150., 700.)
+    return drawn / 1e4
+
+
+def _gutter_beside_patches(world, S, counts, patches):
+    """Where a lane patch's leaves stop at the ruelle's gutter, the gutter carries leaves too: the gutter is the lane's
+    low line, where the leaves collect. Each lane patch whose outline comes within GUTTER_BESIDE of the gutter's edge
+    over 60 cm or more gets a drift in the gutter beside that stretch, unless drifts already run beside
+    GUTTER_BESIDE_SHARE of it. Returns the area drawn (m2)."""
+    counts.setdefault('ruelle_gutter_drifts_beside_patches', 0)
+    own = _alley_pieces_index(world)
+    spans = getattr(world, 'gutter_spans', {})
+    index = AlleyIndex(world)
+    drawn = 0.
+    for c, ring, _ in patches:
+        hit = index.nearest(c, ALLEY_HALF + 100.)
+        if hit is None:
+            continue
+        _, alley, pa, pb = hit
+        u, length = unit(pa, pb)
+        n = (-u[1], u[0])
+        near = [(q[0] - pa[0]) * u[0] + (q[1] - pa[1]) * u[1] for q in ring
+                if abs((q[0] - pa[0]) * n[0] + (q[1] - pa[1]) * n[1]) <= GUTTER_HALF + GUTTER_BESIDE]
+        if len(near) < 2 or max(near) - min(near) < 60.:
+            continue
+        t0, t1 = max(20., min(near) - 20.), min(length - 20., max(near) + 20.)
+        if t1 - t0 < 60.:
+            continue
+        covered = sum(max(0., min(t1, b) - max(t0, a)) for a, b in spans.get((pa, pb), ()))
+        if covered >= GUTTER_BESIDE_SHARE * (t1 - t0):
+            continue
+        rng = Rng('gutter-beside', alley, round(pa[0]), round(pa[1]), round(t0))
+        tris, area_ = _gutter_drift(S, own, pa, pb, t0, t1 - t0, rng, GUTTER_BESIDE_PIECE)
+        if tris:
+            counts['litter_triangles'] += tris
+            counts['ruelle_gutter_drifts_beside_patches'] += 1
+            spans.setdefault((pa, pb), []).append((t0, t1))
+            drawn += area_
+    return drawn / 1e4
+
+
+def _lane_drifts(world, S, ground, crowns, counts):
+    """Leaves banked against the ruelles' fences and walls: along each side of a ruelle's paving, stretches of
+    LANE_DRIFT with a gap of LANE_DRIFT_GAP after each (shorter under the crowns), each drawn by the curb drifts' rule
+    (CURB_DRIFT: a chance of 0.4 plus the leaves overhead). A drift is a fan from the middle of its foot, its straight
+    side 3 cm in from the paving's edge (the fence line or a wall), its ragged bulge LANE_DRIFT_W out over the lane,
+    wider under the crowns, LITTER_LANE over the paving. Only along the longest part of the stretch where the paving
+    ends just beyond the foot (no gate, mouth or crossing ruelle), the edge steps by less than LANE_DRIFT_STEP, and
+    every point of the drift lies on that ruelle's paving (no gutter). Returns the area (m2)."""
+    lane_z = Z_ALLEY + LITTER_LANE
+    on_lane = lambda q: (lambda z: z is not None and abs(z - lane_z) < .05)(ground.at(q))   # noqa: E731
+    counts.setdefault('ruelle_foot_leaf_drifts', 0)
+    drawn = 0.
+    for alley in getattr(world, 'alleys', []):
+        for (pa, pb), profile in zip(alley['segments'], alley['reach']):
+            u, length = unit(pa, pb)
+            n = (-u[1], u[0])
+            ts = profile['t']
+            for side in (1, -1):
+                edge = profile[side]
+
+                def foot(t):
+                    """The paving's reach at t along the stretch (its sampled profile, linear between samples)."""
+                    i = max(0, min(len(ts) - 2, next((j for j in range(len(ts) - 1) if ts[j + 1] >= t), len(ts) - 2)))
+                    f = 0. if ts[i + 1] == ts[i] else max(0., min(1., (t - ts[i]) / (ts[i + 1] - ts[i])))
+                    return edge[i] + (edge[i + 1] - edge[i]) * f
+                rng = Rng('lane-drift', alley['id'], round(pa[0]), round(pa[1]), side)
+                x = rng.uniform(0., 300.)
+                while x < length - 150.:
+                    run = min(rng.uniform(*LANE_DRIFT), length - 50. - x)
+                    mid = add(add(pa, u, x + run / 2), n, side * (foot(x + run / 2) - 10.))
+                    fall = leaves_over(crowns, mid)
+                    reach = [foot(x + run * f) for f in (0., .25, .5, .75, 1.)]
+                    line = min(reach) - 3.
+                    # the longest part of the stretch whose foot runs along the fence or wall: every 20 cm the paving
+                    # ends within LITTER_HUG beyond it (not at a gate, a mouth or a crossing ruelle)
+                    steps = math.ceil(run / 20.)
+                    hug = [not all(on_lane(add(add(pa, u, x + run * j / steps), n, side * (line + d)))
+                                   for d in (4., 8., LITTER_HUG)) for j in range(steps + 1)]
+                    j0 = j1 = best = 0
+                    for j in range(steps + 1):
+                        k = j
+                        while k <= steps and hug[k]:
+                            k += 1
+                        if k - j > best:
+                            j0, j1, best = j, k - 1, k - j
+                    t0, t1 = x + run * j0 / steps, x + run * j1 / steps
+                    if t1 - t0 >= 120. and max(reach) - min(reach) < LANE_DRIFT_STEP and \
+                            rng.chance(CURB_DRIFT[0] + CURB_DRIFT[1] * fall):
+                        width = rng.uniform(*LANE_DRIFT_W) * (1. + fall)
+                        k = max(2, math.ceil((t1 - t0) / LITTER_SIDE))
+                        out = []
+                        for i in range(k, -1, -1):
+                            f = i / k
+                            w = 3. + width * math.sin(math.pi * f) ** .6 * (rng.uniform(.7, 1.2) if 0 < i < k else .2)
+                            t = t0 + (t1 - t0) * f + (rng.uniform(-10., 10.) if 0 < i < k else 0.)
+                            out.append(add(add(pa, u, t), n, side * (line - w)))
+                        at = lambda t: add(add(pa, u, t), n, side * line)   # noqa: E731
+                        pts = [at((t0 + t1) / 2), at(t1)] + out + [at(t0)]
+                        if all(on_lane(q) for q in pts + [lerp(a, b, .5) for a, b in zip(pts, pts[1:])] +
+                               [lerp(pts[0], q, .5) for q in out] +
+                               [((pts[0][0] + a[0] + b[0]) / 3, (pts[0][1] + a[1] + b[1]) / 3)
+                                for a, b in zip(pts[1:], pts[2:])]):
+                            counts['litter_triangles'] += _litter_face(S, pts, lane_z)
+                            counts['ruelle_foot_leaf_drifts'] += 1
+                            drawn += abs(area(pts))
+                    x += run + rng.uniform(*LANE_DRIFT_GAP) * (1. - .5 * fall)
     return drawn / 1e4
 
 
@@ -7096,6 +8149,28 @@ def write_street_trees(world, path, counts):
     Path(path).write_text(text)
 
 
+def write_bike_paint(world, path, counts):
+    """Streets/bike_paint.json: one row per drive way side whose OSM cycleway tags paint it (bike_paint_sides)."""
+    keys = ('bike_paint_sides', 'bike_lane_line_metres', 'bike_lane_marks', 'sharrows', 'bus_diamonds',
+            'bike_paint_too_narrow')
+    head = {'layer': 'Streets', 'generator': GENERATOR, 'frame': FRAME + ' (the map frame; Unreal x and y alike)',
+            'note': 'On-street cycling paint, one row per way side: way (OSM id), name, side (L the OSM left, R the '
+                    'right), kind (lane: cycleway lane or opposite_lane, two white lines with a diamond, a bike and an '
+                    'arrow; shared: shared_lane, a bike and two chevrons; busway: share_busway, the reserved-lane '
+                    'diamond), travel (1 along the way, -1 against it), segments ([segment, inner line, outer line] '
+                    'for a lane, [segment, mark] otherwise: signed cm from the segment centreline, left positive), '
+                    'line_m (painted line metres), marks (centre, heading_deg of travel, at: a point on its paint) '
+                    'and too_narrow (segments left bare for want of a 3 m traffic lane). The parked cars keep the '
+                    'curb: a lane with parking lies between the cars and the traffic.',
+            'rules_cm': {'parking_band': PARKING_W, 'lane_width': BIKE_LANE_W, 'gutter': BIKE_GUTTER,
+                         'line_width': BIKE_LINE_W, 'junction_clear': BIKE_END, 'crossing_clear': BIKE_CLEAR,
+                         'first_after_mouth': BIKE_FIRST, 'repeat': BIKE_REPEAT, 'sharrow_from_edge': SHARROW_FROM_EDGE},
+            'counts': {k: counts[k] for k in keys}}
+    text = json.dumps(head, ensure_ascii=False, indent=1)[:-2] + ',\n "ways": [\n' + \
+        ',\n'.join('  ' + json.dumps(row, ensure_ascii=False) for row in world.bike_paint) + '\n ]\n}\n'
+    Path(path).write_text(text)
+
+
 def prepare(directory=None):
     directory = Path(directory or OUT)
     world = World()
@@ -7105,6 +8180,13 @@ def prepare(directory=None):
     carriageway_polygons(world)
     streets, street_counts = build_streets(world)
     furniture_rows, furniture_counts = build_furniture(world)
+    # the Soul's curb leaf bags keep clear of the Furniture props
+    grid = Grid(500.)
+    for i, row in enumerate(furniture_rows):
+        grid.add(i, bbox([row['position'][:2]]))
+    world.furniture_grid = lambda p: [
+        (furniture_rows[i]['position'][:2], LEAF_BAG_KEEP_SIGN if furniture_rows[i]['prop'] == 'sign_parking' else
+         LEAF_BAG_KEEP) for i in grid.query(bbox([p], LEAF_BAG_KEEP_SIGN))]
     soul, soul_rows, soul_counts = build_soul(world)
     lock_bikes_to_signs(world, furniture_rows, soul_rows, soul_counts)
     soul_counts['placements'] = len(soul_rows)
@@ -7130,9 +8212,12 @@ def prepare(directory=None):
     # Every street and park tree the game shows, one row each (the contract the apply step's tree actors read), the
     # curb extensions and the trunks left for the host.
     write_street_trees(world, directory / 'Streets/street_trees.json', street_counts)
+    write_bike_paint(world, directory / 'Streets/bike_paint.json', street_counts)
     streets_manifest = json.loads((directory / 'Streets/manifest.json').read_text())
     streets_manifest['street_trees'] = 'street_trees.json'
     streets_manifest['street_trees_sha256'] = sha_file(directory / 'Streets/street_trees.json')
+    streets_manifest['bike_paint'] = 'bike_paint.json'
+    streets_manifest['bike_paint_sha256'] = sha_file(directory / 'Streets/bike_paint.json')
     (directory / 'Streets/manifest.json').write_text(json.dumps(streets_manifest, ensure_ascii=False, indent=1) + '\n')
     results['Streets'] = streets_manifest
     # The Furniture layer also gets a manifest (no batches) so the apply step can treat layers uniformly.

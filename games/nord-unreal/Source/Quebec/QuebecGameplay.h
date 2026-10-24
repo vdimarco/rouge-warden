@@ -195,6 +195,9 @@ public:
     void ApplyKnockPose();
     // Server: the launched player's capsule passes through the car that hit it for Seconds.
     void IgnoreCarBriefly(AActor* Car, float Seconds);
+    // Parked cars (QuebecParkedCars.h): a player thrown into a parked car's box at 9 m/s or more turns the space into a
+    // real car. The movement calls this with the velocity it had before it slides along the box.
+    virtual void MoveBlockedBy(const FHitResult& Impact) override;
 
 private:
     UPROPERTY(VisibleAnywhere) TObjectPtr<USpringArmComponent> CameraArm;
@@ -542,6 +545,9 @@ public:
     virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
     AQuebecCar* FindInteractableCar() const;
     AQuebecParkResident* FindInteractableResident() const;
+    // Parked cars (QuebecParkedCars.h): the curb space whose car E would take, or INDEX_NONE. It comes after the real
+    // cars, the missions, the jobs and the stands, and loses to a resident who stands nearer.
+    int32 FindEnterableParkedSlot(const AQuebecParkResident* Resident) const;
     void TickResidentGreetings(float DeltaTime);
     bool IsComicStyle() const { return bComicStyle; }
     void ShowInteractionMessage(const FString& Message) { ClientInteractionMessage(Message); }
@@ -660,6 +666,8 @@ private:
     UPROPERTY() TObjectPtr<class UAudioComponent> LossAudio;
     UPROPERTY() TObjectPtr<class USoundWaveProcedural> LossWave;
     void ExitCar(AQuebecCar* Car);
+    // Server: the walker gets into the driver's seat.
+    void EnterCar(AQuebecCharacter* Character, AQuebecCar* Car);
 };
 
 UCLASS()

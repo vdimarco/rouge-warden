@@ -1682,20 +1682,26 @@ def test_lane_walls_have_doors():
     # local critic 5 (pass 5): a plex wall on a ruelle had windows but no door (310 of 311). Every lane wall of 3 m or
     # more now has a ground-floor back door per 8 m (P.LANE_DOOR_EVERY) in place of a ground-floor window, its leaf in
     # the lot's door paint at the ground floor, with a cast-concrete stoop and steps down along the wall where the
-    # floor is raised; a wide lane wall gets two
-    for width, count in ((760, 4), (1700, 2)):
-        _, _, lots, mesh, records, counts = _rear_fixture(alley_from_wall=250, width=width, count=count)
+    # floor is raised; a wide lane wall gets two.
+    # tech critic (pass 5 verify): cars drive the ruelles, and the stoops stood in them. A stoop that would come within
+    # P.LANE_STOOP_CLEAR of the lane centreline gives way to a door at grade: a ruelle 250 cm from the wall leaves
+    # 149 cm past the 101 cm stoop (doors at grade), one 330 cm away leaves 229 cm (stoops).
+    for alley, width, count in ((250, 760, 4), (250, 1700, 2), (330, 760, 4), (330, 1700, 2)):
+        _, roads, lots, mesh, records, counts = _rear_fixture(alley_from_wall=alley, width=width, count=count)
+        lane = [tuple(p) for p in roads[-1]['points']]
+        clear = alley - P.D_FACE - 85 >= P.LANE_STOOP_CLEAR
         rear = _rear_faces(mesh)
-        lanes = 0
+        lanes = raised = 0
         for lot, record in zip(lots, records):
             r = P.Rear(lot, record['front']['top_cm'])
-            z0 = P._floor_levels(lot)[0]
+            z0 = P._floor_levels(lot)[0] if clear or lot['raise'] < 25 else 0.
             for wall in record['rear']['walls']:
                 if wall['kind'] != 'lane':
                     continue
                 lanes += 1
                 want = P.lane_door_count(wall['width_cm'])
                 assert want == max(1, round(wall['width_cm'] / P.LANE_DOOR_EVERY)) and wall['doors'] == want, wall
+                raised += want if lot['raise'] >= 25 else 0
                 bays = max(1, int(wall['width_cm'] // 450))
                 rows = sum(1 for k in range(lot['storeys']) if P._floor_levels(lot)[k] + P.REAR_HEAD <= wall['top_cm'] - 10)
                 assert wall['windows'] == rows * bays - want, wall
@@ -1707,8 +1713,16 @@ def test_lane_walls_have_doors():
                     c = _centre(leaf)
                     landing = [f for f in rear.get('Stone_Cast', []) if not _vertical(f) and math.dist(_centre(f), c) < 100
                                and all(abs(p[2] - lot['raise']) < .01 for p in f)]
-                    assert lot['raise'] < 25 or landing, ('a raised lane door with no stoop', lot['id'], wall)
-        assert lanes >= count, lanes
+                    if clear:
+                        assert lot['raise'] < 25 or landing, ('a raised lane door with no stoop', lot['id'], wall)
+                    else:
+                        assert not landing, ('a lane stoop in the lane cars drive', alley, lot['id'], wall)
+        assert lanes >= count and raised, (lanes, raised)
+        assert counts.get('rear_lane_doors_traffic', 0) == (0 if clear else raised), (alley, raised, counts)
+        assert counts.get('rear_lane_stoops', 0) == (raised if clear else 0), (alley, raised, counts)
+        # no cast-concrete stoop or step comes nearer the lane centreline than LANE_STOOP_CLEAR
+        low = [f for f in rear.get('Stone_Cast', []) if 15 <= max(p[2] for p in f) <= 150]
+        assert all(_poly_seg([p[:2] for p in f], lane[0], lane[1]) >= P.LANE_STOOP_CLEAR - .01 for f in low), alley
     assert counts['rear_lane_doors'] >= 2, counts
 
 
@@ -1732,9 +1746,10 @@ def test_spec_budget_covers_the_code_caps():
     assert P.TRIANGLE_BUDGET <= triangles <= top_triangles and P.MAX_BATCHES <= batches <= top_batches
 
 
-def _check_lane_doors_district(manifest, fronts):
+def _check_lane_doors_district(manifest, fronts, keep):
     """Every lane wall of 3 m or more, on a plex lot or a background mass, has its ground-floor back doors on the
-    ruelle (one per 8 m), unless it is a blank wall with no window (a neighbour or a shed within 1.2 m of it)."""
+    ruelle (one per 8 m), unless it is a blank wall with no window (a neighbour or a shed within 1.2 m of it). No
+    lane stoop stands in a lane that cars drive (see below)."""
     walls = [(r['id'], w) for r in fronts['fronts'] for w in r['rear']['walls']] + \
             [(r['id'], w) for r in fronts['background'] for w in r['walls']]
     lanes = [(i, w) for i, w in walls if w['kind'] == 'lane' and w['width_cm'] >= P.LANE_DOOR_MIN]
@@ -1743,10 +1758,43 @@ def _check_lane_doors_district(manifest, fronts):
              if (w['windows'] or w['doors']) and w['doors'] < P.lane_door_count(w['width_cm'])]
     assert not short, ('lane walls without their back doors', len(short), short[:5])
     assert len(lanes) >= 400 and len(blank) <= 5, (len(lanes), blank)
+    # tech critic (pass 5 verify): the lane stoops reached 85 cm into ruelles that cars drive, 27 cm from a traffic
+    # centreline at worst. Take every cast-concrete face with a top from 15 to 150 cm that stands within 120 cm of a
+    # lane wall with doors and reaches more than 30 cm past its skin (a stoop or a step; sills reach 6 cm). None may
+    # come within LANE_STOOP_CLEAR of a centreline the traffic drives (LaFontaine::RoadSegments, layout.json).
+    layout = json.loads((P.ROOT / 'Data/LaFontaine/layout.json').read_text())
+    traffic = P.Grid(2000)
+    for road in layout['roads']:
+        for a, b in zip(road, road[1:]):
+            traffic.add((tuple(a[:2]), tuple(b[:2])), [a[0], b[0]], [a[1], b[1]])
+    door_walls = P.Grid(2000)
+    for _, w in lanes:
+        if w['doors']:
+            a, b = tuple(w['a']), tuple(w['b'])
+            door_walls.add((a, b), [a[0], b[0]], [a[1], b[1]])
+    stoop_faces, near, closest = 0, [], math.inf
+    for face in _rear_faces(keep['mesh']).get('Stone_Cast', []):
+        if not 15 <= max(p[2] for p in face) <= 150:
+            continue
+        c = _centre(face)
+        on = [(a, b) for a, b in door_walls.near(c[0], c[1], 200) if _seg_dist(c, a, b) < 120
+              and max(_seg_dist(p[:2], a, b) for p in face) > P.D_FACE + 30]
+        if not on:
+            continue
+        stoop_faces += 1
+        outline = [p[:2] for p in face]
+        gap = min([P._poly_seg(outline, a, b) for a, b in traffic.near(c[0], c[1], 600)] or [math.inf])
+        closest = min(closest, gap)
+        if gap < P.LANE_STOOP_CLEAR - .01:
+            near.append((round(c[0]), round(c[1]), round(gap, 1)))
+    assert stoop_faces >= 1000, stoop_faces
+    assert not near, ('lane stoops in a lane that cars drive', len(near), sorted(near, key=lambda n: n[2])[:5])
     counts = manifest['counts']
     return {'lane_walls': len(lanes), 'blank': len(blank), 'doors': sum(w['doors'] for _, w in lanes),
             'stoops': counts.get('rear_lane_stoops', 0) + counts.get('background_lane_stoops', 0),
-            'at_grade': counts.get('rear_lane_doors_at_grade', 0) + counts.get('background_lane_doors_at_grade', 0)}
+            'at_grade': counts.get('rear_lane_doors_at_grade', 0) + counts.get('background_lane_doors_at_grade', 0),
+            'at_grade_for_traffic': counts.get('rear_lane_doors_traffic', 0) + counts.get('background_lane_doors_traffic', 0),
+            'stoop_faces': stoop_faces, 'closest_stoop_to_traffic_cm': round(closest, 1)}
 
 
 def _check_rear_surfaces_district(manifest, stats, fronts, keep):
@@ -2214,7 +2262,7 @@ def test_district():
     collision = _check_collision_district(manifest, fronts, groups, keep)
     kit = _check_kit_district(manifest, stats, fronts, keep)
     surfaces = _check_rear_surfaces_district(manifest, stats, fronts, keep)
-    lane_doors = _check_lane_doors_district(manifest, fronts)
+    lane_doors = _check_lane_doors_district(manifest, fronts, keep)
     print('district', json.dumps({'fronts': stats['fronts'], 'triangles': total, 'batches': len(manifest['batches']),
                                   'tile_cm': manifest['batching']['tile_cm'], 'stair_share_1890_1930': round(share, 3),
                                   'rear': rear, 'walls_roofs': walls_roofs, 'yards': yards, 'collision': collision,

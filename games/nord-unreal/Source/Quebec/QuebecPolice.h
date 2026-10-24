@@ -51,6 +51,8 @@ public:
     virtual void BeginPlay() override;
     virtual void Tick(float DeltaSeconds) override;
     virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+    // Parked cars (QuebecParkedCars.h): an officer thrown into a parked car's box promotes the space, as a player does.
+    virtual void MoveBlockedBy(const FHitResult& Impact) override;
 
     UPROPERTY(VisibleAnywhere, Replicated) uint8 Faction = 0;
     UPROPERTY(VisibleAnywhere, Replicated) float Health = 100.f;

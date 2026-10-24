@@ -753,23 +753,37 @@
   },
   "lane_concrete": {
    "alpha": false,
-   "base_color_srgb": "#746C62",
+   "base_color_srgb": "#5A554F",
    "keys": [
     "Concrete_Lane_Aged"
    ],
    "layout": {
+    "asphalt_srgb": "#55565A",
     "centre_v_m": 0.5,
     "channel_cm": [
-     4.0,
-     14.0
+     3.0,
+     11.0
     ],
+    "crumb_cm": 1.2,
+    "edge_cm": [
+     11.0,
+     17.0
+    ],
+    "grime_cm": 4.0,
     "joint_cm": 1.2,
     "joint_u_m": [
      1.0
     ],
     "leaves": 12,
-    "stone_cover": 0.049,
-    "uv": "u metres along the gutter, v metres across it, centre at v 0.5"
+    "stone_cover": 0.046,
+    "uv": "u metres along the gutter, v metres across it, centre at v 0.5",
+    "visible_half_cm": 18.0,
+    "visible_mean_linear": [
+     0.1219,
+     0.1047,
+     0.0821
+    ],
+    "visible_srgb": "#625B51"
    },
    "macro": {
     "channels": [
@@ -790,25 +804,25 @@
     "diff": {
      "compression": "TC_DEFAULT",
      "file": "T_Replica_LaneConcrete_diff.png",
-     "raw_sha256": "604529c7574b7b51bbcceae6f2d7effa2fa35914068a1a2b8d320035392b95e6",
+     "raw_sha256": "c18f97a7d702671b56d48e498b07907ee0ade9dd47cf74d2cdf549afcc2ec79e",
      "sampler": "SAMPLERTYPE_COLOR",
-     "sha256": "3ccce18e6020d88911499c036878f112c838735c0c561dc179296d341e85eb5c",
+     "sha256": "26467e2e764e6d166738b50dd5992afddedad355e3a7b4ec6ca9facb3d2de05e",
      "srgb": true
     },
     "nor_dx": {
      "compression": "TC_NORMALMAP",
      "file": "T_Replica_LaneConcrete_nor_dx.png",
-     "raw_sha256": "2b510541632683b5b8e9ffff4cb2da1fb30e55859eee62166923991ffe413ffa",
+     "raw_sha256": "e37744b949a25571e13d455081814b4cf2d19ee99704dd0c71cc3db307f631eb",
      "sampler": "SAMPLERTYPE_NORMAL",
-     "sha256": "b6dcc0d6871de96e306d9ecbba4113c1014038ae38b49a515fe8da469c7bb4a5",
+     "sha256": "3be094d5cf401b19bf96c4e30f70fafe78800d94492e28aebb7a4d18577020c1",
      "srgb": false
     },
     "rough": {
      "compression": "TC_DEFAULT",
      "file": "T_Replica_LaneConcrete_rough.png",
-     "raw_sha256": "991dedf91809010c72487a153734991997eccbb46e1d0c712f3931989f9a06a9",
+     "raw_sha256": "279bf376e2a3d1c3af361cea362253d2612122b2e94d09b553c2284b6930a845",
      "sampler": "SAMPLERTYPE_LINEAR_COLOR",
-     "sha256": "97214ae589adfed4f383016c50bfcfe66cb9f583faef97cb4c22e18bc3507a72",
+     "sha256": "aef74a5600ea982f6d97ee3be86d7c34c19e772cebf68e30c16deb3a06f16ece",
      "srgb": false
     }
    },
@@ -818,11 +832,12 @@
     "two_sided": false
    },
    "mean_linear": [
-    0.1733,
-    0.1502,
-    0.1211
+    0.1012,
+    0.0911,
+    0.0774
    ],
-   "roughness_mean": 0.8306,
+   "own_colour": true,
+   "roughness_mean": 0.8774,
    "size_px": [
     1024,
     512

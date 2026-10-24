@@ -8,7 +8,7 @@ The Montréal map SHALL show Plateau streets as a local would know them: dark as
 - **THEN** the carriageway is dark asphalt about 10–12.5 m from curb to curb, the sidewalks are light grey concrete with joints and an 18 cm curb, and street trees stand in sidewalk tree pits where the city's tree inventory places them
 - **AND** no taupe paver surface shows between the curb and the building line
 - **AND** each street tree is the city inventory's tree at that address, with its species and trunk; a sidewalk tree's pit sits on the sidewalk 65–80 cm behind the curb with a low iron guard and planting, and the curb runs straight past it: curb extensions appear only near corners or where the city or OSM maps one
-- **AND** the trees wear late-October yellow, orange and red on their species' forms (elms and hackberries vase-shaped; red, sugar and Freeman maples red, red and pin oaks russet), spruces, pines and cedars stay dark green on a conical form and larches turn gold, and a young planting is a slim tree with its crown above head height, never a shrunken mature tree
+- **AND** the trees wear late-October yellow, orange and red on their species' forms (elms and hackberries vase-shaped; red, sugar and Freeman maples red, red and pin oaks russet), spruces, pines and cedars stay dark green on a conical form, the Colorado blue spruces are blue-grey, and larches turn gold, and a young planting is a slim tree with its crown above head height, never a shrunken mature tree
 - **AND** a conifer's limbs grow in whorls on one leader, low limbs drooping and high ones rising, and a silver maple's leaf shows five deep lobes joined over a central blade, never five separate leaflets
 - **AND** no tree trunk stands on the carriageway or in the parking lane: a tree the inventory maps there stands in a pit or on the lawn on its own side of the street, or on its street's median, or is left out
 
@@ -16,6 +16,10 @@ The Montréal map SHALL show Plateau streets as a local would know them: dark as
 - **WHEN** a player stops at a corner that OSM maps with a stop sign
 - **THEN** an ARRÊT sign, a white stop bar and a crosswalk of the Québec kind are present, and a white street-name sign with black text gives the real street name
 - **AND** where the city's sign inventory hangs the junction's street-name blades, ARRÊT or one-way sign on a wooden utility pole or a steel light standard the game draws, the sign hangs on that pole, clear of it and stacked (blades over the one-way plate over the ARRÊT), with no post of its own
+
+#### Scenario: Read the parking signs
+- **WHEN** a player looks at the parking signs along a curb
+- **THEN** each stands at a pole of the city's parking-sign inventory and carries that pole's signs (code, text and arrow), hung under the junction signs on a wooden or steel pole the game draws, or on its own post a short way behind the curb, clear of the tree pits; none stands at a random spot with a random text
 
 #### Scenario: Walk a residential street at dusk
 - **WHEN** a player walks avenue de Mentana, rue Fabre, rue Napoléon or rue Saint-André
@@ -25,6 +29,11 @@ The Montréal map SHALL show Plateau streets as a local would know them: dark as
 #### Scenario: Ride Rachel
 - **WHEN** a player travels rue Rachel along the park
 - **THEN** a green-painted bike lane with green bollards separates the bike path from traffic
+
+#### Scenario: Ride a painted bike street
+- **WHEN** a player travels a street whose OSM ways carry a painted cycleway (a bike lane or contraflow lane on Marie-Anne, Fabre, Marquette, Gauthier, Bordeaux, Roy or Parc-La Fontaine; a shared street on Fabre, Chambord or Marquette; the bus lane on Papineau or De Lorimier)
+- **THEN** a bike lane runs between two white lines, between the parked cars and the traffic where the side has parking, with a diamond, a bike and an arrow in its direction repeated in it; a shared street shows a bike with two chevrons in the traffic lane; a bus lane shows the white reserved-lane diamond
+- **AND** on every block of 40 m or more, the first mark lies within 30 m after the junction and the next ones follow no more than 60 m apart, and no paint lies on a crosswalk or under a curb extension
 
 #### Scenario: Curb parking and traffic still work
 - **WHEN** the replica layer is imported and the host runs the curb, car-collision and traffic checks
@@ -54,6 +63,7 @@ The streetscape SHALL carry seeded signs of life and wear, as the owner's refere
 #### Scenario: Look closely at a block
 - **WHEN** a player looks at any residential block
 - **THEN** at least some of these are visible: asphalt patches or potholes, leaves in the gutter, weeds at wall bases, bins at the curb, a bike locked to a railing, rust streaks under iron stairs
+- **AND** a bike locked to a parking-sign post stands along the curb on the building side of the post, and every locked bike at a sign post or a parterre fence has both wheels on the level sidewalk at its own height, never over the road, a ramp or a tree pit
 - **AND** hydrants, sign posts, bins and locked bikes cast shadows in the low sun, as the lamps, poles and benches do
 - **AND** two neighbouring blocks do not repeat the same arrangement
 - **AND** asphalt patches, sealed cracks and potholes are as dull as the asphalt around them, so the low sun never draws a crack as a white hook
@@ -61,23 +71,29 @@ The streetscape SHALL carry seeded signs of life and wear, as the owner's refere
 #### Scenario: Late-October leaf litter
 - **WHEN** a player walks a sidewalk, a parterre, a ruelle or the park lawn under the street, park and yard trees
 - **THEN** fallen leaves lie under every crown, in ragged patches of leaf shapes that thin out toward the drip line, denser under the trees that have dropped more of their leaves (honey locusts and ashes more than Norway maples, conifers almost none), and leaves drift against the curbs, more under the crowns, and along the ruelle gutters
-- **AND** a patch on a sidewalk, a lawn, a parterre or a ruelle has a serrated edge with a point about every 60 cm, never a few long straight sides, and small clumps of leaves lie just outside it, more and bigger near its edge than toward the drip line
-- **AND** where a yard tree's crown reaches over a ruelle, its leaves lie on the lane's paving under it and drift into the gutter under it
-- **AND** the leaves are never a flat one-colour polygon that reads as paint, never hang over a curb, a ramp, a dropped curb or a park path, never lie over the sunken gutter outside its own drifts, never cross the park's own fallen leaves, and never sink under a slab (checked in `test_plateau_replica.py`: every litter vertex lies 0.2 to 0.8 cm over its ground, on world metre UVs of the `Leaf_Litter` set, within 100,000 triangles of the Soul budget)
+- **AND** a patch on a sidewalk, a lawn, a parterre or a ruelle has a serrated edge with a point about every 60 to 90 cm, and small clumps of leaves lie just outside it, more and bigger near its edge than toward the drip line; a side longer than 1.5 m only runs along a change in the ground (a curb, a lawn's or a path's edge, a fence or a wall), never across open sidewalk (checked at every 20 cm of such a side: its ground changes within 20 cm), and no outline runs 3 m or more turning less than 10° over open ground, even in short sides
+- **AND** where a yard tree's crown reaches over a ruelle, its leaves cover at least half its kind's share of the lane's paving under it, and together the crowns' leaves cover 90% or more of their target; they drift into the gutter under it, a lane patch that reaches the gutter has leaves in the gutter beside at least half of that stretch, and leaves bank against the lane fences and walls, more under the crowns (18% or more of the paving's edge has leaves at its foot, and half or more of it under the crowns)
+- **AND** a park patch within 20 m of a street is as fine as a street's, with clumps of leaves on the lawn round it, so the park's carpet thins out toward the street with no clean edge
+- **AND** the leaves are never a flat one-colour polygon that reads as paint, never hang over a curb, a ramp, a dropped curb or a park path, never lie over the sunken gutter outside its own drifts, never cross the park's own fallen leaves (0.25 cm or more under the litter), and never sink under a slab (checked in `test_plateau_replica.py`: every litter vertex lies 0.2 to 0.8 cm over its ground, or up to 1.0 cm on the park lawn, on world metre UVs of the `Leaf_Litter` set, within 110,000 triangles of the Soul budget)
+
+#### Scenario: Late-October dressing
+- **WHEN** a player walks a residential street in late October
+- **THEN** kraft paper leaf bags, printed green on both wide faces and rolled over at the top, stand at the curb beside some bin rows, full, three-quarters or half full, a wide face to the street, on the level sidewalk and never on a ramp, in a tree pit or against another prop
+- **AND** pumpkins sit on some stoop landings, at the corners beside the steps, wholly on the landing and clear of its rail, wall and stair; a carved one faces the street, and no landing within 2.5 m of the carriageway has one, so no pumpkin closes a parking space
 
 #### Scenario: Walk a ruelle
 - **WHEN** a player walks a mapped ruelle
 - **THEN** wooden utility poles and sagging wires cross overhead, and laundry hangs from the galleries over the yards, never from a utility pole or across the lane, as the city's clothesline rules require
 - **AND** no line or garment passes through a tree: every rope and every garment keeps out of the inner 0.7 of each crown the game draws, above its crown base, and 1.5 m from every trunk; a yard under a big tree hangs its line elsewhere or none
 - **AND** each pulley line sags between its gallery and a pole at the back fence and rises to the pole, with sheets, towels, shirts and jeans pegged along it whose tops follow the rope's sag and whose hems fold, never flat boards; from the ruelle preview camera a line with washing is in sight within 15 m, above the fences (checked by a ray cast through the game's geometry and tree meshes)
-- **AND** the centre gutter is a strip of aged, stained concrete with joints, slightly sunken and darker than a sidewalk, with leaves along it, never a painted white line or a double line where an older surface shows through
+- **AND** the centre gutter is a strip of aged, stained concrete with joints, slightly sunken and darker than a sidewalk, with leaves along it, never a painted white line or a double line where an older surface shows through; its dirty, uneven edges fade into the asphalt, and in low sun the strip is at most 1.4 times as bright as the lane asphalt, near or far, and its dry concrete stays matt (roughness 0.85 or more, the damp channel 0.72 or more), so it does not flash in backlight (checked in `test_plateau_textures.py`)
 - **AND** the lane is paved from lot line to lot line: no bare floor lies between the lane and the first fence, yard or wall beside it
 - **AND** blue and brown bins, flower boxes and locked bikes stand at the gates
 
 #### Scenario: Look at the back of a block
 - **WHEN** a player looks at the yard side of a plex block from a ruelle or from above
 - **THEN** each rear wall has doors and windows, every upper floor has a wooden or steel gallery on posts with balusters or boards, and a straight or spiral stair reaches each gallery from the yard
-- **AND** every wall of 3 m or more on a ruelle has a ground-floor back door on the lane, one per 8 m, on a concrete stoop with steps along the wall where the floor is raised
+- **AND** every wall of 3 m or more on a ruelle has a ground-floor back door on the lane, one per 8 m, on a concrete stoop with steps along the wall where the floor is raised and the stoop keeps 2 m from every lane and road centreline; otherwise the door opens at grade, so no car on a ruelle drives through steps
 - **AND** yards hold lawns, patios, garden beds or parking pads behind fences with gates that change from lot to lot (weathered or painted boards, chain-link, low pickets, slat panels, lattice-topped boards), some with sheds or garages facing the lane, and mature backyard trees rise above the roofs where the city's canopy data shows them
 - **AND** cedars and hedges are soft columns of foliage, never cones
 - **AND** no window card floats on a blank wall
@@ -90,6 +106,12 @@ The streetscape SHALL carry seeded signs of life and wear, as the owner's refere
 #### Scenario: See the roofs from above
 - **WHEN** a player sees the plex blocks from above
 - **THEN** most flat roofs are white membrane or white gravel, a few are tar and gravel, parapets carry metal copings that step at party walls, and each lot has a chimney and a roof hatch; only mansards are slate
+
+#### Scenario: Look down a street from far off
+- **WHEN** a player looks along a street, a ruelle or a stoop from 10 to 90 m away
+- **THEN** the paint, the ruelle gutter, the fallen leaves and a jack-o'-lantern's face keep the small lift they were built with over the surface under them, so none sinks into it
+- **AND** the leaf bags and pumpkins cast shadows in the low sun
+- **AND** this is checked without the engine: the apply step imports every layer and prop mesh with a Nanite position step of 1/32 cm and verify reads it back (`check_nanite_precision` in `test_plateau_replica.py`), and on the host by the reference captures
 
 ### Requirement: Checkable without the engine
 The streetscape generators SHALL be deterministic and checkable without Unreal.
