@@ -1,0 +1,40 @@
+PASS: on twos, the hero takes about 12 poses a second (12 in 1 s)
+PASS: a full focus meter puts the hero on ones (60 poses in 1 s)
+PASS: Comic motion Full runs the Verse pass, Off does not
+PASS: the plates change the image at the edges only (3.9% of pixels)
+PASS: where they differ, red and blue move and green stays (0.70%)
+PASS: a punch stops the world for 45 ms
+PASS: a punch shakes the camera
+PASS: the third blow (the kick) stops longer and flashes an impact frame
+PASS: the impact frame lasts under 0.1 s
+PASS: a second kick within 0.5 s flashes no new frame
+PASS: Comic motion Calm: no impact frame and no shake
+PASS: a wind-up near the hero shows the spider-sense
+PASS: with a combo running and nobody in reach, a press zips to the next goon
+PASS: the zip lands a flying kick in 11 frames, and the hero bounces off
+PASS: with no combo running, the same press does not zip
+PASS: the camera leans into a swing, at most 7 degrees (5.1)
+PASS: on the ground the lean goes back to level
+PASS: a walking goon takes about 8 poses a second (8 in 1 s), the hero 12
+PASS: and his place still moves every frame
+PASS: a jump stretches the hero (0.140)
+PASS: the landing squashes him (-0.061)
+PASS: and he settles back to his shape
+PASS: a punch leaves a see-through multiple of the wind-up
+PASS: the multiple is gone within half a second
+PASS: a kick doubles the plate slip (1.10 to 2.21 px)
+PASS: a kick snaps the view in by 10 to 15 %, back within 8 frames
+PASS: the finisher word fills a third of the view (33%)
+PASS: wall words stay 20 s, six at most
+PASS: no page errors
+INFO ink {"lines":0.009228395061728395,"hatch":0.020686728395061728}
+PASS: ink lines darken the edges of the street (0.92% of pixels)
+PASS: hatching darkens the deepest shadows (2.07% of pixels)
+INFO mood {"calm":0,"fight":0.4377043248987184,"fightK":0.9726762775527076,"hurt":0.4377043248987184,"hurtK":0.9726762775527076,"after":0.011959711487512134}
+PASS: a fight tints the shadows red
+PASS: one heart left tints them blue, and healing clears it
+PASS: at 32 m/s the hero smears along his flight (0.20), at rest not at all
+PASS: no page errors in part two
+PASS: a phone runs the Verse pass without the glow, with the hero on twos
+PASS: no page errors on the phone
+PASS: verse

@@ -1340,3 +1340,6 @@ Increment59 shipped #685 as d7b7c8bf after all6CI/review/current23deployedchecks
 
 
 Increment60 pending — goonpose tick shared perstreetframe/currentdiagnosticdefault. Actualfunctions60frames10goons/6mode-layout runs equivalent allfields+pose/state/position/modechanges;400→40ticksfull/calm,200→20offtransition,nonflat0. ExistingVersebrowserchecksPASS. Emptyframeoneextratick/aggregateeffectunmeasured. Evidence r60-goon-tick/all20limits/noFPSclaim/totalwithheld.
+
+
+Increment60 shipped #687 as8b4f724a after all6CI/review/currentVersepreview/exactmainbytes/rebase before AND afterpreview/exactmerge. Productionmain HTTP200 exactSHA9be698cabaa8fc4334b71712cefe5cccd427d6188d43db044925ff04d7034d24 verified. Canonical goon-pose tick scenarios published and OpenSpec archived. ActualChrome/FPSbenefit and aggregate effect unverified; totalwithheld.
