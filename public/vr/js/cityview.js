@@ -3119,8 +3119,10 @@ export function createCityView(renderer, scene, city, opts = {}) {
   // The street cars on the CPU, for car theft (cars.js trafficAt mirrors CAR_VS): the live lane, move and colour arrays.
   // A stolen car's instance is hidden by sinking its lane 500 m under the ground; it keeps its slot, so no draw changes.
   const trafficHidden = new Map(); // slot -> its lane's y
-  function trafficCars() {
-    return cars ? { n: cars.n, lane: cars.attrs.aLane.array, move: cars.attrs.aMove.array, color: cars.attrs.aColor.array } : null;
+  function trafficCars(out = {}) {
+    if (!cars) return null;
+    out.n = cars.n; out.lane = cars.attrs.aLane.array; out.move = cars.attrs.aMove.array; out.color = cars.attrs.aColor.array;
+    return out;
   }
   function hideTraffic(i, on) {
     if (!cars || !(i >= 0 && i < cars.n)) return false;
