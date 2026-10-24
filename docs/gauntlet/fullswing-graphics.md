@@ -1376,3 +1376,6 @@ Increment65 shipped #697 as765d5da0 after all6CI/review/current7authenticatedbro
 
 
 Increment66 pending — private sun-screen result60fresh→1 across90camera frames/60visible30behind/exactprojection;3browser+existingdesktop/phone sky-gather RGBAchecksPASS. Evidence r66-sun-screen/all20limits/noFPSclaim/totalwithheld.
+
+
+Increment66 shipped #699 as74357132 after all6CI/review/current authenticated sun+sky checks/exactmainbytes/rebase before AND afterpreview/exactmerge. Productionmain HTTP200 exactSHA86d220e1ef9114da119d3e6980f9926fb10e95ef1c1d13b4ff810efc8cf0f979 verified. Canonical sun-screen scenarios published and OpenSpec archived. ActualChrome/FPSbenefit unverified; totalwithheld.
