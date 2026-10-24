@@ -9,6 +9,7 @@ The Montréal map SHALL show Plateau streets as a local would know them: dark as
 - **AND** no taupe paver surface shows between the curb and the building line
 - **AND** each street tree is the city inventory's tree at that address, with its species and trunk; a sidewalk tree's pit sits on the sidewalk 65–80 cm behind the curb with a low iron guard and planting, and the curb runs straight past it: curb extensions appear only near corners or where the city or OSM maps one
 - **AND** the trees wear late-October yellow, orange and red on their species' forms (elms and hackberries vase-shaped; red, sugar and Freeman maples red, red and pin oaks russet), spruces, pines and cedars stay dark green on a conical form and larches turn gold, and a young planting is a slim tree with its crown above head height, never a shrunken mature tree
+- **AND** a conifer's limbs grow in whorls on one leader, low limbs drooping and high ones rising, and a silver maple's leaf shows five deep lobes joined over a central blade, never five separate leaflets
 - **AND** no tree trunk stands on the carriageway or in the parking lane: a tree the inventory maps there stands in a pit or on the lawn on its own side of the street, or on its street's median, or is left out
 
 #### Scenario: Stop at a Plateau corner
@@ -48,6 +49,7 @@ The streetscape SHALL carry seeded signs of life and wear, as the owner's refere
 - **WHEN** a player looks at any residential block
 - **THEN** at least some of these are visible: asphalt patches or potholes, leaves in the gutter, weeds at wall bases, bins at the curb, a bike locked to a railing, rust streaks under iron stairs
 - **AND** two neighbouring blocks do not repeat the same arrangement
+- **AND** asphalt patches, sealed cracks and potholes are as dull as the asphalt around them, so the low sun never draws a crack as a white hook
 
 #### Scenario: Late-October leaf litter
 - **WHEN** a player walks a sidewalk, a parterre or the park lawn under the street and park trees
@@ -85,3 +87,5 @@ The streetscape generators SHALL be deterministic and checkable without Unreal.
 #### Scenario: Regenerate on another machine
 - **WHEN** the host runs the replica, plex and props generators from a clean checkout
 - **THEN** the OBJ files match the manifests' hashes, the CPU tests pass, and Blender previews of the reference views render from the same files
+- **AND** the host steps build the tree, Plex and prop OBJs before the replica layers, and a missing OBJ stops the build with the path or the step that makes it
+- **AND** before the replica import, the committed park and the saved map's trees still verify against the OSM tree nodes they were built from
