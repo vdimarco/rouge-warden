@@ -4,7 +4,7 @@ Run from games/nord-unreal:
   python3 Scripts/plateau_textures.py           # writes Data/Plateau/ReplicaGeometry/Textures/
   python3 Scripts/plateau_textures.py --check   # rebuilds in memory and compares with textures.json
 
-Twenty-three sets, three PNG maps each, and one macro-variation mask (T_Replica_Macro_mask, see MACRO):
+Twenty-four sets, three PNG maps each, and one macro-variation mask (T_Replica_Macro_mask, see MACRO):
   T_Replica_<Set>_diff    sRGB base colour; the material multiplies it by target colour / mean_linear. The
                           cut-out sets (balusters, lattice, fence boards, creeper) are RGBA: A is the opacity
                           mask, and the colour under transparent texels is the surface colour, so filtering
@@ -41,6 +41,9 @@ and `card_height_m` is the height the texture was drawn for.
   iron_wrought (Iron_Wrought, the low tree-pit guard), all clamped in V; and laundry (Cloth_Laundry), a garment atlas
   (uv "atlas": each garment quad addresses one padded cell, listed with its UV rect in textures.json). The pit
   planting and the laundry own their colours (own_colour), as tar does.
+- Fifth pass: leaf_litter (Leaf_Litter), fallen leaves for the litter patches on sidewalks, gutters and lawns: a
+  masked set on metre UVs that tiles both ways, built by stamping the tree atlas's own leaf shapes
+  (Scripts/blender/plateau_trees.py FORMS and _leaf) in mixed late-October colours. It owns its colours.
 
 Methods. Greystone and slate follow Larry Gritz's RenderMan shader stone.sl (staggered courses, per-stone
 colour from the stone index, noise-perturbed joint edges, a groove profile for the relief); buff brick is the
@@ -56,7 +59,10 @@ lap), with the lap shadow baked under each butt. The cut-out cards are drawn fro
 the alpha edge is anti-aliased about the 0.5 clip; the apply step turns on Unreal's alpha-coverage mips
 (Castaño, "Computing Alpha Mipmaps"), so thin balusters do not thin out at a distance. The noise is
 tileable value noise on an integer hash, and the normals come from the height field by central
-differences. The card plants are crossed billboards (Pelzer, "Rendering Countless Blades of Waving Grass", GPU
+differences. The leaf litter is a Shape Splatter, after Adam Sharp's fallen-leaves material in Substance 3D Designer
+(80.lv, 2022): a few leaf shapes scattered with random place, rotation and scale, each with its own colour, saturation
+and luminance, the darker leaves laid under the lighter ones for depth, the splatter's mask kept as the alpha, and
+an ambient occlusion from the height darkening the leaves under an edge. The card plants are crossed billboards (Pelzer, "Rendering Countless Blades of Waving Grass", GPU
 Gems ch. 7; klamtii's tree sprites; Kevin Quinn's plant cards for God of War Ragnarok): the cards carry the whole
 silhouette, drawn back to front from signed-distance blades, fronds, leaves and bristles. The garments' folds fan
 down from the pegs, as cloth hung from points does (Weil, "The Synthesis of Cloth Objects", SIGGRAPH 1986). The
@@ -2823,15 +2829,15 @@ LITTER_PALETTES = {
 # factor; rough: (lo, hi), damp below and dry on top; curl: edge lift in cm (lo, hi; below 0 the leaf domes instead);
 # decay: (lo, hi) how far the blade is eaten into holes.
 LITTER_LAYERS = (
-    ('bottom', {'area': .95, 'z': 0., 'age': (LITTER_ROT, .45, .75), 'tone': .82, 'rough': (.5, .62),
+    ('bottom', {'area': 1.1, 'z': 0., 'age': (LITTER_ROT, .45, .75), 'tone': .82, 'rough': (.5, .62),
                 'curl': (-.05, .12), 'decay': (.5, 1.)}),
-    ('middle', {'area': .55, 'z': .08, 'age': (LITTER_BROWN, .15, .45), 'tone': .92, 'rough': (.66, .78),
+    ('middle', {'area': .6, 'z': .08, 'age': (LITTER_BROWN, .15, .45), 'tone': .92, 'rough': (.66, .78),
                 'curl': (-.15, .35), 'decay': (0., .45)}),
-    ('top', {'area': .32, 'z': .16, 'age': (LITTER_BROWN, 0., .15), 'tone': 1., 'rough': (.76, .88),
+    ('top', {'area': .36, 'z': .16, 'age': (LITTER_BROWN, 0., .15), 'tone': 1., 'rough': (.76, .88),
              'curl': (-.2, .55), 'decay': (0., .2)}),
 )
 LITTER_TWIGS = 9                 # small fallen twigs per tile, between the bottom and middle layers
-LITTER_TAR_SPOT = .45            # share of Norway maple leaves with tar spot
+LITTER_TAR_SPOT = .3             # share of Norway maple leaves with tar spot
 LITTER_FACE_DOWN = .3            # share of leaves lying underside up
 
 
@@ -2859,6 +2865,8 @@ def litter_stamp(name):
     1 - d is the squared distance to the midrib that the edge colour and the curl use)."""
     trees = tree_module()
     form, kind, (lo, hi), _ = LITTER_STAMPS[name]
+    assert form in trees.FORMS and 'needles' not in trees.FORMS[form], \
+        f'leaf_litter {name}: no broadleaf form {form!r} in Scripts/blender/plateau_trees.py FORMS'
     F = trees.FORMS[form]
     size = (lo + hi) / 2. * LITTER_STAMP_PX_CM
     stalk = size * F['petiole'] * .8 if kind == 'leaf' else size * .06
@@ -3026,11 +3034,15 @@ def stamp_leaf(cv, owner, layer, S, cx, cy, scale, turn, mirror, look, blotch, d
                 cr += (stalk[0] - cr) * st
                 cg += (stalk[1] - cg) * st
                 cb += (stalk[2] - cb) * st
-            for sx0, sy0, rs in spots:
+            for sx0, sy0, rs, w3, w2 in spots:
                 ex, ey = fx + .5 - sx0, fy + .5 - sy0
                 dd = ex * ex + ey * ey
-                if dd < (rs + 2.) * (rs + 2.):
+                if dd < (rs + 2.5) * (rs + 2.5):
                     dist = sqrt(dd)
+                    if dist > 1e-6:
+                        # an irregular blotch: the radius wavers with cos 3 theta and sin 2 theta of the direction
+                        cx_, sy_ = ex / dist, ey / dist
+                        rs *= 1. + w3 * (4. * cx_ * cx_ * cx_ - 3. * cx_) + w2 * 2. * cx_ * sy_
                     core = min(1., max(0., rs - dist + .5)) * (1. - st)
                     if core > 0.:
                         cr += (LITTER_TAR[0] - cr) * core
@@ -3039,7 +3051,7 @@ def stamp_leaf(cv, owner, layer, S, cx, cy, scale, turn, mirror, look, blotch, d
                         hgt += .04 * core
                         ro += (.38 - ro) * core
                     else:
-                        halo = 1. - (dist - rs) / 2.
+                        halo = max(0., 1. - (dist - rs) / 2.5)
                         cr, cg = cr * (1. + .06 * halo), cg * (1. + .08 * halo)
             if AL[i] > .3 and hgt < HT[i] + .04:
                 hgt = HT[i] + .04
@@ -3129,7 +3141,7 @@ def leaf_litter(spec):
     blotch = field(Fbm(seed + 1, W, H, ((32, 32), (64, 64), (128, 128)), (.5, .3, .2)), H)
     decay = field(Fbm(seed + 2, W, H, ((96, 96), (192, 192)), (.6, .4)), H)
     clump = field(Fbm(seed + 3, W, H, ((3, 3), (6, 6), (12, 12)), (.5, .3, .2)), H)
-    accept = [.3 + .7 * smooth(.34, .62, v) for v in clump]
+    accept = [.35 + .65 * smooth(.34, .62, v) for v in clump]
     mean_accept = sum(accept) / n
     # The mean blade area of a picked leaf in litter texels (the mean of size^2 over a uniform size range).
     mean_area = 0.
@@ -3160,7 +3172,7 @@ def leaf_litter(spec):
             # Per-leaf luminance, saturation and hue variation, as the Shape Splatter Blend varies its colour.
             tone = P['tone'] * (.88 + .24 * u[7])
             grey = sum(colour) / 3.
-            sat = .82 + .3 * u[8]
+            sat = .9 + .25 * u[8]
             warm = (u[9] - .5) * .08
             colour = [(grey + (colour[0] - grey) * sat) * tone * (1. + warm),
                       (grey + (colour[1] - grey) * sat) * tone,
@@ -3169,7 +3181,7 @@ def leaf_litter(spec):
             vein = (.12, .09, .03)
             if down:
                 face_down += 1
-                pale = .55 if form == 'silver' else .25
+                pale = .45 if form == 'silver' else .22
                 colour = [v + (t * P['tone'] - v) * pale for v, t in zip(colour, LITTER_UNDERSIDE)]
                 vein = (.08, .08, .06)
             margin = [v * tone for v in LITTER_MARGIN]
@@ -3181,9 +3193,10 @@ def leaf_litter(spec):
             spots = []
             if form == 'norway' and u[12] < LITTER_TAR_SPOT and S['inside']:
                 spotted += 1
-                for k in range(2 + int(5 * u[13])):
+                for k in range(1 + int(4 * u[13])):
                     sx, sy = S['inside'][int(unit(seed, 300 + L, c, k) * len(S['inside']))]
-                    spots.append((sx, sy, 3.5 + 3.5 * unit(seed, 400 + L, c, k)))
+                    spots.append((sx, sy, 2.2 + 3.3 * unit(seed, 400 + L, c, k), .3 * (unit(seed, 401 + L, c, k) - .5),
+                                  .3 * (unit(seed, 402 + L, c, k) - .5)))
             look = {'colour': colour, 'margin': margin, 'stalk': stalk, 'edge': .15 + .5 * u[14],
                     'z': P['z'], 'curl': curl_lo + (curl_hi - curl_lo) * u[15],
                     'rough': rough_lo + (rough_hi - rough_lo) * u[16], 'vein': vein, 'down': down, 'spots': spots,
@@ -3528,6 +3541,9 @@ def check(out=OUT):
     assert index.get('macro', {}).get('raw_sha256') == macro['raw_sha256'], 'Macro mask changed; rerun plateau_textures.py'
     _, _, raw = read_png((Path(out) / macro['file']).read_bytes())
     assert hashlib.sha256(raw).hexdigest() == macro['raw_sha256'], f'{macro["file"]} is stale'
+    # The leaf litter stamps the tree atlas's leaf shapes: say so when those changed, before any pixel hash differs.
+    if 'leaf_litter' in index['sets']:
+        check_litter_stamps(index['sets']['leaf_litter'])
     for key, (_, entry) in build_all().items():
         assert key in index['sets'], f'{key}: missing from {INDEX}; rerun plateau_textures.py'
         stored = index['sets'][key]
@@ -3538,9 +3554,10 @@ def check(out=OUT):
             assert hashlib.sha256(raw).hexdigest() == b['raw_sha256'], f'{b["file"]} is stale'
         assert entry['mean_linear'] == stored['mean_linear'], key
         # What the apply step builds from the index: the material, the UV mode (metres, card or atlas), the keys,
-        # the card height, the colour authority and the atlas cells the laundry quads address.
+        # the card height, the colour authority, the atlas cells the laundry quads address, the masked sets' cover
+        # and the macro variation.
         for field in ('own_colour', 'metallic', 'uv', 'surface', 'material', 'keys', 'card_height_m', 'tiling',
-                      'layout', 'base_color_srgb'):
+                      'layout', 'base_color_srgb', 'coverage', 'macro'):
             assert entry.get(field) == stored.get(field), f'{key} {field}: rerun plateau_textures.py'
     stale = sorted(set(index['sets']) - set(SETS))
     assert not stale, f'{INDEX} lists sets the generator no longer makes: {stale}; rerun plateau_textures.py'

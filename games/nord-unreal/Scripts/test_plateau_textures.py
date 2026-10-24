@@ -432,17 +432,19 @@ def check_lane_concrete(spec, entry, diff, rough):
 
 
 def hue_family(r, g, b):
-    """'yellow' (yellow and gold), 'red' (orange, red and maroon), 'brown' (tan, russet and rotting brown), 'green'
-    (lime and green) or 'dark' (tar spots, deep shade) for an sRGB colour."""
+    """'yellow' (light yellows, golds and tans), 'red' (orange, red and maroon), 'brown' (russet, dried and rotting
+    browns: dark or greyish), 'green' (lime and green) or 'dark' (tar spots, deep shade) for an sRGB colour."""
     hi, lo = max(r, g, b), min(r, g, b)
     if hi < 40:
         return 'dark'
-    sat = (hi - lo) / hi
     if g >= r:
         return 'green'
-    if sat < .45:
+    q, value, sat = g / r, hi / 255., (hi - lo) / hi
+    if q < .45 or (q < .6 and value >= .6):
+        return 'red'
+    if value < .6 or sat < .4:
         return 'brown'
-    return 'yellow' if g > .66 * r else 'red'
+    return 'yellow'
 
 
 def check_leaf_litter(spec, entry, diff, rough):
