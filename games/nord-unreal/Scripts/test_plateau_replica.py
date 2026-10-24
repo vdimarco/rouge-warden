@@ -1190,9 +1190,15 @@ def check_editor_side():
             textures[row['asset']] = dict(row, object=A.import_texture(u, Path(tmp), row))
             A.check_texture(u, registry[row['asset']], row)
         alpha = [t for t in textures.values() if t['alpha']]
-        assert len(alpha) == 4 and all(t['object'].get_editor_property('alpha_coverage_thresholds').w == .5 for t in alpha)
+        masked_sets = {name for name, e in A.load_textures(Path(tmp)).items() if e['alpha']}
+        assert len(alpha) == len(masked_sets) == 9 and \
+            all(t['object'].get_editor_property('alpha_coverage_thresholds').w == .5 for t in alpha)
         clamped = [t for t in textures.values() if t['object'].get_editor_property('address_y') == 'TA_CLAMP']
-        assert sorted({t['set'] for t in clamped}) == ['balusters', 'fence_boards', 'lattice'] and len(clamped) == 9
+        assert sorted({t['set'] for t in clamped}) == ['balusters', 'cedar', 'fence_boards', 'fountain_grass',
+                                                        'iron_wrought', 'lattice', 'laundry', 'pit_flowers']
+        assert len(clamped) == 24
+        assert sorted({t['set'] for t in textures.values()
+                       if t['object'].get_editor_property('address_x') == 'TA_CLAMP'}) == ['laundry']
         for row in the_plan['parents']:
             mat = A.build_parent(u, row, textures)
             A.check_material_mode(u, mat, row)
