@@ -7,6 +7,7 @@ The Montréal map SHALL show Plateau streets as a local would know them: dark as
 - **WHEN** a player walks along avenue de Mentana or rue Fabre at eye height in daylight
 - **THEN** the carriageway is dark asphalt about 10–12.5 m from curb to curb, the sidewalks are light grey concrete with joints and an 18 cm curb, and street trees stand in tree pits about 8 m apart
 - **AND** no taupe paver surface shows between the curb and the building line
+- **AND** each street tree is the city inventory's tree at that address, with its species and trunk; a sidewalk tree's pit sits on the sidewalk 65–80 cm behind the curb with a low iron guard and planting, and the curb runs straight past it: curb extensions appear only near corners or where the city or OSM maps one
 
 #### Scenario: Stop at a Plateau corner
 - **WHEN** a player stops at a corner that OSM maps with a stop sign
@@ -43,6 +44,7 @@ The streetscape SHALL carry seeded signs of life and wear, as the owner's refere
 #### Scenario: Walk a ruelle
 - **WHEN** a player walks a mapped ruelle
 - **THEN** wooden utility poles and sagging wires cross overhead, and laundry hangs from the galleries over the yards, never from a utility pole or across the lane, as the city's clothesline rules require
+- **AND** the centre gutter is a strip of aged, stained concrete with joints, slightly sunken and darker than a sidewalk, with leaves along it, never a painted white line
 - **AND** blue and brown bins, flower boxes and locked bikes stand at the gates
 
 #### Scenario: Look at the back of a block
