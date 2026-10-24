@@ -212,13 +212,13 @@ def views():
                        sun=(228., 24.), exposure=.35,
                        camera=street_view(alley, d - 1500, 90, 6.8, look_ahead=6000, yaw_deg=-4, pitch_target=650))
     # The ruelle between Mentana and Saint-André (OSM way 204859680), where the Plex yard side is built:
-    # galleries, straight and spiral stairs, fences with gates, sheds, and a pulley line with washing 13 m ahead on
-    # the left, rising over the fences to its pole (test_plateau_replica.check_laundry_view). The lots within 15 m of
-    # the old spot, 32 m back along the lane, had no line: yards too short for one, no gallery, or none drawn.
+    # galleries, straight and spiral stairs, fences with gates, sheds, and a pulley line with washing 12 m ahead
+    # (lot 356252971), rising over the fences to its pole (test_plateau_replica.check_laundry_view). The fifth pass
+    # moved the camera 40 m on from 39500: the lines near that spot ran through yard-tree crowns, so they are gone.
     lane = s['__alley__204859680'][0]
     v['ruelle_mentana'] = dict(title='Ruelle between Mentana and Saint-André: galleries, stairs, fences, laundry',
                                far=9000, exposure=.8,
-                               camera=street_view(lane, 39500, 60, 6.8, look_ahead=6000, yaw_deg=0, pitch_target=650))
+                               camera=street_view(lane, 43500, 60, 6.8, look_ahead=6000, yaw_deg=0, pitch_target=650))
     # Mentana between Rachel and Duluth, seen from above the sunlit side, about 60 m up.
     (tx, ty), (dx, dy) = along(mentana, 12000)
     a = math.atan2(-0.838, -0.545) + math.radians(28)
