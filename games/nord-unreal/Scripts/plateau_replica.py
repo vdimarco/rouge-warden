@@ -94,9 +94,10 @@ VERGE_BACK = 40.          # an extension on a side with no sidewalk reaches this
 CORNER_BACK = 30.         # one on a corner arc overlaps the corner sidewalk by this much
 # Ruelles are paved from fence to fence (or wall to wall where nearer), in pieces of 20 m or less.
 ALLEY_PAVE = 290.         # plateau_plex.FENCE_FROM_ALLEY: the yard fences stand this far from the centreline
-WALL_PAVE = 1500.         # past it, with nothing on the ground between, the paving runs out to the first Plex lot
-                          # line, fence, shed or wall this near (lanes are paved lot line to lot line)
-WALL_SNAP = 30.           # a first stop this near the fence line is the fence line
+WALL_PAVE = 600.          # past it, with no yard or fence between, the paving runs out to a wall this near
+LOT_PAVE = 1500.          # and, behind the street-front yards, out to the first Plex lot line, fence, shed or wall
+                          # this near (lanes are paved lot line to lot line)
+WALL_SNAP = 30.           # a first Plex line this near the fence line is the fence line
 PAVE_PIECE = 2000.
 PAVE_STEP = 100.          # the wall-to-wall reach is sampled every metre
 TEXTURES_PATH = '/Game/Plateau/Replica/Textures/T_Replica_'   # a manifest texture naming a replica set picks it
@@ -2508,8 +2509,11 @@ class PaveStops:
             line(poly, True, 'zone')
             self.zone_grid.add(len(self.zones), bbox(poly))
             self.zones.append(poly)
+        self.fronts, self.front_grid = [], Grid(2000.)
         for strip in world.sidewalk_strips:
             zone([strip['curb'][0], strip['curb'][1], strip['outer'][1], strip['outer'][0]])
+            self.front_grid.add(len(self.fronts), bbox(strip['outer'], FRONT_MAX))
+            self.fronts.append(strip['outer'])
         for w in world.ways:
             if w['tags'].get('leisure') == 'park' and len(w['refs']) > 3 and w['refs'][0] == w['refs'][-1]:
                 zone([world.nodes[r] for r in w['refs'][:-1] if r in world.nodes])
@@ -2521,6 +2525,11 @@ class PaveStops:
 
     def inside(self, p):
         return any(point_in(p, self.zones[i]) for i in self.zone_grid.query((p[0], p[1], p[0], p[1])))
+
+    def behind_front(self, p):
+        """Whether p lies behind the street-front yards: no sidewalk's outer edge within FRONT_MAX (the parterres
+        reach that far back to a building line, and the lane paving leaves them that band)."""
+        return all(seg_dist(p, *self.fronts[i]) >= FRONT_MAX for i in self.front_grid.query((p[0], p[1], p[0], p[1])))
 
     def on_plex(self, p):
         """Whether p lies in a Plex yard, shed or ground cell."""
@@ -2543,14 +2552,19 @@ class PaveStops:
 
 def _alley_profile(world, pa, pb, stops=None):
     """Paving reach either side of a ruelle segment, sampled every metre: the yard fence line (ALLEY_PAVE) or the
-    nearest wall, never inside the 430 cm lane strip; past the fence line, where the ground lies bare, out to the
-    first thing within WALL_PAVE that covers or bounds it: a Plex yard, fence, shed, ground or rear building, a
-    building's wall (a side or rear wall on the lane, a garage), a sidewalk, carriageway or park. So a lot set back
-    from the lane (a car park, the open ground beside a block) is paved to its lot line, not left bare. Where the
+    nearest wall, never inside the 430 cm lane strip; past the fence line, out to a wall within WALL_PAVE where no
+    Plex yard, fence, shed or ground, sidewalk, carriageway or park lies before it (a building's side or rear wall on
+    the lane, a garage); and behind the street-front yards (behind_front), out to the first Plex lot line, fence,
+    shed, ground or wall within LOT_PAVE, so a lot set back from the lane (a car park, the open ground beside a
+    block) is paved to its line, not left bare. Where the
     reach jumps between two samples (a wall begins or ends), two more samples bracket the jump to 1 cm. Returns the
     sample distances and reaches {1: left, -1: right} (left of pa->pb)."""
     u, length = unit(pa, pb)
     n = (-u[1], u[0])
+
+    def back_lot(c, d, reach):
+        """Whether paving from the fence line out to reach stays behind the street-front yards."""
+        return all(stops.behind_front(add(c, d, x)) for x in (ALLEY_PAVE, (ALLEY_PAVE + reach) / 2, reach))
 
     def sample(t):
         c = add(pa, u, t)
@@ -2559,17 +2573,20 @@ def _alley_profile(world, pa, pb, stops=None):
         out = []
         for k in (1, -1):
             d = (n[0] * k, n[1] * k)
-            hit = world.building_ray(c, d, WALL_PAVE)
+            hit = world.building_ray(c, d, LOT_PAVE)
             if hit is not None and hit <= ALLEY_PAVE:
                 out.append(max(ALLEY_HALF, hit))
             elif stops is not None and not stops.inside(c):
-                stop, kind = stops.first(c, d, WALL_PAVE)
-                if hit is not None and (stop is None or hit <= stop):
+                stop, kind = stops.first(c, d, LOT_PAVE)
+                if hit is not None and (stop is None or hit <= stop) and hit <= WALL_PAVE:
                     out.append(hit)                             # a wall first: paved to its foot
-                elif kind == 'plex' and stop > ALLEY_PAVE + WALL_SNAP:
+                elif hit is not None and (stop is None or hit <= stop) and back_lot(c, d, hit):
+                    out.append(hit)
+                elif kind == 'plex' and stop > ALLEY_PAVE + WALL_SNAP and (hit is None or stop < hit) and \
+                        back_lot(c, d, stop):
                     out.append(stop)                            # a lot set back from the lane: to its line
                 else:
-                    out.append(ALLEY_PAVE)                      # the fence line (a street's front yards past it)
+                    out.append(ALLEY_PAVE)                      # the fence line
             else:
                 out.append(ALLEY_PAVE)
         return False, out[0], out[1]

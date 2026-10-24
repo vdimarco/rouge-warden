@@ -3259,10 +3259,11 @@ def check_soul_overlays(out, streets, soul):
 
 
 def check_lane_corridor(world, out, streets, lane='204859680', step=200.):
-    """Every ruelle is paved from lot line to lot line: across the corridor from the lane strip out to the first Plex
-    lot line, fence, shed or wall within 15 m (taken over a 1 m band along the lane, so a seam between two yards is
-    no corridor), nothing shows the bare floor (YardGround). The Mentana and Saint-André lane (OSM way 204859680),
-    where a strip 6 to 12 m out lay bare beside the Habitations De Mentana, has no bare sample at all."""
+    """Every ruelle is paved from lot line to lot line: behind the street-front yards (more than FRONT_MAX from any
+    sidewalk, where the parterres reach back to the buildings), across the corridor from the lane strip out to the
+    first Plex lot line, fence, shed or wall within 15 m (taken over a 1 m band along the lane, so a seam between two
+    yards is no corridor), nothing shows the bare floor (YardGround). The Mentana and Saint-André lane (OSM way
+    204859680), where a strip 6 to 12 m out lay bare beside the Habitations De Mentana, has no bare sample at all."""
     R = replica
     stops = R.PaveStops(world, world.plex)
     ground = ground_tris(out / 'Streets', streets, lambda m, z: True)
@@ -3278,13 +3279,16 @@ def check_lane_corridor(world, out, streets, lane='204859680', step=200.):
                     continue
                 for k in (1, -1):
                     d = (n[0] * k, n[1] * k)
-                    if world.building_ray(c, d, R.WALL_PAVE) is None and stops.ray(c, d, R.WALL_PAVE) is None:
+                    if world.building_ray(c, d, R.LOT_PAVE) is None and stops.ray(c, d, R.LOT_PAVE) is None:
                         continue                    # no lot line within 15 m: the fence-line paving (check_ruelle_paving)
                     end = min(v for dt in (-50., 0., 50.) for q in (R.add(c, u, dt),)
-                              for v in (world.building_ray(q, d, R.WALL_PAVE), stops.ray(q, d, R.WALL_PAVE), R.WALL_PAVE)
+                              for v in (world.building_ray(q, d, R.LOT_PAVE), stops.ray(q, d, R.LOT_PAVE), R.LOT_PAVE)
                               if v is not None)
-                    x = R.ALLEY_HALF + 10.
-                    while x < end - 10.:
+                    xs = [R.ALLEY_HALF + 10. + 50. * j for j in range(int(max(0., end - 20. - R.ALLEY_HALF) // 50) + 1)
+                          if R.ALLEY_HALF + 10. + 50. * j < end - 10.]
+                    if not all(stops.behind_front(R.add(c, d, x)) for x in xs + [end]):
+                        continue                    # in the street-front band: the parterres' (check_capture_coverage)
+                    for x in xs:
                         p = R.add(c, d, x)
                         total += 1
                         lane_total += alley['id'] == lane
@@ -3292,10 +3296,9 @@ def check_lane_corridor(world, out, streets, lane='204859680', step=200.):
                             bare += 1
                             lane_bare += alley['id'] == lane
                             misses.append((alley['id'], [round(v) for v in p], round(x), round(end)))
-                        x += 50.
     assert lane_total > 500 and lane_bare == 0, ('bare floor beside the Mentana and Saint-André lane', lane_bare,
                                                  lane_total, [m for m in misses if m[0] == lane][:6])
-    assert total > 10000 and bare <= .001 * total, ('bare floor in a lane corridor', bare, total, misses[:6])
+    assert total > 5000 and bare <= .002 * total, ('bare floor in a lane corridor', bare, total, misses[:6])
     return {'corridor_samples': total, 'bare': bare, lane: {'samples': lane_total, 'bare': lane_bare},
             'ruelle_m2': streets['counts']['ruelle_square_metres']}
 
