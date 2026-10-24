@@ -183,8 +183,10 @@ def views():
     s = load_streets()
     v = {}
     mentana = [w for w in s['Rue de Mentana'] if -43000 < w[0][0] < -42000 and len(w) > 20][0]
+    # 2 m further along than the last sets: the inventory puts a young elm in a sidewalk pit 1.4 m ahead of the old
+    # spot, which filled the middle of the frame with its trunk; from here the nearest pit tree is 6 m ahead.
     v['mentana'] = dict(title='Rue de Mentana, plex street west of the park, from the shady sidewalk',
-                        camera=street_view(mentana, 5200, -690, 18., look_ahead=6000, yaw_deg=13, pitch_target=430),
+                        camera=street_view(mentana, 5400, -690, 18., look_ahead=6000, yaw_deg=13, pitch_target=430),
                         far=17000)
     fabre = [w for w in s['Rue Fabre'] if len(w) == 7][0]
     v['fabre'] = dict(title='Rue Fabre north of Rachel, with the chantier', far=17000,
