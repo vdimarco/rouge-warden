@@ -8,7 +8,8 @@ The Montréal map SHALL show Plateau streets as a local would know them: dark as
 - **THEN** the carriageway is dark asphalt about 10–12.5 m from curb to curb, the sidewalks are light grey concrete with joints and an 18 cm curb, and street trees stand in sidewalk tree pits where the city's tree inventory places them
 - **AND** no taupe paver surface shows between the curb and the building line
 - **AND** each street tree is the city inventory's tree at that address, with its species and trunk; a sidewalk tree's pit sits on the sidewalk 65–80 cm behind the curb with a low iron guard and planting, and the curb runs straight past it: curb extensions appear only near corners or where the city or OSM maps one
-- **AND** the trees wear late-October yellow, orange and red on their species' forms (elms and hackberries vase-shaped), and a young planting is a slim tree with its crown above head height, never a shrunken mature tree
+- **AND** the trees wear late-October yellow, orange and red on their species' forms (elms and hackberries vase-shaped; red, sugar and Freeman maples red, red and pin oaks russet), spruces, pines and cedars stay dark green on a conical form and larches turn gold, and a young planting is a slim tree with its crown above head height, never a shrunken mature tree
+- **AND** no tree trunk stands on the carriageway or in the parking lane: a tree the inventory maps there stands in a pit or on the lawn on its own side of the street, or on its street's median, or is left out
 
 #### Scenario: Stop at a Plateau corner
 - **WHEN** a player stops at a corner that OSM maps with a stop sign
@@ -51,7 +52,8 @@ The streetscape SHALL carry seeded signs of life and wear, as the owner's refere
 - **WHEN** a player walks a mapped ruelle
 - **THEN** wooden utility poles and sagging wires cross overhead, and laundry hangs from the galleries over the yards, never from a utility pole or across the lane, as the city's clothesline rules require
 - **AND** each pulley line sags between its gallery and a pole at the back fence and rises to the pole, with sheets, towels, shirts and jeans pegged along it whose tops follow the rope's sag and whose hems fold, never flat boards; from the ruelle preview camera a line with washing is in sight within 15 m, above the fences (checked by a ray cast through the game's geometry and tree meshes)
-- **AND** the centre gutter is a strip of aged, stained concrete with joints, slightly sunken and darker than a sidewalk, with leaves along it, never a painted white line
+- **AND** the centre gutter is a strip of aged, stained concrete with joints, slightly sunken and darker than a sidewalk, with leaves along it, never a painted white line or a double line where an older surface shows through
+- **AND** the lane is paved from lot line to lot line: no bare floor lies between the lane and the first fence, yard or wall beside it
 - **AND** blue and brown bins, flower boxes and locked bikes stand at the gates
 
 #### Scenario: Look at the back of a block
