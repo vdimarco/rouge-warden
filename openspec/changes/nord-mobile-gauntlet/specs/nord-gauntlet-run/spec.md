@@ -12,8 +12,10 @@ A gauntlet run SHALL drive the player's car with no player input through five fi
 #### Scenario: Viewer input ignored
 - **WHEN** the viewer drags on the stream during the whole gated lap (the input row, `gauntlet_loop.py stream --look`)
 - **THEN** the car keeps its path, and the largest lateral error in `native/route.json` stays at most 2.5 m
-- **AND** the input row's `verdict.json` gates that lateral error and the exit code, and keeps its stream figures report-only
+- **AND** the input row's `verdict.json` gates that lateral error and the exit code, and keeps its stream figures report-only, and a stream lost inside the lap while NordHost drove on fails it, which `test_gauntlet_loop.py` checks
+- **AND** the input row reads unverified, never pass, unless NordHost's `--look` sample covers the whole gated lap, which the runner followed live (`drags_cover_lap`), so a sampler killed at the runner's limit, one that never reached the page, one that crashed in the middle of the lap, a sample without the `--look` sweep, or a `stream` command started after the lap began gives no input evidence, which `test_gauntlet_loop.py` checks
 - **AND** `gauntlet_loop.py route <stream run>` checks the stop order and the lateral error of the same run
+- **AND** the round report needs an input row from each ranked candidate, a ranked baseline too: a failed input row drops the candidate, also when a newer one passed, and a missing one, or a newest one that is contended, unverified or has no verdict, is missing evidence, which `test_gauntlet_loop.py` checks
 
 #### Scenario: Gameplay state during a run
 - **WHEN** a perf or stream run starts
@@ -76,17 +78,20 @@ A phone-sized client watching NordHost alone over a direct connection SHALL rece
 - **AND** the runner follows the host log on to its `result` line, for at most the CSV wait and 15 s, before it judges the run, so the verdict has the exit code and `native/route.json`, which `test_gauntlet_loop.py` checks with a host that logs its result line after the sampler quit
 - **AND** a sample whose stream ended before `END`, or before `--seconds` without a trigger file, keeps its summary up to the stream end but does not pass and exits non-zero, which `stream-sample.test.mjs` checks
 - **AND** when no `END` comes, for example after a host crash before its `done`, `fail` or `result` line, the sampler stops 10 s after its last sample with a connected peer, not at `--seconds`, and a peer that connects again within 10 s keeps the sample going, which `stream-sample.test.mjs` checks with the fake plan
+- **AND** a stream that went away inside the gated lap and did not come back fails a solo, input or two-viewer row (`stream_lost_in_lap`) while NordHost drove on, because its exit 0 is logged or its process still ran when the runner stopped following the log, leaves a relay row, which gates nothing, unverified, and leaves that gate unverified after a host crash, which `test_gauntlet_loop.py` checks
 
 #### Scenario: Pinned frame size
 - **WHEN** a sample runs with `?pin=` on a player built with `NORD_QA_PIN`
 - **THEN** the requested and received frame size stay the same for the whole lap, the received size equals the pinned rung's size in that orientation, and the sample records every size change
 - **AND** a production player build ignores `?pin=`, which `config.test.mjs` checks
+- **AND** `gauntlet_loop.py stream` refuses a `--pin` rung that has no size in `loop.json` for that orientation before it starts anything, which `test_gauntlet_loop.py` checks
 
 #### Scenario: Two viewers and relay
 - **WHEN** one sampler watches each slot at the same time, or a sampler forces the TURN relay
-- **THEN** `review.html` and `verdict.json` show these results in a section labelled "report-only", and they do not change the gate result
-- **AND** the row's status is "report-only", and `stream` exits 0, when its values are whole: for two viewers, every slot decoded and NordHost's drive ended with exit 0, so the co-op guard counts it; for the relay, every stream figure has a value
+- **THEN** `review.html` and `verdict.json` show their frame figures in a section labelled "report-only", and those figures do not change the gate result
+- **AND** the row's status is "report-only", and `stream` exits 0, when its values are whole: for two viewers, every slot decoded frames inside the lap, and NordHost's `game_exit`, `stream_lost_in_lap`, `received_size`, `size_changes`, `cvar_mismatches` and `gpu_process_samples` gates passed, so the co-op guard counts it; for the relay, every stream figure has a value, NordHost's drive ended with exit 0 and the stream stayed through the lap
 - **AND** a row that is not whole is "unverified", and a row that a foreign GPU process shared is "contended", so the host samples only those again, which `test_gauntlet_loop.py` checks
+- **AND** a two-viewer row where one of those NordHost gates failed, such as a drive that failed inside the lap (a logged exit other than 0), a stream that went away inside the lap while NordHost drove on, another received size or a size change inside the lap, is "fail" and `stream` exits 1, as for a solo row, which `test_gauntlet_loop.py` checks
 - **AND** one `gauntlet_loop.py stream --two-viewers` command starts one sampler per slot and records the two-viewer row
 - **AND** `stream` offers only `--slot NordHost` and refuses `--slot NordFriend1`, because a NordFriend1 row alone wakes NordFriend1, and refuses a second `stream` command on a run that already has a `stream/` folder, which `test_gauntlet_loop.py` checks
 

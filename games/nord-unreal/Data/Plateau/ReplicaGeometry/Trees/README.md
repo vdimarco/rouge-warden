@@ -3,7 +3,7 @@
 Street, park and yard trees for the Plateau replica: nine kinds in late-October dress, two of them
 conifers, and a young tree for each kind but small, so the streets stop reading as one small green
 tree repeated.
-Every street and park tree of the city inventory (`Streets/street_trees.json`, 4,707 trees) and
+Every street and park tree of the city inventory (`Streets/street_trees.json`, 4,682 trees) and
 every Plex yard tree stands on one of these meshes in the game (`Scripts/apply_plateau_replica.py`).
 
 - Generator: `Scripts/blender/plateau_trees.py` (stdlib Python; Blender only renders the sheet).

@@ -15,6 +15,12 @@ The Montréal map SHALL show Plateau streets as a local would know them: dark as
 #### Scenario: Stop at a Plateau corner
 - **WHEN** a player stops at a corner that OSM maps with a stop sign
 - **THEN** an ARRÊT sign, a white stop bar and a crosswalk of the Québec kind are present, and a white street-name sign with black text gives the real street name
+- **AND** where the city's sign inventory hangs the junction's street-name blades, ARRÊT or one-way sign on a wooden utility pole or a steel light standard the game draws, the sign hangs on that pole, clear of it and stacked (blades over the one-way plate over the ARRÊT), with no post of its own
+
+#### Scenario: Walk a residential street at dusk
+- **WHEN** a player walks avenue de Mentana, rue Fabre, rue Napoléon or rue Saint-André
+- **THEN** the city's wooden utility poles stand where its sign-pole inventory puts them, each with a cobra-head light over the street, and its steel light standards carry cobra heads, so the residential streets are lit, not only the arterials and the park
+- **AND** no pole stands on the carriageway or in a tree pit, and no pole or lamp collision lies within 300 cm of a traffic centreline
 
 #### Scenario: Ride Rachel
 - **WHEN** a player travels rue Rachel along the park
@@ -48,13 +54,16 @@ The streetscape SHALL carry seeded signs of life and wear, as the owner's refere
 #### Scenario: Look closely at a block
 - **WHEN** a player looks at any residential block
 - **THEN** at least some of these are visible: asphalt patches or potholes, leaves in the gutter, weeds at wall bases, bins at the curb, a bike locked to a railing, rust streaks under iron stairs
+- **AND** hydrants, sign posts, bins and locked bikes cast shadows in the low sun, as the lamps, poles and benches do
 - **AND** two neighbouring blocks do not repeat the same arrangement
 - **AND** asphalt patches, sealed cracks and potholes are as dull as the asphalt around them, so the low sun never draws a crack as a white hook
 
 #### Scenario: Late-October leaf litter
-- **WHEN** a player walks a sidewalk, a parterre or the park lawn under the street and park trees
+- **WHEN** a player walks a sidewalk, a parterre, a ruelle or the park lawn under the street, park and yard trees
 - **THEN** fallen leaves lie under every crown, in ragged patches of leaf shapes that thin out toward the drip line, denser under the trees that have dropped more of their leaves (honey locusts and ashes more than Norway maples, conifers almost none), and leaves drift against the curbs, more under the crowns, and along the ruelle gutters
-- **AND** the leaves are never a flat one-colour polygon that reads as paint, never hang over a curb, a ramp, a dropped curb or a park path, and never sink under a slab (checked in `test_plateau_replica.py`: every litter vertex lies 0.2 to 0.8 cm over its ground, on world metre UVs of the `Leaf_Litter` set, within 70,000 triangles of the Soul budget)
+- **AND** a patch on a sidewalk, a lawn, a parterre or a ruelle has a serrated edge with a point about every 60 cm, never a few long straight sides, and small clumps of leaves lie just outside it, more and bigger near its edge than toward the drip line
+- **AND** where a yard tree's crown reaches over a ruelle, its leaves lie on the lane's paving under it and drift into the gutter under it
+- **AND** the leaves are never a flat one-colour polygon that reads as paint, never hang over a curb, a ramp, a dropped curb or a park path, never lie over the sunken gutter outside its own drifts, never cross the park's own fallen leaves, and never sink under a slab (checked in `test_plateau_replica.py`: every litter vertex lies 0.2 to 0.8 cm over its ground, on world metre UVs of the `Leaf_Litter` set, within 100,000 triangles of the Soul budget)
 
 #### Scenario: Walk a ruelle
 - **WHEN** a player walks a mapped ruelle
@@ -68,6 +77,7 @@ The streetscape SHALL carry seeded signs of life and wear, as the owner's refere
 #### Scenario: Look at the back of a block
 - **WHEN** a player looks at the yard side of a plex block from a ruelle or from above
 - **THEN** each rear wall has doors and windows, every upper floor has a wooden or steel gallery on posts with balusters or boards, and a straight or spiral stair reaches each gallery from the yard
+- **AND** every wall of 3 m or more on a ruelle has a ground-floor back door on the lane, one per 8 m, on a concrete stoop with steps along the wall where the floor is raised
 - **AND** yards hold lawns, patios, garden beds or parking pads behind fences with gates that change from lot to lot (weathered or painted boards, chain-link, low pickets, slat panels, lattice-topped boards), some with sheds or garages facing the lane, and mature backyard trees rise above the roofs where the city's canopy data shows them
 - **AND** cedars and hedges are soft columns of foliage, never cones
 - **AND** no window card floats on a blank wall

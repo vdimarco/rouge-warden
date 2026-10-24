@@ -15,6 +15,8 @@ are never drawn: the apply step hides them in game. A face is loaded when a corn
 an edge crosses it, so a long lane quad whose corners lie behind the camera and past the far distance stays.
 The street and park trees of Streets/street_trees.json and the Plex yard trees stand on the species meshes of
 Trees/manifest.json (each kind's young mesh for a young street tree), placed by the apply step's plan_trees.
+Shadows follow the apply step too: a layer batch casts one when apply_plateau_replica.casts_shadow says so (the asphalt,
+paint, gutter and Leaf_Litter patches cast none), a prop only when it is one of PROP_SHADOW, and every tree casts one.
 
 Frame: every OBJ stores (x, -y, z) of a game-frame point (x east, y north, cm). Blender is
 right-handed, so placing the file coordinates unchanged shows the world as Unreal's left-handed view
@@ -29,11 +31,13 @@ it, from the apply step's own material rows (material_row): the same keys, tint 
 colour, the tar), tiling, macro variation (Brick_Buff_Even, the roofs and the crushed stone), metallic cap, the
 DirectX normal map, roughness from R, the set's address modes (cards clamp V, the laundry and leaf atlases
 clamp both axes), and for the masked sets (the cut-out cards, the creeper, cedar, fountain grass, pit flowers, the
-wrought iron, the laundry, the tree leaves) the diffuse alpha clipped at the set's opacity_mask_clip, two-sided,
-with the two-sided foliage transmission (base colour x .65). The street and park trees and the yard trees stand on
-the species meshes of Trees/manifest.json with the apply step's transforms (apply_plateau_replica.plan_trees). The
-old summer tree (tree_small_02, at plateau_rendering.tree_positions) appears only in --before images, or when
-Streets/street_trees.json does not exist: the apply step clears QuebecVegetation's instances once it does.
+wrought iron, the laundry, the fallen-leaf Leaf_Litter, the tree leaves) the diffuse alpha clipped at the set's
+opacity_mask_clip, two-sided, with the two-sided foliage transmission (base colour x .65). The street and park trees
+and the yard trees stand on the species meshes of Trees/manifest.json with the apply step's transforms
+(apply_plateau_replica.plan_trees). The old summer tree (tree_small_02, on the OSM tree nodes of plateau_rendering.osm_tree_positions, where the saved map's
+stand-in holds it) appears only in --before images, or when Streets/street_trees.json does not exist: the apply step
+clears QuebecVegetation's instances once it does. A street tree of another fall than its kind's own (a red maple, a
+russet oak) wears the tinted leaves of its plan group, as the apply step sets them on that group's actor.
 
     <blender-python> Scripts/blender/plateau_replica_preview.py --view ruelle_mentana --probe 640,360 990,60
 
@@ -61,9 +65,9 @@ CACHE = os.path.join(ROOT, 'Saved', 'ReplicaPreview')
 OUT = os.path.join(ROOT, 'Preview', 'Replica')
 sys.path.insert(0, os.path.join(ROOT, 'Scripts'))
 # The apply step's material rules, texture sets and yard-tree plan.
-from apply_plateau_replica import (COLLISION_ONLY, FOLIAGE_SUBSURFACE, YOUNG, address_modes,  # noqa: E402
-                                   load_street_trees, load_textures, load_tree_kinds, load_yard_trees, material_row,
-                                   plan_trees, tree_slot)
+from apply_plateau_replica import (COLLISION_ONLY, FOLIAGE_SUBSURFACE, PROP_SHADOW, YOUNG, address_modes,  # noqa: E402
+                                   casts_shadow, load_street_trees, load_textures, load_tree_kinds, load_yard_trees,
+                                   material_row, plan_trees, tree_slot)
 
 # Labels hidden in the game: the OSM masses keep collision only, the old canopies are replaced by the
 # mapped trees, and the replica apply step hides OSM Marking.
@@ -208,8 +212,8 @@ def views():
                                (jx + 900 * f[0] + 700 * r[0], jy + 900 * f[1] + 700 * r[1], 210.)), fov=70)
     alley = s['__alley__21062511'][0]
     d = project(alley, (-18860., 37542.))
-    v['ruelle'] = dict(title='Ruelle behind Rachel with laundry lines and wooden utility poles', far=9000,
-                       sun=(228., 24.), exposure=.35,
+    v['ruelle'] = dict(title='Ruelle behind Rachel: a wooden utility pole, the centre gutter, ruelle-verte plants',
+                       far=9000, sun=(228., 24.), exposure=.35,
                        camera=street_view(alley, d - 1500, 90, 6.8, look_ahead=6000, yaw_deg=-4, pitch_target=650))
     # The ruelle between Mentana and Saint-André (OSM way 204859680), where the Plex yard side is built:
     # galleries, straight and spiral stairs, fences with gates, sheds, and a pulley line with washing 12 m ahead
@@ -794,6 +798,14 @@ def drawn(batch):
     return batch['material'] != COLLISION_ONLY
 
 
+# Keys whose batches overlap themselves at one height by design: the Leaf_Litter patches of Soul (the same leaves on
+# world-metre UVs, so overlaps show no seam). Unreal rasterises both faces to the same texel. A path tracer's bounce ray
+# leaving one patch meets the coplanar patch at once and reads it as cover, so every overlap rendered as a dark
+# polygon (pass 5, mentana.jpg). These batches are seen by camera rays only: they still receive light, and they cast
+# no shadow in game anyway (casts_shadow).
+CAMERA_ONLY = ('Leaf_Litter',)
+
+
 def load_replica(region, col, layers=('Streets', 'Plex', 'Soul'), dirs=None):
     count = 0
     for layer in layers:
@@ -806,18 +818,28 @@ def load_replica(region, col, layers=('Streets', 'Plex', 'Soul'), dirs=None):
             verts, polys, uvs = read_obj(os.path.join(folder, batch['file']), region)
             if polys:
                 mat = replica_material(layer, batch['material'], man['materials'][batch['material']])
-                make_object(f'{layer}_{batch["file"][:-4]}', verts, polys, uvs, mat, col)
+                ob = make_object(f'{layer}_{batch["file"][:-4]}', verts, polys, uvs, mat, col)
+                # The apply step's shadow rule: flat ground, paint, the gutter and the Leaf_Litter patches cast none.
+                ob.visible_shadow = casts_shadow(batch['material'])
+                if batch['material'] in CAMERA_ONLY:
+                    ob.visible_diffuse = ob.visible_glossy = ob.visible_transmission = False
+                    ob.visible_volume_scatter = False
                 count += len(polys)
     return count
 
 
-def prop_variants(parts, seed):
+# The props whose instances cast a shadow in game are the apply step's PROP_SHADOW (imported above): it turns shadows
+# off on every other prop's instanced actor (apply_plateau_replica.apply, set_cast_shadow from the plan's row).
+
+
+def prop_variants(parts, seed, without=()):
     """The material of each part for a placement's variant_seed, as the apply step picks it (plan: options =
-    [material] + variants, options[seed % len(options)])."""
+    [material] + variants, options[seed % len(options)]), or None for a part the row leaves out (a sign hung on a
+    city pole has no post, a cobra head on a wooden pole no steel pole)."""
     out = []
     for batch in parts:
         options = [batch['material']] + list(batch.get('variants', []))
-        out.append(options[seed % len(options)])
+        out.append(None if batch.get('part') in without else options[seed % len(options)])
     return tuple(out)
 
 
@@ -834,16 +856,19 @@ def prop_collections(rows):
         key = r['prop']
         if key not in parts:
             continue
-        variants = prop_variants(parts[key], r.get('variant_seed', 0))
+        variants = prop_variants(parts[key], r.get('variant_seed', 0), r.get('without', ()))
         if (key, variants) in out:
             continue
         c = out[key, variants] = bpy.data.collections.new(f'P_{key}_{len(out)}')
         for batch, variant in zip(parts[key], variants):
+            if variant is None:
+                continue
             if batch['file'] not in meshes:
                 meshes[batch['file']] = read_obj(os.path.join(REPLICA, 'Props', batch['file']), None, want_uv=False)
             verts, polys, _ = meshes[batch['file']]
             mat = replica_material('Props', variant, man['materials'][variant])
-            make_object(f'P_{batch["file"][:-4]}_{variant}', verts, polys, [], mat, c)
+            ob = make_object(f'P_{batch["file"][:-4]}_{variant}', verts, polys, [], mat, c)
+            ob.visible_shadow = key in PROP_SHADOW
     return out, man
 
 
@@ -855,7 +880,7 @@ def place_props(rows, region, col):
         if batch.get('prop') and 'merged' not in batch.get('part', ''):
             parts.setdefault(batch['prop'], []).append(batch)
     for i, r in enumerate(rows):
-        c = colls.get((r['prop'], prop_variants(parts.get(r['prop'], []), r.get('variant_seed', 0))))
+        c = colls.get((r['prop'], prop_variants(parts.get(r['prop'], []), r.get('variant_seed', 0), r.get('without', ()))))
         if not c:
             continue
         e = bpy.data.objects.new(f'I_{r["prop"]}_{i}', None)
@@ -993,10 +1018,11 @@ def load_tree_template():
 
 
 def old_tree_positions():
-    """Where QuebecVegetation puts the old summer tree before the apply step: plateau_rendering.tree_positions(), read
-    fresh each time (the street_trees.json rows), never from a cache."""
-    from plateau_rendering import tree_positions
-    return tree_positions()
+    """Where the saved map's QuebecVegetation stand-in holds the old summer tree before the apply step: the 4,571 OSM
+    tree nodes (plateau_rendering.osm_tree_positions, as upgrade_plateau.py placed them), read fresh each time, never
+    from a cache. The inventory rows of street_trees.json are where the species trees stand after it."""
+    from plateau_rendering import osm_tree_positions
+    return osm_tree_positions()
 
 
 def place_trees(trees, region, col):
@@ -1059,21 +1085,26 @@ def read_obj_groups(path, scale=.01):
 SPECIES = {}
 
 
-def species_collection(species, kind, variant=None):
+def species_collection(species, kind, variant=None, leaves=None):
     """A species mesh of Trees/manifest.json (Scripts/blender/plateau_trees.py) as the apply step imports it: the
     kind's mature mesh, or its young street tree with variant 'young' (kind['young']['obj'], wearing the kind's
     materials). One object per usemtl slot, the slot named bark or leaves (apply_plateau_replica.tree_slot) taking that
     kind's material through the apply step's own material row (the textured bark; the masked, two-sided foliage leaf
     atlas), and the OBJ's normals kept, so the leaf cards keep the normals the generator bent to the crown (SpeedTree's
-    leaf puffiness). File coordinates, as the props: the instance takes position (x, -y, z) and yaw -yaw."""
-    name = species + (f'_{variant}' if variant else '')
+    leaf puffiness). File coordinates, as the props: the instance takes position (x, -y, z) and yaw -yaw.
+
+    leaves is a street group's tinted leaves (plan_trees 'leaves', from apply_plateau_replica.fall_leaves: {key, fall,
+    spec}) for the trees of another fall than the kind's own, such as a red maple or a russet oak. The apply step sets
+    that material on the leaves slot of the group's actor, on the kind's own mesh, so this collection reads the same
+    OBJ and only its leaves differ."""
+    name = species + (f'_{variant}' if variant else '') + (f'_{leaves["fall"]}' if leaves else '')
     if name in SPECIES:
         return SPECIES[name]
     coll = bpy.data.collections.new('Tree_' + name)
     path = os.path.join(REPLICA, (kind[variant] if variant else kind)['obj'])
     for group, (verts, polys, uvs, normals) in sorted(read_obj_groups(path).items()):
         slot = tree_slot(group)
-        ref = kind['materials'][slot]
+        ref = leaves if leaves and slot == 'leaves' else kind['materials'][slot]
         mat = replica_material('Trees', ref['key'], ref['spec'])
         ob = make_object(f'T_{name}_{slot}', verts, polys, uvs, mat, coll, smooth=True)
         if normals:
@@ -1109,16 +1140,17 @@ def place_street_trees(region, col):
 
 
 def place_tree_groups(groups, kinds, region, col, prefix):
-    """Instance each planned tree group's transforms inside the region, on its species (and variant) mesh; a mesh is
-    read only when one of its trees is in the region."""
+    """Instance each planned tree group's transforms inside the region, on its species (and variant) mesh, with the
+    group's tinted leaves when its trees turn another colour than the kind's own (plan_trees: one actor per kind, mesh
+    and fall). A mesh is read only when one of its trees is in the region."""
     n = 0
     for group in groups:
-        variant = group.get('variant')
+        variant, leaves = group.get('variant'), group.get('leaves')
         kept = [t for t in group['transforms'] if region.keep(t[0][0], t[0][1])]
         if not kept:
             continue
-        coll = species_collection(group['kind'], kinds[group['kind']], variant) if kinds else tree_template()[0]
-        name = group['kind'] + (f'_{variant}' if variant else '')
+        coll = species_collection(group['kind'], kinds[group['kind']], variant, leaves) if kinds else tree_template()[0]
+        name = group['kind'] + (f'_{variant}' if variant else '') + (f'_{leaves["fall"]}' if leaves else '')
         for (x, y, z), yaw, scale in kept:
             e = bpy.data.objects.new(f'{prefix}_{name}_{n}', None)
             e.instance_type = 'COLLECTION'
@@ -1134,7 +1166,7 @@ def place_tree_groups(groups, kinds, region, col, prefix):
 def place_all_trees(region, col, before=False):
     """(species street trees, old summer trees, yard trees) placed in the region. After the apply step the street and
     park trees stand on their species meshes and QuebecVegetation holds no old tree; before it (--before), or with no
-    street_trees.json, the old summer tree stands at the current tree positions, and there are no yard trees."""
+    street_trees.json, the old summer tree stands on the OSM tree nodes, and there are no yard trees."""
     street = None if before else place_street_trees(region, col)
     old = place_trees(old_tree_positions(), region, col) if street is None else 0
     yard = 0 if before else place_yard_trees(region, col)

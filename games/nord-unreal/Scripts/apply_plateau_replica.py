@@ -169,6 +169,15 @@ def casts_shadow(key):
     return not any(key == t or key.startswith(t + '_') for t in SHADOWLESS)
 
 
+# Props whose instances cast a shadow: the lamps, poles, docks and benches, and the street props a player sees at the
+# curb in the low October sun (hydrants, sign posts, locked and BIXI bikes, bins, mail boxes, cones and the chantier
+# fence). The local review found the hydrants, signs, bikes and bins standing with none. The small gallery props and
+# the gate flower boxes stay without one.
+PROP_SHADOW = ('lamp_cobra', 'lamp_park', 'utility_pole', 'bixi_dock', 'bench', 'hydrant', 'sign_stop', 'sign_street',
+               'sign_oneway', 'sign_parking', 'bike_locked', 'bixi_bike', 'bin_recycling', 'bin_compost',
+               'bin_garbage', 'mailbox', 'cone', 'barrier_chantier')
+
+
 # The fourth pass's shared keys, as the generators agreed them (plateau_textures.py writes the sets, any layer may
 # use the keys): the set each takes and what the contract asks of its material. plan() checks the loaded sets against
 # this table, so a set that drifts (an unmasked cedar, cards that wrap in V) fails before the host imports anything,
@@ -1038,7 +1047,15 @@ def plan(root=ROOT):
             if key not in parts:
                 missing[key] = missing.get(key, 0) + 1
                 continue
+            # A prop hung on another one leaves parts out: a sign on a city pole has no post of its own, a cobra head
+            # on a wooden utility pole no steel pole (Furniture rows with "without").
+            without = set(row.get('without', ()))
+            assert without <= {b.get('part') for b in parts[key]}, f'{key}: no part {sorted(without)} to leave out'
+            assert not (row.get('collision') and any(b['mesh'] == main_part[key] and b.get('part') in without
+                                                     for b in parts[key])), f'{key}: collides without its main part'
             for batch in parts[key]:
+                if batch.get('part') in without:
+                    continue
                 # Colour variants: one material key per placement, picked from its seed (Props/README.md).
                 options = [batch['material']] + list(batch.get('variants', []))
                 variant = options[row.get('variant_seed', 0) % len(options)]
@@ -1053,7 +1070,7 @@ def plan(root=ROOT):
                 'label': f'{PREFIX}{layer} {key} {mesh[3:]} {variant}{" collision" if collides else ""}',
                 'layer': layer, 'prop': key, 'mesh': f'{ASSETS}/Props/{mesh}',
                 'material': f'{MATERIALS}/{material_name("Props", variant)}', 'variant': variant,
-                'collision': collides, 'count': len(group),
+                'collision': collides, 'shadow': key in PROP_SHADOW, 'count': len(group),
                 'transforms': [(r['position'], r['yaw'], r.get('scale', 1.)) for r in group]})
     out['counts'] = {'materials': len(out['materials']), 'meshes': len(out['meshes']), 'actors': len(out['actors']),
                      'emissive_materials': sum(1 for m in out['materials'] if m['emissive_srgb']),
@@ -1996,7 +2013,7 @@ def apply(u, root, backup):
                 # Props block people and cars but not the spring arms, which test ECC_Camera; the profile becomes Custom.
                 comp.set_collision_response_to_channel(u.CollisionChannel.ECC_CAMERA, u.CollisionResponseType.ECR_IGNORE)
             comp.set_cull_distances(9000, 12000)
-            comp.set_cast_shadow(row['prop'] in ('lamp_cobra', 'lamp_park', 'utility_pole', 'bixi_dock', 'bench'))
+            comp.set_cast_shadow(row['shadow'])
             transforms = [u.Transform(u.Vector(*p), u.Rotator(roll=0., pitch=0., yaw=yaw), u.Vector(s, s, s))
                           for p, yaw, s in row['transforms']]
             comp.add_instances(transforms, False, True, False)

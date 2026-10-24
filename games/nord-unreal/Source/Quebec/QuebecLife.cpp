@@ -1,4 +1,5 @@
 #include "QuebecLife.h"
+#include "QuebecReplicaInstances.h"
 #include "QuebecVegetation.h"
 
 #include "Components/HierarchicalInstancedStaticMeshComponent.h"
@@ -255,7 +256,9 @@ void UQuebecCompanionRig::Pose(const FQuebecCompanionFrame& Frame)
 bool UQuebecCompanionRig::FindSniffSpot(const FVector& Near, FVector& OutSpot) const
 {
     // The nearest street or park tree within leash reach, read from the saved tree instances: the old summer trees on
-    // QuebecVegetation, and the species street trees on the actors apply_plateau_replica.py tags NordStreetTree.
+    // QuebecVegetation, and the species street trees on the replica instance actors apply_plateau_replica.py tags
+    // NordStreetTree. Only those actors are walked, and the tag is made once.
+    static const FName StreetTreeTag(TEXT("NordStreetTree"));
     double Best = FMath::Square(450.);
     bool bFound = false;
     const auto Nearest = [&Near, &OutSpot, &Best, &bFound](const UInstancedStaticMeshComponent* Trees)
@@ -273,11 +276,9 @@ bool UQuebecCompanionRig::FindSniffSpot(const FVector& Near, FVector& OutSpot) c
         }
     };
     for (TActorIterator<AQuebecVegetation> It(GetWorld()); It; ++It) Nearest(It->Trees);
-    for (TActorIterator<AActor> It(GetWorld()); It; ++It)
+    for (TActorIterator<AQuebecReplicaInstances> It(GetWorld()); It; ++It)
     {
-        if (!It->ActorHasTag(TEXT("NordStreetTree"))) continue;
-        const TInlineComponentArray<UInstancedStaticMeshComponent*> StreetTrees(*It);
-        for (const UInstancedStaticMeshComponent* StreetTree : StreetTrees) Nearest(StreetTree);
+        if (It->ActorHasTag(StreetTreeTag)) Nearest(It->Instances.Get());
     }
     return bFound;
 }

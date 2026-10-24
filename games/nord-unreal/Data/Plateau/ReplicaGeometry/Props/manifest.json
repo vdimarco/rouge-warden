@@ -11,18 +11,39 @@
    "mesh": "SM_Props_lamp_cobra_pole",
    "material": "PoleGalv",
    "collision": "none",
-   "triangles": 258,
+   "triangles": 166,
    "bounds_cm": [
     -16.0,
     -15.22,
     0.0,
-    175.1,
+    16.0,
     15.22,
-    812.2
+    803.0
    ],
    "prop": "lamp_cobra",
    "part": "pole",
-   "sha256": "73f3d439720f49eee970f10a77234e556e1d93e68d61212493470d9de21f7973",
+   "sha256": "e47456d55a6ab397acc99a6ece8b2f81ed632a624d738b500963bbc119ba6dbb",
+   "variants": [
+    "PoleGrey"
+   ]
+  },
+  {
+   "file": "lamp_cobra_arm.obj",
+   "mesh": "SM_Props_lamp_cobra_arm",
+   "material": "PoleGalv",
+   "collision": "none",
+   "triangles": 92,
+   "bounds_cm": [
+    -2.24,
+    -4.2,
+    723.65,
+    175.1,
+    4.2,
+    812.2
+   ],
+   "prop": "lamp_cobra",
+   "part": "arm",
+   "sha256": "0af917b7be90aad93b05a5cc465d33ac460242631c2dea0c91b13aaf5f612f84",
    "variants": [
     "PoleGrey"
    ]
@@ -3899,6 +3920,10 @@
      "mesh": "SM_Props_lamp_cobra_pole",
      "material": "PoleGalv"
     },
+    "arm": {
+     "mesh": "SM_Props_lamp_cobra_arm",
+     "material": "PoleGalv"
+    },
     "head": {
      "mesh": "SM_Props_lamp_cobra_head",
      "material": "LampHousing"
@@ -6180,7 +6205,7 @@
  },
  "counts": {
   "props": 32,
-  "meshes": 168,
+  "meshes": 169,
   "triangles_per_prop": {
    "lamp_cobra": 468,
    "lamp_park": 630,
@@ -6218,6 +6243,6 @@
   "triangles_all_meshes": 27080
  },
  "source_sha256": {
-  "Scripts/blender/plateau_props.py": "8fa11064928692911814274f2d42d78fa6c36b511cde71a7111aebeadbb3c178"
+  "Scripts/blender/plateau_props.py": "97e3b39c269d0f6efa32386c559054f4710819cc6602b6e0142121227f2e58bb"
  }
 }

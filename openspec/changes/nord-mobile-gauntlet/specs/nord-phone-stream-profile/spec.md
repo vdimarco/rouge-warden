@@ -22,14 +22,18 @@ The tuner SHALL choose, among the candidates it measured, the phone profile with
 #### Scenario: Co-op guard
 - **WHEN** the winner and the baseline run the two-viewer row in the same window
 - **THEN** the winner's mean decoded FPS with two viewers is at most 2 FPS below the baseline's, otherwise the next feasible candidate is confirmed instead
-- **AND** a two-viewer row that a foreign GPU process contended does not count, so without a clean row the guard is unverified, which `test_gauntlet_loop.py` checks
-- **AND** a two-viewer row whose NordHost drive did not end with exit 0 does not count, because its lap window ended early, which `test_gauntlet_loop.py` checks with a drive that fails inside the lap
+- **AND** each two-viewer row of the winner is paired with the baseline's row at the same rung and orientation from the same window, the baseline's row started last before it when that row counts, else the first counted one started after it, at most 12 hours apart, and a pair more than 2 FPS apart drops the winner for good, also when another pair passed, which `test_gauntlet_loop.py` checks
+- **AND** when the baseline's last row before the winner's does not count, for example an unverified row first in a morning window 10 hours after the evening's, the guard does not reach back to the evening's counted row but pairs with the morning's next counted baseline row, which `test_gauntlet_loop.py` checks
+- **AND** without such a pair, for example when the two rows are more than 12 hours apart, or at another rung or orientation, the guard is unverified, so it is missing evidence, which `test_gauntlet_loop.py` checks
+- **AND** only a row that reads "report-only" counts: a two-viewer row that a foreign GPU process contended does not count, nor one where a slot decoded no frame inside the lap, nor one where one of NordHost's `game_exit`, `stream_lost_in_lap`, `received_size`, `size_changes`, `cvar_mismatches` and `gpu_process_samples` gates did not pass, so without a counted row the guard is unverified, which `test_gauntlet_loop.py` checks
+- **AND** a two-viewer row where one of NordHost's `game_exit`, `stream_lost_in_lap`, `received_size`, `size_changes` and `cvar_mismatches` gates failed, for example a drive that failed inside the lap or a size change under the load of two viewers, fails, and that drops the winner as a failed solo row does, while a baseline whose two-viewer row fails has no row to pair with, so the guard of every candidate stays unverified, which `test_gauntlet_loop.py` checks with a drive that fails inside the lap, another received size and a size change inside the lap
 
 #### Scenario: Confirmation fails
 - **WHEN** the winner fails any gate in the 3-lap confirmation or in the stream runs
 - **THEN** the tuner confirms the next feasible candidate, and `tune.json` records why the first one was dropped
 - **AND** after a stream row or the co-op guard drops a candidate, `gauntlet_loop.py confirm <tune folder>` confirms the next ranked candidate natively, adds the result to `tune.json` and writes no profile
 - **AND** `confirm` skips a ranked candidate that a failed stream row or the co-op guard dropped, as the round report judges it, also when that candidate's native confirmation was cut or never ran, and refuses `--candidate` for it, because a new native result cannot change its verdict, which `test_gauntlet_loop.py` checks also with the tune folder given relative to `games/nord-unreal/`
+- **AND** when the round dropped a ranked baseline whose native confirmation is not finished, `confirm` does not run that baseline first and confirms the next ranked candidate, because the baseline's result cannot change the verdict and a cut there would stop the candidate, which `test_gauntlet_loop.py` checks
 - **AND** `tune` and the round report print `waiting_on`, the best ranked candidate that no failure dropped, whose stream rows are sampled next: when the winner failed its native confirmation and the next candidate passed, it names that candidate, not the winner, and it is empty once a candidate is confirmed or every ranked candidate failed, which `test_gauntlet_loop.py` checks
 - **AND** after each result, `confirm` sets `native_confirmation.confirmed_native` in `tune.json` to the best ranked candidate whose native confirmation passed, a ranked baseline too, which `test_gauntlet_loop.py` checks
 - **AND** only a failure drops a candidate: while a better ranked candidate has only missing evidence, the round report confirms no lower ranked candidate and the `confirmed` gate is unverified, which `test_gauntlet_loop.py` checks
@@ -39,15 +43,16 @@ The tuner SHALL choose, among the candidates it measured, the phone profile with
 - **THEN** the round report reads the newest of those rows, by `started_at` in its `run.json`, so a row sampled again replaces an older row that is contended, unverified or has no verdict
 - **AND** a failed row drops the candidate, also when a newer row at that rung and orientation passed, as a failed native confirmation is final
 - **AND** a newest row that is contended, unverified or has no verdict is missing evidence, so the `confirmed` gate is unverified, not fail, which `test_gauntlet_loop.py` checks
+- **AND** only the rungs and orientations of `size_use.stream` in `loop.json` count, so a solo row at another rung neither holds nor drops a candidate, which `test_gauntlet_loop.py` checks
 
 #### Scenario: Window ends during the confirmation
 - **WHEN** the agreed window (`--until`) ends before every confirmation run of a candidate
 - **THEN** no confirmation run starts unless its planned time ends before `--until`, and the confirmation stops at that candidate
-- **AND** the planned time starts at the model estimate, made longer by as much as the search found the host slower (its slowest native run against that run's estimate, or its longest candidate against its own plan), and rises to the longest confirmation run measured so far, so a host slower than the estimate does not overrun the window by plan, which `test_gauntlet_loop.py` checks also when a contended run splits the search's first candidate
-- **AND** the round report marks the `confirmed` gate unverified, not fail, while a ranked candidate has only missing evidence (a cut or missing confirmation, missing stream rows, a newest stream row that is contended, unverified or has no verdict, an unverified co-op guard), also after a better ranked candidate failed; a cut result that also holds a failed run counts as failed
-- **AND** `gauntlet_loop.py confirm <tune folder>` in a later window runs that candidate again, the baseline first when its result was cut too, and replaces its result in `tune.json`, which `test_gauntlet_loop.py` checks with a fake clock
+- **AND** the planned time starts at the model estimate, made longer by as much as the search found the host slower (its slowest native run that ended with exit 0 and was not contended, against that run's estimate, or only without such a run its longest candidate against its own plan), and rises to the longest confirmation run measured so far, so a host slower than the estimate does not overrun the window by plan, which `test_gauntlet_loop.py` checks also when a contended run splits the search's first candidate, and when a run that hung to the runner's limit would make the plan too long
+- **AND** the round report marks the `confirmed` gate unverified, not fail, while a ranked candidate has only missing evidence (a cut, twice contended, unverified or missing confirmation, missing stream rows or input row, a newest stream row that is contended, unverified or has no verdict, an unverified co-op guard), also after a better ranked candidate failed; a cut result that also holds a failed run counts as failed
+- **AND** `gauntlet_loop.py confirm <tune folder>` in a later window runs that candidate again and replaces its result in `tune.json`, with the baseline first only when the baseline is ranked above the candidate, has no finished result and the round has not dropped it, and on to the candidate after the baseline only when the baseline finished, which `test_gauntlet_loop.py` checks with a fake clock
 - **AND** a cut result that also holds a failed run is final: `confirm` keeps it, runs the next ranked candidate and refuses `--candidate` for it, which `test_gauntlet_loop.py` checks
-- **AND** `native_confirmation.stop_reason` in `tune.json` reads `window_end` while a result that the window cut is still not finished, and is empty once `confirm` has finished every result, which `test_gauntlet_loop.py` checks
+- **AND** `native_confirmation.stop_reason` in `tune.json` reads `window_end` while a result that the window cut is still not finished, else `contended` or `unverified` for a result that a foreign GPU process shared twice or that holds an unverified run, and is empty once `confirm` has finished every result, which `test_gauntlet_loop.py` checks
 - **AND** the baseline runs once when it is itself the ranked candidate
 
 #### Scenario: Contended confirmation run
@@ -55,6 +60,19 @@ The tuner SHALL choose, among the candidates it measured, the phone profile with
 - **THEN** that run runs once more, as in the search
 - **AND** after a second contended run the confirmation stops at that candidate, its result counts as not run, the round report marks the `confirmed` gate unverified, not fail, and `gauntlet_loop.py confirm <tune folder>` runs that candidate again, which `test_gauntlet_loop.py` checks
 - **AND** when that result also holds a failed run, it counts as failed: the round report drops the candidate, and `confirm` keeps the result and runs the next ranked candidate, which `test_gauntlet_loop.py` checks
+
+#### Scenario: Unverified confirmation run
+- **WHEN** a native confirmation run is unverified: a gate has no value and none failed
+- **THEN** that run runs once more, as a contended run does, so when the second run gives a verdict the candidate can be confirmed in the same window, which `test_gauntlet_loop.py` checks
+- **AND** after a second unverified run, the candidate's other confirmation runs go on, and its result gets a reason that starts with "a confirmation run was unverified" and counts as not run
+- **AND** the confirmation then stops at that candidate with `native_confirmation.stop_reason` `unverified`, the round report marks the `confirmed` gate unverified, not fail, and waits on that candidate, and `gauntlet_loop.py confirm <tune folder>` runs it again and replaces its result, which `test_gauntlet_loop.py` checks
+- **AND** when that result also holds a failed run, it counts as failed, and the next ranked candidate is confirmed, which `test_gauntlet_loop.py` checks
+
+#### Scenario: Baseline confirmation
+- **WHEN** `tune` or `confirm` runs the native confirmation
+- **THEN** it runs the baseline's native confirmation only when the round report reads it before the candidate's: `tune` confirms a ranked baseline in its place in the ranking, and `confirm` runs a ranked baseline first only when it is ranked above the candidate, so an unranked baseline, or one ranked below the candidate, takes no window time, which `test_gauntlet_loop.py` checks
+- **AND** when an earlier tune left an unranked baseline's result unfinished and a failed stream row dropped the winner, `confirm` in a window with room for 5 runs, with or without `--candidate`, runs only the next candidate's 4 runs, and the round report confirms that candidate, which `test_gauntlet_loop.py` checks
+- **AND** a baseline ranked above the candidate whose result does not finish, after an unverified run twice or a run contended twice, stops `tune` and `confirm` before the candidate, and the round report waits on the baseline, which `test_gauntlet_loop.py` checks
 
 #### Scenario: Fixed settings
 - **WHEN** the tuner builds a candidate

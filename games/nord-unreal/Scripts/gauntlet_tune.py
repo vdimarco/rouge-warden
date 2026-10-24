@@ -835,17 +835,28 @@ def search(loop, measure, until=None, clock=time.time, readback=None, log=None, 
     return tune
 
 
-def confirm(tune, loop, confirm_fn, still_open=None):
+def coop_reasons(loop, mine, theirs):
+    """The co-op guard on one candidate's two-viewer decoded FPS against the baseline's: no reason when it is at most
+    two_viewer_drop_max_fps below, else why it failed, and unverified when either figure is missing."""
+    if mine is None or theirs is None:
+        return ["co-op guard unverified"]
+    if theirs - mine > loop["budgets"]["stream"]["two_viewer_drop_max_fps"]:
+        return [f"two-viewer FPS {mine:.1f} is {theirs - mine:.1f} below the baseline's {theirs:.1f}"]
+    return []
+
+
+def confirm(tune, loop, confirm_fn, still_open=None, guard=None):
     """Step 7: confirm the baseline, then the ranked candidates best first until one passes every gate.
 
     confirm_fn(record) runs the 3-lap confirmation (both skies, landscape and portrait) and the stream rows and returns
     {"passed": bool, "reasons": [...], "two_viewer_fps": float or None}. A candidate other than the baseline also
     needs the co-op guard: two-viewer decoded FPS at most two_viewer_drop_max_fps below the baseline's.
+    guard(outcome, base), when given, returns the co-op guard's reasons for a candidate (none when it passed), in
+    place of coop_reasons on the two_viewer_fps of the two outcomes.
     still_open(result), when given, is True for a result that did not pass but can still pass (it has only missing
     evidence). confirm stops there with nothing confirmed, so a lower ranked candidate does not take its place.
     """
     records = {record["id"]: record for record in tune["candidates"]}
-    drop_max = loop["budgets"]["stream"]["two_viewer_drop_max_fps"]
     results = []
     base = dict(confirm_fn(records["baseline"]), id="baseline") if "baseline" in records else None
     if base:
@@ -857,13 +868,11 @@ def confirm(tune, loop, confirm_fn, still_open=None):
         else:
             outcome = dict(confirm_fn(records[candidate_id]), id=candidate_id)
             outcome["reasons"] = list(outcome.get("reasons", []))
-            mine, theirs = outcome.get("two_viewer_fps"), (base or {}).get("two_viewer_fps")
-            if mine is None or theirs is None:
+            found = (guard(outcome, base) if guard else
+                     coop_reasons(loop, outcome.get("two_viewer_fps"), (base or {}).get("two_viewer_fps")))
+            if found:
                 outcome["passed"] = False
-                outcome["reasons"].append("co-op guard unverified")
-            elif theirs - mine > drop_max:
-                outcome["passed"] = False
-                outcome["reasons"].append(f"two-viewer FPS {mine:.1f} is {theirs - mine:.1f} below the baseline's {theirs:.1f}")
+                outcome["reasons"] += found
             results.append(outcome)
         if outcome and outcome.get("passed"):
             confirmed = candidate_id

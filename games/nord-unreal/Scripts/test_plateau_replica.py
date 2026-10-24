@@ -493,6 +493,7 @@ def check_shared_plan():
     out['tree_textures'] = check_tree_texture_plan()
     out['street_trees'] = check_street_trees_synthetic()
     out['street_tree_falls'] = check_street_tree_falls()
+    out['kind_falls'] = check_kind_falls()
     out['street_tree_traffic'] = check_street_tree_traffic()
     out['missing_tree_obj'] = check_missing_tree_obj()
     out['host_steps'] = check_host_steps()
@@ -942,6 +943,46 @@ def check_street_tree_falls():
         synthetic_streets(tmp, [street_row(1, 'silver_maple', 1800, 60., fall='red')])
         expect_rejected(lambda: A.plan(tmp), 'a red tree whose leaves are an existing material')
     return out
+
+
+SHADOW_PROPS = ('hydrant', 'sign_stop', 'sign_street', 'sign_oneway', 'sign_parking', 'bike_locked',
+                'bin_recycling', 'bin_compost', 'bin_garbage')   # the street props the local review saw without one
+
+
+def check_prop_shadows(the_plan):
+    """The props a player sees at the curb cast shadows in game: lamps, poles, docks and benches, and also hydrants,
+    sign posts, locked bikes and bins, which the local review found standing in the low sun with none. Every instance
+    row carries its shadow flag from the apply step's PROP_SHADOW, and apply() sets it from that flag."""
+    A = apply_replica
+    assert set(SHADOW_PROPS) <= set(A.PROP_SHADOW), sorted(set(SHADOW_PROPS) - set(A.PROP_SHADOW))
+    assert {'lamp_cobra', 'lamp_park', 'utility_pole', 'bixi_dock', 'bench'} <= set(A.PROP_SHADOW)
+    rows = [i for i in the_plan['instances'] if i['mesh']]
+    assert rows and all(i['shadow'] == (i['prop'] in A.PROP_SHADOW) for i in rows), \
+        [i['label'] for i in rows if i.get('shadow') != (i['prop'] in A.PROP_SHADOW)][:5]
+    seen = {i['prop'] for i in rows if i['shadow']}
+    assert {'hydrant', 'sign_stop', 'sign_street', 'bike_locked', 'bin_recycling'} <= seen, sorted(seen)
+    source = (replica.ROOT / 'Scripts/apply_plateau_replica.py').read_text()
+    assert "comp.set_cast_shadow(row['shadow'])" in source, 'apply() does not set the planned prop shadows'
+    return {'casting_props': sorted(seen), 'casting_components': sum(1 for i in rows if i['shadow'])}
+
+
+def check_kind_falls():
+    """A kind with its own fall (KIND_FALL: the conifer's evergreen, the larch's gold) gets exactly that fall from every
+    species and genus row that puts a tree on it. The apply step refuses a larch tinted another colour, so a dawn
+    redwood or a bald cypress (larch genera) that TREE_FALL turned russet would stop the dry run and the import."""
+    R = replica
+    bad = []
+    names = [prefix for prefix, _ in R.TREE_SPECIES + R.TREE_FALL] + [g.lower() for g in R.TREE_GENERA]
+    for name in sorted(set(names)):
+        species = name[0].upper() + name[1:]
+        kind = R.tree_kind(species, 30.)
+        if kind in R.KIND_FALL and R.tree_fall(species, kind) != R.KIND_FALL[kind]:
+            bad.append((species, kind, R.tree_fall(species, kind)))
+    assert not bad, ('a kind of its own fall tinted another colour', bad)
+    for species in ('Metasequoia glyptostroboides', 'Taxodium distichum', 'Larix decidua'):
+        kind = R.tree_kind(species, 30.)
+        assert kind == 'larch' and R.tree_fall(species, kind) == 'gold', (species, kind, R.tree_fall(species, kind))
+    return {'checked': len(set(names))}
 
 
 TRAFFIC_FIXTURE = {'roads': [[[-5000., 0.], [5000., 0.]], [[-5000., 3000.], [5000., 3000.]]], 'road_widths': [620., 380.]}
@@ -2748,7 +2789,8 @@ def check_washing(out, soul):
 
 CROWN_KEEP, TRUNK_KEEP = .7, 150.   # the local review: no washing in this share of a crown, nor this near a trunk
 LITTER_KEYS = ('leaf_gold', 'leaf_rust', 'leaf_brown')   # the flat one-colour leaf polygons the litter replaced
-LITTER_TRIANGLES = 70000            # the litter's share of the Soul layer's 300,000 triangles
+LITTER_TRIANGLES = 100000           # the litter's share of the Soul layer's 300,000 triangles (70,000 before the fine
+                                    # outlines, the fringe and the ruelle litter of the fifth pass's repair)
 LITTER_GAP = (.2, .8)               # cm a litter vertex lies over the ground under it
 
 
@@ -2941,7 +2983,7 @@ def check_leaf_litter(world, out, soul, streets):
     assert mats['Leaf_Litter']['base_color_srgb'] == '#96733d', mats['Leaf_Litter']
     batches = [b for b in soul['batches'] if b['material'] == 'Leaf_Litter']
     tris = sum(b['triangles'] for b in batches)
-    assert 0 < tris <= LITTER_TRIANGLES and len(batches) <= 4 and soul['counts']['triangles'] < 300000, \
+    assert 0 < tris <= LITTER_TRIANGLES and len(batches) <= 20 and soul['counts']['triangles'] < 300000, \
         (tris, len(batches), soul['counts']['triangles'])
     assert soul['counts']['litter_triangles'] == tris, (soul['counts']['litter_triangles'], tris)
     at = litter_ground(out, streets)
@@ -2989,7 +3031,8 @@ def check_leaf_litter(world, out, soul, streets):
             abs(rec['cover'] - min(R.LITTER_COVER, R.LITTER_GAIN * fallen)) < 1e-3, (kind, rec)
     order = sorted(record['kinds'].values(), key=lambda r: r['fallen'])
     assert all(a['cover'] <= b['cover'] for a, b in zip(order, order[1:])) and order[0]['cover'] < order[-1]['cover']
-    total = sum(r['drawn_m2'] for r in record['kinds'].values()) + record['curb_drifts_m2'] + record['ruelle_drifts_m2']
+    total = sum(r['drawn_m2'] for r in record['kinds'].values()) + record['curb_drifts_m2'] + record['ruelle_drifts_m2'] + \
+        record['yard_trees_over_ruelles']['drawn_m2']
     assert abs(total - drawn / 1e4) <= .005 * total + 1., (total, drawn / 1e4)
     assert soul['counts']['gutter_leaf_drifts'] >= 600 and road >= 4 * soul['counts']['gutter_leaf_drifts'], road
     assert soul['counts']['ruelle_gutter_leaf_drifts'] > 100 and gutter > 1000, gutter
@@ -3012,7 +3055,7 @@ def check_leaf_litter(world, out, soul, streets):
     spreads, small = [], 0
     for c, ring in fans.items():
         radii = [math.dist(c[:2], q[:2]) for q in ring]
-        small += len(ring) < min(R.LITTER_RING[0], R.LITTER_STRAYS[2])
+        small += len(ring) < min(R.LITTER_RING[0], R.LITTER_FRINGE_RING)
         spreads.append((max(radii) - min(radii)) / (sum(radii) / len(radii)))
     spreads.sort()
     assert small == 0 and len(fans) >= .85 * len(rows) and spreads[len(spreads) // 2] >= .25, \
@@ -3021,6 +3064,221 @@ def check_leaf_litter(world, out, soul, streets):
             'crowns_with_litter': f'{under} of {len(rows)}', 'curb_drift_faces': road, 'ruelle_drift_faces': gutter,
             'gap_cm': [round(min(gaps), 3), round(max(gaps), 3)], 'median_outline_spread': round(spreads[len(spreads) // 2], 2),
             'cover_by_kind': {k: r['cover'] for k, r in record['kinds'].items()}}
+
+
+PARK_LEAVES = replica.ROOT / 'Data/Plateau/ParkGeometry'
+PARK_LEAF_GAP = .05           # cm: a park leaf (rim and rib) stays at least this far under the litter lying over it
+
+
+def check_city_poles(world, furniture_rows):
+    """The residential streets' lights and wooden poles come from the city's sign-pole clip (sign_poles.json, CC BY
+    4.0): every wooden street pole is a utility pole with a cobra head over the street (unless an OSM lamp stands
+    there) and every steel one a cobra-head light; the junction's street-name blades, ARRÊT and one-way signs hang on
+    the city pole that carries them, with no post of their own and no collision, stacked clear of the pole. The local
+    review found no light within 204 m of the Mentana camera and the Mentana and Napoléon blades on a short post 1.2 m
+    from the city's wooden pole 65496, which carries them."""
+    R = replica
+    clip = json.loads(R.SIGN_POLES.read_text())
+    assert clip['source']['licence'] == 'CC BY 4.0' and 'Ville de Montréal' in clip['source']['attribution']
+    assert clip['count'] == len(clip['poles']) > 1000 and all(
+        R.inside((float(r['LATITUDE']), float(r['LONGITUDE']))) for r in clip['poles'])
+    kinds = {r['POTEAU_ID_POT']: R.POLE_KINDS.get(r['DESCRIPTION_RTP']) for r in clip['poles']}
+    city = [r for r in furniture_rows if 'city_pole' in r]
+    wood = {r['city_pole']: r for r in city if r['prop'] == 'utility_pole'}
+    heads = {r['city_pole']: r for r in city if r['prop'] == 'lamp_cobra' and r.get('mount') == 'utility_pole'}
+    steel = {r['city_pole']: r for r in city if r['prop'] == 'lamp_cobra' and 'mount' not in r}
+    hung = [r for r in city if r.get('mount') == 'city_pole']
+    assert len(wood) >= 100 and len(steel) >= 100 and len(heads) >= .8 * len(wood), (len(wood), len(steel), len(heads))
+    assert all(kinds[i] == 'wood' for i in wood) and all(kinds[i] == 'steel' for i in steel)
+    lamps = [tuple(r['position'][:2]) for r in furniture_rows if r['prop'] in ('lamp_cobra', 'lamp_park') and 'osm_node' in r]
+    for i, pole in wood.items():
+        if i in heads:
+            head = heads[i]
+            assert head['position'] == pole['position'] and head['without'] == ['pole'] and not head['collision'], head
+            assert abs((head['yaw'] - pole['yaw'] - 90) % 360) < .02 or abs((head['yaw'] - pole['yaw'] - 90) % 360 - 360) < .02
+        else:
+            assert any(math.dist(pole['position'][:2], q) < R.CITY_LAMP_SAME + 50 for q in lamps), ('a dark wooden pole', i)
+    # no pole or lamp collision in the traffic band, none on the carriageway, none in a tree pit
+    trees = json.loads((R.OUT / 'Streets/street_trees.json').read_text())['trees'] if (R.OUT / 'Streets/street_trees.json').is_file() else []
+    for r in list(wood.values()) + list(steel.values()):
+        p = r['position'][:2]
+        assert not R.on_pavement(world, p), ('a pole on the carriageway', r)
+        if r['collision']:
+            assert world.traffic_distance(p, 2000) >= R.CLEAR
+        for t in trees:
+            if t.get('pit') and abs(t['x_cm'] - p[0]) < 120 and abs(t['y_cm'] - p[1]) < 120:
+                u = (math.cos(math.radians(t['pit_yaw_deg'])), math.sin(math.radians(t['pit_yaw_deg'])))
+                along = (p[0] - t['x_cm']) * u[0] + (p[1] - t['y_cm']) * u[1]
+                across = -(p[0] - t['x_cm']) * u[1] + (p[1] - t['y_cm']) * u[0]
+                assert abs(along) >= R.PIT_L / 2 or abs(across) >= R.PIT_D / 2, ('a pole in a tree pit', r, t['id'])
+    # hung signs: on a placed pole, off its axis, stacked, without a post or collision
+    poles = {r['city_pole']: r for r in list(wood.values()) + list(steel.values())}
+    for r in hung:
+        pole = poles[r['city_pole']]
+        d = math.dist(r['position'][:2], pole['position'][:2])
+        assert R.MOUNT_OFF - .1 <= d <= R.MOUNT_OFF * math.sqrt(2) + .1 and r['without'] == ['post'] and not r['collision'], r
+        assert abs(r['position'][2] - pole['position'][2] - R.MOUNT_RAISE[r['prop']]) < .02, r
+        assert r['code'] in json.dumps([p['signs'] for p in clip['poles'] if p['POTEAU_ID_POT'] == r['city_pole']]), r
+    # the critic's corner: the Mentana and Napoléon blades on the city's wooden pole 65496
+    pole = wood.get('65496')
+    blades = [r for r in furniture_rows if r['prop'] == 'sign_street' and pole
+              and {r['text']['blade_a']['full'], r['text']['blade_b']['full']} == {'Rue de Mentana', 'Rue Napoléon'}
+              and math.dist(r['position'][:2], pole['position'][:2]) < 1500]
+    assert len(blades) == 1 and blades[0].get('city_pole') == '65496' and blades[0]['mount'] == 'city_pole', blades
+    assert '65496' in wood and kinds['65496'] == 'wood' and '65496' in heads
+    # light along Mentana: the wooden poles that carry its cobra heads
+    mentana = [s for s in world.segs if s['name'] == 'Rue de Mentana' and not s['excluded']]
+    lit = {i for i, r in heads.items() if any(R.seg_dist(r['position'][:2], s['pa'], s['pb']) < 1200 for s in mentana)}
+    assert len(lit) >= 6, sorted(lit)
+    return {'wooden_poles': len(wood), 'cobra_heads_on_wood': len(heads), 'steel_lamps': len(steel),
+            'signs_on_poles': len(hung), 'by_sign': {k: sum(1 for r in hung if r['prop'] == k) for k in R.MOUNT_RAISE},
+            'mentana_wooden_lamps': len(lit)}
+
+
+def litter_fans(out, soul):
+    """The Leaf_Litter fans of the Soul layer, grouped by their centre (each triangle's last vertex, as obj_text writes
+    a fan): {centre: set of ring points}."""
+    fans = {}
+    for batch in soul['batches']:
+        if batch['material'] == 'Leaf_Litter':
+            for f in parse_obj(out / 'Soul' / batch['file'])[1]:
+                fans.setdefault(tuple(round(v, 2) for v in f[2]), set()).update(tuple(round(v, 2) for v in q) for q in f[:2])
+    return fans
+
+
+def litter_ground_kind(z):
+    """Which ground a litter fan lies on, from its height: the park lawn, a ruelle gutter, a ruelle's paving, a curb
+    drift on the asphalt, or a sidewalk, lawn or parterre of the Streets layer."""
+    R = replica
+    if z < 6.:
+        return 'park'
+    if abs(z - R.Z_ALLEY - R.LITTER_LANE) < .01:
+        return 'lane'
+    if abs(z - R.Z_LITTER_ROAD) < .01:
+        return 'road'
+    if R.gutter_z(0.) + R.LITTER_LIFT - .01 <= z <= R.Z_ALLEY + R.LITTER_LIFT + .01:
+        return 'gutter'
+    return 'street'
+
+
+def check_litter_edges(out, soul):
+    """The local review saw the street patches as cut rugs: 1.6 to 2 m straight sides, the leaves stopping dead at the
+    outline. A patch on a sidewalk, a lawn, a parterre or a ruelle now has a point every LITTER_EDGE_FINE cm round a
+    serrated outline, and small clumps of leaves (LITTER_FRINGE) lie just outside it, more and bigger near the edge
+    than out toward the drip line, so the litter thins out leaf clump by leaf clump."""
+    R = replica
+    fans = litter_fans(out, soul)
+    main, fringe, outlines = [], [], []
+    for c, ring in fans.items():
+        if litter_ground_kind(c[2]) not in ('street', 'lane'):
+            continue
+        pts = sorted(ring, key=lambda q: math.atan2(q[1] - c[1], q[0] - c[0]))
+        radii = [math.dist(c[:2], q[:2]) for q in pts]
+        mean = sum(radii) / len(radii)
+        if mean <= R.LITTER_FRINGE_SIZE[1] + 5:
+            fringe.append((c, mean))
+        elif mean >= 80.:
+            edge = math.tau * mean / len(pts)          # outline per point (the serration makes each chord longer)
+            jag = sum(abs(radii[i] - radii[i - 1]) for i in range(len(radii))) / len(radii) / mean
+            main.append((c, mean, edge, jag, len(pts)))
+            outlines.append([q[:2] for q in pts])
+    edges = sorted(m[2] for m in main)
+    jags = sorted(m[3] for m in main)
+    assert len(main) > 500 and edges[len(edges) // 2] <= R.LITTER_EDGE_FINE + 15, \
+        ('street patches with long straight sides', len(main), edges[len(edges) // 2] if edges else None)
+    assert jags[len(jags) // 2] >= .12, ('street patch outlines without a serrated edge', jags[len(jags) // 2])
+    grid = R.Grid(800.)
+    for i, m in enumerate(main):
+        grid.add(i, R.bbox([m[0]], 2 * m[1]))
+    inner = outer = 0
+    for c, r in fringe:
+        # how far the clump lies outside the nearest main patch's outline, as a share of that patch's radius
+        best = None
+        for i in grid.query((c[0], c[1], c[0], c[1])):
+            m, ring = main[i], outlines[i]
+            if math.dist(c[:2], m[0][:2]) > 2 * m[1] or R.point_in(c[:2], ring):
+                continue
+            d = min(R.seg_dist(c[:2], a, b) for a, b in zip(ring, ring[1:] + ring[:1])) / m[1]
+            best = d if best is None else min(best, d)
+        if best is None:
+            continue
+        inner += best < R.LITTER_FRINGE_OUT / 2
+        outer += best >= R.LITTER_FRINGE_OUT / 2
+    assert inner + outer >= 2 * len(main) and inner > 1.5 * outer, ('no fringe thinning out the patches', inner, outer,
+                                                                    len(main))
+    return {'street_patches': len(main), 'median_edge_cm': round(edges[len(edges) // 2], 1),
+            'median_jag': round(jags[len(jags) // 2], 3), 'fringe_clumps': len(fringe),
+            'fringe_near_edge': inner, 'fringe_toward_drip_line': outer}
+
+
+def check_lane_litter(world, out, soul):
+    """The local review found the ruelles bare under the yard trees (a 12.7 m Norway maple over the Mentana lane) and
+    no gutter drift in sight. Every yard crown that reaches a metre or more over a ruelle's paving now drops leaves on
+    the paving under it (never over the sunken gutter) and, where it overhangs the gutter, into the gutter."""
+    R = replica
+    fans = litter_fans(out, soul)
+    lane = [c for c in fans if litter_ground_kind(c[2]) == 'lane']
+    gutter = [c for c in fans if litter_ground_kind(c[2]) == 'gutter']
+    alleys = R.AlleyIndex(world)
+    for c in lane:
+        for q in fans[c] | {c}:
+            hit = alleys.nearest(q, R.GUTTER_HALF + 1.)
+            assert hit is None, ('lane litter over the gutter', q)
+    lane_grid, gutter_grid = R.Grid(1000.), R.Grid(1000.)
+    for i, c in enumerate(lane):
+        lane_grid.add(i, R.bbox([c]))
+    for i, c in enumerate(gutter):
+        gutter_grid.add(i, R.bbox([c]))
+    crowns = [row for row in R.tree_crowns(world).items if row[8] == 'yard']
+    over = with_litter = over_gutter = with_drift = 0
+    for x, y, z, radius, *_ in crowns:
+        hit = alleys.nearest((x, y), radius + R.ALLEY_HALF)
+        if hit is None or hit[0] - R.ALLEY_HALF > radius - 100.:
+            continue
+        over += 1
+        with_litter += any(math.dist((x, y), lane[i][:2]) <= radius for i in lane_grid.query(R.bbox([(x, y)], radius)))
+        if hit[0] < radius - 100.:
+            over_gutter += 1
+            with_drift += any(math.dist((x, y), gutter[i][:2]) <= radius + 300.
+                              for i in gutter_grid.query(R.bbox([(x, y)], radius + 300.)))
+    assert over > 100 and with_litter >= .8 * over, ('yard crowns over a ruelle with no leaves under them', with_litter, over)
+    assert with_drift >= .8 * over_gutter, ('yard crowns over a ruelle gutter with no drift', with_drift, over_gutter)
+    return {'lane_patches': len(lane), 'crowns_over_lanes': over, 'with_litter': with_litter,
+            'crowns_over_gutters': over_gutter, 'with_gutter_drift': with_drift}
+
+
+def check_park_leaves_under_litter(out, soul, park=PARK_LEAVES):
+    """The park build (plateau_park.py) already scatters its own one-colour fallen leaves on the lawn, 2.30 to 2.38 cm
+    up with a rib 0.35 cm higher. The Soul litter lies over them: every AutumnGold or AutumnRust face whose centre
+    lies on a Leaf_Litter face stays at least PARK_LEAF_GAP under that face, so the two never cross or z-fight. The
+    tech review found 20,927 of them crossing a litter plane at 2.4 cm."""
+    tris, grid = [], replica.Grid(500.)
+    for batch in soul['batches']:
+        if batch['material'] != 'Leaf_Litter':
+            continue
+        for face in parse_obj(out / 'Soul' / batch['file'])[1]:
+            for k in range(1, len(face) - 1):
+                t = (face[0], face[k], face[k + 1])
+                grid.add(len(tris), replica.bbox(t))
+                tris.append(t)
+    leaves, under, worst, bad = 0, 0, math.inf, []
+    for path in sorted(park.glob('Autumn*.obj')):
+        for face in parse_obj(path)[1]:
+            leaves += 1
+            c = (sum(p[0] for p in face) / len(face), sum(p[1] for p in face) / len(face))
+            tops = [max(p[2] for p in tris[i]) for i in grid.query((c[0], c[1], c[0], c[1]))
+                    if _tri_contains([q[:2] for q in tris[i]], c)]
+            if not tops:
+                continue
+            under += 1
+            gap = min(tops) - max(p[2] for p in face)
+            worst = min(worst, gap)
+            if gap < PARK_LEAF_GAP:
+                bad.append((round(c[0]), round(c[1]), round(gap, 3)))
+    assert leaves > 1000, ('the park leaves are missing', leaves)
+    assert not bad, (f'{len(bad)} of the {under} park leaves under the litter cross it or lie within '
+                     f'{PARK_LEAF_GAP} cm of it', bad[:5])
+    return {'park_leaves': leaves, 'under_litter': under, 'closest_gap_cm': round(worst, 3) if under else None}
 
 
 def check_gallery_life(world, out, soul, soul_rows):
@@ -4189,7 +4447,7 @@ def main():
         painted = sum(v for k, v in sc.items() if k.startswith('crosswalks_') and k != 'crosswalks_generated_at_stops')
         assert painted >= .85 * len({w for w, _ in styled}), (painted, len(styled))
         assert sc['crosswalks_continental_yellow'] > 0 and sc['crosswalks_lines_white'] > 0
-        lamps = sum(1 for r in furniture['placements'] if r['prop'] in ('lamp_cobra', 'lamp_park'))
+        lamps = sum(1 for r in furniture['placements'] if r['prop'] in ('lamp_cobra', 'lamp_park') and 'osm_node' in r)
         excluded = sum(1 for n, t in world.node_tags.items() if t.get('highway') == 'street_lamp' and n in world.nodes
                        and replica.inside(world.latlon[n]) and world.route_near(world.nodes[n]))
         assert lamps == fc['osm_lamps_inside'] - excluded, (lamps, fc['osm_lamps_inside'], excluded)
@@ -4220,6 +4478,10 @@ def main():
         report['washing'] = check_washing(out, soul)
         report['laundry_crowns'] = check_laundry_crowns(out)
         report['leaf_litter'] = check_leaf_litter(world, out, soul, streets)
+        report['park_leaves'] = check_park_leaves_under_litter(out, soul)
+        report['litter_edges'] = check_litter_edges(out, soul)
+        report['lane_litter'] = check_lane_litter(world, out, soul)
+        report['city_poles'] = check_city_poles(world, furniture_rows)
         report['gallery_life'] = check_gallery_life(world, out, soul, soul_rows['placements'])
         report['street_trees'] = check_street_trees(world, out, streets)
         report['reseated_trees'] = check_reseated_trees(world, out, streets)
@@ -4292,6 +4554,7 @@ def main():
                 need = max(c / t for c, t in zip(apply_replica.linear(m['base_color_srgb']), m['mean_linear']))
                 assert need <= apply_replica.TINT_LIMIT, (m['asset'], need)
         report['textures'] = check_textures(the_plan)
+        report['prop_shadows'] = check_prop_shadows(the_plan)
         report['planned_collision'] = check_plan_clearance(world, the_plan)
         report['shared_keys'] = check_shared_plan()
         report['yard_trees'] = check_yard_trees(the_plan)

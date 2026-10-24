@@ -1678,6 +1678,40 @@ SPEC = ('openspec/changes/nord-gta-level-up/specs/nord-plateau-streetscape/spec.
         'openspec/specs/nord-plateau-streetscape/spec.md')   # the change's spec, then the canonical one once archived
 
 
+def test_lane_walls_have_doors():
+    # local critic 5 (pass 5): a plex wall on a ruelle had windows but no door (310 of 311). Every lane wall of 3 m or
+    # more now has a ground-floor back door per 8 m (P.LANE_DOOR_EVERY) in place of a ground-floor window, its leaf in
+    # the lot's door paint at the ground floor, with a cast-concrete stoop and steps down along the wall where the
+    # floor is raised; a wide lane wall gets two
+    for width, count in ((760, 4), (1700, 2)):
+        _, _, lots, mesh, records, counts = _rear_fixture(alley_from_wall=250, width=width, count=count)
+        rear = _rear_faces(mesh)
+        lanes = 0
+        for lot, record in zip(lots, records):
+            r = P.Rear(lot, record['front']['top_cm'])
+            z0 = P._floor_levels(lot)[0]
+            for wall in record['rear']['walls']:
+                if wall['kind'] != 'lane':
+                    continue
+                lanes += 1
+                want = P.lane_door_count(wall['width_cm'])
+                assert want == max(1, round(wall['width_cm'] / P.LANE_DOOR_EVERY)) and wall['doors'] == want, wall
+                bays = max(1, int(wall['width_cm'] // 450))
+                rows = sum(1 for k in range(lot['storeys']) if P._floor_levels(lot)[k] + P.REAR_HEAD <= wall['top_cm'] - 10)
+                assert wall['windows'] == rows * bays - want, wall
+                a, b = tuple(wall['a']), tuple(wall['b'])
+                leaves = [f for f in rear.get(r.door, []) if _vertical(f) and _seg_dist(_centre(f), a, b) < P.D_FACE + 4
+                          and abs(min(p[2] for p in f) - z0) < .01 and abs(max(p[2] for p in f) - (z0 + P.REAR_HEAD - 6)) < .01]
+                assert len(leaves) == want, (lot['id'], wall, len(leaves))
+                for leaf in leaves:
+                    c = _centre(leaf)
+                    landing = [f for f in rear.get('Stone_Cast', []) if not _vertical(f) and math.dist(_centre(f), c) < 100
+                               and all(abs(p[2] - lot['raise']) < .01 for p in f)]
+                    assert lot['raise'] < 25 or landing, ('a raised lane door with no stoop', lot['id'], wall)
+        assert lanes >= count, lanes
+    assert counts['rear_lane_doors'] >= 2, counts
+
+
 def test_spec_budget_covers_the_code_caps():
     """The spec's Frame budget scenario promises the host a Plex budget: its triangle and batch numbers must be at
     least the generator's caps (TRIANGLE_BUDGET, MAX_BATCHES), and both must sit under the agreed ceiling the spec
@@ -1696,6 +1730,23 @@ def test_spec_budget_covers_the_code_caps():
     top_triangles, top_batches = float(ceiling.group(1)) * 1e6, int(ceiling.group(2).replace(',', ''))
     assert (top_triangles, top_batches) == (3.5e6, 1400), (top_triangles, top_batches)
     assert P.TRIANGLE_BUDGET <= triangles <= top_triangles and P.MAX_BATCHES <= batches <= top_batches
+
+
+def _check_lane_doors_district(manifest, fronts):
+    """Every lane wall of 3 m or more, on a plex lot or a background mass, has its ground-floor back doors on the
+    ruelle (one per 8 m), unless it is a blank wall with no window (a neighbour or a shed within 1.2 m of it)."""
+    walls = [(r['id'], w) for r in fronts['fronts'] for w in r['rear']['walls']] + \
+            [(r['id'], w) for r in fronts['background'] for w in r['walls']]
+    lanes = [(i, w) for i, w in walls if w['kind'] == 'lane' and w['width_cm'] >= P.LANE_DOOR_MIN]
+    blank = [(i, w) for i, w in lanes if not w['windows'] and not w['doors']]
+    short = [(i, w['width_cm'], w['doors']) for i, w in lanes
+             if (w['windows'] or w['doors']) and w['doors'] < P.lane_door_count(w['width_cm'])]
+    assert not short, ('lane walls without their back doors', len(short), short[:5])
+    assert len(lanes) >= 400 and len(blank) <= 5, (len(lanes), blank)
+    counts = manifest['counts']
+    return {'lane_walls': len(lanes), 'blank': len(blank), 'doors': sum(w['doors'] for _, w in lanes),
+            'stoops': counts.get('rear_lane_stoops', 0) + counts.get('background_lane_stoops', 0),
+            'at_grade': counts.get('rear_lane_doors_at_grade', 0) + counts.get('background_lane_doors_at_grade', 0)}
 
 
 def _check_rear_surfaces_district(manifest, stats, fronts, keep):
@@ -2163,10 +2214,11 @@ def test_district():
     collision = _check_collision_district(manifest, fronts, groups, keep)
     kit = _check_kit_district(manifest, stats, fronts, keep)
     surfaces = _check_rear_surfaces_district(manifest, stats, fronts, keep)
+    lane_doors = _check_lane_doors_district(manifest, fronts)
     print('district', json.dumps({'fronts': stats['fronts'], 'triangles': total, 'batches': len(manifest['batches']),
                                   'tile_cm': manifest['batching']['tile_cm'], 'stair_share_1890_1930': round(share, 3),
                                   'rear': rear, 'walls_roofs': walls_roofs, 'yards': yards, 'collision': collision,
-                                  'kit': kit, 'rear_surfaces': surfaces}))
+                                  'kit': kit, 'rear_surfaces': surfaces, 'lane_doors': lane_doors}))
 
 
 if __name__ == '__main__':
@@ -2187,7 +2239,7 @@ if __name__ == '__main__':
              test_mentana_slab_form, test_walls_a_street_sees_are_brick, test_cedars_are_crossed_cards,
              test_lap_siding_stays_low, test_open_ground_for_yardless_lots, test_towers_buff_or_brown_with_three_metre_bays,
              test_rear_surfaces_siding_gates_and_windows, test_gallery_partitions_and_props_floor,
-             test_background_roofs_and_roof_colours, test_spec_budget_covers_the_code_caps]
+             test_background_roofs_and_roof_colours, test_lane_walls_have_doors, test_spec_budget_covers_the_code_caps]
     if '--quick' not in sys.argv:
         tests.append(test_district)
     for test in tests:

@@ -14,10 +14,13 @@ step (apply_plateau_replica.material_row, textured_graph, add_macro and plan_tre
 - the yard trees stand on their species meshes (maple on norway_maple) at the apply step's positions, yaws and
   uniform scales, and each species OBJ, mature and young, splits into a bark and a leaves slot;
 - every street and park tree of Streets/street_trees.json stands on its kind's species or young mesh with the apply
-  step's transform, and the old summer tree appears only before the apply step, at the current tree positions;
+  step's transform, red, russet and other-fall trees on their group's tinted leaves, and the old summer tree appears
+  only before the apply step, on the OSM tree nodes the saved map's stand-in holds;
 - the OBJ index forgets removed OBJs and never caches tree positions;
 - faces are kept when an edge crosses the view, so the ruelle_mentana lane asphalt (one 188 m quad) is loaded;
 - Collision_Only batches are never drawn;
+- shadows follow the apply step (casts_shadow for the layer batches, the five shadowed props), and the Leaf_Litter
+  patches, which overlap at one height, are seen by camera rays only;
 - every placement gets the colour variant the apply step gives it;
 - the gallery_closeup and hlm_mentana cameras stand in the yard and on the far sidewalk.
 """
@@ -191,8 +194,9 @@ def source(links, socket):
     return next((a for a, b in links if b is socket), None)
 
 
-def check_material(preview, layer, key, spec, sets):
-    """One replica-set material against the apply step's plan row for it; returns the row."""
+def check_material(preview, layer, key, spec, sets, listed=True):
+    """One replica-set material against the apply step's plan row for it; returns the row. listed: the key is one of
+    the set's own keys (a fall's tinted leaves are not: they take the set through their spec's texture)."""
     row = apply_replica.material_row(layer, key, spec, sets, set())
     set_name = row['texture_set']
     entry = sets[set_name]
@@ -291,7 +295,7 @@ def check_material(preview, layer, key, spec, sets):
         assert source(links, keep.inputs[0]) is role['diff'].outputs['Alpha'], key + ' mask is not the diff alpha'
         assert abs(keep.inputs[1].default_value - row['opacity_mask_clip']) < 2e-3, key
         lit = source(links, mix.inputs[2]).node
-        assert key in entry['keys'] and preview.MASKED[mat.name][2] == row['opacity_mask_clip']
+        assert (key in entry['keys'] or not listed) and preview.MASKED[mat.name][2] == row['opacity_mask_clip']
         assert preview.MASKED[mat.name][3] == address, key + ': --probe must address the mask as the material does'
         if row['shading_model'] == 'two_sided_foliage':
             assert lit.bl_idname == 'ShaderNodeAddShader', key + ' needs the foliage transmission'
@@ -361,8 +365,8 @@ def check_yard_trees(preview):
     assert kinds, 'Trees/manifest.json is missing; run Scripts/blender/plateau_trees.py --no-render'
     made = {}
     saved = preview.species_collection, preview.tree_template
-    preview.species_collection = lambda species, kind, variant=None: made.setdefault(
-        species if variant is None else (species, variant), Collection('Tree_' + species))
+    preview.species_collection = lambda species, kind, variant=None, leaves=None: made.setdefault(
+        species if variant is None and leaves is None else (species, variant, leaves), Collection('Tree_' + species))
     preview.tree_template = lambda: (_ for _ in ()).throw(AssertionError('yard trees fell back to tree_small_02'))
     try:
         world = Collection('World')
@@ -426,8 +430,9 @@ def check_street_trees(preview):
     doc = json.loads((ROOT / 'Data/Plateau/ReplicaGeometry/Streets/street_trees.json').read_text())
     made, old_calls = {}, []
     saved = preview.species_collection, preview.tree_template, preview.place_trees
-    preview.species_collection = lambda species, kind, variant=None: made.setdefault(
-        (species, variant), Collection(f'Tree_{species}_{variant}'))
+    # One collection per kind, mesh and leaves: the kind's own leaves (None), or the tinted leaves of another fall.
+    preview.species_collection = lambda species, kind, variant=None, leaves=None: made.setdefault(
+        (species, variant, leaves and leaves['key']), Collection(f'Tree_{species}_{variant}'))
     preview.tree_template = lambda: (_ for _ in ()).throw(AssertionError('a tree fell back to tree_small_02'))
     preview.place_trees = lambda trees, region, col: (old_calls.append(list(trees)), len(trees))[1]
     try:
@@ -437,30 +442,46 @@ def check_street_trees(preview):
         assert street == len(rows) == doc['counts']['street_trees'], (street, len(rows))
         assert old == 0 and not old_calls, 'the old summer tree is drawn next to the species street trees'
         assert yard == len(apply_replica.load_yard_trees(ROOT)), yard
-        planned = [((g['kind'], g['variant']), t) for g in apply_replica.plan_trees(rows, kinds)
-                   if g['group'] == 'street' for t in g['transforms']]
+        street_groups = [g for g in apply_replica.plan_trees(rows, kinds) if g['group'] == 'street']
+        planned = [((g['kind'], g['variant'], g['leaves'] and g['leaves']['key']), g['fall'], t)
+                   for g in street_groups for t in g['transforms']]
         placed = [ob for ob in world.linked if ob.name.startswith('StreetTree_')]
         assert len(placed) == len(planned) == len(rows), (len(placed), len(planned))
-        counts = {}
-        for ob, (key, ((x, y, z), yaw, scale)) in zip(placed, planned):
-            assert ob.instance_type == 'COLLECTION' and ob.instance_collection is made[key], ob.name
+        counts, falls = {}, {}
+        for ob, (key, fall, ((x, y, z), yaw, scale)) in zip(placed, planned):
+            assert ob.instance_type == 'COLLECTION' and ob.instance_collection is made[key], (ob.name, key)
             assert ob.location == (x / 100, -y / 100, z / 100), ob.name
             assert abs(ob.rotation_euler[2] + math.radians(yaw)) < 1e-12, ob.name
             assert tuple(ob.scale) == tuple(scale), ob.name
             counts[key[0]] = counts.get(key[0], 0) + 1
+            falls[f'{key[0]} {fall}'] = falls.get(f'{key[0]} {fall}', 0) + 1
         assert counts == doc['kinds'], (counts, doc['kinds'])
         assert counts.get('elm'), 'no elm or hackberry on the vase mesh'
-        young = sum(1 for key, _ in planned if key[1])
-        assert young and all(kinds[k].get(apply_replica.YOUNG) for (k, v) in made if v), young
+        # The fifth pass's kinds and colours: conifers and larches on their own meshes, and the red and russet trees on
+        # their own tinted leaves, one collection per kind, mesh and fall, as the apply step makes one actor per group.
+        assert counts.get('conifer') and counts.get('larch'), 'no conifer or larch on its own mesh'
+        want = {}
+        for r in rows:
+            want[f'{r["kind"]} {r["fall"]}'] = want.get(f'{r["kind"]} {r["fall"]}', 0) + 1
+        assert falls == want, (falls, want)
+        assert not any(f.split()[1] == 'evergreen' and f.split()[0] != 'conifer' for f in falls), falls
+        tinted = {(g['kind'], g['variant'], g['leaves']['key']) for g in street_groups if g['leaves']}
+        assert tinted and {k for k in made if k[2]} == tinted, (sorted(k for k in made if k[2]), sorted(tinted))
+        assert {g['fall'] for g in street_groups if g['leaves']} >= {'red', 'russet'}, 'no red or russet tree drawn'
+        young = sum(1 for key, _, _ in planned if key[1])
+        assert young and all(kinds[k].get(apply_replica.YOUNG) for (k, v, _) in made if v), young
         meshes = len(made)
-        # Before the apply step: the old summer tree at the current positions, no species or yard tree.
+        # Before the apply step: the old summer tree where the saved map's QuebecVegetation stand-in holds it, on the
+        # 4,571 OSM tree nodes (plateau_rendering.osm_tree_positions), not at the inventory's street_trees.json rows;
+        # no species or yard tree.
         made.clear()
         before = Collection('Before')
         street, old, yard = preview.place_all_trees(everything, before, before=True)
-        from plateau_rendering import tree_positions
+        from plateau_rendering import osm_tree_positions
+        nodes = list(osm_tree_positions())
         assert street is None and yard == 0 and not made and not before.linked
-        assert len(old_calls) == 1 and old_calls[0] == list(tree_positions()) and old == len(rows), \
-            'the --before trees are not at the current positions'
+        assert len(old_calls) == 1 and old_calls[0] == nodes and old == len(nodes) != len(rows), \
+            'the --before trees are not on the OSM nodes the saved map holds'
     finally:
         preview.species_collection, preview.tree_template, preview.place_trees = saved
     # A young street tree reads its kind's young OBJ and wears the kind's bark and leaves.
@@ -472,16 +493,37 @@ def check_street_trees(preview):
         objects.append((name, material)) or types.SimpleNamespace(data=None)
     preview.replica_material = lambda layer, key, spec: (layer, key)
     preview.SPECIES.clear()
+    # A tree of another fall stands on its kind's own mesh, its bark the kind's, its leaves the plan's tinted leaves.
+    group = next(g for g in street_groups if g['leaves'] and g['variant'] == apply_replica.YOUNG)
+    tint = group['leaves']
     try:
         preview.species_collection('elm', kinds['elm'], apply_replica.YOUNG)
         preview.species_collection('elm', kinds['elm'])
+        preview.species_collection(group['kind'], kinds[group['kind']], group['variant'], tint)
+        preview.species_collection(group['kind'], kinds[group['kind']], group['variant'])
     finally:
         preview.read_obj_groups, preview.make_object, preview.replica_material = saved
         preview.SPECIES.clear()
-    assert read == [Path(kinds['elm']['young']['obj']).name, Path(kinds['elm']['obj']).name], read
+    assert read[:2] == [Path(kinds['elm']['young']['obj']).name, Path(kinds['elm']['obj']).name], read
     assert dict(objects[:2]) == {'T_elm_young_bark': ('Trees', kinds['elm']['materials']['bark']['key']),
                                  'T_elm_young_leaves': ('Trees', kinds['elm']['materials']['leaves']['key'])}, objects
-    return {'street_trees': len(rows), 'kinds': counts, 'young': young, 'meshes': meshes}
+    own = kinds[group['kind']]['materials']
+    assert read[2:] == [Path(kinds[group['kind']]['young']['obj']).name] * 2, read
+    assert [m for _, m in objects[4:6]] == [('Trees', own['bark']['key']), ('Trees', tint['key'])], objects[4:6]
+    assert [m for _, m in objects[6:8]] == [('Trees', own['bark']['key']), ('Trees', own['leaves']['key'])], objects[6:]
+    assert len({name for name, _ in objects}) == len(objects), 'two tree collections share an object name'
+    # The tinted leaves are built as the kind's leaves are (the apply step's material row for the tinted spec): the same
+    # atlas, mask and foliage shading, with the tint that brings the kind's cells to the fall's colour.
+    sets = apply_replica.load_textures(ROOT)
+    fall_rows = {}
+    for g in street_groups:
+        if g['leaves'] and g['leaves']['key'] not in fall_rows:
+            row = check_material(preview, 'Trees', g['leaves']['key'], g['leaves']['spec'], sets, listed=False)
+            base = apply_replica.material_row('Trees', own['leaves']['key'], own['leaves']['spec'], sets, set())
+            assert row['texture_set'] == base['texture_set'] and row['blend_mode'] == base['blend_mode'], g['label']
+            fall_rows[g['leaves']['key']] = g['leaves']['spec']['base_color_srgb']
+    return {'street_trees': len(rows), 'kinds': counts, 'falls': falls, 'fall_leaves': fall_rows, 'young': young,
+            'meshes': meshes}
 
 
 def check_index(preview):
@@ -577,7 +619,8 @@ def check_collision_only(preview):
     assert invisible, 'the Plex layer has no Collision_Only batches to leave out'
     drawn, read = [], []
     saved = preview.make_object, preview.read_obj, preview.replica_material
-    preview.make_object = lambda name, verts, polys, uvs, material, collection, smooth=False: drawn.append(name)
+    preview.make_object = lambda name, verts, polys, uvs, material, collection, smooth=False: \
+        drawn.append(name) or types.SimpleNamespace(name=name)
     preview.read_obj = lambda path, region, scale=.01, want_uv=True: (read.append(path), ([(0, 0, 0)] * 3, [[0, 1, 2]], []))[1]
     preview.replica_material = lambda layer, key, spec: key
     try:
@@ -590,6 +633,72 @@ def check_collision_only(preview):
     assert not any(Path(p).name in {b['file'] for b in invisible} for p in read), 'a Collision_Only OBJ was read'
     assert len(drawn) == len(plex['batches']) - len(invisible), (len(drawn), len(plex['batches']), len(invisible))
     return {'collision_only_batches': len(invisible), 'drawn_batches': len(drawn)}
+
+
+def check_shadows(preview):
+    """Only what casts a shadow in game casts one here. A layer batch follows apply_plateau_replica.casts_shadow (the
+    fifth pass's Leaf_Litter patches, the paint, joints and the gutter cast none). A prop casts one only when the apply
+    step's prop instances do: the lamps, poles, BIXI docks and benches."""
+    shown = {}
+
+    def make(name, verts, polys, uvs, material, collection, smooth=False):
+        ob = types.SimpleNamespace(name=name, material=material, visible_camera=True, visible_shadow=True,
+                                   visible_diffuse=True, visible_glossy=True, visible_transmission=True,
+                                   visible_volume_scatter=True)
+        assert name not in shown or not name.startswith(LAYERS), name
+        shown[name] = ob
+        collection.objects.link(ob)
+        return ob
+
+    saved = preview.make_object, preview.read_obj, preview.replica_material
+    preview.make_object = make
+    preview.read_obj = lambda path, region, scale=.01, want_uv=True: ([(0, 0, 0)] * 3, [[0, 1, 2]], [])
+    preview.replica_material = lambda layer, key, spec: key
+    try:
+        everything = preview.Region((0., 0., 0.), (1., 0., 0.), 85., 1e9, circle=(0., 0., 1e9))
+        preview.load_replica(everything, Collection('World'))
+        batches = {}
+        for layer in LAYERS:
+            man = json.loads((ROOT / f'Data/Plateau/ReplicaGeometry/{layer}/manifest.json').read_text())
+            batches.update({f'{layer}_{b["file"][:-4]}': b['material'] for b in man['batches']})
+        litter = [n for n in shown if batches[n] == 'Leaf_Litter']
+        assert litter, 'no Leaf_Litter batch drawn'
+        # The litter patches overlap at one height by design. A path tracer's bounce ray leaving one patch meets the
+        # coplanar patch at once and reads it as cover, so overlaps render dark; Unreal rasterises both to the same
+        # texel. The litter is seen by the camera and lets every other ray pass.
+        for n in litter:
+            ob = shown[n]
+            assert ob.visible_camera and not (ob.visible_diffuse or ob.visible_glossy or ob.visible_transmission
+                                              or ob.visible_volume_scatter or ob.visible_shadow), n
+        rays = [n for n, ob in shown.items() if n not in litter and not ob.visible_diffuse]
+        assert not rays, f'only the litter is hidden from bounce rays: {rays[:4]}'
+        bad = [(n, batches[n]) for n, ob in shown.items() if ob.visible_shadow != apply_replica.casts_shadow(batches[n])]
+        assert not bad, f'{len(bad)} layer batches cast shadows the game does not: {bad[:4]}'
+        layer_objects = len(shown)
+        shadowless = sum(1 for ob in shown.values() if not ob.visible_shadow)
+        # Props: one collection per prop and colour variant; its parts cast a shadow only for the apply step's props.
+        shown.clear()
+        rows = []
+        for layer in ('Furniture', 'Soul'):
+            rows += json.loads((ROOT / f'Data/Plateau/ReplicaGeometry/{layer}/placements.json').read_text())['placements']
+        colls, _ = preview.prop_collections(rows)
+    finally:
+        preview.make_object, preview.read_obj, preview.replica_material = saved
+    text = (ROOT / 'Scripts/apply_plateau_replica.py').read_text()
+    assert "comp.set_cast_shadow(row['shadow'])" in text and "'shadow': key in PROP_SHADOW" in text, \
+        'the apply step\'s prop shadow rule moved; mirror it in the preview'
+    casters = tuple(apply_replica.PROP_SHADOW)
+    assert tuple(preview.PROP_SHADOW) == casters, (preview.PROP_SHADOW, casters)
+    assert {'hydrant', 'sign_stop', 'sign_street', 'bike_locked', 'bin_recycling'} <= set(casters), casters
+    by_prop = {}
+    for (prop, _), c in colls.items():
+        assert c.linked, prop
+        for ob in c.linked:
+            assert ob.visible_shadow == (prop in casters), (prop, ob.name)
+            by_prop[prop] = prop in casters
+    assert any(by_prop.values()) and not all(by_prop.values()), by_prop
+    return {'layer_batches': layer_objects, 'layer_batches_without_shadow': shadowless, 'leaf_litter_batches': len(litter),
+            'props_with_shadow': sorted(p for p, v in by_prop.items() if v)}
 
 
 def check_prop_variants(preview):
@@ -605,20 +714,25 @@ def check_prop_variants(preview):
     for batch in props['batches']:
         if batch.get('prop') and 'merged' not in batch.get('part', ''):
             parts.setdefault(batch['prop'], []).append(batch)
-    checked = varied = 0
+    checked = varied = left_out = 0
     for layer in ('Furniture', 'Soul'):
         rows = json.loads((ROOT / f'Data/Plateau/ReplicaGeometry/{layer}/placements.json').read_text())['placements']
         for r in rows:
             if r['prop'] not in parts:
                 continue
-            chosen = preview.prop_variants(parts[r['prop']], r.get('variant_seed', 0))
+            chosen = preview.prop_variants(parts[r['prop']], r.get('variant_seed', 0), r.get('without', ()))
             for batch, variant in zip(parts[r['prop']], chosen):
                 key = (layer, r['prop'], batch['mesh'], tuple(r['position']), r['yaw'])
+                if variant is None:
+                    # a part the row leaves out (a sign's post on a city pole): the game has none there either
+                    assert batch.get('part') in r['without'] and key not in picked, (key, r.get('without'))
+                    left_out += 1
+                    continue
                 assert picked[key] == variant, (key, picked[key], variant)
                 checked += 1
                 varied += variant != batch['material']
     assert varied, 'no placement took a colour variant'
-    return {'parts_checked': checked, 'parts_in_a_variant': varied}
+    return {'parts_checked': checked, 'parts_in_a_variant': varied, 'parts_left_out': left_out}
 
 
 def check_views(preview):
@@ -684,7 +798,8 @@ def main():
     report = {'materials': check_set_materials(preview), 'yard_trees': check_yard_trees(preview),
               'street_trees': check_street_trees(preview), 'index': check_index(preview),
               'region': check_region(preview), 'collision_only': check_collision_only(preview),
-              'prop_variants': check_prop_variants(preview), 'views': check_views(preview)}
+              'shadows': check_shadows(preview), 'prop_variants': check_prop_variants(preview),
+              'views': check_views(preview)}
     print(json.dumps(report, indent=1, sort_keys=True))
     print('Plateau replica preview checks passed')
 

@@ -1745,14 +1745,15 @@ def blind(F, x0, x1, z0, z1, counts=None):
     return kind
 
 
-def modern_bays(mesh, F, W, floors, zt, paints, counts, balconies=True, every=1, entrance=False):
+def modern_bays(mesh, F, W, floors, zt, paints, counts, balconies=True, every=1, entrance=False, service=False):
     """The post-1945 apartment kit on one wall plane in frame F (x from 0 to W along the wall, the brick face at
     D_FACE): bays of about MODERN_BAY. On each upper floor a balcony bay (every `every`-th bay when `balconies`) has a
     patio door and a concrete slab with a painted steel guard (a cap rail over a panel, on three sides), with a
     window beside the door; the other bays a wide window. Every window has a painted wall panel under it, and each
     floor line a concrete edge. The ground floor takes windows, and with `entrance` a glazed entrance under a canopy
-    in the middle bay. `floors` are the floor heights (ground first); a storey whose window head would pass zt - 10 is
-    left out. paints = (frame, guard, panel). Returns (windows, doors, balconies)."""
+    in the middle bay; with `service` (a wall on a ruelle) a glazed back door per 8 m in place of a ground-floor window
+    (lane_door_bays). `floors` are the floor heights (ground first); a storey whose window head would pass zt - 10 is
+    left out. paints = (frame, guard, panel). Returns (windows, doors, balconies), the back doors among the doors."""
     frame, guard, panel = paints
     n = max(1, round(W / MODERN_BAY))
     bw = W / n
@@ -1788,6 +1789,7 @@ def modern_bays(mesh, F, W, floors, zt, paints, counts, balconies=True, every=1,
             F.box(guard, x - 1, x + 1, D_FACE, dg - 1, z + 10, gt - 8, skip='tbfk')      # side panels
         slabs += 1
 
+    back, back_doors = (lane_door_bays(W, n) if service else []), 0
     for k, z in enumerate(floors[:-1]):
         if z + 215 > zt - 10:
             break
@@ -1795,7 +1797,11 @@ def modern_bays(mesh, F, W, floors, zt, paints, counts, balconies=True, every=1,
             F.quad_d('Stone_Cast', 0, W, z - 20, z - 4, D_FACE + .5)                      # concrete floor edge
         for i in range(n):
             bx0 = i * bw
-            if k == 0:
+            if k == 0 and i in back and not (entrance and i == n // 2):
+                c = bx0 + bw / 2
+                door(c - 45, c + 45, z, 210, patio=False)
+                back_doors += 1
+            elif k == 0:
                 if entrance and i == n // 2:
                     c = bx0 + bw / 2
                     hw = min(100., bw / 2 - 15)
@@ -1812,9 +1818,9 @@ def modern_bays(mesh, F, W, floors, zt, paints, counts, balconies=True, every=1,
             else:
                 window(bx0 + .2 * bw, bx0 + .8 * bw, z)
     for key, value in (('modern_windows', windows), ('patio_doors', doors), ('modern_balconies', slabs),
-                       ('wall_panels', windows)):
+                       ('wall_panels', windows)) + ((('lane_doors', back_doors),) if service else ()):
         counts[key] = counts.get(key, 0) + value
-    return windows, doors, slabs
+    return windows, doors + back_doors, slabs
 
 
 def author_modern_front(mesh, lot, front, kit, primary=True, top_override=None):
@@ -2292,6 +2298,20 @@ CEDAR_CARD = (1.0, 3.0, .95)
 
 
 LONG_WALL, LONG_CLEAR = 800., 120.    # a side wall this long with no neighbour this close is a windowed long wall
+LANE_DOOR_MIN = 300.                  # a lane wall this wide or more has a ground-floor back door on the ruelle,
+LANE_DOOR_EVERY = 800.                # one per 8 m, in place of a ground-floor window (local critic, pass 5: 310 of
+                                      # the 311 Plex lane walls and 135 of 140 background ones had none)
+
+
+def lane_door_count(width):
+    """How many ground-floor back doors a lane wall of this width (cm) gets."""
+    return max(1, round(width / LANE_DOOR_EVERY)) if width >= LANE_DOOR_MIN else 0
+
+
+def lane_door_bays(width, bays):
+    """The window bays (0 to bays - 1) of a lane wall whose ground-floor window becomes a back door, spread evenly."""
+    n = lane_door_count(width)
+    return sorted({min(bays - 1, int((k + .5) * bays / n)) for k in range(n)}) if n else []
 PIECE_MIN = 150.                      # shortest free stretch of a wall a neighbour partly covers that gets a skin
 
 
@@ -3253,6 +3273,34 @@ class Rear:
         F.quad_z('Stone_Cast' if not self.siding else 'Trim', x0 - 4, x1 + 4, D_FACE - 1, D_FACE + 5, z0 + 1, 1)
         self.count('doors')
 
+    def _lane_door(self, F, xd, lo, hi):
+        """A back door on a lane wall at xd, in place of the ground-floor window of the bay lo..hi: at the ground floor,
+        on a cast-concrete stoop whose steps run down along the wall to the side with more room (as _stoop does for a
+        gallery stack), so nothing reaches more than 85 cm into the ruelle. Where the steps do not fit in the bay, the
+        door opens at grade, as a basement door does. Returns 1."""
+        raise_cm = self.lot['raise']
+        z0 = self.floor_z[0]
+        if raise_cm >= 25:
+            steps = max(0, round(raise_cm / 20) - 1)
+            rise = raise_cm / (steps + 1)
+            left, right = xd - 55 - lo, hi - xd - 55
+            if max(left, right) >= steps * 27 + 8:
+                F.box('Stone_Cast', xd - 55, xd + 55, D_FACE - 2, D_FACE + 85, 0, raise_cm, 'kb')
+                for j in range(1, steps + 1):
+                    if left >= right:
+                        x1 = xd - 55 - (j - 1) * 27
+                        F.box('Stone_Cast', x1 - 27, x1, D_FACE - 2, D_FACE + 85, 0, raise_cm - j * rise, 'kbr')
+                    else:
+                        x0 = xd + 55 + (j - 1) * 27
+                        F.box('Stone_Cast', x0, x0 + 27, D_FACE - 2, D_FACE + 85, 0, raise_cm - j * rise, 'kbl')
+                self.count('lane_stoops')
+            else:
+                z0 = 0.
+                self.count('lane_doors_at_grade')
+        self._door(F, xd - 43, xd + 43, z0, z0 + REAR_HEAD)
+        self.count('lane_doors')
+        return 1
+
     def _street_lintel(self):
         lot = self.lot
         if lot['year'] < 1890 and lot['masonry'] != 'Stone':
@@ -3300,6 +3348,7 @@ class Rear:
             windowed = kind in ('lane', 'street', 'long') and W >= 250 or kind == 'rear' and W >= 300
             bays = 1 if kind == 'rear' else max(1, int(W // 450))
         street = kind == 'street' and not self.background
+        back = lane_door_bays(W, bays) if kind == 'lane' else []
         FH = self.lot['floor_height']
         if self.form == 'omhm_slab':
             # the Habitations De Mentana (BUILDING_FORMS): the long faces carry the piers, colonnade and balcony
@@ -3319,7 +3368,7 @@ class Rear:
                 balc = W >= 450 and wall['clear'] >= BALCONY_CLEAR and not wall['piece']
                 windows, doors, balconies = modern_bays(
                     mesh, F, W, self.floor_z, self.zt, ('Sheet_Metal', self.lot['guard_paint'], self.lot['panel_paint']),
-                    self.counts, balconies=balc, every=2 if self.background else 1)
+                    self.counts, balconies=balc, every=2 if self.background else 1, service=kind == 'lane')
             windowed, street = False, False
         if windowed:
             for k in range(self.lot['storeys']):
@@ -3332,6 +3381,9 @@ class Rear:
                     break
                 for i in range(bays):
                     c = (i + .5) * W / bays
+                    if k == 0 and i in back:
+                        doors += self._lane_door(F, c, i * W / bays, (i + 1) * W / bays)
+                        continue
                     if street:
                         self._window(F, c - ww / 2, c + ww / 2, z0, z1, rail=self.lot['sash'] == 'double_hung',
                                      sill='Stone' if self.street_brick != 'Stone' else 'Stone_Cast',

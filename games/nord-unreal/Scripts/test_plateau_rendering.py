@@ -191,16 +191,47 @@ def function_body(source, name):
     raise AssertionError('unbalanced ' + name)
 
 
-def check_dog_sniffs_street_trees():
-    """The apply step clears the old summer trees. Dogs then find the species street trees through the actor tag
-    NordStreetTree: FindSniffSpot reads the instanced mesh components of the tagged actors, the apply step tags its
-    street-tree actors, and the README host checks name the tag."""
-    body = function_body((ROOT / 'Source/Quebec/QuebecLife.cpp').read_text(), 'UQuebecCompanionRig::FindSniffSpot(')
+def check_sniff_source(body):
+    """FindSniffSpot's body reads QuebecVegetation and the street-tree actors: it names the NordStreetTree tag (a
+    TEXT literal or a static FName made from one), checks it with ActorHasTag, and reads their instanced trees through
+    GetInstancesOverlappingSphere. At each dog pause it walks only the replica instance actors the apply step spawns
+    (AQuebecReplicaInstances), never every actor in the level."""
     assert 'TActorIterator<AQuebecVegetation>' in body, 'FindSniffSpot no longer reads QuebecVegetation'
-    assert re.search(r'ActorHasTag\(TEXT\("' + STREET_TREE_TAG + r'"\)\)', body), \
+    assert '"' + STREET_TREE_TAG + '"' in body and 'ActorHasTag(' in body, \
         'FindSniffSpot does not read the street-tree actors tagged ' + STREET_TREE_TAG
     assert 'UInstancedStaticMeshComponent' in body and 'GetInstancesOverlappingSphere' in body, \
         'FindSniffSpot does not read the tagged actors\' instanced trees'
+    assert not re.search(r'TActorIterator<\s*AActor\s*>', body), \
+        'FindSniffSpot walks every actor in the level at each dog pause'
+    assert 'TActorIterator<AQuebecReplicaInstances>' in body, 'FindSniffSpot does not walk the replica instance actors'
+
+
+SNIFF_FIXTURE = '''{
+    static const FName StreetTreeTag(TEXT("NordStreetTree"));
+    for (TActorIterator<AQuebecVegetation> It(GetWorld()); It; ++It) Nearest(It->Trees);
+    for (TActorIterator<AQuebecReplicaInstances> It(GetWorld()); It; ++It)
+        if (It->ActorHasTag(StreetTreeTag)) Nearest(It->Instances);   // UInstancedStaticMeshComponent
+    // Trees->GetInstancesOverlappingSphere(Near, 450.f, true)
+}'''
+
+
+def check_dog_sniffs_street_trees():
+    """The apply step clears the old summer trees. Dogs then find the species street trees through the actor tag
+    NordStreetTree: FindSniffSpot reads the instanced mesh components of the tagged replica instance actors, the apply
+    step tags its street-tree actors, and the README host checks name the tag. A body written with a static FName
+    passes; one that walks every actor (TActorIterator<AActor>) fails."""
+    check_sniff_source(SNIFF_FIXTURE)
+    for bad, why in ((SNIFF_FIXTURE.replace('TActorIterator<AQuebecReplicaInstances>', 'TActorIterator<AActor>'),
+                      'walks every actor'),
+                     (SNIFF_FIXTURE.replace('NordStreetTree', 'StreetTree'), 'another tag'),
+                     (SNIFF_FIXTURE.replace('ActorHasTag', 'Tags.Num'), 'no tag check')):
+        try:
+            check_sniff_source(bad)
+        except AssertionError:
+            continue
+        raise AssertionError('accepted a FindSniffSpot that ' + why)
+    body = function_body((ROOT / 'Source/Quebec/QuebecLife.cpp').read_text(), 'UQuebecCompanionRig::FindSniffSpot(')
+    check_sniff_source(body)
     apply_source = (ROOT / 'Scripts/apply_plateau_replica.py').read_text()
     assert STREET_TREE_TAG in apply_source, 'apply_plateau_replica.py does not tag the street-tree actors'
     readme = (ROOT / 'Data/Plateau/ReplicaGeometry/README.md').read_text()
