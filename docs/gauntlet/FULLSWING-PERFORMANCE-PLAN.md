@@ -84,3 +84,6 @@ Increment54 shipped #672 as05750289 after freshall6CI/review/current8HUDdeployed
 
 
 Increment55 shipped #676 asd1867b18 after freshall6CI/review/current63deployedchecks/exactmain+ropebytes/rebase before AND afterpreview/exactmerge. Productionmain+rope HTTP200 exactbytes verified (hashes in r55-phone-finish/production-verification.json). Canonical phone-finish and ink-rope endpoint scenarios published and both changes archived. Shipped stale endpoint regression restored without changing physics/renderedink; layout fixture waits CSS fade completion, assertions unchanged. Concurrent NORD/buildingrope work preserved. ActualChrome/FPSbenefit unverified; totalwithheld.
+
+
+Increment56 shipped #679 as c4c37bd9 after all6CI/review/current46deployedchecks/exactfxbytes/rebase before AND afterpreview/exactmerge. Productionfx HTTP200 exactSHA3a67361da1a3e08fb75b31b3fcd65f890708e49f79dfb364a3347058a38e19f8 verified. Canonical comic-word upload scenarios published and OpenSpec archived. Initial full GPU allocation unchanged; actualChrome/FPSbenefit unverified; totalwithheld.
