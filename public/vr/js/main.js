@@ -187,7 +187,7 @@ function createWorld() {
   combat = G.combat = createCombat(city);
   cars = G.cars = createCars(city);
   jobs = G.jobs = createJobs({ city, combat, cars });
-  actionView = G.actionView = createActionView(scene, { cars, jobs, traffic: { cars: () => view.traffic && view.traffic(), hide: (i, on) => view.veilTraffic && view.veilTraffic(i, on) } });
+  actionView = G.actionView = createActionView(scene, { cars, jobs, traffic: { cars: () => view.traffic && view.traffic(TRAFFIC_DATA), hide: (i, on) => view.veilTraffic && view.veilTraffic(i, on) } });
   actHud = G.actHud = createActionHud();
   ropes = G.ropes = createRopes(scene, city, settings);
   ensureWeb(); // the easy web's world-space line, compiled with the city so the first swing does not hitch
@@ -398,6 +398,7 @@ function cutsceneFrame(dt, inp) {
 }
 // The people on the sidewalks: they walk on round the player, and see the hero (in play only). The murmur follows them.
 const CAMW = new THREE.Vector3();
+const TRAFFIC_DATA = {};
 const ACTION_VIEW_OPTIONS = { markers: true, cam: CAMW };
 const STREET_HAZARDS = [];
 const HERO_SEEN = { x: 0, y: 0, z: 0, vx: 0, vy: 0, vz: 0, onGround: false };
@@ -600,7 +601,7 @@ function enterCar(c) {
 }
 // Car theft: the street car in reach of the hero (on the ground, or just above it, off the walls), from the traffic shader's lanes
 function canSteal() { return !P.wall && (P.onGround || P.pos.y < CAR.stealUp); }
-function trafficNear() { return canSteal() ? nearTraffic(view.traffic && view.traffic(), P.pos.x, P.pos.z, G.time) : null; }
+function trafficNear() { return canSteal() ? nearTraffic(view.traffic && view.traffic(TRAFFIC_DATA), P.pos.x, P.pos.z, G.time) : null; }
 // the closest car in reach: { car } a parked one (or a stolen one left), { traffic } a street car, or null
 function carInReach() {
   const c = P.onGround && !P.wall ? cars.near(P.pos.x, P.pos.y, P.pos.z) : null, t = trafficNear();
@@ -674,7 +675,7 @@ function actionFrame(dt, inp) {
     DRIVE_IN.steer = -(inp.move.x || 0);
     DRIVE_IN.handbrake = !!inp.jumpHeld;
   }
-  TRAFFIC_IN.T = view.traffic ? view.traffic() : null; TRAFFIC_IN.t = G.time;
+  TRAFFIC_IN.T = view.traffic ? view.traffic(TRAFFIC_DATA) : null; TRAFFIC_IN.t = G.time;
   cars.update(dt, P.pos, driving ? DRIVE_IN : null, TRAFFIC_IN);
   const car = cars.driving;
   if (driving && car) {

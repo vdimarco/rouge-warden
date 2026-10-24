@@ -129,3 +129,6 @@ Increment63 pending — crowd height rejection before horizontal distance:240act
 
 
 Increment63 shipped #693 as a3710180 after all6CI/review/current5authenticatedbrowserchecks/exactstreetbytes/rebase before AND afterpreview/exactmerge. Productionstreet HTTP200 exactSHA20e474654fbd99fc37eafc02afc3abc77de05ce7d79641498983a715a1d51c89 verified. Canonical crowd-height scenarios published and OpenSpec archived. ActualChrome/FPSbenefit/listening unverified; totalwithheld.
+
+
+Increment64 pending — traffic wrapper optionaloutput/private runtime scratch60fresh→1 direct+street frames;4browser+actualaccessor null/replacementchecks+existingactionbrowserPASS. Evidence r64-traffic-record/all20limits/noFPSclaim/totalwithheld.
