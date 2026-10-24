@@ -9,24 +9,25 @@
   "crack_lines": 1055,
   "potholes": 77,
   "gutter_leaf_drifts": 1296,
-  "pit_leaf_covers": 836,
-  "loose_leaves": 3197,
-  "weed_tufts": 7901,
+  "pit_leaf_covers": 952,
+  "loose_leaves": 8785,
+  "weed_tufts": 8075,
   "rust_streaks": 2031,
-  "murals": 22,
+  "murals": 23,
   "chantier_zones": 1,
   "utility_poles": 151,
   "wire_spans": 79,
-  "laundry_lines": 478,
-  "curb_bins": 1695,
-  "locked_bikes": 225,
-  "flower_boxes": 247,
+  "laundry_lines": 477,
+  "curb_bins": 1570,
+  "locked_bikes": 209,
+  "flower_boxes": 229,
   "ac_units": 0,
+  "ruelle_gutter_leaf_drifts": 432,
   "ruelle_fence_weeds": 1430,
   "chantier_street": "Rue Fabre",
-  "laundry_poles": 323,
-  "garments": 2034,
-  "laundry_modules_without_room": 191,
+  "laundry_poles": 322,
+  "garments": 2067,
+  "laundry_modules_without_room": 195,
   "gallery_decks": 1510,
   "gallery_decks_lived": 1242,
   "gallery_props": 3778,
@@ -40,37 +41,39 @@
   "gallery_flower_box": 176,
   "gallery_satellite_dish": 14,
   "gallery_dishes_without_sky": 18,
-  "gate_bin_recycling": 255,
+  "gate_bin_recycling": 253,
   "gate_bin_compost": 186,
-  "gate_flower_box": 46,
+  "gate_flower_box": 43,
   "gate_bike_locked": 18,
-  "gate_props_lane_side": 251,
-  "gate_props_yard_side": 254,
-  "gate_props_without_room": 221,
+  "gate_props_lane_side": 250,
+  "gate_props_yard_side": 250,
+  "gate_props_without_room": 226,
   "ruelles_vertes_osm_ways": 27,
   "ruelles_vertes_ids": 14,
-  "green_bed_metres": 2231,
-  "green_plants": 3284,
-  "green_creeper_strips": 914,
+  "green_bed_metres": 2188,
+  "green_plants": 3231,
+  "green_creeper_strips": 886,
   "green_arches": 13,
   "green_entries_without_room": 1,
   "green_planters": 26,
   "green_grass_metres": 14,
-  "green_murals": 13,
-  "tags_fences": 27,
-  "tags_doors": 15,
-  "placements": 6621
+  "green_murals": 14,
+  "tags_fences": 17,
+  "tags_doors": 30,
+  "placements": 6457
  },
  "source_sha256": {
   "Data/LaFontaine/osm.xml": "fe4410d45007a627bf6d9b9ddeeae329fa9cdd7492dfb5fa6beff851e7cf8f86",
   "Data/LaFontaine/layout.json": "4238d6ed45d5fb890e0f8dbcb672de0803c6dc7079b0b6a86b386d82ebbb4250",
-  "Scripts/plateau_replica.py": "cc5c31b82c854ef8b91273994b795031bee2dbb16e4c097174d2b2986165d5c9",
+  "Scripts/plateau_replica.py": "9bf9aaa413dd9c15a6b0a73f0791fa811f977ded123fb09e1ae49730762cb20a",
   "Scripts/prepare_lafontaine.py": "e7b6e5f068a96ee7306b1fff247fa73158f5cf7c343dc5510ab8cce92ee3c924",
   "Data/Plateau/BaseGeometry/Marking.obj": "2d82cbca59041aa6af5e6f3fffaf6a01b2c3e672eea9732e8a5fecbb7cee35dd",
-  "Data/Plateau/ReplicaGeometry/Plex/fronts.json": "c572a535a248f94d70d6ec2237d9a89419eb98b2e5f209c4122aeda65d9db201",
+  "Data/Plateau/ReplicaGeometry/Plex/fronts.json": "0019455f9de6121473e16abbbcd64dee9a72f0ec5982e59bce9004f7d5ec0b31",
   "Data/Plateau/ReplicaGeometry/Soul/ruelles_vertes_clip.json": "6ca991f5b585f4f0567baed799c37db2d3476f451e0b88fdb315a959e2d7d216",
-  "Data/Plateau/ReplicaGeometry/Plex/manifest.json": "85603475766169d6ab94b74236d8a111822c4ca1b07c9a90cdcca8bb4d90c24b",
-  "Data/Plateau/ReplicaGeometry/Props/manifest.json": "92d3a4c8811dd7adf5d0ca51701d308e1373361a46a346737104247ecfd417da"
+  "Data/Plateau/ReplicaGeometry/Plex/manifest.json": "60e1268db766e6708dea6c349cfb0bd0b0350ed3435ee25b11a04a71645b469f",
+  "Data/Plateau/ReplicaGeometry/Props/manifest.json": "92d3a4c8811dd7adf5d0ca51701d308e1373361a46a346737104247ecfd417da",
+  "Data/Plateau/Inventory/trees_pmr.json": "78ee70b8165af47cdee11a56c9653b69a1543c42cf78ab618145441d756831c1",
+  "Data/Plateau/Inventory/trees_vm.json": "103be208d2135cbb989198a8b33cff081584a40792323fab2d2cd65ca2a8fc35"
  },
  "placements": [
   {
@@ -59305,7 +59308,7 @@
    "position": [
     50879.66,
     24151.64,
-    107.0
+    122.0
    ],
    "yaw": 237.19,
    "scale": 1.0,
@@ -59380,7 +59383,7 @@
    "position": [
     54996.96,
     50143.2,
-    92.0
+    122.0
    ],
    "yaw": 345.52,
    "scale": 1.0,
@@ -59543,9 +59546,9 @@
   {
    "prop": "flower_box",
    "position": [
-    -40150.72,
-    -45889.42,
-    92.0
+    -40213.82,
+    -45840.0,
+    122.0
    ],
    "yaw": 231.93,
    "scale": 1.0,
@@ -59590,7 +59593,7 @@
    "position": [
     -42451.63,
     -37365.98,
-    107.0
+    92.0
    ],
    "yaw": 236.62,
    "scale": 1.0,
@@ -59733,36 +59736,6 @@
    "collision": false,
    "ground": "given",
    "gate_of": "355861240",
-   "side": "yard"
-  },
-  {
-   "prop": "bin_recycling",
-   "position": [
-    -35108.73,
-    -23805.39,
-    1.0
-   ],
-   "yaw": 326.77,
-   "scale": 1.0,
-   "variant_seed": 591187,
-   "collision": false,
-   "ground": "given",
-   "gate_of": "355861243",
-   "side": "yard"
-  },
-  {
-   "prop": "bin_recycling",
-   "position": [
-    -34327.78,
-    -22599.3,
-    1.8
-   ],
-   "yaw": 322.16,
-   "scale": 1.0,
-   "variant_seed": 259384,
-   "collision": false,
-   "ground": "given",
-   "gate_of": "355863260",
    "side": "yard"
   },
   {
@@ -59920,7 +59893,7 @@
    "position": [
     8926.18,
     -40124.3,
-    1.4
+    0.0
    ],
    "yaw": 236.76,
    "scale": 1.0,
@@ -60188,36 +60161,6 @@
   {
    "prop": "bin_recycling",
    "position": [
-    -4402.66,
-    -31423.9,
-    1.0
-   ],
-   "yaw": 237.51,
-   "scale": 1.0,
-   "variant_seed": 969049,
-   "collision": false,
-   "ground": "given",
-   "gate_of": "356234633",
-   "side": "yard"
-  },
-  {
-   "prop": "bin_compost",
-   "position": [
-    -4336.9,
-    -31441.95,
-    1.0
-   ],
-   "yaw": 237.51,
-   "scale": 1.0,
-   "variant_seed": 920526,
-   "collision": false,
-   "ground": "given",
-   "gate_of": "356234633",
-   "side": "yard"
-  },
-  {
-   "prop": "bin_recycling",
-   "position": [
     -6250.03,
     -30227.03,
     1.0
@@ -60353,6 +60296,36 @@
   {
    "prop": "bin_recycling",
    "position": [
+    -20477.05,
+    -20906.59,
+    1.0
+   ],
+   "yaw": 236.85,
+   "scale": 1.0,
+   "variant_seed": 309220,
+   "collision": false,
+   "ground": "given",
+   "gate_of": "356245005",
+   "side": "yard"
+  },
+  {
+   "prop": "bin_compost",
+   "position": [
+    -20520.24,
+    -20853.55,
+    1.0
+   ],
+   "yaw": 236.85,
+   "scale": 1.0,
+   "variant_seed": 48522,
+   "collision": false,
+   "ground": "given",
+   "gate_of": "356245005",
+   "side": "yard"
+  },
+  {
+   "prop": "bin_recycling",
+   "position": [
     -22581.13,
     -19522.25,
     1.4
@@ -60443,8 +60416,8 @@
   {
    "prop": "bin_recycling",
    "position": [
-    -38081.94,
-    -8685.23,
+    -38073.22,
+    -8690.89,
     0.0
    ],
    "yaw": 237.03,
@@ -60608,8 +60581,8 @@
   {
    "prop": "bin_recycling",
    "position": [
-    -12112.27,
-    -25584.7,
+    -11941.83,
+    -25696.84,
     1.4
    ],
    "yaw": 57.45,
@@ -60623,8 +60596,8 @@
   {
    "prop": "bin_compost",
    "position": [
-    -12177.82,
-    -25566.28,
+    -11898.3,
+    -25749.74,
     1.4
    ],
    "yaw": 57.45,
@@ -60653,8 +60626,8 @@
   {
    "prop": "bin_recycling",
    "position": [
-    512.04,
-    -24744.26,
+    340.83,
+    -24633.33,
     1.4
    ],
    "yaw": 237.2,
@@ -60893,8 +60866,8 @@
   {
    "prop": "bin_recycling",
    "position": [
-    -39348.03,
-    18349.72,
+    -39519.5,
+    18460.23,
     6.8
    ],
    "yaw": 57.2,
@@ -60908,8 +60881,8 @@
   {
    "prop": "bin_compost",
    "position": [
-    -39304.39,
-    18297.15,
+    -39364.91,
+    18336.15,
     6.8
    ],
    "yaw": 57.2,
@@ -60953,13 +60926,28 @@
   {
    "prop": "bin_recycling",
    "position": [
-    -36731.02,
-    16710.53,
+    -36902.15,
+    16821.58,
     6.8
    ],
    "yaw": 57.02,
    "scale": 1.0,
    "variant_seed": 156310,
+   "collision": false,
+   "ground": "given",
+   "gate_of": "356650952",
+   "side": "lane"
+  },
+  {
+   "prop": "flower_box",
+   "position": [
+    -37037.6,
+    16869.49,
+    49.0
+   ],
+   "yaw": 57.02,
+   "scale": 1.0,
+   "variant_seed": 295080,
    "collision": false,
    "ground": "given",
    "gate_of": "356650952",
@@ -61495,7 +61483,7 @@
    "position": [
     -36538.05,
     25991.88,
-    92.0
+    122.0
    ],
    "yaw": 237.86,
    "scale": 1.0,
@@ -61553,21 +61541,6 @@
   {
    "prop": "flower_box",
    "position": [
-    -41459.31,
-    29224.77,
-    49.0
-   ],
-   "yaw": 236.88,
-   "scale": 1.0,
-   "variant_seed": 786576,
-   "collision": false,
-   "ground": "given",
-   "gate_of": "356742228",
-   "side": "lane"
-  },
-  {
-   "prop": "flower_box",
-   "position": [
     -41661.44,
     37475.95,
     122.0
@@ -61598,8 +61571,8 @@
   {
    "prop": "flower_box",
    "position": [
-    -41081.65,
-    37091.66,
+    -41079.97,
+    37090.57,
     49.0
    ],
    "yaw": 57.06,
@@ -61628,8 +61601,8 @@
   {
    "prop": "flower_box",
    "position": [
-    -39671.51,
-    36165.61,
+    -39983.95,
+    36371.85,
     49.0
    ],
    "yaw": 56.57,
@@ -61643,8 +61616,8 @@
   {
    "prop": "bin_recycling",
    "position": [
-    -38340.77,
-    35329.02,
+    -38510.38,
+    35442.36,
     6.8
    ],
    "yaw": 56.25,
@@ -61701,21 +61674,6 @@
    "side": "lane"
   },
   {
-   "prop": "flower_box",
-   "position": [
-    -35819.51,
-    33637.3,
-    49.0
-   ],
-   "yaw": 56.6,
-   "scale": 1.0,
-   "variant_seed": 477239,
-   "collision": false,
-   "ground": "given",
-   "gate_of": "357922912",
-   "side": "lane"
-  },
-  {
    "prop": "bin_compost",
    "position": [
     -35238.89,
@@ -61733,8 +61691,8 @@
   {
    "prop": "bin_recycling",
    "position": [
-    -33385.84,
-    32079.25,
+    -33215.78,
+    31966.57,
     6.8
    ],
    "yaw": 56.47,
@@ -61930,7 +61888,7 @@
    "position": [
     -32937.61,
     32418.35,
-    107.0
+    92.0
    ],
    "yaw": 235.52,
    "scale": 1.0,
@@ -62198,21 +62156,6 @@
   {
    "prop": "bin_recycling",
    "position": [
-    -29977.62,
-    37286.85,
-    1.0
-   ],
-   "yaw": 236.59,
-   "scale": 1.0,
-   "variant_seed": 823049,
-   "collision": false,
-   "ground": "given",
-   "gate_of": "357948923",
-   "side": "yard"
-  },
-  {
-   "prop": "bin_recycling",
-   "position": [
     -27704.0,
     35795.09,
     1.4
@@ -62268,6 +62211,21 @@
    "collision": false,
    "ground": "given",
    "gate_of": "357949985",
+   "side": "yard"
+  },
+  {
+   "prop": "bin_compost",
+   "position": [
+    -22476.97,
+    33166.07,
+    1.4
+   ],
+   "yaw": 56.78,
+   "scale": 1.0,
+   "variant_seed": 450095,
+   "collision": false,
+   "ground": "given",
+   "gate_of": "357950172",
    "side": "yard"
   },
   {
@@ -62573,8 +62531,8 @@
   {
    "prop": "bin_compost",
    "position": [
-    -20605.96,
-    39519.14,
+    -20446.88,
+    39414.64,
     1.4
    ],
    "yaw": 237.26,
@@ -62661,21 +62619,6 @@
    "side": "yard"
   },
   {
-   "prop": "bin_compost",
-   "position": [
-    -21878.87,
-    41131.05,
-    2.0
-   ],
-   "yaw": 56.83,
-   "scale": 1.0,
-   "variant_seed": 594927,
-   "collision": false,
-   "ground": "given",
-   "gate_of": "358152039",
-   "side": "yard"
-  },
-  {
    "prop": "bin_recycling",
    "position": [
     -23081.63,
@@ -62718,6 +62661,21 @@
    "collision": false,
    "ground": "given",
    "gate_of": "358153763",
+   "side": "yard"
+  },
+  {
+   "prop": "bin_compost",
+   "position": [
+    -28912.18,
+    45751.56,
+    1.0
+   ],
+   "yaw": 56.99,
+   "scale": 1.0,
+   "variant_seed": 376823,
+   "collision": false,
+   "ground": "given",
+   "gate_of": "358153887",
    "side": "yard"
   },
   {
@@ -62770,7 +62728,7 @@
    "position": [
     -42473.04,
     54687.92,
-    92.0
+    122.0
    ],
    "yaw": 232.14,
    "scale": 1.0,
@@ -62783,32 +62741,32 @@
   {
    "prop": "bin_recycling",
    "position": [
-    -43110.04,
-    55174.35,
-    1.0
+    -42989.32,
+    54983.37,
+    6.8
    ],
-   "yaw": 57.75,
+   "yaw": 237.75,
    "scale": 1.0,
    "variant_seed": 51105,
    "collision": false,
    "ground": "given",
    "gate_of": "358155457",
-   "side": "yard"
+   "side": "lane"
   },
   {
    "prop": "bin_compost",
    "position": [
-    -43176.11,
-    55191.74,
-    1.0
+    -42923.25,
+    54965.98,
+    6.8
    ],
-   "yaw": 57.75,
+   "yaw": 237.75,
    "scale": 1.0,
    "variant_seed": 67897,
    "collision": false,
    "ground": "given",
    "gate_of": "358155457",
-   "side": "yard"
+   "side": "lane"
   },
   {
    "prop": "bin_recycling",
@@ -62858,9 +62816,9 @@
   {
    "prop": "flower_box",
    "position": [
-    -39188.82,
-    61832.2,
-    137.0
+    -39258.78,
+    61878.38,
+    92.0
    ],
    "yaw": 56.58,
    "scale": 1.0,
@@ -62873,8 +62831,8 @@
   {
    "prop": "bike_locked",
    "position": [
-    -39049.51,
-    61769.31,
+    -39119.48,
+    61815.49,
     6.8
    ],
    "yaw": 326.58,
@@ -63098,21 +63056,6 @@
   {
    "prop": "bin_recycling",
    "position": [
-    -15393.09,
-    46878.5,
-    1.4
-   ],
-   "yaw": 55.94,
-   "scale": 1.0,
-   "variant_seed": 693597,
-   "collision": false,
-   "ground": "given",
-   "gate_of": "358208850",
-   "side": "yard"
-  },
-  {
-   "prop": "bin_recycling",
-   "position": [
     -25781.01,
     53821.53,
     1.0
@@ -63128,8 +63071,8 @@
   {
    "prop": "bin_recycling",
    "position": [
-    -35342.28,
-    59888.28,
+    -35172.6,
+    59775.04,
     6.8
    ],
    "yaw": 236.28,
@@ -63263,9 +63206,9 @@
   {
    "prop": "flower_box",
    "position": [
-    -42603.7,
-    64775.58,
-    122.0
+    -42536.58,
+    64731.23,
+    92.0
    ],
    "yaw": 236.54,
    "scale": 1.0,
@@ -63623,8 +63566,8 @@
   {
    "prop": "bin_compost",
    "position": [
-    -14018.76,
-    55708.13,
+    -14177.9,
+    55812.53,
     1.8
    ],
    "yaw": 236.08,
@@ -63936,21 +63879,6 @@
    "side": "lane"
   },
   {
-   "prop": "flower_box",
-   "position": [
-    -8230.39,
-    62864.24,
-    92.0
-   ],
-   "yaw": 55.94,
-   "scale": 1.0,
-   "variant_seed": 685942,
-   "collision": false,
-   "ground": "given",
-   "gate_of": "358287995",
-   "side": "lane"
-  },
-  {
    "prop": "bin_recycling",
    "position": [
     -7711.06,
@@ -64013,8 +63941,8 @@
   {
    "prop": "bin_recycling",
    "position": [
-    -8127.4,
-    63423.17,
+    -8297.73,
+    63535.44,
     6.8
    ],
    "yaw": 236.61,
@@ -64143,6 +64071,21 @@
    "collision": false,
    "ground": "given",
    "gate_of": "359264590",
+   "side": "lane"
+  },
+  {
+   "prop": "bin_recycling",
+   "position": [
+    38123.62,
+    68155.62,
+    6.8
+   ],
+   "yaw": 55.77,
+   "scale": 1.0,
+   "variant_seed": 941368,
+   "collision": false,
+   "ground": "given",
+   "gate_of": "359264686",
    "side": "lane"
   },
   {
@@ -64555,7 +64498,7 @@
    "position": [
     45505.67,
     55816.5,
-    0.0
+    1.4
    ],
    "yaw": 57.58,
    "scale": 1.0,
@@ -64600,7 +64543,7 @@
    "position": [
     46168.0,
     53643.91,
-    93.0
+    123.0
    ],
    "yaw": 325.42,
    "scale": 1.0,
@@ -65515,7 +65458,7 @@
    "position": [
     38447.95,
     52326.16,
-    93.0
+    63.0
    ],
    "yaw": 236.52,
    "scale": 1.0,
@@ -65678,8 +65621,8 @@
   {
    "prop": "bin_compost",
    "position": [
-    20412.66,
-    64490.82,
+    20632.12,
+    64347.12,
     6.8
    ],
    "yaw": 56.78,
@@ -65693,9 +65636,9 @@
   {
    "prop": "flower_box",
    "position": [
-    20294.83,
-    64552.44,
-    92.0
+    20739.15,
+    64261.5,
+    62.0
    ],
    "yaw": 56.78,
    "scale": 1.0,
@@ -65888,8 +65831,8 @@
   {
    "prop": "bin_recycling",
    "position": [
-    14715.27,
-    68283.24,
+    14544.92,
+    68395.48,
     6.8
    ],
    "yaw": 56.62,
@@ -65925,21 +65868,6 @@
    "yaw": 58.03,
    "scale": 1.0,
    "variant_seed": 836150,
-   "collision": false,
-   "ground": "given",
-   "gate_of": "359314773",
-   "side": "lane"
-  },
-  {
-   "prop": "flower_box",
-   "position": [
-    14130.24,
-    68621.37,
-    49.0
-   ],
-   "yaw": 58.03,
-   "scale": 1.0,
-   "variant_seed": 96069,
    "collision": false,
    "ground": "given",
    "gate_of": "359314773",
@@ -66368,8 +66296,8 @@
   {
    "prop": "bin_recycling",
    "position": [
-    9822.0,
-    65312.16,
+    9936.27,
+    65481.16,
     6.8
    ],
    "yaw": 325.93,
@@ -66378,21 +66306,6 @@
    "collision": false,
    "ground": "given",
    "gate_of": "449259061",
-   "side": "lane"
-  },
-  {
-   "prop": "bin_compost",
-   "position": [
-    9496.84,
-    64878.2,
-    6.8
-   ],
-   "yaw": 324.98,
-   "scale": 1.0,
-   "variant_seed": 921960,
-   "collision": false,
-   "ground": "given",
-   "gate_of": "449259065",
    "side": "lane"
   },
   {
@@ -66488,6 +66401,21 @@
   {
    "prop": "bin_recycling",
    "position": [
+    -23014.49,
+    51972.57,
+    1.4
+   ],
+   "yaw": 56.62,
+   "scale": 1.0,
+   "variant_seed": 772114,
+   "collision": false,
+   "ground": "given",
+   "gate_of": "453796964",
+   "side": "yard"
+  },
+  {
+   "prop": "bin_recycling",
+   "position": [
     -22244.59,
     51458.93,
     1.4
@@ -66518,8 +66446,8 @@
   {
    "prop": "bin_recycling",
    "position": [
-    -21495.13,
-    50127.7,
+    -21664.74,
+    50241.06,
     1.4
    ],
    "yaw": 236.62,
@@ -66533,8 +66461,8 @@
   {
    "prop": "bin_compost",
    "position": [
-    -21647.72,
-    50254.46,
+    -21707.58,
+    50294.47,
     1.4
    ],
    "yaw": 236.62,
@@ -66548,8 +66476,8 @@
   {
    "prop": "bin_recycling",
    "position": [
-    -21075.23,
-    49844.91,
+    -21059.46,
+    49834.68,
     1.8
    ],
    "yaw": 237.01,
@@ -67748,20 +67676,6 @@
    "ground": "sidewalk"
   },
   {
-   "prop": "bike_locked",
-   "position": [
-    7245.78,
-    -42337.21,
-    18.0
-   ],
-   "yaw": 147.03,
-   "scale": 1.0,
-   "variant_seed": 981323,
-   "collision": false,
-   "ground": "sidewalk",
-   "locked_to": "parterre_fence"
-  },
-  {
    "prop": "bin_recycling",
    "position": [
     7549.76,
@@ -68144,32 +68058,6 @@
   {
    "prop": "bin_recycling",
    "position": [
-    3665.7,
-    -27609.68,
-    18.0
-   ],
-   "yaw": 322.09,
-   "scale": 1.0,
-   "variant_seed": 698202,
-   "collision": false,
-   "ground": "sidewalk"
-  },
-  {
-   "prop": "bin_compost",
-   "position": [
-    3706.3,
-    -27546.62,
-    18.0
-   ],
-   "yaw": 323.71,
-   "scale": 1.0,
-   "variant_seed": 23963,
-   "collision": false,
-   "ground": "sidewalk"
-  },
-  {
-   "prop": "bin_recycling",
-   "position": [
     4118.3,
     -26906.59,
     9.0
@@ -68261,45 +68149,6 @@
   {
    "prop": "bin_recycling",
    "position": [
-    5214.88,
-    -27375.76,
-    18.0
-   ],
-   "yaw": 149.52,
-   "scale": 1.0,
-   "variant_seed": 196689,
-   "collision": false,
-   "ground": "sidewalk"
-  },
-  {
-   "prop": "bin_compost",
-   "position": [
-    5174.28,
-    -27438.83,
-    18.0
-   ],
-   "yaw": 159.23,
-   "scale": 1.0,
-   "variant_seed": 712137,
-   "collision": false,
-   "ground": "sidewalk"
-  },
-  {
-   "prop": "bin_garbage",
-   "position": [
-    5133.68,
-    -27501.89,
-    18.0
-   ],
-   "yaw": 155.52,
-   "scale": 1.0,
-   "variant_seed": 531587,
-   "collision": false,
-   "ground": "sidewalk"
-  },
-  {
-   "prop": "bin_recycling",
-   "position": [
     4376.78,
     -28677.7,
     18.0
@@ -68372,19 +68221,6 @@
    "yaw": 157.2,
    "scale": 1.0,
    "variant_seed": 483362,
-   "collision": false,
-   "ground": "sidewalk"
-  },
-  {
-   "prop": "bin_recycling",
-   "position": [
-    -42616.27,
-    3122.43,
-    18.0
-   ],
-   "yaw": 47.79,
-   "scale": 1.0,
-   "variant_seed": 302666,
    "collision": false,
    "ground": "sidewalk"
   },
@@ -68599,32 +68435,6 @@
   {
    "prop": "bin_recycling",
    "position": [
-    -34918.77,
-    19463.39,
-    18.0
-   ],
-   "yaw": 43.04,
-   "scale": 1.0,
-   "variant_seed": 770364,
-   "collision": false,
-   "ground": "sidewalk"
-  },
-  {
-   "prop": "bin_compost",
-   "position": [
-    -34981.39,
-    19504.67,
-    18.0
-   ],
-   "yaw": 47.13,
-   "scale": 1.0,
-   "variant_seed": 332761,
-   "collision": false,
-   "ground": "sidewalk"
-  },
-  {
-   "prop": "bin_recycling",
-   "position": [
     -37206.82,
     20972.08,
     18.0
@@ -68632,19 +68442,6 @@
    "yaw": 52.51,
    "scale": 1.0,
    "variant_seed": 707859,
-   "collision": false,
-   "ground": "sidewalk"
-  },
-  {
-   "prop": "bin_recycling",
-   "position": [
-    -38055.43,
-    21531.65,
-    18.0
-   ],
-   "yaw": 50.97,
-   "scale": 1.0,
-   "variant_seed": 269427,
    "collision": false,
    "ground": "sidewalk"
   },
@@ -68700,19 +68497,6 @@
    "collision": false,
    "ground": "sidewalk",
    "locked_to": "parterre_fence"
-  },
-  {
-   "prop": "bin_recycling",
-   "position": [
-    -43034.81,
-    24814.95,
-    18.0
-   ],
-   "yaw": 43.53,
-   "scale": 1.0,
-   "variant_seed": 959207,
-   "collision": false,
-   "ground": "sidewalk"
   },
   {
    "prop": "bin_recycling",
@@ -69029,32 +68813,6 @@
   {
    "prop": "bin_recycling",
    "position": [
-    54764.41,
-    -35430.43,
-    18.0
-   ],
-   "yaw": 52.61,
-   "scale": 1.0,
-   "variant_seed": 657986,
-   "collision": false,
-   "ground": "sidewalk"
-  },
-  {
-   "prop": "bin_compost",
-   "position": [
-    54701.62,
-    -35389.43,
-    18.0
-   ],
-   "yaw": 52.1,
-   "scale": 1.0,
-   "variant_seed": 356885,
-   "collision": false,
-   "ground": "sidewalk"
-  },
-  {
-   "prop": "bin_recycling",
-   "position": [
     54287.94,
     -35119.33,
     18.0
@@ -69140,45 +68898,6 @@
    "yaw": 58.76,
    "scale": 1.0,
    "variant_seed": 576538,
-   "collision": false,
-   "ground": "sidewalk"
-  },
-  {
-   "prop": "bin_recycling",
-   "position": [
-    45944.58,
-    -29671.68,
-    18.0
-   ],
-   "yaw": 58.06,
-   "scale": 1.0,
-   "variant_seed": 756701,
-   "collision": false,
-   "ground": "sidewalk"
-  },
-  {
-   "prop": "bin_recycling",
-   "position": [
-    45221.72,
-    -29199.7,
-    18.0
-   ],
-   "yaw": 56.43,
-   "scale": 1.0,
-   "variant_seed": 930179,
-   "collision": false,
-   "ground": "sidewalk"
-  },
-  {
-   "prop": "bin_compost",
-   "position": [
-    45158.92,
-    -29158.69,
-    18.0
-   ],
-   "yaw": 47.78,
-   "scale": 1.0,
-   "variant_seed": 639500,
    "collision": false,
    "ground": "sidewalk"
   },
@@ -69495,19 +69214,6 @@
    "ground": "sidewalk"
   },
   {
-   "prop": "bin_recycling",
-   "position": [
-    55311.13,
-    -34372.01,
-    18.0
-   ],
-   "yaw": 231.63,
-   "scale": 1.0,
-   "variant_seed": 550789,
-   "collision": false,
-   "ground": "sidewalk"
-  },
-  {
    "prop": "flower_box",
    "position": [
     54784.52,
@@ -69770,19 +69476,6 @@
   {
    "prop": "bin_recycling",
    "position": [
-    -19181.29,
-    34951.62,
-    18.0
-   ],
-   "yaw": 234.37,
-   "scale": 1.0,
-   "variant_seed": 348489,
-   "collision": false,
-   "ground": "sidewalk"
-  },
-  {
-   "prop": "bin_recycling",
-   "position": [
     -21092.61,
     34912.56,
     18.0
@@ -69803,32 +69496,6 @@
    "yaw": 57.75,
    "scale": 1.0,
    "variant_seed": 690879,
-   "collision": false,
-   "ground": "sidewalk"
-  },
-  {
-   "prop": "bin_recycling",
-   "position": [
-    -22880.67,
-    36094.03,
-    18.0
-   ],
-   "yaw": 62.19,
-   "scale": 1.0,
-   "variant_seed": 432339,
-   "collision": false,
-   "ground": "sidewalk"
-  },
-  {
-   "prop": "bin_compost",
-   "position": [
-    -22943.25,
-    36135.37,
-    18.0
-   ],
-   "yaw": 67.11,
-   "scale": 1.0,
-   "variant_seed": 947793,
    "collision": false,
    "ground": "sidewalk"
   },
@@ -70107,45 +69774,6 @@
    "ground": "sidewalk"
   },
   {
-   "prop": "bin_recycling",
-   "position": [
-    -31845.18,
-    43352.52,
-    18.0
-   ],
-   "yaw": 232.49,
-   "scale": 1.0,
-   "variant_seed": 488425,
-   "collision": false,
-   "ground": "sidewalk"
-  },
-  {
-   "prop": "bin_compost",
-   "position": [
-    -31782.61,
-    43311.18,
-    18.0
-   ],
-   "yaw": 245.38,
-   "scale": 1.0,
-   "variant_seed": 339741,
-   "collision": false,
-   "ground": "sidewalk"
-  },
-  {
-   "prop": "bin_garbage",
-   "position": [
-    -31720.03,
-    43269.83,
-    18.0
-   ],
-   "yaw": 230.32,
-   "scale": 1.0,
-   "variant_seed": 675405,
-   "collision": false,
-   "ground": "sidewalk"
-  },
-  {
    "prop": "flower_box",
    "position": [
     -29738.67,
@@ -70276,19 +69904,6 @@
    "collision": false,
    "ground": "sidewalk",
    "locked_to": "parterre_fence"
-  },
-  {
-   "prop": "flower_box",
-   "position": [
-    -24666.71,
-    39070.63,
-    18.0
-   ],
-   "yaw": 236.55,
-   "scale": 1.0,
-   "variant_seed": 247331,
-   "collision": false,
-   "ground": "yard"
   },
   {
    "prop": "bin_recycling",
@@ -72563,32 +72178,6 @@
   {
    "prop": "bin_recycling",
    "position": [
-    -27935.7,
-    25265.01,
-    18.0
-   ],
-   "yaw": 226.03,
-   "scale": 1.0,
-   "variant_seed": 914642,
-   "collision": false,
-   "ground": "sidewalk"
-  },
-  {
-   "prop": "bin_compost",
-   "position": [
-    -27873.03,
-    25223.81,
-    18.0
-   ],
-   "yaw": 228.55,
-   "scale": 1.0,
-   "variant_seed": 212553,
-   "collision": false,
-   "ground": "sidewalk"
-  },
-  {
-   "prop": "bin_recycling",
-   "position": [
     -26099.87,
     24058.06,
     18.0
@@ -72875,45 +72464,6 @@
   {
    "prop": "bin_recycling",
    "position": [
-    -27350.98,
-    58914.49,
-    18.0
-   ],
-   "yaw": 48.13,
-   "scale": 1.0,
-   "variant_seed": 408091,
-   "collision": false,
-   "ground": "sidewalk"
-  },
-  {
-   "prop": "bin_recycling",
-   "position": [
-    -26722.4,
-    60059.77,
-    18.0
-   ],
-   "yaw": 245.66,
-   "scale": 1.0,
-   "variant_seed": 600644,
-   "collision": false,
-   "ground": "sidewalk"
-  },
-  {
-   "prop": "bin_compost",
-   "position": [
-    -26659.97,
-    60018.2,
-    18.0
-   ],
-   "yaw": 242.22,
-   "scale": 1.0,
-   "variant_seed": 212550,
-   "collision": false,
-   "ground": "sidewalk"
-  },
-  {
-   "prop": "bin_recycling",
-   "position": [
     -24411.5,
     58520.95,
     18.0
@@ -72953,45 +72503,6 @@
   {
    "prop": "bin_recycling",
    "position": [
-    -22409.98,
-    57188.14,
-    18.0
-   ],
-   "yaw": 236.78,
-   "scale": 1.0,
-   "variant_seed": 406498,
-   "collision": false,
-   "ground": "sidewalk"
-  },
-  {
-   "prop": "bin_compost",
-   "position": [
-    -22347.56,
-    57146.57,
-    18.0
-   ],
-   "yaw": 227.27,
-   "scale": 1.0,
-   "variant_seed": 273622,
-   "collision": false,
-   "ground": "sidewalk"
-  },
-  {
-   "prop": "bin_recycling",
-   "position": [
-    -21636.66,
-    56673.19,
-    18.0
-   ],
-   "yaw": 235.1,
-   "scale": 1.0,
-   "variant_seed": 531997,
-   "collision": false,
-   "ground": "sidewalk"
-  },
-  {
-   "prop": "bin_recycling",
-   "position": [
     -20577.83,
     55968.12,
     18.0
@@ -73016,19 +72527,6 @@
    "ground": "sidewalk"
   },
   {
-   "prop": "flower_box",
-   "position": [
-    -19806.78,
-    55846.39,
-    18.0
-   ],
-   "yaw": 236.43,
-   "scale": 1.0,
-   "variant_seed": 200152,
-   "collision": false,
-   "ground": "yard"
-  },
-  {
    "prop": "bin_recycling",
    "position": [
     -18540.09,
@@ -73040,58 +72538,6 @@
    "variant_seed": 115189,
    "collision": false,
    "ground": "sidewalk"
-  },
-  {
-   "prop": "flower_box",
-   "position": [
-    -16497.46,
-    53686.91,
-    18.0
-   ],
-   "yaw": 236.43,
-   "scale": 1.0,
-   "variant_seed": 164007,
-   "collision": false,
-   "ground": "yard"
-  },
-  {
-   "prop": "bin_recycling",
-   "position": [
-    -15912.75,
-    52861.66,
-    18.0
-   ],
-   "yaw": 236.04,
-   "scale": 1.0,
-   "variant_seed": 24943,
-   "collision": false,
-   "ground": "sidewalk"
-  },
-  {
-   "prop": "bin_compost",
-   "position": [
-    -15850.32,
-    52820.09,
-    18.0
-   ],
-   "yaw": 231.43,
-   "scale": 1.0,
-   "variant_seed": 230436,
-   "collision": false,
-   "ground": "sidewalk"
-  },
-  {
-   "prop": "flower_box",
-   "position": [
-    -15901.46,
-    53280.72,
-    18.0
-   ],
-   "yaw": 236.43,
-   "scale": 1.0,
-   "variant_seed": 248058,
-   "collision": false,
-   "ground": "yard"
   },
   {
    "prop": "flower_box",
@@ -73168,19 +72614,6 @@
    "yaw": 243.02,
    "scale": 1.0,
    "variant_seed": 109347,
-   "collision": false,
-   "ground": "sidewalk"
-  },
-  {
-   "prop": "bin_recycling",
-   "position": [
-    -12724.29,
-    50738.47,
-    18.0
-   ],
-   "yaw": 230.9,
-   "scale": 1.0,
-   "variant_seed": 617891,
    "collision": false,
    "ground": "sidewalk"
   },
@@ -73503,32 +72936,6 @@
   {
    "prop": "bin_recycling",
    "position": [
-    -30233.7,
-    -8819.0,
-    18.0
-   ],
-   "yaw": 228.52,
-   "scale": 1.0,
-   "variant_seed": 511499,
-   "collision": false,
-   "ground": "sidewalk"
-  },
-  {
-   "prop": "bin_compost",
-   "position": [
-    -30170.83,
-    -8859.88,
-    18.0
-   ],
-   "yaw": 244.49,
-   "scale": 1.0,
-   "variant_seed": 562391,
-   "collision": false,
-   "ground": "sidewalk"
-  },
-  {
-   "prop": "bin_recycling",
-   "position": [
     -29184.9,
     -9500.9,
     18.0
@@ -73722,19 +73129,6 @@
    "ground": "yard"
   },
   {
-   "prop": "flower_box",
-   "position": [
-    -38566.6,
-    -5102.99,
-    18.0
-   ],
-   "yaw": 56.97,
-   "scale": 1.0,
-   "variant_seed": 66846,
-   "collision": false,
-   "ground": "yard"
-  },
-  {
    "prop": "bin_recycling",
    "position": [
     -39261.03,
@@ -73796,32 +73190,6 @@
    "yaw": 66.6,
    "scale": 1.0,
    "variant_seed": 672090,
-   "collision": false,
-   "ground": "sidewalk"
-  },
-  {
-   "prop": "bin_recycling",
-   "position": [
-    -23334.84,
-    -13304.9,
-    18.0
-   ],
-   "yaw": 230.0,
-   "scale": 1.0,
-   "variant_seed": 655951,
-   "collision": false,
-   "ground": "sidewalk"
-  },
-  {
-   "prop": "bin_garbage",
-   "position": [
-    -23271.97,
-    -13345.8,
-    18.0
-   ],
-   "yaw": 224.98,
-   "scale": 1.0,
-   "variant_seed": 745278,
    "collision": false,
    "ground": "sidewalk"
   },
@@ -73893,19 +73261,6 @@
   {
    "prop": "bin_recycling",
    "position": [
-    -20232.84,
-    -15323.28,
-    18.0
-   ],
-   "yaw": 244.04,
-   "scale": 1.0,
-   "variant_seed": 959649,
-   "collision": false,
-   "ground": "sidewalk"
-  },
-  {
-   "prop": "bin_recycling",
-   "position": [
     -19622.28,
     -15720.56,
     18.0
@@ -73955,32 +73310,6 @@
    "variant_seed": 439452,
    "collision": false,
    "ground": "yard"
-  },
-  {
-   "prop": "bin_recycling",
-   "position": [
-    -18249.83,
-    -16613.57,
-    18.0
-   ],
-   "yaw": 238.05,
-   "scale": 1.0,
-   "variant_seed": 525109,
-   "collision": false,
-   "ground": "sidewalk"
-  },
-  {
-   "prop": "bin_compost",
-   "position": [
-    -18186.97,
-    -16654.47,
-    18.0
-   ],
-   "yaw": 240.0,
-   "scale": 1.0,
-   "variant_seed": 635119,
-   "collision": false,
-   "ground": "sidewalk"
   },
   {
    "prop": "flower_box",
@@ -74319,32 +73648,6 @@
    "variant_seed": 867200,
    "collision": false,
    "ground": "sidewalk"
-  },
-  {
-   "prop": "bin_recycling",
-   "position": [
-    -9849.73,
-    -22093.39,
-    18.0
-   ],
-   "yaw": 229.57,
-   "scale": 1.0,
-   "variant_seed": 939252,
-   "collision": false,
-   "ground": "sidewalk"
-  },
-  {
-   "prop": "flower_box",
-   "position": [
-    -9855.96,
-    -21533.78,
-    18.0
-   ],
-   "yaw": 236.79,
-   "scale": 1.0,
-   "variant_seed": 932931,
-   "collision": false,
-   "ground": "yard"
   },
   {
    "prop": "bin_recycling",
@@ -74779,58 +74082,6 @@
   {
    "prop": "bin_recycling",
    "position": [
-    12099.73,
-    -36386.47,
-    18.0
-   ],
-   "yaw": 231.71,
-   "scale": 1.0,
-   "variant_seed": 56973,
-   "collision": false,
-   "ground": "sidewalk"
-  },
-  {
-   "prop": "bin_recycling",
-   "position": [
-    13911.47,
-    -37566.74,
-    18.0
-   ],
-   "yaw": 244.99,
-   "scale": 1.0,
-   "variant_seed": 421174,
-   "collision": false,
-   "ground": "sidewalk"
-  },
-  {
-   "prop": "bin_compost",
-   "position": [
-    13974.31,
-    -37607.67,
-    18.0
-   ],
-   "yaw": 226.06,
-   "scale": 1.0,
-   "variant_seed": 346656,
-   "collision": false,
-   "ground": "sidewalk"
-  },
-  {
-   "prop": "flower_box",
-   "position": [
-    13915.26,
-    -37301.31,
-    18.0
-   ],
-   "yaw": 236.92,
-   "scale": 1.0,
-   "variant_seed": 324443,
-   "collision": false,
-   "ground": "yard"
-  },
-  {
-   "prop": "bin_recycling",
-   "position": [
     15369.66,
     -38516.68,
     18.0
@@ -74935,19 +74186,6 @@
   {
    "prop": "bin_recycling",
    "position": [
-    18553.39,
-    -41994.26,
-    18.0
-   ],
-   "yaw": 56.98,
-   "scale": 1.0,
-   "variant_seed": 275002,
-   "collision": false,
-   "ground": "sidewalk"
-  },
-  {
-   "prop": "bin_recycling",
-   "position": [
     17705.41,
     -41441.84,
     18.0
@@ -74968,32 +74206,6 @@
    "yaw": 47.27,
    "scale": 1.0,
    "variant_seed": 299134,
-   "collision": false,
-   "ground": "sidewalk"
-  },
-  {
-   "prop": "bin_recycling",
-   "position": [
-    17028.61,
-    -41000.94,
-    18.0
-   ],
-   "yaw": 49.19,
-   "scale": 1.0,
-   "variant_seed": 358000,
-   "collision": false,
-   "ground": "sidewalk"
-  },
-  {
-   "prop": "bin_compost",
-   "position": [
-    16965.77,
-    -40960.0,
-    18.0
-   ],
-   "yaw": 67.07,
-   "scale": 1.0,
-   "variant_seed": 53872,
    "collision": false,
    "ground": "sidewalk"
   },
@@ -75039,46 +74251,6 @@
   {
    "prop": "bin_recycling",
    "position": [
-    15271.16,
-    -39856.04,
-    18.0
-   ],
-   "yaw": 68.37,
-   "scale": 1.0,
-   "variant_seed": 274746,
-   "collision": false,
-   "ground": "sidewalk"
-  },
-  {
-   "prop": "bike_locked",
-   "position": [
-    12746.58,
-    -38362.68,
-    18.0
-   ],
-   "yaw": 326.92,
-   "scale": 1.0,
-   "variant_seed": 139563,
-   "collision": false,
-   "ground": "sidewalk",
-   "locked_to": "parterre_fence"
-  },
-  {
-   "prop": "flower_box",
-   "position": [
-    12521.17,
-    -38650.35,
-    18.0
-   ],
-   "yaw": 56.92,
-   "scale": 1.0,
-   "variant_seed": 791033,
-   "collision": false,
-   "ground": "yard"
-  },
-  {
-   "prop": "bin_recycling",
-   "position": [
     11910.58,
     -37666.79,
     18.0
@@ -75118,86 +74290,6 @@
   {
    "prop": "bin_recycling",
    "position": [
-    11462.5,
-    -37374.88,
-    18.0
-   ],
-   "yaw": 64.41,
-   "scale": 1.0,
-   "variant_seed": 453942,
-   "collision": false,
-   "ground": "sidewalk"
-  },
-  {
-   "prop": "bin_compost",
-   "position": [
-    11399.66,
-    -37333.94,
-    18.0
-   ],
-   "yaw": 62.92,
-   "scale": 1.0,
-   "variant_seed": 706003,
-   "collision": false,
-   "ground": "sidewalk"
-  },
-  {
-   "prop": "bike_locked",
-   "position": [
-    11140.33,
-    -37316.29,
-    18.0
-   ],
-   "yaw": 326.92,
-   "scale": 1.0,
-   "variant_seed": 921458,
-   "collision": false,
-   "ground": "sidewalk",
-   "locked_to": "parterre_fence"
-  },
-  {
-   "prop": "bin_recycling",
-   "position": [
-    10576.71,
-    -36797.83,
-    18.0
-   ],
-   "yaw": 55.52,
-   "scale": 1.0,
-   "variant_seed": 56973,
-   "collision": false,
-   "ground": "sidewalk"
-  },
-  {
-   "prop": "bin_compost",
-   "position": [
-    10513.87,
-    -36756.89,
-    18.0
-   ],
-   "yaw": 47.59,
-   "scale": 1.0,
-   "variant_seed": 989330,
-   "collision": false,
-   "ground": "sidewalk"
-  },
-  {
-   "prop": "bike_locked",
-   "position": [
-    10378.62,
-    -36820.07,
-    18.0
-   ],
-   "yaw": 326.92,
-   "scale": 1.0,
-   "variant_seed": 965827,
-   "collision": false,
-   "ground": "sidewalk",
-   "locked_to": "parterre_fence"
-  },
-  {
-   "prop": "bin_recycling",
-   "position": [
     10048.6,
     -36453.79,
     18.0
@@ -75205,32 +74297,6 @@
    "yaw": 63.82,
    "scale": 1.0,
    "variant_seed": 673166,
-   "collision": false,
-   "ground": "sidewalk"
-  },
-  {
-   "prop": "bin_recycling",
-   "position": [
-    9359.04,
-    -36004.58,
-    18.0
-   ],
-   "yaw": 59.9,
-   "scale": 1.0,
-   "variant_seed": 509971,
-   "collision": false,
-   "ground": "sidewalk"
-  },
-  {
-   "prop": "bin_compost",
-   "position": [
-    9296.2,
-    -35963.64,
-    18.0
-   ],
-   "yaw": 67.65,
-   "scale": 1.0,
-   "variant_seed": 231358,
    "collision": false,
    "ground": "sidewalk"
   },
@@ -75248,136 +74314,6 @@
    "ground": "sidewalk"
   },
   {
-   "prop": "bin_recycling",
-   "position": [
-    6890.93,
-    -34396.72,
-    18.0
-   ],
-   "yaw": 49.27,
-   "scale": 1.0,
-   "variant_seed": 77953,
-   "collision": false,
-   "ground": "sidewalk"
-  },
-  {
-   "prop": "bin_compost",
-   "position": [
-    6828.08,
-    -34355.78,
-    18.0
-   ],
-   "yaw": 63.52,
-   "scale": 1.0,
-   "variant_seed": 544055,
-   "collision": false,
-   "ground": "sidewalk"
-  },
-  {
-   "prop": "bin_recycling",
-   "position": [
-    5692.69,
-    -33616.12,
-    18.0
-   ],
-   "yaw": 67.25,
-   "scale": 1.0,
-   "variant_seed": 378116,
-   "collision": false,
-   "ground": "sidewalk"
-  },
-  {
-   "prop": "bin_compost",
-   "position": [
-    5629.85,
-    -33575.19,
-    18.0
-   ],
-   "yaw": 54.64,
-   "scale": 1.0,
-   "variant_seed": 994189,
-   "collision": false,
-   "ground": "sidewalk"
-  },
-  {
-   "prop": "bin_recycling",
-   "position": [
-    4140.99,
-    -32605.26,
-    18.0
-   ],
-   "yaw": 65.74,
-   "scale": 1.0,
-   "variant_seed": 228974,
-   "collision": false,
-   "ground": "sidewalk"
-  },
-  {
-   "prop": "bin_compost",
-   "position": [
-    4078.14,
-    -32564.32,
-    18.0
-   ],
-   "yaw": 50.13,
-   "scale": 1.0,
-   "variant_seed": 696955,
-   "collision": false,
-   "ground": "sidewalk"
-  },
-  {
-   "prop": "bin_garbage",
-   "position": [
-    4015.3,
-    -32523.39,
-    18.0
-   ],
-   "yaw": 44.95,
-   "scale": 1.0,
-   "variant_seed": 832873,
-   "collision": false,
-   "ground": "sidewalk"
-  },
-  {
-   "prop": "flower_box",
-   "position": [
-    4194.4,
-    -32977.01,
-    18.0
-   ],
-   "yaw": 56.92,
-   "scale": 1.0,
-   "variant_seed": 540994,
-   "collision": false,
-   "ground": "yard"
-  },
-  {
-   "prop": "bin_recycling",
-   "position": [
-    3614.49,
-    -32262.27,
-    18.0
-   ],
-   "yaw": 57.62,
-   "scale": 1.0,
-   "variant_seed": 183120,
-   "collision": false,
-   "ground": "sidewalk"
-  },
-  {
-   "prop": "bin_compost",
-   "position": [
-    3551.64,
-    -32221.34,
-    18.0
-   ],
-   "yaw": 62.87,
-   "scale": 1.0,
-   "variant_seed": 639881,
-   "collision": false,
-   "ground": "sidewalk"
-  },
-  {
    "prop": "flower_box",
    "position": [
     -7780.43,
@@ -75389,45 +74325,6 @@
    "variant_seed": 794370,
    "collision": false,
    "ground": "yard"
-  },
-  {
-   "prop": "bin_recycling",
-   "position": [
-    -7248.97,
-    -40911.3,
-    18.0
-   ],
-   "yaw": 320.59,
-   "scale": 1.0,
-   "variant_seed": 60141,
-   "collision": false,
-   "ground": "sidewalk"
-  },
-  {
-   "prop": "bin_compost",
-   "position": [
-    -7209.65,
-    -40847.43,
-    18.0
-   ],
-   "yaw": 331.29,
-   "scale": 1.0,
-   "variant_seed": 495519,
-   "collision": false,
-   "ground": "sidewalk"
-  },
-  {
-   "prop": "bin_garbage",
-   "position": [
-    -7170.32,
-    -40783.57,
-    18.0
-   ],
-   "yaw": 330.8,
-   "scale": 1.0,
-   "variant_seed": 34895,
-   "collision": false,
-   "ground": "sidewalk"
   },
   {
    "prop": "bin_recycling",
@@ -75692,19 +74589,6 @@
    "ground": "yard"
   },
   {
-   "prop": "bin_recycling",
-   "position": [
-    -30470.47,
-    56864.4,
-    18.0
-   ],
-   "yaw": 156.36,
-   "scale": 1.0,
-   "variant_seed": 227355,
-   "collision": false,
-   "ground": "sidewalk"
-  },
-  {
    "prop": "flower_box",
    "position": [
     -30875.14,
@@ -75718,19 +74602,6 @@
    "ground": "yard"
   },
   {
-   "prop": "bin_recycling",
-   "position": [
-    -31601.06,
-    55161.27,
-    18.0
-   ],
-   "yaw": 146.78,
-   "scale": 1.0,
-   "variant_seed": 956359,
-   "collision": false,
-   "ground": "sidewalk"
-  },
-  {
    "prop": "flower_box",
    "position": [
     -31639.18,
@@ -75742,20 +74613,6 @@
    "variant_seed": 842961,
    "collision": false,
    "ground": "yard"
-  },
-  {
-   "prop": "bike_locked",
-   "position": [
-    -33145.67,
-    55461.2,
-    18.0
-   ],
-   "yaw": 236.42,
-   "scale": 1.0,
-   "variant_seed": 429335,
-   "collision": false,
-   "ground": "sidewalk",
-   "locked_to": "parterre_fence"
   },
   {
    "prop": "flower_box",
@@ -76109,32 +74966,6 @@
    "variant_seed": 178489,
    "collision": false,
    "ground": "yard"
-  },
-  {
-   "prop": "bin_recycling",
-   "position": [
-    -39943.57,
-    44856.77,
-    18.0
-   ],
-   "yaw": 330.84,
-   "scale": 1.0,
-   "variant_seed": 290001,
-   "collision": false,
-   "ground": "sidewalk"
-  },
-  {
-   "prop": "bin_compost",
-   "position": [
-    -39902.53,
-    44919.55,
-    18.0
-   ],
-   "yaw": 320.56,
-   "scale": 1.0,
-   "variant_seed": 689520,
-   "collision": false,
-   "ground": "sidewalk"
   },
   {
    "prop": "bin_recycling",
@@ -76607,19 +75438,6 @@
   {
    "prop": "bin_recycling",
    "position": [
-    53364.56,
-    -3820.78,
-    18.0
-   ],
-   "yaw": 236.55,
-   "scale": 1.0,
-   "variant_seed": 95930,
-   "collision": false,
-   "ground": "sidewalk"
-  },
-  {
-   "prop": "bin_recycling",
-   "position": [
     54238.28,
     -4396.75,
     18.0
@@ -76919,19 +75737,6 @@
   {
    "prop": "bin_recycling",
    "position": [
-    -42468.4,
-    42937.77,
-    18.0
-   ],
-   "yaw": 233.74,
-   "scale": 1.0,
-   "variant_seed": 78055,
-   "collision": false,
-   "ground": "sidewalk"
-  },
-  {
-   "prop": "bin_recycling",
-   "position": [
     -42082.95,
     42681.34,
     18.0
@@ -77086,20 +75891,6 @@
    "ground": "sidewalk"
   },
   {
-   "prop": "bike_locked",
-   "position": [
-    -33261.73,
-    36971.7,
-    18.0
-   ],
-   "yaw": 146.4,
-   "scale": 1.0,
-   "variant_seed": 931723,
-   "collision": false,
-   "ground": "sidewalk",
-   "locked_to": "parterre_fence"
-  },
-  {
    "prop": "bin_recycling",
    "position": [
     -32500.65,
@@ -77141,32 +75932,6 @@
   {
    "prop": "bin_recycling",
    "position": [
-    -28787.92,
-    33846.94,
-    18.0
-   ],
-   "yaw": 227.94,
-   "scale": 1.0,
-   "variant_seed": 846195,
-   "collision": false,
-   "ground": "sidewalk"
-  },
-  {
-   "prop": "bin_compost",
-   "position": [
-    -28725.45,
-    33805.44,
-    18.0
-   ],
-   "yaw": 233.77,
-   "scale": 1.0,
-   "variant_seed": 393944,
-   "collision": false,
-   "ground": "sidewalk"
-  },
-  {
-   "prop": "bin_recycling",
-   "position": [
     -27464.73,
     32967.76,
     18.0
@@ -77189,6 +75954,46 @@
    "variant_seed": 64861,
    "collision": false,
    "ground": "sidewalk"
+  },
+  {
+   "prop": "bin_recycling",
+   "position": [
+    -26802.69,
+    32527.87,
+    18.0
+   ],
+   "yaw": 227.38,
+   "scale": 1.0,
+   "variant_seed": 290366,
+   "collision": false,
+   "ground": "sidewalk"
+  },
+  {
+   "prop": "bin_compost",
+   "position": [
+    -26740.22,
+    32486.36,
+    18.0
+   ],
+   "yaw": 231.32,
+   "scale": 1.0,
+   "variant_seed": 997810,
+   "collision": false,
+   "ground": "sidewalk"
+  },
+  {
+   "prop": "bike_locked",
+   "position": [
+    -26973.43,
+    32793.48,
+    18.0
+   ],
+   "yaw": 146.4,
+   "scale": 1.0,
+   "variant_seed": 839144,
+   "collision": false,
+   "ground": "sidewalk",
+   "locked_to": "parterre_fence"
   },
   {
    "prop": "bike_locked",
@@ -77515,32 +76320,6 @@
    "variant_seed": 713099,
    "collision": false,
    "ground": "yard"
-  },
-  {
-   "prop": "bin_recycling",
-   "position": [
-    -26761.23,
-    31149.92,
-    18.0
-   ],
-   "yaw": 63.68,
-   "scale": 1.0,
-   "variant_seed": 13752,
-   "collision": false,
-   "ground": "sidewalk"
-  },
-  {
-   "prop": "bin_garbage",
-   "position": [
-    -26823.63,
-    31191.53,
-    18.0
-   ],
-   "yaw": 63.35,
-   "scale": 1.0,
-   "variant_seed": 909935,
-   "collision": false,
-   "ground": "sidewalk"
   },
   {
    "prop": "bin_recycling",
@@ -78224,45 +77003,6 @@
   {
    "prop": "bin_recycling",
    "position": [
-    -41574.33,
-    -38691.34,
-    18.0
-   ],
-   "yaw": 332.88,
-   "scale": 1.0,
-   "variant_seed": 831734,
-   "collision": false,
-   "ground": "sidewalk"
-  },
-  {
-   "prop": "bin_compost",
-   "position": [
-    -41533.86,
-    -38628.2,
-    18.0
-   ],
-   "yaw": 324.34,
-   "scale": 1.0,
-   "variant_seed": 67145,
-   "collision": false,
-   "ground": "sidewalk"
-  },
-  {
-   "prop": "bin_garbage",
-   "position": [
-    -41493.38,
-    -38565.05,
-    18.0
-   ],
-   "yaw": 316.41,
-   "scale": 1.0,
-   "variant_seed": 220234,
-   "collision": false,
-   "ground": "sidewalk"
-  },
-  {
-   "prop": "bin_recycling",
-   "position": [
     -41184.21,
     -38082.73,
     18.0
@@ -78355,6 +77095,45 @@
   {
    "prop": "bin_recycling",
    "position": [
+    -40896.75,
+    69357.02,
+    18.0
+   ],
+   "yaw": 236.67,
+   "scale": 1.0,
+   "variant_seed": 896802,
+   "collision": false,
+   "ground": "sidewalk"
+  },
+  {
+   "prop": "bin_compost",
+   "position": [
+    -40834.24,
+    69315.57,
+    18.0
+   ],
+   "yaw": 236.46,
+   "scale": 1.0,
+   "variant_seed": 780407,
+   "collision": false,
+   "ground": "sidewalk"
+  },
+  {
+   "prop": "bin_garbage",
+   "position": [
+    -40771.74,
+    69274.12,
+    18.0
+   ],
+   "yaw": 225.62,
+   "scale": 1.0,
+   "variant_seed": 891840,
+   "collision": false,
+   "ground": "sidewalk"
+  },
+  {
+   "prop": "bin_recycling",
+   "position": [
     -40187.91,
     68886.94,
     18.0
@@ -78429,45 +77208,6 @@
    "variant_seed": 367275,
    "collision": false,
    "ground": "yard"
-  },
-  {
-   "prop": "bin_recycling",
-   "position": [
-    -38995.58,
-    68096.24,
-    18.0
-   ],
-   "yaw": 237.68,
-   "scale": 1.0,
-   "variant_seed": 123484,
-   "collision": false,
-   "ground": "sidewalk"
-  },
-  {
-   "prop": "bin_compost",
-   "position": [
-    -38933.07,
-    68054.78,
-    18.0
-   ],
-   "yaw": 232.16,
-   "scale": 1.0,
-   "variant_seed": 672249,
-   "collision": false,
-   "ground": "sidewalk"
-  },
-  {
-   "prop": "bin_garbage",
-   "position": [
-    -38870.57,
-    68013.33,
-    18.0
-   ],
-   "yaw": 238.34,
-   "scale": 1.0,
-   "variant_seed": 827712,
-   "collision": false,
-   "ground": "sidewalk"
   },
   {
    "prop": "bin_recycling",
@@ -78798,32 +77538,6 @@
   {
    "prop": "bin_recycling",
    "position": [
-    -30686.44,
-    61075.82,
-    18.0
-   ],
-   "yaw": 60.94,
-   "scale": 1.0,
-   "variant_seed": 579203,
-   "collision": false,
-   "ground": "sidewalk"
-  },
-  {
-   "prop": "bin_compost",
-   "position": [
-    -30749.79,
-    61115.97,
-    18.0
-   ],
-   "yaw": 64.67,
-   "scale": 1.0,
-   "variant_seed": 833431,
-   "collision": false,
-   "ground": "sidewalk"
-  },
-  {
-   "prop": "bin_recycling",
-   "position": [
     -31277.41,
     61450.41,
     18.0
@@ -78981,45 +77695,6 @@
   {
    "prop": "bin_recycling",
    "position": [
-    -16465.56,
-    63690.4,
-    18.0
-   ],
-   "yaw": 199.93,
-   "scale": 1.0,
-   "variant_seed": 319077,
-   "collision": false,
-   "ground": "sidewalk"
-  },
-  {
-   "prop": "bin_recycling",
-   "position": [
-    -15700.27,
-    63186.87,
-    18.0
-   ],
-   "yaw": 186.05,
-   "scale": 1.0,
-   "variant_seed": 203495,
-   "collision": false,
-   "ground": "sidewalk"
-  },
-  {
-   "prop": "bin_compost",
-   "position": [
-    -15637.61,
-    63145.65,
-    18.0
-   ],
-   "yaw": 184.56,
-   "scale": 1.0,
-   "variant_seed": 904186,
-   "collision": false,
-   "ground": "sidewalk"
-  },
-  {
-   "prop": "bin_recycling",
-   "position": [
     -15106.54,
     62796.22,
     18.0
@@ -79146,20 +77821,6 @@
    "variant_seed": 25491,
    "collision": false,
    "ground": "sidewalk"
-  },
-  {
-   "prop": "bike_locked",
-   "position": [
-    -9350.58,
-    59174.11,
-    18.0
-   ],
-   "yaw": 146.66,
-   "scale": 1.0,
-   "variant_seed": 275644,
-   "collision": false,
-   "ground": "sidewalk",
-   "locked_to": "parterre_fence"
   },
   {
    "prop": "bin_recycling",
@@ -79317,19 +77978,6 @@
    "variant_seed": 955484,
    "collision": false,
    "ground": "yard"
-  },
-  {
-   "prop": "bin_recycling",
-   "position": [
-    -4005.71,
-    55492.44,
-    18.0
-   ],
-   "yaw": 196.16,
-   "scale": 1.0,
-   "variant_seed": 181114,
-   "collision": false,
-   "ground": "sidewalk"
   },
   {
    "prop": "bin_recycling",
@@ -80679,6 +79327,46 @@
   {
    "prop": "bin_recycling",
    "position": [
+    20014.15,
+    61834.19,
+    18.0
+   ],
+   "yaw": 246.04,
+   "scale": 1.0,
+   "variant_seed": 570670,
+   "collision": false,
+   "ground": "sidewalk"
+  },
+  {
+   "prop": "bin_garbage",
+   "position": [
+    20076.46,
+    61792.45,
+    18.0
+   ],
+   "yaw": 228.14,
+   "scale": 1.0,
+   "variant_seed": 973686,
+   "collision": false,
+   "ground": "sidewalk"
+  },
+  {
+   "prop": "bike_locked",
+   "position": [
+    19902.21,
+    62061.75,
+    18.0
+   ],
+   "yaw": 146.18,
+   "scale": 1.0,
+   "variant_seed": 760385,
+   "collision": false,
+   "ground": "sidewalk",
+   "locked_to": "parterre_fence"
+  },
+  {
+   "prop": "bin_recycling",
+   "position": [
     21342.49,
     60944.39,
     9.0
@@ -80935,19 +79623,6 @@
    "yaw": 231.34,
    "scale": 1.0,
    "variant_seed": 455744,
-   "collision": false,
-   "ground": "sidewalk"
-  },
-  {
-   "prop": "bin_recycling",
-   "position": [
-    51255.64,
-    -16895.34,
-    18.0
-   ],
-   "yaw": 225.54,
-   "scale": 1.0,
-   "variant_seed": 115698,
    "collision": false,
    "ground": "sidewalk"
   },
@@ -81254,6 +79929,19 @@
   {
    "prop": "bin_recycling",
    "position": [
+    -38559.49,
+    10909.51,
+    18.0
+   ],
+   "yaw": 48.78,
+   "scale": 1.0,
+   "variant_seed": 648605,
+   "collision": false,
+   "ground": "sidewalk"
+  },
+  {
+   "prop": "bin_recycling",
+   "position": [
     -39849.21,
     11738.52,
     18.0
@@ -81365,58 +80053,6 @@
    "yaw": 157.88,
    "scale": 1.0,
    "variant_seed": 437438,
-   "collision": false,
-   "ground": "sidewalk"
-  },
-  {
-   "prop": "bin_recycling",
-   "position": [
-    46097.93,
-    -46099.42,
-    18.0
-   ],
-   "yaw": 328.67,
-   "scale": 1.0,
-   "variant_seed": 628802,
-   "collision": false,
-   "ground": "sidewalk"
-  },
-  {
-   "prop": "bin_compost",
-   "position": [
-    46138.22,
-    -46036.16,
-    18.0
-   ],
-   "yaw": 337.69,
-   "scale": 1.0,
-   "variant_seed": 592756,
-   "collision": false,
-   "ground": "sidewalk"
-  },
-  {
-   "prop": "bin_recycling",
-   "position": [
-    47338.3,
-    -44152.12,
-    18.0
-   ],
-   "yaw": 324.59,
-   "scale": 1.0,
-   "variant_seed": 437438,
-   "collision": false,
-   "ground": "sidewalk"
-  },
-  {
-   "prop": "bin_compost",
-   "position": [
-    47378.59,
-    -44088.87,
-    18.0
-   ],
-   "yaw": 320.16,
-   "scale": 1.0,
-   "variant_seed": 594404,
    "collision": false,
    "ground": "sidewalk"
   },
@@ -81707,19 +80343,6 @@
    "ground": "yard"
   },
   {
-   "prop": "flower_box",
-   "position": [
-    -37744.87,
-    54513.83,
-    18.0
-   ],
-   "yaw": 56.37,
-   "scale": 1.0,
-   "variant_seed": 852050,
-   "collision": false,
-   "ground": "yard"
-  },
-  {
    "prop": "bin_recycling",
    "position": [
     -37976.52,
@@ -81768,45 +80391,6 @@
    "yaw": 52.42,
    "scale": 1.0,
    "variant_seed": 207193,
-   "collision": false,
-   "ground": "sidewalk"
-  },
-  {
-   "prop": "bin_recycling",
-   "position": [
-    -41785.33,
-    57844.13,
-    18.0
-   ],
-   "yaw": 61.47,
-   "scale": 1.0,
-   "variant_seed": 945071,
-   "collision": false,
-   "ground": "sidewalk"
-  },
-  {
-   "prop": "bin_compost",
-   "position": [
-    -41847.78,
-    57885.67,
-    18.0
-   ],
-   "yaw": 47.2,
-   "scale": 1.0,
-   "variant_seed": 71465,
-   "collision": false,
-   "ground": "sidewalk"
-  },
-  {
-   "prop": "bin_garbage",
-   "position": [
-    -41910.23,
-    57927.2,
-    18.0
-   ],
-   "yaw": 48.51,
-   "scale": 1.0,
-   "variant_seed": 852529,
    "collision": false,
    "ground": "sidewalk"
   },
@@ -81995,45 +80579,6 @@
   {
    "prop": "bin_recycling",
    "position": [
-    -26216.4,
-    49178.8,
-    18.0
-   ],
-   "yaw": 230.81,
-   "scale": 1.0,
-   "variant_seed": 173501,
-   "collision": false,
-   "ground": "sidewalk"
-  },
-  {
-   "prop": "bin_compost",
-   "position": [
-    -26153.98,
-    49137.22,
-    18.0
-   ],
-   "yaw": 244.03,
-   "scale": 1.0,
-   "variant_seed": 747412,
-   "collision": false,
-   "ground": "sidewalk"
-  },
-  {
-   "prop": "flower_box",
-   "position": [
-    -26213.13,
-    49661.95,
-    18.0
-   ],
-   "yaw": 236.92,
-   "scale": 1.0,
-   "variant_seed": 585154,
-   "collision": false,
-   "ground": "yard"
-  },
-  {
-   "prop": "bin_recycling",
-   "position": [
     -25791.14,
     48895.55,
     18.0
@@ -82132,32 +80677,6 @@
    "yaw": 225.18,
    "scale": 1.0,
    "variant_seed": 570566,
-   "collision": false,
-   "ground": "sidewalk"
-  },
-  {
-   "prop": "bin_recycling",
-   "position": [
-    -21097.59,
-    45769.28,
-    18.0
-   ],
-   "yaw": 229.07,
-   "scale": 1.0,
-   "variant_seed": 900142,
-   "collision": false,
-   "ground": "sidewalk"
-  },
-  {
-   "prop": "bin_compost",
-   "position": [
-    -21035.17,
-    45727.7,
-    18.0
-   ],
-   "yaw": 245.87,
-   "scale": 1.0,
-   "variant_seed": 750810,
    "collision": false,
    "ground": "sidewalk"
   },
@@ -82294,45 +80813,6 @@
   {
    "prop": "bin_recycling",
    "position": [
-    -17500.53,
-    41780.4,
-    18.0
-   ],
-   "yaw": 45.31,
-   "scale": 1.0,
-   "variant_seed": 150559,
-   "collision": false,
-   "ground": "sidewalk"
-  },
-  {
-   "prop": "bin_compost",
-   "position": [
-    -17562.95,
-    41821.98,
-    18.0
-   ],
-   "yaw": 56.37,
-   "scale": 1.0,
-   "variant_seed": 153647,
-   "collision": false,
-   "ground": "sidewalk"
-  },
-  {
-   "prop": "bin_garbage",
-   "position": [
-    -17625.37,
-    41863.56,
-    18.0
-   ],
-   "yaw": 50.4,
-   "scale": 1.0,
-   "variant_seed": 80559,
-   "collision": false,
-   "ground": "sidewalk"
-  },
-  {
-   "prop": "bin_recycling",
-   "position": [
     -21172.56,
     44226.26,
     18.0
@@ -82433,19 +80913,6 @@
    "variant_seed": 347452,
    "collision": false,
    "ground": "sidewalk"
-  },
-  {
-   "prop": "flower_box",
-   "position": [
-    -27796.44,
-    47940.64,
-    18.0
-   ],
-   "yaw": 56.72,
-   "scale": 1.0,
-   "variant_seed": 774567,
-   "collision": false,
-   "ground": "yard"
   },
   {
    "prop": "bin_recycling",
@@ -82945,32 +81412,6 @@
   {
    "prop": "bin_recycling",
    "position": [
-    54063.94,
-    15183.19,
-    18.0
-   ],
-   "yaw": 64.83,
-   "scale": 1.0,
-   "variant_seed": 215353,
-   "collision": false,
-   "ground": "sidewalk"
-  },
-  {
-   "prop": "bin_compost",
-   "position": [
-    54001.32,
-    15224.46,
-    18.0
-   ],
-   "yaw": 44.9,
-   "scale": 1.0,
-   "variant_seed": 368451,
-   "collision": false,
-   "ground": "sidewalk"
-  },
-  {
-   "prop": "bin_recycling",
-   "position": [
     52751.24,
     16048.38,
     18.0
@@ -83058,19 +81499,6 @@
    "variant_seed": 148029,
    "collision": false,
    "ground": "sidewalk"
-  },
-  {
-   "prop": "flower_box",
-   "position": [
-    48206.03,
-    18788.57,
-    18.0
-   ],
-   "yaw": 56.61,
-   "scale": 1.0,
-   "variant_seed": 152514,
-   "collision": false,
-   "ground": "yard"
   },
   {
    "prop": "bin_recycling",
@@ -83526,19 +81954,6 @@
    "yaw": 57.09,
    "scale": 1.0,
    "variant_seed": 475407,
-   "collision": false,
-   "ground": "yard"
-  },
-  {
-   "prop": "flower_box",
-   "position": [
-    33102.3,
-    -23768.65,
-    18.0
-   ],
-   "yaw": 326.75,
-   "scale": 1.0,
-   "variant_seed": 385474,
    "collision": false,
    "ground": "yard"
   },
@@ -84051,32 +82466,6 @@
    "variant_seed": 247720,
    "collision": false,
    "ground": "road"
-  },
-  {
-   "prop": "flower_box",
-   "position": [
-    12429.66,
-    57384.02,
-    18.0
-   ],
-   "yaw": 192.68,
-   "scale": 1.0,
-   "variant_seed": 870938,
-   "collision": false,
-   "ground": "yard"
-  },
-  {
-   "prop": "flower_box",
-   "position": [
-    15518.59,
-    55279.16,
-    18.0
-   ],
-   "yaw": 192.68,
-   "scale": 1.0,
-   "variant_seed": 149916,
-   "collision": false,
-   "ground": "yard"
   },
   {
    "prop": "flower_box",
@@ -87186,6 +85575,19 @@
   {
    "prop": "flower_box",
    "position": [
+    -25977.87,
+    -2363.06,
+    18.0
+   ],
+   "yaw": 56.53,
+   "scale": 1.0,
+   "variant_seed": 833588,
+   "collision": false,
+   "ground": "yard"
+  },
+  {
+   "prop": "flower_box",
+   "position": [
     -28109.62,
     -1512.26,
     18.0
@@ -87381,46 +85783,6 @@
   {
    "prop": "bin_recycling",
    "position": [
-    -14689.83,
-    -29597.83,
-    18.0
-   ],
-   "yaw": 54.15,
-   "scale": 1.0,
-   "variant_seed": 888806,
-   "collision": false,
-   "ground": "sidewalk"
-  },
-  {
-   "prop": "bin_compost",
-   "position": [
-    -14752.57,
-    -29556.75,
-    18.0
-   ],
-   "yaw": 55.45,
-   "scale": 1.0,
-   "variant_seed": 353664,
-   "collision": false,
-   "ground": "sidewalk"
-  },
-  {
-   "prop": "bike_locked",
-   "position": [
-    -14744.52,
-    -29713.58,
-    18.0
-   ],
-   "yaw": 326.78,
-   "scale": 1.0,
-   "variant_seed": 443773,
-   "collision": false,
-   "ground": "sidewalk",
-   "locked_to": "parterre_fence"
-  },
-  {
-   "prop": "bin_recycling",
-   "position": [
     -15339.16,
     -29172.66,
     18.0
@@ -87510,58 +85872,6 @@
    "ground": "sidewalk"
   },
   {
-   "prop": "bin_recycling",
-   "position": [
-    -19243.4,
-    -26616.25,
-    18.0
-   ],
-   "yaw": 51.72,
-   "scale": 1.0,
-   "variant_seed": 939144,
-   "collision": false,
-   "ground": "sidewalk"
-  },
-  {
-   "prop": "bin_compost",
-   "position": [
-    -19306.14,
-    -26575.16,
-    18.0
-   ],
-   "yaw": 65.55,
-   "scale": 1.0,
-   "variant_seed": 187617,
-   "collision": false,
-   "ground": "sidewalk"
-  },
-  {
-   "prop": "bin_recycling",
-   "position": [
-    -21201.73,
-    -25333.97,
-    18.0
-   ],
-   "yaw": 47.79,
-   "scale": 1.0,
-   "variant_seed": 41166,
-   "collision": false,
-   "ground": "sidewalk"
-  },
-  {
-   "prop": "bin_compost",
-   "position": [
-    -21264.48,
-    -25292.88,
-    18.0
-   ],
-   "yaw": 64.42,
-   "scale": 1.0,
-   "variant_seed": 301988,
-   "collision": false,
-   "ground": "sidewalk"
-  },
-  {
    "prop": "flower_box",
    "position": [
     -21795.42,
@@ -87571,19 +85881,6 @@
    "yaw": 59.31,
    "scale": 1.0,
    "variant_seed": 826992,
-   "collision": false,
-   "ground": "yard"
-  },
-  {
-   "prop": "flower_box",
-   "position": [
-    -23112.88,
-    -24527.28,
-    18.0
-   ],
-   "yaw": 59.31,
-   "scale": 1.0,
-   "variant_seed": 309698,
    "collision": false,
    "ground": "yard"
   },
@@ -88842,32 +87139,6 @@
   {
    "prop": "bin_recycling",
    "position": [
-    -32915.85,
-    -39392.47,
-    18.0
-   ],
-   "yaw": 241.37,
-   "scale": 1.0,
-   "variant_seed": 592537,
-   "collision": false,
-   "ground": "sidewalk"
-  },
-  {
-   "prop": "bin_garbage",
-   "position": [
-    -32852.48,
-    -39432.58,
-    18.0
-   ],
-   "yaw": 244.89,
-   "scale": 1.0,
-   "variant_seed": 987219,
-   "collision": false,
-   "ground": "sidewalk"
-  },
-  {
-   "prop": "bin_recycling",
-   "position": [
     -32534.74,
     -39633.72,
     18.0
@@ -88959,32 +87230,6 @@
   {
    "prop": "bin_recycling",
    "position": [
-    -36902.51,
-    -38319.63,
-    18.0
-   ],
-   "yaw": 60.35,
-   "scale": 1.0,
-   "variant_seed": 604239,
-   "collision": false,
-   "ground": "sidewalk"
-  },
-  {
-   "prop": "bin_compost",
-   "position": [
-    -36965.88,
-    -38279.51,
-    18.0
-   ],
-   "yaw": 59.91,
-   "scale": 1.0,
-   "variant_seed": 869687,
-   "collision": false,
-   "ground": "sidewalk"
-  },
-  {
-   "prop": "bin_recycling",
-   "position": [
     -37413.18,
     -37996.36,
     18.0
@@ -89063,32 +87308,6 @@
   {
    "prop": "bin_recycling",
    "position": [
-    -27879.67,
-    -42648.51,
-    18.0
-   ],
-   "yaw": 241.06,
-   "scale": 1.0,
-   "variant_seed": 994946,
-   "collision": false,
-   "ground": "sidewalk"
-  },
-  {
-   "prop": "bin_compost",
-   "position": [
-    -27816.77,
-    -42689.36,
-    18.0
-   ],
-   "yaw": 235.12,
-   "scale": 1.0,
-   "variant_seed": 50067,
-   "collision": false,
-   "ground": "sidewalk"
-  },
-  {
-   "prop": "bin_recycling",
-   "position": [
     -26619.33,
     -43467.01,
     18.0
@@ -89122,45 +87341,6 @@
    "yaw": 249.24,
    "scale": 1.0,
    "variant_seed": 448016,
-   "collision": false,
-   "ground": "sidewalk"
-  },
-  {
-   "prop": "bin_recycling",
-   "position": [
-    -23512.54,
-    -45484.65,
-    18.0
-   ],
-   "yaw": 242.73,
-   "scale": 1.0,
-   "variant_seed": 563006,
-   "collision": false,
-   "ground": "sidewalk"
-  },
-  {
-   "prop": "bin_compost",
-   "position": [
-    -23449.64,
-    -45525.5,
-    18.0
-   ],
-   "yaw": 241.49,
-   "scale": 1.0,
-   "variant_seed": 153492,
-   "collision": false,
-   "ground": "sidewalk"
-  },
-  {
-   "prop": "bin_garbage",
-   "position": [
-    -23386.74,
-    -45566.35,
-    18.0
-   ],
-   "yaw": 232.45,
-   "scale": 1.0,
-   "variant_seed": 471314,
    "collision": false,
    "ground": "sidewalk"
   },
@@ -89242,19 +87422,6 @@
    "collision": false,
    "ground": "sidewalk",
    "locked_to": "parterre_fence"
-  },
-  {
-   "prop": "flower_box",
-   "position": [
-    -27181.98,
-    -44952.5,
-    18.0
-   ],
-   "yaw": 57.0,
-   "scale": 1.0,
-   "variant_seed": 999548,
-   "collision": false,
-   "ground": "yard"
   },
   {
    "prop": "bin_recycling",
@@ -89402,45 +87569,6 @@
   {
    "prop": "bin_recycling",
    "position": [
-    -25866.02,
-    -16221.18,
-    18.0
-   ],
-   "yaw": 145.18,
-   "scale": 1.0,
-   "variant_seed": 736820,
-   "collision": false,
-   "ground": "sidewalk"
-  },
-  {
-   "prop": "bin_compost",
-   "position": [
-    -25906.47,
-    -16284.34,
-    18.0
-   ],
-   "yaw": 151.02,
-   "scale": 1.0,
-   "variant_seed": 885192,
-   "collision": false,
-   "ground": "sidewalk"
-  },
-  {
-   "prop": "bin_garbage",
-   "position": [
-    -25946.92,
-    -16347.49,
-    18.0
-   ],
-   "yaw": 150.55,
-   "scale": 1.0,
-   "variant_seed": 298038,
-   "collision": false,
-   "ground": "sidewalk"
-  },
-  {
-   "prop": "bin_recycling",
-   "position": [
     -26790.27,
     -17664.2,
     18.0
@@ -89565,19 +87693,6 @@
    "yaw": 146.73,
    "scale": 1.0,
    "variant_seed": 417362,
-   "collision": false,
-   "ground": "sidewalk"
-  },
-  {
-   "prop": "bin_recycling",
-   "position": [
-    -20050.76,
-    -7229.98,
-    18.0
-   ],
-   "yaw": 140.1,
-   "scale": 1.0,
-   "variant_seed": 291858,
    "collision": false,
    "ground": "sidewalk"
   },
@@ -90039,32 +88154,6 @@
   {
    "prop": "bin_recycling",
    "position": [
-    -31612.9,
-    -25061.4,
-    18.0
-   ],
-   "yaw": 155.32,
-   "scale": 1.0,
-   "variant_seed": 700259,
-   "collision": false,
-   "ground": "sidewalk"
-  },
-  {
-   "prop": "bin_compost",
-   "position": [
-    -31653.97,
-    -25124.15,
-    18.0
-   ],
-   "yaw": 154.81,
-   "scale": 1.0,
-   "variant_seed": 476813,
-   "collision": false,
-   "ground": "sidewalk"
-  },
-  {
-   "prop": "bin_recycling",
-   "position": [
     17375.87,
     -46110.21,
     18.0
@@ -90091,19 +88180,6 @@
   {
    "prop": "flower_box",
    "position": [
-    17218.42,
-    -44607.93,
-    18.0
-   ],
-   "yaw": 328.0,
-   "scale": 1.0,
-   "variant_seed": 201747,
-   "collision": false,
-   "ground": "yard"
-  },
-  {
-   "prop": "flower_box",
-   "position": [
     17625.0,
     -43969.93,
     18.0
@@ -90113,19 +88189,6 @@
    "variant_seed": 987670,
    "collision": false,
    "ground": "yard"
-  },
-  {
-   "prop": "bin_recycling",
-   "position": [
-    18915.2,
-    -43646.81,
-    18.0
-   ],
-   "yaw": 336.26,
-   "scale": 1.0,
-   "variant_seed": 668416,
-   "collision": false,
-   "ground": "sidewalk"
   },
   {
    "prop": "bin_recycling",
@@ -90168,32 +88231,6 @@
    "ground": "yard"
   },
   {
-   "prop": "bin_recycling",
-   "position": [
-    21372.05,
-    -39876.08,
-    18.0
-   ],
-   "yaw": 330.99,
-   "scale": 1.0,
-   "variant_seed": 945527,
-   "collision": false,
-   "ground": "sidewalk"
-  },
-  {
-   "prop": "bin_compost",
-   "position": [
-    21413.76,
-    -39813.75,
-    18.0
-   ],
-   "yaw": 336.09,
-   "scale": 1.0,
-   "variant_seed": 906670,
-   "collision": false,
-   "ground": "sidewalk"
-  },
-  {
    "prop": "flower_box",
    "position": [
     21660.55,
@@ -90205,32 +88242,6 @@
    "variant_seed": 366441,
    "collision": false,
    "ground": "yard"
-  },
-  {
-   "prop": "bin_recycling",
-   "position": [
-    23779.1,
-    -36279.44,
-    18.0
-   ],
-   "yaw": 323.51,
-   "scale": 1.0,
-   "variant_seed": 927646,
-   "collision": false,
-   "ground": "sidewalk"
-  },
-  {
-   "prop": "bin_garbage",
-   "position": [
-    23820.82,
-    -36217.11,
-    18.0
-   ],
-   "yaw": 327.86,
-   "scale": 1.0,
-   "variant_seed": 108183,
-   "collision": false,
-   "ground": "sidewalk"
   },
   {
    "prop": "bin_recycling",
@@ -90752,20 +88763,6 @@
    "yaw": 146.05,
    "scale": 1.0,
    "variant_seed": 597690,
-   "collision": false,
-   "ground": "sidewalk",
-   "locked_to": "parterre_fence"
-  },
-  {
-   "prop": "bike_locked",
-   "position": [
-    36032.49,
-    66703.76,
-    18.0
-   ],
-   "yaw": 146.05,
-   "scale": 1.0,
-   "variant_seed": 417060,
    "collision": false,
    "ground": "sidewalk",
    "locked_to": "parterre_fence"
@@ -91444,32 +89441,6 @@
    "yaw": 63.82,
    "scale": 1.0,
    "variant_seed": 491137,
-   "collision": false,
-   "ground": "sidewalk"
-  },
-  {
-   "prop": "bin_recycling",
-   "position": [
-    32392.74,
-    59941.26,
-    18.0
-   ],
-   "yaw": 55.74,
-   "scale": 1.0,
-   "variant_seed": 8732,
-   "collision": false,
-   "ground": "sidewalk"
-  },
-  {
-   "prop": "bin_garbage",
-   "position": [
-    32330.44,
-    59983.01,
-    18.0
-   ],
-   "yaw": 49.24,
-   "scale": 1.0,
-   "variant_seed": 474156,
    "collision": false,
    "ground": "sidewalk"
   },
@@ -92285,19 +90256,6 @@
   {
    "prop": "bin_recycling",
    "position": [
-    20444.58,
-    6795.29,
-    18.0
-   ],
-   "yaw": 55.26,
-   "scale": 1.0,
-   "variant_seed": 95142,
-   "collision": false,
-   "ground": "sidewalk"
-  },
-  {
-   "prop": "bin_recycling",
-   "position": [
     22504.9,
     7050.11,
     18.0
@@ -92539,6 +90497,19 @@
    "yaw": 155.75,
    "scale": 1.0,
    "variant_seed": 533298,
+   "collision": false,
+   "ground": "sidewalk"
+  },
+  {
+   "prop": "bin_recycling",
+   "position": [
+    -30528.12,
+    7429.29,
+    18.0
+   ],
+   "yaw": 159.86,
+   "scale": 1.0,
+   "variant_seed": 922713,
    "collision": false,
    "ground": "sidewalk"
   },
@@ -93361,13 +91332,13 @@
   {
    "prop": "bike_locked",
    "position": [
-    -40074.38,
-    22842.55,
+    6043.4,
+    -23921.6,
     18.0
    ],
-   "yaw": 236.6,
+   "yaw": 327.23,
    "scale": 1.0,
-   "variant_seed": 426663,
+   "variant_seed": 433571,
    "collision": false,
    "ground": "given",
    "locked_to": "sign_parking"
@@ -93382,34 +91353,6 @@
    "yaw": 236.35,
    "scale": 1.0,
    "variant_seed": 468209,
-   "collision": false,
-   "ground": "given",
-   "locked_to": "sign_parking"
-  },
-  {
-   "prop": "bike_locked",
-   "position": [
-    -32176.2,
-    19170.66,
-    18.0
-   ],
-   "yaw": 236.35,
-   "scale": 1.0,
-   "variant_seed": 364810,
-   "collision": false,
-   "ground": "given",
-   "locked_to": "sign_parking"
-  },
-  {
-   "prop": "bike_locked",
-   "position": [
-    -29845.78,
-    17619.59,
-    18.0
-   ],
-   "yaw": 236.35,
-   "scale": 1.0,
-   "variant_seed": 464009,
    "collision": false,
    "ground": "given",
    "locked_to": "sign_parking"
@@ -93543,6 +91486,34 @@
   {
    "prop": "bike_locked",
    "position": [
+    37090.42,
+    40149.72,
+    18.0
+   ],
+   "yaw": 236.46,
+   "scale": 1.0,
+   "variant_seed": 770894,
+   "collision": false,
+   "ground": "given",
+   "locked_to": "sign_parking"
+  },
+  {
+   "prop": "bike_locked",
+   "position": [
+    42045.72,
+    36888.37,
+    18.0
+   ],
+   "yaw": 56.46,
+   "scale": 1.0,
+   "variant_seed": 273124,
+   "collision": false,
+   "ground": "given",
+   "locked_to": "sign_parking"
+  },
+  {
+   "prop": "bike_locked",
+   "position": [
     28955.19,
     43405.75,
     18.0
@@ -93557,13 +91528,13 @@
   {
    "prop": "bike_locked",
    "position": [
-    21152.76,
-    48552.55,
+    21558.75,
+    48283.49,
     18.0
    ],
    "yaw": 236.47,
    "scale": 1.0,
-   "variant_seed": 629914,
+   "variant_seed": 773267,
    "collision": false,
    "ground": "given",
    "locked_to": "sign_parking"
@@ -93599,20 +91570,6 @@
   {
    "prop": "bike_locked",
    "position": [
-    48547.87,
-    32595.67,
-    18.0
-   ],
-   "yaw": 236.13,
-   "scale": 1.0,
-   "variant_seed": 716880,
-   "collision": false,
-   "ground": "given",
-   "locked_to": "sign_parking"
-  },
-  {
-   "prop": "bike_locked",
-   "position": [
     1247.92,
     -44622.73,
     18.0
@@ -93641,13 +91598,13 @@
   {
    "prop": "bike_locked",
    "position": [
-    -25651.71,
-    23783.76,
+    -35198.33,
+    30036.19,
     18.0
    ],
-   "yaw": 56.68,
+   "yaw": 236.68,
    "scale": 1.0,
-   "variant_seed": 795116,
+   "variant_seed": 478352,
    "collision": false,
    "ground": "given",
    "locked_to": "sign_parking"
@@ -93655,27 +91612,13 @@
   {
    "prop": "bike_locked",
    "position": [
-    -20245.41,
-    54213.56,
+    -24772.96,
+    57211.2,
     18.0
    ],
    "yaw": 56.49,
    "scale": 1.0,
-   "variant_seed": 386052,
-   "collision": false,
-   "ground": "given",
-   "locked_to": "sign_parking"
-  },
-  {
-   "prop": "bike_locked",
-   "position": [
-    -27528.75,
-    59035.78,
-    18.0
-   ],
-   "yaw": 56.49,
-   "scale": 1.0,
-   "variant_seed": 911994,
+   "variant_seed": 24470,
    "collision": false,
    "ground": "given",
    "locked_to": "sign_parking"
@@ -93690,20 +91633,6 @@
    "yaw": 236.34,
    "scale": 1.0,
    "variant_seed": 478130,
-   "collision": false,
-   "ground": "given",
-   "locked_to": "sign_parking"
-  },
-  {
-   "prop": "bike_locked",
-   "position": [
-    -8845.18,
-    48151.79,
-    18.0
-   ],
-   "yaw": 236.34,
-   "scale": 1.0,
-   "variant_seed": 336721,
    "collision": false,
    "ground": "given",
    "locked_to": "sign_parking"
@@ -93739,48 +91668,6 @@
   {
    "prop": "bike_locked",
    "position": [
-    -32247.32,
-    -8932.8,
-    18.0
-   ],
-   "yaw": 236.97,
-   "scale": 1.0,
-   "variant_seed": 885759,
-   "collision": false,
-   "ground": "given",
-   "locked_to": "sign_parking"
-  },
-  {
-   "prop": "bike_locked",
-   "position": [
-    -40226.92,
-    -3744.73,
-    18.0
-   ],
-   "yaw": 236.97,
-   "scale": 1.0,
-   "variant_seed": 365471,
-   "collision": false,
-   "ground": "given",
-   "locked_to": "sign_parking"
-  },
-  {
-   "prop": "bike_locked",
-   "position": [
-    -9594.13,
-    -22240.39,
-    18.0
-   ],
-   "yaw": 56.79,
-   "scale": 1.0,
-   "variant_seed": 92827,
-   "collision": false,
-   "ground": "given",
-   "locked_to": "sign_parking"
-  },
-  {
-   "prop": "bike_locked",
-   "position": [
     -12498.38,
     -21761.55,
     18.0
@@ -93809,13 +91696,27 @@
   {
    "prop": "bike_locked",
    "position": [
-    12677.54,
-    -36766.47,
+    -2192.97,
+    -28504.63,
     18.0
    ],
-   "yaw": 236.92,
+   "yaw": 236.97,
    "scale": 1.0,
-   "variant_seed": 448540,
+   "variant_seed": 420628,
+   "collision": false,
+   "ground": "given",
+   "locked_to": "sign_parking"
+  },
+  {
+   "prop": "bike_locked",
+   "position": [
+    -4394.58,
+    -27073.17,
+    18.0
+   ],
+   "yaw": 236.97,
+   "scale": 1.0,
+   "variant_seed": 936087,
    "collision": false,
    "ground": "given",
    "locked_to": "sign_parking"
@@ -93830,20 +91731,6 @@
    "yaw": 56.92,
    "scale": 1.0,
    "variant_seed": 316675,
-   "collision": false,
-   "ground": "given",
-   "locked_to": "sign_parking"
-  },
-  {
-   "prop": "bike_locked",
-   "position": [
-    7546.03,
-    -34843.77,
-    18.0
-   ],
-   "yaw": 236.92,
-   "scale": 1.0,
-   "variant_seed": 505767,
    "collision": false,
    "ground": "given",
    "locked_to": "sign_parking"
@@ -93935,27 +91822,13 @@
   {
    "prop": "bike_locked",
    "position": [
-    -37536.38,
-    39656.21,
+    -34725.35,
+    37788.43,
     18.0
    ],
    "yaw": 236.4,
    "scale": 1.0,
-   "variant_seed": 832830,
-   "collision": false,
-   "ground": "given",
-   "locked_to": "sign_parking"
-  },
-  {
-   "prop": "bike_locked",
-   "position": [
-    -25138.22,
-    31442.33,
-    18.0
-   ],
-   "yaw": 56.4,
-   "scale": 1.0,
-   "variant_seed": 324365,
+   "variant_seed": 723021,
    "collision": false,
    "ground": "given",
    "locked_to": "sign_parking"
@@ -94026,20 +91899,6 @@
    "yaw": 236.0,
    "scale": 1.0,
    "variant_seed": 708205,
-   "collision": false,
-   "ground": "given",
-   "locked_to": "sign_parking"
-  },
-  {
-   "prop": "bike_locked",
-   "position": [
-    -40399.75,
-    -36827.44,
-    18.0
-   ],
-   "yaw": 147.34,
-   "scale": 1.0,
-   "variant_seed": 519879,
    "collision": false,
    "ground": "given",
    "locked_to": "sign_parking"
@@ -94145,13 +92004,13 @@
   {
    "prop": "bike_locked",
    "position": [
-    -20606.96,
-    64834.39,
+    -21082.21,
+    65145.02,
     18.0
    ],
    "yaw": 236.83,
    "scale": 1.0,
-   "variant_seed": 980863,
+   "variant_seed": 207106,
    "collision": false,
    "ground": "given",
    "locked_to": "sign_parking"
@@ -94243,13 +92102,13 @@
   {
    "prop": "bike_locked",
    "position": [
-    -40158.01,
-    13458.77,
+    -15319.7,
+    32727.25,
     18.0
    ],
-   "yaw": 237.12,
+   "yaw": 145.79,
    "scale": 1.0,
-   "variant_seed": 863395,
+   "variant_seed": 19647,
    "collision": false,
    "ground": "given",
    "locked_to": "sign_parking"
@@ -94292,6 +92151,20 @@
    "yaw": 237.51,
    "scale": 1.0,
    "variant_seed": 592703,
+   "collision": false,
+   "ground": "given",
+   "locked_to": "sign_parking"
+  },
+  {
+   "prop": "bike_locked",
+   "position": [
+    -19258.64,
+    44540.79,
+    18.0
+   ],
+   "yaw": 236.33,
+   "scale": 1.0,
+   "variant_seed": 773343,
    "collision": false,
    "ground": "given",
    "locked_to": "sign_parking"
@@ -94439,13 +92312,13 @@
   {
    "prop": "bike_locked",
    "position": [
-    40414.85,
-    10589.9,
+    41044.65,
+    13398.41,
     18.0
    ],
    "yaw": 347.36,
    "scale": 1.0,
-   "variant_seed": 315045,
+   "variant_seed": 765128,
    "collision": false,
    "ground": "given",
    "locked_to": "sign_parking"
@@ -94453,13 +92326,13 @@
   {
    "prop": "bike_locked",
    "position": [
-    41583.71,
-    15893.67,
-    18.0
+    42848.67,
+    11404.86,
+    9.0
    ],
-   "yaw": 167.36,
+   "yaw": 167.44,
    "scale": 1.0,
-   "variant_seed": 384662,
+   "variant_seed": 204510,
    "collision": false,
    "ground": "given",
    "locked_to": "sign_parking"
@@ -94467,13 +92340,13 @@
   {
    "prop": "bike_locked",
    "position": [
-    42286.85,
-    18937.86,
+    42238.48,
+    8666.62,
     18.0
    ],
-   "yaw": 347.36,
+   "yaw": 167.44,
    "scale": 1.0,
-   "variant_seed": 13002,
+   "variant_seed": 83649,
    "collision": false,
    "ground": "given",
    "locked_to": "sign_parking"
@@ -94481,13 +92354,13 @@
   {
    "prop": "bike_locked",
    "position": [
-    42368.98,
-    9160.29,
+    41654.88,
+    6047.67,
     18.0
    ],
-   "yaw": 347.44,
+   "yaw": 167.44,
    "scale": 1.0,
-   "variant_seed": 252072,
+   "variant_seed": 432203,
    "collision": false,
    "ground": "given",
    "locked_to": "sign_parking"
@@ -94803,41 +92676,13 @@
   {
    "prop": "bike_locked",
    "position": [
-    -14673.56,
-    -29628.79,
+    -20688.54,
+    -24291.69,
     18.0
    ],
    "yaw": 236.78,
    "scale": 1.0,
-   "variant_seed": 177944,
-   "collision": false,
-   "ground": "given",
-   "locked_to": "sign_parking"
-  },
-  {
-   "prop": "bike_locked",
-   "position": [
-    -22382.44,
-    -23182.56,
-    18.0
-   ],
-   "yaw": 236.78,
-   "scale": 1.0,
-   "variant_seed": 856113,
-   "collision": false,
-   "ground": "given",
-   "locked_to": "sign_parking"
-  },
-  {
-   "prop": "bike_locked",
-   "position": [
-    -16702.61,
-    -26877.69,
-    18.0
-   ],
-   "yaw": 56.78,
-   "scale": 1.0,
-   "variant_seed": 614900,
+   "variant_seed": 333568,
    "collision": false,
    "ground": "given",
    "locked_to": "sign_parking"

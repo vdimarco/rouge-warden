@@ -17,25 +17,27 @@
   "sign_street": 53,
   "street_name_corners": 53,
   "sign_oneway": 154,
-  "sign_parking": 782,
-  "total": 1771,
+  "sign_parking": 723,
+  "total": 1712,
   "osm_lamps_inside": 266,
   "osm_hydrants_inside": 104,
   "osm_bixi_inside": 15,
   "osm_stops_inside": 26,
-  "collision_disabled_in_traffic_band": 29,
+  "collision_disabled_in_traffic_band": 32,
   "snapped_out_of_carriageway": 52
  },
  "source_sha256": {
   "Data/LaFontaine/osm.xml": "fe4410d45007a627bf6d9b9ddeeae329fa9cdd7492dfb5fa6beff851e7cf8f86",
   "Data/LaFontaine/layout.json": "4238d6ed45d5fb890e0f8dbcb672de0803c6dc7079b0b6a86b386d82ebbb4250",
-  "Scripts/plateau_replica.py": "cc5c31b82c854ef8b91273994b795031bee2dbb16e4c097174d2b2986165d5c9",
+  "Scripts/plateau_replica.py": "9bf9aaa413dd9c15a6b0a73f0791fa811f977ded123fb09e1ae49730762cb20a",
   "Scripts/prepare_lafontaine.py": "e7b6e5f068a96ee7306b1fff247fa73158f5cf7c343dc5510ab8cce92ee3c924",
   "Data/Plateau/BaseGeometry/Marking.obj": "2d82cbca59041aa6af5e6f3fffaf6a01b2c3e672eea9732e8a5fecbb7cee35dd",
-  "Data/Plateau/ReplicaGeometry/Plex/fronts.json": "c572a535a248f94d70d6ec2237d9a89419eb98b2e5f209c4122aeda65d9db201",
+  "Data/Plateau/ReplicaGeometry/Plex/fronts.json": "0019455f9de6121473e16abbbcd64dee9a72f0ec5982e59bce9004f7d5ec0b31",
   "Data/Plateau/ReplicaGeometry/Soul/ruelles_vertes_clip.json": "6ca991f5b585f4f0567baed799c37db2d3476f451e0b88fdb315a959e2d7d216",
-  "Data/Plateau/ReplicaGeometry/Plex/manifest.json": "85603475766169d6ab94b74236d8a111822c4ca1b07c9a90cdcca8bb4d90c24b",
-  "Data/Plateau/ReplicaGeometry/Props/manifest.json": "92d3a4c8811dd7adf5d0ca51701d308e1373361a46a346737104247ecfd417da"
+  "Data/Plateau/ReplicaGeometry/Plex/manifest.json": "60e1268db766e6708dea6c349cfb0bd0b0350ed3435ee25b11a04a71645b469f",
+  "Data/Plateau/ReplicaGeometry/Props/manifest.json": "92d3a4c8811dd7adf5d0ca51701d308e1373361a46a346737104247ecfd417da",
+  "Data/Plateau/Inventory/trees_pmr.json": "78ee70b8165af47cdee11a56c9653b69a1543c42cf78ab618145441d756831c1",
+  "Data/Plateau/Inventory/trees_vm.json": "103be208d2135cbb989198a8b33cff081584a40792323fab2d2cd65ca2a8fc35"
  },
  "placements": [
   {
@@ -11149,13 +11151,13 @@
    "position": [
     -32201.98,
     -28325.95,
-    18.0
+    7.0
    ],
    "yaw": 237.08,
    "scale": 1.0,
    "variant_seed": 430902,
    "collision": true,
-   "ground": "sidewalk",
+   "ground": "road",
    "osm_node": "13739213081",
    "name": "St-Hubert / Duluth",
    "module": 2,
@@ -11166,7 +11168,7 @@
    "position": [
     -32078.25,
     -28491.82,
-    18.0
+    7.0
    ],
    "yaw": 57.08,
    "scale": 1.0,
@@ -11182,7 +11184,7 @@
    "position": [
     -32145.41,
     -28448.34,
-    18.0
+    7.0
    ],
    "yaw": 57.08,
    "scale": 1.0,
@@ -11198,7 +11200,7 @@
    "position": [
     -32212.56,
     -28404.87,
-    18.0
+    7.0
    ],
    "yaw": 57.08,
    "scale": 1.0,
@@ -11214,7 +11216,7 @@
    "position": [
     -32346.88,
     -28317.92,
-    18.0
+    7.0
    ],
    "yaw": 57.08,
    "scale": 1.0,
@@ -11230,7 +11232,7 @@
    "position": [
     -32414.03,
     -28274.45,
-    18.0
+    7.0
    ],
    "yaw": 57.08,
    "scale": 1.0,
@@ -16016,22 +16018,6 @@
   {
    "prop": "sign_parking",
    "position": [
-    10349.42,
-    -44493.38,
-    18.0
-   ],
-   "yaw": 327.03,
-   "scale": 1.0,
-   "variant_seed": 129292,
-   "collision": true,
-   "ground": "sidewalk",
-   "code": "SU-ME-A",
-   "text": "\\P 9h-10h MERCREDI 1 AVRIL AU 1 DÉC",
-   "arrow": "both"
-  },
-  {
-   "prop": "sign_parking",
-   "position": [
     -1545.92,
     -35577.29,
     0.0
@@ -16096,50 +16082,34 @@
   {
    "prop": "sign_parking",
    "position": [
-    2897.92,
-    -28789.45,
+    4816.43,
+    -25809.15,
     18.0
    ],
    "yaw": 57.23,
    "scale": 1.0,
-   "variant_seed": 587783,
+   "variant_seed": 348504,
    "collision": true,
    "ground": "sidewalk",
-   "code": "R-PF",
-   "text": "\\P 9h-23h EXCEPTÉ S3R",
+   "code": "SD-TT",
+   "text": "\\P EN TOUT TEMPS",
    "arrow": "left"
   },
   {
    "prop": "sign_parking",
    "position": [
-    4568.07,
-    -26194.97,
+    6018.62,
+    -23941.61,
     18.0
    ],
    "yaw": 237.23,
    "scale": 1.0,
-   "variant_seed": 303546,
+   "variant_seed": 474308,
    "collision": true,
    "ground": "sidewalk",
-   "code": "R-PF",
-   "text": "\\P 9h-23h EXCEPTÉ S3R",
+   "code": "SU-MA-A",
+   "text": "\\P 8h-9h MARDI 1 AVRIL AU 1 DÉC",
    "arrow": "both"
-  },
-  {
-   "prop": "sign_parking",
-   "position": [
-    5880.42,
-    -24156.29,
-    18.0
-   ],
-   "yaw": 237.23,
-   "scale": 1.0,
-   "variant_seed": 811121,
-   "collision": true,
-   "ground": "sidewalk",
-   "code": "SD-TT",
-   "text": "\\P EN TOUT TEMPS",
-   "arrow": "right"
   },
   {
    "prop": "sign_parking",
@@ -16288,33 +16258,17 @@
   {
    "prop": "sign_parking",
    "position": [
-    -40094.12,
-    22867.55,
+    -42275.21,
+    24305.72,
     18.0
    ],
    "yaw": 146.6,
    "scale": 1.0,
-   "variant_seed": 717128,
+   "variant_seed": 85772,
    "collision": true,
    "ground": "sidewalk",
-   "code": "AD-TT",
-   "text": "\\A EN TOUT TEMPS",
-   "arrow": "right"
-  },
-  {
-   "prop": "sign_parking",
-   "position": [
-    -42703.64,
-    24588.22,
-    18.0
-   ],
-   "yaw": 146.6,
-   "scale": 1.0,
-   "variant_seed": 940975,
-   "collision": true,
-   "ground": "sidewalk",
-   "code": "R-PF",
-   "text": "\\P 9h-23h EXCEPTÉ S3R",
+   "code": "SD-TT",
+   "text": "\\P EN TOUT TEMPS",
    "arrow": "left"
   },
   {
@@ -16368,50 +16322,18 @@
   {
    "prop": "sign_parking",
    "position": [
-    -34943.06,
-    21024.23,
+    -30242.06,
+    17895.36,
     18.0
    ],
    "yaw": 326.35,
    "scale": 1.0,
-   "variant_seed": 284734,
-   "collision": true,
-   "ground": "sidewalk",
-   "code": "SU-MA-A",
-   "text": "\\P 8h-9h MARDI 1 AVRIL AU 1 DÉC",
-   "arrow": "both"
-  },
-  {
-   "prop": "sign_parking",
-   "position": [
-    -32195.83,
-    19195.74,
-    18.0
-   ],
-   "yaw": 146.35,
-   "scale": 1.0,
-   "variant_seed": 136786,
+   "variant_seed": 408610,
    "collision": true,
    "ground": "sidewalk",
    "code": "R-PF",
    "text": "\\P 9h-23h EXCEPTÉ S3R",
-   "arrow": "left"
-  },
-  {
-   "prop": "sign_parking",
-   "position": [
-    -29865.41,
-    17644.67,
-    18.0
-   ],
-   "yaw": 146.35,
-   "scale": 1.0,
-   "variant_seed": 805061,
-   "collision": true,
-   "ground": "sidewalk",
-   "code": "SD-TT",
-   "text": "\\P EN TOUT TEMPS",
-   "arrow": "right"
+   "arrow": "both"
   },
   {
    "prop": "sign_parking",
@@ -17360,38 +17282,6 @@
   {
    "prop": "sign_parking",
    "position": [
-    48588.09,
-    36890.33,
-    18.0
-   ],
-   "yaw": 257.41,
-   "scale": 1.0,
-   "variant_seed": 464989,
-   "collision": true,
-   "ground": "sidewalk",
-   "code": "R-PF",
-   "text": "\\P 9h-23h EXCEPTÉ S3R",
-   "arrow": "both"
-  },
-  {
-   "prop": "sign_parking",
-   "position": [
-    48063.05,
-    34538.83,
-    18.0
-   ],
-   "yaw": 77.41,
-   "scale": 1.0,
-   "variant_seed": 20855,
-   "collision": true,
-   "ground": "sidewalk",
-   "code": "AD-TT",
-   "text": "\\A EN TOUT TEMPS",
-   "arrow": "left"
-  },
-  {
-   "prop": "sign_parking",
-   "position": [
     -9181.86,
     -14192.25,
     18.0
@@ -17552,98 +17442,82 @@
   {
    "prop": "sign_parking",
    "position": [
-    31757.12,
-    43697.65,
-    18.0
-   ],
-   "yaw": 326.46,
-   "scale": 1.0,
-   "variant_seed": 759445,
-   "collision": true,
-   "ground": "sidewalk",
-   "code": "SD-TT",
-   "text": "\\P EN TOUT TEMPS",
-   "arrow": "left"
-  },
-  {
-   "prop": "sign_parking",
-   "position": [
-    34755.86,
-    41709.51,
+    34205.51,
+    42074.39,
     18.0
    ],
    "yaw": 146.46,
    "scale": 1.0,
-   "variant_seed": 965921,
-   "collision": true,
-   "ground": "sidewalk",
-   "code": "R-PF",
-   "text": "\\P 9h-23h EXCEPTÉ S3R",
-   "arrow": "both"
-  },
-  {
-   "prop": "sign_parking",
-   "position": [
-    36641.94,
-    40459.05,
-    18.0
-   ],
-   "yaw": 146.46,
-   "scale": 1.0,
-   "variant_seed": 408373,
+   "variant_seed": 203382,
    "collision": true,
    "ground": "sidewalk",
    "code": "SU-ME-A",
    "text": "\\P 9h-10h MERCREDI 1 AVRIL AU 1 DÉC",
-   "arrow": "both"
-  },
-  {
-   "prop": "sign_parking",
-   "position": [
-    39022.65,
-    38880.66,
-    18.0
-   ],
-   "yaw": 326.46,
-   "scale": 1.0,
-   "variant_seed": 3651,
-   "collision": true,
-   "ground": "sidewalk",
-   "code": "SU-MA-A",
-   "text": "\\P 8h-9h MARDI 1 AVRIL AU 1 DÉC",
    "arrow": "right"
   },
   {
    "prop": "sign_parking",
    "position": [
-    41003.29,
-    37567.51,
+    37070.74,
+    40174.76,
     18.0
    ],
    "yaw": 146.46,
    "scale": 1.0,
-   "variant_seed": 192210,
+   "variant_seed": 883760,
    "collision": true,
    "ground": "sidewalk",
-   "code": "SU-MA-A",
-   "text": "\\P 8h-9h MARDI 1 AVRIL AU 1 DÉC",
+   "code": "R-PF",
+   "text": "\\P 9h-23h EXCEPTÉ S3R",
+   "arrow": "both"
+  },
+  {
+   "prop": "sign_parking",
+   "position": [
+    39805.73,
+    38361.48,
+    9.0
+   ],
+   "yaw": 146.46,
+   "scale": 1.0,
+   "variant_seed": 835,
+   "collision": false,
+   "ground": "apron",
+   "code": "AD-TT",
+   "text": "\\A EN TOUT TEMPS",
    "arrow": "left"
   },
   {
    "prop": "sign_parking",
    "position": [
-    42856.37,
-    36338.93,
+    42065.4,
+    36863.33,
     18.0
    ],
    "yaw": 326.46,
    "scale": 1.0,
-   "variant_seed": 872862,
+   "variant_seed": 821826,
    "collision": true,
    "ground": "sidewalk",
-   "code": "R-PF",
-   "text": "\\P 9h-23h EXCEPTÉ S3R",
-   "arrow": "left"
+   "code": "SD-TT",
+   "text": "\\P EN TOUT TEMPS",
+   "arrow": "both"
+  },
+  {
+   "prop": "sign_parking",
+   "position": [
+    44317.26,
+    35370.37,
+    18.0
+   ],
+   "yaw": 326.46,
+   "scale": 1.0,
+   "variant_seed": 473093,
+   "collision": true,
+   "ground": "sidewalk",
+   "code": "SU-MA-A",
+   "text": "\\P 8h-9h MARDI 1 AVRIL AU 1 DÉC",
+   "arrow": "both"
   },
   {
    "prop": "sign_parking",
@@ -17792,34 +17666,18 @@
   {
    "prop": "sign_parking",
    "position": [
-    23607.63,
-    46937.67,
+    21539.07,
+    48308.53,
     18.0
    ],
    "yaw": 146.47,
    "scale": 1.0,
-   "variant_seed": 814964,
-   "collision": true,
-   "ground": "sidewalk",
-   "code": "AD-TT",
-   "text": "\\A EN TOUT TEMPS",
-   "arrow": "left"
-  },
-  {
-   "prop": "sign_parking",
-   "position": [
-    21133.08,
-    48577.59,
-    18.0
-   ],
-   "yaw": 146.47,
-   "scale": 1.0,
-   "variant_seed": 855919,
+   "variant_seed": 146376,
    "collision": true,
    "ground": "sidewalk",
    "code": "R-PF",
    "text": "\\P 9h-23h EXCEPTÉ S3R",
-   "arrow": "both"
+   "arrow": "left"
   },
   {
    "prop": "sign_parking",
@@ -17888,49 +17746,49 @@
   {
    "prop": "sign_parking",
    "position": [
-    48528.33,
-    32620.83,
+    51390.95,
+    30699.71,
     18.0
    ],
    "yaw": 146.13,
    "scale": 1.0,
-   "variant_seed": 735382,
+   "variant_seed": 459161,
    "collision": true,
    "ground": "sidewalk",
-   "code": "R-PF",
-   "text": "\\P 9h-23h EXCEPTÉ S3R",
-   "arrow": "both"
-  },
-  {
-   "prop": "sign_parking",
-   "position": [
-    50933.5,
-    31006.71,
-    18.0
-   ],
-   "yaw": 146.13,
-   "scale": 1.0,
-   "variant_seed": 479313,
-   "collision": true,
-   "ground": "sidewalk",
-   "code": "R-PF",
-   "text": "\\P 9h-23h EXCEPTÉ S3R",
+   "code": "SU-MA-A",
+   "text": "\\P 8h-9h MARDI 1 AVRIL AU 1 DÉC",
    "arrow": "left"
   },
   {
    "prop": "sign_parking",
    "position": [
-    53159.77,
-    29512.64,
+    53331.79,
+    29397.21,
+    18.0
+   ],
+   "yaw": 146.13,
+   "scale": 1.0,
+   "variant_seed": 918014,
+   "collision": true,
+   "ground": "sidewalk",
+   "code": "AD-TT",
+   "text": "\\A EN TOUT TEMPS",
+   "arrow": "left"
+  },
+  {
+   "prop": "sign_parking",
+   "position": [
+    55162.45,
+    28168.64,
     18.0
    ],
    "yaw": 326.13,
    "scale": 1.0,
-   "variant_seed": 241890,
+   "variant_seed": 238114,
    "collision": true,
    "ground": "sidewalk",
-   "code": "R-PF",
-   "text": "\\P 9h-23h EXCEPTÉ S3R",
+   "code": "SU-ME-A",
+   "text": "\\P 9h-10h MERCREDI 1 AVRIL AU 1 DÉC",
    "arrow": "left"
   },
   {
@@ -18256,13 +18114,29 @@
   {
    "prop": "sign_parking",
    "position": [
-    -38099.35,
-    31955.41,
+    -35218.11,
+    30061.16,
     18.0
    ],
    "yaw": 146.68,
    "scale": 1.0,
-   "variant_seed": 896257,
+   "variant_seed": 160824,
+   "collision": true,
+   "ground": "sidewalk",
+   "code": "R-PF",
+   "text": "\\P 9h-23h EXCEPTÉ S3R",
+   "arrow": "right"
+  },
+  {
+   "prop": "sign_parking",
+   "position": [
+    -29844.98,
+    26528.63,
+    18.0
+   ],
+   "yaw": 146.68,
+   "scale": 1.0,
+   "variant_seed": 493971,
    "collision": true,
    "ground": "sidewalk",
    "code": "R-PF",
@@ -18272,82 +18146,34 @@
   {
    "prop": "sign_parking",
    "position": [
-    -35284.27,
-    30104.65,
-    18.0
-   ],
-   "yaw": 326.68,
-   "scale": 1.0,
-   "variant_seed": 871285,
-   "collision": true,
-   "ground": "sidewalk",
-   "code": "SU-MA-A",
-   "text": "\\P 8h-9h MARDI 1 AVRIL AU 1 DÉC",
-   "arrow": "right"
-  },
-  {
-   "prop": "sign_parking",
-   "position": [
-    -32972.24,
-    28584.63,
-    18.0
-   ],
-   "yaw": 326.68,
-   "scale": 1.0,
-   "variant_seed": 334043,
-   "collision": true,
-   "ground": "sidewalk",
-   "code": "SU-MA-A",
-   "text": "\\P 8h-9h MARDI 1 AVRIL AU 1 DÉC",
-   "arrow": "left"
-  },
-  {
-   "prop": "sign_parking",
-   "position": [
-    -30586.05,
-    27015.84,
-    18.0
+    -27276.96,
+    24840.3,
+    9.0
    ],
    "yaw": 146.68,
    "scale": 1.0,
-   "variant_seed": 368260,
-   "collision": true,
-   "ground": "sidewalk",
+   "variant_seed": 564198,
+   "collision": false,
+   "ground": "apron",
    "code": "SD-TT",
    "text": "\\P EN TOUT TEMPS",
-   "arrow": "both"
-  },
-  {
-   "prop": "sign_parking",
-   "position": [
-    -28531.09,
-    25664.83,
-    18.0
-   ],
-   "yaw": 146.68,
-   "scale": 1.0,
-   "variant_seed": 956346,
-   "collision": true,
-   "ground": "sidewalk",
-   "code": "R-PF",
-   "text": "\\P 9h-23h EXCEPTÉ S3R",
    "arrow": "left"
   },
   {
    "prop": "sign_parking",
    "position": [
-    -25631.93,
-    23758.79,
+    -24900.61,
+    23277.99,
     18.0
    ],
-   "yaw": 326.68,
+   "yaw": 146.68,
    "scale": 1.0,
-   "variant_seed": 840103,
+   "variant_seed": 456824,
    "collision": true,
    "ground": "sidewalk",
    "code": "R-PF",
    "text": "\\P 9h-23h EXCEPTÉ S3R",
-   "arrow": "right"
+   "arrow": "both"
   },
   {
    "prop": "sign_parking",
@@ -18416,29 +18242,13 @@
   {
    "prop": "sign_parking",
    "position": [
-    -17514.55,
-    52393.5,
+    -22358.08,
+    55600.34,
     18.0
    ],
    "yaw": 146.49,
    "scale": 1.0,
-   "variant_seed": 616663,
-   "collision": true,
-   "ground": "sidewalk",
-   "code": "R-PF",
-   "text": "\\P 9h-23h EXCEPTÉ S3R",
-   "arrow": "right"
-  },
-  {
-   "prop": "sign_parking",
-   "position": [
-    -20225.72,
-    54188.53,
-    18.0
-   ],
-   "yaw": 326.49,
-   "scale": 1.0,
-   "variant_seed": 307005,
+   "variant_seed": 71114,
    "collision": true,
    "ground": "sidewalk",
    "code": "R-PF",
@@ -18448,45 +18258,29 @@
   {
    "prop": "sign_parking",
    "position": [
-    -22137.87,
-    55454.55,
+    -24753.27,
+    57186.17,
     18.0
    ],
-   "yaw": 146.49,
+   "yaw": 326.49,
    "scale": 1.0,
-   "variant_seed": 609267,
+   "variant_seed": 959580,
    "collision": true,
    "ground": "sidewalk",
    "code": "AD-TT",
    "text": "\\A EN TOUT TEMPS",
-   "arrow": "right"
-  },
-  {
-   "prop": "sign_parking",
-   "position": [
-    -24676.24,
-    57135.17,
-    18.0
-   ],
-   "yaw": 326.49,
-   "scale": 1.0,
-   "variant_seed": 621487,
-   "collision": true,
-   "ground": "sidewalk",
-   "code": "SU-MA-A",
-   "text": "\\P 8h-9h MARDI 1 AVRIL AU 1 DÉC",
    "arrow": "both"
   },
   {
    "prop": "sign_parking",
    "position": [
-    -27509.06,
-    59010.75,
+    -27553.42,
+    59040.12,
     18.0
    ],
-   "yaw": 326.49,
+   "yaw": 146.49,
    "scale": 1.0,
-   "variant_seed": 6310,
+   "variant_seed": 16571,
    "collision": true,
    "ground": "sidewalk",
    "code": "SU-ME-A",
@@ -18619,22 +18413,6 @@
    "ground": "apron",
    "code": "SU-MA-A",
    "text": "\\P 8h-9h MARDI 1 AVRIL AU 1 DÉC",
-   "arrow": "both"
-  },
-  {
-   "prop": "sign_parking",
-   "position": [
-    -8864.81,
-    48176.87,
-    18.0
-   ],
-   "yaw": 146.34,
-   "scale": 1.0,
-   "variant_seed": 861042,
-   "collision": true,
-   "ground": "sidewalk",
-   "code": "R-PF",
-   "text": "\\P 9h-23h EXCEPTÉ S3R",
    "arrow": "both"
   },
   {
@@ -18912,82 +18690,50 @@
   {
    "prop": "sign_parking",
    "position": [
-    -29588.71,
-    -10649.41,
+    -32550.99,
+    -8723.43,
     18.0
    ],
    "yaw": 146.97,
    "scale": 1.0,
-   "variant_seed": 897487,
+   "variant_seed": 967975,
    "collision": true,
    "ground": "sidewalk",
-   "code": "R-PF",
-   "text": "\\P 9h-23h EXCEPTÉ S3R",
+   "code": "SU-ME-A",
+   "text": "\\P 9h-10h MERCREDI 1 AVRIL AU 1 DÉC",
    "arrow": "right"
   },
   {
    "prop": "sign_parking",
    "position": [
-    -32267.22,
-    -8907.93,
+    -34668.59,
+    -7346.64,
     18.0
    ],
-   "yaw": 146.97,
+   "yaw": 326.97,
    "scale": 1.0,
-   "variant_seed": 611299,
+   "variant_seed": 491762,
    "collision": true,
    "ground": "sidewalk",
-   "code": "AD-TT",
-   "text": "\\A EN TOUT TEMPS",
-   "arrow": "both"
-  },
-  {
-   "prop": "sign_parking",
-   "position": [
-    -34595.27,
-    -7394.31,
-    18.0
-   ],
-   "yaw": 146.97,
-   "scale": 1.0,
-   "variant_seed": 816573,
-   "collision": true,
-   "ground": "sidewalk",
-   "code": "AD-TT",
-   "text": "\\A EN TOUT TEMPS",
-   "arrow": "right"
-  },
-  {
-   "prop": "sign_parking",
-   "position": [
-    -37516.52,
-    -5495.01,
-    18.0
-   ],
-   "yaw": 146.97,
-   "scale": 1.0,
-   "variant_seed": 664008,
-   "collision": true,
-   "ground": "sidewalk",
-   "code": "SU-MA-A",
-   "text": "\\P 8h-9h MARDI 1 AVRIL AU 1 DÉC",
+   "code": "SD-TT",
+   "text": "\\P EN TOUT TEMPS",
    "arrow": "left"
   },
   {
    "prop": "sign_parking",
    "position": [
-    -40246.82,
-    -3719.86,
+    -39646.13,
+    -4110.41,
     18.0
    ],
    "yaw": 146.97,
    "scale": 1.0,
-   "variant_seed": 104845,
+   "variant_seed": 426757,
    "collision": true,
    "ground": "sidewalk",
-   "code": "R-PF",
-   "text": "\\P 9h-23h EXCEPTÉ S3R",
-   "arrow": "both"
+   "code": "SU-ME-A",
+   "text": "\\P 9h-10h MERCREDI 1 AVRIL AU 1 DÉC",
+   "arrow": "left"
   },
   {
    "prop": "sign_parking",
@@ -19120,34 +18866,18 @@
   {
    "prop": "sign_parking",
    "position": [
-    -12019.75,
-    -20664.53,
+    -9702.58,
+    -22181.35,
     18.0
    ],
    "yaw": 146.79,
    "scale": 1.0,
-   "variant_seed": 671742,
+   "variant_seed": 815577,
    "collision": true,
    "ground": "sidewalk",
-   "code": "SU-MA-A",
-   "text": "\\P 8h-9h MARDI 1 AVRIL AU 1 DÉC",
-   "arrow": "both"
-  },
-  {
-   "prop": "sign_parking",
-   "position": [
-    -9574.31,
-    -22265.32,
-    18.0
-   ],
-   "yaw": 326.79,
-   "scale": 1.0,
-   "variant_seed": 291442,
-   "collision": true,
-   "ground": "sidewalk",
-   "code": "SD-TT",
-   "text": "\\P EN TOUT TEMPS",
-   "arrow": "right"
+   "code": "R-PF",
+   "text": "\\P 9h-23h EXCEPTÉ S3R",
+   "arrow": "left"
   },
   {
    "prop": "sign_parking",
@@ -19248,65 +18978,49 @@
   {
    "prop": "sign_parking",
    "position": [
-    779.21,
-    -30425.16,
+    -2212.87,
+    -28479.76,
     18.0
    ],
    "yaw": 146.97,
    "scale": 1.0,
-   "variant_seed": 563295,
+   "variant_seed": 55254,
    "collision": true,
    "ground": "sidewalk",
-   "code": "R-PF",
-   "text": "\\P 9h-23h EXCEPTÉ S3R",
+   "code": "SU-ME-A",
+   "text": "\\P 9h-10h MERCREDI 1 AVRIL AU 1 DÉC",
    "arrow": "left"
   },
   {
    "prop": "sign_parking",
    "position": [
-    -1699.31,
-    -28813.66,
+    -4414.48,
+    -27048.3,
     18.0
    ],
    "yaw": 146.97,
    "scale": 1.0,
-   "variant_seed": 736241,
+   "variant_seed": 2024,
    "collision": true,
    "ground": "sidewalk",
-   "code": "AD-TT",
-   "text": "\\A EN TOUT TEMPS",
-   "arrow": "right"
+   "code": "SD-TT",
+   "text": "\\P EN TOUT TEMPS",
+   "arrow": "both"
   },
   {
    "prop": "sign_parking",
    "position": [
-    -3712.81,
-    -27504.52,
+    -6778.16,
+    -25511.47,
     18.0
    ],
    "yaw": 146.97,
    "scale": 1.0,
-   "variant_seed": 608159,
+   "variant_seed": 196591,
    "collision": true,
    "ground": "sidewalk",
-   "code": "SU-MA-A",
-   "text": "\\P 8h-9h MARDI 1 AVRIL AU 1 DÉC",
-   "arrow": "right"
-  },
-  {
-   "prop": "sign_parking",
-   "position": [
-    -6421.78,
-    -25743.18,
-    18.0
-   ],
-   "yaw": 326.97,
-   "scale": 1.0,
-   "variant_seed": 858611,
-   "collision": true,
-   "ground": "sidewalk",
-   "code": "AD-TT",
-   "text": "\\A EN TOUT TEMPS",
+   "code": "SD-TT",
+   "text": "\\P EN TOUT TEMPS",
    "arrow": "right"
   },
   {
@@ -19360,50 +19074,34 @@
   {
    "prop": "sign_parking",
    "position": [
-    12657.66,
-    -36741.59,
+    15414.33,
+    -38537.43,
     18.0
    ],
    "yaw": 146.92,
    "scale": 1.0,
-   "variant_seed": 676020,
+   "variant_seed": 921105,
    "collision": true,
    "ground": "sidewalk",
-   "code": "SU-ME-A",
-   "text": "\\P 9h-10h MERCREDI 1 AVRIL AU 1 DÉC",
+   "code": "AD-TT",
+   "text": "\\A EN TOUT TEMPS",
    "arrow": "left"
   },
   {
    "prop": "sign_parking",
    "position": [
-    14903.71,
-    -38204.78,
+    17712.26,
+    -40034.42,
     18.0
    ],
-   "yaw": 146.92,
+   "yaw": 326.92,
    "scale": 1.0,
-   "variant_seed": 462434,
+   "variant_seed": 176038,
    "collision": true,
    "ground": "sidewalk",
    "code": "SU-MA-A",
    "text": "\\P 8h-9h MARDI 1 AVRIL AU 1 DÉC",
    "arrow": "left"
-  },
-  {
-   "prop": "sign_parking",
-   "position": [
-    17278.71,
-    -39751.98,
-    18.0
-   ],
-   "yaw": 146.92,
-   "scale": 1.0,
-   "variant_seed": 360809,
-   "collision": true,
-   "ground": "sidewalk",
-   "code": "SU-ME-A",
-   "text": "\\P 9h-10h MERCREDI 1 AVRIL AU 1 DÉC",
-   "arrow": "right"
   },
   {
    "prop": "sign_parking",
@@ -19440,81 +19138,65 @@
   {
    "prop": "sign_parking",
    "position": [
-    14638.39,
-    -39452.18,
+    12031.83,
+    -37754.13,
     18.0
    ],
    "yaw": 146.92,
    "scale": 1.0,
-   "variant_seed": 381672,
+   "variant_seed": 867694,
    "collision": true,
    "ground": "sidewalk",
-   "code": "SD-TT",
-   "text": "\\P EN TOUT TEMPS",
-   "arrow": "left"
+   "code": "SU-ME-A",
+   "text": "\\P 9h-10h MERCREDI 1 AVRIL AU 1 DÉC",
+   "arrow": "both"
   },
   {
    "prop": "sign_parking",
    "position": [
-    12729.12,
-    -38208.38,
-    18.0
-   ],
-   "yaw": 146.92,
-   "scale": 1.0,
-   "variant_seed": 369501,
-   "collision": true,
-   "ground": "sidewalk",
-   "code": "SD-TT",
-   "text": "\\P EN TOUT TEMPS",
-   "arrow": "left"
-  },
-  {
-   "prop": "sign_parking",
-   "position": [
-    10289.09,
-    -36618.82,
+    9435.16,
+    -36062.52,
     18.0
    ],
    "yaw": 326.92,
    "scale": 1.0,
-   "variant_seed": 69065,
+   "variant_seed": 941897,
    "collision": true,
    "ground": "sidewalk",
-   "code": "AD-TT",
-   "text": "\\A EN TOUT TEMPS",
+   "code": "R-PF",
+   "text": "\\P 9h-23h EXCEPTÉ S3R",
+   "arrow": "left"
+  },
+  {
+   "prop": "sign_parking",
+   "position": [
+    7265.32,
+    -34648.97,
+    18.0
+   ],
+   "yaw": 146.92,
+   "scale": 1.0,
+   "variant_seed": 515674,
+   "collision": true,
+   "ground": "sidewalk",
+   "code": "R-PF",
+   "text": "\\P 9h-23h EXCEPTÉ S3R",
    "arrow": "right"
   },
   {
    "prop": "sign_parking",
    "position": [
-    7526.15,
-    -34818.89,
+    5145.42,
+    -33267.96,
     18.0
    ],
    "yaw": 146.92,
    "scale": 1.0,
-   "variant_seed": 929253,
+   "variant_seed": 338006,
    "collision": true,
    "ground": "sidewalk",
-   "code": "AD-TT",
-   "text": "\\A EN TOUT TEMPS",
-   "arrow": "left"
-  },
-  {
-   "prop": "sign_parking",
-   "position": [
-    5138.79,
-    -33263.64,
-    18.0
-   ],
-   "yaw": 326.92,
-   "scale": 1.0,
-   "variant_seed": 954450,
-   "collision": true,
-   "ground": "sidewalk",
-   "code": "SU-MA-A",
-   "text": "\\P 8h-9h MARDI 1 AVRIL AU 1 DÉC",
+   "code": "SU-ME-A",
+   "text": "\\P 9h-10h MERCREDI 1 AVRIL AU 1 DÉC",
    "arrow": "left"
   },
   {
@@ -20208,114 +19890,66 @@
   {
    "prop": "sign_parking",
    "position": [
-    -37556.03,
-    39681.27,
+    -34745.0,
+    37813.49,
     18.0
    ],
    "yaw": 146.4,
    "scale": 1.0,
-   "variant_seed": 840342,
-   "collision": true,
-   "ground": "sidewalk",
-   "code": "R-PF",
-   "text": "\\P 9h-23h EXCEPTÉ S3R",
-   "arrow": "both"
-  },
-  {
-   "prop": "sign_parking",
-   "position": [
-    -35357.76,
-    38220.64,
-    18.0
-   ],
-   "yaw": 326.4,
-   "scale": 1.0,
-   "variant_seed": 93810,
-   "collision": true,
-   "ground": "sidewalk",
-   "code": "SD-TT",
-   "text": "\\P EN TOUT TEMPS",
-   "arrow": "both"
-  },
-  {
-   "prop": "sign_parking",
-   "position": [
-    -32962.66,
-    36629.23,
-    18.0
-   ],
-   "yaw": 326.4,
-   "scale": 1.0,
-   "variant_seed": 190919,
-   "collision": true,
-   "ground": "sidewalk",
-   "code": "R-PF",
-   "text": "\\P 9h-23h EXCEPTÉ S3R",
-   "arrow": "left"
-  },
-  {
-   "prop": "sign_parking",
-   "position": [
-    -30549.15,
-    35025.59,
-    18.0
-   ],
-   "yaw": 146.4,
-   "scale": 1.0,
-   "variant_seed": 641980,
-   "collision": true,
-   "ground": "sidewalk",
-   "code": "SU-ME-A",
-   "text": "\\P 9h-10h MERCREDI 1 AVRIL AU 1 DÉC",
-   "arrow": "both"
-  },
-  {
-   "prop": "sign_parking",
-   "position": [
-    -27557.08,
-    33037.53,
-    18.0
-   ],
-   "yaw": 326.4,
-   "scale": 1.0,
-   "variant_seed": 511253,
-   "collision": true,
-   "ground": "sidewalk",
-   "code": "SD-TT",
-   "text": "\\P EN TOUT TEMPS",
-   "arrow": "both"
-  },
-  {
-   "prop": "sign_parking",
-   "position": [
-    -25118.57,
-    31417.27,
-    18.0
-   ],
-   "yaw": 326.4,
-   "scale": 1.0,
-   "variant_seed": 409557,
-   "collision": true,
-   "ground": "sidewalk",
-   "code": "R-PF",
-   "text": "\\P 9h-23h EXCEPTÉ S3R",
-   "arrow": "left"
-  },
-  {
-   "prop": "sign_parking",
-   "position": [
-    -22676.84,
-    29794.87,
-    18.0
-   ],
-   "yaw": 326.4,
-   "scale": 1.0,
-   "variant_seed": 457008,
+   "variant_seed": 3280,
    "collision": true,
    "ground": "sidewalk",
    "code": "AD-TT",
    "text": "\\A EN TOUT TEMPS",
    "arrow": "both"
+  },
+  {
+   "prop": "sign_parking",
+   "position": [
+    -27623.88,
+    33081.91,
+    18.0
+   ],
+   "yaw": 146.4,
+   "scale": 1.0,
+   "variant_seed": 435338,
+   "collision": true,
+   "ground": "sidewalk",
+   "code": "SU-MA-A",
+   "text": "\\P 8h-9h MARDI 1 AVRIL AU 1 DÉC",
+   "arrow": "right"
+  },
+  {
+   "prop": "sign_parking",
+   "position": [
+    -25291.66,
+    31532.27,
+    18.0
+   ],
+   "yaw": 326.4,
+   "scale": 1.0,
+   "variant_seed": 833492,
+   "collision": true,
+   "ground": "sidewalk",
+   "code": "SU-MA-A",
+   "text": "\\P 8h-9h MARDI 1 AVRIL AU 1 DÉC",
+   "arrow": "left"
+  },
+  {
+   "prop": "sign_parking",
+   "position": [
+    -23241.09,
+    30169.79,
+    9.0
+   ],
+   "yaw": 326.4,
+   "scale": 1.0,
+   "variant_seed": 336065,
+   "collision": false,
+   "ground": "apron",
+   "code": "R-PF",
+   "text": "\\P 9h-23h EXCEPTÉ S3R",
+   "arrow": "right"
   },
   {
    "prop": "sign_parking",
@@ -20480,34 +20114,18 @@
   {
    "prop": "sign_parking",
    "position": [
-    34982.65,
-    -29223.79,
+    34861.84,
+    -32528.76,
     18.0
    ],
-   "yaw": 87.91,
+   "yaw": 267.91,
    "scale": 1.0,
-   "variant_seed": 116458,
+   "variant_seed": 485484,
    "collision": true,
    "ground": "sidewalk",
-   "code": "SU-ME-A",
-   "text": "\\P 9h-10h MERCREDI 1 AVRIL AU 1 DÉC",
-   "arrow": "right"
-  },
-  {
-   "prop": "sign_parking",
-   "position": [
-    34878.19,
-    -32081.3,
-    18.0
-   ],
-   "yaw": 87.91,
-   "scale": 1.0,
-   "variant_seed": 160513,
-   "collision": true,
-   "ground": "sidewalk",
-   "code": "SD-TT",
-   "text": "\\P EN TOUT TEMPS",
-   "arrow": "both"
+   "code": "SU-MA-A",
+   "text": "\\P 8h-9h MARDI 1 AVRIL AU 1 DÉC",
+   "arrow": "left"
   },
   {
    "prop": "sign_parking",
@@ -20688,38 +20306,6 @@
   {
    "prop": "sign_parking",
    "position": [
-    -41974.17,
-    -39302.13,
-    18.0
-   ],
-   "yaw": 57.34,
-   "scale": 1.0,
-   "variant_seed": 803363,
-   "collision": true,
-   "ground": "sidewalk",
-   "code": "SD-TT",
-   "text": "\\P EN TOUT TEMPS",
-   "arrow": "both"
-  },
-  {
-   "prop": "sign_parking",
-   "position": [
-    -40375.01,
-    -36807.38,
-    18.0
-   ],
-   "yaw": 57.34,
-   "scale": 1.0,
-   "variant_seed": 121056,
-   "collision": true,
-   "ground": "sidewalk",
-   "code": "SU-ME-A",
-   "text": "\\P 9h-10h MERCREDI 1 AVRIL AU 1 DÉC",
-   "arrow": "both"
-  },
-  {
-   "prop": "sign_parking",
-   "position": [
     -39575.99,
     -37292.88,
     18.0
@@ -20832,33 +20418,17 @@
   {
    "prop": "sign_parking",
    "position": [
-    -37586.46,
-    65583.69,
+    -40317.95,
+    67395.11,
     18.0
    ],
-   "yaw": 146.45,
+   "yaw": 326.45,
    "scale": 1.0,
-   "variant_seed": 404602,
+   "variant_seed": 47759,
    "collision": true,
    "ground": "sidewalk",
-   "code": "SU-ME-A",
-   "text": "\\P 9h-10h MERCREDI 1 AVRIL AU 1 DÉC",
-   "arrow": "both"
-  },
-  {
-   "prop": "sign_parking",
-   "position": [
-    -39721.71,
-    66999.71,
-    18.0
-   ],
-   "yaw": 146.45,
-   "scale": 1.0,
-   "variant_seed": 983464,
-   "collision": true,
-   "ground": "sidewalk",
-   "code": "AD-TT",
-   "text": "\\A EN TOUT TEMPS",
+   "code": "R-PF",
+   "text": "\\P 9h-23h EXCEPTÉ S3R",
    "arrow": "both"
   },
   {
@@ -21120,13 +20690,13 @@
   {
    "prop": "sign_parking",
    "position": [
-    -16361.77,
-    62071.65,
+    -19197.89,
+    63925.36,
     18.0
    ],
-   "yaw": 146.83,
+   "yaw": 326.83,
    "scale": 1.0,
-   "variant_seed": 422467,
+   "variant_seed": 786366,
    "collision": true,
    "ground": "sidewalk",
    "code": "R-PF",
@@ -21136,34 +20706,18 @@
   {
    "prop": "sign_parking",
    "position": [
-    -18582.13,
-    63522.89,
+    -21102.05,
+    65169.94,
     18.0
    ],
    "yaw": 146.83,
    "scale": 1.0,
-   "variant_seed": 472741,
+   "variant_seed": 386968,
    "collision": true,
    "ground": "sidewalk",
-   "code": "R-PF",
-   "text": "\\P 9h-23h EXCEPTÉ S3R",
-   "arrow": "left"
-  },
-  {
-   "prop": "sign_parking",
-   "position": [
-    -20626.8,
-    64859.31,
-    18.0
-   ],
-   "yaw": 146.83,
-   "scale": 1.0,
-   "variant_seed": 56555,
-   "collision": true,
-   "ground": "sidewalk",
-   "code": "SD-TT",
-   "text": "\\P EN TOUT TEMPS",
-   "arrow": "right"
+   "code": "SU-ME-A",
+   "text": "\\P 9h-10h MERCREDI 1 AVRIL AU 1 DÉC",
+   "arrow": "both"
   },
   {
    "prop": "sign_parking",
@@ -21808,50 +21362,34 @@
   {
    "prop": "sign_parking",
    "position": [
-    -6930.68,
-    47835.68,
+    -5635.74,
+    49698.23,
     18.0
    ],
    "yaw": 235.19,
    "scale": 1.0,
-   "variant_seed": 855185,
+   "variant_seed": 187598,
    "collision": true,
    "ground": "sidewalk",
-   "code": "R-PF",
-   "text": "\\P 9h-23h EXCEPTÉ S3R",
-   "arrow": "left"
+   "code": "AD-TT",
+   "text": "\\A EN TOUT TEMPS",
+   "arrow": "right"
   },
   {
    "prop": "sign_parking",
    "position": [
-    -5138.36,
-    50413.63,
+    -4014.58,
+    52030.0,
     18.0
    ],
    "yaw": 55.19,
    "scale": 1.0,
-   "variant_seed": 807246,
+   "variant_seed": 219256,
    "collision": true,
    "ground": "sidewalk",
-   "code": "SU-MA-A",
-   "text": "\\P 8h-9h MARDI 1 AVRIL AU 1 DÉC",
-   "arrow": "left"
-  },
-  {
-   "prop": "sign_parking",
-   "position": [
-    -3747.56,
-    52414.06,
-    18.0
-   ],
-   "yaw": 235.19,
-   "scale": 1.0,
-   "variant_seed": 84922,
-   "collision": true,
-   "ground": "sidewalk",
-   "code": "R-PF",
-   "text": "\\P 9h-23h EXCEPTÉ S3R",
-   "arrow": "left"
+   "code": "SD-TT",
+   "text": "\\P EN TOUT TEMPS",
+   "arrow": "both"
   },
   {
    "prop": "sign_parking",
@@ -21952,34 +21490,34 @@
   {
    "prop": "sign_parking",
    "position": [
-    -12139.27,
-    37387.87,
+    -13592.1,
+    35250.77,
     18.0
    ],
    "yaw": 55.79,
    "scale": 1.0,
-   "variant_seed": 990056,
+   "variant_seed": 134729,
    "collision": true,
    "ground": "sidewalk",
-   "code": "AD-TT",
-   "text": "\\A EN TOUT TEMPS",
-   "arrow": "left"
+   "code": "SU-MA-A",
+   "text": "\\P 8h-9h MARDI 1 AVRIL AU 1 DÉC",
+   "arrow": "right"
   },
   {
    "prop": "sign_parking",
    "position": [
-    -14010.76,
-    34634.92,
+    -15294.43,
+    32746.64,
     18.0
    ],
-   "yaw": 235.79,
+   "yaw": 55.79,
    "scale": 1.0,
-   "variant_seed": 224536,
+   "variant_seed": 28147,
    "collision": true,
    "ground": "sidewalk",
-   "code": "SD-TT",
-   "text": "\\P EN TOUT TEMPS",
-   "arrow": "both"
+   "code": "R-PF",
+   "text": "\\P 9h-23h EXCEPTÉ S3R",
+   "arrow": "left"
   },
   {
    "prop": "sign_parking",
@@ -22032,34 +21570,18 @@
   {
    "prop": "sign_parking",
    "position": [
-    -40177.98,
-    13483.58,
-    18.0
-   ],
-   "yaw": 147.12,
-   "scale": 1.0,
-   "variant_seed": 676416,
-   "collision": true,
-   "ground": "sidewalk",
-   "code": "R-PF",
-   "text": "\\P 9h-23h EXCEPTÉ S3R",
-   "arrow": "right"
-  },
-  {
-   "prop": "sign_parking",
-   "position": [
-    -37577.53,
-    11802.83,
+    -38208.02,
+    12210.33,
     18.0
    ],
    "yaw": 327.12,
    "scale": 1.0,
-   "variant_seed": 338672,
+   "variant_seed": 239300,
    "collision": true,
    "ground": "sidewalk",
-   "code": "AD-TT",
-   "text": "\\A EN TOUT TEMPS",
-   "arrow": "both"
+   "code": "SU-MA-A",
+   "text": "\\P 8h-9h MARDI 1 AVRIL AU 1 DÉC",
+   "arrow": "left"
   },
   {
    "prop": "sign_parking",
@@ -22240,34 +21762,18 @@
   {
    "prop": "sign_parking",
    "position": [
-    -40926.75,
-    57264.75,
+    -42900.25,
+    58577.18,
     18.0
    ],
    "yaw": 326.37,
    "scale": 1.0,
-   "variant_seed": 125184,
+   "variant_seed": 653170,
    "collision": true,
    "ground": "sidewalk",
-   "code": "R-PF",
-   "text": "\\P 9h-23h EXCEPTÉ S3R",
-   "arrow": "both"
-  },
-  {
-   "prop": "sign_parking",
-   "position": [
-    -43543.59,
-    59005.02,
-    18.0
-   ],
-   "yaw": 146.37,
-   "scale": 1.0,
-   "variant_seed": 256341,
-   "collision": true,
-   "ground": "sidewalk",
-   "code": "SD-TT",
-   "text": "\\P EN TOUT TEMPS",
-   "arrow": "both"
+   "code": "AD-TT",
+   "text": "\\A EN TOUT TEMPS",
+   "arrow": "right"
   },
   {
    "prop": "sign_parking",
@@ -22288,129 +21794,65 @@
   {
    "prop": "sign_parking",
    "position": [
-    -31180.16,
-    50863.35,
+    -26541.55,
+    49403.78,
     18.0
    ],
-   "yaw": 147.51,
+   "yaw": 326.33,
    "scale": 1.0,
-   "variant_seed": 685485,
+   "variant_seed": 195805,
    "collision": true,
    "ground": "sidewalk",
-   "code": "R-PF",
-   "text": "\\P 9h-23h EXCEPTÉ S3R",
+   "code": "AD-TT",
+   "text": "\\A EN TOUT TEMPS",
    "arrow": "both"
   },
   {
    "prop": "sign_parking",
    "position": [
-    -28849.37,
-    50940.97,
+    -21906.55,
+    46316.52,
     18.0
    ],
    "yaw": 146.33,
    "scale": 1.0,
-   "variant_seed": 708662,
+   "variant_seed": 527156,
    "collision": true,
    "ground": "sidewalk",
-   "code": "SU-MA-A",
-   "text": "\\P 8h-9h MARDI 1 AVRIL AU 1 DÉC",
+   "code": "AD-TT",
+   "text": "\\A EN TOUT TEMPS",
    "arrow": "right"
   },
   {
    "prop": "sign_parking",
    "position": [
-    -26904.3,
-    49645.41,
+    -19278.26,
+    44565.88,
     18.0
    ],
-   "yaw": 326.33,
+   "yaw": 146.33,
    "scale": 1.0,
-   "variant_seed": 990184,
+   "variant_seed": 165143,
    "collision": true,
    "ground": "sidewalk",
    "code": "R-PF",
    "text": "\\P 9h-23h EXCEPTÉ S3R",
-   "arrow": "both"
+   "arrow": "left"
   },
   {
    "prop": "sign_parking",
    "position": [
-    -24863.61,
-    48286.15,
+    -16816.86,
+    42926.4,
     18.0
    ],
-   "yaw": 326.33,
+   "yaw": 146.33,
    "scale": 1.0,
-   "variant_seed": 393173,
-   "collision": true,
-   "ground": "sidewalk",
-   "code": "R-PF",
-   "text": "\\P 9h-23h EXCEPTÉ S3R",
-   "arrow": "both"
-  },
-  {
-   "prop": "sign_parking",
-   "position": [
-    -22886.15,
-    46969.01,
-    18.0
-   ],
-   "yaw": 326.33,
-   "scale": 1.0,
-   "variant_seed": 583013,
+   "variant_seed": 928703,
    "collision": true,
    "ground": "sidewalk",
    "code": "SU-MA-A",
    "text": "\\P 8h-9h MARDI 1 AVRIL AU 1 DÉC",
-   "arrow": "left"
-  },
-  {
-   "prop": "sign_parking",
-   "position": [
-    -20496.22,
-    45377.13,
-    18.0
-   ],
-   "yaw": 146.33,
-   "scale": 1.0,
-   "variant_seed": 840361,
-   "collision": true,
-   "ground": "sidewalk",
-   "code": "SU-ME-A",
-   "text": "\\P 9h-10h MERCREDI 1 AVRIL AU 1 DÉC",
-   "arrow": "left"
-  },
-  {
-   "prop": "sign_parking",
-   "position": [
-    -18595.22,
-    44110.92,
-    18.0
-   ],
-   "yaw": 146.33,
-   "scale": 1.0,
-   "variant_seed": 271940,
-   "collision": true,
-   "ground": "sidewalk",
-   "code": "R-PF",
-   "text": "\\P 9h-23h EXCEPTÉ S3R",
-   "arrow": "left"
-  },
-  {
-   "prop": "sign_parking",
-   "position": [
-    -16633.35,
-    42804.16,
-    18.0
-   ],
-   "yaw": 146.33,
-   "scale": 1.0,
-   "variant_seed": 375166,
-   "collision": true,
-   "ground": "sidewalk",
-   "code": "AD-TT",
-   "text": "\\A EN TOUT TEMPS",
    "arrow": "right"
   },
   {
@@ -22476,22 +21918,6 @@
    "code": "AD-TT",
    "text": "\\A EN TOUT TEMPS",
    "arrow": "both"
-  },
-  {
-   "prop": "sign_parking",
-   "position": [
-    -27475.51,
-    48416.09,
-    18.0
-   ],
-   "yaw": 326.33,
-   "scale": 1.0,
-   "variant_seed": 958099,
-   "collision": true,
-   "ground": "sidewalk",
-   "code": "R-PF",
-   "text": "\\P 9h-23h EXCEPTÉ S3R",
-   "arrow": "right"
   },
   {
    "prop": "sign_parking",
@@ -22896,22 +22322,6 @@
   {
    "prop": "sign_parking",
    "position": [
-    48259.23,
-    45454.24,
-    18.0
-   ],
-   "yaw": 257.73,
-   "scale": 1.0,
-   "variant_seed": 766722,
-   "collision": true,
-   "ground": "sidewalk",
-   "code": "AD-TT",
-   "text": "\\A EN TOUT TEMPS",
-   "arrow": "left"
-  },
-  {
-   "prop": "sign_parking",
-   "position": [
     50759.54,
     46974.94,
     18.0
@@ -23120,22 +22530,6 @@
   {
    "prop": "sign_parking",
    "position": [
-    46125.12,
-    26417.63,
-    18.0
-   ],
-   "yaw": 257.58,
-   "scale": 1.0,
-   "variant_seed": 307620,
-   "collision": true,
-   "ground": "sidewalk",
-   "code": "R-PF",
-   "text": "\\P 9h-23h EXCEPTÉ S3R",
-   "arrow": "both"
-  },
-  {
-   "prop": "sign_parking",
-   "position": [
     39086.24,
     4710.83,
     18.0
@@ -23152,61 +22546,29 @@
   {
    "prop": "sign_parking",
    "position": [
-    39709.44,
-    7489.88,
+    40259.29,
+    9941.92,
     18.0
    ],
    "yaw": 77.36,
    "scale": 1.0,
-   "variant_seed": 849845,
+   "variant_seed": 767074,
    "collision": true,
    "ground": "sidewalk",
-   "code": "AD-TT",
-   "text": "\\A EN TOUT TEMPS",
-   "arrow": "left"
-  },
-  {
-   "prop": "sign_parking",
-   "position": [
-    40398.48,
-    10562.58,
-    18.0
-   ],
-   "yaw": 257.36,
-   "scale": 1.0,
-   "variant_seed": 62621,
-   "collision": true,
-   "ground": "sidewalk",
-   "code": "R-PF",
-   "text": "\\P 9h-23h EXCEPTÉ S3R",
-   "arrow": "both"
-  },
-  {
-   "prop": "sign_parking",
-   "position": [
-    41054.46,
-    13487.87,
-    18.0
-   ],
-   "yaw": 257.36,
-   "scale": 1.0,
-   "variant_seed": 20123,
-   "collision": true,
-   "ground": "sidewalk",
-   "code": "SD-TT",
-   "text": "\\P EN TOUT TEMPS",
+   "code": "SU-ME-A",
+   "text": "\\P 9h-10h MERCREDI 1 AVRIL AU 1 DÉC",
    "arrow": "right"
   },
   {
    "prop": "sign_parking",
    "position": [
-    41600.08,
-    15920.99,
+    41028.28,
+    13371.09,
     18.0
    ],
-   "yaw": 77.36,
+   "yaw": 257.36,
    "scale": 1.0,
-   "variant_seed": 191025,
+   "variant_seed": 363624,
    "collision": true,
    "ground": "sidewalk",
    "code": "SU-MA-A",
@@ -23216,34 +22578,34 @@
   {
    "prop": "sign_parking",
    "position": [
-    42270.48,
-    18910.54,
+    41710.46,
+    16413.2,
     18.0
    ],
-   "yaw": 257.36,
+   "yaw": 77.36,
    "scale": 1.0,
-   "variant_seed": 779876,
+   "variant_seed": 763528,
+   "collision": true,
+   "ground": "sidewalk",
+   "code": "SU-MA-A",
+   "text": "\\P 8h-9h MARDI 1 AVRIL AU 1 DÉC",
+   "arrow": "both"
+  },
+  {
+   "prop": "sign_parking",
+   "position": [
+    42335.37,
+    19199.93,
+    18.0
+   ],
+   "yaw": 77.36,
+   "scale": 1.0,
+   "variant_seed": 662724,
    "collision": true,
    "ground": "sidewalk",
    "code": "SD-TT",
    "text": "\\P EN TOUT TEMPS",
    "arrow": "left"
-  },
-  {
-   "prop": "sign_parking",
-   "position": [
-    42880.13,
-    21629.24,
-    18.0
-   ],
-   "yaw": 257.36,
-   "scale": 1.0,
-   "variant_seed": 438197,
-   "collision": true,
-   "ground": "sidewalk",
-   "code": "SD-TT",
-   "text": "\\P EN TOUT TEMPS",
-   "arrow": "both"
   },
   {
    "prop": "sign_parking",
@@ -23280,13 +22642,29 @@
   {
    "prop": "sign_parking",
    "position": [
-    43433.03,
-    13981.21,
+    42865.01,
+    11432.2,
+    9.0
+   ],
+   "yaw": 77.44,
+   "scale": 1.0,
+   "variant_seed": 368885,
+   "collision": false,
+   "ground": "apron",
+   "code": "R-PF",
+   "text": "\\P 9h-23h EXCEPTÉ S3R",
+   "arrow": "left"
+  },
+  {
+   "prop": "sign_parking",
+   "position": [
+    42254.82,
+    8693.96,
     18.0
    ],
    "yaw": 77.44,
    "scale": 1.0,
-   "variant_seed": 380654,
+   "variant_seed": 818323,
    "collision": true,
    "ground": "sidewalk",
    "code": "AD-TT",
@@ -23296,50 +22674,18 @@
   {
    "prop": "sign_parking",
    "position": [
-    42850.23,
-    11365.91,
-    9.0
-   ],
-   "yaw": 77.44,
-   "scale": 1.0,
-   "variant_seed": 42070,
-   "collision": false,
-   "ground": "apron",
-   "code": "SU-MA-A",
-   "text": "\\P 8h-9h MARDI 1 AVRIL AU 1 DÉC",
-   "arrow": "both"
-  },
-  {
-   "prop": "sign_parking",
-   "position": [
-    42352.64,
-    9132.95,
-    18.0
-   ],
-   "yaw": 257.44,
-   "scale": 1.0,
-   "variant_seed": 620859,
-   "collision": true,
-   "ground": "sidewalk",
-   "code": "SU-MA-A",
-   "text": "\\P 8h-9h MARDI 1 AVRIL AU 1 DÉC",
-   "arrow": "both"
-  },
-  {
-   "prop": "sign_parking",
-   "position": [
-    41729.88,
-    6338.26,
+    41671.22,
+    6075.01,
     18.0
    ],
    "yaw": 77.44,
    "scale": 1.0,
-   "variant_seed": 458641,
+   "variant_seed": 821555,
    "collision": true,
    "ground": "sidewalk",
-   "code": "SU-MA-A",
-   "text": "\\P 8h-9h MARDI 1 AVRIL AU 1 DÉC",
-   "arrow": "both"
+   "code": "SU-ME-A",
+   "text": "\\P 9h-10h MERCREDI 1 AVRIL AU 1 DÉC",
+   "arrow": "left"
   },
   {
    "prop": "sign_parking",
@@ -23500,38 +22846,6 @@
    "code": "AD-TT",
    "text": "\\A EN TOUT TEMPS",
    "arrow": "both"
-  },
-  {
-   "prop": "sign_parking",
-   "position": [
-    37612.94,
-    -43791.6,
-    18.0
-   ],
-   "yaw": 326.89,
-   "scale": 1.0,
-   "variant_seed": 449525,
-   "collision": true,
-   "ground": "sidewalk",
-   "code": "R-PF",
-   "text": "\\P 9h-23h EXCEPTÉ S3R",
-   "arrow": "both"
-  },
-  {
-   "prop": "sign_parking",
-   "position": [
-    35542.88,
-    -42441.43,
-    18.0
-   ],
-   "yaw": 326.89,
-   "scale": 1.0,
-   "variant_seed": 692152,
-   "collision": true,
-   "ground": "sidewalk",
-   "code": "R-PF",
-   "text": "\\P 9h-23h EXCEPTÉ S3R",
-   "arrow": "left"
   },
   {
    "prop": "sign_parking",
@@ -24128,114 +23442,66 @@
   {
    "prop": "sign_parking",
    "position": [
-    5100.63,
-    61540.86,
+    7870.3,
+    59682.29,
     18.0
    ],
-   "yaw": 326.14,
+   "yaw": 146.14,
    "scale": 1.0,
-   "variant_seed": 540677,
+   "variant_seed": 306572,
    "collision": true,
    "ground": "sidewalk",
-   "code": "SU-ME-A",
-   "text": "\\P 9h-10h MERCREDI 1 AVRIL AU 1 DÉC",
+   "code": "R-PF",
+   "text": "\\P 9h-23h EXCEPTÉ S3R",
+   "arrow": "both"
+  },
+  {
+   "prop": "sign_parking",
+   "position": [
+    10291.6,
+    58057.5,
+    18.0
+   ],
+   "yaw": 146.14,
+   "scale": 1.0,
+   "variant_seed": 680565,
+   "collision": true,
+   "ground": "sidewalk",
+   "code": "R-PF",
+   "text": "\\P 9h-23h EXCEPTÉ S3R",
    "arrow": "left"
   },
   {
    "prop": "sign_parking",
    "position": [
-    7231.43,
-    60111.0,
+    12629.64,
+    56488.58,
     18.0
    ],
    "yaw": 146.14,
    "scale": 1.0,
-   "variant_seed": 306535,
+   "variant_seed": 838535,
    "collision": true,
    "ground": "sidewalk",
-   "code": "SD-TT",
-   "text": "\\P EN TOUT TEMPS",
+   "code": "R-PF",
+   "text": "\\P 9h-23h EXCEPTÉ S3R",
    "arrow": "both"
   },
   {
    "prop": "sign_parking",
    "position": [
-    9473.85,
-    58606.24,
+    17998.08,
+    52886.14,
     18.0
    ],
-   "yaw": 326.14,
+   "yaw": 146.14,
    "scale": 1.0,
-   "variant_seed": 140107,
-   "collision": true,
-   "ground": "sidewalk",
-   "code": "SU-MA-A",
-   "text": "\\P 8h-9h MARDI 1 AVRIL AU 1 DÉC",
-   "arrow": "both"
-  },
-  {
-   "prop": "sign_parking",
-   "position": [
-    11602.23,
-    57178.01,
-    18.0
-   ],
-   "yaw": 326.14,
-   "scale": 1.0,
-   "variant_seed": 796156,
+   "variant_seed": 939624,
    "collision": true,
    "ground": "sidewalk",
    "code": "SU-ME-A",
    "text": "\\P 9h-10h MERCREDI 1 AVRIL AU 1 DÉC",
-   "arrow": "right"
-  },
-  {
-   "prop": "sign_parking",
-   "position": [
-    13682.44,
-    55782.11,
-    18.0
-   ],
-   "yaw": 146.14,
-   "scale": 1.0,
-   "variant_seed": 732527,
-   "collision": true,
-   "ground": "sidewalk",
-   "code": "AD-TT",
-   "text": "\\A EN TOUT TEMPS",
    "arrow": "both"
-  },
-  {
-   "prop": "sign_parking",
-   "position": [
-    15853.58,
-    54325.19,
-    18.0
-   ],
-   "yaw": 326.14,
-   "scale": 1.0,
-   "variant_seed": 791818,
-   "collision": true,
-   "ground": "sidewalk",
-   "code": "SU-ME-A",
-   "text": "\\P 9h-10h MERCREDI 1 AVRIL AU 1 DÉC",
-   "arrow": "right"
-  },
-  {
-   "prop": "sign_parking",
-   "position": [
-    17727.17,
-    53067.93,
-    18.0
-   ],
-   "yaw": 146.14,
-   "scale": 1.0,
-   "variant_seed": 409658,
-   "collision": true,
-   "ground": "sidewalk",
-   "code": "SU-MA-A",
-   "text": "\\P 8h-9h MARDI 1 AVRIL AU 1 DÉC",
-   "arrow": "left"
   },
   {
    "prop": "sign_parking",
@@ -24272,66 +23538,34 @@
   {
    "prop": "sign_parking",
    "position": [
-    12056.78,
-    54647.04,
+    9319.06,
+    56482.85,
     18.0
    ],
    "yaw": 326.16,
    "scale": 1.0,
-   "variant_seed": 25107,
+   "variant_seed": 270258,
    "collision": true,
    "ground": "sidewalk",
-   "code": "SU-ME-A",
-   "text": "\\P 9h-10h MERCREDI 1 AVRIL AU 1 DÉC",
-   "arrow": "both"
-  },
-  {
-   "prop": "sign_parking",
-   "position": [
-    9790.8,
-    56166.52,
-    18.0
-   ],
-   "yaw": 326.16,
-   "scale": 1.0,
-   "variant_seed": 60573,
-   "collision": true,
-   "ground": "sidewalk",
-   "code": "SD-TT",
-   "text": "\\P EN TOUT TEMPS",
+   "code": "SU-MA-A",
+   "text": "\\P 8h-9h MARDI 1 AVRIL AU 1 DÉC",
    "arrow": "left"
   },
   {
    "prop": "sign_parking",
    "position": [
-    7184.2,
-    57914.41,
-    18.0
-   ],
-   "yaw": 146.16,
-   "scale": 1.0,
-   "variant_seed": 239695,
-   "collision": true,
-   "ground": "sidewalk",
-   "code": "R-PF",
-   "text": "\\P 9h-23h EXCEPTÉ S3R",
-   "arrow": "both"
-  },
-  {
-   "prop": "sign_parking",
-   "position": [
-    5224.35,
-    59228.6,
+    6892.5,
+    58110.01,
     18.0
    ],
    "yaw": 326.16,
    "scale": 1.0,
-   "variant_seed": 473168,
+   "variant_seed": 148546,
    "collision": true,
    "ground": "sidewalk",
    "code": "R-PF",
    "text": "\\P 9h-23h EXCEPTÉ S3R",
-   "arrow": "left"
+   "arrow": "right"
   },
   {
    "prop": "sign_parking",
@@ -25168,34 +24402,18 @@
   {
    "prop": "sign_parking",
    "position": [
-    26861.26,
-    -31633.6,
+    28361.43,
+    -29275.96,
     18.0
    ],
-   "yaw": 57.53,
+   "yaw": 237.53,
    "scale": 1.0,
-   "variant_seed": 408110,
+   "variant_seed": 184525,
    "collision": true,
    "ground": "sidewalk",
-   "code": "SU-MA-A",
-   "text": "\\P 8h-9h MARDI 1 AVRIL AU 1 DÉC",
-   "arrow": "left"
-  },
-  {
-   "prop": "sign_parking",
-   "position": [
-    28220.78,
-    -29497.0,
-    18.0
-   ],
-   "yaw": 57.53,
-   "scale": 1.0,
-   "variant_seed": 465406,
-   "collision": true,
-   "ground": "sidewalk",
-   "code": "AD-TT",
-   "text": "\\A EN TOUT TEMPS",
-   "arrow": "right"
+   "code": "SD-TT",
+   "text": "\\P EN TOUT TEMPS",
+   "arrow": "both"
   },
   {
    "prop": "sign_parking",
@@ -25340,22 +24558,6 @@
    "code": "SU-ME-A",
    "text": "\\P 9h-10h MERCREDI 1 AVRIL AU 1 DÉC",
    "arrow": "right"
-  },
-  {
-   "prop": "sign_parking",
-   "position": [
-    -12846.86,
-    -40757.81,
-    18.0
-   ],
-   "yaw": 147.18,
-   "scale": 1.0,
-   "variant_seed": 38934,
-   "collision": true,
-   "ground": "sidewalk",
-   "code": "SD-TT",
-   "text": "\\P EN TOUT TEMPS",
-   "arrow": "both"
   },
   {
    "prop": "sign_parking",
@@ -25584,61 +24786,13 @@
   {
    "prop": "sign_parking",
    "position": [
-    -14693.38,
-    -29603.86,
+    -16556.3,
+    -28384.06,
     18.0
    ],
    "yaw": 146.78,
    "scale": 1.0,
-   "variant_seed": 985703,
-   "collision": true,
-   "ground": "sidewalk",
-   "code": "R-PF",
-   "text": "\\P 9h-23h EXCEPTÉ S3R",
-   "arrow": "right"
-  },
-  {
-   "prop": "sign_parking",
-   "position": [
-    -16564.72,
-    -28378.55,
-    18.0
-   ],
-   "yaw": 326.78,
-   "scale": 1.0,
-   "variant_seed": 335167,
-   "collision": true,
-   "ground": "sidewalk",
-   "code": "SD-TT",
-   "text": "\\P EN TOUT TEMPS",
-   "arrow": "right"
-  },
-  {
-   "prop": "sign_parking",
-   "position": [
-    -18781.13,
-    -26927.29,
-    18.0
-   ],
-   "yaw": 146.78,
-   "scale": 1.0,
-   "variant_seed": 641514,
-   "collision": true,
-   "ground": "sidewalk",
-   "code": "SU-MA-A",
-   "text": "\\P 8h-9h MARDI 1 AVRIL AU 1 DÉC",
-   "arrow": "both"
-  },
-  {
-   "prop": "sign_parking",
-   "position": [
-    -21234.68,
-    -25320.76,
-    18.0
-   ],
-   "yaw": 326.78,
-   "scale": 1.0,
-   "variant_seed": 285498,
+   "variant_seed": 629436,
    "collision": true,
    "ground": "sidewalk",
    "code": "SU-ME-A",
@@ -25648,13 +24802,29 @@
   {
    "prop": "sign_parking",
    "position": [
-    -24105.29,
-    -23441.14,
+    -19020.25,
+    -26770.72,
     18.0
    ],
    "yaw": 146.78,
    "scale": 1.0,
-   "variant_seed": 463824,
+   "variant_seed": 33681,
+   "collision": true,
+   "ground": "sidewalk",
+   "code": "SU-MA-A",
+   "text": "\\P 8h-9h MARDI 1 AVRIL AU 1 DÉC",
+   "arrow": "both"
+  },
+  {
+   "prop": "sign_parking",
+   "position": [
+    -21329.79,
+    -25258.48,
+    18.0
+   ],
+   "yaw": 326.78,
+   "scale": 1.0,
+   "variant_seed": 75623,
    "collision": true,
    "ground": "sidewalk",
    "code": "SD-TT",
@@ -25664,18 +24834,34 @@
   {
    "prop": "sign_parking",
    "position": [
-    -26082.36,
-    -22146.59,
+    -24012.35,
+    -23502.0,
     18.0
    ],
    "yaw": 326.78,
    "scale": 1.0,
-   "variant_seed": 154237,
+   "variant_seed": 11793,
+   "collision": true,
+   "ground": "sidewalk",
+   "code": "R-PF",
+   "text": "\\P 9h-23h EXCEPTÉ S3R",
+   "arrow": "right"
+  },
+  {
+   "prop": "sign_parking",
+   "position": [
+    -26478.4,
+    -21887.27,
+    18.0
+   ],
+   "yaw": 146.78,
+   "scale": 1.0,
+   "variant_seed": 975819,
    "collision": true,
    "ground": "sidewalk",
    "code": "SD-TT",
    "text": "\\P EN TOUT TEMPS",
-   "arrow": "left"
+   "arrow": "both"
   },
   {
    "prop": "sign_parking",
@@ -25696,82 +24882,66 @@
   {
    "prop": "sign_parking",
    "position": [
-    -24634.2,
-    -21696.2,
+    -22647.64,
+    -22996.96,
+    18.0
+   ],
+   "yaw": 146.78,
+   "scale": 1.0,
+   "variant_seed": 989730,
+   "collision": true,
+   "ground": "sidewalk",
+   "code": "R-PF",
+   "text": "\\P 9h-23h EXCEPTÉ S3R",
+   "arrow": "left"
+  },
+  {
+   "prop": "sign_parking",
+   "position": [
+    -20708.36,
+    -24266.76,
+    18.0
+   ],
+   "yaw": 146.78,
+   "scale": 1.0,
+   "variant_seed": 857427,
+   "collision": true,
+   "ground": "sidewalk",
+   "code": "AD-TT",
+   "text": "\\A EN TOUT TEMPS",
+   "arrow": "right"
+  },
+  {
+   "prop": "sign_parking",
+   "position": [
+    -18152.06,
+    -25940.57,
+    18.0
+   ],
+   "yaw": 146.78,
+   "scale": 1.0,
+   "variant_seed": 261004,
+   "collision": true,
+   "ground": "sidewalk",
+   "code": "SU-MA-A",
+   "text": "\\P 8h-9h MARDI 1 AVRIL AU 1 DÉC",
+   "arrow": "right"
+  },
+  {
+   "prop": "sign_parking",
+   "position": [
+    -15347.32,
+    -27777.06,
     18.0
    ],
    "yaw": 326.78,
    "scale": 1.0,
-   "variant_seed": 529685,
-   "collision": true,
-   "ground": "sidewalk",
-   "code": "R-PF",
-   "text": "\\P 9h-23h EXCEPTÉ S3R",
-   "arrow": "left"
-  },
-  {
-   "prop": "sign_parking",
-   "position": [
-    -22402.26,
-    -23157.63,
-    18.0
-   ],
-   "yaw": 146.78,
-   "scale": 1.0,
-   "variant_seed": 324393,
-   "collision": true,
-   "ground": "sidewalk",
-   "code": "R-PF",
-   "text": "\\P 9h-23h EXCEPTÉ S3R",
-   "arrow": "left"
-  },
-  {
-   "prop": "sign_parking",
-   "position": [
-    -19619.94,
-    -24979.43,
-    18.0
-   ],
-   "yaw": 146.78,
-   "scale": 1.0,
-   "variant_seed": 272594,
+   "variant_seed": 955149,
    "collision": true,
    "ground": "sidewalk",
    "code": "SD-TT",
    "text": "\\P EN TOUT TEMPS",
    "arrow": "left"
-  },
-  {
-   "prop": "sign_parking",
-   "position": [
-    -16682.79,
-    -26902.62,
-    18.0
-   ],
-   "yaw": 326.78,
-   "scale": 1.0,
-   "variant_seed": 477354,
-   "collision": true,
-   "ground": "sidewalk",
-   "code": "SU-ME-A",
-   "text": "\\P 9h-10h MERCREDI 1 AVRIL AU 1 DÉC",
-   "arrow": "right"
-  },
-  {
-   "prop": "sign_parking",
-   "position": [
-    -14343.37,
-    -28434.42,
-    18.0
-   ],
-   "yaw": 146.78,
-   "scale": 1.0,
-   "variant_seed": 648528,
-   "collision": true,
-   "ground": "sidewalk",
-   "code": "SU-ME-A",
-   "text": "\\P 9h-10h MERCREDI 1 AVRIL AU 1 DÉC",
-   "arrow": "right"
   },
   {
    "prop": "sign_parking",
@@ -25852,22 +25022,6 @@
    "code": "R-PF",
    "text": "\\P 9h-23h EXCEPTÉ S3R",
    "arrow": "right"
-  },
-  {
-   "prop": "sign_parking",
-   "position": [
-    -43077.51,
-    -11093.21,
-    18.0
-   ],
-   "yaw": 327.0,
-   "scale": 1.0,
-   "variant_seed": 857981,
-   "collision": true,
-   "ground": "sidewalk",
-   "code": "R-PF",
-   "text": "\\P 9h-23h EXCEPTÉ S3R",
-   "arrow": "both"
   },
   {
    "prop": "sign_parking",
@@ -26032,22 +25186,6 @@
   {
    "prop": "sign_parking",
    "position": [
-    -10023.73,
-    -32636.99,
-    18.0
-   ],
-   "yaw": 327.02,
-   "scale": 1.0,
-   "variant_seed": 207253,
-   "collision": true,
-   "ground": "sidewalk",
-   "code": "R-PF",
-   "text": "\\P 9h-23h EXCEPTÉ S3R",
-   "arrow": "left"
-  },
-  {
-   "prop": "sign_parking",
-   "position": [
     -8343.68,
     -32313.94,
     18.0
@@ -26060,22 +25198,6 @@
    "code": "SU-MA-A",
    "text": "\\P 8h-9h MARDI 1 AVRIL AU 1 DÉC",
    "arrow": "right"
-  },
-  {
-   "prop": "sign_parking",
-   "position": [
-    -6248.13,
-    -33673.8,
-    18.0
-   ],
-   "yaw": 147.02,
-   "scale": 1.0,
-   "variant_seed": 394945,
-   "collision": true,
-   "ground": "sidewalk",
-   "code": "SU-MA-A",
-   "text": "\\P 8h-9h MARDI 1 AVRIL AU 1 DÉC",
-   "arrow": "both"
   },
   {
    "prop": "sign_parking",
@@ -26512,34 +25634,18 @@
   {
    "prop": "sign_parking",
    "position": [
-    -25334.15,
-    -15403.77,
+    -26798.83,
+    -17690.55,
     18.0
    ],
    "yaw": 237.36,
    "scale": 1.0,
-   "variant_seed": 156874,
-   "collision": true,
-   "ground": "sidewalk",
-   "code": "SU-MA-A",
-   "text": "\\P 8h-9h MARDI 1 AVRIL AU 1 DÉC",
-   "arrow": "right"
-  },
-  {
-   "prop": "sign_parking",
-   "position": [
-    -26730.58,
-    -17583.99,
-    18.0
-   ],
-   "yaw": 237.36,
-   "scale": 1.0,
-   "variant_seed": 982341,
+   "variant_seed": 925549,
    "collision": true,
    "ground": "sidewalk",
    "code": "R-PF",
    "text": "\\P 9h-23h EXCEPTÉ S3R",
-   "arrow": "left"
+   "arrow": "both"
   },
   {
    "prop": "sign_parking",
@@ -26608,34 +25714,18 @@
   {
    "prop": "sign_parking",
    "position": [
-    -21486.93,
-    -9454.0,
+    -23343.72,
+    -12312.78,
     18.0
    ],
-   "yaw": 57.0,
+   "yaw": 237.0,
    "scale": 1.0,
-   "variant_seed": 486292,
+   "variant_seed": 187835,
    "collision": true,
    "ground": "sidewalk",
-   "code": "R-PF",
-   "text": "\\P 9h-23h EXCEPTÉ S3R",
-   "arrow": "left"
-  },
-  {
-   "prop": "sign_parking",
-   "position": [
-    -23194.12,
-    -12082.45,
-    18.0
-   ],
-   "yaw": 57.0,
-   "scale": 1.0,
-   "variant_seed": 391792,
-   "collision": true,
-   "ground": "sidewalk",
-   "code": "R-PF",
-   "text": "\\P 9h-23h EXCEPTÉ S3R",
-   "arrow": "left"
+   "code": "AD-TT",
+   "text": "\\A EN TOUT TEMPS",
+   "arrow": "right"
   },
   {
    "prop": "sign_parking",
@@ -26955,22 +26045,6 @@
    "ground": "sidewalk",
    "code": "R-PF",
    "text": "\\P 9h-23h EXCEPTÉ S3R",
-   "arrow": "left"
-  },
-  {
-   "prop": "sign_parking",
-   "position": [
-    19153.2,
-    -45781.39,
-    18.0
-   ],
-   "yaw": 238.0,
-   "scale": 1.0,
-   "variant_seed": 341685,
-   "collision": true,
-   "ground": "sidewalk",
-   "code": "AD-TT",
-   "text": "\\A EN TOUT TEMPS",
    "arrow": "left"
   },
   {
@@ -27504,45 +26578,13 @@
   {
    "prop": "sign_parking",
    "position": [
-    36462.71,
-    58637.86,
+    38441.46,
+    57311.82,
     18.0
    ],
    "yaw": 326.17,
    "scale": 1.0,
-   "variant_seed": 11418,
-   "collision": true,
-   "ground": "sidewalk",
-   "code": "R-PF",
-   "text": "\\P 9h-23h EXCEPTÉ S3R",
-   "arrow": "right"
-  },
-  {
-   "prop": "sign_parking",
-   "position": [
-    38891.22,
-    57010.41,
-    18.0
-   ],
-   "yaw": 326.17,
-   "scale": 1.0,
-   "variant_seed": 893005,
-   "collision": true,
-   "ground": "sidewalk",
-   "code": "SD-TT",
-   "text": "\\P EN TOUT TEMPS",
-   "arrow": "right"
-  },
-  {
-   "prop": "sign_parking",
-   "position": [
-    41490.05,
-    55268.82,
-    18.0
-   ],
-   "yaw": 326.17,
-   "scale": 1.0,
-   "variant_seed": 136040,
+   "variant_seed": 621805,
    "collision": true,
    "ground": "sidewalk",
    "code": "SD-TT",
@@ -27552,18 +26594,34 @@
   {
    "prop": "sign_parking",
    "position": [
-    43509.57,
-    53915.45,
+    40941.4,
+    55636.49,
     18.0
    ],
    "yaw": 326.17,
    "scale": 1.0,
-   "variant_seed": 207378,
+   "variant_seed": 554297,
    "collision": true,
    "ground": "sidewalk",
-   "code": "AD-TT",
-   "text": "\\A EN TOUT TEMPS",
+   "code": "SD-TT",
+   "text": "\\P EN TOUT TEMPS",
    "arrow": "left"
+  },
+  {
+   "prop": "sign_parking",
+   "position": [
+    43476.35,
+    53937.71,
+    18.0
+   ],
+   "yaw": 146.17,
+   "scale": 1.0,
+   "variant_seed": 378880,
+   "collision": true,
+   "ground": "sidewalk",
+   "code": "SD-TT",
+   "text": "\\P EN TOUT TEMPS",
+   "arrow": "both"
   },
   {
    "prop": "sign_parking",

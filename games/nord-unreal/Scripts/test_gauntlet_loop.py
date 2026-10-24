@@ -859,11 +859,11 @@ def check_confirm_window(out):
     confirm runs it again (the baseline first) and replaces it, and --candidate accepts it."""
     run_s = T.run_estimate_s(SMALL, "perf", SMALL["confirm_laps"])
     full = len(SMALL["sky_order"]) * len(SMALL["size_use"]["confirm"])
-    clock, calls = [1_000_000.0], []
+    clock, calls, took = [1_000_000.0], [], [run_s]
 
     def native_run(loop, mode, size_key, sky, laps=1, quality="current", label=None, direct=False, parent=None, **_):
-        calls.append((label, clock[0] + run_s))
-        clock[0] += run_s
+        calls.append((label, clock[0] + took[0]))
+        clock[0] += took[0]
         return L.new_run_dir(label, parent), {"status": "pass", "gates": []}
 
     base = T.make_candidate(SMALL, T.baseline_levels(SMALL), "baseline", 0)
@@ -887,7 +887,30 @@ def check_confirm_window(out):
             assert [result["id"] for result in after["results"]] == ["baseline", "04-shadows2"], after["results"]
             assert all(result["passed"] and len(result["runs"]) == full for result in after["results"]), after["results"]
             assert after["confirmed_native"] == "04-shadows2" and len(calls) == full * (3 - len(recorded)), calls
-    print("confirm window ok: no run ends after --until, and confirm runs a cut result again and replaces it")
+        # The baseline is itself the best ranked candidate without a finished confirmation: confirm runs it once.
+        group = out.parent / "confirm-window" / "baseline-ranked"
+        failed = {"id": "04-shadows2", "reasons": ["day top_landscape: fail (frame_p95)"], "passed": False,
+                  "runs": [{"run": "x", "sky": sky, "size": size, "status": "fail"} for sky in SMALL["sky_order"]
+                           for size in SMALL["size_use"]["confirm"]]}
+        cut = {"id": "baseline", "runs": failed["runs"][:1], "reasons": [L.CONFIRM_CUT], "passed": False}
+        T.write_tune(group / "tune.json", dict(tune, ranking=["04-shadows2", "baseline", "05-gi2"], native_confirmation={
+            "results": [failed, cut], "confirmed_native": None, "stop_reason": "window_end"}))
+        calls.clear()
+        assert L.main(["confirm", str(group)]) == 0
+        after = json.loads((group / "tune.json").read_text())["native_confirmation"]
+        assert len(calls) == full and [result["id"] for result in after["results"]] == ["04-shadows2", "baseline"], (calls, after)
+        # A host 1.5 times slower than the estimate: each run is planned with the longest one measured so far, within one
+        # candidate (room for 2.6 estimates) and from the baseline to the winner (room for 7.2), as the search plans.
+        took[0] = 1.5 * run_s
+        for name, room, recorded in (("slow", 2.6 * run_s, ["baseline"]), ("slow-winner", 7.2 * run_s, ["baseline", "04-shadows2"])):
+            group, until = out.parent / "confirm-window" / name, clock[0] + room
+            calls.clear()
+            native = L.confirm_native(SMALL, tune, group, until=until)
+            assert all(end <= until for _, end in calls), f"{name}: a run ended {max(e for _, e in calls) - until:.0f} s after --until"
+            assert [result["id"] for result in native["results"]] == recorded and native["stop_reason"] == "window_end", native
+            assert native["results"][-1]["reasons"] == [L.CONFIRM_CUT], native["results"][-1]
+    print("confirm window ok: no run ends after --until, a slow host raises the plan, confirm runs a cut result again and "
+          "replaces it, and a ranked baseline runs once")
 
 
 def main():
