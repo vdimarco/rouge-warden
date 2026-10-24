@@ -1185,7 +1185,8 @@ def confirm_native(loop, tune, group, direct=False, until=None):
     through gauntlet_tune.confirm."""
     records = {record["id"]: record for record in tune["candidates"]}
     results, confirmed = {}, None
-    one = lambda candidate_id: confirm_candidate(loop, records[candidate_id], group, direct, until)
+    plan = {}
+    one = lambda candidate_id: confirm_candidate(loop, records[candidate_id], group, direct, until, plan)
     finished = lambda: all(confirmation_finished(loop, result) for result in results.values())
     if "baseline" in records:
         results["baseline"] = one("baseline")
@@ -1206,20 +1207,25 @@ def confirmation_finished(loop, result):
     return len(result["runs"]) == len(loop["sky_order"]) * len(loop["size_use"]["confirm"])
 
 
-def confirm_candidate(loop, record, group, direct=False, until=None):
+def confirm_candidate(loop, record, group, direct=False, until=None, plan=None):
     """One candidate's native confirmation: confirm_laps measured laps in each sky at each confirm size. A run starts
-    only when its planned time (gauntlet_tune.run_estimate_s) ends before until, so the live demo starts on time."""
+    only when its planned time ends before until, so the live demo starts on time. The plan is
+    gauntlet_tune.run_estimate_s, raised to the longest run so far; the caller's plan dict keeps it across candidates."""
     candidate_id = record["id"]
     execcmds, _ = T.write_candidate_files(group / "candidates", record)
     outcome = {"id": candidate_id, "runs": [], "reasons": [], "passed": False}
-    run_s = T.run_estimate_s(loop, "perf", loop["confirm_laps"])
+    plan = {} if plan is None else plan
+    plan.setdefault("run_s", T.run_estimate_s(loop, "perf", loop["confirm_laps"]))
     for sky in loop["sky_order"]:
         for size_key in loop["size_use"]["confirm"]:
-            if until is not None and time.time() + run_s > until:
+            if until is not None and time.time() + plan["run_s"] > until:
                 outcome["reasons"].append(CONFIRM_CUT)
                 return outcome
+            started = time.time()
             run, verdict = native_run(loop, "perf", size_key, sky, laps=loop["confirm_laps"], quality=f"file:{execcmds}",
                                       label=f"confirm-{candidate_id}-{sky}-{size_key}", direct=direct, parent=group / "runs")
+            # As in the search: a host slower than the estimate does not overrun the window.
+            plan["run_s"] = max(plan["run_s"], time.time() - started)
             outcome["runs"].append({"run": str(run), "sky": sky, "size": size_key, "status": verdict["status"]})
             if verdict["status"] != "pass":
                 failing = [gate["name"] for gate in verdict["gates"] if gate["result"] != "pass"]
@@ -1245,11 +1251,11 @@ def confirm_next(loop, group, candidate_id=None, direct=False, until=None):
     require(candidate_id in tune["ranking"], f"candidate {candidate_id} is not ranked in {group / 'tune.json'}; nothing was run.")
     require(candidate_id not in done, f"candidate {candidate_id} already has a native confirmation; nothing was run.")
     records = {record["id"]: record for record in tune["candidates"]}
-    outcome = None
+    outcome, plan = None, {}
     # The baseline runs first, and once only when it is the ranked candidate itself.
     first = ["baseline"] if "baseline" in records and "baseline" not in done and candidate_id != "baseline" else []
     for wanted in first + [candidate_id]:
-        outcome = dict(confirm_candidate(loop, records[wanted], group, direct, until), added_at=iso_now())
+        outcome = dict(confirm_candidate(loop, records[wanted], group, direct, until, plan), added_at=iso_now())
         native["results"] = [result for result in native["results"] if result["id"] != wanted] + [outcome]
         if outcome["passed"] and wanted != "baseline" and not native.get("confirmed_native"):
             native["confirmed_native"] = wanted
