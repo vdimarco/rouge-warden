@@ -1,0 +1,7 @@
+{"ids":60,"same":true,"live":true,"fresh":true,"current":true,"delta":7}
+FAIL sixty actual draws share one endpoint selector
+  {"ids":60,"same":true,"live":true,"fresh":true,"current":true,"delta":7}
+PASS: current tip identity and mutations preserved
+PASS: missing tip keeps fresh current chest fallback
+PASS: no page errors
+FAIL: web hand helper (1 failed, 3 passed)
