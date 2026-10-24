@@ -282,10 +282,13 @@ test('without END, a sample stops 10 s after its last connected peer, and does n
     assert.ok(after >= 10 && after < 12, `the sample ran on ${after} s after the last connected sample`);
     assert.equal(report.summary.streamEndedTimeMs, report.samples[live + 1].timeMs);
   }, { failed: true });
-  // A peer that connects again within 10 s does not stop the sample: here 8 samples have no connected peer.
+  // A peer that connects again within 10 s does not stop the sample: here 8 samples have no connected peer, and the
+  // sample runs on to END, more than 10 s after the peer first went.
   await sampleWithFake(['--seconds', '925'], [{ atMs: 3500, peer: 'disconnected' }, { atMs: 11500, peer: 'connected' },
     { atMs: 14500, line: 'END' }], report => {
     assert.equal(report.passed, true, report.error);
     assert.equal(report.samples.filter(sample => !sample.peerStates.includes('connected')).length, 8);
+    const seconds = (report.samples.at(-1).timeMs - report.samples[0].timeMs) / 1000;
+    assert.ok(seconds > 12, `the sample stopped after ${seconds} s, before END`);
   });
 });
