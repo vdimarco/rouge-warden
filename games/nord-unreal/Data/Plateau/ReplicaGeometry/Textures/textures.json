@@ -1437,6 +1437,196 @@
    ],
    "uv": "metres"
   },
+  "leaf_litter": {
+   "alpha": true,
+   "base_color_srgb": "#96733D",
+   "coverage": 0.8226,
+   "keys": [
+    "Leaf_Litter"
+   ],
+   "layout": {
+    "cover": 0.8226,
+    "face_down": 563,
+    "layers": {
+     "bottom": {
+      "leaf_area_per_tile_area": 1.1,
+      "leaves": 903,
+      "luminance": 0.0866,
+      "visible_share": 0.2792
+     },
+     "middle": {
+      "leaf_area_per_tile_area": 0.6,
+      "leaves": 538,
+      "luminance": 0.1904,
+      "visible_share": 0.3845
+     },
+     "top": {
+      "leaf_area_per_tile_area": 0.36,
+      "leaves": 303,
+      "luminance": 0.2818,
+      "visible_share": 0.3363
+     }
+    },
+    "leaves": 1744,
+    "px_per_cm": 5.12,
+    "shapes_from": "Scripts/blender/plateau_trees.py FORMS and _leaf (the tree leaf atlas)",
+    "stamp_px_per_cm": 8.0,
+    "stamps": {
+     "amur": {
+      "blade_cm": [
+       5.0,
+       8.0
+      ],
+      "count": 87,
+      "form": "amur",
+      "kind": "leaf",
+      "share": 0.05
+     },
+     "ash": {
+      "blade_cm": [
+       14.0,
+       19.0
+      ],
+      "count": 37,
+      "form": "ash",
+      "kind": "leaf",
+      "share": 0.02
+     },
+     "ash_leaflet": {
+      "blade_cm": [
+       6.0,
+       10.0
+      ],
+      "count": 158,
+      "form": "ash",
+      "kind": "leaflet",
+      "share": 0.09
+     },
+     "elm": {
+      "blade_cm": [
+       6.0,
+       10.0
+      ],
+      "count": 171,
+      "form": "elm",
+      "kind": "leaf",
+      "share": 0.1
+     },
+     "linden": {
+      "blade_cm": [
+       6.0,
+       10.0
+      ],
+      "count": 201,
+      "form": "linden",
+      "kind": "leaf",
+      "share": 0.12
+     },
+     "locust_leaflet": {
+      "blade_cm": [
+       1.6,
+       2.6
+      ],
+      "count": 449,
+      "form": "locust",
+      "kind": "leaflet",
+      "share": 0.24
+     },
+     "norway": {
+      "blade_cm": [
+       9.0,
+       13.0
+      ],
+      "count": 274,
+      "form": "norway",
+      "kind": "leaf",
+      "share": 0.17
+     },
+     "silver": {
+      "blade_cm": [
+       9.0,
+       14.0
+      ],
+      "count": 367,
+      "form": "silver",
+      "kind": "leaf",
+      "share": 0.21
+     }
+    },
+    "stamps_sha256": "526363d451a95ef96e93e4e7422218075625addfb253f86673592dc7baf0bbee",
+    "tar_spotted": 96,
+    "twigs": 9
+   },
+   "macro": {
+    "channels": [
+     "R",
+     "G"
+    ],
+    "file": "T_Replica_Macro_mask.png",
+    "strength": [
+     0.1,
+     0.06
+    ],
+    "tile_m": [
+     17.3,
+     5.3
+    ]
+   },
+   "maps": {
+    "diff": {
+     "alpha": true,
+     "compression": "TC_DEFAULT",
+     "file": "T_Replica_LeafLitter_diff.png",
+     "raw_sha256": "e4edd67073526e012dd5ace78dc5b56c7e8be4907778f87fe0474d32fb8123ae",
+     "sampler": "SAMPLERTYPE_COLOR",
+     "sha256": "8324eba229df5049a490a6a32cb920154f4784180461c78cfff62e075930b581",
+     "srgb": true
+    },
+    "nor_dx": {
+     "compression": "TC_NORMALMAP",
+     "file": "T_Replica_LeafLitter_nor_dx.png",
+     "raw_sha256": "2e4062029c82114ca64a79894083d52c7bfe02b1f3e798fdae78b4c7b594283a",
+     "sampler": "SAMPLERTYPE_NORMAL",
+     "sha256": "e393ed68dc3208bf4520729495e26ad343872738b1d3595692ad83d37637b183",
+     "srgb": false
+    },
+    "rough": {
+     "compression": "TC_DEFAULT",
+     "file": "T_Replica_LeafLitter_rough.png",
+     "raw_sha256": "123dee83b51cf58bd70478cc8621d022dfc1a52fa7faef107576b2c48a95ba3e",
+     "sampler": "SAMPLERTYPE_LINEAR_COLOR",
+     "sha256": "1b47fdbd9b345f0f668d78794e36de19b77d8c561e82a8d4013c62e3679d9c73",
+     "srgb": false
+    }
+   },
+   "material": {
+    "blend_mode": "masked",
+    "opacity_mask_clip": 0.5,
+    "shading_model": "default_lit",
+    "two_sided": true
+   },
+   "mean_linear": [
+    0.3062,
+    0.1729,
+    0.047
+   ],
+   "own_colour": true,
+   "roughness_mean": 0.7044,
+   "size_px": [
+    1024,
+    1024
+   ],
+   "surface": "cutout",
+   "tile_m": [
+    2.0,
+    2.0
+   ],
+   "tiling": [
+    0.5,
+    0.5
+   ],
+   "uv": "metres"
+  },
   "limestone": {
    "alpha": false,
    "base_color_srgb": "#8E8D87",
