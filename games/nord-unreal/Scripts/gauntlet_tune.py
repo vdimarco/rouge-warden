@@ -835,12 +835,14 @@ def search(loop, measure, until=None, clock=time.time, readback=None, log=None, 
     return tune
 
 
-def confirm(tune, loop, confirm_fn):
+def confirm(tune, loop, confirm_fn, still_open=None):
     """Step 7: confirm the baseline, then the ranked candidates best first until one passes every gate.
 
     confirm_fn(record) runs the 3-lap confirmation (both skies, landscape and portrait) and the stream rows and returns
     {"passed": bool, "reasons": [...], "two_viewer_fps": float or None}. A candidate other than the baseline also
     needs the co-op guard: two-viewer decoded FPS at most two_viewer_drop_max_fps below the baseline's.
+    still_open(result), when given, is True for a result that did not pass but can still pass (it has only missing
+    evidence). confirm stops there with nothing confirmed, so a lower ranked candidate does not take its place.
     """
     records = {record["id"]: record for record in tune["candidates"]}
     drop_max = loop["budgets"]["stream"]["two_viewer_drop_max_fps"]
@@ -865,6 +867,8 @@ def confirm(tune, loop, confirm_fn):
             results.append(outcome)
         if outcome and outcome.get("passed"):
             confirmed = candidate_id
+            break
+        if outcome and still_open and still_open(outcome):
             break
     tune["confirmation"] = {"order": ["baseline"] + [i for i in tune["ranking"] if i != "baseline"], "results": results,
                             "confirmed": confirmed}

@@ -150,7 +150,7 @@ python3 Scripts/gauntlet_loop.py stream --run "$run" --slot NordHost --pin 0 --l
 Its stream figures are report-only. It gates the car's lateral error from `native/route.json` (at most 2.5 m) and the exit code. `--look` cannot be combined with `--relay` or `--two-viewers`.
 
 Report-only rows:
-- Two viewers: start the lifecycle once for the baseline and once for the winner in the same window. Run one sampler per slot at the same time (`--slot NordHost` and `--slot NordFriend1`). The winner may lose at most 2 decoded FPS against the baseline. A contended two-viewer row does not count; sample it again.
+- Two viewers: start the lifecycle once for the baseline and once for the winner in the same window. Sample each with one command, `python3 Scripts/gauntlet_loop.py stream --run "$run" --slot NordHost --pin 0 --two-viewers`. It starts one sampler per slot itself and records the two-viewer row. Do not start a second `stream` command on the same run. The runner refuses it, and it refuses `--slot NordFriend1`, because a NordFriend1 row alone wakes NordFriend1 and could never pass. The winner may lose at most 2 decoded FPS against the baseline. A contended two-viewer row does not count; sample it again.
 - Relay: set `NORD_ICE_CONFIG` to the private `ice.json` before `run`, and add `--relay` to the sampler. Never print the file.
 
 After the last row, restore the demo (step 0).
@@ -159,7 +159,7 @@ After the last row, restore the demo (step 0).
 ```bash
 python3 Scripts/gauntlet_loop.py report Saved/Gauntlet/<tune run>
 ```
-`report` judges the tune again from its files, with the native confirmation and the stream runs made after the tune started. If a stream row or the co-op guard drops the winner, confirm the next ranked candidate natively in the GPU window, then sample its stream rows (step 8) and run `report` again:
+`report` judges the tune again from its files, with the native confirmation and the stream runs made after the tune started. Only a failure drops a candidate. While a better ranked candidate has only missing evidence (a cut or twice contended confirmation, a missing, contended or unverified stream row, or an unverified co-op guard), `report` confirms no lower ranked candidate and shows the `confirmed` gate as unverified, so give that evidence first. If a stream row or the co-op guard drops the winner, confirm the next ranked candidate natively in the GPU window, then sample its stream rows (step 8) and run `report` again:
 ```bash
 python3 Scripts/gauntlet_loop.py confirm Saved/Gauntlet/<tune run> --until 06:30
 ```

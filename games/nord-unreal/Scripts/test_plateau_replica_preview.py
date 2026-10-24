@@ -644,15 +644,39 @@ def check_views(preview):
     assert hlm['kit'] == 'post-1945 apartment' and hlm['year'] == 1974, (hlm['kit'], hlm['year'])
     (cx, cy, cz), (tx, ty, tz) = v['hlm_mentana']['camera']
     a, b = hlm['front']['a'], hlm['front']['b']
-    d = preview._segment_distance(cx, cy, a, b)
+    # On the far sidewalk: 15 to 20 m out from the front's line, past its first corner over the parking side, looking
+    # back into the block (the target inside its walls) above the ground floor.
+    n = math.dist(a, b)
+    along = ((b[0] - a[0]) / n, (b[1] - a[1]) / n)
+    d = abs((cx - a[0]) * along[1] - (cy - a[1]) * along[0])
     assert 1500. < d < 2000., d
+    assert (cx - a[0]) * along[0] + (cy - a[1]) * along[1] < -500., 'the HLM camera is not past the end wall\'s corner'
+    walls = [p for w in hlm['rear']['walls'] for p in (w['a'], w['b'])]
+    assert preview._inside(tx, ty, walls) and tz > 600., (tx, ty, tz)
     assert cz == 188., cz
     # On the sidewalk: no Plex front of Mentana within 1 m of the camera, and outside every front yard.
     for f in fronts.values():
         if f['street'] == 'Rue de Mentana' and f['id'] != preview.HLM_LOT:
             assert preview._segment_distance(cx, cy, f['front']['a'], f['front']['b']) > 100. + f['front']['yard_cm'] \
                 or preview._segment_distance(cx, cy, f['front']['a'], f['front']['b']) > 4000., f['id']
-    return {'gallery_closeup': v['gallery_closeup']['camera'], 'hlm_mentana': v['hlm_mentana']['camera']}
+    # No street-level camera stands right behind a street tree: none of street_trees.json's trunks within 2.5 m ahead
+    # of the lens inside the frame (the old mentana spot had a young elm's trunk 1.4 m ahead, filling the middle).
+    rows = apply_replica.load_street_trees(ROOT)
+    nearest = {}
+    for name, spec in v.items():
+        if spec.get('circle'):
+            continue
+        (cx, cy, cz), (tx, ty, tz) = spec['camera']
+        n = math.dist((cx, cy), (tx, ty))
+        fx, fy = (tx - cx) / n, (ty - cy) / n
+        half = math.radians(spec.get('fov', 85.) / 2)
+        ahead = [math.dist((cx, cy), r['position'][:2]) for r in rows
+                 if (r['position'][0] - cx) * fx + (r['position'][1] - cy) * fy
+                 > math.cos(half) * math.dist((cx, cy), r['position'][:2])]
+        nearest[name] = round(min(ahead, default=1e9))
+        assert nearest[name] > 250., f'{name}: a street tree stands {nearest[name]} cm in front of the camera'
+    return {'gallery_closeup': v['gallery_closeup']['camera'], 'hlm_mentana': v['hlm_mentana']['camera'],
+            'nearest_tree_ahead_cm': nearest}
 
 
 def main():

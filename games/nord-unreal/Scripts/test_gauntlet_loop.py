@@ -7,8 +7,9 @@ label, the CVar readback with the fixed CVars, the phone profile flag, a look ru
 with its native confirmation and round report, a partial look run that gives no Look, a stale --reference or one
 without every still or with a contended ceiling run refused, a tune whose first candidate plan holds the ceiling
 render, a stream lap with its trigger file, lap window and page clock and the host's result line after the sampler
-stopped, the input row, the co-op guard without contended two-viewer rows, only the newest solo stream row per rung
-and orientation in the round report, the next candidate's confirmation, confirmation runs that end before --until
+stopped, the input row, one stream command per run and on NordHost only, the co-op guard without contended
+two-viewer rows, only the newest solo stream row per rung and orientation in the round report, no runner-up confirmed
+while a better ranked candidate has only missing evidence, the next candidate's confirmation, confirmation runs that end before --until
 (planned with the longest run so far and with the search's slower host), a cut or twice contended confirmation run
 again and unverified in the round report until then, a contended run run once more, a ranked baseline confirmed once
 and named as confirm_native names it, confirm's stop reason kept current, the write-profile refusal without
@@ -879,6 +880,39 @@ def check_stream_input(out, state, group, winner):
     print("input row ok: --look reaches the sampler, the default sample length is 925 s, the lateral error is gated")
 
 
+def check_stream_one_command(out):
+    """One stream command per run, on NordHost. A NordFriend1 row alone wakes NordFriend1 (friend_awake_windows), so
+    --two-viewers samples both slots in one command. A second command on a run would share the first one's folder."""
+    run = out / "20261023T232000Z-stream-one-command"
+    run.mkdir()
+    host_log = out.parent / f"host-{run.name}.log"
+    host_log.write_text("")
+    gone = next(pid for pid in range(999_999, 900_000, -1) if not Path(f"/proc/{pid}").exists())
+    L.write_json(L.LIFECYCLE, {"launcher_pid": 1, "phase": "running", "stream_quality": browser_streaming.stream_quality("current"),
+                               "gauntlet": {"run": str(run), "host_log": str(host_log), "sky": PINNED.split()},
+                               "children": [{"name": "host", "pid": gone}]})
+    for options, text in (({"slot": "NordFriend1"}, "Every gauntlet row samples NordHost"),
+                          ({"slot": "NordFriend1", "relay": True}, "Every gauntlet row samples NordHost"),
+                          ({"slot": "NordFriend1", "two_viewers": True}, "Every gauntlet row samples NordHost")):
+        try:
+            L.stream_run(SMALL, run, pin=0, seconds=1, **options)
+        except RuntimeError as error:
+            assert text in str(error), (options, error)
+        else:
+            raise AssertionError(f"must be refused: {options}")
+        assert not (run / "stream").exists() and not (run / "run.json").exists(), "a refused row starts nothing"
+    # A first command is still sampling: its folder exists, but it has no sample.json yet.
+    (run / "stream").mkdir()
+    try:
+        L.stream_run(SMALL, run, pin=0, seconds=1, two_viewers=True)
+    except RuntimeError as error:
+        assert "Another stream command" in str(error) and "--two-viewers" in str(error), error
+    else:
+        raise AssertionError("a second stream command on one run must be refused")
+    assert not (run / "run.json").exists() and list((run / "stream").iterdir()) == []
+    print("one command ok: NordFriend1 alone and a second stream command on one run are refused")
+
+
 def check_report_and_profile(group, tune):
     assert L.main(["report", str(group)]) == 1, "the round is not confirmed while stream rows are missing"
     after = json.loads((group / "tune.json").read_text())
@@ -954,18 +988,19 @@ def check_report_window_cut(group, tune):
           "ranked candidate failed; a failed run before the cut fails it")
 
 
-def report_hall(hall):
-    """A tune folder in its own Saved/Gauntlet (hall), so no other stream run counts: the baseline and 04-shadows2
-    passed the native confirmation. Returns (group, row); row(...) adds one judged stream row of a candidate."""
+def report_hall(hall, ranking=("04-shadows2",)):
+    """A tune folder in its own Saved/Gauntlet (hall), so no other stream run counts: the baseline and the ranked
+    candidates passed the native confirmation. Returns (group, row); row(...) adds one judged stream row of a candidate."""
     group = hall / "20261023T200000Z-tune"
     base = T.make_candidate(SMALL, T.baseline_levels(SMALL), "baseline", 0)
-    records = [dict(base, id=name, phase="baseline" if name == "baseline" else "step") for name in ("baseline", "04-shadows2")]
+    names = ("baseline",) + tuple(ranking)
+    records = [dict(base, id=name, phase="baseline" if name == "baseline" else "step") for name in names]
     for record in records:
         T.write_candidate_files(group / "candidates", record)
     runs = [{"run": "x", "sky": sky, "size": size, "status": "pass"} for sky in SMALL["sky_order"] for size in SMALL["size_use"]["confirm"]]
-    T.write_tune(group / "tune.json", {"started_at": "2026-10-23T20:00:00Z", "candidates": records, "ranking": ["04-shadows2"],
-                                       "winner": "04-shadows2", "native_confirmation": {"results": [
-                                           {"id": name, "runs": runs, "reasons": [], "passed": True} for name in ("baseline", "04-shadows2")]}})
+    T.write_tune(group / "tune.json", {"started_at": "2026-10-23T20:00:00Z", "candidates": records, "ranking": list(ranking),
+                                       "winner": ranking[0], "native_confirmation": {"results": [
+                                           {"id": name, "runs": runs, "reasons": [], "passed": True} for name in names]}})
 
     def row(candidate, label, kind, status, fps=None, pin=0, portrait=False, started="2026-10-23T23:00:00Z"):
         quality = ({"name": "current"} if candidate == "baseline" else
@@ -1041,6 +1076,37 @@ def check_report_stream_latest(out):
           "missing evidence, a newest failed row fails")
 
 
+def check_report_better_open(out):
+    """A better ranked candidate with only missing evidence holds the round: report confirms no lower ranked candidate
+    in its place, so the confirmed gate stays unverified. Only a failure of the better one confirms the next one."""
+    cut = lambda data: dict(data, native_confirmation={"results": [
+        dict(result, runs=result["runs"][:1], reasons=[L.CONFIRM_CUT], passed=False) if result["id"] == "04-shadows2" else result
+        for result in data["native_confirmation"]["results"]]})
+    # (case, 04-shadows2's rung 0 landscape row, its two-viewer row, a tune.json change, confirmed, confirmed gate)
+    cases = (("row-contended", "contended", "unverified", None, None, "unverified"),
+             ("native-cut", "pass", "unverified", cut, None, "unverified"),
+             ("two-viewer-contended", "pass", "contended", None, None, "unverified"),
+             ("row-failed", "fail", "unverified", None, "05-gi2", "pass"))
+    for name, landscape, two, change, confirmed, gate in cases:
+        hall = out.parent / "open-hall" / name
+        group, row = report_hall(hall, ranking=("04-shadows2", "05-gi2"))
+        for candidate in ("baseline", "04-shadows2", "05-gi2"):
+            for key in SMALL["size_use"]["stream"]:
+                entry = SMALL["sizes"][key]
+                status = landscape if (candidate, key) == ("04-shadows2", "top_landscape") else "pass"
+                row(candidate, f"{candidate}-{key}", "solo", status, pin=entry["rung"], portrait=entry["size"][1] > entry["size"][0])
+            row(candidate, f"{candidate}-two", "two_viewer", two if candidate == "04-shadows2" else "unverified", 30.0)
+        if change:
+            edit_json(group / "tune.json", change)
+        with patch.object(L, "OUT", hall):
+            verdict = L.round_report(group, SMALL)
+        confirmation = json.loads((group / "tune.json").read_text())["confirmation"]
+        assert confirmation["confirmed"] == confirmed and gates(verdict)["confirmed"]["result"] == gate, (name, confirmation)
+        assert [result["id"] for result in confirmation["results"]] == ["baseline", "04-shadows2"] + ([confirmed] if confirmed else []), name
+    print("better ranked open ok: a contended row, a cut confirmation or an unverified co-op guard of the winner keeps "
+          "the runner-up unconfirmed; a failed row confirms it")
+
+
 def check_confirm_next(group, tune):
     """The winner passed natively but a stream row dropped it: confirm runs the next ranked candidate's native
     confirmation and adds it to tune.json. It writes no profile."""
@@ -1055,6 +1121,11 @@ def check_confirm_next(group, tune):
     added = after["results"][-1]
     assert added["passed"] and len(added["runs"]) == 4 and added["added_at"] and after["confirmed_native"] == tune["winner"]
     assert L.PROFILES_INI.read_text() == profile, "confirm writes no profile"
+    # The winner's rung 0 landscape row, sampled again, failed: report drops the winner and reads the next result.
+    dropped = L.OUT / "20261023T235900Z-stream-winner-failed"
+    L.write_json(dropped / "run.json", {"kind": "stream", "started_at": L.iso_now(), "label": dropped.name, "row": "solo", "pin": 0,
+                                        "portrait": False, "quality": {"name": "file", "path": str(group / "candidates" / f"{tune['winner']}.execcmds")}})
+    L.write_json(dropped / "verdict.json", {"status": "fail", "gates": [], "values": {}})
     L.main(["report", str(group)])
     results = {result["id"]: result for result in json.loads((group / "tune.json").read_text())["confirmation"]["results"]}
     assert "native confirmation not run" not in results[following]["reasons"], results[following]
@@ -1234,10 +1305,12 @@ def main():
         check_stream(out, state, group, tune["winner"])
         check_follow_to_result(out)
         check_stream_input(out, state, group, tune["winner"])
+        check_stream_one_command(out)
         check_report_and_profile(group, tune)
         check_report_window_cut(group, tune)
         check_report_coop_contended(out)
         check_report_stream_latest(out)
+        check_report_better_open(out)
         check_confirm_next(group, tune)
         check_confirm_window(out)
     print("NORD_GAUNTLET_LOOP_OK")

@@ -270,8 +270,11 @@ def gallery_camera(front):
 
 def hlm_camera(front):
     """The far sidewalk of Mentana (the centreline runs 10.3 m out from the block's front, the far fronts 19.3 m), 16.6 m
-    out and 16 m along the street, at eye height over the 18 cm sidewalk, looking at the front's middle 11 m up: the
-    Mentana end wall, the entrance and one long wall of stacked balconies."""
+    out, at eye height over the 18 cm sidewalk, 18.5 m along the street from the front's middle toward its first corner
+    (11.5 m past it, over the parking side), looking back into the block 12.5 m up: the plain concrete Mentana end
+    wall, and the long wall's stacked balconies, brick bays and concrete piers over the recessed ground floor. (The last
+    set stood 16 m the other way and looked at the front's middle: once the fourth pass made the end wall blank
+    concrete, that view was mostly blank wall, and the plexes beside the other long wall hide it.)"""
     (ax, ay), (bx, by) = front['front']['a'], front['front']['b']
     n = math.hypot(bx - ax, by - ay)
     along = ((bx - ax) / n, (by - ay) / n)
@@ -282,8 +285,8 @@ def hlm_camera(front):
     normal = (-along[1], along[0])
     if (gx - mx) * normal[0] + (gy - my) * normal[1] > 0:
         normal = (-normal[0], -normal[1])
-    cam = (mx + normal[0] * 1660. + along[0] * 1600., my + normal[1] * 1660. + along[1] * 1600., 188.)
-    target = (mx - normal[0] * 300., my - normal[1] * 300., 1100.)
+    cam = (mx + normal[0] * 1660. - along[0] * 1850., my + normal[1] * 1660. - along[1] * 1850., 188.)
+    target = (mx - normal[0] * 2610. - along[0] * 546., my - normal[1] * 2610. - along[1] * 546., 1250.)
     return cam, target
 
 

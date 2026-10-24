@@ -888,11 +888,15 @@ def stream_run(loop, run, slot="NordHost", pin=0, portrait=False, relay=False, t
             "The running lifecycle is not a gauntlet lifecycle for this run; start it with NORD_STREAM_GAUNTLET=" + str(run))
     require_pinned(gauntlet.get("sky") or [])
     require(slot in ("NordHost", "NordFriend1") and pin in range(4), "--slot must be NordHost or NordFriend1 and --pin 0 to 3")
-    require(not two_viewers or slot == "NordHost", "--two-viewers samples both slots itself; leave --slot NordHost")
+    # The gauntlet drives NordHost. A row of NordFriend1 alone wakes NordFriend1, so it could never pass.
+    require(slot == "NordHost", "Every gauntlet row samples NordHost; --two-viewers samples NordFriend1 too. Leave --slot NordHost.")
     require(not look or not (relay or two_viewers), "--look is its own row; leave out --relay and --two-viewers")
     stream = run / "stream"
     require(not (stream / "sample.json").exists(), "This run already has a stream sample; each sample needs a fresh lifecycle.")
-    stream.mkdir(parents=True, exist_ok=True)
+    # A second stream command on this run would share the first one's folder and run.json.
+    require(not stream.exists(), "Another stream command already samples this run (or stopped early); each sample needs a fresh "
+                                 "lifecycle, and --two-viewers samples both slots in one command.")
+    stream.mkdir(parents=True)
     sizes = [entry["size"] for entry in loop["sizes"].values() if entry["rung"] == pin and (entry["size"][1] > entry["size"][0]) == portrait]
     # The warm lap drives first; the gated lap starts at its first leg line (lap_window).
     seconds = seconds or stream_seconds(loop)
@@ -1375,7 +1379,9 @@ def round_report(group, loop):
                and row["status"] != "contended"]
         return {"passed": not reasons, "reasons": reasons, "two_viewer_fps": two[-1] if two else None}
 
-    tune = T.confirm(tune, loop, confirm_fn)
+    # A result with only missing evidence can still pass, so no lower ranked candidate is confirmed in its place.
+    open_result = lambda result: all(reason.startswith(missing_evidence) for reason in result.get("reasons", []))
+    tune = T.confirm(tune, loop, confirm_fn, still_open=open_result)
     tune["stream_evidence"] = streams
     T.write_tune(group / "tune.json", tune)
     confirmed = tune["confirmation"]["confirmed"]
@@ -1399,8 +1405,7 @@ def round_report(group, loop):
                          repeat_min=repeat.get("min"))
     results = tune["confirmation"]["results"]
     # Unverified while a ranked candidate has only missing evidence, which confirm and the stream rows can still give.
-    still_open = any(all(reason.startswith(missing_evidence) for reason in result.get("reasons", []))
-                     for result in results if result["id"] in tune["ranking"])
+    still_open = any(open_result(result) for result in results if result["id"] in tune["ranking"])
     gates.append(M.gate("confirmed", 1 if confirmed else (None if still_open else 0), 1, op="==", unit="candidate",
                         note=confirmed or "; ".join(f"{r['id']}: {', '.join(r.get('reasons', [])[:3])}" for r in results[:4]) or None))
     report = {"version": 1, "tune": str(group / "tune.json"), "winner": tune.get("winner"), "confirmed": confirmed, "shown": chosen,

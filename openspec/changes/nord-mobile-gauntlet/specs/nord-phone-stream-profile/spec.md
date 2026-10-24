@@ -29,6 +29,7 @@ The tuner SHALL choose, among the candidates it measured, the phone profile with
 - **THEN** the tuner confirms the next feasible candidate, and `tune.json` records why the first one was dropped
 - **AND** after a stream row or the co-op guard drops a candidate, `gauntlet_loop.py confirm <tune folder>` confirms the next ranked candidate natively, adds the result to `tune.json` and writes no profile
 - **AND** after each result, `confirm` sets `native_confirmation.confirmed_native` in `tune.json` to the best ranked candidate whose native confirmation passed, a ranked baseline too, which `test_gauntlet_loop.py` checks
+- **AND** only a failure drops a candidate: while a better ranked candidate has only missing evidence, the round report confirms no lower ranked candidate and the `confirmed` gate is unverified, which `test_gauntlet_loop.py` checks
 
 #### Scenario: Stream row sampled again
 - **WHEN** a candidate's solo stream row at one rung and orientation is sampled more than once
@@ -47,7 +48,7 @@ The tuner SHALL choose, among the candidates it measured, the phone profile with
 #### Scenario: Contended confirmation run
 - **WHEN** a foreign GPU process shares a native confirmation run
 - **THEN** that run runs once more, as in the search
-- **AND** after a second contended run the confirmation stops at that candidate, its result counts as not run, the round report marks the `confirmed` gate unverified, not fail, and `gauntlet_loop.py confirm <tune folder>` runs that candidate again, which `test_gauntlet_loop.py` checks
+- **AND** after a second contended run the confirmation stops at that candidate, its result counts as not run, the round report marks the `confirmed` gate unverified, not fail, unless that result also holds a failed run, and `gauntlet_loop.py confirm <tune folder>` runs that candidate again, which `test_gauntlet_loop.py` checks
 
 #### Scenario: Fixed settings
 - **WHEN** the tuner builds a candidate

@@ -368,7 +368,11 @@ def check_confirmation(tune):
                                                             "two_viewer_fps": 18.0 if r["id"] == "baseline" else 15.5})
     assert guard["confirmation"]["confirmed"] == "baseline", guard["confirmation"]
     assert all("two-viewer FPS 15.5" in r["reasons"][-1] for r in guard["confirmation"]["results"][1:])
-    print("confirmation ok: fell back to", second)
+    # A better ranked result that can still pass (still_open) stops the confirmation, with nothing confirmed.
+    calls.clear()
+    held = T.confirm(copy.deepcopy(tune), LOOP, confirm, still_open=lambda result: "34.1" in result["reasons"][0])
+    assert held["confirmation"]["confirmed"] is None and calls == ["baseline", tune["ranking"][0]], (calls, held["confirmation"])
+    print("confirmation ok: fell back to", second, "and stopped at a result that can still pass")
 
 
 def check_partial_stills():
