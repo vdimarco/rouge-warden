@@ -3049,10 +3049,32 @@ def _fit_pit(world, frame, s0, d, obstacles):
         if not all(point_in(c, frame['poly']) and not on_pavement(world, c, seg) and not world.in_building(c)
                    for c in rect + [_frame_at(frame, s, d)]):
             continue
+        if not all(_raised_piece(world, frame, k) for k in _pieces_under(frame, s - PIT_L / 2, s + PIT_L / 2)):
+            continue
         if any(poly_point_dist(rect, q) < r or point_in(q, rect) for q, r in obstacles.near(rect)):
             continue
         return s
     return None
+
+
+def _pieces_under(frame, x0, x1):
+    """Indices of the strip's 1.5 m sidewalk pieces (as _sidewalk_strip cuts them) that [x0, x1] along it touches."""
+    pieces = max(1, round(frame['len'] / 150))
+    size = frame['len'] / pieces
+    return range(max(0, int(x0 // size)), min(pieces, int(x1 // size) + 1))
+
+
+def _raised_piece(world, frame, k):
+    """Whether _sidewalk_strip lays piece k of the strip raised at the curb height: clear of the traffic band (else a
+    dropped apron), its middle on no other carriageway and in no building. A pit stands only on raised pieces."""
+    strip = frame['strip']
+    (ca, cb), (oa, ob) = strip['curb'], strip['outer']
+    pieces = max(1, round(frame['len'] / 150))
+    f0, f1 = k / pieces, (k + 1) / pieces
+    poly = [lerp(ca, cb, f0), lerp(ca, cb, f1), lerp(oa, ob, f1), lerp(oa, ob, f0)]
+    mid = lerp(lerp(poly[0], poly[1], .5), lerp(poly[3], poly[2], .5), .5)
+    return world.traffic_distance(poly) >= CLEAR and not on_pavement(world, mid, strip['seg']['i']) and \
+        not world.in_building(mid) and not any(world.in_building(q) for q in poly[:2])
 
 
 class _Obstacles:
