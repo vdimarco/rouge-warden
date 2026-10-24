@@ -398,6 +398,7 @@ function cutsceneFrame(dt, inp) {
 }
 // The people on the sidewalks: they walk on round the player, and see the hero (in play only). The murmur follows them.
 const CAMW = new THREE.Vector3();
+const ACTION_VIEW_OPTIONS = { markers: true, cam: CAMW };
 const STREET_HAZARDS = [];
 const HERO_SEEN = { x: 0, y: 0, z: 0, vx: 0, vy: 0, vz: 0, onGround: false };
 function streetFrame(dt, inPlay) {
@@ -417,7 +418,10 @@ function streetFrame(dt, inPlay) {
     figures.end();
   }
   actionView.setVisible(act && worldVisible);
-  if (act) actionView.update(dt, G.time, { markers: G.state !== "cutscene", cam: CAMW });
+  if (act) {
+    ACTION_VIEW_OPTIONS.markers = G.state !== "cutscene";
+    actionView.update(dt, G.time, ACTION_VIEW_OPTIONS);
+  }
   audio.setCrowd(inPlay ? street.crowd : 0);
 }
 /* ---------------- the city action: sprint, fights, cars and jobs (flat play) ---------------- */

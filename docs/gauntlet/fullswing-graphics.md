@@ -1349,3 +1349,6 @@ Increment61 pending — sharedfigure root followsworldvisibility;hiddenvisualpre
 
 
 Increment61 shipped #689 asb123bc2f after all6CI/review/current9deployedchecks/exactmainbytes/rebase before AND afterpreview/exactmerge. Productionmain HTTP200 exactSHA5850d940312c64eef14db15acf1f1a6a6ed3a64e25ac3950b8fd45d1e6a29e11 verified. Canonical hidden-figure scenarios published and OpenSpec archived. PhysicalAR/actualChrome/FPSbenefit unverified; totalwithheld.
+
+
+Increment62 pending — privateaction-viewoptions64fresh→1record inactualbrowseractive/hidden/resume/cutscene/play;4checksPASS/currentmarkerflags/samecamera. Marker-dirty+6goonposeequivalencecasesPASS. Evidence r62-action-options/all20limits/noFPSclaim/totalwithheld.
