@@ -28,7 +28,15 @@
 - [x] Fourth pass, Plex: the Habitations De Mentana slab form, lane fences seeded lot by lot with more garages and sheds, cedars and hedges as crossed cards, and brick on every wall a named street sees.
 - [x] Fourth pass, lane life: catenary laundry lines with garments from the `Cloth_Laundry` atlas, a line in sight of the moved ruelle camera, fountain-grass cards, and tags only on solid fence faces.
 - [x] Fourth pass, integration: every layer rebuilt in dependency order and byte-identical on a second build, the Plex manifest hashing `street_trees.json`, and the spec's Plex budget set to the code's caps with a test.
-- [ ] Fourth pass previews and review: re-render `mentana`, `papineau`, `rachel`, `fabre`, `corner`, `aerial` and `hlm_mentana`, which still show the old summer trees, the old curb extensions and the old Mentana form, then a critic review.
+- [x] Fourth pass previews and review: all ten street previews re-rendered on the species trees, the straight curbs and the new Mentana form, then a critic review.
+- [x] Fifth pass, streets: carriageway trees re-seated from the inventory's side, place and distance or listed for the host, a late-October colour on every row, conifer and larch genera, a 0.5 cm gutter that keeps clear of the old road, dull crack seal and potholes, ruelles paved out to the first lot line, and a missing Plex `Glass` OBJ named.
+- [x] Fifth pass, trees: the `conifer` and `larch` kinds with young meshes and needle cells, the silver maple leaf with a central blade, and a `.mtl` library for every tree OBJ.
+- [x] Fifth pass, leaf-litter texture: the masked `Leaf_Litter` set stamped from the tree atlas's leaf shapes, with `--check` tied to the leaf forms.
+- [x] Fifth pass, lane life: no laundry line or garment in a tree crown, `Leaf_Litter` patches under every crown, on curb drifts and in the ruelle gutters, and the ruelle camera moved to a line in sight.
+- [x] Fifth pass, apply step: the conifer and larch kinds, one actor per kind, mesh and late-October colour with tinted leaves, the `NordStreetTree` tag, no trunk in the traffic band, and `Leaf_Litter` as a contract key.
+- [x] Fifth pass, host steps: both host blocks build the Plex and prop OBJs first, the park, stand-in and pre-apply verify read the OSM tree nodes again, and dogs sniff the tagged street trees (stub syntax check and link only).
+- [x] Fifth pass, integration: every layer rebuilt in dependency order and byte-identical on a second build.
+- [ ] Fifth pass previews and review: draw the red and russet leaf tints in the preview, re-render the views that show the gutter, the litter, the conifers, the re-seated trees and the moved ruelle camera (`ruelle_mentana`, `ruelle`, `gallery_closeup`, `mentana`, `rachel`, `papineau`, `corner`, `aerial`), update `Preview/Replica/README.md`, then a critic review.
 
 ## Cloud verification
 - [x] Every new and changed `.cpp` passes the stub-header syntax check with UE's Linux warnings.
@@ -43,14 +51,15 @@
 - [ ] Build QuebecEditor and Quebec Linux Development; fix anything the stub check could not catch.
 - [ ] Run `Automation RunTests Quebec.` (the existing tests plus 36 new ones), `car_collision_test.py`, `smoke_test.py`, `population_test.py`, `test_resident_feedback.py` and the story-slice suite with and without `-NordLag`.
 - [ ] Run `Scripts/apply_plateau_replica.py` on a backed-up map, verify on a fresh load, capture the six reference views and profile them.
-- [ ] Check that UE 5.8's OBJ importer names the tree meshes' bark and leaves slots from `usemtl`, that `clear_instances` empties the vegetation's `Trees` component, and the frame time with about 5,300 masked Nanite trees casting shadows.
+- [ ] Check that UE 5.8's OBJ importer names the tree meshes' bark and leaves slots from `usemtl` and the `.mtl` libraries, that `clear_instances` empties the vegetation's `Trees` component, that the red and russet groups show their tinted leaves, and the frame time with about 5,300 masked Nanite trees casting shadows and the `Leaf_Litter` patches.
+- [ ] Check that a dog sniffs a street tree after the import (`FindSniffSpot` on the `NordStreetTree` actors), that `GetInstancesOverlappingSphere` returns the right instances on 5.8, and what the per-pause actor walk costs.
 - [ ] Play on a phone over the stream: graded steering, assists, combat buttons, HUD fit at 667×375 and 800×360.
 - [ ] Cook, package, install with saves preserved, and check the public stream.
 
 ## Follow-up
 - [x] Give the park and street trees more than one model: they stand on the species meshes from the city inventory (the apply plan is tested on the CPU; the previews and the host import are open above).
 - [ ] Bring back the falling leaves: `QuebecVegetation` spawns them near its own instances, which the apply step now clears (a C++ change for a host build).
-- [ ] Give the 263 inventory conifers a conifer kind; today they take a kind by crown size.
+- [x] Give the 263 inventory conifers a conifer kind: 180 stand on `conifer` and 83 larches on `larch`.
 - [ ] Make a chain-link texture set; a small-scale grey lattice stands in for it.
 - [ ] Count the street trees, not only the yard trees, as obstacles in the laundry sight test.
 - [ ] Check the 424 street-name `TextRender` signs in the editor after import.
