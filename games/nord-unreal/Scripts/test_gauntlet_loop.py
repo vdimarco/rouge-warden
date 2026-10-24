@@ -3,11 +3,13 @@ stream sampler (no Unreal, no GPU, no browser).
 
 Run from games/nord-unreal:  python3 Scripts/test_gauntlet_loop.py
 Checks both command lines (direct and RunUnreal), the run folder layout, the sky and label refusals, the contention
-label, the CVar readback, the phone profile flag, a look run scored against a ceiling, a short tune with its native
-confirmation and round report, a partial look run that gives no Look, a stale --reference or one without every still
-refused, a stream lap with its trigger file, lap window and page clock, the input row, the next candidate's
-confirmation, confirmation runs that end before --until and a cut confirmation run again, the write-profile
-refusal without --approved, and that browser_streaming.py without NORD_STREAM_QUALITY keeps today's exact launch line.
+label, the CVar readback with the fixed CVars, the phone profile flag, a look run scored against a ceiling, a short tune
+with its native confirmation and round report, a partial look run that gives no Look, a stale --reference or one
+without every still or with a contended ceiling run refused, a stream lap with its trigger file, lap window and page
+clock, the input row, the next candidate's confirmation, confirmation runs that end before --until (planned with the
+longest run so far), a cut confirmation run again and unverified in the round report until then, a ranked baseline
+confirmed once, the write-profile refusal without --approved, and that browser_streaming.py without
+NORD_STREAM_QUALITY keeps today's exact launch line.
 Everything is written to a temporary folder; the real Saved/Gauntlet and Config/DefaultDeviceProfiles.ini are never
 written.
 """
@@ -1000,10 +1002,12 @@ def main():
         check_tune_first_ceiling_contended(state)
         check_tune_with_reference(out, reference)
         check_reference_missing_sky(out)
+        check_reference_contended(out, state)
         check_tune_partial_look()
         check_stream(out, state, group, tune["winner"])
         check_stream_input(out, state, group, tune["winner"])
         check_report_and_profile(group, tune)
+        check_report_window_cut(group, tune)
         check_confirm_next(group, tune)
         check_confirm_window(out)
     print("NORD_GAUNTLET_LOOP_OK")
