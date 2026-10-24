@@ -3,13 +3,14 @@
 Run apply(unreal) outside PIE, then apply_comic_style.py and capture actual renders.
 Saved/Recovery retains every affected asset before writes; no map save or import occurs.
 
-Leaf colour has two modes. The default keeps the summer look: the leaf texture desaturated 35 % and tinted from
-green to gold by each instance's random value. The late-October mode (apply(u, autumn=True), or the editor
-command-line flag -NordTreeAutumn when autumn is left as None) shifts every leaf toward autumn instead: the
-texture's luminance (its own light and dark veins and edges) times a per-instance palette that runs from a few
-still-green trees through yellow and orange to some red (AUTUMN_STOPS), and it raises the cut-out clip from 1/3 to
-AUTUMN_MASK_CLIP so the crowns thin out as if many leaves had already fallen. leaf_colour() evaluates the same
-graph on the CPU, so the tests check the colours without Unreal.
+Leaf colour has two modes. The default is late October, as the rest of the Plateau replica: every leaf shifts toward
+autumn, the texture's luminance (its own light and dark veins and edges) times a per-instance palette that runs from
+a few still-green trees through yellow and orange to some red (AUTUMN_STOPS), and the cut-out clip rises from 1/3 to
+AUTUMN_MASK_CLIP so the crowns thin out as if many leaves had already fallen. The old summer look (the leaf texture
+desaturated 35 % and tinted from green to gold by each instance's random value) needs apply(u, autumn=False), or the
+editor command-line flag -NordTreeSummer when autumn is left as None (-NordTreeAutumn is still accepted and changes
+nothing). The same material colours QuebecVegetation's falling leaf cards. leaf_colour() evaluates the same graph on
+the CPU, so the tests check the colours without Unreal.
 """
 from datetime import datetime, timezone
 import hashlib
@@ -27,7 +28,8 @@ DIFFUSE = '/Game/Art/Tree/tree_small_02/Textures/tree_small_02_leaves_diff-tree_
 GREEN_TINT = (.85, 1.35, .75)
 GOLD_TINT = (1.8, 1.2, .5)
 MASK_CLIP = 1. / 3.
-AUTUMN_FLAG = '-NordTreeAutumn'
+AUTUMN_FLAG = '-NordTreeAutumn'           # the old opt-in; autumn is the default now
+SUMMER_FLAG = '-NordTreeSummer'           # opt out: the summer green-to-gold graph
 # Late October on the Plateau: per-instance random value r -> linear tint of the leaf luminance. Lerp between
 # neighbouring stops: the first sixth of the trees keeps some green, most are yellow to amber, then orange and a
 # few red. The leaf texture's linear luminance is about .40 over its opaque texels (tree_small_02_leaves_diff_1k,
@@ -39,12 +41,12 @@ AUTUMN_MASK_CLIP = .45     # thinner crowns: many leaves are down by late Octobe
 
 
 def autumn_flag(u):
-    """True when the editor was started with -NordTreeAutumn."""
+    """True (late October, the default) unless the editor was started with -NordTreeSummer."""
     import shlex
     try:
-        return AUTUMN_FLAG in shlex.split(u.SystemLibrary.get_command_line())
+        return SUMMER_FLAG not in shlex.split(u.SystemLibrary.get_command_line())
     except AttributeError:
-        return False
+        return True
 
 
 def luminance(rgb):
@@ -61,7 +63,7 @@ def autumn_tint(r):
     return out
 
 
-def leaf_colour(texel, r, autumn=False):
+def leaf_colour(texel, r, autumn=True):
     """Linear base colour of the leaf material for a linear texture colour and per-instance random value r."""
     if not autumn:
         grey = luminance(texel)
@@ -200,7 +202,8 @@ def verified_source_bounds(before, after, bounds):
 
 
 def apply(u, autumn=None):
-    """autumn: True shifts the leaves to late-October colours and thins the crowns; None reads -NordTreeAutumn."""
+    """autumn: True (the default through None, unless -NordTreeSummer) shifts the leaves to late-October colours and
+    thins the crowns; False keeps the summer green to gold."""
     if autumn is None:
         autumn = autumn_flag(u)
     clip = AUTUMN_MASK_CLIP if autumn else MASK_CLIP

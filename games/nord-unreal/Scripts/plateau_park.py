@@ -124,8 +124,9 @@ def build_park():
         _bench(mesh, point, yaw)
         benches.append(bench | {'yaw': yaw, 'path_clearance_cm': distance - width / 2 - 36})
 
-    from plateau_rendering import tree_positions
-    trees = [p for p in tree_positions() if _inside(p, boundary)
+    # The leaves follow the OSM tree nodes, which the committed park.json, the park OBJs and the saved map hold.
+    from plateau_rendering import osm_tree_positions
+    trees = [p for p in osm_tree_positions() if _inside(p, boundary)
              and (math.dist(p[:2], (35880, 850)) < 7500 or math.dist(p[:2], (12500, -8000)) < 11000)]
     leaves, tree_count = 0, 0
     for x, y, seed in trees[::max(1, len(trees) // 90)][:90]:

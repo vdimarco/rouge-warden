@@ -53,7 +53,7 @@ namespace
     constexpr float SkyCommandBlend = 10.f;
     const FVector SkyRainBox(2000., 2000., 1200.);
     const TCHAR* const SkyQAFlags[] = { TEXT("NordCapture"), TEXT("NordCampaignQA"), TEXT("NordNoCampaign"), TEXT("NordNoCampaignSave"),
-        TEXT("NordStoryRenderChecks"), TEXT("NordRenderChecks"), TEXT("NordFixedSky") };
+        TEXT("NordStoryRenderChecks"), TEXT("NordRenderChecks"), TEXT("NordFixedSky"), TEXT("NordGauntlet") };
 
     // Editor Python runs (captures, verification, PIE regressions) count as QA, whatever Nord flags they pass.
     bool SkyQARun()
@@ -246,6 +246,22 @@ bool AQuebecSky::HostSetWeather(const FString& WeatherName)
 {
     QuebecSky::EWeather Requested = QuebecSky::EWeather::Clear;
     if (!HasAuthority() || !QuebecSky::ParseWeather(StringCast<ANSICHAR>(*WeatherName.TrimStartAndEnd()).Get(), Requested)) return false;
+    // NORD mobile gauntlet look runs switch the sky at each stop. The new weather starts settled, wet streets and puddles
+    // included, as a -NordWeather= start does, so a still does not depend on how long the streets had to wet or dry.
+    if (FParse::Param(FCommandLine::Get(), TEXT("NordGauntlet")))
+    {
+        QuebecSky::FSegment Settled;
+        Settled.From = Settled.To = Requested;
+        Settled.Start = ServerSeconds();
+        Settled.Hold = QuebecSky::HoldSeconds(Requested, Random);
+        SetSegment(Settled);
+        Wet.Step(QuebecSky::LookFor(Requested).Rain, 3600.f);
+        State.Wetness = Wet.Surface;
+        State.Puddles = Wet.Puddles;
+        ForceNetUpdate();
+        UE_LOG(LogTemp, Display, TEXT("NORD_SKY_WEATHER command %s settled"), *WeatherName);
+        return true;
+    }
     // Blend from exactly the look showing now, even mid-blend, so the change does not jump.
     QuebecSky::FSegment Segment = CurrentSegment();
     QuebecSky::Redirect(Segment, Requested, ServerSeconds(), SkyCommandBlend, Random);

@@ -6,6 +6,7 @@ Some runtime walkers SHALL walk dogs, push strollers or carry groceries, without
 #### Scenario: Watch a dog walker
 - **WHEN** a player watches a dog walker on a sidewalk
 - **THEN** the dog trots beside its owner on a visible leash, stops to sniff near a tree or hydrant when the owner pauses, and sits while the owner stands
+- **AND** after the Plateau replica import the dog still finds the street and park trees on their species meshes to sniff
 
 #### Scenario: Watch a stroller
 - **WHEN** a player watches a parent with a stroller

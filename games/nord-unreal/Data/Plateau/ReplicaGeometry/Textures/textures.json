@@ -291,6 +291,77 @@
    ],
    "uv": "metres"
   },
+  "cedar": {
+   "alpha": true,
+   "base_color_srgb": "#405428",
+   "card_height_m": 3.0,
+   "coverage": 0.5157,
+   "keys": [
+    "Leaf_Cedar"
+   ],
+   "layout": {
+    "brown_sprays": 113,
+    "card_height_cm": 300.0,
+    "cover": 0.5157,
+    "crown_cm": 285.0,
+    "per_m": 1,
+    "sprays": 3400,
+    "width_cm": 72.0
+   },
+   "maps": {
+    "diff": {
+     "alpha": true,
+     "compression": "TC_DEFAULT",
+     "file": "T_Replica_Cedar_diff.png",
+     "raw_sha256": "67cecd8dca05633499f5d5e17a9d64a7dc3fa0d32c6511a6bf4b1fb8bf31d39d",
+     "sampler": "SAMPLERTYPE_COLOR",
+     "sha256": "bd52abab54f4e802ecd8fb485f21ed975409776a28df7cebb2cdfc813137ba56",
+     "srgb": true
+    },
+    "nor_dx": {
+     "compression": "TC_NORMALMAP",
+     "file": "T_Replica_Cedar_nor_dx.png",
+     "raw_sha256": "bcd3c4bd3a9d40d60d69c4e2cfae20eb276193e17a21df4c858fd88576e729ed",
+     "sampler": "SAMPLERTYPE_NORMAL",
+     "sha256": "e925d0c810d250558ec8bb8f86fbdab56989455724160265f8cd454e1af22784",
+     "srgb": false
+    },
+    "rough": {
+     "compression": "TC_DEFAULT",
+     "file": "T_Replica_Cedar_rough.png",
+     "raw_sha256": "9d51c8d94a0593488a53a378faee9b41f72623683c3d31ecb41fc753621d1b13",
+     "sampler": "SAMPLERTYPE_LINEAR_COLOR",
+     "sha256": "ad2dbee76821c7bea01f367ca04fc44a77946d56e84b10b6b5b21af36d4fccb1",
+     "srgb": false
+    }
+   },
+   "material": {
+    "blend_mode": "masked",
+    "opacity_mask_clip": 0.5,
+    "shading_model": "two_sided_foliage",
+    "two_sided": true
+   },
+   "mean_linear": [
+    0.0514,
+    0.0882,
+    0.021
+   ],
+   "roughness_mean": 0.7826,
+   "size_px": [
+    512,
+    1024
+   ],
+   "surface": "foliage",
+   "tile_m": [
+    1.0,
+    1.0
+   ],
+   "tiling": [
+    1.0,
+    1.0
+   ],
+   "uv": "card"
+  },
   "creeper": {
    "alpha": true,
    "base_color_srgb": "#8F3321",
@@ -524,6 +595,249 @@
    ],
    "uv": "card"
   },
+  "fountain_grass": {
+   "alpha": true,
+   "base_color_srgb": "#947F53",
+   "card_height_m": 1.0,
+   "coverage": 0.3269,
+   "keys": [
+    "Plant_Grass_Fountain"
+   ],
+   "layout": {
+    "blades": 240,
+    "card_height_cm": 100.0,
+    "cover": 0.3269,
+    "per_m": 1,
+    "plumes": 34
+   },
+   "maps": {
+    "diff": {
+     "alpha": true,
+     "compression": "TC_DEFAULT",
+     "file": "T_Replica_FountainGrass_diff.png",
+     "raw_sha256": "3fe1f1c165f8e8528be305d604b32567541ea2f0d3c469ece1c22461a97ca76f",
+     "sampler": "SAMPLERTYPE_COLOR",
+     "sha256": "45fc571b30240da67b0054850e7f67b658dc1b65396f077bddc06e44b9dda5ca",
+     "srgb": true
+    },
+    "nor_dx": {
+     "compression": "TC_NORMALMAP",
+     "file": "T_Replica_FountainGrass_nor_dx.png",
+     "raw_sha256": "885899044d6834bfe385f0ae988ab703df298c730dc62c43edb6df4c420f3c3a",
+     "sampler": "SAMPLERTYPE_NORMAL",
+     "sha256": "b7a33704b593206b7e92681b43a2011480479d4486331936e3fa7be114b56192",
+     "srgb": false
+    },
+    "rough": {
+     "compression": "TC_DEFAULT",
+     "file": "T_Replica_FountainGrass_rough.png",
+     "raw_sha256": "7f0e90c43c691e22e0a760d7e3d04f9c55dc47db140c9cf3d8b7b57c1fbd4a8d",
+     "sampler": "SAMPLERTYPE_LINEAR_COLOR",
+     "sha256": "1e68405f97d7a4d7aa3bb977fc083af6479eb0d5c31d835f6e83a39e119cfe04",
+     "srgb": false
+    }
+   },
+   "material": {
+    "blend_mode": "masked",
+    "opacity_mask_clip": 0.5,
+    "shading_model": "two_sided_foliage",
+    "two_sided": true
+   },
+   "mean_linear": [
+    0.2977,
+    0.212,
+    0.0875
+   ],
+   "roughness_mean": 0.8121,
+   "size_px": [
+    512,
+    512
+   ],
+   "surface": "foliage",
+   "tile_m": [
+    1.0,
+    1.0
+   ],
+   "tiling": [
+    1.0,
+    1.0
+   ],
+   "uv": "card"
+  },
+  "iron_wrought": {
+   "alpha": true,
+   "base_color_srgb": "#251F1B",
+   "card_height_m": 0.5,
+   "coverage": 0.2187,
+   "keys": [
+    "Iron_Wrought"
+   ],
+   "layout": {
+    "card_height_cm": 50.0,
+    "cover": 0.2187,
+    "finial_cm": [
+     42.0,
+     1.1
+    ],
+    "picket_cm": 12.5,
+    "pickets_per_tile": 4,
+    "rails_cm": [
+     [
+      7.0,
+      9.5
+     ],
+     [
+      36.0,
+      38.5
+     ]
+    ],
+    "ring_cm": [
+     22.75,
+     5.6,
+     0.45
+    ]
+   },
+   "maps": {
+    "diff": {
+     "alpha": true,
+     "compression": "TC_DEFAULT",
+     "file": "T_Replica_IronWrought_diff.png",
+     "raw_sha256": "4a51b324043ffadf0f1a7aad0c69e4a959e6349a008049b76b331fda0ced47fe",
+     "sampler": "SAMPLERTYPE_COLOR",
+     "sha256": "48f4aa27504d5501661019b78ef998032b1a466fba6fae5079cea1fbb96de3d7",
+     "srgb": true
+    },
+    "nor_dx": {
+     "compression": "TC_NORMALMAP",
+     "file": "T_Replica_IronWrought_nor_dx.png",
+     "raw_sha256": "d6c1d4ab442d81fdeb97c731b9a215b5948b402691fcd3792c8b599537479a17",
+     "sampler": "SAMPLERTYPE_NORMAL",
+     "sha256": "470e9d318f706e35103eab830a435d36c10fdf598fbf5a0cb1be1398a42b16f0",
+     "srgb": false
+    },
+    "rough": {
+     "compression": "TC_DEFAULT",
+     "file": "T_Replica_IronWrought_rough.png",
+     "raw_sha256": "5098f750396dab08c5621df9f2813f624bef3bad0248d7401b60b265e900f5e3",
+     "sampler": "SAMPLERTYPE_LINEAR_COLOR",
+     "sha256": "d8415b63ba36d456d338f78060ab0b9ad9b132e240b83f2bedff44047626650a",
+     "srgb": false
+    }
+   },
+   "material": {
+    "blend_mode": "masked",
+    "opacity_mask_clip": 0.5,
+    "shading_model": "default_lit",
+    "two_sided": true
+   },
+   "mean_linear": [
+    0.0185,
+    0.0138,
+    0.011
+   ],
+   "roughness_mean": 0.4883,
+   "size_px": [
+    512,
+    512
+   ],
+   "surface": "cutout",
+   "tile_m": [
+    0.5,
+    1.0
+   ],
+   "tiling": [
+    2.0,
+    1.0
+   ],
+   "uv": "card"
+  },
+  "lane_concrete": {
+   "alpha": false,
+   "base_color_srgb": "#746C62",
+   "keys": [
+    "Concrete_Lane_Aged"
+   ],
+   "layout": {
+    "centre_v_m": 0.5,
+    "channel_cm": [
+     4.0,
+     14.0
+    ],
+    "joint_cm": 1.2,
+    "joint_u_m": [
+     1.0
+    ],
+    "leaves": 12,
+    "stone_cover": 0.049,
+    "uv": "u metres along the gutter, v metres across it, centre at v 0.5"
+   },
+   "macro": {
+    "channels": [
+     "R",
+     "G"
+    ],
+    "file": "T_Replica_Macro_mask.png",
+    "strength": [
+     0.1,
+     0.06
+    ],
+    "tile_m": [
+     17.3,
+     5.3
+    ]
+   },
+   "maps": {
+    "diff": {
+     "compression": "TC_DEFAULT",
+     "file": "T_Replica_LaneConcrete_diff.png",
+     "raw_sha256": "604529c7574b7b51bbcceae6f2d7effa2fa35914068a1a2b8d320035392b95e6",
+     "sampler": "SAMPLERTYPE_COLOR",
+     "sha256": "3ccce18e6020d88911499c036878f112c838735c0c561dc179296d341e85eb5c",
+     "srgb": true
+    },
+    "nor_dx": {
+     "compression": "TC_NORMALMAP",
+     "file": "T_Replica_LaneConcrete_nor_dx.png",
+     "raw_sha256": "2b510541632683b5b8e9ffff4cb2da1fb30e55859eee62166923991ffe413ffa",
+     "sampler": "SAMPLERTYPE_NORMAL",
+     "sha256": "b6dcc0d6871de96e306d9ecbba4113c1014038ae38b49a515fe8da469c7bb4a5",
+     "srgb": false
+    },
+    "rough": {
+     "compression": "TC_DEFAULT",
+     "file": "T_Replica_LaneConcrete_rough.png",
+     "raw_sha256": "991dedf91809010c72487a153734991997eccbb46e1d0c712f3931989f9a06a9",
+     "sampler": "SAMPLERTYPE_LINEAR_COLOR",
+     "sha256": "97214ae589adfed4f383016c50bfcfe66cb9f583faef97cb4c22e18bc3507a72",
+     "srgb": false
+    }
+   },
+   "material": {
+    "blend_mode": "opaque",
+    "shading_model": "default_lit",
+    "two_sided": false
+   },
+   "mean_linear": [
+    0.1733,
+    0.1502,
+    0.1211
+   ],
+   "roughness_mean": 0.8306,
+   "size_px": [
+    1024,
+    512
+   ],
+   "surface": "ground",
+   "tile_m": [
+    2.0,
+    1.0
+   ],
+   "tiling": [
+    0.5,
+    1.0
+   ],
+   "uv": "metres"
+  },
   "lattice": {
    "alpha": true,
    "base_color_srgb": "#C5BEB3",
@@ -593,6 +907,473 @@
    ],
    "uv": "card"
   },
+  "laundry": {
+   "alpha": true,
+   "base_color_srgb": "#BCB4AE",
+   "coverage": 0.4616,
+   "keys": [
+    "Cloth_Laundry"
+   ],
+   "layout": {
+    "cell_px": 256,
+    "cells": {
+     "dress_green": {
+      "garment_cm": [
+       60.0,
+       90.76
+      ],
+      "index": 8,
+      "kind": "dress",
+      "pins_cm": [
+       36.38,
+       57.38
+      ],
+      "px": [
+       520,
+       520,
+       760,
+       760
+      ],
+      "size_cm": [
+       93.75,
+       93.75
+      ],
+      "uv": [
+       0.507812,
+       0.257812,
+       0.742188,
+       0.492188
+      ]
+     },
+     "jeans": {
+      "garment_cm": [
+       46.0,
+       92.0
+      ],
+      "index": 6,
+      "kind": "jeans",
+      "pins_cm": [
+       28.88,
+       64.88
+      ],
+      "px": [
+       8,
+       520,
+       248,
+       760
+      ],
+      "size_cm": [
+       93.75,
+       93.75
+      ],
+      "uv": [
+       0.007812,
+       0.257812,
+       0.242188,
+       0.492188
+      ]
+     },
+     "pillowcase": {
+      "garment_cm": [
+       50.0,
+       74.29
+      ],
+      "index": 10,
+      "kind": "pillowcase",
+      "pins_cm": [
+       25.88,
+       67.88
+      ],
+      "px": [
+       8,
+       776,
+       248,
+       1016
+      ],
+      "size_cm": [
+       93.75,
+       93.75
+      ],
+      "uv": [
+       0.007812,
+       0.007812,
+       0.242188,
+       0.242188
+      ]
+     },
+     "sheet_floral": {
+      "garment_cm": [
+       189.75,
+       90.21
+      ],
+      "index": 1,
+      "kind": "sheet",
+      "pins_cm": [
+       8.0,
+       66.52,
+       127.23,
+       185.75
+      ],
+      "px": [
+       520,
+       8,
+       1016,
+       248
+      ],
+      "size_cm": [
+       193.75,
+       93.75
+      ],
+      "uv": [
+       0.507812,
+       0.757812,
+       0.992188,
+       0.992188
+      ]
+     },
+     "sheet_white": {
+      "garment_cm": [
+       189.75,
+       91.53
+      ],
+      "index": 0,
+      "kind": "sheet",
+      "pins_cm": [
+       8.0,
+       66.52,
+       127.23,
+       185.75
+      ],
+      "px": [
+       8,
+       8,
+       504,
+       248
+      ],
+      "size_cm": [
+       193.75,
+       93.75
+      ],
+      "uv": [
+       0.007812,
+       0.757812,
+       0.492188,
+       0.992188
+      ]
+     },
+     "shirt_blue": {
+      "garment_cm": [
+       62.0,
+       79.0
+      ],
+      "index": 4,
+      "kind": "shirt",
+      "pins_cm": [
+       29.88,
+       63.88
+      ],
+      "px": [
+       520,
+       264,
+       760,
+       504
+      ],
+      "size_cm": [
+       93.75,
+       93.75
+      ],
+      "uv": [
+       0.507812,
+       0.507812,
+       0.742188,
+       0.742188
+      ]
+     },
+     "shirt_plaid": {
+      "garment_cm": [
+       62.0,
+       79.0
+      ],
+      "index": 9,
+      "kind": "shirt",
+      "pins_cm": [
+       29.88,
+       63.88
+      ],
+      "px": [
+       776,
+       520,
+       1016,
+       760
+      ],
+      "size_cm": [
+       93.75,
+       93.75
+      ],
+      "uv": [
+       0.757812,
+       0.257812,
+       0.992188,
+       0.492188
+      ]
+     },
+     "shirt_white": {
+      "garment_cm": [
+       62.0,
+       79.0
+      ],
+      "index": 5,
+      "kind": "shirt",
+      "pins_cm": [
+       29.88,
+       63.88
+      ],
+      "px": [
+       776,
+       264,
+       1016,
+       504
+      ],
+      "size_cm": [
+       93.75,
+       93.75
+      ],
+      "uv": [
+       0.757812,
+       0.507812,
+       0.992188,
+       0.742188
+      ]
+     },
+     "shorts_khaki": {
+      "garment_cm": [
+       48.0,
+       46.0
+      ],
+      "index": 13,
+      "kind": "shorts",
+      "pins_cm": [
+       28.88,
+       64.88
+      ],
+      "px": [
+       776,
+       776,
+       1016,
+       1016
+      ],
+      "size_cm": [
+       93.75,
+       93.75
+      ],
+      "uv": [
+       0.757812,
+       0.007812,
+       0.992188,
+       0.242188
+      ]
+     },
+     "towel_red": {
+      "garment_cm": [
+       62.53,
+       62.8
+      ],
+      "index": 3,
+      "kind": "towel",
+      "pins_cm": [
+       19.61,
+       74.14
+      ],
+      "px": [
+       264,
+       264,
+       504,
+       504
+      ],
+      "size_cm": [
+       93.75,
+       93.75
+      ],
+      "uv": [
+       0.257812,
+       0.507812,
+       0.492188,
+       0.742188
+      ]
+     },
+     "towel_stripes": {
+      "garment_cm": [
+       62.47,
+       61.79
+      ],
+      "index": 2,
+      "kind": "towel",
+      "pins_cm": [
+       19.64,
+       74.11
+      ],
+      "px": [
+       8,
+       264,
+       248,
+       504
+      ],
+      "size_cm": [
+       93.75,
+       93.75
+      ],
+      "uv": [
+       0.007812,
+       0.507812,
+       0.242188,
+       0.742188
+      ]
+     },
+     "towel_yellow": {
+      "garment_cm": [
+       62.85,
+       62.06
+      ],
+      "index": 11,
+      "kind": "towel",
+      "pins_cm": [
+       19.45,
+       74.3
+      ],
+      "px": [
+       264,
+       776,
+       504,
+       1016
+      ],
+      "size_cm": [
+       93.75,
+       93.75
+      ],
+      "uv": [
+       0.257812,
+       0.007812,
+       0.492188,
+       0.242188
+      ]
+     },
+     "tshirt_grey": {
+      "garment_cm": [
+       62.0,
+       65.0
+      ],
+      "index": 12,
+      "kind": "tshirt",
+      "pins_cm": [
+       30.88,
+       62.88
+      ],
+      "px": [
+       520,
+       776,
+       760,
+       1016
+      ],
+      "size_cm": [
+       93.75,
+       93.75
+      ],
+      "uv": [
+       0.507812,
+       0.007812,
+       0.742188,
+       0.242188
+      ]
+     },
+     "tshirt_yellow": {
+      "garment_cm": [
+       62.0,
+       65.0
+      ],
+      "index": 7,
+      "kind": "tshirt",
+      "pins_cm": [
+       30.88,
+       62.88
+      ],
+      "px": [
+       264,
+       520,
+       504,
+       760
+      ],
+      "size_cm": [
+       93.75,
+       93.75
+      ],
+      "uv": [
+       0.257812,
+       0.257812,
+       0.492188,
+       0.492188
+      ]
+     }
+    },
+    "cover": 0.4616,
+    "pad_px": 8,
+    "px_per_cm": 2.56,
+    "rope": "the top edge of each cell rect (v1); x of the pegs from the cell rect left edge"
+   },
+   "maps": {
+    "diff": {
+     "alpha": true,
+     "compression": "TC_DEFAULT",
+     "file": "T_Replica_Laundry_diff.png",
+     "raw_sha256": "6379e2d2da277d49a51a952333d1f0bd87588be565ab1928dbda025a84a5001d",
+     "sampler": "SAMPLERTYPE_COLOR",
+     "sha256": "ca61a017dd2f91e796940724c26c40330acc6f9c8aa1f4091c38d6f8ceaca19c",
+     "srgb": true
+    },
+    "nor_dx": {
+     "compression": "TC_NORMALMAP",
+     "file": "T_Replica_Laundry_nor_dx.png",
+     "raw_sha256": "841b718e83ee02289f528668ea0c39588096d22b13f08452621009c3c06b2426",
+     "sampler": "SAMPLERTYPE_NORMAL",
+     "sha256": "ba748dbafdb73268d4e9c00ec6733102ea47a823b7650d52f06172753730eb24",
+     "srgb": false
+    },
+    "rough": {
+     "compression": "TC_DEFAULT",
+     "file": "T_Replica_Laundry_rough.png",
+     "raw_sha256": "b68c372010cbce1ae813a8c9bb584582d0c23fabe5f6af139ac7f634db682089",
+     "sampler": "SAMPLERTYPE_LINEAR_COLOR",
+     "sha256": "1958d1e9481ab3ca74d59b01bf745460d26c0d6ae52f5db857b69303a924eaa2",
+     "srgb": false
+    }
+   },
+   "material": {
+    "blend_mode": "masked",
+    "opacity_mask_clip": 0.5,
+    "shading_model": "default_lit",
+    "two_sided": true
+   },
+   "mean_linear": [
+    0.5026,
+    0.4536,
+    0.4235
+   ],
+   "own_colour": true,
+   "roughness_mean": 0.898,
+   "size_px": [
+    1024,
+    1024
+   ],
+   "surface": "cutout",
+   "tile_m": [
+    1.0,
+    1.0
+   ],
+   "tiling": [
+    1.0,
+    1.0
+   ],
+   "uv": "atlas"
+  },
   "lawn": {
    "alpha": false,
    "base_color_srgb": "#606A31",
@@ -646,6 +1427,196 @@
     512
    ],
    "surface": "ground",
+   "tile_m": [
+    2.0,
+    2.0
+   ],
+   "tiling": [
+    0.5,
+    0.5
+   ],
+   "uv": "metres"
+  },
+  "leaf_litter": {
+   "alpha": true,
+   "base_color_srgb": "#96733D",
+   "coverage": 0.8226,
+   "keys": [
+    "Leaf_Litter"
+   ],
+   "layout": {
+    "cover": 0.8226,
+    "face_down": 563,
+    "layers": {
+     "bottom": {
+      "leaf_area_per_tile_area": 1.1,
+      "leaves": 903,
+      "luminance": 0.0866,
+      "visible_share": 0.2792
+     },
+     "middle": {
+      "leaf_area_per_tile_area": 0.6,
+      "leaves": 538,
+      "luminance": 0.1904,
+      "visible_share": 0.3845
+     },
+     "top": {
+      "leaf_area_per_tile_area": 0.36,
+      "leaves": 303,
+      "luminance": 0.2818,
+      "visible_share": 0.3363
+     }
+    },
+    "leaves": 1744,
+    "px_per_cm": 5.12,
+    "shapes_from": "Scripts/blender/plateau_trees.py FORMS and _leaf (the tree leaf atlas)",
+    "stamp_px_per_cm": 8.0,
+    "stamps": {
+     "amur": {
+      "blade_cm": [
+       5.0,
+       8.0
+      ],
+      "count": 87,
+      "form": "amur",
+      "kind": "leaf",
+      "share": 0.05
+     },
+     "ash": {
+      "blade_cm": [
+       14.0,
+       19.0
+      ],
+      "count": 37,
+      "form": "ash",
+      "kind": "leaf",
+      "share": 0.02
+     },
+     "ash_leaflet": {
+      "blade_cm": [
+       6.0,
+       10.0
+      ],
+      "count": 158,
+      "form": "ash",
+      "kind": "leaflet",
+      "share": 0.09
+     },
+     "elm": {
+      "blade_cm": [
+       6.0,
+       10.0
+      ],
+      "count": 171,
+      "form": "elm",
+      "kind": "leaf",
+      "share": 0.1
+     },
+     "linden": {
+      "blade_cm": [
+       6.0,
+       10.0
+      ],
+      "count": 201,
+      "form": "linden",
+      "kind": "leaf",
+      "share": 0.12
+     },
+     "locust_leaflet": {
+      "blade_cm": [
+       1.6,
+       2.6
+      ],
+      "count": 449,
+      "form": "locust",
+      "kind": "leaflet",
+      "share": 0.24
+     },
+     "norway": {
+      "blade_cm": [
+       9.0,
+       13.0
+      ],
+      "count": 274,
+      "form": "norway",
+      "kind": "leaf",
+      "share": 0.17
+     },
+     "silver": {
+      "blade_cm": [
+       9.0,
+       14.0
+      ],
+      "count": 367,
+      "form": "silver",
+      "kind": "leaf",
+      "share": 0.21
+     }
+    },
+    "stamps_sha256": "526363d451a95ef96e93e4e7422218075625addfb253f86673592dc7baf0bbee",
+    "tar_spotted": 96,
+    "twigs": 9
+   },
+   "macro": {
+    "channels": [
+     "R",
+     "G"
+    ],
+    "file": "T_Replica_Macro_mask.png",
+    "strength": [
+     0.1,
+     0.06
+    ],
+    "tile_m": [
+     17.3,
+     5.3
+    ]
+   },
+   "maps": {
+    "diff": {
+     "alpha": true,
+     "compression": "TC_DEFAULT",
+     "file": "T_Replica_LeafLitter_diff.png",
+     "raw_sha256": "e4edd67073526e012dd5ace78dc5b56c7e8be4907778f87fe0474d32fb8123ae",
+     "sampler": "SAMPLERTYPE_COLOR",
+     "sha256": "8324eba229df5049a490a6a32cb920154f4784180461c78cfff62e075930b581",
+     "srgb": true
+    },
+    "nor_dx": {
+     "compression": "TC_NORMALMAP",
+     "file": "T_Replica_LeafLitter_nor_dx.png",
+     "raw_sha256": "2e4062029c82114ca64a79894083d52c7bfe02b1f3e798fdae78b4c7b594283a",
+     "sampler": "SAMPLERTYPE_NORMAL",
+     "sha256": "e393ed68dc3208bf4520729495e26ad343872738b1d3595692ad83d37637b183",
+     "srgb": false
+    },
+    "rough": {
+     "compression": "TC_DEFAULT",
+     "file": "T_Replica_LeafLitter_rough.png",
+     "raw_sha256": "123dee83b51cf58bd70478cc8621d022dfc1a52fa7faef107576b2c48a95ba3e",
+     "sampler": "SAMPLERTYPE_LINEAR_COLOR",
+     "sha256": "1b47fdbd9b345f0f668d78794e36de19b77d8c561e82a8d4013c62e3679d9c73",
+     "srgb": false
+    }
+   },
+   "material": {
+    "blend_mode": "masked",
+    "opacity_mask_clip": 0.5,
+    "shading_model": "default_lit",
+    "two_sided": true
+   },
+   "mean_linear": [
+    0.3062,
+    0.1729,
+    0.047
+   ],
+   "own_colour": true,
+   "roughness_mean": 0.7044,
+   "size_px": [
+    1024,
+    1024
+   ],
+   "surface": "cutout",
    "tile_m": [
     2.0,
     2.0
@@ -947,6 +1918,110 @@
     0.833333
    ],
    "uv": "metres"
+  },
+  "pit_flowers": {
+   "alpha": true,
+   "base_color_srgb": "#846F58",
+   "card_height_m": 0.5,
+   "coverage": 0.3482,
+   "keys": [
+    "Plant_Pit_Flowers"
+   ],
+   "layout": {
+    "card_height_cm": 50.0,
+    "cover": 0.3482,
+    "groups": [
+     [
+      "mum",
+      0.0,
+      17.0
+     ],
+     [
+      "kale",
+      17.0,
+      31.0
+     ],
+     [
+      "sedum",
+      31.0,
+      45.0
+     ],
+     [
+      "aster",
+      45.0,
+      60.0
+     ],
+     [
+      "hosta",
+      60.0,
+      74.0
+     ],
+     [
+      "marigold",
+      74.0,
+      88.0
+     ],
+     [
+      "rudbeckia",
+      88.0,
+      100.0
+     ]
+    ]
+   },
+   "maps": {
+    "diff": {
+     "alpha": true,
+     "compression": "TC_DEFAULT",
+     "file": "T_Replica_PitFlowers_diff.png",
+     "raw_sha256": "78ba1f95d6e5bf7a3fcad881b0cec163c8e4d99f3aa29a2e2ede7859d4c83f96",
+     "sampler": "SAMPLERTYPE_COLOR",
+     "sha256": "ddfa0772072ef469e139d74aa8f619322cbf207f9cae78155220b5a8456b964c",
+     "srgb": true
+    },
+    "nor_dx": {
+     "compression": "TC_NORMALMAP",
+     "file": "T_Replica_PitFlowers_nor_dx.png",
+     "raw_sha256": "62332c4fc542da04606fb76b5b8a6c20980f9b8066c40873364716654fce1d8f",
+     "sampler": "SAMPLERTYPE_NORMAL",
+     "sha256": "914850d584f7cc9b2aa082f8fe5868d8450161e9a79536adcbee2e1878fd0c15",
+     "srgb": false
+    },
+    "rough": {
+     "compression": "TC_DEFAULT",
+     "file": "T_Replica_PitFlowers_rough.png",
+     "raw_sha256": "86e59af63bf5eea3701514ea0c65459c3fdc2066a952318509144d6aabcf5d66",
+     "sampler": "SAMPLERTYPE_LINEAR_COLOR",
+     "sha256": "289bab5cd189b2c6cd6e225cb75f91b01e5cb107c7022b21c0c17b9f5018b3b6",
+     "srgb": false
+    }
+   },
+   "material": {
+    "blend_mode": "masked",
+    "opacity_mask_clip": 0.5,
+    "shading_model": "two_sided_foliage",
+    "two_sided": true
+   },
+   "mean_linear": [
+    0.2299,
+    0.1594,
+    0.0984
+   ],
+   "own_colour": true,
+   "roughness_mean": 0.728,
+   "size_px": [
+    1024,
+    512
+   ],
+   "surface": "foliage",
+   "tile_m": [
+    1.0,
+    1.0
+   ],
+   "tiling": [
+    1.0,
+    1.0
+   ],
+   "uv": "card"
   },
   "sheet_metal": {
    "alpha": false,

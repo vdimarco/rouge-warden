@@ -4,6 +4,8 @@ import { signallingUrl } from './config.mjs';
 
 const endpoint = process.env.NORD_SIGNALLING_URL || '';
 const qaPin = process.env.NORD_QA_PIN === '1';
+// A deployed player never holds a phone rung.
+if (qaPin && process.env.VERCEL) throw new Error('NORD_QA_PIN=1 is for a local QA build; unset it for a Vercel build');
 // Local HTTP inspection may use loopback WS; every deployed browser validates WSS again.
 signallingUrl(endpoint, process.env.VERCEL ? 'deployment.vercel.app' : 'localhost');
 await rm('dist', { recursive: true, force: true });

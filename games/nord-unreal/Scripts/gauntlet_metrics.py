@@ -1,7 +1,8 @@
 """Judge a NORD mobile gauntlet run: frame times, legs, hitches, gate verdicts, still SSIM and the review page.
 
 Data/Gauntlet/loop.json holds every limit. The game only reports (Source/Quebec/QuebecGauntletModel.h); this module
-judges. A gate is pass, fail or unverified (no host value), and a run with a foreign GPU process is contended.
+judges. A gate is pass, fail or unverified (no host value), and a run with a foreign GPU process is contended. A
+row that gates nothing (two viewers, relay) is report-only once its report-only values are whole.
 
 The percentile and the CSV frame-row rule are copied from Scripts/profile_package.py (lines 30-34 and 76-79), not
 imported, because importing profile_package.py starts the desktop profile. Data/Gauntlet/fixtures/frametimes.csv
@@ -68,8 +69,24 @@ def leg_names(loop):
     return [loop["names"]["leg"].format(**{"from": order[i], "to": order[(i + 1) % len(order)]}) for i in range(len(order))]
 
 
+def most_in_window(values, limit, window_ms):
+    """The most frames over limit that end less than window_ms apart, with frames in order and their times summed."""
+    ends, clock = [], 0.0
+    for value in values:
+        clock += value
+        if value > limit:
+            ends.append(clock)
+    most, first = 0, 0
+    for last, end in enumerate(ends):
+        while end - ends[first] >= window_ms:
+            first += 1
+        most = max(most, last - first + 1)
+    return most
+
+
 def frame_stats(values, loop):
-    """The statistics of Data/Gauntlet/fixtures/frametimes_expected.json. Frames count when strictly over a limit."""
+    """The statistics of Data/Gauntlet/fixtures/frametimes_expected.json. Frames count when strictly over a limit.
+    hitches_in_window is the most hitches in any hitch_window_s of frame time."""
     if not values:
         return None
     native = loop["budgets"]["native"]
@@ -79,7 +96,8 @@ def frame_stats(values, loop):
             "over_33_3ms": sum(v > native["frame_budget_ms"] for v in values),
             "over_50ms": sum(v > native["slow_frame_ms"] for v in values),
             "over_66_7ms": sum(v > native["hitch_ms"] for v in values),
-            "over_250ms": sum(v > native["long_frame_ms"] for v in values)}
+            "over_250ms": sum(v > native["long_frame_ms"] for v in values),
+            "hitches_in_window": most_in_window(values, native["hitch_ms"], native["hitch_window_s"] * 1000)}
 
 
 # ---------------------------------------------------------------- CSV frames, laps and legs
@@ -378,12 +396,13 @@ def gate(name, value, limit, op="<=", unit="ms", note=None):
 
 
 def hitch_rule(stats, loop):
-    """(hitches per 30 s, frames over 250 ms, passed) for frame statistics; passed is None without data."""
+    """(most hitches in any 30 s, frames over 250 ms, passed) for frame statistics; passed is None without data. A
+    sliding window, not the lap average, so a burst of hitches fails."""
     if not stats or stats["seconds"] <= 0:
         return None, None, None
     native = loop["budgets"]["native"]
-    rate = stats["over_66_7ms"] * 30 / stats["seconds"]
-    return rate, stats["over_250ms"], rate <= native["hitches_per_30s_max"] and stats["over_250ms"] <= native["long_frames_max"]
+    most = stats["hitches_in_window"]
+    return most, stats["over_250ms"], most <= native["hitches_per_30s_max"] and stats["over_250ms"] <= native["long_frames_max"]
 
 
 def native_gates(analysis, loop, vram_mib=None, log_text=None, cvar_mismatches=None, readback=None):
@@ -406,9 +425,10 @@ def native_gates(analysis, loop, vram_mib=None, log_text=None, cvar_mismatches=N
     gates.append(gate("frame_p99", p99, native["p99_max_ms"], note=note))
     slow = whole["over_50ms"] * 100 / whole["frames"] if whole else None
     gates.append(gate("slow_frames_percent", slow, native["slow_max_percent"], unit="%"))
-    rate, long_frames, _ = hitch_rule(whole, loop)
-    gates.append(gate("hitches_per_30s", rate, native["hitches_per_30s_max"], unit="per 30 s",
-                      note=f"{whole['over_66_7ms']} frames over {native['hitch_ms']} ms in {whole['seconds']} s" if whole else None))
+    most, long_frames, _ = hitch_rule(whole, loop)
+    gates.append(gate("hitches_per_30s", most, native["hitches_per_30s_max"], unit="per 30 s",
+                      note=f"most frames over {native['hitch_ms']} ms in any {native['hitch_window_s']} s; "
+                           f"{whole['over_66_7ms']} in {whole['seconds']} s" if whole else None))
     gates.append(gate("long_frames", long_frames, native["long_frames_max"], unit="frames",
                       note=f"frames over {native['long_frame_ms']} ms"))
     gates.append(gate("vram_peak_mib", max(vram_mib.values()) if vram_mib else None, native["vram_max_mib"], unit="MiB"))
@@ -473,17 +493,21 @@ def stream_gates(loop, summary=None, intervals=None, native_windows=None):
                  stream["decoded_vs_native_max_fps"], unit="fps")]
 
 
-def look_gates(loop, images, baseline_mean=None, repeat=None):
-    """The visual check: every image SSIM against the ceiling, the mean against the production profile, and the
-    run-to-run SSIM of the two ceiling renders. images and repeat map view names to SSIM. Without the second ceiling
-    render the repeat gate is unverified, so the round cannot pass."""
+def look_gates(loop, images, baseline_mean=None, repeat_min=None):
+    """The visual check: every one of the budgets.look.images stills scored, every image SSIM against the ceiling, the
+    mean against the production profile, and the run-to-run SSIM of the two ceiling renders. images maps view names to
+    SSIM; repeat_min is the lowest SSIM of ceiling run A against run B. A partial still set fails the count gate, so
+    its mean never passes for the whole set. Without the second ceiling render the repeat gate is unverified, so the
+    round cannot pass."""
     look = loop["budgets"]["look"]
     values = list((images or {}).values())
     mean = sum(values) / len(values) if values else None
-    return [gate("image_ssim_min", min(values) if values else None, look["image_ssim_min"], op=">=", unit="SSIM"),
+    return [gate("image_count", len(values) or None, look["images"], op="==", unit="stills",
+                 note="stills scored against the ceiling"),
+            gate("image_ssim_min", min(values) if values else None, look["image_ssim_min"], op=">=", unit="SSIM"),
             gate("look_vs_baseline", None if mean is None or baseline_mean is None else mean - baseline_mean, 0.0, op=">=",
                  unit="SSIM", note="candidate mean minus the production profile mean"),
-            gate("repeat_ssim_min", min(repeat.values()) if repeat else None, look["repeat_ssim_min"], op=">=",
+            gate("repeat_ssim_min", repeat_min, look["repeat_ssim_min"], op=">=",
                  unit="SSIM", note="ceiling run A against run B; below the limit the round is invalid")]
 
 
@@ -500,12 +524,13 @@ def delay_section(latency):
     return {"label": DELAY_LABEL, "gated": False, "values": dict(latency or {})}
 
 
-def verdict(gates, foreign=None, report_only=None, delay=None, values=None, notes=None, missing_columns=None):
+def verdict(gates, foreign=None, report_only=None, delay=None, values=None, notes=None, missing_columns=None, complete=None):
     """verdict.json: every gate with value, limit and result. Status is contended when a foreign GPU process ran, else
-    fail when any gate failed, else unverified when any gate has no value (or there are none), else pass."""
+    fail when any gate failed, else unverified when any gate has no value, else pass. Without gates it is report-only
+    when complete is true (a two-viewer or relay row whose report-only values are whole), else unverified."""
     results = [g["result"] for g in gates]
-    status = ("contended" if foreign else "fail" if "fail" in results else
-              "unverified" if "unverified" in results or not gates else "pass")
+    status = ("contended" if foreign else "fail" if "fail" in results else "unverified" if "unverified" in results else
+              "pass" if gates else "report-only" if complete else "unverified")
     out = {"status": status, "gates": gates,
            "counts": {key: results.count(key) for key in ("pass", "fail", "unverified")}}
     if foreign:
@@ -628,6 +653,7 @@ p.note { color: var(--muted); margin: 4px 0 12px; }
 table.gates { border-collapse: collapse; } table.gates td, table.gates th { border-bottom: 1px solid var(--line);
   padding: 3px 10px 3px 0; text-align: left; font-variant-numeric: tabular-nums; }
 .pass { color: var(--pass); } .fail { color: var(--fail); } .unverified, .contended { color: var(--warn); }
+.report-only { color: var(--muted); }
 .row { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; margin: 0 0 16px;
   border-top: 1px solid var(--line); padding-top: 8px; }
 .row h3 { grid-column: 1 / -1; font-size: 14px; margin: 0; }

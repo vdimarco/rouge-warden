@@ -482,8 +482,10 @@ def lamp_cobra():
     pole = [(13, 0), (13, 32), (10.5, 36), (9, 60), (6.2, 790), (5.5, 800), (0, 803)]
     P.lathe('PoleGalv', pole, 10, part='pole')
     P.lathe('PoleGalv', [(16, 0), (16, 3), (13.5, 5)], 10, cap0=False, cap1=True, part='pole')
-    P.tube('PoleGalv', [(0, 0, 770), (35, 0, 792), (90, 0, 806), (175, 0, 808)], 4.2, 8, part='pole')
-    P.tube('PoleGalv', [(0, 0, 725), (30, 0, 760), (62, 0, 798)], 2.4, 6, part='pole')
+    # the davit arm and its brace are a part of their own, so a head can hang from a wooden utility pole without the
+    # steel pole (plateau_replica.py: the city's wooden street poles carry cobra heads)
+    P.tube('PoleGalv', [(0, 0, 770), (35, 0, 792), (90, 0, 806), (175, 0, 808)], 4.2, 8, part='arm')
+    P.tube('PoleGalv', [(0, 0, 725), (30, 0, 760), (62, 0, 798)], 2.4, 6, part='arm')
     head = [(0, 0), (6, 2), (11, 12), (13, 30), (12.5, 48), (9.5, 62), (5, 70), (0, 72)]
     P.lathe('LampHousing', head, 10, (168, 0, 808), (0, 90, 0), (.62, 1.0, 1), part='head')
     P.box('LampHousing', (172, 0, 808), (14, 10, 10), bevel=2, part='head')

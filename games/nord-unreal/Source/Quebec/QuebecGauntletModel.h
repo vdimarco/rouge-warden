@@ -49,6 +49,8 @@ namespace QuebecGauntlet
     inline constexpr double StallProgress = 500.0;
     inline constexpr double MaxLapSeconds = 360.0;    // Driving time of one lap; holds do not count.
     inline constexpr double ReadyGrace = 60.0;        // The car and the CVar readback must be ready this long after the delay.
+    inline constexpr double StillsTimeout = 90.0;     // One look-run hold's stills; a screenshot that never lands fails the run as a timeout.
+    inline constexpr double CsvWait = 30.0;           // Real seconds the game waits for the CSV profiler file before it quits anyway.
 
     // Loop building and tracking.
     inline constexpr double NoUTurn = 1.0e7;          // Extra cost of turning back, larger than any route.
@@ -529,8 +531,8 @@ namespace QuebecGauntlet
     // Each eye's road point is the nearest point on a through road (FForwardRoads). The car leaves each stop the way it
     // arrived, so it never turns back there. Each leg is an FForwardRoads route from one road point to the next, and the
     // loop keeps the arrival directions (along or against each stop's segment) that give the lowest total cost: the
-    // shortest loop that never turns back, when one exists. Ties go to the first combination tried, so the loop is the
-    // same on every build. FinishLoop then rounds the junctions.
+    // shortest loop that never turns back. False when every combination turns back (a NoUTurn cost). Ties go to the first
+    // combination tried, so the loop is the same on every build. FinishLoop then rounds the junctions.
     inline bool BuildLoop(const QuebecPursuit::FRoadGraph& Graph, const std::vector<FVec2>& Eyes, FLoop& Out)
     {
         Out = FLoop();
@@ -559,6 +561,8 @@ namespace QuebecGauntlet
             }
             if (Total < Best) { Best = Total; Legs = Paths; }
         }
+        // Every combination turns back somewhere: no loop, so the run fails at setup instead of the car backing out.
+        if (Best >= NoUTurn) return false;
         Out.Points.push_back(Road[0]);
         Out.Stops.push_back(0);
         for (std::size_t Leg = 0; Leg < Legs.size(); ++Leg)
@@ -690,8 +694,9 @@ namespace QuebecGauntlet
     // The run. Perf measures laps, look holds at each stop for stills, stream holds briefly for decoded frames.
     enum class EMode : uint8_t { Perf, Look, Stream };
     enum class EPhase : uint8_t { Wait, WarmLap, Measure, Hold, Done, Fail };
-    // Process exit codes. Python judges the budgets; the run only reports.
-    enum class EExit : int { Running = -1, Done = 0, Stuck = 2, NoSky = 3, CVarMismatch = 4, Timeout = 5 };
+    // Process exit codes. Python judges the budgets; the run only reports. Setup: a bad mode, the wrong map, no loop, a
+    // stop off the road or a lost world, so a run that never drove does not read as a driving failure.
+    enum class EExit : int { Running = -1, Done = 0, Stuck = 2, NoSky = 3, CVarMismatch = 4, Timeout = 5, Setup = 6 };
     enum class EEvent : uint8_t { None, WarmBegin, HoldBegin, LegBegin, Done, Fail };
 
     struct FRunSettings
@@ -717,8 +722,8 @@ namespace QuebecGauntlet
         }
         else if (Mode == EMode::Stream)
         {
+            // The warm lap stays: the gated stream lap then follows the shader compiles and first texture loads, as in perf.
             Settings.Delay = 95.0;
-            Settings.WarmLaps = 0;
             Settings.Hold = 4.0;
         }
         return Settings;
@@ -754,6 +759,7 @@ namespace QuebecGauntlet
         case EExit::NoSky: return "no_sky";
         case EExit::CVarMismatch: return "cvar_mismatch";
         case EExit::Timeout: return "timeout";
+        case EExit::Setup: return "setup";
         default: return "running";
         }
     }
@@ -802,8 +808,8 @@ namespace QuebecGauntlet
         Run.Settings.Hold = std::max(Run.Settings.Hold, 0.0);
         Run.BeganAt = Now;
         Run.bExpectCVars = bExpectCVars;
-        // A loop the car cannot drive fails as stuck; a run without a pinned sky never measures the shipped sky.
-        if (Run.Loop.StopCount() < 2 || Run.Loop.Length <= 0.0) { Run.Phase = EPhase::Fail; Run.Exit = EExit::Stuck; }
+        // No loop to drive fails at setup; a run without a pinned sky never measures the shipped sky.
+        if (Run.Loop.StopCount() < 2 || Run.Loop.Length <= 0.0) { Run.Phase = EPhase::Fail; Run.Exit = EExit::Setup; }
         else if (!bSkyArgs) { Run.Phase = EPhase::Fail; Run.Exit = EExit::NoSky; }
     }
 

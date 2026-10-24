@@ -56,6 +56,7 @@ The manifest follows the shared ReplicaGeometry contract (`layer`, `generator`, 
   `budget`, `bounds_cm`, `parts {name: {mesh, material, attach_cm?, joint?, merged?}}`,
   `anchors`, `colliders_cm`, and prop-specific data:
   - `lamp_cobra` and `lamp_park`: `light` and `anchors.light_cm`, for a 3000 K (#FFB46B) light.
+  - `lamp_cobra`: the davit arm and its brace are their own part (`arm`), so a cobra head hangs from a city wooden utility pole without the steel pole: a placement row may name parts to leave out (`"without": ["pole"]`), which the apply step and the preview skip. A sign hung on a city pole leaves out its `post` the same way.
   - `hydrant`: `clear_radius_cm` (150, SIM). The marker post parts are optional.
   - `bixi_dock`: six `slots`, each with a position and yaw for a `bixi_bike` instance.
   - `utility_pole`: `anchors.wire_attach_cm` for sagging wires between poles.
@@ -84,7 +85,7 @@ Each triangle count is for one assembled prop and excludes the duplicate merged 
 
 | Key | Triangles | Parts | Size cm (X x Y x Z) |
 | --- | ---: | ---: | --- |
-| `lamp_cobra` | 468 | 3 | 256 x 30 x 816 |
+| `lamp_cobra` | 468 | 4 | 256 x 30 x 816 |
 | `lamp_park` | 630 | 2 | 44 x 44 x 422 |
 | `hydrant` | 498 | 4 | 43 x 52 x 150 (barrel 78) |
 | `sign_stop` | 184 | 4 | 7 x 75 x 251 |

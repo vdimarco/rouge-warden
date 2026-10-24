@@ -7,6 +7,9 @@ import { parseArgs } from 'node:util';
 
 // The frame budget and slow-frame limits of Data/Gauntlet/loop.json; a frame counts when strictly over a limit.
 const FRAME_BUDGET_MS = 33.3, SLOW_FRAME_MS = 50;
+// Without END, a sample stops when no peer has been connected for this long, as when the host crashed before its done,
+// fail or result line. That no peer stays connected after a real host exit is unverified.
+const STREAM_GONE_MS = 10000;
 const total = values => values.reduce((sum, value) => sum + value, 0);
 // The percentile of Scripts/gauntlet_metrics.py, so both sides name the same frame.
 const percentile = (sorted, fraction) => sorted[Math.ceil((sorted.length - 1) * fraction)];
@@ -63,6 +66,11 @@ export function playerUrl(value, pin) {
 }
 
 export function summarize(samples, { frames, events } = {}) {
+  // When the host quits first, the samples after the stream ended have no connected peer and so no counters
+  // (unverified against a real host exit). Leave out those at the end; the summary stops where the stream did.
+  const live = samples.findLastIndex(sample => !Array.isArray(sample.peerStates) || sample.peerStates.includes('connected'));
+  const ended = samples[live + 1];
+  samples = samples.slice(0, live + 1);
   assert.ok(samples.length >= 2, 'At least two media samples are required');
   const first = samples[0], last = samples.at(-1);
   const seconds = (last.timeMs - first.timeMs) / 1000;
@@ -76,6 +84,7 @@ export function summarize(samples, { frames, events } = {}) {
     longestFrameGapMs: last.longestFrameGapMs,
     width: last.width, height: last.height, candidate: last.candidate, codec: last.codec
   };
+  if (ended) result.streamEndedTimeMs = ended.timeMs;
   if (Number.isFinite(last.totalDecodeTime) && last.framesDecoded > first.framesDecoded) {
     result.decodeMsPerFrame = (last.totalDecodeTime - first.totalDecodeTime) * 1000 / (last.framesDecoded - first.framesDecoded);
     const emitted = last.jitterBufferEmittedCount - first.jitterBufferEmittedCount;
@@ -243,7 +252,9 @@ async function main() {
     await page.screenshot({ path: resolve(output, 'first-world.png') });
     // Warm playback before the measurement; retain all one-second observations after this point.
     await page.waitForTimeout(warmup * 1000);
-    await page.evaluate(recordFrames => {
+    // Frame times are the page's performance.now() ms. The page's clock origin turns a frame time t into
+    // timeOrigin + t ms since the epoch, so the runner can keep only the frames of the lap (Scripts/gauntlet_loop.py).
+    report.timeOrigin = await page.evaluate(recordFrames => {
       const video = document.querySelector('#video video');
       window.__sampleGap = { previous: performance.now(), longest: 0, active: true };
       if (recordFrames) window.__sampleFrames = [];
@@ -257,8 +268,10 @@ async function main() {
         video.requestVideoFrameCallback(frame);
       };
       video.requestVideoFrameCallback(frame);
+      // Unverified from memory: rVFC times use the same clock as performance.now().
+      return performance.timeOrigin;
     }, values.frames);
-    // Lines already in the trigger file belong to an earlier run; only new lines take shots.
+    // Lines already in the trigger file belong to an earlier run; only new lines take shots or stop the sample.
     const triggerLines = async () => values.trigger
       ? (await readFile(resolve(values.trigger), 'utf8').catch(() => '')).split('\n').slice(0, -1) : [];
     let triggered = (await triggerLines()).length;
@@ -286,6 +299,8 @@ async function main() {
     const point = () => ({ x: image.x + image.width / 2, y: image.y + image.height / 2, id: 9 });
     if (touch) await touch.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [point()] });
     const started = Date.now();
+    // The page showed the world before the sample started, so the stream was live then.
+    let ended = false, endedAt = null, connectedAt = started;
     do {
       const { frameBatch, eventBatch, ...sample } = await page.evaluate(async latency => {
         const video = document.querySelector('#video video'), gap = window.__sampleGap;
@@ -326,18 +341,24 @@ async function main() {
       report.samples.push(sample);
       if (frameBatch) frames.push(...frameBatch);
       if (eventBatch) report.events.push(...eventBatch);
-      if (Date.now() - started >= seconds * 1000) break;
-      for (let step = 0; step < 10; step++) {
+      if (sample.peerStates.includes('connected')) connectedAt = Date.now();
+      // A stream that has ended stops the sample; the check after the summary then fails it.
+      if (ended || Date.now() - started >= seconds * 1000 || Date.now() - connectedAt >= STREAM_GONE_MS) break;
+      for (let step = 0; step < 10 && !ended; step++) {
         if (touch) await touch.send('Input.dispatchTouchEvent', { type: 'touchMove',
           touchPoints: [{ ...point(), x: point().x + 30 * Math.sin((Date.now() - started) / 250) }] });
         if (values.trigger) {
           const lines = await triggerLines();
           // A shorter file was rewritten, so its lines are all new.
           if (lines.length < triggered) triggered = 0;
-          for (const line of lines.slice(triggered)) if (line.trim()) await shoot(line);
+          for (const line of lines.slice(triggered)) {
+            // The runner writes END once when the drive ends: take one last sample and stop before the host quits.
+            if (line.trim() === 'END') { ended = true; endedAt = Date.now(); break; }
+            if (line.trim()) await shoot(line);
+          }
           triggered = lines.length;
         }
-        await page.waitForTimeout(100);
+        if (!ended) await page.waitForTimeout(100);
       }
     } while (true);
     if (touch) {
@@ -351,6 +372,9 @@ async function main() {
     report.summary = summarize(report.samples, { frames: values.frames ? frames : undefined, events: report.events });
     assert.ok(report.summary.decodedFps > 0, 'Video must decode new frames during the sample');
     if (values.relay) assert.equal(report.summary.candidate?.type, 'relay');
+    // A stream that ended before END, or before --seconds without END, keeps its summary, but the sample does not pass.
+    const streamEnd = report.summary.streamEndedTimeMs;
+    assert.ok(streamEnd === undefined || streamEnd >= (endedAt ?? Infinity), 'The stream ended before the sample did');
     await page.screenshot({ path: resolve(output, 'player.png') });
     report.passed = true;
     console.log(JSON.stringify({ output, ...report.summary }));

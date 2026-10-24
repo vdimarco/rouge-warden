@@ -21,7 +21,9 @@ $STUBS/selftest.sh                  # the checkers still catch known mistakes
 
 Requirements: `clang++` (tested with clang 18.1.3), `python3`, `bash` 4 or later, and
 `nm`/`c++filt` from binutils for `link.sh`. Set `QUEBEC_SRC` or pass `--src DIR` to check
-another module directory. `check.sh -h` and `link.sh -h` list every option.
+another module directory. `DIR` is relative to the current folder, so from `games/nord-unreal` the
+NORD mobile gauntlet controller, which needs no Quebec header, is `--src Source/QuebecGauntletTest`.
+`check.sh -h` and `link.sh -h` list every option.
 
 Each file prints `PASS` or `FAIL`, followed by clang's diagnostics. A summary line comes
 last. The exit status is non-zero when any file fails or when UHT reports an error.
@@ -74,7 +76,7 @@ last. The exit status is non-zero when any file fails or when UHT reports an err
    headers are in `include/`. Headers of optional modules are in `modules/<Module>/`. They are
    on the include path only when the Build.cs lists the module, or when a listed module
    depends on it publicly. Stubs exist for AnimGraphRuntime, PixelStreaming2,
-   PixelStreaming2Core, AIModule and NavigationSystem. If you add a module to the Build.cs,
+   PixelStreaming2Core, AIModule, NavigationSystem and Gauntlet. If you add a module to the Build.cs,
    add its stubs under `modules/`. Until then, its headers are reported as "file not found".
 
 Several runs can share the folder safely, because each run generates into its own temporary
@@ -202,6 +204,10 @@ also run the case through `link.sh`.
 | CopyMoveOnly | Copies a `TArray<TUniquePtr<>>`. |
 | ModuleNotListed | Includes an AIModule header that the Build.cs does not list. |
 | LinkMissing | Compiles, but `link.sh` must report a namespace function, a member function and a virtual function that are never defined. It must not report the RPC thunk or `StaticClass`. |
+| GauntletOk | Compiles cleanly: a Gauntlet test controller that starts and ends a CSV profiler capture, adds CSV events and metadata, spawns a camera actor, waits for texture streaming and takes a screenshot. |
+| GauntletOverride | `OnPostMapChange` overridden with the wrong parameter. |
+| GauntletNotListed | Includes `GauntletTestController.h` while the Build.cs does not list Gauntlet. |
+| CsvEventFString | `CSV_EVENT_GLOBAL` with an `FString` for `%s`. |
 
 ## Layout
 
@@ -222,14 +228,15 @@ When code needs an engine API that the stubs lack, add it to the matching header
 real signature: same constness, same default arguments, same access level. Do not add
 catch-all variadic templates.
 
-## Current results (2026-10-19, Source/Quebec with 36 .cpp files)
+## Current results (2026-10-23, Source/Quebec with 46 .cpp files)
 
 | Check | Result |
 | --- | --- |
 | `check.sh --both` | Every file passes in both the game and the editor configuration, including all `*Tests.cpp`. No test file is failing. |
 | `link.sh --both` | Every used game symbol is defined, in both configurations. |
-| `selftest.sh` | 17 checks pass, 0 unexpected. |
-| `check.sh --no-pch` | 15 files fail, all on one gap. `QuebecGameplay.h` uses `TObjectPtr<UStaticMesh>` but never includes or forward-declares `UStaticMesh`; it compiles only through the shared PCH. The other errors in those files follow from it. Adding `class UStaticMesh;` to that header would make it standalone. |
+| `selftest.sh` | 21 checks pass, 0 unexpected. |
+| From `games/nord-unreal`: `Tools/SyntaxCheck/check.sh --src Source/QuebecGauntletTest --both`, and `link.sh` with the same options | Both files of the gauntlet controller module pass in both configurations, and every used game symbol is defined. |
+| `check.sh --no-pch` | 45 files pass and 1 fails: `QuebecVegetation.cpp` names `UMaterialInterface` in a nested name specifier without its header, so it compiles only through the shared PCH. |
 
 ## Uncertain APIs
 
@@ -275,3 +282,14 @@ disagrees.
   - `AAIController`, `UNavigationSystemV1` and `FNavLocation`. `FNavLocation` converts
     implicitly to `FVector`.
   - the AIModule's public dependency on NavigationSystem
+- **NORD mobile gauntlet stubs** (2026-10-23), written from memory and not yet checked against a UE 5.8 build:
+  - `ProfilingDebugging/CsvProfiler.h`: `FCsvProfiler::Get`, `BeginCapture(int, const FString&, const FString&,
+    ECsvProfilerFlags)`, `EndCapture(FGraphEventRef)` returning `TSharedFuture<FString>`, `IsCapturing`,
+    `CSV_EVENT_GLOBAL`, `CSV_METADATA`, and `CSV_PROFILER` as `WITH_ENGINE && !UE_BUILD_SHIPPING`
+  - `modules/Gauntlet/GauntletTestController.h`: the plugin and module name `Gauntlet`, the `On*` hooks as protected
+    virtuals, `EndTest(int32)` and `GetFirstPlayerController`
+  - `FPlatformMisc::RequestExitWithStatus(bool, uint8, const TCHAR*)`
+  - `Camera/CameraActor.h` and `HAL/FileManager.h`, as far as the game uses them
+  - `ContentStreaming.h`: `IStreamingManager::Get()` returning `FStreamingManagerCollection&`, and its
+    `StreamAllResources(float)`
+  - `FGraphEventRef` is a `TSharedPtr` here; UE uses a `TRefCountPtr`
