@@ -482,12 +482,13 @@ def check_leaf_litter(spec, entry, diff, rough):
             low.append((heights[y][x], .2126 * T.SRGB_TO_LINEAR[c[0]] + .7152 * T.SRGB_TO_LINEAR[c[1]]
                         + .0722 * T.SRGB_TO_LINEAR[c[2]], rough_r[y][x] / 255.))
     share = {k: round(v / n, 4) for k, v in sorted(fam.items())}
-    # Mixed late-October colours: mostly yellow and gold, plenty of brown, a good share of orange and red, a little
-    # green, and the black tar spots of Norway maples (Rhytisma), none of them taking over.
+    # Mixed late-October colours: yellows, golds and tans and as much brown (the dried and rotting leaves below),
+    # some orange and red, a little frost-green, and the black tar spots of Norway maples (Rhytisma), none of them
+    # taking over.
     assert .25 <= share.get('yellow', 0) <= .6, share
-    assert .15 <= share.get('brown', 0) <= .55, share
-    assert .06 <= share.get('red', 0) <= .35, share
-    assert .005 <= share.get('green', 0) <= .12, share
+    assert .3 <= share.get('brown', 0) <= .65, share
+    assert .04 <= share.get('red', 0) <= .3, share
+    assert .005 <= share.get('green', 0) <= .1, share
     assert .0005 <= share.get('dark', 0) <= .03, share
     # Lower leaves (the lowest third of the height map) are darker and damper (glossier) than the top third.
     low.sort()
