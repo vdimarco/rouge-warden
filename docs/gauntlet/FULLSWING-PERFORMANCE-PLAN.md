@@ -111,3 +111,6 @@ Increment60 pending — goonpose tick shared perstreetframe/currentdiagnosticdef
 
 
 Increment60 shipped #687 as8b4f724a after all6CI/review/currentVersepreview/exactmainbytes/rebase before AND afterpreview/exactmerge. Productionmain HTTP200 exactSHA9be698cabaa8fc4334b71712cefe5cccd427d6188d43db044925ff04d7034d24 verified. Canonical goon-pose tick scenarios published and OpenSpec archived. ActualChrome/FPSbenefit and aggregate effect unverified; totalwithheld.
+
+
+Increment61 pending — sharedfigure root followsworldvisibility;hiddenvisualprep180→0calls/60frames/bufferversionsunchanged. Simulation+crowd60/60 retained;firstresumeactualmovedgoon/currenttime/jobpopulationPASS.5browser+4hiddenstreet+6goonposeequivalencecasesPASS. Evidence r61-hidden-figures/all20limits/noFPSclaim/totalwithheld.
