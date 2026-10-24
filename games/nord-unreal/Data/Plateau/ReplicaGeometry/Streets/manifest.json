@@ -2465,15 +2465,16 @@
  "source_sha256": {
   "Data/LaFontaine/osm.xml": "fe4410d45007a627bf6d9b9ddeeae329fa9cdd7492dfb5fa6beff851e7cf8f86",
   "Data/LaFontaine/layout.json": "4238d6ed45d5fb890e0f8dbcb672de0803c6dc7079b0b6a86b386d82ebbb4250",
-  "Scripts/plateau_replica.py": "9bf9aaa413dd9c15a6b0a73f0791fa811f977ded123fb09e1ae49730762cb20a",
+  "Scripts/plateau_replica.py": "fe5408396ffd030e5f87558954cd09325650f1be8dc66346d73961b42ba518a3",
   "Scripts/prepare_lafontaine.py": "e7b6e5f068a96ee7306b1fff247fa73158f5cf7c343dc5510ab8cce92ee3c924",
   "Data/Plateau/BaseGeometry/Marking.obj": "2d82cbca59041aa6af5e6f3fffaf6a01b2c3e672eea9732e8a5fecbb7cee35dd",
-  "Data/Plateau/ReplicaGeometry/Plex/fronts.json": "0019455f9de6121473e16abbbcd64dee9a72f0ec5982e59bce9004f7d5ec0b31",
+  "Data/Plateau/ReplicaGeometry/Plex/fronts.json": "c22c35ac4dac8ef8f2fbe9fc7ee2f29dc25bf694b59be2e77edaeb6324e5cabd",
   "Data/Plateau/ReplicaGeometry/Soul/ruelles_vertes_clip.json": "6ca991f5b585f4f0567baed799c37db2d3476f451e0b88fdb315a959e2d7d216",
-  "Data/Plateau/ReplicaGeometry/Plex/manifest.json": "60e1268db766e6708dea6c349cfb0bd0b0350ed3435ee25b11a04a71645b469f",
+  "Data/Plateau/ReplicaGeometry/Plex/manifest.json": "ab4073239c09c12ea345fbad1ae9984b5580b96a650725d61660489f7d945d10",
   "Data/Plateau/ReplicaGeometry/Props/manifest.json": "92d3a4c8811dd7adf5d0ca51701d308e1373361a46a346737104247ecfd417da",
   "Data/Plateau/Inventory/trees_pmr.json": "78ee70b8165af47cdee11a56c9653b69a1543c42cf78ab618145441d756831c1",
-  "Data/Plateau/Inventory/trees_vm.json": "103be208d2135cbb989198a8b33cff081584a40792323fab2d2cd65ca2a8fc35"
+  "Data/Plateau/Inventory/trees_vm.json": "103be208d2135cbb989198a8b33cff081584a40792323fab2d2cd65ca2a8fc35",
+  "Data/Plateau/ReplicaGeometry/Textures/textures.json": "83b1c09b90b565733459f104d36ef4b33b53e092210f9c91ed8c4d00a6f2c57c"
  },
  "attribution": "© OpenStreetMap contributors, ODbL 1.0; authored street details and original murals",
  "z_cm": {

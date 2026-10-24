@@ -467,14 +467,19 @@ def run():
     assert sum(actor.get_actor_label() == 'Plateau mapped vegetation' for actor in actors) == 1, 'Duplicate mapped tree labels'
     vegetation = labels['Plateau mapped vegetation']
     trees = vegetation.get_editor_property('trees')
-    assert trees.static_mesh == tree_mesh and trees.get_instance_count() == 4571
+    # One instance per Streets/street_trees.json row until apply_plateau_replica.py puts the street trees on their
+    # species meshes; none after it (it clears them, and plateau_rendering places none once those exist).
+    from plateau_rendering import planned_vegetation
+    expected = planned_vegetation(actors)
+    assert trees.static_mesh == tree_mesh and trees.get_instance_count() == expected
     assert trees.get_collision_enabled() == u.CollisionEnabled.NO_COLLISION
-    for i, (x, y, seed) in enumerate(tree_positions()):
+    for i, (x, y, seed) in enumerate(tree_positions()[:expected]):
         transform = trees.get_instance_transform(i, True)
         assert math.dist((transform.translation.x, transform.translation.y), (x, y)) < .1, seed
     REPORT['integration_mode'] = 'baked-plateau-environment-with-warden-gameplay'
     REPORT['tree_layer'] = {'mapped_tree_instances': trees.get_instance_count()}
-    REPORT['checks'].append('4,571 saved detailed tree instances at surveyed coordinates')
+    REPORT['checks'].append(f'{expected:,} saved surveyed tree instances at the street_trees.json coordinates'
+                            if expected else 'surveyed trees on the replica species meshes; the old summer trees cleared')
     resident_data = json.loads((ROOT/'Data/ParkComic/layout.json').read_text())['residents']
     assert len(resident_data) == 14
     comic_residents = [actor for actor in actors if actor.get_class().get_name() == 'QuebecParkResident']

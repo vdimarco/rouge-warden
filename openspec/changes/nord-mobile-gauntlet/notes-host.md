@@ -88,6 +88,7 @@ Check the smoke run:
 - `native/route.json` exists. The measured loop length is near the offline model's 3,488 m driven line, and the route gate is 3.0 to 4.0 km. A perf lap is about 296 s of driving in the model, and the lap limit is 360 s. Note the heaviest leg in `native/legs.json`.
 - The CSV has FrameTime, GameThreadTime, RenderThreadTime, RHIThreadTime and GPUTime **(unverified names)**. `verdict.json` lists any missing column.
 - The summary p95 and the CSV p95 agree within 1 ms.
+- The CVar readback includes the `loop.json` `fixed` CVars, `t.MaxFPS 60` and `r.AntiAliasingMethod 4`. The second comes from `Config/DefaultEngine.ini` **(unverified)**. If it reads back another value, the run exits with code 4: record which setting overrides it.
 - The car drove with pawn input disabled. If real input wrote zero axes each frame, the car stalls at S1 and the run exits with code 2.
 
 ## 4. Phone profile readback
@@ -109,9 +110,9 @@ Do not run separate baseline runs. The tune in step 7 starts with two baseline p
 ```bash
 python3 Scripts/gauntlet_loop.py tune --until 06:30
 ```
-Set `--until` to the end of the agreed window. Add `--direct` if RunUnreal failed in step 3. To reuse the step 5 references instead of rendering the ceiling again, add `--reference Saved/Gauntlet/<reference run>`. The runner refuses that folder, before it starts any run, when its commit or package build differs from the current ones, or when a ceiling run at 1412x652 lacks a still or did not exit cleanly. The tuner measures the baseline and the ceiling twice, measures each single step once, combines steps, climbs back, and stops after 24 candidates or when the next candidate would not finish before `--until`. It then confirms the baseline and the best ranked candidates, best first, with 3 measured laps each, both skies, landscape and portrait, until one passes every native gate. Every candidate goes into `tune.json`.
+Set `--until` to the end of the agreed window. Add `--direct` if RunUnreal failed in step 3. To reuse the step 5 references instead of rendering the ceiling again, add `--reference Saved/Gauntlet/<reference run>`. The runner refuses that folder, before it starts any run, when its commit or package build differs from the current ones, or when a ceiling run at 1412x652 lacks a still, did not exit cleanly or was contended. The tuner measures the baseline and the ceiling twice, measures each single step once, combines steps, climbs back, and stops after 24 candidates or when the next candidate would not finish before `--until`. It then confirms the baseline and the best ranked candidates, best first, with 3 measured laps each, both skies, landscape and portrait, until one passes every native gate. Every candidate goes into `tune.json`.
 
-Plan the window from these estimates. A candidate is a perf run and a look run, about 20 minutes, so 24 candidates take about 8 hours. A confirmation run is about 22 minutes, and each confirmed candidate needs 4 of them, so the baseline and the winner take about 3 hours more. The search keeps no time for the confirmation. A confirmation run starts only when its estimate ends before `--until`, so no run ends after the window by plan. A real run can take longer than its estimate. When the window cuts a candidate's confirmation, its result has the reason "the window ended before every confirmation run" and counts as not run. Agree a window that covers the search plus about 3 hours. Otherwise, run `tune --no-confirm`, or let the window cut the confirmation, and confirm in a second window with `confirm` (step 9).
+Plan the window from these estimates. A candidate is a perf run and a look run, about 20 minutes, so 24 candidates take about 8 hours. A confirmation run is about 22 minutes, and each confirmed candidate needs 4 of them, so the baseline and the winner take about 3 hours more. The search keeps no time for the confirmation. A confirmation run starts only when its planned time ends before `--until`. Without `--reference`, the first candidate also renders the ceiling look, about 28 minutes, and the search plans it so. The confirmation's plan starts at the estimate, made longer by as much as the search found this host slower than its own plan. It rises to the longest confirmation run measured so far, so no run ends after the window by plan. A run can still take longer than every run before it. When the window cuts a candidate's confirmation, its result has the reason "the window ended before every confirmation run" and counts as not run. A contended confirmation run runs once more. After a second contended run, the result has the reason "a foreign GPU process shared a confirmation run twice" and also counts as not run. `report` then shows the `confirmed` gate as unverified, not failed, while a ranked candidate has only such missing evidence. Agree a window that covers the search plus about 3 hours. Otherwise, run `tune --no-confirm`, or let the window cut the confirmation, and confirm in a second window with `confirm` (step 9).
 
 ## 8. Stream runs
 Build a separate local player that accepts `?pin=`, and serve it on loopback port 8100. From `Browser/`:
@@ -133,7 +134,7 @@ Use `NORD_STREAM_QUALITY=current` for the baseline. The launcher refuses `NORD_S
 ```bash
 python3 Scripts/gauntlet_loop.py stream --run "$run" --slot NordHost --pin 0
 ```
-The sampler drives `Browser/stream-sample.mjs` with `--frames --latency --trigger --out`, saves a decoded frame at each stop hold, and judges the stream gate over the gated lap only. It also follows NordFriend1's log, so the verdict shows whether NordFriend1 slept through the lap, and it records the host command line, its world flags and the CVar readback in `run.json`. When the lap ends, the runner writes `END` to the trigger file. `stream-sample.mjs` does not stop at `END` yet (task 7.4), so it samples until `--seconds`, 925 s by default, and takes one extra shot named `END`. The verdict reads only the samples inside the lap, so this does not change a gate. When the sampler ends, stop the lifecycle with Ctrl-C and start the next row.
+The sampler drives `Browser/stream-sample.mjs` with `--frames --latency --trigger --out`, saves a decoded frame at each stop hold, and judges the stream gate over the gated lap only. It also follows NordFriend1's log, so the verdict shows whether NordFriend1 slept through the lap, and it records the host command line, its world flags and the CVar readback in `run.json`. When the lap ends, the runner writes `END` to the trigger file, and the sampler takes one last sample and stops. The runner then follows the host log on to its `result` line, which comes after `native/route.json`, for at most 45 s, and then judges the run. If the host stops before its `done`, `fail` or `result` line, no `END` comes, and the sampler runs to `--seconds`, 925 s by default. The verdict reads only the samples inside the lap. When the sampler ends, stop the lifecycle with Ctrl-C and start the next row.
 
 Check each stream verdict:
 - `received_size` is the pinned rung's size in that orientation, and `size_changes` is 0.
@@ -148,7 +149,7 @@ python3 Scripts/gauntlet_loop.py stream --run "$run" --slot NordHost --pin 0 --l
 Its stream figures are report-only. It gates the car's lateral error from `native/route.json` (at most 2.5 m) and the exit code. `--look` cannot be combined with `--relay` or `--two-viewers`.
 
 Report-only rows:
-- Two viewers: start the lifecycle once for the baseline and once for the winner in the same window. Run one sampler per slot at the same time (`--slot NordHost` and `--slot NordFriend1`). The winner may lose at most 2 decoded FPS against the baseline.
+- Two viewers: start the lifecycle once for the baseline and once for the winner in the same window. Run one sampler per slot at the same time (`--slot NordHost` and `--slot NordFriend1`). The winner may lose at most 2 decoded FPS against the baseline. A contended two-viewer row does not count; sample it again.
 - Relay: set `NORD_ICE_CONFIG` to the private `ice.json` before `run`, and add `--relay` to the sampler. Never print the file.
 
 After the last row, restore the demo (step 0).
@@ -161,7 +162,7 @@ python3 Scripts/gauntlet_loop.py report Saved/Gauntlet/<tune run>
 ```bash
 python3 Scripts/gauntlet_loop.py confirm Saved/Gauntlet/<tune run> --until 06:30
 ```
-Add `--candidate <id>` to pick a ranked candidate, and `--direct` if RunUnreal failed in step 3. `confirm` also confirms the baseline first if it has no finished native result. A result that the window cut counts as not run: `confirm` runs that candidate again and replaces its result, and `--candidate` accepts it. `confirm` adds each result to `tune.json` and writes no profile.
+Add `--candidate <id>` to pick a ranked candidate, and `--direct` if RunUnreal failed in step 3. `confirm` also confirms the baseline first if it has no finished native result. When the baseline is the candidate, it runs once. A result that the window cut, or that a foreign GPU process shared twice, counts as not run: `confirm` runs that candidate again and replaces its result, and `--candidate` accepts it. `confirm` adds each result to `tune.json` and writes no profile.
 
 Open `review.html` with the user. It shows the ceiling, baseline, candidate and decoded frame for each view, with SSIM, a difference map and an A/B flip. Only after the user approves the winner's paired captures:
 ```bash
@@ -188,6 +189,8 @@ Record the date, device, OS, browser, network and deployment ID in its own file,
 - RunUnreal and the Gauntlet plugin on Linux. Every public example is Win64.
 - `-DeviceProfile=` in a Development Browser package, and `GameUserSettings.ini` overrides.
 - The CSV column names, and GPUTime with `-csvGpuStats`.
+- Whether `r.AntiAliasingMethod` reads back as 4 in every run kind.
+- Whether a host exit leaves the sampler with no connected peer, so its summary ends at the stream end.
 - C++ driving of a possessed, rendered car with pawn input disabled.
 - The loop length against the modelled 3,488 m, and which leg is heaviest.
 - Whether UAT finds `Build/Scripts/NordGauntlet.Automation.csproj`.

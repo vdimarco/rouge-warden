@@ -70,6 +70,12 @@ A phone-sized client watching NordHost alone over a direct connection SHALL rece
 - **THEN** it keeps only the decoded frames whose wall time (`timeOrigin` plus `expectedDisplayTime`) falls inside the gated lap of the host log
 - **AND** a sample without `timeOrigin` gets "unverified" for the interval share and the longest gap, never pass
 
+#### Scenario: Lap end
+- **WHEN** the host logs the end of the drive (`done` or `fail`)
+- **THEN** the runner writes `END` to the sampler's trigger file, and the sampler takes one last sample and stops
+- **AND** the runner follows the host log on to its `result` line, for at most the CSV wait and 15 s, before it judges the run, so the verdict has the exit code and `native/route.json`, which `test_gauntlet_loop.py` checks with a host that logs its result line after the sampler quit
+- **AND** a sample whose stream ended before `END`, or before `--seconds` without a trigger file, keeps its summary up to the stream end but does not pass and exits non-zero, which `stream-sample.test.mjs` checks
+
 #### Scenario: Pinned frame size
 - **WHEN** a sample runs with `?pin=` on a player built with `NORD_QA_PIN`
 - **THEN** the requested and received frame size stay the same for the whole lap, the received size equals the pinned rung's size in that orientation, and the sample records every size change
@@ -104,6 +110,7 @@ A look run SHALL capture the same fixed views at each stop for each sky and size
 - **WHEN** the ceiling profile is rendered twice with the same build, sizes and skies
 - **THEN** the luma SSIM between the two runs is at least 0.98 on every image, otherwise the round is marked invalid in `verdict.json`
 - **AND** a reference whose ceiling runs lack a still fails its `repeat_stills` gate, and `tune --reference` refuses it before it starts a run
+- **AND** `tune --reference` also refuses, before it starts a run, a reference with a ceiling run that a foreign GPU process contended
 
 #### Scenario: Review page
 - **WHEN** the user opens `review.html` for a round

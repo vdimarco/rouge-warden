@@ -8,6 +8,7 @@ Run without -I (imports sibling modules). Nothing is written to Data/.
 import hashlib
 import json
 import math
+import re
 import struct
 import sys
 import tempfile
@@ -1673,6 +1674,30 @@ def test_background_roofs_and_roof_colours():
     assert abs(tar['roughness'] - sets['tar']['roughness_mean']) < .05
 
 
+SPEC = ('openspec/changes/nord-gta-level-up/specs/nord-plateau-streetscape/spec.md',
+        'openspec/specs/nord-plateau-streetscape/spec.md')   # the change's spec, then the canonical one once archived
+
+
+def test_spec_budget_covers_the_code_caps():
+    """The spec's Frame budget scenario promises the host a Plex budget: its triangle and batch numbers must be at
+    least the generator's caps (TRIANGLE_BUDGET, MAX_BATCHES), and both must sit under the agreed ceiling the spec
+    names (3.5 million triangles, 1,400 batches)."""
+    repo = P.ROOT.parents[1]
+    path = next((repo / rel for rel in SPEC if (repo / rel).is_file()), None)
+    assert path is not None, SPEC
+    scenario = path.read_text().split('#### Scenario: Frame budget', 1)[1].split('\n#', 1)[0]
+    budget = re.search(r'plex layer\b.*?([\d.]+) million triangles in at most ([\d,]+) batches', scenario, re.S)
+    assert budget, scenario
+    triangles, batches = float(budget.group(1)) * 1e6, int(budget.group(2).replace(',', ''))
+    assert triangles >= P.TRIANGLE_BUDGET, (path, triangles, P.TRIANGLE_BUDGET)
+    assert batches >= P.MAX_BATCHES, (path, batches, P.MAX_BATCHES)
+    ceiling = re.search(r'ceiling of ([\d.]+) million triangles and ([\d,]+) batches', scenario)
+    assert ceiling, scenario
+    top_triangles, top_batches = float(ceiling.group(1)) * 1e6, int(ceiling.group(2).replace(',', ''))
+    assert (top_triangles, top_batches) == (3.5e6, 1400), (top_triangles, top_batches)
+    assert P.TRIANGLE_BUDGET <= triangles <= top_triangles and P.MAX_BATCHES <= batches <= top_batches
+
+
 def _check_rear_surfaces_district(manifest, stats, fronts, keep):
     """The rear-surfaces pass over the district: siding guards, board gates, blinds behind every rear and background
     window, gallery screens, the props floor on every deck, and a roof on every background mass."""
@@ -2159,7 +2184,7 @@ if __name__ == '__main__':
              test_mentana_slab_form, test_walls_a_street_sees_are_brick, test_cedars_are_crossed_cards,
              test_lap_siding_stays_low, test_open_ground_for_yardless_lots, test_towers_buff_or_brown_with_three_metre_bays,
              test_rear_surfaces_siding_gates_and_windows, test_gallery_partitions_and_props_floor,
-             test_background_roofs_and_roof_colours]
+             test_background_roofs_and_roof_colours, test_spec_budget_covers_the_code_caps]
     if '--quick' not in sys.argv:
         tests.append(test_district)
     for test in tests:

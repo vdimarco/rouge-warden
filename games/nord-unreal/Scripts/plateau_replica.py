@@ -47,7 +47,9 @@ SOURCES = ('Data/LaFontaine/osm.xml', 'Data/LaFontaine/layout.json', GENERATOR,
            'Data/Plateau/ReplicaGeometry/Plex/fronts.json', 'Data/Plateau/ReplicaGeometry/Soul/ruelles_vertes_clip.json',
            'Data/Plateau/ReplicaGeometry/Plex/manifest.json', 'Data/Plateau/ReplicaGeometry/Props/manifest.json',
            # the street and park trees: the city's public tree inventory, clipped by --clip-trees
-           'Data/Plateau/Inventory/trees_pmr.json', 'Data/Plateau/Inventory/trees_vm.json')
+           'Data/Plateau/Inventory/trees_pmr.json', 'Data/Plateau/Inventory/trees_vm.json',
+           # the laundry atlas's cells (UV rect, size, pegs) the garments address (Scripts/plateau_textures.py)
+           'Data/Plateau/ReplicaGeometry/Textures/textures.json')
 LEGACY_MARKING = ROOT / 'Data/Plateau/BaseGeometry/Marking.obj'
 # The existing Panet/Visitation walking route already has detailed streets (plateau_streets.py).
 ROUTE = [(37400, -3280), (38405, -3924), (42703, -6819), (41685, -11320), (40636, -15933), (35500, -14300)]
@@ -141,10 +143,6 @@ SOUL_MATERIALS = {
     'weed': ('Soul_weed', '#4f6b2f', .95, 0., 'none', None),
     'rust': ('Soul_rust', '#7a3e1d', .9, 0., 'none', None),
     'wire': ('Soul_wire', '#121212', .5, .3, 'none', None),
-    'cloth_a': ('Soul_cloth_a', '#e8e6df', .95, 0., 'none', None),
-    'cloth_b': ('Soul_cloth_b', '#3d7a84', .95, 0., 'none', None),
-    'cloth_c': ('Soul_cloth_c', '#c9a227', .95, 0., 'none', None),
-    'cloth_d': ('Soul_cloth_d', '#a03a36', .95, 0., 'none', None),
     'chantier_dirt': ('Soul_chantier_dirt', '#6e5a43', .95, 0., 'none', None),
     'steel_plate': ('Soul_steel_plate', '#55595b', .45, .8, 'none', None),
     'mural_1': ('Soul_mural_1', '#e4572e', .85, 0., 'none', None),
@@ -157,8 +155,10 @@ SOUL_MATERIALS = {
     'line_rope': ('Soul_line_rope', '#d6d3ca', .7, 0., 'none', None),
     'pulley': ('Soul_pulley', '#8f9295', .4, .8, 'none', None),
     'clothes_pole': ('Soul_clothes_pole', '#6d6253', .85, 0., 'none', None),
-    'cloth_e': ('Soul_cloth_e', '#2e3b5e', .95, 0., 'none', None),
-    'cloth_f': ('Soul_cloth_f', '#d68fa1', .95, 0., 'none', None),
+    # The washing: garments on the Cloth_Laundry atlas (plateau_textures.laundry: sheets, towels, shirts, T-shirts,
+    # jeans, a dress, a pillowcase and shorts, each in its own cell with its pegs and folds; masked, two-sided). The
+    # set owns its colours (the material's tint is white); this colour is the set's mean.
+    'Cloth_Laundry': ('Soul_Cloth_Laundry', '#bcb4ae', .9, 0., 'none', None),
     # Ruelles vertes: the shared textured keys of the rear pass (colours at the texture means, as in Plex), wooden
     # planters, bed edging (also the grey planters), an entry arch, and autumn perennials, grasses and shrubs. Each
     # sparse key costs up to four batches (the last batch tile splits at the origin), so the palette stays small.
@@ -178,7 +178,9 @@ SOUL_MATERIALS = {
     'plant_rust': ('Soul_plant_rust', '#8f4a2b', .6, 0., 'none', TEXTURES_PATH + 'Creeper_diff'),
     'plant_purple': ('Soul_plant_purple', '#5c4860', .6, 0., 'none', TEXTURES_PATH + 'Creeper_diff'),
     'plant_red': ('Soul_plant_red', '#a3312b', .6, 0., 'none', TEXTURES_PATH + 'Creeper_diff'),
-    'plant_straw': ('Soul_plant_straw', '#b9a26a', .95, 0., 'none', None),
+    # Ornamental grass gone to straw: crossed cards of the fountain_grass set (a fountain of blades and buff plumes, V
+    # clamped), at the set's mean colour so the tint is about 1.
+    'Plant_Grass_Fountain': ('Soul_Plant_Grass_Fountain', '#947f53', .81, 0., 'none', None),
     # Tags (spray paint) on lane fences, sheds and garage doors
     'tag_black': ('Soul_tag_black', '#151515', .6, 0., 'none', None),
     'tag_silver': ('Soul_tag_silver', '#b8bbbf', .45, .5, 'none', None),
@@ -4178,27 +4180,62 @@ def _tuft(S, base, rng, scale):
         S.cone('weed', b, rng.uniform(2.5, 5) * scale, rng.uniform(8, 26) * scale, 3, rng.uniform(0, math.tau))
 
 
+class Catenary:
+    """A rope or wire hanging from a to b (x, y, z in cm) as a true catenary in the vertical plane through them: with s
+    the horizontal distance from a, z(s) = a_z + c (cosh((s - m) / c) - cosh(m / c)), c the catenary's parameter and m
+    its vertex (outside 0..span when the rope rises all the way). It is set by its mid-span sag under the chord, the
+    fixed-sag mode of set dressing (80.lv, "Fully Procedural Catenary Curves Generator in Maya", which approximates the
+    curve by a parabola; this solves the catenary itself). The sag falls as c grows, so c is found by bisection; the
+    vertex follows from the height difference, v = 2c sinh((span / 2 - m) / c) sinh(span / 2c), and the length from
+    L^2 - v^2 = 4c^2 sinh^2(span / 2c) (Wikipedia, "Catenary", Determining parameters)."""
+
+    def __init__(self, a, b, sag):
+        self.a, self.b = tuple(float(v) for v in a), tuple(float(v) for v in b)
+        self.span = math.dist(self.a[:2], self.b[:2])
+        self.v = self.b[2] - self.a[2]
+        assert self.span > 1. and sag > 0., (a, b, sag)
+        lo, hi = math.log(self.span / 60.), math.log(self.span * 1e5)
+        for _ in range(100):
+            mid = (lo + hi) / 2
+            if self._sag(math.exp(mid)) > sag:
+                lo = mid
+            else:
+                hi = mid
+        self.c = math.exp((lo + hi) / 2)
+        self.m = self._vertex(self.c)
+        self.sag = self._sag(self.c)
+        self.length = math.sqrt(self.v ** 2 + (2 * self.c * math.sinh(self.span / 2 / self.c)) ** 2)
+
+    def _vertex(self, c):
+        return self.span / 2 - c * math.asinh(self.v / (2 * c * math.sinh(self.span / 2 / c)))
+
+    def _z(self, s, c, m):
+        return self.a[2] + c * (math.cosh((s - m) / c) - math.cosh(m / c))
+
+    def _sag(self, c):
+        return self.a[2] + self.v / 2 - self._z(self.span / 2, c, self._vertex(c))
+
+    def at(self, s):
+        """The point s cm along the span (measured horizontally from a)."""
+        t = s / self.span
+        return (self.a[0] + (self.b[0] - self.a[0]) * t, self.a[1] + (self.b[1] - self.a[1]) * t,
+                self._z(s, self.c, self.m))
+
+    def points(self, segments):
+        return [self.at(self.span * i / segments) for i in range(segments + 1)]
+
+    def record(self, segments):
+        return {'from': [r2(v) for v in self.a], 'to': [r2(v) for v in self.b], 'catenary_cm': round(self.c, 3),
+                'vertex_cm': round(self.m, 3), 'length_cm': r2(self.length), 'segments': segments}
+
+
 def _catenary(S, key, a, b, sag, radius, segments=10):
-    pts = []
-    for i in range(segments + 1):
-        t = i / segments
-        pts.append((a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t,
-                    a[2] + (b[2] - a[2]) * t - sag * 4 * t * (1 - t)))
+    """A rope or wire as rods along the catenary from a to b with mid-span sag `sag`: the curve and its points."""
+    rope = Catenary(a, b, sag)
+    pts = rope.points(segments)
     for p, q in zip(pts, pts[1:]):
         S.rod(key, p, q, radius, 3)
-    return pts
-
-
-def _cloth(S, p, q, rng):
-    key = rng.choice(('cloth_a', 'cloth_b', 'cloth_c', 'cloth_d', 'cloth_a'))
-    w = math.dist(p[:2], q[:2])
-    if w < 20:
-        return
-    h = rng.uniform(35, 75)
-    a, b = lerp(p, q, .12), lerp(p, q, .88)
-    front = [a, b, (b[0], b[1], b[2] - h), (a[0], a[1], a[2] - h * rng.uniform(.8, 1.))]
-    S.face(key, front)
-    S.face(key, front[::-1])
+    return rope, pts
 
 
 def _street_walls(world):
@@ -4327,7 +4364,19 @@ RUELLES_VERTES_SOURCE = {
 PLEX_D_FACE = 16.               # plateau_plex.D_FACE: back-wall skins stand 16 cm proud of the retained mass
 PLEX_YARD_D0 = PLEX_D_FACE + 2  # a yard 'rect' starts 2 cm off the skin face (plateau_plex._author_yard)
 PLEX_GROUND_Z = {'Yard_Grass': 1.0, 'Yard_Soil': 1.4, 'Yard_Pavers': 1.8, 'Yard_Gravel': 2.0}   # plateau_plex.GROUND_Z
-PLEX_POSTS = {'boards': (244., 4.5), 'slats': (300., 3.), 'low': (180., 3.)}   # fence post spacing and half width
+PLEX_POSTS = {'boards': (244., 4.5), 'lattice': (244., 4.5), 'slats': (300., 3.), 'chain': (300., 3.),
+              'low': (180., 3.)}   # fence post spacing and half width (plateau_plex.FENCE_POSTS)
+# Paint on a lane fence (tags, fence murals) goes only on a solid face: the board card of a board fence or of a
+# lattice-topped one (under its lattice band and mid rail, plateau_plex.LATTICE_TOP + 4 cm), or the 3 cm panel of a
+# slatted chain-link fence; never on a low picket fence (the strokes would bridge the gaps between pickets) or on
+# chain-link. The value is the paint's plane off the fence line, in front of the card (1.2) or of the panel's face.
+PAINT_FACE = {'boards': 1.2, 'lattice': 1.2, 'slats': 2.2}
+PLEX_LATTICE_BAND = 45. + 4.
+
+
+def board_top(fence):
+    """Top of a lane fence's solid face (cm): the fence height, or the boards under a lattice band."""
+    return fence['height_cm'] - (PLEX_LATTICE_BAND if fence['kind'] == 'lattice' else 0.)
 ALLEY_HALF = 215.               # half the 430 cm ruelle strip (_ruelles)
 GATE_KEEP = 62.                 # gate leaf (46), its post (5) and a hand: no prop stands closer to the gate axis...
 GATE_SWING = 100.               # ... within this depth either side of the fence, so the leaf swings free
@@ -4349,10 +4398,32 @@ LINE_SKEW = 1.                  # a line runs at most 45 degrees off square to t
 LINE_MIN_SPAN = 250.            # pulley to pulley (the pole's pulley hangs 9 cm off the pole)
 GATE_PROPS = (('bin_recycling', .55), ('bin_compost', .4), ('flower_box', .22), ('bike_locked', .15))
 GREEN_SHARE = .3                # share of ruelles marked green, seeded, when the open-data clip is missing
-TAG_FENCE, TAG_SHED, TAG_GARAGE = .16, .25, .7   # lane fences, shed and garage doors with a tag (halved on a
-                                                 # ruelle verte; garage doors on a lane are few and much tagged)
+TAG_FENCE, TAG_SHED, TAG_GARAGE = .22, .25, .7   # lane fences, shed and garage doors with a tag (halved on a
+                                                 # ruelle verte; garage doors on a lane are few and much tagged).
+# Only solid fence faces take paint now (PAINT_FACE), about 70% of the lane fences the picket fences were counted in,
+# so the fence share rose from .16 to keep about as many tags along a lane.
 Z_BED = 9.                      # soil top of a ruelle-verte bed over the verge, behind a 12 cm timber edge
-CLOTHS = ('cloth_a', 'cloth_b', 'cloth_c', 'cloth_d', 'cloth_e', 'cloth_f')
+# The washing. The local review found the sheets hanging as stiff white boards and no line in a lane view. Each strand
+# of the pulley loop now hangs as a true catenary (Catenary), and the garments are laid along the lower strand by their
+# own widths with a seeded gap, the way J. Fuchs's procedural clothesline HDA for Unreal spaces its items by each one's
+# width (her rope is a Vellum simulation; the closed-form curve keeps this build stdlib-only and deterministic). A
+# garment is a strip of quads on its Cloth_Laundry atlas cell (plateau_textures.laundry: the cell's UV rect, its size
+# and the garment's in cm, its pegs): the top edge on the rope at the garment's edges, at each peg and between pegs, so
+# it follows the rope's sag; the columns hang plumb to the hem, where they stand alternately in front of and behind the
+# rope's plane: the folds that fan down from the pegs and open toward the hem (Weil, "The Synthesis of Cloth Objects",
+# SIGGRAPH 1986), over the folds drawn in the cell.
+LAUNDRY_WEIGHTS = (('sheet_white', 3), ('sheet_floral', 2), ('towel_stripes', 3), ('towel_red', 2),
+                   ('towel_yellow', 2), ('shirt_blue', 2), ('shirt_white', 2), ('shirt_plaid', 2), ('tshirt_yellow', 1),
+                   ('tshirt_grey', 2), ('jeans', 3), ('dress_green', 1), ('pillowcase', 2), ('shorts_khaki', 1))
+FOLD_CM = {'sheet': 4.5, 'towel': 2.5, 'pillowcase': 2., 'shirt': 2.5, 'tshirt': 2.5, 'jeans': 1.5, 'dress': 3.5,
+           'shorts': 1.5}       # a fold's offset at the hem, either side of the rope's plane (x .7 to 1.3 per garment)
+ROPE_SEGMENTS = (6, 8)          # rods of the upper (return) strand and of the lower one, the garments' rope
+PEG_UP = .8                     # a garment's card reaches this far over the rope (the peg tops, in the cell's pad)
+HEM_FREE = 2.                   # and this far under its hem
+HEM_GROUND = 45.                # a hem stays this high over the yard...
+HEM_FENCE = (100., 10.)         # ... and, within 1 m of the back fence, 10 cm over the fence top
+GARMENT_GAP = (8., 35.)         # bare rope between two garments
+LINE_LOADED = .65               # lines with washing on them (late October: a third hang empty)
 TAG_COLOURS = ('tag_black', 'tag_black', 'tag_silver', 'tag_red', 'tag_blue', 'tag_white')
 
 
@@ -4641,16 +4712,22 @@ def lane_laundry(world, plex, S, lane, counts):
             poles.append({'lot': lot['id'], 'module': k, 'xy': P, 'position': [r2(P[0]), r2(P[1])],
                           'height_cm': r2(height), 'material': pole_mat, 'lines': len(mine),
                           'from_fence_cm': r2(F.D - pick[2])})
+            fence_top = float(fence.get('height_cm') or 0.)
+
+            def hem_floor(p, F=F, fence_top=fence_top):
+                near = F.D - F.local(p)[1] < HEM_FENCE[0]
+                return max(HEM_GROUND, fence_top + HEM_FENCE[1]) if near else HEM_GROUND
             for m in mine:
                 toward, _ = unit(P, m['A'])
                 B = (P[0] + toward[0] * 9, P[1] + toward[1] * 9, m['zb'])
                 start = max(60., extent - ad + 50.)
-                garments, sag = _laundry_line(S, m['A'], B, rng, start, 60.)
+                washing, rope = _laundry_line(S, m['A'], B, rng, start, 60., hem_floor)
                 lines.append({'lot': lot['id'], 'module': k, 'deck_z': r2(m['deck_z']), 'guard': m['guard'],
                               'anchor': [r2(v) for v in m['A']], 'end': [r2(v) for v in B], 'pole': index,
-                              'span_cm': r2(math.dist(m['A'][:2], B[:2])), 'sag_cm': r2(sag), 'garments': garments})
+                              'span_cm': r2(math.dist(m['A'][:2], B[:2])), 'sag_cm': r2(rope.sag),
+                              'rope': rope.record(ROPE_SEGMENTS[1]), 'garments': len(washing), 'washing': washing})
                 counts['laundry_lines'] += 1
-                counts['garments'] += garments
+                counts['garments'] += len(washing)
     counts['laundry_poles'] = len(poles)
     lane['laundry'] = {'poles': [{k: v for k, v in q.items() if k != 'xy'} for q in poles], 'lines': lines}
     return [q['xy'] for q in poles]
@@ -4673,58 +4750,109 @@ def _guard_covers(F, g, x, d):
     return abs(da - db) < 2 and d - 8 <= da <= d + 1 and min(xa, xb) - 1 <= x <= max(xa, xb) + 1
 
 
-def _laundry_line(S, A, B, rng, start, stop):
-    """The pulley loop from A to B (two strands 8 cm apart, the lower one sagging more), pulleys at both ends and,
-    on most lines, garments pegged on the lower strand between `start` and `stop` cm from the ends. Returns the
-    garment count and the lower strand's sag (cm at mid-span)."""
+def laundry_cells():
+    """The laundry atlas's cells from Textures/textures.json (plateau_textures.laundry): name -> kind, UV rect (OBJ
+    convention, v up: u0, v0, u1, v1), cell and garment size in cm and the pegs' x in cm from the cell's left edge."""
+    if 'cells' not in _LAUNDRY:
+        try:
+            cells = json.loads(TEXTURE_INDEX.read_text())['sets']['laundry']['layout']['cells']
+        except (OSError, KeyError, ValueError) as error:
+            raise AssertionError('No laundry atlas cells in Textures/textures.json; run python3 Scripts/plateau_textures.py') \
+                from error
+        assert all(name in cells for name, _ in LAUNDRY_WEIGHTS), sorted(cells)
+        _LAUNDRY['cells'] = cells
+    return _LAUNDRY['cells']
+
+
+TEXTURE_INDEX = OUT / 'Textures/textures.json'
+_LAUNDRY = {}
+
+
+def rope_z(pts, span, s):
+    """Height of a rope drawn as the polyline pts (equal horizontal steps over the span) s cm along it."""
+    n = len(pts) - 1
+    i = min(n - 1, max(0, int(s / span * n)))
+    t = min(1., max(0., s / span * n - i))
+    return pts[i][2] + (pts[i + 1][2] - pts[i][2]) * t
+
+
+def _laundry_line(S, A, B, rng, start, stop, hem_floor):
+    """The pulley loop from A to B: two strands 8 cm apart, each a catenary, the lower one sagging more, with pulleys
+    at both ends; on most lines, garments pegged on the lower strand between `start` and `stop` cm from the ends,
+    their hems over hem_floor(xy). Returns the garment records and the lower strand (a Catenary)."""
     span = math.dist(A[:2], B[:2])
     sag = span * rng.uniform(.018, .03)
     yaw = math.degrees(math.atan2(B[1] - A[1], B[0] - A[0]))
     for p in (A, B):
         S.box('pulley', (p[0], p[1], p[2]), (7, 4, 12), yaw)
-    _catenary(S, 'line_rope', (A[0], A[1], A[2] + 4), (B[0], B[1], B[2] + 4), sag * .75, .45, segments=6)
-    _catenary(S, 'line_rope', (A[0], A[1], A[2] - 4), (B[0], B[1], B[2] - 4), sag, .45, segments=6)
-
-    def at(s):
-        t = max(0., min(1., s / span))
-        return (A[0] + (B[0] - A[0]) * t, A[1] + (B[1] - A[1]) * t, A[2] - 4 + (B[2] - A[2]) * t - sag * 4 * t * (1 - t))
-    if not rng.chance(.65):        # late October: a third of the lines hang empty
-        return 0, sag
-    s, count = start, 0
+    _catenary(S, 'line_rope', (A[0], A[1], A[2] + 4), (B[0], B[1], B[2] + 4), sag * .75, .45, ROPE_SEGMENTS[0])
+    rope, pts = _catenary(S, 'line_rope', (A[0], A[1], A[2] - 4), (B[0], B[1], B[2] - 4), sag, .45,
+                          ROPE_SEGMENTS[1])
+    washing = []
+    if not rng.chance(LINE_LOADED):
+        return washing, rope
+    cells = laundry_cells()
+    names = [name for name, w in LAUNDRY_WEIGHTS for _ in range(w)]
+    s = start
     while True:
-        kind = rng.choice(('sheet', 'towel', 'towel', 'shirt', 'shirt', 'pants', 'socks'))
-        width = {'sheet': rng.uniform(110, 170), 'towel': rng.uniform(45, 70), 'shirt': rng.uniform(55, 70),
-                 'pants': rng.uniform(36, 44), 'socks': 40.}[kind]
+        name = rng.choice(names)
+        width = cells[name]['garment_cm'][0]
         if s + width > span - stop:
             break
-        _garment(S, at, s, width, kind, rng)
-        count += 1
-        s += width + rng.uniform(8., 35.)
-    return count, sag
+        row = _garment(S, rope, pts, s, name, cells[name], rng, hem_floor)
+        if row:
+            washing.append(row)
+            s += width + rng.uniform(*GARMENT_GAP)
+        else:
+            s += 25.                # too low here (near a low gallery rail, or over the fence): bare rope
+    return washing, rope
 
 
-def _garment(S, at, s0, width, kind, rng):
-    """A garment hung from the line between s0 and s0 + width (cm along it), double-faced, its top edge following
-    the sagging strand: a sheet or towel, a shirt (shoulders and sleeves, then the body), trousers (waistband and
-    two legs) or a pair of socks."""
-    colour = rng.choice(CLOTHS) if kind != 'sheet' else rng.choice(('cloth_a', 'cloth_a', 'cloth_f', 'cloth_c', 'cloth_b'))
-    if kind in ('sheet', 'towel'):
-        h = rng.uniform(70, 110) if kind == 'sheet' else rng.uniform(40, 65)
-        parts = [(0., width, 0., h)]
-    elif kind == 'shirt':
-        h = rng.uniform(60, 75)
-        parts = [(0., width, 0., 22.), (width * .18, width * .82, 22., h)]
-    elif kind == 'pants':
-        h = rng.uniform(85, 100)
-        parts = [(0., width, 0., 10.), (0., width * .46, 10., h), (width * .54, width, 10., h)]
-    else:
-        parts = [(4., 13., 0., 28.), (27., 36., 0., 28.)]
-    for a, b, za, zb in parts:
-        pa, pb = at(s0 + a), at(s0 + b)
-        quad = [(pa[0], pa[1], pa[2] - za), (pb[0], pb[1], pb[2] - za), (pb[0], pb[1], pb[2] - zb),
-                (pa[0], pa[1], pa[2] - zb)]
-        S.face(colour, quad)
-        S.face(colour, quad[::-1])
+def _garment(S, rope, pts, s0, name, cell, rng, hem_floor):
+    """A garment pegged on the lower strand from s0 cm along the span: a strip of Cloth_Laundry quads on its atlas cell,
+    one column at each edge, each peg and midway between pegs, the top of each on the drawn rope (so the garment's top
+    follows the rope's sag) and its hem plumb under it, a fold's offset in front of the rope's plane at the pegs and
+    behind it between them and at the edges, the whole hem swung a little by the wind. Returns its record, or None
+    (nothing drawn) where a hem would fall under hem_floor."""
+    kind = cell['kind']
+    gw, _ = cell['garment_cm']
+    (cw, ch), (u0, v0, u1, v1) = cell['size_cm'], cell['uv']
+    half = gw / 2 + 1.
+    pins = [p - cw / 2 for p in cell['pins_cm']]
+    cols = [(-half, 'edge'), (half, 'edge')] + [(x, 'peg') for x in pins] + \
+        [((a + b) / 2, 'mid') for a, b in zip(pins, pins[1:])]
+    cols.sort()
+    merged = []
+    for x, role in cols:
+        if merged and x - merged[-1][0] < 3.:      # a peg within 3 cm of an edge: keep the edge, the card's extent
+            if role == 'edge':
+                merged[-1] = (x, role)
+            continue
+        merged.append((x, role))
+    drop = min(ch - .5, cell['garment_cm'][1] + HEM_FREE)
+    vt = v1 + PEG_UP / ch * (v1 - v0)
+    vh = v1 - drop / ch * (v1 - v0)
+    d = ((rope.b[0] - rope.a[0]) / rope.span, (rope.b[1] - rope.a[1]) / rope.span)
+    n = (-d[1], d[0])
+    fold = FOLD_CM[kind] * rng.uniform(.7, 1.3)
+    lean = rng.uniform(-2.5, 2.5)
+    swing = {'peg': 1., 'mid': -1., 'edge': -.6}
+    tops, hems, us = [], [], []
+    for x, role in merged:
+        s = s0 + gw / 2 + x
+        z = rope_z(pts, rope.span, s)
+        p = (rope.a[0] + d[0] * s, rope.a[1] + d[1] * s)
+        off = fold * swing[role] + lean
+        hem = (p[0] + n[0] * off, p[1] + n[1] * off, z - drop)
+        if hem[2] < hem_floor(hem[:2]):
+            return None
+        tops.append((p[0], p[1], z + PEG_UP))
+        hems.append(hem)
+        us.append((u0 + u1) / 2 + x / cw * (u1 - u0))
+    for k in range(len(merged) - 1):
+        S.uvface('Cloth_Laundry', [tops[k], tops[k + 1], hems[k + 1], hems[k]],
+                 [(us[k], vt), (us[k + 1], vt), (us[k + 1], vh), (us[k], vh)])
+    return {'cell': name, 'from_cm': r2(s0), 'width_cm': r2(gw), 'drop_cm': r2(drop), 'quads': len(merged) - 1}
 
 
 # -- life on the galleries ----------------------------------------------------------------------
@@ -5364,16 +5492,14 @@ def _plant(S, p, z, rng, counts):
     grass gone to straw, a shrub (a burning bush gone scarlet, or a green one) or a low ground cover. Perennials,
     shrubs and covers are crossed vertical foliage cards on the creeper's cut-out leaf set, the crossed-quad clumps
     of real-time vegetation (Pelzer, "Rendering Countless Blades of Waving Grass", GPU Gems ch. 7), so they read as
-    leaves from every side instead of faceted mounds; a cover adds a flat leaf card on the soil."""
+    leaves from every side instead of faceted mounds; a cover adds a flat leaf card on the soil. The grass is crossed
+    cards of its own fountain-grass set (_fountain_grass)."""
     kind = rng.choice(('perennial', 'perennial', 'perennial', 'grass', 'shrub', 'cover'))
     if kind == 'perennial':
         _cards(S, rng.choice(('plant_green', 'plant_green', 'plant_gold', 'plant_rust', 'plant_purple')), p, z,
                rng.uniform(15, 26), rng.uniform(25, 48), 2, rng)
     elif kind == 'grass':
-        key = 'plant_straw'
-        for _ in range(4):
-            S.cone(key, (p[0] + rng.uniform(-9, 9), p[1] + rng.uniform(-9, 9), z), rng.uniform(3, 5), rng.uniform(45, 85),
-                   3, rng.uniform(0, math.tau))
+        _fountain_grass(S, p, z, rng)
     elif kind == 'shrub':
         _cards(S, 'plant_red' if rng.chance(.6) else 'plant_green', p, z, rng.uniform(26, 36), rng.uniform(55, 85), 3, rng)
     else:
@@ -5387,6 +5513,26 @@ def _plant(S, p, z, rng, counts):
 
 
 PLANT_CARD = ((-.35, 0.), (.35, 0.), (.5, .55), (.25, 1.), (-.25, 1.), (-.5, .55))   # a clump's ragged outline
+GRASS_CARDS = 3                 # crossed fountain-grass cards per clump, 60 degrees apart
+GRASS_H = (55., 95.)            # a fountain grass (Pennisetum) in October, plumes included
+
+
+def _fountain_grass(S, p, z, rng):
+    """An ornamental grass gone to straw (the local review's "straw cone"): GRASS_CARDS crossed Plant_Grass_Fountain
+    cards round the clump's centre, each showing the fountain_grass set's whole clump (a fountain of arching blades
+    and buff plumes rising from a narrow base, u 0..1 across the card, mirrored on some, v 0..1 up it), about as wide
+    as tall, each card turned and sized a little on its own: the crossed-card clump of real-time vegetation (Pelzer,
+    "Rendering Countless Blades of Waving Grass", GPU Gems ch. 7; K. Quinn's plant cards for God of War Ragnarok)."""
+    h = rng.uniform(*GRASS_H)
+    phase = rng.uniform(0., math.pi)
+    for k in range(GRASS_CARDS):
+        a = phase + k * math.pi / GRASS_CARDS + rng.uniform(-.12, .12)
+        c, s = math.cos(a), math.sin(a)
+        w, hh = h * rng.uniform(.45, .6), h * rng.uniform(.9, 1.05)
+        ua, ub = (1., 0.) if rng.chance(.5) else (0., 1.)
+        S.uvface('Plant_Grass_Fountain', [(p[0] - c * w, p[1] - s * w, z), (p[0] + c * w, p[1] + s * w, z),
+                                          (p[0] + c * w, p[1] + s * w, z + hh), (p[0] - c * w, p[1] - s * w, z + hh)],
+                 [(ua, 0.), (ub, 0.), (ub, 1.), (ua, 1.)])
 
 
 def _cards(S, key, p, z, r, h, count, rng):
@@ -5637,7 +5783,8 @@ def _green_murals(world, plex, S, lane, counts, green, by_id, alleys):
         fences = []
         for lot in plex.lots:
             fence, F = lot['rear'].get('fence'), lot['frame']
-            if F is None or not fence or not fence.get('lane') or fence['kind'] not in ('boards', 'slats'):
+            if F is None or not fence or not fence.get('lane') or fence['kind'] not in PAINT_FACE or \
+                    board_top(fence) - 8. - 15. < 120.:         # _mural's fence face: 15 cm up, 8 under the top
                 continue
             near = alleys.nearest(F.world(F.W / 2, F.D), 700)
             if near is None or near[1] not in groups[rid]:
@@ -5652,17 +5799,18 @@ def _green_murals(world, plex, S, lane, counts, green, by_id, alleys):
                         fences.append((-(p1 - p0), len(fences), lot, p0, p1))
         if fences:
             _, _, lot, p0, p1 = min(fences, key=lambda f: f[:2])
-            F, h = lot['frame'], lot['rear']['fence']['height_cm']
+            F, fence = lot['frame'], lot['rear']['fence']
             a, b = F.world(p0, F.D), F.world(p1, F.D)
-            if _mural(S, {'a': a, 'b': b}, {'height': h + 82.}, rng, off=1.2, z0=15., margin=15., min_h=120.,
-                      min_w=250.):
+            off = PAINT_FACE[fence['kind']]
+            if _mural(S, {'a': a, 'b': b}, {'height': board_top(fence) + 82.}, rng, off=off, z0=15., margin=15.,
+                      min_h=120., min_w=250.):
                 lot['lane_busy'].append((p0, p1))
                 counts['murals'] += 1
                 counts['green_murals'] += 1
                 lane['ruelles_vertes']['murals'].append({'ruelle': rid, 'host': 'fence', 'owner': lot['id'],
                                                          'kind': lot['rear']['fence']['kind'],
                                                          'a': [r2(v) for v in a], 'b': [r2(v) for v in b],
-                                                         'offset_cm': 1.2, 'z0_cm': 15.})
+                                                         'offset_cm': off, 'z0_cm': 15.})
                 continue
         lane['ruelles_vertes']['murals'].append({'ruelle': rid, 'host': None, 'note': 'no blank wall or fence faces it'})
     return painted
@@ -5780,17 +5928,18 @@ def lane_tags(world, plex, S, lane, counts, green):
         near = alleys.nearest(F.world(F.W / 2, F.D), 700)
         on_green = near is not None and near[1] in green
         rng = Rng('tag-fence', lot['id'])
-        if not on_green and fence['kind'] in PLEX_POSTS and rng.chance(TAG_FENCE):
+        if not on_green and fence['kind'] in PAINT_FACE and rng.chance(TAG_FENCE):
             g = fence.get('gate_at')
             busy = list(lot['lane_busy']) + ([(g - 160, g + 160)] if g is not None else []) + \
                 ([tuple(fence['shed_at'])] if fence.get('shed_at') else [])
             bays = [(a, b) for a, b in _fence_bays(fence) if b - a >= 110 and not any(a < y and b > x for x, y in busy)]
             if bays:
                 a, b = rng.choice(bays)
-                top = min(fence['height_cm'] - 15, 155.)
-                tris, kind = _tag(S, F, a + 6, b - 6, 32., top, F.D + 1.2, rng)
-                rows.append({'lot': lot['id'], 'on': 'fence', 'kind': kind, 'x_cm': [r2(a + 6), r2(b - 6)],
-                             'plane': [[r2(v) for v in F.world(a, F.D + 1.2)], [r2(v) for v in F.world(b, F.D + 1.2)]],
+                top, off = min(board_top(fence) - 15, 155.), PAINT_FACE[fence['kind']]
+                tris, kind = _tag(S, F, a + 6, b - 6, 32., top, F.D + off, rng)
+                rows.append({'lot': lot['id'], 'on': 'fence', 'kind': kind, 'fence': fence['kind'], 'face_cm': off,
+                             'top_cm': r2(top), 'x_cm': [r2(a + 6), r2(b - 6)],
+                             'plane': [[r2(v) for v in F.world(a, F.D + off)], [r2(v) for v in F.world(b, F.D + off)]],
                              'facing': [r2(F.n[0]), r2(F.n[1])]})
                 counts['tags_fences'] += 1
         door = lot.get('door')

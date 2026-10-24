@@ -1,5 +1,6 @@
-"""Checks for the species trees (Data/Plateau/ReplicaGeometry/Trees, from Scripts/blender/plateau_trees.py) and for
-the late-October leaf option of Scripts/refine_plateau_trees.py. Stdlib only; no Blender or Unreal needed.
+"""Checks for the species trees (Data/Plateau/ReplicaGeometry/Trees, from Scripts/blender/plateau_trees.py: seven
+kinds, the vase elm among them, and a young street tree for every kind but small) and for the late-October leaves of
+Scripts/refine_plateau_trees.py, its default. Stdlib only; no Blender or Unreal needed.
 
     python3 Scripts/test_plateau_tree_kinds.py            # the files on disk, the generator's rules, the refine graph
     python3 Scripts/test_plateau_tree_kinds.py --rebuild  # also two fresh builds, byte for byte, and against disk
@@ -58,10 +59,18 @@ def read_obj(path):
 _OBJS = {}
 
 
-def obj(kind):
-    if kind not in _OBJS:
-        _OBJS[kind] = read_obj(TREES / manifest()['kinds'][kind]['obj'])
-    return _OBJS[kind]
+def entry(model):
+    """The manifest entry of a model: a kind, or a kind's young tree (<kind>_young)."""
+    kinds = manifest()['kinds']
+    if model.endswith(T.YOUNG):
+        return kinds[model[:-len(T.YOUNG)]]['young']
+    return kinds[model]
+
+
+def obj(model):
+    if model not in _OBJS:
+        _OBJS[model] = read_obj(TREES / entry(model)['obj'])
+    return _OBJS[model]
 
 
 def tri_area(a, b, c):
@@ -132,7 +141,7 @@ def cell_hues():
 
 
 def cards_per_cell(kind):
-    """Cards of a kind by atlas cell, read from the leaf UVs (4 triangles per card, the first corner's UV)."""
+    """Cards of a model by atlas cell, read from the leaf UVs (4 triangles per card, the first corner's UV)."""
     v, vt, vn, groups = obj(kind)
     faces = groups[f'{kind}_leaves']
     cells = manifest()['atlas_cells']
@@ -164,7 +173,7 @@ class GeneratorRules(unittest.TestCase):
         self.assertAlmostEqual(T.flare_factor(.5, .2), 1.)
 
     def test_every_stem_grows_out_of_its_parent_and_crowns_are_pruned_up(self):
-        for kind in T.KINDS:
+        for kind in T.MODELS:
             P = T.SPECIES[kind]
             stems, cards = T.calibrated(kind)
             limbs = [s for s in stems if s.level == 1]
@@ -205,12 +214,20 @@ class TreeFiles(unittest.TestCase):
                 spec = row['materials'][slot]['spec']
                 tex = spec['texture']
                 self.assertTrue((TREES.parent / tex).is_file(), tex)
-                entry = m['texture_sets'][T.ATLAS['key'] if slot == 'leaves' else T.BARK['key']]
-                self.assertEqual(Path(tex).name, entry['maps']['diff']['file'])
-                self.assertIn(row['materials'][slot]['key'], entry['keys'])
+                tex_set = m['texture_sets'][T.ATLAS['key'] if slot == 'leaves' else T.BARK['key']]
+                self.assertEqual(Path(tex).name, tex_set['maps']['diff']['file'])
+                self.assertIn(row['materials'][slot]['key'], tex_set['keys'])
             groups = obj(kind)[3]
             self.assertEqual(list(groups), [k['slots']['bark'], k['slots']['leaves']])
             self.assertEqual({A.tree_slot(name) for name in groups}, set(A.TREE_SLOTS))
+            # Every kind but small has a young street tree, its own OBJ in the kind's bark and leaves.
+            self.assertEqual('young' in k, kind in T.YOUNG_KINDS, kind)
+            self.assertEqual(A.YOUNG in row, kind in T.YOUNG_KINDS, kind)
+            if kind in T.YOUNG_KINDS:
+                young = k['young']
+                self.assertEqual(row[A.YOUNG]['sha256'], hashlib.sha256((TREES / young['obj']).read_bytes()).hexdigest())
+                self.assertEqual(young['materials'], k['materials'])
+                self.assertEqual({A.tree_slot(name) for name in obj(kind + T.YOUNG)[3]}, set(A.TREE_SLOTS))
         self.assertEqual(len(bark_keys), len(T.KINDS), 'each kind has its own bark tint')
         # Yard trees of every kind the Plex layer writes, old kinds included, find a species mesh.
         rows = A.load_yard_trees(ROOT)
@@ -219,6 +236,15 @@ class TreeFiles(unittest.TestCase):
             self.assertEqual(sum(r['count'] for r in plan), len(rows))
             for r in plan:
                 self.assertEqual(r['mesh_height_cm'], m['kinds'][r['kind']]['height_cm'])
+        # Every street and park tree of the inventory stands on its kind's mesh or the kind's young mesh.
+        street = A.load_street_trees(ROOT)
+        if street:
+            plan = A.plan_trees(street, kinds)
+            self.assertEqual(sum(r['count'] for r in plan), len(street))
+            self.assertEqual({r['kind'] for r in plan}, {r['kind'] for r in street})
+            for r in plan:
+                model = r['kind'] + (T.YOUNG if r['variant'] else '')
+                self.assertEqual(r['mesh_height_cm'], entry(model)['height_cm'])
 
     def test_texture_sets(self):
         m = manifest()
@@ -237,7 +263,11 @@ class TreeFiles(unittest.TestCase):
         self.assertEqual((leaves['surface'], leaves['uv'], leaves['tiling']), ('foliage', 'atlas', [1., 1.]))
         self.assertEqual(leaves['material']['blend_mode'], 'masked')
         self.assertTrue(leaves['material']['two_sided'])
-        self.assertTrue(.15 <= leaves['coverage'] <= .5, leaves['coverage'])
+        # 8 x 4 cells of 256 px, power-of-two sides; the used cells are 15-50 % leaf.
+        self.assertEqual((leaves['size_px'], leaves['layout']['cols'], leaves['layout']['rows']), ([2048, 1024], 8, 4))
+        self.assertEqual(len(m['atlas_cells']), len(T.CELLS))
+        used = leaves['coverage'] * T.COLS * T.ROWS / len(T.CELLS)
+        self.assertTrue(.15 <= used <= .5, used)
         self.assertEqual((bark['surface'], bark['uv'], bark['alpha']), ('wall', 'metres', False))
 
     def test_atlas_cells_have_no_halo_and_stay_inside_their_padding(self):
@@ -266,14 +296,14 @@ class TreeFiles(unittest.TestCase):
             self.assertLess(max(abs(a - b) for a, b in zip(mo, mc)), 3., (name, mo, mc))
 
     def test_meshes(self):
-        m = manifest()
-        for kind in T.KINDS:
-            k = m['kinds'][kind]
+        for kind in T.MODELS:
+            k = entry(kind)
             P = T.SPECIES[kind]
             v, vt, vn, groups = obj(kind)
             bark, leaves = groups[f'{kind}_bark'], groups[f'{kind}_leaves']
             self.assertEqual(k['triangles'], {'bark': len(bark), 'leaves': len(leaves), 'total': len(bark) + len(leaves)})
-            target = T.TRIANGLE_TARGET['small' if kind == 'small' else 'mature']
+            target = T.target_of(kind)
+            self.assertEqual(k['triangle_target'], target)
             self.assertLess(k['triangles']['total'], target, kind)
             self.assertEqual(len(leaves) % 4, 0, (kind, 'four triangles per card'))
             for face in bark + leaves:
@@ -287,6 +317,8 @@ class TreeFiles(unittest.TestCase):
             if kind in T.MATURE:
                 self.assertTrue(1200. <= k['height_cm'] <= 1800., kind)
                 self.assertTrue(25. <= k['trunk_cm'] <= 60., kind)
+            elif kind.endswith(T.YOUNG):
+                self.assertTrue(450. <= k['height_cm'] <= 550. and 5. <= k['trunk_cm'] <= 10., kind)
             else:
                 self.assertTrue(500. <= k['height_cm'] <= 800. and 10. <= k['trunk_cm'] <= 25., kind)
             # The trunk diameter at breast height (1.3 m, or just under a lower fork), measured on the mesh, is the
@@ -303,6 +335,9 @@ class TreeFiles(unittest.TestCase):
             self.assertGreaterEqual(min(v[i][2] for i in leaf_v), P['prune_cm'] - T.CARD_HANG_CM - .01, kind)
             if kind in T.MATURE:
                 self.assertGreaterEqual(min(v[i][2] for i in leaf_v), 270., kind)
+            if kind.endswith(T.YOUNG):
+                # A young street tree's crown clears a pedestrian: no leaf under 1.85 m at full scale.
+                self.assertGreaterEqual(min(v[i][2] for i in leaf_v), 185., kind)
             # Leaf normals are unit, never point fully down, and mostly lean out of the crown.
             for i in {c[2] for f in leaves for c in f}:
                 self.assertAlmostEqual(math.sqrt(sum(x * x for x in vn[i])), 1., delta=2e-3)
@@ -312,7 +347,7 @@ class TreeFiles(unittest.TestCase):
     def test_cards_sit_on_twigs_and_map_into_one_cell_of_their_kind(self):
         m = manifest()
         cells = m['atlas_cells']
-        for kind in T.KINDS:
+        for kind in T.MODELS:
             v, vt, vn, groups = obj(kind)
             bark, leaves = groups[f'{kind}_bark'], groups[f'{kind}_leaves']
             grid = {}
@@ -341,14 +376,15 @@ class TreeFiles(unittest.TestCase):
     def test_late_october_colours(self):
         hues = cell_hues()
         total = {}
-        for kind in T.KINDS:
+        for kind in T.MODELS:
             per = cards_per_cell(kind)
-            self.assertEqual(sum(per.values()), manifest()['kinds'][kind]['cards'])
+            self.assertEqual(sum(per.values()), entry(kind)['cards'])
             mix = {}
             for name, n in per.items():
                 for k, share in hues[name].items():
                     mix[k] = mix.get(k, 0.) + share * n
-                    total[k] = total.get(k, 0.) + share * n
+                    if kind in T.KINDS:              # the district-wide mix: the seven mature kinds
+                        total[k] = total.get(k, 0.) + share * n
             s = sum(mix.values())
             mix = {k: c / s for k, c in mix.items()}
             if kind == 'small':
@@ -361,8 +397,23 @@ class TreeFiles(unittest.TestCase):
         s = sum(total.values())
         total = {k: c / s for k, c in total.items()}
         self.assertGreater(total['yellow_orange'], .6, total)
-        self.assertGreater(total['red'], .05, total)
+        # Some red (Amur maples, silver maples): 4 % of the seven kinds' cards since the all-yellow elm joined.
+        self.assertGreater(total['red'], .04, total)
         self.assertTrue(.02 < total['green'] < .25, total)
+        # On the street, weighted by the inventory's trees on each mesh: yellow to orange, some red, a little green.
+        rows, kinds = A.load_street_trees(ROOT), A.load_tree_kinds(ROOT)
+        if rows:
+            street = {}
+            for group in A.plan_trees(rows, kinds):
+                model = group['kind'] + (T.YOUNG if group['variant'] else '')
+                for name, n in cards_per_cell(model).items():
+                    for k, share in hues[name].items():
+                        street[k] = street.get(k, 0.) + share * n * group['count']
+            s = sum(street.values())
+            street = {k: c / s for k, c in street.items()}
+            self.assertGreater(street['yellow_orange'], .8, street)
+            self.assertGreater(street['red'], .04, street)
+            self.assertTrue(.02 < street['green'] < .1, street)
 
     def test_crowns_are_thinner_in_late_october(self):
         m = manifest()
@@ -384,11 +435,64 @@ class TreeFiles(unittest.TestCase):
         self.assertLess(index['honey_locust'], index['norway_maple'])
         self.assertLess(index['ash'], index['norway_maple'])
 
+    def test_elm_is_a_vase(self):
+        """The elm forks low into five leaders that keep spreading; its crown is widest at the top (the inverse-conical
+        envelope) where an oval linden's is not, and its twigs droop more than the Norway maple's."""
+        stems, cards = T.calibrated('elm')
+        leaders = [s for s in stems if s.level == 0][1:]
+        self.assertEqual(len(leaders), 5)
+        fork = stems[0].points[-1][2]
+        self.assertTrue(300. <= fork <= 450., fork)
+        for leader in leaders:
+            heading = T.norm(T.sub(leader.points[-1], leader.points[0]))
+            self.assertTrue(.75 < heading[2] < .95, ('a leader stands too upright or lies down', heading))
+
+        def spread(kind):
+            """Crown radius (90th percentile of the card bases' distance from the trunk axis) in the upper and the
+            lower half of the leafy crown."""
+            _, cs = T.calibrated(kind)
+            zs = sorted(c['base'][2] for c in cs)
+            mid = (zs[0] + zs[-1]) / 2.
+            out = []
+            for upper in (True, False):
+                r = sorted(math.hypot(c['base'][0], c['base'][1]) for c in cs if (c['base'][2] >= mid) == upper)
+                out.append(r[int(.9 * (len(r) - 1))])
+            return out
+        elm_up, elm_low = spread('elm')
+        linden_up, linden_low = spread('linden')
+        self.assertGreater(elm_up / elm_low, 1.15, (elm_up, elm_low))
+        self.assertGreater(elm_up / elm_low, linden_up / linden_low + .15, ('linden', linden_up, linden_low))
+
+        def droop(kind):
+            twigs = [s for s in T.calibrated(kind)[0] if s.level == 2]
+            return sum(s.frames[-1][2][2] for s in twigs) / len(twigs)
+        self.assertLess(droop('elm'), droop('norway_maple') - .1, 'elm twigs droop')
+        k = manifest()['kinds']['elm']
+        self.assertGreater(k['crown_width_cm'], .9 * k['height_cm'], 'a vase is about as wide as it is tall')
+
+    def test_young_trees_are_slim_nursery_trees(self):
+        """Each young tree: one straight leader (no fork), a 7 cm trunk, about 5 m, every limb above the 2.1 m
+        clearance, its kind's leaf cells, and a fraction of the mature triangles."""
+        for kind in T.YOUNG_KINDS:
+            model = kind + T.YOUNG
+            P = T.SPECIES[model]
+            stems, cards = T.calibrated(model)
+            self.assertEqual(sum(1 for s in stems if s.level == 0), 1, model)
+            trunk = stems[0]
+            heading = T.norm(T.sub(trunk.points[-1], trunk.points[0]))
+            self.assertGreater(heading[2], .99, model)
+            self.assertTrue(all(s.points[0][2] >= P['prune_cm'] + 15. for s in stems if s.level == 1), model)
+            self.assertEqual(P['leaves']['cells'], T.SPECIES[kind]['leaves']['cells'])
+            young, mature = entry(model), manifest()['kinds'][kind]
+            self.assertEqual(young['trunk_cm'], 7.)
+            self.assertLess(young['crown_width_cm'], .4 * mature['crown_width_cm'], model)
+            self.assertLess(young['triangles']['total'], .35 * mature['triangles']['total'], model)
+
     def test_contact_sheet(self):
         data = SHEET.read_bytes()
         self.assertEqual(data[:8], b'\x89PNG\r\n\x1a\n')
         width, height = int.from_bytes(data[16:20], 'big'), int.from_bytes(data[20:24], 'big')
-        self.assertEqual((width, height), (1600, 1000))
+        self.assertEqual((width, height), (400 * T.SHEET_GRID[0], 500 * T.SHEET_GRID[1]))
 
     @unittest.skipUnless(REBUILD, 'pass --rebuild for two fresh builds')
     def test_two_builds_are_byte_identical_and_match_disk(self):
@@ -507,15 +611,26 @@ class RefineAutumn(unittest.TestCase):
                     want = R.leaf_colour(texel, r, autumn)
                     self.assertTrue(all(abs(a - b) < 1e-9 for a, b in zip(got, want)), (autumn, texel, r, got, want))
 
-    def test_default_keeps_the_summer_green_to_gold(self):
+    def test_summer_mode_keeps_the_green_to_gold(self):
         texel = self.TEXELS[0]
         grey = R.luminance(texel)
         desat = [c + (grey - c) * .35 for c in texel]
         for r in (0., .5, 1.):
             tint = [g + (o - g) * r for g, o in zip(R.GREEN_TINT, R.GOLD_TINT)]
             want = [d * t + l for d, t, l in zip(desat, tint, (.025, .035, .008))]
-            self.assertEqual(list(R.leaf_colour(texel, r)), want)
+            self.assertEqual(list(R.leaf_colour(texel, r, False)), want)
         self.assertEqual(R.MASK_CLIP, 1. / 3.)
+
+    def test_autumn_is_the_default(self):
+        """Late October unless asked for summer: the CPU colour, the editor flag and apply's default all agree."""
+        import inspect
+        for texel in self.TEXELS:
+            for r in (0., .3, .7, 1.):
+                self.assertEqual(R.leaf_colour(texel, r), R.leaf_colour(texel, r, True))
+        self.assertIsNone(inspect.signature(R.apply).parameters['autumn'].default)
+        self.assertTrue(R.autumn_flag(fake_unreal('UnrealEditor-Cmd Quebec.uproject -NullRHI')))
+        self.assertFalse(R.autumn_flag(fake_unreal('UnrealEditor-Cmd Quebec.uproject -NordTreeSummer -NullRHI')))
+        self.assertTrue(R.autumn_flag(object()), 'no command line reads as the default, autumn')
 
     def test_autumn_shifts_leaves_to_yellow_and_orange_with_some_red_and_green(self):
         classes = {}
@@ -529,14 +644,14 @@ class RefineAutumn(unittest.TestCase):
         self.assertTrue(.02 < classes.get('red', 0) / n < .15, classes)
         self.assertTrue(.02 < classes.get('green', 0) / n < .12, classes)
         # Against the summer graph (green to gold), autumn sits well toward orange for every instance value.
-        summer = sum(srgb_hue(R.leaf_colour(self.TEXELS[0], r / 10.)) for r in range(11)) / 11.
+        summer = sum(srgb_hue(R.leaf_colour(self.TEXELS[0], r / 10., False)) for r in range(11)) / 11.
         autumn = sum(srgb_hue(R.leaf_colour(self.TEXELS[0], r / 10., True)) for r in range(11)) / 11.
         self.assertGreater(summer - autumn, 25., (summer, autumn))
         self.assertGreater(R.AUTUMN_MASK_CLIP, R.MASK_CLIP)   # thinner crowns: many leaves already down
 
     def test_flag(self):
         self.assertTrue(R.autumn_flag(fake_unreal('UnrealEditor-Cmd Quebec.uproject -NordTreeAutumn -NullRHI')))
-        self.assertFalse(R.autumn_flag(fake_unreal('UnrealEditor-Cmd Quebec.uproject -NullRHI')))
+        self.assertFalse(R.autumn_flag(fake_unreal('UnrealEditor-Cmd Quebec.uproject -NordTreeSummer')))
         self.assertIn('autumn', R.apply.__code__.co_varnames)
 
 

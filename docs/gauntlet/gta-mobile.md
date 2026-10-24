@@ -20,7 +20,7 @@ A round passes a gate only with a host measurement for it.
 - Over the lap: p99 at most 50 ms, and at most 1% of frames over 50 ms.
 - Over the lap: at most one hitch (a frame over 66.7 ms) in any 30 s, and no frame over 250 ms.
 - Peak VRAM at most 6,000 MiB per game process.
-- No render log errors, and every profile CVar reads back as requested.
+- No render log errors, and every profile CVar reads back as requested, with the fixed `t.MaxFPS 60` and `r.AntiAliasingMethod 4` (TSR).
 
 **Stream, solo, direct, both rungs, landscape and portrait, over the lap after the warm-up lap:**
 - Mean decoded FPS at least 29, and zero WebRTC freezes.
@@ -54,6 +54,8 @@ Missing host evidence is **unverified, not pass**. A round may still change code
 - Write `unverified` in the Score column for "Performance stability" and for "Responsiveness and input latency".
 - Leave those dimensions out of the playability sum, and record the dimension count you used, as the rubric allows.
 - Do not carry an older measured score forward as if it were new.
+
+A confirmation that the agreed window cut, or that a foreign GPU process shared twice, is missing evidence too. The round's `confirmed` gate stays unverified while a ranked candidate has only missing evidence, also after a better ranked candidate failed, until `gauntlet_loop.py confirm <tune folder>` runs that candidate again. A contended two-viewer row does not count for the co-op guard.
 
 ## Scoring
 - Copy the scorecard block from [RUBRIC.md](RUBRIC.md) for each round, and add the evidence list above.

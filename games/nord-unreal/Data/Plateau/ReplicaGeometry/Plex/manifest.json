@@ -21820,9 +21820,9 @@
   "rear_walls_street_seen": 96,
   "rear_windows": 9068,
   "rear_yard_trees": 565,
-  "rear_yard_trees_ash": 102,
+  "rear_yard_trees_ash": 103,
   "rear_yard_trees_elm": 37,
-  "rear_yard_trees_maple": 201,
+  "rear_yard_trees_maple": 200,
   "rear_yard_trees_small": 225,
   "roof_Roof_Gravel": 364,
   "roof_Roof_Membrane": 811,
@@ -23240,11 +23240,11 @@
  "yard_trees": {
   "file": "yard_trees.json",
   "count": 565,
-  "sha256": "8006270abfd0afe5753fbbbe23911f8a24fe40c3615ca2260e6771b6b6f62f93",
+  "sha256": "c2b001bf09e28051f1b2c31cec565bfda3ed80b0b8947bdf036c8d6e80b8f106",
   "kinds": {
-   "ash": 102,
+   "ash": 103,
    "elm": 37,
-   "maple": 201,
+   "maple": 200,
    "small": 225
   },
   "source": "Ville de Montréal, données ouvertes, Canopée 2019 (CC BY 4.0), donneesquebec.ca vmtl-canopee, resource 77e44cc1; source: photo aérienne (août 2019) et lidar (été 2018), © Communauté métropolitaine de Montréal; producteur: Division de la géomatique, Ville de Montréal"

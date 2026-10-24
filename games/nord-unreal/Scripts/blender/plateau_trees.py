@@ -6,10 +6,23 @@ Run from games/nord-unreal:
     python3 Scripts/test_plateau_tree_kinds.py               # checks; --rebuild also builds twice and compares bytes
 
 Writes Data/Plateau/ReplicaGeometry/Trees/: one OBJ per kind (norway_maple, silver_maple, honey_locust, linden,
-ash, small) with two material groups (usemtl <kind>_bark and <kind>_leaves), the autumn leaf atlas and the bark
-texture (three PNG maps each, in the Scripts/plateau_textures.py format) and manifest.json in the shared Trees
-format {kinds: {kind: {obj, materials {bark, leaves}, height_cm, trunk_cm, ...}}, materials, texture_sets}. The
-contact sheet goes to Preview/Replica/trees_contact_sheet.png.
+ash, elm, small) with two material groups (usemtl <kind>_bark and <kind>_leaves), and for every kind but small a
+young street tree (Tree_<kind>_young.obj: a nursery tree a few years after planting, single leader, crown raised to
+2.1 m), the autumn leaf atlas and the bark texture (three PNG maps each, in the Scripts/plateau_textures.py format)
+and manifest.json in the shared Trees format {kinds: {kind: {obj, materials {bark, leaves}, height_cm, trunk_cm,
+..., young {obj, materials, height_cm, trunk_cm, ...}}}, materials, texture_sets}. The contact sheet goes to
+Preview/Replica/trees_contact_sheet.png.
+
+The elm kind is the vase: American elm (Ulmus americana) and the other elms, and hackberry (Celtis occidentalis),
+whose crowns the city prunes the same way. Its trunk forks low into five ascending leaders that keep their angle
+(Weber & Penn clones with almost no AttractionUp), its limbs follow the inverse-conical ShapeRatio (long at the top,
+short low down, so the crown is wide at the top and narrow at the fork) and arch out, and its twigs droop (negative
+AttractionUp): the vase form botanists describe, "the trunk divides into several erect limbs strongly arched above
+and terminating in numerous slender, pendulous branchlets" (Lady Bird Johnson Wildflower Center, Ulmus americana,
+https://www.wildflower.org/plants/result.php?id_plant=ULAM; Flora of North America and the Minnesota DNR say the
+same), built from the Weber & Penn parameters below. The young kinds stand for the inventory's new plantings (a 5 cm
+trunk, about 4.3 m tall by research-plateau.md 10.4): the same species, leaves and bark, smaller cards, a single
+leader and a crown raised clear of the sidewalk.
 
 Technique. The branching is the parametric model of Weber and Penn, "Creation and Rendering of Realistic Trees"
 (SIGGRAPH 1995), the model Blender's Sapling add-on implements (Sapling is not bundled with the bpy 5.1 module,
@@ -47,11 +60,14 @@ import plateau_textures as PT  # noqa: E402  (stdlib texture primitives: Canvas,
 LAYER = 'Trees'
 OUT = ROOT / 'Data/Plateau/ReplicaGeometry/Trees'
 SHEET = ROOT / 'Preview/Replica/trees_contact_sheet.png'
+SHEET_GRID = (5, 2)          # contact sheet tiles (400 x 500 px each): the kinds, the young trees, a street row, the atlas
 GENERATOR = 'Scripts/blender/plateau_trees.py'
-KINDS = ('norway_maple', 'silver_maple', 'honey_locust', 'linden', 'ash', 'small')
+KINDS = ('norway_maple', 'silver_maple', 'honey_locust', 'linden', 'ash', 'elm', 'small')
 MATURE = KINDS[:-1]
-ALIASES = {'maple': 'norway_maple', 'elm': 'linden'}
-TRIANGLE_TARGET = {'mature': 30000, 'small': 15000}
+# Plex yard-tree kinds that are not species: maple is the Norway maple. (elm was linden until the vase kind came.)
+ALIASES = {'maple': 'norway_maple'}
+TRIANGLE_TARGET = {'mature': 30000, 'small': 15000, 'young': 8000}
+YOUNG = '_young'           # model name suffix of a kind's young street tree
 UP = (0., 0., 1.)
 
 # ------------------------------------------------------------------------------------------------ species
@@ -137,6 +153,25 @@ SPECIES = {
                    'rotate_v': 12., 'twist_v': 30., 'cells': {'as_yellow': .55, 'as_maroon': .15, 'as_sparse': .3}},
         'bark': {'colour': '#77726A', 'note': 'grey, interlacing diamond ridges'},
     },
+    'elm': {
+        # The vase: a low fork into five ascending leaders that hold their angle (little AttractionUp), limbs
+        # longest high on the leaders (inverse-conical ShapeRatio 6) arching out (positive curve), twigs drooping
+        # (negative AttractionUp). Elms and hackberries drop early: by late October half the leaves are down.
+        'name': 'Elm and hackberry, vase form (Ulmus americana, U. pumila, Celtis occidentalis)', 'seed': 4707,
+        'height_cm': 1650., 'dbh_cm': 52., 'prune_cm': 320., 'shape': 6, 'flare': .6, 'ratio_power': 1.2,
+        'lean_deg': 2.,
+        'trunk': {'split_cm': 380., 'leaders': 5, 'split_angle': 31., 'split_angle_v': 5., 'curve_v': 4.,
+                  'leader_res': 7, 'leader_attraction': -.03, 'leader_curve_v': 8., 'sides': 14},
+        'levels': [
+            {'length': .42, 'length_v': .06, 'branches': 30, 'down': 44., 'down_v': -12., 'rotate': 140., 'rotate_v': 35.,
+             'curve_res': 6, 'curve': 24., 'curve_back': 0., 'curve_v': 22., 'attraction': -.1, 'sides': 7},
+            {'length': .5, 'length_v': .1, 'branches': 14, 'down': 50., 'down_v': 14., 'rotate': 140., 'rotate_v': 30.,
+             'curve_res': 4, 'curve': 20., 'curve_back': 0., 'curve_v': 30., 'attraction': -.5, 'sides': 4},
+        ],
+        'leaves': {'cards': 12, 'retention': .6, 'card_cm': 64., 'down': 58., 'down_v': 22., 'rotate': 137.5,
+                   'rotate_v': 12., 'twist_v': 34., 'cells': {'el_yellow': .5, 'el_mixed': .25, 'el_sparse': .25}},
+        'bark': {'colour': '#665D55', 'note': 'dark grey-brown, deep interlacing ridges (elm), corky warts (hackberry)'},
+    },
     'small': {
         'name': 'Small yard tree (Amur maple / serviceberry type)', 'seed': 4606, 'height_cm': 650., 'dbh_cm': 17.,
         'prune_cm': 160., 'shape': 1, 'flare': .35, 'ratio_power': 1.25, 'lean_deg': 3.,
@@ -153,6 +188,37 @@ SPECIES = {
         'bark': {'colour': '#6E655B', 'note': 'smooth grey-brown'},
     },
 }
+
+# Young street trees: the inventory's new plantings (DHP 5 cm, about 4.3 m), one per mature kind. A nursery tree a
+# few years in the ground: one straight leader, no fork, a narrow crown raised to 2.1 m over the sidewalk, fewer and
+# shorter limbs, smaller leaf cards; the species' own leaf cells, retention and bark. Crown shape per kind.
+YOUNG_SHAPE = {'norway_maple': 7, 'silver_maple': 7, 'honey_locust': 2, 'linden': 0, 'ash': 7, 'elm': 4}
+
+
+def young_species(kind):
+    P = SPECIES[kind]
+    l1, l2 = P['levels']
+    return {'name': P['name'] + ', young street tree', 'seed': P['seed'] + 50, 'height_cm': 500., 'dbh_cm': 7.,
+            'prune_cm': 210., 'shape': YOUNG_SHAPE[kind], 'flare': .25, 'ratio_power': 1.3, 'lean_deg': 1.,
+            'trunk': {'split_cm': None, 'leaders': 1, 'curve_v': 3., 'sides': 8},
+            'levels': [dict(l1, length=.34, branches=14, curve_res=4, sides=5, attraction=max(.2, l1['attraction'])),
+                       dict(l2, length=.44, branches=7, curve_res=3, sides=3)],
+            'leaves': dict(P['leaves'], card_cm=round(P['leaves']['card_cm'] * .6, 1)),
+            'bark': P['bark'], 'mature': kind}
+
+
+YOUNG_KINDS = tuple(k for k in KINDS if k in YOUNG_SHAPE)
+SPECIES.update({k + YOUNG: young_species(k) for k in YOUNG_KINDS})
+MODELS = KINDS + tuple(k + YOUNG for k in YOUNG_KINDS)     # every mesh the generator writes
+
+
+def kind_of(model):
+    """The kind a model belongs to: the kind itself, or the mature kind of a young model."""
+    return SPECIES[model].get('mature', model)
+
+
+def target_of(model):
+    return TRIANGLE_TARGET['young' if model.endswith(YOUNG) else 'small' if model == 'small' else 'mature']
 
 LEAF_KEY = 'Tree_Leaves_Autumn'
 PUFFINESS = .55          # card normal -> crown ellipsoid normal blend (SpeedTree's leaf "puffiness")
@@ -495,10 +561,12 @@ def leaf_cards(kind, twigs, rng, clearance):
 
 
 # ------------------------------------------------------------------------------------------------ atlas cells
-# The leaf atlas: 4 x 4 cells of 256 px, each a twig with leaves seen face-on, base at the bottom centre. Colours
-# are sRGB; 'stage' is how far the cell's leaves have turned (green 0 .. fully turned 1): the inner and lower
-# cards of a crown take the greener cells more often, the outer and upper ones the turned cells.
-ATLAS = {'name': 'TreeLeaves', 'key': 'tree_leaves', 'size_px': (1024, 1024), 'grid': 4, 'seed': 2611, 'pad_px': 10}
+# The leaf atlas: 8 x 4 cells of 256 px (2048 x 1024, row-major from the top left; 19 used, the rest left clear for
+# later kinds), each a twig with leaves seen face-on, base at the bottom centre. Colours are sRGB; 'stage' is how
+# far the cell's leaves have turned (green 0 .. fully turned 1): the inner and lower cards of a crown take the
+# greener cells more often, the outer and upper ones the turned cells.
+ATLAS = {'name': 'TreeLeaves', 'key': 'tree_leaves', 'size_px': (2048, 1024), 'cell_px': 256, 'seed': 2611,
+         'pad_px': 10}
 BARK = {'name': 'TreeBark', 'key': 'tree_bark', 'size_px': (512, 1024), 'tile_m': (1.0, 2.0), 'seed': 2612}
 YELLOW = (226., 184., 46.)
 GOLD = (232., 176., 34.)
@@ -528,6 +596,10 @@ CELLS = {
     'sx_red': ('amur', 15, [(.55, RED, MAROON, .3), (.3, ORANGE, RED, .4), (.15, MAROON, RED, .2)], False, 1.),
     'sx_orange': ('amur', 15, [(.5, ORANGE, RED, .4), (.3, YELLOW, ORANGE, .5), (.2, GREEN, ORANGE, .5)], False, .6),
     'sm_sparse': ('silver', 3, [(.6, PALE, BROWN, .3), (.4, YELLOW, ORANGE, .3)], True, 1.),
+    # Elms and hackberries turn a clear or dull yellow and drop early.
+    'el_yellow': ('elm', 15, [(.6, YELLOW, GOLD, .25), (.25, PALE, YELLOW, .3), (.15, GOLD, BROWN, .3)], False, .85),
+    'el_mixed': ('elm', 14, [(.4, LIME, YELLOW, .4), (.35, YELLOW, BROWN, .3), (.25, GREEN, LIME, .3)], False, .45),
+    'el_sparse': ('elm', 4, [(.6, YELLOW, BROWN, .35), (.4, BROWN, BROWN, 0.)], True, 1.),
 }
 CELL_ORDER = list(CELLS)
 # Leaf forms: lobes (turn offset, length share, half-width share, teeth) drawn with plateau_textures.leaflet, and
@@ -542,20 +614,25 @@ FORMS = {
     'linden': {'size': .24, 'cordate': True, 'petiole': .35, 'opposite': False},
     'ash': {'size': .56, 'pinnate': 3, 'petiole': .08, 'opposite': True},
     'locust': {'size': .52, 'bipinnate': 5, 'petiole': .06, 'opposite': False},
+    # Elm: a small ovate, doubly serrate blade with a lopsided base, alternate in two ranks along the twig (two
+    # overlapping blades a hair apart in angle and width give the asymmetry).
+    'elm': {'size': .24, 'lobes': [(-.012, 1., .27, 11), (.016, .93, .21, 11)], 'petiole': .18, 'opposite': False},
 }
+COLS, ROWS = ATLAS['size_px'][0] // ATLAS['cell_px'], ATLAS['size_px'][1] // ATLAS['cell_px']
+assert len(CELLS) <= COLS * ROWS
 
 
-def cell_rect(index, grid=ATLAS['grid'], size=ATLAS['size_px'][0]):
-    """Pixel rectangle (x0, y0, x1, y1) of a cell, row 0 at the top of the image."""
-    c = size // grid
-    row, col = divmod(index, grid)
-    return col * c, row * c, (col + 1) * c, (row + 1) * c
+def cell_rect(index, cell=ATLAS['cell_px'], size=ATLAS['size_px']):
+    """Pixel rectangle (x0, y0, x1, y1) of a cell, row-major from the top left of the image."""
+    row, col = divmod(index, size[0] // cell)
+    return col * cell, row * cell, (col + 1) * cell, (row + 1) * cell
 
 
-def cell_uv(index, grid=ATLAS['grid'], size=ATLAS['size_px'][0], pad=ATLAS['pad_px']):
+def cell_uv(index, cell=ATLAS['cell_px'], size=ATLAS['size_px'], pad=ATLAS['pad_px']):
     """OBJ UV rectangle (u0, v0, u1, v1) inside the padding, v up (v0 is the cell's bottom edge, the twig base)."""
-    x0, y0, x1, y1 = cell_rect(index, grid, size)
-    return ((x0 + pad) / size, 1. - (y1 - pad) / size, (x1 - pad) / size, 1. - (y0 + pad) / size)
+    x0, y0, x1, y1 = cell_rect(index, cell, size)
+    width, height = size
+    return ((x0 + pad) / width, 1. - (y1 - pad) / height, (x1 - pad) / width, 1. - (y0 + pad) / height)
 
 
 def _pick(palette, x):
@@ -631,7 +708,7 @@ def paint_cell(cv, index, blotch):
     name = CELL_ORDER[index]
     form, count, palette, sparse, _ = CELLS[name]
     F = FORMS[form]
-    S = ATLAS['size_px'][0] // ATLAS['grid']
+    S = ATLAS['cell_px']
     x0 = y0 = CELL_MARGIN
     x1 = y1 = CELL_MARGIN + S
     pad = ATLAS['pad_px']
@@ -716,7 +793,7 @@ def paint_cell(cv, index, blotch):
 def atlas_maps():
     """The leaf atlas canvas result (diff RGBA rows, heights, roughness, cavity) and per-cell statistics."""
     W, H = ATLAS['size_px']
-    S = W // ATLAS['grid']
+    S = ATLAS['cell_px']
     C = S + 2 * CELL_MARGIN
     pad = ATLAS['pad_px']
     cv = PT.Canvas(W, H, (196., 146., 60.), 0., .7, alpha=0.)
@@ -756,8 +833,9 @@ def atlas_maps():
                     cv.r[i], cv.g[i], cv.b[i] = mean
                     cv.height[i] = 0.
         stats[name] = {'cover': round(n / ((x1 - x0) * (y1 - y0)), 4), 'mean_srgb': [round(v, 1) for v in mean]}
-    px = W / ATLAS['grid'] / 60.    # nominal: a 60 cm card over a 256 px cell
-    return cv.result(px, px, {'cells': CELL_ORDER, 'grid': ATLAS['grid'], 'pad_px': ATLAS['pad_px'],
+    px = ATLAS['cell_px'] / 60.    # nominal: a 60 cm card over a 256 px cell
+    return cv.result(px, px, {'cells': CELL_ORDER, 'cell_px': ATLAS['cell_px'], 'cols': COLS, 'rows': ROWS,
+                              'pad_px': ATLAS['pad_px'],
                               'cell_stats': stats}, wrap_y=False)
 
 
@@ -1096,6 +1174,37 @@ def trunk_dbh(stems, P):
     return 2. * trunk.radius(trunk.cum[i] / trunk.length)
 
 
+def model_entry(out_dir, model):
+    """Write one model's OBJ (a kind, or a kind's young tree) and return its manifest entry."""
+    P = SPECIES[model]
+    kind = kind_of(model)
+    mesh, stems, stats = build_kind(model)
+    file_name = f'Tree_{model}.obj'
+    digest, counts, verts = write_obj(out_dir / file_name, model, mesh)
+    height = max(v[2] for v in verts)
+    xs, ys = [v[0] for v in verts], [v[1] for v in verts]
+    bounds = [round(min(xs), 1), round(-max(ys), 1), round(min(v[2] for v in verts), 1), round(max(xs), 1),
+              round(-min(ys), 1), round(height, 1)]
+    tris = {'bark': counts['bark'], 'leaves': counts['leaves'], 'total': counts['bark'] + counts['leaves']}
+    return {
+        'name': P['name'], 'obj': file_name, 'sha256': digest,
+        'materials': {'bark': bark_key(kind), 'leaves': LEAF_KEY},
+        'slots': {'bark': f'{model}_bark', 'leaves': f'{model}_leaves'},
+        'height_cm': round(height, 1), 'trunk_cm': round(trunk_dbh(stems, P), 1),
+        'trunk_at_cm': breast_height(P),
+        'crown_width_cm': round(max(bounds[3] - bounds[0], bounds[4] - bounds[1]), 1),
+        'crown_base_cm': stats['crown_base_cm'], 'clear_trunk_cm': stats['clear_trunk_cm'],
+        'prune_cm': P['prune_cm'], 'leaf_retention': P['leaves']['retention'], 'triangles': tris,
+        'triangle_target': target_of(model),
+        'bounds_cm': bounds, 'seed': P['seed'], 'stems_per_level': stats['stems'], 'cards': stats['cards'],
+        'outward_cards': stats['outward_cards'], 'cell_usage': stats['cell_usage'],
+        'crown_centre_cm': stats['crown_centre_cm'], 'crown_radii_cm': stats['crown_radii_cm'],
+        'weber_penn': {k: P[k] for k in ('shape', 'flare', 'ratio_power')} | {'trunk': P['trunk'],
+                                                                              'levels': P['levels'],
+                                                                              'leaves': P['leaves']},
+    }
+
+
 def build(out_dir, textures=True):
     """Write every kind's OBJ, the textures and the manifest; return the manifest."""
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -1107,34 +1216,13 @@ def build(out_dir, textures=True):
     kinds = {}
     for kind in KINDS:
         P = SPECIES[kind]
-        mesh, stems, stats = build_kind(kind)
-        file_name = f'Tree_{kind}.obj'
-        digest, counts, verts = write_obj(out_dir / file_name, kind, mesh)
-        height = max(v[2] for v in verts)
-        xs, ys = [v[0] for v in verts], [v[1] for v in verts]
-        bounds = [round(min(xs), 1), round(-max(ys), 1), round(min(v[2] for v in verts), 1), round(max(xs), 1),
-                  round(-min(ys), 1), round(height, 1)]
         bk = bark_key(kind)
         materials[bk] = {'base_color_srgb': P['bark']['colour'], 'roughness': .92, 'metallic': 0.,
                          'texture': f'{LAYER}/T_Replica_{BARK["name"]}_diff.png', 'note': P['bark']['note']}
-        tris = {'bark': counts['bark'], 'leaves': counts['leaves'], 'total': counts['bark'] + counts['leaves']}
-        kinds[kind] = {
-            'name': P['name'], 'obj': file_name, 'sha256': digest,
-            'materials': {'bark': bk, 'leaves': LEAF_KEY},
-            'slots': {'bark': f'{kind}_bark', 'leaves': f'{kind}_leaves'},
-            'height_cm': round(height, 1), 'trunk_cm': round(trunk_dbh(stems, P), 1),
-            'trunk_at_cm': breast_height(P),
-            'crown_width_cm': round(max(bounds[3] - bounds[0], bounds[4] - bounds[1]), 1),
-            'crown_base_cm': stats['crown_base_cm'], 'clear_trunk_cm': stats['clear_trunk_cm'],
-            'prune_cm': P['prune_cm'], 'leaf_retention': P['leaves']['retention'], 'triangles': tris,
-            'triangle_target': TRIANGLE_TARGET['small' if kind == 'small' else 'mature'],
-            'bounds_cm': bounds, 'seed': P['seed'], 'stems_per_level': stats['stems'], 'cards': stats['cards'],
-            'outward_cards': stats['outward_cards'], 'cell_usage': stats['cell_usage'],
-            'crown_centre_cm': stats['crown_centre_cm'], 'crown_radii_cm': stats['crown_radii_cm'],
-            'weber_penn': {k: P[k] for k in ('shape', 'flare', 'ratio_power')} | {'trunk': P['trunk'],
-                                                                                  'levels': P['levels'],
-                                                                                  'leaves': P['leaves']},
-        }
+        kinds[kind] = model_entry(out_dir, kind)
+        if kind in YOUNG_KINDS:
+            # The young street tree: its own OBJ, the kind's bark and leaves.
+            kinds[kind]['young'] = model_entry(out_dir, kind + YOUNG)
     leaves_spec = {'base_color_srgb': leaf_entry['base_color_srgb'] if leaf_entry else '#C8902E', 'roughness': .6,
                    'metallic': 0., 'texture': f'{LAYER}/T_Replica_{ATLAS["name"]}_diff.png', 'foliage': True,
                    'note': 'one autumn atlas for every kind; masked (clip .5), two-sided foliage'}
@@ -1157,7 +1245,9 @@ def build(out_dir, textures=True):
         'atlas_cells': {name: {'index': i, 'uv': [round(c, 6) for c in cell_uv(i)], 'form': CELLS[name][0],
                                'stage': CELLS[name][4], 'sparse': CELLS[name][3]} for i, name in enumerate(CELL_ORDER)},
         'kinds': kinds,
-        'counts': {'kinds': len(kinds), 'triangles': {k: v['triangles']['total'] for k, v in kinds.items()},
+        'counts': {'kinds': len(kinds), 'young': sum(1 for v in kinds.values() if 'young' in v),
+                   'triangles': {k: v['triangles']['total'] for k, v in kinds.items()},
+                   'young_triangles': {k: v['young']['triangles']['total'] for k, v in kinds.items() if 'young' in v},
                    'textures': len(tex_files)},
         'source_sha256': {GENERATOR: hashlib.sha256((ROOT / GENERATOR).read_bytes()).hexdigest(),
                           'Scripts/plateau_textures.py': hashlib.sha256((ROOT / 'Scripts/plateau_textures.py')
@@ -1332,8 +1422,14 @@ def render_sheet(out_dir, manifest, sheet_path, samples=40):  # pragma: no cover
         return mat
 
     leaf_mat = leaf_material()
-    bark_mats = {k: bark_material(manifest['kinds'][k]['materials']['bark']) for k in KINDS}
-    data = {k: read_obj(out_dir / manifest['kinds'][k]['obj']) for k in KINDS}
+    entries = dict(model_entries(manifest))
+    bark_by_key = {}
+    for k in entries.values():
+        key = k['materials']['bark']
+        if key not in bark_by_key:
+            bark_by_key[key] = bark_material(key)
+    bark_mats = {m: bark_by_key[k['materials']['bark']] for m, k in entries.items()}
+    data = {m: read_obj(out_dir / k['obj']) for m, k in entries.items()}
 
     def tree_object(kind, coll, loc=(0, 0, 0), yaw=0.):
         v, vt, vn, faces = data[kind]
@@ -1377,7 +1473,7 @@ def render_sheet(out_dir, manifest, sheet_path, samples=40):  # pragma: no cover
         cam.rotation_euler = (-back).to_track_quat('-Z', 'Y').to_euler()
 
     import numpy as np
-    tw, th, cols, rows = 400, 500, 4, 2
+    tw, th, cols, rows = 400, 500, SHEET_GRID[0], SHEET_GRID[1]
     scene.render.resolution_x, scene.render.resolution_y = tw, th
     scene.render.resolution_percentage = 100
     tiles = []
@@ -1386,10 +1482,15 @@ def render_sheet(out_dir, manifest, sheet_path, samples=40):  # pragma: no cover
         text = (f'{kind}\n{k["height_cm"] / 100:.1f} m, trunk {k["trunk_cm"]:.0f} cm, '
                 f'{k["triangles"]["total"]:,} tris')
         tiles.append((text, [(kind, (0, 0, 0), 0.)], k['height_cm'] / 100))
-    row = [('norway_maple', -9.), ('linden', -1.5), ('ash', 6.)]
+    young = [m for m in entries if m.endswith(YOUNG)]
+    tiles.append((f'young street trees ({len(young)})\n{entries[young[0]]["height_cm"] / 100:.0f} m, crowns over 2.1 m',
+                  [(m, (-1.1 * (len(young) - 1) + 2.2 * i, 2.5 * (i % 2), 0), 25. * i) for i, m in enumerate(young)],
+                  'young'))
+    row = [('elm', -10.), ('linden', -2.), ('ash_young', 3.), ('norway_maple', 9.)]
     tiles.append(('street row\n3 m clearance line, 1.75 m figure', [(k, (x, 0, 0), 30. * i) for i, (k, x) in
                                                                      enumerate(row)], 'row'))
-    tiles.append(('leaf atlas (4 x 4 cells)\nand bark (2 m tile)', [], 'atlas'))
+    tiles.append((f'leaf atlas ({COLS} x {ROWS} cells)\nand bark (2 m tile)', [], 'atlas'))
+    assert len(tiles) == cols * rows, len(tiles)
     sheet = np.full((th * rows, tw * cols, 4), .3, dtype=np.float32)
     import tempfile
     tmp = Path(tempfile.mkdtemp(prefix='plateau_trees_'))
@@ -1417,21 +1518,23 @@ def render_sheet(out_dir, manifest, sheet_path, samples=40):  # pragma: no cover
             bm.node_tree.nodes['Principled BSDF'].inputs['Emission Strength'].default_value = 2.
             bar.materials.append(bm)
             coll.objects.link(bpy.data.objects.new('clearance', bar))
-            aim((-1.5, 0, 7.), 50., -90., 5.)
+            aim((-1., 0, 7.), 52., -90., 5.)
+        elif view == 'young':
+            aim((0, 1.2, 2.6), 27., -90., 6.)
         elif view == 'atlas':
             plane = bpy.data.meshes.new('atlas')
-            plane.from_pydata([(-3, 0, 2.4), (3, 0, 2.4), (3, 0, 8.4), (-3, 0, 8.4)], [], [(0, 1, 2, 3)])
+            plane.from_pydata([(-3.6, 0, 3.), (3.6, 0, 3.), (3.6, 0, 6.6), (-3.6, 0, 6.6)], [], [(0, 1, 2, 3)])
             uv = plane.uv_layers.new(name='UVMap')
             uv.data.foreach_set('uv', [0, 0, 1, 0, 1, 1, 0, 1])
             plane.materials.append(leaf_mat)
             coll.objects.link(bpy.data.objects.new('atlas', plane))
             strip = bpy.data.meshes.new('bark')
-            strip.from_pydata([(-3, 0, .2), (3, 0, .2), (3, 0, 2.2), (-3, 0, 2.2)], [], [(0, 1, 2, 3)])
+            strip.from_pydata([(-3.6, 0, .6), (3.6, 0, .6), (3.6, 0, 2.6), (-3.6, 0, 2.6)], [], [(0, 1, 2, 3)])
             uv = strip.uv_layers.new(name='UVMap')
-            uv.data.foreach_set('uv', [0, 0, 6, 0, 6, 2, 0, 2])
+            uv.data.foreach_set('uv', [0, 0, 7.2, 0, 7.2, 2, 0, 2])
             strip.materials.append(bark_mats['norway_maple'])
             coll.objects.link(bpy.data.objects.new('bark', strip))
-            aim((0, 0, 4.3), 14., -90., 0.)
+            aim((0, 0, 3.6), 14., -90., 0.)
         else:
             k = manifest['kinds'][items[0][0]]
             size = max(k['height_cm'] / 100, k['crown_width_cm'] / 100 * 1.3)
@@ -1470,17 +1573,27 @@ def main(argv):
         manifest = json.loads((out / 'manifest.json').read_text())
     else:
         manifest = build(out)
-        for kind, k in manifest['kinds'].items():
+        for model, k in model_entries(manifest):
             t = k['triangles']
-            print(f'{kind:13s} {k["height_cm"] / 100:5.1f} m  trunk {k["trunk_cm"]:5.1f} cm  crown base '
-                  f'{k["crown_base_cm"]:5.0f} cm  {t["bark"]:6d} bark + {t["leaves"]:5d} leaf = {t["total"]:6d} tris '
-                  f'({k["cards"]} cards)')
+            print(f'{model:19s} {k["height_cm"] / 100:5.1f} m  trunk {k["trunk_cm"]:5.1f} cm  crown base '
+                  f'{k["crown_base_cm"]:5.0f} cm  width {k["crown_width_cm"] / 100:4.1f} m  {t["bark"]:6d} bark + '
+                  f'{t["leaves"]:5d} leaf = {t["total"]:6d} tris ({k["cards"]} cards)')
         print('->', out)
     if not args.no_render:
         render_sheet(out, manifest, Path(args.sheet), args.samples)
         print('contact sheet ->', args.sheet)
-    over = [k for k, v in manifest['kinds'].items() if v['triangles']['total'] > v['triangle_target']]
+    over = [m for m, v in model_entries(manifest) if v['triangles']['total'] > v['triangle_target']]
     return 1 if over else 0
+
+
+def model_entries(manifest):
+    """(model, entry) for every mesh in a manifest: each kind, then its young tree."""
+    out = []
+    for kind, k in manifest['kinds'].items():
+        out.append((kind, k))
+        if 'young' in k:
+            out.append((kind + YOUNG, k['young']))
+    return out
 
 
 if __name__ == '__main__':

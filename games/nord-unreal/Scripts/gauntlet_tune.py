@@ -478,7 +478,7 @@ def _plain(value):
 # ---------------------------------------------------------------- the search
 
 class Search:
-    def __init__(self, loop, measure, until=None, clock=time.time, readback=None, log=None, save=None):
+    def __init__(self, loop, measure, until=None, clock=time.time, readback=None, log=None, save=None, first_s=None):
         self.loop = loop
         self.save = save
         self.measure = measure
@@ -486,7 +486,8 @@ class Search:
         self.clock = clock
         self.log = log or (lambda text: None)
         self.limits = loop["search"]
-        self.candidate_s = candidate_estimate_s(loop)
+        # first_s: the plan of the first candidate when its measure also renders the ceiling look (gauntlet_loop.tune_run).
+        self.candidate_s = max(candidate_estimate_s(loop), first_s or 0)
         self.order = {knob["id"]: n for n, knob in enumerate(enabled_knobs(loop))}
         self.steps = {knob["id"]: len(knob["steps"]) for knob in enabled_knobs(loop)}
         self.base = baseline_levels(loop)
@@ -816,10 +817,11 @@ class Search:
                 "notes": self.notes}
 
 
-def search(loop, measure, until=None, clock=time.time, readback=None, log=None, save=None):
+def search(loop, measure, until=None, clock=time.time, readback=None, log=None, save=None, first_s=None):
     """Run the whole greedy search and return the tune.json content. Every measured candidate is in "candidates".
-    save(tune) runs after each measured candidate (stop_reason "running"), so a run cut short keeps its records."""
-    state = Search(loop, measure, until=until, clock=clock, readback=readback, log=log, save=save)
+    save(tune) runs after each measured candidate (stop_reason "running"), so a run cut short keeps its records.
+    first_s is the planned time of the first candidate, when it is longer than candidate_estimate_s."""
+    state = Search(loop, measure, until=until, clock=clock, readback=readback, log=log, save=save, first_s=first_s)
     if state.measure_references():
         if state.baseline["feasible"]:
             state.climb_up()

@@ -1,19 +1,53 @@
-"""Nanite city surfaces and surveyed instanced trees without kilometre-wide shadow batches."""
+"""Nanite city surfaces and surveyed instanced trees without kilometre-wide shadow batches.
+
+The surveyed trees are the street and park trees of Data/Plateau/ReplicaGeometry/Streets/street_trees.json
+(Scripts/plateau_replica.py: every tree of the Ville de Montreal inventory over the district, CC BY 4.0, then the
+OpenStreetMap trees it lacks), one row each, at the position the Streets layer gives it (in its sidewalk pit).
+tree_positions() is what every consumer reads (the park leaves, the Plex yard trees' clearance, verify_plateau, the
+previews). The game draws them on their species meshes through Scripts/apply_plateau_replica.py; this pass's
+QuebecVegetation instances of the old summer tree are a stand-in until that step runs, and it places none once the
+replica street trees exist.
+"""
+import hashlib
 import json
 import math
 from pathlib import Path
 import sys
-import xml.etree.ElementTree as ET
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT/'Scripts'))
-from prepare_lafontaine import inside, xy, tags
+STREET_TREES = ROOT/'Data/Plateau/ReplicaGeometry/Streets/street_trees.json'
+REPLICA_STREET_TREES = 'Plateau replica Street trees '   # apply_plateau_replica.py's street-tree actors
 
 
-def tree_positions():
-    return [(*xy(float(e.get('lat')),float(e.get('lon'))),int(e.get('id')))
-            for e in ET.parse(ROOT/'Data/LaFontaine/osm.xml').getroot().findall('node')
-            if tags(e).get('natural') == 'tree' and inside((float(e.get('lat')),float(e.get('lon'))))]
+def tree_seed(tree_id):
+    """A stable integer seed per tree: an OSM tree's node id (as before), else 48 bits of SHA-256 of the inventory id
+    (inv:<borough>-<EMP_NO>)."""
+    source, _, rest = tree_id.partition(':')
+    if source == 'osm':
+        return int(rest)
+    return int.from_bytes(hashlib.sha256(tree_id.encode()).digest()[:6], 'big')
+
+
+def street_trees(path=STREET_TREES):
+    """The rows of Streets/street_trees.json, in file order."""
+    return json.loads(Path(path).read_text())['trees']
+
+
+def tree_positions(path=STREET_TREES):
+    """Every street and park tree the game shows as (x, y, seed): map frame, cm, in street_trees.json order."""
+    return [(float(r['x_cm']), float(r['y_cm']), tree_seed(r['id'])) for r in street_trees(path)]
+
+
+def species_street_trees(actors):
+    """The replica street-tree actors (apply_plateau_replica.py) already in the level."""
+    return [a for a in actors if a.get_actor_label().startswith(REPLICA_STREET_TREES)]
+
+
+def planned_vegetation(actors):
+    """How many old summer trees QuebecVegetation holds: one per surveyed tree, none once the species street trees
+    stand (apply_plateau_replica.py clears them and this pass places none after it)."""
+    return 0 if species_street_trees(actors) else len(tree_positions())
 
 
 def warden_tree_inventory(actors):
@@ -93,11 +127,14 @@ def apply(u, preserve_warden_trees=False):
         component = vegetation.get_editor_property('trees'); assert component.set_static_mesh(tree)
         height = tree.get_bounds().box_extent.z*2
         transforms = []
-        for x,y,seed in tree_positions():
-            scale = (650+seed%500)/height
-            transforms.append(u.Transform(u.Vector(x,y,0),u.Rotator(yaw=seed%360),u.Vector(scale,scale,scale)))
-        component.add_instances(transforms,False,False,False)
-        assert component.get_instance_count() == len(transforms) == 4571
+        # Once apply_plateau_replica.py has put the street trees on their species meshes, the old summer tree has no
+        # place: the actor stays (upgrade_plateau and verify_plateau expect one), empty.
+        if not species_street_trees(actors):
+            for x,y,seed in tree_positions():
+                scale = (650+seed%500)/height
+                transforms.append(u.Transform(u.Vector(x,y,0),u.Rotator(yaw=seed%360),u.Vector(scale,scale,scale)))
+            component.add_instances(transforms,False,False,False)
+        assert component.get_instance_count() == len(transforms) == planned_vegetation(actors)
         mapped_tree_instances = len(transforms)
         warden_tree_instances = 0
     report = {'nanite_city_batches':len(enabled),'mapped_tree_instances':mapped_tree_instances,
@@ -113,7 +150,7 @@ def apply(u, preserve_warden_trees=False):
 if __name__ == '__main__':
     if '--self-check' in sys.argv:
         points = tree_positions()
-        assert len(points) == 4571 and len({p[2] for p in points}) == len(points)
+        assert len(points) == len(street_trees()) >= 4571 and len({p[2] for p in points}) == len(points)
         assert all(math.isfinite(v) for p in points for v in p)
         print('PLATEAU_VEGETATION_SOURCE_OK',len(points))
     else:

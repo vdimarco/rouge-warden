@@ -73,6 +73,7 @@ SAMPLE_S = 1.0
 TAIL_S = .25
 LOAD_S = 180  # Map load and shader warm-up before a run's delay, as profile_package.py allows 180 s per run.
 UAT_S = 300   # RunUAT start-up (script build, Gauntlet set-up) on top of a run's limit; an estimate (unverified).
+RESULT_GRACE_S = 15  # The host's log flush after its CSV wait, before its result line reaches the log; an estimate (unverified).
 COVER_GRACE_MS = 1500  # A per-second sample and the log follower's delay may end this much before the lap.
 LABEL = re.compile(r"[A-Za-z0-9][A-Za-z0-9._+-]{0,159}")
 FOLLOWED = re.compile(r"NORD_GAUNTLET\b|NORD_STREAM_FPS\b")
@@ -81,14 +82,17 @@ LEG_START = re.compile(r"NORD_GAUNTLET leg=S\d+-S\d+")
 HOLD_BEGIN = re.compile(r"NORD_GAUNTLET stop=(\w+)\b.*\bhold=begin")
 STOP_LINE = re.compile(r"NORD_GAUNTLET stop=(\w+)")
 LAP_END = re.compile(r"NORD_GAUNTLET (?:done|fail|result)\b")
+RESULT = re.compile(r"NORD_GAUNTLET result\b")
 RUN_END = re.compile(r"NORD_GAUNTLET\b.*\bexit=(\w+)")
 READBACK = re.compile(r"NORD_GAUNTLET cvar (.*)")
 CSV_WRITTEN = re.compile(r"Writing CSV to file : ([^\r\n]+\.csv)|NORD_GAUNTLET csv=(/[^\s]+\.csv)\b")
 DELAY_KEY = re.compile(r"rtt|roundtrip|jitter|processing|latency|e2e|delay|decodems", re.IGNORECASE)
 # The gates of a native run that also apply to a look run, which holds and switches skies instead of being timed.
 LOOK_GATES = {"vram_peak_mib", "render_log_errors", "cvar_mismatches", "fps_cap"}
-# A confirmation the window cut is missing evidence, not a failure: confirm runs it again.
+# A confirmation the window cut, or one a foreign GPU process shared twice, is missing evidence, not a failure:
+# confirm runs it again.
 CONFIRM_CUT = "the window ended before every confirmation run"
+CONFIRM_CONTENDED = "a foreign GPU process shared a confirmation run twice"
 CLOCK_TICKS = os.sysconf("SC_CLK_TCK")
 require = browser_streaming.require
 
@@ -659,12 +663,12 @@ class LogTail:
     """Follows the host log in a thread. It keeps NORD_GAUNTLET and NORD_STREAM_FPS lines with the wall time they were
     read (lines already in the log at the start are marked late), and appends the stop label to each trigger file when
     a hold begins, so the sampler saves that decoded frame. When the drive ends (done, fail or result) it appends END
-    once, so a sampler that reads END stops before the host quits."""
+    once, so a sampler that reads END stops before the host quits. It sets result at the host's result line."""
 
     def __init__(self, path, triggers):
         self.path, self.triggers = Path(path), [Path(trigger) for trigger in triggers]
         self.events, self.position, self.partial, self.ended = [], 0, "", False
-        self.stopping = threading.Event()
+        self.stopping, self.result = threading.Event(), threading.Event()
         self.thread = threading.Thread(target=self.follow, daemon=True)
 
     def read(self, late=False):
@@ -682,6 +686,8 @@ class LogTail:
             if not FOLLOWED.search(line):
                 continue
             self.events.append({"ms": now, "late": late, "line": line.strip()})
+            if RESULT.search(line):
+                self.result.set()
             hold = HOLD_BEGIN.search(line)
             end = not late and not self.ended and LAP_END.search(line)
             self.ended = self.ended or bool(end)
@@ -702,6 +708,18 @@ class LogTail:
         self.stopping.set()
         self.thread.join(timeout=10)
         self.read()
+
+
+def follow_to_result(tail, state, seconds):
+    """Wait until the tail has read the host's result line, the lifecycle's NordHost process has quit, or seconds have
+    passed; True when the result line came. After the done line the host waits for its CSV file (csv_wait_s at most),
+    then writes native/route.json and the result line (QuebecGauntlet.cpp Complete). The launcher reaps a host that
+    quits, so its /proc entry goes; without a host child in the lifecycle the wait takes all the seconds."""
+    pid = next((child.get("pid") for child in state.get("children") or [] if child.get("name") == "host"), None)
+    deadline = time.monotonic() + seconds
+    while not tail.result.is_set() and (pid is None or Path(f"/proc/{pid}").exists()) and time.monotonic() < deadline:
+        tail.result.wait(TAIL_S)
+    return tail.result.is_set()
 
 
 def lap_window(events):
@@ -919,6 +937,9 @@ def stream_run(loop, run, slot="NordHost", pin=0, portrait=False, relay=False, t
                 codes.append(process.wait(timeout=max(1.0, deadline - time.monotonic())))
             except subprocess.TimeoutExpired:
                 codes.append(None)
+        # The sampler stops at END, the done line. The exit code and native/route.json come later, so follow the host
+        # log on to its result line before the verdict reads them.
+        follow_to_result(tail, state, loop["run_limits"]["csv_wait_s"] + RESULT_GRACE_S)
     finally:
         for process in processes:
             if process.poll() is None:
@@ -1171,21 +1192,35 @@ def tune_run(loop, direct=False, until=None, reference=None, confirm=True):
 
     extra = {"runs": index, "reference": str(reference) if reference else None, "folder": str(group)}
     tune = dict(T.search(loop, measure, until=until, log=lambda text: print(text, flush=True),
-                         save=lambda partial: T.write_tune(tune_path, dict(partial, **extra))), **extra)
+                         save=lambda partial: T.write_tune(tune_path, dict(partial, **extra)),
+                         first_s=first_candidate_s(loop, reference)), **extra)
     if confirm:
         tune["native_confirmation"] = confirm_native(loop, tune, group, direct, until)
     T.write_tune(tune_path, tune)
     return group, tune
 
 
+def first_candidate_s(loop, reference):
+    """The planned time of the tune's first candidate: its perf and look runs, and without --reference the ceiling look
+    run that measure() renders before them."""
+    return T.candidate_estimate_s(loop) + (0 if reference else T.run_estimate_s(loop, "look"))
+
+
+def confirm_plan(loop, tune):
+    """The confirmation's first plan per run: gauntlet_tune.run_estimate_s, made longer by as much as the search found
+    this host slower than its own plan (tune.json planned_candidate_s against first_candidate_s)."""
+    slower = (tune.get("planned_candidate_s") or 0) / first_candidate_s(loop, tune.get("reference"))
+    return {"run_s": T.run_estimate_s(loop, "perf", loop["confirm_laps"]) * max(1.0, slower)}
+
+
 def confirm_native(loop, tune, group, direct=False, until=None):
     """Step 7, native part: the baseline, then the ranked candidates best first, each for confirm_laps measured laps in
     both skies, landscape and portrait, until one passes every native gate. It stops at the first result the window
-    cut (stop_reason window_end). The stream rows and the co-op guard come from the stream runs; report adds them
-    through gauntlet_tune.confirm."""
+    cut (stop_reason window_end), or that a foreign GPU process shared twice (stop_reason contended). The stream rows
+    and the co-op guard come from the stream runs; report adds them through gauntlet_tune.confirm."""
     records = {record["id"]: record for record in tune["candidates"]}
     results, confirmed = {}, None
-    plan = {}
+    plan = confirm_plan(loop, tune)
     one = lambda candidate_id: confirm_candidate(loop, records[candidate_id], group, direct, until, plan)
     finished = lambda: all(confirmation_finished(loop, result) for result in results.values())
     if "baseline" in records:
@@ -1197,20 +1232,25 @@ def confirm_native(loop, tune, group, direct=False, until=None):
         if results[candidate_id]["passed"]:
             confirmed = candidate_id
             break
-    return {"results": list(results.values()), "confirmed_native": confirmed, "stop_reason": None if finished() else "window_end",
+    cut = any(CONFIRM_CUT in result["reasons"] for result in results.values())
+    return {"results": list(results.values()), "confirmed_native": confirmed,
+            "stop_reason": None if finished() else "window_end" if cut else "contended",
             "note": "native gates only; report adds the stream rows and the co-op guard"}
 
 
 def confirmation_finished(loop, result):
-    """True when a native confirmation ran in every sky at every confirm size. A result the window cut is not finished,
-    so confirm runs that candidate again."""
-    return len(result["runs"]) == len(loop["sky_order"]) * len(loop["size_use"]["confirm"])
+    """True when a native confirmation ran in every sky at every confirm size without a foreign GPU process. A result
+    the window cut, or that a foreign GPU process shared twice, is not finished, so confirm runs that candidate again."""
+    clean = [run for run in result["runs"] if run["status"] != "contended"]
+    return len(clean) == len(loop["sky_order"]) * len(loop["size_use"]["confirm"])
 
 
 def confirm_candidate(loop, record, group, direct=False, until=None, plan=None):
     """One candidate's native confirmation: confirm_laps measured laps in each sky at each confirm size. A run starts
     only when its planned time ends before until, so the live demo starts on time. The plan is
-    gauntlet_tune.run_estimate_s, raised to the longest run so far; the caller's plan dict keeps it across candidates."""
+    gauntlet_tune.run_estimate_s, raised to the longest run so far; the caller's plan dict keeps it across candidates.
+    A contended run is run once more, as in the search; a second contended run stops the confirmation as missing
+    evidence, not as a failure."""
     candidate_id = record["id"]
     execcmds, _ = T.write_candidate_files(group / "candidates", record)
     outcome = {"id": candidate_id, "runs": [], "reasons": [], "passed": False}
@@ -1218,18 +1258,24 @@ def confirm_candidate(loop, record, group, direct=False, until=None, plan=None):
     plan.setdefault("run_s", T.run_estimate_s(loop, "perf", loop["confirm_laps"]))
     for sky in loop["sky_order"]:
         for size_key in loop["size_use"]["confirm"]:
-            if until is not None and time.time() + plan["run_s"] > until:
-                outcome["reasons"].append(CONFIRM_CUT)
+            for _ in range(2):
+                if until is not None and time.time() + plan["run_s"] > until:
+                    outcome["reasons"].append(CONFIRM_CUT)
+                    return outcome
+                started = time.time()
+                run, verdict = native_run(loop, "perf", size_key, sky, laps=loop["confirm_laps"], quality=f"file:{execcmds}",
+                                          label=f"confirm-{candidate_id}-{sky}-{size_key}", direct=direct, parent=group / "runs")
+                # As in the search: a host slower than the estimate does not overrun the window.
+                plan["run_s"] = max(plan["run_s"], time.time() - started)
+                outcome["runs"].append({"run": str(run), "sky": sky, "size": size_key, "status": verdict["status"]})
+                if verdict["status"] != "contended":
+                    break
+            if verdict["status"] == "contended":
+                outcome["reasons"].append(f"{CONFIRM_CONTENDED}: {sky} {size_key}")
                 return outcome
-            started = time.time()
-            run, verdict = native_run(loop, "perf", size_key, sky, laps=loop["confirm_laps"], quality=f"file:{execcmds}",
-                                      label=f"confirm-{candidate_id}-{sky}-{size_key}", direct=direct, parent=group / "runs")
-            # As in the search: a host slower than the estimate does not overrun the window.
-            plan["run_s"] = max(plan["run_s"], time.time() - started)
-            outcome["runs"].append({"run": str(run), "sky": sky, "size": size_key, "status": verdict["status"]})
             if verdict["status"] != "pass":
                 failing = [gate["name"] for gate in verdict["gates"] if gate["result"] != "pass"]
-                outcome["reasons"].append(f"{sky} {size_key}: {verdict['status']} ({', '.join(failing[:6]) or 'contended'})")
+                outcome["reasons"].append(f"{sky} {size_key}: {verdict['status']} ({', '.join(failing[:6])})")
     outcome["passed"] = not outcome["reasons"]
     return outcome
 
@@ -1237,9 +1283,9 @@ def confirm_candidate(loop, record, group, direct=False, until=None, plan=None):
 def confirm_next(loop, group, candidate_id=None, direct=False, until=None):
     """Step 7 again, after a stream row or the co-op guard dropped a candidate, or after the window cut a confirmation:
     the native confirmation of the best ranked candidate without a finished one (or of candidate_id), added to
-    tune.json, with the baseline first if it has none. A result the window cut is run again and replaced. It writes no
-    profile; only write-profile with --approved does. Returns the last outcome; when the window cuts the baseline, that
-    is the baseline's, and the candidate does not run."""
+    tune.json, with the baseline first if it has none. A result the window cut, or that a foreign GPU process shared
+    twice, is run again and replaced. It writes no profile; only write-profile with --approved does. Returns the last
+    outcome; when the window cuts the baseline, that is the baseline's, and the candidate does not run."""
     group = Path(group)
     tune = read_json(group / "tune.json")
     require(tune is not None, f"{group} has no tune.json")
@@ -1251,7 +1297,7 @@ def confirm_next(loop, group, candidate_id=None, direct=False, until=None):
     require(candidate_id in tune["ranking"], f"candidate {candidate_id} is not ranked in {group / 'tune.json'}; nothing was run.")
     require(candidate_id not in done, f"candidate {candidate_id} already has a native confirmation; nothing was run.")
     records = {record["id"]: record for record in tune["candidates"]}
-    outcome, plan = None, {}
+    outcome, plan = None, confirm_plan(loop, tune)
     # The baseline runs first, and once only when it is the ranked candidate itself.
     first = ["baseline"] if "baseline" in records and "baseline" not in done and candidate_id != "baseline" else []
     for wanted in first + [candidate_id]:
@@ -1296,7 +1342,7 @@ def round_report(group, loop):
     streams = stream_evidence(group, tune)
     needed = {(loop["sizes"][key]["rung"], loop["sizes"][key]["size"][1] > loop["sizes"][key]["size"][0])
               for key in loop["size_use"]["stream"]}
-    missing_evidence = ("native confirmation not run", CONFIRM_CUT, "stream rows missing", "co-op guard unverified")
+    missing_evidence = ("native confirmation not run", CONFIRM_CUT, CONFIRM_CONTENDED, "stream rows missing", "co-op guard unverified")
 
     def confirm_fn(record):
         rows = streams.get(record["id"], [])
@@ -1308,7 +1354,9 @@ def round_report(group, loop):
             reasons.append("stream rows missing: " + ", ".join(f"rung {pin} {'portrait' if tall else 'landscape'}"
                                                                for pin, tall in sorted(missing)))
         reasons += [f"stream {row['label']}: {row['status']}" for row in solo if row["status"] != "pass"]
-        two = [row["two_viewer_fps"] for row in rows if row["row"] == "two_viewer" and row["two_viewer_fps"] is not None]
+        # A two-viewer row that a foreign GPU process shared measures that process too, so the co-op guard skips it.
+        two = [row["two_viewer_fps"] for row in rows if row["row"] == "two_viewer" and row["two_viewer_fps"] is not None
+               and row["status"] != "contended"]
         return {"passed": not reasons, "reasons": reasons, "two_viewer_fps": two[-1] if two else None}
 
     tune = T.confirm(tune, loop, confirm_fn)
@@ -1334,9 +1382,10 @@ def round_report(group, loop):
     gates = M.look_gates(loop, record.get("images"), baseline_mean=(tune.get("baseline") or {}).get("look"),
                          repeat_min=repeat.get("min"))
     results = tune["confirmation"]["results"]
-    open_only = all(reason.startswith(missing_evidence) for result in results if result["id"] != "baseline"
-                    for reason in result.get("reasons", []))
-    gates.append(M.gate("confirmed", 1 if confirmed else (None if open_only else 0), 1, op="==", unit="candidate",
+    # Unverified while a ranked candidate has only missing evidence, which confirm and the stream rows can still give.
+    still_open = any(all(reason.startswith(missing_evidence) for reason in result.get("reasons", []))
+                     for result in results if result["id"] in tune["ranking"])
+    gates.append(M.gate("confirmed", 1 if confirmed else (None if still_open else 0), 1, op="==", unit="candidate",
                         note=confirmed or "; ".join(f"{r['id']}: {', '.join(r.get('reasons', [])[:3])}" for r in results[:4]) or None))
     report = {"version": 1, "tune": str(group / "tune.json"), "winner": tune.get("winner"), "confirmed": confirmed, "shown": chosen,
               "stop_reason": tune.get("stop_reason"), "measured": tune.get("measured"), "ranking": tune.get("ranking"),
@@ -1563,7 +1612,8 @@ def main(argv=None):
                                                   "or the co-op guard dropped one; writes no profile")
     confirm.add_argument("folder", type=Path)
     confirm.add_argument("--candidate", help="a ranked candidate (default: the best ranked one without a finished native "
-                                             "confirmation; one the window cut is run again)")
+                                             "confirmation; one the window cut, or a foreign GPU process shared twice, "
+                                             "is run again)")
     confirm.add_argument("--until", help="local HH:MM when the GPU window ends")
     confirm.add_argument("--direct", action="store_true")
     report = commands.add_parser("report", help="judge a run, reference or tune folder again from its files")

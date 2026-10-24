@@ -9,6 +9,7 @@ The tuner SHALL choose, among the candidates it measured, the phone profile with
 - **AND** the winner is feasible: on the night-rain landscape lap its FrameTime p95 is at most 30.0 ms and its GPUTime p95 at most 28.0 ms, and its hitch, VRAM and CVar readback gates pass
 - **AND** no measured feasible candidate has a Look score above the winner's by more than the tie threshold, which `test_gauntlet_tune.py` checks with a fake measure function
 - **AND** a candidate whose look run did not exit cleanly, or scored fewer than all 20 stills, has no Look and is never ranked
+- **AND** no search run ends after `--until` by plan: without `--reference` the plan of the first candidate also holds the ceiling look run that it renders first, which `test_gauntlet_loop.py` checks with a fake clock
 
 #### Scenario: Baseline not feasible
 - **WHEN** the baseline misses the feasible limits on the night-rain landscape lap
@@ -21,6 +22,7 @@ The tuner SHALL choose, among the candidates it measured, the phone profile with
 #### Scenario: Co-op guard
 - **WHEN** the winner and the baseline run the two-viewer row in the same window
 - **THEN** the winner's mean decoded FPS with two viewers is at most 2 FPS below the baseline's, otherwise the next feasible candidate is confirmed instead
+- **AND** a two-viewer row that a foreign GPU process contended does not count, so without a clean row the guard is unverified, which `test_gauntlet_loop.py` checks
 
 #### Scenario: Confirmation fails
 - **WHEN** the winner fails any gate in the 3-lap confirmation or in the stream runs
@@ -30,12 +32,21 @@ The tuner SHALL choose, among the candidates it measured, the phone profile with
 #### Scenario: Window ends during the confirmation
 - **WHEN** the agreed window (`--until`) ends before every confirmation run of a candidate
 - **THEN** no confirmation run starts unless its planned time ends before `--until`, and the confirmation stops at that candidate
+- **AND** the planned time starts at the model estimate, made longer by as much as the search found the host slower than its own plan, and rises to the longest confirmation run measured so far, so a host slower than the estimate does not overrun the window
+- **AND** the round report marks the `confirmed` gate unverified, not fail, while a ranked candidate has only missing evidence (a cut or missing confirmation, missing stream rows, an unverified co-op guard), also after a better ranked candidate failed; a cut result that also holds a failed run counts as failed
 - **AND** `gauntlet_loop.py confirm <tune folder>` in a later window runs that candidate again, the baseline first when its result was cut too, and replaces its result in `tune.json`, which `test_gauntlet_loop.py` checks with a fake clock
+- **AND** the baseline runs once when it is itself the ranked candidate
+
+#### Scenario: Contended confirmation run
+- **WHEN** a foreign GPU process shares a native confirmation run
+- **THEN** that run runs once more, as in the search
+- **AND** after a second contended run the confirmation stops at that candidate, its result counts as not run, the round report marks the `confirmed` gate unverified, not fail, and `gauntlet_loop.py confirm <tune folder>` runs that candidate again, which `test_gauntlet_loop.py` checks
 
 #### Scenario: Fixed settings
 - **WHEN** the tuner builds a candidate
 - **THEN** it keeps `t.MaxFPS 60`, TSR (`r.AntiAliasingMethod 4`) and VP8 unchanged, and never breaks a knob dependency declared in `Data/Gauntlet/loop.json`
 - **AND** `gauntlet_tune.py check_loop` refuses a knob step that sets a CVar named in `loop.json` `fixed`
+- **AND** every run's expected-CVar file holds the `fixed` CVars that the candidate does not set, so the CVar readback checks `t.MaxFPS 60` and `r.AntiAliasingMethod 4`, which `test_gauntlet_tune.py` and `test_gauntlet_loop.py` check
 
 ### Requirement: Opt-in, approved phone profile
 The phone-stream profile SHALL be opt-in. The production stream SHALL keep its current settings until the user approves paired captures and a separate change flips the default.

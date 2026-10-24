@@ -176,9 +176,9 @@
    },
    "ground_decks": 71,
    "trees": {
-    "ash": 102,
+    "ash": 103,
     "elm": 37,
-    "maple": 201,
+    "maple": 200,
     "small": 225
    },
    "tree_height_m": {

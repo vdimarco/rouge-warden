@@ -296,7 +296,7 @@ async function main() {
     const point = () => ({ x: image.x + image.width / 2, y: image.y + image.height / 2, id: 9 });
     if (touch) await touch.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [point()] });
     const started = Date.now();
-    let ended = false;
+    let ended = false, endedAt = null;
     do {
       const { frameBatch, eventBatch, ...sample } = await page.evaluate(async latency => {
         const video = document.querySelector('#video video'), gap = window.__sampleGap;
@@ -347,7 +347,7 @@ async function main() {
           if (lines.length < triggered) triggered = 0;
           for (const line of lines.slice(triggered)) {
             // The runner writes END once when the drive ends: take one last sample and stop before the host quits.
-            if (line.trim() === 'END') { ended = true; break; }
+            if (line.trim() === 'END') { ended = true; endedAt = Date.now(); break; }
             if (line.trim()) await shoot(line);
           }
           triggered = lines.length;
@@ -366,6 +366,9 @@ async function main() {
     report.summary = summarize(report.samples, { frames: values.frames ? frames : undefined, events: report.events });
     assert.ok(report.summary.decodedFps > 0, 'Video must decode new frames during the sample');
     if (values.relay) assert.equal(report.summary.candidate?.type, 'relay');
+    // A stream that ended before END, or before --seconds without END, keeps its summary, but the sample does not pass.
+    const streamEnd = report.summary.streamEndedTimeMs;
+    assert.ok(streamEnd === undefined || streamEnd >= (endedAt ?? Infinity), 'The stream ended before the sample did');
     await page.screenshot({ path: resolve(output, 'player.png') });
     report.passed = true;
     console.log(JSON.stringify({ output, ...report.summary }));

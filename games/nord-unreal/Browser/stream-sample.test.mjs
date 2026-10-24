@@ -14,7 +14,8 @@ const FAKE_PLAYWRIGHT = `
 import { appendFileSync } from 'node:fs';
 const realNow = Date.now, realPerf = performance.now.bind(performance);
 let skipped = 0, presented = 0, shown, peer;
-const plan = JSON.parse(process.env.FAKE_PLAN || '[]'), trigger = process.argv[process.argv.indexOf('--trigger') + 1];
+const plan = JSON.parse(process.env.FAKE_PLAN || '[]');
+const trigger = process.argv.includes('--trigger') ? process.argv[process.argv.indexOf('--trigger') + 1] : null;
 Date.now = () => realNow() + skipped;
 // The page opened an hour before the sampler process, so its clock origin is not the sampler's own.
 const clock = { timeOrigin: performance.timeOrigin - 3600000, now: () => realPerf() + 3600000 + skipped };
@@ -44,7 +45,7 @@ const page = { setDefaultTimeout() {}, route: async () => {}, goto: async () => 
     }
     while (plan[0]?.atMs <= skipped) {
       const step = plan.shift();
-      if (step.line) appendFileSync(trigger, step.line + '\\n');
+      if (step.line && trigger) appendFileSync(trigger, step.line + '\\n');
       if (step.peer) peer.connectionState = step.peer;
     }
   } };
@@ -57,15 +58,17 @@ export const chromium = { launch: async () => ({ close: async () => {}, newConte
   } }) }) };
 `;
 
-// Run the sampler on the fake Playwright with an empty trigger file, as the runner starts it, and check its sample.json.
-async function sampleWithFake(args, plan, check) {
+// Run the sampler on the fake Playwright with an empty trigger file, as the runner starts it (or without one, as a
+// standalone sample), and check its exit and its sample.json.
+async function sampleWithFake(args, plan, check, { trigger = true, failed = false } = {}) {
   const dir = await mkdtemp(join(tmpdir(), 'nord-sample-'));
   try {
     await writeFile(join(dir, 'playwright.mjs'), FAKE_PLAYWRIGHT);
     await writeFile(join(dir, 'trigger.txt'), '');
-    const result = spawnSync(process.execPath, ['stream-sample.mjs', ...args, '--trigger', join(dir, 'trigger.txt'), '--out', join(dir, 'out')],
+    const triggerArgs = trigger ? ['--trigger', join(dir, 'trigger.txt')] : [];
+    const result = spawnSync(process.execPath, ['stream-sample.mjs', ...args, ...triggerArgs, '--out', join(dir, 'out')],
       { encoding: 'utf8', env: { ...process.env, NORD_PLAYWRIGHT_PATH: join(dir, 'playwright.mjs'), FAKE_PLAN: JSON.stringify(plan) } });
-    assert.equal(result.status, 0, result.stderr);
+    assert.equal(result.status !== 0, failed, `exit ${result.status}: ${result.stderr}`);
     check(JSON.parse(await readFile(join(dir, 'out/sample.json'), 'utf8')));
   } finally {
     await rm(dir, { recursive: true, force: true });
@@ -244,16 +247,27 @@ test('END in the trigger file stops the sample without a shot, and the report is
     assert.equal(report.passed, true);
     assert.ok(Math.abs(report.summary.decodedFps - 30) < 1, `${report.summary.decodedFps} fps`);
   });
+  // The host quits just after END: the last sample, taken after END, has no peer, and the sample still passes.
+  await sampleWithFake(['--seconds', '60'], [{ atMs: 3250, line: 'END' }, { atMs: 3250, peer: 'closed' }], report => {
+    assert.equal(report.passed, true, report.error);
+    assert.ok(report.summary.streamEndedTimeMs >= report.samples.at(-2).timeMs, 'the stream ended after the last live sample');
+  });
 });
 
-test('a host that quits before END still leaves a passed report with a summary up to the stream end', async () => {
-  // The host quits at 4.5 s: its peer closes and no frame follows, so the samples from 5 s on hold no counters.
-  await sampleWithFake(['--seconds', '5'], [{ atMs: 4500, peer: 'closed' }], report => {
-    assert.equal(report.passed, true);
+test('a stream that ends before END or --seconds keeps its summary up to the stream end, but the sample does not pass', async () => {
+  // A standalone 60 s sample (no --trigger, as Browser/README.md runs it) on a host that quits at 4.5 s: its peer closes
+  // and no frame follows, so the samples from 5 s on hold no counters.
+  await sampleWithFake(['--seconds', '60'], [{ atMs: 4500, peer: 'closed' }], report => {
+    assert.deepEqual([report.passed, report.error], [false, 'AssertionError']);
     const ended = report.samples.findIndex(sample => !sample.peerStates.includes('connected'));
     assert.equal(ended, 3);
     assert.equal(report.summary.streamEndedTimeMs, report.samples[ended].timeMs);
     assert.ok(Math.abs(report.summary.seconds - 2) < .1 && Math.abs(report.summary.decodedFps - 30) < 1,
       `${report.summary.decodedFps} fps over ${report.summary.seconds} s`);
-  });
+  }, { trigger: false, failed: true });
+  // With the runner's trigger file: the stream ends at 3.15 s, and END comes a second later.
+  await sampleWithFake(['--seconds', '60'], [{ atMs: 3150, peer: 'closed' }, { atMs: 4250, line: 'END' }], report => {
+    assert.deepEqual([report.passed, report.error], [false, 'AssertionError']);
+    assert.ok(report.summary.streamEndedTimeMs < report.samples.at(-1).timeMs, 'the stream ended before the last sample');
+  }, { failed: true });
 });

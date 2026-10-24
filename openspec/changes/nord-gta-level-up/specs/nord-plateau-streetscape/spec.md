@@ -31,7 +31,7 @@ Buildings that today show plain extruded boxes SHALL show Plateau plex fronts on
 
 #### Scenario: Frame budget
 - **WHEN** the host profiles the six reference views at Epic quality after import
-- **THEN** each p95 frame time stays under 16.67 ms on the reference RTX 4090, and the plex layer, rear work included, stays under 3.15 million triangles in at most 1,200 batches
+- **THEN** each p95 frame time stays under 16.67 ms on the reference RTX 4090, and the plex layer, rear work included, stays within 3.2 million triangles in at most 1,350 batches, under the agreed ceiling of 3.5 million triangles and 1,400 batches
 
 ### Requirement: A lived-in Plateau
 The streetscape SHALL carry seeded signs of life and wear, as the owner's reference article asks.
@@ -44,6 +44,7 @@ The streetscape SHALL carry seeded signs of life and wear, as the owner's refere
 #### Scenario: Walk a ruelle
 - **WHEN** a player walks a mapped ruelle
 - **THEN** wooden utility poles and sagging wires cross overhead, and laundry hangs from the galleries over the yards, never from a utility pole or across the lane, as the city's clothesline rules require
+- **AND** each pulley line sags between its gallery and a pole at the back fence and rises to the pole, with sheets, towels, shirts and jeans pegged along it whose tops follow the rope's sag and whose hems fold, never flat boards; from the ruelle preview camera a line with washing is in sight within 15 m, above the fences (checked by a ray cast through the game's geometry and tree meshes)
 - **AND** the centre gutter is a strip of aged, stained concrete with joints, slightly sunken and darker than a sidewalk, with leaves along it, never a painted white line
 - **AND** blue and brown bins, flower boxes and locked bikes stand at the gates
 
@@ -56,6 +57,7 @@ The streetscape SHALL carry seeded signs of life and wear, as the owner's refere
 #### Scenario: Walk a ruelle verte
 - **WHEN** a player walks a ruelle that the city's open data lists as a ruelle verte
 - **THEN** planted beds run along the fences and walls, an arch with planters marks the entry, and most such ruelles carry a mural
+- **AND** the ornamental grasses in the beds are fountain-shaped clumps of blades and plumes, never cones, and graffiti appears only where paint can land: board fences, slat panels, shed and garage doors, not picket or chain-link fences
 
 #### Scenario: See the roofs from above
 - **WHEN** a player sees the plex blocks from above

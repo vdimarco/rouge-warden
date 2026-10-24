@@ -8,12 +8,18 @@ texture sets (Scripts/plateau_textures.py) and their textured materials, the sha
 synthetic Plex layer (texture set, parent, masked and two-sided cards, built parents, alpha mips, clamped card
 maps, macro variation, Preserve Area meshes, hidden Collision_Only walls, the whole-key shadow rule), planned
 collision clear of traffic, and the yard-tree actors from Plex/yard_trees.json (species meshes from
-Trees/manifest.json, else the shared mesh), the editor side against a fake unreal module; and the third streets pass: no mapped trunk on carriageway asphalt
-(curb extensions, the host list), ruelles paved to the fences, curb-to-building coverage on the capture streets,
-textured front lawns and card plants, and no open step at a raised slab's edge (risers at aprons and ramps); and the
-lane life: laundry poles at the back fence with lines rising to them, at least one line in sight of the Mentana and
-Saint-André ruelle camera (a ray cast through the game's own geometry and tree meshes), and the gallery props (chairs,
-pots, barbecues, bikes, bins, AC units, rail planters, dishes) on the decks' props floor, clear of stairs and doors.
+Trees/manifest.json, else the shared mesh), the editor side against a fake unreal module; the streets passes: every
+street and park tree of the city's inventory in street_trees.json, sidewalk pits 65-80 cm behind the curb and never on
+the carriageway, curb extensions only at corners or where the data lists one, no trunk on bare asphalt but the host
+list's, each pit's iron guard and planting cards, the sunken aged-concrete ruelle gutter on its own UVs and the dull
+crack seal, ruelles paved to the fences, curb-to-building coverage on the capture streets,
+textured front lawns and card plants (crossed fountain-grass cards for the ornamental grass), and no open step at a
+raised slab's edge (risers at aprons and ramps); and the lane life: laundry poles at the back fence with lines rising
+to them, each strand a true catenary (closed-form fixtures and every line's record), the washing as folded strips of
+quads on the laundry atlas whose tops follow the rope, a line with washing in sight within 15 m of the Mentana and
+Saint-André ruelle camera over the fences (a ray cast through the game's own geometry and tree meshes), paint only on
+solid lane-fence faces, and the gallery props (chairs, pots, barbecues, bikes, bins, AC units, rail planters, dishes)
+on the decks' props floor, clear of stairs and doors.
 """
 import hashlib
 import importlib.util
@@ -420,8 +426,25 @@ def check_shared_plan():
         assert the_plan['counts']['yard_tree_actors'] == the_plan['counts']['yard_tree_instances'] == 0
         shared = A.shared_key_plan(tmp)
         assert sorted(shared) == keys
-        assert all((shared[k].get('address_y') == 'TA_CLAMP') == (k in cards) for k in keys)
+        # Every key reports its maps' addressing: cards clamp V, the laundry atlas both axes, the rest wrap.
+        assert all((shared[k]['address_y'] == 'TA_CLAMP') == (k in cards | atlas) for k in keys)
+        assert all((shared[k]['address_x'] == 'TA_CLAMP') == (k in atlas) for k in keys)
         assert all(bool(shared[k].get('macro_strength')) == (k in macro) for k in keys)
+        # The fourth pass's contract keys, as agreed: each on its set, masked, two-sided and V-clamped where the
+        # contract says, the ruelle gutter without a shadow.
+        contract = the_plan['contract_keys']
+        assert sorted(contract) == sorted(A.CONTRACT_KEYS) == sorted(['Concrete_Lane_Aged', 'Leaf_Cedar',
+                                                                      'Plant_Grass_Fountain', 'Plant_Pit_Flowers',
+                                                                      'Iron_Wrought', 'Cloth_Laundry'])
+        for k, row in contract.items():
+            assert row['set'] == A.SHARED_TEXTURE_KEYS[k] and row['used_by'] == ['Plex'], (k, row)
+            assert (row['blend_mode'] == 'masked') == (k in masked) and row['two_sided'] == (k in masked), k
+            assert row['address'] == [shared[k]['address_x'], shared[k]['address_y']], k
+        assert contract['Leaf_Cedar']['address'][1] == contract['Plant_Grass_Fountain']['address'][1] == 'TA_CLAMP'
+        assert contract['Cloth_Laundry']['address'] == ['TA_CLAMP', 'TA_CLAMP'] and contract['Cloth_Laundry']['own_colour']
+        assert not contract['Concrete_Lane_Aged']['shadow'] and not actors['Concrete_Lane_Aged']['shadow'], \
+            'the ruelle gutter is ground: no shadow'
+        assert 'alley_gutter' not in A.GROUND_KEYS, 'the gutter is Concrete_Lane_Aged now'
     # Yard trees: grouped by kind in a fixed order, the shared crown factor on X and Y only, no collision.
     trees = [{'x': 100. * n, 'y': -50. * n, 'z': 12., 'yaw': 400. + n, 'scale': 1.5 + .1 * n, 'kind': kind}
              for n, kind in enumerate(['elm', 'maple', 'maple', 'small', 'ash', 'maple', 'elm'])]
@@ -454,14 +477,17 @@ def check_shared_plan():
             raise AssertionError(f'A bad yard tree was accepted: {bad}')
     out['species_meshes'] = check_tree_species_plan()
     out['tree_textures'] = check_tree_texture_plan()
+    out['street_trees'] = check_street_trees_synthetic()
+    out['missing_tree_obj'] = check_missing_tree_obj()
+    out['host_steps'] = check_host_steps()
     return out
 
 
 TREE_KINDS_FIXTURE = {
     'norway_maple': {'materials': {'bark': 'Bark_Grey', 'leaves': {'base_color_srgb': '#C8902E', 'roughness': .6}},
                      'height_cm': 1500, 'trunk_cm': 45},
-    'linden': {'materials': {'bark': 'Bark_Grey', 'leaves': {'base_color_srgb': '#B89A3A', 'roughness': .6}},
-               'height_cm': 1600, 'trunk_cm': 50},
+    'elm': {'materials': {'bark': 'Bark_Grey', 'leaves': {'base_color_srgb': '#B89A3A', 'roughness': .6}},
+            'height_cm': 1600, 'trunk_cm': 50},
     'silver_maple': {'materials': {'bark': {'base_color_srgb': '#77736C', 'roughness': .85},
                                    'leaves': '/Game/Art/M_DetailedAutumnLeaves'}, 'height_cm': 1800, 'trunk_cm': 60},
 }
@@ -474,8 +500,8 @@ TREE_ROWS_FIXTURE = [
 
 
 def check_tree_species_plan():
-    """Trees/manifest.json present: each yard tree on its species mesh (maple and elm read as norway_maple and
-    linden), uniformly scaled to its height; bark and leaves materials planned once each (leaves as two-sided
+    """Trees/manifest.json present: each yard tree on its species mesh (maple reads as norway_maple; elm is the vase
+    species since the fourth pass), uniformly scaled to its height; bark and leaves materials planned once each (leaves as two-sided
     foliage), an existing /Game/ material used as is; a bad manifest or a missing species fails the plan."""
     A = apply_replica
     with tempfile.TemporaryDirectory() as tmp:
@@ -483,7 +509,7 @@ def check_tree_species_plan():
         the_plan = A.plan(tmp)
         yard = the_plan['yard_trees']
         assert yard['mode'] == 'species meshes' and yard['mesh'] is None and yard['aliases'] == A.TREE_ALIASES
-        assert [t['kind'] for t in the_plan['trees']] == ['norway_maple', 'silver_maple', 'linden']
+        assert [t['kind'] for t in the_plan['trees']] == ['norway_maple', 'silver_maple', 'elm']
         assert [t['count'] for t in the_plan['trees']] == [2, 1, 1]
         for t in the_plan['trees']:
             assert t['mesh'] == A.tree_mesh_asset(t['kind']) == f'{A.ASSETS}/Trees/SM_Tree_{t["kind"]}'
@@ -494,28 +520,28 @@ def check_tree_species_plan():
                 want = r.get('height_cm', r['scale'] * A.TREE_MESH_HEIGHT_CM) / height
                 assert p == (r['x'], r['y'], r['z']) and scale == (want, want, want), (t['kind'], scale, want)
         meshes = {m['species']: m for m in the_plan['tree_meshes']}
-        assert sorted(meshes) == ['linden', 'norway_maple', 'silver_maple'] and the_plan['counts']['tree_meshes'] == 3
+        assert sorted(meshes) == ['elm', 'norway_maple', 'silver_maple'] and the_plan['counts']['tree_meshes'] == 3
         assert all(m['nanite_shape_preservation'] == A.PRESERVE_AREA and m['collision'] == 'none' for m in meshes.values())
         trees = {m['key']: m for m in the_plan['materials'] if m['layer'] == A.TREES}
-        assert sorted(trees) == ['Bark_Grey', 'linden_leaves', 'norway_maple_leaves', 'silver_maple_bark']
+        assert sorted(trees) == ['Bark_Grey', 'elm_leaves', 'norway_maple_leaves', 'silver_maple_bark']
         assert the_plan['counts']['tree_materials'] == 4
         assert trees['norway_maple_leaves']['foliage'] and not trees['Bark_Grey']['foliage']
         assert not trees['silver_maple_bark']['foliage'] and trees['Bark_Grey']['duplicate_of'].endswith('/M_Trim')
         assert meshes['norway_maple']['materials'] == {'bark': f'{A.MATERIALS}/M_Replica_Trees_Bark_Grey',
                                                        'leaves': f'{A.MATERIALS}/M_Replica_Trees_norway_maple_leaves'}
         assert meshes['silver_maple']['materials']['leaves'] == '/Game/Art/M_DetailedAutumnLeaves'
-        assert meshes['linden']['materials']['bark'] == meshes['norway_maple']['materials']['bark']
+        assert meshes['elm']['materials']['bark'] == meshes['norway_maple']['materials']['bark']
         assert not any(a['label'].endswith('Tree_norway_maple') for a in the_plan['actors']), 'Trees is not a layer'
         # The preview keeps the shared-mesh fallback when called without species.
         assert [t['kind'] for t in A.plan_trees(A.load_yard_trees(tmp))] == ['maple', 'elm', 'norway_maple', 'silver_maple']
         out = {'species': {t['kind']: t['count'] for t in the_plan['trees']}, 'materials': sorted(trees)}
     bad_cases = (
-        ('an unknown kind', dict(TREE_KINDS_FIXTURE, oak=TREE_KINDS_FIXTURE['linden'])),
-        ('a missing leaves slot', dict(TREE_KINDS_FIXTURE, linden={'materials': {'bark': 'Bark_Grey'},
+        ('an unknown kind', dict(TREE_KINDS_FIXTURE, oak=TREE_KINDS_FIXTURE['elm'])),
+        ('a missing leaves slot', dict(TREE_KINDS_FIXTURE, elm={'materials': {'bark': 'Bark_Grey'},
                                                                    'height_cm': 1600, 'trunk_cm': 50})),
-        ('a stale mesh hash', dict(TREE_KINDS_FIXTURE, linden=dict(TREE_KINDS_FIXTURE['linden'], sha256='0' * 64))),
-        ('a silly height', dict(TREE_KINDS_FIXTURE, linden=dict(TREE_KINDS_FIXTURE['linden'], height_cm=50))),
-        ('a species with no mesh', {k: v for k, v in TREE_KINDS_FIXTURE.items() if k != 'linden'}))
+        ('a stale mesh hash', dict(TREE_KINDS_FIXTURE, elm=dict(TREE_KINDS_FIXTURE['elm'], sha256='0' * 64))),
+        ('a silly height', dict(TREE_KINDS_FIXTURE, elm=dict(TREE_KINDS_FIXTURE['elm'], height_cm=50))),
+        ('a species with no mesh', {k: v for k, v in TREE_KINDS_FIXTURE.items() if k != 'elm'}))
     for message, kinds in bad_cases:
         with tempfile.TemporaryDirectory() as tmp:
             synthetic_plex(tmp, ['Yard_Grass'], {'trees': TREE_ROWS_FIXTURE}, tree_kinds=kinds)
@@ -525,6 +551,127 @@ def check_tree_species_plan():
                 continue
             raise AssertionError('Accepted a Trees manifest with ' + message)
     return out
+
+
+def synthetic_streets(root, rows, detailed=2, young=('norway_maple',)):
+    """Streets/street_trees.json under a synthetic root (rows in the plateau_replica.py row format), the
+    Data/Plateau/layout.json route trees (detailed) and young meshes for the given kinds of its Trees manifest."""
+    A = apply_replica
+    data = Path(root) / 'Data/Plateau/ReplicaGeometry'
+    (data / 'Streets').mkdir(parents=True, exist_ok=True)
+    (data / A.STREET_TREES).write_text(json.dumps({'layer': 'Streets', 'trees': rows}))
+    (Path(root) / A.PLATEAU_LAYOUT).write_text(json.dumps({'streets': {'detailed_trees': [[0., 0.]] * detailed}}))
+    path = data / A.TREES / 'manifest.json'
+    if path.is_file():
+        manifest = json.loads(path.read_text())
+        for species in young:
+            body = (b'o tree\nv 0 0 0\nv 8 0 0\nv 0 0 500\nv 100 0 300\nv 0 100 400\nv -100 0 450\n'
+                    b'usemtl bark\nf 1 2 3\nusemtl leaves\nf 4 5 6\n')
+            (data / A.TREES / f'Tree_{species}_young.obj').write_bytes(body)
+            manifest['kinds'][species][A.YOUNG] = {'obj': f'Tree_{species}_young.obj', 'height_cm': 500, 'trunk_cm': 7}
+        path.write_text(json.dumps(manifest))
+
+
+def street_row(n, kind, height, dbh, **extra):
+    return dict({'id': f'inv:5-{n}', 'x_cm': 100. * n, 'y_cm': -40. * n, 'z_cm': 18., 'species': 'Ulmus', 'kind': kind,
+                 'dbh_cm': dbh, 'height_cm': height, 'source': 'inventory', 'pit': True, 'yaw_deg': 30 * n}, **extra)
+
+
+STREET_ROWS_FIXTURE = [
+    street_row(1, 'norway_maple', 425, 5.),        # a new planting: the young mesh, 0.85 of its 5 m
+    street_row(2, 'norway_maple', 1500, 45.),      # the mature mesh at about its own size
+    street_row(3, 'silver_maple', 3200, 200.),     # an old giant: the height scale clamps, the crown spreads
+    street_row(4, 'elm', 300, 3.),                 # no young elm in this fixture: the mature mesh at its floor
+    street_row(5, 'norway_maple', None, 90.),      # no height: the trunk gives it
+    street_row(6, 'silver_maple', 1800, 20.),      # a slim trunk narrows the crown to the spread floor
+]
+
+
+def check_street_trees_synthetic():
+    """Streets/street_trees.json through the apply plan on a synthetic root: each row on its kind's mesh, a new
+    planting on the kind's young mesh, the height scale clamped, the crown spread from the trunk within its limits, one
+    actor per kind and mesh after the yard actors; the old summer trees planned away (the vegetation cleared, the
+    route trees hidden); street trees without species meshes, an unknown kind, a repeated id or a bad number fail."""
+    A = apply_replica
+    with tempfile.TemporaryDirectory() as tmp:
+        synthetic_plex(tmp, ['Yard_Grass'], {'trees': TREE_ROWS_FIXTURE}, tree_kinds=TREE_KINDS_FIXTURE)
+        synthetic_streets(tmp, STREET_ROWS_FIXTURE)
+        the_plan = A.plan(tmp)
+        yard = [t for t in the_plan['trees'] if t['group'] == 'yard']
+        street = [t for t in the_plan['trees'] if t['group'] == 'street']
+        assert the_plan['trees'] == yard + street, 'street actors follow the yard actors'
+        assert [(t['kind'], t['variant']) for t in street] == [('norway_maple', None), ('norway_maple', A.YOUNG),
+                                                               ('silver_maple', None), ('elm', None)]
+        assert [t['ids'] for t in street] == [['inv:5-2', 'inv:5-5'], ['inv:5-1'], ['inv:5-3', 'inv:5-6'], ['inv:5-4']]
+        assert street[1]['label'] == f'{A.PREFIX}Street trees norway_maple young'
+        assert street[1]['mesh'] == f'{A.ASSETS}/Trees/SM_Tree_norway_maple_young'
+        scale = {i: s for t in street for i, (_, _, s) in zip(t['ids'], t['transforms'])}
+        nm = TREE_KINDS_FIXTURE['norway_maple']
+        assert scale['inv:5-1'][2] == round(425 / 500, 4) and abs(scale['inv:5-1'][0] / scale['inv:5-1'][2] - 1) < .1
+        assert scale['inv:5-2'][2] == round(1500 / nm['height_cm'], 4) and scale['inv:5-2'][0] == scale['inv:5-2'][2]
+        assert scale['inv:5-3'][2] == A.TREE_SCALE[1] and scale['inv:5-3'][0] == round(A.TREE_SCALE[1] * A.CROWN_SPREAD[1], 4)
+        assert scale['inv:5-4'][2] == A.TREE_SCALE[0], 'a sapling with no young mesh stands at the floor'
+        assert scale['inv:5-5'][2] == A.TREE_SCALE[1], 'no height: a 90 cm trunk on a 45 cm mesh is as tall as allowed'
+        assert scale['inv:5-6'][0] == round(scale['inv:5-6'][2] * A.CROWN_SPREAD[0], 4), scale['inv:5-6']
+        assert all(t['transforms'][0][0] == (100. * int(t['ids'][0].split('-')[1]), -40. * int(t['ids'][0].split('-')[1]), 18.)
+                   for t in street)
+        meshes = {(m['species'], m['variant']) for m in the_plan['tree_meshes']}
+        assert ('norway_maple', A.YOUNG) in meshes and ('elm', None) in meshes
+        young = next(m for m in the_plan['tree_meshes'] if m['variant'])
+        mature = next(m for m in the_plan['tree_meshes'] if m['species'] == 'norway_maple' and not m['variant'])
+        assert young['materials'] == mature['materials'] and young['file'] == 'Trees/Tree_norway_maple_young.obj'
+        assert the_plan['counts']['street_tree_instances'] == 6 and the_plan['counts']['young_street_trees'] == 1
+        assert the_plan['counts']['yard_tree_instances'] == len(TREE_ROWS_FIXTURE)
+        assert the_plan['vegetation']['label'] == A.VEGETATION_LABEL and the_plan['vegetation']['mesh'] == A.TREE_MESH
+        assert the_plan['hide'] == list(A.HIDE_LABELS) + [f'{A.DETAIL_TREE_LABEL}{i}' for i in range(2)]
+        out = {t['label'][len(A.PREFIX):]: t['count'] for t in street}
+    bad = (('street trees without species meshes', None, STREET_ROWS_FIXTURE),
+           ('an unknown kind', TREE_KINDS_FIXTURE, STREET_ROWS_FIXTURE + [street_row(9, 'oak', 900, 30.)]),
+           ('a repeated id', TREE_KINDS_FIXTURE, STREET_ROWS_FIXTURE + [STREET_ROWS_FIXTURE[0]]),
+           ('a trunk of nothing', TREE_KINDS_FIXTURE, [street_row(9, 'elm', 900, 0.)]),
+           ('a tree at nan', TREE_KINDS_FIXTURE, [street_row(9, 'elm', 900, 30., x_cm=float('nan'))]))
+    for message, kinds, rows in bad:
+        with tempfile.TemporaryDirectory() as tmp:
+            synthetic_plex(tmp, ['Yard_Grass'], {'trees': TREE_ROWS_FIXTURE} if kinds else None, tree_kinds=kinds)
+            synthetic_streets(tmp, rows)
+            expect_rejected(lambda: A.plan(tmp), message)
+    # A plan without street trees leaves the old trees alone.
+    with tempfile.TemporaryDirectory() as tmp:
+        synthetic_plex(tmp, ['Yard_Grass'], {'trees': TREE_ROWS_FIXTURE}, tree_kinds=TREE_KINDS_FIXTURE)
+        the_plan = A.plan(tmp)
+        assert the_plan['vegetation'] is None and the_plan['hide'] == list(A.HIDE_LABELS)
+    return out
+
+
+def check_missing_tree_obj():
+    """A fresh checkout has Trees/manifest.json but no Tree_*.obj (git-ignored): the plan stops with the OBJ's path
+    under Trees/ and the command that builds it."""
+    A = apply_replica
+    with tempfile.TemporaryDirectory() as tmp:
+        synthetic_plex(tmp, ['Yard_Grass'], {'trees': TREE_ROWS_FIXTURE}, tree_kinds=TREE_KINDS_FIXTURE)
+        for obj in (Path(tmp) / 'Data/Plateau/ReplicaGeometry' / A.TREES).glob('Tree_*.obj'):
+            obj.unlink()
+        try:
+            A.plan(tmp)
+        except AssertionError as error:
+            message = str(error)
+        else:
+            raise AssertionError('A Trees manifest without its OBJs was accepted')
+    assert 'Trees/Tree_' in message and 'plateau_trees.py' in message, message
+    return message[message.index('Trees/Tree_'):]
+
+
+def check_host_steps():
+    """Both host blocks of the README build the git-ignored tree OBJs (plateau_trees.py) before plateau_replica.py,
+    whose test and the apply step read them."""
+    readme = (replica.OUT / 'README.md').read_text()
+    blocks = re.findall(r'```bash\n(.*?)```', readme, re.S)
+    hosts = [b for b in blocks if 'python3 Scripts/plateau_replica.py' in b]
+    assert len(hosts) >= 2, f'{len(hosts)} host blocks run plateau_replica.py'
+    for block in hosts:
+        trees, replica_at = block.find('Scripts/blender/plateau_trees.py --no-render'), block.find('Scripts/plateau_replica.py')
+        assert 0 <= trees < replica_at, ('a host block runs plateau_replica.py before building the tree OBJs', block)
+    return len(hosts)
 
 
 TREE_TEXTURED_KINDS = {
@@ -578,7 +725,7 @@ def check_tree_texture_plan():
     that no set covers fails the plan."""
     A = apply_replica
     rows = [{'x': 100. * n, 'y': 0., 'z': 0., 'yaw': 10. * n, 'scale': 3., 'kind': k}
-            for n, k in enumerate(['maple', 'elm', 'linden', 'norway_maple'])]
+            for n, k in enumerate(['maple', 'linden', 'linden', 'norway_maple'])]
     with tempfile.TemporaryDirectory() as tmp:
         synthetic_plex(tmp, ['Yard_Grass'], {'trees': rows}, tree_kinds=TREE_TEXTURED_KINDS)
         manifest = write_tree_texture_sets(tmp)
@@ -655,12 +802,12 @@ def check_yard_trees(the_plan):
         assert all(lo[i] - 500 <= r['position'][i] <= hi[i] + 500 for i in range(2)), r
         assert -50. <= r['position'][2] <= 300. and .3 <= r['scale'] <= 4., r
         assert r['species'] in A.TREE_SPECIES, r
-    assert sum(t['count'] for t in the_plan['trees']) == len(rows)
+    yard = [t for t in the_plan['trees'] if t['group'] == 'yard']
+    assert sum(t['count'] for t in yard) == len(rows) == the_plan['counts']['yard_tree_instances']
     kinds = A.load_tree_kinds(replica.ROOT)
     assert (the_plan['yard_trees']['mode'] == 'species meshes') == (kinds is not None)
     if kinds:
-        assert {t['kind'] for t in the_plan['trees']} <= set(kinds) and all(
-            t['mesh'] == A.tree_mesh_asset(t['kind']) for t in the_plan['trees'])
+        assert {t['kind'] for t in yard} <= set(kinds) and all(t['mesh'] == A.tree_mesh_asset(t['kind']) for t in yard)
         # The generated trees' own texture sets: every tree material that names a map is textured, the leaves are
         # masked two-sided foliage on the leaf atlas (clamped U and V), the bark a textured wall duplicate.
         tree_mats = [m for m in the_plan['materials'] if m['layer'] == A.TREES]
@@ -675,8 +822,51 @@ def check_yard_trees(the_plan):
         assert all(t['address_y'] == 'TA_CLAMP' for t in atlas)
         assert the_plan['counts']['tree_textures'] == 3 * len(the_plan['yard_trees']['texture_sets'])
     return {'present': True, 'mode': the_plan['yard_trees']['mode'],
-            'trees': {t['kind']: t['count'] for t in the_plan['trees']},
+            'trees': {t['kind']: t['count'] for t in yard},
             'tree_texture_sets': the_plan['yard_trees'].get('texture_sets', [])}
+
+
+def check_street_tree_plan(the_plan):
+    """Every row of Streets/street_trees.json, once, on the species mesh for its kind (or the kind's young mesh under
+    YOUNG_BELOW of the mature height), at its own position and yaw, its height scale within the mesh's limits and its
+    crown within CROWN_SPREAD of it, no collision; the old summer trees planned away (the vegetation cleared, the seven
+    route trees hidden)."""
+    A = apply_replica
+    rows = A.load_street_trees(replica.ROOT)
+    if rows is None:
+        assert the_plan['vegetation'] is None and not the_plan['street_trees']['present']
+        return {'present': False}
+    kinds = A.load_tree_kinds(replica.ROOT)
+    groups = [t for t in the_plan['trees'] if t['group'] == 'street']
+    by_id = {r['id']: r for r in rows}
+    placed = [i for g in groups for i in g['ids']]
+    assert sorted(placed) == sorted(by_id) and len(placed) == len(rows) == the_plan['counts']['street_tree_instances']
+    meshes = {m['asset']: m for m in the_plan['tree_meshes']}
+    young = 0
+    for g in groups:
+        assert g['label'] == f"{A.PREFIX}Street trees {g['kind']}" + (f" {g['variant']}" if g['variant'] else '')
+        assert g['folder'] == f'{A.FOLDER}/{A.STREET_TREE_FOLDER}' and not g['collision'] and g['cast_shadow']
+        assert g['mesh'] == A.tree_mesh_asset(g['kind'], g['variant']) and g['mesh'] in meshes, g['label']
+        mesh = kinds[g['kind']][g['variant']] if g['variant'] else kinds[g['kind']]
+        assert meshes[g['mesh']]['file'] == mesh['obj'] and g['mesh_height_cm'] == mesh['height_cm']
+        limits = A.YOUNG_SCALE if g['variant'] else A.TREE_SCALE
+        for tid, (p, yaw, (sx, sy, sz)) in zip(g['ids'], g['transforms']):
+            r = by_id[tid]
+            assert r['kind'] == g['kind'] and p == r['position'] and yaw == r['yaw'], tid
+            assert limits[0] - 1e-4 <= sz <= limits[1] + 1e-4 and sx == sy, (tid, sz)
+            assert A.CROWN_SPREAD[0] - 1e-3 <= sx / sz <= A.CROWN_SPREAD[1] + 1e-3, (tid, sx, sz)
+            assert (r['height_cm'] < A.YOUNG_BELOW * kinds[r['kind']]['height_cm']) == bool(g['variant']) or \
+                A.YOUNG not in kinds[r['kind']], tid
+        young += g['count'] if g['variant'] else 0
+    assert young == the_plan['counts']['young_street_trees'] > 0
+    assert set(the_plan['street_trees']['kinds']) == {r['kind'] for r in rows}
+    # The old summer tree goes: QuebecVegetation's instances cleared, the seven route trees hidden in game.
+    assert the_plan['vegetation'] == {'label': A.VEGETATION_LABEL, 'class': A.VEGETATION_CLASS, 'mesh': A.TREE_MESH,
+                                      'action': 'clear instances'}
+    old = [h for h in the_plan['hide'] if h.startswith(A.DETAIL_TREE_LABEL)]
+    assert old == A.old_tree_labels(replica.ROOT) and len(old) == 7, old
+    return {'trees': len(rows), 'young': young,
+            'actors': {g['label'][len(A.PREFIX):]: g['count'] for g in groups}, 'hidden_old_trees': len(old)}
 
 
 # ------------------------------------------------------------------------------------------------
@@ -1235,6 +1425,18 @@ def check_editor_side():
                                'two_sided': mat.get_editor_property('two_sided'),
                                'macro_samples': 2 if row.get('macro') else 0}
         rows = {m['key']: m for m in the_plan['materials']}
+        # The contract keys, as built: verify's own contract check passes them and rejects a cedar card that wraps in
+        # V or a laundry atlas that lost its mask.
+        assert sum(A.check_contract(u, materials[rows[k]['asset']], rows[k]) for k in A.CONTRACT_KEYS) == 6
+        cedar_v = textures[rows['Leaf_Cedar']['textures']['diff']]['object']
+        cedar_v.set_editor_property('address_y', 'TA_WRAP')
+        expect_rejected(lambda: A.check_contract(u, materials[rows['Leaf_Cedar']['asset']], rows['Leaf_Cedar']),
+                        'a cedar card that wraps in V')
+        cedar_v.set_editor_property('address_y', 'TA_CLAMP')
+        laundry = materials[rows['Cloth_Laundry']['asset']]
+        laundry.set_editor_property('blend_mode', 'BLEND_OPAQUE')
+        expect_rejected(lambda: A.check_contract(u, laundry, rows['Cloth_Laundry']), 'an opaque laundry atlas')
+        laundry.set_editor_property('blend_mode', 'BLEND_MASKED')
         # The fresh-material fallback keeps the mask, sidedness, foliage shading and macro variation.
         for key in ('Rail_Lattice', 'Leaf_Creeper', 'Siding_Lap_Grey', 'Roof_Gravel'):
             row = dict(rows[key], asset=rows[key]['asset'] + '_Fresh', duplicate_of='/Game/Plateau/Materials/M_Missing')
@@ -1328,7 +1530,133 @@ def check_editor_side():
         out['fresh_fallback'] = 'masked, foliage, opaque and macro fallbacks keep their mode'
     out['species_trees'] = check_editor_trees()
     out['tree_textures'] = check_editor_tree_textures()
+    out['import_order'] = check_import_order()
+    out['old_trees'] = check_editor_old_trees()
     return out
+
+
+def editor_fakes():
+    """A fake unreal module with the parents the tree and Plex fixtures duplicate, and a log of every import's file."""
+    A = apply_replica
+    u = fake_unreal()
+    fake_parent(u, A.TEXTURED_PARENT, 'brick_wall_001')
+    fake_parent(u, A.WET_PARENT, 'concrete_pavement', wet=True)
+    fake_trim(u)
+    u.EditorAssetLibrary.registry['/Game/Art/M_DetailedAutumnLeaves'] = FakeMaterial('/Game/Art/M_DetailedAutumnLeaves')
+    tools, order = u.AssetToolsHelpers.get_asset_tools(), []
+    real = tools.import_asset_tasks
+
+    def logged(tasks):
+        order.extend(t.filename for t in tasks)
+        return real(tasks)
+    tools.import_asset_tasks = logged
+    return u, order
+
+
+def check_import_order():
+    """The apply step imports and checks the species meshes (the pipeline's only two-slot OBJs) before every other
+    material and layer mesh: on the fake, every tree OBJ import precedes the first layer OBJ import, the yard and street
+    trees then stand on them, and a tree OBJ whose slots name neither bark nor leaves stops the step before any layer
+    mesh or layer material exists."""
+    A = apply_replica
+    report = lambda: {'textures': {}, 'parents': {}, 'materials': {}, 'fresh_materials': [], 'tree_meshes': {}}  # noqa: E731
+    with tempfile.TemporaryDirectory() as tmp:
+        root = Path(tmp)
+        synthetic_plex(tmp, ['Yard_Grass', 'Rail_Lattice'], {'trees': TREE_ROWS_FIXTURE}, tree_kinds=TREE_KINDS_FIXTURE)
+        synthetic_streets(tmp, STREET_ROWS_FIXTURE)
+        the_plan = A.plan(tmp)
+        manifests, _ = A.load_manifests(root)
+        u, order = editor_fakes()
+        done = report()
+        textures, materials, meshes = A.import_assets(u, root, the_plan, manifests, done)
+        objs = [f for f in order if f.endswith('.obj')]
+        trees = [i for i, f in enumerate(objs) if f'/{A.TREES}/' in f]
+        layers = [i for i, f in enumerate(objs) if '/Plex/' in f]
+        assert len(trees) == len(the_plan['tree_meshes']) == 4 and layers and max(trees) < min(layers), objs
+        assert sorted(done['tree_meshes']) == sorted(m['asset'] for m in the_plan['tree_meshes'])
+        made = list(done['materials'])
+        assert all(a.startswith(f'{A.MATERIALS}/M_Replica_Trees_') for a in made[:the_plan['counts']['tree_materials']])
+        # The yard and street trees on those meshes; verify's placement check passes the crowns' X and Y scale.
+        editor = FakeEditor()
+        A.spawn_yard_trees(u, editor, the_plan['trees'], meshes)
+        actors = {a.label: a for a in editor.actors}
+        assert A.check_yard_trees_placed(u, actors, the_plan['trees']) == len(TREE_ROWS_FIXTURE) + len(STREET_ROWS_FIXTURE)
+        assert actors[f'{A.PREFIX}Street trees norway_maple young'].component.static_mesh is \
+            meshes[f'{A.ASSETS}/Trees/SM_Tree_norway_maple_young']
+        giant = actors[f'{A.PREFIX}Street trees silver_maple'].component
+        assert giant.transforms[0].scale3d.x > giant.transforms[0].scale3d.z
+        saved = giant.transforms[0].scale3d
+        giant.transforms[0].scale3d = u.Vector(saved.z, saved.z, saved.z)
+        expect_rejected(lambda: A.check_yard_trees_placed(u, actors, the_plan['trees']),
+                        'a street tree that lost its crown spread')
+        giant.transforms[0].scale3d = saved
+        # A slot problem fails first.
+        (root / 'Data/Plateau/ReplicaGeometry' / A.TREES / 'Tree_elm.obj').write_bytes(
+            b'o tree\nv 0 0 0\nv 40 0 0\nv 0 0 900\nv 300 0 600\nv 0 300 700\nv -300 0 800\n'
+            b'usemtl lambert1\nf 1 2 3\nusemtl lambert2\nf 4 5 6\n')
+        u, order = editor_fakes()
+        try:
+            A.import_assets(u, root, A.plan(tmp), manifests, report())
+        except AssertionError as error:
+            message = str(error)
+        else:
+            raise AssertionError('A tree mesh whose slots name neither bark nor leaves was imported')
+        assert 'must name the bark and the leaves' in message, message
+        assert not any('/Plex/' in f for f in order), 'layer meshes were imported before the tree slots were checked'
+        assert not any(a.startswith(f'{A.MATERIALS}/M_Replica_Plex_') for a in u.EditorAssetLibrary.registry), \
+            'layer materials were made before the tree slots were checked'
+        return {'tree_imports_first': len(trees), 'layer_imports': len(layers), 'slot_failure_before_layers': True}
+
+
+class FakeVegetation:
+    """AQuebecVegetation: its Trees HISM (the old summer trees on tree_small_02)."""
+
+    def __init__(self, count, label=None):
+        self.label = label or apply_replica.VEGETATION_LABEL
+        self.trees = FakeHism()
+        self.trees.static_mesh = FakeAsset(apply_replica.TREE_MESH)
+        self.trees.transforms = [None] * count
+        self.trees.clear_instances = lambda: self.trees.transforms.clear()
+
+    def get_actor_label(self):
+        return self.label
+
+    def get_class(self):
+        from types import SimpleNamespace
+        return SimpleNamespace(get_name=lambda: 'QuebecVegetation')
+
+    def get_editor_property(self, name):
+        assert name == 'trees', name
+        return self.trees
+
+    def get_path_name(self):
+        return '/Game/Maps/LaFontaine.LaFontaine:PersistentLevel.QuebecVegetation_0'
+
+
+def check_editor_old_trees():
+    """The old summer trees on the fake: apply clears the vegetation's instances (the actor stays), verify passes a
+    cleared one and rejects one whose trees came back; two vegetation actors are refused; a map without one has
+    nothing to clear."""
+    from types import SimpleNamespace as NS
+    A = apply_replica
+    row = {'label': A.VEGETATION_LABEL, 'class': A.VEGETATION_CLASS, 'mesh': A.TREE_MESH, 'action': 'clear instances'}
+    veg = FakeVegetation(4707)
+    other = NS(get_actor_label=lambda: 'OSM Road')
+    editor = NS(get_all_level_actors=lambda: [other, veg])
+    cleared = A.clear_vegetation(None, editor, row)
+    assert cleared == {'present': True, 'path': veg.get_path_name(), 'mesh': f'{A.TREE_MESH}.tree_small_02',
+                       'cleared': 4707}, cleared
+    assert veg.trees.get_instance_count() == 0 and veg.label == A.VEGETATION_LABEL
+    actors = {A.VEGETATION_LABEL: veg}
+    assert A.check_vegetation_cleared(None, actors, row, cleared) == 4707
+    veg.trees.transforms.append(None)
+    expect_rejected(lambda: A.check_vegetation_cleared(None, actors, row, cleared), 'an old summer tree that came back')
+    twice = NS(get_all_level_actors=lambda: [FakeVegetation(3), FakeVegetation(3)])
+    expect_rejected(lambda: A.clear_vegetation(None, twice, row), 'two vegetation actors')
+    none = A.clear_vegetation(None, NS(get_all_level_actors=lambda: [other]), row)
+    assert none == {'present': False, 'cleared': 0} and A.check_vegetation_cleared(None, {}, row, none) == 0
+    assert A.check_vegetation_cleared(None, {}, None, None) == 0, 'no street trees: nothing to check'
+    return {'cleared': cleared['cleared']}
 
 
 def check_editor_trees():
@@ -1383,7 +1711,7 @@ def check_editor_tree_textures():
     an opaque leaf material and leaves masked by the bark."""
     A = apply_replica
     rows = [{'x': 100. * n, 'y': 0., 'z': 0., 'yaw': 10. * n, 'scale': 3., 'kind': k}
-            for n, k in enumerate(['maple', 'elm', 'linden'])]
+            for n, k in enumerate(['maple', 'linden', 'linden'])]
     with tempfile.TemporaryDirectory() as tmp:
         synthetic_plex(tmp, ['Yard_Grass'], {'trees': rows}, tree_kinds=TREE_TEXTURED_KINDS)
         write_tree_texture_sets(tmp)
@@ -1556,7 +1884,25 @@ def check_lane_fixtures():
     fake = type('W', (), {'alleys': [{'id': str(i), 'segments': [((0., 0.), (100., 0.))]} for i in range(400)]})()
     first, source = R.green_alleys(fake, None)
     assert first == R.green_alleys(fake, None)[0] and 'seeded' in source and 90 <= len(first) <= 150, len(first)
-    return {'murals_face_out': True, 'card_uv': 'u metres, v 0..1', 'tags_on_plane': 12, 'seeded_green_share': len(first) / 400}
+    # The rope is a true catenary. Level ends: c = ((L / 2)^2 - sag^2) / (2 sag) (Wikipedia, "Catenary", Determining
+    # parameters), its vertex at mid-span; ends 40 cm apart in height: through both, its lowest point (the vertex)
+    # toward the lower end, and L^2 - v^2 = 4c^2 sinh^2(span / 2c); a line rising 1.3 m has no vertex on its span.
+    rope = R.Catenary((0., 0., 400.), (1000., 0., 400.), 25.)
+    assert abs(rope.sag - 25.) < 1e-6 and abs(rope.m - 500.) < 1e-6, (rope.sag, rope.m)
+    assert abs(rope.c - ((rope.length / 2) ** 2 - 25. ** 2) / 50.) < 1e-6 * rope.c, (rope.c, rope.length)
+    rope = R.Catenary((0., 0., 300.), (600., 800., 340.), 22.)
+    assert abs(rope.at(0.)[2] - 300.) < 1e-6 and math.dist(rope.at(1000.), (600., 800., 340.)) < 1e-6
+    assert abs(320. - rope.at(500.)[2] - 22.) < 1e-6 and 0. < rope.m < 500.
+    assert abs(rope.length ** 2 - 40. ** 2 - (2 * rope.c * math.sinh(500. / rope.c)) ** 2) < 1e-6 * rope.length ** 2
+    assert abs(min(range(1001), key=lambda x: rope.at(x)[2]) - rope.m) <= .5, rope.m
+    rope = R.Catenary((0., 0., 300.), (1000., 0., 430.), 22.)
+    assert rope.m < 0. and all(rope.at(x)[2] < rope.at(x + 10)[2] for x in range(0, 991, 10)) and abs(rope.sag - 22.) < 1e-6
+    # Paint goes on the solid faces of plateau_plex's lane fences, between its posts.
+    import plateau_plex
+    assert R.PLEX_POSTS == plateau_plex.FENCE_POSTS and R.PLEX_LATTICE_BAND == plateau_plex.LATTICE_TOP + 4.
+    assert set(R.PAINT_FACE) == {'boards', 'lattice', 'slats'} and R.PAINT_FACE['slats'] > 1.5   # the 3 cm slat panel
+    return {'murals_face_out': True, 'card_uv': 'u metres, v 0..1', 'tags_on_plane': 12, 'seeded_green_share': len(first) / 400,
+            'catenary': 'closed form and both ends'}
 
 
 def check_lane_life(world, out, soul, soul_rows):
@@ -1674,7 +2020,10 @@ def check_lane_life(world, out, soul, soul_rows):
     painted = [m for m in rv['murals'] if m.get('host')]
     assert len(painted) >= .7 * len({r for a in rv['alleys'] for r in a['ruelles']}), rv['murals']
     for m in painted:
-        assert m['offset_cm'] in (1.2, R.PLEX_D_FACE + .9)
+        assert m['offset_cm'] in (1.2, R.PAINT_FACE['slats'], R.PLEX_D_FACE + .9)
+        if m['host'] == 'fence':
+            fence = lots[m['owner']]['rear']['fence']
+            assert fence['kind'] in R.PAINT_FACE and m['offset_cm'] == R.PAINT_FACE[fence['kind']], m
     for key in ('Yard_Soil', 'Leaf_Creeper', 'Rail_Lattice', 'bed_edge', 'line_rope', 'pulley', 'clothes_pole'):
         assert key in soul['materials'], key
     for batch in soul['batches']:
@@ -1696,7 +2045,10 @@ def check_lane_life(world, out, soul, soul_rows):
         assert lot['rear']['fence']['lane'] and tag['facing'] == [round(F.n[0], 2), round(F.n[1], 2)]
         x0, d0 = F.local(tag['plane'][0])
         if tag['on'] == 'fence':
-            assert abs(d0 - F.D - 1.2) < .15
+            # only on a solid face: boards, the boards under a lattice band, a slat panel; never on pickets or chain-link
+            fence = lot['rear']['fence']
+            assert fence['kind'] in R.PAINT_FACE and tag['fence'] == fence['kind'], ('paint on an open fence', tag)
+            assert abs(d0 - F.D - R.PAINT_FACE[fence['kind']]) < .15 and tag['top_cm'] <= R.board_top(fence) - 15 + .01
             assert not any(a < tag['x_cm'][1] and b > tag['x_cm'][0] for a, b in [(g - 160, g + 160) for g in
                            [lot['rear']['fence']['gate_at']] if g is not None])
         else:
@@ -1717,10 +2069,11 @@ def check_lane_life(world, out, soul, soul_rows):
 # ------------------------------------------------------------------------------------------------
 # Lane life, fourth pass: laundry seen from the ruelle, and the galleries as outdoor rooms
 
-LAUNDRY_KEYS = ('line_rope', 'pulley', 'clothes_pole') + replica.CLOTHS
+LAUNDRY_KEYS = ('line_rope', 'pulley', 'clothes_pole', 'Cloth_Laundry')
 LAUNDRY_VIEW = 'ruelle_mentana'     # Scripts/blender/plateau_replica_preview.py: the Mentana and Saint-André ruelle
 VIEW_SAMPLES = 24                   # points along each line's lower strand
 VIEW_SEEN = (.25, 60.)              # a line counts as seen with this share of its points in sight, spanning these pixels
+VIEW_NEAR = 1500.                   # and one such line, with washing in sight, within 15 m of the camera
 
 
 def preview_view(name):
@@ -1910,13 +2263,29 @@ def _tree_occluders(world, occ, box):
     return count
 
 
+def rope_point(rope, s):
+    """The point s cm (horizontally) along a recorded rope: the catenary z = z_a + c (cosh((s - m) / c) - cosh(m / c))
+    from its record (catenary_cm c, vertex_cm m)."""
+    a, b = rope['from'], rope['to']
+    t = s / math.dist(a[:2], b[:2])
+    c, m = rope['catenary_cm'], rope['vertex_cm']
+    return (a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + c * (math.cosh((s - m) / c) - math.cosh(m / c)))
+
+
 def _strand(line, k, count):
-    """Point k of count along a laundry line's lower strand (the one the washing hangs from), as the Soul layer
-    draws it: 4 cm under the pulleys, sagging by sag_cm at mid-span."""
-    a, e = line['anchor'], line['end']
-    t = k / count
-    return (a[0] + (e[0] - a[0]) * t, a[1] + (e[1] - a[1]) * t,
-            a[2] - 4 + (e[2] - a[2]) * t - line['sag_cm'] * 4 * t * (1 - t))
+    """Point k of count along a laundry line's lower strand (the one the washing hangs from), 4 cm under the
+    pulleys, as its catenary record describes it."""
+    rope = line['rope']
+    return rope_point(rope, math.dist(rope['from'][:2], rope['to'][:2]) * k / count)
+
+
+def _washing_points(line):
+    """The middle of each garment on a line, half its drop under the rope."""
+    out = []
+    for g in line.get('washing') or ():
+        p = rope_point(line['rope'], g['from_cm'] + g['width_cm'] / 2)
+        out.append((p[0], p[1], p[2] - g['drop_cm'] / 2))
+    return out
 
 
 def check_laundry_view(world, out, view=LAUNDRY_VIEW, reach=6000.):
@@ -1924,7 +2293,9 @@ def check_laundry_view(world, out, view=LAUNDRY_VIEW, reach=6000.):
     tested for a clear sight line through the game's own geometry: the Plex layer (all but the Collision_Only walls),
     the Streets and Soul layers just built (all but the laundry itself), the props of both placement layers (their
     collider boxes, else their bounds) and the trees (_tree_occluders). The cards of the masked materials (balusters,
-    lattice, fence boards, leaves) count as solid, so a line seen here is seen in the game."""
+    lattice, fence boards, leaves) count as solid, so a line seen here is seen in the game. One such line stands
+    within VIEW_NEAR of the camera with washing on it in sight (the middle of a garment), every point of it in sight
+    over its lot's fence top: the local review found the nearest lines 28 to 48 m out, behind the tree crowns."""
     spec = preview_view(view)
     cam = ViewCamera(*spec['camera'], spec.get('fov', 85.))
     lane = json.loads((out / 'Soul/lane_life.json').read_text())
@@ -1963,19 +2334,112 @@ def check_laundry_view(world, out, view=LAUNDRY_VIEW, reach=6000.):
                 b = info['bounds'][prop]
                 occ.add_prism(replica._prop_poly(prop, p[:2], yaw), p[2] + b[2], p[2] + b[5])
     trees = _tree_occluders(world, occ, box)
+    fences = {str(f['id']): ((f.get('rear') or {}).get('fence') or {}).get('height_cm') or 0.
+              for f in json.loads(replica.PLEX_FRONTS.read_text())['fronts']}
     seen = []
     for i, line, pts in lines:
         visible = [p for p in pts if cam.pixel(p) and not occ.blocked(cam.c, p)]
         px = [cam.pixel(p) for p in visible]
         span = max((math.dist(a, b) for a in px for b in px), default=0.)
+        washing = [w for w in _washing_points(line) if cam.pixel(w) and not occ.blocked(cam.c, w)]
+        near = min((math.dist(p[:2], cam.c[:2]) for p in visible), default=math.inf)
         seen.append({'line': i, 'lot': line['lot'], 'deck_z': line['deck_z'], 'in_sight': len(visible),
                      'points': len(pts), 'pixel_span': round(span), 'garments': line['garments'],
+                     'garments_in_sight': len(washing), 'nearest_in_sight_m': round(near / 100, 1),
+                     'over_fence_cm': round(min((p[2] for p in visible), default=0.) - fences[line['lot']]),
                      'distance_m': round(math.dist(pts[len(pts) // 2][:2], cam.c[:2]) / 100, 1)})
     good = [s for s in seen if s['in_sight'] >= VIEW_SEEN[0] * s['points'] and s['pixel_span'] >= VIEW_SEEN[1]]
     assert good, ('no laundry line in sight of the ' + view + ' camera', seen)
+    near = [s for s in good if s['nearest_in_sight_m'] * 100 <= VIEW_NEAR and s['garments_in_sight'] and
+            s['over_fence_cm'] > 0]
+    assert near, (f'no line with washing in sight within {VIEW_NEAR / 100:.0f} m of the {view} camera, over the fences',
+                  seen)
     return {'view': view, 'camera_cm': [round(v) for v in cam.c], 'occluders': len(occ.tris), 'trees': trees,
             'lines_in_frame': len(lines), 'lines_in_sight': len(good),
-            'nearest_in_sight': min(good, key=lambda s: s['distance_m'])}
+            'nearest_in_sight': min(near, key=lambda s: s['nearest_in_sight_m'])}
+
+
+def check_washing(out, soul):
+    """The washing hangs on its rope (the local review found sheets as stiff white boards). Each line's lower strand is
+    the catenary its record names: through both pulleys 4 cm under them, sagging sag_cm at mid-span, as long as its
+    arc. Each garment is a Cloth_Laundry strip (no one-colour cloth_* boards) of three quads or more on one cell of the
+    laundry atlas: its top vertices on the rope as drawn (on the line's vertical plane, the card's top .8 cm over the
+    rope), its hem vertices plumb under them but folded in front of and behind that plane."""
+    R, A = replica, apply_replica
+    mats = soul['materials']
+    assert not [k for k in mats if k.startswith('cloth_')] and 'Cloth_Laundry' in mats, sorted(mats)
+    assert A.texture_set('Cloth_Laundry', mats['Cloth_Laundry']) == 'laundry'
+    cells = json.loads((R.OUT / 'Textures/textures.json').read_text())['sets']['laundry']['layout']['cells']
+    lines = json.loads((out / 'Soul/lane_life.json').read_text())['laundry']['lines']
+    grid, quads, kinds = R.Grid(1000.), 0, set()
+    for i, line in enumerate(lines):
+        rope, a, e = line['rope'], line['anchor'], line['end']
+        f, t = rope['from'], rope['to']
+        assert math.dist(f, (a[0], a[1], a[2] - 4)) < .02 and math.dist(t, (e[0], e[1], e[2] - 4)) < .02, line
+        span = math.dist(f[:2], t[:2])
+        assert abs(rope_point(rope, 0.)[2] - f[2]) < .05 and abs(rope_point(rope, span)[2] - t[2]) < .05, rope
+        assert abs((f[2] + t[2]) / 2 - rope_point(rope, span / 2)[2] - line['sag_cm']) < .05, line
+        arc = sum(math.dist(rope_point(rope, span * k / 400), rope_point(rope, span * (k + 1) / 400)) for k in range(400))
+        assert abs(arc - rope['length_cm']) < .2, (arc, rope)
+        assert .015 * span <= line['sag_cm'] <= .035 * span, line
+        end = -math.inf
+        for g in line['washing']:
+            cell = cells[g['cell']]
+            assert abs(g['width_cm'] - cell['garment_cm'][0]) < .01 and g['quads'] >= 3, g
+            assert g['from_cm'] >= end and g['from_cm'] + g['width_cm'] <= span - 60 + .01, (g, span)
+            end = g['from_cm'] + g['width_cm']
+            quads += g['quads']
+            kinds.add(cell['kind'])
+        assert line['garments'] == len(line['washing'])
+        grid.add(i, R.bbox([f, t], 20))
+    assert kinds >= {'sheet', 'towel', 'shirt', 'tshirt', 'jeans', 'pillowcase'}, kinds
+
+    def on_rope(p):
+        """(distance off the line's vertical plane, height over its rope) of the line nearest p (plane, then height)."""
+        best = None
+        for i in grid.query(R.bbox([p], 10)):
+            rope = lines[i]['rope']
+            f, t = rope['from'], rope['to']
+            span = math.dist(f[:2], t[:2])
+            u = ((t[0] - f[0]) / span, (t[1] - f[1]) / span)
+            along = (p[0] - f[0]) * u[0] + (p[1] - f[1]) * u[1]
+            if not -3 <= along <= span + 3:
+                continue
+            off = abs((p[0] - f[0]) * u[1] - (p[1] - f[1]) * u[0])
+            dz = p[2] - rope_point(rope, along)[2]
+            key = (round(off, 1), abs(dz - R.PEG_UP))
+            if best is None or key < best[0]:
+                best = (key, off, dz)
+        return best and best[1:]
+    tris, tops, folded, hems = 0, 0, 0, 0
+    pad = 8 / 1024
+    for batch in soul['batches']:
+        if batch['material'] != 'Cloth_Laundry':
+            continue
+        for face in parse_obj_uv(out / 'Soul' / batch['file']):
+            tris += 1
+            cu = sum(uv[0] for _, uv in face) / 3
+            cv = sum(uv[1] for _, uv in face) / 3
+            name = next((n for n, c in cells.items() if c['uv'][0] <= cu <= c['uv'][2] and c['uv'][1] <= cv <= c['uv'][3]),
+                        None)
+            assert name, ('a garment face on no atlas cell', face)
+            u0, v0, u1, v1 = cells[name]['uv']
+            for p, (u, v) in face:
+                assert u0 - 1e-4 <= u <= u1 + 1e-4 and v0 - 1e-4 <= v <= v1 + pad, ('UV off its atlas cell', name, u, v)
+                hit = on_rope(p)
+                assert hit, ('a garment vertex off every line', p)
+                off, dz = hit
+                if v > v1 - 1e-4:
+                    tops += 1
+                    assert off < .5 and abs(dz - R.PEG_UP) <= 1.2, ('a garment top off its rope', p, off, dz)
+                else:
+                    hems += 1
+                    folded += off >= 1.
+                    assert off <= 9. and -(cells[name]['garment_cm'][1] + R.HEM_FREE) - 1.5 <= dz < -20, (p, off, dz)
+    assert tris == 2 * quads and tops and folded >= .5 * hems, (tris, quads, tops, folded, hems)
+    return {'lines': len(lines), 'garments': sum(len(l['washing']) for l in lines), 'quads': quads,
+            'kinds': sorted(kinds), 'hem_vertices_folded': round(folded / hems, 2),
+            'sag_cm': [min(l['sag_cm'] for l in lines), max(l['sag_cm'] for l in lines)]}
 
 
 def check_gallery_life(world, out, soul, soul_rows):
@@ -2644,11 +3108,47 @@ def check_planting(out, streets, soul):
             assert max(zs) - min(zs) < .01 or vertical, ('a slanted plant facet', batch['material'], face)
             faces += 1
     assert faces > 1000, faces
-    return {'card_triangles': faces}
+    # Ornamental grass: crossed Plant_Grass_Fountain cards (the local review's "straw cone" was plant_straw), each a
+    # vertical quad showing the fountain_grass set's whole clump once (u 0..1, v 0..1), three to a clump crossing at
+    # its centre about 60 degrees apart, the clump about as wide as tall.
+    mats = soul['materials']
+    assert 'plant_straw' not in mats and 'Plant_Grass_Fountain' in mats, sorted(mats)
+    assert A.texture_set('Plant_Grass_Fountain', mats['Plant_Grass_Fountain']) == 'fountain_grass'
+    cards = []
+    for batch in soul['batches']:
+        if batch['material'] != 'Plant_Grass_Fountain':
+            continue
+        for face in parse_obj_uv(out / 'Soul' / batch['file']):
+            n = replica.newell([p for p, _ in face])
+            assert abs(n[2]) < 1e-3 * math.sqrt(sum(v * v for v in n)), ('a slanted grass card', face)
+            assert {uv for _, uv in face} <= {(0., 0.), (1., 0.), (1., 1.), (0., 1.)}, face
+            ends = sorted({(p[0], p[1]) for p, _ in face})
+            assert len(ends) == 2, face
+            cards.append((((ends[0][0] + ends[1][0]) / 2, (ends[0][1] + ends[1][1]) / 2),
+                          math.dist(*ends), max(p[2] for p, _ in face) - min(p[2] for p, _ in face),
+                          math.atan2(ends[1][1] - ends[0][1], ends[1][0] - ends[0][0]) % math.pi))
+    clumps, cells = {}, {}
+    for c in cards:
+        gx, gy = math.floor(c[0][0]), math.floor(c[0][1])
+        near = [k for i in (-1, 0, 1) for j in (-1, 0, 1) for k in cells.get((gx + i, gy + j), ())]
+        key = next((k for k in near if math.dist(k, c[0]) < .1), None)
+        if key is None:
+            key = c[0]
+            cells.setdefault((gx, gy), []).append(key)
+        clumps.setdefault(key, []).append(c)
+    assert len(clumps) >= 100, len(clumps)
+    for group in clumps.values():
+        assert len(group) == 2 * replica.GRASS_CARDS, group           # two triangles a card
+        angles = sorted({round(c[3], 3) for c in group})
+        assert len(angles) == replica.GRASS_CARDS and all(
+            min(abs(a - b), math.pi - abs(a - b)) > math.radians(40) for i, a in enumerate(angles) for b in angles[i + 1:]), angles
+        width, height = max(c[1] for c in group), max(c[2] for c in group)
+        assert replica.GRASS_H[0] * .85 <= height <= replica.GRASS_H[1] * 1.06 and .7 <= width / height <= 1.4, group
+    return {'card_triangles': faces, 'fountain_grass_clumps': len(clumps)}
 
 
 SLAB_KEYS = ('sidewalk', 'curb', 'Yard_Grass', 'Yard_Soil', 'yard_path', 'grass_edge', 'soil')
-OPEN_STEPS_MAX = 50         # of about 184,000 outer slab edges; 41 now (see the README's Limits)
+OPEN_STEPS_MAX = 50         # of about 174,000 outer slab edges; 25 now (see the README's Limits)
 
 
 def check_open_steps(world, out, streets):
@@ -2902,6 +3402,7 @@ def main():
             assert so[key] > 0, key
         report['lane_life'] = check_lane_life(world, out, soul, soul_rows['placements'])
         report['laundry_view'] = check_laundry_view(world, out)
+        report['washing'] = check_washing(out, soul)
         report['gallery_life'] = check_gallery_life(world, out, soul, soul_rows['placements'])
         report['street_trees'] = check_street_trees(world, out, streets)
         report['pit_dressing'] = check_pit_dressing(world, out, streets)
@@ -2973,6 +3474,7 @@ def main():
         report['planned_collision'] = check_plan_clearance(world, the_plan)
         report['shared_keys'] = check_shared_plan()
         report['yard_trees'] = check_yard_trees(the_plan)
+        report['street_tree_plan'] = check_street_tree_plan(the_plan)
         report['editor_side'] = check_editor_side()
         report['set_authority'] = check_set_authority()
         ini = (replica.ROOT / 'Config/DefaultGame.ini').read_text()
