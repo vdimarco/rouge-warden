@@ -7,6 +7,9 @@ import { parseArgs } from 'node:util';
 
 // The frame budget and slow-frame limits of Data/Gauntlet/loop.json; a frame counts when strictly over a limit.
 const FRAME_BUDGET_MS = 33.3, SLOW_FRAME_MS = 50;
+// Without END, a sample stops when no peer has been connected for this long, as when the host crashed before its done,
+// fail or result line. That no peer stays connected after a real host exit is unverified.
+const STREAM_GONE_MS = 10000;
 const total = values => values.reduce((sum, value) => sum + value, 0);
 // The percentile of Scripts/gauntlet_metrics.py, so both sides name the same frame.
 const percentile = (sorted, fraction) => sorted[Math.ceil((sorted.length - 1) * fraction)];
@@ -296,7 +299,8 @@ async function main() {
     const point = () => ({ x: image.x + image.width / 2, y: image.y + image.height / 2, id: 9 });
     if (touch) await touch.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [point()] });
     const started = Date.now();
-    let ended = false, endedAt = null;
+    // The page showed the world before the sample started, so the stream was live then.
+    let ended = false, endedAt = null, connectedAt = started;
     do {
       const { frameBatch, eventBatch, ...sample } = await page.evaluate(async latency => {
         const video = document.querySelector('#video video'), gap = window.__sampleGap;
@@ -337,7 +341,9 @@ async function main() {
       report.samples.push(sample);
       if (frameBatch) frames.push(...frameBatch);
       if (eventBatch) report.events.push(...eventBatch);
-      if (ended || Date.now() - started >= seconds * 1000) break;
+      if (sample.peerStates.includes('connected')) connectedAt = Date.now();
+      // A stream that has ended stops the sample; the check after the summary then fails it.
+      if (ended || Date.now() - started >= seconds * 1000 || Date.now() - connectedAt >= STREAM_GONE_MS) break;
       for (let step = 0; step < 10 && !ended; step++) {
         if (touch) await touch.send('Input.dispatchTouchEvent', { type: 'touchMove',
           touchPoints: [{ ...point(), x: point().x + 30 * Math.sin((Date.now() - started) / 250) }] });

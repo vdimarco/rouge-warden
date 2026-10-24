@@ -271,3 +271,21 @@ test('a stream that ends before END or --seconds keeps its summary up to the str
     assert.ok(report.summary.streamEndedTimeMs < report.samples.at(-1).timeMs, 'the stream ended before the last sample');
   }, { failed: true });
 });
+
+test('without END, a sample stops 10 s after its last connected peer, and does not pass', async () => {
+  // The host crashes at 6.5 s and logs no done, fail or result line, so the runner writes no END to the trigger file.
+  // The sample must not run on to the runner's default of 925 s.
+  await sampleWithFake(['--seconds', '925'], [{ atMs: 6500, peer: 'closed' }], report => {
+    assert.deepEqual([report.passed, report.error], [false, 'AssertionError']);
+    const live = report.samples.findLastIndex(sample => sample.peerStates.includes('connected'));
+    const after = (report.samples.at(-1).timeMs - report.samples[live].timeMs) / 1000;
+    assert.ok(after >= 10 && after < 12, `the sample ran on ${after} s after the last connected sample`);
+    assert.equal(report.summary.streamEndedTimeMs, report.samples[live + 1].timeMs);
+  }, { failed: true });
+  // A peer that connects again within 10 s does not stop the sample: here 8 samples have no connected peer.
+  await sampleWithFake(['--seconds', '925'], [{ atMs: 3500, peer: 'disconnected' }, { atMs: 11500, peer: 'connected' },
+    { atMs: 14500, line: 'END' }], report => {
+    assert.equal(report.passed, true, report.error);
+    assert.equal(report.samples.filter(sample => !sample.peerStates.includes('connected')).length, 8);
+  });
+});

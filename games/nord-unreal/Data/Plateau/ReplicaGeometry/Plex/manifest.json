@@ -21883,7 +21883,7 @@
   "Data/Plateau/layout.json": "819756930647bac5c66eef73dbac02e383b24fa6f8a14ff4de18b9237e6b2765",
   "Data/Plateau/PerimeterGeometry/perimeter.json": "abb1a46217d5ecf7512b91e6d0cbc70179d39e074713d9e299ac758983613e82",
   "Data/Plateau/BaseGeometry/Glass.obj": "a4eceaed1ff52c8fe4df0747fdc627bdc1ebda335afbf0e7a7ae8d5bd266ba1e",
-  "Scripts/plateau_plex.py": "77353c90320aa2b8ce4adc03d3230de6ad159c7821ad013b030047e6a0238bae",
+  "Scripts/plateau_plex.py": "b6431a3a8d153f16a05e002de0f6f756a1a95e5035ae6f340fcefa4a7e1bb362",
   "Data/CityBuildings/Geometry/1884823.obj": "df194d7420ae7ff4d29bb8cd4b4484333b34c444795d988cbf86ff7c3f26d93f",
   "Data/CityBuildings/Geometry/1885606.obj": "444f16110a4a800201767a902f1d4d41a63e58a6c73f4d89b8ec0c2389640e34",
   "Data/CityBuildings/Geometry/1885607.obj": "eba774357e1a04cd87199407f42a9210f62c65d0460c9cc22bafe5119f86c830",
@@ -21892,7 +21892,8 @@
   "Data/CityBuildings/Geometry/Groupe9137208.obj": "d86e2e9e5c7f8453c006da93d2eab6d10f100e0d3534628a69ef0a56a40e4d8c",
   "Data/Plateau/ReplicaGeometry/Plex/assessment_roll_join.json": "a45fbc3a5ee02801feb034da9b30ed37212ba2b0872ca1c7b70ac34f9c17fe26",
   "Data/LaFontaine/layout.json": "4238d6ed45d5fb890e0f8dbcb672de0803c6dc7079b0b6a86b386d82ebbb4250",
-  "Data/Plateau/ReplicaGeometry/Plex/canopy_2019_clip.json": "0ad09161e188ff21940cb57a7caa65d64f1dfa5917a0edc7a3a4b79273514977"
+  "Data/Plateau/ReplicaGeometry/Plex/canopy_2019_clip.json": "0ad09161e188ff21940cb57a7caa65d64f1dfa5917a0edc7a3a4b79273514977",
+  "Data/Plateau/ReplicaGeometry/Streets/street_trees.json": "b209cf804cd06318505307f9b083b428f6390e8e48c17959a3f1ac54ffcc0247"
  },
  "geometry_sha256": {
   "AsphaltLot_XM002_YM001.obj": "f925bb31237b9dcaf142b6f18b2a39c29192d336e93dd63856ca503cb06f89cf",
