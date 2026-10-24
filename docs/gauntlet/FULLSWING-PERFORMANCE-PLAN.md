@@ -138,3 +138,6 @@ Increment64 shipped #695 as013e0bbc after all6CI/review/current authenticated tr
 
 
 Increment65 pending — goal placement+HUD output share private record/twoactivegoalrecords→0;1920exactplacementcomparisons/defaultfresh+goalmark+7browserchecksPASS includinglayout/state/mission/trendreset. Evidence r65-goal-record/all20limits/noFPSclaim/totalwithheld.
+
+
+Increment65 shipped #697 as765d5da0 after all6CI/review/current7authenticatedbrowserchecks/exactmain+actionhudbytes/rebase before AND afterpreview/exactmerge. Productionboth HTTP200 exactSHA main8224627aa0816c71eba6778e777b5bc39e318e85da3faa9137a921a7e4b8afa7/actionhud0f995bd08ad348c929818e50b1fd7c19948a9e489160cdf2ddebc9a9c7441693 verified. Canonical goal-record scenarios published and OpenSpec archived. ActualChrome/FPSbenefit unverified; totalwithheld.
