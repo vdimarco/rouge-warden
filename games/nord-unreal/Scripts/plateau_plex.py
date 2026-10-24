@@ -38,6 +38,12 @@ shared posts (plan_partitions), every deck records the floor left for props (dec
 background masses get white membrane or gravel roofs with a chimney and hatch, or a tower's penthouse and vents
 (author_background_roof).
 
+Fourth pass: BUILDING_FORMS gives a block its own form on top of the post-1945 kit (the Habitations De Mentana after
+the OMHM's April 2009 photo: balcony stacks one bay wide with teal open railings, red brick between exposed-concrete
+piers, plain concrete end walls, a ground floor set back behind columns); lane fences draw their kind and colour per
+lot (weathered or painted boards, lattice tops, chain-link, slats; FENCE_MIX) with more garages and sheds on the lane;
+cedars and cedar hedges are crossed Leaf_Cedar cut-out cards; and any wall a named street sees (street_sight) is brick.
+
 Rules follow research-plateau.md §3-§6 and §9 (Plateau heritage sheets, Dec 2015) and the
 CGA split idea of Müller et al. 2006 (mass -> facade -> floors -> bays). Storeys come from
 OSM building:levels, then the municipal assessment roll joined by address, then the 2016
@@ -77,8 +83,11 @@ TILE_CM = 4750            # base grid; widened in whole multiples only when the 
 # Raised from 860: the walls-and-roofs pass adds 8 material keys (roofs, sheet metal, lap siding, parging, baluster
 # cards), about 1,250 batches at the 142.5 m tile, so the tile widens to 190 m (884 batches) instead of 237.5 m; the
 # yards pass adds 7 more keys (lattice, fence boards, creeper, four ground covers), 1,110 batches at 190 m. A batch is
-# one Nanite static-mesh actor, which is cheap.
-MAX_BATCHES = 1200
+# one Nanite static-mesh actor, which is cheap. Raised to 1,350 (the agreed ceiling is 1,400) by the fourth pass: its 8
+# keys (Leaf_Cedar cards, three painted fence-board keys and Chain_Link on every fenced tile, and the Habitations De
+# Mentana's Concrete_Exposed, Paint_Teal and Rail_Baluster_Teal) take 1,342 batches at the 190 m tile, where a 1,200
+# cap would widen it to 237.5 m and split the Iron batches at the triangle cap.
+MAX_BATCHES = 1350
 MAX_BATCH_TRIANGLES = 60000
 # Raised from 2.5 million to 2.75 million: roofs (membrane skins, party parapets, chimneys, hatches), windowed long and
 # street walls and the skins and windows on 252 background masses add about 210,000 triangles. Raised to 2.95 million:
@@ -104,6 +113,7 @@ SKIP_BUILDING = ('pavilion', 'shed', 'roof', 'garages', 'garage', 'construction'
 SHOP_AMENITY = ('restaurant', 'cafe', 'bar', 'pub', 'fast_food', 'pharmacy', 'bank', 'ice_cream',
                 'clinic', 'dentist', 'doctors', 'bicycle_rental_shop')
 
+REPLICA_TEXTURES = '/Game/Plateau/Replica/Textures'   # apply_plateau_replica.TEXTURE_ASSETS: the replica sets' maps
 # research-plateau.md §9 palette (sRGB); roughness/metallic are art-direction values.
 MATERIALS = {
     'Brick_Red':       {'base_color_srgb': '#953F2F', 'roughness': .86, 'metallic': 0, 'texture': '/Game/Art/Textures/brick_wall_001_diff'},
@@ -154,13 +164,43 @@ MATERIALS = {
     # Shared key: geometry that collides but never renders (gallery guards, stair-opening edges, balcony rails). The
     # apply step spawns these batches on actors hidden in game that block pawns and ignore the camera and visibility.
     'Collision_Only':  {'base_color_srgb': '#FF00FF', 'roughness': 1., 'metallic': 0},
+    # Shared key of the fourth pass (texture set by plateau_textures.py, material by the apply step): eastern white
+    # cedar as crossed cut-out cards (masked, V clamped; v 0..1 foot to top, u one tile per card, CARD_ASPECT). The
+    # colour is the set's mean, so the tint stays near 1 and the drawing keeps its greens and the October browns.
+    'Leaf_Cedar':      {'base_color_srgb': '#405428', 'roughness': .78, 'metallic': 0},
+    # Fourth-pass keys on existing replica sets: the 'texture' path names the set's diffuse map, which the apply step
+    # matches first (apply_plateau_replica.texture_set), so each key is its own tinted duplicate of that set. Painted
+    # lane fences on the weathered-board card, chain-link on the lattice card at chain-link scale (CARD_U), and the
+    # Habitations De Mentana's teal railings and exposed concrete (BUILDING_FORMS).
+    'Fence_Boards_Green': {'base_color_srgb': '#3E6A47', 'roughness': .74, 'metallic': 0,
+                           'texture': REPLICA_TEXTURES + '/T_Replica_FenceBoards_diff'},
+    'Fence_Boards_Red':   {'base_color_srgb': '#8C3B30', 'roughness': .74, 'metallic': 0,
+                           'texture': REPLICA_TEXTURES + '/T_Replica_FenceBoards_diff'},
+    'Fence_Boards_Blue':  {'base_color_srgb': '#4C7391', 'roughness': .74, 'metallic': 0,
+                           'texture': REPLICA_TEXTURES + '/T_Replica_FenceBoards_diff'},
+    'Chain_Link':      {'base_color_srgb': '#A4A8A9', 'roughness': .5, 'metallic': .3,
+                        'texture': REPLICA_TEXTURES + '/T_Replica_Lattice_diff'},
+    'Rail_Baluster_Teal': {'base_color_srgb': '#3F6E69', 'roughness': .55, 'metallic': 0,
+                           'texture': REPLICA_TEXTURES + '/T_Replica_Balusters_diff'},
+    'Paint_Teal':      {'base_color_srgb': '#3F6E69', 'roughness': .5, 'metallic': 0},
+    'Concrete_Exposed': {'base_color_srgb': '#B4B1A9', 'roughness': .86, 'metallic': 0,
+                         'texture': REPLICA_TEXTURES + '/T_Replica_Parging_diff'},
 }
 # complex-as-simple per batch, like the existing *_Collision batches. A Wood_Deck face inside the 300 cm traffic band
 # goes to a 'Visual' batch with no collision instead (clear_traffic_band), and a Collision_Only face there is dropped.
 COLLISION = {'Wood_Deck': 'complex', 'Collision_Only': 'complex'}
 VISUAL = 'Visual'           # batch-name marker of the no-collision Wood_Deck batches
 # Alpha-masked cut-out cards: u along the run in metres, v 0..1 from the bottom to the top of the card.
-CARD_UV = ('Rail_Baluster', 'Rail_Lattice', 'Fence_Boards')
+CARD_UV = ('Rail_Baluster', 'Rail_Lattice', 'Fence_Boards', 'Fence_Boards_Green', 'Fence_Boards_Red',
+           'Fence_Boards_Blue', 'Chain_Link', 'Rail_Baluster_Teal', 'Leaf_Cedar')
+# u per metre along a card where it is not 1: chain-link draws the 1 m lattice tile on 40 cm cards (CHAIN_CARD), so
+# the diamonds come out about 3 cm across, a chain-link mesh rather than a garden lattice.
+CHAIN_CARD = 40.
+CARD_U = {'Chain_Link': 100. / CHAIN_CARD}
+# Cards whose set draws one object per tile (the cedar column, 1 m wide on a 3 m card): u runs from the card's own end
+# at tile width = card height / aspect, so the card shows its drawing whole and upright, whatever its height.
+CARD_ASPECT = {'Leaf_Cedar': 3.}
+BOARD_KEYS = ('Fence_Boards', 'Fence_Boards_Green', 'Fence_Boards_Red', 'Fence_Boards_Blue')
 YARD_GROUND = ('Yard_Grass', 'Yard_Pavers', 'Yard_Soil', 'Yard_Gravel')
 ROOFS = ('Roof_Membrane', 'Roof_Gravel', 'Roof_Tar')
 BRICKS = ('Brick_Red', 'Brick_RedDark', 'Brick_Orange', 'Brick_Brown', 'Brick_BrownDark', 'Brick_Buff_Even')
@@ -194,6 +234,25 @@ BALCONY_CLEAR = 300.        # a wall needs this much room in front of it for bal
 GUARD_PAINT = ('Iron', 'Iron', 'Wood_Grey', 'Trim', 'Wood_Green')
 PANEL_PAINT = ('Wood_Cream', 'Wood_Grey', 'Wood_Green', 'Wood_Burgundy', 'Stone_Cast')
 SIDING_STOREYS, SIDING_MAX_STOREYS = 2, 4   # lap siding never above the 2nd storey, never on a block over 4
+# Per-building forms on top of the post-1945 kit, each with the photo it follows. A form replaces the kit's balcony
+# bands on that block; the kit's parapet roof, lift penthouses, no galleries and no siding stay.
+BUILDING_FORMS = {
+    # OSM way 356220851, the OMHM's Habitations De Mentana (the year override above): a 9-storey slab between Mentana
+    # and Saint-André. The OMHM photo of the tower (Infochantier, April 2009, p. 1) shows separate balconies about one
+    # bay wide in vertical stacks with teal-green open metal railings, red brick bays between grey exposed-concrete
+    # piers, a plain grey concrete end wall with no balconies, and a ground floor set back behind concrete columns.
+    '356220851': {'form': 'omhm_slab',
+                  'source': 'OMHM, Infochantier Habitation De Mentana, April 2009, photo of the tower '
+                            '(https://www.omhm.qc.ca/sites/default/files/infochantier/'
+                            '0845-OMHM-Infochartier-Habitation_De_Mentana.pdf)'},
+}
+SLAB_BAY = 600.             # structural bay between the exposed-concrete piers: a window half and a balcony half
+SLAB_PIER, SLAB_PIER_PROUD = 44., 8.    # pier width, and how far it stands proud of the brick
+SLAB_COLONNADE = 120.       # the upper floors overhang the set-back ground floor by this much, on a column per pier
+SLAB_COLUMN = 40.           # square concrete columns under the piers
+SLAB_RAIL = 100.            # open metal railing over the balcony slab
+SLAB_CLEAR = 450.           # a long wall needs this much room in front of it for the colonnade and the balconies
+SLAB_JOINT = 240.           # panel joints on the plain concrete end walls, and one at each floor line
 
 
 def _seed(*parts):
@@ -246,7 +305,8 @@ def write_obj(path, name, faces, material=None):
 
 def obj_text(name, faces, material=None):
     """plateau_mesh.Mesh.write conventions (v x -y z, reversed fans), UVs in metres. A cut-out card material
-    (CARD_UV, quads authored bottom edge first) takes v = 0 on its lower edge and 1 on its upper edge."""
+    (CARD_UV, quads authored bottom edge first) takes v = 0 on its lower edge and 1 on its upper edge, and u in metres
+    along the card times CARD_U (1 for all but chain-link)."""
     lines = ['o ' + name]
     index = 1
     card = material in CARD_UV
@@ -262,7 +322,16 @@ def obj_text(name, faces, material=None):
             # the face may be stored reversed: its lower edge is the pair of vertices with the lower mean height
             vs = (0., 0., 1., 1.) if poly[0][2] + poly[1][2] < poly[2][2] + poly[3][2] else (1., 1., 0., 0.)
             run = math.hypot(d[0], d[1]) or 1
-            uvs = [((p[0] * d[0] + p[1] * d[1]) / run / 100, v) for p, v in zip(poly, vs)]
+            if material in CARD_ASPECT:
+                # u from the card's own end, one tile per (card height / aspect): the cedar set draws one column per
+                # tile, so a card is placed on its drawing, not on the world's metre grid
+                height = max(p[2] for p in poly) - min(p[2] for p in poly)
+                scale = CARD_ASPECT[material] * 100 / height
+                o = poly[0]
+                uvs = [(((p[0] - o[0]) * d[0] + (p[1] - o[1]) * d[1]) / run / 100 * scale, v) for p, v in zip(poly, vs)]
+            else:
+                scale = CARD_U.get(material, 1.)
+                uvs = [((p[0] * d[0] + p[1] * d[1]) / run / 100 * scale, v) for p, v in zip(poly, vs)]
         else:
             uvs = [(p[0] / 100, p[1] / 100) if horizontal else (sum(p[i] * d[i] for i in range(3)) / 100, p[2] / 100)
                    for p in poly]
@@ -1044,6 +1113,9 @@ def _lot(building, points, primary, sides, roll, lod2, shops, roof_check=None):
     }
     if modern:
         _modern_paint(lot, bid)
+        form = BUILDING_FORMS.get(bid)
+        if form:
+            lot['form'], lot['form_source'] = form['form'], form['source']
     return lot
 
 
@@ -1756,6 +1828,8 @@ def author_modern_front(mesh, lot, front, kit, primary=True, top_override=None):
     top = max(floors[-1] + 12 + 100, lot['height_cm'] + 15)
     if top_override:
         top = max(top, top_override)
+    if lot.get('form') == 'omhm_slab':
+        return author_slab_end(mesh, lot, front, kit, F, W, floors, top)
     base = lot['raise'] + 10
     F.quad_d('Stone_Cast', 0, W, 0, base, D_FACE)
     F.quad_d(wall, 0, W, base, top, D_FACE)
@@ -1772,6 +1846,153 @@ def author_modern_front(mesh, lot, front, kit, primary=True, top_override=None):
               'yard_source': front['yard_source'], 'top_cm': round(top, 1), 'modules': 1,
               'exterior_stairs': 0, 'stairs': [], 'kit': 'post-1945 apartment'}
     return record, top
+
+
+def concrete_joints(F, x0, x1, z0, z1, floors, d, counts=None):
+    """Panel joints on a plain exposed-concrete wall in frame F (the plane d): a 2.5 cm dark groove about every
+    SLAB_JOINT along the wall and one just under each floor line. Returns the number of joints."""
+    n = max(1, round((x1 - x0) / SLAB_JOINT))
+    joints = 0
+    for i in range(1, n):
+        x = x0 + (x1 - x0) * i / n
+        F.quad_d('Parged', x - 1.25, x + 1.25, z0, z1, d + .5)
+        joints += 1
+    for z in floors[1:]:
+        if z0 < z - 12 < z1 - 5:
+            F.quad_d('Parged', x0, x1, z - 13.25, z - 10.75, d + .5)
+            joints += 1
+    if counts is not None:
+        counts['slab_joints'] = counts.get('slab_joints', 0) + joints
+    return joints
+
+
+def author_slab_end(mesh, lot, front, kit, F, W, floors, top):
+    """An end wall of the omhm_slab form (BUILDING_FORMS): plain grey exposed concrete with panel joints and no
+    balconies or windows above the ground floor; a glazed entrance under a concrete canopy in the middle, a parged
+    base and a metal coping. Same record as author_front."""
+    F.quad_d('Parged', 0, W, 0, 30, D_FACE)
+    F.quad_d('Concrete_Exposed', 0, W, 30, top, D_FACE)
+    for x, side in ((0, -1), (W, 1)):
+        F.quad_x('Concrete_Exposed', x, D_BACK, D_FACE, 0, top, side)
+    concrete_joints(F, 0, W, 30, top, floors, D_FACE, kit.counts)
+    # the entrance: a glazed double door in an aluminium frame under a concrete canopy, one step up
+    c, hw, z = W / 2, min(110., W / 2 - 40), floors[0]
+    if hw >= 60:
+        F.quad_d('Sheet_Metal', c - hw, c + hw, z, z + 240, D_FACE + 1)
+        F.quad_d('Glass', c - hw + 6, c + hw - 6, z + 4, z + 234, D_FACE + 2.5)
+        F.quad_d('Sheet_Metal', c - 2.5, c + 2.5, z + 4, z + 234, D_FACE + 3.5)
+        F.box('Stone_Cast', c - hw - 50, c + hw + 50, D_FACE, D_FACE + 170, z + 255, z + 272, skip='k')
+        F.box('Stone_Cast', c - hw - 20, c + hw + 20, D_FACE - 2, D_FACE + 110, 0, z, skip='kb')
+        kit.count('modern_entrances')
+    F.box('Sheet_Metal', 0, W, -18, D_FACE + 3, top, top + 4, skip='b')
+    if top > lot['height_cm']:
+        F.quad_d('Concrete_Exposed', 0, W, lot['height_cm'], top, D_BACK, -1)
+    kit.count('modern_fronts')
+    kit.count('slab_end_walls')
+    record = {'a': [round(v, 2) for v in front['a']], 'b': [round(v, 2) for v in front['b']],
+              'width_cm': round(W, 1), 'street': front['street'], 'yard_cm': front['yard'],
+              'yard_source': front['yard_source'], 'top_cm': round(top, 1), 'modules': 1,
+              'exterior_stairs': 0, 'stairs': [], 'kit': 'post-1945 apartment', 'form': lot['form'],
+              'material': 'Concrete_Exposed'}
+    return record, top
+
+
+def slab_long_wall(mesh, F, W, floors, zt, brick, paints, counts, unit, ends=(0., None)):
+    """A long face of the omhm_slab form in frame F (x 0..W along the wall, the skin at D_FACE): exposed-concrete
+    piers every SLAB_BAY with red brick between them, the upper floors carried SLAB_COLONNADE out over a set-back
+    ground floor on a concrete column under each pier, and in each bay a window half and a balcony half, so the
+    balconies stand one bay wide in vertical stacks (mirrored about the middle, so a stack ends each face). Each
+    balcony is a 15 cm concrete slab BALCONY_D deep behind a teal open metal railing: a Rail_Baluster_Teal cut-out card
+    on three sides, a teal cap rail and corner posts, with a patio door and a small window behind it. Each column gets
+    a Collision_Only box as its own collision unit (`unit` + its index), so the traffic band can drop it alone.
+    paints = (frame, panel); ends = (x0, x1), the skin's ends (it runs D_FACE past a convex corner), which the
+    overhang follows so no strip of the skin plane shows beside it. Returns (windows, patio doors, balconies)."""
+    frame, panel = paints
+    mesh = F.mesh
+    e0, e1 = ends[0], W if ends[1] is None else ends[1]
+    n = max(2, round((e1 - e0) / SLAB_BAY))
+    bw = (e1 - e0) / n
+    dF = D_FACE + SLAB_COLONNADE
+    zs = floors[1] - 35                                   # soffit: the underside of the first floor's slab
+    windows = doors = balconies = 0
+
+    def window(xa, xb, z, d, height=120.):
+        nonlocal windows
+        F.quad_d(frame, xa, xb, z + 90, z + 90 + height, d + 1)
+        F.quad_d('Glass', xa + 5, xb - 5, z + 95, z + 85 + height, d + 2.5)
+        blind(F, xa + 5, xb - 5, z + 95, z + 85 + height, counts)
+        F.quad_d(frame, (xa + xb) / 2 - 2, (xa + xb) / 2 + 2, z + 95, z + 85 + height, d + 3.5)
+        F.quad_d(panel, xa, xb, z + 12, z + 86, d + 1)
+        windows += 1
+
+    def patio(xa, xb, z, d):
+        nonlocal doors
+        F.quad_d(frame, xa, xb, z, z + 210, d + 1)
+        F.quad_d('Glass', xa + 5, xb - 5, z + 3, z + 205, d + 2.5)
+        blind(F, xa + 5, xb - 5, z + 3, z + 205, counts)
+        F.quad_d(frame, (xa + xb) / 2 - 2.5, (xa + xb) / 2 + 2.5, z + 3, z + 205, d + 3.5)
+        doors += 1
+
+    def balcony(x0, x1, z):
+        nonlocal balconies
+        d1 = dF + BALCONY_D
+        F.box('Stone_Cast', x0, x1, dF, d1, z - SLAB_T, z, skip='k')
+        rt = z + SLAB_RAIL
+        p = F.p
+        for (xa, da), (xb, db) in (((x0 + 2, dF), (x0 + 2, d1 - 2)), ((x0 + 2, d1 - 2), (x1 - 2, d1 - 2)),
+                                   ((x1 - 2, d1 - 2), (x1 - 2, dF))):
+            cutout(mesh, 'Rail_Baluster_Teal', p(xa, da, 0), p(xb, db, 0), z, rt - 4)
+        F.box('Paint_Teal', x0, x1, d1 - 4.5, d1 + .5, rt - 4, rt, skip='blr')            # front cap rail
+        for x in (x0 + 2, x1 - 2):
+            F.box('Paint_Teal', x - 2.5, x + 2.5, dF, d1 - 4.5, rt - 4, rt, skip='bk')      # side cap rails
+            F.box('Paint_Teal', x - 2, x + 2, d1 - 4, d1, z, rt - 4, skip='tb')             # corner posts
+        balconies += 1
+
+    # the overhang: the brick face on the column line, its soffit, a concrete edge beam at the first floor, returns
+    F.quad_d(brick, e0, e1, zs, zt, dF)
+    F.quad_z('Stone_Cast', e0, e1, D_FACE, dF - 25, zs, -1)
+    F.box('Concrete_Exposed', e0, e1, dF - 25, dF + 1, zs, floors[1], skip='kt')
+    F.quad_x('Concrete_Exposed', e0, D_FACE, dF, zs, zt, -1)       # the overhang's ends, under the end piers' sides
+    F.quad_x('Concrete_Exposed', e1, D_FACE, dF, zs, zt, 1)
+    F.box('Sheet_Metal', e0, e1, D_FACE, dF + SLAB_PIER_PROUD + 3, zt, zt + 4, skip='b')
+    for k in range(n + 1):
+        x = min(max(e0 + k * bw, e0 + SLAB_PIER / 2), e1 - SLAB_PIER / 2)
+        F.box('Concrete_Exposed', x - SLAB_PIER / 2, x + SLAB_PIER / 2, dF, dF + SLAB_PIER_PROUD, zs, zt, skip='kbt')
+        c = min(max(x, e0 + SLAB_COLUMN / 2 + 2), e1 - SLAB_COLUMN / 2 - 2)
+        F.box('Concrete_Exposed', c - SLAB_COLUMN / 2, c + SLAB_COLUMN / 2, dF - SLAB_COLUMN, dF, 0, zs, skip='tb')
+        mesh.unit = unit + (k,)
+        F.box('Collision_Only', c - SLAB_COLUMN / 2 - 1, c + SLAB_COLUMN / 2 + 1, dF - SLAB_COLUMN - 1, dF + 1, 0, zs,
+              skip='tb')
+        mesh.unit = None
+    counts['slab_piers'] = counts.get('slab_piers', 0) + n + 1
+    counts['slab_columns'] = counts.get('slab_columns', 0) + n + 1
+    for i in range(n):
+        x0, x1 = e0 + i * bw + SLAB_PIER / 2, e0 + (i + 1) * bw - SLAB_PIER / 2
+        xm = (x0 + x1) / 2
+        halves = ((x0, xm, 'balcony'), (xm, x1, 'window')) if i < n / 2 else ((x0, xm, 'window'), (xm, x1, 'balcony'))
+        for k, z in enumerate(floors[:-1]):
+            if z + 215 > zt - 10:
+                break
+            for xa, xb, use in halves:
+                hw = xb - xa
+                if k == 0:
+                    # the set-back ground floor, on the skin plane behind the columns: a window per half, and the
+                    # entrance door from the court in the middle bay
+                    if use == 'balcony' and i == n // 2:
+                        patio(xa + .2 * hw, xb - .2 * hw, z, D_FACE)
+                        counts['slab_court_doors'] = counts.get('slab_court_doors', 0) + 1
+                    else:
+                        window(xa + .2 * hw, xb - .2 * hw, z, D_FACE)
+                elif use == 'window':
+                    window(xa + .22 * hw, xb - .22 * hw, z, dF)
+                else:
+                    patio(xa + .1 * hw, xa + .58 * hw, z, dF)
+                    window(xa + .66 * hw, xa + .9 * hw, z, dF, height=110.)
+                    balcony(xa + 4, xb - 4, z)
+    for key, value in (('modern_windows', windows), ('patio_doors', doors), ('modern_balconies', balconies),
+                       ('wall_panels', windows), ('slab_balconies', balconies)):
+        counts[key] = counts.get(key, 0) + value
+    return windows, doors, balconies
 
 
 def _extension(mesh, lot, top, skin_edges, roof='Roof_Membrane'):
@@ -2043,6 +2264,31 @@ SIDING_SETBACK = 600.       # no siding on a wall that comes this close behind t
 COMMON_BRICK = ('Brick_Red', 'Brick_Red', 'Brick_Brown')      # common brick; also keeps the 142.5 m batch tile
 FENCE_WOOD = ('Wood_Oak', 'Wood_Oak', 'Wood_Grey', 'Wood_Grey', 'Wood_Green', 'Wood_Burgundy', 'Wood_Cream')
 SHED_WALLS = ('Wood_Grey', 'Wood_Oak', 'Wood_Green', 'Wood_Cream', 'Iron', 'Wood_Burgundy')
+# Lane fences of the fourth pass, per lot from a seed of their own (every earlier draw stays put). The local review
+# found both sides of a ruelle one continuous 1.8 m brown board fence, where the lanes mix weathered and painted
+# boards, lattice-topped boards, chain-link, slatted chain-link, low fences, open parking pads, sheds and garages.
+# A fenced lot now draws weathered boards, boards painted green, barn red or blue-grey (the board card tinted, posts and
+# cap in the matching paint), boards under a lattice top, galvanised chain-link or slatted chain-link; the low picket
+# fences and the open parking pads keep their own draws (OPEN_SHARE, LOW_SHARE).
+FENCE_MIX = ((.27, 'boards'), (.5, 'painted'), (.63, 'lattice'), (.86, 'chain'), (1.01, 'slats'))
+FENCE_PAINTED = (('Fence_Boards_Green', 'Wood_Green'), ('Fence_Boards_Red', 'Wood_Burgundy'),
+                 ('Fence_Boards_Blue', 'Wood_Grey'))
+SLAT_PAINT = ('Wood_Green', 'Wood_Grey', 'Wood_Green', 'Wood_Oak')
+LATTICE_TOP = 45.           # the lattice band of a lattice-topped board fence, between a mid rail and the cap rail
+CHAIN_H = (120., 150., 150., 180.)
+CHAIN_POSTS = 300.          # galvanised line posts of a chain-link fence (the slatted kind's spacing)
+FENCE_POSTS = {'boards': (POST_SPACING, 4.5), 'lattice': (POST_SPACING, 4.5), 'slats': (300., 3.),
+               'chain': (CHAIN_POSTS, 3.), 'low': (180., CAP_W / 2)}   # post spacing and half width, by kind
+# More outbuildings on the lane (the review counted 6 garages): a garage on a fifth of the lane lots with room for one,
+# a shed on two fifths of the rest, each with its door and its front wall on the fence line.
+GARAGE_SHARE, SHED_SHARE = .2, .4
+GARAGE_W, GARAGE_D = 300., 540.
+# Cedars (thuja) as crossed cut-out cards (Leaf_Cedar) instead of a dark six-sided cone: three cards crossing at 60
+# degrees, each one tile of the cedar set's drawing (a soft column with a ragged outline in its alpha); hedges as a
+# row of those columns on cards along both faces, across the ends and across the hedge, over a dark core.
+# The cedar set's drawing (plateau_textures SETS['cedar'] and CEDAR_CROWN_CM): one column per 1 m tile on a 3 m card,
+# its tip at 95% of the card height.
+CEDAR_CARD = (1.0, 3.0, .95)
 
 
 LONG_WALL, LONG_CLEAR = 800., 120.    # a side wall this long with no neighbour this close is a windowed long wall
@@ -2288,6 +2534,98 @@ def creeper(mesh, F, x0, x1, d, height, rng, top):
     return strips
 
 
+SIGHT_RANGE = 4500.         # a named street this near sees a wall it has a clear line to
+SIGHT_ANGLES = tuple(range(-75, 76, 15))
+SIGHT_STEP = 150.
+
+
+def _ray_segment(origin, direction, a, b):
+    """Distance along the ray origin + t direction (t > 1 cm) to segment ab, or None."""
+    ex, ey = b[0] - a[0], b[1] - a[1]
+    den = direction[0] * ey - direction[1] * ex
+    if abs(den) < 1e-9:
+        return None
+    ox, oy = a[0] - origin[0], a[1] - origin[1]
+    t = (ox * ey - oy * ex) / den
+    s = (ox * direction[1] - oy * direction[0]) / den
+    return t if t > 1 and 0 <= s <= 1 else None
+
+
+def street_sight(wall, obstacles, streets, limit=SIGHT_RANGE):
+    """Distance at which one of `streets` (named drive centreline segments) first sees `wall` along a clear ray, or
+    None (Rear.street_sight). `obstacles` are (polygon, x0, y0, x1, y1) with their bounds."""
+    if not streets:
+        return None
+    a, b, n = wall['a'], wall['b'], wall['normal']
+    u = ((b[0] - a[0]) / wall['width'], (b[1] - a[1]) / wall['width'])
+    steps = max(2, math.ceil(wall['width'] / SIGHT_STEP))
+    best = None
+    for i in range(steps):
+        f = (i + .5) / steps
+        o = (a[0] + (b[0] - a[0]) * f + n[0] * 25, a[1] + (b[1] - a[1]) * f + n[1] * 25)
+        for angle in SIGHT_ANGLES:
+            r = math.radians(angle)
+            d = (n[0] * math.cos(r) + u[0] * math.sin(r), n[1] * math.cos(r) + u[1] * math.sin(r))
+            hits = [t for c, e in streets for t in (_ray_segment(o, d, c, e),) if t is not None and t < limit]
+            if not hits:
+                continue
+            t_street = min(hits)
+            if best is not None and t_street >= best:
+                continue
+            end = (o[0] + d[0] * t_street, o[1] + d[1] * t_street)
+            bx0, by0, bx1, by1 = min(o[0], end[0]), min(o[1], end[1]), max(o[0], end[0]), max(o[1], end[1])
+            blocked = False
+            for poly, x0, y0, x1, y1 in obstacles:
+                if x1 < bx0 or x0 > bx1 or y1 < by0 or y0 > by1:
+                    continue
+                if any((t := _ray_segment(o, d, p, q)) is not None and t < t_street
+                       for p, q in zip(poly, poly[1:] + poly[:1])):
+                    blocked = True
+                    break
+            if not blocked:
+                best = t_street
+    return None if best is None else round(best, 1)
+
+
+def cedar(mesh, base, height, yaw):
+    """A cedar (thuja) as three crossed Leaf_Cedar cards at 60 degrees round the trunk point `base`. The cedar set
+    (plateau_textures.py) draws one column per tile, CEDAR_CARD[0] m wide on a CEDAR_CARD[1] m card with its tip at
+    CEDAR_CARD[2] of the height, so each card is one tile: as tall as puts the drawn tip at `height`, as wide as keeps
+    the drawing's aspect, centred on the trunk (obj_text gives Leaf_Cedar u from the card's own end, CARD_ASPECT).
+    Returns the card count."""
+    tile_w, card_h, tip = CEDAR_CARD
+    h = height / tip
+    half = h * tile_w / card_h / 2
+    for k in range(3):
+        t = yaw + k * math.pi / 3
+        u = (math.cos(t) * half, math.sin(t) * half)
+        cutout(mesh, 'Leaf_Cedar', (base[0] - u[0], base[1] - u[1]), (base[0] + u[0], base[1] + u[1]), 0., h)
+    return 3
+
+
+def cedar_half_width(height):
+    """Half the width of a cedar's cards (the yard plan keeps 75 cm round its trunk)."""
+    return height / CEDAR_CARD[2] * CEDAR_CARD[0] / CEDAR_CARD[1] / 2
+
+
+def hedge(mesh, F, x0, x1, d0, d1, height):
+    """A cedar hedge in frame F (x0..x1 across, d0..d1 along it): a row of thuja as Leaf_Cedar cards, the set's
+    columns side by side at the drawing's aspect (one per CEDAR_CARD[0] / CEDAR_CARD[1] of the card height, about
+    60 cm), on both long faces, across each end and across the hedge about every 1.2 m, over a dark green core that
+    stops well under the tips (the shade inside the hedge, and its body from a gallery). Returns the card count."""
+    h = height / CEDAR_CARD[2]
+    cards = 0
+    for x in (x0 + 8, x1 - 8):
+        cards += cutout(mesh, 'Leaf_Cedar', F.p(x, d0, 0)[:2], F.p(x, d1, 0)[:2], 0., h)
+    n = max(1, round((d1 - d0) / 120.))
+    for i in range(n + 1):
+        d = d0 + 4 + (d1 - d0 - 8) * i / n
+        cards += cutout(mesh, 'Leaf_Cedar', F.p(x0, d, 0)[:2], F.p(x1, d, 0)[:2], 0., h * .97)
+    if x1 - x0 > 30 and d1 - d0 > 30:
+        F.box('Wood_Green', x0 + 16, x1 - 16, d0 + 16, d1 - 16, 0, height * .6, 'b')
+    return cards
+
+
 class Rear:
     """Plan and author the yard side of one lot. It has its own seed, so the front draws stay as they were."""
 
@@ -2342,6 +2680,26 @@ class Rear:
         if lot['storeys'] >= 5:
             self.paint, self.roofed = 'Iron', False     # apartment blocks: steel fire-escape galleries
             self.infill = 'iron'
+        # the fourth pass's fence kind and colour and its outbuilding draws, from a seed of their own
+        fr = random.Random(_seed('plex-fence', lot['id']))
+        pick = fr.random()
+        style = next(kind for limit, kind in FENCE_MIX if pick < limit)
+        painted, lattice_painted, chain_h, slat_paint = (fr.choice(FENCE_PAINTED), fr.random() < .5, fr.choice(CHAIN_H),
+                                                         fr.choice(SLAT_PAINT))
+        self.garage_pick, self.shed_pick = fr.random(), fr.random()
+        self.fence_style, self.board_key = style, 'Fence_Boards'
+        if style == 'painted' or style == 'lattice' and lattice_painted:
+            self.board_key, self.fence_paint = painted
+        if style in ('boards', 'painted'):
+            self.fence_kind = 'boards'
+            if self.fence_h < 165:
+                self.fence_h = 180.
+        elif style == 'lattice':
+            self.fence_kind, self.fence_h = 'lattice', max(self.fence_h, 180.)
+        elif style == 'chain':
+            self.fence_kind, self.fence_h, self.fence_paint = 'chain', chain_h, 'Sheet_Metal'
+        else:
+            self.fence_kind, self.fence_h, self.fence_paint = 'slats', 150., slat_paint
         # gates are painted and stand out from the fence: never natural wood, never the fence posts' own colour
         if self.gate_paint not in GATE_PAINT or self.gate_paint == self.fence_paint:
             self.gate_paint = next(p for p in (self.gate_alt,) + GATE_PAINT if p != self.fence_paint)
@@ -2355,6 +2713,8 @@ class Rear:
         # lap siding never on a block over four storeys (after every draw above, so they stay put); on the others it
         # stops at the top of the second storey, with the lot's brick above it (_skin_faces)
         self.modern = bool(lot.get('modern'))
+        self.form = lot.get('form')
+        self.sight = {}             # wall index -> distance at which a named street sees it, or None (street_sight)
         if self.siding and (lot['storeys'] > SIDING_MAX_STOREYS or self.modern):
             self.siding, self.wall, self.sill = False, brick, 'Stone_Cast'
         self.siding_top = self.floor_z[SIDING_STOREYS] if lot['storeys'] > SIDING_STOREYS else math.inf
@@ -2659,9 +3019,9 @@ class Rear:
         far_right = gc < (lx0 + lx1) / 2
         if plan['edge'] == 'open':
             kind = None
-        elif plan['lane'] and self.garage_roll < .1 and room >= 600 and lx1 - lx0 >= 480:
-            kind, sw, sd = 'garage', 300., 560.
-        elif self.shed_roll < .3 and room >= 200:
+        elif plan['lane'] and self.garage_pick < GARAGE_SHARE and room >= GARAGE_D + 20 and lx1 - lx0 >= 450:
+            kind, sw, sd = 'garage', GARAGE_W, GARAGE_D
+        elif self.shed_pick < SHED_SHARE and room >= 200:
             kind, sw, sd = 'shed', self.shed_w, min(self.shed_d, room)
         else:
             kind = None
@@ -2733,7 +3093,9 @@ class Rear:
         ds = {d0, d0 + patio, fd - bf, fd}
         pad, shed = plan.get('pad'), plan.get('shed')
         for box in [b for b in (pad, shed and (shed['x'], shed['d'])) if b]:
-            xs |= {min(max(v, lx0), lx1) for v in box[0]}
+            # an edge within 20 cm of a lot line snaps to it (a shed stands 3 cm off the side fence), so the bed or
+            # lawn beside it keeps its full width instead of losing a sliver cell
+            xs |= {lx0 if v - lx0 < 20 else lx1 if lx1 - v < 20 else v for v in (min(max(v, lx0), lx1) for v in box[0])}
             ds |= {min(max(v, d0), fd) for v in box[1]}
         xs, ds = sorted(xs), sorted(ds)
 
@@ -2797,8 +3159,11 @@ class Rear:
 
     def wall_mat(self, wall):
         """Street walls in the front's brick, lane and long walls in common brick, the rest brick or lap siding.
-        Siding stays on the back of the lot: a side wall that comes within 6 m of the front line is brick, since the
-        street sees it past the corner."""
+        Siding stays on the back of the lot: a wall that comes within 6 m of the front line is brick, since the street
+        sees it past the corner, and so is any wall a named street sees (street_sight), across a park, a car park or a
+        gap between buildings. The omhm_slab form: brick long faces, every other wall exposed concrete."""
+        if self.form == 'omhm_slab':
+            return self.brick if wall['kind'] == 'long' else 'Concrete_Exposed'
         if wall['kind'] == 'street':
             return self.street_brick
         if wall['kind'] in ('lane', 'long'):
@@ -2808,10 +3173,27 @@ class Rear:
             a, n = front['a'], front['normal']
             if min(-((p[0] - a[0]) * n[0] + (p[1] - a[1]) * n[1]) for p in (wall['a'], wall['b'])) < SIDING_SETBACK:
                 return self.street_brick
+        if self.wall in SIDING and self.street_sight(wall) is not None:
+            return self.street_brick
         return self.wall
+
+    def street_sight(self, wall):
+        """Distance (cm) at which a named street first sees this wall, or None: from a point every 1.5 m along the
+        wall, 25 cm out, rays fan from -75 to 75 degrees off its normal (SIGHT_ANGLES); a ray sees the wall when it
+        crosses a named drive centreline within SIGHT_RANGE before it meets any building edge (the lot's own and its
+        neighbours'). The occlusion query of the CGA rules (Müller et al. 2006), as a 2D ray cast. Cached per wall."""
+        key = (wall['index'], round(wall['a'][0], 1), round(wall['a'][1], 1))
+        if key not in self.sight:
+            self.sight[key] = street_sight(wall, self.obstacle_bounds,
+                                           [(c, d) for c, d, _, named in self.lot.get('roads_near', ()) if named])
+            if self.sight[key] is not None:
+                self.count('walls_street_seen')
+        return self.sight[key]
 
     def base_of(self, wall):
         """The foundation band: the front's greystone on a street wall, parged concrete everywhere else."""
+        if self.form == 'omhm_slab':
+            return 30., 'Parged'
         if wall['kind'] == 'street':
             return self.lot['raise'], 'Stone'
         return max(30., min(90., self.lot['raise'])), 'Parged'
@@ -2919,7 +3301,18 @@ class Rear:
             bays = 1 if kind == 'rear' else max(1, int(W // 450))
         street = kind == 'street' and not self.background
         FH = self.lot['floor_height']
-        if self.modern:
+        if self.form == 'omhm_slab':
+            # the Habitations De Mentana (BUILDING_FORMS): the long faces carry the piers, colonnade and balcony
+            # stacks; every other wall is plain exposed concrete with panel joints
+            if kind == 'long' and W >= 2 * SLAB_BAY and wall['clear'] >= SLAB_CLEAR:
+                windows, doors, balconies = slab_long_wall(
+                    mesh, F, W, self.floor_z, self.zt, self.brick, ('Sheet_Metal', self.lot['panel_paint']),
+                    self.counts, ('slab', self.lot['id'], wall['index']),
+                    (-D_FACE if wall['ext0'] else 0., W + D_FACE if wall['ext1'] else W))
+            elif kind != 'long':
+                concrete_joints(F, 0, W, 30, self.zt, self.floor_z, D_FACE, self.counts)
+            windowed, street = False, False
+        elif self.modern:
             # the post-1945 kit: bays about every 3 m on every wall with room in front of it, and a balcony on every
             # bay (every second bay on the towers) where the wall is long and open enough
             if W >= 250 and wall['clear'] >= LONG_CLEAR:
@@ -2965,7 +3358,12 @@ class Rear:
                 self.count('creeper_strips', strips)
         record['walls'].append({'kind': kind, 'width_cm': round(W, 1), 'windows': windows, 'doors': doors,
                                 'galleries': 0, 'balconies': balconies, 'material': mat, 'base': base_mat,
-                                **self._siding_record(upper), **_wall_span(wall, self.zt)})
+                                **self._siding_record(upper), **self._seen_record(wall), **_wall_span(wall, self.zt)})
+
+    def _seen_record(self, wall):
+        """Where a named street's sight turned a would-be siding wall to brick: the distance it sees the wall from."""
+        seen = self.sight.get((wall['index'], round(wall['a'][0], 1), round(wall['a'][1], 1)))
+        return {'street_seen_cm': seen} if seen is not None else {}
 
     def _siding_record(self, upper):
         """Where lap siding stops and what stands over it (only on a wall that has both)."""
@@ -3032,7 +3430,7 @@ class Rear:
         record['walls'].append({'kind': wall['kind'], 'width_cm': round(W, 1), 'windows': windows, 'doors': doors,
                                 'galleries': len(levels) * len(st['modules']), 'modules': len(st['modules']),
                                 'material': mat, 'base': base_mat, **self._siding_record(upper),
-                                **_wall_span(wall, self.zt)})
+                                **self._seen_record(wall), **_wall_span(wall, self.zt)})
 
     def _stoop(self, F, c, mx0, mx1, xd):
         """Concrete stoop and side steps at the ground-floor back door (module coordinates, mirrored when c < 0)."""
@@ -3464,16 +3862,12 @@ class Rear:
                 self.count('creeper_strips', strips)
         if plan['hedge']:
             (hx0, hx1), (hd0, hd1), hh = plan['hedge']
-            F.box('Wood_Green', hx0, hx1, hd0, hd1, 0, hh, 'b')
+            self.count('cedar_cards', hedge(mesh, F, hx0, hx1, hd0, hd1, hh))
             self.count('hedges')
         if plan['cedar']:
             tx, td = plan['cedar']
-            base = F.p(tx, td, 0)
-            apex = (base[0], base[1], self.tree_h)
-            ring = [F.p(tx + 75 * math.cos(k * math.pi / 3), td + 75 * math.sin(k * math.pi / 3), 40) for k in range(6)]
-            for k in range(6):
-                q0, q1 = ring[k], ring[(k + 1) % 6]
-                mesh.face('Wood_Green', [q0, q1, apex], ((q0[0] + q1[0]) / 2 - base[0], (q0[1] + q1[1]) / 2 - base[1], 40))
+            yaw = random.Random(_seed('plex-cedar', self.lot['id'])).uniform(0., math.pi / 3)
+            self.count('cedar_cards', cedar(mesh, F.p(tx, td, 0)[:2], self.tree_h, yaw))
             self.count('cedars')
         # ground cover: flat patches that never overlap, a little above the floor (beds and paving a touch higher)
         areas = {}
@@ -3507,6 +3901,7 @@ class Rear:
             'runs': [[round(x0 - lx0, 1), round(x1 - lx0, 1)] for x0, x1 in runs],
             'gate_at': None if g is None else round(g - lx0, 1), 'gate_paint': None if g is None else self.gate_paint,
             'post_paint': self.fence_paint if kind != 'slats' else 'Sheet_Metal',
+            'boards': self.board_key if kind in ('boards', 'lattice') else None,
             'shed_at': None if not shed else [round(shed['x'][0] - lx0, 1), round(shed['x'][1] - lx0, 1)]}
         if shed:
             record['shed'] = shed['kind']
@@ -3597,26 +3992,48 @@ class Rear:
         """One straight fence run from world point a to b; returns its post count. Board fences: the weathered
         boards as one Fence_Boards card (the masked material is two-sided), 4x4 posts at most 8 ft apart and a flat
         2x6 cap rail. Slatted chain-link: the slat panel between galvanised posts under a galvanised top rail.
-        Low picket fence: the gallery guard's rails and baluster card, 107 cm, on 4x4 posts 1.8 m apart."""
+        Low picket fence: the gallery guard's rails and baluster card, 107 cm, on 4x4 posts 1.8 m apart. Board fences
+        take the lot's board card (weathered, or painted green, red or blue-grey); a lattice-topped fence puts a band of
+        lattice over its boards; chain-link stacks galvanised mesh cards between line posts under a top rail."""
         length = math.dist(a, b)
         if length < 20:
             return 0
         G = Frame(mesh, a, b)
         wood = self.fence_paint
+        spacing, half = FENCE_POSTS[kind]
         # the posts stop under the cap or top rail, which covers their tops (no hidden faces)
         if kind == 'boards':
-            cutout(mesh, 'Fence_Boards', a, b, 0, height)
+            cutout(mesh, self.board_key, a, b, 0, height)
             G.box(wood, 0, length, -4.5, 4.5, height, height + 3.8, 'blr')
-            spacing, half, post_h, post_mat = POST_SPACING, 4.5, height, wood
+            post_h, post_mat = height, wood
+        elif kind == 'lattice':
+            # boards to a 2x4 mid rail, a band of lattice over it, the flat cap on top (the lattice card squeezes its
+            # 1 m drawing into the band)
+            hb = height - LATTICE_TOP - 4
+            cutout(mesh, self.board_key, a, b, 0, hb)
+            G.box(wood, 0, length, -2.5, 2.5, hb, hb + 4, 'lr')
+            cutout(mesh, 'Rail_Lattice', a, b, hb + 4, height)
+            G.box(wood, 0, length, -4.5, 4.5, height, height + 3.8, 'blr')
+            post_h, post_mat = height, wood
+            self.count('lattice_tops')
+        elif kind == 'chain':
+            # galvanised chain-link: the mesh as cut-out cards about CHAIN_CARD tall stacked to the top rail (the
+            # card material clamps V, so the mesh tiles by cards), line posts and a top rail
+            cards = max(1, round(height / CHAIN_CARD))
+            for k in range(cards):
+                cutout(mesh, 'Chain_Link', a, b, height * k / cards, height * (k + 1) / cards)
+            G.box('Sheet_Metal', 0, length, -2.5, 2.5, height, height + 4, 'blr')
+            post_h, post_mat = height, 'Sheet_Metal'
+            self.count('chain_link_cards', cards)
         elif kind == 'slats':
             G.box(self.fence_paint, 0, length, -1.5, 1.5, 0, height, 'tblr')
             G.box('Sheet_Metal', 0, length, -3., 3., height, height + 4, 'blr')
-            spacing, half, post_h, post_mat = 300., 3., height, 'Sheet_Metal'
+            post_h, post_mat = height, 'Sheet_Metal'
         else:
             G.box(wood, 0, length, -1.9, 1.9, RAIL_LOW[0], RAIL_LOW[1], 'tblr')
             G.box(wood, 0, length, -CAP_W / 2, CAP_W / 2, height - CAP_H, height, 'blr')
             cutout(mesh, 'Rail_Baluster', a, b, 0, height)
-            spacing, half, post_h, post_mat = 180., CAP_W / 2, height - CAP_H, wood
+            post_h, post_mat = height - CAP_H, wood
         bays = max(1, math.ceil(length / spacing))
         posts = 0
         for i in range(bays + 1):
@@ -3634,7 +4051,19 @@ class Rear:
         (never the fence's colour), the way a ledged-and-braced board gate is built. The old leaf was one flat painted
         panel. Returns the post count."""
         top = h - 6 if kind != 'low' else h - 5
-        leaf = 'Rail_Baluster' if kind == 'low' else 'Fence_Boards'
+        if kind == 'chain':
+            # a chain-link gate: mesh cards in a galvanised frame (top, bottom and a mid rail)
+            cards = max(1, round((top - 4) / CHAIN_CARD))
+            for k in range(cards):
+                cutout(mesh, 'Chain_Link', F.p(g - 46, fd, 0)[:2], F.p(g + 46, fd, 0)[:2],
+                       4 + (top - 4) * k / cards, 4 + (top - 4) * (k + 1) / cards)
+            for z in (4., (top + 4) / 2, top):
+                F.box('Sheet_Metal', g - 46, g + 46, fd - 2.5, fd + 2.5, z - 2, z + 2, 'lr')
+            self.count('gate_leaf_cards')
+            for x in (g - 50, g + 50):
+                F.box('Sheet_Metal', x - 4, x + 4, fd - 4, fd + 4, 0, h + 8, 'b')
+            return 2
+        leaf = 'Rail_Baluster' if kind == 'low' else self.board_key
         cutout(mesh, leaf, F.p(g - 46, fd, 0)[:2], F.p(g + 46, fd, 0)[:2], 4, top)
         zl = [4 + (top - 4) * f for f in GATE_LEDGES]
         for z in zl:
@@ -4353,6 +4782,8 @@ def build(lots, rear=False, canopy=None, traffic=(), mapped=()):
             records[-1]['year_override'] = lot['year_override']
         if lot.get('modern'):
             records[-1]['kit'] = 'post-1945 apartment'
+        if lot.get('form'):
+            records[-1]['form'], records[-1]['form_source'] = lot['form'], lot['form_source']
         tops[lot['id']] = top
     levels = {lot['id']: roof_level(lot, tops[lot['id']]) for lot in lots}
     modern = {lot['id'] for lot in lots if lot.get('modern')}

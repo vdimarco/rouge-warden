@@ -5,7 +5,7 @@ Loop: make NORD (the GTA row) look as close to GTA 6 as the phone stream allows,
 This is the third NORD loop, next to [gta-graphics](gta-graphics.md) and [gta-missions](gta-missions.md). Those loops did not measure frame time. Here an Unreal Gauntlet run on the owner's host PC measures every round. The cloud container has no Unreal Engine and no GPU, so it cannot measure a round.
 
 ## What a round runs
-- **Map and route.** `/Game/Maps/LaFontaine` with the Plateau replica. The player's car drives itself through five stops and back: S1 Sherbrooke, S2 Papineau, S3 Fabre, S4 RachelPark, S5 Mentana. The loop is about 3.0 km.
+- **Map and route.** `/Game/Maps/LaFontaine` with the Plateau replica. The player's car drives itself through five stops and back: S1 Sherbrooke, S2 Papineau, S3 Fabre, S4 RachelPark, S5 Mentana. The loop is about 3.5 km: the offline model drives a 3,488 m line, and the host has not measured it yet. A lap is about 5 minutes of driving (about 296 s in a perf run, 307 s in a look or stream run).
 - **World.** Ambient traffic and residents stay on. Police, campaign, side jobs and save writes are off. Look runs also turn ambient life off, so the stills repeat.
 - **Sky.** Always pinned and frozen. Day is 15:00, clear. Night rain is 22:00, rain, the worst case.
 - **Sizes.** Rung 0 is 1412x652 (landscape) and 652x1412 (portrait). Rung 1 is 1058x488 and 488x1058, in the stream pass only.
@@ -15,24 +15,27 @@ This is the third NORD loop, next to [gta-graphics](gta-graphics.md) and [gta-mi
 ## Gates
 A round passes a gate only with a host measurement for it.
 
-**Native, per lap and per leg, after the warm-up lap:**
-- FrameTime p95 at most 33.3 ms, p99 at most 50 ms, at most 1% of frames over 50 ms.
-- At most one hitch (a frame over 66.7 ms) per 30 s, and no frame over 250 ms.
+**Native, after the warm-up lap:**
+- FrameTime p95 at most 33.3 ms over the lap and on each leg.
+- Over the lap: p99 at most 50 ms, and at most 1% of frames over 50 ms.
+- Over the lap: at most one hitch (a frame over 66.7 ms) in any 30 s, and no frame over 250 ms.
 - Peak VRAM at most 6,000 MiB per game process.
 - No render log errors, and every profile CVar reads back as requested.
 
 **Stream, solo, direct, both rungs, landscape and portrait, over the lap after the warm-up lap:**
 - Mean decoded FPS at least 29, and zero WebRTC freezes.
 - At most 1% of decoded frame intervals over 50 ms, and a longest gap of at most 500 ms.
-- Jitter buffer at most 120 ms per frame on average.
+- Jitter buffer delay at most 120 ms per frame on average. This is the player's own lag rule, a check of stream health, not a delay target.
 - `NORD_STREAM_FPS` at least 29 in every 5 s window, and decoded FPS within 3 FPS of it.
+- The received size stays the pinned rung's size, and NordFriend1 stays asleep through the lap.
 
 **Look:**
 - Every still has an SSIM of at least 0.85 against the full-quality reference, and the mean is at least that of the current production profile. These floors are provisional until round 1 calibrates them.
+- All 20 stills (10 views, two skies) are scored, and the look run exits cleanly, or the look result does not count.
 - The reference repeats with an SSIM of at least 0.98 on every image, or the round is invalid.
 - The user reviews `review.html`. The user's verdict is final.
 
-**Delay** (round-trip time, jitter buffer, decode, end to end) is reported in its own section and never gated. It comes from host-PC headless Chromium with `--disable-gpu`, not a phone and not off-LAN.
+**Delay** (round-trip time, jitter, jitter buffer delay and target, decode, processing, end to end) is reported in its own section, and that section is never gated. The jitter buffer delay is the only delay figure that also has a limit, the stream-health limit above. The delay comes from host-PC headless Chromium with `--disable-gpu`, not a phone and not off-LAN.
 
 ## Evidence each round must carry
 Record these in the round, under the scorecard:

@@ -7,11 +7,13 @@ A gauntlet run SHALL drive the player's car with no player input through five fi
 - **WHEN** the host runs a stream-mode gauntlet and one phone-sized viewer watches NordHost
 - **THEN** the viewer sees the player's car drive from S1 to S5 and back to S1 with no input, pause at each stop, and stop within 8 m of where it started
 - **AND** the game log has one `NORD_GAUNTLET stop=` line per stop in route order, the lap takes at most 6 minutes with no stall longer than 10 s, and the run folder holds `native/route.json`
-- **AND** offline, `test_gauntlet_model.py` passes: the route closes, its length is 2.5 to 3.5 km, and a kinematic car at 30 Hz and at 120 Hz completes the loop with a lateral error under 2.5 m and no stall
+- **AND** offline, `test_gauntlet_model.py` passes: the route closes, its length is 3.0 to 4.0 km (the modelled driven line is 3,488 m), and a kinematic car at 30 Hz and at 120 Hz completes the loop with a lateral error under 2.5 m and no stall
 
 #### Scenario: Viewer input ignored
-- **WHEN** the viewer drags and taps on the stream during the lap (the sampler's `--look` sweep)
-- **THEN** the car keeps its path, and the lateral error in `native/route.json` stays at most 2.5 m
+- **WHEN** the viewer drags on the stream during the whole gated lap (the input row, `gauntlet_loop.py stream --look`)
+- **THEN** the car keeps its path, and the largest lateral error in `native/route.json` stays at most 2.5 m
+- **AND** the input row's `verdict.json` gates that lateral error and the exit code, and keeps its stream figures report-only
+- **AND** `gauntlet_loop.py route <stream run>` checks the stop order and the lateral error of the same run
 
 #### Scenario: Gameplay state during a run
 - **WHEN** a perf or stream run starts
@@ -32,12 +34,12 @@ A gauntlet run SHALL drive the player's car with no player input through five fi
 - **THEN** `test_gauntlet_route.py` fails until `make_gauntlet_route.py` regenerates `QuebecGauntletRoute.h`
 
 ### Requirement: Phone-stream frame budget
-With the phone profile at phone-stream sizes, the native render SHALL hold a 33.3 ms frame budget over the measured lap and on each leg, while the 60 FPS cap stays on.
+With the phone profile at phone-stream sizes, the native render SHALL hold a 33.3 ms FrameTime p95 over the measured lap and on each leg, and the other frame limits over the lap, while the 60 FPS cap stays on.
 
 #### Scenario: Night rain, top phone frame
 - **WHEN** a perf run renders 1412x652 at 22:00 in rain with the phone profile, and the warm-up lap is discarded
 - **THEN** FrameTime p95 is at most 33.3 ms over the lap and on each of the five legs
-- **AND** FrameTime p99 is at most 50 ms, at most 1% of frames take longer than 50 ms, there is at most one hitch (a frame longer than 66.7 ms) per 30 s, and no frame takes longer than 250 ms
+- **AND** over the lap, FrameTime p99 is at most 50 ms, at most 1% of frames take longer than 50 ms, there is at most one hitch (a frame longer than 66.7 ms) in any 30 s of frame time, and no frame takes longer than 250 ms
 - **AND** peak VRAM per game process is at most 6,000 MiB, `render_log_guard.py` finds no errors, and every profile CVar reads back as requested
 - **AND** `verdict.json` from a 3-lap confirmation (median of the per-lap p95 values) shows each of these gates as pass
 
@@ -58,12 +60,19 @@ A phone-sized client watching NordHost alone over a direct connection SHALL rece
 
 #### Scenario: Solo, landscape and portrait, both rungs
 - **WHEN** one phone-sized sampler watches NordHost over a direct connection during the gated stream-mode lap, which follows a warm-up lap that is not gated, with NordFriend1 asleep, pinned first to rung 0 (1412x652 and 652x1412) and then to rung 1 (1058x488 and 488x1058)
-- **THEN** mean decoded FPS is at least 29 over the lap, there are zero WebRTC freezes, at most 1% of decoded frame intervals are longer than 50 ms, the longest gap is at most 500 ms, and the jitter buffer averages at most 120 ms per frame
+- **THEN** mean decoded FPS is at least 29 over the lap, there are zero WebRTC freezes, at most 1% of decoded frame intervals are longer than 50 ms, the longest gap is at most 500 ms, and the jitter buffer delay averages at most 120 ms per frame
 - **AND** `NORD_STREAM_FPS` is at least 29 in every 5 s window, decoded FPS is within 3 FPS of it, and `stream/sample.json` and `verdict.json` record each value
+- **AND** the 120 ms jitter buffer limit is the player's own lag rule (`receiverLagging` in `Browser/config.mjs`), a check of stream health and not a delay target, and it is the only delay figure with a limit
+- **AND** NordFriend1 logs no awake `NORD_STREAM_FPS` window inside the lap
+
+#### Scenario: Frames cut to the lap
+- **WHEN** the runner judges a stream sample
+- **THEN** it keeps only the decoded frames whose wall time (`timeOrigin` plus `expectedDisplayTime`) falls inside the gated lap of the host log
+- **AND** a sample without `timeOrigin` gets "unverified" for the interval share and the longest gap, never pass
 
 #### Scenario: Pinned frame size
 - **WHEN** a sample runs with `?pin=` on a player built with `NORD_QA_PIN`
-- **THEN** the requested and received frame size stay the same for the whole lap, and the sample records every size change
+- **THEN** the requested and received frame size stay the same for the whole lap, the received size equals the pinned rung's size in that orientation, and the sample records every size change
 - **AND** a production player build ignores `?pin=`, which `config.test.mjs` checks
 
 #### Scenario: Two viewers and relay
@@ -71,12 +80,13 @@ A phone-sized client watching NordHost alone over a direct connection SHALL rece
 - **THEN** `review.html` and `verdict.json` show these results in a section labelled "report-only", and they do not change the gate result
 
 ### Requirement: Delay reported apart from frame rate
-Each stream run SHALL report delay (round-trip time, jitter buffer, decode, processing and end-to-end delay) in its own section, apart from frame-rate results.
+Each stream run SHALL report delay (round-trip time, jitter, jitter buffer delay and target, decode, processing and end-to-end delay) in its own section, apart from frame-rate results. The delay section SHALL NOT be gated. The only delay figure with a limit SHALL be the mean jitter buffer delay per frame, which the stream gate also checks as stream health.
 
 #### Scenario: Delay section
 - **WHEN** a stream run finishes
-- **THEN** round-trip time, jitter buffer, decode, processing and end-to-end delay appear in their own section of `review.html` and `verdict.json`, labelled "host-PC headless Chromium with --disable-gpu, not a phone, not off-LAN"
-- **AND** no frame-rate result cites a delay figure, and no delay figure is gated
+- **THEN** round-trip time, jitter, jitter buffer delay and target, decode, processing and end-to-end delay appear in their own section of `review.html` and `verdict.json`, with the gated lap's own values, labelled "host-PC headless Chromium with --disable-gpu, not a phone, not off-LAN"
+- **AND** that section is marked as not gated, and no frame-rate result cites a delay figure
+- **AND** the stream gate's `jitter_buffer_ms_per_frame` limit of 120 ms is the only limit on a delay figure, and no limit applies to round-trip time, jitter, the jitter buffer target, decode, processing or end-to-end delay
 
 ### Requirement: Fixed views and a repeatable look run
 A look run SHALL capture the same fixed views at each stop for each sky and size, and the reference capture SHALL repeat closely enough to compare candidates.
@@ -93,6 +103,7 @@ A look run SHALL capture the same fixed views at each stop for each sky and size
 #### Scenario: Repeatable reference
 - **WHEN** the ceiling profile is rendered twice with the same build, sizes and skies
 - **THEN** the luma SSIM between the two runs is at least 0.98 on every image, otherwise the round is marked invalid in `verdict.json`
+- **AND** a reference whose ceiling runs lack a still fails its `repeat_stills` gate, and `tune --reference` refuses it before it starts a run
 
 #### Scenario: Review page
 - **WHEN** the user opens `review.html` for a round

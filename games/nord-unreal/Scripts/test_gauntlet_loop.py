@@ -4,8 +4,9 @@ stream sampler (no Unreal, no GPU, no browser).
 Run from games/nord-unreal:  python3 Scripts/test_gauntlet_loop.py
 Checks both command lines (direct and RunUnreal), the run folder layout, the sky and label refusals, the contention
 label, the CVar readback, the phone profile flag, a look run scored against a ceiling, a short tune with its native
-confirmation and round report, a partial look run that gives no Look, a stale --reference refused, a stream lap with
-its trigger file, lap window and page clock, the input row, the next candidate's confirmation, the write-profile
+confirmation and round report, a partial look run that gives no Look, a stale --reference or one without every still
+refused, a stream lap with its trigger file, lap window and page clock, the input row, the next candidate's
+confirmation, confirmation runs that end before --until and a cut confirmation run again, the write-profile
 refusal without --approved, and that browser_streaming.py without NORD_STREAM_QUALITY keeps today's exact launch line.
 Everything is written to a temporary folder; the real Saved/Gauntlet and Config/DefaultDeviceProfiles.ini are never
 written.
@@ -483,7 +484,8 @@ def check_reference(out):
     for size_key, entry in result["sizes"].items():
         assert len(entry["repeat"]) == 20 and entry["min"] == 1.0 and Path(entry["a"]["run"]).parent == group / "runs", size_key
         assert json.loads((Path(entry["b"]["run"]) / "run.json").read_text())["quality"]["path"] == str(group / "candidates/00-ceiling.execcmds")
-    assert verdict["status"] == "pass" and set(gates(verdict)) == {"repeat_ssim_min:top_landscape", "repeat_ssim_min:top_portrait"}
+    assert verdict["status"] == "pass" and set(gates(verdict)) == {f"{name}:{size}" for name in ("repeat_ssim_min", "repeat_stills")
+                                                                   for size in ("top_landscape", "top_portrait")}, gates(verdict)
     assert (group / "review.html").read_text().count('class="row"') == 40 and L.main(["report", str(group)]) == 0
     print("reference ok: the ceiling twice at both confirm sizes, run-to-run SSIM 1.0 on all 40 stills")
     return group
@@ -554,6 +556,24 @@ def check_tune_with_reference(out, reference):
             raise AssertionError("a reference from another commit or build must be refused: " + ", ".join(change))
         assert sorted(out.iterdir()) == before, "a refused tune makes no folder"
     print("tune with --reference ok: the stored ceiling renders are reused, nothing is rendered twice; another commit or build is refused")
+
+
+def check_reference_missing_sky(out):
+    """Both ceiling runs lost their night stills (10 of 20, exit 0). The reference fails, and tune --reference refuses
+    it before any run, because every candidate needs all 20 stills scored against the ceiling."""
+    with patch.dict(os.environ, {"FAKE_LOOK_SKIP_SKY": "night_rain"}):
+        group, verdict = L.reference_run(SMALL, direct=True)
+    count = gates(verdict)["repeat_stills:top_landscape"]
+    assert verdict["status"] == "fail" and count["value"] == 10 and count["result"] == "fail", failing(verdict)
+    before = sorted(out.iterdir())
+    try:
+        L.tune_run(SMALL, reference=group, confirm=False)
+    except RuntimeError as error:
+        assert "stills fail" in str(error) and "No run was started" in str(error), error
+    else:
+        raise AssertionError("a reference without every still must be refused")
+    assert sorted(out.iterdir()) == before, "a refused tune makes no folder"
+    print("reference without the night stills ok: its stills gate fails, and tune --reference refuses it")
 
 
 def check_tune_partial_look():
@@ -826,6 +846,43 @@ def check_confirm_next(group, tune):
     print(f"confirm ok: {following} confirmed natively after the winner, added to tune.json, no profile written")
 
 
+def check_confirm_window(out):
+    """Confirmation against --until, with a fake clock and a fake native_run that takes the planned run time and
+    launches nothing. No run starts unless its estimate ends before --until. A result the window cut is not done:
+    confirm runs it again (the baseline first) and replaces it, and --candidate accepts it."""
+    run_s = T.run_estimate_s(SMALL, "perf", SMALL["confirm_laps"])
+    full = len(SMALL["sky_order"]) * len(SMALL["size_use"]["confirm"])
+    clock, calls = [1_000_000.0], []
+
+    def native_run(loop, mode, size_key, sky, laps=1, quality="current", label=None, direct=False, parent=None, **_):
+        calls.append((label, clock[0] + run_s))
+        clock[0] += run_s
+        return L.new_run_dir(label, parent), {"status": "pass", "gates": []}
+
+    base = T.make_candidate(SMALL, T.baseline_levels(SMALL), "baseline", 0)
+    tune = {"candidates": [dict(base, id=name) for name in ("baseline", "04-shadows2", "05-gi2")],
+            "ranking": ["04-shadows2", "05-gi2"], "winner": "04-shadows2"}
+    # The search left 60 s, or room for the baseline and one run of the winner.
+    cases = (("short", 60, ["baseline"], []), ("winner-cut", 5.5 * run_s, ["baseline", "04-shadows2"], ["--candidate", "04-shadows2"]))
+    with patch.object(L, "native_run", native_run), patch.object(L.time, "time", lambda: clock[0]):
+        for name, room, recorded, arguments in cases:
+            group, until = out.parent / "confirm-window" / name, clock[0] + room
+            calls.clear()
+            native = L.confirm_native(SMALL, tune, group, until=until)
+            T.write_tune(group / "tune.json", dict(tune, native_confirmation=native))
+            assert all(end <= until for _, end in calls), f"{name}: a run ended {max(e for _, e in calls) - until:.0f} s after --until"
+            assert [result["id"] for result in native["results"]] == recorded and native["stop_reason"] == "window_end", native
+            cut = native["results"][-1]
+            assert len(cut["runs"]) < full and cut["reasons"] == ["the window ended before every confirmation run"], cut
+            calls.clear()
+            assert L.main(["confirm", str(group), *arguments]) == 0, name
+            after = json.loads((group / "tune.json").read_text())["native_confirmation"]
+            assert [result["id"] for result in after["results"]] == ["baseline", "04-shadows2"], after["results"]
+            assert all(result["passed"] and len(result["runs"]) == full for result in after["results"]), after["results"]
+            assert after["confirmed_native"] == "04-shadows2" and len(calls) == full * (3 - len(recorded)), calls
+    print("confirm window ok: no run ends after --until, and confirm runs a cut result again and replaces it")
+
+
 def main():
     with tempfile.TemporaryDirectory() as directory, contextlib.ExitStack() as stack:
         root = Path(directory)
@@ -862,11 +919,13 @@ def main():
         group, tune = check_tune(out)
         check_tune_first_ceiling_contended(state)
         check_tune_with_reference(out, reference)
+        check_reference_missing_sky(out)
         check_tune_partial_look()
         check_stream(out, state, group, tune["winner"])
         check_stream_input(out, state, group, tune["winner"])
         check_report_and_profile(group, tune)
         check_confirm_next(group, tune)
+        check_confirm_window(out)
     print("NORD_GAUNTLET_LOOP_OK")
 
 

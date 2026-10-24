@@ -137,18 +137,20 @@
    "yard too shallow or lot too narrow for a gallery and stair": 130
   },
   "fences": {
-   "lane": 538,
+   "lane": 537,
    "rear_lot_line": 414,
-   "gates": 537,
+   "gates": 536,
    "kinds": {
-    "boards": 551,
-    "low": 163,
-    "slats": 238
+    "boards": 395,
+    "chain": 182,
+    "lattice": 94,
+    "low": 162,
+    "slats": 118
    }
   },
   "outbuildings": {
-   "garage": 6,
-   "shed": 130
+   "garage": 28,
+   "shed": 156
   },
   "yards": {
    "lots": 1079,
@@ -161,31 +163,31 @@
    },
    "lane_edges": {
     "fence": 789,
-    "low": 163,
+    "low": 162,
     "none": 47,
-    "open": 80
+    "open": 81
    },
-   "parking_pads": 80,
+   "parking_pads": 81,
    "area_m2": {
-    "Yard_Grass": 21975.8,
-    "Yard_Gravel": 5905.4,
-    "Yard_Pavers": 22329.6,
-    "Yard_Soil": 9624.9
+    "Yard_Grass": 21806.1,
+    "Yard_Gravel": 5840.6,
+    "Yard_Pavers": 22295.8,
+    "Yard_Soil": 9384.7
    },
    "ground_decks": 71,
    "trees": {
-    "ash": 103,
-    "elm": 40,
-    "maple": 198,
-    "small": 231
+    "ash": 102,
+    "elm": 37,
+    "maple": 201,
+    "small": 225
    },
    "tree_height_m": {
     "min": 7.5,
-    "median": 12.53,
+    "median": 12.5,
     "max": 18.0
    }
   },
-  "triangles": 743427
+  "triangles": 743976
  },
  "background": {
   "masses": 252,
@@ -215,7 +217,7 @@
    "hatches": 234,
    "penthouses": 9
   },
-  "triangles": 215260
+  "triangles": 215150
  },
  "glass_cards": {
   "status": {
@@ -251,7 +253,7 @@
     "359321925",
     "359325613"
    ],
-   "balconies": 2377
+   "balconies": 2137
   },
   "open_ground": {
    "lots": 133,

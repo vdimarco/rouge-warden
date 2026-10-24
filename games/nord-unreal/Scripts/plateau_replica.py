@@ -4,7 +4,9 @@ Writes three layers under Data/Plateau/ReplicaGeometry/ (frame: x east, y north,
 
 * Streets   - carriageways cut to curb lines measured from the mapped sidewalks, Québec paint,
               grey concrete sidewalks with an 18 cm curb (SM_Concrete_Collision_Replica_*),
-              parterres with low iron fences, tree pits, ruelle surfaces, bike-track bollards.
+              parterres with low iron fences, the street and park trees of the city's inventory with their
+              sidewalk pits (guards and planting) and the few curb extensions the data or a corner calls for
+              (street_trees.json), ruelle surfaces with a sunken aged-concrete gutter, bike-track bollards.
 * Furniture - placements.json only: lamps, hydrants, ARRÊT signs, white street-name signs,
               one-way and parking signs, BIXI docks, benches, bins and mail boxes. The meshes
               come from the MAP-PROPS layer (ReplicaGeometry/Props).
@@ -18,7 +20,8 @@ Writes three layers under Data/Plateau/ReplicaGeometry/ (frame: x east, y north,
 Stdlib only and deterministic: every random choice comes from a SHA-256 seed of stable OSM ids.
 Sources: Data/LaFontaine/osm.xml (© OpenStreetMap contributors, ODbL 1.0), the read-only
 traffic graph in Data/LaFontaine/layout.json, the Plex layer's Plex/fronts.json and the Ville de
-Montréal "Ruelles vertes" open data (CC BY 4.0), clipped by --clip-ruelles into
+Montréal public tree inventory ("Arbres", CC BY 4.0), clipped by --clip-trees into Data/Plateau/Inventory/, the
+Ville de Montréal "Ruelles vertes" open data (CC BY 4.0), clipped by --clip-ruelles into
 Soul/ruelles_vertes_clip.json. Dimensions and colours follow the research brief
 (Plateau heritage sheets, Québec "Marques sur la chaussée", Ville de Montréal sign inventory).
 """
@@ -42,7 +45,9 @@ SOURCES = ('Data/LaFontaine/osm.xml', 'Data/LaFontaine/layout.json', GENERATOR,
            # the lane-life part of the Soul layer reads the Plex yard records and the city's ruelles vertes, the Plex
            # manifest (its Glass batches: the rear windows the AC units sit in) and the props' bounds and anchors
            'Data/Plateau/ReplicaGeometry/Plex/fronts.json', 'Data/Plateau/ReplicaGeometry/Soul/ruelles_vertes_clip.json',
-           'Data/Plateau/ReplicaGeometry/Plex/manifest.json', 'Data/Plateau/ReplicaGeometry/Props/manifest.json')
+           'Data/Plateau/ReplicaGeometry/Plex/manifest.json', 'Data/Plateau/ReplicaGeometry/Props/manifest.json',
+           # the street and park trees: the city's public tree inventory, clipped by --clip-trees
+           'Data/Plateau/Inventory/trees_pmr.json', 'Data/Plateau/Inventory/trees_vm.json')
 LEGACY_MARKING = ROOT / 'Data/Plateau/BaseGeometry/Marking.obj'
 # The existing Panet/Visitation walking route already has detailed streets (plateau_streets.py).
 ROUTE = [(37400, -3280), (38405, -3924), (42703, -6819), (41685, -11320), (40636, -15933), (35500, -14300)]
@@ -70,11 +75,12 @@ FRONT_MAX = 1500.         # a parterre reaches a building this far behind the si
 OPEN_YARD = 250.          # with no building that close: a 2.5 m parterre (open lot, car park, square)
 ALLEY_YARD = 600.         # ...but one reaches a ruelle's paving this near behind the sidewalk
 YARD_STEP = 60.           # the building line is sampled this often along a lot
-# Mapped street trees that the measured curbs left on the carriageway get a curb extension (saillie) round the
-# trunk; see curb_extensions. The trees stay where the map saved them (plateau_rendering.tree_positions).
+# Street and park trees come from the city's inventory (see "Street and park trees"): the curb stays where it was
+# measured and a tree the inventory puts in a sidewalk pit stands in one, 65 to 80 cm behind the curb. Only a tree
+# the carriageway still covers near a corner, or where the inventory or OSM shows a curb extension, gets one
+# (curb_extensions); any other is listed for the host.
 BUMP_REACH = 300.         # a trunk this far from the curb or less gets an extension; farther ones go to the host
-CURB_HUG = 45.            # ...and so does one on the sidewalk this close to the curb with no pit of its own
-PIT_L, PIT_D = 110., 100.  # tree pit along and across the curb (as _tree_pits)
+PIT_L, PIT_D = 110., 100.  # tree pit along and across the curb
 BUMP_MARGIN = 25.         # concrete between the pit and the extension's edge: the 15 cm curb band and 10 cm
 BUMP_MIN = 90.            # shallowest extension
 BUMP_TAPER = .8           # taper length per cm of depth (a chamfer: these sit in the parking lane), at most...
@@ -97,7 +103,13 @@ STREETS_MATERIALS = {
     'sidewalk': ('Concrete_Collision_Replica', '#b5b8b8', .85, 0., 'complex', None),
     'curb': ('Streets_curb', '#c8cac7', .8, 0., 'none', None),
     'joint': ('Streets_joint', '#7c7e7d', .9, 0., 'none', None),
-    'alley_gutter': ('Streets_alley_gutter', '#8b8a86', .9, 0., 'none', None),
+    # The ruelle's sunken centre gutter: aged lane concrete (stains, joints, a damp silted channel) on its own UVs, u
+    # along the gutter and v across it; the colour is the set's mean, darker than the sidewalk.
+    'Concrete_Lane_Aged': ('Streets_Concrete_Lane_Aged', '#746c62', .83, 0., 'none', None),
+    # Tree pits: a low wrought-iron guard (cut-out cards round the pit, no collision) and planted cards on the soil.
+    # Both colours are their sets' means (the planting owns its colours).
+    'Iron_Wrought': ('Streets_Iron_Wrought', '#251f1b', .49, 0., 'none', None),
+    'Plant_Pit_Flowers': ('Streets_Plant_Pit_Flowers', '#846f58', .73, 0., 'none', None),
     'paint_white': ('Streets_paint_white', '#f2f2ee', .6, 0., 'none', None),
     'paint_yellow': ('Streets_paint_yellow', '#f2b705', .6, 0., 'none', None),
     'paint_green': ('Streets_paint_green', '#2e9e5a', .65, 0., 'none', None),
@@ -119,7 +131,9 @@ STREETS_MATERIALS = {
 SOUL_MATERIALS = {
     'patch_dark': ('Soul_patch_dark', '#2c2d31', .9, 0., 'none', None),
     'patch_light': ('Soul_patch_light', '#5e5f62', .95, 0., 'none', None),
-    'crack_seal': ('Soul_crack_seal', '#151617', .35, 0., 'none', None),
+    # Sealed cracks: dull, near-black bitumen. At roughness .35 the sky's highlight turned them into white paint
+    # strokes at a grazing view (the corner capture's "white hook"); .62 keeps them a dark, dull line.
+    'crack_seal': ('Soul_crack_seal', '#0f1011', .62, 0., 'none', None),
     'pothole': ('Soul_pothole', '#1f1d1b', .3, 0., 'none', None),
     'leaf_gold': ('Soul_leaf_gold', '#c9932c', .9, 0., 'none', None),
     'leaf_rust': ('Soul_leaf_rust', '#9a4422', .9, 0., 'none', None),
@@ -421,15 +435,15 @@ class Layer:
         assert len(points) >= 3 and all(len(p) == 3 and all(math.isfinite(v) for v in p) for p in points)
         self.faces[key].append(points)
 
-    def card(self, key, a, b, z0, z1, facing=None):
-        """One vertical cut-out card from a to b, z0 to z1, with card UVs (u in metres along a->b, v 0 at the
-        bottom edge and 1 at the top), the convention of the shared Rail_Lattice and Fence_Boards keys. The masked
-        materials are two-sided, so one face; `facing` (xy) only picks the winding."""
+    def card(self, key, a, b, z0, z1, facing=None, u0=0.):
+        """One vertical cut-out card from a to b, z0 to z1, with card UVs (u in metres along a->b from u0, v 0 at
+        the bottom edge and 1 at the top), the convention of the shared Rail_Lattice and Fence_Boards keys. The
+        masked materials are two-sided, so one face; `facing` (xy) only picks the winding."""
         length = math.dist(a[:2], b[:2])
         if length < 5 or z1 - z0 < 5:
             return 0
         points = [(a[0], a[1], z0), (b[0], b[1], z0), (b[0], b[1], z1), (a[0], a[1], z1)]
-        uv = [(0., 0.), (length / 100, 0.), (length / 100, 1.), (0., 1.)]
+        uv = [(u0, 0.), (u0 + length / 100, 0.), (u0 + length / 100, 1.), (u0, 1.)]
         if facing is not None and (b[1] - a[1]) * facing[0] - (b[0] - a[0]) * facing[1] < 0:
             points, uv = [points[1], points[0], points[3], points[2]], [uv[1], uv[0], uv[3], uv[2]]
         face = UVFace(tuple(float(v) for v in p) for p in points)
@@ -437,6 +451,13 @@ class Layer:
         assert key in self.materials, key
         self.faces[key].append(face)
         return 1
+
+    def uvface(self, key, points, uv):
+        """A face with its own UVs (one per point), for a surface whose texture runs along a line (the gutter)."""
+        assert key in self.materials and len(uv) == len(points) >= 3, key
+        face = UVFace(tuple(float(v) for v in p) for p in points)
+        face.uv = [tuple(float(c) for c in t) for t in uv]
+        self.faces[key].append(face)
 
     def flat(self, key, poly, z):
         poly = dedupe(poly)
@@ -1259,13 +1280,16 @@ def build_streets(world):
         'bike_pictograms', 'green_conflict_zones', 'manholes', 'storm_drains', 'ruelle_metres',
         'skipped_route_segments', 'stop_nodes_off_network', 'yard_slabs', 'yard_slabs_in_traffic_band',
         'ruelle_square_metres', 'ruelle_pieces', 'ruelle_edge_metres', 'ruelle_joint_wedges',
-        'mapped_trees', 'mapped_trees_on_carriageway', 'curb_extensions', 'curb_extension_trees',
+        'street_trees', 'street_trees_inventory', 'street_trees_osm', 'trees_on_carriageway',
+        'sidewalk_pits', 'sidewalk_pits_moved', 'sidewalk_pit_metres_moved', 'trees_kept_in_place',
+        'trees_on_sidewalk_without_pit', 'trees_dropped_in_buildings', 'curb_extensions', 'curb_extension_trees',
         'curb_extensions_merged', 'curb_extensions_flush', 'curb_extensions_part_flush', 'curb_extension_metres',
-        'curb_extensions_on_verges', 'curb_extensions_on_corners', 'mapped_trees_for_host',
-        'yard_slabs_past_ruelle_mouths', 'curb_extension_trees_at_curb', 'sidewalk_risers', 'corner_risers',
+        'curb_extensions_on_verges', 'curb_extensions_on_corners', 'curb_extensions_saillie',
+        'curb_extensions_median', 'curb_extensions_choker', 'curb_extensions_corner', 'trees_for_host',
+        'yard_slabs_past_ruelle_mouths', 'sidewalk_risers', 'corner_risers',
         'yard_risers', 'yard_mouth_wedges', 'yard_mouth_wedge_square_metres', 'sidewalk_pieces_split',
-        'passages', 'passage_square_metres', 'passage_lead_ins', 'tree_pits_off_strip',
-        'curb_extension_back_walls', 'apron_walls', 'tree_pits_slid')}
+        'passages', 'passage_square_metres', 'passage_lead_ins', 'pit_guard_cards', 'pit_flower_cards',
+        'curb_extension_back_walls', 'apron_walls', 'tree_pits_slid', 'ruelle_gutter_metres')}
     # Carriageway asphalt.
     for s in world.segs:
         if s['excluded']:
@@ -1453,16 +1477,11 @@ def build_streets(world):
     _bike_tracks(world, L, counts)
 
     # Sidewalks, curb bands, joints, ramps, aprons; corners; yards and fences; tree pits.
-    trees = [world.nodes[n] for n, t in world.node_tags.items() if t.get('natural') == 'tree' and n in world.nodes]
-    tree_grid = Grid(2000.)
-    for i, p in enumerate(trees):
-        tree_grid.add(i, bbox([p]))
     ramp_grid = Grid(2000.)
     for i, p in enumerate(ramp_points):
         ramp_grid.add(i, bbox([p], 400))
     world.ramp_points = ramp_points
     world.sidewalk_strips = []
-    pit_trees = set()
     for s in world.segs:
         if s['excluded']:
             continue
@@ -1482,12 +1501,11 @@ def build_streets(world):
                      'corner_q': corner_q, 'corner_z': corner_z}
             strip['ramps'] = _strip_ramps(strip, ramp_grid, ramp_points)
             world.sidewalk_strips.append(strip)
-    # The ruelles first (the parterres stop at their paving), then the curb extensions round the mapped trees
-    # the carriageway covers (each strip's curb band gives way to them), then the sidewalks, corners and yards.
+    # The ruelles first (the parterres stop at their paving), then the street trees: sidewalk pits from the city's
+    # inventory and the few curb extensions the data or a corner calls for (each strip's curb band gives way to
+    # them), then the sidewalks, corners and yards.
     _ruelles(world, L, surfaces, counts)
-    for strip in world.sidewalk_strips:
-        _tree_pits(world, L, strip, trees, tree_grid, pit_trees, counts)
-    extensions = curb_extensions(world, counts, {trees[i] for i in pit_trees})
+    extensions = place_street_trees(world, L, counts)
     world.apron_outlines = []
     for strip in world.sidewalk_strips:
         _sidewalk_strip(world, L, surfaces, strip, counts)
@@ -1502,16 +1520,16 @@ def build_streets(world):
     _draw_extensions(world, L, surfaces, extensions, counts)
     _apron_walls(world, L, surfaces, counts)
     _legacy_dashes(world, L, counts)
-    world.pit_trees = pit_trees
+    finish_street_trees(world, counts)
     for k in ('sidewalk_metres', 'yard_square_metres', 'fence_metres', 'centre_line_metres', 'lane_line_metres',
               'parking_line_metres', 'bike_track_metres', 'ruelle_metres', 'ruelle_square_metres',
-              'ruelle_edge_metres', 'curb_extension_metres', 'yard_mouth_wedge_square_metres', 'passage_square_metres'):
+              'ruelle_edge_metres', 'curb_extension_metres', 'yard_mouth_wedge_square_metres', 'passage_square_metres',
+              'sidewalk_pit_metres_moved', 'ruelle_gutter_metres'):
         counts[k] = round(counts[k])
     counts['curb_measurement'] = world.curb_stats
     counts['osm_stop_nodes_inside'] = len(world.stop_nodes)
     counts['osm_crossings_on_replica'] = len({c['way'] for c in world.crossings})
     counts['signalised_approaches'] = len(world.signal_arms)
-    counts['osm_trees_in_pits'] = len(pit_trees)
     return L, counts
 
 
@@ -1812,52 +1830,6 @@ def _corner(world, L, surfaces, row, counts):
         for tri in ([p0, p1, lerp(p1, q1, 15 / d1)], [p0, lerp(p1, q1, 15 / d1), lerp(p0, q0, 15 / d0)]):
             L.flat('curb', tri, Z_WALK + .1)
         counts['corner_pieces'] += 1
-
-
-def _tree_pits(world, L, strip, trees, tree_grid, pit_trees, counts):
-    (ca, cb), (oa, ob), length = strip['curb'], strip['outer'], strip['len']
-    u = ((cb[0] - ca[0]) / length, (cb[1] - ca[1]) / length)
-    width = math.dist(ca, oa)
-    if width < 160:
-        return
-    inward = ((oa[0] - ca[0]) / width, (oa[1] - ca[1]) / width)
-    yaw = math.degrees(math.atan2(u[1], u[0]))
-    for i in tree_grid.query(bbox([ca, cb, oa, ob])):
-        p = trees[i]
-        if i in pit_trees:
-            continue
-        rel = (p[0] - ca[0], p[1] - ca[1])
-        along = rel[0] * u[0] + rel[1] * u[1]
-        lat = rel[0] * inward[0] + rel[1] * inward[1]
-        if not (60 < along < length - 60 and 20 < lat < width + 40):
-            continue
-        if any(abs(along - r) < 300 for r in strip.get('ramps', [])):
-            continue
-        lat = max(60., min(width - 55, lat))
-        c = add(add(ca, u, along), inward, lat)
-        size = (110, 100)
-        q = lambda x, y: (c[0] + u[0] * x + inward[0] * y, c[1] + u[1] * x + inward[1] * y)
-        # the pit lies on its own strip and off every other carriageway, or it would hang over the asphalt where a
-        # short strip's curb and back lines converge at a junction (the trunk then stands on the sidewalk without one)
-        strip_poly = [ca, cb, ob, oa]
-        corners = [q(x * size[0] / 2, y * size[1] / 2) for x, y in ((-1, -1), (1, -1), (1, 1), (-1, 1))]
-        if not all(point_in(r, strip_poly) and not on_pavement(world, r, strip['seg']['i']) for r in corners):
-            counts['tree_pits_off_strip'] += 1
-            continue
-        pit_trees.add(i)
-        L.flat('soil', [q(-size[0] / 2, -size[1] / 2), q(size[0] / 2, -size[1] / 2),
-                        q(size[0] / 2, size[1] / 2), q(-size[0] / 2, size[1] / 2)], Z_WALK + .15)
-        for x0, y0, x1, y1 in ((-55, -50, 55, -50), (55, -50, 55, 50), (55, 50, -55, 50), (-55, 50, -55, -50)):
-            L.rod('iron', (*q(x0, y0), Z_WALK + 2), (*q(x1, y1), Z_WALK + 2), 1.6, 4)
-        rng = Rng('pit', i)
-        if rng.chance(.45):
-            # Low hooped fence typical of Plateau tree pits.
-            for x, y in ((-55, -50), (55, -50), (55, 50), (-55, 50)):
-                L.rod('iron', (*q(x, y), Z_WALK), (*q(x, y), Z_WALK + 38), 1.4, 4)
-            for x0, y0, x1, y1 in ((-55, -50, 55, -50), (55, -50, 55, 50), (55, 50, -55, 50), (-55, 50, -55, -50)):
-                L.rod('iron', (*q(x0, y0), Z_WALK + 36), (*q(x1, y1), Z_WALK + 36), 1.2, 4)
-        counts['tree_pits'] += 1
-        strip.setdefault('pits', []).append((along, c, yaw))
 
 
 def _straight(run, g1, row):
@@ -2602,6 +2574,28 @@ def _alley_profile(world, pa, pb, stops=None):
     return {'t': ts, 1: reach[1], -1: reach[-1]}
 
 
+GUTTER_HALF = 18.          # the ruelle's centre gutter: 36 cm of aged concrete...
+GUTTER_DEPTH = 1.5         # ...sunk in a shallow V below the asphalt either side
+
+
+def gutter_z(lateral):
+    """Height of the gutter's V at `lateral` cm from the ruelle's centre line (the asphalt's height at its edges)."""
+    return Z_ALLEY - GUTTER_DEPTH * max(0., 1. - abs(lateral) / GUTTER_HALF)
+
+
+def _gutter(L, pa, u, n, t0, t1):
+    """One piece of the ruelle's centre gutter from t0 to t1 cm along pa + u t: two faces sloping 1.5 cm down to the
+    centre line, on the aged lane concrete with their own UVs (u metres along the ruelle, v metres across it with the
+    centre line at v = 0.5, where the texture's damp channel runs)."""
+    for lo, hi in ((-GUTTER_HALF, 0.), (0., GUTTER_HALF)):
+        pts, uv = [], []
+        for t, lat in ((t0, lo), (t1, lo), (t1, hi), (t0, hi)):
+            p = add(add(pa, u, t), n, lat)
+            pts.append((p[0], p[1], gutter_z(lat)))
+            uv.append((t / 100., (lat + 50.) / 100.))
+        L.uvface('Concrete_Lane_Aged', pts, uv)
+
+
 def _pave_runs(profile):
     """Sample index runs (i, j) along which both reaches vary linearly (within 1.5 cm), each 20 m or shorter."""
     ts, runs, i = profile['t'], [], 0
@@ -2658,14 +2652,24 @@ def _ruelles(world, L, surfaces, counts):
             for i, j in _pave_runs(profile):
                 poly = [add(add(pa, u, ts[i]), n, -profile[-1][i]), add(add(pa, u, ts[j]), n, -profile[-1][j]),
                         add(add(pa, u, ts[j]), n, profile[1][j]), add(add(pa, u, ts[i]), n, profile[1][i])]
-                if L.flat('alley', poly, Z_ALLEY):
+                # the asphalt stops at the gutter's edges either side (the gutter is sunk between them)
+                halves = ([poly[0], poly[1], add(add(pa, u, ts[j]), n, -GUTTER_HALF), add(add(pa, u, ts[i]), n, -GUTTER_HALF)],
+                          [add(add(pa, u, ts[i]), n, GUTTER_HALF), add(add(pa, u, ts[j]), n, GUTTER_HALF), poly[2], poly[3]])
+                if all(L.flat('alley', half, Z_ALLEY) for half in halves):
                     surfaces.add(poly, Z_ALLEY, 'alley')
                     counts['ruelle_pieces'] += 1
                     counts['ruelle_square_metres'] += abs(area(poly)) / 10000
             pieces = max(1, math.ceil(length / PAVE_PIECE))
             for g in range(pieces):
-                L.strip('alley_gutter', lerp(pa, pb, g / pieces), lerp(pa, pb, (g + 1) / pieces), 36, Z_ALLEY + .1)
+                _gutter(L, pa, u, n, length * g / pieces, length * (g + 1) / pieces)
+            for end, t_end in ((pa, 0.), (pb, length)):
+                # close the V's open end under the paving (a wall facing out of the segment)
+                out = -1. if t_end == 0. else 1.
+                a, b = add(end, n, -GUTTER_HALF * out), add(end, n, GUTTER_HALF * out)
+                L.face('Concrete_Lane_Aged', [(a[0], a[1], Z_ALLEY), (end[0], end[1], Z_ALLEY - GUTTER_DEPTH),
+                                              (b[0], b[1], Z_ALLEY)])
             counts['ruelle_metres'] += length / 100
+            counts['ruelle_gutter_metres'] += length / 100
             # the next segment of the way: an outer wedge where the two pavings part
             if k + 1 < len(segs) and math.dist(pb, segs[k + 1][0]) < 1.:
                 joints.add(k)
@@ -2682,11 +2686,15 @@ def _ruelles(world, L, surfaces, counts):
                     if L.flat('alley', wedge, Z_ALLEY - .05):
                         surfaces.add(wedge, Z_ALLEY, 'alley')
                         counts['ruelle_joint_wedges'] += 1
-        # free ends keep the old round cap of the lane strip
+        # free ends keep the old round cap of the lane strip, as a half disc past the end so the gutter shows
         for k, (pa, pb) in enumerate(segs):
-            for cap, free in ((pa, k == 0 or (k - 1) not in joints), (pb, k not in joints)):
+            u, _ = unit(pa, pb)
+            n = (-u[1], u[0])
+            for cap, free, turn in ((pa, k == 0 or (k - 1) not in joints, 1.), (pb, k not in joints, -1.)):
                 if free:
-                    _disc(L, 'alley', cap, ALLEY_HALF, Z_ALLEY - .05, 10)
+                    L.flat('alley', [add(cap, (n[0] * math.cos(turn * math.pi * i / 6) - n[1] * math.sin(turn * math.pi * i / 6),
+                                               n[0] * math.sin(turn * math.pi * i / 6) + n[1] * math.cos(turn * math.pi * i / 6)),
+                                         ALLEY_HALF) for i in range(7)], Z_ALLEY - .05)
         world.alleys.append({'id': w['id'], 'segments': segs, 'traffic': all(inside(world.latlon[r]) for r in w['refs']),
                              'name': t.get('name', ''), 'reach': profiles})
     # The weedy edge at the fence foot (not where a wall stands nearer, never over a carriageway).
@@ -2745,26 +2753,198 @@ def alley_paving_z(world, p):
 
 
 # ---------------------------------------------------------------------------------------------
-# Curb extensions (saillies) round the mapped street trees that the measured curbs left on the carriageway
+# Street and park trees from the city's inventory, their sidewalk pits, and the few curb extensions
 #
-# The saved map instances 4,571 trees at their OSM nodes (plateau_rendering.tree_positions) and they stay there.
-# Where the carriageway, cut to the curbs measured from the mapped sidewalks and pushed out to 550 cm on traffic
-# streets, covers a trunk within 3 m of its curb, the sidewalk comes out round it: a trapezoid from the curb, the
-# tree pit (110 x 100 cm, as _tree_pits) and 25 cm of concrete in front, with short chamfered tapers, an 18 cm curb
-# face and the light curb band. Extensions whose clear curb between them would not take a parked car (5.4 m)
-# merge into one; elsewhere the parking spaces between them stay. Any part in the 300 cm traffic band is laid
+# Every street and park tree the game shows comes from the Ville de Montréal's public tree inventory (CC BY 4.0,
+# clipped to the district by --clip-trees into Data/Plateau/Inventory/): its position, species and trunk diameter
+# (DHP, at breast height). The OSM tree nodes were imported from the same inventory, so an OSM tree within 3 m of
+# an inventory tree is the same tree; the rest are kept as OSM trees of unknown species. Street_trees.json lists them
+# all, one row each (the contract the apply step and the tree meshes read).
+#
+# The curb stays where it was measured (pushed out to 550 cm on traffic streets for the runtime's curb parking), so a
+# tree the inventory puts in a sidewalk pit (Trottoir) is moved to one: the pit's centre 65 to 80 cm behind the curb
+# (the inventory's distance to the pavement where it says less), at the trunk's place along the curb, slid clear of
+# crossing ramps, street furniture and the next pit. A tree in a grass verge or at the back of the sidewalk moves to
+# a pit only if the replica's sidewalk or carriageway covers it; park, lawn and median trees stay where they are.
+# Each pit gets a low wrought-iron guard (cut-out cards, no collision) and cards of residents' autumn planting on the
+# soil, seeded per pit.
+#
+# Curb extensions (saillies) stay only where real ones are: round a tree the inventory lists in a planted saillie
+# (Saillie Aménagée) or on a median (Terre-plein: a raised lawn round the trunk where the replica's carriageway, pushed
+# out for curb parking, covers the median), within 10 m of an OSM traffic_calming=choker, or within 15 m of a corner,
+# for a tree the carriageway still covers there. Each is a trapezoid from the curb, the tree pit (110 x 100 cm) and 25 cm of
+# concrete in front, with short chamfered tapers, an 18 cm curb face and the light curb band. Extensions whose clear
+# curb between them would not take a parked car (5.4 m) merge into one. Any part in the 300 cm traffic band is laid
 # flush at the dropped-curb height without collision, as the sidewalk's own dropped aprons are, and so is an
-# extension across a crossing ramp. On a side with no sidewalk the extension is a raised lawn verge; on a corner
-# arc it follows the arc piece nearest the trunk. Trunks farther out are listed for the host.
-# Adapted from the City of Minneapolis Street Design Guide, "Curb extensions" (mid-block extensions in the parking
-# lane for greening; tapers of 3:1 to 5:1 where they guide traffic, so these short ones only chamfer), and the
-# Ville de Montréal's "Saillies de trottoir" (mid-block and planted saillies).
+# extension across a crossing ramp. On a side with no sidewalk the extension is a raised lawn verge; on a corner arc
+# it follows the arc piece nearest the trunk. Any other trunk the carriageway covers is listed for the host.
+# Adapted from the City of Minneapolis Street Design Guide, "Curb extensions" (tapers of 3:1 to 5:1 where they guide
+# traffic, so these short ones only chamfer), and the Ville de Montréal's "Saillies de trottoir" (planted saillies,
+# mostly at corners).
+
+INVENTORY = ROOT / 'Data/Plateau/Inventory'
+TREE_FILES = ('trees_pmr.json', 'trees_vm.json')
+TREE_SOURCE = {'dataset': 'Ville de Montréal, Arbres publics sur le territoire de la Ville (inventaire des arbres)',
+               'url': 'https://donnees.montreal.ca/dataset/arbres',
+               'resource': '64e28fe6-ef37-437a-972d-d1d3f1f7d891', 'licence': 'CC BY 4.0',
+               'attribution': 'Source: Ville de Montréal, données ouvertes (CC BY 4.0)'}
+TREE_BOROUGHS = {'trees_pmr.json': 'Le Plateau-Mont-Royal', 'trees_vm.json': 'Ville-Marie'}
+OSM_TREE_SAME = 300.      # an OSM tree this near an inventory tree is that tree (the OSM nodes came from the inventory)
+PIT_BACK = (65., 80.)     # a sidewalk pit's centre stands this far behind the curb
+PIT_GAP = 30.             # concrete between two pits along the curb
+PIT_EDGE = 25.            # ...and between a pit and the end of its sidewalk strip
+RAMP_KEEP = 335.          # a pit's centre stays this far from a crossing ramp's (its 280 cm slope and half a pit)
+PIT_SLIDE_MAX = 450.      # a pit slides at most this far along the curb from the trunk's place
+PIT_REACH = 600.          # a tree this far from a sidewalk's curb or outer edge may move to a pit on it
+CORNER_REACH = 1500.      # an extension at a corner: its tree within 15 m of a junction's curb corner
+CHOKER_REACH = 1000.      # ...or within 10 m of an OSM traffic_calming=choker
+DATA_REACH = 340.         # a trunk the inventory puts in a saillie or on a median gets one this far from the curb
+EXTENSION_REASONS = ('inventory saillie', 'inventory median', 'osm choker', 'corner')
+SIDEWALK_PITS = ('TRottoir',)
+VERGES = ('Banquette Gazonnée', 'Banquette aSphaltée', 'Banquette Aménagée')
+BACK_OF_WALK = ('Fond de Trottoir',)
+SAILLIES = ('Saillie Aménagée',)
+# OSM street furniture a pit keeps clear of (cm between the node and the pit's edge; a BIXI dock is about 6 m long)
+PIT_CLEAR_OF = {('highway', 'street_lamp'): 60., ('emergency', 'fire_hydrant'): 80., ('amenity', 'bench'): 90.,
+                ('amenity', 'post_box'): 60., ('amenity', 'waste_basket'): 50., ('amenity', 'recycling'): 60.,
+                ('amenity', 'bicycle_rental'): 450., ('highway', 'stop'): 40.}
+# Species to the Trees manifest kinds. A species row (a prefix of the Latin name) wins over its genus; an unknown
+# species or genus, and the conifers (no conifer kind yet), take a kind by crown size from the trunk (DHP).
+TREE_KINDS = ('norway_maple', 'silver_maple', 'honey_locust', 'linden', 'ash', 'small', 'elm')
+TREE_SPECIES = (('acer saccharinum', 'silver_maple'), ('acer x freemanii', 'silver_maple'), ('acer ginnala', 'small'),
+                ('acer tataricum', 'small'), ('acer palmatum', 'small'), ('acer spicatum', 'small'),
+                ('acer campestre', 'small'), ('acer miyabei', 'small'), ('acer negundo', 'small'))
+TREE_GENERA = {'Acer': 'norway_maple', 'Platanus': 'norway_maple', 'Populus': 'silver_maple',
+               'Ulmus': 'elm', 'Celtis': 'elm', 'Zelkova': 'elm', 'Salix': 'elm',
+               'Fraxinus': 'ash', 'Phellodendron': 'ash', 'Carya': 'ash', 'Juglans': 'ash', 'Pterocarya': 'ash',
+               'Gleditsia': 'honey_locust', 'Gymnocladus': 'honey_locust', 'Robinia': 'honey_locust',
+               'Tilia': 'linden', 'Quercus': 'linden', 'Aesculus': 'linden', 'Catalpa': 'linden', 'Ginkgo': 'linden',
+               'Fagus': 'linden', 'Liriodendron': 'linden',
+               'Betula': 'small', 'Carpinus': 'small', 'Ostrya': 'small', 'Corylus': 'small', 'Alnus': 'small',
+               'Malus': 'small', 'Prunus': 'small', 'Pyrus': 'small', 'Amelanchier': 'small', 'Syringa': 'small',
+               'Crataegus': 'small', 'Cercis': 'small', 'Cornus': 'small', 'Magnolia': 'small', 'Sorbus': 'small',
+               'Morus': 'small', 'Cercidiphyllum': 'small', 'Rhamnus': 'small', 'Maackia': 'small',
+               'Cladrastis': 'small'}
+CONIFERS = ('Pinus', 'Picea', 'Larix', 'Thuja', 'Taxus', 'Tsuga', 'Abies', 'Juniperus', 'Pseudotsuga',
+            'Metasequoia', 'Taxodium', 'Chamaecyparis')
+# Height from trunk diameter (DHP, cm -> cm), research-plateau.md §10.4 for silver and Norway maple: 10 cm about 6 m,
+# 30 cm 13 m, 60 cm 20 m, 100 cm and over 24 to 28 m. The small kinds stay at 70% of it, under 11 m.
+DBH_HEIGHT = ((0., 250.), (10., 600.), (30., 1300.), (60., 2000.), (100., 2500.), (230., 2800.))
+OSM_DBH_DEFAULT = 25.     # an OSM tree with no inventory tree within 30 m
+
+
+def tree_kind(species, dbh):
+    """The Trees manifest kind of a species (the inventory's Latin name), else by crown size from the trunk."""
+    name = (species or '').strip()
+    low = name.lower()
+    for prefix, kind in TREE_SPECIES:
+        if low.startswith(prefix):
+            return kind
+    genus = name.split(' ')[0] if name else ''
+    if genus in TREE_GENERA:
+        return TREE_GENERA[genus]
+    d = dbh if dbh is not None else OSM_DBH_DEFAULT
+    return 'silver_maple' if d >= 45. else 'norway_maple' if d >= 20. else 'small'
+
+
+def tree_height(kind, dbh):
+    """Height (cm) from the trunk diameter (cm), interpolated in DBH_HEIGHT."""
+    d = max(0., dbh)
+    h = DBH_HEIGHT[-1][1]
+    for (d0, h0), (d1, h1) in zip(DBH_HEIGHT, DBH_HEIGHT[1:]):
+        if d <= d1:
+            h = h0 + (h1 - h0) * (d - d0) / (d1 - d0)
+            break
+    return min(1100., .7 * h) if kind == 'small' else h
+
+
+def _number(value):
+    try:
+        v = float(str(value).replace(',', '.'))
+    except (TypeError, ValueError):
+        return None
+    return v if math.isfinite(v) else None
+
+
+def load_tree_inventory():
+    """The committed inventory clip: (file, record) for every record, in file order (sorted by the inventory's
+    borough and location number when clipped)."""
+    out = []
+    for name in TREE_FILES:
+        path = INVENTORY / name
+        if path.is_file():
+            out += [(name, r) for r in json.loads(path.read_text())['trees']]
+    return out
+
+
+def clip_trees(*paths):
+    """Write Data/Plateau/Inventory/trees_pmr.json and trees_vm.json from datastore extracts of the city's tree
+    inventory: the records inside the district box (prepare_lafontaine.BOUNDS), one file per borough, sorted by
+    borough and location number (EMP_NO), all fields but the search ranking, one record per line."""
+    rows = {name: [] for name in TREE_FILES}
+    by_borough = {v: k for k, v in TREE_BOROUGHS.items()}
+    hashes = {}
+    for path in paths:
+        raw = Path(path).read_bytes()
+        hashes[Path(path).name] = hashlib.sha256(raw).hexdigest()
+        for r in json.loads(raw):
+            lat, lon = _number(r.get('Latitude')), _number(r.get('Longitude'))
+            if lat is None or lon is None or not inside((lat, lon)) or r.get('ARROND_NOM') not in by_borough:
+                continue
+            rows[by_borough[r['ARROND_NOM']]].append({k: v for k, v in r.items() if not k.startswith('rank ')})
+    INVENTORY.mkdir(parents=True, exist_ok=True)
+    docs = {}
+    for name, records in rows.items():
+        records.sort(key=lambda r: (int(r['ARROND']), int(r['EMP_NO']), r['_id']))
+        head = {'source': dict(TREE_SOURCE, borough=TREE_BOROUGHS[name], extract_sha256=hashes),
+                'box_lat_lon': list(BOUNDS), 'frame': 'WGS84 latitude and longitude (Latitude, Longitude); '
+                'Coord_X and Coord_Y in the city\'s MTM zone 8', 'count': len(records)}
+        text = json.dumps(head, ensure_ascii=False, indent=1)[:-2] + ',\n "trees": [\n' + \
+            ',\n'.join('  ' + json.dumps(r, ensure_ascii=False, sort_keys=True) for r in records) + '\n ]\n}\n'
+        (INVENTORY / name).write_text(text)
+        docs[name] = len(records)
+    return docs
+
 
 def mapped_trees(world):
-    """The trees the saved map instances (plateau_rendering.tree_positions): OSM natural=tree nodes inside the
-    district, in file order, as (node id, xy)."""
+    """The OSM natural=tree nodes inside the district, in file order, as (node id, xy): the trees the saved map
+    instanced before the inventory (plateau_rendering.tree_positions)."""
     return [(n, world.nodes[n]) for n, t in world.node_tags.items()
             if t.get('natural') == 'tree' and n in world.nodes and inside(world.latlon[n])]
+
+
+def street_tree_rows(world):
+    """Every street and park tree, unplaced: the inventory's (in clip order), then the OSM trees with no inventory
+    tree within OSM_TREE_SAME. Each row: id, p (xy), source, species, species_fr, dbh_cm, dbh_from, placement (the
+    inventory's Emplacement, or 'osm'), street."""
+    rows, grid = [], Grid(1000.)
+    for name, r in load_tree_inventory():
+        lat, lon = _number(r['Latitude']), _number(r['Longitude'])
+        if lat is None or lon is None or not inside((lat, lon)):
+            continue
+        p = xy(lat, lon)
+        dbh = _number(r.get('DHP'))
+        grid.add(len(rows), bbox([p]))
+        rows.append({'id': f"inv:{r['ARROND']}-{r['EMP_NO']}", 'p': p, 'source': 'inventory',
+                     'species': r.get('Essence_latin') or 'unknown', 'species_fr': r.get('Essence_fr'),
+                     'dbh_cm': dbh if dbh is not None else OSM_DBH_DEFAULT,
+                     'dbh_from': 'inventory' if dbh is not None else 'default',
+                     'placement': r.get('Emplacement') or '', 'street': r.get('Rue') or r.get('NOM_PARC') or '',
+                     'pave_cm': None if _number(r.get('Distance_pave')) is None else 100. * _number(r['Distance_pave']),
+                     'inv_type': r.get('INV_TYPE')})
+    inventory = len(rows)
+    for node, p in mapped_trees(world):
+        near = [rows[i] for i in grid.query(bbox([p], OSM_TREE_SAME))]
+        if any(math.dist(p, t['p']) < OSM_TREE_SAME for t in near):
+            continue
+        around = sorted(t['dbh_cm'] for t in (rows[i] for i in grid.query(bbox([p], 3000.)))
+                        if t['dbh_from'] == 'inventory' and math.dist(p, t['p']) < 3000.)
+        dbh = around[len(around) // 2] if around else OSM_DBH_DEFAULT
+        rows.append({'id': f'osm:{node}', 'p': p, 'source': 'osm', 'species': 'unknown', 'species_fr': None,
+                     'dbh_cm': dbh, 'dbh_from': 'neighbours' if around else 'default', 'placement': 'osm',
+                     'street': '', 'pave_cm': None, 'inv_type': None})
+    world.tree_inventory_rows = inventory
+    return rows
 
 
 def curb_edges(world):
@@ -2808,6 +2988,246 @@ def curb_edges(world):
     return edges
 
 
+def corner_points(world):
+    """The curb corners of every junction of three or more arms: each fillet's or bend's arc midpoint, or a mitre's
+    curb point. Extensions not listed by the data stand within CORNER_REACH of one."""
+    pts = []
+    for j in world.junctions:
+        if j['excluded'] or len(j['arms']) < 3:
+            continue
+        for row in j['corners']:
+            if row.get('arc'):
+                pts.append(row['arc'][len(row['arc']) // 2])
+            elif row.get('P') is not None:
+                pts.append(row['P'])
+    return pts
+
+
+def _strip_frames(world):
+    """Per sidewalk strip: its curb start, direction, the inward normal (toward its outer line), length, widths at
+    both ends and polygon."""
+    frames = []
+    for strip in world.sidewalk_strips:
+        (ca, cb), (oa, ob) = strip['curb'], strip['outer']
+        u, length = unit(ca, cb)
+        n = (-u[1], u[0])
+        if (oa[0] - ca[0]) * n[0] + (oa[1] - ca[1]) * n[1] < 0:
+            n = (-n[0], -n[1])
+        wa = (oa[0] - ca[0]) * n[0] + (oa[1] - ca[1]) * n[1]
+        wb = (ob[0] - cb[0]) * n[0] + (ob[1] - cb[1]) * n[1]
+        frames.append({'strip': strip, 'a': ca, 'u': u, 'n': n, 'len': length, 'wa': wa, 'wb': wb,
+                       'poly': [ca, cb, ob, oa], 'claims': []})
+    return frames
+
+
+def _frame_at(frame, s, d):
+    return (frame['a'][0] + frame['u'][0] * s + frame['n'][0] * d, frame['a'][1] + frame['u'][1] * s + frame['n'][1] * d)
+
+
+def _pit_rect(frame, s, d, hl=PIT_L / 2, hd=PIT_D / 2):
+    return [_frame_at(frame, s + x, d + y) for x, y in ((-hl, -hd), (hl, -hd), (hl, hd), (-hl, hd))]
+
+
+def _fit_pit(world, frame, s0, d, obstacles):
+    """The along-curb place nearest s0 (10 cm steps, up to PIT_SLIDE_MAX) where a pit centred d behind the curb lies
+    on its strip, off every other carriageway and building, clear of the crossing ramps, the OSM street furniture and
+    the strip's other pits; None if there is none."""
+    length = frame['len']
+    ramps = frame['strip'].get('ramps', [])
+    seg = frame['strip']['seg']['i']
+    steps = int(PIT_SLIDE_MAX // 10)
+    for k in sorted(range(-steps, steps + 1), key=lambda v: (abs(v), v)):
+        s = s0 + 10. * k
+        if s - PIT_L / 2 < PIT_EDGE or s + PIT_L / 2 > length - PIT_EDGE:
+            continue
+        if any(abs(s - r) < RAMP_KEEP for r in ramps) or any(abs(s - c) < PIT_L + PIT_GAP for c in frame['claims']):
+            continue
+        width = frame['wa'] + (frame['wb'] - frame['wa']) * s / length
+        if d + PIT_D / 2 > width - 5.:
+            continue
+        rect = _pit_rect(frame, s, d)
+        if not all(point_in(c, frame['poly']) and not on_pavement(world, c, seg) and not world.in_building(c)
+                   for c in rect + [_frame_at(frame, s, d)]):
+            continue
+        if any(poly_point_dist(rect, q) < r or point_in(q, rect) for q, r in obstacles.near(rect)):
+            continue
+        return s
+    return None
+
+
+class _Obstacles:
+    """OSM street furniture nodes a pit keeps clear of."""
+
+    def __init__(self, world):
+        self.items, self.grid = [], Grid(1000.)
+        for n, t in world.node_tags.items():
+            if n not in world.nodes:
+                continue
+            for (k, v), r in PIT_CLEAR_OF.items():
+                if t.get(k) == v:
+                    self.grid.add(len(self.items), bbox([world.nodes[n]], r))
+                    self.items.append((world.nodes[n], r))
+                    break
+
+    def near(self, poly):
+        return [self.items[i] for i in self.grid.query(bbox(poly, 10.))]
+
+
+def place_street_trees(world, L, counts):
+    """Place every street and park tree (see above): sidewalk pits drawn here with their guards and planting, the
+    rows kept for street_trees.json, and the curb extensions planned for _draw_extensions."""
+    rows = street_tree_rows(world)
+    frames = _strip_frames(world)
+    grid = Grid(1500.)
+    for i, f in enumerate(frames):
+        grid.add(i, bbox(f['poly'], PIT_REACH))
+    obstacles = _Obstacles(world)
+    corners = corner_points(world)
+    corner_grid = Grid(2000.)
+    for i, c in enumerate(corners):
+        corner_grid.add(i, bbox([c], CORNER_REACH))
+    chokers = [world.nodes[n] for n, t in world.node_tags.items()
+               if t.get('traffic_calming') == 'choker' and n in world.nodes]
+    world.tree_corners, world.tree_chokers = corners, chokers
+
+    def near_corner(p):
+        return any(math.dist(p, corners[i]) <= CORNER_REACH for i in corner_grid.query(bbox([p])))
+
+    def near_choker(p):
+        return any(math.dist(p, c) <= CHOKER_REACH for c in chokers)
+
+    kept, dropped, wanted = [], [], []
+    for t in rows:
+        p = t['p']
+        t.update(pit=False, extension=None, moved_cm=0., at=p)
+        if world.in_building(p):
+            t['why'] = 'inside a building footprint'
+            dropped.append(t)
+            counts['trees_dropped_in_buildings'] += 1
+            continue
+        kept.append(t)
+        # Only the carriageways and ruelles are down yet: a trunk over carriageway asphalt may still end up on a
+        # median lawn or a sidewalk laid later, which finish_street_trees checks.
+        on_road = world.surfaces.has(p, 'road')
+        t['on_road'] = on_road
+        best = None
+        for i in grid.query(bbox([p])):
+            f = frames[i]
+            rel = (p[0] - f['a'][0], p[1] - f['a'][1])
+            s, d = rel[0] * f['u'][0] + rel[1] * f['u'][1], rel[0] * f['n'][0] + rel[1] * f['n'][1]
+            if not -50. <= s <= f['len'] + 50.:
+                continue
+            width = f['wa'] + (f['wb'] - f['wa']) * max(0., min(1., s / f['len']))
+            gap = -d if d < 0 else d - width if d > width else 0.
+            if gap <= PIT_REACH and (best is None or (gap, abs(d)) < best[0]):
+                best = ((gap, abs(d)), i, s, d, width)
+        on_walk = best is not None and best[0][0] == 0.
+        kind = t['placement']
+        lat = None
+        median = kind.startswith('Terre-plein')
+        if best is not None and not (kind in SAILLIES and on_road) and not median:
+            _, i, s, d, width = best
+            back = min(PIT_BACK[1], max(PIT_BACK[0], t['pave_cm'] if t['pave_cm'] is not None else
+                                        PIT_BACK[0] + (PIT_BACK[1] - PIT_BACK[0]) * Rng('pit-back', t['id']).random()))
+            if kind in SIDEWALK_PITS:
+                lat = back
+            elif kind in BACK_OF_WALK:
+                lat = max(PIT_BACK[0], width - PIT_D / 2 - 15.)
+            elif on_road:
+                lat = back
+            elif on_walk:
+                lat = max(PIT_BACK[0], min(width - PIT_D / 2 - 5., d))
+        if lat is not None:
+            wanted.append((best[1], best[2], lat, t))
+        elif on_road:
+            t['extension_wanted'] = True
+    # Pits, strip by strip along the curb (the order fixes which tree slides when two want one place).
+    wanted.sort(key=lambda w: (w[0], w[1], w[3]['id']))
+    pits = []
+    for i, s0, lat, t in wanted:
+        f = frames[i]
+        s = _fit_pit(world, f, max(PIT_L / 2 + PIT_EDGE, min(f['len'] - PIT_L / 2 - PIT_EDGE, s0)), lat, obstacles)
+        if s is None:
+            if t['on_road']:
+                t['extension_wanted'] = True
+            elif point_in(t['p'], f['poly']):
+                t['no_pit'] = True
+                counts['trees_on_sidewalk_without_pit'] += 1
+            continue
+        f['claims'].append(s)
+        c = _frame_at(f, s, lat)
+        t.update(pit=True, at=c, moved_cm=math.dist(c, t['p']), pit_yaw=math.degrees(math.atan2(f['u'][1], f['u'][0])),
+                 pit_z=Z_WALK + .15, curb_cm=lat, strip=f['strip'])
+        pits.append((f, s, lat, t))
+    for f, s, lat, t in pits:
+        q = lambda x, y, f=f, s=s, lat=lat: _frame_at(f, s + x, lat + y)      # noqa: E731
+        _pit(L, q, Z_WALK, Rng('pit', t['id']), counts)
+        f['strip'].setdefault('pits', []).append((s, t['at'], t['pit_yaw']))
+        counts['sidewalk_pits'] += 1
+        counts['tree_pits'] += 1
+        if t['moved_cm'] > 1.:
+            counts['sidewalk_pits_moved'] += 1
+            counts['sidewalk_pit_metres_moved'] += t['moved_cm'] / 100.
+    for f in frames:
+        if f['strip'].get('pits'):
+            f['strip']['pits'].sort(key=lambda r: r[0])
+    # Curb extensions: only where the data shows one or at a corner; every other covered trunk goes to the host.
+    ext_trees = []
+    for t in kept:
+        if t['pit'] or not t['on_road']:
+            continue
+        reason = None
+        if t.get('extension_wanted'):
+            reason = 'inventory saillie' if t['placement'] in SAILLIES else \
+                'inventory median' if t['placement'].startswith('Terre-plein') else \
+                'osm choker' if near_choker(t['p']) else 'corner' if near_corner(t['p']) else None
+        if reason is None:
+            # resolved in finish_street_trees: on a sidewalk or lawn laid later, or for the host
+            t['host'] = 'on the carriageway mid-block: no extension in the data there, and not at a corner'
+            continue
+        t['extension_reason'] = reason
+        ext_trees.append(t)
+    world.street_tree_list, world.street_tree_dropped = kept, dropped
+    counts['street_trees'] = len(kept)
+    counts['street_trees_inventory'] = sum(1 for t in kept if t['source'] == 'inventory')
+    counts['street_trees_osm'] = sum(1 for t in kept if t['source'] == 'osm')
+    return curb_extensions(world, counts, ext_trees)
+
+
+def _pit(L, q, z, rng, counts):
+    """A tree pit's soil (110 x 100 cm, q(along, across) from its centre), its low wrought-iron guard and the
+    residents' planting, seeded per pit: a guard on all four sides (most), open on the curb side, or a low edging
+    on four sides; one to four planted cards on the soil round the trunk, each showing its own stretch of the
+    planting card's 1 m run, of its own height."""
+    hx, hy = PIT_L / 2, PIT_D / 2
+    L.flat('soil', [q(-hx, -hy), q(hx, -hy), q(hx, hy), q(-hx, hy)], z + .15)
+    style = rng.random()
+    height = (14. + 6. * rng.random()) if style < .12 else (34. + 10. * rng.random())
+    sides = (((-hx, -hy), (hx, -hy)), ((hx, -hy), (hx, hy)), ((hx, hy), (-hx, hy)), ((-hx, hy), (-hx, -hy)))
+    if .12 <= style < .3:
+        sides = sides[1:]                                   # open toward the curb (the -y side)
+    inset = 2.
+    u0 = rng.uniform(0., .5)
+    for (x0, y0), (x1, y1) in sides:
+        a = q(x0 + (inset if x0 < 0 else -inset), y0 + (inset if y0 < 0 else -inset))
+        b = q(x1 + (inset if x1 < 0 else -inset), y1 + (inset if y1 < 0 else -inset))
+        counts['pit_guard_cards'] += L.card('Iron_Wrought', a, b, z + .15, z + .15 + height, u0=u0)
+        u0 += math.dist(a, b) / 100.
+    layout = rng.random()
+    if layout < .35:            # a bed along each long side of the trunk
+        cards = [((-hx + 10., -24.), (hx - 10., -24.)), ((hx - 10., 24.), (-hx + 10., 24.))]
+    elif layout < .6:           # a ring of four short beds round the trunk
+        cards = [((-38., -26.), (38., -26.)), ((38., 26.), (-38., 26.)), ((-36., -20.), (-36., 20.)),
+                 ((36., 20.), (36., -20.))]
+    elif layout < .85:          # one long bed behind the trunk and a short one in front
+        cards = [((-hx + 8., 26.), (hx - 8., 26.)), ((-30., -27.), (30., -27.))]
+    else:                       # a single clump beside the trunk
+        cards = [((12., -30.), (46., -6.))]
+    for a, b in cards:
+        top = z + .15 + rng.uniform(26., 46.)
+        counts['pit_flower_cards'] += L.card('Plant_Pit_Flowers', q(*a), q(*b), z + .15, top, u0=rng.random())
+
+
 def _envelope(group, A):
     """Breakpoints (x, depth) of an extension's front: each tree's flat top over its pit and tapers, bridged to the
     next tree where they merged."""
@@ -2837,40 +3257,17 @@ def _envelope(group, A):
     return sorted(xs), f
 
 
-def curb_extensions(world, counts, pitted=()):
-    """Plan the curb extensions (see above) and the host list; marks each strip's curb band cuts. A trunk on the
-    sidewalk within CURB_HUG of a strip's curb and in no sidewalk pit (`pitted`: their positions) leans over the
-    gutter, so it gets one too."""
+def curb_extensions(world, counts, trees):
+    """Plan the curb extensions (see above) round `trees` (place_street_trees' rows the carriageway covers where the
+    data shows an extension or near a corner) and the host list; marks each strip's curb band cuts."""
     edges = curb_edges(world)
     grid = Grid(1500.)
     for i, e in enumerate(edges):
         grid.add(i, bbox([e['a'], add(e['a'], e['u'], e['len'])], BUMP_REACH + 100))
     A = PIT_L / 2 + BUMP_MARGIN
-    trees = mapped_trees(world)
-    counts['mapped_trees'] = len(trees)
     host, by_edge = [], {}
-    for node, p in trees:
-        on_road = world.surfaces.has(p, 'road')
-        if not on_road:
-            if p in pitted or world.in_building(p):
-                continue
-            hug = None
-            for i in grid.query(bbox([p])):
-                e = edges[i]
-                rel = (p[0] - e['a'][0], p[1] - e['a'][1])
-                s, d = rel[0] * e['u'][0] + rel[1] * e['u'][1], rel[0] * e['n'][0] + rel[1] * e['n'][1]
-                if e['kind'] == 'strip' and 0 <= s <= e['len'] and -CURB_HUG <= d < 0 and (hug is None or d > hug[0]):
-                    hug = (d, i, s)
-            if hug is None:
-                continue
-            d, i, s = hug
-            D = max(BUMP_MIN, d + PIT_D / 2 + BUMP_MARGIN)
-            by_edge.setdefault(i, []).append({'node': node, 'p': p, 's': s, 'd': d, 'D': D, 'at_curb': True,
-                                              'taper': min(BUMP_TAPER_MAX, BUMP_TAPER * D),
-                                              'street': edges[i]['strip']['seg']['name']})
-            counts['curb_extension_trees_at_curb'] += 1
-            continue
-        counts['mapped_trees_on_carriageway'] += 1
+    for t in trees:
+        p = t['p']
         best = None
         for i in grid.query(bbox([p])):
             e = edges[i]
@@ -2878,19 +3275,17 @@ def curb_extensions(world, counts, pitted=()):
             s, d = rel[0] * e['u'][0] + rel[1] * e['u'][1], rel[0] * e['n'][0] + rel[1] * e['n'][1]
             if -40 <= s <= e['len'] + 40 and d >= -5 and (best is None or d < best[0]):
                 best = (d, i, s)
-        near = nearest_seg(world, p)
-        street = near[1]['name'] if near else ''
-        if best is None or best[0] > BUMP_REACH:
-            host.append({'osm_node': node, 'position': [r2(p[0]), r2(p[1])], 'street': street,
-                         'from_curb_cm': r2(best[0]) if best else None,
-                         'traffic_centreline_cm': r2(world.traffic_distance(p, 2000)),
-                         'reason': 'more than 3 m from the curb' if best else 'no curb edge faces it'})
+        reach = DATA_REACH if t['extension_reason'].startswith('inventory') else BUMP_REACH
+        if best is None or best[0] > reach:
+            t['host'] = f'more than {reach / 100:g} m from the curb' if best else 'no curb edge faces it'
+            t['from_curb_cm'] = r2(best[0]) if best else None
             continue
         d, i, s = best
         D = max(BUMP_MIN, d + PIT_D / 2 + BUMP_MARGIN)
-        by_edge.setdefault(i, []).append({'node': node, 'p': p, 's': s, 'd': max(0., d), 'D': D, 'at_curb': False,
-                                          'taper': min(BUMP_TAPER_MAX, BUMP_TAPER * D), 'street': street})
-    counts['mapped_trees_for_host'] = len(host)
+        near = nearest_seg(world, p)
+        by_edge.setdefault(i, []).append({'node': t['id'], 'p': p, 's': s, 'd': max(0., d), 'D': D, 'tree': t,
+                                          'taper': min(BUMP_TAPER_MAX, BUMP_TAPER * D),
+                                          'street': near[1]['name'] if near else t['street']})
     extensions = []
     for i in sorted(by_edge):
         e = edges[i]
@@ -2910,7 +3305,10 @@ def curb_extensions(world, counts, pitted=()):
             xs = sorted({x for x in xs if lo <= x <= hi} | {lo, hi})
             front = [(x, f(x)) for x in xs]
             deepest = max(dd for _, dd in front)
-            ext = {'edge': e, 'trees': group, 'x': (lo, hi), 'front': front, 'deepest': deepest, 'reason': None}
+            reasons = [t['tree']['extension_reason'] for t in group]
+            reason = next(r for r in EXTENSION_REASONS if r in reasons)
+            ext = {'edge': e, 'trees': group, 'x': (lo, hi), 'front': front, 'deepest': deepest, 'reason': None,
+                   'why': reason}
             ramps = e['strip']['ramps'] if e['kind'] == 'strip' else []
             if any(lo - 150 < r < hi + 150 for r in ramps):
                 raised, ext['reason'] = 0., 'crossing ramp'
@@ -2929,10 +3327,57 @@ def curb_extensions(world, counts, pitted=()):
                 raised = 0.
             ext['raised'] = raised
             extensions.append(ext)
+            counts['curb_extensions_' + reason.split(' ')[-1]] += 1
+            for t in group:
+                t['tree']['extension'] = len(extensions) - 1
             if e['kind'] == 'strip' and raised > 0:
                 e['strip'].setdefault('bump_cuts', []).append((lo, hi))
-    world.tree_host = host
     return extensions
+
+
+def finish_street_trees(world, counts):
+    """The street_trees.json rows, once every surface is down: each tree's final place, its ground height and the
+    host list."""
+    rows, host = [], []
+    for t in world.street_tree_list:
+        x, y = t['at']
+        z = t.get('pit_z')
+        if z is None:
+            z, top = world.surfaces.at(t['at'])
+            if t.get('host') and top != 'road' and z >= Z_DROP - .5:
+                t['host'] = None                    # it stands on a median lawn or a sidewalk after all
+        if t['on_road'] and (t.get('host') or t.get('extension') is not None):
+            counts['trees_on_carriageway'] += 1
+        if not t['pit'] and not t.get('host') and t.get('extension') is None and not t.get('no_pit'):
+            counts['trees_kept_in_place'] += 1
+        kind = tree_kind(t['species'] if t['source'] == 'inventory' else None, t['dbh_cm'])
+        genus = (t['species'] or '').split(' ')[0]
+        row = {'id': t['id'], 'x_cm': r2(x), 'y_cm': r2(y), 'z_cm': r2(z), 'species': t['species'],
+               'species_fr': t['species_fr'], 'kind': kind, 'dbh_cm': t['dbh_cm'],
+               'height_cm': round(tree_height(kind, t['dbh_cm'] if t['dbh_cm'] is not None else OSM_DBH_DEFAULT)),
+               'height_from': 'dbh' if t['dbh_from'] == 'inventory' else 'dbh_' + t['dbh_from'],
+               'source': t['source'], 'placement': t['placement'], 'street': t['street'], 'pit': bool(t['pit']),
+               'yaw_deg': seed('tree-yaw', t['id']) % 360}
+        if t['dbh_from'] != 'inventory':
+            row['dbh_from'] = t['dbh_from']
+        if genus in CONIFERS:
+            row['conifer'] = True
+        if t['pit']:
+            row['pit_yaw_deg'] = r2(t['pit_yaw'] % 360)
+            if t.get('curb_cm') is not None:
+                row['pit_from_curb_cm'] = r2(t['curb_cm'])
+        if t['moved_cm'] > 1.:
+            row['moved_cm'] = r2(t['moved_cm'])
+            row['mapped_xy_cm'] = [r2(t['p'][0]), r2(t['p'][1])]
+        if t.get('extension') is not None:
+            row['extension'] = t['extension']
+        if t.get('host'):
+            host.append({'id': t['id'], 'position': [r2(t['p'][0]), r2(t['p'][1])], 'street': t['street'],
+                         'placement': t['placement'], 'from_curb_cm': t.get('from_curb_cm'),
+                         'traffic_centreline_cm': r2(world.traffic_distance(t['p'], 2000)), 'reason': t['host']})
+        rows.append(row)
+    world.street_tree_rows, world.tree_host = rows, host
+    counts['trees_for_host'] = len(host)
 
 
 def _local(e, x, n):
@@ -3094,10 +3539,8 @@ def _draw_extensions(world, L, surfaces, extensions, counts):
             sx = t['s'] + shift
             counts['tree_pits_slid'] += shift != 0
             q = lambda x, y: _local(e, sx + x, t['d'] + y)            # noqa: E731
-            hx, hy = PIT_L / 2, PIT_D / 2
-            L.flat('soil', [q(-hx, -hy), q(hx, -hy), q(hx, hy), q(-hx, hy)], z + .15)
-            for x0, y0, x1, y1 in ((-hx, -hy, hx, -hy), (hx, -hy, hx, hy), (hx, hy, -hx, hy), (-hx, hy, -hx, -hy)):
-                L.rod('iron', (*q(x0, y0), z + 2), (*q(x1, y1), z + 2), 1.6, 4)
+            _pit(L, q, z, Rng('pit', t['node']), counts)
+            t['tree'].update(pit=True, pit_z=z + .15, pit_yaw=yaw)
             world.extension_pits.append((t['node'], t['p'], yaw, z))
             counts['tree_pits'] += 1
             counts['curb_extension_trees'] += 1
@@ -3108,8 +3551,7 @@ def _draw_extensions(world, L, surfaces, extensions, counts):
         counts['curb_extension_metres'] += (hi - lo) / 100
         counts['curb_extensions_on_verges'] += e['kind'] == 'verge'
         counts['curb_extensions_on_corners'] += e['kind'] == 'corner'
-        rows.append({'trees': [t['node'] for t in ext['trees']], 'edge': e['kind'],
-                     'on_sidewalk_at_curb': [t['node'] for t in ext['trees'] if t['at_curb']],
+        rows.append({'trees': [t['node'] for t in ext['trees']], 'edge': e['kind'], 'reason': ext['why'],
                      'street': ext['trees'][0]['street'],
                      'curb': [[r2(v) for v in _local(e, lo, 0.)], [r2(v) for v in _local(e, hi, 0.)]],
                      'road_normal': [round(e['n'][0], 4), round(e['n'][1], 4)],
@@ -3304,7 +3746,9 @@ def build_furniture(world):
         rng = Rng('parking', s['way'], s['i'], strip['side'])
         x = rng.uniform(500, 1400)
         while x < length - 500:
-            if all(abs(x - r) > 400 for r in strip.get('ramps', [])):
+            # clear of the crossing ramps and of the tree pits (a pit runs 15 to 130 cm behind the curb)
+            if all(abs(x - r) > 400 for r in strip.get('ramps', [])) and \
+                    all(abs(x - pit[0]) > PIT_L / 2 + 25. for pit in strip.get('pits', [])):
                 p = add(add(ca, u, x), inward, 45)
                 code, text = rng.choice(PARKING_TEXTS)
                 yaw = math.degrees(math.atan2(u[1], u[0])) + (180 if rng.chance(.5) else 0)
@@ -3409,6 +3853,9 @@ def build_soul(world):
                         S.flat(key, [p0, p1, q1, q0], Z_PAINT2 + .03)
                     counts['gutter_leaf_drifts'] += 1
                 x += run + rng.uniform(200, 900)
+
+    # Leaves drifted along the ruelles' sunken centre gutters.
+    _gutter_drifts(world, S, counts)
 
     # Leaves in and around tree pits; weeds at curb joints.
     for strip in world.sidewalk_strips:
@@ -3637,6 +4084,35 @@ def lock_bikes_to_signs(world, furniture_rows, soul_rows, counts):
         soul_rows.append(placement(world, 'bike_locked', p, yaw, False, ('bike-sign', row['variant_seed']),
                                    {'locked_to': 'sign_parking'}, z=row['position'][2]))
         counts['locked_bikes'] += 1
+
+
+def _gutter_drifts(world, S, counts):
+    """Autumn leaves drifted into the ruelles' centre gutters, as the curb drifts: runs of 1 to 4.5 m along under
+    half of each segment, up to 32 cm across, lying in the gutter's V 4 mm over it."""
+    counts.setdefault('ruelle_gutter_leaf_drifts', 0)
+    for alley in getattr(world, 'alleys', []):
+        for pa, pb in alley['segments']:
+            u, length = unit(pa, pb)
+            n = (-u[1], u[0])
+            rng = Rng('gutter-leaves', alley['id'], round(pa[0]), round(pa[1]))
+            x = rng.uniform(0., 500.)
+            while x < length - 120.:
+                run = min(rng.uniform(100., 450.), length - 20. - x)
+                if run > 60. and rng.chance(.45):
+                    key = rng.choice(('leaf_gold', 'leaf_rust', 'leaf_brown', 'leaf_brown'))
+                    steps = max(2, int(run / 75.))
+                    widths = [math.sin(math.pi * k / steps) * rng.uniform(7., GUTTER_HALF - 2.) + 2. for k in range(steps + 1)]
+
+                    def at(t, lat):
+                        p = add(add(pa, u, t), n, lat)
+                        return (p[0], p[1], gutter_z(lat) + .4)
+                    for k in range(steps):
+                        t0, t1 = x + run * k / steps, x + run * (k + 1) / steps
+                        w0, w1 = widths[k], widths[k + 1]
+                        S.face(key, [at(t0, 0.), at(t1, 0.), at(t1, w1), at(t0, w0)])
+                        S.face(key, [at(t0, -w0), at(t1, -w1), at(t1, 0.), at(t0, 0.)])
+                    counts['ruelle_gutter_leaf_drifts'] += 1
+                x += run + rng.uniform(150., 700.)
 
 
 def _leaf(S, p, rng, z):
@@ -5349,6 +5825,46 @@ def clip_ruelles(path, out=None):
 
 # ---------------------------------------------------------------------------------------------
 
+def write_street_trees(world, path, counts):
+    """Streets/street_trees.json: the rules, the sources, the counts, the curb extensions, the host list and one
+    line per tree (inventory trees first, then the OSM trees the inventory lacks)."""
+    keys = ('street_trees', 'street_trees_inventory', 'street_trees_osm', 'sidewalk_pits', 'sidewalk_pits_moved',
+            'sidewalk_pit_metres_moved', 'trees_kept_in_place', 'trees_on_sidewalk_without_pit',
+            'trees_dropped_in_buildings', 'trees_on_carriageway', 'curb_extensions', 'curb_extension_trees',
+            'curb_extensions_saillie', 'curb_extensions_median', 'curb_extensions_choker', 'curb_extensions_corner',
+            'curb_extensions_merged',
+            'curb_extensions_flush', 'curb_extensions_part_flush', 'curb_extensions_on_verges',
+            'curb_extensions_on_corners', 'trees_for_host', 'tree_pits', 'pit_guard_cards', 'pit_flower_cards')
+    kinds = {}
+    for row in world.street_tree_rows:
+        kinds[row['kind']] = kinds.get(row['kind'], 0) + 1
+    head = {'layer': 'Streets', 'generator': GENERATOR, 'frame': FRAME + ' (the map frame; Unreal x and y alike)',
+            'note': 'Every street and park tree the game shows, one row per tree: id (inv:<borough>-<EMP_NO> from '
+                    'the city inventory, osm:<node> for an OSM tree the inventory lacks), x_cm, y_cm, z_cm (ground '
+                    'under the trunk: the pit soil, a sidewalk, lawn or bare ground), species (the inventory\'s '
+                    'Latin name, or unknown), kind (a Trees manifest kind, from TREE_SPECIES and TREE_GENERA in '
+                    'plateau_replica.py, else by crown size), dbh_cm (trunk diameter at breast height; dbh_from '
+                    'says when it is estimated), height_cm (from the trunk, research-plateau.md 10.4), source '
+                    '(inventory or osm), placement (the inventory\'s Emplacement), pit (in a sidewalk or extension '
+                    'pit), yaw_deg (seeded); moved_cm and mapped_xy_cm when the tree moved into a sidewalk pit, '
+                    'extension (index into extensions), conifer (no conifer kind yet).',
+            'sources': {'inventory': dict(TREE_SOURCE, files=['Data/Plateau/Inventory/' + n for n in TREE_FILES]),
+                        'osm': '\u00a9 OpenStreetMap contributors, ODbL 1.0 (natural=tree nodes the inventory lacks)'},
+            'rules_cm': {'pit': [PIT_L, PIT_D], 'pit_from_curb': list(PIT_BACK), 'pit_gap': PIT_GAP,
+                         'ramp_keep': RAMP_KEEP, 'pit_slide_max': PIT_SLIDE_MAX, 'osm_same_tree': OSM_TREE_SAME,
+                         'extension_corner_reach': CORNER_REACH, 'extension_choker_reach': CHOKER_REACH,
+                         'extension_reach': BUMP_REACH, 'margin': BUMP_MARGIN, 'park_gap': PARK_GAP,
+                         'traffic_clear': CLEAR, 'raised_top': Z_WALK, 'flush_top': Z_DROP},
+            'kinds': dict(sorted(kinds.items())),
+            'counts': {k: counts[k] for k in keys},
+            'extensions': world.extension_rows, 'host_review': world.tree_host,
+            'dropped': [{'id': t['id'], 'position': [r2(t['p'][0]), r2(t['p'][1])], 'reason': t['why']}
+                        for t in world.street_tree_dropped]}
+    text = json.dumps(head, ensure_ascii=False, indent=1)[:-2] + ',\n "trees": [\n' + \
+        ',\n'.join('  ' + json.dumps(row, ensure_ascii=False) for row in world.street_tree_rows) + '\n ]\n}\n'
+    Path(path).write_text(text)
+
+
 def prepare(directory=None):
     directory = Path(directory or OUT)
     world = World()
@@ -5380,25 +5896,9 @@ def prepare(directory=None):
         'Soul': write_layer(soul, directory / 'Soul', soul_counts),
     }
     write_placements(directory / 'Soul', 'Soul', soul_rows, soul_counts)
-    # The mapped street trees the carriageway covers: their curb extensions, and the ones left for the host.
-    trees_doc = {'layer': 'Streets', 'generator': GENERATOR, 'frame': FRAME,
-                 'note': 'Mapped street trees (plateau_rendering.tree_positions: OSM natural=tree inside the district) '
-                         'whose trunk the replica carriageway covers, and those on the sidewalk within 45 cm of the '
-                         'curb with no pit (on_sidewalk_at_curb). Each within 3 m of its curb gets a curb extension '
-                         '(raised 18 cm and colliding where clear of the 300 cm traffic band, else flush at 9 cm '
-                         'without collision); host_review lists the trunks farther out, which the host should check '
-                         'against the street (the trees were not moved).',
-                 'counts': {k: street_counts[k] for k in ('mapped_trees', 'mapped_trees_on_carriageway',
-                                                          'curb_extensions', 'curb_extension_trees',
-                                                          'curb_extension_trees_at_curb',
-                                                          'curb_extensions_merged', 'curb_extensions_flush',
-                                                          'curb_extensions_part_flush', 'curb_extensions_on_verges',
-                                                          'curb_extensions_on_corners', 'mapped_trees_for_host')},
-                 'rules_cm': {'reach': BUMP_REACH, 'curb_hug': CURB_HUG, 'pit': [PIT_L, PIT_D], 'margin': BUMP_MARGIN,
-                              'park_gap': PARK_GAP,
-                              'traffic_clear': CLEAR, 'raised_top': Z_WALK, 'flush_top': Z_DROP},
-                 'extensions': world.extension_rows, 'host_review': world.tree_host}
-    (directory / 'Streets/street_trees.json').write_text(json.dumps(trees_doc, ensure_ascii=False, indent=1) + '\n')
+    # Every street and park tree the game shows, one row each (the contract the apply step's tree actors read), the
+    # curb extensions and the trunks left for the host.
+    write_street_trees(world, directory / 'Streets/street_trees.json', street_counts)
     streets_manifest = json.loads((directory / 'Streets/manifest.json').read_text())
     streets_manifest['street_trees'] = 'street_trees.json'
     streets_manifest['street_trees_sha256'] = sha_file(directory / 'Streets/street_trees.json')
@@ -5439,6 +5939,10 @@ def summary(results):
 
 
 if __name__ == '__main__':
+    if len(sys.argv) >= 3 and sys.argv[1] == '--clip-trees':
+        done = clip_trees(*sys.argv[2:])
+        print(', '.join(f'Data/Plateau/Inventory/{name}: {n} trees' for name, n in done.items()))
+        sys.exit(0)
     if len(sys.argv) == 3 and sys.argv[1] == '--clip-ruelles':
         doc = clip_ruelles(sys.argv[2])
         print(f"{RUELLES_VERTES.relative_to(ROOT)}: {len(doc['polygons'])} polygons of {doc['ruelles']} ruelles vertes "

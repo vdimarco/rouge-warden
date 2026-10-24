@@ -1075,6 +1075,9 @@ def judge_reference(group, loop):
         gates.append(M.gate("repeat_ssim_min:" + size_key, entry["min"], loop["budgets"]["look"]["repeat_ssim_min"], op=">=",
                             unit="SSIM", note=f"{len(entry['repeat'])} of {len(names)} stills; ceiling run A against run B, "
                                               "below the limit the round is invalid"))
+        # Each candidate is scored on every still against ceiling A, so a reference with fewer stills fails.
+        gates.append(M.gate("repeat_stills:" + size_key, len(entry["repeat"]), len(names), op="==", unit="stills",
+                            note="stills that both ceiling runs hold at the run's size"))
         for folder in (first, second):
             foreign += (read_json(folder / "verdict.json", {}) or {}).get("contended_by") or []
         rows += [{"view": view_key(name), "ceiling": first / name, "candidate": second / name} for name in names]
@@ -1099,6 +1102,12 @@ def tune_run(loop, direct=False, until=None, reference=None, confirm=True):
         here, there = (git_state()["commit"], build_state()), ((stored.get("commit") or {}).get("commit"), stored.get("build"))
         require(here == there, f"--reference was rendered at commit {there[0]} with build {there[1]}, but this package is commit "
                                f"{here[0]} with build {here[1]}; render a new reference. No run was started.")
+        # Every candidate is scored on all its stills against ceiling A, so each stored ceiling run needs every still and
+        # a clean exit, as render_ceiling requires of a new one.
+        for tag in "ab":
+            folder = Path(stored["sizes"][size_key][tag]["run"])
+            error = look_error(loop, read_json(folder / "verdict.json") or {"gates": []}, scored=False)
+            require(error is None, f"--reference ceiling run {tag} ({folder}): {error}; render a new reference. No run was started.")
     group = new_run_dir("tune")
     candidates, runs, tune_path = group / "candidates", group / "runs", group / "tune.json"
     ceiling = T.make_candidate(loop, None, "ceiling", 0, "ceiling", cvars=loop["profiles"]["ceiling"]["cvars"], look_only=True)
@@ -1166,33 +1175,42 @@ def tune_run(loop, direct=False, until=None, reference=None, confirm=True):
 
 def confirm_native(loop, tune, group, direct=False, until=None):
     """Step 7, native part: the baseline, then the ranked candidates best first, each for confirm_laps measured laps in
-    both skies, landscape and portrait, until one passes every native gate. The stream rows and the co-op guard come
-    from the stream runs; report adds them through gauntlet_tune.confirm."""
+    both skies, landscape and portrait, until one passes every native gate. It stops at the first result the window
+    cut (stop_reason window_end). The stream rows and the co-op guard come from the stream runs; report adds them
+    through gauntlet_tune.confirm."""
     records = {record["id"]: record for record in tune["candidates"]}
-    results, confirmed, stopped = {}, None, None
+    results, confirmed = {}, None
     one = lambda candidate_id: confirm_candidate(loop, records[candidate_id], group, direct, until)
+    finished = lambda: all(confirmation_finished(loop, result) for result in results.values())
     if "baseline" in records:
         results["baseline"] = one("baseline")
     for candidate_id in tune["ranking"]:
+        if not finished():
+            break
         results[candidate_id] = results.get(candidate_id) or one(candidate_id)
         if results[candidate_id]["passed"]:
             confirmed = candidate_id
             break
-        if until is not None and time.time() >= until:
-            stopped = "window_end"
-            break
-    return {"results": list(results.values()), "confirmed_native": confirmed, "stop_reason": stopped,
+    return {"results": list(results.values()), "confirmed_native": confirmed, "stop_reason": None if finished() else "window_end",
             "note": "native gates only; report adds the stream rows and the co-op guard"}
 
 
+def confirmation_finished(loop, result):
+    """True when a native confirmation ran in every sky at every confirm size. A result the window cut is not finished,
+    so confirm runs that candidate again."""
+    return len(result["runs"]) == len(loop["sky_order"]) * len(loop["size_use"]["confirm"])
+
+
 def confirm_candidate(loop, record, group, direct=False, until=None):
-    """One candidate's native confirmation: confirm_laps measured laps in each sky at each confirm size."""
+    """One candidate's native confirmation: confirm_laps measured laps in each sky at each confirm size. A run starts
+    only when its planned time (gauntlet_tune.run_estimate_s) ends before until, so the live demo starts on time."""
     candidate_id = record["id"]
     execcmds, _ = T.write_candidate_files(group / "candidates", record)
     outcome = {"id": candidate_id, "runs": [], "reasons": [], "passed": False}
+    run_s = T.run_estimate_s(loop, "perf", loop["confirm_laps"])
     for sky in loop["sky_order"]:
         for size_key in loop["size_use"]["confirm"]:
-            if until is not None and time.time() >= until:
+            if until is not None and time.time() + run_s > until:
                 outcome["reasons"].append("the window ended before every confirmation run")
                 return outcome
             run, verdict = native_run(loop, "perf", size_key, sky, laps=loop["confirm_laps"], quality=f"file:{execcmds}",
@@ -1206,15 +1224,17 @@ def confirm_candidate(loop, record, group, direct=False, until=None):
 
 
 def confirm_next(loop, group, candidate_id=None, direct=False, until=None):
-    """Step 7 again, after a stream row or the co-op guard dropped a candidate: the native confirmation of the best
-    ranked candidate without one (or of candidate_id), added to tune.json, with the baseline first if it has none.
-    It writes no profile; only write-profile with --approved does. Returns the candidate's outcome."""
+    """Step 7 again, after a stream row or the co-op guard dropped a candidate, or after the window cut a confirmation:
+    the native confirmation of the best ranked candidate without a finished one (or of candidate_id), added to
+    tune.json, with the baseline first if it has none. A result the window cut is run again and replaced. It writes no
+    profile; only write-profile with --approved does. Returns the last outcome; when the window cuts the baseline, that
+    is the baseline's, and the candidate does not run."""
     group = Path(group)
     tune = read_json(group / "tune.json")
     require(tune is not None, f"{group} has no tune.json")
     native = tune.setdefault("native_confirmation", {"results": [], "confirmed_native": None, "stop_reason": None,
                                                      "note": "native gates only; report adds the stream rows and the co-op guard"})
-    done = {result["id"] for result in native["results"]}
+    done = {result["id"] for result in native["results"] if confirmation_finished(loop, result)}
     candidate_id = candidate_id or next((ranked for ranked in tune["ranking"] if ranked not in done), None)
     require(candidate_id is not None, "Every ranked candidate already has a native confirmation; nothing was run.")
     require(candidate_id in tune["ranking"], f"candidate {candidate_id} is not ranked in {group / 'tune.json'}; nothing was run.")
@@ -1223,10 +1243,12 @@ def confirm_next(loop, group, candidate_id=None, direct=False, until=None):
     outcome = None
     for wanted in (["baseline"] if "baseline" in records and "baseline" not in done else []) + [candidate_id]:
         outcome = dict(confirm_candidate(loop, records[wanted], group, direct, until), added_at=iso_now())
-        native["results"].append(outcome)
+        native["results"] = [result for result in native["results"] if result["id"] != wanted] + [outcome]
         if outcome["passed"] and wanted != "baseline" and not native.get("confirmed_native"):
             native["confirmed_native"] = wanted
         T.write_tune(group / "tune.json", tune)
+        if not confirmation_finished(loop, outcome):
+            break
     return outcome
 
 
@@ -1527,7 +1549,8 @@ def main(argv=None):
     confirm = commands.add_parser("confirm", help="the native confirmation of the next ranked candidate, after a stream row "
                                                   "or the co-op guard dropped one; writes no profile")
     confirm.add_argument("folder", type=Path)
-    confirm.add_argument("--candidate", help="a ranked candidate (default: the best ranked one without a native confirmation)")
+    confirm.add_argument("--candidate", help="a ranked candidate (default: the best ranked one without a finished native "
+                                             "confirmation; one the window cut is run again)")
     confirm.add_argument("--until", help="local HH:MM when the GPU window ends")
     confirm.add_argument("--direct", action="store_true")
     report = commands.add_parser("report", help="judge a run, reference or tune folder again from its files")

@@ -8,6 +8,11 @@ The tuner SHALL choose, among the candidates it measured, the phone profile with
 - **THEN** `tune.json` lists every measured candidate, failures included
 - **AND** the winner is feasible: on the night-rain landscape lap its FrameTime p95 is at most 30.0 ms and its GPUTime p95 at most 28.0 ms, and its hitch, VRAM and CVar readback gates pass
 - **AND** no measured feasible candidate has a Look score above the winner's by more than the tie threshold, which `test_gauntlet_tune.py` checks with a fake measure function
+- **AND** a candidate whose look run did not exit cleanly, or scored fewer than all 20 stills, has no Look and is never ranked
+
+#### Scenario: Baseline not feasible
+- **WHEN** the baseline misses the feasible limits on the night-rain landscape lap
+- **THEN** the tuner first measures one step below today's value for each knob that has one, and `loop.json` gives a floor reason for each enabled knob that has none
 
 #### Scenario: Never worse than today
 - **WHEN** the tuner picks a winner
@@ -20,10 +25,17 @@ The tuner SHALL choose, among the candidates it measured, the phone profile with
 #### Scenario: Confirmation fails
 - **WHEN** the winner fails any gate in the 3-lap confirmation or in the stream runs
 - **THEN** the tuner confirms the next feasible candidate, and `tune.json` records why the first one was dropped
+- **AND** after a stream row or the co-op guard drops a candidate, `gauntlet_loop.py confirm <tune folder>` confirms the next ranked candidate natively, adds the result to `tune.json` and writes no profile
+
+#### Scenario: Window ends during the confirmation
+- **WHEN** the agreed window (`--until`) ends before every confirmation run of a candidate
+- **THEN** no confirmation run starts unless its planned time ends before `--until`, and the confirmation stops at that candidate
+- **AND** `gauntlet_loop.py confirm <tune folder>` in a later window runs that candidate again, the baseline first when its result was cut too, and replaces its result in `tune.json`, which `test_gauntlet_loop.py` checks with a fake clock
 
 #### Scenario: Fixed settings
 - **WHEN** the tuner builds a candidate
-- **THEN** it keeps `t.MaxFPS 60`, TSR and VP8 unchanged, and never breaks a knob dependency declared in `Data/Gauntlet/loop.json`
+- **THEN** it keeps `t.MaxFPS 60`, TSR (`r.AntiAliasingMethod 4`) and VP8 unchanged, and never breaks a knob dependency declared in `Data/Gauntlet/loop.json`
+- **AND** `gauntlet_tune.py check_loop` refuses a knob step that sets a CVar named in `loop.json` `fixed`
 
 ### Requirement: Opt-in, approved phone profile
 The phone-stream profile SHALL be opt-in. The production stream SHALL keep its current settings until the user approves paired captures and a separate change flips the default.
@@ -47,7 +59,8 @@ The phone-stream profile SHALL be opt-in. The production stream SHALL keep its c
 
 #### Scenario: Approval
 - **WHEN** the user has not approved the winner's paired captures
-- **THEN** `gauntlet_loop.py write-profile` is not run and the profile section stays unchanged
+- **THEN** `gauntlet_loop.py write-profile` is not run and the profile section stays unchanged, and without `--approved` it refuses and writes nothing
+- **AND** after approval, `write-profile --approved` writes the section and an approval record beside the ini, and the parse test accepts a section that equals `QUALITY` or that record, so a later hand edit fails
 - **AND** the default changes to `phone` only in a separate change after the user approves
 
 ### Requirement: Desktop gate unchanged

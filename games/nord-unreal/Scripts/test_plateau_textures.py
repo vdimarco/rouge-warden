@@ -22,8 +22,18 @@ import apply_plateau_replica as apply_replica  # noqa: E402
 # The shared material keys of the rear pass (plateau_plex.py and the apply step use exactly these names).
 SHARED_KEYS = ('Roof_Membrane', 'Roof_Gravel', 'Roof_Tar', 'Sheet_Metal', 'Siding_Lap_Cream', 'Siding_Lap_Grey',
                'Parged', 'Rail_Baluster', 'Rail_Lattice', 'Fence_Boards', 'Leaf_Creeper', 'Yard_Grass', 'Yard_Pavers',
-               'Yard_Soil', 'Yard_Gravel', 'Brick_Buff_Even')
-CUTOUT_KEYS = ('Rail_Baluster', 'Rail_Lattice', 'Fence_Boards')
+               'Yard_Soil', 'Yard_Gravel', 'Brick_Buff_Even',
+               # fourth pass: the ruelle gutter, cedars, fountain grass, tree-pit planting and guards, laundry
+               'Concrete_Lane_Aged', 'Leaf_Cedar', 'Plant_Grass_Fountain', 'Plant_Pit_Flowers', 'Iron_Wrought',
+               'Cloth_Laundry')
+# Cards (uv "card": u metres along the run, v 0..1 up the card, V clamped), the masked keys, the foliage-lit keys,
+# the atlas keys (each quad addresses one cell; both axes clamped) and the sets that own their colour.
+CUTOUT_KEYS = ('Rail_Baluster', 'Rail_Lattice', 'Fence_Boards', 'Leaf_Cedar', 'Plant_Grass_Fountain',
+               'Plant_Pit_Flowers', 'Iron_Wrought')
+FOLIAGE_KEYS = ('Leaf_Creeper', 'Leaf_Cedar', 'Plant_Grass_Fountain', 'Plant_Pit_Flowers')
+ATLAS_KEYS = ('Cloth_Laundry',)
+MASKED_KEYS = CUTOUT_KEYS + ('Leaf_Creeper',) + ATLAS_KEYS
+OWN_COLOUR = ('tar', 'pit_flowers', 'laundry')
 
 
 def files(directory):
@@ -300,6 +310,53 @@ def check_cutout(key, spec, entry, rows):
             assert min(alpha[row_at(spec, (lo + hi) / 2.)]) == 255, 'The rails must show through the gaps'
         assert max(alpha[row_at(spec, .5)]) == 0, 'Boards stand clear of the ground'
         out['gaps_cm'] = [round(min(gaps) / px_cm, 2), round(max(gaps) / px_cm, 2)]
+    elif key == 'cedar':
+        # one soft column per metre: opaque down the middle, open at the run's edges, nothing over the crown
+        assert .4 <= entry['coverage'] <= .7, entry['coverage']
+        for z in (30., 150., 240.):
+            row = alpha[row_at(spec, z)]
+            assert row[width // 2] == 255 and row[0] == 0 and row[-1] == 0, ('cedar column at', z)
+        assert max(alpha[row_at(spec, T.CEDAR_CROWN_CM + 12.)]) == 0, 'nothing grows over the crown'
+        widths = [len([v for v in alpha[row_at(spec, z)] if v >= 128]) / px_cm for z in (40., 140., 240.)]
+        assert widths[0] > widths[1] > widths[2] and widths[0] < 2 * T.CEDAR_HALF_CM + 12., ('a column that narrows', widths)
+        green = sum(1 for r, a in zip(rows, alpha) for x in range(width) if a[x] == 255 and r[4 * x + 1] > r[4 * x])
+        assert green > .85 * n_solid, ('cedar stays green in October', green / n_solid)
+        out['green_share'] = round(green / n_solid, 3)
+        out['widths_cm'] = [round(w, 1) for w in widths]
+    elif key == 'fountain_grass':
+        assert .2 <= entry['coverage'] <= .45, entry['coverage']
+        assert alpha[row_at(spec, 3.)][width // 2] == 255, 'the clump stands on its crown'
+        assert max(alpha[row_at(spec, 92.)]) == 0 and max(a[0] for a in alpha) < 255, 'the clump stays inside the card'
+        straw = sum(1 for r, a in zip(rows, alpha) for x in range(width)
+                    if a[x] == 255 and r[4 * x] > r[4 * x + 1] > r[4 * x + 2])
+        assert straw > .7 * n_solid, ('straw and gold in late October', straw / n_solid)
+        out['straw_share'] = round(straw / n_solid, 3)
+    elif key == 'pit_flowers':
+        assert .25 <= entry['coverage'] <= .5, entry['coverage']
+        assert max(alpha[row_at(spec, 48.5)]) == 0, 'the planting stays under the card top'
+        base = sum(1 for v in alpha[row_at(spec, 4.)] if v >= 128) / width
+        assert base > .6, ('dense planting at the soil', base)
+        hues = set()
+        for r, a in zip(rows, alpha):
+            for x in range(0, width, 3):
+                if a[x] >= 250:
+                    c = r[4 * x:4 * x + 3]
+                    hues.add(max(range(3), key=lambda n: c[n]) if max(c) - min(c) > 40 else 'grey')
+        assert {0, 1, 2} <= hues, ('red, green and blue-purple flowers and leaves', hues)
+        out['groups'] = len(entry['layout']['groups'])
+    elif key == 'iron_wrought':
+        assert .15 <= entry['coverage'] <= .32, entry['coverage']
+        for lo, hi in T.IRON_RAILS_CM:
+            assert min(alpha[row_at(spec, (lo + hi) / 2.)]) == 255, f'Rail at {(lo + hi) / 2.} cm must be solid'
+        feet = runs(alpha[row_at(spec, 3.)], opaque=True)
+        assert len(feet) == entry['layout']['pickets_per_tile'], ('pickets to the soil', feet)
+        assert all(1. <= f / px_cm <= 1.6 for f in feet), feet
+        gaps = runs(alpha[row_at(spec, 3.)])
+        assert all(abs(g / px_cm - (T.IRON_PICKET_CM - 1.2)) < .6 for g in gaps), gaps
+        assert max(alpha[row_at(spec, T.IRON_FINIAL[0] + T.IRON_FINIAL[1] + .6)]) == 0, 'nothing over the finials'
+        out['picket_gap_cm'] = round(max(gaps) / px_cm, 2)
+    elif key == 'laundry':
+        out.update(check_laundry(entry, rows))
     elif key == 'creeper':
         assert .7 <= entry['coverage'] <= .9, entry['coverage']
         green = sum(1 for r, a in zip(rows, alpha) for x in range(width) if a[x] >= 128 and r[4 * x + 1] > r[4 * x])
@@ -307,6 +364,64 @@ def check_cutout(key, spec, entry, rows):
         assert .03 < share < .25, ('some leaves stay green', share)
         out['green_leaf_share'] = round(share, 3)
     return out
+
+
+def check_laundry(entry, rows):
+    """The garment atlas: 14 cells inside the atlas, apart by twice the padding, their UV rects (OBJ, v up) matching
+    their pixels, the padding clear, each garment hanging from the top edge of its cell (opaque under every peg),
+    drawn to scale inside the cell, and covering a good part of it."""
+    width, height = entry['size_px']
+    layout = entry['layout']
+    cells = layout['cells']
+    pad = layout['pad_px']
+    assert len(cells) == len(T.LAUNDRY_CELLS) and sorted(c['index'] for c in cells.values()) == list(range(len(cells)))
+    rects = []
+    alpha = [r[3::4] for r in rows]
+    for name, c in cells.items():
+        x0, y0, x1, y1 = c['px']
+        assert 0 <= x0 < x1 <= width and 0 <= y0 < y1 <= height and x0 >= pad and y0 >= pad, name
+        assert c['uv'] == [round(x0 / width, 6), round(1 - y1 / height, 6), round(x1 / width, 6), round(1 - y0 / height, 6)]
+        assert abs(c['size_cm'][0] - (x1 - x0) / layout['px_per_cm']) < 1e-3 and c['garment_cm'][1] <= c['size_cm'][1]
+        for a, b, c_, d in rects:
+            assert x1 + 2 * pad <= a or c_ + 2 * pad <= x0 or y1 + 2 * pad <= b or d + 2 * pad <= y0, ('cells overlap', name)
+        rects.append((x0, y0, x1, y1))
+        # the padding round the cell is clear (a peg may reach 2 px over the rope)
+        for y in range(y0 - pad, y0 - 2):
+            assert max(alpha[y][x0 - pad:x1 + pad]) == 0, (name, 'padding above')
+        for y in range(y0, y1):
+            assert max(alpha[y][x0 - pad:x0]) == 0 and max(alpha[y][x1:x1 + pad]) == 0, (name, 'padding beside')
+        inside = sum(1 for y in range(y0, y1) for v in alpha[y][x0:x1] if v >= 128) / ((x1 - x0) * (y1 - y0))
+        assert inside > .2, (name, inside)
+        for p in c['pins_cm']:
+            xp = x0 + round(p * layout['px_per_cm'])
+            assert min(alpha[y0 + 1][xp - 1:xp + 2]) == 255, (name, 'hangs from its pegs at the rope')
+    return {'cells': len(cells), 'cover': layout['cover']}
+
+
+def check_lane_concrete(spec, entry, diff, rough):
+    """The ruelle gutter: the tooled joint (mid-tile) reads as a dark, open line; the damp channel along the middle
+    row is darker and glossier than the concrete at the gutter's edges (18 cm out), without being black."""
+    width, height = spec['size_px']
+    px = width / (spec['tile_m'][0] * 100.)
+    cavity = [r[2::3] for r in rough]
+    jx = round(entry['layout']['joint_u_m'][0] * 100. * px)
+    joint = sum(cavity[y][x] for y in range(height) for x in (jx - 1, jx)) / (2 * height)
+    away = [x for x in range(0, width, 7) if abs(x - jx) > 40]
+    field_ = sum(cavity[y][x] for y in range(0, height, 4) for x in away) / (len(range(0, height, 4)) * len(away))
+    assert joint > 200 and field_ < 140, ('the transverse joint', joint, field_)
+
+    def band(z_cm, half_cm=2.):
+        ys = range(int((50. + z_cm - half_cm) * px), int((50. + z_cm + half_cm) * px))
+        xs = [x for x in range(0, width, 5) if abs(x - jx) > 30]
+        lum = sum(luminance(diff, x, y) for y in ys for x in xs) / (len(ys) * len(xs))
+        r_ = sum(rough[y][3 * x] for y in ys for x in xs) / (255. * len(ys) * len(xs))
+        return lum, r_
+    centre, edge_a, edge_b = band(0.), band(-17.), band(17.)
+    assert centre[0] < .88 * min(edge_a[0], edge_b[0]) and centre[0] > .05, ('damp channel', centre, edge_a, edge_b)
+    assert centre[1] < min(edge_a[1], edge_b[1]) - .12, ('the damp channel is glossier', centre, edge_a, edge_b)
+    assert entry['layout']['centre_v_m'] == spec['tile_m'][1] / 2.
+    return {'joint_cavity': round(joint / 255., 3), 'channel_luminance_ratio': round(centre[0] / min(edge_a[0], edge_b[0]), 3),
+            'channel_roughness': round(centre[1], 3), 'edge_roughness': round(min(edge_a[1], edge_b[1]), 3)}
 
 
 # Expected colour (mean linear) and roughness per set.
@@ -331,6 +446,14 @@ EXPECT = {
     'crushed_stone': lambda m, r: .15 < sum(m) / 3 < .3 and max(m) / min(m) < 1.2 and .8 <= r <= .92,
     # Even buff brick: yellow-tan (red over green over blue, blue well under red), light, matte.
     'buff_brick': lambda m, r: .3 < sum(m) / 3 < .5 and m[0] > m[1] > m[2] and m[2] / m[0] < .5 and .8 <= r <= .92,
+    # Aged lane concrete: a warm mid grey, well under a new sidewalk's (#B5B8B8, linear about .47), and matte.
+    'lane_concrete': lambda m, r: .1 < sum(m) / 3 < .22 and m[0] > m[1] > m[2] and .75 <= r <= .9,
+    'cedar': lambda m, r: m[1] > m[0] > m[2] and sum(m) / 3 < .12 and .7 <= r <= .85,
+    'fountain_grass': lambda m, r: m[0] > m[1] > m[2] and .12 < sum(m) / 3 < .32 and .75 <= r <= .9,
+    'pit_flowers': lambda m, r: .1 < sum(m) / 3 < .3 and .6 <= r <= .85,
+    # black paint with rust at the feet; paint is not metal
+    'iron_wrought': lambda m, r: sum(m) / 3 < .04 and m[0] >= m[2] and .4 <= r <= .6,
+    'laundry': lambda m, r: .3 < sum(m) / 3 < .6 and .85 <= r <= .95,
 }
 # Sets whose tile must not read as a grid on a large roof or yard: 2 m tiles with 25 cm to 1 m zones. Minimum
 # coefficient of variation of the mean luminance of 25 cm and 50 cm blocks (the 1 m tiles of the last pass had
@@ -350,13 +473,16 @@ def check_shared_keys(index):
         entry = index['sets'][name]
         assert key in entry['keys'] and entry['material'] == T.SURFACES[T.SETS[name]['surface']]
         masked = entry['material']['blend_mode'] == 'masked'
-        assert masked == entry['alpha'] == (key in CUTOUT_KEYS or key == 'Leaf_Creeper'), key
+        assert masked == entry['alpha'] == (key in MASKED_KEYS), key
         assert entry['material']['two_sided'] == masked
         assert (entry['uv'] == 'card') == (key in CUTOUT_KEYS), key
+        assert (entry['uv'] == 'atlas') == (key in ATLAS_KEYS), key
         if key in CUTOUT_KEYS:
-            assert entry['tiling'][1] == 1. and entry['card_height_m'] > .5, key
-        if key == 'Leaf_Creeper':
-            assert entry['material']['shading_model'] == 'two_sided_foliage'
+            assert entry['tiling'][1] == 1. and entry['card_height_m'] >= .5, key
+        assert (entry['material']['shading_model'] == 'two_sided_foliage') == (key in FOLIAGE_KEYS), key
+        # the apply step clamps V on cards and both axes on the atlas
+        assert apply_replica.address_modes(entry) == {'card': ('TA_WRAP', 'TA_CLAMP'), 'atlas': ('TA_CLAMP', 'TA_CLAMP'),
+                                                      'metres': ('TA_WRAP', 'TA_WRAP')}[entry['uv']], key
         assert apply_replica.texture_set(key, {}) == name, (key, apply_replica.texture_set(key, {}))
     return {key: owner[key] for key in SHARED_KEYS}
 
@@ -396,7 +522,8 @@ def main():
                 assert [width, height] == entry['size_px']
                 assert channels == (4 if role == 'diff' and entry['alpha'] else 3), (m['file'], channels)
                 sx, sy = seam_ratio(width, height, rgb(rows, channels))
-                assert sx < 1.6 and (card or sy < 1.6), f'{m["file"]} seam {sx:.2f} x {sy:.2f} the neighbour step'
+                assert key in T.ATLASES or sx < 1.6 and (card or sy < 1.6), \
+                    f'{m["file"]} seam {sx:.2f} x {sy:.2f} the neighbour step'
                 maps[role] = rows
                 summary[m['file']] = {'bytes': len(data), 'sha256': m['sha256'][:16], 'seam': [round(sx, 2), round(sy, 2)]}
             # Normals: unit length, no overall tilt (a tileable height field has zero mean slope), mostly facing out.
@@ -420,6 +547,8 @@ def main():
                 check_slate_gaps(maps['rough'], spec)
             if key == 'buff_brick':
                 sets[key].update(check_buff_brick(spec, maps['diff'], maps['rough']))
+            if key == 'lane_concrete':
+                sets[key].update(check_lane_concrete(spec, entry, maps['diff'], maps['rough']))
             if key in LARGE_SCALE:
                 # Large-scale variation: the tile is 2 m, and 25 cm and 50 cm blocks differ in tone (zones).
                 assert spec['tile_m'] == (2., 2.) and spec['size_px'] == (1024, 1024), key
@@ -431,9 +560,9 @@ def main():
                 sets[key].update(check_cutout(key, spec, entry, maps['diff']))
             if key == 'sheet_metal':
                 assert entry['metallic'] == T.SETS['sheet_metal']['metallic'] <= .35, 'galvanised sheet reads grey'
-            # Only the tar set owns its colour: whatever colour a manifest gives Roof_Tar, the roof shows the
-            # texture's own grey gravel (the EXPECT range above, about #4A4744).
-            assert entry.get('own_colour', False) == (key == 'tar') == bool(spec.get('own_colour')), key
+            # The tar set owns its colour (whatever colour a manifest gives Roof_Tar, the roof shows the texture's own
+            # grey gravel, the EXPECT range above, about #4A4744), and so do the many-coloured pit planting and laundry.
+            assert entry.get('own_colour', False) == (key in OWN_COLOUR) == bool(spec.get('own_colour')), key
             # Tints the apply step derives from the Plex colours stay in range and keep the texture's contrast.
             for name, spec_m in plex_materials.items():
                 if apply_replica.texture_set(name, spec_m) == key:

@@ -85,7 +85,7 @@ Check the smoke run:
 - The CSV is `native/NordGauntlet-perf-night_rain.csv`. If the engine added its own extension, the name ends in `.csv.csv`, which the runner also reads **(unverified)**.
 - Under RunUnreal, the log shows the controller ending the test with the run's exit code, and the game did not quit before that. The two meet through the console variables `nord.GauntletController` and `nord.GauntletExit`.
 - The log has `NORD_GAUNTLET stop=` lines for S1 to S5 in order and a `NORD_GAUNTLET summary` line.
-- `native/route.json` exists. The measured loop length is near 3.0 km (2.5 to 3.5 km). Note the heaviest leg in `native/legs.json`.
+- `native/route.json` exists. The measured loop length is near the offline model's 3,488 m driven line, and the route gate is 3.0 to 4.0 km. A perf lap is about 296 s of driving in the model, and the lap limit is 360 s. Note the heaviest leg in `native/legs.json`.
 - The CSV has FrameTime, GameThreadTime, RenderThreadTime, RHIThreadTime and GPUTime **(unverified names)**. `verdict.json` lists any missing column.
 - The summary p95 and the CSV p95 agree within 1 ms.
 - The car drove with pawn input disabled. If real input wrote zero axes each frame, the car stalls at S1 and the run exits with code 2.
@@ -100,20 +100,18 @@ python3 Scripts/gauntlet_loop.py native --direct --quality phone --mode perf --s
 ```bash
 python3 Scripts/gauntlet_loop.py reference
 ```
-This renders the ceiling look (all `sg.*` at 3, screen percentage 100, VSM on, Lumen at Epic, TSR) twice, at 1412x652 and 652x1412, in both skies, with `-NordNoAmbient`. Every image pair must have SSIM at least 0.98, or the round is invalid. Each sky switch at a stop must log `NORD_SKY_WEATHER command <weather> settled`: the new weather and the street wetness then start settled, so the day stills show dry streets and no still depends on the frame rate. Install `flip-evaluator` with pip if you want the report-only FLIP map.
+This renders the ceiling look (all `sg.*` at 3, screen percentage 100, VSM on, Lumen at Epic, TSR) twice, at 1412x652 and 652x1412, in both skies, with `-NordNoAmbient`. Every image pair must have SSIM at least 0.98, or the round is invalid. Both ceiling runs must also hold every still, or the `repeat_stills` gate fails. Each sky switch at a stop must log `NORD_SKY_WEATHER command <weather> settled`: the new weather and the street wetness then start settled, so the day stills show dry streets and no still depends on the frame rate. Install `flip-evaluator` with pip if you want the report-only FLIP map.
 
-## 6. Baseline twice
-```bash
-python3 Scripts/gauntlet_loop.py native --quality current --mode perf --size 1412x652 --sky night-rain --laps 1 --label baseline-a
-python3 Scripts/gauntlet_loop.py native --quality current --mode perf --size 1412x652 --sky night-rain --laps 1 --label baseline-b
-```
-Use `--direct` on both if RunUnreal failed in step 3. The two p95 values set the noise tie. If the baseline is not feasible (FrameTime p95 over 30.0 ms or GPUTime p95 over 28.0 ms), the tuner searches downward first.
+## 6. Baseline twice (inside the tune)
+Do not run separate baseline runs. The tune in step 7 starts with two baseline perf runs of its own, `baseline-a` and `baseline-b`, and only those two set the noise tie in `tune.json`. The tune has no option to reuse other runs, so separate runs here would cost about 23 minutes of the window (two perf runs of about 690 s) and give a tie that the tune does not use. If the baseline is not feasible (FrameTime p95 over 30.0 ms or GPUTime p95 over 28.0 ms), the tuner searches downward first, one step below today's value per knob.
 
 ## 7. Overnight tune
 ```bash
 python3 Scripts/gauntlet_loop.py tune --until 06:30
 ```
-Set `--until` to the end of the agreed window. The tuner measures the baseline and the ceiling twice, measures each single step once, combines steps, climbs back, and stops after 24 candidates or at the window end. It then confirms the winner and the baseline with 3 measured laps each, both skies, landscape and portrait. Every candidate goes into `tune.json`.
+Set `--until` to the end of the agreed window. Add `--direct` if RunUnreal failed in step 3. To reuse the step 5 references instead of rendering the ceiling again, add `--reference Saved/Gauntlet/<reference run>`. The runner refuses that folder, before it starts any run, when its commit or package build differs from the current ones, or when a ceiling run at 1412x652 lacks a still or did not exit cleanly. The tuner measures the baseline and the ceiling twice, measures each single step once, combines steps, climbs back, and stops after 24 candidates or when the next candidate would not finish before `--until`. It then confirms the baseline and the best ranked candidates, best first, with 3 measured laps each, both skies, landscape and portrait, until one passes every native gate. Every candidate goes into `tune.json`.
+
+Plan the window from these estimates. A candidate is a perf run and a look run, about 20 minutes, so 24 candidates take about 8 hours. A confirmation run is about 22 minutes, and each confirmed candidate needs 4 of them, so the baseline and the winner take about 3 hours more. The search keeps no time for the confirmation. A confirmation run starts only when its estimate ends before `--until`, so no run ends after the window by plan. A real run can take longer than its estimate. When the window cuts a candidate's confirmation, its result has the reason "the window ended before every confirmation run" and counts as not run. Agree a window that covers the search plus about 3 hours. Otherwise, run `tune --no-confirm`, or let the window cut the confirmation, and confirm in a second window with `confirm` (step 9).
 
 ## 8. Stream runs
 Build a separate local player that accepts `?pin=`, and serve it on loopback port 8100. From `Browser/`:
@@ -121,9 +119,9 @@ Build a separate local player that accepts `?pin=`, and serve it on loopback por
 NORD_SIGNALLING_URL=ws://127.0.0.1:9010 NORD_DEFAULT_STREAMER_ID=Choose NORD_QA_PIN=1 npm run build
 python3 -m http.server 8100 --bind 127.0.0.1 --directory dist
 ```
-Do not deploy this `dist`. Rebuild the normal player before any deploy.
+Do not deploy this `dist`. Rebuild the normal player before any deploy. `build.mjs` refuses `NORD_QA_PIN=1` when `VERCEL` is set, so a Vercel build cannot honour `?pin=`.
 
-Each sample needs a fresh lifecycle start. The car starts 95 s after the first BeginPlay, when NordFriend1 is asleep. It drives one warm-up lap, which is not gated, and the gated lap starts at the first `NORD_GAUNTLET leg=` line, about 5 minutes later. Sample the winner and the baseline at rung 0 and rung 1, in landscape and in portrait: eight rows. For one row, start the lifecycle with the gauntlet on NordHost. From `games/nord-unreal/`:
+Each sample needs a fresh lifecycle start. The car starts 95 s after the first BeginPlay, when NordFriend1 is asleep. It drives one warm-up lap, which is not gated, and the gated lap starts at the first `NORD_GAUNTLET leg=` line, about 5 minutes later (the model drives a stream lap in about 307 s). Sample the winner and the baseline at rung 0 and rung 1, in landscape and in portrait: eight rows. Then add one input row for the winner (below). For one row, start the lifecycle with the gauntlet on NordHost. From `games/nord-unreal/`:
 ```bash
 run="$(pwd)/Saved/Gauntlet/$(date -u +%Y%m%dT%H%M%SZ)-stream-winner-r0-land"
 NORD_SKY_ARGS="-NordHour=22 -NordWeather=Rain -NordFreezeTime -NordFreezeWeather" \
@@ -135,7 +133,19 @@ Use `NORD_STREAM_QUALITY=current` for the baseline. The launcher refuses `NORD_S
 ```bash
 python3 Scripts/gauntlet_loop.py stream --run "$run" --slot NordHost --pin 0
 ```
-The sampler drives `Browser/stream-sample.mjs` with `--frames --latency --trigger --out`, saves a decoded frame at each stop hold, and judges the stream gate. When it ends, stop the lifecycle with Ctrl-C and start the next row.
+The sampler drives `Browser/stream-sample.mjs` with `--frames --latency --trigger --out`, saves a decoded frame at each stop hold, and judges the stream gate over the gated lap only. It also follows NordFriend1's log, so the verdict shows whether NordFriend1 slept through the lap, and it records the host command line, its world flags and the CVar readback in `run.json`. When the lap ends, the runner writes `END` to the trigger file. `stream-sample.mjs` does not stop at `END` yet (task 7.4), so it samples until `--seconds`, 925 s by default, and takes one extra shot named `END`. The verdict reads only the samples inside the lap, so this does not change a gate. When the sampler ends, stop the lifecycle with Ctrl-C and start the next row.
+
+Check each stream verdict:
+- `received_size` is the pinned rung's size in that orientation, and `size_changes` is 0.
+- `friend_awake_windows` is 0. If it is unverified, the runner found no NordFriend1 window inside the lap.
+- `decoded_over_50ms_percent` and `longest_gap_ms` are unverified when `stream/sample.json` has no `timeOrigin`. The sampler writes it once the page starts recording frames. That the frame times and the host log share one clock is written from memory and unverified: check one run by eye, for example that the frames of the first stop hold fall inside that hold's log lines.
+- `python3 Scripts/gauntlet_loop.py route "$run"` checks the stop order and the lateral error of the stream run.
+
+Input row: drag on the stream during the whole lap, with the winner at rung 0 in landscape. Start the lifecycle as above, then:
+```bash
+python3 Scripts/gauntlet_loop.py stream --run "$run" --slot NordHost --pin 0 --look
+```
+Its stream figures are report-only. It gates the car's lateral error from `native/route.json` (at most 2.5 m) and the exit code. `--look` cannot be combined with `--relay` or `--two-viewers`.
 
 Report-only rows:
 - Two viewers: start the lifecycle once for the baseline and once for the winner in the same window. Run one sampler per slot at the same time (`--slot NordHost` and `--slot NordFriend1`). The winner may lose at most 2 decoded FPS against the baseline.
@@ -147,12 +157,19 @@ After the last row, restore the demo (step 0).
 ```bash
 python3 Scripts/gauntlet_loop.py report Saved/Gauntlet/<tune run>
 ```
+`report` judges the tune again from its files, with the native confirmation and the stream runs made after the tune started. If a stream row or the co-op guard drops the winner, confirm the next ranked candidate natively in the GPU window, then sample its stream rows (step 8) and run `report` again:
+```bash
+python3 Scripts/gauntlet_loop.py confirm Saved/Gauntlet/<tune run> --until 06:30
+```
+Add `--candidate <id>` to pick a ranked candidate, and `--direct` if RunUnreal failed in step 3. `confirm` also confirms the baseline first if it has no finished native result. A result that the window cut counts as not run: `confirm` runs that candidate again and replaces its result, and `--candidate` accepts it. `confirm` adds each result to `tune.json` and writes no profile.
+
 Open `review.html` with the user. It shows the ceiling, baseline, candidate and decoded frame for each view, with SSIM, a difference map and an A/B flip. Only after the user approves the winner's paired captures:
 ```bash
-python3 Scripts/gauntlet_loop.py write-profile Saved/Gauntlet/<tune run> --candidate <id>
+python3 Scripts/gauntlet_loop.py write-profile Saved/Gauntlet/<tune run> --candidate <id> --approved
+python3 Scripts/gauntlet_tune.py check
 python3 Scripts/browser_streaming.py self-check
 ```
-This rewrites only `[NordPhoneStream DeviceProfile]`. The stream default stays `current`. Flipping it to `phone` is a separate change.
+Without `--approved`, `write-profile` refuses and writes nothing. It rewrites only `[NordPhoneStream DeviceProfile]` and writes the approval record `Config/NordPhoneStream.approval.json` beside the ini. Commit both files. `gauntlet_tune.py check` must then report `approved <id>`. The stream default stays `current`. Flipping it to `phone` is a separate change.
 
 ## 10. Physical phone (person)
 Start one stream lifecycle as in step 8 with the winner profile, and also set the demo's `NORD_ICE_CONFIG`, so a phone on carrier data can use the relay. Watch one full lap on NordHost on a real phone:
@@ -172,7 +189,8 @@ Record the date, device, OS, browser, network and deployment ID in its own file,
 - `-DeviceProfile=` in a Development Browser package, and `GameUserSettings.ini` overrides.
 - The CSV column names, and GPUTime with `-csvGpuStats`.
 - C++ driving of a possessed, rendered car with pawn input disabled.
-- The loop length, and which leg is heaviest.
+- The loop length against the modelled 3,488 m, and which leg is heaviest.
 - Whether UAT finds `Build/Scripts/NordGauntlet.Automation.csproj`.
 - Whether UBT builds `QuebecGauntletTest` from `Quebec.uproject`, and whether Shipping builds without it and without the Gauntlet plugin.
 - Whether `BeginCapture` keeps the given CSV file name as it is.
+- Whether the sampler's frame wall times (`timeOrigin` plus `expectedDisplayTime`) line up with the host log times within a few ms.

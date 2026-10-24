@@ -4,7 +4,7 @@ Run from games/nord-unreal:
   python3 Scripts/plateau_textures.py           # writes Data/Plateau/ReplicaGeometry/Textures/
   python3 Scripts/plateau_textures.py --check   # rebuilds in memory and compares with textures.json
 
-Seventeen sets, three PNG maps each, and one macro-variation mask (T_Replica_Macro_mask, see MACRO):
+Twenty-three sets, three PNG maps each, and one macro-variation mask (T_Replica_Macro_mask, see MACRO):
   T_Replica_<Set>_diff    sRGB base colour; the material multiplies it by target colour / mean_linear. The
                           cut-out sets (balusters, lattice, fence boards, creeper) are RGBA: A is the opacity
                           mask, and the colour under transparent texels is the surface colour, so filtering
@@ -36,6 +36,11 @@ and `card_height_m` is the height the texture was drawn for.
   arcs and hairline cracks.
 - balusters, lattice, fence_boards (cut-out cards) and creeper (cut-out Virginia creeper, tiling).
 - lawn, pavers, soil, crushed_stone: yard ground.
+- Fourth pass: lane_concrete (Concrete_Lane_Aged, the ruelle's centre gutter on its own UVs: u along, v across);
+  card sets cedar (Leaf_Cedar), fountain_grass (Plant_Grass_Fountain), pit_flowers (Plant_Pit_Flowers) and
+  iron_wrought (Iron_Wrought, the low tree-pit guard), all clamped in V; and laundry (Cloth_Laundry), a garment atlas
+  (uv "atlas": each garment quad addresses one padded cell, listed with its UV rect in textures.json). The pit
+  planting and the laundry own their colours (own_colour), as tar does.
 
 Methods. Greystone and slate follow Larry Gritz's RenderMan shader stone.sl (staggered courses, per-stone
 colour from the stone index, noise-perturbed joint edges, a groove profile for the relief); buff brick is the
@@ -43,13 +48,19 @@ classic procedural brick (Peachey's brick shader in Texturing and Modeling; Blen
 module coordinates, half-brick row offset, a colour per brick. The macro mask follows the macro-variation approach
 of Epic's landscape materials (T_MacroVariation sampled at large, unrelated scales). Gravel, tar
 and crushed stone are splatted stones kept by the highest height at each texel, the way Substance
-Designer's Tile Sampler / Shape Splatter stacks pebbles; spangle and tar cracks are Worley cellular noise
+Designer's Tile Sampler / Shape Splatter stacks pebbles (the lane concrete is built height first and coloured
+after, the order of Kai Li's "Old Stone Paver" Substance breakdown: pattern, height, damage, dirt in the low lines,
+colour, roughness); spangle and tar cracks are Worley cellular noise
 (F1 cells, F2 - F1 borders). Siding is the sawtooth band profile of Blender's Wave Texture (one wedge per
 lap), with the lap shadow baked under each butt. The cut-out cards are drawn from signed distances, so
 the alpha edge is anti-aliased about the 0.5 clip; the apply step turns on Unreal's alpha-coverage mips
 (Castaño, "Computing Alpha Mipmaps"), so thin balusters do not thin out at a distance. The noise is
 tileable value noise on an integer hash, and the normals come from the height field by central
-differences. The textures are generated, not scanned.
+differences. The card plants are crossed billboards (Pelzer, "Rendering Countless Blades of Waving Grass", GPU
+Gems ch. 7; klamtii's tree sprites; Kevin Quinn's plant cards for God of War Ragnarok): the cards carry the whole
+silhouette, drawn back to front from signed-distance blades, fronds, leaves and bristles. The garments' folds fan
+down from the pegs, as cloth hung from points does (Weil, "The Synthesis of Cloth Objects", SIGGRAPH 1986). The
+textures are generated, not scanned.
 
 The pixel bytes use only integer hashing and IEEE +, -, *, / and sqrt (sines and cosines come from a
 fixed polynomial, not the C library), so they are the same on every platform. The compressed PNG bytes
@@ -127,6 +138,19 @@ SETS = {
                       'surface': 'ground', 'keys': ('Yard_Gravel',), 'macro': .12},
     'buff_brick': {'name': 'BuffBrick', 'size_px': (1024, 1024), 'tile_m': (1.6, 1.6), 'seed': 1956,
                    'surface': 'wall', 'keys': ('Brick_Buff_Even',), 'macro': .05},
+    # Fourth pass. The ruelle gutter takes its own UVs (u along it, v across it, centre at v 0.5).
+    'lane_concrete': {'name': 'LaneConcrete', 'size_px': (1024, 512), 'tile_m': (2.0, 1.0), 'seed': 1967,
+                      'surface': 'ground', 'keys': ('Concrete_Lane_Aged',), 'macro': .1},
+    'cedar': {'name': 'Cedar', 'size_px': (512, 1024), 'tile_m': (1.0, 1.0), 'card_height_m': 3.0, 'seed': 1909,
+              'surface': 'foliage', 'keys': ('Leaf_Cedar',)},
+    'fountain_grass': {'name': 'FountainGrass', 'size_px': (512, 512), 'tile_m': (1.0, 1.0), 'card_height_m': 1.0,
+                       'seed': 1957, 'surface': 'foliage', 'keys': ('Plant_Grass_Fountain',)},
+    'pit_flowers': {'name': 'PitFlowers', 'size_px': (1024, 512), 'tile_m': (1.0, 1.0), 'card_height_m': .5,
+                    'seed': 2011, 'surface': 'foliage', 'keys': ('Plant_Pit_Flowers',), 'own_colour': True},
+    'iron_wrought': {'name': 'IronWrought', 'size_px': (512, 512), 'tile_m': (.5, 1.0), 'card_height_m': .5,
+                     'seed': 1890, 'surface': 'cutout', 'keys': ('Iron_Wrought',), 'tint_floor': .02},
+    'laundry': {'name': 'Laundry', 'size_px': (1024, 1024), 'tile_m': (1.0, 1.0), 'seed': 1949, 'surface': 'cutout',
+                'keys': ('Cloth_Laundry',), 'uv': 'atlas', 'own_colour': True},
 }
 # Macro variation (the Kite demo / Starter Content T_MacroVariation approach): one small tileable mask of three
 # independent low-frequency noises. The apply step samples it twice, R at MACRO['tile_m'][0] and G at [1] (metres,
@@ -134,6 +158,7 @@ SETS = {
 # lerp(1 - .6 s, 1 + .6 s, G), with s the set's 'macro' strength, so a 49 m roof no longer shows its tile grid.
 MACRO = {'name': 'Macro', 'size_px': (512, 512), 'tile_m': (17.3, 5.3), 'seed': 2026, 'second_scale': .6}
 CARDS = tuple(k for k, s in SETS.items() if 'card_height_m' in s)
+ATLASES = tuple(k for k, s in SETS.items() if s.get('uv') == 'atlas')
 ALPHA = tuple(k for k, s in SETS.items() if SURFACES[s['surface']]['blend_mode'] == 'masked')
 # Limestone layout (cm).
 COURSES = 8
@@ -1879,10 +1904,881 @@ def crushed_stone(spec):
                               'zones_cm': [25, 100]})
 
 
+# ------------------------------------------------------------------------------------------------
+# Fourth pass: the ruelle gutter, card plants, tree-pit fences and the laundry atlas
+
+class Painter:
+    """Draws on a Canvas in centimetres: x along u from the tile's left edge, z up from the card's bottom edge (image
+    row 0 is the top, at z = top_cm). A card is often drawn with more texels per cm up it than along it, so every
+    primitive measures its signed distance in cm and anti-aliases it over the texel size across the edge. Along u
+    the drawing wraps, so the set tiles along its run; up the card it is clipped. Later shapes paint over earlier
+    ones (back to front), each at its own height for the normal map."""
+
+    def __init__(self, cv, pxx, pxy, top_cm):
+        self.cv, self.pxx, self.pxy, self.top = cv, pxx, pxy, top_cm
+
+    def _rows(self, z0, z1):
+        y0 = floor((self.top - z1) * self.pxy) - 1
+        y1 = floor((self.top - z0) * self.pxy) + 1
+        return range(max(0, y0), min(self.cv.h, y1 + 1))
+
+    def _put(self, i, a, col, h, rough, cavity=0.):
+        cv = self.cv
+        cv.r[i] += (col[0] - cv.r[i]) * a
+        cv.g[i] += (col[1] - cv.g[i]) * a
+        cv.b[i] += (col[2] - cv.b[i]) * a
+        cv.height[i] += (h - cv.height[i]) * a
+        cv.rough[i] += (rough - cv.rough[i]) * a
+        cv.cavity[i] += (cavity - cv.cavity[i]) * a
+        if cv.alpha is not None and a > cv.alpha[i]:
+            cv.alpha[i] = a
+
+    def capsule(self, a, b, ra, rb, colour, z, rough, bulge=.5, shade=.25, cavity=0., opacity=1.):
+        """A tapered round bar from a to b (cm) of radius ra to rb, shaded across its width."""
+        W, pxx, pxy, top = self.cv.w, self.pxx, self.pxy, self.top
+        ax, az = a
+        dx, dz = b[0] - ax, b[1] - az
+        l2 = dx * dx + dz * dz or 1e-9
+        r = ra if ra > rb else rb
+        x0 = floor((min(ax, b[0]) - r) * pxx) - 1
+        x1 = floor((max(ax, b[0]) + r) * pxx) + 1
+        for py in self._rows(min(az, b[1]) - r, max(az, b[1]) + r):
+            qz = top - (py + .5) / pxy - az
+            row = py * W
+            for px in range(x0, x1 + 1):
+                qx = (px + .5) / pxx - ax
+                t = (qx * dx + qz * dz) / l2
+                t = 0. if t < 0. else 1. if t > 1. else t
+                ex, ez = qx - t * dx, qz - t * dz
+                d2 = ex * ex + ez * ez
+                rr = ra + (rb - ra) * t
+                if d2 >= (rr + 1.) * (rr + 1.):
+                    continue
+                d = sqrt(d2)
+                k = sqrt(ex * ex * pxx * pxx + ez * ez * pxy * pxy) / d if d > 1e-9 else pxx
+                sd = (rr - d) * k
+                if sd <= -.5:
+                    continue
+                al = (1. if sd >= .5 else sd + .5) * opacity
+                f = d / rr if rr > 1e-9 else 1.
+                prof = sqrt(1. - f * f) if f < 1. else 0.
+                m = 1. - shade + shade * prof
+                self._put(row + px % W, al, (colour[0] * m, colour[1] * m, colour[2] * m), z + bulge * rr * prof,
+                          rough, cavity)
+
+    def band(self, z0, z1, colour, z, rough, bulge=.25, shade=.35):
+        """A horizontal bar across the whole run from z0 to z1 (a rail), rounded across its height: no end caps, so
+        it tiles seamlessly along u."""
+        W, pxy, top = self.cv.w, self.pxy, self.top
+        zc, r = (z0 + z1) / 2., (z1 - z0) / 2.
+        for py in self._rows(z0, z1):
+            d = abs(top - (py + .5) / pxy - zc)
+            sd = (r - d) * pxy
+            if sd <= -.5:
+                continue
+            al = 1. if sd >= .5 else sd + .5
+            f = d / r
+            prof = sqrt(1. - f * f) if f < 1. else 0.
+            m = 1. - shade + shade * prof
+            col = (colour[0] * m, colour[1] * m, colour[2] * m)
+            for i in range(py * W, (py + 1) * W):
+                self._put(i, al, col, z + bulge * r * prof, rough)
+
+    def blob(self, c, rx, rz, colour, z, rough, bulge=.5, shade=.2, opacity=1.):
+        """A filled ellipse of radii rx (along u) and rz (up), domed."""
+        W, pxx, pxy, top = self.cv.w, self.pxx, self.pxy, self.top
+        cx, cz = c
+        k = min(rx * pxx, rz * pxy)
+        for py in self._rows(cz - rz, cz + rz):
+            v = (top - (py + .5) / pxy - cz) / rz
+            if v * v >= 1.2:
+                continue
+            row = py * W
+            for px in range(floor((cx - rx) * pxx) - 1, floor((cx + rx) * pxx) + 2):
+                u = ((px + .5) / pxx - cx) / rx
+                f = u * u + v * v
+                if f >= 1.2:
+                    continue
+                q = sqrt(f)
+                sd = (1. - q) * k
+                if sd <= -.5:
+                    continue
+                al = (1. if sd >= .5 else sd + .5) * opacity
+                prof = sqrt(1. - f) if f < 1. else 0.
+                m = 1. - shade + shade * prof
+                self._put(row + px % W, al, (colour[0] * m, colour[1] * m, colour[2] * m),
+                          z + bulge * min(rx, rz) * prof, rough)
+
+    def leaf(self, base, turns, length, width, colour, z, rough, edge_colour=None, edge=0., teeth=0, shade=1.,
+             tip=.5, mottle=None):
+        """A leaf, frond or petal from base toward `turns` (0 along +u, .25 straight up): half-width
+        width * t * sqrt(1 - t) / .385 at t along the midrib (widest at 2/3), less 10% at each of `teeth` saw teeth
+        toward the tip; `tip` > .5 rounds the end (t * sqrt(1 - t) blended toward sqrt(t (1 - t)))."""
+        W, pxx, pxy, top = self.cv.w, self.pxx, self.pxy, self.top
+        s_, c_ = sin_cos(turns)
+        dx, dz, nx, nz = c_, s_, -s_, c_
+        bx, bz = base
+        kn = sqrt(nx * nx * pxx * pxx + nz * nz * pxy * pxy)
+        reach = width + 2. / min(pxx, pxy)
+        zs = [bz + dz * a + nz * b for a in (0., length) for b in (-reach, reach)]
+        inv = 1. / length
+        kw = width / .385
+        round_ = (tip - .5) * 2.
+        edge_colour = edge_colour or colour
+        for py in self._rows(min(zs), max(zs)):
+            qz = top - (py + .5) / pxy - bz
+            lo, hi = -1e9, 1e9
+            for coef, off, a, b in ((dx, qz * dz, 0., length), (nx, qz * nz, -reach, reach)):
+                if -1e-9 < coef < 1e-9:
+                    if not a <= off <= b:
+                        lo, hi = 1., 0.
+                else:
+                    u1, u2 = (a - off) / coef, (b - off) / coef
+                    if u1 > u2:
+                        u1, u2 = u2, u1
+                    lo, hi = max(lo, u1), min(hi, u2)
+            if lo > hi:
+                continue
+            row = py * W
+            for px in range(floor((bx + lo) * pxx) - 1, floor((bx + hi) * pxx) + 2):
+                qx = (px + .5) / pxx - bx
+                t = (qx * dx + qz * dz) * inv
+                if t <= 0. or t >= 1.:
+                    continue
+                sq = sqrt(1. - t)
+                w = kw * t * sq
+                if round_ > 0.:
+                    w += (width * 2. * sqrt(t) * sq - w) * round_
+                if teeth and t > .15:
+                    saw = t * teeth
+                    w *= 1. - .1 * (saw - floor(saw))
+                s = qx * nx + qz * nz
+                a_s = s if s >= 0. else -s
+                sd = (w - a_s) * kn
+                if sd <= -.5:
+                    continue
+                al = 1. if sd >= .5 else sd + .5
+                rel = a_s / w if w > 1e-9 else 1.
+                e = edge * smooth(.45, 1., max(rel, t * t))
+                i = row + px % W
+                k = shade * (1. + (.24 * (mottle[i] - .5) if mottle is not None else 0.))
+                m = 1. - smooth(0., 1.3, a_s * kn)
+                vein = 1. + .1 * m
+                col = ((colour[0] + (edge_colour[0] - colour[0]) * e) * k * vein,
+                       (colour[1] + (edge_colour[1] - colour[1]) * e) * k * vein,
+                       (colour[2] + (edge_colour[2] - colour[2]) * e) * k * vein)
+                self._put(i, al, col, z + .25 * (1. - rel * rel), rough)
+
+
+def poly_cover(points, W, H, rows=4):
+    """Anti-aliased coverage of a polygon given in pixels: {texel index: coverage}, from `rows` sub-scanlines per
+    texel row (even-odd), each crossing span shared exactly between the texels it covers."""
+    out = {}
+    n = len(points)
+    ys = [p[1] for p in points]
+    for y in range(max(0, floor(min(ys))), min(H, floor(max(ys)) + 1)):
+        acc = {}
+        for k in range(rows):
+            yc = y + (k + .5) / rows
+            xs = []
+            for j in range(n):
+                (x0, y0), (x1, y1) = points[j], points[(j + 1) % n]
+                if (y0 <= yc) != (y1 <= yc):
+                    xs.append(x0 + (yc - y0) * (x1 - x0) / (y1 - y0))
+            xs.sort()
+            for a, b in zip(xs[0::2], xs[1::2]):
+                for x in range(floor(a), floor(b) + 1):
+                    cov = min(b, x + 1.) - max(a, float(x))
+                    if cov > 0.:
+                        acc[x] = acc.get(x, 0.) + cov / rows
+        for x, cov in acc.items():
+            if 0 <= x < W:
+                out[y * W + x] = min(1., cov)
+    return out
+
+
+LANE_JOINT_CM = 1.2        # the tooled transverse joint of the gutter, once per 2 m tile (mid-tile, off the seam)
+LANE_CHANNEL_CM = (4., 14.)  # the damp, silted channel: full within 4 cm of the gutter's centre line, gone by 14
+
+
+def lane_concrete(spec):
+    """The ruelle's centre gutter (Concrete_Lane_Aged): old cast concrete, darker and dirtier than a sidewalk.
+
+    u runs along the gutter and v across it, so the replica gives the gutter its own UVs (u metres along, v metres
+    across with the centre line at v = 0.5) and the gutter's centre runs along the middle row of the tile. The paste
+    is worn down to its sand and small stones, most of all in the damp channel along the centre, where silt and
+    rotting leaves collect; tannin and oil stains, hairline cracks, and one tooled transverse joint per 2 m with dirt
+    and a few weeds in it. Built height first and coloured after, as a Substance concrete graph is: pattern (joint),
+    height (aggregate, cracks), damage, dirt in the low lines, colour, then roughness (the damp channel is glossier).
+    """
+    W, H = spec['size_px']
+    seed = spec['seed']
+    px = W / (spec['tile_m'][0] * 100.)
+    tx, ty = spec['tile_m']
+
+    def cells_m(c):
+        return (round(c * tx), round(c * ty))
+    mottle = field(Fbm(seed + 1, W, H, (cells_m(2), cells_m(4), cells_m(8)), (.5, .3, .2)), H)
+    fine = field(Noise(seed + 2, W, H, *cells_m(128)), H)
+    stain = zone_field(seed + 3, W, H, (cells_m(1), cells_m(2), cells_m(4)), (.5, .3, .2))
+    silt = field(Fbm(seed + 4, W, H, (cells_m(6), cells_m(12), cells_m(24)), (.5, .3, .2)), H)
+    crack_mask = field(Fbm(seed + 5, W, H, (cells_m(2), cells_m(4)), (.6, .4)), H)
+    wave = noise1d(seed + 6, H, 12)
+    centre = H / 2.
+
+    def damp_at(y):
+        return 1. - smooth(LANE_CHANNEL_CM[0], LANE_CHANNEL_CM[1], abs((y + .5 - centre) / px))
+
+    def keep(layer, x, y):
+        return .3 + .6 * damp_at(y)
+
+    palette = ((.4, (152., 148., 140.)), (.25, (120., 116., 110.)), (.2, (170., 160., 142.)), (.15, (86., 84., 82.)))
+    stones, colours, roughs = gravel_stones(seed, W, H, px, ((1.3, .7, (.2, .55), -.06, .3),), palette, keep=keep)
+    cv = Canvas(W, H, (124., 117., 109.), 0., .88)
+    owner, prof = [-1] * (W * H), [0.] * (W * H)
+    splat_round(W, H, stones, cv.height, owner, prof)
+    _, crack, _ = cells(seed + 9, W, H, 45. * px, .9)
+    R, G, B, HT, RO, CA = cv.r, cv.g, cv.b, cv.height, cv.rough, cv.cavity
+    paste = (124., 117., 109.)
+    joint_half = LANE_JOINT_CM / 2.
+    for y in range(H):
+        damp = damp_at(y)
+        jx = W / 2. + (wave[y] - .5) * .9 * px     # the joint meanders a little across the gutter
+        for x in range(W):
+            i = y * W + x
+            o = owner[i]
+            if o < 0:
+                k = (.9 + .2 * mottle[i]) * (1. + .1 * (fine[i] - .5))
+                col = [paste[0] * k, paste[1] * k, paste[2] * k]
+                rough, cav = .88, .35
+            else:
+                p = prof[i]
+                k = .72 + .28 * sqrt(p)
+                col = [colours[o][0] * k, colours[o][1] * k, colours[o][2] * k]
+                rough, cav = roughs[o] + .06, .5 * (1. - p) * (1. - p)
+            s = smooth(.56, .86, stain[i])           # tannin and oil: darker, browner
+            col = [col[0] * (1. - .22 * s), col[1] * (1. - .27 * s), col[2] * (1. - .33 * s)]
+            sl = damp * smooth(.4, .72, silt[i])     # silt and grit left in the channel
+            if sl > 0.:
+                col = [col[n] + ((88., 78., 66.)[n] - col[n]) * .6 * sl for n in range(3)]
+                HT[i] += .05 * sl
+            wet = 1. - .2 * damp
+            col = [col[0] * wet, col[1] * wet, col[2] * wet * .98]
+            rough -= .26 * damp
+            if crack[i] < 1. and crack_mask[i] > .6:   # hairline cracks where the mask allows
+                f = (1. - crack[i]) * smooth(.6, .7, crack_mask[i])
+                col = [c * (1. - .45 * f) for c in col]
+                cav, HT[i] = max(cav, f), HT[i] - .12 * f
+            dj = abs(wrap_delta(x + .5, jx, W)) / px
+            if dj < joint_half + 2.5:                # the joint, its dirt and spalled arrises
+                if dj < joint_half:
+                    f = 1.
+                else:
+                    f = (1. - smooth(0., 2.5, dj - joint_half)) * (.3 + .7 * smooth(.45, .75, fine[i]))
+                col = [col[n] + ((58., 52., 44.)[n] - col[n]) * f for n in range(3)]
+                cav, rough = max(cav, f), rough + (.95 - rough) * f
+                HT[i] -= .6 * (1. if dj < joint_half else f * .5)
+            R[i], G[i], B[i] = col
+            RO[i], CA[i] = rough, cav
+    rng = Rng(seed)
+    blotch = field(Noise(seed + 7, W, H, *cells_m(64)), H)
+    leaves = 0
+    for n in range(12):                              # rotting leaves stuck in the channel, a few beside it
+        x = rng.next() * W
+        y = centre + (rng.next() - .5) * (24. if n < 9 else 70.) * px
+        colour = pick(((.45, (92., 64., 40.)), (.3, (120., 82., 44.)), (.25, (146., 104., 48.))), rng.next())
+        if abs(y - centre) < 10. * px:
+            colour = tuple(c * .8 for c in colour)    # wet
+        maple_leaf(cv, x, y, (4. + 3. * rng.next()) * px, rng.next(), .25, colour, blotch, .55)
+        leaves += 1
+    for n in range(40):                              # grass and weed blades in the joint
+        y = rng.next() * H
+        x = W / 2. + (wave[min(H - 1, int(y))] - .5) * .9 * px + (rng.next() - .5) * LANE_JOINT_CM * px
+        colour = (78., 104., 48.) if rng.next() < .6 else (128., 112., 70.)
+        stroke(cv, x % W, y, rng.next(), (1. + 2.5 * rng.next()) * px, colour, .5 + .3 * rng.next(), .85, .4)
+    cover = sum(1 for o in owner if o >= 0) / len(owner)
+    return cv.result(px, px, {'joint_cm': LANE_JOINT_CM, 'joint_u_m': [tx / 2.], 'centre_v_m': ty / 2.,
+                              'channel_cm': list(LANE_CHANNEL_CM), 'stone_cover': round(cover, 4),
+                              'leaves': leaves, 'uv': 'u metres along the gutter, v metres across it, centre at v 0.5'})
+
+
+CEDAR_CROWN_CM = 285.      # tip of the drawn cedar on its 3 m card
+CEDAR_HALF_CM = 36.        # widest half-width, at the foot: one cedar per metre of card
+CEDAR_PALETTE = ((.34, (58., 88., 42.)), (.26, (74., 104., 48.)), (.14, (96., 120., 56.)), (.16, (46., 70., 36.)),
+                 (.1, (122., 132., 64.)))
+
+
+def cedar_half(z):
+    """Half-width (cm) of the cedar column at height z: a narrow column that rounds to a blunt point."""
+    t = z / CEDAR_CROWN_CM
+    if t >= 1.:
+        return 0.
+    w = sqrt(1. - t) * (1. + .25 * (1. - t)) / 1.25
+    if t < .06:
+        w *= .9 + 1.6 * t
+    return CEDAR_HALF_CM * w
+
+
+def cedar(spec):
+    """Eastern white cedar (thuja, Thuja occidentalis) for crossed cards: one dense, soft green column per metre of
+    card, about 2.85 m tall on the 3 m card it is drawn for, built from flattened sprays of scale leaves (each a frond
+    with two side fronds, toothed for the scales) over a dark core. The sprays at the outline point outward, so the
+    edge is ragged and soft, not a cone. A few inner sprays are yellow-brown: thuja sheds its inner foliage in
+    October. The card stands between two others at right angles (crossed billboards), so it reads as a column from
+    every side."""
+    W, H = spec['size_px']
+    seed = spec['seed']
+    pxx, pxy = card_px(spec)
+    top = spec['card_height_m'] * 100.
+    mid = spec['tile_m'][0] * 50.
+    cv = Canvas(W, H, (60., 86., 44.), 0., .8, alpha=0.)
+    for i in range(W * H):
+        cv.cavity[i] = 1.
+    P = Painter(cv, pxx, pxy, top)
+    mottle = field(Fbm(seed + 1, W, H, ((8, 16), (16, 32), (32, 64)), (.5, .3, .2)), H)
+    rag = noise1d(seed + 2, 96, 24)
+    # The dark core, inset from the outline.
+    for z in range(0, int(CEDAR_CROWN_CM) - 20, 3):
+        w = cedar_half(z + 1.5) - 9.
+        if w > 2.:
+            P.capsule((mid - w, z + 1.5), (mid + w, z + 1.5), 2.2, 2.2, (34., 48., 27.), 0., .85, bulge=.1, shade=.1)
+    rng = Rng(seed)
+    sprays = []
+    target = 3400
+    while len(sprays) < target:
+        z = CEDAR_CROWN_CM * (1. - sqrt(rng.next()))       # more sprays low down, where the column is wide
+        w = cedar_half(z) * (1. + .12 * (rag[int(z / CEDAR_CROWN_CM * 95.)] - .5))
+        x = mid + (rng.next() * 2. - 1.) * w
+        sprays.append((rng.next(), x, z, w, [rng.next() for _ in range(8)]))
+    sprays.sort()
+    brown = 0
+    for depth, x, z, w, u in sprays:
+        rel = (x - mid) / w if w > 1e-6 else 0.
+        out = rel if rel >= 0. else -rel
+        side = 1. if rel >= 0. else -1.
+        turns = .25 - side * (.05 + .17 * out * out) + (u[0] - .5) * .1
+        length = 4.5 + 5. * u[1]
+        colour = pick(CEDAR_PALETTE, u[2])
+        if out < .55 and depth < .5 and u[3] < .12:
+            colour = (118., 104., 60.) if u[4] < .6 else (100., 82., 50.)
+            brown += 1
+        shade = (.5 + .5 * depth) * (.86 + .14 * out)
+        tipc = (126., 140., 66.)
+        P.leaf((x, z), turns, length, length * .12, colour, depth * 2., .78, tipc, .3 * u[5], 11, shade, mottle=mottle)
+        for k, sgn in ((.25, 1.), (.42, -1.), (.6, 1.)):
+            s, c = sin_cos(turns)
+            b = (x + c * length * k, z + s * length * k)
+            P.leaf(b, turns + sgn * (.08 + .04 * u[6]), length * (.62 - .3 * k), length * .09, colour,
+                   depth * 2. + .05, .78, tipc, .3 * u[7], 7, shade * .97, mottle=mottle)
+    cover = sum(1 for a in cv.alpha if a >= .5) / (W * H)
+    return cv.result(pxx, pxy, {'card_height_cm': top, 'crown_cm': CEDAR_CROWN_CM, 'width_cm': 2 * CEDAR_HALF_CM,
+                                'per_m': 1, 'sprays': len(sprays), 'brown_sprays': brown, 'cover': round(cover, 4)},
+                     wrap_y=False)
+
+
+GRASS_PALETTE = ((.3, (196., 166., 96.)), (.22, (176., 144., 86.)), (.16, (184., 126., 66.)), (.12, (212., 194., 140.)),
+                 (.12, (112., 122., 62.)), (.08, (150., 112., 70.)))
+PLUME_PALETTE = ((.45, (196., 176., 146.)), (.3, (178., 154., 128.)), (.25, (210., 194., 166.)))
+
+
+def fountain_grass(spec):
+    """Fountain grass (Pennisetum alopecuroides) in late October for crossed cards: one clump per metre of card, about
+    90 cm across and 75 cm tall on the 1 m card. About 240 blades rise from a 24 cm crown and arch out and down
+    under their own weight (each a tapered bar whose heading bends a little per step), straw-gold and orange-tan
+    with a few still green and darker toward the crown, and about 34 stems carry buff bottlebrush plumes."""
+    W, H = spec['size_px']
+    seed = spec['seed']
+    pxx, pxy = card_px(spec)
+    top = spec['card_height_m'] * 100.
+    mid = spec['tile_m'][0] * 50.
+    cv = Canvas(W, H, (180., 152., 98.), 0., .85, alpha=0.)
+    for i in range(W * H):
+        cv.cavity[i] = 1.
+    P = Painter(cv, pxx, pxy, top)
+    items = []
+    for k in range(240):
+        items.append((unit(seed, 80, k), 'blade', k))
+    for k in range(34):
+        items.append((unit(seed, 81, k), 'plume', k))
+    items.sort()
+    for depth, kind, k in items:
+        u = [unit(seed, 82 if kind == 'blade' else 83, k, n) for n in range(8)]
+        lean = u[0] * 2. - 1.
+        x, z = mid + lean * 12. * (.4 + .6 * u[1]), 0.
+        if kind == 'blade':
+            heading = .25 - lean * .12
+            length = 40. + 44. * u[2]
+            bend, r0, r1 = (.002 + .013 * abs(lean) * (.6 + .4 * u[3])) * (1. if lean >= 0. else -1.), .5, .08
+            colour = pick(GRASS_PALETTE, u[4])
+        else:
+            heading = .25 - lean * .1
+            length, bend, r0, r1 = 58. + 26. * u[2], (.003 + .004 * u[3]) * (1. if lean >= 0. else -1.), .16, .12
+            colour = (184., 160., 112.)
+        steps = int(length / 4.) + 1
+        plume_from = steps - int(14. / 4.) if kind == 'plume' else steps + 1
+        for n in range(steps):
+            s, c = sin_cos(heading)
+            nx, nz = x + c * 4., z + s * 4.
+            if not 3. < nx < 2. * mid - 3. or nz > top - 4.:
+                break
+            f0, f1 = n / steps, (n + 1) / steps
+            shade = (.62 + .38 * min(1., (z + 4.) / 30.)) * (.8 + .2 * depth)
+            col = (colour[0] * shade, colour[1] * shade, colour[2] * shade)
+            P.capsule((x, z), (nx, nz), r0 + (r1 - r0) * f0, r0 + (r1 - r0) * f1, col, depth, .8, bulge=.3, shade=.3)
+            if n >= plume_from:                       # bottlebrush plume: bristles round the stem
+                for b in range(26):
+                    v = [unit(seed, 84, k, n, b, m) for m in range(4)]
+                    t = v[0]
+                    bx, bz = x + c * 4. * t, z + s * 4. * t
+                    turn = heading + (.08 + .17 * v[1]) * (1. if v[2] < .5 else -1.)
+                    ss, cc = sin_cos(turn)
+                    ln = 1.1 + 1.1 * v[3]
+                    pc = pick(PLUME_PALETTE, v[2])
+                    P.capsule((bx, bz), (bx + cc * ln, bz + ss * ln), .2, .1, pc, depth + .3, .9, bulge=.1,
+                              shade=.25, opacity=.95)
+            x, z = nx, nz
+            heading -= bend * (1. + 1.5 * f0)
+            heading = max(-.2, min(.7, heading))
+    cover = sum(1 for a in cv.alpha if a >= .5) / (W * H)
+    return cv.result(pxx, pxy, {'card_height_cm': top, 'per_m': 1, 'blades': 240, 'plumes': 34,
+                                'cover': round(cover, 4)}, wrap_y=False)
+
+
+# Tree-pit planting: (kind, share of the run). Residents adopt and plant the pits (the borough's "Adoptez un carré
+# d'arbre"); in late October: garden mums, ornamental kale, sedum 'Autumn Joy', asters, marigolds, a yellowing
+# hosta and black-eyed Susans gone to seed.
+PIT_GROUPS = (('mum', .17), ('kale', .14), ('sedum', .14), ('aster', .15), ('hosta', .14), ('marigold', .14),
+              ('rudbeckia', .12))
+MUM_COLOURS = ((196., 100., 40.), (126., 34., 48.), (228., 186., 54.), (232., 224., 202.), (178., 128., 170.))
+
+
+def pit_flowers(spec):
+    """Planted tree-pit card: a 1 m run of low autumn planting, 50 cm high, for cards set on the pit's soil round the
+    trunk (crossed or along its sides). Seven groups side by side, so each pit can show its own stretch of the run:
+    a garden-mum dome covered in flowers, an ornamental kale rosette, sedum heads on fleshy stems, an airy aster,
+    marigold pompoms, a yellowing hosta and black-eyed Susans gone to seed. The set owns its colours."""
+    W, H = spec['size_px']
+    seed = spec['seed']
+    pxx, pxy = card_px(spec)
+    top = spec['card_height_m'] * 100.
+    run = spec['tile_m'][0] * 100.
+    cv = Canvas(W, H, (88., 96., 52.), 0., .8, alpha=0.)
+    for i in range(W * H):
+        cv.cavity[i] = 1.
+    P = Painter(cv, pxx, pxy, top)
+    mottle = field(Fbm(seed + 1, W, H, ((8, 4), (16, 8), (32, 16)), (.5, .3, .2)), H)
+    rng = Rng(seed)
+    groups, x = [], 0.
+    for g, (kind, share) in enumerate(PIT_GROUPS):
+        width = share * run
+        groups.append((kind, x + width / 2., width, g))
+        x += width
+    for kind, cx, width, g in groups:
+        hw = width / 2. * 1.12                       # neighbours overlap a little at their edges
+        if kind == 'mum':
+            hgt = 22. + 6. * rng.next()
+            colour = MUM_COLOURS[g % len(MUM_COLOURS) if rng.next() < .5 else int(rng.next() * len(MUM_COLOURS))]
+            P.blob((cx, 0.), hw * .92, hgt, (44., 64., 36.), 0., .85, bulge=.8, shade=.3)
+            for n in range(70):
+                a, r = rng.next(), sqrt(rng.next())
+                s, c = sin_cos(a * .5)
+                P.leaf((cx + c * hw * .8 * r, 1.), .25 + (rng.next() - .5) * .3, 4. + 6. * rng.next(), 1.5,
+                       (52., 78., 42.), .3, .8, (70., 96., 50.), .3, 5, .7 + .3 * rng.next(), .6, mottle)
+            for n in range(int(hw * hgt * .55)):
+                a = rng.next()
+                s, c = sin_cos(a * .5)
+                r = .3 + .62 * sqrt(rng.next())
+                fx, fz = cx + c * hw * r, 1. + s * hgt * r
+                k = .8 + .2 * s
+                P.blob((fx, fz), 1.15 + .4 * rng.next(), 1.05 + .3 * rng.next(), tuple(v * k for v in colour),
+                       1. + s, .7, bulge=.4)
+                P.blob((fx, fz + .2), .35, .32, (176., 156., 64.), 1.6 + s, .7, bulge=.2)
+        elif kind == 'kale':
+            outer, inner = (92., 118., 106.), ((150., 70., 122.) if rng.next() < .6 else (226., 220., 200.))
+            for n in range(16):
+                t = (n + .5) / 16.
+                turn = .25 + (t - .5) * .42 + (rng.next() - .5) * .04
+                P.leaf((cx, 1.5), turn, 9. + 5. * rng.next(), 4.5 + 1.5 * rng.next(), outer, .2 + .05 * n, .7,
+                       (122., 82., 128.), .4, 11, .75 + .25 * rng.next(), .7, mottle)
+            for n in range(9):
+                t = (n + .5) / 9.
+                P.leaf((cx + (rng.next() - .5) * 3., 6.), .25 + (t - .5) * .3, 6. + 3. * rng.next(), 3.,
+                       inner, 1.2 + .05 * n, .7, (182., 160., 170.), .3, 9, .9, .7, mottle)
+        elif kind == 'sedum':
+            for n in range(9):
+                bx = cx + (rng.next() - .5) * hw * 1.2
+                tz = 24. + 9. * rng.next()
+                tx = bx + (rng.next() - .5) * 6.
+                P.capsule((bx, 0.), (tx, tz), .45, .35, (136., 154., 104.), .3 + .02 * n, .7, bulge=.2)
+                for m in range(5):
+                    f = (m + 1) / 6.
+                    lx, lz = bx + (tx - bx) * f, tz * f
+                    sgn = -1. if m % 2 else 1.
+                    P.blob((lx + sgn * 1.4, lz), 1.5, .8, (146., 168., 120.), .4 + .02 * n, .6, bulge=.3)
+                head = (156., 80., 62.) if rng.next() < .7 else (132., 66., 56.)
+                rx = 2.6 + .8 * rng.next()
+                P.blob((tx, tz), rx * .8, 2.2, head, 1. + .02 * n, .8, bulge=.6, shade=.4)
+                for m in range(22):
+                    a = rng.next()
+                    s_, c_ = sin_cos(a * .5)
+                    P.blob((tx + c_ * rx * .85, tz + s_ * 2.1), .5, .45, (122., 54., 50.) if m % 3 else (176., 104., 84.),
+                           1.2 + .02 * n, .8, bulge=.15)
+        elif kind == 'aster':
+            for n in range(13):
+                bx = cx + (rng.next() - .5) * hw * .6
+                tx, tz = cx + (rng.next() - .5) * hw * 1.8, 30. + 14. * rng.next()
+                P.capsule((bx, 0.), (tx, tz), .22, .12, (88., 92., 58.), .3, .8, bulge=.1)
+                for m in range(7):
+                    f = .55 + .45 * rng.next()
+                    fx = bx + (tx - bx) * f + (rng.next() - .5) * 5.
+                    fz = tz * f + (rng.next() - .5) * 3.
+                    P.blob((fx, fz), 1., .9, (120., 86., 172.) if rng.next() < .8 else (150., 120., 190.), 1., .7,
+                           bulge=.2)
+                    P.blob((fx, fz), .32, .3, (214., 170., 50.), 1.3, .7, bulge=.1)
+        elif kind == 'marigold':
+            for n in range(40):
+                s, c = sin_cos(rng.next() * .5)
+                r = sqrt(rng.next())
+                P.leaf((cx + c * hw * .7 * r, .5), .25 + (rng.next() - .5) * .35, 4. + 5. * rng.next(), .9,
+                       (62., 96., 44.), .2, .8, None, 0., 7, .7 + .3 * rng.next(), .5, mottle)
+            P.blob((cx, 0.), hw * .8, 12., (50., 82., 38.), 0., .85, bulge=.6, shade=.3)
+            for n in range(int(hw * 2.4)):
+                s, c = sin_cos(rng.next() * .5)
+                r = .5 + .5 * sqrt(rng.next())
+                fx, fz = cx + c * hw * .85 * r, 3. + s * 13. * r
+                col = (234., 132., 26.) if rng.next() < .55 else (242., 184., 36.)
+                rad = 1.5 + .6 * rng.next()
+                P.blob((fx, fz), rad, rad * .85, col, 1. + s, .75, bulge=.5, shade=.3)
+                P.blob((fx, fz + .3), .45, .4, (150., 70., 20.), 1.5 + s, .75, bulge=.1)
+        elif kind == 'hosta':
+            for n in range(10):
+                t = (n + .5) / 10.
+                turn = .25 + (t - .5) * .38 + (rng.next() - .5) * .05
+                col = pick(((.45, (200., 170., 74.)), (.3, (172., 140., 78.)), (.25, (116., 132., 62.))), rng.next())
+                P.leaf((cx + (t - .5) * 4., 1.), turn, 10. + 5. * rng.next(), 4. + 1.5 * rng.next(), col,
+                       .2 + .05 * n, .65, (130., 96., 52.), .5, 0, .75 + .25 * rng.next(), .8, mottle)
+        else:   # rudbeckia gone to seed
+            for n in range(26):
+                s, c = sin_cos(rng.next() * .5)
+                P.leaf((cx + c * hw * .6 * sqrt(rng.next()), .5), .25 + (rng.next() - .5) * .3,
+                       5. + 4. * rng.next(), 1.6, (54., 70., 40.), .2, .8, (90., 80., 50.), .4, 0, .8, .6, mottle)
+            for n in range(11):
+                bx = cx + (rng.next() - .5) * hw
+                tx, tz = bx + (rng.next() - .5) * 8., 26. + 12. * rng.next()
+                P.capsule((bx, 0.), (tx, tz), .2, .15, (70., 74., 44.), .4, .8, bulge=.1)
+                if rng.next() < .4:
+                    for m in range(8):
+                        P.leaf((tx, tz), (m + .5) / 8. + rng.next() * .05, 2.4, .7, (222., 172., 40.), .9, .7,
+                               (180., 120., 30.), .4, 0, .9, .7)
+                P.blob((tx, tz + .4), 1.2, 1.1, (54., 38., 28.), 1.2, .85, bulge=.6, shade=.3)
+    cover = sum(1 for a in cv.alpha if a >= .5) / (W * H)
+    return cv.result(pxx, pxy, {'card_height_cm': top, 'groups': [[k, round(c - w / 2., 1), round(c + w / 2., 1)]
+                                                                   for k, c, w, _ in groups],
+                                'cover': round(cover, 4)}, wrap_y=False)
+
+
+# Low wrought-iron tree-pit guard (cm up from the soil): 1.2 cm square pickets every 12.5 cm with ball finials, two
+# flat rails, and a band of rings between the rails, painted black.
+IRON_PICKET_CM = 12.5
+IRON_RAILS_CM = ((7., 9.5), (36., 38.5))
+IRON_RING = (22.75, 5.6, .45)          # centre height, radius, half the bar
+IRON_FINIAL = (42., 1.1)
+
+
+def iron_wrought(spec):
+    """Low wrought-iron tree-pit guard card: square pickets at 12.5 cm with ball finials over a top rail, a bottom
+    rail 7 cm off the soil, and a ring between each pair of pickets; black paint, chipped to primer on the rails and
+    rusting at the feet. Drawn for a 50 cm card."""
+    W, H = spec['size_px']
+    seed = spec['seed']
+    pxx, pxy = card_px(spec)
+    top = spec['card_height_m'] * 100.
+    run = spec['tile_m'][0] * 100.
+    paint = (30., 30., 28.)
+    cv = Canvas(W, H, paint, 0., .45, alpha=0.)
+    for i in range(W * H):
+        cv.cavity[i] = 1.
+    P = Painter(cv, pxx, pxy, top)
+    n = round(run / IRON_PICKET_CM)
+    for lo, hi in IRON_RAILS_CM:
+        P.band(lo, hi, paint, .4, .45)
+    zc, rad, half = IRON_RING
+    for k in range(n):
+        cx = (k + 1.) * IRON_PICKET_CM
+        steps = 28
+        for m in range(steps):
+            s0, c0 = sin_cos(m / steps)
+            s1, c1 = sin_cos((m + 1.) / steps)
+            P.capsule((cx + c0 * rad, zc + s0 * rad), (cx + c1 * rad, zc + s1 * rad), half, half, paint, .6, .45,
+                      bulge=.5, shade=.35)
+    for k in range(n):
+        x = (k + .5) * IRON_PICKET_CM
+        P.capsule((x, .3), (x, IRON_FINIAL[0] - .6), .6, .6, paint, 1., .45, bulge=.6, shade=.4)
+        P.blob((x, IRON_FINIAL[0]), IRON_FINIAL[1], IRON_FINIAL[1], paint, 1.2, .45, bulge=.8, shade=.45)
+    wear = field(Fbm(seed + 1, W, H, ((8, 8), (16, 16), (32, 32)), (.5, .3, .2)), H)
+    fine = field(Noise(seed + 2, W, H, 64, 64), H)
+    R, G, B, RO, AL = cv.r, cv.g, cv.b, cv.rough, cv.alpha
+    for y in range(H):
+        z = top - (y + .5) / pxy
+        foot = 1. - smooth(1., 9., z)
+        for x in range(W):
+            i = y * W + x
+            if AL[i] <= 0.:
+                continue
+            rust = smooth(.45, .8, wear[i] * .6 + foot * .7 + .2 * fine[i])
+            chip = smooth(.76, .8, wear[i]) * (1. - rust)
+            if rust > 0.:
+                f = .85 * rust
+                R[i] += (98. * (.8 + .4 * fine[i]) - R[i]) * f
+                G[i] += (54. * (.8 + .4 * fine[i]) - G[i]) * f
+                B[i] += (30. - B[i]) * f
+                RO[i] += (.86 - RO[i]) * rust
+            if chip > 0.:
+                R[i] += (96. - R[i]) * chip
+                G[i] += (94. - G[i]) * chip
+                B[i] += (90. - B[i]) * chip
+                RO[i] += (.7 - RO[i]) * chip
+    cover = sum(1 for a in cv.alpha if a >= .5) / (W * H)
+    return cv.result(pxx, pxy, {'card_height_cm': top, 'picket_cm': IRON_PICKET_CM, 'pickets_per_tile': n,
+                                'rails_cm': [list(r) for r in IRON_RAILS_CM], 'ring_cm': list(IRON_RING),
+                                'finial_cm': list(IRON_FINIAL), 'cover': round(cover, 4)}, wrap_y=False)
+
+
+# The laundry atlas: 4 x 4 cells of 256 px (1 m at 2.56 px per cm), the sheets two cells wide. Each garment hangs
+# from the top edge of its cell's inner rect (the rope), pinned there, and is drawn to scale.
+LAUNDRY_PX_CM = 2.56
+LAUNDRY_CELL_PX = 256
+LAUNDRY_PAD_PX = 8
+LAUNDRY_CELLS = (('sheet_white', 'sheet', 0, 0, 2), ('sheet_floral', 'sheet', 2, 0, 2),
+                 ('towel_stripes', 'towel', 0, 1, 1), ('towel_red', 'towel', 1, 1, 1),
+                 ('shirt_blue', 'shirt', 2, 1, 1), ('shirt_white', 'shirt', 3, 1, 1),
+                 ('jeans', 'jeans', 0, 2, 1), ('tshirt_yellow', 'tshirt', 1, 2, 1),
+                 ('dress_green', 'dress', 2, 2, 1), ('shirt_plaid', 'shirt', 3, 2, 1),
+                 ('pillowcase', 'pillowcase', 0, 3, 1), ('towel_yellow', 'towel', 1, 3, 1),
+                 ('tshirt_grey', 'tshirt', 2, 3, 1), ('shorts_khaki', 'shorts', 3, 3, 1))
+GARMENT_BASE = {'sheet_white': (238., 236., 228.), 'sheet_floral': (214., 222., 236.),
+                'towel_stripes': (234., 230., 218.), 'towel_red': (172., 40., 44.), 'shirt_blue': (150., 178., 214.),
+                'shirt_white': (238., 238., 232.), 'jeans': (60., 82., 124.), 'tshirt_yellow': (232., 194., 64.),
+                'dress_green': (54., 108., 82.), 'shirt_plaid': (168., 44., 42.), 'pillowcase': (228., 212., 222.),
+                'towel_yellow': (230., 188., 70.), 'tshirt_grey': (152., 152., 154.), 'shorts_khaki': (178., 158., 114.)}
+
+
+def _rope_edge(xa, xb, pins, sag, step=2.):
+    """The top edge from xa to xb (cm from the garment's centre, y down from the rope): on the rope at each pin, in a
+    shallow catenary-like sag between pins, the free corners drooping a little past the outer pins."""
+    pts, n = [], max(2, int((xb - xa) / step))
+    ps = sorted(pins)
+    for k in range(n + 1):
+        x = xa + (xb - xa) * k / n
+        y = 0.
+        for p, q in zip(ps, ps[1:]):
+            if p <= x <= q:
+                t = (x - p) / (q - p)
+                y = sag * 4. * t * (1. - t)
+        if x < ps[0]:
+            y = min(2., (ps[0] - x) * .3)
+        elif x > ps[-1]:
+            y = min(2., (x - ps[-1]) * .3)
+        pts.append((x, y))
+    return pts
+
+
+def garment_outline(kind, inner_w, rng):
+    """(outline, pins) of a garment in cm: x from the cell's centre, y down from the rope."""
+    if kind in ('sheet', 'towel', 'pillowcase'):
+        half, drop, sag = {'sheet': (inner_w / 2. - 2., 85. + 4. * rng.next(), 1.8),
+                           'towel': (31. + 2. * rng.next(), 56. + 5. * rng.next(), 1.),
+                           'pillowcase': (25., 70. + 2. * rng.next(), .8)}[kind]
+        pins = ([-half + 6., -half * .32, half * .32, half - 6.] if kind == 'sheet' else [-half + 4., half - 4.])
+        top = _rope_edge(-half, half, pins, sag)
+        hem, n = [], max(6, int(2. * half / 3.))
+        phase = rng.next()
+        for k in range(n + 1):
+            x = half - 2. * half * k / n
+            t = x / half
+            s, _ = sin_cos(phase + 2.3 * t)
+            hem.append((x, drop + 1.2 * s + 2. * t * t * t * t))
+        return top + hem, pins
+    if kind == 'shirt':
+        return ([(-5., 0.), (-17., 0.), (-23., 2.5), (-31., 50.), (-24., 53.), (-20., 24.), (-22., 72.), (-12., 75.),
+                 (0., 79.), (12., 75.), (22., 72.), (20., 24.), (24., 53.), (31., 50.), (23., 2.5), (17., 0.), (5., 0.),
+                 (0., 5.)], [-17., 17.])
+    if kind == 'tshirt':
+        return ([(-6., 0.), (-16., 0.), (-21., 2.), (-31., 16.), (-25., 21.), (-20., 14.), (-21., 64.), (0., 65.),
+                 (21., 64.), (20., 14.), (25., 21.), (31., 16.), (21., 2.), (16., 0.), (6., 0.), (0., 4.)], [-16., 16.])
+    if kind == 'jeans':
+        return ([(-21., 0.), (21., 0.), (23., 22.), (20., 92.), (3.5, 92.), (0., 31.), (-3.5, 92.), (-20., 92.),
+                 (-23., 22.)], [-18., 18.])
+    if kind == 'dress':
+        hem = []
+        for k in range(21):
+            x = 30. - 3. * k
+            t = x / 30.
+            s, _ = sin_cos(.3 + 1.5 * t)
+            hem.append((x, 88. + 2. * (1. - t * t) + .8 * s))
+        return ([(-12., 0.), (-9., 0.), (-8., 6.), (8., 6.), (9., 0.), (12., 0.), (15., 8.), (14., 30.)] + hem +
+                [(-14., 30.), (-15., 8.)], [-10.5, 10.5])
+    if kind == 'shorts':
+        return ([(-22., 0.), (22., 0.), (24., 20.), (23., 46.), (4., 46.), (0., 26.), (-4., 46.), (-23., 46.),
+                 (-24., 20.)], [-18., 18.])
+    raise ValueError(kind)
+
+
+def cloth_folds(x, y, pins, period, phase):
+    """Fold height (about -1.3 to 1.3) at (x, y): folds fanning down from each pin, the way cloth hung from points
+    forms catenary folds that radiate from its supports (Weil, "The Synthesis of Cloth Objects", SIGGRAPH 1986), and
+    long vertical folds that open up toward the hem."""
+    h = 0.
+    grow = smooth(0., 12., y)
+    for p in pins:
+        dx = x - p
+        w = 1. / (1. + dx * dx / 300.)
+        _, c = sin_cos(dx / (y + 6.) * 1.7 + phase)
+        h += .8 * w * c * grow
+    _, c = sin_cos(x / period + phase + .05 * y / period)
+    return h + .5 * c * smooth(4., 40., y)
+
+
+def garment_colour(name, x, y, drop, grain, rng_vals):
+    """The garment's own colour at (x, y) cm (x from the centre, y down from the rope): fabric, print and seams."""
+    base = GARMENT_BASE[name]
+    r, g, b = base
+    k = 1. + .06 * (grain - .5)
+    if name == 'sheet_floral':
+        i, j = floor(x / 10.), floor(y / 10.)
+        fx = (i + .5 + .6 * (unit(rng_vals, 1, i, j) - .5)) * 10.
+        fy = (j + .5 + .6 * (unit(rng_vals, 2, i, j) - .5)) * 10.
+        dx, dy = x - fx, y - fy
+        d2 = dx * dx + dy * dy
+        if d2 < .5:
+            return (222., 186., 70.)
+        if d2 < 5.5:
+            pink = unit(rng_vals, 3, i, j) < .6
+            return (214., 120., 150.) if pink else (236., 170., 90.)
+        if d2 < 9. and unit(rng_vals, 4, i, j) < .5:
+            return (110., 150., 96.)
+    elif name == 'towel_stripes':
+        for lo, hi, col in ((6., 11., (58., 90., 152.)), (12.5, 13.5, (190., 50., 50.)),
+                            (drop - 11., drop - 6., (58., 90., 152.)), (drop - 13.5, drop - 12.5, (190., 50., 50.))):
+            if lo <= y <= hi:
+                r, g, b = col
+    elif name in ('towel_red', 'towel_yellow'):
+        if 7. <= y <= 11. or drop - 11. <= y <= drop - 7.:
+            k *= .82
+    elif name == 'shirt_plaid':
+        mx, my = x % 14., y % 14.
+        if mx < 4.:
+            r, g, b = r + (40. - r) * .6, g + (70. - g) * .6, b + (52. - b) * .6
+        if my < 4.:
+            r, g, b = r + (34. - r) * .5, g + (40. - g) * .5, b + (70. - b) * .5
+        if abs(mx - 9.) < .35 or abs(my - 9.) < .35:
+            r, g, b = 210., 180., 70.
+    elif name == 'jeans':
+        s, c = sin_cos((x + y) * 1.4)
+        k *= 1. + .07 * c
+        leg = abs(x)
+        fade = smooth(26., 40., y) * (1. - smooth(58., 72., y)) * (1. - smooth(6., 16., abs(leg - 12.)))
+        r, g, b = r + (112. - r) * .35 * fade, g + (134. - g) * .35 * fade, b + (168. - b) * .35 * fade
+        if y < 5.:
+            k *= .88                                     # waistband
+        if abs(leg - (21.5 if y < 22. else 21.5 - (y - 22.) * 3. / 70.)) < .35 or 0. < leg - 3.6 < .35:
+            r, g, b = 190., 140., 70.                    # outer and inner seams, orange stitching
+    elif name in ('shirt_blue', 'shirt_white'):
+        if abs(x) < 1.6:
+            k *= .93                                     # button placket
+            if y > 6. and (y - 6.) % 9. < 1.1 and abs(x) < .6:
+                r, g, b = 236., 232., 220.               # buttons
+    elif name == 'tshirt_grey':
+        k *= 1. + .12 * (grain - .5)
+    elif name == 'dress_green':
+        row = floor(y / 6.)
+        dx = (x + (3. if row % 2 else 0.)) % 6. - 3.
+        dy = y % 6. - 3.
+        if dx * dx + dy * dy < .8:
+            r, g, b = 236., 232., 220.
+    elif name == 'pillowcase':
+        if y > drop - 9.:
+            k *= .94
+            if abs(y - (drop - 9.)) < .3:
+                k *= .8
+    elif name == 'shorts_khaki':
+        if 3. < y < 14. and 9. < abs(x) < 10.:
+            k *= .8                                      # pocket seams
+    return (r * k, g * k, b * k)
+
+
+def laundry(spec):
+    """The laundry atlas (Cloth_Laundry): fourteen garments hung on a line, each in its own padded cell: two bed
+    sheets (white, floral) two cells wide, towels (striped, red, yellow), shirts (blue, white, plaid), T-shirts
+    (yellow, heather grey), jeans, a green dress, a pillowcase and khaki shorts. Each hangs from the top edge of its
+    cell (the rope) on wooden or plastic pegs, sags between them, and carries folds that fan down from the pegs and
+    open toward the hem; the alpha is the garment's outline. textures.json lists every cell's UV rect (OBJ
+    convention, v up), its size in cm and its peg positions; the set owns its colours."""
+    W, H = spec['size_px']
+    seed = spec['seed']
+    px = LAUNDRY_PX_CM
+    cv = Canvas(W, H, (176., 170., 160.), 0., .9, alpha=0.)
+    for i in range(W * H):
+        cv.cavity[i] = 1.
+    grain = field(Noise(seed + 1, W, H, 512, 512), H)
+    R, G, B, HT, RO, CA, AL = cv.r, cv.g, cv.b, cv.height, cv.rough, cv.cavity, cv.alpha
+    out = {}
+    for index, (name, kind, col, row, span) in enumerate(LAUNDRY_CELLS):
+        x0, y0 = col * LAUNDRY_CELL_PX + LAUNDRY_PAD_PX, row * LAUNDRY_CELL_PX + LAUNDRY_PAD_PX
+        x1, y1 = (col + span) * LAUNDRY_CELL_PX - LAUNDRY_PAD_PX, (row + 1) * LAUNDRY_CELL_PX - LAUNDRY_PAD_PX
+        inner_w, inner_h = (x1 - x0) / px, (y1 - y0) / px
+        rng = Rng(seed + 100 + index)
+        outline, pins = garment_outline(kind, inner_w, rng)
+        assert all(abs(x) <= inner_w / 2. and 0. <= y <= inner_h for x, y in outline), name
+        drop = max(y for _, y in outline)
+        cx = (x0 + x1) / 2.
+        period = 2.6 + 1.2 * rng.next()
+        phase = rng.next()
+        rough = .85 if name == 'jeans' else .9
+        for i, a in poly_cover([(cx + x * px, y0 + y * px) for x, y in outline], W, H).items():
+            gx, gy = (i % W + .5 - cx) / px, (i // W + .5 - y0) / px
+            h = cloth_folds(gx, gy, pins, period, phase)
+            c = garment_colour(name, gx, gy, drop, grain[i], seed + 7 * index)
+            m = .84 + .16 * min(1., max(0., (h + 1.3) / 2.6))
+            R[i], G[i], B[i] = c[0] * m, c[1] * m, c[2] * m
+            HT[i], RO[i], CA[i], AL[i] = .8 * h, rough, 0., a
+        wood = rng.next() < .6
+        peg = (204., 176., 124.) if wood else pick(((.3, (70., 140., 200.)), (.25, (220., 80., 80.)),
+                                                    (.25, (240., 200., 60.)), (.2, (90., 180., 90.))), rng.next())
+        for p in pins:
+            box = [(cx + (p - .7) * px, y0 - .6 * px), (cx + (p + .7) * px, y0 - .6 * px),
+                   (cx + (p + .7) * px, y0 + 6.2 * px), (cx + (p - .7) * px, y0 + 6.2 * px)]
+            for i, a in poly_cover(box, W, H).items():
+                gx = (i % W + .5 - cx) / px - p
+                gy = (i // W + .5 - y0) / px
+                k = .8 + .2 * (1. - abs(gx) / .7)
+                if abs(gx) < .18 and gy > 2.5:
+                    k *= .55                             # the slit between the two halves
+                c = (150., 150., 152.) if 2.6 < gy < 3.4 else peg
+                R[i] += (c[0] * k - R[i]) * a
+                G[i] += (c[1] * k - G[i]) * a
+                B[i] += (c[2] * k - B[i]) * a
+                HT[i] += (1.6 - HT[i]) * a
+                RO[i] += ((.7 if wood else .4) - RO[i]) * a
+                CA[i] -= CA[i] * a
+                AL[i] = max(AL[i], a)
+        gw = max(x for x, _ in outline) - min(x for x, _ in outline)
+        out[name] = {'index': index, 'kind': kind,
+                     'uv': [round(x0 / W, 6), round(1. - y1 / H, 6), round(x1 / W, 6), round(1. - y0 / H, 6)],
+                     'px': [x0, y0, x1, y1], 'size_cm': [round(inner_w, 3), round(inner_h, 3)],
+                     'garment_cm': [round(gw, 2), round(drop, 2)],
+                     'pins_cm': [round(p + inner_w / 2., 2) for p in pins]}
+    cover = sum(1 for a in AL if a >= .5) / (W * H)
+    return cv.result(px, px, {'cells': out, 'px_per_cm': px, 'cell_px': LAUNDRY_CELL_PX, 'pad_px': LAUNDRY_PAD_PX,
+                              'rope': 'the top edge of each cell rect (v1); x of the pegs from the cell rect left edge',
+                              'cover': round(cover, 4)}, wrap_y=False)
+
+
 GENERATORS = {'membrane': membrane, 'ballast': ballast, 'tar': tar, 'sheet_metal': sheet_metal, 'siding': siding,
               'parging': parging, 'balusters': balusters, 'lattice': lattice, 'fence_boards': fence_boards,
               'creeper': creeper, 'lawn': lawn, 'pavers': pavers, 'soil': soil, 'crushed_stone': crushed_stone,
-              'buff_brick': buff_brick}
+              'buff_brick': buff_brick, 'lane_concrete': lane_concrete, 'cedar': cedar, 'fountain_grass': fountain_grass,
+              'pit_flowers': pit_flowers, 'iron_wrought': iron_wrought, 'laundry': laundry}
 
 
 # ------------------------------------------------------------------------------------------------
@@ -2101,7 +2997,7 @@ def build(key):
              'tiling': [round(1 / spec['tile_m'][0], 6), round(1 / spec['tile_m'][1], 6)],
              'mean_linear': mean, 'roughness_mean': round(channel_mean(maps['rough'], 0, alpha), 4),
              'layout': g['layout'], 'maps': {}, 'surface': spec['surface'], 'material': dict(SURFACES[spec['surface']]),
-             'keys': list(spec['keys']), 'uv': 'card' if card else 'metres', 'alpha': channels == 4,
+             'keys': list(spec['keys']), 'uv': spec.get('uv', 'card' if card else 'metres'), 'alpha': channels == 4,
              'base_color_srgb': to_srgb_hex(mean)}
     if card:
         entry['card_height_m'] = spec['card_height_m']
@@ -2178,8 +3074,13 @@ def check(out=OUT):
             _, _, raw = read_png((Path(out) / b['file']).read_bytes())
             assert hashlib.sha256(raw).hexdigest() == b['raw_sha256'], f'{b["file"]} is stale'
         assert entry['mean_linear'] == stored['mean_linear'], key
-        for field in ('own_colour', 'metallic'):
+        # What the apply step builds from the index: the material, the UV mode (metres, card or atlas), the keys,
+        # the card height, the colour authority and the atlas cells the laundry quads address.
+        for field in ('own_colour', 'metallic', 'uv', 'surface', 'material', 'keys', 'card_height_m', 'tiling',
+                      'layout', 'base_color_srgb'):
             assert entry.get(field) == stored.get(field), f'{key} {field}: rerun plateau_textures.py'
+    stale = sorted(set(index['sets']) - set(SETS))
+    assert not stale, f'{INDEX} lists sets the generator no longer makes: {stale}; rerun plateau_textures.py'
     return index
 
 

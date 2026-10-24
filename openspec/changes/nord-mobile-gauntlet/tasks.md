@@ -8,42 +8,45 @@ Read `design.md` first. `notes-host.md` gives the exact host commands. The lead 
 - [x] 1.3 Validate the structure: `OPENSPEC_TELEMETRY=0 npx -y @fission-ai/openspec@1.14.3 validate nord-mobile-gauntlet --strict`.
 
 ## 2. Engine-free model
-- [ ] 2.1 `Source/Quebec/QuebecGauntletModel.h`: route assembly from stops over `FRoadGraph`, driver step, run state machine, frame-stat accumulator (p50, p95, p99, hitches, per leg) and the expected-CVar parser.
-- [ ] 2.2 `Scripts/gauntlet_model_test.cpp` and `Scripts/test_gauntlet_model.py`: the route closes and is 2.5 to 3.5 km; a kinematic car at 30 Hz and 120 Hz completes it with lateral error under 2.5 m and no stall; percentiles match `Data/Gauntlet/fixtures/frametimes.csv`. Passes with g++ and clang++ under `-Wshadow -Werror`.
+- [x] 2.1 `Source/Quebec/QuebecGauntletModel.h`: route assembly from stops over the through roads of `FRoadGraph` (`FForwardRoads`, junctions rounded by `FinishLoop`), driver step, run state machine, frame-stat accumulator (p50, p95, p99, hitches, per leg) and the expected-CVar parser.
+- [x] 2.2 `Scripts/gauntlet_model_test.cpp` and `Scripts/test_gauntlet_model.py`: the route closes and is 3.0 to 4.0 km (the modelled driven line is 3,488 m); a kinematic car at 30 Hz and 120 Hz completes it with lateral error under 2.5 m and no stall; percentiles match `Data/Gauntlet/fixtures/frametimes.csv`. Passes with g++ and clang++ under `-Wshadow -Werror`.
 
 ## 3. Route
-- [ ] 3.1 `Scripts/make_gauntlet_route.py` generates `Source/Quebec/QuebecGauntletRoute.h` from the replica manifest cameras.
-- [ ] 3.2 `Scripts/test_gauntlet_route.py` fails when the header and the manifest disagree.
+- [x] 3.1 `Scripts/make_gauntlet_route.py` generates `Source/Quebec/QuebecGauntletRoute.h` from the replica manifest cameras.
+- [x] 3.2 `Scripts/test_gauntlet_route.py` fails when the header and the manifest disagree.
 
 ## 4. Game module
-- [ ] 4.1 `QuebecGauntlet.h/.cpp`: `UQuebecGauntletSubsystem` with the `-NordGauntlet*` flags, car seating and driving, CSV capture, holds and stills, `NORD_GAUNTLET` log lines, `route.json` and the exit codes.
-- [ ] 4.2 `Source/QuebecGauntletTest/QuebecGauntletController.h/.cpp`: `UQuebecGauntletController` in its own module, which depends on Gauntlet and is left out of Shipping. It meets the subsystem only through the console variables `nord.GauntletController` and `nord.GauntletExit`.
-- [ ] 4.3 `Quebec.uproject` (the `QuebecGauntletTest` module and the Gauntlet plugin, both denied in Shipping), `QuebecSky.cpp` (`NordGauntlet` QA flag, and a settled weather switch under that flag).
-- [ ] 4.4 Stub `CsvProfiler.h` and the Gauntlet stub headers, marked unverified, plus a selftest case.
-- [ ] 4.5 `Tools/SyntaxCheck/check.sh --both` and `link.sh --both -j 2` pass, for `Source/Quebec` and with `--src ../../Source/QuebecGauntletTest`.
+- [x] 4.1 `QuebecGauntlet.h/.cpp`: `UQuebecGauntletSubsystem` with the `-NordGauntlet*` flags, car seating and driving, CSV capture, holds and stills, `NORD_GAUNTLET` log lines, `route.json` and the exit codes.
+- [x] 4.2 `Source/QuebecGauntletTest/QuebecGauntletController.h/.cpp`: `UQuebecGauntletController` in its own module, which depends on Gauntlet and is left out of Shipping. It meets the subsystem only through the console variables `nord.GauntletController` and `nord.GauntletExit`.
+- [x] 4.3 `Quebec.uproject` (the `QuebecGauntletTest` module and the Gauntlet plugin, both denied in Shipping), `QuebecSky.cpp` (`NordGauntlet` QA flag, and a settled weather switch under that flag).
+- [x] 4.4 Stub `CsvProfiler.h` and the Gauntlet stub headers, marked unverified, plus a selftest case.
+- [x] 4.5 `Tools/SyntaxCheck/check.sh --both` and `link.sh --both -j 2` pass, for `Source/Quebec` and with `--src ../../Source/QuebecGauntletTest`.
 
 ## 5. C# test node (host compile)
 - [ ] 5.1 `Build/Scripts/NordGauntlet.Automation.csproj` and `Build/Scripts/NordMobileLoop.cs` with the `mode`, `size`, `sky`, `laps`, `run` and `execcmds` params.
 
 ## 6. Python runner
-- [ ] 6.1 `Scripts/gauntlet_loop.py` with `self-check`, `route`, `native` (RunUnreal or `--direct`), `stream`, `reference`, `tune`, `report` and `write-profile`.
-- [ ] 6.2 `Scripts/gauntlet_metrics.py`: CSV parse, legs, hitch rule, gate verdicts with pass, fail, unverified and contended, numpy SSIM, optional FLIP, `review.html`.
-- [ ] 6.3 `Scripts/gauntlet_tune.py`: knob ladders and dependencies, candidate ExecCmds and expected-CVar files, profile section read and write, greedy search, stop rule.
-- [ ] 6.4 `Data/Gauntlet/loop.json` with stops, speeds, holds, delays, laps, skies, sizes, budgets, knobs, ceiling and baseline.
-- [ ] 6.5 `test_gauntlet_metrics.py`, `test_gauntlet_tune.py` (fake measure: search order, stop rule, fallback, ties) and `test_gauntlet_loop.py` (fake RunUAT and sampler: command lines, folder layout, sky refusal, contention label) pass, and `gauntlet_loop.py self-check` passes.
+- [x] 6.1 `Scripts/gauntlet_loop.py` with `self-check`, `route` (also for a stream run), `native` (RunUnreal or `--direct`), `stream` (with the `--look` input row), `reference`, `tune` (with `--reference` for the same commit and build), `confirm`, `report` and `write-profile --approved`.
+- [x] 6.2 `Scripts/gauntlet_metrics.py`: CSV parse, legs, hitch rule, gate verdicts with pass, fail, unverified and contended, numpy SSIM, optional FLIP, `review.html`.
+- [x] 6.3 `Scripts/gauntlet_tune.py`: knob ladders and dependencies, candidate ExecCmds and expected-CVar files, profile section read and write, greedy search, stop rule.
+- [x] 6.4 `Data/Gauntlet/loop.json` with stops, speeds, holds, delays, laps, skies, sizes, budgets, knobs, ceiling and baseline.
+- [x] 6.5 `test_gauntlet_metrics.py`, `test_gauntlet_tune.py` (fake measure: search order, stop rule, fallback, ties) and `test_gauntlet_loop.py` (fake RunUAT and sampler: command lines, folder layout, sky refusal, contention label) pass, and `gauntlet_loop.py self-check` passes.
+- [x] 6.6 `confirm_candidate` starts a confirmation run only when its estimate (`gauntlet_tune.run_estimate_s`) ends before `--until`. A result that the window cut counts as not run: `confirm` runs it again, the baseline first, and replaces it. `test_gauntlet_loop.py` checks both with a fake clock.
+- [ ] 6.7 Every run's expected-CVar file also holds the `loop.json` `fixed` CVars that the candidate does not set, so the readback checks `r.AntiAliasingMethod 4`. `test_gauntlet_loop.py` must first stop requiring the phone run's expect file to equal the profile section exactly.
 
 ## 7. Browser sampler
-- [ ] 7.1 `stream-sample.mjs`: `--frames`, `--pin`, `--trigger`, `--out`, `--latency`, and the new summary fields.
-- [ ] 7.2 `config.mjs` `pinnedLevel`, `player.js` skips adaptation when pinned, `build.mjs` defines `NORD_QA_PIN` (false by default).
-- [ ] 7.3 `stream-sample.test.mjs` and `config.test.mjs` cover the new fields and the sizes 1412x652, 652x1412, 1058x488 and 488x1058; `npm test` passes in `Browser/`.
+- [x] 7.1 `stream-sample.mjs`: `--frames`, `--pin`, `--trigger`, `--out`, `--latency`, and the new summary fields.
+- [x] 7.2 `config.mjs` `pinnedLevel`, `player.js` skips adaptation when pinned, `build.mjs` defines `NORD_QA_PIN` (false by default) and refuses `NORD_QA_PIN=1` when `VERCEL` is set.
+- [x] 7.3 `stream-sample.test.mjs` and `config.test.mjs` cover the new fields, the page clock origin (`timeOrigin`), the production pin define and the sizes 1412x652, 652x1412, 1058x488 and 488x1058; `npm test` passes in `Browser/`.
+- [ ] 7.4 `stream-sample.mjs` stops sampling at a trigger line equal to `END`, which the runner writes when the lap ends, instead of taking a shot named `END` and running on to `--seconds`. A test covers it.
 
 ## 8. Launcher
-- [ ] 8.1 `browser_streaming.py`: `NORD_STREAM_QUALITY=current|phone|file:<path>` and `NORD_STREAM_GAUNTLET=<run dir>`, recorded in `lifecycle.json`.
-- [ ] 8.2 `browser_streaming.py self-check` covers the unchanged default line, the phone and file values, the path refusal and the sky refusal.
+- [x] 8.1 `browser_streaming.py`: `NORD_STREAM_QUALITY=current|phone|file:<path>` and `NORD_STREAM_GAUNTLET=<run dir>`, recorded in `lifecycle.json`.
+- [x] 8.2 `browser_streaming.py self-check` covers the unchanged default line, the phone and file values, the path refusal and the sky refusal.
 
 ## 9. Phone profile
-- [ ] 9.1 `Config/DefaultDeviceProfiles.ini` with `[NordPhoneStream DeviceProfile]` equal to today's `QUALITY`.
-- [ ] 9.2 A parse test checks that the section and `QUALITY` hold the same CVars.
+- [x] 9.1 `Config/DefaultDeviceProfiles.ini` with `[NordPhoneStream DeviceProfile]` equal to today's `QUALITY`.
+- [x] 9.2 A parse test checks that the section holds the same CVars as `QUALITY`, or as the candidate in the approval record that `write-profile --approved` writes.
 
 ## 10. Docs
 - [x] 10.1 `Verification/QAPlan.md` names the 60 FPS cap and points to the gauntlet gates.
@@ -56,12 +59,12 @@ Read `design.md` first. `notes-host.md` gives the exact host commands. The lead 
 - [ ] 11.4 Confirm the CSV column names, including GPUTime.
 - [ ] 11.5 First measured lap: loop length, per-leg p95 ranking, and the summary line against the CSV.
 - [ ] 11.6 Ceiling references twice; run-to-run SSIM at least 0.98.
-- [ ] 11.7 Baseline twice at the start of the window.
+- [ ] 11.7 Baseline twice at the start of the window: the tune's own `baseline-a` and `baseline-b` runs set the noise tie. Run no separate baseline runs (notes-host step 6).
 - [ ] 11.8 Overnight tune in an agreed GPU window.
-- [ ] 11.9 Confirmation: 3 laps each for the winner and the baseline, both skies, landscape and portrait.
-- [ ] 11.10 Stream runs: solo at rung 0 and rung 1, landscape and portrait, plus the two-viewer and relay rows.
+- [ ] 11.9 Confirmation: 3 laps each for the winner and the baseline, both skies, landscape and portrait. After a stream row or the co-op guard drops a candidate, `gauntlet_loop.py confirm <tune folder>` confirms the next one.
+- [ ] 11.10 Stream runs: solo at rung 0 and rung 1, landscape and portrait, the input row (`stream --look`, lateral error at most 2.5 m), plus the two-viewer and relay rows. Check by eye that the frame times line up with the host log (the shared clock is unverified).
 - [ ] 11.11 Manual phone run on a physical Android and iOS phone, recorded on its own.
-- [ ] 11.12 User review of `review.html`; run `write-profile` only after approval.
+- [ ] 11.12 User review of `review.html`; run `write-profile --approved` only after approval, and commit the ini and its approval record.
 - [ ] 11.13 Commit the round evidence and score round 1 in `docs/gauntlet/gta-mobile.md`.
 - [ ] 11.14 Archive this change and review the canonical specs.
 
