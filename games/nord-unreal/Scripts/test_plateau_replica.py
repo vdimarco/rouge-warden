@@ -12,8 +12,9 @@ Trees/manifest.json, else the shared mesh), the editor side against a fake unrea
 street and park tree of the city's inventory in street_trees.json, sidewalk pits 65-80 cm behind the curb and never on
 the carriageway, curb extensions only at corners or where the data lists one, no trunk on carriageway or parking
 asphalt (trees mapped there re-seated from the inventory's side, place and distance, or listed), their late-October
-colours and conifer kinds, each pit's iron guard and planting cards, the sunken aged-concrete ruelle gutter on its own UVs and the dull
-crack seal, ruelles paved to the fences, curb-to-building coverage on the capture streets,
+colours and conifer kinds, each pit's iron guard and planting cards, the sunken aged-concrete ruelle gutter on its own
+UVs above the old OSM road, the dull asphalt overlays, ruelles paved to the fences and, behind the street-front yards,
+out to the lot lines, curb-to-building coverage on the capture streets,
 textured front lawns and card plants (crossed fountain-grass cards for the ornamental grass), and no open step at a
 raised slab's edge (risers at aprons and ramps); and the lane life: laundry poles at the back fence with lines rising
 to them, each strand a true catenary (closed-form fixtures and every line's record), the washing as folded strips of
