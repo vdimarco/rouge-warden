@@ -923,9 +923,20 @@ def check_stream_one_command(out):
     host_log = out.parent / f"host-{run.name}.log"
     host_log.write_text("")
     gone = next(pid for pid in range(999_999, 900_000, -1) if not Path(f"/proc/{pid}").exists())
-    L.write_json(L.LIFECYCLE, {"launcher_pid": 1, "phase": "running", "stream_quality": browser_streaming.stream_quality("current"),
-                               "gauntlet": {"run": str(run), "host_log": str(host_log), "sky": PINNED.split()},
-                               "children": [{"name": "host", "pid": gone}]})
+    lifecycle = {"launcher_pid": 1, "phase": "running", "stream_quality": browser_streaming.stream_quality("current"),
+                 "gauntlet": {"run": str(run), "host_log": str(host_log), "sky": PINNED.split()},
+                 "children": [{"name": "host", "pid": gone}]}
+    # Phase starting: the launcher has not started NordFriend1 yet, or not seen it welcomed. GpuWatch reads the children
+    # once, so a NordFriend1 started after the stream command would make the row contended. The runner waits for running.
+    L.write_json(L.LIFECYCLE, dict(lifecycle, phase="starting"))
+    try:
+        L.stream_run(SMALL, run, pin=0, seconds=1)
+    except RuntimeError as error:
+        assert "still starting" in str(error) and "NORD host and friend are connected" in str(error), error
+    else:
+        raise AssertionError("a lifecycle that is still starting must be refused")
+    assert not (run / "stream").exists() and not (run / "run.json").exists(), "a refused row starts nothing"
+    L.write_json(L.LIFECYCLE, lifecycle)
     for options, text in (({"slot": "NordFriend1"}, "Every gauntlet row samples NordHost"),
                           ({"slot": "NordFriend1", "relay": True}, "Every gauntlet row samples NordHost"),
                           ({"slot": "NordFriend1", "two_viewers": True}, "Every gauntlet row samples NordHost")):

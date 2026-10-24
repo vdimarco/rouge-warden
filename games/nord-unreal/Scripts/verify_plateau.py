@@ -304,6 +304,27 @@ def verify_sky_water():
     REPORT['checks'].append('nord-sky-water pond, rain streaks and wet-ground, window and exposure wrappers intact')
 
 
+def verify_vegetation(actors, labels, tree_mesh):
+    """The one saved QuebecVegetation actor and its old summer trees on tree_mesh. Returns the instance count."""
+    from plateau_rendering import planned_vegetation, tree_positions
+    assert sum(actor.get_class().get_name() == 'QuebecVegetation' for actor in actors) == 1, 'Duplicate surveyed vegetation actors'
+    assert sum(actor.get_actor_label() == 'Plateau mapped vegetation' for actor in actors) == 1, 'Duplicate mapped tree labels'
+    vegetation = labels['Plateau mapped vegetation']
+    trees = vegetation.get_editor_property('trees')
+    # One instance per Streets/street_trees.json row until apply_plateau_replica.py puts the street trees on their
+    # species meshes; none after it (it clears them, and plateau_rendering places none once those exist).
+    expected = planned_vegetation(actors)
+    assert trees.static_mesh == tree_mesh and trees.get_instance_count() == expected
+    assert trees.get_collision_enabled() == u.CollisionEnabled.NO_COLLISION
+    for i, (x, y, seed) in enumerate(tree_positions()[:expected]):
+        transform = trees.get_instance_transform(i, True)
+        assert math.dist((transform.translation.x, transform.translation.y), (x, y)) < .1, seed
+    REPORT['tree_layer'] = {'mapped_tree_instances': trees.get_instance_count()}
+    REPORT['checks'].append(f'{expected:,} saved surveyed tree instances at the street_trees.json coordinates'
+                            if expected else 'surveyed trees on the replica species meshes; the old summer trees cleared')
+    return expected
+
+
 def run():
     data = json.loads((ROOT / 'Data/Plateau/layout.json').read_text())
     baseline = json.loads((ROOT / 'Data/LaFontaine/layout.json').read_text())
@@ -458,28 +479,12 @@ def run():
         assert u.MaterialEditingLibrary.has_material_usage(slot.material_interface, u.MaterialUsage.MATUSAGE_NANITE), slot.material_interface.get_path_name()
     REPORT['checks'].append('seven saved street trees at authored coordinates using Nanite mesh/material usage')
 
-    from plateau_rendering import tree_positions
     assert not municipal and 'Environment architecture accents' not in labels, 'Legacy Warden architecture overlaps baked Plateau geometry'
     assert not any(actor.get_class().get_name() == 'QuebecParkInstances' for actor in actors), 'Legacy Comic park instances overlap baked Plateau geometry'
     assert not any(actor.get_actor_label() == 'Comic park inventory trunks' or
                    actor.get_actor_label().startswith('Comic park inventory crowns') for actor in actors), 'Legacy Warden trees overlap baked Plateau geometry'
-    assert sum(actor.get_class().get_name() == 'QuebecVegetation' for actor in actors) == 1, 'Duplicate surveyed vegetation actors'
-    assert sum(actor.get_actor_label() == 'Plateau mapped vegetation' for actor in actors) == 1, 'Duplicate mapped tree labels'
-    vegetation = labels['Plateau mapped vegetation']
-    trees = vegetation.get_editor_property('trees')
-    # One instance per Streets/street_trees.json row until apply_plateau_replica.py puts the street trees on their
-    # species meshes; none after it (it clears them, and plateau_rendering places none once those exist).
-    from plateau_rendering import planned_vegetation
-    expected = planned_vegetation(actors)
-    assert trees.static_mesh == tree_mesh and trees.get_instance_count() == expected
-    assert trees.get_collision_enabled() == u.CollisionEnabled.NO_COLLISION
-    for i, (x, y, seed) in enumerate(tree_positions()[:expected]):
-        transform = trees.get_instance_transform(i, True)
-        assert math.dist((transform.translation.x, transform.translation.y), (x, y)) < .1, seed
+    verify_vegetation(actors, labels, tree_mesh)
     REPORT['integration_mode'] = 'baked-plateau-environment-with-warden-gameplay'
-    REPORT['tree_layer'] = {'mapped_tree_instances': trees.get_instance_count()}
-    REPORT['checks'].append(f'{expected:,} saved surveyed tree instances at the street_trees.json coordinates'
-                            if expected else 'surveyed trees on the replica species meshes; the old summer trees cleared')
     resident_data = json.loads((ROOT/'Data/ParkComic/layout.json').read_text())['residents']
     assert len(resident_data) == 14
     comic_residents = [actor for actor in actors if actor.get_class().get_name() == 'QuebecParkResident']
