@@ -424,8 +424,8 @@ def native_gates(analysis, loop, vram_mib=None, log_text=None, cvar_mismatches=N
     gates.append(gate("frame_p99", p99, native["p99_max_ms"], note=note))
     slow = whole["over_50ms"] * 100 / whole["frames"] if whole else None
     gates.append(gate("slow_frames_percent", slow, native["slow_max_percent"], unit="%"))
-    rate, long_frames, _ = hitch_rule(whole, loop)
-    gates.append(gate("hitches_per_30s", rate, native["hitches_per_30s_max"], unit="per 30 s",
+    most, long_frames, _ = hitch_rule(whole, loop)
+    gates.append(gate("hitches_per_30s", most, native["hitches_per_30s_max"], unit="per 30 s",
                       note=f"most frames over {native['hitch_ms']} ms in any {native['hitch_window_s']} s; "
                            f"{whole['over_66_7ms']} in {whole['seconds']} s" if whole else None))
     gates.append(gate("long_frames", long_frames, native["long_frames_max"], unit="frames",
