@@ -368,8 +368,9 @@ def load_yard_trees(root=ROOT):
     """Rows of Plex/yard_trees.json, checked; None when plateau_plex.py has not written the file yet.
 
     Each row is {x, y, z, yaw, scale, kind}: replica frame (x east, y north, z up, cm), yaw in degrees, scale on
-    the shared tree mesh (about 4.55 m tall and 3 to 4.3 m across at 1), kind one of TREE_KINDS (the old maple and
-    elm stand for norway_maple and linden), and optionally height_cm (else scale x 4.55 m). A file holding
+    the shared tree mesh (about 4.55 m tall and 3 to 4.3 m across at 1), kind one of TREE_KINDS (the old maple
+    stands for norway_maple; elm is the vase kind since the fourth pass), and optionally height_cm (else scale x
+    4.55 m). A file holding
     {"trees": [...]} is read the same way. Each row also carries its species and target height.
     """
     path = Path(root) / 'Data/Plateau/ReplicaGeometry' / YARD_TREES

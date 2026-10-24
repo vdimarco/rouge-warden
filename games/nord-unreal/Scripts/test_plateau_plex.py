@@ -2025,7 +2025,7 @@ def _check_walls_roofs_district(manifest, stats, fronts, keep):
     # Rear-surfaces pass (cap 3.2 million): blinds or curtains behind ~23,000 rear, background and post-1945 windows and
     # patio doors, gallery privacy screens, the background masses' roofs and roof props and the board gates' frames add
     # ~86,000 triangles; no new key, 1,199 batches at 190 m. Fourth pass (batch cap 1,350, triangles unchanged at
-    # 3.2 million): Leaf_Cedar, three painted fence-board keys, Chain_Link and the Mentana slab's three keys take 1,342
+    # 3.2 million): Leaf_Cedar, three painted fence-board keys, Chain_Link and the Mentana slab's three keys take 1,341
     # batches at 190 m (a 1,200 cap would widen the tile to 237.5 m); the slab drops half the old balcony bands, so the
     # cedar cards, chain-link cards and lattice tops fit under the old triangle cap.
     assert P.TRIANGLE_BUDGET <= 3200000 and P.MAX_BATCHES <= 1350 and manifest['batching']['tile_cm'] == 19000

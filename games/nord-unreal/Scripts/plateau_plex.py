@@ -85,7 +85,7 @@ TILE_CM = 4750            # base grid; widened in whole multiples only when the 
 # yards pass adds 7 more keys (lattice, fence boards, creeper, four ground covers), 1,110 batches at 190 m. A batch is
 # one Nanite static-mesh actor, which is cheap. Raised to 1,350 (the agreed ceiling is 1,400) by the fourth pass: its 8
 # keys (Leaf_Cedar cards, three painted fence-board keys and Chain_Link on every fenced tile, and the Habitations De
-# Mentana's Concrete_Exposed, Paint_Teal and Rail_Baluster_Teal) take 1,342 batches at the 190 m tile, where a 1,200
+# Mentana's Concrete_Exposed, Paint_Teal and Rail_Baluster_Teal) take 1,341 batches at the 190 m tile, where a 1,200
 # cap would widen it to 237.5 m and split the Iron batches at the triangle cap.
 MAX_BATCHES = 1350
 MAX_BATCH_TRIANGLES = 60000
