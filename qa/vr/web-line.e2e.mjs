@@ -23,17 +23,15 @@ try {
   await page.evaluate(() => { G.renderer.setAnimationLoop(null); G.test.hold(true); G.test.settings({ verse: "off", bloom: "off" }); });
 
   const shot = await page.evaluate(() => {
-    let spot = null;
-    for (let z = 80; z < 700 && !spot; z += 15) {
-      for (let x = -300; x < 300 && !spot; x += 15) if (G.city.isWater(x, z)) spot = { x, z };
-    }
-    if (!spot) spot = { x: G.city.start.x, z: G.city.start.z };
-    G.test.teleport(spot.x, 48, spot.z);
-    G.rigYaw = 0;
+    const building = G.city.colliders.find(c => c.type === "box" && c.tag === "building" && c.maxY > 100);
+    if (!building) throw Error("No real building for web fixture");
+    const spot = { x: building.minX - 35, z: (building.minZ + building.maxZ) / 2 };
+    G.test.teleport(spot.x, 40, spot.z);
+    G.rigYaw = -Math.PI / 2;
     // The draw leans the camera and then puts it back. With the lean off, the pixels and the
     // projection are the same camera, so a sample lands on the thread.
-    if (G.flatcam) { G.flatcam.bankOn = false; G.flatcam.shakeOn = false; G.flatcam.reset(0, -0.2); }
-    G.P.vel.x = 0; G.P.vel.y = 0; G.P.vel.z = -4; G.P.onGround = false; G.P.wall = null;
+    if (G.flatcam) { G.flatcam.bankOn = false; G.flatcam.shakeOn = false; G.flatcam.reset(-Math.PI / 2, -0.2); }
+    G.P.vel.x = 4; G.P.vel.y = 0; G.P.vel.z = 0; G.P.onGround = false; G.P.wall = null;
     G.test.press(0, true);
     let attached = false, state = "";
     for (let n = 0; n < 20; n++) {
@@ -111,7 +109,7 @@ try {
       }
     }
     return {
-      spot, attached, state, easy: !!r.easy, tension: r.tension, offscreen: !!(window.__test && window.__test.swing && window.__test.swing.anchor.offscreen),
+      spot, attached, state, easy: !!r.easy, tag: r.target?.tag, tension: r.tension, offscreen: !!(window.__test && window.__test.swing && window.__test.swing.anchor.offscreen),
       mesh: mesh ? { visible: mesh.visible, count: mesh.count, name: mesh.name } : null,
       canvasHidden: !cv || cv.hidden,
       near, far, hits: hits.length, sagPx, speed: Math.hypot(G.P.vel.x, G.P.vel.y, G.P.vel.z),
@@ -135,7 +133,7 @@ try {
   check(shot.attached && shot.easy, "the easy web attaches in the 3D scene", shot);
   check(shot.mesh && shot.mesh.visible && shot.mesh.count > 0 && shot.mesh.name === "easyWeb", "the web is the world-space mesh, not a screen stroke", shot.mesh);
   check(shot.canvasHidden || shot.speed > 12, "the overlay stays hidden until the paper speed lines come on", { hidden: shot.canvasHidden, speed: shot.speed });
-  check(shot.offscreen, "the sky anchor is off the screen", shot.offscreen);
+  check(shot.tag === "building", "the web attaches to a real building", shot.tag);
   check(shot.near.onScreen && shot.near.width >= 1 && shot.near.width <= 5, "near the hand the line is about 2 px (" + (shot.near.width) + ")", shot.near);
   check(shot.far.onScreen && shot.far.width >= 1 && shot.far.width <= 5, "farther along, the line is still about 2 px (" + (shot.far.width) + ")", shot.far);
   check(shot.near.onScreen && shot.far.onScreen && Math.abs(shot.near.width - shot.far.width) <= 2, "the width does not change with distance", { near: shot.near.width, far: shot.far.width });
