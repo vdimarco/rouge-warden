@@ -2,7 +2,7 @@ import {newPage,open,close,enterXR,checker,watchdog} from './lib.mjs';
 const {check,done}=checker('word uploads');watchdog(240000,'word uploads');
 try{
  const p=await newPage({width:640,height:360});await p.addInitScript(()=>{window.AudioContext=window.webkitAudioContext=undefined;});
- await p.route(/\/vr\/js\/fx\.js\?upload-reference$/,async route=>{const response=await route.fetch(),s=await response.text();const bounded=/function dirty\(\) \{[\s\S]*?\n  \}/;await route.fulfill({response,body:s.replace(bounded,'function dirty() { for (const a of uploads) { a.clearUpdateRanges(); a.needsUpdate = true; } }')});});
+ await p.route(/\/vr\/js\/fx\.js\?upload-reference$/,async route=>{const response=await route.fetch(),s=await response.text();const bounded=/function dirty\([^)]*\) \{[\s\S]*?\n  \}/;await route.fulfill({response,body:s.replace(bounded,'function dirty() { for (const a of uploads) { a.clearUpdateRanges(); a.needsUpdate = true; } }')});});
  await open(p,'?nosw&skipintro');await p.waitForFunction(()=>G.viewDone);await enterXR(p,'desktop');await p.waitForFunction(()=>G.state==='play');
  const result=await p.evaluate(async()=>{
   G.renderer.setAnimationLoop(null);const THREE=await import('three'),candidate=await import('./js/fx.js'),reference=await import('./js/fx.js?upload-reference'),renderer=G.renderer,gl=renderer.getContext();
@@ -12,10 +12,12 @@ try{
   const pixels=p=>{renderer.render(p.scene,camera);const a=new Uint8Array(gl.drawingBufferWidth*gl.drawingBufferHeight*4);gl.readPixels(0,0,gl.drawingBufferWidth,gl.drawingBufferHeight,gl.RGBA,gl.UNSIGNED_BYTE,a);return a;};const rows=[];
   try{
    for(const p of pairs){spawn(p,1);renderer.render(p.scene,camera);}
-   const sample=(label,n)=>{bytes=0;const a=pixels(pairs[0]),referenceBytes=bytes;bytes=0;const b=pixels(pairs[1]);let different=0,varied=0;for(let i=0;i<a.length;i++){if(a[i]!==b[i])different++;if(i%4!==3&&a[i]!==a[i%4])varied++;}rows.push({label,n,bytes,referenceBytes,expected:n*24*4,different,varied,count:pairs[1].fx.meshes.words.count,info:pairs[1].fx.info().words});};
+   const sample=(label,n,expected=n*24*4)=>{bytes=0;const a=pixels(pairs[0]),referenceBytes=bytes;bytes=0;const b=pixels(pairs[1]);let different=0,varied=0;for(let i=0;i<a.length;i++){if(a[i]!==b[i])different++;if(i%4!==3&&a[i]!==a[i%4])varied++;}rows.push({label,n,bytes,referenceBytes,expected,different,varied,count:pairs[1].fx.meshes.words.count,info:pairs[1].fx.info().words});};
    for(const p of pairs){p.fx.word('BONK',{x:2,y:2,z:0},{size:1});p.fx.word('THWIP',{x:-2,y:2,z:0},{size:1});}sample('spawn before update',3);
    for(const n of [1,3,0,7,16,2]){for(const p of pairs)spawn(p,n);sample('population',n);}
+   for(const p of pairs){spawn(p,16);renderer.render(p.scene,camera);p.fx.word('BONK',{x:2,y:2,z:0},{size:1});p.fx.update(.01,head);}sample('full replacement before update',16);
    for(const p of pairs){spawn(p,3);p.fx.word('BONK',{x:2,y:2,z:0},{size:1,life:2});p.fx.update(.7,head);}sample('swap removal',1);
+   for(const p of pairs)p.fx.update(.01,head);sample('animation only',1,80);
    for(const p of pairs)p.fx.update(3,head);sample('expired',0);
    for(const p of pairs){spawn(p,2);p.fx.setVisible(false);p.fx.update(.1,head);}sample('hidden',0);
    for(const p of pairs)p.fx.setVisible(true);sample('resume',2);
