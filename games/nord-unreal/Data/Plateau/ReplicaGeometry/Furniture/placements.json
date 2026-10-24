@@ -17,8 +17,8 @@
   "sign_street": 53,
   "street_name_corners": 53,
   "sign_oneway": 154,
-  "sign_parking": 723,
-  "total": 1712,
+  "sign_parking": 724,
+  "total": 1713,
   "osm_lamps_inside": 266,
   "osm_hydrants_inside": 104,
   "osm_bixi_inside": 15,
@@ -29,7 +29,7 @@
  "source_sha256": {
   "Data/LaFontaine/osm.xml": "fe4410d45007a627bf6d9b9ddeeae329fa9cdd7492dfb5fa6beff851e7cf8f86",
   "Data/LaFontaine/layout.json": "4238d6ed45d5fb890e0f8dbcb672de0803c6dc7079b0b6a86b386d82ebbb4250",
-  "Scripts/plateau_replica.py": "fe5408396ffd030e5f87558954cd09325650f1be8dc66346d73961b42ba518a3",
+  "Scripts/plateau_replica.py": "1e741b18acd665c685b6c9451c726e113f79676e876e6cd126e2828b41f034ce",
   "Scripts/prepare_lafontaine.py": "e7b6e5f068a96ee7306b1fff247fa73158f5cf7c343dc5510ab8cce92ee3c924",
   "Data/Plateau/BaseGeometry/Marking.obj": "2d82cbca59041aa6af5e6f3fffaf6a01b2c3e672eea9732e8a5fecbb7cee35dd",
   "Data/Plateau/ReplicaGeometry/Plex/fronts.json": "c22c35ac4dac8ef8f2fbe9fc7ee2f29dc25bf694b59be2e77edaeb6324e5cabd",
@@ -26579,13 +26579,45 @@
   {
    "prop": "sign_parking",
    "position": [
-    38441.46,
-    57311.82,
+    36462.71,
+    58637.86,
     18.0
    ],
    "yaw": 326.17,
    "scale": 1.0,
-   "variant_seed": 621805,
+   "variant_seed": 11418,
+   "collision": true,
+   "ground": "sidewalk",
+   "code": "R-PF",
+   "text": "\\P 9h-23h EXCEPTÉ S3R",
+   "arrow": "right"
+  },
+  {
+   "prop": "sign_parking",
+   "position": [
+    38891.22,
+    57010.41,
+    18.0
+   ],
+   "yaw": 326.17,
+   "scale": 1.0,
+   "variant_seed": 893005,
+   "collision": true,
+   "ground": "sidewalk",
+   "code": "SD-TT",
+   "text": "\\P EN TOUT TEMPS",
+   "arrow": "right"
+  },
+  {
+   "prop": "sign_parking",
+   "position": [
+    41490.05,
+    55268.82,
+    18.0
+   ],
+   "yaw": 326.17,
+   "scale": 1.0,
+   "variant_seed": 136040,
    "collision": true,
    "ground": "sidewalk",
    "code": "SD-TT",
@@ -26595,34 +26627,18 @@
   {
    "prop": "sign_parking",
    "position": [
-    40941.4,
-    55636.49,
+    43509.57,
+    53915.45,
     18.0
    ],
    "yaw": 326.17,
    "scale": 1.0,
-   "variant_seed": 554297,
+   "variant_seed": 207378,
    "collision": true,
    "ground": "sidewalk",
-   "code": "SD-TT",
-   "text": "\\P EN TOUT TEMPS",
+   "code": "AD-TT",
+   "text": "\\A EN TOUT TEMPS",
    "arrow": "left"
-  },
-  {
-   "prop": "sign_parking",
-   "position": [
-    43476.35,
-    53937.71,
-    18.0
-   ],
-   "yaw": 146.17,
-   "scale": 1.0,
-   "variant_seed": 378880,
-   "collision": true,
-   "ground": "sidewalk",
-   "code": "SD-TT",
-   "text": "\\P EN TOUT TEMPS",
-   "arrow": "both"
   },
   {
    "prop": "sign_parking",
