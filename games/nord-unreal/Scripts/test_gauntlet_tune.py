@@ -118,8 +118,11 @@ def check_files_and_profile():
         assert "\n" not in line and line.endswith("t.MaxFPS 60"), line
         assert "sg.ShadowQuality 2" in line and "r.Shadow.Virtual.Enable 1" in line and "r.ScreenPercentage 100" in line
         pairs = [row.split("=", 1) for row in expect.read_text().splitlines() if row and not row.startswith("#")]
-        assert len(pairs) == len({name for name, _ in pairs}) == len(candidate["cvars"]), "each CVar once"
+        assert len(pairs) == len({name for name, _ in pairs}), "each CVar once"
         assert dict(pairs)["sg.ShadowQuality"] == "2" and dict(pairs)["r.ScreenPercentage"] == "100"
+        # The readback also checks the fixed CVars the candidate does not set, so a profile that turns TSR off fails.
+        assert set(dict(pairs)) == set(candidate["cvars"]) | set(LOOP["fixed"]) and "r.AntiAliasingMethod" not in candidate["cvars"]
+        assert all(T.values_match(value, dict(pairs)[name]) for name, value in LOOP["fixed"].items()), pairs
 
     # DeviceProfiles: the first written profile equals QUALITY, the writer round-trips and leaves other text alone.
     other = ("; Project device profiles.\n[DeviceProfiles]\n+DeviceProfileNameAndTypes=Linux,Linux\n\n"

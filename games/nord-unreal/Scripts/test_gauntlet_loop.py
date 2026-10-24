@@ -472,9 +472,16 @@ def check_mismatch_and_phone():
     assert "-DeviceProfile=NordPhoneStream" in command and not any(a.startswith("-ExecCmds=") for a in command)
     assert not (run / "quality.execcmds").exists() and "-NordHour=15" in command and "-NordWeather=Clear" in command
     expected = L.expected_from_file(run / "quality.expect")
-    assert T.same_cvars(expected, T.read_profile(T.PROFILES_INI.read_text())["cvars"]) and verdict["status"] == "pass", failing(verdict)
+    # The section's CVars, plus the fixed CVars it does not set (TSR comes from DefaultEngine.ini), are read back.
+    fixed = SMALL["fixed"]
+    unfixed = lambda cvars: {name: value for name, value in cvars.items() if name not in fixed}
+    assert T.same_cvars(unfixed(expected), unfixed(T.read_profile(T.PROFILES_INI.read_text())["cvars"])), expected
+    assert all(name in expected and T.values_match(value, expected[name]) for name, value in fixed.items()), expected
+    meta = json.loads((run / "run.json").read_text())
+    assert meta["quality"]["expected"]["r.AntiAliasingMethod"] == "4" and meta["readback"]["r.AntiAliasingMethod"] == "4.000000"
+    assert gates(verdict)["cvar_mismatches"]["value"] == 0 and verdict["status"] == "pass", failing(verdict)
     print("readback ok: a CVar mismatch fails the run with exit 4, a hung game is killed as a timeout (exit 5), "
-          "phone passes -DeviceProfile and reads the section back")
+          "phone passes -DeviceProfile and reads the section and the fixed CVars back")
 
 
 def check_reference(out):

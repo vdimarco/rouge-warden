@@ -87,6 +87,8 @@ CSV_WRITTEN = re.compile(r"Writing CSV to file : ([^\r\n]+\.csv)|NORD_GAUNTLET c
 DELAY_KEY = re.compile(r"rtt|roundtrip|jitter|processing|latency|e2e|delay|decodems", re.IGNORECASE)
 # The gates of a native run that also apply to a look run, which holds and switches skies instead of being timed.
 LOOK_GATES = {"vram_peak_mib", "render_log_errors", "cvar_mismatches", "fps_cap"}
+# A confirmation the window cut is missing evidence, not a failure: confirm runs it again.
+CONFIRM_CUT = "the window ended before every confirmation run"
 CLOCK_TICKS = os.sysconf("SC_CLK_TCK")
 require = browser_streaming.require
 
@@ -1212,7 +1214,7 @@ def confirm_candidate(loop, record, group, direct=False, until=None):
     for sky in loop["sky_order"]:
         for size_key in loop["size_use"]["confirm"]:
             if until is not None and time.time() + run_s > until:
-                outcome["reasons"].append("the window ended before every confirmation run")
+                outcome["reasons"].append(CONFIRM_CUT)
                 return outcome
             run, verdict = native_run(loop, "perf", size_key, sky, laps=loop["confirm_laps"], quality=f"file:{execcmds}",
                                       label=f"confirm-{candidate_id}-{sky}-{size_key}", direct=direct, parent=group / "runs")
@@ -1284,7 +1286,7 @@ def round_report(group, loop):
     streams = stream_evidence(group, tune)
     needed = {(loop["sizes"][key]["rung"], loop["sizes"][key]["size"][1] > loop["sizes"][key]["size"][0])
               for key in loop["size_use"]["stream"]}
-    missing_evidence = ("native confirmation not run", "stream rows missing", "co-op guard unverified")
+    missing_evidence = ("native confirmation not run", CONFIRM_CUT, "stream rows missing", "co-op guard unverified")
 
     def confirm_fn(record):
         rows = streams.get(record["id"], [])
