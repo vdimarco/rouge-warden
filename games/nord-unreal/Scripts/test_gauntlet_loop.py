@@ -7,11 +7,12 @@ label, the CVar readback with the fixed CVars, the phone profile flag, a look ru
 with its native confirmation and round report, a partial look run that gives no Look, a stale --reference or one
 without every still or with a contended ceiling run refused, a tune whose first candidate plan holds the ceiling
 render, a stream lap with its trigger file, lap window and page clock and the host's result line after the sampler
-stopped, the input row, the co-op guard without contended two-viewer rows, the next candidate's confirmation,
-confirmation runs that end before --until (planned with the longest run so far and with the search's slower host), a
-cut or twice contended confirmation run again and unverified in the round report until then, a contended run run once
-more, a ranked baseline confirmed once, the write-profile refusal without --approved, and that browser_streaming.py
-without NORD_STREAM_QUALITY keeps today's exact launch line.
+stopped, the input row, the co-op guard without contended two-viewer rows, only the newest solo stream row per rung
+and orientation in the round report, the next candidate's confirmation, confirmation runs that end before --until
+(planned with the longest run so far and with the search's slower host), a cut or twice contended confirmation run
+again and unverified in the round report until then, a contended run run once more, a ranked baseline confirmed once
+and named as confirm_native names it, confirm's stop reason kept current, the write-profile refusal without
+--approved, and that browser_streaming.py without NORD_STREAM_QUALITY keeps today's exact launch line.
 Everything is written to a temporary folder; the real Saved/Gauntlet and Config/DefaultDeviceProfiles.ini are never
 written.
 """
@@ -1173,6 +1174,10 @@ def check_confirm_window(out):
             assert [run["status"] for run in winner["runs"]].count("contended") == times and len(winner["runs"]) == full + 1
             if times == 1:
                 assert winner["passed"] and native["confirmed_native"] == "04-shadows2" and native["stop_reason"] is None, native
+                # The window cuts the next candidate's confirmation: the stop reason says so, and the winner stays confirmed.
+                L.confirm_next(SMALL, group, until=clock[0] + 1)
+                after = json.loads((group / "tune.json").read_text())["native_confirmation"]
+                assert after["stop_reason"] == "window_end" and after["confirmed_native"] == "04-shadows2", after
                 continue
             assert winner["reasons"] == [f"{L.CONFIRM_CONTENDED}: night_rain top_portrait"] and not L.confirmation_finished(SMALL, winner)
             assert native["confirmed_native"] is None and native["stop_reason"] == "contended", native
@@ -1180,8 +1185,10 @@ def check_confirm_window(out):
             assert L.main(["confirm", str(group), "--candidate", "04-shadows2"]) == 0
             after = json.loads((group / "tune.json").read_text())["native_confirmation"]
             assert after["confirmed_native"] == "04-shadows2" and after["results"][-1]["passed"] and len(calls) == full, (after, calls)
+            assert after["stop_reason"] is None, after["stop_reason"]
     print("confirm window ok: no run ends after --until, a slow host raises the plan (also the first run, from the search), "
-          "confirm runs a cut result again and replaces it, a ranked baseline runs once, and a contended run runs once more")
+          "confirm runs a cut result again and replaces it, a ranked baseline runs once and can be the confirmed one, "
+          "a contended run runs once more, and confirm keeps the stop reason current")
 
 
 def main():
