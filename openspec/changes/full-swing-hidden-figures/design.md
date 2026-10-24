@@ -1,0 +1,2 @@
+# Design
+setWorldVisible currently toggles view/street/game/ropes/FX, but never figures.setVisible despite a separate shared figure scene root. streetFrame always begins/ends figures and adds active goons/jobs. Inspect AR pause, view-shot hide/resume, initialization and all figure callers before implementation. Use existing figure visibility API and a single worldVisible guard around visual preparation, preserving street.update/audio and action simulation. Baseline actual hidden draw/call counts and resumed current state; no quality cut when visible.

@@ -1,0 +1,7 @@
+{"hidden":{"root":true,"prepare":0,"simulation":60,"crowd":60,"unchanged":true},"resume":{"visible":true,"current":true,"changed":true,"goons":1,"jobs":1,"time":2.116666666666663,"now":2.116666666666663,"simulation":61,"crowd":61}}
+PASS: shared figure root follows hidden world
+PASS: sixty hidden frames skip visual buffer preparation
+PASS: hidden frames retain street simulation and crowd updates
+PASS: first visible frame uploads current actual goon position
+PASS: no page errors
+PASS: hidden figures
