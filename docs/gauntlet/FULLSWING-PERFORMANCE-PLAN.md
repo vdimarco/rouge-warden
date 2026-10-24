@@ -156,3 +156,6 @@ Increment67 shipped #701 asd3984338 after all6CI/review/current23authenticatedch
 
 
 Increment68 pending — fade-onlyweb speedquery1→0/attached1unchanged;10webupload/pixel/peakreset+11weblinechecksPASS. Evidence r68-web-speed/all20limits/noFPSclaim/totalwithheld.
+
+
+Increment68 shipped #703 as5d1ae20b after all6CI/review/current21authenticatedchecks/exactmainbytes/rebase before AND afterpreview/exactmerge. Productionmain HTTP200 exactSHA1dbac0ea735298b55de7cb7bd968958140493fa32c6b0ddc1ba3c3145f7705ba verified. Canonical web-speed scenarios published and OpenSpec archived. ActualChrome/FPSbenefit unverified; totalwithheld.
