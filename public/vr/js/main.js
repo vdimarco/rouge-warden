@@ -947,6 +947,7 @@ function hudFrame(dt, inp) {
 // A chase says CLOSING or FALLING BEHIND from how the distance changed over the last half second.
 const GOAL_V = new THREE.Vector3(), GOAL_CAM = new THREE.Vector3(), GOAL_LOOK = new THREE.Vector3();
 const GOAL_SIZE = { w: 0, h: 0 }, GOAL_PAD = { l: 80, t: 108, r: 80, b: 96 }, GOAL_PHONE_PAD = { l: 110, t: 108, r: 140, b: 168 };
+const GOAL_OUT = { x: 0, y: 0, off: false, angle: 0, name: "", dist: 0, trend: "" };
 const GOAL_NAMES = { sludge: "RUNNER", thief: "THIEF", getaway: "CAR", balloon: "BALLOON", catch: "FALLING", washer: "WASHER", pizza: "DROP", taxi: "DROP", brawl: "FIGHT", mugging: "MUGGING", tanker: "LEAK" };
 const GOAL_CHASE = { sludge: true, thief: true, getaway: true, balloon: true };
 let goalTrack = { tag: "", d: 0, t: -1, trend: "" };
@@ -961,7 +962,7 @@ function goalFrame(phone) {
   const gx = g.x - camera.position.x, gz = g.z - camera.position.z;
   const turn = Math.atan2(-GOAL_LOOK.z * gx + GOAL_LOOK.x * gz, GOAL_LOOK.x * gx + GOAL_LOOK.z * gz);
   GOAL_SIZE.w = innerWidth; GOAL_SIZE.h = innerHeight;
-  const place = placeGoal(GOAL_CAM, ndc, GOAL_SIZE, phone ? GOAL_PHONE_PAD : GOAL_PAD, turn);
+  const place = placeGoal(GOAL_CAM, ndc, GOAL_SIZE, phone ? GOAL_PHONE_PAD : GOAL_PAD, turn, GOAL_OUT);
   const dh = Math.hypot(g.x - P.pos.x, g.z - P.pos.z);
   if (ob.tag !== goalTrack.tag) goalTrack = { tag: ob.tag, d: dh, t: G.time, trend: "" };
   else {
@@ -977,7 +978,9 @@ function goalFrame(phone) {
     }
   }
   const crew = ob.tag === "sludge" && /crew/i.test(ob.detail || "");
-  return { x: place.x, y: place.y, off: place.off, angle: place.angle, name: crew ? "CREW" : (GOAL_NAMES[ob.tag] || "GOAL"), dist: Math.round(dh), trend: GOAL_CHASE[ob.tag] && !crew ? goalTrack.trend : "" };
+  place.name = crew ? "CREW" : (GOAL_NAMES[ob.tag] || "GOAL"); place.dist = Math.round(dh);
+  place.trend = GOAL_CHASE[ob.tag] && !crew ? goalTrack.trend : "";
+  return place;
 }
 // The chase bed: quiet while you are gaining, a clock while the distance holds, faster once you fall behind
 // or the runner is already pulling away (a steady gap can still be a sprint). The first lesson holds the runner,
