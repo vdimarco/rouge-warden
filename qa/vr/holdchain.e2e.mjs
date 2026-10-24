@@ -124,7 +124,7 @@ try {
   });
   await page.screenshot({ path: out + "/water.png" });
   console.log("water", JSON.stringify(water));
-  check(water.sky && water.still && !water.dropped && water.detaches === 0, "holding over open water keeps the sky rope", water);
+  check(!water.sky && !water.still, "holding over open water never attaches to an invisible sky point", water);
   check(page.errors.length === 0, "no page errors", page.errors);
 } catch (e) {
   check(false, "the hold-chain run threw", e.stack || String(e));
