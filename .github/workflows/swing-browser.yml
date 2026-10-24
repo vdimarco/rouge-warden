@@ -54,7 +54,7 @@ jobs:
           NODE_PATH: ${{ github.workspace }}/qa/browser/node_modules
           SHOTS: ${{ github.workspace }}/test-results/swing
       - name: World-space web line
-        run: node qa/vr/web-line.e2e.mjs
+        run: node qa/vr/web-line.e2e.mjs && node qa/vr/web-uploads.e2e.mjs && node qa/vr/building-anchor.e2e.mjs
         env:
           NODE_PATH: ${{ github.workspace }}/qa/browser/node_modules
           SHOTS: ${{ github.workspace }}/test-results/swing

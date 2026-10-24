@@ -1,0 +1,2 @@
+# Design
+Existing drawWeb sole upload site marks full16-slot matrix/fade buffers, even one8-segment rope. Reuse clearUpdateRanges/addUpdateRange already used in actionview/streetview/FX. Both rope counts, fade, empty, hidden and resume need actual GPU checks. Initial allocation remains full. Existing legacy web-line fixture seeks easy sky ropes; do not restore removed artificial anchors to satisfy it. Test real building/inkLine state and exact nonblank reference pixels; preserve concurrent #493 semantics.

@@ -1,0 +1,6 @@
+FAIL water: no invisible attachment [{"state":"attached","tag":"sky"},{"state":"idle"}]
+FAIL above-city: no invisible attachment [{"state":"attached","tag":"sky"},{"state":"idle"}]
+ROOFTOP null
+FAIL a reachable real building can attach below the player above its rooftop
+PASS: no browser errors
+FAIL: building-anchor (3 failed, 1 passed)

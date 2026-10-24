@@ -1,0 +1,8 @@
+chain {"frames":300,"cue":0,"wallAt":-1,"first":{"t":"attach","tag":"building","id":952,"bid":812,"frame":103},"still":true,"fires":1,"y":32,"log":[{"t":"fire","tag":"building","id":952,"bid":812,"frame":89},{"t":"attach","tag":"building","id":952,"bid":812,"frame":103}]}
+PASS: holding E keeps that building rope on until the button comes up
+PASS: a held rope does not dry-fire and does not take a second press
+PASS: letting E up lets the rope go and does not catch another building
+water {"frames":240,"sky":false,"dropped":false,"still":false,"detaches":0,"y":0}
+PASS: holding over open water never attaches to an invisible sky point
+PASS: no page errors
+PASS: holdchain
