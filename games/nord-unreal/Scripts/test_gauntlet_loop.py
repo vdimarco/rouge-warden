@@ -953,11 +953,9 @@ def check_report_window_cut(group, tune):
           "ranked candidate failed; a failed run before the cut fails it")
 
 
-def check_report_coop_contended(out):
-    """The co-op guard skips a two-viewer row that a foreign GPU process shared. The baseline's clean row at 30 fps
-    drops a candidate at 25 fps, and a later contended baseline row at 20 fps cannot let it pass. A contended row alone
-    leaves the guard unverified. The rows sit in their own Saved/Gauntlet, so no other stream run counts."""
-    hall = out.parent / "coop-hall"
+def report_hall(hall):
+    """A tune folder in its own Saved/Gauntlet (hall), so no other stream run counts: the baseline and 04-shadows2
+    passed the native confirmation. Returns (group, row); row(...) adds one judged stream row of a candidate."""
     group = hall / "20261023T200000Z-tune"
     base = T.make_candidate(SMALL, T.baseline_levels(SMALL), "baseline", 0)
     records = [dict(base, id=name, phase="baseline" if name == "baseline" else "step") for name in ("baseline", "04-shadows2")]
@@ -968,15 +966,24 @@ def check_report_coop_contended(out):
                                        "winner": "04-shadows2", "native_confirmation": {"results": [
                                            {"id": name, "runs": runs, "reasons": [], "passed": True} for name in ("baseline", "04-shadows2")]}})
 
-    def row(candidate, label, kind, status, fps=None, pin=0, portrait=False):
+    def row(candidate, label, kind, status, fps=None, pin=0, portrait=False, started="2026-10-23T23:00:00Z"):
         quality = ({"name": "current"} if candidate == "baseline" else
                    {"name": "file", "path": str(group / "candidates" / f"{candidate}.execcmds")})
         folder = hall / f"20261023T230000Z-{label}"
-        L.write_json(folder / "run.json", {"kind": "stream", "started_at": "2026-10-23T23:00:00Z", "label": folder.name, "row": kind,
+        L.write_json(folder / "run.json", {"kind": "stream", "started_at": started, "label": folder.name, "row": kind,
                                            "pin": pin, "portrait": portrait, "quality": quality})
         L.write_json(folder / "verdict.json", {"status": status, "gates": [], "values": {"two_viewer_fps": fps}})
         return folder
 
+    return group, row
+
+
+def check_report_coop_contended(out):
+    """The co-op guard skips a two-viewer row that a foreign GPU process shared. The baseline's clean row at 30 fps
+    drops a candidate at 25 fps, and a later contended baseline row at 20 fps cannot let it pass. A contended row alone
+    leaves the guard unverified."""
+    hall = out.parent / "coop-hall"
+    group, row = report_hall(hall)
     for candidate in ("baseline", "04-shadows2"):
         for key in SMALL["size_use"]["stream"]:
             entry = SMALL["sizes"][key]
@@ -997,6 +1004,40 @@ def check_report_coop_contended(out):
             assert confirmation["confirmed"] is None and reasons == [reason], (name, confirmation)
             assert gates(verdict)["confirmed"]["result"] == gate, (name, gates(verdict)["confirmed"])
     print("co-op guard ok: a contended two-viewer row never counts; the clean baseline row drops the candidate")
+
+
+def check_report_stream_latest(out):
+    """Only the newest solo row per rung and orientation counts, by run.json started_at: a row sampled again replaces
+    an older one. A newest row that is contended, unverified or without a verdict is missing evidence, so the round is
+    unverified; a newest failed row fails it. The newer row's folder name sorts first, as the user names the folders."""
+    newer = "20261023T230000Z-a-newer"
+    # (case, older and newer status of 04-shadows2's rung 0 landscape row, confirmed gate, 04-shadows2's reasons)
+    cases = (("contended-then-pass", ("contended", "pass"), "pass", []),
+             ("unverified-then-pass", ("unverified", "pass"), "pass", []),
+             ("fail-then-pass", ("fail", "pass"), "pass", []),
+             ("pass-then-contended", ("pass", "contended"), "unverified", [f"stream row unverified: {newer} (contended)"]),
+             ("pass-then-unverified", ("pass", "unverified"), "unverified", [f"stream row unverified: {newer} (unverified)"]),
+             ("pass-then-no-verdict", ("pass", None), "unverified", [f"stream row unverified: {newer} (no verdict)"]),
+             ("pass-then-fail", ("pass", "fail"), "fail", [f"stream {newer}: fail"]))
+    for name, (older, latest), gate, reasons in cases:
+        hall = out.parent / "latest-hall" / name
+        group, row = report_hall(hall)
+        for candidate in ("baseline", "04-shadows2"):
+            for key in SMALL["size_use"]["stream"][1:] if candidate == "04-shadows2" else SMALL["size_use"]["stream"]:
+                entry = SMALL["sizes"][key]
+                row(candidate, f"{candidate}-{key}", "solo", "pass", pin=entry["rung"], portrait=entry["size"][1] > entry["size"][0])
+            row(candidate, f"{candidate}-two", "two_viewer", "unverified", 30.0)
+        assert SMALL["size_use"]["stream"][0] == "top_landscape" and SMALL["sizes"]["top_landscape"]["rung"] == 0
+        row("04-shadows2", "z-older", "solo", older)
+        row("04-shadows2", "a-newer", "solo", latest, started="2026-10-23T23:10:00Z")
+        with patch.object(L, "OUT", hall):
+            verdict = L.round_report(group, SMALL)
+        confirmation = json.loads((group / "tune.json").read_text())["confirmation"]
+        found = next(result["reasons"] for result in confirmation["results"] if result["id"] == "04-shadows2")
+        assert found == reasons and gates(verdict)["confirmed"]["result"] == gate, (name, found, gates(verdict)["confirmed"])
+        assert confirmation["confirmed"] == ("04-shadows2" if gate == "pass" else None), (name, confirmation)
+    print("latest stream row ok: a row sampled again replaces an older one; a newest contended or unverified row is "
+          "missing evidence, a newest failed row fails")
 
 
 def check_confirm_next(group, tune):
@@ -1033,14 +1074,15 @@ def check_confirm_window(out):
     confirm runs it again (the baseline first) and replaces it, and --candidate accepts it."""
     run_s = T.run_estimate_s(SMALL, "perf", SMALL["confirm_laps"])
     full = len(SMALL["sky_order"]) * len(SMALL["size_use"]["confirm"])
-    clock, calls, took, shared = [1_000_000.0], [], [run_s], {}
+    clock, calls, took, shared, failing = [1_000_000.0], [], [run_s], {}, set()
 
     def native_run(loop, mode, size_key, sky, laps=1, quality="current", label=None, direct=False, parent=None, **_):
         calls.append((label, clock[0] + took[0]))
         clock[0] += took[0]
-        # shared[label]: how many more runs of that label a foreign GPU process shares.
+        # shared[label]: how many more runs of that label a foreign GPU process shares. A label in failing fails.
         shared[label] = shared.get(label, 0) - 1
-        return L.new_run_dir(label, parent), {"status": "contended" if shared[label] >= 0 else "pass", "gates": []}
+        status = "contended" if shared[label] >= 0 else "fail" if label in failing else "pass"
+        return L.new_run_dir(label, parent), {"status": status, "gates": []}
 
     base = T.make_candidate(SMALL, T.baseline_levels(SMALL), "baseline", 0)
     tune = {"candidates": [dict(base, id=name) for name in ("baseline", "04-shadows2", "05-gi2")],
@@ -1063,7 +1105,9 @@ def check_confirm_window(out):
             assert [result["id"] for result in after["results"]] == ["baseline", "04-shadows2"], after["results"]
             assert all(result["passed"] and len(result["runs"]) == full for result in after["results"]), after["results"]
             assert after["confirmed_native"] == "04-shadows2" and len(calls) == full * (3 - len(recorded)), calls
-        # The baseline is itself the best ranked candidate without a finished confirmation: confirm runs it once.
+            assert after["stop_reason"] is None, f"{name}: every result finished, so no stop reason stays: {after['stop_reason']}"
+        # The baseline is itself the best ranked candidate without a finished confirmation: confirm runs it once, and
+        # when it passes it is the confirmed one, as confirm_native picks it.
         group = out.parent / "confirm-window" / "baseline-ranked"
         failed = {"id": "04-shadows2", "reasons": ["day top_landscape: fail (frame_p95)"], "passed": False,
                   "runs": [{"run": "x", "sky": sky, "size": size, "status": "fail"} for sky in SMALL["sky_order"]
@@ -1075,6 +1119,20 @@ def check_confirm_window(out):
         assert L.main(["confirm", str(group)]) == 0
         after = json.loads((group / "tune.json").read_text())["native_confirmation"]
         assert len(calls) == full and [result["id"] for result in after["results"]] == ["04-shadows2", "baseline"], (calls, after)
+        assert after["stop_reason"] is None, f"the cut baseline finished, so window_end does not stay: {after['stop_reason']}"
+        assert after["confirmed_native"] == "baseline", after["confirmed_native"]
+        # The ranked baseline runs first, below the candidate. The candidate fails and the baseline passes: confirm
+        # names the baseline as confirm_native does.
+        failing.add("confirm-04-shadows2-day-top_landscape")
+        low = dict(tune, ranking=["04-shadows2", "baseline"])
+        group = out.parent / "confirm-window" / "baseline-below"
+        T.write_tune(group / "tune.json", low)
+        assert L.main(["confirm", str(group)]) == 1
+        after = json.loads((group / "tune.json").read_text())["native_confirmation"]
+        native = L.confirm_native(SMALL, low, out.parent / "confirm-window" / "baseline-below-native")
+        assert [result["id"] for result in after["results"]] == ["baseline", "04-shadows2"], after["results"]
+        assert after["confirmed_native"] == native["confirmed_native"] == "baseline", (after["confirmed_native"], native["confirmed_native"])
+        failing.clear()
         # A host 1.5 times slower than the estimate: each run is planned with the longest one measured so far, within one
         # candidate (room for 2.6 estimates) and from the baseline to the winner (room for 7.2), as the search plans.
         took[0] = 1.5 * run_s
@@ -1172,6 +1230,7 @@ def main():
         check_report_and_profile(group, tune)
         check_report_window_cut(group, tune)
         check_report_coop_contended(out)
+        check_report_stream_latest(out)
         check_confirm_next(group, tune)
         check_confirm_window(out)
     print("NORD_GAUNTLET_LOOP_OK")
