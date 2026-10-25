@@ -7,6 +7,7 @@
 // reach zips the hero to the next goon in front of the view (the zip strike), so a fight flows from goon to goon. Pure: no three, no DOM; streetview.js draws them.
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 const wrap = (a) => Math.atan2(Math.sin(a), Math.cos(a));
+const SLIDE_TURNS = [0.8, -0.8, 1.6, -1.6].map(a => ({ side: Math.sign(a), c: Math.cos(a), n: Math.sin(a) }));
 
 export const FIGHT = {
   hp: 5, regenAfter: 6, regen: 0.5, // the hero's hearts; they come back one every 2 s after 6 quiet seconds
@@ -95,9 +96,9 @@ export function createCombat(city) {
   function walkSlide(g, dx, dz) {
     if (walk(g, dx, dz)) return true;
     const s = g.side || 1;
-    for (const a of [0.8 * s, -0.8 * s, 1.6 * s, -1.6 * s]) {
-      const c = Math.cos(a), n = Math.sin(a);
-      if (walk(g, dx * c - dz * n, dx * n + dz * c)) { g.side = Math.sign(a); return true; }
+    for (const turn of SLIDE_TURNS) {
+      const c = turn.c, n = turn.n * s;
+      if (walk(g, dx * c - dz * n, dx * n + dz * c)) { g.side = turn.side * s; return true; }
     }
     return false;
   }
