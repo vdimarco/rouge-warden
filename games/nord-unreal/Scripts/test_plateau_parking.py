@@ -6,10 +6,11 @@ Run from games/nord-unreal after plateau_replica.py:  python3 Scripts/test_plate
 - Clearances, measured here on the raw data: 300 cm from every C++ traffic centre line, 200 cm from every other
   street's (150 cm from its own off the traffic graph: a 3 m lane; beside a track, 3 m across to the far curb or the
   cars parked there), 3 m from a hydrant, 5 m past a painted crosswalk's OSM way and 5 m from its paint in the
-  Streets OBJs (every block and line of it, which Streets/paint_marks.json outlines), 7 m from a junction node, a lane
-  mouth or a driveway left open, out of the bus and taxi zones, clear of curb extensions, road props, bollards and the chantier
-  fence, 150 cm from every side-job spot in QuebecJobRules.h (markers, doors, starts, drops, keep-clear points) and
-  165 cm from every drawn cycle track (OSM highway=cycleway).
+  Streets OBJs (every block and line of it, which Streets/paint_marks.json outlines), 50 cm from every stop bar (its
+  outline there and its paint), 7 m from a junction node, a lane mouth or a driveway left open, out of the bus and
+  taxi zones, clear of curb extensions, road props, bollards and the chantier fence, 150 cm from every side-job spot
+  in QuebecJobRules.h (markers, doors, starts, drops, keep-clear points) and 165 cm from every drawn cycle track (OSM
+  highway=cycleway).
 - Track sides: every side a track runs along that its tags or two poles park holds cars against the replica's
   concrete separator, or is left out where a measurement shows no room; the separators stand only beside parked cars,
   as 17 to 25 cm SM_Concrete_Collision tops clear of the track and the traffic band.
@@ -255,30 +256,41 @@ def check_crossings():
 CROSSWALK_PAINT = 500.     # no car within 5 m of a painted crosswalk (Code de la sécurité routière art. 386)
 
 
+def paint_quads():
+    """Every level four-corner piece of white and yellow paint in the Streets OBJs, in the map frame, as (colour, ring,
+    side lengths). obj_text writes every strip with its own four corners, so one strip is one piece."""
+    if 'paint quads' not in STATE:
+        quads = []
+        for colour in ('white', 'yellow'):
+            for name in sorted(P.STREETS.glob(f'Streets_paint_{colour}_*.obj')):
+                verts, last = [], {}
+                for line in name.read_text().splitlines():
+                    if line.startswith('v '):
+                        x, y, z = map(float, line.split()[1:4])
+                        verts.append((x, -y, z))
+                    elif line.startswith('f '):
+                        ids = [int(item.split('/')[0]) - 1 for item in line.split()[1:]]
+                        last[min(ids)] = max(last.get(min(ids), 0), max(ids))
+                for base, end in sorted(last.items()):
+                    quad = verts[base:end + 1]
+                    if len(quad) != 4 or max(q[2] for q in quad) - min(q[2] for q in quad) > .01:
+                        continue
+                    ring = [q[:2] for q in quad]
+                    quads.append((colour, ring, [math.dist(a, b) for a, b in zip(ring, ring[1:] + ring[:1])]))
+        STATE['paint quads'] = quads
+    return STATE['paint quads']
+
+
 def crosswalk_pieces():
     """The crosswalk paint in the Streets OBJs, in the map frame: each 50 by 300 cm block of a block crosswalk and each
-    20 cm line of a two-line one. obj_text writes every strip with its own four corners, so a level quad of these
-    sizes is one piece; the stop bars are 40 cm wide and the other lines 10 to 12 cm."""
+    20 cm line of a two-line one. A level quad of these sizes is one piece; the stop bars are 40 cm wide and the other
+    lines 10 to 12 cm."""
     pieces = []
-    for name in sorted(P.STREETS.glob('Streets_paint_white_*.obj')) + sorted(P.STREETS.glob('Streets_paint_yellow_*.obj')):
-        verts, last = [], {}
-        for line in name.read_text().splitlines():
-            if line.startswith('v '):
-                x, y, z = map(float, line.split()[1:4])
-                verts.append((x, -y, z))
-            elif line.startswith('f '):
-                ids = [int(item.split('/')[0]) - 1 for item in line.split()[1:]]
-                last[min(ids)] = max(last.get(min(ids), 0), max(ids))
-        for base, end in sorted(last.items()):
-            quad = verts[base:end + 1]
-            if len(quad) != 4 or max(q[2] for q in quad) - min(q[2] for q in quad) > .01:
-                continue
-            ring = [q[:2] for q in quad]
-            sides = [math.dist(a, b) for a, b in zip(ring, ring[1:] + ring[:1])]
-            if 45. <= min(sides) <= 55. and 280. <= max(sides) <= 320.:
-                pieces.append(('block', ring))
-            elif 18. <= min(sides) <= 22. and max(sides) >= 100.:
-                pieces.append(('line', ring))
+    for _, ring, sides in paint_quads():
+        if 45. <= min(sides) <= 55. and 280. <= max(sides) <= 320.:
+            pieces.append(('block', ring))
+        elif 18. <= min(sides) <= 22. and max(sides) >= 100.:
+            pieces.append(('line', ring))
     return pieces
 
 
@@ -326,6 +338,59 @@ def check_paint_marks():
     print('   %d crosswalk outlines and %d stop bars; %d painted pieces outside them' %
           (len(outlines), len(marks['stop_bars']), len(outside)))
     assert not outside, outside[:10]
+
+
+# No car within 50 cm of a stop bar. The Code de la sécurité routière sets no distance from a stop sign or a stop line:
+# LQ 2018, c. 7, s. 95 replaced art. 386 par. 2 ("5 mètres d'une borne-fontaine et d'un signal d'arrêt") with 3 m
+# from a hydrant. So this is a design value.
+STOP_BAR_CLEAR = 50.
+
+
+def stop_bar_pieces():
+    """The stop bars in the Streets OBJs, in the map frame. plateau_replica.py paints each as one white strip 40 cm
+    wide and at least 150 cm long; no other paint is 40 cm wide."""
+    return [ring for colour, ring, sides in paint_quads()
+            if colour == 'white' and 38. <= min(sides) <= 42. and max(sides) >= 150.]
+
+
+@check('50 cm from every stop bar, by its outline in Streets/paint_marks.json and by its paint in the Streets OBJs')
+def check_stop_bars():
+    """The replica paints a stop bar across the approach lanes, 4.2 to 9 m before a junction, at a mapped stop or at
+    traffic lights. Nine cars stood on one. Each painted bar lies inside its outline, and every car keeps 50 cm from
+    both."""
+    s = load()
+    marks = json.loads(P.PAINT_MARKS.read_text())
+    outlines = [[tuple(q) for q in row['outline']] for row in marks['stop_bars']]
+    pieces = stop_bar_pieces()
+    assert marks['counts']['stop_bars'] == len(outlines) > 40 and len(pieces) == len(outlines), \
+        ('paint_marks.json and the Streets OBJs list different stop bars', len(outlines), len(pieces))
+    grid = P.Grid(2000.)
+    for k, poly in enumerate(outlines):
+        grid.add(k, P.bbox(poly))
+    outside = []
+    for ring in pieces:
+        mid = (sum(q[0] for q in ring) / 4, sum(q[1] for q in ring) / 4)
+        if not any(all(P.poly_point_dist(outlines[k], q) < .05 for q in ring) for k in grid.query(P.bbox([mid]))):
+            outside.append([round(v) for v in mid])
+    assert not outside, ('painted stop bars outside every outline', outside[:10])
+    worst, bad = {}, {}
+    for kind, shapes in (('outline', outlines), ('paint', pieces)):
+        grid = P.Grid(2000.)
+        for k, poly in enumerate(shapes):
+            grid.add(k, P.bbox(poly, STOP_BAR_CLEAR))
+        worst[kind] = (1e9, None)
+        for slot in s['slots']:
+            poly = P.footprint(slot)
+            for k in grid.query(P.bbox(poly)):
+                d = P.poly_poly_dist(poly, shapes[k])
+                if d < worst[kind][0]:
+                    worst[kind] = (d, slot)
+                if d < STOP_BAR_CLEAR and d < bad.get(slot['id'], (0, '', 1e9))[2]:
+                    bad[slot['id']] = (slot['id'], slot['street'], round(d, 1), kind)
+    (d, slot), (paint, _) = worst['outline'], worst['paint']
+    print('   %d stop bars; nearest car %.1f cm from an outline (space %d, %s), %.1f cm from the paint' %
+          (len(outlines), d, slot['id'], slot['street'], paint))
+    assert not bad, (f'{len(bad)} cars within {STOP_BAR_CLEAR:.0f} cm of a stop bar', sorted(bad.values(), key=lambda r: r[2]))
 
 
 def curb_side(s, slot):
@@ -771,7 +836,7 @@ def check_bus_zone():
 ALLOW_REASONS = ('side: bike track', 'side: bike lane', 'side: bus lane', 'side: not parallel', 'side: tag no',
                  'side: other side only', 'side: traffic', 'short run', 'run end', 'curb', 'asphalt', 'traffic',
                  'street', 'hydrant', 'crossing', 'lane mouth', 'driveway', 'junction', 'extension', 'prop', 'bollard',
-                 'chantier', 'bus stop', 'taxi stand', 'sign', 'job spot', 'car', 'track', 'lane')
+                 'chantier', 'bus stop', 'taxi stand', 'sign', 'job spot', 'car', 'track', 'lane', 'stop bar')
 
 
 @check('the sign texts at the moment, the arrows and the OSM bus lanes\' hours')

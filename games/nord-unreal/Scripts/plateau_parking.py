@@ -8,7 +8,7 @@ Inputs:
   segments with RoadParkingSides and RoadParkingDirections (parking.json), hydrants, crossings, bus stops, lanes;
 - the replica's Streets OBJs (git-ignored, from plateau_replica.py): the SM_Concrete_Collision tops at 17 to 25 cm
   are the curbs the C++ CurbParking finds, and the replica asphalt is the parking lane; and Streets/paint_marks.json,
-  the crosswalks where the replica paints them (it moves a crossing up to 6 m out of the junction box);
+  the crosswalks and stop bars where the replica paints them (it moves a crossing up to 6 m out of the junction box);
 - Streets/street_trees.json (curb extensions), Furniture and Soul placements with the Props footprints;
 - the city's sign-pole inventory (STM bus stop signs) and its parking signs (Data/Plateau/Inventory/park_signs.json,
   read at the moment of plateau_park_signs.MOMENT: a side signed for parking takes cars, and a sign that bans them
@@ -86,7 +86,9 @@ CANDIDATE_STEP = 20.
 
 # Clearances (cm). Sources: Quebec Highway Safety Code art. 386 (5 m from an intersection or a crosswalk, as
 # montreal.ca puts it), quebec.ca "Stopping a vehicle on a public road" (3 m from a fire hydrant, no stopping in a
-# public transport zone or before a curb ramp). The bus zone length is a design value sized for a 12 m bus.
+# public transport zone or before a curb ramp). The bus zone length is a design value sized for a 12 m bus. The Code
+# sets no distance from a stop sign or a stop line: LQ 2018, c. 7, s. 95 replaced art. 386 par. 2 ("5 mètres d'une
+# borne-fontaine et d'un signal d'arrêt") with 3 m from a hydrant. So STOP_BAR_CLEAR is a design value.
 TRAFFIC_CLEAR = 300.             # no collision this near a C++ traffic centreline (the replica's 300 cm rule)
 STREET_CLEAR = 200.              # nor this near any other street's centreline
 OWN_LANE = 150.                  # a street off the traffic graph keeps a 3 m lane between its own parked cars
@@ -96,6 +98,7 @@ JUNCTION_LATERAL = 2500.         # ...when they lie this near its street's centr
 ARM_ANGLE = 25.                  # an arm this far off a car's own run is a cross street
 CROSSING_CLEAR = 650.            # from a crosswalk's centre line: 5 m past its 1.5 m half width
 PAINTED_CLEAR = 500.             # ...and from the paint itself, where the replica puts it (Streets/paint_marks.json)
+STOP_BAR_CLEAR = 50.             # from a painted stop bar's outline (Streets/paint_marks.json): no car stands on one
 LANE_BAND = 150.                 # a painted bike lane this far or more off the curb leaves the 2.3 m parking band
 LANE_OVERHANG = 5.               # a mirror may reach this far over the lane's line
 CROSSWALK_BAND = 315.            # a painted crosswalk in front of a corner: the replica sets it 1.65 m out, 3 m wide
@@ -727,6 +730,11 @@ class Features:
         self.painted_grid = Grid(2000.)
         for k, poly in enumerate(self.painted):
             self.painted_grid.add(k, bbox(poly, PAINTED_CLEAR))
+        # The replica paints a stop bar across the approach lanes 4.2 to 9 m before a junction, past the 5 m rule.
+        self.stop_bars = [[tuple(p) for p in row['outline']] for row in marks['stop_bars']]
+        self.stop_bar_grid = Grid(2000.)
+        for k, poly in enumerate(self.stop_bars):
+            self.stop_bar_grid.add(k, bbox(poly, STOP_BAR_CLEAR))
         for j in city.junctions:
             painted = set()
             near_signal = any(math.dist(j['p'], q) < PAINT_REACH for q in signals)
@@ -946,6 +954,9 @@ class Checker:
         for k in f.painted_grid.query(box):
             if poly_poly_dist(poly, f.painted[k]) < PAINTED_CLEAR + SLACK:
                 return 'crossing'
+        for k in f.stop_bar_grid.query(box):
+            if poly_poly_dist(poly, f.stop_bars[k]) < STOP_BAR_CLEAR + SLACK:
+                return 'stop bar'
         for k in city.service_grid.query(box):
             item = city.service[k]
             clear = SERVICE_CLEAR.get(item['tags'].get('service'), SERVICE_CLEAR['default']) + SLACK
@@ -1270,12 +1281,14 @@ def build(json_path=OUT_JSON, header_path=OUT_HEADER):
                     'city': 'Ville de Montréal, données ouvertes (CC BY 4.0): sign poles (STM bus stops), trees',
                     'law': 'Code de la sécurité routière art. 386 (5 m from an intersection or a '
                            'crosswalk, montreal.ca); quebec.ca, Stopping a vehicle on a public road (3 m from a hydrant, '
-                           'no stopping in a public transport zone)'},
+                           'no stopping in a public transport zone); no distance from a stop line since LQ 2018, c. 7, '
+                           's. 95, so 50 cm from a stop bar is a design value'},
         'rules_cm': {'car_length': CAR_LENGTH, 'car_width': CAR_HALF_W * 2, 'spaces': list(SPACES),
                      'space_jitter': list(SPACE_JITTER), 'curb_gap': list(CURB_GAP), 'curb_top': list(CURB_TOP),
                      'curb_spread': CURB_SPREAD, 'traffic_clear': TRAFFIC_CLEAR, 'street_clear': STREET_CLEAR,
                      'junction_clear': JUNCTION_CLEAR, 'crossing_clear': CROSSING_CLEAR,
-                     'painted_crosswalk_clear': PAINTED_CLEAR, 'hydrant_clear': HYDRANT_CLEAR,
+                     'painted_crosswalk_clear': PAINTED_CLEAR, 'stop_bar_clear': STOP_BAR_CLEAR,
+                     'hydrant_clear': HYDRANT_CLEAR,
                      'service_clear': SERVICE_CLEAR, 'bus_zone': list(BUS_ZONE), 'taxi_zone': TAXI_ZONE,
                      'extension_clear': EXTENSION_CLEAR, 'prop_clear': PROP_CLEAR, 'bollard_clear': BOLLARD_CLEAR,
                      'chantier_clear': ZONE_CLEAR, 'vacant_share': VACANT, 'yaw_jitter_deg': YAW_JITTER},
@@ -1283,7 +1296,8 @@ def build(json_path=OUT_JSON, header_path=OUT_HEADER):
                    'by_body': [sum(1 for s in slots if s['body'] == b) for b in range(BODIES)],
                    'by_paint': [sum(1 for s in slots if s['paint'] == p) for p in range(PAINTS)],
                    'bus_stops': len(features.bus_stops), 'hydrants': len(features.hydrants),
-                   'crossings': len(features.crossings), 'junctions': len(city.junctions),
+                   'crossings': len(features.crossings), 'stop_bars': len(features.stop_bars),
+                   'junctions': len(city.junctions),
                    'extensions': len(features.extensions), 'bollards': len(bollards)},
         'source_sha256': {p: sha_file(ROOT / p) for p in SOURCES if (ROOT / p).is_file()},
     }

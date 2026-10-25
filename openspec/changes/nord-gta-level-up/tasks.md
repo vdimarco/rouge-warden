@@ -76,7 +76,7 @@
 - [ ] Check the cobra heads on the city's wooden poles, the signs hung on poles and the street props' shadows in the editor, and the residential streets' light at night.
 - [ ] Parked cars, after the C++ build (rebuild the module whenever `plateau_parking.py` rewrites `LaFontaineParking.h`):
   - Run `Quebec.Parked.FillAndPromote`.
-  - After the replica import, check the `NORD_PARKED` log line: about 2,055 spaces, about 1,988 shown, few left out for missing asphalt, a street prop or something already standing there.
+  - After the replica import, check the `NORD_PARKED` log line: about 2,045 spaces, about 1,978 shown, few left out for missing asphalt, a street prop or something already standing there.
   - With a client connected: get into a parked car with E, ram one at 11 km/h or more, throw a person into one and shoot one; on the client the space empties once the real car arrives, with no gap or doubled car, and the car goes back into its space when no player is within 100 m.
   - `car_collision_test.py` (`18cm_curb_*`, `CurbParking`), `population_test.py` and `test_race_drive.py` still pass with the fill, the 32 runtime parked cars still find their spaces, and traffic cars still drive past the filled curbs.
   - Look runs (`-NordNoAmbient`) now show the parked cars, so the reference captures change; take new ones.
@@ -111,7 +111,7 @@
 - [ ] Park the track sides that have no room today: Rachel's north curb would need to move out to about 9 m (about 20% of its length could then park), and Cherrier needs a wider north half; Avenue du Parc-La Fontaine's track lies 5.5 to 6.9 m out, too far for any widening.
 - [ ] Check the lane wall of lot 355861162 at (-28398, -25290): it stands about 70 cm from the centreline of service road 46, and its door threshold 85 cm. The wall predates the sixth pass; check whether traffic routes there.
 - [x] Refresh `Data/Plateau/EastDetails/manifest.json` (its file hashes) and mark `cpu-checks.json` as the record of its 2026-10-14 run; `test_montreal_east_details.py` now checks both (seventh pass, settle).
-- [ ] Keep the parked cars 50 cm behind the stop bars: nine stand on a bar painted curb to curb 4.2 to 9 m before a junction (Beaudry, Cartier, De Lanaudière, Gauthier, Marie-Anne, Rachel, Saint-Hubert, Sherbrooke). The bars are outlined in `Streets/paint_marks.json`.
+- [x] Keep the parked cars 50 cm behind the stop bars: nine stood on a bar painted 4.2 to 9 m before a junction (Beaudry, Cartier, De Lanaudière, Gauthier, Marie-Anne, Rachel, Saint-Hubert, Sherbrooke). `plateau_parking.py` now keeps every car 50 cm from each bar outline in `Streets/paint_marks.json`, and `check_stop_bars` measures it (2,045 spaces).
 - [ ] Move the parking-sign post 106 cm from the café's pickup spot (`DeliveryCafe` in `QuebecJobRules.h`), or keep colliding Furniture 150 cm from every job spot as the parked cars are.
 - [ ] Run the litter's straight-cut rule on the union of the patches on one ground: two edges in `rachel.jpg` (x 480 to 700, y 520 to 552) and `papineau.jpg` (x 1061 to 1196, y 535 to 575) pass it patch by patch but still read as cuts.
 - [ ] Fix the mirrored world: negate Y across map layers, gameplay headers, campaign positions, saved actors and QA scripts, then rerun the full host QA.
