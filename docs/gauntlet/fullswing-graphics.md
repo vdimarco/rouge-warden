@@ -1394,3 +1394,6 @@ Increment68 shipped #703 as5d1ae20b after all6CI/review/current21authenticatedch
 
 
 Increment 69 shipped externally in PR #705 as `f9577462`. Seven moving cars upload 0 unchanged color bytes instead of 84 in the fixture; changed paint uploads 12 bytes per slot. Fresh six-job CI passed on rebased head `4a4e5387`. Production actionview.js is HTTP 200 and exactly matches SHA-256 `13c2a4fcb4c902b9502588aefe150568393435b1ae65f6dc6aa76f11bbdcccf0`; 15 production paint checks and 35 authenticated post-merge preview checks passed. Agent Review was absent, and the external merge preceded the final preview/rebase sequence; those pre-merge gates were not completed or claimed. Canonical car-paint scenarios and archive published with full evidence in fullswing-r69-car-paint. Actual Chrome120Hz/FPS benefit and aggregate frame effect remain unverified; no score changes or total claimed.
+
+
+Increment70 pending — unchanged blocked-goon movement uses prepared fixed rotations. 216 exact attempt/result traces, existing action simulation,8 browser checks and byte-identical nonblank desktop/portrait goon frames pass. Retry trigonometry1,008→0 in focused cases; aggregate effect/FPS unmeasured. Evidence fullswing-r70-goon-slide; all20rubric points/total withheld; full release gates pending.

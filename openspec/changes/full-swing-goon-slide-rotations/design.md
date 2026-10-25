@@ -1,0 +1,5 @@
+# Design
+
+Scope: combat.js private walkSlide, its goTo caller (chase and return-home paths), focused equivalence test and CI. No public API changes, persistent per-goon cache or collision-result reuse. Only walkSlide writes goon.side; it stores +1/-1 and defaults falsy values to +1. Cache cosine and sine for the four existing angles; multiply sine and remembered turn direction by the current side. Math.cos(-a) equals Math.cos(a), Math.sin(-a) equals -Math.sin(a) for these finite constants; verify exact attempted coordinates against the frozen implementation.
+
+This is arithmetic reuse, not a rendering technique; no external art/shader source applies. Tests exercise straight movement, each retry, complete blockage and side changes, then existing action simulation and browser behavior. Count actual trigonometric calls after initialization; baseline must fail the no-repeat assertion. Capture before/after rendered goon frames. Hardware FPS, physical controls, listening and full playthrough remain unverified. OpenSpec CLI unavailable; manual validation.
