@@ -1,0 +1,32 @@
+{
+  "headSha": "4a4e538725cd6fa82f33c8f3ae7981b7597bf35f",
+  "status": "completed",
+  "conclusion": "success",
+  "run": "https://github.com/vdimarco/rouge-warden/actions/runs/40140081405",
+  "jobs": [
+    {
+      "name": "flat-play",
+      "conclusion": "success"
+    },
+    {
+      "name": "flat-payoff",
+      "conclusion": "success"
+    },
+    {
+      "name": "flat-missions",
+      "conclusion": "success"
+    },
+    {
+      "name": "flat-world",
+      "conclusion": "success"
+    },
+    {
+      "name": "city-and-one-thumb",
+      "conclusion": "success"
+    },
+    {
+      "name": "flat-scenes",
+      "conclusion": "success"
+    }
+  ]
+}

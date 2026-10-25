@@ -1,0 +1,14 @@
+{
+  "head": "4a4e538725cd6fa82f33c8f3ae7981b7597bf35f",
+  "merge": "f9577462225528f5dc96cd2f72522376e5d424a7",
+  "checkedAt": "2026-10-25T04:47:27.919681+00:00",
+  "checks": 35,
+  "allPassed": true,
+  "note": "Authenticated post-merge preview verification; not a pre-merge gate.",
+  "breakdown": {
+    "paint": 15,
+    "uploads": 9,
+    "marker": 11
+  },
+  "counting": "Assertions only; suite summary PASS lines excluded."
+}
