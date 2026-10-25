@@ -2,6 +2,8 @@
 
 Run with Python alone. The car actor keeps its existing collision and wheel
 centres, so these visual assets must stay near that established envelope.
+Quebec has required only a rear licence plate since 1979, so each body carries
+one plate, at the rear.
 """
 
 import json
@@ -18,6 +20,12 @@ EXPECTED = {
     "Car70Rim.obj",
 }
 SLOTS = {"Paint", "Chrome", "Ink", "Rubber", "Glass", "Lens", "Red", "Amber", "Cream", "Vinyl"}
+# The plate space on a body end, in centimetres: past the fascia (|x| > 219), on the car's axis
+# (|y| < 16), from z -58 to -44 around the bumper bar's lower half. A plate is a Cream face, Ink
+# characters and a Chrome frame. The bumper bar reaches down to z -49.3, so only Chrome below
+# z -50.5 counts as a frame.
+PLATE_X, PLATE_Y, PLATE_Z = 219, 16, (-58, -44)
+FRAME_Z = -50.5
 
 
 def bounded(value, name):
@@ -38,6 +46,16 @@ def length(a):
     return math.sqrt(sum(component * component for component in a))
 
 
+def plate_part(material, centre):
+    """The end ('front' at +X, 'rear' at -X) whose licence plate this triangle belongs to, or None."""
+    x, y, z = centre
+    if abs(x) <= PLATE_X or abs(y) >= PLATE_Y or not PLATE_Z[0] < z < PLATE_Z[1]:
+        return None
+    if material in ("Cream", "Ink") or (material == "Chrome" and z < FRAME_Z):
+        return "front" if x > 0 else "rear"
+    return None
+
+
 def load_obj(path):
     vertices, uvs, normals = [], [], []
     groups = []
@@ -46,6 +64,7 @@ def load_obj(path):
     body_top_up = body_top_down = 0
     roof_top_x = []
     glass_x = []
+    plates = {"front": {}, "rear": {}}
     for line in path.read_text().splitlines():
         if line.startswith("v "):
             point = tuple(map(float, line.split()[1:]))
@@ -80,6 +99,10 @@ def load_obj(path):
             area_twice = length(normal)
             assert area_twice > .001, (path, "degenerate triangle", vi)
             counts[current] += 1
+            if path.stem.startswith("Car70Body"):
+                end = plate_part(current, tuple((a[i] + b[i] + c[i]) / 3 for i in range(3)))
+                if end:
+                    plates[end][current] = plates[end].get(current, 0) + 1
             if path.stem.startswith("Car70Body") and current == "Paint":
                 z = (a[2] + b[2] + c[2]) / 3
                 if z > 2 and all(-190 < point[0] < 190 for point in (a, b, c)):
@@ -106,6 +129,7 @@ def load_obj(path):
         "roof_top_length": max(roof_top_x) - min(roof_top_x) if roof_top_x else 0,
         "glass_rear_x": min(glass_x) if glass_x else None,
         "maximum_radius": max(math.hypot(x, y) for x, y, _ in vertices),
+        "plates": plates,
     }
 
 
@@ -119,6 +143,10 @@ def check_envelope(name, info):
         assert 500 < info["triangles"] < 10_000, name
         assert info["materials"][0] == "Paint", name
         assert {"Chrome", "Ink", "Lens", "Red", "Amber"} <= set(info["materials"]), name
+        # Rear plate only: Quebec has required no front plate since 1979.
+        assert not info["plates"]["front"], (name, "front licence plate", info["plates"]["front"])
+        rear = info["plates"]["rear"]
+        assert rear.get("Cream", 0) >= 12 and rear.get("Ink", 0) >= 12 and rear.get("Chrome", 0) >= 2, (name, rear)
     elif "Cabin" in name:
         assert -210 <= x[0] < -140 and 75 < x[1] <= 90, (name, x)
         assert -90 <= y[0] and y[1] <= 90, (name, y)
@@ -185,7 +213,8 @@ def main():
     glass_rears = [records[f"Car70Cabin{i}.obj"]["glass_rear_x"] for i in range(3)]
     assert all(abs(a - b) > 15 for i, a in enumerate(glass_rears) for b in glass_rears[i + 1:]), glass_rears
     assert sum(info["triangles"] for info in records.values()) < 35_000
-    print("NORD_CAR70_SOURCE_OK 11 meshes, 3 distinct silhouettes, wheel axis/radius, bounded body, materials and normals")
+    print("NORD_CAR70_SOURCE_OK 11 meshes, 3 distinct silhouettes, wheel axis/radius, bounded body, rear plate only, "
+          "materials and normals")
 
 
 if __name__ == "__main__":

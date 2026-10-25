@@ -140,7 +140,7 @@ The foreground helper refuses other rendered Unreal processes, less than **12,00
 
 Press **Ctrl-C** in that terminal to stop only the three process groups created by this helper. SIGTERM also performs cleanup. Startup failure stops already launched children. It does not kill unrelated jobs or reset any service configuration. Timestamped logs, generated ICE configuration and `lifecycle.json` live under `games/nord-unreal/Saved/BrowserStreaming/`; the private source configuration remains under its ignored `relay/` directory. A forcibly killed launcher or a PC crash cannot run cleanup; inspect its recorded processes and command lines before stopping them manually. This manual option depends on the terminal staying open; the temporary user services above avoid that dependency without adding automatic game recovery.
 
-For local player testing, build `Browser` with `NORD_SIGNALLING_URL=ws://127.0.0.1:9010` and serve it on loopback as described in its README. Do not deploy that local endpoint.
+For local player testing, build `Browser` with `NORD_SIGNALLING_URL=ws://127.0.0.1:9010` and serve it on loopback as described in its README. Do not deploy that local endpoint. A gauntlet stream sample also needs `NORD_QA_PIN=1`, so the page accepts `?pin=`. `build.mjs` refuses `NORD_QA_PIN=1` when `VERCEL` is set.
 
 ## Temporary public signalling
 

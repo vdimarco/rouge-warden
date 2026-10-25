@@ -67,6 +67,8 @@ class ACharacter : public APawn
     virtual void OnStartCrouch(float HalfHeightAdjust, float ScaledHalfHeightAdjust);
     virtual void OnEndCrouch(float HalfHeightAdjust, float ScaledHalfHeightAdjust);
     virtual void Landed(const FHitResult& Hit);
+    // UCharacterMovementComponent::HandleImpact calls this before it turns the velocity into a slide.
+    virtual void MoveBlockedBy(const FHitResult& Impact) {}
     virtual void Falling();
     virtual void NotifyJumpApex();
     virtual void OnJumped_Implementation();

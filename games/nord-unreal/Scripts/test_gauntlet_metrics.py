@@ -146,14 +146,20 @@ def check_missing_columns():
 
 def check_hitch_rule():
     analysis = M.analyze_samples(M.read_fixture(FIXTURE), LOOP)
-    rate, long_frames, passed = M.hitch_rule(analysis["all"]["frame"], LOOP)
-    assert abs(rate - 6 * 30 / EXPECTED["lap"]["seconds"]) < 1e-9 and long_frames == 2 and passed is False
+    most, long_frames, passed = M.hitch_rule(analysis["all"]["frame"], LOOP)
+    # The fixture lap lasts 24 s, so its 6 hitches are all in one 30 s window.
+    assert most == 6 and long_frames == 2 and passed is False, (most, long_frames, passed)
     # S5-S1 has a frame of exactly 66.7 ms, which is not a hitch.
-    assert M.hitch_rule(analysis["legs"]["S5-S1"]["frame"], LOOP) == (0.0, 0, True)
-    smooth = [20.0] * 1500
+    assert M.hitch_rule(analysis["legs"]["S5-S1"]["frame"], LOOP) == (0, 0, True)
+    smooth = [20.0] * 1500  # 30 s
     assert M.hitch_rule(M.frame_stats(smooth + [70.0], LOOP), LOOP)[2] is True, "one hitch in 30 s is allowed"
     assert M.hitch_rule(M.frame_stats(smooth + [70.0, 70.0], LOOP), LOOP)[2] is False
-    assert M.hitch_rule(M.frame_stats(smooth * 2 + [70.0, 70.0], LOOP), LOOP)[2] is True, "two in 60 s are allowed"
+    assert M.hitch_rule(M.frame_stats(smooth + [70.0] + smooth + [70.0], LOOP), LOOP)[2] is True, "two hitches 30 s apart"
+    assert M.hitch_rule(M.frame_stats(smooth * 2 + [70.0, 70.0], LOOP), LOOP)[2] is False, "two in one 30 s stretch of 60 s"
+    # The review's case: 9 hitches inside one 30 s stretch of a 296 s lap average 0.91 per 30 s, but break the rule.
+    lap = [20.0] * 14800
+    burst = M.frame_stats(lap[:6000] + [70.0] * 9 + lap[6000:], LOOP)
+    assert burst["over_66_7ms"] * 30 / burst["seconds"] < 1 and M.hitch_rule(burst, LOOP) == (9, 0, False), M.hitch_rule(burst, LOOP)
     assert M.hitch_rule(M.frame_stats(smooth * 4 + [251.0], LOOP), LOOP)[2] is False, "no frame over 250 ms"
     assert M.hitch_rule(M.frame_stats(smooth * 4 + [250.0], LOOP), LOOP)[2] is True
     assert M.hitch_rule(None, LOOP) == (None, None, None)
@@ -213,8 +219,13 @@ def check_gates():
     contended = M.verdict(gates, foreign=foreign)
     assert contended["status"] == "contended" and contended["contended_by"][0]["pid"] == 7777
     assert M.verdict(list(failing.values()), foreign=foreign)["status"] == "contended"
+    # Report-only: a row that gates nothing (two viewers, relay) with whole values. Gates or contention still decide.
+    whole = M.verdict([], complete=True)
+    assert whole["status"] == "report-only" and "summary" not in whole and M.verdict([], complete=False)["status"] == "unverified"
+    assert M.verdict([], foreign=foreign, complete=True)["status"] == "contended"
+    assert M.verdict(missing, complete=True)["status"] == "unverified" and M.verdict(gates, complete=True)["status"] == "pass"
     assert M.parse_summaries(log)[1]["frames"] == 2000.0 and M.run_summary(M.parse_summaries(log))["frames"] == 2000.0
-    print("gates ok: pass, fail, unverified, contended")
+    print("gates ok: pass, fail, unverified, contended, report-only")
 
 
 def check_stream_and_processes():
@@ -404,18 +415,22 @@ def check_review():
 def check_look_gates():
     images = {f"view{i}": .97 for i in range(20)}
     by_name = lambda rows: {g["name"]: g for g in rows}
-    passed = M.look_gates(LOOP, images, baseline_mean=.96, repeat={f"view{i}": .99 for i in range(20)})
-    assert [g["name"] for g in passed] == ["image_ssim_min", "look_vs_baseline", "repeat_ssim_min"]
+    passed = M.look_gates(LOOP, images, baseline_mean=.96, repeat_min=.99)
+    assert [g["name"] for g in passed] == ["image_count", "image_ssim_min", "look_vs_baseline", "repeat_ssim_min"]
     assert M.verdict(passed)["status"] == "pass", passed
-    # No second ceiling render, or an empty one: the repeat gate stays and is unverified, never a pass.
-    for repeat in (None, {}):
-        rows = by_name(M.look_gates(LOOP, images, baseline_mean=.96, repeat=repeat))
-        assert rows["repeat_ssim_min"]["result"] == "unverified", rows
-        assert M.verdict(list(rows.values()))["status"] == "unverified"
+    # 2 of 20 stills at a high SSIM: the mean beats the baseline, but a partial set fails the count gate.
+    partial = by_name(M.look_gates(LOOP, {"S1-eye": .99, "S1-chase": .99}, baseline_mean=.96, repeat_min=.99))
+    assert partial["image_count"]["result"] == "fail" and partial["image_count"]["value"] == 2, partial["image_count"]
+    assert M.verdict(list(partial.values()))["status"] == "fail"
+    assert by_name(M.look_gates(LOOP, None, repeat_min=.99))["image_count"]["result"] == "unverified"
+    # No second ceiling render: the repeat gate stays and is unverified, never a pass.
+    rows = by_name(M.look_gates(LOOP, images, baseline_mean=.96))
+    assert rows["repeat_ssim_min"]["result"] == "unverified", rows
+    assert M.verdict(list(rows.values()))["status"] == "unverified"
     # A reference that does not repeat fails the round.
-    low = by_name(M.look_gates(LOOP, images, baseline_mean=.96, repeat={"view0": .975, "view1": .99}))
+    low = by_name(M.look_gates(LOOP, images, baseline_mean=.96, repeat_min=.975))
     assert low["repeat_ssim_min"]["result"] == "fail" and low["repeat_ssim_min"]["value"] == .975
-    print("look gates ok: repeat gate always present, unverified without the second ceiling render")
+    print("look gates ok: a partial still set fails the count, repeat gate always present, unverified without the second ceiling render")
 
 
 def main():

@@ -43,6 +43,8 @@
 #include "QuebecTrioMark.h" // Three sidewalk posts. One walker, in order, paid once.
 #include "QuebecTrio.h"
 #include "QuebecPolice.h" // Police: the dispatcher spawned by the game mode (POLICE).
+#include "QuebecParkedCars.h" // Parked cars at every legal curb space, spawned by the game mode.
+#include "QuebecParkedRules.h"
 #include "LaFontaineMap.h"
 #include "LaFontaineExtensionMap.h"
 #include "CollegeBathurstMap.h"
@@ -242,6 +244,13 @@ AQuebecCharacter::AQuebecCharacter()
     CasualStand->SetCollisionProfileName(TEXT("NoCollision"));
     CasualStand->SetVisibility(false);
     CasualStand->SetHiddenInGame(true);
+}
+
+void AQuebecCharacter::MoveBlockedBy(const FHitResult& Impact)
+{
+    Super::MoveBlockedBy(Impact);
+    // The movement has not yet turned the velocity into a slide along what it hit (HandleImpact calls this first).
+    if (HasAuthority() && GetCharacterMovement()) AQuebecParkedCars::PromoteOnBody(Impact, GetCharacterMovement()->Velocity, this);
 }
 
 void AQuebecCharacter::PossessedBy(AController* NewController)
@@ -1795,6 +1804,8 @@ void AQuebecCar::MoveWithCollision(float Step, const FVector& Travel)
         const FVector Normal = Hit.Normal.GetSafeNormal2D();
         FVector Velocity = PlanarVelocity();
         AQuebecCar* Other = HasAuthority() ? Cast<AQuebecCar>(Hit.GetActor()) : nullptr;
+        // A hard hit on a parked car at the curb turns it into a real car first, so the hit below shoves it.
+        if (!Other && HasAuthority()) Other = AQuebecParkedCars::PromoteOnImpact(Hit,Velocity);
         if (Other && Other != this)
         {
             // Another car is a body, not a wall: trade momentum so the struck car is shoved and spun.
@@ -2715,14 +2726,7 @@ void AQuebecController::ServerInteract_Implementation()
     if (!Character || Character->IsInputLocked()) return; // People: no E while knocked down, K.-O. or arrested.
     if (AQuebecCar* NearestCar = FindInteractableCar())
     {
-        ClientInteractionMessage(TEXT(""));
-        WalkingCharacter = Character;
-        Character->SetInVehicle(true);
-        Character->SetActorLocation(NearestCar->GetActorLocation());
-        Character->AttachToActor(NearestCar, FAttachmentTransformRules::KeepWorldTransform);
-        NearestCar->Occupant = Character;
-        NearestCar->StopInput();
-        Possess(NearestCar);
+        EnterCar(Character, NearestCar);
         return;
     }
     if (AQuebecCampaign* Campaign = CampaignFor(GetWorld()))
@@ -2736,12 +2740,45 @@ void AQuebecController::ServerInteract_Implementation()
     if (AQuebecCart* Cart = AQuebecCart::Find(GetWorld()); Cart && Cart->HandleInteract(this)) return;
     if (AQuebecBow* Bow = AQuebecBow::Find(GetWorld()); Bow && Bow->HandleInteract(this)) return;
     if (AQuebecBay* Bay = AQuebecBay::Find(GetWorld()); Bay && Bay->HandleInteract(this)) return;
-    if (AQuebecParkResident* Resident = FindInteractableResident())
+    AQuebecParkResident* Resident = FindInteractableResident();
+    // Parked cars: at its door, E turns the parked car into a real one and takes the driver's seat.
+    if (const int32 Slot = FindEnterableParkedSlot(Resident); Slot != INDEX_NONE)
+        if (AQuebecParkedCars* Parked = AQuebecParkedCars::Find(GetWorld()))
+            if (AQuebecCar* Car = Parked->Promote(Slot))
+            {
+                EnterCar(Character, Car);
+                return;
+            }
+    if (Resident)
     {
         Resident->Acknowledge(Character, true);
         ClientInteractionMessage(FString(AQuebecParkResident::NameForStyle(Resident->Style)) + TEXT("  /  ") + AQuebecParkResident::DialogueForStyle(Resident->Style));
         ClientPlayBark(Resident->Style);
     }
+}
+
+void AQuebecController::EnterCar(AQuebecCharacter* Character, AQuebecCar* Car)
+{
+    ClientInteractionMessage(TEXT(""));
+    WalkingCharacter = Character;
+    Character->SetInVehicle(true);
+    Character->SetActorLocation(Car->GetActorLocation());
+    Character->AttachToActor(Car, FAttachmentTransformRules::KeepWorldTransform);
+    Car->Occupant = Character;
+    Car->StopInput();
+    Possess(Car);
+}
+
+int32 AQuebecController::FindEnterableParkedSlot(const AQuebecParkResident* Resident) const
+{
+    const AQuebecCharacter* Character = Cast<AQuebecCharacter>(GetPawn());
+    const AQuebecParkedCars* Parked = Character && !Character->GetCharacterMovement()->IsSwimming() ? AQuebecParkedCars::Find(GetWorld()) : nullptr;
+    if (!Parked) return INDEX_NONE;
+    float SlotDistance = -1.f;
+    const int32 Slot = Parked->FindEnterableSlot(Character, SlotDistance);
+    const float ResidentDistance = Resident ? static_cast<float>(FVector::DistSquared(Character->GetActorLocation(),
+        Resident->GetActorLocation() + FVector(0., 0., 100.))) : -1.f;
+    return Slot != INDEX_NONE && QuebecParkedRules::SlotBeatsResident(SlotDistance, ResidentDistance) ? Slot : INDEX_NONE;
 }
 
 void AQuebecController::ExitCar(AQuebecCar* Car)
@@ -3081,8 +3118,12 @@ void AQuebecHUD::DrawHUD()
         if (Campaign) Prompt = Campaign->GetInteractionPrompt(Controller);
         if (Prompt.IsEmpty()) Prompt = StreetPrompt(); // Side-job marker, or Chez Lise.
         if (Prompt.IsEmpty())
-            if (AQuebecParkResident* Resident = Controller->FindInteractableResident())
-                Prompt = FString(TEXT("E  /  Talk to ")) + AQuebecParkResident::NameForStyle(Resident->Style);
+        {
+            AQuebecParkResident* Resident = Controller->FindInteractableResident();
+            // A parked car at the curb, unless a resident stands nearer (QuebecParkedRules::SlotBeatsResident).
+            if (Controller->FindEnterableParkedSlot(Resident) != INDEX_NONE) Prompt = TEXT("[ E ]  ENTER CAR");
+            else if (Resident) Prompt = FString(TEXT("E  /  Talk to ")) + AQuebecParkResident::NameForStyle(Resident->Style);
+        }
     }
     const float LowerLeft = !bPortrait && bTouchControls ? 240.f * Scale : Margin;
     const float LowerRight = Right - (!bPortrait ? ((bTouchControls ? 420.f : 0.f) + (Car ? 190.f : 0.f)) * Scale : 0.f);
@@ -3793,7 +3834,12 @@ void AQuebecGameMode::BeginPlay()
             if (!bParked) UE_LOG(LogTemp,Warning,TEXT("NORD_POPULATION no valid starter curb space"));
             break;
         }
-    if (FParse::Param(FCommandLine::Get(),TEXT("NordNoAmbient"))) return;
+    if (FParse::Param(FCommandLine::Get(),TEXT("NordNoAmbient")))
+    {
+        // Look runs keep the parked cars at the curbs: they are deterministic, so the stills still repeat.
+        AQuebecParkedCars::SpawnFill(GetWorld());
+        return;
+    }
     // Old saved cars at a 210 cm offset overlap traffic. Keep the starter
     // anchor and find real asphalt spaces on the nearest sufficiently wide road.
     int32 Reparked = 0;
@@ -4116,6 +4162,9 @@ void AQuebecGameMode::BeginPlay()
         UE_LOG(LogTemp,Warning,TEXT("NORD_POPULATION some placements were blocked by world collision"));
     // Street traces: knockable cones around two work zones and bins at the curb, placed after the parked cars.
     AQuebecStreetProp::SpawnStreetProps(GetWorld());
+    // A parked car at every legal curb space on the replica streets (QuebecParkedCars.h), after the starter, the
+    // saved and runtime cars and the cones, whose spaces it leaves out.
+    AQuebecParkedCars::SpawnFill(GetWorld());
 }
 
 #if WITH_DEV_AUTOMATION_TESTS

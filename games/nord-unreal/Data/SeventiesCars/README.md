@@ -1,6 +1,6 @@
 # Original 1970s-inspired fleet
 
-Three silhouettes share the existing vehicle footprint and running gear: a fastback coupe, notchback sedan and long-roof wagon. Shaped fenders, open wheel arches, painted pillars, crowned roofs, four round sealed-beam lamps, inset grilles, wraparound chrome bumpers, mirrors, door seams, marker lamps and steel wheels replace the primitive car assembly. Four enamel colours retain the comic city's palette.
+Three silhouettes share the existing vehicle footprint and running gear: a fastback coupe, notchback sedan and long-roof wagon. Shaped fenders, open wheel arches, painted pillars, crowned roofs, four round sealed-beam lamps, inset grilles, wraparound chrome bumpers, mirrors, door seams, marker lamps and steel wheels replace the primitive car assembly. Each car carries one licence plate, at the rear: Quebec has required only a rear plate since 1979. Four enamel colours retain the comic city's palette.
 
 These are original procedural designs, not licensed replicas of a particular manufacturer. No extracted game assets, Google imagery or third-party vehicle models are used. Dark opaque glass preserves the existing exterior-only approach; the cars have no detailed interiors.
 

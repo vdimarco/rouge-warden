@@ -188,6 +188,25 @@ def native_stack_guard_test(report):
         else:raise AssertionError('Unsafe actual native wall stack accepted '+defect)
 
 
+def map_scope_test(root):
+    """Only the two road arrays of LaFontaineMap.h are pinned. New parking sides (prepare_car_parking.py rewrites
+    RoadParkingSides) keep the extension valid; an edited road or width does not."""
+    header = root/'Source/Quebec/LaFontaineMap.h'; original = header.read_bytes(); text = original.decode('ascii')
+    def edit(marker, change):
+        head, rest = text.split(marker, 1); body, tail = rest.split('};', 1)
+        assert text.count(marker) == 1 and change(body) != body
+        header.write_bytes((head+marker+change(body)+'};'+tail).encode('ascii'))
+    edit('const int8 RoadParkingSides[] = {\n', lambda body: ','.join('0' if v.strip() != '0' else '3' for v in body.split(','))+'\n')
+    assert plan.sources(root) and plan.load(root)['source_hashes'] == plan.sources(root), 'New parking sides rejected'
+    for marker, change in (('const float RoadSegmentWidths[] = {\n', lambda body: body.replace('620.000f', '621.000f', 1)),
+                           ('const FVector RoadSegments[][2] = {\n', lambda body: body.replace('.', '.1', 1))):
+        edit(marker, change)
+        try: plan.sources(root)
+        except AssertionError: pass
+        else: raise AssertionError('Edited retained road array accepted: '+marker.split('[')[0])
+    header.write_bytes(original); assert plan.sources(root)
+
+
 def main():
     before=plan.sources();mesh,report=plan.build();other,again=plan.build();assert report==again and mesh.groups==other.groups
     assert len(report['roads'])==143 and len({r['source'] for r in report['roads']})==37
@@ -240,7 +259,7 @@ def main():
             path=root/name;path.parent.mkdir(parents=True,exist_ok=True);shutil.copy2(plan.ROOT/name,path)
         generated=plan.prepare(root);assert plan.load(root)==generated
         assert (root/plan.HEADER).read_text()==text
-        preflight_tests(root,generated);backup_test(root)
+        preflight_tests(root,generated);backup_test(root);map_scope_test(root)
         source=root/'Data/LaFontaine/osm.xml';source.write_bytes(source.read_bytes()+b' ')
         try:plan.build(root)
         except AssertionError:pass

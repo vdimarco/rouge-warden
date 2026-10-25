@@ -1,6 +1,7 @@
 #include "QuebecTraces.h"
 #include "QuebecGameplay.h"
 #include "QuebecGTA.h"
+#include "QuebecParkedCars.h"
 #include "LaFontaineMap.h"
 
 #include "CollisionQueryParams.h"
@@ -24,6 +25,9 @@ namespace
     TMap<TWeakObjectPtr<UWorld>, TWeakObjectPtr<AQuebecTraceMarks>> TraceMarkLayers;
     // Every street prop of each game world, filled as props are spawned, so strikes read a short list.
     TMap<TWeakObjectPtr<UWorld>, TArray<TWeakObjectPtr<AQuebecStreetProp>>> StreetPropLists;
+    // The least rise from the road that counts as a curb. The replica curb rises 11 cm (asphalt top 7 cm, sidewalk
+    // top 18 cm); test_plateau_parking.py measures it on the Streets OBJs.
+    constexpr float CurbRise = 10.f;
 
     // Prop sizes (cm): footprint radius for strikes, hop height, lift when lying on a side, and mass for knock distance.
     struct FTracePropShape { float Radius; float Apex; float Lift; float Mass; };
@@ -87,7 +91,7 @@ bool QuebecStreet::FindCurb(const UWorld* World, const FVector& RoadPoint, const
             const float Rise = float(Hit.ImpactPoint.Z)-RoadZ;
             // Something taller than a curb before any curb: a wall, a planter or a step.
             if (Hit.bStartPenetrating || Rise > 32.f) return false;
-            if (Rise >= 12.f && Hit.ImpactNormal.Z >= .7f) Edge = Lateral;
+            if (Rise >= CurbRise && Hit.ImpactNormal.Z >= .7f) Edge = Lateral;
         }
         if (Edge < 0.f) return false;
         Edges[Sample] = Edge;
@@ -270,6 +274,14 @@ bool AQuebecStreetProp::Knock(const FVector& CarVelocity, const FVector& CarCent
     FHitResult Hit;
     if (PropWorld->SweepSingleByObjectType(Hit,Start+FVector(0.,0.,60.),Rest+FVector(0.,0.,60.),FQuat::Identity,Solid,FCollisionShape::MakeSphere(25.f),Query))
         Rest = Hit.bStartPenetrating ? Start : Hit.Location-FVector(0.,0.,60.)-Push*10.;
+    // The parked cars' boxes are WorldDynamic, so the sweep misses them: the flight's own line finds them, and the
+    // prop stops its radius and 10 cm short of the car's side, as at a wall.
+    if (const AQuebecParkedCars* Fill = AQuebecParkedCars::Find(PropWorld))
+    {
+        FVector Side = FVector::ZeroVector;
+        if (Fill->FindSlotOnLine(Start+FVector(0.,0.,60.),Rest+FVector(0.,0.,60.),Side) != INDEX_NONE)
+            Rest = FVector::Dist2D(Side,Start) <= 35. ? Start : Side-FVector(0.,0.,60.)-Push*35.;
+    }
     float GroundZ = float(Start.Z);
     QuebecStreet::GroundAt(PropWorld,Rest,GroundZ);
     Rest.Z = GroundZ;
@@ -426,7 +438,7 @@ int32 AQuebecStreetProp::SpawnStreetProps(UWorld* World)
             for (FVector& Spot : Spots)
             {
                 float SpotZ = 0.f;
-                bFits = bFits && QuebecStreet::GroundAt(World,Spot,SpotZ) && SpotZ-RoadZ >= 12.f && SpotZ-RoadZ <= 32.f;
+                bFits = bFits && QuebecStreet::GroundAt(World,Spot,SpotZ) && SpotZ-RoadZ >= CurbRise && SpotZ-RoadZ <= 32.f;
                 if (!bFits) break;
                 Spot.Z = SpotZ;
                 bFits = Clear(Spot,40.f);

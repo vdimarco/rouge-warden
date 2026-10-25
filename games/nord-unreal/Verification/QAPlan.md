@@ -127,6 +127,8 @@ node stream-sample.mjs --slot NordFriend1 --seconds 60 --look
 node stream-sample.mjs --slot NordFriend1 --seconds 60 --look --relay
 ```
 
+A sample passes only when the stream lasts the whole 60 s. When the stream ends first, `sample.json` keeps the summary up to the stream end (`streamEndedTimeMs`), with `passed: false`, and the sampler exits non-zero. The sampler stops 10 s after its last sample with a connected peer, so a lost stream does not hold it for the rest of the 60 s. That a lost stream leaves no peer in the connected state is unverified.
+
 | Measure | Reference | Pass condition |
 | --- | --- | --- |
 | Decoded FPS | 60 FPS cap, 30 FPS floor | Mean at or above 27 over 60 s on the camera sweep, both slots occupied. |
@@ -138,7 +140,7 @@ node stream-sample.mjs --slot NordFriend1 --seconds 60 --look --relay
 
 The stream runs at a 60 FPS cap: `t.MaxFPS 60` and `-PixelStreamingWebRTCFps=60` in `Scripts/browser_streaming.py`, since commit `d6ed7d07` (2026-10-19). A 30 cap added about 30 ms of phone buffering ([DrivingLatency.md](DrivingLatency.md)). The 30 FPS target is a floor judged against a 33.3 ms frame budget, not a cap. A solo sample can decode up to 60 FPS. That is headroom, not a promise.
 
-These L4 samples sweep the camera at the spawn. For phone-sized gates on a fixed Plateau route, use the GTA mobile gauntlet in [`docs/gauntlet/gta-mobile.md`](../../../docs/gauntlet/gta-mobile.md). It gates native frame time on each leg and decoded frame intervals at pinned phone sizes, and it reports delay apart from frame rate. Its requirements and host commands are in [`openspec/changes/nord-mobile-gauntlet/`](../../../openspec/changes/nord-mobile-gauntlet/).
+These L4 samples sweep the camera at the spawn. For phone-sized gates on a fixed Plateau route, use the GTA mobile gauntlet in [`docs/gauntlet/gta-mobile.md`](../../../docs/gauntlet/gta-mobile.md). It gates native frame time on each leg and decoded frame intervals at pinned phone sizes, and it reports delay apart from frame rate. Its pinned samples need a local player built with `NORD_QA_PIN=1`, which `build.mjs` refuses when `VERCEL` is set. Its input row, `gauntlet_loop.py stream --look`, drags on the stream for the whole lap and gates the car's lateral error at most 2.5 m. Its requirements and host commands are in [`openspec/changes/nord-mobile-gauntlet/`](../../../openspec/changes/nord-mobile-gauntlet/).
 
 Samples go under ignored `Saved/BrowserStreaming/samples/`. Record candidate types only, never ICE credentials. Do not rebuild `dist` while a sample runs. Same-PC samples do not stand for phone, carrier or off-LAN performance.
 

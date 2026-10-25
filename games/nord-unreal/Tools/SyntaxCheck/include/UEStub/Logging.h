@@ -116,6 +116,8 @@ struct FPlatformMisc
     static void SetEnvironmentVar(const TCHAR* VariableName, const TCHAR* Value);
     static bool IsDebuggerPresent();
     static void RequestExit(bool Force, const TCHAR* CallSite = nullptr);
+    // From memory (unverified): the process exit code once the engine loop ends.
+    static void RequestExitWithStatus(bool Force, uint8 ReturnCode, const TCHAR* CallSite = nullptr);
     static void LocalPrint(const TCHAR* Str);
     static int32 NumberOfCores();
     static int32 NumberOfCoresIncludingHyperthreads();

@@ -37,19 +37,22 @@ Each line is `"$cmd" "$uproject" /Game/Maps/LaFontaine <flags> -ExecutePythonScr
 Then the HUD captures: `test_compact_hud.py` and the story render checks at `-NordCaptureWidth=1280` and `1920`. The radar should match the accepted captures. Review them and accept again if the job markers or pickups show.
 
 ## 4. Map import
-Regenerate the git-ignored geometry, back up the map, then import. Build Plex and Props before the replica test, because its apply-plan check needs every layer's OBJ files:
+Regenerate the git-ignored geometry, back up the map, then import. Build the trees, Plex and Props before the replica test, because its apply-plan check needs every layer's OBJ files, and run the parking step after the replica. `Data/Plateau/ReplicaGeometry/README.md` has the full block:
 ```bash
+python3 Scripts/blender/plateau_trees.py --no-render
 python3 Scripts/plateau_plex.py && python3 Scripts/test_plateau_plex.py
 <blender-python> Scripts/blender/plateau_props.py && python3 Scripts/test_plateau_props.py
 python3 Scripts/plateau_replica.py && python3 Scripts/test_plateau_replica.py
+python3 Scripts/plateau_parking.py && python3 Scripts/test_plateau_parking.py
 python3 Scripts/apply_plateau_replica.py --dry-run
+"$cmd" "$uproject" -ExecutePythonScript="$(pwd)/Scripts/build_seventies_cars.py" -unattended -nop4 -nosound -NullRHI
 backup="$(pwd)/Saved/Recovery/replica-$(date -u +%Y%m%dT%H%M%SZ)"
 "$cmd" "$uproject" /Game/Maps/LaFontaine -NullRHI -Unattended -NoP4 -NoSound \
   -ExecutePythonScript="$(pwd)/Scripts/apply_plateau_replica.py" -NordPlateauReplicaBackup="$backup"
 "$cmd" "$uproject" /Game/Maps/LaFontaine -NullRHI -Unattended -NoP4 -NoSound \
   -ExecutePythonScript="$(pwd)/Scripts/apply_plateau_replica.py" -NordPlateauReplicaBackup="$backup" -NordPlateauReplicaVerify
 ```
-The script is additive and refuses to run twice. The only change to an existing actor is that the `OSM Marking` dashes are hidden. Then rerun `car_collision_test.py`, `population_test.py` and `Scripts/verify_lafontaine.py` on the saved map. Capture the six reference views and run `python3 Scripts/profile_package.py` after packaging: each p95 must stay under 16.67 ms. Compare the captures with `Preview/Replica/`.
+Rebuild the Quebec module (step 1) when `plateau_parking.py` rewrites `LaFontaineParking.h`. `build_seventies_cars.py` re-imports the Car70 meshes (rear plate only since the seventh pass) and saves no level. The apply script is additive and refuses to run twice. The only changes to existing actors are the hidden `OSM Marking` dashes and seven route trees, and the emptied `Plateau mapped vegetation`. Then rerun `car_collision_test.py`, `population_test.py` and `Scripts/verify_lafontaine.py` on the saved map. Capture the six reference views and run `python3 Scripts/profile_package.py` after packaging: each p95 must stay under 16.67 ms. Compare the captures with `Preview/Replica/`.
 
 ## 5. Phone play over the stream
 Play on a real phone at 667×375 and 800×360 landscape:

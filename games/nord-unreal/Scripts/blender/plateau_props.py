@@ -103,6 +103,14 @@ MATERIALS = {
     'DishWhite': ('#E2E2DD', .45, .1, 0), 'DishGrey': ('#AEB0AF', .45, .3, 0), 'DishDark': ('#45484B', .45, .3, 0),
     'Terracotta': ('#B0613B', .85, 0, 0), 'PotBlack': ('#232425', .6, 0, 0), 'PotGrey': ('#8A8985', .7, 0, 0),
     'PlantGreen': ('#4D6A33', .7, 0, 0), 'PlantDry': ('#8B7442', .8, 0, 0), 'PlantRust': ('#97492A', .75, 0, 0),
+    # Late-October dressing: kraft yard-waste bags with green print and a few leaves caught in the fold, and pumpkins.
+    # Wet kraft darkens after rain; the pale one has sat in the sun.
+    'LeafBagKraft': ('#A27B4C', .92, 0, 0), 'LeafBagWet': ('#7C5B37', .8, 0, 0), 'LeafBagPale': ('#BD9F70', .95, 0, 0),
+    'LeafBagInk': ('#2F6A3C', .85, 0, 0),
+    'LeafOchre': ('#C2902E', .75, 0, 0), 'LeafRust': ('#A5482A', .75, 0, 0), 'LeafBrown': ('#7A5634', .8, 0, 0),
+    'PumpkinOrange': ('#DB741E', .55, 0, 0), 'PumpkinDeep': ('#B85A1A', .55, 0, 0), 'PumpkinWhite': ('#E3DAC4', .6, 0, 0),
+    'PumpkinLantern': ('#E88A26', .5, 0, 0), 'PumpkinStem': ('#7B7444', .85, 0, 0),
+    'PumpkinHollow': ('#2E1608', .9, 0, 0),
 }
 
 # Colour variant groups: a part authored with the first key may be swapped for the others.
@@ -122,6 +130,8 @@ VARIANTS = [
     ['PoleGalv', 'PoleGrey'],
     ['ResinWhite', 'ResinGreen', 'ResinBeige'], ['GrillBlack', 'GrillRed', 'GrillSteel'], ['DishWhite', 'DishGrey', 'DishDark'],
     ['Terracotta', 'PotBlack', 'PotGrey'], ['PlantGreen', 'PlantDry', 'PlantRust'],
+    ['LeafBagKraft', 'LeafBagWet', 'LeafBagPale'], ['LeafOchre', 'LeafRust', 'LeafBrown'],
+    ['PumpkinOrange', 'PumpkinDeep', 'PumpkinWhite'], ['PumpkinLantern', 'PumpkinOrange', 'PumpkinDeep'],
 ]
 VARIANT_OF = {group[0]: group[1:] for group in VARIANTS}
 
@@ -482,8 +492,10 @@ def lamp_cobra():
     pole = [(13, 0), (13, 32), (10.5, 36), (9, 60), (6.2, 790), (5.5, 800), (0, 803)]
     P.lathe('PoleGalv', pole, 10, part='pole')
     P.lathe('PoleGalv', [(16, 0), (16, 3), (13.5, 5)], 10, cap0=False, cap1=True, part='pole')
-    P.tube('PoleGalv', [(0, 0, 770), (35, 0, 792), (90, 0, 806), (175, 0, 808)], 4.2, 8, part='pole')
-    P.tube('PoleGalv', [(0, 0, 725), (30, 0, 760), (62, 0, 798)], 2.4, 6, part='pole')
+    # the davit arm and its brace are a part of their own, so a head can hang from a wooden utility pole without the
+    # steel pole (plateau_replica.py: the city's wooden street poles carry cobra heads)
+    P.tube('PoleGalv', [(0, 0, 770), (35, 0, 792), (90, 0, 806), (175, 0, 808)], 4.2, 8, part='arm')
+    P.tube('PoleGalv', [(0, 0, 725), (30, 0, 760), (62, 0, 798)], 2.4, 6, part='arm')
     head = [(0, 0), (6, 2), (11, 12), (13, 30), (12.5, 48), (9.5, 62), (5, 70), (0, 72)]
     P.lathe('LampHousing', head, 10, (168, 0, 808), (0, 90, 0), (.62, 1.0, 1), part='head')
     P.box('LampHousing', (172, 0, 808), (14, 10, 10), bevel=2, part='head')
@@ -653,28 +665,154 @@ def sign_oneway():
     return P
 
 
+# Parking-sign plates, one face per sign family of the city's clip (Inventory/park_signs.json). The faces copy the
+# city's own drawings in Ville de Montréal, "Catalogue des panneaux, signalisation écrite" (2015 edition, the
+# "Catalogue des panneaux" resource of the open dataset "Signalisation (stationnement sur rue)"), which apply the
+# Quebec standard: the Règlement sur la signalisation routière (RLRQ c. C-24.2, r. 41) and the MTQ's Tome V,
+# chapter 2, as its Répertoire des dispositifs de signalisation routière draws them.
+# - A prescription sign is white (art. 2). A red crown with a red diagonal bar forbids what it holds (art. 6); a green
+#   crown makes it an obligation (art. 5).
+# - P-160 "arrêt interdit" (art. 30) holds a black octagon under the red crown and bar (P-160-3; city group A,
+#   page 1-1-1). P-150 "stationnement interdit" (art. 29, P-150-1) holds a black P (city groups S and R).
+# - P-150-7 "durée limitée" is a black P with its limit and hours and no crown (city group P, page 1-7-1-4).
+# - P-150-5 reserves a space for disabled people: a green crown with the wheelchair symbol under the barred P
+#   (city page 1-5-2).
+# - The city's plates are 300 x 450 mm, and 300 x 600 mm for the residents' permit zones (SRRR, page 1-5-3) and the
+#   disabled spaces. Each has a black border, and the bar runs from the top left to the bottom right.
+# Every plate hangs from the same top, so one crown serves every prohibition face. The text of a face is that of the
+# family's commonest code in the clip: one mesh serves every plate of its family, so its hours are an example.
+PLATE_TOP = 222.5                       # cm, the top of every plate (the old 45 cm plate centred at 200 cm)
+PLATE_W = 30.
+PLATE_H = {'short': 45., 'tall': 60.}   # the city's 300 x 450 and 300 x 600 mm plates
+CROWN_Y, CROWN_R = -11.3, (7.6, 9.6)    # the crown's centre under the plate top, its inner and outer radius
+GREEN_Y, GREEN_R = -33.5, (6.6, 8.2)    # the disabled plate's green crown
+ARROW_UP = 5.5                          # the arrow's axis over the plate bottom
+FACE_BUDGET = 1000                      # triangles of one assembled face (post, plate, face and arrow)
+# face: (family, plate, symbol, the code it copies, catalogue page, text lines (text, cm under the top, height, width))
+PARKING_FACES = {
+    'no_stopping': ('no_stopping', 'short', 'octagon', 'AD-TT', '1-1-1', ()),
+    'no_stopping_hours': ('no_stopping', 'short', 'octagon', 'AV-JL', '1-1-1',
+                          (('6h - 20h', 26.5, 4.4, 24), ('LUN À VEN', 32., 3.4, 22))),
+    'no_parking': ('no_parking', 'short', 'P', 'SD-TT', '1-2-1-1', ()),
+    'no_parking_hours': ('no_parking', 'short', 'P', 'SU-MA-A', '1-4-2-2',
+                         (('8h - 9h', 25.6, 4.2, 24), ('MARDI', 30.6, 3.2, 22), ('1 AVRIL AU 1 DÉC.', 34.4, 1.9, 23))),
+    'limited': ('limited', 'short', 'P_plain', 'PV-QE', '1-7-1-4',
+                (('15 min', 21.8, 4.4, 22), ('7h - 9h30', 27., 2.9, 20), ('15h - 18h', 30.6, 2.9, 20),
+                 ('LUN À VEN', 34.2, 2.6, 20))),
+    'reserved': ('reserved', 'short', 'P', 'R-SI', '1-5-1', (('EXCEPTÉ', 27., 4., 24),)),
+    'permit': ('permit', 'tall', 'P', 'R-PF', '1-5-3',
+               (('9h - 23h', 27.5, 5.2, 25),)),
+    'disabled': ('disabled', 'tall', 'P', 'R-TD', '1-5-2', ()),
+}
+PERMIT_PANEL = (('EXCEPTÉ', 36.8), ('VÉHICULES', 38.9), ('MUNIS D\'UN', 41.), ('PERMIS', 43.1))   # 1.35 cm lines
+
+
+def rounded_rect(w, h, r, cy=0.0, seg=3):
+    """Counter-clockwise outline of a w x h rectangle with corners of radius r, centred at (0, cy)."""
+    pts = []
+    for cx, cz, a0 in ((w / 2 - r, cy - h / 2 + r, -90), (w / 2 - r, cy + h / 2 - r, 0),
+                       (-w / 2 + r, cy + h / 2 - r, 90), (-w / 2 + r, cy - h / 2 + r, 180)):
+        pts += [(cx + r * math.cos(math.radians(a0 + 90 * i / seg)), cz + r * math.sin(math.radians(a0 + 90 * i / seg)))
+                for i in range(seg + 1)]
+    return pts
+
+
+def stroke(a, b, w):
+    """A straight stroke of width w from a to b, as a quad outline."""
+    dx, dy = b[0] - a[0], b[1] - a[1]
+    n = math.hypot(dx, dy)
+    ox, oy = -dy / n * w / 2, dx / n * w / 2
+    return [(a[0] + ox, a[1] + oy), (a[0] - ox, a[1] - oy), (b[0] - ox, b[1] - oy), (b[0] + ox, b[1] + oy)]
+
+
+def plate_arrow(direction):
+    """The arrow under a plate's text, pointing to the reader's left or right (glyph -X or +X), or both ways."""
+    if direction == 'both':
+        return [(-10, 0), (-6, 3.2), (-6, .8), (6, .8), (6, 3.2), (10, 0), (6, -3.2), (6, -.8), (-6, -.8), (-6, -3.2)]
+    arrow = [(-10, -.8), (6, -.8), (6, -3.2), (10.5, 0), (6, 3.2), (6, .8), (-10, .8)]
+    return arrow if direction == 'right' else [(-x, y) for x, y in arrow]
+
+
+def wheelchair(P, M, part):
+    """The international symbol of access in black, about 11 cm across, centred on M (page 1-5-2's pictogram)."""
+    flat(P, 'SignBlack', circle(1., 12, 0, -.9, 4.), M, part=part)
+    for a, b, w in (((-1.6, 2.6), (-1.1, -1.), 1.), ((-1.3, 1.2), (1.2, 1.2), .8), ((-1.1, -1.), (2., -1.), 1.),
+                    ((2., -1.), (3., -3.6), .9), ((3., -3.6), (4.1, -3.6), .8)):
+        flat(P, 'SignBlack', stroke(a, b, w), M, part=part)
+    ring_band(P, 'SignBlack', 2.6, 3.4, 20, M @ T((-.4, -2.2, 0)), part=part)
+
+
 def sign_parking():
-    P = Prop('sign_parking', 'street', 'Montréal parking sign (R-PF): white plate, red circle and slash '
-             'over a black P, "9h-23h / EXCEPTÉ S3R" and a direction arrow, on a galvanised post.',
-             'post base centre; plate faces +X')
+    P = Prop('sign_parking', 'street', 'Montréal parking sign on a galvanised post, with one plate face per sign family '
+             'of the city clip (plate_faces): no stopping, no parking, limited parking, reserved, the residents\' '
+             'permit zone (SRRR) and the disabled space, each with the arrows it may carry (plate_arrows). A '
+             'placement shows the face its code calls for and leaves the others out.',
+             'post base centre; plate faces +X; every plate hangs from the same top (222.5 cm)')
     _post(P, 235)
-    z = 200
-    P.box('SignBack', (3.6, 0, z), (.4, 30, 45), part='plate')
-    M = T((3.84, 0, z)) @ FACE_PX
-    flat(P, 'SignWhite', [(-15, -22.5), (15, -22.5), (15, 22.5), (-15, 22.5)], M, part='face_white')
+    M = T((3.84, 0, PLATE_TOP)) @ FACE_PX         # glyph x to the reader's right, glyph y up from the plate top
     Mf = M @ T((0, 0, .08))
-    P.text('SignBlack', 'P', 14, Mf @ T((0, 11, .02)), part='face_black', fit_height=11, bold=.3)
-    ring_band(P, 'SignRed', 6.3, 7.6, 20, Mf @ T((0, 11, .05)), part='face_red')
-    P.prism('SignRed', [(-6.9, -.75), (6.9, -.75), (6.9, .75), (-6.9, .75)], .02,
-            Mf @ T((0, 11, .07), (0, 0, 45)), part='face_red', back=False, sides=False)
-    P.text('SignBlack', '9h-23h', 5, Mf @ T((0, -.5, 0)), part='face_black', fit_width=21)
-    P.text('SignBlack', 'EXCEPTÉ S3R', 4, Mf @ T((0, -7.5, 0)), part='face_black', fit_width=24)
-    arrow = [(-10, -1), (6, -1), (6, -3.4), (11, 0), (6, 3.4), (6, 1), (-10, 1)]
-    flat(P, 'SignBlack', [(-a, b) for a, b in arrow], Mf @ T((0, -16, 0)), part='face_black')
-    for dz in (-15, 15):
-        P.box('SignBack', (3.0, 0, z + dz), (1.2, 5, 3), part='plate')
+    sizes = {}
+    for size, h in PLATE_H.items():
+        suffix = '' if size == 'short' else '_tall'
+        P.prism('SignBack', rounded_rect(PLATE_W, h, 2.5, -h / 2), .4, T((3.6, 0, PLATE_TOP)) @ FACE_PX,
+                part='plate' + suffix)
+        for dz in (-h + 7.5, -7.5):
+            P.box('SignBack', (3.0, 0, PLATE_TOP + dz), (1.2, 5, 3), part='plate' + suffix)
+        flat(P, 'SignWhite', rounded_rect(PLATE_W, h, 2.5, -h / 2), M, part='face_white' + suffix)
+        sizes[size] = suffix
+    ring_band(P, 'SignRed', *CROWN_R, 28, Mf @ T((0, CROWN_Y, .05)), part='face_red')
+    P.prism('SignRed', [(-7.7, -.8), (7.7, -.8), (7.7, .8), (-7.7, .8)], .02,
+            Mf @ T((0, CROWN_Y, .07), (0, 0, -45)), part='face_red', back=False, sides=False)
+    faces = {}
+    for face, (family, size, symbol, code, page, lines) in PARKING_FACES.items():
+        h, black = PLATE_H[size], 'face_black_' + face
+        poly_band(P, 'SignBlack', rounded_rect(PLATE_W - 1., h - 1., 2., -h / 2),
+                  rounded_rect(PLATE_W - 2.6, h - 2.6, 1.2, -h / 2), Mf, part=black)
+        if symbol == 'octagon':
+            flat(P, 'SignBlack', octagon(10.6), Mf @ T((0, CROWN_Y, 0)), part=black)
+        elif symbol == 'P':
+            P.text('SignBlack', 'P', 12, Mf @ T((0, CROWN_Y, .02)), part=black, fit_height=11, bold=.3)
+        else:
+            P.text('SignBlack', 'P', 15, Mf @ T((0, -10.5, .02)), part=black, fit_height=14, bold=.3)
+        for text, down, height, width in lines:
+            # The city's plates use a bold face: thicken the strokes in step with the size, as the P (bold .3 at 14).
+            P.text('SignBlack', text, height, Mf @ T((0, -down, 0)), part=black, fit_height=height, fit_width=width,
+                   bold=round(.02 * height, 3) if height >= 2.9 else 0.)
+        parts = ['plate' + sizes[size], 'face_white' + sizes[size]]
+        parts += [] if family == 'limited' else ['face_red']
+        if face == 'permit':
+            for text, down in PERMIT_PANEL:
+                P.text('SignBlack', text, 1.35, Mf @ T((-6.6, -down, 0)), part=black, fit_height=1.35, fit_width=12.4)
+            flat(P, 'SignRed', rounded_rect(12.2, 8.6, .6, -40.), Mf @ T((6.6, 0, .03)), part='face_red_permit')
+            P.text('SignWhite', 'SECTEUR', 1.3, Mf @ T((6.6, -37., .05)), part='face_white_permit', fit_height=1.3,
+                   fit_width=10.5)
+            parts += ['face_red_permit', 'face_white_permit']
+        if face == 'disabled':
+            ring_band(P, 'SignGreen', *GREEN_R, 28, Mf @ T((0, GREEN_Y, .05)), part='face_green')
+            wheelchair(P, Mf @ T((0, GREEN_Y, 0)), black)
+            parts.append('face_green')
+        faces[face] = {'family': family, 'plate': size, 'size_cm': [PLATE_W, h], 'symbol': symbol,
+                       'crown': None if family == 'limited' else 'red', 'parts': parts + [black],
+                       'text': [line[0] for line in lines] + (['EXCEPTÉ VÉHICULES MUNIS D\'UN PERMIS', 'SECTEUR']
+                                                              if face == 'permit' else []),
+                       'example_code': code, 'catalogue_page': page}
+    arrows = {}
+    for direction in ('left', 'right', 'both'):
+        for size, h in PLATE_H.items():
+            part = f'arrow_{direction}{sizes[size]}'
+            flat(P, 'SignBlack', plate_arrow(direction), Mf @ T((0, -h + ARROW_UP, 0)), part=part)
+            arrows.setdefault(direction, {})[size] = part
     P.colliders.append({'center': [0, 0, 118], 'size': [8, 8, 235]})
-    P.extra['text'] = '\\P 9h-23h EXCEPTE S3R (dataset code R-PF, the commonest Plateau parking sign)'
+    P.extra['plate_faces'] = faces
+    P.extra['plate_arrows'] = arrows
+    P.extra['plate_default'] = 'permit'
+    P.extra['face_budget'] = FACE_BUDGET
+    P.extra['plate_sources'] = [
+        'Ville de Montréal, Catalogue des panneaux, signalisation écrite (2015), dataset "Signalisation '
+        '(stationnement sur rue)": the faces, plate sizes and code groups',
+        'Règlement sur la signalisation routière (RLRQ c. C-24.2, r. 41), articles 2, 5, 6, 29 and 30',
+        'MTQ, Tome V Signalisation routière, chapter 2, and its Répertoire des dispositifs: P-150-1, P-150-5, '
+        'P-150-7 and P-160']
     return P
 
 
@@ -1536,14 +1674,254 @@ def grocery_bag():
     return P
 
 
+# ------------------------------------------------------------------ late-October dressing
+# Kraft yard-waste bags at the curb and pumpkins on the stoops (pass-5 Plateau critic, item 5). Montréal takes leaves
+# in compostable paper bags, not plastic.
+# The bag is the 30 gallon two-ply kraft lawn and leaf bag: 16 x 12 x 35 in (41 x 30 x 89 cm) unfolded (Uline
+# S-22522, Duro). Filled, its side gussets tuck in and the top folds over, so a full bag stands about 80 cm. A bag
+# filled less has more paper to fold, so it stands lower under a fatter roll.
+# The pumpkin adapts bflanagin's "How to: Spooky Jack-o-Lantern (Modeling)" (Steemit): a squashed sphere with every
+# third line of vertices pulled in for the ribs, the stem pulled out of the top ring and the face cut in the front.
+# Here a lathe with a radius factor per side makes the ribs. The face is a dark decal laid 4 mm over the shell
+# instead of a hole, so it needs no inner wall.
+
+LEAF_BAG_W, LEAF_BAG_D, LEAF_BAG_SHOULDER = 41.0, 30.0, 12.0
+# key: (fill line cm, radius of the folded top cm, leaves caught in the fold, share of placements, fill name)
+LEAF_BAG_FORMS = {
+    'leaf_bag': (64.0, 1.6, 2, .45, 'full'),
+    'leaf_bag_mid': (48.0, 2.6, 3, .35, 'three quarters'),
+    'leaf_bag_low': (32.0, 3.6, 4, .2, 'half'),
+}
+# A generic five-lobed leaf (not a brand mark), printed on both wide faces, and a band near the bottom.
+LEAF_EMBLEM = [(0, 7.6), (1.6, 6.2), (3.4, 6.6), (3.0, 4.2), (5.4, 3.4), (4.4, 1.6), (5.2, -.4), (2.6, -.6), (2.0, -2.6),
+               (.5, -1.6), (.5, -5.4), (-.5, -5.4), (-.5, -1.6), (-2.0, -2.6), (-2.6, -.6), (-5.2, -.4), (-4.4, 1.6),
+               (-5.4, 3.4), (-3.0, 4.2), (-3.4, 6.6), (-1.6, 6.2)]
+
+
+def _bag_rings(fill):
+    """(z, half depth X, half width Y, corner chamfer, gusset crease) from the bottom to the folded ridge."""
+    hx, hy = LEAF_BAG_D / 2, LEAF_BAG_W / 2
+    # The stuffed walls bow out by about 1.4 cm between the bottom and the fill line.
+    return [(0., hx - 1.2, hy - 1.1, 3., .5), (2.5, hx - .1, hy - .2, 3.8, .8), (fill * .35, hx + 1.2, hy + .3, 4.4, 1.),
+            (fill * .7, hx + 1.4, hy + .3, 4.4, 1.), (fill, hx + .6, hy + .1, 4., 1.), (fill + 4.5, 10.8, hy - .3, 3., 2.),
+            (fill + 9., 4.8, hy - .7, 1.8, 3.), (fill + LEAF_BAG_SHOULDER, 1.2, hy - 1.1, .6, 3.4)]
+
+
+def _oriented(verts, faces, out):
+    """Turn every face so its Newell normal points along out."""
+    return [tuple(f) if _newell([Vector(verts[i]) for i in f]).dot(Vector(out)) >= 0 else tuple(f[::-1]) for f in faces]
+
+
+def leaf_bag(key):
+    fill, roll, leaves, _, label = LEAF_BAG_FORMS[key]
+    P = Prop(key, 'season', f'Kraft paper yard-waste bag ({label}), the 30 gallon two-ply lawn and leaf bag: '
+             f'41 x 30 cm, filled to {fill:.0f} cm, the side gussets tucked in and the top folded over, a green leaf '
+             'print on both wide faces and a few leaves caught in the fold.', 'base centre; wide faces look along ±X')
+    rng = random.Random({'leaf_bag': 8101, 'leaf_bag_mid': 8102, 'leaf_bag_low': 8103}[key])
+    rings = _bag_rings(fill)
+    v, faces = [], []
+    for k, (z, hx, hy, b, g) in enumerate(rings):
+        ring = [(hx, -hy + b), (hx, hy - b), (hx - b, hy), (0, hy - g), (-hx + b, hy), (-hx, hy - b), (-hx, -hy + b),
+                (-hx + b, -hy), (0, -hy + g), (hx - b, -hy)]
+        for x, y in ring:
+            # Paper crumples where the bag folds, never on the printed faces (rings 1 to 4 stay flat there).
+            if k >= 5:
+                x, y, zz = x + rng.uniform(-.5, .5), y + rng.uniform(-.35, .35), z + rng.uniform(-.5, .5)
+            elif k == 0:
+                x, y, zz = x + rng.uniform(-.3, .3), y + rng.uniform(-.3, .3), z
+            else:
+                zz = z
+            v.append((x, y, zz))
+    n = 10
+    for r in range(len(rings) - 1):
+        for i in range(n):
+            j = (i + 1) % n
+            faces.append((n * r + i, n * r + j, n * (r + 1) + j, n * (r + 1) + i))
+    faces.append(tuple(range(n))[::-1])
+    faces.append(tuple(range(n * (len(rings) - 1), n * len(rings))))
+    P.part('body', 'LeafBagKraft').add(outward((v, faces, False)))
+    # The folded top: the paper above the ridge rolled toward +X, and the last fold lying on the front shoulder.
+    ridge = fill + LEAF_BAG_SHOULDER
+    hy = LEAF_BAG_W / 2 - 1.3
+    cx, cz = roll * .5, ridge + roll * .45
+    P.part('body', 'LeafBagKraft').add(tube_geo([(0, -hy, 0), (.25, 0, -.15), (0, hy, 0)], roll, 8),
+                                        T((cx, 0, cz), scale=(1.15, 1, .85)))
+    flap = 4.5 + roll * 1.5
+    d, nrm = Vector((.77, 0, -.64)), Vector((.64, 0, .77))
+    top = Vector((1.2 + roll * .4, 0, ridge + roll * .1))
+    P.box('LeafBagKraft', tuple(top + d * (flap / 2) + nrm * .35), (.5, 2 * hy - .6, flap), (0, 129.7, 0), part='body')
+    # Print: the leaf emblem and a band on each wide face, laid .22 cm over the flat wall (its x follows the rings).
+    wall = [(z, hx) for z, hx, _, _, _ in rings[1:5]]
+
+    def x_at(z):
+        for (z0, x0), (z1, x1) in zip(wall, wall[1:]):
+            if z <= z1:
+                return x0 + (x1 - x0) * (z - z0) / (z1 - z0)
+        return wall[-1][1]
+    band = [(-15., 4.4), (15., 4.4), (15., 6.2), (-15., 6.2)]
+    turn = math.radians(-25)
+    emblem = [(1.3 * (u * math.cos(turn) - w * math.sin(turn)), 17.5 + 1.3 * (u * math.sin(turn) + w * math.cos(turn)))
+              for u, w in LEAF_EMBLEM]
+    for sign in (1, -1):
+        for outline in (emblem, band):
+            pv = [(sign * (x_at(z) + .22), y, z) for y, z in outline]
+            P.part('print', 'LeafBagInk').add((pv, _oriented(pv, [tuple(range(len(pv)))], (sign, 0, 0)), False))
+    # A few leaves caught in the fold, poking up out of the roll.
+    leaf = [(0, 0), (1.6, 1.2), (2.3, 3.0), (0, 5.6), (-2.3, 3.0), (-1.6, 1.2)]
+    for k in range(leaves):
+        y = -hy * .8 + 2 * hy * .8 * (k + rng.uniform(.2, .8)) / leaves
+        rot = (90 + rng.choice((-1, 1)) * rng.uniform(30, 60), rng.uniform(-20, 20), rng.uniform(0, 360))
+        P.part('leaves', 'LeafOchre').add(prism_geo(leaf, .25), T((cx + rng.uniform(-.4, .4) * roll, y, cz + roll * .3), rot))
+    height = cz + roll * .85
+    P.colliders.append({'center': [0, 0, round(height / 2, 2)], 'size': [LEAF_BAG_D, LEAF_BAG_W, round(height, 2)]})
+    P.extra['fill_cm'] = fill
+    P.extra['form_of'] = 'leaf_bag'
+    if key == 'leaf_bag':
+        P.extra['forms'] = [{'prop': k, 'fill': f[4], 'fill_cm': f[0], 'share': f[3]} for k, f in LEAF_BAG_FORMS.items()]
+        P.extra['scale_range'] = [.97, 1.03]
+        P.extra['placement_note'] = ('on the sidewalk at the curb edge beside the bins of a collection row, or against '
+                                     'a front fence or stoop: one to four per door, a wide face toward the street; pick '
+                                     'the form by the forms shares and the colour by variant_seed (fresh, rain-dark, '
+                                     'sun-bleached kraft)')
+    return P
+
+
+PUMPKIN_PROFILE = [(0, .8), (8.0, 0.), (13.8, 4.6), (15.0, 11.0), (13.6, 17.6), (9.0, 22.4), (2.6, 24.0)]
+PUMPKIN_RIBS = 10
+PUMPKIN_SIDES = 3 * PUMPKIN_RIBS
+PUMPKIN_PHASE = -math.pi / PUMPKIN_RIBS     # a groove at -18°, so +X looks at the middle of a lobe
+PUMPKIN_GROOVE = .085
+
+
+def _pumpkin_factors(rng):
+    """Radius factor per lathe side: every third side is a groove; each rib swells a little on its own."""
+    swell = [1 + rng.uniform(-.035, .035) for _ in range(PUMPKIN_RIBS)]
+    return [(1 - PUMPKIN_GROOVE if i % 3 == 0 else 1.) * swell[i // 3] for i in range(PUMPKIN_SIDES)]
+
+
+def _pumpkin_point(m, theta, z, lift):
+    """The shell surface at azimuth theta (radians) and height z (cm), lifted along its normal: the ray meets the chord
+    between the two lathe sides around theta, scaled by the profile radius at z."""
+    step = math.tau / PUMPKIN_SIDES
+    k = math.floor((theta - PUMPKIN_PHASE) / step)
+    t0 = PUMPKIN_PHASE + k * step
+    i0, i1 = k % PUMPKIN_SIDES, (k + 1) % PUMPKIN_SIDES
+    p0 = (m[i0] * math.cos(t0), m[i0] * math.sin(t0))
+    p1 = (m[i1] * math.cos(t0 + step), m[i1] * math.sin(t0 + step))
+    dx, dy = math.cos(theta), math.sin(theta)
+    ex, ey = p1[0] - p0[0], p1[1] - p0[1]
+    factor = (-p0[0] * ey + ex * p0[1]) / (-dx * ey + ex * dy)
+    prof = PUMPKIN_PROFILE[1:]
+    for (r0, z0), (r1, z1) in zip(prof, prof[1:]):
+        if z <= z1:
+            break
+    r = r0 + (r1 - r0) * (z - z0) / (z1 - z0)
+    ln = math.hypot(r1 - r0, z1 - z0)
+    nr, nz = (z1 - z0) / ln, -(r1 - r0) / ln
+    return (r * factor * dx + lift * nr * dx, r * factor * dy + lift * nr * dy, z + lift * nz)
+
+
+def _decal(m, columns, lift=.4):
+    """A strip over the shell: columns are (theta degrees, z low, z high), left to right; three rows of vertices."""
+    v, faces = [], []
+    for t, lo, hi in columns:
+        for z in (lo, (lo + hi) / 2, hi):
+            v.append(_pumpkin_point(m, math.radians(t), z, lift))
+    for c in range(len(columns) - 1):
+        for r in range(2):
+            a = 3 * c + r
+            faces.append((a, a + 3, a + 4, a + 1))
+    return v, faces, False
+
+
+def _columns(t0, t1, height, breaks=()):
+    """Sample a decal from t0 to t1 degrees: every 4°, at each lathe side and at each break, where the shape may jump
+    (both sides of the jump). height(t, side) gives (z low, z high) just left (side -1) or right (+1) of t."""
+    step = math.degrees(math.tau / PUMPKIN_SIDES)
+    phase = math.degrees(PUMPKIN_PHASE)
+    ts = {t0, t1} | set(breaks)
+    ts |= {t0 + 4 * k for k in range(1, int((t1 - t0) / 4) + 1) if t0 + 4 * k < t1}
+    ts |= {phase + step * k for k in range(-PUMPKIN_SIDES, PUMPKIN_SIDES) if t0 < phase + step * k < t1}
+    cols = []
+    for t in sorted(ts):
+        left, right = height(t, -1), height(t, 1)
+        if t > t0:
+            cols.append((t, *left))
+        if t < t1 and (t == t0 or right != left):
+            cols.append((t, *right))
+    return cols
+
+
+def pumpkin(key):
+    carved = key == 'pumpkin_carved'
+    P = Prop(key, 'season', 'Carving pumpkin with ten ribs and a woody stem, about 30 cm across' +
+             (', carved as a jack-o\'-lantern: triangle eyes and nose, a grin with two teeth and the lid cut, '
+              'facing +X.' if carved else '.'), 'base centre' + ('; the face looks along +X' if carved else ''))
+    rng = random.Random(9301 if carved else 9300)
+    m = _pumpkin_factors(rng)
+    squash = (1, .96, 1)
+    shell = 'PumpkinLantern' if carved else 'PumpkinOrange'
+    P.lathe(shell, PUMPKIN_PROFILE, PUMPKIN_SIDES, scale=squash, phase=PUMPKIN_PHASE, rfunc=lambda i: m[i], hard=70,
+            part='body')
+    lean = rng.uniform(-.6, .6)
+    P.tube('PumpkinStem', [(0, 0, 23.2), (.5 + lean, .3, 26.6), (1.8 + lean, .9, 29.2)], [2.6, 1.7, 1.45], 6, part='stem',
+           smooth=False, phase=rng.uniform(0, 1))
+    if carved:
+        S = T(scale=squash)
+        face = P.part('face', 'PumpkinHollow')
+
+        def eye(c):
+            return lambda t, side: (14.6, 14.6 + 4.4 * (1 - abs(t - c) / 7.5))
+
+        def nose(t, side):
+            return (11.0, 11.0 + 2.8 * (1 - abs(t) / 4.))
+
+        def mouth(t, side):
+            u = t / 32.
+            c, w = 7.4 + 3.4 * u * u, 2.1 * math.sqrt(max(0., 1 - u * u))
+            lo, hi = c - w, c + w
+            # Teeth: one hangs from the top lip, one stands on the bottom lip. At an edge the side picks the tooth.
+            if -13 < t + side * .01 < -5:
+                hi -= 2.2
+            if 5 < t + side * .01 < 13:
+                lo += 2.2
+            return (round(lo, 4), round(hi, 4))
+        for c in (-19., 19.):
+            face.add(_decal(m, _columns(c - 7.5, c + 7.5, eye(c), (c,))), S)
+        face.add(_decal(m, _columns(-4., 4., nose, (0.,))), S)
+        face.add(_decal(m, _columns(-32., 32., mouth, (-13., -5., 5., 13.))), S)
+        # The lid cut: a thin dark ring on the top slope, lifted along the slope's normal.
+        (r0, z0), (r1, z1) = PUMPKIN_PROFILE[5], PUMPKIN_PROFILE[6]
+        ln = math.hypot(r1 - r0, z1 - z0)
+        nr, nz = (z1 - z0) / ln, -(r1 - r0) / ln
+        cut = [(r, z0 + (z1 - z0) * (r - r0) / (r1 - r0)) for r in (7.3, 6.7)]
+        face.add(lathe_geo([(r + .15 * nr, z + .15 * nz) for r, z in cut], PUMPKIN_SIDES, phase=PUMPKIN_PHASE,
+                           rfunc=lambda i: m[i], cap0=False, cap1=False, smooth=False), S)
+    P.extra['form_of'] = 'pumpkin'
+    if not carved:
+        P.extra['forms'] = [{'prop': 'pumpkin', 'carved': False, 'share': .7},
+                            {'prop': 'pumpkin_carved', 'carved': True, 'share': .3}]
+        P.extra['sizes'] = {'pie': .6, 'carving': 1.0, 'large': 1.4}
+        P.extra['scale_range'] = [.55, 1.45]
+        P.extra['placement_note'] = ('on stoop steps and landings, front-yard ledges and balcony floors: one to three '
+                                     'per door, sizes by the placement scale (pie .6, carving 1, large 1.4), a carved '
+                                     'one with its face (+X) toward the sidewalk; the colour by variant_seed (orange, '
+                                     'deep orange, white)')
+    return P
+
+
 BUILDERS = [lamp_cobra, lamp_park, hydrant, sign_stop, sign_street, sign_oneway, sign_parking, bixi_dock,
             bixi_bike, bin_recycling, bin_compost, bin_garbage, cone, barrier_chantier, utility_pole,
             laundry_line, bike_locked, ac_unit, flower_box, bench, mailbox, police_lightbar,
             lambda: dog('dog_small'), lambda: dog('dog_medium'), lambda: dog('dog_large'), stroller,
-            grocery_bag, chair_patio, bbq, satellite_dish, potted_plant, bike_gallery]
+            grocery_bag, chair_patio, bbq, satellite_dish, potted_plant, bike_gallery,
+            lambda: leaf_bag('leaf_bag'), lambda: leaf_bag('leaf_bag_mid'), lambda: leaf_bag('leaf_bag_low'),
+            lambda: pumpkin('pumpkin'), lambda: pumpkin('pumpkin_carved')]
+# sign_parking counts all its plate faces; one placement shows one (plate_faces[face].triangles, FACE_BUDGET).
 BUDGETS = {'lamp_cobra': 800, 'lamp_park': 800, 'hydrant': 500, 'dog_small': 1500, 'dog_medium': 1500,
            'dog_large': 1500, 'stroller': 1500, 'chair_patio': 700, 'bbq': 1600, 'satellite_dish': 1200,
-           'potted_plant': 1500}
+           'potted_plant': 1500, 'leaf_bag': 400, 'leaf_bag_mid': 400, 'leaf_bag_low': 400, 'pumpkin': 450,
+           'pumpkin_carved': 700}
 DEFAULT_BUDGET = 2500
 
 
@@ -1739,6 +2117,12 @@ def export(props, out_dir):
         if prop.colliders:
             entry['colliders_cm'] = prop.colliders
         entry.update(prop.extra)
+        if 'plate_faces' in prop.extra:
+            # A placement shows one plate face: the post, that face's parts and at most one arrow.
+            tris_of = {n: len(finals[(prop.key, n)][1]) for n in prop.parts}
+            arrow = max(tris_of[p] for a in prop.extra['plate_arrows'].values() for p in a.values())
+            entry['plate_faces'] = {face: dict(spec, triangles=tris_of['post'] + arrow + sum(tris_of[p] for p in spec['parts']))
+                                    for face, spec in prop.extra['plate_faces'].items()}
         entries[prop.key] = entry
     materials = {k: material_entry(k) for k in MATERIALS if k in used}
     return batches, entries, materials, finals, tri_counts
@@ -1883,18 +2267,20 @@ def frame_camera(cam, lo, hi, azimuth=-38.0, elevation=16.0, aspect=200 / 250, m
     return dist
 
 
-def add_label(scene, cam, text, mat):
+def add_label(scene, cam, text, mat, depth=1.0):
+    """The tile's name at the bottom of the frame, depth metres ahead of the camera (closer for a small prop, so the
+    ground does not hide it); its size follows the depth, so it looks the same in every tile."""
     curve = bpy.data.curves.new('label', 'FONT')
     curve.body = text
     curve.align_x = 'CENTER'
     curve.align_y = 'CENTER'
     tan_v = 18 / cam.data.lens
-    curve.size = tan_v * .085
+    curve.size = tan_v * .085 * depth
     obj = bpy.data.objects.new('label', curve)
     obj.data.materials.append(mat)
     scene.collection.objects.link(obj)
     obj.parent = cam
-    obj.location = (0, -tan_v * .9, -1.0)
+    obj.location = (0, -tan_v * .9 * depth, -depth)
     obj.visible_shadow = False
     return obj
 
@@ -1909,17 +2295,25 @@ def render_sheet(props, finals, sheet_path, tmp_dir):
     import numpy as np
     bpy.ops.wm.read_factory_settings(use_empty=True)
     scene, cam, label_mat = setup_scene()
-    tw, th, cols, rows = 200, 250, 8, 5
+    tw, th, cols = 200, 250, 8
     scene.render.resolution_x, scene.render.resolution_y = tw, th
     scene.render.resolution_percentage = 100
     demo = sign_street(demo=True)
     demo_finals = {('sign_street', n): finalize(d['geo']) + (d['material'],) for n, d in demo.parts.items()}
     by_key = {p.key: p for p in props}
 
-    def placements(key, M=None, variant=None, explode=False):
+    def placements(key, M=None, variant=None, explode=False, face=None, post=True, arrow=None):
         parts = [(n, f) for (k, n), f in finals.items() if k == key]
         if key == 'sign_street':
             parts = [(n, f) for (k, n), f in demo_finals.items()]
+        faces = by_key[key].extra.get('plate_faces') if key in by_key else None
+        if faces:
+            # A parking sign shows one plate face (the default one on its own tile) and at most one arrow.
+            spec = faces[face or by_key[key].extra['plate_default']]
+            keep = set(spec['parts']) | ({'post'} if post else set())
+            if arrow:
+                keep.add(by_key[key].extra['plate_arrows'][arrow][spec['plate']])
+            parts = [(n, f) for n, f in parts if n in keep]
         has_merged = any(n.startswith('merged') for n, _ in parts)
         out = []
         for name, data in parts:
@@ -1954,6 +2348,16 @@ def render_sheet(props, finals, sheet_path, tmp_dir):
     for label, key, box, az, el in DETAIL_TILES:
         if key in by_key:
             tiles.append((label, placements(key), (box, az, el)))
+    if 'sign_parking' in by_key:
+        # Every parking-sign plate face, plates only, in two rows of four read from the street side (+X), three of
+        # them with an arrow.
+        arrows = {'no_stopping': 'right', 'limited': 'both', 'permit': 'left'}
+        items = []
+        for i, face in enumerate(by_key['sign_parking'].extra['plate_faces']):
+            row, col = divmod(i, 4)
+            items += placements('sign_parking', T((0, (col - 1.5) * .34, -row * .68)),
+                                face=face, post=False, arrow=arrows.get(face))
+        tiles.append(('parking faces', items, (((0, -70, 92), (5, 70, 225)), -8, 3)))
     corner = [('sign_stop', (0, 40), 90), ('sign_street', (-20, 0), 0), ('hydrant', (10, -110), 90),
               ('bin_recycling', (-60, -230), 0), ('bin_compost', (-60, -300), 0), ('bin_garbage', (-50, -380), 0),
               ('cone', (170, -170), 0), ('cone', (200, -260), 30), ('mailbox', (-40, 180), 0),
@@ -1970,7 +2374,17 @@ def render_sheet(props, finals, sheet_path, tmp_dir):
         for n, (key, (x, y), yaw) in enumerate(gallery):
             items += placements(key, T((x / 100, y / 100, 0), (0, 0, yaw)), n % 3)
         tiles.append(('gallery deck', items, None))
-    tiles = tiles[:cols * rows]
+    # Late October at a curb: the three bag fills beside a brown bin, and pumpkins at the pie, carving and large
+    # sizes (placement scale .6, 1 and 1.4) with a carved one facing the camera side (+X).
+    october = [('bin_compost', (-15, -78), 0, 1, 0), ('leaf_bag', (-5, -28), 4, 1, 0),
+               ('leaf_bag_mid', (-8, 18), -6, 1, 1), ('leaf_bag_low', (-4, 62), 9, 1, 2),
+               ('pumpkin', (48, -30), 20, 1.4, 0), ('pumpkin_carved', (50, 14), 0, 1, 0), ('pumpkin', (44, 46), 60, .6, 2)]
+    if all(k in by_key for k, _, _, _, _ in october):
+        items = []
+        for key, (x, y), yaw, scale, variant in october:
+            items += placements(key, T((x / 100, y / 100, 0), (0, 0, yaw), scale), variant)
+        tiles.append(('october curb', items, (((-40, -100, 0), (75, 85, 85)), -24, 12)))
+    rows = -(-len(tiles) // cols)
     sheet = np.full((th * rows, tw * cols, 4), .3, dtype=np.float32)
     for idx, (label, items, view) in enumerate(tiles):
         coll = bpy.data.collections.new(f'tile{idx}')
@@ -1993,8 +2407,8 @@ def render_sheet(props, finals, sheet_path, tmp_dir):
         if view:
             (blo, bhi), az, el = view
             lo, hi = Vector(blo) / 100, Vector(bhi) / 100
-        frame_camera(cam, lo, hi, az, el)
-        lab = add_label(scene, cam, label, label_mat)
+        dist = frame_camera(cam, lo, hi, az, el)
+        lab = add_label(scene, cam, label, label_mat, min(1.0, dist * .5))
         for other in bpy.data.collections:
             other.hide_render = other is not coll
         scene.render.filepath = str(tmp_dir / f'tile{idx:02d}.png')

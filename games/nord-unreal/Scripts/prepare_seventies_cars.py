@@ -132,9 +132,11 @@ def body(profile):
                        (end*225., 79., -45.), (end*211., 90., -45.)], 5., 'Chrome', False)
         for y in (-57., 57.):
             mesh.box((end*228.5, y, -44.), (7., 5., 15.), 'Ink')
-        mesh.box((end*222., 0., -51.), (3., 27., 11.), 'Chrome')
-        mesh.box((end*224., 0., -51.), (1.5, 24., 8.5), 'Cream')
-        for y in range(-8, 9, 4): mesh.box((end*225., y, -51.), (1., 1.2, 4.), 'Ink')
+    # One licence plate, at the rear only. Quebec has required only a rear plate since 1979
+    # (Wikipedia, "Vehicle registration plates of Quebec").
+    mesh.box((-222., 0., -51.), (3., 27., 11.), 'Chrome')
+    mesh.box((-224., 0., -51.), (1.5, 24., 8.5), 'Cream')
+    for y in range(-8, 9, 4): mesh.box((-225., y, -51.), (1., 1.2, 4.), 'Ink')
     for y in (-52., 52.): mesh.box((223., y, -37.), (3., 18., 4.), 'Amber')
     mesh.box((-221., 0., -23.), (3., 172., 23.), 'Chrome')
     mesh.box((-223., 0., -23.), (2., 166., 19.), 'Ink')

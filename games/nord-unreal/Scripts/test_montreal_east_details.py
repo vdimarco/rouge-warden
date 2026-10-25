@@ -114,4 +114,17 @@ assert contract['actor_labels'] == ['Plateau east details '+name for name in pla
 assert contract['new_packages'] == ['Content/Plateau/EastDetails/SM_'+name+'.uasset' for name in plan.MATERIALS]
 assert all(contract['materials'][name] == '/Game/Plateau/Materials/M_'+name+'.M_'+name for name in plan.MATERIALS)
 assert plan.sources() == before_source and files(plan.ROOT/'Content') == before_content, 'CPU authoring touched existing source/Content'
+
+# The folder's inventory (manifest.json) lists each file with its current hash and size. cpu-checks.json is the record
+# of one run, so it keeps that run's hashes: it must say it is historical once details.json has moved on.
+folder = plan.ROOT/plan.DATA
+inventory = json.loads((folder/'manifest.json').read_text())
+listed = {name: (row['sha256'], row['bytes']) for name, row in inventory['files'].items()}
+actual = {str(path.relative_to(folder)): (plan.sha(path), path.stat().st_size) for path in sorted(folder.rglob('*'))
+          if path.is_file() and path.name != 'manifest.json'}
+assert listed == actual and inventory['count'] == len(actual), \
+    ('EastDetails/manifest.json is stale', sorted(name for name in set(listed) | set(actual) if listed.get(name) != actual.get(name)))
+record = json.loads((folder/'cpu-checks.json').read_text())
+assert record['details_manifest_sha256'] == plan.sha(folder/'details.json') or record.get('historical'), \
+    'cpu-checks.json records an old details.json hash and does not say it is historical'
 print('NORD_EAST_DETAILS_CPU_OK:50source/8fully-occluded/42candidate panes,3groups/2604triangles, exact producer/source reuse, bounded frames, concave/height culling, restored gate, OBJ/float32 and immutable Content guards')

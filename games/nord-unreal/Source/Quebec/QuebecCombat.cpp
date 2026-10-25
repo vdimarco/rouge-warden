@@ -3,6 +3,7 @@
 #include "QuebecGameplay.h"
 #include "QuebecPlayerState.h"
 #include "QuebecPolice.h"
+#include "QuebecParkedCars.h" // A shot whose line meets a parked car promotes it.
 
 #include "Camera/PlayerCameraManager.h"
 #include "Components/AudioComponent.h"
@@ -735,16 +736,24 @@ void AQuebecCharacter::FireWeapon(const FVector& AimOrigin, const FVector& AimDi
     const FVector Muzzle = CombatMuzzle(this, Yaw);
     FVector Impact;
     bool bHit = false;
-    if (Target)
-    {
-        bHit = CombatClearLine(World, Muzzle, TargetPoint, this, Target, Impact);
-        if (bHit)
-        {
-            const double Distance = FVector::Dist2D(Origin, TargetPoint);
-            CombatApplyHit(this, Target, Row, static_cast<float>(QuebecCombatModel::DamageAt(Row, Distance)), TargetPoint - Origin);
-        }
-    }
+    if (Target) bHit = CombatClearLine(World, Muzzle, TargetPoint, this, Target, Impact);
     else CombatClearLine(World, Muzzle, Muzzle + Aim * Row.Range, this, nullptr, Impact);
+    // The parked cars at the curb ignore the Visibility channel, so a floor probe never stands on a roof. A shot finds
+    // the first one on its own line instead: it stops there, and the space turns into a real car that takes the dent
+    // as any car does.
+    FVector ParkedImpact = Impact;
+    if (AQuebecCar* Parked = AQuebecParkedCars::PromoteOnLine(World, Muzzle, bHit ? TargetPoint : Impact, ParkedImpact))
+    {
+        bHit = false;
+        Impact = ParkedImpact;
+        Parked->AddBodyDamage(static_cast<float>(QuebecCombatModel::DamageAt(Row, FVector::Dist2D(Origin, Impact)) *
+            QuebecCombatModel::CarDamageScale), GetController());
+    }
+    if (bHit)
+    {
+        const double Distance = FVector::Dist2D(Origin, TargetPoint);
+        CombatApplyHit(this, Target, Row, static_cast<float>(QuebecCombatModel::DamageAt(Row, Distance)), TargetPoint - Origin);
+    }
     MulticastShot(Muzzle, Impact, static_cast<uint8>(Slot), bHit, Yaw);
     // A shot near civilians is a crime the police can hear about, and the street runs from it. Shots at goons, or
     // at police already chasing the shooter, are not reported as gunfire; a civilian actually hit is reported by

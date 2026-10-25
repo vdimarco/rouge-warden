@@ -11,18 +11,39 @@
    "mesh": "SM_Props_lamp_cobra_pole",
    "material": "PoleGalv",
    "collision": "none",
-   "triangles": 258,
+   "triangles": 166,
    "bounds_cm": [
     -16.0,
     -15.22,
     0.0,
-    175.1,
+    16.0,
     15.22,
-    812.2
+    803.0
    ],
    "prop": "lamp_cobra",
    "part": "pole",
-   "sha256": "73f3d439720f49eee970f10a77234e556e1d93e68d61212493470d9de21f7973",
+   "sha256": "e47456d55a6ab397acc99a6ece8b2f81ed632a624d738b500963bbc119ba6dbb",
+   "variants": [
+    "PoleGrey"
+   ]
+  },
+  {
+   "file": "lamp_cobra_arm.obj",
+   "mesh": "SM_Props_lamp_cobra_arm",
+   "material": "PoleGalv",
+   "collision": "none",
+   "triangles": 92,
+   "bounds_cm": [
+    -2.24,
+    -4.2,
+    723.65,
+    175.1,
+    4.2,
+    812.2
+   ],
+   "prop": "lamp_cobra",
+   "part": "arm",
+   "sha256": "0af917b7be90aad93b05a5cc465d33ac460242631c2dea0c91b13aaf5f612f84",
    "variants": [
     "PoleGrey"
    ]
@@ -476,7 +497,7 @@
    "mesh": "SM_Props_sign_parking_plate",
    "material": "SignBack",
    "collision": "none",
-   "triangles": 36,
+   "triangles": 84,
    "bounds_cm": [
     2.4,
     -15.0,
@@ -487,14 +508,14 @@
    ],
    "prop": "sign_parking",
    "part": "plate",
-   "sha256": "720d462428a35fc4abeeed82ac432c953fa8876394a1303b647c05d56e5e6027"
+   "sha256": "65c0034a831fed368e07e5076d3fabea1d9fd29a2d0ab0fad67e8be85225c758"
   },
   {
    "file": "sign_parking_face_white.obj",
    "mesh": "SM_Props_sign_parking_face_white",
    "material": "SignWhite",
    "collision": "none",
-   "triangles": 2,
+   "triangles": 14,
    "bounds_cm": [
     3.84,
     -15.0,
@@ -505,43 +526,367 @@
    ],
    "prop": "sign_parking",
    "part": "face_white",
-   "sha256": "d3e40d1b62b2f1b697879cfa4a906e5168882f5f0e96aaa0ab6ed3bc448f8c9d"
+   "sha256": "52a76f878d192bc8000ffea8c51986a786b6392dd840f386af99bfa525426233"
   },
   {
-   "file": "sign_parking_face_black.obj",
-   "mesh": "SM_Props_sign_parking_face_black",
-   "material": "SignBlack",
+   "file": "sign_parking_plate_tall.obj",
+   "mesh": "SM_Props_sign_parking_plate_tall",
+   "material": "SignBack",
    "collision": "none",
-   "triangles": 265,
+   "triangles": 84,
    "bounds_cm": [
-    3.92,
-    -12.0,
-    180.6,
-    3.94,
-    12.0,
-    216.5
+    2.4,
+    -15.0,
+    162.5,
+    3.8,
+    15.0,
+    222.5
    ],
    "prop": "sign_parking",
-   "part": "face_black",
-   "sha256": "b046bc0e47c4048868c80496a163913ef9f8115f2bca6f85af78aba2ef420fa0"
+   "part": "plate_tall",
+   "sha256": "86e06994e5670af716a1043c6303aba7f90ad7184d24b4a321644e7aaa4e1d4c"
+  },
+  {
+   "file": "sign_parking_face_white_tall.obj",
+   "mesh": "SM_Props_sign_parking_face_white_tall",
+   "material": "SignWhite",
+   "collision": "none",
+   "triangles": 14,
+   "bounds_cm": [
+    3.84,
+    -15.0,
+    162.5,
+    3.84,
+    15.0,
+    222.5
+   ],
+   "prop": "sign_parking",
+   "part": "face_white_tall",
+   "sha256": "b9751a2dbf7a256f32c43b1d8e6add2a9cda30eef5bd3401a1f9f6c1a5e73fad"
   },
   {
    "file": "sign_parking_face_red.obj",
    "mesh": "SM_Props_sign_parking_face_red",
    "material": "SignRed",
    "collision": "none",
-   "triangles": 42,
+   "triangles": 58,
    "bounds_cm": [
     3.97,
-    -7.6,
-    203.4,
+    -9.6,
+    201.6,
     4.0,
-    7.6,
-    218.6
+    9.6,
+    220.8
    ],
    "prop": "sign_parking",
    "part": "face_red",
-   "sha256": "c4d2980bf378653b74f9bde658407038c31944af6cd597e89ccc02cc3c8706ce"
+   "sha256": "516db64595b8bb71154821a776daf374dcfb82483b24fa3d5bff32d6ada5c1ee"
+  },
+  {
+   "file": "sign_parking_face_black_no_stopping.obj",
+   "mesh": "SM_Props_sign_parking_face_black_no_stopping",
+   "material": "SignBlack",
+   "collision": "none",
+   "triangles": 38,
+   "bounds_cm": [
+    3.92,
+    -14.5,
+    178.0,
+    3.92,
+    14.5,
+    222.0
+   ],
+   "prop": "sign_parking",
+   "part": "face_black_no_stopping",
+   "sha256": "6fa341c74609719694d9269e46dedb55ce5ab376c8f1d8e01784e81aa0de2ee1"
+  },
+  {
+   "file": "sign_parking_face_black_no_stopping_hours.obj",
+   "mesh": "SM_Props_sign_parking_face_black_no_stopping_hours",
+   "material": "SignBlack",
+   "collision": "none",
+   "triangles": 194,
+   "bounds_cm": [
+    3.92,
+    -14.5,
+    178.0,
+    3.92,
+    14.5,
+    222.0
+   ],
+   "prop": "sign_parking",
+   "part": "face_black_no_stopping_hours",
+   "sha256": "2399186c05286f8519f729024b4b3a97b34dc417b0e78a9633eb149db1a001fc"
+  },
+  {
+   "file": "sign_parking_face_black_no_parking.obj",
+   "mesh": "SM_Props_sign_parking_face_black_no_parking",
+   "material": "SignBlack",
+   "collision": "none",
+   "triangles": 48,
+   "bounds_cm": [
+    3.92,
+    -14.5,
+    178.0,
+    3.94,
+    14.5,
+    222.0
+   ],
+   "prop": "sign_parking",
+   "part": "face_black_no_parking",
+   "sha256": "4e63a997dd31489d2819b743a93e7dac3145f215d071125056d3303dbc6c77b3"
+  },
+  {
+   "file": "sign_parking_face_black_no_parking_hours.obj",
+   "mesh": "SM_Props_sign_parking_face_black_no_parking_hours",
+   "material": "SignBlack",
+   "collision": "none",
+   "triangles": 338,
+   "bounds_cm": [
+    3.92,
+    -14.5,
+    178.0,
+    3.94,
+    14.5,
+    222.0
+   ],
+   "prop": "sign_parking",
+   "part": "face_black_no_parking_hours",
+   "sha256": "ecee6d0141baf0c19d4bb3bb48485acb612c64549a09d22230efe9cdbf7a8157"
+  },
+  {
+   "file": "sign_parking_face_black_limited.obj",
+   "mesh": "SM_Props_sign_parking_face_black_limited",
+   "material": "SignBlack",
+   "collision": "none",
+   "triangles": 379,
+   "bounds_cm": [
+    3.92,
+    -14.5,
+    178.0,
+    3.94,
+    14.5,
+    222.0
+   ],
+   "prop": "sign_parking",
+   "part": "face_black_limited",
+   "sha256": "bfd1fe6c0f5336a82221e07d71698d8c5a8dbc571b4db0fa944b6fe9fe373370"
+  },
+  {
+   "file": "sign_parking_face_black_reserved.obj",
+   "mesh": "SM_Props_sign_parking_face_black_reserved",
+   "material": "SignBlack",
+   "collision": "none",
+   "triangles": 128,
+   "bounds_cm": [
+    3.92,
+    -14.5,
+    178.0,
+    3.94,
+    14.5,
+    222.0
+   ],
+   "prop": "sign_parking",
+   "part": "face_black_reserved",
+   "sha256": "9338b616049e89ce495dea2b8d080f690a7721673c774e67319ee63a7a64865c"
+  },
+  {
+   "file": "sign_parking_face_black_permit.obj",
+   "mesh": "SM_Props_sign_parking_face_black_permit",
+   "material": "SignBlack",
+   "collision": "none",
+   "triangles": 512,
+   "bounds_cm": [
+    3.92,
+    -14.5,
+    163.0,
+    3.94,
+    14.5,
+    222.0
+   ],
+   "prop": "sign_parking",
+   "part": "face_black_permit",
+   "sha256": "60bdc5fad85676e35c26a01fbf4a40251f987097aff9a9a3e9935ce0fa7b3e04"
+  },
+  {
+   "file": "sign_parking_face_red_permit.obj",
+   "mesh": "SM_Props_sign_parking_face_red_permit",
+   "material": "SignRed",
+   "collision": "none",
+   "triangles": 14,
+   "bounds_cm": [
+    3.95,
+    -12.7,
+    178.2,
+    3.95,
+    -0.5,
+    186.8
+   ],
+   "prop": "sign_parking",
+   "part": "face_red_permit",
+   "sha256": "734a8da27c3dc6ec97eae27128410759a22afbdd8cc707fb3ceec18654423c53"
+  },
+  {
+   "file": "sign_parking_face_white_permit.obj",
+   "mesh": "SM_Props_sign_parking_face_white_permit",
+   "material": "SignWhite",
+   "collision": "none",
+   "triangles": 102,
+   "bounds_cm": [
+    3.97,
+    -10.35,
+    184.85,
+    3.97,
+    -2.85,
+    186.15
+   ],
+   "prop": "sign_parking",
+   "part": "face_white_permit",
+   "sha256": "0c4b98b5d0647d15287f78cc7936984bf8573a231e38e0a4ba1c63198ccdf8a8"
+  },
+  {
+   "file": "sign_parking_face_black_disabled.obj",
+   "mesh": "SM_Props_sign_parking_face_black_disabled",
+   "material": "SignBlack",
+   "collision": "none",
+   "triangles": 108,
+   "bounds_cm": [
+    3.92,
+    -14.5,
+    163.0,
+    3.94,
+    14.5,
+    222.0
+   ],
+   "prop": "sign_parking",
+   "part": "face_black_disabled",
+   "sha256": "6e610222b4f4608097f98637b5d4a19b9bd6bc664ea3fd91b09e58793cde2d47"
+  },
+  {
+   "file": "sign_parking_face_green.obj",
+   "mesh": "SM_Props_sign_parking_face_green",
+   "material": "SignGreen",
+   "collision": "none",
+   "triangles": 56,
+   "bounds_cm": [
+    3.97,
+    -8.2,
+    180.8,
+    3.97,
+    8.2,
+    197.2
+   ],
+   "prop": "sign_parking",
+   "part": "face_green",
+   "sha256": "ef5ebb74a160d8c50f943101cfefbc76582956167c15d54fe2f19fe36b4f811c"
+  },
+  {
+   "file": "sign_parking_arrow_left.obj",
+   "mesh": "SM_Props_sign_parking_arrow_left",
+   "material": "SignBlack",
+   "collision": "none",
+   "triangles": 3,
+   "bounds_cm": [
+    3.92,
+    -10.0,
+    179.8,
+    3.92,
+    10.5,
+    186.2
+   ],
+   "prop": "sign_parking",
+   "part": "arrow_left",
+   "sha256": "527a65e1a07b5320ce06bf929a09255660676e7558df9f1b58e58ad42951eb0e"
+  },
+  {
+   "file": "sign_parking_arrow_left_tall.obj",
+   "mesh": "SM_Props_sign_parking_arrow_left_tall",
+   "material": "SignBlack",
+   "collision": "none",
+   "triangles": 3,
+   "bounds_cm": [
+    3.92,
+    -10.0,
+    164.8,
+    3.92,
+    10.5,
+    171.2
+   ],
+   "prop": "sign_parking",
+   "part": "arrow_left_tall",
+   "sha256": "914a385e7c7fcda6949d8d55e07380f8f73314d34586102cc56c572dd2e032c7"
+  },
+  {
+   "file": "sign_parking_arrow_right.obj",
+   "mesh": "SM_Props_sign_parking_arrow_right",
+   "material": "SignBlack",
+   "collision": "none",
+   "triangles": 3,
+   "bounds_cm": [
+    3.92,
+    -10.5,
+    179.8,
+    3.92,
+    10.0,
+    186.2
+   ],
+   "prop": "sign_parking",
+   "part": "arrow_right",
+   "sha256": "23bb8074e0f454ad318647dcf62a13b9b10ae1b0a19c71c1830a0dd4c741eb89"
+  },
+  {
+   "file": "sign_parking_arrow_right_tall.obj",
+   "mesh": "SM_Props_sign_parking_arrow_right_tall",
+   "material": "SignBlack",
+   "collision": "none",
+   "triangles": 3,
+   "bounds_cm": [
+    3.92,
+    -10.5,
+    164.8,
+    3.92,
+    10.0,
+    171.2
+   ],
+   "prop": "sign_parking",
+   "part": "arrow_right_tall",
+   "sha256": "38d12095008e66a57b58d213349e2ca1deb6a8fc194eda054380961d9199f009"
+  },
+  {
+   "file": "sign_parking_arrow_both.obj",
+   "mesh": "SM_Props_sign_parking_arrow_both",
+   "material": "SignBlack",
+   "collision": "none",
+   "triangles": 6,
+   "bounds_cm": [
+    3.92,
+    -10.0,
+    179.8,
+    3.92,
+    10.0,
+    186.2
+   ],
+   "prop": "sign_parking",
+   "part": "arrow_both",
+   "sha256": "93496423255ed4154ba67a433f69775ff4068ad609aa65b85fec1dce2933a533"
+  },
+  {
+   "file": "sign_parking_arrow_both_tall.obj",
+   "mesh": "SM_Props_sign_parking_arrow_both_tall",
+   "material": "SignBlack",
+   "collision": "none",
+   "triangles": 6,
+   "bounds_cm": [
+    3.92,
+    -10.0,
+    164.8,
+    3.92,
+    10.0,
+    171.2
+   ],
+   "prop": "sign_parking",
+   "part": "arrow_both_tall",
+   "sha256": "7e89dbd7af85c081ed64955c389ff5cb3cbc04246e7339fdfabdf5d9d5b55217"
   },
   {
    "file": "bixi_dock_platform.obj",
@@ -3278,6 +3623,290 @@
    "prop": "bike_gallery",
    "part": "rack",
    "sha256": "9e4a0ea3be8e3998c6850128e08f69633e71ee5598de1071d23a1f39f2eae7ec"
+  },
+  {
+   "file": "leaf_bag_body.obj",
+   "mesh": "SM_Props_leaf_bag_body",
+   "material": "LeafBagKraft",
+   "collision": "none",
+   "triangles": 212,
+   "bounds_cm": [
+    -16.4,
+    -20.8,
+    0.0,
+    16.4,
+    20.8,
+    78.08
+   ],
+   "prop": "leaf_bag",
+   "part": "body",
+   "sha256": "b04ee940eee6e4d226e18a8a67ec3cf3f863f6c59d3ee0c36a7914c834395d8d",
+   "variants": [
+    "LeafBagWet",
+    "LeafBagPale"
+   ]
+  },
+  {
+   "file": "leaf_bag_print.obj",
+   "mesh": "SM_Props_leaf_bag_print",
+   "material": "LeafBagInk",
+   "collision": "none",
+   "triangles": 42,
+   "bounds_cm": [
+    -16.46,
+    -15.0,
+    4.4,
+    16.46,
+    15.0,
+    27.14
+   ],
+   "prop": "leaf_bag",
+   "part": "print",
+   "sha256": "bf606bc78013ea9fa0d365c4730e9a2b507d28f6378611aa62c54b51d4ba1a00"
+  },
+  {
+   "file": "leaf_bag_leaves.obj",
+   "mesh": "SM_Props_leaf_bag_leaves",
+   "material": "LeafOchre",
+   "collision": "none",
+   "triangles": 40,
+   "bounds_cm": [
+    -3.56,
+    -13.32,
+    77.1,
+    5.11,
+    11.81,
+    81.16
+   ],
+   "prop": "leaf_bag",
+   "part": "leaves",
+   "sha256": "5c4b56822fb546dbf3a9bbacfa5bf158016c951dd7cbe1cf2ead8e52d1a732f0",
+   "variants": [
+    "LeafRust",
+    "LeafBrown"
+   ]
+  },
+  {
+   "file": "leaf_bag_mid_body.obj",
+   "mesh": "SM_Props_leaf_bag_mid_body",
+   "material": "LeafBagKraft",
+   "collision": "none",
+   "triangles": 212,
+   "bounds_cm": [
+    -16.4,
+    -20.8,
+    0.0,
+    16.4,
+    20.8,
+    63.38
+   ],
+   "prop": "leaf_bag_mid",
+   "part": "body",
+   "sha256": "7b0d8651de63c2f644c769686caa29804ca334871fd55952daa36f020fedcce2",
+   "variants": [
+    "LeafBagWet",
+    "LeafBagPale"
+   ]
+  },
+  {
+   "file": "leaf_bag_mid_print.obj",
+   "mesh": "SM_Props_leaf_bag_mid_print",
+   "material": "LeafBagInk",
+   "collision": "none",
+   "triangles": 42,
+   "bounds_cm": [
+    -16.54,
+    -15.0,
+    4.4,
+    16.54,
+    15.0,
+    27.14
+   ],
+   "prop": "leaf_bag_mid",
+   "part": "print",
+   "sha256": "f598aaa594027a0aa65e367671edcc946ca68a75a92a339477e347b4d4c61b4f"
+  },
+  {
+   "file": "leaf_bag_mid_leaves.obj",
+   "mesh": "SM_Props_leaf_bag_mid_leaves",
+   "material": "LeafOchre",
+   "collision": "none",
+   "triangles": 60,
+   "bounds_cm": [
+    0.07,
+    -13.05,
+    61.85,
+    4.67,
+    8.9,
+    66.53
+   ],
+   "prop": "leaf_bag_mid",
+   "part": "leaves",
+   "sha256": "edfd98b08a64ab14d45ca23c4fbc25a2d87b43d217804a723477bafa0cb7bfa3",
+   "variants": [
+    "LeafRust",
+    "LeafBrown"
+   ]
+  },
+  {
+   "file": "leaf_bag_low_body.obj",
+   "mesh": "SM_Props_leaf_bag_low_body",
+   "material": "LeafBagKraft",
+   "collision": "none",
+   "triangles": 212,
+   "bounds_cm": [
+    -16.4,
+    -20.8,
+    0.0,
+    16.4,
+    20.8,
+    48.68
+   ],
+   "prop": "leaf_bag_low",
+   "part": "body",
+   "sha256": "9f6b5c6a9b1dd3c90d4215b08b065c81b33de7e41fab1fdce4af82e3f151123d",
+   "variants": [
+    "LeafBagWet",
+    "LeafBagPale"
+   ]
+  },
+  {
+   "file": "leaf_bag_low_print.obj",
+   "mesh": "SM_Props_leaf_bag_low_print",
+   "material": "LeafBagInk",
+   "collision": "none",
+   "triangles": 42,
+   "bounds_cm": [
+    -16.61,
+    -15.0,
+    4.4,
+    16.61,
+    15.0,
+    27.14
+   ],
+   "prop": "leaf_bag_low",
+   "part": "print",
+   "sha256": "19b08abcbac98d475dc30c6911a493d9cdd0197a15e7052a9b3242492c9f8019"
+  },
+  {
+   "file": "leaf_bag_low_leaves.obj",
+   "mesh": "SM_Props_leaf_bag_low_leaves",
+   "material": "LeafOchre",
+   "collision": "none",
+   "triangles": 80,
+   "bounds_cm": [
+    0.07,
+    -15.99,
+    46.6,
+    6.49,
+    17.65,
+    50.6
+   ],
+   "prop": "leaf_bag_low",
+   "part": "leaves",
+   "sha256": "2d6409e08f1dff1eaa5c161439691d20b293edf220524c104eca4110fe9d764c",
+   "variants": [
+    "LeafRust",
+    "LeafBrown"
+   ]
+  },
+  {
+   "file": "pumpkin_body.obj",
+   "mesh": "SM_Props_pumpkin_body",
+   "material": "PumpkinOrange",
+   "collision": "none",
+   "triangles": 358,
+   "bounds_cm": [
+    -14.95,
+    -14.01,
+    0.0,
+    15.28,
+    14.56,
+    24.0
+   ],
+   "prop": "pumpkin",
+   "part": "body",
+   "sha256": "e0a93b4f6d8aead27a396a4d9966135f94ec05ff6b4def4d65650dffa769033d",
+   "variants": [
+    "PumpkinDeep",
+    "PumpkinWhite"
+   ]
+  },
+  {
+   "file": "pumpkin_stem.obj",
+   "mesh": "SM_Props_pumpkin_stem",
+   "material": "PumpkinStem",
+   "collision": "none",
+   "triangles": 32,
+   "bounds_cm": [
+    -2.45,
+    -2.51,
+    22.69,
+    3.14,
+    2.51,
+    29.89
+   ],
+   "prop": "pumpkin",
+   "part": "stem",
+   "sha256": "aaafde0134036d74a1a64d0bbe999eb5fdc74140148ab70e49dff5c220a2514a"
+  },
+  {
+   "file": "pumpkin_carved_body.obj",
+   "mesh": "SM_Props_pumpkin_carved_body",
+   "material": "PumpkinLantern",
+   "collision": "none",
+   "triangles": 358,
+   "bounds_cm": [
+    -15.37,
+    -14.41,
+    0.0,
+    14.73,
+    14.05,
+    24.0
+   ],
+   "prop": "pumpkin_carved",
+   "part": "body",
+   "sha256": "0409a253f663b9e543eff37d6575bad7edd7110edaa6372bddf26ff6a1b2ef2f",
+   "variants": [
+    "PumpkinOrange",
+    "PumpkinDeep"
+   ]
+  },
+  {
+   "file": "pumpkin_carved_stem.obj",
+   "mesh": "SM_Props_pumpkin_carved_stem",
+   "material": "PumpkinStem",
+   "collision": "none",
+   "triangles": 32,
+   "bounds_cm": [
+    -2.21,
+    -2.59,
+    22.45,
+    3.52,
+    2.59,
+    29.89
+   ],
+   "prop": "pumpkin_carved",
+   "part": "stem",
+   "sha256": "a43a4d1b55f6b8535d6f6464bbcf785a3f8f9a5b8579633f5a14fe840c3290c0"
+  },
+  {
+   "file": "pumpkin_carved_face.obj",
+   "mesh": "SM_Props_pumpkin_carved_face",
+   "material": "PumpkinHollow",
+   "collision": "none",
+   "triangles": 206,
+   "bounds_cm": [
+    -7.52,
+    -8.03,
+    5.23,
+    15.12,
+    7.55,
+    23.12
+   ],
+   "prop": "pumpkin_carved",
+   "part": "face",
+   "sha256": "ba4d291cbc8f0e755fd0dbe936fb3fcfff51a48110cde79eb87b066bfebb0b78"
   }
  ],
  "materials": {
@@ -3362,6 +3991,11 @@
   },
   "SignRosette": {
    "base_color_srgb": "#d52b1e",
+   "roughness": 0.4,
+   "metallic": 0
+  },
+  "SignGreen": {
+   "base_color_srgb": "#007a3d",
    "roughness": 0.4,
    "metallic": 0
   },
@@ -3877,6 +4511,71 @@
    "base_color_srgb": "#97492a",
    "roughness": 0.75,
    "metallic": 0
+  },
+  "LeafBagKraft": {
+   "base_color_srgb": "#a27b4c",
+   "roughness": 0.92,
+   "metallic": 0
+  },
+  "LeafBagWet": {
+   "base_color_srgb": "#7c5b37",
+   "roughness": 0.8,
+   "metallic": 0
+  },
+  "LeafBagPale": {
+   "base_color_srgb": "#bd9f70",
+   "roughness": 0.95,
+   "metallic": 0
+  },
+  "LeafBagInk": {
+   "base_color_srgb": "#2f6a3c",
+   "roughness": 0.85,
+   "metallic": 0
+  },
+  "LeafOchre": {
+   "base_color_srgb": "#c2902e",
+   "roughness": 0.75,
+   "metallic": 0
+  },
+  "LeafRust": {
+   "base_color_srgb": "#a5482a",
+   "roughness": 0.75,
+   "metallic": 0
+  },
+  "LeafBrown": {
+   "base_color_srgb": "#7a5634",
+   "roughness": 0.8,
+   "metallic": 0
+  },
+  "PumpkinOrange": {
+   "base_color_srgb": "#db741e",
+   "roughness": 0.55,
+   "metallic": 0
+  },
+  "PumpkinDeep": {
+   "base_color_srgb": "#b85a1a",
+   "roughness": 0.55,
+   "metallic": 0
+  },
+  "PumpkinWhite": {
+   "base_color_srgb": "#e3dac4",
+   "roughness": 0.6,
+   "metallic": 0
+  },
+  "PumpkinLantern": {
+   "base_color_srgb": "#e88a26",
+   "roughness": 0.5,
+   "metallic": 0
+  },
+  "PumpkinStem": {
+   "base_color_srgb": "#7b7444",
+   "roughness": 0.85,
+   "metallic": 0
+  },
+  "PumpkinHollow": {
+   "base_color_srgb": "#2e1608",
+   "roughness": 0.9,
+   "metallic": 0
   }
  },
  "props": {
@@ -3897,6 +4596,10 @@
    "parts": {
     "pole": {
      "mesh": "SM_Props_lamp_cobra_pole",
+     "material": "PoleGalv"
+    },
+    "arm": {
+     "mesh": "SM_Props_lamp_cobra_arm",
      "material": "PoleGalv"
     },
     "head": {
@@ -4390,9 +5093,9 @@
   },
   "sign_parking": {
    "kind": "street",
-   "description": "Montréal parking sign (R-PF): white plate, red circle and slash over a black P, \"9h-23h / EXCEPTÉ S3R\" and a direction arrow, on a galvanised post.",
-   "pivot": "post base centre; plate faces +X",
-   "triangles": 369,
+   "description": "Montréal parking sign on a galvanised post, with one plate face per sign family of the city clip (plate_faces): no stopping, no parking, limited parking, reserved, the residents' permit zone (SRRR) and the disabled space, each with the arrows it may carry (plate_arrows). A placement shows the face its code calls for and leaves the others out.",
+   "pivot": "post base centre; plate faces +X; every plate hangs from the same top (222.5 cm)",
+   "triangles": 2219,
    "budget": 2500,
    "bounds_cm": [
     -3.3,
@@ -4415,13 +5118,85 @@
      "mesh": "SM_Props_sign_parking_face_white",
      "material": "SignWhite"
     },
-    "face_black": {
-     "mesh": "SM_Props_sign_parking_face_black",
-     "material": "SignBlack"
+    "plate_tall": {
+     "mesh": "SM_Props_sign_parking_plate_tall",
+     "material": "SignBack"
+    },
+    "face_white_tall": {
+     "mesh": "SM_Props_sign_parking_face_white_tall",
+     "material": "SignWhite"
     },
     "face_red": {
      "mesh": "SM_Props_sign_parking_face_red",
      "material": "SignRed"
+    },
+    "face_black_no_stopping": {
+     "mesh": "SM_Props_sign_parking_face_black_no_stopping",
+     "material": "SignBlack"
+    },
+    "face_black_no_stopping_hours": {
+     "mesh": "SM_Props_sign_parking_face_black_no_stopping_hours",
+     "material": "SignBlack"
+    },
+    "face_black_no_parking": {
+     "mesh": "SM_Props_sign_parking_face_black_no_parking",
+     "material": "SignBlack"
+    },
+    "face_black_no_parking_hours": {
+     "mesh": "SM_Props_sign_parking_face_black_no_parking_hours",
+     "material": "SignBlack"
+    },
+    "face_black_limited": {
+     "mesh": "SM_Props_sign_parking_face_black_limited",
+     "material": "SignBlack"
+    },
+    "face_black_reserved": {
+     "mesh": "SM_Props_sign_parking_face_black_reserved",
+     "material": "SignBlack"
+    },
+    "face_black_permit": {
+     "mesh": "SM_Props_sign_parking_face_black_permit",
+     "material": "SignBlack"
+    },
+    "face_red_permit": {
+     "mesh": "SM_Props_sign_parking_face_red_permit",
+     "material": "SignRed"
+    },
+    "face_white_permit": {
+     "mesh": "SM_Props_sign_parking_face_white_permit",
+     "material": "SignWhite"
+    },
+    "face_black_disabled": {
+     "mesh": "SM_Props_sign_parking_face_black_disabled",
+     "material": "SignBlack"
+    },
+    "face_green": {
+     "mesh": "SM_Props_sign_parking_face_green",
+     "material": "SignGreen"
+    },
+    "arrow_left": {
+     "mesh": "SM_Props_sign_parking_arrow_left",
+     "material": "SignBlack"
+    },
+    "arrow_left_tall": {
+     "mesh": "SM_Props_sign_parking_arrow_left_tall",
+     "material": "SignBlack"
+    },
+    "arrow_right": {
+     "mesh": "SM_Props_sign_parking_arrow_right",
+     "material": "SignBlack"
+    },
+    "arrow_right_tall": {
+     "mesh": "SM_Props_sign_parking_arrow_right_tall",
+     "material": "SignBlack"
+    },
+    "arrow_both": {
+     "mesh": "SM_Props_sign_parking_arrow_both",
+     "material": "SignBlack"
+    },
+    "arrow_both_tall": {
+     "mesh": "SM_Props_sign_parking_arrow_both_tall",
+     "material": "SignBlack"
     }
    },
    "colliders_cm": [
@@ -4438,7 +5213,209 @@
      ]
     }
    ],
-   "text": "\\P 9h-23h EXCEPTE S3R (dataset code R-PF, the commonest Plateau parking sign)"
+   "plate_faces": {
+    "no_stopping": {
+     "family": "no_stopping",
+     "plate": "short",
+     "size_cm": [
+      30.0,
+      45.0
+     ],
+     "symbol": "octagon",
+     "crown": "red",
+     "parts": [
+      "plate",
+      "face_white",
+      "face_red",
+      "face_black_no_stopping"
+     ],
+     "text": [],
+     "example_code": "AD-TT",
+     "catalogue_page": "1-1-1",
+     "triangles": 224
+    },
+    "no_stopping_hours": {
+     "family": "no_stopping",
+     "plate": "short",
+     "size_cm": [
+      30.0,
+      45.0
+     ],
+     "symbol": "octagon",
+     "crown": "red",
+     "parts": [
+      "plate",
+      "face_white",
+      "face_red",
+      "face_black_no_stopping_hours"
+     ],
+     "text": [
+      "6h - 20h",
+      "LUN À VEN"
+     ],
+     "example_code": "AV-JL",
+     "catalogue_page": "1-1-1",
+     "triangles": 380
+    },
+    "no_parking": {
+     "family": "no_parking",
+     "plate": "short",
+     "size_cm": [
+      30.0,
+      45.0
+     ],
+     "symbol": "P",
+     "crown": "red",
+     "parts": [
+      "plate",
+      "face_white",
+      "face_red",
+      "face_black_no_parking"
+     ],
+     "text": [],
+     "example_code": "SD-TT",
+     "catalogue_page": "1-2-1-1",
+     "triangles": 234
+    },
+    "no_parking_hours": {
+     "family": "no_parking",
+     "plate": "short",
+     "size_cm": [
+      30.0,
+      45.0
+     ],
+     "symbol": "P",
+     "crown": "red",
+     "parts": [
+      "plate",
+      "face_white",
+      "face_red",
+      "face_black_no_parking_hours"
+     ],
+     "text": [
+      "8h - 9h",
+      "MARDI",
+      "1 AVRIL AU 1 DÉC."
+     ],
+     "example_code": "SU-MA-A",
+     "catalogue_page": "1-4-2-2",
+     "triangles": 524
+    },
+    "limited": {
+     "family": "limited",
+     "plate": "short",
+     "size_cm": [
+      30.0,
+      45.0
+     ],
+     "symbol": "P_plain",
+     "crown": null,
+     "parts": [
+      "plate",
+      "face_white",
+      "face_black_limited"
+     ],
+     "text": [
+      "15 min",
+      "7h - 9h30",
+      "15h - 18h",
+      "LUN À VEN"
+     ],
+     "example_code": "PV-QE",
+     "catalogue_page": "1-7-1-4",
+     "triangles": 507
+    },
+    "reserved": {
+     "family": "reserved",
+     "plate": "short",
+     "size_cm": [
+      30.0,
+      45.0
+     ],
+     "symbol": "P",
+     "crown": "red",
+     "parts": [
+      "plate",
+      "face_white",
+      "face_red",
+      "face_black_reserved"
+     ],
+     "text": [
+      "EXCEPTÉ"
+     ],
+     "example_code": "R-SI",
+     "catalogue_page": "1-5-1",
+     "triangles": 314
+    },
+    "permit": {
+     "family": "permit",
+     "plate": "tall",
+     "size_cm": [
+      30.0,
+      60.0
+     ],
+     "symbol": "P",
+     "crown": "red",
+     "parts": [
+      "plate_tall",
+      "face_white_tall",
+      "face_red",
+      "face_red_permit",
+      "face_white_permit",
+      "face_black_permit"
+     ],
+     "text": [
+      "9h - 23h",
+      "EXCEPTÉ VÉHICULES MUNIS D'UN PERMIS",
+      "SECTEUR"
+     ],
+     "example_code": "R-PF",
+     "catalogue_page": "1-5-3",
+     "triangles": 814
+    },
+    "disabled": {
+     "family": "disabled",
+     "plate": "tall",
+     "size_cm": [
+      30.0,
+      60.0
+     ],
+     "symbol": "P",
+     "crown": "red",
+     "parts": [
+      "plate_tall",
+      "face_white_tall",
+      "face_red",
+      "face_green",
+      "face_black_disabled"
+     ],
+     "text": [],
+     "example_code": "R-TD",
+     "catalogue_page": "1-5-2",
+     "triangles": 350
+    }
+   },
+   "plate_arrows": {
+    "left": {
+     "short": "arrow_left",
+     "tall": "arrow_left_tall"
+    },
+    "right": {
+     "short": "arrow_right",
+     "tall": "arrow_right_tall"
+    },
+    "both": {
+     "short": "arrow_both",
+     "tall": "arrow_both_tall"
+    }
+   },
+   "plate_default": "permit",
+   "face_budget": 1000,
+   "plate_sources": [
+    "Ville de Montréal, Catalogue des panneaux, signalisation écrite (2015), dataset \"Signalisation (stationnement sur rue)\": the faces, plate sizes and code groups",
+    "Règlement sur la signalisation routière (RLRQ c. C-24.2, r. 41), articles 2, 5, 6, 29 and 30",
+    "MTQ, Tome V Signalisation routière, chapter 2, and its Répertoire des dispositifs: P-150-1, P-150-5, P-150-7 and P-160"
+   ]
   },
   "bixi_dock": {
    "kind": "street",
@@ -6176,11 +7153,249 @@
      ]
     }
    ]
+  },
+  "leaf_bag": {
+   "kind": "season",
+   "description": "Kraft paper yard-waste bag (full), the 30 gallon two-ply lawn and leaf bag: 41 x 30 cm, filled to 64 cm, the side gussets tucked in and the top folded over, a green leaf print on both wide faces and a few leaves caught in the fold.",
+   "pivot": "base centre; wide faces look along ±X",
+   "triangles": 294,
+   "budget": 400,
+   "bounds_cm": [
+    -16.46,
+    -20.8,
+    0.0,
+    16.46,
+    20.8,
+    81.16
+   ],
+   "parts": {
+    "body": {
+     "mesh": "SM_Props_leaf_bag_body",
+     "material": "LeafBagKraft"
+    },
+    "print": {
+     "mesh": "SM_Props_leaf_bag_print",
+     "material": "LeafBagInk"
+    },
+    "leaves": {
+     "mesh": "SM_Props_leaf_bag_leaves",
+     "material": "LeafOchre"
+    }
+   },
+   "colliders_cm": [
+    {
+     "center": [
+      0,
+      0,
+      39.04
+     ],
+     "size": [
+      30.0,
+      41.0,
+      78.08
+     ]
+    }
+   ],
+   "fill_cm": 64.0,
+   "form_of": "leaf_bag",
+   "forms": [
+    {
+     "prop": "leaf_bag",
+     "fill": "full",
+     "fill_cm": 64.0,
+     "share": 0.45
+    },
+    {
+     "prop": "leaf_bag_mid",
+     "fill": "three quarters",
+     "fill_cm": 48.0,
+     "share": 0.35
+    },
+    {
+     "prop": "leaf_bag_low",
+     "fill": "half",
+     "fill_cm": 32.0,
+     "share": 0.2
+    }
+   ],
+   "scale_range": [
+    0.97,
+    1.03
+   ],
+   "placement_note": "on the sidewalk at the curb edge beside the bins of a collection row, or against a front fence or stoop: one to four per door, a wide face toward the street; pick the form by the forms shares and the colour by variant_seed (fresh, rain-dark, sun-bleached kraft)"
+  },
+  "leaf_bag_mid": {
+   "kind": "season",
+   "description": "Kraft paper yard-waste bag (three quarters), the 30 gallon two-ply lawn and leaf bag: 41 x 30 cm, filled to 48 cm, the side gussets tucked in and the top folded over, a green leaf print on both wide faces and a few leaves caught in the fold.",
+   "pivot": "base centre; wide faces look along ±X",
+   "triangles": 314,
+   "budget": 400,
+   "bounds_cm": [
+    -16.54,
+    -20.8,
+    0.0,
+    16.54,
+    20.8,
+    66.53
+   ],
+   "parts": {
+    "body": {
+     "mesh": "SM_Props_leaf_bag_mid_body",
+     "material": "LeafBagKraft"
+    },
+    "print": {
+     "mesh": "SM_Props_leaf_bag_mid_print",
+     "material": "LeafBagInk"
+    },
+    "leaves": {
+     "mesh": "SM_Props_leaf_bag_mid_leaves",
+     "material": "LeafOchre"
+    }
+   },
+   "colliders_cm": [
+    {
+     "center": [
+      0,
+      0,
+      31.69
+     ],
+     "size": [
+      30.0,
+      41.0,
+      63.38
+     ]
+    }
+   ],
+   "fill_cm": 48.0,
+   "form_of": "leaf_bag"
+  },
+  "leaf_bag_low": {
+   "kind": "season",
+   "description": "Kraft paper yard-waste bag (half), the 30 gallon two-ply lawn and leaf bag: 41 x 30 cm, filled to 32 cm, the side gussets tucked in and the top folded over, a green leaf print on both wide faces and a few leaves caught in the fold.",
+   "pivot": "base centre; wide faces look along ±X",
+   "triangles": 334,
+   "budget": 400,
+   "bounds_cm": [
+    -16.61,
+    -20.8,
+    0.0,
+    16.61,
+    20.8,
+    50.6
+   ],
+   "parts": {
+    "body": {
+     "mesh": "SM_Props_leaf_bag_low_body",
+     "material": "LeafBagKraft"
+    },
+    "print": {
+     "mesh": "SM_Props_leaf_bag_low_print",
+     "material": "LeafBagInk"
+    },
+    "leaves": {
+     "mesh": "SM_Props_leaf_bag_low_leaves",
+     "material": "LeafOchre"
+    }
+   },
+   "colliders_cm": [
+    {
+     "center": [
+      0,
+      0,
+      24.34
+     ],
+     "size": [
+      30.0,
+      41.0,
+      48.68
+     ]
+    }
+   ],
+   "fill_cm": 32.0,
+   "form_of": "leaf_bag"
+  },
+  "pumpkin": {
+   "kind": "season",
+   "description": "Carving pumpkin with ten ribs and a woody stem, about 30 cm across.",
+   "pivot": "base centre",
+   "triangles": 390,
+   "budget": 450,
+   "bounds_cm": [
+    -14.95,
+    -14.01,
+    0.0,
+    15.28,
+    14.56,
+    29.89
+   ],
+   "parts": {
+    "body": {
+     "mesh": "SM_Props_pumpkin_body",
+     "material": "PumpkinOrange"
+    },
+    "stem": {
+     "mesh": "SM_Props_pumpkin_stem",
+     "material": "PumpkinStem"
+    }
+   },
+   "form_of": "pumpkin",
+   "forms": [
+    {
+     "prop": "pumpkin",
+     "carved": false,
+     "share": 0.7
+    },
+    {
+     "prop": "pumpkin_carved",
+     "carved": true,
+     "share": 0.3
+    }
+   ],
+   "sizes": {
+    "pie": 0.6,
+    "carving": 1.0,
+    "large": 1.4
+   },
+   "scale_range": [
+    0.55,
+    1.45
+   ],
+   "placement_note": "on stoop steps and landings, front-yard ledges and balcony floors: one to three per door, sizes by the placement scale (pie .6, carving 1, large 1.4), a carved one with its face (+X) toward the sidewalk; the colour by variant_seed (orange, deep orange, white)"
+  },
+  "pumpkin_carved": {
+   "kind": "season",
+   "description": "Carving pumpkin with ten ribs and a woody stem, about 30 cm across, carved as a jack-o'-lantern: triangle eyes and nose, a grin with two teeth and the lid cut, facing +X.",
+   "pivot": "base centre; the face looks along +X",
+   "triangles": 596,
+   "budget": 700,
+   "bounds_cm": [
+    -15.37,
+    -14.41,
+    0.0,
+    15.12,
+    14.05,
+    29.89
+   ],
+   "parts": {
+    "body": {
+     "mesh": "SM_Props_pumpkin_carved_body",
+     "material": "PumpkinLantern"
+    },
+    "stem": {
+     "mesh": "SM_Props_pumpkin_carved_stem",
+     "material": "PumpkinStem"
+    },
+    "face": {
+     "mesh": "SM_Props_pumpkin_carved_face",
+     "material": "PumpkinHollow"
+    }
+   },
+   "form_of": "pumpkin"
   }
  },
  "counts": {
-  "props": 32,
-  "meshes": 168,
+  "props": 37,
+  "meshes": 201,
   "triangles_per_prop": {
    "lamp_cobra": 468,
    "lamp_park": 630,
@@ -6188,7 +7403,7 @@
    "sign_stop": 184,
    "sign_street": 272,
    "sign_oneway": 86,
-   "sign_parking": 369,
+   "sign_parking": 2219,
    "bixi_dock": 928,
    "bixi_bike": 1472,
    "bin_recycling": 327,
@@ -6213,11 +7428,16 @@
    "bbq": 1000,
    "satellite_dish": 818,
    "potted_plant": 1176,
-   "bike_gallery": 1524
+   "bike_gallery": 1524,
+   "leaf_bag": 294,
+   "leaf_bag_mid": 314,
+   "leaf_bag_low": 334,
+   "pumpkin": 390,
+   "pumpkin_carved": 596
   },
-  "triangles_all_meshes": 27080
+  "triangles_all_meshes": 30858
  },
  "source_sha256": {
-  "Scripts/blender/plateau_props.py": "8fa11064928692911814274f2d42d78fa6c36b511cde71a7111aebeadbb3c178"
+  "Scripts/blender/plateau_props.py": "128c4636e434fd2ddb170dd12765b6256d428f962ba3c204153c9d87d99cac66"
  }
 }
