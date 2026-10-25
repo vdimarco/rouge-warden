@@ -63,6 +63,9 @@ namespace
             Expect(CullStart(Group) > 0 && CullStart(Group) < CullEnd(Group), "group %d fades before it culls", Group);
         Expect(CastsShadow(BodyGroup(0, 0)) && CastsShadow(RoofGroup(2, 3)) && CastsShadow(CabinGroup(1)), "the shell casts shadows");
         Expect(!CastsShadow(TireGroup) && !CastsShadow(RimGroup), "tyres and rims do not");
+        Expect(AffectsDistanceFields(BodyGroup(2, 1)) && AffectsDistanceFields(RoofGroup(0, 3)) && AffectsDistanceFields(CabinGroup(2)),
+            "the shell lights the distance fields");
+        Expect(!AffectsDistanceFields(TireGroup) && !AffectsDistanceFields(RimGroup), "the tyres and rims stay out of them");
         Expect(RecycleDistance > float(BodyCullEnd), "a swap happens beyond the cull distance, where nobody sees it");
     }
 
@@ -84,6 +87,19 @@ namespace
         Expect(SlotBeatsResident(200.f * 200.f, 250.f * 250.f), "a nearer car wins");
     }
 
+    void Throws()
+    {
+        // A resident 3 m from a car's centre line, thrown square at it: the line enters the box 2 m out.
+        const float Reach = 1000.f;
+        const float Entry = SegmentEntry(0.f, -300.f, 10.f, 0.f, 700.f, 10.f);
+        Expect(std::fabs(Entry * Reach - 200.f) < .01f, "the throw's line enters the car 2 m out: %.2f", double(Entry * Reach));
+        const float Share = ThrowShare(Entry, Reach);
+        Expect(std::fabs(Share * Reach - 125.f) < .01f, "the person stops 75 cm before the car's side: %.2f", double(Share * Reach));
+        Expect(ThrowShare(-1.f, Reach) == 1.f && ThrowShare(.5f, 0.f) == 1.f, "a throw that meets no car keeps its reach");
+        Expect(ThrowShare(.05f, Reach) == 0.f, "a person against the car drops where they stand");
+        Expect(StrongImpact(1200.f, false) && !StrongImpact(600.f, false), "a 12 m/s throw promotes the car, a 6 m/s push does not");
+    }
+
     void Recycling()
     {
         Expect(MayRecycle(false, false, false, 12000.f, 12000.f), "an empty car far from everyone goes");
@@ -94,6 +110,13 @@ namespace
             "a player near the car or its space keeps it");
         Expect(MayRefill(12000.f, false) && !MayRefill(12000.f, true) && !MayRefill(5000.f, false), "a space refills empty and unseen");
         Expect(HideNow(100.f, 0.f) && !HideNow(300.f, .5f) && HideNow(300.f, 1.f) && !HideNow(-1.f, .2f), "a client waits for the real car");
+        // Two spaces promoted 0.9 s apart, with no real car in reach yet: each waits its own second.
+        const FPendingHide First = StartPending(3, 10.f), Second = StartPending(4, 10.9f);
+        Expect(First.Slot == 3 && Second.Slot == 4, "a pending space keeps its slot");
+        Expect(PendingHideNow(First, -1.f, 11.f) && !PendingHideNow(Second, -1.f, 11.f),
+            "at 11 s the first space hides and the second, promoted at 10.9 s, still waits");
+        Expect(PendingHideNow(Second, -1.f, 11.9f), "the second hides a second after its own promotion");
+        Expect(PendingHideNow(Second, 100.f, 11.f), "or as soon as its real car has arrived");
         Expect(LivePromotedCap >= 16 && LivePromotedCap <= 32, "the promoted-car cap stays within the old 32 parked actors");
     }
 
@@ -160,6 +183,7 @@ int main()
     Culling();
     Body();
     Promotion();
+    Throws();
     Recycling();
     Tiles();
     Lines();

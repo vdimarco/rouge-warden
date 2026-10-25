@@ -63,12 +63,20 @@ namespace QuebecParkedRules
     inline int CullStart(int Group) { return CullEnd(Group) - (BodyCullEnd - BodyCullStart); }
     // Only the body, the cabin and the roof cast shadows; the tyres and rims sit in the body's shadow.
     inline bool CastsShadow(int Group) { return Group < TireGroup; }
+    // Nor do the tyres and rims affect the distance-field lighting (its shadows and occlusion, and Lumen's software
+    // tracing). They are small and sit under the body, which shades the road there already, and each instance is one
+    // more distance-field object to cull and trace. Epic's "Mesh Distance Fields" page and its forum advise the same
+    // for small instanced props.
+    inline bool AffectsDistanceFields(int Group) { return Group < TireGroup; }
 
     // ---- The hidden box ---------------------------------------------------------------------------------------
-    // The boxes block cars and people but ignore the Visibility channel, as a real car's hull does: the floor probes
-    // (getting out of a car, spawning an officer, moving a car or a person) must land on the road, never on a roof.
-    // A shot finds a parked car on its own line instead: SegmentEntry, in the space's frame (pivot at the origin, X
-    // along the car), gives the share of the segment from A to B where it enters the box, or a negative value.
+    // The boxes are WorldDynamic bodies that block every channel but Visibility and Camera. So they stop cars,
+    // players and officers (an officer's capsule lets Pawn bodies through, so Pawn would not do), and the officers'
+    // steering probe sees them. Neither the floor probes by channel (getting out of a car, spawning an officer) nor
+    // the ground queries by the WorldStatic object type (a job's goal, a car's wheels, a knocked cone's rest, a
+    // person's floor) land on a roof. A shot, a scripted throw and a knocked cone find a parked car on their own line
+    // instead: SegmentEntry, in the space's frame (pivot at the origin, X along the car), gives the share of the
+    // segment from A to B where it enters the box, or a negative value.
     inline float SegmentEntry(float AX, float AY, float AZ, float BX, float BY, float BZ)
     {
         const float Low[3] = {-BoxHalfX, -BoxHalfY, BoxCentreZ - BoxHalfZ};
@@ -108,6 +116,17 @@ namespace QuebecParkedRules
     {
         return ClosingSpeed >= (bCar ? CarImpactSpeed : PawnImpactSpeed);
     }
+    // A resident's or a pedestrian's throw is scripted, so no sweep meets the boxes: the throw's line does
+    // (SegmentEntry). The person stops ThrowStopShort before the car's side, as before a wall (a 35 cm body and the
+    // 40 cm a wall keeps), and a throw at PawnImpactSpeed or faster turns the car into a real one first. ThrowShare is
+    // what is left of a throw of Reach cm whose line enters a car at Entry (0 to 1), or 1 when it meets none.
+    inline constexpr float ThrowStopShort = 75.f;
+    inline float ThrowShare(float Entry, float Reach)
+    {
+        if (Entry < 0.f || Reach <= 1.f) return 1.f;
+        const float Share = (Entry * Reach - ThrowStopShort) / Reach;
+        return Share < 0.f ? 0.f : (Share > 1.f ? 1.f : Share);
+    }
     // E takes a parked car after the real cars, the missions, the jobs and the stands, and before a resident unless
     // the resident stands nearer (squared distances; a negative one means no resident).
     inline bool SlotBeatsResident(float SlotDistanceSquared, float ResidentDistanceSquared)
@@ -139,5 +158,17 @@ namespace QuebecParkedRules
     inline bool HideNow(float NearestCarDistance, float Waited)
     {
         return (NearestCarDistance >= 0.f && NearestCarDistance <= ArrivalReach) || Waited >= ArrivalWait;
+    }
+    // A promoted space a client still draws, and when it began to wait. Each space keeps its own start, so a space
+    // promoted while another waits gets its whole ArrivalWait and does not blink empty before its car arrives.
+    struct FPendingHide
+    {
+        int Slot = -1;
+        float Since = 0.f;
+    };
+    inline FPendingHide StartPending(int Slot, float Now) { return FPendingHide{Slot, Now}; }
+    inline bool PendingHideNow(const FPendingHide& Pending, float NearestCarDistance, float Now)
+    {
+        return HideNow(NearestCarDistance, Now - Pending.Since);
     }
 }

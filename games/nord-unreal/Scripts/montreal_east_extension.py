@@ -31,15 +31,36 @@ SOURCE_HASHES = {
     'Data/LaFontaine/layout.json': '4238d6ed45d5fb890e0f8dbcb672de0803c6dc7079b0b6a86b386d82ebbb4250',
     'Data/Plateau/ContextGeometry/context.json': '74764fd01528c320439692fdc6eefd3394770e547f425b886ceabbd73fc9392a',
     'Data/Plateau/EdgesGeometry/edges.json': '9b2adcc383903d64014e5a09851cea786aea5af4307242f5a37dc83362323a35',
-    'Source/Quebec/LaFontaineMap.h': '80a96e858c315584598acd8d87dfb758ba45f64a58ccd4b6f5222ddb56ff1700',
+    'Source/Quebec/LaFontaineMap.h': 'b6881221df8fc3878f0ef441856a18b0af51a9db9af2c417ebb715ab55ce7b1b',
 }
+# The extension reads only two arrays of LaFontaineMap.h, so its hash covers only their text. The header's other
+# arrays, such as the parking sides, may change without a new review of the extension.
+MAP_HEADER = 'Source/Quebec/LaFontaineMap.h'
+MAP_ARRAYS = ('const FVector RoadSegments[][2] = {\n', 'const float RoadSegmentWidths[] = {\n')
 
 
 def sha(path): return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 
 
+def map_arrays(root=ROOT):
+    """The text of the RoadSegments and RoadSegmentWidths initializers in LaFontaineMap.h, each to its closing brace."""
+    text = (Path(root) / MAP_HEADER).read_bytes().decode('ascii')
+    parts = []
+    for marker in MAP_ARRAYS:
+        assert text.count(marker) == 1, ('Expected one array in LaFontaineMap.h', marker)
+        parts.append(marker + text.split(marker, 1)[1].split('};', 1)[0] + '};\n')
+    return ''.join(parts)
+
+
+def source_sha(root, path):
+    """The pinned hash of one source: the whole file, or only the two road arrays of LaFontaineMap.h."""
+    if path == MAP_HEADER:
+        return hashlib.sha256(map_arrays(root).encode('ascii')).hexdigest()
+    return sha(Path(root) / path)
+
+
 def sources(root=ROOT):
-    got = {p: sha(Path(root) / p) for p in SOURCE_HASHES}
+    got = {p: source_sha(root, p) for p in SOURCE_HASHES}
     assert got == SOURCE_HASHES, 'Retained district/context source changed; review before authoring'
     return got
 
@@ -129,8 +150,8 @@ def _closures(exits, bounds):
 
 def original_radar_prefix(root=ROOT):
     """Retain the complete original initializer bytes; do not reformat roads."""
-    path = Path(root)/'Source/Quebec/LaFontaineMap.h'
-    assert sha(path) == SOURCE_HASHES['Source/Quebec/LaFontaineMap.h'], 'Original road header changed'
+    path = Path(root)/MAP_HEADER
+    assert source_sha(root, MAP_HEADER) == SOURCE_HASHES[MAP_HEADER], 'Original road arrays changed'
     text = path.read_bytes().decode('ascii')
     marker = 'const FVector RoadSegments[][2] = {\n'
     assert text.count(marker) == 1
@@ -180,7 +201,8 @@ def build(root=ROOT):
                              'size_cm': [70., y1-y0, BOUNDARY_HEIGHT_CM-ORIGINAL_WALL_HEIGHT_CM],
                              'outward_normal': [1., 0., 0.], 'bottom_z_cm': ORIGINAL_WALL_HEIGHT_CM,
                              'top_z_cm': BOUNDARY_HEIGHT_CM})
-    report = {'version': 1, 'generator_sha256': sha(Path(__file__)), 'source_hashes': before, 'source': 'Data/LaFontaine/osm.xml',
+    report = {'version': 1, 'generator_sha256': sha(Path(__file__)), 'source_hashes': before,
+              'source_hash_scope': {MAP_HEADER: 'the RoadSegments and RoadSegmentWidths arrays only'}, 'source': 'Data/LaFontaine/osm.xml',
               'attribution': '(c) OpenStreetMap contributors, ODbL 1.0', 'closures_fictional': True,
               'original_bounds_xy': original, 'extension_bounds_xy': bounds,
               'expanded_bounds_xy': [original[0], original[1], x1, original[3]],

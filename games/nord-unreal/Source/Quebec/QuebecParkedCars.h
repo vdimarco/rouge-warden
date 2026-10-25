@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "Engine/TimerHandle.h"
+#include "QuebecParkedRules.h"
 #include "QuebecParkedCars.generated.h"
 
 class AController;
@@ -31,11 +32,11 @@ struct FQuebecParkedSlotParts
  * The parked cars on the Plateau curbs: one car per legal curb space in LaFontaineParking.h (Scripts/plateau_parking.py).
  * Every peer builds the same instanced parts at BeginPlay from the meshes and paints AQuebecCar uses, one instanced
  * component per 190 m tile, part mesh and paint, so a parked car looks like a real one and a promotion touches only
- * its own tile. A hidden component per tile holds one collision box per car; the boxes block cars and people but
- * ignore the Visibility channel, so floor probes never land on a roof. The server leaves out the spaces where a car,
- * a cone or anything else already stands, and turns a space into a real AQuebecCar with the same transform and style
- * when a player gets in, a car or a person hits it hard, or a shot's line ends on it. Clients hide those spaces from
- * the replicated lists.
+ * its own tile. A hidden component per tile holds one collision box per car. The boxes are WorldDynamic: they block
+ * cars and people but ignore the Visibility channel, and they are not WorldStatic, so no floor probe or ground query
+ * lands on a roof. The server leaves out the spaces where a car, a cone or anything else
+ * already stands, and turns a space into a real AQuebecCar with the same transform and style when a player gets in,
+ * a car or a person hits it hard, or a shot's line ends on it. Clients hide those spaces from the replicated lists.
  */
 UCLASS()
 class QUEBEC_API AQuebecParkedCars : public AActor
@@ -43,6 +44,7 @@ class QUEBEC_API AQuebecParkedCars : public AActor
     GENERATED_BODY()
     friend class FQuebecParkedCarsTest;
     friend class FQuebecParkedThrownPersonTest;
+    friend class FQuebecParkedThrownResidentTest;
 public:
     AQuebecParkedCars();
     virtual void BeginPlay() override;
@@ -67,6 +69,11 @@ public:
     // Server: the first shown parked car a shot's line from From to To passes through (the boxes ignore the
     // Visibility channel the shot's trace uses) turns into a real car. OutImpact is where the line enters it.
     static AQuebecCar* PromoteOnLine(const UWorld* World, const FVector& From, const FVector& To, FVector& OutImpact);
+    // Server: a resident or a pedestrian thrown at Speed (cm/s) along the line from From to To. Their throw is
+    // scripted, so no sweep meets the boxes; the line does. A hard throw turns the first shown parked car on it into a
+    // real one and shoves it. Returns the share of the throw that is left before that car (ThrowShare in
+    // QuebecParkedRules.h), or 1 when the line meets none.
+    static float ThrowAgainst(const UWorld* World, const FVector& From, const FVector& To, float Speed);
     // Every peer: the first shown space the line enters, or INDEX_NONE, and where.
     int32 FindSlotOnLine(const FVector& From, const FVector& To, FVector& OutImpact) const;
 
@@ -95,8 +102,7 @@ private:
     TArray<bool> Shown;                              // as drawn on this peer
     TArray<TWeakObjectPtr<AQuebecCar>> PromotedCars; // server: the real car each promoted space became
     TArray<float> PromotedAt;
-    TArray<int32> PendingHide;                       // client: promoted spaces waiting for their real car
-    float PendingSince = 0.f;
+    TArray<QuebecParkedRules::FPendingHide> PendingHides;   // client: promoted spaces waiting for their real car
     bool bBuilt = false;
     FTimerHandle RecycleTimer;
     FTimerHandle PendingTimer;

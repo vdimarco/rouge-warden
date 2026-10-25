@@ -238,7 +238,7 @@ void AQuebecParkedCars::Build()
             FVector(BoxHalfX / 50., BoxHalfY / 50., BoxHalfZ / 50.)) * Pivot));
         TileSlots[Where.Tile].Add(Slot);
     }
-    const auto NewGroup = [this](const FString& Name, UStaticMesh* Mesh, EComponentMobility::Type Mobility)
+    const auto NewGroup = [this](const FString& Name, UStaticMesh* Mesh, EComponentMobility::Type Mobility, bool bDistanceFields)
     {
         UHierarchicalInstancedStaticMeshComponent* Group = NewObject<UHierarchicalInstancedStaticMeshComponent>(this, *Name);
         Group->SetMobility(Mobility);
@@ -246,6 +246,8 @@ void AQuebecParkedCars::Build()
         Group->SetStaticMesh(Mesh);
         Group->SetCanEverAffectNavigation(false);
         Group->SetGenerateOverlapEvents(false);
+        // Set before the component registers, so its first render state has it.
+        Group->bAffectDistanceFieldLighting = bDistanceFields;
         Group->RegisterComponent();
         return Group;
     };
@@ -259,7 +261,7 @@ void AQuebecParkedCars::Build()
             if (!Instances.Num()) continue;
             // Static, so the shadow maps cache the parked cars; a hidden instance moves only when a car is promoted.
             UHierarchicalInstancedStaticMeshComponent* Group = NewGroup(FString::Printf(TEXT("ParkedParts%02d_%02d"), TileNumber, Index),
-                Meshes[Index], EComponentMobility::Static);
+                Meshes[Index], EComponentMobility::Static, AffectsDistanceFields(Index));
             Group->SetCollisionEnabled(ECollisionEnabled::NoCollision);
             Group->SetCullDistances(CullStart(Index), CullEnd(Index));
             Group->SetCastShadow(CastsShadow(Index));
@@ -272,14 +274,16 @@ void AQuebecParkedCars::Build()
             Group->AddInstances(Instances, false, true, false);
             Groups[TileNumber * VisibleGroups + Index] = Group;
         }
-        // One box per car: it blocks cars and people, not the spring arms (as the replica props do) and not the
-        // Visibility channel, as a real car's hull, so every floor probe lands on the road under it. Movable, so a
-        // promoted car's box leaves as a kinematic body; it is never drawn.
+        // One box per car. WorldDynamic, as a movable body is: it blocks cars, players and officers (their capsules
+        // let Pawn bodies through, so a Pawn box would not stop them). It ignores the Visibility channel, and it is not
+        // WorldStatic, so no floor probe and no ground query by object type (a job's goal, a car's wheels, a knocked
+        // cone's rest, a person's floor) lands on its roof. It ignores the spring arms too, as the replica props do.
+        // Movable, so a promoted car's box leaves as a kinematic body; it is never drawn.
         UHierarchicalInstancedStaticMeshComponent* Boxes = NewGroup(FString::Printf(TEXT("ParkedBoxes%02d"), TileNumber), BoxMesh,
-            EComponentMobility::Movable);
+            EComponentMobility::Movable, false);
         Boxes->SetHiddenInGame(true);
         Boxes->SetCastShadow(false);
-        Boxes->SetCollisionProfileName(TEXT("BlockAll"));
+        Boxes->SetCollisionProfileName(TEXT("BlockAllDynamic"));
         Boxes->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
         Boxes->SetCollisionResponseToChannel(ECC_Visibility, ECR_Ignore);
         Boxes->AddInstances(BoxTransforms[TileNumber], false, true, false);
@@ -300,40 +304,43 @@ void AQuebecParkedCars::ApplyHidden()
     for (int32 Slot : VacantSlots) if (Hide.IsValidIndex(Slot)) Hide[Slot] = true;
     for (int32 Slot : PromotedSlots) if (Hide.IsValidIndex(Slot)) Hide[Slot] = true;
     const bool bServer = HasAuthority();
+    const float Now = GetWorld()->GetTimeSeconds();
     for (int32 Slot = 0; Slot < Shown.Num(); ++Slot)
     {
         if (!Hide[Slot] && !Shown[Slot]) SetSlotShown(Slot, true);
         if (!Hide[Slot] || !Shown[Slot]) continue;
-        // A client keeps a promoted car drawn until the real car has arrived, so the space never blinks empty.
-        if (!bServer && PromotedSlots.Contains(Slot) && !VacantSlots.Contains(Slot)) PendingHide.AddUnique(Slot);
+        // A client keeps a promoted car drawn until the real car has arrived, so the space never blinks empty. Each
+        // space waits from its own promotion, not from the first one still pending.
+        if (!bServer && PromotedSlots.Contains(Slot) && !VacantSlots.Contains(Slot))
+        {
+            if (!PendingHides.ContainsByPredicate([Slot](const FPendingHide& Pending) { return Pending.Slot == Slot; }))
+                PendingHides.Add(StartPending(Slot, Now));
+        }
         else SetSlotShown(Slot, false);
     }
-    PendingHide.RemoveAll([this](int32 Slot) { return !PromotedSlots.Contains(Slot); });
-    if (PendingHide.Num() && !GetWorldTimerManager().IsTimerActive(PendingTimer))
-    {
-        PendingSince = GetWorld()->GetTimeSeconds();
+    PendingHides.RemoveAll([this](const FPendingHide& Pending) { return !PromotedSlots.Contains(Pending.Slot); });
+    if (PendingHides.Num() && !GetWorldTimerManager().IsTimerActive(PendingTimer))
         GetWorldTimerManager().SetTimer(PendingTimer, this, &AQuebecParkedCars::FlushPendingHides, .1f, true);
-    }
 }
 
 void AQuebecParkedCars::FlushPendingHides()
 {
-    const float Waited = GetWorld()->GetTimeSeconds() - PendingSince;
-    for (int32 Index = PendingHide.Num() - 1; Index >= 0; --Index)
+    const float Now = GetWorld()->GetTimeSeconds();
+    for (int32 Index = PendingHides.Num() - 1; Index >= 0; --Index)
     {
-        const int32 Slot = PendingHide[Index];
-        const FVector Where = SlotTransforms[Slot].GetLocation();
+        const FPendingHide Pending = PendingHides[Index];
+        const FVector Where = SlotTransforms[Pending.Slot].GetLocation();
         float Nearest = -1.f;
         for (TActorIterator<AQuebecCar> It(GetWorld()); It; ++It)
         {
             const float Distance = static_cast<float>(FVector::Dist(It->GetActorLocation(), Where));
             if (Nearest < 0.f || Distance < Nearest) Nearest = Distance;
         }
-        if (!HideNow(Nearest, Waited)) continue;
-        SetSlotShown(Slot, false);
-        PendingHide.RemoveAt(Index);
+        if (!PendingHideNow(Pending, Nearest, Now)) continue;
+        SetSlotShown(Pending.Slot, false);
+        PendingHides.RemoveAt(Index);
     }
-    if (!PendingHide.Num()) GetWorldTimerManager().ClearTimer(PendingTimer);
+    if (!PendingHides.Num()) GetWorldTimerManager().ClearTimer(PendingTimer);
 }
 
 UHierarchicalInstancedStaticMeshComponent* AQuebecParkedCars::GroupOf(int32 Tile, int32 Group) const
@@ -466,6 +473,21 @@ AQuebecCar* AQuebecParkedCars::PromoteOnLine(const UWorld* World, const FVector&
     if (!Fill || !Fill->HasAuthority()) return nullptr;
     const int32 Slot = Fill->FindSlotOnLine(From, To, OutImpact);
     return Slot != INDEX_NONE ? Fill->Promote(Slot) : nullptr;
+}
+
+float AQuebecParkedCars::ThrowAgainst(const UWorld* World, const FVector& From, const FVector& To, float Speed)
+{
+    AQuebecParkedCars* Fill = Find(World);
+    if (!Fill || !Fill->HasAuthority()) return 1.f;
+    FVector Impact = FVector::ZeroVector;
+    const int32 Slot = Fill->FindSlotOnLine(From, To, Impact);
+    const float Reach = static_cast<float>(FVector::Dist(From, To));
+    if (Slot == INDEX_NONE || Reach <= 1.f) return 1.f;
+    // A hard throw shoves the new car as a body hitting it would (PromoteOnBody); a soft one stops at the car.
+    if (StrongImpact(Speed, false))
+        if (AQuebecCar* Car = Fill->Promote(Slot))
+            Car->ReceiveImpact((To - From).GetSafeNormal2D() * Speed * PawnMassShare, 0.f, .5f);
+    return ThrowShare(static_cast<float>(FVector::Dist(From, Impact)) / Reach, Reach);
 }
 
 int32 AQuebecParkedCars::FindEnterableSlot(const AActor* Walker, float& OutDistanceSquared) const

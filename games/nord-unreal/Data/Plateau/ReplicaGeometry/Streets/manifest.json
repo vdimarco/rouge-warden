@@ -188,8 +188,8 @@
    "mesh": "SM_Concrete_Collision_Replica_XM002_YP000",
    "material": "sidewalk",
    "collision": "complex",
-   "triangles": 2584,
-   "faces": 1295,
+   "triangles": 2588,
+   "faces": 1297,
    "tile_cm": 38000,
    "bounds_cm": [
     -44124.83,
@@ -199,7 +199,7 @@
     38111.3,
     18.0
    ],
-   "sha256": "65ab499530b1572d539b1dca669c5993a9778d39cd95855a17830b873da67c65"
+   "sha256": "56938defe9c9474dfac1613fabb9186109fca357c48bbfe2382fb8e9168cfad5"
   },
   {
    "file": "Concrete_Collision_Replica_XM002_YP001.obj",
@@ -260,18 +260,18 @@
    "mesh": "SM_Concrete_Collision_Replica_XM001_YP000",
    "material": "sidewalk",
    "collision": "complex",
-   "triangles": 10392,
-   "faces": 5223,
+   "triangles": 10428,
+   "faces": 5241,
    "tile_cm": 38000,
    "bounds_cm": [
-    -38107.34,
+    -43623.54,
     -103.1,
     0.0,
     -111.1,
     38099.12,
     18.0
    ],
-   "sha256": "4c65121ef261f0f4108f33e993b9ea7b76f8da23266a29e2a8cc24e25e7f753a"
+   "sha256": "012648f1131e81703b769be3c549d0a34159c452eede121e2e2ad3b46555742d"
   },
   {
    "file": "Concrete_Collision_Replica_XM001_YP001.obj",
@@ -800,72 +800,72 @@
    "mesh": "SM_Streets_paint_white_XM001_YM001",
    "material": "paint_white",
    "collision": "none",
-   "triangles": 1622,
-   "faces": 815,
+   "triangles": 1612,
+   "faces": 810,
    "tile_cm": 1000000,
    "bounds_cm": [
     -43659.11,
     -47116.69,
     7.1,
-    6353.35,
-    2615.53,
+    6375.65,
+    2649.73,
     7.12
    ],
-   "sha256": "b15eaf9ecfd4506794f5f47c5097f10ab9e844f1f2cb788ed51b5005f96558b4"
+   "sha256": "6cf99e6622f3bb96360f9b54327679936ff0fc5c1d2d923f95ed8c2afc88e34b"
   },
   {
    "file": "Streets_paint_white_XM001_YP000.obj",
    "mesh": "SM_Streets_paint_white_XM001_YP000",
    "material": "paint_white",
    "collision": "none",
-   "triangles": 7309,
-   "faces": 3662,
+   "triangles": 7247,
+   "faces": 3631,
    "tile_cm": 1000000,
    "bounds_cm": [
     -43632.34,
-    1233.08,
+    1267.28,
     7.1,
     66.29,
-    69352.59,
-    111.0
+    69318.42,
+    122.0
    ],
-   "sha256": "6f6a8e1ddc7e9f4db010cea90cbd77e6b2e303e191ba847cfe9ccdcb9f561e1a"
+   "sha256": "7163e1ff3e529384a368eb1baf483c214b4b5459b1e95001d2239107db87ff1c"
   },
   {
    "file": "Streets_paint_white_XP000_YM001.obj",
    "mesh": "SM_Streets_paint_white_XP000_YM001",
    "material": "paint_white",
    "collision": "none",
-   "triangles": 1553,
-   "faces": 781,
+   "triangles": 1539,
+   "faces": 774,
    "tile_cm": 1000000,
    "bounds_cm": [
-    -6882.58,
-    -46584.75,
+    -1360.74,
+    -46463.47,
     7.1,
     54984.01,
-    -11555.14,
+    -18988.24,
     7.12
    ],
-   "sha256": "168f888efba45c3aa2e1d3f1719582433f35fcce628708a1d90e2e6441244826"
+   "sha256": "1d00b7a6a345504f2d154785de1aa1ca84f9b6fa2f10e9645de24431577b7bd1"
   },
   {
    "file": "Streets_paint_white_XP000_YP000.obj",
    "mesh": "SM_Streets_paint_white_XP000_YP000",
    "material": "paint_white",
    "collision": "none",
-   "triangles": 3246,
-   "faces": 1627,
+   "triangles": 3234,
+   "faces": 1621,
    "tile_cm": 1000000,
    "bounds_cm": [
     -1119.31,
-    1928.13,
+    1996.59,
     7.1,
     55298.26,
     69223.38,
     111.0
    ],
-   "sha256": "2e08f9896232d713166875f5ca0bede98749540308f5906a19627354bf248248"
+   "sha256": "9864f6102ca742e8dbbe73d9bb1c2d95a1cb296723135576d6f9e2baed884048"
   },
   {
    "file": "Streets_paint_yellow_XM001_YM001.obj",
@@ -2195,9 +2195,9 @@
     7.0,
     2.69,
     57683.04,
-    126.0
+    137.0
    ],
-   "sha256": "4289226750ac4ab40562c33860a2146c971f92a7e26364ed4ef4344e7762d8c8"
+   "sha256": "2e15ec8b1f55fe2e0809282e8b59e6b3305f63549674d65a87e1dc3419c18381"
   },
   {
    "file": "Streets_bollard_green_XP000_YP000.obj",
@@ -2394,7 +2394,8 @@
   "crosswalks_generated_at_stops": 3,
   "centre_line_metres": 1268,
   "lane_line_metres": 1287,
-  "parking_line_metres": 5449,
+  "parking_line_metres": 93,
+  "parking_line_sides": 1,
   "bike_track_metres": 1103,
   "bollards": 173,
   "bike_pictograms": 22,
@@ -2457,8 +2458,10 @@
   "bike_lane_marks": 40,
   "sharrows": 26,
   "bus_diamonds": 14,
-  "bike_paint_sides": 44,
+  "bike_paint_sides": 42,
   "bike_paint_too_narrow": 0,
+  "track_buffers": 4,
+  "track_buffer_metres": 384,
   "sidewalk_pieces_to_walls": 291,
   "legacy_route_dashes": 41,
   "curb_measurement": {
@@ -2470,18 +2473,18 @@
   "osm_crossings_on_replica": 179,
   "signalised_approaches": 69,
   "batches": 123,
-  "triangles": 623526
+  "triangles": 623468
  },
  "source_sha256": {
   "Data/LaFontaine/osm.xml": "fe4410d45007a627bf6d9b9ddeeae329fa9cdd7492dfb5fa6beff851e7cf8f86",
   "Data/LaFontaine/layout.json": "4238d6ed45d5fb890e0f8dbcb672de0803c6dc7079b0b6a86b386d82ebbb4250",
-  "Scripts/plateau_replica.py": "12755d10d34aeca8fefc501c1023337586af1f42288acd1893f8f14c934018f8",
+  "Scripts/plateau_replica.py": "3b95c6729872a495412bd48d8c77eabe20bdcb0d4ecf55ba2136ad1808a74e2c",
   "Scripts/prepare_lafontaine.py": "e7b6e5f068a96ee7306b1fff247fa73158f5cf7c343dc5510ab8cce92ee3c924",
   "Data/Plateau/BaseGeometry/Marking.obj": "2d82cbca59041aa6af5e6f3fffaf6a01b2c3e672eea9732e8a5fecbb7cee35dd",
   "Data/Plateau/ReplicaGeometry/Plex/fronts.json": "18f03aa2131ddab7409c92e8e42c2e21bd0f149ebcda428963bf3424ad0b5ca6",
   "Data/Plateau/ReplicaGeometry/Soul/ruelles_vertes_clip.json": "6ca991f5b585f4f0567baed799c37db2d3476f451e0b88fdb315a959e2d7d216",
   "Data/Plateau/ReplicaGeometry/Plex/manifest.json": "918fd3495a443beeb7aef34e10a9a1d670ee52393f676bd5efebf24ef954390a",
-  "Data/Plateau/ReplicaGeometry/Props/manifest.json": "013a6b79abb563f02b1f1b767e704f517b3d9bc70e91a6a5759eb2d7f59d16de",
+  "Data/Plateau/ReplicaGeometry/Props/manifest.json": "1e4c7f296491aaa271fe47977ae870d3d6ddd7f5b1ca62d0f00a13f05972ed98",
   "Data/Plateau/Inventory/trees_pmr.json": "78ee70b8165af47cdee11a56c9653b69a1543c42cf78ab618145441d756831c1",
   "Data/Plateau/Inventory/trees_vm.json": "103be208d2135cbb989198a8b33cff081584a40792323fab2d2cd65ca2a8fc35",
   "Data/Plateau/Inventory/sign_poles.json": "3d77a221def94a78024c587148cfa86a3dcfb385d7c9db118714735771283cfd",
@@ -2612,5 +2615,7 @@
  "street_trees": "street_trees.json",
  "street_trees_sha256": "08a433fdc38a40dfab9130d51a9364fb341fba34d8cf6e48fc104a7f27849a3d",
  "bike_paint": "bike_paint.json",
- "bike_paint_sha256": "2a953a00e6748616419079ef5ec70ec06d09dabd22b804029c245f9e4ed3055c"
+ "bike_paint_sha256": "ac20d2dca4a0fc2c8b363e63213046548302b380355b23b729a9b809924180fe",
+ "paint_marks": "paint_marks.json",
+ "paint_marks_sha256": "0dc4e409b2818c9d4b2466f2fc75d1b8a3a9f8043b550db71a909075d9d65712"
 }

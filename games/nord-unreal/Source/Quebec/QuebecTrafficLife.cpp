@@ -100,7 +100,7 @@ float AQuebecCar::UpdateTrafficLife(float DesiredSpeed, const FVector& Direction
         }
         else
         {
-            // The curb must be real (a raised step 12-32 cm high), far enough out to clear the lane, and the curb lane
+            // The curb must be real (a raised step 10-32 cm high), far enough out to clear the lane, and the curb lane
             // must be free of parked cars, people and posts from 16 m before the stop point to 4 m past it.
             const FVector StopCentre = SegmentStart+Direction*StopAlong;
             const FQuat Facing = Direction.Rotation().Quaternion();

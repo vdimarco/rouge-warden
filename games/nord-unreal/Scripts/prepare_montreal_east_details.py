@@ -26,7 +26,7 @@ MATERIALS = ('Glass', 'Iron', 'Trim')
 SOURCE_HASHES = {
     'Data/LaFontaine/osm.xml': 'fe4410d45007a627bf6d9b9ddeeae329fa9cdd7492dfb5fa6beff851e7cf8f86',
     'Data/Plateau/ContextGeometry/context.json': '74764fd01528c320439692fdc6eefd3394770e547f425b886ceabbd73fc9392a',
-    'Data/Plateau/EastExtension/extension.json': 'c19300127f80c9ebd4483610544acab9162a05280ab5a2717376c88c6770dcbf',
+    'Data/Plateau/EastExtension/extension.json': '1539d58bc356acf89e37ca565f320f510534ce7d02091c3ab499fb74fb6e60d4',
     'Scripts/plateau_context.py': 'b5df165d154c2c18697cc7884cd486c5f3e056886398cda220e96b9cfcfbf5be',
     'Scripts/plateau_mesh.py': '0db445d502ffeb5a0d77c49fb1cb9d3a1bd49492b6956f37ce96bad505033217',
     'Scripts/plateau_ground.py': '9ba1e57a062d94c6eb2c3ecef2ea191d63d5cf97ada05cccf9e9441a1ce7c445',

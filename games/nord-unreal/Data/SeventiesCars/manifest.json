@@ -121,7 +121,7 @@
   "models": [
     {
       "file": "Car70Body0.obj",
-      "triangles": 8260,
+      "triangles": 8176,
       "materials": [
         "Paint",
         "Chrome",
@@ -152,7 +152,7 @@
     },
     {
       "file": "Car70Body1.obj",
-      "triangles": 8388,
+      "triangles": 8304,
       "materials": [
         "Paint",
         "Chrome",
@@ -183,7 +183,7 @@
     },
     {
       "file": "Car70Body2.obj",
-      "triangles": 8368,
+      "triangles": 8284,
       "materials": [
         "Paint",
         "Chrome",

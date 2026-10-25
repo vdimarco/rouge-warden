@@ -18,6 +18,10 @@ step (apply_plateau_replica.material_row, textured_graph, add_macro and plan_tre
   only before the apply step, on the OSM tree nodes the saved map's stand-in holds;
 - the OBJ index forgets removed OBJs and never caches tree positions;
 - faces are kept when an edge crosses the view, so the ruelle_mentana lane asphalt (one 188 m quad) is loaded;
+- only the existing batches the game shows are drawn: the landmark visual step's copies, not the six background batches
+  and OSM Glass it hides, and not OSM Water, which the park step hides; the perimeter's two survey landmarks stand on
+  their municipal survey bodies in the wall and roof materials the game gives them, and the perimeter's stone and
+  landmark materials take the game's colours;
 - Collision_Only batches are never drawn;
 - shadows follow the apply step (casts_shadow for the layer batches, its PROP_SHADOW props), and the Leaf_Litter
   patches, which overlap at one height, are seen by camera rays only;
@@ -620,6 +624,170 @@ def check_region(preview):
             'corner_in_view': any(real.keep(x, y) for x, y in hit[1])}
 
 
+def recording(preview):
+    """Swap the preview's make_object and read_obj for recorders: (made, read, restore). Each made object is
+    (name, faces, material); read_obj returns one triangle."""
+    made, read = [], []
+    saved = preview.make_object, preview.read_obj
+
+    def make(name, verts, polys, uvs, material, collection, smooth=False):
+        made.append((name, len(polys), material))
+        ob = Obj(name, types.SimpleNamespace(normals_split_custom_set=lambda normals: None))
+        collection.objects.link(ob)
+        return ob
+
+    preview.make_object = make
+    preview.read_obj = lambda path, region, scale=.01, want_uv=True: (read.append(path),
+                                                                      ([(0, 0, 0)] * 3, [[0, 1, 2]], []))[1]
+
+    def restore():
+        preview.make_object, preview.read_obj = saved
+    return made, read, restore
+
+
+def check_landmark_visuals(preview):
+    """The pass-7 render found the landmark visual step's sources drawn beside its copies. plateau_landmark_visuals.apply
+    (run by upgrade_plateau, so before the replica too) hides six background batches and OSM Glass in game and shows its
+    LandmarkContext copies, which leave out the old masses and window cards of Le Neuville and École Le Plateau. The
+    preview drew both: every OSM window card twice on one plane, and the school's old 9.6 m mass and cards under its new
+    windows. Now no hidden source is read, and every copy is, in the before and after builds."""
+    visuals = json.loads((ROOT / 'Data/Plateau/LandmarkVisualGeometry/visuals.json').read_text())
+    sources = {r['source'] for r in visuals['replacements']}
+    copies = {f'Data/Plateau/LandmarkVisualGeometry/{r["geometry"]}' for r in visuals['replacements'] if r['geometry']}
+    assert 'Data/Plateau/BaseGeometry/Glass.obj' in sources and len(sources) == 7 and copies, (sources, copies)
+    text = (ROOT / 'Scripts/plateau_landmark_visuals.py').read_text()
+    assert 'source.set_actor_hidden_in_game(True)' in text and 'apply_landmark_visuals(u' in \
+        (ROOT / 'Scripts/upgrade_plateau.py').read_text(), 'the landmark visual step moved; mirror it in the preview'
+    control = ['Data/Plateau/BackgroundGeometry/Brick_XP000_YP000.obj', 'Data/Plateau/BaseGeometry/Road.obj']
+    everything = [0., 0., 0., 0., 0., 0.]
+    idx = {rel: {'mtime': 0, 'size': 0, 'b': everything} for rel in sorted(sources | copies) + control}
+    region = preview.Region((0., 0., 0.), (1., 0., 0.), 85., 1e9, circle=(0., 0., 1e9))
+    made, read, restore = recording(preview)
+    try:
+        for before in (False, True):
+            read.clear()
+            preview.load_existing(idx, region, Collection('World'), before)
+            loaded = {str(Path(p).relative_to(ROOT)) for p in read}
+            assert not loaded & sources, ('hidden in game but drawn', sorted(loaded & sources), before)
+            assert copies <= loaded and set(control) <= loaded, (sorted(copies - loaded), before)
+    finally:
+        restore()
+    return {'hidden_sources': len(sources), 'copies_drawn': len(copies)}
+
+
+def check_hidden_base(preview):
+    """Of the BaseGeometry OSM batches, the preview draws only what the game shows. Hidden in game: the masses
+    (plateau_background, whose tiles stand in), the old canopies, wood and trunks (plateau_rendering), OSM Grass
+    (plateau_ground's ParkGrass), OSM Glass (plateau_landmark_visuals' copy) and, since the pass-7 render, OSM Water:
+    plateau_park.apply hides it, and its PondWater batches lie on the same plane at z 7, so the preview drew the pond
+    twice. OSM Marking shows only before the replica apply step. Road, Path and Court stay."""
+    park = (ROOT / 'Scripts/plateau_park.py').read_text()
+    assert "actors['OSM Water'].set_actor_hidden_in_game(True)" in park, 'the park step moved; mirror it in the preview'
+    files = sorted(p.name for p in (ROOT / 'Data/Plateau/BaseGeometry').glob('*.obj'))
+    idx = {f'Data/Plateau/BaseGeometry/{name}': {'mtime': 0, 'size': 0, 'b': [0.] * 6} for name in files}
+    pond = sorted((ROOT / 'Data/Plateau/ParkGeometry').glob('PondWater_*.obj'))
+    assert pond, 'no PondWater batch'
+    idx.update({str(p.relative_to(ROOT)): {'mtime': 0, 'size': 0, 'b': [0.] * 6} for p in pond})
+    region = preview.Region((0., 0., 0.), (1., 0., 0.), 85., 1e9, circle=(0., 0., 1e9))
+    made, read, restore = recording(preview)
+    shown = {}
+    try:
+        for before in (False, True):
+            read.clear()
+            preview.load_existing(idx, region, Collection('World'), before)
+            shown[before] = sorted(Path(p).name for p in read if '/BaseGeometry/' in p)
+            assert len([p for p in read if '/ParkGeometry/PondWater_' in p]) == len(pond), before
+    finally:
+        restore()
+    assert shown == {False: ['Court.obj', 'Path.obj', 'Road.obj'],
+                     True: ['Court.obj', 'Marking.obj', 'Path.obj', 'Road.obj']}, shown
+    return {'base_drawn_after': shown[False], 'base_drawn_before': shown[True], 'pond_batches': len(pond)}
+
+
+def check_survey_landmarks(preview):
+    """The pass-7 render found the windows, frames and balcony rails of Le Neuville and École Le Plateau floating with no
+    wall behind them (a check camera on Avenue Calixa-Lavallée). plateau_perimeter.apply adds each landmark's body as a
+    copy of a municipal survey OBJ outside Data/Plateau (perimeter.json 'source'), at the origin, with the wall material
+    on EstimatedWall (M_LeNeuvilleConcrete, M_SchoolTan) and the survey's roof photo on Facade (MI_<name>Roof on the
+    copied M_CityFacade: colour ^ 0.7, roughness 0.85). Each body is drawn whole, in its slot materials, when the view
+    reaches its bounds."""
+    import plateau_tower
+    perimeter = json.loads((ROOT / 'Data/Plateau/PerimeterGeometry/perimeter.json').read_text())
+    tower, school = (ROOT / 'Scripts/plateau_tower.py').read_text(), (ROOT / 'Scripts/plateau_school.py').read_text()
+    for line in ("name='LeNeuville', wall='LeNeuvilleConcrete', label='Le Neuville'",
+                 "palette[wall] if str(slot.material_slot_name) == 'EstimatedWall' else roof",
+                 "assets.duplicate_asset('/Game/CityBuildings/MI_' + city_id, roof_path)",
+                 "assets.duplicate_asset('/Game/CityBuildings/M_CityFacade', parent_path)"):
+        assert line in tower, 'the survey landmark moved; mirror it in the preview: ' + line
+    assert "wall='SchoolTan', label='École Le Plateau')" in school and 'LinearColor(.94, .86, .66, 1)' in school
+    city = (ROOT / 'Scripts/import_city_buildings.py').read_text()
+    assert "power.set_editor_property('const_exponent', .7)" in city and "rough.set_editor_property('r', .85)" in city
+    made, read, restore = recording(preview)
+    preview.MATS.clear()
+    try:
+        everything = preview.Region((0., 0., 0.), (1., 0., 0.), 85., 1e9, circle=(0., 0., 1e9))
+        faces = preview.load_survey_landmarks(everything, Collection('World'))
+        far = preview.Region((0., 0., 0.), (1., 0., 0.), 85., 1e9, circle=(1e7, 1e7, 100.))
+        before = len(made)
+        assert preview.load_survey_landmarks(far, Collection('Empty')) == 0 and len(made) == before
+    finally:
+        restore()
+    bodies = {}
+    for key, wall in (('survey_landmark', 'LeNeuvilleConcrete'), ('survey_school', 'SchoolTan')):
+        info = perimeter[key]
+        groups = preview.read_obj_groups(str(ROOT / info['source']))
+        assert set(groups) == {'EstimatedWall', 'Facade'}, sorted(groups)
+        assert sum(len(g[1]) for g in groups.values()) == info['survey_triangles'], key
+        for slot, (verts, polys, uvs, _) in groups.items():
+            name = f'PerimeterSurvey_{info["city_id"]}_{slot}'
+            row = [m for m in made if m[0] == name]
+            assert len(row) == 1 and row[0][1] == len(polys), (name, row)
+            nodes = row[0][2].node_tree.nodes
+            bsdf = nodes['Principled BSDF']
+            images = [n.image.filepath for n in nodes if n.image]
+            if slot == 'EstimatedWall' and wall == 'SchoolTan':
+                tint = [n for n in nodes if n.bl_idname == 'ShaderNodeMix'][0]
+                assert tuple(tint.inputs['B'].default_value[:3]) == (.94, .86, .66), name
+                assert [Path(p).name for p in images] == ['concrete_pavement_diff.jpg', 'concrete_pavement_nor_dx.jpg']
+            elif slot == 'EstimatedWall':
+                color, rough, metal = plateau_tower.PALETTE[wall]
+                assert tuple(bsdf.inputs['Base Color'].default_value[:3]) == color and not images, name
+                assert bsdf.inputs['Roughness'].default_value == rough, name
+            else:
+                assert images == [str(ROOT / 'Data/CityBuildings/Textures' / (info['city_id'] + '.jpg'))], images
+                lift = [n for n in nodes if n.bl_idname == 'ShaderNodeGamma']
+                assert len(lift) == 1 and lift[0].inputs['Gamma'].default_value == .7, name
+                assert bsdf.inputs['Roughness'].default_value == .85, name
+        bodies[info['name']] = sum(len(g[1]) for g in groups.values())
+    assert faces == sum(bodies.values()), (faces, bodies)
+    return {'survey_bodies': bodies}
+
+
+def check_perimeter_materials(preview):
+    """The pass-7 render found the perimeter's landmark and stone colours guessed. The Le Neuville and school batches
+    take plateau_tower.materials' flat colours (plateau_tower.PALETTE and plateau_school.PALETTE), and the perimeter's
+    Limestone batches take M_PerimeterStone, M_Limestone with its tint set to (.80, .86, .88) (plateau_perimeter.apply)."""
+    import plateau_school
+    import plateau_tower
+    assert 'LinearColor(.80, .86, .88, 1)' in (ROOT / 'Scripts/plateau_perimeter.py').read_text()
+    preview.MATS.clear()
+    stone = preview.existing_material('PerimeterGeometry', 'Limestone')
+    tint = [n for n in stone.node_tree.nodes if n.bl_idname == 'ShaderNodeMix'][0]
+    assert tuple(tint.inputs['B'].default_value[:3]) == (.80, .86, .88), tint.inputs['B'].default_value
+    assert [n.image.filepath for n in stone.node_tree.nodes if n.image][0].endswith('concrete_pavement_diff.jpg')
+    perimeter = json.loads((ROOT / 'Data/Plateau/PerimeterGeometry/perimeter.json').read_text())
+    used = {m['material'] for m in perimeter['materials'].values()}
+    flat = {**plateau_tower.PALETTE, **{k: v for k, v in plateau_school.PALETTE.items() if k != 'SchoolTan'}}
+    checked = []
+    for name, (color, rough, metal) in sorted(flat.items()):
+        bsdf = preview.existing_material('PerimeterGeometry', name).node_tree.nodes['Principled BSDF']
+        assert tuple(bsdf.inputs['Base Color'].default_value[:3]) == color, (name, color)
+        assert bsdf.inputs['Roughness'].default_value == rough and bsdf.inputs['Metallic'].default_value == metal, name
+        checked.append(name)
+    assert {'SchoolFrame', 'SchoolGlass', 'SchoolTrim', 'LeNeuvilleRail'} <= used & set(checked), sorted(used)
+    return {'perimeter_stone': [.80, .86, .88], 'flat_landmark_materials': checked}
+
+
 def check_collision_only(preview):
     """Collision_Only batches (the gallery guards' invisible walls) are never drawn; every other batch is."""
     plex = json.loads((ROOT / 'Data/Plateau/ReplicaGeometry/Plex/manifest.json').read_text())
@@ -729,12 +897,15 @@ def check_prop_variants(preview):
         for r in rows:
             if r['prop'] not in parts:
                 continue
-            chosen = preview.prop_variants(parts[r['prop']], r.get('variant_seed', 0), r.get('without', ()))
+            # The parts the preview leaves out, as it computes them: the row's own (a sign's post on a city pole) and,
+            # on a parking sign, every plate face and arrow but the row's own.
+            without = preview.row_without(r, props['props'].get(r['prop']))
+            chosen = preview.prop_variants(parts[r['prop']], r.get('variant_seed', 0), without)
             for batch, variant in zip(parts[r['prop']], chosen):
                 key = (layer, r['prop'], batch['mesh'], tuple(r['position']), r['yaw'])
                 if variant is None:
-                    # a part the row leaves out (a sign's post on a city pole): the game has none there either
-                    assert batch.get('part') in r['without'] and key not in picked, (key, r.get('without'))
+                    # a part the row leaves out: the game has none there either
+                    assert batch.get('part') in without and key not in picked, (key, sorted(without))
                     left_out += 1
                     continue
                 assert picked[key] == variant, (key, picked[key], variant)
@@ -938,7 +1109,10 @@ def main():
     preview = load_preview()
     report = {'materials': check_set_materials(preview), 'yard_trees': check_yard_trees(preview),
               'street_trees': check_street_trees(preview), 'index': check_index(preview),
-              'region': check_region(preview), 'collision_only': check_collision_only(preview),
+              'region': check_region(preview), 'landmark_visuals': check_landmark_visuals(preview),
+              'hidden_base': check_hidden_base(preview),
+              'survey_landmarks': check_survey_landmarks(preview),
+              'perimeter_materials': check_perimeter_materials(preview), 'collision_only': check_collision_only(preview),
               'shadows': check_shadows(preview), 'prop_variants': check_prop_variants(preview),
               'parked_cars': check_parked_cars(preview), 'views': check_views(preview)}
     print(json.dumps(report, indent=1, sort_keys=True))

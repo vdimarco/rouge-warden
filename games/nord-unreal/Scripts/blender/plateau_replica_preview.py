@@ -7,7 +7,9 @@ Run with a Python that can `import bpy` (Blender 5.1), from games/nord-unreal:
     <blender-python> Scripts/blender/plateau_replica_preview.py --list
 
 Each view loads, inside a camera wedge, the committed Data/Plateau layers that are visible in the game
-(background masses, OSM road, path, glass cards, ground, park, perimeter and context batches) and,
+(background masses, OSM road, path, glass cards, ground, park, perimeter and context batches; the landmark visual
+step's copies in place of the six background batches and OSM Glass it hides; the perimeter's two survey landmarks,
+Le Neuville and École Le Plateau, on their municipal survey bodies from Data/CityBuildings) and,
 unless --before is given, the ReplicaGeometry layers: Streets, Plex, Soul, and the Furniture and Soul
 placements instanced from the Props meshes in the colour variant the apply step picks from each row's seed,
 with the street-name text the apply step adds. Collision_Only batches (the gallery guards' invisible walls)
@@ -70,12 +72,16 @@ sys.path.insert(0, os.path.join(ROOT, 'Scripts'))
 # The apply step's material rules, texture sets and yard-tree plan.
 from apply_plateau_replica import (COLLISION_ONLY, FOLIAGE_SUBSURFACE, PROP_SHADOW, YOUNG, address_modes,  # noqa: E402
                                    casts_shadow, load_street_trees, load_textures, load_tree_kinds, load_yard_trees,
-                                   material_row, plan_trees, tree_slot)
+                                   material_row, plan_trees, row_without, tree_slot)
+# The perimeter layer's two survey landmarks and their flat materials (plateau_perimeter.apply).
+import plateau_school  # noqa: E402
+import plateau_tower  # noqa: E402
 
 # Labels hidden in the game: the OSM masses keep collision only, the old canopies are replaced by the
 # mapped trees, and the replica apply step hides OSM Marking.
 HIDDEN_BASE = {'Brick', 'Cream', 'Sage', 'Roof', 'Canopy', 'CanopyGold', 'CanopyRust', 'Wood', 'HiddenTrunks',
-               'Grass'}  # plateau_ground.apply gives OSM Grass the GroundGeometry/ParkGrass mesh
+               'Grass',  # plateau_ground.apply gives OSM Grass the GroundGeometry/ParkGrass mesh
+               'Water'}  # plateau_park.apply hides OSM Water: its PondWater batches lie on the same plane
 
 # Linear colours of the existing materials (upgrade_plateau.py palette and textured tints).
 PALETTE = {
@@ -91,9 +97,7 @@ PALETTE = {
     # Park and landmark materials not in that palette: plausible values.
     'AutumnGold': (.50, .30, .04), 'AutumnRust': (.36, .09, .03), 'ParkEarth': (.20, .15, .09),
     'ParkWood': (.16, .09, .05), 'PondWater': (.02, .035, .03), 'Court': (.12, .20, .14), 'Water': (.02, .035, .03),
-    'LeNeuvilleConcrete': (.45, .45, .43), 'LeNeuvilleGlass': (.04, .07, .09), 'LeNeuvilleMetal': (.30, .32, .33),
-    'LeNeuvilleRail': (.05, .05, .05), 'SchoolFrame': (.30, .30, .28), 'SchoolGlass': (.04, .07, .09),
-    'SchoolTrim': (.60, .55, .43), 'Marking': (.82, .82, .72),
+    'Marking': (.82, .82, .72),
 }
 TEXTURED = {  # name: (tint, texture, tiles per metre or 'world' metres)
     'BrickRed': ((1.05, .80, .66), 'brick_wall_001', 1.5), 'BrickBrown': ((.68, .63, .53), 'brick_wall_001', 1.5),
@@ -103,8 +107,14 @@ TEXTURED = {  # name: (tint, texture, tiles per metre or 'world' metres)
     'YardGround': ((.58, .55, .47), 'concrete_pavement', 'world4'), 'Path': ((1, 1, 1), 'concrete_pavement', 'world4'),
     'ParkGrass': ((.42, .65, .29), 'grass_ground', 'world4'), 'Grass': ((.42, .65, .29), 'grass_ground', 'world4'),
     'BrickBackground': ((1., .9, .8), 'brick_wall_001', 2.25), 'CreamBackground': ((1.5, 1.45, 1.2), 'brick_wall_001', 2.25),
-    'SageBackground': ((.65, .9, .75), 'brick_wall_001', 2.25), 'PerimeterStone': ((.83, .88, .83), 'concrete_pavement', 1),
+    'SageBackground': ((.65, .9, .75), 'brick_wall_001', 2.25),
+    # plateau_perimeter.apply: the perimeter's Limestone batches take M_PerimeterStone, M_Limestone with its tint set to
+    # (.80, .86, .88). plateau_school.materials: the school's survey walls take M_SchoolTan, M_Limestone tinted (.94, .86, .66).
+    'PerimeterStone': ((.80, .86, .88), 'concrete_pavement', 1), 'SchoolTan': ((.94, .86, .66), 'concrete_pavement', 1),
 }
+# The flat Le Neuville and school materials, as plateau_tower.materials builds them: (linear colour, roughness, metallic).
+SURVEY_PALETTE = {**plateau_tower.PALETTE, **{k: v for k, v in plateau_school.PALETTE.items() if k not in TEXTURED}}
+CITY_TEXTURES = os.path.join(ROOT, 'Data', 'CityBuildings', 'Textures')
 # Mean linear colour of each texture, as apply_plateau_replica.TEXTURE_MEAN.
 TEXTURE_MEAN = {'asphalt_02': (.1162, .1143, .1020), 'concrete_pavement': (.2170, .1790, .1372),
                 'brick_wall_001': (.1402, .0776, .0516), 'grass_ground': (.1593, .1198, .0498)}
@@ -537,6 +547,11 @@ def existing_material(layer, base):
         name = name.replace('LandmarkContext_', '')
         if name in ('Sage', 'Cream', 'Brick'):
             name += 'Background'
+    if layer == 'PerimeterGeometry' and name == 'Limestone':
+        name = 'PerimeterStone'
+    if name in SURVEY_PALETTE:
+        color, rough, metal = SURVEY_PALETTE[name]
+        return material('E_' + name, color, rough, metal)
     if name in TEXTURED:
         tint, tex, tiling = TEXTURED[name]
         return material('E_' + name, tint, .85, 0., tex, tiling)
@@ -774,10 +789,25 @@ def index():
     return idx
 
 
+LANDMARK_VISUALS = os.path.join(DATA, 'LandmarkVisualGeometry', 'visuals.json')
+PERIMETER = os.path.join(DATA, 'PerimeterGeometry', 'perimeter.json')
+
+
+def replaced_sources():
+    """The OBJs whose actors the landmark visual step hides in game (plateau_landmark_visuals.apply, run by
+    upgrade_plateau, so before the replica too): six background batches and OSM Glass, as root-relative paths. Their
+    LandmarkContext copies in LandmarkVisualGeometry stand in their place without the two survey landmarks' old faces.
+    Drawing both put every OSM window card twice on one plane and kept the old masses and cards of the landmarks."""
+    if not os.path.exists(LANDMARK_VISUALS):
+        return set()
+    return {r['source'] for r in json.load(open(LANDMARK_VISUALS))['replacements']}
+
+
 def load_existing(idx, region, col, before):
     count = 0
+    hidden = replaced_sources()
     for rel, row in sorted(idx.items()):
-        if rel.startswith('__') or '/ReplicaGeometry/' in rel:
+        if rel.startswith('__') or '/ReplicaGeometry/' in rel or rel in hidden:
             continue
         parts = rel.split('/')
         layer = parts[2]
@@ -859,7 +889,8 @@ def prop_collections(rows):
         key = r['prop']
         if key not in parts:
             continue
-        variants = prop_variants(parts[key], r.get('variant_seed', 0), r.get('without', ()))
+        # The apply step's parts per row: a hung sign's post left out, a parking sign's own plate face and arrow.
+        variants = prop_variants(parts[key], r.get('variant_seed', 0), row_without(r, man['props'].get(key)))
         if (key, variants) in out:
             continue
         c = out[key, variants] = bpy.data.collections.new(f'P_{key}_{len(out)}')
@@ -883,7 +914,8 @@ def place_props(rows, region, col):
         if batch.get('prop') and 'merged' not in batch.get('part', ''):
             parts.setdefault(batch['prop'], []).append(batch)
     for i, r in enumerate(rows):
-        c = colls.get((r['prop'], prop_variants(parts.get(r['prop'], []), r.get('variant_seed', 0), r.get('without', ()))))
+        c = colls.get((r['prop'], prop_variants(parts.get(r['prop'], []), r.get('variant_seed', 0),
+                                                row_without(r, man['props'].get(r['prop'])))))
         if not c:
             continue
         e = bpy.data.objects.new(f'I_{r["prop"]}_{i}', None)
@@ -1083,6 +1115,55 @@ def read_obj_groups(path, scale=.01):
             polys.append(poly)
         out[name] = (verts, polys, uvs, normals if all(normals) else None)
     return out
+
+
+# The survey landmarks plateau_perimeter.apply adds (plateau_tower.apply, plateau_school.apply): the perimeter.json key
+# and the material on the survey body's EstimatedWall slot (each apply's wall).
+SURVEY_BODIES = (('survey_landmark', 'LeNeuvilleConcrete'), ('survey_school', 'SchoolTan'))
+
+
+def survey_roof_material(city_id):
+    """The Facade slot of a survey body: MI_<name>Roof, a copy of the city model's MI_<city id> (its roof photo,
+    Data/CityBuildings/Textures/<city id>.jpg) on the copied M_CityFacade parent: colour ^ 0.7, roughness 0.85."""
+    name = 'E_SurveyRoof_' + city_id
+    if name in MATS:
+        return MATS[name]
+    m = bpy.data.materials.new(name)
+    nt = m.node_tree
+    bsdf = nt.nodes['Principled BSDF']
+    tex = nt.nodes.new('ShaderNodeTexImage')
+    tex.image = image(city_id + '.jpg', CITY_TEXTURES)
+    lift = nt.nodes.new('ShaderNodeGamma')  # pow(colour, gamma), as the parent's Power node with exponent 0.7
+    lift.inputs['Gamma'].default_value = .7
+    nt.links.new(tex.outputs['Color'], lift.inputs['Color'])
+    nt.links.new(lift.outputs['Color'], bsdf.inputs['Base Color'])
+    bsdf.inputs['Roughness'].default_value = .85
+    MATS[name] = m
+    return m
+
+
+def load_survey_landmarks(region, col):
+    """The bodies of the perimeter layer's two survey landmarks, Le Neuville and École Le Plateau. The game spawns each
+    as a copy of a municipal survey OBJ outside Data/Plateau (perimeter.json 'source', Data/CityBuildings/Geometry) at
+    the origin, with the wall material on its EstimatedWall slot and the roof photo on its Facade slot. The Perimeter
+    batches hold only their windows, frames and rails, so without the bodies these float. Returns the faces drawn."""
+    if not os.path.exists(PERIMETER):
+        return 0
+    doc = json.load(open(PERIMETER))
+    count = 0
+    for key, wall in SURVEY_BODIES:
+        info = doc.get(key)
+        if not info:
+            continue
+        (x0, y0, z0), (x1, y1, z1) = info['bounds_cm']
+        if not region.box([x0, y0, z0, x1, y1, z1]):
+            continue
+        for slot, (verts, polys, uvs, _) in sorted(read_obj_groups(os.path.join(ROOT, info['source'])).items()):
+            mat = existing_material('PerimeterGeometry', wall) if slot == 'EstimatedWall' else \
+                survey_roof_material(info['city_id'])
+            make_object(f'PerimeterSurvey_{info["city_id"]}_{slot}', verts, polys, uvs, mat, col)
+            count += len(polys)
+    return count
 
 
 SPECIES = {}
@@ -1336,6 +1417,7 @@ def build(name, spec, before=False, res=(1280, 720)):
     scene.collection.children.link(col)
     idx = index()
     tris = load_existing(idx, region, col, before)
+    tris += load_survey_landmarks(region, col)
     if not before:
         tris += load_replica(region, col, dirs={'Plex': spec.get('plex_dir')})
     # District ground (z 0) under everything.

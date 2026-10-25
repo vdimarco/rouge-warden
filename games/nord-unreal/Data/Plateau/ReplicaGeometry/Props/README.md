@@ -58,6 +58,9 @@ The manifest follows the shared ReplicaGeometry contract (`layer`, `generator`, 
   - `lamp_cobra` and `lamp_park`: `light` and `anchors.light_cm`, for a 3000 K (#FFB46B) light.
   - `lamp_cobra`: the davit arm and its brace are their own part (`arm`), so a cobra head hangs from a city wooden utility pole without the steel pole: a placement row may name parts to leave out (`"without": ["pole"]`), which the apply step and the preview skip. A sign hung on a city pole leaves out its `post` the same way.
   - `hydrant`: `clear_radius_cm` (150, SIM). The marker post parts are optional.
+  - `sign_parking`: `plate_faces {face: {family, plate, size_cm, symbol, crown, parts, text, example_code,
+    catalogue_page, triangles}}`, `plate_arrows {left|right|both: {short|tall: part}}`, `plate_default` and
+    `face_budget`. A placement shows one face and at most one arrow; see "Parking-sign plates" below.
   - `bixi_dock`: six `slots`, each with a position and yaw for a `bixi_bike` instance.
   - `utility_pole`: `anchors.wire_attach_cm` for sagging wires between poles.
   - `laundry_line`: `anchors.line_start_cm` and `line_end_cm`, and `span_cm`. Scale X by
@@ -94,7 +97,7 @@ Each triangle count is for one assembled prop and excludes the duplicate merged 
 | `sign_stop` | 184 | 4 | 7 x 75 x 251 |
 | `sign_street` | 272 | 7 | 100 x 100 x 300 |
 | `sign_oneway` | 86 | 4 | 7 x 90 x 241 |
-| `sign_parking` | 369 | 5 | 7 x 30 x 236 |
+| `sign_parking` | 2,219 (all 8 faces; one face 224 to 814) | 23 | 7 x 30 x 236 |
 | `bixi_dock` | 928 | 10 | 83 x 558 x 361 |
 | `bixi_bike` | 1,472 | 4 | 183 x 55 x 110 |
 | `bin_recycling` | 327 | 5 | 81 x 64 x 104 |
@@ -129,8 +132,8 @@ Each triangle count is for one assembled prop and excludes the duplicate merged 
 Targets met: each lamp has at most 800 triangles, the hydrant at most 500, each dog at most 1,500,
 the stroller at most 1,500, the patio chair at most 700, the barbecue at most 1,600, the dish at
 most 1,200, the potted plant at most 1,500, each leaf bag at most 400, the pumpkin at most 450
-and the carved pumpkin at most 700. The folder holds 183 meshes, 29,008 triangles in all and
-130 material keys. Every mesh is under 65,000 triangles.
+and the carved pumpkin at most 700. Each assembled parking-sign face, with its post and arrow, has at most 1,000.
+The folder holds 201 meshes, 30,858 triangles in all and 131 material keys. Every mesh is under 65,000 triangles.
 
 Gallery life (`kind: gallery`) furnishes the back galleries, the outdoor rooms the Plex layer
 records on each deck: a white resin stacking armchair, a two-burner propane grill on its cart with
@@ -147,6 +150,46 @@ white), the AC case (3), the flower box and flowers (3 each), bench wood (3), lo
 (2), the stroller seat and canopy fabric (3 each), the lamp pole (galvanised, grey), the resin chair
 (white, green, beige), the grill body (black, red, steel), the dish (white, grey, dark), the pot
 (terracotta, black, grey) and the geranium leaves (green, dry, rust).
+
+## Parking-sign plates
+
+`sign_parking` carries one plate face per sign family of the city's clip (`Inventory/park_signs.json`). Before the
+seventh pass every plate showed the R-PF face. The apply step picks the face from each Furniture row's code
+(`apply_plateau_replica.parking_face`, `row_without`) and leaves the other faces and arrows out, as a hung sign leaves
+out its post. The preview takes the same rule. The contact sheet's "parking faces" tile shows all eight.
+
+| Face | Family (code group) | Plate (mm) | Face | Copies | Rows |
+| --- | --- | --- | --- | --- | ---: |
+| `no_stopping` | no stopping (A) | 300 x 450 | red crown and bar over a black octagon | AD-TT | 74 |
+| `no_stopping_hours` | no stopping (A) | 300 x 450 | the same, "6h - 20h / LUN À VEN" | AV-JL | 13 |
+| `no_parking` | no parking (S) | 300 x 450 | red crown and bar over a black P | SD-TT | 34 |
+| `no_parking_hours` | no parking (S) | 300 x 450 | the same, "8h - 9h / MARDI / 1 AVRIL AU 1 DÉC." | SU-MA-A | 90 |
+| `limited` | limited parking (P) | 300 x 450 | black P, no crown, "15 min" and its hours | PV-QE | 20 |
+| `reserved` | no parking except (R) | 300 x 450 | barred P, "EXCEPTÉ" | R-SI | 10 |
+| `permit` | residents' permit zone (R, SRRR) | 300 x 600 | barred P, "9h - 23h", the permit panel and a red SECTEUR box | R-PF | 287 |
+| `disabled` | disabled space (R) | 300 x 600 | barred P over a green crown with the wheelchair symbol | R-TD | 20 |
+
+- **Family.** The family is the first letter of the code, the group of the city's codification. In group R, the
+  codes of the catalogue's page 1-5-2 are the disabled spaces, and a description that says "EXCEPTE S3R" is a
+  residents' permit zone. The bus zone's LAC-8 ("ARRÊT INTERDIT") is a no-stopping face. A no stopping or no parking
+  description with a time shows the face with hours.
+- **Text.** One mesh serves every plate of a face, so its text is that of the family's commonest code in the clip.
+  The symbol, the crown and the plate height are right for every row. The hours may differ from the row's own, and
+  the permit box carries no sector number.
+- **Geometry.** Every plate hangs from the same top (222.5 cm), so the props keep their old bounds and collider, and
+  one crown part (`face_red`) serves every prohibition face. The layers stand off the white face as the old plate's
+  did: black at 0.08 cm, the crowns at 0.13 cm, the bar at 0.16 cm. The bar runs from the reader's top left to the
+  bottom right. The arrow lies 5.5 cm over the plate bottom and points to the reader's left or right, as the row's
+  `arrow` says.
+- **Sources.** Ville de Montréal, *Catalogue des panneaux, signalisation écrite* (2015 edition), a resource of the
+  open dataset *Signalisation (stationnement sur rue)*, <https://donnees.montreal.ca/dataset/stationnement-sur-rue-signalisation-courant>:
+  the faces, the plate sizes and the code groups (pages 1-1-1, 1-2-1-1, 1-4-2-2, 1-5-1, 1-5-2, 1-5-3, 1-7-1-4).
+  The city's drawings apply the Quebec standard: the *Règlement sur la signalisation routière* (RLRQ c. C-24.2,
+  r. 41; Gazette officielle du Québec, 23 June 1999), articles 2 (a prescription sign is white), 5 (a green crown
+  is an obligation), 6 (a red crown and diagonal bar forbid), 29 (P-150, parking) and 30 (P-160, stopping); and the
+  MTQ's *Tome V, Signalisation routière*, chapter 2, as its *Répertoire des dispositifs de signalisation routière*
+  draws P-150-1 (no parking), P-150-5 (disabled), P-150-7 (time limit: a black P, no crown) and P-160-3 (no
+  stopping: a barred black octagon).
 
 ## Late-October dressing (leaf bags and pumpkins)
 

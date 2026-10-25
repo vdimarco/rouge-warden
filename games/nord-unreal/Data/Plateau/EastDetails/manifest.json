@@ -17,11 +17,11 @@
       "bytes": 4224
     },
     "cpu-checks.json": {
-      "sha256": "4676053a1931a538964d9829f9643761df29c1cab247bba6bbb33de28ac715db",
-      "bytes": 3168
+      "sha256": "d5d79e0ccb8dbfb8e3f7151b368de44c1abccac5b86b7be04f1389a9759cd4aa",
+      "bytes": 3457
     },
     "details.json": {
-      "sha256": "ad7e9860068c029782cea2ed869bd4e15d112d7164dd4a84bb078c1b5bc580cb",
+      "sha256": "b037a03f7aa26b82866102df17c60f44d86c88210e82ef5984a6edb513db9e22",
       "bytes": 46149
     },
     "source-subset.osm.xml": {

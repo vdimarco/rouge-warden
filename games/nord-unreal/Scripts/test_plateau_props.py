@@ -10,12 +10,15 @@ Stdlib only.
 """
 import argparse
 import hashlib
+import importlib.util
 import json
 import math
 import os
+import re
 import subprocess
 import sys
 import tempfile
+import types
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -48,6 +51,15 @@ VARIANT_PROPS = {'bin_recycling', 'bin_compost', 'bin_garbage', 'utility_pole', 
                  'bench', 'bike_locked', 'laundry_line', 'dog_small', 'dog_medium', 'dog_large', 'stroller',
                  'chair_patio', 'bbq', 'satellite_dish', 'potted_plant', 'bike_gallery', 'leaf_bag', 'leaf_bag_mid',
                  'leaf_bag_low', 'pumpkin', 'pumpkin_carved'}
+# Parking-sign plates (pass-6 local review, item 3: every plate showed the R-PF face). The faces follow the city's
+# drawings (Ville de Montréal, Catalogue des panneaux, signalisation écrite, 2015) and the Quebec standard (Règlement
+# sur la signalisation routière, arts. 2, 5, 6, 29 and 30; Tome V P-150 and P-160): the families, their plate heights
+# (300 x 450 mm, 300 x 600 mm for the permit zones and the disabled spaces), the crown's place and radii, the arrow axis.
+PLATE_FAMILIES = {'no_stopping': 45, 'no_parking': 45, 'limited': 45, 'reserved': 45, 'permit': 60, 'disabled': 60}
+PLATE_TOP, CROWN_Z, CROWN_IN = 222.5, 222.5 - 11.3, 7.6
+ARROW_UP = 5.5
+PLACEMENTS = ROOT / 'Data/Plateau/ReplicaGeometry/Furniture/placements.json'
+PREVIEW = ROOT / 'Scripts/blender/plateau_replica_preview.py'
 
 
 def read_obj(path):
@@ -177,6 +189,7 @@ def check(directory):
     check_october(directory, manifest)
     stop = props['sign_stop']['parts']
     assert {'face_red', 'face_white'} <= set(stop)
+    check_plate_faces(directory, manifest)
     return manifest
 
 
@@ -304,6 +317,153 @@ def shell_hit(verts, tris, origin, direction):
     return best
 
 
+def _colour(manifest, part):
+    return _srgb(manifest['materials'][manifest['props']['sign_parking']['parts'][part]['material']]['base_color_srgb'])
+
+
+def _red(rgb):
+    return rgb[0] > 150 and rgb[1] < 80 and rgb[2] < 80
+
+
+def _green(rgb):
+    return rgb[1] > 90 and rgb[0] < 60 and rgb[2] < 110
+
+
+def check_plate_faces(directory, manifest):
+    """The parking sign's plate faces: the red bar of the crown runs from the reader's top left to the bottom right, as
+    on the city's plates; one face per family of the city clip, each with its own black part, its plate height, a red
+    crown on every prohibition (art. 6) and none on the limited-parking P (P-150-7), a green crown on the disabled
+    space (art. 5, P-150-5), a black octagon only under the no-stopping crowns (P-160), arrows on the plate's own axis
+    pointing the way they say, and each assembled face within its triangle budget."""
+    sign = manifest['props']['sign_parking']
+    # The crown's bar. The OBJ holds Blender coordinates, where a reader facing the plate (+X) has +Y on the right, so
+    # a bar from the top left to the bottom right has y growing as z falls.
+    verts = _part_verts(directory, manifest, 'sign_parking', 'face_red')
+    front = max(x for x, _, _ in verts)
+    ring = [(y, z) for x, y, z in verts if x < front - .005]
+    bar = [(y, z) for x, y, z in verts if x >= front - .005]
+    cy, cz = sum(y for y, _ in ring) / len(ring), sum(z for _, z in ring) / len(ring)
+    assert len(bar) == 4 and all(math.hypot(y - cy, z - cz) < max(math.hypot(a - cy, b - cz) for a, b in ring)
+                                 for y, z in bar), ('the crown bar', bar)
+    my, mz = sum(y for y, _ in bar) / 4, sum(z for _, z in bar) / 4
+    slope = sum((y - my) * (z - mz) for y, z in bar)
+    assert slope < 0, ('the crown bar runs from the bottom left to the top right; the city draws it from the top left '
+                       'to the bottom right', bar)
+    faces = sign.get('plate_faces')
+    assert faces, 'sign_parking has one plate face (R-PF) for every sign: it needs plate_faces, one per sign family'
+    parts, arrows = sign['parts'], sign['plate_arrows']
+    assert {f['family'] for f in faces.values()} == set(PLATE_FAMILIES), sorted(f['family'] for f in faces.values())
+    assert sign['plate_default'] in faces and abs(cz - CROWN_Z) < .01 and abs(cy) < .01, (cy, cz)
+    bounds = {b['part']: b['bounds_cm'] for b in manifest['batches'] if b['prop'] == 'sign_parking'}
+    blacks = []
+    for name, face in faces.items():
+        assert set(face['parts']) <= set(parts) and 'post' not in face['parts'], (name, face['parts'])
+        (black,) = [p for p in face['parts'] if p.startswith('face_black')]
+        blacks.append(black)
+        height = PLATE_FAMILIES[face['family']]
+        assert face['size_cm'] == [30., height] and face['plate'] == ('tall' if height == 60 else 'short'), (name, face)
+        (plate,) = [p for p in face['parts'] if p.startswith('plate')]
+        white = 'face_white' + ('_tall' if height == 60 else '')
+        assert white in face['parts'] and _colour(manifest, white) > [230] * 3, (name, white)
+        for part in (plate, white, black):
+            b = bounds[part]
+            assert abs(b[5] - PLATE_TOP) < .6 and abs(b[5] - b[2] - height) < 1.1, (name, part, b, height)
+        reds = [p for p in face['parts'] if _red(_colour(manifest, p))]
+        greens = [p for p in face['parts'] if _green(_colour(manifest, p))]
+        assert ('face_red' in reds) == (face['family'] != 'limited'), (name, 'a red crown and bar on a prohibition')
+        assert bool(greens) == (face['family'] == 'disabled'), (name, 'a green crown on the disabled space only')
+        # Under the crown: the stop octagon (8 corners on one circle) on a no-stopping face, a P on the others.
+        inside = {(round(y, 2), round(z, 2)) for _, y, z in _part_verts(directory, manifest, 'sign_parking', black)
+                  if math.hypot(y, z - CROWN_Z) < CROWN_IN - .2}
+        radii = {round(math.hypot(y, z - CROWN_Z), 1) for y, z in inside}
+        octagon = len(inside) == 8 and len(radii) == 1
+        assert octagon == (face['symbol'] == 'octagon') == (face['family'] == 'no_stopping'), (name, len(inside), radii)
+        assert face['triangles'] <= sign['face_budget'], (name, face['triangles'])
+    assert len(set(blacks)) == len(blacks), 'two faces share a black part'
+    for direction, sizes in arrows.items():
+        for size, part in sizes.items():
+            verts = _part_verts(directory, manifest, 'sign_parking', part)
+            axis = PLATE_TOP - (60 if size == 'tall' else 45) + ARROW_UP
+            left = min(verts, key=lambda v: v[1])
+            right = max(verts, key=lambda v: v[1])
+            tips = {'left': [left], 'right': [right], 'both': [left, right]}[direction]
+            for tip in tips:
+                assert abs(tip[2] - axis) < .01, (part, 'a tip off the arrow axis', tip, axis)
+            assert all(abs(v[2] - axis) > .5 for v in {'left': [right], 'right': [left], 'both': []}[direction]), part
+
+
+def expected_family(code, text):
+    """A sign's family from the city's codification (the catalogue's "Principes de base du code de panneaux": the
+    first letter is the group, A no stopping, S no parking, P limited parking, R no parking except), checked against
+    the description's own notation ("\\A" a barred A for no stopping, "\\P" a barred P, "P" a plain P)."""
+    group = {'A': 'no_stopping', 'S': 'no_parking', 'P': 'limited', 'R': 'reserved', 'L': 'no_stopping'}[code[0]]
+    mark = text.split(' ')[0].upper()
+    assert {'no_stopping': ('\\A', '\\ARRÊT'), 'limited': ('P',)}.get(group, ('\\P',)).count(mark) == 1, \
+        (code, text, 'the code group and the description disagree')
+    if group == 'reserved' and 'S3R' in text:
+        return 'permit'            # the residents' permit zones (SRRR), catalogue pages 1-5-3 to 1-5-7
+    if group == 'reserved' and 'HANDICAP' in text.upper():
+        return 'disabled'          # catalogue page 1-5-2, P-150-5
+    return group
+
+
+def check_row_faces(manifest):
+    """Through the apply step's plan, as the dry run builds it: each parking sign of the Furniture layer shows exactly
+    one plate face, the one its code's family calls for, with hours where its description gives them (no stopping and
+    no parking), the arrow its row carries on that plate's axis and nothing else, and its post unless it hangs on a
+    city pole. The preview takes its parts from the same rule."""
+    sys.path.insert(0, str(ROOT / 'Scripts'))
+    import apply_plateau_replica as A
+    sign = manifest['props']['sign_parking']
+    faces = sign.get('plate_faces')
+    assert faces, 'sign_parking has one plate face (R-PF) for every sign: it needs plate_faces, one per sign family'
+    part_of = {f"{A.ASSETS}/Props/{b['mesh']}": b['part'] for b in manifest['batches'] if b['prop'] == 'sign_parking'}
+    shown = {}
+    the_plan = A.plan(ROOT)
+    for inst in the_plan['instances']:
+        if inst['prop'] == 'sign_parking':
+            for position, _, _ in inst['transforms']:
+                shown.setdefault(tuple(position), set()).add(part_of[inst['mesh']])
+    rows = [r for r in json.loads(PLACEMENTS.read_text())['placements'] if r['prop'] == 'sign_parking']
+    assert len(rows) == len(shown) > 400, (len(rows), len(shown))
+    tally, hours_pattern = {}, re.compile(r'\d{1,2} ?h')    # a time in the description: "8h-9h", "07h-09h30"
+    for r in rows:
+        got = shown[tuple(r['position'])]
+        on = [name for name, face in faces.items() if set(face['parts']) <= got]
+        blacks = [p for p in got if p.startswith('face_black')]
+        assert len(blacks) == 1 and len(on) >= 1, (r['code'], r['text'], 'shows', len(blacks), 'faces', sorted(got))
+        (face,) = [name for name in on if 'face_black_' + name in blacks]
+        family = expected_family(r['code'], r['text'])
+        assert faces[face]['family'] == family, (r['code'], r['text'], 'shows', face, 'not', family)
+        if family in ('no_stopping', 'no_parking'):
+            assert face.endswith('_hours') == bool(hours_pattern.search(r['text'])), (r['code'], r['text'], face)
+        arrow = sign['plate_arrows'].get(r['arrow'], {}).get(faces[face]['plate'])
+        extra = got - set(faces[face]['parts']) - {'post'}
+        assert extra == ({arrow} if arrow else set()), (r['code'], r['arrow'], sorted(extra))
+        assert ('post' in got) == ('post' not in r.get('without', ())), r
+        tally[face] = tally.get(face, 0) + 1
+    assert the_plan.get('plate_faces') == tally, (the_plan.get('plate_faces'), tally)
+    # The Blender preview places the same parts: it takes row_without from the apply step.
+    stubs = {'bpy': types.ModuleType('bpy'), 'mathutils': types.ModuleType('mathutils')}
+    stubs['mathutils'].Matrix = stubs['mathutils'].Vector = object
+    saved = {k: sys.modules.get(k) for k in stubs}
+    sys.modules.update(stubs)
+    try:
+        spec = importlib.util.spec_from_file_location('_props_preview', PREVIEW)
+        preview = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(preview)
+    finally:
+        for k, v in saved.items():
+            if v is None:
+                sys.modules.pop(k, None)
+            else:
+                sys.modules[k] = v
+    assert preview.row_without is A.row_without, 'the preview picks its own parts'
+    source = PREVIEW.read_text()
+    assert "r.get('without'" not in source and source.count('row_without(r, ') == 2, 'the preview ignores the plate faces'
+    return tally
+
+
 def check_colliders(props):
     """Collider boxes are Unreal-local like bounds_cm: none sticks out of its prop by more than 10 cm, and the
     leaning bikes' boxes sit on the lean (-Y) side, covering the frame within 6 cm."""
@@ -347,12 +507,13 @@ def determinism(python, reference):
 
 
 def check_sheet(manifest):
-    """The contact sheet holds every prop: 200 x 250 px tiles, 8 per row, one tile per prop plus the seven detail
-    tiles (dog parts, coat variants, lamp head, sign blades, street corner, gallery deck, october curb)."""
+    """The contact sheet holds every prop: 200 x 250 px tiles, 8 per row, one tile per prop plus the eight detail
+    tiles (dog parts, coat variants, lamp head, sign blades, parking faces, street corner, gallery deck, october
+    curb)."""
     data = SHEET.read_bytes()
     assert data[:8] == b'\x89PNG\r\n\x1a\n', SHEET
     size = int.from_bytes(data[16:20], 'big'), int.from_bytes(data[20:24], 'big')
-    tiles = manifest['counts']['props'] + 7
+    tiles = manifest['counts']['props'] + 8
     assert size == (1600, 250 * -(-tiles // 8)), (size, tiles)
 
 
@@ -368,6 +529,9 @@ def main():
         if SHEET.is_file():
             check_sheet(reference)
             print('contact sheet ok:', SHEET.name)
+        if PLACEMENTS.is_file():
+            tally = check_row_faces(reference)
+            print('parking plates ok:', ', '.join(f'{k} {v}' for k, v in sorted(tally.items())))
     else:
         print('no built OBJs on disk; pass --blender to build and check')
     if args.blender:

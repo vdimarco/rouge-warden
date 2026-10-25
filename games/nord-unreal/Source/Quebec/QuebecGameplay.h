@@ -109,6 +109,7 @@ public:
 private:
     friend class FQuebecPeopleResidentKnockTest;
     friend class FQuebecPeopleCompanionTest;
+    friend class FQuebecParkedThrownResidentTest;
     UPROPERTY() TArray<TObjectPtr<UStaticMeshComponent>> Pieces;
     UPROPERTY() TObjectPtr<USkeletalMeshComponent> GeneratedBody;
     UPROPERTY() TObjectPtr<UStaticMeshComponent> HandProp;

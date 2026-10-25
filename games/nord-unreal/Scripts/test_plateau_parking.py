@@ -4,8 +4,15 @@ Run from games/nord-unreal after plateau_replica.py:  python3 Scripts/test_plate
 
 - Output: two builds are byte-identical, and the committed parked_cars.json and LaFontaineParking.h are that build.
 - Clearances, measured here on the raw data: 300 cm from every C++ traffic centre line, 200 cm from every other
-  street's (150 cm from its own off the traffic graph: a 3 m lane), 3 m from a hydrant, 5 m past a painted crosswalk, 7 m from a junction node, a lane mouth or a driveway
-  left open, out of the bus and taxi zones, clear of curb extensions, road props, bollards and the chantier fence.
+  street's (150 cm from its own off the traffic graph: a 3 m lane; beside a track, 3 m across to the far curb or the
+  cars parked there), 3 m from a hydrant, 5 m past a painted crosswalk's OSM way and 5 m from its paint in the
+  Streets OBJs (every block and line of it, which Streets/paint_marks.json outlines), 7 m from a junction node, a lane
+  mouth or a driveway left open, out of the bus and taxi zones, clear of curb extensions, road props, bollards and the chantier
+  fence, 150 cm from every side-job spot in QuebecJobRules.h (markers, doors, starts, drops, keep-clear points) and
+  165 cm from every drawn cycle track (OSM highway=cycleway).
+- Track sides: every side a track runs along that its tags or two poles park holds cars against the replica's
+  concrete separator, or is left out where a measurement shows no room; the separators stand only beside parked cars,
+  as 17 to 25 cm SM_Concrete_Collision tops clear of the track and the traffic band.
 - Curb: a 17 to 25 cm SM_Concrete_Collision top runs 2 to 60 cm off every car's curb side at both ends and the middle,
   no raised top lies under a car, the replica asphalt does, and no two cars touch.
 - Counts per street on the plex streets, and every body and paint in use.
@@ -17,14 +24,17 @@ Run from games/nord-unreal after plateau_replica.py:  python3 Scripts/test_plate
 - The C++ rules (QuebecParkedRules.h) and the generated header, built and run with the system compilers.
 - The game wiring: the fill spawns after the street props and in look runs, E, impacts and shots promote a space,
   and the instanced parts copy AQuebecCar's.
-- The frame budget: components, cars within each cull distance and their triangles.
+- The frame budget: components, cars within each cull distance and their triangles, and the mesh sections of the
+  worst view, in the main pass and the shadow pass, with every space taken as a viewpoint.
 """
 import json
 import math
+import re
 import shutil
 import subprocess
 import sys
 import tempfile
+import xml.etree.ElementTree as ET
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -125,6 +135,30 @@ def own_street(street, other):
     return abs(P.dot(u, v)) > .9
 
 
+def lane_across(s, slot, cars):
+    """The free width (cm) across the street from a car's outer side to the first raised curb or other parked car,
+    the least of three rays square to it (at its middle and 2 m either way)."""
+    yaw = math.radians(slot['yaw'])
+    u, left = (math.cos(yaw), math.sin(yaw)), (-math.sin(yaw), math.cos(yaw))
+    side = curb_side(s, slot)
+    d = (-left[0] * side, -left[1] * side)
+    best = 1e9
+    for along in (-200., 0., 200.):
+        o = (slot['x'] + u[0] * along + d[0] * P.CAR_HALF_W, slot['y'] + u[1] * along + d[1] * P.CAR_HALF_W)
+        reach = s['curbs'].ray(o, d, 1500.)
+        reach = 1500. if reach is None else reach
+        for k in cars.query(P.bbox([o, (o[0] + d[0] * reach, o[1] + d[1] * reach)])):
+            if k == slot['id']:
+                continue
+            q = P.footprint(s['slots'][k])
+            for tri in ([q[0], q[1], q[2]], [q[0], q[2], q[3]]):
+                t = P._tri_entry(o, d, tri, reach)
+                if t is not None:
+                    reach = min(reach, t)
+        best = min(best, reach)
+    return best
+
+
 @check('300 cm from traffic centre lines, 200 cm from other streets, a 3 m lane, no two cars touch')
 def check_centre_lines():
     s = load()
@@ -134,23 +168,35 @@ def check_centre_lines():
     grid = P.Grid(2000.)
     for k, (_, a, b) in enumerate(streets):
         grid.add(k, P.bbox([a, b], 400))
+    cars = P.Grid(1000.)
+    for slot in s['slots']:
+        cars.add(slot['id'], P.bbox(P.footprint(slot)))
     placed = P.Grid(1000.)
-    worst = {'traffic': 1e9, 'street': 1e9, 'own lane': 1e9, 'car': 1e9}
+    worst = {'traffic': 1e9, 'street': 1e9, 'own lane': 1e9, 'lane beside a track': 1e9, 'car': 1e9}
     for slot in s['slots']:
         poly = P.footprint(slot)
         mine = by_id[slot['way']]
         worst['traffic'] = min(worst['traffic'], min_dist(poly, [city.traffic[i] for i in near(city.traffic_grid, poly, 400)]))
+        # Beside a track off the traffic graph the track pulls the carriageway off the OSM centre line: the 3 m lane
+        # is measured across, to the far curb or the cars parked there.
+        track = not mine['traffic'] and on_track_side(city, slot)
+        if track:
+            worst['lane beside a track'] = min(worst['lane beside a track'], lane_across(s, slot, cars))
         for i in near(grid, poly, 400):
             st, a, b = streets[i]
-            key = 'own lane' if own_street(mine, st) and not mine['traffic'] else 'street'
+            own = own_street(mine, st) and not mine['traffic']
+            if own and track:
+                continue
+            key = 'own lane' if own else 'street'
             worst[key] = min(worst[key], P.poly_seg_dist(poly, a, b))
         for other in placed.query(P.bbox(poly, 100)):
             worst['car'] = min(worst['car'], P.poly_poly_dist(poly, other))
         placed.add(tuple(poly), P.bbox(poly))
     print('   nearest traffic centre line %.1f cm, street %.1f cm, own centre line off the traffic graph %.1f cm, '
-          'car to car %.1f cm' % (worst['traffic'], worst['street'], worst['own lane'], worst['car']))
+          'lane across beside a track %.1f cm, car to car %.1f cm' %
+          (worst['traffic'], worst['street'], worst['own lane'], worst['lane beside a track'], worst['car']))
     assert worst['traffic'] >= 300. - 1e-6 and worst['street'] >= 200. - 1e-6 and worst['own lane'] >= 150. - 1e-6 \
-        and worst['car'] >= 40. - 1e-6, worst
+        and worst['lane beside a track'] >= P.LANE_CLEAR - 1e-6 and worst['car'] >= 40. - 1e-6, worst
 
 
 @check('3 m from hydrants, 7 m from junctions, lane mouths and driveways open')
@@ -206,6 +252,82 @@ def check_crossings():
     assert worst >= P.CROSSING_CLEAR, worst
 
 
+CROSSWALK_PAINT = 500.     # no car within 5 m of a painted crosswalk (Code de la sécurité routière art. 386)
+
+
+def crosswalk_pieces():
+    """The crosswalk paint in the Streets OBJs, in the map frame: each 50 by 300 cm block of a block crosswalk and each
+    20 cm line of a two-line one. obj_text writes every strip with its own four corners, so a level quad of these
+    sizes is one piece; the stop bars are 40 cm wide and the other lines 10 to 12 cm."""
+    pieces = []
+    for name in sorted(P.STREETS.glob('Streets_paint_white_*.obj')) + sorted(P.STREETS.glob('Streets_paint_yellow_*.obj')):
+        verts, last = [], {}
+        for line in name.read_text().splitlines():
+            if line.startswith('v '):
+                x, y, z = map(float, line.split()[1:4])
+                verts.append((x, -y, z))
+            elif line.startswith('f '):
+                ids = [int(item.split('/')[0]) - 1 for item in line.split()[1:]]
+                last[min(ids)] = max(last.get(min(ids), 0), max(ids))
+        for base, end in sorted(last.items()):
+            quad = verts[base:end + 1]
+            if len(quad) != 4 or max(q[2] for q in quad) - min(q[2] for q in quad) > .01:
+                continue
+            ring = [q[:2] for q in quad]
+            sides = [math.dist(a, b) for a, b in zip(ring, ring[1:] + ring[:1])]
+            if 45. <= min(sides) <= 55. and 280. <= max(sides) <= 320.:
+                pieces.append(('block', ring))
+            elif 18. <= min(sides) <= 22. and max(sides) >= 100.:
+                pieces.append(('line', ring))
+    return pieces
+
+
+@check('5 m from the paint of every crosswalk, measured on the Streets OBJs')
+def check_crosswalk_paint():
+    """plateau_replica.crossing_records moves a crosswalk's band out of the junction box, up to 6 m from its OSM way,
+    and the replica paints crosswalks at stops and traffic lights where none is mapped. So the cars are measured here
+    against the paint itself."""
+    s = load()
+    pieces = crosswalk_pieces()
+    kinds = {k: sum(1 for kind, _ in pieces if kind == k) for k in ('block', 'line')}
+    assert kinds['block'] > 500 and kinds['line'] > 40, ('no crosswalk paint found in the Streets OBJs', kinds)
+    grid = P.Grid(2000.)
+    for k, (_, ring) in enumerate(pieces):
+        grid.add(k, P.bbox(ring, CROSSWALK_PAINT))
+    worst, bad = 1e9, {}
+    for slot in s['slots']:
+        poly = P.footprint(slot)
+        for k in grid.query(P.bbox(poly)):
+            d = P.poly_poly_dist(poly, pieces[k][1])
+            worst = min(worst, d)
+            if d < CROSSWALK_PAINT and d < bad.get(slot['id'], (0, '', 1e9))[2]:
+                bad[slot['id']] = (slot['id'], slot['street'], round(d), pieces[k][0])
+    print('   %d crosswalk blocks and %d crosswalk lines; nearest car %.0f cm from their paint' %
+          (kinds['block'], kinds['line'], worst))
+    assert not bad, (f'{len(bad)} cars within {CROSSWALK_PAINT:.0f} cm of crosswalk paint', sorted(bad.values(), key=lambda r: r[2])[:12])
+
+
+@check('Streets/paint_marks.json outlines every crosswalk the Streets OBJs paint')
+def check_paint_marks():
+    """The parking step keeps its cars off the crosswalks by these outlines, so each painted block and line must lie
+    inside one of them."""
+    assert P.PAINT_MARKS.is_file(), f'no {P.PAINT_MARKS.relative_to(ROOT)}: run Scripts/plateau_replica.py'
+    marks = json.loads(P.PAINT_MARKS.read_text())
+    outlines = [[tuple(q) for q in row['outline']] for row in marks['crosswalks']]
+    assert marks['counts']['crosswalks'] == len(outlines) > 100 and marks['counts']['stop_bars'] == len(marks['stop_bars'])
+    grid = P.Grid(2000.)
+    for k, poly in enumerate(outlines):
+        grid.add(k, P.bbox(poly))
+    outside = []
+    for kind, ring in crosswalk_pieces():
+        mid = (sum(q[0] for q in ring) / 4, sum(q[1] for q in ring) / 4)
+        if not any(all(P.poly_point_dist(outlines[k], q) < .05 for q in ring) for k in grid.query(P.bbox([mid]))):
+            outside.append((kind, [round(v) for v in mid]))
+    print('   %d crosswalk outlines and %d stop bars; %d painted pieces outside them' %
+          (len(outlines), len(marks['stop_bars']), len(outside)))
+    assert not outside, outside[:10]
+
+
 def curb_side(s, slot):
     """+1 when the curb is on the car's left (its yaw rotated +90 degrees), -1 on its right, by the nearer raised top."""
     yaw = math.radians(slot['yaw'])
@@ -254,6 +376,40 @@ def check_curbs():
     assert not bad, bad[:10]
 
 
+def level_tops(pattern, low, high):
+    """The heights of the level faces between low and high in the Streets OBJs that match pattern."""
+    heights = set()
+    for name in sorted(P.STREETS.glob(pattern)):
+        z = []
+        for line in name.read_text().splitlines():
+            if line.startswith('v '):
+                z.append(float(line.split()[3]))
+            elif line.startswith('f '):
+                face = [z[int(item.split('/')[0]) - 1] for item in line.split()[1:]]
+                if max(face) - min(face) < .001 and low <= face[0] <= high:
+                    heights.add(round(face[0], 2))
+    return heights
+
+
+@check('the runtime curb finders (QuebecTraces.cpp) accept the replica curb rise')
+def check_curb_rise():
+    """FindCurb (traffic curb stops, chantiers) and the curb bins want a rise from the road to the curb top. It must
+    not exceed the replica's: the lowest SM_Concrete_Collision top less the highest replica asphalt top."""
+    curb, road = level_tops('Concrete_Collision_Replica_*.obj', *P.CURB_TOP), level_tops('Asphalt_Replica_X*.obj', 5., 9.)
+    assert curb and road, 'no replica curb or asphalt tops'
+    rise = min(curb) - max(road)
+    text = (SOURCE / 'QuebecTraces.cpp').read_text()
+    constants = {name: float(value) for name, value in re.findall(r'constexpr float (\w+) = ([\d.]+)f;', text)}
+    found = {}
+    for label, pattern in (('FindCurb', r'Rise >= ([\w.]+)'), ('curb bins', r'SpotZ-RoadZ >= ([\w.]+)')):
+        tokens = re.findall(pattern, text)
+        assert len(tokens) == 1, (label, tokens)
+        found[label] = constants[tokens[0]] if tokens[0] in constants else float(tokens[0].rstrip('f'))
+    print('   replica curb rise %.1f cm (curb top %.1f, road %.1f); FindCurb wants %.1f, the bins %.1f' %
+          (rise, min(curb), max(road), found['FindCurb'], found['curb bins']))
+    assert all(value <= rise for value in found.values()), ('a curb finder misses the replica curb', rise, found)
+
+
 @check('clear of extensions, road props, bollards and the chantier, and out of bus and taxi zones')
 def check_features():
     s = load()
@@ -284,6 +440,226 @@ def check_features():
                     bad.append((slot['id'], 'stop zone', round(ahead), round(lateral)))
     assert not bad, bad[:10]
     assert len(f.bus_stops) >= 40 and len(f.extensions) >= 50 and len(s['bollards']) > 100
+
+
+def job_spots():
+    """Every {x, y, z} row of an FJobSpot in QuebecJobRules.h, read here apart from the generator."""
+    text = (SOURCE / 'QuebecJobRules.h').read_text()
+    spots = []
+    for name, body in re.findall(r'FJobSpot\s+(\w+)\s*(?:\[\w*\])?\s*=\s*(\{.*?\});', text, re.S):
+        rows = re.findall(r'\{\s*(-?[\d.]+)\s*,\s*(-?[\d.]+)\s*,\s*(-?[\d.]+)\s*\}', body)
+        spots += [(name, (float(x), float(y))) for x, y, _ in rows]
+    return spots
+
+
+@check('150 cm from every side-job spot (QuebecJobRules.h): no car on a marker, a door or a start')
+def check_job_spots():
+    s = load()
+    spots = job_spots()
+    assert len(spots) == 44, len(spots)
+    grid = P.Grid(2000.)
+    for k, slot in enumerate(s['slots']):
+        grid.add(k, P.bbox(P.footprint(slot)))
+    worst, bad = 1e9, []
+    for name, p in spots:
+        for k in grid.query(P.bbox([p], 200.)):
+            d = P.poly_point_dist(P.footprint(s['slots'][k]), p)
+            worst = min(worst, d)
+            if d < 150.:
+                bad.append((name, s['slots'][k]['id'], round(d, 1)))
+    print('   %d job spots; nearest car %.1f cm' % (len(spots), worst))
+    assert not bad, bad
+    assert 'Source/Quebec/QuebecJobRules.h' in P.SOURCES and 'Source/Quebec/QuebecJobRules.h' in s['doc']['source_sha256'], \
+        'the job spots are not an input of plateau_parking.py'
+
+
+# ---------------------------------------------------------------------------------------------------------------
+# Cycle tracks
+
+TRACK_HALF = 150.          # a 3 m track either side of its OSM centre line (Ville de Montréal: 3 m tracks)
+SEPARATOR_REACH = 35. + P.CURB_GAP_MIN + 2 * P.CAR_HALF_W   # a car against a separator in front of the bollards
+                                                             # reaches this far toward the traffic from them
+
+
+def osm_tracks():
+    """Every drawn cycle track (OSM highway=cycleway) segment, read from the snapshot apart from the generator."""
+    root = ET.parse(P.DATA / 'osm.xml').getroot()
+    nodes = {e.get('id'): P.xy(float(e.get('lat')), float(e.get('lon'))) for e in root.iter('node')}
+    out = []
+    for w in root.iter('way'):
+        if any(t.get('k') == 'highway' and t.get('v') == 'cycleway' for t in w.findall('tag')):
+            pts = [nodes[n.get('ref')] for n in w.findall('nd') if n.get('ref') in nodes]
+            out += [(a, b) for a, b in zip(pts, pts[1:]) if math.dist(a, b) > 1.]
+    return out
+
+
+def track_gap(city, slot):
+    """How far (cm) a car's footprint lies from the nearest drawn cycle track."""
+    if 'tracks' not in STATE:
+        tracks = osm_tracks()
+        grid = P.Grid(2000.)
+        for k, (a, b) in enumerate(tracks):
+            grid.add(k, P.bbox([a, b], 600.))
+        STATE['tracks'] = (tracks, grid)
+    tracks, grid = STATE['tracks']
+    poly = P.footprint(slot)
+    return min((P.poly_seg_dist(poly, *tracks[k]) for k in grid.query(P.bbox(poly))), default=1e9)
+
+
+def on_track_side(city, slot):
+    """Whether a slot stands on a way side a drawn track runs along (prepare_car_parking.track_sides)."""
+    street = next(st for st in city.streets if st['id'] == slot['way'])
+    g = min(street['segs'], key=lambda q: P.seg_dist((slot['x'], slot['y']), q['a'], q['b']))
+    return (1 if slot['side'] == 'L' else -1) in city.track_sides(street, g)
+
+
+@check('no car within 165 cm of a drawn cycle track (Rue Atateken\'s cars stood on its new track)')
+def check_track_clear():
+    s = load()
+    gaps = sorted((track_gap(s['city'], slot), slot['id'], slot['street']) for slot in s['slots'])
+    bad = [g for g in gaps if g[0] < P.TRACK_CLEAR]
+    print('   nearest car to a drawn track %.1f cm (%s)' % (gaps[0][0], gaps[0][2]))
+    assert not bad, (f'{len(bad)} cars within {P.TRACK_CLEAR:.0f} cm of a cycle track', bad[:8])
+
+
+def track_side_sample(s, street, side, o, u):
+    """Why a car cannot stand beside the track at o on this side, measured on the replica: 'traffic band' when a car
+    against a separator in front of the bollards there would come within 300 cm of a traffic centre line, 'no curb'
+    when no raised curb is in reach, 'curb on the track' when a car at the curb would stand within TRACK_CLEAR of the
+    track, 'bus stop' when a stop's zone covers it; None when a car could stand there."""
+    city, f = s['city'], s['features']
+    n = (-u[1] * side, u[0] * side)
+    bollards = [b for b in s['bollards'] if abs(P.dot(P.sub(b, o), u)) < 250. and 0. < P.dot(P.sub(b, o), n) < 1500.]
+    stop = any(math.dist(o, q) < P.BUS_ZONE[0] + P.CAR_LENGTH and P.dot(P.sub(q, o), n) > 0. for q in f.bus_stops)
+    if bollards:
+        b = min(bollards, key=lambda q: P.dot(P.sub(q, o), n))
+        outer = (b[0] - n[0] * SEPARATOR_REACH, b[1] - n[1] * SEPARATOR_REACH)
+        near = min((P.seg_dist(outer, *city.traffic[i]) for i in city.traffic_grid.query(P.bbox([outer], 400.))), default=1e9)
+        return 'traffic band' if near < P.TRAFFIC_CLEAR else 'bus stop' if stop else None
+    start = max(0., street['width'] / 2 - 100.)
+    t = s['curbs'].ray((o[0] + n[0] * start, o[1] + n[1] * start), n, P.CURB_REACH)
+    if t is None:
+        return 'no curb'
+    tracks, _ = STATE['tracks']
+    across = [P.seg_dist(o, a, b) for a, b in tracks
+              if abs(P.cross(u, P.unit(a, b)[0])) < .35 and P.dot(P.sub(((a[0] + b[0]) / 2, (a[1] + b[1]) / 2), o), n) > 0.
+              and P.seg_dist(o, a, b) < 1500.]
+    if across and min(across) - (start + t) < P.TRACK_CLEAR - P.CURB_GAP_MIN:
+        return 'curb on the track'
+    return 'bus stop' if stop else None
+
+
+@check('every track side its tags or two poles park holds cars against a separator, or is left out for a measured reason')
+def check_track_parking():
+    """verifyLocal pass 6, item 1: Rachel, Parc-La Fontaine, Brébeuf, De La Roche, Cherrier and Christophe-Colomb
+    allow parking beside their tracks. A side held no car while the tracks closed it. Now a side its OSM tags or two
+    of the city's on-street poles park holds cars, unless every metre of it, 10 m clear of the junctions, shows no
+    room: a car beside the track would come within 300 cm of a traffic centre line, or stand on the track where the
+    replica's curb runs along it, or the replica draws no curb, or a bus stop's zone covers it."""
+    s = load()
+    city = s['city']
+    track_gap(city, s['slots'][0])
+    have = {}
+    for slot in s['slots']:
+        have[(slot['way'], slot['side'])] = have.get((slot['way'], slot['side']), 0) + 1
+    poles = {}
+    for pole in sign_poles():
+        if any(g['rule'] == 'allow' for g in pole['signs']):
+            key = (pole['way'], 'L' if pole['side'] > 0 else 'R')
+            poles[key] = poles.get(key, 0) + 1
+    report = {(r['way'], r['side']): r for r in s['doc']['counts'].get('track_sides', ())}
+    held, left, bad = [], [], []
+    for street in city.streets:
+        for side, name in ((1, 'left'), (-1, 'right')):
+            segs = [g for g in street['segs'] if side in city.track_sides(street, g)]
+            key = (street['id'], 'L' if side > 0 else 'R')
+            tagged = P.side_parking(street['tags'], name, None, None, True, False)[0]
+            if not segs or not (tagged or poles.get(key, 0) >= P.SIGNED_POLES):
+                continue
+            if have.get(key):
+                held.append((street['name'], key[1], have[key]))
+                continue
+            why = {}
+            for g in segs:
+                u, length = P.unit(g['a'], g['b'])
+                for k in range(int(length // 100.) + 1):
+                    o = (g['a'][0] + u[0] * k * 100., g['a'][1] + u[1] * k * 100.)
+                    if any(math.dist(o, j['p']) < 1000. for j in city.junctions):
+                        continue
+                    reason = track_side_sample(s, street, side, o, u)
+                    why[reason] = why.get(reason, 0) + 1
+                    if reason is None:
+                        bad.append((street['name'], key, [round(v) for v in o]))
+            left.append((street['name'], street['id'], key[1], poles.get(key, 0), 'tag' if tagged else 'signs',
+                         {k: v for k, v in sorted(why.items(), key=lambda kv: str(kv[0]))}))
+            if report.get(key, {}).get('cars') != 0:
+                bad.append((street['name'], key, 'not listed in counts.track_sides'))
+    print('   held: %s' % ', '.join('%s %s %d cars' % h for h in sorted(held)))
+    for row in sorted(left):
+        print('   left out: %s (way %s, %s, %d poles, by %s): metres %s' % row)
+    assert not bad, (f'{len(bad)} metres of a parked track side with room for a car and none parked', bad[:8])
+    assert {'Rue de Brébeuf', 'Rue De La Roche'} <= {h[0] for h in held}, held
+
+
+@check('the track separators: 17-25 cm SM_Concrete_Collision tops beside parked cars, clear of the track and traffic')
+def check_separators():
+    """Where cars park beside a track the replica builds a 70 cm concrete separator (bike_paint.json, tracks): its
+    face is the curb the cars keep. Each stands on a way side that holds cars, as a raised top the curb finders
+    accept (SM_Concrete_Collision, 17 to 25 cm, found first from the centre line as CurbParking marches out), 150 cm
+    or more from the track's centre line, and, every metre along it, 300 cm from every traffic centre line and clear
+    of every lane and driveway mouth (SERVICE_CLEAR from a service way's centre line)."""
+    s = load()
+    city = s['city']
+    track_gap(city, s['slots'][0])
+    tracks, grid = STATE['tracks']
+    rows = [r for r in json.loads(P.BIKE_PAINT.read_text()).get('tracks', ()) if r['pieces']]
+    have = {}
+    for slot in s['slots']:
+        if on_track_side(city, slot):
+            have[(slot['way'], slot['side'])] = have.get((slot['way'], slot['side']), 0) + 1
+    bad, metres = [], 0.
+    for row in rows:
+        key = (row['way'], row['side'])
+        if not have.get(key):
+            bad.append((row['name'], key, 'a separator with no car beside it'))
+        street = next(st for st in city.streets if st['id'] == row['way'])
+        side = 1 if row['side'] == 'L' else -1
+        for piece in row['pieces']:
+            (f0, f1), (b0, b1) = piece['face'], piece['back']
+            metres += math.dist(f0, f1) / 100
+            steps = max(1, int(math.dist(f0, f1) // 100.))
+            for k in range(steps + 1):
+                f = k / steps
+                cut = [(f0[0] + (f1[0] - f0[0]) * f, f0[1] + (f1[1] - f0[1]) * f),
+                       (b0[0] + (b1[0] - b0[0]) * f, b0[1] + (b1[1] - b0[1]) * f)]
+                near_traffic = min((P.seg_seg_dist(cut[0], cut[1], *city.traffic[i])
+                                    for i in city.traffic_grid.query(P.bbox(cut, 400.))), default=1e9)
+                if near_traffic < P.TRAFFIC_CLEAR:
+                    bad.append((row['name'], key, 'in the traffic band', round(near_traffic), [round(v) for v in cut[0]]))
+                for item in city.service:
+                    clear = P.SERVICE_CLEAR.get(item['tags'].get('service'), P.SERVICE_CLEAR['default'])
+                    if any(P.seg_seg_dist(cut[0], cut[1], a, b) < clear for a, b in zip(item['points'], item['points'][1:])):
+                        bad.append((row['name'], key, 'across a lane or driveway mouth', item['id'], [round(v) for v in cut[0]]))
+            for t in (.1, .5, .9):
+                face = (f0[0] + (f1[0] - f0[0]) * t, f0[1] + (f1[1] - f0[1]) * t)
+                back = (b0[0] + (b1[0] - b0[0]) * t, b0[1] + (b1[1] - b0[1]) * t)
+                if not s['curbs'].contains(((face[0] + back[0]) / 2, (face[1] + back[1]) / 2)):
+                    bad.append((row['name'], key, 'no 17-25 cm curb top', [round(v) for v in face]))
+                g = min(street['segs'], key=lambda q: P.seg_dist(face, q['a'], q['b']))
+                u = P.unit(g['a'], g['b'])[0]
+                n = (-u[1] * side, u[0] * side)
+                foot = P.sub(face, (n[0] * P.dot(P.sub(face, g['a']), n), n[1] * P.dot(P.sub(face, g['a']), n)))
+                offset = P.dot(P.sub(face, foot), n)
+                start = max(0., street['width'] / 2 - 100.)
+                hit = s['curbs'].ray((foot[0] + n[0] * start, foot[1] + n[1] * start), n, P.CURB_REACH)
+                if hit is None or abs(start + hit - offset) > 3.:
+                    bad.append((row['name'], key, 'not the first curb out from the centre line', round(offset), hit))
+                near_track = min((P.seg_dist(back, *tracks[k]) for k in grid.query(P.bbox([back]))), default=1e9)
+                if near_track < TRACK_HALF:
+                    bad.append((row['name'], key, 'on the track', round(near_track)))
+    print('   %d separators, %.0f m, on %d way sides' % (sum(len(r['pieces']) for r in rows), metres, len(rows)))
+    assert rows and metres > 200., 'no separator beside a parked track side: run Scripts/plateau_replica.py'
+    assert not bad, bad[:8]
 
 
 # ---------------------------------------------------------------------------------------------------------------
@@ -325,10 +701,20 @@ def check_sides():
     assert sp({'cycleway:left': 'lane', 'parking:both': 'lane'}, 'left', 0) == (True, 'tag')
     assert sp({'parking:right': 'lane'}, 'left', 2) == (False, 'other side only')
     assert sp({}, 'left', 0) == (False, 'traffic') and sp({}, 'left', 2) == (True, 'traffic')
-    # A separate track closes only the side it runs along; a painted lane or track at the curb closes its own.
+    # A separate track closes only the side it runs along, unless its tags or the city's signs park that side: then
+    # the cars stand against the track's separator. A painted lane or track at the curb closes its own.
     assert sp({'cycleway:both': 'separate'}, 'right', None) == (True, 'default')
     assert sp({'cycleway:both': 'separate'}, 'right', None, None, True) == (False, 'bike track')
-    assert sp({'cycleway:both': 'separate', 'parking:both': 'lane'}, 'left', None, None, True) == (False, 'bike track')
+    assert sp({'cycleway:both': 'separate'}, 'right', 2, None, True) == (False, 'bike track')
+    assert sp({'cycleway:both': 'separate', 'parking:both': 'lane'}, 'left', None, None, True) == (True, 'beside a track'), \
+        'a track side its tags park takes cars against the separator'
+    assert sp({'cycleway:both': 'separate'}, 'right', None, None, True, True) == (True, 'beside a track, city signs')
+    assert sp({'cycleway:both': 'separate', 'parking:both': 'no'}, 'left', None, None, True) == (False, 'bike track')
+    assert sp({'cycleway:both': 'separate', 'parking:both': 'no'}, 'left', None, None, True, True) == \
+        (True, 'beside a track, city signs')
+    assert sp({'cycleway:both': 'separate', 'parking:right': 'lane'}, 'left', None, None, True) == (False, 'bike track')
+    assert sp({'cycleway:right': 'share_busway', 'parking:both': 'lane'}, 'right', None, None, True, True) == \
+        (False, 'bus lane')
     assert sp({'cycleway:right': 'track'}, 'right', None) == (False, 'bike lane')
     assert sp({}, 'right', None) == (True, 'default')
     # The city's signs open a side the tags or the C++ bit leave bare, never a bike lane at the curb.
@@ -385,7 +771,7 @@ def check_bus_zone():
 ALLOW_REASONS = ('side: bike track', 'side: bike lane', 'side: bus lane', 'side: not parallel', 'side: tag no',
                  'side: other side only', 'side: traffic', 'short run', 'run end', 'curb', 'asphalt', 'traffic',
                  'street', 'hydrant', 'crossing', 'lane mouth', 'driveway', 'junction', 'extension', 'prop', 'bollard',
-                 'chantier', 'bus stop', 'taxi stand', 'sign', 'car')
+                 'chantier', 'bus stop', 'taxi stand', 'sign', 'job spot', 'car', 'track', 'lane')
 
 
 @check('the sign texts at the moment, the arrows and the OSM bus lanes\' hours')
@@ -464,11 +850,15 @@ def check_signed_sides():
                 bare.append((way, side, pole, reason))
     assert not bare, bare[:10]
     park_side = sum(1 for slot in slots if slot['street'] == 'Rue Rachel Est' and slot['side'] == 'L')
-    north = sum(1 for slot in slots if slot['street'] == 'Rue Rachel Est' and slot['side'] == 'R')
+    north = [slot for slot in slots if slot['street'] == 'Rue Rachel Est' and slot['side'] == 'R']
     papineau = sum(1 for slot in slots if slot['way'] in ('25876960', '465376930') and slot['side'] == 'R')
-    print('   %d signed sides; Rachel park side %d cars, north side %d; Papineau park side %d' %
-          (signs['signed_sides'], park_side, north, papineau))
-    assert park_side >= 25 and north == 0 and papineau >= 20, (park_side, north, papineau)
+    # Rachel's north side is signed for parking, but its track and the traffic band leave room only where the track
+    # swings away behind the sidewalk, with the curb between the car and the track.
+    behind = min((track_gap(s['city'], slot) for slot in north), default=1e9)
+    print('   %d signed sides; Rachel park side %d cars, north side %d (%.0f cm or more from the track); Papineau park '
+          'side %d' % (signs['signed_sides'], park_side, len(north), behind, papineau))
+    assert park_side >= 25 and len(north) <= 3 and behind >= P.TRACK_CLEAR and papineau >= 20, \
+        (park_side, len(north), behind, papineau)
 
 
 @check('no ban (AD-TT, SD-TT) covers a car within 4 m of its pole, the way its arrow points')
@@ -552,7 +942,7 @@ def check_cpp():
     print('   ' + outs.pop())
 
 
-def wiring_problems(gameplay, combat, actor, actor_header, rules, police=''):
+def wiring_problems(gameplay, combat, actor, actor_header, rules, police='', people='', tests='', traces=''):
     """What the game wiring lacks, from the source texts (empty when it is complete)."""
     out = []
     spawn = 'AQuebecParkedCars::SpawnFill(GetWorld());'
@@ -581,6 +971,30 @@ def wiring_problems(gameplay, combat, actor, actor_header, rules, police=''):
         out.append('the parked boxes block the Visibility channel, so floor probes land on their roofs')
     if 'NotifyHit' in actor or 'GetVelocity()' in actor:
         out.append('the thrown-person path reads the velocity after the move (NotifyHit)')
+    # The pass-6 verify: the boxes were WorldStatic (BlockAll), so every ground query by object type (a job's goal by
+    # GroundPoint, WheelSupport, GroundAt, the people's FloorUnder) could land on a roof. They are WorldDynamic now (an
+    # officer's capsule lets Pawn bodies through, so not Pawn), and the fill test traces by object type.
+    if 'Boxes->SetCollisionProfileName(TEXT("BlockAllDynamic"));' not in actor or 'TEXT("BlockAll")' in actor:
+        out.append('the parked boxes are WorldStatic, so WorldStatic ground queries land on their roofs')
+    fill_test = tests.split('"Quebec.Parked.FillAndPromote"', 1)[-1].split('IMPLEMENT_SIMPLE_AUTOMATION_TEST', 1)[0]
+    if 'LineTraceSingleByObjectType(Ground' not in fill_test or 'FCollisionObjectQueryParams(ECC_WorldStatic)' not in fill_test:
+        out.append('Quebec.Parked.FillAndPromote does not trace for the ground by the WorldStatic object type')
+    # A resident's or a pedestrian's throw is scripted, so only the throw's line can meet a parked car.
+    throw = people.split('float FitThrow(', 1)[-1].split('\n    }\n', 1)[0]
+    if 'AQuebecParkedCars::ThrowAgainst(World, Start + Lift, Start + Along * Left + Lift, Speed)' not in throw:
+        out.append('a resident or a pedestrian thrown at a parked car neither promotes it nor stops at it (FitThrow)')
+    if '"Quebec.Parked.ThrownResident"' not in tests:
+        out.append('no automation test throws a resident at a parked car')
+    if 'Fill->FindSlotOnLine(Start+FVector(0.,0.,60.),Rest+FVector(0.,0.,60.),Side)' not in traces or \
+            'Flying->Knock(Toward * 1500.' not in fill_test:
+        out.append('a knocked cone flies through a parked car (AQuebecStreetProp::Knock)')
+    # Each pending client hide waits from its own promotion.
+    if 'PendingSince' in actor + actor_header or 'PendingHideNow(Pending, Nearest, Now)' not in actor or \
+            'PendingHides.Add(StartPending(Slot, Now))' not in actor:
+        out.append('the pending client hides share one start time')
+    if 'Group->bAffectDistanceFieldLighting = bDistanceFields;' not in actor or 'AffectsDistanceFields(Index)' not in actor or \
+            actor.find('bAffectDistanceFieldLighting') > actor.find('Group->RegisterComponent();'):
+        out.append('the tyres and rims still enter the distance-field lighting')
     for text, owner in ((gameplay, 'AQuebecCharacter'), (police, 'AQuebecOfficer')):
         body = text.split(f'void {owner}::MoveBlockedBy(const FHitResult& Impact)', 1)
         if len(body) < 2 or 'AQuebecParkedCars::PromoteOnBody(Impact, GetCharacterMovement()->Velocity, this)' not in body[1][:400]:
@@ -611,7 +1025,8 @@ def wiring_problems(gameplay, combat, actor, actor_header, rules, police=''):
 @check('the game wiring')
 def check_wiring():
     texts = [(SOURCE / n).read_text() for n in ('QuebecGameplay.cpp', 'QuebecCombat.cpp', 'QuebecParkedCars.cpp',
-                                                'QuebecParkedCars.h', 'QuebecParkedRules.h', 'QuebecPolice.cpp')]
+                                                'QuebecParkedCars.h', 'QuebecParkedRules.h', 'QuebecPolice.cpp',
+                                                'QuebecPeople.cpp', 'QuebecParkedCarsTests.cpp', 'QuebecTraces.cpp')]
     problems = wiring_problems(*texts)
     assert not problems, problems
 
@@ -619,7 +1034,13 @@ def check_wiring():
 # ---------------------------------------------------------------------------------------------------------------
 # Budget
 
-SECTION_BUDGET = 500            # mesh sections the fill may draw in one view (main pass); the shadow pass draws fewer
+SECTION_BUDGET = 500            # mesh sections the fill may draw in one view (main pass)
+# ...and in that view's shadow pass, where only the shell casts (QuebecParkedRules::CastsShadow). Non-Nanite meshes
+# cost more in virtual shadow maps than in the main pass (Epic, "Virtual Shadow Maps"). The budget is the main pass's
+# 500 less the tyres and rims of the four tiles a view meets (5 sections a tile). The worst view, with every space
+# taken as a viewpoint, has 466: one more body and roof paint there (10 sections) still fits, so a parking rebuild
+# that only reshuffles paints passes, and a change that adds shadow casters must say so here.
+SHADOW_SECTION_BUDGET = 480
 
 
 @check('frame budget: tiles, components, sections, cars and triangles within the cull distances')
@@ -656,14 +1077,17 @@ def check_budget():
 
     def most(reach):
         best = 0
-        for p in points[::2]:
+        for p in points:
             best = max(best, sum(1 for k in grid.query(P.bbox([p], reach)) if math.dist(points[k], p) <= reach))
         return best
     bodies, tyres, rims = most(9000.), most(6000.), most(3500.)
     total = bodies * shell + tyres * 4 * tris['Car70Tire'] + rims * 4 * tris['Car70Rim']
     worst, worst_shadow = 0, 0
-    for p in points[::4]:
-        drawn = [key for key, ks in parts.items() if any(math.dist(points[k], p) <= key[3] for k in ks)]
+    boxes = {key: P.bbox([points[k] for k in ks], key[3]) for key, ks in parts.items()}
+    for p in points:
+        drawn = [key for key, ks in parts.items()
+                 if boxes[key][0] <= p[0] <= boxes[key][2] and boxes[key][1] <= p[1] <= boxes[key][3] and
+                 any(math.dist(points[k], p) <= key[3] for k in ks)]
         worst = max(worst, sum(sections[key[1]] for key in drawn))
         worst_shadow = max(worst_shadow, sum(sections[key[1]] for key in drawn if 'Tire' not in key[1] and 'Rim' not in key[1]))
     print('   %d tiles, %d components (and %d box components), the widest %.0f m; at most %d cars within 90 m, %d within 60 m, '
@@ -672,6 +1096,7 @@ def check_budget():
     assert max(spans) <= 20000., ('an instanced component spans more than 200 m', max(spans))
     assert bodies <= 160 and total <= 2.2e6, (bodies, total)
     assert worst <= SECTION_BUDGET, ('the fill draws too many sections in one view', worst)
+    assert worst_shadow <= SHADOW_SECTION_BUDGET, ('the fill casts shadows from too many sections in one view', worst_shadow)
 
 
 def main():

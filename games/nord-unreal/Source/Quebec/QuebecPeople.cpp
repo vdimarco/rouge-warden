@@ -2,6 +2,7 @@
 #include "QuebecGameplay.h"
 #include "QuebecGTA.h"
 #include "QuebecLife.h"
+#include "QuebecParkedCars.h"
 #include "QuebecPedestrian.h"
 #include "QuebecPlayerState.h"
 #include "QuebecPolice.h"
@@ -120,19 +121,24 @@ namespace
         return true;
     }
 
-    // Shortens a throw so the person stops short of a wall, and finds the ground where they land. Returns the ground step.
+    // Shortens a throw so the person stops short of a wall or a parked car, and finds the ground where they land.
+    // Returns the ground step. A hard throw turns the parked car into a real one first (AQuebecParkedCars::ThrowAgainst).
     float FitThrow(const UWorld* World, const AActor* Person, const FVector& Start, const FVector& Along, QuebecKnock::FLaunch& Launch, float Feet)
     {
+        const float Speed = Launch.Forward;
         const float Reach = QuebecKnock::Timeline(Launch).RestForward;
+        const FVector Lift(0., 0., 100.);
         if (Reach > 1.f)
         {
             FHitResult Wall;
             FCollisionQueryParams Query(SCENE_QUERY_STAT(PeopleThrow), false, Person);
-            const FVector Lift(0., 0., 100.);
             if (World->SweepSingleByObjectType(Wall, Start + Lift, Start + Along * Reach + Lift, FQuat::Identity,
                 FCollisionObjectQueryParams(ECC_WorldStatic), FCollisionShape::MakeSphere(35.f), Query))
                 Launch.Forward *= FMath::Clamp((Wall.Time * Reach - 40.f) / Reach, 0.f, 1.f);
         }
+        // The parked cars' boxes are not WorldStatic, and this flight is scripted: the throw's own line finds them.
+        const float Left = QuebecKnock::Timeline(Launch).RestForward;
+        if (Left > 1.f) Launch.Forward *= AQuebecParkedCars::ThrowAgainst(World, Start + Lift, Start + Along * Left + Lift, Speed);
         float Ground = 0.f;
         const FVector Rest = Start + Along * QuebecKnock::Timeline(Launch).RestForward;
         return FloorUnder(World, Rest, Person, Ground) ? Ground + Feet - Start.Z : 0.f;

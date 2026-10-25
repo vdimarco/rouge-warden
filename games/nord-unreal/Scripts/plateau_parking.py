@@ -7,13 +7,21 @@ Inputs:
 - the OSM snapshot and the traffic layout (Data/LaFontaine): the streets, their parking tags, the C++ traffic
   segments with RoadParkingSides and RoadParkingDirections (parking.json), hydrants, crossings, bus stops, lanes;
 - the replica's Streets OBJs (git-ignored, from plateau_replica.py): the SM_Concrete_Collision tops at 17 to 25 cm
-  are the curbs the C++ CurbParking finds, and the replica asphalt is the parking lane;
+  are the curbs the C++ CurbParking finds, and the replica asphalt is the parking lane; and Streets/paint_marks.json,
+  the crosswalks where the replica paints them (it moves a crossing up to 6 m out of the junction box);
 - Streets/street_trees.json (curb extensions), Furniture and Soul placements with the Props footprints;
 - the city's sign-pole inventory (STM bus stop signs) and its parking signs (Data/Plateau/Inventory/park_signs.json,
   read at the moment of plateau_park_signs.MOMENT: a side signed for parking takes cars, and a sign that bans them
-  closes the curb its arrow covers).
+  closes the curb its arrow covers);
+- the side-job spots in Source/Quebec/QuebecJobRules.h (markers, doors, starts, drops and keep-clear points): no car
+  stands on one;
+- the drawn cycle tracks (OSM highway=cycleway): no car stands within TRACK_CLEAR of one. A side a track runs along
+  parks where its tags or the city's signs allow it, against the concrete separator plateau_replica.py builds there
+  (bike_paint.json, tracks).
 
-Outputs: Data/Plateau/ReplicaGeometry/Streets/parked_cars.json and Source/Quebec/LaFontaineParking.h.
+Outputs: Data/Plateau/ReplicaGeometry/Streets/parked_cars.json and Source/Quebec/LaFontaineParking.h. The JSON's
+counts.track_sides lists each side along a track that its tags or signs park: its cars, its separator metres, and
+what kept cars off it.
 
 Run from games/nord-unreal after plateau_replica.py:  python3 Scripts/plateau_parking.py
 """
@@ -22,6 +30,7 @@ import glob
 import hashlib
 import json
 import math
+import re
 import sys
 import xml.etree.ElementTree as ET
 from pathlib import Path
@@ -38,12 +47,15 @@ OUT_JSON = STREETS / 'parked_cars.json'
 OUT_HEADER = ROOT / 'Source/Quebec/LaFontaineParking.h'
 SIGN_POLES = ROOT / 'Data/Plateau/Inventory/sign_poles.json'
 BIKE_PAINT = STREETS / 'bike_paint.json'
+PAINT_MARKS = STREETS / 'paint_marks.json'
+JOB_RULES = ROOT / 'Source/Quebec/QuebecJobRules.h'
 SOURCES = ('Data/LaFontaine/osm.xml', 'Data/LaFontaine/layout.json', 'Data/LaFontaine/parking.json',
            'Data/Plateau/ReplicaGeometry/Streets/manifest.json', 'Data/Plateau/ReplicaGeometry/Streets/street_trees.json',
            'Data/Plateau/ReplicaGeometry/Furniture/placements.json', 'Data/Plateau/ReplicaGeometry/Soul/placements.json',
            'Data/Plateau/ReplicaGeometry/Props/manifest.json', 'Data/Plateau/Inventory/sign_poles.json', GENERATOR,
            'Scripts/prepare_lafontaine.py', 'Data/Plateau/ReplicaGeometry/Streets/bike_paint.json',
-           'Scripts/prepare_car_parking.py', 'Scripts/plateau_park_signs.py', 'Data/Plateau/Inventory/park_signs.json')
+           'Scripts/prepare_car_parking.py', 'Scripts/plateau_park_signs.py', 'Data/Plateau/Inventory/park_signs.json',
+           'Source/Quebec/QuebecJobRules.h', 'Data/Plateau/ReplicaGeometry/Streets/paint_marks.json')
 FRAME = 'x east, y north, cm, z up (the map frame; Unreal x and y alike)'
 
 # The cars: the AQuebecCar fleet (Data/SeventiesCars). All three bodies are 466 cm long and 220 cm wide over the
@@ -83,6 +95,7 @@ JUNCTION_REACH = 4000.           # junctions this near a car are checked
 JUNCTION_LATERAL = 2500.         # ...when they lie this near its street's centre line
 ARM_ANGLE = 25.                  # an arm this far off a car's own run is a cross street
 CROSSING_CLEAR = 650.            # from a crosswalk's centre line: 5 m past its 1.5 m half width
+PAINTED_CLEAR = 500.             # ...and from the paint itself, where the replica puts it (Streets/paint_marks.json)
 LANE_BAND = 150.                 # a painted bike lane this far or more off the curb leaves the 2.3 m parking band
 LANE_OVERHANG = 5.               # a mirror may reach this far over the lane's line
 CROSSWALK_BAND = 315.            # a painted crosswalk in front of a corner: the replica sets it 1.65 m out, 3 m wide
@@ -96,6 +109,10 @@ EXTENSION_CLEAR = 50.
 PROP_CLEAR = 30.
 BOLLARD_CLEAR = 30.
 ZONE_CLEAR = 50.                 # a chantier zone's fence
+JOB_CLEAR = 150.                 # a side-job spot: its marker, door or start stays clear of every car
+TRACK_CLEAR = 165.               # from a drawn cycle track's centre line: the replica paints its edge line here
+LANE_CLEAR = 2 * OWN_LANE        # beside a track off the traffic graph, the lane across to the far curb or the cars
+                                 # parked there (the track pulls the carriageway off the OSM centre line)
 SLACK = .5                       # every clearance holds by this much more, so the rows' rounding cannot break it
 ZONE_SLACK = 10.                 # ...and a stop zone by this much, for the car's own yaw jitter
 SIGN_REACH = 1500.               # a parking-sign pole this near a street's centre line serves its curb
@@ -334,19 +351,19 @@ def bus_lane(t, side):
 def side_parking(t, side, traffic_bit, painted=None, track=False, signed=False):
     """Whether a way's side ('left' or 'right', OSM sense) takes parked cars, and why.
 
-    A reserved bus lane at the curb in its hours wins, then a drawn cycle track along this side (track:
-    prepare_car_parking.track_sides). Then an explicit parking tag for the side, or for both sides. A way that
-    tags only its other side has none on this one. Then the replica's painted bike lane (Streets/bike_paint.json):
-    'band' when it runs outside a 2.3 m parking band, so cars park between it and the curb, 'curb' when it runs
-    along the curb. Otherwise the C++ RoadParkingSides bit decides on a traffic segment, and the same rule
-    (prepare_car_parking.py) on the other streets. Where the tags or the bit leave the side bare, the city's signs
-    win when SIGNED_POLES poles on it allow parking now (signed)."""
+    A reserved bus lane at the curb in its hours wins. Then an explicit parking tag for the side, or for both sides. A
+    way that tags only its other side has none on this one. Along a drawn cycle track (track:
+    prepare_car_parking.track_sides) the side parks only where its tag parks it or the city's signs do; the cars
+    then stand against the track's separator, and TRACK_CLEAR keeps them off the track. Then the replica's painted
+    bike lane (Streets/bike_paint.json): 'band' when it runs outside a 2.3 m parking band, so cars park between it
+    and the curb, 'curb' when it runs along the curb. Otherwise the C++ RoadParkingSides bit decides on a traffic
+    segment, and the same rule (prepare_car_parking.py) on the other streets. Where the tags or the bit leave the
+    side bare, the city's signs win when SIGNED_POLES poles on it allow parking now (signed)."""
     other = 'left' if side == 'right' else 'right'
     cycle = t.get('cycleway:' + side, t.get('cycleway:both', t.get('cycleway', 'no')))
     if bus_lane(t, side):
         return False, 'bus lane'
-    if track:
-        return False, 'bike track'
+    signs = (True, 'beside a track, city signs' if track else 'city signs')
     orientation = t.get(f'parking:{side}:orientation', t.get('parking:both:orientation', 'parallel'))
     for key in (f'parking:{side}', 'parking:both', f'parking:lane:{side}', 'parking:lane:both'):
         if key in t:
@@ -354,10 +371,12 @@ def side_parking(t, side, traffic_bit, painted=None, track=False, signed=False):
             if value in ('perpendicular', 'diagonal') or orientation != 'parallel':
                 return False, 'not parallel'
             if value in PARK_YES:
-                return True, 'tag'
-            return (True, 'city signs') if signed and painted != 'curb' else (False, 'tag no')
+                return True, 'beside a track' if track else 'tag'
+            return signs if signed and painted != 'curb' else (False, 'bike track' if track else 'tag no')
     if any(k in t for k in (f'parking:{other}', f'parking:lane:{other}')):
-        return (True, 'city signs') if signed and painted != 'curb' else (False, 'other side only')
+        return signs if signed and painted != 'curb' else (False, 'bike track' if track else 'other side only')
+    if track:
+        return signs if signed else (False, 'bike track')
     if painted == 'band':
         return True, 'beside a bike lane'
     if painted == 'curb':
@@ -430,6 +449,14 @@ class City:
         self._junctions()
         self.tracks = cycle_tracks([(w['tags'], [self.nodes[r] for r in w['refs']]) for w in self.ways
                                     if w['tags'].get('highway') == 'cycleway'])
+        self.track_grid = Grid(2000.)
+        for k, (a, b) in enumerate(self.tracks):
+            self.track_grid.add(k, bbox([a, b], TRACK_CLEAR + 300))
+        # The replica's separators beside the tracks, per way side ((way, +1 left or -1 right) -> row).
+        self.track_rows = {}
+        if BIKE_PAINT.is_file():
+            for row in json.loads(BIKE_PAINT.read_text()).get('tracks', ()):
+                self.track_rows[(row['way'], 1 if row['side'] == 'L' else -1)] = row
         self.signs = ParkSigns(self)
 
     def track_sides(self, street, seg):
@@ -616,6 +643,10 @@ class Features:
         self.hydrant_grid = Grid(1000.)
         for k, p in enumerate(self.hydrants):
             self.hydrant_grid.add(k, bbox([p], HYDRANT_CLEAR))
+        # The side jobs' markers, doors and starts: their goal discs and columns stand on the ground there.
+        self.jobs, self.job_grid = job_spots(), Grid(1000.)
+        for k, (_, p) in enumerate(self.jobs):
+            self.job_grid.add(k, bbox([p], JOB_CLEAR))
         # Every placed prop keeps its footprint: BIXI docks and bikes in the parking lane, bins and signs at the curb.
         # Their colliders stand on the ground; a lamp's arm or a pole's crossarm over the lane does not count.
         self.props, self.prop_grid = [], Grid(1000.)
@@ -687,6 +718,15 @@ class Features:
         self.crossings, self.crossing_grid = [(r['a'], r['b']) for r in lines], Grid(2000.)
         for k, (a, b) in enumerate(self.crossings):
             self.crossing_grid.add(k, bbox([a, b], CROSSING_CLEAR))
+        # The replica keeps a crosswalk's 3 m band out of the junction box, so its paint can lie up to 6 m from the
+        # OSM way; and it paints a crosswalk at a stop or at traffic lights where none is mapped.
+        if not PAINT_MARKS.is_file():
+            raise SystemExit(f'No {PAINT_MARKS.relative_to(ROOT)}: run Scripts/plateau_replica.py first.')
+        marks = json.loads(PAINT_MARKS.read_text())
+        self.painted = [[tuple(p) for p in row['outline']] for row in marks['crosswalks']]
+        self.painted_grid = Grid(2000.)
+        for k, poly in enumerate(self.painted):
+            self.painted_grid.add(k, bbox(poly, PAINTED_CLEAR))
         for j in city.junctions:
             painted = set()
             near_signal = any(math.dist(j['p'], q) < PAINT_REACH for q in signals)
@@ -714,6 +754,22 @@ class Features:
         self.bus_stops = stops
         self.taxis = [city.nodes[n] for n, t in sorted(city.node_tags.items())
                       if t.get('amenity') == 'taxi' and inside(city.latlon[n])]
+
+
+def job_spots(path=JOB_RULES):
+    """Every FJobSpot in QuebecJobRules.h, as (name, (x, y)): the job markers, the café and the delivery doors, the
+    thief's start, the goons' arena and spawns, the police garage, the poster boards, the fare's drop and the
+    keep-clear points. The header uses the game frame, x east and y north in cm, as the slots do."""
+    text = Path(path).read_text()
+    number = r'(-?\d+(?:\.\d*)?)'
+    out = []
+    for match in re.finditer(r'FJobSpot\s+(\w+)\s*(\[\w*\])?\s*=\s*\{(.*?)\};', text, re.S):
+        name, table, body = match.groups()
+        rows = re.findall(r'\{\s*' + number + r'\s*,\s*' + number + r'\s*,\s*' + number + r'\s*\}', body) if table else \
+            [re.fullmatch(r'\s*' + number + r'\s*,\s*' + number + r'\s*,\s*' + number + r'\s*', body).groups()]
+        out += [(f'{name}[{k}]' if table else name, (float(x), float(y))) for k, (x, y, _) in enumerate(rows)]
+    assert len(out) >= 40, f'{path}: expected the side-job spots, found {len(out)}'
+    return out
 
 
 def hull(points):
@@ -762,8 +818,8 @@ def runs_for(city, curbs):
             for g in s['segs']:
                 k = g['traffic']
                 painted = painted_lane(s, g, side, lane, curbs) if lane is not None else None
-                ok, why = side_parking(t, name, (city.sides[k] & bit) if k is not None else None, painted,
-                                       side in city.track_sides(s, g),
+                track = side in city.track_sides(s, g)
+                ok, why = side_parking(t, name, (city.sides[k] & bit) if k is not None else None, painted, track,
                                        city.signs.signed.get((s['id'], side), 0) >= SIGNED_POLES)
                 reasons[why] = reasons.get(why, 0) + 1
                 direction = city.directions[k] if k is not None else osm_direction(t)
@@ -774,16 +830,18 @@ def runs_for(city, curbs):
                     continue
                 last = groups[-1] if groups else None
                 if last is not None and last['direction'] == direction and last['lane'] == band and \
-                        math.dist(last['b'], g['a']) < 1. and dot(last['u'], u) > math.cos(math.radians(RUN_TURN)) and \
+                        last['track'] == track and math.dist(last['b'], g['a']) < 1. and \
+                        dot(last['u'], u) > math.cos(math.radians(RUN_TURN)) and \
                         straight(last['a'], [h['b'] for h in last['segs']] + [g['b']]):
                     last['b'] = g['b']
                     last['segs'].append(g)
                 else:
-                    groups.append({'a': g['a'], 'b': g['b'], 'u': u, 'direction': direction, 'segs': [g], 'lane': band})
+                    groups.append({'a': g['a'], 'b': g['b'], 'u': u, 'direction': direction, 'segs': [g], 'lane': band,
+                                   'track': track})
             for grp in groups:
                 if grp and math.dist(grp['a'], grp['b']) >= CAR_LENGTH + 2 * CURB_SPAN:
                     run = Run(s, grp['a'], grp['b'], side, grp['direction'], grp['segs'])
-                    run.lane = grp['lane']
+                    run.lane, run.track = grp['lane'], grp['track']
                     out.append(run)
     return out, reasons
 
@@ -866,14 +924,27 @@ class Checker:
                 return 'traffic'
         for si in city.street_grid.query(box):
             clear = self.street_clear(run, city.streets[si])
+            if clear is None:
+                continue
             for g in city.streets[si]['segs']:
                 if poly_seg_dist(poly, g['a'], g['b']) < clear + SLACK:
                     return 'street'
+        if self.lane_short(run, centre, poly) > 0.:
+            return 'lane'
+        for k in city.track_grid.query(box):
+            if poly_seg_dist(poly, *city.tracks[k]) < TRACK_CLEAR + SLACK:
+                return 'track'
         for k in f.hydrant_grid.query(box):
             if poly_point_dist(poly, f.hydrants[k]) < HYDRANT_CLEAR + SLACK:
                 return 'hydrant'
+        for k in f.job_grid.query(box):
+            if poly_point_dist(poly, f.jobs[k][1]) < JOB_CLEAR + SLACK:
+                return 'job spot'
         for k in f.crossing_grid.query(box):
             if poly_seg_dist(poly, *f.crossings[k]) < CROSSING_CLEAR + SLACK:
+                return 'crossing'
+        for k in f.painted_grid.query(box):
+            if poly_poly_dist(poly, f.painted[k]) < PAINTED_CLEAR + SLACK:
                 return 'crossing'
         for k in city.service_grid.query(box):
             item = city.service[k]
@@ -904,13 +975,17 @@ class Checker:
             return 'taxi stand'
         return None
 
-    def centre_line_shortfall(self, run, poly):
-        """How far (cm) a footprint lies inside the clearance of a traffic or street centre line; 0 when clear."""
-        city, box, short = self.city, bbox(poly), 0.
+    def centre_line_shortfall(self, run, poly, centre):
+        """How far (cm) a footprint lies inside the clearance of a traffic or street centre line, or short of the
+        lane beside a track; 0 when clear."""
+        city, box = self.city, bbox(poly)
+        short = self.lane_short(run, centre, poly)
         for i in city.traffic_grid.query(box):
             short = max(short, TRAFFIC_CLEAR + SLACK - poly_seg_dist(poly, *city.traffic[i]))
         for si in city.street_grid.query(box):
             clear = self.street_clear(run, city.streets[si])
+            if clear is None:
+                continue
             for g in city.streets[si]['segs']:
                 short = max(short, clear + SLACK - poly_seg_dist(poly, g['a'], g['b']))
         return short
@@ -919,10 +994,36 @@ class Checker:
     def street_clear(run, street):
         """STREET_CLEAR from another street's centre line. A street off the traffic graph keeps only a 3 m lane
         (OWN_LANE each side of its centre line) from its own: Cartier and Rivard are about 8 m between the curbs and
-        the city signs both of them for parking."""
+        the city signs both of them for parking. Beside a track the lane is measured across instead (lane_short),
+        so its own centre line gives None."""
         own = street is run.street or (street['name'] and street['name'] == run.street['name'] and
                                        abs(dot(unit(street['segs'][0]['a'], street['segs'][-1]['b'])[0], run.u)) > .9)
-        return OWN_LANE if own and not run.street['traffic'] else STREET_CLEAR
+        if own and not run.street['traffic']:
+            return None if run.track else OWN_LANE
+        return STREET_CLEAR
+
+    def lane_short(self, run, centre, poly):
+        """Beside a track on a street off the traffic graph: how far (cm) the lane across the street, from the car's
+        outer side to the far curb or to the nearest car parked across, falls short of LANE_CLEAR; 0 elsewhere. The
+        track lies inside the curbs, so the carriageway's middle is off the OSM centre line."""
+        if not run.track or run.street['traffic']:
+            return 0.
+        n = run.n
+        outer = min(dot(sub(c, run.a), n) for c in poly)
+        along = dot(sub(centre, run.a), run.u)
+        start = max(0., run.street['width'] / 2 - 100.)
+        t = self.f.curbs.ray(run.point(along, -start), (-n[0], -n[1]), CURB_REACH)
+        across = -(start + (CURB_REACH if t is None else t))
+        for other, way, name in self.placed.query(bbox(poly, LANE_CLEAR + 2 * CAR_HALF_W)):
+            if way != run.street['id'] and (not name or name != run.street['name']):
+                continue
+            mid = (sum(p[0] for p in other) / 4, sum(p[1] for p in other) / 4)
+            if abs(dot(sub(mid, centre), run.u)) > CAR_LENGTH:
+                continue
+            inner = max(dot(sub(p, run.a), n) for p in other)
+            if inner < outer:
+                across = max(across, inner)
+        return max(0., LANE_CLEAR + SLACK - (outer - across))
 
     def junction_breach(self, run, centre, poly):
         """A car within JUNCTION_CLEAR of a cross street's curb line, measured square to that street, at a junction
@@ -968,8 +1069,10 @@ def place(city, features, curbs, asphalt, bollards):
     checker = Checker(city, features, asphalt, bollards)
     checker.run_curb, checker.log = {}, {}
     slots, blocked, placed = [], {}, Grid(1000.)
+    checker.placed, checker.track_cars = placed, {}
     stats = {'runs': len(runs), 'side_reasons': dict(sorted(reasons.items())), 'curb_metres': 0, 'vacant': 0}
-    for run in sorted(runs, key=lambda r: (r.street['name'], r.street['id'], r.side, r.a)):
+    # The runs beside a track go last: their lane is measured to the cars already parked across the street.
+    for run in sorted(runs, key=lambda r: (r.track, r.street['name'], r.street['id'], r.side, r.a)):
         profile = curb_profile(run, curbs)
         found = [v for v in profile if v is not None]
         if not found:
@@ -996,12 +1099,13 @@ def place(city, features, curbs, asphalt, bollards):
             for _ in range(3):
                 centre = run.point(along, curb - CAR_HALF_W - gap - swing)
                 poly = rect(centre, yaw, CAR_LENGTH / 2, CAR_HALF_W)
-                short = checker.centre_line_shortfall(run, poly)
+                short = checker.centre_line_shortfall(run, poly, centre)
                 if short <= 0. or gap - short - .5 < CURB_GAP_MIN:
                     break
                 gap -= short + .5
             why = checker.why_not(run, centre, yaw, poly) or \
-                ('car' if any(poly_poly_dist(poly, other) < CAR_GAP + SLACK for other in placed.query(bbox(poly, CAR_GAP))) else None)
+                ('car' if any(poly_poly_dist(poly, other[0]) < CAR_GAP + SLACK
+                              for other in placed.query(bbox(poly, CAR_GAP))) else None)
             if why:
                 blocked[why] = blocked.get(why, 0) + 1
                 log.append((along, why))
@@ -1011,13 +1115,16 @@ def place(city, features, curbs, asphalt, bollards):
             body = 0 if pick < BODY_SHARE[0] else 1 if pick < BODY_SHARE[0] + BODY_SHARE[1] else 2
             paint = min(PAINTS - 1, int(seeded('paint', *key) * PAINTS))
             space = SPACES[body] + SPACE_JITTER[0] + (SPACE_JITTER[1] - SPACE_JITTER[0]) * seeded('space', *key)
-            placed.add(tuple(poly), bbox(poly))
+            placed.add((tuple(poly), run.street['id'], run.street['name']), bbox(poly))
             log.append((along, 'car'))
             if seeded('vacant', *key) < VACANT:
                 stats['vacant'] += 1
             else:
                 traffic = next((g['traffic'] for g in run.segs
                                 if g['traffic'] is not None and seg_dist(centre, g['a'], g['b']) < 2000.), None)
+                if run.track:
+                    side_key = (run.street['id'], run.side)
+                    checker.track_cars[side_key] = checker.track_cars.get(side_key, 0) + 1
                 slots.append({'x': round(centre[0], 1), 'y': round(centre[1], 1), 'z': ROAD_Z,
                               'yaw': round(yaw % 360., 2), 'length': body, 'paint': paint, 'body': body,
                               'street': run.street['name'], 'way': run.street['id'],
@@ -1027,7 +1134,34 @@ def place(city, features, curbs, asphalt, bollards):
             along += space
     stats['blocked_candidates'] = dict(sorted(blocked.items()))
     stats['signs'] = sign_report(city, runs, checker, slots)
+    stats['track_sides'] = track_report(city, runs, checker)
     return slots, stats
+
+
+def track_report(city, runs, checker):
+    """Every way side a drawn track runs along whose tags or signs park it: its cars, the metres of the replica's
+    separator beside the track (bike_paint.json, tracks), the replica's reasons for none (left_out), and the rules
+    its candidates broke ('no curb' where the replica draws no raised curb along it)."""
+    rows = {}
+    for run in runs:
+        if not run.track:
+            continue
+        key = (run.street['id'], run.side)
+        replica = city.track_rows.get(key, {})
+        row = rows.setdefault(key, {'way': run.street['id'], 'name': run.street['name'], 'side': 'L' if run.side > 0 else 'R',
+                                    'allow_poles': city.signs.signed.get(key, 0), 'cars': checker.track_cars.get(key, 0),
+                                    'separator_m': replica.get('buffer_m', 0.), 'left_out': replica.get('left_out', {}),
+                                    'blocked': {}})
+        log = checker.log.get(id(run))
+        for _, why in log or [(0., 'no curb')]:
+            if why != 'car':
+                row['blocked'][why] = row['blocked'].get(why, 0) + 1
+    out = []
+    for key in sorted(rows, key=lambda k: (rows[k]['name'], int(k[0]), k[1])):
+        row = rows[key]
+        row['blocked'] = dict(sorted(row['blocked'].items(), key=lambda kv: (-kv[1], kv[0])))
+        out.append(row)
+    return out
 
 
 SIGN_NEAR = 1500.        # a pole whose signs allow parking has a car this near on its curb, or a reason
@@ -1140,7 +1274,8 @@ def build(json_path=OUT_JSON, header_path=OUT_HEADER):
         'rules_cm': {'car_length': CAR_LENGTH, 'car_width': CAR_HALF_W * 2, 'spaces': list(SPACES),
                      'space_jitter': list(SPACE_JITTER), 'curb_gap': list(CURB_GAP), 'curb_top': list(CURB_TOP),
                      'curb_spread': CURB_SPREAD, 'traffic_clear': TRAFFIC_CLEAR, 'street_clear': STREET_CLEAR,
-                     'junction_clear': JUNCTION_CLEAR, 'crossing_clear': CROSSING_CLEAR, 'hydrant_clear': HYDRANT_CLEAR,
+                     'junction_clear': JUNCTION_CLEAR, 'crossing_clear': CROSSING_CLEAR,
+                     'painted_crosswalk_clear': PAINTED_CLEAR, 'hydrant_clear': HYDRANT_CLEAR,
                      'service_clear': SERVICE_CLEAR, 'bus_zone': list(BUS_ZONE), 'taxi_zone': TAXI_ZONE,
                      'extension_clear': EXTENSION_CLEAR, 'prop_clear': PROP_CLEAR, 'bollard_clear': BOLLARD_CLEAR,
                      'chantier_clear': ZONE_CLEAR, 'vacant_share': VACANT, 'yaw_jitter_deg': YAW_JITTER},

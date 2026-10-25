@@ -1,12 +1,15 @@
 {
   "version": 1,
-  "generator_sha256": "3d5a3f60a7dd99059c464905f55e8d941d4b120c8a141ebf73a7eb785a13dfe9",
+  "generator_sha256": "cd4f38c0698cb15c073799ddce023c3a14a2490838c14790ba394c31ec0a77e8",
   "source_hashes": {
     "Data/LaFontaine/osm.xml": "fe4410d45007a627bf6d9b9ddeeae329fa9cdd7492dfb5fa6beff851e7cf8f86",
     "Data/LaFontaine/layout.json": "4238d6ed45d5fb890e0f8dbcb672de0803c6dc7079b0b6a86b386d82ebbb4250",
     "Data/Plateau/ContextGeometry/context.json": "74764fd01528c320439692fdc6eefd3394770e547f425b886ceabbd73fc9392a",
     "Data/Plateau/EdgesGeometry/edges.json": "9b2adcc383903d64014e5a09851cea786aea5af4307242f5a37dc83362323a35",
-    "Source/Quebec/LaFontaineMap.h": "80a96e858c315584598acd8d87dfb758ba45f64a58ccd4b6f5222ddb56ff1700"
+    "Source/Quebec/LaFontaineMap.h": "b6881221df8fc3878f0ef441856a18b0af51a9db9af2c417ebb715ab55ce7b1b"
+  },
+  "source_hash_scope": {
+    "Source/Quebec/LaFontaineMap.h": "the RoadSegments and RoadSegmentWidths arrays only"
   },
   "source": "Data/LaFontaine/osm.xml",
   "attribution": "(c) OpenStreetMap contributors, ODbL 1.0",

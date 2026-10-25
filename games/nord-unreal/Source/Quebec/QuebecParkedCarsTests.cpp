@@ -1,10 +1,15 @@
 #include "QuebecParkedCars.h"
 #include "QuebecGameplay.h"
+#include "QuebecKnockModel.h"
 #include "QuebecParkedRules.h"
+#include "QuebecPedestrian.h"
+#include "QuebecPeople.h"
+#include "QuebecPolice.h"
 #include "QuebecTraces.h"
 #include "LaFontaineParking.h"
 
 #if WITH_DEV_AUTOMATION_TESTS
+#include "Components/CapsuleComponent.h"
 #include "Components/HierarchicalInstancedStaticMeshComponent.h"
 #include "Engine/World.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -76,15 +81,47 @@ bool FQuebecParkedCarsTest::RunTest(const FString& Parameters)
     TestEqual(TEXT("Bodies cull at 90 m"), Fill->GroupOf(First.Tile, First.BodyGroup)->InstanceEndCullDistance, BodyCullEnd);
     TestEqual(TEXT("Rims cull at 35 m"), Fill->GroupOf(First.Tile, RimGroup)->InstanceEndCullDistance, RimCullEnd);
     TestEqual(TEXT("Every space is shown"), Fill->GetShownCount(), Count);
+    TestTrue(TEXT("The shell lights the distance fields"), Fill->GroupOf(First.Tile, First.BodyGroup)->bAffectDistanceFieldLighting != 0);
+    TestTrue(TEXT("The tyres and rims do not"), !Fill->GroupOf(First.Tile, TireGroup)->bAffectDistanceFieldLighting &&
+        !Fill->GroupOf(First.Tile, RimGroup)->bAffectDistanceFieldLighting);
 
-    // The boxes ignore the Visibility channel: a floor probe down onto a shown space passes through to the road.
+    // The boxes are WorldDynamic: a floor probe by the Visibility channel and a ground query by the WorldStatic
+    // object type (GroundPoint, WheelSupport, GroundAt, FloorUnder) both pass through to the road.
+    const ECollisionChannel BoxType = Fill->TileBoxes[First.Tile]->GetCollisionObjectType();
+    TestTrue(TEXT("The boxes are WorldDynamic bodies"), BoxType == ECC_WorldDynamic);
     const FVector Over = Fill->GetSlotTransform(5).GetLocation();
     FHitResult Floor;
     const bool bFloor = World->LineTraceSingleByChannel(Floor, Over + FVector(0., 0., 300.), Over - FVector(0., 0., 300.), ECC_Visibility);
     TestFalse(TEXT("A Visibility floor probe never lands on a parked car"), bFloor && Floor.GetActor() == Fill);
+    FHitResult Ground;
+    const bool bGround = World->LineTraceSingleByObjectType(Ground, Over + FVector(0., 0., 300.), Over - FVector(0., 0., 300.),
+        FCollisionObjectQueryParams(ECC_WorldStatic));
+    TestFalse(TEXT("A WorldStatic ground query never lands on a parked car"), bGround && Ground.GetActor() == Fill);
     FHitResult Pawn;
     const bool bPawn = World->LineTraceSingleByChannel(Pawn, Over + FVector(-400., 0., 0.), Over + FVector(400., 0., 0.), ECC_Pawn);
     TestTrue(TEXT("Cars and people still stop at it"), bPawn && Pawn.GetActor() == Fill);
+    FHitResult Obstacle;
+    const bool bObstacle = World->LineTraceSingleByObjectType(Obstacle, Over + FVector(-400., 0., 0.), Over + FVector(400., 0., 0.),
+        FCollisionObjectQueryParams(ECC_WorldDynamic));
+    TestTrue(TEXT("The officers' steering probe sees it"), bObstacle && Obstacle.GetActor() == Fill);
+    // An officer's capsule lets Pawn bodies through, so only a box of another type stops an officer.
+    if (AQuebecOfficer* Officer = World->SpawnActor<AQuebecOfficer>(Over + FVector(0., 0., 2000.), FRotator::ZeroRotator, Spawn))
+    {
+        TestTrue(TEXT("An officer is blocked by a parked car"), Officer->GetCapsuleComponent()->GetCollisionResponseToChannel(BoxType) == ECR_Block);
+        Officer->Destroy();
+    }
+
+    // A cone knocked at a parked car stops at its side: the sweep misses the WorldDynamic box, the flight's line finds it.
+    const FTransform ConeSpace = Fill->GetSlotTransform(10);
+    AQuebecStreetProp* Flying = AQuebecStreetProp::SpawnProp(World, AQuebecStreetProp::KindCone,
+        ConeSpace.TransformPosition(FVector(0., -300., 7. - PivotHeight)), 0.f);
+    if (TestNotNull(TEXT("A cone to knock"), Flying))
+    {
+        const FVector Toward = ConeSpace.GetRotation().RotateVector(FVector(0., 1., 0.));
+        TestTrue(TEXT("The cone is knocked toward the car"), Flying->Knock(Toward * 1500., Flying->GetActorLocation() - Toward * 200.));
+        TestTrue(TEXT("It lands short of the parked car's side"), ConeSpace.InverseTransformPosition(FVector(Flying->RestPoint)).Y < -BoxHalfY);
+        TestTrue(TEXT("A knocked cone leaves the car parked"), Fill->IsSlotShown(10));
+    }
 
     // A gentle bump leaves the car parked; a hard one turns it into a real car of the same paint and body.
     const auto BoxHit = [Fill](int32 Slot)
@@ -110,6 +147,8 @@ bool FQuebecParkedCarsTest::RunTest(const FString& Parameters)
     Fill->TileBoxes[Fill->Parts[1].Tile]->GetInstanceTransform(Fill->Parts[1].Box, Box, true);
     TestTrue(TEXT("Its box left the space"), Box.GetLocation().Z < Fill->GetSlotTransform(1).GetLocation().Z - 400.);
     TestTrue(TEXT("Promoted cars are not CityParked"), !Rammed->ActorHasTag(TEXT("CityParked")) && !Rammed->bTraffic);
+    const UPrimitiveComponent* Hull = Cast<UPrimitiveComponent>(Rammed->GetRootComponent());
+    TestTrue(TEXT("A real car's hull is blocked by a parked car"), Hull && Hull->GetCollisionResponseToChannel(BoxType) == ECR_Block);
     TestNull(TEXT("A space promotes once"), Fill->Promote(1));
 
     // A shot's line across a shown space promotes it and stops at its side; one over the roof does not.
@@ -166,6 +205,50 @@ bool FQuebecParkedThrownPersonTest::RunTest(const FString& Parameters)
     Slow.bBlockingHit = true;
     Slow.Item = Fill->Parts[6].Box;
     TestNull(TEXT("A walk into a parked car does not promote it"), AQuebecParkedCars::PromoteOnBody(Slow, FVector(0., 400., 0.), Person));
+    return true;
+}
+
+// A resident or a pedestrian thrown at a parked car: their throw is scripted, so its own line meets the car. A hard
+// throw promotes the space and the person stops at the car's side; a soft one stops there and leaves it parked.
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FQuebecParkedThrownResidentTest, "Quebec.Parked.ThrownResident", EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+bool FQuebecParkedThrownResidentTest::RunTest(const FString& Parameters)
+{
+    using namespace QuebecParkedRules;
+    UWorld* World = NewParkedWorld();
+    if (!TestNotNull(TEXT("Parked-car test world"), World)) return false;
+    ON_SCOPE_EXIT { World->DestroyWorld(false); };
+    FActorSpawnParameters Spawn;
+    Spawn.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+    AQuebecParkedCars* Fill = World->SpawnActor<AQuebecParkedCars>(FVector::ZeroVector, FRotator::ZeroRotator, Spawn);
+    if (!TestNotNull(TEXT("Parked-car fill"), Fill)) return false;
+    Fill->PrepareSlots();
+    Fill->Build();
+    World->TimeSeconds = 5.;
+    // Each person stands on the road 3 m out from a car's centre line, 2 m from its side, and is thrown square at it.
+    const auto Beside = [Fill](int32 Slot) { return Fill->GetSlotTransform(Slot).TransformPosition(FVector(0., -300., 7. - PivotHeight)); };
+    const auto Toward = [Fill](int32 Slot) { return Fill->GetSlotTransform(Slot).GetRotation().RotateVector(FVector(0., 1., 0.)); };
+    const auto RestOf = [](const AQuebecParkResident* Resident)
+    {
+        return QuebecKnock::Timeline(QuebecPeopleVisuals::Launch(Resident->KnockPush, Resident->KnockLieSeconds, Resident->KnockGround)).RestForward;
+    };
+    AQuebecParkResident* Hard = World->SpawnActor<AQuebecParkResident>(Beside(7), FRotator::ZeroRotator, Spawn);
+    if (!TestNotNull(TEXT("A resident to throw hard"), Hard)) return false;
+    TestTrue(TEXT("The resident is thrown at 12 m/s"), Hard->Knock(Toward(7) * 1200. + FVector(0., 0., 400.), Beside(7) - Toward(7) * 300.));
+    TestFalse(TEXT("A resident thrown hard at a parked car promotes it"), Fill->IsSlotShown(7));
+    TestEqual(TEXT("One promoted space"), Fill->GetPromotedCount(), 1);
+    TestTrue(TEXT("The resident stops at the car's side, not inside it"), RestOf(Hard) <= 200.f - 35.f && RestOf(Hard) > 50.f);
+
+    AQuebecParkResident* Soft = World->SpawnActor<AQuebecParkResident>(Beside(8), FRotator::ZeroRotator, Spawn);
+    if (!TestNotNull(TEXT("A resident to push"), Soft)) return false;
+    TestTrue(TEXT("The resident is pushed at 6 m/s"), Soft->Knock(Toward(8) * 600. + FVector(0., 0., 400.), Beside(8) - Toward(8) * 300.));
+    TestTrue(TEXT("A soft throw leaves the car parked"), Fill->IsSlotShown(8));
+    TestTrue(TEXT("And stops the person at its side"), RestOf(Soft) <= 200.f - 35.f);
+
+    AQuebecPedestrian* Walker = World->SpawnActor<AQuebecPedestrian>(Beside(9), FRotator::ZeroRotator, Spawn);
+    if (!TestNotNull(TEXT("A pedestrian to throw"), Walker)) return false;
+    TestTrue(TEXT("The pedestrian is thrown at 12 m/s"), Walker->Knock(Toward(9) * 1200. + FVector(0., 0., 400.), Beside(9) - Toward(9) * 300.));
+    TestFalse(TEXT("A pedestrian thrown hard at a parked car promotes it"), Fill->IsSlotShown(9));
+    TestEqual(TEXT("Two promoted spaces"), Fill->GetPromotedCount(), 2);
     return true;
 }
 #endif

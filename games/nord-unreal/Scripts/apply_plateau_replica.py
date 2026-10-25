@@ -201,6 +201,50 @@ def prop_scale_range(props_meta, key):
     return (float(found[0]), float(found[1])) if found else None
 
 
+# Parking-sign plates. The Props sign_parking prop holds one plate face per sign family (plate_faces) and an arrow per
+# direction and plate height (plate_arrows); see Props/README.md. A Furniture row shows the face its top sign's code
+# calls for and the arrow it carries, and leaves every other face and arrow out, as a hung sign leaves out its post.
+# The family is the code's group, its first letter, in the city's codification (Ville de Montréal, Catalogue des
+# panneaux, signalisation écrite, 2015, "Principes de base du code de panneaux"): A no stopping, S no parking,
+# P limited parking, R no parking except. In group R, the codes of the catalogue's page 1-5-2 reserve a space for
+# disabled people (P-150-5), and the residents' permit zones (SRRR) say "EXCEPTE S3R" in their description. A no
+# stopping or no parking sign whose description gives hours shows the face with hours.
+PARKING_GROUPS = {'A': 'no_stopping', 'S': 'no_parking', 'P': 'limited', 'R': 'reserved'}
+PARKING_CODES = {'LAC-8': 'no_stopping'}   # the bus zone's "ARRÊT INTERDIT" of the road-sign set, on a parking pole
+PARKING_DISABLED = frozenset(
+    ['R-TD', 'RD-TT', 'RD-SA', 'RD-SB', 'RD-SC'] + [f'RD-J{c}' for c in 'ABCDEFGHIJKLMNO'] +
+    [f'RV-J{c}' for c in 'ABCDEFGI'])
+PARKING_HOURS = re.compile(r'\d{1,2} ?h')
+
+
+def parking_face(code, text):
+    """The plate face (a Props plate_faces key) of a parking sign, from its city code and that code's description."""
+    family = PARKING_CODES.get(code) or ('disabled' if code in PARKING_DISABLED else PARKING_GROUPS.get(code[:1]))
+    assert family, f'No plate face for the parking-sign code {code!r} ({text!r}); see Props/README.md'
+    if family == 'reserved' and 'S3R' in text:
+        return 'permit'
+    if family in ('no_stopping', 'no_parking') and PARKING_HOURS.search(text):
+        return family + '_hours'
+    return family
+
+
+def row_without(row, meta):
+    """The parts a placement leaves out: its row's "without" (a hung sign's post), and on a parking sign every plate
+    face and arrow but its own (meta is the prop's Props manifest entry)."""
+    without = set(row.get('without', ()))
+    faces = (meta or {}).get('plate_faces')
+    if not faces:
+        return without
+    face = faces[parking_face(row['code'], row.get('text', ''))]
+    arrows = meta.get('plate_arrows', {})
+    shown = set(face['parts'])
+    arrow = arrows.get(row.get('arrow', 'none'), {}).get(face['plate'])
+    if arrow:
+        shown.add(arrow)
+    every = {p for f in faces.values() for p in f['parts']} | {p for a in arrows.values() for p in a.values()}
+    return without | (every - shown)
+
+
 # The fourth pass's shared keys, as the generators agreed them (plateau_textures.py writes the sets, any layer may
 # use the keys): the set each takes and what the contract asks of its material. plan() checks the loaded sets against
 # this table, so a set that drifts (an unmasked cedar, cards that wrap in V) fails before the host imports anything,
@@ -1076,9 +1120,13 @@ def plan(root=ROOT):
                 missing[key] = missing.get(key, 0) + 1
                 continue
             # A prop hung on another one leaves parts out: a sign on a city pole has no post of its own, a cobra head
-            # on a wooden utility pole no steel pole (Furniture rows with "without").
-            without = set(row.get('without', ()))
+            # on a wooden utility pole no steel pole (Furniture rows with "without"). A parking sign shows only the
+            # plate face and arrow its code and arrow call for.
+            without = row_without(row, props_meta.get(key))
             assert without <= {b.get('part') for b in parts[key]}, f'{key}: no part {sorted(without)} to leave out'
+            if props_meta.get(key, {}).get('plate_faces'):
+                face = parking_face(row['code'], row.get('text', ''))
+                out.setdefault('plate_faces', {})[face] = out.get('plate_faces', {}).get(face, 0) + 1
             # A prop that gives a scale range (a pumpkin's pie, carving and large sizes) keeps every placement in it.
             span = prop_scale_range(props_meta, key)
             scale = float(row.get('scale', 1.))
@@ -2324,6 +2372,8 @@ def main():
                                                                        'scale': [min(t[2] for t in i['transforms']),
                                                                                  max(t[2] for t in i['transforms'])]}
                                             for i in the_plan['instances'] if i['prop'] in OCTOBER_PROPS},
+                          # The parking signs per plate face (row_without): the city's sign families.
+                          'plate_faces': dict(sorted(the_plan.get('plate_faces', {}).items())),
                           'hidden_collision_actors': [a['label'] for a in the_plan['actors'] if a['collision_only']],
                           'shadowless_materials': sorted({meshes[a['mesh']]['material'].rsplit('/', 1)[1]
                                                           for a in the_plan['actors'] if not a['shadow']}),

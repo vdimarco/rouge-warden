@@ -497,7 +497,7 @@
    "mesh": "SM_Props_sign_parking_plate",
    "material": "SignBack",
    "collision": "none",
-   "triangles": 36,
+   "triangles": 84,
    "bounds_cm": [
     2.4,
     -15.0,
@@ -508,14 +508,14 @@
    ],
    "prop": "sign_parking",
    "part": "plate",
-   "sha256": "720d462428a35fc4abeeed82ac432c953fa8876394a1303b647c05d56e5e6027"
+   "sha256": "65c0034a831fed368e07e5076d3fabea1d9fd29a2d0ab0fad67e8be85225c758"
   },
   {
    "file": "sign_parking_face_white.obj",
    "mesh": "SM_Props_sign_parking_face_white",
    "material": "SignWhite",
    "collision": "none",
-   "triangles": 2,
+   "triangles": 14,
    "bounds_cm": [
     3.84,
     -15.0,
@@ -526,43 +526,367 @@
    ],
    "prop": "sign_parking",
    "part": "face_white",
-   "sha256": "d3e40d1b62b2f1b697879cfa4a906e5168882f5f0e96aaa0ab6ed3bc448f8c9d"
+   "sha256": "52a76f878d192bc8000ffea8c51986a786b6392dd840f386af99bfa525426233"
   },
   {
-   "file": "sign_parking_face_black.obj",
-   "mesh": "SM_Props_sign_parking_face_black",
-   "material": "SignBlack",
+   "file": "sign_parking_plate_tall.obj",
+   "mesh": "SM_Props_sign_parking_plate_tall",
+   "material": "SignBack",
    "collision": "none",
-   "triangles": 265,
+   "triangles": 84,
    "bounds_cm": [
-    3.92,
-    -12.0,
-    180.6,
-    3.94,
-    12.0,
-    216.5
+    2.4,
+    -15.0,
+    162.5,
+    3.8,
+    15.0,
+    222.5
    ],
    "prop": "sign_parking",
-   "part": "face_black",
-   "sha256": "b046bc0e47c4048868c80496a163913ef9f8115f2bca6f85af78aba2ef420fa0"
+   "part": "plate_tall",
+   "sha256": "86e06994e5670af716a1043c6303aba7f90ad7184d24b4a321644e7aaa4e1d4c"
+  },
+  {
+   "file": "sign_parking_face_white_tall.obj",
+   "mesh": "SM_Props_sign_parking_face_white_tall",
+   "material": "SignWhite",
+   "collision": "none",
+   "triangles": 14,
+   "bounds_cm": [
+    3.84,
+    -15.0,
+    162.5,
+    3.84,
+    15.0,
+    222.5
+   ],
+   "prop": "sign_parking",
+   "part": "face_white_tall",
+   "sha256": "b9751a2dbf7a256f32c43b1d8e6add2a9cda30eef5bd3401a1f9f6c1a5e73fad"
   },
   {
    "file": "sign_parking_face_red.obj",
    "mesh": "SM_Props_sign_parking_face_red",
    "material": "SignRed",
    "collision": "none",
-   "triangles": 42,
+   "triangles": 58,
    "bounds_cm": [
     3.97,
-    -7.6,
-    203.4,
+    -9.6,
+    201.6,
     4.0,
-    7.6,
-    218.6
+    9.6,
+    220.8
    ],
    "prop": "sign_parking",
    "part": "face_red",
-   "sha256": "c4d2980bf378653b74f9bde658407038c31944af6cd597e89ccc02cc3c8706ce"
+   "sha256": "516db64595b8bb71154821a776daf374dcfb82483b24fa3d5bff32d6ada5c1ee"
+  },
+  {
+   "file": "sign_parking_face_black_no_stopping.obj",
+   "mesh": "SM_Props_sign_parking_face_black_no_stopping",
+   "material": "SignBlack",
+   "collision": "none",
+   "triangles": 38,
+   "bounds_cm": [
+    3.92,
+    -14.5,
+    178.0,
+    3.92,
+    14.5,
+    222.0
+   ],
+   "prop": "sign_parking",
+   "part": "face_black_no_stopping",
+   "sha256": "6fa341c74609719694d9269e46dedb55ce5ab376c8f1d8e01784e81aa0de2ee1"
+  },
+  {
+   "file": "sign_parking_face_black_no_stopping_hours.obj",
+   "mesh": "SM_Props_sign_parking_face_black_no_stopping_hours",
+   "material": "SignBlack",
+   "collision": "none",
+   "triangles": 194,
+   "bounds_cm": [
+    3.92,
+    -14.5,
+    178.0,
+    3.92,
+    14.5,
+    222.0
+   ],
+   "prop": "sign_parking",
+   "part": "face_black_no_stopping_hours",
+   "sha256": "2399186c05286f8519f729024b4b3a97b34dc417b0e78a9633eb149db1a001fc"
+  },
+  {
+   "file": "sign_parking_face_black_no_parking.obj",
+   "mesh": "SM_Props_sign_parking_face_black_no_parking",
+   "material": "SignBlack",
+   "collision": "none",
+   "triangles": 48,
+   "bounds_cm": [
+    3.92,
+    -14.5,
+    178.0,
+    3.94,
+    14.5,
+    222.0
+   ],
+   "prop": "sign_parking",
+   "part": "face_black_no_parking",
+   "sha256": "4e63a997dd31489d2819b743a93e7dac3145f215d071125056d3303dbc6c77b3"
+  },
+  {
+   "file": "sign_parking_face_black_no_parking_hours.obj",
+   "mesh": "SM_Props_sign_parking_face_black_no_parking_hours",
+   "material": "SignBlack",
+   "collision": "none",
+   "triangles": 338,
+   "bounds_cm": [
+    3.92,
+    -14.5,
+    178.0,
+    3.94,
+    14.5,
+    222.0
+   ],
+   "prop": "sign_parking",
+   "part": "face_black_no_parking_hours",
+   "sha256": "ecee6d0141baf0c19d4bb3bb48485acb612c64549a09d22230efe9cdbf7a8157"
+  },
+  {
+   "file": "sign_parking_face_black_limited.obj",
+   "mesh": "SM_Props_sign_parking_face_black_limited",
+   "material": "SignBlack",
+   "collision": "none",
+   "triangles": 379,
+   "bounds_cm": [
+    3.92,
+    -14.5,
+    178.0,
+    3.94,
+    14.5,
+    222.0
+   ],
+   "prop": "sign_parking",
+   "part": "face_black_limited",
+   "sha256": "bfd1fe6c0f5336a82221e07d71698d8c5a8dbc571b4db0fa944b6fe9fe373370"
+  },
+  {
+   "file": "sign_parking_face_black_reserved.obj",
+   "mesh": "SM_Props_sign_parking_face_black_reserved",
+   "material": "SignBlack",
+   "collision": "none",
+   "triangles": 128,
+   "bounds_cm": [
+    3.92,
+    -14.5,
+    178.0,
+    3.94,
+    14.5,
+    222.0
+   ],
+   "prop": "sign_parking",
+   "part": "face_black_reserved",
+   "sha256": "9338b616049e89ce495dea2b8d080f690a7721673c774e67319ee63a7a64865c"
+  },
+  {
+   "file": "sign_parking_face_black_permit.obj",
+   "mesh": "SM_Props_sign_parking_face_black_permit",
+   "material": "SignBlack",
+   "collision": "none",
+   "triangles": 512,
+   "bounds_cm": [
+    3.92,
+    -14.5,
+    163.0,
+    3.94,
+    14.5,
+    222.0
+   ],
+   "prop": "sign_parking",
+   "part": "face_black_permit",
+   "sha256": "60bdc5fad85676e35c26a01fbf4a40251f987097aff9a9a3e9935ce0fa7b3e04"
+  },
+  {
+   "file": "sign_parking_face_red_permit.obj",
+   "mesh": "SM_Props_sign_parking_face_red_permit",
+   "material": "SignRed",
+   "collision": "none",
+   "triangles": 14,
+   "bounds_cm": [
+    3.95,
+    -12.7,
+    178.2,
+    3.95,
+    -0.5,
+    186.8
+   ],
+   "prop": "sign_parking",
+   "part": "face_red_permit",
+   "sha256": "734a8da27c3dc6ec97eae27128410759a22afbdd8cc707fb3ceec18654423c53"
+  },
+  {
+   "file": "sign_parking_face_white_permit.obj",
+   "mesh": "SM_Props_sign_parking_face_white_permit",
+   "material": "SignWhite",
+   "collision": "none",
+   "triangles": 102,
+   "bounds_cm": [
+    3.97,
+    -10.35,
+    184.85,
+    3.97,
+    -2.85,
+    186.15
+   ],
+   "prop": "sign_parking",
+   "part": "face_white_permit",
+   "sha256": "0c4b98b5d0647d15287f78cc7936984bf8573a231e38e0a4ba1c63198ccdf8a8"
+  },
+  {
+   "file": "sign_parking_face_black_disabled.obj",
+   "mesh": "SM_Props_sign_parking_face_black_disabled",
+   "material": "SignBlack",
+   "collision": "none",
+   "triangles": 108,
+   "bounds_cm": [
+    3.92,
+    -14.5,
+    163.0,
+    3.94,
+    14.5,
+    222.0
+   ],
+   "prop": "sign_parking",
+   "part": "face_black_disabled",
+   "sha256": "6e610222b4f4608097f98637b5d4a19b9bd6bc664ea3fd91b09e58793cde2d47"
+  },
+  {
+   "file": "sign_parking_face_green.obj",
+   "mesh": "SM_Props_sign_parking_face_green",
+   "material": "SignGreen",
+   "collision": "none",
+   "triangles": 56,
+   "bounds_cm": [
+    3.97,
+    -8.2,
+    180.8,
+    3.97,
+    8.2,
+    197.2
+   ],
+   "prop": "sign_parking",
+   "part": "face_green",
+   "sha256": "ef5ebb74a160d8c50f943101cfefbc76582956167c15d54fe2f19fe36b4f811c"
+  },
+  {
+   "file": "sign_parking_arrow_left.obj",
+   "mesh": "SM_Props_sign_parking_arrow_left",
+   "material": "SignBlack",
+   "collision": "none",
+   "triangles": 3,
+   "bounds_cm": [
+    3.92,
+    -10.0,
+    179.8,
+    3.92,
+    10.5,
+    186.2
+   ],
+   "prop": "sign_parking",
+   "part": "arrow_left",
+   "sha256": "527a65e1a07b5320ce06bf929a09255660676e7558df9f1b58e58ad42951eb0e"
+  },
+  {
+   "file": "sign_parking_arrow_left_tall.obj",
+   "mesh": "SM_Props_sign_parking_arrow_left_tall",
+   "material": "SignBlack",
+   "collision": "none",
+   "triangles": 3,
+   "bounds_cm": [
+    3.92,
+    -10.0,
+    164.8,
+    3.92,
+    10.5,
+    171.2
+   ],
+   "prop": "sign_parking",
+   "part": "arrow_left_tall",
+   "sha256": "914a385e7c7fcda6949d8d55e07380f8f73314d34586102cc56c572dd2e032c7"
+  },
+  {
+   "file": "sign_parking_arrow_right.obj",
+   "mesh": "SM_Props_sign_parking_arrow_right",
+   "material": "SignBlack",
+   "collision": "none",
+   "triangles": 3,
+   "bounds_cm": [
+    3.92,
+    -10.5,
+    179.8,
+    3.92,
+    10.0,
+    186.2
+   ],
+   "prop": "sign_parking",
+   "part": "arrow_right",
+   "sha256": "23bb8074e0f454ad318647dcf62a13b9b10ae1b0a19c71c1830a0dd4c741eb89"
+  },
+  {
+   "file": "sign_parking_arrow_right_tall.obj",
+   "mesh": "SM_Props_sign_parking_arrow_right_tall",
+   "material": "SignBlack",
+   "collision": "none",
+   "triangles": 3,
+   "bounds_cm": [
+    3.92,
+    -10.5,
+    164.8,
+    3.92,
+    10.0,
+    171.2
+   ],
+   "prop": "sign_parking",
+   "part": "arrow_right_tall",
+   "sha256": "38d12095008e66a57b58d213349e2ca1deb6a8fc194eda054380961d9199f009"
+  },
+  {
+   "file": "sign_parking_arrow_both.obj",
+   "mesh": "SM_Props_sign_parking_arrow_both",
+   "material": "SignBlack",
+   "collision": "none",
+   "triangles": 6,
+   "bounds_cm": [
+    3.92,
+    -10.0,
+    179.8,
+    3.92,
+    10.0,
+    186.2
+   ],
+   "prop": "sign_parking",
+   "part": "arrow_both",
+   "sha256": "93496423255ed4154ba67a433f69775ff4068ad609aa65b85fec1dce2933a533"
+  },
+  {
+   "file": "sign_parking_arrow_both_tall.obj",
+   "mesh": "SM_Props_sign_parking_arrow_both_tall",
+   "material": "SignBlack",
+   "collision": "none",
+   "triangles": 6,
+   "bounds_cm": [
+    3.92,
+    -10.0,
+    164.8,
+    3.92,
+    10.0,
+    171.2
+   ],
+   "prop": "sign_parking",
+   "part": "arrow_both_tall",
+   "sha256": "7e89dbd7af85c081ed64955c389ff5cb3cbc04246e7339fdfabdf5d9d5b55217"
   },
   {
    "file": "bixi_dock_platform.obj",
@@ -3670,6 +3994,11 @@
    "roughness": 0.4,
    "metallic": 0
   },
+  "SignGreen": {
+   "base_color_srgb": "#007a3d",
+   "roughness": 0.4,
+   "metallic": 0
+  },
   "SignBack": {
    "base_color_srgb": "#a9adb0",
    "roughness": 0.4,
@@ -4764,9 +5093,9 @@
   },
   "sign_parking": {
    "kind": "street",
-   "description": "Montréal parking sign (R-PF): white plate, red circle and slash over a black P, \"9h-23h / EXCEPTÉ S3R\" and a direction arrow, on a galvanised post.",
-   "pivot": "post base centre; plate faces +X",
-   "triangles": 369,
+   "description": "Montréal parking sign on a galvanised post, with one plate face per sign family of the city clip (plate_faces): no stopping, no parking, limited parking, reserved, the residents' permit zone (SRRR) and the disabled space, each with the arrows it may carry (plate_arrows). A placement shows the face its code calls for and leaves the others out.",
+   "pivot": "post base centre; plate faces +X; every plate hangs from the same top (222.5 cm)",
+   "triangles": 2219,
    "budget": 2500,
    "bounds_cm": [
     -3.3,
@@ -4789,13 +5118,85 @@
      "mesh": "SM_Props_sign_parking_face_white",
      "material": "SignWhite"
     },
-    "face_black": {
-     "mesh": "SM_Props_sign_parking_face_black",
-     "material": "SignBlack"
+    "plate_tall": {
+     "mesh": "SM_Props_sign_parking_plate_tall",
+     "material": "SignBack"
+    },
+    "face_white_tall": {
+     "mesh": "SM_Props_sign_parking_face_white_tall",
+     "material": "SignWhite"
     },
     "face_red": {
      "mesh": "SM_Props_sign_parking_face_red",
      "material": "SignRed"
+    },
+    "face_black_no_stopping": {
+     "mesh": "SM_Props_sign_parking_face_black_no_stopping",
+     "material": "SignBlack"
+    },
+    "face_black_no_stopping_hours": {
+     "mesh": "SM_Props_sign_parking_face_black_no_stopping_hours",
+     "material": "SignBlack"
+    },
+    "face_black_no_parking": {
+     "mesh": "SM_Props_sign_parking_face_black_no_parking",
+     "material": "SignBlack"
+    },
+    "face_black_no_parking_hours": {
+     "mesh": "SM_Props_sign_parking_face_black_no_parking_hours",
+     "material": "SignBlack"
+    },
+    "face_black_limited": {
+     "mesh": "SM_Props_sign_parking_face_black_limited",
+     "material": "SignBlack"
+    },
+    "face_black_reserved": {
+     "mesh": "SM_Props_sign_parking_face_black_reserved",
+     "material": "SignBlack"
+    },
+    "face_black_permit": {
+     "mesh": "SM_Props_sign_parking_face_black_permit",
+     "material": "SignBlack"
+    },
+    "face_red_permit": {
+     "mesh": "SM_Props_sign_parking_face_red_permit",
+     "material": "SignRed"
+    },
+    "face_white_permit": {
+     "mesh": "SM_Props_sign_parking_face_white_permit",
+     "material": "SignWhite"
+    },
+    "face_black_disabled": {
+     "mesh": "SM_Props_sign_parking_face_black_disabled",
+     "material": "SignBlack"
+    },
+    "face_green": {
+     "mesh": "SM_Props_sign_parking_face_green",
+     "material": "SignGreen"
+    },
+    "arrow_left": {
+     "mesh": "SM_Props_sign_parking_arrow_left",
+     "material": "SignBlack"
+    },
+    "arrow_left_tall": {
+     "mesh": "SM_Props_sign_parking_arrow_left_tall",
+     "material": "SignBlack"
+    },
+    "arrow_right": {
+     "mesh": "SM_Props_sign_parking_arrow_right",
+     "material": "SignBlack"
+    },
+    "arrow_right_tall": {
+     "mesh": "SM_Props_sign_parking_arrow_right_tall",
+     "material": "SignBlack"
+    },
+    "arrow_both": {
+     "mesh": "SM_Props_sign_parking_arrow_both",
+     "material": "SignBlack"
+    },
+    "arrow_both_tall": {
+     "mesh": "SM_Props_sign_parking_arrow_both_tall",
+     "material": "SignBlack"
     }
    },
    "colliders_cm": [
@@ -4812,7 +5213,209 @@
      ]
     }
    ],
-   "text": "\\P 9h-23h EXCEPTE S3R (dataset code R-PF, the commonest Plateau parking sign)"
+   "plate_faces": {
+    "no_stopping": {
+     "family": "no_stopping",
+     "plate": "short",
+     "size_cm": [
+      30.0,
+      45.0
+     ],
+     "symbol": "octagon",
+     "crown": "red",
+     "parts": [
+      "plate",
+      "face_white",
+      "face_red",
+      "face_black_no_stopping"
+     ],
+     "text": [],
+     "example_code": "AD-TT",
+     "catalogue_page": "1-1-1",
+     "triangles": 224
+    },
+    "no_stopping_hours": {
+     "family": "no_stopping",
+     "plate": "short",
+     "size_cm": [
+      30.0,
+      45.0
+     ],
+     "symbol": "octagon",
+     "crown": "red",
+     "parts": [
+      "plate",
+      "face_white",
+      "face_red",
+      "face_black_no_stopping_hours"
+     ],
+     "text": [
+      "6h - 20h",
+      "LUN À VEN"
+     ],
+     "example_code": "AV-JL",
+     "catalogue_page": "1-1-1",
+     "triangles": 380
+    },
+    "no_parking": {
+     "family": "no_parking",
+     "plate": "short",
+     "size_cm": [
+      30.0,
+      45.0
+     ],
+     "symbol": "P",
+     "crown": "red",
+     "parts": [
+      "plate",
+      "face_white",
+      "face_red",
+      "face_black_no_parking"
+     ],
+     "text": [],
+     "example_code": "SD-TT",
+     "catalogue_page": "1-2-1-1",
+     "triangles": 234
+    },
+    "no_parking_hours": {
+     "family": "no_parking",
+     "plate": "short",
+     "size_cm": [
+      30.0,
+      45.0
+     ],
+     "symbol": "P",
+     "crown": "red",
+     "parts": [
+      "plate",
+      "face_white",
+      "face_red",
+      "face_black_no_parking_hours"
+     ],
+     "text": [
+      "8h - 9h",
+      "MARDI",
+      "1 AVRIL AU 1 DÉC."
+     ],
+     "example_code": "SU-MA-A",
+     "catalogue_page": "1-4-2-2",
+     "triangles": 524
+    },
+    "limited": {
+     "family": "limited",
+     "plate": "short",
+     "size_cm": [
+      30.0,
+      45.0
+     ],
+     "symbol": "P_plain",
+     "crown": null,
+     "parts": [
+      "plate",
+      "face_white",
+      "face_black_limited"
+     ],
+     "text": [
+      "15 min",
+      "7h - 9h30",
+      "15h - 18h",
+      "LUN À VEN"
+     ],
+     "example_code": "PV-QE",
+     "catalogue_page": "1-7-1-4",
+     "triangles": 507
+    },
+    "reserved": {
+     "family": "reserved",
+     "plate": "short",
+     "size_cm": [
+      30.0,
+      45.0
+     ],
+     "symbol": "P",
+     "crown": "red",
+     "parts": [
+      "plate",
+      "face_white",
+      "face_red",
+      "face_black_reserved"
+     ],
+     "text": [
+      "EXCEPTÉ"
+     ],
+     "example_code": "R-SI",
+     "catalogue_page": "1-5-1",
+     "triangles": 314
+    },
+    "permit": {
+     "family": "permit",
+     "plate": "tall",
+     "size_cm": [
+      30.0,
+      60.0
+     ],
+     "symbol": "P",
+     "crown": "red",
+     "parts": [
+      "plate_tall",
+      "face_white_tall",
+      "face_red",
+      "face_red_permit",
+      "face_white_permit",
+      "face_black_permit"
+     ],
+     "text": [
+      "9h - 23h",
+      "EXCEPTÉ VÉHICULES MUNIS D'UN PERMIS",
+      "SECTEUR"
+     ],
+     "example_code": "R-PF",
+     "catalogue_page": "1-5-3",
+     "triangles": 814
+    },
+    "disabled": {
+     "family": "disabled",
+     "plate": "tall",
+     "size_cm": [
+      30.0,
+      60.0
+     ],
+     "symbol": "P",
+     "crown": "red",
+     "parts": [
+      "plate_tall",
+      "face_white_tall",
+      "face_red",
+      "face_green",
+      "face_black_disabled"
+     ],
+     "text": [],
+     "example_code": "R-TD",
+     "catalogue_page": "1-5-2",
+     "triangles": 350
+    }
+   },
+   "plate_arrows": {
+    "left": {
+     "short": "arrow_left",
+     "tall": "arrow_left_tall"
+    },
+    "right": {
+     "short": "arrow_right",
+     "tall": "arrow_right_tall"
+    },
+    "both": {
+     "short": "arrow_both",
+     "tall": "arrow_both_tall"
+    }
+   },
+   "plate_default": "permit",
+   "face_budget": 1000,
+   "plate_sources": [
+    "Ville de Montréal, Catalogue des panneaux, signalisation écrite (2015), dataset \"Signalisation (stationnement sur rue)\": the faces, plate sizes and code groups",
+    "Règlement sur la signalisation routière (RLRQ c. C-24.2, r. 41), articles 2, 5, 6, 29 and 30",
+    "MTQ, Tome V Signalisation routière, chapter 2, and its Répertoire des dispositifs: P-150-1, P-150-5, P-150-7 and P-160"
+   ]
   },
   "bixi_dock": {
    "kind": "street",
@@ -6792,7 +7395,7 @@
  },
  "counts": {
   "props": 37,
-  "meshes": 183,
+  "meshes": 201,
   "triangles_per_prop": {
    "lamp_cobra": 468,
    "lamp_park": 630,
@@ -6800,7 +7403,7 @@
    "sign_stop": 184,
    "sign_street": 272,
    "sign_oneway": 86,
-   "sign_parking": 369,
+   "sign_parking": 2219,
    "bixi_dock": 928,
    "bixi_bike": 1472,
    "bin_recycling": 327,
@@ -6832,9 +7435,9 @@
    "pumpkin": 390,
    "pumpkin_carved": 596
   },
-  "triangles_all_meshes": 29008
+  "triangles_all_meshes": 30858
  },
  "source_sha256": {
-  "Scripts/blender/plateau_props.py": "82a95217c5b0970cc9c60344da3993ee7fb98fc6af350778eb77526a09595603"
+  "Scripts/blender/plateau_props.py": "128c4636e434fd2ddb170dd12765b6256d428f962ba3c204153c9d87d99cac66"
  }
 }

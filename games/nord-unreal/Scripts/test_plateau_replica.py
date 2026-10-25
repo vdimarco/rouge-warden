@@ -28,7 +28,13 @@ clumps round them, and every input hashed), the late-October leaf bags at the cu
 Plex stoop landings, a line with washing in sight within 15 m of the Mentana and
 Saint-André ruelle camera over the fences (a ray cast through the game's own geometry and tree meshes), paint only on
 solid lane-fence faces, and the gallery props (chairs, pots, barbecues, bikes, bins, AC units, rail planters, dishes)
-on the decks' props floor, clear of stairs and doors.
+on the decks' props floor, clear of stairs and doors; and the seventh pass: no plain parking line where OSM marks
+none, the lines along parked cars 255 cm or more from the measured curb, no parked car of parked_cars.json within 5 cm
+of a white line along it, no street or lane leaf patch with a straight side of 2 m or more over open ground, no ruelle
+patch side over 1 m across the open paving, and no small patch the edge of its ground cuts; and the settle pass: a
+bollard's white band 92 to 104 cm over its own foot (on the road or on a track's separator), every street patch's
+clump of leaves within 30 cm of a bigger patch and, apart from every patch, five points round or more, and
+Streets/paint_marks.json with one outline per painted crosswalk and stop bar.
 """
 import hashlib
 import importlib.util
@@ -3437,15 +3443,25 @@ def check_city_poles(world, furniture_rows):
 def litter_fans(out, soul):
     """The Leaf_Litter fans of the Soul layer, grouped by their centre (each triangle's last vertex, as obj_text writes
     a fan): {centre: set of ring points}. A clump drawn as a quad (two triangles from one corner) is keyed by the mean
-    of its four corners, with all four as its ring."""
-    fans = {}
+    of its four corners, with all four as its ring, and so is a five-point street clump drawn from one of its corners
+    (its triangles turn less than a full turn round their shared vertex)."""
+    fans, turn = {}, {}
     for batch in soul['batches']:
         if batch['material'] == 'Leaf_Litter':
             for f in parse_obj(out / 'Soul' / batch['file'])[1]:
-                fans.setdefault(tuple(round(v, 2) for v in f[2]), set()).update(tuple(round(v, 2) for v in q) for q in f[:2])
+                c = tuple(round(v, 2) for v in f[2])
+                fans.setdefault(c, set()).update(tuple(round(v, 2) for v in q) for q in f[:2])
+                a, b = (math.atan2(q[1] - f[2][1], q[0] - f[2][0]) for q in f[:2])
+                turn[c] = turn.get(c, 0.) + abs((b - a + math.pi) % math.tau - math.pi)
     for c in [c for c, ring in fans.items() if len(ring) == 3]:
         ring = fans.pop(c) | {c}
         fans[(round(sum(q[0] for q in ring) / 4, 2), round(sum(q[1] for q in ring) / 4, 2), c[2])] = ring
+    # the curb and gutter drifts are fans from a point of their outline too, on other grounds
+    for c in [c for c, ring in fans.items() if len(ring) == STREET_CLUMP_POINTS - 1 and
+              litter_ground_kind(c[2]) == 'street' and turn.get(c, math.tau) < math.tau - .01]:
+        ring = fans.pop(c) | {c}
+        n = len(ring)
+        fans[(round(sum(q[0] for q in ring) / n, 2), round(sum(q[1] for q in ring) / n, 2), c[2])] = ring
     return fans
 
 
@@ -5039,6 +5055,114 @@ SLAB_KEYS = ('sidewalk', 'curb', 'Yard_Grass', 'Yard_Soil', 'yard_path', 'grass_
 OPEN_STEPS_MAX = 50         # of about 174,000 outer slab edges; 25 now (see the README's Limits)
 
 
+def check_bollard_band():
+    """A bollard on a track's separator stands at the sidewalk height. Its white band rides with the post, 92 to 104 cm
+    over its foot, as on a bollard on the road (the seventh pass drew it at road height on the separators)."""
+    R = replica
+    out = {}
+    for z in (R.Z_ROAD, R.Z_WALK):
+        L = R.Layer('Streets', R.STREETS_MATERIALS)
+        R._bollard(L, (0., 0.), z)
+        post = [q[2] for f in L.faces['bollard_green'] for q in f]
+        band = [q[2] for f in L.faces['paint_white'] for q in f]
+        assert post and band and abs(min(post) - z) < 1e-6, (z, post[:3])
+        assert abs(min(band) - z - 92.) < 1e-6 and abs(max(band) - z - 104.) < 1e-6, \
+            ('the band is off its post', z, round(min(band) - z, 2), round(max(band) - z, 2))
+        out[f'foot_{z:g}_cm'] = [round(min(band) - z, 2), round(max(band) - z, 2)]
+    return out
+
+
+def check_bollard_bands(out, streets):
+    """Every bollard of the Streets OBJs, on the road or on a separator, has its white band 92 to 104 cm over its foot."""
+    posts, bands = [], []
+    for batch in streets['batches']:
+        if batch['material'] not in ('bollard_green', 'paint_white'):
+            continue
+        for face in parse_obj(out / 'Streets' / batch['file'])[1]:
+            zs = [q[2] for q in face]
+            if max(zs) - min(zs) < .01:
+                continue                          # the posts and bands are upright; the paint on the road is level
+            row = (sum(q[0] for q in face) / len(face), sum(q[1] for q in face) / len(face), min(zs))
+            (posts if batch['material'] == 'bollard_green' else bands).append(row)
+    grid, feet = replica.Grid(100.), []           # one post per cluster of faces within 15 cm of its axis
+    for x, y, z in posts:
+        k = next((k for k in grid.query((x, y, x, y)) if math.dist(feet[k][:2], (x, y)) < 15.), None)
+        if k is None:
+            grid.add(len(feet), replica.bbox([(x, y)], 15.))
+            feet.append([x, y, z, None])
+        else:
+            feet[k][2] = min(feet[k][2], z)
+    for x, y, z in bands:
+        k = next((k for k in grid.query((x, y, x, y)) if math.dist(feet[k][:2], (x, y)) < 15.), None)
+        if k is not None:
+            feet[k][3] = z if feet[k][3] is None else min(feet[k][3], z)
+    bad = [([round(x), round(y)], round(band - z, 2)) for x, y, z, band in feet
+           if band is None or abs(band - z - 92.) > .01]
+    lifted = sum(1 for _, _, z, _ in feet if z > replica.Z_ROAD + 1.)
+    assert len(feet) > 100 and lifted and not bad, ('bollard bands off their posts', len(feet), lifted, bad[:5])
+    return {'bollards': len(feet), 'on_separators': lifted}
+
+
+STREET_CLUMP_GAP = 30.     # cm: plateau_replica.LITTER_FRINGE_GAP
+STREET_CLUMP_POINTS = 5    # plateau_replica.LITTER_CLUMP_RING
+
+
+def ring_gap(a, b):
+    if any(replica.point_in(p, b) for p in a) or any(replica.point_in(p, a) for p in b):
+        return 0.
+    return min(replica.seg_seg_dist(p, q, r, s) for p, q in zip(a, a[1:] + a[:1]) for r, s in zip(b, b[1:] + b[:1]))
+
+
+def check_street_clumps(out, soul):
+    """The local review saw a lone four-point clump on Papineau's near sidewalk as a diamond-shaped rug. Each clump of a
+    street patch's fringe now lies within STREET_CLUMP_GAP (30 cm) of a bigger
+    patch, and one apart from every patch has STREET_CLUMP_POINTS points or more, so none reads as a diamond."""
+    R = replica
+    fans = litter_fans(out, soul)
+    clumps, patches = [], []
+    for c, ring in fans.items():
+        if litter_ground_kind(c[2]) != 'street':
+            continue
+        pts = [a[:2] for a, _ in litter_sides(c, ring)]
+        mean = sum(math.dist(c[:2], q) for q in pts) / len(pts)
+        # a fringe clump: a few points round (a main patch has ten or more) and no bigger than LITTER_FRINGE_SIZE
+        (clumps if len(pts) <= STREET_CLUMP_POINTS and mean <= R.LITTER_FRINGE_SIZE[1] + 5 else patches).append((c, pts))
+    grid = R.Grid(1000.)
+    for i, (_, pts) in enumerate(patches):
+        grid.add(i, R.bbox(pts, STREET_CLUMP_GAP + 1.))
+    lone, diamonds, apart = [], [], 0
+    for c, pts in clumps:
+        near = [patches[i][1] for i in grid.query(R.bbox(pts))]   # on a sidewalk, a lawn, a parterre or a dropped curb
+        gap = min([ring_gap(pts, other) for other in near] or [1e9])
+        if gap > STREET_CLUMP_GAP + .05:
+            lone.append(([round(v) for v in c[:2]], round(min(gap, 9999.))))
+        elif gap > .05:
+            apart += 1
+            if len(pts) < STREET_CLUMP_POINTS:
+                diamonds.append(([round(v) for v in c[:2]], len(pts), round(gap, 1)))
+    assert len(clumps) > 1000 and not lone, (f'{len(lone)} of {len(clumps)} street clumps lie apart from every patch',
+                                             sorted(lone, key=lambda r: -r[1])[:8])
+    assert not diamonds, (f'{len(diamonds)} street clumps apart from their patch have under {STREET_CLUMP_POINTS} points',
+                          diamonds[:8])
+    return {'street_clumps': len(clumps), 'apart_from_patches': apart, 'street_patches': len(patches)}
+
+
+def check_paint_marks(out, streets):
+    """Streets/paint_marks.json, the outline of each crosswalk and stop bar the layer paints, which the parking step
+    reads: listed in the manifest with its hash, one row per painted mark."""
+    assert streets.get('paint_marks') == 'paint_marks.json'
+    assert streets['paint_marks_sha256'] == replica.sha_file(out / 'Streets/paint_marks.json')
+    doc = json.loads((out / 'Streets/paint_marks.json').read_text())
+    counts = streets['counts']
+    painted = sum(counts[k] for k in ('crosswalks_continental_white', 'crosswalks_continental_yellow',
+                                      'crosswalks_lines_white'))
+    assert len(doc['crosswalks']) == doc['counts']['crosswalks'] == painted, (len(doc['crosswalks']), painted)
+    assert len(doc['stop_bars']) == doc['counts']['stop_bars'] == counts['stop_bars']
+    for row in doc['crosswalks'] + doc['stop_bars']:
+        assert len(row['outline']) == 4 and abs(replica.area(row['outline'])) > 1e4, row
+    return dict(doc['counts'])
+
+
 def check_bike_paint_tags():
     """The painted on-street cycling of a drive way, per side (OSM left L, right R), read from its cycleway tags: the
     kind (lane for cycleway lane and opposite_lane, shared for shared_lane, busway for share_busway) and the travel
@@ -5219,6 +5343,300 @@ def check_bike_paint(world, out, streets):
             'worst_gap_m': round(worst_gap / 100, 1)}
 
 
+# ------------------------------------------------------------------------------------------------
+# Seventh pass: paint clear of the parked cars, litter outlines with no straight cut
+
+PAINT_CAR_CLEAR = 5.        # cm: no parked car's outline comes this near a white line that runs along it
+PAINT_PARALLEL = 5.         # degrees: a strip within this of a car's heading runs along it
+CURB_BAND = (150., 300.)    # cm from the measured curb: a line here runs along the parked cars' band
+CURB_LINE_MIN = 255.        # cm: a line along parked cars lies at least this far from the measured curb
+STRIP_MIN = 150.            # cm: a white triangle with a side this long (and under 24 cm across) is part of a line
+
+
+def white_strips(out, streets):
+    """The triangles of the Streets white lines: those with a side over STRIP_MIN and under 24 cm across, as the
+    render review's line_under_car.py reads them. Each is (triangle, unit direction of its long side)."""
+    strips = []
+    for batch in streets['batches']:
+        if batch['material'] != 'paint_white':
+            continue
+        for face in parse_obj(out / 'Streets' / batch['file'])[1]:
+            tri = [p[:2] for p in face]
+            if len(tri) != 3:
+                continue
+            edges = sorted(((math.dist(tri[k], tri[(k + 1) % 3]), tri[k], tri[(k + 1) % 3]) for k in range(3)),
+                           reverse=True)
+            length, a, b = edges[1]                     # edges[0] is the quad's diagonal
+            if length > STRIP_MIN and 2 * abs(replica.area(tri)) / length < 24.:
+                strips.append((tri, ((b[0] - a[0]) / length, (b[1] - a[1]) / length)))
+    return strips
+
+
+def poly_gap(p, q):
+    """The distance between two convex polygons, 0 where they overlap."""
+    R = replica
+    if any(R.point_in(x, q) for x in p) or any(R.point_in(x, p) for x in q):
+        return 0.
+    return min(R.poly_seg_dist(q, a, b) for a, b in zip(p, p[1:] + p[:1]))
+
+
+def check_paint_clear_of_cars(out, streets, parked=None):
+    """The pass-6 critics found the parking line under 396 of the 402 cars beside one: the generator painted it
+    230 cm from the curb, where a car 12 to 30 cm off the curb and 220 cm wide over the mirrors stands on it. No
+    parked car of Streets/parked_cars.json (the committed slots, which plateau_parking.py places on these Streets)
+    now has its outline (466 x 220 cm, over the mirrors) within PAINT_CAR_CLEAR of a white strip that runs along it.
+    Marks across the lane (stop bars, crosswalks) and a bus lane's diamonds, which cars may stand on outside the
+    lane's hours, are not lines along the car."""
+    parked = parked or replica.OUT / 'Streets/parked_cars.json'
+    if not Path(parked).is_file():
+        return {'skipped': 'no parked_cars.json (run plateau_parking.py)'}
+    doc = json.loads(Path(parked).read_text())
+    half_l, half_w = doc['rules_cm']['car_length'] / 2, doc['rules_cm']['car_width'] / 2
+    strips = white_strips(out, streets)
+    grid = replica.Grid(600.)
+    for i, (tri, _) in enumerate(strips):
+        grid.add(i, replica.bbox(tri))
+    bad, beside = [], 0
+    for slot in doc['slots']:
+        a = math.radians(slot['yaw'])
+        f, r = (math.cos(a), math.sin(a)), (-math.sin(a), math.cos(a))
+        c = (slot['x'], slot['y'])
+        car = [replica.add(replica.add(c, f, sf * half_l), r, sr * half_w)
+               for sf, sr in ((1, 1), (-1, 1), (-1, -1), (1, -1))]
+        near = None
+        for i in grid.query(replica.bbox(car, 40.)):
+            tri, u = strips[i]
+            if abs(u[0] * f[1] - u[1] * f[0]) > math.sin(math.radians(PAINT_PARALLEL)):
+                continue
+            gap = poly_gap(car, tri)
+            near = gap if near is None else min(near, gap)
+        if near is not None and near < 40.:
+            beside += 1
+        if near is not None and near < PAINT_CAR_CLEAR:
+            bad.append((slot['id'], slot['street'], round(near, 1)))
+    assert not bad, (f'{len(bad)} of {len(doc["slots"])} parked cars stand within {PAINT_CAR_CLEAR:.0f} cm of a white '
+                     f'line along them', bad[:8])
+    return {'cars': len(doc['slots']), 'cars_within_40_cm_of_a_line': beside, 'white_strip_triangles': len(strips)}
+
+
+def osm_parking_marked(t, side):
+    """Whether OSM marks the parking of a way's side (L or R) with paint: parking:<side>:markings=yes or :both."""
+    name = 'left' if side == 'L' else 'right'
+    return 'yes' in (t.get(f'parking:{name}:markings'), t.get('parking:both:markings'))
+
+
+def measured_curb(raised, p, n, reach=400.):
+    """How far from p along n the first raised curb top (17 cm or more) lies, to 1 cm, or None within reach."""
+    return next((d for d in range(0, int(reach)) if raised.contains(replica.add(p, n, d))), None)
+
+
+def check_curb_lines(world, out, streets):
+    """No plain parking line where OSM marks none (parking:<side>:markings=yes, only Avenue Calixa-Lavallée in the
+    district): on a side with parking, a white line in the parked cars' band (CURB_BAND from the curb the cars park
+    against, measured on the raised tops) runs only beside a painted bike lane, a marked parking lane or a cycle
+    track, and lies CURB_LINE_MIN or more from the measured curb. So the critics' bike-lane inner lines on Parc-La
+    Fontaine, Gauthier, Marquette and Marie-Anne (230 cm from s['curb'], 208 to 233 cm from the curb as drawn, where a
+    mitre at a way's end sets the curb in) leave the cars clear. A side with no parking may carry a lane line there."""
+    R = replica
+    raised = ground_tris(out / 'Streets', streets, lambda m, z: m == 'sidewalk' and z > 17.)
+    doc = json.loads((out / 'Streets/bike_paint.json').read_text())
+    lanes = {(r['way'], r['side']) for r in doc['ways'] if r['kind'] == 'lane'}
+    tracks = [(world.nodes[a], world.nodes[b]) for w in world.ways if w['tags'].get('highway') == 'cycleway'
+              for a, b in zip(w['refs'], w['refs'][1:]) if a in world.nodes and b in world.nodes]
+    track_grid = R.Grid(1000.)
+    for i, (a, b) in enumerate(tracks):
+        track_grid.add(i, R.bbox([a, b], 500.))
+    lines, plain, close = 0, [], []
+    for tri, u in white_strips(out, streets):
+        m = ((tri[0][0] + tri[1][0] + tri[2][0]) / 3, (tri[0][1] + tri[1][1] + tri[2][1]) / 3)
+        best = None
+        for i in world.seg_grid.query(R.bbox([m], 100.)):
+            s = world.segs[i]
+            if s['excluded'] or abs(u[0] * s['u'][0] + u[1] * s['u'][1]) < math.cos(math.radians(3.)):
+                continue
+            along, lat = R.seg_local(s, m)
+            side = 'L' if lat > 0 else 'R'
+            if -50. < along < s['len'] + 50. and abs(lat) < s['curb' + side] and (best is None or abs(lat) < best[2]):
+                best = (s, side, abs(lat))
+        if best is None:
+            continue
+        s, side, _ = best
+        sign = 1 if side == 'L' else -1
+        d = measured_curb(raised, m, (s['n'][0] * sign, s['n'][1] * sign))
+        if d is None or not CURB_BAND[0] <= d < CURB_BAND[1]:
+            continue
+        if not R._parking_sides(s)[side]:
+            continue                                    # no parked cars: a lane line may lie here
+        lines += 1
+        lane = (s['way'], side) in lanes
+        marked = osm_parking_marked(s['tags'], side)
+        track = any(R.seg_dist(m, *tracks[i]) < 500. for i in track_grid.query((m[0], m[1], m[0], m[1])))
+        if not (lane or marked or track):
+            plain.append((s['name'], s['way'], side, round(d), [round(v) for v in m]))
+        elif (lane or marked) and d < CURB_LINE_MIN:
+            close.append((s['name'], s['way'], side, round(d), [round(v) for v in m]))
+    assert not plain, (f'{len(plain)} white line triangles in the parked cars\' band where OSM marks no parking line '
+                       f'and no bike lane or track runs', plain[:6])
+    assert not close, (f'{len(close)} line triangles beside parked cars nearer the curb than {CURB_LINE_MIN:.0f} cm',
+                       close[:6])
+    counts = streets['counts']
+    marked = sum(1 for s in world.segs for side in ('L', 'R') if osm_parking_marked(s['tags'], side))
+    assert counts['parking_line_sides'] <= marked, (counts['parking_line_sides'], marked)
+    return {'band_line_triangles': lines, 'parking_line_sides': counts['parking_line_sides'],
+            'parking_line_metres': counts['parking_line_metres']}
+
+
+LITTER_CHORD = 200.         # cm: an outline that runs this far...
+LITTER_CHORD_DEV = 15.      # ... with every point within this of the straight line between its ends is a straight side
+LITTER_SMALL = 5000.        # cm2: a patch under 0.5 m2...
+LITTER_SMALL_PROBE = 8.     # ... with its ground ending within this beyond a point of its outline, along its ray
+
+
+def straight_chains(pts, length, dev):
+    """The straight chains of a closed outline: (i, k) where the points i to i + k (k sides) all lie within dev of the
+    line from point i to point i + k, between its ends, and that line is length or longer. Each chain is grown from
+    its first point until a point leaves the line; the longest is kept."""
+    n, out = len(pts), []
+    for i in range(n):
+        best = None
+        for k in range(1, n):
+            a, b = pts[i], pts[(i + k) % n]
+            span = math.dist(a, b)
+            if span < 1.:
+                break
+            u = ((b[0] - a[0]) / span, (b[1] - a[1]) / span)
+            inner = [pts[(i + m) % n] for m in range(1, k)]
+            if any(abs((q[0] - a[0]) * u[1] - (q[1] - a[1]) * u[0]) > dev or
+                   not -dev <= (q[0] - a[0]) * u[0] + (q[1] - a[1]) * u[1] <= span + dev for q in inner):
+                break
+            if span >= length:
+                best = k
+        if best:
+            out.append((i, best))
+    return out
+
+
+def litter_chords(world, out, soul):
+    """The straight sides of the street and lane patches over open ground: a chain of outline points spanning
+    LITTER_CHORD or more with every point within LITTER_CHORD_DEV of the line between its ends, LITTER_CHORD of which
+    does not follow a change in the ground (probed every 20 cm along it: no probe within LITTER_RUN_NEAR either side
+    lies off the patch's ground). Short sides that zigzag a few centimetres either side of one line read as one cut;
+    the heading measure of litter_straight_runs misses them when the sides turn more than 10 degrees by turns. A
+    straight side along a curb that runs on a little past its end follows the curb; it is not counted."""
+    R = replica
+    ground = R.LitterGround(world)
+    found, outlines = [], 0
+
+    def open_run(a, b, z):
+        """The longest stretch of a-b (cm) that follows no change in the ground."""
+        length = math.dist(a, b)
+        n = (-(b[1] - a[1]) / length, (b[0] - a[0]) / length)
+        steps = math.ceil(length / 20.)
+        best = run = 0
+        for k in range(steps + 1):
+            p = R.lerp(a, b, k / steps)
+            edge = any((lambda g: g is None or abs(g - z) > .05)(ground.at(R.add(p, n, s * d)))
+                       for d in (5., 10., 15., LITTER_RUN_NEAR) for s in (1., -1.))
+            run = 0 if edge else run + 1
+            best = max(best, run)
+        return max(0, best - 1) * length / steps
+    for c, ring in litter_fans(out, soul).items():
+        if litter_ground_kind(c[2]) not in ('street', 'lane') or len(ring) <= 4:
+            continue
+        pts = [a[:2] for a, _ in litter_sides(c, ring)]
+        angles = [math.atan2(q[1] - c[1], q[0] - c[0]) for q in pts]
+        if max((angles[(i + 1) % len(angles)] - angles[i]) % math.tau for i in range(len(angles))) > math.radians(150):
+            continue                                    # a drift along a curb, a fence or a gutter
+        outlines += 1
+        for i, k in straight_chains(pts, LITTER_CHORD, LITTER_CHORD_DEV):
+            a, b = pts[i], pts[(i + k) % len(pts)]
+            if open_run(a, b, c[2]) >= LITTER_CHORD:
+                found.append((round(math.dist(a, b)), litter_ground_kind(c[2]), [round(v) for v in R.lerp(a, b, .5)],
+                              [round(v) for v in c[:2]]))
+    found.sort(reverse=True)
+    return found, outlines
+
+
+def check_litter_chords(world, out, soul):
+    """The pass-6 local review still saw straight litter edges: the near side of a Rachel patch crossing the sidewalk
+    in one line of 2.6 m (three sides of 72 to 92 cm within 14 cm of one line) and a Papineau gap with straight sides.
+    No street or lane patch now has a straight side of LITTER_CHORD or more over open ground (litter_chords)."""
+    found, outlines = litter_chords(world, out, soul)
+    assert not found, (f'{len(found)} straight litter sides of {LITTER_CHORD:.0f} cm or more cross open ground',
+                       found[:6])
+    return {'outlines': outlines}
+
+
+LANE_LITTER_SIDE = 100.     # cm: a ruelle patch's side longer than this follows a change in its ground
+
+
+def check_lane_litter_sides(world, out, soul):
+    """The pass-6 local review saw the ruelle patches as polygons with sides of 0.75 to 2.2 m, one a strip with straight
+    cuts across the half-lane: seen down the lane from a low eye, a side the street patches may have (up to 1.5 m
+    over open ground) reads as a cut across it. Every side of a ruelle patch longer than LANE_LITTER_SIDE now runs
+    within LITTER_STRAIGHT_NEAR of a change in its ground at every 20 cm along it (the gutter, a fence or a wall)."""
+    R = replica
+    ground = R.LitterGround(world)
+    sides = 0
+    bad = []
+    for c, ring in litter_fans(out, soul).items():
+        if litter_ground_kind(c[2]) != 'lane' or len(ring) <= 4:
+            continue
+        pts = [a for a, _ in litter_sides(c, ring)]
+        angles = [math.atan2(q[1] - c[1], q[0] - c[0]) for q in pts]
+        if max((angles[(i + 1) % len(angles)] - angles[i]) % math.tau for i in range(len(angles))) > math.radians(150):
+            continue                                    # a drift at a fence or wall foot
+        for a, b in zip(pts, pts[1:] + pts[:1]):
+            length = math.dist(a[:2], b[:2])
+            sides += 1
+            if length <= LANE_LITTER_SIDE:
+                continue
+            n = (-(b[1] - a[1]) / length, (b[0] - a[0]) / length)
+            steps = math.ceil(length / 20.)
+            for k in range(steps + 1):
+                q = R.lerp(a[:2], b[:2], k / steps)
+                if not any((lambda z: z is None or abs(z - c[2]) > .05)(ground.at(R.add(q, n, sg * d)))
+                           for d in (5., 10., 15., LITTER_STRAIGHT_NEAR) for sg in (1., -1.)):
+                    bad.append((round(length), [round(v) for v in q], [round(v) for v in c[:2]]))
+                    break
+    bad.sort(reverse=True)
+    assert not bad, (f'{len(bad)} ruelle patch sides over {LANE_LITTER_SIDE:.0f} cm cross the open paving', bad[:5])
+    return {'lane_patch_sides': sides}
+
+
+def check_small_litter_cuts(world, out, soul):
+    """The pass-6 local review found a 0.4 x 0.5 m leaf patch with four straight sides at the top of a lane-mouth ramp
+    on Fabre: a fringe clump that the edge of its ground cut. A street or lane patch or clump under LITTER_SMALL whose
+    ground ends just beyond its outline (within LITTER_SMALL_PROBE along the ray of any of its points, or beyond the
+    middle of any side) is left out; a bigger patch cut by a curb or a ramp keeps its serrated outline."""
+    R = replica
+    ground = R.LitterGround(world)
+    small = bad = 0
+    found = []
+    for c, ring in litter_fans(out, soul).items():
+        if litter_ground_kind(c[2]) not in ('street', 'lane'):
+            continue
+        pts = [a[:2] for a, _ in litter_sides(c, ring)]
+        angles = [math.atan2(q[1] - c[1], q[0] - c[0]) for q in pts]
+        if len(pts) > 4 and max((angles[(i + 1) % len(angles)] - angles[i]) % math.tau
+                                for i in range(len(angles))) > math.radians(150):
+            continue                                    # a drift
+        if abs(R.area(pts)) >= LITTER_SMALL:
+            continue
+        small += 1
+        mids = [R.lerp(a, b, .5) for a, b in zip(pts, pts[1:] + pts[:1])]
+        for q in pts + mids:
+            d = math.dist(c[:2], q) or 1.
+            z = ground.at(R.add(q, ((q[0] - c[0]) / d, (q[1] - c[1]) / d), LITTER_SMALL_PROBE))
+            if z is None or abs(z - c[2]) > .05:
+                bad += 1
+                found.append((round(abs(R.area(pts)) / 1e4, 2), [round(v) for v in q], [round(v) for v in c[:2]]))
+                break
+    assert not found, (f'{bad} of {small} street and lane patches under {LITTER_SMALL / 1e4:.1f} m2 are cut by the '
+                       f'edge of their ground', found[:6])
+    return {'small_patches': small}
+
+
 def check_blue_spruce():
     """The Colorado blue spruce (Picea pungens, its cultivars and the inventory's misspelt 'Picea punges') wears the
     conifer's glaucous blue (KIND_TINTS); the other spruces keep the evergreen green, and no broadleaf turns blue."""
@@ -5321,7 +5739,8 @@ def main():
     report = {'lane_fixtures': check_lane_fixtures(), 'laundry_fixture': check_laundry_fixture(),
               'laundry_crown_fixture': check_laundry_crown_fixture(), 'crown_scaling': check_crown_scaling(),
               'gallery_fixture': check_gallery_fixture(), 'missing_plex_glass': check_missing_plex_glass(),
-              'bike_paint_tags': check_bike_paint_tags(), 'blue_spruce': check_blue_spruce()}
+              'bike_paint_tags': check_bike_paint_tags(), 'blue_spruce': check_blue_spruce(),
+              'bollard_band': check_bollard_band()}
     with tempfile.TemporaryDirectory() as a, tempfile.TemporaryDirectory() as b:
         world, results = replica.prepare(a)
         replica.prepare(b)
@@ -5492,6 +5911,7 @@ def main():
         report['leaf_litter'] = check_leaf_litter(world, out, soul, streets)
         report['park_leaves'] = check_park_leaves_under_litter(out, soul)
         report['litter_edges'] = check_litter_edges(out, soul)
+        report['street_clumps'] = check_street_clumps(out, soul)
         report['lane_litter'] = check_lane_litter(world, out, soul)
         report['litter_straight_sides'] = check_litter_straight_sides(world, out, soul)
         report['litter_straight_runs'] = check_litter_straight_runs(world, out, soul)
@@ -5516,6 +5936,13 @@ def main():
         report['planting'] = check_planting(out, streets, soul)
         report['open_steps'] = check_open_steps(world, out, streets)
         report['bike_paint'] = check_bike_paint(world, out, streets)
+        report['bollard_bands'] = check_bollard_bands(out, streets)
+        report['paint_marks'] = check_paint_marks(out, streets)
+        report['curb_lines'] = check_curb_lines(world, out, streets)
+        report['paint_clear_of_cars'] = check_paint_clear_of_cars(out, streets)
+        report['litter_chords'] = check_litter_chords(world, out, soul)
+        report['small_litter_cuts'] = check_small_litter_cuts(world, out, soul)
+        report['lane_litter_sides'] = check_lane_litter_sides(world, out, soul)
         bins = {}
         for row in soul_rows['placements']:
             if row['prop'].startswith('bin_'):
