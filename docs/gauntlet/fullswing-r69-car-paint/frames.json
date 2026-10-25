@@ -1,0 +1,7 @@
+{
+  "before": "before.png",
+  "after": "after.png",
+  "exact": true,
+  "sha256": "544bbb00eaf0b57f48fab4d4d6bd22e49154a4f7d040af8900253c17d131cff6",
+  "note": "Seven moving job cars, four model and three fallback. Pixel capture from actual GL framebuffer. Baseline runtime #703 vs candidate #705. Software renderer functional evidence only; no FPS claim."
+}

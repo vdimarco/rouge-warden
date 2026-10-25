@@ -1,0 +1,9 @@
+{
+  "merge": "f9577462225528f5dc96cd2f72522376e5d424a7",
+  "checkedAt": "2026-10-25T04:47:29.082595+00:00",
+  "file": "js/actionview.js",
+  "status": 200,
+  "exact": true,
+  "sha256": "13c2a4fcb4c902b9502588aefe150568393435b1ae65f6dc6aa76f11bbdcccf0",
+  "release": "externally merged; automated review and final pre-merge preview/rebase gates not performed"
+}
