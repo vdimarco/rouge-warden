@@ -56,8 +56,8 @@ ORIGINAL_MODE = {'PIE_Standalone': 0, 'PIE_ListenServer': 1, 'PIE_Client': 2}[
 CLASSES = {kind: u.load_class(None, '/Script/Quebec.Quebec'+kind) for kind in ('Controller', 'Character', 'Car', 'ParkResident', 'Campaign')}
 assert all(CLASSES.values()), 'Build the current editor module first'
 FIELDS = ('ReactionStartedAt', 'ReactionUntil', 'RouteDelay', 'ReactionYaw')
-GREETINGS = ('Salut!', 'Allô!', 'Ça va bien?')
-WARNINGS = ('Doucement', 'Attention!', 'Lève le pied')
+GREETINGS = ('Hi! A walk in the park feels good.', 'Hello! A fine day to take it easy.', 'You good? See you at the chalet.')
+WARNINGS = ('Hey! Easy', 'Watch it!', 'Whoa! Ease off')
 REPORT = {'passed': False, 'checks': [], 'trace': [], 'captures': [],
           'mode': 'two-player listen-server PIE; native callbacks and authority relocation fixtures',
           'audio_scope': 'Native accepted greeting, E dialogue and warning exercise the Dialogue cue; audio output and invocation counts require separate observation. Checkpoint/Complete events require the story suite.',

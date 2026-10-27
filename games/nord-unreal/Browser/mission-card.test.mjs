@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { columnLines, heatLines, jobLines, markerOffset, missionLines, payoutLines } from './mission-card.js';
+import { columnLines, heatLines, jobLines, markerOffset, missionLines, payoutLines, speechLines } from './mission-card.js';
 
 const lines = missionLines({
   title: '28 / THE BOLT',
@@ -52,11 +52,16 @@ assert.equal(heatLines({ down: 'knocked' }).line, 'To Hôpital Notre-Dame');
 assert.equal(heatLines(null).head, '');
 assert.ok(!/[\u00e9\u00e8\u00ea]/.test(`${wanted.head} ${wanted.line}`), 'the star plate mixed languages');
 
-const column = columnLines({ title: 'Car thief', info: '40 m  ·  damage 55 %' });
+const column = columnLines({ title: 'Car thief', objective: 'Ram the stolen car until it gives', info: '40 m  ·  damage 55 %' });
 assert.equal(column.title, 'Car thief');
+assert.equal(column.objective, 'Ram the stolen car until it gives');
 assert.equal(column.info, '40 m  ·  damage 55 %');
 assert.equal(columnLines({ title: 'Ink overrun', info: '12 m  ·  down 2/6' }).info, '12 m  ·  down 2/6');
 assert.equal(columnLines(null).title, '');
-assert.ok(!/[\u00e9\u00e8\u00ea]/.test(`${column.title} ${column.info}`), 'the job column mixed languages');
+assert.ok(!/[\u00e9\u00e8\u00ea]/.test(`${column.title} ${column.objective} ${column.info}`), 'the job column mixed languages');
+const heard = speechLines('Hi! A walk in the park feels good.');
+assert.equal(heard.line, 'Hi! A walk in the park feels good.');
+assert.equal(speechLines('').line, '');
+assert.ok(!/[\u00e9\u00e8\u00ea\u00e0]/.test(heard.line), 'the resident line mixed languages');
 
 console.log('mission card lines and marker ok');

@@ -74,6 +74,15 @@ int main()
     for (int Title = 0; Title < JobTitleCount; ++Title)
         Expect(PlainEnglish(JobTitles[Title]) && std::strcmp(JobTitles[Title], ExpectedTitles[Title]) == 0, "a job title left English");
     Expect(std::strcmp(JobOn, "JOB ON") == 0 && std::strcmp(JobAgain, "again") == 0, "the job prompt left English");
+    Expect(std::strcmp(Signs[1], "CAR THIEF") == 0 && std::strcmp(ThiefSign, "THIEF") == 0, "the sign left English");
+    Expect(std::strcmp(TakeOrder, "Pick up the order at the cafe") == 0 && std::strcmp(RamThief, "Ram the stolen car until it gives") == 0, "an objective left English");
+    Expect(std::strcmp(Pistol, "PISTOL") == 0 && std::strcmp(Fists, "FISTS") == 0 && std::strcmp(Medkit, "MEDKIT") == 0, "a weapon left English");
+    Expect(std::strcmp(Warnings[0], "Hey! Easy, people are here!") == 0 && std::strcmp(Greetings[0], "Hi! A walk in the park feels good.") == 0, "a resident line left English");
+    Expect(PlainEnglish(NotNow) && PlainEnglish(FinishScene) && PlainEnglish(Snack) && PlainEnglish(Mechanic) && PlainEnglish(CrewComing), "a notice left English");
+    for (int Speech = 0; Speech < SpeechCount; ++Speech)
+        Expect(PlainEnglish(Warnings[Speech]) && PlainEnglish(Greetings[Speech]), "a resident line mixed languages");
+    for (int Job = 0; Job < JobTitleCount; ++Job)
+        Expect(PlainEnglish(Signs[Job]) && PlainEnglish(Briefs[Job]), "a job brief mixed languages");
 
     std::printf("%d assertions, %d failures\n", Assertions, Failures);
     return Failures == 0 ? 0 : 1;

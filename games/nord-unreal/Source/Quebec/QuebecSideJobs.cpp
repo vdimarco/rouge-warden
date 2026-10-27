@@ -35,20 +35,10 @@ namespace
     constexpr int32 SideJobPosters = static_cast<int32>(QuebecJobRules::EJob::Posters);
     constexpr int32 SideJobFare = static_cast<int32>(QuebecJobRules::EJob::Fare);
 
-    // The 3D captions stay ASCII: the text-render font has no accented glyphs. The HUD titles are the English lines in QuebecBanner.h.
-    const TCHAR* const SideJobSigns[] = {TEXT("LIVRAISON CHAUDE"), TEXT("VOLEUR DE CHAR"), TEXT("L'ENCRE DEBORDE"), TEXT("CINQ ETOILES"), TEXT("TROIS AFFICHES"), TEXT("LA COURSE")};
-    const TCHAR* const SideJobBriefs[] = {
-        TEXT("Prends la commande au café, puis trois portes. Vite, c'est chaud!"),
-        TEXT("Un voleur file sur Sherbrooke. Rentre-lui dedans jusqu'à ce que son char lâche."),
-        TEXT("Les sbires du Curateur envahissent le Théâtre de Verdure. Trois vagues."),
-        TEXT("Trois étoiles aux trousses. Sème la police ou cache-toi au garage."),
-        TEXT("Rue Gauthier, trois coins. Colle-les dans l'ordre que tu veux. Le temps ne s'allonge pas."),
-        TEXT("Un passager attend. Reste dans le char jusqu'au quai. Quatre secondes à pied, et il descend.")
-    };
+    // The 3D captions stay ASCII: the text-render font has no accented glyphs. The words are the English lines in QuebecBanner.h.
     const TCHAR* const SideJobDoorStreets[] = {TEXT("rue De Lanaudière"), TEXT("rue Garnier"), TEXT("rue De La Roche")};
     const TCHAR* const PosterCorners[] = {TEXT("Papineau"), TEXT("Cartier"), TEXT("Dorion")};
-    static_assert(QuebecBanner::JobTitleCount == QuebecJobRules::JobCount && UE_ARRAY_COUNT(SideJobSigns) == QuebecJobRules::JobCount);
-    static_assert(UE_ARRAY_COUNT(SideJobBriefs) == QuebecJobRules::JobCount);
+    static_assert(QuebecBanner::JobTitleCount == QuebecJobRules::JobCount);
     static_assert(UE_ARRAY_COUNT(SideJobDoorStreets) == QuebecJobRules::DoorCount);
     static_assert(UE_ARRAY_COUNT(PosterCorners) == QuebecJobRules::PosterCount);
 
@@ -262,14 +252,14 @@ void AQuebecSideJobs::BuildMarkers()
         MarkerParts.Add(AddPart(*FString::Printf(TEXT("JobMarkerDisc%d"),Index),Cylinder,Point+FVector(0.,0.,4.),FVector(320.,320.,6.)));
         MarkerParts.Add(AddPart(*FString::Printf(TEXT("JobMarkerHalo%d"),Index),Cylinder,Point+FVector(0.,0.,90.),FVector(240.,240.,3.)));
         MarkerLetters.Add(AddCaption(*FString::Printf(TEXT("JobMarkerLetter%d"),Index),Point+FVector(0.,0.,250.),TEXT("M"),120.f,FColor(255,200,24)));
-        MarkerTitles.Add(AddCaption(*FString::Printf(TEXT("JobMarkerTitle%d"),Index),Point+FVector(0.,0.,165.),SideJobSigns[Index],26.f,FColor(255,238,193)));
+        MarkerTitles.Add(AddCaption(*FString::Printf(TEXT("JobMarkerTitle%d"),Index),Point+FVector(0.,0.,165.),JobWords(QuebecBanner::Signs[Index]),26.f,FColor(255,238,193)));
     }
     GoalDisc = AddPart(TEXT("JobGoalDisc"),Cylinder,FVector::ZeroVector,FVector(420.,420.,6.));
     GoalColumn = AddPart(TEXT("JobGoalColumn"),Cylinder,FVector::ZeroVector,FVector(30.,30.,900.));
     GoalBag = AddPart(TEXT("JobGoalBag"),Cube,FVector::ZeroVector,FVector(32.,22.,40.));
     if (UMaterialInterface* Kraft = LoadObject<UMaterialInterface>(nullptr,TEXT("/Game/ParkComic/M_Wood.M_Wood"))) GoalBag->SetMaterial(0,Kraft);
     GoalCaption = AddCaption(TEXT("JobGoalCaption"),FVector::ZeroVector,FString(),46.f,FColor(255,200,24));
-    ThiefCaption = AddCaption(TEXT("JobThiefCaption"),FVector::ZeroVector,TEXT("VOLEUR"),70.f,FColor(255,70,50));
+    ThiefCaption = AddCaption(TEXT("JobThiefCaption"),FVector::ZeroVector,JobWords(QuebecBanner::ThiefSign),70.f,FColor(255,70,50));
     GoalDisc->SetVisibility(false);
     GoalColumn->SetVisibility(false);
     GoalBag->SetVisibility(false);
@@ -399,7 +389,7 @@ bool AQuebecSideJobs::HandleInteract(AQuebecController* Player)
     for (TActorIterator<AQuebecCampaign> It(GetWorld()); It; ++It)
         if (It->Phase == EQuebecCampaignPhase::RaceRunning || It->IsAimingLight(Player) || It->IsStoryBeatOpen())
         {
-            QuebecNotice::Show(Player,TEXT("PAS MAINTENANT"),TEXT("Termine d'abord la scène du Curateur."),3.f);
+            QuebecNotice::Show(Player, JobWords(QuebecBanner::NotNow), JobWords(QuebecBanner::FinishScene), 3.f);
             return true;
         }
     return StartJob(Index,Player);
@@ -431,7 +421,7 @@ bool AQuebecSideJobs::StartJob(int32 Index, AQuebecController* Player)
     BeginJobContent(Player);
     if (GetWorld())
         for (TActorIterator<AQuebecController> It(GetWorld()); It; ++It) It->PlayFeedback(EQuebecFeedbackCue::Dialogue);
-    Say(SideJobSigns[Index],SideJobBriefs[Index],4.5f);
+    Say(JobWords(QuebecBanner::Signs[Index]), JobWords(QuebecBanner::Briefs[Index]), 4.5f);
     UE_LOG(LogTemp,Display,TEXT("NORD_SIDEJOB start job=%d starter=%s deadline=%.1f"),Index,*GetNameSafe(StarterState),DeadlineTime);
     UpdatePresentation();
     ForceNetUpdate();
@@ -444,7 +434,7 @@ void AQuebecSideJobs::BeginJobContent(AQuebecController* Player)
     const FVector MarkerPoint = MarkerPoints.IsValidIndex(JobIndex) ? MarkerPoints[JobIndex] : SideJobVector(QuebecJobRules::Markers[JobIndex]);
     if (JobIndex == SideJobDelivery)
     {
-        SetObjective(TEXT("Prends la commande au café"),GroundPoint(SideJobVector(QuebecJobRules::DeliveryCafe),0.f),true);
+        SetObjective(JobWords(QuebecBanner::TakeOrder),GroundPoint(SideJobVector(QuebecJobRules::DeliveryCafe),0.f),true);
     }
     else if (JobIndex == SideJobThief)
     {
@@ -468,13 +458,13 @@ void AQuebecSideJobs::BeginJobContent(AQuebecController* Player)
         if (!ThiefCar)
         {
             UE_LOG(LogTemp,Warning,TEXT("NORD_SIDEJOB thief car could not spawn"));
-            SetObjective(TEXT("Le voleur reste introuvable"),SideJobVector(QuebecJobRules::ThiefStart),false);
+            SetObjective(JobWords(QuebecBanner::ThiefMissing),SideJobVector(QuebecJobRules::ThiefStart),false);
             return;
         }
         TargetActor = ThiefCar;
         LastThiefVelocity = FVector::ZeroVector;
         ThiefCar->SetAutopilot(0.f,0.f,false);
-        SetObjective(TEXT("Rentre dans le char volé jusqu'à ce qu'il lâche"),ThiefCar->GetActorLocation(),true);
+        SetObjective(JobWords(QuebecBanner::RamThief),ThiefCar->GetActorLocation(),true);
         // A walker gets a loaner at the curb unless a free car already waits near the marker.
         bool bFreeCar = !Cast<AQuebecCharacter>(Body);
         for (TActorIterator<AQuebecCar> It(GetWorld()); It && !bFreeCar; ++It)
@@ -496,7 +486,7 @@ void AQuebecSideJobs::BeginJobContent(AQuebecController* Player)
     else if (JobIndex == SideJobGoons)
     {
         GrantPistols();
-        SetObjective(TEXT("Vague 1/3 : mets les sbires K.-O."),GroundPoint(SideJobVector(QuebecJobRules::GoonArena),0.f),true);
+        SetObjective(FString::Printf(TEXT("Wave 1/3: %s"), UTF8_TO_TCHAR(QuebecBanner::WaveKnock)),GroundPoint(SideJobVector(QuebecJobRules::GoonArena),0.f),true);
         SpawnWave(0);
     }
     else if (JobIndex == SideJobEscape)
@@ -506,13 +496,13 @@ void AQuebecSideJobs::BeginJobContent(AQuebecController* Player)
         // The way out is the police garage, which clears stars only for a car that no unit sees. The table point is the fallback.
         FVector Garage = QuebecPolice::GarageLocation();
         if (Garage.IsNearlyZero()) Garage = SideJobVector(QuebecJobRules::EscapeGarage);
-        SetObjective(TEXT("Sème la police ou rejoins le garage"),GroundPoint(Garage,0.f),true);
+        SetObjective(JobWords(QuebecBanner::LoseOrGarage),GroundPoint(Garage,0.f),true);
     }
     else if (JobIndex == SideJobPosters)
     {
         const int32 Aim = QuebecJobRules::NextPoster(QuebecJobRules::Markers[SideJobPosters], 0);
         const TCHAR* Corner = Aim >= 0 && Aim < QuebecJobRules::PosterCount ? PosterCorners[Aim] : TEXT("Gauthier");
-        SetObjective(FString::Printf(TEXT("Colle l'affiche au coin %s"), Corner),
+        SetObjective(FString::Printf(TEXT("Paste the poster at %s"), Corner),
             GroundPoint(SideJobVector(QuebecJobRules::PosterBoards[Aim >= 0 ? Aim : 0]), 0.f), true);
     }
     else if (JobIndex == SideJobFare)
@@ -536,7 +526,7 @@ void AQuebecSideJobs::BeginJobContent(AQuebecController* Player)
                 if (LoanCar) break;
             }
         }
-        SetObjective(TEXT("Prends le passager"), GroundPoint(SideJobVector(QuebecJobRules::Markers[SideJobFare]), 0.f), true);
+        SetObjective(JobWords(QuebecBanner::TakeFare), GroundPoint(SideJobVector(QuebecJobRules::Markers[SideJobFare]), 0.f), true);
     }
 }
 
@@ -861,8 +851,8 @@ void AQuebecSideJobs::TickDelivery()
         if (!ReachedBy(TargetLocation,0.,&Who)) return;
         CarrierState = Who;
         JobStep = 1;
-        Say(TEXT("COMMANDE RÉCUPÉRÉE"),FString::Printf(TEXT("Porte 1/3 · %s"),SideJobDoorStreets[0]),2.5f);
-        SetObjective(FString::Printf(TEXT("Livre la porte 1/3 · %s"),SideJobDoorStreets[0]),GroundPoint(SideJobVector(QuebecJobRules::DeliveryDoors[0]),0.f),true);
+        Say(JobWords(QuebecBanner::OrderGot),FString::Printf(TEXT("Door 1/3 · %s"),SideJobDoorStreets[0]),2.5f);
+        SetObjective(FString::Printf(TEXT("Door 1/3 · %s"),SideJobDoorStreets[0]),GroundPoint(SideJobVector(QuebecJobRules::DeliveryDoors[0]),0.f),true);
         for (TActorIterator<AQuebecController> It(GetWorld()); It; ++It) It->PlayFeedback(EQuebecFeedbackCue::Checkpoint);
         ForceNetUpdate();
         return;
@@ -888,8 +878,8 @@ void AQuebecSideJobs::TickDelivery()
     // Each door adds its bonus to the clock that is left.
     DeadlineTime = static_cast<float>(QuebecJobRules::DeliveryDeadline(StartedAt,Done));
     JobStep = Done+1;
-    Say(TEXT("LIVRÉ!"),FString::Printf(TEXT("Porte %d/3 · +%.0f s"),Done,QuebecJobRules::DoorBonusSeconds),2.5f);
-    SetObjective(FString::Printf(TEXT("Livre la porte %d/3 · %s"),Done+1,SideJobDoorStreets[Done]),GroundPoint(SideJobVector(QuebecJobRules::DeliveryDoors[Done]),0.f),true);
+    Say(JobWords(QuebecBanner::DoorWord),FString::Printf(TEXT("Door %d/3 · +%.0f s"),Done,QuebecJobRules::DoorBonusSeconds),2.5f);
+    SetObjective(FString::Printf(TEXT("Door %d/3 · %s"),Done+1,SideJobDoorStreets[Done]),GroundPoint(SideJobVector(QuebecJobRules::DeliveryDoors[Done]),0.f),true);
     for (TActorIterator<AQuebecController> It(GetWorld()); It; ++It) It->PlayFeedback(EQuebecFeedbackCue::Checkpoint);
     ForceNetUpdate();
 }
@@ -1017,7 +1007,7 @@ void AQuebecSideJobs::TickGoons(float Now)
             if (OutsideSince < 0.f)
             {
                 OutsideSince = Now;
-                Say(TEXT("REVIENS!"),TEXT("Le théâtre a besoin de toi : 10 s"),2.5f);
+                Say(JobWords(QuebecBanner::ComeBack), JobWords(QuebecBanner::TheatreNeeds), 2.5f);
             }
             else if (Now-OutsideSince > QuebecJobRules::GoonArenaGraceSeconds) { FinishJob(false, JobWords(QuebecBanner::LeftTheatre)); return; }
         }
@@ -1036,7 +1026,7 @@ void AQuebecSideJobs::TickGoons(float Now)
     if (NextWaveAt < 0.f)
     {
         NextWaveAt = Now+2.5f;
-        Say(FString::Printf(TEXT("VAGUE %d/3"),JobStep+2),TEXT("D'autres sbires arrivent!"),2.5f);
+        Say(FString::Printf(TEXT("WAVE %d/3"), JobStep+2), JobWords(QuebecBanner::CrewComing), 2.5f);
         return;
     }
     if (Now < NextWaveAt) return;
@@ -1046,7 +1036,7 @@ void AQuebecSideJobs::TickGoons(float Now)
     Goons.Reset();
     ++JobStep;
     SpawnWave(JobStep);
-    SetObjective(FString::Printf(TEXT("Vague %d/3 : mets les sbires K.-O."),JobStep+1),TargetLocation,true);
+    SetObjective(FString::Printf(TEXT("Wave %d/3: %s"), JobStep+1, UTF8_TO_TCHAR(QuebecBanner::WaveKnock)), TargetLocation, true);
     ForceNetUpdate();
 }
 
@@ -1085,8 +1075,8 @@ void AQuebecSideJobs::TickPosters()
     const QuebecJobRules::FJobSpot From = QuebecJobRules::PosterBoards[Hit];
     const int32 Aim = QuebecJobRules::NextPoster(From, Next);
     const int32 Shown = Aim >= 0 ? Aim : 0;
-    Say(TEXT("COLLÉ"), FString::Printf(TEXT("Coin %s, ensuite"), PosterCorners[Shown]), 2.5f);
-    SetObjective(FString::Printf(TEXT("Colle l'affiche au coin %s"), PosterCorners[Shown]),
+    Say(JobWords(QuebecBanner::Pasted), FString::Printf(TEXT("Corner %s, next"), PosterCorners[Shown]), 2.5f);
+    SetObjective(FString::Printf(TEXT("Paste the poster at %s"), PosterCorners[Shown]),
         GroundPoint(SideJobVector(QuebecJobRules::PosterBoards[Shown]), 0.f), true);
     for (TActorIterator<AQuebecController> It(GetWorld()); It; ++It) It->PlayFeedback(EQuebecFeedbackCue::Checkpoint);
     ForceNetUpdate();
@@ -1143,7 +1133,7 @@ void AQuebecSideJobs::TickFare(float DeltaSeconds)
     if (bBoarded)
     {
         JobProgress = 0.5f;
-        Say(TEXT("MONTE"), TEXT("Reste dans le char."), 2.5f);
+        Say(JobWords(QuebecBanner::GetIn), JobWords(QuebecBanner::StayInCar), 2.5f);
         for (TActorIterator<AQuebecController> It(GetWorld()); It; ++It) It->PlayFeedback(EQuebecFeedbackCue::Checkpoint);
     }
     if (Next.Step != QuebecJobRules::FareAboard) return;
@@ -1151,8 +1141,8 @@ void AQuebecSideJobs::TickFare(float DeltaSeconds)
     const bool bLoanWaiting = IsValid(LoanCar) && !LoanCar->Occupant && !LoanCar->GetController();
     const int32 Aim = QuebecJobRules::FareAim(Next.Step, bDriving, bLoanWaiting);
     const FVector Where = Aim == QuebecJobRules::FareAimLoan ? LoanCar->GetActorLocation() : Drop;
-    const FString Words = bDriving ? FString(TEXT("Dépose-le, sans quitter le char"))
-        : FString::Printf(TEXT("Reviens dans le char, %d s"), QuebecJobRules::FareSecondsLeft(Next.OnFoot));
+    const FString Words = bDriving ? JobWords(QuebecBanner::DropFare)
+        : FString::Printf(TEXT("Get back in the car, %d s"), QuebecJobRules::FareSecondsLeft(Next.OnFoot));
     if (ObjectiveText.Equals(Words, ESearchCase::CaseSensitive) && FVector::DistSquared2D(TargetLocation, Where) <= 1.) return;
     SetObjective(Words, Where, true);
     ForceNetUpdate();
@@ -1199,13 +1189,13 @@ void AQuebecSideJobs::UpdatePresentation()
         const int32 FareCap = QuebecJobRules::FareCaption(
             FVector::Dist2D(TargetLocation, GroundPoint(SideJobVector(QuebecJobRules::Markers[SideJobFare]), 0.f)) <= QuebecJobRules::FarePlaceRadius,
             FVector::Dist2D(TargetLocation, GroundPoint(SideJobVector(QuebecJobRules::FareDrop), 0.f)) <= QuebecJobRules::FarePlaceRadius);
-        const FString FareWord = FareCap == QuebecJobRules::FareAimLoan ? FString(TEXT("CHAR")) :
-            FareCap == QuebecJobRules::FareAimPickup ? FString(TEXT("PASSAGER")) : FString(TEXT("QUAI"));
-        const FString Label = JobIndex == SideJobDelivery ? (JobStep == 0 ? FString(TEXT("CAFE / COMMANDE")) : FString::Printf(TEXT("PORTE %d/3"),JobStep)) :
-            JobIndex == SideJobGoons ? FString(TEXT("THEATRE")) :
-            JobIndex == SideJobPosters ? FString::Printf(TEXT("AFFICHE %d/3"), FMath::Min(QuebecJobRules::PosterBits(JobStep) + 1, QuebecJobRules::PosterCount)) :
+        const FString FareWord = FareCap == QuebecJobRules::FareAimLoan ? JobWords(QuebecBanner::CarWord) :
+            FareCap == QuebecJobRules::FareAimPickup ? JobWords(QuebecBanner::Passenger) : JobWords(QuebecBanner::Quay);
+        const FString Label = JobIndex == SideJobDelivery ? (JobStep == 0 ? JobWords(QuebecBanner::CafeOrder) : FString::Printf(TEXT("DOOR %d/3"),JobStep)) :
+            JobIndex == SideJobGoons ? JobWords(QuebecBanner::TheatreCap) :
+            JobIndex == SideJobPosters ? FString::Printf(TEXT("POSTER %d/3"), FMath::Min(QuebecJobRules::PosterBits(JobStep) + 1, QuebecJobRules::PosterCount)) :
             JobIndex == SideJobFare ? FareWord :
-            FString(TEXT("GARAGE"));
+            JobWords(QuebecBanner::GarageWord);
         // SetText rebuilds the caption's glyphs, so it runs only when the label changes.
         if (!Label.Equals(GoalLabel,ESearchCase::CaseSensitive)) { GoalLabel = Label; GoalCaption->SetText(FText::FromString(Label)); }
     }

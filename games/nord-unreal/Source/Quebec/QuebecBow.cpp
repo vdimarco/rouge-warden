@@ -179,7 +179,7 @@ void AQuebecBow::UpdateSign()
         if (Part) Part->SetVisibility(bShow);
     if (!Caption) return;
     Caption->SetVisibility(bShow);
-    const FString Words = bBowDone ? TEXT("MERCI") : bHolding ? TEXT("RESTE") : TEXT("SALUT");
+    const FString Words = bBowDone ? FString(TEXT("THANKS")) : bHolding ? FString(TEXT("STAY")) : FString(UTF8_TO_TCHAR(QuebecBanner::BowWord));
     if (Words == Shown) return;
     Shown = Words;
     Caption->SetText(FText::FromString(Words));
@@ -201,7 +201,7 @@ void AQuebecBow::Succeed()
             }
     if (GetWorld())
         for (TActorIterator<AQuebecController> It(GetWorld()); It; ++It) It->PlayFeedback(EQuebecFeedbackCue::Complete);
-    Say(TEXT("SALUT"), FString::Printf(TEXT("%d $"), QuebecBow::Pay));
+    Say(FString(UTF8_TO_TCHAR(QuebecBanner::BowWord)), FString::Printf(TEXT("%d $"), QuebecBow::Pay));
     UE_LOG(LogTemp, Display, TEXT("NORD_BOW done pay=%d"), QuebecBow::Pay);
     ForceNetUpdate();
 }
@@ -212,7 +212,7 @@ void AQuebecBow::FailHold()
     bHolding = false;
     InsideSeconds = 0.f;
     OutsideSeconds = 0.f;
-    Say(TEXT("COUPÉ"), TEXT("Tu as quitté la lumière."));
+    Say(FString(UTF8_TO_TCHAR(QuebecBanner::Cut)), FString(UTF8_TO_TCHAR(QuebecBanner::LeftTheLight)));
     UE_LOG(LogTemp, Display, TEXT("NORD_BOW dropped"));
     ForceNetUpdate();
 }
@@ -241,14 +241,14 @@ FString AQuebecBow::GetPrompt(const APawn* Pawn) const
 {
     if (bHolding)
     {
-        if (OutsideSeconds > 0.f) return TEXT("Reviens dans la lumière");
+        if (OutsideSeconds > 0.f) return FString(UTF8_TO_TCHAR(QuebecBanner::BackToLight));
         const int32 Left = FMath::Max(1, FMath::CeilToInt(QuebecBow::HoldSeconds - InsideSeconds));
-        return FString::Printf(TEXT("Reste  %d s"), Left);
+        return FString::Printf(TEXT("Stay  %d s"), Left);
     }
     if (bBowDone || !Near(Pawn) || !IsListed()) return FString();
     if (StoryOpen(Cast<AQuebecController>(Pawn ? Pawn->GetController() : nullptr)))
-        return TEXT("[ E ]  SALUT  /  Pas maintenant");
-    return TEXT("[ E ]  SALUT");
+        return TEXT("[ E ]  BOW  /  Not now");
+    return TEXT("[ E ]  BOW");
 }
 
 bool AQuebecBow::HandleInteract(AQuebecController* Player)
@@ -271,14 +271,14 @@ bool AQuebecBow::HandleInteract(AQuebecController* Player)
     {
         if (!bWon) return false;
         if (bJob) QuebecNotice::Show(Player, FString(UTF8_TO_TCHAR(QuebecBanner::JobOn)), FString(UTF8_TO_TCHAR(QuebecBanner::KeyRetry)), 3.f);
-        else if (bStory) QuebecNotice::Show(Player, TEXT("PAS MAINTENANT"), TEXT("Termine d'abord la scène du Curateur."), 3.f);
+        else if (bStory) QuebecNotice::Show(Player, FString(UTF8_TO_TCHAR(QuebecBanner::NotNow)), FString(UTF8_TO_TCHAR(QuebecBanner::FinishScene)), 3.f);
         return true;
     }
     bHolding = true;
     InsideSeconds = 0.f;
     OutsideSeconds = 0.f;
     Player->PlayFeedback(EQuebecFeedbackCue::Dialogue);
-    Say(TEXT("LA SCÈNE"), TEXT("Douze secondes dans la lumière."));
+    Say(FString(UTF8_TO_TCHAR(QuebecBanner::TheScene)), FString(UTF8_TO_TCHAR(QuebecBanner::TwelveSeconds)));
     UE_LOG(LogTemp, Display, TEXT("NORD_BOW start"));
     ForceNetUpdate();
     return true;

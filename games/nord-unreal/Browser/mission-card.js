@@ -165,8 +165,13 @@ export function heatLines(card) {
 export function columnLines(card) {
   return {
     title: String(card?.title || '').trim(),
+    objective: String(card?.objective || '').trim(),
     info: String(card?.info || '').trim(),
   };
+}
+
+export function speechLines(text) {
+  return { line: String(text || '').trim() };
 }
 
 export function showColumn(card) {
@@ -175,9 +180,21 @@ export function showColumn(card) {
   const lines = columnLines(card);
   root.hidden = !lines.title;
   const title = document.getElementById('column-title');
+  const objective = document.getElementById('column-objective');
   const info = document.getElementById('column-info');
   if (title) title.textContent = lines.title;
+  if (objective) objective.textContent = lines.objective;
   if (info) info.textContent = lines.info;
+  return lines;
+}
+
+export function showSpeech(text) {
+  const root = document.getElementById('speech');
+  if (!root) return null;
+  const lines = speechLines(text);
+  root.hidden = !lines.line;
+  const line = document.getElementById('speech-line');
+  if (line) line.textContent = lines.line;
   return lines;
 }
 
@@ -199,3 +216,4 @@ if (typeof window !== 'undefined') window.__nordShowPayout = showPayout;
 if (typeof window !== 'undefined') window.__nordShowJob = card => showJob(card, document.body.classList.contains('touch-input'));
 if (typeof window !== 'undefined') window.__nordShowHeat = showHeat;
 if (typeof window !== 'undefined') window.__nordShowColumn = showColumn;
+if (typeof window !== 'undefined') window.__nordShowSpeech = showSpeech;

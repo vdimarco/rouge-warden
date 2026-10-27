@@ -1220,7 +1220,7 @@ void AQuebecPoliceDispatch::BuildGarage()
         const FVector Front = Sign + Right * (Face * 7.5);
         const bool bStreet = Face < 0.;
         Caption(bStreet ? TEXT("GarageWordStreet") : TEXT("GarageWordBack"), TEXT("GARAGE"), Front + FVector(0., 0., 305.), Facing, 58.f, FColor(250, 250, 245));
-        Caption(bStreet ? TEXT("GarageLineStreet") : TEXT("GarageLineBack"), TEXT("MÉCANIQUE · CARROSSERIE"), Front + FVector(0., 0., 258.), Facing, 20.f,
+        Caption(bStreet ? TEXT("GarageLineStreet") : TEXT("GarageLineBack"), FString(UTF8_TO_TCHAR(QuebecBanner::Mechanic)), Front + FVector(0., 0., 258.), Facing, 20.f,
             FColor(255, 214, 90));
     }
 }

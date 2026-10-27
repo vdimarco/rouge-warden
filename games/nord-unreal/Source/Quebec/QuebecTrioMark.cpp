@@ -1,4 +1,5 @@
 #include "QuebecTrioMark.h"
+#include "QuebecBanner.h"
 #include "QuebecTrio.h"
 #include "QuebecGameplay.h"
 #include "QuebecPlayerState.h"
@@ -108,9 +109,9 @@ void AQuebecTrio::BuildPosts()
 
 FString AQuebecTrio::WalkLine() const
 {
-    if (Step <= 0) return TEXT("Porte 1");
-    if (Step == 1) return TEXT("Porte 2");
-    if (Step == 2) return TEXT("Porte 3");
+    if (Step <= 0) return FString(UTF8_TO_TCHAR(QuebecBanner::DoorWord1));
+    if (Step == 1) return FString(UTF8_TO_TCHAR(QuebecBanner::DoorWord2));
+    if (Step == 2) return FString(UTF8_TO_TCHAR(QuebecBanner::DoorWord3));
     return FString();
 }
 
@@ -155,18 +156,18 @@ void AQuebecTrio::Tick(float DeltaSeconds)
     if (Next.Step == 1)
     {
         UE_LOG(LogTemp, Display, TEXT("NORD_TRIO step=1"));
-        QuebecNotice::Show(Player, TEXT("PORTE 1"), TEXT("Vers la porte 2."), 4.f);
+        QuebecNotice::Show(Player, FString(UTF8_TO_TCHAR(QuebecBanner::DoorWord1)), FString(UTF8_TO_TCHAR(QuebecBanner::ToDoor2)), 4.f);
     }
     else if (Next.Step == 2)
     {
         UE_LOG(LogTemp, Display, TEXT("NORD_TRIO step=2"));
-        QuebecNotice::Show(Player, TEXT("PORTE 2"), TEXT("Vers la porte 3."), 4.f);
+        QuebecNotice::Show(Player, FString(UTF8_TO_TCHAR(QuebecBanner::DoorWord2)), FString(UTF8_TO_TCHAR(QuebecBanner::ToDoor3)), 4.f);
     }
     else if (Prize > 0 && Stats)
     {
         Stats->Cash += Prize;
         Stats->Changed();
         UE_LOG(LogTemp, Display, TEXT("NORD_TRIO paid %d cash=%d"), Prize, Stats->Cash);
-        QuebecNotice::Show(Player, TEXT("PORTE 3"), FString::Printf(TEXT("%d $"), Prize), 4.f);
+        QuebecNotice::Show(Player, FString(UTF8_TO_TCHAR(QuebecBanner::DoorWord3)), FString::Printf(TEXT("%d $"), Prize), 4.f);
     }
 }

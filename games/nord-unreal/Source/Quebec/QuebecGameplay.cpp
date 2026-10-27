@@ -2631,7 +2631,7 @@ void AQuebecController::PlayerTick(float DeltaTime)
                 if (Delta.SizeSquared2D() > 1.f)
                     CardBearing = FMath::RoundToInt(FMath::RadiansToDegrees(FMath::Atan2(Delta.X, Delta.Y)));
             }
-            FString JobHead, JobLine, DownKind, ColumnTitle, ColumnInfo;
+            FString JobHead, JobLine, DownKind, ColumnTitle, ColumnInfo, ColumnObjective, Speech;
             int32 StarPlate = 0;
             if (const UWorld* World = GetWorld())
             {
@@ -2671,8 +2671,10 @@ void AQuebecController::PlayerTick(float DeltaTime)
                             ColumnInfo += FString::Printf(TEXT("  ·  damage %d %%"), FMath::RoundToInt(Jobs->JobProgress * 100.f));
                         else if (Jobs->JobIndex == static_cast<int32>(QuebecJobRules::EJob::Goons))
                             ColumnInfo += FString::Printf(TEXT("  ·  down %d/%d"), FMath::RoundToInt(Jobs->JobProgress * QuebecJobRules::GoonTotal()), QuebecJobRules::GoonTotal());
+                        ColumnObjective = Jobs->ObjectiveText;
                     }
                 }
+                if (World->GetTimeSeconds() < ResidentCaptionUntil) Speech = ResidentCaption;
                 if (const AQuebecPlayerState* Stats = GetPlayerState<AQuebecPlayerState>())
                 {
                     const int32 Stars = Stats->Stars;
@@ -2704,11 +2706,12 @@ void AQuebecController::PlayerTick(float DeltaTime)
                 return Out;
             };
             Streamer->SendAllPlayersMessage(TEXT("Response"), FString::Printf(
-                TEXT("{\"nordDriving\":%s,\"nordSwimming\":%s,\"nordTitle\":\"%s\",\"nordObjective\":\"%s\",\"nordStage\":\"%s\",\"nordFail\":\"%s\",\"nordBearing\":%d,\"nordMeters\":%d,\"nordPayout\":%d,\"nordJobHead\":\"%s\",\"nordJobLine\":\"%s\",\"nordStars\":%d,\"nordDown\":\"%s\",\"nordColumn\":\"%s\",\"nordColumnInfo\":\"%s\"}"),
+                TEXT("{\"nordDriving\":%s,\"nordSwimming\":%s,\"nordTitle\":\"%s\",\"nordObjective\":\"%s\",\"nordStage\":\"%s\",\"nordFail\":\"%s\",\"nordBearing\":%d,\"nordMeters\":%d,\"nordPayout\":%d,\"nordJobHead\":\"%s\",\"nordJobLine\":\"%s\",\"nordStars\":%d,\"nordDown\":\"%s\",\"nordColumn\":\"%s\",\"nordColumnInfo\":\"%s\",\"nordColumnObjective\":\"%s\",\"nordSpeech\":\"%s\"}"),
                 Cast<AQuebecCar>(GetPawn()) ? TEXT("true") : TEXT("false"),
                 Character && Character->GetCharacterMovement()->IsSwimming() ? TEXT("true") : TEXT("false"),
                 *Json(CardTitle), *Json(CardObjective), *Json(CardStage), *Json(CardFail), CardBearing, CardMeters, CardPayout,
-                *Json(JobHead), *Json(JobLine), StarPlate, *Json(DownKind), *Json(ColumnTitle), *Json(ColumnInfo)));
+                *Json(JobHead), *Json(JobLine), StarPlate, *Json(DownKind), *Json(ColumnTitle), *Json(ColumnInfo),
+                *Json(ColumnObjective), *Json(Speech)));
         }
     }
     ApplyComicStyle();
@@ -3669,9 +3672,9 @@ void AQuebecHUD::DrawHUD()
     }
     FString PedaloPortrait = TEXT("km/h  /  PEDALO");
     FString PedaloLandscape = TEXT("Hold gas to paddle");
-    FString BikePortrait = TEXT("km/h  /  VELO");
+    FString BikePortrait = TEXT("km/h  /  BIKE");
     FString BikeLandscape = TEXT("Hold gas to pedal");
-    const FString ScootPortrait = TEXT("km/h  /  TROT");
+    const FString ScootPortrait = TEXT("km/h  /  SCOOT");
     const FString ScootLandscape = TEXT("Hold gas to kick");
     if (Car && Car->IsPedalo())
     {

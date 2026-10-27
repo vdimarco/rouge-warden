@@ -1,4 +1,5 @@
 #include "QuebecGameplay.h"
+#include "QuebecBanner.h"
 #include "QuebecCampaign.h"
 #include "QuebecKnockModel.h"
 #include "QuebecPedestrian.h"
@@ -114,9 +115,8 @@ void AQuebecController::TickResidentGreetings(float DeltaTime)
         // People: the nearest one shouts a warning while diving aside, instead of stopping in the car's path.
         if (Nearest)
         {
-            const TCHAR* Warnings[] = {TEXT("Hé! Doucement, y'a du monde ici!"),
-                TEXT("Attention! Le parc, c'est pas une piste de course!"),TEXT("Oups! Lève le pied, mon ami!")};
-            ClientResidentGreeting(FString(AQuebecParkResident::NameForStyle(Nearest->Style))+TEXT("  /  ")+Warnings[FMath::Clamp(Nearest->Style,0,10)%3]);
+            const int32 Which = FMath::Clamp(Nearest->Style, 0, 10) % QuebecBanner::SpeechCount;
+            ClientResidentGreeting(FString(AQuebecParkResident::NameForStyle(Nearest->Style)) + TEXT("  /  ") + FString(UTF8_TO_TCHAR(QuebecBanner::Warnings[Which])));
             NextResidentGreetingAt = Now+10.f;
         }
         return;
@@ -129,9 +129,8 @@ void AQuebecController::TickResidentGreetings(float DeltaTime)
         if (!It->GetInteractionPrompt(this).IsEmpty()) return;
     if (AQuebecParkResident* Resident = FindInteractableResident(); Resident && Resident->Acknowledge(Walker))
     {
-        const TCHAR* Greetings[] = {TEXT("Salut! Ça fait du bien, un tour au parc."),
-            TEXT("Allô! Belle journée pour prendre ça relax."),TEXT("Ça va bien? On se croise au chalet tantôt!")};
-        ClientResidentGreeting(FString(AQuebecParkResident::NameForStyle(Resident->Style))+TEXT("  /  ")+Greetings[FMath::Clamp(Resident->Style,0,10)%3]);
+        const int32 Which = FMath::Clamp(Resident->Style, 0, 10) % QuebecBanner::SpeechCount;
+        ClientResidentGreeting(FString(AQuebecParkResident::NameForStyle(Resident->Style)) + TEXT("  /  ") + FString(UTF8_TO_TCHAR(QuebecBanner::Greetings[Which])));
         NextResidentGreetingAt = Now+30.f;
     }
 }

@@ -1,4 +1,5 @@
 #include "QuebecBuoy.h"
+#include "QuebecBanner.h"
 #include "QuebecLap.h"
 #include "QuebecRide.h"
 #include "QuebecGameplay.h"
@@ -90,7 +91,7 @@ void AQuebecBuoy::BuildBuoy()
     Caption->SetHorizontalAlignment(EHTA_Center);
     Caption->SetVerticalAlignment(EVRTA_TextCenter);
     Caption->SetWorldSize(90.f);
-    Caption->SetText(FText::FromString(TEXT("BOUEE")));
+    Caption->SetText(FText::FromString(FString(UTF8_TO_TCHAR(QuebecBanner::Buoy))));
     Caption->SetTextRenderColor(FColor(220, 236, 255));
     Caption->SetCollisionEnabled(ECollisionEnabled::NoCollision);
     if (UMaterialInterface* Mat = LoadObject<UMaterialInterface>(nullptr, TEXT("/Game/ParkComic/M_Text.M_Text")))
@@ -103,7 +104,7 @@ FString AQuebecBuoy::DriveLine(bool bPortrait) const
     if (Leg == static_cast<int32>(QuebecLap::ELeg::Buoy))
         return bPortrait ? FString(TEXT("km/h  /  PONT")) : FString(TEXT("Paddle back to the bridge"));
     if (Leg == static_cast<int32>(QuebecLap::ELeg::Dock))
-        return bPortrait ? FString(TEXT("km/h  /  BOUEE")) : FString(TEXT("Hold gas to paddle to the buoy"));
+        return bPortrait ? FString(TEXT("km/h  /  BUOY")) : FString(TEXT("Hold gas to paddle to the buoy"));
     return bPortrait ? FString(TEXT("km/h  /  PEDALO")) : FString(TEXT("Hold gas to paddle"));
 }
 
@@ -138,13 +139,13 @@ void AQuebecBuoy::Tick(float DeltaSeconds)
     if (Next == QuebecLap::ELeg::Buoy)
     {
         UE_LOG(LogTemp, Display, TEXT("NORD_LAP buoy"));
-        if (Player) QuebecNotice::Show(Player, TEXT("BOUEE"), TEXT("Ramène le pédalo au pont."), 4.f);
+        if (Player) QuebecNotice::Show(Player, FString(UTF8_TO_TCHAR(QuebecBanner::Buoy)), FString(UTF8_TO_TCHAR(QuebecBanner::BackToBridge)), 4.f);
     }
     if (Prize > 0 && Stats)
     {
         Stats->Cash += Prize;
         Stats->Changed();
         UE_LOG(LogTemp, Display, TEXT("NORD_LAP paid %d cash=%d"), Prize, Stats->Cash);
-        QuebecNotice::Show(Player, TEXT("TOUR"), FString::Printf(TEXT("%d $"), Prize), 4.f);
+        QuebecNotice::Show(Player, FString(UTF8_TO_TCHAR(QuebecBanner::Lap)), FString::Printf(TEXT("%d $"), Prize), 4.f);
     }
 }
