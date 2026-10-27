@@ -1,0 +1,5 @@
+- [x] Share the run from walk speed to sprint speed
+- [x] Keep the single-node cut at 520
+- [x] Keep the opening pitch, the aim, and the socket
+- [x] Run `Scripts/test_gait_blend.py`
+- [ ] Confirm a blend space in Unreal (editor not available here)
