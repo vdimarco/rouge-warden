@@ -1,4 +1,5 @@
 #include "QuebecCombat.h"
+#include "QuebecBanner.h"
 #include "QuebecAimModel.h"
 #include "QuebecGameplay.h"
 #include "QuebecPlayerState.h"
@@ -350,7 +351,7 @@ namespace
         if (const APawn* AttackerPawn = Attacker ? Attacker->GetPawn() : nullptr)
             Push += (Victim->GetActorLocation() - AttackerPawn->GetActorLocation()).GetSafeNormal2D() * 260.;
         Victim->StartKnock(Push, static_cast<float>(QuebecCombatModel::KnockOutSeconds), true);
-        if (Player) QuebecNotice::Show(Player, TEXT("K.-O."), TEXT("Retour à l'Hôpital Notre-Dame"), static_cast<float>(QuebecCombatModel::KnockOutSeconds));
+        if (Player) QuebecNotice::Show(Player, FString(UTF8_TO_TCHAR(QuebecBanner::KnockedWord)), FString(UTF8_TO_TCHAR(QuebecBanner::HospitalLine)), static_cast<float>(QuebecCombatModel::KnockOutSeconds));
         UE_LOG(LogTemp, Display, TEXT("NORD_COMBAT knockout player=%s by=%s"), *GetNameSafe(Victim), *GetNameSafe(Attacker));
     }
 

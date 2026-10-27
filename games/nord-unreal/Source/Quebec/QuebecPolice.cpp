@@ -1,4 +1,5 @@
 #include "QuebecPolice.h"
+#include "QuebecBanner.h"
 #include "QuebecCombat.h"
 #include "QuebecGameplay.h"
 #include "QuebecHeatModel.h"
@@ -1387,7 +1388,7 @@ void AQuebecPoliceDispatch::ReportCrime(AController* Offender, EQuebecCrime Crim
     if (bPoliceSaw) Record.bSeen = true;
     UE_LOG(LogTemp, Display, TEXT("NORD_WANTED crime=%d heat=%.0f stars=%d police=%d"), Index, Wanted.Heat, Wanted.Stars, bPoliceSaw ? 1 : 0);
     if (Added > 0)
-        QuebecNotice::Show(Offender, TEXT("RECHERCHÉ!"), FString::Printf(TEXT("%d étoile%s"), Wanted.Stars, Wanted.Stars > 1 ? TEXT("s") : TEXT("")), 2.5f);
+        QuebecNotice::Show(Offender, FString(UTF8_TO_TCHAR(QuebecBanner::Wanted)), FString(UTF8_TO_TCHAR(QuebecBanner::StarLine(Wanted.Stars).c_str())), 2.5f);
 }
 
 void AQuebecPoliceDispatch::ApplyStars(AController* Player, int32 NewStars)
@@ -1421,7 +1422,7 @@ void AQuebecPoliceDispatch::Arrest(APlayerController* Player, AQuebecPlayerState
     Record.bArrestPending = true;
     Record.bSeen = false;
     Record.ArrestHeld = 0.f;
-    QuebecNotice::Show(Player, TEXT("ARRÊTÉ!"), TEXT("Poste de quartier 38"), QuebecHeat::ArrestBannerSeconds);
+    QuebecNotice::Show(Player, FString(UTF8_TO_TCHAR(QuebecBanner::ArrestedWord)), FString(UTF8_TO_TCHAR(QuebecBanner::StationLine)), QuebecHeat::ArrestBannerSeconds);
     UE_LOG(LogTemp, Display, TEXT("NORD_WANTED arrest player=%s"), *GetNameSafe(Player));
 }
 
@@ -1486,7 +1487,7 @@ void AQuebecPoliceDispatch::TickPlayers(float Now, float DeltaSeconds, bool bVis
         if (Change < 0)
         {
             UE_LOG(LogTemp, Display, TEXT("NORD_WANTED stars=%d reason=search_ended"), Wanted.Stars);
-            if (Wanted.Stars == 0) QuebecNotice::Show(Player, TEXT("SEMÉS!"), TEXT("La police abandonne"), 3.f);
+            if (Wanted.Stars == 0) QuebecNotice::Show(Player, FString(UTF8_TO_TCHAR(QuebecBanner::LostPolice)), FString(UTF8_TO_TCHAR(QuebecBanner::LostDetail)), 3.f);
         }
         if (Wanted.Stars <= 0) { Record.ArrestHeld = 0.f; continue; }
         // Arrest: a police officer within reach of a slow player on foot for two seconds.
@@ -1509,7 +1510,7 @@ void AQuebecPoliceDispatch::TickPlayers(float Now, float DeltaSeconds, bool bVis
         {
             Record.GarageReadyAt = Now + QuebecPolice::GarageCooldown;
             ApplyStars(Player, 0);
-            QuebecNotice::Show(Player, TEXT("GARAGE"), TEXT("Nouvelles plaques: recherche annulée"), 3.f);
+            QuebecNotice::Show(Player, FString(UTF8_TO_TCHAR(QuebecBanner::GarageWord)), FString(UTF8_TO_TCHAR(QuebecBanner::GarageDetail)), 3.f);
             UE_LOG(LogTemp, Display, TEXT("NORD_WANTED garage player=%s"), *GetNameSafe(Player));
         }
     }

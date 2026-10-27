@@ -630,6 +630,8 @@ private:
     int32 BrowserJobSerial = -1;
     float BrowserJobBannerAt = -10.f;
     bool bBrowserJobWaiting = false;
+    int32 BrowserStars = 0;
+    float BrowserStarsAt = -10.f;
     FString BrowserStreamerId;
     void BindBrowserInputRelease();
     void UnbindBrowserInputRelease();

@@ -2,7 +2,7 @@ import { Config, Flags, NumericParameters, OptionParameters, PixelStreaming, Tex
 import { Logger, LogLevel } from '@epicgames-ps/lib-pixelstreamingcommon-ue5.8';
 import { signallingUrl, streamDimensions, phoneStreamState, adaptPhoneStream, pinnedLevel } from './config.mjs';
 import { setupTouchControls } from './touch-controls.js';
-import { showMission, showPayout, showJob } from './mission-card.js';
+import { showMission, showPayout, showJob, showHeat } from './mission-card.js';
 
 Logger.InitLogging(LogLevel.Warning, false);
 
@@ -163,6 +163,9 @@ if (endpoint) {
       if (typeof state?.nordPayout === 'number') showPayout(state.nordPayout);
       if (typeof state?.nordJobHead === 'string') {
         showJob(state.nordJobHead ? { head: state.nordJobHead, line: state.nordJobLine || '' } : null, touchMode);
+      }
+      if (typeof state?.nordStars === 'number' || typeof state?.nordDown === 'string') {
+        showHeat({ stars: state.nordStars, down: state.nordDown });
       }
     });
     connectButton.disabled = false;

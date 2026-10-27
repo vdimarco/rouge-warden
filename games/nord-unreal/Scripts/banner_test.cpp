@@ -61,6 +61,14 @@ int main()
     Expect(Paid.Line == "+300 $  ·  Three doors delivered, still hot", "the success line drifted");
     Expect(!HasFrench(Paid.Line), "the success line mixed languages");
 
+    Expect(PlainEnglish(Wanted) && PlainEnglish(ArrestedWord) && PlainEnglish(KnockedWord), "the heat heads left English");
+    Expect(std::strcmp(Wanted, "WANTED") == 0 && StarLine(1) == "1 star" && StarLine(2) == "2 stars", "the star line drifted");
+    Expect(!HasFrench(StarLine(3)), "the star line mixed languages");
+    Expect(std::strcmp(ArrestedWord, "ARRESTED") == 0 && std::strcmp(StationLine, "To Poste de quartier 38") == 0, "the arrest line drifted");
+    Expect(std::strcmp(KnockedWord, "KNOCKED OUT") == 0 && std::strcmp(HospitalLine, "To Hôpital Notre-Dame") == 0, "the knockout line drifted");
+    Expect(std::strcmp(LostPolice, "LOST THEM") == 0 && std::strcmp(LostDetail, "The police let go") == 0, "the lost-them line drifted");
+    Expect(std::strcmp(GarageWord, "GARAGE") == 0 && std::strcmp(GarageDetail, "New plates. The search is off.") == 0, "the garage line drifted");
+
     std::printf("%d assertions, %d failures\n", Assertions, Failures);
     return Failures == 0 ? 0 : 1;
 }

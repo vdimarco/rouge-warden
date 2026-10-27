@@ -2631,7 +2631,8 @@ void AQuebecController::PlayerTick(float DeltaTime)
                 if (Delta.SizeSquared2D() > 1.f)
                     CardBearing = FMath::RoundToInt(FMath::RadiansToDegrees(FMath::Atan2(Delta.X, Delta.Y)));
             }
-            FString JobHead, JobLine;
+            FString JobHead, JobLine, DownKind;
+            int32 StarPlate = 0;
             if (const UWorld* World = GetWorld())
             {
                 if (const AQuebecSideJobs* Jobs = AQuebecSideJobs::Find(World))
@@ -2662,6 +2663,19 @@ void AQuebecController::PlayerTick(float DeltaTime)
                         JobLine = UTF8_TO_TCHAR(Words.Line.c_str());
                     }
                 }
+                if (const AQuebecPlayerState* Stats = GetPlayerState<AQuebecPlayerState>())
+                {
+                    const int32 Stars = Stats->Stars;
+                    const float Now = static_cast<float>(World->GetTimeSeconds());
+                    if (Stars != BrowserStars) BrowserStarsAt = Now;
+                    BrowserStars = Stars;
+                    if (Stats->IsDown())
+                        DownKind = Stats->GetDownState() == EQuebecDownState::Arrested ? TEXT("arrested") : TEXT("knocked");
+                    const float Age = Now - BrowserStarsAt;
+                    const bool bNoticeCovers = GameNoticeStart >= BrowserStarsAt - .3f;
+                    if (!Stats->IsDown() && Stars > 0 && Age >= .6f && Age < 2.4f && !bNoticeCovers)
+                        StarPlate = Stars;
+                }
             }
             const auto Json = [](const FString& Value)
             {
@@ -2680,11 +2694,11 @@ void AQuebecController::PlayerTick(float DeltaTime)
                 return Out;
             };
             Streamer->SendAllPlayersMessage(TEXT("Response"), FString::Printf(
-                TEXT("{\"nordDriving\":%s,\"nordSwimming\":%s,\"nordTitle\":\"%s\",\"nordObjective\":\"%s\",\"nordStage\":\"%s\",\"nordFail\":\"%s\",\"nordBearing\":%d,\"nordMeters\":%d,\"nordPayout\":%d,\"nordJobHead\":\"%s\",\"nordJobLine\":\"%s\"}"),
+                TEXT("{\"nordDriving\":%s,\"nordSwimming\":%s,\"nordTitle\":\"%s\",\"nordObjective\":\"%s\",\"nordStage\":\"%s\",\"nordFail\":\"%s\",\"nordBearing\":%d,\"nordMeters\":%d,\"nordPayout\":%d,\"nordJobHead\":\"%s\",\"nordJobLine\":\"%s\",\"nordStars\":%d,\"nordDown\":\"%s\"}"),
                 Cast<AQuebecCar>(GetPawn()) ? TEXT("true") : TEXT("false"),
                 Character && Character->GetCharacterMovement()->IsSwimming() ? TEXT("true") : TEXT("false"),
                 *Json(CardTitle), *Json(CardObjective), *Json(CardStage), *Json(CardFail), CardBearing, CardMeters, CardPayout,
-                *Json(JobHead), *Json(JobLine)));
+                *Json(JobHead), *Json(JobLine), StarPlate, *Json(DownKind)));
         }
     }
     ApplyComicStyle();

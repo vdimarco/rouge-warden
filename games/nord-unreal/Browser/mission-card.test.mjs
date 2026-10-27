@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { jobLines, markerOffset, missionLines, payoutLines } from './mission-card.js';
+import { heatLines, jobLines, markerOffset, missionLines, payoutLines } from './mission-card.js';
 
 const lines = missionLines({
   title: '28 / THE BOLT',
@@ -40,5 +40,16 @@ assert.equal(jobLines(failed, true).line, 'Time ran out  ·  Menu · Recover');
 assert.equal(jobLines({ head: 'MISSION DONE', line: '+300 $  ·  Three doors delivered, still hot' }, true).line, '+300 $  ·  Three doors delivered, still hot');
 assert.equal(jobLines(null).head, '');
 assert.ok(!/[\u00e9\u00e8\u00ea\u00e0]/.test(`${failed.head} ${failed.line}`), 'the plate mixed in a French accent');
+
+const wanted = heatLines({ stars: 2 });
+assert.equal(wanted.head, 'WANTED');
+assert.equal(wanted.line, '2 stars');
+assert.equal(heatLines({ stars: 1 }).line, '1 star');
+assert.equal(heatLines({ stars: 2, down: 'arrested' }).head, 'ARRESTED');
+assert.equal(heatLines({ down: 'arrested' }).line, 'To Poste de quartier 38');
+assert.equal(heatLines({ down: 'knocked' }).head, 'KNOCKED OUT');
+assert.equal(heatLines({ down: 'knocked' }).line, 'To Hôpital Notre-Dame');
+assert.equal(heatLines(null).head, '');
+assert.ok(!/[\u00e9\u00e8\u00ea]/.test(`${wanted.head} ${wanted.line}`), 'the star plate mixed languages');
 
 console.log('mission card lines and marker ok');

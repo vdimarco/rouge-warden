@@ -153,6 +153,29 @@ export function showJob(card, touch) {
   return lines;
 }
 
+export function heatLines(card) {
+  const down = String(card?.down || '');
+  if (down === 'arrested') return { head: 'ARRESTED', line: 'To Poste de quartier 38', kind: 'down' };
+  if (down === 'knocked') return { head: 'KNOCKED OUT', line: 'To Hôpital Notre-Dame', kind: 'down' };
+  const stars = Math.max(0, Math.round(Number(card?.stars) || 0));
+  if (!stars) return { head: '', line: '', kind: '' };
+  return { head: 'WANTED', line: stars === 1 ? '1 star' : `${stars} stars`, kind: 'wanted' };
+}
+
+export function showHeat(card) {
+  const root = document.getElementById('heat-plate');
+  if (!root) return null;
+  const lines = heatLines(card);
+  root.hidden = !lines.head;
+  root.dataset.kind = lines.kind;
+  const head = document.getElementById('heat-head');
+  const line = document.getElementById('heat-line');
+  if (head) head.textContent = lines.head;
+  if (line) line.textContent = lines.line;
+  return lines;
+}
+
 if (typeof window !== 'undefined') window.__nordShowMission = showMission;
 if (typeof window !== 'undefined') window.__nordShowPayout = showPayout;
 if (typeof window !== 'undefined') window.__nordShowJob = card => showJob(card, document.body.classList.contains('touch-input'));
+if (typeof window !== 'undefined') window.__nordShowHeat = showHeat;

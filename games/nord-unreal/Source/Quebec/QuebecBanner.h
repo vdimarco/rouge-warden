@@ -31,6 +31,17 @@ namespace QuebecBanner
     inline constexpr const char* FareLeft = "The passenger got out";
     inline constexpr const char* FareDone = "Passenger dropped off";
 
+    inline constexpr const char* Wanted = "WANTED";
+    inline constexpr const char* ArrestedWord = "ARRESTED";
+    inline constexpr const char* KnockedWord = "KNOCKED OUT";
+    inline constexpr const char* LostPolice = "LOST THEM";
+    inline constexpr const char* LostDetail = "The police let go";
+    inline constexpr const char* GarageWord = "GARAGE";
+    inline constexpr const char* GarageDetail = "New plates. The search is off.";
+    inline constexpr const char* StationLine = "To Poste de quartier 38";
+    // The hospital keeps its name. The chrome word in front of it is English.
+    inline constexpr const char* HospitalLine = "To H\xC3\xB4pital Notre-Dame";
+
     struct FPlate
     {
         const char* Head = Failed;
@@ -54,6 +65,12 @@ namespace QuebecBanner
             }
         }
         return Out;
+    }
+
+    inline std::string StarLine(int Stars)
+    {
+        if (Stars < 0) Stars = 0;
+        return std::to_string(Stars) + (Stars == 1 ? " star" : " stars");
     }
 
     // Result lines are plain ASCII. The middle dot lives only in the composed separator and the touch retry.

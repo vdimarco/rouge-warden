@@ -3562,3 +3562,50 @@ Unreal is not available here, so the native diamond was not captured. The title 
 ![The job plate on a 390-wide screen](gta-missions/r78-play-card-390.png)
 
 ![Menu on a 390-wide screen, Recover visible](gta-missions/r78-play-menu-390.png)
+
+### Round 79 — 2026-10-27 — rubric v1
+
+- What changed: A silent star rise says WANTED and a star count. Going down says ARRESTED or KNOCKED OUT, and names Poste de quartier 38 or Hôpital Notre-Dame. Losing the police says LOST THEM. The garage says the search is off. The play shell shows that plate with no host, and the stream sends the same state. The native plates and the police notices use those words. Heat, arrest timing, and the respawn places stay as they were. No new mission.
+- Why it helped: The star plate and the down plate were the next chrome that mixed languages, and the play page never showed them. The page we run now shows WANTED and ARRESTED in English.
+- Screenshots: title `docs/gauntlet/gta-missions/r79-title-1280.png`, `r79-title-390.png`, `r79-title-320.png`. Play client, host offline, `r79-play-1280.png`, with the arrest plate at 390 in `r79-play-card-390.png`. Menu with Recover `r79-play-menu-390.png`. The title loaded with no page errors. The raw play page still logs the missing `@epicgames-ps/lib-pixelstreamingfrontend-ue5.8` specifier; the shell, the card, the plate, and Recover still draw. The 1280 frame shows WANTED and 2 stars on a cyan plate (9052 cyan pixels). The 390 frame shows ARRESTED and To Poste de quartier 38 on a pink plate (14968 pink pixels). The job column and resident speech were not on the shell. `python3 Scripts/test_banner.py` is 39 assertions, 0 failures, on three compilers. `node Browser/mission-card.test.mjs` passed. Syntax check `--both` passed, 96 files, 0 failed. OpenSpec CLI is not installed, so `openspec validate` did not run. `Browser/browser.test.mjs` did not run: the `ws` package is not installed here.
+- Next target: UI polish (6) is still the lowest line this loop can move without Unreal. The job column and resident speech still mix languages, and they were not on the shell. Particles stay at 2 until the world effects are seen. Responsiveness stays at 3 and stays out of scope. Performance stays at 4 and is not measurable here.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 3 | Unchanged. |
+| Color palette | 5 | Unchanged. Wanted uses the same cyan. Down uses the same pink as a failed job. |
+| Detail density | 3 | Unchanged. |
+| Texture and material quality | 3 | Unchanged. |
+| Composition and camera | 4 | Unchanged. |
+| Atmosphere | 4 | Unchanged. |
+| Character models | 3 | Unchanged. |
+| Animation smoothness | 3 | Unchanged. |
+| Particles and VFX | 2 | Unchanged. The plate is a panel, not a world effect, and the world effects were not seen. |
+| UI polish | 6 | The play shell shows WANTED, 2 stars, and ARRESTED with the station name. The job column and resident speech were not seen and still mix languages, so this is one step. |
+| Responsiveness and input latency | 3 | Unchanged. Still a lagged stream. Out of scope for this loop. |
+| Controls feel | 9 | Unchanged. Getting out faster than a walk still keeps that pace. |
+| Mission clarity | 8 | Unchanged. The play shell still shows the carry's objective, Stage 3 of 3, the fail sentence, and a gold diamond. The heat plate is a status, not a new objective. |
+| Pacing | 9 | Unchanged. Nothing new was driven. |
+| Fun factor | 9 | Unchanged. The plates were seen. They were not played. |
+| Difficulty curve | 9 | Unchanged. Selling the last page ends it for 200 and does not bank the chain. A wreck still costs more than the goon pay. |
+| Feedback | 9 | Unchanged. The shell still shows a purse. The notes were not heard. The heat plate adds words, not a new hit. |
+| Sound design | 9 | Unchanged. The two notes were not heard. The dent thud still marks a scrape as quiet. Nobody is voiced. |
+| Variety | 9 | Unchanged. No new way to play was added, and the carry was not driven. |
+| Performance stability | 4 | Unchanged. Not measurable in this container. |
+
+- Aesthetics raw: 36 / 10 dimensions, index 36
+- Playability raw: 78 / 10 dimensions, index 78
+- Total: 114 / 200
+- Delta vs last round: +1 (round 78 was 113). UI polish 5 → 6. Every other score held.
+
+![GTA title at 1280](gta-missions/r79-title-1280.png)
+
+![GTA title at 390](gta-missions/r79-title-390.png)
+
+![GTA title at 320](gta-missions/r79-title-320.png)
+
+![Play client at 1280, host offline, the wanted plate visible](gta-missions/r79-play-1280.png)
+
+![The arrest plate on a 390-wide screen](gta-missions/r79-play-card-390.png)
+
+![Menu on a 390-wide screen, Recover visible](gta-missions/r79-play-menu-390.png)
