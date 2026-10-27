@@ -2628,3 +2628,38 @@ Unreal is not available in this environment, so in-engine frames are the last co
 - Playability raw: 39 / 10 dimensions, index 39
 - Total: 129 / 200
 - Delta vs last round: 0
+
+### Round 76 — 2026-10-27 — rubric v1
+
+- What changed: the curb keeps the bag pile and the hydrant. A walker stands on the sidewalk 700 cm past the pile, on walk phase 0.22, facing the camera. A car sits in the near lane 1100 cm past the pile, 145 cm off the centre, facing the camera. The curb eye stays. The opening aim stays.
+- Why it helped: the curb was a hydrant and a pile on an empty street. The walker and the car occupy it. They are the same hoodie and the same car, so characters and detail stay at 9.
+- Screenshots: before `docs/gauntlet/gta-graphics/round-76/before-frame.png` is the curb with the pile and the hydrant. After `docs/gauntlet/gta-graphics/round-76/after-frame.png` is the same camera with the walker and the car. The crop is `passer-crop.png`. Not an Unreal capture. From the same render, the mean absolute delta is 0.00250 and the max is 0.473. 6457 pixels change, from x 472 to 783 and y 127 to 209. `Scripts/test_passer.py` passed. The actors were not spawned in Unreal. `GET /gta/` returned 200. OpenSpec CLI is not installed, so the change files were not validated with `openspec`.
+- Next target: the far sidewalk and the far lane are still empty.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 9 | The afternoon sun is unchanged. |
+| Color palette | 9 | The car is the red the fleet already had. |
+| Detail density | 9 | The curb now holds a walker and a car beside the pile and the hydrant. |
+| Texture and material quality | 9 | The cloth and the paint are unchanged. |
+| Composition and camera | 9 | The curb eye and the opening aim are unchanged. |
+| Atmosphere | 9 | The sky is unchanged. |
+| Character models | 9 | The walker is the same hoodie. |
+| Animation smoothness | 9 | The walker is one step of the walk the graph already plays. |
+| Particles and VFX | 9 | The shoe puffs are unchanged. |
+| UI polish | 9 | The radar heading is unchanged. |
+| Responsiveness and input latency | 4 | Not measured this round. |
+| Controls feel | 4 | Not played. |
+| Mission clarity | 5 | The objective words are unchanged. |
+| Pacing | 4 | Unchanged mission slice. |
+| Fun factor | 3 | Not played. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 4 | The walker and the oncoming car are the new marks. No new juice. |
+| Sound design | 3 | Not listened to. |
+| Variety | 3 | One walker and one car from the bodies the street already uses. |
+| Performance stability | 5 | `Scripts/test_passer.py` passed. Frame time was not remeasured. |
+
+- Aesthetics raw: 90 / 10 dimensions, index 90
+- Playability raw: 39 / 10 dimensions, index 39
+- Total: 129 / 200
+- Delta vs last round: 0
