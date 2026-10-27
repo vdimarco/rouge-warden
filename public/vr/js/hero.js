@@ -998,14 +998,14 @@ export function createHero(scene, renderer) {
     // run: a two-beat cycle, the arms against the legs. The chase camera sits behind the facing, so a stride
     // along z foreshortens to a stand. The lifted foot and its knee step out to the side, where the frame can see them.
     if (wR > 0.001) {
-      const ph = S.phase, lift = 0.62 * clamp(hs / 3.5, 0.55, 1);
+      const ph = S.phase, lift = 0.86 * clamp(hs / 3.5, 0.55, 1);
       hipsDy = (-0.04 - 0.06 * wR) + hipsDy * (1 - wR);
       lean = lean * (1 - wR) + 0.22 * wR;
       hipTw += 0.2 * wR * Math.sin(ph); twist += -0.28 * wR * Math.sin(ph);
       for (let sd = 0; sd < 2; sd++) {
         const sx = sd === 0 ? 1 : -1, th = ph + (sd ? Math.PI : 0), n = sd === 0 ? "Left" : "Right";
         const s = Math.sin(th), up = Math.max(0, Math.cos(th));
-        foot[sd].p.set(sx * (0.12 + 0.38 * up * wR), ay + lift * up * wR, az + 0.5 * s * wR);
+        foot[sd].p.set(sx * (0.14 + 0.62 * up * wR), ay + lift * up * wR, az + 0.55 * s * wR);
         pole[sd].set(sx * (0.25 + 1.05 * up), 0.25 + 0.2 * up, 0.35);
         // The knee joint itself steps out. A rotation alone stays inside the silhouette from behind the chase.
         // Walk and jog stay on the captured loop (or the code pose, when the clips never loaded). The step waits
@@ -1013,7 +1013,7 @@ export function createHero(scene, renderer) {
         const knee = I[n + "Leg"].b;
         if (!kneeRest[sd]) kneeRest[sd] = knee.position.clone();
         const runOpen = MC.data ? MC.w[3] : smooth(2.9, 3.3, hs);
-        if (up > 0.2 && runOpen > 0.45) knee.position.x += sx * 0.22 * up * runOpen;
+        if (up > 0.2 && runOpen > 0.45) knee.position.x += sx * 0.34 * up * runOpen;
         const psi = (s > 0 ? -0.9 : 0.7) * wR;
         V.a.set(sx * (0.15 + 0.55 * (s > 0 ? 1 : 0.2)), -Math.cos(psi), Math.sin(psi)).normalize();
         V.b.set(sx * 0.2, -Math.cos(psi + 0.6), Math.sin(psi + 0.6)).normalize();
@@ -1120,9 +1120,9 @@ export function createHero(scene, renderer) {
         const sx = sd === 0 ? 1 : -1;
         const yH = ay + (sd === 0 ? 0.36 : 0.2), zH = az - (sd === 0 ? 0.3 : 0.44);
         // The chase is behind the facing, so the trail also steps out to the side. One heel stays low and wide, the other lifts.
-        const yT = ay + (sd === 0 ? 0.06 : 0.62), zT = az - (sd === 0 ? 0.72 : 0.48);
+        const yT = ay + (sd === 0 ? 0.08 : 0.86), zT = az - (sd === 0 ? 0.78 : 0.52);
         const yK = ay + (sd === 0 ? 0.62 : 0.5), zK = az + (sd === 0 ? 0.62 : 0.42);
-        const xSwing = sx * (0.14 * hw + (sd === 0 ? 0.48 : 0.2) * tw + 0.12 * kw);
+        const xSwing = sx * (0.16 * hw + (sd === 0 ? 0.72 : 0.46) * tw + 0.16 * kw);
         V.k.set(xSwing, yH * hw + yT * tw + yK * kw, zH * hw + zT * tw + zK * kw);
         foot[sd].p.lerp(V.k, wS);
         foot[sd].pitch += (0.4 * hw + 0.95 * tw + 0.25 * kw) * wS;

@@ -1397,3 +1397,41 @@ Increment 69 shipped externally in PR #705 as `f9577462`. Seven moving cars uplo
 
 
 Increment70 pending — unchanged blocked-goon movement uses prepared fixed rotations. 216 exact attempt/result traces, existing action simulation,8 browser checks and byte-identical nonblank desktop/portrait goon frames pass. Retry trigonometry1,008→0 in focused cases; aggregate effect/FPS unmeasured. Evidence fullswing-r70-goon-slide; all20rubric points/total withheld; full release gates pending.
+
+### Round 31 — 2026-10-27 — rubric v1
+
+- What changed: At a full run the lifted foot steps further out and the knee rises higher. At the bottom of a swing the trail steps wider and one heel lifts higher. The knee step still waits for the run clip, so a jog keeps the shin at rest. A quiet hang stays the mild trail. The rope hand is still aimed after the pose. Pose names, the twelve poses a second, the chase arm and the pitch stay as they are. John Lasseter, SIGGRAPH 1987, the exaggeration principle. The captured file was not rebuilt. Round 30's sky gather was already on main and was left as shipped.
+- Why it helped: From behind the chase, the same run phase (0.438) put the feet at screen x 517 and 551 (34 px) and y 507 and 582 (75 px) before, and at x 476 and 556 (80 px) and y 484 and 578 (94 px) after. The same swing frame put the feet at x 475 and 550 (75 px) before, and at x 461 and 580 (119 px) after. A jog's feet stayed 0.286 m apart, the same as before. The rope-hand cosine at that swing frame stayed 0.873, the same figure as the previous pose.
+- Screenshots: run before `docs/gauntlet/shots/r31-before-run.png` (crop `docs/gauntlet/shots/r31-before-run-crop.png`), after `docs/gauntlet/shots/r31-after-run.png` (crop `docs/gauntlet/shots/r31-after-run-crop.png`). Swing before `docs/gauntlet/shots/r31-before-swing.png` (crop `docs/gauntlet/shots/r31-before-swing-crop.png`), after `docs/gauntlet/shots/r31-after-swing.png` (crop `docs/gauntlet/shots/r31-after-swing-crop.png`).
+- Next target: Color palette (6), tied with detail density, composition, atmosphere, character models, particles and UI. The grade is still one teal and one rose.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 7 | Unchanged. A lit shop's cloth is warmer along the hem than along the top. |
+| Color palette | 6 | Unchanged. Cool shade stays teal and the step toward the sun stays rose. |
+| Detail density | 6 | Unchanged. The shop awnings from round 16. |
+| Texture and material quality | 7 | Unchanged. The masonry clay from round 23. |
+| Composition and camera | 6 | Unchanged. On a fast rope the head still sits lower. The chase arm stays 4.5 m and the pitch stays −20°. |
+| Atmosphere | 6 | Unchanged. The far avenue still sits in the warm dust from round 15. |
+| Character models | 6 | Unchanged. The cream belt from round 17. |
+| Animation smoothness | 8 | At the same run phase the feet sit 80 px apart across the frame and 94 px apart in height. At the same swing frame they sit 119 px apart. A jog does not take the step. |
+| Particles and VFX | 6 | Unchanged. The cream trail from round 19. |
+| UI polish | 6 | Unchanged. The cream lip and rose hem from round 21. |
+| Responsiveness and input latency | 6 | Unchanged. No new pass and no new draw. No input timing was measured. |
+| Controls feel | 5 | Unchanged. |
+| Mission clarity | 4 | Unchanged. Not played. |
+| Pacing | 4 | Unchanged. |
+| Fun factor | 4 | Unchanged. Not played as a session. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 5 | Unchanged. |
+| Sound design | 4 | Unchanged. |
+| Variety | 4 | Unchanged. |
+| Performance stability | 6 | `qa/vr/render.mjs` passed, including flat play, the painted-sky checks, the lit-sphere cel check, and the canyon ink lines (26.7%). Street mean 75.4, saturation 0.58. |
+
+- Aesthetics raw: 64 / 10 dimensions, index 64
+- Playability raw: 46 / 10 dimensions, index 46
+- Total: 110 / 200
+- Delta vs last round: +1 (109 → 110). Animation smoothness 7 → 8. Playability unchanged.
+
+Playability was scored from a flat boot and the city render check, not a full playthrough. OpenSpec CLI validation was not run; the `openspec` command is not installed.
+
