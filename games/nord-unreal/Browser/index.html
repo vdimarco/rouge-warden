@@ -16,6 +16,7 @@
     <link rel="stylesheet" href="./intro.css">
     <link rel="stylesheet" href="./menu.css">
     <script type="module" src="./player.js"></script>
+    <script type="module" src="./mission-card.js"></script>
     <script type="module" src="./hero.js"></script>
     <script type="module" src="./crew.js"></script>
     <script type="module" src="./intro.js"></script>
@@ -96,6 +97,16 @@
         <button id="touch-auto" class="touch-auto" type="button" data-toggle="auto" aria-pressed="false" aria-label="Auto gas: keep accelerating until you brake" hidden><b>Auto</b><span>Gas</span></button>
         <button id="touch-lock" class="touch-lock" type="button" data-key="32" aria-label="Hold to lock the wheels" hidden><b>Lock</b><span>Skid</span></button>
       </div>
+      <aside id="mission-card" hidden aria-label="Mission">
+        <p id="mission-title"></p>
+        <p id="mission-objective"></p>
+        <p id="mission-stage"></p>
+        <p id="mission-fail" hidden></p>
+        <div class="mission-map">
+          <canvas id="mission-map" width="112" height="112" aria-hidden="true"></canvas>
+          <p id="mission-distance"></p>
+        </div>
+      </aside>
       <section id="overlay" aria-labelledby="status-title">
         <!-- In fullscreen the header is out of view; this button keeps the menu reachable. -->
         <button id="overlay-menu" class="overlay-menu" type="button" data-menu-toggle aria-expanded="false" aria-controls="menu">☰ Menu</button>

@@ -3327,3 +3327,50 @@ Unreal is not available here, so the native diamond was not captured. The title 
 ![Play client at 1280, host offline](gta-missions/r73-play-1280.png)
 
 ![Menu on a 390-wide screen, Recover visible](gta-missions/r73-play-menu-390.png)
+
+### Round 74 — 2026-10-27 — rubric v1
+
+- What changed: While a mission is open, the play shell shows the title, the objective, the stage, a fail line, and a gold diamond on a small map. The host sends those fields with the driving state. A setback writes the fail line and leaves it until the step changes. That sentence is not saved. The slot stays version 24. Stages from the tour through the post now count on the card. The native card draws the same stage line and fail line. No new mission was added. The post, the lift, and the yard are not retuned.
+- Why it helped: The objective and the reason a beat failed lived on the native card. The shell now shows them, so an offline frame can be read.
+- Screenshots: title `docs/gauntlet/gta-missions/r74-title-1280.png`, `r74-title-390.png`, `r74-title-320.png`. Play client, host offline, `r74-play-1280.png`, with the same card at 390 in `r74-play-card-390.png`. Menu with Recover `r74-play-menu-390.png`. The title loaded with no page errors. The raw play page still logs the missing `@epicgames-ps/lib-pixelstreamingfrontend-ue5.8` specifier; the shell, the card, and Recover still draw. The 1280 frame shows 28 / THE BOLT, Reach the bay before they do, Stage 2 of 3, A crawl is caught. The chase starts again., 180 m, and a gold diamond (60 gold pixels on the map). The bolt was not driven in Unreal. The native card was not seen. `node Browser/mission-card.test.mjs` reports the lines and the marker. Syntax check `--both` passed, 96 files, 0 failed. OpenSpec CLI is not installed, so `openspec validate` did not run.
+- Next target: feedback and juice, a payout popup and a sound cue, checkable in the shell or an offline frame. Feedback stays at 9 until a popup is seen. Sound stays at 9 until a cue is heard. Responsiveness stays at 3 and stays out of scope. Performance stays at 4 and is not measurable here.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 3 | Unchanged. |
+| Color palette | 5 | Unchanged. |
+| Detail density | 3 | Unchanged. |
+| Texture and material quality | 3 | Unchanged. |
+| Composition and camera | 4 | Unchanged. |
+| Atmosphere | 4 | Unchanged. |
+| Character models | 3 | Unchanged. |
+| Animation smoothness | 3 | Unchanged. |
+| Particles and VFX | 2 | Unchanged. |
+| UI polish | 4 | Unchanged. The shell card was seen. The native card was not compared, and French and English still share the screen. |
+| Responsiveness and input latency | 3 | Unchanged. Still a lagged stream. Out of scope for this loop. |
+| Controls feel | 9 | Unchanged. Getting out faster than a walk still keeps that pace. |
+| Mission clarity | 8 | The play shell shows the objective, Stage 2 of 3, the fail sentence, and a gold diamond. The native card was not seen. French and English still share the screen, so this is one step. |
+| Pacing | 9 | Unchanged. Four seconds on foot after boarding still loses the passenger. |
+| Fun factor | 9 | Unchanged. Chez Lise still sells a kit, a vest, or one star. |
+| Difficulty curve | 9 | Unchanged. Selling the last page ends it for 200 and does not bank the chain. A wreck still costs more than the goon pay. |
+| Feedback | 9 | Unchanged. A failed side job still plays the falling sting. The sting was not heard. |
+| Sound design | 9 | Unchanged. The dent thud still marks a scrape as quiet. Nobody is voiced, so this is not the reference's city. |
+| Variety | 9 | Unchanged. No new beat was added. |
+| Performance stability | 4 | Unchanged. Not measurable in this container. |
+
+- Aesthetics raw: 34 / 10 dimensions, index 34
+- Playability raw: 78 / 10 dimensions, index 78
+- Total: 112 / 200
+- Delta vs last round: +1 (round 73 was 111). Mission clarity 7 → 8. Every other score held.
+
+![GTA title at 1280](gta-missions/r74-title-1280.png)
+
+![GTA title at 390](gta-missions/r74-title-390.png)
+
+![GTA title at 320](gta-missions/r74-title-320.png)
+
+![Play client at 1280, host offline, mission card visible](gta-missions/r74-play-1280.png)
+
+![Mission card on a 390-wide screen](gta-missions/r74-play-card-390.png)
+
+![Menu on a 390-wide screen, Recover visible](gta-missions/r74-play-menu-390.png)

@@ -1117,7 +1117,7 @@ bool AQuebecCampaign::HandleInteract(AQuebecController* Controller)
                 PondTagOutside = 0.f;
                 Controller->PlayFeedback(EQuebecFeedbackCue::Dialogue);
                 BreakChain();
-                Controller->ShowInteractionMessage(TEXT("That beam blinks with the sky. The postcard does not. The chain breaks."));
+                NoteSetback(Controller, TEXT("That beam blinks with the sky. The postcard does not. The chain breaks."));
                 return true;
             }
             if (!bPondTagHolding)
@@ -1200,7 +1200,7 @@ bool AQuebecCampaign::HandleInteract(AQuebecController* Controller)
             {
                 Controller->PlayFeedback(EQuebecFeedbackCue::Dialogue);
                 BreakChain();
-                Controller->ShowInteractionMessage(TEXT("That panel restarts the point. The referee is already writing the penalty. The chain breaks."));
+                NoteSetback(Controller, TEXT("That panel restarts the point. The referee is already writing the penalty. The chain breaks."));
                 return true;
             }
             if (NearCourt(Controller, QuebecCourtRules::ReturnGate.X, QuebecCourtRules::ReturnGate.Y))
@@ -1329,7 +1329,7 @@ bool AQuebecCampaign::HandleInteract(AQuebecController* Controller)
             {
                 Controller->PlayFeedback(EQuebecFeedbackCue::Dialogue);
                 BreakChain();
-                Controller->ShowInteractionMessage(TEXT("The beam is still painting. Wait for the gap. The chain breaks."));
+                NoteSetback(Controller, TEXT("The beam is still painting. Wait for the gap. The chain breaks."));
                 return true;
             }
             const int32 Bonus = QuebecChain::ClosePay(Chain, bChainSpoiled, QuebecConvoyRules::CloseCall(ConvoyTime, Chain));
@@ -1352,7 +1352,7 @@ bool AQuebecCampaign::HandleInteract(AQuebecController* Controller)
             {
                 Controller->PlayFeedback(EQuebecFeedbackCue::Dialogue);
                 BreakChain();
-                Controller->ShowInteractionMessage(TEXT("GREEN CAP: That is the gate I called. TOPKNOT: It is still painted. The chain breaks."));
+                NoteSetback(Controller, TEXT("GREEN CAP: That is the gate I called. TOPKNOT: It is still painted. The chain breaks."));
             }
             return true;
         }
@@ -1468,7 +1468,7 @@ void AQuebecCampaign::TickPond(float DeltaSeconds)
         PondTagInside = 0.f;
         PondTagOutside = 0.f;
         for (TActorIterator<AQuebecController> It(GetWorld()); It; ++It)
-            It->ShowInteractionMessage(TEXT("You left the postcard. Tag it again."));
+            NoteSetback(*It, TEXT("You left the postcard. Tag it again."));
         ForceNetUpdate();
         return;
     }
@@ -2529,7 +2529,7 @@ void AQuebecCampaign::TickRoll(float DeltaSeconds)
     }
     if (After.bTipped && BeforeAlong > 0.)
     {
-        if (Foot) Foot->ShowInteractionMessage(TEXT("You tipped it. It's back at the start."));
+        if (Foot) NoteSetback(Foot, TEXT("You tipped it. It's back at the start."));
         for (TActorIterator<AQuebecController> It(GetWorld()); It; ++It)
             It->PlayFeedback(EQuebecFeedbackCue::Checkpoint);
         UpdatePresentation();
@@ -2577,7 +2577,7 @@ void AQuebecCampaign::TickBell()
     {
         bBellWarned = true;
         BellStep = static_cast<int32>(After.Step);
-        if (Foot) Foot->ShowInteractionMessage(TEXT("That bell was early. Start again at the first."));
+        if (Foot) NoteSetback(Foot, TEXT("That bell was early. Start again at the first."));
         for (TActorIterator<AQuebecController> It(GetWorld()); It; ++It)
             It->PlayFeedback(EQuebecFeedbackCue::Checkpoint);
         UpdatePresentation();
@@ -2667,7 +2667,7 @@ void AQuebecCampaign::TickBlock(float DeltaSeconds)
     if (After.bPassed)
     {
         BlockStep = static_cast<int32>(After.Step);
-        if (Driver) Driver->ShowInteractionMessage(TEXT("They passed. The side street is back."));
+        if (Driver) NoteSetback(Driver, TEXT("They passed. The side street is back."));
         for (TActorIterator<AQuebecController> It(GetWorld()); It; ++It)
             It->PlayFeedback(EQuebecFeedbackCue::Checkpoint);
         UpdatePresentation();
@@ -2804,7 +2804,7 @@ void AQuebecCampaign::TickSend(float DeltaSeconds)
     SendDriven = static_cast<float>(After.Driven);
     if (After.bFast)
     {
-        if (Driver) Driver->ShowInteractionMessage(TEXT("Too fast. The drive is back."));
+        if (Driver) NoteSetback(Driver, TEXT("Too fast. The drive is back."));
         for (TActorIterator<AQuebecController> It(GetWorld()); It; ++It)
             It->PlayFeedback(EQuebecFeedbackCue::Checkpoint);
         UpdatePresentation();
@@ -2890,7 +2890,7 @@ void AQuebecCampaign::TickPursue(float DeltaSeconds)
     PursueAlong = static_cast<float>(After.Along);
     if (After.bGone)
     {
-        if (Driver) Driver->ShowInteractionMessage(TEXT("They made the end of the avenue. The traffic car is ahead again."));
+        if (Driver) NoteSetback(Driver, TEXT("They made the end of the avenue. The traffic car is ahead again."));
         for (TActorIterator<AQuebecController> It(GetWorld()); It; ++It)
             It->PlayFeedback(EQuebecFeedbackCue::Checkpoint);
         UpdatePresentation();
@@ -3008,7 +3008,7 @@ void AQuebecCampaign::TickSlip(float DeltaSeconds)
     SlipY = static_cast<float>(After.Y);
     if (After.bCaught)
     {
-        if (Foot) Foot->ShowInteractionMessage(TEXT("They caught you. The door is back."));
+        if (Foot) NoteSetback(Foot, TEXT("They caught you. The door is back."));
         SlipStep = After.Step;
         for (TActorIterator<AQuebecController> It(GetWorld()); It; ++It)
             It->PlayFeedback(EQuebecFeedbackCue::Checkpoint);
@@ -3070,7 +3070,7 @@ void AQuebecCampaign::TickMarch(float DeltaSeconds)
     MarchY = static_cast<float>(After.Y);
     if (After.bLeft)
     {
-        if (Foot) Foot->ShowInteractionMessage(TEXT("You left the march. It is back at the start."));
+        if (Foot) NoteSetback(Foot, TEXT("You left the march. It is back at the start."));
         MarchStep = After.Step;
         for (TActorIterator<AQuebecController> It(GetWorld()); It; ++It)
             It->PlayFeedback(EQuebecFeedbackCue::Checkpoint);
@@ -3172,7 +3172,7 @@ void AQuebecCampaign::TickDitch(float DeltaSeconds)
     DitchAlong = static_cast<float>(After.Along);
     if (After.bCaught)
     {
-        if (Who) Who->ShowInteractionMessage(TEXT("They caught the car. The line is back."));
+        if (Who) NoteSetback(Who, TEXT("They caught the car. The line is back."));
         DitchStep = After.Step;
         for (TActorIterator<AQuebecController> It(GetWorld()); It; ++It)
             It->PlayFeedback(EQuebecFeedbackCue::Checkpoint);
@@ -3246,7 +3246,7 @@ void AQuebecCampaign::TickParcel(float DeltaSeconds)
     ParcelAlongB = static_cast<float>(After.AlongB);
     if (After.bDropped)
     {
-        if (Who) Who->ShowInteractionMessage(TEXT("The parcel is back. The clock starts over."));
+        if (Who) NoteSetback(Who, TEXT("The parcel is back. The clock starts over."));
         ParcelStep = After.Step;
         for (TActorIterator<AQuebecController> It(GetWorld()); It; ++It)
             It->PlayFeedback(EQuebecFeedbackCue::Checkpoint);
@@ -3352,7 +3352,7 @@ void AQuebecCampaign::TickBolt(float DeltaSeconds)
     BoltSeekY = static_cast<float>(After.SeekY);
     if (After.bCaught)
     {
-        if (Who) Who->ShowInteractionMessage(TEXT("They caught the car. The bay is still the bay."));
+        if (Who) NoteSetback(Who, TEXT("They caught the car. The bay is still the bay."));
         for (TActorIterator<AQuebecController> It(GetWorld()); It; ++It)
             It->PlayFeedback(EQuebecFeedbackCue::Checkpoint);
         UpdatePresentation();
@@ -3361,7 +3361,7 @@ void AQuebecCampaign::TickBolt(float DeltaSeconds)
     }
     if (After.bExpired)
     {
-        if (Who) Who->ShowInteractionMessage(TEXT("The clock went. The gate is still the gate."));
+        if (Who) NoteSetback(Who, TEXT("The clock went. The gate is still the gate."));
         for (TActorIterator<AQuebecController> It(GetWorld()); It; ++It)
             It->PlayFeedback(EQuebecFeedbackCue::Checkpoint);
         UpdatePresentation();
@@ -3434,7 +3434,7 @@ void AQuebecCampaign::TickYard(float DeltaSeconds)
     bYardArmed = After.bArmed;
     if (After.bSeen)
     {
-        if (Who) Who->ShowInteractionMessage(TEXT("They looked. The near side is still the near side."));
+        if (Who) NoteSetback(Who, TEXT("They looked. The near side is still the near side."));
         for (TActorIterator<AQuebecController> It(GetWorld()); It; ++It)
             It->PlayFeedback(EQuebecFeedbackCue::Checkpoint);
         UpdatePresentation();
@@ -3503,7 +3503,7 @@ void AQuebecCampaign::TickLift(float DeltaSeconds)
     bLiftComing = After.bComing;
     if (After.bBack)
     {
-        if (Who) Who->ShowInteractionMessage(TEXT("The car rolled. They went back."));
+        if (Who) NoteSetback(Who, TEXT("The car rolled. They went back."));
         for (TActorIterator<AQuebecController> It(GetWorld()); It; ++It)
             It->PlayFeedback(EQuebecFeedbackCue::Checkpoint);
         UpdatePresentation();
@@ -3570,7 +3570,7 @@ void AQuebecCampaign::TickPost(float DeltaSeconds)
     PostClock = static_cast<float>(After.Clock);
     if (After.bBroke)
     {
-        if (Who) Who->ShowInteractionMessage(TEXT("The count started again."));
+        if (Who) NoteSetback(Who, TEXT("The count started again."));
         for (TActorIterator<AQuebecController> It(GetWorld()); It; ++It)
             It->PlayFeedback(EQuebecFeedbackCue::Checkpoint);
         UpdatePresentation();
@@ -4286,6 +4286,7 @@ void AQuebecCampaign::BreakChain()
 
 void AQuebecCampaign::ShowStepMessage(AQuebecController* Who, const TCHAR* Message, bool bFinished, int32 Link)
 {
+    FailReason.Empty();
     const bool bWasSpoiled = bChainSpoiled;
     if (bFinished) BankChain(Link);
     if (!Who || !Message) return;
@@ -4296,6 +4297,12 @@ void AQuebecCampaign::ShowStepMessage(AQuebecController* Who, const TCHAR* Messa
         return;
     }
     Who->ShowInteractionMessage(Message);
+}
+
+void AQuebecCampaign::NoteSetback(AQuebecController* Who, const TCHAR* Reason)
+{
+    FailReason = Reason ? FString(Reason) : FString();
+    if (Who && Reason) Who->ShowInteractionMessage(Reason);
 }
 
 bool AQuebecCampaign::GetCloseOffer(int32& OutPay) const
@@ -5436,6 +5443,31 @@ bool AQuebecCampaign::GetBeatPace(int32& OutIndex, int32& OutCount, int32& OutWa
     if (IsRescueOpen()) return Publish(QuebecPace::Rescue(RescueMask));
     if (IsConvoyOpen()) return Publish(QuebecPace::Linear(ConvoyStep, QuebecConvoyRules::StepBanked, QuebecConvoyRules::Objective));
     if (IsBlankOpen()) return Publish(QuebecPace::Linear(BlankStep, QuebecBlankRules::StepBanked, QuebecBlankRules::Objective));
+    struct FFlatSpot { double X = 0.; double Y = 0.; };
+    const auto Flat = [](int) { return FFlatSpot{}; };
+    if (IsTourOpen()) return Publish(QuebecPace::Linear(TourStep, TourBankedStep, Flat));
+    if (IsHomeOpen()) return Publish(QuebecPace::Linear(HomeStep, HomeBankedStep, Flat));
+    if (IsEscortOpen()) return Publish(QuebecPace::Linear(EscortStep, EscortBankedStep, Flat));
+    if (IsShadeOpen()) return Publish(QuebecPace::Linear(ShadeStep, ShadeBankedStep, Flat));
+    if (IsGrabOpen()) return Publish(QuebecPace::Linear(GrabStep, GrabBankedStep, Flat));
+    if (IsCutOpen()) return Publish(QuebecPace::Linear(CutStep, CutBankedStep, Flat));
+    if (IsChaseOpen()) return Publish(QuebecPace::Linear(ChaseStep, ChaseBankedStep, Flat));
+    if (IsFinaleOpen()) return Publish(QuebecPace::Linear(FinaleStep, FinaleBankedStep, Flat));
+    if (IsFollowOpen()) return Publish(QuebecPace::Linear(FollowStep, FollowBankedStep, Flat));
+    if (IsRollOpen()) return Publish(QuebecPace::Linear(RollStep, RollBankedStep, Flat));
+    if (IsBellOpen()) return Publish(QuebecPace::Linear(BellStep, BellBankedStep, Flat));
+    if (IsBlockOpen()) return Publish(QuebecPace::Linear(BlockStep, BlockBankedStep, Flat));
+    if (IsSendOpen()) return Publish(QuebecPace::Linear(SendStep, SendBankedStep, Flat));
+    if (IsPursueOpen()) return Publish(QuebecPace::Linear(PursueStep, PursueBankedStep, Flat));
+    if (IsNoseOpen()) return Publish(QuebecPace::Linear(NoseStep, NoseBankedStep, Flat));
+    if (IsSlipOpen()) return Publish(QuebecPace::Linear(SlipStep, SlipBankedStep, Flat));
+    if (IsMarchOpen()) return Publish(QuebecPace::Linear(MarchStep, MarchBankedStep, Flat));
+    if (IsDitchOpen()) return Publish(QuebecPace::Linear(DitchStep, DitchBankedStep, Flat));
+    if (IsParcelOpen()) return Publish(QuebecPace::Linear(ParcelStep, ParcelBankedStep, Flat));
+    if (IsBoltOpen()) return Publish(QuebecPace::Linear(BoltStep, BoltBankedStep, Flat));
+    if (IsYardOpen()) return Publish(QuebecPace::Linear(YardStep, YardBankedStep, Flat));
+    if (IsLiftOpen()) return Publish(QuebecPace::Linear(LiftStep, LiftBankedStep, Flat));
+    if (IsPostOpen()) return Publish(QuebecPace::Linear(PostStep, PostBankedStep, Flat));
     if (Phase == EQuebecCampaignPhase::Complete || Phase >= EQuebecCampaignPhase::RaceReady) return false;
     return Publish(QuebecPace::Terrace(static_cast<int>(Phase)));
 }
@@ -5978,6 +6010,7 @@ void AQuebecCampaign::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
     DOREPLIFETIME(AQuebecCampaign,bLiftComing);
     DOREPLIFETIME(AQuebecCampaign,PostStep);
     DOREPLIFETIME(AQuebecCampaign,PostClock);
+    DOREPLIFETIME(AQuebecCampaign,FailReason);
     DOREPLIFETIME(AQuebecCampaign,LightOperator);
     DOREPLIFETIME(AQuebecCampaign,LightYaw);
     DOREPLIFETIME(AQuebecCampaign,LightPitch);

@@ -537,6 +537,8 @@ public:
     // How long they have stood is not saved. A reload starts the count again.
     UPROPERTY(VisibleAnywhere, ReplicatedUsing=UpdatePresentation) int32 PostStep = 0;
     UPROPERTY(VisibleAnywhere, Replicated) float PostClock = 0.f;
+    // The last setback stays on the card until the step changes. It is not saved.
+    UPROPERTY(Replicated) FString FailReason;
     UPROPERTY(VisibleAnywhere, Replicated) TObjectPtr<APlayerState> LightOperator;
     UPROPERTY(VisibleAnywhere, Replicated) float LightYaw = 0.f;
     UPROPERTY(VisibleAnywhere, Replicated) float LightPitch = 0.f;
@@ -771,6 +773,7 @@ private:
     void GrantCash(int32 Amount);
     void BreakChain();
     void ShowStepMessage(AQuebecController* Who, const TCHAR* Message, bool bFinished, int32 Link);
+    void NoteSetback(AQuebecController* Who, const TCHAR* Reason);
     int32 LastChainPay = 0;
 
     void BuildEncounter();

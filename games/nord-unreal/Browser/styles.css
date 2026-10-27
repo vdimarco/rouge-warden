@@ -31,6 +31,21 @@ footer p { margin: 0; }
 .controls { color: #dad4dc; }
 .controls b { color: var(--paper); }
 #frame:fullscreen { width: 100vw; height: 100dvh; }
+
+#mission-card { position: absolute; z-index: 3; top: 14px; left: 14px; width: min(320px, calc(100% - 28px)); display: grid; grid-template-columns: 1fr 112px; gap: 8px 12px; padding: 12px 14px; pointer-events: none; color: var(--paper); background: #0b0a16eb; border: 3px solid var(--yellow); box-shadow: 5px 5px 0 #c2185b; }
+#mission-title { grid-column: 1; margin: 0; color: var(--yellow); font: 900 13px/1.2 Impact, "Arial Black", Arial, sans-serif; letter-spacing: .04em; text-transform: uppercase; }
+#mission-objective { grid-column: 1; margin: 0; font: 700 18px/1.2 Arial, sans-serif; }
+#mission-stage { grid-column: 1; margin: 0; font: 700 14px/1.2 Arial, sans-serif; }
+#mission-fail { grid-column: 1 / -1; margin: 0; color: #ff8aa0; font: 700 14px/1.25 Arial, sans-serif; }
+.mission-map { grid-column: 2; grid-row: 1 / span 3; display: grid; justify-items: center; align-content: start; gap: 2px; }
+#mission-map { width: 112px; height: 112px; background: #12141c; border: 2px solid #fffaf0; border-radius: 50%; }
+#mission-distance { margin: 0; font: 700 12px/1 Arial, sans-serif; }
+@media (max-width: 420px) {
+  #mission-card { grid-template-columns: 1fr 88px; width: min(320px, calc(100% - 16px)); top: 8px; left: 8px; padding: 10px; }
+  #mission-objective { font-size: 16px; }
+  #mission-map { width: 88px; height: 88px; }
+  .mission-map { grid-column: 2; }
+}
 @media (max-width: 900px) { header { padding: 14px; } main { min-height: 420px; } footer { padding: 10px 14px; } .caption { padding: 22px; } #overlay { padding: 20px; } }
 
 #touch-controls { --action-size: clamp(72px, 22vh, 88px); position: absolute; inset: 0; pointer-events: none; user-select: none; -webkit-user-select: none; }

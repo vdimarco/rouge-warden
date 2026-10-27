@@ -2529,9 +2529,46 @@ void AQuebecController::PlayerTick(float DeltaTime)
         if (const TSharedPtr<IPixelStreaming2Streamer> Streamer = IPixelStreaming2Module::Get().FindStreamer(BrowserStreamerId))
         {
             const AQuebecCharacter* Character = Cast<AQuebecCharacter>(GetPawn());
-            Streamer->SendAllPlayersMessage(TEXT("Response"), FString::Printf(TEXT("{\"nordDriving\":%s,\"nordSwimming\":%s}"),
+            const AQuebecCampaign* CardCampaign = CampaignFor(GetWorld());
+            FString CardTitle, CardObjective, CardStage, CardFail;
+            int32 CardBearing = 0;
+            int32 CardMeters = 0;
+            if (CardCampaign && GetPawn())
+            {
+                CardTitle = CardCampaign->GetMissionTitle();
+                CardObjective = CardCampaign->GetObjectiveText();
+                CardFail = CardCampaign->FailReason;
+                int32 PaceIndex = 0, PaceCount = 0, PaceWalk = 0, PaceSprint = 0;
+                if (CardCampaign->GetBeatPace(PaceIndex, PaceCount, PaceWalk, PaceSprint))
+                    CardStage = FString::Printf(TEXT("%d of %d"), PaceIndex, PaceCount);
+                const FVector Here = GetPawn()->GetActorLocation();
+                const FVector Target = CardCampaign->GetObjectiveLocation();
+                const FVector Delta = Target - Here;
+                CardMeters = FMath::RoundToInt(Delta.Size2D() / 100.f);
+                if (Delta.SizeSquared2D() > 1.f)
+                    CardBearing = FMath::RoundToInt(FMath::RadiansToDegrees(FMath::Atan2(Delta.X, Delta.Y)));
+            }
+            const auto Json = [](const FString& Value)
+            {
+                FString Out;
+                Out.Reserve(Value.Len());
+                for (const TCHAR Glyph : Value)
+                {
+                    if (Glyph == TEXT('\\') || Glyph == TEXT('"')) Out.AppendChar(TEXT('\\'));
+                    if (Glyph == TEXT('\n') || Glyph == TEXT('\r'))
+                    {
+                        Out.AppendChar(TEXT(' '));
+                        continue;
+                    }
+                    Out.AppendChar(Glyph);
+                }
+                return Out;
+            };
+            Streamer->SendAllPlayersMessage(TEXT("Response"), FString::Printf(
+                TEXT("{\"nordDriving\":%s,\"nordSwimming\":%s,\"nordTitle\":\"%s\",\"nordObjective\":\"%s\",\"nordStage\":\"%s\",\"nordFail\":\"%s\",\"nordBearing\":%d,\"nordMeters\":%d}"),
                 Cast<AQuebecCar>(GetPawn()) ? TEXT("true") : TEXT("false"),
-                Character && Character->GetCharacterMovement()->IsSwimming() ? TEXT("true") : TEXT("false")));
+                Character && Character->GetCharacterMovement()->IsSwimming() ? TEXT("true") : TEXT("false"),
+                *Json(CardTitle), *Json(CardObjective), *Json(CardStage), *Json(CardFail), CardBearing, CardMeters));
         }
     }
     ApplyComicStyle();
@@ -2994,7 +3031,7 @@ void AQuebecHUD::DrawHUD()
     }
 
     const FVector Here = Pawn->GetActorLocation();
-    FString Title, Action, Status;
+    FString Title, Action, Status, StageText, FailText;
     FVector Target = FVector::ZeroVector;
     bool bHasObjective = false;
     bool bHasNext = false;
@@ -3113,6 +3150,7 @@ void AQuebecHUD::DrawHUD()
         if (Campaign->GetBeatPace(PaceIndex, PaceCount, PaceWalk, PaceSprint))
         {
             Status += FString::Printf(TEXT(" · %d of %d"), PaceIndex, PaceCount);
+            StageText = FString::Printf(TEXT("Stage %d of %d"), PaceIndex, PaceCount);
             // On foot the clock is the time left to this diamond. A car keeps the stored leg,
             // which is zero on the drive, so the card does not invent a walk.
             if (bHasObjective && !Car)
@@ -3140,6 +3178,7 @@ void AQuebecHUD::DrawHUD()
         int32 CloseOffer = 0;
         if (Campaign->GetCloseOffer(CloseOffer))
             Status += FString::Printf(TEXT(" · close +$%d"), CloseOffer);
+        FailText = Campaign->FailReason;
     }
     else if (State && State->MissionIndex >= 0 && State->MissionIndex < AQuebecGameState::MissionCount)
     {
@@ -3172,8 +3211,10 @@ void AQuebecHUD::DrawHUD()
     const float MissionX = bPortrait ? Margin : bTouchControls ? MapX - MissionWidth - (18.f + StreetColumnWidth()) * Scale : Right - MissionWidth;
     const TArray<FString> Titles = WrappedLines(Title, MissionWidth - 24.f * Scale, .9f);
     const TArray<FString> Actions = WrappedLines(Action, MissionWidth - 24.f * Scale, 1.15f);
+    const TArray<FString> Stages = StageText.IsEmpty() ? TArray<FString>() : WrappedLines(StageText, MissionWidth - 24.f * Scale, .95f);
+    const TArray<FString> Fails = FailText.IsEmpty() ? TArray<FString>() : WrappedLines(FailText, MissionWidth - 24.f * Scale, .9f);
     const TArray<FString> Statuses = WrappedLines(Status, MissionWidth - 24.f * Scale, .9f);
-    const float MissionHeight = (20.f + Titles.Num() * 20.f + Actions.Num() * 25.f + Statuses.Num() * 20.f + (bHasObjective ? 20.f : 0.f)) * Scale;
+    const float MissionHeight = (20.f + Titles.Num() * 20.f + Actions.Num() * 25.f + Stages.Num() * 20.f + Fails.Num() * 20.f + Statuses.Num() * 20.f + (bHasObjective ? 20.f : 0.f)) * Scale;
     const float MissionY = bPortrait || bTouchControls ? Margin : Canvas->SizeY - Margin - 78.f * Scale - MissionHeight;
     const float TopClear = bPortrait ? FMath::Max(MissionY + MissionHeight, MapY + MapBlock) + 12.f * Scale : Margin;
 
@@ -3440,6 +3481,8 @@ void AQuebecHUD::DrawHUD()
     float RowY = MissionY + 10.f * Scale;
     for (const FString& Line : Titles) { Text(Line, Accent, MissionX + 12.f * Scale, RowY, .9f); RowY += 20.f * Scale; }
     for (const FString& Line : Actions) { Text(Line, Paper, MissionX + 12.f * Scale, RowY, 1.15f); RowY += 25.f * Scale; }
+    for (const FString& Line : Stages) { Text(Line, Paper, MissionX + 12.f * Scale, RowY, .95f); RowY += 20.f * Scale; }
+    for (const FString& Line : Fails) { Text(Line, FLinearColor(1.f, .42f, .48f, 1.f), MissionX + 12.f * Scale, RowY, .9f); RowY += 20.f * Scale; }
     for (const FString& Line : Statuses) { Text(Line, Muted, MissionX + 12.f * Scale, RowY, .9f); RowY += 20.f * Scale; }
     if (bHasObjective)
     {

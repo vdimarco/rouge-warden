@@ -16,7 +16,7 @@ function build(endpoint) {
 }
 const server = createServer(async (request, response) => {
   const file = new URL(request.url, 'http://localhost').pathname.slice(1) || 'index.html';
-  if (!['index.html', 'player.js', 'hero.js', 'crew.js', 'intro.js', 'menu.js', 'install.js', 'styles.css', 'hero.css', 'intro.css', 'menu.css', 'crew-sprite.webp', 'title-loop-wide.mp4', 'title-loop-tall.mp4', 'manifest.webmanifest', 'bungee-400.woff2', 'barlow-condensed-500.woff2', 'barlow-condensed-700.woff2', 'favicon.svg', 'favicon-32.png', 'apple-touch-icon.png', 'icon-192.png', 'icon-512.png', 'icon-maskable-512.png'].includes(file)) {
+  if (!['index.html', 'player.js', 'hero.js', 'crew.js', 'intro.js', 'menu.js', 'install.js', 'mission-card.js', 'styles.css', 'hero.css', 'intro.css', 'menu.css', 'crew-sprite.webp', 'title-loop-wide.mp4', 'title-loop-tall.mp4', 'manifest.webmanifest', 'bungee-400.woff2', 'barlow-condensed-500.woff2', 'barlow-condensed-700.woff2', 'favicon.svg', 'favicon-32.png', 'apple-touch-icon.png', 'icon-192.png', 'icon-512.png', 'icon-maskable-512.png'].includes(file)) {
     response.writeHead(404).end();
     return;
   }
