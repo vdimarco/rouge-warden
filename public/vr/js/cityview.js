@@ -84,10 +84,13 @@ vec3 skyHaze(vec3 d) {
   vec3 c = uHaveSky > 0.5 ? textureLod(uSky, skyUV(h), 3.0).rgb : skyRamp(skyT(h));
   // far things go violet, like the far shore in the key art: darker than the sky behind them
   c = mix(c, vec3(0.3, 0.16, 0.5), 0.42);
-  // street dust: level air takes the avenue's warm light. Above that it stays the sky.
+  // street dust: level air takes the hour. Sunset stays the avenue's warm light. Blue hour
+  // walks it toward the sky's violet (Gurney, Color and Light). Above that it stays the sky.
   // The height split is the 18 m layer below (Wenzel, SIGGRAPH 2006, the height only).
   float level = 1.0 - smoothstep(0.02, 0.22, normalize(d).y);
-  return mix(c, vec3(0.78, 0.42, 0.26), level * 0.78);
+  float day = clamp(uDay, 0.0, 1.0);
+  vec3 dust = mix(vec3(0.78, 0.42, 0.26), vec3(0.28, 0.20, 0.68), day);
+  return mix(c, dust, level * mix(0.78, 0.92, day));
 }
 // Haze toward the sky colour behind the point. It is thick near the ground and thin up high (height fog), so the Needle
 // and the aerial view keep their shapes. The fragment stage snaps it to four print-like steps.

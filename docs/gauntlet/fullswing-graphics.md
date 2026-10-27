@@ -1583,3 +1583,40 @@ Playability was scored from a flat boot and the city render check, not a full pl
 
 Playability was scored from a flat boot and the city render check, not a full playthrough. OpenSpec CLI validation was not run; the `openspec` command is not installed.
 
+### Round 36 — 2026-10-27 — rubric v1
+
+- What changed: The low air keeps its sunset rose. As the hour walks to blue hour, that dust walks toward violet (0.28, 0.20, 0.68) and the mix goes from 0.78 to 0.92. Looking up stays the painted sky. A red awning at (196, 47, 32) and an ink line at (20, 10, 24) did not move. James Gurney, Color and Light (2010): the air takes the colour of the sky at that hour. The height split is the street layer already there, from Carsten Wenzel, SIGGRAPH 2006.
+- Why it helped: At blue hour the street band was 15.2% violet and 74.2% rose. It is now 29.0% violet and 59.5% rose. At x 432, y 160, the haze goes from (95, 45, 56) to (57, 29, 89). Mean absolute change 14.5. The same pixel at the painted sunset stays (95, 45, 56), matching the street from round 33. 94.4% of the sunset frame is identical.
+- Screenshots: blue hour before `docs/gauntlet/shots/r36-before-blue.png`, after `docs/gauntlet/shots/r36-after-blue.png`. Sunset, where the dust does not move: `docs/gauntlet/shots/r36-sunset.png`.
+- Next target: Particles and VFX (6), tied with UI. The cream trail from round 19 is still one fleck.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 7 | Unchanged. A lit shop's cloth is warmer along the hem than along the top. |
+| Color palette | 7 | Unchanged. The dark shade is violet and the open shade is still teal. At blue hour that teal is gone. |
+| Detail density | 7 | Unchanged. A limestone course sits on each floor above a shop. |
+| Texture and material quality | 7 | Unchanged. The masonry clay from round 23. |
+| Composition and camera | 7 | Unchanged. On the same fast rope the body shrinks from 133 px to 80 px and the arm goes from 4.46 m to 6.98 m. |
+| Atmosphere | 7 | At blue hour the low haze goes from rose to violet. At x 432, y 160 it goes from (95, 45, 56) to (57, 29, 89). Sunset stays the warm dust. |
+| Character models | 7 | Unchanged. A dark wine panel breaks the upper back. |
+| Animation smoothness | 8 | Unchanged. At the same run phase the feet sit 80 px apart across the frame and 94 px apart in height. |
+| Particles and VFX | 6 | Unchanged. The cream trail from round 19. |
+| UI polish | 6 | Unchanged. The cream lip and rose hem from round 21. |
+| Responsiveness and input latency | 6 | Unchanged. No new pass and no new draw. No input timing was measured. |
+| Controls feel | 5 | Unchanged. |
+| Mission clarity | 4 | Unchanged. Not played. |
+| Pacing | 4 | Unchanged. |
+| Fun factor | 4 | Unchanged. Not played as a session. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 5 | Unchanged. |
+| Sound design | 4 | Unchanged. |
+| Variety | 4 | Unchanged. |
+| Performance stability | 6 | `qa/vr/render.mjs` passed, including flat play, the painted-sky checks, the lit-sphere cel check, and the canyon ink lines (20.4%). Street mean 77.1, saturation 0.58. |
+
+- Aesthetics raw: 69 / 10 dimensions, index 69
+- Playability raw: 46 / 10 dimensions, index 46
+- Total: 115 / 200
+- Delta vs last round: +1 (114 → 115). Atmosphere 6 → 7. Playability unchanged.
+
+Playability was scored from a flat boot and the city render check, not a full playthrough. OpenSpec CLI validation was not run; the `openspec` command is not installed.
+
