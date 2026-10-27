@@ -42,6 +42,8 @@ export const JOB = {
   lid: { stay: 4, hold: 6, time: 24, reward: 25 },
   // radius: a pass counts inside this column. speed: across the ground, in the air. arm: leave, then wait, before the next pass.
   gust: { radius: 6, need: 3, speed: 11, arm: 0.4, time: 28, reward: 25, lift: 7 },
+  // reach: on the ground, this close, the wheel stops. speed: it rolls along the street.
+  wheel: { reach: 4.5, speed: 8, time: 18, reward: 30, bump: 5 },
 };
 // the crime shouts (the hero's own words, as in the comics) and the quips after a crime is stopped
 export const CRIME_LINES = {
@@ -67,8 +69,9 @@ export const MISS = {
   flood: { title: "IT BURST", detail: "Seal the leak, then clear the crew.", short: "SEAL" },
   popped: { title: "POPPED", detail: "Stay on the lid until it seats.", short: "HOLD" },
   blown: { title: "BLOWN OFF", detail: "Swing through the gust three times.", short: "SWING" },
+  rolled: { title: "ROLLED OFF", detail: "Get on the ground in front of the wheel.", short: "LAND" },
 };
-export const JOB_NAMES = { sludge: "Sludge Run", catch: "Catch!", washer: "Window Washer", pizza: "Pizza Rush", balloon: "Balloon Chase", brawl: "Rooftop Brawl", taxi: "Taxi!", thief: "Stop, Thief!", mugging: "Mugging", getaway: "Getaway Car", tanker: "Sludge Tanker", lid: "Seat the Lid", gust: "Through the Gust" };
+export const JOB_NAMES = { sludge: "Sludge Run", catch: "Catch!", washer: "Window Washer", pizza: "Pizza Rush", balloon: "Balloon Chase", brawl: "Rooftop Brawl", taxi: "Taxi!", thief: "Stop, Thief!", mugging: "Mugging", getaway: "Getaway Car", tanker: "Sludge Tanker", lid: "Seat the Lid", gust: "Through the Gust", wheel: "Loose Wheel" };
 // After the Sludge Run the story is four different jobs, in this order. The twelve clogs stay in the city and still wake the King.
 export const STORY_ROUTE = [
   { type: "thief", mission: "MISSION 2", pending: "Stop the purse snatcher", scene: "mission2" },
@@ -93,6 +96,7 @@ export const JOB_LINES = {
   tanker: "Plug the leak with your plunger (rope it three times) and beat the crew.",
   lid: "The lid is rattling. Stand on it until it seats.",
   gust: "A gust is kicking up. Swing through it three times.",
+  wheel: "A wheel got loose. Get on the ground in front of it.",
 };
 // jobs that take you far from their marker: no "left it behind" for these
 const ROAMS = { sludge: true, taxi: true, thief: true, getaway: true };
@@ -242,7 +246,7 @@ export function createJobs({ city, combat, cars = null, seed = 4711 }) {
   function refreshOffers(fx, fz) {
     offerAt = { x: fx, z: fz };
     J.offers = [];
-    const types = ["catch", "washer", "pizza", "balloon", "brawl", "taxi", "thief"].sort(() => r() - 0.5).slice(0, JOB.offers);
+    const types = ["catch", "washer", "pizza", "balloon", "brawl", "taxi", "thief", "wheel"].sort(() => r() - 0.5).slice(0, JOB.offers);
     for (const t of types) { const o = makeOffer(t, fx, fz); if (o) J.offers.push(o); }
   }
 
@@ -463,6 +467,16 @@ export function createJobs({ city, combat, cars = null, seed = 4711 }) {
       A.data = { n: 0, in: false, arm: 0 };
       A.timer = JOB.gust.time;
       A.reward = JOB.gust.reward;
+    },
+    wheel(A) {
+      const o = A.o, S = city.streets;
+      let axis = "z", best = Infinity;
+      for (const at of S.xs) { const d = Math.abs(o.x - (at + 6)); if (d < best) { best = d; axis = "z"; } }
+      for (const at of S.zs) { const d = Math.abs(o.z - (at + 6)); if (d < best) { best = d; axis = "x"; } }
+      const dir = r() < 0.5 ? 1 : -1, sp = JOB.wheel.speed;
+      A.data = { x: o.x, y: o.y || 0, z: o.z, vx: axis === "x" ? dir * sp : 0, vz: axis === "z" ? dir * sp : 0, flips: 0, stop: false };
+      A.timer = JOB.wheel.time;
+      A.reward = JOB.wheel.reward;
     },
   };
   function spawnRing(o, n) {
@@ -731,6 +745,26 @@ export function createJobs({ city, combat, cars = null, seed = 4711 }) {
       if (A.timer <= 0) { end(false, "blown"); return; }
       const detail = A.data.n > 0 ? "Through it, " + A.data.n + "/" + C.need : "Swing through the gust.";
       A.card = card("SWING THROUGH " + fmt(A.timer), detail, A.o, { short: A.data.n > 0 ? A.data.n + "/" + C.need : "SWING" });
+      J.card = A.card;
+    },
+    wheel(A, dt, h) {
+      const C = JOB.wheel, D = A.data;
+      if (D.stop) { end(true, "stopped"); return; }
+      A.timer -= dt;
+      const nx = D.x + D.vx * dt, nz = D.z + D.vz * dt;
+      if (city.collideSphere(nx, 1, nz, 0.8) || city.isWater(nx, nz)) {
+        D.vx = -D.vx; D.vz = -D.vz; D.flips += 1;
+        if (D.flips > 4) { end(false, "rolled"); return; }
+      } else { D.x = nx; D.z = nz; }
+      const dist = Math.hypot(h.x - D.x, h.z - D.z);
+      if (h.onGround && dist <= C.reach) {
+        emit({ type: "wheel", x: D.x, y: 1.2, z: D.z, vx: D.vx, vz: D.vz });
+        end(true, "stopped");
+        return;
+      }
+      if (A.timer <= 0) { end(false, "rolled"); return; }
+      const detail = !h.onGround && dist <= C.reach ? "Land in front of it." : "Get in front of it, " + Math.round(dist) + " m";
+      A.card = card("STOP THE WHEEL " + fmt(A.timer), detail, { x: D.x, y: 1.2, z: D.z }, { short: "WHEEL" });
       J.card = A.card;
     },
   };
