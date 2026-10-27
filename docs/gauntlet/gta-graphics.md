@@ -2348,3 +2348,38 @@ Unreal is not available in this environment, so in-engine frames are the last co
 - Playability raw: 39 / 10 dimensions, index 39
 - Total: 129 / 200
 - Delta vs last round: 0
+
+### Round 68 — 2026-10-27 — rubric v1
+
+- What changed: an upright bar crosses the bar that already splits each dusk pane. It is the same 12 cm thickness. The glass stays 36 cm across and 55 cm up, and the border stays. A wall under five metres stays blank. The opening aim stays.
+- Why it helped: each pane was two flat lights. The upright bar makes four. The lights are still flat colour, so this is not a real window and detail stays at 9.
+- Screenshots: before `docs/gauntlet/gta-graphics/round-68/before-frame.png` is the corner with the cross bar only. After `docs/gauntlet/gta-graphics/round-68/after-frame.png` is the same camera with the upright bar. The crop is `mullion-crop.png`. Not an Unreal capture. From the same render, the mean absolute delta is 0.00462 and the max is 0.981. 3367 pixels change, from x 36 to 874 and y 10 to 414. `Scripts/test_window_mullion.py` passed. The bar was not compiled in Unreal. `GET /gta/` returned 200. OpenSpec CLI is not installed, so the change files were not validated with `openspec`.
+- Next target: each of the four lights is still one flat colour.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 9 | The dusk lamps are unchanged. The upright bar is dark, not a new light. |
+| Color palette | 9 | The warm glass is unchanged. |
+| Detail density | 9 | Each pane is four lights. Each light is still a flat rectangle, so this is not a real window. |
+| Texture and material quality | 9 | The wall is unchanged. |
+| Composition and camera | 9 | The corner camera and the opening aim are unchanged. |
+| Atmosphere | 9 | The scattering sky is unchanged. |
+| Character models | 9 | The hoodie is unchanged. |
+| Animation smoothness | 9 | The halfway pose is unchanged. |
+| Particles and VFX | 9 | The shoe puffs are unchanged. |
+| UI polish | 9 | The radar heading is unchanged. |
+| Responsiveness and input latency | 4 | Not measured this round. |
+| Controls feel | 4 | Not played. |
+| Mission clarity | 5 | The objective words are unchanged. |
+| Pacing | 4 | Unchanged mission slice. |
+| Fun factor | 3 | Not played. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 4 | The upright bar is the new mark. No new juice. |
+| Sound design | 3 | Not listened to. |
+| Variety | 3 | One more bar on the panes that were already there. |
+| Performance stability | 5 | `Scripts/test_window_mullion.py` passed. Frame time was not remeasured. |
+
+- Aesthetics raw: 90 / 10 dimensions, index 90
+- Playability raw: 39 / 10 dimensions, index 39
+- Total: 129 / 200
+- Delta vs last round: 0

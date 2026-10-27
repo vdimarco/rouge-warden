@@ -5,6 +5,7 @@ five metres, or lower than four and a half, stays blank. Consecutive footprint
 edges that face the same way are one wall, so a facade split into two short
 pieces still counts. The sash is a darker rectangle ten centimetres past the glass.
 A bar six centimetres tall sits across the middle of the glass.
+An upright bar of the same thickness splits that glass the other way.
 """
 
 import math
@@ -16,6 +17,7 @@ SASH_CM = 10.0
 GLASS_OUT_CM = 7.0
 SASH_OUT_CM = 4.0
 MUNTIN_HALF_UP_CM = 6.0
+MULLION_HALF_ALONG_CM = 6.0
 
 
 def sash_box():

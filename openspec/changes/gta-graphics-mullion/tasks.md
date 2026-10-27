@@ -1,0 +1,5 @@
+- [x] Draw the upright bar the same thickness as the cross bar
+- [x] Keep a wall under five metres blank
+- [x] Keep the opening pitch, the aim, and the socket
+- [x] Run `Scripts/test_window_mullion.py`
+- [ ] Confirm the upright bar in Unreal (editor not available here)
