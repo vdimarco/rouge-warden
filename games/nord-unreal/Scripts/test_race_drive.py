@@ -323,8 +323,8 @@ def drive():
     if phase == u.QuebecCampaignPhase.COMPLETE:
         saved = u.GameplayStatics.load_game_from_slot(SLOT, 0)
         assert saved and saved.get_editor_property('CompletedMissions') == 2
-        assert saved.get_editor_property('Version') == 20, 'A finished race did not write the story tail'
-        for name in ('PondStep', 'CourtStep', 'ShowStep', 'RescueMask', 'ConvoyStep', 'BlankStep', 'TourStep', 'HomeStep', 'EscortStep', 'ShadeStep', 'GrabStep', 'CutStep', 'ChaseStep', 'FinaleStep', 'FollowStep', 'RollStep', 'BellStep', 'BlockStep', 'SendStep', 'PursueStep', 'NoseStep', 'SlipStep', 'MarchStep', 'DitchStep', 'ParcelStep'):
+        assert saved.get_editor_property('Version') == 21, 'A finished race did not write the story tail'
+        for name in ('PondStep', 'CourtStep', 'ShowStep', 'RescueMask', 'ConvoyStep', 'BlankStep', 'TourStep', 'HomeStep', 'EscortStep', 'ShadeStep', 'GrabStep', 'CutStep', 'ChaseStep', 'FinaleStep', 'FollowStep', 'RollStep', 'BellStep', 'BlockStep', 'SendStep', 'PursueStep', 'NoseStep', 'SlipStep', 'MarchStep', 'DitchStep', 'ParcelStep', 'BoltStep'):
             assert saved.get_editor_property(name) == 0, 'A finished race wrote a story step'
         assert len(REPORT['gate_crossings']) == len(STATE['gates']), 'Every authored directional gate must be crossed'
         assert STATE['travel'] > STATE['lengths'][-1]*.8, 'Route completion needs continuous physical travel'

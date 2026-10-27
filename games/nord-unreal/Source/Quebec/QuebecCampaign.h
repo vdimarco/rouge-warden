@@ -77,10 +77,12 @@ public:
     UPROPERTY(VisibleAnywhere) int32 DitchStep = 0;
     // Parcel tail. Version 19 leaves this at 0. Version 20 writes it. The clock and the street cars stay in the session.
     UPROPERTY(VisibleAnywhere) int32 ParcelStep = 0;
+    // Bolt tail. Version 20 leaves this at 0. Version 21 writes it. The seeker and the escape clock stay in the session.
+    UPROPERTY(VisibleAnywhere) int32 BoltStep = 0;
     bool IsSupported() const;
 };
 
-/** Story encounters. All objective decisions run on authority. Missions 3 through 10 persist on the version-3 tail. Mission 11 persists on version 4. Mission 12 persists on version 5. Mission 13 persists on version 6. Mission 14 persists on version 7. Mission 15 persists on version 8. Mission 16 persists on version 9. Mission 17 persists on version 10. Mission 18 persists on version 11. Mission 19 persists on version 12. Mission 20 persists on version 13. Mission 21 persists on version 14. Mission 22 persists on version 15. Mission 23 persists on version 16. Mission 24 persists on version 17. Mission 25 persists on version 18. Mission 26 persists on version 19. Mission 27 persists on version 20. Completed missions stay 0–2. */
+/** Story encounters. All objective decisions run on authority. Missions 3 through 10 persist on the version-3 tail. Mission 11 persists on version 4. Mission 12 persists on version 5. Mission 13 persists on version 6. Mission 14 persists on version 7. Mission 15 persists on version 8. Mission 16 persists on version 9. Mission 17 persists on version 10. Mission 18 persists on version 11. Mission 19 persists on version 12. Mission 20 persists on version 13. Mission 21 persists on version 14. Mission 22 persists on version 15. Mission 23 persists on version 16. Mission 24 persists on version 17. Mission 25 persists on version 18. Mission 26 persists on version 19. Mission 27 persists on version 20. Mission 28 persists on version 21. Completed missions stay 0–2. */
 UCLASS()
 class QUEBEC_API AQuebecCampaign : public AActor
 {
@@ -144,6 +146,7 @@ public:
     static constexpr int32 MarchBankedStep = 3;
     static constexpr int32 DitchBankedStep = 3;
     static constexpr int32 ParcelBankedStep = 2;
+    static constexpr int32 BoltBankedStep = 3;
     bool IsPondOpen() const { return Phase == EQuebecCampaignPhase::Complete && PondStep < PondBankedStep; }
     bool IsCourtOpen() const { return Phase == EQuebecCampaignPhase::Complete && PondStep >= PondBankedStep && CourtStep < CourtBankedStep; }
     bool IsShowOpen() const { return Phase == EQuebecCampaignPhase::Complete && PondStep >= PondBankedStep && CourtStep >= CourtBankedStep && ShowStep < ShowBankedStep; }
@@ -343,7 +346,20 @@ public:
             && DitchStep >= DitchBankedStep
             && ParcelStep >= 0 && ParcelStep < ParcelBankedStep;
     }
-    bool IsStoryBeatOpen() const { return IsPondOpen() || IsCourtOpen() || IsShowOpen() || IsRescueOpen() || IsConvoyOpen() || IsBlankOpen() || IsTourOpen() || IsHomeOpen() || IsEscortOpen() || IsShadeOpen() || IsGrabOpen() || IsCutOpen() || IsChaseOpen() || IsFinaleOpen() || IsFollowOpen() || IsRollOpen() || IsBellOpen() || IsBlockOpen() || IsSendOpen() || IsPursueOpen() || IsNoseOpen() || IsSlipOpen() || IsMarchOpen() || IsDitchOpen() || IsParcelOpen(); }
+    bool IsBoltOpen() const
+    {
+        return Phase == EQuebecCampaignPhase::Complete && PondStep >= PondBankedStep && CourtStep >= CourtBankedStep
+            && ShowStep >= ShowBankedStep && RescueMask >= RescueDone && ConvoyStep >= ConvoyBankedStep
+            && BlankStep >= BlankBankedStep && TourStep >= TourBankedStep && HomeStep >= HomeBankedStep
+            && EscortStep >= EscortBankedStep && ShadeStep >= ShadeBankedStep && GrabStep >= GrabBankedStep
+            && CutStep >= CutBankedStep && ChaseStep >= ChaseBankedStep && FinaleStep >= FinaleBankedStep
+            && FollowStep >= FollowBankedStep && RollStep >= RollBankedStep && BellStep >= BellBankedStep
+            && BlockStep >= BlockBankedStep && SendStep >= SendBankedStep && PursueStep >= PursueBankedStep
+            && NoseStep >= NoseBankedStep && SlipStep >= SlipBankedStep && MarchStep >= MarchBankedStep
+            && DitchStep >= DitchBankedStep && ParcelStep >= ParcelBankedStep
+            && BoltStep >= 0 && BoltStep < BoltBankedStep;
+    }
+    bool IsStoryBeatOpen() const { return IsPondOpen() || IsCourtOpen() || IsShowOpen() || IsRescueOpen() || IsConvoyOpen() || IsBlankOpen() || IsTourOpen() || IsHomeOpen() || IsEscortOpen() || IsShadeOpen() || IsGrabOpen() || IsCutOpen() || IsChaseOpen() || IsFinaleOpen() || IsFollowOpen() || IsRollOpen() || IsBellOpen() || IsBlockOpen() || IsSendOpen() || IsPursueOpen() || IsNoseOpen() || IsSlipOpen() || IsMarchOpen() || IsDitchOpen() || IsParcelOpen() || IsBoltOpen(); }
 
     UPROPERTY(VisibleAnywhere, ReplicatedUsing=UpdatePresentation) EQuebecCampaignPhase Phase = EQuebecCampaignPhase::AimWorklight;
     UPROPERTY(VisibleAnywhere, Replicated) int32 CompletedMissions = 0;
@@ -451,6 +467,12 @@ public:
     UPROPERTY(VisibleAnywhere, Replicated) float ParcelClock = 0.f;
     UPROPERTY(VisibleAnywhere, Replicated) float ParcelAlongA = 0.f;
     UPROPERTY(VisibleAnywhere, Replicated) float ParcelAlongB = 0.f;
+    // 0 the drive, 1 the chase, 2 the gate, 3 banked. Written on the version-21 tail. Not a chain link.
+    // Where the seeker is, and the escape clock, are not saved. A reload puts the seeker behind the end again.
+    UPROPERTY(VisibleAnywhere, ReplicatedUsing=UpdatePresentation) int32 BoltStep = 0;
+    UPROPERTY(VisibleAnywhere, Replicated) float BoltClock = 0.f;
+    UPROPERTY(VisibleAnywhere, Replicated) float BoltSeekX = 0.f;
+    UPROPERTY(VisibleAnywhere, Replicated) float BoltSeekY = 0.f;
     UPROPERTY(VisibleAnywhere, Replicated) TObjectPtr<APlayerState> LightOperator;
     UPROPERTY(VisibleAnywhere, Replicated) float LightYaw = 0.f;
     UPROPERTY(VisibleAnywhere, Replicated) float LightPitch = 0.f;
@@ -633,6 +655,14 @@ private:
     UPROPERTY() TObjectPtr<UTextRenderComponent> ParcelStoopCaption;
     UPROPERTY() TObjectPtr<UTextRenderComponent> ParcelCarACaption;
     UPROPERTY() TObjectPtr<UTextRenderComponent> ParcelCarBCaption;
+    UPROPERTY() TObjectPtr<UStaticMeshComponent> BoltEnd;
+    UPROPERTY() TObjectPtr<UStaticMeshComponent> BoltBay;
+    UPROPERTY() TObjectPtr<UStaticMeshComponent> BoltGate;
+    UPROPERTY() TObjectPtr<UStaticMeshComponent> BoltThem;
+    UPROPERTY() TObjectPtr<UTextRenderComponent> BoltEndCaption;
+    UPROPERTY() TObjectPtr<UTextRenderComponent> BoltBayCaption;
+    UPROPERTY() TObjectPtr<UTextRenderComponent> BoltGateCaption;
+    UPROPERTY() TObjectPtr<UTextRenderComponent> BoltThemCaption;
     UPROPERTY() TArray<TObjectPtr<UStaticMeshComponent>> ConvoyParts;
     UPROPERTY() TArray<TObjectPtr<UTextRenderComponent>> ConvoyCaptions;
     UPROPERTY() TArray<TObjectPtr<UStaticMeshComponent>> BlankParts;
@@ -729,6 +759,8 @@ private:
     void AdvanceDitch(int32 Next, AQuebecController* Who, const TCHAR* Message, bool bFinished);
     void TickParcel(float DeltaSeconds);
     void AdvanceParcel(int32 Next, AQuebecController* Who, const TCHAR* Message, bool bFinished);
+    void TickBolt(float DeltaSeconds);
+    void AdvanceBolt(int32 Next, AQuebecController* Who, const TCHAR* Message, bool bFinished);
     void ChangePhase(EQuebecCampaignPhase Next, bool bFeedback = true);
     void StopAiming();
     void SaveBoundary();
