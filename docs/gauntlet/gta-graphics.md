@@ -2663,3 +2663,38 @@ Unreal is not available in this environment, so in-engine frames are the last co
 - Playability raw: 39 / 10 dimensions, index 39
 - Total: 129 / 200
 - Delta vs last round: 0
+
+### Round 77 — 2026-10-27 — rubric v1
+
+- What changed: the sun and the moon use a three-degree disk and a 45 cm contact shadow. The view's ambient occlusion is 0.65. On the curb, the building, the hydrant, the bags, the walker, and the car throw soft shadows on the grass, and the contacts darken. A full shadow keeps 57 percent of the lit ground. The curb eye stays. The opening aim stays.
+- Why it helped: the grass was one flat sun term. The shadows put the props on the ground. The shade is still flat and the penumbra is a simple disk, so lighting stays at 9.
+- Screenshots: before `docs/gauntlet/gta-graphics/round-77/before-frame.png` is the curb with no cast shadow. After `docs/gauntlet/gta-graphics/round-77/after-frame.png` is the same camera with the soft shadows and the contact darkening. The crop is `shadow-crop.png`. Not an Unreal capture. From the same render, the mean absolute delta is 0.00783 and the max is 0.274. 55220 pixels change, from x 0 to 959 and y 0 to 402. `Scripts/test_shade_contact.py` passed. The syntax check passed `QuebecSky.cpp` and `QuebecGameplay.cpp`. The lights were not rebuilt in Unreal. `GET /gta/` returned 200. OpenSpec CLI is not installed, so the change files were not validated with `openspec`.
+- Next target: the wet road and the car paint still have no specular.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 9 | The ground takes a soft shadow and a contact darkening. The shade is still flat. |
+| Color palette | 9 | The colours are unchanged. The shadows are darker grass. |
+| Detail density | 9 | The contacts read. The meshes are unchanged. |
+| Texture and material quality | 9 | No new material. The light is what changed. |
+| Composition and camera | 9 | The curb eye and the opening aim are unchanged. |
+| Atmosphere | 9 | The sky is unchanged. |
+| Character models | 9 | The walker is unchanged. |
+| Animation smoothness | 9 | The walk step is unchanged. |
+| Particles and VFX | 9 | The shoe puffs are unchanged. |
+| UI polish | 9 | The radar heading is unchanged. |
+| Responsiveness and input latency | 4 | Not measured this round. |
+| Controls feel | 4 | Not played. |
+| Mission clarity | 5 | The objective words are unchanged. |
+| Pacing | 4 | Unchanged mission slice. |
+| Fun factor | 3 | Not played. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 4 | The shadows are the new mark. No new juice. |
+| Sound design | 3 | Not listened to. |
+| Variety | 3 | The same curb, now with shadows. |
+| Performance stability | 5 | `Scripts/test_shade_contact.py` passed. Frame time was not remeasured. |
+
+- Aesthetics raw: 90 / 10 dimensions, index 90
+- Playability raw: 39 / 10 dimensions, index 39
+- Total: 129 / 200
+- Delta vs last round: 0

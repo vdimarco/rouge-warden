@@ -26,6 +26,7 @@
 #include "QuebecShowTone.h"
 #include "QuebecJobRules.h"
 #include "QuebecSky.h"
+#include "QuebecShade.h"
 #include "QuebecCrewAnimation.h"
 #include "QuebecGTA.h" // AQuebecCar: street traces each frame (DRIVE).
 #include "QuebecTraces.h" // Street traces: knockable street props spawned by the game mode (TRAFFIC).
@@ -2580,12 +2581,14 @@ void AQuebecController::ApplySkyGrading()
         Settings.bOverride_ColorSaturation = bSkyGrading;
         Settings.bOverride_ColorContrast = bSkyGrading;
         Settings.bOverride_WhiteTemp = bSkyGrading;
+        Settings.bOverride_AmbientOcclusionIntensity = bSkyGrading;
         if (!Sky) continue;
         Settings.AutoExposureMinBrightness = Settings.AutoExposureMaxBrightness = QuebecSky::AuthoredEV100 + Sky->GetExposureOffset();
         const float Saturation = Sky->GetSaturation(), Contrast = Sky->GetContrast();
         Settings.ColorSaturation = FVector4(Saturation, Saturation, Saturation, 1.f);
         Settings.ColorContrast = FVector4(Contrast, Contrast, Contrast, 1.f);
         Settings.WhiteTemp = Sky->GetWhiteTemp();
+        Settings.AmbientOcclusionIntensity = QuebecShade::AmbientOcclusion;
     }
 }
 
