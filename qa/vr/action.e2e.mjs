@@ -296,6 +296,37 @@ try {
   check(held.low && held.low.job === "kite" && /Stay above/i.test(held.low.detail || ""), "the ground does not hold the kite", held);
   check(held.won && held.won.y > 3 && !held.job, "staying above the kite launches you", held);
 
+  const line = await page.evaluate(() => {
+    if (G.ui.paused) G.ui.closePause();
+    if (G.jobs.active) G.jobs.cancel();
+    G.test.job("line");
+    QA.step(8);
+    const ob = G.game.progress.objective;
+    G.test.render(0);
+    return { title: ob && ob.title, detail: ob && ob.detail, job: G.test.action().jobs.active && G.test.action().jobs.active.type, state: G.state };
+  });
+  await page.screenshot({ path: out + "/line.png" });
+  check(line.job === "line" && /RIDE THE LINE/.test(line.title || "") && /Swing onto/i.test(line.detail || ""), "a line asks you to swing onto it", line);
+  const ride = await page.evaluate(() => {
+    const goal = G.game.progress.objective && G.game.progress.objective.goal;
+    if (!goal) return { slow: null, y: 0, job: "missing" };
+    G.P.pos.x = goal.x; G.P.pos.y = 0; G.P.pos.z = goal.z;
+    G.P.onGround = true; G.P.vel.x = 16; G.P.vel.y = 0; G.P.vel.z = 0;
+    QA.step(2);
+    const slow = { job: G.test.action().jobs.active && G.test.action().jobs.active.type, detail: G.game.progress.objective && G.game.progress.objective.detail };
+    const g2 = G.game.progress.objective && G.game.progress.objective.goal;
+    if (g2) { G.P.pos.x = g2.x; G.P.pos.y = g2.y; G.P.pos.z = g2.z; }
+    G.P.onGround = false; G.P.vel.x = 16; G.P.vel.y = 0; G.P.vel.z = 0;
+    let won = null;
+    for (let i = 0; i < 180 && !won; i++) {
+      QA.step(1);
+      if (!(G.test.action().jobs.active)) won = { y: G.P.vel.y, title: G.game.progress.objective && G.game.progress.objective.title, i };
+    }
+    return { slow, won, job: G.test.action().jobs.active && G.test.action().jobs.active.type };
+  });
+  check(ride.slow && ride.slow.job === "line" && /Swing onto/i.test(ride.slow.detail || ""), "standing on the line does not catch it", ride);
+  check(ride.won && ride.won.y > 3 && !ride.job, "swinging onto the line carries you off the end", ride);
+
   check(page.errors.length === 0, "no errors in flat play", page.errors);
   await page.context().close();
 } catch (e) { check(false, "the flat-play run threw", e.stack || String(e)); }

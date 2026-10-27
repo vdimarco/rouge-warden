@@ -1026,5 +1026,38 @@ test("Hold the Kite: the air above it counts, the ground slips it, and the clock
   assert.ok(ev.some((e) => e.type === "failed" && e.why === "risen"), JSON.stringify(ev.filter((e) => e.type === "failed")));
   assert.equal(MISS.risen.title, "IT ROSE");
 });
+test("Ride the Line: a fast swing catches it, the ground does not, and the clock lets it go by", () => {
+  const C = createCombat(city), J = createJobs({ city, combat: C, seed: 9 });
+  const h0 = hero(city.start.x, city.start.y, city.start.z);
+  J.start("line", null, h0);
+  const D = J.active.data;
+  assert.ok(Math.hypot(D.x1 - D.x0, D.z1 - D.z0) > 10, "the line has a length");
+  J.update(DT, 0, h0);
+  assert.match(J.card.title, /RIDE THE LINE/);
+  assert.match(J.card.detail, /Swing onto the line/);
+  assert.doesNotMatch(J.card.title + " " + J.card.detail, /FLUSH THE CLOGS/);
+  const ground = hero(D.x0, D.y, D.z0, { onGround: true, vx: 16 });
+  J.update(DT, 0, ground);
+  assert.equal(J.active.data.on, false, "the ground misses the line");
+  const slow = hero(D.x0, D.y, D.z0, { onGround: false, vx: 4 });
+  J.update(DT, 0, slow);
+  assert.equal(J.active.data.on, false, "a slow swing misses");
+  const fly = hero(D.x0, D.y, D.z0, { onGround: false, vx: 16 });
+  J.update(DT, 0, fly);
+  assert.equal(J.active.data.on, true, "a fast swing catches");
+  assert.ok(J.events.some((e) => e.type === "line" && e.catch), "the catch");
+  assert.match(J.card.detail, /Along it/);
+  for (let i = 0; i < (JOB.line.span / JOB.line.ride + 0.4) / DT && J.active; i++) J.update(DT, i * DT, fly);
+  assert.ok(J.events.some((e) => e.type === "line" && e.ride), "it carries");
+  assert.ok(J.events.some((e) => e.type === "line" && e.hop), "it launches");
+  assert.ok(J.events.some((e) => e.type === "done" && e.why === "across" && e.reward === JOB.line.reward), JSON.stringify(J.events.filter((e) => e.type === "done" || e.type === "failed")));
+  const J2 = createJobs({ city, combat: createCombat(city), seed: 9 });
+  J2.start("line", null, h0);
+  const far = hero(J2.active.data.x0 + 400, 0, J2.active.data.z0);
+  const ev = [];
+  for (let i = 0; i < (JOB.line.time + 1) / DT && J2.active; i++) { J2.update(DT, i * DT, far); ev.push(...J2.events); J2.events.length = 0; }
+  assert.ok(ev.some((e) => e.type === "failed" && e.why === "snapped"), JSON.stringify(ev.filter((e) => e.type === "failed")));
+  assert.equal(MISS.snapped.title, "MISSED IT");
+});
 console.log(fails ? "FAIL: action (" + fails + " failed)" : "PASS: action");
 process.exitCode = fails ? 1 : 0;

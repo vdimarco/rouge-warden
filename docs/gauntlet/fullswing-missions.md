@@ -1644,3 +1644,34 @@ Evidence: [the opening card](fullswing-r45/kite.png). The DOM assert is the sour
 | Performance stability | Unverified | No GPU pass, and this round does not claim one. |
 
 Current total withheld. Historical 132 is context from the earlier mission rounds, and this round's delta against that history is 0. It is not a new acceptance score. Responsiveness and performance stay unverified. No phone, listening, or full playthrough. `openspec validate` did not run. The change is archived by hand under `openspec/changes/archive/2026-10-26-swing-kite-hold/`.
+
+### Round 46 — 2026-10-27 — a line to ride, rubric v1
+
+An odd job strings a line across the street, 8 m up. The card says RIDE THE LINE and to swing onto it. A swing in the air, within 3.5 m and at 9 m/s or faster across the ground, catches it. Standing on the street under it does not. A slower swing does not. Once caught, the line carries the hero to the far end and launches them off. The play measured an upward speed above 3 m/s and the job gone. A 16 s clock that runs out before the catch misses as snapped. The line is an offer. It does not replace a flush. The first flush stays the clog card, the third flush stays the gust, and the wheel and the kite stay offers. The King stays asleep.
+
+Evidence: [the opening card](fullswing-r46/line.png). The DOM assert is the source of truth for the card text. Local flat play passed the card, the ground refusal, and the launch off the end. Local action tests passed, including the slow swing, the ground, the catch, the carry, the launch, and the clock miss. A street offer that snapped inside the usual band is placed again, so the markers stay out where the band asks. No new art files. The catch and the launch use the existing comic word and the existing rope-release sound.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 5 | Historical context only. This round does not re-score it. |
+| Color palette | 6 | Historical context only. This round does not re-score it. |
+| Detail density | 4 | Historical context only. This round does not re-score it. |
+| Texture and material quality | 3 | Historical context only. This round does not re-score it. |
+| Composition and camera | 4 | Historical context only. This round does not re-score it. |
+| Atmosphere | 5 | Historical context only. This round does not re-score it. |
+| Character models | 3 | Historical context only. This round does not re-score it. |
+| Animation smoothness | 4 | Historical context only. This round does not re-score it. |
+| Particles and VFX | 5 | The catch uses the existing comic word. That is not a new effects bar. |
+| UI polish | 6 | The card names the line and the miss. Polish stays where it was. |
+| Responsiveness and input latency | Unverified | No hardware pass. The launch is a simulated frame, not a measured input latency. |
+| Controls feel | 9 | Catching it is the same swing. The carry is a short ride, not a new control. |
+| Mission clarity | 9 | The card says to swing onto the line. Clarity stays 9. |
+| Pacing | 9 | The line is not a flush. Ten of twelve flushes differ, and the first is still the pump. |
+| Fun factor | 9 | A caught line carries you off the end. One odd job is not a 2023 open city. |
+| Difficulty curve | 9 | Sixteen seconds, the ground does not count, and the miss says to swing on. The curve stays 9. |
+| Feedback | 9 | The card names the swing, the word pops, and a miss names itself. Feedback stays 9. |
+| Sound design | 9 | The catch reuses the rope-release sound. Sound stays 9. |
+| Variety | 9 | The line is another offer. It does not change the flush list. Variety stays 9. |
+| Performance stability | Unverified | No GPU pass, and this round does not claim one. |
+
+Current total withheld. Historical 132 is context from the earlier mission rounds, and this round's delta against that history is 0. It is not a new acceptance score. Responsiveness and performance stay unverified. No phone, listening, or full playthrough. `openspec validate` did not run. The change is archived by hand under `openspec/changes/archive/2026-10-27-swing-line-ride/`.

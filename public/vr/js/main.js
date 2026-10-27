@@ -785,7 +785,7 @@ const WIN_CUE = {
   sludge: "winWet", tanker: "winWet",
   brawl: "winFight", mugging: "winFight",
   thief: "winDash", pizza: "winDash", getaway: "winDash", taxi: "winDash",
-  catch: "winLift", washer: "winLift", balloon: "winLift", gust: "winLift", kite: "winLift", wheel: "winDash",
+  catch: "winLift", washer: "winLift", balloon: "winLift", gust: "winLift", kite: "winLift", line: "winLift", wheel: "winDash",
   lid: "winWet",
 };
 function winCue(job) { return WIN_CUE[job] || "winLift"; }
@@ -851,6 +851,7 @@ const FAIL_LINES = {
   blown: "The gust blew past. Swing through it three times.",
   rolled: "The wheel rolled off. Get on the ground in front of it.",
   risen: "The kite rose away. Stay above it.",
+  snapped: "The line went by. Swing onto it.",
 };
 function jobEvent(e) {
   switch (e.type) {
@@ -883,6 +884,23 @@ function jobEvent(e) {
       fx.word(e.tug ? "UP" : "GOT IT", FXP.set(e.x, e.y + 1.2, e.z), { scale: e.tug ? 1.3 : 1.6 });
       audio.sfx("release");
       if (P && !driving) { P.vel.y = Math.max(P.vel.y, 0) + (e.tug ? JOB.kite.tug : JOB.kite.lift); P.onGround = false; }
+      break;
+    case "line":
+      if (e.ride) {
+        if (P && !driving) {
+          P.pos.x = e.x; P.pos.y = e.y; P.pos.z = e.z;
+          P.vel.x = e.vx; P.vel.y = 0; P.vel.z = e.vz;
+          P.onGround = false;
+        }
+        break;
+      }
+      fx.word(e.hop ? "ZIP" : "CATCH", FXP.set(e.x, e.y + 1.2, e.z), { scale: e.hop ? 1.6 : 1.3 });
+      audio.sfx("release");
+      if (e.hop && P && !driving) {
+        P.vel.x = e.vx; P.vel.z = e.vz;
+        P.vel.y = Math.max(P.vel.y, 0) + JOB.line.hop;
+        P.onGround = false;
+      }
       break;
     case "done": {
       game.reward(e.reward);
@@ -3067,6 +3085,7 @@ G.test = {
     else if (A.type === "gust") D.n = JOB.gust.need;
     else if (A.type === "wheel") D.stop = true;
     else if (A.type === "kite") D.done = true;
+    else if (A.type === "line") D.done = true;
     else return false;
     return true;
   },
