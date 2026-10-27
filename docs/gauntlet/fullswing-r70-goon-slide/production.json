@@ -1,0 +1,19 @@
+{
+  "merge": "0719c3f668f1238b440341bebc857c6fa41d0d65",
+  "checkedAt": "2026-10-25T20:48:14.128988+00:00",
+  "files": [
+    {
+      "file": "index.html",
+      "status": 200,
+      "exact": true,
+      "sha256": "203a5663bd9e2da6cfbc734ec97f60e30935dfe93e597c73fa08d56e619ee90d"
+    },
+    {
+      "file": "js/combat.js",
+      "status": 200,
+      "exact": true,
+      "sha256": "24933b759fab55be014148c99d0c0ed99777a676bee08e9b3a0a9940b0bc966d"
+    }
+  ],
+  "release": "Externally merged by vdimarco 2026-10-25T20:43:25Z; Agent Review absent and final pre-merge authenticated preview and both rebases not completed; no future waiver"
+}

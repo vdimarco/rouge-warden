@@ -1,0 +1,11 @@
+{"width":640,"frames":320,"blocked":39,"side":1,"returned":true,"diff":0,"varied":9894}
+PASS: exact chase/return movement and events 640
+PASS: post retries and return home covered 640
+PASS: exact nonblank rendered goon frame 640
+PASS: no page errors 640
+{"width":390,"frames":320,"blocked":39,"side":1,"returned":true,"diff":0,"varied":49743}
+PASS: exact chase/return movement and events 390
+PASS: post retries and return home covered 390
+PASS: exact nonblank rendered goon frame 390
+PASS: no page errors 390
+PASS: goon slide rotations
