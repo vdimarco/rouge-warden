@@ -3374,3 +3374,50 @@ Unreal is not available here, so the native diamond was not captured. The title 
 ![Mission card on a 390-wide screen](gta-missions/r74-play-card-390.png)
 
 ![Menu on a 390-wide screen, Recover visible](gta-missions/r74-play-menu-390.png)
+
+### Round 75 — 2026-10-27 — rubric v1
+
+- What changed: A story purse shows +700 and the word CHING on the play shell, and the page arms two short notes with it. The popup stays a few seconds, then leaves. The amount is not saved. The slot stays version 24. The three feedback sounds stay three. No new mission was added. The post, the lift, and the yard are not retuned.
+- Why it helped: A banked beat paid, and the play page never said the amount.
+- Screenshots: title `docs/gauntlet/gta-missions/r75-title-1280.png`, `r75-title-390.png`, `r75-title-320.png`. Play client, host offline, `r75-play-1280.png`, with the same popup at 390 in `r75-play-purse-390.png`. Menu with Recover `r75-play-menu-390.png`. The title loaded with no page errors. The raw play page still logs the missing `@epicgames-ps/lib-pixelstreamingfrontend-ue5.8` specifier; the shell, the popup, and Recover still draw. The 1280 frame shows CHING and +700 over the post card. The post was not stood in Unreal. The notes were not heard. `node Browser/mission-card.test.mjs` reports +700, CHING, and the two notes. Syntax check `--both` passed, 96 files, 0 failed. OpenSpec CLI is not installed, so `openspec validate` did not run.
+- Next target: the playable scores that can still move are capped. A popup is not the reference's reward, so feedback stays at 9. The notes were not heard, so sound stays at 9. Responsiveness stays at 3 and stays out of scope. Performance stays at 4 and is not measurable here.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 3 | Unchanged. |
+| Color palette | 5 | Unchanged. |
+| Detail density | 3 | Unchanged. |
+| Texture and material quality | 3 | Unchanged. |
+| Composition and camera | 4 | Unchanged. |
+| Atmosphere | 4 | Unchanged. |
+| Character models | 3 | Unchanged. |
+| Animation smoothness | 3 | Unchanged. |
+| Particles and VFX | 2 | Unchanged. |
+| UI polish | 4 | Unchanged. The shell popup was seen. The native card was not compared, and French and English still share the screen. |
+| Responsiveness and input latency | 3 | Unchanged. Still a lagged stream. Out of scope for this loop. |
+| Controls feel | 9 | Unchanged. Getting out faster than a walk still keeps that pace. |
+| Mission clarity | 8 | Unchanged. The play shell still shows the objective, the stage, the fail sentence, and a gold diamond. |
+| Pacing | 9 | Unchanged. Four seconds on foot after boarding still loses the passenger. |
+| Fun factor | 9 | Unchanged. Chez Lise still sells a kit, a vest, or one star. |
+| Difficulty curve | 9 | Unchanged. Selling the last page ends it for 200 and does not bank the chain. A wreck still costs more than the goon pay. |
+| Feedback | 9 | The shell shows +700 and CHING. The notes were not heard, and a popup is not the reference's reward, so this stays one step short. |
+| Sound design | 9 | Unchanged. The two notes were not heard. The dent thud still marks a scrape as quiet. Nobody is voiced. |
+| Variety | 9 | Unchanged. No new beat was added. |
+| Performance stability | 4 | Unchanged. Not measurable in this container. |
+
+- Aesthetics raw: 34 / 10 dimensions, index 34
+- Playability raw: 78 / 10 dimensions, index 78
+- Total: 112 / 200
+- Delta vs last round: 0 (round 74 was 112). The purse was seen on the shell and was not paid in Unreal, so every score held.
+
+![GTA title at 1280](gta-missions/r75-title-1280.png)
+
+![GTA title at 390](gta-missions/r75-title-390.png)
+
+![GTA title at 320](gta-missions/r75-title-320.png)
+
+![Play client at 1280, host offline, payout visible](gta-missions/r75-play-1280.png)
+
+![Payout on a 390-wide screen](gta-missions/r75-play-purse-390.png)
+
+![Menu on a 390-wide screen, Recover visible](gta-missions/r75-play-menu-390.png)

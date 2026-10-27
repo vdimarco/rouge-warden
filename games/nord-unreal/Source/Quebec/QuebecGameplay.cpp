@@ -2533,6 +2533,7 @@ void AQuebecController::PlayerTick(float DeltaTime)
             FString CardTitle, CardObjective, CardStage, CardFail;
             int32 CardBearing = 0;
             int32 CardMeters = 0;
+            int32 CardPayout = 0;
             if (CardCampaign && GetPawn())
             {
                 CardTitle = CardCampaign->GetMissionTitle();
@@ -2541,6 +2542,9 @@ void AQuebecController::PlayerTick(float DeltaTime)
                 int32 PaceIndex = 0, PaceCount = 0, PaceWalk = 0, PaceSprint = 0;
                 if (CardCampaign->GetBeatPace(PaceIndex, PaceCount, PaceWalk, PaceSprint))
                     CardStage = FString::Printf(TEXT("%d of %d"), PaceIndex, PaceCount);
+                const UWorld* World = GetWorld();
+                if (World && World->GetTimeSeconds() < CardCampaign->PayoutUntil)
+                    CardPayout = CardCampaign->LastPayout;
                 const FVector Here = GetPawn()->GetActorLocation();
                 const FVector Target = CardCampaign->GetObjectiveLocation();
                 const FVector Delta = Target - Here;
@@ -2565,10 +2569,10 @@ void AQuebecController::PlayerTick(float DeltaTime)
                 return Out;
             };
             Streamer->SendAllPlayersMessage(TEXT("Response"), FString::Printf(
-                TEXT("{\"nordDriving\":%s,\"nordSwimming\":%s,\"nordTitle\":\"%s\",\"nordObjective\":\"%s\",\"nordStage\":\"%s\",\"nordFail\":\"%s\",\"nordBearing\":%d,\"nordMeters\":%d}"),
+                TEXT("{\"nordDriving\":%s,\"nordSwimming\":%s,\"nordTitle\":\"%s\",\"nordObjective\":\"%s\",\"nordStage\":\"%s\",\"nordFail\":\"%s\",\"nordBearing\":%d,\"nordMeters\":%d,\"nordPayout\":%d}"),
                 Cast<AQuebecCar>(GetPawn()) ? TEXT("true") : TEXT("false"),
                 Character && Character->GetCharacterMovement()->IsSwimming() ? TEXT("true") : TEXT("false"),
-                *Json(CardTitle), *Json(CardObjective), *Json(CardStage), *Json(CardFail), CardBearing, CardMeters));
+                *Json(CardTitle), *Json(CardObjective), *Json(CardStage), *Json(CardFail), CardBearing, CardMeters, CardPayout));
         }
     }
     ApplyComicStyle();
@@ -3484,6 +3488,17 @@ void AQuebecHUD::DrawHUD()
     for (const FString& Line : Stages) { Text(Line, Paper, MissionX + 12.f * Scale, RowY, .95f); RowY += 20.f * Scale; }
     for (const FString& Line : Fails) { Text(Line, FLinearColor(1.f, .42f, .48f, 1.f), MissionX + 12.f * Scale, RowY, .9f); RowY += 20.f * Scale; }
     for (const FString& Line : Statuses) { Text(Line, Muted, MissionX + 12.f * Scale, RowY, .9f); RowY += 20.f * Scale; }
+    if (Campaign && Campaign->LastPayout > 0 && Now < Campaign->PayoutUntil)
+    {
+        const FString Purse = FString::Printf(TEXT("+%d"), Campaign->LastPayout);
+        const float PopW = 180.f * Scale;
+        const float PopH = 64.f * Scale;
+        const float PopX = (Canvas->SizeX - PopW) * .5f;
+        const float PopY = Margin;
+        DrawRect(Accent, PopX, PopY, PopW, PopH);
+        Text(TEXT("CHING"), Ink, PopX + 12.f * Scale, PopY + 8.f * Scale, .7f);
+        Text(Purse, Ink, PopX + 12.f * Scale, PopY + 28.f * Scale, 1.4f);
+    }
     if (bHasObjective)
     {
         const FString Distance = RouteTurn == QuebecRouteLine::ETurn::Here

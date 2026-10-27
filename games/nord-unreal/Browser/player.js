@@ -2,7 +2,7 @@ import { Config, Flags, NumericParameters, OptionParameters, PixelStreaming, Tex
 import { Logger, LogLevel } from '@epicgames-ps/lib-pixelstreamingcommon-ue5.8';
 import { signallingUrl, streamDimensions, phoneStreamState, adaptPhoneStream, pinnedLevel } from './config.mjs';
 import { setupTouchControls } from './touch-controls.js';
-import { showMission } from './mission-card.js';
+import { showMission, showPayout } from './mission-card.js';
 
 Logger.InitLogging(LogLevel.Warning, false);
 
@@ -160,6 +160,7 @@ if (endpoint) {
           meters: state.nordMeters,
         } : null);
       }
+      if (typeof state?.nordPayout === 'number') showPayout(state.nordPayout);
     });
     connectButton.disabled = false;
     status('idle', 'The city is waiting.', 'Connect to a free player and help save Park La Fontaine.');

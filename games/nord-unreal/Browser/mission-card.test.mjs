@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { markerOffset, missionLines } from './mission-card.js';
+import { markerOffset, missionLines, payoutLines } from './mission-card.js';
 
 const lines = missionLines({
   title: '28 / THE BOLT',
@@ -24,5 +24,13 @@ const north = markerOffset(0, 40);
 assert.ok(Math.abs(north.x) < 1e-6 && north.y < -39, 'north sits above the player');
 const east = markerOffset(90, 40);
 assert.ok(east.x > 39 && Math.abs(east.y) < 1e-6, 'east sits to the right');
+
+const purse = payoutLines(700);
+assert.equal(purse.amount, '+700');
+assert.equal(purse.cue, 'CHING');
+assert.equal(purse.notes.length, 2);
+assert.equal(purse.notes[0].hz, 880);
+assert.equal(purse.notes[1].hz, 1320);
+assert.deepEqual(payoutLines(0), { amount: '', cue: '', notes: [] });
 
 console.log('mission card lines and marker ok');

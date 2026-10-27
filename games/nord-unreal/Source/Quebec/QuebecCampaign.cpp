@@ -4249,6 +4249,7 @@ void AQuebecCampaign::RequestReplay(AQuebecController* Controller)
 void AQuebecCampaign::GrantCash(int32 Amount)
 {
     if (Amount <= 0) return;
+    NotePayout(Amount);
     if (const AGameStateBase* Game = GetWorld() ? GetWorld()->GetGameState() : nullptr)
         for (APlayerState* Each : Game->PlayerArray)
             if (AQuebecPlayerState* Stats = Cast<AQuebecPlayerState>(Each))
@@ -4258,11 +4259,27 @@ void AQuebecCampaign::GrantCash(int32 Amount)
             }
 }
 
+void AQuebecCampaign::NotePayout(int32 Amount)
+{
+    if (Amount <= 0) return;
+    LastPayout = Amount;
+    ++PayoutSerial;
+    const UWorld* World = GetWorld();
+    PayoutUntil = World ? World->GetTimeSeconds() + 4.f : 4.f;
+}
+
+void AQuebecCampaign::OnRep_Payout()
+{
+    const UWorld* World = GetWorld();
+    PayoutUntil = World ? World->GetTimeSeconds() + 4.f : 4.f;
+}
+
 void AQuebecCampaign::BankChain(int32 Link)
 {
     const QuebecChain::FBank Bank = QuebecChain::Bank(Chain, ChainMask, bChainSpoiled, Link);
     LastChainPay = Bank.Pay;
     if (Bank.Pay <= 0) return;
+    NotePayout(Bank.Pay);
     Chain = Bank.Chain;
     ChainMask = Bank.Mask;
     bChainSpoiled = Bank.bSpoiled;
@@ -6011,6 +6028,8 @@ void AQuebecCampaign::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
     DOREPLIFETIME(AQuebecCampaign,PostStep);
     DOREPLIFETIME(AQuebecCampaign,PostClock);
     DOREPLIFETIME(AQuebecCampaign,FailReason);
+    DOREPLIFETIME(AQuebecCampaign,LastPayout);
+    DOREPLIFETIME(AQuebecCampaign,PayoutSerial);
     DOREPLIFETIME(AQuebecCampaign,LightOperator);
     DOREPLIFETIME(AQuebecCampaign,LightYaw);
     DOREPLIFETIME(AQuebecCampaign,LightPitch);

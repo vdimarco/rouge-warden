@@ -84,4 +84,53 @@ export function showMission(card) {
   }
 }
 
+export function payoutLines(amount) {
+  const purse = Math.max(0, Math.round(Number(amount) || 0));
+  if (!purse) return { amount: '', cue: '', notes: [] };
+  return {
+    amount: `+${purse}`,
+    cue: 'CHING',
+    notes: [{ hz: 880, ms: 90 }, { hz: 1320, ms: 160 }],
+  };
+}
+
+export function showPayout(amount) {
+  const root = document.getElementById('payout-pop');
+  if (!root) return null;
+  const lines = payoutLines(amount);
+  root.hidden = !lines.amount;
+  const cue = document.getElementById('payout-cue');
+  const purse = document.getElementById('payout-amount');
+  if (cue) cue.textContent = lines.cue;
+  if (purse) purse.textContent = lines.amount;
+  if (lines.notes.length && showPayout.last !== lines.amount) playCue(lines.notes);
+  showPayout.last = lines.amount;
+  return lines;
+}
+
+function playCue(notes) {
+  const Context = window.AudioContext || window.webkitAudioContext;
+  if (!Context) return;
+  try {
+    const audio = playCue.audio || new Context();
+    playCue.audio = audio;
+    let at = audio.currentTime + 0.02;
+    for (const note of notes) {
+      const tone = audio.createOscillator();
+      const gain = audio.createGain();
+      tone.frequency.value = note.hz;
+      tone.type = 'square';
+      gain.gain.setValueAtTime(0.0001, at);
+      gain.gain.exponentialRampToValueAtTime(0.08, at + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, at + note.ms / 1000);
+      tone.connect(gain).connect(audio.destination);
+      tone.start(at);
+      tone.stop(at + note.ms / 1000);
+      at += note.ms / 1000;
+    }
+    if (audio.state === 'suspended') audio.resume().catch(() => {});
+  } catch { /* a frame can show the word without a speaker */ }
+}
+
 if (typeof window !== 'undefined') window.__nordShowMission = showMission;
+if (typeof window !== 'undefined') window.__nordShowPayout = showPayout;
