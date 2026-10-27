@@ -341,9 +341,10 @@ vec3 roomTint(float c, float s) {
   if (c < 0.8) return vec3(1.08, 0.88, 0.66);
   return vec3(0.94, 0.94, 0.9);
 }
-vec3 wallColor(int k, float shop, float sd, float salt, float h1, float h2, float h3, vec3 N, vec3 V, float dist, out float lineY, out vec4 awning, out vec3 clay, out vec4 spill) {
+vec3 wallColor(int k, float shop, float sd, float salt, float h1, float h2, float h3, vec3 N, vec3 V, float dist, out float lineY, out vec4 awning, out vec3 clay, out vec4 spill, out vec4 storey) {
   clay = vec3(1.0);
   spill = vec4(0.0);
+  storey = vec4(0.0);
   float fh = vInfo.z, bay = vInfo.w;
   float u = vFace.x, faceW = vFace.y, top = vFace.w, y = vW.y;
   bool glassy = k <= 1;
@@ -425,6 +426,13 @@ vec3 wallColor(int k, float shop, float sd, float salt, float h1, float h2, floa
   else if (fr == F_CURTAIN) { wr = vec4(0.0, mix(0.1, 0.22, hw2), 1.0, 1.0); mun = vec2(floor(2.0 + hw1 * 2.99), hw3 < 0.5 ? 1.0 : 2.0); }
   else if (fr == F_PUNCH) { float w = topRow ? 0.3 : mix(0.26, 0.4, hw1), y0 = topRow ? 0.36 : mix(0.3, 0.4, hw2); wr = vec4(0.5 - w * 0.5, y0, 0.5 + w * 0.5, y0 + (topRow ? 0.36 : mix(0.3, 0.42, hw3))); mun = vec2(hw1 < 0.5 ? 1.0 : 2.0, hw3 < 0.5 ? 1.0 : 2.0); }
   else if (fr == F_GRID) { float x0 = mix(0.06, 0.14, hw1); wr = vec4(x0, mix(0.08, 0.14, hw2), 1.0 - x0, mix(0.84, 0.92, hw3)); mun = vec2(floor(3.0 + hw1 * 2.99), floor(3.0 + hw2 * 1.99)); }
+  // The floor above a shop is its own storey (Ching, Form, Space, and Order: a string course
+  // marks the floor). A shorter sash, so it is not the same tile as the floors above it.
+  bool overShop = !street && shop > 0.5 && abs(id.y) < 0.5 && !glassy;
+  if (overShop) {
+    wr.y = max(wr.y, 0.38);
+    wr.w = min(max(wr.w, wr.y + 0.28), 0.84);
+  }
   // the window's own coordinates (a pair splits the cell in two), its metres per unit each way, and a pixel in metres
   float inSub = sub > 1.5 ? step(0.0, ft.x) * step(ft.x, 1.0) : 1.0;
   vec2 fc = sub > 1.5 ? vec2(fract(ft.x * 2.0), ft.y) : ft;
@@ -927,6 +935,22 @@ vec3 wallColor(int k, float shop, float sd, float salt, float h1, float h2, floa
   #endif
   // the street floor is cut from the floors above by a course line
   lineY = (glassy || shop > 0.5) ? gH : -1.0;
+  // Limestone at each floor of a shop building, and a deeper course plus a sill on the storey
+  // just above the shop. Printed after the grade, the way the awning is, so the paper does not
+  // take the stone. It fades before the band can shimmer.
+  if (!street && shop > 0.5 && id.y > -0.5 && !glassy) {
+    float px = max(fwidth(f.y), 1e-4);
+    float ground = 1.0 - step(0.5, abs(id.y));
+    float h = mix(0.14, 0.26, ground);
+    float stone = 1.0 - smoothstep(h - px, h + px, f.y);
+    float lip = smoothstep(h - 0.04 - px, h - 0.04 + px, f.y) * (1.0 - smoothstep(h + 0.02 - px, h + 0.02 + px, f.y));
+    float sill = smoothstep(wr.y - 0.06 - px, wr.y - 0.06 + px, f.y) * (1.0 - smoothstep(wr.y - px, wr.y + px, f.y));
+    float inX = smoothstep(wr.x - 0.06, wr.x, fc.x) * (1.0 - smoothstep(wr.z, wr.z + 0.06, fc.x));
+    vec3 stoneC = mix(vec3(0.58, 0.52, 0.44), vec3(0.90, 0.84, 0.72), smoothstep(0.15, 1.1, band));
+    vec3 lipC = vec3(0.36, 0.30, 0.26);
+    float a = max(stone, sill * inX * ground) * detail * inFloors0;
+    storey = vec4(mix(stoneC, lipC, clamp(lip, 0.0, 1.0)), a);
+  }
   // tower crowns: a short top tier on a glass tower is a louvred plant screen
   if (glassy && salt > 50.0 && y < top) {
     col = mix(comicCel(vec3(0.3, 0.32, 0.4), band), INKC, stripe(y / 0.6, 0.06) * 0.8);
@@ -1012,8 +1036,9 @@ void main() {
   vec4 awn = vec4(0.0);
   vec3 clay = vec3(1.0);
   vec4 spill = vec4(0.0);
+  vec4 storey = vec4(0.0);
   if (N.y > 0.5) col = roofColor(k, h1, h2, N);
-  else col = wallColor(k, shop, sd, salt, h1, h2, h3, N, V, dist, lineY, awn, clay, spill);
+  else col = wallColor(k, shop, sd, salt, h1, h2, h3, N, V, dist, lineY, awn, clay, spill, storey);
   // a clogged district goes grey-green; the finale warms everything
   col = mix(col, vec3(dot(col, vec3(0.3, 0.5, 0.2))) * vec3(0.82, 0.98, 0.62), vClog * 0.38);
   col *= mix(vec3(1.0), vec3(1.08, 1.0, 0.9), uFinale);
@@ -1037,6 +1062,7 @@ void main() {
   vec3 graded = gradeInk(col, sunT(shadowDepthAt(vW))) * clay;
   graded = mix(graded, graded * spill.rgb + vec3(0.07, 0.025, 0.0), spill.a * (1.0 - ink));
   vec3 shown = mix(graded, mix(awn.rgb, INKC, ink), awn.a);
+  shown = mix(shown, mix(storey.rgb, INKC, ink), storey.a);
   gl_FragColor = vec4(mix(shown, vFog.rgb, comicPoster(vFog.a, 4.0)), 1.0);
 }`;
 
