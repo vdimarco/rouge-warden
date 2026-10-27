@@ -379,6 +379,8 @@ public:
     // Server.
     void AddBodyDamage(float Amount, AController* DamagedBy);
     bool IsWrecked() const { return BodyDamage >= 100.f; }
+    // Ages of the six tail puffs, or -1 when that slot is dark. The play shell draws the same rule.
+    void ExhaustAges(float Now, float* Out, int32 Count) const;
     // The controller of the player in the driver's seat, else null (AI, traffic and parked cars).
     AController* GetDriverController() const;
     // Server: sets bPolice and decorates the car.

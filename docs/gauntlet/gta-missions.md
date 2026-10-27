@@ -3844,3 +3844,50 @@ Unreal is not available here, so the native diamond was not captured. The title 
 ![The pistol chip on a 390-wide screen](gta-missions/r84-play-card-390.png)
 
 ![Menu on a 390-wide screen, Recover visible](gta-missions/r84-play-menu-390.png)
+
+### Round 85 — 2026-10-27 — rubric v1
+
+- What changed: A running car's six tail puffs show on the play page. Each puff is born, rises, and dies on the same 1.1 second rule. The count, the life, the interval, and the rise stay as they are. Bonnet smoke stays for a wreck. No new sound. No new mission.
+- Why it helped: The column already left the tail, and the page we run never showed it. The page now paints that column.
+- Screenshots: title `docs/gauntlet/gta-missions/r85-title-1280.png`, `r85-title-390.png`, `r85-title-320.png`. Play client, host offline, `r85-play-1280.png`, with the same column at 390 in `r85-play-card-390.png`. Menu with Recover `r85-play-menu-390.png`. The title loaded with no page errors. The raw play page still logs the missing `@epicgames-ps/lib-pixelstreamingfrontend-ue5.8` specifier; the shell, the card, the column, and Recover still draw. The 1280 frame shows six pale puffs at the lower left of center (1642 pale pixels in the canvas). The 390 frame shows the same column on the right, clear of the card, the speech, the weapon chip, and the job column (1642 pale pixels). The city's own exhaust was not seen in Unreal. `python3 Scripts/test_exhaust.py` passed (`NORD_EXHAUST_OK 6 99 0.433`). `node Browser/mission-card.test.mjs` passed. Syntax check `--both` passed for `QuebecDrive.cpp` and `QuebecGameplay.cpp`, game and editor, 0 failed. OpenSpec CLI is not installed, so `openspec validate` did not run. `Browser/browser.test.mjs` did not run: the `ws` package is not installed here.
+- Next target: composition, atmosphere, responsiveness, and particles are tied at 4. Lighting, detail, texture, models, and animation stay at 3 with the graphics loop. Performance stays at 4 and is not measurable here.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 3 | Unchanged. |
+| Color palette | 5 | Unchanged. The puffs use the same paper and ink. |
+| Detail density | 3 | Unchanged. |
+| Texture and material quality | 3 | Unchanged. |
+| Composition and camera | 4 | Unchanged. |
+| Atmosphere | 4 | Unchanged. |
+| Character models | 3 | Unchanged. |
+| Animation smoothness | 3 | Unchanged. |
+| Particles and VFX | 4 | The play shell shows six tail puffs that rise and fade on the existing 1.1 second rule. The city's own exhaust was not seen in Unreal, so this is one step. |
+| UI polish | 9 | Unchanged. The pistol chip, the English objective, and the resident line are still on the shell. |
+| Responsiveness and input latency | 4 | Unchanged. The shell still hears the city every 0.1 s. The video stream was not timed. |
+| Controls feel | 9 | Unchanged. Steering rates were not retuned. |
+| Mission clarity | 8 | Unchanged. The play shell still shows the carry's objective, Stage 3 of 3, the fail sentence, and a gold diamond. |
+| Pacing | 9 | Unchanged. Nothing new was driven. |
+| Fun factor | 9 | Unchanged. The column was seen. It was not driven. |
+| Difficulty curve | 9 | Unchanged. Selling the last page ends it for 200 and does not bank the chain. A wreck still costs more than the goon pay. |
+| Feedback | 9 | Unchanged. The shell still shows a purse. The notes were not heard. The column adds a trail, not a new hit. |
+| Sound design | 9 | Unchanged. The two notes were not heard. No new sound was added. |
+| Variety | 9 | Unchanged. No new way to play was added, and the carry was not driven. |
+| Performance stability | 4 | Unchanged. Not measurable in this container. |
+
+- Aesthetics raw: 41 / 10 dimensions, index 41
+- Playability raw: 79 / 10 dimensions, index 79
+- Total: 120 / 200
+- Delta vs last round: +1 (round 84 was 119). Particles 3 → 4. Every other score held.
+
+![GTA title at 1280](gta-missions/r85-title-1280.png)
+
+![GTA title at 390](gta-missions/r85-title-390.png)
+
+![GTA title at 320](gta-missions/r85-title-320.png)
+
+![Play client at 1280, host offline, six tail puffs](gta-missions/r85-play-1280.png)
+
+![The tail puffs on a 390-wide screen](gta-missions/r85-play-card-390.png)
+
+![Menu on a 390-wide screen, Recover visible](gta-missions/r85-play-menu-390.png)

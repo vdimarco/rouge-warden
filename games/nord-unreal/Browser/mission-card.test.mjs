@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { columnLines, heatLines, jobLines, markerOffset, missionLines, payoutLines, scuffPuff, speechLines, weaponLines } from './mission-card.js';
+import { columnLines, exhaustPuff, heatLines, jobLines, markerOffset, missionLines, payoutLines, scuffPuff, speechLines, weaponLines } from './mission-card.js';
 
 const lines = missionLines({
   title: '28 / THE BOLT',
@@ -78,5 +78,22 @@ const pistol = weaponLines('PISTOL');
 assert.equal(pistol.name, 'PISTOL');
 assert.equal(weaponLines('').name, '');
 assert.ok(!/[\u00e9\u00e8\u00ea\u00e0]/.test(pistol.name), 'the weapon mixed languages');
+const tail = exhaustPuff(0, 1);
+assert.equal(tail.back, 0);
+assert.equal(tail.up, 0);
+assert.ok(Math.abs(tail.swell - 0.16) < 1e-9, 'the birth puff left the tail');
+assert.equal(tail.side, 0);
+const risen = exhaustPuff(0.55, 0);
+assert.ok(Math.abs(risen.back - 0.55 * 160) < 1e-6, 'the mid puff left the tail');
+assert.ok(risen.up > tail.up + 90, 'the tail puff did not rise');
+assert.ok(risen.swell > tail.swell, 'the tail puff did not grow');
+assert.ok(risen.side < 0, 'the column lost its weave');
+assert.ok(exhaustPuff(1.1, 2).swell < 0.01, 'a finished tail puff still has swell');
+let live = 0;
+for (let slot = 0; slot < 6; slot += 1) {
+  const age = 0.05 + slot * 0.16;
+  if (age >= 0 && age < 1.1 && exhaustPuff(age, slot).swell > 0.05) live += 1;
+}
+assert.equal(live, 6);
 
 console.log('mission card lines and marker ok');

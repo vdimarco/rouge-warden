@@ -58,6 +58,7 @@
 #include "QuebecStreetLook.h"
 #include "QuebecSway.h"
 #include "QuebecScuff.h"
+#include "QuebecExhaust.h"
 
 #include "Animation/AnimInstance.h"
 #include "Animation/AnimSequence.h"
@@ -2644,7 +2645,7 @@ void AQuebecController::PlayerTick(float DeltaTime)
                 if (Delta.SizeSquared2D() > 1.f)
                     CardBearing = FMath::RoundToInt(FMath::RadiansToDegrees(FMath::Atan2(Delta.X, Delta.Y)));
             }
-            FString JobHead, JobLine, DownKind, ColumnTitle, ColumnInfo, ColumnObjective, Speech, Scuff, Weapon;
+            FString JobHead, JobLine, DownKind, ColumnTitle, ColumnInfo, ColumnObjective, Speech, Scuff, Weapon, Exhaust;
             int32 StarPlate = 0;
             if (const UWorld* World = GetWorld())
             {
@@ -2712,6 +2713,16 @@ void AQuebecController::PlayerTick(float DeltaTime)
                         StarPlate = Stars;
                     Weapon = QuebecCombat::WeaponName(Stats->CurrentWeapon());
                 }
+                if (const AQuebecCar* Car = Cast<AQuebecCar>(GetPawn()))
+                {
+                    float Ages[QuebecExhaust::Count];
+                    Car->ExhaustAges(static_cast<float>(World->GetTimeSeconds()), Ages, QuebecExhaust::Count);
+                    for (int32 Index = 0; Index < QuebecExhaust::Count; ++Index)
+                    {
+                        if (Index) Exhaust += TEXT(",");
+                        Exhaust += FString::SanitizeFloat(Ages[Index]);
+                    }
+                }
             }
             const auto Json = [](const FString& Value)
             {
@@ -2730,12 +2741,12 @@ void AQuebecController::PlayerTick(float DeltaTime)
                 return Out;
             };
             Streamer->SendAllPlayersMessage(TEXT("Response"), FString::Printf(
-                TEXT("{\"nordDriving\":%s,\"nordSwimming\":%s,\"nordTitle\":\"%s\",\"nordObjective\":\"%s\",\"nordStage\":\"%s\",\"nordFail\":\"%s\",\"nordBearing\":%d,\"nordMeters\":%d,\"nordPayout\":%d,\"nordJobHead\":\"%s\",\"nordJobLine\":\"%s\",\"nordStars\":%d,\"nordDown\":\"%s\",\"nordColumn\":\"%s\",\"nordColumnInfo\":\"%s\",\"nordColumnObjective\":\"%s\",\"nordSpeech\":\"%s\",\"nordScuff\":\"%s\",\"nordWeapon\":\"%s\"}"),
+                TEXT("{\"nordDriving\":%s,\"nordSwimming\":%s,\"nordTitle\":\"%s\",\"nordObjective\":\"%s\",\"nordStage\":\"%s\",\"nordFail\":\"%s\",\"nordBearing\":%d,\"nordMeters\":%d,\"nordPayout\":%d,\"nordJobHead\":\"%s\",\"nordJobLine\":\"%s\",\"nordStars\":%d,\"nordDown\":\"%s\",\"nordColumn\":\"%s\",\"nordColumnInfo\":\"%s\",\"nordColumnObjective\":\"%s\",\"nordSpeech\":\"%s\",\"nordScuff\":\"%s\",\"nordWeapon\":\"%s\",\"nordExhaust\":\"%s\"}"),
                 Cast<AQuebecCar>(GetPawn()) ? TEXT("true") : TEXT("false"),
                 Character && Character->GetCharacterMovement()->IsSwimming() ? TEXT("true") : TEXT("false"),
                 *Json(CardTitle), *Json(CardObjective), *Json(CardStage), *Json(CardFail), CardBearing, CardMeters, CardPayout,
                 *Json(JobHead), *Json(JobLine), StarPlate, *Json(DownKind), *Json(ColumnTitle), *Json(ColumnInfo),
-                *Json(ColumnObjective), *Json(Speech), *Json(Scuff), *Json(Weapon)));
+                *Json(ColumnObjective), *Json(Speech), *Json(Scuff), *Json(Weapon), *Json(Exhaust)));
         }
     }
     ApplyComicStyle();

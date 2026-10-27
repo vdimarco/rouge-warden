@@ -178,6 +178,21 @@ export function weaponLines(name) {
   return { name: String(name || '').trim() };
 }
 
+// Same birth, rise, and fade as QuebecExhaust::At. Life 1.1s. Reeves, SIGGRAPH 1983.
+export function exhaustPuff(age, slot) {
+  const life = 1.1;
+  const clamped = Math.min(life, Math.max(0, Number(age) || 0));
+  const along = clamped / life;
+  const grow = 0.16 + (0.55 - 0.16) * Math.min(1, along * 1.4);
+  const fade = along > 0.75 ? (1 - along) / 0.25 : 1;
+  return {
+    back: clamped * 160,
+    up: clamped * 180,
+    swell: grow * fade,
+    side: 14 * ((slot % 3) - 1),
+  };
+}
+
 // Same birth, rise, and fade as QuebecScuff::At. Life 0.7s. Reeves, SIGGRAPH 1983.
 export function scuffPuff(age, slot) {
   const life = 0.7;
@@ -274,3 +289,30 @@ export function showScuff(ages) {
 }
 
 if (typeof window !== 'undefined') window.__nordShowScuff = showScuff;
+
+export function showExhaust(ages) {
+  const canvas = document.getElementById('exhaust-puff');
+  if (!canvas) return [];
+  const list = String(ages || '').split(',').slice(0, 6).map(Number);
+  const live = list.some((age) => age >= 0 && age < 1.1);
+  canvas.hidden = !live;
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  list.forEach((age, slot) => {
+    if (!(age >= 0) || age >= 1.1) return;
+    const puff = exhaustPuff(age, slot);
+    const x = canvas.width - 28 - puff.back * 0.42 + puff.side * 0.7;
+    const y = canvas.height - 18 - puff.up * 0.32;
+    const radius = Math.max(3, puff.swell * 36);
+    ctx.beginPath();
+    ctx.fillStyle = 'rgba(255, 250, 240, 0.9)';
+    ctx.strokeStyle = '#0b0a16';
+    ctx.lineWidth = 2;
+    ctx.arc(x, y, radius, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+  });
+  return list;
+}
+
+if (typeof window !== 'undefined') window.__nordShowExhaust = showExhaust;

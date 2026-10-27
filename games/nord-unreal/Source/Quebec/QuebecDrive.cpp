@@ -1,6 +1,7 @@
 // AQuebecCar for the street systems: lag-tolerant steering on roads, the AI driver (autopilot), police livery,
 // body damage and smoke, people and props struck by a car, rams reported to the police, and wall forgiveness.
 #include "QuebecGameplay.h"
+#include "QuebecExhaust.h"
 #include "QuebecImpactTone.h"
 #include "QuebecGTA.h"
 #include "LaFontaineMap.h"
@@ -24,9 +25,9 @@ namespace
     constexpr int32 SmokePuffCount = 7;
     constexpr float SmokePuffLife = 1.4f;
     // A running tailpipe, smaller and shorter than the bonnet smoke. Six puffs, a new one every 0.16 s.
-    constexpr int32 ExhaustPuffCount = 6;
-    constexpr float ExhaustPuffLife = 1.1f;
-    constexpr float ExhaustInterval = 0.16f;
+    constexpr int32 ExhaustPuffCount = QuebecExhaust::Count;
+    constexpr float ExhaustPuffLife = static_cast<float>(QuebecExhaust::Life);
+    constexpr float ExhaustInterval = static_cast<float>(QuebecExhaust::Interval);
 
     constexpr int32 TorontoRoads = static_cast<int32>(UE_ARRAY_COUNT(CollegeBathurst::RoadSegments));
     constexpr int32 MontrealRoads = static_cast<int32>(UE_ARRAY_COUNT(LaFontaine::RoadSegmentWidths));
@@ -424,4 +425,15 @@ void AQuebecCar::UpdateExhaust(float DeltaSeconds)
     Puff->SetWorldScale3D(FVector(0.16f));
     Puff->SetVisibility(true);
     ExhaustBorn[Slot] = Now;
+}
+
+void AQuebecCar::ExhaustAges(float Now, float* Out, int32 Count) const
+{
+    for (int32 Index = 0; Index < Count; ++Index)
+    {
+        Out[Index] = -1.f;
+        if (!ExhaustPuffs.IsValidIndex(Index) || !ExhaustPuffs[Index] || !ExhaustPuffs[Index]->IsVisible() || !ExhaustBorn.IsValidIndex(Index)) continue;
+        const float Age = Now - ExhaustBorn[Index];
+        if (Age >= 0.f && Age < ExhaustPuffLife) Out[Index] = Age;
+    }
 }
