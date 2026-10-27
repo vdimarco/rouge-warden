@@ -1928,3 +1928,38 @@ Unreal is not available in this environment, so in-engine frames are the last co
 - Playability raw: 39 / 10 dimensions, index 39
 - Total: 126 / 200
 - Delta vs last round: 0
+
+### Round 56 — 2026-10-27 — rubric v1
+
+- What changed: the opening shade samples the clear-day Montréal sky at 18:70 on day 288. The sun is about 6 degrees below the horizon, `SunScale` is 0.624, the day factor is 0, and the street lamps are on. The direction is the model's (east, north, up) vector in the game frame (east, −north, up). Upward faces lose the direct sun. The raster has no scattering shader, so the sky is a warm horizon and a dark zenith weighted by that day factor. The wet road picks that sky up. The lamp globes are emissive. `QuebecSky.cpp` still starts clear in the afternoon, so this picture is a later sample, not the spawn clock. Pitch, aim, socket, the hoodie, and the coupe stay.
+- Why it helped: the frame was one clear afternoon. It now reads as that sunset, and the lamps along the avenue are lit. Lighting and atmosphere stay at 9. This is not a GTA 6 sky.
+- Screenshots: before `docs/gauntlet/gta-graphics/round-56/before-frame.png`, after `docs/gauntlet/gta-graphics/round-56/after-frame.png`. Crops of the avenue are `before-dusk.png` and `after-dusk.png`. Both use the opening walk camera (arm 420, socket Y 70, socket Z 110, pitch −16, yaw about 110°, horizontal FOV 90) at the surveyed sidewalk spawn, with the hoodie walk at 0.75 s and the same walk-peak rock. The road is the wet ground from the previous round. Foot dust is left out. Not an Unreal capture. The full-frame mean absolute delta is 0.196 and the max is 0.515. 495086 pixels change, across the whole frame. The crop shows the lit lamps and the darker road. `Scripts/test_opening_dusk.py` passed. The sky model was not recompiled into the game. `GET /gta/` returned 200. OpenSpec CLI is not installed, so the change files were not validated with `openspec`.
+- Next target: animation, still at 6. Another sheet of this same walk will not move it, and the run clip is not imported. Surveyed signs still sit too far off this aim to read.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 9 | The sun is the model's sunset, so the lawn is darker and the lamps are lit. The grade is still a flat shade, so the 9 stays. |
+| Color palette | 9 | The sunset warms the sky the puddles pick up. The street hues are the same materials. |
+| Detail density | 9 | The lamp row, the trees, and the lawn are the same objects. |
+| Texture and material quality | 9 | The wet asphalt is unchanged. The lawn still sets the 9. |
+| Composition and camera | 9 | The opening aim is unchanged. |
+| Atmosphere | 9 | The frame reads as the model's sunset. The sky is a stand-in grade, not a scattering sky, so the 9 stays. |
+| Character models | 9 | The hoodie is unchanged. |
+| Animation smoothness | 6 | The stride is unchanged. The sheet from round 53 still shows the cycle. |
+| Particles and VFX | 9 | The shoe puffs are unchanged. They are left out of these frames. |
+| UI polish | 9 | The radar heading is unchanged. |
+| Responsiveness and input latency | 4 | Not measured this round. |
+| Controls feel | 4 | Not played. |
+| Mission clarity | 5 | The objective words are unchanged. |
+| Pacing | 4 | Unchanged mission slice. |
+| Fun factor | 3 | Not played. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 4 | The sunset and the lit lamps are the new mark. No new juice. |
+| Sound design | 3 | Not listened to. |
+| Variety | 3 | One sunset hour. The weather is still clear. |
+| Performance stability | 5 | `Scripts/test_opening_dusk.py` passed. Frame time was not remeasured. |
+
+- Aesthetics raw: 87 / 10 dimensions, index 87
+- Playability raw: 39 / 10 dimensions, index 39
+- Total: 126 / 200
+- Delta vs last round: 0
