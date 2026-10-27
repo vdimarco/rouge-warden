@@ -2488,3 +2488,38 @@ Unreal is not available in this environment, so in-engine frames are the last co
 - Playability raw: 39 / 10 dimensions, index 39
 - Total: 129 / 200
 - Delta vs last round: 0
+
+### Round 72 — 2026-10-27 — rubric v1
+
+- What changed: a frame on Rue Sherbrooke Est looks along the avenue. Three cars sit in the two traffic lanes, one facing the camera and one facing away. Three walkers stand on the two sidewalks, each on a different step of the walk. The lane is 145 cm off the centre and the sidewalk is 850 cm off it, which is the population spawn. The Marie-Anne corner stays. The opening aim stays.
+- Why it helped: that corner looks into a facade, so a walker and the cross-street cars never entered it. Sherbrooke shows the lane and the sidewalk. The cars are still the same family, and the walkers are still the one hoodie, so characters and detail stay at 9.
+- Screenshots: before `docs/gauntlet/gta-graphics/round-72/before-frame.png` is the avenue with no added traffic and no walkers. After `docs/gauntlet/gta-graphics/round-72/after-frame.png` is the same camera with the lanes and the sidewalks occupied. The crop is `street-crop.png`. Not an Unreal capture. From the same render, the mean absolute delta is 0.00501 and the max is 0.494. 16055 pixels change, from x 109 to 786 and y 138 to 286. `Scripts/test_street_life.py` passed. The actors were not spawned in Unreal. `GET /gta/` returned 200. OpenSpec CLI is not installed, so the change files were not validated with `openspec`.
+- Next target: the trees in this frame are the park crowns behind the sidewalk. The curb has no street-tree row.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 9 | The afternoon sun is unchanged. |
+| Color palette | 9 | The car paints are the four the fleet already had. |
+| Detail density | 9 | The avenue holds a lane of cars and a sidewalk of walkers. The meshes are the ones the street already used. |
+| Texture and material quality | 9 | The car paint and the cloth are unchanged. |
+| Composition and camera | 9 | This look is down Sherbrooke. The opening aim is unchanged. |
+| Atmosphere | 9 | The sky is unchanged. |
+| Character models | 9 | The walker is the same hoodie. |
+| Animation smoothness | 9 | The three walkers are three steps of the walk the graph already plays. |
+| Particles and VFX | 9 | The shoe puffs are unchanged. |
+| UI polish | 9 | The radar heading is unchanged. |
+| Responsiveness and input latency | 4 | Not measured this round. |
+| Controls feel | 4 | Not played. |
+| Mission clarity | 5 | The objective words are unchanged. |
+| Pacing | 4 | Unchanged mission slice. |
+| Fun factor | 3 | Not played. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 4 | The oncoming car and the near walker are the new marks. No new juice. |
+| Sound design | 3 | Not listened to. |
+| Variety | 3 | Two lanes and two sidewalks of bodies the game already spawns. |
+| Performance stability | 5 | `Scripts/test_street_life.py` passed. Frame time was not remeasured. |
+
+- Aesthetics raw: 90 / 10 dimensions, index 90
+- Playability raw: 39 / 10 dimensions, index 39
+- Total: 129 / 200
+- Delta vs last round: 0
