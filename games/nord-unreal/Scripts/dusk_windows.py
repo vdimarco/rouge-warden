@@ -1,12 +1,29 @@
-"""How many warm panes a dusk wall carries.
+"""How many warm panes a dusk wall carries, and the border around each one.
 
 The afternoon leaves a wall dark, with the street lamps. A wall shorter than
 five metres, or lower than four and a half, stays blank. Consecutive footprint
 edges that face the same way are one wall, so a facade split into two short
-pieces still counts.
+pieces still counts. The sash is a darker rectangle ten centimetres past the glass.
 """
 
 import math
+
+
+GLASS_HALF_ALONG_CM = 36.0
+GLASS_HALF_UP_CM = 55.0
+SASH_CM = 10.0
+GLASS_OUT_CM = 7.0
+SASH_OUT_CM = 4.0
+
+
+def sash_box():
+    """The warm glass, then the darker border that sits on the wall behind it."""
+    return (
+        GLASS_HALF_ALONG_CM,
+        GLASS_HALF_UP_CM,
+        GLASS_HALF_ALONG_CM + SASH_CM,
+        GLASS_HALF_UP_CM + SASH_CM,
+    )
 
 
 def window_grid(length_cm, height_cm, lamps):
