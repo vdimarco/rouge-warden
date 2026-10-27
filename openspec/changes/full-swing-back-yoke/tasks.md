@@ -1,0 +1,4 @@
+- [x] Paint the upper-back panel in the hips' frame, after the cel
+- [x] Standing chase stills show the panel and keep the cream belt
+- [x] `qa/vr/render.mjs` passes, with the canyon ink under 35%
+- [x] Score the character line only if the still shows the panel
