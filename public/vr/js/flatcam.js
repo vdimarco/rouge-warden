@@ -153,7 +153,10 @@ export function createFlatCam(camera, city) {
 
       // the arm: longer at speed, and a little shorter as you look up past level (the hero keeps its size in ordinary play)
       const full = (ARM + (ARM_FAST - ARM) * smooth(FOV_V[0], FOV_V[1], speed)) * (flags && flags.drive != null ? DRIVE_ARM : 1);
-      const arm = full * (1 - (1 - ARM_UP) * smooth(0, PITCH_MAX, S.pitch));
+      // On a fast rope the arm lets out further, so the body takes less of the frame and the avenue
+      // ahead keeps the rest. A stand stays on the ordinary arm. Haigh-Hutchinson, lead room.
+      const reach = full + (!P.onGround && rope && hs > 8 ? 2.6 * smooth(8, 16, hs) : 0);
+      const arm = reach * (1 - (1 - ARM_UP) * smooth(0, PITCH_MAX, S.pitch));
       // its angle: the view's while you look down; above the default it bends smoothly toward the floor over the head
       // (with the same slope at the default, so the camera never jerks there)
       const top = -Math.asin(clamp((OVER_HEAD - PIVOT_UP) / arm, 0, 1)), bend = top - PITCH0;
@@ -163,7 +166,7 @@ export function createFlatCam(camera, city) {
       BACK.set(Math.sin(S.yaw) * ce, -Math.sin(el), Math.cos(S.yaw) * ce); // from the pivot out to the camera
 
       // the room behind: never through a building or under the street
-      let room = full;
+      let room = reach;
       FC.blocked = false;
       if (S.blend > 0.001) {
         const hit = city.raycast(T.x, T.y, T.z, BACK.x, BACK.y, BACK.z, arm + NEAR_HIT, HIT);

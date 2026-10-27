@@ -1509,3 +1509,40 @@ Playability was scored from a flat boot and the city render check, not a full pl
 
 Playability was scored from a flat boot and the city render check, not a full playthrough. OpenSpec CLI validation was not run; the `openspec` command is not installed.
 
+### Round 34 — 2026-10-27 — rubric v1
+
+- What changed: On a rope, off the ground, and faster than 8 m/s across, the chase arm lets out by up to 2.6 m past the length speed already asks for. It is all the way out by 16 m/s. A stand stays at 4.5 m and −20°. The pitch on the swing is the lift that was already there. A wall still stops the arm. Mark Haigh-Hutchinson, Real-Time Cameras (2009): at speed the subject takes less of the frame so the space ahead stays readable.
+- Why it helped: The same mid-swing, low in the arc at 18 m/s, held the body from screen y 400 to 533 (133 px) on a 4.46 m arm. The arm is now 6.98 m and the body runs from y 379 to 459 (80 px). The feet sit 74 px higher, so the avenue shows under them. Mean absolute change across the frame is 50.1, and 33% of the pixels moved. The camera was not against a wall. Standing still, the arm is 4.50 m and the pitch is −20°.
+- Screenshots: before `docs/gauntlet/shots/r34-before-swing.png`, after `docs/gauntlet/shots/r34-after-swing.png`. The street, where this arm does not run: `docs/gauntlet/shots/r34-street.png`.
+- Next target: Atmosphere (6), tied with character models, particles and UI. The far avenue still sits in the warm dust from round 15.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 7 | Unchanged. A lit shop's cloth is warmer along the hem than along the top. |
+| Color palette | 7 | Unchanged. The dark shade is violet and the open shade is still teal. At blue hour that teal is gone. |
+| Detail density | 7 | Unchanged. A limestone course sits on each floor above a shop. |
+| Texture and material quality | 7 | Unchanged. The masonry clay from round 23. |
+| Composition and camera | 7 | On the same fast rope the body shrinks from 133 px to 80 px and the arm goes from 4.46 m to 6.98 m. A stand stays at 4.5 m and −20°. |
+| Atmosphere | 6 | Unchanged. The far avenue still sits in the warm dust from round 15. |
+| Character models | 6 | Unchanged. The cream belt from round 17. |
+| Animation smoothness | 8 | Unchanged. At the same run phase the feet sit 80 px apart across the frame and 94 px apart in height. |
+| Particles and VFX | 6 | Unchanged. The cream trail from round 19. |
+| UI polish | 6 | Unchanged. The cream lip and rose hem from round 21. |
+| Responsiveness and input latency | 6 | Unchanged. No new pass and no new draw. No input timing was measured. |
+| Controls feel | 5 | Unchanged. |
+| Mission clarity | 4 | Unchanged. Not played. |
+| Pacing | 4 | Unchanged. |
+| Fun factor | 4 | Unchanged. Not played as a session. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 5 | Unchanged. |
+| Sound design | 4 | Unchanged. |
+| Variety | 4 | Unchanged. |
+| Performance stability | 6 | `qa/vr/render.mjs` passed, including flat play, the painted-sky checks, the lit-sphere cel check, and the canyon ink lines (20.4%). Street mean 77.1, saturation 0.58. |
+
+- Aesthetics raw: 67 / 10 dimensions, index 67
+- Playability raw: 46 / 10 dimensions, index 46
+- Total: 113 / 200
+- Delta vs last round: +1 (112 → 113). Composition and camera 6 → 7. Playability unchanged.
+
+Playability was scored from a flat boot and the city render check, not a full playthrough. OpenSpec CLI validation was not run; the `openspec` command is not installed.
+
