@@ -1,6 +1,6 @@
 """The sunset shade uses a scattering gradient, and the opening camera stays.
 
-The spawn clock stays on the clear afternoon. The gradient is the offline
+The opening hour is night. The gradient is the offline
 stand-in for the sky the puddles reflect.
 """
 import math

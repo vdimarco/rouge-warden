@@ -403,7 +403,7 @@ def check_default_line():
               "-PixelStreamingWebRTCStartBitrate=2000000", "-PixelStreamingKeyFilter=Tilde"]
     binary = str(browser_streaming.PROJECT / "Builds/Browser/Linux/Quebec/Binaries/Linux/Quebec")
     host = [binary, "Quebec", "/Game/Maps/LaFontaine?listen", *stream, "-PixelStreamingID=NordHost", "-ExecCmds=" + quality,
-            "-abslog=host.log", "-NordStreamFps", "-NordTouchControls", "-NordIdleThrottle", "-port=7791", "-NordHour=15", "-NordFreezeTime"]
+            "-abslog=host.log", "-NordStreamFps", "-NordTouchControls", "-NordIdleThrottle", "-port=7791", "-NordHour=22", "-NordFreezeTime"]
     friend = [binary, "Quebec", "127.0.0.1:7791", *stream, "-PixelStreamingID=NordFriend1", "-ExecCmds=" + quality,
               "-abslog=friend.log", "-NordStreamFps", "-NordTouchControls", "-NordIdleThrottle", "-NordNoCampaignSave",
               "-saveddirsuffix=BrowserGuest"]

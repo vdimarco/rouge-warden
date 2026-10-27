@@ -29,7 +29,7 @@ struct FQuebecSkyState
     UPROPERTY() double CycleOffset = 0.;
     UPROPERTY() float CycleSeconds = 2400.f;
     UPROPERTY() bool bFreezeClock = false;
-    UPROPERTY() float FrozenHour = 15.f;
+    UPROPERTY() float FrozenHour = 22.f;
     UPROPERTY() uint8 From = 0;
     UPROPERTY() uint8 To = 0;
     /** Empty, or one share per weather of the look a command turned mid-blend; see QuebecSky::FSegment::FromWeights. */
@@ -105,6 +105,7 @@ private:
     UPROPERTY(ReplicatedUsing=OnRep_State) FQuebecSkyState State;
     UPROPERTY() TObjectPtr<UDirectionalLightComponent> Moon;
     UPROPERTY() TArray<TObjectPtr<UPointLightComponent>> Lamps;
+    UPROPERTY() TArray<TObjectPtr<UPointLightComponent>> Neon;
     UPROPERTY() TArray<TObjectPtr<USpotLightComponent>> Headlights;
     UPROPERTY() TObjectPtr<UInstancedStaticMeshComponent> Rain;
     UPROPERTY() TObjectPtr<UAudioComponent> RainAudio;
@@ -120,7 +121,7 @@ private:
     QuebecSky::FLighting Lighting;
     QuebecSky::FWetness Wet;
     QuebecSky::EWeather ShownWeather = QuebecSky::EWeather::Clear;
-    float Hour = 15.f;
+    float Hour = 22.f;
     bool bHasState = false;
     double LastWetSync = -10.;
     float SceneClock = 1.f;

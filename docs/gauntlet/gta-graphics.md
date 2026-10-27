@@ -2803,3 +2803,38 @@ Unreal is not available in this environment, so in-engine frames are the last co
 - Playability raw: 39 / 10 dimensions, index 39
 - Total: 129 / 200
 - Delta vs last round: 0
+
+### Round 81 — 2026-10-27 — rubric v1
+
+- What changed: the opening clock is 22:00. Three neon blades stand on the near sidewalk of Rue Sherbrooke and turn on with the street lamps. The same opening camera is shaded as a rainy night: wet asphalt, coloured streaks under the signs, headlamps, rain, and four walkers. The weather default stays clear, so a normal start is a clear night and rain still comes from the chain or the night-rain preset. The opening aim stays.
+- Why it helped: the opening was a clear afternoon. The same look is now a night street with signs, lamps, rain, and people. It is still the low-poly shade, so the scores stay at 9. This is not a GTA 6 picture.
+- Screenshots: before `docs/gauntlet/gta-graphics/round-81/before-frame.png` is the opening camera at 15:00. After `docs/gauntlet/gta-graphics/round-81/after-frame.png` is that camera at 22:00 in the rain. The crop is `neon-crop.png`. Not an Unreal capture. From the same process, the mean absolute delta is 0.36356 and the max is 0.808. 517488 pixels change, from x 0 to 959 and y 0 to 539. `Scripts/test_opening_night.py` passed. The syntax check passed `QuebecSky.cpp`. The lights were not rebuilt in Unreal. `GET /gta/` returned 200. OpenSpec CLI is not installed, so the change files were not validated with `openspec`.
+- Next target: the night street is a band across the opening look. The verge in front of the camera stays dark.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 9 | The hour is night, with lamps, neon, and headlamps. It is still the shade. |
+| Color palette | 9 | The signs are magenta, cyan, and amber. The grade stays. |
+| Detail density | 9 | The trees and the coupe stay. |
+| Texture and material quality | 9 | The wet road carries the sign colours. The streaks are flat. |
+| Composition and camera | 9 | The opening aim stays. The street band holds the night. |
+| Atmosphere | 9 | Rain and a dark sky. The air is still the shade. |
+| Character models | 9 | Four of the same hoodie stand on the sidewalk. |
+| Animation smoothness | 9 | The poses are samples of the walk. No new clip. |
+| Particles and VFX | 9 | Rain streaks and a small lamp halo. |
+| UI polish | 9 | The radar heading is unchanged. |
+| Responsiveness and input latency | 4 | Not measured this round. |
+| Controls feel | 4 | Not played. |
+| Mission clarity | 5 | The objective words are unchanged. Night does not hide them in this check. |
+| Pacing | 4 | Unchanged mission slice. |
+| Fun factor | 3 | Not played. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 4 | The night street is the new mark. No new juice. |
+| Sound design | 3 | Not listened to. |
+| Variety | 3 | One night opening. The day preset stays. |
+| Performance stability | 5 | `Scripts/test_opening_night.py` passed. Frame time was not remeasured. |
+
+- Aesthetics raw: 90 / 10 dimensions, index 90
+- Playability raw: 39 / 10 dimensions, index 39
+- Total: 129 / 200
+- Delta vs last round: 0

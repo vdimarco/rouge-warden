@@ -1,7 +1,7 @@
 """The opening shade can show the sky model's sunset without moving the spawn.
 
-The clock in QuebecSky.cpp stays on the clear afternoon. This checks that the
-sun, the lighting, and the opening camera are still the ones that shade used.
+The sunset model stays available. The opening hour is the night clock. This
+checks that the sun model, the clear-weather default, and the opening camera stay.
 """
 import unittest
 from pathlib import Path
