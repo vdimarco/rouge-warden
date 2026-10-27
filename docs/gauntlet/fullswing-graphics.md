@@ -1694,3 +1694,40 @@ Playability was scored from a flat boot and the city render check, not a full pl
 
 Playability was scored from a flat boot and the city render check, not a full playthrough. OpenSpec CLI validation was not run; the `openspec` command is not installed.
 
+### Round 39 — 2026-10-27 — rubric v1
+
+- What changed: The six street lamps nearest the camera print a warm disc on the pavement, full inside 1.1 m and gone by 6.4 m. It is mixed after the grade and before the haze, and it stays off the ink. James Gurney, Color and Light (2010): a local light colours the nearby surface and falls off. The shop spill already uses that on the wall.
+- Why it helped: From the lamp shot, 1.65 m up and 9 m from the post, 28,074 pixels shift amber (red up by at least 15, blue down by at least 8). At (482, 300) the pavement goes from (23, 65, 54) to (49, 63, 24). At (372, 206) it goes from (59, 30, 34) to (194, 130, 54). The lamp post at (482, 274) stays ink (13, 16, 73). 84.8% of the frame is identical.
+- Screenshots: before `docs/gauntlet/shots/r39-before-lamp.png`, after `docs/gauntlet/shots/r39-after-lamp.png`.
+- Next target: Detail density (7). A limestone course sits on each floor above a shop. The wall between those courses is still one slab.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 8 | A warm disc sits on the pavement under a street lamp. At (482, 300) it goes from (23, 65, 54) to (49, 63, 24). The lamp post stays ink. It is still one local pool, not a lit city. |
+| Color palette | 7 | Unchanged. The dark shade is violet and the open shade is still teal. At blue hour that teal is gone. |
+| Detail density | 7 | Unchanged. A limestone course sits on each floor above a shop. |
+| Texture and material quality | 7 | Unchanged. The masonry clay from round 23. |
+| Composition and camera | 7 | Unchanged. On the same fast rope the body shrinks from 133 px to 80 px and the arm goes from 4.46 m to 6.98 m. |
+| Atmosphere | 7 | Unchanged. At blue hour the low haze goes from rose to violet. At x 432, y 160 it goes from (95, 45, 56) to (57, 29, 89). |
+| Character models | 7 | Unchanged. A dark wine panel breaks the upper back. |
+| Animation smoothness | 8 | Unchanged. At the same run phase the feet sit 80 px apart across the frame and 94 px apart in height. |
+| Particles and VFX | 7 | Unchanged. Three cream puffs mark the air behind a fast rope. |
+| UI polish | 7 | Unchanged. A rose ring and four ink ticks sit on the compass dial. |
+| Responsiveness and input latency | 6 | Unchanged. Six extra uniforms on the ground shader. No input timing was measured. |
+| Controls feel | 5 | Unchanged. |
+| Mission clarity | 4 | Unchanged. Not played. |
+| Pacing | 4 | Unchanged. |
+| Fun factor | 4 | Unchanged. Not played as a session. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 5 | Unchanged. |
+| Sound design | 4 | Unchanged. |
+| Variety | 4 | Unchanged. |
+| Performance stability | 6 | `qa/vr/render.mjs` passed, including flat play, the painted-sky checks, the lit-sphere cel check, and the canyon ink lines (20.4%). Street mean 77.2, saturation 0.59. |
+
+- Aesthetics raw: 72 / 10 dimensions, index 72
+- Playability raw: 46 / 10 dimensions, index 46
+- Total: 118 / 200
+- Delta vs last round: +1 (117 → 118). Lighting 7 → 8. Playability unchanged.
+
+Playability was scored from a flat boot and the city render check, not a full playthrough. OpenSpec CLI validation was not run; the `openspec` command is not installed.
+

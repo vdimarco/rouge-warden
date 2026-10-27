@@ -1401,8 +1401,19 @@ ${COMMON_FS}
 ${GROUND_PATTERN}
 uniform float uClog[6];
 uniform vec4 uDist[6];
+uniform vec4 uLamp[6]; // xyz unused except xy = lamp on the pavement, w = 1 when the slot is filled
 varying vec3 vW;
 varying vec3 vN;
+// A warm disc on the pavement under a street lamp. It dies within a few metres.
+// Gurney, Color and Light (2010): a local light colours the nearby surface and falls off.
+float lampPool(vec2 p) {
+  float a = 0.0;
+  for (int i = 0; i < 6; i++) {
+    float d = distance(p, uLamp[i].xy);
+    a = max(a, (1.0 - smoothstep(1.1, 6.4, d)) * step(0.5, uLamp[i].w));
+  }
+  return a;
+}
 float clogAt(vec2 p) {
   if (p.y > 110.0) return uClog[0];
   float best = 1e9, v = 0.0;
@@ -1431,7 +1442,12 @@ void main() {
   col = mix(col, DOTC, comicDots(vW.xz, 0.3, mix(0.62, 0.3, clamp(band, 0.0, 1.0))) * dw * 0.5);
   col = wetAsphalt(col, vW, N, gWet, sunVis);
   col = mix(col, INKC, clamp(ink, 0.0, 1.0));
-  gl_FragColor = vec4(fogMix(col, vW, 1.0), 1.0);
+  // The pool is printed after the grade and before the haze, the same way a shop's spill is.
+  vec3 graded = gradeInk(col, sunT(shadowDepthAt(vW + vec3(0.0, 0.1, 0.0))));
+  float pool = lampPool(vW.xz) * (1.0 - clamp(ink, 0.0, 1.0));
+  graded = mix(graded, graded * vec3(1.55, 0.86, 0.36) + vec3(0.07, 0.025, 0.0), pool);
+  vec3 hv = normalize(vW - cameraPosition);
+  gl_FragColor = vec4(mix(graded, skyHaze(hv), comicPoster(fogAmount(vW), 4.0)), 1.0);
 }`;
 
 // The lake: flat violet bands of mirror, inked wave strokes, the sun's road of light, print dots.
@@ -2286,7 +2302,34 @@ export function createCityView(renderer, scene, city, opts = {}) {
   const landMat = mat(LANDMARK_VS, LANDMARK_FS, { ...pick(...COMMON_U, "uKing", "uFinale"),
     uNeedle: { value: new THREE.Vector4(N0.x, N0.z, N0.podY0, 0) }, uDome: { value: new THREE.Vector4(D0.x, D0.z, D0.r, X0.z) } });
   const landInk = mat(LANDMARK_HULL_VS, LANDMARK_HULL_FS, { ...pick(...COMMON_U), uInkK: inkK, uInkPx: { value: INK_PX }, uInkW: { value: 0 } }, { side: THREE.BackSide });
-  const groundMat = mat(GROUND_VS, GROUND_FS, { ...pick(...COMMON_U, "uClog"), ...GU });
+  const LAMP_N = 6;
+  const uLamp = Array.from({ length: LAMP_N }, () => new THREE.Vector4());
+  const groundMat = mat(GROUND_VS, GROUND_FS, { ...pick(...COMMON_U, "uClog"), ...GU, uLamp: { value: uLamp } });
+  // ShaderMaterial clones Vector4 arrays, so the live slots are the material's copies.
+  const lampU = groundMat.uniforms.uLamp.value;
+  // The six lamps nearest the camera. The rest of the city stays unlit by them, so the ground
+  // shader's loop stays six wide.
+  function nearLamps(camPos) {
+    if (!camPos) return;
+    const cx = camPos.x, cz = camPos.z;
+    const best = [];
+    for (let i = 0; i < lampSpots.length; i += 2) {
+      const x = lampSpots[i], z = lampSpots[i + 1];
+      const d = (x - cx) * (x - cx) + (z - cz) * (z - cz);
+      if (d > 6400) continue;
+      if (best.length < LAMP_N) {
+        best.push({ d, x, z });
+        if (best.length === LAMP_N) best.sort((a, b) => a.d - b.d);
+      } else if (d < best[LAMP_N - 1].d) {
+        best[LAMP_N - 1] = { d, x, z };
+        best.sort((a, b) => a.d - b.d);
+      }
+    }
+    for (let i = 0; i < LAMP_N; i++) {
+      const s = best[i];
+      lampU[i].set(s ? s.x : 0, s ? s.z : 0, 0, s ? 1 : 0);
+    }
+  }
   const waterMat = mat(GROUND_VS, WATER_FS, pick(...COMMON_U, "uWater"));
   const skyMat = mat(SKY_VS, SKY_FS, pick(...COMMON_U), { side: THREE.BackSide, depthWrite: false });
   // instanced meshes get an ink twin: the same geometry drawn again as back faces pushed out along the normals
@@ -3056,10 +3099,12 @@ export function createCityView(renderer, scene, city, opts = {}) {
   function makeSteam() {
     steam = instancedMesh(new THREE.PlaneGeometry(1, 1), { aP: 4, aS: 4 }, 3200, steamMat, 4);
   }
-  // lamps: runs of 3 numbers (x, z, turn)
+  // lamps: runs of 3 numbers (x, z, turn). The spots stay, so a pavement pool can find the nearest ones.
+  const lampSpots = [];
   function addLamps(c) {
     const l = c.lamps, I = props.lamp;
     for (let o = 0; o < l.length; o += 3) {
+      lampSpots.push(l[o], l[o + 1]);
       const i = slot(I);
       if (i < 0) break;
       put(I, "aP", i, l[o], 0, l[o + 1], l[o + 2]); put(I, "aS", i, 1, 1, 1, 0.5);
@@ -3287,6 +3332,7 @@ export function createCityView(renderer, scene, city, opts = {}) {
     stats,
     // which art files arrived (art/sky.webp, art/windows.webp): the tests read this
     art: { loaded: false, sky: false, windows: false, rooms: false },
+    lampSpots,
     // Builds a few units per call within the time budget and a hard count (the clock can stand still in tests).
     build(budgetMs = 6) {
       if (next >= units.length) return true;
@@ -3317,6 +3363,7 @@ export function createCityView(renderer, scene, city, opts = {}) {
       U.uKing.value += (kingWant - U.uKing.value) * (1 - Math.exp(-dt * 2));
       U.uFinale.value += (finaleWant - U.uFinale.value) * (1 - Math.exp(-dt * 0.8));
       if (sky && camPos) sky.position.set(camPos.x, camPos.y, camPos.z);
+      nearLamps(camPos);
       // ink lines are a few pixels wide: a touch wider on the headset's finer pixels and on a big flat window
       renderer.getDrawingBufferSize(inkSize);
       U.uInkS.value = renderer.xr.isPresenting ? 1.15 : clamp(inkSize.y / 540, 1, 1.5);

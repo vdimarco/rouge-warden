@@ -2736,6 +2736,7 @@ function shotPose(name) {
     case "harbour": return { pos: [-90, 28, 470], at: [-90, 80, 150] };
     case "aerial": return { pos: [120, 720, 640], at: [-40, 0, -200] };
     case "street": return { pos: [-154.5, 1.7, 30.5], at: [-162, 8, -300] }; // the sidewalk corner, clear of the traffic
+    case "lamp": return { pos: [-154.7, 1.65, 1], at: [-154.7, 0.15, -8] }; // the pavement under one street lamp
     case "diorama": return { pos: [0, 1.65, 0], at: [0, 1.0, -1.1], diorama: true };
     default: return null;
   }
