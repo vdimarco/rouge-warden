@@ -12,6 +12,7 @@ namespace QuebecSteer
 {
     // Today's player handling. The off-road path reproduces it exactly, so the pinned driving tests keep their numbers.
     inline constexpr float HoldRate = 3.5f;          // Steering units/s toward a held input.
+    inline constexpr float ThrottleRate = 20.f;      // Pedal units/s. Full gas in 50 ms. The old 5/s waited 200 ms.
     inline constexpr float ReleaseRate = 10.f;       // Toward neutral, a smaller graded level or the other side.
     inline constexpr float Wheelbase = 310.f;
     inline constexpr float LockSlow = 30.f;          // Wheel lock at rest...

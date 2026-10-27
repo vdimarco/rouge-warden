@@ -2,6 +2,7 @@ import { Config, Flags, NumericParameters, OptionParameters, PixelStreaming, Tex
 import { Logger, LogLevel } from '@epicgames-ps/lib-pixelstreamingcommon-ue5.8';
 import { signallingUrl, streamDimensions, phoneStreamState, adaptPhoneStream, pinnedLevel } from './config.mjs';
 import { setupTouchControls } from './touch-controls.js';
+import { showMission, showPayout, showJob, showHeat, showColumn, showScuff, showSpeech, showWeapon, showExhaust } from './mission-card.js';
 
 Logger.InitLogging(LogLevel.Warning, false);
 
@@ -149,6 +150,34 @@ if (endpoint) {
       try { state = JSON.parse(response); } catch { return; }
       if (typeof state?.nordDriving === 'boolean') touchControls.setDriving(state.nordDriving);
       if (typeof state?.nordSwimming === 'boolean') touchControls.setSwimming(state.nordSwimming);
+      if (typeof state?.nordTitle === 'string') {
+        showMission(state.nordTitle ? {
+          title: state.nordTitle,
+          objective: state.nordObjective || '',
+          stage: state.nordStage || '',
+          fail: state.nordFail || '',
+          bearing: state.nordBearing,
+          meters: state.nordMeters,
+        } : null);
+      }
+      if (typeof state?.nordPayout === 'number') showPayout(state.nordPayout);
+      if (typeof state?.nordJobHead === 'string') {
+        showJob(state.nordJobHead ? { head: state.nordJobHead, line: state.nordJobLine || '' } : null, touchMode);
+      }
+      if (typeof state?.nordStars === 'number' || typeof state?.nordDown === 'string') {
+        showHeat({ stars: state.nordStars, down: state.nordDown });
+      }
+      if (typeof state?.nordColumn === 'string') {
+        showColumn(state.nordColumn ? {
+          title: state.nordColumn,
+          objective: state.nordColumnObjective || '',
+          info: state.nordColumnInfo || '',
+        } : null);
+      }
+      if (typeof state?.nordSpeech === 'string') showSpeech(state.nordSpeech);
+      if (typeof state?.nordScuff === 'string') showScuff(state.nordScuff);
+      if (typeof state?.nordWeapon === 'string') showWeapon(state.nordWeapon);
+      if (typeof state?.nordExhaust === 'string') showExhaust(state.nordExhaust);
     });
     connectButton.disabled = false;
     status('idle', 'The city is waiting.', 'Connect to a free player and help save Park La Fontaine.');

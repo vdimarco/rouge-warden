@@ -1,0 +1,5 @@
+- [x] Prepare `A_MenHoodie_Run.fbx` from the hoodie's own run and list it in the civilian manifest
+- [x] Load that sequence on the hoodie fallback, and keep the walk when the import is missing
+- [x] Show six poses of the run beside the walk
+- [x] Run `Scripts/test_run_cycle.py`
+- [ ] Import `A_MenHoodie_Run` in Unreal (editor not available here)

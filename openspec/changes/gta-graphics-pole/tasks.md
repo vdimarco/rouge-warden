@@ -1,0 +1,4 @@
+- [x] Treat city pole 13707 as the wooden shaft the corner blades use
+- [x] Keep the opening pitch, the aim, and the socket
+- [x] Run `Scripts/test_opening_pole.py`
+- [ ] Confirm the pole in Unreal (editor not available here)

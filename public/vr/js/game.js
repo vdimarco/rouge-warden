@@ -2150,10 +2150,14 @@ export function createGame({ scene, city, view, ropes, hands, ui, audio, P, save
     if (windT < 0.08) return;
     windT -= 0.08;
     const inv = 1 / sp, bx = -vx * inv, by = -vy * inv, bz = -vz * inv, sx = -bz, sz = bx;
-    const side = (rand() < 0.5 ? -1 : 1) * (0.9 + rand() * 0.9);
-    const back = 0.5 + rand() * 0.8;
-    const drift = 1.8 + rand() * 2.4;
-    spawn(T_PUFF, P.pos.x + bx * back + sx * side, P.pos.y + 0.85 + rand() * 1.35, P.pos.z + bz * back + sz * side, bx * drift, by * drift * 0.2 + (rand() - 0.5) * 0.5, bz * drift, 0.9, 1.05 + rand() * 0.55, rand() < 0.3 ? C_GOLD : C_CREAM, 0, 1.4, 0);
+    // Three puffs along the wake, nearer ones a little larger, so the air behind the body
+    // is a short streak and not one fleck. Reeves, SIGGRAPH 1983: born along the path.
+    for (let i = 0; i < 3; i++) {
+      const side = (i - 1) * 0.65 + (rand() - 0.5) * 0.3;
+      const back = 0.35 + i * 0.8 + rand() * 0.25;
+      const drift = 1.4 + rand() * 1.6;
+      spawn(T_PUFF, P.pos.x + bx * back + sx * side, P.pos.y + 0.7 + rand() * 1.1, P.pos.z + bz * back + sz * side, bx * drift, by * drift * 0.2 + (rand() - 0.5) * 0.4, bz * drift, 0.7 + rand() * 0.25, 0.72 + (2 - i) * 0.16 + rand() * 0.15, i === 1 && rand() < 0.35 ? C_GOLD : C_CREAM, 0, 1.4, 0);
+    }
   }
   // "That's a clog. Plunge it.", once, when the first one is close
   function clogsHint() {

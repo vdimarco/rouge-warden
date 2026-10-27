@@ -1400,3 +1400,337 @@ Increment70 pending — unchanged blocked-goon movement uses prepared fixed rota
 
 
 Increment 70 shipped externally in PR #711 as `0719c3f6` from `f3e29d11` at 2026-10-25T20:43:25Z by vdimarco. Fresh six-job CI run40213698308 and deployments passed. Production index.html and combat.js are HTTP200 and exactly match the merged bytes; combat SHA-256 `24933b759fab55be014148c99d0c0ed99777a676bee08e9b3a0a9940b0bc966d`. Eight production browser assertions and 60 action simulation assertions using downloaded production combat bytes pass. Desktop/portrait goon PNGs exactly match pre-release evidence. Agent Review was absent, and final authenticated pre-merge preview/both rebases were not completed; this external merge exception is not a waiver for future PRs. Canonical slide requirements and archive published with full evidence in fullswing-r70-goon-slide. Retry trig work is removed in focused cases; aggregate effect, affected Chrome120Hz/FPS, physical input and listening/full-playthrough remain unverified. All 20 scores and total/delta withheld.
+
+### Round 31 — 2026-10-27 — rubric v1
+
+- What changed: At a full run the lifted foot steps further out and the knee rises higher. At the bottom of a swing the trail steps wider and one heel lifts higher. The knee step still waits for the run clip, so a jog keeps the shin at rest. A quiet hang stays the mild trail. The rope hand is still aimed after the pose. Pose names, the twelve poses a second, the chase arm and the pitch stay as they are. John Lasseter, SIGGRAPH 1987, the exaggeration principle. The captured file was not rebuilt. Round 30's sky gather was already on main and was left as shipped.
+- Why it helped: From behind the chase, the same run phase (0.438) put the feet at screen x 517 and 551 (34 px) and y 507 and 582 (75 px) before, and at x 476 and 556 (80 px) and y 484 and 578 (94 px) after. The same swing frame put the feet at x 475 and 550 (75 px) before, and at x 461 and 580 (119 px) after. A jog's feet stayed 0.286 m apart, the same as before. The rope-hand cosine at that swing frame stayed 0.873, the same figure as the previous pose.
+- Screenshots: run before `docs/gauntlet/shots/r31-before-run.png` (crop `docs/gauntlet/shots/r31-before-run-crop.png`), after `docs/gauntlet/shots/r31-after-run.png` (crop `docs/gauntlet/shots/r31-after-run-crop.png`). Swing before `docs/gauntlet/shots/r31-before-swing.png` (crop `docs/gauntlet/shots/r31-before-swing-crop.png`), after `docs/gauntlet/shots/r31-after-swing.png` (crop `docs/gauntlet/shots/r31-after-swing-crop.png`).
+- Next target: Color palette (6), tied with detail density, composition, atmosphere, character models, particles and UI. The grade is still one teal and one rose.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 7 | Unchanged. A lit shop's cloth is warmer along the hem than along the top. |
+| Color palette | 6 | Unchanged. Cool shade stays teal and the step toward the sun stays rose. |
+| Detail density | 6 | Unchanged. The shop awnings from round 16. |
+| Texture and material quality | 7 | Unchanged. The masonry clay from round 23. |
+| Composition and camera | 6 | Unchanged. On a fast rope the head still sits lower. The chase arm stays 4.5 m and the pitch stays −20°. |
+| Atmosphere | 6 | Unchanged. The far avenue still sits in the warm dust from round 15. |
+| Character models | 6 | Unchanged. The cream belt from round 17. |
+| Animation smoothness | 8 | At the same run phase the feet sit 80 px apart across the frame and 94 px apart in height. At the same swing frame they sit 119 px apart. A jog does not take the step. |
+| Particles and VFX | 6 | Unchanged. The cream trail from round 19. |
+| UI polish | 6 | Unchanged. The cream lip and rose hem from round 21. |
+| Responsiveness and input latency | 6 | Unchanged. No new pass and no new draw. No input timing was measured. |
+| Controls feel | 5 | Unchanged. |
+| Mission clarity | 4 | Unchanged. Not played. |
+| Pacing | 4 | Unchanged. |
+| Fun factor | 4 | Unchanged. Not played as a session. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 5 | Unchanged. |
+| Sound design | 4 | Unchanged. |
+| Variety | 4 | Unchanged. |
+| Performance stability | 6 | `qa/vr/render.mjs` passed, including flat play, the painted-sky checks, the lit-sphere cel check, and the canyon ink lines (26.7%). Street mean 75.4, saturation 0.58. |
+
+- Aesthetics raw: 64 / 10 dimensions, index 64
+- Playability raw: 46 / 10 dimensions, index 46
+- Total: 110 / 200
+- Delta vs last round: +1 (109 → 110). Animation smoothness 7 → 8. Playability unchanged.
+
+Playability was scored from a flat boot and the city render check, not a full playthrough. OpenSpec CLI validation was not run; the `openspec` command is not installed.
+
+### Round 32 — 2026-10-27 — rubric v1
+
+- What changed: The grade's dark end is violet, the sky's colour in the shade. Open shade stays teal. The step stays rose. A sunlit face takes amber. During play the boundary walks from the painted sunset to blue hour and back, over four minutes. At blue hour the violet takes the teal and the amber leaves. Bright lamps, the sun disc, and near-black ink stay. The painted strip is not replaced. James Gurney, Color and Light (2010): a shadow takes the sky's colour, and the light takes the hour's.
+- Why it helped: On the street, every other pixel, violet was 8.2% and teal was 20.6% before. At the painted sunset violet is 18.9% and teal is 13.1%, with rose 39.0% and amber 15.3%. The same street at blue hour is violet 35.7%, teal 0.0%, amber 5.2%, rose 49.0%. A wall that is (49, 91, 54) at sunset is (53, 35, 101) at blue hour. A dark shade that was (60, 53, 34) is (63, 28, 54) already at sunset. The red awning at (250, 46, 59) and a rose step at (182, 46, 94) did not move. On the wall crop, mean green goes from 51.8 at sunset to 26.6 at blue hour, and mean blue from 67.8 to 102.1.
+- Screenshots: before `docs/gauntlet/shots/r32-before-street.png`, sunset `docs/gauntlet/shots/r32-after-street.png`, blue hour `docs/gauntlet/shots/r32-blue-street.png`. The same wall: `docs/gauntlet/shots/r32-before-wall.png`, `docs/gauntlet/shots/r32-after-wall.png`, `docs/gauntlet/shots/r32-blue-wall.png`. Needle before `docs/gauntlet/shots/r32-before-needle.png`.
+- Next target: Detail density (6), tied with composition, atmosphere, character models, particles and UI. The shop band is still one cloth.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 7 | Unchanged. A lit shop's cloth is warmer along the hem than along the top. |
+| Color palette | 7 | The dark shade is violet and the open shade is still teal. At blue hour that teal is gone and the violet covers the shade. |
+| Detail density | 6 | Unchanged. The shop awnings from round 16. |
+| Texture and material quality | 7 | Unchanged. The masonry clay from round 23. |
+| Composition and camera | 6 | Unchanged. On a fast rope the head still sits lower. The chase arm stays 4.5 m and the pitch stays −20°. |
+| Atmosphere | 6 | Unchanged. The far avenue still sits in the warm dust from round 15. |
+| Character models | 6 | Unchanged. The cream belt from round 17. |
+| Animation smoothness | 8 | Unchanged. At the same run phase the feet sit 80 px apart across the frame and 94 px apart in height. |
+| Particles and VFX | 6 | Unchanged. The cream trail from round 19. |
+| UI polish | 6 | Unchanged. The cream lip and rose hem from round 21. |
+| Responsiveness and input latency | 6 | Unchanged. No new pass and no new draw. No input timing was measured. |
+| Controls feel | 5 | Unchanged. |
+| Mission clarity | 4 | Unchanged. Not played. |
+| Pacing | 4 | Unchanged. |
+| Fun factor | 4 | Unchanged. Not played as a session. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 5 | Unchanged. |
+| Sound design | 4 | Unchanged. |
+| Variety | 4 | Unchanged. |
+| Performance stability | 6 | `qa/vr/render.mjs` passed, including flat play, the painted-sky checks, the lit-sphere cel check, and the canyon ink lines (20.4%). Street mean 73.6, saturation 0.60. |
+
+- Aesthetics raw: 65 / 10 dimensions, index 65
+- Playability raw: 46 / 10 dimensions, index 46
+- Total: 111 / 200
+- Delta vs last round: +1 (110 → 111). Color palette 6 → 7. Playability unchanged.
+
+Playability was scored from a flat boot and the city render check, not a full playthrough. OpenSpec CLI validation was not run; the `openspec` command is not installed.
+
+### Round 33 — 2026-10-27 — rubric v1
+
+- What changed: On a shop building, each floor above the street gets a limestone course at the floor line. The storey just above the shop is the deep one, about a quarter of the floor, with a dark lip and a sill, and its window starts higher so the sash is shorter than the floors above it. Higher floors get a thinner course, about a seventh of the floor. The stone is mixed on after the grade, so the violet and teal paper do not recolor it. It fades before it can shimmer. Glass towers are left alone. No new mesh. Francis D.K. Ching, Architecture: Form, Space, and Order: a string course marks the floor.
+- Why it helped: The floors above the shop cloth were one window tile. On the street still, six limestone courses now stack up the near facades. The deepest, just above the red cloth, runs from image y 224 to 242. At x 600, y 235, the wall goes from (203, 55, 27) to (148, 133, 112). About 8.3% of the street pixels moved, mean absolute change 12.2. Glass that sat in the old lower sash is stone now (757 sampled pixels).
+- Screenshots: before `docs/gauntlet/shots/r33-before-street.png`, after `docs/gauntlet/shots/r33-after-street.png`. The floors: `docs/gauntlet/shots/r33-before-floors.png`, `docs/gauntlet/shots/r33-after-floors.png`. Needle, where the courses are out of frame: `docs/gauntlet/shots/r33-before-needle.png`, `docs/gauntlet/shots/r33-after-needle.png`.
+- Next target: Composition and camera (6), tied with atmosphere, character models, particles and UI. On a fast rope the head still sits lower, and the chase arm stays 4.5 m at −20°.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 7 | Unchanged. A lit shop's cloth is warmer along the hem than along the top. |
+| Color palette | 7 | Unchanged. The dark shade is violet and the open shade is still teal. At blue hour that teal is gone. |
+| Detail density | 7 | A limestone course sits on each floor above a shop. The one just above the cloth is the deep course, and that window's sash is shorter. |
+| Texture and material quality | 7 | Unchanged. The masonry clay from round 23. |
+| Composition and camera | 6 | Unchanged. On a fast rope the head still sits lower. The chase arm stays 4.5 m and the pitch stays −20°. |
+| Atmosphere | 6 | Unchanged. The far avenue still sits in the warm dust from round 15. |
+| Character models | 6 | Unchanged. The cream belt from round 17. |
+| Animation smoothness | 8 | Unchanged. At the same run phase the feet sit 80 px apart across the frame and 94 px apart in height. |
+| Particles and VFX | 6 | Unchanged. The cream trail from round 19. |
+| UI polish | 6 | Unchanged. The cream lip and rose hem from round 21. |
+| Responsiveness and input latency | 6 | Unchanged. No new pass and no new draw. No input timing was measured. |
+| Controls feel | 5 | Unchanged. |
+| Mission clarity | 4 | Unchanged. Not played. |
+| Pacing | 4 | Unchanged. |
+| Fun factor | 4 | Unchanged. Not played as a session. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 5 | Unchanged. |
+| Sound design | 4 | Unchanged. |
+| Variety | 4 | Unchanged. |
+| Performance stability | 6 | `qa/vr/render.mjs` passed, including flat play, the painted-sky checks, the lit-sphere cel check, and the canyon ink lines (20.4%). Street mean 77.1, saturation 0.58. |
+
+- Aesthetics raw: 66 / 10 dimensions, index 66
+- Playability raw: 46 / 10 dimensions, index 46
+- Total: 112 / 200
+- Delta vs last round: +1 (111 → 112). Detail density 6 → 7. Playability unchanged.
+
+Playability was scored from a flat boot and the city render check, not a full playthrough. OpenSpec CLI validation was not run; the `openspec` command is not installed.
+
+### Round 34 — 2026-10-27 — rubric v1
+
+- What changed: On a rope, off the ground, and faster than 11 m/s across, the chase arm lets out by up to 2.6 m past the length speed already asks for. It is all the way out by 16 m/s. A swing near 8 m/s keeps the ordinary arm. A stand stays at 4.5 m and −20°. The pitch on the swing is the lift that was already there. A wall still stops the arm. Mark Haigh-Hutchinson, Real-Time Cameras (2009): at speed the subject takes less of the frame so the space ahead stays readable.
+- Why it helped: The same mid-swing, low in the arc at 18 m/s, held the body from screen y 400 to 533 (133 px) on a 4.46 m arm. The arm is now 6.98 m and the body runs from y 379 to 459 (80 px). The feet sit 74 px higher, so the avenue shows under them. Mean absolute change across the frame is 50.1, and 33% of the pixels moved. The camera was not against a wall. Standing still, the arm is 4.50 m and the pitch is −20°.
+- Screenshots: before `docs/gauntlet/shots/r34-before-swing.png`, after `docs/gauntlet/shots/r34-after-swing.png`. The street, where this arm does not run: `docs/gauntlet/shots/r34-street.png`.
+- Next target: Atmosphere (6), tied with character models, particles and UI. The far avenue still sits in the warm dust from round 15.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 7 | Unchanged. A lit shop's cloth is warmer along the hem than along the top. |
+| Color palette | 7 | Unchanged. The dark shade is violet and the open shade is still teal. At blue hour that teal is gone. |
+| Detail density | 7 | Unchanged. A limestone course sits on each floor above a shop. |
+| Texture and material quality | 7 | Unchanged. The masonry clay from round 23. |
+| Composition and camera | 7 | On the same fast rope the body shrinks from 133 px to 80 px and the arm goes from 4.46 m to 6.98 m. A stand stays at 4.5 m and −20°. |
+| Atmosphere | 6 | Unchanged. The far avenue still sits in the warm dust from round 15. |
+| Character models | 6 | Unchanged. The cream belt from round 17. |
+| Animation smoothness | 8 | Unchanged. At the same run phase the feet sit 80 px apart across the frame and 94 px apart in height. |
+| Particles and VFX | 6 | Unchanged. The cream trail from round 19. |
+| UI polish | 6 | Unchanged. The cream lip and rose hem from round 21. |
+| Responsiveness and input latency | 6 | Unchanged. No new pass and no new draw. No input timing was measured. |
+| Controls feel | 5 | Unchanged. |
+| Mission clarity | 4 | Unchanged. Not played. |
+| Pacing | 4 | Unchanged. |
+| Fun factor | 4 | Unchanged. Not played as a session. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 5 | Unchanged. |
+| Sound design | 4 | Unchanged. |
+| Variety | 4 | Unchanged. |
+| Performance stability | 6 | `qa/vr/render.mjs` passed, including flat play, the painted-sky checks, the lit-sphere cel check, and the canyon ink lines (20.4%). Street mean 77.1, saturation 0.58. |
+
+- Aesthetics raw: 67 / 10 dimensions, index 67
+- Playability raw: 46 / 10 dimensions, index 46
+- Total: 113 / 200
+- Delta vs last round: +1 (112 → 113). Composition and camera 6 → 7. Playability unchanged.
+
+Playability was scored from a flat boot and the city render check, not a full playthrough. OpenSpec CLI validation was not run; the `openspec` command is not installed.
+
+### Round 35 — 2026-10-27 — rubric v1
+
+- What changed: The chase jacket gets a dark wine panel on the upper back, painted after the cel in the hips' own frame, so a roll carries it. It sits about 42 cm above the hip joint and stays off the chest and off the cream belt. No new mesh. Skinned triangles stay at 12,468. Mitchell, Francke, and Eng, Illustrative Rendering in Team Fortress 2 (2007): the material break is painted back onto the albedo, the same way the belt was.
+- Why it helped: From behind at the rest chase (4.5 m, −20°), the jacket above the belt was one red. The upper back is now wine. At x 400, y 336, the cloth goes from (246, 106, 103) to (51, 17, 25). The panel covers about 35 by 22 pixels, and 460 of those pixels leave the red. The cream belt at y 364 stays (252, 249, 235). The head stays the hair and skin.
+- Screenshots: before `docs/gauntlet/shots/r35-before-hero.png`, after `docs/gauntlet/shots/r35-after-hero.png`.
+- Next target: Atmosphere (6), tied with particles and UI. The far avenue still sits in the warm dust from round 15.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 7 | Unchanged. A lit shop's cloth is warmer along the hem than along the top. |
+| Color palette | 7 | Unchanged. The dark shade is violet and the open shade is still teal. At blue hour that teal is gone. |
+| Detail density | 7 | Unchanged. A limestone course sits on each floor above a shop. |
+| Texture and material quality | 7 | Unchanged. The masonry clay from round 23. |
+| Composition and camera | 7 | Unchanged. On the same fast rope the body shrinks from 133 px to 80 px and the arm goes from 4.46 m to 6.98 m. |
+| Atmosphere | 6 | Unchanged. The far avenue still sits in the warm dust from round 15. |
+| Character models | 7 | A dark wine panel breaks the upper back. The cream belt stays. The figure is still simple. Skinned triangles stayed at 12,468. |
+| Animation smoothness | 8 | Unchanged. At the same run phase the feet sit 80 px apart across the frame and 94 px apart in height. |
+| Particles and VFX | 6 | Unchanged. The cream trail from round 19. |
+| UI polish | 6 | Unchanged. The cream lip and rose hem from round 21. |
+| Responsiveness and input latency | 6 | Unchanged. No new pass and no new draw. No input timing was measured. |
+| Controls feel | 5 | Unchanged. |
+| Mission clarity | 4 | Unchanged. Not played. |
+| Pacing | 4 | Unchanged. |
+| Fun factor | 4 | Unchanged. Not played as a session. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 5 | Unchanged. |
+| Sound design | 4 | Unchanged. |
+| Variety | 4 | Unchanged. |
+| Performance stability | 6 | `qa/vr/render.mjs` passed, including flat play, the painted-sky checks, the lit-sphere cel check, and the canyon ink lines (20.4%). Street mean 77.1, saturation 0.58. |
+
+- Aesthetics raw: 68 / 10 dimensions, index 68
+- Playability raw: 46 / 10 dimensions, index 46
+- Total: 114 / 200
+- Delta vs last round: +1 (113 → 114). Character models 6 → 7. Playability unchanged.
+
+Playability was scored from a flat boot and the city render check, not a full playthrough. OpenSpec CLI validation was not run; the `openspec` command is not installed.
+
+### Round 36 — 2026-10-27 — rubric v1
+
+- What changed: The low air keeps its sunset rose. As the hour walks to blue hour, that dust walks toward violet (0.28, 0.20, 0.68) and the mix goes from 0.78 to 0.92. Looking up stays the painted sky. A red awning at (196, 47, 32) and an ink line at (20, 10, 24) did not move. James Gurney, Color and Light (2010): the air takes the colour of the sky at that hour. The height split is the street layer already there, from Carsten Wenzel, SIGGRAPH 2006.
+- Why it helped: At blue hour the street band was 15.2% violet and 74.2% rose. It is now 29.0% violet and 59.5% rose. At x 432, y 160, the haze goes from (95, 45, 56) to (57, 29, 89). Mean absolute change 14.5. The same pixel at the painted sunset stays (95, 45, 56), matching the street from round 33. 94.4% of the sunset frame is identical.
+- Screenshots: blue hour before `docs/gauntlet/shots/r36-before-blue.png`, after `docs/gauntlet/shots/r36-after-blue.png`. Sunset, where the dust does not move: `docs/gauntlet/shots/r36-sunset.png`.
+- Next target: Particles and VFX (6), tied with UI. The cream trail from round 19 is still one fleck.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 7 | Unchanged. A lit shop's cloth is warmer along the hem than along the top. |
+| Color palette | 7 | Unchanged. The dark shade is violet and the open shade is still teal. At blue hour that teal is gone. |
+| Detail density | 7 | Unchanged. A limestone course sits on each floor above a shop. |
+| Texture and material quality | 7 | Unchanged. The masonry clay from round 23. |
+| Composition and camera | 7 | Unchanged. On the same fast rope the body shrinks from 133 px to 80 px and the arm goes from 4.46 m to 6.98 m. |
+| Atmosphere | 7 | At blue hour the low haze goes from rose to violet. At x 432, y 160 it goes from (95, 45, 56) to (57, 29, 89). Sunset stays the warm dust. |
+| Character models | 7 | Unchanged. A dark wine panel breaks the upper back. |
+| Animation smoothness | 8 | Unchanged. At the same run phase the feet sit 80 px apart across the frame and 94 px apart in height. |
+| Particles and VFX | 6 | Unchanged. The cream trail from round 19. |
+| UI polish | 6 | Unchanged. The cream lip and rose hem from round 21. |
+| Responsiveness and input latency | 6 | Unchanged. No new pass and no new draw. No input timing was measured. |
+| Controls feel | 5 | Unchanged. |
+| Mission clarity | 4 | Unchanged. Not played. |
+| Pacing | 4 | Unchanged. |
+| Fun factor | 4 | Unchanged. Not played as a session. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 5 | Unchanged. |
+| Sound design | 4 | Unchanged. |
+| Variety | 4 | Unchanged. |
+| Performance stability | 6 | `qa/vr/render.mjs` passed, including flat play, the painted-sky checks, the lit-sphere cel check, and the canyon ink lines (20.4%). Street mean 77.1, saturation 0.58. |
+
+- Aesthetics raw: 69 / 10 dimensions, index 69
+- Playability raw: 46 / 10 dimensions, index 46
+- Total: 115 / 200
+- Delta vs last round: +1 (114 → 115). Atmosphere 6 → 7. Playability unchanged.
+
+Playability was scored from a flat boot and the city render check, not a full playthrough. OpenSpec CLI validation was not run; the `openspec` command is not installed.
+
+### Round 37 — 2026-10-27 — rubric v1
+
+- What changed: A fast rope now leaves three cream puffs along the air behind the body, stepped back along the velocity, instead of one fleck every 0.08 s. They are the same comic puff. The gate is unchanged: off the ground, off a wall, faster than 10, rope attached. Reeves, Particle Systems (SIGGRAPH 1983): the particles are born along the path the body just traveled.
+- Why it helped: On the same mid-swing (18 m/s, arm 6.91 m), 11,898 pixels became cream. A puff at (212, 100) goes from (64, 69, 30) to (249, 252, 236). The trail crosses the avenue behind the body. A stand still returns before any birth.
+- Screenshots: before `docs/gauntlet/shots/r37-before-swing.png`, after `docs/gauntlet/shots/r37-after-swing.png`.
+- Next target: UI polish (6). The cream lip and rose hem from round 21.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 7 | Unchanged. A lit shop's cloth is warmer along the hem than along the top. |
+| Color palette | 7 | Unchanged. The dark shade is violet and the open shade is still teal. At blue hour that teal is gone. |
+| Detail density | 7 | Unchanged. A limestone course sits on each floor above a shop. |
+| Texture and material quality | 7 | Unchanged. The masonry clay from round 23. |
+| Composition and camera | 7 | Unchanged. On the same fast rope the body shrinks from 133 px to 80 px and the arm goes from 4.46 m to 6.98 m. |
+| Atmosphere | 7 | Unchanged. At blue hour the low haze goes from rose to violet. At x 432, y 160 it goes from (95, 45, 56) to (57, 29, 89). |
+| Character models | 7 | Unchanged. A dark wine panel breaks the upper back. |
+| Animation smoothness | 8 | Unchanged. At the same run phase the feet sit 80 px apart across the frame and 94 px apart in height. |
+| Particles and VFX | 7 | Three cream puffs mark the air behind a fast rope. 11,898 pixels became cream on the same mid-swing. They are still flat comic puffs. |
+| UI polish | 6 | Unchanged. The cream lip and rose hem from round 21. |
+| Responsiveness and input latency | 6 | Unchanged. No new pass and no new draw. No input timing was measured. |
+| Controls feel | 5 | Unchanged. |
+| Mission clarity | 4 | Unchanged. Not played. |
+| Pacing | 4 | Unchanged. |
+| Fun factor | 4 | Unchanged. Not played as a session. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 5 | Unchanged. |
+| Sound design | 4 | Unchanged. |
+| Variety | 4 | Unchanged. |
+| Performance stability | 6 | `qa/vr/render.mjs` passed, including flat play, the painted-sky checks, the lit-sphere cel check, and the canyon ink lines (20.4%). Street mean 77.1, saturation 0.58. |
+
+- Aesthetics raw: 70 / 10 dimensions, index 70
+- Playability raw: 46 / 10 dimensions, index 46
+- Total: 116 / 200
+- Delta vs last round: +1 (115 → 116). Particles and VFX 6 → 7. Playability unchanged.
+
+Playability was scored from a flat boot and the city render check, not a full playthrough. OpenSpec CLI validation was not run; the `openspec` command is not installed.
+
+### Round 38 — 2026-10-27 — rubric v1
+
+- What changed: The compass dial was a blank cream disc. It now carries a rose ring and four ink ticks, painted in the same paper as the plate's hem. The ticks stay put. The arrow is a second mark and still turns on its own. The row box does not move.
+- Why it helped: The face of the dial was one cream. At (984, 38) that cream goes from (255, 249, 234) to the ink (20, 10, 24). At (976, 28) it goes to the rose (231, 160, 180). Sixteen cream pixels become ink and 118 become rose. At 1280×720 the row stayed top 12, bottom 63, left 199, right 1081.
+- Screenshots: before `docs/gauntlet/shots/r38-before-hud.png`, after `docs/gauntlet/shots/r38-after-hud.png`.
+- Next target: Lighting (7). The street is still one warm key.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 7 | Unchanged. A lit shop's cloth is warmer along the hem than along the top. |
+| Color palette | 7 | Unchanged. The dark shade is violet and the open shade is still teal. At blue hour that teal is gone. |
+| Detail density | 7 | Unchanged. A limestone course sits on each floor above a shop. |
+| Texture and material quality | 7 | Unchanged. The masonry clay from round 23. |
+| Composition and camera | 7 | Unchanged. On the same fast rope the body shrinks from 133 px to 80 px and the arm goes from 4.46 m to 6.98 m. |
+| Atmosphere | 7 | Unchanged. At blue hour the low haze goes from rose to violet. At x 432, y 160 it goes from (95, 45, 56) to (57, 29, 89). |
+| Character models | 7 | Unchanged. A dark wine panel breaks the upper back. |
+| Animation smoothness | 8 | Unchanged. At the same run phase the feet sit 80 px apart across the frame and 94 px apart in height. |
+| Particles and VFX | 7 | Unchanged. Three cream puffs mark the air behind a fast rope. |
+| UI polish | 7 | A rose ring and four ink ticks sit on the compass dial. The row box did not move. It is still a flat sticker. |
+| Responsiveness and input latency | 6 | Unchanged. CSS and one extra svg. No input timing was measured. |
+| Controls feel | 5 | Unchanged. |
+| Mission clarity | 4 | Unchanged. Not played. |
+| Pacing | 4 | Unchanged. |
+| Fun factor | 4 | Unchanged. Not played as a session. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 5 | Unchanged. |
+| Sound design | 4 | Unchanged. |
+| Variety | 4 | Unchanged. |
+| Performance stability | 6 | `qa/vr/render.mjs` passed, including flat play, the painted-sky checks, the lit-sphere cel check, and the canyon ink lines (20.4%). Street mean 77.1, saturation 0.58. |
+
+- Aesthetics raw: 71 / 10 dimensions, index 71
+- Playability raw: 46 / 10 dimensions, index 46
+- Total: 117 / 200
+- Delta vs last round: +1 (116 → 117). UI polish 6 → 7. Playability unchanged.
+
+Playability was scored from a flat boot and the city render check, not a full playthrough. OpenSpec CLI validation was not run; the `openspec` command is not installed.
+
+### Round 39 — 2026-10-27 — rubric v1
+
+- What changed: The six street lamps nearest the camera print a warm disc on the pavement, full inside 1.1 m and gone by 6.4 m. It is mixed after the grade and before the haze, and it stays off the ink. James Gurney, Color and Light (2010): a local light colours the nearby surface and falls off. The shop spill already uses that on the wall.
+- Why it helped: From the lamp shot, 1.65 m up and 9 m from the post, 28,074 pixels shift amber (red up by at least 15, blue down by at least 8). At (482, 300) the pavement goes from (23, 65, 54) to (49, 63, 24). At (372, 206) it goes from (59, 30, 34) to (194, 130, 54). The lamp post at (482, 274) stays ink (13, 16, 73). 84.8% of the frame is identical.
+- Screenshots: before `docs/gauntlet/shots/r39-before-lamp.png`, after `docs/gauntlet/shots/r39-after-lamp.png`.
+- Next target: Detail density (7). A limestone course sits on each floor above a shop. The wall between those courses is still one slab.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 8 | A warm disc sits on the pavement under a street lamp. At (482, 300) it goes from (23, 65, 54) to (49, 63, 24). The lamp post stays ink. It is still one local pool, not a lit city. |
+| Color palette | 7 | Unchanged. The dark shade is violet and the open shade is still teal. At blue hour that teal is gone. |
+| Detail density | 7 | Unchanged. A limestone course sits on each floor above a shop. |
+| Texture and material quality | 7 | Unchanged. The masonry clay from round 23. |
+| Composition and camera | 7 | Unchanged. On the same fast rope the body shrinks from 133 px to 80 px and the arm goes from 4.46 m to 6.98 m. |
+| Atmosphere | 7 | Unchanged. At blue hour the low haze goes from rose to violet. At x 432, y 160 it goes from (95, 45, 56) to (57, 29, 89). |
+| Character models | 7 | Unchanged. A dark wine panel breaks the upper back. |
+| Animation smoothness | 8 | Unchanged. At the same run phase the feet sit 80 px apart across the frame and 94 px apart in height. |
+| Particles and VFX | 7 | Unchanged. Three cream puffs mark the air behind a fast rope. |
+| UI polish | 7 | Unchanged. A rose ring and four ink ticks sit on the compass dial. |
+| Responsiveness and input latency | 6 | Unchanged. Six extra uniforms on the ground shader. No input timing was measured. |
+| Controls feel | 5 | Unchanged. |
+| Mission clarity | 4 | Unchanged. Not played. |
+| Pacing | 4 | Unchanged. |
+| Fun factor | 4 | Unchanged. Not played as a session. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 5 | Unchanged. |
+| Sound design | 4 | Unchanged. |
+| Variety | 4 | Unchanged. |
+| Performance stability | 6 | `qa/vr/render.mjs` passed, including flat play, the painted-sky checks, the lit-sphere cel check, and the canyon ink lines (20.4%). Street mean 77.2, saturation 0.59. |
+
+- Aesthetics raw: 72 / 10 dimensions, index 72
+- Playability raw: 46 / 10 dimensions, index 46
+- Total: 118 / 200
+- Delta vs last round: +1 (117 → 118). Lighting 7 → 8. Playability unchanged.
+
+Playability was scored from a flat boot and the city render check, not a full playthrough. OpenSpec CLI validation was not run; the `openspec` command is not installed.
+

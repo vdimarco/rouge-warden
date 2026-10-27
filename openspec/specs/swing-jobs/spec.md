@@ -63,7 +63,7 @@ After the Sludge Run is won, the story SHALL be four missions in order: Stop, Th
 - **THEN** a lesson card names the miss, the same mission starts again after that card, and the card still does not say to flush the clogs
 
 ### Requirement: Clog beats
-While the King is still asleep, the second flush SHALL start a falling rescue, the fourth flush SHALL start a balloon to bring back, the fifth flush SHALL start a purse snatcher to run down, the sixth flush SHALL start a pizza to deliver to a roof, the seventh flush SHALL start a mugging to clear, the eighth flush SHALL start a washer to carry down, the ninth flush SHALL start a getaway car to rope, the tenth flush SHALL start a rooftop brawl, and the eleventh flush SHALL start a lid to stand on until it seats. Each of those jobs SHALL take the mission card, and that card SHALL NOT say to flush the clogs. Standing on the ground within 4 m of that lid SHALL fill a 6 s hold. Leaving the lid, or leaving the ground, SHALL slip that hold at twice the rate. Filling the hold SHALL end the job seated. The clock SHALL be 24 s, and running it out SHALL miss as popped. The first and the third flushes SHALL keep the clog card, counting toward twelve. When a beat ends, the clog card SHALL return. Flushing all twelve SHALL still wake the King. The second, the fifth, the seventh, the ninth, the tenth, and the eleventh flushes SHALL NOT wake him. A beat SHALL wait while a story mission is the current job. A beat SHALL NOT move the story route. The washer on the eighth flush SHALL give less time than an odd-job washer when he hangs within a swing. The King SHALL still roar only on the fourth and the eighth flush. The falling rescue SHALL keep its fall rate.
+While the King is still asleep, the second flush SHALL start a falling rescue, the third flush SHALL start a gust to swing through, the fourth flush SHALL start a balloon to bring back, the fifth flush SHALL start a purse snatcher to run down, the sixth flush SHALL start a pizza to deliver to a roof, the seventh flush SHALL start a mugging to clear, the eighth flush SHALL start a washer to carry down, the ninth flush SHALL start a getaway car to rope, the tenth flush SHALL start a rooftop brawl, and the eleventh flush SHALL start a lid to stand on until it seats. Each of those jobs SHALL take the mission card, and that card SHALL NOT say to flush the clogs. Swinging through that gust in the air, within 6 m of its column and at 11 m/s or faster across the ground, SHALL count one pass. Standing in the column, or crossing it slower than that, SHALL NOT count. A later pass SHALL count only after the hero has left the column and 0.4 s have passed. Three passes SHALL end the job. The clock SHALL be 28 s, and running it out SHALL miss as blown off. Each counted pass SHALL lift the swing. Standing on the ground within 4 m of that lid SHALL fill a 6 s hold. Leaving the lid, or leaving the ground, SHALL slip that hold at twice the rate. Filling the hold SHALL end the job seated. The clock SHALL be 24 s, and running it out SHALL miss as popped. The first flush SHALL keep the clog card, counting toward twelve. When a beat ends, the clog card SHALL return. Flushing all twelve SHALL still wake the King. The second, the third, the fifth, the seventh, the ninth, the tenth, and the eleventh flushes SHALL NOT wake him. A beat SHALL wait while a story mission is the current job. A beat SHALL NOT move the story route. The washer on the eighth flush SHALL give less time than an odd-job washer when he hangs within a swing. The King SHALL still roar only on the fourth and the eighth flush. The falling rescue SHALL keep its fall rate.
 
 #### Scenario: One flush
 - **WHEN** one clog is flushed and no story mission is running
@@ -77,9 +77,33 @@ While the King is still asleep, the second flush SHALL start a falling rescue, t
 - **WHEN** that person is set down
 - **THEN** the card says FLUSH THE CLOGS 2/12
 
-#### Scenario: Three flushes
-- **WHEN** three clogs are flushed and no story mission is running
-- **THEN** the card says FLUSH THE CLOGS 3/12
+#### Scenario: The third flush
+- **WHEN** the third clog is flushed
+- **THEN** the card names a gust to swing through and does not say to flush the clogs, and the King is still asleep
+
+#### Scenario: Through the gust
+- **WHEN** the hero swings through that column in the air at 11 m/s or faster
+- **THEN** the card counts one pass and the swing lifts
+
+#### Scenario: Not a pass
+- **WHEN** the hero stands in the column, or crosses it slower than 11 m/s
+- **THEN** the pass count stays
+
+#### Scenario: The next pass
+- **WHEN** the hero leaves the column, waits 0.4 s, and swings through again
+- **THEN** the card counts the next pass
+
+#### Scenario: Three passes
+- **WHEN** the third pass counts
+- **THEN** the job ends
+
+#### Scenario: Blown off
+- **WHEN** the 28 s clock runs out first
+- **THEN** the lesson card says the gust blew off and to swing through it
+
+#### Scenario: After the gust
+- **WHEN** that gust is swung through
+- **THEN** the card says FLUSH THE CLOGS 3/12 and the King is still asleep
 
 #### Scenario: The fourth flush
 - **WHEN** the fourth clog is flushed
@@ -241,6 +265,75 @@ goons on a roof within 120 s.
 #### Scenario: A balloon
 - **WHEN** the hero grabs the balloon and comes back to the kid
 - **THEN** the kid cheers and the job pays 20 Loonies
+
+### Requirement: A loose wheel
+An odd job SHALL start a wheel rolling along the street. The card SHALL name the wheel and how far it is. Standing on the ground within 4.5 m of it SHALL stop it and bump the hero along its roll. Being in the air, even that close, SHALL NOT stop it. The clock SHALL be 18 s, and running it out SHALL miss as rolled off. The wheel SHALL NOT replace a flush.
+
+#### Scenario: The wheel is loose
+- **WHEN** the player takes the loose wheel
+- **THEN** the card says to get in front of it, and the wheel is rolling
+
+#### Scenario: In the air
+- **WHEN** the hero is in the air within 4.5 m of the wheel
+- **THEN** the card says to land in front of it, and the job is still on
+
+#### Scenario: On the ground
+- **WHEN** the hero stands on the ground within 4.5 m of the wheel
+- **THEN** the wheel stops and the hero is bumped along its roll
+
+#### Scenario: It rolls off
+- **WHEN** the 18 s clock runs out first
+- **THEN** the lesson card says the wheel rolled off
+
+### Requirement: Hold the kite
+An odd job SHALL send a kite up from the street. The card SHALL name the kite and tell the player to stay above it. Time in the air above the kite, within 8 m, SHALL fill a 4 s hold, and the first moment above it SHALL tug the hero upward. Standing on the ground, or hanging under the kite, SHALL NOT fill the hold, and leaving it SHALL slip the hold. Filling the hold SHALL catch the kite and launch the hero. The clock SHALL be 22 s, and running it out SHALL miss as risen. The kite SHALL NOT replace a flush.
+
+#### Scenario: The kite is up
+- **WHEN** the player takes the kite
+- **THEN** the card says to stay above it, and the kite is rising
+
+#### Scenario: On the ground
+- **WHEN** the hero stands on the ground under the kite
+- **THEN** the hold does not grow, and the card still says to stay above it
+
+#### Scenario: Above it
+- **WHEN** the hero is in the air above the kite and close
+- **THEN** the hold grows and the kite tugs the hero up
+
+#### Scenario: It slips
+- **WHEN** the hero leaves the air above the kite
+- **THEN** the hold slips and the card says to get back above it
+
+#### Scenario: Four seconds
+- **WHEN** the hero stays above the kite for 4 s
+- **THEN** the kite is caught and the hero is launched
+
+#### Scenario: It rises away
+- **WHEN** the 22 s clock runs out first
+- **THEN** the lesson card says the kite rose away
+
+### Requirement: Ride the line
+An odd job SHALL string a line across the street, above it. The card SHALL name the line and tell the player to swing onto it. A swing in the air, within 3.5 m of the line and at 9 m/s or faster across the ground, SHALL catch it. Standing on the ground, or swinging slower than that, SHALL NOT catch it. Once caught, the line SHALL carry the hero to the far end and launch them off. The clock SHALL be 16 s, and running it out before the catch SHALL miss as snapped. The line SHALL NOT replace a flush.
+
+#### Scenario: The line is up
+- **WHEN** the player takes the line
+- **THEN** the card says to swing onto it
+
+#### Scenario: On the ground
+- **WHEN** the hero stands where the line is
+- **THEN** the line is not caught
+
+#### Scenario: A fast swing
+- **WHEN** the hero swings onto the line in the air, close and fast
+- **THEN** the line catches them and carries them
+
+#### Scenario: Off the end
+- **WHEN** the ride reaches the far end
+- **THEN** the hero is launched off the line
+
+#### Scenario: It goes by
+- **WHEN** the 16 s clock runs out before the catch
+- **THEN** the lesson card says the line went by
 
 ### Requirement: A taxi fare needs a car
 A Taxi! marker SHALL wait on a street. Driving a car into it SHALL start the job; reaching it on foot SHALL only make the

@@ -1,4 +1,4 @@
-// The second flush is a rescue, the fourth a balloon, the fifth a chase, the sixth a pizza, the seventh a mugging,
+// The second flush is a rescue, the third a gust to swing through, the fourth a balloon, the fifth a chase, the sixth a pizza, the seventh a mugging,
 // the eighth a washer, the ninth a getaway car, the tenth a brawl, the eleventh a lid to stand on, and the clog card comes back after each.
 import { mkdir } from "node:fs/promises";
 import { newPage, open, close, enterXR, checker, watchdog } from "./lib.mjs";
@@ -71,15 +71,53 @@ try {
     const id = G.game.targets().find((t) => t.kind === "clog" && !t.done);
     G.test.clearClog(id.id);
     let n = 0;
-    for (; n < 80; n++) {
+    for (; n < 180; n++) {
+      G.test.step(1 / 60, 1);
+      const job = G.test.action().jobs.active;
+      const ob = G.game.progress.objective;
+      if (job && job.type === "gust" && ob && /THROUGH THE GUST/.test(ob.title || "") && /SWING THROUGH/.test(ob.title || "")) break;
+    }
+    G.test.step(1 / 60, 4);
+    const ob = G.game.progress.objective;
+    const job = G.test.action().jobs.active;
+    G.test.render(0);
+    return { n, title: ob && ob.title, detail: ob && ob.detail, job: job && job.type, king: G.game.progress.king };
+  });
+  await page.screenshot({ path: out + "/gust.png" });
+  check(early.job === "gust" && /THROUGH THE GUST/.test(early.title || "") && /SWING THROUGH/.test(early.title || "") && /gust/i.test(early.detail || "") && !/FLUSH THE CLOGS/.test((early.title || "") + " " + (early.detail || "")) && early.king !== "awake", "the third flush is a gust to swing through, and the King still sleeps", early);
+
+  const lift = await page.evaluate(() => {
+    const ob = G.game.progress.objective;
+    const goal = ob && ob.goal;
+    const back = { x: G.P.pos.x, y: G.P.pos.y, z: G.P.pos.z };
+    if (!goal) return { y: 0, detail: "", passes: 0 };
+    G.P.pos.x = goal.x; G.P.pos.y = goal.y + 8; G.P.pos.z = goal.z;
+    G.P.vel.x = 16; G.P.vel.y = 0; G.P.vel.z = 0;
+    G.P.onGround = false;
+    G.test.step(1 / 60, 1);
+    const ob2 = G.game.progress.objective;
+    const y = G.P.vel.y;
+    const passes = G.test.action().jobs.active && G.test.action().jobs.active.data.passes;
+    G.P.pos.x = back.x; G.P.pos.y = back.y; G.P.pos.z = back.z;
+    G.P.vel.x = G.P.vel.y = G.P.vel.z = 0;
+    G.P.onGround = true;
+    return { y, detail: ob2 && ob2.detail, passes };
+  });
+  check(lift.y > 4 && /Through it, 1\/3/.test(lift.detail || "") && lift.passes === 1, "a swing through the gust counts and lifts", lift);
+
+  const afterGust = await page.evaluate(() => {
+    const killed = G.test.finishJob();
+    let n = 0;
+    for (; n < 240; n++) {
       G.test.step(1 / 60, 1);
       const ob = G.game.progress.objective;
-      if (ob && ob.n === 3 && /FLUSH THE CLOGS/.test(ob.title || "") && !G.test.action().jobs.active) break;
+      const job = G.test.action().jobs.active;
+      if (!job && ob && /FLUSH THE CLOGS/.test(ob.title || "") && ob.n === 3) break;
     }
     const ob = G.game.progress.objective;
-    return { n, title: ob && ob.title, count: ob && ob.n, of: ob && ob.of, job: G.test.action().jobs.active && G.test.action().jobs.active.type };
+    return { n, killed, title: ob && ob.title, count: ob && ob.n, job: G.test.action().jobs.active && G.test.action().jobs.active.type, king: G.game.progress.king };
   });
-  check(!early.job && early.title === "FLUSH THE CLOGS" && early.count === 3 && early.of === 12, "three flushes are still the clog card", early);
+  check(afterGust.killed && !afterGust.job && afterGust.title === "FLUSH THE CLOGS" && afterGust.count === 3 && afterGust.king !== "awake", "after the gust the clog card returns at 3/12, and the King still sleeps", afterGust);
 
   const air = await page.evaluate(() => {
     const id = G.game.targets().find((t) => t.kind === "clog" && !t.done);

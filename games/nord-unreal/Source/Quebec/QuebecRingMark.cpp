@@ -1,4 +1,5 @@
 #include "QuebecRingMark.h"
+#include "QuebecBanner.h"
 #include "QuebecRing.h"
 #include "QuebecGameplay.h"
 #include "QuebecPlayerState.h"
@@ -100,22 +101,22 @@ void AQuebecRing::BuildMarks()
     const FVector Home = FVector(QuebecRing::StandX, QuebecRing::StandY, 0.) - Origin + FVector(0., 0., 8.);
     const FVector PostScale = FVector(28., 28., 160.) / 100.f;
     AddPost(TEXT("LawnPost"), Lawn, PostScale, Lime);
-    AddCaption(TEXT("LawnName"), Lawn + FVector(0., 0., 120.), TEXT("PELOUSE"));
+    AddCaption(TEXT("LawnName"), Lawn + FVector(0., 0., 120.), FString(UTF8_TO_TCHAR(QuebecBanner::Lawn)));
     AddPost(TEXT("AlleePost"), Allee, PostScale, Ink);
-    AddCaption(TEXT("AlleeName"), Allee + FVector(0., 0., 120.), TEXT("ALLEE"));
+    AddCaption(TEXT("AlleeName"), Allee + FVector(0., 0., 120.), FString(UTF8_TO_TCHAR(QuebecBanner::Alley)));
     AddPost(TEXT("StandRing"), Home, FVector(160., 160., 12.) / 100.f, Cream);
-    AddCaption(TEXT("StandName"), Home + FVector(0., 0., 70.), TEXT("VELO"));
+    AddCaption(TEXT("StandName"), Home + FVector(0., 0., 70.), FString(UTF8_TO_TCHAR(QuebecBanner::Bike)));
 }
 
 FString AQuebecRing::DriveLine(bool bPortrait) const
 {
     if (Leg == QuebecRing::Lawn)
-        return bPortrait ? FString(TEXT("km/h  /  ALLEE")) : FString(TEXT("Pedal on to the allée"));
+        return bPortrait ? FString(TEXT("km/h  /  ALLEY")) : FString(TEXT("Pedal on to the alley"));
     if (Leg == QuebecRing::Allee)
         return bPortrait ? FString(TEXT("km/h  /  STAND")) : FString(TEXT("Pedal back to the stand"));
     if (Leg == QuebecRing::Stand)
-        return bPortrait ? FString(TEXT("km/h  /  PELOUSE")) : FString(TEXT("Hold gas to pedal to the lawn"));
-    return bPortrait ? FString(TEXT("km/h  /  VELO")) : FString(TEXT("Hold gas to pedal"));
+        return bPortrait ? FString(TEXT("km/h  /  LAWN")) : FString(TEXT("Hold gas to pedal to the lawn"));
+    return bPortrait ? FString(TEXT("km/h  /  BIKE")) : FString(TEXT("Hold gas to pedal"));
 }
 
 void AQuebecRing::Tick(float DeltaSeconds)
@@ -153,18 +154,18 @@ void AQuebecRing::Tick(float DeltaSeconds)
     if (Next.Leg == QuebecRing::Lawn)
     {
         UE_LOG(LogTemp, Display, TEXT("NORD_RING lawn"));
-        QuebecNotice::Show(Player, TEXT("PELOUSE"), TEXT("Vers l'allée."), 4.f);
+        QuebecNotice::Show(Player, FString(UTF8_TO_TCHAR(QuebecBanner::Lawn)), FString(UTF8_TO_TCHAR(QuebecBanner::ToTheAlley)), 4.f);
     }
     else if (Next.Leg == QuebecRing::Allee)
     {
         UE_LOG(LogTemp, Display, TEXT("NORD_RING allee"));
-        QuebecNotice::Show(Player, TEXT("ALLEE"), TEXT("Ramène le vélo au support."), 4.f);
+        QuebecNotice::Show(Player, FString(UTF8_TO_TCHAR(QuebecBanner::Alley)), FString(UTF8_TO_TCHAR(QuebecBanner::BackToStand)), 4.f);
     }
     else if (Prize > 0 && Stats)
     {
         Stats->Cash += Prize;
         Stats->Changed();
         UE_LOG(LogTemp, Display, TEXT("NORD_RING paid %d cash=%d"), Prize, Stats->Cash);
-        QuebecNotice::Show(Player, TEXT("TOUR"), FString::Printf(TEXT("%d $"), Prize), 4.f);
+        QuebecNotice::Show(Player, FString(UTF8_TO_TCHAR(QuebecBanner::Lap)), FString::Printf(TEXT("%d $"), Prize), 4.f);
     }
 }

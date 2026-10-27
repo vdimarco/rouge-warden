@@ -49,6 +49,7 @@ float vnoise(vec2 p) { vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 *
 // Uniforms shared by every city material (vertex and fragment stage alike)
 const COMMON_UNI = /* glsl */ `
 uniform float uTime;
+uniform float uDay; // 0 painted sunset, 1 blue hour
 uniform vec3 uSunDir;
 uniform vec2 uSunXZ;
 uniform vec3 uFog; // near, density, haze height
@@ -83,10 +84,13 @@ vec3 skyHaze(vec3 d) {
   vec3 c = uHaveSky > 0.5 ? textureLod(uSky, skyUV(h), 3.0).rgb : skyRamp(skyT(h));
   // far things go violet, like the far shore in the key art: darker than the sky behind them
   c = mix(c, vec3(0.3, 0.16, 0.5), 0.42);
-  // street dust: level air takes the avenue's warm light. Above that it stays the sky.
+  // street dust: level air takes the hour. Sunset stays the avenue's warm light. Blue hour
+  // walks it toward the sky's violet (Gurney, Color and Light). Above that it stays the sky.
   // The height split is the 18 m layer below (Wenzel, SIGGRAPH 2006, the height only).
   float level = 1.0 - smoothstep(0.02, 0.22, normalize(d).y);
-  return mix(c, vec3(0.78, 0.42, 0.26), level * 0.78);
+  float day = clamp(uDay, 0.0, 1.0);
+  vec3 dust = mix(vec3(0.78, 0.42, 0.26), vec3(0.28, 0.20, 0.68), day);
+  return mix(c, dust, level * mix(0.78, 0.92, day));
 }
 // Haze toward the sky colour behind the point. It is thick near the ground and thin up high (height fog), so the Needle
 // and the aerial view keep their shapes. The fragment stage snaps it to four print-like steps.
@@ -166,21 +170,39 @@ vec3 wetAsphalt(vec3 col, vec3 wp, vec3 N, float wet, float sunVis) {
   vec3 fill = vec3(1.0, 0.55, 0.28) * (1.0 - sunVis) * cover * 0.14;
   return col + sky * fres * cover * (0.55 + 0.6 * puddle) + glint + fill;
 }
-// James Gurney, Color and Light (2010): a shadow is its own hue, and the step between
-// shadow and light is not their average. Cool shade goes teal. That step goes rose.
-// Bright lamps, the sun, and near-black ink stay.
-vec3 gradeInk(vec3 c) {
+// James Gurney, Color and Light (2010): a shadow takes the sky's colour, the light takes
+// the hour's, and the step between them is not their average. The dark end of the shade
+// is violet. Open shade stays teal. The step stays rose. A sunlit face takes amber.
+// uDay walks that boundary toward blue hour: the violet takes the teal, and the amber
+// leaves. Bright lamps, the sun disc, and near-black ink stay. A pixel that was not
+// ink is not pushed under it.
+vec3 gradeInk(vec3 c, float sun) {
   float y = dot(c, vec3(0.299, 0.587, 0.114));
   float hold = smoothstep(0.08, 0.12, y) * (1.0 - smoothstep(0.30, 0.44, y));
+  float day = clamp(uDay, 0.0, 1.0);
+  float s = clamp(sun, 0.0, 1.0);
+  vec3 violet = vec3(c.r * 0.62, c.g * 0.50, c.b * 1.18 + 0.04);
   vec3 teal = vec3(c.r * 0.55, c.g * 1.35 + 0.055, c.b * 0.58);
   vec3 rose = vec3(c.r * 1.30 + 0.03, c.g * 0.68, c.b * 0.90);
-  float t = smoothstep(0.16, 0.30, y);
-  return mix(c, mix(teal, rose, t), hold);
+  vec3 amber = vec3(c.r * 1.20 + 0.045, c.g * 0.96, c.b * 0.48);
+  // The dark end of the shade is violet. Open shade stays teal. Blue hour moves
+  // that boundary up, so the teal gives way to the sky.
+  float violetW = 1.0 - smoothstep(mix(0.125, 0.22, day), mix(0.175, 0.32, day), y);
+  vec3 shade = mix(teal, violet, violetW);
+  // The sun's own step is amber, and only at the painted sunset. Shade stays rose.
+  float amberW = (1.0 - day) * smoothstep(0.30, 0.42, y) * smoothstep(0.45, 1.0, s);
+  vec3 lit = mix(rose, amber, amberW);
+  vec3 inked = mix(shade, lit, smoothstep(0.16, 0.30, y));
+  vec3 g = mix(c, inked, hold);
+  float src = max(c.r, max(c.g, c.b));
+  float m = max(g.r, max(g.g, g.b));
+  g = mix(g, g * (0.188 / max(m, 1e-4)), step(0.188, src) * (1.0 - step(0.188, m)));
+  return g;
 }
 // Haze in four print-like steps toward the sky's own colour in that direction
 vec3 fogMix(vec3 col, vec3 wp, float maxF) {
   vec3 v = normalize(wp - cameraPosition);
-  return mix(gradeInk(col), skyHaze(v), comicPoster(fogAmount(wp) * maxF, 4.0));
+  return mix(gradeInk(col, sunT(shadowDepthAt(wp))), skyHaze(v), comicPoster(fogAmount(wp) * maxF, 4.0));
 }
 `;
 
@@ -193,6 +215,8 @@ varying vec4 vFog;
 void fogVertex(vec3 wp) {
   vec3 v = normalize(wp - cameraPosition);
   vFog = vec4(skyHaze(v), fogAmount(wp));
+  // keeps uDay live in vertex programs; a ten-thousandth of fog does not move a print step
+  vFog.a = min(vFog.a + clamp(uDay, 0.0, 1.0) * 1e-4, 1.0);
 }
 `;
 // An outline hull (a twin of an instanced mesh, back faces, pushed out along the normal so the line stays INK_PX wide)
@@ -320,9 +344,10 @@ vec3 roomTint(float c, float s) {
   if (c < 0.8) return vec3(1.08, 0.88, 0.66);
   return vec3(0.94, 0.94, 0.9);
 }
-vec3 wallColor(int k, float shop, float sd, float salt, float h1, float h2, float h3, vec3 N, vec3 V, float dist, out float lineY, out vec4 awning, out vec3 clay, out vec4 spill) {
+vec3 wallColor(int k, float shop, float sd, float salt, float h1, float h2, float h3, vec3 N, vec3 V, float dist, out float lineY, out vec4 awning, out vec3 clay, out vec4 spill, out vec4 storey) {
   clay = vec3(1.0);
   spill = vec4(0.0);
+  storey = vec4(0.0);
   float fh = vInfo.z, bay = vInfo.w;
   float u = vFace.x, faceW = vFace.y, top = vFace.w, y = vW.y;
   bool glassy = k <= 1;
@@ -404,6 +429,13 @@ vec3 wallColor(int k, float shop, float sd, float salt, float h1, float h2, floa
   else if (fr == F_CURTAIN) { wr = vec4(0.0, mix(0.1, 0.22, hw2), 1.0, 1.0); mun = vec2(floor(2.0 + hw1 * 2.99), hw3 < 0.5 ? 1.0 : 2.0); }
   else if (fr == F_PUNCH) { float w = topRow ? 0.3 : mix(0.26, 0.4, hw1), y0 = topRow ? 0.36 : mix(0.3, 0.4, hw2); wr = vec4(0.5 - w * 0.5, y0, 0.5 + w * 0.5, y0 + (topRow ? 0.36 : mix(0.3, 0.42, hw3))); mun = vec2(hw1 < 0.5 ? 1.0 : 2.0, hw3 < 0.5 ? 1.0 : 2.0); }
   else if (fr == F_GRID) { float x0 = mix(0.06, 0.14, hw1); wr = vec4(x0, mix(0.08, 0.14, hw2), 1.0 - x0, mix(0.84, 0.92, hw3)); mun = vec2(floor(3.0 + hw1 * 2.99), floor(3.0 + hw2 * 1.99)); }
+  // The floor above a shop is its own storey (Ching, Form, Space, and Order: a string course
+  // marks the floor). A shorter sash, so it is not the same tile as the floors above it.
+  bool overShop = !street && shop > 0.5 && abs(id.y) < 0.5 && !glassy;
+  if (overShop) {
+    wr.y = max(wr.y, 0.38);
+    wr.w = min(max(wr.w, wr.y + 0.28), 0.84);
+  }
   // the window's own coordinates (a pair splits the cell in two), its metres per unit each way, and a pixel in metres
   float inSub = sub > 1.5 ? step(0.0, ft.x) * step(ft.x, 1.0) : 1.0;
   vec2 fc = sub > 1.5 ? vec2(fract(ft.x * 2.0), ft.y) : ft;
@@ -906,6 +938,22 @@ vec3 wallColor(int k, float shop, float sd, float salt, float h1, float h2, floa
   #endif
   // the street floor is cut from the floors above by a course line
   lineY = (glassy || shop > 0.5) ? gH : -1.0;
+  // Limestone at each floor of a shop building, and a deeper course plus a sill on the storey
+  // just above the shop. Printed after the grade, the way the awning is, so the paper does not
+  // take the stone. It fades before the band can shimmer.
+  if (!street && shop > 0.5 && id.y > -0.5 && !glassy) {
+    float px = max(fwidth(f.y), 1e-4);
+    float ground = 1.0 - step(0.5, abs(id.y));
+    float h = mix(0.14, 0.26, ground);
+    float stone = 1.0 - smoothstep(h - px, h + px, f.y);
+    float lip = smoothstep(h - 0.04 - px, h - 0.04 + px, f.y) * (1.0 - smoothstep(h + 0.02 - px, h + 0.02 + px, f.y));
+    float sill = smoothstep(wr.y - 0.06 - px, wr.y - 0.06 + px, f.y) * (1.0 - smoothstep(wr.y - px, wr.y + px, f.y));
+    float inX = smoothstep(wr.x - 0.06, wr.x, fc.x) * (1.0 - smoothstep(wr.z, wr.z + 0.06, fc.x));
+    vec3 stoneC = mix(vec3(0.58, 0.52, 0.44), vec3(0.90, 0.84, 0.72), smoothstep(0.15, 1.1, band));
+    vec3 lipC = vec3(0.36, 0.30, 0.26);
+    float a = max(stone, sill * inX * ground) * detail * inFloors0;
+    storey = vec4(mix(stoneC, lipC, clamp(lip, 0.0, 1.0)), a);
+  }
   // tower crowns: a short top tier on a glass tower is a louvred plant screen
   if (glassy && salt > 50.0 && y < top) {
     col = mix(comicCel(vec3(0.3, 0.32, 0.4), band), INKC, stripe(y / 0.6, 0.06) * 0.8);
@@ -991,8 +1039,9 @@ void main() {
   vec4 awn = vec4(0.0);
   vec3 clay = vec3(1.0);
   vec4 spill = vec4(0.0);
+  vec4 storey = vec4(0.0);
   if (N.y > 0.5) col = roofColor(k, h1, h2, N);
-  else col = wallColor(k, shop, sd, salt, h1, h2, h3, N, V, dist, lineY, awn, clay, spill);
+  else col = wallColor(k, shop, sd, salt, h1, h2, h3, N, V, dist, lineY, awn, clay, spill, storey);
   // a clogged district goes grey-green; the finale warms everything
   col = mix(col, vec3(dot(col, vec3(0.3, 0.5, 0.2))) * vec3(0.82, 0.98, 0.62), vClog * 0.38);
   col *= mix(vec3(1.0), vec3(1.08, 1.0, 0.9), uFinale);
@@ -1010,11 +1059,13 @@ void main() {
   col += vec3(1.0, 0.72, 0.39) * fold * foldSun * 0.22;
   if (lineY > 0.0) ink = max(ink, comicInk(abs(vW.y - lineY), wpx * 0.8));
   col = mix(col, INKC, ink);
-  // The clay is printed on the graded wall, the way the awning is. The grade itself stays the teal and rose paper.
+  // The clay is printed on the graded wall, the way the awning is. The grade stays the paper:
+  // violet at the dark end, teal in open shade, rose on the step, amber in the sun.
   // The lamp pool is printed after that, and it stays off the ink line.
-  vec3 graded = gradeInk(col) * clay;
+  vec3 graded = gradeInk(col, sunT(shadowDepthAt(vW))) * clay;
   graded = mix(graded, graded * spill.rgb + vec3(0.07, 0.025, 0.0), spill.a * (1.0 - ink));
   vec3 shown = mix(graded, mix(awn.rgb, INKC, ink), awn.a);
+  shown = mix(shown, mix(storey.rgb, INKC, ink), storey.a);
   gl_FragColor = vec4(mix(shown, vFog.rgb, comicPoster(vFog.a, 4.0)), 1.0);
 }`;
 
@@ -1350,8 +1401,19 @@ ${COMMON_FS}
 ${GROUND_PATTERN}
 uniform float uClog[6];
 uniform vec4 uDist[6];
+uniform vec4 uLamp[6]; // xyz unused except xy = lamp on the pavement, w = 1 when the slot is filled
 varying vec3 vW;
 varying vec3 vN;
+// A warm disc on the pavement under a street lamp. It dies within a few metres.
+// Gurney, Color and Light (2010): a local light colours the nearby surface and falls off.
+float lampPool(vec2 p) {
+  float a = 0.0;
+  for (int i = 0; i < 6; i++) {
+    float d = distance(p, uLamp[i].xy);
+    a = max(a, (1.0 - smoothstep(1.1, 6.4, d)) * step(0.5, uLamp[i].w));
+  }
+  return a;
+}
 float clogAt(vec2 p) {
   if (p.y > 110.0) return uClog[0];
   float best = 1e9, v = 0.0;
@@ -1380,7 +1442,12 @@ void main() {
   col = mix(col, DOTC, comicDots(vW.xz, 0.3, mix(0.62, 0.3, clamp(band, 0.0, 1.0))) * dw * 0.5);
   col = wetAsphalt(col, vW, N, gWet, sunVis);
   col = mix(col, INKC, clamp(ink, 0.0, 1.0));
-  gl_FragColor = vec4(fogMix(col, vW, 1.0), 1.0);
+  // The pool is printed after the grade and before the haze, the same way a shop's spill is.
+  vec3 graded = gradeInk(col, sunT(shadowDepthAt(vW + vec3(0.0, 0.1, 0.0))));
+  float pool = lampPool(vW.xz) * (1.0 - clamp(ink, 0.0, 1.0));
+  graded = mix(graded, graded * vec3(1.55, 0.86, 0.36) + vec3(0.07, 0.025, 0.0), pool);
+  vec3 hv = normalize(vW - cameraPosition);
+  gl_FragColor = vec4(mix(graded, skyHaze(hv), comicPoster(fogAmount(vW), 4.0)), 1.0);
 }`;
 
 // The lake: flat violet bands of mirror, inked wave strokes, the sun's road of light, print dots.
@@ -1483,7 +1550,7 @@ void main() {
     col = mix(col, vec3(1.0, 0.72, 0.3), 1.0 - smoothstep(0.9935 - 0.0008, 0.9935 + 0.0008, s));
     col = mix(col, ${hexv(PAL.sun)}, 1.0 - smoothstep(0.9985 - 0.0004, 0.9985 + 0.0004, s));
   }
-  gl_FragColor = vec4(gradeInk(col), 1.0);
+  gl_FragColor = vec4(gradeInk(col, clamp(dot(d, uSunDir) * 0.5 + 0.5, 0.0, 1.0)), 1.0);
 }`;
 
 // Trees: a trunk and two lumpy crown lobes, one instance each. Cel colours, leaf clumps in two flat tones, and an ink hull.
@@ -1549,7 +1616,7 @@ void main() {
   vec3 col = band < 1.0 ? mix(shd, mid, band) : mix(mid, lit, band - 1.0);
   float dw = 1.0 - clamp(band - 1.0, 0.0, 1.0);
   col = mix(col, DOTC, comicDots(vW.xz + vW.y * 0.5, 0.4, mix(0.6, 0.3, clamp(band, 0.0, 1.0))) * dw * 0.45);
-  gl_FragColor = vec4(mix(gradeInk(col), vFog.rgb, comicPoster(vFog.a, 4.0)), 1.0);
+  gl_FragColor = vec4(mix(gradeInk(col, sunT(vDepth)), vFog.rgb, comicPoster(vFog.a, 4.0)), 1.0);
 }`;
 
 // Cars and streetcars: they drive their lanes in the vertex shader, from uTime, with head and tail lights and an ink hull.
@@ -1644,7 +1711,7 @@ void main() {
   float front = step(0.5, vLN.x), back = step(0.5, -vLN.x);
   col = mix(col, vec3(1.0, 0.95, 0.7), light * front);
   col = mix(col, vec3(1.0, 0.1, 0.08), light * back);
-  gl_FragColor = vec4(mix(gradeInk(col), vFog.rgb, comicPoster(vFog.a, 4.0)), 1.0);
+  gl_FragColor = vec4(mix(gradeInk(col, sunT(vDepth)), vFog.rgb, comicPoster(vFog.a, 4.0)), 1.0);
 }`;
 
 // Roof props and curb furniture. aPart: 0 plain, 2 fan top, 3 wood staves, 4 leaves, 5 metal,
@@ -1762,7 +1829,7 @@ void main() {
   // thin things (masts, poles, tower legs, curb posts) take a dark rim where they turn away from the eye
   float rim = part == 5 || part == 7 || part >= 8 ? 1.0 - smoothstep(0.2, 0.5, abs(dot(N, normalize(cameraPosition - vW)))) : 0.0;
   col = mix(col, INKC, clamp(max(ink, rim * 0.8), 0.0, 1.0));
-  gl_FragColor = vec4(mix(gradeInk(col), vFog.rgb, comicPoster(vFog.a, 4.0)), 1.0);
+  gl_FragColor = vec4(mix(gradeInk(col, sunT(vDepth)), vFog.rgb, comicPoster(vFog.a, 4.0)), 1.0);
 }`;
 
 // Sidewalk steam. aP: x, y, z, phase. aS: size, rise, cycles per second, which puff.
@@ -1811,7 +1878,7 @@ void main() {
   float fill = 1.0 - smoothstep(-aa, aa, sd);
   float iw = clamp(px * 1.6, 0.08, 0.26);
   float ink = 1.0 - smoothstep(iw - aa, iw + aa, sd);
-  float haze = comicPoster(vFog.a, 4.0);
+  float haze = comicPoster(vFog.a + clamp(uDay, 0.0, 1.0) * 1e-4, 4.0);
   float A = ink * vLife * (1.0 - haze);
   if (A < 0.04) discard;
   col = mix(INKC, col, fill);
@@ -1878,7 +1945,7 @@ void main() {
   } else {
     col = comicCelX(vec3(0.24, 0.24, 0.42), band, vec3(1.4, 1.1, 0.8), vec3(0.06, 0.025, 0.0));
   }
-  gl_FragColor = vec4(mix(gradeInk(col), vFog.rgb, min(comicPoster(vFog.a, 4.0), 0.75)), 1.0);
+  gl_FragColor = vec4(mix(gradeInk(col, sunT(shadowDepthAt(vW))), vFog.rgb, min(comicPoster(vFog.a, 4.0), 0.75)), 1.0);
 }`;
 
 /* ---------------- the diorama (spec §9: shared geometry, a simple unlit material, no fog) ---------------- */
@@ -2145,6 +2212,7 @@ export function createCityView(renderer, scene, city, opts = {}) {
   const clogNow = new Float32Array(6), clogWant = new Float32Array(6);
   const U = {
     uTime: { value: 0 },
+    uDay: { value: 0 },
     uSunDir: { value: new THREE.Vector3(SUN_DIR.x, SUN_DIR.y, SUN_DIR.z) },
     uSunXZ: { value: new THREE.Vector2(SUN_DIR.x / sunLen, SUN_DIR.z / sunLen) },
     // the art (art/sky.webp, art/windows.webp) arrives later; until then (or if a file fails) the shaders draw the procedural look
@@ -2161,7 +2229,7 @@ export function createCityView(renderer, scene, city, opts = {}) {
     uWater: { value: col3(COLORS.water) },
   };
   const pick = (...names) => Object.fromEntries(names.map((n) => [n, U[n]]));
-  const COMMON_U = ["uTime", "uSunDir", "uSunXZ", "uFog", "uMap", "uMapBox", "uSky", "uHaveSky", "uSkyU", "uInkS"];
+  const COMMON_U = ["uTime", "uDay", "uSunDir", "uSunXZ", "uFog", "uMap", "uMapBox", "uSky", "uHaveSky", "uSkyU", "uInkS"];
 
   // Height (G) and shadow height (R) over the city, 2 m per step. Filled by the build, uploaded once when done.
   const mapData = new Uint8Array(MAP.nx * MAP.nz * 2);
@@ -2234,7 +2302,34 @@ export function createCityView(renderer, scene, city, opts = {}) {
   const landMat = mat(LANDMARK_VS, LANDMARK_FS, { ...pick(...COMMON_U, "uKing", "uFinale"),
     uNeedle: { value: new THREE.Vector4(N0.x, N0.z, N0.podY0, 0) }, uDome: { value: new THREE.Vector4(D0.x, D0.z, D0.r, X0.z) } });
   const landInk = mat(LANDMARK_HULL_VS, LANDMARK_HULL_FS, { ...pick(...COMMON_U), uInkK: inkK, uInkPx: { value: INK_PX }, uInkW: { value: 0 } }, { side: THREE.BackSide });
-  const groundMat = mat(GROUND_VS, GROUND_FS, { ...pick(...COMMON_U, "uClog"), ...GU });
+  const LAMP_N = 6;
+  const uLamp = Array.from({ length: LAMP_N }, () => new THREE.Vector4());
+  const groundMat = mat(GROUND_VS, GROUND_FS, { ...pick(...COMMON_U, "uClog"), ...GU, uLamp: { value: uLamp } });
+  // ShaderMaterial clones Vector4 arrays, so the live slots are the material's copies.
+  const lampU = groundMat.uniforms.uLamp.value;
+  // The six lamps nearest the camera. The rest of the city stays unlit by them, so the ground
+  // shader's loop stays six wide.
+  function nearLamps(camPos) {
+    if (!camPos) return;
+    const cx = camPos.x, cz = camPos.z;
+    const best = [];
+    for (let i = 0; i < lampSpots.length; i += 2) {
+      const x = lampSpots[i], z = lampSpots[i + 1];
+      const d = (x - cx) * (x - cx) + (z - cz) * (z - cz);
+      if (d > 6400) continue;
+      if (best.length < LAMP_N) {
+        best.push({ d, x, z });
+        if (best.length === LAMP_N) best.sort((a, b) => a.d - b.d);
+      } else if (d < best[LAMP_N - 1].d) {
+        best[LAMP_N - 1] = { d, x, z };
+        best.sort((a, b) => a.d - b.d);
+      }
+    }
+    for (let i = 0; i < LAMP_N; i++) {
+      const s = best[i];
+      lampU[i].set(s ? s.x : 0, s ? s.z : 0, 0, s ? 1 : 0);
+    }
+  }
   const waterMat = mat(GROUND_VS, WATER_FS, pick(...COMMON_U, "uWater"));
   const skyMat = mat(SKY_VS, SKY_FS, pick(...COMMON_U), { side: THREE.BackSide, depthWrite: false });
   // instanced meshes get an ink twin: the same geometry drawn again as back faces pushed out along the normals
@@ -3004,10 +3099,12 @@ export function createCityView(renderer, scene, city, opts = {}) {
   function makeSteam() {
     steam = instancedMesh(new THREE.PlaneGeometry(1, 1), { aP: 4, aS: 4 }, 3200, steamMat, 4);
   }
-  // lamps: runs of 3 numbers (x, z, turn)
+  // lamps: runs of 3 numbers (x, z, turn). The spots stay, so a pavement pool can find the nearest ones.
+  const lampSpots = [];
   function addLamps(c) {
     const l = c.lamps, I = props.lamp;
     for (let o = 0; o < l.length; o += 3) {
+      lampSpots.push(l[o], l[o + 1]);
       const i = slot(I);
       if (i < 0) break;
       put(I, "aP", i, l[o], 0, l[o + 1], l[o + 2]); put(I, "aS", i, 1, 1, 1, 0.5);
@@ -3235,6 +3332,7 @@ export function createCityView(renderer, scene, city, opts = {}) {
     stats,
     // which art files arrived (art/sky.webp, art/windows.webp): the tests read this
     art: { loaded: false, sky: false, windows: false, rooms: false },
+    lampSpots,
     // Builds a few units per call within the time budget and a hard count (the clock can stand still in tests).
     build(budgetMs = 6) {
       if (next >= units.length) return true;
@@ -3265,6 +3363,7 @@ export function createCityView(renderer, scene, city, opts = {}) {
       U.uKing.value += (kingWant - U.uKing.value) * (1 - Math.exp(-dt * 2));
       U.uFinale.value += (finaleWant - U.uFinale.value) * (1 - Math.exp(-dt * 0.8));
       if (sky && camPos) sky.position.set(camPos.x, camPos.y, camPos.z);
+      nearLamps(camPos);
       // ink lines are a few pixels wide: a touch wider on the headset's finer pixels and on a big flat window
       renderer.getDrawingBufferSize(inkSize);
       U.uInkS.value = renderer.xr.isPresenting ? 1.15 : clamp(inkSize.y / 540, 1, 1.5);
@@ -3320,6 +3419,8 @@ export function createCityView(renderer, scene, city, opts = {}) {
     },
     // The sky colour in a direction (a THREE.Vector3 or {x, y, z}), read from the same painted strip (or the same banded ramp).
     skyColorAt(dir, out = new THREE.Color()) { return skyJS(dir, out); },
+    // 0 is the painted sunset. 1 is blue hour. Play walks this; a still can pin it.
+    setDay(v) { U.uDay.value = v < 0 ? 0 : v > 1 ? 1 : v; },
   };
   // car theft: the street traffic on the CPU, and hiding a stolen car's instance (see trafficCars above)
   V.traffic = trafficCars;

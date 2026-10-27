@@ -1,0 +1,4 @@
+- [x] Replace the sunset stand-in with the one-sample scattering gradient
+- [x] Keep the spawn weather clear, and keep the opening pitch, the aim, and the socket
+- [x] Run `Scripts/test_opening_scatter.py`
+- [ ] Confirm the sky atmosphere in Unreal (editor not available here)

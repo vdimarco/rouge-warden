@@ -1,3 +1,13 @@
-# Rank the avenues on the radar
+# Proposal: the Sherbrooke planting strip continues
 
-UI polish is the aesthetics score a picture can still move. The radar draws every street with the same grey stroke, so a 14 m avenue and a side street look alike. This round draws a road at least 9 m wide as a dark casing with a light center, after the side streets. Narrower streets stay the grey line. The clip that keeps outside segments off the rim is unchanged. No reference-game assets.
+## What
+
+The Sherbrooke frame keeps the lanes and the sidewalks. Past the crowns already inside 50 m, it draws the surveyed park trees that stand in the planting strip beside the same road, out to 90 m along the avenue.
+
+## Why
+
+The near side of the avenue had crowns. The road beyond the blue car was open sky. Those trees are already in the park survey.
+
+## Scope
+
+The strip helper, the Sherbrooke picture, and the scorecard. The opening aim stays. Unreal is not installed, so the editor does not instance these crowns.

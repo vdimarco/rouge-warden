@@ -29,7 +29,9 @@ class StreetMeterTests(unittest.TestCase):
         self.assertIn('DrawRect(Paper.CopyWithNewOpacity(.9f), PosX, PosY, Fill, Lip)', source)
         self.assertIn('DrawRect(bCutFill ? Cut : Paper.CopyWithNewOpacity(.85f), At, PosY, Gap, BarHeight)', source)
         self.assertIn('return bBusy ? 158.f : 0.f', source)
-        self.assertIn('PISTOLET', (ROOT / 'Source/Quebec/QuebecCombat.cpp').read_text())
+        self.assertIn('PISTOL', (ROOT / 'Source/Quebec/QuebecCombat.cpp').read_text())
+        self.assertNotIn('PISTOLET', (ROOT / 'Source/Quebec/QuebecCombat.cpp').read_text())
+        self.assertIn('nordWeapon', (ROOT / 'Source/Quebec/QuebecGameplay.cpp').read_text())
 
     def test_rule_stays_in_the_padding_and_the_meter_stays_a_bar(self):
         for scale in (0.4, 0.6, 1.0, 1.5):

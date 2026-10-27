@@ -1,4 +1,5 @@
 #include "QuebecCart.h"
+#include "QuebecBanner.h"
 #include "QuebecStandRules.h"
 #include "QuebecJobRules.h"
 #include "QuebecGameplay.h"
@@ -125,7 +126,7 @@ void AQuebecCart::BuildStall()
     AddPart(TEXT("CartPoleL"), Cube, At + FVector(-70., -30., 130.), FVector(8., 8., 160.), Ink);
     AddPart(TEXT("CartPoleR"), Cube, At + FVector(70., -30., 130.), FVector(8., 8., 160.), Ink);
     AddCaption(TEXT("CartName"), At + FVector(0., 0., 260.), TEXT("LISE"), 120.f);
-    AddCaption(TEXT("CartSign"), At + FVector(0., 0., 180.), TEXT("CASSE-CROUTE"), 28.f);
+    AddCaption(TEXT("CartSign"), At + FVector(0., 0., 180.), FString(UTF8_TO_TCHAR(QuebecBanner::Snack)), 28.f);
 }
 
 FString AQuebecCart::GetPrompt(const APawn* Pawn) const
@@ -138,14 +139,14 @@ FString AQuebecCart::GetPrompt(const APawn* Pawn) const
         Stats->Stars, bEscape, false, false);
     if (Wanted == QuebecStand::EGood::None)
     {
-        if (bEscape && Stats->Stars > 0) return TEXT("[ E ]  CASSE-CROÛTE  /  Pas pendant Cinq étoiles");
-        return TEXT("[ E ]  CASSE-CROÛTE  /  T'es correct");
+        if (bEscape && Stats->Stars > 0) return FString::Printf(TEXT("[ E ]  %s  /  %s"), UTF8_TO_TCHAR(QuebecBanner::Snack), UTF8_TO_TCHAR(QuebecBanner::SnackBusy));
+        return FString::Printf(TEXT("[ E ]  %s  /  %s"), UTF8_TO_TCHAR(QuebecBanner::Snack), UTF8_TO_TCHAR(QuebecBanner::SnackFine));
     }
     const int32 Price = QuebecStand::PriceOf(Wanted);
-    const TCHAR* Name = Wanted == QuebecStand::EGood::Health ? TEXT("Trousse")
-        : Wanted == QuebecStand::EGood::Armor ? TEXT("Veste") : TEXT("Une étoile");
-    if (Stats->Cash < Price) return FString::Printf(TEXT("[ E ]  %d $  %s  /  Pas assez"), Price, Name);
-    return FString::Printf(TEXT("[ E ]  %d $  %s"), Price, Name);
+    const FString Name = Wanted == QuebecStand::EGood::Health ? FString(UTF8_TO_TCHAR(QuebecBanner::Kit))
+        : Wanted == QuebecStand::EGood::Armor ? FString(UTF8_TO_TCHAR(QuebecBanner::VestShort)) : FString(UTF8_TO_TCHAR(QuebecBanner::OneStar));
+    if (Stats->Cash < Price) return FString::Printf(TEXT("[ E ]  %d $  %s  /  %s"), Price, *Name, UTF8_TO_TCHAR(QuebecBanner::NotEnough));
+    return FString::Printf(TEXT("[ E ]  %d $  %s"), Price, *Name);
 }
 
 bool AQuebecCart::HandleInteract(AQuebecController* Player)
@@ -169,10 +170,10 @@ bool AQuebecCart::HandleInteract(AQuebecController* Player)
     {
         if (Wanted == QuebecStand::EGood::None)
         {
-            if (bEscape && Stats->Stars > 0) QuebecNotice::Show(Player, TEXT("PAS MAINTENANT"), TEXT("Cinq étoiles d'abord."), 3.f);
-            else QuebecNotice::Show(Player, TEXT("T'ES CORRECT"), TEXT("Rien à vendre."), 3.f);
+            if (bEscape && Stats->Stars > 0) QuebecNotice::Show(Player, FString(UTF8_TO_TCHAR(QuebecBanner::NotNow)), FString(UTF8_TO_TCHAR(QuebecBanner::StarsFirst)), 3.f);
+            else QuebecNotice::Show(Player, FString(UTF8_TO_TCHAR(QuebecBanner::YouAreFine)), FString(UTF8_TO_TCHAR(QuebecBanner::NothingToSell)), 3.f);
         }
-        else QuebecNotice::Show(Player, TEXT("PAS ASSEZ"), FString::Printf(TEXT("Il te faut %d $."), QuebecStand::PriceOf(Wanted)), 3.f);
+        else QuebecNotice::Show(Player, FString(UTF8_TO_TCHAR(QuebecBanner::NotEnough)), FString::Printf(TEXT("You need %d $."), QuebecStand::PriceOf(Wanted)), 3.f);
         return true;
     }
     const int32 BeforeCash = Stats->Cash;
@@ -191,11 +192,11 @@ bool AQuebecCart::HandleInteract(AQuebecController* Player)
     {
         Stats->Cash = BeforeCash;
         Stats->Changed();
-        QuebecNotice::Show(Player, TEXT("T'ES CORRECT"), TEXT("Rien à vendre."), 3.f);
+        QuebecNotice::Show(Player, FString(UTF8_TO_TCHAR(QuebecBanner::YouAreFine)), FString(UTF8_TO_TCHAR(QuebecBanner::NothingToSell)), 3.f);
         return true;
     }
-    const TCHAR* Title = Sale.Bought == QuebecStand::EGood::Health ? TEXT("TROUSSE")
-        : Sale.Bought == QuebecStand::EGood::Armor ? TEXT("VESTE") : TEXT("PLUS CALME");
+    const FString Title = Sale.Bought == QuebecStand::EGood::Health ? FString(UTF8_TO_TCHAR(QuebecBanner::KitTitle))
+        : Sale.Bought == QuebecStand::EGood::Armor ? FString(UTF8_TO_TCHAR(QuebecBanner::Vest)) : FString(UTF8_TO_TCHAR(QuebecBanner::Calmer));
     Player->PlayFeedback(EQuebecFeedbackCue::Checkpoint);
     QuebecNotice::Show(Player, Title, FString::Printf(TEXT("%d $"), QuebecStand::PriceOf(Sale.Bought)), 3.f);
     UE_LOG(LogTemp, Display, TEXT("NORD_STAND buy good=%d price=%d cash=%d"), static_cast<int32>(Sale.Bought), QuebecStand::PriceOf(Sale.Bought), Stats->Cash);

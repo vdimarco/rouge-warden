@@ -1,0 +1,5 @@
+- [x] Join collinear footprint edges before counting a dusk wall
+- [x] Keep a single edge under five metres dark
+- [x] Keep the opening pitch, the aim, and the socket
+- [x] Run `Scripts/test_opening_windows.py`
+- [ ] Confirm the joined face in Unreal (editor not available here)

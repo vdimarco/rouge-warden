@@ -38,7 +38,7 @@ CANDIDATE_PAIR = re.compile(r"[A-Za-z]\w*(?:\.\w+)+ [+-]?\d+(?:\.\d+)?")
 
 # The public host runs the live sky. A QA lifecycle may pin it, for example
 # NORD_SKY_ARGS="-NordFixedSky" (the authored afternoon) or
-# NORD_SKY_ARGS="-NordHour=15 -NordWeather=Clear -NordFreezeTime -NordFreezeWeather".
+# NORD_SKY_ARGS="-NordHour=22 -NordWeather=Clear -NordFreezeTime -NordFreezeWeather".
 # Only these host flags are accepted; the friend shows the host's replicated sky.
 SKY_ARGUMENT = re.compile(r"-Nord(?:FixedSky|DynamicSky|FreezeTime|FreezeWeather|Hour=\d{1,2}(?:\.\d+)?|DayMinutes=\d{1,3}(?:\.\d+)?"
                           r"|SkySeed=\d{1,10}|Weather=(?:Clear|Breezy|Overcast|Fog|Drizzle|Rain))", re.IGNORECASE)
@@ -159,7 +159,7 @@ def preflight():
 
 
 def sky_arguments():
-    arguments = os.environ.get("NORD_SKY_ARGS", "-NordHour=15 -NordFreezeTime").split()
+    arguments = os.environ.get("NORD_SKY_ARGS", "-NordHour=22 -NordFreezeTime").split()
     for argument in arguments:
         require(SKY_ARGUMENT.fullmatch(argument), "NORD_SKY_ARGS accepts only -NordFixedSky, -NordDynamicSky, -NordFreezeTime, "
                 "-NordFreezeWeather, -NordHour=, -NordDayMinutes=, -NordSkySeed= and -NordWeather=; rejected " + repr(argument))
@@ -418,7 +418,7 @@ def self_check():
     assert all("-NoDebugExecBindings" in command for command in (host, friend))
     assert all("-PixelStreamingKeyFilter=Tilde" in command for command in (host, friend))
     with patch.dict(os.environ, {}, clear=True):
-        assert [argument for argument in game_command(False, Path("host.log")) if argument.lower().startswith("-nord")] == ["-NordStreamFps", "-NordTouchControls", "-NordIdleThrottle", "-NordHour=15", "-NordFreezeTime"]
+        assert [argument for argument in game_command(False, Path("host.log")) if argument.lower().startswith("-nord")] == ["-NordStreamFps", "-NordTouchControls", "-NordIdleThrottle", "-NordHour=22", "-NordFreezeTime"]
         assert stream_settings() == {"flags": ["idle"], "start_bitrate": 2000000, "min_bitrate": 100000,
                                      "max_bitrate": 12000000, "scheduling": 0}
     with patch.dict(os.environ, {"NORD_STREAM_BITRATE": "1000000,300000,4000000", "NORD_STREAM_SCHEDULING": "1"}):
@@ -470,7 +470,7 @@ def self_check():
               "-PixelStreamingWebRTCStartBitrate=2000000", "-PixelStreamingKeyFilter=Tilde"]
     today = {False: [str(BINARY), "Quebec", "/Game/Maps/LaFontaine?listen", *common, "-PixelStreamingID=NordHost",
                      "-ExecCmds=" + today_quality, "-abslog=host.log", "-NordStreamFps", "-NordTouchControls", "-NordIdleThrottle",
-                     "-port=7791", "-NordHour=15", "-NordFreezeTime"],
+                     "-port=7791", "-NordHour=22", "-NordFreezeTime"],
              True: [str(BINARY), "Quebec", "127.0.0.1:7791", *common, "-PixelStreamingID=NordFriend1", "-ExecCmds=" + today_quality,
                     "-abslog=friend.log", "-NordStreamFps", "-NordTouchControls", "-NordIdleThrottle", "-NordNoCampaignSave",
                     "-saveddirsuffix=BrowserGuest"]}

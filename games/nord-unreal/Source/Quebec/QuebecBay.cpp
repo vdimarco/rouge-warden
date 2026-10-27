@@ -1,4 +1,5 @@
 #include "QuebecBay.h"
+#include "QuebecBanner.h"
 #include "QuebecBayRules.h"
 #include "QuebecJobRules.h"
 #include "QuebecGameplay.h"
@@ -127,7 +128,7 @@ void AQuebecBay::BuildBay()
     AddPart(TEXT("BayDisc"), Cylinder, At + FVector(0., 0., 4.), FVector(200., 200., 6.), Cream);
     AddPart(TEXT("BayBench"), Cube, At + FVector(0., 0., 42.), FVector(150., 70., 78.), Ink);
     AddPart(TEXT("BaySign"), Cube, At + FVector(0., 0., 160.), FVector(120., 8., 36.), Lime);
-    AddCaption(TEXT("BayName"), At + FVector(0., 0., 240.), TEXT("ATELIER"), 90.f);
+    AddCaption(TEXT("BayName"), At + FVector(0., 0., 240.), FString(UTF8_TO_TCHAR(QuebecBanner::Shop)), 90.f);
 }
 
 FString AQuebecBay::GetPrompt(const APawn* Pawn) const
@@ -136,10 +137,10 @@ FString AQuebecBay::GetPrompt(const APawn* Pawn) const
     const AQuebecPlayerState* Stats = Pawn->GetPlayerState<AQuebecPlayerState>();
     if (!Stats || Stats->IsDown()) return FString();
     const AQuebecCar* Car = NearestHurtCar();
-    if (!Car) return TEXT("[ E ]  ATELIER  /  Aucun char");
+    if (!Car) return FString::Printf(TEXT("[ E ]  %s  /  %s"), UTF8_TO_TCHAR(QuebecBanner::Shop), UTF8_TO_TCHAR(QuebecBanner::NoCar));
     const int32 Price = QuebecBay::PriceFor(static_cast<double>(Car->BodyDamage));
-    if (Stats->Cash < Price) return FString::Printf(TEXT("[ E ]  %d $  /  Pas assez"), Price);
-    return FString::Printf(TEXT("[ E ]  %d $  Réparer"), Price);
+    if (Stats->Cash < Price) return FString::Printf(TEXT("[ E ]  %d $  /  %s"), Price, UTF8_TO_TCHAR(QuebecBanner::NotEnough));
+    return FString::Printf(TEXT("[ E ]  %d $  %s"), Price, UTF8_TO_TCHAR(QuebecBanner::Repair));
 }
 
 bool AQuebecBay::HandleInteract(AQuebecController* Player)
@@ -160,12 +161,12 @@ bool AQuebecBay::HandleInteract(AQuebecController* Player)
     const QuebecBay::FQuote Bill = QuebecBay::Quote(Stats->Cash, Damage, false, false, Car != nullptr, bPolice);
     if (Bill.Result == QuebecBay::EBill::None)
     {
-        QuebecNotice::Show(Player, TEXT("RIEN A REPARER"), TEXT("Amène un char abîmé."), 3.f);
+        QuebecNotice::Show(Player, FString(UTF8_TO_TCHAR(QuebecBanner::NothingToFix)), FString(UTF8_TO_TCHAR(QuebecBanner::BringACar)), 3.f);
         return true;
     }
     if (Bill.Result == QuebecBay::EBill::Short)
     {
-        QuebecNotice::Show(Player, TEXT("PAS ASSEZ"), FString::Printf(TEXT("Il te faut %d $."), Bill.Price), 3.f);
+        QuebecNotice::Show(Player, FString(UTF8_TO_TCHAR(QuebecBanner::NotEnough)), FString::Printf(TEXT("You need %d $."), Bill.Price), 3.f);
         return true;
     }
     Stats->Cash = Bill.Cash;
@@ -173,7 +174,7 @@ bool AQuebecBay::HandleInteract(AQuebecController* Player)
     Car->BodyDamage = 0.f;
     Car->ForceNetUpdate();
     Player->PlayFeedback(EQuebecFeedbackCue::Checkpoint);
-    QuebecNotice::Show(Player, TEXT("REPARE"), FString::Printf(TEXT("%d $"), Bill.Price), 3.f);
+    QuebecNotice::Show(Player, FString(UTF8_TO_TCHAR(QuebecBanner::Fixed)), FString::Printf(TEXT("%d $"), Bill.Price), 3.f);
     UE_LOG(LogTemp, Display, TEXT("NORD_BAY mend price=%d cash=%d"), Bill.Price, Stats->Cash);
     return true;
 }

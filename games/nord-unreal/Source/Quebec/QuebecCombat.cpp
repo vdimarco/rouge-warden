@@ -1,4 +1,5 @@
 #include "QuebecCombat.h"
+#include "QuebecBanner.h"
 #include "QuebecAimModel.h"
 #include "QuebecGameplay.h"
 #include "QuebecPlayerState.h"
@@ -55,14 +56,14 @@ namespace
     const FVector CombatAimSocketOffset(0., 70., 117.);
 
     const TCHAR* const CombatWeaponNames[] = {
-        TEXT("POINGS"), TEXT("BÂTON DE HOCKEY"), TEXT("PISTOLET"), TEXT("MITRAILLETTE"), TEXT("FUSIL À POMPE")
+        TEXT("FISTS"), TEXT("HOCKEY STICK"), TEXT("PISTOL"), TEXT("SMG"), TEXT("SHOTGUN")
     };
     const TCHAR* const CombatPickupNames[] = {
-        TEXT("BÂTON DE HOCKEY"), TEXT("PISTOLET"), TEXT("MITRAILLETTE"), TEXT("FUSIL À POMPE"), TEXT("VESTE PARE-BALLES"),
-        TEXT("TROUSSE DE SOINS")
+        TEXT("HOCKEY STICK"), TEXT("PISTOL"), TEXT("SMG"), TEXT("SHOTGUN"), TEXT("ARMOR VEST"),
+        TEXT("MEDKIT")
     };
-    // Original comic words, one per weapon slot.
-    const TCHAR* const CombatWords[] = {TEXT("POW!"), TEXT("CLAC!"), TEXT("PAN!"), TEXT("RA-TA-TA!"), TEXT("BOUM!")};
+    // Same English comic words as QuebecBanner.h, one per weapon slot.
+    const TCHAR* const CombatWords[] = {TEXT("WHACK!"), TEXT("CRACK!"), TEXT("POW!"), TEXT("RAT-A-TAT!"), TEXT("BOOM!")};
     const FColor CombatWordColors[] = {
         FColor(255, 255, 255), FColor(255, 238, 193), FColor(255, 222, 60), FColor(255, 140, 40), FColor(255, 70, 50)
     };
@@ -163,11 +164,11 @@ namespace
     };
     constexpr int32 CombatBangGunImpact = 5;
     const FCombatBang CombatBangs[] = {
-        {.14f, 95.f, .20f, .07f, .030f, .20f},   // Fists: POW!
-        {.10f, 900.f, .10f, .14f, .012f, .90f},  // Stick: CLAC!
-        {.28f, 140.f, .12f, .20f, .035f, .55f},  // Pistol: PAN!
-        {.12f, 180.f, .08f, .16f, .020f, .60f},  // SMG: RA-TA-TA!
-        {.45f, 80.f, .14f, .18f, .070f, .35f},   // Shotgun: BOUM!
+        {.14f, 95.f, .20f, .07f, .030f, .20f},   // Fists: WHACK!
+        {.10f, 900.f, .10f, .14f, .012f, .90f},  // Stick: CRACK!
+        {.28f, 140.f, .12f, .20f, .035f, .55f},  // Pistol: POW!
+        {.12f, 180.f, .08f, .16f, .020f, .60f},  // SMG: RAT-A-TAT!
+        {.45f, 80.f, .14f, .18f, .070f, .35f},   // Shotgun: BOOM!
         {.08f, 110.f, .10f, .04f, .020f, .30f},  // A bullet landing: a short thud.
     };
     static_assert(UE_ARRAY_COUNT(CombatBangs) == QuebecCombatModel::WeaponCount + 1, "One bang per weapon plus the bullet thud");
@@ -350,7 +351,7 @@ namespace
         if (const APawn* AttackerPawn = Attacker ? Attacker->GetPawn() : nullptr)
             Push += (Victim->GetActorLocation() - AttackerPawn->GetActorLocation()).GetSafeNormal2D() * 260.;
         Victim->StartKnock(Push, static_cast<float>(QuebecCombatModel::KnockOutSeconds), true);
-        if (Player) QuebecNotice::Show(Player, TEXT("K.-O."), TEXT("Retour à l'Hôpital Notre-Dame"), static_cast<float>(QuebecCombatModel::KnockOutSeconds));
+        if (Player) QuebecNotice::Show(Player, FString(UTF8_TO_TCHAR(QuebecBanner::KnockedWord)), FString(UTF8_TO_TCHAR(QuebecBanner::HospitalLine)), static_cast<float>(QuebecCombatModel::KnockOutSeconds));
         UE_LOG(LogTemp, Display, TEXT("NORD_COMBAT knockout player=%s by=%s"), *GetNameSafe(Victim), *GetNameSafe(Attacker));
     }
 
@@ -1068,10 +1069,10 @@ bool AQuebecWeaponPickup::TryGive(AQuebecCharacter* Taker)
     OnRep_Available();
     ForceNetUpdate();
     const int32 Slot = QuebecCombatModel::PickupWeaponSlot(Which);
-    const FString Detail = Which == QuebecCombatModel::EPickupKind::Armor ? FString(TEXT("+50 armure"))
-        : Which == QuebecCombatModel::EPickupKind::Health ? FString(TEXT("+50 santé"))
-        : QuebecCombatModel::Weapon(Slot).bMelee ? FString(TEXT("F ou clic gauche / frapper"))
-        : FString::Printf(TEXT("+%d munitions  /  Q change d'arme"), QuebecCombatModel::Weapon(Slot).AmmoPerPickup);
+    const FString Detail = Which == QuebecCombatModel::EPickupKind::Armor ? FString(UTF8_TO_TCHAR(QuebecBanner::ArmorGain))
+        : Which == QuebecCombatModel::EPickupKind::Health ? FString(UTF8_TO_TCHAR(QuebecBanner::HealthGain))
+        : QuebecCombatModel::Weapon(Slot).bMelee ? FString(UTF8_TO_TCHAR(QuebecBanner::MeleeHint))
+        : FString::Printf(TEXT("+%d rounds  /  Q changes weapon"), QuebecCombatModel::Weapon(Slot).AmmoPerPickup);
     if (AController* Player = Taker->GetController()) QuebecNotice::Show(Player, QuebecCombat::PickupName(Which), Detail, 2.5f);
     UE_LOG(LogTemp, Display, TEXT("NORD_COMBAT pickup kind=%d player=%s"), static_cast<int32>(Kind), *GetNameSafe(Taker));
     return true;

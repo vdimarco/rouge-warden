@@ -16,8 +16,10 @@
     <link rel="stylesheet" href="./intro.css">
     <link rel="stylesheet" href="./menu.css">
     <script type="module" src="./player.js"></script>
+    <script type="module" src="./mission-card.js"></script>
     <script type="module" src="./hero.js"></script>
     <script type="module" src="./crew.js"></script>
+    <script type="module" src="./place.js"></script>
     <script type="module" src="./intro.js"></script>
     <script type="module" src="./menu.js"></script>
     <script type="module" src="./install.js"></script>
@@ -38,6 +40,8 @@
           <button data-key="82" tabindex="-1">Recover</button>
           <button data-key="84" tabindex="-1">Race</button>
           <button data-key="113" tabindex="-1">Comic</button>
+          <button data-key="57" tabindex="-1">Sherbrooke</button>
+          <button data-key="48" tabindex="-1">Rachel</button>
         </div>
         <div id="crew-picker" class="crew-picker" role="group" aria-label="Choose your crew member" hidden>
           <button data-key="49">1 · GREEN CAP 51</button>
@@ -96,6 +100,44 @@
         <button id="touch-auto" class="touch-auto" type="button" data-toggle="auto" aria-pressed="false" aria-label="Auto gas: keep accelerating until you brake" hidden><b>Auto</b><span>Gas</span></button>
         <button id="touch-lock" class="touch-lock" type="button" data-key="32" aria-label="Hold to lock the wheels" hidden><b>Lock</b><span>Skid</span></button>
       </div>
+      <aside id="mission-card" hidden aria-label="Mission">
+        <p id="mission-title"></p>
+        <p id="mission-objective"></p>
+        <p id="mission-stage"></p>
+        <p id="mission-fail" hidden></p>
+        <div class="mission-map">
+          <canvas id="mission-map" width="112" height="112" aria-hidden="true"></canvas>
+          <p id="mission-distance"></p>
+        </div>
+      </aside>
+      <aside id="payout-pop" hidden aria-label="Payout">
+        <p id="payout-cue"></p>
+        <p id="payout-amount"></p>
+      </aside>
+      <aside id="job-banner" hidden aria-label="Job result">
+        <p id="job-head"></p>
+        <p id="job-line"></p>
+      </aside>
+      <aside id="heat-plate" hidden aria-label="Heat">
+        <p id="heat-head"></p>
+        <p id="heat-line"></p>
+      </aside>
+      <aside id="job-column" hidden aria-label="Side job">
+        <p id="column-title"></p>
+        <p id="column-objective"></p>
+        <p id="column-info"></p>
+      </aside>
+      <aside id="weapon-chip" hidden aria-label="Weapon">
+        <p id="weapon-name"></p>
+      </aside>
+      <!-- Five foot puffs, ages from the walk, drawn with the same rule as the city. -->
+      <canvas id="scuff-dust" width="200" height="78" hidden aria-hidden="true"></canvas>
+      <!-- Six tail puffs, ages from a running car, drawn with the same rule as the city. -->
+      <canvas id="exhaust-puff" width="210" height="130" hidden aria-hidden="true"></canvas>
+      <!-- A resident's English line, shown while the caption is up. -->
+      <aside id="speech" hidden aria-label="Someone nearby">
+        <p id="speech-line"></p>
+      </aside>
       <section id="overlay" aria-labelledby="status-title">
         <!-- In fullscreen the header is out of view; this button keeps the menu reachable. -->
         <button id="overlay-menu" class="overlay-menu" type="button" data-menu-toggle aria-expanded="false" aria-controls="menu">☰ Menu</button>
@@ -180,6 +222,8 @@
             <button id="mute" type="button" disabled aria-pressed="false">Mute</button>
             <button id="fullscreen" type="button" disabled>Fullscreen</button>
             <button id="disconnect" type="button" disabled>Disconnect</button>
+            <button id="place-sherbrooke" type="button" aria-pressed="true">Sherbrooke</button>
+            <button id="place-rachel" type="button" aria-pressed="false">Rachel</button>
           </div>
           <div class="menu-game">
             <h3>GAME</h3>
@@ -212,7 +256,7 @@
     </dialog>
     <footer>
       <p id="input-note">Keyboard, mouse and touch supported. The host PC must stay online.</p>
-      <p class="controls"><b>WASD</b> or arrows Move / drive &nbsp; <b>Mouse</b> Look &nbsp; <b>Shift</b> Sprint &nbsp; <b>Space</b> Jump / handbrake &nbsp; <b>E</b> Interact / car &nbsp; <b>F</b> Fire &nbsp; <b>Right-click</b> Aim &nbsp; <b>Q</b> Weapon &nbsp; <b>1–8</b> Choose crew &nbsp; <b>C</b> Next crew &nbsp; <b>F2</b> Comic &nbsp; <b>R</b> Recover &nbsp; <b>T</b> Race replay &nbsp; <b>Esc</b> Release mouse</p>
+      <p class="controls"><b>WASD</b> or arrows Move / drive &nbsp; <b>Mouse</b> Look &nbsp; <b>Shift</b> Sprint &nbsp; <b>Space</b> Jump / handbrake &nbsp; <b>E</b> Interact / car &nbsp; <b>F</b> Fire &nbsp; <b>Right-click</b> Aim &nbsp; <b>Q</b> Weapon &nbsp; <b>1–8</b> Choose crew &nbsp; <b>9</b> Sherbrooke &nbsp; <b>0</b> Rachel &nbsp; <b>C</b> Next crew &nbsp; <b>F2</b> Comic &nbsp; <b>R</b> Recover &nbsp; <b>T</b> Race replay &nbsp; <b>Esc</b> Release mouse</p>
     </footer>
   </body>
 </html>

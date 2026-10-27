@@ -30,6 +30,8 @@ RAIN_HLSL = ROOT / 'Scripts/rain_streak.hlsl'
 # offset on each axis to this value and pads each instance's culling bounds by it; 0 would cull streaks
 # whose pivot is off screen. Scripts/water_shader_test.cpp checks that the offset stays inside it.
 RAIN_MAX_OFFSET = 3200.
+# QuebecGloss.h WetRoadRoughness. A water film, smoother than dry asphalt.
+WET_ROAD_ROUGHNESS = 0.15
 PUDDLE_HLSL = ROOT / 'Scripts/wet_puddles.hlsl'
 SPLASH_HLSL = ROOT / 'Scripts/rain_splash.hlsl'
 RAIN_INPUTS = ('Pivot', 'WorldPos', 'CameraPos', 'Time', 'Rand', 'Rain', 'Wind', 'WindDirX', 'WindDirY')
@@ -305,7 +307,7 @@ def rain_material(u, mpc):
 
 def wet_ground(u, mat, mpc):
     """Base colour x lerp(1, .5, Wetness), plus a splash ring where RainIntensity is up.
-    Roughness to x.45 when wet and .03 in puddles; flat normal in puddles."""
+    Roughness lerps to the water film when wet and .03 in puddles; flat normal in puddles."""
     g, P, added = Graph(u, mat, mpc), u.MaterialProperty, []
     puddles = []
 
@@ -343,11 +345,8 @@ def wet_ground(u, mat, mpc):
     source, output, wrapped = g.current(P.MP_ROUGHNESS)
     assert source is not None, mat.get_path_name()
     if not wrapped:
-        glossy = g.node(u.MaterialExpressionMultiply, const_b=.45)
-        g.link(source, output, glossy, 'A')
-        wet = g.node(u.MaterialExpressionLinearInterpolate)
+        wet = g.node(u.MaterialExpressionLinearInterpolate, const_b=WET_ROAD_ROUGHNESS)
         g.link(source, output, wet, 'A')
-        g.link(glossy, '', wet, 'B')
         g.link(g.parameter('Wetness'), '', wet, 'Alpha')
         root = g.node(u.MaterialExpressionLinearInterpolate, const_b=.03)
         g.link(wet, '', root, 'A')

@@ -2652,3 +2652,1242 @@ Unreal is not available here, so the native diamond was not captured. The title 
 ![Play client at 1280, host offline](gta-missions/r58-play-1280.png)
 
 ![Menu on a 390-wide screen, Recover visible](gta-missions/r58-play-menu-390.png)
+
+### Round 59 — 2026-10-27 — rubric v1
+
+- What changed: After the day is banked, one person walks their own line south across the north lawn at a walk. Stand behind them. A matched walk keeps the gap and pays 400 once at the stop. A sprint crowds them. A stop loses them. A car does not count. A partner inside the close radius crowds them even when the watched player is in the band. A fail sends them back to the corner and stays on this beat. The seven banks stay seven. The escort, the chase, the finale, the lap ghost, and the police chase are not retuned. No extra car is spawned. The slot is now version 10. Version 9 still loads and starts this beat over. Version 1 still loads and starts the pond over. Version 2 stays unread and is not overwritten. How far they have walked stays in the session, so a reload during the walk puts them back at the corner and keeps the step.
+- Why it helped: The escort follows you, and the tail chases you. Nothing asked you to hold a gap while someone else walked a line of their own.
+- Screenshots: title `docs/gauntlet/gta-missions/r59-title-1280.png`, `r59-title-390.png`, `r59-title-320.png`. Play client, host offline, `r59-play-1280.png`. Menu with Recover `r59-play-menu-390.png`. The title loaded with no page errors. The raw play page still logs the missing `@epicgames-ps/lib-pixelstreamingfrontend-ue5.8` specifier; the shell and Recover still draw. The gap was not walked in Unreal. `Scripts/test_follow.py` reports 97 assertions, 0 failures, on c++, g++, and clang++. `Scripts/test_story_save.py` reports 128 assertions, 0 failures, on the same three. Syntax check `--both` passed for `QuebecCampaign.cpp`, `QuebecCampaignSaveTests.cpp`, `QuebecGameplay.cpp`, and `QuebecFeedbackTests.cpp`. OpenSpec CLI is not installed, so `openspec validate` did not run.
+- Next target: the playable scores that can still move are capped offline, so the score stays. Do not add a second copy of this gap, the day, the tail, or the short way. Mission clarity stays at 7 and stays out of reach offline. Responsiveness stays at 3 and stays out of scope. Performance stays at 4 and is not measurable here.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 3 | Unchanged. |
+| Color palette | 5 | Unchanged. |
+| Detail density | 3 | Unchanged. |
+| Texture and material quality | 3 | Unchanged. |
+| Composition and camera | 4 | Unchanged. |
+| Atmosphere | 4 | Unchanged. |
+| Character models | 3 | Unchanged. |
+| Animation smoothness | 3 | Unchanged. |
+| Particles and VFX | 2 | Unchanged. |
+| UI polish | 4 | Unchanged. The native card was not seen, and French and English still share the screen. |
+| Responsiveness and input latency | 3 | Unchanged. Still a lagged stream. Out of scope for this loop. |
+| Controls feel | 9 | Unchanged. Getting out faster than a walk still keeps that pace. |
+| Mission clarity | 7 | Unchanged. The fare post still moves from the loaner to the quay. The native card was not seen, and this score stays out of reach offline. |
+| Pacing | 9 | Unchanged. Four seconds on foot after boarding still loses the passenger. |
+| Fun factor | 9 | Unchanged. Chez Lise still sells a kit, a vest, or one star. A gap that was not walked is not a new thing to do. |
+| Difficulty curve | 9 | Unchanged. Selling the last page ends it for 200 and does not bank the chain. A wreck still costs more than the goon pay. |
+| Feedback | 9 | Unchanged. A failed side job still plays the falling sting. The sting was not heard. |
+| Sound design | 9 | Unchanged. The dent thud still marks a scrape as quiet. Nobody is voiced, so this is not the reference's city. |
+| Variety | 9 | Unchanged. A gap that was not walked is not a new way across the park that was seen. |
+| Performance stability | 4 | Unchanged. Not measurable in this container. |
+
+- Aesthetics raw: 34 / 10 dimensions, index 34
+- Playability raw: 77 / 10 dimensions, index 77
+- Total: 111 / 200
+- Delta vs last round: 0 (round 58 was 111). The gap was not walked in Unreal, so every score held.
+
+![GTA title at 1280](gta-missions/r59-title-1280.png)
+
+![GTA title at 390](gta-missions/r59-title-390.png)
+
+![GTA title at 320](gta-missions/r59-title-320.png)
+
+![Play client at 1280, host offline](gta-missions/r59-play-1280.png)
+
+![Menu on a 390-wide screen, Recover visible](gta-missions/r59-play-menu-390.png)
+
+### Round 60 — 2026-10-27 — rubric v1
+
+- What changed: After the gap is banked, a cart sits west of that line. Stand at the handles. It rolls only while you walk there, and it pays 360 once at the stop. A stop leaves it where it is. A sprint tips it back to the start and stays on this beat. A car does not push it. A partner sprinting at the handles tips it. The seven banks stay seven. The follow, the escort, the chase, the finale, the lap ghost, and the police chase are not retuned. No extra car is spawned. The slot is now version 11. Version 10 still loads and starts this cart over. Version 1 still loads and starts the pond over. Version 2 stays unread and is not overwritten. How far it has rolled stays in the session, so a reload during the roll puts it back at the start and keeps the step.
+- Why it helped: The person on the gap walks off if you stop. Nothing waited under your hands, and nothing tipped if you sprinted.
+- Screenshots: title `docs/gauntlet/gta-missions/r60-title-1280.png`, `r60-title-390.png`, `r60-title-320.png`. Play client, host offline, `r60-play-1280.png`. Menu with Recover `r60-play-menu-390.png`. The title loaded with no page errors. The raw play page still logs the missing `@epicgames-ps/lib-pixelstreamingfrontend-ue5.8` specifier; the shell and Recover still draw. The cart was not rolled in Unreal. `Scripts/test_roll.py` reports 83 assertions, 0 failures, on c++, g++, and clang++. `Scripts/test_story_save.py` reports 138 assertions, 0 failures, on the same three. Syntax check `--both` passed for `QuebecCampaign.cpp`, `QuebecCampaignSaveTests.cpp`, `QuebecGameplay.cpp`, and `QuebecFeedbackTests.cpp`. OpenSpec CLI is not installed, so `openspec validate` did not run.
+- Next target: the playable scores that can still move are capped offline, so the score stays. Do not add a second copy of this cart, the gap, the day, the tail, or the short way. Mission clarity stays at 7 and stays out of reach offline. Responsiveness stays at 3 and stays out of scope. Performance stays at 4 and is not measurable here.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 3 | Unchanged. |
+| Color palette | 5 | Unchanged. |
+| Detail density | 3 | Unchanged. |
+| Texture and material quality | 3 | Unchanged. |
+| Composition and camera | 4 | Unchanged. |
+| Atmosphere | 4 | Unchanged. |
+| Character models | 3 | Unchanged. |
+| Animation smoothness | 3 | Unchanged. |
+| Particles and VFX | 2 | Unchanged. |
+| UI polish | 4 | Unchanged. The native card was not seen, and French and English still share the screen. |
+| Responsiveness and input latency | 3 | Unchanged. Still a lagged stream. Out of scope for this loop. |
+| Controls feel | 9 | Unchanged. Getting out faster than a walk still keeps that pace. |
+| Mission clarity | 7 | Unchanged. The fare post still moves from the loaner to the quay. The native card was not seen, and this score stays out of reach offline. |
+| Pacing | 9 | Unchanged. Four seconds on foot after boarding still loses the passenger. |
+| Fun factor | 9 | Unchanged. Chez Lise still sells a kit, a vest, or one star. A cart that was not rolled is not a new thing to do. |
+| Difficulty curve | 9 | Unchanged. Selling the last page ends it for 200 and does not bank the chain. A wreck still costs more than the goon pay. |
+| Feedback | 9 | Unchanged. A failed side job still plays the falling sting. The sting was not heard. |
+| Sound design | 9 | Unchanged. The dent thud still marks a scrape as quiet. Nobody is voiced, so this is not the reference's city. |
+| Variety | 9 | Unchanged. A cart that was not rolled is not a new way across the park that was seen. |
+| Performance stability | 4 | Unchanged. Not measurable in this container. |
+
+- Aesthetics raw: 34 / 10 dimensions, index 34
+- Playability raw: 77 / 10 dimensions, index 77
+- Total: 111 / 200
+- Delta vs last round: 0 (round 59 was 111). The cart was not rolled in Unreal, so every score held.
+
+![GTA title at 1280](gta-missions/r60-title-1280.png)
+
+![GTA title at 390](gta-missions/r60-title-390.png)
+
+![GTA title at 320](gta-missions/r60-title-320.png)
+
+![Play client at 1280, host offline](gta-missions/r60-play-1280.png)
+
+![Menu on a 390-wide screen, Recover visible](gta-missions/r60-play-menu-390.png)
+
+### Round 61 — 2026-10-27 — rubric v1
+
+- What changed: After the cart is banked, three bells sit east of the follow line. Ring the north one, then the middle, then the south. The last bell pays 340 once. An early bell starts the order over and stays on this beat. A sprint still rings. A car does not. A walker already in the next bell rings it. The seven banks stay seven. The cart, the follow, the escort, the chase, the finale, the lap ghost, and the police chase are not retuned. No extra car is spawned. The slot is now version 12. Version 11 still loads and starts these bells over. Version 1 still loads and starts the pond over. Version 2 stays unread and is not overwritten. Which bell is next is the saved step. An early bell does not write the slot.
+- Why it helped: The cart moves while you walk and tips if you sprint. Nothing on the lawn cared which mark you touched first.
+- Screenshots: title `docs/gauntlet/gta-missions/r61-title-1280.png`, `r61-title-390.png`, `r61-title-320.png`. Play client, host offline, `r61-play-1280.png`. Menu with Recover `r61-play-menu-390.png`. The title loaded with no page errors. The raw play page still logs the missing `@epicgames-ps/lib-pixelstreamingfrontend-ue5.8` specifier; the shell and Recover still draw. The bells were not rung in Unreal. `Scripts/test_bells.py` reports 27 assertions, 0 failures, on c++, g++, and clang++. `Scripts/test_story_save.py` reports 148 assertions, 0 failures, on the same three. Syntax check `--both` passed for `QuebecCampaign.cpp`, `QuebecCampaignSaveTests.cpp`, `QuebecGameplay.cpp`, and `QuebecFeedbackTests.cpp`. OpenSpec CLI is not installed, so `openspec validate` did not run.
+- Next target: the playable scores that can still move are capped offline, so the score stays. Do not add a second copy of these bells, this cart, the gap, the day, the tail, or the short way. Mission clarity stays at 7 and stays out of reach offline. Responsiveness stays at 3 and stays out of scope. Performance stays at 4 and is not measurable here.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 3 | Unchanged. |
+| Color palette | 5 | Unchanged. |
+| Detail density | 3 | Unchanged. |
+| Texture and material quality | 3 | Unchanged. |
+| Composition and camera | 4 | Unchanged. |
+| Atmosphere | 4 | Unchanged. |
+| Character models | 3 | Unchanged. |
+| Animation smoothness | 3 | Unchanged. |
+| Particles and VFX | 2 | Unchanged. |
+| UI polish | 4 | Unchanged. The native card was not seen, and French and English still share the screen. |
+| Responsiveness and input latency | 3 | Unchanged. Still a lagged stream. Out of scope for this loop. |
+| Controls feel | 9 | Unchanged. Getting out faster than a walk still keeps that pace. |
+| Mission clarity | 7 | Unchanged. The fare post still moves from the loaner to the quay. The native card was not seen, and this score stays out of reach offline. |
+| Pacing | 9 | Unchanged. Four seconds on foot after boarding still loses the passenger. |
+| Fun factor | 9 | Unchanged. Chez Lise still sells a kit, a vest, or one star. Bells that were not rung are not a new thing to do. |
+| Difficulty curve | 9 | Unchanged. Selling the last page ends it for 200 and does not bank the chain. A wreck still costs more than the goon pay. |
+| Feedback | 9 | Unchanged. A failed side job still plays the falling sting. The sting was not heard. |
+| Sound design | 9 | Unchanged. The dent thud still marks a scrape as quiet. Nobody is voiced, so this is not the reference's city. |
+| Variety | 9 | Unchanged. Bells that were not rung are not a new way across the park that was seen. |
+| Performance stability | 4 | Unchanged. Not measurable in this container. |
+
+- Aesthetics raw: 34 / 10 dimensions, index 34
+- Playability raw: 77 / 10 dimensions, index 77
+- Total: 111 / 200
+- Delta vs last round: 0 (round 60 was 111). The bells were not rung in Unreal, so every score held.
+
+![GTA title at 1280](gta-missions/r61-title-1280.png)
+
+![GTA title at 390](gta-missions/r61-title-390.png)
+
+![GTA title at 320](gta-missions/r61-title-320.png)
+
+![Play client at 1280, host offline](gta-missions/r61-play-1280.png)
+
+![Menu on a 390-wide screen, Recover visible](gta-missions/r61-play-menu-390.png)
+
+### Round 62 — 2026-10-27 — rubric v1
+
+- What changed: After the bells are banked, a courier drives one surveyed road from the north end. They do not follow the player. A car on the side street starts them. Only a car already on the block stops them, and it pays 380 once. A bike, a pedalo, a scooter, or a walker does not. If they reach the block first, the side street is back and this beat stays open. The seven banks stay seven. The tail, the day, the bells, the cart, the follow, the lap ghost, and the police chase are not retuned. No extra car is spawned. The slot is now version 13. Version 12 still loads and starts this block over. Version 1 still loads and starts the pond over. Version 2 stays unread and is not overwritten. How far the courier has driven stays in the session, so a reload during the run puts them back at the north end and keeps the step.
+- Why it helped: The tail follows your car. Nothing on a road kept its own line, and nothing cared that a side street was shorter.
+- Screenshots: title `docs/gauntlet/gta-missions/r62-title-1280.png`, `r62-title-390.png`, `r62-title-320.png`. Play client, host offline, `r62-play-1280.png`. Menu with Recover `r62-play-menu-390.png`. The title loaded with no page errors. The raw play page still logs the missing `@epicgames-ps/lib-pixelstreamingfrontend-ue5.8` specifier; the shell and Recover still draw. The block was not driven in Unreal. `Scripts/test_block.py` reports 27 assertions, 0 failures, on c++, g++, and clang++. `Scripts/test_story_save.py` reports 158 assertions, 0 failures, on the same three. Syntax check `--both` passed for `QuebecCampaign.cpp`, `QuebecCampaignSaveTests.cpp`, `QuebecGameplay.cpp`, and `QuebecFeedbackTests.cpp`. OpenSpec CLI is not installed, so `openspec validate` did not run.
+- Next target: the playable scores that can still move are capped offline, so the score stays. A later beat can tie the new drives and walks into one day. Do not add a second copy of this road, the tail, or the five-stage day. Mission clarity stays at 7 and stays out of reach offline. Responsiveness stays at 3 and stays out of scope. Performance stays at 4 and is not measurable here.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 3 | Unchanged. |
+| Color palette | 5 | Unchanged. |
+| Detail density | 3 | Unchanged. |
+| Texture and material quality | 3 | Unchanged. |
+| Composition and camera | 4 | Unchanged. |
+| Atmosphere | 4 | Unchanged. |
+| Character models | 3 | Unchanged. |
+| Animation smoothness | 3 | Unchanged. |
+| Particles and VFX | 2 | Unchanged. |
+| UI polish | 4 | Unchanged. The native card was not seen, and French and English still share the screen. |
+| Responsiveness and input latency | 3 | Unchanged. Still a lagged stream. Out of scope for this loop. |
+| Controls feel | 9 | Unchanged. Getting out faster than a walk still keeps that pace. |
+| Mission clarity | 7 | Unchanged. The fare post still moves from the loaner to the quay. The native card was not seen, and this score stays out of reach offline. |
+| Pacing | 9 | Unchanged. Four seconds on foot after boarding still loses the passenger. |
+| Fun factor | 9 | Unchanged. Chez Lise still sells a kit, a vest, or one star. A road that was not driven is not a new thing to do. |
+| Difficulty curve | 9 | Unchanged. Selling the last page ends it for 200 and does not bank the chain. A wreck still costs more than the goon pay. |
+| Feedback | 9 | Unchanged. A failed side job still plays the falling sting. The sting was not heard. |
+| Sound design | 9 | Unchanged. The dent thud still marks a scrape as quiet. Nobody is voiced, so this is not the reference's city. |
+| Variety | 9 | Unchanged. A road that was not driven is not a new way across the park that was seen. |
+| Performance stability | 4 | Unchanged. Not measurable in this container. |
+
+- Aesthetics raw: 34 / 10 dimensions, index 34
+- Playability raw: 77 / 10 dimensions, index 77
+- Total: 111 / 200
+- Delta vs last round: 0 (round 61 was 111). The block was not driven in Unreal, so every score held.
+
+![GTA title at 1280](gta-missions/r62-title-1280.png)
+
+![GTA title at 390](gta-missions/r62-title-390.png)
+
+![GTA title at 320](gta-missions/r62-title-320.png)
+
+![Play client at 1280, host offline](gta-missions/r62-play-1280.png)
+
+![Menu on a 390-wide screen, Recover visible](gta-missions/r62-play-menu-390.png)
+
+### Round 63 — 2026-10-27 — rubric v1
+
+- What changed: After the block is banked, the send-off is four stages on one lawn. Walk to the door. Drive south to the gate under a speed cap. Stop the car in the bay. Leave it and walk the last stretch. A car does not open the door or finish the walk. A flat-out run starts the drive over and does not save. Coasting through the bay does not count. It pays 520 once, at the walk. The seven banks stay seven. The five-stage day, the tail, the follow, the cart, the bells, and the block are not retuned. No extra car is spawned. The slot is now version 14. Version 13 still loads and starts this send-off over. Version 1 still loads and starts the pond over. Version 2 stays unread and is not overwritten. How far the drive got stays in the session, so a reload during the drive starts that distance again and keeps the stage.
+- Why it helped: The new drives and walks were separate days. Nothing asked for a car and then asked the player to leave it.
+- Screenshots: title `docs/gauntlet/gta-missions/r63-title-1280.png`, `r63-title-390.png`, `r63-title-320.png`. Play client, host offline, `r63-play-1280.png`. Menu with Recover `r63-play-menu-390.png`. The title loaded with no page errors. The raw play page still logs the missing `@epicgames-ps/lib-pixelstreamingfrontend-ue5.8` specifier; the shell and Recover still draw. The send-off was not played in Unreal. `Scripts/test_send.py` reports 29 assertions, 0 failures, on c++, g++, and clang++. `Scripts/test_story_save.py` reports 168 assertions, 0 failures, on the same three. Syntax check `--both` passed for `QuebecCampaign.cpp`, `QuebecCampaignSaveTests.cpp`, `QuebecGameplay.cpp`, and `QuebecFeedbackTests.cpp`. OpenSpec CLI is not installed, so `openspec validate` did not run.
+- Next target: the playable scores that can still move are capped offline, so the score stays. A later beat can be a new verb. Do not add a second copy of this send-off, the road, the tail, or the five-stage day. Mission clarity stays at 7 and stays out of reach offline. Responsiveness stays at 3 and stays out of scope. Performance stays at 4 and is not measurable here.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 3 | Unchanged. |
+| Color palette | 5 | Unchanged. |
+| Detail density | 3 | Unchanged. |
+| Texture and material quality | 3 | Unchanged. |
+| Composition and camera | 4 | Unchanged. |
+| Atmosphere | 4 | Unchanged. |
+| Character models | 3 | Unchanged. |
+| Animation smoothness | 3 | Unchanged. |
+| Particles and VFX | 2 | Unchanged. |
+| UI polish | 4 | Unchanged. The native card was not seen, and French and English still share the screen. |
+| Responsiveness and input latency | 3 | Unchanged. Still a lagged stream. Out of scope for this loop. |
+| Controls feel | 9 | Unchanged. Getting out faster than a walk still keeps that pace. |
+| Mission clarity | 7 | Unchanged. The fare post still moves from the loaner to the quay. The native card was not seen, and this score stays out of reach offline. |
+| Pacing | 9 | Unchanged. Four seconds on foot after boarding still loses the passenger. |
+| Fun factor | 9 | Unchanged. Chez Lise still sells a kit, a vest, or one star. A send-off that was not played is not a new thing to do. |
+| Difficulty curve | 9 | Unchanged. Selling the last page ends it for 200 and does not bank the chain. A wreck still costs more than the goon pay. |
+| Feedback | 9 | Unchanged. A failed side job still plays the falling sting. The sting was not heard. |
+| Sound design | 9 | Unchanged. The dent thud still marks a scrape as quiet. Nobody is voiced, so this is not the reference's city. |
+| Variety | 9 | Unchanged. A send-off that was not played is not a new way across the park that was seen. |
+| Performance stability | 4 | Unchanged. Not measurable in this container. |
+
+- Aesthetics raw: 34 / 10 dimensions, index 34
+- Playability raw: 77 / 10 dimensions, index 77
+- Total: 111 / 200
+- Delta vs last round: 0 (round 62 was 111). The send-off was not played in Unreal, so every score held.
+
+![GTA title at 1280](gta-missions/r63-title-1280.png)
+
+![GTA title at 390](gta-missions/r63-title-390.png)
+
+![GTA title at 320](gta-missions/r63-title-320.png)
+
+![Play client at 1280, host offline](gta-missions/r63-play-1280.png)
+
+![Menu on a 390-wide screen, Recover visible](gta-missions/r63-play-menu-390.png)
+
+### Round 64 — 2026-10-27 — rubric v1
+
+- What changed: After the send-off is banked, a traffic car is already ahead on one surveyed avenue. It cruises at 650 cm/s, the traffic straight-line speed, and it does not steer toward the player. A real car that pulls alongside it before the avenue ends pays 460 once. A walker does not. If the traffic car reaches the end first, it is ahead again and this beat stays open. The seven banks stay seven. The tail, the courier, the send-off, and the lap ghost are not retuned. No extra car is spawned. The slot is now version 15. Version 14 still loads and starts this pursuit over. Version 1 still loads and starts the pond over. Version 2 stays unread and is not overwritten. How far the traffic car has driven stays in the session, so a reload puts it ahead of the near end again and keeps the step.
+- Why it helped: The tail follows your car. The courier drives toward a point you can stand on. Nothing asked you to catch a car that keeps its own lane.
+- Screenshots: title `docs/gauntlet/gta-missions/r64-title-1280.png`, `r64-title-390.png`, `r64-title-320.png`. Play client, host offline, `r64-play-1280.png`. Menu with Recover `r64-play-menu-390.png`. The title loaded with no page errors. The raw play page still logs the missing `@epicgames-ps/lib-pixelstreamingfrontend-ue5.8` specifier; the shell and Recover still draw. The pursuit was not driven in Unreal. `Scripts/test_pursue.py` reports 23 assertions, 0 failures, on c++, g++, and clang++. `Scripts/test_story_save.py` reports 178 assertions, 0 failures, on the same three. Syntax check `--both` passed for `QuebecCampaign.cpp`, `QuebecCampaignSaveTests.cpp`, `QuebecGameplay.cpp`, and `QuebecFeedbackTests.cpp`. OpenSpec CLI is not installed, so `openspec validate` did not run.
+- Next target: the playable scores that can still move are capped offline, so the score stays. A later beat can be a new verb. Do not add a second copy of this pursuit, the tail, the courier, or the send-off. Mission clarity stays at 7 and stays out of reach offline. Responsiveness stays at 3 and stays out of scope. Performance stays at 4 and is not measurable here.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 3 | Unchanged. |
+| Color palette | 5 | Unchanged. |
+| Detail density | 3 | Unchanged. |
+| Texture and material quality | 3 | Unchanged. |
+| Composition and camera | 4 | Unchanged. |
+| Atmosphere | 4 | Unchanged. |
+| Character models | 3 | Unchanged. |
+| Animation smoothness | 3 | Unchanged. |
+| Particles and VFX | 2 | Unchanged. |
+| UI polish | 4 | Unchanged. The native card was not seen, and French and English still share the screen. |
+| Responsiveness and input latency | 3 | Unchanged. Still a lagged stream. Out of scope for this loop. |
+| Controls feel | 9 | Unchanged. Getting out faster than a walk still keeps that pace. |
+| Mission clarity | 7 | Unchanged. The fare post still moves from the loaner to the quay. The native card was not seen, and this score stays out of reach offline. |
+| Pacing | 9 | Unchanged. Four seconds on foot after boarding still loses the passenger. |
+| Fun factor | 9 | Unchanged. Chez Lise still sells a kit, a vest, or one star. A pursuit that was not driven is not a new thing to do. |
+| Difficulty curve | 9 | Unchanged. Selling the last page ends it for 200 and does not bank the chain. A wreck still costs more than the goon pay. |
+| Feedback | 9 | Unchanged. A failed side job still plays the falling sting. The sting was not heard. |
+| Sound design | 9 | Unchanged. The dent thud still marks a scrape as quiet. Nobody is voiced, so this is not the reference's city. |
+| Variety | 9 | Unchanged. A pursuit that was not driven is not a new way across the park that was seen. |
+| Performance stability | 4 | Unchanged. Not measurable in this container. |
+
+- Aesthetics raw: 34 / 10 dimensions, index 34
+- Playability raw: 77 / 10 dimensions, index 77
+- Total: 111 / 200
+- Delta vs last round: 0 (round 63 was 111). The pursuit was not driven in Unreal, so every score held.
+
+![GTA title at 1280](gta-missions/r64-title-1280.png)
+
+![GTA title at 390](gta-missions/r64-title-390.png)
+
+![GTA title at 320](gta-missions/r64-title-320.png)
+
+![Play client at 1280, host offline](gta-missions/r64-play-1280.png)
+
+![Menu on a 390-wide screen, Recover visible](gta-missions/r64-play-menu-390.png)
+
+### Round 65 — 2026-10-27 — rubric v1
+
+- What changed: After the pursuit is banked, a stall sits on a surveyed road and a line-up sits further toward the far end. A real car inside the stall, reversing at 400 cm/s or more, with its nose toward that far end, pays 440 once. A stop, a forward roll, a sideways reverse, and a walker do not. The seven banks stay seven. The send-off and the pursuit are not retuned. No extra car is spawned. The slot is now version 16. Version 15 still loads and starts this stall over. Version 1 still loads and starts the pond over. Version 2 stays unread and is not overwritten. The reverse itself is not stored, so a reload keeps the step.
+- Why it helped: The send-off wants a full stop. The pursuit wants you alongside a car that keeps its lane. This asks for reverse, with the nose pointed toward the far end of the stall.
+- Screenshots: title `docs/gauntlet/gta-missions/r65-title-1280.png`, `r65-title-390.png`, `r65-title-320.png`. Play client, host offline, `r65-play-1280.png`. Menu with Recover `r65-play-menu-390.png`. The title loaded with no page errors. The raw play page still logs the missing `@epicgames-ps/lib-pixelstreamingfrontend-ue5.8` specifier; the shell and Recover still draw. The stall was not driven in Unreal. `Scripts/test_nose.py` reports 28 assertions, 0 failures, on c++, g++, and clang++. `Scripts/test_story_save.py` reports 188 assertions, 0 failures, on the same three. Syntax check `--both` passed for `QuebecCampaign.cpp`, `QuebecCampaignSaveTests.cpp`, `QuebecGameplay.cpp`, and `QuebecFeedbackTests.cpp`. OpenSpec CLI is not installed, so `openspec validate` did not run.
+- Next target: the playable scores that can still move are capped offline, so the score stays. A later beat can be a new verb. Do not add a second copy of this stall, the pursuit, the tail, the courier, or the send-off. Mission clarity stays at 7 and stays out of reach offline. Responsiveness stays at 3 and stays out of scope. Performance stays at 4 and is not measurable here.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 3 | Unchanged. |
+| Color palette | 5 | Unchanged. |
+| Detail density | 3 | Unchanged. |
+| Texture and material quality | 3 | Unchanged. |
+| Composition and camera | 4 | Unchanged. |
+| Atmosphere | 4 | Unchanged. |
+| Character models | 3 | Unchanged. |
+| Animation smoothness | 3 | Unchanged. |
+| Particles and VFX | 2 | Unchanged. |
+| UI polish | 4 | Unchanged. The native card was not seen, and French and English still share the screen. |
+| Responsiveness and input latency | 3 | Unchanged. Still a lagged stream. Out of scope for this loop. |
+| Controls feel | 9 | Unchanged. Getting out faster than a walk still keeps that pace. |
+| Mission clarity | 7 | Unchanged. The fare post still moves from the loaner to the quay. The native card was not seen, and this score stays out of reach offline. |
+| Pacing | 9 | Unchanged. Four seconds on foot after boarding still loses the passenger. |
+| Fun factor | 9 | Unchanged. Chez Lise still sells a kit, a vest, or one star. A stall that was not driven is not a new thing to do. |
+| Difficulty curve | 9 | Unchanged. Selling the last page ends it for 200 and does not bank the chain. A wreck still costs more than the goon pay. |
+| Feedback | 9 | Unchanged. A failed side job still plays the falling sting. The sting was not heard. |
+| Sound design | 9 | Unchanged. The dent thud still marks a scrape as quiet. Nobody is voiced, so this is not the reference's city. |
+| Variety | 9 | Unchanged. A stall that was not driven is not a new way across the park that was seen. |
+| Performance stability | 4 | Unchanged. Not measurable in this container. |
+
+- Aesthetics raw: 34 / 10 dimensions, index 34
+- Playability raw: 77 / 10 dimensions, index 77
+- Total: 111 / 200
+- Delta vs last round: 0 (round 64 was 111). The stall was not driven in Unreal, so every score held.
+
+![GTA title at 1280](gta-missions/r65-title-1280.png)
+
+![GTA title at 390](gta-missions/r65-title-390.png)
+
+![GTA title at 320](gta-missions/r65-title-320.png)
+
+![Play client at 1280, host offline](gta-missions/r65-play-1280.png)
+
+![Menu on a 390-wide screen, Recover visible](gta-missions/r65-play-menu-390.png)
+
+### Round 66 — 2026-10-27 — rubric v1
+
+- What changed: After the stall is banked, a pursuer waits behind a door on the lawn west of the cart. Stepping outside starts them. They close at 640 cm/s. A walk is caught before a gate 72 m south, and the door is the door again. A sprint reaches the gate and pays 500 once. A car does not start the run and does not clear the gate. A catch plays the checkpoint and does not save. The seven banks stay seven. The tail, the finale, and the stall are not retuned. No extra car is spawned. The slot is now version 17. Version 16 still loads and starts this slip over. Version 1 still loads and starts the pond over. Version 2 stays unread and is not overwritten. Their place is not stored, so a reload during the run puts them behind the door again and keeps the step.
+- Why it helped: The tail follows a car. The finale's last stage follows a car. This chases a person, and a walk fails where a sprint succeeds.
+- Screenshots: title `docs/gauntlet/gta-missions/r66-title-1280.png`, `r66-title-390.png`, `r66-title-320.png`. Play client, host offline, `r66-play-1280.png`. Menu with Recover `r66-play-menu-390.png`. The title loaded with no page errors. The raw play page still logs the missing `@epicgames-ps/lib-pixelstreamingfrontend-ue5.8` specifier; the shell and Recover still draw. The slip was not played in Unreal. `Scripts/test_slip.py` reports 25 assertions, 0 failures, on c++, g++, and clang++. `Scripts/test_story_save.py` reports 198 assertions, 0 failures, on the same three. Syntax check `--both` passed for `QuebecCampaign.cpp`, `QuebecCampaignSaveTests.cpp`, `QuebecGameplay.cpp`, and `QuebecFeedbackTests.cpp`. OpenSpec CLI is not installed, so `openspec validate` did not run.
+- Next target: the playable scores that can still move are capped offline, so the score stays. The next beat is a multi-stage finale that is not a copy of mission 16 and not a replay of this slip, the stall, the pursuit, the tail, the courier, or the send-off. Mission clarity stays at 7 and stays out of reach offline. Responsiveness stays at 3 and stays out of scope. Performance stays at 4 and is not measurable here.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 3 | Unchanged. |
+| Color palette | 5 | Unchanged. |
+| Detail density | 3 | Unchanged. |
+| Texture and material quality | 3 | Unchanged. |
+| Composition and camera | 4 | Unchanged. |
+| Atmosphere | 4 | Unchanged. |
+| Character models | 3 | Unchanged. |
+| Animation smoothness | 3 | Unchanged. |
+| Particles and VFX | 2 | Unchanged. |
+| UI polish | 4 | Unchanged. The native card was not seen, and French and English still share the screen. |
+| Responsiveness and input latency | 3 | Unchanged. Still a lagged stream. Out of scope for this loop. |
+| Controls feel | 9 | Unchanged. Getting out faster than a walk still keeps that pace. |
+| Mission clarity | 7 | Unchanged. The fare post still moves from the loaner to the quay. The native card was not seen, and this score stays out of reach offline. |
+| Pacing | 9 | Unchanged. Four seconds on foot after boarding still loses the passenger. |
+| Fun factor | 9 | Unchanged. Chez Lise still sells a kit, a vest, or one star. A slip that was not played is not a new thing to do. |
+| Difficulty curve | 9 | Unchanged. Selling the last page ends it for 200 and does not bank the chain. A wreck still costs more than the goon pay. |
+| Feedback | 9 | Unchanged. A failed side job still plays the falling sting. The sting was not heard. |
+| Sound design | 9 | Unchanged. The dent thud still marks a scrape as quiet. Nobody is voiced, so this is not the reference's city. |
+| Variety | 9 | Unchanged. A slip that was not played is not a new way across the park that was seen. |
+| Performance stability | 4 | Unchanged. Not measurable in this container. |
+
+- Aesthetics raw: 34 / 10 dimensions, index 34
+- Playability raw: 77 / 10 dimensions, index 77
+- Total: 111 / 200
+- Delta vs last round: 0 (round 65 was 111). The slip was not played in Unreal, so every score held.
+
+![GTA title at 1280](gta-missions/r66-title-1280.png)
+
+![GTA title at 390](gta-missions/r66-title-390.png)
+
+![GTA title at 320](gta-missions/r66-title-320.png)
+
+![Play client at 1280, host offline](gta-missions/r66-play-1280.png)
+
+![Menu on a 390-wide screen, Recover visible](gta-missions/r66-play-menu-390.png)
+
+### Round 67 — 2026-10-27 — rubric v1
+
+- What changed: After the slip is banked, a march waits on the lawn east of that door. Stepping in starts it. It walks south at a walk whether or not you keep up. Leaving the circle sends it back to the start and does not save. A sprint walks out the front. A stop falls out the back. A walk that stays inside reaches the end, and stepping out of the circle pays 580 once. A car does not join and does not finish it. The seven banks stay seven. The follow, the cart, the slip, and mission 16 are not retuned. No extra car is spawned. The slot is now version 18. Version 17 still loads and starts this march over. Version 1 still loads and starts the pond over. Version 2 stays unread and is not overwritten. Where they have walked is not stored, so a reload during the march puts them back at the join and keeps the step.
+- Why it helped: The follow stays behind a walker. The cart only moves when you push it. This walks itself, and you have to stay inside it, then step out.
+- Screenshots: title `docs/gauntlet/gta-missions/r67-title-1280.png`, `r67-title-390.png`, `r67-title-320.png`. Play client, host offline, `r67-play-1280.png`. Menu with Recover `r67-play-menu-390.png`. The title loaded with no page errors. The raw play page still logs the missing `@epicgames-ps/lib-pixelstreamingfrontend-ue5.8` specifier; the shell and Recover still draw. The march was not played in Unreal. `Scripts/test_march.py` reports 27 assertions, 0 failures, on c++, g++, and clang++. `Scripts/test_story_save.py` reports 208 assertions, 0 failures, on the same three. Syntax check `--both` passed for `QuebecCampaign.cpp`, `QuebecCampaignSaveTests.cpp`, `QuebecGameplay.cpp`, and `QuebecFeedbackTests.cpp`. OpenSpec CLI is not installed, so `openspec validate` did not run.
+- Next target: the playable scores that can still move are capped offline, so the score stays. A later beat can be a new verb. Do not add a second copy of this march, the slip, the stall, the pursuit, the tail, the courier, or the send-off, and do not replay mission 16. Mission clarity stays at 7 and stays out of reach offline. Responsiveness stays at 3 and stays out of scope. Performance stays at 4 and is not measurable here.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 3 | Unchanged. |
+| Color palette | 5 | Unchanged. |
+| Detail density | 3 | Unchanged. |
+| Texture and material quality | 3 | Unchanged. |
+| Composition and camera | 4 | Unchanged. |
+| Atmosphere | 4 | Unchanged. |
+| Character models | 3 | Unchanged. |
+| Animation smoothness | 3 | Unchanged. |
+| Particles and VFX | 2 | Unchanged. |
+| UI polish | 4 | Unchanged. The native card was not seen, and French and English still share the screen. |
+| Responsiveness and input latency | 3 | Unchanged. Still a lagged stream. Out of scope for this loop. |
+| Controls feel | 9 | Unchanged. Getting out faster than a walk still keeps that pace. |
+| Mission clarity | 7 | Unchanged. The fare post still moves from the loaner to the quay. The native card was not seen, and this score stays out of reach offline. |
+| Pacing | 9 | Unchanged. Four seconds on foot after boarding still loses the passenger. |
+| Fun factor | 9 | Unchanged. Chez Lise still sells a kit, a vest, or one star. A march that was not played is not a new thing to do. |
+| Difficulty curve | 9 | Unchanged. Selling the last page ends it for 200 and does not bank the chain. A wreck still costs more than the goon pay. |
+| Feedback | 9 | Unchanged. A failed side job still plays the falling sting. The sting was not heard. |
+| Sound design | 9 | Unchanged. The dent thud still marks a scrape as quiet. Nobody is voiced, so this is not the reference's city. |
+| Variety | 9 | Unchanged. A march that was not played is not a new way across the park that was seen. |
+| Performance stability | 4 | Unchanged. Not measurable in this container. |
+
+- Aesthetics raw: 34 / 10 dimensions, index 34
+- Playability raw: 77 / 10 dimensions, index 77
+- Total: 111 / 200
+- Delta vs last round: 0 (round 66 was 111). The march was not played in Unreal, so every score held.
+
+![GTA title at 1280](gta-missions/r67-title-1280.png)
+
+![GTA title at 390](gta-missions/r67-title-390.png)
+
+![GTA title at 320](gta-missions/r67-title-320.png)
+
+![Play client at 1280, host offline](gta-missions/r67-play-1280.png)
+
+![Menu on a 390-wide screen, Recover visible](gta-missions/r67-play-menu-390.png)
+
+### Round 68 — 2026-10-27 — rubric v1
+
+- What changed: After the march is banked, a line sits on a surveyed road north of the stall. A real car crossing it, still rolling forward at 500 cm/s or more, with its nose toward the far end, starts a chase car at the near end. That car drives the road at 900 cm/s and does not steer. Beat it to the end. A crawl is caught and the line is the line again, and that catch does not save. At the end, get out. A mark 20 m off the road pays 660 once. A car at that mark does not. They stop at the end of the road. The seven banks stay seven. The tail, the pursuit, the stall, the slip, and the march are not retuned. No extra car is spawned. The slot is now version 19. Version 18 still loads and starts this ditch over. Version 1 still loads and starts the pond over. Version 2 stays unread and is not overwritten. How far the chase car has driven is not stored, so a reload during the chase puts them at the near end again and keeps the step.
+- Why it helped: The tail follows you to a hide. The pursuit is catching a car that keeps its lane. The slip is a sprint on foot. This rolls a car into a chase, then leaves the car where they will not follow.
+- Screenshots: title `docs/gauntlet/gta-missions/r68-title-1280.png`, `r68-title-390.png`, `r68-title-320.png`. Play client, host offline, `r68-play-1280.png`. Menu with Recover `r68-play-menu-390.png`. The title loaded with no page errors. The raw play page still logs the missing `@epicgames-ps/lib-pixelstreamingfrontend-ue5.8` specifier; the shell and Recover still draw. The ditch was not driven in Unreal. `Scripts/test_ditch.py` reports 33 assertions, 0 failures, on c++, g++, and clang++. `Scripts/test_story_save.py` reports 218 assertions, 0 failures, on the same three. Syntax check `--both` passed for `QuebecCampaign.cpp`, `QuebecCampaignSaveTests.cpp`, `QuebecGameplay.cpp`, and `QuebecFeedbackTests.cpp`. OpenSpec CLI is not installed, so `openspec validate` did not run.
+- Next target: the playable scores that can still move are capped offline, so the score stays. The next beat is a new verb, a delivery under a timer where traffic matters, and it is not a copy of the hot-delivery side job, this ditch, the slip, the march, the stall, or the pursuit. Mission clarity stays at 7 and stays out of reach offline. Responsiveness stays at 3 and stays out of scope. Performance stays at 4 and is not measurable here.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 3 | Unchanged. |
+| Color palette | 5 | Unchanged. |
+| Detail density | 3 | Unchanged. |
+| Texture and material quality | 3 | Unchanged. |
+| Composition and camera | 4 | Unchanged. |
+| Atmosphere | 4 | Unchanged. |
+| Character models | 3 | Unchanged. |
+| Animation smoothness | 3 | Unchanged. |
+| Particles and VFX | 2 | Unchanged. |
+| UI polish | 4 | Unchanged. The native card was not seen, and French and English still share the screen. |
+| Responsiveness and input latency | 3 | Unchanged. Still a lagged stream. Out of scope for this loop. |
+| Controls feel | 9 | Unchanged. Getting out faster than a walk still keeps that pace. |
+| Mission clarity | 7 | Unchanged. The fare post still moves from the loaner to the quay. The native card was not seen, and this score stays out of reach offline. |
+| Pacing | 9 | Unchanged. Four seconds on foot after boarding still loses the passenger. |
+| Fun factor | 9 | Unchanged. Chez Lise still sells a kit, a vest, or one star. A ditch that was not driven is not a new thing to do. |
+| Difficulty curve | 9 | Unchanged. Selling the last page ends it for 200 and does not bank the chain. A wreck still costs more than the goon pay. |
+| Feedback | 9 | Unchanged. A failed side job still plays the falling sting. The sting was not heard. |
+| Sound design | 9 | Unchanged. The dent thud still marks a scrape as quiet. Nobody is voiced, so this is not the reference's city. |
+| Variety | 9 | Unchanged. A ditch that was not driven is not a new way across the park that was seen. |
+| Performance stability | 4 | Unchanged. Not measurable in this container. |
+
+- Aesthetics raw: 34 / 10 dimensions, index 34
+- Playability raw: 77 / 10 dimensions, index 77
+- Total: 111 / 200
+- Delta vs last round: 0 (round 67 was 111). The ditch was not driven in Unreal, so every score held.
+
+![GTA title at 1280](gta-missions/r68-title-1280.png)
+
+![GTA title at 390](gta-missions/r68-title-390.png)
+
+![GTA title at 320](gta-missions/r68-title-320.png)
+
+![Play client at 1280, host offline](gta-missions/r68-play-1280.png)
+
+![Menu on a 390-wide screen, Recover visible](gta-missions/r68-play-menu-390.png)
+
+### Round 69 — 2026-10-27 — rubric v1
+
+- What changed: After the ditch is banked, a parcel sits off a surveyed street. Picking it up on foot starts a sixteen-second clock. Two traffic cars drive that street at 280 cm/s and do not steer. Step into the lane while one is close and the parcel goes back, the clock starts over, and that drop does not save. Waiting for the car, then walking or sprinting to the stoop, pays 620 once. A car does not pick it up and does not deliver it. Waiting out the clock drops it. The seven banks stay seven. The ditch, the march, the slip, and the hot delivery are not retuned. No extra car is spawned. The slot is now version 20. Version 19 still loads and starts this parcel over. Version 1 still loads and starts the pond over. Version 2 stays unread and is not overwritten. The clock and where the street cars are are not stored, so a reload during the crossing starts the clock again and keeps the step.
+- Why it helped: The hot delivery is a café and three doors, and the clock grows at each door. This is one parcel, one street, and a car you wait for.
+- Screenshots: title `docs/gauntlet/gta-missions/r69-title-1280.png`, `r69-title-390.png`, `r69-title-320.png`. Play client, host offline, `r69-play-1280.png`. Menu with Recover `r69-play-menu-390.png`. The title loaded with no page errors. The raw play page still logs the missing `@epicgames-ps/lib-pixelstreamingfrontend-ue5.8` specifier; the shell and Recover still draw. The parcel was not carried in Unreal. `Scripts/test_parcel.py` reports 22 assertions, 0 failures, on c++, g++, and clang++. `Scripts/test_story_save.py` reports 228 assertions, 0 failures, on the same three. Syntax check `--both` passed for `QuebecCampaign.cpp`, `QuebecCampaignSaveTests.cpp`, `QuebecGameplay.cpp`, and `QuebecFeedbackTests.cpp`. OpenSpec CLI is not installed, so `openspec validate` did not run.
+- Next target: the playable scores that can still move are capped offline, so the score stays. The next beat needs a new verb that is not this crossing, the ditch, the slip, the march, the stall, or the pursuit. Mission clarity stays at 7 and stays out of reach offline. Responsiveness stays at 3 and stays out of scope. Performance stays at 4 and is not measurable here.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 3 | Unchanged. |
+| Color palette | 5 | Unchanged. |
+| Detail density | 3 | Unchanged. |
+| Texture and material quality | 3 | Unchanged. |
+| Composition and camera | 4 | Unchanged. |
+| Atmosphere | 4 | Unchanged. |
+| Character models | 3 | Unchanged. |
+| Animation smoothness | 3 | Unchanged. |
+| Particles and VFX | 2 | Unchanged. |
+| UI polish | 4 | Unchanged. The native card was not seen, and French and English still share the screen. |
+| Responsiveness and input latency | 3 | Unchanged. Still a lagged stream. Out of scope for this loop. |
+| Controls feel | 9 | Unchanged. Getting out faster than a walk still keeps that pace. |
+| Mission clarity | 7 | Unchanged. The fare post still moves from the loaner to the quay. The native card was not seen, and this score stays out of reach offline. |
+| Pacing | 9 | Unchanged. Four seconds on foot after boarding still loses the passenger. |
+| Fun factor | 9 | Unchanged. Chez Lise still sells a kit, a vest, or one star. A parcel that was not carried is not a new thing to do. |
+| Difficulty curve | 9 | Unchanged. Selling the last page ends it for 200 and does not bank the chain. A wreck still costs more than the goon pay. |
+| Feedback | 9 | Unchanged. A failed side job still plays the falling sting. The sting was not heard. |
+| Sound design | 9 | Unchanged. The dent thud still marks a scrape as quiet. Nobody is voiced, so this is not the reference's city. |
+| Variety | 9 | Unchanged. A parcel that was not carried is not a new way across the park that was seen. |
+| Performance stability | 4 | Unchanged. Not measurable in this container. |
+
+- Aesthetics raw: 34 / 10 dimensions, index 34
+- Playability raw: 77 / 10 dimensions, index 77
+- Total: 111 / 200
+- Delta vs last round: 0 (round 68 was 111). The parcel was not carried in Unreal, so every score held.
+
+![GTA title at 1280](gta-missions/r69-title-1280.png)
+
+![GTA title at 390](gta-missions/r69-title-390.png)
+
+![GTA title at 320](gta-missions/r69-title-320.png)
+
+![Play client at 1280, host offline](gta-missions/r69-play-1280.png)
+
+![Menu on a 390-wide screen, Recover visible](gta-missions/r69-play-menu-390.png)
+
+### Round 70 — 2026-10-27 — rubric v1
+
+- What changed: After the parcel is banked, one beat asks for a fast drive, then a chase, then a walk off the road. A real car reaching the far end of a surveyed road still at 1200 cm/s, nose down the road, starts a seeker 18 m behind. They steer toward the car at 1050 cm/s. Reach the bay off the road before they close, or a crawl is caught and the chase starts again. The drive stays banked, and that catch does not save. At the bay, get out. A gate further off the road pays 720 once if you reach it on foot before a ten-second clock. A car at the gate does not. The clock running out starts it again and leaves the chase banked. The seven banks stay seven. The ditch, the tail, the pursuit, and the parcel are not retuned. No extra car is spawned. The slot is now version 21. Version 20 still loads and starts this bolt over. Version 1 still loads and starts the pond over. Version 2 stays unread and is not overwritten. Where the seeker is, and the escape clock, are not stored, so a reload during the chase puts the seeker behind the end again and keeps the step.
+- Why it helped: The ditch car stays on its road. This seeker steers, and the escape is its own saved step.
+- Screenshots: title `docs/gauntlet/gta-missions/r70-title-1280.png`, `r70-title-390.png`, `r70-title-320.png`. Play client, host offline, `r70-play-1280.png`. Menu with Recover `r70-play-menu-390.png`. The title loaded with no page errors. The raw play page still logs the missing `@epicgames-ps/lib-pixelstreamingfrontend-ue5.8` specifier; the shell and Recover still draw. The bolt was not driven in Unreal. `Scripts/test_bolt.py` reports 24 assertions, 0 failures, on c++, g++, and clang++. `Scripts/test_story_save.py` reports 238 assertions, 0 failures, on the same three. Syntax check `--both` passed for `QuebecCampaign.cpp`, `QuebecCampaignSaveTests.cpp`, `QuebecGameplay.cpp`, and `QuebecFeedbackTests.cpp`. OpenSpec CLI is not installed, so `openspec validate` did not run.
+- Next target: the playable scores that can still move are capped offline, so the score stays. The next beat needs a new verb that is not this bolt, the parcel, the ditch, the slip, or a lamp crossing. Mission clarity stays at 7 and stays out of reach offline. Responsiveness stays at 3 and stays out of scope. Performance stays at 4 and is not measurable here.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 3 | Unchanged. |
+| Color palette | 5 | Unchanged. |
+| Detail density | 3 | Unchanged. |
+| Texture and material quality | 3 | Unchanged. |
+| Composition and camera | 4 | Unchanged. |
+| Atmosphere | 4 | Unchanged. |
+| Character models | 3 | Unchanged. |
+| Animation smoothness | 3 | Unchanged. |
+| Particles and VFX | 2 | Unchanged. |
+| UI polish | 4 | Unchanged. The native card was not seen, and French and English still share the screen. |
+| Responsiveness and input latency | 3 | Unchanged. Still a lagged stream. Out of scope for this loop. |
+| Controls feel | 9 | Unchanged. Getting out faster than a walk still keeps that pace. |
+| Mission clarity | 7 | Unchanged. The fare post still moves from the loaner to the quay. The native card was not seen, and this score stays out of reach offline. |
+| Pacing | 9 | Unchanged. Four seconds on foot after boarding still loses the passenger. |
+| Fun factor | 9 | Unchanged. Chez Lise still sells a kit, a vest, or one star. A bolt that was not driven is not a new thing to do. |
+| Difficulty curve | 9 | Unchanged. Selling the last page ends it for 200 and does not bank the chain. A wreck still costs more than the goon pay. |
+| Feedback | 9 | Unchanged. A failed side job still plays the falling sting. The sting was not heard. |
+| Sound design | 9 | Unchanged. The dent thud still marks a scrape as quiet. Nobody is voiced, so this is not the reference's city. |
+| Variety | 9 | Unchanged. A bolt that was not driven is not a new way across the park that was seen. |
+| Performance stability | 4 | Unchanged. Not measurable in this container. |
+
+- Aesthetics raw: 34 / 10 dimensions, index 34
+- Playability raw: 77 / 10 dimensions, index 77
+- Total: 111 / 200
+- Delta vs last round: 0 (round 69 was 111). The bolt was not driven in Unreal, so every score held.
+
+![GTA title at 1280](gta-missions/r70-title-1280.png)
+
+![GTA title at 390](gta-missions/r70-title-390.png)
+
+![GTA title at 320](gta-missions/r70-title-320.png)
+
+![Play client at 1280, host offline](gta-missions/r70-play-1280.png)
+
+![Menu on a 390-wide screen, Recover visible](gta-missions/r70-play-menu-390.png)
+
+### Round 71 — 2026-10-27 — rubric v1
+
+- What changed: After the bolt is banked, a yard off the road asks for a walk while a watcher is turned away. They stand still and turn. On foot, the near side arms the crossing while their look is elsewhere. Reaching the far side before that look swings onto you pays 540 once. Stepping into the look sends the crossing back to the near side and does not save. A car does not arm it and does not clear the far side. The seven banks stay seven. The bolt, the shade, the slip, and the parcel are not retuned. No extra car is spawned. The slot is now version 22. Version 21 still loads and starts this yard over. Version 1 still loads and starts the pond over. Version 2 stays unread and is not overwritten. Where they are looking, and whether the crossing is armed, are not stored, so a reload starts the look again and keeps the step.
+- Why it helped: The shade is a dark pocket, and the slip is a sprint against someone who follows. This watcher turns in place, and a walk crosses when their back is to the yard.
+- Screenshots: title `docs/gauntlet/gta-missions/r71-title-1280.png`, `r71-title-390.png`, `r71-title-320.png`. Play client, host offline, `r71-play-1280.png`. Menu with Recover `r71-play-menu-390.png`. The title loaded with no page errors. The raw play page still logs the missing `@epicgames-ps/lib-pixelstreamingfrontend-ue5.8` specifier; the shell and Recover still draw. The yard was not crossed in Unreal. `Scripts/test_yard.py` reports 17 assertions, 0 failures, on c++, g++, and clang++. `Scripts/test_story_save.py` reports 248 assertions, 0 failures, on the same three. Syntax check `--both` passed for `QuebecCampaign.cpp`, `QuebecCampaignSaveTests.cpp`, `QuebecGameplay.cpp`, and `QuebecFeedbackTests.cpp`. OpenSpec CLI is not installed, so `openspec validate` did not run.
+- Next target: the playable scores that can still move are capped offline, so the score stays. The next beat needs a new verb that is not this yard, the bolt, the parcel, the ditch, or the slip. Mission clarity stays at 7 and stays out of reach offline. Responsiveness stays at 3 and stays out of scope. Performance stays at 4 and is not measurable here.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 3 | Unchanged. |
+| Color palette | 5 | Unchanged. |
+| Detail density | 3 | Unchanged. |
+| Texture and material quality | 3 | Unchanged. |
+| Composition and camera | 4 | Unchanged. |
+| Atmosphere | 4 | Unchanged. |
+| Character models | 3 | Unchanged. |
+| Animation smoothness | 3 | Unchanged. |
+| Particles and VFX | 2 | Unchanged. |
+| UI polish | 4 | Unchanged. The native card was not seen, and French and English still share the screen. |
+| Responsiveness and input latency | 3 | Unchanged. Still a lagged stream. Out of scope for this loop. |
+| Controls feel | 9 | Unchanged. Getting out faster than a walk still keeps that pace. |
+| Mission clarity | 7 | Unchanged. The fare post still moves from the loaner to the quay. The native card was not seen, and this score stays out of reach offline. |
+| Pacing | 9 | Unchanged. Four seconds on foot after boarding still loses the passenger. |
+| Fun factor | 9 | Unchanged. Chez Lise still sells a kit, a vest, or one star. A yard that was not crossed is not a new thing to do. |
+| Difficulty curve | 9 | Unchanged. Selling the last page ends it for 200 and does not bank the chain. A wreck still costs more than the goon pay. |
+| Feedback | 9 | Unchanged. A failed side job still plays the falling sting. The sting was not heard. |
+| Sound design | 9 | Unchanged. The dent thud still marks a scrape as quiet. Nobody is voiced, so this is not the reference's city. |
+| Variety | 9 | Unchanged. A yard that was not crossed is not a new way across the park that was seen. |
+| Performance stability | 4 | Unchanged. Not measurable in this container. |
+
+- Aesthetics raw: 34 / 10 dimensions, index 34
+- Playability raw: 77 / 10 dimensions, index 77
+- Total: 111 / 200
+- Delta vs last round: 0 (round 70 was 111). The yard was not crossed in Unreal, so every score held.
+
+![GTA title at 1280](gta-missions/r71-title-1280.png)
+
+![GTA title at 390](gta-missions/r71-title-390.png)
+
+![GTA title at 320](gta-missions/r71-title-320.png)
+
+![Play client at 1280, host offline](gta-missions/r71-play-1280.png)
+
+![Menu on a 390-wide screen, Recover visible](gta-missions/r71-play-menu-390.png)
+
+### Round 72 — 2026-10-27 — rubric v1
+
+- What changed: After the yard is banked, a stop on a surveyed road asks for a real car held still. They start off the road and walk a fixed line at a walk. Reaching the car while it stays stopped pays 680 once. Rolling the car sends them back along the same line and does not save. A bike does not start them. A creep above 60 cm/s does not count as stopped. The seven banks stay seven. The yard, the send-off, and the bolt are not retuned. No extra car is spawned. The slot is now version 23. Version 22 still loads and starts this lift over. Version 1 still loads and starts the pond over. Version 2 stays unread and is not overwritten. Where they are on the walk is not stored, so a reload puts them back at the door and keeps the step.
+- Why it helped: The send-off is a stop you make so you can walk. This stop is one you hold so they can walk to the car.
+- Screenshots: title `docs/gauntlet/gta-missions/r72-title-1280.png`, `r72-title-390.png`, `r72-title-320.png`. Play client, host offline, `r72-play-1280.png`. Menu with Recover `r72-play-menu-390.png`. The title loaded with no page errors. The raw play page still logs the missing `@epicgames-ps/lib-pixelstreamingfrontend-ue5.8` specifier; the shell and Recover still draw. The lift was not driven in Unreal. `Scripts/test_lift.py` reports 17 assertions, 0 failures, on c++, g++, and clang++. `Scripts/test_story_save.py` reports 258 assertions, 0 failures, on the same three. Syntax check `--both` passed for `QuebecCampaign.cpp`, `QuebecCampaignSaveTests.cpp`, `QuebecGameplay.cpp`, and `QuebecFeedbackTests.cpp`. OpenSpec CLI is not installed, so `openspec validate` did not run.
+- Next target: the playable scores that can still move are capped offline, so the score stays. The next beat needs a new verb that is not this lift, the yard, the bolt, the parcel, or the ditch. Mission clarity stays at 7 and stays out of reach offline. Responsiveness stays at 3 and stays out of scope. Performance stays at 4 and is not measurable here.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 3 | Unchanged. |
+| Color palette | 5 | Unchanged. |
+| Detail density | 3 | Unchanged. |
+| Texture and material quality | 3 | Unchanged. |
+| Composition and camera | 4 | Unchanged. |
+| Atmosphere | 4 | Unchanged. |
+| Character models | 3 | Unchanged. |
+| Animation smoothness | 3 | Unchanged. |
+| Particles and VFX | 2 | Unchanged. |
+| UI polish | 4 | Unchanged. The native card was not seen, and French and English still share the screen. |
+| Responsiveness and input latency | 3 | Unchanged. Still a lagged stream. Out of scope for this loop. |
+| Controls feel | 9 | Unchanged. Getting out faster than a walk still keeps that pace. |
+| Mission clarity | 7 | Unchanged. The fare post still moves from the loaner to the quay. The native card was not seen, and this score stays out of reach offline. |
+| Pacing | 9 | Unchanged. Four seconds on foot after boarding still loses the passenger. |
+| Fun factor | 9 | Unchanged. Chez Lise still sells a kit, a vest, or one star. A lift that was not held is not a new thing to do. |
+| Difficulty curve | 9 | Unchanged. Selling the last page ends it for 200 and does not bank the chain. A wreck still costs more than the goon pay. |
+| Feedback | 9 | Unchanged. A failed side job still plays the falling sting. The sting was not heard. |
+| Sound design | 9 | Unchanged. The dent thud still marks a scrape as quiet. Nobody is voiced, so this is not the reference's city. |
+| Variety | 9 | Unchanged. A lift that was not held is not a new way across the park that was seen. |
+| Performance stability | 4 | Unchanged. Not measurable in this container. |
+
+- Aesthetics raw: 34 / 10 dimensions, index 34
+- Playability raw: 77 / 10 dimensions, index 77
+- Total: 111 / 200
+- Delta vs last round: 0 (round 71 was 111). The lift was not held in Unreal, so every score held.
+
+![GTA title at 1280](gta-missions/r72-title-1280.png)
+
+![GTA title at 390](gta-missions/r72-title-390.png)
+
+![GTA title at 320](gta-missions/r72-title-320.png)
+
+![Play client at 1280, host offline](gta-missions/r72-play-1280.png)
+
+![Menu on a 390-wide screen, Recover visible](gta-missions/r72-play-menu-390.png)
+
+### Round 73 — 2026-10-27 — rubric v1
+
+- What changed: After the lift is banked, a mark off a surveyed road asks for a walk that stays inside it. Walking at 90 to 450 cm/s fills a six-second count. Filling it pays 700 once. Standing still does not count. A sprint or a step out starts the count again and does not save. A car does not stand it. The seven banks stay seven. The lift, the yard, and the bolt are not retuned. No extra car is spawned. The slot is now version 24. Version 23 still loads and starts this post over. Version 1 still loads and starts the pond over. Version 2 stays unread and is not overwritten. How long they have stood is not stored, so a reload starts the count again and keeps the step.
+- Why it helped: The lift is a car you hold so someone else can walk. This mark is a patch you keep walking until the count fills.
+- Screenshots: title `docs/gauntlet/gta-missions/r73-title-1280.png`, `r73-title-390.png`, `r73-title-320.png`. Play client, host offline, `r73-play-1280.png`. Menu with Recover `r73-play-menu-390.png`. The title loaded with no page errors. The raw play page still logs the missing `@epicgames-ps/lib-pixelstreamingfrontend-ue5.8` specifier; the shell and Recover still draw. The post was not stood in Unreal. `Scripts/test_post.py` reports 18 assertions, 0 failures, on c++, g++, and clang++. `Scripts/test_story_save.py` reports 269 assertions, 0 failures, on the same three. Syntax check `--both` passed for `QuebecCampaign.cpp`, `QuebecCampaignSaveTests.cpp`, `QuebecGameplay.cpp`, and `QuebecFeedbackTests.cpp`. OpenSpec CLI is not installed, so `openspec validate` did not run.
+- Next target: the playable scores that can still move are capped offline, so the score stays. The next beat needs a new verb that is not this post, the lift, the yard, the bolt, or the parcel. Mission clarity stays at 7 and stays out of reach offline. Responsiveness stays at 3 and stays out of scope. Performance stays at 4 and is not measurable here.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 3 | Unchanged. |
+| Color palette | 5 | Unchanged. |
+| Detail density | 3 | Unchanged. |
+| Texture and material quality | 3 | Unchanged. |
+| Composition and camera | 4 | Unchanged. |
+| Atmosphere | 4 | Unchanged. |
+| Character models | 3 | Unchanged. |
+| Animation smoothness | 3 | Unchanged. |
+| Particles and VFX | 2 | Unchanged. |
+| UI polish | 4 | Unchanged. The native card was not seen, and French and English still share the screen. |
+| Responsiveness and input latency | 3 | Unchanged. Still a lagged stream. Out of scope for this loop. |
+| Controls feel | 9 | Unchanged. Getting out faster than a walk still keeps that pace. |
+| Mission clarity | 7 | Unchanged. The fare post still moves from the loaner to the quay. The native card was not seen, and this score stays out of reach offline. |
+| Pacing | 9 | Unchanged. Four seconds on foot after boarding still loses the passenger. |
+| Fun factor | 9 | Unchanged. Chez Lise still sells a kit, a vest, or one star. A post that was not stood is not a new thing to do. |
+| Difficulty curve | 9 | Unchanged. Selling the last page ends it for 200 and does not bank the chain. A wreck still costs more than the goon pay. |
+| Feedback | 9 | Unchanged. A failed side job still plays the falling sting. The sting was not heard. |
+| Sound design | 9 | Unchanged. The dent thud still marks a scrape as quiet. Nobody is voiced, so this is not the reference's city. |
+| Variety | 9 | Unchanged. A post that was not stood is not a new way across the park that was seen. |
+| Performance stability | 4 | Unchanged. Not measurable in this container. |
+
+- Aesthetics raw: 34 / 10 dimensions, index 34
+- Playability raw: 77 / 10 dimensions, index 77
+- Total: 111 / 200
+- Delta vs last round: 0 (round 72 was 111). The post was not stood in Unreal, so every score held.
+
+![GTA title at 1280](gta-missions/r73-title-1280.png)
+
+![GTA title at 390](gta-missions/r73-title-390.png)
+
+![GTA title at 320](gta-missions/r73-title-320.png)
+
+![Play client at 1280, host offline](gta-missions/r73-play-1280.png)
+
+![Menu on a 390-wide screen, Recover visible](gta-missions/r73-play-menu-390.png)
+
+### Round 74 — 2026-10-27 — rubric v1
+
+- What changed: While a mission is open, the play shell shows the title, the objective, the stage, a fail line, and a gold diamond on a small map. The host sends those fields with the driving state. A setback writes the fail line and leaves it until the step changes. That sentence is not saved. The slot stays version 24. Stages from the tour through the post now count on the card. The native card draws the same stage line and fail line. No new mission was added. The post, the lift, and the yard are not retuned.
+- Why it helped: The objective and the reason a beat failed lived on the native card. The shell now shows them, so an offline frame can be read.
+- Screenshots: title `docs/gauntlet/gta-missions/r74-title-1280.png`, `r74-title-390.png`, `r74-title-320.png`. Play client, host offline, `r74-play-1280.png`, with the same card at 390 in `r74-play-card-390.png`. Menu with Recover `r74-play-menu-390.png`. The title loaded with no page errors. The raw play page still logs the missing `@epicgames-ps/lib-pixelstreamingfrontend-ue5.8` specifier; the shell, the card, and Recover still draw. The 1280 frame shows 28 / THE BOLT, Reach the bay before they do, Stage 2 of 3, A crawl is caught. The chase starts again., 180 m, and a gold diamond (60 gold pixels on the map). The bolt was not driven in Unreal. The native card was not seen. `node Browser/mission-card.test.mjs` reports the lines and the marker. Syntax check `--both` passed, 96 files, 0 failed. OpenSpec CLI is not installed, so `openspec validate` did not run.
+- Next target: feedback and juice, a payout popup and a sound cue, checkable in the shell or an offline frame. Feedback stays at 9 until a popup is seen. Sound stays at 9 until a cue is heard. Responsiveness stays at 3 and stays out of scope. Performance stays at 4 and is not measurable here.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 3 | Unchanged. |
+| Color palette | 5 | Unchanged. |
+| Detail density | 3 | Unchanged. |
+| Texture and material quality | 3 | Unchanged. |
+| Composition and camera | 4 | Unchanged. |
+| Atmosphere | 4 | Unchanged. |
+| Character models | 3 | Unchanged. |
+| Animation smoothness | 3 | Unchanged. |
+| Particles and VFX | 2 | Unchanged. |
+| UI polish | 4 | Unchanged. The shell card was seen. The native card was not compared, and French and English still share the screen. |
+| Responsiveness and input latency | 3 | Unchanged. Still a lagged stream. Out of scope for this loop. |
+| Controls feel | 9 | Unchanged. Getting out faster than a walk still keeps that pace. |
+| Mission clarity | 8 | The play shell shows the objective, Stage 2 of 3, the fail sentence, and a gold diamond. The native card was not seen. French and English still share the screen, so this is one step. |
+| Pacing | 9 | Unchanged. Four seconds on foot after boarding still loses the passenger. |
+| Fun factor | 9 | Unchanged. Chez Lise still sells a kit, a vest, or one star. |
+| Difficulty curve | 9 | Unchanged. Selling the last page ends it for 200 and does not bank the chain. A wreck still costs more than the goon pay. |
+| Feedback | 9 | Unchanged. A failed side job still plays the falling sting. The sting was not heard. |
+| Sound design | 9 | Unchanged. The dent thud still marks a scrape as quiet. Nobody is voiced, so this is not the reference's city. |
+| Variety | 9 | Unchanged. No new beat was added. |
+| Performance stability | 4 | Unchanged. Not measurable in this container. |
+
+- Aesthetics raw: 34 / 10 dimensions, index 34
+- Playability raw: 78 / 10 dimensions, index 78
+- Total: 112 / 200
+- Delta vs last round: +1 (round 73 was 111). Mission clarity 7 → 8. Every other score held.
+
+![GTA title at 1280](gta-missions/r74-title-1280.png)
+
+![GTA title at 390](gta-missions/r74-title-390.png)
+
+![GTA title at 320](gta-missions/r74-title-320.png)
+
+![Play client at 1280, host offline, mission card visible](gta-missions/r74-play-1280.png)
+
+![Mission card on a 390-wide screen](gta-missions/r74-play-card-390.png)
+
+![Menu on a 390-wide screen, Recover visible](gta-missions/r74-play-menu-390.png)
+
+### Round 75 — 2026-10-27 — rubric v1
+
+- What changed: A story purse shows +700 and the word CHING on the play shell, and the page arms two short notes with it. The popup stays a few seconds, then leaves. The amount is not saved. The slot stays version 24. The three feedback sounds stay three. No new mission was added. The post, the lift, and the yard are not retuned.
+- Why it helped: A banked beat paid, and the play page never said the amount.
+- Screenshots: title `docs/gauntlet/gta-missions/r75-title-1280.png`, `r75-title-390.png`, `r75-title-320.png`. Play client, host offline, `r75-play-1280.png`, with the same popup at 390 in `r75-play-purse-390.png`. Menu with Recover `r75-play-menu-390.png`. The title loaded with no page errors. The raw play page still logs the missing `@epicgames-ps/lib-pixelstreamingfrontend-ue5.8` specifier; the shell, the popup, and Recover still draw. The 1280 frame shows CHING and +700 over the post card. The post was not stood in Unreal. The notes were not heard. `node Browser/mission-card.test.mjs` reports +700, CHING, and the two notes. Syntax check `--both` passed, 96 files, 0 failed. OpenSpec CLI is not installed, so `openspec validate` did not run.
+- Next target: the playable scores that can still move are capped. A popup is not the reference's reward, so feedback stays at 9. The notes were not heard, so sound stays at 9. Responsiveness stays at 3 and stays out of scope. Performance stays at 4 and is not measurable here.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 3 | Unchanged. |
+| Color palette | 5 | Unchanged. |
+| Detail density | 3 | Unchanged. |
+| Texture and material quality | 3 | Unchanged. |
+| Composition and camera | 4 | Unchanged. |
+| Atmosphere | 4 | Unchanged. |
+| Character models | 3 | Unchanged. |
+| Animation smoothness | 3 | Unchanged. |
+| Particles and VFX | 2 | Unchanged. |
+| UI polish | 4 | Unchanged. The shell popup was seen. The native card was not compared, and French and English still share the screen. |
+| Responsiveness and input latency | 3 | Unchanged. Still a lagged stream. Out of scope for this loop. |
+| Controls feel | 9 | Unchanged. Getting out faster than a walk still keeps that pace. |
+| Mission clarity | 8 | Unchanged. The play shell still shows the objective, the stage, the fail sentence, and a gold diamond. |
+| Pacing | 9 | Unchanged. Four seconds on foot after boarding still loses the passenger. |
+| Fun factor | 9 | Unchanged. Chez Lise still sells a kit, a vest, or one star. |
+| Difficulty curve | 9 | Unchanged. Selling the last page ends it for 200 and does not bank the chain. A wreck still costs more than the goon pay. |
+| Feedback | 9 | The shell shows +700 and CHING. The notes were not heard, and a popup is not the reference's reward, so this stays one step short. |
+| Sound design | 9 | Unchanged. The two notes were not heard. The dent thud still marks a scrape as quiet. Nobody is voiced. |
+| Variety | 9 | Unchanged. No new beat was added. |
+| Performance stability | 4 | Unchanged. Not measurable in this container. |
+
+- Aesthetics raw: 34 / 10 dimensions, index 34
+- Playability raw: 78 / 10 dimensions, index 78
+- Total: 112 / 200
+- Delta vs last round: 0 (round 74 was 112). The purse was seen on the shell and was not paid in Unreal, so every score held.
+
+![GTA title at 1280](gta-missions/r75-title-1280.png)
+
+![GTA title at 390](gta-missions/r75-title-390.png)
+
+![GTA title at 320](gta-missions/r75-title-320.png)
+
+![Play client at 1280, host offline, payout visible](gta-missions/r75-play-1280.png)
+
+![Payout on a 390-wide screen](gta-missions/r75-play-purse-390.png)
+
+![Menu on a 390-wide screen, Recover visible](gta-missions/r75-play-menu-390.png)
+
+### Round 76 — 2026-10-27 — rubric v1
+
+- What changed: Mission 32, THE TAB, opens after the post. Walk to the counter. Drive the car through the lane inside a speed band, nose down the road. Stand still for the receipt. Too fast, too slow, or the wrong nose drops the lane and keeps the counter. Moving starts the receipt count again and does not save. The purse is 760, once, when the tab closes. Version 25 writes the step. A version-24 slot starts the tab over. The receipt count and the lane warning stay in the session. No extra car. The post, the lift, and the yard are not retuned.
+- Why it helped: The last beats were one verb. This one is a walk, a drive, and a still count, and a mistake on the lane does not throw away the counter.
+- Screenshots: title `docs/gauntlet/gta-missions/r76-title-1280.png`, `r76-title-390.png`, `r76-title-320.png`. Play client, host offline, `r76-play-1280.png`, with the same card at 390 in `r76-play-card-390.png`. Menu with Recover `r76-play-menu-390.png`. The title loaded with no page errors. The raw play page still logs the missing `@epicgames-ps/lib-pixelstreamingfrontend-ue5.8` specifier; the shell, the card, and Recover still draw. The 1280 frame shows 32 / THE TAB, Take the lane in the band, Stage 2 of 3, That speed drops the tab. Take the lane again., 180 m, and a gold diamond (60 gold pixels on the map). The tab was not driven in Unreal. `python3 Scripts/test_tab.py` is 20 assertions, 0 failures, on three compilers. `python3 Scripts/test_story_save.py` is 280 assertions, 0 failures. Syntax check `--both` passed, 96 files, 0 failed. OpenSpec CLI is not installed, so `openspec validate` did not run.
+- Next target: another complete errand that can be checked the same way. Variety, fun, and pacing stay at 9 until a new way is driven. Responsiveness stays at 3 and stays out of scope. Performance stays at 4 and is not measurable here.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 3 | Unchanged. |
+| Color palette | 5 | Unchanged. |
+| Detail density | 3 | Unchanged. |
+| Texture and material quality | 3 | Unchanged. |
+| Composition and camera | 4 | Unchanged. |
+| Atmosphere | 4 | Unchanged. |
+| Character models | 3 | Unchanged. |
+| Animation smoothness | 3 | Unchanged. |
+| Particles and VFX | 2 | Unchanged. |
+| UI polish | 4 | Unchanged. The shell card was seen. The native card was not compared, and French and English still share the screen. |
+| Responsiveness and input latency | 3 | Unchanged. Still a lagged stream. Out of scope for this loop. |
+| Controls feel | 9 | Unchanged. Getting out faster than a walk still keeps that pace. |
+| Mission clarity | 8 | Unchanged. The play shell shows the tab's objective, Stage 2 of 3, the fail sentence, and a gold diamond. The tab was not driven. |
+| Pacing | 9 | Unchanged. The lane band was not driven. Four seconds on foot after boarding still loses the passenger. |
+| Fun factor | 9 | Unchanged. The three verbs were proven offline and were not played. |
+| Difficulty curve | 9 | Unchanged. Selling the last page ends it for 200 and does not bank the chain. A wreck still costs more than the goon pay. |
+| Feedback | 9 | Unchanged. The shell still shows a purse. The notes were not heard. |
+| Sound design | 9 | Unchanged. The two notes were not heard. The dent thud still marks a scrape as quiet. Nobody is voiced. |
+| Variety | 9 | The tab is a walk, a lane, and a still count. It was not driven, so it is not a new way that was seen. |
+| Performance stability | 4 | Unchanged. Not measurable in this container. |
+
+- Aesthetics raw: 34 / 10 dimensions, index 34
+- Playability raw: 78 / 10 dimensions, index 78
+- Total: 112 / 200
+- Delta vs last round: 0 (round 75 was 112). The tab was tested and the card was seen. It was not driven, so every score held.
+
+![GTA title at 1280](gta-missions/r76-title-1280.png)
+
+![GTA title at 390](gta-missions/r76-title-390.png)
+
+![GTA title at 320](gta-missions/r76-title-320.png)
+
+![Play client at 1280, host offline, the tab card visible](gta-missions/r76-play-1280.png)
+
+![The tab card on a 390-wide screen](gta-missions/r76-play-card-390.png)
+
+![Menu on a 390-wide screen, Recover visible](gta-missions/r76-play-menu-390.png)
+
+### Round 77 — 2026-10-27 — rubric v1
+
+- What changed: Mission 33, THE CARRY, opens after the tab. Pick up the case on foot. Walk it to the stoop. Roll the car across the line, slower than that walk and faster than a crawl. A sprint, a creep, or a car at the stoop drops the delivery and keeps the case. A stop or a bolt drops the roll and keeps the stoop. The purse is 740, once. Version 26 writes the step. A version-25 slot starts the carry over. No extra car. The tab, the post, and the lift are not retuned.
+- Why it helped: The tab asks for a mid-speed lane and a still count. This one asks for a walk, then a roll that is slower than that walk.
+- Screenshots: title `docs/gauntlet/gta-missions/r77-title-1280.png`, `r77-title-390.png`, `r77-title-320.png`. Play client, host offline, `r77-play-1280.png`, with the same card at 390 in `r77-play-card-390.png`. Menu with Recover `r77-play-menu-390.png`. The title loaded with no page errors. The raw play page still logs the missing `@epicgames-ps/lib-pixelstreamingfrontend-ue5.8` specifier; the shell, the card, and Recover still draw. The 1280 frame shows 33 / THE CARRY, Roll the car across the line, Stage 3 of 3, That speed drops the roll. Take the line again., 90 m, and a gold diamond (60 gold pixels on the map). The carry was not driven in Unreal. `python3 Scripts/test_carry.py` is 20 assertions, 0 failures, on three compilers. `python3 Scripts/test_story_save.py` is 290 assertions, 0 failures. Syntax check `--both` passed, 96 files, 0 failed. OpenSpec CLI is not installed, so `openspec validate` did not run.
+- Next target: another complete errand with a different verb. Variety, fun, and pacing stay at 9 until a new way is driven. Responsiveness stays at 3 and stays out of scope. Performance stays at 4 and is not measurable here.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 3 | Unchanged. |
+| Color palette | 5 | Unchanged. |
+| Detail density | 3 | Unchanged. |
+| Texture and material quality | 3 | Unchanged. |
+| Composition and camera | 4 | Unchanged. |
+| Atmosphere | 4 | Unchanged. |
+| Character models | 3 | Unchanged. |
+| Animation smoothness | 3 | Unchanged. |
+| Particles and VFX | 2 | Unchanged. |
+| UI polish | 4 | Unchanged. The shell card was seen. The native card was not compared, and French and English still share the screen. |
+| Responsiveness and input latency | 3 | Unchanged. Still a lagged stream. Out of scope for this loop. |
+| Controls feel | 9 | Unchanged. Getting out faster than a walk still keeps that pace. |
+| Mission clarity | 8 | Unchanged. The play shell shows the carry's objective, Stage 3 of 3, the fail sentence, and a gold diamond. The carry was not driven. |
+| Pacing | 9 | Unchanged. The walk and the slow roll were not driven. |
+| Fun factor | 9 | Unchanged. The three verbs were proven offline and were not played. |
+| Difficulty curve | 9 | Unchanged. Selling the last page ends it for 200 and does not bank the chain. A wreck still costs more than the goon pay. |
+| Feedback | 9 | Unchanged. The shell still shows a purse. The notes were not heard. |
+| Sound design | 9 | Unchanged. The two notes were not heard. The dent thud still marks a scrape as quiet. Nobody is voiced. |
+| Variety | 9 | The carry is a pickup, a walk, and a slow roll. It was not driven, so it is not a new way that was seen. |
+| Performance stability | 4 | Unchanged. Not measurable in this container. |
+
+- Aesthetics raw: 34 / 10 dimensions, index 34
+- Playability raw: 78 / 10 dimensions, index 78
+- Total: 112 / 200
+- Delta vs last round: 0 (round 76 was 112). The carry was tested and the card was seen. It was not driven, so every score held.
+
+![GTA title at 1280](gta-missions/r77-title-1280.png)
+
+![GTA title at 390](gta-missions/r77-title-390.png)
+
+![GTA title at 320](gta-missions/r77-title-320.png)
+
+![Play client at 1280, host offline, the carry card visible](gta-missions/r77-play-1280.png)
+
+![The carry card on a 390-wide screen](gta-missions/r77-play-card-390.png)
+
+![Menu on a 390-wide screen, Recover visible](gta-missions/r77-play-menu-390.png)
+
+### Round 78 — 2026-10-27 — rubric v1
+
+- What changed: A finished side job says MISSION DONE or MISSION FAILED, the English reason, and the cash on a success. A failure that can still be restarted says R restarts, or Menu · Recover on touch. The play shell shows that plate with no host, and the stream sends the same words. The native plate uses those words too. Job rules, rewards, and the retry window stay as they were. No new mission.
+- Why it helped: The result plate was the line that mixed French heads with English retry words, and the play page never showed it. The page we run now shows one language on that plate.
+- Screenshots: title `docs/gauntlet/gta-missions/r78-title-1280.png`, `r78-title-390.png`, `r78-title-320.png`. Play client, host offline, `r78-play-1280.png`, with the same plate at 390 in `r78-play-card-390.png`. Menu with Recover `r78-play-menu-390.png`. The title loaded with no page errors. The raw play page still logs the missing `@epicgames-ps/lib-pixelstreamingfrontend-ue5.8` specifier; the shell, the card, the plate, and Recover still draw. The 1280 frame shows MISSION FAILED, Time ran out · R restarts, on a pink plate (12064 pink pixels). The 390 frame shows the same words, wrapped, with 17860 pink pixels. No French accent is on that plate. The native wanted plate, the down overlay, and the job column were not seen. `python3 Scripts/test_banner.py` is 32 assertions, 0 failures, on three compilers. `node Browser/mission-card.test.mjs` passed. Syntax check `--both` passed, 96 files, 0 failed. OpenSpec CLI is not installed, so `openspec validate` did not run. `Browser/browser.test.mjs` did not run: the `ws` package is not installed here.
+- Next target: UI polish (5) is still the lowest line this loop can move without Unreal. The wanted plate, the down overlay, and the job column still mix languages, and they were not on the shell. Particles stay at 2 until the world effects are seen. Responsiveness stays at 3 and stays out of scope. Performance stays at 4 and is not measurable here.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 3 | Unchanged. |
+| Color palette | 5 | Unchanged. The plate uses the same ink, paper, and magenta. |
+| Detail density | 3 | Unchanged. |
+| Texture and material quality | 3 | Unchanged. |
+| Composition and camera | 4 | Unchanged. |
+| Atmosphere | 4 | Unchanged. |
+| Character models | 3 | Unchanged. |
+| Animation smoothness | 3 | Unchanged. |
+| Particles and VFX | 2 | Unchanged. The plate is a panel, not a world effect, and the world effects were not seen. |
+| UI polish | 5 | The play shell shows MISSION FAILED, Time ran out, and R restarts, with no French accent on that plate. The native wanted plate, the down overlay, and the job column were not seen and still mix languages, so this is one step. |
+| Responsiveness and input latency | 3 | Unchanged. Still a lagged stream. Out of scope for this loop. |
+| Controls feel | 9 | Unchanged. Getting out faster than a walk still keeps that pace. |
+| Mission clarity | 8 | Unchanged. The play shell still shows the carry's objective, Stage 3 of 3, the fail sentence, and a gold diamond. The job plate is a result, not a new objective. |
+| Pacing | 9 | Unchanged. Nothing new was driven. |
+| Fun factor | 9 | Unchanged. The plate was seen. It was not played. |
+| Difficulty curve | 9 | Unchanged. Selling the last page ends it for 200 and does not bank the chain. A wreck still costs more than the goon pay. |
+| Feedback | 9 | Unchanged. The shell still shows a purse. The notes were not heard. The result plate adds words, not a new hit. |
+| Sound design | 9 | Unchanged. The two notes were not heard. The dent thud still marks a scrape as quiet. Nobody is voiced. |
+| Variety | 9 | Unchanged. No new way to play was added, and the carry was not driven. |
+| Performance stability | 4 | Unchanged. Not measurable in this container. |
+
+- Aesthetics raw: 35 / 10 dimensions, index 35
+- Playability raw: 78 / 10 dimensions, index 78
+- Total: 113 / 200
+- Delta vs last round: +1 (round 77 was 112). UI polish 4 → 5. Every other score held.
+
+![GTA title at 1280](gta-missions/r78-title-1280.png)
+
+![GTA title at 390](gta-missions/r78-title-390.png)
+
+![GTA title at 320](gta-missions/r78-title-320.png)
+
+![Play client at 1280, host offline, the job plate visible](gta-missions/r78-play-1280.png)
+
+![The job plate on a 390-wide screen](gta-missions/r78-play-card-390.png)
+
+![Menu on a 390-wide screen, Recover visible](gta-missions/r78-play-menu-390.png)
+
+### Round 79 — 2026-10-27 — rubric v1
+
+- What changed: A silent star rise says WANTED and a star count. Going down says ARRESTED or KNOCKED OUT, and names Poste de quartier 38 or Hôpital Notre-Dame. Losing the police says LOST THEM. The garage says the search is off. The play shell shows that plate with no host, and the stream sends the same state. The native plates and the police notices use those words. Heat, arrest timing, and the respawn places stay as they were. No new mission.
+- Why it helped: The star plate and the down plate were the next chrome that mixed languages, and the play page never showed them. The page we run now shows WANTED and ARRESTED in English.
+- Screenshots: title `docs/gauntlet/gta-missions/r79-title-1280.png`, `r79-title-390.png`, `r79-title-320.png`. Play client, host offline, `r79-play-1280.png`, with the arrest plate at 390 in `r79-play-card-390.png`. Menu with Recover `r79-play-menu-390.png`. The title loaded with no page errors. The raw play page still logs the missing `@epicgames-ps/lib-pixelstreamingfrontend-ue5.8` specifier; the shell, the card, the plate, and Recover still draw. The 1280 frame shows WANTED and 2 stars on a cyan plate (9052 cyan pixels). The 390 frame shows ARRESTED and To Poste de quartier 38 on a pink plate (14968 pink pixels). The job column and resident speech were not on the shell. `python3 Scripts/test_banner.py` is 39 assertions, 0 failures, on three compilers. `node Browser/mission-card.test.mjs` passed. Syntax check `--both` passed, 96 files, 0 failed. OpenSpec CLI is not installed, so `openspec validate` did not run. `Browser/browser.test.mjs` did not run: the `ws` package is not installed here.
+- Next target: UI polish (6) is still the lowest line this loop can move without Unreal. The job column and resident speech still mix languages, and they were not on the shell. Particles stay at 2 until the world effects are seen. Responsiveness stays at 3 and stays out of scope. Performance stays at 4 and is not measurable here.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 3 | Unchanged. |
+| Color palette | 5 | Unchanged. Wanted uses the same cyan. Down uses the same pink as a failed job. |
+| Detail density | 3 | Unchanged. |
+| Texture and material quality | 3 | Unchanged. |
+| Composition and camera | 4 | Unchanged. |
+| Atmosphere | 4 | Unchanged. |
+| Character models | 3 | Unchanged. |
+| Animation smoothness | 3 | Unchanged. |
+| Particles and VFX | 2 | Unchanged. The plate is a panel, not a world effect, and the world effects were not seen. |
+| UI polish | 6 | The play shell shows WANTED, 2 stars, and ARRESTED with the station name. The job column and resident speech were not seen and still mix languages, so this is one step. |
+| Responsiveness and input latency | 3 | Unchanged. Still a lagged stream. Out of scope for this loop. |
+| Controls feel | 9 | Unchanged. Getting out faster than a walk still keeps that pace. |
+| Mission clarity | 8 | Unchanged. The play shell still shows the carry's objective, Stage 3 of 3, the fail sentence, and a gold diamond. The heat plate is a status, not a new objective. |
+| Pacing | 9 | Unchanged. Nothing new was driven. |
+| Fun factor | 9 | Unchanged. The plates were seen. They were not played. |
+| Difficulty curve | 9 | Unchanged. Selling the last page ends it for 200 and does not bank the chain. A wreck still costs more than the goon pay. |
+| Feedback | 9 | Unchanged. The shell still shows a purse. The notes were not heard. The heat plate adds words, not a new hit. |
+| Sound design | 9 | Unchanged. The two notes were not heard. The dent thud still marks a scrape as quiet. Nobody is voiced. |
+| Variety | 9 | Unchanged. No new way to play was added, and the carry was not driven. |
+| Performance stability | 4 | Unchanged. Not measurable in this container. |
+
+- Aesthetics raw: 36 / 10 dimensions, index 36
+- Playability raw: 78 / 10 dimensions, index 78
+- Total: 114 / 200
+- Delta vs last round: +1 (round 78 was 113). UI polish 5 → 6. Every other score held.
+
+![GTA title at 1280](gta-missions/r79-title-1280.png)
+
+![GTA title at 390](gta-missions/r79-title-390.png)
+
+![GTA title at 320](gta-missions/r79-title-320.png)
+
+![Play client at 1280, host offline, the wanted plate visible](gta-missions/r79-play-1280.png)
+
+![The arrest plate on a 390-wide screen](gta-missions/r79-play-card-390.png)
+
+![Menu on a 390-wide screen, Recover visible](gta-missions/r79-play-menu-390.png)
+
+### Round 80 — 2026-10-27 — rubric v1
+
+- What changed: A running side job shows its English name and the distance. The thief adds damage. The crew adds a down count. The start prompt says JOB and again. A job already running says JOB ON and R restarts. The play shell shows that column with no host. The 3D signs, the objective sentences, and resident speech stay as they are. No new mission.
+- Why it helped: The column was the next chrome that named the work in French, and the play page never showed it. The page we run now shows Car thief and damage in English.
+- Screenshots: title `docs/gauntlet/gta-missions/r80-title-1280.png`, `r80-title-390.png`, `r80-title-320.png`. Play client, host offline, `r80-play-1280.png`, with the same column at 390 in `r80-play-card-390.png`. Menu with Recover `r80-play-menu-390.png`. The title loaded with no page errors. The raw play page still logs the missing `@epicgames-ps/lib-pixelstreamingfrontend-ue5.8` specifier; the shell, the card, the column, and Recover still draw. The 1280 frame shows CAR THIEF and 40 m · damage 55 % on the right (1810 gold pixels). The 390 frame shows the same words along the bottom (2740 gold pixels). The objective sentences, the 3D signs, and resident speech were not on that column. `python3 Scripts/test_banner.py` is 47 assertions, 0 failures, on three compilers. `node Browser/mission-card.test.mjs` passed. Syntax check `--both` passed, 96 files, 0 failed. OpenSpec CLI is not installed, so `openspec validate` did not run. `Browser/browser.test.mjs` did not run: the `ws` package is not installed here.
+- Next target: UI polish (7) is still the lowest line this loop can move without Unreal. The objective sentences, the 3D signs, and resident speech still mix languages, and they were not on this column. Particles stay at 2 until the world effects are seen. Responsiveness stays at 3 and stays out of scope. Performance stays at 4 and is not measurable here.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 3 | Unchanged. |
+| Color palette | 5 | Unchanged. The column uses the same gold and ink as the mission card. |
+| Detail density | 3 | Unchanged. |
+| Texture and material quality | 3 | Unchanged. |
+| Composition and camera | 4 | Unchanged. |
+| Atmosphere | 4 | Unchanged. |
+| Character models | 3 | Unchanged. |
+| Animation smoothness | 3 | Unchanged. |
+| Particles and VFX | 2 | Unchanged. The column is a panel, not a world effect, and the world effects were not seen. |
+| UI polish | 7 | The play shell shows CAR THIEF and damage in English, beside the mission card. The objective sentences, the 3D signs, and resident speech were not seen and still mix languages, so this is one step. |
+| Responsiveness and input latency | 3 | Unchanged. Still a lagged stream. Out of scope for this loop. |
+| Controls feel | 9 | Unchanged. Getting out faster than a walk still keeps that pace. |
+| Mission clarity | 8 | Unchanged. The play shell still shows the carry's objective, Stage 3 of 3, the fail sentence, and a gold diamond. The column names a side job, not a new story objective. |
+| Pacing | 9 | Unchanged. Nothing new was driven. |
+| Fun factor | 9 | Unchanged. The column was seen. It was not played. |
+| Difficulty curve | 9 | Unchanged. Selling the last page ends it for 200 and does not bank the chain. A wreck still costs more than the goon pay. |
+| Feedback | 9 | Unchanged. The shell still shows a purse. The notes were not heard. The column adds words, not a new hit. |
+| Sound design | 9 | Unchanged. The two notes were not heard. The dent thud still marks a scrape as quiet. Nobody is voiced. |
+| Variety | 9 | Unchanged. No new way to play was added, and the carry was not driven. |
+| Performance stability | 4 | Unchanged. Not measurable in this container. |
+
+- Aesthetics raw: 37 / 10 dimensions, index 37
+- Playability raw: 78 / 10 dimensions, index 78
+- Total: 115 / 200
+- Delta vs last round: +1 (round 79 was 114). UI polish 6 → 7. Every other score held.
+
+![GTA title at 1280](gta-missions/r80-title-1280.png)
+
+![GTA title at 390](gta-missions/r80-title-390.png)
+
+![GTA title at 320](gta-missions/r80-title-320.png)
+
+![Play client at 1280, host offline, the job column visible](gta-missions/r80-play-1280.png)
+
+![The job column on a 390-wide screen](gta-missions/r80-play-card-390.png)
+
+![Menu on a 390-wide screen, Recover visible](gta-missions/r80-play-menu-390.png)
+
+### Round 81 — 2026-10-27 — rubric v1
+
+- What changed: The remaining player-facing sentences are English: job objectives, 3D signs, weapon names, comic hits, resident greetings and warnings, and the small notices at the stand, the shop, the bow, the ring, the dip, the doors, the crate, and the buoy. Place names stay names. The play shell shows the running objective under the job name and a resident line, with no host. No new mission. The save slot stays at version 26.
+- Why it helped: The column named the job in English and the sentence under it was still French. The page we run now shows Ram the stolen car until it gives, and Hi! A walk in the park feels good.
+- Screenshots: title `docs/gauntlet/gta-missions/r81-title-1280.png`, `r81-title-390.png`, `r81-title-320.png`. Play client, host offline, `r81-play-1280.png`, with the same lines at 390 in `r81-play-card-390.png`. Menu with Recover `r81-play-menu-390.png`. The title loaded with no page errors. The raw play page still logs the missing `@epicgames-ps/lib-pixelstreamingfrontend-ue5.8` specifier; the shell, the card, the column, the resident line, and Recover still draw. The 1280 frame shows CAR THIEF, Ram the stolen car until it gives, and 40 m · damage 55 % (2044 gold pixels) and the resident line (9563 paper pixels). The 390 frame shows the same words, the column along the bottom and the line above it (2492 gold pixels, 9874 paper pixels). The native HUD was not seen in Unreal. `python3 Scripts/test_banner.py` is 61 assertions, 0 failures, on three compilers. `python3 Scripts/test_street_meter.py` passed. `node Browser/mission-card.test.mjs` passed. Syntax check `--both` passed, 96 files, 0 failed. OpenSpec CLI is not installed, so `openspec validate` did not run. `Browser/browser.test.mjs` did not run: the `ws` package is not installed here.
+- Next target: particles (2). A shell effect that a test counts can move it one step. Responsiveness stays at 3 until that effect is merged. Performance stays at 4 and is not measurable here.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 3 | Unchanged. |
+| Color palette | 5 | Unchanged. The column and the resident line use the same gold, ink, and paper. |
+| Detail density | 3 | Unchanged. |
+| Texture and material quality | 3 | Unchanged. |
+| Composition and camera | 4 | Unchanged. |
+| Atmosphere | 4 | Unchanged. |
+| Character models | 3 | Unchanged. |
+| Animation smoothness | 3 | Unchanged. |
+| Particles and VFX | 2 | Unchanged. The new lines are type, not a world effect, and the world effects were not seen. |
+| UI polish | 8 | The play shell shows the English objective Ram the stolen car until it gives and the resident line Hi! A walk in the park feels good. The native HUD was not seen in Unreal, so this is one step. |
+| Responsiveness and input latency | 3 | Unchanged. Still a lagged stream. |
+| Controls feel | 9 | Unchanged. Getting out faster than a walk still keeps that pace. |
+| Mission clarity | 8 | Unchanged. The play shell still shows the carry's objective, Stage 3 of 3, the fail sentence, and a gold diamond. The column names a side job, not a new story objective. |
+| Pacing | 9 | Unchanged. Nothing new was driven. |
+| Fun factor | 9 | Unchanged. The sentences were seen. They were not played. |
+| Difficulty curve | 9 | Unchanged. Selling the last page ends it for 200 and does not bank the chain. A wreck still costs more than the goon pay. |
+| Feedback | 9 | Unchanged. The shell still shows a purse. The notes were not heard. The resident line adds words, not a new hit. |
+| Sound design | 9 | Unchanged. The two notes were not heard. The dent thud still marks a scrape as quiet. Nobody is voiced. |
+| Variety | 9 | Unchanged. No new way to play was added, and the carry was not driven. |
+| Performance stability | 4 | Unchanged. Not measurable in this container. |
+
+- Aesthetics raw: 38 / 10 dimensions, index 38
+- Playability raw: 78 / 10 dimensions, index 78
+- Total: 116 / 200
+- Delta vs last round: +1 (round 80 was 115). UI polish 7 → 8. Every other score held.
+
+![GTA title at 1280](gta-missions/r81-title-1280.png)
+
+![GTA title at 390](gta-missions/r81-title-390.png)
+
+![GTA title at 320](gta-missions/r81-title-320.png)
+
+![Play client at 1280, host offline, the English objective and a resident line](gta-missions/r81-play-1280.png)
+
+![The English objective and a resident line on a 390-wide screen](gta-missions/r81-play-card-390.png)
+
+![Menu on a 390-wide screen, Recover visible](gta-missions/r81-play-menu-390.png)
+
+### Round 82 — 2026-10-27 — rubric v1
+
+- What changed: A walk's five foot puffs show on the play page. Each puff is born, rises, and dies on the same 0.7 second rule. The count, the life, the interval, and the speed that starts a scuff stay as they are. No new sound. No new mission.
+- Why it helped: The dust already existed at the rear shoe and the page we run never showed it. The page now paints that trail.
+- Screenshots: title `docs/gauntlet/gta-missions/r82-title-1280.png`, `r82-title-390.png`, `r82-title-320.png`. Play client, host offline, `r82-play-1280.png`, with the same trail at 390 in `r82-play-card-390.png`. Menu with Recover `r82-play-menu-390.png`. The title loaded with no page errors. The raw play page still logs the missing `@epicgames-ps/lib-pixelstreamingfrontend-ue5.8` specifier; the shell, the card, the dust, and Recover still draw. The 1280 frame shows five pale puffs at the lower left (1767 pale pixels). The 390 frame shows the same trail above the column (912 pale pixels). The city's own dust was not seen in Unreal. `python3 Scripts/test_scuff.py` passed (`NORD_SCUFF_OK 43.68 28.64`). `node Browser/mission-card.test.mjs` passed. Syntax check `--both` passed, 96 files, 0 failed. OpenSpec CLI is not installed, so `openspec validate` did not run. `Browser/browser.test.mjs` did not run: the `ws` package is not installed here.
+- Next target: responsiveness (3). A measured input-path change can move it one step. Performance stays at 4 and is not measurable here.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 3 | Unchanged. |
+| Color palette | 5 | Unchanged. The puffs use the same paper and ink. |
+| Detail density | 3 | Unchanged. |
+| Texture and material quality | 3 | Unchanged. |
+| Composition and camera | 4 | Unchanged. |
+| Atmosphere | 4 | Unchanged. |
+| Character models | 3 | Unchanged. |
+| Animation smoothness | 3 | Unchanged. |
+| Particles and VFX | 3 | The play shell shows five foot puffs that rise and fade on the existing 0.7 second rule. The city's own dust was not seen in Unreal, so this is one step. |
+| UI polish | 8 | Unchanged. The English objective and the resident line are still on the shell. |
+| Responsiveness and input latency | 3 | Unchanged. Still a lagged stream. |
+| Controls feel | 9 | Unchanged. Getting out faster than a walk still keeps that pace. |
+| Mission clarity | 8 | Unchanged. The play shell still shows the carry's objective, Stage 3 of 3, the fail sentence, and a gold diamond. |
+| Pacing | 9 | Unchanged. Nothing new was driven. |
+| Fun factor | 9 | Unchanged. The dust was seen. It was not walked. |
+| Difficulty curve | 9 | Unchanged. Selling the last page ends it for 200 and does not bank the chain. A wreck still costs more than the goon pay. |
+| Feedback | 9 | Unchanged. The shell still shows a purse. The notes were not heard. The dust adds a trail, not a new hit. |
+| Sound design | 9 | Unchanged. The two notes were not heard. No new sound was added. |
+| Variety | 9 | Unchanged. No new way to play was added, and the carry was not driven. |
+| Performance stability | 4 | Unchanged. Not measurable in this container. |
+
+- Aesthetics raw: 39 / 10 dimensions, index 39
+- Playability raw: 78 / 10 dimensions, index 78
+- Total: 117 / 200
+- Delta vs last round: +1 (round 81 was 116). Particles 2 → 3. Every other score held.
+
+![GTA title at 1280](gta-missions/r82-title-1280.png)
+
+![GTA title at 390](gta-missions/r82-title-390.png)
+
+![GTA title at 320](gta-missions/r82-title-320.png)
+
+![Play client at 1280, host offline, five foot puffs](gta-missions/r82-play-1280.png)
+
+![The foot puffs on a 390-wide screen](gta-missions/r82-play-card-390.png)
+
+![Menu on a 390-wide screen, Recover visible](gta-missions/r82-play-menu-390.png)
+
+### Round 83 — 2026-10-27 — rubric v1
+
+- What changed: The play shell hears the card, the column, the speech, and the dust every tenth of a second. The old poll was every half second. A foot puff lives 0.7 seconds, so five of the new samples fit in one life and two of the old gaps do not. Steering rates do not change. No new mission.
+- Why it helped: A half-second poll can miss the rise of a puff. The page we run now asks again before that puff dies.
+- Screenshots: title `docs/gauntlet/gta-missions/r83-title-1280.png`, `r83-title-390.png`, `r83-title-320.png`. Play client, host offline, `r83-play-1280.png`, with the same trail at 390 in `r83-play-card-390.png`. Menu with Recover `r83-play-menu-390.png`. The title loaded with no page errors. The raw play page still logs the missing `@epicgames-ps/lib-pixelstreamingfrontend-ue5.8` specifier; the shell, the card, the dust, and Recover still draw. The 1280 frame still shows five pale puffs (1767 pale pixels). The 390 frame still shows the trail above the column (912 pale pixels). The video stream and the phone steer were not timed. `python3 Scripts/test_scuff.py` passed, and it fails if the half-second poll returns. Syntax check of `QuebecGameplay.cpp` passed for the game and editor targets. OpenSpec CLI is not installed, so `openspec validate` did not run. `Browser/browser.test.mjs` did not run: the `ws` package is not installed here.
+- Next target: the next lowest line this loop can measure without Unreal. Lighting, detail, texture, models, and animation stay with the graphics loop. Performance stays at 4 and is not measurable here.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 3 | Unchanged. |
+| Color palette | 5 | Unchanged. |
+| Detail density | 3 | Unchanged. |
+| Texture and material quality | 3 | Unchanged. |
+| Composition and camera | 4 | Unchanged. |
+| Atmosphere | 4 | Unchanged. |
+| Character models | 3 | Unchanged. |
+| Animation smoothness | 3 | Unchanged. |
+| Particles and VFX | 3 | Unchanged. The five puffs are still on the shell. The city's own dust was not seen. |
+| UI polish | 8 | Unchanged. The English objective and the resident line are still on the shell. |
+| Responsiveness and input latency | 4 | The play shell now hears the card, the column, the speech, and the dust every 0.1 s. Five samples fit in a 0.7 s puff. The video stream and the phone steer were not timed, so this is one step. |
+| Controls feel | 9 | Unchanged. Steering rates were not retuned. |
+| Mission clarity | 8 | Unchanged. The play shell still shows the carry's objective, Stage 3 of 3, the fail sentence, and a gold diamond. |
+| Pacing | 9 | Unchanged. Nothing new was driven. |
+| Fun factor | 9 | Unchanged. The shell was seen. It was not driven. |
+| Difficulty curve | 9 | Unchanged. Selling the last page ends it for 200 and does not bank the chain. A wreck still costs more than the goon pay. |
+| Feedback | 9 | Unchanged. The shell still shows a purse. The notes were not heard. |
+| Sound design | 9 | Unchanged. The two notes were not heard. No new sound was added. |
+| Variety | 9 | Unchanged. No new way to play was added, and the carry was not driven. |
+| Performance stability | 4 | Unchanged. Not measurable in this container. |
+
+- Aesthetics raw: 39 / 10 dimensions, index 39
+- Playability raw: 79 / 10 dimensions, index 79
+- Total: 118 / 200
+- Delta vs last round: +1 (round 82 was 117). Responsiveness 3 → 4. Every other score held.
+
+![GTA title at 1280](gta-missions/r83-title-1280.png)
+
+![GTA title at 390](gta-missions/r83-title-390.png)
+
+![GTA title at 320](gta-missions/r83-title-320.png)
+
+![Play client at 1280, host offline, the shell still showing the dust](gta-missions/r83-play-1280.png)
+
+![The dust on a 390-wide screen](gta-missions/r83-play-card-390.png)
+
+![Menu on a 390-wide screen, Recover visible](gta-missions/r83-play-menu-390.png)
+
+### Round 84 — 2026-10-27 — rubric v1
+
+- What changed: The play page names the weapon in hand. The names stay Fists, Hockey stick, Pistol, SMG, and Shotgun. Weapon rules do not change. No new mission.
+- Why it helped: Those names were already English, and the page we run never showed which one was in hand.
+- Screenshots: title `docs/gauntlet/gta-missions/r84-title-1280.png`, `r84-title-390.png`, `r84-title-320.png`. Play client, host offline, `r84-play-1280.png`, with the same chip at 390 in `r84-play-card-390.png`. Menu with Recover `r84-play-menu-390.png`. The title loaded with no page errors. The raw play page still logs the missing `@epicgames-ps/lib-pixelstreamingfrontend-ue5.8` specifier; the shell, the card, the chip, and Recover still draw. The 1280 frame shows PISTOL at the lower right (paper pixels in that corner). The 390 frame shows PISTOL below the mission card and above the resident line (2037 paper pixels in the chip). The native weapon was not seen in Unreal. `node Browser/mission-card.test.mjs` passed. `python3 Scripts/test_street_meter.py` passed. Syntax check of `QuebecGameplay.cpp` passed for the game and editor targets. OpenSpec CLI is not installed, so `openspec validate` did not run. `Browser/browser.test.mjs` did not run: the `ws` package is not installed here.
+- Next target: lighting, detail, texture, models, and animation stay at 3 with the graphics loop. Performance stays at 4 and is not measurable here.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 3 | Unchanged. |
+| Color palette | 5 | Unchanged. The chip uses the same paper and gold. |
+| Detail density | 3 | Unchanged. |
+| Texture and material quality | 3 | Unchanged. |
+| Composition and camera | 4 | Unchanged. |
+| Atmosphere | 4 | Unchanged. |
+| Character models | 3 | Unchanged. |
+| Animation smoothness | 3 | Unchanged. |
+| Particles and VFX | 3 | Unchanged. The five puffs are still on the shell. The city's own dust was not seen. |
+| UI polish | 9 | The play shell shows PISTOL in English, with the objective and the resident line. The native weapon was not seen in Unreal, so this is one step. |
+| Responsiveness and input latency | 4 | Unchanged. The shell still hears the city every 0.1 s. The video stream was not timed. |
+| Controls feel | 9 | Unchanged. Steering rates were not retuned. |
+| Mission clarity | 8 | Unchanged. The play shell still shows the carry's objective, Stage 3 of 3, the fail sentence, and a gold diamond. |
+| Pacing | 9 | Unchanged. Nothing new was driven. |
+| Fun factor | 9 | Unchanged. The chip was seen. It was not used. |
+| Difficulty curve | 9 | Unchanged. Selling the last page ends it for 200 and does not bank the chain. A wreck still costs more than the goon pay. |
+| Feedback | 9 | Unchanged. The shell still shows a purse. The notes were not heard. |
+| Sound design | 9 | Unchanged. The two notes were not heard. No new sound was added. |
+| Variety | 9 | Unchanged. No new way to play was added, and the carry was not driven. |
+| Performance stability | 4 | Unchanged. Not measurable in this container. |
+
+- Aesthetics raw: 40 / 10 dimensions, index 40
+- Playability raw: 79 / 10 dimensions, index 79
+- Total: 119 / 200
+- Delta vs last round: +1 (round 83 was 118). UI polish 8 → 9. Every other score held.
+
+![GTA title at 1280](gta-missions/r84-title-1280.png)
+
+![GTA title at 390](gta-missions/r84-title-390.png)
+
+![GTA title at 320](gta-missions/r84-title-320.png)
+
+![Play client at 1280, host offline, the pistol chip](gta-missions/r84-play-1280.png)
+
+![The pistol chip on a 390-wide screen](gta-missions/r84-play-card-390.png)
+
+![Menu on a 390-wide screen, Recover visible](gta-missions/r84-play-menu-390.png)
+
+### Round 85 — 2026-10-27 — rubric v1
+
+- What changed: A running car's six tail puffs show on the play page. Each puff is born, rises, and dies on the same 1.1 second rule. The count, the life, the interval, and the rise stay as they are. Bonnet smoke stays for a wreck. No new sound. No new mission.
+- Why it helped: The column already left the tail, and the page we run never showed it. The page now paints that column.
+- Screenshots: title `docs/gauntlet/gta-missions/r85-title-1280.png`, `r85-title-390.png`, `r85-title-320.png`. Play client, host offline, `r85-play-1280.png`, with the same column at 390 in `r85-play-card-390.png`. Menu with Recover `r85-play-menu-390.png`. The title loaded with no page errors. The raw play page still logs the missing `@epicgames-ps/lib-pixelstreamingfrontend-ue5.8` specifier; the shell, the card, the column, and Recover still draw. The 1280 frame shows six pale puffs at the lower left of center (1642 pale pixels in the canvas). The 390 frame shows the same column on the right, clear of the card, the speech, the weapon chip, and the job column (1642 pale pixels). The city's own exhaust was not seen in Unreal. `python3 Scripts/test_exhaust.py` passed (`NORD_EXHAUST_OK 6 99 0.433`). `node Browser/mission-card.test.mjs` passed. Syntax check `--both` passed for `QuebecDrive.cpp` and `QuebecGameplay.cpp`, game and editor, 0 failed. OpenSpec CLI is not installed, so `openspec validate` did not run. `Browser/browser.test.mjs` did not run: the `ws` package is not installed here.
+- Next target: composition, atmosphere, responsiveness, and particles are tied at 4. Lighting, detail, texture, models, and animation stay at 3 with the graphics loop. Performance stays at 4 and is not measurable here.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 3 | Unchanged. |
+| Color palette | 5 | Unchanged. The puffs use the same paper and ink. |
+| Detail density | 3 | Unchanged. |
+| Texture and material quality | 3 | Unchanged. |
+| Composition and camera | 4 | Unchanged. |
+| Atmosphere | 4 | Unchanged. |
+| Character models | 3 | Unchanged. |
+| Animation smoothness | 3 | Unchanged. |
+| Particles and VFX | 4 | The play shell shows six tail puffs that rise and fade on the existing 1.1 second rule. The city's own exhaust was not seen in Unreal, so this is one step. |
+| UI polish | 9 | Unchanged. The pistol chip, the English objective, and the resident line are still on the shell. |
+| Responsiveness and input latency | 4 | Unchanged. The shell still hears the city every 0.1 s. The video stream was not timed. |
+| Controls feel | 9 | Unchanged. Steering rates were not retuned. |
+| Mission clarity | 8 | Unchanged. The play shell still shows the carry's objective, Stage 3 of 3, the fail sentence, and a gold diamond. |
+| Pacing | 9 | Unchanged. Nothing new was driven. |
+| Fun factor | 9 | Unchanged. The column was seen. It was not driven. |
+| Difficulty curve | 9 | Unchanged. Selling the last page ends it for 200 and does not bank the chain. A wreck still costs more than the goon pay. |
+| Feedback | 9 | Unchanged. The shell still shows a purse. The notes were not heard. The column adds a trail, not a new hit. |
+| Sound design | 9 | Unchanged. The two notes were not heard. No new sound was added. |
+| Variety | 9 | Unchanged. No new way to play was added, and the carry was not driven. |
+| Performance stability | 4 | Unchanged. Not measurable in this container. |
+
+- Aesthetics raw: 41 / 10 dimensions, index 41
+- Playability raw: 79 / 10 dimensions, index 79
+- Total: 120 / 200
+- Delta vs last round: +1 (round 84 was 119). Particles 3 → 4. Every other score held.
+
+![GTA title at 1280](gta-missions/r85-title-1280.png)
+
+![GTA title at 390](gta-missions/r85-title-390.png)
+
+![GTA title at 320](gta-missions/r85-title-320.png)
+
+![Play client at 1280, host offline, six tail puffs](gta-missions/r85-play-1280.png)
+
+![The tail puffs on a 390-wide screen](gta-missions/r85-play-card-390.png)
+
+![Menu on a 390-wide screen, Recover visible](gta-missions/r85-play-menu-390.png)

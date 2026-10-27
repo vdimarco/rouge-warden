@@ -1,4 +1,5 @@
 #include "QuebecCrateMark.h"
+#include "QuebecBanner.h"
 #include "QuebecCrate.h"
 #include "QuebecGameplay.h"
 #include "QuebecPlayerState.h"
@@ -95,7 +96,7 @@ void AQuebecCrate::BuildPosts()
     const FVector Curb = FVector(0., 0., 40.);
     const FVector Park = FVector(QuebecCrate::ParkX, QuebecCrate::ParkY, 0.) - Origin + FVector(0., 0., 80.);
     AddPost(TEXT("Caisse"), Curb, FVector(46., 46., 40.) / 100.f, Lime);
-    AddCaption(TEXT("CaisseName"), Curb + FVector(0., 0., 80.), TEXT("CAISSE"));
+    AddCaption(TEXT("CaisseName"), Curb + FVector(0., 0., 80.), FString(UTF8_TO_TCHAR(QuebecBanner::Crate)));
     AddPost(TEXT("Persillier"), Park, FVector(28., 28., 160.) / 100.f, Ink);
     AddCaption(TEXT("PersillierName"), Park + FVector(0., 0., 120.), TEXT("PERSILLIER"));
 }
@@ -169,7 +170,7 @@ void AQuebecCrate::Tick(float DeltaSeconds)
     if (Next.Step == QuebecCrate::Park)
     {
         UE_LOG(LogTemp, Display, TEXT("NORD_CRATE carried"));
-        QuebecNotice::Show(Player, TEXT("CAISSE"), TEXT("Prends le vélo. Persillier t'attend."), 4.f);
+        QuebecNotice::Show(Player, FString(UTF8_TO_TCHAR(QuebecBanner::Crate)), FString(UTF8_TO_TCHAR(QuebecBanner::TakeTheBike)), 4.f);
     }
     else if (Prize > 0 && Stats)
     {

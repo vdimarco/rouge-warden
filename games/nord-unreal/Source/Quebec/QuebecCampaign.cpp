@@ -11,6 +11,23 @@
 #include "QuebecCut.h"
 #include "QuebecChase.h"
 #include "QuebecFinale.h"
+#include "QuebecFollow.h"
+#include "QuebecRoll.h"
+#include "QuebecBells.h"
+#include "QuebecBlock.h"
+#include "QuebecSend.h"
+#include "QuebecPursue.h"
+#include "QuebecNose.h"
+#include "QuebecSlip.h"
+#include "QuebecMarch.h"
+#include "QuebecDitch.h"
+#include "QuebecParcel.h"
+#include "QuebecBolt.h"
+#include "QuebecYard.h"
+#include "QuebecLift.h"
+#include "QuebecPost.h"
+#include "QuebecTab.h"
+#include "QuebecCarry.h"
 #include "QuebecChain.h"
 #include "QuebecPace.h"
 #include "QuebecConvoyRules.h"
@@ -64,6 +81,109 @@ static_assert(QuebecFinale::StepBanked == AQuebecCampaign::FinaleBankedStep, "mi
 static_assert(QuebecStorySave::FinaleBanked == AQuebecCampaign::FinaleBankedStep, "the story tail left the day");
 static_assert(QuebecFinale::CountsAsCar(0) && !QuebecFinale::CountsAsCar(1), "only a car takes the last seat");
 static_assert(QuebecFinale::ColumnX == 32800. && QuebecFinale::MeetY == 19000., "the meet left the lawn");
+static_assert(QuebecFollow::StepBanked == AQuebecCampaign::FollowBankedStep, "mission 17 and the story tail share one banked index");
+static_assert(QuebecStorySave::FollowBanked == AQuebecCampaign::FollowBankedStep, "the story tail left the gap");
+static_assert(QuebecFollow::Speed == QuebecPace::WalkCmPerSecond, "a matched walk would change the gap");
+static_assert(QuebecFollow::CornerX == 20000. && QuebecFollow::CornerY == 22000., "the corner left the north lawn");
+static_assert(QuebecRoll::StepBanked == AQuebecCampaign::RollBankedStep, "mission 18 and the story tail share one banked index");
+static_assert(QuebecStorySave::RollBanked == AQuebecCampaign::RollBankedStep, "the story tail left the cart");
+static_assert(QuebecRoll::Speed == QuebecPace::WalkCmPerSecond, "a walk would not roll the cart");
+static_assert(QuebecRoll::SprintAbove > QuebecPace::WalkCmPerSecond && QuebecRoll::SprintAbove < QuebecPace::SprintCmPerSecond, "the tip left the space between a walk and a sprint");
+static_assert(QuebecRoll::StartX == 16800. && QuebecRoll::StartY == 21000., "the cart left the north lawn");
+static_assert(QuebecBells::StepBanked == AQuebecCampaign::BellBankedStep, "mission 19 and the story tail share one banked index");
+static_assert(QuebecStorySave::BellBanked == AQuebecCampaign::BellBankedStep, "the story tail left the bells");
+static_assert(QuebecBells::BellX == 24800. && QuebecBells::BellOneY == 22000., "the bells left the north lawn");
+static_assert(QuebecBells::Reach * 2. < QuebecBells::BellOneY - QuebecBells::BellTwoY, "two bells share a circle");
+static_assert(QuebecBells::BellX - QuebecFollow::CornerX > 2500., "the bells sat on the follow");
+static_assert(QuebecBells::BellX - QuebecRoll::StartX > 2500., "the bells sat on the cart");
+static_assert(QuebecBlock::StepBanked == AQuebecCampaign::BlockBankedStep, "mission 20 and the story tail share one banked index");
+static_assert(QuebecStorySave::BlockBanked == AQuebecCampaign::BlockBankedStep, "the story tail left the block");
+static_assert(QuebecBlock::RoadAx == 12728.841 && QuebecBlock::RoadAy == -24734.191, "the courier left the south road");
+static_assert(QuebecBlock::CourierCmPerSecond > QuebecPace::WalkCmPerSecond, "a walk would beat the courier's road");
+static_assert(QuebecBlock::CountsAsCar(0) && !QuebecBlock::CountsAsCar(1) && !QuebecBlock::CountsAsCar(3), "the block took a bike");
+static_assert(QuebecSend::StepBanked == AQuebecCampaign::SendBankedStep, "mission 21 and the story tail share one banked index");
+static_assert(QuebecStorySave::SendBanked == AQuebecCampaign::SendBankedStep, "the story tail left the send-off");
+static_assert(QuebecSend::ColumnX == 28800. && QuebecSend::DoorY == 21000., "the door left the north lawn");
+static_assert(QuebecSend::SpeedCap > QuebecPace::WalkCmPerSecond && QuebecSend::Crawl < QuebecPace::WalkCmPerSecond, "the gentle drive left the space above a walk");
+static_assert(QuebecSend::CountsAsCar(0) && !QuebecSend::CountsAsCar(1) && !QuebecSend::CountsAsCar(3), "the send-off took a bike");
+static_assert(QuebecFinale::ColumnX - QuebecSend::ColumnX > 2500. && QuebecSend::ColumnX - QuebecBells::BellX > 2500., "the send-off sat on an earlier column");
+static_assert(QuebecPursue::StepBanked == AQuebecCampaign::PursueBankedStep, "mission 22 and the story tail share one banked index");
+static_assert(QuebecStorySave::PursueBanked == AQuebecCampaign::PursueBankedStep, "the story tail left the pursuit");
+static_assert(QuebecPursue::RoadAx == 7749.923 && QuebecPursue::RoadAy == -21373.440, "the traffic car left the avenue");
+static_assert(QuebecPursue::CruiseCmPerSecond == 650. && QuebecPursue::CruiseCmPerSecond > QuebecPace::WalkCmPerSecond, "the traffic cruise left a walk behind");
+static_assert(QuebecPursue::CruiseCmPerSecond < QuebecBlock::CourierCmPerSecond && QuebecPursue::CruiseCmPerSecond < QuebecChase::TailCmPerSecond, "the traffic car took a chase speed");
+static_assert(QuebecPursue::CountsAsCar(0) && !QuebecPursue::CountsAsCar(1) && !QuebecPursue::CountsAsCar(3), "the pursuit took a bike");
+static_assert(QuebecPursue::HeadStart > QuebecPursue::Catch, "the seat already counts as alongside");
+static_assert(QuebecNose::StepBanked == AQuebecCampaign::NoseBankedStep, "mission 23 and the story tail share one banked index");
+static_assert(QuebecStorySave::NoseBanked == AQuebecCampaign::NoseBankedStep, "the story tail left the stall");
+static_assert(QuebecNose::RoadAx == 44495.179 && QuebecNose::RoadAy == 23662.179, "the stall left its road");
+static_assert(QuebecNose::ReverseMin == 400. && QuebecNose::ReverseMin > QuebecSend::Crawl, "a crawl counted as backing in");
+static_assert(QuebecNose::ReverseMin < 900., "the reverse asked for more than the car can give");
+static_assert(QuebecNose::CountsAsCar(0) && !QuebecNose::CountsAsCar(1) && !QuebecNose::CountsAsCar(3), "the stall took a bike");
+static_assert(QuebecNose::RecoverAhead > QuebecNose::Reach, "the line-up already sits in the stall");
+static_assert(QuebecSlip::StepBanked == AQuebecCampaign::SlipBankedStep, "mission 24 and the story tail share one banked index");
+static_assert(QuebecStorySave::SlipBanked == AQuebecCampaign::SlipBankedStep, "the story tail left the slip");
+static_assert(QuebecSlip::DoorX == 12800. && QuebecSlip::DoorY == 14000., "the door left the lawn");
+static_assert(QuebecSlip::CloseCmPerSecond > QuebecPace::WalkCmPerSecond && QuebecSlip::CloseCmPerSecond < QuebecPace::SprintCmPerSecond, "the pursuer left the gap between a walk and a sprint");
+static_assert(QuebecSlip::HeadStart > QuebecSlip::Catch, "the door already counts as caught");
+static_assert(QuebecMarch::StepBanked == AQuebecCampaign::MarchBankedStep, "mission 25 and the story tail share one banked index");
+static_assert(QuebecStorySave::MarchBanked == AQuebecCampaign::MarchBankedStep, "the story tail left the march");
+static_assert(QuebecMarch::ColumnX == 13600. && QuebecMarch::StartY == 16800., "the march left its lawn");
+static_assert(QuebecMarch::MarchCmPerSecond == QuebecPace::WalkCmPerSecond, "the march left a walk");
+static_assert(QuebecMarch::OutPast > QuebecMarch::Reach && QuebecMarch::RecoverNorth > QuebecMarch::Reach, "the step-out already sits in the march");
+static_assert(QuebecDitch::StepBanked == AQuebecCampaign::DitchBankedStep, "mission 26 and the story tail share one banked index");
+static_assert(QuebecStorySave::DitchBanked == AQuebecCampaign::DitchBankedStep, "the story tail left the ditch");
+static_assert(QuebecDitch::RoadAx == 46815.398 && QuebecDitch::RoadAy == 34267.636, "the ditch left its road");
+static_assert(QuebecDitch::ChaseCmPerSecond > QuebecPursue::CruiseCmPerSecond && QuebecDitch::ChaseCmPerSecond < QuebecChase::TailCmPerSecond, "the chase car took a traffic speed");
+static_assert(QuebecDitch::ChaseCmPerSecond > QuebecPace::WalkCmPerSecond, "a walk could beat the chase car");
+static_assert(QuebecDitch::RollMin > QuebecSend::Crawl && QuebecDitch::RollMin > QuebecNose::ReverseMin, "a crawl counted as rolling");
+static_assert(QuebecDitch::CountsAsCar(0) && !QuebecDitch::CountsAsCar(1) && !QuebecDitch::CountsAsCar(3), "the ditch took a bike");
+static_assert(QuebecDitch::RecoverBack > QuebecDitch::Reach && QuebecDitch::FootSide > QuebecDitch::Reach, "the clear mark already sits on the line");
+static_assert(QuebecParcel::StepBanked == AQuebecCampaign::ParcelBankedStep, "mission 27 and the story tail share one banked index");
+static_assert(QuebecStorySave::ParcelBanked == AQuebecCampaign::ParcelBankedStep, "the story tail left the parcel");
+static_assert(QuebecParcel::RoadAx == 60966.786 && QuebecParcel::RoadAy == -37733.027, "the parcel left its street");
+static_assert(QuebecParcel::TrafficCmPerSecond < QuebecPace::WalkCmPerSecond && QuebecParcel::TrafficCmPerSecond != QuebecPursue::CruiseCmPerSecond, "the street cars took a walk");
+static_assert(QuebecParcel::Side > QuebecParcel::Lane && QuebecParcel::RecoverPast > QuebecParcel::Reach, "the parcel already sits in the lane");
+static_assert(QuebecBolt::StepBanked == AQuebecCampaign::BoltBankedStep, "mission 28 and the story tail share one banked index");
+static_assert(QuebecStorySave::BoltBanked == AQuebecCampaign::BoltBankedStep, "the story tail left the bolt");
+static_assert(QuebecBolt::RoadAx == -152.082 && QuebecBolt::RoadAy == 21026.122, "the bolt left its road");
+static_assert(QuebecBolt::DriveMin > QuebecDitch::RollMin && QuebecBolt::SeekCmPerSecond != QuebecDitch::ChaseCmPerSecond, "the bolt copied the ditch");
+static_assert(QuebecBolt::SeekCmPerSecond > QuebecDitch::ChaseCmPerSecond && QuebecBolt::SeekCmPerSecond < QuebecChase::TailCmPerSecond, "the seeker took a road car's speed");
+static_assert(QuebecBolt::CountsAsCar(0) && !QuebecBolt::CountsAsCar(1) && !QuebecBolt::CountsAsCar(3), "the bolt took a bike");
+static_assert(QuebecBolt::BaySide > QuebecBolt::Reach && QuebecBolt::GatePast > QuebecBolt::Reach, "the gate already sits on the bay");
+static_assert(QuebecYard::StepBanked == AQuebecCampaign::YardBankedStep, "mission 29 and the story tail share one banked index");
+static_assert(QuebecStorySave::YardBanked == 1, "the story tail left the yard bank");
+static_assert(QuebecYard::NearX == -37668. && QuebecYard::NearY == 59266., "the yard left its near side");
+static_assert(QuebecYard::Pay == 540 && QuebecYard::Pay < 800 && QuebecYard::Pay != QuebecBolt::Pay && QuebecYard::Pay != QuebecShade::Pay && QuebecYard::Pay != QuebecSlip::Pay, "the yard reused a purse");
+static_assert(QuebecYard::Half > 0.2 && QuebecYard::Half < 1.2, "the look is not a cone");
+static_assert(QuebecLift::StepBanked == AQuebecCampaign::LiftBankedStep, "mission 30 and the story tail share one banked index");
+static_assert(QuebecStorySave::LiftBanked == 1, "the story tail left the lift bank");
+static_assert(QuebecLift::PocketX == -25683.074 && QuebecLift::PocketY == 18644.430, "the lift left its stop");
+static_assert(QuebecLift::Walk == QuebecPace::WalkCmPerSecond, "they took a sprint");
+static_assert(QuebecLift::Still != QuebecSend::Crawl && QuebecLift::Still < QuebecSend::Crawl, "the hold copied the send-off crawl");
+static_assert(QuebecLift::Pay == 680 && QuebecLift::Pay < 800 && QuebecLift::Pay != QuebecYard::Pay && QuebecLift::Pay != QuebecBolt::Pay, "the lift reused a purse");
+static_assert(QuebecLift::CountsAsCar(0) && !QuebecLift::CountsAsCar(2), "the lift took a bike");
+static_assert(QuebecStorySave::PostBanked == 1, "mission 31 banks one step");
+static_assert(QuebecPost::StepBanked == AQuebecCampaign::PostBankedStep, "mission 31 and the story tail share one banked index");
+static_assert(QuebecPost::MarkX == 57794.578 && QuebecPost::MarkY == -18855.368, "the post left its mark");
+static_assert(QuebecPost::Walk == QuebecPace::WalkCmPerSecond, "the post took a sprint");
+static_assert(QuebecPost::Drift != QuebecSend::Crawl && QuebecPost::Drift > QuebecSend::Crawl, "standing copied the send-off crawl");
+static_assert(QuebecPost::Pay == 700 && QuebecPost::Pay < 800 && QuebecPost::Pay != QuebecLift::Pay && QuebecPost::Pay != QuebecBolt::Pay, "the post reused a purse");
+static_assert(QuebecPost::Fill == 6., "the post count moved");
+static_assert(QuebecStorySave::TabBanked == 3, "mission 32 banks three steps");
+static_assert(QuebecTab::StepBanked == AQuebecCampaign::TabBankedStep, "mission 32 and the story tail share one banked index");
+static_assert(QuebecTab::CounterX == -19252.447 && QuebecTab::CounterY == -1944.473, "the tab left its counter");
+static_assert(QuebecTab::Slow > QuebecPace::WalkCmPerSecond && QuebecTab::Fast < QuebecBolt::DriveMin, "the lane copied a walk or a bolt");
+static_assert(QuebecTab::Still < QuebecPost::Drift && QuebecTab::Still < QuebecLift::Still, "the receipt copied the post or the lift");
+static_assert(QuebecTab::Pay == 760 && QuebecTab::Pay < 800 && QuebecTab::Pay != QuebecPost::Pay && QuebecTab::Pay != QuebecBolt::Pay, "the tab reused a purse");
+static_assert(QuebecTab::CountsAsCar(0) && !QuebecTab::CountsAsCar(2), "the lane took a bike");
+static_assert(QuebecStorySave::CarryBanked == 3, "mission 33 banks three steps");
+static_assert(QuebecCarry::StepBanked == AQuebecCampaign::CarryBankedStep, "mission 33 and the story tail share one banked index");
+static_assert(QuebecCarry::CaseX == -20220.041 && QuebecCarry::CaseY == -26860.949, "the carry left its case");
+static_assert(QuebecCarry::WalkHi == QuebecPace::WalkCmPerSecond && QuebecCarry::WalkHi < QuebecTab::Slow, "the stoop copied the lane");
+static_assert(QuebecCarry::RollMax < QuebecTab::Slow && QuebecCarry::RollMin > QuebecSend::Crawl, "the line copied the lane or a crawl");
+static_assert(QuebecCarry::Pay == 740 && QuebecCarry::Pay != QuebecTab::Pay && QuebecCarry::Pay != QuebecPost::Pay, "the carry reused a purse");
+static_assert(QuebecCarry::CountsAsCar(0) && !QuebecCarry::CountsAsCar(2), "the line took a bike");
 static_assert(QuebecStorySave::Current != QuebecStorySave::Rejected, "the writer would plant the unsupported fixture");
 
 static FString WithClose(const TCHAR* Line, int32 Bonus)
@@ -199,7 +319,7 @@ void AQuebecCampaign::BeginPlay()
                 CompletedMissions = Save->CompletedMissions;
                 const QuebecStorySave::FSteps Steps = QuebecStorySave::Applied(Save->Version, {
                     Save->PondStep, Save->CourtStep, Save->ShowStep, Save->RescueMask,
-                    Save->ConvoyStep, Save->BlankStep, Save->TourStep, Save->HomeStep, Save->EscortStep, Save->ShadeStep, Save->GrabStep, Save->CutStep, Save->ChaseStep, Save->FinaleStep});
+                    Save->ConvoyStep, Save->BlankStep, Save->TourStep, Save->HomeStep, Save->EscortStep, Save->ShadeStep, Save->GrabStep, Save->CutStep, Save->ChaseStep, Save->FinaleStep, Save->FollowStep, Save->RollStep, Save->BellStep, Save->BlockStep, Save->SendStep, Save->PursueStep, Save->NoseStep, Save->SlipStep, Save->MarchStep, Save->DitchStep, Save->ParcelStep, Save->BoltStep, Save->YardStep, Save->LiftStep, Save->PostStep, Save->TabStep, Save->CarryStep});
                 PondStep = Steps.Pond;
                 CourtStep = Steps.Court;
                 ShowStep = Steps.Show;
@@ -214,6 +334,23 @@ void AQuebecCampaign::BeginPlay()
                 CutStep = Steps.Cut;
                 ChaseStep = Steps.Chase;
                 FinaleStep = Steps.Finale;
+                FollowStep = Steps.Follow;
+                RollStep = Steps.Roll;
+                BellStep = Steps.Bell;
+                BlockStep = Steps.Block;
+                SendStep = Steps.Send;
+                PursueStep = Steps.Pursue;
+                NoseStep = Steps.Nose;
+                SlipStep = Steps.Slip;
+                MarchStep = Steps.March;
+                DitchStep = Steps.Ditch;
+                ParcelStep = Steps.Parcel;
+                BoltStep = Steps.Bolt;
+                YardStep = Steps.Yard;
+                LiftStep = Steps.Lift;
+                PostStep = Steps.Post;
+                TabStep = Steps.Tab;
+                CarryStep = Steps.Carry;
                 // The coat's place is not in the slot. A walk in progress starts again at the meet.
                 EscortFriendX = static_cast<float>(EscortStep >= EscortBankedStep ? QuebecEscort::DoorX : QuebecEscort::MeetX);
                 EscortFriendY = static_cast<float>(EscortStep >= EscortBankedStep ? QuebecEscort::DoorY : QuebecEscort::MeetY);
@@ -247,6 +384,45 @@ void AQuebecCampaign::BeginPlay()
         const QuebecFinale::FDay ParkedDay = QuebecFinale::Park();
         FinaleTailX = static_cast<float>(ParkedDay.TailX);
         FinaleTailY = static_cast<float>(ParkedDay.TailY);
+        // Their place on the path is not in the slot. A walk in progress starts again at the corner.
+        FollowAlong = 0.f;
+        // How far the cart has rolled is not in the slot. A roll in progress starts again at the handles.
+        RollAlong = 0.f;
+        // How far the courier has driven is not in the slot. A run in progress starts again at the north end.
+        BlockAlong = 0.f;
+        // How far the send-off drive got is not in the slot. A drive in progress starts that distance again.
+        SendDriven = 0.f;
+        // How far the traffic car has driven is not in the slot. A hunt in progress puts it ahead of the near end again.
+        PursueAlong = static_cast<float>(QuebecPursue::HeadStart);
+        // Their place is not in the slot. A run in progress puts them behind the door again.
+        const QuebecSlip::FSpot Behind = QuebecSlip::Park();
+        SlipX = static_cast<float>(Behind.X);
+        SlipY = static_cast<float>(Behind.Y);
+        // Where the march has walked is not in the slot. A march in progress starts again at the join.
+        MarchY = static_cast<float>(QuebecMarch::StartY);
+        // How far the chase car has driven is not in the slot. A chase in progress puts them at the near end again.
+        DitchAlong = 0.f;
+        // The clock and the street cars are not in the slot. A crossing in progress starts the clock again.
+        ParcelAlongA = static_cast<float>(QuebecParcel::TrafficA);
+        ParcelAlongB = static_cast<float>(QuebecParcel::TrafficB);
+        ParcelClock = ParcelStep == QuebecParcel::StepCarry ? static_cast<float>(QuebecParcel::LimitSeconds) : 0.f;
+        // Where the seeker is, and the escape clock, are not in the slot. A chase puts them behind the end again.
+        const QuebecBolt::FSpot BoltParked = QuebecBolt::Home();
+        BoltSeekX = static_cast<float>(BoltParked.X);
+        BoltSeekY = static_cast<float>(BoltParked.Y);
+        BoltClock = BoltStep == QuebecBolt::StepOut ? static_cast<float>(QuebecBolt::LimitSeconds) : 0.f;
+        // Where they are looking, and whether the crossing is armed, are not in the slot. A reload starts the look again.
+        YardAngle = 0.f;
+        bYardArmed = false;
+        // Where they are on the walk is not in the slot. A reload puts them back at the door.
+        LiftAlong = 0.f;
+        bLiftComing = false;
+        // How long they have stood is not in the slot. A reload starts the count again.
+        PostClock = 0.f;
+        // The receipt count, and whether the lane has already warned, are not in the slot.
+        TabClock = 0.f;
+        bTabNoted = false;
+        bCarryNoted = false;
         const auto SpawnCar = [this](const FVector& Location, const FRotator& Rotation, int32 Paint)
         {
             const FTransform Transform(Rotation,Location);
@@ -616,6 +792,134 @@ void AQuebecCampaign::BuildEncounter()
     FinaleHideCaption = AddCaption(TEXT("FinaleHideCaption"), FVector(FinaleHideSpot.X, FinaleHideSpot.Y, 160.), TEXT("HIDE"), 18.f);
     FinaleTail = AddPart(TEXT("FinaleTail"), Cube, FVector(FinaleParked.TailX, FinaleParked.TailY, 90.), FVector(40., 40., 80.), Berry);
     FinaleTailCaption = AddCaption(TEXT("FinaleTailCaption"), FVector(FinaleParked.TailX, FinaleParked.TailY, 220.), TEXT("TAIL"), 18.f);
+    const QuebecFollow::FSpot FollowMeetSpot = QuebecFollow::Meet();
+    const QuebecFollow::FSpot FollowStopSpot = QuebecFollow::Stop();
+    const QuebecFollow::FSpot FollowCorner = QuebecFollow::Place(0.);
+    FollowMeet = AddPart(TEXT("FollowMeet"), Cube, FVector(FollowMeetSpot.X, FollowMeetSpot.Y, 40.), FVector(70., 70., 16.), Gold);
+    FollowMeetCaption = AddCaption(TEXT("FollowMeetCaption"), FVector(FollowMeetSpot.X, FollowMeetSpot.Y, 160.), TEXT("MEET"), 18.f);
+    FollowPerson = AddPart(TEXT("FollowPerson"), Cube, FVector(FollowCorner.X, FollowCorner.Y, 90.), FVector(40., 40., 80.), Berry);
+    FollowPersonCaption = AddCaption(TEXT("FollowPersonCaption"), FVector(FollowCorner.X, FollowCorner.Y, 220.), TEXT("KEEP BACK"), 18.f);
+    FollowStop = AddPart(TEXT("FollowStop"), Cube, FVector(FollowStopSpot.X, FollowStopSpot.Y, 40.), FVector(70., 70., 16.), Lime);
+    FollowStopCaption = AddCaption(TEXT("FollowStopCaption"), FVector(FollowStopSpot.X, FollowStopSpot.Y, 160.), TEXT("STOP"), 18.f);
+    const QuebecRoll::FSpot RollHands = QuebecRoll::Handles(0.);
+    const QuebecRoll::FSpot RollStart = QuebecRoll::Place(0.);
+    const QuebecRoll::FSpot RollEnd = QuebecRoll::Stop();
+    RollHandles = AddPart(TEXT("RollHandles"), Cube, FVector(RollHands.X, RollHands.Y, 40.), FVector(70., 70., 16.), Gold);
+    RollHandlesCaption = AddCaption(TEXT("RollHandlesCaption"), FVector(RollHands.X, RollHands.Y, 160.), TEXT("HANDLES"), 18.f);
+    RollCart = AddPart(TEXT("RollCart"), Cube, FVector(RollStart.X, RollStart.Y, 70.), FVector(80., 50., 40.), Berry);
+    RollCartCaption = AddCaption(TEXT("RollCartCaption"), FVector(RollStart.X, RollStart.Y, 180.), TEXT("CART"), 18.f);
+    RollStop = AddPart(TEXT("RollStop"), Cube, FVector(RollEnd.X, RollEnd.Y, 40.), FVector(70., 70., 16.), Lime);
+    RollStopCaption = AddCaption(TEXT("RollStopCaption"), FVector(RollEnd.X, RollEnd.Y, 160.), TEXT("STOP"), 18.f);
+    const QuebecBells::FSpot North = QuebecBells::Bell(0);
+    const QuebecBells::FSpot Mid = QuebecBells::Bell(1);
+    const QuebecBells::FSpot South = QuebecBells::Bell(2);
+    BellNorth = AddPart(TEXT("BellNorth"), Cube, FVector(North.X, North.Y, 40.), FVector(70., 70., 16.), Gold);
+    BellNorthCaption = AddCaption(TEXT("BellNorthCaption"), FVector(North.X, North.Y, 160.), TEXT("ONE"), 18.f);
+    BellMid = AddPart(TEXT("BellMid"), Cube, FVector(Mid.X, Mid.Y, 40.), FVector(70., 70., 16.), Berry);
+    BellMidCaption = AddCaption(TEXT("BellMidCaption"), FVector(Mid.X, Mid.Y, 160.), TEXT("TWO"), 18.f);
+    BellSouth = AddPart(TEXT("BellSouth"), Cube, FVector(South.X, South.Y, 40.), FVector(70., 70., 16.), Lime);
+    BellSouthCaption = AddCaption(TEXT("BellSouthCaption"), FVector(South.X, South.Y, 160.), TEXT("THREE"), 18.f);
+    BlockSide = AddPart(TEXT("BlockSide"), Cube, FVector(QuebecBlock::SideX, QuebecBlock::SideY, 40.), FVector(70., 70., 16.), Gold);
+    BlockSideCaption = AddCaption(TEXT("BlockSideCaption"), FVector(QuebecBlock::SideX, QuebecBlock::SideY, 160.), TEXT("SIDE"), 18.f);
+    BlockMark = AddPart(TEXT("BlockMark"), Cube, FVector(QuebecBlock::BlockX, QuebecBlock::BlockY, 40.), FVector(70., 70., 16.), Lime);
+    BlockMarkCaption = AddCaption(TEXT("BlockMarkCaption"), FVector(QuebecBlock::BlockX, QuebecBlock::BlockY, 160.), TEXT("BLOCK"), 18.f);
+    const QuebecBlock::FSpot Courier = QuebecBlock::Place(0.);
+    BlockCourier = AddPart(TEXT("BlockCourier"), Cube, FVector(Courier.X, Courier.Y, 90.), FVector(40., 40., 80.), Berry);
+    BlockCourierCaption = AddCaption(TEXT("BlockCourierCaption"), FVector(Courier.X, Courier.Y, 220.), TEXT("CAR"), 18.f);
+    SendDoor = AddPart(TEXT("SendDoor"), Cube, FVector(QuebecSend::ColumnX, QuebecSend::DoorY, 40.), FVector(70., 70., 16.), Gold);
+    SendDoorCaption = AddCaption(TEXT("SendDoorCaption"), FVector(QuebecSend::ColumnX, QuebecSend::DoorY, 160.), TEXT("DOOR"), 18.f);
+    SendGate = AddPart(TEXT("SendGate"), Cube, FVector(QuebecSend::ColumnX, QuebecSend::GateY, 40.), FVector(70., 70., 16.), Berry);
+    SendGateCaption = AddCaption(TEXT("SendGateCaption"), FVector(QuebecSend::ColumnX, QuebecSend::GateY, 160.), TEXT("GATE"), 18.f);
+    SendBay = AddPart(TEXT("SendBay"), Cube, FVector(QuebecSend::ColumnX, QuebecSend::BayY, 40.), FVector(70., 70., 16.), Lime);
+    SendBayCaption = AddCaption(TEXT("SendBayCaption"), FVector(QuebecSend::ColumnX, QuebecSend::BayY, 160.), TEXT("BAY"), 18.f);
+    SendWalk = AddPart(TEXT("SendWalk"), Cube, FVector(QuebecSend::ColumnX, QuebecSend::FinishY, 40.), FVector(70., 70., 16.), Gold);
+    SendWalkCaption = AddCaption(TEXT("SendWalkCaption"), FVector(QuebecSend::ColumnX, QuebecSend::FinishY, 160.), TEXT("WALK"), 18.f);
+    const QuebecPursue::FSpot PursueStart = QuebecPursue::Place(0.);
+    const QuebecPursue::FSpot PursueAhead = QuebecPursue::Place(QuebecPursue::HeadStart);
+    PursueLine = AddPart(TEXT("PursueLine"), Cube, FVector(PursueStart.X, PursueStart.Y, 40.), FVector(70., 70., 16.), Gold);
+    PursueLineCaption = AddCaption(TEXT("PursueLineCaption"), FVector(PursueStart.X, PursueStart.Y, 160.), TEXT("LINE"), 18.f);
+    PursueCar = AddPart(TEXT("PursueCar"), Cube, FVector(PursueAhead.X, PursueAhead.Y, 90.), FVector(40., 40., 80.), Berry);
+    PursueCarCaption = AddCaption(TEXT("PursueCarCaption"), FVector(PursueAhead.X, PursueAhead.Y, 220.), TEXT("TRAFFIC"), 18.f);
+    const QuebecNose::FSpot NoseMark = QuebecNose::Stall();
+    const QuebecNose::FSpot NoseOpen = QuebecNose::Recover();
+    NoseStall = AddPart(TEXT("NoseStall"), Cube, FVector(NoseMark.X, NoseMark.Y, 40.), FVector(70., 70., 16.), Gold);
+    NoseStallCaption = AddCaption(TEXT("NoseStallCaption"), FVector(NoseMark.X, NoseMark.Y, 160.), TEXT("STALL"), 18.f);
+    NoseLine = AddPart(TEXT("NoseLine"), Cube, FVector(NoseOpen.X, NoseOpen.Y, 40.), FVector(70., 70., 16.), Lime);
+    NoseLineCaption = AddCaption(TEXT("NoseLineCaption"), FVector(NoseOpen.X, NoseOpen.Y, 160.), TEXT("LINE"), 18.f);
+    const QuebecSlip::FSpot SlipDoorSpot = QuebecSlip::Door();
+    const QuebecSlip::FSpot SlipGateSpot = QuebecSlip::Gate();
+    const QuebecSlip::FSpot SlipBehind = QuebecSlip::Park();
+    SlipDoor = AddPart(TEXT("SlipDoor"), Cube, FVector(SlipDoorSpot.X, SlipDoorSpot.Y, 40.), FVector(70., 70., 16.), Gold);
+    SlipDoorCaption = AddCaption(TEXT("SlipDoorCaption"), FVector(SlipDoorSpot.X, SlipDoorSpot.Y, 160.), TEXT("SLIP"), 18.f);
+    SlipGate = AddPart(TEXT("SlipGate"), Cube, FVector(SlipGateSpot.X, SlipGateSpot.Y, 40.), FVector(70., 70., 16.), Lime);
+    SlipGateCaption = AddCaption(TEXT("SlipGateCaption"), FVector(SlipGateSpot.X, SlipGateSpot.Y, 160.), TEXT("OUT"), 18.f);
+    SlipThem = AddPart(TEXT("SlipThem"), Cube, FVector(SlipBehind.X, SlipBehind.Y, 90.), FVector(40., 40., 80.), Berry);
+    SlipThemCaption = AddCaption(TEXT("SlipThemCaption"), FVector(SlipBehind.X, SlipBehind.Y, 220.), TEXT("THEM"), 18.f);
+    const QuebecMarch::FSpot MarchJoin = QuebecMarch::Join();
+    const QuebecMarch::FSpot MarchOut = QuebecMarch::Leave();
+    MarchJoinMark = AddPart(TEXT("MarchJoin"), Cube, FVector(MarchJoin.X, MarchJoin.Y, 40.), FVector(70., 70., 16.), Gold);
+    MarchJoinCaption = AddCaption(TEXT("MarchJoinCaption"), FVector(MarchJoin.X, MarchJoin.Y, 160.), TEXT("JOIN"), 18.f);
+    MarchLeaveMark = AddPart(TEXT("MarchLeave"), Cube, FVector(MarchOut.X, MarchOut.Y, 40.), FVector(70., 70., 16.), Lime);
+    MarchLeaveCaption = AddCaption(TEXT("MarchLeaveCaption"), FVector(MarchOut.X, MarchOut.Y, 160.), TEXT("OUT"), 18.f);
+    MarchGroup = AddPart(TEXT("MarchGroup"), Cube, FVector(MarchJoin.X, MarchJoin.Y, 90.), FVector(50., 50., 80.), Berry);
+    MarchGroupCaption = AddCaption(TEXT("MarchGroupCaption"), FVector(MarchJoin.X, MarchJoin.Y, 220.), TEXT("MARCH"), 18.f);
+    const QuebecDitch::FSpot DitchMark = QuebecDitch::Line();
+    const QuebecDitch::FSpot DitchOut = QuebecDitch::Foot();
+    const QuebecDitch::FSpot DitchBehind = QuebecDitch::Place(0.);
+    DitchLine = AddPart(TEXT("DitchLine"), Cube, FVector(DitchMark.X, DitchMark.Y, 40.), FVector(70., 70., 16.), Gold);
+    DitchLineCaption = AddCaption(TEXT("DitchLineCaption"), FVector(DitchMark.X, DitchMark.Y, 160.), TEXT("ROLL"), 18.f);
+    DitchClear = AddPart(TEXT("DitchClear"), Cube, FVector(DitchOut.X, DitchOut.Y, 40.), FVector(70., 70., 16.), Lime);
+    DitchClearCaption = AddCaption(TEXT("DitchClearCaption"), FVector(DitchOut.X, DitchOut.Y, 160.), TEXT("CLEAR"), 18.f);
+    DitchThem = AddPart(TEXT("DitchThem"), Cube, FVector(DitchBehind.X, DitchBehind.Y, 90.), FVector(40., 40., 80.), Berry);
+    DitchThemCaption = AddCaption(TEXT("DitchThemCaption"), FVector(DitchBehind.X, DitchBehind.Y, 220.), TEXT("BEHIND"), 18.f);
+    const QuebecParcel::FSpot ParcelHere = QuebecParcel::Parcel();
+    const QuebecParcel::FSpot ParcelDoor = QuebecParcel::Stoop();
+    const QuebecParcel::FSpot ParcelFirst = QuebecParcel::OnRoad(QuebecParcel::TrafficA);
+    const QuebecParcel::FSpot ParcelSecond = QuebecParcel::OnRoad(QuebecParcel::TrafficB);
+    ParcelMark = AddPart(TEXT("ParcelMark"), Cube, FVector(ParcelHere.X, ParcelHere.Y, 40.), FVector(70., 70., 16.), Gold);
+    ParcelMarkCaption = AddCaption(TEXT("ParcelMarkCaption"), FVector(ParcelHere.X, ParcelHere.Y, 160.), TEXT("PARCEL"), 18.f);
+    ParcelStoop = AddPart(TEXT("ParcelStoop"), Cube, FVector(ParcelDoor.X, ParcelDoor.Y, 40.), FVector(70., 70., 16.), Lime);
+    ParcelStoopCaption = AddCaption(TEXT("ParcelStoopCaption"), FVector(ParcelDoor.X, ParcelDoor.Y, 160.), TEXT("STOOP"), 18.f);
+    ParcelCarA = AddPart(TEXT("ParcelCarA"), Cube, FVector(ParcelFirst.X, ParcelFirst.Y, 90.), FVector(40., 40., 70.), Berry);
+    ParcelCarACaption = AddCaption(TEXT("ParcelCarACaption"), FVector(ParcelFirst.X, ParcelFirst.Y, 220.), TEXT("CAR"), 18.f);
+    ParcelCarB = AddPart(TEXT("ParcelCarB"), Cube, FVector(ParcelSecond.X, ParcelSecond.Y, 90.), FVector(40., 40., 70.), Berry);
+    ParcelCarBCaption = AddCaption(TEXT("ParcelCarBCaption"), FVector(ParcelSecond.X, ParcelSecond.Y, 220.), TEXT("CAR"), 18.f);
+    const QuebecBolt::FSpot BoltFar = QuebecBolt::End();
+    const QuebecBolt::FSpot BoltPocket = QuebecBolt::Bay();
+    const QuebecBolt::FSpot BoltDoor = QuebecBolt::Gate();
+    const QuebecBolt::FSpot BoltBehind = QuebecBolt::Home();
+    BoltEnd = AddPart(TEXT("BoltEnd"), Cube, FVector(BoltFar.X, BoltFar.Y, 40.), FVector(70., 70., 16.), Gold);
+    BoltEndCaption = AddCaption(TEXT("BoltEndCaption"), FVector(BoltFar.X, BoltFar.Y, 160.), TEXT("DRIVE"), 18.f);
+    BoltBay = AddPart(TEXT("BoltBay"), Cube, FVector(BoltPocket.X, BoltPocket.Y, 40.), FVector(70., 70., 16.), Gold);
+    BoltBayCaption = AddCaption(TEXT("BoltBayCaption"), FVector(BoltPocket.X, BoltPocket.Y, 160.), TEXT("BAY"), 18.f);
+    BoltGate = AddPart(TEXT("BoltGate"), Cube, FVector(BoltDoor.X, BoltDoor.Y, 40.), FVector(70., 70., 16.), Lime);
+    BoltGateCaption = AddCaption(TEXT("BoltGateCaption"), FVector(BoltDoor.X, BoltDoor.Y, 160.), TEXT("GATE"), 18.f);
+    BoltThem = AddPart(TEXT("BoltThem"), Cube, FVector(BoltBehind.X, BoltBehind.Y, 90.), FVector(40., 40., 80.), Berry);
+    BoltThemCaption = AddCaption(TEXT("BoltThemCaption"), FVector(BoltBehind.X, BoltBehind.Y, 220.), TEXT("THEM"), 18.f);
+    const QuebecYard::FSpot YardEdge = QuebecYard::Near();
+    const QuebecYard::FSpot YardDoor = QuebecYard::Far();
+    const QuebecYard::FSpot YardLook = QuebecYard::Watch();
+    YardNear = AddPart(TEXT("YardNear"), Cube, FVector(YardEdge.X, YardEdge.Y, 40.), FVector(70., 70., 16.), Gold);
+    YardNearCaption = AddCaption(TEXT("YardNearCaption"), FVector(YardEdge.X, YardEdge.Y, 160.), TEXT("NEAR"), 18.f);
+    YardFar = AddPart(TEXT("YardFar"), Cube, FVector(YardDoor.X, YardDoor.Y, 40.), FVector(70., 70., 16.), Lime);
+    YardFarCaption = AddCaption(TEXT("YardFarCaption"), FVector(YardDoor.X, YardDoor.Y, 160.), TEXT("FAR"), 18.f);
+    YardWatch = AddPart(TEXT("YardWatch"), Cube, FVector(YardLook.X, YardLook.Y, 90.), FVector(40., 40., 80.), Berry);
+    YardWatchCaption = AddCaption(TEXT("YardWatchCaption"), FVector(YardLook.X, YardLook.Y, 220.), TEXT("LOOK"), 18.f);
+    const QuebecLift::FSpot LiftDoor = QuebecLift::Home();
+    const QuebecLift::FSpot LiftPocket = QuebecLift::Pocket();
+    LiftStop = AddPart(TEXT("LiftStop"), Cube, FVector(LiftPocket.X, LiftPocket.Y, 40.), FVector(70., 70., 16.), Gold);
+    LiftStopCaption = AddCaption(TEXT("LiftStopCaption"), FVector(LiftPocket.X, LiftPocket.Y, 160.), TEXT("STOP"), 18.f);
+    LiftThem = AddPart(TEXT("LiftThem"), Cube, FVector(LiftDoor.X, LiftDoor.Y, 90.), FVector(40., 40., 80.), Berry);
+    LiftThemCaption = AddCaption(TEXT("LiftThemCaption"), FVector(LiftDoor.X, LiftDoor.Y, 220.), TEXT("THEM"), 18.f);
+    const QuebecPost::FSpot PostHere = QuebecPost::Mark();
+    PostMark = AddPart(TEXT("PostMark"), Cube, FVector(PostHere.X, PostHere.Y, 40.), FVector(70., 70., 16.), Gold);
+    PostMarkCaption = AddCaption(TEXT("PostMarkCaption"), FVector(PostHere.X, PostHere.Y, 160.), TEXT("POST"), 18.f);
+    const QuebecTab::FSpot TabHere = QuebecTab::Objective(0);
+    TabMark = AddPart(TEXT("TabMark"), Cube, FVector(TabHere.X, TabHere.Y, 40.), FVector(70., 70., 16.), Gold);
+    TabMarkCaption = AddCaption(TEXT("TabMarkCaption"), FVector(TabHere.X, TabHere.Y, 160.), TEXT("TAB"), 18.f);
+    const QuebecCarry::FSpot CarryHere = QuebecCarry::Objective(0);
+    CarryMark = AddPart(TEXT("CarryMark"), Cube, FVector(CarryHere.X, CarryHere.Y, 40.), FVector(70., 70., 16.), Gold);
+    CarryMarkCaption = AddCaption(TEXT("CarryMarkCaption"), FVector(CarryHere.X, CarryHere.Y, 160.), TEXT("CARRY"), 18.f);
 }
 
 void AQuebecCampaign::Tick(float DeltaSeconds)
@@ -642,6 +946,23 @@ void AQuebecCampaign::Tick(float DeltaSeconds)
             TickCut(DeltaSeconds);
             TickChase(DeltaSeconds);
             TickFinale(DeltaSeconds);
+            TickFollow(DeltaSeconds);
+            TickRoll(DeltaSeconds);
+            TickBell();
+            TickBlock(DeltaSeconds);
+            TickSend(DeltaSeconds);
+            TickPursue(DeltaSeconds);
+            TickNose();
+            TickSlip(DeltaSeconds);
+            TickMarch(DeltaSeconds);
+            TickDitch(DeltaSeconds);
+            TickParcel(DeltaSeconds);
+            TickBolt(DeltaSeconds);
+            TickYard(DeltaSeconds);
+            TickLift(DeltaSeconds);
+            TickPost(DeltaSeconds);
+            TickTab(DeltaSeconds);
+            TickCarry(DeltaSeconds);
         }
     }
     if (GetWorld()->GetTimeSeconds()-LastPresentationTime >= .1f)
@@ -826,7 +1147,7 @@ bool AQuebecCampaign::HandleInteract(AQuebecController* Controller)
                 PondTagOutside = 0.f;
                 Controller->PlayFeedback(EQuebecFeedbackCue::Dialogue);
                 BreakChain();
-                Controller->ShowInteractionMessage(TEXT("That beam blinks with the sky. The postcard does not. The chain breaks."));
+                NoteSetback(Controller, TEXT("That beam blinks with the sky. The postcard does not. The chain breaks."));
                 return true;
             }
             if (!bPondTagHolding)
@@ -909,7 +1230,7 @@ bool AQuebecCampaign::HandleInteract(AQuebecController* Controller)
             {
                 Controller->PlayFeedback(EQuebecFeedbackCue::Dialogue);
                 BreakChain();
-                Controller->ShowInteractionMessage(TEXT("That panel restarts the point. The referee is already writing the penalty. The chain breaks."));
+                NoteSetback(Controller, TEXT("That panel restarts the point. The referee is already writing the penalty. The chain breaks."));
                 return true;
             }
             if (NearCourt(Controller, QuebecCourtRules::ReturnGate.X, QuebecCourtRules::ReturnGate.Y))
@@ -1038,7 +1359,7 @@ bool AQuebecCampaign::HandleInteract(AQuebecController* Controller)
             {
                 Controller->PlayFeedback(EQuebecFeedbackCue::Dialogue);
                 BreakChain();
-                Controller->ShowInteractionMessage(TEXT("The beam is still painting. Wait for the gap. The chain breaks."));
+                NoteSetback(Controller, TEXT("The beam is still painting. Wait for the gap. The chain breaks."));
                 return true;
             }
             const int32 Bonus = QuebecChain::ClosePay(Chain, bChainSpoiled, QuebecConvoyRules::CloseCall(ConvoyTime, Chain));
@@ -1061,7 +1382,7 @@ bool AQuebecCampaign::HandleInteract(AQuebecController* Controller)
             {
                 Controller->PlayFeedback(EQuebecFeedbackCue::Dialogue);
                 BreakChain();
-                Controller->ShowInteractionMessage(TEXT("GREEN CAP: That is the gate I called. TOPKNOT: It is still painted. The chain breaks."));
+                NoteSetback(Controller, TEXT("GREEN CAP: That is the gate I called. TOPKNOT: It is still painted. The chain breaks."));
             }
             return true;
         }
@@ -1177,7 +1498,7 @@ void AQuebecCampaign::TickPond(float DeltaSeconds)
         PondTagInside = 0.f;
         PondTagOutside = 0.f;
         for (TActorIterator<AQuebecController> It(GetWorld()); It; ++It)
-            It->ShowInteractionMessage(TEXT("You left the postcard. Tag it again."));
+            NoteSetback(*It, TEXT("You left the postcard. Tag it again."));
         ForceNetUpdate();
         return;
     }
@@ -2068,6 +2389,1481 @@ void AQuebecCampaign::AdvanceFinale(int32 Next, AQuebecController* Who, const TC
     SaveBoundary();
 }
 
+void AQuebecCampaign::TickFollow(float DeltaSeconds)
+{
+    if (!IsFollowOpen()) return;
+    const QuebecFollow::FSpot There = QuebecFollow::Place(static_cast<double>(FollowAlong));
+    AQuebecController* Foot = nullptr;
+    double FootX = 0.;
+    double FootY = 0.;
+    bool bHaveWalker = false;
+    bool bInBand = false;
+    double BandError = 1.e18;
+    double WalkerSpan = 1.e18;
+    bool bCrowded = false;
+    bool bHaveOther = false;
+    AQuebecController* Other = nullptr;
+    double OtherX = 0.;
+    double OtherY = 0.;
+    for (TActorIterator<AQuebecController> It(GetWorld()); It; ++It)
+    {
+        const APawn* Pawn = It->GetPawn();
+        if (!Pawn) continue;
+        const FVector Position = Pawn->GetActorLocation();
+        const AQuebecCharacter* Walker = Cast<AQuebecCharacter>(Pawn);
+        const bool bWalker = Walker && !Walker->GetCharacterMovement()->IsSwimming();
+        if (bWalker)
+        {
+            const double Span = QuebecFollow::Gap(Position.X, Position.Y, There.X, There.Y);
+            if (Span <= QuebecFollow::Spook) bCrowded = true;
+            if (QuebecFollow::InBand(Span))
+            {
+                const double Error = FMath::Abs(Span - QuebecFollow::Behind);
+                if (!bInBand || Error < BandError)
+                {
+                    bInBand = true;
+                    BandError = Error;
+                    bHaveWalker = true;
+                    Foot = *It;
+                    FootX = Position.X;
+                    FootY = Position.Y;
+                }
+            }
+            else if (!bInBand && (!bHaveWalker || Span < WalkerSpan))
+            {
+                bHaveWalker = true;
+                WalkerSpan = Span;
+                Foot = *It;
+                FootX = Position.X;
+                FootY = Position.Y;
+            }
+        }
+        else if (!bHaveOther)
+        {
+            bHaveOther = true;
+            Other = *It;
+            OtherX = Position.X;
+            OtherY = Position.Y;
+        }
+    }
+    const bool bHaveBody = bHaveWalker || bHaveOther;
+    const bool bOnFoot = bHaveWalker;
+    if (!bHaveWalker && bHaveOther)
+    {
+        Foot = Other;
+        FootX = OtherX;
+        FootY = OtherY;
+    }
+    const double BeforeAlong = static_cast<double>(FollowAlong);
+    QuebecFollow::FGap Now;
+    Now.Step = static_cast<int>(FollowStep);
+    Now.Along = BeforeAlong;
+    const QuebecFollow::FGap After = QuebecFollow::Tick(Now, static_cast<double>(DeltaSeconds), bOnFoot, bHaveBody, bCrowded, FootX, FootY);
+    FollowAlong = static_cast<float>(After.Along);
+    if (After.Step != FollowStep)
+    {
+        const TCHAR* Message = TEXT("They are walking. Keep a gap. A sprint crowds them.");
+        bool bFinished = false;
+        if (After.Step == QuebecFollow::StepBanked)
+        {
+            Message = TEXT("They made the stop. You kept the gap.");
+            bFinished = true;
+        }
+        AdvanceFollow(After.Step, Foot, Message, bFinished);
+        return;
+    }
+    if (BeforeAlong > 0. && After.Along <= 0.)
+    {
+        const TCHAR* Message = After.bCrowded
+            ? TEXT("You crowded them. They are back at the corner.")
+            : TEXT("You lost them. They are back at the corner.");
+        if (Foot) Foot->ShowInteractionMessage(Message);
+        for (TActorIterator<AQuebecController> It(GetWorld()); It; ++It)
+            It->PlayFeedback(EQuebecFeedbackCue::Checkpoint);
+        UpdatePresentation();
+        ForceNetUpdate();
+        return;
+    }
+    if (!FMath::IsNearlyEqual(static_cast<float>(BeforeAlong), FollowAlong)) ForceNetUpdate();
+}
+
+void AQuebecCampaign::AdvanceFollow(int32 Next, AQuebecController* Who, const TCHAR* Message, bool bFinished)
+{
+    if (Next == FollowStep) return;
+    FollowStep = Next;
+    // Link -1 is outside the seven banks, so the chain does not move. The purse is flat, and only at the stop.
+    ShowStepMessage(Who, Message, bFinished, -1);
+    if (bFinished) GrantCash(QuebecFollow::Pay);
+    for (TActorIterator<AQuebecController> It(GetWorld()); It; ++It)
+        It->PlayFeedback(bFinished ? EQuebecFeedbackCue::Complete : EQuebecFeedbackCue::Checkpoint);
+    UpdatePresentation();
+    ForceNetUpdate();
+    SaveBoundary();
+}
+
+void AQuebecCampaign::TickRoll(float DeltaSeconds)
+{
+    if (!IsRollOpen()) return;
+    AQuebecController* Foot = nullptr;
+    double FootX = 0.;
+    double FootY = 0.;
+    bool bHaveBody = false;
+    bool bOnFoot = false;
+    bool bSprinting = false;
+    for (TActorIterator<AQuebecController> It(GetWorld()); It; ++It)
+    {
+        const APawn* Pawn = It->GetPawn();
+        if (!Pawn) continue;
+        const FVector Position = Pawn->GetActorLocation();
+        if (!QuebecRoll::InHandles(Position.X, Position.Y, static_cast<double>(RollAlong))) continue;
+        bHaveBody = true;
+        const AQuebecCharacter* Walker = Cast<AQuebecCharacter>(Pawn);
+        const bool bWalker = Walker && !Walker->GetCharacterMovement()->IsSwimming();
+        if (!bWalker)
+        {
+            if (!Foot)
+            {
+                Foot = *It;
+                FootX = Position.X;
+                FootY = Position.Y;
+            }
+            continue;
+        }
+        bOnFoot = true;
+        const bool bFast = Walker->GetVelocity().Size2D() > static_cast<float>(QuebecRoll::SprintAbove);
+        if (bFast) bSprinting = true;
+        if (!bFast || !Foot)
+        {
+            Foot = *It;
+            FootX = Position.X;
+            FootY = Position.Y;
+        }
+    }
+    const double BeforeAlong = static_cast<double>(RollAlong);
+    QuebecRoll::FCart Now;
+    Now.Step = static_cast<int>(RollStep);
+    Now.Along = BeforeAlong;
+    const QuebecRoll::FCart After = QuebecRoll::Tick(Now, static_cast<double>(DeltaSeconds), bOnFoot, bHaveBody, bSprinting, FootX, FootY);
+    RollAlong = static_cast<float>(After.Along);
+    if (After.Step != RollStep)
+    {
+        const TCHAR* Message = TEXT("The cart is yours. Walk it. A sprint tips it.");
+        bool bFinished = false;
+        if (After.Step == QuebecRoll::StepBanked)
+        {
+            Message = TEXT("The cart is at the stop.");
+            bFinished = true;
+        }
+        AdvanceRoll(After.Step, Foot, Message, bFinished);
+        return;
+    }
+    if (After.bTipped && BeforeAlong > 0.)
+    {
+        if (Foot) NoteSetback(Foot, TEXT("You tipped it. It's back at the start."));
+        for (TActorIterator<AQuebecController> It(GetWorld()); It; ++It)
+            It->PlayFeedback(EQuebecFeedbackCue::Checkpoint);
+        UpdatePresentation();
+        ForceNetUpdate();
+        return;
+    }
+    if (!FMath::IsNearlyEqual(static_cast<float>(BeforeAlong), RollAlong)) ForceNetUpdate();
+}
+
+void AQuebecCampaign::TickBell()
+{
+    if (!IsBellOpen()) return;
+    const int Next = static_cast<int>(BellStep);
+    AQuebecController* NextFoot = nullptr;
+    AQuebecController* OtherFoot = nullptr;
+    for (TActorIterator<AQuebecController> It(GetWorld()); It; ++It)
+    {
+        const AQuebecCharacter* Walker = Cast<AQuebecCharacter>(It->GetPawn());
+        if (!Walker || Walker->GetCharacterMovement()->IsSwimming()) continue;
+        const FVector Position = Walker->GetActorLocation();
+        if (QuebecBells::InBell(Next, Position.X, Position.Y))
+        {
+            if (!NextFoot) NextFoot = *It;
+            continue;
+        }
+        bool bOther = false;
+        for (int Index = 0; Index < QuebecBells::Count; ++Index)
+        {
+            if (Index == Next) continue;
+            if (QuebecBells::InBell(Index, Position.X, Position.Y)) bOther = true;
+        }
+        if (bOther && !OtherFoot) OtherFoot = *It;
+    }
+    const bool bHaveNext = NextFoot != nullptr;
+    const bool bHaveOther = OtherFoot != nullptr && !bHaveNext;
+    AQuebecController* Foot = bHaveNext ? NextFoot : OtherFoot;
+    QuebecBells::FRing Now;
+    Now.Step = Next;
+    const QuebecBells::FRing After = QuebecBells::Tick(Now, Foot != nullptr, bHaveNext, bHaveOther);
+    if (!After.bEarly)
+    {
+        bBellWarned = false;
+    }
+    else if (!bBellWarned)
+    {
+        bBellWarned = true;
+        BellStep = static_cast<int32>(After.Step);
+        if (Foot) NoteSetback(Foot, TEXT("That bell was early. Start again at the first."));
+        for (TActorIterator<AQuebecController> It(GetWorld()); It; ++It)
+            It->PlayFeedback(EQuebecFeedbackCue::Checkpoint);
+        UpdatePresentation();
+        ForceNetUpdate();
+        return;
+    }
+    else return;
+    if (After.Step != BellStep)
+    {
+        const TCHAR* Message = TEXT("The first bell is rung. The next one is south.");
+        bool bFinished = false;
+        if (After.Step == QuebecBells::StepThree)
+            Message = TEXT("The second bell is rung. The last one is south.");
+        if (After.Step == QuebecBells::StepBanked)
+        {
+            Message = TEXT("The three bells are rung.");
+            bFinished = true;
+        }
+        AdvanceBell(After.Step, Foot, Message, bFinished);
+    }
+}
+
+void AQuebecCampaign::AdvanceBell(int32 Next, AQuebecController* Who, const TCHAR* Message, bool bFinished)
+{
+    if (Next == BellStep) return;
+    BellStep = Next;
+    // Link -1 is outside the seven banks, so the chain does not move. The purse is flat, and only at the last bell.
+    ShowStepMessage(Who, Message, bFinished, -1);
+    if (bFinished) GrantCash(QuebecBells::Pay);
+    for (TActorIterator<AQuebecController> It(GetWorld()); It; ++It)
+        It->PlayFeedback(bFinished ? EQuebecFeedbackCue::Complete : EQuebecFeedbackCue::Checkpoint);
+    UpdatePresentation();
+    ForceNetUpdate();
+    SaveBoundary();
+}
+
+void AQuebecCampaign::TickBlock(float DeltaSeconds)
+{
+    if (!IsBlockOpen()) return;
+    AQuebecController* Driver = nullptr;
+    bool bInCar = false;
+    bool bAtSide = false;
+    bool bAtBlock = false;
+    bool bHaveBody = false;
+    for (TActorIterator<AQuebecCar> It(GetWorld()); It; ++It)
+    {
+        AQuebecCar* Car = *It;
+        if (!Car || !Car->Occupant || !QuebecBlock::CountsAsCar(static_cast<int>(Car->RideKind))) continue;
+        AQuebecController* Who = Cast<AQuebecController>(Car->GetController());
+        if (!Who) continue;
+        const FVector Position = Car->GetActorLocation();
+        bHaveBody = true;
+        bInCar = true;
+        const bool bHere = QuebecBlock::InBlock(Position.X, Position.Y);
+        const bool bThere = QuebecBlock::InSide(Position.X, Position.Y);
+        if (bHere)
+        {
+            bAtBlock = true;
+            Driver = Who;
+        }
+        else if (bThere && !bAtBlock)
+        {
+            bAtSide = true;
+            if (!Driver) Driver = Who;
+        }
+        else if (!Driver)
+            Driver = Who;
+    }
+    if (!bInCar)
+    {
+        for (TActorIterator<AQuebecController> It(GetWorld()); It; ++It)
+        {
+            const APawn* Pawn = It->GetPawn();
+            if (!Pawn) continue;
+            const AQuebecCharacter* Walker = Cast<AQuebecCharacter>(Pawn);
+            if (Walker && Walker->GetCharacterMovement()->IsSwimming()) continue;
+            bHaveBody = true;
+            if (!Driver) Driver = *It;
+            break;
+        }
+    }
+    QuebecBlock::FRun Now;
+    Now.Step = static_cast<int>(BlockStep);
+    Now.Along = static_cast<double>(BlockAlong);
+    const QuebecBlock::FRun After = QuebecBlock::Tick(Now, static_cast<double>(DeltaSeconds), bInCar, bHaveBody, bAtSide, bAtBlock);
+    BlockAlong = static_cast<float>(After.Along);
+    if (After.bPassed)
+    {
+        BlockStep = static_cast<int32>(After.Step);
+        if (Driver) NoteSetback(Driver, TEXT("They passed. The side street is back."));
+        for (TActorIterator<AQuebecController> It(GetWorld()); It; ++It)
+            It->PlayFeedback(EQuebecFeedbackCue::Checkpoint);
+        UpdatePresentation();
+        ForceNetUpdate();
+        return;
+    }
+    if (After.Step != BlockStep)
+    {
+        const TCHAR* Message = TEXT("They took the long road. Cut across.");
+        bool bFinished = false;
+        if (After.Step == QuebecBlock::StepBanked)
+        {
+            Message = TEXT("You blocked the road.");
+            bFinished = true;
+        }
+        AdvanceBlock(After.Step, Driver, Message, bFinished);
+        return;
+    }
+    if (!FMath::IsNearlyEqual(static_cast<float>(Now.Along), BlockAlong)) ForceNetUpdate();
+}
+
+void AQuebecCampaign::AdvanceBlock(int32 Next, AQuebecController* Who, const TCHAR* Message, bool bFinished)
+{
+    if (Next == BlockStep) return;
+    BlockStep = Next;
+    // Link -1 is outside the seven banks, so the chain does not move. The purse is flat, and only at the block.
+    ShowStepMessage(Who, Message, bFinished, -1);
+    if (bFinished) GrantCash(QuebecBlock::Pay);
+    for (TActorIterator<AQuebecController> It(GetWorld()); It; ++It)
+        It->PlayFeedback(bFinished ? EQuebecFeedbackCue::Complete : EQuebecFeedbackCue::Checkpoint);
+    UpdatePresentation();
+    ForceNetUpdate();
+    SaveBoundary();
+}
+
+void AQuebecCampaign::TickSend(float DeltaSeconds)
+{
+    if (!IsSendOpen()) return;
+    AQuebecController* Driver = nullptr;
+    bool bOnFoot = false;
+    bool bInCar = false;
+    bool bHaveBody = false;
+    double Speed = 0.;
+    bool bInMark = false;
+    bool bInLane = false;
+    const int Stage = static_cast<int>(SendStep);
+    const bool bFootStage = Stage == QuebecSend::StepDoor || Stage == QuebecSend::StepWalk;
+    if (bFootStage)
+    {
+        for (TActorIterator<AQuebecController> It(GetWorld()); It; ++It)
+        {
+            const APawn* Pawn = It->GetPawn();
+            if (!Pawn || Cast<AQuebecCar>(Pawn)) continue;
+            const AQuebecCharacter* Walker = Cast<AQuebecCharacter>(Pawn);
+            if (Walker && Walker->GetCharacterMovement()->IsSwimming()) continue;
+            bHaveBody = true;
+            const FVector Position = Pawn->GetActorLocation();
+            const bool bHere = Stage == QuebecSend::StepDoor
+                ? QuebecSend::InDoor(Position.X, Position.Y)
+                : QuebecSend::InFinish(Position.X, Position.Y);
+            if (bHere)
+            {
+                bOnFoot = true;
+                Driver = *It;
+                bInMark = true;
+                break;
+            }
+            if (!Driver) Driver = *It;
+        }
+    }
+    else
+    {
+        bool bWatched = false;
+        bool bStoppedInBay = false;
+        for (TActorIterator<AQuebecCar> It(GetWorld()); It; ++It)
+        {
+            AQuebecCar* Car = *It;
+            if (!Car || !Car->Occupant || !QuebecSend::CountsAsCar(static_cast<int>(Car->RideKind))) continue;
+            AQuebecController* Who = Cast<AQuebecController>(Car->GetController());
+            if (!Who) continue;
+            bHaveBody = true;
+            bInCar = true;
+            const FVector Position = Car->GetActorLocation();
+            const double Pace = static_cast<double>(FMath::Abs(Car->Speed));
+            const bool bHere = Stage == QuebecSend::StepDrive
+                ? QuebecSend::InGate(Position.X, Position.Y)
+                : QuebecSend::InBay(Position.X, Position.Y);
+            const bool bLane = QuebecSend::InLane(Position.X);
+            if (Stage == QuebecSend::StepDrive && Pace > QuebecSend::SpeedCap)
+            {
+                bWatched = true;
+                Driver = Who;
+                Speed = Pace;
+                bInMark = bHere;
+                bInLane = bLane;
+                break;
+            }
+            if (Stage == QuebecSend::StepStop && bHere && Pace <= QuebecSend::Crawl)
+            {
+                bWatched = true;
+                Driver = Who;
+                Speed = Pace;
+                bInMark = true;
+                bStoppedInBay = true;
+                break;
+            }
+            if (bHere && !bStoppedInBay)
+            {
+                bWatched = true;
+                Driver = Who;
+                Speed = Pace;
+                bInMark = true;
+                bInLane = bLane;
+            }
+            else if (!bWatched && bLane)
+            {
+                bWatched = true;
+                Driver = Who;
+                Speed = Pace;
+                bInLane = true;
+            }
+            else if (!bWatched)
+            {
+                bWatched = true;
+                Driver = Who;
+                Speed = Pace;
+            }
+        }
+    }
+    QuebecSend::FDay Now;
+    Now.Step = Stage;
+    Now.Driven = static_cast<double>(SendDriven);
+    const QuebecSend::FDay After = QuebecSend::Tick(Now, static_cast<double>(DeltaSeconds), bOnFoot, bInCar, bHaveBody, Speed, bInMark, bInLane);
+    SendDriven = static_cast<float>(After.Driven);
+    if (After.bFast)
+    {
+        if (Driver) NoteSetback(Driver, TEXT("Too fast. The drive is back."));
+        for (TActorIterator<AQuebecController> It(GetWorld()); It; ++It)
+            It->PlayFeedback(EQuebecFeedbackCue::Checkpoint);
+        UpdatePresentation();
+        ForceNetUpdate();
+        return;
+    }
+    if (After.Step != SendStep)
+    {
+        const TCHAR* Message = TEXT("The car is yours. Keep it gentle.");
+        bool bFinished = false;
+        if (After.Step == QuebecSend::StepStop) Message = TEXT("Stop the car in the bay.");
+        else if (After.Step == QuebecSend::StepWalk) Message = TEXT("Leave the car. Walk the last of it.");
+        else if (After.Step == QuebecSend::StepBanked)
+        {
+            Message = TEXT("The day is home.");
+            bFinished = true;
+        }
+        AdvanceSend(After.Step, Driver, Message, bFinished);
+        return;
+    }
+    if (!FMath::IsNearlyEqual(static_cast<float>(Now.Driven), SendDriven)) ForceNetUpdate();
+}
+
+void AQuebecCampaign::AdvanceSend(int32 Next, AQuebecController* Who, const TCHAR* Message, bool bFinished)
+{
+    if (Next == SendStep) return;
+    SendStep = Next;
+    // Link -1 is outside the seven banks, so the chain does not move. The purse is flat, and only at the walk.
+    ShowStepMessage(Who, Message, bFinished, -1);
+    if (bFinished) GrantCash(QuebecSend::Pay);
+    for (TActorIterator<AQuebecController> It(GetWorld()); It; ++It)
+        It->PlayFeedback(bFinished ? EQuebecFeedbackCue::Complete : EQuebecFeedbackCue::Checkpoint);
+    UpdatePresentation();
+    ForceNetUpdate();
+    SaveBoundary();
+}
+
+void AQuebecCampaign::TickPursue(float DeltaSeconds)
+{
+    if (!IsPursueOpen()) return;
+    AQuebecController* Driver = nullptr;
+    bool bInCar = false;
+    bool bHaveBody = false;
+    double CarX = 0.;
+    double CarY = 0.;
+    double Best = 1.0e18;
+    const QuebecPursue::FSpot Spot = QuebecPursue::Place(static_cast<double>(PursueAlong));
+    for (TActorIterator<AQuebecCar> It(GetWorld()); It; ++It)
+    {
+        AQuebecCar* Car = *It;
+        if (!Car || !Car->Occupant || !QuebecPursue::CountsAsCar(static_cast<int>(Car->RideKind))) continue;
+        AQuebecController* Who = Cast<AQuebecController>(Car->GetController());
+        if (!Who) continue;
+        bHaveBody = true;
+        bInCar = true;
+        const FVector Position = Car->GetActorLocation();
+        const double Near = QuebecPursue::Apart(Position.X, Position.Y, Spot.X, Spot.Y);
+        if (Near < Best)
+        {
+            Best = Near;
+            Driver = Who;
+            CarX = Position.X;
+            CarY = Position.Y;
+        }
+    }
+    if (!bInCar)
+    {
+        for (TActorIterator<AQuebecController> It(GetWorld()); It; ++It)
+        {
+            const APawn* Pawn = It->GetPawn();
+            if (!Pawn || Cast<AQuebecCar>(Pawn)) continue;
+            const AQuebecCharacter* Walker = Cast<AQuebecCharacter>(Pawn);
+            if (Walker && Walker->GetCharacterMovement()->IsSwimming()) continue;
+            bHaveBody = true;
+            if (!Driver) Driver = *It;
+            break;
+        }
+    }
+    QuebecPursue::FRun Now;
+    Now.Step = static_cast<int>(PursueStep);
+    Now.Along = static_cast<double>(PursueAlong);
+    const QuebecPursue::FRun After = QuebecPursue::Tick(Now, static_cast<double>(DeltaSeconds), bInCar, bHaveBody, CarX, CarY);
+    PursueAlong = static_cast<float>(After.Along);
+    if (After.bGone)
+    {
+        if (Driver) NoteSetback(Driver, TEXT("They made the end of the avenue. The traffic car is ahead again."));
+        for (TActorIterator<AQuebecController> It(GetWorld()); It; ++It)
+            It->PlayFeedback(EQuebecFeedbackCue::Checkpoint);
+        UpdatePresentation();
+        ForceNetUpdate();
+        return;
+    }
+    if (After.Step != PursueStep)
+    {
+        AdvancePursue(After.Step, Driver, TEXT("You caught the traffic car."), true);
+        return;
+    }
+    if (!FMath::IsNearlyEqual(static_cast<float>(Now.Along), PursueAlong)) ForceNetUpdate();
+}
+
+void AQuebecCampaign::AdvancePursue(int32 Next, AQuebecController* Who, const TCHAR* Message, bool bFinished)
+{
+    if (Next == PursueStep) return;
+    PursueStep = Next;
+    // Link -1 is outside the seven banks, so the chain does not move. The purse is flat, and only at the catch.
+    ShowStepMessage(Who, Message, bFinished, -1);
+    if (bFinished) GrantCash(QuebecPursue::Pay);
+    for (TActorIterator<AQuebecController> It(GetWorld()); It; ++It)
+        It->PlayFeedback(bFinished ? EQuebecFeedbackCue::Complete : EQuebecFeedbackCue::Checkpoint);
+    UpdatePresentation();
+    ForceNetUpdate();
+    SaveBoundary();
+}
+
+void AQuebecCampaign::TickNose()
+{
+    if (!IsNoseOpen()) return;
+    AQuebecController* Driver = nullptr;
+    bool bInCar = false;
+    double CarX = 0.;
+    double CarY = 0.;
+    double Signed = 0.;
+    double ForwardX = 0.;
+    double ForwardY = 0.;
+    double Best = 1.0e18;
+    bool bInside = false;
+    const QuebecNose::FSpot Mark = QuebecNose::Stall();
+    for (TActorIterator<AQuebecCar> It(GetWorld()); It; ++It)
+    {
+        AQuebecCar* Car = *It;
+        if (!Car || !Car->Occupant || !QuebecNose::CountsAsCar(static_cast<int>(Car->RideKind))) continue;
+        AQuebecController* Who = Cast<AQuebecController>(Car->GetController());
+        if (!Who) continue;
+        const FVector Position = Car->GetActorLocation();
+        const double Near = QuebecNose::Apart(Position.X, Position.Y, Mark.X, Mark.Y);
+        const bool bHere = Near <= QuebecNose::Reach;
+        const bool bBetter = bHere ? (!bInside || Near < Best) : (!bInside && Near < Best);
+        if (!bBetter) continue;
+        bInside = bInside || bHere;
+        Best = Near;
+        bInCar = true;
+        Driver = Who;
+        CarX = Position.X;
+        CarY = Position.Y;
+        Signed = static_cast<double>(Car->Speed);
+        const FVector Forward = Car->GetActorForwardVector();
+        ForwardX = Forward.X;
+        ForwardY = Forward.Y;
+    }
+    QuebecNose::FRun Now;
+    Now.Step = static_cast<int>(NoseStep);
+    const QuebecNose::FRun After = QuebecNose::Tick(Now, bInCar, CarX, CarY, Signed, ForwardX, ForwardY);
+    if (After.Step != NoseStep)
+        AdvanceNose(After.Step, Driver, TEXT("You backed it in."), true);
+}
+
+void AQuebecCampaign::AdvanceNose(int32 Next, AQuebecController* Who, const TCHAR* Message, bool bFinished)
+{
+    if (Next == NoseStep) return;
+    NoseStep = Next;
+    // Link -1 is outside the seven banks, so the chain does not move. The purse is flat, and only at the stall.
+    ShowStepMessage(Who, Message, bFinished, -1);
+    if (bFinished) GrantCash(QuebecNose::Pay);
+    for (TActorIterator<AQuebecController> It(GetWorld()); It; ++It)
+        It->PlayFeedback(bFinished ? EQuebecFeedbackCue::Complete : EQuebecFeedbackCue::Checkpoint);
+    UpdatePresentation();
+    ForceNetUpdate();
+    SaveBoundary();
+}
+
+void AQuebecCampaign::TickSlip(float DeltaSeconds)
+{
+    if (!IsSlipOpen()) return;
+    AQuebecController* Foot = nullptr;
+    bool bOnFoot = false;
+    double FootX = 0.;
+    double FootY = 0.;
+    double Best = 1.0e18;
+    for (TActorIterator<AQuebecController> It(GetWorld()); It; ++It)
+    {
+        const APawn* Pawn = It->GetPawn();
+        if (!Pawn || Cast<AQuebecCar>(Pawn)) continue;
+        const AQuebecCharacter* Walker = Cast<AQuebecCharacter>(Pawn);
+        if (!Walker || Walker->GetCharacterMovement()->IsSwimming()) continue;
+        const FVector Position = Walker->GetActorLocation();
+        // The closest person is the one being chased. A partner already at the gate does not clear it.
+        const double ToThem = QuebecSlip::Apart(Position.X, Position.Y, static_cast<double>(SlipX), static_cast<double>(SlipY));
+        if (ToThem >= Best) continue;
+        Best = ToThem;
+        bOnFoot = true;
+        Foot = *It;
+        FootX = Position.X;
+        FootY = Position.Y;
+    }
+    QuebecSlip::FRun Now;
+    Now.Step = static_cast<int>(SlipStep);
+    Now.X = static_cast<double>(SlipX);
+    Now.Y = static_cast<double>(SlipY);
+    const QuebecSlip::FRun After = QuebecSlip::Tick(Now, static_cast<double>(DeltaSeconds), bOnFoot, FootX, FootY);
+    SlipX = static_cast<float>(After.X);
+    SlipY = static_cast<float>(After.Y);
+    if (After.bCaught)
+    {
+        if (Foot) NoteSetback(Foot, TEXT("They caught you. The door is back."));
+        SlipStep = After.Step;
+        for (TActorIterator<AQuebecController> It(GetWorld()); It; ++It)
+            It->PlayFeedback(EQuebecFeedbackCue::Checkpoint);
+        UpdatePresentation();
+        ForceNetUpdate();
+        return;
+    }
+    if (After.Step != SlipStep)
+    {
+        const bool bFinished = After.Step >= QuebecSlip::StepBanked;
+        AdvanceSlip(After.Step, Foot, bFinished ? TEXT("You lost them.") : TEXT("They saw you. Sprint."), bFinished);
+        return;
+    }
+    if (!FMath::IsNearlyEqual(static_cast<float>(Now.X), SlipX) || !FMath::IsNearlyEqual(static_cast<float>(Now.Y), SlipY)) ForceNetUpdate();
+}
+
+void AQuebecCampaign::AdvanceSlip(int32 Next, AQuebecController* Who, const TCHAR* Message, bool bFinished)
+{
+    if (Next == SlipStep) return;
+    SlipStep = Next;
+    // Link -1 is outside the seven banks, so the chain does not move. The purse is flat, and only at the gate.
+    ShowStepMessage(Who, Message, bFinished, -1);
+    if (bFinished) GrantCash(QuebecSlip::Pay);
+    for (TActorIterator<AQuebecController> It(GetWorld()); It; ++It)
+        It->PlayFeedback(bFinished ? EQuebecFeedbackCue::Complete : EQuebecFeedbackCue::Checkpoint);
+    UpdatePresentation();
+    ForceNetUpdate();
+    SaveBoundary();
+}
+
+void AQuebecCampaign::TickMarch(float DeltaSeconds)
+{
+    if (!IsMarchOpen()) return;
+    AQuebecController* Foot = nullptr;
+    bool bOnFoot = false;
+    double FootX = 0.;
+    double FootY = 0.;
+    double Best = 1.0e18;
+    for (TActorIterator<AQuebecController> It(GetWorld()); It; ++It)
+    {
+        const APawn* Pawn = It->GetPawn();
+        if (!Pawn || Cast<AQuebecCar>(Pawn)) continue;
+        const AQuebecCharacter* Walker = Cast<AQuebecCharacter>(Pawn);
+        if (!Walker || Walker->GetCharacterMovement()->IsSwimming()) continue;
+        const FVector Position = Walker->GetActorLocation();
+        // The closest person is the one inside the march. A partner already at the step-out does not finish it.
+        const double ToThem = QuebecMarch::Apart(Position.X, Position.Y, QuebecMarch::ColumnX, static_cast<double>(MarchY));
+        if (ToThem >= Best) continue;
+        Best = ToThem;
+        bOnFoot = true;
+        Foot = *It;
+        FootX = Position.X;
+        FootY = Position.Y;
+    }
+    QuebecMarch::FRun Now;
+    Now.Step = static_cast<int>(MarchStep);
+    Now.Y = static_cast<double>(MarchY);
+    const QuebecMarch::FRun After = QuebecMarch::Tick(Now, static_cast<double>(DeltaSeconds), bOnFoot, FootX, FootY);
+    MarchY = static_cast<float>(After.Y);
+    if (After.bLeft)
+    {
+        if (Foot) NoteSetback(Foot, TEXT("You left the march. It is back at the start."));
+        MarchStep = After.Step;
+        for (TActorIterator<AQuebecController> It(GetWorld()); It; ++It)
+            It->PlayFeedback(EQuebecFeedbackCue::Checkpoint);
+        UpdatePresentation();
+        ForceNetUpdate();
+        return;
+    }
+    if (After.Step != MarchStep)
+    {
+        const bool bFinished = After.Step >= QuebecMarch::StepBanked;
+        const TCHAR* Message = bFinished ? TEXT("You stayed with them.")
+            : After.Step == QuebecMarch::StepLeave ? TEXT("They stopped. Step out.")
+            : TEXT("You joined. Stay inside.");
+        AdvanceMarch(After.Step, Foot, Message, bFinished);
+        return;
+    }
+    if (!FMath::IsNearlyEqual(static_cast<float>(Now.Y), MarchY)) ForceNetUpdate();
+}
+
+void AQuebecCampaign::AdvanceMarch(int32 Next, AQuebecController* Who, const TCHAR* Message, bool bFinished)
+{
+    if (Next == MarchStep) return;
+    MarchStep = Next;
+    // Link -1 is outside the seven banks, so the chain does not move. The purse is flat, and only when you step out.
+    ShowStepMessage(Who, Message, bFinished, -1);
+    if (bFinished) GrantCash(QuebecMarch::Pay);
+    for (TActorIterator<AQuebecController> It(GetWorld()); It; ++It)
+        It->PlayFeedback(bFinished ? EQuebecFeedbackCue::Complete : EQuebecFeedbackCue::Checkpoint);
+    UpdatePresentation();
+    ForceNetUpdate();
+    SaveBoundary();
+}
+
+void AQuebecCampaign::TickDitch(float DeltaSeconds)
+{
+    if (!IsDitchOpen()) return;
+    AQuebecController* Who = nullptr;
+    bool bInCar = false;
+    bool bOnFoot = false;
+    double BodyX = 0.;
+    double BodyY = 0.;
+    double Speed = 0.;
+    double ForwardX = 1.;
+    double ForwardY = 0.;
+    double Best = 1.0e18;
+    bool bInside = false;
+    if (DitchStep == QuebecDitch::StepFoot)
+    {
+        const QuebecDitch::FSpot Clear = QuebecDitch::Foot();
+        for (TActorIterator<AQuebecController> It(GetWorld()); It; ++It)
+        {
+            const APawn* Pawn = It->GetPawn();
+            if (!Pawn || Cast<AQuebecCar>(Pawn)) continue;
+            const AQuebecCharacter* Walker = Cast<AQuebecCharacter>(Pawn);
+            if (!Walker || Walker->GetCharacterMovement()->IsSwimming()) continue;
+            const FVector Position = Walker->GetActorLocation();
+            const double Near = QuebecDitch::Apart(Position.X, Position.Y, Clear.X, Clear.Y);
+            const bool bHere = Near <= QuebecDitch::Reach;
+            const bool bBetter = bHere ? (!bInside || Near < Best) : (!bInside && Near < Best);
+            if (!bBetter) continue;
+            bInside = bInside || bHere;
+            Best = Near;
+            bOnFoot = true;
+            Who = *It;
+            BodyX = Position.X;
+            BodyY = Position.Y;
+        }
+    }
+    else
+    {
+        const QuebecDitch::FSpot Watched = DitchStep == QuebecDitch::StepRoll ? QuebecDitch::Line() : QuebecDitch::End();
+        for (TActorIterator<AQuebecCar> It(GetWorld()); It; ++It)
+        {
+            AQuebecCar* Car = *It;
+            if (!Car || !Car->Occupant || !QuebecDitch::CountsAsCar(static_cast<int>(Car->RideKind))) continue;
+            AQuebecController* Driver = Cast<AQuebecController>(Car->GetController());
+            if (!Driver) continue;
+            const FVector Position = Car->GetActorLocation();
+            const double Near = QuebecDitch::Apart(Position.X, Position.Y, Watched.X, Watched.Y);
+            const bool bHere = Near <= QuebecDitch::Reach;
+            const bool bBetter = bHere ? (!bInside || Near < Best) : (!bInside && Near < Best);
+            if (!bBetter) continue;
+            bInside = bInside || bHere;
+            Best = Near;
+            bInCar = true;
+            Who = Driver;
+            BodyX = Position.X;
+            BodyY = Position.Y;
+            Speed = static_cast<double>(Car->Speed);
+            const FVector Forward = Car->GetActorForwardVector();
+            ForwardX = Forward.X;
+            ForwardY = Forward.Y;
+        }
+    }
+    QuebecDitch::FRun Now;
+    Now.Step = static_cast<int>(DitchStep);
+    Now.Along = static_cast<double>(DitchAlong);
+    const QuebecDitch::FRun After = QuebecDitch::Tick(Now, static_cast<double>(DeltaSeconds), bInCar, bOnFoot, Speed, ForwardX, ForwardY, BodyX, BodyY);
+    DitchAlong = static_cast<float>(After.Along);
+    if (After.bCaught)
+    {
+        if (Who) NoteSetback(Who, TEXT("They caught the car. The line is back."));
+        DitchStep = After.Step;
+        for (TActorIterator<AQuebecController> It(GetWorld()); It; ++It)
+            It->PlayFeedback(EQuebecFeedbackCue::Checkpoint);
+        UpdatePresentation();
+        ForceNetUpdate();
+        return;
+    }
+    if (After.Step != DitchStep)
+    {
+        const bool bFinished = After.Step >= QuebecDitch::StepBanked;
+        const TCHAR* Message = bFinished ? TEXT("You ditched it.")
+            : After.Step == QuebecDitch::StepFoot ? TEXT("You beat them. Get out.")
+            : TEXT("They are behind you. Stay ahead.");
+        AdvanceDitch(After.Step, Who, Message, bFinished);
+        return;
+    }
+    if (!FMath::IsNearlyEqual(static_cast<float>(Now.Along), DitchAlong)) ForceNetUpdate();
+}
+
+void AQuebecCampaign::AdvanceDitch(int32 Next, AQuebecController* Who, const TCHAR* Message, bool bFinished)
+{
+    if (Next == DitchStep) return;
+    DitchStep = Next;
+    // Link -1 is outside the seven banks, so the chain does not move. The purse is flat, and only when you are clear.
+    ShowStepMessage(Who, Message, bFinished, -1);
+    if (bFinished) GrantCash(QuebecDitch::Pay);
+    for (TActorIterator<AQuebecController> It(GetWorld()); It; ++It)
+        It->PlayFeedback(bFinished ? EQuebecFeedbackCue::Complete : EQuebecFeedbackCue::Checkpoint);
+    UpdatePresentation();
+    ForceNetUpdate();
+    SaveBoundary();
+}
+
+void AQuebecCampaign::TickParcel(float DeltaSeconds)
+{
+    if (!IsParcelOpen()) return;
+    AQuebecController* Who = nullptr;
+    bool bOnFoot = false;
+    double BodyX = 0.;
+    double BodyY = 0.;
+    double BestParcel = 1.0e18;
+    double BestStoop = 1.0e18;
+    const QuebecParcel::FSpot Mark = QuebecParcel::Parcel();
+    const QuebecParcel::FSpot Door = QuebecParcel::Stoop();
+    for (TActorIterator<AQuebecController> It(GetWorld()); It; ++It)
+    {
+        const APawn* Pawn = It->GetPawn();
+        if (!Pawn || Cast<AQuebecCar>(Pawn)) continue;
+        const AQuebecCharacter* Walker = Cast<AQuebecCharacter>(Pawn);
+        if (!Walker || Walker->GetCharacterMovement()->IsSwimming()) continue;
+        const FVector Position = Walker->GetActorLocation();
+        const double NearParcel = QuebecParcel::Apart(Position.X, Position.Y, Mark.X, Mark.Y);
+        const double NearStoop = QuebecParcel::Apart(Position.X, Position.Y, Door.X, Door.Y);
+        const bool bBetter = NearParcel < BestParcel - 1. || (std::abs(NearParcel - BestParcel) <= 1. && NearStoop < BestStoop);
+        if (!bBetter) continue;
+        BestParcel = NearParcel;
+        BestStoop = NearStoop;
+        bOnFoot = true;
+        Who = *It;
+        BodyX = Position.X;
+        BodyY = Position.Y;
+    }
+    QuebecParcel::FRun Now;
+    Now.Step = static_cast<int>(ParcelStep);
+    Now.Clock = static_cast<double>(ParcelClock);
+    Now.AlongA = static_cast<double>(ParcelAlongA);
+    Now.AlongB = static_cast<double>(ParcelAlongB);
+    const QuebecParcel::FRun After = QuebecParcel::Tick(Now, static_cast<double>(DeltaSeconds), bOnFoot, BodyX, BodyY);
+    ParcelClock = static_cast<float>(After.Clock);
+    ParcelAlongA = static_cast<float>(After.AlongA);
+    ParcelAlongB = static_cast<float>(After.AlongB);
+    if (After.bDropped)
+    {
+        if (Who) NoteSetback(Who, TEXT("The parcel is back. The clock starts over."));
+        ParcelStep = After.Step;
+        for (TActorIterator<AQuebecController> It(GetWorld()); It; ++It)
+            It->PlayFeedback(EQuebecFeedbackCue::Checkpoint);
+        UpdatePresentation();
+        ForceNetUpdate();
+        return;
+    }
+    if (After.Step != ParcelStep)
+    {
+        const bool bFinished = After.Step >= QuebecParcel::StepBanked;
+        const TCHAR* Message = bFinished ? TEXT("You crossed with it.") : TEXT("You have it. Let the car pass.");
+        AdvanceParcel(After.Step, Who, Message, bFinished);
+        return;
+    }
+    if (!FMath::IsNearlyEqual(static_cast<float>(Now.Clock), ParcelClock)
+        || !FMath::IsNearlyEqual(static_cast<float>(Now.AlongA), ParcelAlongA))
+        ForceNetUpdate();
+}
+
+void AQuebecCampaign::AdvanceParcel(int32 Next, AQuebecController* Who, const TCHAR* Message, bool bFinished)
+{
+    if (Next == ParcelStep) return;
+    ParcelStep = Next;
+    // Link -1 is outside the seven banks, so the chain does not move. The purse is flat, and only when the parcel is across.
+    ShowStepMessage(Who, Message, bFinished, -1);
+    if (bFinished) GrantCash(QuebecParcel::Pay);
+    for (TActorIterator<AQuebecController> It(GetWorld()); It; ++It)
+        It->PlayFeedback(bFinished ? EQuebecFeedbackCue::Complete : EQuebecFeedbackCue::Checkpoint);
+    UpdatePresentation();
+    ForceNetUpdate();
+    SaveBoundary();
+}
+
+void AQuebecCampaign::TickBolt(float DeltaSeconds)
+{
+    if (!IsBoltOpen()) return;
+    AQuebecController* Who = nullptr;
+    int Kind = -1;
+    bool bOnFoot = false;
+    double BodyX = 0.;
+    double BodyY = 0.;
+    double Speed = 0.;
+    double ForwardX = 1.;
+    double ForwardY = 0.;
+    double Best = 1.0e18;
+    bool bInside = false;
+    if (BoltStep == QuebecBolt::StepOut)
+    {
+        const QuebecBolt::FSpot Door = QuebecBolt::Gate();
+        for (TActorIterator<AQuebecController> It(GetWorld()); It; ++It)
+        {
+            const APawn* Pawn = It->GetPawn();
+            if (!Pawn || Cast<AQuebecCar>(Pawn)) continue;
+            const AQuebecCharacter* Walker = Cast<AQuebecCharacter>(Pawn);
+            if (!Walker || Walker->GetCharacterMovement()->IsSwimming()) continue;
+            const FVector Position = Walker->GetActorLocation();
+            const double Near = QuebecBolt::Apart(Position.X, Position.Y, Door.X, Door.Y);
+            const bool bHere = Near <= QuebecBolt::Reach;
+            const bool bBetter = bHere ? (!bInside || Near < Best) : (!bInside && Near < Best);
+            if (!bBetter) continue;
+            bInside = bInside || bHere;
+            Best = Near;
+            bOnFoot = true;
+            Who = *It;
+            BodyX = Position.X;
+            BodyY = Position.Y;
+        }
+    }
+    else
+    {
+        const QuebecBolt::FSpot Watched = BoltStep == QuebecBolt::StepDrive ? QuebecBolt::End() : QuebecBolt::Bay();
+        for (TActorIterator<AQuebecCar> It(GetWorld()); It; ++It)
+        {
+            AQuebecCar* Car = *It;
+            if (!Car || !Car->Occupant || !QuebecBolt::CountsAsCar(static_cast<int>(Car->RideKind))) continue;
+            AQuebecController* Driver = Cast<AQuebecController>(Car->GetController());
+            if (!Driver) continue;
+            const FVector Position = Car->GetActorLocation();
+            const double Near = QuebecBolt::Apart(Position.X, Position.Y, Watched.X, Watched.Y);
+            const bool bHere = Near <= QuebecBolt::Reach;
+            const bool bBetter = bHere ? (!bInside || Near < Best) : (!bInside && Near < Best);
+            if (!bBetter) continue;
+            bInside = bInside || bHere;
+            Best = Near;
+            Kind = static_cast<int>(Car->RideKind);
+            Who = Driver;
+            BodyX = Position.X;
+            BodyY = Position.Y;
+            Speed = static_cast<double>(Car->Speed);
+            const FVector Forward = Car->GetActorForwardVector();
+            ForwardX = Forward.X;
+            ForwardY = Forward.Y;
+        }
+    }
+    QuebecBolt::FRun Now;
+    Now.Step = static_cast<int>(BoltStep);
+    Now.Clock = static_cast<double>(BoltClock);
+    Now.SeekX = static_cast<double>(BoltSeekX);
+    Now.SeekY = static_cast<double>(BoltSeekY);
+    const QuebecBolt::FRun After = QuebecBolt::Tick(Now, static_cast<double>(DeltaSeconds), Kind, bOnFoot, Speed, ForwardX, ForwardY, BodyX, BodyY);
+    BoltClock = static_cast<float>(After.Clock);
+    BoltSeekX = static_cast<float>(After.SeekX);
+    BoltSeekY = static_cast<float>(After.SeekY);
+    if (After.bCaught)
+    {
+        if (Who) NoteSetback(Who, TEXT("They caught the car. The bay is still the bay."));
+        for (TActorIterator<AQuebecController> It(GetWorld()); It; ++It)
+            It->PlayFeedback(EQuebecFeedbackCue::Checkpoint);
+        UpdatePresentation();
+        ForceNetUpdate();
+        return;
+    }
+    if (After.bExpired)
+    {
+        if (Who) NoteSetback(Who, TEXT("The clock went. The gate is still the gate."));
+        for (TActorIterator<AQuebecController> It(GetWorld()); It; ++It)
+            It->PlayFeedback(EQuebecFeedbackCue::Checkpoint);
+        UpdatePresentation();
+        ForceNetUpdate();
+        return;
+    }
+    if (After.Step != BoltStep)
+    {
+        const bool bFinished = After.Step >= QuebecBolt::StepBanked;
+        const TCHAR* Message = bFinished ? TEXT("You bolted.")
+            : After.Step == QuebecBolt::StepOut ? TEXT("Out of the car. The gate is off the road.")
+            : TEXT("They are steering for you. The bay.");
+        AdvanceBolt(After.Step, Who, Message, bFinished);
+        return;
+    }
+    if (!FMath::IsNearlyEqual(static_cast<float>(Now.SeekX), BoltSeekX)
+        || !FMath::IsNearlyEqual(static_cast<float>(Now.SeekY), BoltSeekY)
+        || !FMath::IsNearlyEqual(static_cast<float>(Now.Clock), BoltClock))
+        ForceNetUpdate();
+}
+
+void AQuebecCampaign::AdvanceBolt(int32 Next, AQuebecController* Who, const TCHAR* Message, bool bFinished)
+{
+    if (Next == BoltStep) return;
+    BoltStep = Next;
+    // Link -1 is outside the seven banks, so the chain does not move. The purse is flat, and only when you are through the gate.
+    ShowStepMessage(Who, Message, bFinished, -1);
+    if (bFinished) GrantCash(QuebecBolt::Pay);
+    for (TActorIterator<AQuebecController> It(GetWorld()); It; ++It)
+        It->PlayFeedback(bFinished ? EQuebecFeedbackCue::Complete : EQuebecFeedbackCue::Checkpoint);
+    UpdatePresentation();
+    ForceNetUpdate();
+    SaveBoundary();
+}
+
+void AQuebecCampaign::TickYard(float DeltaSeconds)
+{
+    if (!IsYardOpen()) return;
+    AQuebecController* Who = nullptr;
+    bool bOnFoot = false;
+    double BodyX = 0.;
+    double BodyY = 0.;
+    double Best = 1.0e18;
+    bool bInside = false;
+    const QuebecYard::FSpot Watched = bYardArmed ? QuebecYard::Far() : QuebecYard::Near();
+    for (TActorIterator<AQuebecController> It(GetWorld()); It; ++It)
+    {
+        const APawn* Pawn = It->GetPawn();
+        if (!Pawn || Cast<AQuebecCar>(Pawn)) continue;
+        const AQuebecCharacter* Walker = Cast<AQuebecCharacter>(Pawn);
+        if (!Walker || Walker->GetCharacterMovement()->IsSwimming()) continue;
+        const FVector Position = Walker->GetActorLocation();
+        const double Span = QuebecYard::Apart(Position.X, Position.Y, Watched.X, Watched.Y);
+        const bool bHere = Span <= QuebecYard::Reach;
+        const bool bBetter = bHere ? (!bInside || Span < Best) : (!bInside && Span < Best);
+        if (!bBetter) continue;
+        bInside = bInside || bHere;
+        Best = Span;
+        bOnFoot = true;
+        Who = *It;
+        BodyX = Position.X;
+        BodyY = Position.Y;
+    }
+    QuebecYard::FRun Now;
+    Now.Step = static_cast<int>(YardStep);
+    Now.Angle = static_cast<double>(YardAngle);
+    Now.bArmed = bYardArmed;
+    const QuebecYard::FRun After = QuebecYard::Tick(Now, static_cast<double>(DeltaSeconds), bOnFoot, BodyX, BodyY);
+    YardAngle = static_cast<float>(After.Angle);
+    bYardArmed = After.bArmed;
+    if (After.bSeen)
+    {
+        if (Who) NoteSetback(Who, TEXT("They looked. The near side is still the near side."));
+        for (TActorIterator<AQuebecController> It(GetWorld()); It; ++It)
+            It->PlayFeedback(EQuebecFeedbackCue::Checkpoint);
+        UpdatePresentation();
+        ForceNetUpdate();
+        return;
+    }
+    if (After.Step != YardStep)
+    {
+        AdvanceYard(After.Step, Who, TEXT("You crossed while they looked away."), After.Step >= QuebecYard::StepBanked);
+        return;
+    }
+    if (!FMath::IsNearlyEqual(static_cast<float>(Now.Angle), YardAngle))
+        ForceNetUpdate();
+}
+
+void AQuebecCampaign::AdvanceYard(int32 Next, AQuebecController* Who, const TCHAR* Message, bool bFinished)
+{
+    if (Next == YardStep) return;
+    YardStep = Next;
+    // Link -1 is outside the seven banks, so the chain does not move. The purse is flat, and only when you are across.
+    ShowStepMessage(Who, Message, bFinished, -1);
+    if (bFinished) GrantCash(QuebecYard::Pay);
+    for (TActorIterator<AQuebecController> It(GetWorld()); It; ++It)
+        It->PlayFeedback(bFinished ? EQuebecFeedbackCue::Complete : EQuebecFeedbackCue::Checkpoint);
+    UpdatePresentation();
+    ForceNetUpdate();
+    SaveBoundary();
+}
+
+void AQuebecCampaign::TickLift(float DeltaSeconds)
+{
+    if (!IsLiftOpen()) return;
+    AQuebecController* Who = nullptr;
+    int Kind = -1;
+    double Speed = 0.;
+    double BodyX = 0.;
+    double BodyY = 0.;
+    double Best = 1.0e18;
+    bool bInside = false;
+    const QuebecLift::FSpot Pocket = QuebecLift::Pocket();
+    for (TActorIterator<AQuebecCar> It(GetWorld()); It; ++It)
+    {
+        AQuebecCar* Car = *It;
+        if (!Car || !Car->Occupant || !QuebecLift::CountsAsCar(static_cast<int>(Car->RideKind))) continue;
+        AQuebecController* Driver = Cast<AQuebecController>(Car->GetController());
+        if (!Driver) continue;
+        const FVector Position = Car->GetActorLocation();
+        const double Span = QuebecLift::Apart(Position.X, Position.Y, Pocket.X, Pocket.Y);
+        const bool bHere = Span <= QuebecLift::Reach;
+        const bool bBetter = bHere ? (!bInside || Span < Best) : (!bInside && Span < Best);
+        if (!bBetter) continue;
+        bInside = bInside || bHere;
+        Best = Span;
+        Kind = static_cast<int>(Car->RideKind);
+        Who = Driver;
+        Speed = static_cast<double>(Car->Speed);
+        BodyX = Position.X;
+        BodyY = Position.Y;
+    }
+    QuebecLift::FRun Now;
+    Now.Step = static_cast<int>(LiftStep);
+    Now.Along = static_cast<double>(LiftAlong);
+    Now.bComing = bLiftComing;
+    const QuebecLift::FRun After = QuebecLift::Tick(Now, static_cast<double>(DeltaSeconds), Kind, Speed, BodyX, BodyY);
+    LiftAlong = static_cast<float>(After.Along);
+    bLiftComing = After.bComing;
+    if (After.bBack)
+    {
+        if (Who) NoteSetback(Who, TEXT("The car rolled. They went back."));
+        for (TActorIterator<AQuebecController> It(GetWorld()); It; ++It)
+            It->PlayFeedback(EQuebecFeedbackCue::Checkpoint);
+        UpdatePresentation();
+        ForceNetUpdate();
+        return;
+    }
+    if (After.Step != LiftStep)
+    {
+        AdvanceLift(After.Step, Who, TEXT("They reached the car."), After.Step >= QuebecLift::StepBanked);
+        return;
+    }
+    if (!FMath::IsNearlyEqual(static_cast<float>(Now.Along), LiftAlong))
+        ForceNetUpdate();
+}
+
+void AQuebecCampaign::AdvanceLift(int32 Next, AQuebecController* Who, const TCHAR* Message, bool bFinished)
+{
+    if (Next == LiftStep) return;
+    LiftStep = Next;
+    // Link -1 is outside the seven banks, so the chain does not move. The purse is flat, and only when they are in.
+    ShowStepMessage(Who, Message, bFinished, -1);
+    if (bFinished) GrantCash(QuebecLift::Pay);
+    for (TActorIterator<AQuebecController> It(GetWorld()); It; ++It)
+        It->PlayFeedback(bFinished ? EQuebecFeedbackCue::Complete : EQuebecFeedbackCue::Checkpoint);
+    UpdatePresentation();
+    ForceNetUpdate();
+    SaveBoundary();
+}
+
+void AQuebecCampaign::TickPost(float DeltaSeconds)
+{
+    if (!IsPostOpen()) return;
+    AQuebecController* Who = nullptr;
+    bool bOnFoot = false;
+    double Rate = 0.;
+    double BodyX = 0.;
+    double BodyY = 0.;
+    double Best = 1.0e18;
+    bool bInside = false;
+    const QuebecPost::FSpot Here = QuebecPost::Mark();
+    for (TActorIterator<AQuebecController> It(GetWorld()); It; ++It)
+    {
+        const APawn* Pawn = It->GetPawn();
+        if (!Pawn || Cast<AQuebecCar>(Pawn)) continue;
+        const AQuebecCharacter* Walker = Cast<AQuebecCharacter>(Pawn);
+        if (!Walker || Walker->GetCharacterMovement()->IsSwimming()) continue;
+        const FVector Position = Walker->GetActorLocation();
+        const double Span = QuebecPost::Apart(Position.X, Position.Y, Here.X, Here.Y);
+        const bool bHere = Span <= QuebecPost::Reach;
+        const bool bBetter = bHere ? (!bInside || Span < Best) : (!bInside && Span < Best);
+        if (!bBetter) continue;
+        bInside = bInside || bHere;
+        Best = Span;
+        bOnFoot = true;
+        Who = *It;
+        Rate = static_cast<double>(Walker->GetVelocity().Size2D());
+        BodyX = Position.X;
+        BodyY = Position.Y;
+    }
+    QuebecPost::FRun Now;
+    Now.Step = static_cast<int>(PostStep);
+    Now.Clock = static_cast<double>(PostClock);
+    const QuebecPost::FRun After = QuebecPost::Tick(Now, static_cast<double>(DeltaSeconds), bOnFoot, Rate, BodyX, BodyY);
+    PostClock = static_cast<float>(After.Clock);
+    if (After.bBroke)
+    {
+        if (Who) NoteSetback(Who, TEXT("The count started again."));
+        for (TActorIterator<AQuebecController> It(GetWorld()); It; ++It)
+            It->PlayFeedback(EQuebecFeedbackCue::Checkpoint);
+        UpdatePresentation();
+        ForceNetUpdate();
+        return;
+    }
+    if (After.Step != PostStep)
+    {
+        AdvancePost(After.Step, Who, TEXT("You stood the post."), After.Step >= QuebecPost::StepBanked);
+        return;
+    }
+    if (!FMath::IsNearlyEqual(static_cast<float>(Now.Clock), PostClock))
+        ForceNetUpdate();
+}
+
+void AQuebecCampaign::AdvancePost(int32 Next, AQuebecController* Who, const TCHAR* Message, bool bFinished)
+{
+    if (Next == PostStep) return;
+    PostStep = Next;
+    // Link -1 is outside the seven banks, so the chain does not move. The purse is flat, and only when the count is full.
+    ShowStepMessage(Who, Message, bFinished, -1);
+    if (bFinished) GrantCash(QuebecPost::Pay);
+    for (TActorIterator<AQuebecController> It(GetWorld()); It; ++It)
+        It->PlayFeedback(bFinished ? EQuebecFeedbackCue::Complete : EQuebecFeedbackCue::Checkpoint);
+    UpdatePresentation();
+    ForceNetUpdate();
+    SaveBoundary();
+}
+
+void AQuebecCampaign::TickTab(float DeltaSeconds)
+{
+    if (!IsTabOpen()) return;
+    AQuebecController* Who = nullptr;
+    int Kind = -1;
+    bool bOnFoot = false;
+    double Rate = 0.;
+    double ForwardX = 1.;
+    double ForwardY = 0.;
+    double BodyX = 0.;
+    double BodyY = 0.;
+    double Best = 1.0e18;
+    bool bInside = false;
+    const QuebecTab::FSpot Here = QuebecTab::Objective(static_cast<int>(TabStep));
+    const double Watch = TabStep == QuebecTab::StepLane ? QuebecTab::GateReach : QuebecTab::Reach;
+    if (TabStep == QuebecTab::StepLane)
+    {
+        for (TActorIterator<AQuebecCar> It(GetWorld()); It; ++It)
+        {
+            AQuebecCar* Car = *It;
+            if (!Car || !Car->Occupant || !QuebecTab::CountsAsCar(static_cast<int>(Car->RideKind))) continue;
+            AQuebecController* Driver = Cast<AQuebecController>(Car->GetController());
+            if (!Driver) continue;
+            const FVector Position = Car->GetActorLocation();
+            const double Near = QuebecTab::Apart(Position.X, Position.Y, Here.X, Here.Y);
+            const bool bHere = Near <= Watch;
+            const bool bBetter = bHere ? (!bInside || Near < Best) : (!bInside && Near < Best);
+            if (!bBetter) continue;
+            bInside = bInside || bHere;
+            Best = Near;
+            Kind = static_cast<int>(Car->RideKind);
+            Who = Driver;
+            BodyX = Position.X;
+            BodyY = Position.Y;
+            Rate = static_cast<double>(Car->Speed);
+            const FVector Forward = Car->GetActorForwardVector();
+            ForwardX = Forward.X;
+            ForwardY = Forward.Y;
+        }
+    }
+    else
+    {
+        for (TActorIterator<AQuebecController> It(GetWorld()); It; ++It)
+        {
+            const APawn* Pawn = It->GetPawn();
+            if (!Pawn || Cast<AQuebecCar>(Pawn)) continue;
+            const AQuebecCharacter* Walker = Cast<AQuebecCharacter>(Pawn);
+            if (!Walker || Walker->GetCharacterMovement()->IsSwimming()) continue;
+            const FVector Position = Walker->GetActorLocation();
+            const double Near = QuebecTab::Apart(Position.X, Position.Y, Here.X, Here.Y);
+            const bool bHere = Near <= Watch;
+            const bool bBetter = bHere ? (!bInside || Near < Best) : (!bInside && Near < Best);
+            if (!bBetter) continue;
+            bInside = bInside || bHere;
+            Best = Near;
+            bOnFoot = true;
+            Who = *It;
+            Rate = static_cast<double>(Walker->GetVelocity().Size2D());
+            BodyX = Position.X;
+            BodyY = Position.Y;
+        }
+    }
+    QuebecTab::FRun Now;
+    Now.Step = static_cast<int>(TabStep);
+    Now.Clock = static_cast<double>(TabClock);
+    const QuebecTab::FRun After = QuebecTab::Tick(Now, static_cast<double>(DeltaSeconds), Kind, bOnFoot, Rate, ForwardX, ForwardY, BodyX, BodyY);
+    TabClock = static_cast<float>(After.Clock);
+    if (After.bSlipped)
+    {
+        if (!bTabNoted)
+        {
+            bTabNoted = true;
+            if (Who) NoteSetback(Who, TEXT("That speed drops the tab. Take the lane again."));
+            for (TActorIterator<AQuebecController> It(GetWorld()); It; ++It)
+                It->PlayFeedback(EQuebecFeedbackCue::Checkpoint);
+            UpdatePresentation();
+            ForceNetUpdate();
+        }
+        return;
+    }
+    bTabNoted = false;
+    if (After.bBroke)
+    {
+        if (Who) NoteSetback(Who, TEXT("You moved. The count started again."));
+        for (TActorIterator<AQuebecController> It(GetWorld()); It; ++It)
+            It->PlayFeedback(EQuebecFeedbackCue::Checkpoint);
+        UpdatePresentation();
+        ForceNetUpdate();
+        return;
+    }
+    if (After.Step != TabStep)
+    {
+        const TCHAR* Message = After.Step >= QuebecTab::StepBanked ? TEXT("The tab is closed.")
+            : After.Step == QuebecTab::StepStill ? TEXT("The lane took the tab.")
+            : TEXT("The tab is open.");
+        AdvanceTab(After.Step, Who, Message, After.Step >= QuebecTab::StepBanked);
+        return;
+    }
+    if (!FMath::IsNearlyEqual(static_cast<float>(Now.Clock), TabClock))
+        ForceNetUpdate();
+}
+
+void AQuebecCampaign::AdvanceTab(int32 Next, AQuebecController* Who, const TCHAR* Message, bool bFinished)
+{
+    if (Next == TabStep) return;
+    TabStep = Next;
+    TabClock = 0.f;
+    bTabNoted = false;
+    // Link -1 is outside the seven banks, so the chain does not move. The purse is flat, and only when the tab is closed.
+    ShowStepMessage(Who, Message, bFinished, -1);
+    if (bFinished) GrantCash(QuebecTab::Pay);
+    for (TActorIterator<AQuebecController> It(GetWorld()); It; ++It)
+        It->PlayFeedback(bFinished ? EQuebecFeedbackCue::Complete : EQuebecFeedbackCue::Checkpoint);
+    UpdatePresentation();
+    ForceNetUpdate();
+    SaveBoundary();
+}
+
+void AQuebecCampaign::TickCarry(float DeltaSeconds)
+{
+    if (!IsCarryOpen()) return;
+    (void)DeltaSeconds;
+    AQuebecController* Who = nullptr;
+    int Kind = -1;
+    bool bOnFoot = false;
+    double Rate = 0.;
+    double BodyX = 0.;
+    double BodyY = 0.;
+    double Best = 1.0e18;
+    bool bInside = false;
+    const QuebecCarry::FSpot Here = QuebecCarry::Objective(static_cast<int>(CarryStep));
+    const double Watch = CarryStep == QuebecCarry::StepRoll ? QuebecCarry::LineReach : QuebecCarry::Reach;
+    const bool bWantCar = CarryStep == QuebecCarry::StepRoll || CarryStep == QuebecCarry::StepWalk;
+    if (bWantCar)
+    {
+        for (TActorIterator<AQuebecCar> It(GetWorld()); It; ++It)
+        {
+            AQuebecCar* Car = *It;
+            if (!Car || !Car->Occupant || !QuebecCarry::CountsAsCar(static_cast<int>(Car->RideKind))) continue;
+            AQuebecController* Driver = Cast<AQuebecController>(Car->GetController());
+            if (!Driver) continue;
+            const FVector Position = Car->GetActorLocation();
+            const double Near = QuebecCarry::Apart(Position.X, Position.Y, Here.X, Here.Y);
+            if (Near > Watch) continue;
+            if (Near >= Best && bInside) continue;
+            bInside = true;
+            Best = Near;
+            Kind = static_cast<int>(Car->RideKind);
+            Who = Driver;
+            BodyX = Position.X;
+            BodyY = Position.Y;
+            Rate = static_cast<double>(Car->Speed);
+        }
+    }
+    if (!bInside && CarryStep != QuebecCarry::StepRoll)
+    {
+        for (TActorIterator<AQuebecController> It(GetWorld()); It; ++It)
+        {
+            const APawn* Pawn = It->GetPawn();
+            if (!Pawn || Cast<AQuebecCar>(Pawn)) continue;
+            const AQuebecCharacter* Walker = Cast<AQuebecCharacter>(Pawn);
+            if (!Walker || Walker->GetCharacterMovement()->IsSwimming()) continue;
+            const FVector Position = Walker->GetActorLocation();
+            const double Near = QuebecCarry::Apart(Position.X, Position.Y, Here.X, Here.Y);
+            const bool bHere = Near <= Watch;
+            const bool bBetter = bHere ? (!bInside || Near < Best) : (!bInside && Near < Best);
+            if (!bBetter) continue;
+            bInside = bInside || bHere;
+            Best = Near;
+            bOnFoot = true;
+            Kind = -1;
+            Who = *It;
+            Rate = static_cast<double>(Walker->GetVelocity().Size2D());
+            BodyX = Position.X;
+            BodyY = Position.Y;
+        }
+    }
+    const QuebecCarry::FRun After = QuebecCarry::Tick(
+        {static_cast<int>(CarryStep), false}, Kind, bOnFoot, Rate, BodyX, BodyY);
+    if (After.bSlipped)
+    {
+        if (!bCarryNoted)
+        {
+            bCarryNoted = true;
+            const TCHAR* Reason = CarryStep == QuebecCarry::StepRoll
+                ? TEXT("That speed drops the roll. Take the line again.")
+                : TEXT("That pace drops the case. Walk it in.");
+            if (Who) NoteSetback(Who, Reason);
+            for (TActorIterator<AQuebecController> It(GetWorld()); It; ++It)
+                It->PlayFeedback(EQuebecFeedbackCue::Checkpoint);
+            UpdatePresentation();
+            ForceNetUpdate();
+        }
+        return;
+    }
+    bCarryNoted = false;
+    if (After.Step != CarryStep)
+    {
+        const TCHAR* Message = After.Step >= QuebecCarry::StepBanked ? TEXT("The carry is home.")
+            : After.Step == QuebecCarry::StepRoll ? TEXT("The stoop took the case.")
+            : TEXT("The case is up.");
+        AdvanceCarry(After.Step, Who, Message, After.Step >= QuebecCarry::StepBanked);
+    }
+}
+
+void AQuebecCampaign::AdvanceCarry(int32 Next, AQuebecController* Who, const TCHAR* Message, bool bFinished)
+{
+    if (Next == CarryStep) return;
+    CarryStep = Next;
+    bCarryNoted = false;
+    // Link -1 is outside the seven banks, so the chain does not move. The purse is flat, and only when the carry is home.
+    ShowStepMessage(Who, Message, bFinished, -1);
+    if (bFinished) GrantCash(QuebecCarry::Pay);
+    for (TActorIterator<AQuebecController> It(GetWorld()); It; ++It)
+        It->PlayFeedback(bFinished ? EQuebecFeedbackCue::Complete : EQuebecFeedbackCue::Checkpoint);
+    UpdatePresentation();
+    ForceNetUpdate();
+    SaveBoundary();
+}
+
+void AQuebecCampaign::AdvanceRoll(int32 Next, AQuebecController* Who, const TCHAR* Message, bool bFinished)
+{
+    if (Next == RollStep) return;
+    RollStep = Next;
+    // Link -1 is outside the seven banks, so the chain does not move. The purse is flat, and only at the stop.
+    ShowStepMessage(Who, Message, bFinished, -1);
+    if (bFinished) GrantCash(QuebecRoll::Pay);
+    for (TActorIterator<AQuebecController> It(GetWorld()); It; ++It)
+        It->PlayFeedback(bFinished ? EQuebecFeedbackCue::Complete : EQuebecFeedbackCue::Checkpoint);
+    UpdatePresentation();
+    ForceNetUpdate();
+    SaveBoundary();
+}
+
 void AQuebecCampaign::TickRace(float DeltaSeconds)
 {
     const float Now = GetWorld()->GetTimeSeconds();
@@ -2184,7 +3980,7 @@ void AQuebecCampaign::ChangePhase(EQuebecCampaignPhase Next, bool bFeedback)
 bool UQuebecCampaignSaveGame::IsSupported() const
 {
     const QuebecStorySave::FSteps Steps{
-        PondStep, CourtStep, ShowStep, RescueMask, ConvoyStep, BlankStep, TourStep, HomeStep, EscortStep, ShadeStep, GrabStep, CutStep, ChaseStep, FinaleStep};
+        PondStep, CourtStep, ShowStep, RescueMask, ConvoyStep, BlankStep, TourStep, HomeStep, EscortStep, ShadeStep, GrabStep, CutStep, ChaseStep, FinaleStep, FollowStep, RollStep, BellStep, BlockStep, SendStep, PursueStep, NoseStep, SlipStep, MarchStep, DitchStep, ParcelStep, BoltStep, YardStep, LiftStep, PostStep, TabStep, CarryStep};
     return QuebecStorySave::Accept(Version, CompletedMissions, Steps);
 }
 
@@ -2217,6 +4013,23 @@ void AQuebecCampaign::SaveBoundary()
         Save->CutStep = CutStep;
         Save->ChaseStep = ChaseStep;
         Save->FinaleStep = FinaleStep;
+        Save->FollowStep = FollowStep;
+        Save->RollStep = RollStep;
+        Save->BellStep = BellStep;
+        Save->BlockStep = BlockStep;
+        Save->SendStep = SendStep;
+        Save->PursueStep = PursueStep;
+        Save->NoseStep = NoseStep;
+        Save->SlipStep = SlipStep;
+        Save->MarchStep = MarchStep;
+        Save->DitchStep = DitchStep;
+        Save->ParcelStep = ParcelStep;
+        Save->BoltStep = BoltStep;
+        Save->YardStep = YardStep;
+        Save->LiftStep = LiftStep;
+        Save->PostStep = PostStep;
+        Save->TabStep = TabStep;
+        Save->CarryStep = CarryStep;
     }
     if (!Save || !UGameplayStatics::SaveGameToSlot(Save,SaveSlot(),0))
     {
@@ -2364,6 +4177,113 @@ void AQuebecCampaign::RequestRetry(AQuebecController* Controller)
                 Controller->ShowInteractionMessage(TEXT("This day restored. The stage you are on stays."));
             return;
         }
+        if (IsFollowOpen())
+        {
+            const QuebecFollow::FSpot Spot = QuebecFollow::Recover(static_cast<int>(FollowStep), static_cast<double>(FollowAlong));
+            if (MoveToSafeCheckpoint(Controller, FVector(Spot.X, Spot.Y, 100.), FRotator(0., 90., 0.)))
+                Controller->ShowInteractionMessage(TEXT("This gap restored. They keep the ground they walked."));
+            return;
+        }
+        if (IsRollOpen())
+        {
+            const QuebecRoll::FSpot Spot = QuebecRoll::Recover(static_cast<int>(RollStep), static_cast<double>(RollAlong));
+            if (MoveToSafeCheckpoint(Controller, FVector(Spot.X, Spot.Y, 100.), FRotator(0., 90., 0.)))
+                Controller->ShowInteractionMessage(TEXT("This cart restored. It keeps the ground it rolled."));
+            return;
+        }
+        if (IsBellOpen())
+        {
+            const QuebecBells::FSpot Spot = QuebecBells::Recover(static_cast<int>(BellStep));
+            if (MoveToSafeCheckpoint(Controller, FVector(Spot.X, Spot.Y, 100.), FRotator(0., 90., 0.)))
+                Controller->ShowInteractionMessage(TEXT("This order restored. The next bell stays the next bell."));
+            return;
+        }
+        if (IsBlockOpen())
+        {
+            const QuebecBlock::FSpot Spot = QuebecBlock::Recover();
+            if (MoveToSafeCheckpoint(Controller, FVector(Spot.X, Spot.Y, 100.), FRotator(0., 90., 0.)))
+                Controller->ShowInteractionMessage(TEXT("This road restored. They keep the ground they gained."));
+            return;
+        }
+        if (IsSendOpen())
+        {
+            const QuebecSend::FSpot Spot = QuebecSend::Recover(static_cast<int>(SendStep));
+            if (MoveToSafeCheckpoint(Controller, FVector(Spot.X, Spot.Y, 100.), FRotator(0., 90., 0.)))
+                Controller->ShowInteractionMessage(TEXT("This send-off restored. The stage you are on stays."));
+            return;
+        }
+        if (IsPursueOpen())
+        {
+            const QuebecPursue::FSpot Spot = QuebecPursue::Recover();
+            if (MoveToSafeCheckpoint(Controller, FVector(Spot.X, Spot.Y, 100.), FRotator(0., 90., 0.)))
+                Controller->ShowInteractionMessage(TEXT("This pursuit restored. They keep the ground they gained."));
+            return;
+        }
+        if (IsNoseOpen())
+        {
+            const QuebecNose::FSpot Spot = QuebecNose::Recover();
+            if (MoveToSafeCheckpoint(Controller, FVector(Spot.X, Spot.Y, 100.), FRotator(0., 90., 0.)))
+                Controller->ShowInteractionMessage(TEXT("This stall restored."));
+            return;
+        }
+        if (IsSlipOpen())
+        {
+            const QuebecSlip::FSpot Spot = QuebecSlip::Recover();
+            if (MoveToSafeCheckpoint(Controller, FVector(Spot.X, Spot.Y, 100.), FRotator(0., 90., 0.)))
+                Controller->ShowInteractionMessage(TEXT("This slip restored. The door is still the door."));
+            return;
+        }
+        if (IsMarchOpen())
+        {
+            const QuebecMarch::FSpot Spot = QuebecMarch::Recover();
+            if (MoveToSafeCheckpoint(Controller, FVector(Spot.X, Spot.Y, 100.), FRotator(0., 90., 0.)))
+                Controller->ShowInteractionMessage(TEXT("This march restored. The start is still the start."));
+            return;
+        }
+        if (IsDitchOpen())
+        {
+            const QuebecDitch::FSpot Spot = QuebecDitch::Recover();
+            if (MoveToSafeCheckpoint(Controller, FVector(Spot.X, Spot.Y, 100.), FRotator(0., 90., 0.)))
+                Controller->ShowInteractionMessage(TEXT("This ditch restored. The line is still the line."));
+            return;
+        }
+        if (IsParcelOpen())
+        {
+            const QuebecParcel::FSpot Spot = QuebecParcel::Recover();
+            if (MoveToSafeCheckpoint(Controller, FVector(Spot.X, Spot.Y, 100.), FRotator(0., 90., 0.)))
+                Controller->ShowInteractionMessage(TEXT("This parcel restored. The stoop is still the stoop."));
+            return;
+        }
+        if (IsBoltOpen())
+        {
+            QuebecBolt::FSpot Spot = QuebecBolt::DriveStart();
+            if (BoltStep == QuebecBolt::StepChase) Spot = QuebecBolt::End();
+            if (BoltStep == QuebecBolt::StepOut) Spot = QuebecBolt::Bay();
+            if (MoveToSafeCheckpoint(Controller, FVector(Spot.X, Spot.Y, 100.), FRotator(0., 90., 0.)))
+                Controller->ShowInteractionMessage(TEXT("This bolt restored. The gate is still the gate."));
+            return;
+        }
+        if (IsYardOpen())
+        {
+            const QuebecYard::FSpot Spot = QuebecYard::Near();
+            if (MoveToSafeCheckpoint(Controller, FVector(Spot.X, Spot.Y, 100.), FRotator(0., 90., 0.)))
+                Controller->ShowInteractionMessage(TEXT("This yard restored. The near side is still the near side."));
+            return;
+        }
+        if (IsLiftOpen())
+        {
+            const QuebecLift::FSpot Spot = QuebecLift::Pocket();
+            if (MoveToSafeCheckpoint(Controller, FVector(Spot.X, Spot.Y, 100.), FRotator(0., 90., 0.)))
+                Controller->ShowInteractionMessage(TEXT("This lift restored. The stop is still the stop."));
+            return;
+        }
+        if (IsPostOpen())
+        {
+            const QuebecPost::FSpot Here = QuebecPost::Mark();
+            if (MoveToSafeCheckpoint(Controller, FVector(Here.X, Here.Y, 100.), FRotator(0., 90., 0.)))
+                Controller->ShowInteractionMessage(TEXT("This post restored. The mark is still the mark."));
+            return;
+        }
         Controller->ShowInteractionMessage(TEXT("The day held. T replays the race."));
         return;
     }
@@ -2490,6 +4410,81 @@ void AQuebecCampaign::RequestReplay(AQuebecController* Controller)
         Controller->ShowInteractionMessage(TEXT("The day is still open. T replays the race after it holds."));
         return;
     }
+    if (IsFollowOpen())
+    {
+        Controller->ShowInteractionMessage(TEXT("The gap is still open. T replays the race after the stop."));
+        return;
+    }
+    if (IsRollOpen())
+    {
+        Controller->ShowInteractionMessage(TEXT("The cart is still out. T replays the race after the stop."));
+        return;
+    }
+    if (IsBellOpen())
+    {
+        Controller->ShowInteractionMessage(TEXT("The bells are still quiet. T replays the race after they ring."));
+        return;
+    }
+    if (IsBlockOpen())
+    {
+        Controller->ShowInteractionMessage(TEXT("The road is still open. T replays the race after the block."));
+        return;
+    }
+    if (IsSendOpen())
+    {
+        Controller->ShowInteractionMessage(TEXT("The send-off is still open. T replays the race after it is home."));
+        return;
+    }
+    if (IsPursueOpen())
+    {
+        Controller->ShowInteractionMessage(TEXT("The pursuit is still open. T replays the race after the catch."));
+        return;
+    }
+    if (IsNoseOpen())
+    {
+        Controller->ShowInteractionMessage(TEXT("The stall is still open. T replays the race after it is in."));
+        return;
+    }
+    if (IsSlipOpen())
+    {
+        Controller->ShowInteractionMessage(TEXT("The slip is still open. T replays the race after you lose them."));
+        return;
+    }
+    if (IsMarchOpen())
+    {
+        Controller->ShowInteractionMessage(TEXT("The march is still moving. T replays the race after you step out."));
+        return;
+    }
+    if (IsDitchOpen())
+    {
+        Controller->ShowInteractionMessage(TEXT("The ditch is still open. T replays the race after you are clear."));
+        return;
+    }
+    if (IsParcelOpen())
+    {
+        Controller->ShowInteractionMessage(TEXT("The parcel is still open. T replays the race after you cross."));
+        return;
+    }
+    if (IsBoltOpen())
+    {
+        Controller->ShowInteractionMessage(TEXT("The bolt is still open. T replays the race after you are through."));
+        return;
+    }
+    if (IsYardOpen())
+    {
+        Controller->ShowInteractionMessage(TEXT("The yard is still open. T replays the race after you cross."));
+        return;
+    }
+    if (IsLiftOpen())
+    {
+        Controller->ShowInteractionMessage(TEXT("The lift is still open. T replays the race after they are in."));
+        return;
+    }
+    if (IsPostOpen())
+    {
+        Controller->ShowInteractionMessage(TEXT("The post is still open. T replays the race after you have stood."));
+        return;
+    }
     // A race replay does not rewind the story steps or the chain, and it does not write the slot. The story tail already holds the steps.
     RaceGateIndex = 0;
     RaceElapsed = 0.f;
@@ -2506,6 +4501,7 @@ void AQuebecCampaign::RequestReplay(AQuebecController* Controller)
 void AQuebecCampaign::GrantCash(int32 Amount)
 {
     if (Amount <= 0) return;
+    NotePayout(Amount);
     if (const AGameStateBase* Game = GetWorld() ? GetWorld()->GetGameState() : nullptr)
         for (APlayerState* Each : Game->PlayerArray)
             if (AQuebecPlayerState* Stats = Cast<AQuebecPlayerState>(Each))
@@ -2515,11 +4511,27 @@ void AQuebecCampaign::GrantCash(int32 Amount)
             }
 }
 
+void AQuebecCampaign::NotePayout(int32 Amount)
+{
+    if (Amount <= 0) return;
+    LastPayout = Amount;
+    ++PayoutSerial;
+    const UWorld* World = GetWorld();
+    PayoutUntil = World ? World->GetTimeSeconds() + 4.f : 4.f;
+}
+
+void AQuebecCampaign::OnRep_Payout()
+{
+    const UWorld* World = GetWorld();
+    PayoutUntil = World ? World->GetTimeSeconds() + 4.f : 4.f;
+}
+
 void AQuebecCampaign::BankChain(int32 Link)
 {
     const QuebecChain::FBank Bank = QuebecChain::Bank(Chain, ChainMask, bChainSpoiled, Link);
     LastChainPay = Bank.Pay;
     if (Bank.Pay <= 0) return;
+    NotePayout(Bank.Pay);
     Chain = Bank.Chain;
     ChainMask = Bank.Mask;
     bChainSpoiled = Bank.bSpoiled;
@@ -2543,6 +4555,7 @@ void AQuebecCampaign::BreakChain()
 
 void AQuebecCampaign::ShowStepMessage(AQuebecController* Who, const TCHAR* Message, bool bFinished, int32 Link)
 {
+    FailReason.Empty();
     const bool bWasSpoiled = bChainSpoiled;
     if (bFinished) BankChain(Link);
     if (!Who || !Message) return;
@@ -2553,6 +4566,12 @@ void AQuebecCampaign::ShowStepMessage(AQuebecController* Who, const TCHAR* Messa
         return;
     }
     Who->ShowInteractionMessage(Message);
+}
+
+void AQuebecCampaign::NoteSetback(AQuebecController* Who, const TCHAR* Reason)
+{
+    FailReason = Reason ? FString(Reason) : FString();
+    if (Who && Reason) Who->ShowInteractionMessage(Reason);
 }
 
 bool AQuebecCampaign::GetCloseOffer(int32& OutPay) const
@@ -2737,6 +4756,23 @@ FString AQuebecCampaign::GetMissionTitle() const
     if (IsCutOpen()) return TEXT("14 / THE SHORT WAY");
     if (IsChaseOpen()) return TEXT("15 / ON YOUR TAIL");
     if (IsFinaleOpen()) return TEXT("16 / ONCE MORE");
+    if (IsFollowOpen()) return TEXT("17 / KEEP BACK");
+    if (IsRollOpen()) return TEXT("18 / ROLL IT");
+    if (IsBellOpen()) return TEXT("19 / IN ORDER");
+    if (IsBlockOpen()) return TEXT("20 / HEAD THEM OFF");
+    if (IsSendOpen()) return TEXT("21 / THE SEND-OFF");
+    if (IsPursueOpen()) return TEXT("22 / CATCH THAT CAR");
+    if (IsNoseOpen()) return TEXT("23 / BACK IT IN");
+    if (IsSlipOpen()) return TEXT("24 / LOSE THEM");
+    if (IsMarchOpen()) return TEXT("25 / THE MARCH");
+    if (IsDitchOpen()) return TEXT("26 / DITCH IT");
+    if (IsParcelOpen()) return TEXT("27 / THE PARCEL");
+    if (IsBoltOpen()) return TEXT("28 / THE BOLT");
+    if (IsYardOpen()) return TEXT("29 / THE YARD");
+    if (IsLiftOpen()) return TEXT("30 / LET THEM IN");
+    if (IsCarryOpen()) return TEXT("33 / THE CARRY");
+    if (IsTabOpen()) return TEXT("32 / THE TAB");
+    if (IsPostOpen()) return TEXT("31 / THE POST");
     if (Phase == EQuebecCampaignPhase::Complete) return TEXT("THE PARK IS OPEN");
     return Phase <= EQuebecCampaignPhase::ReleaseTable ? TEXT("01 / A TABLE FOR ETERNITY") : TEXT("02 / NO SUCH THING AS A QUIET LAP");
 }
@@ -2877,6 +4913,75 @@ FString AQuebecCampaign::GetObjectiveText() const
         if (!bFinaleTailing) return TEXT("Get in a car on the line");
         return TEXT("Drive to the hide before they catch you");
     }
+    if (IsFollowOpen())
+    {
+        if (FollowStep == QuebecFollow::StepMeet) return TEXT("Stand behind them");
+        return TEXT("Keep the gap. Walk with them.");
+    }
+    if (IsRollOpen())
+    {
+        if (RollStep == QuebecRoll::StepReady) return TEXT("Stand at the handles");
+        return TEXT("Walk the cart. Don't sprint.");
+    }
+    if (IsBellOpen())
+    {
+        if (BellStep == QuebecBells::StepOne) return TEXT("Ring the north bell");
+        if (BellStep == QuebecBells::StepTwo) return TEXT("Ring the middle bell");
+        return TEXT("Ring the south bell");
+    }
+    if (IsBlockOpen())
+    {
+        if (BlockStep == QuebecBlock::StepSide) return TEXT("Get in a car on the side street");
+        return TEXT("Block the road before they pass");
+    }
+    if (IsSendOpen())
+    {
+        if (SendStep == QuebecSend::StepDoor) return TEXT("Walk to the door");
+        if (SendStep == QuebecSend::StepDrive) return TEXT("Drive to the gate. Keep it gentle.");
+        if (SendStep == QuebecSend::StepStop) return TEXT("Stop the car in the bay");
+        return TEXT("Leave the car and walk the last stretch");
+    }
+    if (IsPursueOpen()) return TEXT("Pull alongside the traffic car");
+    if (IsNoseOpen()) return TEXT("Reverse into the stall");
+    if (IsSlipOpen())
+    {
+        if (SlipStep == QuebecSlip::StepDoor) return TEXT("Step outside");
+        return TEXT("Sprint to the gate");
+    }
+    if (IsMarchOpen())
+    {
+        if (MarchStep == QuebecMarch::StepJoin) return TEXT("Step into the march");
+        if (MarchStep == QuebecMarch::StepMarch) return TEXT("Stay inside");
+        return TEXT("Step out of the march");
+    }
+    if (IsDitchOpen())
+    {
+        if (DitchStep == QuebecDitch::StepRoll) return TEXT("Cross the line rolling");
+        if (DitchStep == QuebecDitch::StepLead) return TEXT("Stay ahead of them");
+        return TEXT("Get out and clear the road");
+    }
+    if (IsParcelOpen())
+    {
+        if (ParcelStep == QuebecParcel::StepParcel) return TEXT("Pick up the parcel");
+        return TEXT("Cross after the car");
+    }
+    if (IsBoltOpen())
+    {
+        if (BoltStep == QuebecBolt::StepDrive) return TEXT("Drive the end, still fast");
+        if (BoltStep == QuebecBolt::StepChase) return TEXT("Reach the bay before they do");
+        return TEXT("Get out and take the gate");
+    }
+    if (IsYardOpen()) return TEXT("Cross while they look away");
+    if (IsLiftOpen()) return TEXT("Hold the car still");
+    if (IsPostOpen()) return TEXT("Keep walking inside the mark");
+    if (IsTabOpen())
+        return TabStep == QuebecTab::StepLane ? TEXT("Take the lane in the band")
+            : TabStep == QuebecTab::StepStill ? TEXT("Stand still for the receipt")
+            : TEXT("Walk to the counter");
+    if (IsCarryOpen())
+        return CarryStep == QuebecCarry::StepWalk ? TEXT("Walk it to the stoop")
+            : CarryStep == QuebecCarry::StepRoll ? TEXT("Roll the car across the line")
+            : TEXT("Pick up the case");
     if (Phase == EQuebecCampaignPhase::Complete) return TEXT("The last page is blank / T: replay the race");
     switch (Phase)
     {
@@ -3034,7 +5139,93 @@ FString AQuebecCampaign::GetBriefingText() const
             return TEXT("MEMPHIS: A car is the last of it. Get in on the line. The hide is down the road.");
         return TEXT("MEMPHIS: Drive. If they catch you, the seat is back. A bike will not lose them.");
     }
-    if (Phase == EQuebecCampaignPhase::Complete && PondStep >= PondBankedStep && CourtStep >= CourtBankedStep && ShowStep >= ShowBankedStep && RescueMask >= RescueDone && ConvoyStep >= ConvoyBankedStep && BlankStep >= BlankBankedStep && TourStep >= TourBankedStep && HomeStep >= HomeBankedStep && EscortStep >= EscortBankedStep && ShadeStep >= ShadeBankedStep && GrabStep >= GrabBankedStep && CutStep >= CutBankedStep && ChaseStep >= ChaseBankedStep && FinaleStep >= FinaleBankedStep)
+    if (IsFollowOpen())
+    {
+        if (FollowStep == QuebecFollow::StepMeet)
+            return TEXT("MEMPHIS: They walk their own line. Stand behind them. A sprint crowds them, and a stop loses them.");
+        return TEXT("MEMPHIS: Match their walk. A sprint crowds them. A stop loses them. A car does not count.");
+    }
+    if (IsRollOpen())
+    {
+        if (RollStep == QuebecRoll::StepReady)
+            return TEXT("MEMPHIS: The cart only moves while you walk it. A sprint tips it. A stop waits.");
+        return TEXT("MEMPHIS: Stay at the handles. Walk. If you sprint, it goes back to the start.");
+    }
+    if (IsBellOpen())
+    {
+        if (BellStep == QuebecBells::StepOne)
+            return TEXT("MEMPHIS: Ring them from north to south. An early bell starts you over.");
+        if (BellStep == QuebecBells::StepTwo)
+            return TEXT("MEMPHIS: The middle bell is next. The south one waits.");
+        return TEXT("MEMPHIS: The south bell closes it. An early bell starts you over.");
+    }
+    if (IsBlockOpen())
+    {
+        if (BlockStep == QuebecBlock::StepSide)
+            return TEXT("MEMPHIS: They take the long road. The side street is shorter. Only a car stops them.");
+        return TEXT("MEMPHIS: Be on their road in a car before they reach it. A bike rolls through.");
+    }
+    if (IsSendOpen())
+    {
+        if (SendStep == QuebecSend::StepDoor)
+            return TEXT("MEMPHIS: The door is on foot. A car does not open it.");
+        if (SendStep == QuebecSend::StepDrive)
+            return TEXT("MEMPHIS: Take the car south to the gate. A flat-out run starts the drive over.");
+        if (SendStep == QuebecSend::StepStop)
+            return TEXT("MEMPHIS: Roll into the bay and stop. Coasting through does not count.");
+        return TEXT("MEMPHIS: Leave the car. Walk the last stretch. The day is home when you do.");
+    }
+    if (IsPursueOpen())
+        return TEXT("MEMPHIS: That car is already rolling. It keeps its lane. Pull alongside before the avenue ends.");
+    if (IsNoseOpen())
+        return TEXT("MEMPHIS: Nose toward the far end. Back the car into the stall. A stop does not count.");
+    if (IsSlipOpen())
+    {
+        if (SlipStep == QuebecSlip::StepDoor)
+            return TEXT("MEMPHIS: Step outside. They are already behind the door.");
+        return TEXT("MEMPHIS: They saw you. A walk will not do. Sprint to the gate.");
+    }
+    if (IsMarchOpen())
+    {
+        if (MarchStep == QuebecMarch::StepJoin)
+            return TEXT("MEMPHIS: Step into the march. They move at a walk.");
+        if (MarchStep == QuebecMarch::StepMarch)
+            return TEXT("MEMPHIS: Stay inside. A sprint walks out the front.");
+        return TEXT("MEMPHIS: They stopped. Step out of the march.");
+    }
+    if (IsDitchOpen())
+    {
+        if (DitchStep == QuebecDitch::StepRoll)
+            return TEXT("MEMPHIS: Cross the line in a car, still rolling. A stop does not start them.");
+        if (DitchStep == QuebecDitch::StepLead)
+            return TEXT("MEMPHIS: They are behind you. Beat them to the end. A crawl will not do.");
+        return TEXT("MEMPHIS: Out of the car. The mark is off the road. They will not follow on foot.");
+    }
+    if (IsParcelOpen())
+    {
+        if (ParcelStep == QuebecParcel::StepParcel)
+            return TEXT("MEMPHIS: Pick up the parcel. A car is on the street. Let it pass.");
+        return TEXT("MEMPHIS: Cross after the car. The clock does not wait, and a rush meets it.");
+    }
+    if (IsBoltOpen())
+    {
+        if (BoltStep == QuebecBolt::StepDrive)
+            return TEXT("MEMPHIS: Drive the end in a car, still fast. A crawl does not start them.");
+        if (BoltStep == QuebecBolt::StepChase)
+            return TEXT("MEMPHIS: They steer for you. The bay, before they close. A crawl is caught.");
+        return TEXT("MEMPHIS: Out of the car. The gate is off the road. They will not follow.");
+    }
+    if (IsYardOpen())
+        return TEXT("MEMPHIS: On foot. They turn. Cross the yard while their back is to you. Their look sends you back.");
+    if (IsLiftOpen())
+        return TEXT("MEMPHIS: Stop the car and leave it stopped. They walk to you. A roll sends them back.");
+    if (IsPostOpen())
+        return TEXT("MEMPHIS: On foot. Keep walking inside the mark. Standing still, a sprint, or a step out starts the count again.");
+    if (IsTabOpen())
+        return TEXT("MEMPHIS: Three verbs. Walk the counter. Thread the lane. Stand for the receipt.");
+    if (IsCarryOpen())
+        return TEXT("MEMPHIS: Pick it up. Walk it to the stoop. Roll the car across the line.");
+    if (Phase == EQuebecCampaignPhase::Complete && PondStep >= PondBankedStep && CourtStep >= CourtBankedStep && ShowStep >= ShowBankedStep && RescueMask >= RescueDone && ConvoyStep >= ConvoyBankedStep && BlankStep >= BlankBankedStep && TourStep >= TourBankedStep && HomeStep >= HomeBankedStep && EscortStep >= EscortBankedStep && ShadeStep >= ShadeBankedStep && GrabStep >= GrabBankedStep && CutStep >= CutBankedStep && ChaseStep >= ChaseBankedStep && FinaleStep >= FinaleBankedStep && FollowStep >= FollowBankedStep && RollStep >= RollBankedStep && BellStep >= BellBankedStep && BlockStep >= BlockBankedStep && SendStep >= SendBankedStep && PursueStep >= PursueBankedStep && NoseStep >= NoseBankedStep && SlipStep >= SlipBankedStep && MarchStep >= MarchBankedStep && DitchStep >= DitchBankedStep && ParcelStep >= ParcelBankedStep && BoltStep >= BoltBankedStep && YardStep >= YardBankedStep && LiftStep >= LiftBankedStep && PostStep >= PostBankedStep && TabStep >= TabBankedStep && CarryStep >= CarryBankedStep)
         return TEXT("The last page is blank. The park keeps the day that was not in his book.");
     switch (Phase)
     {
@@ -3066,6 +5257,23 @@ FString AQuebecCampaign::GetStatusText() const
     if (IsCutOpen()) return TEXT("R recovers this cut");
     if (IsChaseOpen()) return TEXT("R recovers this tail");
     if (IsFinaleOpen()) return TEXT("R recovers this day");
+    if (IsFollowOpen()) return TEXT("R recovers this gap");
+    if (IsRollOpen()) return TEXT("R recovers this cart");
+    if (IsBellOpen()) return TEXT("R recovers this order");
+    if (IsBlockOpen()) return TEXT("R recovers this road");
+    if (IsSendOpen()) return TEXT("R recovers this send-off");
+    if (IsPursueOpen()) return TEXT("R recovers this pursuit");
+    if (IsNoseOpen()) return TEXT("R recovers this stall");
+    if (IsSlipOpen()) return TEXT("R recovers this slip");
+    if (IsMarchOpen()) return TEXT("R recovers this march");
+    if (IsDitchOpen()) return TEXT("R recovers this ditch");
+    if (IsParcelOpen()) return TEXT("R recovers this parcel");
+    if (IsBoltOpen()) return TEXT("R recovers this bolt");
+    if (IsYardOpen()) return TEXT("R recovers this yard");
+    if (IsLiftOpen()) return TEXT("R recovers this lift");
+    if (IsCarryOpen()) return TEXT("R recovers this carry");
+    if (IsTabOpen()) return TEXT("R recovers this tab");
+    if (IsPostOpen()) return TEXT("R recovers this post");
     if (Phase == EQuebecCampaignPhase::AimWorklight) return FString::Printf(TEXT("Alignment %d%% / hold %d%%"),FMath::RoundToInt(LightAlignment*100.f),FMath::RoundToInt(LightHoldProgress*100.f));
     if (Phase == EQuebecCampaignPhase::CrossCable) return FString::Printf(TEXT("Sprint %s / jump %s / R: recover"),bSprintSeen?TEXT("banked"):TEXT("needed"),bJumpSeen?TEXT("banked"):TEXT("needed"));
     if (Phase == EQuebecCampaignPhase::PullClamp || Phase == EQuebecCampaignPhase::ReleaseTable) return bClampOpen ? TEXT("GREEN BEAT / pull now / R: recover") : TEXT("Press squeezing / wait for green / R: recover");
@@ -3160,6 +5368,104 @@ FVector AQuebecCampaign::GetObjectiveLocation() const
                         ? (bFinaleTailing ? QuebecFinale::Hide() : QuebecFinale::Seat())
                         : QuebecFinale::Meet();
         return FVector(Spot.X, Spot.Y, 100.);
+    }
+    if (IsFollowOpen())
+    {
+        const QuebecFollow::FSpot Spot = FollowStep == QuebecFollow::StepMeet
+            ? QuebecFollow::Meet()
+            : QuebecFollow::Place(static_cast<double>(FollowAlong));
+        return FVector(Spot.X, Spot.Y, 100.);
+    }
+    if (IsRollOpen())
+    {
+        const QuebecRoll::FSpot Spot = RollStep == QuebecRoll::StepReady
+            ? QuebecRoll::Handles(0.)
+            : QuebecRoll::Place(static_cast<double>(RollAlong));
+        return FVector(Spot.X, Spot.Y, 100.);
+    }
+    if (IsBellOpen())
+    {
+        const QuebecBells::FSpot Spot = QuebecBells::Bell(static_cast<int>(BellStep));
+        return FVector(Spot.X, Spot.Y, 100.);
+    }
+    if (IsBlockOpen())
+    {
+        if (BlockStep == QuebecBlock::StepSide) return FVector(QuebecBlock::SideX, QuebecBlock::SideY, 100.);
+        return FVector(QuebecBlock::BlockX, QuebecBlock::BlockY, 100.);
+    }
+    if (IsSendOpen())
+    {
+        const double MarkY = SendStep == QuebecSend::StepDrive ? QuebecSend::GateY
+            : SendStep == QuebecSend::StepStop ? QuebecSend::BayY
+            : SendStep == QuebecSend::StepWalk ? QuebecSend::FinishY
+            : QuebecSend::DoorY;
+        return FVector(QuebecSend::ColumnX, MarkY, 100.);
+    }
+    if (IsPursueOpen())
+    {
+        const QuebecPursue::FSpot Spot = QuebecPursue::Place(static_cast<double>(PursueAlong));
+        return FVector(Spot.X, Spot.Y, 100.);
+    }
+    if (IsNoseOpen())
+    {
+        const QuebecNose::FSpot Spot = QuebecNose::Stall();
+        return FVector(Spot.X, Spot.Y, 100.);
+    }
+    if (IsSlipOpen())
+    {
+        const QuebecSlip::FSpot Spot = SlipStep == QuebecSlip::StepDoor ? QuebecSlip::Door() : QuebecSlip::Gate();
+        return FVector(Spot.X, Spot.Y, 100.);
+    }
+    if (IsMarchOpen())
+    {
+        QuebecMarch::FSpot Spot = QuebecMarch::Join();
+        if (MarchStep == QuebecMarch::StepMarch) Spot = {QuebecMarch::ColumnX, static_cast<double>(MarchY)};
+        if (MarchStep == QuebecMarch::StepLeave) Spot = QuebecMarch::Leave();
+        return FVector(Spot.X, Spot.Y, 100.);
+    }
+    if (IsDitchOpen())
+    {
+        QuebecDitch::FSpot Spot = QuebecDitch::Line();
+        if (DitchStep == QuebecDitch::StepLead) Spot = QuebecDitch::End();
+        if (DitchStep == QuebecDitch::StepFoot) Spot = QuebecDitch::Foot();
+        return FVector(Spot.X, Spot.Y, 100.);
+    }
+    if (IsParcelOpen())
+    {
+        const QuebecParcel::FSpot Spot = ParcelStep == QuebecParcel::StepParcel ? QuebecParcel::Parcel() : QuebecParcel::Stoop();
+        return FVector(Spot.X, Spot.Y, 100.);
+    }
+    if (IsBoltOpen())
+    {
+        QuebecBolt::FSpot Spot = QuebecBolt::End();
+        if (BoltStep == QuebecBolt::StepChase) Spot = QuebecBolt::Bay();
+        if (BoltStep == QuebecBolt::StepOut) Spot = QuebecBolt::Gate();
+        return FVector(Spot.X, Spot.Y, 100.);
+    }
+    if (IsYardOpen())
+    {
+        const QuebecYard::FSpot Spot = QuebecYard::Far();
+        return FVector(Spot.X, Spot.Y, 100.);
+    }
+    if (IsLiftOpen())
+    {
+        const QuebecLift::FSpot Spot = QuebecLift::Pocket();
+        return FVector(Spot.X, Spot.Y, 100.);
+    }
+    if (IsPostOpen())
+    {
+        const QuebecPost::FSpot Here = QuebecPost::Mark();
+        return FVector(Here.X, Here.Y, 100.);
+    }
+    if (IsTabOpen())
+    {
+        const QuebecTab::FSpot Here = QuebecTab::Objective(static_cast<int>(TabStep));
+        return FVector(Here.X, Here.Y, 100.);
+    }
+    if (IsCarryOpen())
+    {
+        const QuebecCarry::FSpot Here = QuebecCarry::Objective(static_cast<int>(CarryStep));
+        return FVector(Here.X, Here.Y, 100.);
     }
     switch (Phase)
     {
@@ -3292,6 +5598,111 @@ bool AQuebecCampaign::GetNextObjectiveLocation(FVector& Out) const
         }
         return false;
     }
+    if (IsFollowOpen())
+    {
+        if (FollowStep != QuebecFollow::StepMeet) return false;
+        const QuebecFollow::FSpot Spot = QuebecFollow::Stop();
+        Out = At(Spot.X, Spot.Y);
+        return true;
+    }
+    if (IsRollOpen())
+    {
+        if (RollStep != QuebecRoll::StepReady) return false;
+        const QuebecRoll::FSpot Spot = QuebecRoll::Stop();
+        Out = At(Spot.X, Spot.Y);
+        return true;
+    }
+    if (IsBellOpen())
+    {
+        if (BellStep >= QuebecBells::StepThree) return false;
+        const QuebecBells::FSpot Spot = QuebecBells::Bell(static_cast<int>(BellStep) + 1);
+        Out = At(Spot.X, Spot.Y);
+        return true;
+    }
+    if (IsBlockOpen())
+    {
+        if (BlockStep != QuebecBlock::StepSide) return false;
+        Out = At(QuebecBlock::BlockX, QuebecBlock::BlockY);
+        return true;
+    }
+    if (IsSendOpen())
+    {
+        if (SendStep == QuebecSend::StepWalk) return false;
+        const double MarkY = SendStep == QuebecSend::StepDoor ? QuebecSend::GateY
+            : SendStep == QuebecSend::StepDrive ? QuebecSend::BayY
+            : QuebecSend::FinishY;
+        Out = At(QuebecSend::ColumnX, MarkY);
+        return true;
+    }
+    if (IsPursueOpen())
+    {
+        Out = At(QuebecPursue::RoadBx, QuebecPursue::RoadBy);
+        return true;
+    }
+    if (IsNoseOpen())
+    {
+        const QuebecNose::FSpot Spot = QuebecNose::Recover();
+        Out = At(Spot.X, Spot.Y);
+        return true;
+    }
+    if (IsSlipOpen())
+    {
+        if (SlipStep != QuebecSlip::StepDoor) return false;
+        const QuebecSlip::FSpot Spot = QuebecSlip::Gate();
+        Out = At(Spot.X, Spot.Y);
+        return true;
+    }
+    if (IsMarchOpen())
+    {
+        if (MarchStep == QuebecMarch::StepLeave) return false;
+        const QuebecMarch::FSpot Spot = MarchStep == QuebecMarch::StepJoin ? QuebecMarch::End() : QuebecMarch::Leave();
+        Out = At(Spot.X, Spot.Y);
+        return true;
+    }
+    if (IsDitchOpen())
+    {
+        if (DitchStep == QuebecDitch::StepFoot) return false;
+        const QuebecDitch::FSpot Spot = DitchStep == QuebecDitch::StepRoll ? QuebecDitch::End() : QuebecDitch::Foot();
+        Out = At(Spot.X, Spot.Y);
+        return true;
+    }
+    if (IsParcelOpen())
+    {
+        if (ParcelStep != QuebecParcel::StepParcel) return false;
+        const QuebecParcel::FSpot Spot = QuebecParcel::Stoop();
+        Out = At(Spot.X, Spot.Y);
+        return true;
+    }
+    if (IsBoltOpen())
+    {
+        if (BoltStep == QuebecBolt::StepOut) return false;
+        const QuebecBolt::FSpot Spot = BoltStep == QuebecBolt::StepDrive ? QuebecBolt::Bay() : QuebecBolt::Gate();
+        Out = At(Spot.X, Spot.Y);
+        return true;
+    }
+    if (IsYardOpen()) return false;
+    if (IsLiftOpen()) return false;
+    if (IsTabOpen())
+    {
+        if (TabStep + 1 < TabBankedStep)
+        {
+            const QuebecTab::FSpot Next = QuebecTab::Objective(static_cast<int>(TabStep + 1));
+            Out = FVector(Next.X, Next.Y, 40.);
+            return true;
+        }
+        return false;
+    }
+    if (IsCarryOpen())
+    {
+        if (CarryStep + 1 < CarryBankedStep)
+        {
+            const QuebecCarry::FSpot Next = QuebecCarry::Objective(static_cast<int>(CarryStep + 1));
+            Out = FVector(Next.X, Next.Y, 40.);
+            return true;
+        }
+        return false;
+    }
+    if (IsPostOpen()) return false;
     if (Phase == EQuebecCampaignPhase::Complete) return false;
     switch (Phase)
     {
@@ -3347,6 +5758,33 @@ bool AQuebecCampaign::GetBeatPace(int32& OutIndex, int32& OutCount, int32& OutWa
     if (IsRescueOpen()) return Publish(QuebecPace::Rescue(RescueMask));
     if (IsConvoyOpen()) return Publish(QuebecPace::Linear(ConvoyStep, QuebecConvoyRules::StepBanked, QuebecConvoyRules::Objective));
     if (IsBlankOpen()) return Publish(QuebecPace::Linear(BlankStep, QuebecBlankRules::StepBanked, QuebecBlankRules::Objective));
+    struct FFlatSpot { double X = 0.; double Y = 0.; };
+    const auto Flat = [](int) { return FFlatSpot{}; };
+    if (IsTourOpen()) return Publish(QuebecPace::Linear(TourStep, TourBankedStep, Flat));
+    if (IsHomeOpen()) return Publish(QuebecPace::Linear(HomeStep, HomeBankedStep, Flat));
+    if (IsEscortOpen()) return Publish(QuebecPace::Linear(EscortStep, EscortBankedStep, Flat));
+    if (IsShadeOpen()) return Publish(QuebecPace::Linear(ShadeStep, ShadeBankedStep, Flat));
+    if (IsGrabOpen()) return Publish(QuebecPace::Linear(GrabStep, GrabBankedStep, Flat));
+    if (IsCutOpen()) return Publish(QuebecPace::Linear(CutStep, CutBankedStep, Flat));
+    if (IsChaseOpen()) return Publish(QuebecPace::Linear(ChaseStep, ChaseBankedStep, Flat));
+    if (IsFinaleOpen()) return Publish(QuebecPace::Linear(FinaleStep, FinaleBankedStep, Flat));
+    if (IsFollowOpen()) return Publish(QuebecPace::Linear(FollowStep, FollowBankedStep, Flat));
+    if (IsRollOpen()) return Publish(QuebecPace::Linear(RollStep, RollBankedStep, Flat));
+    if (IsBellOpen()) return Publish(QuebecPace::Linear(BellStep, BellBankedStep, Flat));
+    if (IsBlockOpen()) return Publish(QuebecPace::Linear(BlockStep, BlockBankedStep, Flat));
+    if (IsSendOpen()) return Publish(QuebecPace::Linear(SendStep, SendBankedStep, Flat));
+    if (IsPursueOpen()) return Publish(QuebecPace::Linear(PursueStep, PursueBankedStep, Flat));
+    if (IsNoseOpen()) return Publish(QuebecPace::Linear(NoseStep, NoseBankedStep, Flat));
+    if (IsSlipOpen()) return Publish(QuebecPace::Linear(SlipStep, SlipBankedStep, Flat));
+    if (IsMarchOpen()) return Publish(QuebecPace::Linear(MarchStep, MarchBankedStep, Flat));
+    if (IsDitchOpen()) return Publish(QuebecPace::Linear(DitchStep, DitchBankedStep, Flat));
+    if (IsParcelOpen()) return Publish(QuebecPace::Linear(ParcelStep, ParcelBankedStep, Flat));
+    if (IsBoltOpen()) return Publish(QuebecPace::Linear(BoltStep, BoltBankedStep, Flat));
+    if (IsYardOpen()) return Publish(QuebecPace::Linear(YardStep, YardBankedStep, Flat));
+    if (IsLiftOpen()) return Publish(QuebecPace::Linear(LiftStep, LiftBankedStep, Flat));
+    if (IsPostOpen()) return Publish(QuebecPace::Linear(PostStep, PostBankedStep, Flat));
+    if (IsTabOpen()) return Publish(QuebecPace::Linear(TabStep, TabBankedStep, QuebecTab::Objective));
+    if (IsCarryOpen()) return Publish(QuebecPace::Linear(CarryStep, CarryBankedStep, QuebecCarry::Objective));
     if (Phase == EQuebecCampaignPhase::Complete || Phase >= EQuebecCampaignPhase::RaceReady) return false;
     return Publish(QuebecPace::Terrace(static_cast<int>(Phase)));
 }
@@ -3540,6 +5978,112 @@ void AQuebecCampaign::UpdatePresentation()
             }
             if (Caption == FinaleHideCaption) Caption->SetVisibility(IsFinaleOpen() && FinaleStep == QuebecFinale::StepChase);
             if (Caption == FinaleTailCaption) Caption->SetVisibility(IsFinaleOpen() && FinaleStep == QuebecFinale::StepChase);
+            if (Caption == FollowMeetCaption) Caption->SetVisibility(IsFollowOpen() && FollowStep == QuebecFollow::StepMeet);
+            if (Caption == FollowPersonCaption)
+            {
+                const QuebecFollow::FSpot Spot = QuebecFollow::Place(static_cast<double>(FollowAlong));
+                Caption->SetVisibility(IsFollowOpen());
+                Caption->SetWorldLocation(FVector(Spot.X, Spot.Y, 220.));
+            }
+            if (Caption == FollowStopCaption) Caption->SetVisibility(IsFollowOpen());
+            if (Caption == RollHandlesCaption) Caption->SetVisibility(IsRollOpen() && RollStep == QuebecRoll::StepReady);
+            if (Caption == RollCartCaption)
+            {
+                const QuebecRoll::FSpot Spot = QuebecRoll::Place(static_cast<double>(RollAlong));
+                Caption->SetVisibility(IsRollOpen());
+                Caption->SetWorldLocation(FVector(Spot.X, Spot.Y, 180.));
+            }
+            if (Caption == RollStopCaption) Caption->SetVisibility(IsRollOpen());
+            if (Caption == BellNorthCaption) Caption->SetVisibility(IsBellOpen());
+            if (Caption == BellMidCaption) Caption->SetVisibility(IsBellOpen());
+            if (Caption == BellSouthCaption) Caption->SetVisibility(IsBellOpen());
+            if (Caption == BlockSideCaption) Caption->SetVisibility(IsBlockOpen() && BlockStep == QuebecBlock::StepSide);
+            if (Caption == BlockMarkCaption) Caption->SetVisibility(IsBlockOpen());
+            if (Caption == BlockCourierCaption)
+            {
+                const QuebecBlock::FSpot Spot = QuebecBlock::Place(static_cast<double>(BlockAlong));
+                Caption->SetVisibility(IsBlockOpen());
+                Caption->SetWorldLocation(FVector(Spot.X, Spot.Y, 220.));
+            }
+            if (Caption == SendDoorCaption) Caption->SetVisibility(IsSendOpen() && SendStep == QuebecSend::StepDoor);
+            if (Caption == SendGateCaption) Caption->SetVisibility(IsSendOpen() && SendStep == QuebecSend::StepDrive);
+            if (Caption == SendBayCaption) Caption->SetVisibility(IsSendOpen() && SendStep == QuebecSend::StepStop);
+            if (Caption == SendWalkCaption) Caption->SetVisibility(IsSendOpen() && SendStep == QuebecSend::StepWalk);
+            if (Caption == PursueLineCaption) Caption->SetVisibility(IsPursueOpen());
+            if (Caption == PursueCarCaption)
+            {
+                const QuebecPursue::FSpot Spot = QuebecPursue::Place(static_cast<double>(PursueAlong));
+                Caption->SetVisibility(IsPursueOpen());
+                Caption->SetWorldLocation(FVector(Spot.X, Spot.Y, 220.));
+            }
+            if (Caption == NoseStallCaption) Caption->SetVisibility(IsNoseOpen());
+            if (Caption == NoseLineCaption) Caption->SetVisibility(IsNoseOpen());
+            if (Caption == SlipDoorCaption) Caption->SetVisibility(IsSlipOpen() && SlipStep == QuebecSlip::StepDoor);
+            if (Caption == SlipGateCaption) Caption->SetVisibility(IsSlipOpen());
+            if (Caption == SlipThemCaption)
+            {
+                Caption->SetVisibility(IsSlipOpen());
+                Caption->SetWorldLocation(FVector(SlipX, SlipY, 220.));
+            }
+            if (Caption == MarchJoinCaption) Caption->SetVisibility(IsMarchOpen() && MarchStep == QuebecMarch::StepJoin);
+            if (Caption == MarchLeaveCaption) Caption->SetVisibility(IsMarchOpen());
+            if (Caption == MarchGroupCaption)
+            {
+                Caption->SetVisibility(IsMarchOpen());
+                Caption->SetWorldLocation(FVector(QuebecMarch::ColumnX, MarchY, 220.));
+            }
+            if (Caption == DitchLineCaption) Caption->SetVisibility(IsDitchOpen() && DitchStep == QuebecDitch::StepRoll);
+            if (Caption == DitchClearCaption) Caption->SetVisibility(IsDitchOpen());
+            if (Caption == DitchThemCaption)
+            {
+                const QuebecDitch::FSpot Behind = QuebecDitch::Place(static_cast<double>(DitchAlong));
+                Caption->SetVisibility(IsDitchOpen() && DitchStep != QuebecDitch::StepFoot);
+                Caption->SetWorldLocation(FVector(Behind.X, Behind.Y, 220.));
+            }
+            if (Caption == ParcelMarkCaption) Caption->SetVisibility(IsParcelOpen() && ParcelStep == QuebecParcel::StepParcel);
+            if (Caption == ParcelStoopCaption) Caption->SetVisibility(IsParcelOpen());
+            if (Caption == ParcelCarACaption || Caption == ParcelCarBCaption)
+            {
+                const double Along = Caption == ParcelCarACaption ? static_cast<double>(ParcelAlongA) : static_cast<double>(ParcelAlongB);
+                const QuebecParcel::FSpot Car = QuebecParcel::OnRoad(Along);
+                Caption->SetVisibility(IsParcelOpen());
+                Caption->SetWorldLocation(FVector(Car.X, Car.Y, 220.));
+            }
+            if (Caption == BoltEndCaption) Caption->SetVisibility(IsBoltOpen() && BoltStep == QuebecBolt::StepDrive);
+            if (Caption == BoltBayCaption) Caption->SetVisibility(IsBoltOpen() && BoltStep == QuebecBolt::StepChase);
+            if (Caption == BoltGateCaption) Caption->SetVisibility(IsBoltOpen());
+            if (Caption == BoltThemCaption)
+            {
+                Caption->SetVisibility(IsBoltOpen() && BoltStep != QuebecBolt::StepDrive);
+                Caption->SetWorldLocation(FVector(BoltSeekX, BoltSeekY, 220.));
+            }
+            if (Caption == YardNearCaption) Caption->SetVisibility(IsYardOpen());
+            if (Caption == YardFarCaption) Caption->SetVisibility(IsYardOpen());
+            if (Caption == YardWatchCaption)
+            {
+                Caption->SetVisibility(IsYardOpen());
+                Caption->SetWorldLocation(FVector(static_cast<double>(QuebecYard::WatchX), static_cast<double>(QuebecYard::WatchY), 220.));
+            }
+            if (Caption == LiftStopCaption) Caption->SetVisibility(IsLiftOpen());
+            if (Caption == LiftThemCaption)
+            {
+                const QuebecLift::FSpot Walker = QuebecLift::Place(static_cast<double>(LiftAlong));
+                Caption->SetVisibility(IsLiftOpen());
+                Caption->SetWorldLocation(FVector(Walker.X, Walker.Y, 220.));
+            }
+            if (Caption == PostMarkCaption) Caption->SetVisibility(IsPostOpen());
+            if (Caption == TabMarkCaption)
+            {
+                const QuebecTab::FSpot Here = QuebecTab::Objective(static_cast<int>(TabStep));
+                Caption->SetVisibility(IsTabOpen());
+                Caption->SetWorldLocation(FVector(Here.X, Here.Y, 160.));
+            }
+            if (Caption == CarryMarkCaption)
+            {
+                const QuebecCarry::FSpot Here = QuebecCarry::Objective(static_cast<int>(CarryStep));
+                Caption->SetVisibility(IsCarryOpen());
+                Caption->SetWorldLocation(FVector(Here.X, Here.Y, 160.));
+            }
         }
         if (EscortDoor) EscortDoor->SetVisibility(IsEscortOpen());
         const bool bShadeWorld = IsShadeOpen();
@@ -3602,6 +6146,131 @@ void AQuebecCampaign::UpdatePresentation()
             FinaleTail->SetVisibility(bFinaleChaseWorld);
             if (FinaleTailCaption) FinaleTailCaption->SetWorldLocation(FVector(FinaleTailX, FinaleTailY, 220.));
         }
+        const bool bFollowWorld = IsFollowOpen();
+        const QuebecFollow::FSpot FollowSpot = QuebecFollow::Place(static_cast<double>(FollowAlong));
+        if (FollowMeet) FollowMeet->SetVisibility(bFollowWorld && FollowStep == QuebecFollow::StepMeet);
+        if (FollowStop) FollowStop->SetVisibility(bFollowWorld);
+        if (FollowPerson)
+        {
+            FollowPerson->SetWorldLocation(FVector(FollowSpot.X, FollowSpot.Y, 90.));
+            FollowPerson->SetVisibility(bFollowWorld);
+        }
+        const bool bRollWorld = IsRollOpen();
+        const QuebecRoll::FSpot RollSpot = QuebecRoll::Place(static_cast<double>(RollAlong));
+        if (RollHandles) RollHandles->SetVisibility(bRollWorld && RollStep == QuebecRoll::StepReady);
+        if (RollStop) RollStop->SetVisibility(bRollWorld);
+        if (RollCart)
+        {
+            RollCart->SetWorldLocation(FVector(RollSpot.X, RollSpot.Y, 70.));
+            RollCart->SetVisibility(bRollWorld);
+        }
+        const bool bBellWorld = IsBellOpen();
+        if (BellNorth) BellNorth->SetVisibility(bBellWorld);
+        if (BellMid) BellMid->SetVisibility(bBellWorld);
+        if (BellSouth) BellSouth->SetVisibility(bBellWorld);
+        const bool bBlockWorld = IsBlockOpen();
+        const QuebecBlock::FSpot CourierSpot = QuebecBlock::Place(static_cast<double>(BlockAlong));
+        if (BlockSide) BlockSide->SetVisibility(bBlockWorld && BlockStep == QuebecBlock::StepSide);
+        if (BlockMark) BlockMark->SetVisibility(bBlockWorld);
+        if (BlockCourier)
+        {
+            BlockCourier->SetWorldLocation(FVector(CourierSpot.X, CourierSpot.Y, 90.));
+            BlockCourier->SetVisibility(bBlockWorld);
+        }
+        const bool bSendWorld = IsSendOpen();
+        if (SendDoor) SendDoor->SetVisibility(bSendWorld && SendStep == QuebecSend::StepDoor);
+        if (SendGate) SendGate->SetVisibility(bSendWorld && SendStep == QuebecSend::StepDrive);
+        if (SendBay) SendBay->SetVisibility(bSendWorld && SendStep == QuebecSend::StepStop);
+        if (SendWalk) SendWalk->SetVisibility(bSendWorld && SendStep == QuebecSend::StepWalk);
+        const bool bPursueWorld = IsPursueOpen();
+        const QuebecPursue::FSpot TrafficSpot = QuebecPursue::Place(static_cast<double>(PursueAlong));
+        if (PursueLine) PursueLine->SetVisibility(bPursueWorld);
+        if (PursueCar)
+        {
+            PursueCar->SetWorldLocation(FVector(TrafficSpot.X, TrafficSpot.Y, 90.));
+            PursueCar->SetVisibility(bPursueWorld);
+        }
+        const bool bNoseWorld = IsNoseOpen();
+        if (NoseStall) NoseStall->SetVisibility(bNoseWorld);
+        if (NoseLine) NoseLine->SetVisibility(bNoseWorld);
+        const bool bSlipWorld = IsSlipOpen();
+        if (SlipDoor) SlipDoor->SetVisibility(bSlipWorld && SlipStep == QuebecSlip::StepDoor);
+        if (SlipGate) SlipGate->SetVisibility(bSlipWorld);
+        if (SlipThem)
+        {
+            SlipThem->SetWorldLocation(FVector(SlipX, SlipY, 90.));
+            SlipThem->SetVisibility(bSlipWorld);
+        }
+        const bool bMarchWorld = IsMarchOpen();
+        if (MarchJoinMark) MarchJoinMark->SetVisibility(bMarchWorld && MarchStep == QuebecMarch::StepJoin);
+        if (MarchLeaveMark) MarchLeaveMark->SetVisibility(bMarchWorld);
+        if (MarchGroup)
+        {
+            MarchGroup->SetWorldLocation(FVector(QuebecMarch::ColumnX, MarchY, 90.));
+            MarchGroup->SetVisibility(bMarchWorld);
+        }
+        const bool bDitchWorld = IsDitchOpen();
+        if (DitchLine) DitchLine->SetVisibility(bDitchWorld && DitchStep == QuebecDitch::StepRoll);
+        if (DitchClear) DitchClear->SetVisibility(bDitchWorld);
+        if (DitchThem)
+        {
+            const QuebecDitch::FSpot Behind = QuebecDitch::Place(static_cast<double>(DitchAlong));
+            DitchThem->SetWorldLocation(FVector(Behind.X, Behind.Y, 90.));
+            DitchThem->SetVisibility(bDitchWorld && DitchStep != QuebecDitch::StepFoot);
+        }
+        const bool bParcelWorld = IsParcelOpen();
+        if (ParcelMark) ParcelMark->SetVisibility(bParcelWorld && ParcelStep == QuebecParcel::StepParcel);
+        if (ParcelStoop) ParcelStoop->SetVisibility(bParcelWorld);
+        if (ParcelCarA)
+        {
+            const QuebecParcel::FSpot Car = QuebecParcel::OnRoad(static_cast<double>(ParcelAlongA));
+            ParcelCarA->SetWorldLocation(FVector(Car.X, Car.Y, 90.));
+            ParcelCarA->SetVisibility(bParcelWorld);
+        }
+        if (ParcelCarB)
+        {
+            const QuebecParcel::FSpot Car = QuebecParcel::OnRoad(static_cast<double>(ParcelAlongB));
+            ParcelCarB->SetWorldLocation(FVector(Car.X, Car.Y, 90.));
+            ParcelCarB->SetVisibility(bParcelWorld);
+        }
+        const bool bBoltWorld = IsBoltOpen();
+        if (BoltEnd) BoltEnd->SetVisibility(bBoltWorld && BoltStep == QuebecBolt::StepDrive);
+        if (BoltBay) BoltBay->SetVisibility(bBoltWorld && BoltStep == QuebecBolt::StepChase);
+        if (BoltGate) BoltGate->SetVisibility(bBoltWorld);
+        if (BoltThem)
+        {
+            BoltThem->SetWorldLocation(FVector(BoltSeekX, BoltSeekY, 90.));
+            BoltThem->SetVisibility(bBoltWorld && BoltStep != QuebecBolt::StepDrive);
+        }
+        const bool bYardWorld = IsYardOpen();
+        if (YardNear) YardNear->SetVisibility(bYardWorld);
+        if (YardFar) YardFar->SetVisibility(bYardWorld);
+        if (YardWatch)
+        {
+            YardWatch->SetWorldRotation(FRotator(0.f, static_cast<float>(static_cast<double>(YardAngle) * (180.0 / 3.141592653589793)), 0.f));
+            YardWatch->SetVisibility(bYardWorld);
+        }
+        const bool bLiftWorld = IsLiftOpen();
+        if (LiftStop) LiftStop->SetVisibility(bLiftWorld);
+        if (LiftThem)
+        {
+            const QuebecLift::FSpot Walker = QuebecLift::Place(static_cast<double>(LiftAlong));
+            LiftThem->SetWorldLocation(FVector(Walker.X, Walker.Y, 90.));
+            LiftThem->SetVisibility(bLiftWorld);
+        }
+        if (PostMark) PostMark->SetVisibility(IsPostOpen());
+        if (TabMark)
+        {
+            const QuebecTab::FSpot Here = QuebecTab::Objective(static_cast<int>(TabStep));
+            TabMark->SetWorldLocation(FVector(Here.X, Here.Y, 40.));
+            TabMark->SetVisibility(IsTabOpen());
+        }
+        if (CarryMark)
+        {
+            const QuebecCarry::FSpot Here = QuebecCarry::Objective(static_cast<int>(CarryStep));
+            CarryMark->SetWorldLocation(FVector(Here.X, Here.Y, 40.));
+            CarryMark->SetVisibility(IsCarryOpen());
+        }
         for (UTextRenderComponent* Caption : Captions) Caption->SetWorldRotation((Eye-Caption->GetComponentLocation()).Rotation());
     }
 }
@@ -3647,6 +6316,47 @@ void AQuebecCampaign::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
     DOREPLIFETIME(AQuebecCampaign,FinaleElapsed);
     DOREPLIFETIME(AQuebecCampaign,FinaleTailX);
     DOREPLIFETIME(AQuebecCampaign,FinaleTailY);
+    DOREPLIFETIME(AQuebecCampaign,FollowStep);
+    DOREPLIFETIME(AQuebecCampaign,FollowAlong);
+    DOREPLIFETIME(AQuebecCampaign,RollStep);
+    DOREPLIFETIME(AQuebecCampaign,RollAlong);
+    DOREPLIFETIME(AQuebecCampaign,BellStep);
+    DOREPLIFETIME(AQuebecCampaign,BlockStep);
+    DOREPLIFETIME(AQuebecCampaign,BlockAlong);
+    DOREPLIFETIME(AQuebecCampaign,SendStep);
+    DOREPLIFETIME(AQuebecCampaign,SendDriven);
+    DOREPLIFETIME(AQuebecCampaign,PursueStep);
+    DOREPLIFETIME(AQuebecCampaign,PursueAlong);
+    DOREPLIFETIME(AQuebecCampaign,NoseStep);
+    DOREPLIFETIME(AQuebecCampaign,SlipStep);
+    DOREPLIFETIME(AQuebecCampaign,SlipX);
+    DOREPLIFETIME(AQuebecCampaign,SlipY);
+    DOREPLIFETIME(AQuebecCampaign,MarchStep);
+    DOREPLIFETIME(AQuebecCampaign,MarchY);
+    DOREPLIFETIME(AQuebecCampaign,DitchStep);
+    DOREPLIFETIME(AQuebecCampaign,DitchAlong);
+    DOREPLIFETIME(AQuebecCampaign,ParcelStep);
+    DOREPLIFETIME(AQuebecCampaign,ParcelClock);
+    DOREPLIFETIME(AQuebecCampaign,ParcelAlongA);
+    DOREPLIFETIME(AQuebecCampaign,ParcelAlongB);
+    DOREPLIFETIME(AQuebecCampaign,BoltStep);
+    DOREPLIFETIME(AQuebecCampaign,BoltClock);
+    DOREPLIFETIME(AQuebecCampaign,BoltSeekX);
+    DOREPLIFETIME(AQuebecCampaign,BoltSeekY);
+    DOREPLIFETIME(AQuebecCampaign,YardStep);
+    DOREPLIFETIME(AQuebecCampaign,YardAngle);
+    DOREPLIFETIME(AQuebecCampaign,bYardArmed);
+    DOREPLIFETIME(AQuebecCampaign,LiftStep);
+    DOREPLIFETIME(AQuebecCampaign,LiftAlong);
+    DOREPLIFETIME(AQuebecCampaign,bLiftComing);
+    DOREPLIFETIME(AQuebecCampaign,PostStep);
+    DOREPLIFETIME(AQuebecCampaign,PostClock);
+    DOREPLIFETIME(AQuebecCampaign,TabStep);
+    DOREPLIFETIME(AQuebecCampaign,TabClock);
+    DOREPLIFETIME(AQuebecCampaign,CarryStep);
+    DOREPLIFETIME(AQuebecCampaign,FailReason);
+    DOREPLIFETIME(AQuebecCampaign,LastPayout);
+    DOREPLIFETIME(AQuebecCampaign,PayoutSerial);
     DOREPLIFETIME(AQuebecCampaign,LightOperator);
     DOREPLIFETIME(AQuebecCampaign,LightYaw);
     DOREPLIFETIME(AQuebecCampaign,LightPitch);

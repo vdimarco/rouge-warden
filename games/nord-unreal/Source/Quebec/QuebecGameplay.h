@@ -8,6 +8,7 @@
 #include "GameFramework/Pawn.h"
 #include "GameFramework/PlayerController.h"
 #include "QuebecSteerAssist.h" // Lag-tolerant driving: AQuebecCar keeps a QuebecSteer::FAssistState.
+#include "QuebecSlide.h" // A handbrake slide earns one banner: AQuebecCar keeps a QuebecSlide::FState.
 #include "Engine/TimerHandle.h" // Traffic street life: AQuebecCar blinks its signal lamps on a timer.
 #include "QuebecTrafficModel.h" // Traffic street life: ARRÊT stops, yielding and curb stops.
 #include "QuebecGameplay.generated.h"
@@ -192,6 +193,8 @@ public:
     bool IsKnocked() const;
     // Knocked down, or knocked out or arrested on the player state: no walking, jumping, sprinting or E.
     bool IsInputLocked() const;
+    // Ages of the five foot puffs, or -1 when that slot is dark. The play shell draws the same rule.
+    void ScuffAges(float Now, float* Out, int32 Count) const;
     // Every peer, after movement and network smoothing (UQuebecKnockPoser): tumbles the mesh about the hips.
     void ApplyKnockPose();
     // Server: the launched player's capsule passes through the car that hit it for Seconds.
@@ -218,6 +221,9 @@ private:
     float CrewPoseElapsed = 0.f;
     float SwayPhase = 0.f;
     bool bSwayApplied = false;
+    double StepAlong = 0.;
+    int32 StepFoot = 0;
+    void UpdateFootsteps(float DeltaSeconds);
     void ApplyStreetSway(float DeltaSeconds);
     void RestoreStreetSway();
     // Pale spheres left at the rear shoe while walking. Five slots cover the puff life.
@@ -374,6 +380,8 @@ public:
     // Server.
     void AddBodyDamage(float Amount, AController* DamagedBy);
     bool IsWrecked() const { return BodyDamage >= 100.f; }
+    // Ages of the six tail puffs, or -1 when that slot is dark. The play shell draws the same rule.
+    void ExhaustAges(float Now, float* Out, int32 Count) const;
     // The controller of the player in the driver's seat, else null (AI, traffic and parked cars).
     AController* GetDriverController() const;
     // Server: sets bPolice and decorates the car.
@@ -439,6 +447,8 @@ private:
     // A player car on a road gets the steering assist, the glancing-wall turn and the stuck nudge; off-road is unchanged.
     bool bSteerAssist = false;
     QuebecSteer::FAssistState SteerAssist;
+    // One SLIDE banner per held handbrake shove. Cleared when the shove ends.
+    QuebecSlide::FState Slide;
     FVector LastWallNormal = FVector::ZeroVector;
     float NextRamReportAt = 0.f;
     // Server clock for the dent thud. A grind inside the gap stays quiet. Not saved.
@@ -538,6 +548,7 @@ public:
     void PlayFeedback(EQuebecFeedbackCue Cue);
     void PlayRank(int32 ChainAfter, bool bWasSpoiled);
     void PlayImpact();
+    void PlayStepTone(int32 Foot);
     void PlayLoss();
     virtual void BeginPlay() override;
     virtual void SetupInputComponent() override;
@@ -560,6 +571,8 @@ public:
     UFUNCTION(Exec) void NordWeather(const FString& Weather);
     UFUNCTION(Exec) void NordTime(float Hours);
     UFUNCTION(Exec) void NordSkyFreeze(int32 Frozen);
+    // Sherbrooke or Rachel. A guest can begin on either sidewalk.
+    UFUNCTION(Exec) void NordPlace(const FString& Name);
     UPROPERTY(VisibleAnywhere, Transient) FString ResidentCaption;
     UPROPERTY(VisibleAnywhere, Transient) float ResidentCaptionUntil = 0.f;
     // Street notices (JOBS, QuebecGameHUD.cpp): a banner channel apart from ResidentCaption, so story captions,
@@ -621,6 +634,11 @@ private:
     float ResidentGreetingElapsed = 0.f;
     float NextResidentGreetingAt = 0.f;
     float BrowserStateElapsed = 0.f;
+    int32 BrowserJobSerial = -1;
+    float BrowserJobBannerAt = -10.f;
+    bool bBrowserJobWaiting = false;
+    int32 BrowserStars = 0;
+    float BrowserStarsAt = -10.f;
     FString BrowserStreamerId;
     void BindBrowserInputRelease();
     void UnbindBrowserInputRelease();
@@ -636,6 +654,8 @@ private:
     UFUNCTION(Server, Reliable) void ServerNextCharacter();
     // Keys 1-8 pick crew styles 3-10 directly.
     void ChooseCrewKey(int32 Slot);
+    void BeginPlaceKey(int32 Index);
+    UFUNCTION(Server, Reliable) void ServerBeginPlace(int32 Index);
     UFUNCTION(Server, Reliable) void ServerChooseCrew(int32 Style);
     UFUNCTION() void ToggleComicStyle();
     void ApplyComicStyle();
@@ -661,6 +681,8 @@ private:
     UFUNCTION(Client, Unreliable) void ClientPlayImpact();
     void PlayImpactTone();
     UPROPERTY() TObjectPtr<class UAudioComponent> ImpactAudio;
+    UPROPERTY() TObjectPtr<class UAudioComponent> StepAudio;
+    UPROPERTY() TObjectPtr<class USoundWaveProcedural> StepWave;
     UPROPERTY() TObjectPtr<class USoundWaveProcedural> ImpactWave;
     UFUNCTION(Client, Unreliable) void ClientPlayLoss();
     void PlayLossTone();

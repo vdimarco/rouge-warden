@@ -1,0 +1,4 @@
+- [x] Paint a rose ring and four ink ticks on a second svg under the arrow
+- [x] A 1280×720 play still shows the ticks and the ring, and the row box stays put
+- [x] `qa/vr/render.mjs` passes (street mean 77.1, saturation 0.58, canyon ink 20.4%)
+- [x] The graphics scorecard records the UI result

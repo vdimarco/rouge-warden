@@ -433,9 +433,10 @@ let winHold = 0, winCard = null, winStory = null, lastWin = null;
 let missHold = 0, missCard = null, missJob = null, lastMiss = null;
 // A test can run the story route under ?nocut. Real play runs it only after Mission 1, and the tests leave it off.
 let routeForce = false;
-// Eight flushes break the clog run, so the pump never runs three times in a row. The queue waits out a story mission.
+// Ten flushes break the clog run, so the pump never runs three times in a row. The queue waits out a story mission.
 const CLOG_BEAT = {
   2: { type: "catch", mission: "OVER THE EDGE", near: [36, 130] },
+  3: { type: "gust", mission: "THROUGH THE GUST", near: [18, 70] },
   4: { type: "balloon", mission: "UP FOR AIR", near: [18, 80] },
   5: { type: "thief", mission: "PURSE RUN", near: [18, 55] },
   6: { type: "pizza", mission: "HOT PIE", near: [18, 80] },
@@ -784,7 +785,7 @@ const WIN_CUE = {
   sludge: "winWet", tanker: "winWet",
   brawl: "winFight", mugging: "winFight",
   thief: "winDash", pizza: "winDash", getaway: "winDash", taxi: "winDash",
-  catch: "winLift", washer: "winLift", balloon: "winLift",
+  catch: "winLift", washer: "winLift", balloon: "winLift", gust: "winLift", kite: "winLift", line: "winLift", wheel: "winDash",
   lid: "winWet",
 };
 function winCue(job) { return WIN_CUE[job] || "winLift"; }
@@ -847,6 +848,10 @@ const FAIL_LINES = {
   walked: "The fare got bored and walked off.", late: "Too slow! The fare jumped out at a red light.", away: "They got away. Next time!",
   flood: "The tanker burst! Sludge everywhere. Next time!",
   popped: "The lid popped. Stand on it until it seats.",
+  blown: "The gust blew past. Swing through it three times.",
+  rolled: "The wheel rolled off. Get on the ground in front of it.",
+  risen: "The kite rose away. Stay above it.",
+  snapped: "The line went by. Swing onto it.",
 };
 function jobEvent(e) {
   switch (e.type) {
@@ -858,6 +863,45 @@ function jobEvent(e) {
     case "leak": fx.word("GLUG", FXP.set(e.x, e.y + 1, e.z), { scale: 1.1 }); break;
     case "seal": fx.word("SPLORT", FXP.set(e.x, e.y + 0.6, e.z), { scale: 1.3 }); audio.sfx("pump"); if (e.n >= e.of) ui.toast("Leak sealed!"); break;
     case "caught": audio.sfx("unlock"); haptic(1, 0.6, 50); break;
+    case "gust":
+      fx.word("WHOOSH", FXP.set(e.x, e.y + 1.2, e.z), { scale: 1.4 });
+      audio.sfx("release");
+      if (P && !driving) { P.vel.y = Math.max(P.vel.y, 0) + JOB.gust.lift; P.onGround = false; }
+      break;
+    case "wheel": {
+      fx.word("BONK", FXP.set(e.x, e.y + 1, e.z), { scale: 1.5 });
+      audio.sfx("yank");
+      if (P && !driving) {
+        const len = Math.hypot(e.vx || 0, e.vz || 0) || 1;
+        P.vel.x += ((e.vx || 0) / len) * 4;
+        P.vel.z += ((e.vz || 0) / len) * 4;
+        P.vel.y = Math.max(P.vel.y, 0) + JOB.wheel.bump;
+        P.onGround = false;
+      }
+      break;
+    }
+    case "kite":
+      fx.word(e.tug ? "UP" : "GOT IT", FXP.set(e.x, e.y + 1.2, e.z), { scale: e.tug ? 1.3 : 1.6 });
+      audio.sfx("release");
+      if (P && !driving) { P.vel.y = Math.max(P.vel.y, 0) + (e.tug ? JOB.kite.tug : JOB.kite.lift); P.onGround = false; }
+      break;
+    case "line":
+      if (e.ride) {
+        if (P && !driving) {
+          P.pos.x = e.x; P.pos.y = e.y; P.pos.z = e.z;
+          P.vel.x = e.vx; P.vel.y = 0; P.vel.z = e.vz;
+          P.onGround = false;
+        }
+        break;
+      }
+      fx.word(e.hop ? "ZIP" : "CATCH", FXP.set(e.x, e.y + 1.2, e.z), { scale: e.hop ? 1.6 : 1.3 });
+      audio.sfx("release");
+      if (e.hop && P && !driving) {
+        P.vel.x = e.vx; P.vel.z = e.vz;
+        P.vel.y = Math.max(P.vel.y, 0) + JOB.line.hop;
+        P.onGround = false;
+      }
+      break;
     case "done": {
       game.reward(e.reward);
       winPayoff(e);
@@ -2099,6 +2143,8 @@ function catchFeedback(i, what) {
 // ahead of you, never on you. Sizes come from fx.js (8 to 12 degrees across); scale makes the big moments bigger.
 const FX_UP = { x: 0, y: 1, z: 0 }, FXP = new THREE.Vector3(), FXD = new THREE.Vector3(), FXQ = new THREE.Vector3();
 let whooshAt = -99, whooshArmed = true;
+// The grade's hour. A full turn is four minutes: sunset, blue hour, sunset again. Title shots stay at sunset.
+let gradeClock = 0;
 // on the line from the head through the hand's muzzle, 1.7 m from the head
 function wordAtHand(name, i) {
   const hp = G.input.head.pos, t = TIPS[i] || hands.tip(i);
@@ -2152,6 +2198,10 @@ function after(dt, inp, yawDelta) {
   ropes.update(dt, P, TIPS, G.time);
   game.update(dt, G.time, P, inp); // before the hand-off it only lets the sleeping King breathe
   ui.paintMission(); // the score-row card was drawn at the start of the frame, before this objective existed
+  if (inPlay) {
+    gradeClock += dt;
+    view.setDay(0.5 - 0.5 * Math.cos(gradeClock * (Math.PI * 2 / 240)));
+  }
   view.update(dt, G.time, vh.pos);
   streetFrame(dt, inPlay);
   // comfort: the 50 ms low-passed acceleration, the smooth-turn rate, and whether a snap happened
@@ -2686,6 +2736,7 @@ function shotPose(name) {
     case "harbour": return { pos: [-90, 28, 470], at: [-90, 80, 150] };
     case "aerial": return { pos: [120, 720, 640], at: [-40, 0, -200] };
     case "street": return { pos: [-154.5, 1.7, 30.5], at: [-162, 8, -300] }; // the sidewalk corner, clear of the traffic
+    case "lamp": return { pos: [-154.7, 1.65, 1], at: [-154.7, 0.15, -8] }; // the pavement under one street lamp
     case "diorama": return { pos: [0, 1.65, 0], at: [0, 1.0, -1.1], diorama: true };
     default: return null;
   }
@@ -3032,6 +3083,10 @@ G.test = {
       P.onGround = true;
     }
     else if (A.type === "lid") D.held = JOB.lid.hold;
+    else if (A.type === "gust") D.n = JOB.gust.need;
+    else if (A.type === "wheel") D.stop = true;
+    else if (A.type === "kite") D.done = true;
+    else if (A.type === "line") D.done = true;
     else return false;
     return true;
   },

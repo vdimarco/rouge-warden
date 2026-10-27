@@ -46,7 +46,7 @@ class WalkCycleTests(unittest.TestCase):
         casual = GAME.index('TEXT("/Game/Plateau/Life/Civilians/MenCasual/SK_MenCasual.SK_MenCasual")')
         block = GAME[hoodie:casual]
         self.assertIn("CrewWalk = HoodieWalk;", block)
-        self.assertIn("CrewRun = nullptr;", block)
+        self.assertIn("CrewRun = HoodieRun;", block)
         self.assertIn("const FRotator Look(-16.f, Yaw, 0.f);", GAME)
         self.assertIn("CameraArm->SocketOffset = FVector(0., 70., 110.);", GAME)
         self.assertIn("inline constexpr double WalkRoll = 12.;", SWAY)

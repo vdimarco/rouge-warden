@@ -1,4 +1,5 @@
 #include "QuebecWadeMark.h"
+#include "QuebecBanner.h"
 #include "QuebecWade.h"
 #include "QuebecGameplay.h"
 #include "QuebecPlayerState.h"
@@ -85,9 +86,9 @@ void AQuebecWade::BuildMarks()
     const FVector Bank(QuebecWade::BankX - QuebecWade::BuoyX, QuebecWade::BankY - QuebecWade::BuoyY, 0.);
     AddPost(TEXT("WadeFloat"), FVector(0., 0., 120.), FVector(35., 35., 240.), Cream);
     AddPost(TEXT("WadeRing"), FVector(0., 0., 28.), FVector(160., 160., 18.), Ink);
-    AddCaption(TEXT("WadeName"), FVector(0., 0., 280.), TEXT("BAIN"));
+    AddCaption(TEXT("WadeName"), FVector(0., 0., 280.), FString(UTF8_TO_TCHAR(QuebecBanner::Dip)));
     AddPost(TEXT("WadeBank"), Bank + FVector(0., 0., 80.), FVector(28., 28., 160.), Lime);
-    AddCaption(TEXT("WadeShore"), Bank + FVector(0., 0., 200.), TEXT("RIVE"));
+    AddCaption(TEXT("WadeShore"), Bank + FVector(0., 0., 200.), FString(UTF8_TO_TCHAR(QuebecBanner::Shore)));
 }
 
 void AQuebecWade::Tick(float DeltaSeconds)
@@ -129,13 +130,13 @@ void AQuebecWade::Tick(float DeltaSeconds)
     if (Next.Leg == QuebecWade::ELeg::Buoy && Player)
     {
         UE_LOG(LogTemp, Display, TEXT("NORD_WADE buoy"));
-        QuebecNotice::Show(Player, TEXT("BAIN"), TEXT("Reviens sur la rive."), 4.f);
+        QuebecNotice::Show(Player, FString(UTF8_TO_TCHAR(QuebecBanner::Dip)), FString(UTF8_TO_TCHAR(QuebecBanner::BackToBank)), 4.f);
     }
     if (Prize > 0 && Stats)
     {
         Stats->Cash += Prize;
         Stats->Changed();
         UE_LOG(LogTemp, Display, TEXT("NORD_WADE paid %d cash=%d"), Prize, Stats->Cash);
-        QuebecNotice::Show(Player, TEXT("BAIN"), FString::Printf(TEXT("%d $"), Prize), 4.f);
+        QuebecNotice::Show(Player, FString(UTF8_TO_TCHAR(QuebecBanner::Dip)), FString::Printf(TEXT("%d $"), Prize), 4.f);
     }
 }

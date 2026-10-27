@@ -1,4 +1,5 @@
 """A running car leaves a short column at the tail. Bonnet smoke stays for a wreck."""
+import subprocess
 import unittest
 from pathlib import Path
 
@@ -6,6 +7,8 @@ ROOT = Path(__file__).resolve().parents[1]
 DRIVE = (ROOT / "Source/Quebec/QuebecDrive.cpp").read_text()
 GAME = (ROOT / "Source/Quebec/QuebecGameplay.cpp").read_text()
 HEADER = (ROOT / "Source/Quebec/QuebecGameplay.h").read_text()
+EXHAUST = (ROOT / "Source/Quebec/QuebecExhaust.h").read_text()
+CARD = (ROOT / "Browser/mission-card.js").read_text()
 
 
 def exhaust_block():
@@ -26,11 +29,22 @@ class ExhaustTests(unittest.TestCase):
         self.assertIn("(-GetActorForwardVector() * 160.f + FVector(0.f, 0.f, 180.f)) * DeltaSeconds", block)
         self.assertIn("FMath::Lerp(0.16f, 0.55f, FMath::Min(1.f, Life * 1.4f))", block)
         self.assertIn('TEXT("/Game/Materials/M_White.M_White")', block)
-        self.assertIn("constexpr int32 ExhaustPuffCount = 6;", DRIVE)
-        self.assertIn("constexpr float ExhaustPuffLife = 1.1f;", DRIVE)
-        self.assertIn("constexpr float ExhaustInterval = 0.16f;", DRIVE)
+        self.assertIn("constexpr int32 ExhaustPuffCount = QuebecExhaust::Count;", DRIVE)
+        self.assertIn("constexpr float ExhaustPuffLife = static_cast<float>(QuebecExhaust::Life);", DRIVE)
+        self.assertIn("constexpr float ExhaustInterval = static_cast<float>(QuebecExhaust::Interval);", DRIVE)
+        self.assertIn("inline constexpr int Count = 6;", EXHAUST)
+        self.assertIn("inline constexpr double Life = 1.1;", EXHAUST)
+        self.assertIn("inline constexpr double Interval = 0.16;", EXHAUST)
+        self.assertIn("inline constexpr double BackSpeed = 160.;", EXHAUST)
+        self.assertIn("inline constexpr double RiseSpeed = 180.;", EXHAUST)
+        self.assertIn("void AQuebecCar::ExhaustAges", DRIVE)
+        self.assertIn("nordExhaust", GAME)
+        self.assertIn("const life = 1.1;", CARD)
+        self.assertIn("clamped * 160", CARD)
+        self.assertIn("clamped * 180", CARD)
         self.assertIn("UpdateDamageSmoke(DeltaSeconds);\n    UpdateExhaust(DeltaSeconds);", GAME)
         self.assertIn("void UpdateExhaust(float DeltaSeconds);", HEADER)
+        self.assertIn("void ExhaustAges(float Now, float* Out, int32 Count) const;", HEADER)
         self.assertNotIn("rain_streak", block)
 
     def test_a_stopped_car_does_not_run_and_a_rolling_one_does(self):
@@ -57,6 +71,18 @@ class ExhaustTests(unittest.TestCase):
         self.assertGreater(far[2], near[2] + 150.0)
         self.assertLess(puff(0.16, 0)[1], 0.0)
         self.assertGreater(puff(0.32, 2)[1], 0.0)
+
+    def test_the_header_matches_the_offline_column(self):
+        binary = Path("/tmp/exhaust_test")
+        subprocess.run(
+            ["g++", "-std=c++20", "-Wall", "-Wextra", "-Werror", "-O1",
+             f"-I{ROOT / 'Source/Quebec'}", str(ROOT / "Scripts/exhaust_test.cpp"),
+             "-o", str(binary), "-lm"],
+            check=True,
+        )
+        result = subprocess.run([str(binary)], check=True, capture_output=True, text=True)
+        self.assertTrue(result.stdout.startswith("NORD_EXHAUST_OK"))
+        print(result.stdout.strip())
 
 
 if __name__ == "__main__":

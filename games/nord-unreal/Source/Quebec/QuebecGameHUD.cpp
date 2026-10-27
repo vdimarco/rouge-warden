@@ -1,4 +1,5 @@
 #include "QuebecGameplay.h"
+#include "QuebecBanner.h"
 #include "QuebecCombat.h"
 #include "QuebecJobRules.h"
 #include "QuebecPlayerState.h"
@@ -570,9 +571,9 @@ void AQuebecHUD::DrawStreetHUD(float UIScale, bool bTall, bool bTouch, float Rad
             {
                 FString Info = FString::Printf(TEXT("%d m"), FMath::RoundToInt(FVector::Dist(Here, Goal) / 100.f));
                 if (Jobs->JobIndex == static_cast<int32>(QuebecJobRules::EJob::Thief))
-                    Info += FString::Printf(TEXT("  ·  dégâts %d %%"), FMath::RoundToInt(Jobs->JobProgress * 100.f));
+                    Info += FString::Printf(TEXT("  ·  damage %d %%"), FMath::RoundToInt(Jobs->JobProgress * 100.f));
                 else if (Jobs->JobIndex == static_cast<int32>(QuebecJobRules::EJob::Goons))
-                    Info += FString::Printf(TEXT("  ·  K.-O. %d/%d"), FMath::RoundToInt(Jobs->JobProgress * QuebecJobRules::GoonTotal()), QuebecJobRules::GoonTotal());
+                    Info += FString::Printf(TEXT("  ·  down %d/%d"), FMath::RoundToInt(Jobs->JobProgress * QuebecJobRules::GoonTotal()), QuebecJobRules::GoonTotal());
                 if (!bTouch && !bTall) Info += TEXT("  ·  R");
                 Write(Info, Font, Muted, ColumnRight - static_cast<float>(Measure(Info, Font, .78f).X), Row, .78f);
                 Row += 16.f * S;
@@ -595,11 +596,11 @@ void AQuebecHUD::DrawStreetHUD(float UIScale, bool bTall, bool bTouch, float Rad
         (!Player->GameNoticeTitle.IsEmpty() || !Player->GameNoticeDetail.IsEmpty());
     if (bJobBanner)
     {
-        const FString Head = Jobs->bLastSucceeded ? TEXT("MISSION RÉUSSIE") : TEXT("MISSION RATÉE");
-        FString Line = Jobs->bLastSucceeded ? FString::Printf(TEXT("+%d $  ·  %s"), Jobs->LastReward, *Jobs->LastResult) : Jobs->LastResult;
-        // Touch has no R key on the pad. Recover lives in the Menu, under GAME, and sends the same key.
-        if (!Jobs->bLastSucceeded && Jobs->RetryUntil > ServerNow)
-            Line += bTouch ? TEXT("  ·  Menu · Recover") : TEXT("  ·  R réessaie");
+        const bool bRetry = !Jobs->bLastSucceeded && Jobs->RetryUntil > ServerNow;
+        const QuebecBanner::FPlate Words = QuebecBanner::Compose(
+            Jobs->bLastSucceeded, Jobs->LastReward, TCHAR_TO_UTF8(*Jobs->LastResult), bTouch, bRetry);
+        const FString Head(UTF8_TO_TCHAR(Words.Head));
+        const FString Line(UTF8_TO_TCHAR(Words.Line.c_str()));
         Plate(Head, Line, Jobs->bLastSucceeded ? Accent : Danger, ScreenW * .5f, BannerTop, JobAge, QuebecJobRules::ResultBannerSeconds);
     }
     else if (bNotice)
@@ -612,7 +613,7 @@ void AQuebecHUD::DrawStreetHUD(float UIScale, bool bTall, bool bTouch, float Rad
     {
         // The police announce most star changes with their own notice, and a respawn clears stars silently; this plate
         // covers a rise they leave silent, after a short wait so the two never show back to back.
-        Plate(TEXT("RECHERCHÉ"), FString::Printf(TEXT("%d étoile%s"), Stars, Stars > 1 ? TEXT("s") : TEXT("")),
+        Plate(FString(UTF8_TO_TCHAR(QuebecBanner::Wanted)), FString(UTF8_TO_TCHAR(QuebecBanner::StarLine(Stars).c_str())),
             Cop, ScreenW * .5f, BannerTop, Now - StarsChangedAt - .6f, 1.8f);
     }
     if (bDown)
@@ -623,7 +624,7 @@ void AQuebecHUD::DrawStreetHUD(float UIScale, bool bTall, bool bTouch, float Rad
         const float Age = FMath::Max(0.f, 4.f - Left);
         const float Alpha = FMath::Clamp(Age / .5f, 0.f, 1.f);
         DrawRect(FLinearColor(0.f, 0.f, 0.f, .5f * Alpha), 0.f, 0.f, ScreenW, ScreenH);
-        const FString Word = bArrest ? TEXT("ARRÊTÉ!") : TEXT("K.-O.");
+        const FString Word(UTF8_TO_TCHAR(bArrest ? QuebecBanner::ArrestedWord : QuebecBanner::KnockedWord));
         const FLinearColor Tone = bArrest ? Cop : Danger;
         const FVector2D Burst(ScreenW * .5f, ScreenH * (bTall ? .4f : .42f));
         const float Pop = FMath::Min(Age / .15f, 1.f);
@@ -642,7 +643,7 @@ void AQuebecHUD::DrawStreetHUD(float UIScale, bool bTall, bool bTouch, float Rad
         for (const FVector2D Offset : {FVector2D(-3, 0), FVector2D(3, 0), FVector2D(0, -3), FVector2D(0, 3), FVector2D(5, 5)})
             DrawText(Word, Ink.CopyWithNewOpacity(Alpha), WordX + Offset.X * S, WordY + Offset.Y * S, Large, WordSize);
         DrawText(Word, Paper.CopyWithNewOpacity(Alpha), WordX, WordY, Large, WordSize);
-        FString Line = bArrest ? TEXT("Direction poste de quartier 38") : TEXT("Direction Hôpital Notre-Dame");
+        FString Line(UTF8_TO_TCHAR(bArrest ? QuebecBanner::StationLine : QuebecBanner::HospitalLine));
         if (Left > .05f) Line += FString::Printf(TEXT("  ·  %d"), FMath::CeilToInt(Left));
         Write(Line, Font, Paper.CopyWithNewOpacity(Alpha), ScreenW * .5f - static_cast<float>(Measure(Line, Font, 1.f).X) * .5f,
             static_cast<float>(Burst.Y) + 95.f * S, 1.f);

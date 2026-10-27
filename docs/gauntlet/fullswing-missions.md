@@ -1551,3 +1551,163 @@ Round42 clarification: above-rooftop attachment allowed to reachable real buildi
 
 
 Round42 shipped in PR#632, merge5d0cd1ca, after all6CI/review/exactauthenticatedpreview/rebase. Productionmain HTTP200 exactSHAedd1226e70c3f2fb08137e283d8d770a056c7db0f0df3f40724977d3f4780a41. Realbuildinganchors,noartificialceiling,reachableaboverooftopattachment. Canonical swing-moves scenarios published and OpenSpec archived. No affectedChrome/physicalcontroller/phone/performance claim.
+
+### Round 43 — 2026-10-26 — a gust on the third flush, rubric v1
+
+The third flush starts Through the Gust. Swing through the column in the air, within 6 m, at 11 m/s or faster across the ground. Standing in it, or crossing it slower than that, does not count. The next pass counts only after the hero has left the column and 0.4 s have passed. Three passes end the job. A 28 s clock that runs out misses as blown off. Each counted pass lifts the swing: the play measured an upward speed above 4 m/s and the card at 1/3. The card names THROUGH THE GUST and SWING THROUGH, and it does not say to flush the clogs. The King stays asleep. After the gust, the clog card returns at 3/12. The first flush stays the clog card. The gust is not an odd-job offer and it does not move the story route.
+
+Evidence: [the opening card](fullswing-r43/gust.png). The DOM assert is the source of truth for the card text. Local clog-beat play passed every flush through the lid, including the lift. Local action tests passed, including the three-pass win and the blown-off miss. No new art files. The pass uses the existing comic word and the existing rope-release sound.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 5 | Historical context only. This round does not re-score it. |
+| Color palette | 6 | Historical context only. This round does not re-score it. |
+| Detail density | 4 | Historical context only. This round does not re-score it. |
+| Texture and material quality | 3 | Historical context only. This round does not re-score it. |
+| Composition and camera | 4 | Historical context only. This round does not re-score it. |
+| Atmosphere | 5 | Historical context only. This round does not re-score it. |
+| Character models | 3 | Historical context only. This round does not re-score it. |
+| Animation smoothness | 4 | Historical context only. This round does not re-score it. |
+| Particles and VFX | 5 | The pass uses the existing comic word. That is not a new effects bar. |
+| UI polish | 6 | The card names the gust, the count, and the miss. Polish stays where it was. |
+| Responsiveness and input latency | Unverified | No hardware pass. The lift is a simulated frame, not a measured input latency. |
+| Controls feel | 9 | The swing is the same swing. One new place to aim it does not move the feel score. |
+| Mission clarity | 9 | The card says what to swing through and how many passes remain. Clarity stays 9. |
+| Pacing | 9 | Ten of twelve flushes now differ, and the first is still the pump. That is not a 2023 mission rhythm. |
+| Fun factor | 9 | A counted pass lifts the swing. One new beat is not the fun of a 2023 open city. |
+| Difficulty curve | 9 | Three swings inside 28 s, with a miss that says to swing. The curve stays 9. |
+| Feedback | 9 | The card counts, the word pops, and a miss names itself. Feedback stays 9. |
+| Sound design | 9 | The pass reuses the rope-release sound. Sound stays 9. |
+| Variety | 9 | The third flush is a new verb. The rest of the city is the same list. Variety stays 9. |
+| Performance stability | Unverified | No GPU pass, and this round does not claim one. |
+
+Current total withheld. Historical 132 is context from the earlier mission rounds, and this round's delta against that history is 0. It is not a new acceptance score. Responsiveness and performance stay unverified. No phone, listening, or full playthrough. `openspec validate` did not run. The change is archived by hand under `openspec/changes/archive/2026-10-26-swing-gust-pass/`.
+
+### Round 44 — 2026-10-26 — a loose wheel, rubric v1
+
+An odd job starts a wheel rolling along the nearest street. The card says STOP THE WHEEL and to get in front of it, with the distance. Standing on the ground within 4.5 m stops it and bumps the hero along the roll. The play measured an upward speed above 3 m/s and the job gone. Being in the air that close does not stop it, and the card says to land in front of it. An 18 s clock that runs out misses as rolled off. Turning around at a building or the water more than four times misses the same way. The wheel is an offer. It does not replace a flush. The first flush stays the clog card, and the third flush stays the gust. The King stays asleep.
+
+Evidence: [the opening card](fullswing-r44/wheel.png). The DOM assert is the source of truth for the card text. Local flat play passed the card, the air refusal, and the ground stop. Local action tests passed, including the roll, the air, the ground stop, and the clock miss. No new art files. The bump uses the existing comic word and the existing yank sound.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 5 | Historical context only. This round does not re-score it. |
+| Color palette | 6 | Historical context only. This round does not re-score it. |
+| Detail density | 4 | Historical context only. This round does not re-score it. |
+| Texture and material quality | 3 | Historical context only. This round does not re-score it. |
+| Composition and camera | 4 | Historical context only. This round does not re-score it. |
+| Atmosphere | 5 | Historical context only. This round does not re-score it. |
+| Character models | 3 | Historical context only. This round does not re-score it. |
+| Animation smoothness | 4 | Historical context only. This round does not re-score it. |
+| Particles and VFX | 5 | The bump uses the existing comic word. That is not a new effects bar. |
+| UI polish | 6 | The card names the wheel, the distance, and the miss. Polish stays where it was. |
+| Responsiveness and input latency | Unverified | No hardware pass. The bump is a simulated frame, not a measured input latency. |
+| Controls feel | 9 | Stopping it is standing on the street. The swing is the same swing. |
+| Mission clarity | 9 | The card says to get in front, and in the air it says to land. Clarity stays 9. |
+| Pacing | 9 | The wheel is not a flush. Ten of twelve flushes differ, and the first is still the pump. |
+| Fun factor | 9 | Landing in front of a rolling wheel bumps you along it. One odd job is not a 2023 open city. |
+| Difficulty curve | 9 | Eighteen seconds, the air does not count, and the miss says to land. The curve stays 9. |
+| Feedback | 9 | The card names the distance, the word pops, and a miss names itself. Feedback stays 9. |
+| Sound design | 9 | The bump reuses the yank sound. Sound stays 9. |
+| Variety | 9 | The wheel is another offer. It does not change the flush list. Variety stays 9. |
+| Performance stability | Unverified | No GPU pass, and this round does not claim one. |
+
+Current total withheld. Historical 132 is context from the earlier mission rounds, and this round's delta against that history is 0. It is not a new acceptance score. Responsiveness and performance stay unverified. No phone, listening, or full playthrough. `openspec validate` did not run. The change is archived by hand under `openspec/changes/archive/2026-10-26-swing-wheel-stop/`.
+
+### Round 45 — 2026-10-26 — a kite to stay above, rubric v1
+
+An odd job sends a kite up from the street. The card says HOLD THE KITE and to stay above it. Time in the air above the kite, within 8 m, fills a 4 s hold. The first moment above it tugs the hero up. Standing on the ground, or hanging under the kite, does not fill the hold. Leaving the air slips the hold, and the card says to get back above it. Filling the hold catches the kite. The play measured an upward speed above 3 m/s and the job gone. A 22 s clock that runs out misses as risen. The kite is an offer. It does not replace a flush. The first flush stays the clog card, the third flush stays the gust, and the loose wheel stays an offer. The King stays asleep.
+
+Evidence: [the opening card](fullswing-r45/kite.png). The DOM assert is the source of truth for the card text. Local flat play passed the card, the ground refusal, and the launch. Local action tests passed, including the rise, the ground, the air under it, the tug, the slip, the catch, and the clock miss. No new art files. The tug and the catch use the existing comic word and the existing rope-release sound.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 5 | Historical context only. This round does not re-score it. |
+| Color palette | 6 | Historical context only. This round does not re-score it. |
+| Detail density | 4 | Historical context only. This round does not re-score it. |
+| Texture and material quality | 3 | Historical context only. This round does not re-score it. |
+| Composition and camera | 4 | Historical context only. This round does not re-score it. |
+| Atmosphere | 5 | Historical context only. This round does not re-score it. |
+| Character models | 3 | Historical context only. This round does not re-score it. |
+| Animation smoothness | 4 | Historical context only. This round does not re-score it. |
+| Particles and VFX | 5 | The tug uses the existing comic word. That is not a new effects bar. |
+| UI polish | 6 | The card names the kite, the hold, and the miss. Polish stays where it was. |
+| Responsiveness and input latency | Unverified | No hardware pass. The launch is a simulated frame, not a measured input latency. |
+| Controls feel | 9 | Staying above it is the same swing. One new place to be does not move the feel score. |
+| Mission clarity | 9 | The card says to stay above, and a slip says to get back. Clarity stays 9. |
+| Pacing | 9 | The kite is not a flush. Ten of twelve flushes differ, and the first is still the pump. |
+| Fun factor | 9 | A rising kite tugs you up and then launches you. One odd job is not a 2023 open city. |
+| Difficulty curve | 9 | Four seconds above it, the ground does not count, and the miss says to stay above. The curve stays 9. |
+| Feedback | 9 | The card counts the hold, the word pops, and a miss names itself. Feedback stays 9. |
+| Sound design | 9 | The tug reuses the rope-release sound. Sound stays 9. |
+| Variety | 9 | The kite is another offer. It does not change the flush list. Variety stays 9. |
+| Performance stability | Unverified | No GPU pass, and this round does not claim one. |
+
+Current total withheld. Historical 132 is context from the earlier mission rounds, and this round's delta against that history is 0. It is not a new acceptance score. Responsiveness and performance stay unverified. No phone, listening, or full playthrough. `openspec validate` did not run. The change is archived by hand under `openspec/changes/archive/2026-10-26-swing-kite-hold/`.
+
+### Round 46 — 2026-10-27 — a line to ride, rubric v1
+
+An odd job strings a line across the street, 8 m up. The card says RIDE THE LINE and to swing onto it. A swing in the air, within 3.5 m and at 9 m/s or faster across the ground, catches it. Standing on the street under it does not. A slower swing does not. Once caught, the line carries the hero to the far end and launches them off. The play measured an upward speed above 3 m/s and the job gone. A 16 s clock that runs out before the catch misses as snapped. The line is an offer. It does not replace a flush. The first flush stays the clog card, the third flush stays the gust, and the wheel and the kite stay offers. The King stays asleep.
+
+Evidence: [the opening card](fullswing-r46/line.png). The DOM assert is the source of truth for the card text. Local flat play passed the card, the ground refusal, and the launch off the end. Local action tests passed, including the slow swing, the ground, the catch, the carry, the launch, and the clock miss. A street offer that snapped inside the usual band is placed again, so the markers stay out where the band asks. No new art files. The catch and the launch use the existing comic word and the existing rope-release sound.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 5 | Historical context only. This round does not re-score it. |
+| Color palette | 6 | Historical context only. This round does not re-score it. |
+| Detail density | 4 | Historical context only. This round does not re-score it. |
+| Texture and material quality | 3 | Historical context only. This round does not re-score it. |
+| Composition and camera | 4 | Historical context only. This round does not re-score it. |
+| Atmosphere | 5 | Historical context only. This round does not re-score it. |
+| Character models | 3 | Historical context only. This round does not re-score it. |
+| Animation smoothness | 4 | Historical context only. This round does not re-score it. |
+| Particles and VFX | 5 | The catch uses the existing comic word. That is not a new effects bar. |
+| UI polish | 6 | The card names the line and the miss. Polish stays where it was. |
+| Responsiveness and input latency | Unverified | No hardware pass. The launch is a simulated frame, not a measured input latency. |
+| Controls feel | 9 | Catching it is the same swing. The carry is a short ride, not a new control. |
+| Mission clarity | 9 | The card says to swing onto the line. Clarity stays 9. |
+| Pacing | 9 | The line is not a flush. Ten of twelve flushes differ, and the first is still the pump. |
+| Fun factor | 9 | A caught line carries you off the end. One odd job is not a 2023 open city. |
+| Difficulty curve | 9 | Sixteen seconds, the ground does not count, and the miss says to swing on. The curve stays 9. |
+| Feedback | 9 | The card names the swing, the word pops, and a miss names itself. Feedback stays 9. |
+| Sound design | 9 | The catch reuses the rope-release sound. Sound stays 9. |
+| Variety | 9 | The line is another offer. It does not change the flush list. Variety stays 9. |
+| Performance stability | Unverified | No GPU pass, and this round does not claim one. |
+
+Current total withheld. Historical 132 is context from the earlier mission rounds, and this round's delta against that history is 0. It is not a new acceptance score. Responsiveness and performance stay unverified. No phone, listening, or full playthrough. `openspec validate` did not run. The change is archived by hand under `openspec/changes/archive/2026-10-27-swing-line-ride/`.
+
+### Round 47 — 2026-10-27 — a measured swing, rubric v1
+
+Flat play with debug on already records frame intervals and input-to-submit time. This round drives a swing, one callback at a time, after the city is up, and gates the play window. Headless present stays out of the sample: on this machine the compositor waited about a second between callbacks while the main thread was idle. The number is the callback. Input-to-submit is the press until that callback starts. It is not GPU completion and it is not display latency.
+
+The warmup is 36 driven frames. On the scored run those callbacks cost 1–7 ms. The play window after that is 23 intervals at 1280×800 on SwiftShader, buffer already scaled to 786×491. Median 5.6 ms, p95 6.9 ms, p99 7.0 ms, no interval over 50 ms. Twenty-four presses, input-to-submit p95 1.9 ms. The rope was on and the hero was moving at 14.9 m/s. The view was about 1.11 million triangles. During the settle, before that window, the same page's present clock was 0.7 fps, frame p95 7.9 s, input-to-submit p95 1.6 s. A second pass of the same gate measured callback p95 7.8 ms and input-to-submit p95 3.6 ms. The elapsed-time figure from the back-to-back callbacks is not a presented frame rate.
+
+Evidence: [the swing](fullswing-r47/swing-meter.png). The test log is the source of truth for the times. The picture is the swing in the air before the timed window. No new art. No new mission. The first flush stays the clog card. The King stays asleep.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 5 | Historical context only. This round does not re-score it. |
+| Color palette | 6 | Historical context only. This round does not re-score it. |
+| Detail density | 4 | Historical context only. This round does not re-score it. |
+| Texture and material quality | 3 | Historical context only. This round does not re-score it. |
+| Composition and camera | 4 | Historical context only. This round does not re-score it. |
+| Atmosphere | 5 | Historical context only. This round does not re-score it. |
+| Character models | 3 | Historical context only. This round does not re-score it. |
+| Animation smoothness | 4 | Historical context only. This round does not re-score it. |
+| Particles and VFX | 5 | Historical context only. This round does not re-score it. |
+| UI polish | 6 | The debug overlay names p95 and input-to-submit. Polish stays where it was. |
+| Responsiveness and input latency | 5 | Once a callback starts, the press is in it: the play window's input-to-submit p95 is 1.9 ms. On this machine the present clock made the next callback late, and the settle measured that wait at 1.6 s p95. That is not the old stepped-frame 9. |
+| Controls feel | 9 | Held. The swing is the same swing. |
+| Mission clarity | 9 | Held. The cards are unchanged. |
+| Pacing | 9 | Held. The flush list is unchanged. |
+| Fun factor | 9 | Held. No new beat. |
+| Difficulty curve | 9 | Held. No new clock. |
+| Feedback | 9 | Held. No new sting or word. |
+| Sound design | 9 | Held. No new sound. |
+| Variety | 9 | Held. No new job. |
+| Performance stability | 4 | The play window p95 is 6.9 ms and nothing in it exceeds 50 ms. The settle on the same page presented at 0.7 fps with a frame p95 of 7.9 s, on SwiftShader, at about 1.11 million triangles. No page error. That is not a presented 60 and not a 2023 console, so the old unmeasured 6 comes down. |
+
+- Aesthetics raw: 45 / 10 dimensions, index 45
+- Playability raw: 81 / 10 dimensions, index 81
+- Total: 126 / 200
+- Delta vs last round: -6 against the last published total, 132. Responsiveness is now 5 and performance is now 4, from the measured present wait and the measured callback. The other eighteen scores are the historical context. No phone, listening, or full playthrough. Hardware present was not measured. `openspec validate` did not run. The change is archived by hand under `openspec/changes/archive/2026-10-27-swing-frame-meter/`.
