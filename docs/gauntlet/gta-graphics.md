@@ -2453,3 +2453,38 @@ Unreal is not available in this environment, so in-engine frames are the last co
 - Playability raw: 39 / 10 dimensions, index 39
 - Total: 129 / 200
 - Delta vs last round: 0
+
+### Round 71 — 2026-10-27 — rubric v1
+
+- What changed: the corner curb draws the nearest surveyed slot and the next two on that same curb. Slot 1023 is the blue wagon, 1024 the teal coupe behind it, and 1025 the gold wagon further along Rue Marie-Anne Est. Body and paint come from the slot. The pivot stays 108 cm over the road, so the nearest car stays at height 115. The opening aim stays.
+- Why it helped: the street showed one coupe. The curb is now a row. The cars are still one family of mesh, and the cross street stays hidden behind the facade, so this is not a full street and detail stays at 9.
+- Screenshots: before `docs/gauntlet/gta-graphics/round-71/before-frame.png` is the corner with one teal coupe. After `docs/gauntlet/gta-graphics/round-71/after-frame.png` is the same camera with the surveyed row. The crop is `curb-crop.png`. Not an Unreal capture. From the same render, the mean absolute delta is 0.000928 and the max is 0.791. 10422 pixels change, from x 750 to 959 and y 354 to 466. `Scripts/test_curb_row.py` passed. The row was not spawned in Unreal. `GET /gta/` returned 200. OpenSpec CLI is not installed, so the change files were not validated with `openspec`.
+- Next target: a walker placed on this sidewalk does not enter the frame, and the parking signs along the curb are still missing.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 9 | The room lights are unchanged. |
+| Color palette | 9 | The row uses the slot paints. The wall and the sky are unchanged. |
+| Detail density | 9 | The curb is a row of three surveyed cars. They are still one family of mesh, so this is not a full street. |
+| Texture and material quality | 9 | The car materials are unchanged. |
+| Composition and camera | 9 | The corner camera and the opening aim are unchanged. |
+| Atmosphere | 9 | The scattering sky is unchanged. |
+| Character models | 9 | The hoodie is unchanged. |
+| Animation smoothness | 9 | The player graph is unchanged. |
+| Particles and VFX | 9 | The shoe puffs are unchanged. |
+| UI polish | 9 | The radar heading is unchanged. |
+| Responsiveness and input latency | 4 | Not measured this round. |
+| Controls feel | 4 | Not played. |
+| Mission clarity | 5 | The objective words are unchanged. |
+| Pacing | 4 | Unchanged mission slice. |
+| Fun factor | 3 | Not played. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 4 | The second car behind the wagon is the new mark. No new juice. |
+| Sound design | 3 | Not listened to. |
+| Variety | 3 | Three slots of the car family the curb already used. |
+| Performance stability | 5 | `Scripts/test_curb_row.py` passed. Frame time was not remeasured. |
+
+- Aesthetics raw: 90 / 10 dimensions, index 90
+- Playability raw: 39 / 10 dimensions, index 39
+- Total: 129 / 200
+- Delta vs last round: 0
