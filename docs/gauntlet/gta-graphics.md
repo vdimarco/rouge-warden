@@ -2523,3 +2523,38 @@ Unreal is not available in this environment, so in-engine frames are the last co
 - Playability raw: 39 / 10 dimensions, index 39
 - Total: 129 / 200
 - Delta vs last round: 0
+
+### Round 73 — 2026-10-27 — rubric v1
+
+- What changed: the Sherbrooke frame keeps the lanes and the sidewalks, and draws eleven surveyed park trees that stand in the planting strip past the crowns already inside 50 m. They run out to 90 m along the avenue. The opening aim stays.
+- Why it helped: the road beyond the far car was open sky. The strip now continues. The crowns are still plain ellipsoids, so detail stays at 9.
+- Screenshots: before `docs/gauntlet/gta-graphics/round-73/before-frame.png` is the avenue with the near crowns only. After `docs/gauntlet/gta-graphics/round-73/after-frame.png` is the same camera with the strip continued. The crop is `avenue-crop.png`. Not an Unreal capture. From the same render, the mean absolute delta is 0.00235 and the max is 0.306. 6289 pixels change, from x 378 to 658 and y 98 to 182. `Scripts/test_avenue_trees.py` passed. The trees were not instanced in Unreal. `GET /gta/` returned 200. OpenSpec CLI is not installed, so the change files were not validated with `openspec`.
+- Next target: the bins and hydrants on this avenue still sit outside the frame, and the new crowns are still plain ellipsoids.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 9 | The afternoon sun is unchanged. |
+| Color palette | 9 | The crowns use the park colours already in the near row. |
+| Detail density | 9 | The planting strip continues down the avenue. The crowns are still plain ellipsoids. |
+| Texture and material quality | 9 | The bark and the leaf colour are unchanged. |
+| Composition and camera | 9 | The Sherbrooke look and the opening aim are unchanged. |
+| Atmosphere | 9 | The sky is unchanged. The farther crowns sit under it. |
+| Character models | 9 | The walkers are unchanged. |
+| Animation smoothness | 9 | The walk steps are unchanged. |
+| Particles and VFX | 9 | The shoe puffs are unchanged. |
+| UI polish | 9 | The radar heading is unchanged. |
+| Responsiveness and input latency | 4 | Not measured this round. |
+| Controls feel | 4 | Not played. |
+| Mission clarity | 5 | The objective words are unchanged. |
+| Pacing | 4 | Unchanged mission slice. |
+| Fun factor | 3 | Not played. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 4 | The crowns past the far car are the new mark. No new juice. |
+| Sound design | 3 | Not listened to. |
+| Variety | 3 | Eleven more trees from the park survey the near row already used. |
+| Performance stability | 5 | `Scripts/test_avenue_trees.py` passed. Frame time was not remeasured. |
+
+- Aesthetics raw: 90 / 10 dimensions, index 90
+- Playability raw: 39 / 10 dimensions, index 39
+- Total: 129 / 200
+- Delta vs last round: 0

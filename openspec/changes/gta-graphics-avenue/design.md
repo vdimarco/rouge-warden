@@ -1,7 +1,9 @@
-# A wider stroke for a wider road
+# Design: the planting strip past 50 m
 
-Jacques Bertin, *Semiology of Graphics* (1983), treats size as the visual variable that orders a quantity. A 9 m avenue and a 4 m street are ordered, so their radar strokes are ordered. The avenue is drawn in two passes: an ink casing, then a warm paper center, so the light line stays readable on the dark disc. That casing is the ordinary topographic road sign. No lighting or material paper fit a HUD map.
+## Source
 
-The width arrays already exist. On the expanded Montréal radar the original park segments keep `LaFontaine::RoadSegmentWidths`, and the surveyed suffix keeps `LaFontaineExtension::RoadSegmentWidths`. Toronto uses `CollegeBathurst::RoadSegmentWidths`. An unmatched index stays 400 cm, which is under the 9 m gate, so it stays a side street. The 9 m gate is the same gate as the broken center line. `ClipHUDRadarSegment` is unchanged.
+None fit. The trees are the park survey. The shade was stopping at 50 m from the eye. The game culls much farther. This frame only adds the ones beside Sherbrooke, so the park behind the camera does not fill the sky.
 
-Unreal is not installed. The offline picture is the landscape HUD radar (160 px, scale 1) centered on the park spawn. The before frame uses one grey stroke. The after frame cases the avenues. It is not an engine capture.
+## Choice
+
+A tree joins the row when it is more than 50 m from the eye, its along-distance is within 90 m past the starter stretch, and its lateral distance from the road centre is between 5 m and 16 m. That is eleven trees. The lane, the sidewalk, and the opening look stay.
