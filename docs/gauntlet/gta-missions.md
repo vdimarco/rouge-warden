@@ -2922,3 +2922,48 @@ Unreal is not available here, so the native diamond was not captured. The title 
 ![Play client at 1280, host offline](gta-missions/r64-play-1280.png)
 
 ![Menu on a 390-wide screen, Recover visible](gta-missions/r64-play-menu-390.png)
+
+### Round 65 — 2026-10-27 — rubric v1
+
+- What changed: After the pursuit is banked, a stall sits on a surveyed road and a line-up sits further toward the far end. A real car inside the stall, reversing at 400 cm/s or more, with its nose toward that far end, pays 440 once. A stop, a forward roll, a sideways reverse, and a walker do not. The seven banks stay seven. The send-off and the pursuit are not retuned. No extra car is spawned. The slot is now version 16. Version 15 still loads and starts this stall over. Version 1 still loads and starts the pond over. Version 2 stays unread and is not overwritten. The reverse itself is not stored, so a reload keeps the step.
+- Why it helped: The send-off wants a full stop. The pursuit wants you alongside a car that keeps its lane. This asks for reverse, with the nose pointed toward the far end of the stall.
+- Screenshots: title `docs/gauntlet/gta-missions/r65-title-1280.png`, `r65-title-390.png`, `r65-title-320.png`. Play client, host offline, `r65-play-1280.png`. Menu with Recover `r65-play-menu-390.png`. The title loaded with no page errors. The raw play page still logs the missing `@epicgames-ps/lib-pixelstreamingfrontend-ue5.8` specifier; the shell and Recover still draw. The stall was not driven in Unreal. `Scripts/test_nose.py` reports 28 assertions, 0 failures, on c++, g++, and clang++. `Scripts/test_story_save.py` reports 188 assertions, 0 failures, on the same three. Syntax check `--both` passed for `QuebecCampaign.cpp`, `QuebecCampaignSaveTests.cpp`, `QuebecGameplay.cpp`, and `QuebecFeedbackTests.cpp`. OpenSpec CLI is not installed, so `openspec validate` did not run.
+- Next target: the playable scores that can still move are capped offline, so the score stays. A later beat can be a new verb. Do not add a second copy of this stall, the pursuit, the tail, the courier, or the send-off. Mission clarity stays at 7 and stays out of reach offline. Responsiveness stays at 3 and stays out of scope. Performance stays at 4 and is not measurable here.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 3 | Unchanged. |
+| Color palette | 5 | Unchanged. |
+| Detail density | 3 | Unchanged. |
+| Texture and material quality | 3 | Unchanged. |
+| Composition and camera | 4 | Unchanged. |
+| Atmosphere | 4 | Unchanged. |
+| Character models | 3 | Unchanged. |
+| Animation smoothness | 3 | Unchanged. |
+| Particles and VFX | 2 | Unchanged. |
+| UI polish | 4 | Unchanged. The native card was not seen, and French and English still share the screen. |
+| Responsiveness and input latency | 3 | Unchanged. Still a lagged stream. Out of scope for this loop. |
+| Controls feel | 9 | Unchanged. Getting out faster than a walk still keeps that pace. |
+| Mission clarity | 7 | Unchanged. The fare post still moves from the loaner to the quay. The native card was not seen, and this score stays out of reach offline. |
+| Pacing | 9 | Unchanged. Four seconds on foot after boarding still loses the passenger. |
+| Fun factor | 9 | Unchanged. Chez Lise still sells a kit, a vest, or one star. A stall that was not driven is not a new thing to do. |
+| Difficulty curve | 9 | Unchanged. Selling the last page ends it for 200 and does not bank the chain. A wreck still costs more than the goon pay. |
+| Feedback | 9 | Unchanged. A failed side job still plays the falling sting. The sting was not heard. |
+| Sound design | 9 | Unchanged. The dent thud still marks a scrape as quiet. Nobody is voiced, so this is not the reference's city. |
+| Variety | 9 | Unchanged. A stall that was not driven is not a new way across the park that was seen. |
+| Performance stability | 4 | Unchanged. Not measurable in this container. |
+
+- Aesthetics raw: 34 / 10 dimensions, index 34
+- Playability raw: 77 / 10 dimensions, index 77
+- Total: 111 / 200
+- Delta vs last round: 0 (round 64 was 111). The stall was not driven in Unreal, so every score held.
+
+![GTA title at 1280](gta-missions/r65-title-1280.png)
+
+![GTA title at 390](gta-missions/r65-title-390.png)
+
+![GTA title at 320](gta-missions/r65-title-320.png)
+
+![Play client at 1280, host offline](gta-missions/r65-play-1280.png)
+
+![Menu on a 390-wide screen, Recover visible](gta-missions/r65-play-menu-390.png)

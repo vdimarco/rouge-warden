@@ -17,6 +17,7 @@
 #include "QuebecBlock.h"
 #include "QuebecSend.h"
 #include "QuebecPursue.h"
+#include "QuebecNose.h"
 #include "QuebecChain.h"
 #include "QuebecPace.h"
 #include "QuebecConvoyRules.h"
@@ -103,6 +104,13 @@ static_assert(QuebecPursue::CruiseCmPerSecond == 650. && QuebecPursue::CruiseCmP
 static_assert(QuebecPursue::CruiseCmPerSecond < QuebecBlock::CourierCmPerSecond && QuebecPursue::CruiseCmPerSecond < QuebecChase::TailCmPerSecond, "the traffic car took a chase speed");
 static_assert(QuebecPursue::CountsAsCar(0) && !QuebecPursue::CountsAsCar(1) && !QuebecPursue::CountsAsCar(3), "the pursuit took a bike");
 static_assert(QuebecPursue::HeadStart > QuebecPursue::Catch, "the seat already counts as alongside");
+static_assert(QuebecNose::StepBanked == AQuebecCampaign::NoseBankedStep, "mission 23 and the story tail share one banked index");
+static_assert(QuebecStorySave::NoseBanked == AQuebecCampaign::NoseBankedStep, "the story tail left the stall");
+static_assert(QuebecNose::RoadAx == 44495.179 && QuebecNose::RoadAy == 23662.179, "the stall left its road");
+static_assert(QuebecNose::ReverseMin == 400. && QuebecNose::ReverseMin > QuebecSend::Crawl, "a crawl counted as backing in");
+static_assert(QuebecNose::ReverseMin < 900., "the reverse asked for more than the car can give");
+static_assert(QuebecNose::CountsAsCar(0) && !QuebecNose::CountsAsCar(1) && !QuebecNose::CountsAsCar(3), "the stall took a bike");
+static_assert(QuebecNose::RecoverAhead > QuebecNose::Reach, "the line-up already sits in the stall");
 static_assert(QuebecStorySave::Current != QuebecStorySave::Rejected, "the writer would plant the unsupported fixture");
 
 static FString WithClose(const TCHAR* Line, int32 Bonus)
@@ -238,7 +246,7 @@ void AQuebecCampaign::BeginPlay()
                 CompletedMissions = Save->CompletedMissions;
                 const QuebecStorySave::FSteps Steps = QuebecStorySave::Applied(Save->Version, {
                     Save->PondStep, Save->CourtStep, Save->ShowStep, Save->RescueMask,
-                    Save->ConvoyStep, Save->BlankStep, Save->TourStep, Save->HomeStep, Save->EscortStep, Save->ShadeStep, Save->GrabStep, Save->CutStep, Save->ChaseStep, Save->FinaleStep, Save->FollowStep, Save->RollStep, Save->BellStep, Save->BlockStep, Save->SendStep, Save->PursueStep});
+                    Save->ConvoyStep, Save->BlankStep, Save->TourStep, Save->HomeStep, Save->EscortStep, Save->ShadeStep, Save->GrabStep, Save->CutStep, Save->ChaseStep, Save->FinaleStep, Save->FollowStep, Save->RollStep, Save->BellStep, Save->BlockStep, Save->SendStep, Save->PursueStep, Save->NoseStep});
                 PondStep = Steps.Pond;
                 CourtStep = Steps.Court;
                 ShowStep = Steps.Show;
@@ -259,6 +267,7 @@ void AQuebecCampaign::BeginPlay()
                 BlockStep = Steps.Block;
                 SendStep = Steps.Send;
                 PursueStep = Steps.Pursue;
+                NoseStep = Steps.Nose;
                 // The coat's place is not in the slot. A walk in progress starts again at the meet.
                 EscortFriendX = static_cast<float>(EscortStep >= EscortBankedStep ? QuebecEscort::DoorX : QuebecEscort::MeetX);
                 EscortFriendY = static_cast<float>(EscortStep >= EscortBankedStep ? QuebecEscort::DoorY : QuebecEscort::MeetY);
@@ -719,6 +728,12 @@ void AQuebecCampaign::BuildEncounter()
     PursueLineCaption = AddCaption(TEXT("PursueLineCaption"), FVector(PursueStart.X, PursueStart.Y, 160.), TEXT("LINE"), 18.f);
     PursueCar = AddPart(TEXT("PursueCar"), Cube, FVector(PursueAhead.X, PursueAhead.Y, 90.), FVector(40., 40., 80.), Berry);
     PursueCarCaption = AddCaption(TEXT("PursueCarCaption"), FVector(PursueAhead.X, PursueAhead.Y, 220.), TEXT("TRAFFIC"), 18.f);
+    const QuebecNose::FSpot NoseMark = QuebecNose::Stall();
+    const QuebecNose::FSpot NoseOpen = QuebecNose::Recover();
+    NoseStall = AddPart(TEXT("NoseStall"), Cube, FVector(NoseMark.X, NoseMark.Y, 40.), FVector(70., 70., 16.), Gold);
+    NoseStallCaption = AddCaption(TEXT("NoseStallCaption"), FVector(NoseMark.X, NoseMark.Y, 160.), TEXT("STALL"), 18.f);
+    NoseLine = AddPart(TEXT("NoseLine"), Cube, FVector(NoseOpen.X, NoseOpen.Y, 40.), FVector(70., 70., 16.), Lime);
+    NoseLineCaption = AddCaption(TEXT("NoseLineCaption"), FVector(NoseOpen.X, NoseOpen.Y, 160.), TEXT("LINE"), 18.f);
 }
 
 void AQuebecCampaign::Tick(float DeltaSeconds)
@@ -751,6 +766,7 @@ void AQuebecCampaign::Tick(float DeltaSeconds)
             TickBlock(DeltaSeconds);
             TickSend(DeltaSeconds);
             TickPursue(DeltaSeconds);
+            TickNose();
         }
     }
     if (GetWorld()->GetTimeSeconds()-LastPresentationTime >= .1f)
@@ -2737,6 +2753,62 @@ void AQuebecCampaign::AdvancePursue(int32 Next, AQuebecController* Who, const TC
     SaveBoundary();
 }
 
+void AQuebecCampaign::TickNose()
+{
+    if (!IsNoseOpen()) return;
+    AQuebecController* Driver = nullptr;
+    bool bInCar = false;
+    double CarX = 0.;
+    double CarY = 0.;
+    double Signed = 0.;
+    double ForwardX = 0.;
+    double ForwardY = 0.;
+    double Best = 1.0e18;
+    bool bInside = false;
+    const QuebecNose::FSpot Mark = QuebecNose::Stall();
+    for (TActorIterator<AQuebecCar> It(GetWorld()); It; ++It)
+    {
+        AQuebecCar* Car = *It;
+        if (!Car || !Car->Occupant || !QuebecNose::CountsAsCar(static_cast<int>(Car->RideKind))) continue;
+        AQuebecController* Who = Cast<AQuebecController>(Car->GetController());
+        if (!Who) continue;
+        const FVector Position = Car->GetActorLocation();
+        const double Near = QuebecNose::Apart(Position.X, Position.Y, Mark.X, Mark.Y);
+        const bool bHere = Near <= QuebecNose::Reach;
+        const bool bBetter = bHere ? (!bInside || Near < Best) : (!bInside && Near < Best);
+        if (!bBetter) continue;
+        bInside = bInside || bHere;
+        Best = Near;
+        bInCar = true;
+        Driver = Who;
+        CarX = Position.X;
+        CarY = Position.Y;
+        Signed = static_cast<double>(Car->Speed);
+        const FVector Forward = Car->GetActorForwardVector();
+        ForwardX = Forward.X;
+        ForwardY = Forward.Y;
+    }
+    QuebecNose::FRun Now;
+    Now.Step = static_cast<int>(NoseStep);
+    const QuebecNose::FRun After = QuebecNose::Tick(Now, bInCar, CarX, CarY, Signed, ForwardX, ForwardY);
+    if (After.Step != NoseStep)
+        AdvanceNose(After.Step, Driver, TEXT("You backed it in."), true);
+}
+
+void AQuebecCampaign::AdvanceNose(int32 Next, AQuebecController* Who, const TCHAR* Message, bool bFinished)
+{
+    if (Next == NoseStep) return;
+    NoseStep = Next;
+    // Link -1 is outside the seven banks, so the chain does not move. The purse is flat, and only at the stall.
+    ShowStepMessage(Who, Message, bFinished, -1);
+    if (bFinished) GrantCash(QuebecNose::Pay);
+    for (TActorIterator<AQuebecController> It(GetWorld()); It; ++It)
+        It->PlayFeedback(bFinished ? EQuebecFeedbackCue::Complete : EQuebecFeedbackCue::Checkpoint);
+    UpdatePresentation();
+    ForceNetUpdate();
+    SaveBoundary();
+}
+
 void AQuebecCampaign::AdvanceRoll(int32 Next, AQuebecController* Who, const TCHAR* Message, bool bFinished)
 {
     if (Next == RollStep) return;
@@ -2867,7 +2939,7 @@ void AQuebecCampaign::ChangePhase(EQuebecCampaignPhase Next, bool bFeedback)
 bool UQuebecCampaignSaveGame::IsSupported() const
 {
     const QuebecStorySave::FSteps Steps{
-        PondStep, CourtStep, ShowStep, RescueMask, ConvoyStep, BlankStep, TourStep, HomeStep, EscortStep, ShadeStep, GrabStep, CutStep, ChaseStep, FinaleStep, FollowStep, RollStep, BellStep, BlockStep, SendStep, PursueStep};
+        PondStep, CourtStep, ShowStep, RescueMask, ConvoyStep, BlankStep, TourStep, HomeStep, EscortStep, ShadeStep, GrabStep, CutStep, ChaseStep, FinaleStep, FollowStep, RollStep, BellStep, BlockStep, SendStep, PursueStep, NoseStep};
     return QuebecStorySave::Accept(Version, CompletedMissions, Steps);
 }
 
@@ -2906,6 +2978,7 @@ void AQuebecCampaign::SaveBoundary()
         Save->BlockStep = BlockStep;
         Save->SendStep = SendStep;
         Save->PursueStep = PursueStep;
+        Save->NoseStep = NoseStep;
     }
     if (!Save || !UGameplayStatics::SaveGameToSlot(Save,SaveSlot(),0))
     {
@@ -3095,6 +3168,13 @@ void AQuebecCampaign::RequestRetry(AQuebecController* Controller)
                 Controller->ShowInteractionMessage(TEXT("This pursuit restored. They keep the ground they gained."));
             return;
         }
+        if (IsNoseOpen())
+        {
+            const QuebecNose::FSpot Spot = QuebecNose::Recover();
+            if (MoveToSafeCheckpoint(Controller, FVector(Spot.X, Spot.Y, 100.), FRotator(0., 90., 0.)))
+                Controller->ShowInteractionMessage(TEXT("This stall restored."));
+            return;
+        }
         Controller->ShowInteractionMessage(TEXT("The day held. T replays the race."));
         return;
     }
@@ -3249,6 +3329,11 @@ void AQuebecCampaign::RequestReplay(AQuebecController* Controller)
     if (IsPursueOpen())
     {
         Controller->ShowInteractionMessage(TEXT("The pursuit is still open. T replays the race after the catch."));
+        return;
+    }
+    if (IsNoseOpen())
+    {
+        Controller->ShowInteractionMessage(TEXT("The stall is still open. T replays the race after it is in."));
         return;
     }
     // A race replay does not rewind the story steps or the chain, and it does not write the slot. The story tail already holds the steps.
@@ -3504,6 +3589,7 @@ FString AQuebecCampaign::GetMissionTitle() const
     if (IsBlockOpen()) return TEXT("20 / HEAD THEM OFF");
     if (IsSendOpen()) return TEXT("21 / THE SEND-OFF");
     if (IsPursueOpen()) return TEXT("22 / CATCH THAT CAR");
+    if (IsNoseOpen()) return TEXT("23 / BACK IT IN");
     if (Phase == EQuebecCampaignPhase::Complete) return TEXT("THE PARK IS OPEN");
     return Phase <= EQuebecCampaignPhase::ReleaseTable ? TEXT("01 / A TABLE FOR ETERNITY") : TEXT("02 / NO SUCH THING AS A QUIET LAP");
 }
@@ -3673,6 +3759,7 @@ FString AQuebecCampaign::GetObjectiveText() const
         return TEXT("Leave the car and walk the last stretch");
     }
     if (IsPursueOpen()) return TEXT("Pull alongside the traffic car");
+    if (IsNoseOpen()) return TEXT("Reverse into the stall");
     if (Phase == EQuebecCampaignPhase::Complete) return TEXT("The last page is blank / T: replay the race");
     switch (Phase)
     {
@@ -3868,7 +3955,9 @@ FString AQuebecCampaign::GetBriefingText() const
     }
     if (IsPursueOpen())
         return TEXT("MEMPHIS: That car is already rolling. It keeps its lane. Pull alongside before the avenue ends.");
-    if (Phase == EQuebecCampaignPhase::Complete && PondStep >= PondBankedStep && CourtStep >= CourtBankedStep && ShowStep >= ShowBankedStep && RescueMask >= RescueDone && ConvoyStep >= ConvoyBankedStep && BlankStep >= BlankBankedStep && TourStep >= TourBankedStep && HomeStep >= HomeBankedStep && EscortStep >= EscortBankedStep && ShadeStep >= ShadeBankedStep && GrabStep >= GrabBankedStep && CutStep >= CutBankedStep && ChaseStep >= ChaseBankedStep && FinaleStep >= FinaleBankedStep && FollowStep >= FollowBankedStep && RollStep >= RollBankedStep && BellStep >= BellBankedStep && BlockStep >= BlockBankedStep && SendStep >= SendBankedStep && PursueStep >= PursueBankedStep)
+    if (IsNoseOpen())
+        return TEXT("MEMPHIS: Nose toward the far end. Back the car into the stall. A stop does not count.");
+    if (Phase == EQuebecCampaignPhase::Complete && PondStep >= PondBankedStep && CourtStep >= CourtBankedStep && ShowStep >= ShowBankedStep && RescueMask >= RescueDone && ConvoyStep >= ConvoyBankedStep && BlankStep >= BlankBankedStep && TourStep >= TourBankedStep && HomeStep >= HomeBankedStep && EscortStep >= EscortBankedStep && ShadeStep >= ShadeBankedStep && GrabStep >= GrabBankedStep && CutStep >= CutBankedStep && ChaseStep >= ChaseBankedStep && FinaleStep >= FinaleBankedStep && FollowStep >= FollowBankedStep && RollStep >= RollBankedStep && BellStep >= BellBankedStep && BlockStep >= BlockBankedStep && SendStep >= SendBankedStep && PursueStep >= PursueBankedStep && NoseStep >= NoseBankedStep)
         return TEXT("The last page is blank. The park keeps the day that was not in his book.");
     switch (Phase)
     {
@@ -3906,6 +3995,7 @@ FString AQuebecCampaign::GetStatusText() const
     if (IsBlockOpen()) return TEXT("R recovers this road");
     if (IsSendOpen()) return TEXT("R recovers this send-off");
     if (IsPursueOpen()) return TEXT("R recovers this pursuit");
+    if (IsNoseOpen()) return TEXT("R recovers this stall");
     if (Phase == EQuebecCampaignPhase::AimWorklight) return FString::Printf(TEXT("Alignment %d%% / hold %d%%"),FMath::RoundToInt(LightAlignment*100.f),FMath::RoundToInt(LightHoldProgress*100.f));
     if (Phase == EQuebecCampaignPhase::CrossCable) return FString::Printf(TEXT("Sprint %s / jump %s / R: recover"),bSprintSeen?TEXT("banked"):TEXT("needed"),bJumpSeen?TEXT("banked"):TEXT("needed"));
     if (Phase == EQuebecCampaignPhase::PullClamp || Phase == EQuebecCampaignPhase::ReleaseTable) return bClampOpen ? TEXT("GREEN BEAT / pull now / R: recover") : TEXT("Press squeezing / wait for green / R: recover");
@@ -4036,6 +4126,11 @@ FVector AQuebecCampaign::GetObjectiveLocation() const
     if (IsPursueOpen())
     {
         const QuebecPursue::FSpot Spot = QuebecPursue::Place(static_cast<double>(PursueAlong));
+        return FVector(Spot.X, Spot.Y, 100.);
+    }
+    if (IsNoseOpen())
+    {
+        const QuebecNose::FSpot Spot = QuebecNose::Stall();
         return FVector(Spot.X, Spot.Y, 100.);
     }
     switch (Phase)
@@ -4208,6 +4303,12 @@ bool AQuebecCampaign::GetNextObjectiveLocation(FVector& Out) const
     if (IsPursueOpen())
     {
         Out = At(QuebecPursue::RoadBx, QuebecPursue::RoadBy);
+        return true;
+    }
+    if (IsNoseOpen())
+    {
+        const QuebecNose::FSpot Spot = QuebecNose::Recover();
+        Out = At(Spot.X, Spot.Y);
         return true;
     }
     if (Phase == EQuebecCampaignPhase::Complete) return false;
@@ -4496,6 +4597,8 @@ void AQuebecCampaign::UpdatePresentation()
                 Caption->SetVisibility(IsPursueOpen());
                 Caption->SetWorldLocation(FVector(Spot.X, Spot.Y, 220.));
             }
+            if (Caption == NoseStallCaption) Caption->SetVisibility(IsNoseOpen());
+            if (Caption == NoseLineCaption) Caption->SetVisibility(IsNoseOpen());
         }
         if (EscortDoor) EscortDoor->SetVisibility(IsEscortOpen());
         const bool bShadeWorld = IsShadeOpen();
@@ -4602,6 +4705,9 @@ void AQuebecCampaign::UpdatePresentation()
             PursueCar->SetWorldLocation(FVector(TrafficSpot.X, TrafficSpot.Y, 90.));
             PursueCar->SetVisibility(bPursueWorld);
         }
+        const bool bNoseWorld = IsNoseOpen();
+        if (NoseStall) NoseStall->SetVisibility(bNoseWorld);
+        if (NoseLine) NoseLine->SetVisibility(bNoseWorld);
         for (UTextRenderComponent* Caption : Captions) Caption->SetWorldRotation((Eye-Caption->GetComponentLocation()).Rotation());
     }
 }
@@ -4658,6 +4764,7 @@ void AQuebecCampaign::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
     DOREPLIFETIME(AQuebecCampaign,SendDriven);
     DOREPLIFETIME(AQuebecCampaign,PursueStep);
     DOREPLIFETIME(AQuebecCampaign,PursueAlong);
+    DOREPLIFETIME(AQuebecCampaign,NoseStep);
     DOREPLIFETIME(AQuebecCampaign,LightOperator);
     DOREPLIFETIME(AQuebecCampaign,LightYaw);
     DOREPLIFETIME(AQuebecCampaign,LightPitch);

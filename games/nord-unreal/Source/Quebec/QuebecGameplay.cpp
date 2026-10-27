@@ -3022,6 +3022,8 @@ void AQuebecHUD::DrawHUD()
             Status = TEXT("Menu · Recover restores this send-off");
         else if (Campaign->IsPursueOpen() && bTouchControls)
             Status = TEXT("Menu · Recover restores this pursuit");
+        else if (Campaign->IsNoseOpen() && bTouchControls)
+            Status = TEXT("Menu · Recover restores this stall");
         else if (Campaign->IsCampaignComplete() && !Campaign->IsStoryBeatOpen() && SideJobs)
         {
             const int32 Guide = SideJobs->GuideMarker(Here, true);

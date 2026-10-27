@@ -67,10 +67,12 @@ public:
     UPROPERTY(VisibleAnywhere) int32 SendStep = 0;
     // Pursuit tail. Version 14 leaves this at 0. Version 15 writes it. How far the traffic car has driven stays in the session.
     UPROPERTY(VisibleAnywhere) int32 PursueStep = 0;
+    // Stall tail. Version 15 leaves this at 0. Version 16 writes it. The reverse itself stays in the session.
+    UPROPERTY(VisibleAnywhere) int32 NoseStep = 0;
     bool IsSupported() const;
 };
 
-/** Story encounters. All objective decisions run on authority. Missions 3 through 10 persist on the version-3 tail. Mission 11 persists on version 4. Mission 12 persists on version 5. Mission 13 persists on version 6. Mission 14 persists on version 7. Mission 15 persists on version 8. Mission 16 persists on version 9. Mission 17 persists on version 10. Mission 18 persists on version 11. Mission 19 persists on version 12. Mission 20 persists on version 13. Mission 21 persists on version 14. Mission 22 persists on version 15. Completed missions stay 0–2. */
+/** Story encounters. All objective decisions run on authority. Missions 3 through 10 persist on the version-3 tail. Mission 11 persists on version 4. Mission 12 persists on version 5. Mission 13 persists on version 6. Mission 14 persists on version 7. Mission 15 persists on version 8. Mission 16 persists on version 9. Mission 17 persists on version 10. Mission 18 persists on version 11. Mission 19 persists on version 12. Mission 20 persists on version 13. Mission 21 persists on version 14. Mission 22 persists on version 15. Mission 23 persists on version 16. Completed missions stay 0–2. */
 UCLASS()
 class QUEBEC_API AQuebecCampaign : public AActor
 {
@@ -129,6 +131,7 @@ public:
     static constexpr int32 BlockBankedStep = 2;
     static constexpr int32 SendBankedStep = 4;
     static constexpr int32 PursueBankedStep = 1;
+    static constexpr int32 NoseBankedStep = 1;
     bool IsPondOpen() const { return Phase == EQuebecCampaignPhase::Complete && PondStep < PondBankedStep; }
     bool IsCourtOpen() const { return Phase == EQuebecCampaignPhase::Complete && PondStep >= PondBankedStep && CourtStep < CourtBankedStep; }
     bool IsShowOpen() const { return Phase == EQuebecCampaignPhase::Complete && PondStep >= PondBankedStep && CourtStep >= CourtBankedStep && ShowStep < ShowBankedStep; }
@@ -268,7 +271,18 @@ public:
             && BlockStep >= BlockBankedStep && SendStep >= SendBankedStep
             && PursueStep >= 0 && PursueStep < PursueBankedStep;
     }
-    bool IsStoryBeatOpen() const { return IsPondOpen() || IsCourtOpen() || IsShowOpen() || IsRescueOpen() || IsConvoyOpen() || IsBlankOpen() || IsTourOpen() || IsHomeOpen() || IsEscortOpen() || IsShadeOpen() || IsGrabOpen() || IsCutOpen() || IsChaseOpen() || IsFinaleOpen() || IsFollowOpen() || IsRollOpen() || IsBellOpen() || IsBlockOpen() || IsSendOpen() || IsPursueOpen(); }
+    bool IsNoseOpen() const
+    {
+        return Phase == EQuebecCampaignPhase::Complete && PondStep >= PondBankedStep && CourtStep >= CourtBankedStep
+            && ShowStep >= ShowBankedStep && RescueMask >= RescueDone && ConvoyStep >= ConvoyBankedStep
+            && BlankStep >= BlankBankedStep && TourStep >= TourBankedStep && HomeStep >= HomeBankedStep
+            && EscortStep >= EscortBankedStep && ShadeStep >= ShadeBankedStep && GrabStep >= GrabBankedStep
+            && CutStep >= CutBankedStep && ChaseStep >= ChaseBankedStep && FinaleStep >= FinaleBankedStep
+            && FollowStep >= FollowBankedStep && RollStep >= RollBankedStep && BellStep >= BellBankedStep
+            && BlockStep >= BlockBankedStep && SendStep >= SendBankedStep && PursueStep >= PursueBankedStep
+            && NoseStep >= 0 && NoseStep < NoseBankedStep;
+    }
+    bool IsStoryBeatOpen() const { return IsPondOpen() || IsCourtOpen() || IsShowOpen() || IsRescueOpen() || IsConvoyOpen() || IsBlankOpen() || IsTourOpen() || IsHomeOpen() || IsEscortOpen() || IsShadeOpen() || IsGrabOpen() || IsCutOpen() || IsChaseOpen() || IsFinaleOpen() || IsFollowOpen() || IsRollOpen() || IsBellOpen() || IsBlockOpen() || IsSendOpen() || IsPursueOpen() || IsNoseOpen(); }
 
     UPROPERTY(VisibleAnywhere, ReplicatedUsing=UpdatePresentation) EQuebecCampaignPhase Phase = EQuebecCampaignPhase::AimWorklight;
     UPROPERTY(VisibleAnywhere, Replicated) int32 CompletedMissions = 0;
@@ -354,6 +368,9 @@ public:
     // How far the traffic car has driven is not saved. A reload puts it ahead of the near end again.
     UPROPERTY(VisibleAnywhere, ReplicatedUsing=UpdatePresentation) int32 PursueStep = 0;
     UPROPERTY(VisibleAnywhere, Replicated) float PursueAlong = 0.f;
+    // 0 the stall, 1 banked. Written on the version-16 tail. Not a chain link.
+    // The reverse itself is not saved. A reload keeps the step.
+    UPROPERTY(VisibleAnywhere, ReplicatedUsing=UpdatePresentation) int32 NoseStep = 0;
     UPROPERTY(VisibleAnywhere, Replicated) TObjectPtr<APlayerState> LightOperator;
     UPROPERTY(VisibleAnywhere, Replicated) float LightYaw = 0.f;
     UPROPERTY(VisibleAnywhere, Replicated) float LightPitch = 0.f;
@@ -506,6 +523,10 @@ private:
     UPROPERTY() TObjectPtr<UStaticMeshComponent> PursueCar;
     UPROPERTY() TObjectPtr<UTextRenderComponent> PursueLineCaption;
     UPROPERTY() TObjectPtr<UTextRenderComponent> PursueCarCaption;
+    UPROPERTY() TObjectPtr<UStaticMeshComponent> NoseStall;
+    UPROPERTY() TObjectPtr<UStaticMeshComponent> NoseLine;
+    UPROPERTY() TObjectPtr<UTextRenderComponent> NoseStallCaption;
+    UPROPERTY() TObjectPtr<UTextRenderComponent> NoseLineCaption;
     UPROPERTY() TArray<TObjectPtr<UStaticMeshComponent>> ConvoyParts;
     UPROPERTY() TArray<TObjectPtr<UTextRenderComponent>> ConvoyCaptions;
     UPROPERTY() TArray<TObjectPtr<UStaticMeshComponent>> BlankParts;
@@ -592,6 +613,8 @@ private:
     void AdvanceSend(int32 Next, AQuebecController* Who, const TCHAR* Message, bool bFinished);
     void TickPursue(float DeltaSeconds);
     void AdvancePursue(int32 Next, AQuebecController* Who, const TCHAR* Message, bool bFinished);
+    void TickNose();
+    void AdvanceNose(int32 Next, AQuebecController* Who, const TCHAR* Message, bool bFinished);
     void ChangePhase(EQuebecCampaignPhase Next, bool bFeedback = true);
     void StopAiming();
     void SaveBoundary();
