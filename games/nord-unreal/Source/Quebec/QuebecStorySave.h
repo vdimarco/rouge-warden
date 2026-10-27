@@ -17,11 +17,12 @@
 // Version 13 adds the block step and starts the send-off over.
 // Version 14 adds the send-off stage and starts the pursuit over.
 // Version 15 adds the pursuit step and starts the stall over.
-// Version 16 adds the stall step. The chain, the hold clocks, the court misses, cash,
+// Version 16 adds the stall step and starts the slip over.
+// Version 17 adds the slip step. The chain, the hold clocks, the court misses, cash,
 // the friend's place on the lawn, the lamp burn, the grab clock, the rival's clock,
 // the tail's place on the road, the finale burn, the page clock, the cut clock,
 // the finale tail's place, the follow person's place on the path, how far the cart
-// has rolled, how far the courier has driven, how far the send-off drive got, how far the traffic car has driven, and the side errands are not in this record.
+// has rolled, how far the courier has driven, how far the send-off drive got, how far the traffic car has driven, the pursuer's place on the slip, and the side errands are not in this record.
 
 namespace QuebecStorySave
 {
@@ -40,7 +41,8 @@ namespace QuebecStorySave
     inline constexpr int Block = 13;
     inline constexpr int Send = 14;
     inline constexpr int Pursue = 15;
-    inline constexpr int Current = 16;
+    inline constexpr int Nose = 16;
+    inline constexpr int Current = 17;
 
     inline constexpr int PondBanked = 6;
     inline constexpr int CourtBanked = 4;
@@ -63,6 +65,7 @@ namespace QuebecStorySave
     inline constexpr int SendBanked = 4;
     inline constexpr int PursueBanked = 1;
     inline constexpr int NoseBanked = 1;
+    inline constexpr int SlipBanked = 2;
 
     struct FSteps
     {
@@ -87,6 +90,7 @@ namespace QuebecStorySave
         int Send = 0;
         int Pursue = 0;
         int Nose = 0;
+        int Slip = 0;
     };
 
     inline bool InRange(int Value, int Hi)
@@ -101,7 +105,7 @@ namespace QuebecStorySave
             && Steps.Escort == 0 && Steps.Shade == 0 && Steps.Grab == 0 && Steps.Cut == 0
             && Steps.Chase == 0 && Steps.Finale == 0 && Steps.Follow == 0 && Steps.Roll == 0
             && Steps.Bell == 0 && Steps.Block == 0 && Steps.Send == 0 && Steps.Pursue == 0
-            && Steps.Nose == 0;
+            && Steps.Nose == 0 && Steps.Slip == 0;
     }
 
     // A later beat may move only after the one before it is banked.
@@ -123,7 +127,8 @@ namespace QuebecStorySave
             || !InRange(Steps.Block, BlockBanked)
             || !InRange(Steps.Send, SendBanked)
             || !InRange(Steps.Pursue, PursueBanked)
-            || !InRange(Steps.Nose, NoseBanked))
+            || !InRange(Steps.Nose, NoseBanked)
+            || !InRange(Steps.Slip, SlipBanked))
             return false;
         if (Steps.Court > 0 && Steps.Pond != PondBanked) return false;
         if (Steps.Show > 0 && (Steps.Pond != PondBanked || Steps.Court != CourtBanked)) return false;
@@ -146,6 +151,7 @@ namespace QuebecStorySave
         if (Steps.Send > 0 && Steps.Block != BlockBanked) return false;
         if (Steps.Pursue > 0 && Steps.Send != SendBanked) return false;
         if (Steps.Nose > 0 && Steps.Pursue != PursueBanked) return false;
+        if (Steps.Slip > 0 && Steps.Nose != NoseBanked) return false;
         return true;
     }
 
@@ -231,6 +237,12 @@ namespace QuebecStorySave
             if (Completed < 2 && !Fresh(Steps)) return false;
             return StepsFit(Steps);
         }
+        if (Version == Nose)
+        {
+            if (Steps.Slip != 0) return false;
+            if (Completed < 2 && !Fresh(Steps)) return false;
+            return StepsFit(Steps);
+        }
         if (Version != Current) return false;
         if (Completed < 2 && !Fresh(Steps)) return false;
         return StepsFit(Steps);
@@ -242,7 +254,8 @@ namespace QuebecStorySave
     // A version-8 slot never copies the finale. A version-9 slot never copies the follow.
     // A version-10 slot never copies the cart. A version-11 slot never copies the bells.
     // A version-12 slot never copies the block. A version-13 slot never copies the send-off.
-    // A version-14 slot never copies the pursuit. A version-15 slot never copies the stall. Call this only after Accept.
+    // A version-14 slot never copies the pursuit. A version-15 slot never copies the stall.
+    // A version-16 slot never copies the slip. Call this only after Accept.
     inline FSteps Applied(int Version, const FSteps& Steps)
     {
         if (Version == Legacy) return {};
@@ -262,6 +275,7 @@ namespace QuebecStorySave
             Copy.Send = 0;
             Copy.Pursue = 0;
             Copy.Nose = 0;
+            Copy.Slip = 0;
             return Copy;
         }
         if (Version == Escort)
@@ -279,6 +293,7 @@ namespace QuebecStorySave
             Copy.Send = 0;
             Copy.Pursue = 0;
             Copy.Nose = 0;
+            Copy.Slip = 0;
             return Copy;
         }
         if (Version == Shade)
@@ -295,6 +310,7 @@ namespace QuebecStorySave
             Copy.Send = 0;
             Copy.Pursue = 0;
             Copy.Nose = 0;
+            Copy.Slip = 0;
             return Copy;
         }
         if (Version == Grab)
@@ -310,6 +326,7 @@ namespace QuebecStorySave
             Copy.Send = 0;
             Copy.Pursue = 0;
             Copy.Nose = 0;
+            Copy.Slip = 0;
             return Copy;
         }
         if (Version == Cut)
@@ -324,6 +341,7 @@ namespace QuebecStorySave
             Copy.Send = 0;
             Copy.Pursue = 0;
             Copy.Nose = 0;
+            Copy.Slip = 0;
             return Copy;
         }
         if (Version == Chase)
@@ -337,6 +355,7 @@ namespace QuebecStorySave
             Copy.Send = 0;
             Copy.Pursue = 0;
             Copy.Nose = 0;
+            Copy.Slip = 0;
             return Copy;
         }
         if (Version == Finale)
@@ -349,6 +368,7 @@ namespace QuebecStorySave
             Copy.Send = 0;
             Copy.Pursue = 0;
             Copy.Nose = 0;
+            Copy.Slip = 0;
             return Copy;
         }
         if (Version == Follow)
@@ -360,6 +380,7 @@ namespace QuebecStorySave
             Copy.Send = 0;
             Copy.Pursue = 0;
             Copy.Nose = 0;
+            Copy.Slip = 0;
             return Copy;
         }
         if (Version == Roll)
@@ -370,6 +391,7 @@ namespace QuebecStorySave
             Copy.Send = 0;
             Copy.Pursue = 0;
             Copy.Nose = 0;
+            Copy.Slip = 0;
             return Copy;
         }
         if (Version == Bell)
@@ -379,6 +401,7 @@ namespace QuebecStorySave
             Copy.Send = 0;
             Copy.Pursue = 0;
             Copy.Nose = 0;
+            Copy.Slip = 0;
             return Copy;
         }
         if (Version == Block)
@@ -387,6 +410,7 @@ namespace QuebecStorySave
             Copy.Send = 0;
             Copy.Pursue = 0;
             Copy.Nose = 0;
+            Copy.Slip = 0;
             return Copy;
         }
         if (Version == Send)
@@ -394,12 +418,20 @@ namespace QuebecStorySave
             FSteps Copy = Steps;
             Copy.Pursue = 0;
             Copy.Nose = 0;
+            Copy.Slip = 0;
             return Copy;
         }
         if (Version == Pursue)
         {
             FSteps Copy = Steps;
             Copy.Nose = 0;
+            Copy.Slip = 0;
+            return Copy;
+        }
+        if (Version == Nose)
+        {
+            FSteps Copy = Steps;
+            Copy.Slip = 0;
             return Copy;
         }
         return Steps;
