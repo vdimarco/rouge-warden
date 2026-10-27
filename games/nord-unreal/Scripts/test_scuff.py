@@ -42,6 +42,13 @@ class ScuffTests(unittest.TestCase):
         self.assertEqual(SCUFF.count("inline constexpr double WalkSpeed = 80.;"), 1)
         self.assertEqual(SCUFF.count("inline constexpr double Life = 0.7;"), 1)
 
+    def test_the_shell_samples_a_puff_before_it_dies(self):
+        self.assertIn("constexpr float ShellStateSeconds = 0.1f;", GAME)
+        self.assertIn("BrowserStateElapsed >= ShellStateSeconds", GAME)
+        self.assertNotIn("BrowserStateElapsed >= .5f", GAME)
+        self.assertLess(0.1 * 5, 0.7)
+        self.assertGreater(0.5 * 2, 0.7)
+
     def test_the_header_matches_the_offline_trail(self):
         binary = Path("/tmp/scuff_test")
         subprocess.run(

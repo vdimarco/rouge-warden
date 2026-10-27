@@ -2613,7 +2613,9 @@ void AQuebecController::PlayerTick(float DeltaTime)
     TickCourtFeel();
     TickSkid();
     BrowserStateElapsed += DeltaTime;
-    if (BrowserStateElapsed >= .5f && !BrowserStreamerId.IsEmpty() && IPixelStreaming2Module::IsAvailable())
+    // A puff lives 0.7 s. A half-second poll can miss the rise. A tenth of a second samples it several times.
+    constexpr float ShellStateSeconds = 0.1f;
+    if (BrowserStateElapsed >= ShellStateSeconds && !BrowserStreamerId.IsEmpty() && IPixelStreaming2Module::IsAvailable())
     {
         BrowserStateElapsed = 0.f;
         if (const TSharedPtr<IPixelStreaming2Streamer> Streamer = IPixelStreaming2Module::Get().FindStreamer(BrowserStreamerId))
