@@ -2838,3 +2838,38 @@ Unreal is not available in this environment, so in-engine frames are the last co
 - Playability raw: 39 / 10 dimensions, index 39
 - Total: 129 / 200
 - Delta vs last round: 0
+
+### Round 82 — 2026-10-27 — rubric v1
+
+- What changed: on foot, the local player plants a footfall once per stride. A walk of eight seconds plants 18 steps. A sprint of eight seconds plants 32. Under 5 cm/s, in a car, while falling, and while swimming, the feet stay quiet. A long frame plays at most four taps. The tap is an original damped strike, quieter than the impact thud, and the two shoes are not the same note. The sway, the opening aim, and the 22:00 clock stay.
+- Why it helped: sound was the lowest playability line that a test can move. The feet were silent. The count is measured. It was not listened to in Unreal, so the score moves by one.
+- Screenshots: `docs/gauntlet/gta-graphics/round-82/steps.png` is the measured tap and the plant marks for a walk and a sprint. It is not a game view. `Scripts/test_step_tone.py` passed (18 and 32). The syntax check passed `QuebecGameplay.cpp`. Unreal did not run. `GET /gta/` returned 200. OpenSpec CLI is not installed, so the change files were not validated with `openspec`.
+- Next target: fun factor and variety are still 3. Fun needs a played session. Variety is still one night opening and one district.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 9 | Unchanged. The night lamps stay. |
+| Color palette | 9 | Unchanged. |
+| Detail density | 9 | Unchanged. |
+| Texture and material quality | 9 | Unchanged. |
+| Composition and camera | 9 | The opening aim stays. |
+| Atmosphere | 9 | The 22:00 clock stays. |
+| Character models | 9 | Unchanged. |
+| Animation smoothness | 9 | The rock is not retuned. The plants follow the stride. |
+| Particles and VFX | 9 | The foot dust stays. |
+| UI polish | 9 | Unchanged. |
+| Responsiveness and input latency | 4 | Not measured this round. |
+| Controls feel | 4 | Not played. |
+| Mission clarity | 5 | The objective words are unchanged. |
+| Pacing | 4 | Unchanged mission slice. |
+| Fun factor | 3 | Not played. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 4 | A footfall is not hit or reward juice. |
+| Sound design | 4 | A walk plants 18 steps in eight seconds and a sprint plants 32. The tap was measured, not listened to. |
+| Variety | 3 | One night opening. No new activity. |
+| Performance stability | 5 | `Scripts/test_step_tone.py` passed. Frame time was not remeasured. |
+
+- Aesthetics raw: 90 / 10 dimensions, index 90
+- Playability raw: 40 / 10 dimensions, index 40
+- Total: 130 / 200
+- Delta vs last round: +1

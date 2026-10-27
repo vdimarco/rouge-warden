@@ -17,6 +17,7 @@
 #include "QuebecRankTone.h"
 #include "QuebecSkidTone.h"
 #include "QuebecImpactTone.h"
+#include "QuebecStep.h"
 #include "QuebecLossTone.h"
 #include "QuebecStoryBed.h"
 #include "QuebecBarks.h"
@@ -603,6 +604,20 @@ void AQuebecCharacter::ApplyStreetSway(float DeltaSeconds)
     bSwayApplied = true;
 }
 
+void AQuebecCharacter::UpdateFootsteps(float DeltaSeconds)
+{
+    if (bInVehicle || IsKnocked() || !IsLocallyControlled() || !GetCharacterMovement()) return;
+    if (GetCharacterMovement()->IsFalling() || GetCharacterMovement()->IsSwimming()) return;
+    AQuebecController* Player = Cast<AQuebecController>(GetController());
+    if (!Player) return;
+    const int Steps = QuebecStep::Consume(StepAlong, static_cast<double>(GetVelocity().Size2D()), static_cast<double>(DeltaSeconds));
+    for (int Index = 0; Index < Steps; ++Index)
+    {
+        Player->PlayStepTone(StepFoot);
+        ++StepFoot;
+    }
+}
+
 void AQuebecCharacter::UpdateFootDust(float DeltaSeconds)
 {
     // Age comes from the birth clock, so a long frame does not step the puff twice.
@@ -720,6 +735,7 @@ void AQuebecCharacter::Tick(float DeltaSeconds)
         }
     }
     ApplyStreetSway(DeltaSeconds);
+    UpdateFootsteps(DeltaSeconds);
     UpdateFootDust(DeltaSeconds);
     if (HasAuthority() && !bInVehicle && GetActorLocation().Z < -1500.)
     {
@@ -2048,6 +2064,10 @@ AQuebecController::AQuebecController()
     ImpactAudio->bAutoActivate = false;
     ImpactAudio->bAllowSpatialization = false;
     ImpactAudio->VolumeMultiplier = .8f;
+    StepAudio = CreateDefaultSubobject<UAudioComponent>(TEXT("StepAudio"));
+    StepAudio->bAutoActivate = false;
+    StepAudio->bAllowSpatialization = false;
+    StepAudio->VolumeMultiplier = .45f;
     LossAudio = CreateDefaultSubobject<UAudioComponent>(TEXT("LossAudio"));
     LossAudio->bAutoActivate = false;
     LossAudio->bAllowSpatialization = false;
@@ -2382,6 +2402,28 @@ void AQuebecController::PlaySkidTone()
     }
     SkidWave->QueueAudio(reinterpret_cast<const uint8*>(Pcm), QuebecSkidTone::Frames * static_cast<int32>(sizeof(int16)));
     SkidAudio->Play();
+}
+
+void AQuebecController::PlayStepTone(int32 Foot)
+{
+    if (!StepAudio || !GetWorld() || !GetWorld()->AllowAudioPlayback()) return;
+    if (!StepWave)
+    {
+        StepWave = NewObject<USoundWaveProcedural>(this);
+        StepWave->SetSampleRate(static_cast<uint32>(QuebecStep::SampleRate));
+        StepWave->NumChannels = 1;
+        StepWave->Duration = static_cast<float>(QuebecStep::Frames) / static_cast<float>(QuebecStep::SampleRate);
+        StepAudio->SetSound(StepWave);
+    }
+    StepWave->ResetAudio();
+    int16 Pcm[QuebecStep::Frames];
+    for (int32 Frame = 0; Frame < QuebecStep::Frames; ++Frame)
+    {
+        const float Sample = FMath::Clamp(static_cast<float>(QuebecStep::SampleAt(Frame, Foot)), -1.f, 1.f);
+        Pcm[Frame] = static_cast<int16>(Sample * 32767.f);
+    }
+    StepWave->QueueAudio(reinterpret_cast<const uint8*>(Pcm), QuebecStep::Frames * static_cast<int32>(sizeof(int16)));
+    StepAudio->Play();
 }
 
 void AQuebecController::PlayImpact()

@@ -218,6 +218,9 @@ private:
     float CrewPoseElapsed = 0.f;
     float SwayPhase = 0.f;
     bool bSwayApplied = false;
+    double StepAlong = 0.;
+    int32 StepFoot = 0;
+    void UpdateFootsteps(float DeltaSeconds);
     void ApplyStreetSway(float DeltaSeconds);
     void RestoreStreetSway();
     // Pale spheres left at the rear shoe while walking. Five slots cover the puff life.
@@ -538,6 +541,7 @@ public:
     void PlayFeedback(EQuebecFeedbackCue Cue);
     void PlayRank(int32 ChainAfter, bool bWasSpoiled);
     void PlayImpact();
+    void PlayStepTone(int32 Foot);
     void PlayLoss();
     virtual void BeginPlay() override;
     virtual void SetupInputComponent() override;
@@ -661,6 +665,8 @@ private:
     UFUNCTION(Client, Unreliable) void ClientPlayImpact();
     void PlayImpactTone();
     UPROPERTY() TObjectPtr<class UAudioComponent> ImpactAudio;
+    UPROPERTY() TObjectPtr<class UAudioComponent> StepAudio;
+    UPROPERTY() TObjectPtr<class USoundWaveProcedural> StepWave;
     UPROPERTY() TObjectPtr<class USoundWaveProcedural> ImpactWave;
     UFUNCTION(Client, Unreliable) void ClientPlayLoss();
     void PlayLossTone();
