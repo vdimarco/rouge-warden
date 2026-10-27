@@ -1679,7 +1679,7 @@ void AQuebecCar::SimulateDrive(float Step, bool bFailsafe)
     }
     else
     {
-        DriveThrottle = FMath::FInterpConstantTo(DriveThrottle,Throttle,Step,5.f);
+        DriveThrottle = FMath::FInterpConstantTo(DriveThrottle,Throttle,Step,QuebecSteer::ThrottleRate);
         // Lag-tolerant driving: graded levels ease back as fast as a release, and on roads high-speed turn-in is calmer.
         const float SteeringRate = QuebecSteer::TurnInRate(Speed,Steering,SteeringState,bSteerAssist);
         SteeringState = FMath::FInterpConstantTo(SteeringState,Steering,Step,SteeringRate);

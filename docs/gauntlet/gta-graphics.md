@@ -2908,3 +2908,38 @@ Unreal is not available in this environment, so in-engine frames are the last co
 - Playability raw: 41 / 10 dimensions, index 41
 - Total: 131 / 200
 - Delta vs last round: +1
+
+### Round 84 — 2026-10-27 — rubric v1
+
+- What changed: a held gas pedal reaches full power in 50 ms. It used to wait 200 ms, five units a second. The drive step is otherwise the same, and the steering rates stay at 3.5 and 10. At a quarter of a second the car is already faster and has covered more ground. At a second and a half it is still inside the old city-speed window, so it does not become a launch.
+- Why it helped: the pedal was the lag a test could measure. Responsiveness and the gas control both move by one. Steering was not retuned, and nobody drove it in Unreal.
+- Screenshots: `docs/gauntlet/gta-graphics/round-84/pedal.png` plots the two pedals over half a second. It is not a game view. `Scripts/test_pedal.py` passed. The lap model and the steering tests passed. The syntax check passed `QuebecGameplay.cpp`. Unreal did not run. `GET /gta/` returned 200. OpenSpec CLI is not installed, so the change files were not validated with `openspec`.
+- Next target: fun factor is still 3 and needs a played session.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 9 | Unchanged. The night lamps stay. |
+| Color palette | 9 | Unchanged. |
+| Detail density | 9 | Unchanged. |
+| Texture and material quality | 9 | Unchanged. |
+| Composition and camera | 9 | Unchanged. |
+| Atmosphere | 9 | The 22:00 clock stays. |
+| Character models | 9 | Unchanged. |
+| Animation smoothness | 9 | Unchanged. |
+| Particles and VFX | 9 | Unchanged. |
+| UI polish | 9 | Unchanged. |
+| Responsiveness and input latency | 5 | Full gas in 50 ms, measured at 60 Hz. It was 200 ms. |
+| Controls feel | 5 | The pedal answers in that same 50 ms. Steering rates are unchanged, and it was not driven. |
+| Mission clarity | 5 | The objective words are unchanged. |
+| Pacing | 4 | Unchanged mission slice. |
+| Fun factor | 3 | Not played. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 4 | No new hit or reward. |
+| Sound design | 4 | The footfalls stay. This round was not a listen. |
+| Variety | 4 | The two starts stay. |
+| Performance stability | 5 | `Scripts/test_pedal.py` passed. Frame time was not remeasured. |
+
+- Aesthetics raw: 90 / 10 dimensions, index 90
+- Playability raw: 43 / 10 dimensions, index 43
+- Total: 133 / 200
+- Delta vs last round: +2

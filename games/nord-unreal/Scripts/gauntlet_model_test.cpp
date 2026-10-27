@@ -394,7 +394,7 @@ namespace
     {
         const float Throttle = static_cast<float>(Controls.Pedal);
         const float Steering = static_cast<float>(Controls.Wheel);
-        Car.DriveThrottle = QuebecSteer::MoveToward(Car.DriveThrottle, Throttle, Step, 5.f);
+        Car.DriveThrottle = QuebecSteer::MoveToward(Car.DriveThrottle, Throttle, Step, QuebecSteer::ThrottleRate);
         Car.SteeringState = QuebecSteer::MoveToward(Car.SteeringState, Steering, Step, QuebecSteer::TurnInRate(Car.Speed, Steering, Car.SteeringState, false));
         if (Controls.bBrake) Car.Speed = QuebecSteer::MoveToward(Car.Speed, 0.f, Step, 2300.f);
         else if (Throttle * Car.Speed < 0.f)
