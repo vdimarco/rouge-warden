@@ -24,6 +24,7 @@
 #include "QuebecParcel.h"
 #include "QuebecBolt.h"
 #include "QuebecYard.h"
+#include "QuebecLift.h"
 #include "QuebecChain.h"
 #include "QuebecPace.h"
 #include "QuebecConvoyRules.h"
@@ -152,6 +153,13 @@ static_assert(QuebecStorySave::YardBanked == 1, "the story tail left the yard ba
 static_assert(QuebecYard::NearX == -37668. && QuebecYard::NearY == 59266., "the yard left its near side");
 static_assert(QuebecYard::Pay == 540 && QuebecYard::Pay < 800 && QuebecYard::Pay != QuebecBolt::Pay && QuebecYard::Pay != QuebecShade::Pay && QuebecYard::Pay != QuebecSlip::Pay, "the yard reused a purse");
 static_assert(QuebecYard::Half > 0.2 && QuebecYard::Half < 1.2, "the look is not a cone");
+static_assert(QuebecLift::StepBanked == AQuebecCampaign::LiftBankedStep, "mission 30 and the story tail share one banked index");
+static_assert(QuebecStorySave::LiftBanked == 1, "the story tail left the lift bank");
+static_assert(QuebecLift::PocketX == -25683.074 && QuebecLift::PocketY == 18644.430, "the lift left its stop");
+static_assert(QuebecLift::Walk == QuebecPace::WalkCmPerSecond, "they took a sprint");
+static_assert(QuebecLift::Still != QuebecSend::Crawl && QuebecLift::Still < QuebecSend::Crawl, "the hold copied the send-off crawl");
+static_assert(QuebecLift::Pay == 680 && QuebecLift::Pay < 800 && QuebecLift::Pay != QuebecYard::Pay && QuebecLift::Pay != QuebecBolt::Pay, "the lift reused a purse");
+static_assert(QuebecLift::CountsAsCar(0) && !QuebecLift::CountsAsCar(2), "the lift took a bike");
 static_assert(QuebecStorySave::Current != QuebecStorySave::Rejected, "the writer would plant the unsupported fixture");
 
 static FString WithClose(const TCHAR* Line, int32 Bonus)
@@ -287,7 +295,7 @@ void AQuebecCampaign::BeginPlay()
                 CompletedMissions = Save->CompletedMissions;
                 const QuebecStorySave::FSteps Steps = QuebecStorySave::Applied(Save->Version, {
                     Save->PondStep, Save->CourtStep, Save->ShowStep, Save->RescueMask,
-                    Save->ConvoyStep, Save->BlankStep, Save->TourStep, Save->HomeStep, Save->EscortStep, Save->ShadeStep, Save->GrabStep, Save->CutStep, Save->ChaseStep, Save->FinaleStep, Save->FollowStep, Save->RollStep, Save->BellStep, Save->BlockStep, Save->SendStep, Save->PursueStep, Save->NoseStep, Save->SlipStep, Save->MarchStep, Save->DitchStep, Save->ParcelStep, Save->BoltStep, Save->YardStep});
+                    Save->ConvoyStep, Save->BlankStep, Save->TourStep, Save->HomeStep, Save->EscortStep, Save->ShadeStep, Save->GrabStep, Save->CutStep, Save->ChaseStep, Save->FinaleStep, Save->FollowStep, Save->RollStep, Save->BellStep, Save->BlockStep, Save->SendStep, Save->PursueStep, Save->NoseStep, Save->SlipStep, Save->MarchStep, Save->DitchStep, Save->ParcelStep, Save->BoltStep, Save->YardStep, Save->LiftStep});
                 PondStep = Steps.Pond;
                 CourtStep = Steps.Court;
                 ShowStep = Steps.Show;
@@ -315,6 +323,7 @@ void AQuebecCampaign::BeginPlay()
                 ParcelStep = Steps.Parcel;
                 BoltStep = Steps.Bolt;
                 YardStep = Steps.Yard;
+                LiftStep = Steps.Lift;
                 // The coat's place is not in the slot. A walk in progress starts again at the meet.
                 EscortFriendX = static_cast<float>(EscortStep >= EscortBankedStep ? QuebecEscort::DoorX : QuebecEscort::MeetX);
                 EscortFriendY = static_cast<float>(EscortStep >= EscortBankedStep ? QuebecEscort::DoorY : QuebecEscort::MeetY);
@@ -378,6 +387,9 @@ void AQuebecCampaign::BeginPlay()
         // Where they are looking, and whether the crossing is armed, are not in the slot. A reload starts the look again.
         YardAngle = 0.f;
         bYardArmed = false;
+        // Where they are on the walk is not in the slot. A reload puts them back at the door.
+        LiftAlong = 0.f;
+        bLiftComing = false;
         const auto SpawnCar = [this](const FVector& Location, const FRotator& Rotation, int32 Paint)
         {
             const FTransform Transform(Rotation,Location);
@@ -860,6 +872,12 @@ void AQuebecCampaign::BuildEncounter()
     YardFarCaption = AddCaption(TEXT("YardFarCaption"), FVector(YardDoor.X, YardDoor.Y, 160.), TEXT("FAR"), 18.f);
     YardWatch = AddPart(TEXT("YardWatch"), Cube, FVector(YardLook.X, YardLook.Y, 90.), FVector(40., 40., 80.), Berry);
     YardWatchCaption = AddCaption(TEXT("YardWatchCaption"), FVector(YardLook.X, YardLook.Y, 220.), TEXT("LOOK"), 18.f);
+    const QuebecLift::FSpot LiftDoor = QuebecLift::Home();
+    const QuebecLift::FSpot LiftPocket = QuebecLift::Pocket();
+    LiftStop = AddPart(TEXT("LiftStop"), Cube, FVector(LiftPocket.X, LiftPocket.Y, 40.), FVector(70., 70., 16.), Gold);
+    LiftStopCaption = AddCaption(TEXT("LiftStopCaption"), FVector(LiftPocket.X, LiftPocket.Y, 160.), TEXT("STOP"), 18.f);
+    LiftThem = AddPart(TEXT("LiftThem"), Cube, FVector(LiftDoor.X, LiftDoor.Y, 90.), FVector(40., 40., 80.), Berry);
+    LiftThemCaption = AddCaption(TEXT("LiftThemCaption"), FVector(LiftDoor.X, LiftDoor.Y, 220.), TEXT("THEM"), 18.f);
 }
 
 void AQuebecCampaign::Tick(float DeltaSeconds)
@@ -899,6 +917,7 @@ void AQuebecCampaign::Tick(float DeltaSeconds)
             TickParcel(DeltaSeconds);
             TickBolt(DeltaSeconds);
             TickYard(DeltaSeconds);
+            TickLift(DeltaSeconds);
         }
     }
     if (GetWorld()->GetTimeSeconds()-LastPresentationTime >= .1f)
@@ -3430,6 +3449,75 @@ void AQuebecCampaign::AdvanceYard(int32 Next, AQuebecController* Who, const TCHA
     SaveBoundary();
 }
 
+void AQuebecCampaign::TickLift(float DeltaSeconds)
+{
+    if (!IsLiftOpen()) return;
+    AQuebecController* Who = nullptr;
+    int Kind = -1;
+    double Speed = 0.;
+    double BodyX = 0.;
+    double BodyY = 0.;
+    double Best = 1.0e18;
+    bool bInside = false;
+    const QuebecLift::FSpot Pocket = QuebecLift::Pocket();
+    for (TActorIterator<AQuebecCar> It(GetWorld()); It; ++It)
+    {
+        AQuebecCar* Car = *It;
+        if (!Car || !Car->Occupant || !QuebecLift::CountsAsCar(static_cast<int>(Car->RideKind))) continue;
+        AQuebecController* Driver = Cast<AQuebecController>(Car->GetController());
+        if (!Driver) continue;
+        const FVector Position = Car->GetActorLocation();
+        const double Span = QuebecLift::Apart(Position.X, Position.Y, Pocket.X, Pocket.Y);
+        const bool bHere = Span <= QuebecLift::Reach;
+        const bool bBetter = bHere ? (!bInside || Span < Best) : (!bInside && Span < Best);
+        if (!bBetter) continue;
+        bInside = bInside || bHere;
+        Best = Span;
+        Kind = static_cast<int>(Car->RideKind);
+        Who = Driver;
+        Speed = static_cast<double>(Car->Speed);
+        BodyX = Position.X;
+        BodyY = Position.Y;
+    }
+    QuebecLift::FRun Now;
+    Now.Step = static_cast<int>(LiftStep);
+    Now.Along = static_cast<double>(LiftAlong);
+    Now.bComing = bLiftComing;
+    const QuebecLift::FRun After = QuebecLift::Tick(Now, static_cast<double>(DeltaSeconds), Kind, Speed, BodyX, BodyY);
+    LiftAlong = static_cast<float>(After.Along);
+    bLiftComing = After.bComing;
+    if (After.bBack)
+    {
+        if (Who) Who->ShowInteractionMessage(TEXT("The car rolled. They went back."));
+        for (TActorIterator<AQuebecController> It(GetWorld()); It; ++It)
+            It->PlayFeedback(EQuebecFeedbackCue::Checkpoint);
+        UpdatePresentation();
+        ForceNetUpdate();
+        return;
+    }
+    if (After.Step != LiftStep)
+    {
+        AdvanceLift(After.Step, Who, TEXT("They reached the car."), After.Step >= QuebecLift::StepBanked);
+        return;
+    }
+    if (!FMath::IsNearlyEqual(static_cast<float>(Now.Along), LiftAlong))
+        ForceNetUpdate();
+}
+
+void AQuebecCampaign::AdvanceLift(int32 Next, AQuebecController* Who, const TCHAR* Message, bool bFinished)
+{
+    if (Next == LiftStep) return;
+    LiftStep = Next;
+    // Link -1 is outside the seven banks, so the chain does not move. The purse is flat, and only when they are in.
+    ShowStepMessage(Who, Message, bFinished, -1);
+    if (bFinished) GrantCash(QuebecLift::Pay);
+    for (TActorIterator<AQuebecController> It(GetWorld()); It; ++It)
+        It->PlayFeedback(bFinished ? EQuebecFeedbackCue::Complete : EQuebecFeedbackCue::Checkpoint);
+    UpdatePresentation();
+    ForceNetUpdate();
+    SaveBoundary();
+}
+
 void AQuebecCampaign::AdvanceRoll(int32 Next, AQuebecController* Who, const TCHAR* Message, bool bFinished)
 {
     if (Next == RollStep) return;
@@ -3560,7 +3648,7 @@ void AQuebecCampaign::ChangePhase(EQuebecCampaignPhase Next, bool bFeedback)
 bool UQuebecCampaignSaveGame::IsSupported() const
 {
     const QuebecStorySave::FSteps Steps{
-        PondStep, CourtStep, ShowStep, RescueMask, ConvoyStep, BlankStep, TourStep, HomeStep, EscortStep, ShadeStep, GrabStep, CutStep, ChaseStep, FinaleStep, FollowStep, RollStep, BellStep, BlockStep, SendStep, PursueStep, NoseStep, SlipStep, MarchStep, DitchStep, ParcelStep, BoltStep, YardStep};
+        PondStep, CourtStep, ShowStep, RescueMask, ConvoyStep, BlankStep, TourStep, HomeStep, EscortStep, ShadeStep, GrabStep, CutStep, ChaseStep, FinaleStep, FollowStep, RollStep, BellStep, BlockStep, SendStep, PursueStep, NoseStep, SlipStep, MarchStep, DitchStep, ParcelStep, BoltStep, YardStep, LiftStep};
     return QuebecStorySave::Accept(Version, CompletedMissions, Steps);
 }
 
@@ -3606,6 +3694,7 @@ void AQuebecCampaign::SaveBoundary()
         Save->ParcelStep = ParcelStep;
         Save->BoltStep = BoltStep;
         Save->YardStep = YardStep;
+        Save->LiftStep = LiftStep;
     }
     if (!Save || !UGameplayStatics::SaveGameToSlot(Save,SaveSlot(),0))
     {
@@ -3846,6 +3935,13 @@ void AQuebecCampaign::RequestRetry(AQuebecController* Controller)
                 Controller->ShowInteractionMessage(TEXT("This yard restored. The near side is still the near side."));
             return;
         }
+        if (IsLiftOpen())
+        {
+            const QuebecLift::FSpot Spot = QuebecLift::Pocket();
+            if (MoveToSafeCheckpoint(Controller, FVector(Spot.X, Spot.Y, 100.), FRotator(0., 90., 0.)))
+                Controller->ShowInteractionMessage(TEXT("This lift restored. The stop is still the stop."));
+            return;
+        }
         Controller->ShowInteractionMessage(TEXT("The day held. T replays the race."));
         return;
     }
@@ -4035,6 +4131,11 @@ void AQuebecCampaign::RequestReplay(AQuebecController* Controller)
     if (IsYardOpen())
     {
         Controller->ShowInteractionMessage(TEXT("The yard is still open. T replays the race after you cross."));
+        return;
+    }
+    if (IsLiftOpen())
+    {
+        Controller->ShowInteractionMessage(TEXT("The lift is still open. T replays the race after they are in."));
         return;
     }
     // A race replay does not rewind the story steps or the chain, and it does not write the slot. The story tail already holds the steps.
@@ -4297,6 +4398,7 @@ FString AQuebecCampaign::GetMissionTitle() const
     if (IsParcelOpen()) return TEXT("27 / THE PARCEL");
     if (IsBoltOpen()) return TEXT("28 / THE BOLT");
     if (IsYardOpen()) return TEXT("29 / THE YARD");
+    if (IsLiftOpen()) return TEXT("30 / LET THEM IN");
     if (Phase == EQuebecCampaignPhase::Complete) return TEXT("THE PARK IS OPEN");
     return Phase <= EQuebecCampaignPhase::ReleaseTable ? TEXT("01 / A TABLE FOR ETERNITY") : TEXT("02 / NO SUCH THING AS A QUIET LAP");
 }
@@ -4496,6 +4598,7 @@ FString AQuebecCampaign::GetObjectiveText() const
         return TEXT("Get out and take the gate");
     }
     if (IsYardOpen()) return TEXT("Cross while they look away");
+    if (IsLiftOpen()) return TEXT("Hold the car still");
     if (Phase == EQuebecCampaignPhase::Complete) return TEXT("The last page is blank / T: replay the race");
     switch (Phase)
     {
@@ -4731,7 +4834,9 @@ FString AQuebecCampaign::GetBriefingText() const
     }
     if (IsYardOpen())
         return TEXT("MEMPHIS: On foot. They turn. Cross the yard while their back is to you. Their look sends you back.");
-    if (Phase == EQuebecCampaignPhase::Complete && PondStep >= PondBankedStep && CourtStep >= CourtBankedStep && ShowStep >= ShowBankedStep && RescueMask >= RescueDone && ConvoyStep >= ConvoyBankedStep && BlankStep >= BlankBankedStep && TourStep >= TourBankedStep && HomeStep >= HomeBankedStep && EscortStep >= EscortBankedStep && ShadeStep >= ShadeBankedStep && GrabStep >= GrabBankedStep && CutStep >= CutBankedStep && ChaseStep >= ChaseBankedStep && FinaleStep >= FinaleBankedStep && FollowStep >= FollowBankedStep && RollStep >= RollBankedStep && BellStep >= BellBankedStep && BlockStep >= BlockBankedStep && SendStep >= SendBankedStep && PursueStep >= PursueBankedStep && NoseStep >= NoseBankedStep && SlipStep >= SlipBankedStep && MarchStep >= MarchBankedStep && DitchStep >= DitchBankedStep && ParcelStep >= ParcelBankedStep && BoltStep >= BoltBankedStep && YardStep >= YardBankedStep)
+    if (IsLiftOpen())
+        return TEXT("MEMPHIS: Stop the car and leave it stopped. They walk to you. A roll sends them back.");
+    if (Phase == EQuebecCampaignPhase::Complete && PondStep >= PondBankedStep && CourtStep >= CourtBankedStep && ShowStep >= ShowBankedStep && RescueMask >= RescueDone && ConvoyStep >= ConvoyBankedStep && BlankStep >= BlankBankedStep && TourStep >= TourBankedStep && HomeStep >= HomeBankedStep && EscortStep >= EscortBankedStep && ShadeStep >= ShadeBankedStep && GrabStep >= GrabBankedStep && CutStep >= CutBankedStep && ChaseStep >= ChaseBankedStep && FinaleStep >= FinaleBankedStep && FollowStep >= FollowBankedStep && RollStep >= RollBankedStep && BellStep >= BellBankedStep && BlockStep >= BlockBankedStep && SendStep >= SendBankedStep && PursueStep >= PursueBankedStep && NoseStep >= NoseBankedStep && SlipStep >= SlipBankedStep && MarchStep >= MarchBankedStep && DitchStep >= DitchBankedStep && ParcelStep >= ParcelBankedStep && BoltStep >= BoltBankedStep && YardStep >= YardBankedStep && LiftStep >= LiftBankedStep)
         return TEXT("The last page is blank. The park keeps the day that was not in his book.");
     switch (Phase)
     {
@@ -4776,6 +4881,7 @@ FString AQuebecCampaign::GetStatusText() const
     if (IsParcelOpen()) return TEXT("R recovers this parcel");
     if (IsBoltOpen()) return TEXT("R recovers this bolt");
     if (IsYardOpen()) return TEXT("R recovers this yard");
+    if (IsLiftOpen()) return TEXT("R recovers this lift");
     if (Phase == EQuebecCampaignPhase::AimWorklight) return FString::Printf(TEXT("Alignment %d%% / hold %d%%"),FMath::RoundToInt(LightAlignment*100.f),FMath::RoundToInt(LightHoldProgress*100.f));
     if (Phase == EQuebecCampaignPhase::CrossCable) return FString::Printf(TEXT("Sprint %s / jump %s / R: recover"),bSprintSeen?TEXT("banked"):TEXT("needed"),bJumpSeen?TEXT("banked"):TEXT("needed"));
     if (Phase == EQuebecCampaignPhase::PullClamp || Phase == EQuebecCampaignPhase::ReleaseTable) return bClampOpen ? TEXT("GREEN BEAT / pull now / R: recover") : TEXT("Press squeezing / wait for green / R: recover");
@@ -4947,6 +5053,11 @@ FVector AQuebecCampaign::GetObjectiveLocation() const
     if (IsYardOpen())
     {
         const QuebecYard::FSpot Spot = QuebecYard::Far();
+        return FVector(Spot.X, Spot.Y, 100.);
+    }
+    if (IsLiftOpen())
+    {
+        const QuebecLift::FSpot Spot = QuebecLift::Pocket();
         return FVector(Spot.X, Spot.Y, 100.);
     }
     switch (Phase)
@@ -5163,6 +5274,7 @@ bool AQuebecCampaign::GetNextObjectiveLocation(FVector& Out) const
         return true;
     }
     if (IsYardOpen()) return false;
+    if (IsLiftOpen()) return false;
     if (Phase == EQuebecCampaignPhase::Complete) return false;
     switch (Phase)
     {
@@ -5497,6 +5609,13 @@ void AQuebecCampaign::UpdatePresentation()
                 Caption->SetVisibility(IsYardOpen());
                 Caption->SetWorldLocation(FVector(static_cast<double>(QuebecYard::WatchX), static_cast<double>(QuebecYard::WatchY), 220.));
             }
+            if (Caption == LiftStopCaption) Caption->SetVisibility(IsLiftOpen());
+            if (Caption == LiftThemCaption)
+            {
+                const QuebecLift::FSpot Walker = QuebecLift::Place(static_cast<double>(LiftAlong));
+                Caption->SetVisibility(IsLiftOpen());
+                Caption->SetWorldLocation(FVector(Walker.X, Walker.Y, 220.));
+            }
         }
         if (EscortDoor) EscortDoor->SetVisibility(IsEscortOpen());
         const bool bShadeWorld = IsShadeOpen();
@@ -5663,6 +5782,14 @@ void AQuebecCampaign::UpdatePresentation()
             YardWatch->SetWorldRotation(FRotator(0.f, static_cast<float>(static_cast<double>(YardAngle) * (180.0 / 3.141592653589793)), 0.f));
             YardWatch->SetVisibility(bYardWorld);
         }
+        const bool bLiftWorld = IsLiftOpen();
+        if (LiftStop) LiftStop->SetVisibility(bLiftWorld);
+        if (LiftThem)
+        {
+            const QuebecLift::FSpot Walker = QuebecLift::Place(static_cast<double>(LiftAlong));
+            LiftThem->SetWorldLocation(FVector(Walker.X, Walker.Y, 90.));
+            LiftThem->SetVisibility(bLiftWorld);
+        }
         for (UTextRenderComponent* Caption : Captions) Caption->SetWorldRotation((Eye-Caption->GetComponentLocation()).Rotation());
     }
 }
@@ -5738,6 +5865,9 @@ void AQuebecCampaign::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
     DOREPLIFETIME(AQuebecCampaign,YardStep);
     DOREPLIFETIME(AQuebecCampaign,YardAngle);
     DOREPLIFETIME(AQuebecCampaign,bYardArmed);
+    DOREPLIFETIME(AQuebecCampaign,LiftStep);
+    DOREPLIFETIME(AQuebecCampaign,LiftAlong);
+    DOREPLIFETIME(AQuebecCampaign,bLiftComing);
     DOREPLIFETIME(AQuebecCampaign,LightOperator);
     DOREPLIFETIME(AQuebecCampaign,LightYaw);
     DOREPLIFETIME(AQuebecCampaign,LightPitch);

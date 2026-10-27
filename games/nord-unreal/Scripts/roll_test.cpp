@@ -121,7 +121,7 @@ int main()
     Saved.Roll = 1;
     Saved.Follow = 0;
     Expect(!QuebecStorySave::Accept(QuebecStorySave::Current, 2, Saved), "the cart started before the gap was banked");
-    Expect(QuebecStorySave::Follow == 10 && QuebecStorySave::Roll == 11 && QuebecStorySave::Bell == 12 && QuebecStorySave::Block == 13 && QuebecStorySave::Send == 14 && QuebecStorySave::Pursue == 15 && QuebecStorySave::Nose == 16 && QuebecStorySave::Slip == 17 && QuebecStorySave::March == 18 && QuebecStorySave::Ditch == 19 && QuebecStorySave::Parcel == 20 && QuebecStorySave::Bolt == 21 && QuebecStorySave::Current == 22 && QuebecStorySave::Finale == 9, "the slot writer left version 22");
+    Expect(QuebecStorySave::Follow == 10 && QuebecStorySave::Roll == 11 && QuebecStorySave::Bell == 12 && QuebecStorySave::Block == 13 && QuebecStorySave::Send == 14 && QuebecStorySave::Pursue == 15 && QuebecStorySave::Nose == 16 && QuebecStorySave::Slip == 17 && QuebecStorySave::March == 18 && QuebecStorySave::Ditch == 19 && QuebecStorySave::Parcel == 20 && QuebecStorySave::Bolt == 21 && QuebecStorySave::Yard == 22 && QuebecStorySave::Current == 23 && QuebecStorySave::Finale == 9, "the slot writer left version 23");
 
     std::printf("%d assertions, %d failures\n", Assertions, Failures);
     return Failures == 0 ? 0 : 1;

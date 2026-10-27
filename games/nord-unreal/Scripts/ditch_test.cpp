@@ -148,7 +148,7 @@ int main()
     Saved.Ditch = 1;
     Saved.March = 0;
     Expect(!QuebecStorySave::Accept(QuebecStorySave::Current, 2, Saved), "the ditch started before the march was banked");
-    Expect(QuebecStorySave::March == 18 && QuebecStorySave::Ditch == 19 && QuebecStorySave::Parcel == 20 && QuebecStorySave::Bolt == 21 && QuebecStorySave::Current == 22 && QuebecStorySave::Slip == 17, "the slot writer left version 22");
+    Expect(QuebecStorySave::March == 18 && QuebecStorySave::Ditch == 19 && QuebecStorySave::Parcel == 20 && QuebecStorySave::Bolt == 21 && QuebecStorySave::Yard == 22 && QuebecStorySave::Current == 23 && QuebecStorySave::Slip == 17, "the slot writer left version 23");
 
     std::printf("%d assertions, %d failures\n", Assertions, Failures);
     return Failures == 0 ? 0 : 1;

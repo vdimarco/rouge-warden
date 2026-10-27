@@ -308,9 +308,9 @@ def save_boundary(expected):
     if not u.GameplayStatics.does_save_game_exist(SLOT, 0):
         return False
     saved = u.GameplayStatics.load_game_from_slot(SLOT, 0)
-    assert saved and saved.get_editor_property('Version') == 22, 'Invalid actual campaign save'
+    assert saved and saved.get_editor_property('Version') == 23, 'Invalid actual campaign save'
     assert saved.get_editor_property('CompletedMissions') == expected, 'Save does not match completed mission boundary'
-    for name in ('PondStep', 'CourtStep', 'ShowStep', 'RescueMask', 'ConvoyStep', 'BlankStep', 'TourStep', 'HomeStep', 'EscortStep', 'ShadeStep', 'GrabStep', 'CutStep', 'ChaseStep', 'FinaleStep', 'FollowStep', 'RollStep', 'BellStep', 'BlockStep', 'SendStep', 'PursueStep', 'NoseStep', 'SlipStep', 'MarchStep', 'DitchStep', 'ParcelStep', 'BoltStep', 'YardStep'):
+    for name in ('PondStep', 'CourtStep', 'ShowStep', 'RescueMask', 'ConvoyStep', 'BlankStep', 'TourStep', 'HomeStep', 'EscortStep', 'ShadeStep', 'GrabStep', 'CutStep', 'ChaseStep', 'FinaleStep', 'FollowStep', 'RollStep', 'BellStep', 'BlockStep', 'SendStep', 'PursueStep', 'NoseStep', 'SlipStep', 'MarchStep', 'DitchStep', 'ParcelStep', 'BoltStep', 'YardStep', 'LiftStep'):
         assert saved.get_editor_property(name) == 0, 'Race boundary wrote a story step'
     digest = hashlib.sha256(SAVE_PATH.read_bytes()).hexdigest()
     STATE['saved_boundary_hash'] = digest
