@@ -1551,3 +1551,34 @@ Round42 clarification: above-rooftop attachment allowed to reachable real buildi
 
 
 Round42 shipped in PR#632, merge5d0cd1ca, after all6CI/review/exactauthenticatedpreview/rebase. Productionmain HTTP200 exactSHAedd1226e70c3f2fb08137e283d8d770a056c7db0f0df3f40724977d3f4780a41. Realbuildinganchors,noartificialceiling,reachableaboverooftopattachment. Canonical swing-moves scenarios published and OpenSpec archived. No affectedChrome/physicalcontroller/phone/performance claim.
+
+### Round 43 — 2026-10-26 — a gust on the third flush, rubric v1
+
+The third flush starts Through the Gust. Swing through the column in the air, within 6 m, at 11 m/s or faster across the ground. Standing in it, or crossing it slower than that, does not count. The next pass counts only after the hero has left the column and 0.4 s have passed. Three passes end the job. A 28 s clock that runs out misses as blown off. Each counted pass lifts the swing: the play measured an upward speed above 4 m/s and the card at 1/3. The card names THROUGH THE GUST and SWING THROUGH, and it does not say to flush the clogs. The King stays asleep. After the gust, the clog card returns at 3/12. The first flush stays the clog card. The gust is not an odd-job offer and it does not move the story route.
+
+Evidence: [the opening card](fullswing-r43/gust.png). The DOM assert is the source of truth for the card text. Local clog-beat play passed every flush through the lid, including the lift. Local action tests passed, including the three-pass win and the blown-off miss. No new art files. The pass uses the existing comic word and the existing rope-release sound.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 5 | Historical context only. This round does not re-score it. |
+| Color palette | 6 | Historical context only. This round does not re-score it. |
+| Detail density | 4 | Historical context only. This round does not re-score it. |
+| Texture and material quality | 3 | Historical context only. This round does not re-score it. |
+| Composition and camera | 4 | Historical context only. This round does not re-score it. |
+| Atmosphere | 5 | Historical context only. This round does not re-score it. |
+| Character models | 3 | Historical context only. This round does not re-score it. |
+| Animation smoothness | 4 | Historical context only. This round does not re-score it. |
+| Particles and VFX | 5 | The pass uses the existing comic word. That is not a new effects bar. |
+| UI polish | 6 | The card names the gust, the count, and the miss. Polish stays where it was. |
+| Responsiveness and input latency | Unverified | No hardware pass. The lift is a simulated frame, not a measured input latency. |
+| Controls feel | 9 | The swing is the same swing. One new place to aim it does not move the feel score. |
+| Mission clarity | 9 | The card says what to swing through and how many passes remain. Clarity stays 9. |
+| Pacing | 9 | Ten of twelve flushes now differ, and the first is still the pump. That is not a 2023 mission rhythm. |
+| Fun factor | 9 | A counted pass lifts the swing. One new beat is not the fun of a 2023 open city. |
+| Difficulty curve | 9 | Three swings inside 28 s, with a miss that says to swing. The curve stays 9. |
+| Feedback | 9 | The card counts, the word pops, and a miss names itself. Feedback stays 9. |
+| Sound design | 9 | The pass reuses the rope-release sound. Sound stays 9. |
+| Variety | 9 | The third flush is a new verb. The rest of the city is the same list. Variety stays 9. |
+| Performance stability | Unverified | No GPU pass, and this round does not claim one. |
+
+Current total withheld. Historical 132 is context from the earlier mission rounds, and this round's delta against that history is 0. It is not a new acceptance score. Responsiveness and performance stay unverified. No phone, listening, or full playthrough. `openspec validate` did not run. The change is archived by hand under `openspec/changes/archive/2026-10-26-swing-gust-pass/`.

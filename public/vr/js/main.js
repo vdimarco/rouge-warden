@@ -433,9 +433,10 @@ let winHold = 0, winCard = null, winStory = null, lastWin = null;
 let missHold = 0, missCard = null, missJob = null, lastMiss = null;
 // A test can run the story route under ?nocut. Real play runs it only after Mission 1, and the tests leave it off.
 let routeForce = false;
-// Eight flushes break the clog run, so the pump never runs three times in a row. The queue waits out a story mission.
+// Ten flushes break the clog run, so the pump never runs three times in a row. The queue waits out a story mission.
 const CLOG_BEAT = {
   2: { type: "catch", mission: "OVER THE EDGE", near: [36, 130] },
+  3: { type: "gust", mission: "THROUGH THE GUST", near: [18, 70] },
   4: { type: "balloon", mission: "UP FOR AIR", near: [18, 80] },
   5: { type: "thief", mission: "PURSE RUN", near: [18, 55] },
   6: { type: "pizza", mission: "HOT PIE", near: [18, 80] },
@@ -784,7 +785,7 @@ const WIN_CUE = {
   sludge: "winWet", tanker: "winWet",
   brawl: "winFight", mugging: "winFight",
   thief: "winDash", pizza: "winDash", getaway: "winDash", taxi: "winDash",
-  catch: "winLift", washer: "winLift", balloon: "winLift",
+  catch: "winLift", washer: "winLift", balloon: "winLift", gust: "winLift",
   lid: "winWet",
 };
 function winCue(job) { return WIN_CUE[job] || "winLift"; }
@@ -847,6 +848,7 @@ const FAIL_LINES = {
   walked: "The fare got bored and walked off.", late: "Too slow! The fare jumped out at a red light.", away: "They got away. Next time!",
   flood: "The tanker burst! Sludge everywhere. Next time!",
   popped: "The lid popped. Stand on it until it seats.",
+  blown: "The gust blew past. Swing through it three times.",
 };
 function jobEvent(e) {
   switch (e.type) {
@@ -858,6 +860,11 @@ function jobEvent(e) {
     case "leak": fx.word("GLUG", FXP.set(e.x, e.y + 1, e.z), { scale: 1.1 }); break;
     case "seal": fx.word("SPLORT", FXP.set(e.x, e.y + 0.6, e.z), { scale: 1.3 }); audio.sfx("pump"); if (e.n >= e.of) ui.toast("Leak sealed!"); break;
     case "caught": audio.sfx("unlock"); haptic(1, 0.6, 50); break;
+    case "gust":
+      fx.word("WHOOSH", FXP.set(e.x, e.y + 1.2, e.z), { scale: 1.4 });
+      audio.sfx("release");
+      if (P && !driving) { P.vel.y = Math.max(P.vel.y, 0) + JOB.gust.lift; P.onGround = false; }
+      break;
     case "done": {
       game.reward(e.reward);
       winPayoff(e);
@@ -3032,6 +3039,7 @@ G.test = {
       P.onGround = true;
     }
     else if (A.type === "lid") D.held = JOB.lid.hold;
+    else if (A.type === "gust") D.n = JOB.gust.need;
     else return false;
     return true;
   },
