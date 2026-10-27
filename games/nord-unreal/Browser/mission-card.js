@@ -174,6 +174,10 @@ export function speechLines(text) {
   return { line: String(text || '').trim() };
 }
 
+export function weaponLines(name) {
+  return { name: String(name || '').trim() };
+}
+
 // Same birth, rise, and fade as QuebecScuff::At. Life 0.7s. Reeves, SIGGRAPH 1983.
 export function scuffPuff(age, slot) {
   const life = 0.7;
@@ -231,6 +235,18 @@ if (typeof window !== 'undefined') window.__nordShowJob = card => showJob(card, 
 if (typeof window !== 'undefined') window.__nordShowHeat = showHeat;
 if (typeof window !== 'undefined') window.__nordShowColumn = showColumn;
 if (typeof window !== 'undefined') window.__nordShowSpeech = showSpeech;
+
+export function showWeapon(name) {
+  const root = document.getElementById('weapon-chip');
+  if (!root) return null;
+  const lines = weaponLines(name);
+  root.hidden = !lines.name;
+  const label = document.getElementById('weapon-name');
+  if (label) label.textContent = lines.name;
+  return lines;
+}
+
+if (typeof window !== 'undefined') window.__nordShowWeapon = showWeapon;
 
 export function showScuff(ages) {
   const canvas = document.getElementById('scuff-dust');

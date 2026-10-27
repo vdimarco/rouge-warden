@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { columnLines, heatLines, jobLines, markerOffset, missionLines, payoutLines, scuffPuff, speechLines } from './mission-card.js';
+import { columnLines, heatLines, jobLines, markerOffset, missionLines, payoutLines, scuffPuff, speechLines, weaponLines } from './mission-card.js';
 
 const lines = missionLines({
   title: '28 / THE BOLT',
@@ -74,5 +74,9 @@ assert.equal(mid.side, 8);
 assert.ok(mid.radius > born.radius, 'the mid puff did not grow');
 assert.ok(mid.up > born.up + 20, 'the puff did not rise');
 assert.ok(scuffPuff(0.7, 0).radius < 0.05, 'a finished puff still has a radius');
+const pistol = weaponLines('PISTOL');
+assert.equal(pistol.name, 'PISTOL');
+assert.equal(weaponLines('').name, '');
+assert.ok(!/[\u00e9\u00e8\u00ea\u00e0]/.test(pistol.name), 'the weapon mixed languages');
 
 console.log('mission card lines and marker ok');
