@@ -11,11 +11,12 @@
 // Version 7 adds the short way and starts the chase over.
 // Version 8 adds the chase and starts the finale over.
 // Version 9 adds the finale and starts the follow over.
-// Version 10 adds the follow step. The chain, the hold clocks, the court misses, cash,
+// Version 10 adds the follow step and starts the cart over.
+// Version 11 adds the cart step. The chain, the hold clocks, the court misses, cash,
 // the friend's place on the lawn, the lamp burn, the grab clock, the rival's clock,
 // the tail's place on the road, the finale burn, the page clock, the cut clock,
-// the finale tail's place, the follow person's place on the path, and the side errands
-// are not in this record.
+// the finale tail's place, the follow person's place on the path, how far the cart
+// has rolled, and the side errands are not in this record.
 
 namespace QuebecStorySave
 {
@@ -28,7 +29,8 @@ namespace QuebecStorySave
     inline constexpr int Cut = 7;
     inline constexpr int Chase = 8;
     inline constexpr int Finale = 9;
-    inline constexpr int Current = 10;
+    inline constexpr int Follow = 10;
+    inline constexpr int Current = 11;
 
     inline constexpr int PondBanked = 6;
     inline constexpr int CourtBanked = 4;
@@ -45,6 +47,7 @@ namespace QuebecStorySave
     inline constexpr int ChaseBanked = 2;
     inline constexpr int FinaleBanked = 5;
     inline constexpr int FollowBanked = 2;
+    inline constexpr int RollBanked = 2;
 
     struct FSteps
     {
@@ -63,6 +66,7 @@ namespace QuebecStorySave
         int Chase = 0;
         int Finale = 0;
         int Follow = 0;
+        int Roll = 0;
     };
 
     inline bool InRange(int Value, int Hi)
@@ -75,7 +79,7 @@ namespace QuebecStorySave
         return Steps.Pond == 0 && Steps.Court == 0 && Steps.Show == 0 && Steps.Rescue == 0
             && Steps.Convoy == 0 && Steps.Blank == 0 && Steps.Tour == 0 && Steps.Home == 0
             && Steps.Escort == 0 && Steps.Shade == 0 && Steps.Grab == 0 && Steps.Cut == 0
-            && Steps.Chase == 0 && Steps.Finale == 0 && Steps.Follow == 0;
+            && Steps.Chase == 0 && Steps.Finale == 0 && Steps.Follow == 0 && Steps.Roll == 0;
     }
 
     // A later beat may move only after the one before it is banked.
@@ -91,7 +95,8 @@ namespace QuebecStorySave
             || !InRange(Steps.Cut, CutBanked)
             || !InRange(Steps.Chase, ChaseBanked)
             || !InRange(Steps.Finale, FinaleBanked)
-            || !InRange(Steps.Follow, FollowBanked))
+            || !InRange(Steps.Follow, FollowBanked)
+            || !InRange(Steps.Roll, RollBanked))
             return false;
         if (Steps.Court > 0 && Steps.Pond != PondBanked) return false;
         if (Steps.Show > 0 && (Steps.Pond != PondBanked || Steps.Court != CourtBanked)) return false;
@@ -108,6 +113,7 @@ namespace QuebecStorySave
         if (Steps.Chase > 0 && Steps.Cut != CutBanked) return false;
         if (Steps.Finale > 0 && Steps.Chase != ChaseBanked) return false;
         if (Steps.Follow > 0 && Steps.Finale != FinaleBanked) return false;
+        if (Steps.Roll > 0 && Steps.Follow != FollowBanked) return false;
         return true;
     }
 
@@ -157,6 +163,12 @@ namespace QuebecStorySave
             if (Completed < 2 && !Fresh(Steps)) return false;
             return StepsFit(Steps);
         }
+        if (Version == Follow)
+        {
+            if (Steps.Roll != 0) return false;
+            if (Completed < 2 && !Fresh(Steps)) return false;
+            return StepsFit(Steps);
+        }
         if (Version != Current) return false;
         if (Completed < 2 && !Fresh(Steps)) return false;
         return StepsFit(Steps);
@@ -165,7 +177,8 @@ namespace QuebecStorySave
     // A legacy slot never copies a story tail. A version-3 slot never copies the escort, the crossing, the grab, or the short way.
     // A version-4 slot never copies the crossing, the grab, or the short way. A version-5 slot never copies the grab or the short way.
     // A version-6 slot never copies the short way. A version-7 slot never copies the chase.
-    // A version-8 slot never copies the finale. A version-9 slot never copies the follow. Call this only after Accept.
+    // A version-8 slot never copies the finale. A version-9 slot never copies the follow.
+    // A version-10 slot never copies the cart. Call this only after Accept.
     inline FSteps Applied(int Version, const FSteps& Steps)
     {
         if (Version == Legacy) return {};
@@ -179,6 +192,7 @@ namespace QuebecStorySave
             Copy.Chase = 0;
             Copy.Finale = 0;
             Copy.Follow = 0;
+            Copy.Roll = 0;
             return Copy;
         }
         if (Version == Escort)
@@ -190,6 +204,7 @@ namespace QuebecStorySave
             Copy.Chase = 0;
             Copy.Finale = 0;
             Copy.Follow = 0;
+            Copy.Roll = 0;
             return Copy;
         }
         if (Version == Shade)
@@ -200,6 +215,7 @@ namespace QuebecStorySave
             Copy.Chase = 0;
             Copy.Finale = 0;
             Copy.Follow = 0;
+            Copy.Roll = 0;
             return Copy;
         }
         if (Version == Grab)
@@ -209,6 +225,7 @@ namespace QuebecStorySave
             Copy.Chase = 0;
             Copy.Finale = 0;
             Copy.Follow = 0;
+            Copy.Roll = 0;
             return Copy;
         }
         if (Version == Cut)
@@ -217,6 +234,7 @@ namespace QuebecStorySave
             Copy.Chase = 0;
             Copy.Finale = 0;
             Copy.Follow = 0;
+            Copy.Roll = 0;
             return Copy;
         }
         if (Version == Chase)
@@ -224,12 +242,20 @@ namespace QuebecStorySave
             FSteps Copy = Steps;
             Copy.Finale = 0;
             Copy.Follow = 0;
+            Copy.Roll = 0;
             return Copy;
         }
         if (Version == Finale)
         {
             FSteps Copy = Steps;
             Copy.Follow = 0;
+            Copy.Roll = 0;
+            return Copy;
+        }
+        if (Version == Follow)
+        {
+            FSteps Copy = Steps;
+            Copy.Roll = 0;
             return Copy;
         }
         return Steps;
