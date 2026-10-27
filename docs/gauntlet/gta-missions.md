@@ -3750,3 +3750,50 @@ Unreal is not available here, so the native diamond was not captured. The title 
 ![The foot puffs on a 390-wide screen](gta-missions/r82-play-card-390.png)
 
 ![Menu on a 390-wide screen, Recover visible](gta-missions/r82-play-menu-390.png)
+
+### Round 83 — 2026-10-27 — rubric v1
+
+- What changed: The play shell hears the card, the column, the speech, and the dust every tenth of a second. The old poll was every half second. A foot puff lives 0.7 seconds, so five of the new samples fit in one life and two of the old gaps do not. Steering rates do not change. No new mission.
+- Why it helped: A half-second poll can miss the rise of a puff. The page we run now asks again before that puff dies.
+- Screenshots: title `docs/gauntlet/gta-missions/r83-title-1280.png`, `r83-title-390.png`, `r83-title-320.png`. Play client, host offline, `r83-play-1280.png`, with the same trail at 390 in `r83-play-card-390.png`. Menu with Recover `r83-play-menu-390.png`. The title loaded with no page errors. The raw play page still logs the missing `@epicgames-ps/lib-pixelstreamingfrontend-ue5.8` specifier; the shell, the card, the dust, and Recover still draw. The 1280 frame still shows five pale puffs (1767 pale pixels). The 390 frame still shows the trail above the column (912 pale pixels). The video stream and the phone steer were not timed. `python3 Scripts/test_scuff.py` passed, and it fails if the half-second poll returns. Syntax check of `QuebecGameplay.cpp` passed for the game and editor targets. OpenSpec CLI is not installed, so `openspec validate` did not run. `Browser/browser.test.mjs` did not run: the `ws` package is not installed here.
+- Next target: the next lowest line this loop can measure without Unreal. Lighting, detail, texture, models, and animation stay with the graphics loop. Performance stays at 4 and is not measurable here.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 3 | Unchanged. |
+| Color palette | 5 | Unchanged. |
+| Detail density | 3 | Unchanged. |
+| Texture and material quality | 3 | Unchanged. |
+| Composition and camera | 4 | Unchanged. |
+| Atmosphere | 4 | Unchanged. |
+| Character models | 3 | Unchanged. |
+| Animation smoothness | 3 | Unchanged. |
+| Particles and VFX | 3 | Unchanged. The five puffs are still on the shell. The city's own dust was not seen. |
+| UI polish | 8 | Unchanged. The English objective and the resident line are still on the shell. |
+| Responsiveness and input latency | 4 | The play shell now hears the card, the column, the speech, and the dust every 0.1 s. Five samples fit in a 0.7 s puff. The video stream and the phone steer were not timed, so this is one step. |
+| Controls feel | 9 | Unchanged. Steering rates were not retuned. |
+| Mission clarity | 8 | Unchanged. The play shell still shows the carry's objective, Stage 3 of 3, the fail sentence, and a gold diamond. |
+| Pacing | 9 | Unchanged. Nothing new was driven. |
+| Fun factor | 9 | Unchanged. The shell was seen. It was not driven. |
+| Difficulty curve | 9 | Unchanged. Selling the last page ends it for 200 and does not bank the chain. A wreck still costs more than the goon pay. |
+| Feedback | 9 | Unchanged. The shell still shows a purse. The notes were not heard. |
+| Sound design | 9 | Unchanged. The two notes were not heard. No new sound was added. |
+| Variety | 9 | Unchanged. No new way to play was added, and the carry was not driven. |
+| Performance stability | 4 | Unchanged. Not measurable in this container. |
+
+- Aesthetics raw: 39 / 10 dimensions, index 39
+- Playability raw: 79 / 10 dimensions, index 79
+- Total: 118 / 200
+- Delta vs last round: +1 (round 82 was 117). Responsiveness 3 → 4. Every other score held.
+
+![GTA title at 1280](gta-missions/r83-title-1280.png)
+
+![GTA title at 390](gta-missions/r83-title-390.png)
+
+![GTA title at 320](gta-missions/r83-title-320.png)
+
+![Play client at 1280, host offline, the shell still showing the dust](gta-missions/r83-play-1280.png)
+
+![The dust on a 390-wide screen](gta-missions/r83-play-card-390.png)
+
+![Menu on a 390-wide screen, Recover visible](gta-missions/r83-play-menu-390.png)
