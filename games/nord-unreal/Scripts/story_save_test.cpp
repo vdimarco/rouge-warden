@@ -49,7 +49,7 @@ namespace
 
 int main()
 {
-    Expect(Legacy == 1 && Rejected == 2 && Story == 3 && Escort == 4 && Shade == 5 && Grab == 6 && Cut == 7 && Chase == 8 && Finale == 9 && Follow == 10 && Current == 11, "the slot versions drifted");
+    Expect(Legacy == 1 && Rejected == 2 && Story == 3 && Escort == 4 && Shade == 5 && Grab == 6 && Cut == 7 && Chase == 8 && Finale == 9 && Follow == 10 && Roll == 11 && Current == 12, "the slot versions drifted");
     Expect(Current != Rejected, "the writer would plant the unsupported fixture");
     Expect(PondBanked == QuebecPondRules::StepBanked, "the pond bank left the save");
     Expect(CourtBanked == QuebecCourtRules::StepBanked, "the court bank left the save");
@@ -74,10 +74,11 @@ int main()
         Expect(Accept(Chase, Completed, None), "a version-8 race boundary was rejected");
         Expect(Accept(Finale, Completed, None), "a version-9 race boundary was rejected");
         Expect(Accept(Follow, Completed, None), "a version-10 race boundary was rejected");
+        Expect(Accept(Roll, Completed, None), "a version-11 race boundary was rejected");
         Expect(Accept(Current, Completed, None), "a current race boundary with no story was rejected");
         Expect(!Accept(Rejected, Completed, None), "version 2 was accepted");
         Expect(!Accept(0, Completed, None), "version 0 was accepted");
-        Expect(!Accept(12, Completed, None), "a later schema was accepted");
+        Expect(!Accept(13, Completed, None), "a later schema was accepted");
     }
     Expect(!Accept(Legacy, -1, None), "a missing mission count was accepted");
     Expect(!Accept(Legacy, 3, None), "completed missions 3 were accepted on a legacy slot");
@@ -261,6 +262,28 @@ int main()
     Cart.Roll = 1;
     Cart.Follow = 0;
     Expect(!Accept(Current, 2, Cart), "the cart started before the gap was banked");
+    FSteps Bells = Banked();
+    Bells.Escort = EscortBanked;
+    Bells.Shade = ShadeBanked;
+    Bells.Grab = GrabBanked;
+    Bells.Cut = CutBanked;
+    Bells.Chase = ChaseBanked;
+    Bells.Finale = FinaleBanked;
+    Bells.Follow = FollowBanked;
+    Bells.Roll = RollBanked;
+    Bells.Bell = 1;
+    Expect(!Fresh(Bells), "an order counted as a fresh day");
+    Expect(Accept(Current, 2, Bells), "an order in progress was rejected");
+    Expect(!Accept(Roll, 2, Bells), "a version-11 slot carried the bells");
+    const FSteps FromRoll = Applied(Roll, Bells);
+    Expect(FromRoll.Roll == RollBanked && FromRoll.Bell == 0, "a version-11 slot copied the bells");
+    Bells.Bell = BellBanked;
+    Expect(Accept(Current, 2, Bells), "a finished order was rejected");
+    Bells.Bell = BellBanked + 1;
+    Expect(!Accept(Current, 2, Bells), "an order past the bank was accepted");
+    Bells.Bell = 1;
+    Bells.Roll = 0;
+    Expect(!Accept(Current, 2, Bells), "the bells started before the cart was banked");
 
     std::printf("%d assertions, %d failures\n", Assertions, Failures);
     return Failures == 0 ? 0 : 1;

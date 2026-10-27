@@ -13,6 +13,7 @@
 #include "QuebecFinale.h"
 #include "QuebecFollow.h"
 #include "QuebecRoll.h"
+#include "QuebecBells.h"
 #include "QuebecChain.h"
 #include "QuebecPace.h"
 #include "QuebecConvoyRules.h"
@@ -75,6 +76,12 @@ static_assert(QuebecStorySave::RollBanked == AQuebecCampaign::RollBankedStep, "t
 static_assert(QuebecRoll::Speed == QuebecPace::WalkCmPerSecond, "a walk would not roll the cart");
 static_assert(QuebecRoll::SprintAbove > QuebecPace::WalkCmPerSecond && QuebecRoll::SprintAbove < QuebecPace::SprintCmPerSecond, "the tip left the space between a walk and a sprint");
 static_assert(QuebecRoll::StartX == 16800. && QuebecRoll::StartY == 21000., "the cart left the north lawn");
+static_assert(QuebecBells::StepBanked == AQuebecCampaign::BellBankedStep, "mission 19 and the story tail share one banked index");
+static_assert(QuebecStorySave::BellBanked == AQuebecCampaign::BellBankedStep, "the story tail left the bells");
+static_assert(QuebecBells::BellX == 24800. && QuebecBells::BellOneY == 22000., "the bells left the north lawn");
+static_assert(QuebecBells::Reach * 2. < QuebecBells::BellOneY - QuebecBells::BellTwoY, "two bells share a circle");
+static_assert(QuebecBells::BellX - QuebecFollow::CornerX > 2500., "the bells sat on the follow");
+static_assert(QuebecBells::BellX - QuebecRoll::StartX > 2500., "the bells sat on the cart");
 static_assert(QuebecStorySave::Current != QuebecStorySave::Rejected, "the writer would plant the unsupported fixture");
 
 static FString WithClose(const TCHAR* Line, int32 Bonus)
@@ -210,7 +217,7 @@ void AQuebecCampaign::BeginPlay()
                 CompletedMissions = Save->CompletedMissions;
                 const QuebecStorySave::FSteps Steps = QuebecStorySave::Applied(Save->Version, {
                     Save->PondStep, Save->CourtStep, Save->ShowStep, Save->RescueMask,
-                    Save->ConvoyStep, Save->BlankStep, Save->TourStep, Save->HomeStep, Save->EscortStep, Save->ShadeStep, Save->GrabStep, Save->CutStep, Save->ChaseStep, Save->FinaleStep, Save->FollowStep, Save->RollStep});
+                    Save->ConvoyStep, Save->BlankStep, Save->TourStep, Save->HomeStep, Save->EscortStep, Save->ShadeStep, Save->GrabStep, Save->CutStep, Save->ChaseStep, Save->FinaleStep, Save->FollowStep, Save->RollStep, Save->BellStep});
                 PondStep = Steps.Pond;
                 CourtStep = Steps.Court;
                 ShowStep = Steps.Show;
@@ -227,6 +234,7 @@ void AQuebecCampaign::BeginPlay()
                 FinaleStep = Steps.Finale;
                 FollowStep = Steps.Follow;
                 RollStep = Steps.Roll;
+                BellStep = Steps.Bell;
                 // The coat's place is not in the slot. A walk in progress starts again at the meet.
                 EscortFriendX = static_cast<float>(EscortStep >= EscortBankedStep ? QuebecEscort::DoorX : QuebecEscort::MeetX);
                 EscortFriendY = static_cast<float>(EscortStep >= EscortBankedStep ? QuebecEscort::DoorY : QuebecEscort::MeetY);
@@ -651,6 +659,15 @@ void AQuebecCampaign::BuildEncounter()
     RollCartCaption = AddCaption(TEXT("RollCartCaption"), FVector(RollStart.X, RollStart.Y, 180.), TEXT("CART"), 18.f);
     RollStop = AddPart(TEXT("RollStop"), Cube, FVector(RollEnd.X, RollEnd.Y, 40.), FVector(70., 70., 16.), Lime);
     RollStopCaption = AddCaption(TEXT("RollStopCaption"), FVector(RollEnd.X, RollEnd.Y, 160.), TEXT("STOP"), 18.f);
+    const QuebecBells::FSpot North = QuebecBells::Bell(0);
+    const QuebecBells::FSpot Mid = QuebecBells::Bell(1);
+    const QuebecBells::FSpot South = QuebecBells::Bell(2);
+    BellNorth = AddPart(TEXT("BellNorth"), Cube, FVector(North.X, North.Y, 40.), FVector(70., 70., 16.), Gold);
+    BellNorthCaption = AddCaption(TEXT("BellNorthCaption"), FVector(North.X, North.Y, 160.), TEXT("ONE"), 18.f);
+    BellMid = AddPart(TEXT("BellMid"), Cube, FVector(Mid.X, Mid.Y, 40.), FVector(70., 70., 16.), Berry);
+    BellMidCaption = AddCaption(TEXT("BellMidCaption"), FVector(Mid.X, Mid.Y, 160.), TEXT("TWO"), 18.f);
+    BellSouth = AddPart(TEXT("BellSouth"), Cube, FVector(South.X, South.Y, 40.), FVector(70., 70., 16.), Lime);
+    BellSouthCaption = AddCaption(TEXT("BellSouthCaption"), FVector(South.X, South.Y, 160.), TEXT("THREE"), 18.f);
 }
 
 void AQuebecCampaign::Tick(float DeltaSeconds)
@@ -679,6 +696,7 @@ void AQuebecCampaign::Tick(float DeltaSeconds)
             TickFinale(DeltaSeconds);
             TickFollow(DeltaSeconds);
             TickRoll(DeltaSeconds);
+            TickBell();
         }
     }
     if (GetWorld()->GetTimeSeconds()-LastPresentationTime >= .1f)
@@ -2285,6 +2303,81 @@ void AQuebecCampaign::TickRoll(float DeltaSeconds)
     if (!FMath::IsNearlyEqual(static_cast<float>(BeforeAlong), RollAlong)) ForceNetUpdate();
 }
 
+void AQuebecCampaign::TickBell()
+{
+    if (!IsBellOpen()) return;
+    const int Next = static_cast<int>(BellStep);
+    AQuebecController* NextFoot = nullptr;
+    AQuebecController* OtherFoot = nullptr;
+    for (TActorIterator<AQuebecController> It(GetWorld()); It; ++It)
+    {
+        const AQuebecCharacter* Walker = Cast<AQuebecCharacter>(It->GetPawn());
+        if (!Walker || Walker->GetCharacterMovement()->IsSwimming()) continue;
+        const FVector Position = Walker->GetActorLocation();
+        if (QuebecBells::InBell(Next, Position.X, Position.Y))
+        {
+            if (!NextFoot) NextFoot = *It;
+            continue;
+        }
+        bool bOther = false;
+        for (int Index = 0; Index < QuebecBells::Count; ++Index)
+        {
+            if (Index == Next) continue;
+            if (QuebecBells::InBell(Index, Position.X, Position.Y)) bOther = true;
+        }
+        if (bOther && !OtherFoot) OtherFoot = *It;
+    }
+    const bool bHaveNext = NextFoot != nullptr;
+    const bool bHaveOther = OtherFoot != nullptr && !bHaveNext;
+    AQuebecController* Foot = bHaveNext ? NextFoot : OtherFoot;
+    QuebecBells::FRing Now;
+    Now.Step = Next;
+    const QuebecBells::FRing After = QuebecBells::Tick(Now, Foot != nullptr, bHaveNext, bHaveOther);
+    if (!After.bEarly)
+    {
+        bBellWarned = false;
+    }
+    else if (!bBellWarned)
+    {
+        bBellWarned = true;
+        BellStep = static_cast<int32>(After.Step);
+        if (Foot) Foot->ShowInteractionMessage(TEXT("That bell was early. Start again at the first."));
+        for (TActorIterator<AQuebecController> It(GetWorld()); It; ++It)
+            It->PlayFeedback(EQuebecFeedbackCue::Checkpoint);
+        UpdatePresentation();
+        ForceNetUpdate();
+        return;
+    }
+    else return;
+    if (After.Step != BellStep)
+    {
+        const TCHAR* Message = TEXT("The first bell is rung. The next one is south.");
+        bool bFinished = false;
+        if (After.Step == QuebecBells::StepThree)
+            Message = TEXT("The second bell is rung. The last one is south.");
+        if (After.Step == QuebecBells::StepBanked)
+        {
+            Message = TEXT("The three bells are rung.");
+            bFinished = true;
+        }
+        AdvanceBell(After.Step, Foot, Message, bFinished);
+    }
+}
+
+void AQuebecCampaign::AdvanceBell(int32 Next, AQuebecController* Who, const TCHAR* Message, bool bFinished)
+{
+    if (Next == BellStep) return;
+    BellStep = Next;
+    // Link -1 is outside the seven banks, so the chain does not move. The purse is flat, and only at the last bell.
+    ShowStepMessage(Who, Message, bFinished, -1);
+    if (bFinished) GrantCash(QuebecBells::Pay);
+    for (TActorIterator<AQuebecController> It(GetWorld()); It; ++It)
+        It->PlayFeedback(bFinished ? EQuebecFeedbackCue::Complete : EQuebecFeedbackCue::Checkpoint);
+    UpdatePresentation();
+    ForceNetUpdate();
+    SaveBoundary();
+}
+
 void AQuebecCampaign::AdvanceRoll(int32 Next, AQuebecController* Who, const TCHAR* Message, bool bFinished)
 {
     if (Next == RollStep) return;
@@ -2415,7 +2508,7 @@ void AQuebecCampaign::ChangePhase(EQuebecCampaignPhase Next, bool bFeedback)
 bool UQuebecCampaignSaveGame::IsSupported() const
 {
     const QuebecStorySave::FSteps Steps{
-        PondStep, CourtStep, ShowStep, RescueMask, ConvoyStep, BlankStep, TourStep, HomeStep, EscortStep, ShadeStep, GrabStep, CutStep, ChaseStep, FinaleStep, FollowStep, RollStep};
+        PondStep, CourtStep, ShowStep, RescueMask, ConvoyStep, BlankStep, TourStep, HomeStep, EscortStep, ShadeStep, GrabStep, CutStep, ChaseStep, FinaleStep, FollowStep, RollStep, BellStep};
     return QuebecStorySave::Accept(Version, CompletedMissions, Steps);
 }
 
@@ -2450,6 +2543,7 @@ void AQuebecCampaign::SaveBoundary()
         Save->FinaleStep = FinaleStep;
         Save->FollowStep = FollowStep;
         Save->RollStep = RollStep;
+        Save->BellStep = BellStep;
     }
     if (!Save || !UGameplayStatics::SaveGameToSlot(Save,SaveSlot(),0))
     {
@@ -2611,6 +2705,13 @@ void AQuebecCampaign::RequestRetry(AQuebecController* Controller)
                 Controller->ShowInteractionMessage(TEXT("This cart restored. It keeps the ground it rolled."));
             return;
         }
+        if (IsBellOpen())
+        {
+            const QuebecBells::FSpot Spot = QuebecBells::Recover(static_cast<int>(BellStep));
+            if (MoveToSafeCheckpoint(Controller, FVector(Spot.X, Spot.Y, 100.), FRotator(0., 90., 0.)))
+                Controller->ShowInteractionMessage(TEXT("This order restored. The next bell stays the next bell."));
+            return;
+        }
         Controller->ShowInteractionMessage(TEXT("The day held. T replays the race."));
         return;
     }
@@ -2745,6 +2846,11 @@ void AQuebecCampaign::RequestReplay(AQuebecController* Controller)
     if (IsRollOpen())
     {
         Controller->ShowInteractionMessage(TEXT("The cart is still out. T replays the race after the stop."));
+        return;
+    }
+    if (IsBellOpen())
+    {
+        Controller->ShowInteractionMessage(TEXT("The bells are still quiet. T replays the race after they ring."));
         return;
     }
     // A race replay does not rewind the story steps or the chain, and it does not write the slot. The story tail already holds the steps.
@@ -2996,6 +3102,7 @@ FString AQuebecCampaign::GetMissionTitle() const
     if (IsFinaleOpen()) return TEXT("16 / ONCE MORE");
     if (IsFollowOpen()) return TEXT("17 / KEEP BACK");
     if (IsRollOpen()) return TEXT("18 / ROLL IT");
+    if (IsBellOpen()) return TEXT("19 / IN ORDER");
     if (Phase == EQuebecCampaignPhase::Complete) return TEXT("THE PARK IS OPEN");
     return Phase <= EQuebecCampaignPhase::ReleaseTable ? TEXT("01 / A TABLE FOR ETERNITY") : TEXT("02 / NO SUCH THING AS A QUIET LAP");
 }
@@ -3145,6 +3252,12 @@ FString AQuebecCampaign::GetObjectiveText() const
     {
         if (RollStep == QuebecRoll::StepReady) return TEXT("Stand at the handles");
         return TEXT("Walk the cart. Don't sprint.");
+    }
+    if (IsBellOpen())
+    {
+        if (BellStep == QuebecBells::StepOne) return TEXT("Ring the north bell");
+        if (BellStep == QuebecBells::StepTwo) return TEXT("Ring the middle bell");
+        return TEXT("Ring the south bell");
     }
     if (Phase == EQuebecCampaignPhase::Complete) return TEXT("The last page is blank / T: replay the race");
     switch (Phase)
@@ -3315,7 +3428,15 @@ FString AQuebecCampaign::GetBriefingText() const
             return TEXT("MEMPHIS: The cart only moves while you walk it. A sprint tips it. A stop waits.");
         return TEXT("MEMPHIS: Stay at the handles. Walk. If you sprint, it goes back to the start.");
     }
-    if (Phase == EQuebecCampaignPhase::Complete && PondStep >= PondBankedStep && CourtStep >= CourtBankedStep && ShowStep >= ShowBankedStep && RescueMask >= RescueDone && ConvoyStep >= ConvoyBankedStep && BlankStep >= BlankBankedStep && TourStep >= TourBankedStep && HomeStep >= HomeBankedStep && EscortStep >= EscortBankedStep && ShadeStep >= ShadeBankedStep && GrabStep >= GrabBankedStep && CutStep >= CutBankedStep && ChaseStep >= ChaseBankedStep && FinaleStep >= FinaleBankedStep && FollowStep >= FollowBankedStep && RollStep >= RollBankedStep)
+    if (IsBellOpen())
+    {
+        if (BellStep == QuebecBells::StepOne)
+            return TEXT("MEMPHIS: Ring them from north to south. An early bell starts you over.");
+        if (BellStep == QuebecBells::StepTwo)
+            return TEXT("MEMPHIS: The middle bell is next. The south one waits.");
+        return TEXT("MEMPHIS: The south bell closes it. An early bell starts you over.");
+    }
+    if (Phase == EQuebecCampaignPhase::Complete && PondStep >= PondBankedStep && CourtStep >= CourtBankedStep && ShowStep >= ShowBankedStep && RescueMask >= RescueDone && ConvoyStep >= ConvoyBankedStep && BlankStep >= BlankBankedStep && TourStep >= TourBankedStep && HomeStep >= HomeBankedStep && EscortStep >= EscortBankedStep && ShadeStep >= ShadeBankedStep && GrabStep >= GrabBankedStep && CutStep >= CutBankedStep && ChaseStep >= ChaseBankedStep && FinaleStep >= FinaleBankedStep && FollowStep >= FollowBankedStep && RollStep >= RollBankedStep && BellStep >= BellBankedStep)
         return TEXT("The last page is blank. The park keeps the day that was not in his book.");
     switch (Phase)
     {
@@ -3349,6 +3470,7 @@ FString AQuebecCampaign::GetStatusText() const
     if (IsFinaleOpen()) return TEXT("R recovers this day");
     if (IsFollowOpen()) return TEXT("R recovers this gap");
     if (IsRollOpen()) return TEXT("R recovers this cart");
+    if (IsBellOpen()) return TEXT("R recovers this order");
     if (Phase == EQuebecCampaignPhase::AimWorklight) return FString::Printf(TEXT("Alignment %d%% / hold %d%%"),FMath::RoundToInt(LightAlignment*100.f),FMath::RoundToInt(LightHoldProgress*100.f));
     if (Phase == EQuebecCampaignPhase::CrossCable) return FString::Printf(TEXT("Sprint %s / jump %s / R: recover"),bSprintSeen?TEXT("banked"):TEXT("needed"),bJumpSeen?TEXT("banked"):TEXT("needed"));
     if (Phase == EQuebecCampaignPhase::PullClamp || Phase == EQuebecCampaignPhase::ReleaseTable) return bClampOpen ? TEXT("GREEN BEAT / pull now / R: recover") : TEXT("Press squeezing / wait for green / R: recover");
@@ -3456,6 +3578,11 @@ FVector AQuebecCampaign::GetObjectiveLocation() const
         const QuebecRoll::FSpot Spot = RollStep == QuebecRoll::StepReady
             ? QuebecRoll::Handles(0.)
             : QuebecRoll::Place(static_cast<double>(RollAlong));
+        return FVector(Spot.X, Spot.Y, 100.);
+    }
+    if (IsBellOpen())
+    {
+        const QuebecBells::FSpot Spot = QuebecBells::Bell(static_cast<int>(BellStep));
         return FVector(Spot.X, Spot.Y, 100.);
     }
     switch (Phase)
@@ -3600,6 +3727,13 @@ bool AQuebecCampaign::GetNextObjectiveLocation(FVector& Out) const
     {
         if (RollStep != QuebecRoll::StepReady) return false;
         const QuebecRoll::FSpot Spot = QuebecRoll::Stop();
+        Out = At(Spot.X, Spot.Y);
+        return true;
+    }
+    if (IsBellOpen())
+    {
+        if (BellStep >= QuebecBells::StepThree) return false;
+        const QuebecBells::FSpot Spot = QuebecBells::Bell(static_cast<int>(BellStep) + 1);
         Out = At(Spot.X, Spot.Y);
         return true;
     }
@@ -3867,6 +4001,9 @@ void AQuebecCampaign::UpdatePresentation()
                 Caption->SetWorldLocation(FVector(Spot.X, Spot.Y, 180.));
             }
             if (Caption == RollStopCaption) Caption->SetVisibility(IsRollOpen());
+            if (Caption == BellNorthCaption) Caption->SetVisibility(IsBellOpen());
+            if (Caption == BellMidCaption) Caption->SetVisibility(IsBellOpen());
+            if (Caption == BellSouthCaption) Caption->SetVisibility(IsBellOpen());
         }
         if (EscortDoor) EscortDoor->SetVisibility(IsEscortOpen());
         const bool bShadeWorld = IsShadeOpen();
@@ -3947,6 +4084,10 @@ void AQuebecCampaign::UpdatePresentation()
             RollCart->SetWorldLocation(FVector(RollSpot.X, RollSpot.Y, 70.));
             RollCart->SetVisibility(bRollWorld);
         }
+        const bool bBellWorld = IsBellOpen();
+        if (BellNorth) BellNorth->SetVisibility(bBellWorld);
+        if (BellMid) BellMid->SetVisibility(bBellWorld);
+        if (BellSouth) BellSouth->SetVisibility(bBellWorld);
         for (UTextRenderComponent* Caption : Captions) Caption->SetWorldRotation((Eye-Caption->GetComponentLocation()).Rotation());
     }
 }
@@ -3996,6 +4137,7 @@ void AQuebecCampaign::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
     DOREPLIFETIME(AQuebecCampaign,FollowAlong);
     DOREPLIFETIME(AQuebecCampaign,RollStep);
     DOREPLIFETIME(AQuebecCampaign,RollAlong);
+    DOREPLIFETIME(AQuebecCampaign,BellStep);
     DOREPLIFETIME(AQuebecCampaign,LightOperator);
     DOREPLIFETIME(AQuebecCampaign,LightYaw);
     DOREPLIFETIME(AQuebecCampaign,LightPitch);

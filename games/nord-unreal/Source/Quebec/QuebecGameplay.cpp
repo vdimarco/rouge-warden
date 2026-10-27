@@ -3014,6 +3014,8 @@ void AQuebecHUD::DrawHUD()
             Status = TEXT("Menu · Recover restores this gap");
         else if (Campaign->IsRollOpen() && bTouchControls)
             Status = TEXT("Menu · Recover restores this cart");
+        else if (Campaign->IsBellOpen() && bTouchControls)
+            Status = TEXT("Menu · Recover restores this order");
         else if (Campaign->IsCampaignComplete() && !Campaign->IsStoryBeatOpen() && SideJobs)
         {
             const int32 Guide = SideJobs->GuideMarker(Here, true);
