@@ -1472,3 +1472,40 @@ Playability was scored from a flat boot and the city render check, not a full pl
 
 Playability was scored from a flat boot and the city render check, not a full playthrough. OpenSpec CLI validation was not run; the `openspec` command is not installed.
 
+### Round 33 — 2026-10-27 — rubric v1
+
+- What changed: On a shop building, each floor above the street gets a limestone course at the floor line. The storey just above the shop is the deep one, about a quarter of the floor, with a dark lip and a sill, and its window starts higher so the sash is shorter than the floors above it. Higher floors get a thinner course, about a seventh of the floor. The stone is mixed on after the grade, so the violet and teal paper do not recolor it. It fades before it can shimmer. Glass towers are left alone. No new mesh. Francis D.K. Ching, Architecture: Form, Space, and Order: a string course marks the floor.
+- Why it helped: The floors above the shop cloth were one window tile. On the street still, six limestone courses now stack up the near facades. The deepest, just above the red cloth, runs from image y 224 to 242. At x 600, y 235, the wall goes from (203, 55, 27) to (148, 133, 112). About 8.3% of the street pixels moved, mean absolute change 12.2. Glass that sat in the old lower sash is stone now (757 sampled pixels).
+- Screenshots: before `docs/gauntlet/shots/r33-before-street.png`, after `docs/gauntlet/shots/r33-after-street.png`. The floors: `docs/gauntlet/shots/r33-before-floors.png`, `docs/gauntlet/shots/r33-after-floors.png`. Needle, where the courses are out of frame: `docs/gauntlet/shots/r33-before-needle.png`, `docs/gauntlet/shots/r33-after-needle.png`.
+- Next target: Composition and camera (6), tied with atmosphere, character models, particles and UI. On a fast rope the head still sits lower, and the chase arm stays 4.5 m at −20°.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 7 | Unchanged. A lit shop's cloth is warmer along the hem than along the top. |
+| Color palette | 7 | Unchanged. The dark shade is violet and the open shade is still teal. At blue hour that teal is gone. |
+| Detail density | 7 | A limestone course sits on each floor above a shop. The one just above the cloth is the deep course, and that window's sash is shorter. |
+| Texture and material quality | 7 | Unchanged. The masonry clay from round 23. |
+| Composition and camera | 6 | Unchanged. On a fast rope the head still sits lower. The chase arm stays 4.5 m and the pitch stays −20°. |
+| Atmosphere | 6 | Unchanged. The far avenue still sits in the warm dust from round 15. |
+| Character models | 6 | Unchanged. The cream belt from round 17. |
+| Animation smoothness | 8 | Unchanged. At the same run phase the feet sit 80 px apart across the frame and 94 px apart in height. |
+| Particles and VFX | 6 | Unchanged. The cream trail from round 19. |
+| UI polish | 6 | Unchanged. The cream lip and rose hem from round 21. |
+| Responsiveness and input latency | 6 | Unchanged. No new pass and no new draw. No input timing was measured. |
+| Controls feel | 5 | Unchanged. |
+| Mission clarity | 4 | Unchanged. Not played. |
+| Pacing | 4 | Unchanged. |
+| Fun factor | 4 | Unchanged. Not played as a session. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 5 | Unchanged. |
+| Sound design | 4 | Unchanged. |
+| Variety | 4 | Unchanged. |
+| Performance stability | 6 | `qa/vr/render.mjs` passed, including flat play, the painted-sky checks, the lit-sphere cel check, and the canyon ink lines (20.4%). Street mean 77.1, saturation 0.58. |
+
+- Aesthetics raw: 66 / 10 dimensions, index 66
+- Playability raw: 46 / 10 dimensions, index 46
+- Total: 112 / 200
+- Delta vs last round: +1 (111 → 112). Detail density 6 → 7. Playability unchanged.
+
+Playability was scored from a flat boot and the city render check, not a full playthrough. OpenSpec CLI validation was not run; the `openspec` command is not installed.
+

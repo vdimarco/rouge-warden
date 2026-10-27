@@ -1,0 +1,4 @@
+- [x] Paint a limestone course on each floor above a shop, deeper on the first storey, with a sill and a shorter sash
+- [x] Shoot the street before and after, and confirm the band is on the wall above the shop
+- [x] Pass `qa/vr/render.mjs`, including canyon ink under 35%
+- [x] Record the score only if the still shows the course
