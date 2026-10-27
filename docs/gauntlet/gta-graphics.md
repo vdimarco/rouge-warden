@@ -2173,3 +2173,38 @@ Unreal is not available in this environment, so in-engine frames are the last co
 - Playability raw: 39 / 10 dimensions, index 39
 - Total: 127 / 200
 - Delta vs last round: 0
+
+### Round 63 — 2026-10-27 — rubric v1
+
+- What changed: the corner camera shows one cycle of the hoodie run. The clip is the CC0 run already in the glTF, the same sequence the gameplay loads as `A_MenHoodie_Run`. Sprint is 800 cm/s and the clip plays at that speed divided by 600, so the figure travels 600 cm across the cycle. The still is the pose at 0.20 s. The sheet and the gif are six even samples. The rock stays off. The opening aim stays.
+- Why it helped: animation was a side sheet, and the scored street still posed the walk. The stride now reads in the corner: a kicked trailing leg, a long step, a raised knee. It is still one clip, with no blend, and the sequence is not an imported uasset, so the score moves by one and stops at 8.
+- Screenshots: before `docs/gauntlet/gta-graphics/round-63/before-frame.png` is the corner from the previous round. After `docs/gauntlet/gta-graphics/round-63/after-frame.png` is the same camera with the run at 0.20 s. The crop is `runner-crop.png`. The cycle is `run-sheet.png` and `run.gif`. Not an Unreal capture. Against an empty corner from the same render, the mean absolute delta is 0.00129 and the max is 0.213. 5709 pixels change, from x 433 to 524 and y 351 to 539. `Scripts/test_run_cycle.py` passed. The pose was not compiled in Unreal. `GET /gta/` returned 200. OpenSpec CLI is not installed, so the change files were not validated with `openspec`.
+- Next target: the feet throw no shadow on the street. Animation is one clip.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 9 | The dusk panes and the car lamps are unchanged. |
+| Color palette | 9 | The hoodie colours are unchanged. |
+| Detail density | 9 | The avenue is unchanged. |
+| Texture and material quality | 9 | The wall and the cloth are unchanged. |
+| Composition and camera | 9 | The corner camera and the opening aim are unchanged. |
+| Atmosphere | 9 | The scattering sky is unchanged. |
+| Character models | 9 | The hoodie is unchanged. |
+| Animation smoothness | 8 | The original run plays through the corner for one cycle. There is still no blend, and the sequence is not imported yet. |
+| Particles and VFX | 9 | The shoe puffs are unchanged. |
+| UI polish | 9 | The radar heading is unchanged. |
+| Responsiveness and input latency | 4 | Not measured this round. |
+| Controls feel | 4 | Not played. |
+| Mission clarity | 5 | The objective words are unchanged. |
+| Pacing | 4 | Unchanged mission slice. |
+| Fun factor | 3 | Not played. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 4 | The stride in the street is the new mark. No new juice. |
+| Sound design | 3 | Not listened to. |
+| Variety | 3 | One run cycle. The walk clip is still the opening pose. |
+| Performance stability | 5 | `Scripts/test_run_cycle.py` passed. Frame time was not remeasured. |
+
+- Aesthetics raw: 89 / 10 dimensions, index 89
+- Playability raw: 39 / 10 dimensions, index 39
+- Total: 128 / 200
+- Delta vs last round: +1

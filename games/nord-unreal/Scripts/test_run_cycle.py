@@ -10,6 +10,7 @@ from pathlib import Path
 import numpy as np
 
 from bake_officer_stand import SOURCE, _accessor, _load_glb
+from run_stride import cycle_cm
 
 ROOT = Path(__file__).resolve().parents[1]
 GAME = (ROOT / "Source/Quebec/QuebecGameplay.cpp").read_text()
@@ -58,6 +59,12 @@ class RunCycleTests(unittest.TestCase):
         self.assertIn("Speed > 520.f && CrewRun ? CrewRun", GAME)
         self.assertIn("const FRotator Look(-16.f, Yaw, 0.f);", GAME)
         self.assertIn("CameraArm->SocketOffset = FVector(0., 70., 110.);", GAME)
+
+    def test_one_run_cycle_covers_six_metres(self):
+        pace = (ROOT / "Source/Quebec/QuebecPace.h").read_text()
+        self.assertIn("inline constexpr double SprintCmPerSecond = 800.;", pace)
+        self.assertIn("Animation == CrewRun ? 600.f : 180.f", GAME)
+        self.assertEqual(cycle_cm(800.0, 600.0), 600.0)
 
 
 if __name__ == "__main__":
