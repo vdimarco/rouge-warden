@@ -93,7 +93,7 @@ int main()
     Saved.Bell = 1;
     Saved.Roll = 0;
     Expect(!QuebecStorySave::Accept(QuebecStorySave::Current, 2, Saved), "the bells started before the cart was banked");
-    Expect(QuebecStorySave::Roll == 11 && QuebecStorySave::Bell == 12 && QuebecStorySave::Current == 13 && QuebecStorySave::Follow == 10, "the slot writer left version 13");
+    Expect(QuebecStorySave::Roll == 11 && QuebecStorySave::Bell == 12 && QuebecStorySave::Block == 13 && QuebecStorySave::Current == 14 && QuebecStorySave::Follow == 10, "the slot writer left version 14");
 
     std::printf("%d assertions, %d failures\n", Assertions, Failures);
     return Failures == 0 ? 0 : 1;

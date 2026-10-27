@@ -163,7 +163,7 @@ int main()
     Saved.Follow = 1;
     Saved.Finale = 1;
     Expect(!QuebecStorySave::Accept(QuebecStorySave::Current, 2, Saved), "the gap started before the day was banked");
-    Expect(QuebecStorySave::Finale == 9 && QuebecStorySave::Follow == 10 && QuebecStorySave::Roll == 11 && QuebecStorySave::Bell == 12 && QuebecStorySave::Current == 13 && QuebecStorySave::Chase == 8, "the slot writer left version 13");
+    Expect(QuebecStorySave::Finale == 9 && QuebecStorySave::Follow == 10 && QuebecStorySave::Roll == 11 && QuebecStorySave::Bell == 12 && QuebecStorySave::Block == 13 && QuebecStorySave::Current == 14 && QuebecStorySave::Chase == 8, "the slot writer left version 14");
 
     std::printf("%d assertions, %d failures\n", Assertions, Failures);
     return Failures == 0 ? 0 : 1;

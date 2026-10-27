@@ -3018,6 +3018,8 @@ void AQuebecHUD::DrawHUD()
             Status = TEXT("Menu · Recover restores this order");
         else if (Campaign->IsBlockOpen() && bTouchControls)
             Status = TEXT("Menu · Recover restores this road");
+        else if (Campaign->IsSendOpen() && bTouchControls)
+            Status = TEXT("Menu · Recover restores this send-off");
         else if (Campaign->IsCampaignComplete() && !Campaign->IsStoryBeatOpen() && SideJobs)
         {
             const int32 Guide = SideJobs->GuideMarker(Here, true);

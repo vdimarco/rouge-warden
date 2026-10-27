@@ -15,6 +15,7 @@
 #include "QuebecRoll.h"
 #include "QuebecBells.h"
 #include "QuebecBlock.h"
+#include "QuebecSend.h"
 #include "QuebecChain.h"
 #include "QuebecPace.h"
 #include "QuebecConvoyRules.h"
@@ -88,6 +89,12 @@ static_assert(QuebecStorySave::BlockBanked == AQuebecCampaign::BlockBankedStep, 
 static_assert(QuebecBlock::RoadAx == 12728.841 && QuebecBlock::RoadAy == -24734.191, "the courier left the south road");
 static_assert(QuebecBlock::CourierCmPerSecond > QuebecPace::WalkCmPerSecond, "a walk would beat the courier's road");
 static_assert(QuebecBlock::CountsAsCar(0) && !QuebecBlock::CountsAsCar(1) && !QuebecBlock::CountsAsCar(3), "the block took a bike");
+static_assert(QuebecSend::StepBanked == AQuebecCampaign::SendBankedStep, "mission 21 and the story tail share one banked index");
+static_assert(QuebecStorySave::SendBanked == AQuebecCampaign::SendBankedStep, "the story tail left the send-off");
+static_assert(QuebecSend::ColumnX == 28800. && QuebecSend::DoorY == 21000., "the door left the north lawn");
+static_assert(QuebecSend::SpeedCap > QuebecPace::WalkCmPerSecond && QuebecSend::Crawl < QuebecPace::WalkCmPerSecond, "the gentle drive left the space above a walk");
+static_assert(QuebecSend::CountsAsCar(0) && !QuebecSend::CountsAsCar(1) && !QuebecSend::CountsAsCar(3), "the send-off took a bike");
+static_assert(QuebecFinale::ColumnX - QuebecSend::ColumnX > 2500. && QuebecSend::ColumnX - QuebecBells::BellX > 2500., "the send-off sat on an earlier column");
 static_assert(QuebecStorySave::Current != QuebecStorySave::Rejected, "the writer would plant the unsupported fixture");
 
 static FString WithClose(const TCHAR* Line, int32 Bonus)
@@ -223,7 +230,7 @@ void AQuebecCampaign::BeginPlay()
                 CompletedMissions = Save->CompletedMissions;
                 const QuebecStorySave::FSteps Steps = QuebecStorySave::Applied(Save->Version, {
                     Save->PondStep, Save->CourtStep, Save->ShowStep, Save->RescueMask,
-                    Save->ConvoyStep, Save->BlankStep, Save->TourStep, Save->HomeStep, Save->EscortStep, Save->ShadeStep, Save->GrabStep, Save->CutStep, Save->ChaseStep, Save->FinaleStep, Save->FollowStep, Save->RollStep, Save->BellStep, Save->BlockStep});
+                    Save->ConvoyStep, Save->BlankStep, Save->TourStep, Save->HomeStep, Save->EscortStep, Save->ShadeStep, Save->GrabStep, Save->CutStep, Save->ChaseStep, Save->FinaleStep, Save->FollowStep, Save->RollStep, Save->BellStep, Save->BlockStep, Save->SendStep});
                 PondStep = Steps.Pond;
                 CourtStep = Steps.Court;
                 ShowStep = Steps.Show;
@@ -242,6 +249,7 @@ void AQuebecCampaign::BeginPlay()
                 RollStep = Steps.Roll;
                 BellStep = Steps.Bell;
                 BlockStep = Steps.Block;
+                SendStep = Steps.Send;
                 // The coat's place is not in the slot. A walk in progress starts again at the meet.
                 EscortFriendX = static_cast<float>(EscortStep >= EscortBankedStep ? QuebecEscort::DoorX : QuebecEscort::MeetX);
                 EscortFriendY = static_cast<float>(EscortStep >= EscortBankedStep ? QuebecEscort::DoorY : QuebecEscort::MeetY);
@@ -281,6 +289,8 @@ void AQuebecCampaign::BeginPlay()
         RollAlong = 0.f;
         // How far the courier has driven is not in the slot. A run in progress starts again at the north end.
         BlockAlong = 0.f;
+        // How far the send-off drive got is not in the slot. A drive in progress starts that distance again.
+        SendDriven = 0.f;
         const auto SpawnCar = [this](const FVector& Location, const FRotator& Rotation, int32 Paint)
         {
             const FTransform Transform(Rotation,Location);
@@ -684,6 +694,14 @@ void AQuebecCampaign::BuildEncounter()
     const QuebecBlock::FSpot Courier = QuebecBlock::Place(0.);
     BlockCourier = AddPart(TEXT("BlockCourier"), Cube, FVector(Courier.X, Courier.Y, 90.), FVector(40., 40., 80.), Berry);
     BlockCourierCaption = AddCaption(TEXT("BlockCourierCaption"), FVector(Courier.X, Courier.Y, 220.), TEXT("CAR"), 18.f);
+    SendDoor = AddPart(TEXT("SendDoor"), Cube, FVector(QuebecSend::ColumnX, QuebecSend::DoorY, 40.), FVector(70., 70., 16.), Gold);
+    SendDoorCaption = AddCaption(TEXT("SendDoorCaption"), FVector(QuebecSend::ColumnX, QuebecSend::DoorY, 160.), TEXT("DOOR"), 18.f);
+    SendGate = AddPart(TEXT("SendGate"), Cube, FVector(QuebecSend::ColumnX, QuebecSend::GateY, 40.), FVector(70., 70., 16.), Berry);
+    SendGateCaption = AddCaption(TEXT("SendGateCaption"), FVector(QuebecSend::ColumnX, QuebecSend::GateY, 160.), TEXT("GATE"), 18.f);
+    SendBay = AddPart(TEXT("SendBay"), Cube, FVector(QuebecSend::ColumnX, QuebecSend::BayY, 40.), FVector(70., 70., 16.), Lime);
+    SendBayCaption = AddCaption(TEXT("SendBayCaption"), FVector(QuebecSend::ColumnX, QuebecSend::BayY, 160.), TEXT("BAY"), 18.f);
+    SendWalk = AddPart(TEXT("SendWalk"), Cube, FVector(QuebecSend::ColumnX, QuebecSend::FinishY, 40.), FVector(70., 70., 16.), Gold);
+    SendWalkCaption = AddCaption(TEXT("SendWalkCaption"), FVector(QuebecSend::ColumnX, QuebecSend::FinishY, 160.), TEXT("WALK"), 18.f);
 }
 
 void AQuebecCampaign::Tick(float DeltaSeconds)
@@ -714,6 +732,7 @@ void AQuebecCampaign::Tick(float DeltaSeconds)
             TickRoll(DeltaSeconds);
             TickBell();
             TickBlock(DeltaSeconds);
+            TickSend(DeltaSeconds);
         }
     }
     if (GetWorld()->GetTimeSeconds()-LastPresentationTime >= .1f)
@@ -2484,6 +2503,145 @@ void AQuebecCampaign::AdvanceBlock(int32 Next, AQuebecController* Who, const TCH
     SaveBoundary();
 }
 
+void AQuebecCampaign::TickSend(float DeltaSeconds)
+{
+    if (!IsSendOpen()) return;
+    AQuebecController* Driver = nullptr;
+    bool bOnFoot = false;
+    bool bInCar = false;
+    bool bHaveBody = false;
+    double Speed = 0.;
+    bool bInMark = false;
+    bool bInLane = false;
+    const int Stage = static_cast<int>(SendStep);
+    const bool bFootStage = Stage == QuebecSend::StepDoor || Stage == QuebecSend::StepWalk;
+    if (bFootStage)
+    {
+        for (TActorIterator<AQuebecController> It(GetWorld()); It; ++It)
+        {
+            const APawn* Pawn = It->GetPawn();
+            if (!Pawn || Cast<AQuebecCar>(Pawn)) continue;
+            const AQuebecCharacter* Walker = Cast<AQuebecCharacter>(Pawn);
+            if (Walker && Walker->GetCharacterMovement()->IsSwimming()) continue;
+            bHaveBody = true;
+            const FVector Position = Pawn->GetActorLocation();
+            const bool bHere = Stage == QuebecSend::StepDoor
+                ? QuebecSend::InDoor(Position.X, Position.Y)
+                : QuebecSend::InFinish(Position.X, Position.Y);
+            if (bHere)
+            {
+                bOnFoot = true;
+                Driver = *It;
+                bInMark = true;
+                break;
+            }
+            if (!Driver) Driver = *It;
+        }
+    }
+    else
+    {
+        bool bWatched = false;
+        bool bStoppedInBay = false;
+        for (TActorIterator<AQuebecCar> It(GetWorld()); It; ++It)
+        {
+            AQuebecCar* Car = *It;
+            if (!Car || !Car->Occupant || !QuebecSend::CountsAsCar(static_cast<int>(Car->RideKind))) continue;
+            AQuebecController* Who = Cast<AQuebecController>(Car->GetController());
+            if (!Who) continue;
+            bHaveBody = true;
+            bInCar = true;
+            const FVector Position = Car->GetActorLocation();
+            const double Pace = static_cast<double>(FMath::Abs(Car->Speed));
+            const bool bHere = Stage == QuebecSend::StepDrive
+                ? QuebecSend::InGate(Position.X, Position.Y)
+                : QuebecSend::InBay(Position.X, Position.Y);
+            const bool bLane = QuebecSend::InLane(Position.X);
+            if (Stage == QuebecSend::StepDrive && Pace > QuebecSend::SpeedCap)
+            {
+                bWatched = true;
+                Driver = Who;
+                Speed = Pace;
+                bInMark = bHere;
+                bInLane = bLane;
+                break;
+            }
+            if (Stage == QuebecSend::StepStop && bHere && Pace <= QuebecSend::Crawl)
+            {
+                bWatched = true;
+                Driver = Who;
+                Speed = Pace;
+                bInMark = true;
+                bStoppedInBay = true;
+                break;
+            }
+            if (bHere && !bStoppedInBay)
+            {
+                bWatched = true;
+                Driver = Who;
+                Speed = Pace;
+                bInMark = true;
+                bInLane = bLane;
+            }
+            else if (!bWatched && bLane)
+            {
+                bWatched = true;
+                Driver = Who;
+                Speed = Pace;
+                bInLane = true;
+            }
+            else if (!bWatched)
+            {
+                bWatched = true;
+                Driver = Who;
+                Speed = Pace;
+            }
+        }
+    }
+    QuebecSend::FDay Now;
+    Now.Step = Stage;
+    Now.Driven = static_cast<double>(SendDriven);
+    const QuebecSend::FDay After = QuebecSend::Tick(Now, static_cast<double>(DeltaSeconds), bOnFoot, bInCar, bHaveBody, Speed, bInMark, bInLane);
+    SendDriven = static_cast<float>(After.Driven);
+    if (After.bFast)
+    {
+        if (Driver) Driver->ShowInteractionMessage(TEXT("Too fast. The drive is back."));
+        for (TActorIterator<AQuebecController> It(GetWorld()); It; ++It)
+            It->PlayFeedback(EQuebecFeedbackCue::Checkpoint);
+        UpdatePresentation();
+        ForceNetUpdate();
+        return;
+    }
+    if (After.Step != SendStep)
+    {
+        const TCHAR* Message = TEXT("The car is yours. Keep it gentle.");
+        bool bFinished = false;
+        if (After.Step == QuebecSend::StepStop) Message = TEXT("Stop the car in the bay.");
+        else if (After.Step == QuebecSend::StepWalk) Message = TEXT("Leave the car. Walk the last of it.");
+        else if (After.Step == QuebecSend::StepBanked)
+        {
+            Message = TEXT("The day is home.");
+            bFinished = true;
+        }
+        AdvanceSend(After.Step, Driver, Message, bFinished);
+        return;
+    }
+    if (!FMath::IsNearlyEqual(static_cast<float>(Now.Driven), SendDriven)) ForceNetUpdate();
+}
+
+void AQuebecCampaign::AdvanceSend(int32 Next, AQuebecController* Who, const TCHAR* Message, bool bFinished)
+{
+    if (Next == SendStep) return;
+    SendStep = Next;
+    // Link -1 is outside the seven banks, so the chain does not move. The purse is flat, and only at the walk.
+    ShowStepMessage(Who, Message, bFinished, -1);
+    if (bFinished) GrantCash(QuebecSend::Pay);
+    for (TActorIterator<AQuebecController> It(GetWorld()); It; ++It)
+        It->PlayFeedback(bFinished ? EQuebecFeedbackCue::Complete : EQuebecFeedbackCue::Checkpoint);
+    UpdatePresentation();
+    ForceNetUpdate();
+    SaveBoundary();
+}
+
 void AQuebecCampaign::AdvanceRoll(int32 Next, AQuebecController* Who, const TCHAR* Message, bool bFinished)
 {
     if (Next == RollStep) return;
@@ -2614,7 +2772,7 @@ void AQuebecCampaign::ChangePhase(EQuebecCampaignPhase Next, bool bFeedback)
 bool UQuebecCampaignSaveGame::IsSupported() const
 {
     const QuebecStorySave::FSteps Steps{
-        PondStep, CourtStep, ShowStep, RescueMask, ConvoyStep, BlankStep, TourStep, HomeStep, EscortStep, ShadeStep, GrabStep, CutStep, ChaseStep, FinaleStep, FollowStep, RollStep, BellStep, BlockStep};
+        PondStep, CourtStep, ShowStep, RescueMask, ConvoyStep, BlankStep, TourStep, HomeStep, EscortStep, ShadeStep, GrabStep, CutStep, ChaseStep, FinaleStep, FollowStep, RollStep, BellStep, BlockStep, SendStep};
     return QuebecStorySave::Accept(Version, CompletedMissions, Steps);
 }
 
@@ -2651,6 +2809,7 @@ void AQuebecCampaign::SaveBoundary()
         Save->RollStep = RollStep;
         Save->BellStep = BellStep;
         Save->BlockStep = BlockStep;
+        Save->SendStep = SendStep;
     }
     if (!Save || !UGameplayStatics::SaveGameToSlot(Save,SaveSlot(),0))
     {
@@ -2826,6 +2985,13 @@ void AQuebecCampaign::RequestRetry(AQuebecController* Controller)
                 Controller->ShowInteractionMessage(TEXT("This road restored. They keep the ground they gained."));
             return;
         }
+        if (IsSendOpen())
+        {
+            const QuebecSend::FSpot Spot = QuebecSend::Recover(static_cast<int>(SendStep));
+            if (MoveToSafeCheckpoint(Controller, FVector(Spot.X, Spot.Y, 100.), FRotator(0., 90., 0.)))
+                Controller->ShowInteractionMessage(TEXT("This send-off restored. The stage you are on stays."));
+            return;
+        }
         Controller->ShowInteractionMessage(TEXT("The day held. T replays the race."));
         return;
     }
@@ -2970,6 +3136,11 @@ void AQuebecCampaign::RequestReplay(AQuebecController* Controller)
     if (IsBlockOpen())
     {
         Controller->ShowInteractionMessage(TEXT("The road is still open. T replays the race after the block."));
+        return;
+    }
+    if (IsSendOpen())
+    {
+        Controller->ShowInteractionMessage(TEXT("The send-off is still open. T replays the race after it is home."));
         return;
     }
     // A race replay does not rewind the story steps or the chain, and it does not write the slot. The story tail already holds the steps.
@@ -3223,6 +3394,7 @@ FString AQuebecCampaign::GetMissionTitle() const
     if (IsRollOpen()) return TEXT("18 / ROLL IT");
     if (IsBellOpen()) return TEXT("19 / IN ORDER");
     if (IsBlockOpen()) return TEXT("20 / HEAD THEM OFF");
+    if (IsSendOpen()) return TEXT("21 / THE SEND-OFF");
     if (Phase == EQuebecCampaignPhase::Complete) return TEXT("THE PARK IS OPEN");
     return Phase <= EQuebecCampaignPhase::ReleaseTable ? TEXT("01 / A TABLE FOR ETERNITY") : TEXT("02 / NO SUCH THING AS A QUIET LAP");
 }
@@ -3383,6 +3555,13 @@ FString AQuebecCampaign::GetObjectiveText() const
     {
         if (BlockStep == QuebecBlock::StepSide) return TEXT("Get in a car on the side street");
         return TEXT("Block the road before they pass");
+    }
+    if (IsSendOpen())
+    {
+        if (SendStep == QuebecSend::StepDoor) return TEXT("Walk to the door");
+        if (SendStep == QuebecSend::StepDrive) return TEXT("Drive to the gate. Keep it gentle.");
+        if (SendStep == QuebecSend::StepStop) return TEXT("Stop the car in the bay");
+        return TEXT("Leave the car and walk the last stretch");
     }
     if (Phase == EQuebecCampaignPhase::Complete) return TEXT("The last page is blank / T: replay the race");
     switch (Phase)
@@ -3567,7 +3746,17 @@ FString AQuebecCampaign::GetBriefingText() const
             return TEXT("MEMPHIS: They take the long road. The side street is shorter. Only a car stops them.");
         return TEXT("MEMPHIS: Be on their road in a car before they reach it. A bike rolls through.");
     }
-    if (Phase == EQuebecCampaignPhase::Complete && PondStep >= PondBankedStep && CourtStep >= CourtBankedStep && ShowStep >= ShowBankedStep && RescueMask >= RescueDone && ConvoyStep >= ConvoyBankedStep && BlankStep >= BlankBankedStep && TourStep >= TourBankedStep && HomeStep >= HomeBankedStep && EscortStep >= EscortBankedStep && ShadeStep >= ShadeBankedStep && GrabStep >= GrabBankedStep && CutStep >= CutBankedStep && ChaseStep >= ChaseBankedStep && FinaleStep >= FinaleBankedStep && FollowStep >= FollowBankedStep && RollStep >= RollBankedStep && BellStep >= BellBankedStep && BlockStep >= BlockBankedStep)
+    if (IsSendOpen())
+    {
+        if (SendStep == QuebecSend::StepDoor)
+            return TEXT("MEMPHIS: The door is on foot. A car does not open it.");
+        if (SendStep == QuebecSend::StepDrive)
+            return TEXT("MEMPHIS: Take the car south to the gate. A flat-out run starts the drive over.");
+        if (SendStep == QuebecSend::StepStop)
+            return TEXT("MEMPHIS: Roll into the bay and stop. Coasting through does not count.");
+        return TEXT("MEMPHIS: Leave the car. Walk the last stretch. The day is home when you do.");
+    }
+    if (Phase == EQuebecCampaignPhase::Complete && PondStep >= PondBankedStep && CourtStep >= CourtBankedStep && ShowStep >= ShowBankedStep && RescueMask >= RescueDone && ConvoyStep >= ConvoyBankedStep && BlankStep >= BlankBankedStep && TourStep >= TourBankedStep && HomeStep >= HomeBankedStep && EscortStep >= EscortBankedStep && ShadeStep >= ShadeBankedStep && GrabStep >= GrabBankedStep && CutStep >= CutBankedStep && ChaseStep >= ChaseBankedStep && FinaleStep >= FinaleBankedStep && FollowStep >= FollowBankedStep && RollStep >= RollBankedStep && BellStep >= BellBankedStep && BlockStep >= BlockBankedStep && SendStep >= SendBankedStep)
         return TEXT("The last page is blank. The park keeps the day that was not in his book.");
     switch (Phase)
     {
@@ -3603,6 +3792,7 @@ FString AQuebecCampaign::GetStatusText() const
     if (IsRollOpen()) return TEXT("R recovers this cart");
     if (IsBellOpen()) return TEXT("R recovers this order");
     if (IsBlockOpen()) return TEXT("R recovers this road");
+    if (IsSendOpen()) return TEXT("R recovers this send-off");
     if (Phase == EQuebecCampaignPhase::AimWorklight) return FString::Printf(TEXT("Alignment %d%% / hold %d%%"),FMath::RoundToInt(LightAlignment*100.f),FMath::RoundToInt(LightHoldProgress*100.f));
     if (Phase == EQuebecCampaignPhase::CrossCable) return FString::Printf(TEXT("Sprint %s / jump %s / R: recover"),bSprintSeen?TEXT("banked"):TEXT("needed"),bJumpSeen?TEXT("banked"):TEXT("needed"));
     if (Phase == EQuebecCampaignPhase::PullClamp || Phase == EQuebecCampaignPhase::ReleaseTable) return bClampOpen ? TEXT("GREEN BEAT / pull now / R: recover") : TEXT("Press squeezing / wait for green / R: recover");
@@ -3721,6 +3911,14 @@ FVector AQuebecCampaign::GetObjectiveLocation() const
     {
         if (BlockStep == QuebecBlock::StepSide) return FVector(QuebecBlock::SideX, QuebecBlock::SideY, 100.);
         return FVector(QuebecBlock::BlockX, QuebecBlock::BlockY, 100.);
+    }
+    if (IsSendOpen())
+    {
+        const double MarkY = SendStep == QuebecSend::StepDrive ? QuebecSend::GateY
+            : SendStep == QuebecSend::StepStop ? QuebecSend::BayY
+            : SendStep == QuebecSend::StepWalk ? QuebecSend::FinishY
+            : QuebecSend::DoorY;
+        return FVector(QuebecSend::ColumnX, MarkY, 100.);
     }
     switch (Phase)
     {
@@ -3878,6 +4076,15 @@ bool AQuebecCampaign::GetNextObjectiveLocation(FVector& Out) const
     {
         if (BlockStep != QuebecBlock::StepSide) return false;
         Out = At(QuebecBlock::BlockX, QuebecBlock::BlockY);
+        return true;
+    }
+    if (IsSendOpen())
+    {
+        if (SendStep == QuebecSend::StepWalk) return false;
+        const double MarkY = SendStep == QuebecSend::StepDoor ? QuebecSend::GateY
+            : SendStep == QuebecSend::StepDrive ? QuebecSend::BayY
+            : QuebecSend::FinishY;
+        Out = At(QuebecSend::ColumnX, MarkY);
         return true;
     }
     if (Phase == EQuebecCampaignPhase::Complete) return false;
@@ -4155,6 +4362,10 @@ void AQuebecCampaign::UpdatePresentation()
                 Caption->SetVisibility(IsBlockOpen());
                 Caption->SetWorldLocation(FVector(Spot.X, Spot.Y, 220.));
             }
+            if (Caption == SendDoorCaption) Caption->SetVisibility(IsSendOpen() && SendStep == QuebecSend::StepDoor);
+            if (Caption == SendGateCaption) Caption->SetVisibility(IsSendOpen() && SendStep == QuebecSend::StepDrive);
+            if (Caption == SendBayCaption) Caption->SetVisibility(IsSendOpen() && SendStep == QuebecSend::StepStop);
+            if (Caption == SendWalkCaption) Caption->SetVisibility(IsSendOpen() && SendStep == QuebecSend::StepWalk);
         }
         if (EscortDoor) EscortDoor->SetVisibility(IsEscortOpen());
         const bool bShadeWorld = IsShadeOpen();
@@ -4248,6 +4459,11 @@ void AQuebecCampaign::UpdatePresentation()
             BlockCourier->SetWorldLocation(FVector(CourierSpot.X, CourierSpot.Y, 90.));
             BlockCourier->SetVisibility(bBlockWorld);
         }
+        const bool bSendWorld = IsSendOpen();
+        if (SendDoor) SendDoor->SetVisibility(bSendWorld && SendStep == QuebecSend::StepDoor);
+        if (SendGate) SendGate->SetVisibility(bSendWorld && SendStep == QuebecSend::StepDrive);
+        if (SendBay) SendBay->SetVisibility(bSendWorld && SendStep == QuebecSend::StepStop);
+        if (SendWalk) SendWalk->SetVisibility(bSendWorld && SendStep == QuebecSend::StepWalk);
         for (UTextRenderComponent* Caption : Captions) Caption->SetWorldRotation((Eye-Caption->GetComponentLocation()).Rotation());
     }
 }
@@ -4300,6 +4516,8 @@ void AQuebecCampaign::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
     DOREPLIFETIME(AQuebecCampaign,BellStep);
     DOREPLIFETIME(AQuebecCampaign,BlockStep);
     DOREPLIFETIME(AQuebecCampaign,BlockAlong);
+    DOREPLIFETIME(AQuebecCampaign,SendStep);
+    DOREPLIFETIME(AQuebecCampaign,SendDriven);
     DOREPLIFETIME(AQuebecCampaign,LightOperator);
     DOREPLIFETIME(AQuebecCampaign,LightYaw);
     DOREPLIFETIME(AQuebecCampaign,LightPitch);
