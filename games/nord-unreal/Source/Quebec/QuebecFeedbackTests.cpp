@@ -118,6 +118,10 @@ bool FQuebecRaceResultTest::RunTest(const FString& Parameters)
     TestTrue(TEXT("A finished road opens the send-off instead of the lap card"),
         Race->GetStatusText().Contains(TEXT("R recovers this send-off")));
     Race->SendStep = AQuebecCampaign::SendBankedStep;
+    Race->PursueStep = 0;
+    TestTrue(TEXT("A finished send-off opens the pursuit instead of the lap card"),
+        Race->GetStatusText().Contains(TEXT("R recovers this pursuit")));
+    Race->PursueStep = AQuebecCampaign::PursueBankedStep;
     const FString Status = Race->GetStatusText();
     TestTrue(TEXT("Result presents recovered time and clean session best"),
         Status.Contains(TEXT("10.0s")) && Status.Contains(TEXT("recovered")) && Status.Contains(TEXT("60.0s")));
