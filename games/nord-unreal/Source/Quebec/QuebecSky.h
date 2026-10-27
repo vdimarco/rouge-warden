@@ -96,6 +96,8 @@ public:
 
     float GetHour() const { return Hour; }
     FString GetWeatherName() const { return FString(QuebecSky::WeatherName(ShownWeather)); }
+    // The radar line: hour and minute, then the weather name. Same text on the play shell.
+    FString GetClockLine() const;
     float GetExposureOffset() const { return Lighting.ExposureOffset; }
     float GetSaturation() const { return Lighting.Saturation; }
     float GetContrast() const { return Lighting.Contrast; }

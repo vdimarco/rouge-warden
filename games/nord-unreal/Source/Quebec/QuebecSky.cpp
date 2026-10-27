@@ -246,6 +246,12 @@ void AQuebecSky::StartHost()
         State.bFreezeClock ? 1 : 0, State.bFreezeWeather ? 1 : 0, State.LatitudeDeg, State.SolarNoonHour);
 }
 
+FString AQuebecSky::GetClockLine() const
+{
+    const int32 Minutes = FMath::Clamp(FMath::FloorToInt(GetHour() * 60.f), 0, 24 * 60 - 1);
+    return FString::Printf(TEXT("%02d:%02d · %s"), Minutes / 60, Minutes % 60, *GetWeatherName());
+}
+
 bool AQuebecSky::HostSetWeather(const FString& WeatherName)
 {
     QuebecSky::EWeather Requested = QuebecSky::EWeather::Clear;
