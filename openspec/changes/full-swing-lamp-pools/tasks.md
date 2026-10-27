@@ -1,0 +1,4 @@
+- [x] Print a warm disc on the ground under the six nearest street lamps
+- [x] A close still shows the disc, and the lamp post stays ink
+- [x] `qa/vr/render.mjs` passes (street mean 77.2, saturation 0.59, canyon ink 20.4%)
+- [x] The graphics scorecard records the lighting result
