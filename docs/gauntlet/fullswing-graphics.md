@@ -1620,3 +1620,40 @@ Playability was scored from a flat boot and the city render check, not a full pl
 
 Playability was scored from a flat boot and the city render check, not a full playthrough. OpenSpec CLI validation was not run; the `openspec` command is not installed.
 
+### Round 37 — 2026-10-27 — rubric v1
+
+- What changed: A fast rope now leaves three cream puffs along the air behind the body, stepped back along the velocity, instead of one fleck every 0.08 s. They are the same comic puff. The gate is unchanged: off the ground, off a wall, faster than 10, rope attached. Reeves, Particle Systems (SIGGRAPH 1983): the particles are born along the path the body just traveled.
+- Why it helped: On the same mid-swing (18 m/s, arm 6.91 m), 11,898 pixels became cream. A puff at (212, 100) goes from (64, 69, 30) to (249, 252, 236). The trail crosses the avenue behind the body. A stand still returns before any birth.
+- Screenshots: before `docs/gauntlet/shots/r37-before-swing.png`, after `docs/gauntlet/shots/r37-after-swing.png`.
+- Next target: UI polish (6). The cream lip and rose hem from round 21.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 7 | Unchanged. A lit shop's cloth is warmer along the hem than along the top. |
+| Color palette | 7 | Unchanged. The dark shade is violet and the open shade is still teal. At blue hour that teal is gone. |
+| Detail density | 7 | Unchanged. A limestone course sits on each floor above a shop. |
+| Texture and material quality | 7 | Unchanged. The masonry clay from round 23. |
+| Composition and camera | 7 | Unchanged. On the same fast rope the body shrinks from 133 px to 80 px and the arm goes from 4.46 m to 6.98 m. |
+| Atmosphere | 7 | Unchanged. At blue hour the low haze goes from rose to violet. At x 432, y 160 it goes from (95, 45, 56) to (57, 29, 89). |
+| Character models | 7 | Unchanged. A dark wine panel breaks the upper back. |
+| Animation smoothness | 8 | Unchanged. At the same run phase the feet sit 80 px apart across the frame and 94 px apart in height. |
+| Particles and VFX | 7 | Three cream puffs mark the air behind a fast rope. 11,898 pixels became cream on the same mid-swing. They are still flat comic puffs. |
+| UI polish | 6 | Unchanged. The cream lip and rose hem from round 21. |
+| Responsiveness and input latency | 6 | Unchanged. No new pass and no new draw. No input timing was measured. |
+| Controls feel | 5 | Unchanged. |
+| Mission clarity | 4 | Unchanged. Not played. |
+| Pacing | 4 | Unchanged. |
+| Fun factor | 4 | Unchanged. Not played as a session. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 5 | Unchanged. |
+| Sound design | 4 | Unchanged. |
+| Variety | 4 | Unchanged. |
+| Performance stability | 6 | `qa/vr/render.mjs` passed, including flat play, the painted-sky checks, the lit-sphere cel check, and the canyon ink lines (20.4%). Street mean 77.1, saturation 0.58. |
+
+- Aesthetics raw: 70 / 10 dimensions, index 70
+- Playability raw: 46 / 10 dimensions, index 46
+- Total: 116 / 200
+- Delta vs last round: +1 (115 → 116). Particles and VFX 6 → 7. Playability unchanged.
+
+Playability was scored from a flat boot and the city render check, not a full playthrough. OpenSpec CLI validation was not run; the `openspec` command is not installed.
+

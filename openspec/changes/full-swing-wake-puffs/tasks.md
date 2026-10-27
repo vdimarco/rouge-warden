@@ -1,0 +1,5 @@
+- [x] Lay three puffs along the wake on each birth
+- [x] The swing still shows more cream behind the body than one fleck
+- [x] A stand spawns none (the birth still returns unless the body is off the ground, off a wall, faster than 10, and on a rope)
+- [x] `qa/vr/render.mjs` passes (street mean 77.1, saturation 0.58, canyon ink 20.4%)
+- [x] Score particles only if the still shows the streak
