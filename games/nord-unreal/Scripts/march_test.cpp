@@ -135,7 +135,7 @@ int main()
     Saved.March = 1;
     Saved.Slip = 0;
     Expect(!QuebecStorySave::Accept(QuebecStorySave::Current, 2, Saved), "the march started before the slip was banked");
-    Expect(QuebecStorySave::Slip == 17 && QuebecStorySave::Current == 18 && QuebecStorySave::Nose == 16, "the slot writer left version 18");
+    Expect(QuebecStorySave::Slip == 17 && QuebecStorySave::March == 18 && QuebecStorySave::Current == 19 && QuebecStorySave::Nose == 16, "the slot writer left version 19");
 
     std::printf("%d assertions, %d failures\n", Assertions, Failures);
     return Failures == 0 ? 0 : 1;
