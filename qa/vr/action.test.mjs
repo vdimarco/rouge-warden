@@ -954,5 +954,33 @@ test("Through the Gust: three airborne swings count, a jog or a stand does not, 
   assert.ok(ev.some((e) => e.type === "failed" && e.why === "blown"), JSON.stringify(ev.filter((e) => e.type === "failed")));
   assert.equal(MISS.blown.title, "BLOWN OFF");
 });
+test("Loose Wheel: it rolls, the air does not stop it, the ground does, and the clock lets it roll off", () => {
+  const C = createCombat(city), J = createJobs({ city, combat: C, seed: 7 });
+  const h0 = hero(city.start.x, city.start.y, city.start.z);
+  J.start("wheel", null, h0);
+  const D = J.active.data, x0 = D.x, z0 = D.z;
+  const away = hero(D.x + 40, D.y + 8, D.z, { onGround: false });
+  J.update(DT, 0, away);
+  assert.ok(J.active, "still rolling");
+  assert.ok(Math.hypot(J.active.data.x - x0, J.active.data.z - z0) > 0.2, "it moved");
+  assert.match(J.card.title, /STOP THE WHEEL/);
+  assert.match(J.card.detail, /front of it/);
+  const air = hero(J.active.data.x, J.active.data.y + 6, J.active.data.z, { onGround: false });
+  J.update(DT, 0, air);
+  assert.ok(J.active, "the air lets it roll");
+  assert.match(J.card.detail, /Land in front/);
+  const at = J.active.data;
+  const land = hero(at.x, at.y, at.z, { onGround: true });
+  J.update(DT, 0, land);
+  assert.ok(J.events.some((e) => e.type === "wheel" && e.y > 0), "the bump");
+  assert.ok(J.events.some((e) => e.type === "done" && e.why === "stopped" && e.reward === JOB.wheel.reward), JSON.stringify(J.events.filter((e) => e.type === "done" || e.type === "wheel")));
+  const J2 = createJobs({ city, combat: createCombat(city), seed: 7 });
+  J2.start("wheel", null, h0);
+  const far = hero(J2.active.data.x + 400, J2.active.data.y + 8, J2.active.data.z, { onGround: false });
+  const ev = [];
+  for (let i = 0; i < (JOB.wheel.time + 1) / DT && J2.active; i++) { J2.update(DT, i * DT, far); ev.push(...J2.events); J2.events.length = 0; }
+  assert.ok(ev.some((e) => e.type === "failed" && e.why === "rolled"), JSON.stringify(ev.filter((e) => e.type === "failed")));
+  assert.equal(MISS.rolled.title, "ROLLED OFF");
+});
 console.log(fails ? "FAIL: action (" + fails + " failed)" : "PASS: action");
 process.exitCode = fails ? 1 : 0;
