@@ -2651,7 +2651,7 @@ void AQuebecController::PlayerTick(float DeltaTime)
                 if (Delta.SizeSquared2D() > 1.f)
                     CardBearing = FMath::RoundToInt(FMath::RadiansToDegrees(FMath::Atan2(Delta.X, Delta.Y)));
             }
-            FString JobHead, JobLine, DownKind, ColumnTitle, ColumnInfo, ColumnObjective, Speech, Scuff, Weapon, Exhaust;
+            FString JobHead, JobLine, DownKind, ColumnTitle, ColumnInfo, ColumnObjective, Speech, Scuff, Weapon, Exhaust, SkyLine;
             int32 StarPlate = 0;
             if (const UWorld* World = GetWorld())
             {
@@ -2719,6 +2719,7 @@ void AQuebecController::PlayerTick(float DeltaTime)
                         StarPlate = Stars;
                     Weapon = QuebecCombat::WeaponName(Stats->CurrentWeapon());
                 }
+                if (const AQuebecSky* Sky = AQuebecSky::Find(World)) SkyLine = Sky->GetClockLine();
                 if (const AQuebecCar* Car = Cast<AQuebecCar>(GetPawn()))
                 {
                     float Ages[QuebecExhaust::Count];
@@ -2747,12 +2748,12 @@ void AQuebecController::PlayerTick(float DeltaTime)
                 return Out;
             };
             Streamer->SendAllPlayersMessage(TEXT("Response"), FString::Printf(
-                TEXT("{\"nordDriving\":%s,\"nordSwimming\":%s,\"nordTitle\":\"%s\",\"nordObjective\":\"%s\",\"nordStage\":\"%s\",\"nordFail\":\"%s\",\"nordBearing\":%d,\"nordMeters\":%d,\"nordPayout\":%d,\"nordJobHead\":\"%s\",\"nordJobLine\":\"%s\",\"nordStars\":%d,\"nordDown\":\"%s\",\"nordColumn\":\"%s\",\"nordColumnInfo\":\"%s\",\"nordColumnObjective\":\"%s\",\"nordSpeech\":\"%s\",\"nordScuff\":\"%s\",\"nordWeapon\":\"%s\",\"nordExhaust\":\"%s\"}"),
+                TEXT("{\"nordDriving\":%s,\"nordSwimming\":%s,\"nordTitle\":\"%s\",\"nordObjective\":\"%s\",\"nordStage\":\"%s\",\"nordFail\":\"%s\",\"nordBearing\":%d,\"nordMeters\":%d,\"nordPayout\":%d,\"nordJobHead\":\"%s\",\"nordJobLine\":\"%s\",\"nordStars\":%d,\"nordDown\":\"%s\",\"nordColumn\":\"%s\",\"nordColumnInfo\":\"%s\",\"nordColumnObjective\":\"%s\",\"nordSpeech\":\"%s\",\"nordScuff\":\"%s\",\"nordWeapon\":\"%s\",\"nordExhaust\":\"%s\",\"nordSky\":\"%s\"}"),
                 Cast<AQuebecCar>(GetPawn()) ? TEXT("true") : TEXT("false"),
                 Character && Character->GetCharacterMovement()->IsSwimming() ? TEXT("true") : TEXT("false"),
                 *Json(CardTitle), *Json(CardObjective), *Json(CardStage), *Json(CardFail), CardBearing, CardMeters, CardPayout,
                 *Json(JobHead), *Json(JobLine), StarPlate, *Json(DownKind), *Json(ColumnTitle), *Json(ColumnInfo),
-                *Json(ColumnObjective), *Json(Speech), *Json(Scuff), *Json(Weapon), *Json(Exhaust)));
+                *Json(ColumnObjective), *Json(Speech), *Json(Scuff), *Json(Weapon), *Json(Exhaust), *Json(SkyLine)));
         }
     }
     ApplyComicStyle();
@@ -3527,8 +3528,7 @@ void AQuebecHUD::DrawHUD()
     DrawRect(Panel, Right - 240.f * Scale, MapY + MapHeight + 4.f * Scale, 240.f * Scale, SkyStep + 3.f * CreditStep);
     if (Sky)
     {
-        const int32 Minutes = FMath::Clamp(FMath::FloorToInt(Sky->GetHour() * 60.f), 0, 24 * 60 - 1);
-        RightText(FString::Printf(TEXT("%02d:%02d · %s"), Minutes / 60, Minutes % 60, *Sky->GetWeatherName()), Paper, CreditRight, MapY + MapHeight + 4.f * Scale, CreditSize * 1.15f);
+        RightText(Sky->GetClockLine(), Paper, CreditRight, MapY + MapHeight + 4.f * Scale, CreditSize * 1.15f);
     }
     const float CreditY = MapY + MapHeight + 4.f * Scale + SkyStep;
     RightText(TEXT("© OpenStreetMap contributors / ODbL"), Paper, CreditRight, CreditY, CreditSize);

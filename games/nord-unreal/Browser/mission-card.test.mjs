@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { columnLines, exhaustPuff, heatLines, jobLines, markerOffset, missionLines, payoutLines, scuffPuff, speechLines, weaponLines } from './mission-card.js';
+import { columnLines, exhaustPuff, heatLines, jobLines, markerOffset, missionLines, payoutLines, scuffPuff, skyLine, speechLines, weaponLines } from './mission-card.js';
 
 const lines = missionLines({
   title: '28 / THE BOLT',
@@ -95,5 +95,13 @@ for (let slot = 0; slot < 6; slot += 1) {
   if (age >= 0 && age < 1.1 && exhaustPuff(age, slot).swell > 0.05) live += 1;
 }
 assert.equal(live, 6);
+assert.equal(skyLine(15, 'CLEAR'), '15:00 · CLEAR');
+assert.equal(skyLine(15.9, 'RAIN'), '15:54 · RAIN');
+assert.equal(skyLine(0, 'FOG'), '00:00 · FOG');
+assert.equal(skyLine(24, 'CLEAR'), '23:59 · CLEAR');
+assert.equal(skyLine(-3, 'BREEZY'), '00:00 · BREEZY');
+assert.equal(skyLine(9.5, ''), '');
+assert.ok(!/[\u00e9\u00e8\u00ea\u00e0]/.test(skyLine(12, 'OVERCAST')), 'the sky line mixed languages');
+assert.ok(!/[\u00e9\u00e8\u00ea\u00e0]/.test(skyLine(8, 'DRIZZLE')), 'the sky line mixed languages');
 
 console.log('mission card lines and marker ok');

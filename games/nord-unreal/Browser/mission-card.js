@@ -178,6 +178,16 @@ export function weaponLines(name) {
   return { name: String(name || '').trim() };
 }
 
+// Same floor as AQuebecSky::GetClockLine. Hour 15.9 is 15:54. The names stay CLEAR through RAIN.
+export function skyLine(hour, weather) {
+  const name = String(weather || '').trim();
+  if (!name) return '';
+  const minutes = Math.min(24 * 60 - 1, Math.max(0, Math.floor(Number(hour) * 60) || 0));
+  const hh = String(Math.floor(minutes / 60)).padStart(2, '0');
+  const mm = String(minutes % 60).padStart(2, '0');
+  return `${hh}:${mm} · ${name}`;
+}
+
 // Same birth, rise, and fade as QuebecExhaust::At. Life 1.1s. Reeves, SIGGRAPH 1983.
 export function exhaustPuff(age, slot) {
   const life = 1.1;
@@ -316,3 +326,15 @@ export function showExhaust(ages) {
 }
 
 if (typeof window !== 'undefined') window.__nordShowExhaust = showExhaust;
+
+export function showSky(text) {
+  const root = document.getElementById('sky-plate');
+  if (!root) return null;
+  const line = String(text || '').trim();
+  root.hidden = !line;
+  const label = document.getElementById('sky-line');
+  if (label) label.textContent = line;
+  return line;
+}
+
+if (typeof window !== 'undefined') window.__nordShowSky = showSky;

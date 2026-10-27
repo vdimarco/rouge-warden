@@ -3891,3 +3891,50 @@ Unreal is not available here, so the native diamond was not captured. The title 
 ![The tail puffs on a 390-wide screen](gta-missions/r85-play-card-390.png)
 
 ![Menu on a 390-wide screen, Recover visible](gta-missions/r85-play-menu-390.png)
+
+### Round 86 — 2026-10-27 — rubric v1
+
+- What changed: The play page shows the same clock line as the radar. The hour still floors. The names stay CLEAR, BREEZY, OVERCAST, FOG, DRIZZLE, and RAIN. The sky does not change. No new mission.
+- Why it helped: The radar already printed the hour and the weather, and the page we run never showed them.
+- Screenshots: title `docs/gauntlet/gta-missions/r86-title-1280.png`, `r86-title-390.png`, `r86-title-320.png`. Play client, host offline, `r86-play-1280.png`, with the same plate at 390 in `r86-play-card-390.png`. Menu with Recover `r86-play-menu-390.png`. The title loaded with no page errors. The raw play page still logs the missing `@epicgames-ps/lib-pixelstreamingfrontend-ue5.8` specifier; the shell, the card, the plate, and Recover still draw. The 1280 frame shows 15:00 · CLEAR at the top center, clear of the card and the column (3304 paper pixels in the plate). The 390 frame shows the same line below the card and above the tail puffs, clear of the weapon chip (3339 paper pixels). The city's own sky was not seen in Unreal. `python3 Scripts/test_clock_line.py` passed. `node Browser/mission-card.test.mjs` passed. Syntax check `--both` passed for `QuebecSky.cpp` and `QuebecGameplay.cpp`, game and editor, 0 failed. OpenSpec CLI is not installed, so `openspec validate` did not run. `Browser/browser.test.mjs` did not run: the `ws` package is not installed here.
+- Next target: composition, responsiveness, particles, and performance are tied at 4. Lighting, detail, texture, models, and animation stay at 3 with the graphics loop. Performance stays at 4 and is not measurable here.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 3 | Unchanged. |
+| Color palette | 5 | Unchanged. The plate uses the same paper and gold. |
+| Detail density | 3 | Unchanged. |
+| Texture and material quality | 3 | Unchanged. |
+| Composition and camera | 4 | Unchanged. |
+| Atmosphere | 5 | The play shell shows 15:00 · CLEAR, the same floored hour and weather name as the radar. The city's own sky was not seen in Unreal, so this is one step. |
+| Character models | 3 | Unchanged. |
+| Animation smoothness | 3 | Unchanged. |
+| Particles and VFX | 4 | Unchanged. The six tail puffs are still on the shell. The city's own exhaust was not seen. |
+| UI polish | 9 | Unchanged. The pistol chip, the English objective, and the resident line are still on the shell. |
+| Responsiveness and input latency | 4 | Unchanged. The shell still hears the city every 0.1 s. The video stream was not timed. |
+| Controls feel | 9 | Unchanged. Steering rates were not retuned. |
+| Mission clarity | 8 | Unchanged. The play shell still shows the carry's objective, Stage 3 of 3, the fail sentence, and a gold diamond. |
+| Pacing | 9 | Unchanged. Nothing new was driven. |
+| Fun factor | 9 | Unchanged. The plate was seen. The day was not watched. |
+| Difficulty curve | 9 | Unchanged. Selling the last page ends it for 200 and does not bank the chain. A wreck still costs more than the goon pay. |
+| Feedback | 9 | Unchanged. The shell still shows a purse. The notes were not heard. |
+| Sound design | 9 | Unchanged. The two notes were not heard. No new sound was added. |
+| Variety | 9 | Unchanged. No new way to play was added, and the carry was not driven. |
+| Performance stability | 4 | Unchanged. Not measurable in this container. |
+
+- Aesthetics raw: 42 / 10 dimensions, index 42
+- Playability raw: 79 / 10 dimensions, index 79
+- Total: 121 / 200
+- Delta vs last round: +1 (round 85 was 120). Atmosphere 4 → 5. Every other score held.
+
+![GTA title at 1280](gta-missions/r86-title-1280.png)
+
+![GTA title at 390](gta-missions/r86-title-390.png)
+
+![GTA title at 320](gta-missions/r86-title-320.png)
+
+![Play client at 1280, host offline, the clock and the weather](gta-missions/r86-play-1280.png)
+
+![The clock on a 390-wide screen](gta-missions/r86-play-card-390.png)
+
+![Menu on a 390-wide screen, Recover visible](gta-missions/r86-play-menu-390.png)
