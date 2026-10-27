@@ -1,0 +1,4 @@
+- [x] Paint the surveyed asphalt with the existing wet ground in the opening shade
+- [x] Keep the dashes dry, and keep the opening pitch, the aim, the socket, and the clear spawn weather
+- [x] Run `Scripts/test_opening_wet.py`
+- [ ] Confirm the wet ground material in Unreal (editor not available here)

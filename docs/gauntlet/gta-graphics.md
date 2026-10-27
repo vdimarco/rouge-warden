@@ -1893,3 +1893,38 @@ Unreal is not available in this environment, so in-engine frames are the last co
 - Playability raw: 39 / 10 dimensions, index 39
 - Total: 126 / 200
 - Delta vs last round: 0
+
+### Round 55 — 2026-10-26 — rubric v1
+
+- What changed: the opening shade paints the surveyed asphalt with the existing wet-ground material at Wetness 1, Puddles 1, and Rain 1. The base colour is halved, splash rings sit on the road, and the puddle mask is the one in `wet_puddles.hlsl`. Glossy puddles take this shade's own sky, because the raster has no reflection probe. The material stores roughness 0.03 there and does not sample the sky in the base colour. The yellow dashes stay dry. The lawn, trees, lamps, hoodie, and coupe stay. `QuebecSky.cpp` still starts at Clear, so this picture is the material, not the spawn clock.
+- Why it helped: the asphalt was a flat grey, and that ground is large enough to read. The road now reads wet. Atmosphere and texture stay at 9. The lawn and the clear sky still set those scores. This is not a whole-frame weather change.
+- Screenshots: before `docs/gauntlet/gta-graphics/round-55/before-frame.png`, after `docs/gauntlet/gta-graphics/round-55/after-frame.png`. Crops of the road are `before-road.png` and `after-road.png`. Both use the opening walk camera (arm 420, socket Y 70, socket Z 110, pitch −16, yaw about 110°, horizontal FOV 90) at the surveyed sidewalk spawn, with the hoodie walk at 0.75 s and the same walk-peak rock. The coupe is the seventies fastback. Foot dust is left out. Not an Unreal capture. The full-frame mean absolute delta is 0.00156 and the max is 0.439. 7399 pixels change, in a band from x 189 to 959 and y 142 to 196. The crop shows the wet asphalt. `Scripts/test_opening_wet.py` passed. The wet-ground graph was not recompiled. `GET /gta/` returned 200. OpenSpec CLI is not installed, so the change files were not validated with `openspec`.
+- Next target: time of day. The sky in this frame is still one clear grade. Surveyed signs and the extra parked cars still sit too far off this aim to read.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 9 | The street shade is unchanged. The sky is still the clear grade. |
+| Color palette | 9 | The wet road darkens the existing asphalt. The street hues are unchanged. |
+| Detail density | 9 | The lamp row and the lawn are unchanged. |
+| Texture and material quality | 9 | The asphalt now uses the wet ground: half the dry colour, splash rings, and sky in the puddles. The lawn still sets the 9. |
+| Composition and camera | 9 | The opening aim is unchanged. |
+| Atmosphere | 9 | The road shows the rain-wet material. The sky is still clear, and the spawn weather is still Clear, so the 9 stays. |
+| Character models | 9 | The hoodie is unchanged. |
+| Animation smoothness | 6 | The stride is unchanged. The sheet from round 53 still shows the cycle. |
+| Particles and VFX | 9 | The shoe puffs are unchanged. They are left out of these frames. Splash rings are the wet-ground material, not a new streak. |
+| UI polish | 9 | The radar heading is unchanged. |
+| Responsiveness and input latency | 4 | Not measured this round. |
+| Controls feel | 4 | Not played. |
+| Mission clarity | 5 | The objective words are unchanged. |
+| Pacing | 4 | Unchanged mission slice. |
+| Fun factor | 3 | Not played. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 4 | The wet road is the new mark. No new juice. |
+| Sound design | 3 | Not listened to. |
+| Variety | 3 | One wet avenue. The sky grade is unchanged. |
+| Performance stability | 5 | `Scripts/test_opening_wet.py` passed. Frame time was not remeasured. |
+
+- Aesthetics raw: 87 / 10 dimensions, index 87
+- Playability raw: 39 / 10 dimensions, index 39
+- Total: 126 / 200
+- Delta vs last round: 0
