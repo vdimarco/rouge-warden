@@ -26,7 +26,7 @@
 #include "QuebecShowTone.h"
 #include "QuebecJobRules.h"
 #include "QuebecSky.h"
-#include "QuebecShade.h"
+#include "QuebecContact.h"
 #include "QuebecCrewAnimation.h"
 #include "QuebecGTA.h" // AQuebecCar: street traces each frame (DRIVE).
 #include "QuebecTraces.h" // Street traces: knockable street props spawned by the game mode (TRAFFIC).

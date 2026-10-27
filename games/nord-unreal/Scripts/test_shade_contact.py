@@ -19,7 +19,8 @@ from shade_contact import (
 )
 
 ROOT = Path(__file__).resolve().parents[1]
-SHADE = (ROOT / "Source/Quebec/QuebecShade.h").read_text()
+SHADE = (ROOT / "Source/Quebec/QuebecContact.h").read_text()
+MISSION = (ROOT / "Source/Quebec/QuebecShade.h").read_text()
 SKY = (ROOT / "Source/Quebec/QuebecSky.cpp").read_text()
 GAME = (ROOT / "Source/Quebec/QuebecGameplay.cpp").read_text()
 
@@ -54,6 +55,7 @@ class ShadeContactTests(unittest.TestCase):
         self.assertIn("Light->SetLightSourceAngle(QuebecShade::SunDiskDegrees);", SKY)
         self.assertIn("Light->ContactShadowLength = QuebecShade::ContactShadowCm;", SKY)
         self.assertIn("Settings.AmbientOcclusionIntensity = QuebecShade::AmbientOcclusion;", GAME)
+        self.assertIn("inline constexpr int StepPocket = 0;", MISSION)
         self.assertIn("const FRotator Look(-16.f, Yaw, 0.f);", GAME)
         self.assertIn("CameraArm->SocketOffset = FVector(0., 70., 110.);", GAME)
         self.assertGreater(math.tan(math.radians(1.5)) * 400.0, 0.0)

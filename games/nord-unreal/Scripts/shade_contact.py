@@ -1,6 +1,6 @@
 """Soft shadows and ambient occlusion for the offline shade.
 
-The penumbra follows the solar disk in QuebecShade.h. A blocker far above the
+The penumbra follows the solar disk in QuebecContact.h. A blocker far above the
 ground throws a wider edge than one at the contact. Occlusion darkens a pixel
 whose neighbour is closer.
 """
