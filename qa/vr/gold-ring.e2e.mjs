@@ -141,7 +141,17 @@ try {
       },
       fade() {
         document.dispatchEvent(new MouseEvent("mouseup", { button: 0, bubbles: true }));
-        for (let i = 0; i < 6; i++) G.test.step(1 / 60, 1);
+        // Hold the swing framing. The chase eases toward travel in those 100 ms, and on a short sky
+        // crossing that slide puts the 2 px line on the tower, where the ink sample misses.
+        const hold = G.flatcam ? { yaw: G.flatcam.yaw, pitch: G.flatcam.pitch } : null;
+        for (let i = 0; i < 6; i++) {
+          G.test.step(1 / 60, 1);
+          if (hold && G.flatcam) {
+            G.flatcam.bankOn = false;
+            G.flatcam.shakeOn = false;
+            G.flatcam.reset(hold.yaw, hold.pitch);
+          }
+        }
         G.test.render(0);
         return window.__goldInk.measure();
       },
@@ -189,26 +199,36 @@ try {
           if (d < reach) reach = d;
         }
         const hand = proj(G.hero.hand(0).x, G.hero.hand(0).y, G.hero.hand(0).z);
+        const lum = (c) => 0.3 * c[0] + 0.5 * c[1] + 0.2 * c[2];
         let best = null;
         for (let i = 0; i < segs.length; i++) {
           const p = segs[i].p, q = segs[Math.min(segs.length - 1, i + 1)].p;
-          if (p.behind || p.x < 8 || p.y < 8 || p.x > innerWidth - 8 || p.y > innerHeight - 8) continue;
-          if (Math.hypot(p.x - hand.x, p.y - hand.y) < 28) continue;
+          if (p.behind) continue;
           let tx = q.x - p.x, ty = q.y - p.y, tl = Math.hypot(tx, ty) || 1;
           tx /= tl; ty /= tl;
-          let width = 0, run = 0, center = null, inkD = 1e9;
-          for (let s = -14; s <= 14; s++) {
-            const c = read(p.x - ty * s, p.y + tx * s);
-            const d = Math.hypot(c[0] - 43, c[1] - 42, c[2] - 51);
-            if (d < 16) { run++; width = Math.max(width, run); } else run = 0;
-            if (d < inkD) { inkD = d; center = c; }
+          // The bow sits up to about 16 px off a segment end. Sample the end and the middle, and
+          // take the brighter side so a tower on one side does not hide a sky crossing.
+          const stations = [p];
+          if (tl > 12) stations.push({ x: (p.x + q.x) * 0.5, y: (p.y + q.y) * 0.5 });
+          for (const st of stations) {
+            if (st.x < 8 || st.y < 8 || st.x > innerWidth - 8 || st.y > innerHeight - 8) continue;
+            if (Math.hypot(st.x - hand.x, st.y - hand.y) < 18) continue;
+            let width = 0, run = 0, center = null, inkD = 1e9;
+            for (let s = -22; s <= 22; s++) {
+              const c = read(st.x - ty * s, st.y + tx * s);
+              const d = Math.hypot(c[0] - 43, c[1] - 42, c[2] - 51);
+              if (d < 16) { run++; width = Math.max(width, run); } else run = 0;
+              if (d < inkD) { inkD = d; center = c; }
+            }
+            const sideA = read(st.x - ty * 28, st.y + tx * 28);
+            const sideB = read(st.x + ty * 28, st.y - tx * 28);
+            const side = lum(sideA) >= lum(sideB) ? sideA : sideB;
+            const sideD = center ? Math.hypot(side[0] - center[0], side[1] - center[1], side[2] - center[2]) : 0;
+            const sideL = lum(side);
+            const hit = { width, center, inkD: +inkD.toFixed(1), sideD: +sideD.toFixed(1), sideL: +sideL.toFixed(0), x: +st.x.toFixed(1), y: +st.y.toFixed(1) };
+            const score = (h) => (h.inkD < 16 ? 0 : 500) + h.inkD + (h.sideL > 80 ? 0 : 40);
+            if (!best || score(hit) < score(best)) best = hit;
           }
-          const side = read(p.x - ty * 16, p.y + tx * 16);
-          const sideD = center ? Math.hypot(side[0] - center[0], side[1] - center[1], side[2] - center[2]) : 0;
-          const sideL = 0.3 * side[0] + 0.5 * side[1] + 0.2 * side[2];
-          const hit = { width, center, inkD: +inkD.toFixed(1), sideD: +sideD.toFixed(1), sideL: +sideL.toFixed(0), x: +p.x.toFixed(1), y: +p.y.toFixed(1) };
-          const score = (h) => (h.sideL > 80 ? 0 : 100) + h.inkD;
-          if (!best || score(hit) < score(best)) best = hit;
         }
         const ap = proj(r.anchor.x, r.anchor.y, r.anchor.z);
         let anchorInk = null;
