@@ -1546,3 +1546,40 @@ Playability was scored from a flat boot and the city render check, not a full pl
 
 Playability was scored from a flat boot and the city render check, not a full playthrough. OpenSpec CLI validation was not run; the `openspec` command is not installed.
 
+### Round 35 — 2026-10-27 — rubric v1
+
+- What changed: The chase jacket gets a dark wine panel on the upper back, painted after the cel in the hips' own frame, so a roll carries it. It sits about 42 cm above the hip joint and stays off the chest and off the cream belt. No new mesh. Skinned triangles stay at 12,468. Mitchell, Francke, and Eng, Illustrative Rendering in Team Fortress 2 (2007): the material break is painted back onto the albedo, the same way the belt was.
+- Why it helped: From behind at the rest chase (4.5 m, −20°), the jacket above the belt was one red. The upper back is now wine. At x 400, y 336, the cloth goes from (246, 106, 103) to (51, 17, 25). The panel covers about 35 by 22 pixels, and 460 of those pixels leave the red. The cream belt at y 364 stays (252, 249, 235). The head stays the hair and skin.
+- Screenshots: before `docs/gauntlet/shots/r35-before-hero.png`, after `docs/gauntlet/shots/r35-after-hero.png`.
+- Next target: Atmosphere (6), tied with particles and UI. The far avenue still sits in the warm dust from round 15.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 7 | Unchanged. A lit shop's cloth is warmer along the hem than along the top. |
+| Color palette | 7 | Unchanged. The dark shade is violet and the open shade is still teal. At blue hour that teal is gone. |
+| Detail density | 7 | Unchanged. A limestone course sits on each floor above a shop. |
+| Texture and material quality | 7 | Unchanged. The masonry clay from round 23. |
+| Composition and camera | 7 | Unchanged. On the same fast rope the body shrinks from 133 px to 80 px and the arm goes from 4.46 m to 6.98 m. |
+| Atmosphere | 6 | Unchanged. The far avenue still sits in the warm dust from round 15. |
+| Character models | 7 | A dark wine panel breaks the upper back. The cream belt stays. The figure is still simple. Skinned triangles stayed at 12,468. |
+| Animation smoothness | 8 | Unchanged. At the same run phase the feet sit 80 px apart across the frame and 94 px apart in height. |
+| Particles and VFX | 6 | Unchanged. The cream trail from round 19. |
+| UI polish | 6 | Unchanged. The cream lip and rose hem from round 21. |
+| Responsiveness and input latency | 6 | Unchanged. No new pass and no new draw. No input timing was measured. |
+| Controls feel | 5 | Unchanged. |
+| Mission clarity | 4 | Unchanged. Not played. |
+| Pacing | 4 | Unchanged. |
+| Fun factor | 4 | Unchanged. Not played as a session. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 5 | Unchanged. |
+| Sound design | 4 | Unchanged. |
+| Variety | 4 | Unchanged. |
+| Performance stability | 6 | `qa/vr/render.mjs` passed, including flat play, the painted-sky checks, the lit-sphere cel check, and the canyon ink lines (20.4%). Street mean 77.1, saturation 0.58. |
+
+- Aesthetics raw: 68 / 10 dimensions, index 68
+- Playability raw: 46 / 10 dimensions, index 46
+- Total: 114 / 200
+- Delta vs last round: +1 (113 → 114). Character models 6 → 7. Playability unchanged.
+
+Playability was scored from a flat boot and the city render check, not a full playthrough. OpenSpec CLI validation was not run; the `openspec` command is not installed.
+

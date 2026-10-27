@@ -8,6 +8,7 @@ import { toonify, INK, inkK, syncInk, smoothNormals, outlineOf } from "./comic.j
 const MODEL_URL = "/wild/models/crew5.glb";
 const HERO_HIP = new THREE.Vector3();
 const HERO_UP = new THREE.Vector3(0, 1, 0);
+const HERO_FWD = new THREE.Vector3(0, 0, 1);
 const HIP_Q = new THREE.Quaternion();
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 const smooth = (a, b, x) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
@@ -165,10 +166,18 @@ vec3 heroRim(vec3 col, vec3 wn) {
   // A world-Y test would stay horizontal through a roll.
   vec3 rel = vComicW - uHeroHip;
   float along = dot(rel, uHeroUp);
-  float radial = length(rel - uHeroUp * along);
+  vec3 across = rel - uHeroUp * along;
+  float radial = length(across);
+  float face = dot(across, uHeroFwd);
   float belt = (1.0 - smoothstep(0.04, 0.10, abs(along - 0.08))) * (1.0 - smoothstep(0.16, 0.28, radial));
+  // A darker panel on the upper back, under the collar and above the belt. The hips' own
+  // frame carries it through a roll. The chest side stays the red cloth.
+  float yoke = (1.0 - smoothstep(0.11, 0.14, abs(along - 0.42)))
+    * (1.0 - smoothstep(0.20, 0.32, radial))
+    * (1.0 - smoothstep(0.06, 0.16, face));
   float jacket = smoothstep(0.04, 0.14, col.r - max(col.g, col.b));
   col = mix(col, vec3(0.95, 0.91, 0.82), belt * jacket);
+  col = mix(col, vec3(0.20, 0.06, 0.09), yoke * jacket);
   return col + vec3(1.0, 0.55, 0.28) * rim * mix(0.45, 1.0, key) * 0.48
     + vec3(0.32, 0.46, 0.78) * rim * (1.0 - key) * 0.28;
 }
@@ -183,6 +192,7 @@ function bodyMaterial(map, OPA, LIGHT) {
     shader.uniforms.uHeroSun = LIGHT;
     shader.uniforms.uHeroHip = { value: HERO_HIP };
     shader.uniforms.uHeroUp = { value: HERO_UP };
+    shader.uniforms.uHeroFwd = { value: HERO_FWD };
     // toonify shades with the rest-pose normal; a posed body needs the skinned one
     shader.vertexShader = shader.vertexShader.replace("vec3 wn = normal;", "vec3 wn = objectNormal;");
     // The painted face, zipper and shoe panels are in the colour map. A full cel band, and the mip
@@ -192,7 +202,7 @@ function bodyMaterial(map, OPA, LIGHT) {
     shader.fragmentShader = shader.fragmentShader.replace(/comicLight\(wn, vec3\([^)]*\)\)/, "comicLight(wn, uHeroSun)")
       .replace("texture2D( map, vMapUv )", "texture2D( map, vMapUv, -1.6 )")
       .replace("vec3 col = comicCel(diffuseColor.rgb, b);", "vec3 col = mix(diffuseColor.rgb, comicCel(diffuseColor.rgb, b), 0.5);")
-      .replace("void main() {", "uniform vec3 uHeroSun;\nuniform vec3 uHeroHip;\nuniform vec3 uHeroUp;\n" + DITHER + HERO_RIM + "void main() {")
+      .replace("void main() {", "uniform vec3 uHeroSun;\nuniform vec3 uHeroHip;\nuniform vec3 uHeroUp;\nuniform vec3 uHeroFwd;\n" + DITHER + HERO_RIM + "void main() {")
       .replace("outgoingLight = col + ", "outgoingLight = heroRim(col, wn) + ")
       .replace("#include <clipping_planes_fragment>", "#include <clipping_planes_fragment>\n  if (heroGone()) discard;");
   };
@@ -461,6 +471,8 @@ export function createHero(scene, renderer) {
     rig.I.Hips.b.getWorldPosition(HERO_HIP);
     rig.I.Hips.b.getWorldQuaternion(HIP_Q);
     HERO_UP.set(0, 1, 0).applyQuaternion(HIP_Q);
+    // The crew model faces +z. The yoke uses that axis so the panel stays on the back.
+    HERO_FWD.set(0, 0, 1).applyQuaternion(HIP_Q);
     b.getWorldPosition(READ_P);
     b.getWorldQuaternion(TQ);
     // Flight on twos moves the head a whole pose between calls. 0.7 m is only about 8.5 m/s at 12 Hz,
