@@ -2033,3 +2033,38 @@ Unreal is not available in this environment, so in-engine frames are the last co
 - Playability raw: 39 / 10 dimensions, index 39
 - Total: 127 / 200
 - Delta vs last round: 0
+
+### Round 59 — 2026-10-27 — rubric v1
+
+- What changed: the sunset shade replaces the warm-horizon stand-in with a one-sample Rayleigh and Mie sky. The horizon toward the sun is orange. Overhead is blue. Wet asphalt reflects that sky. The spawn stays a clear afternoon, and the opening aim stays.
+- Why it helped: the old grade was the same warm colour at every azimuth. Puddles on the sun side are now orange and puddles away from it are blue. Atmosphere stays at 9. The sky dome is still hidden by the trees, and this is not a GTA 6 sky.
+- Screenshots: before `docs/gauntlet/gta-graphics/round-59/before-frame.png`, after `docs/gauntlet/gta-graphics/round-59/after-frame.png`. The road crops are `before-road.png` and `after-road.png`. Both are the sunset frame with the parked headlights on. Not an Unreal capture. The full-frame mean absolute delta is 0.00025 and the max is 0.171. 2130 pixels change, in a band from x 191 to 959 and y 142 to 191. `Scripts/test_opening_scatter.py` passed. The gradient was not compiled in Unreal. `GET /gta/` returned 200. OpenSpec CLI is not installed, so the change files were not validated with `openspec`.
+- Next target: a second camera, aimed so a surveyed sign and a parked car both read. The opening aim stays.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 9 | The sunset sun and the parked headlights are unchanged. |
+| Color palette | 9 | The reflected sky shifts from one warm grade to orange and blue. The street hues still set the 9. |
+| Detail density | 9 | The avenue is unchanged. |
+| Texture and material quality | 9 | The wet asphalt is unchanged. It reflects a different sky. |
+| Composition and camera | 9 | The opening aim is unchanged. |
+| Atmosphere | 9 | The sky is a scattering gradient now. The trees still hide the dome, and it is not a GTA 6 sky. |
+| Character models | 9 | The hoodie is unchanged. |
+| Animation smoothness | 7 | The run is unchanged. |
+| Particles and VFX | 9 | The shoe puffs are unchanged. |
+| UI polish | 9 | The radar heading is unchanged. |
+| Responsiveness and input latency | 4 | Not measured this round. |
+| Controls feel | 4 | Not played. |
+| Mission clarity | 5 | The objective words are unchanged. |
+| Pacing | 4 | Unchanged mission slice. |
+| Fun factor | 3 | Not played. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 4 | The reflected sky is the new mark. No new juice. |
+| Sound design | 3 | Not listened to. |
+| Variety | 3 | One sunset sample. The spawn is still the clear afternoon. |
+| Performance stability | 5 | `Scripts/test_opening_scatter.py` passed. Frame time was not remeasured. |
+
+- Aesthetics raw: 88 / 10 dimensions, index 88
+- Playability raw: 39 / 10 dimensions, index 39
+- Total: 127 / 200
+- Delta vs last round: 0
