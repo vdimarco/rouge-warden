@@ -2873,3 +2873,38 @@ Unreal is not available in this environment, so in-engine frames are the last co
 - Playability raw: 40 / 10 dimensions, index 40
 - Total: 130 / 200
 - Delta vs last round: +1
+
+### Round 83 — 2026-10-27 — rubric v1
+
+- What changed: a session can begin on Rue Rachel as well as on the Sherbrooke opening. Rachel is the sidewalk in front of a surveyed building, 781 m from the opening spawn, 490 cm off the street centre (past the curb, short of the wall). The look there runs down Rachel. Sherbrooke stays the default, with the same opening aim and the 22:00 clock. Key 9 or the menu returns to Sherbrooke. Key 0, the menu, or `-NordPlace=rachel` begins on Rachel. An unknown name stays on Sherbrooke.
+- Why it helped: variety was one start on one street. Rachel is a second place on the same map, far enough that it is not the same block. It was measured, not walked in Unreal, so the score moves by one.
+- Screenshots: `docs/gauntlet/gta-graphics/round-83/places.png` marks the two starts. It is not a game view. `Scripts/test_place.py` passed. The syntax check passed `QuebecGameplay.cpp`. Unreal did not run. `GET /gta/` returned 200. OpenSpec CLI is not installed, so the change files were not validated with `openspec`.
+- Next target: fun factor is still 3 and needs a played session. Responsiveness and controls are still unmeasured.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 9 | Unchanged. The night lamps stay. |
+| Color palette | 9 | Unchanged. |
+| Detail density | 9 | Unchanged. |
+| Texture and material quality | 9 | Unchanged. |
+| Composition and camera | 9 | The Sherbrooke opening aim stays. Rachel uses the same downward pitch on its own street. |
+| Atmosphere | 9 | The 22:00 clock stays. |
+| Character models | 9 | Unchanged. |
+| Animation smoothness | 9 | Unchanged. |
+| Particles and VFX | 9 | Unchanged. |
+| UI polish | 9 | The menu names the two starts. The rest of the page stays. |
+| Responsiveness and input latency | 4 | Not measured this round. |
+| Controls feel | 4 | Not played. |
+| Mission clarity | 5 | The objective words are unchanged. |
+| Pacing | 4 | Unchanged mission slice. |
+| Fun factor | 3 | Not played. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 4 | No new hit or reward. |
+| Sound design | 4 | The footfalls stay. This round was not a listen. |
+| Variety | 4 | Two starts, 781 m apart. Sherbrooke is still the opening. Rachel was measured, not walked. |
+| Performance stability | 5 | `Scripts/test_place.py` passed. Frame time was not remeasured. |
+
+- Aesthetics raw: 90 / 10 dimensions, index 90
+- Playability raw: 41 / 10 dimensions, index 41
+- Total: 131 / 200
+- Delta vs last round: +1

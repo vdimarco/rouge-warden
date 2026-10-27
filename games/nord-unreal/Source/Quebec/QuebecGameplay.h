@@ -564,6 +564,8 @@ public:
     UFUNCTION(Exec) void NordWeather(const FString& Weather);
     UFUNCTION(Exec) void NordTime(float Hours);
     UFUNCTION(Exec) void NordSkyFreeze(int32 Frozen);
+    // Sherbrooke or Rachel. A guest can begin on either sidewalk.
+    UFUNCTION(Exec) void NordPlace(const FString& Name);
     UPROPERTY(VisibleAnywhere, Transient) FString ResidentCaption;
     UPROPERTY(VisibleAnywhere, Transient) float ResidentCaptionUntil = 0.f;
     // Street notices (JOBS, QuebecGameHUD.cpp): a banner channel apart from ResidentCaption, so story captions,
@@ -640,6 +642,8 @@ private:
     UFUNCTION(Server, Reliable) void ServerNextCharacter();
     // Keys 1-8 pick crew styles 3-10 directly.
     void ChooseCrewKey(int32 Slot);
+    void BeginPlaceKey(int32 Index);
+    UFUNCTION(Server, Reliable) void ServerBeginPlace(int32 Index);
     UFUNCTION(Server, Reliable) void ServerChooseCrew(int32 Style);
     UFUNCTION() void ToggleComicStyle();
     void ApplyComicStyle();

@@ -19,6 +19,7 @@
     <script type="module" src="./mission-card.js"></script>
     <script type="module" src="./hero.js"></script>
     <script type="module" src="./crew.js"></script>
+    <script type="module" src="./place.js"></script>
     <script type="module" src="./intro.js"></script>
     <script type="module" src="./menu.js"></script>
     <script type="module" src="./install.js"></script>
@@ -39,6 +40,8 @@
           <button data-key="82" tabindex="-1">Recover</button>
           <button data-key="84" tabindex="-1">Race</button>
           <button data-key="113" tabindex="-1">Comic</button>
+          <button data-key="57" tabindex="-1">Sherbrooke</button>
+          <button data-key="48" tabindex="-1">Rachel</button>
         </div>
         <div id="crew-picker" class="crew-picker" role="group" aria-label="Choose your crew member" hidden>
           <button data-key="49">1 · GREEN CAP 51</button>
@@ -200,6 +203,8 @@
             <h3>GAME</h3>
             <div class="menu-grid">
               <button id="crew-toggle" type="button" aria-expanded="false" aria-controls="crew-picker">Crew</button>
+              <button id="place-sherbrooke" type="button" aria-pressed="true">Sherbrooke</button>
+              <button id="place-rachel" type="button" aria-pressed="false">Rachel</button>
               <button type="button" data-send="82">Recover</button>
               <button type="button" data-send="84">Race replay</button>
               <button type="button" data-send="113">Comic view</button>
@@ -227,7 +232,7 @@
     </dialog>
     <footer>
       <p id="input-note">Keyboard, mouse and touch supported. The host PC must stay online.</p>
-      <p class="controls"><b>WASD</b> or arrows Move / drive &nbsp; <b>Mouse</b> Look &nbsp; <b>Shift</b> Sprint &nbsp; <b>Space</b> Jump / handbrake &nbsp; <b>E</b> Interact / car &nbsp; <b>F</b> Fire &nbsp; <b>Right-click</b> Aim &nbsp; <b>Q</b> Weapon &nbsp; <b>1–8</b> Choose crew &nbsp; <b>C</b> Next crew &nbsp; <b>F2</b> Comic &nbsp; <b>R</b> Recover &nbsp; <b>T</b> Race replay &nbsp; <b>Esc</b> Release mouse</p>
+      <p class="controls"><b>WASD</b> or arrows Move / drive &nbsp; <b>Mouse</b> Look &nbsp; <b>Shift</b> Sprint &nbsp; <b>Space</b> Jump / handbrake &nbsp; <b>E</b> Interact / car &nbsp; <b>F</b> Fire &nbsp; <b>Right-click</b> Aim &nbsp; <b>Q</b> Weapon &nbsp; <b>1–8</b> Choose crew &nbsp; <b>9</b> Sherbrooke &nbsp; <b>0</b> Rachel &nbsp; <b>C</b> Next crew &nbsp; <b>F2</b> Comic &nbsp; <b>R</b> Recover &nbsp; <b>T</b> Race replay &nbsp; <b>Esc</b> Release mouse</p>
     </footer>
   </body>
 </html>

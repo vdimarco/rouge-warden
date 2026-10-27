@@ -18,6 +18,7 @@
 #include "QuebecSkidTone.h"
 #include "QuebecImpactTone.h"
 #include "QuebecStep.h"
+#include "QuebecPlace.h"
 #include "QuebecLossTone.h"
 #include "QuebecStoryBed.h"
 #include "QuebecBarks.h"
@@ -2168,6 +2169,14 @@ void AQuebecController::SetupInputComponent()
         Binding.KeyDelegate.GetDelegateForManualSet().BindUObject(this, &AQuebecController::ChooseCrewKey, Slot);
         InputComponent->KeyBindings.Add(Binding);
     }
+    // 9 returns to the Sherbrooke opening. 0 begins on Rue Rachel.
+    const FKey PlaceKeys[] = {EKeys::Nine, EKeys::Zero};
+    for (int32 Place = 0; Place < 2; ++Place)
+    {
+        FInputKeyBinding Binding(FInputChord(PlaceKeys[Place]), IE_Pressed);
+        Binding.KeyDelegate.GetDelegateForManualSet().BindUObject(this, &AQuebecController::BeginPlaceKey, Place);
+        InputComponent->KeyBindings.Add(Binding);
+    }
     InputComponent->BindAction(TEXT("RetryCampaign"), IE_Pressed, this, &AQuebecController::RetryCampaign);
     InputComponent->BindAction(TEXT("ReplayCampaign"), IE_Pressed, this, &AQuebecController::ReplayCampaign);
 }
@@ -2198,6 +2207,33 @@ void AQuebecController::ServerNextCharacter_Implementation()
 }
 
 void AQuebecController::ChooseCrewKey(int32 Slot) { ServerChooseCrew(3 + Slot); }
+
+void AQuebecController::BeginPlaceKey(int32 Index) { ServerBeginPlace(Index); }
+
+void AQuebecController::NordPlace(const FString& Name)
+{
+    char Buffer[32];
+    const int32 Letters = FMath::Min(Name.Len(), 31);
+    for (int32 Index = 0; Index < Letters; ++Index)
+        Buffer[Index] = static_cast<char>(Name[Index] & 127);
+    Buffer[Letters] = 0;
+    ServerBeginPlace(QuebecPlace::IndexFor(Buffer));
+}
+
+void AQuebecController::ServerBeginPlace_Implementation(int32 Index)
+{
+    if (Index < 0 || Index >= QuebecPlace::Count || QuebecDistrict::IsToronto(GetWorld())) return;
+    AQuebecCharacter* Walker = Cast<AQuebecCharacter>(GetPawn());
+    if (!Walker || Walker->IsKnocked()) return;
+    const QuebecPlace::FPlace Spot = QuebecPlace::PlaceAt(Index);
+    const FVector Point(Spot.X, Spot.Y, Spot.Z);
+    if (!Walker->TeleportTo(Point, FRotator::ZeroRotator))
+        Walker->SetActorLocation(Point);
+    if (Spot.bOwnYaw)
+        FrameTheStreet(Spot.Yaw);
+    else
+        FrameTheStreet(QuebecStreetLook::OpeningYaw(GetWorld(), Point, 0.f));
+}
 void AQuebecController::ServerChooseCrew_Implementation(int32 Style)
 {
     if (Style < 3 || Style > 10) return;
@@ -3757,7 +3793,29 @@ void AQuebecGameMode::FinishRestartPlayer(AController* NewPlayer, const FRotator
     // The start yaw looks along the avenue, which from this sidewalk leaves the street as a side sliver.
     if (AQuebecController* Player = Cast<AQuebecController>(NewPlayer))
         if (AQuebecCharacter* Walker = Cast<AQuebecCharacter>(Player->GetPawn()))
+        {
+            FString PlaceName;
+            const bool bAsked = FParse::Value(FCommandLine::Get(), TEXT("NordPlace="), PlaceName);
+            if (bAsked && !QuebecDistrict::IsToronto(GetWorld()))
+            {
+                char Buffer[32];
+                const int32 Letters = FMath::Min(PlaceName.Len(), 31);
+                for (int32 Index = 0; Index < Letters; ++Index)
+                    Buffer[Index] = static_cast<char>(PlaceName[Index] & 127);
+                Buffer[Letters] = 0;
+                const int PlaceIndex = QuebecPlace::IndexFor(Buffer);
+                if (PlaceIndex > 0)
+                {
+                    const QuebecPlace::FPlace Spot = QuebecPlace::PlaceAt(PlaceIndex);
+                    const FVector Point(Spot.X, Spot.Y, Spot.Z);
+                    if (!Walker->TeleportTo(Point, FRotator::ZeroRotator))
+                        Walker->SetActorLocation(Point);
+                    Player->FrameTheStreet(Spot.Yaw);
+                    return;
+                }
+            }
             Player->FrameTheStreet(QuebecStreetLook::OpeningYaw(GetWorld(), Walker->GetActorLocation(), StartRotation.Yaw));
+        }
 }
 
 AActor* AQuebecGameMode::ChoosePlayerStart_Implementation(AController* Player)
