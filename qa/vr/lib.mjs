@@ -69,7 +69,10 @@ export async function launch() {
 }
 // Closes the browser and our server (never anything else that runs on this machine).
 export async function close() {
-  if (browser) { await browser.close().catch(() => {}); browser = null; }
+  if (browser) {
+    await Promise.race([browser.close().catch(() => {}), sleep(5000)]);
+    browser = null;
+  }
   if (server) { await new Promise((r) => { server.close(r); for (const s of sockets) s.destroy(); }); server = null; pageURL = null; }
 }
 
