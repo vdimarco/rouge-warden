@@ -327,7 +327,8 @@ void AQuebecCharacter::ApplyCrewAppearance()
         // The crew blend space cannot be posed here. The hoodie is the same CC0 family as the
         // casual body, and its garment has a hood, sleeve cuffs, and a hem the t-shirt does not.
         // Goons repaint that mesh one colour. The player keeps the imported slots. The mesh faces
-        // the component's +X, the axis a pedestrian root walks along. There is no hoodie run clip.
+        // the component's +X, the axis a pedestrian root walks along. The run is that body's own
+        // clip. It stays empty until A_MenHoodie_Run is imported, and a sprint then plays the walk.
         USkeletalMesh* HoodieBody = LoadObject<USkeletalMesh>(nullptr,
             TEXT("/Game/Plateau/Life/Civilians/MenHoodie/SK_MenHoodie.SK_MenHoodie"),
             nullptr, LOAD_NoWarn | LOAD_Quiet);
@@ -336,6 +337,9 @@ void AQuebecCharacter::ApplyCrewAppearance()
             nullptr, LOAD_NoWarn | LOAD_Quiet);
         UAnimSequence* HoodieWalk = LoadObject<UAnimSequence>(nullptr,
             TEXT("/Game/Plateau/Life/Civilians/MenHoodie/A_MenHoodie_Walk.A_MenHoodie_Walk"),
+            nullptr, LOAD_NoWarn | LOAD_Quiet);
+        UAnimSequence* HoodieRun = LoadObject<UAnimSequence>(nullptr,
+            TEXT("/Game/Plateau/Life/Civilians/MenHoodie/A_MenHoodie_Run.A_MenHoodie_Run"),
             nullptr, LOAD_NoWarn | LOAD_Quiet);
         if (HoodieBody && HoodieIdle && HoodieWalk)
         {
@@ -350,7 +354,7 @@ void AQuebecCharacter::ApplyCrewAppearance()
             GetMesh()->SetCustomDepthStencilValue(255);
             CrewIdle = HoodieIdle;
             CrewWalk = HoodieWalk;
-            CrewRun = nullptr;
+            CrewRun = HoodieRun;
             CrewJump = nullptr;
             CrewLocomotion = nullptr;
             CrewAnimation = nullptr;

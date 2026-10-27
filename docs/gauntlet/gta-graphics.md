@@ -1963,3 +1963,38 @@ Unreal is not available in this environment, so in-engine frames are the last co
 - Playability raw: 39 / 10 dimensions, index 39
 - Total: 126 / 200
 - Delta vs last round: 0
+
+### Round 57 — 2026-10-27 — rubric v1
+
+- What changed: the hoodie fallback loads `A_MenHoodie_Run` when that sequence exists. The clip is the CC0 run already in `MenHoodie.glb` (Quaternius, CC0 1.0), prepared as an animation-only FBX and listed in the civilian manifest. It lasts 0.792 s. The lower leg turns about 79 degrees, against about 47 on the walk. There is no uasset yet. Until the editor imports it, the load stays empty and a sprint still plays the walk. The opening camera stays.
+- Why it helped: animation was a sheet of one walk. The run is a shorter cycle and a longer stride. It is still one clip, with no blend, so the score moves by one.
+- Screenshots: before `docs/gauntlet/gta-graphics/round-57/before-run.png`, after `docs/gauntlet/gta-graphics/round-57/after-run.png`. The pair is `run-sheet.png` and the loop is `run.gif`. Both rows are side on, feet on one ground line, sway off. The before row is the walk at six even samples. The after row is the run at six even samples. Not an Unreal capture. Compared with the walk row scaled to the run row's height, the mean absolute delta is 0.092 and the max is 0.906. 57552 pixels change. `Scripts/test_run_cycle.py`, `test_walk_cycle.py`, and `test_garment.py` passed. `QuebecGameplay.cpp` was not compiled in Unreal. `GET /gta/` returned 200. OpenSpec CLI is not installed, so the change files were not validated with `openspec`.
+- Next target: parked car lamps at dusk. The sky code still leaves a parked car dark when the street lamps are on.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 9 | The street shade is unchanged. |
+| Color palette | 9 | The hoodie colours are unchanged. |
+| Detail density | 9 | The avenue is unchanged. |
+| Texture and material quality | 9 | The wet asphalt is unchanged. |
+| Composition and camera | 9 | The opening aim is unchanged. This sheet is a side view so the stride can be read. |
+| Atmosphere | 9 | The sunset grade is unchanged. |
+| Character models | 9 | The hoodie is unchanged. |
+| Animation smoothness | 7 | The run is its own cycle, shorter than the walk, with a longer stride. There is still no blend, and the sequence is not imported yet. |
+| Particles and VFX | 9 | The shoe puffs are unchanged. |
+| UI polish | 9 | The radar heading is unchanged. |
+| Responsiveness and input latency | 4 | Not measured this round. |
+| Controls feel | 4 | Not played. |
+| Mission clarity | 5 | The objective words are unchanged. |
+| Pacing | 4 | Unchanged mission slice. |
+| Fun factor | 3 | Not played. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 4 | The run is the new motion. No new juice. |
+| Sound design | 3 | Not listened to. |
+| Variety | 3 | One run beside the walk. The other civilians still have no run. |
+| Performance stability | 5 | `Scripts/test_run_cycle.py` passed. Frame time was not remeasured. |
+
+- Aesthetics raw: 88 / 10 dimensions, index 88
+- Playability raw: 39 / 10 dimensions, index 39
+- Total: 127 / 200
+- Delta vs last round: +1

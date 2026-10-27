@@ -35,7 +35,8 @@ class GarmentTests(unittest.TestCase):
         block = GAME[hoodie:casual]
         self.assertIn("CrewWalk = HoodieWalk;", block)
         self.assertIn("CrewIdle = HoodieIdle;", block)
-        self.assertIn("CrewRun = nullptr;", block)
+        self.assertIn("CrewRun = HoodieRun;", block)
+        self.assertIn('TEXT("/Game/Plateau/Life/Civilians/MenHoodie/A_MenHoodie_Run.A_MenHoodie_Run")', block)
         self.assertIn("GetMesh()->SetVisibility(true);", block)
         self.assertIn("CasualStand->SetVisibility(false);", block)
         self.assertIn("GetMesh()->SetRelativeRotation(FRotator(0., 0., 0.));", block)
