@@ -1998,3 +1998,38 @@ Unreal is not available in this environment, so in-engine frames are the last co
 - Playability raw: 39 / 10 dimensions, index 39
 - Total: 127 / 200
 - Delta vs last round: +1
+
+### Round 58 — 2026-10-27 — rubric v1
+
+- What changed: once the street lamps are on, the headlight pool includes a parked car. Daytime rain still requires an occupant or traffic. The sunset shade draws the spawn car's two headlights, the same local (222, ±58, −20) the car builds, in the emissive lamp colour. The taillights fall outside this camera. The opening aim stays.
+- Why it helped: the coupe's nose was dark at sunset. Two lamps now sit on it. Lighting stays at 9. They are a small glow on one car, and the lawn still sets the score.
+- Screenshots: before `docs/gauntlet/gta-graphics/round-58/before-frame.png`, after `docs/gauntlet/gta-graphics/round-58/after-frame.png`. Crops of the nose are `before-lamps.png` and `after-lamps.png`. Both are the sunset frame from the previous round, wet road included, opening walk camera. Not an Unreal capture. The full-frame mean absolute delta is 0.00011 and the max is 0.993. 70 pixels change, in a band from x 774 to 808 and y 225 to 234. The crop shows the two lamps. `Scripts/test_opening_lamps.py` passed. `QuebecSky.cpp` was not compiled in Unreal. `GET /gta/` returned 200. OpenSpec CLI is not installed, so the change files were not validated with `openspec`.
+- Next target: a scattering sky. The sunset grade is still a warm horizon blended over the clear day colour, not a scattering gradient.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 9 | The parked coupe's headlights are lit at sunset. They are two small lamps, and the flat shade still sets the 9. |
+| Color palette | 9 | The lamp colour is the existing warm emissive. The street hues are unchanged. |
+| Detail density | 9 | The avenue is unchanged. |
+| Texture and material quality | 9 | The wet asphalt is unchanged. |
+| Composition and camera | 9 | The opening aim is unchanged. |
+| Atmosphere | 9 | The sunset grade is unchanged. |
+| Character models | 9 | The hoodie is unchanged. |
+| Animation smoothness | 7 | The run from the previous round is unchanged. |
+| Particles and VFX | 9 | The shoe puffs are unchanged. |
+| UI polish | 9 | The radar heading is unchanged. |
+| Responsiveness and input latency | 4 | Not measured this round. |
+| Controls feel | 4 | Not played. |
+| Mission clarity | 5 | The objective words are unchanged. |
+| Pacing | 4 | Unchanged mission slice. |
+| Fun factor | 3 | Not played. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 4 | The coupe's lamps are the new mark. No new juice. |
+| Sound design | 3 | Not listened to. |
+| Variety | 3 | One parked car's lamps. The far curb cars still have no lamp mesh. |
+| Performance stability | 5 | `Scripts/test_opening_lamps.py` passed. Frame time was not remeasured. |
+
+- Aesthetics raw: 88 / 10 dimensions, index 88
+- Playability raw: 39 / 10 dimensions, index 39
+- Total: 127 / 200
+- Delta vs last round: 0

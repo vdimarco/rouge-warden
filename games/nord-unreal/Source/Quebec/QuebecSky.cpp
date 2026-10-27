@@ -639,11 +639,12 @@ void AQuebecSky::AssignPools(const FVector& View)
         Lamps[Index]->SetVisibility(bUsed);
     }
 
-    // Headlights go to the nearest driven or traffic cars, at night and in fog, drizzle or rain; parked cars stay dark.
+    // Headlights go to the nearest driven or traffic cars in the rain. Once the street lamps are on,
+    // a parked car gets a lamp too. The pool is still the nearest few.
     TArray<AQuebecCar*> Cars;
     if (Lighting.bHeadlights)
         for (TActorIterator<AQuebecCar> It(GetWorld()); It; ++It)
-            if (It->Occupant || It->bTraffic) Cars.Add(*It);
+            if (It->Occupant || It->bTraffic || Lighting.bStreetLamps) Cars.Add(*It);
     Cars.Sort([View](const AQuebecCar& A, const AQuebecCar& B) { return FVector::DistSquared(A.GetActorLocation(), View) < FVector::DistSquared(B.GetActorLocation(), View); });
     HeadlightCars.Reset();
     for (int32 Index = 0; Index < FMath::Min(Cars.Num(), Headlights.Num()); ++Index) HeadlightCars.Emplace(Cars[Index]);
