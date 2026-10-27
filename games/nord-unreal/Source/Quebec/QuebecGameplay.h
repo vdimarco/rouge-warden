@@ -8,6 +8,7 @@
 #include "GameFramework/Pawn.h"
 #include "GameFramework/PlayerController.h"
 #include "QuebecSteerAssist.h" // Lag-tolerant driving: AQuebecCar keeps a QuebecSteer::FAssistState.
+#include "QuebecSlide.h" // A handbrake slide earns one banner: AQuebecCar keeps a QuebecSlide::FState.
 #include "Engine/TimerHandle.h" // Traffic street life: AQuebecCar blinks its signal lamps on a timer.
 #include "QuebecTrafficModel.h" // Traffic street life: ARRÊT stops, yielding and curb stops.
 #include "QuebecGameplay.generated.h"
@@ -442,6 +443,8 @@ private:
     // A player car on a road gets the steering assist, the glancing-wall turn and the stuck nudge; off-road is unchanged.
     bool bSteerAssist = false;
     QuebecSteer::FAssistState SteerAssist;
+    // One SLIDE banner per held handbrake shove. Cleared when the shove ends.
+    QuebecSlide::FState Slide;
     FVector LastWallNormal = FVector::ZeroVector;
     float NextRamReportAt = 0.f;
     // Server clock for the dent thud. A grind inside the gap stays quiet. Not saved.

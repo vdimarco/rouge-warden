@@ -2943,3 +2943,38 @@ Unreal is not available in this environment, so in-engine frames are the last co
 - Playability raw: 43 / 10 dimensions, index 43
 - Total: 133 / 200
 - Delta vs last round: +2
+
+### Round 85 — 2026-10-27 — rubric v1
+
+- What changed: a held handbrake slide now earns one SLIDE banner. The car already braked, yawed, and lost sideways grip under the handbrake. The banner fires when that shove stays at least 180 cm/s sideways, at 450 cm/s or faster, for 0.35 s. A second slide waits 1.5 s, which is how long the notice channel keeps the same line. Story captions stay on their own channel.
+- Why it helped: fun factor was the lowest line, and it was there because nothing playful had been played. A scripted drive holds gas for 3 seconds, then the handbrake and a turn. One banner fires at 3.57 s, while the car is still moving and the sideways shove peaks near 599 cm/s. A straight run, a 0.45 s tap, and a turn without the handbrake earn none. Getting back up to speed and sliding again earns a second. It was not driven in Unreal, so the score moves by one.
+- Screenshots: `docs/gauntlet/gta-graphics/round-85/slide.png` plots that session. It is not a game view. `Scripts/test_slide.py` passed (40 assertions). The lap model, the pedal test, the place test, and the steering tests passed. The syntax check passed `QuebecGameplay.cpp`. Unreal did not run. OpenSpec CLI is not installed, so the change files were not validated with `openspec`.
+- Next target: the slide is silent, so sound design is the next line a test can move. Pacing is still the same mission slice.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 9 | Unchanged. The night lamps stay. |
+| Color palette | 9 | Unchanged. |
+| Detail density | 9 | Unchanged. |
+| Texture and material quality | 9 | Unchanged. |
+| Composition and camera | 9 | Unchanged. |
+| Atmosphere | 9 | The 22:00 clock stays. |
+| Character models | 9 | Unchanged. |
+| Animation smoothness | 9 | Unchanged. |
+| Particles and VFX | 9 | Unchanged. |
+| UI polish | 9 | Unchanged. The banner uses the notice channel that was already there. |
+| Responsiveness and input latency | 5 | Full gas in 50 ms stays. |
+| Controls feel | 5 | The pedal and the steering rates stay. This was not driven. |
+| Mission clarity | 5 | The objective words are unchanged. |
+| Pacing | 4 | Unchanged mission slice. |
+| Fun factor | 4 | A scripted 3 s run, then a held handbrake turn, earns one SLIDE banner at 3.57 s. A tap, a straight run, and a gripped turn earn none. Not driven in Unreal. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 4 | The banner is the fun payoff. Hits and the dent thud are unchanged. |
+| Sound design | 4 | The footfalls stay. The slide is silent. This round was not a listen. |
+| Variety | 4 | The two starts stay. |
+| Performance stability | 5 | `Scripts/test_slide.py` passed. Frame time was not remeasured. |
+
+- Aesthetics raw: 90 / 10 dimensions, index 90
+- Playability raw: 44 / 10 dimensions, index 44
+- Total: 134 / 200
+- Delta vs last round: +1
