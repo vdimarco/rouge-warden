@@ -206,7 +206,7 @@ int main()
     Tail.Cut = 0;
     Expect(!QuebecStorySave::Accept(QuebecStorySave::Current, 2, Tail), "the chase started before the short way was banked");
     Expect(StepBanked == QuebecStorySave::ChaseBanked, "the save left the chase bank");
-    Expect(QuebecStorySave::Chase == 8 && QuebecStorySave::Current == 9 && QuebecStorySave::Cut == 7, "the slot writer left version 9");
+    Expect(QuebecStorySave::Chase == 8 && QuebecStorySave::Finale == 9 && QuebecStorySave::Current == 10 && QuebecStorySave::Cut == 7, "the slot writer left version 10");
 
     std::printf("%d assertions, %d failures\n", Assertions, Failures);
     return Failures == 0 ? 0 : 1;

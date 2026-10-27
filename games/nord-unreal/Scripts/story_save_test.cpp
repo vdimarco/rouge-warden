@@ -49,7 +49,7 @@ namespace
 
 int main()
 {
-    Expect(Legacy == 1 && Rejected == 2 && Story == 3 && Escort == 4 && Shade == 5 && Grab == 6 && Cut == 7 && Chase == 8 && Current == 9, "the slot versions drifted");
+    Expect(Legacy == 1 && Rejected == 2 && Story == 3 && Escort == 4 && Shade == 5 && Grab == 6 && Cut == 7 && Chase == 8 && Finale == 9 && Current == 10, "the slot versions drifted");
     Expect(Current != Rejected, "the writer would plant the unsupported fixture");
     Expect(PondBanked == QuebecPondRules::StepBanked, "the pond bank left the save");
     Expect(CourtBanked == QuebecCourtRules::StepBanked, "the court bank left the save");
@@ -72,10 +72,11 @@ int main()
         Expect(Accept(Grab, Completed, None), "a version-6 race boundary was rejected");
         Expect(Accept(Cut, Completed, None), "a version-7 race boundary was rejected");
         Expect(Accept(Chase, Completed, None), "a version-8 race boundary was rejected");
+        Expect(Accept(Finale, Completed, None), "a version-9 race boundary was rejected");
         Expect(Accept(Current, Completed, None), "a current race boundary with no story was rejected");
         Expect(!Accept(Rejected, Completed, None), "version 2 was accepted");
         Expect(!Accept(0, Completed, None), "version 0 was accepted");
-        Expect(!Accept(10, Completed, None), "a later schema was accepted");
+        Expect(!Accept(11, Completed, None), "a later schema was accepted");
     }
     Expect(!Accept(Legacy, -1, None), "a missing mission count was accepted");
     Expect(!Accept(Legacy, 3, None), "completed missions 3 were accepted on a legacy slot");
@@ -218,6 +219,26 @@ int main()
     Day.Finale = 1;
     Day.Chase = 0;
     Expect(!Accept(Current, 2, Day), "the day started before the tail was lost");
+    FSteps Gap = Banked();
+    Gap.Escort = EscortBanked;
+    Gap.Shade = ShadeBanked;
+    Gap.Grab = GrabBanked;
+    Gap.Cut = CutBanked;
+    Gap.Chase = ChaseBanked;
+    Gap.Finale = FinaleBanked;
+    Gap.Follow = 1;
+    Expect(!Fresh(Gap), "a gap counted as a fresh day");
+    Expect(Accept(Current, 2, Gap), "a gap in progress was rejected");
+    Expect(!Accept(Finale, 2, Gap), "a version-9 slot carried the gap");
+    const FSteps FromFinale = Applied(Finale, Gap);
+    Expect(FromFinale.Finale == FinaleBanked && FromFinale.Follow == 0, "a version-9 slot copied the gap");
+    Gap.Follow = FollowBanked;
+    Expect(Accept(Current, 2, Gap), "a finished gap was rejected");
+    Gap.Follow = FollowBanked + 1;
+    Expect(!Accept(Current, 2, Gap), "a gap past the bank was accepted");
+    Gap.Follow = 1;
+    Gap.Finale = 0;
+    Expect(!Accept(Current, 2, Gap), "the gap started before the day was banked");
 
     std::printf("%d assertions, %d failures\n", Assertions, Failures);
     return Failures == 0 ? 0 : 1;
