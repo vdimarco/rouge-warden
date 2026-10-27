@@ -627,6 +627,9 @@ private:
     float ResidentGreetingElapsed = 0.f;
     float NextResidentGreetingAt = 0.f;
     float BrowserStateElapsed = 0.f;
+    int32 BrowserJobSerial = -1;
+    float BrowserJobBannerAt = -10.f;
+    bool bBrowserJobWaiting = false;
     FString BrowserStreamerId;
     void BindBrowserInputRelease();
     void UnbindBrowserInputRelease();

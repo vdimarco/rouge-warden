@@ -27,6 +27,7 @@
 #include "QuebecShowRules.h"
 #include "QuebecShowTone.h"
 #include "QuebecJobRules.h"
+#include "QuebecBanner.h"
 #include "QuebecSky.h"
 #include "QuebecContact.h"
 #include "QuebecGloss.h"
@@ -2630,6 +2631,38 @@ void AQuebecController::PlayerTick(float DeltaTime)
                 if (Delta.SizeSquared2D() > 1.f)
                     CardBearing = FMath::RoundToInt(FMath::RadiansToDegrees(FMath::Atan2(Delta.X, Delta.Y)));
             }
+            FString JobHead, JobLine;
+            if (const UWorld* World = GetWorld())
+            {
+                if (const AQuebecSideJobs* Jobs = AQuebecSideJobs::Find(World))
+                {
+                    const AQuebecPlayerState* Stats = GetPlayerState<AQuebecPlayerState>();
+                    const bool bDownNow = Stats && Stats->IsDown();
+                    const float Now = static_cast<float>(World->GetTimeSeconds());
+                    if (BrowserJobSerial >= 0 && Jobs->ResultSerial != BrowserJobSerial)
+                    {
+                        if (bDownNow) bBrowserJobWaiting = true;
+                        else BrowserJobBannerAt = Now;
+                    }
+                    BrowserJobSerial = Jobs->ResultSerial;
+                    if (bBrowserJobWaiting && !bDownNow)
+                    {
+                        bBrowserJobWaiting = false;
+                        BrowserJobBannerAt = Now;
+                    }
+                    const float Age = Now - BrowserJobBannerAt;
+                    const AGameStateBase* Game = World->GetGameState();
+                    const float ServerNow = static_cast<float>(Game ? Game->GetServerWorldTimeSeconds() : World->GetTimeSeconds());
+                    const bool bRetry = !Jobs->bLastSucceeded && Jobs->RetryUntil > ServerNow;
+                    if (!bDownNow && Age >= 0.f && Age < QuebecJobRules::ResultBannerSeconds)
+                    {
+                        const QuebecBanner::FPlate Words = QuebecBanner::Compose(
+                            Jobs->bLastSucceeded, Jobs->LastReward, TCHAR_TO_UTF8(*Jobs->LastResult), false, bRetry);
+                        JobHead = UTF8_TO_TCHAR(Words.Head);
+                        JobLine = UTF8_TO_TCHAR(Words.Line.c_str());
+                    }
+                }
+            }
             const auto Json = [](const FString& Value)
             {
                 FString Out;
@@ -2647,10 +2680,11 @@ void AQuebecController::PlayerTick(float DeltaTime)
                 return Out;
             };
             Streamer->SendAllPlayersMessage(TEXT("Response"), FString::Printf(
-                TEXT("{\"nordDriving\":%s,\"nordSwimming\":%s,\"nordTitle\":\"%s\",\"nordObjective\":\"%s\",\"nordStage\":\"%s\",\"nordFail\":\"%s\",\"nordBearing\":%d,\"nordMeters\":%d,\"nordPayout\":%d}"),
+                TEXT("{\"nordDriving\":%s,\"nordSwimming\":%s,\"nordTitle\":\"%s\",\"nordObjective\":\"%s\",\"nordStage\":\"%s\",\"nordFail\":\"%s\",\"nordBearing\":%d,\"nordMeters\":%d,\"nordPayout\":%d,\"nordJobHead\":\"%s\",\"nordJobLine\":\"%s\"}"),
                 Cast<AQuebecCar>(GetPawn()) ? TEXT("true") : TEXT("false"),
                 Character && Character->GetCharacterMovement()->IsSwimming() ? TEXT("true") : TEXT("false"),
-                *Json(CardTitle), *Json(CardObjective), *Json(CardStage), *Json(CardFail), CardBearing, CardMeters, CardPayout));
+                *Json(CardTitle), *Json(CardObjective), *Json(CardStage), *Json(CardFail), CardBearing, CardMeters, CardPayout,
+                *Json(JobHead), *Json(JobLine)));
         }
     }
     ApplyComicStyle();

@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { markerOffset, missionLines, payoutLines } from './mission-card.js';
+import { jobLines, markerOffset, missionLines, payoutLines } from './mission-card.js';
 
 const lines = missionLines({
   title: '28 / THE BOLT',
@@ -32,5 +32,13 @@ assert.equal(purse.notes.length, 2);
 assert.equal(purse.notes[0].hz, 880);
 assert.equal(purse.notes[1].hz, 1320);
 assert.deepEqual(payoutLines(0), { amount: '', cue: '', notes: [] });
+
+const failed = jobLines({ head: 'MISSION FAILED', line: 'Time ran out  ·  R restarts' });
+assert.equal(failed.head, 'MISSION FAILED');
+assert.equal(failed.line, 'Time ran out  ·  R restarts');
+assert.equal(jobLines(failed, true).line, 'Time ran out  ·  Menu · Recover');
+assert.equal(jobLines({ head: 'MISSION DONE', line: '+300 $  ·  Three doors delivered, still hot' }, true).line, '+300 $  ·  Three doors delivered, still hot');
+assert.equal(jobLines(null).head, '');
+assert.ok(!/[\u00e9\u00e8\u00ea\u00e0]/.test(`${failed.head} ${failed.line}`), 'the plate mixed in a French accent');
 
 console.log('mission card lines and marker ok');

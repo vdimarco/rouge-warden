@@ -132,5 +132,27 @@ function playCue(notes) {
   } catch { /* a frame can show the word without a speaker */ }
 }
 
+export function jobLines(card, touch) {
+  const head = String(card?.head || '').trim();
+  let line = String(card?.line || '').trim();
+  const key = 'R restarts';
+  if (touch && line.endsWith(key)) line = `${line.slice(0, -key.length)}Menu · Recover`;
+  return { head, line };
+}
+
+export function showJob(card, touch) {
+  const root = document.getElementById('job-banner');
+  if (!root) return null;
+  const lines = jobLines(card, touch);
+  root.hidden = !lines.head;
+  root.dataset.result = lines.head === 'MISSION FAILED' ? 'failed' : 'done';
+  const head = document.getElementById('job-head');
+  const line = document.getElementById('job-line');
+  if (head) head.textContent = lines.head;
+  if (line) line.textContent = lines.line;
+  return lines;
+}
+
 if (typeof window !== 'undefined') window.__nordShowMission = showMission;
 if (typeof window !== 'undefined') window.__nordShowPayout = showPayout;
+if (typeof window !== 'undefined') window.__nordShowJob = card => showJob(card, document.body.classList.contains('touch-input'));

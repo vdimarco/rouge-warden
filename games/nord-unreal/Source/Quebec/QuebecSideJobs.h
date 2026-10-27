@@ -84,7 +84,7 @@ public:
     UPROPERTY(VisibleAnywhere, Replicated) TObjectPtr<APlayerState> StarterState;
     // The thief's car while it drives, for the radar and the floating caption.
     UPROPERTY(VisibleAnywhere, Replicated) TObjectPtr<AActor> TargetActor;
-    // A finished job bumps ResultSerial; the HUD shows MISSION RÉUSSIE or MISSION RATÉE when it changes.
+    // A finished job bumps ResultSerial; the HUD shows MISSION DONE or MISSION FAILED when it changes.
     UPROPERTY(VisibleAnywhere, Replicated) int32 ResultSerial = 0;
     UPROPERTY(VisibleAnywhere, Replicated) int32 LastJob = INDEX_NONE;
     UPROPERTY(VisibleAnywhere, Replicated) bool bLastSucceeded = false;
@@ -92,7 +92,7 @@ public:
     UPROPERTY(VisibleAnywhere, Replicated) FString LastResult;
     // One bit per job completed this session.
     UPROPERTY(VisibleAnywhere, Replicated) int32 CompletedMask = 0;
-    // Server time until which R restarts LastJob after MISSION RATÉE; 0 when no retry is offered.
+    // Server time until which R restarts LastJob after MISSION FAILED; 0 when no retry is offered.
     UPROPERTY(VisibleAnywhere, Replicated) float RetryUntil = 0.f;
     // Ground-traced marker points, readable by QA.
     UPROPERTY(VisibleAnywhere) TArray<FVector> MarkerPoints;

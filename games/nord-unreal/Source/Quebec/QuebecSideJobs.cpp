@@ -1,4 +1,5 @@
 #include "QuebecSideJobs.h"
+#include "QuebecBanner.h"
 #include "QuebecGameplay.h"
 #include "QuebecCampaign.h"
 #include "QuebecJobRules.h"
@@ -22,6 +23,11 @@
 
 namespace
 {
+    FString JobWords(const char* Text)
+    {
+        return FString(UTF8_TO_TCHAR(Text));
+    }
+
     constexpr int32 SideJobDelivery = static_cast<int32>(QuebecJobRules::EJob::Delivery);
     constexpr int32 SideJobThief = static_cast<int32>(QuebecJobRules::EJob::Thief);
     constexpr int32 SideJobGoons = static_cast<int32>(QuebecJobRules::EJob::Goons);
@@ -691,7 +697,7 @@ void AQuebecSideJobs::FinishJob(bool bSucceeded, const FString& Reason)
     bLastSucceeded = bSucceeded;
     LastReward = Pay;
     LastResult = Reason;
-    // After MISSION RATÉE, R restarts the same job from its marker for a while instead of the campaign checkpoint.
+    // After MISSION FAILED, R restarts the same job from its marker for a while instead of the campaign checkpoint.
     RetryUntil = bSucceeded ? 0.f : GetServerNow()+RetrySeconds;
     ++ResultSerial;
     JobState = bSucceeded ? EQuebecJobState::Succeeded : EQuebecJobState::Failed;
@@ -816,7 +822,7 @@ void AQuebecSideJobs::TickJob(float DeltaSeconds)
             QuebecCrime::SetStars(Starter,FMath::Max(QuebecCrime::Stars(Starter),QuebecJobRules::EscapeStars));
         }
     }
-    if (!Starter) { FinishJob(false,TEXT("Mission abandonnée")); return; }
+    if (!Starter) { FinishJob(false, JobWords(QuebecBanner::Abandoned)); return; }
     // The job is shared, so any player's new K.-O. or arrest fails it.
     for (TActorIterator<AQuebecController> It(GetWorld()); It; ++It)
     {
@@ -832,10 +838,10 @@ void AQuebecSideJobs::TickJob(float DeltaSeconds)
             continue;
         }
         if (Waiting != INDEX_NONE) continue;
-        FinishJob(false,Stats->GetDownState() == EQuebecDownState::Arrested ? TEXT("Arrêté par la police") : TEXT("K.-O."));
+        FinishJob(false, Stats->GetDownState() == EQuebecDownState::Arrested ? JobWords(QuebecBanner::Arrested) : JobWords(QuebecBanner::KnockedOut));
         return;
     }
-    if (DeadlineTime > 0.f && Now >= DeadlineTime) { FinishJob(false,TEXT("Temps écoulé")); return; }
+    if (DeadlineTime > 0.f && Now >= DeadlineTime) { FinishJob(false, JobWords(QuebecBanner::TimeUp)); return; }
     if (JobIndex == SideJobDelivery) TickDelivery();
     else if (JobIndex == SideJobThief) TickThief(Now,DeltaSeconds);
     else if (JobIndex == SideJobGoons) TickGoons(Now);
@@ -866,7 +872,7 @@ void AQuebecSideJobs::TickDelivery()
             bCarrierHere = true;
             if (const AQuebecCar* Car = Cast<AQuebecCar>(It->GetPawn()); Car && Car->IsWrecked())
             {
-                FinishJob(false,TEXT("La commande est écrasée"));
+                FinishJob(false, JobWords(QuebecBanner::Crushed));
                 return;
             }
         }
@@ -875,7 +881,7 @@ void AQuebecSideJobs::TickDelivery()
     if (!ReachedBy(TargetLocation,0.,&Who,CarrierState)) return;
     const int32 Done = FMath::Clamp(JobStep,1,QuebecJobRules::DoorCount);
     JobProgress = static_cast<float>(Done)/QuebecJobRules::DoorCount;
-    if (Done >= QuebecJobRules::DoorCount) { FinishJob(true,TEXT("Trois portes livrées, encore chaud")); return; }
+    if (Done >= QuebecJobRules::DoorCount) { FinishJob(true, JobWords(QuebecBanner::Delivered)); return; }
     // Each door adds its bonus to the clock that is left.
     DeadlineTime = static_cast<float>(QuebecJobRules::DeliveryDeadline(StartedAt,Done));
     JobStep = Done+1;
@@ -888,12 +894,12 @@ void AQuebecSideJobs::TickDelivery()
 void AQuebecSideJobs::TickThief(float Now, float DeltaSeconds)
 {
     AQuebecCar* Car = ThiefCar;
-    if (!IsValid(Car)) { FinishJob(false,TEXT("Le voleur s'est échappé")); return; }
+    if (!IsValid(Car)) { FinishJob(false, JobWords(QuebecBanner::ThiefGone)); return; }
     JobProgress = FMath::Clamp(Car->BodyDamage/100.f,0.f,1.f);
     if (Car->IsWrecked() || Car->GetDriverController())
     {
         Car->ClearAutopilot();
-        FinishJob(true,Car->IsWrecked() ? TEXT("Le char volé est hors d'usage") : TEXT("Tu as repris le char volé"));
+        FinishJob(true, Car->IsWrecked() ? JobWords(QuebecBanner::Wrecked) : JobWords(QuebecBanner::Recovered));
         return;
     }
     // A hard hit from a player's car counts as a ram on top of the car's own impact damage.
@@ -913,7 +919,7 @@ void AQuebecSideJobs::TickThief(float Now, float DeltaSeconds)
     if (Nearest > QuebecJobRules::ThiefLostDistance)
     {
         if (LostSince < 0.f) LostSince = Now;
-        else if (Now-LostSince > QuebecJobRules::ThiefLostSeconds) { FinishJob(false,TEXT("Le voleur t'a semé")); return; }
+        else if (Now-LostSince > QuebecJobRules::ThiefLostSeconds) { FinishJob(false, JobWords(QuebecBanner::LostThief)); return; }
     }
     else LostSince = -1.f;
     // Clients follow TargetActor; the replicated point is only a 4 Hz fallback, not a per-frame write.
@@ -998,7 +1004,7 @@ void AQuebecSideJobs::TickGoons(float Now)
         const AQuebecOfficer* Goon = Cast<AQuebecOfficer>(Entry.Get());
         if (!IsValid(Goon) || Goon->IsDown()) ++Down; else ++Standing;
     }
-    if (Goons.Num() == 0) { FinishJob(false,TEXT("Les sbires ne sont pas venus")); return; }
+    if (Goons.Num() == 0) { FinishJob(false, JobWords(QuebecBanner::NoGoons)); return; }
     JobProgress = QuebecJobRules::WaveProgress(JobStep,Down);
     const FVector Arena = SideJobVector(QuebecJobRules::GoonArena);
     if (const AQuebecController* Starter = FindStarter(); Starter && Starter->GetPawn())
@@ -1010,7 +1016,7 @@ void AQuebecSideJobs::TickGoons(float Now)
                 OutsideSince = Now;
                 Say(TEXT("REVIENS!"),TEXT("Le théâtre a besoin de toi : 10 s"),2.5f);
             }
-            else if (Now-OutsideSince > QuebecJobRules::GoonArenaGraceSeconds) { FinishJob(false,TEXT("Tu as quitté le théâtre")); return; }
+            else if (Now-OutsideSince > QuebecJobRules::GoonArenaGraceSeconds) { FinishJob(false, JobWords(QuebecBanner::LeftTheatre)); return; }
         }
         else OutsideSince = -1.f;
     }
@@ -1023,7 +1029,7 @@ void AQuebecSideJobs::TickGoons(float Now)
                 if (APawn* Target = NearestPlayerPawn(Goon->GetActorLocation())) Goon->SetTargetPlayer(Target);
     }
     if (Standing > 0) return;
-    if (JobStep+1 >= QuebecJobRules::WaveCount) { FinishJob(true,TEXT("Le Théâtre de Verdure est sauvé")); return; }
+    if (JobStep+1 >= QuebecJobRules::WaveCount) { FinishJob(true, JobWords(QuebecBanner::TheatreSaved)); return; }
     if (NextWaveAt < 0.f)
     {
         NextWaveAt = Now+2.5f;
@@ -1051,7 +1057,7 @@ void AQuebecSideJobs::TickEscape(float Now)
     const APawn* Body = Starter->GetPawn();
     const bool bCarAtGarage = Cast<AQuebecCar>(Body) && FVector::Dist2D(Body->GetActorLocation(),TargetLocation) <= QuebecJobRules::GarageRadius;
     if (!QuebecJobRules::EscapeWon(bSawStars,Stars,bCarAtGarage,Now-StartedAt)) return;
-    FinishJob(true,bCarAtGarage ? TEXT("Planqué au garage") : TEXT("Police semée"));
+    FinishJob(true, bCarAtGarage ? JobWords(QuebecBanner::Garaged) : JobWords(QuebecBanner::PoliceLost));
 }
 
 void AQuebecSideJobs::TickPosters()
@@ -1070,7 +1076,7 @@ void AQuebecSideJobs::TickPosters()
     JobProgress = static_cast<float>(QuebecJobRules::PosterBits(Next)) / static_cast<float>(QuebecJobRules::PosterCount);
     if (QuebecJobRules::PostersDone(Next))
     {
-        FinishJob(true, TEXT("Trois affiches collées"));
+        FinishJob(true, JobWords(QuebecBanner::PostersUp));
         return;
     }
     const QuebecJobRules::FJobSpot From = QuebecJobRules::PosterBoards[Hit];
@@ -1122,12 +1128,12 @@ void AQuebecSideJobs::TickFare(float DeltaSeconds)
     FareOnFoot = static_cast<float>(Next.OnFoot);
     if (Next.Step == QuebecJobRules::FareLost)
     {
-        FinishJob(false, TEXT("Le passager est descendu"));
+        FinishJob(false, JobWords(QuebecBanner::FareLeft));
         return;
     }
     if (Next.Step == QuebecJobRules::FareDone)
     {
-        FinishJob(true, TEXT("Passager déposé"));
+        FinishJob(true, JobWords(QuebecBanner::FareDone));
         return;
     }
     const bool bBoarded = Previous == QuebecJobRules::FareWait && Next.Step == QuebecJobRules::FareAboard;

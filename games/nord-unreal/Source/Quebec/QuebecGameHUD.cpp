@@ -1,4 +1,5 @@
 #include "QuebecGameplay.h"
+#include "QuebecBanner.h"
 #include "QuebecCombat.h"
 #include "QuebecJobRules.h"
 #include "QuebecPlayerState.h"
@@ -595,11 +596,11 @@ void AQuebecHUD::DrawStreetHUD(float UIScale, bool bTall, bool bTouch, float Rad
         (!Player->GameNoticeTitle.IsEmpty() || !Player->GameNoticeDetail.IsEmpty());
     if (bJobBanner)
     {
-        const FString Head = Jobs->bLastSucceeded ? TEXT("MISSION RÉUSSIE") : TEXT("MISSION RATÉE");
-        FString Line = Jobs->bLastSucceeded ? FString::Printf(TEXT("+%d $  ·  %s"), Jobs->LastReward, *Jobs->LastResult) : Jobs->LastResult;
-        // Touch has no R key on the pad. Recover lives in the Menu, under GAME, and sends the same key.
-        if (!Jobs->bLastSucceeded && Jobs->RetryUntil > ServerNow)
-            Line += bTouch ? TEXT("  ·  Menu · Recover") : TEXT("  ·  R réessaie");
+        const bool bRetry = !Jobs->bLastSucceeded && Jobs->RetryUntil > ServerNow;
+        const QuebecBanner::FPlate Words = QuebecBanner::Compose(
+            Jobs->bLastSucceeded, Jobs->LastReward, TCHAR_TO_UTF8(*Jobs->LastResult), bTouch, bRetry);
+        const FString Head(UTF8_TO_TCHAR(Words.Head));
+        const FString Line(UTF8_TO_TCHAR(Words.Line.c_str()));
         Plate(Head, Line, Jobs->bLastSucceeded ? Accent : Danger, ScreenW * .5f, BannerTop, JobAge, QuebecJobRules::ResultBannerSeconds);
     }
     else if (bNotice)

@@ -136,13 +136,13 @@ bool FQuebecJobsLifecycleTest::RunTest(const FString& Parameters)
     TestFalse(TEXT("The deadline ends the job"), Jobs->IsActive());
     TestTrue(TEXT("A timeout is a failure"), Jobs->JobState == EQuebecJobState::Failed);
     TestEqual(TEXT("The result banner is triggered once"), Jobs->ResultSerial, SerialBefore + 1);
-    TestTrue(TEXT("The failure names the timeout"), Jobs->LastResult.Contains(TEXT("Temps")));
+    TestTrue(TEXT("The failure names the timeout"), Jobs->LastResult.Contains(TEXT("Time")));
     TestEqual(TEXT("A failure pays nothing"), Jobs->LastReward, 0);
     TestFalse(TEXT("The race gate guard releases once the job ended"), QuebecJobs::IsJobActive(Fixture.World));
-    // Spec: after MISSION RATÉE, R restarts the job rather than the campaign encounter, for a short window.
+    // Spec: after MISSION FAILED, R restarts the job rather than the campaign encounter, for a short window.
     TestTrue(TEXT("A failure offers a retry for 30 s"), Jobs->RetryUntil > Jobs->GetServerNow() + AQuebecSideJobs::RetrySeconds - 1.f);
     Fixture.World->TimeSeconds += 10.;
-    TestTrue(TEXT("R within 30 s of MISSION RATÉE is taken by the job"), QuebecJobs::HandleRecover(Fixture.Player));
+    TestTrue(TEXT("R within 30 s of MISSION FAILED is taken by the job"), QuebecJobs::HandleRecover(Fixture.Player));
     TestTrue(TEXT("R after a failure restarts the failed job"), Jobs->IsActive() && Jobs->JobIndex == 0 && Jobs->JobStep == 0);
     TestEqual(TEXT("The restarted job has its full time"), Jobs->GetRemainingSeconds(), 75.f, .01f);
     TestEqual(TEXT("Starting a job closes the retry window"), Jobs->RetryUntil, 0.f);
@@ -160,7 +160,7 @@ bool FQuebecJobsLifecycleTest::RunTest(const FString& Parameters)
     Fixture.Stats->DownState = static_cast<uint8>(EQuebecDownState::KnockedOut);
     Jobs->Tick(.1f);
     TestTrue(TEXT("K.-O. fails the job"), Jobs->JobState == EQuebecJobState::Failed);
-    TestTrue(TEXT("The failure names the K.-O."), Jobs->LastResult.Contains(TEXT("K.-O.")));
+    TestTrue(TEXT("The failure names the knockout"), Jobs->LastResult.Contains(TEXT("Knocked")));
     TestTrue(TEXT("R from a downed player is taken"), QuebecJobs::HandleRecover(Fixture.Player));
     TestFalse(TEXT("R from a downed player neither restarts the job nor moves the player"), Jobs->IsActive());
     Fixture.Stats->DownState = 0;
@@ -183,7 +183,7 @@ bool FQuebecJobsLifecycleTest::RunTest(const FString& Parameters)
     PartnerStats->DownState = static_cast<uint8>(EQuebecDownState::Arrested);
     Jobs->Tick(.1f);
     TestFalse(TEXT("The partner's new arrest fails the shared job"), Jobs->IsActive());
-    TestTrue(TEXT("The failure names the arrest"), Jobs->LastResult.Contains(TEXT("Arrêté")));
+    TestTrue(TEXT("The failure names the arrest"), Jobs->LastResult.Contains(TEXT("Arrested")));
     PartnerStats->DownState = 0;
 
     // The goon job hands every unarmed player a pistol.
