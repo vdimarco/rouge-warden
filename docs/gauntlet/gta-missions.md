@@ -3797,3 +3797,50 @@ Unreal is not available here, so the native diamond was not captured. The title 
 ![The dust on a 390-wide screen](gta-missions/r83-play-card-390.png)
 
 ![Menu on a 390-wide screen, Recover visible](gta-missions/r83-play-menu-390.png)
+
+### Round 84 — 2026-10-27 — rubric v1
+
+- What changed: The play page names the weapon in hand. The names stay Fists, Hockey stick, Pistol, SMG, and Shotgun. Weapon rules do not change. No new mission.
+- Why it helped: Those names were already English, and the page we run never showed which one was in hand.
+- Screenshots: title `docs/gauntlet/gta-missions/r84-title-1280.png`, `r84-title-390.png`, `r84-title-320.png`. Play client, host offline, `r84-play-1280.png`, with the same chip at 390 in `r84-play-card-390.png`. Menu with Recover `r84-play-menu-390.png`. The title loaded with no page errors. The raw play page still logs the missing `@epicgames-ps/lib-pixelstreamingfrontend-ue5.8` specifier; the shell, the card, the chip, and Recover still draw. The 1280 frame shows PISTOL at the lower right (paper pixels in that corner). The 390 frame shows PISTOL below the mission card and above the resident line (2037 paper pixels in the chip). The native weapon was not seen in Unreal. `node Browser/mission-card.test.mjs` passed. `python3 Scripts/test_street_meter.py` passed. Syntax check of `QuebecGameplay.cpp` passed for the game and editor targets. OpenSpec CLI is not installed, so `openspec validate` did not run. `Browser/browser.test.mjs` did not run: the `ws` package is not installed here.
+- Next target: lighting, detail, texture, models, and animation stay at 3 with the graphics loop. Performance stays at 4 and is not measurable here.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 3 | Unchanged. |
+| Color palette | 5 | Unchanged. The chip uses the same paper and gold. |
+| Detail density | 3 | Unchanged. |
+| Texture and material quality | 3 | Unchanged. |
+| Composition and camera | 4 | Unchanged. |
+| Atmosphere | 4 | Unchanged. |
+| Character models | 3 | Unchanged. |
+| Animation smoothness | 3 | Unchanged. |
+| Particles and VFX | 3 | Unchanged. The five puffs are still on the shell. The city's own dust was not seen. |
+| UI polish | 9 | The play shell shows PISTOL in English, with the objective and the resident line. The native weapon was not seen in Unreal, so this is one step. |
+| Responsiveness and input latency | 4 | Unchanged. The shell still hears the city every 0.1 s. The video stream was not timed. |
+| Controls feel | 9 | Unchanged. Steering rates were not retuned. |
+| Mission clarity | 8 | Unchanged. The play shell still shows the carry's objective, Stage 3 of 3, the fail sentence, and a gold diamond. |
+| Pacing | 9 | Unchanged. Nothing new was driven. |
+| Fun factor | 9 | Unchanged. The chip was seen. It was not used. |
+| Difficulty curve | 9 | Unchanged. Selling the last page ends it for 200 and does not bank the chain. A wreck still costs more than the goon pay. |
+| Feedback | 9 | Unchanged. The shell still shows a purse. The notes were not heard. |
+| Sound design | 9 | Unchanged. The two notes were not heard. No new sound was added. |
+| Variety | 9 | Unchanged. No new way to play was added, and the carry was not driven. |
+| Performance stability | 4 | Unchanged. Not measurable in this container. |
+
+- Aesthetics raw: 40 / 10 dimensions, index 40
+- Playability raw: 79 / 10 dimensions, index 79
+- Total: 119 / 200
+- Delta vs last round: +1 (round 83 was 118). UI polish 8 → 9. Every other score held.
+
+![GTA title at 1280](gta-missions/r84-title-1280.png)
+
+![GTA title at 390](gta-missions/r84-title-390.png)
+
+![GTA title at 320](gta-missions/r84-title-320.png)
+
+![Play client at 1280, host offline, the pistol chip](gta-missions/r84-play-1280.png)
+
+![The pistol chip on a 390-wide screen](gta-missions/r84-play-card-390.png)
+
+![Menu on a 390-wide screen, Recover visible](gta-missions/r84-play-menu-390.png)
