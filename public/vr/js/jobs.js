@@ -714,6 +714,7 @@ export function createJobs({ city, combat, cars = null, seed = 4711 }) {
     },
     gust(A, dt, h) {
       const C = JOB.gust;
+      if (A.data.n >= C.need) { end(true, "through"); return; }
       A.timer -= dt;
       A.data.arm = Math.max(0, A.data.arm - dt);
       const dist = Math.hypot(h.x - A.o.x, h.z - A.o.z);
