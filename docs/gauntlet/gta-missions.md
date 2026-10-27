@@ -3421,3 +3421,50 @@ Unreal is not available here, so the native diamond was not captured. The title 
 ![Payout on a 390-wide screen](gta-missions/r75-play-purse-390.png)
 
 ![Menu on a 390-wide screen, Recover visible](gta-missions/r75-play-menu-390.png)
+
+### Round 76 — 2026-10-27 — rubric v1
+
+- What changed: Mission 32, THE TAB, opens after the post. Walk to the counter. Drive the car through the lane inside a speed band, nose down the road. Stand still for the receipt. Too fast, too slow, or the wrong nose drops the lane and keeps the counter. Moving starts the receipt count again and does not save. The purse is 760, once, when the tab closes. Version 25 writes the step. A version-24 slot starts the tab over. The receipt count and the lane warning stay in the session. No extra car. The post, the lift, and the yard are not retuned.
+- Why it helped: The last beats were one verb. This one is a walk, a drive, and a still count, and a mistake on the lane does not throw away the counter.
+- Screenshots: title `docs/gauntlet/gta-missions/r76-title-1280.png`, `r76-title-390.png`, `r76-title-320.png`. Play client, host offline, `r76-play-1280.png`, with the same card at 390 in `r76-play-card-390.png`. Menu with Recover `r76-play-menu-390.png`. The title loaded with no page errors. The raw play page still logs the missing `@epicgames-ps/lib-pixelstreamingfrontend-ue5.8` specifier; the shell, the card, and Recover still draw. The 1280 frame shows 32 / THE TAB, Take the lane in the band, Stage 2 of 3, That speed drops the tab. Take the lane again., 180 m, and a gold diamond (60 gold pixels on the map). The tab was not driven in Unreal. `python3 Scripts/test_tab.py` is 20 assertions, 0 failures, on three compilers. `python3 Scripts/test_story_save.py` is 280 assertions, 0 failures. Syntax check `--both` passed, 96 files, 0 failed. OpenSpec CLI is not installed, so `openspec validate` did not run.
+- Next target: another complete errand that can be checked the same way. Variety, fun, and pacing stay at 9 until a new way is driven. Responsiveness stays at 3 and stays out of scope. Performance stays at 4 and is not measurable here.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 3 | Unchanged. |
+| Color palette | 5 | Unchanged. |
+| Detail density | 3 | Unchanged. |
+| Texture and material quality | 3 | Unchanged. |
+| Composition and camera | 4 | Unchanged. |
+| Atmosphere | 4 | Unchanged. |
+| Character models | 3 | Unchanged. |
+| Animation smoothness | 3 | Unchanged. |
+| Particles and VFX | 2 | Unchanged. |
+| UI polish | 4 | Unchanged. The shell card was seen. The native card was not compared, and French and English still share the screen. |
+| Responsiveness and input latency | 3 | Unchanged. Still a lagged stream. Out of scope for this loop. |
+| Controls feel | 9 | Unchanged. Getting out faster than a walk still keeps that pace. |
+| Mission clarity | 8 | Unchanged. The play shell shows the tab's objective, Stage 2 of 3, the fail sentence, and a gold diamond. The tab was not driven. |
+| Pacing | 9 | Unchanged. The lane band was not driven. Four seconds on foot after boarding still loses the passenger. |
+| Fun factor | 9 | Unchanged. The three verbs were proven offline and were not played. |
+| Difficulty curve | 9 | Unchanged. Selling the last page ends it for 200 and does not bank the chain. A wreck still costs more than the goon pay. |
+| Feedback | 9 | Unchanged. The shell still shows a purse. The notes were not heard. |
+| Sound design | 9 | Unchanged. The two notes were not heard. The dent thud still marks a scrape as quiet. Nobody is voiced. |
+| Variety | 9 | The tab is a walk, a lane, and a still count. It was not driven, so it is not a new way that was seen. |
+| Performance stability | 4 | Unchanged. Not measurable in this container. |
+
+- Aesthetics raw: 34 / 10 dimensions, index 34
+- Playability raw: 78 / 10 dimensions, index 78
+- Total: 112 / 200
+- Delta vs last round: 0 (round 75 was 112). The tab was tested and the card was seen. It was not driven, so every score held.
+
+![GTA title at 1280](gta-missions/r76-title-1280.png)
+
+![GTA title at 390](gta-missions/r76-title-390.png)
+
+![GTA title at 320](gta-missions/r76-title-320.png)
+
+![Play client at 1280, host offline, the tab card visible](gta-missions/r76-play-1280.png)
+
+![The tab card on a 390-wide screen](gta-missions/r76-play-card-390.png)
+
+![Menu on a 390-wide screen, Recover visible](gta-missions/r76-play-menu-390.png)

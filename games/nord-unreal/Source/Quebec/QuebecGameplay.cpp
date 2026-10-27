@@ -3158,6 +3158,8 @@ void AQuebecHUD::DrawHUD()
             Status = TEXT("Menu · Recover restores this yard");
         else if (Campaign->IsLiftOpen() && bTouchControls)
             Status = TEXT("Menu · Recover restores this lift");
+        else if (Campaign->IsTabOpen() && bTouchControls)
+            Status = TEXT("Menu · Recover restores this tab");
         else if (Campaign->IsPostOpen() && bTouchControls)
             Status = TEXT("Menu · Recover restores this post");
         else if (Campaign->IsCampaignComplete() && !Campaign->IsStoryBeatOpen() && SideJobs)

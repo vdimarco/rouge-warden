@@ -85,10 +85,12 @@ public:
     UPROPERTY(VisibleAnywhere) int32 LiftStep = 0;
     // Post tail. Version 23 leaves this at 0. Version 24 writes it. How long they have stood stays in the session.
     UPROPERTY(VisibleAnywhere) int32 PostStep = 0;
+    // Tab tail. Version 24 leaves this at 0. Version 25 writes it. The receipt count stays in the session.
+    UPROPERTY(VisibleAnywhere) int32 TabStep = 0;
     bool IsSupported() const;
 };
 
-/** Story encounters. All objective decisions run on authority. Missions 3 through 10 persist on the version-3 tail. Mission 11 persists on version 4. Mission 12 persists on version 5. Mission 13 persists on version 6. Mission 14 persists on version 7. Mission 15 persists on version 8. Mission 16 persists on version 9. Mission 17 persists on version 10. Mission 18 persists on version 11. Mission 19 persists on version 12. Mission 20 persists on version 13. Mission 21 persists on version 14. Mission 22 persists on version 15. Mission 23 persists on version 16. Mission 24 persists on version 17. Mission 25 persists on version 18. Mission 26 persists on version 19. Mission 27 persists on version 20. Mission 28 persists on version 21. Mission 29 persists on version 22. Mission 30 persists on version 23. Mission 31 persists on version 24. Completed missions stay 0–2. */
+/** Story encounters. All objective decisions run on authority. Missions 3 through 10 persist on the version-3 tail. Mission 11 persists on version 4. Mission 12 persists on version 5. Mission 13 persists on version 6. Mission 14 persists on version 7. Mission 15 persists on version 8. Mission 16 persists on version 9. Mission 17 persists on version 10. Mission 18 persists on version 11. Mission 19 persists on version 12. Mission 20 persists on version 13. Mission 21 persists on version 14. Mission 22 persists on version 15. Mission 23 persists on version 16. Mission 24 persists on version 17. Mission 25 persists on version 18. Mission 26 persists on version 19. Mission 27 persists on version 20. Mission 28 persists on version 21. Mission 29 persists on version 22. Mission 30 persists on version 23. Mission 31 persists on version 24. Mission 32 persists on version 25. Completed missions stay 0–2. */
 UCLASS()
 class QUEBEC_API AQuebecCampaign : public AActor
 {
@@ -156,6 +158,7 @@ public:
     static constexpr int32 YardBankedStep = 1;
     static constexpr int32 LiftBankedStep = 1;
     static constexpr int32 PostBankedStep = 1;
+    static constexpr int32 TabBankedStep = 3;
     bool IsPondOpen() const { return Phase == EQuebecCampaignPhase::Complete && PondStep < PondBankedStep; }
     bool IsCourtOpen() const { return Phase == EQuebecCampaignPhase::Complete && PondStep >= PondBankedStep && CourtStep < CourtBankedStep; }
     bool IsShowOpen() const { return Phase == EQuebecCampaignPhase::Complete && PondStep >= PondBankedStep && CourtStep >= CourtBankedStep && ShowStep < ShowBankedStep; }
@@ -409,7 +412,21 @@ public:
             && YardStep >= YardBankedStep && LiftStep >= LiftBankedStep
             && PostStep >= 0 && PostStep < PostBankedStep;
     }
-    bool IsStoryBeatOpen() const { return IsPondOpen() || IsCourtOpen() || IsShowOpen() || IsRescueOpen() || IsConvoyOpen() || IsBlankOpen() || IsTourOpen() || IsHomeOpen() || IsEscortOpen() || IsShadeOpen() || IsGrabOpen() || IsCutOpen() || IsChaseOpen() || IsFinaleOpen() || IsFollowOpen() || IsRollOpen() || IsBellOpen() || IsBlockOpen() || IsSendOpen() || IsPursueOpen() || IsNoseOpen() || IsSlipOpen() || IsMarchOpen() || IsDitchOpen() || IsParcelOpen() || IsBoltOpen() || IsYardOpen() || IsLiftOpen() || IsPostOpen(); }
+    bool IsTabOpen() const
+    {
+        return Phase == EQuebecCampaignPhase::Complete && PondStep >= PondBankedStep && CourtStep >= CourtBankedStep
+            && ShowStep >= ShowBankedStep && RescueMask >= RescueDone && ConvoyStep >= ConvoyBankedStep
+            && BlankStep >= BlankBankedStep && TourStep >= TourBankedStep && HomeStep >= HomeBankedStep
+            && EscortStep >= EscortBankedStep && ShadeStep >= ShadeBankedStep && GrabStep >= GrabBankedStep
+            && CutStep >= CutBankedStep && ChaseStep >= ChaseBankedStep && FinaleStep >= FinaleBankedStep
+            && FollowStep >= FollowBankedStep && RollStep >= RollBankedStep && BellStep >= BellBankedStep
+            && BlockStep >= BlockBankedStep && SendStep >= SendBankedStep && PursueStep >= PursueBankedStep
+            && NoseStep >= NoseBankedStep && SlipStep >= SlipBankedStep && MarchStep >= MarchBankedStep
+            && DitchStep >= DitchBankedStep && ParcelStep >= ParcelBankedStep && BoltStep >= BoltBankedStep
+            && YardStep >= YardBankedStep && LiftStep >= LiftBankedStep && PostStep >= PostBankedStep
+            && TabStep >= 0 && TabStep < TabBankedStep;
+    }
+    bool IsStoryBeatOpen() const { return IsPondOpen() || IsCourtOpen() || IsShowOpen() || IsRescueOpen() || IsConvoyOpen() || IsBlankOpen() || IsTourOpen() || IsHomeOpen() || IsEscortOpen() || IsShadeOpen() || IsGrabOpen() || IsCutOpen() || IsChaseOpen() || IsFinaleOpen() || IsFollowOpen() || IsRollOpen() || IsBellOpen() || IsBlockOpen() || IsSendOpen() || IsPursueOpen() || IsNoseOpen() || IsSlipOpen() || IsMarchOpen() || IsDitchOpen() || IsParcelOpen() || IsBoltOpen() || IsYardOpen() || IsLiftOpen() || IsPostOpen() || IsTabOpen(); }
 
     UPROPERTY(VisibleAnywhere, ReplicatedUsing=UpdatePresentation) EQuebecCampaignPhase Phase = EQuebecCampaignPhase::AimWorklight;
     UPROPERTY(VisibleAnywhere, Replicated) int32 CompletedMissions = 0;
@@ -537,6 +554,10 @@ public:
     // How long they have stood is not saved. A reload starts the count again.
     UPROPERTY(VisibleAnywhere, ReplicatedUsing=UpdatePresentation) int32 PostStep = 0;
     UPROPERTY(VisibleAnywhere, Replicated) float PostClock = 0.f;
+    // 0 the counter, 1 the lane, 2 the receipt, 3 banked. Written on the version-25 tail. Not a chain link.
+    // The receipt count is not saved. A reload starts that count again and keeps the step.
+    UPROPERTY(VisibleAnywhere, ReplicatedUsing=UpdatePresentation) int32 TabStep = 0;
+    UPROPERTY(VisibleAnywhere, Replicated) float TabClock = 0.f;
     // The last setback stays on the card until the step changes. It is not saved.
     UPROPERTY(Replicated) FString FailReason;
     // The last story purse. The serial bumps once per purse. The clock is local and is not saved.
@@ -745,6 +766,8 @@ private:
     UPROPERTY() TObjectPtr<UTextRenderComponent> LiftThemCaption;
     UPROPERTY() TObjectPtr<UStaticMeshComponent> PostMark;
     UPROPERTY() TObjectPtr<UTextRenderComponent> PostMarkCaption;
+    UPROPERTY() TObjectPtr<UStaticMeshComponent> TabMark;
+    UPROPERTY() TObjectPtr<UTextRenderComponent> TabMarkCaption;
     UPROPERTY() TArray<TObjectPtr<UStaticMeshComponent>> ConvoyParts;
     UPROPERTY() TArray<TObjectPtr<UTextRenderComponent>> ConvoyCaptions;
     UPROPERTY() TArray<TObjectPtr<UStaticMeshComponent>> BlankParts;
@@ -772,6 +795,8 @@ private:
     bool bSaveBlocked = false;
     // Session only. An early bell warns once until the player leaves it. Not saved.
     bool bBellWarned = false;
+    // Session only. The lane warns once until they leave it. Not saved.
+    bool bTabNoted = false;
     void RecordRaceResult();
     void BankChain(int32 Link);
     void GrantCash(int32 Amount);
@@ -852,6 +877,8 @@ private:
     void AdvanceLift(int32 Next, AQuebecController* Who, const TCHAR* Message, bool bFinished);
     void TickPost(float DeltaSeconds);
     void AdvancePost(int32 Next, AQuebecController* Who, const TCHAR* Message, bool bFinished);
+    void TickTab(float DeltaSeconds);
+    void AdvanceTab(int32 Next, AQuebecController* Who, const TCHAR* Message, bool bFinished);
     void ChangePhase(EQuebecCampaignPhase Next, bool bFeedback = true);
     void StopAiming();
     void SaveBoundary();
