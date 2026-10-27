@@ -1613,3 +1613,34 @@ Evidence: [the opening card](fullswing-r44/wheel.png). The DOM assert is the sou
 | Performance stability | Unverified | No GPU pass, and this round does not claim one. |
 
 Current total withheld. Historical 132 is context from the earlier mission rounds, and this round's delta against that history is 0. It is not a new acceptance score. Responsiveness and performance stay unverified. No phone, listening, or full playthrough. `openspec validate` did not run. The change is archived by hand under `openspec/changes/archive/2026-10-26-swing-wheel-stop/`.
+
+### Round 45 — 2026-10-26 — a kite to stay above, rubric v1
+
+An odd job sends a kite up from the street. The card says HOLD THE KITE and to stay above it. Time in the air above the kite, within 8 m, fills a 4 s hold. The first moment above it tugs the hero up. Standing on the ground, or hanging under the kite, does not fill the hold. Leaving the air slips the hold, and the card says to get back above it. Filling the hold catches the kite. The play measured an upward speed above 3 m/s and the job gone. A 22 s clock that runs out misses as risen. The kite is an offer. It does not replace a flush. The first flush stays the clog card, the third flush stays the gust, and the loose wheel stays an offer. The King stays asleep.
+
+Evidence: [the opening card](fullswing-r45/kite.png). The DOM assert is the source of truth for the card text. Local flat play passed the card, the ground refusal, and the launch. Local action tests passed, including the rise, the ground, the air under it, the tug, the slip, the catch, and the clock miss. No new art files. The tug and the catch use the existing comic word and the existing rope-release sound.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 5 | Historical context only. This round does not re-score it. |
+| Color palette | 6 | Historical context only. This round does not re-score it. |
+| Detail density | 4 | Historical context only. This round does not re-score it. |
+| Texture and material quality | 3 | Historical context only. This round does not re-score it. |
+| Composition and camera | 4 | Historical context only. This round does not re-score it. |
+| Atmosphere | 5 | Historical context only. This round does not re-score it. |
+| Character models | 3 | Historical context only. This round does not re-score it. |
+| Animation smoothness | 4 | Historical context only. This round does not re-score it. |
+| Particles and VFX | 5 | The tug uses the existing comic word. That is not a new effects bar. |
+| UI polish | 6 | The card names the kite, the hold, and the miss. Polish stays where it was. |
+| Responsiveness and input latency | Unverified | No hardware pass. The launch is a simulated frame, not a measured input latency. |
+| Controls feel | 9 | Staying above it is the same swing. One new place to be does not move the feel score. |
+| Mission clarity | 9 | The card says to stay above, and a slip says to get back. Clarity stays 9. |
+| Pacing | 9 | The kite is not a flush. Ten of twelve flushes differ, and the first is still the pump. |
+| Fun factor | 9 | A rising kite tugs you up and then launches you. One odd job is not a 2023 open city. |
+| Difficulty curve | 9 | Four seconds above it, the ground does not count, and the miss says to stay above. The curve stays 9. |
+| Feedback | 9 | The card counts the hold, the word pops, and a miss names itself. Feedback stays 9. |
+| Sound design | 9 | The tug reuses the rope-release sound. Sound stays 9. |
+| Variety | 9 | The kite is another offer. It does not change the flush list. Variety stays 9. |
+| Performance stability | Unverified | No GPU pass, and this round does not claim one. |
+
+Current total withheld. Historical 132 is context from the earlier mission rounds, and this round's delta against that history is 0. It is not a new acceptance score. Responsiveness and performance stay unverified. No phone, listening, or full playthrough. `openspec validate` did not run. The change is archived by hand under `openspec/changes/archive/2026-10-26-swing-kite-hold/`.
