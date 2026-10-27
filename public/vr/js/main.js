@@ -2106,6 +2106,8 @@ function catchFeedback(i, what) {
 // ahead of you, never on you. Sizes come from fx.js (8 to 12 degrees across); scale makes the big moments bigger.
 const FX_UP = { x: 0, y: 1, z: 0 }, FXP = new THREE.Vector3(), FXD = new THREE.Vector3(), FXQ = new THREE.Vector3();
 let whooshAt = -99, whooshArmed = true;
+// The grade's hour. A full turn is four minutes: sunset, blue hour, sunset again. Title shots stay at sunset.
+let gradeClock = 0;
 // on the line from the head through the hand's muzzle, 1.7 m from the head
 function wordAtHand(name, i) {
   const hp = G.input.head.pos, t = TIPS[i] || hands.tip(i);
@@ -2159,6 +2161,10 @@ function after(dt, inp, yawDelta) {
   ropes.update(dt, P, TIPS, G.time);
   game.update(dt, G.time, P, inp); // before the hand-off it only lets the sleeping King breathe
   ui.paintMission(); // the score-row card was drawn at the start of the frame, before this objective existed
+  if (inPlay) {
+    gradeClock += dt;
+    view.setDay(0.5 - 0.5 * Math.cos(gradeClock * (Math.PI * 2 / 240)));
+  }
   view.update(dt, G.time, vh.pos);
   streetFrame(dt, inPlay);
   // comfort: the 50 ms low-passed acceleration, the smooth-turn rate, and whether a snap happened

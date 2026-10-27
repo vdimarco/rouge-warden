@@ -1,0 +1,5 @@
+- [x] Pin the sunset grade so the dark end of the shade goes violet, open shade stays teal, the step stays rose, and sun goes amber
+- [x] Walk that grade to blue hour during play, and pin it for a still
+- [x] Shoot the street and the needle at sunset and at blue hour
+- [x] Pass `qa/vr/render.mjs`, including canyon ink under 35%
+- [x] Record the score only if the stills show the new inks
