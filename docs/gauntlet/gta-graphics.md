@@ -2103,3 +2103,38 @@ Unreal is not available in this environment, so in-engine frames are the last co
 - Playability raw: 39 / 10 dimensions, index 39
 - Total: 127 / 200
 - Delta vs last round: 0
+
+### Round 61 — 2026-10-27 — rubric v1
+
+- What changed: a dusk wall at least five metres long and four and a half metres tall takes a grid of warm panes, up to eight across and four up, on both sides of the face. Shorter walls stay blank. The afternoon stays dark, with the street lamps. The opening aim stays.
+- Why it helped: the blocks beside the Marie-Anne corner were one flat colour. Lit panes now sit on those faces. Lighting stays at 9. The panes are flat rectangles, and the nearest large face is still bare.
+- Screenshots: before `docs/gauntlet/gta-graphics/round-61/before-frame.png` is the corner from the previous round. After `docs/gauntlet/gta-graphics/round-61/after-frame.png` is the same camera with the panes. The crop is `window-crop.png`. Not an Unreal capture. The full-frame mean absolute delta is 0.0195 and the max is 0.980. 239791 pixels change, from x 33 to 882 and y 0 to 539. `Scripts/test_opening_windows.py` passed. The panes were not compiled in Unreal. `GET /gta/` returned 200. OpenSpec CLI is not installed, so the change files were not validated with `openspec`.
+- Next target: the blank face closest to this camera. Walls under five metres still take no panes.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 9 | Warm panes sit on the dusk blocks. They are flat rectangles, and the nearest large face is still bare. |
+| Color palette | 9 | The pane colour is a warm emissive. The street hues are unchanged. |
+| Detail density | 9 | The panes add a grid on the long faces. The avenue is otherwise unchanged. |
+| Texture and material quality | 9 | The walls are still flat colour under the panes. |
+| Composition and camera | 9 | The corner camera and the opening aim are unchanged. |
+| Atmosphere | 9 | The scattering sky is unchanged. |
+| Character models | 9 | The hoodie is unchanged. |
+| Animation smoothness | 7 | The run is unchanged. |
+| Particles and VFX | 9 | The shoe puffs are unchanged. |
+| UI polish | 9 | The radar heading is unchanged. |
+| Responsiveness and input latency | 4 | Not measured this round. |
+| Controls feel | 4 | Not played. |
+| Mission clarity | 5 | The objective words are unchanged. |
+| Pacing | 4 | Unchanged mission slice. |
+| Fun factor | 3 | Not played. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 4 | The lit panes are the new mark. No new juice. |
+| Sound design | 3 | Not listened to. |
+| Variety | 3 | One dusk grid. The afternoon walls stay dark. |
+| Performance stability | 5 | `Scripts/test_opening_windows.py` passed. Frame time was not remeasured. |
+
+- Aesthetics raw: 88 / 10 dimensions, index 88
+- Playability raw: 39 / 10 dimensions, index 39
+- Total: 127 / 200
+- Delta vs last round: 0
