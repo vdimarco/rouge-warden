@@ -63,7 +63,7 @@ After the Sludge Run is won, the story SHALL be four missions in order: Stop, Th
 - **THEN** a lesson card names the miss, the same mission starts again after that card, and the card still does not say to flush the clogs
 
 ### Requirement: Clog beats
-While the King is still asleep, the second flush SHALL start a falling rescue, the fourth flush SHALL start a balloon to bring back, the fifth flush SHALL start a purse snatcher to run down, the sixth flush SHALL start a pizza to deliver to a roof, the seventh flush SHALL start a mugging to clear, the eighth flush SHALL start a washer to carry down, the ninth flush SHALL start a getaway car to rope, the tenth flush SHALL start a rooftop brawl, and the eleventh flush SHALL start a lid to stand on until it seats. Each of those jobs SHALL take the mission card, and that card SHALL NOT say to flush the clogs. Standing on the ground within 4 m of that lid SHALL fill a 6 s hold. Leaving the lid, or leaving the ground, SHALL slip that hold at twice the rate. Filling the hold SHALL end the job seated. The clock SHALL be 24 s, and running it out SHALL miss as popped. The first and the third flushes SHALL keep the clog card, counting toward twelve. When a beat ends, the clog card SHALL return. Flushing all twelve SHALL still wake the King. The second, the fifth, the seventh, the ninth, the tenth, and the eleventh flushes SHALL NOT wake him. A beat SHALL wait while a story mission is the current job. A beat SHALL NOT move the story route. The washer on the eighth flush SHALL give less time than an odd-job washer when he hangs within a swing. The King SHALL still roar only on the fourth and the eighth flush. The falling rescue SHALL keep its fall rate.
+While the King is still asleep, the second flush SHALL start a falling rescue, the third flush SHALL start a gust to swing through, the fourth flush SHALL start a balloon to bring back, the fifth flush SHALL start a purse snatcher to run down, the sixth flush SHALL start a pizza to deliver to a roof, the seventh flush SHALL start a mugging to clear, the eighth flush SHALL start a washer to carry down, the ninth flush SHALL start a getaway car to rope, the tenth flush SHALL start a rooftop brawl, and the eleventh flush SHALL start a lid to stand on until it seats. Each of those jobs SHALL take the mission card, and that card SHALL NOT say to flush the clogs. Swinging through that gust in the air, within 6 m of its column and at 11 m/s or faster across the ground, SHALL count one pass. Standing in the column, or crossing it slower than that, SHALL NOT count. A later pass SHALL count only after the hero has left the column and 0.4 s have passed. Three passes SHALL end the job. The clock SHALL be 28 s, and running it out SHALL miss as blown off. Each counted pass SHALL lift the swing. Standing on the ground within 4 m of that lid SHALL fill a 6 s hold. Leaving the lid, or leaving the ground, SHALL slip that hold at twice the rate. Filling the hold SHALL end the job seated. The clock SHALL be 24 s, and running it out SHALL miss as popped. The first flush SHALL keep the clog card, counting toward twelve. When a beat ends, the clog card SHALL return. Flushing all twelve SHALL still wake the King. The second, the third, the fifth, the seventh, the ninth, the tenth, and the eleventh flushes SHALL NOT wake him. A beat SHALL wait while a story mission is the current job. A beat SHALL NOT move the story route. The washer on the eighth flush SHALL give less time than an odd-job washer when he hangs within a swing. The King SHALL still roar only on the fourth and the eighth flush. The falling rescue SHALL keep its fall rate.
 
 #### Scenario: One flush
 - **WHEN** one clog is flushed and no story mission is running
@@ -77,9 +77,33 @@ While the King is still asleep, the second flush SHALL start a falling rescue, t
 - **WHEN** that person is set down
 - **THEN** the card says FLUSH THE CLOGS 2/12
 
-#### Scenario: Three flushes
-- **WHEN** three clogs are flushed and no story mission is running
-- **THEN** the card says FLUSH THE CLOGS 3/12
+#### Scenario: The third flush
+- **WHEN** the third clog is flushed
+- **THEN** the card names a gust to swing through and does not say to flush the clogs, and the King is still asleep
+
+#### Scenario: Through the gust
+- **WHEN** the hero swings through that column in the air at 11 m/s or faster
+- **THEN** the card counts one pass and the swing lifts
+
+#### Scenario: Not a pass
+- **WHEN** the hero stands in the column, or crosses it slower than 11 m/s
+- **THEN** the pass count stays
+
+#### Scenario: The next pass
+- **WHEN** the hero leaves the column, waits 0.4 s, and swings through again
+- **THEN** the card counts the next pass
+
+#### Scenario: Three passes
+- **WHEN** the third pass counts
+- **THEN** the job ends
+
+#### Scenario: Blown off
+- **WHEN** the 28 s clock runs out first
+- **THEN** the lesson card says the gust blew off and to swing through it
+
+#### Scenario: After the gust
+- **WHEN** that gust is swung through
+- **THEN** the card says FLUSH THE CLOGS 3/12 and the King is still asleep
 
 #### Scenario: The fourth flush
 - **WHEN** the fourth clog is flushed
