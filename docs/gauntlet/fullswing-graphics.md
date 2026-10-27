@@ -1657,3 +1657,40 @@ Playability was scored from a flat boot and the city render check, not a full pl
 
 Playability was scored from a flat boot and the city render check, not a full playthrough. OpenSpec CLI validation was not run; the `openspec` command is not installed.
 
+### Round 38 — 2026-10-27 — rubric v1
+
+- What changed: The compass dial was a blank cream disc. It now carries a rose ring and four ink ticks, painted in the same paper as the plate's hem. The ticks stay put. The arrow is a second mark and still turns on its own. The row box does not move.
+- Why it helped: The face of the dial was one cream. At (984, 38) that cream goes from (255, 249, 234) to the ink (20, 10, 24). At (976, 28) it goes to the rose (231, 160, 180). Sixteen cream pixels become ink and 118 become rose. At 1280×720 the row stayed top 12, bottom 63, left 199, right 1081.
+- Screenshots: before `docs/gauntlet/shots/r38-before-hud.png`, after `docs/gauntlet/shots/r38-after-hud.png`.
+- Next target: Lighting (7). The street is still one warm key.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 7 | Unchanged. A lit shop's cloth is warmer along the hem than along the top. |
+| Color palette | 7 | Unchanged. The dark shade is violet and the open shade is still teal. At blue hour that teal is gone. |
+| Detail density | 7 | Unchanged. A limestone course sits on each floor above a shop. |
+| Texture and material quality | 7 | Unchanged. The masonry clay from round 23. |
+| Composition and camera | 7 | Unchanged. On the same fast rope the body shrinks from 133 px to 80 px and the arm goes from 4.46 m to 6.98 m. |
+| Atmosphere | 7 | Unchanged. At blue hour the low haze goes from rose to violet. At x 432, y 160 it goes from (95, 45, 56) to (57, 29, 89). |
+| Character models | 7 | Unchanged. A dark wine panel breaks the upper back. |
+| Animation smoothness | 8 | Unchanged. At the same run phase the feet sit 80 px apart across the frame and 94 px apart in height. |
+| Particles and VFX | 7 | Unchanged. Three cream puffs mark the air behind a fast rope. |
+| UI polish | 7 | A rose ring and four ink ticks sit on the compass dial. The row box did not move. It is still a flat sticker. |
+| Responsiveness and input latency | 6 | Unchanged. CSS and one extra svg. No input timing was measured. |
+| Controls feel | 5 | Unchanged. |
+| Mission clarity | 4 | Unchanged. Not played. |
+| Pacing | 4 | Unchanged. |
+| Fun factor | 4 | Unchanged. Not played as a session. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 5 | Unchanged. |
+| Sound design | 4 | Unchanged. |
+| Variety | 4 | Unchanged. |
+| Performance stability | 6 | Render check not recorded yet. |
+
+- Aesthetics raw: 71 / 10 dimensions, index 71
+- Playability raw: 46 / 10 dimensions, index 46
+- Total: 117 / 200
+- Delta vs last round: +1 (116 → 117). UI polish 6 → 7. Playability unchanged.
+
+Playability was scored from a flat boot and the city render check, not a full playthrough. OpenSpec CLI validation was not run; the `openspec` command is not installed.
+

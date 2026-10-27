@@ -1241,7 +1241,11 @@ body[data-mode="desktop"] .fs-hud{display:block}
 .fs-coin{width:24px;height:24px;border-radius:50%;background:radial-gradient(circle at 32% 28%,#fff6d0 0 16%,rgba(255,246,208,0) 34%),radial-gradient(circle at 70% 76%,rgba(80,36,8,.5) 0 20%,rgba(80,36,8,0) 42%),radial-gradient(circle at 34% 30%,#fff3bf 0 26%,#f2c14e 52%,#a87412 100%);border:3px solid var(--ink,#140a18);box-sizing:border-box;box-shadow:inset 0 -2px 0 rgba(20,10,24,.45)}
 .fs-drop{width:16px;height:21px;border-radius:50% 50% 50% 50%/62% 62% 38% 38%;background:linear-gradient(155deg,#f4ffd4 0%,#9cff3a 46%,#2f8a14 100%);border:3px solid var(--ink,#140a18);box-sizing:border-box}
 .fs-heart{color:#ff3a4a;font-size:26px;margin:0 1px;text-shadow:2px 0 var(--ink,#140a18),-2px 0 var(--ink,#140a18),0 2px var(--ink,#140a18),0 -2px var(--ink,#140a18)}.fs-heart.off{color:#d9cfb8}
-.fs-compass svg{width:28px;height:28px;border-radius:50%;background:#fff9ea;box-shadow:0 0 0 2.5px var(--ink,#140a18);fill:var(--red,#e0482c);stroke:var(--ink,#140a18);stroke-width:2.6;stroke-linejoin:round;transition:transform .08s linear}
+.fs-dial{position:relative;width:28px;height:28px;flex:0 0 28px}
+.fs-dial svg{position:absolute;left:0;top:0;width:28px;height:28px}
+.fs-dial .fs-ticks{border-radius:50%;background:#fff9ea;box-shadow:0 0 0 2.5px var(--ink,#140a18);fill:none;stroke:var(--ink,#140a18);stroke-width:2.4;stroke-linecap:round}
+.fs-dial .fs-ticks .ring{stroke:#e7a0b4;stroke-width:2.2}
+.fs-compass svg[data-k=arrow]{border-radius:50%;background:none;box-shadow:none;fill:var(--red,#e0482c);stroke:var(--ink,#140a18);stroke-width:2.6;stroke-linejoin:round;transition:transform .08s linear}
 .fs-compass [data-k=elev]{display:block;font-size:14px;line-height:1.1}
 .fs-time b{color:var(--red,#e0482c)}
 .fs-flash{position:absolute;inset:0;opacity:0;pointer-events:none;box-shadow:inset 0 0 90px 30px rgba(110,255,120,.75)}
@@ -1353,7 +1357,7 @@ body:has(#phoneControls:not([hidden])) .fs-top:has(.fs-pill:not([hidden]):not(.f
       '<div class="fs-pill" title="Clogs"><i class="fs-drop"></i><b data-k="clog">0</b><small data-k="clogT">/12</small></div>' +
       '<div class="fs-pill fs-time" data-k="trialBox" hidden><b data-k="trial">0.0</b><small>s</small></div>' +
       '<div class="fs-pill" data-k="heartBox" hidden></div>' +
-      '<div class="fs-pill fs-compass" data-k="compassBox" title="The nearest clog"><svg viewBox="-12 -12 24 24" data-k="arrow"><path d="M0 -10 L7 8 L0 4 L-7 8 Z"/></svg><small><span data-k="dist"></span><span data-k="elev"></span></small></div>' +
+      '<div class="fs-pill fs-compass" data-k="compassBox" title="The nearest clog"><span class="fs-dial"><svg class="fs-ticks" viewBox="-12 -12 24 24" aria-hidden="true"><circle class="ring" cx="0" cy="0" r="8.2"/><path d="M0 -11.2 V-8.6 M0 8.6 V11.2 M-11.2 0 H-8.6 M8.6 0 H11.2"/></svg><svg viewBox="-12 -12 24 24" data-k="arrow"><path d="M0 -10 L7 8 L0 4 L-7 8 Z"/></svg></span><small><span data-k="dist"></span><span data-k="elev"></span></small></div>' +
       '<div class="fs-pill fs-mission" data-k="mission" hidden><b data-k="mTitle"></b><small data-k="mDetail"></small><span class="fs-m-short" data-k="mShort"></span></div>' +
       '<div class="fs-pill fs-train-now" data-k="trainNow" hidden></div>' +
       '</div><p class="fs-sub" data-k="sub" role="status"></p><p class="fs-toast" data-k="toast" role="status"></p>';
