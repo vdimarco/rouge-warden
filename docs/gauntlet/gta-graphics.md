@@ -2383,3 +2383,38 @@ Unreal is not available in this environment, so in-engine frames are the last co
 - Playability raw: 39 / 10 dimensions, index 39
 - Total: 129 / 200
 - Delta vs last round: 0
+
+### Round 69 — 2026-10-27 — rubric v1
+
+- What changed: the hoodie player blends the walk into the run by speed. At 450 cm/s the graph is the walk, at 800 it is the run, and at 625 the two clips share the pose. A body with no run clip still cuts at 520. The corner shows those three shares. The opening aim stays.
+- Why it helped: the blend was a posed frame the game did not play. The graph now plays it. It is still two clips, so this is not a matched set and animation stays at 9.
+- Screenshots: before `docs/gauntlet/gta-graphics/round-69/before-frame.png` is the corner on the run, which is the old cut. After `docs/gauntlet/gta-graphics/round-69/after-frame.png` is the walk, the half share, and the run. The crop is `gait-crop.png`. Not an Unreal capture. From the same render, the mean absolute delta is 0.00254 and the max is 0.988. 10501 pixels change, from x 67 to 394 and y 349 to 539. `Scripts/test_gait_blend.py` passed. `QuebecCrewAnimation.cpp` and `QuebecGameplay.cpp` passed the offline syntax check. The graph was not run in Unreal. `GET /gta/` returned 200. OpenSpec CLI is not installed, so the change files were not validated with `openspec`.
+- Next target: the lit windows are still one colour.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 9 | The dusk lamps are unchanged. |
+| Color palette | 9 | The warm glass is unchanged. |
+| Detail density | 9 | The four lights are unchanged. |
+| Texture and material quality | 9 | The cloth is unchanged. |
+| Composition and camera | 9 | The corner camera and the opening aim are unchanged. |
+| Atmosphere | 9 | The scattering sky is unchanged. |
+| Character models | 9 | The hoodie is unchanged. |
+| Animation smoothness | 9 | The player graph blends the walk into the run by speed. It is still two clips, so this is not a matched set. |
+| Particles and VFX | 9 | The shoe puffs are unchanged. |
+| UI polish | 9 | The radar heading is unchanged. |
+| Responsiveness and input latency | 4 | Not measured this round. |
+| Controls feel | 4 | Not played. |
+| Mission clarity | 5 | The objective words are unchanged. |
+| Pacing | 4 | Unchanged mission slice. |
+| Fun factor | 3 | Not played. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 4 | The half share between the walk and the run is the new mark. No new juice. |
+| Sound design | 3 | Not listened to. |
+| Variety | 3 | One graph over the two clips the body already had. |
+| Performance stability | 5 | `Scripts/test_gait_blend.py` passed. The offline syntax check passed. Frame time was not remeasured. |
+
+- Aesthetics raw: 90 / 10 dimensions, index 90
+- Playability raw: 39 / 10 dimensions, index 39
+- Total: 129 / 200
+- Delta vs last round: 0

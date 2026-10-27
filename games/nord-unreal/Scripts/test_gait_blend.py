@@ -1,6 +1,6 @@
-"""The walk and the run meet in the middle, and the side run is its own clip.
+"""The player graph blends the walk into the run by speed.
 
-The opening camera stays. This does not run Unreal, and it does not play a blend space.
+The opening camera stays. This does not run Unreal. The hoodie has no saved blend space.
 """
 import math
 import unittest
@@ -13,6 +13,7 @@ from gait_blend import slerp, walk_run_share
 
 ROOT = Path(__file__).resolve().parents[1]
 GAME = (ROOT / "Source/Quebec/QuebecGameplay.cpp").read_text()
+ANIM = (ROOT / "Source/Quebec/QuebecCrewAnimation.cpp").read_text()
 GAIT = (ROOT / "Source/Quebec/QuebecGait.h").read_text()
 
 
@@ -56,6 +57,8 @@ class GaitBlendTests(unittest.TestCase):
         self.assertGreater(_angle(mid, run), 15.0)
         names = [item["name"] for item in _load_glb(SOURCE / "MenHoodie.glb")[0]["animations"]]
         self.assertTrue(any(name.endswith("|Run_Left") for name in names))
+        self.assertIn("QuebecGait::WalkRunShare(Speed)", ANIM)
+        self.assertIn("SetGaitClips(HoodieIdle, HoodieWalk, HoodieRun)", GAME)
         self.assertIn("Speed > 520.f && CrewRun ? CrewRun", GAME)
         self.assertIn("const FRotator Look(-16.f, Yaw, 0.f);", GAME)
         self.assertIn("CameraArm->SocketOffset = FVector(0., 70., 110.);", GAME)

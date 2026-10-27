@@ -358,6 +358,13 @@ void AQuebecCharacter::ApplyCrewAppearance()
             CrewJump = nullptr;
             CrewLocomotion = nullptr;
             CrewAnimation = nullptr;
+            if (HoodieRun)
+            {
+                GetMesh()->SetAnimInstanceClass(UQuebecCrewAnimInstance::StaticClass());
+                UQuebecCrewAnimInstance* Gait = Cast<UQuebecCrewAnimInstance>(GetMesh()->GetAnimInstance());
+                if (!Gait || !Gait->SetGaitClips(HoodieIdle, HoodieWalk, HoodieRun))
+                    GetMesh()->SetAnimationMode(EAnimationMode::AnimationSingleNode);
+            }
             CrewProp->SetVisibility(false);
             return;
         }

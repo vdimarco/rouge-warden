@@ -1,8 +1,8 @@
 #pragma once
 
 // How much of the run belongs at a given speed. Walk is 450 cm/s and sprint is 800.
-// The posed frames slerp the two clips by this share. The single-node player still
-// cuts from the walk to the run at 520, because there is no blend space asset yet.
+// The hoodie graph blends the two clips by this share. A body with no run clip
+// still cuts from the walk to the run at 520.
 
 namespace QuebecGait
 {
