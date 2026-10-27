@@ -2967,3 +2967,48 @@ Unreal is not available here, so the native diamond was not captured. The title 
 ![Play client at 1280, host offline](gta-missions/r65-play-1280.png)
 
 ![Menu on a 390-wide screen, Recover visible](gta-missions/r65-play-menu-390.png)
+
+### Round 66 — 2026-10-27 — rubric v1
+
+- What changed: After the stall is banked, a pursuer waits behind a door on the lawn west of the cart. Stepping outside starts them. They close at 640 cm/s. A walk is caught before a gate 72 m south, and the door is the door again. A sprint reaches the gate and pays 500 once. A car does not start the run and does not clear the gate. A catch plays the checkpoint and does not save. The seven banks stay seven. The tail, the finale, and the stall are not retuned. No extra car is spawned. The slot is now version 17. Version 16 still loads and starts this slip over. Version 1 still loads and starts the pond over. Version 2 stays unread and is not overwritten. Their place is not stored, so a reload during the run puts them behind the door again and keeps the step.
+- Why it helped: The tail follows a car. The finale's last stage follows a car. This chases a person, and a walk fails where a sprint succeeds.
+- Screenshots: title `docs/gauntlet/gta-missions/r66-title-1280.png`, `r66-title-390.png`, `r66-title-320.png`. Play client, host offline, `r66-play-1280.png`. Menu with Recover `r66-play-menu-390.png`. The title loaded with no page errors. The raw play page still logs the missing `@epicgames-ps/lib-pixelstreamingfrontend-ue5.8` specifier; the shell and Recover still draw. The slip was not played in Unreal. `Scripts/test_slip.py` reports 25 assertions, 0 failures, on c++, g++, and clang++. `Scripts/test_story_save.py` reports 198 assertions, 0 failures, on the same three. Syntax check `--both` passed for `QuebecCampaign.cpp`, `QuebecCampaignSaveTests.cpp`, `QuebecGameplay.cpp`, and `QuebecFeedbackTests.cpp`. OpenSpec CLI is not installed, so `openspec validate` did not run.
+- Next target: the playable scores that can still move are capped offline, so the score stays. The next beat is a multi-stage finale that is not a copy of mission 16 and not a replay of this slip, the stall, the pursuit, the tail, the courier, or the send-off. Mission clarity stays at 7 and stays out of reach offline. Responsiveness stays at 3 and stays out of scope. Performance stays at 4 and is not measurable here.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 3 | Unchanged. |
+| Color palette | 5 | Unchanged. |
+| Detail density | 3 | Unchanged. |
+| Texture and material quality | 3 | Unchanged. |
+| Composition and camera | 4 | Unchanged. |
+| Atmosphere | 4 | Unchanged. |
+| Character models | 3 | Unchanged. |
+| Animation smoothness | 3 | Unchanged. |
+| Particles and VFX | 2 | Unchanged. |
+| UI polish | 4 | Unchanged. The native card was not seen, and French and English still share the screen. |
+| Responsiveness and input latency | 3 | Unchanged. Still a lagged stream. Out of scope for this loop. |
+| Controls feel | 9 | Unchanged. Getting out faster than a walk still keeps that pace. |
+| Mission clarity | 7 | Unchanged. The fare post still moves from the loaner to the quay. The native card was not seen, and this score stays out of reach offline. |
+| Pacing | 9 | Unchanged. Four seconds on foot after boarding still loses the passenger. |
+| Fun factor | 9 | Unchanged. Chez Lise still sells a kit, a vest, or one star. A slip that was not played is not a new thing to do. |
+| Difficulty curve | 9 | Unchanged. Selling the last page ends it for 200 and does not bank the chain. A wreck still costs more than the goon pay. |
+| Feedback | 9 | Unchanged. A failed side job still plays the falling sting. The sting was not heard. |
+| Sound design | 9 | Unchanged. The dent thud still marks a scrape as quiet. Nobody is voiced, so this is not the reference's city. |
+| Variety | 9 | Unchanged. A slip that was not played is not a new way across the park that was seen. |
+| Performance stability | 4 | Unchanged. Not measurable in this container. |
+
+- Aesthetics raw: 34 / 10 dimensions, index 34
+- Playability raw: 77 / 10 dimensions, index 77
+- Total: 111 / 200
+- Delta vs last round: 0 (round 65 was 111). The slip was not played in Unreal, so every score held.
+
+![GTA title at 1280](gta-missions/r66-title-1280.png)
+
+![GTA title at 390](gta-missions/r66-title-390.png)
+
+![GTA title at 320](gta-missions/r66-title-320.png)
+
+![Play client at 1280, host offline](gta-missions/r66-play-1280.png)
+
+![Menu on a 390-wide screen, Recover visible](gta-missions/r66-play-menu-390.png)
