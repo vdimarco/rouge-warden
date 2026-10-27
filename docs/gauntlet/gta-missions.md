@@ -3703,3 +3703,50 @@ Unreal is not available here, so the native diamond was not captured. The title 
 ![The English objective and a resident line on a 390-wide screen](gta-missions/r81-play-card-390.png)
 
 ![Menu on a 390-wide screen, Recover visible](gta-missions/r81-play-menu-390.png)
+
+### Round 82 — 2026-10-27 — rubric v1
+
+- What changed: A walk's five foot puffs show on the play page. Each puff is born, rises, and dies on the same 0.7 second rule. The count, the life, the interval, and the speed that starts a scuff stay as they are. No new sound. No new mission.
+- Why it helped: The dust already existed at the rear shoe and the page we run never showed it. The page now paints that trail.
+- Screenshots: title `docs/gauntlet/gta-missions/r82-title-1280.png`, `r82-title-390.png`, `r82-title-320.png`. Play client, host offline, `r82-play-1280.png`, with the same trail at 390 in `r82-play-card-390.png`. Menu with Recover `r82-play-menu-390.png`. The title loaded with no page errors. The raw play page still logs the missing `@epicgames-ps/lib-pixelstreamingfrontend-ue5.8` specifier; the shell, the card, the dust, and Recover still draw. The 1280 frame shows five pale puffs at the lower left (1767 pale pixels). The 390 frame shows the same trail above the column (912 pale pixels). The city's own dust was not seen in Unreal. `python3 Scripts/test_scuff.py` passed (`NORD_SCUFF_OK 43.68 28.64`). `node Browser/mission-card.test.mjs` passed. Syntax check `--both` passed, 96 files, 0 failed. OpenSpec CLI is not installed, so `openspec validate` did not run. `Browser/browser.test.mjs` did not run: the `ws` package is not installed here.
+- Next target: responsiveness (3). A measured input-path change can move it one step. Performance stays at 4 and is not measurable here.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 3 | Unchanged. |
+| Color palette | 5 | Unchanged. The puffs use the same paper and ink. |
+| Detail density | 3 | Unchanged. |
+| Texture and material quality | 3 | Unchanged. |
+| Composition and camera | 4 | Unchanged. |
+| Atmosphere | 4 | Unchanged. |
+| Character models | 3 | Unchanged. |
+| Animation smoothness | 3 | Unchanged. |
+| Particles and VFX | 3 | The play shell shows five foot puffs that rise and fade on the existing 0.7 second rule. The city's own dust was not seen in Unreal, so this is one step. |
+| UI polish | 8 | Unchanged. The English objective and the resident line are still on the shell. |
+| Responsiveness and input latency | 3 | Unchanged. Still a lagged stream. |
+| Controls feel | 9 | Unchanged. Getting out faster than a walk still keeps that pace. |
+| Mission clarity | 8 | Unchanged. The play shell still shows the carry's objective, Stage 3 of 3, the fail sentence, and a gold diamond. |
+| Pacing | 9 | Unchanged. Nothing new was driven. |
+| Fun factor | 9 | Unchanged. The dust was seen. It was not walked. |
+| Difficulty curve | 9 | Unchanged. Selling the last page ends it for 200 and does not bank the chain. A wreck still costs more than the goon pay. |
+| Feedback | 9 | Unchanged. The shell still shows a purse. The notes were not heard. The dust adds a trail, not a new hit. |
+| Sound design | 9 | Unchanged. The two notes were not heard. No new sound was added. |
+| Variety | 9 | Unchanged. No new way to play was added, and the carry was not driven. |
+| Performance stability | 4 | Unchanged. Not measurable in this container. |
+
+- Aesthetics raw: 39 / 10 dimensions, index 39
+- Playability raw: 78 / 10 dimensions, index 78
+- Total: 117 / 200
+- Delta vs last round: +1 (round 81 was 116). Particles 2 → 3. Every other score held.
+
+![GTA title at 1280](gta-missions/r82-title-1280.png)
+
+![GTA title at 390](gta-missions/r82-title-390.png)
+
+![GTA title at 320](gta-missions/r82-title-320.png)
+
+![Play client at 1280, host offline, five foot puffs](gta-missions/r82-play-1280.png)
+
+![The foot puffs on a 390-wide screen](gta-missions/r82-play-card-390.png)
+
+![Menu on a 390-wide screen, Recover visible](gta-missions/r82-play-menu-390.png)
