@@ -3057,3 +3057,48 @@ Unreal is not available here, so the native diamond was not captured. The title 
 ![Play client at 1280, host offline](gta-missions/r67-play-1280.png)
 
 ![Menu on a 390-wide screen, Recover visible](gta-missions/r67-play-menu-390.png)
+
+### Round 68 — 2026-10-27 — rubric v1
+
+- What changed: After the march is banked, a line sits on a surveyed road north of the stall. A real car crossing it, still rolling forward at 500 cm/s or more, with its nose toward the far end, starts a chase car at the near end. That car drives the road at 900 cm/s and does not steer. Beat it to the end. A crawl is caught and the line is the line again, and that catch does not save. At the end, get out. A mark 20 m off the road pays 660 once. A car at that mark does not. They stop at the end of the road. The seven banks stay seven. The tail, the pursuit, the stall, the slip, and the march are not retuned. No extra car is spawned. The slot is now version 19. Version 18 still loads and starts this ditch over. Version 1 still loads and starts the pond over. Version 2 stays unread and is not overwritten. How far the chase car has driven is not stored, so a reload during the chase puts them at the near end again and keeps the step.
+- Why it helped: The tail follows you to a hide. The pursuit is catching a car that keeps its lane. The slip is a sprint on foot. This rolls a car into a chase, then leaves the car where they will not follow.
+- Screenshots: title `docs/gauntlet/gta-missions/r68-title-1280.png`, `r68-title-390.png`, `r68-title-320.png`. Play client, host offline, `r68-play-1280.png`. Menu with Recover `r68-play-menu-390.png`. The title loaded with no page errors. The raw play page still logs the missing `@epicgames-ps/lib-pixelstreamingfrontend-ue5.8` specifier; the shell and Recover still draw. The ditch was not driven in Unreal. `Scripts/test_ditch.py` reports 33 assertions, 0 failures, on c++, g++, and clang++. `Scripts/test_story_save.py` reports 218 assertions, 0 failures, on the same three. Syntax check `--both` passed for `QuebecCampaign.cpp`, `QuebecCampaignSaveTests.cpp`, `QuebecGameplay.cpp`, and `QuebecFeedbackTests.cpp`. OpenSpec CLI is not installed, so `openspec validate` did not run.
+- Next target: the playable scores that can still move are capped offline, so the score stays. The next beat is a new verb, a delivery under a timer where traffic matters, and it is not a copy of the hot-delivery side job, this ditch, the slip, the march, the stall, or the pursuit. Mission clarity stays at 7 and stays out of reach offline. Responsiveness stays at 3 and stays out of scope. Performance stays at 4 and is not measurable here.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 3 | Unchanged. |
+| Color palette | 5 | Unchanged. |
+| Detail density | 3 | Unchanged. |
+| Texture and material quality | 3 | Unchanged. |
+| Composition and camera | 4 | Unchanged. |
+| Atmosphere | 4 | Unchanged. |
+| Character models | 3 | Unchanged. |
+| Animation smoothness | 3 | Unchanged. |
+| Particles and VFX | 2 | Unchanged. |
+| UI polish | 4 | Unchanged. The native card was not seen, and French and English still share the screen. |
+| Responsiveness and input latency | 3 | Unchanged. Still a lagged stream. Out of scope for this loop. |
+| Controls feel | 9 | Unchanged. Getting out faster than a walk still keeps that pace. |
+| Mission clarity | 7 | Unchanged. The fare post still moves from the loaner to the quay. The native card was not seen, and this score stays out of reach offline. |
+| Pacing | 9 | Unchanged. Four seconds on foot after boarding still loses the passenger. |
+| Fun factor | 9 | Unchanged. Chez Lise still sells a kit, a vest, or one star. A ditch that was not driven is not a new thing to do. |
+| Difficulty curve | 9 | Unchanged. Selling the last page ends it for 200 and does not bank the chain. A wreck still costs more than the goon pay. |
+| Feedback | 9 | Unchanged. A failed side job still plays the falling sting. The sting was not heard. |
+| Sound design | 9 | Unchanged. The dent thud still marks a scrape as quiet. Nobody is voiced, so this is not the reference's city. |
+| Variety | 9 | Unchanged. A ditch that was not driven is not a new way across the park that was seen. |
+| Performance stability | 4 | Unchanged. Not measurable in this container. |
+
+- Aesthetics raw: 34 / 10 dimensions, index 34
+- Playability raw: 77 / 10 dimensions, index 77
+- Total: 111 / 200
+- Delta vs last round: 0 (round 67 was 111). The ditch was not driven in Unreal, so every score held.
+
+![GTA title at 1280](gta-missions/r68-title-1280.png)
+
+![GTA title at 390](gta-missions/r68-title-390.png)
+
+![GTA title at 320](gta-missions/r68-title-320.png)
+
+![Play client at 1280, host offline](gta-missions/r68-play-1280.png)
+
+![Menu on a 390-wide screen, Recover visible](gta-missions/r68-play-menu-390.png)

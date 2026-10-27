@@ -8,7 +8,7 @@
 
 ## 3. Check
 
-- [ ] Run the engine-free tests, the syntax check, and the cabinet screenshots.
+- [x] Run the engine-free tests, the syntax check, and the cabinet screenshots.
 
 ## 4. Host
 
