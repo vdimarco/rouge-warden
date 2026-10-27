@@ -2733,3 +2733,38 @@ Unreal is not available in this environment, so in-engine frames are the last co
 - Playability raw: 39 / 10 dimensions, index 39
 - Total: 129 / 200
 - Delta vs last round: 0
+
+### Round 79 — 2026-10-27 — rubric v1
+
+- What changed: when the sun is below 8 degrees, the directional light throws shafts and the height fog becomes volumetric. The bloom scale is 0.4 and the haze density is 0.00015 per centimetre. The dusk frame uses the curb eye and yaws toward the sun, because the street look faces away from it. The opening aim stays. The opening weather stays clear.
+- Why it helped: the dusk street was a flat sky. Distance now fades, and the low sun throws shafts through the trees. The shade is still a low-poly city, so atmosphere stays at 9.
+- Screenshots: before `docs/gauntlet/gta-graphics/round-79/before-frame.png` is the dusk curb with no haze. After `docs/gauntlet/gta-graphics/round-79/after-frame.png` is the same camera with the fog and the shafts. The crop is `shaft-crop.png`. Not an Unreal capture. From the same render, the mean absolute delta is 0.04470 and the max is 0.834. 398428 pixels change, from x 0 to 959 and y 0 to 465. `Scripts/test_shade_haze.py` passed. The syntax check passed `QuebecSky.cpp`. The fog was not rebuilt in Unreal. `GET /gta/` returned 200. OpenSpec CLI is not installed, so the change files were not validated with `openspec`.
+- Next target: a filmic tone map and a color grade.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 9 | The low sun throws shafts. The shade is still simple. |
+| Color palette | 9 | The haze is a dusk orange. The set of colours is unchanged. |
+| Detail density | 9 | The trees are unchanged. |
+| Texture and material quality | 9 | The water film and the clearcoat stay. |
+| Composition and camera | 9 | The curb eye stays. The yaw turns toward the sun so the shafts are in view. |
+| Atmosphere | 9 | Distance fades and the shafts read. It is still not a GTA 6 sky. |
+| Character models | 9 | No figure in this look. The walker is unchanged. |
+| Animation smoothness | 9 | No new motion. |
+| Particles and VFX | 9 | The shafts are the new volume. The shoe puffs are unchanged. |
+| UI polish | 9 | The radar heading is unchanged. |
+| Responsiveness and input latency | 4 | Not measured this round. |
+| Controls feel | 4 | Not played. |
+| Mission clarity | 5 | The objective words are unchanged. |
+| Pacing | 4 | Unchanged mission slice. |
+| Fun factor | 3 | Not played. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 4 | The haze is the new mark. No new juice. |
+| Sound design | 3 | Not listened to. |
+| Variety | 3 | The same park, now at dusk with shafts. |
+| Performance stability | 5 | `Scripts/test_shade_haze.py` passed. Frame time was not remeasured. |
+
+- Aesthetics raw: 90 / 10 dimensions, index 90
+- Playability raw: 39 / 10 dimensions, index 39
+- Total: 129 / 200
+- Delta vs last round: 0
