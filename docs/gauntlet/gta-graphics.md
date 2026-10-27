@@ -2138,3 +2138,38 @@ Unreal is not available in this environment, so in-engine frames are the last co
 - Playability raw: 39 / 10 dimensions, index 39
 - Total: 127 / 200
 - Delta vs last round: 0
+
+### Round 62 — 2026-10-27 — rubric v1
+
+- What changed: consecutive footprint edges that face the same way count as one wall before the dusk panes are placed. The face nearest the corner camera, building 1885349, is two collinear 4.03 m edges. Joined, it is 8.05 m and takes panes. A single edge under five metres stays dark. The opening aim stays.
+- Why it helped: that face filled the corner and was one flat colour, because each piece missed the five-metre floor. It now has a grid of warm panes. Lighting stays at 9. The panes are still flat rectangles.
+- Screenshots: before `docs/gauntlet/gta-graphics/round-62/before-frame.png` is the corner from the previous round. After `docs/gauntlet/gta-graphics/round-62/after-frame.png` is the same camera with the joined face lit. The crop is `facade-crop.png`. Not an Unreal capture. The full-frame mean absolute delta is 0.032 and the max is 0.910. 61239 pixels change, from x 33 to 882 and y 0 to 444. `Scripts/test_opening_windows.py` passed. The join was not compiled in Unreal. `GET /gta/` returned 200. OpenSpec CLI is not installed, so the change files were not validated with `openspec`.
+- Next target: the run clip. Animation is at 7, the low score, and the scored frames still pose the walk.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 9 | The nearest face now has warm panes. They are flat rectangles, so the 9 stays. |
+| Color palette | 9 | The pane colour is the existing warm emissive. |
+| Detail density | 9 | One more facade carries the same grid. |
+| Texture and material quality | 9 | The wall under the panes is still flat colour. |
+| Composition and camera | 9 | The corner camera and the opening aim are unchanged. |
+| Atmosphere | 9 | The scattering sky is unchanged. |
+| Character models | 9 | The hoodie is unchanged. |
+| Animation smoothness | 7 | The scored frames still pose the walk. |
+| Particles and VFX | 9 | The shoe puffs are unchanged. |
+| UI polish | 9 | The radar heading is unchanged. |
+| Responsiveness and input latency | 4 | Not measured this round. |
+| Controls feel | 4 | Not played. |
+| Mission clarity | 5 | The objective words are unchanged. |
+| Pacing | 4 | Unchanged mission slice. |
+| Fun factor | 3 | Not played. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 4 | The lit near face is the new mark. No new juice. |
+| Sound design | 3 | Not listened to. |
+| Variety | 3 | One joined facade. The afternoon stays dark. |
+| Performance stability | 5 | `Scripts/test_opening_windows.py` passed. Frame time was not remeasured. |
+
+- Aesthetics raw: 88 / 10 dimensions, index 88
+- Playability raw: 39 / 10 dimensions, index 39
+- Total: 127 / 200
+- Delta vs last round: 0
