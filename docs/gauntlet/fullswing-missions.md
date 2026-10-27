@@ -1582,3 +1582,34 @@ Evidence: [the opening card](fullswing-r43/gust.png). The DOM assert is the sour
 | Performance stability | Unverified | No GPU pass, and this round does not claim one. |
 
 Current total withheld. Historical 132 is context from the earlier mission rounds, and this round's delta against that history is 0. It is not a new acceptance score. Responsiveness and performance stay unverified. No phone, listening, or full playthrough. `openspec validate` did not run. The change is archived by hand under `openspec/changes/archive/2026-10-26-swing-gust-pass/`.
+
+### Round 44 — 2026-10-26 — a loose wheel, rubric v1
+
+An odd job starts a wheel rolling along the nearest street. The card says STOP THE WHEEL and to get in front of it, with the distance. Standing on the ground within 4.5 m stops it and bumps the hero along the roll. The play measured an upward speed above 3 m/s and the job gone. Being in the air that close does not stop it, and the card says to land in front of it. An 18 s clock that runs out misses as rolled off. Turning around at a building or the water more than four times misses the same way. The wheel is an offer. It does not replace a flush. The first flush stays the clog card, and the third flush stays the gust. The King stays asleep.
+
+Evidence: [the opening card](fullswing-r44/wheel.png). The DOM assert is the source of truth for the card text. Local flat play passed the card, the air refusal, and the ground stop. Local action tests passed, including the roll, the air, the ground stop, and the clock miss. No new art files. The bump uses the existing comic word and the existing yank sound.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 5 | Historical context only. This round does not re-score it. |
+| Color palette | 6 | Historical context only. This round does not re-score it. |
+| Detail density | 4 | Historical context only. This round does not re-score it. |
+| Texture and material quality | 3 | Historical context only. This round does not re-score it. |
+| Composition and camera | 4 | Historical context only. This round does not re-score it. |
+| Atmosphere | 5 | Historical context only. This round does not re-score it. |
+| Character models | 3 | Historical context only. This round does not re-score it. |
+| Animation smoothness | 4 | Historical context only. This round does not re-score it. |
+| Particles and VFX | 5 | The bump uses the existing comic word. That is not a new effects bar. |
+| UI polish | 6 | The card names the wheel, the distance, and the miss. Polish stays where it was. |
+| Responsiveness and input latency | Unverified | No hardware pass. The bump is a simulated frame, not a measured input latency. |
+| Controls feel | 9 | Stopping it is standing on the street. The swing is the same swing. |
+| Mission clarity | 9 | The card says to get in front, and in the air it says to land. Clarity stays 9. |
+| Pacing | 9 | The wheel is not a flush. Ten of twelve flushes differ, and the first is still the pump. |
+| Fun factor | 9 | Landing in front of a rolling wheel bumps you along it. One odd job is not a 2023 open city. |
+| Difficulty curve | 9 | Eighteen seconds, the air does not count, and the miss says to land. The curve stays 9. |
+| Feedback | 9 | The card names the distance, the word pops, and a miss names itself. Feedback stays 9. |
+| Sound design | 9 | The bump reuses the yank sound. Sound stays 9. |
+| Variety | 9 | The wheel is another offer. It does not change the flush list. Variety stays 9. |
+| Performance stability | Unverified | No GPU pass, and this round does not claim one. |
+
+Current total withheld. Historical 132 is context from the earlier mission rounds, and this round's delta against that history is 0. It is not a new acceptance score. Responsiveness and performance stay unverified. No phone, listening, or full playthrough. `openspec validate` did not run. The change is archived by hand under `openspec/changes/archive/2026-10-26-swing-wheel-stop/`.

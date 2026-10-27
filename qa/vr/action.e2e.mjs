@@ -238,12 +238,13 @@ try {
   check(now.names.some((n) => /^Your job/.test(n)) && !now.names.some((n) => /^Odd job/.test(n)), "while you are on a job the map pins that job, and no other markers", now.names);
 
   const wheel = await page.evaluate(() => {
+    if (G.ui.paused) G.ui.closePause();
     if (G.jobs.active) G.jobs.cancel();
     G.test.job("wheel");
-    QA.step(4);
+    QA.step(8);
     const ob = G.game.progress.objective;
     G.test.render(0);
-    return { title: ob && ob.title, detail: ob && ob.detail, job: G.test.action().jobs.active && G.test.action().jobs.active.type };
+    return { title: ob && ob.title, detail: ob && ob.detail, job: G.test.action().jobs.active && G.test.action().jobs.active.type, state: G.state };
   });
   await page.screenshot({ path: out + "/wheel.png" });
   check(wheel.job === "wheel" && /STOP THE WHEEL/.test(wheel.title || "") && /front of it/i.test(wheel.detail || ""), "a loose wheel asks you to get in front of it", wheel);
@@ -255,9 +256,9 @@ try {
     QA.step(2);
     const air = { job: G.test.action().jobs.active && G.test.action().jobs.active.type, detail: G.game.progress.objective && G.game.progress.objective.detail };
     const g2 = G.game.progress.objective && G.game.progress.objective.goal;
-    if (g2) { G.P.pos.x = g2.x; G.P.pos.y = g2.y; G.P.pos.z = g2.z; }
+    if (g2) { G.P.pos.x = g2.x; G.P.pos.y = 0; G.P.pos.z = g2.z; }
     G.P.onGround = true; G.P.vel.x = G.P.vel.y = G.P.vel.z = 0;
-    QA.step(2);
+    QA.step(1);
     return { air, y: G.P.vel.y, job: G.test.action().jobs.active && G.test.action().jobs.active.type, title: G.game.progress.objective && G.game.progress.objective.title };
   });
   check(stop.air && stop.air.job === "wheel" && /Land in front/.test(stop.air.detail || ""), "the air does not stop the wheel", stop);
