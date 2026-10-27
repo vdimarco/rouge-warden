@@ -2068,3 +2068,38 @@ Unreal is not available in this environment, so in-engine frames are the last co
 - Playability raw: 39 / 10 dimensions, index 39
 - Total: 127 / 200
 - Delta vs last round: 0
+
+### Round 60 — 2026-10-27 — rubric v1
+
+- What changed: a second camera stands at the surveyed Rue Marie-Anne Est and Rue De Lanaudière blades and looks toward the parked Car70 on Rue Marie-Anne Est. The blade carries those street names. The opening pitch, aim, and socket stay.
+- Why it helped: the opening aim never reached a sign or a parked car. In this view the Marie-Anne blade reads, and the parked car reads, lamps on. Composition stays at 9. The opening shot is unchanged, and this is not a filmed GTA shot.
+- Screenshots: before `docs/gauntlet/gta-graphics/round-60/before-frame.png` is the opening aim. After `docs/gauntlet/gta-graphics/round-60/after-frame.png` is the corner. Crops are `sign-crop.png` and `car-crop.png`. Not an Unreal capture. `Scripts/test_opening_corner.py` passed. The view was not compiled in Unreal. `GET /gta/` returned 200. OpenSpec CLI is not installed, so the change files were not validated with `openspec`.
+- Next target: lit windows on the dusk blocks. The corner wall is still one flat face.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 9 | The sunset and the car lamps are unchanged. |
+| Color palette | 9 | The blade is the sign white already in the prop set. The street hues are unchanged. |
+| Detail density | 9 | One junction is now in a scored view. The opening avenue is unchanged. |
+| Texture and material quality | 9 | The car and the wall are unchanged. |
+| Composition and camera | 9 | The opening aim is unchanged. The second view holds a readable blade and a parked car, and it is not a filmed GTA shot. |
+| Atmosphere | 9 | The scattering sky is unchanged. |
+| Character models | 9 | The hoodie is unchanged. |
+| Animation smoothness | 7 | The run is unchanged. |
+| Particles and VFX | 9 | The shoe puffs are unchanged. |
+| UI polish | 9 | The radar heading is unchanged. |
+| Responsiveness and input latency | 4 | Not measured this round. |
+| Controls feel | 4 | Not played. |
+| Mission clarity | 5 | The objective words are unchanged. |
+| Pacing | 4 | Unchanged mission slice. |
+| Fun factor | 3 | Not played. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 4 | The street blade is the new mark. No new juice. |
+| Sound design | 3 | Not listened to. |
+| Variety | 3 | One extra view. The opening is still the Sherbrooke aim. |
+| Performance stability | 5 | `Scripts/test_opening_corner.py` passed. Frame time was not remeasured. |
+
+- Aesthetics raw: 88 / 10 dimensions, index 88
+- Playability raw: 39 / 10 dimensions, index 39
+- Total: 127 / 200
+- Delta vs last round: 0
