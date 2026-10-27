@@ -620,6 +620,17 @@ void AQuebecCharacter::UpdateFootsteps(float DeltaSeconds)
     }
 }
 
+void AQuebecCharacter::ScuffAges(float Now, float* Out, int32 Count) const
+{
+    for (int32 Index = 0; Index < Count; ++Index)
+    {
+        Out[Index] = -1.f;
+        if (!FootDust.IsValidIndex(Index) || !FootDust[Index] || !FootDust[Index]->IsVisible() || !FootDustBorn.IsValidIndex(Index)) continue;
+        const float Age = Now - FootDustBorn[Index];
+        if (Age >= 0.f && Age < static_cast<float>(QuebecScuff::Life)) Out[Index] = Age;
+    }
+}
+
 void AQuebecCharacter::UpdateFootDust(float DeltaSeconds)
 {
     // Age comes from the birth clock, so a long frame does not step the puff twice.
@@ -2631,7 +2642,7 @@ void AQuebecController::PlayerTick(float DeltaTime)
                 if (Delta.SizeSquared2D() > 1.f)
                     CardBearing = FMath::RoundToInt(FMath::RadiansToDegrees(FMath::Atan2(Delta.X, Delta.Y)));
             }
-            FString JobHead, JobLine, DownKind, ColumnTitle, ColumnInfo, ColumnObjective, Speech;
+            FString JobHead, JobLine, DownKind, ColumnTitle, ColumnInfo, ColumnObjective, Speech, Scuff;
             int32 StarPlate = 0;
             if (const UWorld* World = GetWorld())
             {
@@ -2675,6 +2686,16 @@ void AQuebecController::PlayerTick(float DeltaTime)
                     }
                 }
                 if (World->GetTimeSeconds() < ResidentCaptionUntil) Speech = ResidentCaption;
+                if (const AQuebecCharacter* Walker = Cast<AQuebecCharacter>(GetPawn()))
+                {
+                    float Ages[QuebecScuff::Count];
+                    Walker->ScuffAges(static_cast<float>(World->GetTimeSeconds()), Ages, QuebecScuff::Count);
+                    for (int32 Index = 0; Index < QuebecScuff::Count; ++Index)
+                    {
+                        if (Index) Scuff += TEXT(",");
+                        Scuff += FString::SanitizeFloat(Ages[Index]);
+                    }
+                }
                 if (const AQuebecPlayerState* Stats = GetPlayerState<AQuebecPlayerState>())
                 {
                     const int32 Stars = Stats->Stars;
@@ -2706,12 +2727,12 @@ void AQuebecController::PlayerTick(float DeltaTime)
                 return Out;
             };
             Streamer->SendAllPlayersMessage(TEXT("Response"), FString::Printf(
-                TEXT("{\"nordDriving\":%s,\"nordSwimming\":%s,\"nordTitle\":\"%s\",\"nordObjective\":\"%s\",\"nordStage\":\"%s\",\"nordFail\":\"%s\",\"nordBearing\":%d,\"nordMeters\":%d,\"nordPayout\":%d,\"nordJobHead\":\"%s\",\"nordJobLine\":\"%s\",\"nordStars\":%d,\"nordDown\":\"%s\",\"nordColumn\":\"%s\",\"nordColumnInfo\":\"%s\",\"nordColumnObjective\":\"%s\",\"nordSpeech\":\"%s\"}"),
+                TEXT("{\"nordDriving\":%s,\"nordSwimming\":%s,\"nordTitle\":\"%s\",\"nordObjective\":\"%s\",\"nordStage\":\"%s\",\"nordFail\":\"%s\",\"nordBearing\":%d,\"nordMeters\":%d,\"nordPayout\":%d,\"nordJobHead\":\"%s\",\"nordJobLine\":\"%s\",\"nordStars\":%d,\"nordDown\":\"%s\",\"nordColumn\":\"%s\",\"nordColumnInfo\":\"%s\",\"nordColumnObjective\":\"%s\",\"nordSpeech\":\"%s\",\"nordScuff\":\"%s\"}"),
                 Cast<AQuebecCar>(GetPawn()) ? TEXT("true") : TEXT("false"),
                 Character && Character->GetCharacterMovement()->IsSwimming() ? TEXT("true") : TEXT("false"),
                 *Json(CardTitle), *Json(CardObjective), *Json(CardStage), *Json(CardFail), CardBearing, CardMeters, CardPayout,
                 *Json(JobHead), *Json(JobLine), StarPlate, *Json(DownKind), *Json(ColumnTitle), *Json(ColumnInfo),
-                *Json(ColumnObjective), *Json(Speech)));
+                *Json(ColumnObjective), *Json(Speech), *Json(Scuff)));
         }
     }
     ApplyComicStyle();

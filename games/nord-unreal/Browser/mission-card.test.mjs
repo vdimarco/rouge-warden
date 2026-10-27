@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { columnLines, heatLines, jobLines, markerOffset, missionLines, payoutLines, speechLines } from './mission-card.js';
+import { columnLines, heatLines, jobLines, markerOffset, missionLines, payoutLines, scuffPuff, speechLines } from './mission-card.js';
 
 const lines = missionLines({
   title: '28 / THE BOLT',
@@ -63,5 +63,16 @@ const heard = speechLines('Hi! A walk in the park feels good.');
 assert.equal(heard.line, 'Hi! A walk in the park feels good.');
 assert.equal(speechLines('').line, '');
 assert.ok(!/[\u00e9\u00e8\u00ea\u00e0]/.test(heard.line), 'the resident line mixed languages');
+const born = scuffPuff(0, 0);
+assert.equal(born.back, 0);
+assert.equal(born.up, 6);
+assert.equal(born.radius, 12);
+assert.equal(born.side, -8);
+const mid = scuffPuff(0.52, 1);
+assert.ok(Math.abs(mid.back - 0.52 * 84) < 1e-9, 'the mid puff left the shoe');
+assert.equal(mid.side, 8);
+assert.ok(mid.radius > born.radius, 'the mid puff did not grow');
+assert.ok(mid.up > born.up + 20, 'the puff did not rise');
+assert.ok(scuffPuff(0.7, 0).radius < 0.05, 'a finished puff still has a radius');
 
 console.log('mission card lines and marker ok');

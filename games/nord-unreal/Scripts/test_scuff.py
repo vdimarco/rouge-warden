@@ -33,10 +33,14 @@ class ScuffTests(unittest.TestCase):
         self.assertIn('TEXT("/Engine/BasicShapes/Sphere.Sphere")', block)
         self.assertIn('TEXT("/Game/Materials/M_White.M_White")', block)
         self.assertIn("Dust.Radius / 50.", block)
-        self.assertIn("ApplyStreetSway(DeltaSeconds);\n    UpdateFootDust(DeltaSeconds);", GAME)
+        self.assertIn("ApplyStreetSway(DeltaSeconds);\n    UpdateFootsteps(DeltaSeconds);\n    UpdateFootDust(DeltaSeconds);", GAME)
         self.assertIn("void UpdateFootDust(float DeltaSeconds);", HEADER)
         self.assertIn("float3 Box = float3(2000.0, 2000.0, 1200.0);", RAIN)
         self.assertNotIn("LeafCount", block)
+        self.assertIn("void AQuebecCharacter::ScuffAges", GAME)
+        self.assertIn("nordScuff", GAME)
+        self.assertEqual(SCUFF.count("inline constexpr double WalkSpeed = 80.;"), 1)
+        self.assertEqual(SCUFF.count("inline constexpr double Life = 0.7;"), 1)
 
     def test_the_header_matches_the_offline_trail(self):
         binary = Path("/tmp/scuff_test")

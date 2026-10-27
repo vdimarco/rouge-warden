@@ -174,6 +174,20 @@ export function speechLines(text) {
   return { line: String(text || '').trim() };
 }
 
+// Same birth, rise, and fade as QuebecScuff::At. Life 0.7s. Reeves, SIGGRAPH 1983.
+export function scuffPuff(age, slot) {
+  const life = 0.7;
+  const clamped = Math.min(life, Math.max(0, Number(age) || 0));
+  const along = clamped / life;
+  const fade = along > 0.75 ? (1 - along) / 0.25 : 1;
+  return {
+    back: clamped * 84,
+    up: 6 + clamped * 58,
+    radius: (12 + clamped * 32) * fade,
+    side: slot % 2 ? 8 : -8,
+  };
+}
+
 export function showColumn(card) {
   const root = document.getElementById('job-column');
   if (!root) return null;
@@ -217,3 +231,30 @@ if (typeof window !== 'undefined') window.__nordShowJob = card => showJob(card, 
 if (typeof window !== 'undefined') window.__nordShowHeat = showHeat;
 if (typeof window !== 'undefined') window.__nordShowColumn = showColumn;
 if (typeof window !== 'undefined') window.__nordShowSpeech = showSpeech;
+
+export function showScuff(ages) {
+  const canvas = document.getElementById('scuff-dust');
+  if (!canvas) return [];
+  const list = String(ages || '').split(',').slice(0, 5).map(Number);
+  const live = list.some((age) => age >= 0 && age < 0.7);
+  canvas.hidden = !live;
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  list.forEach((age, slot) => {
+    if (!(age >= 0) || age >= 0.7) return;
+    const puff = scuffPuff(age, slot);
+    const x = 18 + puff.back * 0.55 + (slot % 2 ? 8 : 0);
+    const y = canvas.height - 10 - puff.up * 0.42;
+    const radius = Math.max(2, puff.radius * 0.22);
+    ctx.beginPath();
+    ctx.fillStyle = 'rgba(255, 250, 240, 0.9)';
+    ctx.strokeStyle = '#0b0a16';
+    ctx.lineWidth = 2;
+    ctx.arc(x, y, radius, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+  });
+  return list;
+}
+
+if (typeof window !== 'undefined') window.__nordShowScuff = showScuff;

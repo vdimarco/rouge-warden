@@ -192,6 +192,8 @@ public:
     bool IsKnocked() const;
     // Knocked down, or knocked out or arrested on the player state: no walking, jumping, sprinting or E.
     bool IsInputLocked() const;
+    // Ages of the five foot puffs, or -1 when that slot is dark. The play shell draws the same rule.
+    void ScuffAges(float Now, float* Out, int32 Count) const;
     // Every peer, after movement and network smoothing (UQuebecKnockPoser): tumbles the mesh about the hips.
     void ApplyKnockPose();
     // Server: the launched player's capsule passes through the car that hit it for Seconds.
