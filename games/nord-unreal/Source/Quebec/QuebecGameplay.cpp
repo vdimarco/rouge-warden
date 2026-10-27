@@ -3037,6 +3037,8 @@ void AQuebecHUD::DrawHUD()
             Status = TEXT("Menu · Recover restores this march");
         else if (Campaign->IsDitchOpen() && bTouchControls)
             Status = TEXT("Menu · Recover restores this ditch");
+        else if (Campaign->IsParcelOpen() && bTouchControls)
+            Status = TEXT("Menu · Recover restores this parcel");
         else if (Campaign->IsCampaignComplete() && !Campaign->IsStoryBeatOpen() && SideJobs)
         {
             const int32 Guide = SideJobs->GuideMarker(Here, true);
