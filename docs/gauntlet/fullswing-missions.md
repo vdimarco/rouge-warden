@@ -1675,3 +1675,39 @@ Evidence: [the opening card](fullswing-r46/line.png). The DOM assert is the sour
 | Performance stability | Unverified | No GPU pass, and this round does not claim one. |
 
 Current total withheld. Historical 132 is context from the earlier mission rounds, and this round's delta against that history is 0. It is not a new acceptance score. Responsiveness and performance stay unverified. No phone, listening, or full playthrough. `openspec validate` did not run. The change is archived by hand under `openspec/changes/archive/2026-10-27-swing-line-ride/`.
+
+### Round 47 — 2026-10-27 — a measured swing, rubric v1
+
+Flat play with debug on already records frame intervals and input-to-submit time. This round drives a swing, one callback at a time, after the city is up, and gates the play window. Headless present stays out of the sample: on this machine the compositor waited about a second between callbacks while the main thread was idle. The number is the callback. Input-to-submit is the press until that callback starts. It is not GPU completion and it is not display latency.
+
+The warmup is 36 driven frames. On the scored run those callbacks cost 1–7 ms. The play window after that is 23 intervals at 1280×800 on SwiftShader, buffer already scaled to 786×491. Median 5.6 ms, p95 6.9 ms, p99 7.0 ms, no interval over 50 ms. Twenty-four presses, input-to-submit p95 1.9 ms. The rope was on and the hero was moving at 14.9 m/s. The view was about 1.11 million triangles. During the settle, before that window, the same page's present clock was 0.7 fps, frame p95 7.9 s, input-to-submit p95 1.6 s. A second pass of the same gate measured callback p95 7.8 ms and input-to-submit p95 3.6 ms. The elapsed-time figure from the back-to-back callbacks is not a presented frame rate.
+
+Evidence: [the swing](fullswing-r47/swing-meter.png). The test log is the source of truth for the times. The picture is the swing in the air before the timed window. No new art. No new mission. The first flush stays the clog card. The King stays asleep.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 5 | Historical context only. This round does not re-score it. |
+| Color palette | 6 | Historical context only. This round does not re-score it. |
+| Detail density | 4 | Historical context only. This round does not re-score it. |
+| Texture and material quality | 3 | Historical context only. This round does not re-score it. |
+| Composition and camera | 4 | Historical context only. This round does not re-score it. |
+| Atmosphere | 5 | Historical context only. This round does not re-score it. |
+| Character models | 3 | Historical context only. This round does not re-score it. |
+| Animation smoothness | 4 | Historical context only. This round does not re-score it. |
+| Particles and VFX | 5 | Historical context only. This round does not re-score it. |
+| UI polish | 6 | The debug overlay names p95 and input-to-submit. Polish stays where it was. |
+| Responsiveness and input latency | 5 | Once a callback starts, the press is in it: the play window's input-to-submit p95 is 1.9 ms. On this machine the present clock made the next callback late, and the settle measured that wait at 1.6 s p95. That is not the old stepped-frame 9. |
+| Controls feel | 9 | Held. The swing is the same swing. |
+| Mission clarity | 9 | Held. The cards are unchanged. |
+| Pacing | 9 | Held. The flush list is unchanged. |
+| Fun factor | 9 | Held. No new beat. |
+| Difficulty curve | 9 | Held. No new clock. |
+| Feedback | 9 | Held. No new sting or word. |
+| Sound design | 9 | Held. No new sound. |
+| Variety | 9 | Held. No new job. |
+| Performance stability | 4 | The play window p95 is 6.9 ms and nothing in it exceeds 50 ms. The settle on the same page presented at 0.7 fps with a frame p95 of 7.9 s, on SwiftShader, at about 1.11 million triangles. No page error. That is not a presented 60 and not a 2023 console, so the old unmeasured 6 comes down. |
+
+- Aesthetics raw: 45 / 10 dimensions, index 45
+- Playability raw: 81 / 10 dimensions, index 81
+- Total: 126 / 200
+- Delta vs last round: -6 against the last published total, 132. Responsiveness is now 5 and performance is now 4, from the measured present wait and the measured callback. The other eighteen scores are the historical context. No phone, listening, or full playthrough. Hardware present was not measured. `openspec validate` did not run. The change is archived by hand under `openspec/changes/archive/2026-10-27-swing-frame-meter/`.
