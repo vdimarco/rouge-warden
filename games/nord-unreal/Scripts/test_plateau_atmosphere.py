@@ -180,7 +180,7 @@ def check_first_and_second_run():
         asphalt = assets.store[atmosphere.WET[0]]
         base = library.get_material_property_input_node(asphalt, 'MP_BASE_COLOR')
         rough = library.get_material_property_input_node(asphalt, 'MP_ROUGHNESS')
-        for wetness, puddles, colour, roughness in ((0., 0., 1., .8), (1., 0., .5, .36), (1., 1., .5, .03), (.5, 0., .75, .58)):
+        for wetness, puddles, colour, roughness in ((0., 0., 1., .8), (1., 0., .5, .15), (1., 1., .5, .03), (.5, 0., .75, .475)):
             values = defaults | {'source': 1., 'Wetness': wetness, 'custom': (0.,)}
             assert abs(evaluate(base, '', values) - colour) < 1e-12
             puddle = next(n for n in asphalt.expressions if type(n).KIND == 'Custom' and n.get_editor_property('code') == atmosphere.PUDDLE_HLSL.read_text())
@@ -190,7 +190,7 @@ def check_first_and_second_run():
         splash = next(n for n in asphalt.expressions if type(n).KIND == 'Custom' and n.get_editor_property('code') == atmosphere.SPLASH_HLSL.read_text())
         assert splash.pins() == ('WorldPos', 'Time', 'Rain')
         assert evaluate(base, '', defaults | {'source': 1., 'Wetness': 1., 'custom': (1.,)}) > .85
-        glossy = next(n for n in asphalt.expressions if type(n).KIND == 'Multiply' and n.get_editor_property('const_b') == .45)
+        glossy = next(n for n in asphalt.expressions if type(n).KIND == 'LinearInterpolate' and n.get_editor_property('const_b') == atmosphere.WET_ROAD_ROUGHNESS)
         assert glossy.links['A'][1] == 'R', 'Roughness must keep reading the texture R channel'
         normal = library.get_material_property_input_node(asphalt, 'MP_NORMAL')
         assert normal.links['A'][1] == 'RGB' and normal.links['B'][0].get_editor_property('constant') == (0, 0, 1, 1)
@@ -250,7 +250,7 @@ def check_fallbacks():
         assert scalars[0].guid == existing.guid and scalars[0].get_editor_property('default_value') == .25
         assert report['collection']['other_parameters'] == ['Foo'] and not report['collection']['created']
         asphalt = u.EditorAssetLibrary.store[atmosphere.WET[0]]
-        glossy = next(n for n in asphalt.expressions if type(n).KIND == 'Multiply' and n.get_editor_property('const_b') == .45)
+        glossy = next(n for n in asphalt.expressions if type(n).KIND == 'LinearInterpolate' and n.get_editor_property('const_b') == atmosphere.WET_ROAD_ROUGHNESS)
         assert glossy.links['A'][1] == 'R'
 
     with tempfile.TemporaryDirectory() as temporary:

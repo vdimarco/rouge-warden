@@ -27,6 +27,7 @@
 #include "QuebecJobRules.h"
 #include "QuebecSky.h"
 #include "QuebecContact.h"
+#include "QuebecGloss.h"
 #include "QuebecCrewAnimation.h"
 #include "QuebecGTA.h" // AQuebecCar: street traces each frame (DRIVE).
 #include "QuebecTraces.h" // Street traces: knockable street props spawned by the game mode (TRAFFIC).
@@ -38,6 +39,7 @@
 #include "QuebecBow.h" // The stage bow after the goon fight.
 #include "QuebecBay.h" // The sidewalk atelier that spends cash on a dented car.
 #include "QuebecBuoy.h" // The north-pond buoy. One pedalo lap pays session cash once.
+#include "Materials/MaterialInstanceDynamic.h"
 #include "QuebecLap.h"
 #include "QuebecWadeMark.h" // The south-pond float. One wade pays session cash once.
 #include "QuebecWade.h"
@@ -1220,6 +1222,12 @@ void AQuebecCar::ResetMotion()
 
 void AQuebecCar::ApplyPaint()
 {
+    // The paint slot takes the clearcoat roughness. Other slots keep their own materials.
+    auto CoatPaint = [](UStaticMeshComponent* Part, int32 Element)
+    {
+        if (UMaterialInstanceDynamic* Coat = Part->CreateDynamicMaterialInstance(Element))
+            Coat->SetScalarParameterValue(TEXT("Roughness"), QuebecShade::CarPaintRoughness);
+    };
     const int32 Profile = FMath::Clamp(BodyProfile,0,2);
     Hull->SetStaticMesh(CollisionMeshes[Profile]);
     Hull->SetCollisionProfileName(TEXT("Pawn"));
@@ -1256,7 +1264,11 @@ void AQuebecCar::ApplyPaint()
                 }
                 const TArray<FStaticMaterial>& Materials = Mesh->GetStaticMaterials();
                 for (int32 I = 0; I < Materials.Num(); ++I)
-                    Part->SetMaterial(I,Paint && Materials[I].MaterialSlotName == TEXT("Paint") ? Paint : Mesh->GetMaterial(I));
+                {
+                    const bool bPaint = Paint && Materials[I].MaterialSlotName == TEXT("Paint");
+                    Part->SetMaterial(I, bPaint ? Paint : Mesh->GetMaterial(I));
+                    if (bPaint) CoatPaint(Part, I);
+                }
             }
         }
         // A repaint must not wash out the police livery (street contract).
@@ -1275,7 +1287,11 @@ void AQuebecCar::ApplyPaint()
     {
         if (Part->ComponentHasTag(TEXT("NordOwnPaint"))) continue; // Street livery and lamps (POLICE, TRAFFIC).
         const FString Name = Part->GetName();
-        if (Name == TEXT("Body") && Paint) Part->SetMaterial(0,Paint);
+        if (Name == TEXT("Body") && Paint)
+        {
+            Part->SetMaterial(0, Paint);
+            CoatPaint(Part, 0);
+        }
         if ((Name == TEXT("Glass") || Name == TEXT("Roof")) && Part->GetStaticMesh() &&
             Part->GetStaticMesh()->GetName().StartsWith(TEXT("SM_Car")))
         {
