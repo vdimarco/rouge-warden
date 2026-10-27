@@ -69,6 +69,12 @@ int main()
     Expect(std::strcmp(LostPolice, "LOST THEM") == 0 && std::strcmp(LostDetail, "The police let go") == 0, "the lost-them line drifted");
     Expect(std::strcmp(GarageWord, "GARAGE") == 0 && std::strcmp(GarageDetail, "New plates. The search is off.") == 0, "the garage line drifted");
 
+    Expect(JobTitleCount == 6, "a job title was dropped");
+    const char* ExpectedTitles[] = {"Hot delivery", "Car thief", "Ink overrun", "Five stars", "Three posters", "The fare"};
+    for (int Title = 0; Title < JobTitleCount; ++Title)
+        Expect(PlainEnglish(JobTitles[Title]) && std::strcmp(JobTitles[Title], ExpectedTitles[Title]) == 0, "a job title left English");
+    Expect(std::strcmp(JobOn, "JOB ON") == 0 && std::strcmp(JobAgain, "again") == 0, "the job prompt left English");
+
     std::printf("%d assertions, %d failures\n", Assertions, Failures);
     return Failures == 0 ? 0 : 1;
 }

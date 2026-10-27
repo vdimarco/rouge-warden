@@ -162,6 +162,25 @@ export function heatLines(card) {
   return { head: 'WANTED', line: stars === 1 ? '1 star' : `${stars} stars`, kind: 'wanted' };
 }
 
+export function columnLines(card) {
+  return {
+    title: String(card?.title || '').trim(),
+    info: String(card?.info || '').trim(),
+  };
+}
+
+export function showColumn(card) {
+  const root = document.getElementById('job-column');
+  if (!root) return null;
+  const lines = columnLines(card);
+  root.hidden = !lines.title;
+  const title = document.getElementById('column-title');
+  const info = document.getElementById('column-info');
+  if (title) title.textContent = lines.title;
+  if (info) info.textContent = lines.info;
+  return lines;
+}
+
 export function showHeat(card) {
   const root = document.getElementById('heat-plate');
   if (!root) return null;
@@ -179,3 +198,4 @@ if (typeof window !== 'undefined') window.__nordShowMission = showMission;
 if (typeof window !== 'undefined') window.__nordShowPayout = showPayout;
 if (typeof window !== 'undefined') window.__nordShowJob = card => showJob(card, document.body.classList.contains('touch-input'));
 if (typeof window !== 'undefined') window.__nordShowHeat = showHeat;
+if (typeof window !== 'undefined') window.__nordShowColumn = showColumn;

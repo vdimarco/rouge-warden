@@ -35,8 +35,7 @@ namespace
     constexpr int32 SideJobPosters = static_cast<int32>(QuebecJobRules::EJob::Posters);
     constexpr int32 SideJobFare = static_cast<int32>(QuebecJobRules::EJob::Fare);
 
-    // HUD text in Québec French. The 3D captions stay ASCII: the text-render font has no accented glyphs.
-    const TCHAR* const SideJobTitles[] = {TEXT("Livraison chaude"), TEXT("Voleur de char"), TEXT("L'encre déborde"), TEXT("Cinq étoiles"), TEXT("Trois affiches"), TEXT("La course")};
+    // The 3D captions stay ASCII: the text-render font has no accented glyphs. The HUD titles are the English lines in QuebecBanner.h.
     const TCHAR* const SideJobSigns[] = {TEXT("LIVRAISON CHAUDE"), TEXT("VOLEUR DE CHAR"), TEXT("L'ENCRE DEBORDE"), TEXT("CINQ ETOILES"), TEXT("TROIS AFFICHES"), TEXT("LA COURSE")};
     const TCHAR* const SideJobBriefs[] = {
         TEXT("Prends la commande au café, puis trois portes. Vite, c'est chaud!"),
@@ -48,7 +47,7 @@ namespace
     };
     const TCHAR* const SideJobDoorStreets[] = {TEXT("rue De Lanaudière"), TEXT("rue Garnier"), TEXT("rue De La Roche")};
     const TCHAR* const PosterCorners[] = {TEXT("Papineau"), TEXT("Cartier"), TEXT("Dorion")};
-    static_assert(UE_ARRAY_COUNT(SideJobTitles) == QuebecJobRules::JobCount && UE_ARRAY_COUNT(SideJobSigns) == QuebecJobRules::JobCount);
+    static_assert(QuebecBanner::JobTitleCount == QuebecJobRules::JobCount && UE_ARRAY_COUNT(SideJobSigns) == QuebecJobRules::JobCount);
     static_assert(UE_ARRAY_COUNT(SideJobBriefs) == QuebecJobRules::JobCount);
     static_assert(UE_ARRAY_COUNT(SideJobDoorStreets) == QuebecJobRules::DoorCount);
     static_assert(UE_ARRAY_COUNT(PosterCorners) == QuebecJobRules::PosterCount);
@@ -164,7 +163,11 @@ AQuebecSideJobs* AQuebecSideJobs::Find(const UWorld* World)
 
 const TCHAR* AQuebecSideJobs::JobTitle(int32 Index)
 {
-    return Index >= 0 && Index < QuebecJobRules::JobCount ? SideJobTitles[Index] : TEXT("");
+    static const FString Titles[] = {
+        JobWords(QuebecBanner::JobTitles[0]), JobWords(QuebecBanner::JobTitles[1]), JobWords(QuebecBanner::JobTitles[2]),
+        JobWords(QuebecBanner::JobTitles[3]), JobWords(QuebecBanner::JobTitles[4]), JobWords(QuebecBanner::JobTitles[5])
+    };
+    return Index >= 0 && Index < QuebecBanner::JobTitleCount ? *Titles[Index] : TEXT("");
 }
 
 void AQuebecSideJobs::BeginPlay()
@@ -312,8 +315,8 @@ FString AQuebecSideJobs::GetPrompt(const APawn* Pawn) const
 {
     const int32 Index = MarkerAt(Pawn);
     if (Index == INDEX_NONE) return FString();
-    if (IsActive()) return FString::Printf(TEXT("Mission en cours : %s  /  R recommence"),JobTitle(JobIndex));
-    return FString::Printf(TEXT("[ E ]  MISSION  /  %s%s"),JobTitle(Index),IsCompleted(Index) ? TEXT("  (rejouer)") : TEXT(""));
+    if (IsActive()) return FString::Printf(TEXT("Job on: %s  /  %s"), JobTitle(JobIndex), UTF8_TO_TCHAR(QuebecBanner::KeyRetry));
+    return FString::Printf(TEXT("[ E ]  JOB  /  %s%s"), JobTitle(Index), IsCompleted(Index) ? *FString::Printf(TEXT("  (%s)"), UTF8_TO_TCHAR(QuebecBanner::JobAgain)) : TEXT(""));
 }
 
 bool AQuebecSideJobs::GetTarget(FVector& OutLocation) const
@@ -390,7 +393,7 @@ bool AQuebecSideJobs::HandleInteract(AQuebecController* Player)
     if (const AQuebecPlayerState* Stats = Cast<AQuebecPlayerState>(Player->PlayerState); Stats && Stats->IsDown()) return true;
     if (IsActive())
     {
-        QuebecNotice::Show(Player,TEXT("MISSION EN COURS"),FString::Printf(TEXT("%s  /  R recommence"),JobTitle(JobIndex)),3.f);
+        QuebecNotice::Show(Player, FString(UTF8_TO_TCHAR(QuebecBanner::JobOn)), FString::Printf(TEXT("%s  /  %s"), JobTitle(JobIndex), UTF8_TO_TCHAR(QuebecBanner::KeyRetry)), 3.f);
         return true;
     }
     for (TActorIterator<AQuebecCampaign> It(GetWorld()); It; ++It)

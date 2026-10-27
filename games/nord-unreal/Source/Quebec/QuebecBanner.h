@@ -31,6 +31,13 @@ namespace QuebecBanner
     inline constexpr const char* FareLeft = "The passenger got out";
     inline constexpr const char* FareDone = "Passenger dropped off";
 
+    inline constexpr const char* JobTitles[] = {
+        "Hot delivery", "Car thief", "Ink overrun", "Five stars", "Three posters", "The fare"
+    };
+    inline constexpr int JobTitleCount = 6;
+    inline constexpr const char* JobOn = "JOB ON";
+    inline constexpr const char* JobAgain = "again";
+
     inline constexpr const char* Wanted = "WANTED";
     inline constexpr const char* ArrestedWord = "ARRESTED";
     inline constexpr const char* KnockedWord = "KNOCKED OUT";

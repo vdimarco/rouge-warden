@@ -571,9 +571,9 @@ void AQuebecHUD::DrawStreetHUD(float UIScale, bool bTall, bool bTouch, float Rad
             {
                 FString Info = FString::Printf(TEXT("%d m"), FMath::RoundToInt(FVector::Dist(Here, Goal) / 100.f));
                 if (Jobs->JobIndex == static_cast<int32>(QuebecJobRules::EJob::Thief))
-                    Info += FString::Printf(TEXT("  ·  dégâts %d %%"), FMath::RoundToInt(Jobs->JobProgress * 100.f));
+                    Info += FString::Printf(TEXT("  ·  damage %d %%"), FMath::RoundToInt(Jobs->JobProgress * 100.f));
                 else if (Jobs->JobIndex == static_cast<int32>(QuebecJobRules::EJob::Goons))
-                    Info += FString::Printf(TEXT("  ·  K.-O. %d/%d"), FMath::RoundToInt(Jobs->JobProgress * QuebecJobRules::GoonTotal()), QuebecJobRules::GoonTotal());
+                    Info += FString::Printf(TEXT("  ·  down %d/%d"), FMath::RoundToInt(Jobs->JobProgress * QuebecJobRules::GoonTotal()), QuebecJobRules::GoonTotal());
                 if (!bTouch && !bTall) Info += TEXT("  ·  R");
                 Write(Info, Font, Muted, ColumnRight - static_cast<float>(Measure(Info, Font, .78f).X), Row, .78f);
                 Row += 16.f * S;

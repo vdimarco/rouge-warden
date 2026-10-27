@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { heatLines, jobLines, markerOffset, missionLines, payoutLines } from './mission-card.js';
+import { columnLines, heatLines, jobLines, markerOffset, missionLines, payoutLines } from './mission-card.js';
 
 const lines = missionLines({
   title: '28 / THE BOLT',
@@ -51,5 +51,12 @@ assert.equal(heatLines({ down: 'knocked' }).head, 'KNOCKED OUT');
 assert.equal(heatLines({ down: 'knocked' }).line, 'To Hôpital Notre-Dame');
 assert.equal(heatLines(null).head, '');
 assert.ok(!/[\u00e9\u00e8\u00ea]/.test(`${wanted.head} ${wanted.line}`), 'the star plate mixed languages');
+
+const column = columnLines({ title: 'Car thief', info: '40 m  ·  damage 55 %' });
+assert.equal(column.title, 'Car thief');
+assert.equal(column.info, '40 m  ·  damage 55 %');
+assert.equal(columnLines({ title: 'Ink overrun', info: '12 m  ·  down 2/6' }).info, '12 m  ·  down 2/6');
+assert.equal(columnLines(null).title, '');
+assert.ok(!/[\u00e9\u00e8\u00ea]/.test(`${column.title} ${column.info}`), 'the job column mixed languages');
 
 console.log('mission card lines and marker ok');

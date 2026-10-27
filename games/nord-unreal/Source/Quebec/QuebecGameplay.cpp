@@ -2631,7 +2631,7 @@ void AQuebecController::PlayerTick(float DeltaTime)
                 if (Delta.SizeSquared2D() > 1.f)
                     CardBearing = FMath::RoundToInt(FMath::RadiansToDegrees(FMath::Atan2(Delta.X, Delta.Y)));
             }
-            FString JobHead, JobLine, DownKind;
+            FString JobHead, JobLine, DownKind, ColumnTitle, ColumnInfo;
             int32 StarPlate = 0;
             if (const UWorld* World = GetWorld())
             {
@@ -2661,6 +2661,16 @@ void AQuebecController::PlayerTick(float DeltaTime)
                             Jobs->bLastSucceeded, Jobs->LastReward, TCHAR_TO_UTF8(*Jobs->LastResult), false, bRetry);
                         JobHead = UTF8_TO_TCHAR(Words.Head);
                         JobLine = UTF8_TO_TCHAR(Words.Line.c_str());
+                    }
+                    if (Jobs->IsActive() && GetPawn())
+                    {
+                        ColumnTitle = Jobs->JobTitle(Jobs->JobIndex);
+                        const int32 Meters = FMath::RoundToInt(FVector::Dist2D(GetPawn()->GetActorLocation(), Jobs->TargetLocation) / 100.f);
+                        ColumnInfo = FString::Printf(TEXT("%d m"), FMath::Max(0, Meters));
+                        if (Jobs->JobIndex == static_cast<int32>(QuebecJobRules::EJob::Thief))
+                            ColumnInfo += FString::Printf(TEXT("  ·  damage %d %%"), FMath::RoundToInt(Jobs->JobProgress * 100.f));
+                        else if (Jobs->JobIndex == static_cast<int32>(QuebecJobRules::EJob::Goons))
+                            ColumnInfo += FString::Printf(TEXT("  ·  down %d/%d"), FMath::RoundToInt(Jobs->JobProgress * QuebecJobRules::GoonTotal()), QuebecJobRules::GoonTotal());
                     }
                 }
                 if (const AQuebecPlayerState* Stats = GetPlayerState<AQuebecPlayerState>())
@@ -2694,11 +2704,11 @@ void AQuebecController::PlayerTick(float DeltaTime)
                 return Out;
             };
             Streamer->SendAllPlayersMessage(TEXT("Response"), FString::Printf(
-                TEXT("{\"nordDriving\":%s,\"nordSwimming\":%s,\"nordTitle\":\"%s\",\"nordObjective\":\"%s\",\"nordStage\":\"%s\",\"nordFail\":\"%s\",\"nordBearing\":%d,\"nordMeters\":%d,\"nordPayout\":%d,\"nordJobHead\":\"%s\",\"nordJobLine\":\"%s\",\"nordStars\":%d,\"nordDown\":\"%s\"}"),
+                TEXT("{\"nordDriving\":%s,\"nordSwimming\":%s,\"nordTitle\":\"%s\",\"nordObjective\":\"%s\",\"nordStage\":\"%s\",\"nordFail\":\"%s\",\"nordBearing\":%d,\"nordMeters\":%d,\"nordPayout\":%d,\"nordJobHead\":\"%s\",\"nordJobLine\":\"%s\",\"nordStars\":%d,\"nordDown\":\"%s\",\"nordColumn\":\"%s\",\"nordColumnInfo\":\"%s\"}"),
                 Cast<AQuebecCar>(GetPawn()) ? TEXT("true") : TEXT("false"),
                 Character && Character->GetCharacterMovement()->IsSwimming() ? TEXT("true") : TEXT("false"),
                 *Json(CardTitle), *Json(CardObjective), *Json(CardStage), *Json(CardFail), CardBearing, CardMeters, CardPayout,
-                *Json(JobHead), *Json(JobLine), StarPlate, *Json(DownKind)));
+                *Json(JobHead), *Json(JobLine), StarPlate, *Json(DownKind), *Json(ColumnTitle), *Json(ColumnInfo)));
         }
     }
     ApplyComicStyle();

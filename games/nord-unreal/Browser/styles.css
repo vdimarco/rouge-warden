@@ -51,8 +51,12 @@ footer p { margin: 0; }
 #heat-plate[data-kind="down"] { background: #ffd6de; border-color: var(--ink); }
 #heat-head { margin: 0; font: 900 22px/1.1 Impact, "Arial Black", Arial, sans-serif; letter-spacing: .08em; }
 #heat-line { margin: 6px 0 0; font: 700 15px/1.25 Arial, sans-serif; }
+#job-column { position: absolute; z-index: 3; top: 14px; right: 14px; width: min(220px, calc(100% - 28px)); padding: 10px 12px; text-align: right; pointer-events: none; color: var(--paper); background: #0b0a16eb; border: 3px solid var(--yellow); box-shadow: 5px 5px 0 #c2185b; }
+#column-title { margin: 0; color: var(--yellow); font: 900 13px/1.2 Impact, "Arial Black", Arial, sans-serif; letter-spacing: .04em; text-transform: uppercase; }
+#column-info { margin: 4px 0 0; font: 700 14px/1.2 Arial, sans-serif; }
 @media (max-width: 420px) {
   #mission-card { grid-template-columns: 1fr 88px; width: min(320px, calc(100% - 16px)); top: 8px; left: 8px; padding: 10px; }
+  #job-column { top: auto; bottom: 16px; right: 8px; left: 8px; width: auto; text-align: left; }
   #mission-objective { font-size: 16px; }
   #mission-map { width: 88px; height: 88px; }
   .mission-map { grid-column: 2; }

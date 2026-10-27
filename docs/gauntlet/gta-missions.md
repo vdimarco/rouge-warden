@@ -3609,3 +3609,50 @@ Unreal is not available here, so the native diamond was not captured. The title 
 ![The arrest plate on a 390-wide screen](gta-missions/r79-play-card-390.png)
 
 ![Menu on a 390-wide screen, Recover visible](gta-missions/r79-play-menu-390.png)
+
+### Round 80 — 2026-10-27 — rubric v1
+
+- What changed: A running side job shows its English name and the distance. The thief adds damage. The crew adds a down count. The start prompt says JOB and again. A job already running says JOB ON and R restarts. The play shell shows that column with no host. The 3D signs, the objective sentences, and resident speech stay as they are. No new mission.
+- Why it helped: The column was the next chrome that named the work in French, and the play page never showed it. The page we run now shows Car thief and damage in English.
+- Screenshots: title `docs/gauntlet/gta-missions/r80-title-1280.png`, `r80-title-390.png`, `r80-title-320.png`. Play client, host offline, `r80-play-1280.png`, with the same column at 390 in `r80-play-card-390.png`. Menu with Recover `r80-play-menu-390.png`. The title loaded with no page errors. The raw play page still logs the missing `@epicgames-ps/lib-pixelstreamingfrontend-ue5.8` specifier; the shell, the card, the column, and Recover still draw. The 1280 frame shows CAR THIEF and 40 m · damage 55 % on the right (1810 gold pixels). The 390 frame shows the same words along the bottom (2740 gold pixels). The objective sentences, the 3D signs, and resident speech were not on that column. `python3 Scripts/test_banner.py` is 47 assertions, 0 failures, on three compilers. `node Browser/mission-card.test.mjs` passed. Syntax check `--both` passed, 96 files, 0 failed. OpenSpec CLI is not installed, so `openspec validate` did not run. `Browser/browser.test.mjs` did not run: the `ws` package is not installed here.
+- Next target: UI polish (7) is still the lowest line this loop can move without Unreal. The objective sentences, the 3D signs, and resident speech still mix languages, and they were not on this column. Particles stay at 2 until the world effects are seen. Responsiveness stays at 3 and stays out of scope. Performance stays at 4 and is not measurable here.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 3 | Unchanged. |
+| Color palette | 5 | Unchanged. The column uses the same gold and ink as the mission card. |
+| Detail density | 3 | Unchanged. |
+| Texture and material quality | 3 | Unchanged. |
+| Composition and camera | 4 | Unchanged. |
+| Atmosphere | 4 | Unchanged. |
+| Character models | 3 | Unchanged. |
+| Animation smoothness | 3 | Unchanged. |
+| Particles and VFX | 2 | Unchanged. The column is a panel, not a world effect, and the world effects were not seen. |
+| UI polish | 7 | The play shell shows CAR THIEF and damage in English, beside the mission card. The objective sentences, the 3D signs, and resident speech were not seen and still mix languages, so this is one step. |
+| Responsiveness and input latency | 3 | Unchanged. Still a lagged stream. Out of scope for this loop. |
+| Controls feel | 9 | Unchanged. Getting out faster than a walk still keeps that pace. |
+| Mission clarity | 8 | Unchanged. The play shell still shows the carry's objective, Stage 3 of 3, the fail sentence, and a gold diamond. The column names a side job, not a new story objective. |
+| Pacing | 9 | Unchanged. Nothing new was driven. |
+| Fun factor | 9 | Unchanged. The column was seen. It was not played. |
+| Difficulty curve | 9 | Unchanged. Selling the last page ends it for 200 and does not bank the chain. A wreck still costs more than the goon pay. |
+| Feedback | 9 | Unchanged. The shell still shows a purse. The notes were not heard. The column adds words, not a new hit. |
+| Sound design | 9 | Unchanged. The two notes were not heard. The dent thud still marks a scrape as quiet. Nobody is voiced. |
+| Variety | 9 | Unchanged. No new way to play was added, and the carry was not driven. |
+| Performance stability | 4 | Unchanged. Not measurable in this container. |
+
+- Aesthetics raw: 37 / 10 dimensions, index 37
+- Playability raw: 78 / 10 dimensions, index 78
+- Total: 115 / 200
+- Delta vs last round: +1 (round 79 was 114). UI polish 6 → 7. Every other score held.
+
+![GTA title at 1280](gta-missions/r80-title-1280.png)
+
+![GTA title at 390](gta-missions/r80-title-390.png)
+
+![GTA title at 320](gta-missions/r80-title-320.png)
+
+![Play client at 1280, host offline, the job column visible](gta-missions/r80-play-1280.png)
+
+![The job column on a 390-wide screen](gta-missions/r80-play-card-390.png)
+
+![Menu on a 390-wide screen, Recover visible](gta-missions/r80-play-menu-390.png)

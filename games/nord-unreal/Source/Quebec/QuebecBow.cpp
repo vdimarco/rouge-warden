@@ -1,4 +1,5 @@
 #include "QuebecBow.h"
+#include "QuebecBanner.h"
 #include "QuebecBowRules.h"
 #include "QuebecJobRules.h"
 #include "QuebecGameplay.h"
@@ -269,7 +270,7 @@ bool AQuebecBow::HandleInteract(AQuebecController* Player)
     if (!QuebecBow::CanStart(bWon, bJob, bStory, bBowDone, Stats && Stats->IsDown(), false))
     {
         if (!bWon) return false;
-        if (bJob) QuebecNotice::Show(Player, TEXT("MISSION EN COURS"), TEXT("R recommence"), 3.f);
+        if (bJob) QuebecNotice::Show(Player, FString(UTF8_TO_TCHAR(QuebecBanner::JobOn)), FString(UTF8_TO_TCHAR(QuebecBanner::KeyRetry)), 3.f);
         else if (bStory) QuebecNotice::Show(Player, TEXT("PAS MAINTENANT"), TEXT("Termine d'abord la scène du Curateur."), 3.f);
         return true;
     }
