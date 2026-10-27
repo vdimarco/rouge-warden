@@ -1435,3 +1435,40 @@ Increment70 pending — unchanged blocked-goon movement uses prepared fixed rota
 
 Playability was scored from a flat boot and the city render check, not a full playthrough. OpenSpec CLI validation was not run; the `openspec` command is not installed.
 
+### Round 32 — 2026-10-27 — rubric v1
+
+- What changed: The grade's dark end is violet, the sky's colour in the shade. Open shade stays teal. The step stays rose. A sunlit face takes amber. During play the boundary walks from the painted sunset to blue hour and back, over four minutes. At blue hour the violet takes the teal and the amber leaves. Bright lamps, the sun disc, and near-black ink stay. The painted strip is not replaced. James Gurney, Color and Light (2010): a shadow takes the sky's colour, and the light takes the hour's.
+- Why it helped: On the street, every other pixel, violet was 8.2% and teal was 20.6% before. At the painted sunset violet is 18.9% and teal is 13.1%, with rose 39.0% and amber 15.3%. The same street at blue hour is violet 35.7%, teal 0.0%, amber 5.2%, rose 49.0%. A wall that is (49, 91, 54) at sunset is (53, 35, 101) at blue hour. A dark shade that was (60, 53, 34) is (63, 28, 54) already at sunset. The red awning at (250, 46, 59) and a rose step at (182, 46, 94) did not move. On the wall crop, mean green goes from 51.8 at sunset to 26.6 at blue hour, and mean blue from 67.8 to 102.1.
+- Screenshots: before `docs/gauntlet/shots/r32-before-street.png`, sunset `docs/gauntlet/shots/r32-after-street.png`, blue hour `docs/gauntlet/shots/r32-blue-street.png`. The same wall: `docs/gauntlet/shots/r32-before-wall.png`, `docs/gauntlet/shots/r32-after-wall.png`, `docs/gauntlet/shots/r32-blue-wall.png`. Needle before `docs/gauntlet/shots/r32-before-needle.png`.
+- Next target: Detail density (6), tied with composition, atmosphere, character models, particles and UI. The shop band is still one cloth.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 7 | Unchanged. A lit shop's cloth is warmer along the hem than along the top. |
+| Color palette | 7 | The dark shade is violet and the open shade is still teal. At blue hour that teal is gone and the violet covers the shade. |
+| Detail density | 6 | Unchanged. The shop awnings from round 16. |
+| Texture and material quality | 7 | Unchanged. The masonry clay from round 23. |
+| Composition and camera | 6 | Unchanged. On a fast rope the head still sits lower. The chase arm stays 4.5 m and the pitch stays −20°. |
+| Atmosphere | 6 | Unchanged. The far avenue still sits in the warm dust from round 15. |
+| Character models | 6 | Unchanged. The cream belt from round 17. |
+| Animation smoothness | 8 | Unchanged. At the same run phase the feet sit 80 px apart across the frame and 94 px apart in height. |
+| Particles and VFX | 6 | Unchanged. The cream trail from round 19. |
+| UI polish | 6 | Unchanged. The cream lip and rose hem from round 21. |
+| Responsiveness and input latency | 6 | Unchanged. No new pass and no new draw. No input timing was measured. |
+| Controls feel | 5 | Unchanged. |
+| Mission clarity | 4 | Unchanged. Not played. |
+| Pacing | 4 | Unchanged. |
+| Fun factor | 4 | Unchanged. Not played as a session. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 5 | Unchanged. |
+| Sound design | 4 | Unchanged. |
+| Variety | 4 | Unchanged. |
+| Performance stability | 6 | `qa/vr/render.mjs` passed, including flat play, the painted-sky checks, the lit-sphere cel check, and the canyon ink lines (20.4%). Street mean 73.6, saturation 0.60. |
+
+- Aesthetics raw: 65 / 10 dimensions, index 65
+- Playability raw: 46 / 10 dimensions, index 46
+- Total: 111 / 200
+- Delta vs last round: +1 (110 → 111). Color palette 6 → 7. Playability unchanged.
+
+Playability was scored from a flat boot and the city render check, not a full playthrough. OpenSpec CLI validation was not run; the `openspec` command is not installed.
+

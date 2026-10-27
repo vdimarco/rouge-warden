@@ -49,6 +49,7 @@ float vnoise(vec2 p) { vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 *
 // Uniforms shared by every city material (vertex and fragment stage alike)
 const COMMON_UNI = /* glsl */ `
 uniform float uTime;
+uniform float uDay; // 0 painted sunset, 1 blue hour
 uniform vec3 uSunDir;
 uniform vec2 uSunXZ;
 uniform vec3 uFog; // near, density, haze height
@@ -166,21 +167,39 @@ vec3 wetAsphalt(vec3 col, vec3 wp, vec3 N, float wet, float sunVis) {
   vec3 fill = vec3(1.0, 0.55, 0.28) * (1.0 - sunVis) * cover * 0.14;
   return col + sky * fres * cover * (0.55 + 0.6 * puddle) + glint + fill;
 }
-// James Gurney, Color and Light (2010): a shadow is its own hue, and the step between
-// shadow and light is not their average. Cool shade goes teal. That step goes rose.
-// Bright lamps, the sun, and near-black ink stay.
-vec3 gradeInk(vec3 c) {
+// James Gurney, Color and Light (2010): a shadow takes the sky's colour, the light takes
+// the hour's, and the step between them is not their average. The dark end of the shade
+// is violet. Open shade stays teal. The step stays rose. A sunlit face takes amber.
+// uDay walks that boundary toward blue hour: the violet takes the teal, and the amber
+// leaves. Bright lamps, the sun disc, and near-black ink stay. A pixel that was not
+// ink is not pushed under it.
+vec3 gradeInk(vec3 c, float sun) {
   float y = dot(c, vec3(0.299, 0.587, 0.114));
   float hold = smoothstep(0.08, 0.12, y) * (1.0 - smoothstep(0.30, 0.44, y));
+  float day = clamp(uDay, 0.0, 1.0);
+  float s = clamp(sun, 0.0, 1.0);
+  vec3 violet = vec3(c.r * 0.62, c.g * 0.50, c.b * 1.18 + 0.04);
   vec3 teal = vec3(c.r * 0.55, c.g * 1.35 + 0.055, c.b * 0.58);
   vec3 rose = vec3(c.r * 1.30 + 0.03, c.g * 0.68, c.b * 0.90);
-  float t = smoothstep(0.16, 0.30, y);
-  return mix(c, mix(teal, rose, t), hold);
+  vec3 amber = vec3(c.r * 1.20 + 0.045, c.g * 0.96, c.b * 0.48);
+  // The dark end of the shade is violet. Open shade stays teal. Blue hour moves
+  // that boundary up, so the teal gives way to the sky.
+  float violetW = 1.0 - smoothstep(mix(0.125, 0.22, day), mix(0.175, 0.32, day), y);
+  vec3 shade = mix(teal, violet, violetW);
+  // The sun's own step is amber, and only at the painted sunset. Shade stays rose.
+  float amberW = (1.0 - day) * smoothstep(0.30, 0.42, y) * smoothstep(0.45, 1.0, s);
+  vec3 lit = mix(rose, amber, amberW);
+  vec3 inked = mix(shade, lit, smoothstep(0.16, 0.30, y));
+  vec3 g = mix(c, inked, hold);
+  float src = max(c.r, max(c.g, c.b));
+  float m = max(g.r, max(g.g, g.b));
+  g = mix(g, g * (0.188 / max(m, 1e-4)), step(0.188, src) * (1.0 - step(0.188, m)));
+  return g;
 }
 // Haze in four print-like steps toward the sky's own colour in that direction
 vec3 fogMix(vec3 col, vec3 wp, float maxF) {
   vec3 v = normalize(wp - cameraPosition);
-  return mix(gradeInk(col), skyHaze(v), comicPoster(fogAmount(wp) * maxF, 4.0));
+  return mix(gradeInk(col, sunT(shadowDepthAt(wp))), skyHaze(v), comicPoster(fogAmount(wp) * maxF, 4.0));
 }
 `;
 
@@ -193,6 +212,8 @@ varying vec4 vFog;
 void fogVertex(vec3 wp) {
   vec3 v = normalize(wp - cameraPosition);
   vFog = vec4(skyHaze(v), fogAmount(wp));
+  // keeps uDay live in vertex programs; a ten-thousandth of fog does not move a print step
+  vFog.a = min(vFog.a + clamp(uDay, 0.0, 1.0) * 1e-4, 1.0);
 }
 `;
 // An outline hull (a twin of an instanced mesh, back faces, pushed out along the normal so the line stays INK_PX wide)
@@ -1010,9 +1031,10 @@ void main() {
   col += vec3(1.0, 0.72, 0.39) * fold * foldSun * 0.22;
   if (lineY > 0.0) ink = max(ink, comicInk(abs(vW.y - lineY), wpx * 0.8));
   col = mix(col, INKC, ink);
-  // The clay is printed on the graded wall, the way the awning is. The grade itself stays the teal and rose paper.
+  // The clay is printed on the graded wall, the way the awning is. The grade stays the paper:
+  // violet at the dark end, teal in open shade, rose on the step, amber in the sun.
   // The lamp pool is printed after that, and it stays off the ink line.
-  vec3 graded = gradeInk(col) * clay;
+  vec3 graded = gradeInk(col, sunT(shadowDepthAt(vW))) * clay;
   graded = mix(graded, graded * spill.rgb + vec3(0.07, 0.025, 0.0), spill.a * (1.0 - ink));
   vec3 shown = mix(graded, mix(awn.rgb, INKC, ink), awn.a);
   gl_FragColor = vec4(mix(shown, vFog.rgb, comicPoster(vFog.a, 4.0)), 1.0);
@@ -1483,7 +1505,7 @@ void main() {
     col = mix(col, vec3(1.0, 0.72, 0.3), 1.0 - smoothstep(0.9935 - 0.0008, 0.9935 + 0.0008, s));
     col = mix(col, ${hexv(PAL.sun)}, 1.0 - smoothstep(0.9985 - 0.0004, 0.9985 + 0.0004, s));
   }
-  gl_FragColor = vec4(gradeInk(col), 1.0);
+  gl_FragColor = vec4(gradeInk(col, clamp(dot(d, uSunDir) * 0.5 + 0.5, 0.0, 1.0)), 1.0);
 }`;
 
 // Trees: a trunk and two lumpy crown lobes, one instance each. Cel colours, leaf clumps in two flat tones, and an ink hull.
@@ -1549,7 +1571,7 @@ void main() {
   vec3 col = band < 1.0 ? mix(shd, mid, band) : mix(mid, lit, band - 1.0);
   float dw = 1.0 - clamp(band - 1.0, 0.0, 1.0);
   col = mix(col, DOTC, comicDots(vW.xz + vW.y * 0.5, 0.4, mix(0.6, 0.3, clamp(band, 0.0, 1.0))) * dw * 0.45);
-  gl_FragColor = vec4(mix(gradeInk(col), vFog.rgb, comicPoster(vFog.a, 4.0)), 1.0);
+  gl_FragColor = vec4(mix(gradeInk(col, sunT(vDepth)), vFog.rgb, comicPoster(vFog.a, 4.0)), 1.0);
 }`;
 
 // Cars and streetcars: they drive their lanes in the vertex shader, from uTime, with head and tail lights and an ink hull.
@@ -1644,7 +1666,7 @@ void main() {
   float front = step(0.5, vLN.x), back = step(0.5, -vLN.x);
   col = mix(col, vec3(1.0, 0.95, 0.7), light * front);
   col = mix(col, vec3(1.0, 0.1, 0.08), light * back);
-  gl_FragColor = vec4(mix(gradeInk(col), vFog.rgb, comicPoster(vFog.a, 4.0)), 1.0);
+  gl_FragColor = vec4(mix(gradeInk(col, sunT(vDepth)), vFog.rgb, comicPoster(vFog.a, 4.0)), 1.0);
 }`;
 
 // Roof props and curb furniture. aPart: 0 plain, 2 fan top, 3 wood staves, 4 leaves, 5 metal,
@@ -1762,7 +1784,7 @@ void main() {
   // thin things (masts, poles, tower legs, curb posts) take a dark rim where they turn away from the eye
   float rim = part == 5 || part == 7 || part >= 8 ? 1.0 - smoothstep(0.2, 0.5, abs(dot(N, normalize(cameraPosition - vW)))) : 0.0;
   col = mix(col, INKC, clamp(max(ink, rim * 0.8), 0.0, 1.0));
-  gl_FragColor = vec4(mix(gradeInk(col), vFog.rgb, comicPoster(vFog.a, 4.0)), 1.0);
+  gl_FragColor = vec4(mix(gradeInk(col, sunT(vDepth)), vFog.rgb, comicPoster(vFog.a, 4.0)), 1.0);
 }`;
 
 // Sidewalk steam. aP: x, y, z, phase. aS: size, rise, cycles per second, which puff.
@@ -1811,7 +1833,7 @@ void main() {
   float fill = 1.0 - smoothstep(-aa, aa, sd);
   float iw = clamp(px * 1.6, 0.08, 0.26);
   float ink = 1.0 - smoothstep(iw - aa, iw + aa, sd);
-  float haze = comicPoster(vFog.a, 4.0);
+  float haze = comicPoster(vFog.a + clamp(uDay, 0.0, 1.0) * 1e-4, 4.0);
   float A = ink * vLife * (1.0 - haze);
   if (A < 0.04) discard;
   col = mix(INKC, col, fill);
@@ -1878,7 +1900,7 @@ void main() {
   } else {
     col = comicCelX(vec3(0.24, 0.24, 0.42), band, vec3(1.4, 1.1, 0.8), vec3(0.06, 0.025, 0.0));
   }
-  gl_FragColor = vec4(mix(gradeInk(col), vFog.rgb, min(comicPoster(vFog.a, 4.0), 0.75)), 1.0);
+  gl_FragColor = vec4(mix(gradeInk(col, sunT(shadowDepthAt(vW))), vFog.rgb, min(comicPoster(vFog.a, 4.0), 0.75)), 1.0);
 }`;
 
 /* ---------------- the diorama (spec §9: shared geometry, a simple unlit material, no fog) ---------------- */
@@ -2145,6 +2167,7 @@ export function createCityView(renderer, scene, city, opts = {}) {
   const clogNow = new Float32Array(6), clogWant = new Float32Array(6);
   const U = {
     uTime: { value: 0 },
+    uDay: { value: 0 },
     uSunDir: { value: new THREE.Vector3(SUN_DIR.x, SUN_DIR.y, SUN_DIR.z) },
     uSunXZ: { value: new THREE.Vector2(SUN_DIR.x / sunLen, SUN_DIR.z / sunLen) },
     // the art (art/sky.webp, art/windows.webp) arrives later; until then (or if a file fails) the shaders draw the procedural look
@@ -2161,7 +2184,7 @@ export function createCityView(renderer, scene, city, opts = {}) {
     uWater: { value: col3(COLORS.water) },
   };
   const pick = (...names) => Object.fromEntries(names.map((n) => [n, U[n]]));
-  const COMMON_U = ["uTime", "uSunDir", "uSunXZ", "uFog", "uMap", "uMapBox", "uSky", "uHaveSky", "uSkyU", "uInkS"];
+  const COMMON_U = ["uTime", "uDay", "uSunDir", "uSunXZ", "uFog", "uMap", "uMapBox", "uSky", "uHaveSky", "uSkyU", "uInkS"];
 
   // Height (G) and shadow height (R) over the city, 2 m per step. Filled by the build, uploaded once when done.
   const mapData = new Uint8Array(MAP.nx * MAP.nz * 2);
@@ -3320,6 +3343,8 @@ export function createCityView(renderer, scene, city, opts = {}) {
     },
     // The sky colour in a direction (a THREE.Vector3 or {x, y, z}), read from the same painted strip (or the same banded ramp).
     skyColorAt(dir, out = new THREE.Color()) { return skyJS(dir, out); },
+    // 0 is the painted sunset. 1 is blue hour. Play walks this; a still can pin it.
+    setDay(v) { U.uDay.value = v < 0 ? 0 : v > 1 ? 1 : v; },
   };
   // car theft: the street traffic on the CPU, and hiding a stolen car's instance (see trafficCars above)
   V.traffic = trafficCars;
