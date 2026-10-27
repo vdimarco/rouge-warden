@@ -44,7 +44,7 @@ int main()
     Expect(Drift != QuebecSend::Crawl && Drift > QuebecSend::Crawl, "standing copied the send-off crawl");
     Expect(Pay == 700 && Pay < 800 && Pay != QuebecLift::Pay && Pay != 720 && Pay != 540, "the post reused a purse");
     Expect(Fill == 6. && Reach == 450. && Slice == 0.25, "the post count moved");
-    Expect(QuebecStorySave::Lift == 23 && QuebecStorySave::Post == 24 && QuebecStorySave::Current == 25 && QuebecStorySave::Yard == 22, "the slot writer left version 25");
+    Expect(QuebecStorySave::Lift == 23 && QuebecStorySave::Post == 24 && QuebecStorySave::Tab == 25 && QuebecStorySave::Current == 26 && QuebecStorySave::Yard == 22, "the slot writer left version 26");
 
     const FRun Stood = Hold({}, 0., true, 40);
     Expect(Stood.Clock == 0. && Stood.Step == StepOpen && !Stood.bBroke, "standing still counted");

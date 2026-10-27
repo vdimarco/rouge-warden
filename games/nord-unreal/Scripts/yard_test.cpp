@@ -93,7 +93,7 @@ int main()
     const QuebecYard::FRun Long = QuebecYard::Tick(Held, 5., true, Edge.X, Edge.Y);
     Expect(Long.Angle < 0.1 && !Long.bSeen, "one long frame swept the whole look");
 
-    Expect(QuebecStorySave::Bolt == 21 && QuebecStorySave::Yard == 22 && QuebecStorySave::Lift == 23 && QuebecStorySave::Post == 24 && QuebecStorySave::Current == 25 && QuebecStorySave::Parcel == 20, "the slot writer left version 25");
+    Expect(QuebecStorySave::Bolt == 21 && QuebecStorySave::Yard == 22 && QuebecStorySave::Lift == 23 && QuebecStorySave::Post == 24 && QuebecStorySave::Tab == 25 && QuebecStorySave::Current == 26 && QuebecStorySave::Parcel == 20, "the slot writer left version 26");
 
     std::printf("%d assertions, %d failures\n", Assertions, Failures);
     return Failures == 0 ? 0 : 1;

@@ -3468,3 +3468,50 @@ Unreal is not available here, so the native diamond was not captured. The title 
 ![The tab card on a 390-wide screen](gta-missions/r76-play-card-390.png)
 
 ![Menu on a 390-wide screen, Recover visible](gta-missions/r76-play-menu-390.png)
+
+### Round 77 — 2026-10-27 — rubric v1
+
+- What changed: Mission 33, THE CARRY, opens after the tab. Pick up the case on foot. Walk it to the stoop. Roll the car across the line, slower than that walk and faster than a crawl. A sprint, a creep, or a car at the stoop drops the delivery and keeps the case. A stop or a bolt drops the roll and keeps the stoop. The purse is 740, once. Version 26 writes the step. A version-25 slot starts the carry over. No extra car. The tab, the post, and the lift are not retuned.
+- Why it helped: The tab asks for a mid-speed lane and a still count. This one asks for a walk, then a roll that is slower than that walk.
+- Screenshots: title `docs/gauntlet/gta-missions/r77-title-1280.png`, `r77-title-390.png`, `r77-title-320.png`. Play client, host offline, `r77-play-1280.png`, with the same card at 390 in `r77-play-card-390.png`. Menu with Recover `r77-play-menu-390.png`. The title loaded with no page errors. The raw play page still logs the missing `@epicgames-ps/lib-pixelstreamingfrontend-ue5.8` specifier; the shell, the card, and Recover still draw. The 1280 frame shows 33 / THE CARRY, Roll the car across the line, Stage 3 of 3, That speed drops the roll. Take the line again., 90 m, and a gold diamond (60 gold pixels on the map). The carry was not driven in Unreal. `python3 Scripts/test_carry.py` is 20 assertions, 0 failures, on three compilers. `python3 Scripts/test_story_save.py` is 290 assertions, 0 failures. Syntax check `--both` passed, 96 files, 0 failed. OpenSpec CLI is not installed, so `openspec validate` did not run.
+- Next target: another complete errand with a different verb. Variety, fun, and pacing stay at 9 until a new way is driven. Responsiveness stays at 3 and stays out of scope. Performance stays at 4 and is not measurable here.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 3 | Unchanged. |
+| Color palette | 5 | Unchanged. |
+| Detail density | 3 | Unchanged. |
+| Texture and material quality | 3 | Unchanged. |
+| Composition and camera | 4 | Unchanged. |
+| Atmosphere | 4 | Unchanged. |
+| Character models | 3 | Unchanged. |
+| Animation smoothness | 3 | Unchanged. |
+| Particles and VFX | 2 | Unchanged. |
+| UI polish | 4 | Unchanged. The shell card was seen. The native card was not compared, and French and English still share the screen. |
+| Responsiveness and input latency | 3 | Unchanged. Still a lagged stream. Out of scope for this loop. |
+| Controls feel | 9 | Unchanged. Getting out faster than a walk still keeps that pace. |
+| Mission clarity | 8 | Unchanged. The play shell shows the carry's objective, Stage 3 of 3, the fail sentence, and a gold diamond. The carry was not driven. |
+| Pacing | 9 | Unchanged. The walk and the slow roll were not driven. |
+| Fun factor | 9 | Unchanged. The three verbs were proven offline and were not played. |
+| Difficulty curve | 9 | Unchanged. Selling the last page ends it for 200 and does not bank the chain. A wreck still costs more than the goon pay. |
+| Feedback | 9 | Unchanged. The shell still shows a purse. The notes were not heard. |
+| Sound design | 9 | Unchanged. The two notes were not heard. The dent thud still marks a scrape as quiet. Nobody is voiced. |
+| Variety | 9 | The carry is a pickup, a walk, and a slow roll. It was not driven, so it is not a new way that was seen. |
+| Performance stability | 4 | Unchanged. Not measurable in this container. |
+
+- Aesthetics raw: 34 / 10 dimensions, index 34
+- Playability raw: 78 / 10 dimensions, index 78
+- Total: 112 / 200
+- Delta vs last round: 0 (round 76 was 112). The carry was tested and the card was seen. It was not driven, so every score held.
+
+![GTA title at 1280](gta-missions/r77-title-1280.png)
+
+![GTA title at 390](gta-missions/r77-title-390.png)
+
+![GTA title at 320](gta-missions/r77-title-320.png)
+
+![Play client at 1280, host offline, the carry card visible](gta-missions/r77-play-1280.png)
+
+![The carry card on a 390-wide screen](gta-missions/r77-play-card-390.png)
+
+![Menu on a 390-wide screen, Recover visible](gta-missions/r77-play-menu-390.png)

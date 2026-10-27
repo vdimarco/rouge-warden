@@ -49,7 +49,7 @@ namespace
 
 int main()
 {
-    Expect(Legacy == 1 && Rejected == 2 && Story == 3 && Escort == 4 && Shade == 5 && Grab == 6 && Cut == 7 && Chase == 8 && Finale == 9 && Follow == 10 && Roll == 11 && Bell == 12 && Block == 13 && Send == 14 && Pursue == 15 && Nose == 16 && Slip == 17 && March == 18 && Ditch == 19 && Parcel == 20 && Bolt == 21 && Yard == 22 && Lift == 23 && Post == 24 && Current == 25, "the slot versions drifted");
+    Expect(Legacy == 1 && Rejected == 2 && Story == 3 && Escort == 4 && Shade == 5 && Grab == 6 && Cut == 7 && Chase == 8 && Finale == 9 && Follow == 10 && Roll == 11 && Bell == 12 && Block == 13 && Send == 14 && Pursue == 15 && Nose == 16 && Slip == 17 && March == 18 && Ditch == 19 && Parcel == 20 && Bolt == 21 && Yard == 22 && Lift == 23 && Post == 24 && Tab == 25 && Current == 26, "the slot versions drifted");
     Expect(Current != Rejected, "the writer would plant the unsupported fixture");
     Expect(PondBanked == QuebecPondRules::StepBanked, "the pond bank left the save");
     Expect(CourtBanked == QuebecCourtRules::StepBanked, "the court bank left the save");
@@ -88,10 +88,11 @@ int main()
         Expect(Accept(Yard, Completed, None), "a version-22 race boundary was rejected");
         Expect(Accept(Lift, Completed, None), "a version-23 race boundary was rejected");
         Expect(Accept(Post, Completed, None), "a version-24 race boundary was rejected");
+        Expect(Accept(Tab, Completed, None), "a version-25 race boundary was rejected");
         Expect(Accept(Current, Completed, None), "a current race boundary with no story was rejected");
         Expect(!Accept(Rejected, Completed, None), "version 2 was accepted");
         Expect(!Accept(0, Completed, None), "version 0 was accepted");
-        Expect(!Accept(26, Completed, None), "a later schema was accepted");
+        Expect(!Accept(27, Completed, None), "a later schema was accepted");
     }
     Expect(!Accept(Legacy, -1, None), "a missing mission count was accepted");
     Expect(!Accept(Legacy, 3, None), "completed missions 3 were accepted on a legacy slot");
@@ -688,6 +689,43 @@ int main()
     Chit.Tab = 1;
     Chit.Post = 0;
     Expect(!Accept(Current, 2, Chit), "the tab started before the post was banked");
+
+    FSteps Haul = Banked();
+    Haul.Escort = EscortBanked;
+    Haul.Shade = ShadeBanked;
+    Haul.Grab = GrabBanked;
+    Haul.Cut = CutBanked;
+    Haul.Chase = ChaseBanked;
+    Haul.Finale = FinaleBanked;
+    Haul.Follow = FollowBanked;
+    Haul.Roll = RollBanked;
+    Haul.Bell = BellBanked;
+    Haul.Block = BlockBanked;
+    Haul.Send = SendBanked;
+    Haul.Pursue = PursueBanked;
+    Haul.Nose = NoseBanked;
+    Haul.Slip = SlipBanked;
+    Haul.March = MarchBanked;
+    Haul.Ditch = DitchBanked;
+    Haul.Parcel = ParcelBanked;
+    Haul.Bolt = BoltBanked;
+    Haul.Yard = YardBanked;
+    Haul.Lift = LiftBanked;
+    Haul.Post = PostBanked;
+    Haul.Tab = TabBanked;
+    Haul.Carry = 1;
+    Expect(!Fresh(Haul), "a carry counted as a fresh day");
+    Expect(Accept(Current, 2, Haul), "a carry in progress was rejected");
+    Expect(!Accept(Tab, 2, Haul), "a version-25 slot carried the carry");
+    const FSteps FromTab = Applied(Tab, Haul);
+    Expect(FromTab.Tab == TabBanked && FromTab.Carry == 0, "a version-25 slot copied the carry");
+    Haul.Carry = CarryBanked;
+    Expect(Accept(Current, 2, Haul), "a finished carry was rejected");
+    Haul.Carry = CarryBanked + 1;
+    Expect(!Accept(Current, 2, Haul), "a carry past the bank was accepted");
+    Haul.Carry = 1;
+    Haul.Tab = 0;
+    Expect(!Accept(Current, 2, Haul), "the carry started before the tab was banked");
 
     std::printf("%d assertions, %d failures\n", Assertions, Failures);
     return Failures == 0 ? 0 : 1;

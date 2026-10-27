@@ -35,7 +35,7 @@ int main()
     Expect(Still < QuebecPost::Drift && Still < QuebecLift::Still, "standing copied the post or the lift");
     Expect(Pay == 760 && Pay < 800 && Pay != QuebecPost::Pay && Pay != QuebecBolt::Pay && Pay != QuebecLift::Pay, "the tab reused a purse");
     Expect(StepBanked == 3 && Hold == 3. && Slice == 0.25, "the tab lost a step");
-    Expect(QuebecStorySave::Post == 24 && QuebecStorySave::Current == 25 && QuebecStorySave::Lift == 23, "the slot writer left version 25");
+    Expect(QuebecStorySave::Post == 24 && QuebecStorySave::Tab == 25 && QuebecStorySave::Current == 26 && QuebecStorySave::Lift == 23, "the slot writer left version 26");
     Expect(CountsAsCar(0) && !CountsAsCar(1) && !CountsAsCar(2), "the lane took a bike");
 
     const FSpot Counter = Objective(StepCounter);

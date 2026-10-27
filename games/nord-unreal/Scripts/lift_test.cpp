@@ -72,7 +72,7 @@ int main()
     const QuebecLift::FRun Long = QuebecLift::Tick({}, 5., 0, 0., Stop.X, Stop.Y);
     Expect(Long.Step == QuebecLift::StepOpen && Long.Along < 200., "one long frame walked them all the way");
 
-    Expect(QuebecStorySave::Yard == 22 && QuebecStorySave::Lift == 23 && QuebecStorySave::Post == 24 && QuebecStorySave::Current == 25 && QuebecStorySave::Bolt == 21, "the slot writer left version 25");
+    Expect(QuebecStorySave::Yard == 22 && QuebecStorySave::Lift == 23 && QuebecStorySave::Post == 24 && QuebecStorySave::Tab == 25 && QuebecStorySave::Current == 26 && QuebecStorySave::Bolt == 21, "the slot writer left version 26");
 
     std::printf("%d assertions, %d failures\n", Assertions, Failures);
     return Failures == 0 ? 0 : 1;
