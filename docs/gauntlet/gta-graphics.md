@@ -2593,3 +2593,38 @@ Unreal is not available in this environment, so in-engine frames are the last co
 - Playability raw: 39 / 10 dimensions, index 39
 - Total: 129 / 200
 - Delta vs last round: 0
+
+### Round 75 — 2026-10-27 — rubric v1
+
+- What changed: the scored look leaves the Sherbrooke eye and stands on the wide road where a surveyed bag pile and a fire hydrant are about 4 m apart. The eye is 420 cm back along the road and 860 cm toward the props, pitch −14. The hydrant is the barrel, the hose outlets, the pumper, and the marker post. The bin is the three tied bags. The opening aim stays.
+- Why it helped: on Sherbrooke that pair is about 100 m away, a few pixels. Here the hydrant and the bags read. The street is quieter than Sherbrooke, and the meshes are still simple, so detail stays at 9.
+- Screenshots: before `docs/gauntlet/gta-graphics/round-75/before-frame.png` is the curb with no pile and no hydrant. After `docs/gauntlet/gta-graphics/round-75/after-frame.png` is the same camera with both. The crop is `borne-crop.png`. Not an Unreal capture. From the same render, the mean absolute delta is 0.00234 and the max is 0.327. 4983 pixels change, from x 299 to 413 and y 133 to 308. `Scripts/test_borne.py` passed. The props were not spawned in Unreal. `GET /gta/` returned 200. OpenSpec CLI is not installed, so the change files were not validated with `openspec`.
+- Next target: this curb still has no walker and the road still has no car.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 9 | The afternoon sun is unchanged. |
+| Color palette | 9 | The hydrant is the prop red and the bags are black. |
+| Detail density | 9 | A hydrant and a bag pile now read. The street around them is still thin. |
+| Texture and material quality | 9 | The red and the black are flat. The shape is what changed. |
+| Composition and camera | 9 | This look is the curb where the pair stands. The opening aim is unchanged. |
+| Atmosphere | 9 | The sky is unchanged. |
+| Character models | 9 | No new figure. |
+| Animation smoothness | 9 | Nothing new moves. |
+| Particles and VFX | 9 | The shoe puffs are unchanged. |
+| UI polish | 9 | The radar heading is unchanged. |
+| Responsiveness and input latency | 4 | Not measured this round. |
+| Controls feel | 4 | Not played. |
+| Mission clarity | 5 | The objective words are unchanged. |
+| Pacing | 4 | Unchanged mission slice. |
+| Fun factor | 3 | Not played. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 4 | The hydrant and the bags are the new mark. No new juice. |
+| Sound design | 3 | Not listened to. |
+| Variety | 3 | One surveyed pile and one surveyed hydrant. |
+| Performance stability | 5 | `Scripts/test_borne.py` passed. Frame time was not remeasured. |
+
+- Aesthetics raw: 90 / 10 dimensions, index 90
+- Playability raw: 39 / 10 dimensions, index 39
+- Total: 129 / 200
+- Delta vs last round: 0
