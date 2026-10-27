@@ -61,10 +61,12 @@ public:
     UPROPERTY(VisibleAnywhere) int32 RollStep = 0;
     // Bell tail. Version 11 leaves this at 0. Version 12 writes which bell is next.
     UPROPERTY(VisibleAnywhere) int32 BellStep = 0;
+    // Block tail. Version 12 leaves this at 0. Version 13 writes it. How far the courier has driven stays in the session.
+    UPROPERTY(VisibleAnywhere) int32 BlockStep = 0;
     bool IsSupported() const;
 };
 
-/** Story encounters. All objective decisions run on authority. Missions 3 through 10 persist on the version-3 tail. Mission 11 persists on version 4. Mission 12 persists on version 5. Mission 13 persists on version 6. Mission 14 persists on version 7. Mission 15 persists on version 8. Mission 16 persists on version 9. Mission 17 persists on version 10. Mission 18 persists on version 11. Mission 19 persists on version 12. Completed missions stay 0–2. */
+/** Story encounters. All objective decisions run on authority. Missions 3 through 10 persist on the version-3 tail. Mission 11 persists on version 4. Mission 12 persists on version 5. Mission 13 persists on version 6. Mission 14 persists on version 7. Mission 15 persists on version 8. Mission 16 persists on version 9. Mission 17 persists on version 10. Mission 18 persists on version 11. Mission 19 persists on version 12. Mission 20 persists on version 13. Completed missions stay 0–2. */
 UCLASS()
 class QUEBEC_API AQuebecCampaign : public AActor
 {
@@ -120,6 +122,7 @@ public:
     static constexpr int32 FollowBankedStep = 2;
     static constexpr int32 RollBankedStep = 2;
     static constexpr int32 BellBankedStep = 3;
+    static constexpr int32 BlockBankedStep = 2;
     bool IsPondOpen() const { return Phase == EQuebecCampaignPhase::Complete && PondStep < PondBankedStep; }
     bool IsCourtOpen() const { return Phase == EQuebecCampaignPhase::Complete && PondStep >= PondBankedStep && CourtStep < CourtBankedStep; }
     bool IsShowOpen() const { return Phase == EQuebecCampaignPhase::Complete && PondStep >= PondBankedStep && CourtStep >= CourtBankedStep && ShowStep < ShowBankedStep; }
@@ -227,7 +230,17 @@ public:
             && FollowStep >= FollowBankedStep && RollStep >= RollBankedStep
             && BellStep >= 0 && BellStep < BellBankedStep;
     }
-    bool IsStoryBeatOpen() const { return IsPondOpen() || IsCourtOpen() || IsShowOpen() || IsRescueOpen() || IsConvoyOpen() || IsBlankOpen() || IsTourOpen() || IsHomeOpen() || IsEscortOpen() || IsShadeOpen() || IsGrabOpen() || IsCutOpen() || IsChaseOpen() || IsFinaleOpen() || IsFollowOpen() || IsRollOpen() || IsBellOpen(); }
+    bool IsBlockOpen() const
+    {
+        return Phase == EQuebecCampaignPhase::Complete && PondStep >= PondBankedStep && CourtStep >= CourtBankedStep
+            && ShowStep >= ShowBankedStep && RescueMask >= RescueDone && ConvoyStep >= ConvoyBankedStep
+            && BlankStep >= BlankBankedStep && TourStep >= TourBankedStep && HomeStep >= HomeBankedStep
+            && EscortStep >= EscortBankedStep && ShadeStep >= ShadeBankedStep && GrabStep >= GrabBankedStep
+            && CutStep >= CutBankedStep && ChaseStep >= ChaseBankedStep && FinaleStep >= FinaleBankedStep
+            && FollowStep >= FollowBankedStep && RollStep >= RollBankedStep && BellStep >= BellBankedStep
+            && BlockStep >= 0 && BlockStep < BlockBankedStep;
+    }
+    bool IsStoryBeatOpen() const { return IsPondOpen() || IsCourtOpen() || IsShowOpen() || IsRescueOpen() || IsConvoyOpen() || IsBlankOpen() || IsTourOpen() || IsHomeOpen() || IsEscortOpen() || IsShadeOpen() || IsGrabOpen() || IsCutOpen() || IsChaseOpen() || IsFinaleOpen() || IsFollowOpen() || IsRollOpen() || IsBellOpen() || IsBlockOpen(); }
 
     UPROPERTY(VisibleAnywhere, ReplicatedUsing=UpdatePresentation) EQuebecCampaignPhase Phase = EQuebecCampaignPhase::AimWorklight;
     UPROPERTY(VisibleAnywhere, Replicated) int32 CompletedMissions = 0;
@@ -301,6 +314,10 @@ public:
     UPROPERTY(VisibleAnywhere, Replicated) float RollAlong = 0.f;
     // 0 north, 1 middle, 2 south, 3 banked. Written on the version-12 tail. Not a chain link.
     UPROPERTY(VisibleAnywhere, ReplicatedUsing=UpdatePresentation) int32 BellStep = 0;
+    // 0 the side street, 1 the courier is out, 2 banked. Written on the version-13 tail. Not a chain link.
+    // How far the courier has driven is not saved. A reload during the run puts them back at the north end.
+    UPROPERTY(VisibleAnywhere, ReplicatedUsing=UpdatePresentation) int32 BlockStep = 0;
+    UPROPERTY(VisibleAnywhere, Replicated) float BlockAlong = 0.f;
     UPROPERTY(VisibleAnywhere, Replicated) TObjectPtr<APlayerState> LightOperator;
     UPROPERTY(VisibleAnywhere, Replicated) float LightYaw = 0.f;
     UPROPERTY(VisibleAnywhere, Replicated) float LightPitch = 0.f;
@@ -435,6 +452,12 @@ private:
     UPROPERTY() TObjectPtr<UTextRenderComponent> BellNorthCaption;
     UPROPERTY() TObjectPtr<UTextRenderComponent> BellMidCaption;
     UPROPERTY() TObjectPtr<UTextRenderComponent> BellSouthCaption;
+    UPROPERTY() TObjectPtr<UStaticMeshComponent> BlockSide;
+    UPROPERTY() TObjectPtr<UStaticMeshComponent> BlockMark;
+    UPROPERTY() TObjectPtr<UStaticMeshComponent> BlockCourier;
+    UPROPERTY() TObjectPtr<UTextRenderComponent> BlockSideCaption;
+    UPROPERTY() TObjectPtr<UTextRenderComponent> BlockMarkCaption;
+    UPROPERTY() TObjectPtr<UTextRenderComponent> BlockCourierCaption;
     UPROPERTY() TArray<TObjectPtr<UStaticMeshComponent>> ConvoyParts;
     UPROPERTY() TArray<TObjectPtr<UTextRenderComponent>> ConvoyCaptions;
     UPROPERTY() TArray<TObjectPtr<UStaticMeshComponent>> BlankParts;
@@ -515,6 +538,8 @@ private:
     void AdvanceRoll(int32 Next, AQuebecController* Who, const TCHAR* Message, bool bFinished);
     void TickBell();
     void AdvanceBell(int32 Next, AQuebecController* Who, const TCHAR* Message, bool bFinished);
+    void TickBlock(float DeltaSeconds);
+    void AdvanceBlock(int32 Next, AQuebecController* Who, const TCHAR* Message, bool bFinished);
     void ChangePhase(EQuebecCampaignPhase Next, bool bFeedback = true);
     void StopAiming();
     void SaveBoundary();
