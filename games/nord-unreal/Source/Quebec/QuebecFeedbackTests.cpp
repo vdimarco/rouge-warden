@@ -130,6 +130,10 @@ bool FQuebecRaceResultTest::RunTest(const FString& Parameters)
     TestTrue(TEXT("A finished stall opens the slip instead of the lap card"),
         Race->GetStatusText().Contains(TEXT("R recovers this slip")));
     Race->SlipStep = AQuebecCampaign::SlipBankedStep;
+    Race->MarchStep = 0;
+    TestTrue(TEXT("A finished slip opens the march instead of the lap card"),
+        Race->GetStatusText().Contains(TEXT("R recovers this march")));
+    Race->MarchStep = AQuebecCampaign::MarchBankedStep;
     const FString Status = Race->GetStatusText();
     TestTrue(TEXT("Result presents recovered time and clean session best"),
         Status.Contains(TEXT("10.0s")) && Status.Contains(TEXT("recovered")) && Status.Contains(TEXT("60.0s")));

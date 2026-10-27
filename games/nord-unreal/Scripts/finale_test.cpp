@@ -375,7 +375,7 @@ int main()
     Day.Chase = 1;
     Expect(!QuebecStorySave::Accept(QuebecStorySave::Current, 2, Day), "the day started before the tail was lost");
     Expect(StepBanked == QuebecStorySave::FinaleBanked, "the save left the day bank");
-    Expect(QuebecStorySave::Chase == 8 && QuebecStorySave::Finale == 9 && QuebecStorySave::Follow == 10 && QuebecStorySave::Roll == 11 && QuebecStorySave::Bell == 12 && QuebecStorySave::Block == 13 && QuebecStorySave::Send == 14 && QuebecStorySave::Pursue == 15 && QuebecStorySave::Nose == 16 && QuebecStorySave::Current == 17 && QuebecStorySave::Cut == 7, "the slot writer left version 17");
+    Expect(QuebecStorySave::Chase == 8 && QuebecStorySave::Finale == 9 && QuebecStorySave::Follow == 10 && QuebecStorySave::Roll == 11 && QuebecStorySave::Bell == 12 && QuebecStorySave::Block == 13 && QuebecStorySave::Send == 14 && QuebecStorySave::Pursue == 15 && QuebecStorySave::Nose == 16 && QuebecStorySave::Slip == 17 && QuebecStorySave::Current == 18 && QuebecStorySave::Cut == 7, "the slot writer left version 18");
 
     std::printf("%d assertions, %d failures\n", Assertions, Failures);
     return Failures == 0 ? 0 : 1;

@@ -95,7 +95,7 @@ int main()
     Saved.Pursue = 1;
     Saved.Send = 0;
     Expect(!QuebecStorySave::Accept(QuebecStorySave::Current, 2, Saved), "the pursuit started before the send-off was banked");
-    Expect(QuebecStorySave::Send == 14 && QuebecStorySave::Pursue == 15 && QuebecStorySave::Nose == 16 && QuebecStorySave::Current == 17 && QuebecStorySave::Block == 13, "the slot writer left version 17");
+    Expect(QuebecStorySave::Send == 14 && QuebecStorySave::Pursue == 15 && QuebecStorySave::Nose == 16 && QuebecStorySave::Slip == 17 && QuebecStorySave::Current == 18 && QuebecStorySave::Block == 13, "the slot writer left version 18");
 
     std::printf("%d assertions, %d failures\n", Assertions, Failures);
     return Failures == 0 ? 0 : 1;

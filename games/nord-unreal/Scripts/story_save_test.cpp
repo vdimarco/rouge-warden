@@ -49,7 +49,7 @@ namespace
 
 int main()
 {
-    Expect(Legacy == 1 && Rejected == 2 && Story == 3 && Escort == 4 && Shade == 5 && Grab == 6 && Cut == 7 && Chase == 8 && Finale == 9 && Follow == 10 && Roll == 11 && Bell == 12 && Block == 13 && Send == 14 && Pursue == 15 && Nose == 16 && Current == 17, "the slot versions drifted");
+    Expect(Legacy == 1 && Rejected == 2 && Story == 3 && Escort == 4 && Shade == 5 && Grab == 6 && Cut == 7 && Chase == 8 && Finale == 9 && Follow == 10 && Roll == 11 && Bell == 12 && Block == 13 && Send == 14 && Pursue == 15 && Nose == 16 && Slip == 17 && Current == 18, "the slot versions drifted");
     Expect(Current != Rejected, "the writer would plant the unsupported fixture");
     Expect(PondBanked == QuebecPondRules::StepBanked, "the pond bank left the save");
     Expect(CourtBanked == QuebecCourtRules::StepBanked, "the court bank left the save");
@@ -80,10 +80,11 @@ int main()
         Expect(Accept(Send, Completed, None), "a version-14 race boundary was rejected");
         Expect(Accept(Pursue, Completed, None), "a version-15 race boundary was rejected");
         Expect(Accept(Nose, Completed, None), "a version-16 race boundary was rejected");
+        Expect(Accept(Slip, Completed, None), "a version-17 race boundary was rejected");
         Expect(Accept(Current, Completed, None), "a current race boundary with no story was rejected");
         Expect(!Accept(Rejected, Completed, None), "version 2 was accepted");
         Expect(!Accept(0, Completed, None), "version 0 was accepted");
-        Expect(!Accept(18, Completed, None), "a later schema was accepted");
+        Expect(!Accept(19, Completed, None), "a later schema was accepted");
     }
     Expect(!Accept(Legacy, -1, None), "a missing mission count was accepted");
     Expect(!Accept(Legacy, 3, None), "completed missions 3 were accepted on a legacy slot");
@@ -416,6 +417,35 @@ int main()
     Dash.Slip = 1;
     Dash.Nose = 0;
     Expect(!Accept(Current, 2, Dash), "the slip started before the stall was banked");
+
+    FSteps Group = Banked();
+    Group.Escort = EscortBanked;
+    Group.Shade = ShadeBanked;
+    Group.Grab = GrabBanked;
+    Group.Cut = CutBanked;
+    Group.Chase = ChaseBanked;
+    Group.Finale = FinaleBanked;
+    Group.Follow = FollowBanked;
+    Group.Roll = RollBanked;
+    Group.Bell = BellBanked;
+    Group.Block = BlockBanked;
+    Group.Send = SendBanked;
+    Group.Pursue = PursueBanked;
+    Group.Nose = NoseBanked;
+    Group.Slip = SlipBanked;
+    Group.March = 1;
+    Expect(!Fresh(Group), "a march counted as a fresh day");
+    Expect(Accept(Current, 2, Group), "a march in progress was rejected");
+    Expect(!Accept(Slip, 2, Group), "a version-17 slot carried the march");
+    const FSteps FromSlip = Applied(Slip, Group);
+    Expect(FromSlip.Slip == SlipBanked && FromSlip.March == 0, "a version-17 slot copied the march");
+    Group.March = MarchBanked;
+    Expect(Accept(Current, 2, Group), "a finished march was rejected");
+    Group.March = MarchBanked + 1;
+    Expect(!Accept(Current, 2, Group), "a march past the bank was accepted");
+    Group.March = 1;
+    Group.Slip = 0;
+    Expect(!Accept(Current, 2, Group), "the march started before the slip was banked");
 
     std::printf("%d assertions, %d failures\n", Assertions, Failures);
     return Failures == 0 ? 0 : 1;

@@ -106,7 +106,7 @@ int main()
     Saved.Send = 1;
     Saved.Block = 0;
     Expect(!QuebecStorySave::Accept(QuebecStorySave::Current, 2, Saved), "the send-off started before the block was banked");
-    Expect(QuebecStorySave::Block == 13 && QuebecStorySave::Send == 14 && QuebecStorySave::Pursue == 15 && QuebecStorySave::Nose == 16 && QuebecStorySave::Current == 17 && QuebecStorySave::Bell == 12, "the slot writer left version 17");
+    Expect(QuebecStorySave::Block == 13 && QuebecStorySave::Send == 14 && QuebecStorySave::Pursue == 15 && QuebecStorySave::Nose == 16 && QuebecStorySave::Slip == 17 && QuebecStorySave::Current == 18 && QuebecStorySave::Bell == 12, "the slot writer left version 18");
 
     std::printf("%d assertions, %d failures\n", Assertions, Failures);
     return Failures == 0 ? 0 : 1;
