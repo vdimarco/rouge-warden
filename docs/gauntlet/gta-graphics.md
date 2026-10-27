@@ -2768,3 +2768,38 @@ Unreal is not available in this environment, so in-engine frames are the last co
 - Playability raw: 39 / 10 dimensions, index 39
 - Total: 129 / 200
 - Delta vs last round: 0
+
+### Round 80 — 2026-10-27 — rubric v1
+
+- What changed: the view uses a full filmic tone curve, gain (1.06, 1.02, 0.94), and offset (0.012, 0.008, 0.004). Gamma stays 1. The dusk frame runs the same fitted curve. The shafts stay. The opening aim stays. The opening weather stays clear.
+- Why it helped: the dusk frame clipped. The shoulder holds the sun and the warm lift opens the foreground. The shade is still a low-poly city, so color stays at 9.
+- Screenshots: before `docs/gauntlet/gta-graphics/round-80/before-frame.png` is the dusk picture with the fog and the shafts. After `docs/gauntlet/gta-graphics/round-80/after-frame.png` is that same buffer through the filmic grade. The crop is `grade-crop.png`. Not an Unreal capture. From the same buffer, the mean absolute delta is 0.06153 and the max is 0.176. 518400 pixels change, from x 0 to 959 and y 0 to 539. `Scripts/test_shade_grade.py` passed. The syntax check passed `QuebecGameplay.cpp`. The post process was not rebuilt in Unreal. `GET /gta/` returned 200. OpenSpec CLI is not installed, so the change files were not validated with `openspec`.
+- Next target: the graded dusk is still flat colour on the trees and the ground.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 9 | The shafts stay. The curve shapes them. |
+| Color palette | 9 | The grade warms the dusk. It is still not a GTA 6 grade. |
+| Detail density | 9 | The trees are unchanged. |
+| Texture and material quality | 9 | The water film and the clearcoat stay. |
+| Composition and camera | 9 | The dusk eye stays. The opening aim stays. |
+| Atmosphere | 9 | The fog and the shafts stay under the curve. |
+| Character models | 9 | No figure in this look. |
+| Animation smoothness | 9 | No new motion. |
+| Particles and VFX | 9 | The shafts stay. |
+| UI polish | 9 | The radar heading is unchanged. |
+| Responsiveness and input latency | 4 | Not measured this round. |
+| Controls feel | 4 | Not played. |
+| Mission clarity | 5 | The objective words are unchanged. |
+| Pacing | 4 | Unchanged mission slice. |
+| Fun factor | 3 | Not played. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 4 | The grade is the new mark. No new juice. |
+| Sound design | 3 | Not listened to. |
+| Variety | 3 | The same dusk, now graded. |
+| Performance stability | 5 | `Scripts/test_shade_grade.py` passed. Frame time was not remeasured. |
+
+- Aesthetics raw: 90 / 10 dimensions, index 90
+- Playability raw: 39 / 10 dimensions, index 39
+- Total: 129 / 200
+- Delta vs last round: 0

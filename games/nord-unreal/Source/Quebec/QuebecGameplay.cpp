@@ -28,6 +28,7 @@
 #include "QuebecSky.h"
 #include "QuebecContact.h"
 #include "QuebecGloss.h"
+#include "QuebecGrade.h"
 #include "QuebecCrewAnimation.h"
 #include "QuebecGTA.h" // AQuebecCar: street traces each frame (DRIVE).
 #include "QuebecTraces.h" // Street traces: knockable street props spawned by the game mode (TRAFFIC).
@@ -2598,6 +2599,10 @@ void AQuebecController::ApplySkyGrading()
         Settings.bOverride_ColorContrast = bSkyGrading;
         Settings.bOverride_WhiteTemp = bSkyGrading;
         Settings.bOverride_AmbientOcclusionIntensity = bSkyGrading;
+        Settings.bOverride_ToneCurveAmount = bSkyGrading;
+        Settings.bOverride_ColorGamma = bSkyGrading;
+        Settings.bOverride_ColorGain = bSkyGrading;
+        Settings.bOverride_ColorOffset = bSkyGrading;
         if (!Sky) continue;
         Settings.AutoExposureMinBrightness = Settings.AutoExposureMaxBrightness = QuebecSky::AuthoredEV100 + Sky->GetExposureOffset();
         const float Saturation = Sky->GetSaturation(), Contrast = Sky->GetContrast();
@@ -2605,6 +2610,12 @@ void AQuebecController::ApplySkyGrading()
         Settings.ColorContrast = FVector4(Contrast, Contrast, Contrast, 1.f);
         Settings.WhiteTemp = Sky->GetWhiteTemp();
         Settings.AmbientOcclusionIntensity = QuebecShade::AmbientOcclusion;
+        // Narkowicz, ACES Filmic Tone Mapping Curve. The view uses the full filmic curve.
+        // Gamma stays 1. Gain and offset are the warm grade. The opening aim stays.
+        Settings.ToneCurveAmount = QuebecShade::ToneCurveAmount;
+        Settings.ColorGamma = FVector4(1.f, 1.f, 1.f, 1.f);
+        Settings.ColorGain = FVector4(QuebecShade::GradeGainR, QuebecShade::GradeGainG, QuebecShade::GradeGainB, 1.f);
+        Settings.ColorOffset = FVector4(QuebecShade::GradeOffsetR, QuebecShade::GradeOffsetG, QuebecShade::GradeOffsetB, 0.f);
     }
 }
 
