@@ -6,6 +6,7 @@ edges that face the same way are one wall, so a facade split into two short
 pieces still counts. The sash is a darker rectangle ten centimetres past the glass.
 A bar six centimetres tall sits across the middle of the glass.
 An upright bar of the same thickness splits that glass the other way.
+Each pane is its own room: some are dark, and the lit ones are not one lamp.
 """
 
 import math
@@ -18,6 +19,19 @@ GLASS_OUT_CM = 7.0
 SASH_OUT_CM = 4.0
 MUNTIN_HALF_UP_CM = 6.0
 MULLION_HALF_ALONG_CM = 6.0
+
+
+def pane_light(column, row, salt):
+    """One dusk window. Some rooms are dark, and the lit ones are not one lamp."""
+    mix = (int(salt) * 131 + int(column) * 17 + int(row) * 29) & 0x7FFFFFFF
+    if mix % 100 < 22:
+        return (0.08, 0.06, 0.05, False)
+    warm = ((mix // 7) % 100) / 100.0
+    bright = 0.40 + ((mix // 13) % 100) / 100.0 * 0.60
+    red = (1.0 - 0.45 * warm) * bright
+    green = (0.62 + 0.16 * warm) * bright
+    blue = (0.28 + 0.62 * warm) * bright
+    return (red, green, blue, True)
 
 
 def sash_box():
