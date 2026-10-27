@@ -1685,7 +1685,7 @@ Playability was scored from a flat boot and the city render check, not a full pl
 | Feedback | 5 | Unchanged. |
 | Sound design | 4 | Unchanged. |
 | Variety | 4 | Unchanged. |
-| Performance stability | 6 | Render check not recorded yet. |
+| Performance stability | 6 | `qa/vr/render.mjs` passed, including flat play, the painted-sky checks, the lit-sphere cel check, and the canyon ink lines (20.4%). Street mean 77.1, saturation 0.58. |
 
 - Aesthetics raw: 71 / 10 dimensions, index 71
 - Playability raw: 46 / 10 dimensions, index 46
