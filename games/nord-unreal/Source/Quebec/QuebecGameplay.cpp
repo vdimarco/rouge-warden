@@ -3044,6 +3044,8 @@ void AQuebecHUD::DrawHUD()
             Status = TEXT("Menu · Recover restores this parcel");
         else if (Campaign->IsBoltOpen() && bTouchControls)
             Status = TEXT("Menu · Recover restores this bolt");
+        else if (Campaign->IsYardOpen() && bTouchControls)
+            Status = TEXT("Menu · Recover restores this yard");
         else if (Campaign->IsCampaignComplete() && !Campaign->IsStoryBeatOpen() && SideJobs)
         {
             const int32 Guide = SideJobs->GuideMarker(Here, true);

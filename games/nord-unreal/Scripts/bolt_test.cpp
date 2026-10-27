@@ -135,7 +135,7 @@ int main()
     }
     Expect(Out.Step == StepBanked && !Out.bExpired, "walking to the gate did not finish the bolt");
 
-    Expect(QuebecStorySave::Parcel == 20 && QuebecStorySave::Current == 21 && QuebecStorySave::Ditch == 19, "the slot writer left version 21");
+    Expect(QuebecStorySave::Parcel == 20 && QuebecStorySave::Bolt == 21 && QuebecStorySave::Current == 22 && QuebecStorySave::Ditch == 19, "the slot writer left version 22");
 
     std::printf("%d assertions, %d failures\n", Assertions, Failures);
     return Failures == 0 ? 0 : 1;

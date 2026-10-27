@@ -22,11 +22,15 @@
 // Version 18 adds the march step and starts the ditch over.
 // Version 19 adds the ditch step and starts the parcel over.
 // Version 20 adds the parcel step and starts the bolt over.
-// Version 21 adds the bolt step. The chain, the hold clocks, the court misses, cash,
-// the friend's place on the lawn, the lamp burn, the grab clock, the rival's clock,
-// the tail's place on the road, the finale burn, the page clock, the cut clock,
-// the finale tail's place, the follow person's place on the path, how far the cart
-// has rolled, how far the courier has driven, how far the send-off drive got, how far the traffic car has driven, the pursuer's place on the slip, where the march has walked, how far the chase car has driven, where the two street cars are, the parcel clock, and the side errands are not in this record.
+// Version 21 adds the bolt step and starts the yard over. Version 22 adds the yard step.
+// The chain, the hold clocks, the court misses, cash, the friend's place on the lawn,
+// the lamp burn, the grab clock, the rival's clock, the tail's place on the road,
+// the finale burn, the page clock, the cut clock, the finale tail's place, the follow
+// person's place on the path, how far the cart has rolled, how far the courier has driven,
+// how far the send-off drive got, how far the traffic car has driven, the pursuer's place
+// on the slip, where the march has walked, how far the chase car has driven, where the
+// two street cars are, the parcel clock, where the seeker is, the bolt clock, where the
+// watcher is looking, whether the crossing is armed, and the side errands are not in this record.
 
 namespace QuebecStorySave
 {
@@ -50,7 +54,8 @@ namespace QuebecStorySave
     inline constexpr int March = 18;
     inline constexpr int Ditch = 19;
     inline constexpr int Parcel = 20;
-    inline constexpr int Current = 21;
+    inline constexpr int Bolt = 21;
+    inline constexpr int Current = 22;
 
     inline constexpr int PondBanked = 6;
     inline constexpr int CourtBanked = 4;
@@ -78,6 +83,7 @@ namespace QuebecStorySave
     inline constexpr int DitchBanked = 3;
     inline constexpr int ParcelBanked = 2;
     inline constexpr int BoltBanked = 3;
+    inline constexpr int YardBanked = 1;
 
     struct FSteps
     {
@@ -107,6 +113,7 @@ namespace QuebecStorySave
         int Ditch = 0;
         int Parcel = 0;
         int Bolt = 0;
+        int Yard = 0;
     };
 
     inline bool InRange(int Value, int Hi)
@@ -121,7 +128,7 @@ namespace QuebecStorySave
             && Steps.Escort == 0 && Steps.Shade == 0 && Steps.Grab == 0 && Steps.Cut == 0
             && Steps.Chase == 0 && Steps.Finale == 0 && Steps.Follow == 0 && Steps.Roll == 0
             && Steps.Bell == 0 && Steps.Block == 0 && Steps.Send == 0 && Steps.Pursue == 0
-            && Steps.Nose == 0 && Steps.Slip == 0 && Steps.March == 0 && Steps.Ditch == 0 && Steps.Parcel == 0 && Steps.Bolt == 0;
+            && Steps.Nose == 0 && Steps.Slip == 0 && Steps.March == 0 && Steps.Ditch == 0 && Steps.Parcel == 0 && Steps.Bolt == 0 && Steps.Yard == 0;
     }
 
     // A later beat may move only after the one before it is banked.
@@ -148,7 +155,8 @@ namespace QuebecStorySave
             || !InRange(Steps.March, MarchBanked)
             || !InRange(Steps.Ditch, DitchBanked)
             || !InRange(Steps.Parcel, ParcelBanked)
-            || !InRange(Steps.Bolt, BoltBanked))
+            || !InRange(Steps.Bolt, BoltBanked)
+            || !InRange(Steps.Yard, YardBanked))
             return false;
         if (Steps.Court > 0 && Steps.Pond != PondBanked) return false;
         if (Steps.Show > 0 && (Steps.Pond != PondBanked || Steps.Court != CourtBanked)) return false;
@@ -176,6 +184,7 @@ namespace QuebecStorySave
         if (Steps.Ditch > 0 && Steps.March != MarchBanked) return false;
         if (Steps.Parcel > 0 && Steps.Ditch != DitchBanked) return false;
         if (Steps.Bolt > 0 && Steps.Parcel != ParcelBanked) return false;
+        if (Steps.Yard > 0 && Steps.Bolt != BoltBanked) return false;
         return true;
     }
 
@@ -291,6 +300,12 @@ namespace QuebecStorySave
             if (Completed < 2 && !Fresh(Steps)) return false;
             return StepsFit(Steps);
         }
+        if (Version == Bolt)
+        {
+            if (Steps.Yard != 0) return false;
+            if (Completed < 2 && !Fresh(Steps)) return false;
+            return StepsFit(Steps);
+        }
         if (Version != Current) return false;
         if (Completed < 2 && !Fresh(Steps)) return false;
         return StepsFit(Steps);
@@ -303,7 +318,7 @@ namespace QuebecStorySave
     // A version-10 slot never copies the cart. A version-11 slot never copies the bells.
     // A version-12 slot never copies the block. A version-13 slot never copies the send-off.
     // A version-14 slot never copies the pursuit. A version-15 slot never copies the stall.
-    // A version-16 slot never copies the slip. A version-17 slot never copies the march. A version-18 slot never copies the ditch. A version-19 slot never copies the parcel. A version-20 slot never copies the bolt. Call this only after Accept.
+    // A version-16 slot never copies the slip. A version-17 slot never copies the march. A version-18 slot never copies the ditch. A version-19 slot never copies the parcel. A version-20 slot never copies the bolt. A version-21 slot never copies the yard. Call this only after Accept.
     inline FSteps Applied(int Version, const FSteps& Steps)
     {
         if (Version == Legacy) return {};
@@ -328,6 +343,7 @@ namespace QuebecStorySave
             Copy.Ditch = 0;
             Copy.Parcel = 0;
             Copy.Bolt = 0;
+            Copy.Yard = 0;
             return Copy;
         }
         if (Version == Escort)
@@ -350,6 +366,7 @@ namespace QuebecStorySave
             Copy.Ditch = 0;
             Copy.Parcel = 0;
             Copy.Bolt = 0;
+            Copy.Yard = 0;
             return Copy;
         }
         if (Version == Shade)
@@ -371,6 +388,7 @@ namespace QuebecStorySave
             Copy.Ditch = 0;
             Copy.Parcel = 0;
             Copy.Bolt = 0;
+            Copy.Yard = 0;
             return Copy;
         }
         if (Version == Grab)
@@ -391,6 +409,7 @@ namespace QuebecStorySave
             Copy.Ditch = 0;
             Copy.Parcel = 0;
             Copy.Bolt = 0;
+            Copy.Yard = 0;
             return Copy;
         }
         if (Version == Cut)
@@ -410,6 +429,7 @@ namespace QuebecStorySave
             Copy.Ditch = 0;
             Copy.Parcel = 0;
             Copy.Bolt = 0;
+            Copy.Yard = 0;
             return Copy;
         }
         if (Version == Chase)
@@ -428,6 +448,7 @@ namespace QuebecStorySave
             Copy.Ditch = 0;
             Copy.Parcel = 0;
             Copy.Bolt = 0;
+            Copy.Yard = 0;
             return Copy;
         }
         if (Version == Finale)
@@ -445,6 +466,7 @@ namespace QuebecStorySave
             Copy.Ditch = 0;
             Copy.Parcel = 0;
             Copy.Bolt = 0;
+            Copy.Yard = 0;
             return Copy;
         }
         if (Version == Follow)
@@ -461,6 +483,7 @@ namespace QuebecStorySave
             Copy.Ditch = 0;
             Copy.Parcel = 0;
             Copy.Bolt = 0;
+            Copy.Yard = 0;
             return Copy;
         }
         if (Version == Roll)
@@ -476,6 +499,7 @@ namespace QuebecStorySave
             Copy.Ditch = 0;
             Copy.Parcel = 0;
             Copy.Bolt = 0;
+            Copy.Yard = 0;
             return Copy;
         }
         if (Version == Bell)
@@ -490,6 +514,7 @@ namespace QuebecStorySave
             Copy.Ditch = 0;
             Copy.Parcel = 0;
             Copy.Bolt = 0;
+            Copy.Yard = 0;
             return Copy;
         }
         if (Version == Block)
@@ -503,6 +528,7 @@ namespace QuebecStorySave
             Copy.Ditch = 0;
             Copy.Parcel = 0;
             Copy.Bolt = 0;
+            Copy.Yard = 0;
             return Copy;
         }
         if (Version == Send)
@@ -515,6 +541,7 @@ namespace QuebecStorySave
             Copy.Ditch = 0;
             Copy.Parcel = 0;
             Copy.Bolt = 0;
+            Copy.Yard = 0;
             return Copy;
         }
         if (Version == Pursue)
@@ -526,6 +553,7 @@ namespace QuebecStorySave
             Copy.Ditch = 0;
             Copy.Parcel = 0;
             Copy.Bolt = 0;
+            Copy.Yard = 0;
             return Copy;
         }
         if (Version == Nose)
@@ -536,6 +564,7 @@ namespace QuebecStorySave
             Copy.Ditch = 0;
             Copy.Parcel = 0;
             Copy.Bolt = 0;
+            Copy.Yard = 0;
             return Copy;
         }
         if (Version == Slip)
@@ -545,6 +574,7 @@ namespace QuebecStorySave
             Copy.Ditch = 0;
             Copy.Parcel = 0;
             Copy.Bolt = 0;
+            Copy.Yard = 0;
             return Copy;
         }
         if (Version == March)
@@ -553,6 +583,7 @@ namespace QuebecStorySave
             Copy.Ditch = 0;
             Copy.Parcel = 0;
             Copy.Bolt = 0;
+            Copy.Yard = 0;
             return Copy;
         }
         if (Version == Ditch)
@@ -560,12 +591,20 @@ namespace QuebecStorySave
             FSteps Copy = Steps;
             Copy.Parcel = 0;
             Copy.Bolt = 0;
+            Copy.Yard = 0;
             return Copy;
         }
         if (Version == Parcel)
         {
             FSteps Copy = Steps;
             Copy.Bolt = 0;
+            Copy.Yard = 0;
+            return Copy;
+        }
+        if (Version == Bolt)
+        {
+            FSteps Copy = Steps;
+            Copy.Yard = 0;
             return Copy;
         }
         return Steps;

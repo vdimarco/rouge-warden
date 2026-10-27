@@ -3192,3 +3192,48 @@ Unreal is not available here, so the native diamond was not captured. The title 
 ![Play client at 1280, host offline](gta-missions/r70-play-1280.png)
 
 ![Menu on a 390-wide screen, Recover visible](gta-missions/r70-play-menu-390.png)
+
+### Round 71 — 2026-10-27 — rubric v1
+
+- What changed: After the bolt is banked, a yard off the road asks for a walk while a watcher is turned away. They stand still and turn. On foot, the near side arms the crossing while their look is elsewhere. Reaching the far side before that look swings onto you pays 540 once. Stepping into the look sends the crossing back to the near side and does not save. A car does not arm it and does not clear the far side. The seven banks stay seven. The bolt, the shade, the slip, and the parcel are not retuned. No extra car is spawned. The slot is now version 22. Version 21 still loads and starts this yard over. Version 1 still loads and starts the pond over. Version 2 stays unread and is not overwritten. Where they are looking, and whether the crossing is armed, are not stored, so a reload starts the look again and keeps the step.
+- Why it helped: The shade is a dark pocket, and the slip is a sprint against someone who follows. This watcher turns in place, and a walk crosses when their back is to the yard.
+- Screenshots: title `docs/gauntlet/gta-missions/r71-title-1280.png`, `r71-title-390.png`, `r71-title-320.png`. Play client, host offline, `r71-play-1280.png`. Menu with Recover `r71-play-menu-390.png`. The title loaded with no page errors. The raw play page still logs the missing `@epicgames-ps/lib-pixelstreamingfrontend-ue5.8` specifier; the shell and Recover still draw. The yard was not crossed in Unreal. `Scripts/test_yard.py` reports 17 assertions, 0 failures, on c++, g++, and clang++. `Scripts/test_story_save.py` reports 248 assertions, 0 failures, on the same three. Syntax check `--both` passed for `QuebecCampaign.cpp`, `QuebecCampaignSaveTests.cpp`, `QuebecGameplay.cpp`, and `QuebecFeedbackTests.cpp`. OpenSpec CLI is not installed, so `openspec validate` did not run.
+- Next target: the playable scores that can still move are capped offline, so the score stays. The next beat needs a new verb that is not this yard, the bolt, the parcel, the ditch, or the slip. Mission clarity stays at 7 and stays out of reach offline. Responsiveness stays at 3 and stays out of scope. Performance stays at 4 and is not measurable here.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 3 | Unchanged. |
+| Color palette | 5 | Unchanged. |
+| Detail density | 3 | Unchanged. |
+| Texture and material quality | 3 | Unchanged. |
+| Composition and camera | 4 | Unchanged. |
+| Atmosphere | 4 | Unchanged. |
+| Character models | 3 | Unchanged. |
+| Animation smoothness | 3 | Unchanged. |
+| Particles and VFX | 2 | Unchanged. |
+| UI polish | 4 | Unchanged. The native card was not seen, and French and English still share the screen. |
+| Responsiveness and input latency | 3 | Unchanged. Still a lagged stream. Out of scope for this loop. |
+| Controls feel | 9 | Unchanged. Getting out faster than a walk still keeps that pace. |
+| Mission clarity | 7 | Unchanged. The fare post still moves from the loaner to the quay. The native card was not seen, and this score stays out of reach offline. |
+| Pacing | 9 | Unchanged. Four seconds on foot after boarding still loses the passenger. |
+| Fun factor | 9 | Unchanged. Chez Lise still sells a kit, a vest, or one star. A yard that was not crossed is not a new thing to do. |
+| Difficulty curve | 9 | Unchanged. Selling the last page ends it for 200 and does not bank the chain. A wreck still costs more than the goon pay. |
+| Feedback | 9 | Unchanged. A failed side job still plays the falling sting. The sting was not heard. |
+| Sound design | 9 | Unchanged. The dent thud still marks a scrape as quiet. Nobody is voiced, so this is not the reference's city. |
+| Variety | 9 | Unchanged. A yard that was not crossed is not a new way across the park that was seen. |
+| Performance stability | 4 | Unchanged. Not measurable in this container. |
+
+- Aesthetics raw: 34 / 10 dimensions, index 34
+- Playability raw: 77 / 10 dimensions, index 77
+- Total: 111 / 200
+- Delta vs last round: 0 (round 70 was 111). The yard was not crossed in Unreal, so every score held.
+
+![GTA title at 1280](gta-missions/r71-title-1280.png)
+
+![GTA title at 390](gta-missions/r71-title-390.png)
+
+![GTA title at 320](gta-missions/r71-title-320.png)
+
+![Play client at 1280, host offline](gta-missions/r71-play-1280.png)
+
+![Menu on a 390-wide screen, Recover visible](gta-missions/r71-play-menu-390.png)

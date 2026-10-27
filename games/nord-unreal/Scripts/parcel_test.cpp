@@ -112,7 +112,7 @@ int main()
     TooLate = Walk(TooLate, 8., 450.);
     Expect(TooLate.Step == StepParcel && TooLate.bDropped, "waiting out the clock still delivered");
 
-    Expect(QuebecStorySave::Ditch == 19 && QuebecStorySave::Parcel == 20 && QuebecStorySave::Current == 21 && QuebecStorySave::March == 18, "the slot writer left version 21");
+    Expect(QuebecStorySave::Ditch == 19 && QuebecStorySave::Parcel == 20 && QuebecStorySave::Bolt == 21 && QuebecStorySave::Current == 22 && QuebecStorySave::March == 18, "the slot writer left version 22");
 
     std::printf("%d assertions, %d failures\n", Assertions, Failures);
     return Failures == 0 ? 0 : 1;
