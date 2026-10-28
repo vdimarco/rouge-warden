@@ -2978,3 +2978,38 @@ Unreal is not available in this environment, so in-engine frames are the last co
 - Playability raw: 44 / 10 dimensions, index 44
 - Total: 134 / 200
 - Delta vs last round: +1
+
+### Round 86 — 2026-10-28 — rubric v1
+
+- What changed: a handbrake slide now screams in the drive loop. The scream starts on the SLIDE banner's line: handbrake held, 450 cm/s or faster, and 180 cm/s or more sideways. It gets louder and higher as the shove grows, from 1,050 Hz to about 1,570 Hz. It fades in about 0.3 s when the slide ends. Before this, the slide had a 0.1 s lock chirp and a tire hiss under the engine. Only the driver hears the scream.
+- Why it helped: sound design was the line round 85 named, because the slide was silent. In the round-85 drive, the scream starts at 3.23 s and is loud at 3.30 s. It is still loud when the banner fires at 3.57 s. The car drops under 450 cm/s at 3.65 s, and the scream is quiet at 3.92 s. A straight run, a gripped turn and a straight handbrake stop make no scream. Nobody listened in Unreal, so the score moves by one.
+- Screenshots: `docs/gauntlet/gta-graphics/round-86/slide-tone.png` plots that drive and its spectrogram. It is not a game view. `round-86/slide-tone.wav` is the scream alone for that drive, without the engine. `Scripts/test_slide_tone.py` passed (46 assertions), with g++ and clang++ in strict mode. `Scripts/test_slide.py`, the lap model, the pedal test, the place test and the steering tests passed. The round-85 car moved to `Scripts/slide_car.h`, so both slide tests drive one car. The Unreal syntax check did not run: its tool and engine headers are not in this container. Unreal did not run. OpenSpec CLI is not installed, so the change files were not validated with `openspec`.
+- Next target: pacing, fun factor, difficulty and feedback are tied at 4. Pacing is still the same mission slice.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 9 | Unchanged. The night lamps stay. |
+| Color palette | 9 | Unchanged. |
+| Detail density | 9 | Unchanged. |
+| Texture and material quality | 9 | Unchanged. |
+| Composition and camera | 9 | Unchanged. |
+| Atmosphere | 9 | The 22:00 clock stays. |
+| Character models | 9 | Unchanged. |
+| Animation smoothness | 9 | Unchanged. |
+| Particles and VFX | 9 | Unchanged. |
+| UI polish | 9 | Unchanged. |
+| Responsiveness and input latency | 5 | Full gas in 50 ms stays. The scream can start up to 0.15 s late, the same as the hiss, because the drive loop fills that far ahead. |
+| Controls feel | 5 | The pedal and the steering rates stay. This was not driven. |
+| Mission clarity | 5 | The objective words are unchanged. |
+| Pacing | 4 | Unchanged mission slice. |
+| Fun factor | 4 | The slide and its banner stay. Not driven in Unreal. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 4 | The banner now lands on a loud scream. Hits and the dent thud are unchanged. |
+| Sound design | 5 | A held slide screams from the shove to 0.3 s after it ends, and a gripped turn stays quiet. Rendered and measured, not heard in the game. |
+| Variety | 4 | The two starts stay. |
+| Performance stability | 5 | The scream adds one sine pair and one noise step per sample to the 24 kHz loop. Frame time was not remeasured. |
+
+- Aesthetics raw: 90 / 10 dimensions, index 90
+- Playability raw: 45 / 10 dimensions, index 45
+- Total: 135 / 200
+- Delta vs last round: +1 (round 85 was 134). Sound design 4 → 5. Every other score held.
