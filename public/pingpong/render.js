@@ -372,7 +372,9 @@ export function createView(canvas) {
   }
 
   function pixelRatio() {
-    return Math.min(RULES.dprCap, window.devicePixelRatio || 1, dprLimit);
+    const cssWidth = Math.max(1, canvas.clientWidth || 1);
+    const scale = Math.min(window.devicePixelRatio || 1, 1920 / cssWidth);
+    return Math.min(RULES.dprCap, window.devicePixelRatio || 1, dprLimit, scale);
   }
 
   function setDprCap(n) {
@@ -608,29 +610,29 @@ export function createView(canvas) {
     const width = Math.min(w, h) * (w > h * 1.15 ? 0.22 : 0.32) * (0.62 + 0.38 * anchor.s);
     const hang = width * 0.62;
     const y = Math.min(anchor.y, h - RULES.safePx - hang);
-    return { x: anchor.x, y: y - width * 0.11 };
+    return { x: anchor.x, y: y - width * 0.11, width };
   }
 
-  function slashStyle(kind, speed) {
-    if (kind === 'push') return { color: SEA, width: 1.5, len: 18 };
-    if (kind === 'smash') return { color: EMBER, width: 8, len: 48 };
-    const v = Number(speed) || 8;
-    return { color: OCHRE, width: 3.5, len: 28 + Math.min(24, v * 1.4) };
+  function slashStyle(kind) {
+    if (kind === 'push') return { color: INK, width: 2, spans: 1.35 };
+    if (kind === 'smash') return { color: EMBER, width: 6, spans: 2 };
+    return { color: OCHRE, width: 4, spans: 2 };
   }
 
   function drawSlash(ctx, state, w, h, pose) {
     const shot = state.lastShot;
     if (shot && shot.struckAt != null && shot.band !== 'miss' && state.lastContact) {
       if (!slash || slash.id !== shot.struckAt) {
-        const look = slashStyle(shot.kind, shot.speed);
+        const look = slashStyle(shot.kind);
         slash = {
           id: shot.struckAt,
           t: shot.struckAt,
           kind: shot.kind,
           color: look.color,
           width: look.width,
-          len: look.len,
-          dir: shot.pullDeg < 0 ? -1 : 1,
+          spans: look.spans,
+          len: 0,
+          dir: pose && pose.swingDir === 'backhand' ? -1 : 1,
         };
       }
     }
@@ -638,20 +640,16 @@ export function createView(canvas) {
     const age = state.time - slash.t;
     if (age < 0 || age > 0.25) return;
     const face = batFace(state, pose, w, h);
+    slash.len = face.width * slash.spans;
     ctx.save();
     ctx.translate(face.x, face.y);
-    ctx.rotate(slash.dir * 0.55);
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
-    ctx.globalAlpha = 1 - age / 0.25;
+    const fade = 1 - age / 0.25;
+    ctx.globalAlpha = fade;
     ctx.strokeStyle = slash.color;
     ctx.lineWidth = slash.width;
-    if (slash.kind === 'push') {
-      ctx.beginPath();
-      ctx.moveTo(0, 0);
-      ctx.quadraticCurveTo(8, -slash.len * 0.45, 4, -slash.len);
-      ctx.stroke();
-    } else faceSlash(ctx, slash.len);
+    faceSlash(ctx, slash.len, slash.dir, slash.width, fade, slash.kind !== 'push');
     ctx.restore();
   }
 
@@ -875,19 +873,37 @@ function ballGlow() {
   return glowSprite;
 }
 
-function faceSlash(ctx, len) {
-  ctx.beginPath();
-  for (let i = 0; i < 6; i++) {
-    const t0 = i / 6;
-    const t1 = (i + 1) / 6;
-    const y0 = -len * t0;
-    const y1 = -len * t1;
-    const bow0 = Math.sin(t0 * Math.PI) * len * 0.16;
-    const bow1 = Math.sin(t1 * Math.PI) * len * 0.16;
-    ctx.moveTo(bow0 * 0.35, y0);
-    ctx.quadraticCurveTo(len * 0.2, (y0 + y1) * 0.5, bow1, y1);
+function faceSlash(ctx, len, dir, width, fade, taper) {
+  const ex = dir * len;
+  const ey = -len * 0.28;
+  const cx = dir * len * 0.34;
+  const cy = -len * 0.46;
+  const at = (t) => {
+    const u = 1 - t;
+    return { x: 2 * u * t * cx + t * t * ex, y: 2 * u * t * cy + t * t * ey };
+  };
+  if (!taper) {
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.quadraticCurveTo(cx, cy, ex, ey);
+    ctx.stroke();
+    return;
   }
-  ctx.stroke();
+  const steps = 8;
+  for (let i = 0; i < steps; i++) {
+    const t0 = i / steps;
+    const t1 = (i + 1) / steps;
+    const p0 = at(t0);
+    const p1 = at(t1);
+    const mix = (1 - t0) * t1 + t0 * (1 - t1);
+    const head = 1 - t0;
+    ctx.beginPath();
+    ctx.moveTo(p0.x, p0.y);
+    ctx.quadraticCurveTo(mix * cx + t0 * t1 * ex, mix * cy + t0 * t1 * ey, p1.x, p1.y);
+    ctx.lineWidth = Math.max(0.5, width * head);
+    ctx.globalAlpha = fade * head;
+    ctx.stroke();
+  }
 }
 
 function roundRect(ctx, x, y, w, h, r) {

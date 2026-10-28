@@ -32,7 +32,7 @@ function seeded(seed) { // from fish
 /* ---------------- shared state: what the game asked for, kept even before the context exists ---------------- */
 function newState(on = true) {
   return {
-    on, speed: 0, height: NaN, ropes: [0, 0], music: false, fight: false, duck: false, amb: 1, crowd: 0, handles: new Set(),
+    on, speed: 0, height: NaN, ropes: [0, 0], music: false, fight: false, chase: 0, duck: false, amb: 1, crowd: 0, handles: new Set(),
     L: { x: 0, y: 1.6, z: 0, fx: 0, fy: 0, fz: -1, ux: 0, uy: 1, uz: 0 }, // the listener: world position, forward and up
   };
 }
@@ -478,11 +478,45 @@ const SFX = {
     mallet(e, t + 0.06, 2093, 0.13, 0.7);
     return hiss(e, t, { type: "highpass", f: 7000, dur: 0.3, peak: 0.04, send: 0.2 });
   },
+  // a mission takes the card: one short brass stab. A trial still counts in with trialStart.
+  // Live cleanup disconnects a voice at the time this returns. The hiss ends first; the second brass note is the one that has to finish.
+  beat(e, t) {
+    const a = brass(e, t, 659.3, 0.14, 0.16);
+    const b = brass(e, t + 0.06, 1046.5, 0.18, 0.12);
+    const h = hiss(e, t, { type: "highpass", f: 5000, dur: 0.08, att: 0.001, peak: 0.08 });
+    return Math.max(a, b, h);
+  },
   // a trial starts: three blips, then go
   trialStart(e, t) {
     for (const at of [0, 0.35, 0.7]) tone(e, t + at, { type: "triangle", f: 784, dur: 0.12, peak: 0.16 });
     hiss(e, t + 0.9, { buf: e.pink, type: "bandpass", f: 500, f2: 2500, sweep: 0.3, q: 1, dur: 0.35, att: 0.15, peak: 0.12 });
     return tone(e, t + 1.05, { type: "triangle", f: 1568, dur: 0.4, peak: 0.18, send: 0.2 });
+  },
+  // a won flush: the splash of the job, not the ring-trial fanfare. The voice lasts through the longer part.
+  winWet(e, t) {
+    const s = splashAt(e, t, 0.5);
+    const b = brass(e, t + 0.02, 392, 0.12, 0.1);
+    return Math.max(s, b);
+  },
+  // a won fight: one crack and a short punch
+  winFight(e, t) {
+    const h = hiss(e, t, { type: "highpass", f: 1800, dur: 0.03, att: 0.0004, peak: 0.42 });
+    const p = tone(e, t, { f: 140, f2: 70, dur: 0.14, peak: 0.32 });
+    const b = brass(e, t + 0.01, 220, 0.1, 0.14);
+    return Math.max(h, p, b);
+  },
+  // a won chase or delivery: a rush, then a high ding
+  winDash(e, t) {
+    const h = hiss(e, t, { type: "bandpass", f: 700, f2: 3400, sweep: 0.16, q: 0.7, dur: 0.22, att: 0.004, peak: 0.3 });
+    const n = tone(e, t + 0.05, { type: "triangle", f: 988, f2: 1760, glide: 0.08, dur: 0.16, peak: 0.2 });
+    const b = brass(e, t + 0.08, 1318.5, 0.1, 0.1);
+    return Math.max(h, n, b);
+  },
+  // a won rescue: two rising notes, shorter than the ring-trial fanfare
+  winLift(e, t) {
+    const a = brass(e, t, 523.3, 0.1, 0.13);
+    const b = brass(e, t + 0.1, 1046.5, 0.18, 0.15);
+    return Math.max(a, b);
   },
   // a trial ends: a little brass fanfare (after fish's record)
   trialEnd(e, t) {
@@ -494,6 +528,12 @@ const SFX = {
     brass(e, hold, E5, 0.9, 0.06, true);
     tone(e, hold, { f: 98, f2: 86, dur: 0.8, peak: 0.25 });
     return hiss(e, hold, { type: "highpass", f: 6500, dur: 1.2, att: 0.01, peak: 0.06, send: 0.3 });
+  },
+  // a miss: two low notes falling. The win is the rising brass; this is the other way.
+  miss(e, t) {
+    tone(e, t, { type: "triangle", f: 220, f2: 180, dur: 0.22, peak: 0.22 });
+    tone(e, t + 0.18, { type: "triangle", f: 146, f2: 110, dur: 0.45, peak: 0.26 });
+    return tone(e, t + 0.18, { f: 73, f2: 55, dur: 0.5, peak: 0.2 });
   },
   // the wall cracks: sharp crackles that come faster, and a low groan in the plaster
   crack(e, t) {
@@ -927,7 +967,12 @@ function musicTick(e, t, ahead) {
   const dt = M.kT < 0 ? 1 : clamp(t - M.kT, 0, 1);
   M.kT = t;
   M.k += (clamp(e.st.speed / 30, 0, 1) - M.k) * (1 - Math.exp(-dt / 0.6));
-  if (Math.abs(M.k - M.lpK) > 0.01) { e.musLP.frequency.setTargetAtTime(1400 + 7500 * Math.pow(M.k, 1.5), t, 0.25); M.lpK = M.k; }
+  const chase = e.st.chase || 0;
+  // falling behind opens the groove a little, the way speed does, so the chase is brighter than a stroll
+  if (Math.abs(M.k - M.lpK) > 0.01 || Math.abs(chase - (M.cK || 0)) > 0.05) {
+    e.musLP.frequency.setTargetAtTime(1400 + 7500 * Math.pow(M.k, 1.5) + 1400 * chase, t, 0.25);
+    M.lpK = M.k; M.cK = chase;
+  }
   // a long gap (a hitch, a hidden page): skip ahead on the grid instead of playing everything at once
   if (M.next < t - 0.05) { const n = Math.ceil((t - M.next) / S16); M.step += n; M.next += n * S16; }
   while (M.next < t + ahead && M.next < M.until) { playStep(e, M.step, M.next); M.step++; M.next += S16; }
@@ -947,7 +992,19 @@ function playStep(e, step, t) {
     if (s % 4 === 0 && s !== 0) kick(e, at, 0.8);
     if (s === 3 || s === 11) bass(e, at, mtof(C.root + 12), S16);
     if (s >= 13) tone(e, at, { type: "triangle", f: [196, 165, 131][s - 13], f2: [150, 120, 95][s - 13], dur: 0.16, att: 0.002, peak: 0.12, to: e.musIn });
+  } else if ((e.st.chase || 0) > 0.08) {
+    // a bomb clock on the chase: quarters while you keep pace, eighths and a heavier block once you fall behind.
+    // A fight already has its own pulse.
+    const c = e.st.chase, behind = c > 0.7;
+    // keeping pace is a light quarter. Falling behind is a heavier hit, and on the eighths.
+    if (s % 4 === 0) clockTick(e, at, behind ? 1.55 : 0.4 + 0.25 * c);
+    else if (behind && s % 2 === 0) clockTick(e, at, 0.95);
   }
+}
+// a wood block under a short click. The old tick sat with the hats, so the chase sounded like the same groove.
+function clockTick(e, t, v) {
+  ring(e, t, [[740, 0.38 * v, 0.05], [2800, 0.18 * v, 0.012], [1700, 0.1 * v, 0.02]], { to: e.musIn });
+  hiss(e, t, { type: "highpass", f: 5000, dur: 0.018, att: 0.001, peak: 0.1 * v, to: e.musIn });
 }
 // an electric piano: one sine through another (FM), bright at the strike and mellow after
 function keys(e, t, f, dur, v) {
@@ -1199,6 +1256,9 @@ export function createAudio(settings) {
     // the fight layer of the groove: driving kicks, a stab on the off-beat and toms into each bar while goons fight the hero
     fight(v) { st.fight = !!v; },
     get fightOn() { return st.fight; },
+    // 0..1 on a chase: 0 while closing or off the chase, about 0.4 while the distance holds, 1 while falling behind or the runner is pulling away
+    chase(v) { st.chase = clamp(num(v), 0, 1); },
+    get chaseOn() { return st.chase; },
     // a one-shot. pos (world, {x, y, z}) makes it spatial; vol 0..2; pitch 0.25..4 (1 = as designed)
     sfx(name, o) {
       if (!on || !alive() || !SFX[name]) return;
@@ -1301,7 +1361,7 @@ export const LOOP_NAMES = Object.keys(LOOP_SRC);
 // opts: pos, vol, pitch, at (one-shots; pos makes it spatial); speed, height, tension, side (a number, or [[t, v], ...]
 // steps); z (the listener's z, for the gulls); from + to (a loop source moves in a line over the render);
 // listener { pos, quat }; legacy (use setPosition/setOrientation); raw (skip the compressor and limiter); seed.
-// Resolves to the AudioBuffer, with .stats (voices, steals, horns, gulls).
+// Resolves to the AudioBuffer, with .stats (voices, steals, horns, gulls, and voiceEnd for one one-shot).
 export async function renderOffline(name, seconds = 2, opts = {}) {
   const OAC = globalThis.OfflineAudioContext || globalThis.webkitOfflineAudioContext;
   if (!OAC) throw new Error("no OfflineAudioContext");
@@ -1310,14 +1370,14 @@ export async function renderOffline(name, seconds = 2, opts = {}) {
   rnd = seeded(opts.seed ?? 7);
   const st = newState(true), dt = 1 / 60, at = opts.at ?? 0.25;
   st.amb = 0; // only "city" and "stress" hear the city
-  let e;
+  let e, voice = null;
   try {
     if (opts.listener) setL(st.L, opts.listener.pos, opts.listener.quat);
     e = makeEngine(ctx, { offline: true, raw: !!opts.raw, legacy: !!opts.legacy, st });
     e.out.gain.value = opts.raw ? 1 : VOL;
     const val = (v, t, d) => (typeof v === "number" ? v : typeof v === "function" ? v(t) : Array.isArray(v) ? stepAt(v, t, d) : d);
     const steps = (fn) => { for (let t = 0; t < seconds; t += dt) fn(t); };
-    if (SFX[name]) play(e, SFX[name], name, at, opts);
+    if (SFX[name]) voice = play(e, SFX[name], name, at, opts);
     else if (name === "wind") steps((t) => { const s = val(opts.speed, t, 20), h = val(opts.height, t, 60); drive(e, "wind", windLevel(s, h), t, s); });
     else if (name === "rope") { const side = opts.side === "right" || opts.side === 1 ? "ropeR" : "ropeL"; steps((t) => drive(e, side, val(opts.tension, t, 0.5), t)); }
     else if (name === "city") {
@@ -1327,7 +1387,7 @@ export async function renderOffline(name, seconds = 2, opts = {}) {
     } else if (name === "music") {
       st.music = true;
       musicSet(e, 0);
-      steps((t) => { st.speed = val(opts.speed, t, 0); musicTick(e, t, dt + 0.001); });
+      steps((t) => { st.speed = val(opts.speed, t, 0); st.chase = val(opts.chase, t, 0); musicTick(e, t, dt + 0.001); });
     } else if (name.startsWith("loop:")) {
       const f = opts.from || opts.pos || { x: 0, y: 1.6, z: -3 }, g = opts.to || f;
       const h = makeHandle(name.slice(5), f), p = { x: 0, y: 0, z: 0 };
@@ -1372,7 +1432,7 @@ export async function renderOffline(name, seconds = 2, opts = {}) {
     } else throw new Error("unknown sound " + name);
   } finally { rnd = keep; }
   const buf = await ctx.startRendering();
-  try { buf.stats = { ...e.stats, voiceCap: MAX_VOICES }; } catch (err) { /* not extensible */ }
+  try { buf.stats = { ...e.stats, voiceCap: MAX_VOICES, voiceEnd: voice ? voice.end - at : null }; } catch (err) { /* not extensible */ }
   return buf;
 }
 // [[t, v], ...]: the last v whose t has passed

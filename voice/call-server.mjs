@@ -5,22 +5,30 @@
 import { createServer } from "node:http";
 import { pathToFileURL } from "node:url";
 import { WebSocketServer } from "ws";
+import { STREAM_PATH, createRelay } from "./relay.mjs";
 import { SERVER_SETTINGS, hermesSpeech, loadEnv, missing, relayBase, relayUrl, sameText, tokenOk, twilioSignature } from "./watch-call.mjs";
 
-export function createCallServer({ env, post = fetch, log = console.log, now = Date.now, fillerMs = 6000 } = {}) {
+export function createCallServer({ env, post = fetch, log = console.log, now = Date.now, fillerMs = 6000, relay = {} } = {}) {
   const wss = new WebSocketServer({ noServer: true, maxPayload: 64 * 1024 });
   const spent = new Map(); // call token -> expiry in ms; each token opens one session
+  const watchRelay = createRelay({ env, post, log, now, ...relay });
 
   const server = createServer((req, res) => {
     if (req.method === "GET" && req.url === "/health") return void res.writeHead(200, { "content-type": "application/json" }).end('{"ok":true}');
+    if (watchRelay(req, res)) return;
     res.writeHead(404).end();
   });
 
   // Twilio signs the handshake with the wss:// address from the TwiML, so check that address.
   server.on("upgrade", (req, socket, head) => {
+    const pathname = new URL(req.url, "http://local").pathname;
+    if (pathname === STREAM_PATH) {
+      watchRelay.upgrade(req, socket, head);
+      return;
+    }
     const signed = relayBase(env.CALL_PUBLIC_URL) + req.url;
     const signature = String(req.headers["x-twilio-signature"] || "");
-    const pathOk = new URL(req.url, "http://local").pathname === "/relay";
+    const pathOk = pathname === "/relay";
     if (!pathOk || ![signed, signed + "/"].some((url) => sameText(signature, twilioSignature(env.TWILIO_AUTH_TOKEN, url)))) {
       log("call: refused a connection without a valid Twilio signature");
       socket.end("HTTP/1.1 403 Forbidden\r\n\r\n");

@@ -1,0 +1,4 @@
+- [x] Draw the paper rule and crop tick on the mission card, caption, and prompt
+- [x] Shade the mission card before and after
+- [x] Run `Scripts/test_hud_rule.py`
+- [ ] Compile and view the HUD in Unreal (editor not available here)

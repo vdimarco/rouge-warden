@@ -7,9 +7,21 @@ Run with a Python that can `import bpy` (Blender 5.1), from games/nord-unreal:
     <blender-python> Scripts/blender/plateau_replica_preview.py --list
 
 Each view loads, inside a camera wedge, the committed Data/Plateau layers that are visible in the game
-(background masses, OSM road, path, glass cards, ground, park, perimeter and context batches) and,
+(background masses, OSM road, path, glass cards, ground, park, perimeter and context batches; the landmark visual
+step's copies in place of the six background batches and OSM Glass it hides; the perimeter's two survey landmarks,
+Le Neuville and École Le Plateau, on their municipal survey bodies from Data/CityBuildings) and,
 unless --before is given, the ReplicaGeometry layers: Streets, Plex, Soul, and the Furniture and Soul
-placements instanced from the Props meshes, with the street-name text the apply step adds.
+placements instanced from the Props meshes in the colour variant the apply step picks from each row's seed,
+with the street-name text the apply step adds. Collision_Only batches (the gallery guards' invisible walls)
+are never drawn: the apply step hides them in game. A face is loaded when a corner lies inside the wedge or
+an edge crosses it, so a long lane quad whose corners lie behind the camera and past the far distance stays.
+The street and park trees of Streets/street_trees.json and the Plex yard trees stand on the species meshes of
+Trees/manifest.json (each kind's young mesh for a young street tree), placed by the apply step's plan_trees.
+Shadows follow the apply step too: a layer batch casts one when apply_plateau_replica.casts_shadow says so (the asphalt,
+paint, gutter and Leaf_Litter patches cast none), a prop only when it is one of PROP_SHADOW, and every tree casts one.
+The curb spaces of Streets/parked_cars.json hold the cars the game fills them with at runtime (AQuebecParkedCars, from
+the generated LaFontaineParking.h): the AQuebecCar fleet of Data/SeventiesCars in each slot's body and paint, laid out
+and culled as QuebecParkedRules.h says. Nothing else that moves (traffic, people, dogs) is drawn.
 
 Frame: every OBJ stores (x, -y, z) of a game-frame point (x east, y north, cm). Blender is
 right-handed, so placing the file coordinates unchanged shows the world as Unreal's left-handed view
@@ -19,11 +31,18 @@ Prop instances use the file coordinates of their meshes, position (x, -y, z) and
 These are previews of generated geometry, not Unreal captures. Colours come from the layer manifests
 and from the colours `upgrade_plateau.py` gives the existing materials; the four Poly Haven textures in
 Data/Art are used the way the game materials use them, and every replica texture set in
-ReplicaGeometry/Textures the way apply_plateau_replica.py uses it: the same keys, tint and tiling, the
-DirectX normal map, roughness from R, and for the masked sets (Rail_Baluster, Rail_Lattice, Fence_Boards,
-Leaf_Creeper) the diffuse alpha clipped at the set's opacity_mask_clip, two-sided, with the creeper's
-two-sided foliage transmission (base colour x .65). The yard trees of Plex/yard_trees.json are instanced
-on the mapped trees' model with the apply step's transforms (apply_plateau_replica.plan_trees).
+ReplicaGeometry/Textures (and the Trees manifest's bark and leaf atlas) the way apply_plateau_replica.py uses
+it, from the apply step's own material rows (material_row): the same keys, tint (white for a set that owns its
+colour, the tar), tiling, macro variation (Brick_Buff_Even, the roofs and the crushed stone), metallic cap, the
+DirectX normal map, roughness from R, the set's address modes (cards clamp V, the laundry and leaf atlases
+clamp both axes), and for the masked sets (the cut-out cards, the creeper, cedar, fountain grass, pit flowers, the
+wrought iron, the laundry, the fallen-leaf Leaf_Litter, the tree leaves) the diffuse alpha clipped at the set's
+opacity_mask_clip, two-sided, with the two-sided foliage transmission (base colour x .65). The street and park trees
+and the yard trees stand on the species meshes of Trees/manifest.json with the apply step's transforms
+(apply_plateau_replica.plan_trees). The old summer tree (tree_small_02, on the OSM tree nodes of plateau_rendering.osm_tree_positions, where the saved map's
+stand-in holds it) appears only in --before images, or when Streets/street_trees.json does not exist: the apply step
+clears QuebecVegetation's instances once it does. A street tree of another fall than its kind's own (a red maple, a
+russet oak) wears the tinted leaves of its plan group, as the apply step sets them on that group's actor.
 
     <blender-python> Scripts/blender/plateau_replica_preview.py --view ruelle_mentana --probe 640,360 990,60
 
@@ -50,13 +69,19 @@ ART = os.path.join(ROOT, 'Data', 'Art')
 CACHE = os.path.join(ROOT, 'Saved', 'ReplicaPreview')
 OUT = os.path.join(ROOT, 'Preview', 'Replica')
 sys.path.insert(0, os.path.join(ROOT, 'Scripts'))
-# The apply step's material rules and yard-tree plan.
-from apply_plateau_replica import FOLIAGE_SUBSURFACE, base_material, load_yard_trees, plan_trees  # noqa: E402
+# The apply step's material rules, texture sets and yard-tree plan.
+from apply_plateau_replica import (COLLISION_ONLY, FOLIAGE_SUBSURFACE, PROP_SHADOW, YOUNG, address_modes,  # noqa: E402
+                                   casts_shadow, load_street_trees, load_textures, load_tree_kinds, load_yard_trees,
+                                   material_row, plan_trees, row_without, tree_slot)
+# The perimeter layer's two survey landmarks and their flat materials (plateau_perimeter.apply).
+import plateau_school  # noqa: E402
+import plateau_tower  # noqa: E402
 
 # Labels hidden in the game: the OSM masses keep collision only, the old canopies are replaced by the
 # mapped trees, and the replica apply step hides OSM Marking.
 HIDDEN_BASE = {'Brick', 'Cream', 'Sage', 'Roof', 'Canopy', 'CanopyGold', 'CanopyRust', 'Wood', 'HiddenTrunks',
-               'Grass'}  # plateau_ground.apply gives OSM Grass the GroundGeometry/ParkGrass mesh
+               'Grass',  # plateau_ground.apply gives OSM Grass the GroundGeometry/ParkGrass mesh
+               'Water'}  # plateau_park.apply hides OSM Water: its PondWater batches lie on the same plane
 
 # Linear colours of the existing materials (upgrade_plateau.py palette and textured tints).
 PALETTE = {
@@ -72,9 +97,7 @@ PALETTE = {
     # Park and landmark materials not in that palette: plausible values.
     'AutumnGold': (.50, .30, .04), 'AutumnRust': (.36, .09, .03), 'ParkEarth': (.20, .15, .09),
     'ParkWood': (.16, .09, .05), 'PondWater': (.02, .035, .03), 'Court': (.12, .20, .14), 'Water': (.02, .035, .03),
-    'LeNeuvilleConcrete': (.45, .45, .43), 'LeNeuvilleGlass': (.04, .07, .09), 'LeNeuvilleMetal': (.30, .32, .33),
-    'LeNeuvilleRail': (.05, .05, .05), 'SchoolFrame': (.30, .30, .28), 'SchoolGlass': (.04, .07, .09),
-    'SchoolTrim': (.60, .55, .43), 'Marking': (.82, .82, .72),
+    'Marking': (.82, .82, .72),
 }
 TEXTURED = {  # name: (tint, texture, tiles per metre or 'world' metres)
     'BrickRed': ((1.05, .80, .66), 'brick_wall_001', 1.5), 'BrickBrown': ((.68, .63, .53), 'brick_wall_001', 1.5),
@@ -84,8 +107,14 @@ TEXTURED = {  # name: (tint, texture, tiles per metre or 'world' metres)
     'YardGround': ((.58, .55, .47), 'concrete_pavement', 'world4'), 'Path': ((1, 1, 1), 'concrete_pavement', 'world4'),
     'ParkGrass': ((.42, .65, .29), 'grass_ground', 'world4'), 'Grass': ((.42, .65, .29), 'grass_ground', 'world4'),
     'BrickBackground': ((1., .9, .8), 'brick_wall_001', 2.25), 'CreamBackground': ((1.5, 1.45, 1.2), 'brick_wall_001', 2.25),
-    'SageBackground': ((.65, .9, .75), 'brick_wall_001', 2.25), 'PerimeterStone': ((.83, .88, .83), 'concrete_pavement', 1),
+    'SageBackground': ((.65, .9, .75), 'brick_wall_001', 2.25),
+    # plateau_perimeter.apply: the perimeter's Limestone batches take M_PerimeterStone, M_Limestone with its tint set to
+    # (.80, .86, .88). plateau_school.materials: the school's survey walls take M_SchoolTan, M_Limestone tinted (.94, .86, .66).
+    'PerimeterStone': ((.80, .86, .88), 'concrete_pavement', 1), 'SchoolTan': ((.94, .86, .66), 'concrete_pavement', 1),
 }
+# The flat Le Neuville and school materials, as plateau_tower.materials builds them: (linear colour, roughness, metallic).
+SURVEY_PALETTE = {**plateau_tower.PALETTE, **{k: v for k, v in plateau_school.PALETTE.items() if k not in TEXTURED}}
+CITY_TEXTURES = os.path.join(ROOT, 'Data', 'CityBuildings', 'Textures')
 # Mean linear colour of each texture, as apply_plateau_replica.TEXTURE_MEAN.
 TEXTURE_MEAN = {'asphalt_02': (.1162, .1143, .1020), 'concrete_pavement': (.2170, .1790, .1372),
                 'brick_wall_001': (.1402, .0776, .0516), 'grass_ground': (.1593, .1198, .0498)}
@@ -171,8 +200,10 @@ def views():
     s = load_streets()
     v = {}
     mentana = [w for w in s['Rue de Mentana'] if -43000 < w[0][0] < -42000 and len(w) > 20][0]
+    # 2 m further along than the last sets: the inventory puts a young elm in a sidewalk pit 1.4 m ahead of the old
+    # spot, which filled the middle of the frame with its trunk; from here the nearest pit tree is 6 m ahead.
     v['mentana'] = dict(title='Rue de Mentana, plex street west of the park, from the shady sidewalk',
-                        camera=street_view(mentana, 5200, -690, 18., look_ahead=6000, yaw_deg=13, pitch_target=430),
+                        camera=street_view(mentana, 5400, -690, 18., look_ahead=6000, yaw_deg=13, pitch_target=430),
                         far=17000)
     fabre = [w for w in s['Rue Fabre'] if len(w) == 7][0]
     v['fabre'] = dict(title='Rue Fabre north of Rachel, with the chantier', far=17000,
@@ -194,36 +225,128 @@ def views():
                                (jx + 900 * f[0] + 700 * r[0], jy + 900 * f[1] + 700 * r[1], 210.)), fov=70)
     alley = s['__alley__21062511'][0]
     d = project(alley, (-18860., 37542.))
-    v['ruelle'] = dict(title='Ruelle behind Rachel with laundry lines and wooden utility poles', far=9000,
-                       sun=(228., 24.), exposure=.35,
+    v['ruelle'] = dict(title='Ruelle behind Rachel: a wooden utility pole, the centre gutter, ruelle-verte plants',
+                       far=9000, sun=(228., 24.), exposure=.35,
                        camera=street_view(alley, d - 1500, 90, 6.8, look_ahead=6000, yaw_deg=-4, pitch_target=650))
     # The ruelle between Mentana and Saint-André (OSM way 204859680), where the Plex yard side is built:
-    # galleries, straight and spiral stairs, fences with gates, sheds.
+    # galleries, straight and spiral stairs, fences with gates, sheds, and a pulley line with washing 12 m ahead
+    # (lot 356252971), rising over the fences to its pole (test_plateau_replica.check_laundry_view). The fifth pass
+    # moved the camera 40 m on from 39500: the lines near that spot ran through yard-tree crowns, so they are gone.
     lane = s['__alley__204859680'][0]
-    v['ruelle_mentana'] = dict(title='Ruelle between Mentana and Saint-André: galleries, stairs, fences', far=9000,
-                               exposure=.8,
-                               camera=street_view(lane, 36300, 60, 6.8, look_ahead=6000, yaw_deg=0, pitch_target=650))
+    v['ruelle_mentana'] = dict(title='Ruelle between Mentana and Saint-André: galleries, stairs, fences, laundry',
+                               far=9000, exposure=.8,
+                               camera=street_view(lane, 43500, 60, 6.8, look_ahead=6000, yaw_deg=0, pitch_target=650))
     # Mentana between Rachel and Duluth, seen from above the sunlit side, about 60 m up.
     (tx, ty), (dx, dy) = along(mentana, 12000)
     a = math.atan2(-0.838, -0.545) + math.radians(28)
     cx, cy = tx + 9500 * math.cos(a), ty + 9500 * math.sin(a)
     v['aerial'] = dict(title='High three-quarter view over two plex blocks on Mentana', far=26000,
                        camera=((cx, cy, 6000.), (tx, ty, 0.)), fov=62, circle=(tx, ty, 19000))
+    fronts = plex_fronts()
+    if GALLERY_LOT in fronts:
+        v['gallery_closeup'] = dict(title='A yard behind Rue de Mentana: a three-storey gallery stack with chairs, '
+                                          'plants and barbecues, laundry lines to the poles at the back fence',
+                                    far=9000, exposure=.8, camera=gallery_camera(fronts[GALLERY_LOT]))
+    if HLM_LOT in fronts:
+        v['hlm_mentana'] = dict(title='Habitations De Mentana (OMHM, 1974) from the far sidewalk of Rue de Mentana',
+                                far=17000, camera=hlm_camera(fronts[HLM_LOT]))
     return v
+
+
+# The two close views of the post-pass work: a gallery stack with lane life, and the OMHM block.
+GALLERY_LOT = '356349231'  # Rue de Mentana, 4 storeys, two gallery modules, 23 gallery props and 6 laundry lines
+HLM_LOT = '356220851'      # Habitations De Mentana (OSM way 356220851), the post-1945 apartment kit
+FRONTS = {}
+
+
+def plex_fronts():
+    """Plex/fronts.json rows by lot id (the generator's own record of each lot's walls, decks and fence)."""
+    if not FRONTS:
+        path = os.path.join(REPLICA, 'Plex', 'fronts.json')
+        if os.path.exists(path):
+            FRONTS.update({f['id']: f for f in json.load(open(path))['fronts']})
+    return FRONTS
+
+
+def gallery_camera(front):
+    """Eye height in the yard, 1.2 m in from the back fence and 3.5 m along it from the yard's middle, looking at
+    the gallery stack 4.8 m up, 1.5 m out from the rear wall: the ground deck's chair and plants, the decks above
+    behind their balusters, and the laundry lines running from the deck guards over the yard to the fence poles."""
+    rear = front['rear']
+    wall = max((w for w in rear['walls'] if w['kind'] == 'rear'), key=lambda w: w.get('galleries', 0))
+    (ax, ay), (bx, by) = wall['a'], wall['b']
+    n = math.hypot(bx - ax, by - ay)
+    along = ((bx - ax) / n, (by - ay) / n)
+    out = rear['decks'][0]['out']
+    mx, my = (ax + bx) / 2, (ay + by) / 2
+    depth = rear['fence']['distance_cm'] - 120.
+    cam = (mx + out[0] * depth - along[0] * 350., my + out[1] * depth - along[1] * 350., 175.)
+    target = (mx + out[0] * 150. + along[0] * 150., my + out[1] * 150. + along[1] * 150., 480.)
+    return cam, target
+
+
+def hlm_camera(front):
+    """The far sidewalk of Mentana (the centreline runs 10.3 m out from the block's front, the far fronts 19.3 m), 16.6 m
+    out, at eye height over the 18 cm sidewalk, 18.5 m along the street from the front's middle toward its first corner
+    (11.5 m past it, over the parking side), looking back into the block 12.5 m up: the plain concrete Mentana end
+    wall, and the long wall's stacked balconies, brick bays and concrete piers over the recessed ground floor. (The last
+    set stood 16 m the other way and looked at the front's middle: once the fourth pass made the end wall blank
+    concrete, that view was mostly blank wall, and the plexes beside the other long wall hide it.)"""
+    (ax, ay), (bx, by) = front['front']['a'], front['front']['b']
+    n = math.hypot(bx - ax, by - ay)
+    along = ((bx - ax) / n, (by - ay) / n)
+    mx, my = (ax + bx) / 2, (ay + by) / 2
+    # The street side: away from the block's other walls.
+    walls = [p for w in front['rear']['walls'] for p in (w['a'], w['b'])]
+    gx, gy = sum(p[0] for p in walls) / len(walls), sum(p[1] for p in walls) / len(walls)
+    normal = (-along[1], along[0])
+    if (gx - mx) * normal[0] + (gy - my) * normal[1] > 0:
+        normal = (-normal[0], -normal[1])
+    cam = (mx + normal[0] * 1660. - along[0] * 1850., my + normal[1] * 1660. - along[1] * 1850., 188.)
+    target = (mx - normal[0] * 2610. - along[0] * 546., my - normal[1] * 2610. - along[1] * 546., 1250.)
+    return cam, target
 
 
 # ------------------------------------------------------------------------------------------------
 # Loading
 
+def _segment_distance(px, py, a, b):
+    """Distance from (px, py) to the segment a-b (2D)."""
+    ex, ey = b[0] - a[0], b[1] - a[1]
+    n = ex * ex + ey * ey
+    t = 0. if n == 0. else max(0., min(1., ((px - a[0]) * ex + (py - a[1]) * ey) / n))
+    return math.hypot(a[0] + ex * t - px, a[1] + ey * t - py)
+
+
+def _inside(px, py, pts):
+    """Even-odd test: is (px, py) inside the polygon pts (2D)?"""
+    inside = False
+    for k in range(len(pts)):
+        (x0, y0), (x1, y1) = pts[k - 1], pts[k]
+        if (y0 > py) != (y1 > py) and px < x0 + (py - y0) * (x1 - x0) / (y1 - y0):
+            inside = not inside
+    return inside
+
+
 class Region:
+    """What a view loads, in the game frame (x east, y north): a disc of radius `near` around the camera plus a
+    wedge (the field of view widened by 22 degrees a side) out to `far`; or, with `circle` (x, y, r), a disc."""
+
     def __init__(self, cam, target, fov, far, circle=None):
         self.cx, self.cy = cam[0], cam[1]
         d = (target[0] - cam[0], target[1] - cam[1])
         n = math.hypot(*d) or 1.
         self.dx, self.dy = d[0] / n, d[1] / n
-        self.cos = math.cos(math.radians(min(89., fov / 2 + 22.)))
+        half = math.radians(min(89., fov / 2 + 22.))
+        self.cos = math.cos(half)
         self.far, self.near = far, 4500.
         self.circle = circle
+        # The wedge (under 90 degrees a side) is the meet of two half-planes through the camera, each bounded by an
+        # edge ray of the wedge: (nx, ny) . (p - camera) >= 0 on the inner side.
+        c, s = math.cos(half), math.sin(half)
+        b1 = (self.dx * c - self.dy * s, self.dx * s + self.dy * c)
+        b2 = (self.dx * c + self.dy * s, -self.dx * s + self.dy * c)
+        self.normals = ((b1[1], -b1[0]), (-b2[1], b2[0]))
 
     def keep(self, x, y):
         if self.circle:
@@ -234,29 +357,58 @@ class Region:
             return True
         return d < self.far and (ex * self.dx + ey * self.dy) > self.cos * d
 
-    def box(self, b):
-        """Could an OBJ with game-frame bounds b = [x0, y0, z0, x1, y1, z1] hold kept vertices?"""
+    def crosses(self, pts):
+        """Does the polygon pts [(x, y), ...] reach the region though none of its corners is kept? True when the
+        polygon holds the camera (or the circle's centre), or an edge crosses the near disc, the circle, or the wedge
+        inside the far distance: a 188 m lane quad with its corners behind the camera and past `far` is kept."""
         if self.circle:
             cx, cy, r = self.circle
-            qx, qy = min(max(cx, b[0]), b[3]), min(max(cy, b[1]), b[4])
-            return math.hypot(qx - cx, qy - cy) < r
-        qx, qy = min(max(self.cx, b[0]), b[3]), min(max(self.cy, b[1]), b[4])
-        if math.hypot(qx - self.cx, qy - self.cy) > self.far:
+        else:
+            cx, cy, r = self.cx, self.cy, max(self.far, self.near)
+        xs, ys = [p[0] for p in pts], [p[1] for p in pts]
+        x0, x1, y0, y1 = min(xs), max(xs), min(ys), max(ys)
+        if math.hypot(min(max(cx, x0), x1) - cx, min(max(cy, y0), y1) - cy) >= r:
             return False
-        corners = [(b[0], b[1]), (b[3], b[1]), (b[0], b[4]), (b[3], b[4]), (qx, qy)]
-        if any(self.keep(x, y) for x, y in corners):
+        if x0 <= cx <= x1 and y0 <= cy <= y1 and _inside(cx, cy, pts):
             return True
-        # A box straddling the wedge: test points along the view ray.
-        for k in range(1, 40):
-            t = self.far * k / 40
-            x, y = self.cx + self.dx * t, self.cy + self.dy * t
-            if b[0] <= x <= b[3] and b[1] <= y <= b[4]:
+        edges = [(pts[k - 1], pts[k]) for k in range(len(pts))]
+        if self.circle:
+            return any(_segment_distance(cx, cy, a, b) < r for a, b in edges)
+        if any(_segment_distance(cx, cy, a, b) < self.near for a, b in edges):
+            return True
+        for a, b in edges:
+            # Clip the edge to the two half-planes of the wedge, then ask whether what is left comes within far.
+            t0, t1 = 0., 1.
+            for nx, ny in self.normals:
+                fa = (a[0] - cx) * nx + (a[1] - cy) * ny
+                fb = (b[0] - cx) * nx + (b[1] - cy) * ny
+                if fa < 0. and fb < 0.:
+                    t0 = 2.
+                    break
+                if fa < 0.:
+                    t0 = max(t0, fa / (fa - fb))
+                elif fb < 0.:
+                    t1 = min(t1, fa / (fa - fb))
+            if t0 > t1:
+                continue
+            p0 = (a[0] + (b[0] - a[0]) * t0, a[1] + (b[1] - a[1]) * t0)
+            p1 = (a[0] + (b[0] - a[0]) * t1, a[1] + (b[1] - a[1]) * t1)
+            if _segment_distance(cx, cy, p0, p1) < self.far:
                 return True
         return False
 
+    def face(self, pts):
+        """Does the polygon pts [(x, y), ...] reach the region (a corner kept, or crosses)?"""
+        return any(self.keep(x, y) for x, y in pts) or self.crosses(pts)
+
+    def box(self, b):
+        """Could an OBJ with game-frame bounds b = [x0, y0, z0, x1, y1, z1] hold faces the region keeps?"""
+        return self.face([(b[0], b[1]), (b[3], b[1]), (b[3], b[4]), (b[0], b[4])])
+
 
 def read_obj(path, region, scale=.01, want_uv=True):
-    """Faces of an OBJ with at least one vertex kept by the region (None keeps all)."""
+    """Faces of an OBJ that reach the region (None keeps all): a corner kept, an edge crossing the region, or the
+    face holding the camera (Region.crosses), so long quads that span the view keep their faces."""
     vs, vts, faces = [], [], []
     with open(path, 'r') as fh:
         for line in fh:
@@ -281,7 +433,7 @@ def read_obj(path, region, scale=.01, want_uv=True):
             if want_uv and len(parts) > 1 and parts[1]:
                 t = int(parts[1])
                 tex.append(t - 1 if t > 0 else len(vts) + t)
-        if not any(keep[i] for i in idx):
+        if not any(keep[i] for i in idx) and not region.crosses([(vs[i][0], -vs[i][1]) for i in idx]):
             continue
         poly = []
         for i in idx:
@@ -395,6 +547,11 @@ def existing_material(layer, base):
         name = name.replace('LandmarkContext_', '')
         if name in ('Sage', 'Cream', 'Brick'):
             name += 'Background'
+    if layer == 'PerimeterGeometry' and name == 'Limestone':
+        name = 'PerimeterStone'
+    if name in SURVEY_PALETTE:
+        color, rough, metal = SURVEY_PALETTE[name]
+        return material('E_' + name, color, rough, metal)
     if name in TEXTURED:
         tint, tex, tiling = TEXTURED[name]
         return material('E_' + name, tint, .85, 0., tex, tiling)
@@ -410,52 +567,123 @@ MASKED = {}  # material name -> (diff image, (u tiling, v tiling), clip): what -
 
 
 def texture_sets():
+    """The apply step's texture sets (apply_plateau_replica.load_textures): textures.json and the Trees manifest's
+    bark and leaf atlas, each entry with the folder its maps are in ('directory')."""
     if not TEXTURE_INDEX:
-        TEXTURE_INDEX.update(json.load(open(os.path.join(TEXTURES, 'textures.json')))['sets'])
+        TEXTURE_INDEX.update(load_textures(ROOT))
     return TEXTURE_INDEX
 
 
-def replica_set_material(name, color, set_name, metal=0.):
-    """A replica texture-set key as the apply step builds it (apply_plateau_replica.textured_graph): the maps of
-    the set, UV tiling from textures.json (1 / tile_m on metre UVs; 1 / tile_u by 1 on card UVs), base colour =
-    diff x (colour / mean_linear) capped at TINT_LIMIT, normal from the DirectX-convention map, roughness from
-    the R of the rough map and the manifest's metallic. A masked set (the cut-out cards and the creeper) keeps
-    only the texels whose diffuse alpha reaches its opacity_mask_clip and shows both faces; the two-sided
-    foliage set also transmits base colour x FOLIAGE_SUBSURFACE, as the foliage parent's SubsurfaceColor."""
+def macro_factor(nt, coord, macro):
+    """The apply step's macro variation (apply_plateau_replica.add_macro) as a grey factor: lerp(1 - s, 1 + s,
+    mask channel) at each macro tile (17.3 m on R, 5.3 m on G), multiplied together, on the raw metre UVs."""
+    mask = image(os.path.basename(macro['texture']) + '.png', TEXTURES)
+    mask.colorspace_settings.name = 'Non-Color'
+    factor = None
+    for tiling, strength, channel in zip(macro['tiling'], macro['strength'], macro['channels']):
+        mapping = nt.nodes.new('ShaderNodeMapping')
+        mapping.inputs['Scale'].default_value = (tiling[0], tiling[1], 1)
+        nt.links.new(coord.outputs['UV'], mapping.inputs['Vector'])
+        sample = nt.nodes.new('ShaderNodeTexImage')
+        sample.image = mask
+        nt.links.new(mapping.outputs['Vector'], sample.inputs['Vector'])
+        split = nt.nodes.new('ShaderNodeSeparateColor')
+        nt.links.new(sample.outputs['Color'], split.inputs['Color'])
+        lerp = nt.nodes.new('ShaderNodeMath')  # (1 - s) + 2 s x mask = lerp(1 - s, 1 + s, mask)
+        lerp.operation = 'MULTIPLY_ADD'
+        nt.links.new(split.outputs[{'R': 'Red', 'G': 'Green', 'B': 'Blue'}[channel]], lerp.inputs[0])
+        lerp.inputs[1].default_value = 2. * strength
+        lerp.inputs[2].default_value = 1. - strength
+        if factor is None:
+            factor = lerp.outputs['Value']
+        else:
+            both = nt.nodes.new('ShaderNodeMath')
+            both.operation = 'MULTIPLY'
+            nt.links.new(factor, both.inputs[0])
+            nt.links.new(lerp.outputs['Value'], both.inputs[1])
+            factor = both.outputs['Value']
+    return factor
+
+
+def address_vector(nt, vector, address, size_px):
+    """The texture lookup for a set's address modes (apply_plateau_replica.address_modes), as (image extension, UV
+    socket). Tiling sets wrap both axes (REPEAT on the tiled UVs). An atlas clamps both (EXTEND: the laundry and leaf
+    cells never pull in the opposite edge). A card wraps U and clamps V (TA_WRAP, TA_CLAMP): Blender has one extension
+    for both axes, so V is clamped to the centres of the first and last texel rows before a REPEAT lookup, which is
+    what a clamped V samples, and the top of a fence, grass or flower card never blends in the bottom row's texels."""
+    if address == ('TA_WRAP', 'TA_WRAP'):
+        return 'REPEAT', vector
+    if address == ('TA_CLAMP', 'TA_CLAMP'):
+        return 'EXTEND', vector
+    assert address == ('TA_WRAP', 'TA_CLAMP'), address
+    half = .5 / size_px[1]
+    split = nt.nodes.new('ShaderNodeSeparateXYZ')
+    nt.links.new(vector, split.inputs['Vector'])
+    clamp = nt.nodes.new('ShaderNodeClamp')
+    clamp.inputs['Min'].default_value = half
+    clamp.inputs['Max'].default_value = 1. - half
+    nt.links.new(split.outputs['Y'], clamp.inputs['Value'])
+    join = nt.nodes.new('ShaderNodeCombineXYZ')
+    nt.links.new(split.outputs['X'], join.inputs['X'])
+    nt.links.new(clamp.outputs['Result'], join.inputs['Y'])
+    nt.links.new(split.outputs['Z'], join.inputs['Z'])
+    return 'REPEAT', join.outputs['Vector']
+
+
+def replica_set_material(name, row):
+    """A replica texture-set key as the apply step builds it (apply_plateau_replica.textured_graph), from its plan
+    row (material_row): the maps of the set (Textures/, or Trees/ for the bark and leaf atlas), the row's UV tiling
+    (1 / tile_m on metre UVs; 1 / tile_u by 1 on card UVs; 1 on the leaf atlas), base colour = diff x the row's tint
+    (colour / mean_linear capped at TINT_LIMIT, white for a set that owns its colour) x the macro variation, normal
+    from the DirectX-convention map, roughness from the R of the rough map and the row's metallic (the manifest's,
+    capped at the set's). A masked set (the cut-out cards, the creeper, the tree leaves) keeps only the texels whose
+    diffuse alpha reaches its opacity_mask_clip and shows both faces; a two-sided foliage set also transmits base
+    colour x FOLIAGE_SUBSURFACE, as the foliage parent's SubsurfaceColor."""
     if name in MATS:
         return MATS[name]
-    entry = texture_sets()[set_name]
-    mode = entry.get('material') or {}
-    masked = mode.get('blend_mode') == 'masked'
-    foliage = mode.get('shading_model') == 'two_sided_foliage'
-    tint = tuple(min(TINT_LIMIT, c / m) for c, m in zip(color, entry['mean_linear']))
+    entry = texture_sets()[row['texture_set']]
+    folder = os.path.join(REPLICA, entry.get('directory', 'Textures'))
+    masked = row.get('blend_mode') == 'masked'
+    foliage = row.get('shading_model') == 'two_sided_foliage'
     m = bpy.data.materials.new(name)
     nt = m.node_tree
     bsdf = nt.nodes['Principled BSDF']
     out = [x for x in nt.nodes if x.type == 'OUTPUT_MATERIAL'][0]
-    bsdf.inputs['Metallic'].default_value = metal
+    bsdf.inputs['Metallic'].default_value = float(row.get('metallic', 0.))
     coord = nt.nodes.new('ShaderNodeTexCoord')
     mapping = nt.nodes.new('ShaderNodeMapping')
-    mapping.inputs['Scale'].default_value = (entry['tiling'][0], entry['tiling'][1], 1)
+    mapping.inputs['Scale'].default_value = (row['tiling'][0], row['tiling'][1], 1)
     nt.links.new(coord.outputs['UV'], mapping.inputs['Vector'])
+    address = address_modes(entry)
+    extension, vector = address_vector(nt, mapping.outputs['Vector'], address, entry['size_px'])
     tex = {}
     for role in ('diff', 'nor_dx', 'rough'):
         node = nt.nodes.new('ShaderNodeTexImage')
-        node.image = image(entry['maps'][role]['file'], TEXTURES)
+        node.image = image(entry['maps'][role]['file'], folder)
         node.image.colorspace_settings.name = 'sRGB' if entry['maps'][role]['srgb'] else 'Non-Color'
         if role == 'diff' and entry.get('alpha'):
             # Colour and mask are independent channels: the colour under a hole is the surface's own, so
             # nothing is premultiplied or darkened at the clip edge (Textures/README.md).
             node.image.alpha_mode = 'CHANNEL_PACKED'
-        nt.links.new(mapping.outputs['Vector'], node.inputs['Vector'])
+        node.extension = extension
+        nt.links.new(vector, node.inputs['Vector'])
         tex[role] = node
     mul = nt.nodes.new('ShaderNodeMix')
     mul.data_type = 'RGBA'
     mul.blend_type = 'MULTIPLY'
     sock(mul.inputs, 'Factor', 'VALUE').default_value = 1.
     nt.links.new(tex['diff'].outputs['Color'], sock(mul.inputs, 'A'))
-    sock(mul.inputs, 'B').default_value = (*tint, 1)
-    nt.links.new(sock(mul.outputs, 'Result'), bsdf.inputs['Base Color'])
+    sock(mul.inputs, 'B').default_value = (*row['tint'], 1)
+    base = sock(mul.outputs, 'Result')
+    if row.get('macro'):
+        vary = nt.nodes.new('ShaderNodeMix')
+        vary.data_type = 'RGBA'
+        vary.blend_type = 'MULTIPLY'
+        sock(vary.inputs, 'Factor', 'VALUE').default_value = 1.
+        nt.links.new(base, sock(vary.inputs, 'A'))
+        nt.links.new(macro_factor(nt, coord, row['macro']), sock(vary.inputs, 'B'))
+        base = sock(vary.outputs, 'Result')
+    nt.links.new(base, bsdf.inputs['Base Color'])
     nmap = nt.nodes.new('ShaderNodeNormalMap')
     nmap.convention = 'DIRECTX'  # Blender 5.1: green points down, as Unreal reads these maps
     nmap.inputs['Strength'].default_value = 1.
@@ -470,7 +698,7 @@ def replica_set_material(name, color, set_name, metal=0.):
         transmit.data_type = 'RGBA'
         transmit.blend_type = 'MULTIPLY'
         sock(transmit.inputs, 'Factor', 'VALUE').default_value = 1.
-        nt.links.new(sock(mul.outputs, 'Result'), sock(transmit.inputs, 'A'))
+        nt.links.new(base, sock(transmit.inputs, 'A'))
         sock(transmit.inputs, 'B').default_value = (FOLIAGE_SUBSURFACE,) * 3 + (1,)
         translucent = nt.nodes.new('ShaderNodeBsdfTranslucent')
         nt.links.new(sock(transmit.outputs, 'Result'), translucent.inputs['Color'])
@@ -480,7 +708,7 @@ def replica_set_material(name, color, set_name, metal=0.):
         nt.links.new(translucent.outputs['BSDF'], add.inputs[1])
         shader = add.outputs['Shader']
     if masked:
-        clip = float(mode.get('opacity_mask_clip', .5))
+        clip = float(row.get('opacity_mask_clip') or .5)
         keep = nt.nodes.new('ShaderNodeMath')  # Unreal keeps a texel when its mask is at or over the clip
         keep.operation = 'GREATER_THAN'
         keep.inputs[1].default_value = clip - 1 / 1024
@@ -491,7 +719,7 @@ def replica_set_material(name, color, set_name, metal=0.):
         nt.links.new(clear.outputs['BSDF'], mix.inputs[1])
         nt.links.new(shader, mix.inputs[2])
         shader = mix.outputs['Shader']
-        MASKED[name] = (tex['diff'].image, tuple(entry['tiling']), clip)
+        MASKED[name] = (tex['diff'].image, tuple(row['tiling']), clip, address)
     nt.links.new(shader, out.inputs['Surface'])
     MATS[name] = m
     return m
@@ -499,11 +727,11 @@ def replica_set_material(name, color, set_name, metal=0.):
 
 def replica_material(layer, key, spec):
     color = srgb_to_linear(spec['base_color_srgb'])
-    # The apply step's own rule decides which keys take the greystone or slate maps (Stone, Slate...).
-    parent_texture = base_material(key, spec)[1] or ''
-    if parent_texture.startswith('replica_'):
-        return replica_set_material(f'R_{layer}_{key}', color, parent_texture[len('replica_'):],
-                                    spec.get('metallic', 0.))
+    # The apply step's own plan row decides which keys take a replica texture set (Stone, Slate, the shared keys,
+    # Brick_Buff_Even, the tree bark and leaves) and with what tint, macro variation and metallic.
+    row = material_row(layer, key, spec, texture_sets(), set())
+    if row.get('texture_set'):
+        return replica_set_material(f'R_{layer}_{key}', row)
     texture = spec.get('texture') or ''
     tex = None
     tiling = 1.
@@ -525,9 +753,13 @@ def replica_material(layer, key, spec):
 def index():
     path = os.path.join(CACHE, 'index.json')
     idx = json.load(open(path)) if os.path.exists(path) else {}
-    changed = False
+    # Forget OBJs a generator has since removed, so no view tries to read one.
+    gone = [rel for rel in idx if not rel.startswith('__') and not os.path.exists(os.path.join(ROOT, rel))]
+    for rel in gone:
+        del idx[rel]
+    changed = bool(gone)
     for dirpath, _, names in os.walk(DATA):
-        if '/ReplicaGeometry/Props' in dirpath:
+        if '/ReplicaGeometry/Props' in dirpath or '/ReplicaGeometry/Trees' in dirpath:
             continue
         for n in names:
             if not n.endswith('.obj'):
@@ -547,10 +779,9 @@ def index():
                         b = [min(b[0], x), min(b[1], y), min(b[2], z), max(b[3], x), max(b[4], y), max(b[5], z)]
             idx[rel] = {'mtime': st.st_mtime, 'size': st.st_size, 'b': b}
             changed = True
-    if '__trees__' not in idx:
-        sys.path.insert(0, os.path.join(ROOT, 'Scripts'))
-        from plateau_rendering import tree_positions
-        idx['__trees__'] = [list(t) for t in tree_positions()]
+    # Tree positions are never cached here: an earlier index kept the 4,571 OSM positions after Streets moved the
+    # trees into the inventory's sidewalk pits, so the old summer trees stood where no tree is any more.
+    if idx.pop('__trees__', None) is not None:
         changed = True
     if changed:
         os.makedirs(CACHE, exist_ok=True)
@@ -558,10 +789,25 @@ def index():
     return idx
 
 
+LANDMARK_VISUALS = os.path.join(DATA, 'LandmarkVisualGeometry', 'visuals.json')
+PERIMETER = os.path.join(DATA, 'PerimeterGeometry', 'perimeter.json')
+
+
+def replaced_sources():
+    """The OBJs whose actors the landmark visual step hides in game (plateau_landmark_visuals.apply, run by
+    upgrade_plateau, so before the replica too): six background batches and OSM Glass, as root-relative paths. Their
+    LandmarkContext copies in LandmarkVisualGeometry stand in their place without the two survey landmarks' old faces.
+    Drawing both put every OSM window card twice on one plane and kept the old masses and cards of the landmarks."""
+    if not os.path.exists(LANDMARK_VISUALS):
+        return set()
+    return {r['source'] for r in json.load(open(LANDMARK_VISUALS))['replacements']}
+
+
 def load_existing(idx, region, col, before):
     count = 0
+    hidden = replaced_sources()
     for rel, row in sorted(idx.items()):
-        if rel.startswith('__') or '/ReplicaGeometry/' in rel:
+        if rel.startswith('__') or '/ReplicaGeometry/' in rel or rel in hidden:
             continue
         parts = rel.split('/')
         layer = parts[2]
@@ -579,6 +825,20 @@ def load_existing(idx, region, col, before):
     return count
 
 
+def drawn(batch):
+    """Is a layer batch visible in game? Collision_Only batches (the gallery guards' invisible walls) are spawned
+    hidden in game by the apply step, so the preview never draws them."""
+    return batch['material'] != COLLISION_ONLY
+
+
+# Keys whose batches overlap themselves at one height by design: the Leaf_Litter patches of Soul (the same leaves on
+# world-metre UVs, so overlaps show no seam). Unreal rasterises both faces to the same texel. A path tracer's bounce ray
+# leaving one patch meets the coplanar patch at once and reads it as cover, so every overlap rendered as a dark
+# polygon (pass 5, mentana.jpg). These batches are seen by camera rays only: they still receive light, and they cast
+# no shadow in game anyway (casts_shadow).
+CAMERA_ONLY = ('Leaf_Litter',)
+
+
 def load_replica(region, col, layers=('Streets', 'Plex', 'Soul'), dirs=None):
     count = 0
     for layer in layers:
@@ -586,38 +846,76 @@ def load_replica(region, col, layers=('Streets', 'Plex', 'Soul'), dirs=None):
         man = json.load(open(os.path.join(folder, 'manifest.json')))
         for batch in man['batches']:
             b = batch['bounds_cm']
-            if not region.box(b):
+            if not drawn(batch) or not region.box(b):
                 continue
             verts, polys, uvs = read_obj(os.path.join(folder, batch['file']), region)
             if polys:
                 mat = replica_material(layer, batch['material'], man['materials'][batch['material']])
-                make_object(f'{layer}_{batch["file"][:-4]}', verts, polys, uvs, mat, col)
+                ob = make_object(f'{layer}_{batch["file"][:-4]}', verts, polys, uvs, mat, col)
+                # The apply step's shadow rule: flat ground, paint, the gutter and the Leaf_Litter patches cast none.
+                ob.visible_shadow = casts_shadow(batch['material'])
+                if batch['material'] in CAMERA_ONLY:
+                    ob.visible_diffuse = ob.visible_glossy = ob.visible_transmission = False
+                    ob.visible_volume_scatter = False
                 count += len(polys)
     return count
 
 
-def prop_collections(keys):
+# The props whose instances cast a shadow in game are the apply step's PROP_SHADOW (imported above): it turns shadows
+# off on every other prop's instanced actor (apply_plateau_replica.apply, set_cast_shadow from the plan's row).
+
+
+def prop_variants(parts, seed, without=()):
+    """The material of each part for a placement's variant_seed, as the apply step picks it (plan: options =
+    [material] + variants, options[seed % len(options)]), or None for a part the row leaves out (a sign hung on a
+    city pole has no post, a cobra head on a wooden pole no steel pole)."""
+    out = []
+    for batch in parts:
+        options = [batch['material']] + list(batch.get('variants', []))
+        out.append(None if batch.get('part') in without else options[seed % len(options)])
+    return tuple(out)
+
+
+def prop_collections(rows):
+    """One collection per prop and colour variant the rows use: the prop's parts (not the merged dog meshes), each in
+    the variant material its rows' seeds pick. Returns ({(prop, variants): collection}, the Props manifest)."""
     man = json.load(open(os.path.join(REPLICA, 'Props', 'manifest.json')))
-    out = {}
+    parts = {}
     for batch in man['batches']:
-        key = batch.get('prop')
-        if key not in keys or 'merged' in batch.get('part', ''):
+        if batch.get('prop') and 'merged' not in batch.get('part', ''):
+            parts.setdefault(batch['prop'], []).append(batch)
+    meshes, out = {}, {}
+    for r in rows:
+        key = r['prop']
+        if key not in parts:
             continue
-        if key not in out:
-            c = bpy.data.collections.new('P_' + key)
-            out[key] = c
-        verts, polys, uvs = read_obj(os.path.join(REPLICA, 'Props', batch['file']), None, want_uv=False)
-        mat = replica_material('Props', batch['material'], man['materials'][batch['material']])
-        ob = make_object('P_' + batch['file'][:-4], verts, polys, [], mat, out[key])
+        # The apply step's parts per row: a hung sign's post left out, a parking sign's own plate face and arrow.
+        variants = prop_variants(parts[key], r.get('variant_seed', 0), row_without(r, man['props'].get(key)))
+        if (key, variants) in out:
+            continue
+        c = out[key, variants] = bpy.data.collections.new(f'P_{key}_{len(out)}')
+        for batch, variant in zip(parts[key], variants):
+            if variant is None:
+                continue
+            if batch['file'] not in meshes:
+                meshes[batch['file']] = read_obj(os.path.join(REPLICA, 'Props', batch['file']), None, want_uv=False)
+            verts, polys, _ = meshes[batch['file']]
+            mat = replica_material('Props', variant, man['materials'][variant])
+            ob = make_object(f'P_{batch["file"][:-4]}_{variant}', verts, polys, [], mat, c)
+            ob.visible_shadow = key in PROP_SHADOW
     return out, man
 
 
 def place_props(rows, region, col):
     rows = [r for r in rows if region.keep(r['position'][0], r['position'][1])]
-    keys = sorted({r['prop'] for r in rows})
-    colls, man = prop_collections(keys)
+    colls, man = prop_collections(rows)
+    parts = {}
+    for batch in man['batches']:
+        if batch.get('prop') and 'merged' not in batch.get('part', ''):
+            parts.setdefault(batch['prop'], []).append(batch)
     for i, r in enumerate(rows):
-        c = colls.get(r['prop'])
+        c = colls.get((r['prop'], prop_variants(parts.get(r['prop'], []), r.get('variant_seed', 0),
+                                                row_without(r, man['props'].get(r['prop'])))))
         if not c:
             continue
         e = bpy.data.objects.new(f'I_{r["prop"]}_{i}', None)
@@ -677,8 +975,8 @@ TREE = {}
 
 
 def tree_template():
-    """The mapped trees' model (Poly Haven tree_small_02, 4.55 m tall) with the game's leaf material, loaded once
-    per scene; the mapped trees and the yard trees both instance it, as the game does."""
+    """The old summer tree (Poly Haven tree_small_02, 4.55 m tall) with the game's leaf material, loaded once per
+    scene: what QuebecVegetation draws before the apply step (--before), or when no street_trees.json exists."""
     if 'coll' not in TREE:
         TREE['coll'], TREE['height'] = load_tree_template()
     return TREE['coll'], TREE['height']
@@ -754,7 +1052,16 @@ def load_tree_template():
     return coll, height
 
 
+def old_tree_positions():
+    """Where the saved map's QuebecVegetation stand-in holds the old summer tree before the apply step: the 4,571 OSM
+    tree nodes (plateau_rendering.osm_tree_positions, as upgrade_plateau.py placed them), read fresh each time, never
+    from a cache. The inventory rows of street_trees.json are where the species trees stand after it."""
+    from plateau_rendering import osm_tree_positions
+    return osm_tree_positions()
+
+
 def place_trees(trees, region, col):
+    """The old summer tree at (x, y, seed) points, scaled and turned by seed as plateau_rendering does."""
     coll, height = tree_template()
     n = 0
     for x, y, seed in trees:
@@ -772,20 +1079,164 @@ def place_trees(trees, region, col):
     return n
 
 
+def read_obj_groups(path, scale=.01):
+    """An OBJ split by usemtl: {name: (verts, polys, uvs, loop normals)}, in file coordinates, scaled to metres."""
+    vs, vts, vns, groups, current = [], [], [], {}, None
+    with open(path, 'r') as fh:
+        for line in fh:
+            tag = line[:2]
+            if tag == 'v ':
+                p = line.split()
+                vs.append((float(p[1]) * scale, float(p[2]) * scale, float(p[3]) * scale))
+            elif tag == 'vt':
+                p = line.split()
+                vts.append((float(p[1]), float(p[2])))
+            elif tag == 'vn':
+                p = line.split()
+                vns.append((float(p[1]), float(p[2]), float(p[3])))
+            elif line.startswith('usemtl '):
+                current = line.split()[1]
+            elif tag == 'f ':
+                groups.setdefault(current, []).append([[int(x) if x else 0 for x in (t.split('/') + ['', ''])[:3]]
+                                                       for t in line.split()[1:]])
+    out = {}
+    for name, faces in groups.items():
+        remap, verts, polys, uvs, normals = {}, [], [], [], []
+        for f in faces:
+            poly = []
+            for v, t, n in f:
+                i = v - 1 if v > 0 else len(vs) + v
+                if i not in remap:
+                    remap[i] = len(verts)
+                    verts.append(vs[i])
+                poly.append(remap[i])
+                uvs.append(vts[t - 1] if t else (0., 0.))
+                normals.append(vns[n - 1] if n else None)
+            polys.append(poly)
+        out[name] = (verts, polys, uvs, normals if all(normals) else None)
+    return out
+
+
+# The survey landmarks plateau_perimeter.apply adds (plateau_tower.apply, plateau_school.apply): the perimeter.json key
+# and the material on the survey body's EstimatedWall slot (each apply's wall).
+SURVEY_BODIES = (('survey_landmark', 'LeNeuvilleConcrete'), ('survey_school', 'SchoolTan'))
+
+
+def survey_roof_material(city_id):
+    """The Facade slot of a survey body: MI_<name>Roof, a copy of the city model's MI_<city id> (its roof photo,
+    Data/CityBuildings/Textures/<city id>.jpg) on the copied M_CityFacade parent: colour ^ 0.7, roughness 0.85."""
+    name = 'E_SurveyRoof_' + city_id
+    if name in MATS:
+        return MATS[name]
+    m = bpy.data.materials.new(name)
+    nt = m.node_tree
+    bsdf = nt.nodes['Principled BSDF']
+    tex = nt.nodes.new('ShaderNodeTexImage')
+    tex.image = image(city_id + '.jpg', CITY_TEXTURES)
+    lift = nt.nodes.new('ShaderNodeGamma')  # pow(colour, gamma), as the parent's Power node with exponent 0.7
+    lift.inputs['Gamma'].default_value = .7
+    nt.links.new(tex.outputs['Color'], lift.inputs['Color'])
+    nt.links.new(lift.outputs['Color'], bsdf.inputs['Base Color'])
+    bsdf.inputs['Roughness'].default_value = .85
+    MATS[name] = m
+    return m
+
+
+def load_survey_landmarks(region, col):
+    """The bodies of the perimeter layer's two survey landmarks, Le Neuville and École Le Plateau. The game spawns each
+    as a copy of a municipal survey OBJ outside Data/Plateau (perimeter.json 'source', Data/CityBuildings/Geometry) at
+    the origin, with the wall material on its EstimatedWall slot and the roof photo on its Facade slot. The Perimeter
+    batches hold only their windows, frames and rails, so without the bodies these float. Returns the faces drawn."""
+    if not os.path.exists(PERIMETER):
+        return 0
+    doc = json.load(open(PERIMETER))
+    count = 0
+    for key, wall in SURVEY_BODIES:
+        info = doc.get(key)
+        if not info:
+            continue
+        (x0, y0, z0), (x1, y1, z1) = info['bounds_cm']
+        if not region.box([x0, y0, z0, x1, y1, z1]):
+            continue
+        for slot, (verts, polys, uvs, _) in sorted(read_obj_groups(os.path.join(ROOT, info['source'])).items()):
+            mat = existing_material('PerimeterGeometry', wall) if slot == 'EstimatedWall' else \
+                survey_roof_material(info['city_id'])
+            make_object(f'PerimeterSurvey_{info["city_id"]}_{slot}', verts, polys, uvs, mat, col)
+            count += len(polys)
+    return count
+
+
+SPECIES = {}
+
+
+def species_collection(species, kind, variant=None, leaves=None):
+    """A species mesh of Trees/manifest.json (Scripts/blender/plateau_trees.py) as the apply step imports it: the
+    kind's mature mesh, or its young street tree with variant 'young' (kind['young']['obj'], wearing the kind's
+    materials). One object per usemtl slot, the slot named bark or leaves (apply_plateau_replica.tree_slot) taking that
+    kind's material through the apply step's own material row (the textured bark; the masked, two-sided foliage leaf
+    atlas), and the OBJ's normals kept, so the leaf cards keep the normals the generator bent to the crown (SpeedTree's
+    leaf puffiness). File coordinates, as the props: the instance takes position (x, -y, z) and yaw -yaw.
+
+    leaves is a street group's tinted leaves (plan_trees 'leaves', from apply_plateau_replica.fall_leaves: {key, fall,
+    spec}) for the trees of another fall than the kind's own, such as a red maple or a russet oak. The apply step sets
+    that material on the leaves slot of the group's actor, on the kind's own mesh, so this collection reads the same
+    OBJ and only its leaves differ."""
+    name = species + (f'_{variant}' if variant else '') + (f'_{leaves["fall"]}' if leaves else '')
+    if name in SPECIES:
+        return SPECIES[name]
+    coll = bpy.data.collections.new('Tree_' + name)
+    path = os.path.join(REPLICA, (kind[variant] if variant else kind)['obj'])
+    for group, (verts, polys, uvs, normals) in sorted(read_obj_groups(path).items()):
+        slot = tree_slot(group)
+        ref = leaves if leaves and slot == 'leaves' else kind['materials'][slot]
+        mat = replica_material('Trees', ref['key'], ref['spec'])
+        ob = make_object(f'T_{name}_{slot}', verts, polys, uvs, mat, coll, smooth=True)
+        if normals:
+            ob.data.normals_split_custom_set(normals)
+    SPECIES[name] = coll
+    return coll
+
+
 def place_yard_trees(region, col):
-    """The Plex yard trees as the apply step instances them: one group per kind on the mapped trees' mesh, each
-    tree at its position and yaw with scale (scale x crown, scale x crown, scale) from plan_trees, so the kinds
-    widen or narrow the crown of the same model. Positions and yaw go into the file frame as (x, -y, z), -yaw."""
+    """The Plex yard trees as the apply step instances them (plan_trees). With Trees/manifest.json: one group per
+    species (the old maple rows on norway_maple, elm on the elm vase), each tree on its species mesh, scaled uniformly
+    to the row's height. Without it: one group per kind on the old tree's mesh with scale (scale x crown, scale x
+    crown, scale). Positions and yaw go into the file frame as (x, -y, z), -yaw."""
     rows = load_yard_trees(ROOT)
     if not rows:
         return 0
-    coll, _ = tree_template()
+    kinds = load_tree_kinds(ROOT)
+    return place_tree_groups(plan_trees(rows, kinds), kinds, region, col, 'YardTree')
+
+
+def place_street_trees(region, col):
+    """Every street and park tree of Streets/street_trees.json as the apply step instances it (plan_trees, group
+    'street'): each row on its kind's species mesh, or the kind's young mesh under YOUNG_BELOW of the mature height,
+    at the ground under its trunk (the pit soil, sidewalk or lawn), its yaw, and the height and trunk spread scale of
+    apply_plateau_replica.street_tree_scale. Returns the number placed, or None when the file does not exist (the game
+    then still draws the old summer tree)."""
+    rows = load_street_trees(ROOT)
+    if rows is None:
+        return None
+    kinds = load_tree_kinds(ROOT)
+    assert kinds, 'Streets/street_trees.json needs Trees/manifest.json: run Scripts/blender/plateau_trees.py --no-render'
+    return place_tree_groups(plan_trees(rows, kinds), kinds, region, col, 'StreetTree')
+
+
+def place_tree_groups(groups, kinds, region, col, prefix):
+    """Instance each planned tree group's transforms inside the region, on its species (and variant) mesh, with the
+    group's tinted leaves when its trees turn another colour than the kind's own (plan_trees: one actor per kind, mesh
+    and fall). A mesh is read only when one of its trees is in the region."""
     n = 0
-    for group in plan_trees(rows):
-        for (x, y, z), yaw, scale in group['transforms']:
-            if not region.keep(x, y):
-                continue
-            e = bpy.data.objects.new(f'YardTree_{group["kind"]}_{n}', None)
+    for group in groups:
+        variant, leaves = group.get('variant'), group.get('leaves')
+        kept = [t for t in group['transforms'] if region.keep(t[0][0], t[0][1])]
+        if not kept:
+            continue
+        coll = species_collection(group['kind'], kinds[group['kind']], variant, leaves) if kinds else tree_template()[0]
+        name = group['kind'] + (f'_{variant}' if variant else '') + (f'_{leaves["fall"]}' if leaves else '')
+        for (x, y, z), yaw, scale in kept:
+            e = bpy.data.objects.new(f'{prefix}_{name}_{n}', None)
             e.instance_type = 'COLLECTION'
             e.instance_collection = coll
             e.location = (x / 100, -y / 100, z / 100)
@@ -793,6 +1244,135 @@ def place_yard_trees(region, col):
             e.scale = scale
             col.objects.link(e)
             n += 1
+    return n
+
+
+def place_all_trees(region, col, before=False):
+    """(species street trees, old summer trees, yard trees) placed in the region. After the apply step the street and
+    park trees stand on their species meshes and QuebecVegetation holds no old tree; before it (--before), or with no
+    street_trees.json, the old summer tree stands on the OSM tree nodes, and there are no yard trees."""
+    street = None if before else place_street_trees(region, col)
+    old = place_trees(old_tree_positions(), region, col) if street is None else 0
+    yard = 0 if before else place_yard_trees(region, col)
+    return street, old, yard
+
+
+# ------------------------------------------------------------------------------------------------
+# Parked cars: the curb spaces of Streets/parked_cars.json (Scripts/plateau_parking.py), which the game fills at
+# runtime with AQuebecParkedCars (Source/Quebec/QuebecParkedCars.cpp) from the generated LaFontaineParking.h.
+
+PARKED = os.path.join(REPLICA, 'Streets', 'parked_cars.json')
+CARS = os.path.join(ROOT, 'Data', 'SeventiesCars')  # the AQuebecCar fleet: Car70 meshes, surfaces and paints
+PARKED_RULES = os.path.join(ROOT, 'Source', 'Quebec', 'QuebecParkedRules.h')
+RULES = {}
+CARS_BUILT = {}
+
+
+def parked_rules():
+    """The fill's layout, cull distances and style counts, read from QuebecParkedRules.h, the C++ the game runs: the
+    pivot height over the road, the wheel centres and roll, and the cull ends of the bodies, tyres and rims."""
+    if not RULES:
+        text = open(PARKED_RULES).read()
+        for name, value in re.findall(r'inline constexpr (?:float|int) (\w+) = (-?[\d.]+)f?;', text):
+            RULES[name] = float(value)
+        need = {'PivotHeight', 'WheelX', 'TireY', 'RimY', 'WheelZ', 'WheelRoll', 'BodyCullEnd', 'TireCullEnd',
+                'RimCullEnd', 'Paints', 'Bodies'}
+        assert need <= set(RULES), sorted(need - set(RULES))
+    return RULES
+
+
+def load_parked():
+    """The slots of Streets/parked_cars.json, or None when plateau_parking.py has not written it."""
+    if not os.path.exists(PARKED):
+        return None
+    return json.load(open(PARKED))['slots']
+
+
+def car_material(fleet, slot, paint=None):
+    """A Car70 surface as build_seventies_cars.py makes it: the manifest's linear colour, roughness and metallic; the
+    Paint slot in M_Car70_Paint<paint> (paints[paint], with the Paint surface's roughness and metallic)."""
+    spec = fleet['materials'][slot]
+    colour = fleet['paints'][paint] if paint is not None else spec['color']
+    name = f'Car70_{slot}' + (str(paint) if paint is not None else '')
+    return material(name, tuple(colour), spec['roughness'], spec['metallic'])
+
+
+def car_collection(key):
+    """One collection of AQuebecCar parts, as AQuebecParkedCars::Build instances them. key ('body', body, paint): the
+    Car70 body, roof and cabin of that BodyProfile at the pivot, the Paint slots of the body and roof in that paint
+    (AQuebecCar::ApplyPaint sets M_Car70_Paint on the slots named Paint); 'tires' or 'rims': four Car70Tire or Car70Rim
+    at the wheel centres (+-WheelX, +-TireY or +-RimY, WheelZ), rolled WheelRoll, one mesh shared by the four. Meshes keep
+    their file frame (x, -y, z), so a part at the C++ offset (x, y, z) sits at (x, -y, z), and the roll about the car's x
+    axis stays a roll about X. Only the body, cabin and roof cast shadows (QuebecParkedRules::CastsShadow)."""
+    if key in CARS_BUILT:
+        return CARS_BUILT[key]
+    rules = parked_rules()
+    fleet = json.load(open(os.path.join(CARS, 'manifest.json')))
+    name = 'Car_' + ('_'.join(str(k) for k in key) if isinstance(key, tuple) else key)
+    coll = CARS_BUILT[key] = bpy.data.collections.new(name)
+
+    def parts(stem, paint, shadow, places):
+        groups = read_obj_groups(os.path.join(CARS, 'Geometry', stem + '.obj'))
+        for slot, (verts, polys, uvs, normals) in groups.items():
+            mat = car_material(fleet, slot, paint if slot == 'Paint' else None)
+            first = None
+            for k, (location, roll) in enumerate(places):
+                label = f'Car_{stem}_{slot}' + (f'_{k}' if len(places) > 1 else '')
+                if first is None:
+                    ob = first = make_object(label, verts, polys, uvs, mat, coll, smooth=True)
+                    if normals:
+                        ob.data.normals_split_custom_set(normals)
+                else:
+                    ob = bpy.data.objects.new(label, first.data)
+                    coll.objects.link(ob)
+                ob.location = location
+                ob.rotation_euler = (roll, 0, 0)
+                ob.visible_shadow = shadow
+
+    if isinstance(key, tuple):
+        _, body, paint = key
+        for stem in (f'Car70Body{body}', f'Car70Roof{body}', f'Car70Cabin{body}'):
+            parts(stem, paint, True, [((0, 0, 0), 0)])
+    else:
+        y = rules['TireY'] if key == 'tires' else rules['RimY']
+        places = []
+        for wheel in range(4):  # QuebecParkedCars.cpp: front pair first, left (-y) then right (+y)
+            x = rules['WheelX'] if wheel < 2 else -rules['WheelX']
+            side = 1. if wheel % 2 else -1.
+            places.append(((x / 100, -side * y / 100, rules['WheelZ'] / 100), math.radians(rules['WheelRoll'])))
+        parts('Car70Tire' if key == 'tires' else 'Car70Rim', None, False, places)
+    return coll
+
+
+def place_parked_cars(region, col, camera=None):
+    """A car on every slot of Streets/parked_cars.json inside the region, as the game fills it: the pivot PivotHeight
+    over the slot's road point, turned to its yaw, in the file frame (x, -y, z) and -yaw as the props. Each part goes
+    past its cull end from the camera (game-frame cm), as the instanced components cull: the rims at 35 m, the tyres
+    at 60 m and the body, cabin and roof at 90 m. Without a camera nothing is culled. Returns the number of cars placed.
+    The game also leaves a space empty where something already stands in it; the preview draws every slot."""
+    slots = load_parked()
+    if not slots:
+        return 0
+    rules = parked_rules()
+    n = 0
+    for s in slots:
+        if not region.keep(s['x'], s['y']):
+            continue
+        pivot = (s['x'], s['y'], s['z'] + rules['PivotHeight'])
+        d = math.dist(camera, pivot) if camera else 0.
+        if d >= rules['BodyCullEnd']:
+            continue
+        for key, cull in ((('body', s['body'], s['paint']), rules['BodyCullEnd']), ('tires', rules['TireCullEnd']),
+                          ('rims', rules['RimCullEnd'])):
+            if d >= cull:
+                continue
+            e = bpy.data.objects.new(f'Parked_{s["id"]}_{key[0] if isinstance(key, tuple) else key}', None)
+            e.instance_type = 'COLLECTION'
+            e.instance_collection = car_collection(key)
+            e.location = (pivot[0] / 100, -pivot[1] / 100, pivot[2] / 100)
+            e.rotation_euler = (0, 0, -math.radians(s['yaw']))
+            col.objects.link(e)
+        n += 1
     return n
 
 
@@ -826,6 +1406,8 @@ def build(name, spec, before=False, res=(1280, 720)):
     MATS.clear()
     MASKED.clear()
     TREE.clear()
+    SPECIES.clear()
+    CARS_BUILT.clear()
     scene = bpy.context.scene
     scene.unit_settings.scale_length = 1.
     cam_pos, target = spec['camera']
@@ -835,21 +1417,23 @@ def build(name, spec, before=False, res=(1280, 720)):
     scene.collection.children.link(col)
     idx = index()
     tris = load_existing(idx, region, col, before)
+    tris += load_survey_landmarks(region, col)
     if not before:
         tris += load_replica(region, col, dirs={'Plex': spec.get('plex_dir')})
     # District ground (z 0) under everything.
     g = 60000
     make_object('DistrictGround', [(-g / 100, -g / 100, -.002), (g / 100, -g / 100, -.002), (g / 100, g / 100, -.002),
                                    (-g / 100, g / 100, -.002)], [[0, 1, 2, 3]], [], existing_material('Ground', 'Gravel'), col)
-    trees = place_trees(idx['__trees__'], region, col)
-    yard_trees = 0 if before else place_yard_trees(region, col)
-    texts = 0
+    street, trees, yard_trees = place_all_trees(region, col, before)
+    texts = parked = 0
     placed = []
     if not before:
         rows = json.load(open(os.path.join(REPLICA, 'Furniture', 'placements.json')))['placements']
         rows += json.load(open(os.path.join(REPLICA, 'Soul', 'placements.json')))['placements']
         placed, man = place_props(rows, region, col)
         texts = street_name_text(placed, man, col)
+        # The parked cars the game fills the curb spaces with at runtime, culled from this camera as the game culls them.
+        parked = place_parked_cars(region, col, cam_pos)
     cam = bpy.data.objects.new('Camera', bpy.data.cameras.new('Camera'))
     scene.collection.objects.link(cam)
     cam.location = (cam_pos[0] / 100, -cam_pos[1] / 100, cam_pos[2] / 100)
@@ -862,8 +1446,9 @@ def build(name, spec, before=False, res=(1280, 720)):
     setup_world(scene, *spec.get('sun', (215., 31.)))
     scene.render.resolution_x, scene.render.resolution_y = res
     scene.render.resolution_percentage = 100
-    summary = (f'PREVIEW {name} before={before} loaded {tris} faces, {trees} trees, {yard_trees} yard trees, '
-               f'{len(placed)} props, {texts} texts in {time.time() - t0:.0f}s')
+    summary = (f'PREVIEW {name} before={before} loaded {tris} faces, {street or 0} species street trees, {trees} old '
+               f'summer trees, {yard_trees} yard trees, {len(placed)} props, {texts} texts, {parked} parked cars in '
+               f'{time.time() - t0:.0f}s')
     return scene, summary
 
 
@@ -908,8 +1493,9 @@ def render(name, spec, before=False, samples=40, threads=3, res=(1280, 720), out
 PIXELS = {}
 
 
-def pixel_alpha(img, u, v):
-    """Diffuse alpha of a cut-out map at UV (u, v), tiled; Blender stores image rows bottom up, as UV v runs."""
+def pixel_alpha(img, u, v, address=('TA_WRAP', 'TA_WRAP')):
+    """Diffuse alpha of a cut-out map at UV (u, v), wrapped or clamped per axis as the set addresses it; Blender stores
+    image rows bottom up, as UV v runs."""
     import numpy as np
     key = img.name
     if key not in PIXELS:
@@ -919,7 +1505,9 @@ def pixel_alpha(img, u, v):
         PIXELS[key] = buf.reshape(h, w, 4)
     a = PIXELS[key]
     h, w = a.shape[:2]
-    return float(a[int((v % 1.) * h) % h, int((u % 1.) * w) % w, 3])
+    u = min(max(u, 0.), 1. - 1e-9) if address[0] == 'TA_CLAMP' else u % 1.
+    v = min(max(v, 0.), 1. - 1e-9) if address[1] == 'TA_CLAMP' else v % 1.
+    return float(a[int(v * h) % h, int(u * w) % w, 3])
 
 
 def face_uv(ob, index, local):
@@ -968,7 +1556,7 @@ def probe(scene, pixels):
             cut = MASKED.get(material)
             if cut and ob.type == 'MESH':
                 uv = face_uv(ob, index, mat.inverted() @ loc)
-                if uv is not None and pixel_alpha(cut[0], uv.x * cut[1][0], uv.y * cut[1][1]) < cut[2]:
+                if uv is not None and pixel_alpha(cut[0], uv.x * cut[1][0], uv.y * cut[1][1], cut[3]) < cut[2]:
                     origin, passes = loc + direction * .002, passes + 1
                     continue
             row['hit'] = {'object': ob.name, 'material': material, 'distance_m': round(travelled, 2),

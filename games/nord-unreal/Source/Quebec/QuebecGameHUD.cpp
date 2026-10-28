@@ -1,9 +1,13 @@
 #include "QuebecGameplay.h"
+#include "QuebecBanner.h"
 #include "QuebecCombat.h"
 #include "QuebecJobRules.h"
 #include "QuebecPlayerState.h"
 #include "QuebecPolice.h"
 #include "QuebecSideJobs.h"
+#include "QuebecCart.h"
+#include "QuebecBow.h"
+#include "QuebecBay.h"
 
 #include "CanvasItem.h"
 #include "Engine/Canvas.h"
@@ -15,7 +19,7 @@
 
 // The street layer of the HUD: wanted stars, vitals, weapon, cash and the side-job column; the centre banners
 // (K.-O., ARRÊTÉ!, MISSION RÉUSSIE / RATÉE, notices, star changes); the aim reticle; and radar blips for police,
-// goons, side jobs and pickups. It reads only replicated state, so both players see the same thing under lag.
+// goons, side jobs, the casse-croûte and pickups. It reads only replicated state, so both players see the same thing under lag.
 
 namespace
 {
@@ -106,7 +110,23 @@ void AQuebecController::TickGameNotice()
 FString AQuebecHUD::StreetPrompt() const
 {
     const AQuebecSideJobs* Jobs = AQuebecSideJobs::Find(GetWorld());
-    return Jobs && PlayerOwner ? Jobs->GetPrompt(PlayerOwner->GetPawn()) : FString();
+    if (Jobs && PlayerOwner)
+    {
+        const FString Job = Jobs->GetPrompt(PlayerOwner->GetPawn());
+        if (!Job.IsEmpty()) return Job;
+    }
+    if (const AQuebecCart* Cart = AQuebecCart::Find(GetWorld()); Cart && PlayerOwner)
+    {
+        const FString Stall = Cart->GetPrompt(PlayerOwner->GetPawn());
+        if (!Stall.IsEmpty()) return Stall;
+    }
+    if (const AQuebecBay* Bay = AQuebecBay::Find(GetWorld()); Bay && PlayerOwner)
+    {
+        const FString Mend = Bay->GetPrompt(PlayerOwner->GetPawn());
+        if (!Mend.IsEmpty()) return Mend;
+    }
+    const AQuebecBow* Bow = AQuebecBow::Find(GetWorld());
+    return Bow && PlayerOwner ? Bow->GetPrompt(PlayerOwner->GetPawn()) : FString();
 }
 
 float AQuebecHUD::StreetColumnWidth() const
@@ -192,10 +212,24 @@ void AQuebecHUD::DrawStreetHUD(float UIScale, bool bTall, bool bTouch, float Rad
             DrawLine(A.X, A.Y, B.X, B.Y, Edge, FMath::Max(1.f, 1.4f * S));
         }
     };
-    const auto Bar = [this](float PosX, float PosY, float BarWidth, float BarHeight, float Share, const FLinearColor& Tone, const FLinearColor& Back)
+    // Quarter cuts are reference marks on the meter (Tufte, The Visual Display of
+    // Quantitative Information, 1983). The lip runs only as far as the fill.
+    const auto Bar = [this, S, Paper, Ink](float PosX, float PosY, float BarWidth, float BarHeight, float Share, const FLinearColor& Tone, const FLinearColor& Back)
     {
         DrawRect(Back, PosX, PosY, BarWidth, BarHeight);
-        DrawRect(Tone, PosX, PosY, BarWidth * FMath::Clamp(Share, 0.f, 1.f), BarHeight);
+        const float Fill = BarWidth * FMath::Clamp(Share, 0.f, 1.f);
+        DrawRect(Tone, PosX, PosY, Fill, BarHeight);
+        const float Lip = FMath::Min(FMath::Max(1.f, 2.f * S), BarHeight * .4f);
+        if (Fill > Lip)
+            DrawRect(Paper.CopyWithNewOpacity(.9f), PosX, PosY, Fill, Lip);
+        const float Gap = FMath::Min(FMath::Max(2.f, 3.f * S), BarWidth * .08f);
+        const FLinearColor Cut = Ink.CopyWithNewOpacity(.95f);
+        for (int32 Notch = 1; Notch < 4; ++Notch)
+        {
+            const float At = PosX + BarWidth * (static_cast<float>(Notch) / 4.f) - Gap * .5f;
+            const bool bCutFill = At < PosX + Fill;
+            DrawRect(bCutFill ? Cut : Paper.CopyWithNewOpacity(.85f), At, PosY, Gap, BarHeight);
+        }
     };
     // A centred comic plate: ink panel, coloured edges and an outlined title over a smaller detail line.
     const auto Plate = [&Write, &Measure, this, S, Font, Panel, Paper](const FString& Head, const FString& Line, const FLinearColor& Tone, float Middle, float Top, float Age, float Life)
@@ -330,6 +364,63 @@ void AQuebecHUD::DrawStreetHUD(float UIScale, bool bTall, bool bTouch, float Rad
             Canvas->DrawItem(Fill);
         }
     }
+    // Chez Lise is a diamond, and only inside 80 m, so the race gates (about 94 m out) stay clear of it.
+    if (const AQuebecCart* Cart = AQuebecCart::Find(World))
+    {
+        constexpr double StandBlipRange = 8000.;
+        const FVector Spot = Cart->GetSpot();
+        if (FVector::DistSquared2D(Spot, Here) <= FMath::Square(StandBlipRange))
+        {
+            const FVector2D Dot = RadarPoint(Spot);
+            if (OnRadar(Dot))
+            {
+                FCanvasNGonItem Rim(Dot, FVector2D(5.f * S), 4, Ink);
+                Rim.BlendMode = SE_BLEND_Translucent;
+                Canvas->DrawItem(Rim);
+                FCanvasNGonItem Fill(Dot, FVector2D(3.2f * S), 4, CashTone);
+                Fill.BlendMode = SE_BLEND_Translucent;
+                Canvas->DrawItem(Fill);
+            }
+        }
+    }
+    // The atelier is a second cash diamond, and only inside 80 m.
+    if (const AQuebecBay* Bay = AQuebecBay::Find(World))
+    {
+        constexpr double BayBlipRange = 8000.;
+        const FVector Spot = Bay->GetSpot();
+        if (FVector::DistSquared2D(Spot, Here) <= FMath::Square(BayBlipRange))
+        {
+            const FVector2D Dot = RadarPoint(Spot);
+            if (OnRadar(Dot))
+            {
+                FCanvasNGonItem Rim(Dot, FVector2D(5.f * S), 4, Ink);
+                Rim.BlendMode = SE_BLEND_Translucent;
+                Canvas->DrawItem(Rim);
+                FCanvasNGonItem Fill(Dot, FVector2D(3.2f * S), 4, CashTone);
+                Fill.BlendMode = SE_BLEND_Translucent;
+                Canvas->DrawItem(Fill);
+            }
+        }
+    }
+    // The stage bow is a gold diamond, and only inside 80 m, once the goon fight is won.
+    if (const AQuebecBow* Bow = AQuebecBow::Find(World); Bow && Bow->IsListed())
+    {
+        constexpr double BowBlipRange = 8000.;
+        const FVector Spot = Bow->GetSpot();
+        if (FVector::DistSquared2D(Spot, Here) <= FMath::Square(BowBlipRange))
+        {
+            const FVector2D Dot = RadarPoint(Spot);
+            if (OnRadar(Dot))
+            {
+                FCanvasNGonItem Rim(Dot, FVector2D(5.f * S), 4, Ink);
+                Rim.BlendMode = SE_BLEND_Translucent;
+                Canvas->DrawItem(Rim);
+                FCanvasNGonItem Fill(Dot, FVector2D(3.2f * S), 4, JobYellow);
+                Fill.BlendMode = SE_BLEND_Translucent;
+                Canvas->DrawItem(Fill);
+            }
+        }
+    }
     FVector Goal = FVector::ZeroVector;
     const bool bGoal = bJob && Jobs->GetTarget(Goal);
     if (bGoal)
@@ -409,7 +500,21 @@ void AQuebecHUD::DrawStreetHUD(float UIScale, bool bTall, bool bTouch, float Rad
         if (bJob) Total += (Remaining > 0.f ? 32.f * S : 0.f) + 18.f * S + GoalLines.Num() * 16.f * S + (bGoal ? 16.f * S : 0.f);
         if (bCashRow) Total += 20.f * S;
         float Row = bTall ? ScreenH * .6f - 6.f * S - Total : RadarY;
-        DrawRect(Panel.CopyWithNewOpacity(.34f), ColumnLeft - 6.f * S, Row - 4.f * S, ColumnWidth + 12.f * S, Total + 8.f * S);
+        const float PanelX = ColumnLeft - 6.f * S;
+        const float PanelY = Row - 4.f * S;
+        const float PanelW = ColumnWidth + 12.f * S;
+        const float PanelH = Total + 8.f * S;
+        DrawRect(Panel.CopyWithNewOpacity(.62f), PanelX, PanelY, PanelW, PanelH);
+        // Scott McCloud, Understanding Comics (1993): the border is what separates
+        // the panel from the scene. This column's padding is 4 scale units, so the
+        // rule sits on the edge, where it stays off the type.
+        const float RuleEdge = FMath::Min(FMath::Max(2.f, 2.f * S), 4.f * S);
+        const FLinearColor Rule = Paper.CopyWithNewOpacity(.88f);
+        DrawRect(Rule, PanelX, PanelY, PanelW, RuleEdge);
+        DrawRect(Rule, PanelX, PanelY + PanelH - RuleEdge, PanelW, RuleEdge);
+        DrawRect(Rule, PanelX, PanelY, RuleEdge, PanelH);
+        DrawRect(Rule, PanelX + PanelW - RuleEdge, PanelY, RuleEdge, PanelH);
+        DrawRect(Accent, PanelX, PanelY, RuleEdge, PanelH);
         if (bStarRow)
         {
             // Stars blink at 2 Hz while no officer sees the player; a change pops them for 0.4 s.
@@ -466,9 +571,9 @@ void AQuebecHUD::DrawStreetHUD(float UIScale, bool bTall, bool bTouch, float Rad
             {
                 FString Info = FString::Printf(TEXT("%d m"), FMath::RoundToInt(FVector::Dist(Here, Goal) / 100.f));
                 if (Jobs->JobIndex == static_cast<int32>(QuebecJobRules::EJob::Thief))
-                    Info += FString::Printf(TEXT("  ·  dégâts %d %%"), FMath::RoundToInt(Jobs->JobProgress * 100.f));
+                    Info += FString::Printf(TEXT("  ·  damage %d %%"), FMath::RoundToInt(Jobs->JobProgress * 100.f));
                 else if (Jobs->JobIndex == static_cast<int32>(QuebecJobRules::EJob::Goons))
-                    Info += FString::Printf(TEXT("  ·  K.-O. %d/%d"), FMath::RoundToInt(Jobs->JobProgress * QuebecJobRules::GoonTotal()), QuebecJobRules::GoonTotal());
+                    Info += FString::Printf(TEXT("  ·  down %d/%d"), FMath::RoundToInt(Jobs->JobProgress * QuebecJobRules::GoonTotal()), QuebecJobRules::GoonTotal());
                 if (!bTouch && !bTall) Info += TEXT("  ·  R");
                 Write(Info, Font, Muted, ColumnRight - static_cast<float>(Measure(Info, Font, .78f).X), Row, .78f);
                 Row += 16.f * S;
@@ -491,9 +596,11 @@ void AQuebecHUD::DrawStreetHUD(float UIScale, bool bTall, bool bTouch, float Rad
         (!Player->GameNoticeTitle.IsEmpty() || !Player->GameNoticeDetail.IsEmpty());
     if (bJobBanner)
     {
-        const FString Head = Jobs->bLastSucceeded ? TEXT("MISSION RÉUSSIE") : TEXT("MISSION RATÉE");
-        FString Line = Jobs->bLastSucceeded ? FString::Printf(TEXT("+%d $  ·  %s"), Jobs->LastReward, *Jobs->LastResult) : Jobs->LastResult;
-        if (!Jobs->bLastSucceeded && !bTouch && Jobs->RetryUntil > ServerNow) Line += TEXT("  ·  R réessaie");
+        const bool bRetry = !Jobs->bLastSucceeded && Jobs->RetryUntil > ServerNow;
+        const QuebecBanner::FPlate Words = QuebecBanner::Compose(
+            Jobs->bLastSucceeded, Jobs->LastReward, TCHAR_TO_UTF8(*Jobs->LastResult), bTouch, bRetry);
+        const FString Head(UTF8_TO_TCHAR(Words.Head));
+        const FString Line(UTF8_TO_TCHAR(Words.Line.c_str()));
         Plate(Head, Line, Jobs->bLastSucceeded ? Accent : Danger, ScreenW * .5f, BannerTop, JobAge, QuebecJobRules::ResultBannerSeconds);
     }
     else if (bNotice)
@@ -506,7 +613,7 @@ void AQuebecHUD::DrawStreetHUD(float UIScale, bool bTall, bool bTouch, float Rad
     {
         // The police announce most star changes with their own notice, and a respawn clears stars silently; this plate
         // covers a rise they leave silent, after a short wait so the two never show back to back.
-        Plate(TEXT("RECHERCHÉ"), FString::Printf(TEXT("%d étoile%s"), Stars, Stars > 1 ? TEXT("s") : TEXT("")),
+        Plate(FString(UTF8_TO_TCHAR(QuebecBanner::Wanted)), FString(UTF8_TO_TCHAR(QuebecBanner::StarLine(Stars).c_str())),
             Cop, ScreenW * .5f, BannerTop, Now - StarsChangedAt - .6f, 1.8f);
     }
     if (bDown)
@@ -517,7 +624,7 @@ void AQuebecHUD::DrawStreetHUD(float UIScale, bool bTall, bool bTouch, float Rad
         const float Age = FMath::Max(0.f, 4.f - Left);
         const float Alpha = FMath::Clamp(Age / .5f, 0.f, 1.f);
         DrawRect(FLinearColor(0.f, 0.f, 0.f, .5f * Alpha), 0.f, 0.f, ScreenW, ScreenH);
-        const FString Word = bArrest ? TEXT("ARRÊTÉ!") : TEXT("K.-O.");
+        const FString Word(UTF8_TO_TCHAR(bArrest ? QuebecBanner::ArrestedWord : QuebecBanner::KnockedWord));
         const FLinearColor Tone = bArrest ? Cop : Danger;
         const FVector2D Burst(ScreenW * .5f, ScreenH * (bTall ? .4f : .42f));
         const float Pop = FMath::Min(Age / .15f, 1.f);
@@ -536,7 +643,7 @@ void AQuebecHUD::DrawStreetHUD(float UIScale, bool bTall, bool bTouch, float Rad
         for (const FVector2D Offset : {FVector2D(-3, 0), FVector2D(3, 0), FVector2D(0, -3), FVector2D(0, 3), FVector2D(5, 5)})
             DrawText(Word, Ink.CopyWithNewOpacity(Alpha), WordX + Offset.X * S, WordY + Offset.Y * S, Large, WordSize);
         DrawText(Word, Paper.CopyWithNewOpacity(Alpha), WordX, WordY, Large, WordSize);
-        FString Line = bArrest ? TEXT("Direction poste de quartier 38") : TEXT("Direction Hôpital Notre-Dame");
+        FString Line(UTF8_TO_TCHAR(bArrest ? QuebecBanner::StationLine : QuebecBanner::HospitalLine));
         if (Left > .05f) Line += FString::Printf(TEXT("  ·  %d"), FMath::CeilToInt(Left));
         Write(Line, Font, Paper.CopyWithNewOpacity(Alpha), ScreenW * .5f - static_cast<float>(Measure(Line, Font, 1.f).X) * .5f,
             static_cast<float>(Burst.Y) + 95.f * S, 1.f);

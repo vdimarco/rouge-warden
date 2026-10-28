@@ -153,7 +153,10 @@ export function createFlatCam(camera, city) {
 
       // the arm: longer at speed, and a little shorter as you look up past level (the hero keeps its size in ordinary play)
       const full = (ARM + (ARM_FAST - ARM) * smooth(FOV_V[0], FOV_V[1], speed)) * (flags && flags.drive != null ? DRIVE_ARM : 1);
-      const arm = full * (1 - (1 - ARM_UP) * smooth(0, PITCH_MAX, S.pitch));
+      // On a fast rope the arm lets out further, so the body takes less of the frame and the avenue
+      // ahead keeps the rest. A stand stays on the ordinary arm. Haigh-Hutchinson, lead room.
+      const reach = full + (!P.onGround && rope && hs > 11 ? 2.6 * smooth(11, 16, hs) : 0);
+      const arm = reach * (1 - (1 - ARM_UP) * smooth(0, PITCH_MAX, S.pitch));
       // its angle: the view's while you look down; above the default it bends smoothly toward the floor over the head
       // (with the same slope at the default, so the camera never jerks there)
       const top = -Math.asin(clamp((OVER_HEAD - PIVOT_UP) / arm, 0, 1)), bend = top - PITCH0;
@@ -163,7 +166,7 @@ export function createFlatCam(camera, city) {
       BACK.set(Math.sin(S.yaw) * ce, -Math.sin(el), Math.cos(S.yaw) * ce); // from the pivot out to the camera
 
       // the room behind: never through a building or under the street
-      let room = full;
+      let room = reach;
       FC.blocked = false;
       if (S.blend > 0.001) {
         const hit = city.raycast(T.x, T.y, T.z, BACK.x, BACK.y, BACK.z, arm + NEAR_HIT, HIT);
@@ -182,10 +185,36 @@ export function createFlatCam(camera, city) {
       S.dist = Math.min(arm, S.room);
       POS.copy(T).addScaledVector(BACK, S.dist);
       if (S.blend < 1) POS.lerpVectors(EYE, POS, S.blend);
+      FC.dist = Math.hypot(POS.x - T.x, POS.y - T.y, POS.z - T.z);
+      // Framing, not a new rig: the arm length and the pitch stay. The camera slides onto the hero's right
+      // and a little higher, so the body sits left of centre and the street ahead keeps the middle.
+      // Mark Haigh-Hutchinson, Real-Time Cameras (2009): lead room, and the subject off the centre line.
+      // The slide stops at a wall. It eases out in first person with the blend.
+      if (S.blend > 0.2) {
+        const rx = Math.cos(S.yaw), rz = -Math.sin(S.yaw);
+        let side = 0.95 * S.blend;
+        const wall = city.raycast(POS.x, POS.y + 0.3, POS.z, rx, 0, rz, side + 0.35, HIT);
+        if (wall) side = Math.max(0, wall.t - 0.35);
+        // A small lift at the default chase. It fades once the arm is already down by the head
+        // (looking up), where more height would push the head off the bottom of the frame.
+        // On a fast rope the camera rises a little more, so the body sits in the lower third and the street ahead
+        // keeps the upper frame. The arm length and the pitch are unchanged. Haigh-Hutchinson, lead room.
+        // The same fade covers the fast-rope rise. Looking up already has the camera down by the head,
+        // and another rise there would push the body off the bottom of the frame.
+        const headRoom = Math.max(0, Math.min(1, (POS.y - EYE.y - 0.7) / 0.5));
+        let lift = 0.22 * S.blend * headRoom;
+        if (!P.onGround && rope && hs > 8) lift += 1.15 * S.blend * smooth(8, 14, hs) * headRoom;
+        const ceil = city.raycast(POS.x + rx * side, POS.y, POS.z + rz * side, 0, 1, 0, lift + 0.25, HIT);
+        if (ceil) lift = Math.max(0, ceil.t - 0.25);
+        for (let k = 0; k < 3; k++) {
+          if (!city.collideSphere(POS.x + rx * side, POS.y + lift, POS.z + rz * side, 0.28, SPH)) break;
+          side *= 0.55; lift *= 0.55;
+        }
+        POS.x += rx * side; POS.z += rz * side; POS.y += lift;
+      }
       camera.position.copy(POS);
       E.set(S.pitch, S.yaw, 0);
       camera.quaternion.setFromEuler(E);
-      FC.dist = Math.hypot(POS.x - T.x, POS.y - T.y, POS.z - T.z);
       FC.opacity = smooth(FADE_TO, FADE_FROM, FC.dist);
 
       // the view widens with speed, eased; the two views have their own range, and the blend moves between them

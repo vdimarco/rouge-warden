@@ -1,6 +1,7 @@
 {
   "passed": true,
   "completed_utc": "2026-10-14T16:46:56.667152+00:00",
+  "historical": "The record of this run. Its hashes are those of that day. The seventh pass changed only the recorded source hashes in details.json and EastExtension/extension.json (the east pin), and test_montreal_east_details.py passes on them; manifest.json lists the current hashes.",
   "command": "python Scripts/test_montreal_east_details.py",
   "exit_code": 0,
   "stdout_marker": "NORD_EAST_DETAILS_CPU_OK",

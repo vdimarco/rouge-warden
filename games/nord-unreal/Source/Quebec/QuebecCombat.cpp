@@ -1,8 +1,10 @@
 #include "QuebecCombat.h"
+#include "QuebecBanner.h"
 #include "QuebecAimModel.h"
 #include "QuebecGameplay.h"
 #include "QuebecPlayerState.h"
 #include "QuebecPolice.h"
+#include "QuebecParkedCars.h" // A shot whose line meets a parked car promotes it.
 
 #include "Camera/PlayerCameraManager.h"
 #include "Components/AudioComponent.h"
@@ -49,18 +51,19 @@ namespace
     // Police chasing the shooter are threats, but goons still win close calls with them.
     constexpr double CombatPoliceThreatPenalty = .2;
     constexpr float CombatWeaponCycleSeconds = .15f;
-    const FVector CombatSocketOffset(0., 0., 55.);
-    const FVector CombatAimSocketOffset(0., 70., 62.);
+    // Idle matches the walker's shoulder and height. Aim only closes in and lifts; the sideways offset stays.
+    const FVector CombatSocketOffset(0., 70., 110.);
+    const FVector CombatAimSocketOffset(0., 70., 117.);
 
     const TCHAR* const CombatWeaponNames[] = {
-        TEXT("POINGS"), TEXT("BÂTON DE HOCKEY"), TEXT("PISTOLET"), TEXT("MITRAILLETTE"), TEXT("FUSIL À POMPE")
+        TEXT("FISTS"), TEXT("HOCKEY STICK"), TEXT("PISTOL"), TEXT("SMG"), TEXT("SHOTGUN")
     };
     const TCHAR* const CombatPickupNames[] = {
-        TEXT("BÂTON DE HOCKEY"), TEXT("PISTOLET"), TEXT("MITRAILLETTE"), TEXT("FUSIL À POMPE"), TEXT("VESTE PARE-BALLES"),
-        TEXT("TROUSSE DE SOINS")
+        TEXT("HOCKEY STICK"), TEXT("PISTOL"), TEXT("SMG"), TEXT("SHOTGUN"), TEXT("ARMOR VEST"),
+        TEXT("MEDKIT")
     };
-    // Original comic words, one per weapon slot.
-    const TCHAR* const CombatWords[] = {TEXT("POW!"), TEXT("CLAC!"), TEXT("PAN!"), TEXT("RA-TA-TA!"), TEXT("BOUM!")};
+    // Same English comic words as QuebecBanner.h, one per weapon slot.
+    const TCHAR* const CombatWords[] = {TEXT("WHACK!"), TEXT("CRACK!"), TEXT("POW!"), TEXT("RAT-A-TAT!"), TEXT("BOOM!")};
     const FColor CombatWordColors[] = {
         FColor(255, 255, 255), FColor(255, 238, 193), FColor(255, 222, 60), FColor(255, 140, 40), FColor(255, 70, 50)
     };
@@ -161,11 +164,11 @@ namespace
     };
     constexpr int32 CombatBangGunImpact = 5;
     const FCombatBang CombatBangs[] = {
-        {.14f, 95.f, .20f, .07f, .030f, .20f},   // Fists: POW!
-        {.10f, 900.f, .10f, .14f, .012f, .90f},  // Stick: CLAC!
-        {.28f, 140.f, .12f, .20f, .035f, .55f},  // Pistol: PAN!
-        {.12f, 180.f, .08f, .16f, .020f, .60f},  // SMG: RA-TA-TA!
-        {.45f, 80.f, .14f, .18f, .070f, .35f},   // Shotgun: BOUM!
+        {.14f, 95.f, .20f, .07f, .030f, .20f},   // Fists: WHACK!
+        {.10f, 900.f, .10f, .14f, .012f, .90f},  // Stick: CRACK!
+        {.28f, 140.f, .12f, .20f, .035f, .55f},  // Pistol: POW!
+        {.12f, 180.f, .08f, .16f, .020f, .60f},  // SMG: RAT-A-TAT!
+        {.45f, 80.f, .14f, .18f, .070f, .35f},   // Shotgun: BOOM!
         {.08f, 110.f, .10f, .04f, .020f, .30f},  // A bullet landing: a short thud.
     };
     static_assert(UE_ARRAY_COUNT(CombatBangs) == QuebecCombatModel::WeaponCount + 1, "One bang per weapon plus the bullet thud");
@@ -234,8 +237,7 @@ namespace
         if (!Player) return;
         if (Player->GetPawn() == Car) Player->Possess(Character);
         Player->ForgetWalkingCharacter();
-        Player->SetControlRotation(Facing);
-        Player->ClientSetRotation(Facing);
+        Player->FrameTheStreet(Yaw);
     }
 
     // Server: the target of a shot or swing, through QuebecAimModel. Lock and LockSince carry the hysteresis.
@@ -349,7 +351,7 @@ namespace
         if (const APawn* AttackerPawn = Attacker ? Attacker->GetPawn() : nullptr)
             Push += (Victim->GetActorLocation() - AttackerPawn->GetActorLocation()).GetSafeNormal2D() * 260.;
         Victim->StartKnock(Push, static_cast<float>(QuebecCombatModel::KnockOutSeconds), true);
-        if (Player) QuebecNotice::Show(Player, TEXT("K.-O."), TEXT("Retour à l'Hôpital Notre-Dame"), static_cast<float>(QuebecCombatModel::KnockOutSeconds));
+        if (Player) QuebecNotice::Show(Player, FString(UTF8_TO_TCHAR(QuebecBanner::KnockedWord)), FString(UTF8_TO_TCHAR(QuebecBanner::HospitalLine)), static_cast<float>(QuebecCombatModel::KnockOutSeconds));
         UE_LOG(LogTemp, Display, TEXT("NORD_COMBAT knockout player=%s by=%s"), *GetNameSafe(Victim), *GetNameSafe(Attacker));
     }
 
@@ -431,8 +433,7 @@ void QuebecCombat::Respawn(AQuebecController* Player, EQuebecDownState Kind)
     {
         Character->GetCharacterMovement()->StopMovementImmediately();
         Character->TeleportTo(Spot, FRotator::ZeroRotator, false, true);
-        Player->SetControlRotation(FRotator::ZeroRotator);
-        Player->ClientSetRotation(FRotator::ZeroRotator);
+        Player->FrameTheStreet(QuebecStreetLook::OpeningYaw(World, Spot, 0.f));
     }
     Character->EndKnock();
     Character->ReleaseCombatInput();
@@ -736,16 +737,24 @@ void AQuebecCharacter::FireWeapon(const FVector& AimOrigin, const FVector& AimDi
     const FVector Muzzle = CombatMuzzle(this, Yaw);
     FVector Impact;
     bool bHit = false;
-    if (Target)
-    {
-        bHit = CombatClearLine(World, Muzzle, TargetPoint, this, Target, Impact);
-        if (bHit)
-        {
-            const double Distance = FVector::Dist2D(Origin, TargetPoint);
-            CombatApplyHit(this, Target, Row, static_cast<float>(QuebecCombatModel::DamageAt(Row, Distance)), TargetPoint - Origin);
-        }
-    }
+    if (Target) bHit = CombatClearLine(World, Muzzle, TargetPoint, this, Target, Impact);
     else CombatClearLine(World, Muzzle, Muzzle + Aim * Row.Range, this, nullptr, Impact);
+    // The parked cars at the curb ignore the Visibility channel, so a floor probe never stands on a roof. A shot finds
+    // the first one on its own line instead: it stops there, and the space turns into a real car that takes the dent
+    // as any car does.
+    FVector ParkedImpact = Impact;
+    if (AQuebecCar* Parked = AQuebecParkedCars::PromoteOnLine(World, Muzzle, bHit ? TargetPoint : Impact, ParkedImpact))
+    {
+        bHit = false;
+        Impact = ParkedImpact;
+        Parked->AddBodyDamage(static_cast<float>(QuebecCombatModel::DamageAt(Row, FVector::Dist2D(Origin, Impact)) *
+            QuebecCombatModel::CarDamageScale), GetController());
+    }
+    if (bHit)
+    {
+        const double Distance = FVector::Dist2D(Origin, TargetPoint);
+        CombatApplyHit(this, Target, Row, static_cast<float>(QuebecCombatModel::DamageAt(Row, Distance)), TargetPoint - Origin);
+    }
     MulticastShot(Muzzle, Impact, static_cast<uint8>(Slot), bHit, Yaw);
     // A shot near civilians is a crime the police can hear about, and the street runs from it. Shots at goons, or
     // at police already chasing the shooter, are not reported as gunfire; a civilian actually hit is reported by
@@ -1060,10 +1069,10 @@ bool AQuebecWeaponPickup::TryGive(AQuebecCharacter* Taker)
     OnRep_Available();
     ForceNetUpdate();
     const int32 Slot = QuebecCombatModel::PickupWeaponSlot(Which);
-    const FString Detail = Which == QuebecCombatModel::EPickupKind::Armor ? FString(TEXT("+50 armure"))
-        : Which == QuebecCombatModel::EPickupKind::Health ? FString(TEXT("+50 santé"))
-        : QuebecCombatModel::Weapon(Slot).bMelee ? FString(TEXT("F ou clic gauche / frapper"))
-        : FString::Printf(TEXT("+%d munitions  /  Q change d'arme"), QuebecCombatModel::Weapon(Slot).AmmoPerPickup);
+    const FString Detail = Which == QuebecCombatModel::EPickupKind::Armor ? FString(UTF8_TO_TCHAR(QuebecBanner::ArmorGain))
+        : Which == QuebecCombatModel::EPickupKind::Health ? FString(UTF8_TO_TCHAR(QuebecBanner::HealthGain))
+        : QuebecCombatModel::Weapon(Slot).bMelee ? FString(UTF8_TO_TCHAR(QuebecBanner::MeleeHint))
+        : FString::Printf(TEXT("+%d rounds  /  Q changes weapon"), QuebecCombatModel::Weapon(Slot).AmmoPerPickup);
     if (AController* Player = Taker->GetController()) QuebecNotice::Show(Player, QuebecCombat::PickupName(Which), Detail, 2.5f);
     UE_LOG(LogTemp, Display, TEXT("NORD_COMBAT pickup kind=%d player=%s"), static_cast<int32>(Kind), *GetNameSafe(Taker));
     return true;

@@ -1,0 +1,17 @@
+[{"label":"first repaint after allocation","bytes":12,"expected":12,"diff":0,"varied":13539,"colors":true,"cars":7,"fallback":3},{"label":"moving unchanged","bytes":0,"expected":0,"diff":0,"varied":13446,"colors":true,"cars":7,"fallback":3},{"label":"model paint","bytes":12,"expected":12,"diff":0,"varied":13445,"colors":true,"cars":7,"fallback":3},{"label":"fallback paint","bytes":12,"expected":12,"diff":0,"varied":13445,"colors":true,"cars":7,"fallback":3},{"label":"pending updates","bytes":24,"expected":24,"diff":0,"varied":13427,"colors":true,"cars":7,"fallback":3},{"label":"hidden resume","bytes":12,"expected":12,"diff":0,"varied":13425,"colors":true,"cars":7,"fallback":3},{"label":"compacted slots","bytes":36,"expected":null,"diff":0,"varied":11377,"colors":true,"cars":6,"fallback":2},{"label":"empty","bytes":0,"expected":0,"diff":0,"varied":0,"colors":true,"cars":0,"fallback":0},{"label":"regrow reordered","bytes":48,"expected":null,"diff":0,"varied":13425,"colors":true,"cars":7,"fallback":3},{"label":"steady after reorder","bytes":0,"expected":0,"diff":0,"varied":13425,"colors":true,"cars":7,"fallback":3},{"label":"moving street traffic","bytes":0,"expected":0,"diff":0,"varied":2426,"colors":true,"cars":1,"fallback":0},{"label":"street traffic paint","bytes":12,"expected":12,"diff":0,"varied":2410,"colors":true,"cars":1,"fallback":0},{"label":"unchanged Float32 paint","bytes":0,"expected":0,"diff":0,"varied":2401,"colors":true,"cars":1,"fallback":0}]
+PASS: first repaint after allocation: changed-slot uploads and exact nonblank reference pixels
+PASS: moving unchanged: changed-slot uploads and exact nonblank reference pixels
+PASS: model paint: changed-slot uploads and exact nonblank reference pixels
+PASS: fallback paint: changed-slot uploads and exact nonblank reference pixels
+PASS: pending updates: changed-slot uploads and exact nonblank reference pixels
+PASS: hidden resume: changed-slot uploads and exact nonblank reference pixels
+PASS: compacted slots: changed-slot uploads and exact nonblank reference pixels
+PASS: empty: changed-slot uploads and exact nonblank reference pixels
+PASS: regrow reordered: changed-slot uploads and exact nonblank reference pixels
+PASS: steady after reorder: changed-slot uploads and exact nonblank reference pixels
+PASS: moving street traffic: changed-slot uploads and exact nonblank reference pixels
+PASS: street traffic paint: changed-slot uploads and exact nonblank reference pixels
+PASS: unchanged Float32 paint: changed-slot uploads and exact nonblank reference pixels
+PASS: fallback and model slots covered
+PASS: no page errors
+PASS: car paint dirty

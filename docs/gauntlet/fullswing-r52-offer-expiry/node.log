@@ -1,0 +1,1 @@
+PASS: 60 idle frames retain array; strict expiry, busy deferral, ordered events and previous-array independence

@@ -2,9 +2,11 @@
 // the app starts from its icon), owns the rig and the body, runs the 14 steps of every frame, routes events to the
 // portal, the game and the feedback table, saves, and exposes window.G and G.test (spec §6 and §12).
 import * as THREE from "three";
-import { VERSION, SAVE_KEY, WORLD, SWING, COMFORT, PERF, COLORS, PHONE, CLIMB, TARGET, DESKTOP, PAD, HINT, MOVES } from "./config.js";
+import { createRenderScale } from "./render-scale.js";
+import { createFrameMetrics } from "./frame-metrics.js";
+import { VERSION, SAVE_KEY, WORLD, SWING, COMFORT, PERF, COLORS, PHONE, CLIMB, TARGET, DESKTOP, PAD, HINT, MOVES, SUN_DIR } from "./config.js";
 import { generate } from "./city.js";
-import { createPlayer, fire, release, step, teleport } from "./physics.js";
+import { createPlayer, fire, release, step, teleport, easyAnchor, armEasy, easyBoost } from "./physics.js";
 import { createXR } from "./xr.js";
 import { createDesktop } from "./desktop.js";
 import { createCityView } from "./cityview.js";
@@ -23,11 +25,12 @@ import { createStreet, STREET } from "./street.js";
 import { createStreetView, createFigures } from "./streetview.js";
 import { createCombat, FIGHT } from "./combat.js";
 import { createCars, nearTraffic, trafficAt, CAR } from "./cars.js";
-import { createJobs, JOB_NAMES, gauntletPay } from "./jobs.js";
+import { createJobs, JOB, JOB_NAMES, MISS, STORY_ROUTE, STORY_NEAR, gauntletPay } from "./jobs.js";
 import { createActionView } from "./actionview.js";
-import { createActionHud } from "./actionhud.js";
+import { createActionHud, placeGoal } from "./actionhud.js";
 import { createBloom } from "./bloom.js";
 import { createTarget, bidOf, project, releaseWindow, kick } from "./target.js";
+import { playYaw, handFiresRope, buttonHand } from "./playturn.js";
 
 const $ = (s) => document.querySelector(s);
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
@@ -52,10 +55,10 @@ const store = {
 };
 function defaultSettings() {
   const p = COMFORT.presets[COMFORT.defaultPreset];
-  return { preset: COMFORT.defaultPreset, vignette: p.vignette, turn: p.turn, snap: p.snap, aim: p.aim, vignetteLook: "room", seated: false, height: 0, hand: "right", hold: "hold", cue: true, hz: PERF.hz, foveation: PERF.foveation, music: true, speedLines: true, verse: "full" };
+  return { preset: COMFORT.defaultPreset, vignette: p.vignette, turn: p.turn, snap: p.snap, aim: p.aim, vignetteLook: "room", seated: false, height: 0, hand: "right", hold: "hold", cue: true, hz: PERF.hz, foveation: PERF.foveation, music: true, speedLines: true, verse: REDUCED ? "calm" : "full" };
 }
 // seen: the comic scenes already played (cutscene.js), so each plays once, and the phone's gesture card (mobile.js)
-function blankSave() { return { v: 1, intro: false, tutorial: false, clogs: [], loonies: [], bonus: 0, king: "sleeping", pipes: [], best: {}, seen: { opening: false, king: false, finale: false, mission2: false, phoneCoach: false, districts: [] }, jobs: { sludge: false, done: {} }, settings: defaultSettings() }; }
+function blankSave() { return { v: 1, intro: false, tutorial: false, clogs: [], loonies: [], bonus: 0, king: "sleeping", pipes: [], best: {}, seen: { opening: false, king: false, finale: false, mission2: false, mission3: false, mission4: false, mission5: false, phoneCoach: false, districts: [] }, jobs: { sludge: false, route: 0, done: {} }, settings: defaultSettings() }; }
 function loadSave() {
   const s = blankSave(), raw = store.get(SAVE_KEY, null);
   if (!raw || typeof raw !== "object" || raw.v !== 1) return s;
@@ -65,11 +68,12 @@ function loadSave() {
   s.bonus = Number.isFinite(raw.bonus) && raw.bonus >= 0 ? raw.bonus : 0;
   s.king = ["sleeping", "awake", "beaten"].includes(raw.king) ? raw.king : "sleeping";
   if (raw.seen && typeof raw.seen === "object") {
-    for (const k of ["opening", "king", "finale", "mission2", "phoneCoach"]) s.seen[k] = raw.seen[k] === true;
+    for (const k of ["opening", "king", "finale", "mission2", "mission3", "mission4", "mission5", "phoneCoach"]) s.seen[k] = raw.seen[k] === true;
     s.seen.districts = ints(raw.seen.districts).filter((d) => d < 6);
   }
   if (raw.jobs && typeof raw.jobs === "object") {
     s.jobs.sludge = raw.jobs.sludge === true;
+    s.jobs.route = Number.isInteger(raw.jobs.route) && raw.jobs.route >= 0 && raw.jobs.route <= STORY_ROUTE.length ? raw.jobs.route : 0;
     if (raw.jobs.done && typeof raw.jobs.done === "object") for (const [k, v] of Object.entries(raw.jobs.done)) if (JOB_NAMES[k] && Number.isInteger(v) && v > 0) s.jobs.done[k] = v;
   }
   if (raw.best && typeof raw.best === "object") for (const [k, v] of Object.entries(raw.best)) if (Number.isFinite(v) && v > 0) s.best[k] = v;
@@ -133,13 +137,19 @@ let renderer, scene, camera, rig, X, D, audio;
 let city, P, view, ropes, hands, comfort, game, ui, portal, fx, hero, flatcam, picker, cutscenes, street, streetView, bloom;
 let figures, combat, cars, jobs, actionView, actHud; // the city action (flat play): fights, cars, jobs
 let loadRing = null;
+const renderScale = createRenderScale();
+addEventListener("visibilitychange", () => renderScale.frame(0, false));
+// Bound high-DPI ultrawide fill cost; the DOM interface keeps its native resolution.
+function flatPixelRatio() {
+  return Math.min(window.devicePixelRatio || 1, 2, Math.sqrt(3840 * 2160 / (innerWidth * innerHeight))) * renderScale.scale;
+}
 function createRenderer() {
   THREE.ColorManagement.enabled = false;
   const r = new THREE.WebGLRenderer({ antialias: true, alpha: true, stencil: true, multiviewStereo: !FLAGS.nomv, powerPreference: "high-performance" });
   r.outputColorSpace = THREE.LinearSRGBColorSpace;
   r.toneMapping = THREE.NoToneMapping;
   r.setClearColor(COLORS.fog, 1);
-  r.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  r.setPixelRatio(flatPixelRatio());
   r.setSize(innerWidth, innerHeight);
   r.xr.enabled = true;
   $("#view").appendChild(r.domElement);
@@ -178,9 +188,10 @@ function createWorld() {
   combat = G.combat = createCombat(city);
   cars = G.cars = createCars(city);
   jobs = G.jobs = createJobs({ city, combat, cars });
-  actionView = G.actionView = createActionView(scene, { cars, jobs, traffic: { cars: () => view.traffic && view.traffic(), hide: (i, on) => view.veilTraffic && view.veilTraffic(i, on) } });
+  actionView = G.actionView = createActionView(scene, { cars, jobs, traffic: { cars: () => view.traffic && view.traffic(TRAFFIC_DATA), hide: (i, on) => view.veilTraffic && view.veilTraffic(i, on) } });
   actHud = G.actHud = createActionHud();
   ropes = G.ropes = createRopes(scene, city, settings);
+  ensureWeb(); // the easy web's world-space line, compiled with the city so the first swing does not hitch
   hands = G.hands = createHands(rig, scene, settings);
   comfort = G.comfort = createComfort(camera, rig, settings);
   fx = G.fx = createFX(scene, renderer); // the comic sound words; game.js reaches it as G.fx
@@ -192,6 +203,7 @@ function createWorld() {
   ui = G.ui = createUI({ scene, camera, rig, renderer, city, view, save, settings, comfort, audio, xr: X, hands, saveNow, haptic, setWorldVisible });
   game = G.game = createGame({ scene, city, view, ropes, hands, ui, audio, P, save, settings, saveNow, haptic });
   game.onStory(story);
+  game.onClogBeat(noteClogBeat);
   portal = G.portal = createPortal({ scene, rig, camera, renderer, xr: X, city, view, ropes, audio, ui, P, placeRig, haptic });
   portal.onDone(handOff);
   ui.onExit(exitPlay);
@@ -248,6 +260,7 @@ function setWorldVisible(v) {
   worldVisible = !!v;
   if (view) view.root.visible = worldVisible;
   if (streetView) streetView.setVisible(worldVisible);
+  if (figures) figures.setVisible(worldVisible);
   if (game && game.root && gameStarted) game.root.visible = worldVisible;
   if (ropes) ropes.setVisible(worldVisible);
   if (fx) fx.setVisible(worldVisible);
@@ -325,9 +338,13 @@ function handOff() {
   resumable = true;
   saveNow();
   // Mission 1, the Sludge Run, starts at once (the King's comic played before the cottage room); a returning save that has not
-  // done it gets it too. The tests (?nocut, ?skipintro) start it only when they ask (G.test.job).
+  // done it gets it too. A save that already won it continues Missions 2–4. The tests (?nocut, ?skipintro) start a job only when they ask.
   if (FLAGS.gauntlet) startGauntlet();
-  else if (!FLAGS.nocut && !FLAGS.skipintro) { if (lakeDrop) lakeDrop.sludge = true; else startSludge(); }
+  else if (!FLAGS.nocut && !FLAGS.skipintro) {
+    if (lakeDrop) lakeDrop.sludge = true;
+    else if (!save.jobs.sludge) startSludge();
+    else if ((save.jobs.route || 0) < STORY_ROUTE.length) routeRetry = 0.8;
+  }
 }
 // The Gauntlet: to its roof, and the first round (?gauntlet, G.test.gauntlet)
 function startGauntlet() {
@@ -353,7 +370,14 @@ function coldOpen() {
 // A comic scene (cutscene.js) in flat play, once per save: the opening after the hand-off, a district's briefing the first
 // time you come near its clogs, the King waking, the finale. The game holds still while it plays (G.state "cutscene"); a
 // headset plays none and shows the mission as a toast. ?skipintro and ?nocut (the tests) play none.
-const STORY_TOAST = { mission2: () => "Mission 2: flush the twelve clogs.", king: () => "Mission 3: rip off the King's three pipes, then flush him.", finale: () => "All clear! Free roam: trials and Loonies." };
+const STORY_TOAST = {
+  mission2: () => "Mission 2: stop the purse snatcher.",
+  mission3: () => "Mission 3: catch the person falling.",
+  mission4: () => "Mission 4: clear the Sludge Gang off the roof.",
+  mission5: () => "Mission 5: get the pizza to the roof.",
+  king: () => "The King: rip off his three pipes, then flush him.",
+  finale: () => "All clear! Free roam: trials and Loonies.",
+};
 function story(name, arg, force) {
   if (!force && (FLAGS.nocut || FLAGS.skipintro || !save.seen)) return;
   const seen = save.seen;
@@ -388,27 +412,68 @@ function cutsceneFrame(dt, inp) {
 }
 // The people on the sidewalks: they walk on round the player, and see the hero (in play only). The murmur follows them.
 const CAMW = new THREE.Vector3();
+const TRAFFIC_DATA = {};
+const ACTION_VIEW_OPTIONS = { markers: true, cam: CAMW };
+const STREET_HAZARDS = [];
 const HERO_SEEN = { x: 0, y: 0, z: 0, vx: 0, vy: 0, vz: 0, onGround: false };
 function streetFrame(dt, inPlay) {
   street.limit = isXR() ? STREET.maxXR : STREET.max;
   HERO_SEEN.x = P.pos.x; HERO_SEEN.y = P.pos.y; HERO_SEEN.z = P.pos.z;
   HERO_SEEN.vx = P.vel.x; HERO_SEEN.vy = P.vel.y; HERO_SEEN.vz = P.vel.z; HERO_SEEN.onGround = !!P.onGround;
   const act = actionOn();
-  street.update(dt, G.time, P.pos, inPlay ? HERO_SEEN : null, act ? cars.hazards() : null);
-  figures.begin(camera.getWorldPosition(CAMW), G.time);
-  streetView.update(dt, G.time, CAMW);
-  if (act) {
-    for (const g of combat.goons) if (g.on) figures.add(goonOnThrees(g), "goons");
-    for (const q of jobs.people) if (q.on) figures.add(q, "jobs");
+  street.update(dt, G.time, P.pos, inPlay ? HERO_SEEN : null, act ? cars.hazards(STREET_HAZARDS) : null);
+  if (worldVisible) {
+    figures.begin(camera.getWorldPosition(CAMW), G.time);
+    streetView.update(dt, G.time, CAMW);
+    if (act) {
+      const tick = verseMode() === "off" || !flatOn ? null : Math.floor(G.time * VERSE.goons);
+      for (const g of combat.goons) if (g.on) figures.add(goonOnThrees(g, tick), "goons", g); // the goon himself carries his fight marks (the flash, the telegraph)
+      for (const q of jobs.people) if (q.on) figures.add(q, "jobs");
+    }
+    figures.end();
   }
-  figures.end();
   actionView.setVisible(act && worldVisible);
-  if (act) actionView.update(dt, G.time, { markers: G.state !== "cutscene", cam: CAMW });
+  if (act) {
+    ACTION_VIEW_OPTIONS.markers = G.state !== "cutscene";
+    actionView.update(dt, G.time, ACTION_VIEW_OPTIONS);
+  }
   audio.setCrowd(inPlay ? street.crowd : 0);
 }
 /* ---------------- the city action: sprint, fights, cars and jobs (flat play) ---------------- */
 // The action runs in flat play once the game has started; a headset keeps its swinging game.
-let sprinting = false, energy = 1, energyWait = 0, driving = false, fightHints = 0, sludgeRetry = -1;
+let sprinting = false, energy = 1, energyWait = 0, driving = false, fightHints = 0, sludgeRetry = -1, routeRetry = -1;
+// a won job hangs on a big word before the next mission card (winHold seconds, winCard on the pill, winStory after)
+let winHold = 0, winCard = null, winStory = null, lastWin = null;
+let missHold = 0, missCard = null, missJob = null, lastMiss = null;
+// A test can run the story route under ?nocut. Real play runs it only after Mission 1, and the tests leave it off.
+let routeForce = false;
+// Ten flushes break the clog run, so the pump never runs three times in a row. The queue waits out a story mission.
+const CLOG_BEAT = {
+  2: { type: "catch", mission: "OVER THE EDGE", near: [36, 130] },
+  3: { type: "gust", mission: "THROUGH THE GUST", near: [18, 70] },
+  4: { type: "balloon", mission: "UP FOR AIR", near: [18, 80] },
+  5: { type: "thief", mission: "PURSE RUN", near: [18, 55] },
+  6: { type: "pizza", mission: "HOT PIE", near: [18, 80] },
+  7: { type: "mugging", mission: "THE ALLEY", near: [18, 80] },
+  8: { type: "washer", mission: "GET HIM DOWN", near: [24, 140] },
+  9: { type: "getaway", mission: "STOP THAT CAR", near: [20, 120] },
+  10: { type: "brawl", mission: "ROOF CREW", near: [24, 140] },
+  11: { type: "lid", mission: "HOLD IT DOWN", near: [16, 80] },
+};
+const clogQueue = [];
+function noteClogBeat(n) {
+  const b = CLOG_BEAT[n];
+  if (!b || clogQueue.some((q) => q.type === b.type)) return;
+  clogQueue.push(b);
+}
+function startClogBeat() {
+  if (!clogQueue.length || jobs.active || routeOpen() || winHold > 0 || missHold > 0 || G.state !== "play") return;
+  const b = clogQueue[0], h = heroFight();
+  const o = jobs.prepare(b.type, h, b.near) || jobs.prepare(b.type, h, [16, 900]);
+  if (!o) return;
+  clogQueue.shift();
+  jobs.start(b.type, o, h, { mission: b.mission });
+}
 // The fall into the lake after the toilet erupts (flat screen): { t, sludge } while it lasts. The splash fishes the hero out on the
 // start roof (respawn from lastSafe), and Mission 1 starts then, or when he lands somewhere else, or after 12 s.
 let lakeDrop = null;
@@ -424,11 +489,15 @@ function launchIntoLake() {
 }
 function endLakeDrop() {
   if (!lakeDrop) return;
-  if (lakeDrop.sludge) sludgeRetry = 1.2;
+  if (lakeDrop.sludge) {
+    if (!save.jobs.sludge) sludgeRetry = 1.2;
+    else if ((save.jobs.route || 0) < STORY_ROUTE.length) routeRetry = 1.2;
+  }
   lakeDrop = null;
 }
 const HERO_FACE = { x: 0, z: -1 }, HERO_FIGHT = { x: 0, y: 0, z: 0, yaw: 0, onGround: false, safe: false, hidden: false, perch: false };
-const ropeIds = new Set(), GOON_POS = new Map(), firePerch = [false, false];
+const ropeWant = new Map(), combatTargets = [], jobTargets = [];
+const ropeIds = new Set(), GOON_ROPE = new Map(), firePerch = [false, false];
 function actionOn() { return flatOn && !isXR() && gameStarted && G.mode === "desktop"; }
 // Shift on the ground with no rope out and a direction held: sprint while the energy lasts; the gauge fills again after a pause
 function sprintFrame(dt, inp, moving) {
@@ -522,17 +591,18 @@ function ropeCatch(i, r) {
 // The rope targets: the fighting goons near the hero and a job's falling person or balloon. They are added and taken away as
 // they come and go; a goon's target point is his chest.
 function syncRopeTargets() {
-  const want = new Map();
+  const want = ropeWant;
+  want.clear();
   if (actionOn() && G.state === "play" && !driving) {
-    for (const g of combat.targets(heroFight())) {
-      let q = GOON_POS.get(g.id);
-      if (!q) { q = { x: 0, y: 0, z: 0 }; GOON_POS.set(g.id, q); }
-      q.x = g.x; q.y = g.y + 1.1; q.z = g.z;
-      want.set("goon:" + g.id, { id: "goon:" + g.id, tag: "goon", pos: q, radius: 1.3 });
+    for (const g of combat.targets(heroFight(), 40, combatTargets)) {
+      let t = GOON_ROPE.get(g.id);
+      if (!t) { t = { id: "goon:" + g.id, tag: "goon", pos: { x: 0, y: 0, z: 0 }, radius: 1.3 }; GOON_ROPE.set(g.id, t); }
+      t.pos.x = g.x; t.pos.y = g.y + 1.1; t.pos.z = g.z;
+      want.set(t.id, t);
     }
-    for (const t of jobs.ropeTargets(P.pos)) want.set(t.id, t);
+    for (const t of jobs.ropeTargets(P.pos, jobTargets)) want.set(t.id, t);
   }
-  for (const id of ropeIds) if (!want.has(id)) { ropes.removeTarget(id); ropeIds.delete(id); if (id.startsWith("goon:")) GOON_POS.delete(+id.slice(5)); }
+  for (const id of ropeIds) if (!want.has(id)) { ropes.removeTarget(id); ropeIds.delete(id); if (id.startsWith("goon:")) GOON_ROPE.delete(+id.slice(5)); }
   for (const [id, t] of want) if (!ropeIds.has(id)) { ropes.addTarget(t); ropeIds.add(id); }
 }
 function enterCar(c) {
@@ -546,7 +616,7 @@ function enterCar(c) {
 }
 // Car theft: the street car in reach of the hero (on the ground, or just above it, off the walls), from the traffic shader's lanes
 function canSteal() { return !P.wall && (P.onGround || P.pos.y < CAR.stealUp); }
-function trafficNear() { return canSteal() ? nearTraffic(view.traffic && view.traffic(), P.pos.x, P.pos.z, G.time) : null; }
+function trafficNear() { return canSteal() ? nearTraffic(view.traffic && view.traffic(TRAFFIC_DATA), P.pos.x, P.pos.z, G.time) : null; }
 // the closest car in reach: { car } a parked one (or a stolen one left), { traffic } a street car, or null
 function carInReach() {
   const c = P.onGround && !P.wall ? cars.near(P.pos.x, P.pos.y, P.pos.z) : null, t = trafficNear();
@@ -620,7 +690,7 @@ function actionFrame(dt, inp) {
     DRIVE_IN.steer = -(inp.move.x || 0);
     DRIVE_IN.handbrake = !!inp.jumpHeld;
   }
-  TRAFFIC_IN.T = view.traffic ? view.traffic() : null; TRAFFIC_IN.t = G.time;
+  TRAFFIC_IN.T = view.traffic ? view.traffic(TRAFFIC_DATA) : null; TRAFFIC_IN.t = G.time;
   cars.update(dt, P.pos, driving ? DRIVE_IN : null, TRAFFIC_IN);
   const car = cars.driving;
   if (driving && car) {
@@ -640,9 +710,18 @@ function actionFrame(dt, inp) {
   // the gang guards the clogs once Mission 1 is done
   if (save.jobs.sludge) guardClogs();
   const hf = heroFight();
+  // Mission 1 waits out the first lesson. A rope, or that lesson ending (the row ticks, or Skip), starts the runner and the clock.
+  const chase = jobs.active;
+  if (chase && chase.data && chase.data.hold) {
+    const swung = P.ropes[0].state === "attached" || P.ropes[1].state === "attached";
+    if (swung || !game.progress || game.progress.tutorial !== 0) jobs.holdChase(false);
+  }
   combat.update(dt, hf);
-  jobs.offersOn = save.jobs.sludge; // while driving only a taxi marker starts (jobs.js)
-  jobs.crimesOn = save.jobs.sludge; // crimes start near the hero after Mission 1
+  syncStory();
+  const routing = routeOpen();
+  jobs.offersOn = !!save.jobs.sludge && !routing; // odd jobs wait until the story route is done; while driving only a taxi marker starts
+  jobs.crimesOn = !!save.jobs.sludge && !routing;
+  if (!routing && winHold <= 0 && missHold <= 0) startClogBeat();
   jobs.update(dt, G.time, hf);
   throwFrame(dt);
   audio.fight(combat.fighting > 0 && G.state === "play");
@@ -651,18 +730,39 @@ function actionFrame(dt, inp) {
   combat.events.length = 0;
   for (const e of jobs.events) jobEvent(e);
   jobs.events.length = 0;
-  game.setJob(jobs.card);
+  game.setJob(jobs.card || routeCard());
   game.hush(!!jobs.active && jobs.active.type === "gauntlet");
   syncRopeTargets();
   if (lakeDrop && ((lakeDrop.t += dt) > LAKE_DROP.max || (lakeDrop.t > 0.5 && P.onGround && !respawning))) endLakeDrop();
   if (sludgeRetry > 0 && (sludgeRetry -= dt) <= 0) { sludgeRetry = -1; startSludge(); }
+  // the win hangs in play. The next mission, and its card, wait until that moment is over.
+  // a miss holds its lesson the same way, and the retry waits until that card has been up.
+  if (winHold > 0) {
+    winHold -= dt;
+    if (winHold <= 0) {
+      winHold = 0; winCard = null;
+      if (winStory) { const name = winStory; winStory = null; story(name); }
+      if (routeOpen() && !jobs.active && routeRetry < 0) routeRetry = 0.35;
+    }
+  } else if (missHold > 0) {
+    missHold -= dt;
+    if (missHold <= 0) {
+      missHold = 0; missCard = null;
+      const job = missJob; missJob = null;
+      if (job === "sludge" && !save.jobs.sludge) sludgeRetry = 0.4;
+      else if (routeOpen() && !jobs.active && jobs.storyNext() && jobs.storyNext().type === job && routeRetry < 0) routeRetry = 0.4;
+    }
+  } else {
+    if (routing && !jobs.active && routeRetry < 0) routeRetry = 0.8;
+    if (routeRetry > 0 && (routeRetry -= dt) <= 0) startStoryStep();
+  }
   hudFrame(dt, inp);
 }
 // two goons on each clogged roof near the hero, once (they come back after a reload)
 const guarded = new Set();
 function guardClogs() {
-  for (const t of game.targets()) {
-    if (t.kind !== "clog" || t.done || guarded.has(t.id)) continue;
+  for (const t of city.clogs) {
+    if (save.clogs.includes(t.id) || guarded.has(t.id)) continue;
     if (Math.hypot(t.x - P.pos.x, t.z - P.pos.z) > 140) continue;
     guarded.add(t.id);
     for (let k = 0; k < 2; k++) combat.spawn(t.x + (k ? 4 : -4), t.y, t.z + (k ? -3 : 3), "clog:" + t.id);
@@ -697,6 +797,68 @@ function combatEvent(e) {
     case "windup": if (fightHints < 1 && !G.input.easySwing) { fightHints++; ui.say("A goon! Get close and press " + (G.input.kind === "pad" ? "RT" : "the left mouse button") + " to punch. When he winds up, press " + (G.input.kind === "pad" ? "A" : "Space") + " to dodge.", 4); } break;
   }
 }
+// A won job, in this game's own words. The sheet has no new title, so a flush and a kasplash carry the moment.
+function winWord(job) { return job === "sludge" ? "FLUSH" : "KASPLASH"; }
+// A won job gets a sting that fits it. The ring-trial fanfare stays on a finished trial.
+const WIN_CUE = {
+  sludge: "winWet", tanker: "winWet",
+  brawl: "winFight", mugging: "winFight",
+  thief: "winDash", pizza: "winDash", getaway: "winDash", taxi: "winDash",
+  catch: "winLift", washer: "winLift", balloon: "winLift", gust: "winLift", kite: "winLift", line: "winLift", wheel: "winDash",
+  lid: "winWet",
+};
+function winCue(job) { return WIN_CUE[job] || "winLift"; }
+const WIN_HIT = { t: 0 };
+// In front of the camera, short of the first wall, so the word sits in the view and not inside a block.
+function winSpot(out) {
+  camera.getWorldDirection(FXD);
+  if (FXD.lengthSq() < 1e-8) FXD.set(0, 0, -1); else FXD.normalize();
+  // in the gap between the camera and the hero, so the word is a title and the city does not cover it
+  let dist = 2.8;
+  const hit = city.raycast(camera.position.x, camera.position.y, camera.position.z, FXD.x, FXD.y, FXD.z, 8, WIN_HIT);
+  if (hit && WIN_HIT.t < dist + 0.3) dist = Math.max(1.45, WIN_HIT.t * 0.5);
+  return out.copy(camera.position).addScaledVector(FXD, dist);
+}
+// A roof fight, a getaway, a tanker, and the bomb hop higher and hang longer than a chase, a rescue, or a delivery.
+const WIN_BIG = { sludge: 1, brawl: 1, getaway: 1, tanker: 1 };
+// The payoff: a comic word wider than a finisher, a cheer, a short slow moment, and a hop off the street. The next card waits.
+function winLaunch(job) {
+  if (REDUCED || driving || !flatOn || isXR() || !P) return 0;
+  const B = WIN_BIG[job] ? MOVES.winBig : MOVES.win, v = P.vel, hs = Math.hypot(v.x, v.z);
+  if (hs > 0.5) { v.x += (v.x / hs) * B.forward; v.z += (v.z / hs) * B.forward; }
+  else { v.x += -Math.sin(G.rigYaw) * B.forward; v.z += -Math.cos(G.rigYaw) * B.forward; }
+  v.y = Math.max(v.y, 0) + B.up;
+  // the ground step zeroes an upward speed while the feet are down, so the hop has to leave the street now
+  P.onGround = false;
+  P.ground = null;
+  fovKick = Math.max(fovKick, B.kick);
+  return B.up;
+}
+function winPayoff(e) {
+  const word = winWord(e.job);
+  const at = winSpot(FXP);
+  const wide = flatOn && !isXR();
+  const shown = !!fx.word(word, at, { scale: 2.4, size: wide ? screenWide(at, 0.62) : 0, life: 3.2 });
+  const big = !!WIN_BIG[e.job];
+  audio.sfx(winCue(e.job));
+  audio.sfx("cheer", { vol: 1.1 });
+  haptic(0, 1, 160); haptic(1, 1, 160);
+  if (!REDUCED) { impact({ stop: 0.14, shake: 0.55, frame: true }); slowT = Math.max(slowT, big ? 0.9 : 0.55); }
+  const up = winLaunch(e.job);
+  lastWin = { job: e.job, word, shown, up, big };
+  winCard = { title: "GOT IT", detail: (JOB_NAMES[e.job] || "Job") + " done. +" + (e.reward || 0) + " Loonies", short: "GOT IT", n: 0, of: 0, tag: "win", goal: null };
+  winHold = big ? 1.9 : 1.35;
+  winStory = null;
+}
+// A miss is a lesson, not a cheer. The card names the miss and one thing to do, and the retry waits it out.
+function missPayoff(e) {
+  const lesson = MISS[e.why] || { title: "MISSED", detail: "Try that one again.", short: "AGAIN" };
+  lastMiss = { job: e.job, why: e.why, title: lesson.title };
+  missCard = { title: lesson.title, detail: lesson.detail, short: lesson.short, n: 0, of: 0, tag: "miss", goal: null };
+  missHold = 1.7;
+  missJob = e.job;
+  audio.sfx("miss");
+}
 const FAIL_LINES = {
   drain: "The Market drain blew! Sludge everywhere. Try again!",
   time: "Out of time!", dumpster: "Ouch! A dumpster broke the fall. They are fine, but you missed.",
@@ -704,10 +866,15 @@ const FAIL_LINES = {
   knockout: "You were knocked out. The job is lost.", left: "You left the job behind.",
   walked: "The fare got bored and walked off.", late: "Too slow! The fare jumped out at a red light.", away: "They got away. Next time!",
   flood: "The tanker burst! Sludge everywhere. Next time!",
+  popped: "The lid popped. Stand on it until it seats.",
+  blown: "The gust blew past. Swing through it three times.",
+  rolled: "The wheel rolled off. Get on the ground in front of it.",
+  risen: "The kite rose away. Stay above it.",
+  snapped: "The line went by. Swing onto it.",
 };
 function jobEvent(e) {
   switch (e.type) {
-    case "start": ui.toast(e.line); audio.sfx("trialStart"); break;
+    case "start": ui.toast(e.line); audio.sfx(e.mission ? "beat" : "trialStart"); break;
     case "say": ui.say(e.line, 2.5); break;
     // a crime near the hero: the hero's shout, and a marker (actionview draws the offer)
     case "crime": ui.say(e.line, 3); ui.toast("Crime: " + JOB_NAMES[e.job] + ". Swing over there!"); audio.sfx("trialStart"); break;
@@ -724,15 +891,64 @@ function jobEvent(e) {
       actHud.banner("CLEARED!", "ROUND " + e.n + " · " + e.reward + " LOONIES SO FAR", true);
       audio.sfx("unlock"); haptic(0, 0.6, 60); haptic(1, 0.6, 60);
       break;
+    case "gust":
+      fx.word("WHOOSH", FXP.set(e.x, e.y + 1.2, e.z), { scale: 1.4 });
+      audio.sfx("release");
+      if (P && !driving) { P.vel.y = Math.max(P.vel.y, 0) + JOB.gust.lift; P.onGround = false; }
+      break;
+    case "wheel": {
+      fx.word("BONK", FXP.set(e.x, e.y + 1, e.z), { scale: 1.5 });
+      audio.sfx("yank");
+      if (P && !driving) {
+        const len = Math.hypot(e.vx || 0, e.vz || 0) || 1;
+        P.vel.x += ((e.vx || 0) / len) * 4;
+        P.vel.z += ((e.vz || 0) / len) * 4;
+        P.vel.y = Math.max(P.vel.y, 0) + JOB.wheel.bump;
+        P.onGround = false;
+      }
+      break;
+    }
+    case "kite":
+      fx.word(e.tug ? "UP" : "GOT IT", FXP.set(e.x, e.y + 1.2, e.z), { scale: e.tug ? 1.3 : 1.6 });
+      audio.sfx("release");
+      if (P && !driving) { P.vel.y = Math.max(P.vel.y, 0) + (e.tug ? JOB.kite.tug : JOB.kite.lift); P.onGround = false; }
+      break;
+    case "line":
+      if (e.ride) {
+        if (P && !driving) {
+          P.pos.x = e.x; P.pos.y = e.y; P.pos.z = e.z;
+          P.vel.x = e.vx; P.vel.y = 0; P.vel.z = e.vz;
+          P.onGround = false;
+        }
+        break;
+      }
+      fx.word(e.hop ? "ZIP" : "CATCH", FXP.set(e.x, e.y + 1.2, e.z), { scale: e.hop ? 1.6 : 1.3 });
+      audio.sfx("release");
+      if (e.hop && P && !driving) {
+        P.vel.x = e.vx; P.vel.z = e.vz;
+        P.vel.y = Math.max(P.vel.y, 0) + JOB.line.hop;
+        P.onGround = false;
+      }
+      break;
     case "done": {
       if (e.job === "gauntlet") { gauntletOver(e); break; }
-      audio.sfx("trialEnd");
       game.reward(e.reward);
+      winPayoff(e);
       if (e.job === "sludge") {
         save.jobs.sludge = true;
+        if (!Number.isInteger(save.jobs.route)) save.jobs.route = 0;
+        syncStory();
         ui.toast("Bomb defused! +" + e.reward + " Loonies");
-        story("mission2");
-      } else ui.toast(JOB_NAMES[e.job] + " done! +" + e.reward + " Loonies");
+        if (routeOpen()) winStory = STORY_ROUTE[0].scene;
+      } else {
+        syncStory();
+        const adv = routeOpen() ? jobs.storyAdvance(e.job) : null;
+        if (adv && adv.ok) {
+          save.jobs.route = jobs.story.route;
+          ui.toast(JOB_NAMES[e.job] + " done! +" + e.reward + " Loonies" + (adv.next ? "" : ". The districts are still clogged. Flush them to wake the King."));
+          if (adv.next) winStory = adv.next.scene;
+        } else ui.toast(JOB_NAMES[e.job] + " done! +" + e.reward + " Loonies");
+      }
       save.jobs.done[e.job] = (save.jobs.done[e.job] || 0) + 1;
       saveNow();
       break;
@@ -740,7 +956,7 @@ function jobEvent(e) {
     case "failed":
       if (e.job === "gauntlet") { gauntletOver(e); break; }
       ui.toast(FAIL_LINES[e.why] || "Job failed.");
-      if (e.job === "sludge") sludgeRetry = 3.5;
+      missPayoff(e);
       break;
   }
 }
@@ -759,30 +975,113 @@ function gauntletOver(e) {
 function startSludge() {
   if (!actionOn() || save.jobs.sludge) return;
   jobs.start("sludge", null, heroFight());
+  // the gold-ring row (or the spoken tutorial's first line) is still the lesson: the bomb waits
+  if (game.progress && game.progress.tutorial === 0) jobs.holdChase(true);
+}
+function syncStory() {
+  jobs.story.sludge = !!save.jobs.sludge;
+  jobs.story.route = save.jobs.route || 0;
+}
+// Missions 2–4 run in real flat play after the bomb, and in a test that asks. They do not run under ?nocut or ?skipintro.
+function routeOpen() {
+  if (!routeForce && (FLAGS.nocut || FLAGS.skipintro)) return false;
+  syncStory();
+  return !!jobs.storyNext();
+}
+function routeCard() {
+  if (winHold > 0 && winCard) return winCard;
+  if (missHold > 0 && missCard) return missCard;
+  if (jobs.active || !routeOpen()) return null;
+  const step = jobs.storyNext();
+  if (!step) return null;
+  return { title: step.mission, detail: step.pending, short: step.mission, n: 0, of: 0, tag: step.type, goal: null };
+}
+function startStoryStep() {
+  routeRetry = -1;
+  if (!routeOpen() || G.state !== "play" || jobs.active) return;
+  const step = jobs.storyNext();
+  if (!step) return;
+  const h = heroFight();
+  const o = jobs.prepare(step.type, h, STORY_NEAR[step.type]) || jobs.prepare(step.type, h, [20, 900]);
+  if (!o) { routeRetry = 1.2; return; }
+  jobs.start(step.type, o, h, { mission: step.mission, arrive: true });
 }
 function hudFrame(dt, inp) {
   const phone = !!inp.easySwing, near = !driving ? carInReach() : null;
+  const threat = combat.threat(heroFight());
+  const throwable = combat.fighting > 0 && !!combat.throwTarget(throwFrom());
   const key = (k, m, t) => "<b>" + (phone ? t : inp.kind === "pad" ? k : m) + "</b>";
   let prompt = "";
   // in a fight, the dodge and the finisher come before a car in reach
   if (driving) prompt = phone ? "" : key("B", "R", "") + "GET OUT";
-  else if (combat.threat(heroFight())) prompt = phone ? "" : key("A", "SPACE", "") + "DODGE"; // (a phone shows its DODGE button)
-  else if (combat.focus >= 1 && combat.inReach(heroFight()) && !phone) prompt = key("RB", "F", "") + "FINISH";
+  else if (threat) prompt = phone ? "" : key("A", "SPACE", "") + "DODGE"; // (a phone shows its DODGE button)
+  else if (combat.focus >= 1 && !phone && combat.inReach(heroFight())) prompt = key("RB", "F", "") + "FINISH";
   else if (near) prompt = phone ? "" : key("B", "R", "") + (near.traffic ? "STEAL" : "GET IN");
   else if (takedownAim()) prompt = key("RT", "CLICK", "TAP") + "TAKEDOWN";
-  else if (combat.throwTarget(throwFrom()) && combat.fighting > 0 && !phone) prompt = key("D-PAD UP", "G", "") + "THROW";
+  else if (throwable && !phone) prompt = key("D-PAD UP", "G", "") + "THROW";
   else if (combat.inReach(heroFight()) && fightHints < 3) prompt = key("RT", "CLICK", "TAP") + "PUNCH";
   const fight = combat.hits > 0 || combat.focus > 0 || combat.fighting > 0;
   actHud.update(dt, { on: G.state === "play" || G.state === "paused", hp: combat.hp, max: FIGHT.hp, energy: energy < 0.999 || sprinting ? energy : -1, prompt, phone, nearCar: !!near, driving, shout: shoutFrame(dt),
-    combo: combat.hits, focus: fight ? combat.focus : -1, warn: warnFrame(),
+    goal: goalFrame(phone),
+    combo: combat.hits, focus: fight ? combat.focus : -1, warn: warnFrame(threat),
     wall: !!P.wall,
     air: G.state === "play" && !P.onGround && !P.wall && !driving && P.ropes[0].state !== "attached" && P.ropes[1].state !== "attached",
-    throwable: combat.fighting > 0 && !!combat.throwTarget(throwFrom()) });
+    throwable });
+}
+// the job sticker: the goal's name and distance, on the goal, or on the screen edge when it is off the view.
+// A chase says CLOSING or FALLING BEHIND from how the distance changed over the last half second.
+const GOAL_V = new THREE.Vector3(), GOAL_CAM = new THREE.Vector3(), GOAL_LOOK = new THREE.Vector3();
+const GOAL_SIZE = { w: 0, h: 0 }, GOAL_PAD = { l: 80, t: 108, r: 80, b: 96 }, GOAL_PHONE_PAD = { l: 110, t: 108, r: 140, b: 168 };
+const GOAL_OUT = { x: 0, y: 0, off: false, angle: 0, name: "", dist: 0, trend: "" };
+const GOAL_NAMES = { sludge: "RUNNER", thief: "THIEF", getaway: "CAR", balloon: "BALLOON", catch: "FALLING", washer: "WASHER", pizza: "DROP", taxi: "DROP", brawl: "FIGHT", mugging: "MUGGING", tanker: "LEAK" };
+const GOAL_CHASE = { sludge: true, thief: true, getaway: true, balloon: true };
+let goalTrack = { tag: "", d: 0, t: -1, trend: "" };
+function goalFrame(phone) {
+  const ob = jobs.card, g = ob && ob.goal;
+  if (!ob || !g || G.state !== "play") { goalTrack.tag = ""; return null; }
+  GOAL_V.set(g.x, (g.y || 0) + 2.4, g.z);
+  camera.updateMatrixWorld();
+  GOAL_CAM.copy(GOAL_V).applyMatrix4(camera.matrixWorldInverse);
+  const ndc = GOAL_V.project(camera);
+  camera.getWorldDirection(GOAL_LOOK);
+  const gx = g.x - camera.position.x, gz = g.z - camera.position.z;
+  const turn = Math.atan2(-GOAL_LOOK.z * gx + GOAL_LOOK.x * gz, GOAL_LOOK.x * gx + GOAL_LOOK.z * gz);
+  GOAL_SIZE.w = innerWidth; GOAL_SIZE.h = innerHeight;
+  const place = placeGoal(GOAL_CAM, ndc, GOAL_SIZE, phone ? GOAL_PHONE_PAD : GOAL_PAD, turn, GOAL_OUT);
+  const dh = Math.hypot(g.x - P.pos.x, g.z - P.pos.z);
+  if (ob.tag !== goalTrack.tag) goalTrack = { tag: ob.tag, d: dh, t: G.time, trend: "" };
+  else {
+    const elapsed = G.time - goalTrack.t, jumped = Math.abs(dh - goalTrack.d) > 6;
+    if (jumped || elapsed >= 0.45) {
+      const rate = (dh - goalTrack.d) / Math.max(0.05, elapsed);
+      let set = true;
+      if (rate < -1.5) goalTrack.trend = "CLOSING";
+      else if (rate > 1.5) goalTrack.trend = "FALLING BEHIND";
+      else if (elapsed >= 1.1) goalTrack.trend = "";
+      else set = false;
+      if (set) { goalTrack.d = dh; goalTrack.t = G.time; }
+    }
+  }
+  const crew = ob.tag === "sludge" && /crew/i.test(ob.detail || "");
+  place.name = crew ? "CREW" : (GOAL_NAMES[ob.tag] || "GOAL"); place.dist = Math.round(dh);
+  place.trend = GOAL_CHASE[ob.tag] && !crew ? goalTrack.trend : "";
+  return place;
+}
+// The chase bed: quiet while you are gaining, a clock while the distance holds, faster once you fall behind
+// or the runner is already pulling away (a steady gap can still be a sprint). The first lesson holds the runner,
+// so the clock stays quiet until the chase actually starts. A fight keeps its own pulse.
+function chaseBed() {
+  const A = jobs.active;
+  if (!A || !GOAL_CHASE[A.type] || (A.data && A.data.hold)) return 0;
+  if (A.type === "sludge" && A.data && A.data.crew) return 0;
+  const pulling = !!(A.data && A.data.runner && (A.data.runner.heat || 0) >= 0.55);
+  if (pulling || goalTrack.trend === "FALLING BEHIND") return 1;
+  if (goalTrack.trend === "CLOSING") return 0;
+  return 0.4;
 }
 // the warning: a red mark on the screen over the goon who winds up near the hero (the prompt line says how to dodge)
 const WARN_V = new THREE.Vector3(), WARN_OUT = { x: 0, y: 0 };
-function warnFrame() {
-  const g = combat.threat(heroFight());
+function warnFrame(g) {
   if (!g) return null;
   WARN_V.set(g.x, g.y + 2.3, g.z).project(camera);
   if (WARN_V.z > 1 || Math.abs(WARN_V.x) > 1.1 || Math.abs(WARN_V.y) > 1.1) return null;
@@ -801,17 +1100,15 @@ function takedownAim() {
 // The gang moves on threes (8 poses a second) while the hero moves on twos: two rates in one shot, as in the film. A goon's
 // place moves every frame; his pose (the walk, the pose clock, the fall) holds between steps, and a new pose shows at once.
 const GOON_VIEW = new Map();
-function goonOnThrees(g) {
-  if (verseMode() === "off" || !flatOn) return g;
+function goonOnThrees(g, k = verseMode() === "off" || !flatOn ? null : Math.floor(G.time * VERSE.goons)) {
+  if (k === null) return g;
   let v = GOON_VIEW.get(g);
   if (!v) { v = { k: -1, pose: -1 }; GOON_VIEW.set(g, v); if (GOON_VIEW.size > 64) for (const q of GOON_VIEW.keys()) if (!q.on) GOON_VIEW.delete(q); }
-  const k = Math.floor(G.time * VERSE.goons);
   if (k !== v.k || g.pose !== v.pose || g.state !== v.state) {
     v.k = k; v.pose = g.pose; v.state = g.state;
     v.phase = g.phase; v.poseT = g.poseT; v.stride = g.stride; v.yaw = g.yaw; v.bp = g.bp; v.br = g.br; v.lift = g.lift; v.delay = g.delay;
   }
   v.x = g.x; v.y = g.y; v.z = g.z;
-  v.flash = g.flash; v.tele = g.tele;
   v.shirt = g.shirt; v.pants = g.pants; v.skin = g.skin; v.height = g.height;
   return v;
 }
@@ -1224,14 +1521,14 @@ function flatHud(dt, inp) {
   D.cue(cue);
   D.hints(play && !save.tutorial && hintT < HINT.seconds);
 }
-// Which hand a swing input fires (desktop.js asks when the input goes down): the free hand on the side of the target, or the right
-// hand for the second-rope input. With one rope out, the idle hand fires. In the opening there is no answer: the old mapping holds.
-// "Toggle": the next press of an input lets go of its own rope.
+// Which hand a swing input fires (desktop.js asks when the input goes down). Both ropes free: the left button
+// is the left rope and the right button is the right rope. With one rope out, the idle hand fires. In the opening
+// there is no answer: the old mapping holds. "Toggle": the next press of an input lets go of its own rope.
 function chooseHand(which, last, busy) {
   if (G.state !== "play" || !flatOn || D.mobile.enabled) return undefined;
   if (settings.hold === "toggle" && last >= 0 && P.ropes[last].state !== "idle") return last;
   const f0 = !busy[0] && P.ropes[0].state === "idle", f1 = !busy[1] && P.ropes[1].state === "idle";
-  if (f0 && f1) return which === 1 ? 1 : picker.hand(picker.result(), TCTX);
+  if (f0 && f1) return buttonHand(which);
   return f0 ? 0 : f1 ? 1 : -1;
 }
 // The pose the ears, the comic words and the far city follow: the camera in flat play, the head otherwise.
@@ -1331,8 +1628,11 @@ function tick(dt, frame, time) {
   // 12. turning, the rig, world poses again
   let yawDelta = 0;
   if (G.state === "play") {
-    yawDelta = inp.mode === "desktop" ? inp.turn : comfort.turn(inp, dt);
-    if (inp.easySwing) yawDelta += phoneFollow(dt, inp);
+    // A headset never yaws to follow a swing. The stick snap or smooth turn still does: that is the player.
+    const xrPlay = isXR() || inp.mode === "xr";
+    const turn = inp.mode === "desktop" && !xrPlay ? inp.turn : comfort.turn(inp, dt);
+    const follow = !xrPlay && inp.easySwing ? phoneFollow(dt, inp) : 0;
+    yawDelta = playYaw({ xr: xrPlay, turn, follow });
     G.rigYaw += yawDelta;
     syncRig();
     toWorld(inp);
@@ -1386,31 +1686,137 @@ function couple(inp) {
 // target and both hands aim at it: a mouse or pad press fires at it, and a phone tap goes through the tap rules. A held press
 // still fires if a target shows up within SWING.fireHold; with none it is a dry fire along the view. A test aim override on a hand
 // wins: for that hand ropes.aim decides, as before.
-const latch = [false, false], realWait = [false, false];
+const latch = [false, false], realWait = [false, false], swingCool = [0, 0], otherHeld = [false, false];
+let easyAvoid = -1;
 let noneAt = -99;
 const PICK_OPTS = { avoidBid: -1 }; // reused: the options of the second pick when both swing inputs go down in one frame
 const PHONE_DIR = new THREE.Vector3(), PROJ = { x: 0, y: 0, depth: 0, behind: false, inView: false };
+// Flat play never aims the web. Holding swing takes a point 12 body-heights ahead and 14 up; a building within 6
+// snaps; without a suitable building there is no attachment. A test aim (G.test.aimAt) and a headset
+// still use the old ray. A new web waits 150 ms after the last one let go.
+let easyDx = 0, easyDz = -1;
+const CAM = { cam: { x: 0, y: 0, z: 0 }, yaw: 0, pitch: 0, fov: 70, aspect: 1 };
+function fillCam() {
+  const c = camera.position;
+  CAM.cam.x = c.x; CAM.cam.y = c.y; CAM.cam.z = c.z;
+  CAM.yaw = flatcam ? flatcam.yaw : G.rigYaw; CAM.pitch = flatcam ? flatcam.pitch : 0; CAM.fov = camera.fov; CAM.aspect = camera.aspect;
+  return CAM;
+}
+function easyDir() {
+  easyDx = P.vel.x; easyDz = P.vel.z;
+  if (Math.hypot(easyDx, easyDz) < 1) {
+    const yaw = G.rigYaw + yawOfQuat(G.input.head.local.quat);
+    easyDx = -Math.sin(yaw); easyDz = -Math.cos(yaw);
+  }
+}
+function bodyH() { return (P.cfg && P.cfg.bodyH) || SWING.bodyH; }
+// The mission card's goal, when the aim is already on it and it sits within `limit` metres of the chest.
+function goalNear(res, limit) {
+  const goal = game && game.progress && game.progress.goal;
+  if (!goal || goal.x == null || !res || !res.valid) return false;
+  const d = Math.hypot(goal.x - P.pos.x, (goal.y || 0) - (P.pos.y + P.chest), goal.z - P.pos.z);
+  if (!(d <= limit) || d < 1) return false;
+  return Math.hypot(res.x - goal.x, res.y - (goal.y == null ? res.y : goal.y), res.z - goal.z) < 15;
+}
+// A tutorial or mission target within 16h, or the gold ring while the picker still has it in range.
+// Those shots fly the aimed cup. An easy web would land at once and cap the rope at 16h.
+function markedCup() {
+  if (!pickerOn) return false;
+  const res = picker.result();
+  if (!res || !res.valid || res.same) return false;
+  if (res.kind === "ring") return true;
+  const cap = 16 * bodyH();
+  return res.dist <= cap && (res.special || res.prio || goalNear(res, cap));
+}
+function aimCopy(a) {
+  return { x: a.x, y: a.y, z: a.z, nx: a.nx, ny: a.ny, nz: a.nz, tag: a.tag, id: a.id, bid: a.bid, easy: true, easyH: a.easyH, sky: !!a.sky, valid: true, same: false, special: false };
+}
+// A building the hero can hang under: the rope is the real distance, and the bottom of that arc stays 1.5 body-heights up.
+function canHang(a) {
+  if (!a || a.sky || a.tag !== "building") return false;
+  const H = a.easyH || SWING.bodyH;
+  const d = Math.hypot(a.x - P.pos.x, a.y - (P.pos.y + P.chest), a.z - P.pos.z);
+  const gy = city.isWater(P.pos.x, P.pos.z) ? 0 : city.groundY(P.pos.x, P.pos.z);
+  return d <= a.y - P.chest - (gy + 1.5 * H);
+}
+function playerEasy(avoid) {
+  easyDir();
+  const tries = [{}, { up: 8, ahead: 20, reach: 10 }, { up: 4, ahead: 34, reach: 16 }];
+  for (let t = 0; t < tries.length; t++) {
+    const opt = avoid != null && avoid >= 0 ? { ...tries[t], avoid } : (t ? tries[t] : undefined);
+    const a = easyAnchor(P, easyDx, easyDz, opt);
+    if (!a || a.sky) continue;
+    if (!(avoid != null && a.bid === avoid)) return { ...aimCopy(a), easy: canHang(a) };
+  }
+  // The visible lock-on may find a real building beyond the automatic search samples.
+  // Reject points that would shorten the rope and pull the hero into the ground-clearance cap.
+  if (pickerOn) {
+    const res = picker.pick(TCTX, { avoidBid: avoid ?? -1 });
+    if (res && res.valid && res.tag === "building" && res.bid !== avoid) {
+      const copy = aimCopy(res);
+      if (copy.easyH == null) copy.easyH = (P.cfg && P.cfg.bodyH) || SWING.bodyH;
+      copy.easy = canHang(copy);
+      return copy;
+    }
+  }
+  return null;
+}
+// The building the other rope already holds, or the one this frame's first shot just took.
+function otherWeb(i) {
+  const held = ropeBid(P.ropes[1 - i]);
+  if (held != null && held >= 0) return held;
+  return i === 1 && easyAvoid >= 0 ? easyAvoid : undefined;
+}
 function aimAndFire(dt, inp) {
   if (driving) return;
+  easyAvoid = -1;
   for (let i = 0; i < 2; i++) {
+    if (swingCool[i] > 0) swingCool[i] = Math.max(0, swingCool[i] - dt);
     const h = inp.hands[i], r = P.ropes[i];
     // a goon in reach: the swing input punches (punch, punch, kick) instead of firing a rope
     const tap = tapped(inp, i);
     if (actionOn() && G.state === "play" && (inp.easySwing ? tap : h.triggerDown) && tryAttack()) { h.triggerDown = false; fireWait[i] = 0; continue; }
+    // Chase view, no test aim, not on a wall: a held swing takes the auto anchor. A phone tap still
+    // aims (the building under the finger). A finger that holds the right half does not. First person
+    // keeps the crosshair. A headset and G.test.aimAt keep the old ray.
+    // A goon in reach makes this button a punch. An easy web here would carry the hero off the fight.
+    const melee = actionOn() && combat.inReach(heroFight());
+    let useEasy = flatOn && !isXR() && G.state === "play" && !ov.aim[i] && !P.wall && !melee
+      && !(pickerOn && picker.result()?.special)
+      && !(flatcam && flatcam.firstPerson)
+      && !(inp.easySwing && !(inp.phoneHeld && inp.phoneHeld[i]));
+    // Mouse and pad: a tutorial or mission target within 16h, and the gold ring while it is in range, keep the aimed cup.
+    // A 6h building still takes the easy web. Over open water an empty 6h ball stays sky, even when the aim can still
+    // see a building across the shore. Over the city, that same empty ball uses the aimed building, and on the ground
+    // with nothing aimed the cup dry-fires.
+    if (useEasy && !inp.easySwing) {
+      if (markedCup()) useEasy = false;
+      else {
+        easyDir();
+        const probe = easyAnchor(P, easyDx, easyDz);
+        if (probe.sky) {
+          const res = pickerOn ? picker.result() : null;
+          const openWater = !P.onGround && P.city.isWater(P.pos.x, P.pos.z);
+          if (!openWater && ((res && res.valid && !res.same) || P.onGround)) useEasy = false;
+        }
+      }
+    }
     // phone: a tap on a side with that side's rope out moves it to the tapped building, or the next one ahead: one tap, one swing,
     // with no let-go between. With nothing new in reach the rope stays. A tap while the cup still flies (0.3 s at most) does
     // nothing: a new shot would cancel the cup before it lands.
     if (tap && r.state !== "idle") {
       if (r.state === "flying") continue;
-      const next = phoneAim(i, h, inp);
-      if (next?.valid && !next.same && !ui.blocking(i)) shoot(i, h, next);
+      const next = useEasy ? playerEasy(otherWeb(i)) : phoneAim(i, h, inp);
+      if (next?.valid && !next.same && !ui.blocking(i) && !(next.easy && swingCool[i] > 0)) shoot(i, h, next);
       else D.mobile.miss(i, true);
       continue;
     }
     if (tap && h.connected && !ui.blocking(i)) {
-      const a = (lastAim[i] = phoneAim(i, h, inp));
+      const a = (lastAim[i] = useEasy ? playerEasy(otherWeb(i)) : phoneAim(i, h, inp));
       D.mobile.target(!!a?.valid && !a.same, false);
-      // only the building the other rope holds is in reach: that rope stays, and this plunger stays home
+      // only the building the other rope holds is in reach: that rope stays, and this plunger stays home.
+      // an easy web that just let go waits out its 150 ms before the next one
+      if (a?.easy && swingCool[i] > 0) { fireWait[i] = 0; continue; }
       if (a?.valid && !a.same) shoot(i, h, a); else if (a?.same) D.mobile.miss(i, false, true); else dryFire(i, h, PHONE_DIR);
       fireWait[i] = 0;
       continue;
@@ -1422,20 +1828,26 @@ function aimAndFire(dt, inp) {
       continue;
     }
     latch[i] = false; // an idle rope has nothing to keep
-    const pk = pickerOn && !ov.aim[i];
+    // easy swing only looks for an anchor on the press. The reticle still follows the aim, so the ring and the world mark agree.
+    if (useEasy && !h.triggerDown && fireWait[i] <= 0) { ropes.aim(i, h.aimPos, h.aimDir, P.vel); lastAim[i] = null; continue; }
+    const pk = pickerOn && !ov.aim[i] && !useEasy;
     let a;
-    if (pk) { ropes.aim(i, h.aimPos, h.aimDir, P.vel); a = picker.result(); } // the reticle follows the aim; the picker decides
+    if (useEasy) a = playerEasy(otherWeb(i));
+    else if (pk) { ropes.aim(i, h.aimPos, h.aimDir, P.vel); a = picker.result(); } // the reticle follows the aim; the picker decides
     else a = ropes.aim(i, h.aimPos, h.aimDir, P.vel);
     lastAim[i] = a;
-    const blocked = ui.blocking(i), ok = !!a && a.valid && !blocked && !(inp.easySwing && a.same);
+    const blocked = ui.blocking(i), cooling = !!(a && a.easy && swingCool[i] > 0);
+    const ok = !!a && a.valid && !blocked && !cooling && !(inp.easySwing && a.same);
     if (inp.easySwing && i === 1) D.mobile.target(ok, false);
-    if (h.triggerDown && !blocked) {
+    if (handFiresRope(h) && !blocked) {
       if (ok) {
         const bid = a.bid;
         shoot(i, h, a);
         // The other hand fires in this same frame (two swing inputs went down together). The picker learns of this rope only next
         // frame, so ask it again for a building that does not hold it. pick() rewrites the result in place: after shoot, never in it.
-        if (pk && i === 0 && bid >= 0 && inp.hands[1].triggerDown && P.ropes[1].state === "idle") { PICK_OPTS.avoidBid = bid; picker.pick(TCTX, PICK_OPTS); }
+        // An easy web has the same rule: the second shot this frame skips the building the first just took.
+        if (useEasy && i === 0 && bid >= 0) easyAvoid = bid;
+        if (pk && i === 0 && bid >= 0 && handFiresRope(inp.hands[1]) && P.ropes[1].state === "idle") { PICK_OPTS.avoidBid = bid; picker.pick(TCTX, PICK_OPTS); }
       } else { fireWait[i] = SWING.fireHold; realWait[i] = !!h.swingDown; }
     } else if (fireWait[i] > 0) {
       if (blocked) fireWait[i] = 0;
@@ -1472,9 +1884,11 @@ function turnToSwing(a) {
 function shoot(i, h, a) {
   const phone = G.input.easySwing, real = !phone && !!(h.swingDown || realWait[i]);
   realWait[i] = false;
-  if (flatOn && pickerOn && P.wall && flatcam.opacity > 0.5 && (phone || real)) turnToSwing(a); // before fire: it lets go of the wall
+  if (flatOn && !isXR() && pickerOn && P.wall && flatcam.opacity > 0.5 && (phone || real)) turnToSwing(a); // before fire: it lets go of the wall. A headset does not turn the view.
   firePerch[i] = heroFight().perch; // a rope fired from a roof or a wall: the takedown is judged from here, not where the cup lands
+  otherHeld[i] = P.ropes[1 - i].state === "attached";
   fire(P, i, h.aimPos, a);
+  if (a.easy) armEasy(P.ropes[i], a.easyH);
   toggled[i] = true;
   if (phone) { firedAt[i] = G.time; handoffT[i] = -1; firedPair[i] = !!(G.input.phonePair && G.input.phonePair[i]); } // a rope thrown again is not the one that lets go
   latch[i] = real; // a real press keeps the cup in flight, and earns the kick
@@ -1516,6 +1930,7 @@ function physics(dt, inp) {
   const ml = Math.sqrt(mx * mx + mz * mz);
   if (ml > 1) { mx /= ml; mz /= ml; }
   physIn.move.x = mx; physIn.move.z = mz;
+  physIn.forward = !intro && inp.move.y > 0.2;
   // on a wall: W/S (or the phone's arrows) climb, and A/D go along it, toward the view's right
   physIn.climb.up = intro ? 0 : inp.move.y;
   physIn.climb.x = intro ? 0 : -fz * inp.move.x; physIn.climb.z = intro ? 0 : fx * inp.move.x;
@@ -1630,21 +2045,24 @@ function phoneLetGo(i, vault) {
   if (G.time - whooshAt >= 2) { whooshAt = G.time; wordAhead("WHOOSH", P.pos, 6, 1.6, 1.2); }
   pushRing({ type: "fling", side: i, speed: Math.hypot(v.x, v.y, v.z) });
 }
-// Mouse and pad: a real let-go while the GO cue showed on that rope (last frame) boosts the hero forward and up with a flip
+// Mouse and pad: a real let-go. On the GO cue it boosts forward and up and flips. A fast let-go outside the cue still
+// carries the swing on, so one arc does not die when the release is early. A slow drop stays a drop.
 let boostAt = -9;
 function releaseBoost(i) {
   const B = MOVES.release;
-  if (!cueAir[i] || G.input.easySwing || !flatOn || G.state !== "play" || P.onGround || P.wall || G.time - boostAt < B.cool) return;
+  if (G.input.easySwing || !flatOn || G.state !== "play" || P.onGround || P.wall || G.time - boostAt < B.cool) return;
   if (P.ropes[1 - i].state === "attached") return; // the other rope still holds: it carries you on
-  boostAt = G.time;
+  const perfect = !!cueAir[i];
   const v = P.vel, hs = Math.hypot(v.x, v.z);
-  if (hs > 0.5) { v.x += (v.x / hs) * B.forward; v.z += (v.z / hs) * B.forward; }
-  v.y = Math.max(v.y, 0) + B.up;
-  fovKick = B.kick;
-  plateKick = 1; // the plates slip for a moment: a burst of speed
-  hero.flip(B.flip);
-  if (G.time - whooshAt >= 2) { whooshAt = G.time; wordAhead("WHOOSH", P.pos, 6, 1.6, 1.2); }
-  pushRing({ type: "boost", side: i, speed: Math.hypot(v.x, v.y, v.z) });
+  if (!perfect && hs < B.carry) return;
+  boostAt = G.time;
+  const forward = perfect ? B.forward : B.carryForward, up = perfect ? B.up : B.carryUp;
+  if (hs > 0.5) { v.x += (v.x / hs) * forward; v.z += (v.z / hs) * forward; }
+  if (perfect) v.y = Math.max(v.y, 0) + up; else v.y += up;
+  fovKick = perfect ? B.kick : B.carryKick;
+  if (perfect) { plateKick = 1; hero.flip(B.flip); } // the plates slip, and the hero flips, only on the cue
+  if (G.time - whooshAt >= 2) { whooshAt = G.time; wordAhead("WHOOSH", P.pos, 6, 1.6, perfect ? 1.2 : 1); }
+  pushRing({ type: "boost", side: i, speed: Math.hypot(v.x, v.y, v.z), perfect, added: forward });
 }
 // A new phone plunger on side i caught a building: the other one lets go soon, unless the two were thrown as a pair (close in
 // time, or by two fingers that were down together)
@@ -1707,11 +2125,13 @@ function feedback(ev) {
       // the rope can already be gone in the same step (the chest grabbed a wall and let go of the ropes): no kick then
       if (G.state === "play" && r.state === "attached" && !SPECIAL_TAGS[r.target.tag] && !r.sticky) {
         if (G.input.easySwing) { phoneRopeT[i] = 0; phoneCatch(r); boost(i, PHONE.attachSpeed); phoneHandoff(i); }
-        else if (latch[i] && flatOn) boost(i, DESKTOP.attachSpeed); // a real press only: a test hook gets no kick
+        else if (latch[i] && flatOn && !otherHeld[i]) boost(i, DESKTOP.attachSpeed); // a real press only, and not a second web: a test hook gets no kick
       }
       catchFeedback(i, "attach");
       break;
-    case "detach": audio.sfx("release", { pos: G.input.hands[i].gripPos }); if (latch[i]) releaseBoost(i); latch[i] = false; break;
+    case "detach":
+      if (ev.easy) { easyBoost(P); swingCool[i] = 0.15; }
+      audio.sfx("release", { pos: G.input.hands[i].gripPos }); if (latch[i]) releaseBoost(i); latch[i] = false; break;
     case "yank":
       audio.sfx(ev.pump ? "pump" : "yank", { pos: G.input.hands[i].gripPos }); haptic(i, 0.6, 40);
       if (ev.pump) fx.word("SPLORT", r.anchor, { dir: FX_UP, scale: 1.2 }); else wordAtHand("YANK", i);
@@ -1764,6 +2184,8 @@ function catchFeedback(i, what) {
 // ahead of you, never on you. Sizes come from fx.js (8 to 12 degrees across); scale makes the big moments bigger.
 const FX_UP = { x: 0, y: 1, z: 0 }, FXP = new THREE.Vector3(), FXD = new THREE.Vector3(), FXQ = new THREE.Vector3();
 let whooshAt = -99, whooshArmed = true;
+// The grade's hour. A full turn is four minutes: sunset, blue hour, sunset again. Title shots stay at sunset.
+let gradeClock = 0;
 // on the line from the head through the hand's muzzle, 1.7 m from the head
 function wordAtHand(name, i) {
   const hp = G.input.head.pos, t = TIPS[i] || hands.tip(i);
@@ -1813,8 +2235,14 @@ function after(dt, inp, yawDelta) {
   TIPS[0] = hands.tip(0); TIPS[1] = hands.tip(1);
   // third person: the ropes leave the hero's own hands (the old muzzles stay for first person)
   if (flatOn && flatcam.opacity > 0.5) { TIPS[0] = hero.hand(0); TIPS[1] = hero.hand(1); }
+  markGoldInk(dt);
   ropes.update(dt, P, TIPS, G.time);
   game.update(dt, G.time, P, inp); // before the hand-off it only lets the sleeping King breathe
+  ui.paintMission(); // the score-row card was drawn at the start of the frame, before this objective existed
+  if (inPlay) {
+    gradeClock += dt;
+    view.setDay(0.5 - 0.5 * Math.cos(gradeClock * (Math.PI * 2 / 240)));
+  }
   view.update(dt, G.time, vh.pos);
   streetFrame(dt, inPlay);
   // comfort: the 50 ms low-passed acceleration, the smooth-turn rate, and whether a snap happened
@@ -1861,6 +2289,7 @@ function after(dt, inp, yawDelta) {
   if (inp.easySwing) { D.mobile.rush(inPlay ? (speed - PHONE.lines.from) / (PHONE.lines.to - PHONE.lines.from) : 0, dt); D.mobile.climbing(inPlay && !!P.wall); }
   audio.setListener(vh.pos, vh.quat);
   audio.setWind(inPlay ? speed : 0, P.pos.y);
+  audio.chase(inPlay ? chaseBed() : 0);
   for (let i = 0; i < 2; i++) {
     const r = P.ropes[i], on = r.state === "attached";
     audio.setRope(i, on ? r.tension : 0);
@@ -1868,6 +2297,318 @@ function after(dt, inp, yawDelta) {
     if (on && isXR()) { hapT[i] -= dt; if (hapT[i] <= 0) { hapT[i] = 0.05; haptic(i, 0.05 + 0.35 * r.tension, 40); } } else hapT[i] = 0;
   }
   audio.update(dt);
+  drawWeb(dt);
+  publishSwing();
+}
+
+// Chase view only: a normal cup on the gold-ring tower is drawn as the ink web. The flight and the length
+// stay the aimed cup (easy stays false). The flag lingers 150 ms after release so the hemp cup does not
+// zip back across that fade. A headset and first person keep the mesh rope.
+function markGoldInk(dt) {
+  if (!P) return;
+  const chase = flatOn && !isXR() && !(flatcam && flatcam.firstPerson);
+  const g = city && city.goldRing;
+  for (const r of P.ropes) {
+    const on = !!(chase && g && r.state === "attached"
+      && Math.abs(r.anchor.x - g.x) < 2
+      && Math.abs(r.anchor.y - g.y) < 6
+      && Math.abs(r.anchor.z - g.z) < 8);
+    if (on) { r.inkLine = true; r.inkFade = 0; }
+    else if (r.inkLine && chase && r.state === "idle") {
+      r.inkFade = (r.inkFade || 0) + (dt || 0);
+      if (r.inkFade > 0.15) r.inkLine = false;
+    } else r.inkLine = false;
+  }
+}
+
+// The easy web. In the 3D scene it is a line in the world from the hand toward the anchor, ink #2B2A33,
+// about 2 CSS px wide at every distance (so a far anchor does not thin away). At the start, the middle
+// of the part you can see sits about 16 px off that chord, toward the bottom of the screen, and
+// tension pulls it straight. The bow is unprojected, and the line keeps going to the anchor past the
+// edge. A hang at the middle of the whole rope does not show: on a sky web that point is off the
+// screen. It fades over 150 ms on the let-go. The paper speed lines stay a 2D overlay. A scene that
+// is not the perspective view keeps the old screen stroke, clipped to the edge.
+let webCv = null, webCx = null, webW = 0, webH = 0, peakSp = 0;
+const webWas = [false, false], webFade = [0, 0], webSag = [0, 0];
+const webA = [{ x: 0, y: 0, z: 0 }, { x: 0, y: 0, z: 0 }];
+const WEB_A = { x: 0, y: 0, depth: 0, behind: false, inView: false };
+const WEB_B = { x: 0, y: 0, depth: 0, behind: false, inView: false };
+const SWING_VIEW = { attached: false, anchor: { x: 0, y: 0, z: 0, offscreen: false }, ropeLength: 0, speed: 0 };
+const WEB_MAX = 16, WEB_N = 8, WEB_SCAN = 16;
+const WEB_PTS = Array.from({ length: WEB_N + 1 }, () => new THREE.Vector3());
+const WEB_HAND = new THREE.Vector3(), WEB_ANCH = new THREE.Vector3(), WEB_DIR = new THREE.Vector3();
+const WEB_G = new THREE.Vector3(), WEB_AXIS = new THREE.Vector3(), WEB_FROM = new THREE.Vector3();
+const WEB_QT = new THREE.Quaternion(), WEB_M = new THREE.Matrix4(), WEB_SC = new THREE.Vector3(1, 1, 1);
+const WEB_Y = new THREE.Vector3(0, 1, 0);
+let webMesh = null, webFadeAttr = null, webSeg = 0;
+function webCss() {
+  const e5 = camera.projectionMatrix.elements[5];
+  const h = innerHeight || renderer.domElement.clientHeight || 1;
+  return e5 > 0 && h > 0 ? (2 / e5) / h : 0.001;
+}
+function ensureWeb() {
+  if (webMesh || !scene) return;
+  const geo = new THREE.CylinderGeometry(1, 1, 1, 6, 1, true).translate(0, 0.5, 0);
+  webFadeAttr = new THREE.InstancedBufferAttribute(new Float32Array(WEB_MAX), 1);
+  geo.setAttribute("aFade", webFadeAttr);
+  const mat = new THREE.ShaderMaterial({
+    transparent: true, depthWrite: false, toneMapped: false, fog: false,
+    uniforms: { uPix: { value: 0.001 } },
+    vertexShader: `
+      attribute float aFade;
+      uniform float uPix;
+      varying float vFade;
+      void main() {
+        mat4 m = modelMatrix * instanceMatrix;
+        vec3 axis = (m * vec4(0.0, position.y, 0.0, 1.0)).xyz;
+        vec3 rad = normalize(mat3(m) * vec3(position.x, 0.0, position.z));
+        float r = uPix * distance(axis, cameraPosition);
+        vFade = aFade;
+        gl_Position = projectionMatrix * viewMatrix * vec4(axis + rad * max(r, 1e-4), 1.0);
+      }`,
+    fragmentShader: `
+      varying float vFade;
+      void main() { gl_FragColor = vec4(${(0x2b / 255).toFixed(5)}, ${(0x2a / 255).toFixed(5)}, ${(0x33 / 255).toFixed(5)}, vFade); }`,
+  });
+  webMesh = new THREE.InstancedMesh(geo, mat, WEB_MAX);
+  webMesh.name = "easyWeb";
+  webMesh.frustumCulled = false;
+  webMesh.visible = false;
+  webMesh.count = 0;
+  webMesh.renderOrder = 2;
+  webMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+  webFadeAttr.setUsage(THREE.DynamicDrawUsage);
+  webMesh.onBeforeRender = () => { mat.uniforms.uPix.value = webCss(); };
+  scene.add(webMesh);
+}
+function webSagPx(tension) {
+  const ten = tension < 0 ? 0 : tension > 1 ? 1 : tension;
+  return (1 - ten) * 16;
+}
+function putWeb(hand, anchor, sagPx, alpha) {
+  if (!(alpha > 0.01) || !webMesh) return;
+  WEB_HAND.set(hand.x, hand.y, hand.z);
+  WEB_ANCH.set(anchor.x, anchor.y, anchor.z);
+  WEB_DIR.copy(WEB_ANCH).sub(WEB_HAND);
+  if (WEB_DIR.length() < 1e-3) return;
+  const w = innerWidth || 1, h = innerHeight || 1;
+  const inv = camera.matrixWorldInverse;
+  // Where the straight rope crosses the view. The belly of a sky web is often off the screen, so the
+  // sag is measured on the part you can see, then the line still runs out to the anchor.
+  let ua = 1, ub = 0, saw = false;
+  let ax = 0, ay = 0, bx = 0, by = 0;
+  for (let i = 0; i <= WEB_SCAN; i++) {
+    const u = i / WEB_SCAN;
+    WEB_AXIS.copy(WEB_HAND).lerp(WEB_ANCH, u);
+    WEB_FROM.copy(WEB_AXIS).applyMatrix4(inv);
+    const inFront = WEB_FROM.z < -0.05;
+    WEB_FROM.copy(WEB_AXIS).project(camera);
+    const sx = (WEB_FROM.x * 0.5 + 0.5) * w, sy = (0.5 - WEB_FROM.y * 0.5) * h;
+    const vis = inFront && sx >= 0 && sy >= 0 && sx < w && sy < h;
+    if (vis) {
+      if (!saw || u < ua) { ua = u; ax = sx; ay = sy; }
+      if (!saw || u > ub) { ub = u; bx = sx; by = sy; }
+      saw = true;
+    }
+  }
+  let tx = bx - ax, ty = by - ay, tl = Math.hypot(tx, ty);
+  if (!saw || ub - ua < 0.02 || tl < 8) { tx = 0; ty = 1; tl = 0; }
+  else { tx /= tl; ty /= tl; }
+  let nx = -ty, ny = tx;
+  if (ny < 0) { nx = -nx; ny = -ny; }
+  const n = WEB_N;
+  for (let k = 0; k <= n; k++) {
+    const t = k / n;
+    let u;
+    if (!saw || ub - ua < 0.02) u = t;
+    else if (t < 0.15) u = ua > 0 ? (t / 0.15) * ua : 0;
+    else if (t > 0.85) u = ub + ((t - 0.85) / 0.15) * (1 - ub);
+    else u = ua + ((t - 0.15) / 0.7) * (ub - ua);
+    const p = WEB_PTS[k].copy(WEB_HAND).lerp(WEB_ANCH, u);
+    let drop = 0;
+    if (saw && u > ua + 1e-4 && u < ub - 1e-4 && tl >= 8) {
+      const s = (u - ua) / (ub - ua);
+      // The visible ends sit partway off the rope, so the bow the eye measures is shallower than
+      // this offset. 1.65 brings that bow back to about (1 - tension) * 16 px.
+      drop = sagPx * 1.65 * (0.5 - 0.5 * Math.cos(s * Math.PI * 2));
+    }
+    if (drop > 0.05) {
+      WEB_FROM.copy(p).project(camera);
+      const nz = WEB_FROM.z;
+      const sx = (WEB_FROM.x * 0.5 + 0.5) * w + nx * drop;
+      const sy = (0.5 - WEB_FROM.y * 0.5) * h + ny * drop;
+      WEB_FROM.x = (sx / w) * 2 - 1;
+      WEB_FROM.y = 1 - (sy / h) * 2;
+      WEB_FROM.z = nz;
+      p.copy(WEB_FROM).unproject(camera);
+    }
+  }
+  for (let k = 0; k < n && webSeg < WEB_MAX; k++) {
+    const p = WEB_PTS[k], q = WEB_PTS[k + 1];
+    WEB_AXIS.copy(q).sub(p);
+    const l = WEB_AXIS.length();
+    if (l < 1e-5) continue;
+    WEB_AXIS.multiplyScalar(1 / l);
+    WEB_FROM.copy(p).addScaledVector(WEB_AXIS, -0.004);
+    WEB_QT.setFromUnitVectors(WEB_Y, WEB_AXIS);
+    WEB_M.compose(WEB_FROM, WEB_QT, WEB_SC.set(1, l + 0.008, 1));
+    webMesh.setMatrixAt(webSeg, WEB_M);
+    webFadeAttr.setX(webSeg, alpha);
+    webSeg++;
+  }
+}
+function webCanvas() {
+  if (!webCv) {
+    webCv = document.createElement("canvas");
+    webCv.id = "webLine";
+    webCv.style.cssText = "position:fixed;inset:0;z-index:8;pointer-events:none";
+    document.body.appendChild(webCv);
+    webCx = webCv.getContext("2d");
+  }
+  const dpr = Math.min(window.devicePixelRatio || 1, 2), w = innerWidth, h = innerHeight;
+  const bw = Math.floor(w * dpr), bh = Math.floor(h * dpr);
+  if (webCv.width !== bw || webCv.height !== bh) { webCv.width = bw; webCv.height = bh; webCv.style.width = w + "px"; webCv.style.height = h + "px"; }
+  webW = w; webH = h;
+  webCx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  webCx.clearRect(0, 0, w, h);
+  return webCx;
+}
+function clipSeg(x0, y0, x1, y1, w, h) {
+  const code = (x, y) => (y < 0 ? 8 : y > h ? 4 : 0) | (x > w ? 2 : x < 0 ? 1 : 0);
+  let c0 = code(x0, y0), c1 = code(x1, y1);
+  for (let n = 0; n < 8; n++) {
+    if (!(c0 | c1)) return { x0, y0, x1, y1, ok: true };
+    if (c0 & c1) return { ok: false };
+    const c = c0 || c1;
+    let x, y;
+    if (c & 8) { x = x0 + (x1 - x0) * (0 - y0) / ((y1 - y0) || 1e-6); y = 0; }
+    else if (c & 4) { x = x0 + (x1 - x0) * (h - y0) / ((y1 - y0) || 1e-6); y = h; }
+    else if (c & 2) { y = y0 + (y1 - y0) * (w - x0) / ((x1 - x0) || 1e-6); x = w; }
+    else { y = y0 + (y1 - y0) * (0 - x0) / ((x1 - x0) || 1e-6); x = 0; }
+    if (c === c0) { x0 = x; y0 = y; c0 = code(x0, y0); } else { x1 = x; y1 = y; c1 = code(x1, y1); }
+  }
+  return { ok: false };
+}
+function strokeWeb(ctx, hand, anchor, sag, alpha, w, h) {
+  project(CAM, hand.x, hand.y, hand.z, WEB_A);
+  project(CAM, anchor.x, anchor.y, anchor.z, WEB_B);
+  const x0 = (WEB_A.x * 0.5 + 0.5) * w, y0 = (0.5 - WEB_A.y * 0.5) * h;
+  const x1 = (WEB_B.x * 0.5 + 0.5) * w, y1 = (0.5 - WEB_B.y * 0.5) * h;
+  const seg = clipSeg(x0, y0, x1, y1, w, h);
+  if (!seg.ok) return;
+  ctx.strokeStyle = "#2B2A33";
+  ctx.globalAlpha = alpha;
+  ctx.lineWidth = 2;
+  ctx.lineCap = "round";
+  ctx.beginPath();
+  ctx.moveTo(seg.x0, seg.y0);
+  if (sag > 0.5) ctx.quadraticCurveTo((seg.x0 + seg.x1) / 2, (seg.y0 + seg.y1) / 2 + sag, seg.x1, seg.y1);
+  else ctx.lineTo(seg.x1, seg.y1);
+  ctx.stroke();
+  ctx.globalAlpha = 1;
+}
+const handOf = (i) => TIPS[i] || { x: P.pos.x, y: P.pos.y + P.chest, z: P.pos.z };
+function drawWeb(dt) {
+  // An empty full-screen canvas, cleared every frame, sits in the compositor and can stall the next
+  // frame for seconds (the mouse-look resume timer). The 3D line is a mesh. The canvas stays hidden
+  // until the paper speed lines are actually drawn.
+  const threeD = !!(camera && camera.isPerspectiveCamera);
+  if (!flatOn || isXR() || !P) {
+    if (webCv) webCv.hidden = true;
+    if (webMesh) { webMesh.visible = false; webMesh.count = 0; }
+    return;
+  }
+  let pending = false;
+  for (let i = 0; i < 2; i++) {
+    if ((P.ropes[i].easy || P.ropes[i].inkLine) && P.ropes[i].state === "attached") pending = true;
+    else if (webWas[i] || webFade[i] > 0) pending = true;
+  }
+  if (!pending) {
+    if (webCv) webCv.hidden = true;
+    if (webMesh) { webMesh.visible = false; webMesh.count = 0; }
+    peakSp = 0;
+    return;
+  }
+  if (threeD) { ensureWeb(); camera.updateMatrixWorld(); }
+  else fillCam();
+  webSeg = 0;
+  const ctx2 = threeD ? null : webCanvas();
+  if (!threeD) webCv.hidden = false;
+  const w = webW, h = webH;
+  let any = false;
+  for (let i = 0; i < 2; i++) {
+    const r = P.ropes[i], on = !!((r.easy || r.inkLine) && r.state === "attached");
+    if (on) {
+      webWas[i] = true; webFade[i] = 0;
+      webA[i].x = r.anchor.x; webA[i].y = r.anchor.y; webA[i].z = r.anchor.z;
+      const ten = r.tension < 0 ? 0 : r.tension > 1 ? 1 : r.tension;
+      const hand = handOf(i);
+      webSag[i] = webSagPx(ten);
+      if (threeD) putWeb(hand, webA[i], webSag[i], 1);
+      else strokeWeb(ctx2, hand, webA[i], webSag[i], 1, w, h);
+      any = true;
+    } else if (webWas[i]) { webWas[i] = false; webFade[i] = 0.15; }
+    if (!on && webFade[i] > 0) {
+      webFade[i] = Math.max(0, webFade[i] - dt);
+      const k = webFade[i] / 0.15, hand = handOf(i);
+      if (threeD) putWeb(hand, webA[i], webSag[i] * k, k);
+      else strokeWeb(ctx2, hand, webA[i], webSag[i] * k, k, w, h);
+    }
+  }
+  if (threeD && webMesh) {
+    webMesh.count = webSeg;
+    webMesh.visible = webSeg > 0;
+    webMesh.userData.fade = Math.max(webFade[0], webFade[1]);
+    webMesh.instanceMatrix.clearUpdateRanges(); webFadeAttr.clearUpdateRanges();
+    if (webSeg > 0) {
+      webMesh.instanceMatrix.addUpdateRange(0, webSeg * 16); webMesh.instanceMatrix.needsUpdate = true;
+      webFadeAttr.addUpdateRange(0, webSeg); webFadeAttr.needsUpdate = true;
+    }
+  }
+  const sp = any ? Math.hypot(P.vel.x, P.vel.y, P.vel.z) : 0;
+  if (!any) peakSp = 0;
+  else if (sp > peakSp) peakSp = sp;
+  if (any && peakSp > 12 && sp > 0.88 * peakSp) {
+    fillCam();
+    project(CAM, P.pos.x, P.pos.y + P.chest, P.pos.z, WEB_A);
+    if (!WEB_A.behind) {
+      const ctx = threeD ? webCanvas() : ctx2;
+      if (threeD) webCv.hidden = false;
+      const bw = webW, bh = webH;
+      const bx = (WEB_A.x * 0.5 + 0.5) * bw, by = (0.5 - WEB_A.y * 0.5) * bh;
+      const k = 2 / (sp || 1);
+      project(CAM, P.pos.x - P.vel.x * k, P.pos.y + P.chest - P.vel.y * k, P.pos.z - P.vel.z * k, WEB_B);
+      let dx = ((WEB_B.x - WEB_A.x) * 0.5) * bw, dy = ((WEB_A.y - WEB_B.y) * 0.5) * bh;
+      const len = Math.hypot(dx, dy) || 1; dx /= len; dy /= len;
+      const n = sp > 0.95 * peakSp ? 4 : 3;
+      ctx.strokeStyle = "#F3E9D6"; ctx.globalAlpha = 0.25; ctx.lineWidth = 1; ctx.lineCap = "round";
+      for (let i = 0; i < n; i++) {
+        const off = (i - (n - 1) / 2) * 7, x0 = bx - dy * off, y0 = by + dx * off, reach = 28 + i * 6;
+        ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x0 + dx * reach, y0 + dy * reach); ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
+    } else if (threeD && webCv) webCv.hidden = true;
+  } else if (threeD && webCv) webCv.hidden = true;
+}
+function publishSwing() {
+  window.__test = window.__test || {};
+  window.__test.swing = SWING_VIEW;
+  let r = null;
+  if (P) {
+    const live = (q) => q.state === "attached";
+    if (live(P.ropes[0]) && P.ropes[0].easy) r = P.ropes[0];
+    else if (live(P.ropes[1]) && P.ropes[1].easy) r = P.ropes[1];
+    else if (live(P.ropes[0]) && P.ropes[0].inkLine) r = P.ropes[0];
+    else if (live(P.ropes[1]) && P.ropes[1].inkLine) r = P.ropes[1];
+  }
+  SWING_VIEW.attached = !!r;
+  SWING_VIEW.ropeLength = r ? r.len : 0;
+  SWING_VIEW.speed = P ? Math.hypot(P.vel.x, P.vel.y, P.vel.z) : 0;
+  if (r) {
+    SWING_VIEW.anchor.x = r.anchor.x; SWING_VIEW.anchor.y = r.anchor.y; SWING_VIEW.anchor.z = r.anchor.z;
+    if (flatOn && !isXR()) { fillCam(); project(CAM, r.anchor.x, r.anchor.y, r.anchor.z, WEB_B); SWING_VIEW.anchor.offscreen = !WEB_B.inView; }
+    else SWING_VIEW.anchor.offscreen = !!(r.target && r.target.tag === "sky");
+  } else { SWING_VIEW.anchor.x = SWING_VIEW.anchor.y = SWING_VIEW.anchor.z = 0; SWING_VIEW.anchor.offscreen = false; }
 }
 
 // The fight keys of flat play. Space (pad A, the phone's DODGE button) with a goon winding up near: a dodge, not a jump. F (pad RB) with a
@@ -1942,9 +2683,23 @@ function fightKeys(inp, mx, mz) {
 
 /* ---------------- the loop ---------------- */
 let lastTime = -1, fps = 60, titleCompiled = false;
+const frameMetrics = FLAGS.debug ? createFrameMetrics() : null;
+if (frameMetrics) for (const type of ["keydown", "pointerdown"]) addEventListener(type, (e) => {
+  if (!e.repeat && G.state === "play" && G.input?.visible && !document.hidden && !G.held) frameMetrics.input(e.timeStamp);
+}, { capture: true, passive: true });
+if (frameMetrics) addEventListener("visibilitychange", () => frameMetrics.frame(0, 0, false));
 const lastInfo = { calls: 0, tris: 0, views: 1 };
 const samples = [];
 const errSeen = new Set();
+const SUN_PT = new THREE.Vector3(), SUN_OUT = { x: 0, y: 0 };
+// Where the sun sits on the screen, for the shaft pass. Null when it is behind the camera. Flat play only.
+function sunShaft() {
+  SUN_PT.set(camera.position.x + SUN_DIR.x * 800, camera.position.y + SUN_DIR.y * 800, camera.position.z + SUN_DIR.z * 800);
+  SUN_PT.project(camera);
+  if (SUN_PT.z > 1) return null;
+  SUN_OUT.x = SUN_PT.x * 0.5 + 0.5; SUN_OUT.y = SUN_PT.y * 0.5 + 0.5;
+  return SUN_OUT;
+}
 function loop(time, frame) {
   try {
     const raw = lastTime < 0 ? 1 / 60 : (time - lastTime) / 1000;
@@ -1958,7 +2713,9 @@ function loop(time, frame) {
     const stopped = hitStopT > 0 && G.state === "play";
     hitStopT = Math.max(0, hitStopT - dt);
     if (!G.held && !stopped) tick(dt * slow, frame, time);
+    if (renderScale.frame(time, G.state === "play" && G.input?.visible && !document.hidden && !G.held && !renderer.xr.isPresenting)) renderer.setPixelRatio(flatPixelRatio());
     render(frame, dt);
+    if (frameMetrics) frameMetrics.frame(time, performance.now(), G.state === "play" && G.input?.visible && !document.hidden && !G.held);
   } catch (e) {
     // an exception in the XR callback would stop three's loop for good: report it once and keep going
     const k = String(e && e.message);
@@ -1967,6 +2724,7 @@ function loop(time, frame) {
 }
 function render(frame, rdt = 0) {
   const xr = renderer.xr.isPresenting;
+  if (!xr && document.hidden) return;
   if (loadRing.visible) loadRing.rotation.z -= 0.08;
   if (shot && !xr) applyShot();
   if (xr && frame && !compiledXR) {
@@ -1983,7 +2741,7 @@ function render(frame, rdt = 0) {
   }
   if (!xr) {
     const vs = verseFrame(rdt);
-    bloom.render(scene, camera, bloomLevel(), vs);
+    bloom.render(scene, camera, bloomLevel(), vs, sunShaft());
     if (camLeaned) { camLeaned = false; flatcam.restore(); } // the lean and the shake are for the eye only
   } else renderer.render(scene, camera);
   const info = xr ? renderer.info.render : bloom.last;
@@ -2019,6 +2777,7 @@ function shotPose(name) {
     case "harbour": return { pos: [-90, 28, 470], at: [-90, 80, 150] };
     case "aerial": return { pos: [120, 720, 640], at: [-40, 0, -200] };
     case "street": return { pos: [-154.5, 1.7, 30.5], at: [-162, 8, -300] }; // the sidewalk corner, clear of the traffic
+    case "lamp": return { pos: [-154.7, 1.65, 1], at: [-154.7, 0.15, -8] }; // the pavement under one street lamp
     case "diorama": return { pos: [0, 1.65, 0], at: [0, 1.0, -1.1], diorama: true };
     default: return null;
   }
@@ -2221,6 +2980,8 @@ function inputSnapshot() {
   };
 }
 G.test = {
+  performance: () => frameMetrics ? frameMetrics.report() : null,
+  resetPerformance: () => frameMetrics?.reset(),
   // logic without rendering; while held the loop only renders, so step owns time
   step(dt = 1 / 60, n = 1) { for (let i = 0; i < n; i++) tick(dt, null, null); return G.test.state(); },
   hold(on = true) { G.held = !!on; return G.held; },
@@ -2238,6 +2999,14 @@ G.test = {
     };
   },
   teleport(x, y, z) { teleport(P, x, y, z); placeRig(G.rigYaw, x, y, z); return v3(P.pos); },
+  // turn the chase view toward a world point (a test frame, not a control)
+  face(x, z) {
+    const yaw = Math.atan2(-(x - P.pos.x), -(z - P.pos.z));
+    G.rigYaw = yaw;
+    placeRig(yaw, P.pos.x, P.pos.y, P.pos.z);
+    if (flatOn && flatcam) { flatcam.settle(); hero.setYaw(yaw); }
+    return yaw;
+  },
   toLocal(x, y, z) { const R = rig.position; rotY(-G.rigYaw, x - R.x, z - R.z, T); return { x: T.x, y: y - R.y, z: T.z }; },
   toWorld(x, y, z) { const R = rig.position; rotY(G.rigYaw, x, z, T); return { x: R.x + T.x, y: R.y + y, z: R.z + T.z }; },
   aimAt(side, x, y, z) { ov.aim[side] = x == null ? null : { x, y, z }; },
@@ -2284,12 +3053,39 @@ G.test = {
   // tune the Verse numbers for a test (VERSE in main.js): verse({ lines: 0 }); returns a copy of them all
   verse(o) { if (o) Object.assign(VERSE, o); return { ...VERSE }; },
   // the city action (flat play): fights, cars, jobs, the moves, and the screen bits
-  action: () => ({ on: actionOn(), driving, sprinting, energy, roll: P.roll || 0, combat: combat.info(), cars: cars.info(), jobs: jobs.info(), hud: actHud.info(), view: actionView.info(), figures: figures.info(), save: JSON.parse(JSON.stringify(save.jobs)), ropeTargets: [...ropeIds], cueAir: cueAir.slice(), slowT, hero: G.hero.info().pose, zip: zip ? { ...zip } : null, hitStop: hitStopT,
+  action: () => ({ on: actionOn(), driving, sprinting, energy, roll: P.roll || 0, combat: combat.info(), cars: cars.info(), jobs: jobs.info(), hud: actHud.info(), view: actionView.info(), figures: figures.info(), save: JSON.parse(JSON.stringify(save.jobs)), ropeTargets: [...ropeIds], cueAir: cueAir.slice(), slowT, hero: G.hero.info().pose, zip: zip ? { ...zip } : null, hitStop: hitStopT, win: lastWin ? { ...lastWin, hold: winHold } : null, miss: lastMiss ? { ...lastMiss, hold: missHold } : null,
     verse: { mode: verseMode(), impact: impactT, sense: senseAmt, twos: G.hero.info().twos, plate: VS.plate, mood: VS.mood, moodHurt, moodFight, smear: G.hero.info().smear, cam: flatcam.info() } }),
   // the goon as the figures draw him (on threes in flat play)
   goonView(id) { const g = combat.goons.find((q) => q.id === id); if (!g) return null; const v = goonOnThrees(g); return { phase: v.phase, poseT: v.poseT, pose: v.pose, x: v.x, z: v.z }; },
   // start a job (type: sludge, catch, washer, pizza, balloon, brawl, taxi, thief) at the nearest offer of that type, or at the hero
-  job(type) { const o = jobs.offers.find((q) => q.type === type) || null; jobs.start(type, o, heroFight()); return jobs.info(); },
+  job(type, mission) { const o = jobs.offers.find((q) => q.type === type) || null; jobs.start(type, o, heroFight(), mission ? { mission } : undefined); return jobs.info(); },
+  // The live getaway's cruise speed, or 0 when the job has no car.
+  jobPace() { const c = jobs.active && jobs.active.data && jobs.active.data.car; return c && c.auto ? c.auto.speed : 0; },
+  // Set the live job clock. The copy from action() is not the live one. Returns the timer, or false when nothing is running.
+  jobClock(t) { const A = jobs.active; if (!A) return false; A.timer = +t; return A.timer; },
+  // A free balloon, this many metres up. Returns false when the live job is not a balloon still in the air.
+  jobFloat(y) { const A = jobs.active; if (!A || A.type !== "balloon" || !A.data || !A.data.b || A.data.b.held) return false; A.data.b.free = true; A.data.b.y = +y; return A.data.b.y; },
+  // The person on the edge lets go. Returns false when the live job is not a rescue still in the air.
+  jobFall() {
+    const A = jobs.active;
+    if (!A || A.type !== "catch" || !A.data || A.data.caught || A.data.falling) return false;
+    const D = A.data;
+    D.falling = true;
+    if (D.p && D.out) { D.p.x = D.out.x; D.p.z = D.out.z; D.p.pose = 12; }
+    return true;
+  },
+  // Start story mission i (0 thief, 1 catch, 2 brawl, 3 pizza). 4 or more ends the route and the clog card can show.
+  storyMission(i = 0) {
+    const n = Math.max(0, Math.min(STORY_ROUTE.length, i | 0));
+    routeForce = n < STORY_ROUTE.length;
+    save.jobs.sludge = true;
+    save.jobs.route = n;
+    syncStory();
+    if (jobs.active) jobs.cancel();
+    jobs.events.length = 0;
+    routeRetry = routeForce ? 0.02 : -1;
+    return n;
+  },
   gauntlet() { return startGauntlet() ? jobs.info() : null; },
   arena: () => jobs.arena(),
   jobOffers(on = true) { save.jobs.sludge = !!on; return jobs.info().offers; },
@@ -2308,6 +3104,42 @@ G.test = {
   enterCar(id) { const c = id == null ? cars.near(P.pos.x, P.pos.y, P.pos.z) : cars.cars.find((q) => q.id === id && q.on); if (c) enterCar(c); return driving; },
   exitCar() { if (driving) exitCar(); return !driving; },
   attack() { return tryAttack(); },
+  // End the live job on the next update: the runner, the crew, or a catch already in hand. The copy from action() is not the live one.
+  finishJob() {
+    const A = jobs.active;
+    if (!A || !A.data) return false;
+    const D = A.data;
+    const down = (g) => { if (g) { g.hp = 0; g.state = "down"; g.on = false; } };
+    if (A.type === "thief") down(D.runner);
+    else if (A.type === "sludge") { D.crew = true; D.hold = false; down(D.runner); for (const g of combat.group("job")) down(g); }
+    else if (A.type === "brawl" || A.type === "mugging") { if (A.type === "brawl") D.wave = 2; for (const g of combat.group("job")) down(g); }
+    else if (A.type === "getaway") { D.stopped = true; D.crew = true; for (const g of combat.group("job")) down(g); }
+    else if (A.type === "tanker") { D.seals = 99; for (const g of combat.group("job")) down(g); }
+    else if (A.type === "catch") { D.falling = true; D.caught = true; }
+    else if (A.type === "washer") D.caught = true;
+    else if (A.type === "balloon") {
+      D.b.free = true; D.b.held = true;
+      if (D.kid) { D.kid.x = P.pos.x; D.kid.y = P.pos.y; D.kid.z = P.pos.z; }
+    }
+    else if (A.type === "pizza" && D.drop) {
+      P.pos.x = D.drop.x; P.pos.y = D.drop.y; P.pos.z = D.drop.z;
+      P.onGround = true;
+    }
+    else if (A.type === "lid") D.held = JOB.lid.hold;
+    else if (A.type === "gust") D.n = JOB.gust.need;
+    else if (A.type === "wheel") D.stop = true;
+    else if (A.type === "kite") D.done = true;
+    else if (A.type === "line") D.done = true;
+    else return false;
+    return true;
+  },
+  // Drop the live job's clock so the next update fails it (a chase says they got away).
+  failJob() {
+    const A = jobs.active;
+    if (!A) return false;
+    A.timer = 0;
+    return true;
+  },
   sample: (points) => new Promise((resolve, reject) => samples.push({ points, resolve, reject })),
 };
 
@@ -2318,13 +3150,16 @@ function debugTick() {
   const now = performance.now();
   if (now - dbgT < 500) return;
   dbgT = now;
+  const m = frameMetrics.report(), ms = n => n === null ? "n/a" : n.toFixed(1);
   const p = P ? P.pos : { x: 0, y: 0, z: 0 };
-  dbgEl.textContent = `${fps.toFixed(0)} fps  ${lastInfo.calls} calls  ${(lastInfo.tris / 1000).toFixed(0)}k tris  ${lastInfo.views} view(s)\n${G.mode} / ${G.state}  pos ${p.x.toFixed(1)} ${p.y.toFixed(1)} ${p.z.toFixed(1)}`;
+  dbgEl.textContent = `${lastInfo.calls} calls  ${(lastInfo.tris / 1000).toFixed(0)}k tris  ${lastInfo.views} view(s)\n${G.mode} / ${G.state}  pos ${p.x.toFixed(1)} ${p.y.toFixed(1)} ${p.z.toFixed(1)}\nPlay: ${ms(m.fps)} fps • p95 ${ms(m.p95Ms)} / p99 ${ms(m.p99Ms)} ms\n>50ms: ${m.over50}/${m.frames} • input→submit p95 ${ms(m.inputSubmitP95Ms)} ms (${m.inputs})\n3D: ${renderer.domElement.width}×${renderer.domElement.height} • scale ${renderScale.scale.toFixed(2)}`;
 }
 
 /* ---------------- boot ---------------- */
 function onResize() {
   if (!renderer || renderer.xr.isPresenting) return;
+  renderScale.reset();
+  renderer.setPixelRatio(flatPixelRatio());
   renderer.setSize(innerWidth, innerHeight);
   camera.aspect = innerWidth / innerHeight;
   camera.updateProjectionMatrix();
@@ -2338,6 +3173,7 @@ async function boot() {
   X.onEnd(onSessionEnd);
   X.onReset(() => { pendingReset = true; });
   X.onVisibility((state) => {
+    frameMetrics?.frame(0, 0, false);
     const vis = state === "visible";
     if (!vis) {
       // hidden or blurred (a system menu): freeze, hide the hands, quiet the sound, keep the ropes

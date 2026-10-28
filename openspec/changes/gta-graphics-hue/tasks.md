@@ -1,0 +1,4 @@
+- [x] Replace the coloured crew key with a scalar shade and skip the cool wash on printed crew
+- [x] Shade a clothed figure before and after on the walking camera's shaded side
+- [x] Run `Scripts/test_crew_colour.py`, `Scripts/test_plateau_trees.py`, and `Scripts/test_horizon_haze.py`
+- [ ] Recompile `M_ComicInk` in Unreal (editor not available here)

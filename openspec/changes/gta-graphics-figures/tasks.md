@@ -1,0 +1,4 @@
+- [x] Bake the suit and hoodie idles and prefer them over the cylinder
+- [x] Shade the walking camera before and after
+- [x] Run `Scripts/test_officer_stand.py`
+- [ ] Import the stand meshes in Unreal (editor not available here)

@@ -1,0 +1,5 @@
+# Opening coupe
+
+A new car model does not fit. `Data/SeventiesCars/manifest.json` is original procedural artwork (1970s-inspired, no manufacturer badges). Units are centimetres, X is forward, and the pivot and wheel centres match `AQuebecCar`. Profile 0 is the fastback coupe. The default paint is the first swatch, teal `(0.035, 0.26, 0.24)`. `AQuebecCar::ApplyPaint` already loads `SM_Car70Body0`, `SM_Car70Cabin0`, `SM_Car70Roof0`, `SM_Car70Tire`, and `SM_Car70Rim`, puts body parts at relative zero, keeps the constructor wheel locals, and sets rim Y to ±106.5. The constructor cubes and cylinders are the stand-in the shade was still drawing.
+
+The shade uses those OBJ files at the layout car spawn and yaw. Tires and rims are disks in the XY plane, so they stand up with the same 90° roll about X the constructor uses. Glass is the glass material colour, drawn opaque, because this rasterizer has no alpha. The opening pitch stays −16, the aim stays about 110°, and the socket stays at Y 70 and Z 110. It is not an engine capture. Unreal is not installed, so confirming the saved meshes in a viewport is unchecked.

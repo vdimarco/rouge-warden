@@ -1,0 +1,78 @@
+PASS: [960x540] with no line and no toast: the look hint shows (the spoken line or the toast is not over its place)
+PASS: [960x540] with no line and no toast: the look hint lies inside the window (box, border and shadow)
+PASS: [960x540] with the spoken line: the look hint is faded out (the spoken line or the toast is over its place)
+PASS: [960x540] the toast has two lines
+PASS: [960x540] the window is 960 by 540
+PASS: [960x540] the phone panel is hidden
+PASS: [960x540] score row shows and lies inside the window (box, border and shadow)
+PASS: [960x540] score pill Loonies shows and lies inside the window (box, border and shadow)
+PASS: [960x540] score pill Clogs shows and lies inside the window (box, border and shadow)
+PASS: [960x540] spoken line with its tail shows and lies inside the window (box, border and shadow)
+PASS: [960x540] toast shows and lies inside the window (box, border and shadow)
+PASS: [960x540] key strip shows and lies inside the window (box, border and shadow)
+PASS: [960x540] score pill compassBox lies inside the window (box, border and shadow)
+PASS: [960x540] score pill mission lies inside the window (box, border and shadow)
+PASS: [960x540] training card lies inside the window (box, border and shadow)
+PASS: [960x540] edge arrow lies inside the window (box, border and shadow)
+PASS: [960x540] all 84 visible elements of the HUD and the phone panel lie inside the window
+PASS: [960x540] no text runs out of its box in the HUD and the phone panel
+PASS: [960x540] the page and the HUD layer do not scroll (960 by 540 in a window of 960 by 540)
+PASS: [960x540] the toast does not overlap the spoken line or its tail
+INFO: [960x540] the toast starts 9 px under the tail of the spoken line, and covers 42 px of the training card
+PASS: [960x540] the lock-on ring or the edge arrow shows
+PASS: [960x540] the toast does not overlap the key strip
+PASS: [960x540] with the spoken line and the toast: the look hint is faded out (the spoken line or the toast is over its place)
+PASS: [960x540] the look hint does not draw over the spoken line
+PASS: [960x540] the look hint does not draw over the toast
+PASS: [960x540] the look hint does not draw over the edge arrow
+INFO: [960x540] the look hint shares 0 of 96 points with the spoken line, 80 of 96 points with the toast, 96 of 96 points with the edge arrow
+PASS: [960x540 with the LET GO caption] LET GO caption shows and lies inside the window (box, border and shadow)
+PASS: [960x540 with the LET GO caption] score row lies inside the window (box, border and shadow)
+PASS: [960x540 with the LET GO caption] score pill Loonies lies inside the window (box, border and shadow)
+PASS: [960x540 with the LET GO caption] score pill Clogs lies inside the window (box, border and shadow)
+PASS: [960x540 with the LET GO caption] score pill compassBox lies inside the window (box, border and shadow)
+PASS: [960x540 with the LET GO caption] score pill mission lies inside the window (box, border and shadow)
+PASS: [960x540 with the LET GO caption] training card lies inside the window (box, border and shadow)
+PASS: [960x540 with the LET GO caption] spoken line with its tail lies inside the window (box, border and shadow)
+PASS: [960x540 with the LET GO caption] toast lies inside the window (box, border and shadow)
+PASS: [960x540 with the LET GO caption] key strip lies inside the window (box, border and shadow)
+PASS: [960x540 with the LET GO caption] edge arrow lies inside the window (box, border and shadow)
+PASS: [960x540 with the LET GO caption] all 85 visible elements of the HUD and the phone panel lie inside the window
+PASS: [960x540 with the LET GO caption] no text runs out of its box in the HUD and the phone panel
+PASS: [960x540 with the LET GO caption] the page and the HUD layer do not scroll (960 by 540 in a window of 960 by 540)
+PASS: [960x540] the hero holds a wall
+PASS: [960x540 on a wall] edge arrow shows and lies inside the window (box, border and shadow)
+PASS: [960x540 on a wall] score row lies inside the window (box, border and shadow)
+PASS: [960x540 on a wall] score pill Loonies lies inside the window (box, border and shadow)
+PASS: [960x540 on a wall] score pill Clogs lies inside the window (box, border and shadow)
+PASS: [960x540 on a wall] score pill compassBox lies inside the window (box, border and shadow)
+PASS: [960x540 on a wall] score pill mission lies inside the window (box, border and shadow)
+PASS: [960x540 on a wall] training card lies inside the window (box, border and shadow)
+PASS: [960x540 on a wall] spoken line with its tail lies inside the window (box, border and shadow)
+PASS: [960x540 on a wall] toast lies inside the window (box, border and shadow)
+PASS: [960x540 on a wall] key strip lies inside the window (box, border and shadow)
+PASS: [960x540 on a wall] all 84 visible elements of the HUD and the phone panel lie inside the window
+PASS: [960x540 on a wall] no text runs out of its box in the HUD and the phone panel
+PASS: [960x540 on a wall] the page and the HUD layer do not scroll (960 by 540 in a window of 960 by 540)
+PASS: [960x540 on a wall] the toast does not overlap the spoken line or its tail
+PASS: [960x540 on a wall] the arrow behind the camera shows and no HUD box covers it
+PASS: [960x540] the pause menu is open and has its buttons
+PASS: [960x540] pause menu panel lies inside the window (box, border and shadow)
+PASS: [960x540] pause menu title lies inside the window
+PASS: [960x540] pause menu button RESUME lies inside the window (box, border and shadow)
+PASS: [960x540] pause menu button MAP lies inside the window (box, border and shadow)
+PASS: [960x540] pause menu button COMFORT lies inside the window (box, border and shadow)
+PASS: [960x540] pause menu button SOUND: ON lies inside the window (box, border and shadow)
+PASS: [960x540] pause menu button MUSIC: ON lies inside the window (box, border and shadow)
+PASS: [960x540] pause menu button SKIP THE TUTORIAL lies inside the window (box, border and shadow)
+PASS: [960x540] pause menu button RESET PROGRESS lies inside the window (box, border and shadow)
+PASS: [960x540] pause menu button EXIT lies inside the window (box, border and shadow)
+PASS: [960x540] no pause menu button cuts off its words
+PASS: [960x540] the pause menu panel does not scroll inside (0 px too tall, 0 px too wide)
+PASS: [960x540] pause menu Comfort page panel lies inside the window (box, border and shadow)
+PASS: [960x540] the 17 buttons of the pause menu Comfort page lie between the left and right edges of the window
+PASS: [960x540] the pause menu Comfort page does not scroll sideways inside its panel (0 px too wide)
+PASS: [960x540] no Comfort page button cuts off its words
+INFO: [960x540] the Comfort page scrolls 31 px up and down inside its panel
+PASS: [960x540] no console error or page error
+PASS: layout

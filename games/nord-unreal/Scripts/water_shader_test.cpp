@@ -35,6 +35,11 @@ namespace Hlsl
     {
 #include "wet_puddles.hlsl"
     }
+
+    float RainSplash(float3 WorldPos, float Time, float Rain)
+    {
+#include "rain_splash.hlsl"
+    }
 }
 
 using namespace Hlsl;
@@ -679,8 +684,8 @@ namespace
             const float3 Last = Camera - float3(Random.Next(-160.f, 160.f), Random.Next(-160.f, 160.f), Random.Next(-160.f, 160.f));
             const float3 Component(Snap(Last.x, Box.x), Snap(Last.y, Box.y), Snap(Last.z, Box.z));
             const float3 Pivot = Component + float3(Random.Next(-.5f, .5f) * Box.x, Random.Next(-.5f, .5f) * Box.y, Random.Next(-.5f, .5f) * Box.z);
-            // Upright quads up to 1.2 cm wide and 80 cm long.
-            const float3 Vertex = Pivot + float3(Random.Next(-.6f, .6f), Random.Next(-.6f, .6f), Random.Next(-40.f, 40.f));
+            // Upright quads 10 cm wide and up to 80 cm long.
+            const float3 Vertex = Pivot + float3(Random.Next(-5.f, 5.f), Random.Next(-5.f, 5.f), Random.Next(-40.f, 40.f));
             const float Time = Sample % 7 == 0 ? Random.Next(0.f, 3.0e5f) : Random.Next(0.f, 1200.f);
             const float4 V = RainStreak(Pivot, Vertex, Camera, Time, Random.Next(0.f, 1.f), 1.f, Random.Next(0.f, 1.f), Random.Next(-1.f, 1.f), Random.Next(-1.f, 1.f));
             Largest[0] = std::fmax(Largest[0], std::fabs(V.x));
@@ -724,6 +729,44 @@ namespace
         Expect(Jump < .1, "puddle edges are soft, largest 1 cm step %.3f", Jump);
         std::printf("puddles: %.1f%% of the ground at full puddles, largest 1 cm step %.3f\n", 100.0 * Share, Jump);
     }
+
+    void SplashTests()
+    {
+        bool Unit = true, Dry = true, Linear = true;
+        int Bright = 0, Samples = 0;
+        float Lo = 1.f, Hi = 0.f;
+        for (int Y = -30; Y <= 30; ++Y)
+            for (int X = -30; X <= 30; ++X)
+            {
+                const float3 P(X * 9.f, Y * 13.f, 4.f);
+                const float Full = RainSplash(P, 1.2f, 1.f);
+                Unit = Unit && Full >= 0.f && Full <= 1.f;
+                Dry = Dry && RainSplash(P, 1.2f, 0.f) == 0.f;
+                Linear = Linear && std::fabs(RainSplash(P, 1.2f, .5f) - .5f * Full) < 1e-5f;
+                Lo = std::fmin(Lo, Full);
+                Hi = std::fmax(Hi, Full);
+                Bright += Full > .45f;
+                ++Samples;
+            }
+        Expect(Unit, "splash rings stay in [0, 1]");
+        Expect(Dry, "no splashes when Rain is 0");
+        Expect(Linear, "a splash scales with Rain");
+        Expect(Hi - Lo > .5f, "the street is not a flat wet tint, range %.3f", static_cast<double>(Hi - Lo));
+        Expect(Bright > 10 && Bright * 8 < Samples, "only some cells are mid-impact, %d of %d", Bright, Samples);
+        // The bright crown and the open ring are not the same pixels.
+        int Moved = 0, Compared = 0;
+        for (int Y = -40; Y <= 40; ++Y)
+            for (int X = -40; X <= 40; ++X)
+            {
+                const float3 P(X * 2.f, Y * 2.f, 0.f);
+                const bool Early = RainSplash(P, .15f, 1.f) > .5f;
+                const bool Later = RainSplash(P, .85f, 1.f) > .5f;
+                Moved += Early != Later;
+                Compared += Early || Later;
+            }
+        Expect(Compared > 20 && Moved * 2 > Compared, "the ring leaves the crown, %d of %d impacts moved", Moved, Compared);
+        std::printf("splashes: %d bright of %d samples, %d of %d impacts moved\n", Bright, Samples, Moved, Compared);
+    }
 }
 
 int main()
@@ -736,6 +779,7 @@ int main()
     StreakTests();
     StreakBoundsTests();
     PuddleTests();
+    SplashTests();
     if (Failures)
     {
         std::fprintf(stderr, "%d of %d assertions failed\n", Failures, Assertions);

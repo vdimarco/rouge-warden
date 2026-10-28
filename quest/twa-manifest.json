@@ -29,7 +29,7 @@
   "minSdkVersion": 32,
   "appVersion": "1.25.0",
   "appVersionName": "1.25.0",
-  "appVersionCode": 32,
+  "appVersionCode": 34,
   "signingKey": {
     "path": "./fullswing.keystore",
     "alias": "fullswing"

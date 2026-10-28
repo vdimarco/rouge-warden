@@ -1,0 +1,5 @@
+- [x] Light a grid of warm panes on dusk walls
+- [x] Leave short walls and the afternoon dark
+- [x] Keep the opening pitch, the aim, and the socket
+- [x] Run `Scripts/test_opening_windows.py`
+- [ ] Confirm the panes in Unreal (editor not available here)

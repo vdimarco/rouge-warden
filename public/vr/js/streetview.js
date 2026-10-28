@@ -33,11 +33,11 @@ uniform float uTime;
 uniform float uHull; // 0 the body, 1 the ink hull
 uniform float uInkK, uInkPx;
 varying vec3 vN;
+varying vec3 vW;
 varying vec3 vCol;
 varying float vDist;
 varying float vFlash;
 varying float vTele;
-varying vec3 vView;
 mat3 rotX(float a) { float c = cos(a), s = sin(a); return mat3(1.0, 0.0, 0.0, 0.0, c, s, 0.0, -s, c); }
 mat3 rotZ(float a) { float c = cos(a), s = sin(a); return mat3(c, s, 0.0, -s, c, 0.0, 0.0, 0.0, 1.0); }
 void main() {
@@ -140,12 +140,13 @@ void main() {
   vec3 wn = normalize(Y * n);
   vDist = distance(w, cameraPosition);
   vTele = step(1.5, aB.w);
-  vView = normalize(cameraPosition - w);
   vFlash = aB.w - 2.0 * vTele;
   if (uHull > 0.5) w += wn * max(0.012, uInkPx * uInkK * vDist) * (1.0 + vTele * (1.6 + 0.6 * sin(uTime * 18.0)));
   vN = wn;
+  vW = w;
   vCol = part == 1 ? aC3 : (part == 2 || part == 3) ? aC2 : aC1.rgb;
-  if ((part == 4 || part == 5) && position.y < 0.95) vCol = aC3; // the hands
+  if (part == 0 && position.y < 1.0) vCol = aC2; // the waist, in the trouser colour
+  if ((part == 4 || part == 5) && position.y < 1.0) vCol = aC3; // the hands and the wrist
   if ((part == 2 || part == 3) && position.y < 0.09) vCol = vec3(0.12, 0.1, 0.12); // the shoes
   if (part == 1 && position.y > 1.63) vCol = vec3(0.16, 0.1, 0.08) + aC2 * 0.3; // the hair
   gl_Position = projectionMatrix * viewMatrix * vec4(w, 1.0);
@@ -154,21 +155,27 @@ void main() {
 const PEOPLE_FS = /* glsl */ `
 uniform float uHull;
 varying vec3 vN;
+varying vec3 vW;
 varying vec3 vCol;
 varying float vDist;
 varying float vFlash;
 varying float vTele;
-varying vec3 vView;
 uniform float uTime;
 ${GLSL.toon}
 ${FOG}
 void main() {
   if (uHull > 0.5) { gl_FragColor = vec4(streetFog(mix(${hexv(INK)}, vec3(0.91, 0.16, 0.12), vTele), vDist), 1.0); return; }
-  float band = comicBand(comicLight(normalize(vN), ${SUN}), 0.14, 0.5);
+  vec3 N = normalize(vN);
+  float band = comicBand(comicLight(N, ${SUN}), 0.14, 0.5);
   vec3 col = comicCel(vCol, band);
+  // a small rim so the figure lifts off the street (Mitchell, Francke, Eng, Team Fortress 2, 2007)
+  float nd = clamp(dot(N, normalize(cameraPosition - vW)), 0.0, 1.0);
+  float rim = pow(1.0 - nd, 3.0);
+  float key = clamp(dot(N, ${SUN}), 0.0, 1.0);
+  col += vec3(1.0, 0.55, 0.28) * rim * mix(0.45, 1.0, key) * 0.32;
+  col += vec3(0.32, 0.46, 0.78) * rim * (1.0 - key) * 0.16;
   // on his way to a blow: a hard red rim round him (the spider-sense), pulsing; the ink lines of the post pass keep their place
-  float rim = step(0.55, 1.0 - abs(dot(normalize(vN), vView)));
-  col = mix(col, vec3(0.95, 0.16, 0.1), vTele * max(rim, 0.25 + 0.15 * sin(uTime * 18.0)));
+  col = mix(col, vec3(0.95, 0.16, 0.1), vTele * max(step(0.45, 1.0 - nd), 0.25 + 0.15 * sin(uTime * 18.0)));
   // a blow: the figure flashes paper white, then the colour comes back
   gl_FragColor = vec4(streetFog(mix(col, vec3(1.0, 0.99, 0.94), clamp(vFlash * 2.0, 0.0, 1.0)), vDist), 1.0);
 }
@@ -186,12 +193,24 @@ function figure() {
     for (const i of g.index.array) idx.push(base + i);
     g.dispose();
   };
-  box(-0.2, 0.84, -0.12, 0.2, 1.42, 0.12, 0); // torso
-  box(-0.11, 1.44, -0.12, 0.11, 1.7, 0.11, 1); // head
-  box(0.03, 0.0, -0.08, 0.17, 0.88, 0.08, 2); // right leg (+x)
-  box(-0.17, 0.0, -0.08, -0.03, 0.88, 0.08, 3); // left leg
-  box(0.21, 0.84, -0.06, 0.32, 1.42, 0.06, 4); // right arm
-  box(-0.32, 0.84, -0.06, -0.21, 1.42, 0.06, 5); // left arm
+  box(-0.16, 0.82, -0.10, 0.16, 1.05, 0.11, 0); // hips, painted as trousers below 1 m
+  box(-0.18, 1.02, -0.14, 0.18, 1.36, 0.10, 0); // chest
+  box(-0.32, 1.24, -0.08, 0.32, 1.44, 0.08, 0); // shoulders, wider than the waist
+  box(-0.09, 1.30, -0.16, 0.09, 1.40, -0.06, 0); // collar
+  box(-0.05, 1.34, -0.06, 0.05, 1.52, 0.05, 1); // neck
+  box(-0.11, 1.46, -0.12, 0.11, 1.68, 0.10, 1); // head
+  box(-0.125, 1.60, -0.08, 0.125, 1.80, 0.16, 1); // hair, up and toward the back
+  box(-0.10, 1.62, -0.16, 0.10, 1.74, -0.06, 1); // fringe
+  box(0.02, 0.40, -0.09, 0.18, 0.90, 0.09, 2); // right thigh
+  box(0.035, 0.06, -0.07, 0.155, 0.48, 0.07, 2); // right shin
+  box(-0.18, 0.40, -0.09, -0.02, 0.90, 0.09, 3); // left thigh
+  box(-0.155, 0.06, -0.07, -0.035, 0.48, 0.07, 3); // left shin
+  box(0.20, 1.02, -0.07, 0.34, 1.42, 0.07, 4); // right upper arm
+  box(0.18, 0.95, -0.06, 0.30, 1.10, 0.06, 4); // right forearm
+  box(0.16, 0.70, -0.16, 0.32, 0.98, 0.02, 4); // right hand, forward
+  box(-0.34, 1.02, -0.07, -0.20, 1.42, 0.07, 5); // left upper arm
+  box(-0.30, 0.95, -0.06, -0.18, 1.10, 0.06, 5); // left forearm
+  box(-0.32, 0.70, -0.16, -0.16, 0.98, 0.02, 5); // left hand
   box(0.04, 0.0, -0.17, 0.16, 0.08, 0.08, 2); // shoes stick out in front
   box(-0.16, 0.0, -0.17, -0.04, 0.08, 0.08, 3);
   const g = new THREE.BufferGeometry();
@@ -329,9 +348,10 @@ export function createFigures(scene, max = 240, reach = PEOPLE_REACH) {
   const R2 = reach * reach;
   const F = {
     root, mesh, hull,
-    begin(c, time) { n = 0; cam = c; counts = {}; if (time != null) U.uTime.value = time; },
+    begin(c, time) { n = 0; cam = c; for (const tag in counts) delete counts[tag]; if (time != null) U.uTime.value = time; },
     // tag: a name to count by (people, goons, jobs) for the tests
-    add(p, tag = "people") {
+    // marks: where the fight marks come from (flash, tele), when p is a view of the figure (a goon on threes)
+    add(p, tag = "people", marks = p) {
       if (n >= max) return false;
       if (cam && (p.x - cam.x) ** 2 + (p.z - cam.z) ** 2 + (p.y - cam.y) ** 2 > R2) return false; // a far figure is a few pixels: not drawn
       const o4 = n * 4, o3 = n * 3, aP = A.aP.array, aA = A.aA.array, c1 = A.aC1.array, c2 = A.aC2.array, c3 = A.aC3.array, aB = A.aB.array;
@@ -341,14 +361,18 @@ export function createFigures(scene, max = 240, reach = PEOPLE_REACH) {
       c1[o4] = p.shirt[0]; c1[o4 + 1] = p.shirt[1]; c1[o4 + 2] = p.shirt[2]; c1[o4 + 3] = p.height;
       c2[o3] = p.pants[0]; c2[o3 + 1] = p.pants[1]; c2[o3 + 2] = p.pants[2];
       c3[o3] = p.skin[0]; c3[o3 + 1] = p.skin[1]; c3[o3 + 2] = p.skin[2];
-      aB[o4] = p.bp || 0; aB[o4 + 1] = p.br || 0; aB[o4 + 2] = p.lift || 0; aB[o4 + 3] = (p.flash || 0) + (p.tele ? 2 : 0);
+      aB[o4] = p.bp || 0; aB[o4 + 1] = p.br || 0; aB[o4 + 2] = p.lift || 0; aB[o4 + 3] = (marks.flash || 0) + (marks.tele ? 2 : 0);
       counts[tag] = (counts[tag] || 0) + 1;
       n++;
       return true;
     },
     end() {
       g.instanceCount = n;
-      for (const k in A) A[k].needsUpdate = true;
+      for (const k in A) {
+        const a = A[k];
+        a.clearUpdateRanges();
+        if (n > 0) { a.addUpdateRange(0, n * a.itemSize); a.needsUpdate = true; }
+      }
     },
     setVisible(v) { root.visible = !!v; },
     info: () => ({ drawn: g.instanceCount, counts: { ...counts }, visible: root.visible }),
@@ -395,7 +419,11 @@ export function createStreetView(scene, street, figures) {
       n++;
     }
     sg.instanceCount = n;
-    for (const k in sA) sA[k].needsUpdate = true;
+    for (const k in sA) {
+      const a = sA[k];
+      a.clearUpdateRanges();
+      if (n > 0) { a.addUpdateRange(0, n * a.itemSize); a.needsUpdate = true; }
+    }
   }
   const signMat = new THREE.ShaderMaterial({ vertexShader: SIGN_VS, fragmentShader: SIGN_FS, uniforms: U, fog: false });
   const signMesh = new THREE.Mesh(sg, signMat);
@@ -408,6 +436,7 @@ export function createStreetView(scene, street, figures) {
     root, signs: signMesh,
     // cam: the camera's world position (the signs near it are drawn)
     update(dt, time, cam) {
+      if (!root.visible) return;
       U.uTime.value = time;
       if (cam && Math.hypot(cam.x - signAt.x, cam.z - signAt.z) > SIGN_STEP) nearSigns(cam.x, cam.z);
       if (figures && root.visible) for (const p of street.people) if (p.on) figures.add(p, "people");

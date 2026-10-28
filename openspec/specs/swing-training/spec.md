@@ -10,7 +10,7 @@ On a first run in flat play a training card SHALL list the moves to learn, each 
 
 #### Scenario: Desktop card
 - **WHEN** a new player starts play with a mouse and keys
-- **THEN** the card shows eight rows: swing at the gold ring (HOLD W + LEFT MOUSE), let go, swing again, reel in (HOLD SHIFT), yank (F), look around, climb a wall (W A S D), and plunge a clog (F three times)
+- **THEN** the card shows eight rows: swing at the gold ring (LEFT MOUSE or E), let go, swing again, reel in (HOLD SHIFT), yank (F), look around, climb a wall (W A S D), and plunge a clog (F three times)
 - **AND** the first row is lit and its line is said
 
 #### Scenario: A row ticks

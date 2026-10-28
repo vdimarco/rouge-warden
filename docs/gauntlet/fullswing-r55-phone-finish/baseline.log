@@ -1,0 +1,22 @@
+PASS: 4096 prompt/button/state combinations equivalent; reach queries 712 -> 712
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: phone keeps only punch fallback reach query
+
+2 !== 1
+
+    at file:///home/von/Work/rouge-warden-fullswing-gauntlet/qa/vr/phone-finish-query.test.mjs:21:46
+    at ModuleJob.run (node:internal/modules/esm/module_job:569:25)
+    at async node:internal/modules/esm/loader:650:26
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5) {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: 2,
+  expected: 1,
+  operator: 'strictEqual',
+  diff: 'simple'
+}
+
+Node.js v26.7.0

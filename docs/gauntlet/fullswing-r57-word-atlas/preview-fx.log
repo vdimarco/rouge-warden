@@ -1,0 +1,33 @@
+PASS: the art loads and no word shows at the start
+PASS: one InstancedMesh, a ShaderMaterial (no raw), depthTest on, depthWrite off, renderOrder 980, mipmapped art
+PASS: a shot gives THWIP near the firing hand
+PASS: and it is not on your head (at least 1.2 m away)
+PASS: the cup sticking gives THUCK
+PASS: at the anchor (a little way out from the wall)
+PASS: a yank on a normal target gives YANK
+PASS: every word faces the head about world up (upright, normal flat and toward you, roll under about 12 degrees)
+PASS: it pops: scale 0, then 1.2 at 0.07 s, then 1 by 0.12 s
+PASS: it holds at full strength, fades from 0.5 s, and is nearly gone at 0.8 s
+PASS: it is gone after 0.8 s (the mesh draws nothing)
+PASS: a word closer than 1.2 m to the head is skipped (0.5 m and 1.19 m: no; 1.3 m: yes)
+PASS: an unknown name or no position adds nothing
+PASS: at most 16 words live: a full pool gives up its oldest
+PASS: 12 live words are exactly one draw call (56 with, 55 without)
+PASS: a word really draws: 21 of 25 sample points changed, and the frame stays opaque (alpha 1)
+PASS: the rope sticks to a clog
+PASS: a pump gives SPLORT at the clog
+PASS: the flush gives a big FLUSH above the clog
+PASS: falling into the lake gives KASPLASH
+PASS: and it is not on your head
+PASS: flying into a wall gives BONK
+PASS: and it is not on your head
+PASS: crossing 20 m/s gives one WHOOSH ahead of you (12 m/s gives none)
+PASS: and no second WHOOSH within 4 s, but another after it
+PASS: the King's ball hitting you gives GLUG (after 6.5 s)
+PASS: and it is in the air between you and him, not on your head
+PASS: the rope sticks to a pipe and three pumps rip it off
+PASS: a ripped pipe gives a big FLUSH at its tip
+PASS: no errors in desktop play
+PASS: with no art no word shows, and the game still works (a rope still sticks)
+PASS: and nothing else errors
+PASS: fx

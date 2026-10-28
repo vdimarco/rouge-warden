@@ -3,6 +3,11 @@
 # Vercel runs it in the project root directory, games/nord-unreal/Browser.
 set -u
 
+# Endpoint-only redeploys still need a fresh browser bundle.
+if [ "${NORD_FORCE_BUILD:-0}" = "1" ]; then
+  exit 1
+fi
+
 # Files that never reach dist/: tests, docs and local tools.
 paths=(. ':(exclude)*.test.mjs' ':(exclude)*.md' ':(exclude)stream-sample.mjs'
   ':(exclude).env.example' ':(exclude).gitignore')

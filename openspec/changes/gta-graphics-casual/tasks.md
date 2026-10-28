@@ -1,0 +1,4 @@
+- [x] Bake the casual idle and prefer it over the mannequin when the crew rig is missing
+- [x] Shade the walking camera before and after
+- [x] Run `Scripts/test_player_stand.py` and `Scripts/test_officer_stand.py`
+- [ ] Import the casual stand mesh in Unreal (editor not available here)

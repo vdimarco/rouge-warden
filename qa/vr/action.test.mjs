@@ -5,7 +5,7 @@ import { generate } from "../../public/vr/js/city.js";
 import { createCombat, FIGHT } from "../../public/vr/js/combat.js";
 import { createCars, CAR, trafficAt, nearTraffic } from "../../public/vr/js/cars.js";
 import { createStreet } from "../../public/vr/js/street.js";
-import { createJobs, JOB, CRIME_LINES } from "../../public/vr/js/jobs.js";
+import { createJobs, JOB, CRIME_LINES, MISS, STORY_ROUTE, STORY_NEAR } from "../../public/vr/js/jobs.js";
 
 const city = generate();
 let fails = 0;
@@ -29,6 +29,41 @@ test("no blow lands while the hero rolls or drives (safe)", () => {
   C.spawn(street.x - 1.2, 0, street.z, "t").aggro = true;
   for (let i = 0; i < 6 / DT; i++) C.update(DT, h);
   assert.equal(C.hp, FIGHT.hp);
+});
+test("a goon on the street goes round a block corner to the hero, not into the wall", () => {
+  // the goon and the hero on the sidewalks of two streets that meet, with the block's corner building between them
+  const open = (x, z) => !city.isWater(x, z) && !city.collideSphere(x, 0.9, z, 0.32) && !city.topBelow(x, 0.6, z, 0.25);
+  const clear = (x0, z0, x1, z1) => { const n = Math.ceil(Math.hypot(x1 - x0, z1 - z0)); for (let i = 1; i <= n; i++) if (!open(x0 + ((x1 - x0) * i) / n, z0 + ((z1 - z0) * i) / n)) return false; return true; };
+  const cases = [];
+  for (const x of city.streets.xs) for (const z of city.streets.zs) {
+    const g = { x: x - 8, z: z - 22 }, h = { x: x - 22, z: z - 8 };
+    if (open(g.x, g.z) && open(h.x, h.z) && !clear(g.x, g.z, h.x, h.z)) cases.push({ g, h });
+  }
+  assert.ok(cases.length >= 20, "corners " + cases.length);
+  for (const k of [0, Math.floor(cases.length / 2), cases.length - 1]) {
+    const { g: s, h: at } = cases[k];
+    const C = createCombat(city), h = hero(at.x, 0, at.z);
+    const g = C.spawn(s.x, 0, s.z, "t"); g.aggro = true;
+    let hit = false;
+    for (let i = 0; i < 12 / DT && !hit; i++) {
+      C.update(DT, h);
+      if (C.events.some((e) => e.type === "hurt")) hit = true;
+      C.events.length = 0;
+      assert.ok(open(g.x, g.z), "inside a wall at " + g.x.toFixed(1) + ", " + g.z.toFixed(1));
+    }
+    assert.ok(hit, "reached and punched from " + s.x + ", " + s.z + "; stopped at " + g.x.toFixed(1) + ", " + g.z.toFixed(1));
+  }
+});
+test("a goon whose straight way a post blocks slides past it", () => {
+  // a post 3 m in front of the goon, a little to one side of his line to the hero
+  const C = createCombat(city), h = hero(street.x, 0, street.z);
+  const g = C.spawn(street.x - 12, 0, street.z, "t"); g.aggro = true;
+  const real = city.collideSphere;
+  city.collideSphere = (x, y, z, r, o) => Math.hypot(x - (street.x - 9), z - (street.z + 0.2)) < r + 0.3 || real(x, y, z, r, o);
+  try {
+    for (let i = 0; i < 6 / DT; i++) { C.update(DT, h); C.events.length = 0; }
+  } finally { city.collideSphere = real; }
+  assert.ok(Math.hypot(g.x - h.x, g.z - h.z) < FIGHT.reach, "got past: " + g.x.toFixed(2) + ", " + g.z.toFixed(2));
 });
 test("punch, punch, kick: the combo knocks a goon down, and he sinks away", () => {
   const C = createCombat(city), h = hero(street.x, 0, street.z, { safe: true });
@@ -452,6 +487,26 @@ test("Sludge Run left alone: the runner reaches the drain and it fails", () => {
   const r = runJob("sludge", (J, C, h) => hero(h.x, h.y, h.z));
   assert.ok(r.end && r.end.type === "failed" && (r.end.why === "drain" || r.end.why === "time"), JSON.stringify(r.end));
 });
+test("Sludge Run waits out the first swing: the runner and the clock stay until the chase is released", () => {
+  const C = createCombat(city), J = createJobs({ city, combat: C });
+  const S = city.start, h = hero(S.x, S.y, S.z, { safe: true });
+  J.start("sludge", null, h);
+  J.holdChase(true);
+  const g = C.goons.find((q) => q.runner);
+  const x0 = g.x, z0 = g.z, t0 = J.active.timer;
+  for (let i = 0; i < 90; i++) { C.update(DT, h); J.update(DT, i * DT, h); J.events.length = 0; C.events.length = 0; }
+  assert.ok(J.active && J.active.data.hold, "still waiting");
+  assert.ok(Math.hypot(g.x - x0, g.z - z0) < 0.2, "he waits: moved " + Math.hypot(g.x - x0, g.z - z0).toFixed(2));
+  assert.ok(Math.abs(J.active.timer - t0) < 1e-6, "the clock waits: " + J.active.timer);
+  assert.match(J.card.detail, /swing first/i);
+  assert.equal(J.card.short, "SWING");
+  J.holdChase(false);
+  for (let i = 0; i < 60; i++) { C.update(DT, h); J.update(DT, i * DT, h); J.events.length = 0; C.events.length = 0; }
+  assert.ok(J.active && !J.active.data.hold);
+  assert.ok(Math.hypot(g.x - x0, g.z - z0) > 2, "then he runs: " + Math.hypot(g.x - x0, g.z - z0).toFixed(1));
+  assert.ok(J.active.timer < t0 - 1, "and the clock runs: " + J.active.timer.toFixed(2));
+  assert.match(J.card.detail, /catch the runner/i);
+});
 test("Catch!: be there when they fall, then land to set them down", () => {
   const r = runJob("catch", (J, C, h) => {
     const A = J.active;
@@ -503,6 +558,41 @@ test("Window Washer: reach him, carry him down to the street", () => {
     return hero(A.o.x, 0, A.o.z, { onGround: true });
   });
   assert.ok(r.end && r.end.type === "done", JSON.stringify(r.end));
+});
+test("the eighth-flush washer hangs for 36 s inside a swing, and an odd job keeps 60", () => {
+  const spots = [hero(city.start.x, city.start.y, city.start.z), hero(-200, 0, 40), hero(180, 0, -120), hero(40, 0, -200)];
+  for (let seed = 1; seed <= 24; seed++) {
+    const C = createCombat(city), J = createJobs({ city, combat: C, seed });
+    const h = spots[seed % spots.length];
+    const o = J.prepare("washer", h, [24, 140]);
+    assert.ok(o && o.hang, "a tower in the beat band, seed " + seed);
+    const d = Math.hypot(o.hang.x - h.x, o.hang.z - h.z);
+    assert.ok(d <= 160, "within a swing: " + d.toFixed(0) + " m");
+    J.start("washer", o, h, { mission: "GET HIM DOWN" });
+    assert.equal(J.active.timer, JOB.washer.beat, "seed " + seed + " d " + d.toFixed(0));
+    J.update(0, 0, h);
+    assert.ok(/36 s/.test(J.card.title), J.card.title);
+  }
+  const C = createCombat(city), J = createJobs({ city, combat: C, seed: 2 });
+  const h = hero(city.start.x, city.start.y, city.start.z);
+  const odd = J.prepare("washer", h, [90, 420]) || J.prepare("washer", h);
+  assert.ok(odd);
+  J.start("washer", odd, h);
+  assert.equal(J.active.timer, JOB.washer.grip);
+  J.update(0, 0, h);
+  assert.ok(/60 s/.test(J.card.title), J.card.title);
+  const origin = hero(h.x, 0, h.z);
+  const far = { id: 9, type: "washer", name: "Window Washer", x: origin.x + 800, y: 0, z: origin.z, hang: { x: origin.x + 800, y: 50, z: origin.z, nx: 1, nz: 0 } };
+  J.start("washer", far, origin, { mission: "GET HIM DOWN" });
+  assert.equal(J.active.timer, JOB.washer.grip, "a far tower is not cut to 36 s");
+  const away = hero(origin.x + 200, 0, origin.z);
+  let end = null;
+  for (let t = 0; t < 40 && J.active; t += DT) {
+    J.update(DT, t, away);
+    for (const e of J.events) if (e.type === "failed") end = e;
+    J.events.length = 0;
+  }
+  assert.ok(!end, "the far clock is still running at 40 s");
 });
 test("Pizza Rush: on the roof in time pays, late is a cold pizza", () => {
   const ok = runJob("pizza", (J, C, h, t) => (t > 3 && J.active ? hero(J.active.data.drop.x, J.active.data.drop.y, J.active.data.drop.z) : h));
@@ -607,6 +697,48 @@ test("Stop, Thief!: his run keeps to the streets, clear of buildings and water, 
   assert.ok(runs >= 15, "thief offers " + runs);
   assert.ok(turns >= runs, "corners " + turns + " in " + runs + " runs");
 });
+test("Stop, Thief!: falling behind speeds him up, and staying close keeps the jog", () => {
+  const C = createCombat(city), J = createJobs({ city, combat: C, seed: 2 });
+  const S = city.safe[2];
+  J.start("thief", null, hero(S.x, S.y, S.z));
+  const g = J.active.data.runner;
+  const far = () => hero(g.x + 40, g.y, g.z);
+  for (let i = 0; i < 2 / DT; i++) { C.update(DT, far()); J.update(DT, i * DT, far()); C.events.length = 0; }
+  assert.ok(J.active, "still chasing");
+  assert.ok(g.speed > 8, "pulling at " + g.speed.toFixed(2));
+  assert.match(J.card.detail, /pulling away/i);
+  assert.equal(J.card.hot, true, "hot while pulling, timer " + J.active.timer.toFixed(1));
+  const near = () => hero(g.x + 2, g.y, g.z);
+  for (let i = 0; i < 1.2 / DT; i++) { C.update(DT, near()); J.update(DT, i * DT, near()); C.events.length = 0; }
+  assert.ok(g.speed < JOB.thief.speed + 0.45, "back to a jog at " + g.speed.toFixed(2));
+  assert.match(J.card.detail, /run him down/i);
+  assert.doesNotMatch(J.card.detail, /pulling away/i);
+  assert.equal(J.card.hot, false, "ink when close, timer " + J.active.timer.toFixed(1));
+});
+test("Sludge Run: falling behind speeds the runner, and the first-swing wait still holds him", () => {
+  const C = createCombat(city), J = createJobs({ city, combat: C });
+  const S = city.start, h0 = hero(S.x, S.y, S.z);
+  J.start("sludge", null, h0);
+  const g = C.goons.find((q) => q.runner);
+  const far = () => hero(g.x + 80, g.y, g.z);
+  for (let i = 0; i < 3 / DT; i++) { C.update(DT, far()); J.update(DT, i * DT, far()); C.events.length = 0; }
+  assert.ok(J.active && !J.active.data.crew, "still the runner");
+  assert.ok(g.speed > JOB.sludge.speed + 1.5, "pulling at " + g.speed.toFixed(2));
+  assert.match(J.card.detail, /pulling away/i);
+  const x0 = g.x, z0 = g.z;
+  J.holdChase(true);
+  for (let i = 0; i < 1 / DT; i++) { C.update(DT, far()); J.update(DT, i * DT, far()); C.events.length = 0; }
+  assert.equal(g.speed, 0);
+  assert.ok(Math.hypot(g.x - x0, g.z - z0) < 0.2, "the lesson holds him");
+  assert.match(J.card.detail, /swing first/i);
+});
+test("A miss names itself: got away, and the drain", () => {
+  assert.equal(MISS.away.title, "GOT AWAY");
+  assert.match(MISS.away.detail, /swing/i);
+  assert.equal(MISS.drain.title, "IT BLEW");
+  assert.match(MISS.drain.detail, /drain/i);
+  assert.equal(MISS.dumpster.title, "MISSED");
+});
 test("markers: four offers of different jobs round the player, and walking into one starts it", () => {
   const C = createCombat(city), J = createJobs({ city, combat: C });
   const h = hero(city.start.x, city.start.y, city.start.z);
@@ -620,5 +752,312 @@ test("markers: four offers of different jobs round the player, and walking into 
   J.offersOn = true;
 });
 
+test("After the bomb the story is a thief, a catch, a brawl, then a pizza, and none of them is a clog", () => {
+  assert.deepEqual(STORY_ROUTE.map((s) => s.type), ["thief", "catch", "brawl", "pizza"]);
+  const C = createCombat(city), J = createJobs({ city, combat: C, seed: 3 });
+  const h = hero(city.start.x, city.start.y, city.start.z);
+  assert.equal(J.storyNext(), null);
+  J.story.sludge = true;
+  const titles = [];
+  for (const step of STORY_ROUTE) {
+    assert.equal(J.storyNext().type, step.type);
+    assert.equal(J.storyAdvance("taxi").ok, false);
+    assert.equal(J.story.route, STORY_ROUTE.indexOf(step));
+    const o = J.prepare(step.type, h, STORY_NEAR[step.type]) || J.prepare(step.type, h, [20, 900]);
+    assert.ok(o && o.type === step.type, step.type);
+    J.start(step.type, o, h, { mission: step.mission, arrive: true });
+    J.update(DT, 0, h);
+    const text = J.card.title + " " + J.card.detail;
+    assert.ok(J.card.title.startsWith(step.mission), text);
+    assert.ok(!/clog/i.test(text), text);
+    if (step.type === "catch") assert.ok(J.active.timer > JOB.catch.delay, "time to arrive " + J.active.timer);
+    if (step.type === "pizza") {
+      const d = Math.hypot(J.active.data.drop.x - J.active.o.x, J.active.data.drop.z - J.active.o.z);
+      assert.ok(d > 40 && d < 200, "story pizza is a swing, not a hike " + d.toFixed(0));
+    }
+    titles.push(text);
+    J.cancel();
+    const adv = J.storyAdvance(step.type);
+    assert.equal(adv.ok, true);
+    assert.equal(adv.next, STORY_ROUTE[J.story.route] || null);
+  }
+  assert.equal(J.storyNext(), null);
+  assert.equal(J.storyAdvance("brawl").ok, false);
+  assert.match(titles[0], /STOP, THIEF/);
+  assert.match(titles[1], /CATCH/);
+  assert.match(titles[2], /ROOFTOP BRAWL/);
+  assert.match(titles[3], /PIZZA/);
+  assert.match(titles[3], /[Dd]eliver/);
+  assert.ok(titles.every((t) => !/FLUSH THE CLOGS/.test(t)));
+});
+function startJob(type) {
+  const C = createCombat(city), J = createJobs({ city, combat: C, seed: 3 });
+  const h0 = hero(city.start.x, city.start.y, city.start.z);
+  J.update(DT, 0, h0);
+  const o = J.offers.find((q) => q.type === type) || null;
+  J.start(type, o, h0);
+  const h = hero(J.active.o.x, J.active.o.y, J.active.o.z);
+  return { C, J, h };
+}
+test("a long clock turns the card hot in the last stretch, and time put back brings the ink", () => {
+  const { J, h } = startJob("brawl");
+  assert.ok(J.active.budget >= 120, "opened at " + J.active.budget);
+  J.update(DT, 0, h);
+  assert.equal(J.card.hot, false);
+  assert.match(J.card.title, /BRAWL/);
+  J.active.budget = 16;
+  J.active.timer = 6;
+  J.update(DT, DT, h);
+  assert.equal(J.card.hot, false, "a quarter of 16 s is 4 s, timer " + J.active.timer.toFixed(2));
+  J.active.timer = 4;
+  J.update(DT, DT, h);
+  assert.equal(J.card.hot, true, "timer " + J.active.timer.toFixed(2));
+  J.active.budget = 120;
+  J.active.timer = 7;
+  J.update(DT, DT, h);
+  assert.equal(J.card.hot, true);
+  J.active.timer = 30;
+  J.update(DT, DT, h);
+  assert.equal(J.card.hot, false, "30 s on a two-minute clock, timer " + J.active.timer.toFixed(2));
+});
+test("the crew clock is a new opening, so a fresh 40 s is not already hot", () => {
+  const { J, h } = startJob("sludge");
+  J.active.timer = 5;
+  J.active.budget = 16;
+  J.active.data.runner.on = false;
+  J.update(DT, 0, h);
+  assert.ok(J.active && J.active.data.crew, "the crew is in");
+  assert.ok(J.active.budget >= 40, "budget " + J.active.budget);
+  assert.ok(J.active.timer > 39, "timer " + J.active.timer);
+  assert.equal(J.card.hot, false);
+  assert.match(J.card.detail, /crew/i);
+  J.active.timer = 7;
+  J.update(DT, DT, h);
+  assert.equal(J.card.hot, true);
+});
+test("a short edge stays ink, and a falling person turns the card hot", () => {
+  const { J, h } = startJob("catch");
+  J.update(DT, 0, h);
+  assert.ok(J.active.budget < 12, "edge budget " + J.active.budget);
+  assert.equal(J.card.hot, false);
+  J.active.timer = 1;
+  J.update(DT, DT, h);
+  assert.equal(J.active.data.falling, false);
+  assert.equal(J.card.hot, false);
+  J.active.timer = 0.01;
+  const far = hero(h.x + 80, h.y, h.z, { onGround: false });
+  J.update(DT, DT, far);
+  assert.equal(!!(J.active && J.active.data.falling), true);
+  assert.equal(J.card.hot, true);
+  assert.match(J.card.detail, /hit the street/i);
+});
+test("a low balloon stays ink, and one at 140 m turns the card hot", () => {
+  const { J, h } = startJob("balloon");
+  assert.ok(J.active.budget < 12, "slip budget " + J.active.budget);
+  for (let i = 0; i < 2 / DT && J.active; i++) J.update(DT, i * DT, h);
+  assert.ok(J.active && J.active.data.b.free, "it slipped");
+  assert.ok(J.active.data.b.y < JOB.balloon.high, "still low at " + J.active.data.b.y.toFixed(1));
+  assert.equal(J.card.hot, false);
+  J.active.data.b.y = JOB.balloon.high;
+  J.update(DT, 0, h);
+  assert.equal(J.card.hot, true);
+  assert.match(J.card.detail, /floats away/i);
+  J.active.data.b.y = 40;
+  J.update(DT, 0, h);
+  assert.equal(J.card.hot, false);
+});
+test("the ninth-flush car drives faster than an odd-job getaway", () => {
+  const C = createCombat(city), K = createCars(city), J = createJobs({ city, combat: C, cars: K, seed: 4 });
+  const h = hero(-150, 0, 14);
+  const path = [{ x: -150, y: 0, z: 14 }, { x: -150, y: 0, z: 184 }, { x: 20, y: 0, z: 184 }];
+  const offer = () => ({ id: 90, type: "getaway", name: "Getaway Car", x: path[0].x, y: 0, z: path[0].z, path: path.map((p) => ({ ...p })) });
+  J.start("getaway", offer(), h);
+  const slow = J.active.data.car.auto.speed, tSlow = J.active.timer;
+  J.start("getaway", offer(), h, { mission: "STOP THAT CAR" });
+  J.update(DT, 0, h);
+  assert.equal(slow, JOB.getaway.speed);
+  assert.equal(J.active.data.car.auto.speed, JOB.getaway.beat);
+  assert.ok(JOB.getaway.beat > JOB.getaway.speed + 5);
+  assert.ok(J.active.timer < tSlow, "clock " + J.active.timer.toFixed(1) + " vs " + tSlow.toFixed(1));
+  assert.match(J.card.title, /STOP THAT CAR/);
+});
+test("Seat the Lid: standing on it for 6 s seats it, leaving slips the hold, and the clock pops it", () => {
+  const C = createCombat(city), J = createJobs({ city, combat: C, seed: 11 });
+  const h0 = hero(city.start.x, city.start.y, city.start.z);
+  J.start("lid", null, h0, { mission: "HOLD IT DOWN" });
+  const o = J.active.o;
+  assert.ok(Math.hypot(o.x - h0.x, o.z - h0.z) > 8, "the lid is off the hero");
+  J.update(DT, 0, h0);
+  assert.match(J.card.title, /HOLD IT DOWN/);
+  assert.match(J.card.title, /SEAT THE LID/);
+  assert.match(J.card.detail, /Stand on the lid/);
+  assert.doesNotMatch(J.card.title + " " + J.card.detail, /FLUSH THE CLOGS/);
+  const on = hero(o.x, o.y, o.z);
+  for (let i = 0; i < 3 / DT; i++) J.update(DT, i * DT, on);
+  assert.ok(J.active && J.active.data.held > 2.5 && J.active.data.held < 3.2, "held " + J.active.data.held.toFixed(2));
+  assert.match(J.card.detail, /Stay on the lid/);
+  const air = hero(o.x, o.y + 4, o.z, { onGround: false });
+  const held = J.active.data.held;
+  for (let i = 0; i < 1 / DT; i++) J.update(DT, i * DT, air);
+  assert.ok(J.active && J.active.data.held < held - 1.5, "the air slips it to " + J.active.data.held.toFixed(2));
+  assert.match(J.card.detail, /slipped/i);
+  const away = hero(o.x + 12, o.y, o.z);
+  J.update(DT, 0, away);
+  assert.ok(J.active.data.held < held - 1.5);
+  for (let i = 0; i < 6 / DT && J.active; i++) J.update(DT, i * DT, on);
+  assert.ok(J.events.some((e) => e.type === "done" && e.why === "seated" && e.reward === JOB.lid.reward), JSON.stringify(J.events.filter((e) => e.type === "done" || e.type === "failed")));
+  const J2 = createJobs({ city, combat: createCombat(city), seed: 11 });
+  J2.start("lid", null, h0);
+  const far = hero(J2.active.o.x + 12, J2.active.o.y, J2.active.o.z);
+  const ev = [];
+  for (let i = 0; i < (JOB.lid.time + 1) / DT && J2.active; i++) { J2.update(DT, i * DT, far); ev.push(...J2.events); J2.events.length = 0; }
+  assert.ok(ev.some((e) => e.type === "failed" && e.why === "popped"), JSON.stringify(ev.filter((e) => e.type === "failed")));
+  assert.equal(MISS.popped.title, "POPPED");
+});
+test("Through the Gust: three airborne swings count, a jog or a stand does not, and the clock blows it off", () => {
+  const C = createCombat(city), J = createJobs({ city, combat: C, seed: 3 });
+  const h0 = hero(city.start.x, city.start.y, city.start.z);
+  J.start("gust", null, h0, { mission: "THROUGH THE GUST" });
+  const o = J.active.o;
+  assert.ok(Math.hypot(o.x - h0.x, o.z - h0.z) > 8, "the gust is off the hero");
+  J.update(DT, 0, h0);
+  assert.match(J.card.title, /THROUGH THE GUST/);
+  assert.match(J.card.title, /SWING THROUGH/);
+  assert.match(J.card.detail, /Swing through the gust/);
+  assert.doesNotMatch(J.card.title + " " + J.card.detail, /FLUSH THE CLOGS/);
+  const slow = hero(o.x, o.y + 8, o.z, { onGround: false, vx: 6 });
+  J.update(DT, 0, slow);
+  assert.equal(J.active.data.n, 0, "a slow pass");
+  const ground = hero(o.x, o.y, o.z, { onGround: true, vx: 16 });
+  J.update(DT, 0, ground);
+  assert.equal(J.active.data.n, 0, "standing in it");
+  const fly = hero(o.x, o.y + 8, o.z, { onGround: false, vx: 16 });
+  const out = hero(o.x + 20, o.y + 8, o.z, { onGround: false, vx: 16 });
+  J.update(DT, 0, fly);
+  assert.equal(J.active.data.n, 1);
+  assert.ok(J.events.some((e) => e.type === "gust" && e.n === 1 && e.of === 3));
+  J.update(DT, 0, out);
+  J.update(DT, 0, fly);
+  assert.equal(J.active.data.n, 1, "back inside before the arm");
+  for (let i = 0; i < 0.5 / DT; i++) J.update(DT, i * DT, out);
+  J.update(DT, 0, fly);
+  assert.equal(J.active.data.n, 2);
+  assert.match(J.card.detail, /Through it, 2\/3/);
+  for (let i = 0; i < 0.5 / DT; i++) J.update(DT, i * DT, out);
+  J.update(DT, 0, fly);
+  assert.ok(J.events.some((e) => e.type === "done" && e.why === "through" && e.reward === JOB.gust.reward), JSON.stringify(J.events.filter((e) => e.type === "done" || e.type === "failed")));
+  const J2 = createJobs({ city, combat: createCombat(city), seed: 3 });
+  J2.start("gust", null, h0);
+  const far = hero(J2.active.o.x + 30, J2.active.o.y + 8, J2.active.o.z, { onGround: false });
+  const ev = [];
+  for (let i = 0; i < (JOB.gust.time + 1) / DT && J2.active; i++) { J2.update(DT, i * DT, far); ev.push(...J2.events); J2.events.length = 0; }
+  assert.ok(ev.some((e) => e.type === "failed" && e.why === "blown"), JSON.stringify(ev.filter((e) => e.type === "failed")));
+  assert.equal(MISS.blown.title, "BLOWN OFF");
+});
+test("Loose Wheel: it rolls, the air does not stop it, the ground does, and the clock lets it roll off", () => {
+  const C = createCombat(city), J = createJobs({ city, combat: C, seed: 7 });
+  const h0 = hero(city.start.x, city.start.y, city.start.z);
+  J.start("wheel", null, h0);
+  const D = J.active.data, x0 = D.x, z0 = D.z;
+  const away = hero(D.x + 40, D.y + 8, D.z, { onGround: false });
+  J.update(DT, 0, away);
+  assert.ok(J.active, "still rolling");
+  assert.ok(Math.hypot(J.active.data.x - x0, J.active.data.z - z0) > 0.2, "it moved");
+  assert.match(J.card.title, /STOP THE WHEEL/);
+  assert.match(J.card.detail, /front of it/);
+  const air = hero(J.active.data.x, J.active.data.y + 6, J.active.data.z, { onGround: false });
+  J.update(DT, 0, air);
+  assert.ok(J.active, "the air lets it roll");
+  assert.match(J.card.detail, /Land in front/);
+  const at = J.active.data;
+  const land = hero(at.x, at.y, at.z, { onGround: true });
+  J.update(DT, 0, land);
+  assert.ok(J.events.some((e) => e.type === "wheel" && e.y > 0), "the bump");
+  assert.ok(J.events.some((e) => e.type === "done" && e.why === "stopped" && e.reward === JOB.wheel.reward), JSON.stringify(J.events.filter((e) => e.type === "done" || e.type === "wheel")));
+  const J2 = createJobs({ city, combat: createCombat(city), seed: 7 });
+  J2.start("wheel", null, h0);
+  const far = hero(J2.active.data.x + 400, J2.active.data.y + 8, J2.active.data.z, { onGround: false });
+  const ev = [];
+  for (let i = 0; i < (JOB.wheel.time + 1) / DT && J2.active; i++) { J2.update(DT, i * DT, far); ev.push(...J2.events); J2.events.length = 0; }
+  assert.ok(ev.some((e) => e.type === "failed" && e.why === "rolled"), JSON.stringify(ev.filter((e) => e.type === "failed")));
+  assert.equal(MISS.rolled.title, "ROLLED OFF");
+});
+test("Hold the Kite: the air above it counts, the ground slips it, and the clock lets it rise away", () => {
+  const C = createCombat(city), J = createJobs({ city, combat: C, seed: 5 });
+  const h0 = hero(city.start.x, city.start.y, city.start.z);
+  J.start("kite", null, h0);
+  const o = J.active.o, y0 = J.active.data.y;
+  const away = hero(o.x + 40, 0, o.z);
+  J.update(DT, 0, away);
+  assert.ok(J.active.data.y > y0, "the kite rose");
+  assert.match(J.card.title, /HOLD THE KITE/);
+  assert.match(J.card.detail, /Stay above the kite/);
+  assert.doesNotMatch(J.card.title + " " + J.card.detail, /FLUSH THE CLOGS/);
+  const ground = hero(o.x, 0, o.z, { onGround: true });
+  J.update(DT, 0, ground);
+  assert.equal(J.active.data.held, 0, "the ground is not above it");
+  const low = hero(o.x, 2, o.z, { onGround: false });
+  J.update(DT, 0, low);
+  assert.equal(J.active.data.held, 0, "under it does not count");
+  assert.equal(J.events.some((e) => e.type === "kite"), false, "no tug yet");
+  const over = () => hero(o.x, 80, o.z, { onGround: false });
+  J.update(DT, 0, over());
+  assert.ok(J.active.data.held > 0, "above it counts");
+  assert.ok(J.events.some((e) => e.type === "kite" && e.tug), "the kite tugs");
+  for (let i = 0; i < 1 / DT; i++) J.update(DT, i * DT, over());
+  const held = J.active.data.held;
+  assert.ok(held > 0.9 && held < 1.3, "held " + held.toFixed(2));
+  assert.match(J.card.detail, /Above it/);
+  for (let i = 0; i < 0.3 / DT; i++) J.update(DT, i * DT, ground);
+  assert.ok(J.active.data.held < held - 0.4, "it slipped to " + J.active.data.held.toFixed(2));
+  assert.match(J.card.detail, /slipped/i);
+  const J2 = createJobs({ city, combat: createCombat(city), seed: 5 });
+  J2.start("kite", null, h0);
+  const o2 = J2.active.o;
+  const high = hero(o2.x, 80, o2.z, { onGround: false });
+  for (let i = 0; i < (JOB.kite.hold + 0.4) / DT && J2.active; i++) J2.update(DT, i * DT, high);
+  assert.ok(J2.events.some((e) => e.type === "kite" && !e.tug), "caught");
+  assert.ok(J2.events.some((e) => e.type === "done" && e.why === "held" && e.reward === JOB.kite.reward), JSON.stringify(J2.events.filter((e) => e.type === "done" || e.type === "failed")));
+  const J3 = createJobs({ city, combat: createCombat(city), seed: 5 });
+  J3.start("kite", null, h0);
+  const far = hero(J3.active.o.x + 40, 0, J3.active.o.z);
+  const ev = [];
+  for (let i = 0; i < (JOB.kite.time + 1) / DT && J3.active; i++) { J3.update(DT, i * DT, far); ev.push(...J3.events); J3.events.length = 0; }
+  assert.ok(ev.some((e) => e.type === "failed" && e.why === "risen"), JSON.stringify(ev.filter((e) => e.type === "failed")));
+  assert.equal(MISS.risen.title, "IT ROSE");
+});
+test("Ride the Line: a fast swing catches it, the ground does not, and the clock lets it go by", () => {
+  const C = createCombat(city), J = createJobs({ city, combat: C, seed: 9 });
+  const h0 = hero(city.start.x, city.start.y, city.start.z);
+  J.start("line", null, h0);
+  const D = J.active.data;
+  assert.ok(Math.hypot(D.x1 - D.x0, D.z1 - D.z0) > 10, "the line has a length");
+  J.update(DT, 0, h0);
+  assert.match(J.card.title, /RIDE THE LINE/);
+  assert.match(J.card.detail, /Swing onto the line/);
+  assert.doesNotMatch(J.card.title + " " + J.card.detail, /FLUSH THE CLOGS/);
+  const ground = hero(D.x0, D.y, D.z0, { onGround: true, vx: 16 });
+  J.update(DT, 0, ground);
+  assert.equal(J.active.data.on, false, "the ground misses the line");
+  const slow = hero(D.x0, D.y, D.z0, { onGround: false, vx: 4 });
+  J.update(DT, 0, slow);
+  assert.equal(J.active.data.on, false, "a slow swing misses");
+  const fly = hero(D.x0, D.y, D.z0, { onGround: false, vx: 16 });
+  J.update(DT, 0, fly);
+  assert.equal(J.active.data.on, true, "a fast swing catches");
+  assert.ok(J.events.some((e) => e.type === "line" && e.catch), "the catch");
+  assert.match(J.card.detail, /Along it/);
+  for (let i = 0; i < (JOB.line.span / JOB.line.ride + 0.4) / DT && J.active; i++) J.update(DT, i * DT, fly);
+  assert.ok(J.events.some((e) => e.type === "line" && e.ride), "it carries");
+  assert.ok(J.events.some((e) => e.type === "line" && e.hop), "it launches");
+  assert.ok(J.events.some((e) => e.type === "done" && e.why === "across" && e.reward === JOB.line.reward), JSON.stringify(J.events.filter((e) => e.type === "done" || e.type === "failed")));
+  const J2 = createJobs({ city, combat: createCombat(city), seed: 9 });
+  J2.start("line", null, h0);
+  const far = hero(J2.active.data.x0 + 400, 0, J2.active.data.z0);
+  const ev = [];
+  for (let i = 0; i < (JOB.line.time + 1) / DT && J2.active; i++) { J2.update(DT, i * DT, far); ev.push(...J2.events); J2.events.length = 0; }
+  assert.ok(ev.some((e) => e.type === "failed" && e.why === "snapped"), JSON.stringify(ev.filter((e) => e.type === "failed")));
+  assert.equal(MISS.snapped.title, "MISSED IT");
+});
 console.log(fails ? "FAIL: action (" + fails + " failed)" : "PASS: action");
 process.exitCode = fails ? 1 : 0;

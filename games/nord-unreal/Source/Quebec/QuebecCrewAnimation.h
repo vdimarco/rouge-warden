@@ -19,8 +19,14 @@ public:
     UFUNCTION(BlueprintCallable, Category="NORD") static bool ConfigureCrewBlendSpace(UBlendSpace1D* Space, UAnimSequence* Idle, UAnimSequence* Walk, UAnimSequence* Run);
     UFUNCTION(BlueprintCallable, Category="NORD") static bool ConfigureTripoGrip(USkeletalMesh* Mesh, UStaticMesh* Prop);
     bool SetAssets(UBlendSpace* Locomotion, UAnimSequence* Jump);
+    // Hoodie locomotion has no saved blend space. The graph blends these clips by speed.
+    bool SetGaitClips(UAnimSequence* Idle, UAnimSequence* Walk, UAnimSequence* Run);
     UPROPERTY(Transient, VisibleAnywhere, BlueprintReadOnly) TObjectPtr<UBlendSpace> LocomotionAsset;
     UPROPERTY(Transient, VisibleAnywhere, BlueprintReadOnly) TObjectPtr<UAnimSequence> JumpAsset;
+    UPROPERTY(Transient) TObjectPtr<UAnimSequence> GaitIdleAsset;
+    UPROPERTY(Transient) TObjectPtr<UAnimSequence> GaitWalkAsset;
+    UPROPERTY(Transient) TObjectPtr<UAnimSequence> GaitRunAsset;
+    UPROPERTY(Transient) float GaitPhase = 0.f;
     // Published on the game thread after the engine graph update, including its real sample weights/times.
     UPROPERTY(Transient, VisibleAnywhere, BlueprintReadOnly) TObjectPtr<UAnimSequence> ObservedClip;
     UPROPERTY(Transient, VisibleAnywhere, BlueprintReadOnly) float ObservedClipTime = 0.f;

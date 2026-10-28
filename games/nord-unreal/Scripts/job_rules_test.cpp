@@ -45,7 +45,10 @@ namespace
         {"cafe", DeliveryCafe}, {"door 1", DeliveryDoors[0]}, {"door 2", DeliveryDoors[1]}, {"door 3", DeliveryDoors[2]},
         {"thief start", ThiefStart}, {"goon arena", GoonArena},
         {"goon spawn 1", GoonSpawns[0]}, {"goon spawn 2", GoonSpawns[1]}, {"goon spawn 3", GoonSpawns[2]},
-        {"goon spawn 4", GoonSpawns[3]}, {"goon spawn 5", GoonSpawns[4]}, {"garage", EscapeGarage}
+        {"goon spawn 4", GoonSpawns[3]}, {"goon spawn 5", GoonSpawns[4]}, {"garage", EscapeGarage},
+        {"poster marker", Markers[4]}, {"poster papineau", PosterBoards[0]},
+        {"poster cartier", PosterBoards[1]}, {"poster dorion", PosterBoards[2]},
+        {"fare marker", Markers[5]}, {"fare drop", FareDrop}
     };
 
     void PlacementTests()
@@ -85,6 +88,42 @@ namespace
         const double Allowed = static_cast<double>(TimeLimits[0] + DoorBonusSeconds * static_cast<float>(DoorCount - 1));
         Expect(Route / 1300. < Allowed, "delivery route %.0f m cannot be driven in %.0f s", Route / 100., Allowed);
         Expect(Distance2D(EscapeGarage, Markers[3]) > 15000., "garage is too close to the escape start");
+        // The poster tour is a walk along rue Gauthier. The corners stay apart, the marker does not
+        // paste one by itself, and a walk of the nearest-first route fits the clock with no bonus time.
+        for (int Board = 0; Board < PosterCount; ++Board)
+        {
+            Expect(Distance2D(Markers[4], PosterBoards[Board]) > 800., "the poster marker pastes a corner");
+            for (int Other = Board + 1; Other < PosterCount; ++Other)
+                Expect(Distance2D(PosterBoards[Board], PosterBoards[Other]) > 4000., "two affiches share a corner");
+        }
+        Expect(NextPoster(Markers[4], 0) == 0, "the first affiche is not the Papineau corner");
+        double Walk = 0.;
+        FJobSpot At = Markers[4];
+        int Mask = 0;
+        while (!PostersDone(Mask))
+        {
+            const int Board = NextPoster(At, Mask);
+            Expect(Board >= 0, "the tour runs out of corners");
+            if (Board < 0) break;
+            Walk += Distance2D(At, PosterBoards[Board]);
+            At = PosterBoards[Board];
+            Mask = PastePoster(Mask, Board);
+        }
+        Expect(PostersDone(Mask), "the nearest-first walk misses a corner");
+        Expect(Walk / 450. < static_cast<double>(TimeLimits[4]), "the affiche walk does not fit two minutes");
+        Expect(Rewards[2] == 300, "the goon reward moved");
+        Expect(Rewards[4] == 350 && TimeLimits[4] == 120.f, "the affiche pay or clock drifted");
+        // The fare is a drive from a south road to a west quay. The straight line fits the clock
+        // at 13 m/s, and both ends stay farther from the usual guides than the jobs those guides name.
+        const FJobSpot Spawn = {38793., -7522.8, 0.};
+        const FJobSpot Terrace = {5550., 2460., 0.};
+        const double FareLeg = Distance2D(Markers[5], FareDrop);
+        Expect(FareLeg > 30000., "the fare is a hop, not a drive");
+        Expect(FareLeg / 1300. < static_cast<double>(TimeLimits[5]), "the fare drive does not fit its clock");
+        Expect(Distance2D(Spawn, Markers[5]) > Distance2D(Spawn, Markers[1]), "the fare is closer to the spawn than the thief");
+        Expect(Distance2D(Terrace, Markers[5]) > Distance2D(Terrace, Markers[2]), "the fare is closer to the terrace than the goons");
+        Expect(Rewards[5] == 450 && TimeLimits[5] == 100.f, "the fare pay or clock drifted");
+        Expect(Distance2D(Markers[5], FareDrop) > WalkerArrivalRadius, "standing on the pickup also drops the passenger");
     }
 
     void TimerTests()
@@ -166,6 +205,83 @@ namespace
         Expect(!EscapeWon(false, 0, true, 1.f), "not in the first two seconds");
     }
 
+    void FareTests()
+    {
+        const FFare Board = AdvanceFare(FareWait, 0., true, false, false, 0.f, 4.5);
+        Expect(Board.Step == FareAboard && Board.OnFoot == 0., "boarding spends the grace in the same call");
+        const FFare Waiting = AdvanceFare(FareWait, 0., false, true, true, 0.f, 1.);
+        Expect(Waiting.Step == FareWait, "a car at the drop boards a passenger who was never picked up");
+        const FFare Dropped = AdvanceFare(FareAboard, 3., false, true, true, 800.f, 1.);
+        Expect(Dropped.Step == FareDone && Dropped.OnFoot == 0., "a slow car at the quay does not drop the passenger");
+        const FFare Fast = AdvanceFare(FareAboard, 2., false, true, true, 801.f, 1.);
+        Expect(Fast.Step == FareAboard && Fast.OnFoot == 0., "a fast car at the quay drops the passenger");
+        const FFare Edge = AdvanceFare(FareAboard, 0., false, false, false, 0.f, 4.);
+        Expect(Edge.Step == FareAboard && Edge.OnFoot == 4., "four seconds on foot already loses the passenger");
+        const FFare Lost = AdvanceFare(FareAboard, 0., false, true, false, 0.f, 4.5);
+        Expect(Lost.Step == FareLost, "stepping out at the quay still counts as a drop");
+        const FFare Back = AdvanceFare(FareAboard, 3.5, false, false, true, 0.f, 1.);
+        Expect(Back.Step == FareAboard && Back.OnFoot == 0., "getting back in the car leaves the grace where it was");
+        const FFare StuckDone = AdvanceFare(FareDone, 0., false, false, false, 0.f, 9.);
+        Expect(StuckDone.Step == FareDone, "a finished fare starts over");
+        const FFare StuckLost = AdvanceFare(FareLost, 5., true, true, true, 0.f, 1.);
+        Expect(StuckLost.Step == FareLost && StuckLost.OnFoot == 5., "a lost fare boards again");
+        const FFare NoTick = AdvanceFare(FareAboard, 1., false, false, false, 0.f, -2.);
+        Expect(NoTick.Step == FareAboard && NoTick.OnFoot == 1., "a backwards tick spends the grace");
+        Expect(FareSecondsLeft(0.) == 4, "a fresh grace is not four seconds");
+        Expect(FareSecondsLeft(0.5) == 4, "half a second on foot rounds the grace down");
+        Expect(FareSecondsLeft(3.5) == 1, "three and a half seconds leaves no whole second");
+        Expect(FareSecondsLeft(4.) == 0 && FareSecondsLeft(6.) == 0, "a spent grace still shows a second");
+        Expect(FareNeedsLoan(true, false), "a walker with no car is left to find one");
+        Expect(!FareNeedsLoan(false, false), "a driver is given a second car");
+        Expect(!FareNeedsLoan(true, true), "a free car nearby still spawns a loaner");
+        Expect(FareLoanRadius == 3000., "the loaner looks farther than the curb");
+        Expect(FareCarIsFree(false, false, false, false, false, 0.f), "a parked car is passed over");
+        Expect(!FareCarIsFree(false, false, false, false, true, 121.f), "moving traffic counts as a ride");
+        Expect(!FareCarIsFree(false, false, false, false, true, -121.f), "traffic rolling backward counts as a ride");
+        Expect(FareCarIsFree(false, false, false, false, true, 120.f), "stopped traffic is passed over");
+        Expect(!FareCarIsFree(true, false, false, false, false, 0.f), "an occupied car counts as a ride");
+        Expect(!FareCarIsFree(false, true, false, false, false, 0.f), "a driven car counts as a ride");
+        Expect(!FareCarIsFree(false, false, true, false, false, 0.f), "a police car counts as a ride");
+        Expect(!FareCarIsFree(false, false, false, true, false, 0.f), "a wreck counts as a ride");
+        Expect(FareTakeSpeed == 120.f, "the door speed drifted from the traffic car a player can enter");
+        Expect(FareAim(FareWait, false, true) == FareAimPickup, "the pickup post jumps to the loaner before anyone boards");
+        Expect(FareAim(FareAboard, false, true) == FareAimLoan, "on foot the post stays on the quay while the loaner waits");
+        Expect(FareAim(FareAboard, true, true) == FareAimDrop, "a driver is sent back to the empty loaner");
+        Expect(FareAim(FareAboard, false, false) == FareAimDrop, "on foot with no loaner the post hunts a car that is not there");
+        Expect(FareAim(FareDone, false, true) == FareAimDrop, "a finished fare points at the loaner");
+        Expect(FareCaption(true, false) == FareAimPickup, "the pickup post says the quay");
+        Expect(FareCaption(false, true) == FareAimDrop, "the quay post says the car");
+        Expect(FareCaption(false, false) == FareAimLoan, "a post on the loaner says the quay");
+        Expect(FareCaption(true, true) == FareAimPickup, "a post on both places prefers the quay");
+        Expect(FarePlaceRadius == 80., "the place word reaches the loaner");
+    }
+
+    void GuideTests()
+    {
+        const FJobSpot Spawn = {38793., -7522.8, 0.};
+        const FJobSpot Terrace = {5550., 2460., 0.};
+        Expect(NearestOpenJob(Spawn, Markers, JobCount, 0) == 3, "from the spawn the nearest open job is the escape");
+        Expect(NearestOpenJob(Terrace, Markers, JobCount, 0) == 2, "from the terrace the nearest open job is the goons");
+        Expect(NearestOpenJob(Spawn, Markers, JobCount, 1 << 3) == 1, "a finished escape yields the thief, not a replay of the closer job");
+        Expect(NearestOpenJob(Spawn, Markers, JobCount, (1 << JobCount) - 1) == 3, "when every job is done the nearest replay is the escape");
+        Expect(NearestOpenJob(Spawn, Markers, 0, 0) == -1, "no markers means no guide");
+        Expect(FreeRoamGuide(false, false, -1, Terrace, Markers, JobCount, 0) == -1, "the story card keeps the diamond during the campaign");
+        Expect(FreeRoamGuide(false, true, 0, Terrace, Markers, JobCount, 0) == -1, "a side job during the story does not replace the story card");
+        Expect(FreeRoamGuide(true, false, -1, Terrace, Markers, JobCount, 0) == 2, "after the story the card points at the nearest open job");
+        Expect(FreeRoamGuide(true, true, 0, Spawn, Markers, JobCount, 0) == 0, "a running job stays on the card wherever the player is");
+        Expect(FreeRoamGuide(true, true, 9, Spawn, Markers, JobCount, 0) == -1, "a running job with a bad index does not invent a marker");
+        const int Same = PastePoster(PastePoster(0, 0), 0);
+        Expect(Same == 1 && PosterBits(Same) == 1 && !PostersDone(Same), "pasting Papineau twice counts twice");
+        Expect(PastePoster(0, -1) == 0 && PastePoster(0, 9) == 0, "a corner outside the tour changes the mask");
+        const int Forward = PastePoster(PastePoster(PastePoster(0, 2), 0), 1);
+        const int Backward = PastePoster(PastePoster(PastePoster(0, 1), 2), 0);
+        Expect(Forward == Backward && PostersDone(Forward), "the order of the corners changes the result");
+        Expect(NextPoster(PosterBoards[0], 1) == 1, "after Papineau the tour does not go on to Cartier");
+        Expect(NextPoster(PosterBoards[2], 7) == -1, "a finished tour still names a corner");
+        const FJobSpot Tied[] = {{0., 0., 0.}, {100., 0., 0.}};
+        Expect(NearestOpenJob({50., 0., 0.}, Tied, 2, 0) == 0, "an equal distance keeps the earlier job");
+    }
+
     void PrintTable()
     {
         for (const FNamedSpot& Point : JobPoints)
@@ -186,6 +302,8 @@ int main(int Count, char** Arguments)
     WaveTests();
     ThiefTests();
     EscapeTests();
+    FareTests();
+    GuideTests();
     std::printf("%d assertions, %d failures\n", Assertions, Failures);
     return Failures == 0 ? 0 : 1;
 }

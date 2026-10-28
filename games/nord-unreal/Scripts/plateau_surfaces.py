@@ -73,9 +73,64 @@ def apply(u, materials, expression, material):
     link(world, '', mask, '')
     coordinates = expression(asphalt, u.MaterialExpressionMultiply, const_b=.005)
     link(mask, '', coordinates, 'A')
-    for node in library.get_material_expressions(asphalt):
-        if isinstance(node, u.MaterialExpressionTextureSample):
-            link(coordinates, '', node, '')
+    samples = [node for node in library.get_material_expressions(asphalt)
+               if isinstance(node, u.MaterialExpressionTextureSample)]
+    for node in samples:
+        link(coordinates, '', node, '')
+    # Eric Heitz and Fabrice Neyret, "High-Performance By-Example Noise using a
+    # Histogram-Preserving Blending Operator" (HPG 2018), break a repeated photo
+    # by blending several stochastic tiles. That hash does not fit this graph.
+    # A second sample of the same photo, at a scale that does not share the 2 m
+    # repeat, is mixed by a slow sine. Normals and roughness stay on the 2 m grid.
+    # The sine node's period stays 1, so the output is sin(2π · input).
+    diffuse = next(node for node in samples
+                   if node.get_editor_property('sampler_type') == u.MaterialSamplerType.SAMPLERTYPE_COLOR)
+    coarse = expression(asphalt, u.MaterialExpressionMultiply, const_b=.013)
+    link(mask, '', coarse, 'A')
+    shifted = expression(asphalt, u.MaterialExpressionAdd, const_b=.37)
+    link(coarse, '', shifted, 'A')
+    second = expression(asphalt, u.MaterialExpressionTextureSample,
+                        texture=diffuse.get_editor_property('texture'))
+    link(shifted, '', second, '')
+    axis_x = expression(asphalt, u.MaterialExpressionComponentMask, r=True, g=False, b=False, a=False)
+    axis_y = expression(asphalt, u.MaterialExpressionComponentMask, r=False, g=True, b=False, a=False)
+    link(world, '', axis_x, '')
+    link(world, '', axis_y, '')
+
+    def wave(axis, scale):
+        slow = expression(asphalt, u.MaterialExpressionMultiply, const_b=scale)
+        link(axis, '', slow, 'A')
+        sine = expression(asphalt, u.MaterialExpressionSine)
+        link(slow, '', sine, '')
+        return sine
+
+    mix_x, mix_y = wave(axis_x, .0011), wave(axis_y, .0009)
+    product = expression(asphalt, u.MaterialExpressionMultiply)
+    link(mix_x, '', product, 'A')
+    link(mix_y, '', product, 'B')
+    half = expression(asphalt, u.MaterialExpressionMultiply, const_b=.5)
+    link(product, '', half, 'A')
+    span = expression(asphalt, u.MaterialExpressionAdd, const_b=.5)
+    link(half, '', span, 'A')
+    blended = expression(asphalt, u.MaterialExpressionLinearInterpolate)
+    link(diffuse, 'RGB', blended, 'A')
+    link(second, 'RGB', blended, 'B')
+    link(span, '', blended, 'Alpha')
+    wear_x, wear_y = wave(axis_x, .0023), wave(axis_y, .0017)
+    wear_product = expression(asphalt, u.MaterialExpressionMultiply)
+    link(wear_x, '', wear_product, 'A')
+    link(wear_y, '', wear_product, 'B')
+    wear_half = expression(asphalt, u.MaterialExpressionMultiply, const_b=.5)
+    link(wear_product, '', wear_half, 'A')
+    wear_span = expression(asphalt, u.MaterialExpressionAdd, const_b=.5)
+    link(wear_half, '', wear_span, 'A')
+    wear = expression(asphalt, u.MaterialExpressionLinearInterpolate, const_a=.78, const_b=1.)
+    link(wear_span, '', wear, 'Alpha')
+    scaled = expression(asphalt, u.MaterialExpressionMultiply)
+    link(blended, '', scaled, 'A')
+    link(wear, '', scaled, 'B')
+    base = library.get_material_property_input_node(asphalt, u.MaterialProperty.MP_BASE_COLOR)
+    link(scaled, '', base, 'A')
     library.recompile_material(asphalt)
 
     water = material('PondWater', (.012, .035, .028), rough=.17, metal=.08)

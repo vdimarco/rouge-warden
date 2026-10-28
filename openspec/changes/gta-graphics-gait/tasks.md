@@ -1,0 +1,6 @@
+- [x] Blend the hoodie walk and run by speed in the player graph
+- [x] Keep the 520 cut for a body with no run clip
+- [x] Keep the opening pitch, the aim, and the socket
+- [x] Run `Scripts/test_gait_blend.py`
+- [x] Syntax-check the player graph offline
+- [ ] Confirm the blend in Unreal (editor not available here)

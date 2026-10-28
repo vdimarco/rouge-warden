@@ -21,7 +21,7 @@
  "masonry": {
   "Brick_Brown": 251,
   "Brick_BrownDark": 107,
-  "Brick_Buff": 182,
+  "Brick_Buff_Even": 182,
   "Brick_Orange": 104,
   "Brick_Red": 239,
   "Brick_RedDark": 91,
@@ -48,7 +48,8 @@
   "municipal LOD2 (h - 4.9 m) / 3.26 m +1 storey to cover the retained mass": 27
  },
  "era_sources": {
-  "assessment roll": 1090,
+  "assessment roll": 1089,
+  "override: OMHM, Habitations De Mentana: in operation since 1974 (https://omhm.qc.ca/en/node/15296); red brick, concrete balcony slabs with painted guards, patio doors and wall panels under the windows (OMHM Infochantier De Mentana, October 2008, https://www.omhm.qc.ca/sites/default/files/infochantier/DeMentanav210.08.pdf)": 1,
   "seeded from roll decade histogram": 217
  },
  "streets_covered": {
@@ -97,7 +98,7 @@
   "tower over 24 m": 8
  },
  "triangles_per_front": {
-  "median": 1556,
+  "median": 1564,
   "max": 13700
  },
  "roofs": {
@@ -106,12 +107,12 @@
    "Roof_Membrane": 811,
    "Roof_Tar": 132
   },
-  "chimneys": 1307,
-  "hatches": 1272,
+  "chimneys": 1301,
+  "hatches": 1266,
   "terraces": 33,
   "party_copings": 2345,
   "party_skins": 659,
-  "triangles": 89986
+  "triangles": 90546
  },
  "rear": {
   "back_walls": {
@@ -121,32 +122,35 @@
    "side": 1757,
    "street": 283
   },
-  "lots_with_galleries": 833,
-  "galleries": 1741,
+  "lots_with_galleries": 830,
+  "galleries": 1709,
   "stairs": {
-   "spiral": 494,
-   "straight": 405
+   "spiral": 491,
+   "straight": 403
   },
-  "flights": 1741,
+  "flights": 1709,
   "no_gallery_reasons": {
-   "a building, structure or traffic lane behind the wall": 116,
+   "a building, structure or traffic lane behind the wall": 115,
    "no rear wall of 3 m or more and no long wall": 224,
-   "no rear wall of 3 m or more; long walls carry galleries up to 4 storeys only": 4,
+   "no rear wall of 3 m or more; long walls carry galleries up to 4 storeys only": 2,
+   "post-1945 apartment block: a balcony on every bay, no rear galleries": 6,
    "yard too shallow or lot too narrow for a gallery and stair": 130
   },
   "fences": {
-   "lane": 538,
+   "lane": 537,
    "rear_lot_line": 414,
-   "gates": 537,
+   "gates": 536,
    "kinds": {
-    "boards": 551,
-    "low": 163,
-    "slats": 238
+    "boards": 395,
+    "chain": 182,
+    "lattice": 94,
+    "low": 162,
+    "slats": 118
    }
   },
   "outbuildings": {
-   "garage": 6,
-   "shed": 129
+   "garage": 28,
+   "shed": 156
   },
   "yards": {
    "lots": 1079,
@@ -159,31 +163,31 @@
    },
    "lane_edges": {
     "fence": 789,
-    "low": 163,
+    "low": 162,
     "none": 47,
-    "open": 80
+    "open": 81
    },
-   "parking_pads": 80,
+   "parking_pads": 81,
    "area_m2": {
-    "Yard_Grass": 21975.6,
-    "Yard_Gravel": 5905.4,
-    "Yard_Pavers": 22334.9,
-    "Yard_Soil": 9626.9
+    "Yard_Grass": 21806.1,
+    "Yard_Gravel": 5840.6,
+    "Yard_Pavers": 22295.8,
+    "Yard_Soil": 9384.7
    },
    "ground_decks": 71,
    "trees": {
     "ash": 103,
-    "elm": 40,
-    "maple": 198,
-    "small": 232
+    "elm": 37,
+    "maple": 200,
+    "small": 225
    },
    "tree_height_m": {
     "min": 7.5,
-    "median": 12.53,
+    "median": 12.5,
     "max": 18.0
    }
   },
-  "triangles": 649725
+  "triangles": 745920
  },
  "background": {
   "masses": 252,
@@ -201,9 +205,19 @@
    "side": 613,
    "street": 126
   },
-  "windows": 6137,
+  "windows": 10601,
   "party_skins": 26,
-  "triangles": 61010
+  "roofs": {
+   "materials": {
+    "Roof_Gravel": 90,
+    "Roof_Membrane": 151,
+    "Roof_Tar": 11
+   },
+   "chimneys": 240,
+   "hatches": 234,
+   "penthouses": 9
+  },
+  "triangles": 215670
  },
  "glass_cards": {
   "status": {
@@ -215,5 +229,47 @@
    "skin": 27560
   },
   "floating_on": []
+ },
+ "walls_pass": {
+  "year_overrides": {
+   "356220851": 1974
+  },
+  "post_1945_kit": {
+   "lots": [
+    "131285491",
+    "345482790",
+    "356220851",
+    "356257089",
+    "356740897",
+    "358133794"
+   ],
+   "towers": [
+    "347041020",
+    "355960989",
+    "357948906",
+    "358275482",
+    "358275641",
+    "359275176",
+    "359321925",
+    "359325613"
+   ],
+   "balconies": 2137
+  },
+  "open_ground": {
+   "lots": 133,
+   "area_m2": {
+    "Yard_Grass": 3435.0,
+    "Asphalt_Lot": 1264.4
+   },
+   "stall_lines": 71
+  },
+  "collision": {
+   "guard_runs": 6465,
+   "flight_runs": 379,
+   "balcony_rail_runs": 1270,
+   "traffic_band_units": 135,
+   "traffic_band_lots": 64,
+   "traffic_band_visual_faces": 2011
+  }
  }
 }

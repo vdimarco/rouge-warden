@@ -1,7 +1,8 @@
 // In Full Swing: missions and odd jobs. Mission 1, "Sludge Run" (the story's fast start): a gang runner with a clog bomb runs the
-// streets to the Market drain; catch him before the timer runs out, beat his crew, and the bomb is defused. Odd jobs wait at
-// markers round the city and pay Loonies: catch a falling person, carry a stranded window washer down, a pizza rush, a balloon
-// chase, a rooftop brawl, a taxi fare (drive a car into the marker) and a purse snatcher to run down.
+// streets to the Market drain; catch him before the timer runs out, beat his crew, and the bomb is defused. Missions 2, 3, 4 and 5
+// (STORY_ROUTE) are a purse snatcher, a falling rescue, a roof fight and a pizza delivery. Odd jobs wait at markers after that route and pay
+// Loonies: catch a falling person, carry a stranded window washer down, a pizza rush, a balloon chase, a rooftop brawl, a taxi
+// fare (drive a car into the marker) and a purse snatcher to run down.
 // Crimes also start near the hero now and then with a shout (a mugging, a getaway car, a leaking sludge tanker, a purse
 // snatcher); swing close to take one, or it is over after a minute. One job runs at a time; walk or swing into a marker to take it. Nobody gets hurt when a job fails: it
 // is a cartoon city. Pure: no three, no DOM; streetview.js draws the people, jobsview the markers and the balloon.
@@ -20,9 +21,10 @@ function rng(seed) {
 export const JOB = {
   offers: 4, near: [90, 420], refresh: 650, markerR: 4.5, markerUp: 3, leave: 700, // a job is dropped when you go this far away
   catch: { fall: 7, fallMax: 22, reach: 2.8, delay: 3.5, reward: 30, clear: 3, out: 1.6 }, // clear: the drop under the edge ends this low (no ledge)
-  washer: { grip: 60, reach: 2.6, reward: 40 },
+  // beat: the eighth-flush carry. pace and climb are a swing and a wall run, not a walk. A farther tower keeps the minute.
+  washer: { grip: 60, beat: 36, pace: 16, climb: 8, spare: 10, reach: 2.6, reward: 40 },
   pizza: { speed: 12, spare: 18, reach: 4.5, reward: 25, bonus: 15 },
-  balloon: { rise: 2.4, drift: 1.1, top: 170, reach: 2.6, back: 4.5, slip: 1.2, clear: 5, reward: 20 }, // clear: it can be caught once this high
+  balloon: { rise: 2.4, drift: 1.1, top: 170, high: 140, reach: 2.6, back: 4.5, slip: 1.2, clear: 5, reward: 20 }, // clear: it can be caught once this high. high: a free balloon this far up heats the card
   brawl: { time: 120, wave1: 4, wave2: 3, reward: 35 },
   // the Gauntlet: round after round on one roof until the hero is knocked out. Round n brings base + n goons (at most most), and
   // from round bruteFrom a brute, one more every bruteEvery rounds (at most brutes). Each round the gang walks pace faster (at
@@ -30,16 +32,28 @@ export const JOB = {
   // reward Loonies times the round for each round cleared. The roof is city.arena (city.js ARENA).
   gauntlet: { base: 2, most: 8, bruteFrom: 3, bruteEvery: 3, brutes: 2, pace: 0.05, paceMost: 1.35, windupK: 0.04, windupMin: 0.32,
     windup: 0.55, rest: 4, first: 2.5, heal: 2, reward: 5 },
-  sludge: { speed: 5.4, crew: 3, runnerHp: 2, reward: 50, spare: 6 },
+  // press: past this gap the runner leaves the jog. ramp: seconds to reach fast. ease: seconds to fall back to the jog.
+  sludge: { speed: 5.4, fast: 7.4, press: 46, ramp: 2, ease: 0.7, crew: 3, runnerHp: 2, reward: 50, spare: 6 },
   // taxi: the fare's drop is this far off; the clock gives this road speed plus spare; get out for longer than walk and they leave
   taxi: { near: 260, far: 560, speed: 13, spare: 20, reach: 9, walk: 4, reward: 35, tip: 20, hail: 6 },
-  thief: { speed: 6.3, hops: [4, 6], spare: 4, reward: 30 },
+  thief: { speed: 6.3, fast: 9.2, press: 28, ramp: 1.2, ease: 0.6, hops: [4, 6], spare: 4, reward: 30 },
   // crimes near the hero: one every every[0]..every[1] s while no job runs, near[0]..near[1] m away, taken from take m, gone
   // after last s. The first comes after first s of free play.
   crime: { every: [45, 80], first: 40, near: [50, 150], take: 28, last: 60 },
   mugging: { crew: 3, time: 90, reward: 30 },
-  getaway: { speed: 17, hops: [5, 8], crew: 2, reward: 40, swerve: 0.5, spare: 8 },
+  // beat: the ninth flush. An odd-job getaway keeps speed.
+  getaway: { speed: 17, beat: 24, hops: [5, 8], crew: 2, reward: 40, swerve: 0.5, spare: 8 },
   tanker: { crew: 3, time: 100, seals: 3, reward: 45 },
+  // stay: metres on the ground that fill the hold. Leaving the lid, or the ground, slips it at twice that rate.
+  lid: { stay: 4, hold: 6, time: 24, reward: 25 },
+  // radius: a pass counts inside this column. speed: across the ground, in the air. arm: leave, then wait, before the next pass.
+  gust: { radius: 6, need: 3, speed: 11, arm: 0.4, time: 28, reward: 25, lift: 7 },
+  // reach: on the ground, this close, the wheel stops. speed: it rolls along the street.
+  wheel: { reach: 4.5, speed: 8, time: 18, reward: 30, bump: 5 },
+  // rise: the kite climbs. hold: seconds in the air above it. radius: across the ground. slip: the hold falls back this fast.
+  kite: { rise: 4, hold: 4, radius: 8, time: 22, reward: 25, tug: 6, lift: 9, top: 90, slip: 2 },
+  // span: the line's length. height: above the street. reach: how close a swing has to come. speed: across the ground.
+  line: { span: 18, height: 8, reach: 3.5, speed: 9, time: 16, reward: 25, ride: 14, hop: 8 },
 };
 // the crime shouts (the hero's own words, as in the comics) and the quips after a crime is stopped
 export const CRIME_LINES = {
@@ -58,7 +72,36 @@ export function gauntletRound(n) {
 }
 // Loonies for a Gauntlet that cleared rounds rounds
 export const gauntletPay = (rounds) => (JOB.gauntlet.reward * rounds * (rounds + 1)) / 2;
-export const JOB_NAMES = { gauntlet: "The Gauntlet", sludge: "Sludge Run", catch: "Catch!", washer: "Window Washer", pizza: "Pizza Rush", balloon: "Balloon Chase", brawl: "Rooftop Brawl", taxi: "Taxi!", thief: "Stop, Thief!", mugging: "Mugging", getaway: "Getaway Car", tanker: "Sludge Tanker" };
+// A miss names itself and one thing to do on the retry. No payoff word: a win owns that.
+export const MISS = {
+  away: { title: "GOT AWAY", detail: "Stay close. A swing beats a jog.", short: "SWING IN" },
+  drain: { title: "IT BLEW", detail: "Catch the runner before the drain.", short: "SWING IN" },
+  time: { title: "TOO SLOW", detail: "Close the gap before the clock wins.", short: "CLOSER" },
+  dumpster: { title: "MISSED", detail: "Catch them in the air, above the street.", short: "CATCH" },
+  drainpipe: { title: "SLID", detail: "Reach the washer before his grip goes.", short: "REACH" },
+  cold: { title: "COLD", detail: "The roof was too far for that clock.", short: "FASTER" },
+  gone: { title: "GONE", detail: "Grab the balloon before it clears the roofs.", short: "GRAB" },
+  knockout: { title: "DOWN", detail: "Dodge the wind-up, then hit back.", short: "DODGE" },
+  left: { title: "LEFT IT", detail: "Stay with the job.", short: "STAY" },
+  walked: { title: "WALKED OFF", detail: "Stay in the car.", short: "DRIVE" },
+  late: { title: "TOO SLOW", detail: "The fare needed a faster street.", short: "FASTER" },
+  flood: { title: "IT BURST", detail: "Seal the leak, then clear the crew.", short: "SEAL" },
+  popped: { title: "POPPED", detail: "Stay on the lid until it seats.", short: "HOLD" },
+  blown: { title: "BLOWN OFF", detail: "Swing through the gust three times.", short: "SWING" },
+  rolled: { title: "ROLLED OFF", detail: "Get on the ground in front of the wheel.", short: "LAND" },
+  risen: { title: "IT ROSE", detail: "Stay above the kite until you have it.", short: "ABOVE" },
+  snapped: { title: "MISSED IT", detail: "Swing onto the line.", short: "SWING" },
+};
+export const JOB_NAMES = { gauntlet: "The Gauntlet", sludge: "Sludge Run", catch: "Catch!", washer: "Window Washer", pizza: "Pizza Rush", balloon: "Balloon Chase", brawl: "Rooftop Brawl", taxi: "Taxi!", thief: "Stop, Thief!", mugging: "Mugging", getaway: "Getaway Car", tanker: "Sludge Tanker", lid: "Seat the Lid", gust: "Through the Gust", wheel: "Loose Wheel", kite: "Hold the Kite", line: "Ride the Line" };
+// After the Sludge Run the story is four different jobs, in this order. The twelve clogs stay in the city and still wake the King.
+export const STORY_ROUTE = [
+  { type: "thief", mission: "MISSION 2", pending: "Stop the purse snatcher", scene: "mission2" },
+  { type: "catch", mission: "MISSION 3", pending: "Catch the person falling", scene: "mission3" },
+  { type: "brawl", mission: "MISSION 4", pending: "Clear the Sludge Gang off the roof", scene: "mission4" },
+  { type: "pizza", mission: "MISSION 5", pending: "Get the pizza to the roof", scene: "mission5" },
+];
+// How far from the hero a story job is placed, in metres. Close enough to reach, far enough to be a swing.
+export const STORY_NEAR = { thief: [18, 55], catch: [36, 130], brawl: [40, 170], pizza: [24, 90] };
 // what the marker says, and the toast when you take the job
 export const JOB_LINES = {
   catch: "Someone is falling off a roof! Catch them.",
@@ -73,6 +116,11 @@ export const JOB_LINES = {
   mugging: "Three goons are mugging someone. Stop them!",
   getaway: "Rope the getaway car to stop it, then deal with the crew.",
   tanker: "Plug the leak with your plunger (rope it three times) and beat the crew.",
+  lid: "The lid is rattling. Stand on it until it seats.",
+  gust: "A gust is kicking up. Swing through it three times.",
+  wheel: "A wheel got loose. Get on the ground in front of it.",
+  kite: "A kite is getting away. Stay above it.",
+  line: "A line is strung across the street. Swing onto it.",
 };
 // jobs that take you far from their marker: no "left it behind" for these
 const ROAMS = { sludge: true, taxi: true, thief: true, getaway: true };
@@ -85,9 +133,10 @@ const VICTIM = { shirt: [0.9, 0.35, 0.45], pants: [0.3, 0.3, 0.4], skin: [0.92, 
 const FALLER = { shirt: [0.95, 0.9, 0.3], pants: [0.3, 0.2, 0.15], skin: [0.96, 0.78, 0.62] };
 
 export function createJobs({ city, combat, cars = null, seed = 4711 }) {
+  const crewScratch = [];
   const r = rng(seed);
   const J = {
-    active: null, offers: [], events: [], crimesOn: false, people: [], balloons: [], done: {}, failed: {}, story: { sludge: false }, offersOn: true,
+    active: null, offers: [], events: [], crimesOn: false, people: [], balloons: [], done: {}, failed: {}, story: { sludge: false, route: 0 }, offersOn: true,
     stats: { started: 0, done: 0, failed: 0 },
   };
   let nextId = 1, offerAt = null, hailT = 0, crimeT = JOB.crime.first;
@@ -173,17 +222,35 @@ export function createJobs({ city, combat, cars = null, seed = 4711 }) {
     else if (type === "gauntlet") { const q = arena(); if (q) { at = { x: q.x, y: q.y, z: q.z }; extra.bid = q.b.id; extra.rect = q.rect; } }
     else if (type === "brawl") { const q = pickRoof(fx, fz, lo, hi, 14, 70); if (q) { at = { x: q.x, y: q.y, z: q.z }; extra.bid = q.b.id; } }
     else if (type === "washer") {
-      const q = pickRoof(fx, fz, lo, hi, 55, 200);
-      if (q) {
-        // the washer hangs on the face that looks on to a street, at 40 to 70 % of the height
-        const t = q.b.tiers[0], faces = [[t.maxX, (t.minZ + t.maxZ) / 2, 1, 0], [t.minX, (t.minZ + t.maxZ) / 2, -1, 0], [(t.minX + t.maxX) / 2, t.maxZ, 0, 1], [(t.minX + t.maxX) / 2, t.minZ, 0, -1]];
+      // the washer hangs on the face that looks on to a street, at 40 to 70 % of the height
+      const hangOn = (b) => {
+        const t = b.tiers[0], faces = [[t.maxX, (t.minZ + t.maxZ) / 2, 1, 0], [t.minX, (t.minZ + t.maxZ) / 2, -1, 0], [(t.minX + t.maxX) / 2, t.maxZ, 0, 1], [(t.minX + t.maxX) / 2, t.minZ, 0, -1]];
         for (const [x, z, nx, nz] of faces) {
           const sx = x + nx * 8, sz = z + nz * 8;
           if (city.collideSphere(sx, 1, sz, 1) || city.isWater(sx, sz)) continue;
-          const h = Math.min(t.y1, q.b.roofY) * (0.4 + 0.3 * r());
-          at = { x: sx, y: ground(sx, sz), z: sz }; extra.hang = { x: x + nx * 0.45, y: h, z: z + nz * 0.45, nx, nz };
-          break;
+          const hy = Math.min(t.y1, b.roofY) * (0.4 + 0.3 * r());
+          return { at: { x: sx, y: ground(sx, sz), z: sz }, hang: { x: x + nx * 0.45, y: hy, z: z + nz * 0.45, nx, nz } };
         }
+        return null;
+      };
+      const tall = (b) => {
+        const t = b.tiers[b.tiers.length - 1];
+        return b.roofY >= 55 && b.roofY <= 200 && t.maxX - t.minX >= 10 && t.maxZ - t.minZ >= 10;
+      };
+      // a close band (the eighth flush) walks the towers in range. A wide band keeps the old random pick.
+      if (hi <= 180) {
+        const hits = [];
+        for (const { b } of tops) {
+          if (!tall(b)) continue;
+          const c = roofCentre(b), d = Math.hypot(c.x - fx, c.z - fz);
+          if (d < lo || d > hi) continue;
+          const w = hangOn(b);
+          if (w) hits.push(w);
+        }
+        if (hits.length) { const w = hits[Math.floor(r() * hits.length)]; at = w.at; extra.hang = w.hang; }
+      } else {
+        const q = pickRoof(fx, fz, lo, hi, 55, 200);
+        if (q) { const w = hangOn(q.b); if (w) { at = w.at; extra.hang = w.hang; } }
       }
     } else if (type === "getaway") {
       // the car starts on a crossing and runs the grid
@@ -192,10 +259,11 @@ export function createJobs({ city, combat, cars = null, seed = 4711 }) {
         if (path) { at = path[0]; extra.path = path; }
       }
     } else {
-      // the pizza shop, the kid with the balloon, a mugging and a tanker are on a street
+      // the pizza shop, the kid with the balloon, a mugging, a tanker, a loose wheel, a kite and a line are on a street
       for (let k = 0; k < 40 && !at; k++) {
         const a = r() * Math.PI * 2, d = lo + r() * (hi - lo);
-        at = streetNear(fx + Math.cos(a) * d, fz + Math.sin(a) * d);
+        const q = streetNear(fx + Math.cos(a) * d, fz + Math.sin(a) * d);
+        if (q && Math.hypot(q.x - fx, q.z - fz) >= lo && Math.hypot(q.x - fx, q.z - fz) <= hi + 20) at = q;
       }
     }
     if (!at) return null;
@@ -204,7 +272,7 @@ export function createJobs({ city, combat, cars = null, seed = 4711 }) {
   function refreshOffers(fx, fz) {
     offerAt = { x: fx, z: fz };
     J.offers = [];
-    const types = ["catch", "washer", "pizza", "balloon", "brawl", "taxi", "thief"].sort(() => r() - 0.5).slice(0, JOB.offers);
+    const types = ["catch", "washer", "pizza", "balloon", "brawl", "taxi", "thief", "wheel", "kite", "line"].sort(() => r() - 0.5).slice(0, JOB.offers);
     for (const t of types) { const o = makeOffer(t, fx, fz); if (o) J.offers.push(o); }
     // the Gauntlet's marker is always there, on the same roof
     const g = makeOffer("gauntlet", fx, fz);
@@ -240,19 +308,54 @@ export function createJobs({ city, combat, cars = null, seed = 4711 }) {
   };
 
   /* ---------------- starting and ending ---------------- */
-  function card(title, detail, goal, extra = {}) { return { title, detail, short: extra.short || title, n: extra.n || 0, of: extra.of || 0, goal: goal ? { x: goal.x, y: goal.y, z: goal.z } : null }; }
-  // start a job of type at the offer o (or at the hero, for the story and the tests)
-  J.start = function start(type, o, h) {
+  // A clock that opened at 12 s or more heats in the last 8 s, or the last quarter, whichever is sooner.
+  // A 3.5 s edge and a 1.2 s slip stay ink until the fall or the height. The crew's clock is a new opening.
+  function clockHot(A) {
+    if (!A || !(A.budget >= 12) || !(A.timer > 0)) return false;
+    return A.timer <= Math.min(8, A.budget * 0.25);
+  }
+  function card(title, detail, goal, extra = {}) {
+    const mission = J.active && J.active.mission;
+    const hot = !!(extra.hot || clockHot(J.active) || /pulling away/i.test(detail || ""));
+    return { title: mission ? mission + " · " + title : title, detail, short: extra.short || title, n: extra.n || 0, of: extra.of || 0, tag: J.active ? J.active.type : "", hot, goal: goal ? { x: goal.x, y: goal.y, z: goal.z } : null };
+  }
+  // The next story mission after the bomb, or null when that route is done or has not started.
+  J.storyNext = function storyNext() {
+    if (!J.story.sludge) return null;
+    return STORY_ROUTE[J.story.route] || null;
+  };
+  // The current story mission was won. Returns the following step, or null when the route is finished. A different job does not move it.
+  J.storyAdvance = function storyAdvance(type) {
+    const step = J.storyNext();
+    if (!step || step.type !== type) return { ok: false, next: null };
+    J.story.route++;
+    return { ok: true, next: STORY_ROUTE[J.story.route] || null };
+  };
+  // An offer of this job near the hero, or null. near is [min, max] metres. A catch needs a clear roof edge.
+  J.prepare = function prepare(type, h, near) {
+    const o = makeOffer(type, h.x, h.z, near || JOB.near);
+    if (!o) return null;
+    if (type === "catch" && !(o.bid && o.edge)) return null;
+    if (type === "brawl" && !o.bid) return null;
+    return o;
+  };
+  // start a job of type at the offer o (or at the hero, for the story and the tests). opt.mission prefixes the card. opt.arrive gives a story Catch time to swing there.
+  J.start = function start(type, o, h, opt) {
     if (J.active) end(false, "dropped", true);
     hailT = 0;
     // with no offer (the story, the tests): one made round the hero, or the hero's own spot
     o = o || (type !== "sludge" && makeOffer(type, h.x, h.z)) || { id: nextId++, type, name: JOB_NAMES[type], x: h.x, y: h.y, z: h.z };
-    const A = { type, o, t: 0, phase: "go", timer: 0, data: {}, card: null };
+    const A = { type, o, t: 0, phase: "go", timer: 0, data: {}, card: null, mission: (opt && opt.mission) || "" };
     J.active = A;
     J.offers = J.offers.filter((q) => q !== o);
     J.stats.started++;
     setup[type](A, h);
-    emit({ type: "start", job: type, line: JOB_LINES[type] });
+    if (type === "catch" && opt && opt.arrive && A.data && A.data.p && h) {
+      const d = Math.hypot(A.data.p.x - h.x, A.data.p.z - h.z);
+      A.timer = Math.max(A.timer, d / 14 + 6);
+    }
+    A.budget = A.timer;
+    emit({ type: "start", job: type, line: JOB_LINES[type], mission: A.mission });
     return A;
   };
   function end(ok, why, quiet, more = {}) {
@@ -263,6 +366,7 @@ export function createJobs({ city, combat, cars = null, seed = 4711 }) {
     for (const p of J.people) p.on = false;
     J.people = []; J.balloons = [];
     J.active = null;
+    J.card = null;
     if (ok) { J.done[A.type] = (J.done[A.type] || 0) + 1; J.stats.done++; if (A.type === "sludge") J.story.sludge = true; }
     else if (!quiet) { J.failed[A.type] = (J.failed[A.type] || 0) + 1; J.stats.failed++; }
     if (!quiet) emit({ type: ok ? "done" : "failed", job: A.type, why, reward: ok ? A.reward : 0, x: A.o.x, y: A.o.y, z: A.o.z, crime: !!A.o.crime, ...more });
@@ -270,6 +374,15 @@ export function createJobs({ city, combat, cars = null, seed = 4711 }) {
     offerAt = null; // fresh offers round wherever you are
   }
   J.cancel = () => end(false, "cancelled", true);
+  // The first lesson and Mission 1 start together. Until the player swings, the runner waits and the bomb clock does not
+  // count (main.js calls this). A retry, or a start after that lesson, never holds.
+  J.holdChase = function holdChase(on) {
+    const A = J.active;
+    if (!A || A.type !== "sludge" || !A.data || A.data.crew) return;
+    A.data.hold = !!on;
+    const g = A.data.runner;
+    if (g && g.on) g.speed = on ? 0 : JOB.sludge.speed;
+  };
   const person = (look, x, y, z, pose, extra = {}) => {
     const p = { on: true, x, y, z, yaw: r() * 6.28, phase: 0, stride: 0, pose, poseT: 0, height: extra.height || 1, shirt: look.shirt, pants: look.pants, skin: look.skin, bp: 0, br: 0, lift: 0, ...extra };
     J.people.push(p);
@@ -297,14 +410,22 @@ export function createJobs({ city, combat, cars = null, seed = 4711 }) {
       A.timer = JOB.catch.delay;
       A.reward = JOB.catch.reward;
     },
-    washer(A) {
-      const H = A.o.hang;
+    washer(A, h) {
+      const H = A.o.hang, W = JOB.washer;
       A.data = { p: person(WASHER, H.x, H.y - 1.6, H.z, 14, { yaw: Math.atan2(H.nx, H.nz) }), caught: false };
-      A.timer = JOB.washer.grip;
-      A.reward = JOB.washer.reward;
+      // an odd job keeps the minute. The eighth flush is a swing: 36 s when he is close, longer only when the tower is far.
+      let clock = W.grip;
+      if (A.mission && h) {
+        const d = Math.hypot(H.x - h.x, H.z - h.z), climb = Math.max(0, H.y - h.y);
+        clock = Math.min(W.grip, Math.max(W.beat, d / W.pace + climb / W.climb + W.spare));
+      }
+      A.timer = clock;
+      A.reward = W.reward;
     },
     pizza(A, h) {
-      const q = pickRoof(A.o.x, A.o.z, 250, 460, 18, 90) || pickRoof(A.o.x, A.o.z, 150, 600, 10, 120);
+      // a story delivery is a swing or two. An odd-job pizza still runs across town.
+      const band = A.mission ? [70, 160] : [250, 460], wide = A.mission ? [40, 280] : [150, 600];
+      const q = pickRoof(A.o.x, A.o.z, band[0], band[1], 18, 90) || pickRoof(A.o.x, A.o.z, wide[0], wide[1], 10, 120);
       A.data = { drop: q ? { x: q.x, y: q.y, z: q.z } : { x: city.start.x, y: city.start.y, z: city.start.z } };
       const d = Math.hypot(A.data.drop.x - A.o.x, A.data.drop.z - A.o.z);
       A.timer = A.data.limit = d / JOB.pizza.speed + JOB.pizza.spare;
@@ -350,13 +471,13 @@ export function createJobs({ city, combat, cars = null, seed = 4711 }) {
       A.reward = JOB.mugging.reward;
     },
     getaway(A) {
-      const C = JOB.getaway, path = A.o.path || streetRun(A.o.x, A.o.z, C.hops[1]) || [{ x: A.o.x, y: 0, z: A.o.z }, { x: A.o.x + 120, y: 0, z: A.o.z }];
+      const C = JOB.getaway, pace = A.mission ? C.beat : C.speed, path = A.o.path || streetRun(A.o.x, A.o.z, C.hops[1]) || [{ x: A.o.x, y: 0, z: A.o.z }, { x: A.o.x + 120, y: 0, z: A.o.z }];
       const yaw = path.length > 1 ? Math.atan2(-(path[1].x - path[0].x), -(path[1].z - path[0].z)) : 0;
-      const car = cars ? cars.jobCar(path[0].x, path[0].z, yaw, GETAWAY_PAINT, { path: path.slice(1), speed: C.speed }) : null;
+      const car = cars ? cars.jobCar(path[0].x, path[0].z, yaw, GETAWAY_PAINT, { path: path.slice(1), speed: pace }) : null;
       let len = 0;
       for (let i = 1; i < path.length; i++) len += Math.hypot(path[i].x - path[i - 1].x, path[i].z - path[i - 1].z);
       A.data = { car, path, pos: { x: path[0].x, y: 1.3, z: path[0].z }, stopped: false, crew: false };
-      A.timer = len / C.speed + C.spare;
+      A.timer = len / pace + C.spare;
       A.reward = C.reward;
       if (!car) { A.data.stopped = true; A.data.crew = true; spawnRing(A.o, C.crew); } // no car to drive: only the crew
     },
@@ -379,6 +500,43 @@ export function createJobs({ city, combat, cars = null, seed = 4711 }) {
       spawnRing(A.o, JOB.brawl.wave1);
       A.timer = JOB.brawl.time;
       A.reward = JOB.brawl.reward;
+    },
+    lid(A) {
+      A.data = { held: 0 };
+      A.timer = JOB.lid.time;
+      A.reward = JOB.lid.reward;
+    },
+    gust(A) {
+      A.data = { n: 0, in: false, arm: 0 };
+      A.timer = JOB.gust.time;
+      A.reward = JOB.gust.reward;
+    },
+    wheel(A) {
+      const o = A.o, S = city.streets;
+      let axis = "z", best = Infinity;
+      for (const at of S.xs) { const d = Math.abs(o.x - (at + 6)); if (d < best) { best = d; axis = "z"; } }
+      for (const at of S.zs) { const d = Math.abs(o.z - (at + 6)); if (d < best) { best = d; axis = "x"; } }
+      const dir = r() < 0.5 ? 1 : -1, sp = JOB.wheel.speed;
+      A.data = { x: o.x, y: o.y || 0, z: o.z, vx: axis === "x" ? dir * sp : 0, vz: axis === "z" ? dir * sp : 0, flips: 0, stop: false };
+      A.timer = JOB.wheel.time;
+      A.reward = JOB.wheel.reward;
+    },
+    kite(A) {
+      A.data = { y: Math.max(14, (A.o.y || 0) + 12), held: 0, tug: false, done: false };
+      A.timer = JOB.kite.time;
+      A.reward = JOB.kite.reward;
+    },
+    line(A) {
+      const o = A.o, S = city.streets, C = JOB.line;
+      let axis = "z", best = Infinity;
+      for (const at of S.xs) { const d = Math.abs(o.x - (at + 6)); if (d < best) { best = d; axis = "z"; } }
+      for (const at of S.zs) { const d = Math.abs(o.z - (at + 6)); if (d < best) { best = d; axis = "x"; } }
+      const dir = r() < 0.5 ? 1 : -1;
+      const x1 = o.x + (axis === "x" ? dir * C.span : 0);
+      const z1 = o.z + (axis === "z" ? dir * C.span : 0);
+      A.data = { x0: o.x, z0: o.z, x1, z1, y: C.height, t: 0, on: false, done: false };
+      A.timer = C.time;
+      A.reward = C.reward;
     },
   };
   function spawnRing(o, n) {
@@ -412,7 +570,7 @@ export function createJobs({ city, combat, cars = null, seed = 4711 }) {
     if (J.offersOn && !J.active && (!offerAt || Math.hypot(h.x - offerAt.x, h.z - offerAt.z) > JOB.refresh)) refreshOffers(h.x, h.z);
     // crimes: one now and then near the hero, with a shout; it is over after a minute if nobody comes
     if (J.offersOn && !J.active && !h.busy) {
-      J.offers = J.offers.filter((o) => !(o.crime && t > o.until && (emit({ type: "crimeover", job: o.type, x: o.x, z: o.z }), true)));
+      if (J.offers.some((o) => o.crime && t > o.until)) J.offers = J.offers.filter((o) => !(o.crime && t > o.until && (emit({ type: "crimeover", job: o.type, x: o.x, z: o.z }), true)));
       if (J.crimesOn && !J.offers.some((o) => o.crime) && (crimeT -= dt) <= 0) J.crime(null, h, t);
     }
     // a marker you walk or swing into starts its job
@@ -440,6 +598,15 @@ export function createJobs({ city, combat, cars = null, seed = 4711 }) {
   };
   const fmt = (s) => Math.max(0, Math.ceil(s)) + " s";
   const near3 = (a, b, d) => (a.x - b.x) ** 2 + (a.y - b.y) ** 2 + (a.z - b.z) ** 2 < d * d;
+  // A chase you lose speeds up. Inside the press distance it eases back to the jog. A held lesson never calls this.
+  function pressRun(g, h, C, dt) {
+    const gap = Math.hypot(g.x - h.x, g.z - h.z);
+    let heat = g.heat || 0;
+    heat = gap > C.press ? Math.min(1, heat + dt / C.ramp) : Math.max(0, heat - dt / C.ease);
+    g.heat = heat;
+    g.speed = C.speed + (C.fast - C.speed) * heat;
+    return { heat, pulling: heat >= 0.55, gap };
+  }
   // carrying someone: they ride over the hero's left shoulder, and a landing on anything sets them down
   function carry(p, h) {
     const yaw = h.yaw || 0, rx = Math.cos(yaw), rz = -Math.sin(yaw);
@@ -452,22 +619,35 @@ export function createJobs({ city, combat, cars = null, seed = 4711 }) {
   }
   const run = {
     sludge(A, dt, h) {
-      A.timer -= dt;
       const D = A.data, g = D.runner;
       if (!D.crew && (!g.on || !combat.alive(g))) {
-        // the runner is down: his crew jumps in
+        // the runner is down: his crew jumps in, and a held clock starts with them
+        D.hold = false;
         D.crew = true;
         for (let i = 0; i < JOB.sludge.crew; i++) { const a = (i / JOB.sludge.crew) * 6.28; const q = combat.spawn(g.x + Math.cos(a) * 5, g.y, g.z + Math.sin(a) * 5, "job"); q.aggro = true; }
         A.timer = Math.max(A.timer, 40);
+        A.budget = Math.max(A.budget || 0, A.timer);
         emit({ type: "say", line: "Get him, boys!" });
       }
-      const crew = combat.group("job");
-      const left = crew.filter((q) => combat.alive(q)).length;
+      if (D.hold && !D.crew && g.on && combat.alive(g)) {
+        g.speed = 0;
+        A.card = card("SLUDGE RUN " + fmt(A.timer), "Swing first. He waits until you do.", g, { short: "SWING" });
+        J.card = A.card;
+        return;
+      }
+      A.timer -= dt;
+      const crew = combat.group("job", crewScratch);
+      const left = crew.reduce((n, q) => n + (combat.alive(q) ? 1 : 0), 0);
       if (D.crew && left === 0) { end(true, "defused"); return; }
       if (!D.crew && combat.events.some((e) => e.type === "arrived" && e.id === g.id)) { end(false, "drain"); return; }
       if (A.timer <= 0) { end(false, "time"); return; }
       const goal = D.crew ? (crew.find((q) => combat.alive(q)) || h) : g;
-      A.card = card("SLUDGE RUN " + fmt(A.timer), D.crew ? "Beat his crew: " + left + " left" : "Catch the runner, " + Math.round(Math.hypot(g.x - h.x, g.z - h.z)) + " m", goal, { short: fmt(A.timer) });
+      let chase = "Catch the runner, " + Math.round(Math.hypot(g.x - h.x, g.z - h.z)) + " m";
+      if (!D.crew && g.on && combat.alive(g)) {
+        const pull = pressRun(g, h, JOB.sludge, dt);
+        if (pull.pulling) chase = "He's pulling away. Swing closer, " + Math.round(pull.gap) + " m";
+      }
+      A.card = card("SLUDGE RUN " + fmt(A.timer), D.crew ? "Beat his crew: " + left + " left" : chase, goal, { short: fmt(A.timer) });
       J.card = A.card;
     },
     catch(A, dt, h) {
@@ -488,7 +668,7 @@ export function createJobs({ city, combat, cars = null, seed = 4711 }) {
         carry(p, h);
         if (h.onGround) { setDown(p, h); end(true, "safe"); return; }
       }
-      A.card = card("CATCH!", D.caught ? "Land anywhere to set them down" : D.falling ? "Catch them before they hit the street!" : "They are on the edge. Get below them: " + Math.ceil(Math.max(0, A.timer)) + " s", D.caught ? null : p);
+      A.card = card("CATCH!", D.caught ? "Land anywhere to set them down" : D.falling ? "Catch them before they hit the street!" : "They are on the edge. Get below them: " + Math.ceil(Math.max(0, A.timer)) + " s", D.caught ? null : p, { hot: D.falling && !D.caught });
       J.card = A.card;
     },
     washer(A, dt, h) {
@@ -525,7 +705,7 @@ export function createJobs({ city, combat, cars = null, seed = 4711 }) {
         b.x = h.x; b.y = h.y + 2.6; b.z = h.z;
         if (Math.hypot(h.x - D.kid.x, h.z - D.kid.z) < C.back && Math.abs(h.y - D.kid.y) < 2) { D.kid.pose = 4; D.kid.poseT = 0; end(true, "returned"); return; }
       }
-      A.card = card("BALLOON CHASE", b.held ? "Give it back to the kid" : "Grab it before it floats away, " + Math.round(b.y) + " m up", b.held ? D.kid : b);
+      A.card = card("BALLOON CHASE", b.held ? "Give it back to the kid" : "Grab it before it floats away, " + Math.round(b.y) + " m up", b.held ? D.kid : b, { hot: b.free && !b.held && b.y >= C.high });
       J.card = A.card;
     },
     taxi(A, dt, h) {
@@ -555,12 +735,14 @@ export function createJobs({ city, combat, cars = null, seed = 4711 }) {
       }
       if (combat.events.some((e) => e.type === "arrived" && e.id === g.id)) { end(false, "away"); return; }
       if (A.timer <= 0) { end(false, "away"); return; }
-      A.card = card("STOP, THIEF! " + fmt(A.timer), "Run him down, " + Math.round(Math.hypot(g.x - h.x, g.z - h.z)) + " m", g, { short: fmt(A.timer) });
+      const pull = pressRun(g, h, JOB.thief, dt);
+      const line = pull.pulling ? "He's pulling away. Swing closer, " + Math.round(pull.gap) + " m" : "Run him down, " + Math.round(pull.gap) + " m";
+      A.card = card("STOP, THIEF! " + fmt(A.timer), line, g, { short: fmt(A.timer) });
       J.card = A.card;
     },
     mugging(A, dt, h) {
       A.timer -= dt;
-      const crew = combat.group("job"), left = crew.filter((q) => combat.alive(q)).length;
+      const crew = combat.group("job", crewScratch), left = crew.reduce((n, q) => n + (combat.alive(q) ? 1 : 0), 0);
       if (left === 0) { A.data.victim.pose = 4; A.data.victim.poseT = 0; emit({ type: "say", line: "Thank you! My hero!" }); end(true, "cleared"); return; }
       if (A.timer <= 0) { end(false, "time"); return; }
       A.card = card("MUGGING " + fmt(A.timer), left + " goons left", crew.find((q) => combat.alive(q)) || A.o, { short: fmt(A.timer), n: left });
@@ -580,7 +762,7 @@ export function createJobs({ city, combat, cars = null, seed = 4711 }) {
           for (let i = 0; i < JOB.getaway.crew; i++) { const g = combat.spawn(D.pos.x + (i ? 2 : -2), 0, D.pos.z + 1.5, "job"); g.aggro = true; }
           emit({ type: "say", line: "Get the plumber!" });
         }
-        const crew = combat.group("job"), left = crew.filter((q) => combat.alive(q)).length;
+        const crew = combat.group("job", crewScratch), left = crew.reduce((n, q) => n + (combat.alive(q) ? 1 : 0), 0);
         if (D.crew && left === 0) { end(true, "stopped"); return; }
         A.card = card("GETAWAY CAR", D.crew ? left + " robbers left" : "Stopping...", crew.find((q) => combat.alive(q)) || D.pos, { n: left });
       }
@@ -588,7 +770,7 @@ export function createJobs({ city, combat, cars = null, seed = 4711 }) {
     },
     tanker(A, dt, h) {
       A.timer -= dt;
-      const D = A.data, crew = combat.group("job"), left = crew.filter((q) => combat.alive(q)).length, sealed = D.seals >= JOB.tanker.seals;
+      const D = A.data, crew = combat.group("job", crewScratch), left = crew.reduce((n, q) => n + (combat.alive(q) ? 1 : 0), 0), sealed = D.seals >= JOB.tanker.seals;
       if (!sealed && (D.glugT -= dt) <= 0) { D.glugT = 1.6; emit({ type: "leak", x: D.leak.x, y: D.leak.y, z: D.leak.z }); }
       if (sealed && left === 0) { emit({ type: "say", line: "Tanker's stable. A plunger patch works every time." }); end(true, "sealed"); return; }
       if (A.timer <= 0) { end(false, "flood"); return; }
@@ -624,11 +806,129 @@ export function createJobs({ city, combat, cars = null, seed = 4711 }) {
     },
     brawl(A, dt, h) {
       A.timer -= dt;
-      const crew = combat.group("job"), left = crew.filter((q) => combat.alive(q)).length;
+      const crew = combat.group("job", crewScratch), left = crew.reduce((n, q) => n + (combat.alive(q) ? 1 : 0), 0);
       if (left === 0 && A.data.wave === 1) { A.data.wave = 2; spawnRing(A.o, JOB.brawl.wave2); emit({ type: "say", line: "More of them!" }); }
       else if (left === 0 && A.data.wave === 2) { end(true, "cleared"); return; }
       if (A.timer <= 0) { end(false, "time"); return; }
       A.card = card("ROOFTOP BRAWL " + fmt(A.timer), "Wave " + A.data.wave + " of 2: " + left + " left", crew.find((q) => combat.alive(q)) || A.o, { short: fmt(A.timer), n: left });
+      J.card = A.card;
+    },
+    lid(A, dt, h) {
+      const C = JOB.lid;
+      if (A.data.held >= C.hold) { end(true, "seated"); return; }
+      A.timer -= dt;
+      const on = Math.hypot(h.x - A.o.x, h.z - A.o.z) <= C.stay && !!h.onGround;
+      if (on) A.data.held += dt;
+      else if (A.data.held > 0) A.data.held = Math.max(0, A.data.held - dt * 2);
+      if (A.data.held >= C.hold) { end(true, "seated"); return; }
+      if (A.timer <= 0) { end(false, "popped"); return; }
+      const left = Math.max(0, C.hold - A.data.held);
+      const detail = on ? "Stay on the lid, " + left.toFixed(1) + " s" : A.data.held > 0 ? "It slipped. Get back on the lid." : "Stand on the lid.";
+      A.card = card("SEAT THE LID " + fmt(A.timer), detail, A.o, { short: on ? "HOLD" : A.data.held > 0 ? "BACK" : "LID" });
+      J.card = A.card;
+    },
+    gust(A, dt, h) {
+      const C = JOB.gust;
+      if (A.data.n >= C.need) { end(true, "through"); return; }
+      A.timer -= dt;
+      A.data.arm = Math.max(0, A.data.arm - dt);
+      const dist = Math.hypot(h.x - A.o.x, h.z - A.o.z);
+      const spd = Math.hypot(h.vx || 0, h.vz || 0);
+      const inside = dist <= C.radius;
+      if (!inside) A.data.in = false;
+      else if (!A.data.in && A.data.arm <= 0 && !h.onGround && spd >= C.speed) {
+        A.data.in = true;
+        A.data.arm = C.arm;
+        A.data.n += 1;
+        emit({ type: "gust", x: h.x, y: h.y, z: h.z, n: A.data.n, of: C.need });
+        if (A.data.n >= C.need) { end(true, "through"); return; }
+      }
+      if (A.timer <= 0) { end(false, "blown"); return; }
+      const detail = A.data.n > 0 ? "Through it, " + A.data.n + "/" + C.need : "Swing through the gust.";
+      A.card = card("SWING THROUGH " + fmt(A.timer), detail, A.o, { short: A.data.n > 0 ? A.data.n + "/" + C.need : "SWING" });
+      J.card = A.card;
+    },
+    wheel(A, dt, h) {
+      const C = JOB.wheel, D = A.data;
+      if (D.stop) { end(true, "stopped"); return; }
+      A.timer -= dt;
+      const nx = D.x + D.vx * dt, nz = D.z + D.vz * dt;
+      if (city.collideSphere(nx, 1, nz, 0.8) || city.isWater(nx, nz)) {
+        D.vx = -D.vx; D.vz = -D.vz; D.flips += 1;
+        if (D.flips > 4) { end(false, "rolled"); return; }
+      } else { D.x = nx; D.z = nz; }
+      const dist = Math.hypot(h.x - D.x, h.z - D.z);
+      if (h.onGround && dist <= C.reach) {
+        emit({ type: "wheel", x: D.x, y: 1.2, z: D.z, vx: D.vx, vz: D.vz });
+        end(true, "stopped");
+        return;
+      }
+      if (A.timer <= 0) { end(false, "rolled"); return; }
+      const detail = !h.onGround && dist <= C.reach ? "Land in front of it." : "Get in front of it, " + Math.round(dist) + " m";
+      A.card = card("STOP THE WHEEL " + fmt(A.timer), detail, { x: D.x, y: 1.2, z: D.z }, { short: "WHEEL" });
+      J.card = A.card;
+    },
+    kite(A, dt, h) {
+      const C = JOB.kite, D = A.data;
+      if (D.done || D.held >= C.hold) { end(true, "held"); return; }
+      A.timer -= dt;
+      D.y = Math.min(C.top, D.y + C.rise * dt);
+      const dist = Math.hypot(h.x - A.o.x, h.z - A.o.z);
+      const above = !h.onGround && h.y >= D.y - 1 && dist <= C.radius;
+      if (above) {
+        D.held += dt;
+        if (!D.tug) {
+          D.tug = true;
+          emit({ type: "kite", x: h.x, y: h.y, z: h.z, tug: true });
+        }
+      } else if (D.held > 0) {
+        D.held = Math.max(0, D.held - dt * C.slip);
+        if (D.held === 0) D.tug = false;
+      }
+      if (D.held >= C.hold) {
+        emit({ type: "kite", x: A.o.x, y: D.y, z: A.o.z });
+        end(true, "held");
+        return;
+      }
+      if (A.timer <= 0) { end(false, "risen"); return; }
+      const detail = above ? "Above it, " + D.held.toFixed(1) + " s" : D.held > 0 ? "It slipped. Get back above it." : "Stay above the kite.";
+      A.card = card("HOLD THE KITE " + fmt(A.timer), detail, { x: A.o.x, y: D.y, z: A.o.z }, { short: above ? "ABOVE" : D.held > 0 ? "BACK" : "KITE" });
+      J.card = A.card;
+    },
+    line(A, dt, h) {
+      const C = JOB.line, D = A.data;
+      if (D.done) { end(true, "across"); return; }
+      const dx = D.x1 - D.x0, dz = D.z1 - D.z0;
+      const len = Math.hypot(dx, dz) || 1;
+      const vx = (dx / len) * C.ride, vz = (dz / len) * C.ride;
+      if (D.on) {
+        D.t += C.ride * dt;
+        if (D.t >= C.span) {
+          emit({ type: "line", x: D.x1, y: D.y, z: D.z1, hop: true, vx, vz });
+          end(true, "across");
+          return;
+        }
+        const u = D.t / C.span;
+        emit({ type: "line", x: D.x0 + dx * u, y: D.y, z: D.z0 + dz * u, ride: true, vx, vz });
+        A.card = card("RIDE THE LINE", "Along it.", { x: D.x0 + dx * u, y: D.y, z: D.z0 + dz * u }, { short: "RIDE" });
+        J.card = A.card;
+        return;
+      }
+      A.timer -= dt;
+      const abx = dx, abz = dz, len2 = abx * abx + abz * abz || 1;
+      let u = ((h.x - D.x0) * abx + (h.z - D.z0) * abz) / len2;
+      u = u < 0 ? 0 : u > 1 ? 1 : u;
+      const dist = Math.hypot(h.x - (D.x0 + abx * u), h.z - (D.z0 + abz * u));
+      const spd = Math.hypot(h.vx || 0, h.vz || 0);
+      if (!h.onGround && Math.abs(h.y - D.y) <= 3 && dist <= C.reach && spd >= C.speed) {
+        D.on = true;
+        emit({ type: "line", x: h.x, y: D.y, z: h.z, catch: true });
+        A.card = card("RIDE THE LINE", "Along it.", { x: D.x0, y: D.y, z: D.z0 }, { short: "RIDE" });
+        J.card = A.card;
+        return;
+      }
+      if (A.timer <= 0) { end(false, "snapped"); return; }
+      A.card = card("RIDE THE LINE " + fmt(A.timer), "Swing onto the line.", { x: D.x0, y: D.y, z: D.z0 }, { short: "LINE" });
       J.card = A.card;
     },
   };
@@ -640,8 +940,9 @@ export function createJobs({ city, combat, cars = null, seed = 4711 }) {
     if (J.active && ["brawl", "sludge", "thief", "mugging", "getaway", "tanker"].includes(J.active.type)) end(false, "knockout");
   };
   // a rope that catches a falling person or the balloon catches them
-  J.ropeTargets = function ropeTargets(h) {
-    const A = J.active, out = [];
+  J.ropeTargets = function ropeTargets(h, out = []) {
+    out.length = 0;
+    const A = J.active;
     if (!A) return out;
     if (A.type === "catch" && A.data.falling && !A.data.caught) out.push({ id: "person", tag: "person", pos: A.data.p, radius: 1.4 });
     if (A.type === "balloon" && A.data.b.free && !A.data.b.held) out.push({ id: "balloon", tag: "balloon", pos: A.data.b, radius: 1.4 });
@@ -671,7 +972,9 @@ export function createJobs({ city, combat, cars = null, seed = 4711 }) {
   J.carrying = () => !!(J.active && J.active.data.caught && (J.active.type === "catch" || J.active.type === "washer"));
   J.info = () => ({
     active: J.active ? { type: J.active.type, phase: J.active.phase, timer: J.active.timer, t: J.active.t, crime: !!J.active.o.crime,
-      data: { caught: !!J.active.data.caught, falling: !!J.active.data.falling, crew: !!J.active.data.crew, stopped: !!J.active.data.stopped, seals: J.active.data.seals || 0,
+      data: { caught: !!J.active.data.caught, falling: !!J.active.data.falling, crew: !!J.active.data.crew, stopped: !!J.active.data.stopped, seals: J.active.data.seals || 0, passes: J.active.data.n || 0,
+        run: J.active.data.runner && J.active.data.runner.on ? J.active.data.runner.speed : 0,
+        heat: J.active.data.runner ? (J.active.data.runner.heat || 0) : 0,
         round: J.active.data.round || 0, cleared: J.active.data.cleared || 0, rest: J.active.data.rest || 0 } } : null,
     offers: J.offers.map((o) => ({ id: o.id, type: o.type, x: o.x, y: o.y, z: o.z, crime: !!o.crime })), crimeT, done: { ...J.done }, failed: { ...J.failed }, story: { ...J.story }, stats: { ...J.stats }, card: J.card,
   });

@@ -610,7 +610,7 @@ if (chromium) {
   const OTHERS = {
     cottage: ["plungerd", "drain", "brawl", "wild", "fish", "vr", "pingpong"],
     ascii: ["ascii-front", "battle-tanks"],
-    strategy: ["breakthrough", "follow-suit"],
+    strategy: ["breakthrough", "follow-suit", "silent-depth"],
     gta: ["gta"],
     lab: ["lab", "worlds", "neon", "echo", "tellme", "plunge", "creek", "tilt", "rules", "afterlight", "lighthouse-keeper", "echoes-under-ice", "last-train-home", "firefly-courier", "mirage-runner", "orbital-gardener", "last-light"],
   };

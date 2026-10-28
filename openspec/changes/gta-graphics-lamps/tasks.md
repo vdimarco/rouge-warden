@@ -1,0 +1,4 @@
+- [x] Colour some inner window panes warm in `city_facade.hlsl`
+- [x] Shade the facade before and after
+- [x] Run `Scripts/test_environment_refresh.py`
+- [ ] Apply the facade material in Unreal (editor not available here)

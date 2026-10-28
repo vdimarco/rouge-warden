@@ -1,0 +1,7 @@
+- [x] With every pipe on, the next attack is a throw
+- [x] After a pipe is off, the attack after a sweep is a grab, and the card says to get back
+- [x] Standing within 8 m when it lands takes a heart, and the hero stays put
+- [x] Farther than 8 m keeps the heart
+- [x] A jump within 8 m still takes a heart
+- [x] A rope within 8 m still takes a heart, and the hero stays put
+- [x] Check it in a 1280×800 play

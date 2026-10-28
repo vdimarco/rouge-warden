@@ -1,0 +1,57 @@
+PASS: on the start roof, in the tutorial, the target is the gold ring
+PASS: holding the left button: the left rope attaches within 0.6 s to the tower face at the gold ring, over 10 m above the roof
+PASS: the left rope fires (the target is on the left), the attach gets a kick and there is no hop by default
+PASS: the rope starts at the hero's left hand
+PASS: letting go of the button lets go of the rope
+PASS: holding E fires the same rope
+PASS: letting go of E lets go of the rope
+PASS: with both ropes idle, Q fires the right hand at the target
+PASS: with both ropes idle, the right button fires the right hand at the target
+PASS: an 80 ms click attaches the web and lets it go when the button comes up
+PASS: with a rope on building A, the right button fires the idle hand at a different building
+PASS: no kick for the second rope
+PASS: with both ropes out another press fires nothing and shows no dry fire
+PASS: letting go of the right button lets go of the second rope only
+PASS: E and Q in the same frame do not share a building: the second web attaches to another building or stays idle
+PASS: the hand on the side of the target fires: left for a target to the left, right for one to the right
+PASS: Space on a roof jumps (about 5.2 m/s up)
+PASS: Space in the air with no rope does nothing
+PASS: Space in the air with a rope out yanks the rope
+INFO: from the start roof with W and the swing button: airborne after 3.83 s (rope attached)
+PASS: holding W and the left button on the start roof takes the hero off the roof within 4 s (this run 3.83 s)
+PASS: while the rope drags the hero along the roof the LET GO cue shows, and the first frame in the air after the roof gives none
+INFO: from the start roof without W and the swing button: airborne after 3.88 s (rope attached)
+PASS: the left button alone on the start roof takes the hero off the roof within 4 s (this run 3.88 s)
+PASS: while the rope drags the hero along the roof the LET GO cue shows, and the first frame in the air after the roof gives none
+PASS: F yanks the attached rope: a yank event, and the rope is shorter
+PASS: Shift reels the rope in (0.5 s: 6.5 m shorter)
+PASS: one notch of the mouse wheel reels for 0.15 s (3.09 m)
+PASS: a wheel event with Ctrl held (a pinch) reels nothing
+PASS: 60 wheel events in 1 s reel for at most 0.6 s (0.60 s)
+PASS: Ctrl, Meta and Alt keys do nothing: no yank, no jump, no view switch, no map
+PASS: Ctrl+W held for 0.5 s on the roof does not walk the hero
+PASS: (and plain W held for 0.5 s does walk him, so the check above can fail: 1.5 m)
+PASS: a rope that G.test.press fires gets no kick and no hop (only a real input does)
+PASS: with DESKTOP.hop above 0 a real swing from the roof hops toward the target
+PASS: falling at 5 m/s with a target ahead: a frame after the attach the speed across the rope toward the view is at least 10 m/s
+PASS: a clog in view is the target: the swing input plunges it with no hop and no kick, and three presses of F (0.4 s apart) flush it
+PASS: Tab opens the map
+PASS: Tab again closes the map and play goes on
+PASS: after Tab, Tab the lock is held and the mouse still turns the view (0.22 rad)
+PASS: M turns the sound off or on and does not open the map
+PASS: Toggle: a press and the button going up leaves the rope on
+PASS: Toggle: the next press of that input lets go
+PASS: when the browser lets go of the pointer lock (Esc) the game pauses with the menu open
+PASS: in a pause Tab, Space and the arrows keep their page meaning (Tab moves the focus to a menu button)
+PASS: and the pause is still there after those keys
+PASS: the click that resumes from a pause starts no swing: both ropes idle, the hero on the roof
+PASS: the lock is back and the next press after the resume click fires a rope
+PASS: with the lock still held at the click that resumes (a slow release), no swing starts either
+PASS: a browser that refuses the pointer lock: the click that resumes swings nothing, at most two clicks are lost, then clicks swing again
+PASS: Esc, Esc, Esc in a browser that refuses the lock: play goes on unlocked after two resumes that asked once each
+PASS: after two refused Esc resumes the next click is still the click that asks for the lock: it fires no rope
+PASS: no page errors in the swing checks
+PASS: the browser bot (real mouse and key events) starting at -10 degrees reaches three buildings in 16.6 s (30 s at most)
+PASS: the browser bot (real mouse and key events) starting at +0 degrees reaches three buildings in 17.4 s (30 s at most)
+PASS: the browser bot (real mouse and key events) starting at +10 degrees reaches three buildings in 17.4 s (30 s at most)
+PASS: flat

@@ -1,0 +1,4 @@
+- [x] Shade the opening avenue at the model's clear-day sunset, with the street lamps on
+- [x] Keep the spawn weather clear, and keep the opening pitch, the aim, and the socket
+- [x] Run `Scripts/test_opening_dusk.py`
+- [ ] Confirm the saved sun and the street lamps in Unreal (editor not available here)

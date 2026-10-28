@@ -1,0 +1,4 @@
+PASS 216 exact movement traces: straight, four retries, blocked, both sides and zero/default side
+PASS full blockage and remembered-side changes covered
+{"baselineTrig":1008,"candidateTrig":0,"startupTrig":8}
+PASS no retry trigonometry after initialization

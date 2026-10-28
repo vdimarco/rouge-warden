@@ -1,0 +1,18 @@
+{
+  "stage": "production_verified",
+  "merge": "765d5da08d3e1ea647369bf0d6670ad69fd55b05",
+  "files": [
+    {
+      "file": "js/main.js",
+      "status": 200,
+      "exact": true,
+      "sha256": "8224627aa0816c71eba6778e777b5bc39e318e85da3faa9137a921a7e4b8afa7"
+    },
+    {
+      "file": "js/actionhud.js",
+      "status": 200,
+      "exact": true,
+      "sha256": "0f995bd08ad348c929818e50b1fd7c19948a9e489160cdf2ddebc9a9c7441693"
+    }
+  ]
+}

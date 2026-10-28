@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    NORD mobile gauntlet test node for UAT RunUnreal (NordMobileLoop.cs).
+    Written from memory of the UE 5.x automation script projects and not built here: the cloud container has no dotnet.
+    Unverified: the target framework, the output folder UAT loads project scripts from, and the reference paths. If the
+    host build fails, copy those blocks from the engine's Engine/Source/Programs/AutomationTool/Gauntlet/Gauntlet.Automation.csproj.
+    EngineDir: UAT may pass it when it builds project scripts (unverified); otherwise export UE_ROOT=<engine install>.
+  -->
+  <PropertyGroup>
+    <EngineDir Condition="'$(EngineDir)' == ''">$(UE_ROOT)/Engine</EngineDir>
+    <TargetFramework>net8.0</TargetFramework>
+    <Configurations>Debug;Release;Development</Configurations>
+    <Configuration Condition="'$(Configuration)' == ''">Development</Configuration>
+    <OutputType>Library</OutputType>
+    <RootNamespace>NordGauntlet.Automation</RootNamespace>
+    <AssemblyName>NordGauntlet.Automation</AssemblyName>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <OutputPath>../../Binaries/DotNET/AutomationTool/AutomationScripts/NordGauntlet</OutputPath>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="$(EngineDir)/Source/Programs/AutomationTool/AutomationUtils/AutomationUtils.Automation.csproj">
+      <Private>false</Private>
+    </ProjectReference>
+    <ProjectReference Include="$(EngineDir)/Source/Programs/AutomationTool/Gauntlet/Gauntlet.Automation.csproj">
+      <Private>false</Private>
+    </ProjectReference>
+    <ProjectReference Include="$(EngineDir)/Source/Programs/Shared/EpicGames.Core/EpicGames.Core.csproj">
+      <Private>false</Private>
+    </ProjectReference>
+  </ItemGroup>
+</Project>

@@ -392,11 +392,11 @@ Two assists run only for a rope that a real swing input fired. A rope fired by `
 
 There is no auto release on a computer. The release cue tells the player when. A headset player has no cue either, and the headset does not change.
 
-### The start roof (decision D1)
+### The start roof
 
-Holding only the swing input does not take the hero off the start roof. The rope attaches to the tower at the gold ring, the kick slides the hero across the roof, and friction stops him on it. A hop did not help in the bot study (the first swing lands on the same roof again). Physics does not change. So the first mouse line and the key strip tell the player to hold W with the left mouse button (E also works), and the pad lines tell the player to hold the left stick up with the right trigger. With the stick or W the hero walks to the edge while the rope pulls, and the rope takes him off the roof.
+A swing button with no stick walks the hero toward the web at run speed, the same walk the first swing was built around. Friction used to stop a press that did not also hold forward. The hop stays at 0. W and the left stick still steer when the player holds them. A clog, a pipe or the crack does not walk the hero.
 
-Measured by `flat.mjs` on this build, in game time from the press: with W and the left button the hero is in the air after 3.1 to 3.3 s. With the left stick up and RT it is 3.1 to 3.3 s. With the swing input alone the hero is still on the roof after 6 s. The check bound is 4 s. `flat.mjs` also checks the cue: while the rope drags the hero along the roof the LET GO caption shows, and the first frame in the air gives none.
+Measured by `flat.mjs`, in game time from the press: the left button alone, W with the left button, the left stick with RT, and RT alone each put the hero in the air within 4 s. While the rope drags the hero along the roof the LET GO caption shows, and the first frame in the air gives none.
 
 ## Desktop and pad input
 
@@ -425,10 +425,10 @@ Measured by `flat.mjs` on this build, in game time from the press: with W and th
 
 `desktop.js` makes `#keyHints`, a comic caption strip at the bottom of the screen. `main.js` calls `D.hints(on)` each frame. It is on while the state is "play", the saved tutorial is not finished (`!save.tutorial`), fewer than 60 s of play time have passed, and the kind is "mouse" or "pad". It never shows on touch. The phone has its own `.phone-hint`.
 
-- Mouse: HOLD W AND LEFT MOUSE (OR E): SWING. LET GO WHEN THE RING SAYS GO. MOUSE: LOOK.
-- Pad: HOLD LEFT STICK UP AND RIGHT TRIGGER: SWING. LET GO WHEN THE RING SAYS GO. RIGHT STICK: LOOK.
+- Mouse: LEFT MOUSE (OR E): SWING. LET GO WHEN THE RING SAYS GO. MOUSE: LOOK.
+- Pad: RIGHT TRIGGER: SWING. LET GO WHEN THE RING SAYS GO. RIGHT STICK: LOOK.
 
-The first item names W (or the left stick) because the swing input alone does not take the hero off the start roof (see "The start roof"). The strip has three items, so its text fits inside the strip at 640 by 360 and `flat.mjs` checks that the text is not cut off.
+The first item is the swing button alone. The rope walks the hero off the start roof, so the strip does not ask for W or the left stick. The strip has three items, so its text fits inside the strip at 640 by 360 and `flat.mjs` checks that the text is not cut off.
 
 The strip is at most 36 px high and sits 10 px above the bottom edge. While it shows, `desktop.js` adds a class to the body that raises `.fs-sub` by 52 px and `.fs-toast` with it. The tail of the speech bubble hangs 27 px below the box of `.fs-sub`, so the check measures the tail too. The strip never covers the score pills. It has no JUMP slot, because a swing needs no jump key. F and the yank come in the tutorial.
 
@@ -438,7 +438,7 @@ The strip is at most 36 px high and sits 10 px above the bottom edge. While it s
 
 `LINES_DESKTOP` changes these lines. The others stay. `intro` is unchanged, because the opening keeps the exact aim.
 
-- tutorial 0: "Look at the gold ring. Hold W and the left mouse button."
+- tutorial 0: "Look at the gold ring. Hold the left mouse button."
 - tutorial 1: "Swing out. Let go when the ring says GO."
 - tutorial 2: "Swing again before you land."
 - tutorial 5: "Move the mouse to look around."
@@ -450,7 +450,7 @@ The strip is at most 36 px high and sits 10 px above the bottom edge. While it s
 `LINES_PAD` is new.
 
 - intro 0 to 5: "Shoes off. Plunger up." "Hear that? Something is backing up." "Aim at the crack. Hold the right trigger." "Now press the right bumper to yank." "Clear the space around you." "Give yourself some room."
-- tutorial 0: "Look at the gold ring. Hold the left stick up and the right trigger."
+- tutorial 0: "Look at the gold ring. Hold the right trigger."
 - tutorial 1: "Swing out. Let go when the ring says GO."
 - tutorial 2: "Swing again before you land."
 - tutorial 3: "Hold the left bumper to reel in."
@@ -477,7 +477,7 @@ Agent B writes these sections in `index.html`. The sections are: Headset control
 Keyboard and mouse:
 
 - The game picks a building for you. Look toward the buildings you want. A ring marks the target.
-- Hold the left mouse button, or <kbd>E</kbd>, to swing. On a roof, hold <kbd>W</kbd> too, so you run off the edge. Let go when the ring says GO.
+- Hold the left mouse button, or <kbd>E</kbd>, to swing. The rope runs you off a roof. Let go when the ring says GO.
 - Hold the right mouse button, or <kbd>Q</kbd>, to add a second rope.
 - Hold <kbd>Shift</kbd> or turn the wheel to reel in.
 - Press <kbd>F</kbd> to yank. Three yanks plunge a clog.
@@ -490,7 +490,7 @@ Keyboard and mouse:
 Game pad (a standard pad, such as Xbox or PlayStation):
 
 - Press PLAY with the mouse, a tap or Enter. The pad works after that.
-- Hold the right trigger (RT, R2) to swing. On a roof, push the left stick up too. Hold the left trigger (LT, L2) to add a second rope. Let go when the ring says GO.
+- Hold the right trigger (RT, R2) to swing. The rope runs you off a roof. Hold the left trigger (LT, L2) to add a second rope. Let go when the ring says GO.
 - Hold the left bumper (LB, L1) to reel in. Press the right bumper (RB, R1) or X (Square) to yank.
 - The left stick walks, steers and climbs. The right stick looks around.
 - A (Cross) jumps. On a wall it jumps off.
@@ -505,7 +505,7 @@ Phone and touch:
 - Hit a wall to hold on. Hold the arrows to climb. Tap JUMP to jump off.
 - Motion aim is optional. Center sets it straight again.
 
-The title shows `#deskNote` on a computer (the swing, W, and "a game pad works after you press PLAY"), `#touchNote` on a touch-only device, and `#hybridNote` on a touch device with a fine pointer. B makes the three elements. A shows and hides them in `wireTitle`.
+The title shows `#deskNote` on a computer (the swing button, and "a game pad works after you press PLAY"), `#touchNote` on a touch-only device, and `#hybridNote` on a touch device with a fine pointer. B makes the three elements. A shows and hides them in `wireTitle`.
 
 ## The phone panel
 

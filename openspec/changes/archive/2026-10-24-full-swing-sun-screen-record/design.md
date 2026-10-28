@@ -1,0 +1,2 @@
+# Design
+main.sunShaft sole render caller returns fresh x/y every flat bloom frame. bloom.render copies x/y synchronously into uSunUV and does not retain the record. Follow existing SHOUT_OUT/WARN_OUT private scratch pattern, no public API change. Baseline actual identities and exact coordinates over camera changes/behind-camera transitions before code. No new rendering technique; shader untouched.

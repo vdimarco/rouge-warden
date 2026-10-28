@@ -1,0 +1,4 @@
+- [x] Frame the street column and quarter the health and armour bars
+- [x] Shade the column before and after at desktop and phone scale
+- [x] Run `Scripts/test_street_meter.py` and `Scripts/test_hud_rule.py`
+- [ ] Compile and view the HUD in Unreal (editor not available here)

@@ -23,7 +23,7 @@ requirement has SHALL and at least one scenario. A box is ticked only when the c
 - [x] `qa/vr/gauntlet-bot.mjs` and `qa/vr/gauntlet.test.mjs` pass.
 - [x] `qa/vr/gauntlet.e2e.mjs` passes at 960 × 540 and 390 × 844; screenshots and the report written.
 - [x] The other unit suites pass: action, physics, target, city, street, mobile, mobile panel.
-- [x] Version 1.25.0 in `config.js`, `sw.js` and `quest/twa-manifest.json` (APK code 32).
+- [x] Version 1.25.0 in `config.js`, `sw.js` and `quest/twa-manifest.json` (APK code 34).
 
 ## Not checked
 

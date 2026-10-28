@@ -1,0 +1,4 @@
+- [x] Darken upward normals from eight same-depth upright taps
+- [x] Shade a figure on the street before and after
+- [x] Run `Scripts/test_contact.py`, `Scripts/test_plateau_trees.py`, and `Scripts/test_horizon_haze.py`
+- [ ] Recompile `M_ComicInk` in Unreal (editor not available here)

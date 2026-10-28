@@ -1,0 +1,5 @@
+# Scripts/blender/plateau_trees.py: material slots of Tree_silver_maple.obj
+newmtl silver_maple_bark
+Kd 0.5412 0.5216 0.4863
+newmtl silver_maple_leaves
+Kd 0.8941 0.7843 0.3608

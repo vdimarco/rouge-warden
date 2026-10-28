@@ -1,0 +1,6 @@
+{"stable":true,"deferred":true,"expired":true,"events":1,"state":"play"}
+PASS: sixty idle updates and exact deadline retain array
+PASS: busy hero defers expiration
+PASS: expiration preserves survivors and prior array, emits once
+PASS: play and no page errors
+PASS: offer expiry

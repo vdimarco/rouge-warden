@@ -27,3 +27,5 @@ namespace ENamedThreads
         GameThread_Local = GameThread | LocalQueue,
     };
 }
+class FGraphEvent;
+using FGraphEventRef = TSharedPtr<FGraphEvent>;

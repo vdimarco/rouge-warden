@@ -1,0 +1,13 @@
+960 {"visible":2,"hidden":0,"resumed":2,"xrCalls":1}
+PASS: visible flat render path runs 960
+PASS: sixty hidden callbacks submit no flat render passes 960
+PASS: visible rendering resumes 960
+PASS: XR render path unaffected by flat visibility guard 960
+PASS: no page errors 960
+390 {"visible":2,"hidden":0,"resumed":2,"xrCalls":1}
+PASS: visible flat render path runs 390
+PASS: sixty hidden callbacks submit no flat render passes 390
+PASS: visible rendering resumes 390
+PASS: XR render path unaffected by flat visibility guard 390
+PASS: no page errors 390
+PASS: hidden render

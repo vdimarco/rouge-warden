@@ -1,0 +1,31 @@
+// Controlled callback timing tests integration; not a hardware FPS benchmark.
+import {readFile} from 'node:fs/promises';
+import {newPage,open,close,enterXR,checker,watchdog,shot} from './lib.mjs';
+const {check,done}=checker('adaptive resolution');watchdog(300000,'adaptive resolution');
+try {
+ const p=await newPage({width:960,height:540});
+ await p.addInitScript(()=>{window.AudioContext=window.webkitAudioContext=undefined;});
+ const baseline=process.env.BASELINE_MAIN?await readFile(process.env.BASELINE_MAIN,'utf8'):null;
+ await p.route('**/vr/js/main.js',async r=>{const response=await r.fetch();const source=baseline||await response.text();await r.fulfill({response,body:source.replace('renderer.setAnimationLoop(loop);','window.__scaleLoop=loop; renderer.setAnimationLoop(loop);')});});
+ await open(p,'?nosw&skipintro');await p.waitForFunction(()=>G.viewDone);await enterXR(p,'desktop');
+ await p.evaluate(()=>{G.renderer.setAnimationLoop(null);G.game.skipTutorial();window.__savedRender=G.bloom.render;G.bloom.render=()=>{};window.__scaleTime=performance.now();});
+ const run=(dt,n)=>p.evaluate(({dt,n})=>{for(let i=0;i<n;i++)window.__scaleLoop(window.__scaleTime+=dt,null);return G.renderer.getPixelRatio();},{dt,n});
+ await p.evaluate(()=>dispatchEvent(new Event('resize')));
+ const base=await p.evaluate(()=>G.renderer.getPixelRatio());
+ check(await run(40,80)<base,'sustained slow callbacks lower the flat buffer');
+ const reduced=await p.evaluate(()=>G.renderer.getPixelRatio());
+ check(await run(20,160)===reduced,'improving callbacks retain the reduction');
+ check(await p.evaluate(()=>{const c=G.renderer.domElement,r=c.getBoundingClientRect();return r.width===960&&r.height===540&&G.camera.aspect===960/540;}),'canvas CSS and camera aspect remain native');
+ await p.evaluate(()=>{G.ui.openPause();});check(await run(80,80)===reduced,'paused callbacks cannot change resolution');await p.evaluate(()=>G.ui.closePause());
+ await p.evaluate(()=>Object.defineProperty(document,'hidden',{configurable:true,value:true}));check(await run(80,80)===reduced,'hidden callbacks cannot change resolution');await p.evaluate(()=>{delete document.hidden;dispatchEvent(new Event('visibilitychange'));});
+ await p.setViewportSize({width:390,height:844});await p.waitForFunction(()=>G.camera.aspect===390/844);
+ check(await p.evaluate(()=>G.renderer.getPixelRatio())===base,'phone resize restores normal device ratio');
+ check(await p.evaluate(()=>{const c=G.renderer.domElement,r=c.getBoundingClientRect();return r.width===390&&r.height===844&&G.camera.aspect===390/844;}),'phone CSS and camera stay viewport-sized');
+ check(await run(40,80)<base,'new viewport can trial a reduction');
+ check(await run(40,80)===base,'unchanged pacing rolls back the trial');
+ check(await run(80,120)===base,'failed trial stops further quality reductions');
+ await p.evaluate(()=>{dispatchEvent(new Event('resize'));G.renderer.xr.isPresenting=true;});
+ check(await run(80,80)===base,'XR callbacks cannot change flat resolution');
+ await p.evaluate(()=>{G.renderer.xr.isPresenting=false;G.bloom.render=window.__savedRender;G.test.render();});
+ await shot(p,'adaptive-resolution');check(p.errors.length===0,'no page errors',p.errors);
+}finally{await close();}done();

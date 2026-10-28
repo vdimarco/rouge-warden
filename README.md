@@ -23,6 +23,8 @@ Sound stops when a page is hidden. On a phone, a tab you leave, a browser you mi
 
 ## Play
 
+Silent Depth (`/silent-depth/`) is a Pacific submarine patrol for desktop and phones. Track a convoy through the periscope, chart or hydrophone, launch torpedoes, then dive and evade the escort. Start in its control room and visit the periscope, chart, individual torpedo tubes, hydrophone and helm. Its circular periscope has etched angular marks, lens shading and 1.5×/6× optical power. Its ocean has GPU-animated traveling ripples and reflections, with a static fallback. Find its cabinet at the end of Strategy or search All Games. Tests: `node --test qa/silent-depth/*.test.mjs`; browser: `NODE_PATH=qa/browser/node_modules node qa/silent-depth/smoke.e2e.mjs`.
+
 The arcade is live at <https://arcade.uptick.systems/>. To run your own copy, deploy to Vercel, or serve `public/` from any static server and open it in a browser. Opened locally, a built-in stand-in answers for Jev.
 
 - The How to play card, and the How to play chip on the title screen, show a short clip of each move.
@@ -794,6 +796,18 @@ Run these from the repo root. Each node test runs alone and exits with code 1 wh
 | `NODE_PATH=qa/browser/node_modules node qa/first-breath/music.e2e.mjs` | The score, offline (it bypasses the womb filter, a mood change on a bar line, stage 6's downbeats on her beats, Music off and Sound off, the mix peak under -1 dBFS, her heartbeat clear over every cue) and in the page (no score file at boot, nor with Music off until it is turned on, the cue's opening kept through the Play tap's first-frame stall, the samples or the fallback synth, the Music setting, a hidden page, the stingers, the caption, the ending's fade and warm chord) |
 | `NODE_PATH=qa/browser/node_modules node qa/first-breath/music-demo.mjs` | Renders every cue (each level, and the boss) and every stinger to mp3 with ffmpeg in `DEMO` (default the system temp folder), so a person can listen |
 | `SHOTS=<folder> NODE_PATH=qa/browser/node_modules node qa/first-breath/shots.mjs` | Screenshots of every stage at the three sizes in both tiers, the birth light, and a 1 s strip of stage 1 at `?res=0.5` to review the sway |
+
+### Table Tennis tests
+
+Run these from the repo root. The desktop checks open Chromium through the Playwright package in `qa/browser`. Install that package, then install Chromium with `npx playwright install chromium` in `qa/browser`:
+
+```sh
+npm ci --prefix qa/browser
+(cd qa/browser && npx playwright install chromium)
+node --test qa/pingpong/*.test.mjs
+```
+
+The 48 checks cover the rules, the rally, the bat, the gate, phone motion, the desktop court, and the win rate.
 
 ### Arcade tests
 

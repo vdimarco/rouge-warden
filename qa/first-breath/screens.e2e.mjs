@@ -11,13 +11,23 @@
 //   by an internal screen id ("settings", "pause", "tapTest", "almost", "card", "overlay", "result");
 // - in real time: a caption under the pause screen is still there on resume, with the time it had left (5 s paused);
 // - in real time, stage 3 practice with the reference bot at 390 × 844: no fact caption flashes for under 1.4 s, and
-//   every fact that shows stays for its reading time (1.5 s + 55 ms a letter, at least 4 s; 10% slack for timers).
+//   every fact that shows stays for its reading time (1.5 s + 55 ms a letter, at least 4 s; 10% slack for timers);
+// - Sources opened from the title (first-breath-score's "The Sources screen", "Open Sources"): every shown fact
+//   (core/facts.js) is listed once, with its clock label in front, and each of its source numbers points at a link in
+//   the list (https, opening a new tab); a tap on a fact's first source opens it in a new tab (answered locally);
+// - the music credit (first-breath-score, "The music credit"): at 390 × 844 the title's Sources button opens Sources,
+//   scrolled to its end the credit shows on screen, one plain line naming the instrument sounds, FluidR3_GM by Frank
+//   Wen from gleitz/midi-js-soundfonts, and both licenses (MIT, CC BY 3.0), with no banned word (text.test.mjs's list)
+//   and no em dash; its links (the soundfonts, CC BY 3.0, the MIT license) each open their page in a new tab when
+//   tapped (the page is answered locally), and each answers online with no error status (when the network is out
+//   this last part is reported, not counted).
 //   NODE_PATH=qa/browser/node_modules node qa/first-breath/screens.e2e.mjs
 import fs from "node:fs";
 import path from "node:path";
 import { spawn } from "node:child_process";
 import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
+import { shown as shownFacts } from "../../public/first-breath/core/facts.js";
 
 const FILE = "qa/first-breath/screens.e2e.mjs";
 const require = createRequire(import.meta.url);
@@ -249,6 +259,88 @@ for (const size of Object.keys(SIZES)) {
   check(`split in real time: no fact caption flashes for under 1.4 s (${total.size} facts)`, total.size > 0 && flashes.length === 0, flashes.join("; "));
   check("split in real time: every fact that shows stays for its reading time", short.length === 0, short.join("; "));
   check("no page errors (real time)", errors.length === 0, errors.slice(0, 3).join(" || "));
+  await ctx.close();
+}
+
+// ---- 6. Sources from the title: every fact once, with its label and a link that opens its source; then the music
+// credit at its end
+{
+  const { ctx, page, errors } = await open("portrait", "?seed=1");
+  await press(page, "portrait", 'section[data-screen="title"] [data-act="sources"]');
+  await wait(300);
+  const want = shownFacts({});
+  const src = await F(page, () => {
+    const sec = document.querySelector('#screens section.screen[data-screen="sources"]');
+    if (!sec || sec.hidden) return null;
+    const refs = [...sec.querySelectorAll("ol.refs-list a")].map((a) => ({ href: a.href, target: a.target, rel: a.rel }));
+    const facts = [...sec.querySelectorAll("li[data-fact]")].map((li) => ({ id: li.dataset.fact, label: (li.querySelector("b") || { textContent: "" }).textContent.trim(),
+      ns: ((li.querySelector(".refs") || { textContent: "" }).textContent.match(/\d+/g) || []).map(Number) }));
+    return { refs, facts };
+  });
+  const bad = [];
+  if (!src) bad.push("Sources is not shown");
+  else {
+    for (const f of want) {
+      const rows = src.facts.filter((x) => x.id === f.id);
+      if (rows.length !== 1) { bad.push(`${f.id} shows ${rows.length} times`); continue; }
+      const r = rows[0];
+      if (r.label !== f.label) bad.push(`${f.id}: label "${r.label}", not "${f.label}"`);
+      if (r.ns.length !== f.links.length) bad.push(`${f.id}: ${r.ns.length} source numbers for ${f.links.length} sources`);
+      r.ns.forEach((n, i) => {
+        const a = src.refs[n - 1];
+        if (!a || !/^https:\/\//.test(a.href) || a.target !== "_blank" || (f.links[i] && a.href.replace(/\/$/, "") !== new URL(f.links[i].url).href.replace(/\/$/, ""))) bad.push(`${f.id}: source ${n} ${a ? a.href : "missing"}`);
+      });
+    }
+    for (const x of src.facts) if (!want.some((f) => f.id === x.id)) bad.push(`${x.id} is listed but not a shown fact`);
+  }
+  check("Sources (from the title): every shown fact once, with its clock label and links to its sources (https, a new tab)", bad.length === 0 && !!src && src.facts.length === want.length,
+    `${src ? src.facts.length : 0} of ${want.length} facts; ${bad.slice(0, 4).join("; ")}`);
+  if (src && src.facts.length) {
+    const first = src.facts[0].ns[0];
+    await ctx.route(/^https:\/\/(?!127\.0\.0\.1)/, (r) => r.fulfill({ status: 200, contentType: "text/html", body: "<title>ok</title>" }));
+    const [tab] = await Promise.all([ctx.waitForEvent("page", { timeout: 5000 }).catch(() => null), page.tap(`section[data-screen="sources"] ol.refs-list li:nth-child(${first}) a`)]);
+    const url = tab ? tab.url() : null;
+    if (tab) await tab.close();
+    check("a tap on a fact's source opens it in a new tab", !!url && url.replace(/\/$/, "") === src.refs[first - 1].href.replace(/\/$/, ""), String(url));
+    await ctx.unroute(/^https:\/\/(?!127\.0\.0\.1)/);
+  }
+  const c = await F(page, () => {
+    const sec = document.querySelector('#screens section.screen[data-screen="sources"]');
+    if (!sec || sec.hidden) return null;
+    sec.scrollTop = sec.scrollHeight;
+    const p = sec.querySelector('[data-credit="music"]');
+    const r = p ? p.getBoundingClientRect() : null;
+    const links = [...sec.querySelectorAll(".credit-links a")].map((a) => { const q = a.getBoundingClientRect(); return { href: a.href, text: a.textContent.trim(), target: a.target, rel: a.rel, w: q.width, h: q.height }; });
+    return { text: p ? p.textContent.trim() : null, onScreen: !!r && r.top >= 0 && r.bottom <= innerHeight && r.height > 0, end: sec.scrollTop + sec.clientHeight >= sec.scrollHeight - 1, links };
+  });
+  const BANNED = /\b(die|dies|died|dying|dead|death|kill\w*|lose|loses|losing|lost|loser|fail\w*|miscarr\w*|abort\w*|sex\w*|pain\w*|hurt\w*|danger\w*|sick\w*|viab\w*|prematur\w*|NICU|invad\w*|invas\w*|attack\w*|destroy\w*|defeat\w*|conquer\w*|enem\w*|fight\w*|battle\w*)/i;
+  const t = c && c.text ? c.text : "";
+  check("Sources (390 × 844, from the title): scrolled to its end, the music credit shows on screen", !!c && c.end && c.onScreen, JSON.stringify(c && { end: c.end, onScreen: c.onScreen }));
+  check("the music credit is one plain line naming the instrument sounds, FluidR3_GM by Frank Wen, gleitz/midi-js-soundfonts, MIT and CC BY 3.0, with no banned word and no em dash",
+    /instrument sounds/i.test(t) && /FluidR3_GM/.test(t) && /Frank Wen/.test(t) && /gleitz\/midi-js-soundfonts/.test(t) && /MIT/.test(t) && /CC BY 3\.0/.test(t) && !BANNED.test(t) && !/\u2014/.test(t) && !/\n/.test(t), t);
+  const wantLinks = [/^https:\/\/github\.com\/gleitz\/midi-js-soundfonts\/?$/, /^https:\/\/creativecommons\.org\/licenses\/by\/3\.0\/?/, /^https:\/\/opensource\.org\/licenses?\/mit\/?$/i];
+  const links = c ? c.links : [];
+  check("the credit's links: the soundfonts, CC BY 3.0 and the MIT license, each opening in a new tab, each at least 44 px on its shorter side",
+    links.length === 3 && wantLinks.every((re) => links.some((l) => re.test(l.href))) && links.every((l) => l.target === "_blank" && /noopener/.test(l.rel) && Math.min(l.w, l.h) >= 44 - 0.5),
+    JSON.stringify(links.map((l) => [l.href, l.target, l.rel, Math.round(l.w) + "×" + Math.round(l.h)])));
+  // a tap on each opens its page in a new tab (answered here, so the check does not need the network)
+  await ctx.route(/^https:\/\/(github\.com|creativecommons\.org|opensource\.org)\//, (r) => r.fulfill({ status: 200, contentType: "text/html", body: "<title>ok</title>" }));
+  const opened = [];
+  for (let i = 0; i < links.length; i++) {
+    const [tab] = await Promise.all([ctx.waitForEvent("page", { timeout: 5000 }).catch(() => null), page.tap(`section[data-screen="sources"] .credit-links li:nth-child(${i + 1}) a`)]);
+    if (tab) { await tab.waitForLoadState("domcontentloaded").catch(() => {}); opened.push(tab.url()); await tab.close(); } else opened.push(null);
+  }
+  check("a tap on each credit link opens its page in a new tab", opened.length === 3 && opened.every((u, i) => u && u.replace(/\/$/, "") === links[i].href.replace(/\/$/, "")), JSON.stringify(opened));
+  // and each one answers online
+  const online = [];
+  for (const l of links) {
+    try { const r = await fetch(l.href, { redirect: "follow", signal: AbortSignal.timeout(15000) }); online.push({ url: l.href, status: r.status }); }
+    catch (e) { online.push({ url: l.href, error: String((e.cause && e.cause.code) || e.message) }); }
+  }
+  const offline = online.filter((x) => x.error);
+  if (offline.length) console.log(`NOTE ${FILE}: could not reach ${offline.map((x) => `${x.url} (${x.error})`).join(", ")}; the links were not checked online`);
+  else check("each credit link answers online with no error status", online.every((x) => x.status < 400), JSON.stringify(online));
+  check("no page errors (Sources)", errors.length === 0, errors.slice(0, 3).join(" || "));
   await ctx.close();
 }
 

@@ -1,0 +1,3 @@
+# Design
+
+Scope: createFigures.end and createStreetView.nearSigns, their renderer callers and focused browser checks/CI. Clear queued update ranges, then mark only0..n*itemSize for each populated attribute; skipzero-count uploads. instanceCount remains authoritative on shrink. First allocation remains Three-managed. Validate real bufferSubData byte counts after allocation, ranges after shrink/grow/zero and same-frame image equivalence. Reuse Three BufferAttribute update-range API already used in cityview.js. No new renderer/art technique. FPSbenefit not merge gate per user direction; keep correctness/review/CI/preview/rebase/production checks.

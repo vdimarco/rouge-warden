@@ -17,19 +17,20 @@ namespace QuebecJobRules
         double Z = 0.;
     };
 
-    enum class EJob : uint8_t { Delivery, Thief, Goons, Escape };
-    inline constexpr int JobCount = 4;
+    enum class EJob : uint8_t { Delivery, Thief, Goons, Escape, Posters, Fare };
+    inline constexpr int JobCount = 6;
 
     // Yellow 'M' markers, all on sidewalks or park paths. Sources: OSM centrelines in Data/LaFontaine/osm.xml.
     // Delivery: Rue Rachel Est sidewalk, 25 m from the Maison des cyclistes café. Thief: park-side Sherbrooke
     // sidewalk south of Avenue Papineau. Goons: the path west of the Théâtre de Verdure bleachers. Escape: east
     // Sherbrooke sidewalk at Avenue du Parc-La Fontaine / Rue Atateken.
     inline constexpr FJobSpot Markers[JobCount] = {
-        {-22296., 25268., 0.}, {44747., 29578., 0.}, {-14333., 3740., 0.}, {34714., -38068., 0.}
+        {-22296., 25268., 0.}, {44747., 29578., 0.}, {-14333., 3740., 0.}, {34714., -38068., 0.},
+        {18031., 49813., 0.}, {-1683., -36868., 0.}
     };
-    // Base time limit in seconds. A delivery earns DoorBonusSeconds at each door.
-    inline constexpr float TimeLimits[JobCount] = {75.f, 150.f, 150.f, 180.f};
-    inline constexpr int Rewards[JobCount] = {250, 400, 300, 500};
+    // Base time limit in seconds. A delivery earns DoorBonusSeconds at each door. The poster tour and the fare do not.
+    inline constexpr float TimeLimits[JobCount] = {75.f, 150.f, 150.f, 180.f, 120.f, 100.f};
+    inline constexpr int Rewards[JobCount] = {250, 400, 300, 500, 350, 450};
 
     // Livraison chaude: pick up at the café, then three doors in order.
     inline constexpr FJobSpot DeliveryCafe = {-23677., 23184., 0.};
@@ -62,6 +63,34 @@ namespace QuebecJobRules
     inline constexpr int EscapeStars = 3;
     inline constexpr FJobSpot EscapeGarage = {50591., -17400., 0.};
     inline constexpr double GarageRadius = 700.;
+
+    // Trois affiches: three corners of rue Gauthier, any order. Papineau, then Cartier, then Dorion.
+    // The spots sit one sidewalk off the crossing. The clock is the base limit and does not grow.
+    inline constexpr int PosterCount = 3;
+    inline constexpr FJobSpot PosterBoards[PosterCount] = {
+        {18922., 51143., 0.}, {23957., 58660., 0.}, {27489., 63934., 0.}
+    };
+
+    // La course: the marker is the pickup, on a mapped road south of the park. The drop is a quay road
+    // west of the terrace. The passenger boards at the pickup and stays only while someone is in a car.
+    // Four seconds on foot after boarding, and they get out. The clock does not grow. A drop counts only
+    // for a car that has slowed to CarArrivalSpeed.
+    inline constexpr FJobSpot FareDrop = {-31212., 18782., 0.};
+    inline constexpr int FareWait = 0;
+    inline constexpr int FareAboard = 1;
+    inline constexpr int FareDone = 2;
+    inline constexpr int FareLost = 3;
+    inline constexpr float FareGraceSeconds = 4.f;
+    // A walker with no free car this close gets a loaner at the curb, so the four seconds are a choice.
+    inline constexpr double FareLoanRadius = 3000.;
+    // FindInteractableCar offers a traffic car only at or under this speed. Faster traffic is not a ride.
+    inline constexpr float FareTakeSpeed = 120.f;
+
+    struct FFare
+    {
+        int Step = FareWait;
+        double OnFoot = 0.;
+    };
 
     inline constexpr double MarkerRadius = 250.;
     inline constexpr double WalkerArrivalRadius = 300.;
@@ -114,6 +143,115 @@ namespace QuebecJobRules
     inline bool Arrived(double Distance, bool bInCar, float Speed)
     {
         return bInCar ? Distance <= CarArrivalRadius && std::fabs(Speed) <= CarArrivalSpeed : Distance <= WalkerArrivalRadius;
+    }
+
+    // One step of the fare. Boarding does not spend the grace: the next tick starts the four seconds.
+    // A car at the drop that is still fast stays aboard. A walker at the drop does not count as the drop.
+    // Done and Lost stay as they are. A negative tick is treated as zero.
+    inline FFare AdvanceFare(int Step, double OnFoot, bool bAtPickup, bool bCarAtDrop, bool bDriving, float Speed, double Dt)
+    {
+        FFare Result;
+        Result.Step = Step;
+        Result.OnFoot = OnFoot;
+        if (Step != FareWait && Step != FareAboard) return Result;
+        if (Dt < 0.) Dt = 0.;
+        if (Step == FareWait)
+        {
+            if (!bAtPickup) return Result;
+            Result.Step = FareAboard;
+            Result.OnFoot = 0.;
+            return Result;
+        }
+        if (bDriving)
+        {
+            Result.OnFoot = 0.;
+            if (bCarAtDrop && std::fabs(static_cast<double>(Speed)) <= static_cast<double>(CarArrivalSpeed)) Result.Step = FareDone;
+            return Result;
+        }
+        Result.OnFoot += Dt;
+        if (Result.OnFoot > static_cast<double>(FareGraceSeconds)) Result.Step = FareLost;
+        return Result;
+    }
+
+    // Whole seconds still left in the grace, rounded up. 0 once the grace is spent.
+    inline int FareSecondsLeft(double OnFoot)
+    {
+        const double Left = static_cast<double>(FareGraceSeconds) - OnFoot;
+        if (Left <= 0.) return 0;
+        return static_cast<int>(std::ceil(Left));
+    }
+
+    // The fare boards a walker at the pickup, then gives them four seconds. A loaner is offered only
+    // when they are on foot and no free car is already waiting inside FareLoanRadius.
+    inline bool FareNeedsLoan(bool bOnFoot, bool bFreeCarNearby)
+    {
+        return bOnFoot && !bFreeCarNearby;
+    }
+
+    // A free car is one the player can enter. Moving traffic is not. Stopped traffic, at FareTakeSpeed, is.
+    inline bool FareCarIsFree(bool bOccupied, bool bControlled, bool bPolice, bool bWrecked, bool bTraffic, float Speed)
+    {
+        if (bOccupied || bControlled || bPolice || bWrecked) return false;
+        if (bTraffic && std::fabs(static_cast<double>(Speed)) > static_cast<double>(FareTakeSpeed)) return false;
+        return true;
+    }
+
+    // Where the fare marker stands. On foot with a loaner waiting, it stands on that car.
+    // Driving, or on foot with no loaner, it stands on the quay. Before boarding it stands on the pickup.
+    inline constexpr int FareAimPickup = 0;
+    inline constexpr int FareAimLoan = 1;
+    inline constexpr int FareAimDrop = 2;
+    // A post this close to the pickup or the quay uses that place's word. The loaner spawns farther along the lane.
+    inline constexpr double FarePlaceRadius = 80.;
+
+    inline int FareAim(int Step, bool bDriving, bool bLoanWaiting)
+    {
+        if (Step == FareWait) return FareAimPickup;
+        if (Step == FareAboard && !bDriving && bLoanWaiting) return FareAimLoan;
+        return FareAimDrop;
+    }
+
+    // The post's word follows the place. A post on the pickup says the passenger. A post on the quay says the quay.
+    // Anywhere else is the loaner.
+    inline int FareCaption(bool bAtPickup, bool bAtDrop)
+    {
+        if (bAtPickup) return FareAimPickup;
+        if (bAtDrop) return FareAimDrop;
+        return FareAimLoan;
+    }
+
+    inline int PosterBits(int Mask)
+    {
+        int Count = 0;
+        for (int Board = 0; Board < PosterCount; ++Board)
+            if ((Mask & (1 << Board)) != 0) ++Count;
+        return Count;
+    }
+
+    // Pasting a corner twice leaves the mask as it was. A corner outside the tour does nothing.
+    inline int PastePoster(int Mask, int Board)
+    {
+        if (Board < 0 || Board >= PosterCount) return Mask;
+        return Mask | (1 << Board);
+    }
+
+    inline bool PostersDone(int Mask)
+    {
+        return PosterBits(Mask) >= PosterCount;
+    }
+
+    // Nearest corner that is not yet pasted, or -1 when the tour is done.
+    inline int NextPoster(const FJobSpot& From, int Mask)
+    {
+        int Best = -1;
+        double BestDistance = 1e300;
+        for (int Board = 0; Board < PosterCount; ++Board)
+        {
+            if ((Mask & (1 << Board)) != 0) continue;
+            const double Distance = Distance2D(From, PosterBoards[Board]);
+            if (Distance < BestDistance) { BestDistance = Distance; Best = Board; }
+        }
+        return Best;
     }
 
     inline int GoonTotal()
@@ -175,5 +313,36 @@ namespace QuebecJobRules
     {
         if (Elapsed < 2.f) return false;
         return bSawStars ? Stars <= 0 : bCarAtGarage;
+    }
+
+    // Index of the nearest unfinished job. A finished job is chosen only when every listed job is finished.
+    // Equal distances keep the earlier index. -1 when Count is 0.
+    inline int NearestOpenJob(const FJobSpot& From, const FJobSpot* Spots, int Count, int CompletedMask)
+    {
+        int Open = -1;
+        int Any = -1;
+        double OpenDistance = 1e300;
+        double AnyDistance = 1e300;
+        for (int Index = 0; Index < Count; ++Index)
+        {
+            const double Distance = Distance2D(From, Spots[Index]);
+            if (Distance < AnyDistance) { AnyDistance = Distance; Any = Index; }
+            if ((CompletedMask & (1 << Index)) == 0 && Distance < OpenDistance)
+            {
+                OpenDistance = Distance;
+                Open = Index;
+            }
+        }
+        return Open >= 0 ? Open : Any;
+    }
+
+    // Which side job the free-roam mission card should name. The story card keeps its diamond until the
+    // campaign is complete. A running job wins; otherwise the nearest unfinished marker.
+    inline int FreeRoamGuide(bool bCampaignComplete, bool bJobRunning, int RunningJob,
+        const FJobSpot& From, const FJobSpot* Spots, int Count, int CompletedMask)
+    {
+        if (!bCampaignComplete) return -1;
+        if (bJobRunning) return RunningJob >= 0 && RunningJob < JobCount ? RunningJob : -1;
+        return NearestOpenJob(From, Spots, Count, CompletedMask);
     }
 }

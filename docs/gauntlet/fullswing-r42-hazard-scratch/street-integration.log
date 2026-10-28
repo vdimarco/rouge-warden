@@ -1,0 +1,12 @@
+PASS: people fill the sidewalks round the player, all on a sidewalk or a zebra
+PASS: a 500 m move: the people left behind go, new ones show, nobody is over 150 m away
+PASS: crossings: a person starts over a road only while its walk light is on, and waits at the kerb otherwise
+PASS: some people stand (window, phone, talk) and then walk on
+PASS: a landing near people: they stop, face the hero and cheer
+PASS: a hard landing next to a person: a jump back first, then the cheer, and a gasp
+PASS: a low fast swing over people: they look up and point
+PASS: the hero walks into a person: the person steps aside
+PASS: the crowd level: people near on the street, none on a high roof
+PASS: shop signs: boards and blades on the street floors, in neon, some flickering, none in a building or the road
+PASS: the frame costs little
+PASS: street

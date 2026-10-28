@@ -2,9 +2,25 @@
 // MoveRight -0.33/-0.66 and NumPad 4/5 to +0.33/+0.66 (JavaScript key codes 97, 98, 100, 101); A and D stay full lock.
 export const steerKeys = new Map([[-3, 65], [-2, 98], [-1, 97], [1, 100], [2, 101], [3, 68]]);
 const steeringKeys = new Set(steerKeys.values());
-// Wheel deflection, as a fraction of its drag reach, where each steering level and the pedals engage.
+// On-foot stick and the driving pedal: the same three steps. WASD stay full lock.
+// The shorter steps use numpad keys the steering wheel does not use for left and right.
+export const walkKeys = {
+  forward: new Map([[1, 104], [2, 105], [3, 87]]),
+  back: new Map([[1, 99], [2, 102], [3, 83]]),
+  left: new Map([[1, 103], [2, 96], [3, 65]]),
+  right: new Map([[1, 106], [2, 107], [3, 68]])
+};
+export function walkKey(axis, level) {
+  const size = Math.abs(level);
+  if (!size) return 0;
+  const table = axis === 'x'
+    ? (level < 0 ? walkKeys.left : walkKeys.right)
+    : (level < 0 ? walkKeys.back : walkKeys.forward);
+  return table.get(size) || 0;
+}
+// Wheel deflection, as a fraction of its drag reach, where each steering level and each pedal step engages.
 export const steerEdges = [.18, .45, .75];
-export const pedalEdges = [.28];
+export const pedalEdges = steerEdges;
 // An engaged level holds until the thumb comes back this far below its edge, so a thumb resting on an edge cannot flicker.
 export const holdMargin = .06;
 // The wheel measures drags over 1.4 times its drawn radius, so small thumb jitter moves the steering less.
@@ -39,6 +55,7 @@ export function setupTouchControls({ root, surface, stream }) {
   const brakeButton = document.getElementById('touch-brake');
   const useButton = document.getElementById('touch-use');
   const autoButton = document.getElementById('touch-auto');
+  const lockButton = document.getElementById('touch-lock');
   const combatGroup = root.querySelector('.touch-combat');
   // Aim holds the right mouse button; every other control holds a key code.
   const aimInput = 'RightMouseButton';
@@ -158,15 +175,22 @@ export function setupTouchControls({ root, surface, stream }) {
     const next = new Set([...activations.keys(), ...[...pointers.values()].flatMap(pointer => pointer.keys)]);
     if (!driving && sprintLatched && [65, 68, 87, 83].some(key => next.has(key))) next.add(16);
     if (driving) {
-      // Auto gas holds Gas until any brake input (button or wheel pulled down) turns it off.
-      if (next.has(83)) autoGas = false;
+      // Any brake step, including a short one, drops auto gas. Lock is Space and is not a brake
+      // step, so a slide can keep gas. Full gas from the button or Auto wins over a lighter wheel step.
+      const gasStep = [104, 105, 87];
+      const brakeStep = [99, 102, 83];
+      if (brakeStep.some(key => next.has(key))) autoGas = false;
       if (autoGas) next.add(87);
       // Exactly one steering key: a held wheel level wins over a keyboard-style Left/Right pulse.
       const wheel = [...pointers.values()].find(pointer => pointer.stick === 'steer')?.keys.find(key => steeringKeys.has(key));
       const steering = [...next].filter(key => steeringKeys.has(key));
       for (const key of steering) if (key !== (wheel ?? steering[0])) next.delete(key);
+      if (brakeStep.some(key => next.has(key))) for (const key of gasStep) next.delete(key);
+      for (const steps of [gasStep, brakeStep]) {
+        const held = steps.filter(key => next.has(key));
+        for (const key of held.slice(0, -1)) next.delete(key);
+      }
     } else autoGas = false;
-    if (driving && next.has(83)) next.delete(87);
     for (const key of heldKeys) if (!next.has(key)) lift(key);
     for (const key of next) if (!heldKeys.has(key)) press(key);
     heldKeys = next;
@@ -196,7 +220,8 @@ export function setupTouchControls({ root, surface, stream }) {
       const y = Math.max(-1, Math.min(1, (event.clientY - centerY) / (bounds.height / 2 * wheelReach)));
       pointer.steer = gradedLevel(x, pointer.steer);
       pointer.pedal = gradedLevel(y, pointer.pedal, pedalEdges);
-      pointer.keys = [steerKeys.get(pointer.steer), pointer.pedal < 0 && 87, pointer.pedal > 0 && 83].filter(Boolean);
+      // Up is gas. The three steps are the on-foot forward keys, and full lock stays W.
+      pointer.keys = [steerKeys.get(pointer.steer), walkKey('y', -pointer.pedal)].filter(Boolean);
       pointer.target.dataset.steer = String(pointer.steer);
       pointer.target.style.setProperty('--steer-angle', `${x * 60}deg`);
       pointer.target.style.setProperty('--steer-y', `${Math.round(y * 12)}px`);
@@ -209,7 +234,9 @@ export function setupTouchControls({ root, surface, stream }) {
       const centerY = pointer.originY ?? bounds.top + bounds.height / 2;
       const x = (event.clientX - centerX) / radius;
       const y = (event.clientY - centerY) / radius;
-      pointer.keys = [x < -.28 && 65, x > .28 && 68, y < -.28 && 87, y > .28 && 83].filter(Boolean);
+      pointer.side = gradedLevel(x, pointer.side);
+      pointer.forward = gradedLevel(-y, pointer.forward);
+      pointer.keys = [walkKey('x', pointer.side), walkKey('y', pointer.forward)].filter(Boolean);
       const scale = radius * .55 / Math.max(1, Math.hypot(x, y));
       pointer.target.style.setProperty('--stick-x', `${x * scale}px`);
       pointer.target.style.setProperty('--stick-y', `${y * scale}px`);
@@ -281,9 +308,10 @@ export function setupTouchControls({ root, surface, stream }) {
     root.dataset.driving = String(driving);
     root.querySelector('[data-stick="move"]').hidden = driving;
     root.querySelector('.touch-steering').hidden = !driving;
-    // Combat buttons are for walking; the Auto gas toggle is for driving.
+    // Combat buttons are for walking. Auto gas and the wheel lock are for driving.
     if (combatGroup) combatGroup.hidden = driving;
     if (autoButton) autoButton.hidden = !driving;
+    if (lockButton) lockButton.hidden = !driving;
     for (const [button, key, name, hint, label, icon] of [
       [gasButton, driving ? 87 : 16, driving ? 'Gas' : 'Sprint', driving ? 'Hold' : 'Hold / ×2', driving ? 'Hold to accelerate' : 'Hold or double-tap to sprint while moving',
         driving ? '<path d="M10 28V9l12-5v24ZM10 12h12M10 19h12"/>' : null],

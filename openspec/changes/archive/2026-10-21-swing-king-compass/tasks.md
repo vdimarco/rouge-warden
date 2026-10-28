@@ -1,0 +1,4 @@
+- [x] The King card names the nearest pipe and the distance
+- [x] The compass title is The King's pipe and it points at that pipe
+- [x] Moving toward the pipe drops the metres within a few frames
+- [x] A leftover clog does not take the compass while he is awake

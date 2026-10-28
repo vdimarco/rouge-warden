@@ -41,7 +41,7 @@ showed a problem, and this change fixes the ones it found.
 - **Quiet training:** while the Gauntlet runs the training checklist folds away and says nothing (`game.hush`).
 - **The test loop:** `qa/vr/gauntlet-bot.mjs` (balance runs), `qa/vr/gauntlet.test.mjs` (unit), `qa/vr/gauntlet.e2e.mjs`
   (browser, two layouts, pixel checks, screenshots and `gauntlet-report.json`).
-- The version goes to 1.25.0 (Quest APK code 32).
+- The version goes to 1.25.0 (Quest APK code 34).
 
 ## Out of scope
 

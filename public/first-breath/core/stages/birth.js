@@ -1061,8 +1061,10 @@ export function probe() {
 
 // The score's mood (openspec/changes/first-breath-score/contract.md, "Mood"), by wave from its warning: 0 for waves 1
 // and 2, 1 for waves 3 to 5, 2 for waves 6 to 8, and the tempo rises from 1 to 1.12 over the 8 waves (the engine moves
-// it at a bar line); the light is 0 at the last tempo, under the light stinger's choir. Pure and cheap (main.js reads
-// it every 100 ms); it changes nothing.
+// it at a bar line); the light is 0 at the last tempo, under the light stinger's choir. These thresholds (waves 3 and
+// 6, the top tempo 1.12) stay here as literals on purpose: they set only the music, so they sit beside the state they
+// read and not in birth.tune.js (first-breath-score design 4). Pure and cheap (main.js reads it every 100 ms); it
+// changes nothing.
 export function mood(st) {
   if (!st || !Array.isArray(st.waves) || !st.waves.length) return { level: 0 };
   const n = st.waves.length;

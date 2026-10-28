@@ -1,0 +1,26 @@
+[{"label":"first repaint after allocation","bytes":84,"expected":12,"diff":0,"varied":13539,"cars":7,"fallback":3},{"label":"moving unchanged","bytes":84,"expected":0,"diff":0,"varied":13446,"cars":7,"fallback":3},{"label":"model paint","bytes":84,"expected":12,"diff":0,"varied":13445,"cars":7,"fallback":3},{"label":"fallback paint","bytes":84,"expected":12,"diff":0,"varied":13445,"cars":7,"fallback":3},{"label":"pending updates","bytes":84,"expected":24,"diff":0,"varied":13427,"cars":7,"fallback":3},{"label":"hidden resume","bytes":84,"expected":12,"diff":0,"varied":13425,"cars":7,"fallback":3},{"label":"compacted slots","bytes":72,"expected":null,"diff":0,"varied":11377,"cars":6,"fallback":2},{"label":"empty","bytes":0,"expected":0,"diff":0,"varied":0,"cars":0,"fallback":0},{"label":"regrow reordered","bytes":84,"expected":null,"diff":0,"varied":13425,"cars":7,"fallback":3},{"label":"steady after reorder","bytes":84,"expected":0,"diff":0,"varied":13425,"cars":7,"fallback":3},{"label":"moving street traffic","bytes":12,"expected":0,"diff":0,"varied":2426,"cars":1,"fallback":0},{"label":"street traffic paint","bytes":12,"expected":12,"diff":0,"varied":2410,"cars":1,"fallback":0},{"label":"unchanged Float32 paint","bytes":12,"expected":0,"diff":0,"varied":2401,"cars":1,"fallback":0}]
+FAIL first repaint after allocation: changed-slot uploads and exact nonblank reference pixels
+  {"label":"first repaint after allocation","bytes":84,"expected":12,"diff":0,"varied":13539,"cars":7,"fallback":3}
+FAIL moving unchanged: changed-slot uploads and exact nonblank reference pixels
+  {"label":"moving unchanged","bytes":84,"expected":0,"diff":0,"varied":13446,"cars":7,"fallback":3}
+FAIL model paint: changed-slot uploads and exact nonblank reference pixels
+  {"label":"model paint","bytes":84,"expected":12,"diff":0,"varied":13445,"cars":7,"fallback":3}
+FAIL fallback paint: changed-slot uploads and exact nonblank reference pixels
+  {"label":"fallback paint","bytes":84,"expected":12,"diff":0,"varied":13445,"cars":7,"fallback":3}
+FAIL pending updates: changed-slot uploads and exact nonblank reference pixels
+  {"label":"pending updates","bytes":84,"expected":24,"diff":0,"varied":13427,"cars":7,"fallback":3}
+FAIL hidden resume: changed-slot uploads and exact nonblank reference pixels
+  {"label":"hidden resume","bytes":84,"expected":12,"diff":0,"varied":13425,"cars":7,"fallback":3}
+PASS: compacted slots: changed-slot uploads and exact nonblank reference pixels
+PASS: empty: changed-slot uploads and exact nonblank reference pixels
+PASS: regrow reordered: changed-slot uploads and exact nonblank reference pixels
+FAIL steady after reorder: changed-slot uploads and exact nonblank reference pixels
+  {"label":"steady after reorder","bytes":84,"expected":0,"diff":0,"varied":13425,"cars":7,"fallback":3}
+FAIL moving street traffic: changed-slot uploads and exact nonblank reference pixels
+  {"label":"moving street traffic","bytes":12,"expected":0,"diff":0,"varied":2426,"cars":1,"fallback":0}
+PASS: street traffic paint: changed-slot uploads and exact nonblank reference pixels
+FAIL unchanged Float32 paint: changed-slot uploads and exact nonblank reference pixels
+  {"label":"unchanged Float32 paint","bytes":12,"expected":0,"diff":0,"varied":2401,"cars":1,"fallback":0}
+PASS: fallback and model slots covered
+PASS: no page errors
+FAIL: car paint dirty (9 failed, 6 passed)

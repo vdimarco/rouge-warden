@@ -1,0 +1,4 @@
+- [x] Add eight ladder bars at the middle of each wide road
+- [x] Shade the walking camera before and after
+- [x] Run `Scripts/test_crosswalk.py` and `Scripts/test_lane_paint.py`
+- [ ] Confirm the bars in Unreal (editor not available here)

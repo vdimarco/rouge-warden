@@ -3,9 +3,13 @@
 // load, a code-built comic figure with the same bones takes its place. Look: toonify (cel bands) plus an inked hull (comic.js).
 import * as THREE from "three";
 import { SUN_DIR } from "./config.js";
-import { toonify, INK, inkK, syncInk, smoothNormals } from "./comic.js";
+import { toonify, INK, inkK, syncInk, smoothNormals, outlineOf } from "./comic.js";
 
 const MODEL_URL = "/wild/models/crew5.glb";
+const HERO_HIP = new THREE.Vector3();
+const HERO_UP = new THREE.Vector3(0, 1, 0);
+const HERO_FWD = new THREE.Vector3(0, 0, 1);
+const HIP_Q = new THREE.Quaternion();
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 const smooth = (a, b, x) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
 const ease = (dt, rate) => 1 - Math.exp(-dt * rate);
@@ -149,6 +153,35 @@ bool heroGone() {
   return length(fract(q) - 0.5) > sqrt(uHeroOpa * 0.31831);
 }
 `;
+// A view-dependent rim after the cel bands, so the hero is not a flat cutout on the sunset.
+// Mitchell, Francke, Eng, "Illustrative Rendering in Team Fortress 2", 2007. The rim stays inside the bands.
+const HERO_RIM = /* glsl */ `
+vec3 heroRim(vec3 col, vec3 wn) {
+  vec3 N = normalize(wn);
+  float nd = clamp(dot(N, normalize(cameraPosition - vComicW)), 0.0, 1.0);
+  float rim = pow(1.0 - nd, 3.0);
+  float key = clamp(dot(N, normalize(uHeroSun)), 0.0, 1.0);
+  // The built-in figure has a cream belt on the hips. The mapped jacket's cel flattens that belt,
+  // so paint it back on the red cloth, in the hips' own up axis, and only near the torso.
+  // A world-Y test would stay horizontal through a roll.
+  vec3 rel = vComicW - uHeroHip;
+  float along = dot(rel, uHeroUp);
+  vec3 across = rel - uHeroUp * along;
+  float radial = length(across);
+  float face = dot(across, uHeroFwd);
+  float belt = (1.0 - smoothstep(0.04, 0.10, abs(along - 0.08))) * (1.0 - smoothstep(0.16, 0.28, radial));
+  // A darker panel on the upper back, under the collar and above the belt. The hips' own
+  // frame carries it through a roll. The chest side stays the red cloth.
+  float yoke = (1.0 - smoothstep(0.11, 0.14, abs(along - 0.42)))
+    * (1.0 - smoothstep(0.20, 0.32, radial))
+    * (1.0 - smoothstep(0.06, 0.16, face));
+  float jacket = smoothstep(0.04, 0.14, col.r - max(col.g, col.b));
+  col = mix(col, vec3(0.95, 0.91, 0.82), belt * jacket);
+  col = mix(col, vec3(0.20, 0.06, 0.09), yoke * jacket);
+  return col + vec3(1.0, 0.55, 0.28) * rim * mix(0.45, 1.0, key) * 0.48
+    + vec3(0.32, 0.46, 0.78) * rim * (1.0 - key) * 0.28;
+}
+`;
 function bodyMaterial(map, OPA, LIGHT) {
   const m = new THREE.MeshBasicMaterial(map ? { map } : { vertexColors: true });
   toonify(m, { dots: 0.035 });
@@ -157,11 +190,20 @@ function bodyMaterial(map, OPA, LIGHT) {
     base(shader, r);
     shader.uniforms.uHeroOpa = OPA;
     shader.uniforms.uHeroSun = LIGHT;
+    shader.uniforms.uHeroHip = { value: HERO_HIP };
+    shader.uniforms.uHeroUp = { value: HERO_UP };
+    shader.uniforms.uHeroFwd = { value: HERO_FWD };
     // toonify shades with the rest-pose normal; a posed body needs the skinned one
     shader.vertexShader = shader.vertexShader.replace("vec3 wn = normal;", "vec3 wn = objectNormal;");
-    // and the light: the key light leans toward the camera side so the hero's back is never a dark shape against the sunset
+    // The painted face, zipper and shoe panels are in the colour map. A full cel band, and the mip
+    // that a chase view picks, flatten them into one block. Half the colour stays the paint, and the
+    // sample is a sharper mip. Mitchell, Francke and Eng, "Illustrative Rendering in Team Fortress 2" (2007):
+    // the warp stays a warp of the albedo, so the material still reads.
     shader.fragmentShader = shader.fragmentShader.replace(/comicLight\(wn, vec3\([^)]*\)\)/, "comicLight(wn, uHeroSun)")
-      .replace("void main() {", "uniform vec3 uHeroSun;\n" + DITHER + "void main() {")
+      .replace("texture2D( map, vMapUv )", "texture2D( map, vMapUv, -1.6 )")
+      .replace("vec3 col = comicCel(diffuseColor.rgb, b);", "vec3 col = mix(diffuseColor.rgb, comicCel(diffuseColor.rgb, b), 0.5);")
+      .replace("void main() {", "uniform vec3 uHeroSun;\nuniform vec3 uHeroHip;\nuniform vec3 uHeroUp;\nuniform vec3 uHeroFwd;\n" + DITHER + HERO_RIM + "void main() {")
+      .replace("outgoingLight = col + ", "outgoingLight = heroRim(col, wn) + ")
       .replace("#include <clipping_planes_fragment>", "#include <clipping_planes_fragment>\n  if (heroGone()) discard;");
   };
   m.customProgramCacheKey = () => key() + (map ? "-hero-map" : "-hero-vc");
@@ -187,6 +229,51 @@ function hullMaterial(OPA) {
   };
   m.customProgramCacheKey = () => "hero-hull";
   return m;
+}
+// Hair and a collar in metres, in the Head bone's frame (+y up the skull, +z toward the face). One mesh and its ink
+// hull: the hero's draw budget is four (body, hull, this, its outline). The skinned crew mesh is not touched.
+function readForms() {
+  const parts = [];
+  const put = (geo, hex, x, y, z, sx = 1, sy = 1, sz = 1, rx = 0) => {
+    const g = geo.index ? geo.toNonIndexed() : geo;
+    if (rx) g.rotateX(rx);
+    g.scale(sx, sy, sz);
+    g.computeVertexNormals();
+    g.translate(x, y, z);
+    const c = hexRGB(hex), n = g.attributes.position.count, col = new Float32Array(n * 3);
+    for (let i = 0; i < n; i++) { col[i * 3] = c[0]; col[i * 3 + 1] = c[1]; col[i * 3 + 2] = c[2]; }
+    g.setAttribute("color", new THREE.Float32BufferAttribute(col, 3));
+    parts.push(g);
+    if (g !== geo) geo.dispose();
+  };
+  // a crown past the skull, a brow fringe, and a collar that flares wider than the neck
+  put(new THREE.SphereGeometry(0.125, 8, 6), C.hair, 0, 0.17, -0.03, 1.15, 0.72, 1.0);
+  put(new THREE.BoxGeometry(0.22, 0.05, 0.06), C.hair, 0, 0.115, 0.1);
+  put(new THREE.TorusGeometry(0.125, 0.028, 5, 8), C.white, 0, -0.01, 0.02, 1, 1, 1, Math.PI / 2);
+  let count = 0;
+  for (const g of parts) count += g.attributes.position.count;
+  const P = new Float32Array(count * 3), Nrm = new Float32Array(count * 3), Col = new Float32Array(count * 3);
+  let o = 0;
+  for (const g of parts) {
+    const n = g.attributes.position.count;
+    P.set(g.attributes.position.array, o);
+    Nrm.set(g.attributes.normal.array, o);
+    Col.set(g.attributes.color.array, o);
+    o += n * 3;
+    g.dispose();
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute("position", new THREE.BufferAttribute(P, 3));
+  geo.setAttribute("normal", new THREE.BufferAttribute(Nrm, 3));
+  geo.setAttribute("color", new THREE.BufferAttribute(Col, 3));
+  const mat = new THREE.MeshBasicMaterial({ vertexColors: true, fog: false });
+  toonify(mat, { dots: 0.035 });
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.name = "hero:read";
+  mesh.frustumCulled = false;
+  mesh.visible = false;
+  mesh.add(outlineOf(mesh, { width: 0.012, px: 2 }));
+  return mesh;
 }
 
 /* ---------------- the rig: rest data for both models ---------------- */
@@ -272,6 +359,7 @@ export function createHero(scene, renderer) {
     sq: 0, sqV: 0, // squash (−) and stretch (+) of the body, and its rate: a spring after a landing or a launch // the pose rate (0 = every frame), the time since the last pose, a pose exists to hold
   };
   const mesh = { body: null, hull: null };
+  let readMesh = null;
   // the motion capture: the loops, each limb's fix for a rig whose rest limbs point elsewhere (the built-in figure), the blend
   // weights (idle, walk, jog, run), the shared phase of the moving loops, and scratch for the sampled turns
   const MC = { data: null, corr: BONES.map(() => new THREE.Quaternion()), w: [1, 0, 0, 0], want: [1, 0, 0, 0], phase: 0, idleT: 0, on: 0,
@@ -320,7 +408,10 @@ export function createHero(scene, renderer) {
     const g = SU.clone(holder);
     const kill = [];
     let sk = null;
-    g.traverse((o) => { if (o.name === "hero:outline") kill.push(o); else if (o.isSkinnedMesh && !sk) sk = o; });
+    g.traverse((o) => {
+      if (o.name === "hero:outline" || (o.name && o.name.indexOf("hero:read") === 0)) kill.push(o);
+      else if (o.isSkinnedMesh && !sk) sk = o;
+    });
     for (const o of kill) o.parent.remove(o);
     if (!sk) return null;
     sk.material = new THREE.MeshBasicMaterial({ color: GHOST.colors[k % 2], transparent: true, opacity: 0, depthWrite: false });
@@ -344,7 +435,7 @@ export function createHero(scene, renderer) {
       if (!skinned || !skinned.material.map) throw new Error("crew5.glb has no skinned colour-mapped mesh");
       const old = skinned.material, map = old.map;
       map.colorSpace = THREE.NoColorSpace; // a display colour: no sRGB decoding (the repo's colour rule)
-      map.anisotropy = 4;
+      map.anisotropy = 8;
       map.generateMipmaps = true; map.minFilter = THREE.LinearMipmapLinearFilter;
       try { renderer.initTexture(map); } catch (e) { /* uploads on first use */ }
       // the other maps (normal, roughness, emissive) are never drawn: let them go. The glb uses one texture for the colour and the
@@ -353,6 +444,9 @@ export function createHero(scene, renderer) {
       const fit = new THREE.Box3().setFromObject(model, true).getSize(new THREE.Vector3());
       if (!(fit.y > 1.5 && fit.y < 2.2)) throw new Error("crew5.glb has an odd height " + fit.y);
       useRig(model, skinned, bodyMaterial(map, OPA, LIGHT), "glb");
+      readMesh = readForms();
+      scene.add(readMesh);
+      applyVisible();
     } catch (e) {
       console.info("crew5.glb did not load, using the built-in hero:", e && e.message);
       try { useFigure(); } catch (e2) { console.error("the built-in hero failed:", e2); H.model = "none"; }
@@ -360,7 +454,45 @@ export function createHero(scene, renderer) {
   }
   loadModel();
 
-  function applyVisible() { root.visible = !!rig && visible && opacity > 0.02 && !S.hidden; }
+  function applyVisible() {
+    const on = !!rig && visible && opacity > 0.02 && !S.hidden;
+    root.visible = on;
+    // the close fade dissolves the body into dots; these solid forms leave with it
+    if (readMesh) readMesh.visible = on && opacity > 0.9;
+  }
+  // Follow-through: the hair arrives after the head. Lasseter, "Principles of Traditional Animation Applied to
+  // 3D Computer Animation" (SIGGRAPH 1987). The position stays on the skull; the turn and a short sideways drag lag.
+  const READ_Q = new THREE.Quaternion(), READ_P = new THREE.Vector3(), READ_A = new THREE.Vector3();
+  let readReady = false;
+  function placeRead(dt) {
+    if (!readMesh || !rig) return;
+    const b = rig.I.Head.b;
+    b.updateWorldMatrix(true, false);
+    rig.I.Hips.b.getWorldPosition(HERO_HIP);
+    rig.I.Hips.b.getWorldQuaternion(HIP_Q);
+    HERO_UP.set(0, 1, 0).applyQuaternion(HIP_Q);
+    // The crew model faces +z. The yoke uses that axis so the panel stays on the back.
+    HERO_FWD.set(0, 0, 1).applyQuaternion(HIP_Q);
+    b.getWorldPosition(READ_P);
+    b.getWorldQuaternion(TQ);
+    // Flight on twos moves the head a whole pose between calls. 0.7 m is only about 8.5 m/s at 12 Hz,
+    // so a swing was snapping the hair every pose and the turn never followed through. The phone cap is 48 m/s.
+    const span = Math.max(dt || 1 / 60, 1 / 60);
+    const snapM = 48 * span + 1.5;
+    const jump = !readReady || READ_P.distanceToSquared(readMesh.position) > snapM * snapM;
+    if (jump) READ_Q.copy(TQ);
+    else READ_Q.slerp(TQ, 1 - Math.exp(-(dt || 1 / 60) * 1));
+    readReady = true;
+    READ_A.set(0, 0, 1).applyQuaternion(TQ);
+    const headYaw = Math.atan2(READ_A.x, READ_A.z);
+    READ_A.set(0, 0, 1).applyQuaternion(READ_Q);
+    let err = headYaw - Math.atan2(READ_A.x, READ_A.z);
+    err = Math.atan2(Math.sin(err), Math.cos(err));
+    const drag = Math.max(-0.12, Math.min(0.12, -err * 0.85));
+    READ_A.set(1, 0, 0).applyQuaternion(TQ);
+    readMesh.position.copy(READ_P).addScaledVector(READ_A, drag);
+    readMesh.quaternion.copy(READ_Q);
+  }
 
   /* ---- scratch ---- */
   const E = new THREE.Euler(), EF = new THREE.Euler(0, 0, 0, "YXZ"), QA = new THREE.Quaternion(), QB = new THREE.Quaternion(), QC = new THREE.Quaternion();
@@ -398,6 +530,7 @@ export function createHero(scene, renderer) {
   const setArm = (i, ux, uy, uz, fx, fy, fz) => { arm[i].up.set(ux, uy, uz).normalize(); arm[i].fore.set(fx, fy, fz).normalize(); };
   const POLE = [new THREE.Vector3(0.1, 0, 1), new THREE.Vector3(-0.1, 0, 1)];
   const pole = [new THREE.Vector3(), new THREE.Vector3()]; // this frame's knee poles (POLE, or out wide on a wall)
+  const kneeRest = [null, null]; // the knee's rest local position, so a run can step it out and the next pose puts it back
   const ikArm = [0, 1].map(() => ({ up: new THREE.Vector3(), fore: new THREE.Vector3() }));
   const hipW = [new THREE.Vector3(), new THREE.Vector3()]; // the hip joints where the posed hips put them (model frame)
 
@@ -646,6 +779,9 @@ export function createHero(scene, renderer) {
       else if (/UpLeg|Leg|Foot|ToeBase/.test(n)) w = legW;
       else if (side >= 0) w = bodyW * (1 - S.reach[side]) * (side === 0 ? 1 - S.carry : 1); // a rope arm keeps reaching for its anchor (its yank is part of the reach); the carrying arm holds on
       else w = bodyW;
+      // At a full run the captured loop foreshortens to a stand from behind the chase. Keep the opened stride instead.
+      // Walk and jog stay on the clip. Lasseter 1987, exaggeration.
+      if (MC.w[3] > 0.45 && n !== "Head" && n !== "neck") w *= 1 - MC.w[3];
       // a bone the code-built pose leaves alone (the neck, the shoulders, the hands, the toes) has no turn of its own there
       const own = d.q;
       if (n === "neck" || /Shoulder|Hand$|ToeBase/.test(n)) own.identity();
@@ -653,7 +789,7 @@ export function createHero(scene, renderer) {
       d.D.copy(p < 0 ? TQ.identity() : I[BONES[p]].D).multiply(own);
       setBone(d, own);
     }
-    WP.set(hx, hy, hz).lerp(MC.hips, legW);
+    WP.set(hx, hy, hz).lerp(MC.hips, legW * (1 - MC.w[3]));
     rig.hips.position.copy(rig.hipsRest).add(WP.applyMatrix3(rig.armInv));
   }
 
@@ -680,6 +816,7 @@ export function createHero(scene, renderer) {
         root.updateMatrixWorld(true);
         for (let sd = 0; sd < 2; sd++) { handPos[sd].add(V.c); footPos[sd].add(V.c); CL.palm[sd].add(V.c); }
         headPos.add(V.c);
+        placeRead(dt);
         return;
       }
       if (V.c.lengthSq() < 4) dt = Math.min(S.stepAcc, 0.1); // (after a teleport, the time before it does not count)
@@ -861,7 +998,7 @@ export function createHero(scene, renderer) {
 
     /* -- the pose, layer by layer -- */
     const I = rig.I, wR = S.run, wA = S.air, wS = S.swing, cr = S.crouch;
-    const ampR = clamp(hs * 0.085, 0.05, 0.3);
+    for (let sd = 0; sd < 2; sd++) if (kneeRest[sd]) I[(sd ? "Right" : "Left") + "Leg"].b.position.copy(kneeRest[sd]);
     let hipsDx = 0, hipsDy = -0.02 + Math.sin(t * 1.9) * 0.004, hipsDz = 0, lean = 0.02 + Math.sin(t * 1.9 + 0.4) * 0.01, twist = 0, bank = 0, hipTw = 0;
     const stanceX = 0.12, ay = rig.ankleY, az = -0.05;
     for (let sd = 0; sd < 2; sd++) {
@@ -870,19 +1007,28 @@ export function createHero(scene, renderer) {
       foot[sd].p.set(sx * stanceX, ay, az); foot[sd].pitch = 0; foot[sd].yaw = 0; pole[sd].copy(POLE[sd]);
       setArm(sd, sx * 0.1, -1, 0.05, sx * 0.14, -1, 0.42);
     }
-    // run: a two-beat cycle, the arms against the legs
+    // run: a two-beat cycle, the arms against the legs. The chase camera sits behind the facing, so a stride
+    // along z foreshortens to a stand. The lifted foot and its knee step out to the side, where the frame can see them.
     if (wR > 0.001) {
-      const ph = S.phase, lift = 0.05 + 0.13 * clamp(hs / 3.5, 0.3, 1);
-      hipsDy = (-0.02 - 0.02 * wR - 0.03 * wR * (0.5 + 0.5 * Math.cos(2 * ph))) * 1 + hipsDy * (1 - wR);
-      lean = lean * (1 - wR) + (0.08 + 0.14 * clamp(hs / 4, 0, 1)) * wR;
-      hipTw += 0.16 * wR * Math.sin(ph); twist += -0.2 * wR * Math.sin(ph);
+      const ph = S.phase, lift = 0.86 * clamp(hs / 3.5, 0.55, 1);
+      hipsDy = (-0.04 - 0.06 * wR) + hipsDy * (1 - wR);
+      lean = lean * (1 - wR) + 0.22 * wR;
+      hipTw += 0.2 * wR * Math.sin(ph); twist += -0.28 * wR * Math.sin(ph);
       for (let sd = 0; sd < 2; sd++) {
-        const sx = sd === 0 ? 1 : -1, th = ph + (sd ? Math.PI : 0);
-        foot[sd].p.z += wR * ampR * Math.sin(th);
-        foot[sd].p.y += wR * lift * Math.max(0, Math.cos(th));
-        const psi = 0.8 * wR * Math.sin(th + Math.PI) * clamp(hs / 3, 0.3, 1);
-        V.a.set(sx * 0.12, -Math.cos(psi), Math.sin(psi)).normalize();
-        V.b.set(sx * 0.1, -Math.cos(psi + 0.8 + 0.4 * wR), Math.sin(psi + 0.8 + 0.4 * wR)).normalize();
+        const sx = sd === 0 ? 1 : -1, th = ph + (sd ? Math.PI : 0), n = sd === 0 ? "Left" : "Right";
+        const s = Math.sin(th), up = Math.max(0, Math.cos(th));
+        foot[sd].p.set(sx * (0.14 + 0.62 * up * wR), ay + lift * up * wR, az + 0.55 * s * wR);
+        pole[sd].set(sx * (0.25 + 1.05 * up), 0.25 + 0.2 * up, 0.35);
+        // The knee joint itself steps out. A rotation alone stays inside the silhouette from behind the chase.
+        // Walk and jog stay on the captured loop (or the code pose, when the clips never loaded). The step waits
+        // for the run band, the same 2.9–3.3 m/s the run clip uses, so a jog does not shove the shin out by 22 cm.
+        const knee = I[n + "Leg"].b;
+        if (!kneeRest[sd]) kneeRest[sd] = knee.position.clone();
+        const runOpen = MC.data ? MC.w[3] : smooth(2.9, 3.3, hs);
+        if (up > 0.2 && runOpen > 0.45) knee.position.x += sx * 0.34 * up * runOpen;
+        const psi = (s > 0 ? -0.9 : 0.7) * wR;
+        V.a.set(sx * (0.15 + 0.55 * (s > 0 ? 1 : 0.2)), -Math.cos(psi), Math.sin(psi)).normalize();
+        V.b.set(sx * 0.2, -Math.cos(psi + 0.6), Math.sin(psi + 0.6)).normalize();
         arm[sd].up.lerp(V.a, wR).normalize(); arm[sd].fore.lerp(V.b, wR).normalize();
       }
     }
@@ -959,18 +1105,48 @@ export function createHero(scene, renderer) {
       arm[0].up.lerp(V.a, S.carry).normalize(); arm[0].fore.lerp(V.b, S.carry).normalize();
       lean += 0.1 * S.carry;
     }
-    // swing: legs trail, the hero hangs a little lower, the free arm goes out for balance
+    // swing: the chest leads through the bottom and the legs follow; the knees tuck on the way up.
+    // Lasseter, SIGGRAPH 1987 (arcs, follow-through, overlapping action). A quiet hang keeps the mild trail.
     if (wS > 0.001) {
+      let tw = 0, kw = 0;
+      if (nAtt) {
+        const rx = anchorMix.x - pos.x, ry = anchorMix.y - (pos.y + chestH), rz = anchorMix.z - pos.z;
+        const rl = Math.hypot(rx, ry, rz) || 1;
+        const hang = clamp(ry / rl, 0, 1);
+        const along = (vel.x * rx + vel.y * ry + vel.z * rz) / rl;
+        const across = Math.hypot(hs, vel.y);
+        // A taut rope keeps the radial speed near zero, so the tuck follows the rise and how far the
+        // rope is off vertical, not the speed toward the anchor. The bottom is the fast pass under it.
+        const rising = smooth(0.5, 4, vel.y);
+        const bottom = hang * (1 - smooth(1.5, 8, Math.abs(along))) * smooth(5, 12, across) * (1 - rising);
+        const rise = Math.max(smooth(-2, 3, vel.y), 1 - smooth(1, 7, across));
+        kw = clamp((1 - hang) * rise, 0, 1);
+        tw = clamp(Math.max(bottom, (1 - kw) * hang * smooth(5, 14, across) * (1 - rising)), 0, 1);
+      }
+      let hw = Math.max(0, 1 - tw - kw);
+      const keyed = tw + kw;
+      if (keyed > 0.2) hw *= 1 - smooth(0.2, 0.55, keyed);
+      const sw = tw + kw + hw || 1;
+      tw /= sw; kw /= sw; hw /= sw;
       for (let sd = 0; sd < 2; sd++) {
-        const sx = sd === 0 ? 1 : -1, ph = t * 3.1 + sd * 1.7;
-        V.k.set(sx * 0.14, ay + (sd === 0 ? 0.36 : 0.2) + 0.03 * Math.sin(ph), az - (sd === 0 ? 0.3 : 0.44) - 0.03 * Math.sin(ph + 1));
+        const sx = sd === 0 ? 1 : -1;
+        const yH = ay + (sd === 0 ? 0.36 : 0.2), zH = az - (sd === 0 ? 0.3 : 0.44);
+        // The chase is behind the facing, so the trail also steps out to the side. One heel stays low and wide, the other lifts.
+        const yT = ay + (sd === 0 ? 0.08 : 0.86), zT = az - (sd === 0 ? 0.78 : 0.52);
+        const yK = ay + (sd === 0 ? 0.62 : 0.5), zK = az + (sd === 0 ? 0.62 : 0.42);
+        const xSwing = sx * (0.16 * hw + (sd === 0 ? 0.72 : 0.46) * tw + 0.16 * kw);
+        V.k.set(xSwing, yH * hw + yT * tw + yK * kw, zH * hw + zT * tw + zK * kw);
         foot[sd].p.lerp(V.k, wS);
-        foot[sd].pitch += 0.4 * wS;
-        V.a.set(sx * 0.8, -0.1, -0.3).normalize(); V.b.set(sx * 0.85, 0.05, 0.0).normalize();
+        foot[sd].pitch += (0.4 * hw + 0.95 * tw + 0.25 * kw) * wS;
+        pole[sd].lerp(V.a.set(sx * 0.2, tw > kw ? -0.25 : 0.35, tw > kw ? -1 : 1), wS);
+        const ax = sx * (0.8 * hw + 0.95 * tw + 0.4 * kw), ayA = -0.1 * hw + 0.05 * tw + 0.45 * kw, azA = -0.3 * hw - 0.85 * tw + 0.55 * kw;
+        V.a.set(ax, ayA, azA).normalize(); V.b.set(ax * 0.85, ayA + 0.15, azA * 0.65).normalize();
         arm[sd].up.lerp(V.a, wS).normalize(); arm[sd].fore.lerp(V.b, wS).normalize();
       }
-      hipsDy = hipsDy * (1 - wS) + (-0.06) * wS;
-      lean = lean * (1 - wS) + 0.12 * wS;
+      hipsDy = hipsDy * (1 - wS) + (-0.06 * hw - 0.12 * tw - 0.02 * kw) * wS;
+      hipsDz += (0.1 * tw - 0.03 * kw) * wS;
+      lean = lean * (1 - wS) + (0.12 * hw + 0.72 * tw - 0.06 * kw) * wS;
+      bank += 0.28 * tw * wS;
     }
     // land: a crouch, arms out, a forward lean
     if (cr > 0.001) {
@@ -1104,6 +1280,7 @@ export function createHero(scene, renderer) {
     }
     I.Head.b.getWorldPosition(headPos);
     headPos.y += 0.09;
+    placeRead(dt);
     for (let sd = 0; sd < 2; sd++) { CL.palm[sd].copy(handPos[sd]); I[sd === 0 ? "LeftFoot" : "RightFoot"].b.getWorldPosition(footPos[sd]); }
 
     /* -- a name for the tests -- */

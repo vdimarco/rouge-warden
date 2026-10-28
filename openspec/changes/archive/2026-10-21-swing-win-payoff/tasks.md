@@ -1,0 +1,3 @@
+- [x] Show a big comic word, a cheer, and a short slow moment on a won job
+- [x] Hold the next mission card until that moment ends
+- [x] Check Stop, Thief! in a 1280×800 play: KASPLASH, then Mission 3

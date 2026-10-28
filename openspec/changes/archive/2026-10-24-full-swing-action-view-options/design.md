@@ -1,0 +1,2 @@
+# Design
+main streetFrame is the sole runtime callsite. actionview.update synchronously reads opts.cam/opts.markers and does not retain/mutate opts; independent callers retain optional/default API. Use one private record next to CAMW, update markers immediately before each call. Inspect all callers/fields and existing goon-pose extraction fixture before code. Baseline options identity60fresh→one, compare marker states/camera identity across cutscene/play and hidden-world transitions; preserve current hidden guard behavior.

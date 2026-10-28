@@ -2,6 +2,7 @@
 // Pure: plain {x, y, z}, no three, no DOM. main.js calls step(P, h, inp) a few times a frame with a small h.
 // Deterministic, and step allocates nothing except the event objects it pushes.
 import { SWING, GAME, COMFORT } from "./config.js";
+import { bidOf } from "./target.js";
 
 // Targets you pump instead of swing on: a yank there counts as a pump and moves nothing.
 const SPECIAL = { clog: true, pipe: true, crack: true };
@@ -27,12 +28,15 @@ function makeRope(i) {
     rate: 0, // when above 0, the length moves toward lenTarget this fast instead of cfg.lenRate (a phone rope that pulls you up)
     // internal: the catch, the stretch it leaves, how fast the rope pulls in, last step's state
     stretch: 0, catchT: 0, catchV: 0, catchLen: 0, pull: 0, L0: 0, wasTaut: false, acc: 0, _t: { tag: "", id: null },
+    // easy swing: the player did not aim. The rope lands at once, stays at most 16 body-heights, and pumps once at the bottom.
+    easy: false, easyH: 0, pumped: false, prevY: 0,
   };
 }
 function idle(r) {
   r.state = "idle"; r.target = null; r.len = r.lenTarget = 0; r.flyT = r.flyDur = 0; r.rate = 0;
   r.taut = r.wasTaut = false; r.tension = 0; r.sticky = false; r.blockedT = 0; r.reeling = false;
   r.stretch = r.catchT = r.catchV = r.pull = r.acc = 0;
+  r.easy = false; r.easyH = 0; r.pumped = false; r.prevY = 0;
 }
 
 /* ---------------- API ---------------- */
@@ -95,11 +99,126 @@ export function fire(P, side, from, target) {
   return r;
 }
 
+// Easy swing lands on this step. hgt is the hero's height, the unit of the rope cap and the ground clearance.
+export function armEasy(r, hgt) {
+  r.easy = true; r.easyH = hgt > 0 ? hgt : SWING.bodyH; r.pumped = false; r.prevY = 0; r.flyDur = 0;
+  return r;
+}
+
+// The point a held swing takes: 12h ahead along (dx, dz) and 14h above the feet. Order: a marked tutorial or
+// mission point within 16h, else the nearest building within 6h (including a point inside the solid; a ray from
+// inside a box does not hit it), else sky. opt.avoid is the building just left: another tier or its antenna is
+// not a new anchor. opt.lesson is the gold-ring tower and wins over sky even past 16h.
+// One reused result, so a caller copies it.
+const EASY_OUT = { x: 0, y: 0, z: 0, nx: 0, ny: -1, nz: 0, tag: "sky", id: "sky", bid: -1, easy: true, easyH: 1.8, sky: true, valid: true, same: false, special: false };
+const EASY_DIRS = [];
+for (let y = -1; y <= 1; y++) for (let x = -1; x <= 1; x++) for (let z = -1; z <= 1; z++) if (x || y || z) EASY_DIRS.push(x, y, z);
+// Closest point on a collider, and the outward normal. d is 0 when the query is inside. Null when farther than R.
+function faceOf(c, x, y, z, R) {
+  if (c.type === "box") {
+    const qx = x < c.minX ? c.minX : x > c.maxX ? c.maxX : x;
+    const qy = y < c.minY ? c.minY : y > c.maxY ? c.maxY : y;
+    const qz = z < c.minZ ? c.minZ : z > c.maxZ ? c.maxZ : z;
+    const dx = x - qx, dy = y - qy, dz = z - qz, d2 = dx * dx + dy * dy + dz * dz;
+    if (d2 > 1e-8) {
+      const d = Math.sqrt(d2);
+      if (d > R) return null;
+      return { d, x: qx, y: qy, z: qz, nx: dx / d, ny: dy / d, nz: dz / d };
+    }
+    const faces = [
+      [x - c.minX, c.minX, y, z, -1, 0, 0], [c.maxX - x, c.maxX, y, z, 1, 0, 0],
+      [y - c.minY, x, c.minY, z, 0, -1, 0], [c.maxY - y, x, c.maxY, z, 0, 1, 0],
+      [z - c.minZ, x, y, c.minZ, 0, 0, -1], [c.maxZ - z, x, y, c.maxZ, 0, 0, 1],
+    ];
+    let b = 0;
+    for (let i = 1; i < 6; i++) if (faces[i][0] < faces[b][0]) b = i;
+    const f = faces[b];
+    return { d: 0, x: f[1], y: f[2], z: f[3], nx: f[4], ny: f[5], nz: f[6] };
+  }
+  const ex = x - c.x, ez = z - c.z, horiz = Math.hypot(ex, ez);
+  const yTop = y > c.y1, yBot = y < c.y0;
+  if (horiz > c.r || yTop || yBot) {
+    const ux = horiz > 1e-8 ? ex / horiz : 1, uz = horiz > 1e-8 ? ez / horiz : 0;
+    const px = c.x + ux * Math.min(horiz, c.r), pz = c.z + uz * Math.min(horiz, c.r);
+    const py = yTop ? c.y1 : yBot ? c.y0 : y;
+    const vx = x - px, vy = y - py, vz = z - pz, d = Math.hypot(vx, vy, vz);
+    if (d > R) return null;
+    const n = d > 1e-8 ? d : 1;
+    return { d, x: px, y: py, z: pz, nx: vx / n, ny: vy / n, nz: vz / n };
+  }
+  const side = c.r - horiz, up = c.y1 - y, down = y - c.y0;
+  if (side <= up && side <= down) {
+    const ux = horiz > 1e-8 ? ex / horiz : 1, uz = horiz > 1e-8 ? ez / horiz : 0;
+    return { d: 0, x: c.x + ux * c.r, y, z: c.z + uz * c.r, nx: ux, ny: 0, nz: uz };
+  }
+  if (up <= down) return { d: 0, x, y: c.y1, z, nx: 0, ny: 1, nz: 0 };
+  return { d: 0, x, y: c.y0, z, nx: 0, ny: -1, nz: 0 };
+}
+function takeFace(o, p) {
+  o.x = p.x; o.y = p.y; o.z = p.z;
+  o.nx = p.nx || 0; o.ny = p.ny || 0; o.nz = p.nz || 0;
+  o.tag = p.tag || "building"; o.id = p.id; o.bid = p.bid != null ? p.bid : -1; o.sky = false;
+}
+export function easyAnchor(P, dx, dz, opt) {
+  const H = (P.cfg && P.cfg.bodyH) || SWING.bodyH;
+  const hl = len2(dx, dz) || 1;
+  dx /= hl; dz /= hl;
+  const ahead = opt && opt.ahead != null ? opt.ahead : 12, up = opt && opt.up != null ? opt.up : 14, reach = opt && opt.reach != null ? opt.reach : 6;
+  const avoid = opt && opt.avoid != null ? opt.avoid : undefined;
+  const ax = P.pos.x + dx * ahead * H, ay = P.pos.y + up * H, az = P.pos.z + dz * ahead * H, R = reach * H;
+  const o = EASY_OUT;
+  o.easy = true; o.easyH = H; o.valid = true; o.same = false; o.special = false; o.sky = true;
+  o.x = ax; o.y = ay; o.z = az; o.nx = 0; o.ny = -1; o.nz = 0; o.tag = "sky"; o.id = "sky"; o.bid = -1;
+  // 1. A tutorial or mission point within 16h of the chest wins over the building search and over sky.
+  const marked = opt && opt.marked;
+  if (marked && marked.x != null) {
+    const cx = P.pos.x, cy = P.pos.y + (P.chest || 0), cz = P.pos.z;
+    const md = Math.hypot(marked.x - cx, marked.y - cy, marked.z - cz);
+    if (md <= 16 * H) { takeFace(o, marked); return o; }
+  }
+  // 2. The nearest building face within 6h of the auto point, including a point inside the solid.
+  const city = P.city;
+  if (city.nearestSurface(ax, ay, az, R) <= R) {
+    let best = null;
+    const cols = city.colliders;
+    if (cols) for (let i = 0; i < cols.length; i++) {
+      const c = cols[i];
+      const piece = bidOf(c);
+      if (avoid != null && piece === avoid) continue;
+      const f = faceOf(c, ax, ay, az, R);
+      if (f && (!best || f.d < best.d)) { f.id = c.id; f.bid = piece; f.tag = c.tag || "building"; best = f; }
+    }
+    let bt = best ? best.d : R + 1, bx = 0, by = 0, bz = 0, bnx = 0, bny = 1, bnz = 0, cid = 0, bld = -1, btag = "building", hit = !!best;
+    if (best) { bx = best.x; by = best.y; bz = best.z; bnx = best.nx; bny = best.ny; bnz = best.nz; cid = best.id; bld = best.bid; btag = best.tag; }
+    for (let i = 0; i < EASY_DIRS.length; i += 3) {
+      const h = city.raycast(ax, ay, az, EASY_DIRS[i], EASY_DIRS[i + 1], EASY_DIRS[i + 2], R, HIT);
+      const piece = h && h.collider ? bidOf(h.collider) : -1;
+      if (h && h.t <= R && h.t < bt && h.collider && piece !== avoid) {
+        bt = h.t; bx = h.x; by = h.y; bz = h.z; bnx = h.nx; bny = h.ny; bnz = h.nz; cid = h.collider.id; bld = piece; btag = "building"; hit = true;
+      }
+    }
+    if (hit) { o.x = bx; o.y = by; o.z = bz; o.nx = bnx; o.ny = bny; o.nz = bnz; o.tag = btag; o.id = cid; o.bid = bld; o.sky = false; }
+  }
+  // 3. Sky, unless the gold-ring lesson names its tower. That face wins even past 16h, so the tower is never sky while it is in range.
+  const lesson = o.sky && opt && opt.lesson;
+  if (lesson && lesson.x != null) takeFace(o, lesson);
+  return o;
+}
+
+// Let go of an easy swing: the speed stays, and 10% of it is added forward and up.
+export function easyBoost(P) {
+  const v = P.vel, sp = len3(v.x, v.y, v.z);
+  if (!(sp > 0.01)) return;
+  const hs = len2(v.x, v.z), add = 0.1 * sp;
+  if (hs > 0.05) { v.x += (v.x / hs) * add; v.z += (v.z / hs) * add; }
+  v.y += add;
+}
+
 // Let go of a rope. Always works, even on a sticky one (the portal calls it at the burst).
 export function release(P, side) {
-  const r = P.ropes[sideIndex(side)], was = r.state;
+  const r = P.ropes[sideIndex(side)], was = r.state, easy = r.easy;
   idle(r);
-  if (was === "attached") P.events.push({ type: "detach", side: r.side, speed: len3(P.vel.x, P.vel.y, P.vel.z) });
+  if (was === "attached") P.events.push({ type: "detach", side: r.side, speed: len3(P.vel.x, P.vel.y, P.vel.z), easy });
 }
 
 /* ---------------- wall climbing ---------------- */
@@ -228,9 +347,25 @@ function aroundLip(P, x, y, z) {
 function attach(P, r) {
   const c = P.cfg, d = len3(r.anchor.x - C.x, r.anchor.y - C.y, r.anchor.z - C.z);
   r.state = "attached";
-  // the rope starts at the distance and settles 3 % shorter: a small tug, never a pop
-  r.len = Math.max(c.minRopeLen, d);
-  r.lenTarget = Math.max(c.minRopeLen, d * c.attachLengthFactor);
+  // the rope starts at the distance and settles 3 % shorter: a small tug, never a pop.
+  // An easy swing stays at that distance, and never longer than 16 body-heights. If the bottom of the
+  // arc would put the feet under 1.5 body-heights, the rope shortens until the bottom sits on that line.
+  let L = Math.max(c.minRopeLen, d), target = Math.max(c.minRopeLen, d * c.attachLengthFactor);
+  if (r.easy) {
+    const H = r.easyH || c.bodyH || SWING.bodyH;
+    const gy = P.city.isWater(P.pos.x, P.pos.z) ? 0 : P.city.groundY(P.pos.x, P.pos.z);
+    const maxL = r.anchor.y - P.chest - (gy + 1.5 * H);
+    // A sky rope stays inside 16 body-heights. A building rope is the real distance, so the hero starts
+    // on the sphere instead of flying past a short rope into the wall. The ground line still caps both.
+    const sky = r.target && r.target.tag === "sky";
+    L = sky ? Math.min(d, 16 * H) : d;
+    if (L > maxL) L = maxL;
+    L = Math.max(c.minRopeLen, L);
+    target = L;
+    r.pumped = false;
+  }
+  r.len = L;
+  r.lenTarget = target;
   r.stretch = r.catchT = r.pull = r.acc = 0; r.taut = r.wasTaut = false; r.tension = 0; r.blockedT = 0;
   if (r.target.tag === "crack") r.sticky = true;
   P.events.push({ type: "attach", side: r.side, target: { tag: r.target.tag, id: r.target.id } });
@@ -291,10 +426,22 @@ function ropeInput(P, i, hand, h) {
 //   stretch coming back) it pulls the chest in at that speed. W is not momentum: it is gone next step, so
 //   the body stops moving in when the rope stops shortening (no yo-yo).
 // - Catch: a slack rope that goes taut with a jolt removes the outward speed over catchTime and gives up to 1 m.
+// While an easy rope holds, the feet stay at least 1.5 body-heights off the ground. Shortening is immediate:
+// a lenTarget that trails the length would let one arc scrape before the winch caught up.
+function keepClear(P, r) {
+  if (!r.easy) return;
+  const H = r.easyH || SWING.bodyH;
+  const gy = P.city.isWater(P.pos.x, P.pos.z) ? 0 : P.city.groundY(P.pos.x, P.pos.z);
+  const span = r.target && r.target.tag === "sky" ? 16 * H : Infinity;
+  const cap = Math.min(r.len, span, r.anchor.y - P.chest - (gy + 1.5 * H));
+  const L = Math.max(P.cfg.minRopeLen, cap);
+  if (r.len > L) { r.len = L; r.lenTarget = Math.min(r.lenTarget, L); r.stretch = 0; }
+}
 function constrain(P, h) {
   const c = P.cfg;
   for (const r of P.ropes) {
     if (r.state !== "attached") continue;
+    keepClear(P, r);
     const L0 = r.len + r.stretch;
     // the length holds still while a catch lasts, so the stretch it measures stays within 1 m
     if (r.catchT <= 0 && r.len > r.lenTarget) r.len = Math.max(r.lenTarget, r.len - (r.rate > 0 ? r.rate : c.lenRate) * h);
@@ -375,9 +522,22 @@ export function step(P, h, inp) {
       const want = mvs.roll.minSpeed * (P.roll > 0 ? 1 : 0);
       if (hs > 1e-3 && hs * f < want) { const k = want / (hs * f); V.x *= k; V.z *= k; }
     } else {
-      const k = 1 - Math.exp(-c.ground.friction * h), run = c.ground.run * (mvs && inp && inp.sprint ? mvs.sprint : 1);
-      V.x += (mx * run - V.x) * k;
-      V.z += (mz * run - V.z) * k;
+      // A swing with no stick walks toward the web at run speed. The first swing was built as a walk off the
+      // start roof; friction used to eat a press that did not also hold forward, so the lesson asked for both.
+      let wx = mx, wz = mz;
+      if (ml <= 0.15) {
+        let best = 0, bx = 0, bz = 0;
+        for (const r of P.ropes) {
+          if ((r.state !== "attached" && r.state !== "flying") || r.sticky || (r.target && SPECIAL[r.target.tag])) continue;
+          const dx = r.anchor.x - pos.x, dz = r.anchor.z - pos.z, d = len2(dx, dz);
+          if (d > best) { best = d; bx = dx / d; bz = dz / d; }
+        }
+        // already faster than a walk toward the web: leave that speed alone (a phone launch, a running start)
+        if (best > 4 && V.x * bx + V.z * bz < c.ground.run) { wx = bx; wz = bz; }
+      }
+      const k = 1 - Math.exp(-c.ground.friction * h), run = c.ground.run * (mvs && inp && inp.sprint && ml > 0.15 ? mvs.sprint : 1);
+      V.x += (wx * run - V.x) * k;
+      V.z += (wz * run - V.z) * k;
     }
     V.y = 0;
     if (inp && inp.jump) { V.y = c.ground.jump; P.onGround = false; P.ground = null; }
@@ -412,6 +572,19 @@ export function step(P, h, inp) {
 
   /* ---- ropes ---- */
   if (attached) constrain(P, h);
+  // Easy swing: holding forward adds 15% speed once, as the arc passes its bottom (falling, then rising).
+  if (attached && inp && inp.forward) {
+    let once = false;
+    for (const r of P.ropes) {
+      if (once || r.state !== "attached" || !r.easy || r.pumped) continue;
+      const ex = C.x - r.anchor.x, ey = C.y - r.anchor.y, ez = C.z - r.anchor.z, d = len3(ex, ey, ez);
+      // under the anchor, and the fall has turned into a rise: the bottom, not the tug of the catch
+      if (r.prevY < -1 && V.y + W.y >= 0 && len2(V.x, V.z) > 2 && d > 1 && -ey / d > 0.75) {
+        V.x *= 1.15; V.y *= 1.15; V.z *= 1.15; W.x *= 1.15; W.y *= 1.15; W.z *= 1.15;
+        r.pumped = true; once = true;
+      }
+    }
+  }
   if (P.onGround) {
     // a rope that pulls up hard enough lifts you off; otherwise it only drags you along the roof
     if (V.y + W.y > 0.5) { P.onGround = false; P.ground = null; } else { V.y = 0; W.y = 0; }
@@ -497,6 +670,7 @@ export function step(P, h, inp) {
   }
 
   P.vel.x = V.x + W.x; P.vel.y = V.y + W.y; P.vel.z = V.z + W.z;
+  for (const r of P.ropes) if (r.easy && r.state === "attached") r.prevY = P.vel.y;
   P.pullVel.x = W.x; P.pullVel.y = W.y; P.pullVel.z = W.z;
   P.airT = P.onGround ? 0 : P.airT + h;
   if (P.onGround && P.ground) { P.lastSafe.x = pos.x; P.lastSafe.y = pos.y; P.lastSafe.z = pos.z; }

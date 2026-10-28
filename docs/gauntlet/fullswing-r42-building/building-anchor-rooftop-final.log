@@ -1,0 +1,6 @@
+PASS: water: no invisible attachment [{"state":"idle"},{"state":"idle"}]
+PASS: above-city: no invisible attachment [{"state":"idle"},{"state":"idle"}]
+ROOFTOP {"playerY":113.5,"roofY":111.5,"anchor":{"x":-284.66676664375666,"y":111.5,"z":-686.25},"tag":"building"}
+PASS: a reachable real building can attach below the player above its rooftop
+PASS: no browser errors
+PASS: building-anchor

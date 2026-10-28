@@ -96,7 +96,7 @@ for (const size of SIZES) {
   await page.evaluate(() => document.querySelector('.cab[data-opens="strategy"]').click());
   await settle(page);
   s = await state(page);
-  check(JSON.stringify(s.visible) === JSON.stringify(["breakthrough", "follow-suit"]) && s.hash === "#strategy", "clicking Strategy opens it");
+  check(JSON.stringify(s.visible) === JSON.stringify(["breakthrough", "follow-suit", "silent-depth"]) && s.hash === "#strategy", "clicking Strategy opens it");
   await page.goBack();
   await settle(page);
   s = await state(page);

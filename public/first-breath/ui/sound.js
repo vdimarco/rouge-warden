@@ -12,8 +12,9 @@
 //   one-shots   a pool of 12 tone voices and 4 noise voices, the oldest taken first (16 in all)
 //   womb bus    two low-pass filters in series → a compressor → the master; the cutoff follows the stage (11)
 //   birth bus   room tone, breaths and the cry; silent until open() (the ending) or birth.open
-//   score in    one gain into the master (after mute and pause, not through the womb filters): ui/music.js plays the
-//               score into it; scoreDest() gives it (null before start() or with no context)
+//   score in    one gain into the master at the score's trim, SCORE_DB (after mute and pause, not through the womb
+//               filters): ui/music.js plays the score into it; scoreDest() gives it (null before start() or with no
+//               context)
 //
 // Timing (Chris Wilson, "A tale of two clocks", 2013): main.js runs the lookahead (a timer every 25 ms schedules the
 // next 100 ms from run.beats()) and hands each beat here once; each one is scheduled latencyS early (outputLatency,
@@ -59,6 +60,12 @@
 import { stream } from "../core/rng.js";
 
 const MASTER = 0.85;
+// The score's place against her heart (first-breath-score design 2.1, tasks 4.5): one trim at the score input, so the
+// mix between cues and levels (core/music/mix.js) keeps its shape. Measured with EBU R128 (each cue's whole loop at
+// level 1, the score alone; the leading heart alone in that stage's scene), her heart sits at -19.8 to -20.2 LUFS
+// (your heart, which leads in grow, at -19.5) and a stage cue at level 1 at -24.2 to -25.4 LUFS before this trim, 4.3
+// to 5.5 LU under; with it, -26.7 to -27.8 LUFS, 6.7 to 8.0 LU under (the spec asks for 6).
+const SCORE_DB = -2.5;
 const TONES = 12, NOISES = 4;                 // the one-shot pool: 16 voices
 const CONTACT_PER_S = 6;
 const LATE_S = 0.02;
@@ -142,8 +149,9 @@ export function createSound(ctx, { seed = 1, latencyS = null } = {}) {
     limit.threshold.value = -6; limit.knee.value = 6; limit.ratio.value = 8; limit.attack.value = 0.003; limit.release.value = 0.25;
     limit.connect(gain(0.89, c.destination));
     const master = gain(muted || suspended ? 0 : MASTER, limit);
-    // the score in (ui/music.js): straight into the master, so mute silences it and the womb filters do not touch it
-    const scoreIn = gain(1, master);
+    // the score in (ui/music.js): straight into the master, so mute silences it and the womb filters do not touch it;
+    // its trim (SCORE_DB) keeps every stage cue at level 1 at least 6.5 LU under her heart
+    const scoreIn = gain(dB(SCORE_DB), master);
 
     // the womb bus: two low-pass filters in series, then a compressor
     const comp = c.createDynamicsCompressor();

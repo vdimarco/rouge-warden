@@ -13,6 +13,15 @@
 // - course chunk bakes (K1): at 1440 × 900 from a Play click, 30 s of stage 1 with the ref bot: after the stage's first
 //   frame no frame bakes a whole chunk, the rescale comes in, no frame takes 200 ms or more, and no heartbeat drops
 //   (CHUNKS=0 skips it).
+// - stage 5 at its busiest with the score playing (first-breath-score, "The score costs little"): at 390 × 844 with
+//   ?probe=1, the full tier, the sound and the score started by a Play tap, stage 5 opened as Stages opens it and its
+//   big germ brought in by the hook (the boss moment), the ref bot driving: once the score plays level 2 with the boss
+//   layer, after 3 s, over the next 120 frames: p95Ms ≤ 16 ms (taken again after a pause when over, as above); the
+//   score still at level 2 with the boss; at most 48 voices sounding at every sample (__fb.music.voices, every 40 ms);
+//   no held note cut by the voice cap (the cap lets a voice go with setTargetAtTime(0, t, 0.008) right after
+//   cancelAndHoldAtTime(t); that voice was held when t comes before its envelope's hold end, on an instrument that
+//   holds, attack 5 ms or longer); the 25 ms sound timer's callback (main.js scheduleSound: the mood, the score's
+//   tick and her beats) averaging 0.5 ms or less, an upper bound on the score's tick (SCORE=0 skips it).
 //   NODE_PATH=qa/browser/node_modules node qa/first-breath/perf.e2e.mjs        (ONLY=portrait,desktop TIERS=full)
 import fs from "node:fs";
 import path from "node:path";
@@ -162,6 +171,91 @@ if (only.includes("desktop") && process.env.CHUNKS !== "0") {
   check("desktop stage 1: her beats keep an even spacing (none dropped)", beats.length >= 30 && odd.length === 0,
     `${beats.length} beats; ${odd.slice(0, 4).map(([i, d]) => `#${i}: ${(d * 1000).toFixed(0)} ms`).join(", ")}`);
   check("desktop stage 1: no page errors", errors.length === 0, errors.slice(0, 3).join(" | "));
+  await ctx.close();
+}
+
+// Stage 5 at its busiest with the score playing (see the header).
+const SCORE_HOOKS = () => {
+  // the voice cap's releases, and whether each one cut a held note
+  const env = new WeakMap();
+  const P = AudioParam.prototype;
+  const rawSV = P.setValueAtTime, rawLR = P.linearRampToValueAtTime, rawST = P.setTargetAtTime, rawCH = P.cancelAndHoldAtTime;
+  window.__cap = { steals: 0, held: 0 };
+  P.setValueAtTime = function (v, t) {
+    const e = env.get(this) || {};
+    if (v === 0) { e.t0 = t; e.attack = null; e.hold = null; e.peakAt = null; } else e.peakAt = t;
+    env.set(this, e);
+    return rawSV.call(this, v, t);
+  };
+  P.linearRampToValueAtTime = function (v, t) { const e = env.get(this); if (e && e.t0 !== undefined && e.attack === null && v > 0) e.attack = t - e.t0; return rawLR.call(this, v, t); };
+  P.cancelAndHoldAtTime = function (t) { const e = env.get(this) || {}; e.cancelAt = t; env.set(this, e); return rawCH.call(this, t); };
+  P.setTargetAtTime = function (v, t, tc) {
+    const e = env.get(this);
+    if (e && v === 0) {
+      if (e.peakAt !== null && e.peakAt !== undefined && Math.abs(e.peakAt - t) < 1e-9 && e.hold === null) e.hold = t;
+      else if (tc === 0.008 && e.cancelAt !== undefined && Math.abs(e.cancelAt - t) < 1e-9) {
+        window.__cap.steals++;
+        if (e.attack !== null && e.attack >= 0.005 && e.hold !== null && t < e.hold - 1e-3) window.__cap.held++;
+      }
+    }
+    return rawST.call(this, v, t, tc);
+  };
+  // the sound timer's callback (main.js sets it up with 25 ms)
+  window.__ticks = [];
+  const rawSI = window.setInterval;
+  window.setInterval = function (fn, ms, ...rest) {
+    if (ms === 25 && typeof fn === "function") {
+      return rawSI.call(window, () => { const t0 = performance.now(); try { fn(); } finally { window.__ticks.push(performance.now() - t0); } }, ms, ...rest);
+    }
+    return rawSI.call(window, fn, ms, ...rest);
+  };
+};
+if (only.includes("portrait") && process.env.SCORE !== "0") {
+  const L = LAYOUTS.portrait;
+  const ctx = await browser.newContext({ ...L.ctx });
+  await ctx.addInitScript(() => { try { localStorage.clear(); } catch (e) { /* off */ } });
+  await ctx.addInitScript(SCORE_HOOKS);
+  const page = await ctx.newPage();
+  const errors = [];
+  page.on("pageerror", (e) => errors.push((e.stack || e.message).split("\n")[0]));
+  await page.route(/\/api\//, (r) => r.fulfill({ status: 204, body: "" }));
+  const busiest = async () => {
+    await page.goto(BASE + `?seed=1&probe=1&res=${L.res}&q=full`);
+    await page.waitForFunction(() => window.__fb && __fb.state().frames > 2, null, { timeout: 60000 });
+    await page.tap("#play");
+    await page.waitForFunction(() => __fb.music && __fb.music.loaded, null, { timeout: 30000 });
+    await page.evaluate(() => { __fb.bot(1); __fb.act("practice", "grow"); __fb.jump("boss"); });
+    const on = await page.waitForFunction(() => { const m = __fb.music; return m.cue === "grow" && m.level === 2 && m.boss; }, null, { timeout: 10000 }).then(() => true, () => false);
+    await wait(3000);
+    await page.evaluate(() => { window.__ticks.length = 0; window.__cap.steals = 0; window.__cap.held = 0; });
+    const f0 = await page.evaluate(() => __fb.state().frames);
+    let vmax = 0, samples = 0;
+    for (;;) {
+      const s = await page.evaluate(() => ({ f: __fb.state().frames, v: __fb.music.voices }));
+      vmax = Math.max(vmax, s.v); samples++;
+      if (s.f >= f0 + 120) break;
+      await wait(40);
+    }
+    const out = await page.evaluate(() => {
+      const t = window.__ticks, m = __fb.music;
+      return { p: __fb.perf, tick: t.length ? t.reduce((a, b) => a + b, 0) / t.length : null, ticks: t.length, cap: { ...window.__cap },
+        level: m.level, boss: m.boss, cue: m.cue, loaded: m.loaded, fallback: m.fallback.length, ctx: __fb.sound.state, muted: __fb.sound.muted };
+    });
+    return { on, vmax, samples, ...out };
+  };
+  let m = await busiest(), again = null;
+  if (m.p.p95Ms > BUDGET.full) { await wait(1500); again = await busiest(); }
+  const best = again && again.p.p95Ms < m.p.p95Ms ? again : m;
+  rows.push(`portrait  score     grow boss p95 ${m.p.p95Ms.toFixed(1)}${again ? ` / ${again.p.p95Ms.toFixed(1)}` : ""} ms  voices ≤ ${best.vmax}  steals ${best.cap.steals}, held ${best.cap.held}  timer ${best.tick === null ? "?" : best.tick.toFixed(3)} ms over ${best.ticks}`);
+  check("portrait stage 5 with the score: the score plays level 2 with the boss layer (samples loaded, sound on)",
+    best.on && best.cue === "grow" && best.level === 2 && best.boss && best.loaded && best.fallback === 0 && best.ctx === "running" && !best.muted,
+    JSON.stringify({ on: best.on, cue: best.cue, level: best.level, boss: best.boss, fallback: best.fallback, ctx: best.ctx, muted: best.muted }));
+  check(`portrait stage 5 with the score: p95Ms ≤ ${BUDGET.full}`, best.p.p95Ms <= BUDGET.full && best.p.tier === "full", `${m.p.p95Ms.toFixed(1)}${again ? ` then ${again.p.p95Ms.toFixed(1)}` : ""} ms, tier ${best.p.tier}`);
+  check("portrait stage 5 with the score: at most 48 voices sounding at every sample", best.samples >= 10 && best.vmax <= 48, `${best.vmax} at most over ${best.samples} samples`);
+  check("portrait stage 5 with the score: no held note cut by the voice cap", best.cap.held === 0, `${best.cap.steals} voices let go by the cap, ${best.cap.held} of them held`);
+  check("portrait stage 5 with the score: the sound timer (the score's tick with the mood and her beats) averages 0.5 ms or less",
+    best.tick !== null && best.ticks >= 40 && best.tick <= 0.5, `${best.tick === null ? "no" : best.tick.toFixed(3) + " ms over " + best.ticks} ticks`);
+  check("portrait stage 5 with the score: no page errors", errors.length === 0, errors.slice(0, 3).join(" | "));
   await ctx.close();
 }
 

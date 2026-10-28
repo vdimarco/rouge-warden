@@ -1,0 +1,4 @@
+- [x] Photograph the current full run and the bottom of a swing
+- [x] Open the full-run stride and the swing trail without moving a jog knee
+- [x] Photograph the same frames and confirm the feet moved
+- [x] Pass `qa/vr/render.mjs`

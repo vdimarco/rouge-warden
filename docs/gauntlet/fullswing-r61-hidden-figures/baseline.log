@@ -1,0 +1,9 @@
+{"hidden":{"root":false,"prepare":180,"simulation":60,"crowd":60,"unchanged":false},"resume":{"visible":true,"current":true,"changed":true,"goons":1,"simulation":61,"crowd":61}}
+FAIL shared figure root follows hidden world
+  {"hidden":{"root":false,"prepare":180,"simulation":60,"crowd":60,"unchanged":false},"resume":{"visible":true,"current":true,"changed":true,"goons":1,"simulation":61,"crowd":61}}
+FAIL sixty hidden frames skip visual buffer preparation
+  {"hidden":{"root":false,"prepare":180,"simulation":60,"crowd":60,"unchanged":false},"resume":{"visible":true,"current":true,"changed":true,"goons":1,"simulation":61,"crowd":61}}
+PASS: hidden frames retain street simulation and crowd updates
+PASS: first visible frame uploads current actual goon position
+PASS: no page errors
+FAIL: hidden figures (2 failed, 3 passed)

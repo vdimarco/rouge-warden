@@ -1,0 +1,4 @@
+- [x] Paint cumulus on sky pixels in the comic post process
+- [x] Shade the walking street before and after
+- [x] Run `Scripts/test_cloud.py`, `Scripts/test_horizon_haze.py`, `Scripts/test_plateau_trees.py`, `Scripts/test_crew_colour.py`, and `Scripts/test_contact.py`
+- [ ] Apply the comic material in Unreal (editor not available here)

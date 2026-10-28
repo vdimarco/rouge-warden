@@ -9,6 +9,7 @@
 .menu-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 8px; }
 .menu button { min-height: 44px; background: var(--ink); color: var(--paper); border-color: var(--ink); font-size: 14px; }
 .menu button:hover:enabled { background: var(--paper); color: var(--ink); border-color: var(--ink); }
+#place-sherbrooke[aria-pressed="true"], #place-rachel[aria-pressed="true"] { background: var(--paper); color: var(--ink); }
 .menu-close { width: 100%; margin-top: 16px; }
 .menu-install { margin-top: 18px; padding-top: 16px; border-top: 2px solid var(--ink); }
 .menu-install button { width: 100%; }

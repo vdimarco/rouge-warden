@@ -1,0 +1,24 @@
+{
+  "stage": "production_verified",
+  "merge": "6f1005b1b5d9ae3d45c61dc75439a027d5c7f590",
+  "files": [
+    {
+      "file": "js/main.js",
+      "status": 200,
+      "exact": true,
+      "sha256": "1aa0e02fcbd7632973a05344134d162738255b50dacb4d5fdfdc2b84af24872e"
+    },
+    {
+      "file": "js/render-scale.js",
+      "status": 200,
+      "exact": true,
+      "sha256": "0dc1caf07cf8fe0e0f3c9a956ba36e7059ca277be4b45d7284108bf558ce34a8"
+    },
+    {
+      "file": "sw.js",
+      "status": 200,
+      "exact": true,
+      "sha256": "f2aae715052e7cece5d7a3fab93f923ab4a7c1068fce278aaaab2c1561142031"
+    }
+  ]
+}

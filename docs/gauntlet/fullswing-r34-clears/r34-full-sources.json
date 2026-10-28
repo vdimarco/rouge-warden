@@ -1,0 +1,10 @@
+{
+  "r34-main.js": "edd1226e70c3f2fb08137e283d8d770a056c7db0f0df3f40724977d3f4780a41",
+  "r34-baseline-bloom.js": "da57af013327ae283503ddc5a29416d9847057ce478c35b582f03bfa1fcc4b04",
+  "r34-candidate-bloom.js": "fb50ce577959bbf004b6772483c60101aead3b35a73d1969cd101ccc5ea867eb",
+  "r30-scale.js": "0dc1caf07cf8fe0e0f3c9a956ba36e7059ca277be4b45d7284108bf558ce34a8",
+  "r30-fixed-scale.js": "4c97f9779586b479c0f9aca6be719d2d857e8c0ec48a2c658210c17053f80753",
+  "r30b-workloads.mjs": "892cf1e9a9ef4336d5b6b3874be942d196a90c3bbe7d92b1b362fcae2f656027",
+  "r30d-workloads.mjs": "a685d3e3ec24baa3bdd96c8120145080a97d3da55ffdf29faf61c162a8cec943",
+  "r34-full-equivalence.mjs": "6bc622ffb0be582e5121e64015aa5b50a5806e8392ecddff3491efecfc7b05c6"
+}

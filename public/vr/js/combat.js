@@ -7,6 +7,7 @@
 // reach zips the hero to the next goon in front of the view (the zip strike), so a fight flows from goon to goon. Pure: no three, no DOM; streetview.js draws them.
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 const wrap = (a) => Math.atan2(Math.sin(a), Math.cos(a));
+const SLIDE_TURNS = [0.8, -0.8, 1.6, -1.6].map(a => ({ side: Math.sign(a), c: Math.cos(a), n: Math.sin(a) }));
 
 export const FIGHT = {
   hp: 5, regenAfter: 6, regen: 0.5, // the hero's hearts; they come back one every 2 s after 6 quiet seconds
@@ -18,6 +19,10 @@ export const FIGHT = {
   car: { r: 2.2, speed: 4 }, // a car faster than this knocks over the goons it touches
   goon: { hp: 3, speed: 3.1, run: 4.4, sight: 24, up: 5, reach: 1.5, windup: 0.55, swing: 0.3, cool: 1.3, dmg: 1, stagger: 0.5, down: 2.6, out: 1.2 },
   keep: 220, // a goon this far from the hero, not fighting, goes
+  // the street route: a goon on the street that cannot walk straight to the hero goes by the street crossings. A crossing within
+  // link m that he can walk straight to (the nearest ends of them) starts or ends the route; a route stops growing past far m; it
+  // is planned again every every s
+  route: { link: 110, ends: 4, far: 260, every: 0.5 },
   // the dodge: a goon this close (m) that winds up or swings is a threat; a dodge keeps every blow off for time s, and pushes the
   // hero speed m/s sideways (hop m/s up). A dodge during a wind-up is a perfect one.
   dodge: { near: 4, time: 0.5, speed: 7.5, hop: 2.5, cool: 0.35 },
@@ -75,7 +80,11 @@ export function createCombat(city) {
   C.alive = (g) => g.on && g.state !== "down" && g.state !== "out" && g.state !== "pulled" && g.state !== "hung";
   // a blow landed: the combo count goes up and the meter fills
   const scored = (k) => { C.hits = C.hitsT < 2 ? C.hits + 1 : 1; C.hitsT = 0; C.focus = Math.min(1, C.focus + (FIGHT.focus[k] || 0)); };
-  C.group = (name) => goons.filter((g) => g.on && g.group === name);
+  C.group = function group(name, out = []) {
+    out.length = 0;
+    for (const g of goons) if (g.on && g.group === name) out.push(g);
+    return out;
+  };
   C.clearGroup = (name) => { for (const g of goons) if (g.group === name) g.on = false; prune(); };
   C.heal = () => { C.hp = FIGHT.hp; C.quiet = 99; };
   C.mend = (n) => { if (C.hp > 0) C.hp = Math.min(FIGHT.hp, C.hp + n); };
@@ -92,6 +101,115 @@ export function createCombat(city) {
     g.x = nx; g.z = nz; g.y = top;
     return true;
   }
+  // a step that a wall or a post stops turns 45°, then 90°, to the side that worked last, then the other side
+  function walkSlide(g, dx, dz) {
+    if (walk(g, dx, dz)) return true;
+    const s = g.side || 1;
+    for (const turn of SLIDE_TURNS) {
+      const c = turn.c, n = turn.n * s;
+      if (walk(g, dx * c - dz * n, dx * n + dz * c)) { g.side = turn.side * s; return true; }
+    }
+    return false;
+  }
+
+  /* ---- the street routes ---- */
+  // A goon on the street goes round a block, not into it. The nodes are the crossings of the street centre lines (every street
+  // and avenue line, so a crossing inside a block is never clear and drops out). A* over them, between the crossings the goon
+  // and his target can walk straight to. A line is clear when no building or water is on it, tested every metre. Only a
+  // building (a solid wider than 2 m under a roof above 2.5 m) counts: a post or a bench does not send a goon round the block,
+  // he slides past it (walkSlide).
+  const LX = [...new Set([...city.streets.xs, ...city.streets.avenues.filter((a) => a.axis === "x").map((a) => a.at)])].sort((a, b) => a - b);
+  const LZ = [...new Set([...city.streets.zs, ...city.streets.avenues.filter((a) => a.axis === "z").map((a) => a.at)])].sort((a, b) => a - b);
+  const NX = LX.length;
+  const nodeX = (n) => LX[n % NX], nodeZ = (n) => LZ[Math.floor(n / NX)];
+  function open(x, z) {
+    if (city.isWater(x, z)) return false;
+    if (!city.collideSphere(x, 0.9, z, 0.32)) return true;
+    const tb = city.topBelow(x, 1e4, z, 0), c = tb && tb.collider;
+    if (!c || tb.y <= 2.5) return true;
+    return !(c.type === "box" ? Math.min(c.maxX - c.minX, c.maxZ - c.minZ) > 2 : c.r > 1);
+  }
+  function clear(x0, z0, x1, z1) {
+    const n = Math.ceil(Math.hypot(x1 - x0, z1 - z0));
+    for (let i = 1; i <= n; i++) if (!open(x0 + ((x1 - x0) * i) / n, z0 + ((z1 - z0) * i) / n)) return false;
+    return true;
+  }
+  const nodeOpen = new Map(), linkOpen = new Map(); // the city does not change: each crossing and each block side is tested once
+  const isNode = (n) => { if (!nodeOpen.has(n)) nodeOpen.set(n, open(nodeX(n), nodeZ(n))); return nodeOpen.get(n); };
+  const isLink = (a, b) => {
+    const k = a < b ? a * 4096 + b : b * 4096 + a;
+    if (!linkOpen.has(k)) linkOpen.set(k, isNode(a) && isNode(b) && clear(nodeX(a), nodeZ(a), nodeX(b), nodeZ(b)));
+    return linkOpen.get(k);
+  };
+  // the crossings within FIGHT.route.link m of (x, z) that a goon can walk straight to, nearest first, at most FIGHT.route.ends
+  function ends(x, z) {
+    const R = FIGHT.route, out = [];
+    for (let j = 0; j < LZ.length; j++) {
+      if (Math.abs(LZ[j] - z) > R.link) continue;
+      for (let i = 0; i < NX; i++) {
+        const d = Math.hypot(LX[i] - x, LZ[j] - z);
+        if (d <= R.link) out.push({ n: j * NX + i, d });
+      }
+    }
+    out.sort((p, q) => p.d - q.d);
+    const ok = [];
+    for (const e of out) { if (ok.length >= R.ends) break; if (isNode(e.n) && clear(x, z, nodeX(e.n), nodeZ(e.n))) ok.push(e); }
+    return ok;
+  }
+  // The way from (x0, z0) to (x1, z1): [] when the line is clear, the crossings to pass through, or null when there is no way.
+  function route(x0, z0, x1, z1) {
+    if (clear(x0, z0, x1, z1)) return [];
+    const from = ends(x0, z0), to = ends(x1, z1);
+    if (!from.length || !to.length) return null;
+    const goal = new Map(to.map((e) => [e.n, e.d]));
+    const g = new Map(), prev = new Map(), shut = new Set(), q = [];
+    const h = (n) => Math.hypot(nodeX(n) - x1, nodeZ(n) - z1);
+    for (const e of from) { g.set(e.n, e.d); q.push({ n: e.n, f: e.d + h(e.n) }); }
+    let best = null, bestF = Infinity;
+    while (q.length) {
+      let k = 0;
+      for (let i = 1; i < q.length; i++) if (q[i].f < q[k].f) k = i;
+      const { n, f } = q.splice(k, 1)[0];
+      if (f >= bestF) break;
+      if (shut.has(n)) continue;
+      shut.add(n);
+      if (goal.has(n) && g.get(n) + goal.get(n) < bestF) { bestF = g.get(n) + goal.get(n); best = n; }
+      if (g.get(n) > FIGHT.route.far) continue;
+      const i = n % NX, j = Math.floor(n / NX);
+      for (const m of [i > 0 ? n - 1 : -1, i < NX - 1 ? n + 1 : -1, j > 0 ? n - NX : -1, j < LZ.length - 1 ? n + NX : -1]) {
+        if (m < 0 || shut.has(m) || !isLink(n, m)) continue;
+        const gm = g.get(n) + Math.hypot(nodeX(m) - nodeX(n), nodeZ(m) - nodeZ(n));
+        if (gm >= (g.has(m) ? g.get(m) : Infinity)) continue;
+        g.set(m, gm); prev.set(m, n); q.push({ n: m, f: gm + h(m) });
+      }
+    }
+    if (best === null) return null;
+    const way = [];
+    for (let n = best; n !== undefined; n = prev.get(n)) way.unshift({ x: nodeX(n), z: nodeZ(n) });
+    return way;
+  }
+  // Where a goon steps next on his way to (tx, tz): straight there on a roof or when the line is clear, else the next crossing of
+  // his route. The route is planned again every FIGHT.route.every s, or at once when the target has moved 3 m.
+  function aim(g, tx, tz, dt) {
+    if (Math.abs(g.y - city.groundY(g.x, g.z)) > 0.5) { g.way = null; return null; }
+    g.wayT = (g.wayT || 0) - dt;
+    if (!g.way || g.wayT <= 0 || Math.hypot(tx - g.wayTo.x, tz - g.wayTo.z) > 3) {
+      // each goon on his own beat (0.75 to 1.25 of every), so a crew does not plan on the same frame
+      g.way = route(g.x, g.z, tx, tz) || []; g.wayTo = { x: tx, z: tz }; g.wayT = FIGHT.route.every * (0.75 + ((g.id * 0.618) % 1) * 0.5);
+    }
+    while (g.way.length && Math.hypot(g.way[0].x - g.x, g.way[0].z - g.z) < 1.2) g.way.shift();
+    return g.way.length ? g.way[0] : null;
+  }
+  // A step of at most st m toward (tx, tz), by the route. Returns true when he moved.
+  function goTo(g, tx, tz, st, dt) {
+    const p = aim(g, tx, tz, dt), ax = p ? p.x : tx, az = p ? p.z : tz;
+    const ex = ax - g.x, ez = az - g.z, e = Math.hypot(ex, ez);
+    if (e < 1e-3) return false;
+    if (p) st = Math.min(st, e); // to the crossing, and no further this frame
+    face(g, ax, az, 0.25);
+    return walkSlide(g, (ex / e) * st, (ez / e) * st);
+  }
+
   function setPose(g, pose) { if (g.pose !== pose) { g.pose = pose; g.poseT = 0; } }
   function face(g, x, z, k = 1) { const want = Math.atan2(-(x - g.x), -(z - g.z)); g.yaw = wrap(g.yaw + wrap(want - g.yaw) * k); }
   function knock(g, fromX, fromZ, dmg, push, why) {
@@ -398,9 +516,10 @@ export function createCombat(city) {
               emit({ type: "windup", id: g.id, brute: true, charge: true });
             } else if (d > gr) {
               const sp = (d > 8 ? G.run : G.speed) * (g.pace || 1), st = Math.min(sp * dt, d - gr * 0.8);
-              const moved = walk(g, (dx / d) * st, (dz / d) * st);
+              const moved = goTo(g, h.x, h.z, st, dt);
               g.stride = moved ? sp : 0; setPose(g, 0);
             } else {
+              face(g, h.x, h.z, 0.25);
               g.stride = 0; setPose(g, 1);
               if (g.cool <= 0 && !h.safe) { g.state = "windup"; g.dodged = false; g.t = g.windup || G.windup; setPose(g, 9); emit({ type: "windup", id: g.id, brute: g.brute }); }
             }
@@ -408,8 +527,8 @@ export function createCombat(city) {
             // back home, or stand guard with a taunt now and then
             g.state = "idle";
             const hx = g.home.x - g.x, hz = g.home.z - g.z, hd = Math.hypot(hx, hz);
-            if (hd > 1.5 && g.aggro) { const st = Math.min(G.speed * dt, hd); walk(g, (hx / hd) * st, (hz / hd) * st); g.stride = G.speed; setPose(g, 0); face(g, g.home.x, g.home.z, 0.2); }
-            else { g.aggro = false; g.stride = 0; setPose(g, (Math.floor(g.poseT / 4 + g.id) % 3 === 0) ? 3 : 1); if (h && d < 40) face(g, h.x, h.z, 0.05); }
+            if (hd > 1.5 && g.aggro) { goTo(g, g.home.x, g.home.z, Math.min(G.speed * dt, hd), dt); g.stride = G.speed; setPose(g, 0); }
+            else { g.aggro = false; g.way = null; g.stride = 0; setPose(g, (Math.floor(g.poseT / 4 + g.id) % 3 === 0) ? 3 : 1); if (h && d < 40) face(g, h.x, h.z, 0.05); }
           }
         }
       }
@@ -429,6 +548,8 @@ export function createCombat(city) {
   function runPath(g, dt) {
     const P = g.path, q = P[g.pathI];
     if (!q) { g.stride = 0; setPose(g, 1); return; }
+    // a held chase (the first swing of Mission 1) stands. Speed 0 must not creep him along the path.
+    if (g.speed <= 0) { g.stride = 0; setPose(g, 1); return; }
     const dx = q.x - g.x, dz = q.z - g.z, d = Math.hypot(dx, dz), st = Math.min(g.speed * dt, d);
     g.x += (dx / (d || 1)) * st; g.z += (dz / (d || 1)) * st;
     const tb = city.topBelow(g.x, g.y + 0.6, g.z, 0.25);
@@ -438,8 +559,8 @@ export function createCombat(city) {
   }
   // the rope targets: the living goons near the hero that are fighting (so a quiet guard never steals a swing), and the guards
   // below a perched hero (a takedown)
-  C.targets = function targets(h, R = 40) {
-    const out = [];
+  C.targets = function targets(h, R = 40, out = []) {
+    out.length = 0;
     for (const g of goons) if (C.alive(g) && (g.aggro || g.runner || C.perched(g, h)) && Math.hypot(g.x - h.x, g.z - h.z) < R) out.push(g);
     return out;
   };

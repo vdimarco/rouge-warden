@@ -58,6 +58,9 @@ public:
     float GetServerNow() const;
     int32 NumMarkers() const { return MarkerPoints.Num(); }
     FVector GetMarker(int32 Index) const { return MarkerPoints.IsValidIndex(Index) ? MarkerPoints[Index] : FVector::ZeroVector; }
+    // Free-roam guide index: the running job, else the nearest unfinished marker, else the nearest replay.
+    // INDEX_NONE while the story campaign still owns the mission card, or when no marker exists.
+    int32 GuideMarker(const FVector& From, bool bCampaignComplete) const;
     bool IsCompleted(int32 Index) const { return Index >= 0 && Index < 31 && (CompletedMask & (1 << Index)) != 0; }
     // The marker a walking pawn stands at, or INDEX_NONE. Every peer.
     int32 MarkerAt(const APawn* Pawn) const;
@@ -68,7 +71,7 @@ public:
 
     UPROPERTY(VisibleAnywhere, ReplicatedUsing=OnRep_Job) int32 JobIndex = INDEX_NONE;
     UPROPERTY(VisibleAnywhere, ReplicatedUsing=OnRep_Job) EQuebecJobState JobState = EQuebecJobState::Idle;
-    // Delivery: 0 café, 1-3 doors. Goons: wave 0-2. Others stay 0.
+    // Delivery: 0 café, 1-3 doors. Goons: wave 0-2. Fare: 0 waiting, 1 aboard. Others stay 0.
     UPROPERTY(VisibleAnywhere, ReplicatedUsing=OnRep_Job) int32 JobStep = 0;
     // Server times. DeadlineTime 0 means untimed; clients subtract their server-time reading, so the timer stays smooth.
     UPROPERTY(VisibleAnywhere, Replicated) float StartedAt = 0.f;
@@ -81,7 +84,7 @@ public:
     UPROPERTY(VisibleAnywhere, Replicated) TObjectPtr<APlayerState> StarterState;
     // The thief's car while it drives, for the radar and the floating caption.
     UPROPERTY(VisibleAnywhere, Replicated) TObjectPtr<AActor> TargetActor;
-    // A finished job bumps ResultSerial; the HUD shows MISSION RÉUSSIE or MISSION RATÉE when it changes.
+    // A finished job bumps ResultSerial; the HUD shows MISSION DONE or MISSION FAILED when it changes.
     UPROPERTY(VisibleAnywhere, Replicated) int32 ResultSerial = 0;
     UPROPERTY(VisibleAnywhere, Replicated) int32 LastJob = INDEX_NONE;
     UPROPERTY(VisibleAnywhere, Replicated) bool bLastSucceeded = false;
@@ -89,7 +92,7 @@ public:
     UPROPERTY(VisibleAnywhere, Replicated) FString LastResult;
     // One bit per job completed this session.
     UPROPERTY(VisibleAnywhere, Replicated) int32 CompletedMask = 0;
-    // Server time until which R restarts LastJob after MISSION RATÉE; 0 when no retry is offered.
+    // Server time until which R restarts LastJob after MISSION FAILED; 0 when no retry is offered.
     UPROPERTY(VisibleAnywhere, Replicated) float RetryUntil = 0.f;
     // Ground-traced marker points, readable by QA.
     UPROPERTY(VisibleAnywhere) TArray<FVector> MarkerPoints;
@@ -124,6 +127,8 @@ private:
     // Server job bookkeeping.
     float OutsideSince = -1.f;
     float LostSince = -1.f;
+    // Seconds the fare's passenger has been without a driver. Reset when someone is in a car.
+    float FareOnFoot = 0.f;
     float NextTargetRefresh = 0.f;
     float NextWaveAt = -1.f;
     bool bSawStars = false;
@@ -155,6 +160,8 @@ private:
     void TickThief(float Now, float DeltaSeconds);
     void TickGoons(float Now);
     void TickEscape(float Now);
+    void TickPosters();
+    void TickFare(float DeltaSeconds);
     AQuebecCar* SpawnJobCar(const FVector& Point, const FVector& Heading, int32 Paint, FName Tag) const;
     void SpawnWave(int32 Wave);
     void DriveThief(float Now);

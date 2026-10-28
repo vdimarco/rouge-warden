@@ -17,8 +17,8 @@ class UStaticMeshComponent;
 namespace QuebecStreet
 {
     // Distance (cm) along Outward from RoadPoint, a point on the road, to the face of a raised curb: a walkable step
-    // 12-32 cm above the road, the rule the runtime curb parking relies on. Checked at three points 2.35 m apart
-    // along Along; false when there is no consistent curb within 3-7.6 m.
+    // 10-32 cm above the road (CurbRise in QuebecTraces.cpp; the replica curb rises 11 cm). Checked at three points
+    // 2.35 m apart along Along; false when there is no consistent curb within 3-7.6 m.
     QUEBEC_API bool FindCurb(const UWorld* World, const FVector& RoadPoint, const FVector& Along, const FVector& Outward, float& OutEdge);
     // Height of the walkable surface under Point (cm), ignoring cars and people. False when there is none.
     QUEBEC_API bool GroundAt(const UWorld* World, const FVector& Point, float& OutZ);
@@ -87,6 +87,19 @@ private:
     void RegisterStreetProp();
     UFUNCTION() void OnRep_Kind();
     UFUNCTION() void OnRep_Knock();
+};
+
+/** Broken white center line and a ladder crossing on the wide La Fontaine roads. Local to each peer, no collision. */
+UCLASS(Transient, NotPlaceable)
+class QUEBEC_API AQuebecLanePaint : public AActor
+{
+    GENERATED_BODY()
+public:
+    AQuebecLanePaint();
+    // One pool for this world. Returns how many dashes were added, or 0 when the pool already exists.
+    static int32 Spawn(UWorld* World);
+private:
+    UPROPERTY() TObjectPtr<UInstancedStaticMeshComponent> Dashes;
 };
 
 // Per-car state of the tyre-mark layer on one peer.

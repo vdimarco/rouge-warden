@@ -14,7 +14,7 @@ SOURCE = SCRIPTS / 'water_shader_test.cpp'
 FLAGS = ['-std=c++20', '-Wall', '-Wextra', '-Werror', '-O1', '-I', str(SCRIPTS), f'-DNORD_RAIN_MAX_OFFSET={RAIN_MAX_OFFSET!r}']
 compilers = [name for name in ('c++', 'g++', 'clang++') if shutil.which(name)]
 assert compilers, 'no C++ compiler found (c++, g++ or clang++)'
-for body in ('pond_water.hlsl', 'rain_streak.hlsl', 'wet_puddles.hlsl'):
+for body in ('pond_water.hlsl', 'rain_streak.hlsl', 'wet_puddles.hlsl', 'rain_splash.hlsl'):
     text = (SCRIPTS / body).read_text()
     # Unreal shader headers define these; a body that uses them would not mean what the test checks.
     for name in ('PI', 'check', 'verify', 'ensure', 'TEXT', 'SMALL_NUMBER', 'static'):

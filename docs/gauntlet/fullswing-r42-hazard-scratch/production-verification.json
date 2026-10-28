@@ -1,0 +1,18 @@
+{
+  "stage": "production_verified",
+  "merge": "853fed7a565a5dff985cde77a62a7c794e64f9ea",
+  "files": [
+    {
+      "file": "js/cars.js",
+      "status": 200,
+      "exact": true,
+      "sha256": "3ea9645e09e8ba3cf55974a11478d22f849043aaa1f081308b51fac0b4a1b9eb"
+    },
+    {
+      "file": "js/main.js",
+      "status": 200,
+      "exact": true,
+      "sha256": "526debad133a31caf4e2d1f69de5746d0b67d41e132d85cc3fe0587344a702ca"
+    }
+  ]
+}

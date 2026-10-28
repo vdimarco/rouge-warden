@@ -1,0 +1,5 @@
+- [x] Tighten the broadleaf field and assign Leaf0 / Leaf2
+- [x] Regenerate the eight canopy OBJs and layout counts
+- [x] Shade before and after from the same camera
+- [x] Run `Scripts/test_environment_refresh.py`
+- [ ] Apply the meshes in Unreal and recapture Sherbrooke (editor not available here)

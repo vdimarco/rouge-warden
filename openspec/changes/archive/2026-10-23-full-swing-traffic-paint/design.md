@@ -1,0 +1,2 @@
+# Design
+trafficAt already accepts a mutable output object. Give that output an independent paint array once, then write its three components for colored and fallback traffic. Never assign shared CAR_PAINT constants to the output. Callers inspected: actionview reuses scratch TQ; nearTraffic scratch is separate from fresh returned best objects; car stealing copies paint; main diagnostics requests fresh outputs. No new rendering technique or FPS claim.

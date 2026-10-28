@@ -149,7 +149,7 @@ def check_first_and_second_run():
         for path in atmosphere.WET:
             textured_input = not path.endswith('ConcreteDark')
             assert report['wrapped_this_run'][path] == ['MP_BASE_COLOR', 'MP_ROUGHNESS'] + ['MP_NORMAL'] * textured_input
-            assert parameters(u, path) == ['Puddles', 'Wetness', 'Wetness'], (path, parameters(u, path))
+            assert parameters(u, path) == ['Puddles', 'RainIntensity', 'Wetness', 'Wetness'], (path, parameters(u, path))
         for path in atmosphere.WINDOWS:
             assert report['wrapped_this_run'][path] == ['MP_EMISSIVE_COLOR'] and parameters(u, path) == ['WindowGlow']
         for path in atmosphere.UNLIT:
@@ -180,14 +180,17 @@ def check_first_and_second_run():
         asphalt = assets.store[atmosphere.WET[0]]
         base = library.get_material_property_input_node(asphalt, 'MP_BASE_COLOR')
         rough = library.get_material_property_input_node(asphalt, 'MP_ROUGHNESS')
-        for wetness, puddles, colour, roughness in ((0., 0., 1., .8), (1., 0., .5, .36), (1., 1., .5, .03), (.5, 0., .75, .58)):
-            values = defaults | {'source': 1., 'Wetness': wetness}
+        for wetness, puddles, colour, roughness in ((0., 0., 1., .8), (1., 0., .5, .15), (1., 1., .5, .03), (.5, 0., .75, .475)):
+            values = defaults | {'source': 1., 'Wetness': wetness, 'custom': (0.,)}
             assert abs(evaluate(base, '', values) - colour) < 1e-12
-            puddle = next(n for n in asphalt.expressions if type(n).KIND == 'Custom')
-            assert puddle.get_editor_property('code') == atmosphere.PUDDLE_HLSL.read_text() and puddle.pins() == ('WorldPos', 'Puddles')
+            puddle = next(n for n in asphalt.expressions if type(n).KIND == 'Custom' and n.get_editor_property('code') == atmosphere.PUDDLE_HLSL.read_text())
+            assert puddle.pins() == ('WorldPos', 'Puddles')
             values = values | {'source': .8, 'custom': (puddles,)}
             assert abs(evaluate(rough, '', values) - roughness) < 1e-12, (wetness, puddles, evaluate(rough, '', values))
-        glossy = next(n for n in asphalt.expressions if type(n).KIND == 'Multiply' and n.get_editor_property('const_b') == .45)
+        splash = next(n for n in asphalt.expressions if type(n).KIND == 'Custom' and n.get_editor_property('code') == atmosphere.SPLASH_HLSL.read_text())
+        assert splash.pins() == ('WorldPos', 'Time', 'Rain')
+        assert evaluate(base, '', defaults | {'source': 1., 'Wetness': 1., 'custom': (1.,)}) > .85
+        glossy = next(n for n in asphalt.expressions if type(n).KIND == 'LinearInterpolate' and n.get_editor_property('const_b') == atmosphere.WET_ROAD_ROUGHNESS)
         assert glossy.links['A'][1] == 'R', 'Roughness must keep reading the texture R channel'
         normal = library.get_material_property_input_node(asphalt, 'MP_NORMAL')
         assert normal.links['A'][1] == 'RGB' and normal.links['B'][0].get_editor_property('constant') == (0, 0, 1, 1)
@@ -210,7 +213,11 @@ def check_first_and_second_run():
         opacity = library.get_material_property_input_node(rain, 'MP_OPACITY')
         interpolator = opacity.links['B'][0]
         assert type(interpolator).KIND == 'VertexInterpolator' and interpolator.links['VS'][0].get_editor_property('a')
-        assert library.get_material_property_input_node(rain, 'MP_BASE_COLOR').get_editor_property('constant') == (.7, .74, .78, 1)
+        tint = library.get_material_property_input_node(rain, 'MP_BASE_COLOR')
+        assert type(tint).KIND == 'LinearInterpolate'
+        assert tint.links['A'][0].get_editor_property('constant') == (.55, .64, .74, 1)
+        assert tint.links['B'][0].get_editor_property('constant') == (.96, .97, 1, 1)
+        assert tint.links['Alpha'][0] is not None
 
         counts = {path: len(assets.store[path].expressions) for path in atmosphere.TOUCHED[2:]}
         saves = len(assets.saves)
@@ -243,7 +250,7 @@ def check_fallbacks():
         assert scalars[0].guid == existing.guid and scalars[0].get_editor_property('default_value') == .25
         assert report['collection']['other_parameters'] == ['Foo'] and not report['collection']['created']
         asphalt = u.EditorAssetLibrary.store[atmosphere.WET[0]]
-        glossy = next(n for n in asphalt.expressions if type(n).KIND == 'Multiply' and n.get_editor_property('const_b') == .45)
+        glossy = next(n for n in asphalt.expressions if type(n).KIND == 'LinearInterpolate' and n.get_editor_property('const_b') == atmosphere.WET_ROAD_ROUGHNESS)
         assert glossy.links['A'][1] == 'R'
 
     with tempfile.TemporaryDirectory() as temporary:

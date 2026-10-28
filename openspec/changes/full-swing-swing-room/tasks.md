@@ -1,0 +1,4 @@
+- [x] Let the chase arm out on a fast rope, and leave the stand and the hand-off at 4.5 m
+- [x] Shoot the same mid-swing before and after, and measure the arm and the body's place on screen
+- [x] Pass `qa/vr/render.mjs`
+- [x] Record the score only if the still shows a smaller body and more avenue

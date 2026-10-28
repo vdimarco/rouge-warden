@@ -40,7 +40,7 @@ for (const [width,height] of [[320,568],[360,640],[375,667],[390,844],[568,320],
  const brake = await page.locator('#touch-brake').boundingBox();
  assert.ok(wheel.x>=0 && wheel.x+wheel.width<=gas.x);
  assert.equal(gas.y,brake.y);
- for(const selector of ['.touch-steering button','#touch-gas','#touch-brake','#touch-auto']) for(const box of await page.locator(selector).evaluateAll(nodes=>nodes.map(n=>({w:n.offsetWidth,h:n.offsetHeight})))) assert.ok(box.w>=44 && box.h>=44, `${width}px: ${selector} is a 44 px target`);
+ for(const selector of ['.touch-steering button','#touch-gas','#touch-brake','#touch-auto','#touch-lock']) for(const box of await page.locator(selector).evaluateAll(nodes=>nodes.map(n=>({w:n.offsetWidth,h:n.offsetHeight})))) assert.ok(box.w>=44 && box.h>=44, `${width}px: ${selector} is a 44 px target`);
  // Graded wheel: the drawn Left/Right centres (28 px from the middle of the 112 px wheel) are the gentle 0.33 levels.
  await page.mouse.move(wheel.x+28,wheel.y+56);await page.mouse.down();
  await page.mouse.move(wheel.x+84,wheel.y+56);await page.mouse.up();
@@ -59,7 +59,7 @@ for (const [width,height] of [[320,568],[360,640],[375,667],[390,844],[568,320],
  assert.equal(await page.locator('#touch-auto').getAttribute('aria-pressed'), 'false');
  for (const mode of ['drive', 'walk', 'swim']) {
   await page.evaluate(mode => { controls.setDriving(mode === 'drive'); controls.setSwimming(mode === 'swim'); }, mode);
-  const overflow = await page.locator('.touch-primary button, .touch-steering button, .touch-combat button, #touch-auto, #touch-menu').evaluateAll(buttons => buttons.filter(b => b.getClientRects().length).flatMap(b => {
+  const overflow = await page.locator('.touch-primary button, .touch-steering button, .touch-combat button, #touch-auto, #touch-lock, #touch-menu').evaluateAll(buttons => buttons.filter(b => b.getClientRects().length).flatMap(b => {
    const box = b.getBoundingClientRect();
    return [...b.querySelectorAll('b, span, svg')].filter(n => {
     const r = n.getBoundingClientRect();
@@ -68,10 +68,11 @@ for (const [width,height] of [[320,568],[360,640],[375,667],[390,844],[568,320],
   }));
   assert.deepEqual(overflow, [], `${width}px ${mode}: labels fit fully inside controls`);
   // Combat buttons on foot, Auto gas in a car: 44 px targets inside the screen, clear of the other controls and the native HUD text.
-  const extra = await boxes(mode === 'drive' ? '#touch-auto' : '.touch-combat button');
+  const extra = await boxes(mode === 'drive' ? '#touch-auto, #touch-lock' : '.touch-combat button');
   const others = await boxes(mode === 'drive' ? '.touch-steering, .touch-primary button' : '.move-stick, .touch-primary button');
-  assert.equal(extra.length, mode === 'drive' ? 1 : 3, `${width}px ${mode}: ${mode === 'drive' ? 'Auto' : 'Weapon, Aim and Fire'} shown`);
+  assert.equal(extra.length, mode === 'drive' ? 2 : 3, `${width}px ${mode}: ${mode === 'drive' ? 'Auto and Lock' : 'Weapon, Aim and Fire'} shown`);
   assert.equal(await page.locator(mode === 'drive' ? '.touch-combat' : '#touch-auto').isHidden(), true, `${width}px ${mode}: the other mode's extra controls hide`);
+  assert.equal(await page.locator('#touch-lock').isHidden(), mode !== 'drive', `${width}px ${mode}: Lock shows only while driving`);
   for (const box of extra) {
    assert.ok(box.width >= 44 && box.height >= 44, `${width}px ${mode}: ${box.id} is a 44 px target`);
    assert.ok(box.x >= 0 && box.y >= 0 && box.x + box.width <= width && box.y + box.height <= height, `${width}px ${mode}: ${box.id} fits the screen`);

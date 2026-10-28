@@ -1,7 +1,37 @@
 #include "QuebecGameplay.h"
 #include "Misc/PackageName.h"
 #include "QuebecCampaign.h"
+#include "QuebecChain.h"
+#include "QuebecPace.h"
+#include "QuebecBail.h"
+#include "QuebecRide.h"
+#include "QuebecCycle.h"
+#include "QuebecScoot.h"
+#include "QuebecRingMark.h" // Two lawn marks. One bike lap pays session cash once.
+#include "QuebecRing.h"
+#include "QuebecCrateMark.h" // A Sherbrooke caisse. One bike run to Persillier pays once.
+#include "QuebecCrate.h"
+#include "QuebecRouteLine.h"
+#include "QuebecCourtRules.h"
+#include "QuebecCourtTone.h"
+#include "QuebecRankTone.h"
+#include "QuebecSkidTone.h"
+#include "QuebecImpactTone.h"
+#include "QuebecStep.h"
+#include "QuebecPlace.h"
+#include "QuebecLossTone.h"
+#include "QuebecStoryBed.h"
+#include "QuebecBarks.h"
+#include "QuebecPondRules.h"
+#include "QuebecPondTone.h"
+#include "QuebecShowRules.h"
+#include "QuebecShowTone.h"
+#include "QuebecJobRules.h"
+#include "QuebecBanner.h"
 #include "QuebecSky.h"
+#include "QuebecContact.h"
+#include "QuebecGloss.h"
+#include "QuebecGrade.h"
 #include "QuebecCrewAnimation.h"
 #include "QuebecGTA.h" // AQuebecCar: street traces each frame (DRIVE).
 #include "QuebecTraces.h" // Street traces: knockable street props spawned by the game mode (TRAFFIC).
@@ -9,10 +39,26 @@
 #include "QuebecPlayerState.h"
 #include "QuebecLife.h" // Living street: companion assignment for runtime walkers (PEOPLE).
 #include "QuebecSideJobs.h" // Side jobs: markers, E, R and the game mode spawn (JOBS).
+#include "QuebecCart.h" // Chez Lise: the stall that spends session cash.
+#include "QuebecBow.h" // The stage bow after the goon fight.
+#include "QuebecBay.h" // The sidewalk atelier that spends cash on a dented car.
+#include "QuebecBuoy.h" // The north-pond buoy. One pedalo lap pays session cash once.
+#include "Materials/MaterialInstanceDynamic.h"
+#include "QuebecLap.h"
+#include "QuebecWadeMark.h" // The south-pond float. One wade pays session cash once.
+#include "QuebecWade.h"
+#include "QuebecTrioMark.h" // Three sidewalk posts. One walker, in order, paid once.
+#include "QuebecTrio.h"
 #include "QuebecPolice.h" // Police: the dispatcher spawned by the game mode (POLICE).
+#include "QuebecParkedCars.h" // Parked cars at every legal curb space, spawned by the game mode.
+#include "QuebecParkedRules.h"
 #include "LaFontaineMap.h"
 #include "LaFontaineExtensionMap.h"
 #include "CollegeBathurstMap.h"
+#include "QuebecStreetLook.h"
+#include "QuebecSway.h"
+#include "QuebecScuff.h"
+#include "QuebecExhaust.h"
 
 #include "Animation/AnimInstance.h"
 #include "Animation/AnimSequence.h"
@@ -99,6 +145,18 @@ namespace
         return It ? *It : nullptr;
     }
 
+    const TCHAR* RouteTurnWord(QuebecRouteLine::ETurn Turn)
+    {
+        switch (Turn)
+        {
+        case QuebecRouteLine::ETurn::Ahead: return TEXT("ahead");
+        case QuebecRouteLine::ETurn::Right: return TEXT("right");
+        case QuebecRouteLine::ETurn::Behind: return TEXT("behind");
+        case QuebecRouteLine::ETurn::Left: return TEXT("left");
+        default: return TEXT("here");
+        }
+    }
+
     bool ClipHUDRadarSegment(FVector2D& A, FVector2D& B, const FVector2D& Center, float Radius)
     {
         const FVector2D Start = A, Direction = B - A, Offset = A - Center;
@@ -128,7 +186,7 @@ namespace
         if (AQuebecCharacter* Walker = Cast<AQuebecCharacter>(Pawn))
         {
             Walker->StopJumping();
-            Walker->GetCharacterMovement()->MaxWalkSpeed = 450.f;
+            Walker->GetCharacterMovement()->MaxWalkSpeed = static_cast<float>(QuebecPace::WalkCmPerSecond);
             Walker->GetCharacterMovement()->MaxSwimSpeed = 260.f;
             Walker->GetCharacterMovement()->StopMovementImmediately();
             Walker->ReleaseCombatInput(); // Combat: a held Fire or Aim must not outlive the browser.
@@ -152,7 +210,7 @@ AQuebecCharacter::AQuebecCharacter()
     bUseControllerRotationYaw = false;
     GetCharacterMovement()->bOrientRotationToMovement = true;
     GetCharacterMovement()->RotationRate = FRotator(0.f, 500.f, 0.f);
-    GetCharacterMovement()->MaxWalkSpeed = 450.f;
+    GetCharacterMovement()->MaxWalkSpeed = static_cast<float>(QuebecPace::WalkCmPerSecond);
     GetCharacterMovement()->JumpZVelocity = 600.f;
     GetCharacterMovement()->AirControl = 0.35f;
     GetCharacterMovement()->GetNavAgentPropertiesRef().bCanSwim = true;
@@ -163,7 +221,10 @@ AQuebecCharacter::AQuebecCharacter()
     CameraArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraArm"));
     CameraArm->SetupAttachment(RootComponent);
     CameraArm->TargetArmLength = 420.f;
-    CameraArm->SocketOffset = FVector(0., 0., 55.);
+    // The aim pose already sits 70 cm to the figure's right. Idle uses that same shoulder,
+    // so the street stays open beside them and aiming does not slide the frame sideways.
+    // Raising the socket drops the figure in the frame, so the street ahead is the picture.
+    CameraArm->SocketOffset = FVector(0., 70., 110.);
     CameraArm->bUsePawnControlRotation = false;
     CameraArm->SetUsingAbsoluteRotation(true);
     Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
@@ -184,6 +245,27 @@ AQuebecCharacter::AQuebecCharacter()
     CrewProp->SetupAttachment(GetMesh(), TEXT("RightHand"));
     CrewProp->SetCollisionProfileName(TEXT("NoCollision"));
     CrewProp->SetUsingAbsoluteRotation(true);
+    // Feet on the capsule bottom. Stays hidden until a missing crew rig shows the casual idle.
+    CasualStand = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("CasualStand"));
+    CasualStand->SetupAttachment(GetCapsuleComponent());
+    CasualStand->SetRelativeLocation(FVector(0., 0., -96.));
+    CasualStand->SetCollisionProfileName(TEXT("NoCollision"));
+    CasualStand->SetVisibility(false);
+    CasualStand->SetHiddenInGame(true);
+}
+
+void AQuebecCharacter::MoveBlockedBy(const FHitResult& Impact)
+{
+    Super::MoveBlockedBy(Impact);
+    // The movement has not yet turned the velocity into a slide along what it hit (HandleImpact calls this first).
+    if (HasAuthority() && GetCharacterMovement()) AQuebecParkedCars::PromoteOnBody(Impact, GetCharacterMovement()->Velocity, this);
+}
+
+void AQuebecCharacter::PossessedBy(AController* NewController)
+{
+    Super::PossessedBy(NewController);
+    if (AQuebecController* Player = Cast<AQuebecController>(NewController))
+        Player->FrameTheStreet(NewController->GetControlRotation().Yaw);
 }
 
 void AQuebecCharacter::BeginPlay()
@@ -248,7 +330,102 @@ void AQuebecCharacter::ApplyCrewAppearance()
         : bGraphicNovelCandidate ? TEXT("/Game/ParkComic/CrewGraphicNovel/Resident9/")
         : FString::Printf(TEXT("/Game/ParkComic/Crew/Resident%d/"), CrewStyle);
     USkeletalMesh* Body = LoadObject<USkeletalMesh>(nullptr, *(Folder + TEXT("SK_Body.SK_Body")));
-    if (!Body) return;
+    if (!Body)
+    {
+        // The crew blend space cannot be posed here. The hoodie is the same CC0 family as the
+        // casual body, and its garment has a hood, sleeve cuffs, and a hem the t-shirt does not.
+        // Goons repaint that mesh one colour. The player keeps the imported slots. The mesh faces
+        // the component's +X, the axis a pedestrian root walks along. The run is that body's own
+        // clip. It stays empty until A_MenHoodie_Run is imported, and a sprint then plays the walk.
+        USkeletalMesh* HoodieBody = LoadObject<USkeletalMesh>(nullptr,
+            TEXT("/Game/Plateau/Life/Civilians/MenHoodie/SK_MenHoodie.SK_MenHoodie"),
+            nullptr, LOAD_NoWarn | LOAD_Quiet);
+        UAnimSequence* HoodieIdle = LoadObject<UAnimSequence>(nullptr,
+            TEXT("/Game/Plateau/Life/Civilians/MenHoodie/A_MenHoodie_Idle.A_MenHoodie_Idle"),
+            nullptr, LOAD_NoWarn | LOAD_Quiet);
+        UAnimSequence* HoodieWalk = LoadObject<UAnimSequence>(nullptr,
+            TEXT("/Game/Plateau/Life/Civilians/MenHoodie/A_MenHoodie_Walk.A_MenHoodie_Walk"),
+            nullptr, LOAD_NoWarn | LOAD_Quiet);
+        UAnimSequence* HoodieRun = LoadObject<UAnimSequence>(nullptr,
+            TEXT("/Game/Plateau/Life/Civilians/MenHoodie/A_MenHoodie_Run.A_MenHoodie_Run"),
+            nullptr, LOAD_NoWarn | LOAD_Quiet);
+        if (HoodieBody && HoodieIdle && HoodieWalk)
+        {
+            CasualStand->SetHiddenInGame(true);
+            CasualStand->SetVisibility(false);
+            GetMesh()->SetVisibility(true);
+            GetMesh()->SetAnimationMode(EAnimationMode::AnimationSingleNode);
+            GetMesh()->SetSkeletalMesh(HoodieBody);
+            GetMesh()->SetRelativeLocation(FVector(0., 0., -96.));
+            GetMesh()->SetRelativeRotation(FRotator(0., 0., 0.));
+            GetMesh()->SetRenderCustomDepth(true);
+            GetMesh()->SetCustomDepthStencilValue(255);
+            CrewIdle = HoodieIdle;
+            CrewWalk = HoodieWalk;
+            CrewRun = HoodieRun;
+            CrewJump = nullptr;
+            CrewLocomotion = nullptr;
+            CrewAnimation = nullptr;
+            if (HoodieRun)
+            {
+                GetMesh()->SetAnimInstanceClass(UQuebecCrewAnimInstance::StaticClass());
+                UQuebecCrewAnimInstance* Gait = Cast<UQuebecCrewAnimInstance>(GetMesh()->GetAnimInstance());
+                if (!Gait || !Gait->SetGaitClips(HoodieIdle, HoodieWalk, HoodieRun))
+                    GetMesh()->SetAnimationMode(EAnimationMode::AnimationSingleNode);
+            }
+            CrewProp->SetVisibility(false);
+            return;
+        }
+        // The casual walk remains when the hoodie skeleton or its clips are missing.
+        // Feet and arms come from that clip, and the body rock still leans the whole mesh.
+        USkeletalMesh* CasualBody = LoadObject<USkeletalMesh>(nullptr,
+            TEXT("/Game/Plateau/Life/Civilians/MenCasual/SK_MenCasual.SK_MenCasual"),
+            nullptr, LOAD_NoWarn | LOAD_Quiet);
+        UAnimSequence* CasualIdle = LoadObject<UAnimSequence>(nullptr,
+            TEXT("/Game/Plateau/Life/Civilians/MenCasual/A_MenCasual_Idle.A_MenCasual_Idle"),
+            nullptr, LOAD_NoWarn | LOAD_Quiet);
+        UAnimSequence* CasualWalk = LoadObject<UAnimSequence>(nullptr,
+            TEXT("/Game/Plateau/Life/Civilians/MenCasual/A_MenCasual_Walk.A_MenCasual_Walk"),
+            nullptr, LOAD_NoWarn | LOAD_Quiet);
+        if (CasualBody && CasualIdle && CasualWalk)
+        {
+            CasualStand->SetHiddenInGame(true);
+            CasualStand->SetVisibility(false);
+            GetMesh()->SetVisibility(true);
+            GetMesh()->SetAnimationMode(EAnimationMode::AnimationSingleNode);
+            GetMesh()->SetSkeletalMesh(CasualBody);
+            GetMesh()->SetRelativeLocation(FVector(0., 0., -96.));
+            GetMesh()->SetRelativeRotation(FRotator(0., 0., 0.));
+            GetMesh()->SetRenderCustomDepth(true);
+            GetMesh()->SetCustomDepthStencilValue(255);
+            CrewIdle = CasualIdle;
+            CrewWalk = CasualWalk;
+            CrewRun = nullptr;
+            CrewJump = nullptr;
+            CrewLocomotion = nullptr;
+            CrewAnimation = nullptr;
+            CrewProp->SetVisibility(false);
+            return;
+        }
+        // The clothed casual idle replaces the mannequin when the crew rig is missing.
+        // Feet sit on the mesh origin and the face points +X. A loaded rig hides this stand.
+        if (UStaticMesh* Stand = LoadObject<UStaticMesh>(nullptr,
+            TEXT("/Game/Plateau/Life/Civilians/MenCasual/SM_MenCasualStand.SM_MenCasualStand"),
+            nullptr, LOAD_NoWarn | LOAD_Quiet))
+        {
+            CasualStand->SetStaticMesh(Stand);
+            CasualStand->SetRelativeLocation(FVector(0., 0., -96.));
+            CasualStand->SetRelativeRotation(FRotator::ZeroRotator);
+            CasualStand->SetRelativeScale3D(FVector(1.));
+            CasualStand->SetHiddenInGame(false);
+            CasualStand->SetVisibility(true);
+            GetMesh()->SetVisibility(false);
+        }
+        return;
+    }
+    CasualStand->SetHiddenInGame(true);
+    CasualStand->SetVisibility(false);
+    GetMesh()->SetVisibility(true);
     GetMesh()->SetAnimationMode(EAnimationMode::AnimationSingleNode);
     GetMesh()->SetSkeletalMesh(Body);
     // Generated cast bodies face -Y; the retained Meshy pilot already faces +X.
@@ -318,25 +495,69 @@ void AQuebecCharacter::MoveRight(float Value)
 void AQuebecCharacter::StartSprint()
 {
     if (IsInputLocked()) return; // People: no sprint while down.
-    GetCharacterMovement()->MaxWalkSpeed = 800.f;
+    GetCharacterMovement()->MaxWalkSpeed = static_cast<float>(QuebecPace::SprintCmPerSecond);
     GetCharacterMovement()->MaxSwimSpeed = 390.f;
     ServerSetSprint(true);
 }
 void AQuebecCharacter::StopSprint()
 {
-    GetCharacterMovement()->MaxWalkSpeed = 450.f;
+    GetCharacterMovement()->MaxWalkSpeed = static_cast<float>(QuebecPace::WalkCmPerSecond);
     GetCharacterMovement()->MaxSwimSpeed = 260.f;
     ServerSetSprint(false);
 }
 void AQuebecCharacter::ServerSetSprint_Implementation(bool bSprint)
 {
     const bool bCanSprint = bSprint && !bInVehicle && !IsInputLocked(); // People: no sprint while down.
-    GetCharacterMovement()->MaxWalkSpeed = bCanSprint ? 800.f : 450.f;
+    GetCharacterMovement()->MaxWalkSpeed = static_cast<float>(bCanSprint ? QuebecPace::SprintCmPerSecond : QuebecPace::WalkCmPerSecond);
     GetCharacterMovement()->MaxSwimSpeed = bCanSprint ? 390.f : 260.f;
+}
+
+void AQuebecCharacter::BeginBail(const FVector& Direction, float Speed)
+{
+    if (bInVehicle || IsInputLocked() || !(Speed > 0.f)) return;
+    const FVector Flat = Direction.GetSafeNormal2D();
+    if (Flat.IsNearlyZero()) return;
+    BailDirection = Flat;
+    BailSpeed = Speed;
+    if (UCharacterMovementComponent* Move = GetCharacterMovement())
+    {
+        Move->MaxWalkSpeed = Speed;
+        Move->Velocity = Flat * Speed;
+    }
+}
+
+void AQuebecCharacter::EndBail()
+{
+    BailSpeed = 0.f;
+    BailDirection = FVector::ZeroVector;
+    if (bInVehicle) return;
+    UCharacterMovementComponent* Move = GetCharacterMovement();
+    if (!Move) return;
+    bool bSprint = false;
+    if (APlayerController* Player = Cast<APlayerController>(GetController()))
+        bSprint = Player->IsInputKeyDown(EKeys::LeftShift);
+    Move->MaxWalkSpeed = static_cast<float>(bSprint ? QuebecPace::SprintCmPerSecond : QuebecPace::WalkCmPerSecond);
+}
+
+void AQuebecCharacter::TickBail(float DeltaSeconds)
+{
+    if (!HasAuthority() || bInVehicle || !(BailSpeed > 0.f)) return;
+    UCharacterMovementComponent* Move = GetCharacterMovement();
+    if (!Move || IsInputLocked() || Move->IsSwimming() || Move->IsFalling() || Move->Velocity.Z > 1.f
+        || !GetPendingMovementInputVector().IsNearlyZero())
+    {
+        EndBail();
+        return;
+    }
+    Move->MaxWalkSpeed = BailSpeed;
+    Move->Velocity = BailDirection * BailSpeed;
+    BailSpeed = QuebecBail::Ease(BailSpeed, DeltaSeconds);
+    if (!(BailSpeed > 0.f)) EndBail();
 }
 
 void AQuebecCharacter::SetInVehicle(bool bNewInVehicle)
 {
+    if (bNewInVehicle) { BailSpeed = 0.f; BailDirection = FVector::ZeroVector; }
     bInVehicle = bNewInVehicle;
     OnRep_InVehicle();
     ForceNetUpdate();
@@ -348,15 +569,142 @@ void AQuebecCharacter::OnRep_InVehicle()
     SetActorEnableCollision(!bInVehicle);
     GetCharacterMovement()->StopMovementImmediately();
     GetCharacterMovement()->SetMovementMode(bInVehicle ? MOVE_None : MOVE_Walking);
-    GetCharacterMovement()->MaxWalkSpeed = 450.f;
+    GetCharacterMovement()->MaxWalkSpeed = static_cast<float>(QuebecPace::WalkCmPerSecond);
     GetCharacterMovement()->MaxSwimSpeed = 260.f;
     // Combat: the car takes the input, so a Fire or Aim held while getting in would never see its release.
     ReleaseCombatInput();
 }
 
+void AQuebecCharacter::RestoreStreetSway()
+{
+    const float Yaw = GetMesh()->GetRelativeRotation().Yaw;
+    GetMesh()->SetRelativeLocation(FVector(0., 0., -96.));
+    GetMesh()->SetRelativeRotation(FRotator(0., Yaw, 0.));
+    CasualStand->SetRelativeLocation(FVector(0., 0., -96.));
+    CasualStand->SetRelativeRotation(FRotator::ZeroRotator);
+    bSwayApplied = false;
+}
+
+void AQuebecCharacter::ApplyStreetSway(float DeltaSeconds)
+{
+    // The crew blend space already poses the body. A second rock would stack on it.
+    // Swimming and a knockdown own the mesh rotation. A fall holds the rest pose.
+    const bool bHeld = bInVehicle || IsKnocked() || !GetCharacterMovement() || GetCharacterMovement()->IsSwimming()
+        || Cast<UQuebecCrewAnimInstance>(GetMesh()->GetAnimInstance());
+    if (bHeld || GetCharacterMovement()->IsFalling())
+    {
+        if (bSwayApplied) RestoreStreetSway();
+        return;
+    }
+    const float Speed = GetVelocity().Size2D();
+    SwayPhase = static_cast<float>(QuebecSway::Advance(SwayPhase, DeltaSeconds, Speed));
+    const QuebecSway::FPose Sway = QuebecSway::Pose(SwayPhase, Speed);
+    const float Yaw = GetMesh()->GetRelativeRotation().Yaw;
+    GetMesh()->SetRelativeLocation(FVector(0., Sway.Side, -96. + Sway.Bob));
+    GetMesh()->SetRelativeRotation(FRotator(Sway.Pitch, Yaw, Sway.Roll));
+    CasualStand->SetRelativeLocation(FVector(0., Sway.Side, -96. + Sway.Bob));
+    CasualStand->SetRelativeRotation(FRotator(Sway.Pitch, 0., Sway.Roll));
+    bSwayApplied = true;
+}
+
+void AQuebecCharacter::UpdateFootsteps(float DeltaSeconds)
+{
+    if (bInVehicle || IsKnocked() || !IsLocallyControlled() || !GetCharacterMovement()) return;
+    if (GetCharacterMovement()->IsFalling() || GetCharacterMovement()->IsSwimming()) return;
+    AQuebecController* Player = Cast<AQuebecController>(GetController());
+    if (!Player) return;
+    const int Steps = QuebecStep::Consume(StepAlong, static_cast<double>(GetVelocity().Size2D()), static_cast<double>(DeltaSeconds));
+    for (int Index = 0; Index < Steps; ++Index)
+    {
+        Player->PlayStepTone(StepFoot);
+        ++StepFoot;
+    }
+}
+
+void AQuebecCharacter::ScuffAges(float Now, float* Out, int32 Count) const
+{
+    for (int32 Index = 0; Index < Count; ++Index)
+    {
+        Out[Index] = -1.f;
+        if (!FootDust.IsValidIndex(Index) || !FootDust[Index] || !FootDust[Index]->IsVisible() || !FootDustBorn.IsValidIndex(Index)) continue;
+        const float Age = Now - FootDustBorn[Index];
+        if (Age >= 0.f && Age < static_cast<float>(QuebecScuff::Life)) Out[Index] = Age;
+    }
+}
+
+void AQuebecCharacter::UpdateFootDust(float DeltaSeconds)
+{
+    // Age comes from the birth clock, so a long frame does not step the puff twice.
+    (void)DeltaSeconds;
+    if (GetNetMode() == NM_DedicatedServer || !GetCharacterMovement()) return;
+    const float Now = GetWorld()->GetTimeSeconds();
+    for (int32 Index = 0; Index < FootDust.Num(); ++Index)
+    {
+        UStaticMeshComponent* Puff = FootDust[Index];
+        if (!Puff || !Puff->IsVisible()) continue;
+        const float Age = Now - FootDustBorn[Index];
+        if (Age >= static_cast<float>(QuebecScuff::Life))
+        {
+            Puff->SetVisibility(false);
+            continue;
+        }
+        const QuebecScuff::FPuff Dust = QuebecScuff::At(Age, Index);
+        const QuebecScuff::FPuff Born = QuebecScuff::At(0., Index);
+        Puff->SetWorldLocation(FootDustOrigin[Index]
+            - FootDustForward[Index] * static_cast<float>(Dust.Back - Born.Back)
+            + FootDustRight[Index] * static_cast<float>(Dust.Side - Born.Side)
+            + FVector(0.f, 0.f, static_cast<float>(Dust.Up - Born.Up)));
+        Puff->SetWorldScale3D(FVector(static_cast<float>(Dust.Radius / 50.)));
+    }
+    const bool bScuffing = !bInVehicle && !IsKnocked() && !GetCharacterMovement()->IsSwimming()
+        && !GetCharacterMovement()->IsFalling()
+        && GetVelocity().Size2D() > static_cast<float>(QuebecScuff::WalkSpeed);
+    UPrimitiveComponent* Body = GetMesh()->IsVisible() ? static_cast<UPrimitiveComponent*>(GetMesh()) : CasualStand;
+    if (!bScuffing || Now < NextFootDustAt || !Body || !Body->WasRecentlyRendered(1.f)) return;
+    NextFootDustAt = Now + static_cast<float>(QuebecScuff::Interval);
+    const int32 Slot = FootDust.Num() < QuebecScuff::Count ? FootDust.Num() : NextFootDust % QuebecScuff::Count;
+    ++NextFootDust;
+    if (Slot == FootDust.Num())
+    {
+        UStaticMesh* Sphere = LoadObject<UStaticMesh>(nullptr, TEXT("/Engine/BasicShapes/Sphere.Sphere"));
+        if (!Sphere) return;
+        UStaticMeshComponent* NewPuff = NewObject<UStaticMeshComponent>(this);
+        NewPuff->SetStaticMesh(Sphere);
+        NewPuff->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+        NewPuff->SetCastShadow(false);
+        NewPuff->SetUsingAbsoluteLocation(true);
+        NewPuff->SetUsingAbsoluteRotation(true);
+        NewPuff->SetUsingAbsoluteScale(true);
+        NewPuff->SetupAttachment(GetCapsuleComponent());
+        NewPuff->RegisterComponent();
+        FootDust.Add(NewPuff);
+        FootDustBorn.Add(Now);
+        FootDustOrigin.Add(FVector::ZeroVector);
+        FootDustForward.Add(FVector::ForwardVector);
+        FootDustRight.Add(FVector::RightVector);
+    }
+    UStaticMeshComponent* Puff = FootDust[Slot];
+    if (!Puff) return;
+    if (UMaterialInterface* Material = LoadObject<UMaterialInterface>(nullptr, TEXT("/Game/Materials/M_White.M_White")))
+        Puff->SetMaterial(0, Material);
+    const QuebecScuff::FPuff Born = QuebecScuff::At(0., Slot);
+    const FVector Local(
+        -static_cast<float>(QuebecScuff::FootBack),
+        static_cast<float>(QuebecScuff::FootSide + Born.Side),
+        static_cast<float>(QuebecScuff::FootUp + Born.Up));
+    FootDustOrigin[Slot] = Body->GetComponentTransform().TransformPosition(Local);
+    FootDustForward[Slot] = GetActorForwardVector();
+    FootDustRight[Slot] = GetActorRightVector();
+    FootDustBorn[Slot] = Now;
+    Puff->SetWorldLocation(FootDustOrigin[Slot]);
+    Puff->SetWorldScale3D(FVector(static_cast<float>(Born.Radius / 50.)));
+    Puff->SetVisibility(true);
+}
+
 void AQuebecCharacter::Tick(float DeltaSeconds)
 {
     UpdateSwimming(DeltaSeconds);
+    TickBail(DeltaSeconds);
     Super::Tick(DeltaSeconds);
     KeepCharacterInView(CameraArm, GetViewRotation());
     TickCombat(DeltaSeconds); // Combat: held weapon, aim camera, autofire, melee hits and the K.-O. respawn.
@@ -400,6 +748,9 @@ void AQuebecCharacter::Tick(float DeltaSeconds)
             }
         }
     }
+    ApplyStreetSway(DeltaSeconds);
+    UpdateFootsteps(DeltaSeconds);
+    UpdateFootDust(DeltaSeconds);
     if (HasAuthority() && !bInVehicle && GetActorLocation().Z < -1500.)
     {
         GetCharacterMovement()->StopMovementImmediately();
@@ -902,6 +1253,12 @@ void AQuebecCar::ResetMotion()
 
 void AQuebecCar::ApplyPaint()
 {
+    // The paint slot takes the clearcoat roughness. Other slots keep their own materials.
+    auto CoatPaint = [](UStaticMeshComponent* Part, int32 Element)
+    {
+        if (UMaterialInstanceDynamic* Coat = Part->CreateDynamicMaterialInstance(Element))
+            Coat->SetScalarParameterValue(TEXT("Roughness"), QuebecShade::CarPaintRoughness);
+    };
     const int32 Profile = FMath::Clamp(BodyProfile,0,2);
     Hull->SetStaticMesh(CollisionMeshes[Profile]);
     Hull->SetCollisionProfileName(TEXT("Pawn"));
@@ -938,7 +1295,11 @@ void AQuebecCar::ApplyPaint()
                 }
                 const TArray<FStaticMaterial>& Materials = Mesh->GetStaticMaterials();
                 for (int32 I = 0; I < Materials.Num(); ++I)
-                    Part->SetMaterial(I,Paint && Materials[I].MaterialSlotName == TEXT("Paint") ? Paint : Mesh->GetMaterial(I));
+                {
+                    const bool bPaint = Paint && Materials[I].MaterialSlotName == TEXT("Paint");
+                    Part->SetMaterial(I, bPaint ? Paint : Mesh->GetMaterial(I));
+                    if (bPaint) CoatPaint(Part, I);
+                }
             }
         }
         // A repaint must not wash out the police livery (street contract).
@@ -957,7 +1318,11 @@ void AQuebecCar::ApplyPaint()
     {
         if (Part->ComponentHasTag(TEXT("NordOwnPaint"))) continue; // Street livery and lamps (POLICE, TRAFFIC).
         const FString Name = Part->GetName();
-        if (Name == TEXT("Body") && Paint) Part->SetMaterial(0,Paint);
+        if (Name == TEXT("Body") && Paint)
+        {
+            Part->SetMaterial(0, Paint);
+            CoatPaint(Part, 0);
+        }
         if ((Name == TEXT("Glass") || Name == TEXT("Roof")) && Part->GetStaticMesh() &&
             Part->GetStaticMesh()->GetName().StartsWith(TEXT("SM_Car")))
         {
@@ -1191,6 +1556,7 @@ void AQuebecCar::Tick(float DeltaSeconds)
     // Street traces: tyre marks on every peer while the car moves, and smoke from a battered car.
     if (!FMath::IsNearlyZero(Speed,1.f) || !FMath::IsNearlyZero(LateralSpeed,1.f)) QuebecTraces::TickCar(this,DeltaSeconds);
     UpdateDamageSmoke(DeltaSeconds);
+    UpdateExhaust(DeltaSeconds);
     if (!HasAuthority()) return;
     if (bTraffic && !Controller) UpdateTraffic();
     // An AI driver (police, side jobs) writes the same inputs a player would.
@@ -1225,8 +1591,74 @@ void AQuebecCar::Tick(float DeltaSeconds)
     FinishDriveTick(StrikeFrom,bStriker,DeltaSeconds);
 }
 
+void AQuebecCar::SimulatePedalo(float Step, bool bFailsafe)
+{
+    const float ThrottleNow = bFailsafe ? 0.f : Throttle;
+    const bool bOnWater = QuebecPondContains(static_cast<float>(GetActorLocation().X), static_cast<float>(GetActorLocation().Y));
+    Speed = QuebecRide::Advance(Speed, ThrottleNow, bOnWater, Step);
+    LateralSpeed = 0.f;
+    SteeringState = Steering;
+    if (FMath::Abs(Speed) > 15.f)
+    {
+        const float Turn = QuebecRide::YawDegrees(Speed, Steering, Step);
+        const FQuat Rotation = (GetActorRotation() + FRotator(0., Turn, 0.)).Quaternion();
+        if (CanFitAt(GetActorLocation(), Rotation)) SetActorRotation(Rotation);
+    }
+    const FVector Travel = GetActorForwardVector().GetSafeNormal2D() * Speed * Step;
+    MoveWithCollision(Step, Travel);
+}
+
+void AQuebecCar::SimulateBike(float Step, bool bFailsafe)
+{
+    const float ThrottleNow = bFailsafe ? 0.f : Throttle;
+    const bool bInWater = QuebecPondContains(static_cast<float>(GetActorLocation().X), static_cast<float>(GetActorLocation().Y));
+    Speed = QuebecCycle::Advance(Speed, ThrottleNow, bInWater, Step);
+    LateralSpeed = 0.f;
+    SteeringState = Steering;
+    if (FMath::Abs(Speed) > 15.f)
+    {
+        const float Turn = QuebecCycle::YawDegrees(Speed, Steering, Step);
+        const FQuat Rotation = (GetActorRotation() + FRotator(0., Turn, 0.)).Quaternion();
+        if (CanFitAt(GetActorLocation(), Rotation)) SetActorRotation(Rotation);
+    }
+    const FVector Travel = GetActorForwardVector().GetSafeNormal2D() * Speed * Step;
+    MoveWithCollision(Step, Travel);
+}
+
+void AQuebecCar::SimulateScoot(float Step, bool bFailsafe)
+{
+    const float ThrottleNow = bFailsafe ? 0.f : Throttle;
+    const bool bInWater = QuebecPondContains(static_cast<float>(GetActorLocation().X), static_cast<float>(GetActorLocation().Y));
+    Speed = QuebecScoot::Advance(Speed, ThrottleNow, bInWater, Step);
+    LateralSpeed = 0.f;
+    SteeringState = Steering;
+    if (FMath::Abs(Speed) > 15.f)
+    {
+        const float Turn = QuebecScoot::YawDegrees(Speed, Steering, Step);
+        const FQuat Rotation = (GetActorRotation() + FRotator(0., Turn, 0.)).Quaternion();
+        if (CanFitAt(GetActorLocation(), Rotation)) SetActorRotation(Rotation);
+    }
+    const FVector Travel = GetActorForwardVector().GetSafeNormal2D() * Speed * Step;
+    MoveWithCollision(Step, Travel);
+}
+
 void AQuebecCar::SimulateDrive(float Step, bool bFailsafe)
 {
+    if (IsPedalo())
+    {
+        SimulatePedalo(Step, bFailsafe);
+        return;
+    }
+    if (IsBike())
+    {
+        SimulateBike(Step, bFailsafe);
+        return;
+    }
+    if (IsScoot())
+    {
+        SimulateScoot(Step, bFailsafe);
+        return;
+    }
     if (KnockTime > 0.f)
     {
         // Struck: tyres scrub instead of rolling, so the car slides, spins and bleeds speed until it settles.
@@ -1260,7 +1692,7 @@ void AQuebecCar::SimulateDrive(float Step, bool bFailsafe)
     }
     else
     {
-        DriveThrottle = FMath::FInterpConstantTo(DriveThrottle,Throttle,Step,5.f);
+        DriveThrottle = FMath::FInterpConstantTo(DriveThrottle,Throttle,Step,QuebecSteer::ThrottleRate);
         // Lag-tolerant driving: graded levels ease back as fast as a release, and on roads high-speed turn-in is calmer.
         const float SteeringRate = QuebecSteer::TurnInRate(Speed,Steering,SteeringState,bSteerAssist);
         SteeringState = FMath::FInterpConstantTo(SteeringState,Steering,Step,SteeringRate);
@@ -1322,6 +1754,12 @@ void AQuebecCar::SimulateDrive(float Step, bool bFailsafe)
         if (bFailsafe || FMath::Abs(Speed)<100.f)
             LateralSpeed = FMath::FInterpConstantTo(LateralSpeed,0.f,Step,3600.f);
         if (FMath::Abs(Speed)<1.f && FMath::Abs(Throttle)<.01f) Speed=0.f;
+        // A held handbrake shove at speed earns one banner. A tap, a straight run and a gripped turn do not.
+        if (AController* Driver = GetDriverController())
+        {
+            if (Slide.Tick(Step, Speed, LateralSpeed, bHandbrake && !bFailsafe))
+                QuebecNotice::Show(Driver, TEXT("SLIDE"), TEXT("Through the corner"), QuebecSlide::NoticeSeconds);
+        }
     }
     MoveWithCollision(Step,(GetActorForwardVector().GetSafeNormal2D()*Speed+GetActorRightVector().GetSafeNormal2D()*LateralSpeed)*Step);
 }
@@ -1431,6 +1869,8 @@ void AQuebecCar::MoveWithCollision(float Step, const FVector& Travel)
         const FVector Normal = Hit.Normal.GetSafeNormal2D();
         FVector Velocity = PlanarVelocity();
         AQuebecCar* Other = HasAuthority() ? Cast<AQuebecCar>(Hit.GetActor()) : nullptr;
+        // A hard hit on a parked car at the curb turns it into a real car first, so the hit below shoves it.
+        if (!Other && HasAuthority()) Other = AQuebecParkedCars::PromoteOnImpact(Hit,Velocity);
         if (Other && Other != this)
         {
             // Another car is a body, not a wall: trade momentum so the struck car is shoved and spun.
@@ -1552,6 +1992,7 @@ void AQuebecCar::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifeti
     DOREPLIFETIME(AQuebecCar, VisualSteering);
     DOREPLIFETIME(AQuebecCar, PaintStyle);
     DOREPLIFETIME(AQuebecCar, BodyProfile);
+    DOREPLIFETIME(AQuebecCar, RideKind);
     DOREPLIFETIME(AQuebecCar, bTraffic);
     // Street contract.
     DOREPLIFETIME(AQuebecCar, bPolice);
@@ -1615,6 +2056,50 @@ AQuebecController::AQuebecController()
     MusicAudio->bAutoActivate = false;
     MusicAudio->bAllowSpatialization = false;
     MusicAudio->VolumeMultiplier = .045f;
+    PondTickAudio = CreateDefaultSubobject<UAudioComponent>(TEXT("PondTickAudio"));
+    PondTickAudio->bAutoActivate = false;
+    PondTickAudio->bAllowSpatialization = false;
+    PondTickAudio->VolumeMultiplier = .55f;
+    ShowPageAudio = CreateDefaultSubobject<UAudioComponent>(TEXT("ShowPageAudio"));
+    ShowPageAudio->bAutoActivate = false;
+    ShowPageAudio->bAllowSpatialization = false;
+    ShowPageAudio->VolumeMultiplier = .6f;
+    CourtWhistleAudio = CreateDefaultSubobject<UAudioComponent>(TEXT("CourtWhistleAudio"));
+    CourtWhistleAudio->bAutoActivate = false;
+    CourtWhistleAudio->bAllowSpatialization = false;
+    CourtWhistleAudio->VolumeMultiplier = .6f;
+    CourtRaspAudio = CreateDefaultSubobject<UAudioComponent>(TEXT("CourtRaspAudio"));
+    CourtRaspAudio->bAutoActivate = false;
+    CourtRaspAudio->bAllowSpatialization = false;
+    CourtRaspAudio->VolumeMultiplier = .5f;
+    RankAudio = CreateDefaultSubobject<UAudioComponent>(TEXT("RankAudio"));
+    RankAudio->bAutoActivate = false;
+    RankAudio->bAllowSpatialization = false;
+    RankAudio->VolumeMultiplier = .55f;
+    SkidAudio = CreateDefaultSubobject<UAudioComponent>(TEXT("SkidAudio"));
+    SkidAudio->bAutoActivate = false;
+    SkidAudio->bAllowSpatialization = false;
+    SkidAudio->VolumeMultiplier = .7f;
+    ImpactAudio = CreateDefaultSubobject<UAudioComponent>(TEXT("ImpactAudio"));
+    ImpactAudio->bAutoActivate = false;
+    ImpactAudio->bAllowSpatialization = false;
+    ImpactAudio->VolumeMultiplier = .8f;
+    StepAudio = CreateDefaultSubobject<UAudioComponent>(TEXT("StepAudio"));
+    StepAudio->bAutoActivate = false;
+    StepAudio->bAllowSpatialization = false;
+    StepAudio->VolumeMultiplier = .45f;
+    LossAudio = CreateDefaultSubobject<UAudioComponent>(TEXT("LossAudio"));
+    LossAudio->bAutoActivate = false;
+    LossAudio->bAllowSpatialization = false;
+    LossAudio->VolumeMultiplier = .65f;
+    StoryBedAudio = CreateDefaultSubobject<UAudioComponent>(TEXT("StoryBedAudio"));
+    StoryBedAudio->bAutoActivate = false;
+    StoryBedAudio->bAllowSpatialization = false;
+    StoryBedAudio->VolumeMultiplier = .05f;
+    BarkAudio = CreateDefaultSubobject<UAudioComponent>(TEXT("BarkAudio"));
+    BarkAudio->bAutoActivate = false;
+    BarkAudio->bAllowSpatialization = false;
+    BarkAudio->VolumeMultiplier = .85f;
 }
 
 void AQuebecController::PlayFeedback(EQuebecFeedbackCue Cue)
@@ -1622,6 +2107,15 @@ void AQuebecController::PlayFeedback(EQuebecFeedbackCue Cue)
     const int32 Index = static_cast<int32>(Cue);
     if (FeedbackSounds.IsValidIndex(Index) && FeedbackSounds[Index])
         ClientPlaySound(FeedbackSounds[Index], 1.f);
+}
+
+void AQuebecController::FrameTheStreet(float Yaw, bool bResetCamera)
+{
+    // An unset pitch of 0 is pulled to the upward stop at -5, so the horizon sits near the middle.
+    // -16 stays inside the -25..-5 clamp and tips the view down the street.
+    const FRotator Look(-16.f, Yaw, 0.f);
+    SetControlRotation(Look);
+    ClientSetRotation(Look, bResetCamera);
 }
 
 void AQuebecController::BeginPlay()
@@ -1633,6 +2127,8 @@ void AQuebecController::BeginPlay()
         PlayerCameraManager->ViewPitchMax = -5.f;
     }
     BindBrowserInputRelease();
+    // The game mode paints the host. A remote client has no game mode, so it paints its own copy.
+    if (IsLocalController() && GetNetMode() == NM_Client) AQuebecLanePaint::Spawn(GetWorld());
 }
 
 void AQuebecController::BindBrowserInputRelease()
@@ -1692,6 +2188,14 @@ void AQuebecController::SetupInputComponent()
         Binding.KeyDelegate.GetDelegateForManualSet().BindUObject(this, &AQuebecController::ChooseCrewKey, Slot);
         InputComponent->KeyBindings.Add(Binding);
     }
+    // 9 returns to the Sherbrooke opening. 0 begins on Rue Rachel.
+    const FKey PlaceKeys[] = {EKeys::Nine, EKeys::Zero};
+    for (int32 Place = 0; Place < 2; ++Place)
+    {
+        FInputKeyBinding Binding(FInputChord(PlaceKeys[Place]), IE_Pressed);
+        Binding.KeyDelegate.GetDelegateForManualSet().BindUObject(this, &AQuebecController::BeginPlaceKey, Place);
+        InputComponent->KeyBindings.Add(Binding);
+    }
     InputComponent->BindAction(TEXT("RetryCampaign"), IE_Pressed, this, &AQuebecController::RetryCampaign);
     InputComponent->BindAction(TEXT("ReplayCampaign"), IE_Pressed, this, &AQuebecController::ReplayCampaign);
 }
@@ -1722,6 +2226,33 @@ void AQuebecController::ServerNextCharacter_Implementation()
 }
 
 void AQuebecController::ChooseCrewKey(int32 Slot) { ServerChooseCrew(3 + Slot); }
+
+void AQuebecController::BeginPlaceKey(int32 Index) { ServerBeginPlace(Index); }
+
+void AQuebecController::NordPlace(const FString& Name)
+{
+    char Buffer[32];
+    const int32 Letters = FMath::Min(Name.Len(), 31);
+    for (int32 Index = 0; Index < Letters; ++Index)
+        Buffer[Index] = static_cast<char>(Name[Index] & 127);
+    Buffer[Letters] = 0;
+    ServerBeginPlace(QuebecPlace::IndexFor(Buffer));
+}
+
+void AQuebecController::ServerBeginPlace_Implementation(int32 Index)
+{
+    if (Index < 0 || Index >= QuebecPlace::Count || QuebecDistrict::IsToronto(GetWorld())) return;
+    AQuebecCharacter* Walker = Cast<AQuebecCharacter>(GetPawn());
+    if (!Walker || Walker->IsKnocked()) return;
+    const QuebecPlace::FPlace Spot = QuebecPlace::PlaceAt(Index);
+    const FVector Point(Spot.X, Spot.Y, Spot.Z);
+    if (!Walker->TeleportTo(Point, FRotator::ZeroRotator))
+        Walker->SetActorLocation(Point);
+    if (Spot.bOwnYaw)
+        FrameTheStreet(Spot.Yaw);
+    else
+        FrameTheStreet(QuebecStreetLook::OpeningYaw(GetWorld(), Point, 0.f));
+}
 void AQuebecController::ServerChooseCrew_Implementation(int32 Style)
 {
     if (Style < 3 || Style > 10) return;
@@ -1732,6 +2263,338 @@ void AQuebecController::ServerChooseCrew_Implementation(int32 Style)
 }
 
 void AQuebecController::ToggleComicStyle() { bComicStyle = !bComicStyle; }
+
+void AQuebecController::TickStoryBed(bool bPlay)
+{
+    if (!StoryBedAudio || !GetWorld()) return;
+    if (!bPlay)
+    {
+        if (StoryBedOrigin >= 0.)
+        {
+            StoryBedAudio->Stop();
+            StoryBedOrigin = -1.;
+            StoryBedQueued = 0.;
+            if (MusicAudio && MusicAudio->Sound && GetWorld()->AllowAudioPlayback()) MusicAudio->FadeIn(.35f);
+        }
+        return;
+    }
+    if (!GetWorld()->AllowAudioPlayback()) return;
+    if (MusicAudio && MusicAudio->IsPlaying()) MusicAudio->Stop();
+    if (!StoryBedWave)
+    {
+        StoryBedWave = NewObject<USoundWaveProcedural>(this);
+        StoryBedWave->SetSampleRate(static_cast<uint32>(QuebecStoryBed::SampleRate));
+        StoryBedWave->NumChannels = 2;
+        StoryBedWave->Duration = static_cast<float>(QuebecStoryBed::LoopSeconds);
+        StoryBedAudio->SetSound(StoryBedWave);
+    }
+    if (StoryBedPcm.Num() == 0)
+    {
+        StoryBedPcm.SetNumUninitialized(QuebecStoryBed::Frames * 2);
+        for (int32 Frame = 0; Frame < QuebecStoryBed::Frames; ++Frame)
+        {
+            const QuebecStoryBed::FStereo Sample = QuebecStoryBed::SampleAt(Frame);
+            StoryBedPcm[Frame * 2] = static_cast<int16>(FMath::Clamp(static_cast<float>(Sample.L), -1.f, 1.f) * 32767.f);
+            StoryBedPcm[Frame * 2 + 1] = static_cast<int16>(FMath::Clamp(static_cast<float>(Sample.R), -1.f, 1.f) * 32767.f);
+        }
+    }
+    const double Now = static_cast<double>(GetWorld()->GetTimeSeconds());
+    const double Loop = QuebecStoryBed::LoopSeconds;
+    if (StoryBedOrigin < 0. || !StoryBedAudio->IsPlaying())
+    {
+        StoryBedWave->ResetAudio();
+        StoryBedWave->QueueAudio(reinterpret_cast<const uint8*>(StoryBedPcm.GetData()), StoryBedPcm.Num() * static_cast<int32>(sizeof(int16)));
+        StoryBedAudio->Play();
+        StoryBedOrigin = Now;
+        StoryBedQueued = Loop;
+        return;
+    }
+    if (Now - StoryBedOrigin > StoryBedQueued - 0.5)
+    {
+        StoryBedWave->QueueAudio(reinterpret_cast<const uint8*>(StoryBedPcm.GetData()), StoryBedPcm.Num() * static_cast<int32>(sizeof(int16)));
+        StoryBedQueued += Loop;
+    }
+}
+
+void AQuebecController::ClientPlayBark_Implementation(int32 Style)
+{
+    if (!IsLocalController() || !BarkAudio || !GetWorld() || !GetWorld()->AllowAudioPlayback()) return;
+    const QuebecBarks::FSpan Span = QuebecBarks::Span(Style);
+    if (Span.Count <= 0) return;
+    if (BarkPcm.Num() != QuebecBarks::PcmSamples)
+    {
+        BarkPcm.SetNumUninitialized(QuebecBarks::PcmSamples);
+        if (QuebecBarks::Decode(BarkPcm.GetData(), BarkPcm.Num()) != QuebecBarks::PcmSamples)
+        {
+            BarkPcm.Reset();
+            return;
+        }
+    }
+    if (!BarkWave)
+    {
+        BarkWave = NewObject<USoundWaveProcedural>(this);
+        BarkWave->SetSampleRate(static_cast<uint32>(QuebecBarks::SampleRate));
+        BarkWave->NumChannels = 1;
+        BarkAudio->SetSound(BarkWave);
+    }
+    BarkWave->Duration = static_cast<float>(Span.Count) / static_cast<float>(QuebecBarks::SampleRate);
+    BarkWave->ResetAudio();
+    BarkWave->QueueAudio(reinterpret_cast<const uint8*>(BarkPcm.GetData() + Span.Begin), Span.Count * static_cast<int32>(sizeof(int16)));
+    BarkAudio->Play();
+}
+
+void AQuebecController::PlayPondTick()
+{
+    if (!PondTickAudio || !GetWorld() || !GetWorld()->AllowAudioPlayback()) return;
+    if (!PondTickWave)
+    {
+        PondTickWave = NewObject<USoundWaveProcedural>(this);
+        PondTickWave->SetSampleRate(static_cast<uint32>(QuebecPondTone::SampleRate));
+        PondTickWave->NumChannels = 1;
+        PondTickWave->Duration = static_cast<float>(QuebecPondTone::TickFrames) / static_cast<float>(QuebecPondTone::SampleRate);
+        PondTickAudio->SetSound(PondTickWave);
+    }
+    PondTickWave->ResetAudio();
+    int16 Pcm[QuebecPondTone::TickFrames];
+    for (int32 Frame = 0; Frame < QuebecPondTone::TickFrames; ++Frame)
+    {
+        const float Sample = FMath::Clamp(static_cast<float>(QuebecPondTone::SampleAt(Frame)), -1.f, 1.f);
+        Pcm[Frame] = static_cast<int16>(Sample * 32767.f);
+    }
+    PondTickWave->QueueAudio(reinterpret_cast<const uint8*>(Pcm), QuebecPondTone::TickFrames * static_cast<int32>(sizeof(int16)));
+    PondTickAudio->Play();
+}
+
+void AQuebecController::PlayShowPage()
+{
+    if (!ShowPageAudio || !GetWorld() || !GetWorld()->AllowAudioPlayback()) return;
+    if (!ShowPageWave)
+    {
+        ShowPageWave = NewObject<USoundWaveProcedural>(this);
+        ShowPageWave->SetSampleRate(static_cast<uint32>(QuebecShowTone::SampleRate));
+        ShowPageWave->NumChannels = 1;
+        ShowPageWave->Duration = static_cast<float>(QuebecShowTone::PageFrames) / static_cast<float>(QuebecShowTone::SampleRate);
+        ShowPageAudio->SetSound(ShowPageWave);
+    }
+    ShowPageWave->ResetAudio();
+    int16 Pcm[QuebecShowTone::PageFrames];
+    for (int32 Frame = 0; Frame < QuebecShowTone::PageFrames; ++Frame)
+    {
+        const float Sample = FMath::Clamp(static_cast<float>(QuebecShowTone::SampleAt(Frame)), -1.f, 1.f);
+        Pcm[Frame] = static_cast<int16>(Sample * 32767.f);
+    }
+    ShowPageWave->QueueAudio(reinterpret_cast<const uint8*>(Pcm), QuebecShowTone::PageFrames * static_cast<int32>(sizeof(int16)));
+    ShowPageAudio->Play();
+}
+
+void AQuebecController::TickShowPage()
+{
+    const AQuebecCampaign* Campaign = CampaignFor(GetWorld());
+    const int32 Step = (IsLocalController() && Campaign) ? Campaign->ShowStep : -1;
+    if (Step == QuebecShowRules::StepBanked && ShowHeardStep == QuebecShowRules::StepCue) PlayShowPage();
+    ShowHeardStep = (IsLocalController() && Campaign) ? Step : -1;
+}
+
+void AQuebecController::PlayRank(int32 ChainAfter, bool bWasSpoiled)
+{
+    ClientPlayRank(ChainAfter, bWasSpoiled);
+}
+
+void AQuebecController::ClientPlayRank_Implementation(int32 ChainAfter, bool bWasSpoiled)
+{
+    PlayRankTone(ChainAfter, bWasSpoiled);
+}
+
+void AQuebecController::PlayRankTone(int32 ChainAfter, bool bWasSpoiled)
+{
+    if (!RankAudio || !GetWorld() || !GetWorld()->AllowAudioPlayback()) return;
+    const int32 Hz = QuebecRankTone::RankHz(static_cast<int>(ChainAfter), bWasSpoiled);
+    if (!RankWave)
+    {
+        RankWave = NewObject<USoundWaveProcedural>(this);
+        RankWave->SetSampleRate(static_cast<uint32>(QuebecRankTone::SampleRate));
+        RankWave->NumChannels = 1;
+        RankWave->Duration = static_cast<float>(QuebecRankTone::Frames) / static_cast<float>(QuebecRankTone::SampleRate);
+        RankAudio->SetSound(RankWave);
+    }
+    RankWave->ResetAudio();
+    int16 Pcm[QuebecRankTone::Frames];
+    for (int32 Frame = 0; Frame < QuebecRankTone::Frames; ++Frame)
+    {
+        const float Sample = FMath::Clamp(static_cast<float>(QuebecRankTone::SampleAt(Frame, Hz)), -1.f, 1.f);
+        Pcm[Frame] = static_cast<int16>(Sample * 32767.f);
+    }
+    RankWave->QueueAudio(reinterpret_cast<const uint8*>(Pcm), QuebecRankTone::Frames * static_cast<int32>(sizeof(int16)));
+    RankAudio->Play();
+}
+
+void AQuebecController::TickSkid()
+{
+    const AQuebecCar* Car = Cast<AQuebecCar>(GetPawn());
+    const bool bLocked = Car && Car->bHandbrake;
+    const double Speed = Car ? static_cast<double>(Car->Speed) : 0.;
+    if (QuebecSkidTone::Caught(bLocked, bWasSkidLocked, Speed)) PlaySkidTone();
+    bWasSkidLocked = bLocked;
+}
+
+void AQuebecController::PlaySkidTone()
+{
+    if (!SkidAudio || !GetWorld() || !GetWorld()->AllowAudioPlayback()) return;
+    if (!SkidWave)
+    {
+        SkidWave = NewObject<USoundWaveProcedural>(this);
+        SkidWave->SetSampleRate(static_cast<uint32>(QuebecSkidTone::SampleRate));
+        SkidWave->NumChannels = 1;
+        SkidWave->Duration = static_cast<float>(QuebecSkidTone::Frames) / static_cast<float>(QuebecSkidTone::SampleRate);
+        SkidAudio->SetSound(SkidWave);
+    }
+    SkidWave->ResetAudio();
+    int16 Pcm[QuebecSkidTone::Frames];
+    for (int32 Frame = 0; Frame < QuebecSkidTone::Frames; ++Frame)
+    {
+        const float Sample = FMath::Clamp(static_cast<float>(QuebecSkidTone::SampleAt(Frame)), -1.f, 1.f);
+        Pcm[Frame] = static_cast<int16>(Sample * 32767.f);
+    }
+    SkidWave->QueueAudio(reinterpret_cast<const uint8*>(Pcm), QuebecSkidTone::Frames * static_cast<int32>(sizeof(int16)));
+    SkidAudio->Play();
+}
+
+void AQuebecController::PlayStepTone(int32 Foot)
+{
+    if (!StepAudio || !GetWorld() || !GetWorld()->AllowAudioPlayback()) return;
+    if (!StepWave)
+    {
+        StepWave = NewObject<USoundWaveProcedural>(this);
+        StepWave->SetSampleRate(static_cast<uint32>(QuebecStep::SampleRate));
+        StepWave->NumChannels = 1;
+        StepWave->Duration = static_cast<float>(QuebecStep::Frames) / static_cast<float>(QuebecStep::SampleRate);
+        StepAudio->SetSound(StepWave);
+    }
+    StepWave->ResetAudio();
+    int16 Pcm[QuebecStep::Frames];
+    for (int32 Frame = 0; Frame < QuebecStep::Frames; ++Frame)
+    {
+        const float Sample = FMath::Clamp(static_cast<float>(QuebecStep::SampleAt(Frame, Foot)), -1.f, 1.f);
+        Pcm[Frame] = static_cast<int16>(Sample * 32767.f);
+    }
+    StepWave->QueueAudio(reinterpret_cast<const uint8*>(Pcm), QuebecStep::Frames * static_cast<int32>(sizeof(int16)));
+    StepAudio->Play();
+}
+
+void AQuebecController::PlayImpact()
+{
+    ClientPlayImpact();
+}
+
+void AQuebecController::ClientPlayImpact_Implementation()
+{
+    PlayImpactTone();
+}
+
+void AQuebecController::PlayImpactTone()
+{
+    if (!ImpactAudio || !GetWorld() || !GetWorld()->AllowAudioPlayback()) return;
+    if (!ImpactWave)
+    {
+        ImpactWave = NewObject<USoundWaveProcedural>(this);
+        ImpactWave->SetSampleRate(static_cast<uint32>(QuebecImpactTone::SampleRate));
+        ImpactWave->NumChannels = 1;
+        ImpactWave->Duration = static_cast<float>(QuebecImpactTone::Frames) / static_cast<float>(QuebecImpactTone::SampleRate);
+        ImpactAudio->SetSound(ImpactWave);
+    }
+    ImpactWave->ResetAudio();
+    int16 Pcm[QuebecImpactTone::Frames];
+    for (int32 Frame = 0; Frame < QuebecImpactTone::Frames; ++Frame)
+    {
+        const float Sample = FMath::Clamp(static_cast<float>(QuebecImpactTone::SampleAt(Frame)), -1.f, 1.f);
+        Pcm[Frame] = static_cast<int16>(Sample * 32767.f);
+    }
+    ImpactWave->QueueAudio(reinterpret_cast<const uint8*>(Pcm), QuebecImpactTone::Frames * static_cast<int32>(sizeof(int16)));
+    ImpactAudio->Play();
+}
+
+void AQuebecController::PlayLoss()
+{
+    ClientPlayLoss();
+}
+
+void AQuebecController::ClientPlayLoss_Implementation()
+{
+    PlayLossTone();
+}
+
+void AQuebecController::PlayLossTone()
+{
+    if (!LossAudio || !GetWorld() || !GetWorld()->AllowAudioPlayback()) return;
+    if (!LossWave)
+    {
+        LossWave = NewObject<USoundWaveProcedural>(this);
+        LossWave->SetSampleRate(static_cast<uint32>(QuebecLossTone::SampleRate));
+        LossWave->NumChannels = 1;
+        LossWave->Duration = static_cast<float>(QuebecLossTone::Frames) / static_cast<float>(QuebecLossTone::SampleRate);
+        LossAudio->SetSound(LossWave);
+    }
+    LossWave->ResetAudio();
+    int16 Pcm[QuebecLossTone::Frames];
+    for (int32 Frame = 0; Frame < QuebecLossTone::Frames; ++Frame)
+    {
+        const float Sample = FMath::Clamp(static_cast<float>(QuebecLossTone::SampleAt(Frame)), -1.f, 1.f);
+        Pcm[Frame] = static_cast<int16>(Sample * 32767.f);
+    }
+    LossWave->QueueAudio(reinterpret_cast<const uint8*>(Pcm), QuebecLossTone::Frames * static_cast<int32>(sizeof(int16)));
+    LossAudio->Play();
+}
+
+void AQuebecController::PlayCourtWave(UAudioComponent* Audio, TObjectPtr<USoundWaveProcedural>& Wave, int32 Frames, bool bWhistle)
+{
+    if (!Audio || !GetWorld() || !GetWorld()->AllowAudioPlayback()) return;
+    if (!Wave)
+    {
+        Wave = NewObject<USoundWaveProcedural>(this);
+        Wave->SetSampleRate(static_cast<uint32>(QuebecCourtTone::SampleRate));
+        Wave->NumChannels = 1;
+        Wave->Duration = static_cast<float>(Frames) / static_cast<float>(QuebecCourtTone::SampleRate);
+        Audio->SetSound(Wave);
+    }
+    Wave->ResetAudio();
+    TArray<int16> Pcm;
+    Pcm.SetNumUninitialized(Frames);
+    for (int32 Frame = 0; Frame < Frames; ++Frame)
+    {
+        const double Raw = bWhistle ? QuebecCourtTone::WhistleAt(Frame) : QuebecCourtTone::RaspAt(Frame);
+        const float Sample = FMath::Clamp(static_cast<float>(Raw), -1.f, 1.f);
+        Pcm[Frame] = static_cast<int16>(Sample * 32767.f);
+    }
+    Wave->QueueAudio(reinterpret_cast<const uint8*>(Pcm.GetData()), Frames * static_cast<int32>(sizeof(int16)));
+    Audio->Play();
+}
+
+void AQuebecController::TickCourtFeel()
+{
+    const AQuebecCampaign* Campaign = CampaignFor(GetWorld());
+    if (!IsLocalController() || !Campaign)
+    {
+        CourtHeardStep = -1;
+        CourtHeardMisses = -1;
+        return;
+    }
+    if (Campaign->CourtStep == QuebecCourtRules::StepPull && CourtHeardStep == QuebecCourtRules::StepRedirect)
+        PlayCourtWave(CourtWhistleAudio, CourtWhistleWave, QuebecCourtTone::WhistleFrames, true);
+    if (CourtHeardMisses >= 0 && Campaign->CourtMisses != CourtHeardMisses)
+        PlayCourtWave(CourtRaspAudio, CourtRaspWave, QuebecCourtTone::RaspFrames, false);
+    CourtHeardStep = Campaign->CourtStep;
+    CourtHeardMisses = Campaign->CourtMisses;
+}
+
+void AQuebecController::TickPondBlink()
+{
+    const AQuebecCampaign* Campaign = CampaignFor(GetWorld());
+    const bool bTag = IsLocalController() && Campaign && Campaign->IsPondOpen() && Campaign->PondStep == QuebecPondRules::StepTag;
+    const AGameStateBase* State = GetWorld() ? GetWorld()->GetGameState() : nullptr;
+    const double Now = static_cast<double>(State ? State->GetServerWorldTimeSeconds() : (GetWorld() ? GetWorld()->GetTimeSeconds() : 0.));
+    if (bTag && PondBlinkTime >= 0. && QuebecPondRules::BlinkEdge(PondBlinkTime, Now)) PlayPondTick();
+    PondBlinkTime = bTag ? Now : -1.;
+}
 
 void AQuebecController::PlayerTick(float DeltaTime)
 {
@@ -1744,17 +2607,153 @@ void AQuebecController::PlayerTick(float DeltaTime)
     }
     Super::PlayerTick(DeltaTime);
     if (!IsLocalController()) return;
-    UpdateMusic(Campaign && Campaign->Phase == EQuebecCampaignPhase::RaceRunning);
+    const bool bRacing = Campaign && Campaign->Phase == EQuebecCampaignPhase::RaceRunning;
+    const bool bStory = Campaign && Campaign->IsStoryBeatOpen();
+    if (QuebecStoryBed::BedFor(bRacing, bStory) == QuebecStoryBed::EBed::Story) TickStoryBed(true);
+    else
+    {
+        TickStoryBed(false);
+        UpdateMusic(bRacing);
+    }
+    TickPondBlink();
+    TickShowPage();
+    TickCourtFeel();
+    TickSkid();
     BrowserStateElapsed += DeltaTime;
-    if (BrowserStateElapsed >= .5f && !BrowserStreamerId.IsEmpty() && IPixelStreaming2Module::IsAvailable())
+    // A puff lives 0.7 s. A half-second poll can miss the rise. A tenth of a second samples it several times.
+    constexpr float ShellStateSeconds = 0.1f;
+    if (BrowserStateElapsed >= ShellStateSeconds && !BrowserStreamerId.IsEmpty() && IPixelStreaming2Module::IsAvailable())
     {
         BrowserStateElapsed = 0.f;
         if (const TSharedPtr<IPixelStreaming2Streamer> Streamer = IPixelStreaming2Module::Get().FindStreamer(BrowserStreamerId))
         {
             const AQuebecCharacter* Character = Cast<AQuebecCharacter>(GetPawn());
-            Streamer->SendAllPlayersMessage(TEXT("Response"), FString::Printf(TEXT("{\"nordDriving\":%s,\"nordSwimming\":%s}"),
+            const AQuebecCampaign* CardCampaign = CampaignFor(GetWorld());
+            FString CardTitle, CardObjective, CardStage, CardFail;
+            int32 CardBearing = 0;
+            int32 CardMeters = 0;
+            int32 CardPayout = 0;
+            if (CardCampaign && GetPawn())
+            {
+                CardTitle = CardCampaign->GetMissionTitle();
+                CardObjective = CardCampaign->GetObjectiveText();
+                CardFail = CardCampaign->FailReason;
+                int32 PaceIndex = 0, PaceCount = 0, PaceWalk = 0, PaceSprint = 0;
+                if (CardCampaign->GetBeatPace(PaceIndex, PaceCount, PaceWalk, PaceSprint))
+                    CardStage = FString::Printf(TEXT("%d of %d"), PaceIndex, PaceCount);
+                const UWorld* World = GetWorld();
+                if (World && World->GetTimeSeconds() < CardCampaign->PayoutUntil)
+                    CardPayout = CardCampaign->LastPayout;
+                const FVector Here = GetPawn()->GetActorLocation();
+                const FVector Target = CardCampaign->GetObjectiveLocation();
+                const FVector Delta = Target - Here;
+                CardMeters = FMath::RoundToInt(Delta.Size2D() / 100.f);
+                if (Delta.SizeSquared2D() > 1.f)
+                    CardBearing = FMath::RoundToInt(FMath::RadiansToDegrees(FMath::Atan2(Delta.X, Delta.Y)));
+            }
+            FString JobHead, JobLine, DownKind, ColumnTitle, ColumnInfo, ColumnObjective, Speech, Scuff, Weapon, Exhaust, SkyLine;
+            int32 StarPlate = 0;
+            if (const UWorld* World = GetWorld())
+            {
+                if (const AQuebecSideJobs* Jobs = AQuebecSideJobs::Find(World))
+                {
+                    const AQuebecPlayerState* Stats = GetPlayerState<AQuebecPlayerState>();
+                    const bool bDownNow = Stats && Stats->IsDown();
+                    const float Now = static_cast<float>(World->GetTimeSeconds());
+                    if (BrowserJobSerial >= 0 && Jobs->ResultSerial != BrowserJobSerial)
+                    {
+                        if (bDownNow) bBrowserJobWaiting = true;
+                        else BrowserJobBannerAt = Now;
+                    }
+                    BrowserJobSerial = Jobs->ResultSerial;
+                    if (bBrowserJobWaiting && !bDownNow)
+                    {
+                        bBrowserJobWaiting = false;
+                        BrowserJobBannerAt = Now;
+                    }
+                    const float Age = Now - BrowserJobBannerAt;
+                    const AGameStateBase* Game = World->GetGameState();
+                    const float ServerNow = static_cast<float>(Game ? Game->GetServerWorldTimeSeconds() : World->GetTimeSeconds());
+                    const bool bRetry = !Jobs->bLastSucceeded && Jobs->RetryUntil > ServerNow;
+                    if (!bDownNow && Age >= 0.f && Age < QuebecJobRules::ResultBannerSeconds)
+                    {
+                        const QuebecBanner::FPlate Words = QuebecBanner::Compose(
+                            Jobs->bLastSucceeded, Jobs->LastReward, TCHAR_TO_UTF8(*Jobs->LastResult), false, bRetry);
+                        JobHead = UTF8_TO_TCHAR(Words.Head);
+                        JobLine = UTF8_TO_TCHAR(Words.Line.c_str());
+                    }
+                    if (Jobs->IsActive() && GetPawn())
+                    {
+                        ColumnTitle = Jobs->JobTitle(Jobs->JobIndex);
+                        const int32 Meters = FMath::RoundToInt(FVector::Dist2D(GetPawn()->GetActorLocation(), Jobs->TargetLocation) / 100.f);
+                        ColumnInfo = FString::Printf(TEXT("%d m"), FMath::Max(0, Meters));
+                        if (Jobs->JobIndex == static_cast<int32>(QuebecJobRules::EJob::Thief))
+                            ColumnInfo += FString::Printf(TEXT("  ·  damage %d %%"), FMath::RoundToInt(Jobs->JobProgress * 100.f));
+                        else if (Jobs->JobIndex == static_cast<int32>(QuebecJobRules::EJob::Goons))
+                            ColumnInfo += FString::Printf(TEXT("  ·  down %d/%d"), FMath::RoundToInt(Jobs->JobProgress * QuebecJobRules::GoonTotal()), QuebecJobRules::GoonTotal());
+                        ColumnObjective = Jobs->ObjectiveText;
+                    }
+                }
+                if (World->GetTimeSeconds() < ResidentCaptionUntil) Speech = ResidentCaption;
+                if (const AQuebecCharacter* Walker = Cast<AQuebecCharacter>(GetPawn()))
+                {
+                    float Ages[QuebecScuff::Count];
+                    Walker->ScuffAges(static_cast<float>(World->GetTimeSeconds()), Ages, QuebecScuff::Count);
+                    for (int32 Index = 0; Index < QuebecScuff::Count; ++Index)
+                    {
+                        if (Index) Scuff += TEXT(",");
+                        Scuff += FString::SanitizeFloat(Ages[Index]);
+                    }
+                }
+                if (const AQuebecPlayerState* Stats = GetPlayerState<AQuebecPlayerState>())
+                {
+                    const int32 Stars = Stats->Stars;
+                    const float Now = static_cast<float>(World->GetTimeSeconds());
+                    if (Stars != BrowserStars) BrowserStarsAt = Now;
+                    BrowserStars = Stars;
+                    if (Stats->IsDown())
+                        DownKind = Stats->GetDownState() == EQuebecDownState::Arrested ? TEXT("arrested") : TEXT("knocked");
+                    const float Age = Now - BrowserStarsAt;
+                    const bool bNoticeCovers = GameNoticeStart >= BrowserStarsAt - .3f;
+                    if (!Stats->IsDown() && Stars > 0 && Age >= .6f && Age < 2.4f && !bNoticeCovers)
+                        StarPlate = Stars;
+                    Weapon = QuebecCombat::WeaponName(Stats->CurrentWeapon());
+                }
+                if (const AQuebecSky* Sky = AQuebecSky::Find(World)) SkyLine = Sky->GetClockLine();
+                if (const AQuebecCar* Car = Cast<AQuebecCar>(GetPawn()))
+                {
+                    float Ages[QuebecExhaust::Count];
+                    Car->ExhaustAges(static_cast<float>(World->GetTimeSeconds()), Ages, QuebecExhaust::Count);
+                    for (int32 Index = 0; Index < QuebecExhaust::Count; ++Index)
+                    {
+                        if (Index) Exhaust += TEXT(",");
+                        Exhaust += FString::SanitizeFloat(Ages[Index]);
+                    }
+                }
+            }
+            const auto Json = [](const FString& Value)
+            {
+                FString Out;
+                Out.Reserve(Value.Len());
+                for (const TCHAR Glyph : Value)
+                {
+                    if (Glyph == TEXT('\\') || Glyph == TEXT('"')) Out.AppendChar(TEXT('\\'));
+                    if (Glyph == TEXT('\n') || Glyph == TEXT('\r'))
+                    {
+                        Out.AppendChar(TEXT(' '));
+                        continue;
+                    }
+                    Out.AppendChar(Glyph);
+                }
+                return Out;
+            };
+            Streamer->SendAllPlayersMessage(TEXT("Response"), FString::Printf(
+                TEXT("{\"nordDriving\":%s,\"nordSwimming\":%s,\"nordTitle\":\"%s\",\"nordObjective\":\"%s\",\"nordStage\":\"%s\",\"nordFail\":\"%s\",\"nordBearing\":%d,\"nordMeters\":%d,\"nordPayout\":%d,\"nordJobHead\":\"%s\",\"nordJobLine\":\"%s\",\"nordStars\":%d,\"nordDown\":\"%s\",\"nordColumn\":\"%s\",\"nordColumnInfo\":\"%s\",\"nordColumnObjective\":\"%s\",\"nordSpeech\":\"%s\",\"nordScuff\":\"%s\",\"nordWeapon\":\"%s\",\"nordExhaust\":\"%s\",\"nordSky\":\"%s\"}"),
                 Cast<AQuebecCar>(GetPawn()) ? TEXT("true") : TEXT("false"),
-                Character && Character->GetCharacterMovement()->IsSwimming() ? TEXT("true") : TEXT("false")));
+                Character && Character->GetCharacterMovement()->IsSwimming() ? TEXT("true") : TEXT("false"),
+                *Json(CardTitle), *Json(CardObjective), *Json(CardStage), *Json(CardFail), CardBearing, CardMeters, CardPayout,
+                *Json(JobHead), *Json(JobLine), StarPlate, *Json(DownKind), *Json(ColumnTitle), *Json(ColumnInfo),
+                *Json(ColumnObjective), *Json(Speech), *Json(Scuff), *Json(Weapon), *Json(Exhaust), *Json(SkyLine)));
         }
     }
     ApplyComicStyle();
@@ -1821,12 +2820,24 @@ void AQuebecController::ApplySkyGrading()
         Settings.bOverride_ColorSaturation = bSkyGrading;
         Settings.bOverride_ColorContrast = bSkyGrading;
         Settings.bOverride_WhiteTemp = bSkyGrading;
+        Settings.bOverride_AmbientOcclusionIntensity = bSkyGrading;
+        Settings.bOverride_ToneCurveAmount = bSkyGrading;
+        Settings.bOverride_ColorGamma = bSkyGrading;
+        Settings.bOverride_ColorGain = bSkyGrading;
+        Settings.bOverride_ColorOffset = bSkyGrading;
         if (!Sky) continue;
         Settings.AutoExposureMinBrightness = Settings.AutoExposureMaxBrightness = QuebecSky::AuthoredEV100 + Sky->GetExposureOffset();
         const float Saturation = Sky->GetSaturation(), Contrast = Sky->GetContrast();
         Settings.ColorSaturation = FVector4(Saturation, Saturation, Saturation, 1.f);
         Settings.ColorContrast = FVector4(Contrast, Contrast, Contrast, 1.f);
         Settings.WhiteTemp = Sky->GetWhiteTemp();
+        Settings.AmbientOcclusionIntensity = QuebecShade::AmbientOcclusion;
+        // Narkowicz, ACES Filmic Tone Mapping Curve. The view uses the full filmic curve.
+        // Gamma stays 1. Gain and offset are the warm grade. The opening aim stays.
+        Settings.ToneCurveAmount = QuebecShade::ToneCurveAmount;
+        Settings.ColorGamma = FVector4(1.f, 1.f, 1.f, 1.f);
+        Settings.ColorGain = FVector4(QuebecShade::GradeGainR, QuebecShade::GradeGainG, QuebecShade::GradeGainB, 1.f);
+        Settings.ColorOffset = FVector4(QuebecShade::GradeOffsetR, QuebecShade::GradeOffsetG, QuebecShade::GradeOffsetB, 0.f);
     }
 }
 
@@ -1925,12 +2936,13 @@ AQuebecCar* AQuebecController::FindInteractableCar() const
     for (TActorIterator<AQuebecCar> It(GetWorld()); It; ++It)
     {
         const double Distance = FVector::DistSquared(Character->GetActorLocation(), It->GetActorLocation());
-        if (!It->Occupant && !It->GetController() && (!It->bTraffic || FMath::Abs(It->Speed) <= 120.f) && Distance <= NearestDistance)
+        if (!It->Occupant && !It->GetController() && (!It->bTraffic || FMath::Abs(It->Speed) <= QuebecJobRules::FareTakeSpeed) && Distance <= NearestDistance)
         {
             FHitResult Hit;
             FCollisionQueryParams Query(SCENE_QUERY_STAT(EnterCar), false, Character);
             Query.AddIgnoredActor(*It);
-            if (GetWorld()->LineTraceSingleByChannel(Hit, Character->GetActorLocation(), It->GetActorLocation(), ECC_Visibility, Query)) continue;
+            // The pedalo sits in the channel. The bridge rail is between the deck and the boat, and E on the deck still boards.
+            if (!It->IsPedalo() && GetWorld()->LineTraceSingleByChannel(Hit, Character->GetActorLocation(), It->GetActorLocation(), ECC_Visibility, Query)) continue;
             NearestDistance = Distance;
             NearestCar = *It;
         }
@@ -1977,14 +2989,7 @@ void AQuebecController::ServerInteract_Implementation()
     if (!Character || Character->IsInputLocked()) return; // People: no E while knocked down, K.-O. or arrested.
     if (AQuebecCar* NearestCar = FindInteractableCar())
     {
-        ClientInteractionMessage(TEXT(""));
-        WalkingCharacter = Character;
-        Character->SetInVehicle(true);
-        Character->SetActorLocation(NearestCar->GetActorLocation());
-        Character->AttachToActor(NearestCar, FAttachmentTransformRules::KeepWorldTransform);
-        NearestCar->Occupant = Character;
-        NearestCar->StopInput();
-        Possess(NearestCar);
+        EnterCar(Character, NearestCar);
         return;
     }
     if (AQuebecCampaign* Campaign = CampaignFor(GetWorld()))
@@ -1995,12 +3000,48 @@ void AQuebecController::ServerInteract_Implementation()
         if (State->AdvanceMissionNear(Character->GetActorLocation())) return;
     // Side jobs (JOBS): E at a yellow marker starts a job, after car and campaign interactions.
     if (AQuebecSideJobs* Jobs = AQuebecSideJobs::Find(GetWorld()); Jobs && Jobs->HandleInteract(this)) return;
-    if (AQuebecParkResident* Resident = FindInteractableResident())
+    if (AQuebecCart* Cart = AQuebecCart::Find(GetWorld()); Cart && Cart->HandleInteract(this)) return;
+    if (AQuebecBow* Bow = AQuebecBow::Find(GetWorld()); Bow && Bow->HandleInteract(this)) return;
+    if (AQuebecBay* Bay = AQuebecBay::Find(GetWorld()); Bay && Bay->HandleInteract(this)) return;
+    AQuebecParkResident* Resident = FindInteractableResident();
+    // Parked cars: at its door, E turns the parked car into a real one and takes the driver's seat.
+    if (const int32 Slot = FindEnterableParkedSlot(Resident); Slot != INDEX_NONE)
+        if (AQuebecParkedCars* Parked = AQuebecParkedCars::Find(GetWorld()))
+            if (AQuebecCar* Car = Parked->Promote(Slot))
+            {
+                EnterCar(Character, Car);
+                return;
+            }
+    if (Resident)
     {
         Resident->Acknowledge(Character, true);
         ClientInteractionMessage(FString(AQuebecParkResident::NameForStyle(Resident->Style)) + TEXT("  /  ") + AQuebecParkResident::DialogueForStyle(Resident->Style));
-        PlayFeedback(EQuebecFeedbackCue::Dialogue);
+        ClientPlayBark(Resident->Style);
     }
+}
+
+void AQuebecController::EnterCar(AQuebecCharacter* Character, AQuebecCar* Car)
+{
+    ClientInteractionMessage(TEXT(""));
+    WalkingCharacter = Character;
+    Character->SetInVehicle(true);
+    Character->SetActorLocation(Car->GetActorLocation());
+    Character->AttachToActor(Car, FAttachmentTransformRules::KeepWorldTransform);
+    Car->Occupant = Character;
+    Car->StopInput();
+    Possess(Car);
+}
+
+int32 AQuebecController::FindEnterableParkedSlot(const AQuebecParkResident* Resident) const
+{
+    const AQuebecCharacter* Character = Cast<AQuebecCharacter>(GetPawn());
+    const AQuebecParkedCars* Parked = Character && !Character->GetCharacterMovement()->IsSwimming() ? AQuebecParkedCars::Find(GetWorld()) : nullptr;
+    if (!Parked) return INDEX_NONE;
+    float SlotDistance = -1.f;
+    const int32 Slot = Parked->FindEnterableSlot(Character, SlotDistance);
+    const float ResidentDistance = Resident ? static_cast<float>(FVector::DistSquared(Character->GetActorLocation(),
+        Resident->GetActorLocation() + FVector(0., 0., 100.))) : -1.f;
+    return Slot != INDEX_NONE && QuebecParkedRules::SlotBeatsResident(SlotDistance, ResidentDistance) ? Slot : INDEX_NONE;
 }
 
 void AQuebecController::ExitCar(AQuebecCar* Car)
@@ -2027,8 +3068,11 @@ void AQuebecController::ExitCar(AQuebecCar* Car)
         Car->Occupant = nullptr;
         Car->StopInput();
         Possess(WalkingCharacter);
-        SetControlRotation(Car->GetActorRotation());
-        ClientSetRotation(Car->GetActorRotation());
+        FrameTheStreet(Car->GetActorRotation().Yaw);
+        const float Pace = QuebecBail::CarryPace(Car->Speed, Car->LateralSpeed);
+        const FVector Planar = Car->GetActorForwardVector().GetSafeNormal2D() * Car->Speed
+            + Car->GetActorRightVector().GetSafeNormal2D() * Car->LateralSpeed;
+        if (Pace > 0.f) WalkingCharacter->BeginBail(Planar, Pace);
         WalkingCharacter = nullptr;
         return;
     }
@@ -2114,6 +3158,19 @@ void AQuebecHUD::DrawHUD()
         GetTextSize(Value, W, H, Font, Size * Scale);
         Text(Value, Color, Right - W, Y, Size);
     };
+    // A paper rule and a crop tick turn a flat fill into a printed card. Scott McCloud,
+    // Understanding Comics (1993): the border is what separates the panel from the scene.
+    // Type stays at its existing inset, which is wider than this rule.
+    const auto PanelRule = [this, Scale, Paper](float X, float Y, float W, float H)
+    {
+        const float Inset = 4.f * Scale;
+        const float Weight = FMath::Max(1.f, 2.f * Scale);
+        const FLinearColor Rule = Paper.CopyWithNewOpacity(.7f);
+        DrawLine(X + Inset, Y + Inset, X + W - Inset, Y + Inset, Rule, Weight);
+        DrawLine(X + Inset, Y + H - Inset, X + W - Inset, Y + H - Inset, Rule, Weight);
+        const float Tick = 6.f * Scale;
+        DrawLine(X + W - Inset - Tick, Y + Inset, X + W - Inset, Y + Inset + Tick, Rule, Weight);
+    };
     const auto WrappedLines = [this, Font, Scale](const FString& Value, float Width, float Size)
     {
         TArray<FString> Words, Lines;
@@ -2149,14 +3206,23 @@ void AQuebecHUD::DrawHUD()
     const float Right = Canvas->SizeX - Margin;
     RightText(FString::Printf(TEXT("NORD · %s  /  %d ONLINE"), District.City, State ? State->PlayerArray.Num() : 1), Paper, Right, Margin, .92f);
     if (Avatar) RightText(AQuebecParkResident::NameForStyle(Avatar->CrewStyle), Paper, Right, Margin + 23.f * Scale, 1.f);
-    // Phones have touch buttons for these keys.
+    // Phones have touch buttons for these keys. R still restarts a side job after the story, so the legend stays.
+    const AQuebecSideJobs* SideJobs = AQuebecSideJobs::Find(GetWorld());
+    const bool bSideJobRunning = SideJobs && SideJobs->IsActive();
     if (!bPortrait)
-        RightText(Campaign && !Campaign->IsCampaignComplete() ? TEXT("C  Character   /   F2  Look   /   R  Recover") : TEXT("C  Character   /   F2  Look"), Muted, Right, Margin + 48.f * Scale, .85f);
+    {
+        const bool bShowRecover = bSideJobRunning || (Campaign && (!Campaign->IsCampaignComplete() || Campaign->IsStoryBeatOpen()));
+        RightText(bShowRecover ? TEXT("C  Character   /   F2  Look   /   R  Recover") : TEXT("C  Character   /   F2  Look"), Muted, Right, Margin + 48.f * Scale, .85f);
+    }
 
     const FVector Here = Pawn->GetActorLocation();
-    FString Title, Action, Status;
+    FString Title, Action, Status, StageText, FailText;
     FVector Target = FVector::ZeroVector;
     bool bHasObjective = false;
+    bool bHasNext = false;
+    FVector NextStop = FVector::ZeroVector;
+    double RouteBearing = 0.;
+    QuebecRouteLine::ETurn RouteTurn = QuebecRouteLine::ETurn::Here;
     if (bToronto)
     {
         Title = TEXT("TORONTO FREE ROAM");
@@ -2169,7 +3235,139 @@ void AQuebecHUD::DrawHUD()
         Action = Campaign->GetObjectiveText();
         Status = Campaign->GetStatusText();
         Target = Campaign->GetObjectiveLocation();
-        bHasObjective = !Campaign->IsCampaignComplete();
+        bHasNext = Campaign->GetNextObjectiveLocation(NextStop);
+        bHasObjective = !Campaign->IsCampaignComplete() || Campaign->IsStoryBeatOpen();
+        // After the open story beats the card used to say the city was finished, while the five side jobs
+        // stayed off the radar until the player was within 100 m. The same gold diamond now leads to the
+        // next job. Missions 3 through 8 keep that diamond until they are banked. During the earlier story
+        // the campaign objective keeps the diamond.
+        if (Campaign->IsPondOpen() && bTouchControls)
+            Status = TEXT("Menu · Recover restores this step");
+        else if (Campaign->IsCourtOpen() && bTouchControls)
+            Status = TEXT("Menu · Recover restores this rally");
+        else if (Campaign->IsShowOpen() && bTouchControls)
+            Status = TEXT("Menu · Recover restores this cue");
+        else if (Campaign->IsRescueOpen() && bTouchControls)
+            Status = TEXT("Menu · Recover restores this group");
+        else if (Campaign->IsConvoyOpen() && bTouchControls)
+            Status = TEXT("Menu · Recover restores this wagon");
+        else if (Campaign->IsBlankOpen() && bTouchControls)
+            Status = TEXT("Menu · Recover restores this page");
+        else if (Campaign->IsTourOpen() && bTouchControls)
+            Status = TEXT("Menu · Recover restores this tour");
+        else if (Campaign->IsHomeOpen() && bTouchControls)
+            Status = TEXT("Menu · Recover restores this home");
+        else if (Campaign->IsEscortOpen() && bTouchControls)
+            Status = TEXT("Menu · Recover restores this walk");
+        else if (Campaign->IsShadeOpen() && bTouchControls)
+            Status = TEXT("Menu · Recover restores this dark");
+        else if (Campaign->IsGrabOpen() && bTouchControls)
+            Status = TEXT("Menu · Recover restores this window");
+        else if (Campaign->IsCutOpen() && bTouchControls)
+            Status = TEXT("Menu · Recover restores this cut");
+        else if (Campaign->IsChaseOpen() && bTouchControls)
+            Status = TEXT("Menu · Recover restores this tail");
+        else if (Campaign->IsFinaleOpen() && bTouchControls)
+            Status = TEXT("Menu · Recover restores this day");
+        else if (Campaign->IsFollowOpen() && bTouchControls)
+            Status = TEXT("Menu · Recover restores this gap");
+        else if (Campaign->IsRollOpen() && bTouchControls)
+            Status = TEXT("Menu · Recover restores this cart");
+        else if (Campaign->IsBellOpen() && bTouchControls)
+            Status = TEXT("Menu · Recover restores this order");
+        else if (Campaign->IsBlockOpen() && bTouchControls)
+            Status = TEXT("Menu · Recover restores this road");
+        else if (Campaign->IsSendOpen() && bTouchControls)
+            Status = TEXT("Menu · Recover restores this send-off");
+        else if (Campaign->IsPursueOpen() && bTouchControls)
+            Status = TEXT("Menu · Recover restores this pursuit");
+        else if (Campaign->IsNoseOpen() && bTouchControls)
+            Status = TEXT("Menu · Recover restores this stall");
+        else if (Campaign->IsSlipOpen() && bTouchControls)
+            Status = TEXT("Menu · Recover restores this slip");
+        else if (Campaign->IsMarchOpen() && bTouchControls)
+            Status = TEXT("Menu · Recover restores this march");
+        else if (Campaign->IsDitchOpen() && bTouchControls)
+            Status = TEXT("Menu · Recover restores this ditch");
+        else if (Campaign->IsParcelOpen() && bTouchControls)
+            Status = TEXT("Menu · Recover restores this parcel");
+        else if (Campaign->IsBoltOpen() && bTouchControls)
+            Status = TEXT("Menu · Recover restores this bolt");
+        else if (Campaign->IsYardOpen() && bTouchControls)
+            Status = TEXT("Menu · Recover restores this yard");
+        else if (Campaign->IsLiftOpen() && bTouchControls)
+            Status = TEXT("Menu · Recover restores this lift");
+        else if (Campaign->IsCarryOpen() && bTouchControls)
+            Status = TEXT("Menu · Recover restores this carry");
+        else if (Campaign->IsTabOpen() && bTouchControls)
+            Status = TEXT("Menu · Recover restores this tab");
+        else if (Campaign->IsPostOpen() && bTouchControls)
+            Status = TEXT("Menu · Recover restores this post");
+        else if (Campaign->IsCampaignComplete() && !Campaign->IsStoryBeatOpen() && SideJobs)
+        {
+            const int32 Guide = SideJobs->GuideMarker(Here, true);
+            if (Guide >= 0)
+            {
+                const bool bThisJob = bSideJobRunning && Guide == SideJobs->JobIndex;
+                Title = bThisJob ? AQuebecSideJobs::JobTitle(Guide)
+                    : (SideJobs->IsCompleted(Guide) ? TEXT("REPLAY A SIDE JOB") : TEXT("NEXT SIDE JOB"));
+                Action = (bThisJob && !SideJobs->ObjectiveText.IsEmpty())
+                    ? SideJobs->ObjectiveText
+                    : FString::Printf(TEXT("Go to %s"), AQuebecSideJobs::JobTitle(Guide));
+                FVector Goal = FVector::ZeroVector;
+                const bool bGoal = bThisJob && SideJobs->GetTarget(Goal);
+                if (bGoal) Target = Goal;
+                else if (Guide < SideJobs->NumMarkers()) Target = SideJobs->GetMarker(Guide);
+                if (bGoal || Guide < SideJobs->NumMarkers()) bHasObjective = true;
+                bHasNext = false;
+                if (bThisJob)
+                {
+                    const int32 Whole = FMath::Max(0, FMath::CeilToInt(SideJobs->GetRemainingSeconds()));
+                    const FString Clock = Whole > 0 ? FString::Printf(TEXT("%d:%02d left · "), Whole / 60, Whole % 60) : FString();
+                    Status = Clock + (bTouchControls ? FString(TEXT("Menu · Recover restarts")) : FString(TEXT("R restarts")));
+                }
+                else Status = bTouchControls ? TEXT("Use at the yellow M · Menu · Race replay") : TEXT("E at the yellow M · T replays the race");
+                const int32 Offer = Campaign->JobStake(QuebecJobRules::Rewards[Guide]);
+                if (Offer > 0)
+                {
+                    if (Campaign->bChainSpoiled) Status += FString::Printf(TEXT(" · chain broken · +$%d"), Offer);
+                    else Status += FString::Printf(TEXT(" · chain %d · +$%d"), Campaign->Chain, Offer);
+                }
+            }
+        }
+        int32 PaceIndex = 0, PaceCount = 0, PaceWalk = 0, PaceSprint = 0;
+        if (Campaign->GetBeatPace(PaceIndex, PaceCount, PaceWalk, PaceSprint))
+        {
+            Status += FString::Printf(TEXT(" · %d of %d"), PaceIndex, PaceCount);
+            StageText = FString::Printf(TEXT("Stage %d of %d"), PaceIndex, PaceCount);
+            // On foot the clock is the time left to this diamond. A car keeps the stored leg,
+            // which is zero on the drive, so the card does not invent a walk.
+            if (bHasObjective && !Car)
+            {
+                int LeftWalk = 0;
+                int LeftSprint = 0;
+                QuebecPace::TimeLeft(static_cast<double>(FVector::Dist2D(Here, Target)), LeftWalk, LeftSprint);
+                PaceWalk = LeftWalk;
+                PaceSprint = LeftSprint;
+            }
+            if (PaceWalk > 0) Status += FString::Printf(TEXT(" · ~%ds walk"), PaceWalk);
+            if (PaceSprint > 0 && PaceSprint < PaceWalk) Status += FString::Printf(TEXT(" · ~%ds sprint"), PaceSprint);
+        }
+        int32 Chain = 0;
+        int32 ChainPay = 0;
+        bool bChainBroken = false;
+        if (Campaign->GetChainStake(Chain, ChainPay, bChainBroken))
+        {
+            if (bChainBroken) Status += FString::Printf(TEXT(" · chain broken · +$%d"), ChainPay);
+            else Status += FString::Printf(TEXT(" · chain %d · +$%d"), Chain, ChainPay);
+        }
+        int32 ClearTenths = 0;
+        if (Campaign->GetClearWindow(ClearTenths))
+            Status += FString::Printf(TEXT(" · %d.%ds clear"), ClearTenths / 10, ClearTenths % 10);
+        int32 CloseOffer = 0;
+        if (Campaign->GetCloseOffer(CloseOffer))
+            Status += FString::Printf(TEXT(" · close +$%d"), CloseOffer);
+        FailText = Campaign->FailReason;
     }
     else if (State && State->MissionIndex >= 0 && State->MissionIndex < AQuebecGameState::MissionCount)
     {
@@ -2202,8 +3400,10 @@ void AQuebecHUD::DrawHUD()
     const float MissionX = bPortrait ? Margin : bTouchControls ? MapX - MissionWidth - (18.f + StreetColumnWidth()) * Scale : Right - MissionWidth;
     const TArray<FString> Titles = WrappedLines(Title, MissionWidth - 24.f * Scale, .9f);
     const TArray<FString> Actions = WrappedLines(Action, MissionWidth - 24.f * Scale, 1.15f);
+    const TArray<FString> Stages = StageText.IsEmpty() ? TArray<FString>() : WrappedLines(StageText, MissionWidth - 24.f * Scale, .95f);
+    const TArray<FString> Fails = FailText.IsEmpty() ? TArray<FString>() : WrappedLines(FailText, MissionWidth - 24.f * Scale, .9f);
     const TArray<FString> Statuses = WrappedLines(Status, MissionWidth - 24.f * Scale, .9f);
-    const float MissionHeight = (20.f + Titles.Num() * 20.f + Actions.Num() * 25.f + Statuses.Num() * 20.f + (bHasObjective ? 20.f : 0.f)) * Scale;
+    const float MissionHeight = (20.f + Titles.Num() * 20.f + Actions.Num() * 25.f + Stages.Num() * 20.f + Fails.Num() * 20.f + Statuses.Num() * 20.f + (bHasObjective ? 20.f : 0.f)) * Scale;
     const float MissionY = bPortrait || bTouchControls ? Margin : Canvas->SizeY - Margin - 78.f * Scale - MissionHeight;
     const float TopClear = bPortrait ? FMath::Max(MissionY + MissionHeight, MapY + MapBlock) + 12.f * Scale : Margin;
 
@@ -2211,16 +3411,20 @@ void AQuebecHUD::DrawHUD()
     const bool bSwimming = Avatar && Avatar->GetCharacterMovement()->IsSwimming();
     // On a tall screen the Use button already says car; an always-on exit prompt would only cover the view.
     if (bSwimming) Prompt = TEXT("SWIMMING · Move toward shore");
-    else if (Car) Prompt = bPortrait ? FString() : TEXT("[ E ]  EXIT CAR");
-    else if (NearbyCar) Prompt = TEXT("[ E ]  ENTER CAR");
+    else if (Car) Prompt = bPortrait ? FString() : (Car->IsPedalo() ? TEXT("[ E ]  STEP ASHORE") : Car->IsScoot() ? TEXT("[ E ]  STEP OFF") : Car->IsBike() ? TEXT("[ E ]  STEP OFF") : TEXT("[ E ]  EXIT CAR"));
+    else if (NearbyCar) Prompt = NearbyCar->IsPedalo() ? TEXT("[ E ]  BOARD PEDALO") : NearbyCar->IsScoot() ? TEXT("[ E ]  BOARD SCOOTER") : NearbyCar->IsBike() ? TEXT("[ E ]  BOARD BIKE") : TEXT("[ E ]  ENTER CAR");
     else if (bCanComplete) Prompt = TEXT("[ E ]  COMPLETE OBJECTIVE");
     else if (Controller)
     {
         if (Campaign) Prompt = Campaign->GetInteractionPrompt(Controller);
-        if (Prompt.IsEmpty()) Prompt = StreetPrompt(); // Side-job marker (JOBS).
+        if (Prompt.IsEmpty()) Prompt = StreetPrompt(); // Side-job marker, or Chez Lise.
         if (Prompt.IsEmpty())
-            if (AQuebecParkResident* Resident = Controller->FindInteractableResident())
-                Prompt = FString(TEXT("E  /  Talk to ")) + AQuebecParkResident::NameForStyle(Resident->Style);
+        {
+            AQuebecParkResident* Resident = Controller->FindInteractableResident();
+            // A parked car at the curb, unless a resident stands nearer (QuebecParkedRules::SlotBeatsResident).
+            if (Controller->FindEnterableParkedSlot(Resident) != INDEX_NONE) Prompt = TEXT("[ E ]  ENTER CAR");
+            else if (Resident) Prompt = FString(TEXT("E  /  Talk to ")) + AQuebecParkResident::NameForStyle(Resident->Style);
+        }
     }
     const float LowerLeft = !bPortrait && bTouchControls ? 240.f * Scale : Margin;
     const float LowerRight = Right - (!bPortrait ? ((bTouchControls ? 420.f : 0.f) + (Car ? 190.f : 0.f)) * Scale : 0.f);
@@ -2254,6 +3458,7 @@ void AQuebecHUD::DrawHUD()
         const float Height = (22.f + Lines.Num() * 22.f) * Scale;
         DrawRect(Panel, Margin, TopClear, Width, Height);
         DrawRect(Accent, Margin, TopClear, 2.f * Scale, Height);
+        PanelRule(Margin, TopClear, Width, Height);
         for (int32 Row = 0; Row < Lines.Num(); ++Row)
             Text(Lines[Row], Paper, Margin + 14.f * Scale, TopClear + (11.f + Row * 22.f) * Scale, 1.05f);
         CaptionBottom = TopClear + Height + 8.f * Scale;
@@ -2278,20 +3483,52 @@ void AQuebecHUD::DrawHUD()
         const FVector2D Offset = MapPoint(Position) - Center;
         return Center + Offset.GetClampedToMaxSize(MapRadius - 8.f * Scale);
     };
-    for (int32 Index = 0; Index < District.RoadCount; ++Index)
+    // Jacques Bertin, Semiology of Graphics (1983): size is the visual variable that
+    // orders a quantity. A 9 m avenue and a side street are ordered, so the avenue's
+    // stroke is wider. A dark edge keeps the light center readable on the panel.
+    // Side streets stay the grey line. The clip is unchanged.
+    const auto RoadWidthCm = [&District](int32 Index) -> float
     {
-        const auto& Segment = District.RoadSegments[Index];
-        FVector2D A = MapPoint(Segment[0]), B = MapPoint(Segment[1]);
-        // Clip the segment: clamping its endpoints invents roads along the radar border.
-        if (ClipHUDRadarSegment(A, B, Center, MapRadius))
-            DrawLine(A.X, A.Y, B.X, B.Y, FLinearColor(.53f, .58f, .59f, .85f), 1.5f * Scale);
+        if (District.RoadSegments == LaFontaineExtension::RadarRoadSegments)
+        {
+            const int32 ParkCount = UE_ARRAY_COUNT(LaFontaine::RoadSegments);
+            if (Index < ParkCount) return LaFontaine::RoadSegmentWidths[Index];
+            const int32 Extension = Index - ParkCount;
+            if (Extension < UE_ARRAY_COUNT(LaFontaineExtension::RoadSegmentWidths))
+                return LaFontaineExtension::RoadSegmentWidths[Extension];
+        }
+        else if (District.RoadSegments == LaFontaine::RoadSegments
+            && Index < UE_ARRAY_COUNT(LaFontaine::RoadSegmentWidths))
+            return LaFontaine::RoadSegmentWidths[Index];
+        else if (District.RoadSegments == CollegeBathurst::RoadSegments
+            && Index < UE_ARRAY_COUNT(CollegeBathurst::RoadSegmentWidths))
+            return CollegeBathurst::RoadSegmentWidths[Index];
+        return 400.f;
+    };
+    for (int32 Pass = 0; Pass < 3; ++Pass)
+    {
+        for (int32 Index = 0; Index < District.RoadCount; ++Index)
+        {
+            const bool bAvenue = RoadWidthCm(Index) >= 900.f;
+            if (Pass == 0 && bAvenue) continue;
+            if (Pass > 0 && !bAvenue) continue;
+            const auto& Segment = District.RoadSegments[Index];
+            FVector2D A = MapPoint(Segment[0]), B = MapPoint(Segment[1]);
+            // Clip the segment: clamping its endpoints invents roads along the radar border.
+            if (!ClipHUDRadarSegment(A, B, Center, MapRadius)) continue;
+            if (Pass == 0)
+                DrawLine(A.X, A.Y, B.X, B.Y, FLinearColor(.53f, .58f, .59f, .85f), 1.5f * Scale);
+            else if (Pass == 1)
+                DrawLine(A.X, A.Y, B.X, B.Y, Ink, 5.2f * Scale);
+            else
+                DrawLine(A.X, A.Y, B.X, B.Y, FLinearColor(.92f, .89f, .82f, .95f), 2.6f * Scale);
+        }
     }
     const float CreditRight = Right - 7.f * Scale;
     DrawRect(Panel, Right - 240.f * Scale, MapY + MapHeight + 4.f * Scale, 240.f * Scale, SkyStep + 3.f * CreditStep);
     if (Sky)
     {
-        const int32 Minutes = FMath::Clamp(FMath::FloorToInt(Sky->GetHour() * 60.f), 0, 24 * 60 - 1);
-        RightText(FString::Printf(TEXT("%02d:%02d · %s"), Minutes / 60, Minutes % 60, *Sky->GetWeatherName()), Paper, CreditRight, MapY + MapHeight + 4.f * Scale, CreditSize * 1.15f);
+        RightText(Sky->GetClockLine(), Paper, CreditRight, MapY + MapHeight + 4.f * Scale, CreditSize * 1.15f);
     }
     const float CreditY = MapY + MapHeight + 4.f * Scale + SkyStep;
     RightText(TEXT("© OpenStreetMap contributors / ODbL"), Paper, CreditRight, CreditY, CreditSize);
@@ -2320,6 +3557,27 @@ void AQuebecHUD::DrawHUD()
     const FVector2D Tip = Center + Nose * 10.f * Scale;
     const FVector2D TailA = Center - Nose * 5.f * Scale + Side * 5.f * Scale;
     const FVector2D TailB = Center - Nose * 5.f * Scale - Side * 5.f * Scale;
+    // Jacques Bertin, Semiology of Graphics (1983): a mark that shares its ground's value
+    // disappears. The avenue center is paper, and this arrow was a paper outline, so the
+    // heading broke up along a wide road. The ink wedge is larger. The paper wedge sits inside it.
+    const FVector2D ArrowMid = (Tip + TailA + TailB) / 3.f;
+    const FVector2D CaseTip = ArrowMid + (Tip - ArrowMid) * 1.55f;
+    const FVector2D CaseA = ArrowMid + (TailA - ArrowMid) * 1.55f;
+    const FVector2D CaseB = ArrowMid + (TailB - ArrowMid) * 1.55f;
+    for (int32 Row = 0; Row <= 14; ++Row)
+    {
+        const float Along = static_cast<float>(Row) / 14.f;
+        const FVector2D CaseLeft = FMath::Lerp(CaseTip, CaseA, Along);
+        const FVector2D CaseRight = FMath::Lerp(CaseTip, CaseB, Along);
+        DrawLine(CaseLeft.X, CaseLeft.Y, CaseRight.X, CaseRight.Y, Ink, 2.f * Scale);
+    }
+    for (int32 Row = 0; Row <= 14; ++Row)
+    {
+        const float Along = static_cast<float>(Row) / 14.f;
+        const FVector2D FillLeft = FMath::Lerp(Tip, TailA, Along);
+        const FVector2D FillRight = FMath::Lerp(Tip, TailB, Along);
+        DrawLine(FillLeft.X, FillLeft.Y, FillRight.X, FillRight.Y, Paper, 2.f * Scale);
+    }
     DrawLine(TailA.X, TailA.Y, Tip.X, Tip.Y, Paper, 2.f * Scale);
     DrawLine(Tip.X, Tip.Y, TailB.X, TailB.Y, Paper, 2.f * Scale);
     DrawLine(TailB.X, TailB.Y, TailA.X, TailA.Y, Paper, 2.f * Scale);
@@ -2328,15 +3586,36 @@ void AQuebecHUD::DrawHUD()
     if (bHasObjective)
     {
         const FVector2D Goal = MapMarker(Target);
+        const FVector ToStop = Target - Here;
+        const FVector PawnForward = Pawn->GetActorForwardVector();
+        const QuebecRouteLine::FVec2 RouteFace = QuebecRouteLine::RouteFacing(
+            Car != nullptr,
+            static_cast<double>(PlayerOwner->GetControlRotation().Yaw),
+            {PawnForward.X, PawnForward.Y});
+        const double PlanCm = QuebecRouteLine::Length({ToStop.X, ToStop.Y});
+        RouteBearing = QuebecRouteLine::BearingFromPlayer(RouteFace, {ToStop.X, ToStop.Y});
+        RouteTurn = QuebecRouteLine::TurnFor(RouteBearing, PlanCm);
+        QuebecRouteLine::FVec2 StrokeA, StrokeB;
+        if (QuebecRouteLine::RadarStroke({Center.X, Center.Y}, {Goal.X, Goal.Y}, 12. * Scale, 8. * Scale, StrokeA, StrokeB))
+            DrawLine(static_cast<float>(StrokeA.X), static_cast<float>(StrokeA.Y), static_cast<float>(StrokeB.X), static_cast<float>(StrokeB.Y), Accent, 2.2f * Scale);
+        if (bHasNext)
+        {
+            FVector2D From = MapPoint(Target);
+            FVector2D To = MapPoint(NextStop);
+            if (ClipHUDRadarSegment(From, To, Center, MapRadius - 6.f * Scale))
+                DrawLine(From.X, From.Y, To.X, To.Y, Accent.CopyWithNewOpacity(.4f), 1.4f * Scale);
+        }
         const float Radius = 5.f * Scale;
         DrawLine(Goal.X, Goal.Y - Radius, Goal.X + Radius, Goal.Y, Accent, 2.f * Scale);
         DrawLine(Goal.X + Radius, Goal.Y, Goal.X, Goal.Y + Radius, Accent, 2.f * Scale);
         DrawLine(Goal.X, Goal.Y + Radius, Goal.X - Radius, Goal.Y, Accent, 2.f * Scale);
         DrawLine(Goal.X - Radius, Goal.Y, Goal.X, Goal.Y - Radius, Accent, 2.f * Scale);
         FVector2D Marker;
-        if (PlayerOwner->ProjectWorldLocationToScreen(Target + FVector(0., 0., 220.), Marker) &&
+        const FVector Pin = Target + FVector(0., 0., 220.);
+        const float ViewBottom = bPortrait ? ControlsTop : Canvas->SizeY - 250.f * Scale;
+        if (PlayerOwner->ProjectWorldLocationToScreen(Pin, Marker) &&
             Marker.X > Margin + 20.f * Scale && Marker.X < Right - 20.f * Scale &&
-            Marker.Y > ViewTop && Marker.Y < (bPortrait ? ControlsTop : Canvas->SizeY - 250.f * Scale))
+            Marker.Y > ViewTop && Marker.Y < ViewBottom)
         {
             const float R = 10.f * Scale;
             DrawLine(Marker.X, Marker.Y - R, Marker.X + R, Marker.Y, Accent, 2.f * Scale);
@@ -2345,26 +3624,135 @@ void AQuebecHUD::DrawHUD()
             DrawLine(Marker.X - R, Marker.Y, Marker.X, Marker.Y - R, Accent, 2.f * Scale);
             Text(FString::Printf(TEXT("%dm"), FMath::RoundToInt(Meters)), Paper, Marker.X - 15.f * Scale, Marker.Y + 15.f * Scale, .85f);
         }
+        else
+        {
+            FVector Eye = FVector::ZeroVector;
+            FRotator View = FRotator::ZeroRotator;
+            PlayerOwner->GetPlayerViewPoint(Eye, View);
+            const FRotationMatrix Axes(View);
+            const FVector ToPin = Pin - Eye;
+            double DirX = 0., DirY = 0.;
+            QuebecRouteLine::ViewToScreen(
+                FVector::DotProduct(ToPin, Axes.GetUnitAxis(EAxis::X)),
+                FVector::DotProduct(ToPin, Axes.GetUnitAxis(EAxis::Y)),
+                FVector::DotProduct(ToPin, Axes.GetUnitAxis(EAxis::Z)),
+                DirX, DirY);
+            const double EdgeLeft = static_cast<double>(Margin + 28.f * Scale);
+            const double EdgeTop = static_cast<double>(ViewTop);
+            const double EdgeRight = static_cast<double>(Right - 28.f * Scale);
+            const double EdgeBottom = static_cast<double>(ViewBottom - 28.f * Scale);
+            QuebecRouteLine::FVec2 Edge;
+            if (EdgeRight - EdgeLeft >= 40. * Scale && EdgeBottom - EdgeTop >= 40. * Scale &&
+                QuebecRouteLine::EdgeArrow(DirX, DirY, EdgeLeft, EdgeTop, EdgeRight, EdgeBottom, Edge))
+            {
+                const double Span = std::hypot(DirX, DirY);
+                if (Span > 1e-6)
+                {
+                    const float Ux = static_cast<float>(DirX / Span);
+                    const float Uy = static_cast<float>(DirY / Span);
+                    const float Wing = 10.f * Scale;
+                    const float Spread = 6.f * Scale;
+                    const float TipX = static_cast<float>(Edge.X);
+                    const float TipY = static_cast<float>(Edge.Y);
+                    const float BackX = TipX - Ux * Wing;
+                    const float BackY = TipY - Uy * Wing;
+                    DrawLine(TipX, TipY, BackX - Uy * Spread, BackY + Ux * Spread, Accent, 2.f * Scale);
+                    DrawLine(TipX, TipY, BackX + Uy * Spread, BackY - Ux * Spread, Accent, 2.f * Scale);
+                }
+            }
+        }
     }
 
     DrawRect(Panel, MissionX, MissionY, MissionWidth, MissionHeight);
     DrawRect(Accent, MissionX, MissionY, 2.f * Scale, MissionHeight);
+    PanelRule(MissionX, MissionY, MissionWidth, MissionHeight);
     float RowY = MissionY + 10.f * Scale;
     for (const FString& Line : Titles) { Text(Line, Accent, MissionX + 12.f * Scale, RowY, .9f); RowY += 20.f * Scale; }
     for (const FString& Line : Actions) { Text(Line, Paper, MissionX + 12.f * Scale, RowY, 1.15f); RowY += 25.f * Scale; }
+    for (const FString& Line : Stages) { Text(Line, Paper, MissionX + 12.f * Scale, RowY, .95f); RowY += 20.f * Scale; }
+    for (const FString& Line : Fails) { Text(Line, FLinearColor(1.f, .42f, .48f, 1.f), MissionX + 12.f * Scale, RowY, .9f); RowY += 20.f * Scale; }
     for (const FString& Line : Statuses) { Text(Line, Muted, MissionX + 12.f * Scale, RowY, .9f); RowY += 20.f * Scale; }
-    if (bHasObjective) Text(FString::Printf(TEXT("%dm"), FMath::RoundToInt(Meters)), Paper, MissionX + 12.f * Scale, RowY, .9f);
+    if (Campaign && Campaign->LastPayout > 0 && Now < Campaign->PayoutUntil)
+    {
+        const FString Purse = FString::Printf(TEXT("+%d"), Campaign->LastPayout);
+        const float PopW = 180.f * Scale;
+        const float PopH = 64.f * Scale;
+        const float PopX = (Canvas->SizeX - PopW) * .5f;
+        const float PopY = Margin;
+        DrawRect(Accent, PopX, PopY, PopW, PopH);
+        Text(TEXT("CHING"), Ink, PopX + 12.f * Scale, PopY + 8.f * Scale, .7f);
+        Text(Purse, Ink, PopX + 12.f * Scale, PopY + 28.f * Scale, 1.4f);
+    }
+    if (bHasObjective)
+    {
+        const FString Distance = RouteTurn == QuebecRouteLine::ETurn::Here
+            ? FString(TEXT("here"))
+            : FString::Printf(TEXT("%dm · %s"), FMath::RoundToInt(Meters), RouteTurnWord(RouteTurn));
+        Text(Distance, Paper, MissionX + 12.f * Scale, RowY, .9f);
+        if (RouteTurn != QuebecRouteLine::ETurn::Here)
+        {
+            float TextW = 0.f, TextH = 0.f;
+            GetTextSize(Distance, TextW, TextH, Font, .9f * Scale);
+            const float Box = 18.f * Scale;
+            const float BoxX = MissionX + 12.f * Scale + TextW + 8.f * Scale;
+            if (BoxX + Box <= MissionX + MissionWidth - 6.f * Scale)
+            {
+                QuebecRouteLine::FVec2 NeedleStart, NeedleTip;
+                QuebecRouteLine::CardNeedle(RouteBearing, static_cast<double>(Box), NeedleStart, NeedleTip);
+                DrawLine(BoxX + static_cast<float>(NeedleStart.X), RowY + static_cast<float>(NeedleStart.Y),
+                    BoxX + static_cast<float>(NeedleTip.X), RowY + static_cast<float>(NeedleTip.Y), Accent, 2.f * Scale);
+            }
+        }
+    }
 
     if (!Prompt.IsEmpty())
     {
         DrawRect(Panel, PromptX, PromptY, PromptWidth, PromptHeight);
+        PanelRule(PromptX, PromptY, PromptWidth, PromptHeight);
         for (int32 I = 0; I < PromptLines.Num(); ++I) Text(PromptLines[I], Paper, PromptX + 12.f * Scale, PromptY + (10.f + I * 24.f) * Scale, 1.1f);
+    }
+    FString PedaloPortrait = TEXT("km/h  /  PEDALO");
+    FString PedaloLandscape = TEXT("Hold gas to paddle");
+    FString BikePortrait = TEXT("km/h  /  BIKE");
+    FString BikeLandscape = TEXT("Hold gas to pedal");
+    const FString ScootPortrait = TEXT("km/h  /  SCOOT");
+    const FString ScootLandscape = TEXT("Hold gas to kick");
+    if (Car && Car->IsPedalo())
+    {
+        if (const AQuebecBuoy* Buoy = AQuebecBuoy::Find(GetWorld()))
+        {
+            PedaloPortrait = Buoy->DriveLine(true);
+            PedaloLandscape = Buoy->DriveLine(false);
+        }
+    }
+    else if (Car && Car->IsBike())
+    {
+        const AQuebecRing* Ring = AQuebecRing::Find(GetWorld());
+        const AQuebecCrate* Crate = AQuebecCrate::Find(GetWorld());
+        const FString Carry = Crate ? Crate->BikeLine(false) : FString();
+        if (Ring && Ring->IsOpen())
+        {
+            BikePortrait = Ring->DriveLine(true);
+            BikeLandscape = Ring->DriveLine(false);
+        }
+        else if (!Carry.IsEmpty())
+        {
+            BikePortrait = Crate->BikeLine(true);
+            BikeLandscape = Carry;
+        }
+        else if (Ring)
+        {
+            BikePortrait = Ring->DriveLine(true);
+            BikeLandscape = Ring->DriveLine(false);
+        }
     }
     if (Car && bPortrait)
     {
         const float Y = ControlsTop - 66.f * Scale;
         Text(FString::Printf(TEXT("%03d"), FMath::RoundToInt(FMath::Abs(Car->Speed) * .036f)), Paper, Margin, Y, 1.8f);
-        Text(Car->bHandbrake ? TEXT("km/h  /  HANDBRAKE") : TEXT("km/h"), Car->bHandbrake ? Accent : Muted, Margin, Y + 38.f * Scale, .85f);
+        const bool bKick = Car->IsBike() || Car->IsPedalo() || Car->IsScoot();
+        const FString KickCaption = Car->IsScoot() ? ScootPortrait : Car->IsBike() ? BikePortrait : Car->IsPedalo() ? PedaloPortrait : (Car->bHandbrake ? TEXT("km/h  /  HANDBRAKE") : TEXT("km/h"));
+        Text(KickCaption, bKick ? Accent : (Car->bHandbrake ? Accent : Muted), Margin, Y + 38.f * Scale, .85f);
     }
     else if (Car)
     {
@@ -2373,12 +3761,25 @@ void AQuebecHUD::DrawHUD()
         const float Y = Canvas->SizeY - Margin - 74.f * Scale;
         RightText(FString::Printf(TEXT("%03d"), FMath::RoundToInt(FMath::Abs(Car->Speed) * .036f)), Paper, SpeedRight - 42.f * Scale, Y, 1.8f);
         RightText(TEXT("km/h"), Muted, SpeedRight, Y + 23.f * Scale, .85f);
-        Text(TEXT("W/S Drive   A/D Steer"), Muted, X, Y + 42.f * Scale, .85f);
-        Text(Car->bHandbrake ? TEXT("SPACE  HANDBRAKE ON") : TEXT("SPACE  Handbrake"), Car->bHandbrake ? Accent : Muted, X, Y + 59.f * Scale, .85f);
+        Text(TEXT("WASD or arrows  Drive / steer"), Muted, X, Y + 42.f * Scale, .85f);
+        const bool bKick = Car->IsBike() || Car->IsPedalo() || Car->IsScoot();
+        const FString KickLine = Car->IsScoot() ? ScootLandscape : Car->IsBike() ? BikeLandscape : Car->IsPedalo() ? PedaloLandscape : (Car->bHandbrake ? TEXT("SPACE  HANDBRAKE ON") : TEXT("SPACE  Handbrake"));
+        Text(KickLine, bKick || Car->bHandbrake ? Accent : Muted, X, Y + 59.f * Scale, .85f);
     }
-    else if (!bPortrait && !bTouchControls && Now - FirstHUDTime < 10.f)
+    else if (!bPortrait && !bTouchControls)
     {
-        Text(TEXT("SPACE  Jump   /   SHIFT  Sprint"), Muted, LowerLeft, Canvas->SizeY - Margin - 68.f * Scale, .9f);
+        if (const AQuebecTrio* Trio = AQuebecTrio::Find(GetWorld()))
+        {
+            const FString TrioLine = Trio->WalkLine();
+            if (!TrioLine.IsEmpty()) Text(TrioLine, Accent, LowerLeft, Canvas->SizeY - Margin - 90.f * Scale, .9f);
+        }
+        if (const AQuebecCrate* Crate = AQuebecCrate::Find(GetWorld()))
+        {
+            const FString CrateLine = Crate->WalkLine();
+            if (!CrateLine.IsEmpty()) Text(CrateLine, Accent, LowerLeft, Canvas->SizeY - Margin - 112.f * Scale, .9f);
+        }
+        if (Now - FirstHUDTime < 10.f)
+            Text(TEXT("SPACE  Jump   /   SHIFT  Sprint"), Muted, LowerLeft, Canvas->SizeY - Margin - 68.f * Scale, .9f);
     }
 
     bool bFalling = false;
@@ -2389,7 +3790,7 @@ void AQuebecHUD::DrawHUD()
     }
     if (bComic && Car)
     {
-        if (Car->bHandbrake && !bWasHandbrake && FMath::Abs(Car->Speed) > 300.f) TriggerSoundWord(TEXT("SKRRT!"));
+        if (QuebecSkidTone::Caught(Car->bHandbrake, bWasHandbrake, static_cast<double>(Car->Speed))) TriggerSoundWord(TEXT("SKRRT!"));
         if (LastCarSpeed < 900.f && Car->Speed >= 900.f) TriggerSoundWord(TEXT("VROOM!"));
     }
     bWasFalling = bFalling;
@@ -2461,6 +3862,66 @@ AQuebecGameMode::AQuebecGameMode()
     PlayerStateClass = AQuebecPlayerState::StaticClass(); // Street state: health, weapons, stars, cash (COMBAT).
 }
 
+float QuebecStreetLook::OpeningYaw(const UWorld* World, const FVector& Here, float FallbackYaw)
+{
+    // Same length test as RoadWidthAt: each map's width array is recognised by the road count.
+    const QuebecDistrict::FSettings& District = QuebecDistrict::ForWorld(World);
+    const int32 TorontoRoads = static_cast<int32>(UE_ARRAY_COUNT(CollegeBathurst::RoadSegments));
+    const int32 MontrealRoads = static_cast<int32>(UE_ARRAY_COUNT(LaFontaine::RoadSegmentWidths));
+    const int32 ExtensionRoads = static_cast<int32>(UE_ARRAY_COUNT(LaFontaineExtension::RoadSegmentWidths));
+    TArray<FSegment> Segments;
+    Segments.Reserve(District.RoadCount);
+    for (int32 Index = 0; Index < District.RoadCount; ++Index)
+    {
+        const FVector& A = District.RoadSegments[Index][0];
+        const FVector& B = District.RoadSegments[Index][1];
+        float Width = 0.f;
+        if (District.RoadCount == TorontoRoads)
+            Width = Index < static_cast<int32>(UE_ARRAY_COUNT(CollegeBathurst::RoadSegmentWidths)) ? CollegeBathurst::RoadSegmentWidths[Index] : 0.f;
+        else if (Index < MontrealRoads)
+            Width = LaFontaine::RoadSegmentWidths[Index];
+        else
+        {
+            const int32 Extra = Index - MontrealRoads;
+            Width = Extra < ExtensionRoads ? LaFontaineExtension::RoadSegmentWidths[Extra] : 0.f;
+        }
+        Segments.Add(FSegment{A.X, A.Y, B.X, B.Y, Width});
+    }
+    return static_cast<float>(AimYaw(Here.X, Here.Y, Segments.GetData(), Segments.Num(), FallbackYaw));
+}
+
+void AQuebecGameMode::FinishRestartPlayer(AController* NewPlayer, const FRotator& StartRotation)
+{
+    Super::FinishRestartPlayer(NewPlayer, StartRotation);
+    // The base class writes the start rotator after possess, which puts pitch back at 0.
+    // The start yaw looks along the avenue, which from this sidewalk leaves the street as a side sliver.
+    if (AQuebecController* Player = Cast<AQuebecController>(NewPlayer))
+        if (AQuebecCharacter* Walker = Cast<AQuebecCharacter>(Player->GetPawn()))
+        {
+            FString PlaceName;
+            const bool bAsked = FParse::Value(FCommandLine::Get(), TEXT("NordPlace="), PlaceName);
+            if (bAsked && !QuebecDistrict::IsToronto(GetWorld()))
+            {
+                char Buffer[32];
+                const int32 Letters = FMath::Min(PlaceName.Len(), 31);
+                for (int32 Index = 0; Index < Letters; ++Index)
+                    Buffer[Index] = static_cast<char>(PlaceName[Index] & 127);
+                Buffer[Letters] = 0;
+                const int PlaceIndex = QuebecPlace::IndexFor(Buffer);
+                if (PlaceIndex > 0)
+                {
+                    const QuebecPlace::FPlace Spot = QuebecPlace::PlaceAt(PlaceIndex);
+                    const FVector Point(Spot.X, Spot.Y, Spot.Z);
+                    if (!Walker->TeleportTo(Point, FRotator::ZeroRotator))
+                        Walker->SetActorLocation(Point);
+                    Player->FrameTheStreet(Spot.Yaw);
+                    return;
+                }
+            }
+            Player->FrameTheStreet(QuebecStreetLook::OpeningYaw(GetWorld(), Walker->GetActorLocation(), StartRotation.Yaw));
+        }
+}
+
 AActor* AQuebecGameMode::ChoosePlayerStart_Implementation(AController* Player)
 {
     // Keep authored multiplayer starts and PIE's "Play from Here" behavior.
@@ -2492,6 +3953,8 @@ void AQuebecGameMode::BeginPlay()
             Surface->SetCollisionResponseToChannel(ECC_Visibility,ECR_Block);
         }
     }
+    // After the road meshes accept a ground trace, so a dash is not dropped for lack of a hit.
+    if (!bToronto) AQuebecLanePaint::Spawn(GetWorld());
     // Toronto has its own origin and starts as free roam, with only its authored starter car.
     if (bToronto) return;
     if (!FParse::Param(FCommandLine::Get(), TEXT("NordNoCampaign")))
@@ -2502,9 +3965,79 @@ void AQuebecGameMode::BeginPlay()
                 Material && Material->GetName().Contains(TEXT("Beacon")))
                 It->SetActorHiddenInGame(true);
     }
-    // Side jobs (JOBS): four yellow markers, one shared job at a time. No cars spawn here, so population is unchanged.
+    // Side jobs (JOBS): six yellow markers, one shared job at a time. No cars spawn here, so population is unchanged.
     if (!FParse::Param(FCommandLine::Get(), TEXT("NordNoCampaign")) && !FParse::Param(FCommandLine::Get(), TEXT("NordNoSideJobs")))
         GetWorld()->SpawnActor<AQuebecSideJobs>();
+    // Chez Lise, on the Sherbrooke sidewalk. E spends session cash. No population change.
+    if (!FParse::Param(FCommandLine::Get(), TEXT("NordNoCampaign")))
+        GetWorld()->SpawnActor<AQuebecCart>();
+    // The stage bow. Hidden until the goon fight is won. No population change.
+    if (!FParse::Param(FCommandLine::Get(), TEXT("NordNoCampaign")))
+        GetWorld()->SpawnActor<AQuebecBow>();
+    // The atelier. E spends session cash to clear body damage on a nearby car. No population change.
+    if (!FParse::Param(FCommandLine::Get(), TEXT("NordNoCampaign")))
+        GetWorld()->SpawnActor<AQuebecBay>();
+    // One pedalo in the channel beside the north-pond bridge. It is not a parked street car.
+    if (!FParse::Param(FCommandLine::Get(), TEXT("NordNoCampaign")))
+    {
+        static_assert(QuebecRide::PedaloKind == 1, "IsPedalo() follows PedaloKind");
+        const FVector Point(static_cast<float>(QuebecRide::BerthX), static_cast<float>(QuebecRide::BerthY), QuebecRide::BerthZ);
+        const FRotator Facing(0.f, QuebecRide::BerthYaw, 0.f);
+        const FTransform Transform(Facing, Point);
+        AQuebecCar* Boat = GetWorld()->SpawnActorDeferred<AQuebecCar>(AQuebecCar::StaticClass(), Transform, nullptr, nullptr, ESpawnActorCollisionHandlingMethod::AlwaysSpawn);
+        if (Boat)
+        {
+            Boat->RideKind = QuebecRide::PedaloKind;
+            Boat->Tags.Add(TEXT("Pedalo"));
+            Boat->FinishSpawning(Transform);
+            UE_LOG(LogTemp, Display, TEXT("NORD_PEDALO berth x=%.0f y=%.0f"), Point.X, Point.Y);
+        }
+        GetWorld()->SpawnActor<AQuebecBuoy>(FVector(QuebecLap::BuoyX, QuebecLap::BuoyY, 0.), FRotator::ZeroRotator);
+        GetWorld()->SpawnActor<AQuebecWade>(FVector(QuebecWade::BuoyX, QuebecWade::BuoyY, 0.), FRotator::ZeroRotator);
+        GetWorld()->SpawnActor<AQuebecTrio>(FVector(QuebecTrio::Stops[0].X, QuebecTrio::Stops[0].Y, 0.), FRotator::ZeroRotator);
+        // One bike in the dry park east of the spawn. It is not a parked street car.
+        static_assert(QuebecCycle::BikeKind == 2, "IsBike() follows BikeKind");
+        FVector BikePoint(static_cast<float>(QuebecCycle::StandX), static_cast<float>(QuebecCycle::StandY), 0.f);
+        FHitResult GroundHit;
+        FCollisionQueryParams GroundQuery(SCENE_QUERY_STAT(BikeStand), false);
+        const FVector TraceStart = BikePoint + FVector(0.f, 0.f, 200.f);
+        if (GetWorld()->LineTraceSingleByChannel(GroundHit, TraceStart, TraceStart - FVector(0.f, 0.f, 800.f), ECC_Visibility, GroundQuery))
+            BikePoint = GroundHit.ImpactPoint + FVector(0.f, 0.f, 102.f);
+        else
+            BikePoint.Z = QuebecCycle::StandZ;
+        const FRotator BikeYaw(0.f, QuebecCycle::StandYaw, 0.f);
+        const FTransform BikeTransform(BikeYaw, BikePoint);
+        AQuebecCar* Bike = GetWorld()->SpawnActorDeferred<AQuebecCar>(AQuebecCar::StaticClass(), BikeTransform, nullptr, nullptr, ESpawnActorCollisionHandlingMethod::AlwaysSpawn);
+        if (Bike)
+        {
+            Bike->RideKind = QuebecCycle::BikeKind;
+            Bike->Tags.Add(TEXT("Velo"));
+            Bike->FinishSpawning(BikeTransform);
+            UE_LOG(LogTemp, Display, TEXT("NORD_BIKE stand x=%.0f y=%.0f"), BikePoint.X, BikePoint.Y);
+        }
+        GetWorld()->SpawnActor<AQuebecRing>(FVector(QuebecRing::GateAX, QuebecRing::GateAY, 0.), FRotator::ZeroRotator);
+        GetWorld()->SpawnActor<AQuebecCrate>(FVector(QuebecCrate::CurbX, QuebecCrate::CurbY, 0.), FRotator::ZeroRotator);
+        // One kick scooter on the dry lawn. It is not a parked street car.
+        static_assert(QuebecScoot::ScootKind == 3, "IsScoot() follows ScootKind");
+        FVector ScootPoint(static_cast<float>(QuebecScoot::StandX), static_cast<float>(QuebecScoot::StandY), 0.f);
+        FHitResult ScootGround;
+        FCollisionQueryParams ScootQuery(SCENE_QUERY_STAT(ScootStand), false);
+        const FVector ScootTrace = ScootPoint + FVector(0.f, 0.f, 200.f);
+        if (GetWorld()->LineTraceSingleByChannel(ScootGround, ScootTrace, ScootTrace - FVector(0.f, 0.f, 800.f), ECC_Visibility, ScootQuery))
+            ScootPoint = ScootGround.ImpactPoint + FVector(0.f, 0.f, 102.f);
+        else
+            ScootPoint.Z = QuebecScoot::StandZ;
+        const FRotator ScootYaw(0.f, QuebecScoot::StandYaw, 0.f);
+        const FTransform ScootTransform(ScootYaw, ScootPoint);
+        AQuebecCar* Scooter = GetWorld()->SpawnActorDeferred<AQuebecCar>(AQuebecCar::StaticClass(), ScootTransform, nullptr, nullptr, ESpawnActorCollisionHandlingMethod::AlwaysSpawn);
+        if (Scooter)
+        {
+            Scooter->RideKind = QuebecScoot::ScootKind;
+            Scooter->Tags.Add(TEXT("Trot"));
+            Scooter->FinishSpawning(ScootTransform);
+            UE_LOG(LogTemp, Display, TEXT("NORD_SCOOT stand x=%.0f y=%.0f"), ScootPoint.X, ScootPoint.Y);
+        }
+    }
     // Combat: weapon, vest and health pickups at street and park points, none near a QA anchor and no collision.
     if (!FParse::Param(FCommandLine::Get(), TEXT("NordNoCampaign"))) QuebecCombat::SpawnPickups(GetWorld());
     // Police (POLICE): the dispatcher and its garage sign. Police cars and officers appear only while a player has stars.
@@ -2636,7 +4169,12 @@ void AQuebecGameMode::BeginPlay()
             if (!bParked) UE_LOG(LogTemp,Warning,TEXT("NORD_POPULATION no valid starter curb space"));
             break;
         }
-    if (FParse::Param(FCommandLine::Get(),TEXT("NordNoAmbient"))) return;
+    if (FParse::Param(FCommandLine::Get(),TEXT("NordNoAmbient")))
+    {
+        // Look runs keep the parked cars at the curbs: they are deterministic, so the stills still repeat.
+        AQuebecParkedCars::SpawnFill(GetWorld());
+        return;
+    }
     // Old saved cars at a 210 cm offset overlap traffic. Keep the starter
     // anchor and find real asphalt spaces on the nearest sufficiently wide road.
     int32 Reparked = 0;
@@ -2959,6 +4497,9 @@ void AQuebecGameMode::BeginPlay()
         UE_LOG(LogTemp,Warning,TEXT("NORD_POPULATION some placements were blocked by world collision"));
     // Street traces: knockable cones around two work zones and bins at the curb, placed after the parked cars.
     AQuebecStreetProp::SpawnStreetProps(GetWorld());
+    // A parked car at every legal curb space on the replica streets (QuebecParkedCars.h), after the starter, the
+    // saved and runtime cars and the cones, whose spaces it leaves out.
+    AQuebecParkedCars::SpawnFill(GetWorld());
 }
 
 #if WITH_DEV_AUTOMATION_TESTS
@@ -3311,7 +4852,7 @@ bool FQuebecBrowserInputReleaseTest::RunTest(const FString& Parameters)
     Press(EKeys::W); Press(EKeys::LeftShift); Press(EKeys::SpaceBar);
     Controller->PlayerInput->ProcessInputStack(WalkerStack,.016f,false);
     TestTrue(TEXT("Native W key is held"),Controller->PlayerInput->IsPressed(EKeys::W));
-    TestEqual(TEXT("Native sprint binding is active"),Walker->GetCharacterMovement()->MaxWalkSpeed,800.f);
+    TestEqual(TEXT("Native sprint binding is active"),Walker->GetCharacterMovement()->MaxWalkSpeed,static_cast<float>(QuebecPace::SprintCmPerSecond));
     TestTrue(TEXT("Native movement creates pending input"),!Walker->GetPendingMovementInputVector().IsNearlyZero());
     if (!TestTrue(TEXT("Controller acquires actual worklight"),Campaign->HandleInteract(Controller))) return false;
     TestTrue(TEXT("Worklight belongs to departing controller"),Campaign->IsAimingLight(Controller));
@@ -3328,7 +4869,7 @@ bool FQuebecBrowserInputReleaseTest::RunTest(const FString& Parameters)
     TestFalse(TEXT("Data loss flushes sprint"),Controller->PlayerInput->IsPressed(EKeys::LeftShift));
     TestFalse(TEXT("Data loss flushes jump"),Controller->PlayerInput->IsPressed(EKeys::SpaceBar));
     TestTrue(TEXT("Data loss clears pending movement"),Walker->GetPendingMovementInputVector().IsNearlyZero());
-    TestEqual(TEXT("Sprint returns to walking speed"),Walker->GetCharacterMovement()->MaxWalkSpeed,450.f);
+    TestEqual(TEXT("Sprint returns to walking speed"),Walker->GetCharacterMovement()->MaxWalkSpeed,static_cast<float>(QuebecPace::WalkCmPerSecond));
     TestNull(TEXT("Only departing operator is released"),Campaign->LightOperator.Get());
     TestTrue(TEXT("Campaign phase is preserved"),Campaign->Phase==Phase);
     TestEqual(TEXT("Completed missions are preserved"),Campaign->CompletedMissions,Completed);

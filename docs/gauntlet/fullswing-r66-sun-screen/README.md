@@ -1,0 +1,5 @@
+# Increment66 — private sun screen result
+
+One private SUN_OUT beside SUN_PT follows existing WARN_OUT pattern. sunShaft preserves behind-camera null and fills current coordinates; sole bloom.render consumer copies x/y synchronously into uniforms. No shader/pass change. Actual90camera-frame browser check: baseline60freshresults→one across60visible/30behind/visible-resume; exact independent projection coordinates and no errors,3checksPASS. Existing sky-gather checks PASS with identical RGBA at desktop/phone and active/inactive sun paths.
+
+All20dimensions: Lighting, Color palette, Detail density, Texture/material, Composition/camera, Atmosphere, Character models, Animation smoothness, Particles/VFX, UI polish, Responsiveness/input latency, Controls feel, Mission clarity, Pacing, Fun factor, Difficulty curve, Feedback, Sound design, Variety, Performance stability: no new points. Actual affected Chrome120Hz, physical devices, listening and full playthrough unverified; no FPS claim; total/delta withheld. OpenSpec checked manually; CLI unavailable. Review/CI/currentauthenticatedpreview/bothrebases/exactmerge/production pending.

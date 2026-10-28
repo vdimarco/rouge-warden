@@ -6,6 +6,11 @@
 // - every screen (the title, Settings, Stages, Sources, the Tap test, pause, the Almost card, the stage-end overlay,
 //   the stage card and the result) shows, has no horizontal scroll, has every button, link and control at least
 //   44 px on the shorter side (Play 56 px tall, pause 48 × 48) and every one of them reachable inside the safe area;
+// - the Music switch (first-breath-score, "The switch in every layout"): found in Settings by its role and name
+//   (a switch named "Music"), it sits next to Sound (the control right after Sound, side by side or one under the
+//   other with at most 24 px between them), is at least 44 px on its shorter side, overlaps no other control and no
+//   HUD part, and Tab reaches it with a visible focus ring (:focus-visible, an outline of 2 px or more) drawn as the
+//   Sound switch's is (the same outline and shadow);
 //   in portrait the in-world overlay and Almost card keep every word above 60% of the height and clear of the HUD;
 // - in every stage and the ending, played by the ref bot and sampled every 0.25 s of stage time: the HUD tags, the
 //   prompt line and the caption sit inside the safe area and overlap neither each other nor the pause button; in
@@ -352,6 +357,52 @@ for (const size of sizeList()) {
     else await page.click('[data-set="carer"][data-val="mum"]');
     const carer = await page.evaluate(() => window.__fb.state().settings.carer);
     check(`${tag}: Settings sets the carer word`, carer === "mum", carer);
+    await page.evaluate(() => window.__fb.act("back"));
+
+    // the Music switch, found by its role and name
+    await page.evaluate(() => window.__fb.act("settings"));
+    const musicSw = page.locator('#screens section.screen[data-screen="settings"]').getByRole("switch", { name: /^Music/ });
+    const found = await musicSw.count();
+    if (found === 1) await musicSw.scrollIntoViewIfNeeded();
+    const geo = await page.evaluate(() => {
+      const sec = document.querySelector('#screens section.screen[data-screen="settings"]');
+      const vis = (e) => { const r = e.getBoundingClientRect(), cs = getComputedStyle(e); return r.width > 0 && r.height > 0 && cs.visibility !== "hidden" && cs.display !== "none"; };
+      const R = (e) => { const r = e.getBoundingClientRect(); return { x: r.left, y: r.top, r: r.right, b: r.bottom, w: r.width, h: r.height }; };
+      const ctl = [...sec.querySelectorAll("button, a[href], input, select, [data-act], [data-set]")].filter(vis);
+      const m = ctl.find((e) => e.getAttribute("role") === "switch" && /^Music/.test(e.textContent.trim()));
+      const snd = sec.querySelector('[data-set="sound"]');
+      if (!m || !snd) return { m: !!m, snd: !!snd };
+      const a = R(m), b = R(snd);
+      const ov = (p, q) => p.x < q.r - 0.5 && q.x < p.r - 0.5 && p.y < q.b - 0.5 && q.y < p.b - 0.5;
+      const over = ctl.filter((e) => e !== m && !m.contains(e) && !e.contains(m) && ov(a, R(e))).map((e) => (e.dataset.set || e.dataset.act || e.tagName) + "");
+      for (const id of ["hud", "pause"]) { const h = document.getElementById(id); if (h && vis(h) && ov(a, R(h))) over.push("#" + id); }
+      const row = Math.abs(a.y - b.y) <= 2 && Math.max(a.x - b.r, b.x - a.r) <= 24;
+      const col = Math.abs(a.x - b.x) <= 2 && Math.max(a.y - b.b, b.y - a.b) <= 24;
+      return { m: true, snd: true, a, b, after: ctl.indexOf(m) === ctl.indexOf(snd) + 1, beside: row || col, over, inView: a.y >= 0 && a.b <= innerHeight && a.x >= 0 && a.r <= innerWidth };
+    });
+    check(`${tag}: Settings has one switch named Music, right after Sound and beside it`, found === 1 && geo.m && geo.after && geo.beside,
+      JSON.stringify({ found, after: geo.after, beside: geo.beside, music: geo.a && [geo.a.x, geo.a.y, geo.a.w, geo.a.h].map(Math.round), sound: geo.b && [geo.b.x, geo.b.y, geo.b.w, geo.b.h].map(Math.round) }));
+    check(`${tag}: the Music switch is at least 44 px on its shorter side, on screen, and overlaps nothing`, !!geo.a && Math.min(geo.a.w, geo.a.h) >= 44 - 0.5 && geo.inView && geo.over.length === 0,
+      geo.a ? `${Math.round(geo.a.w)}×${Math.round(geo.a.h)}, on screen ${geo.inView}, overlaps ${geo.over.join(", ") || "nothing"}` : "not found");
+    // Tab from the top of the panel until the focus is on it; its focus ring, then Sound's (Shift+Tab, one back)
+    await page.evaluate(() => { const a = document.activeElement; if (a && a.blur) a.blur(); });
+    let tabs = 0, onMusic = false;
+    for (; tabs < 60 && !onMusic; tabs++) {
+      await page.keyboard.press("Tab");
+      onMusic = await page.evaluate(() => { const a = document.activeElement; return !!a && a.getAttribute("role") === "switch" && /^Music/.test(a.textContent.trim()); });
+    }
+    const ring = () => page.evaluate(() => {
+      const a = document.activeElement, cs = getComputedStyle(a);
+      return { id: a.dataset.set || null, fv: a.matches(":focus-visible"), style: cs.outlineStyle, width: parseFloat(cs.outlineWidth), color: cs.outlineColor, shadow: cs.boxShadow };
+    });
+    const mRing = onMusic ? await ring() : null;
+    await page.keyboard.press("Shift+Tab");
+    const sRing = await ring();
+    const same = !!mRing && sRing.id === "sound" && mRing.style === sRing.style && mRing.width === sRing.width && mRing.color === sRing.color && mRing.shadow === sRing.shadow;
+    check(`${tag}: Tab reaches the Music switch, with a visible focus ring like the Sound switch's`,
+      onMusic && mRing.fv && mRing.style !== "none" && mRing.width >= 2 && !/rgba\([^)]*, 0\)|transparent/.test(mRing.color) && same,
+      JSON.stringify({ tabs, music: mRing, sound: sRing }));
+    await shot(page, size, "screen-settings-music");
     await page.evaluate(() => window.__fb.act("back"));
 
     await page.evaluate(() => { window.__fb.act("play"); window.__fb.step(90); });

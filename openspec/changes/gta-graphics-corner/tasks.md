@@ -1,0 +1,4 @@
+- [x] Frame the Marie-Anne blades and the parked car on that street in a second camera
+- [x] Keep the opening pitch, the aim, and the socket
+- [x] Run `Scripts/test_opening_corner.py`
+- [ ] Confirm the blades and the parked car in Unreal (editor not available here)

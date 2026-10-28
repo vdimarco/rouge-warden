@@ -52,9 +52,41 @@ const CSS = `
 @keyframes actSlam{from{transform:translate(-50%,0) rotate(-3deg) scale(2.4);opacity:0}to{opacity:1}}
 @media (max-width:600px){#actBanner{top:24%;padding:6px 16px 3px;max-width:calc(100vw - 32px);box-sizing:border-box}#actBanner b{font-size:36px}#actBanner small{font-size:15px;white-space:normal}}
 @media (prefers-reduced-motion:reduce){#actBanner.go{animation:none}}
-body.cutscene #actBanner,
-body.cutscene #actHud,body.cutscene #actPrompt,body.cutscene #actTouch,body.cutscene #actShout,body.cutscene #actWarn,body.cutscene #actFight{visibility:hidden}
+#actGoal{position:fixed;left:0;top:0;z-index:12;pointer-events:none;transform:translate(-50%,-115%);padding:3px 12px 2px;background:#ffd84a;border:3px solid #140a18;box-shadow:4px 4px 0 #140a18;font-family:var(--comic,"Bangers",Impact,"Arial Black",sans-serif);color:#140a18;text-align:center;white-space:nowrap}
+#actGoal[hidden]{display:none}
+#actGoal b{display:block;font-size:22px;line-height:1;letter-spacing:.06em}
+#actGoal small{display:block;margin-top:1px;font-size:16px;line-height:1;letter-spacing:.04em}
+#actGoal small.closing{color:#1f8a3a}
+#actGoal small.behind{color:#e8402a}
+#actGoal.off{transform:translate(-50%,-50%)}
+#actGoal:not(.off):after{content:"";position:absolute;left:50%;bottom:-12px;margin-left:-7px;border:7px solid transparent;border-top:8px solid #140a18}
+#actGoal .arr{display:none;margin-top:2px;font-size:18px;line-height:1}
+#actGoal.off .arr{display:block}
+body.cutscene #actBanner,body.cutscene #actHud,body.cutscene #actPrompt,body.cutscene #actTouch,body.cutscene #actShout,body.cutscene #actWarn,body.cutscene #actFight,body.cutscene #actGoal{visibility:hidden}
 `;
+
+// Where the job sticker sits. dir is the goal in camera space (Three.js: +x right, +y up, −z forward).
+// ndc is that point after project() ({ x, y, z }; z > 1 is behind the far plane). size is the view in px.
+// pad keeps the sticker off the score row, the key strip and the phone buttons: { l, t, r, b } inset from the edges.
+// turn is the horizontal angle from the view to the goal, in radians, positive to the right.
+// On the goal, the sticker sits on the projected point. Off to the side, or behind you, it sits on the left or right
+// edge, the way you have to turn. In front but off the top or bottom, it sits on that edge.
+export function placeGoal(dir, ndc, size, pad, turn = 0, out = {}) {
+  const w = size.w, h = size.h;
+  const L = pad.l, T = pad.t, R = w - pad.r, B = h - pad.b;
+  const sx = (ndc.x * 0.5 + 0.5) * w, sy = (0.5 - ndc.y * 0.5) * h;
+  const forward = -dir.z;
+  const on = forward > 0.4 && ndc.z < 1 && sx >= L && sx <= R && sy >= T && sy <= B;
+  if (on) { out.x = sx; out.y = sy; out.off = false; out.angle = 0; return out; }
+  const side = Math.abs(turn) > 0.35 || forward <= 0.4;
+  const ang = side ? (turn > 0 ? 0 : Math.PI) : (dir.y >= 0 ? -Math.PI / 2 : Math.PI / 2);
+  const c = Math.cos(ang), s = Math.sin(ang);
+  const cx = (L + R) / 2, cy = (T + B) / 2;
+  const rx = Math.max(8, (R - L) / 2), ry = Math.max(8, (B - T) / 2);
+  const t = Math.min(rx / Math.max(1e-4, Math.abs(c)), ry / Math.max(1e-4, Math.abs(s)));
+  out.x = cx + c * t; out.y = cy + s * t; out.off = true; out.angle = ang;
+  return out;
+}
 
 export function createActionHud() {
   const style = document.createElement("style");
@@ -78,13 +110,17 @@ export function createActionHud() {
   banner.id = "actBanner"; banner.hidden = true; banner.setAttribute("role", "status");
   banner.innerHTML = "<b></b><small></small>";
   let bannerT = 0;
+  const goal = document.createElement("div");
+  goal.id = "actGoal"; goal.hidden = true; goal.setAttribute("role", "status");
+  goal.innerHTML = "<b></b><small></small><span class=\"arr\">▲</span>";
   const touchEl = document.createElement("div");
   touchEl.id = "actTouch";
   const btn = (k, label) => { const b = document.createElement("button"); b.className = k; b.textContent = label; b.hidden = true; b.type = "button"; touchEl.appendChild(b); return b; };
   const B = { glide: btn("glide", "GLIDE"), throw: btn("throw", "THROW"), dodge: btn("dodge", "DODGE"), car: btn("car", "CAR") };
-  document.body.append(hud, fightEl, prompt, shout, warn, hit, banner, touchEl);
+  document.body.append(hud, fightEl, prompt, shout, warn, goal, hit, banner, touchEl);
   const hearts = hud.querySelector(".hearts"), energy = hud.querySelector(".energy"), bar = energy.querySelector("i");
   const comboEl = fightEl.querySelector(".combo"), focusEl = fightEl.querySelector(".focus"), focusBar = focusEl.querySelector("i");
+  const goalName = goal.querySelector("b"), goalSub = goal.querySelector("small"), goalArr = goal.querySelector(".arr");
   const touch = { car: false, dodge: false, throw: false, glide: false };
   for (const k of ["glide"]) {
     const b = B[k];
@@ -94,11 +130,12 @@ export function createActionHud() {
   B.car.addEventListener("pointerdown", (e) => { e.preventDefault(); touch.car = true; });
   B.dodge.addEventListener("pointerdown", (e) => { e.preventDefault(); touch.dodge = true; });
   B.throw.addEventListener("pointerdown", (e) => { e.preventDefault(); touch.throw = true; });
-  let shown = { hp: -1, max: -1, e: -2, p: "", c: -1, f: -2 }, hitT = 0;
+  let shown = { hp: -1, max: -1, e: -2, p: "", c: -1, f: -2, g: "" }, hitT = 0;
   const H = {
     touch,
     // s: { on, hp, max, energy (0..1, or < 0 to hide), prompt (html or ""), phone, nearCar, driving, shout: { text, x, y } (px) or null,
-    //   combo (blows in a row; shows from 2), focus (0..1, or < 0 to hide), warn: { x, y } (px) or null }
+    //   combo (blows in a row; shows from 2), focus (0..1, or < 0 to hide), warn: { x, y } (px) or null,
+    //   goal: { x, y, off, angle, name, dist, trend } or null (the job sticker) }
     update(dt, s) {
       hud.hidden = !s.on;
       const sh = s.on && s.shout;
@@ -111,7 +148,7 @@ export function createActionHud() {
       warn.hidden = !wn;
       if (wn) { warn.style.left = Math.round(wn.x) + "px"; warn.style.top = Math.round(wn.y) + "px"; }
       fightEl.hidden = !s.on;
-      if (!s.on) { prompt.hidden = true; for (const k in B) B[k].hidden = true; return; }
+      if (!s.on) { prompt.hidden = true; goal.hidden = true; shown.g = ""; for (const k in B) B[k].hidden = true; return; }
       const c = s.combo >= 2 ? s.combo : 0;
       if (c !== shown.c) { shown.c = c; comboEl.hidden = !c; comboEl.textContent = c ? c + " HITS" : ""; }
       const f = s.focus == null || s.focus < 0 ? -1 : Math.round(s.focus * 50) / 50;
@@ -132,6 +169,21 @@ export function createActionHud() {
         if (e >= 0) { bar.style.transform = "scaleX(" + e + ")"; energy.classList.toggle("low", e < 0.25); }
       }
       if (s.prompt !== shown.p) { shown.p = s.prompt; prompt.hidden = !s.prompt; prompt.innerHTML = s.prompt || ""; }
+      const gg = s.on && s.goal;
+      if (!gg) { goal.hidden = true; shown.g = ""; }
+      else {
+        const key = gg.off + "|" + gg.name + "|" + gg.dist + "|" + gg.trend;
+        if (key !== shown.g) {
+          shown.g = key; goal.hidden = false;
+          goalName.textContent = gg.name;
+          goalSub.textContent = gg.dist + " m" + (gg.trend ? " · " + gg.trend : "");
+          goalSub.className = gg.trend === "CLOSING" ? "closing" : gg.trend === "FALLING BEHIND" ? "behind" : "";
+          goal.classList.toggle("off", !!gg.off);
+        }
+        goal.hidden = false;
+        goal.style.left = Math.round(gg.x) + "px"; goal.style.top = Math.round(gg.y) + "px";
+        goalArr.style.transform = gg.off ? "rotate(" + ((gg.angle + Math.PI / 2) * 180 / Math.PI).toFixed(1) + "deg)" : "";
+      }
       B.car.hidden = !(s.phone && (s.nearCar || s.driving));
       B.dodge.hidden = !(s.phone && s.warn);
       if (B.dodge.hidden) touch.dodge = false;
@@ -157,7 +209,7 @@ export function createActionHud() {
     takeDodge() { const v = touch.dodge; touch.dodge = false; return v; },
     takeThrow() { const v = touch.throw; touch.throw = false; return v; },
     flash() { hit.style.opacity = "1"; hitT = 0.25; },
-    info: () => ({ hidden: hud.hidden, hearts: shown.hp, energy: shown.e, combo: shown.c, focus: shown.f, warn: !warn.hidden, prompt: prompt.hidden ? "" : prompt.textContent, shout: shout.hidden ? "" : shout.textContent, banner: banner.hidden ? "" : banner.textContent, car: !B.car.hidden, dodge: !B.dodge.hidden, throw: !B.throw.hidden, glide: !B.glide.hidden }),
+    info: () => ({ hidden: hud.hidden, hearts: shown.hp, energy: shown.e, combo: shown.c, focus: shown.f, warn: !warn.hidden, prompt: prompt.hidden ? "" : prompt.textContent, shout: shout.hidden ? "" : shout.textContent, banner: banner.hidden ? "" : banner.textContent, car: !B.car.hidden, dodge: !B.dodge.hidden, throw: !B.throw.hidden, glide: !B.glide.hidden, goal: goal.hidden ? "" : goal.innerText.replace(/\n/g, " "), goalOff: goal.classList.contains("off") }),
   };
   return H;
 }

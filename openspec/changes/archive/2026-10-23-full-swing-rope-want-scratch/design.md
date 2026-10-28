@@ -1,0 +1,2 @@
+# Design
+syncRopeTargets is called synchronously once per actionFrame. Its desired map is private and never passed to consumers; only individual target records go to ropes.addTarget. Reuse a module-local Map and clear before filling. GOON_POS remains the persistent mutable chest position, so moving targets keep updating. Clear also when disabled, paused or driving to remove old targets. No change to combat/jobs/rope APIs, rendering or gameplay rules; no FPS claim.

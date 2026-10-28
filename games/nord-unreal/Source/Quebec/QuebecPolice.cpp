@@ -1,8 +1,10 @@
 #include "QuebecPolice.h"
+#include "QuebecBanner.h"
 #include "QuebecCombat.h"
 #include "QuebecGameplay.h"
 #include "QuebecHeatModel.h"
 #include "QuebecKnockModel.h"
+#include "QuebecParkedCars.h" // An officer thrown into a parked car promotes it.
 #include "QuebecPlayerState.h"
 #include "QuebecPursuitModel.h"
 
@@ -354,7 +356,18 @@ void AQuebecOfficer::ApplyLook()
     USkeletalMesh* Skin = bGoon ? GoonBodyMesh : PoliceBodyMesh;
     if (!Skin)
     {
-        // Basic shapes when the civilian rigs are missing: a torso, a head and the cap or the mask.
+        // The clothed idle bake replaces the cylinder when it has been imported.
+        // Feet sit on the mesh origin; the pose pivot is the hip.
+        const TCHAR* StandPath = bGoon
+            ? TEXT("/Game/Plateau/Life/Civilians/MenHoodie/SM_MenHoodieStand.SM_MenHoodieStand")
+            : TEXT("/Game/Plateau/Life/Civilians/MenSuit/SM_MenSuitStand.SM_MenSuitStand");
+        if (UStaticMesh* Stand = LoadObject<UStaticMesh>(nullptr, StandPath, nullptr, LOAD_NoWarn | LOAD_Quiet))
+        {
+            AddShape(TEXT("FallbackStand"), Stand, Pose, FVector(0., 0., -QuebecKnock::HipHeight), FVector(100., 100., 100.), nullptr);
+            BodyHeight = bGoon ? 176.f : 182.f;
+            return;
+        }
+        // Basic shapes when the civilian rigs and the baked stand are both missing.
         const FVector Torso(0., 0., 0.), Head(0., 0., 72.);
         FallbackBody.Add(AddShape(TEXT("FallbackTorso"), CylinderMesh, Pose, Torso, FVector(46., 40., 120.), bGoon ? Ink : Navy));
         FallbackBody.Add(AddShape(TEXT("FallbackHead"), SphereMesh, Pose, Head, FVector(28., 28., 30.), bGoon ? White : PoliceMaterial(TEXT("/Game/ParkComic/M_Skin.M_Skin"))));
@@ -440,6 +453,12 @@ float AQuebecOfficer::KnockEndsAt() const
     Launch.Spin = KnockSpin;
     Launch.LieSeconds = KnockLieSeconds;
     return KnockStartedAt + QuebecKnock::Timeline(Launch).Total;
+}
+
+void AQuebecOfficer::MoveBlockedBy(const FHitResult& Impact)
+{
+    Super::MoveBlockedBy(Impact);
+    if (HasAuthority() && GetCharacterMovement()) AQuebecParkedCars::PromoteOnBody(Impact, GetCharacterMovement()->Velocity, this);
 }
 
 bool AQuebecOfficer::IsDown() const
@@ -1201,7 +1220,7 @@ void AQuebecPoliceDispatch::BuildGarage()
         const FVector Front = Sign + Right * (Face * 7.5);
         const bool bStreet = Face < 0.;
         Caption(bStreet ? TEXT("GarageWordStreet") : TEXT("GarageWordBack"), TEXT("GARAGE"), Front + FVector(0., 0., 305.), Facing, 58.f, FColor(250, 250, 245));
-        Caption(bStreet ? TEXT("GarageLineStreet") : TEXT("GarageLineBack"), TEXT("MÉCANIQUE · CARROSSERIE"), Front + FVector(0., 0., 258.), Facing, 20.f,
+        Caption(bStreet ? TEXT("GarageLineStreet") : TEXT("GarageLineBack"), FString(UTF8_TO_TCHAR(QuebecBanner::Mechanic)), Front + FVector(0., 0., 258.), Facing, 20.f,
             FColor(255, 214, 90));
     }
 }
@@ -1369,7 +1388,7 @@ void AQuebecPoliceDispatch::ReportCrime(AController* Offender, EQuebecCrime Crim
     if (bPoliceSaw) Record.bSeen = true;
     UE_LOG(LogTemp, Display, TEXT("NORD_WANTED crime=%d heat=%.0f stars=%d police=%d"), Index, Wanted.Heat, Wanted.Stars, bPoliceSaw ? 1 : 0);
     if (Added > 0)
-        QuebecNotice::Show(Offender, TEXT("RECHERCHÉ!"), FString::Printf(TEXT("%d étoile%s"), Wanted.Stars, Wanted.Stars > 1 ? TEXT("s") : TEXT("")), 2.5f);
+        QuebecNotice::Show(Offender, FString(UTF8_TO_TCHAR(QuebecBanner::Wanted)), FString(UTF8_TO_TCHAR(QuebecBanner::StarLine(Wanted.Stars).c_str())), 2.5f);
 }
 
 void AQuebecPoliceDispatch::ApplyStars(AController* Player, int32 NewStars)
@@ -1403,7 +1422,7 @@ void AQuebecPoliceDispatch::Arrest(APlayerController* Player, AQuebecPlayerState
     Record.bArrestPending = true;
     Record.bSeen = false;
     Record.ArrestHeld = 0.f;
-    QuebecNotice::Show(Player, TEXT("ARRÊTÉ!"), TEXT("Poste de quartier 38"), QuebecHeat::ArrestBannerSeconds);
+    QuebecNotice::Show(Player, FString(UTF8_TO_TCHAR(QuebecBanner::ArrestedWord)), FString(UTF8_TO_TCHAR(QuebecBanner::StationLine)), QuebecHeat::ArrestBannerSeconds);
     UE_LOG(LogTemp, Display, TEXT("NORD_WANTED arrest player=%s"), *GetNameSafe(Player));
 }
 
@@ -1468,7 +1487,7 @@ void AQuebecPoliceDispatch::TickPlayers(float Now, float DeltaSeconds, bool bVis
         if (Change < 0)
         {
             UE_LOG(LogTemp, Display, TEXT("NORD_WANTED stars=%d reason=search_ended"), Wanted.Stars);
-            if (Wanted.Stars == 0) QuebecNotice::Show(Player, TEXT("SEMÉS!"), TEXT("La police abandonne"), 3.f);
+            if (Wanted.Stars == 0) QuebecNotice::Show(Player, FString(UTF8_TO_TCHAR(QuebecBanner::LostPolice)), FString(UTF8_TO_TCHAR(QuebecBanner::LostDetail)), 3.f);
         }
         if (Wanted.Stars <= 0) { Record.ArrestHeld = 0.f; continue; }
         // Arrest: a police officer within reach of a slow player on foot for two seconds.
@@ -1491,7 +1510,7 @@ void AQuebecPoliceDispatch::TickPlayers(float Now, float DeltaSeconds, bool bVis
         {
             Record.GarageReadyAt = Now + QuebecPolice::GarageCooldown;
             ApplyStars(Player, 0);
-            QuebecNotice::Show(Player, TEXT("GARAGE"), TEXT("Nouvelles plaques: recherche annulée"), 3.f);
+            QuebecNotice::Show(Player, FString(UTF8_TO_TCHAR(QuebecBanner::GarageWord)), FString(UTF8_TO_TCHAR(QuebecBanner::GarageDetail)), 3.f);
             UE_LOG(LogTemp, Display, TEXT("NORD_WANTED garage player=%s"), *GetNameSafe(Player));
         }
     }

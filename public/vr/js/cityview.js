@@ -49,6 +49,7 @@ float vnoise(vec2 p) { vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 *
 // Uniforms shared by every city material (vertex and fragment stage alike)
 const COMMON_UNI = /* glsl */ `
 uniform float uTime;
+uniform float uDay; // 0 painted sunset, 1 blue hour
 uniform vec3 uSunDir;
 uniform vec2 uSunXZ;
 uniform vec3 uFog; // near, density, haze height
@@ -82,7 +83,14 @@ vec3 skyHaze(vec3 d) {
   vec3 h = vec3(d.x, clamp(d.y, 0.0, 0.1) * length(d.xz) * 10.0, d.z);
   vec3 c = uHaveSky > 0.5 ? textureLod(uSky, skyUV(h), 3.0).rgb : skyRamp(skyT(h));
   // far things go violet, like the far shore in the key art: darker than the sky behind them
-  return mix(c, vec3(0.3, 0.16, 0.5), 0.42);
+  c = mix(c, vec3(0.3, 0.16, 0.5), 0.42);
+  // street dust: level air takes the hour. Sunset stays the avenue's warm light. Blue hour
+  // walks it toward the sky's violet (Gurney, Color and Light). Above that it stays the sky.
+  // The height split is the 18 m layer below (Wenzel, SIGGRAPH 2006, the height only).
+  float level = 1.0 - smoothstep(0.02, 0.22, normalize(d).y);
+  float day = clamp(uDay, 0.0, 1.0);
+  vec3 dust = mix(vec3(0.78, 0.42, 0.26), vec3(0.28, 0.20, 0.68), day);
+  return mix(c, dust, level * mix(0.78, 0.92, day));
 }
 // Haze toward the sky colour behind the point. It is thick near the ground and thin up high (height fog), so the Needle
 // and the aerial view keep their shapes. The fragment stage snaps it to four print-like steps.
@@ -93,6 +101,10 @@ float fogAmount(vec3 wp) {
   float dy = yc - yp;
   float hf = abs(dy) < 1.0 ? exp(-0.5 * (yc + yp) / H) : H * (exp(-yp / H) - exp(-yc / H)) / dy;
   float f = 1.0 - exp(-uFog.y * max(d - uFog.x, 0.0) * hf);
+  // a shorter layer: street air on the walks and the lower floors, gone by the roofs (Wenzel 2006, the height split only)
+  float Hs = 18.0;
+  float hs = abs(dy) < 1.0 ? exp(-0.5 * (yc + yp) / Hs) : Hs * (exp(-yp / Hs) - exp(-yc / Hs)) / dy;
+  f = max(f, (1.0 - exp(-0.022 * max(d - 28.0, 0.0))) * hs * 0.70);
   return max(f, 0.06 * smoothstep(12.0, uFog.x, d));
 }
 // Metres under the shadow surface at a point (the map's shadow height minus its height): above 0 in another tower's shadow
@@ -123,10 +135,74 @@ vec3 skyAt(vec3 d) {
   if (uHaveSky > 0.5) return skyStrip(d);
   return skyRamp(comicPoster(skyT(d), 5.0));
 }
+// Wet asphalt. Porous roads go darker and throw a fresnel mirror of the sky, with the micro-normal
+// stretched across the view so the glint runs away down the avenue. Adapted from Sébastien Lagarde's
+// notes on lighting wet surfaces (darken the diffuse, raise the fresnel). The mirror is this game's
+// own sky strip, read with textureLod so a branch does not break the derivatives. Lane paint stays
+// bright: a high luma skips most of the darkening.
+vec3 skyMirror(vec3 d) {
+  vec3 n = normalize(d);
+  if (uHaveSky > 0.5) return textureLod(uSky, skyUV(n), 2.0).rgb;
+  return skyRamp(skyT(n));
+}
+vec3 wetAsphalt(vec3 col, vec3 wp, vec3 N, float wet, float sunVis) {
+  if (wet < 0.01 || N.y < 0.5) return col;
+  vec3 V = normalize(cameraPosition - wp);
+  float puddle = smoothstep(0.52, 0.8, vnoise(wp.xz * 0.065 + vec2(3.1, 8.4)));
+  float gloss = wet * mix(0.75, 1.0, puddle);
+  float luma = dot(col, vec3(0.299, 0.587, 0.114));
+  float paint = smoothstep(0.42, 0.78, luma);
+  // lane paint is left alone so the dashes stay lighter than the wet road
+  float cover = gloss * (1.0 - paint);
+  col *= mix(1.0, mix(0.58, 0.36, puddle), cover);
+  vec2 viewXZ = normalize(V.xz + vec2(1e-4));
+  vec2 across = vec2(-viewXZ.y, viewXZ.x);
+  float rip = vnoise(vec2(dot(wp.xz, across) * 0.7, dot(wp.xz, viewXZ) * 0.07)) - 0.5;
+  float rough = mix(0.28, 0.04, puddle);
+  vec3 Nw = normalize(vec3(across.x * rip * rough, 1.0, across.y * rip * rough));
+  vec3 R = reflect(-V, Nw);
+  R.y = max(R.y, 0.02);
+  // a little mirror even when looking down, and a full one along the avenue
+  float fres = 0.18 + 0.82 * pow(1.0 - clamp(V.y, 0.0, 1.0), 2.2);
+  float spec = pow(clamp(dot(normalize(R), normalize(uSunDir)), 0.0, 1.0), mix(10.0, 36.0, puddle));
+  vec3 sky = skyMirror(R);
+  vec3 glint = min(vec3(1.0, 0.78, 0.42) * spec * sunVis * cover * 0.42, vec3(0.35));
+  vec3 fill = vec3(1.0, 0.55, 0.28) * (1.0 - sunVis) * cover * 0.14;
+  return col + sky * fres * cover * (0.55 + 0.6 * puddle) + glint + fill;
+}
+// James Gurney, Color and Light (2010): a shadow takes the sky's colour, the light takes
+// the hour's, and the step between them is not their average. The dark end of the shade
+// is violet. Open shade stays teal. The step stays rose. A sunlit face takes amber.
+// uDay walks that boundary toward blue hour: the violet takes the teal, and the amber
+// leaves. Bright lamps, the sun disc, and near-black ink stay. A pixel that was not
+// ink is not pushed under it.
+vec3 gradeInk(vec3 c, float sun) {
+  float y = dot(c, vec3(0.299, 0.587, 0.114));
+  float hold = smoothstep(0.08, 0.12, y) * (1.0 - smoothstep(0.30, 0.44, y));
+  float day = clamp(uDay, 0.0, 1.0);
+  float s = clamp(sun, 0.0, 1.0);
+  vec3 violet = vec3(c.r * 0.62, c.g * 0.50, c.b * 1.18 + 0.04);
+  vec3 teal = vec3(c.r * 0.55, c.g * 1.35 + 0.055, c.b * 0.58);
+  vec3 rose = vec3(c.r * 1.30 + 0.03, c.g * 0.68, c.b * 0.90);
+  vec3 amber = vec3(c.r * 1.20 + 0.045, c.g * 0.96, c.b * 0.48);
+  // The dark end of the shade is violet. Open shade stays teal. Blue hour moves
+  // that boundary up, so the teal gives way to the sky.
+  float violetW = 1.0 - smoothstep(mix(0.125, 0.22, day), mix(0.175, 0.32, day), y);
+  vec3 shade = mix(teal, violet, violetW);
+  // The sun's own step is amber, and only at the painted sunset. Shade stays rose.
+  float amberW = (1.0 - day) * smoothstep(0.30, 0.42, y) * smoothstep(0.45, 1.0, s);
+  vec3 lit = mix(rose, amber, amberW);
+  vec3 inked = mix(shade, lit, smoothstep(0.16, 0.30, y));
+  vec3 g = mix(c, inked, hold);
+  float src = max(c.r, max(c.g, c.b));
+  float m = max(g.r, max(g.g, g.b));
+  g = mix(g, g * (0.188 / max(m, 1e-4)), step(0.188, src) * (1.0 - step(0.188, m)));
+  return g;
+}
 // Haze in four print-like steps toward the sky's own colour in that direction
 vec3 fogMix(vec3 col, vec3 wp, float maxF) {
   vec3 v = normalize(wp - cameraPosition);
-  return mix(col, skyHaze(v), comicPoster(fogAmount(wp) * maxF, 4.0));
+  return mix(gradeInk(col, sunT(shadowDepthAt(wp))), skyHaze(v), comicPoster(fogAmount(wp) * maxF, 4.0));
 }
 `;
 
@@ -139,6 +215,8 @@ varying vec4 vFog;
 void fogVertex(vec3 wp) {
   vec3 v = normalize(wp - cameraPosition);
   vFog = vec4(skyHaze(v), fogAmount(wp));
+  // keeps uDay live in vertex programs; a ten-thousandth of fog does not move a print step
+  vFog.a = min(vFog.a + clamp(uDay, 0.0, 1.0) * 1e-4, 1.0);
 }
 `;
 // An outline hull (a twin of an instanced mesh, back faces, pushed out along the normal so the line stays INK_PX wide)
@@ -266,7 +344,10 @@ vec3 roomTint(float c, float s) {
   if (c < 0.8) return vec3(1.08, 0.88, 0.66);
   return vec3(0.94, 0.94, 0.9);
 }
-vec3 wallColor(int k, float shop, float sd, float salt, float h1, float h2, float h3, vec3 N, vec3 V, float dist, out float lineY) {
+vec3 wallColor(int k, float shop, float sd, float salt, float h1, float h2, float h3, vec3 N, vec3 V, float dist, out float lineY, out vec4 awning, out vec3 clay, out vec4 spill, out vec4 storey) {
+  clay = vec3(1.0);
+  spill = vec4(0.0);
+  storey = vec4(0.0);
   float fh = vInfo.z, bay = vInfo.w;
   float u = vFace.x, faceW = vFace.y, top = vFace.w, y = vW.y;
   bool glassy = k <= 1;
@@ -348,6 +429,13 @@ vec3 wallColor(int k, float shop, float sd, float salt, float h1, float h2, floa
   else if (fr == F_CURTAIN) { wr = vec4(0.0, mix(0.1, 0.22, hw2), 1.0, 1.0); mun = vec2(floor(2.0 + hw1 * 2.99), hw3 < 0.5 ? 1.0 : 2.0); }
   else if (fr == F_PUNCH) { float w = topRow ? 0.3 : mix(0.26, 0.4, hw1), y0 = topRow ? 0.36 : mix(0.3, 0.4, hw2); wr = vec4(0.5 - w * 0.5, y0, 0.5 + w * 0.5, y0 + (topRow ? 0.36 : mix(0.3, 0.42, hw3))); mun = vec2(hw1 < 0.5 ? 1.0 : 2.0, hw3 < 0.5 ? 1.0 : 2.0); }
   else if (fr == F_GRID) { float x0 = mix(0.06, 0.14, hw1); wr = vec4(x0, mix(0.08, 0.14, hw2), 1.0 - x0, mix(0.84, 0.92, hw3)); mun = vec2(floor(3.0 + hw1 * 2.99), floor(3.0 + hw2 * 1.99)); }
+  // The floor above a shop is its own storey (Ching, Form, Space, and Order: a string course
+  // marks the floor). A shorter sash, so it is not the same tile as the floors above it.
+  bool overShop = !street && shop > 0.5 && abs(id.y) < 0.5 && !glassy;
+  if (overShop) {
+    wr.y = max(wr.y, 0.38);
+    wr.w = min(max(wr.w, wr.y + 0.28), 0.84);
+  }
   // the window's own coordinates (a pair splits the cell in two), its metres per unit each way, and a pixel in metres
   float inSub = sub > 1.5 ? step(0.0, ft.x) * step(ft.x, 1.0) : 1.0;
   vec2 fc = sub > 1.5 ? vec2(fract(ft.x * 2.0), ft.y) : ft;
@@ -411,6 +499,68 @@ vec3 wallColor(int k, float shop, float sd, float salt, float h1, float h2, floa
     }
   }
   #endif
+  // masonry joints on brick, stone, concrete and loft. A course smaller than a pixel fades out
+  // so the far wall stays a flat comic tone. Glass towers are left alone.
+  // Each unit then keeps its own clay, stone or panel (Lake, Marshall, Harris, Blackstein, NPAR 2000:
+  // the cel ramp shades that colour). A coarser batch remains once a single course has faded.
+  vec3 mason = vec3(1.0);
+  vec3 batchM = vec3(1.0);
+  float masonOn = 0.0;
+  // Printed on the graded colour, after the cel. The cel and the grade pull a unit back into one band.
+  vec3 clayPrint = vec3(1.0);
+  float clayOn = 0.0;
+  if (st >= 2 && st <= 5) {
+    float pitch = st == 3 ? 0.42 : st == 4 ? 0.85 : 0.16;
+    float run = pitch * (st >= 4 ? 2.2 : 2.0);
+    float cy = y / pitch;
+    float cx = u / run + mod(floor(cy), 2.0) * 0.5;
+    float wy = fwidth(cy), wx = fwidth(cx);
+    float jy = 1.0 - smoothstep(0.07, 0.07 + wy * 2.2, fract(cy));
+    float jx = 1.0 - smoothstep(0.06, 0.06 + wx * 2.2, fract(cx));
+    float joint = max(jy, jx) * (1.0 - smoothstep(0.22, 0.5, max(wy, wx)));
+    vec2 buv = vec2(u / 1.7, y / 1.15);
+    vec2 bf = fract(buv), bw = max(fwidth(buv), vec2(0.004));
+    vec2 bid = floor(buv);
+    float b00 = hash13(vec3(bid.x, bid.y, sd));
+    float b10 = hash13(vec3(bid.x + 1.0, bid.y, sd));
+    float b01 = hash13(vec3(bid.x, bid.y + 1.0, sd));
+    float b11 = hash13(vec3(bid.x + 1.0, bid.y + 1.0, sd));
+    float ax = smoothstep(1.0 - bw.x * 2.0, 1.0, bf.x);
+    float ay = smoothstep(1.0 - bw.y * 2.0, 1.0, bf.y);
+    // all four corners, so the seam matches the next cell when both axes are blending
+    float batch = mix(mix(b00, b10, ax), mix(b01, b11, ax), ay);
+    float unit = hash13(vec3(floor(cx) + 17.0, floor(cy), sd + 4.0));
+    vec3 batchT = st == 3 ? mix(vec3(0.72, 0.70, 0.66), vec3(1.28, 1.22, 1.12), batch)
+      : st == 4 ? mix(vec3(0.70, 0.74, 0.80), vec3(1.24, 1.18, 1.10), batch)
+      : mix(vec3(0.48, 0.36, 0.32), vec3(1.42, 1.05, 0.78), batch);
+    vec3 unitT = st == 3 ? mix(vec3(0.86, 0.84, 0.80), vec3(1.16, 1.12, 1.06), unit)
+      : st == 4 ? mix(vec3(0.88, 0.90, 0.94), vec3(1.12, 1.08, 1.04), unit)
+      : mix(vec3(0.70, 0.56, 0.48), vec3(1.28, 1.04, 0.86), unit);
+    float e = max(wy, 0.02);
+    float fy = fract(cy);
+    float up = smoothstep(0.58 - e, 0.94, fy);
+    float down = 1.0 - smoothstep(0.08, 0.30 + e, fy);
+    float lip = mix(1.0, 1.18, up) * mix(1.0, 0.76, down);
+    float unitNear = 1.0 - smoothstep(0.18, 0.42, max(wy, wx));
+    float batchNear = 1.0 - smoothstep(0.45, 0.9, max(bw.x, bw.y));
+    batchM = mix(vec3(1.0), batchT, batchNear);
+    mason = batchM * mix(vec3(1.0), unitT * lip, unitNear);
+    masonOn = 1.0;
+    wallP *= mix(vec3(1.0), mason, 1.0 - joint);
+    wallP = mix(wallP, vec3(0.2, 0.15, 0.17), joint * 0.82);
+    // Barla, Thollot, Markosian, X-Toon (NPAR 2006): the lighting band stays. A second tone, this unit's clay,
+    // is printed after the grade so that grade cannot pull every brick back to one hue. The course crest holds
+    // until the course is only a few pixels, past the point where the unit tint itself fades.
+    float grain = mix(batch, unit, unitNear);
+    // Every channel stays at or above 1. A darker bed, and a lo clay under 1, pushed shade faces
+    // under the ink test (max channel 46) and flooded the canyon rows. Hue is the clay.
+    vec3 loC = st == 3 ? vec3(1.00, 1.06, 1.28) : st == 4 ? vec3(1.00, 1.08, 1.22) : vec3(1.42, 1.08, 1.00);
+    vec3 hiC = st == 3 ? vec3(1.30, 1.16, 1.04) : st == 4 ? vec3(1.24, 1.14, 1.02) : vec3(1.18, 1.28, 1.06);
+    clayPrint = mix(loC, hiC, grain);
+    float courseHold = 1.0 - smoothstep(0.30, 0.80, max(wy, wx));
+    clayPrint *= mix(1.0, mix(1.0, 1.18, up), courseHold);
+    clayOn = max(unitNear, batchNear) * (1.0 - joint);
+  }
   vec3 celWall = comicCelX(wallP, band, LITMUL, LITADD);
   vec3 green = vec3(0.5, 0.9, 0.25);
   vec3 warm = vec3(1.06, 1.0, 0.88);
@@ -432,7 +582,13 @@ vec3 wallColor(int k, float shop, float sd, float salt, float h1, float h2, floa
   if (glassy) {
     vec3 R = reflect(-V, N);
     skyR = skyAt(vec3(R.x, abs(R.y) * 0.5 + 0.07, R.z)) * mix(vec3(1.0), vec3(0.78, 0.9, 1.0), step(0.5, h3)) * (0.7 + 0.3 * min(band, 1.0));
-    mirror = k == 1 ? 0.3 : (fr == F_CURTAIN ? 0.65 : 0.55);
+    // Schlick 1994: a pane facing the camera stays a window, a grazing pane takes the sky
+    float fres = pow(1.0 - clamp(dot(N, V), 0.0, 1.0), 3.0);
+    float face = k == 1 ? 0.08 : 0.12;
+    float edge = k == 1 ? 0.7 : 1.0;
+    mirror = mix(face, edge, fres);
+    float glint = pow(clamp(dot(normalize(R), normalize(uSunDir)), 0.0, 1.0), 22.0);
+    skyR += vec3(1.0, 0.62, 0.28) * glint * fres * 0.55;
   }
   #endif
   // -- flat blocks: a window in each cell, flat lit or dark (also the look without the atlas)
@@ -443,6 +599,7 @@ vec3 wallColor(int k, float shop, float sd, float salt, float h1, float h2, floa
   float rcut = mix(roundAvg, round0, detail);
   float wmask = wa.x * wa.y * rcut * inFloors;
   float wSharp = ww.x * ww.y * round0;
+  clayOn *= 1.0 - wmask;
   vec3 glassDark = mix(glassC, skyR, mirror);
   vec3 roomDark = comicCelX(glassDark * (0.85 + 0.4 * f.y), band, LITMUL, LITADD);
   vec3 roomNow = lit > 0.5 ? litWin : roomDark;
@@ -451,12 +608,6 @@ vec3 wallColor(int k, float shop, float sd, float salt, float h1, float h2, floa
   float emBlock = wmask * mix(litAvg, lit, detail);
   vec3 col = mix(celWall, room, wmask);
   float em = emBlock;
-  // an awning over the shop windows in the flat look
-  if (shopRow && nearD < 0.5) {
-    float ay = smoothstep(0.58 - aa.y, 0.58 + aa.y, f.y) * (1.0 - smoothstep(0.96 - aa.y, 0.96 + aa.y, f.y));
-    vec3 aw = comicCelX(rs < 0.5 ? vec3(0.7, 0.14, 0.1) : vec3(0.1, 0.4, 0.4), band, LITMUL, LITADD);
-    col = mix(col, aw, ay * detail);
-  }
   // -- the painted tile: the atlas cell for this window, lit or dark. The painted family shows the whole tile in the
   // building's own wall paint; the other families show only the tile's window, stretched into their own window shape.
   if (nearD > 0.001) {
@@ -482,7 +633,11 @@ vec3 wallColor(int k, float shop, float sd, float salt, float h1, float h2, floa
     float yy = min(tc.r, tc.g) - tc.b;
     float e = lit * smoothstep(0.12, 0.34, yy);
     if (tl > 12.5 && tl < 13.5) e = max(e, smoothstep(0.3, 0.55, max(tc.r, max(tc.g, tc.b))));
-    if (painted) { if (!shopRow) tc = max(tc + wallShift * (1.0 - win) * (1.0 - e), 0.0); }
+    if (painted) {
+      if (!shopRow) tc = max(tc + wallShift * (1.0 - win) * (1.0 - e), 0.0);
+      // the painted tile is one flat brick. The same batch that colours the far wall tints the tile's wall, not its glass.
+      tc *= mix(vec3(1.0), batchM, (1.0 - win) * masonOn);
+    }
     else { e *= win; tc = mix(wallP, tc, win); }
     // the dark glass takes the building's tint, and shows the sky, the way the towers in the key art do
     tc = max(tc + (glassC - darkWin) * win * (1.0 - e) * 0.9, 0.0);
@@ -494,6 +649,7 @@ vec3 wallColor(int k, float shop, float sd, float salt, float h1, float h2, floa
     vec3 tcol = comicCelX(tc * (1.0 - e), band, LITMUL, LITADD) + glow;
     col = mix(col, mix(celWall, tcol, inFloors), nearD);
     em = mix(em, e * inFloors, nearD);
+    clayOn *= mix(1.0, 1.0 - win, nearD);
   }
   float upper = street ? 0.0 : inFloors * step(y, top);
   // a pixel's step in window metres, each screen axis (for the painted rooms' mip level)
@@ -631,6 +787,7 @@ vec3 wallColor(int k, float shop, float sd, float salt, float h1, float h2, floa
     vec3 roomC = lit > 0.5 ? litC : mix(comicCelX(darkC, band, LITMUL, LITADD), comicCelX(glassDark, band, LITMUL, LITADD), 0.35 + 0.4 * mirror);
     col = mix(col, roomC, inM);
     em = mix(em, lit, inM);
+    clayOn *= 1.0 - inM;
   }
   #endif
   #ifndef LOW
@@ -710,7 +867,7 @@ vec3 wallColor(int k, float shop, float sd, float salt, float h1, float h2, floa
   }
   // -- the building's own structure, which fades to its average tone: piers between window groups, pilasters on the
   // corners, a spandrel band in a contrasting tone every few floors, balcony rails, and a fire escape on some brick faces
-  vec3 pierCol = comicCelX(wallAlb * (grp > 1.5 ? 0.86 : 1.0), band, LITMUL, LITADD);
+  vec3 pierCol = comicCelX(wallAlb * (grp > 1.5 ? 0.86 : 1.0) * mix(vec3(1.0), mason, masonOn), band, LITMUL, LITADD);
   col = mix(col, pierCol, pier * upper);
   em *= 1.0 - pier * upper;
   float wl = dot(wallAlb, LUMW);
@@ -753,6 +910,7 @@ vec3 wallColor(int k, float shop, float sd, float salt, float h1, float h2, floa
     vec3 railCol = mix(comicCelX(vec3(0.16, 0.14, 0.18), band, LITMUL, LITADD), comicCelX(vec3(0.66, 0.63, 0.6), band, LITMUL, LITADD), slab * (1.0 - bar));
     col = mix(col, mix(comicCelX(vec3(0.3, 0.28, 0.32), band, LITMUL, LITADD), railCol, detail), rv);
     em *= 1.0 - rv;
+    clayOn *= 1.0 - rv;
   }
   // a fire escape: a landing at each floor and a stair zigzagging between them, two bays wide
   if (brickish && hr > 0.55 && fract(salt * 0.618) < 0.5 && cols >= 3.0) {
@@ -772,6 +930,7 @@ vec3 wallColor(int k, float shop, float sd, float salt, float h1, float h2, floa
     float fe = mix(feAvg, max(max(slab, rail), max(post, stair)), detail) * inX * inFloors0 * step(y, top);
     col = mix(col, comicCelX(vec3(0.17, 0.13, 0.17), band, LITMUL, LITADD), fe);
     em *= 1.0 - fe;
+    clayOn *= 1.0 - fe;
   }
   // world-anchored Ben-Day dots on the walls that are not fully lit, in face metres so they hold still in both eyes
   float dw = 1.0 - clamp(band - 1.0, 0.0, 1.0);
@@ -779,12 +938,62 @@ vec3 wallColor(int k, float shop, float sd, float salt, float h1, float h2, floa
   #endif
   // the street floor is cut from the floors above by a course line
   lineY = (glassy || shop > 0.5) ? gH : -1.0;
+  // Limestone at each floor of a shop building, and a deeper course plus a sill on the storey
+  // just above the shop. Printed after the grade, the way the awning is, so the paper does not
+  // take the stone. It fades before the band can shimmer.
+  if (!street && shop > 0.5 && id.y > -0.5 && !glassy) {
+    float px = max(fwidth(f.y), 1e-4);
+    float ground = 1.0 - step(0.5, abs(id.y));
+    float h = mix(0.14, 0.26, ground);
+    float stone = 1.0 - smoothstep(h - px, h + px, f.y);
+    float lip = smoothstep(h - 0.04 - px, h - 0.04 + px, f.y) * (1.0 - smoothstep(h + 0.02 - px, h + 0.02 + px, f.y));
+    float sill = smoothstep(wr.y - 0.06 - px, wr.y - 0.06 + px, f.y) * (1.0 - smoothstep(wr.y - px, wr.y + px, f.y));
+    float inX = smoothstep(wr.x - 0.06, wr.x, fc.x) * (1.0 - smoothstep(wr.z, wr.z + 0.06, fc.x));
+    vec3 stoneC = mix(vec3(0.58, 0.52, 0.44), vec3(0.90, 0.84, 0.72), smoothstep(0.15, 1.1, band));
+    vec3 lipC = vec3(0.36, 0.30, 0.26);
+    float a = max(stone, sill * inX * ground) * detail * inFloors0;
+    storey = vec4(mix(stoneC, lipC, clamp(lip, 0.0, 1.0)), a);
+  }
   // tower crowns: a short top tier on a glass tower is a louvred plant screen
   if (glassy && salt > 50.0 && y < top) {
     col = mix(comicCel(vec3(0.3, 0.32, 0.4), band), INKC, stripe(y / 0.6, 0.06) * 0.8);
   }
   // above the last window row, and the parapet: plain wall
   if (y > top) col = comicCel(mix(wallAlb, vec3(0.62, 0.6, 0.64), 0.4), band);
+  // Shaded wall under the street air takes a warm bounce from the avenue. The lit band stays the sun,
+  // and a lit window (em) keeps its own light. The height is the 18 m street layer, faded out by the roofs.
+  float shade = 1.0 - smoothstep(0.25, 1.15, band);
+  float low = 1.0 - smoothstep(8.0, 20.0, y);
+  col = mix(col, col * vec3(1.7, 1.05, 0.5) + vec3(0.08, 0.02, 0.0), shade * low * (1.0 - em) * 0.85);
+  // A cloth band over the shop windows. The flat look used to paint this only while the window atlas
+  // was off, and the street camera is inside that atlas, so the near shops had no awning.
+  // It sits above the shop glass (the window ends at 0.56 of the street floor). The caller mixes it
+  // on after the teal grade, or that grade would repaint the shaded cloth.
+  awning = vec4(0.0);
+  if (shopRow) {
+    float y0 = 0.58;
+    float y1 = 0.96;
+    float ay = smoothstep(y0 - aa.y, y0 + aa.y, f.y) * (1.0 - smoothstep(y1 - aa.y, y1 + aa.y, f.y));
+    float hem = smoothstep(y0 - aa.y, y0 + aa.y, f.y) * (1.0 - smoothstep(0.70 - aa.y, 0.70 + aa.y, f.y));
+    vec3 cloth = rs < 0.5 ? vec3(0.92, 0.10, 0.08) : vec3(0.06, 0.48, 0.58);
+    cloth = mix(cloth, cloth * vec3(0.45, 0.40, 0.42), hem);
+    cloth = mix(cloth, cloth * 0.72, stripe(u / cw, 0.04));
+    // The shop lamp hits the cloth from below. The hem, nearest the glass, takes the warm light.
+    // The top of the cloth stays its own red or teal. A dark shop leaves the cloth alone.
+    float fromGlass = (1.0 - smoothstep(y0, 0.90, f.y)) * lit;
+    cloth = mix(cloth, cloth * vec3(1.55, 0.78, 0.36) + vec3(0.20, 0.06, 0.0), fromGlass);
+    awning = vec4(comicCelX(cloth, band, LITMUL, LITADD), ay * detail);
+  }
+  // James Gurney, Color and Light (2010): a local light colours the nearby surface and dies with distance.
+  // The pool is printed after the grade, so the teal paper cannot take the lamp's colour. It stays off the
+  // glass, and a face in the sun keeps only a little of it.
+  vec2 outd = max(wr.xy - fc, fc - wr.zw);
+  float gap = max(outd.x, outd.y);
+  float nearWin = 1.0 - smoothstep(0.0, 0.28, gap);
+  float spillA = nearWin * lit * inFloors * (1.0 - wmask) * detail;
+  spillA *= mix(1.0, 0.28, smoothstep(0.15, 1.05, band));
+  spill = vec4(1.55, 0.92, 0.42, clamp(spillA, 0.0, 1.0));
+  clay = mix(vec3(1.0), clayPrint, clamp(clayOn, 0.0, 1.0));
   return col;
 }
 vec3 roofColor(int k, float h1, float h2, vec3 N) {
@@ -827,8 +1036,12 @@ void main() {
   float h1 = fract(sd * 0.0913), h2 = fract(sd * 0.3771), h3 = fract(sd * 0.1313);
   vec3 col;
   float lineY = -1.0;
+  vec4 awn = vec4(0.0);
+  vec3 clay = vec3(1.0);
+  vec4 spill = vec4(0.0);
+  vec4 storey = vec4(0.0);
   if (N.y > 0.5) col = roofColor(k, h1, h2, N);
-  else col = wallColor(k, shop, sd, salt, h1, h2, h3, N, V, dist, lineY);
+  else col = wallColor(k, shop, sd, salt, h1, h2, h3, N, V, dist, lineY, awn, clay, spill, storey);
   // a clogged district goes grey-green; the finale warms everything
   col = mix(col, vec3(dot(col, vec3(0.3, 0.5, 0.2))) * vec3(0.82, 0.98, 0.62), vClog * 0.38);
   col *= mix(vec3(1.0), vec3(1.08, 1.0, 0.9), uFinale);
@@ -846,7 +1059,14 @@ void main() {
   col += vec3(1.0, 0.72, 0.39) * fold * foldSun * 0.22;
   if (lineY > 0.0) ink = max(ink, comicInk(abs(vW.y - lineY), wpx * 0.8));
   col = mix(col, INKC, ink);
-  gl_FragColor = vec4(mix(col, vFog.rgb, comicPoster(vFog.a, 4.0)), 1.0);
+  // The clay is printed on the graded wall, the way the awning is. The grade stays the paper:
+  // violet at the dark end, teal in open shade, rose on the step, amber in the sun.
+  // The lamp pool is printed after that, and it stays off the ink line.
+  vec3 graded = gradeInk(col, sunT(shadowDepthAt(vW))) * clay;
+  graded = mix(graded, graded * spill.rgb + vec3(0.07, 0.025, 0.0), spill.a * (1.0 - ink));
+  vec3 shown = mix(graded, mix(awn.rgb, INKC, ink), awn.a);
+  shown = mix(shown, mix(storey.rgb, INKC, ink), storey.a);
+  gl_FragColor = vec4(mix(shown, vFog.rgb, comicPoster(vFog.a, 4.0)), 1.0);
 }`;
 
 // The Needle, the Dome, the expressway and the King's perch: one mesh, a kind per vertex.
@@ -969,6 +1189,8 @@ void main() {
   float dw = 1.0 - clamp(band - 1.0, 0.0, 1.0);
   col = mix(col, DOTC, comicDots(vec2(az * 12.0 + vW.x * 0.0, vW.y), 0.34, mix(0.62, 0.3, clamp(band, 0.0, 1.0))) * dw * 0.5 * step(float(k), 15.5));
   col += emit;
+  // the expressway deck is the same wet asphalt as the streets
+  if (k == 18) col = wetAsphalt(col, vW, N, 1.0, sunT(shadowDepthAt(vW + vec3(0.0, 0.4, 0.0))));
   col = mix(col, INKC, clamp(ink, 0.0, 1.0));
   gl_FragColor = vec4(fogMix(col, vW, maxF), 1.0);
 }`;
@@ -1012,8 +1234,10 @@ float aaLine(float d, float w, float fw) { return (1.0 - smoothstep(w - fw, w + 
 float stripes(float t, float fw) { float s = smoothstep(0.25 - fw, 0.25 + fw, abs(fract(t) - 0.5)); return mix(0.5, s, 1.0 - smoothstep(0.2, 0.5, fw)); }
 // an ink line where a pattern draws one (kerbs, park edges, the quay), as pixels: d metres to the edge over metres per pixel
 float gInk = 0.0;
+float gWet = 0.0; // 1 on asphalt, a little in alleys, 0 on sidewalks, parks and the boardwalk
 float inkD(float d, float fp) { return 1.0 - smoothstep(1.05, 2.55, d / fp); }
 vec3 asphalt(vec2 p, float fp) {
+  gWet = 1.0;
   // repair patches on a loose grid, flat, in a slightly lighter violet
   vec2 cell = floor(p / vec2(9.0, 6.0));
   float patchv = step(0.86, hash12(cell));
@@ -1081,7 +1305,8 @@ vec3 cityGround(vec2 p, float fp) {
   bool onX = ax < hx && p.y < float(${PROMENADE}.0);
   bool onZ = az < hz;
   if (!onX && !onZ) {
-    // inside a block: alleys and courtyards
+    // inside a block: alleys and courtyards, damp but not a mirror
+    gWet = 0.4;
     return vec3(0.34, 0.3, 0.42);
   }
   bool roadX = onX && ax < hx - wx;
@@ -1107,6 +1332,7 @@ vec3 cityGround(vec2 p, float fp) {
       // the boulevard: a planted median
       if (aw < 3.0) {
         gInk = max(gInk, inkD(3.0 - aw, fp));
+        gWet = 0.0; // the planted median stays matte
         return mix(vec3(0.4, 0.5, 0.15), vec3(0.86, 0.42, 0.1), step(0.72, vnoise(p * 0.5)));
       }
       lines += aaLine(aw - 3.2, 0.14, fp);
@@ -1163,6 +1389,7 @@ vec3 suburb(vec2 p, float fp) {
 vec3 groundAlbedo(vec3 wp, vec3 N, float fp) {
   vec2 p = wp.xz;
   gInk = 0.0;
+  gWet = 0.0;
   if (N.y < 0.5) return vec3(0.5, 0.46, 0.56);
   if (p.x < uLand.x || p.x > uLand.z || p.y < uLand.y) return suburb(p, fp);
   if (p.y > float(${PROMENADE}.0)) return promenade(p, fp);
@@ -1174,8 +1401,19 @@ ${COMMON_FS}
 ${GROUND_PATTERN}
 uniform float uClog[6];
 uniform vec4 uDist[6];
+uniform vec4 uLamp[6]; // xyz unused except xy = lamp on the pavement, w = 1 when the slot is filled
 varying vec3 vW;
 varying vec3 vN;
+// A warm disc on the pavement under a street lamp. It dies within a few metres.
+// Gurney, Color and Light (2010): a local light colours the nearby surface and falls off.
+float lampPool(vec2 p) {
+  float a = 0.0;
+  for (int i = 0; i < 6; i++) {
+    float d = distance(p, uLamp[i].xy);
+    a = max(a, (1.0 - smoothstep(1.1, 6.4, d)) * step(0.5, uLamp[i].w));
+  }
+  return a;
+}
 float clogAt(vec2 p) {
   if (p.y > 110.0) return uClog[0];
   float best = 1e9, v = 0.0;
@@ -1196,13 +1434,20 @@ void main() {
     float s = smoothstep(0.66 - sw, 0.66 + sw, sn) * step(0.5, cl + 0.3 * sn);
     alb = mix(alb, vec3(0.5, 0.78, 0.16), s * cl);
   }
-  float L = comicLight(N, uSunDir) * sunT(shadowDepthAt(vW + vec3(0.0, 0.1, 0.0)));
+  float sunVis = sunT(shadowDepthAt(vW + vec3(0.0, 0.1, 0.0)));
+  float L = comicLight(N, uSunDir) * sunVis;
   float band = comicBand(L, 0.12, 0.5);
   vec3 col = comicCelX(alb, band, vec3(1.7, 1.22, 0.8), vec3(0.08, 0.03, 0.0));
   float dw = 1.0 - clamp(band - 1.0, 0.0, 1.0);
   col = mix(col, DOTC, comicDots(vW.xz, 0.3, mix(0.62, 0.3, clamp(band, 0.0, 1.0))) * dw * 0.5);
+  col = wetAsphalt(col, vW, N, gWet, sunVis);
   col = mix(col, INKC, clamp(ink, 0.0, 1.0));
-  gl_FragColor = vec4(fogMix(col, vW, 1.0), 1.0);
+  // The pool is printed after the grade and before the haze, the same way a shop's spill is.
+  vec3 graded = gradeInk(col, sunT(shadowDepthAt(vW + vec3(0.0, 0.1, 0.0))));
+  float pool = lampPool(vW.xz) * (1.0 - clamp(ink, 0.0, 1.0));
+  graded = mix(graded, graded * vec3(1.55, 0.86, 0.36) + vec3(0.07, 0.025, 0.0), pool);
+  vec3 hv = normalize(vW - cameraPosition);
+  gl_FragColor = vec4(mix(graded, skyHaze(hv), comicPoster(fogAmount(vW), 4.0)), 1.0);
 }`;
 
 // The lake: flat violet bands of mirror, inked wave strokes, the sun's road of light, print dots.
@@ -1305,7 +1550,7 @@ void main() {
     col = mix(col, vec3(1.0, 0.72, 0.3), 1.0 - smoothstep(0.9935 - 0.0008, 0.9935 + 0.0008, s));
     col = mix(col, ${hexv(PAL.sun)}, 1.0 - smoothstep(0.9985 - 0.0004, 0.9985 + 0.0004, s));
   }
-  gl_FragColor = vec4(col, 1.0);
+  gl_FragColor = vec4(gradeInk(col, clamp(dot(d, uSunDir) * 0.5 + 0.5, 0.0, 1.0)), 1.0);
 }`;
 
 // Trees: a trunk and two lumpy crown lobes, one instance each. Cel colours, leaf clumps in two flat tones, and an ink hull.
@@ -1371,7 +1616,7 @@ void main() {
   vec3 col = band < 1.0 ? mix(shd, mid, band) : mix(mid, lit, band - 1.0);
   float dw = 1.0 - clamp(band - 1.0, 0.0, 1.0);
   col = mix(col, DOTC, comicDots(vW.xz + vW.y * 0.5, 0.4, mix(0.6, 0.3, clamp(band, 0.0, 1.0))) * dw * 0.45);
-  gl_FragColor = vec4(mix(col, vFog.rgb, comicPoster(vFog.a, 4.0)), 1.0);
+  gl_FragColor = vec4(mix(gradeInk(col, sunT(vDepth)), vFog.rgb, comicPoster(vFog.a, 4.0)), 1.0);
 }`;
 
 // Cars and streetcars: they drive their lanes in the vertex shader, from uTime, with head and tail lights and an ink hull.
@@ -1466,11 +1711,11 @@ void main() {
   float front = step(0.5, vLN.x), back = step(0.5, -vLN.x);
   col = mix(col, vec3(1.0, 0.95, 0.7), light * front);
   col = mix(col, vec3(1.0, 0.1, 0.08), light * back);
-  gl_FragColor = vec4(mix(col, vFog.rgb, comicPoster(vFog.a, 4.0)), 1.0);
+  gl_FragColor = vec4(mix(gradeInk(col, sunT(vDepth)), vFog.rgb, comicPoster(vFog.a, 4.0)), 1.0);
 }`;
 
-// Roof props: boxes (plant rooms and air conditioners), water towers, masts and gardens. aPart: 0 plain, 2 fan top,
-// 3 wood staves, 4 leaves, 5 metal, 6 lamp head, 7 lamp pole.
+// Roof props and curb furniture. aPart: 0 plain, 2 fan top, 3 wood staves, 4 leaves, 5 metal,
+// 6 lamp head, 7 lamp pole, 8 bin, 9 bollard, 10 hydrant.
 const PROP_VS = /* glsl */ `
 ${VERTEX_FOG}
 varying float vDepth;
@@ -1486,15 +1731,26 @@ varying vec3 vS;
 varying vec3 vLN;
 varying float vPart;
 varying float vHash;
+varying float vKeep;
 void main() {
   float c = cos(aP.w), s = sin(aP.w);
   vec3 p = position * aS.xyz;
+  float dist = length(aP.xyz - cameraPosition);
+  float keep = 1.0;
   // street lamps shrink away in the distance: a thin pole far off would only flicker
-  if (aPart > 5.5) p *= 1.0 - smoothstep(170.0, 240.0, length(aP.xyz - cameraPosition));
+  if (aPart > 5.5 && aPart < 7.5) p *= 1.0 - smoothstep(170.0, 240.0, dist);
+  // one mesh holds the bin, the bollard and the hydrant; the hash keeps one and drops the rest
+  if (aPart > 7.5) {
+    float kind = aS.w < 0.34 ? 8.0 : (aS.w < 0.67 ? 9.0 : 10.0);
+    float match = 1.0 - step(0.5, abs(aPart - kind));
+    float fade = 1.0 - smoothstep(70.0, 110.0, dist);
+    keep = match * step(0.04, fade);
+    p *= match * fade;
+  }
   p = vec3(p.x * c + p.z * s, p.y, -p.x * s + p.z * c);
   vec3 n = vec3(normal.x * c + normal.z * s, normal.y, -normal.x * s + normal.z * c);
   vec4 w = modelMatrix * vec4(aP.xyz + p, 1.0);
-  vW = w.xyz; vN = n; vL = position; vC = aCol; vPart = aPart; vHash = aS.w; vS = aS.xyz; vLN = normal;
+  vW = w.xyz; vN = n; vL = position; vC = aCol; vPart = aPart; vHash = aS.w; vS = aS.xyz; vLN = normal; vKeep = keep;
   vDepth = shadowDepthAt(w.xyz + vec3(n.x, 0.0, n.z));
   fogVertex(w.xyz);
   gl_Position = projectionMatrix * viewMatrix * w;
@@ -1511,7 +1767,9 @@ varying vec3 vS;
 varying vec3 vLN;
 varying float vPart;
 varying float vHash;
+varying float vKeep;
 void main() {
+  if (vKeep < 0.5) discard;
   vec3 N = normalize(vN);
   vec3 alb = vC * mix(vec3(0.9), vec3(1.1), vHash);
   int part = int(vPart + 0.5);
@@ -1552,14 +1810,79 @@ void main() {
     alb = mix(vec3(0.55, 0.36, 0.25) * (0.85 + 0.2 * st), vec3(0.16, 0.12, 0.2), hoop * (1.0 - smoothstep(0.2, 0.5, fp * 2.2)));
   } else if (part == 4) {
     alb = vC * (0.8 + 0.4 * step(0.5, vnoise(vW.xz * 2.0 + vW.y)));
+  } else if (part == 8) {
+    alb = vec3(0.16, 0.28, 0.26);
+    alb *= mix(0.85, 1.05, step(0.98, vL.y));
+  } else if (part == 9) {
+    alb = vec3(0.18, 0.19, 0.22);
+    float bandY = 1.0 - smoothstep(0.035, 0.035 + fp, abs(vL.y - 0.62));
+    alb = mix(alb, vec3(0.86, 0.82, 0.72), bandY);
+  } else if (part == 10) {
+    alb = vec3(0.72, 0.16, 0.13);
+    alb = mix(alb, vec3(0.42, 0.1, 0.1), step(0.6, vL.y));
   }
   vec3 col = comicCel(alb, band);
   // a lamp head: its glass glows warm underneath
   if (part == 6) col = mix(col, vec3(1.0, 0.82, 0.4), step(vLN.y, -0.5));
-  // thin things (masts, poles, tower legs) take a dark rim where they turn away from the eye
-  float rim = part == 5 || part == 7 ? 1.0 - smoothstep(0.2, 0.5, abs(dot(N, normalize(cameraPosition - vW)))) : 0.0;
+  // the bollard band is painted after the cel, or the three bands swallow it
+  if (part == 9) col = mix(col, vec3(0.93, 0.9, 0.82), 1.0 - smoothstep(0.045, 0.045 + fp, abs(vL.y - 0.62)));
+  // thin things (masts, poles, tower legs, curb posts) take a dark rim where they turn away from the eye
+  float rim = part == 5 || part == 7 || part >= 8 ? 1.0 - smoothstep(0.2, 0.5, abs(dot(N, normalize(cameraPosition - vW)))) : 0.0;
   col = mix(col, INKC, clamp(max(ink, rim * 0.8), 0.0, 1.0));
-  gl_FragColor = vec4(mix(col, vFog.rgb, comicPoster(vFog.a, 4.0)), 1.0);
+  gl_FragColor = vec4(mix(gradeInk(col, sunT(vDepth)), vFog.rgb, comicPoster(vFog.a, 4.0)), 1.0);
+}`;
+
+// Sidewalk steam. aP: x, y, z, phase. aS: size, rise, cycles per second, which puff.
+// Two cards share a grate, half a loop apart, so a still always has one rising.
+// William T. Reeves, SIGGRAPH 1983: a puff is born, lives, dies, and drifts up. The fill is this game's cel cloud.
+const STEAM_VS = /* glsl */ `
+${VERTEX_FOG}
+attribute vec4 aP;
+attribute vec4 aS;
+varying vec2 vUv;
+varying float vLife;
+varying float vSeed;
+void main() {
+  vUv = uv;
+  vSeed = aS.w;
+  float dist = length(aP.xyz - cameraPosition);
+  float away = (1.0 - smoothstep(8.0, 16.0, dist)) + smoothstep(70.0, 110.0, dist);
+  float ph = fract(uTime * aS.z + aP.w);
+  vLife = smoothstep(0.0, 0.1, ph) * (1.0 - smoothstep(0.55, 1.0, ph)) * (1.0 - clamp(away, 0.0, 1.0));
+  vec3 wp = aP.xyz + vec3(sin(ph * 6.28318 + aP.w * 12.0) * 0.35, ph * aS.y, 0.0);
+  float size = aS.x * (0.5 + 0.9 * ph);
+  vec3 right = vec3(viewMatrix[0][0], viewMatrix[1][0], viewMatrix[2][0]);
+  vec3 up = vec3(viewMatrix[0][1], viewMatrix[1][1], viewMatrix[2][1]);
+  vec3 w = wp + (right * position.x + up * position.y) * size;
+  fogVertex(w);
+  gl_Position = projectionMatrix * viewMatrix * vec4(w, 1.0);
+}`;
+const STEAM_FS = /* glsl */ `
+${COMMON_UNI}
+${GLSL.toon}
+${GLSL.halftone}
+${GLSL.posterize}
+varying vec4 vFog;
+varying vec2 vUv;
+varying float vLife;
+varying float vSeed;
+void main() {
+  vec2 p = vUv * 2.0 - 1.0;
+  float px = max(fwidth(p.x), fwidth(p.y)), aa = px * 0.8;
+  float r = length(p), ang = atan(p.y, p.x);
+  float rs = 0.62 + 0.1 * sin(ang * 5.0 + vSeed * 6.28) + 0.05 * sin(ang * 9.0 + vSeed * 37.0);
+  float sd = r - rs;
+  float side = dot(p, vec2(0.55, -0.75));
+  vec3 col = vec3(0.96, 0.91, 0.8);
+  col = mix(col, vec3(0.62, 0.56, 0.72), max(comicStep(0.1, side), comicDots(p * 1.5, 0.28, 0.4) * 0.5 * smoothstep(-0.2, 0.35, side)));
+  float fill = 1.0 - smoothstep(-aa, aa, sd);
+  float iw = clamp(px * 1.6, 0.08, 0.26);
+  float ink = 1.0 - smoothstep(iw - aa, iw + aa, sd);
+  float haze = comicPoster(vFog.a + clamp(uDay, 0.0, 1.0) * 1e-4, 4.0);
+  float A = ink * vLife * (1.0 - haze);
+  if (A < 0.04) discard;
+  col = mix(INKC, col, fill);
+  gl_FragColor = vec4(mix(col, vFog.rgb, haze), A);
 }`;
 
 // Red aviation beacons on the Needle and the tall towers: they blink, and never shrink below a couple of pixels.
@@ -1622,7 +1945,7 @@ void main() {
   } else {
     col = comicCelX(vec3(0.24, 0.24, 0.42), band, vec3(1.4, 1.1, 0.8), vec3(0.06, 0.025, 0.0));
   }
-  gl_FragColor = vec4(mix(col, vFog.rgb, min(comicPoster(vFog.a, 4.0), 0.75)), 1.0);
+  gl_FragColor = vec4(mix(gradeInk(col, sunT(shadowDepthAt(vW))), vFog.rgb, min(comicPoster(vFog.a, 4.0), 0.75)), 1.0);
 }`;
 
 /* ---------------- the diorama (spec §9: shared geometry, a simple unlit material, no fog) ---------------- */
@@ -1889,6 +2212,7 @@ export function createCityView(renderer, scene, city, opts = {}) {
   const clogNow = new Float32Array(6), clogWant = new Float32Array(6);
   const U = {
     uTime: { value: 0 },
+    uDay: { value: 0 },
     uSunDir: { value: new THREE.Vector3(SUN_DIR.x, SUN_DIR.y, SUN_DIR.z) },
     uSunXZ: { value: new THREE.Vector2(SUN_DIR.x / sunLen, SUN_DIR.z / sunLen) },
     // the art (art/sky.webp, art/windows.webp) arrives later; until then (or if a file fails) the shaders draw the procedural look
@@ -1905,7 +2229,7 @@ export function createCityView(renderer, scene, city, opts = {}) {
     uWater: { value: col3(COLORS.water) },
   };
   const pick = (...names) => Object.fromEntries(names.map((n) => [n, U[n]]));
-  const COMMON_U = ["uTime", "uSunDir", "uSunXZ", "uFog", "uMap", "uMapBox", "uSky", "uHaveSky", "uSkyU", "uInkS"];
+  const COMMON_U = ["uTime", "uDay", "uSunDir", "uSunXZ", "uFog", "uMap", "uMapBox", "uSky", "uHaveSky", "uSkyU", "uInkS"];
 
   // Height (G) and shadow height (R) over the city, 2 m per step. Filled by the build, uploaded once when done.
   const mapData = new Uint8Array(MAP.nx * MAP.nz * 2);
@@ -1978,7 +2302,34 @@ export function createCityView(renderer, scene, city, opts = {}) {
   const landMat = mat(LANDMARK_VS, LANDMARK_FS, { ...pick(...COMMON_U, "uKing", "uFinale"),
     uNeedle: { value: new THREE.Vector4(N0.x, N0.z, N0.podY0, 0) }, uDome: { value: new THREE.Vector4(D0.x, D0.z, D0.r, X0.z) } });
   const landInk = mat(LANDMARK_HULL_VS, LANDMARK_HULL_FS, { ...pick(...COMMON_U), uInkK: inkK, uInkPx: { value: INK_PX }, uInkW: { value: 0 } }, { side: THREE.BackSide });
-  const groundMat = mat(GROUND_VS, GROUND_FS, { ...pick(...COMMON_U, "uClog"), ...GU });
+  const LAMP_N = 6;
+  const uLamp = Array.from({ length: LAMP_N }, () => new THREE.Vector4());
+  const groundMat = mat(GROUND_VS, GROUND_FS, { ...pick(...COMMON_U, "uClog"), ...GU, uLamp: { value: uLamp } });
+  // ShaderMaterial clones Vector4 arrays, so the live slots are the material's copies.
+  const lampU = groundMat.uniforms.uLamp.value;
+  // The six lamps nearest the camera. The rest of the city stays unlit by them, so the ground
+  // shader's loop stays six wide.
+  function nearLamps(camPos) {
+    if (!camPos) return;
+    const cx = camPos.x, cz = camPos.z;
+    const best = [];
+    for (let i = 0; i < lampSpots.length; i += 2) {
+      const x = lampSpots[i], z = lampSpots[i + 1];
+      const d = (x - cx) * (x - cx) + (z - cz) * (z - cz);
+      if (d > 6400) continue;
+      if (best.length < LAMP_N) {
+        best.push({ d, x, z });
+        if (best.length === LAMP_N) best.sort((a, b) => a.d - b.d);
+      } else if (d < best[LAMP_N - 1].d) {
+        best[LAMP_N - 1] = { d, x, z };
+        best.sort((a, b) => a.d - b.d);
+      }
+    }
+    for (let i = 0; i < LAMP_N; i++) {
+      const s = best[i];
+      lampU[i].set(s ? s.x : 0, s ? s.z : 0, 0, s ? 1 : 0);
+    }
+  }
   const waterMat = mat(GROUND_VS, WATER_FS, pick(...COMMON_U, "uWater"));
   const skyMat = mat(SKY_VS, SKY_FS, pick(...COMMON_U), { side: THREE.BackSide, depthWrite: false });
   // instanced meshes get an ink twin: the same geometry drawn again as back faces pushed out along the normals
@@ -1993,6 +2344,7 @@ export function createCityView(renderer, scene, city, opts = {}) {
   const tramMat = mat(CAR_VS, CAR_FS, tramU, { defines: { STREETCAR: 1 } });
   const tramInk = twinMat(CAR_VS, CAR_FS, tramU, { STREETCAR: 1 });
   const propMat = mat(PROP_VS, PROP_FS, pick(...COMMON_U));
+  const steamMat = mat(STEAM_VS, STEAM_FS, pick(...COMMON_U), { transparent: true, depthWrite: false, side: THREE.DoubleSide });
   const beaconMat = mat(BEACON_VS, BEACON_FS, pick(...COMMON_U, "uKing"));
   const farMat = mat(FAR_VS, FAR_FS, pick(...COMMON_U));
 
@@ -2333,7 +2685,7 @@ export function createCityView(renderer, scene, city, opts = {}) {
   /* ---------------- 5. chunks of buildings, with their props and trees ---------------- */
   const nxC = Math.ceil((B.maxX - B.minX) / CHUNK), nzC = Math.ceil((city.shoreZ - B.minZ) / CHUNK);
   const chunkList = [];
-  for (let k = 0; k < nzC; k++) for (let i = 0; i < nxC; i++) chunkList.push({ i, k, x0: B.minX + i * CHUNK, z0: B.minZ + k * CHUNK, buildings: [], trees: [], lamps: [], mesh: null });
+  for (let k = 0; k < nzC; k++) for (let i = 0; i < nxC; i++) chunkList.push({ i, k, x0: B.minX + i * CHUNK, z0: B.minZ + k * CHUNK, buildings: [], trees: [], lamps: [], curbs: [], mesh: null });
   const chunkOf = (x, z) => chunkList[clamp(Math.floor((z - B.minZ) / CHUNK), 0, nzC - 1) * nxC + clamp(Math.floor((x - B.minX) / CHUNK), 0, nxC - 1)];
   for (const b of city.buildings) chunkOf(b.x, b.z).buildings.push(b);
   // start view first: the chunks in front of the start roof, near to far, then the rest by distance
@@ -2451,8 +2803,8 @@ export function createCityView(renderer, scene, city, opts = {}) {
   }
 
   /* ---- roof props ---- */
-  const PROP_TYPES = ["box", "tower", "mast", "garden", "lamp"];
-  const PROP_MAX = { box: 6000, tower: 500, mast: 900, garden: 1400, lamp: 2400 };
+  const PROP_TYPES = ["box", "tower", "mast", "garden", "lamp", "curb"];
+  const PROP_MAX = { box: 6000, tower: 500, mast: 900, garden: 1400, lamp: 2400, curb: 4200 };
   const props = {};
   const BEACON_MAX = 900;
   let beaconMesh = null;
@@ -2476,6 +2828,16 @@ export function createCityView(renderer, scene, city, opts = {}) {
       addGeo(b, new THREE.CylinderGeometry(0.06, 0.09, 6.6, 6, 1, true), M.makeTranslation(0, 3.3, 0), 7, { aCol: dark });
       addGeo(b, new THREE.BoxGeometry(1.5, 0.08, 0.08), M.makeTranslation(0.72, 6.55, 0), 7, { aCol: dark });
       addGeo(b, new THREE.BoxGeometry(0.62, 0.16, 0.3), M.makeTranslation(1.4, 6.5, 0), 6, { aCol: dark });
+    } else if (type === "curb") {
+      // one mesh, three kinds: the instance hash keeps one. Local +x faces the road.
+      const bin = () => [0.16, 0.28, 0.26], metal = () => [0.18, 0.19, 0.22], red = () => [0.72, 0.16, 0.13];
+      addGeo(b, new THREE.BoxGeometry(0.72, 1.05, 0.52), M.makeTranslation(0, 0.525, 0), 8, { aCol: bin });
+      addGeo(b, new THREE.BoxGeometry(0.78, 0.1, 0.58), M.makeTranslation(0, 1.08, 0), 8, { aCol: bin });
+      addGeo(b, new THREE.CylinderGeometry(0.11, 0.13, 0.9, 6), M.makeTranslation(0, 0.45, 0), 9, { aCol: metal });
+      addGeo(b, new THREE.CylinderGeometry(0.14, 0.14, 0.06, 6), M.makeTranslation(0, 0.9, 0), 9, { aCol: metal });
+      addGeo(b, new THREE.CylinderGeometry(0.16, 0.18, 0.62, 6), M.makeTranslation(0, 0.31, 0), 10, { aCol: red });
+      addGeo(b, new THREE.CylinderGeometry(0.2, 0.16, 0.16, 6), M.makeTranslation(0, 0.68, 0), 10, { aCol: red });
+      addGeo(b, new THREE.BoxGeometry(0.28, 0.12, 0.12), M.makeTranslation(0.2, 0.42, 0), 10, { aCol: red });
     } else {
       addGeo(b, new THREE.BoxGeometry(1, 0.45, 1), M.makeTranslation(0, 0.225, 0), 0, { aCol: () => [0.42, 0.34, 0.28] });
       for (const [x, z, s] of [[-0.22, -0.2, 0.36], [0.24, 0.1, 0.32], [-0.05, 0.28, 0.26]]) {
@@ -2605,7 +2967,7 @@ export function createCityView(renderer, scene, city, opts = {}) {
   /* ---- trees ---- */
   const AUTUMN = [[0.93, 0.46, 0.1, 5], [0.8, 0.2, 0.08, 3], [0.96, 0.74, 0.18, 4], [0.84, 0.58, 0.14, 3], [0.6, 0.28, 0.1, 2], [0.36, 0.48, 0.16, 2], [0.56, 0.54, 0.18, 1.5]];
   const autumnW = AUTUMN.reduce((s, c) => s + c[3], 0);
-  let trees = null;
+  let trees = null, steam = null;
   function treeGeometry() {
     const b = Buf({ aPart: 1 });
     const M = new THREE.Matrix4();
@@ -2654,8 +3016,46 @@ export function createCityView(renderer, scene, city, opts = {}) {
         chunkOf(x, z).lamps.push(x, z, axis === "x" ? (side > 0 ? Math.PI : 0) : (side * Math.PI) / 2);
       }
     };
+    // bins, bollards and hydrants on both walks, further in than the lamp, off the carriageway
+    const roadHalf = (q) => q.w / 2 - walkW(q.w) + 1.2;
+    // a grate on each walk, further in than the bins, with two puffs half a loop apart
+    const vents = (axis, l, from, to) => {
+      const inset = l.w / 2 - walkW(l.w) + 2.0;
+      let k = 0;
+      for (const side of [-1, 1]) {
+        for (let s = from + 22 + (side > 0 ? 20 : 0); s < to - 10; s += 40, k++) {
+          const x = axis === "x" ? l.at + side * inset : s, z = axis === "x" ? s : l.at + side * inset;
+          if (hAt(x, z) > 0.5 || inPark(x, z, 1)) continue;
+          const across = axis === "x" ? z : x;
+          if ((axis === "x" ? lines.z : lines.x).some((q) => Math.abs(across - q.at) < roadHalf(q))) continue;
+          if (partial.some((q) => q.axis !== axis && across > q.from && across < q.to && Math.abs(across - q.at) < roadHalf(q))) continue;
+          if (Math.hypot(x - N0.x, z - N0.z) < 36 || Math.hypot(x - D0.x, z - D0.z) < D0.r + 9) continue;
+          const size = l.w > 24 ? 4.2 : 3.6;
+          for (let p = 0; p < 2; p++) push(steam, { aP: [x, 0.15, z, (k * 0.17 + p * 0.5) % 1], aS: [size, 3.6, 0.38, p + (k % 5) * 0.2] });
+        }
+      }
+    };
+    const curbs = (axis, l, from, to) => {
+      const inset = l.w / 2 - walkW(l.w) + 1.15;
+      let k = 0;
+      for (const side of [-1, 1]) {
+        const yaw = axis === "x" ? (side > 0 ? Math.PI : 0) : (side * Math.PI) / 2;
+        for (let s = from + 16 + (side > 0 ? 9 : 0); s < to - 8; s += 18, k++) {
+          const x = axis === "x" ? l.at + side * inset : s, z = axis === "x" ? s : l.at + side * inset;
+          if (hAt(x, z) > 0.5 || inPark(x, z, 1)) continue;
+          const across = axis === "x" ? z : x;
+          if ((axis === "x" ? lines.z : lines.x).some((q) => Math.abs(across - q.at) < roadHalf(q))) continue;
+          if (partial.some((q) => q.axis !== axis && across > q.from && across < q.to && Math.abs(across - q.at) < roadHalf(q))) continue;
+          if (Math.hypot(x - N0.x, z - N0.z) < 36 || Math.hypot(x - D0.x, z - D0.z) < D0.r + 9) continue;
+          const kind = k % 3;
+          chunkOf(x, z).curbs.push(x, z, yaw, kind === 0 ? 0.1 : kind === 1 ? 0.5 : 0.85);
+        }
+      }
+    };
     const along = (axis, l, from, to, step) => {
       lamps(axis, l, from, to);
+      curbs(axis, l, from, to);
+      vents(axis, l, from, to);
       const hw = l.w / 2, curb = hw - walkW(l.w) + 0.9;
       for (const side of [-1, 1]) {
         for (let s = from + r() * step; s < to; s += step * lerp(0.85, 1.2, r())) {
@@ -2693,17 +3093,32 @@ export function createCityView(renderer, scene, city, opts = {}) {
       if (lines.x.some((l) => Math.abs(x - l.at) < l.w / 2 + 2)) continue;
       if (r() < 0.85) put(x, city.shoreZ - 4.5, 1.1);
     }
+    if (part === 7) flush(steam);
   }
   function makeTrees() {
     trees = instancedMesh(treeGeometry(), { aT: 4, aTc: 4 }, 4200, treeMat, 0, treeInk);
   }
-  // lamps: runs of 3 numbers (x, z, turn)
+  function makeSteam() {
+    steam = instancedMesh(new THREE.PlaneGeometry(1, 1), { aP: 4, aS: 4 }, 3200, steamMat, 4);
+  }
+  // lamps: runs of 3 numbers (x, z, turn). The spots stay, so a pavement pool can find the nearest ones.
+  const lampSpots = [];
   function addLamps(c) {
     const l = c.lamps, I = props.lamp;
     for (let o = 0; o < l.length; o += 3) {
+      lampSpots.push(l[o], l[o + 1]);
       const i = slot(I);
       if (i < 0) break;
       put(I, "aP", i, l[o], 0, l[o + 1], l[o + 2]); put(I, "aS", i, 1, 1, 1, 0.5);
+    }
+  }
+  // curbs: runs of 4 numbers (x, z, turn, hash)
+  function addCurbs(c) {
+    const l = c.curbs, I = props.curb;
+    for (let o = 0; o < l.length; o += 4) {
+      const i = slot(I);
+      if (i < 0) break;
+      put(I, "aP", i, l[o], 0, l[o + 1], l[o + 2]); put(I, "aS", i, 1, 1, 1, l[o + 3]);
     }
   }
   // a chunk's trees are flat runs of 8 numbers: x, y, z, scale, r, g, b, turn
@@ -2803,8 +3218,10 @@ export function createCityView(renderer, scene, city, opts = {}) {
   // The street cars on the CPU, for car theft (cars.js trafficAt mirrors CAR_VS): the live lane, move and colour arrays.
   // A stolen car's instance is hidden by sinking its lane 500 m under the ground; it keeps its slot, so no draw changes.
   const trafficHidden = new Map(); // slot -> its lane's y
-  function trafficCars() {
-    return cars ? { n: cars.n, lane: cars.attrs.aLane.array, move: cars.attrs.aMove.array, color: cars.attrs.aColor.array } : null;
+  function trafficCars(out = {}) {
+    if (!cars) return null;
+    out.n = cars.n; out.lane = cars.attrs.aLane.array; out.move = cars.attrs.aMove.array; out.color = cars.attrs.aColor.array;
+    return out;
   }
   function hideTraffic(i, on) {
     if (!cars || !(i >= 0 && i < cars.n)) return false;
@@ -2843,6 +3260,7 @@ export function createCityView(renderer, scene, city, opts = {}) {
     chunkGroup.push(m);
     addTrees(c);
     addLamps(c);
+    addCurbs(c);
     for (const t of PROP_TYPES) flush(props[t]);
     flush(trees);
     for (const dio of dioramas) dio.addChunk(m);
@@ -2859,6 +3277,7 @@ export function createCityView(renderer, scene, city, opts = {}) {
   for (const t of PROP_TYPES) unit("props", 0.4, () => makeProps(t), true);
   unit("props", 0.5, makeBeacons, true);
   unit("trees", 1, makeTrees, true);
+  unit("steam", 0.4, makeSteam, true);
   for (let i = 0; i < 2; i++) unit("heights", 1, () => buildHeights(i), true);
   const SLICE = 36;
   for (let i = 0; i < Math.ceil(MAP.nz / SLICE); i++) unit("shadow", 0.4, () => buildShadowRows(i, SLICE), true);
@@ -2915,6 +3334,7 @@ export function createCityView(renderer, scene, city, opts = {}) {
     stats,
     // which art files arrived (art/sky.webp, art/windows.webp): the tests read this
     art: { loaded: false, sky: false, windows: false, rooms: false },
+    lampSpots,
     // Builds a few units per call within the time budget and a hard count (the clock can stand still in tests).
     build(budgetMs = 6) {
       if (next >= units.length) return true;
@@ -2945,6 +3365,7 @@ export function createCityView(renderer, scene, city, opts = {}) {
       U.uKing.value += (kingWant - U.uKing.value) * (1 - Math.exp(-dt * 2));
       U.uFinale.value += (finaleWant - U.uFinale.value) * (1 - Math.exp(-dt * 0.8));
       if (sky && camPos) sky.position.set(camPos.x, camPos.y, camPos.z);
+      nearLamps(camPos);
       // ink lines are a few pixels wide: a touch wider on the headset's finer pixels and on a big flat window
       renderer.getDrawingBufferSize(inkSize);
       U.uInkS.value = renderer.xr.isPresenting ? 1.15 : clamp(inkSize.y / 540, 1, 1.5);
@@ -3000,6 +3421,8 @@ export function createCityView(renderer, scene, city, opts = {}) {
     },
     // The sky colour in a direction (a THREE.Vector3 or {x, y, z}), read from the same painted strip (or the same banded ramp).
     skyColorAt(dir, out = new THREE.Color()) { return skyJS(dir, out); },
+    // 0 is the painted sunset. 1 is blue hour. Play walks this; a still can pin it.
+    setDay(v) { U.uDay.value = v < 0 ? 0 : v > 1 ? 1 : v; },
   };
   // car theft: the street traffic on the CPU, and hiding a stolen car's instance (see trafficCars above)
   V.traffic = trafficCars;

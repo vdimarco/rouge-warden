@@ -1,0 +1,3 @@
+- [x] Keep the fast chase clock on while a runner is pulling away, even if the gap holds
+- [x] Play a low falling sting on a miss, and not the win fanfare
+- [x] Measure the sting in an offline buffer, and check the clock in a 1280×800 play

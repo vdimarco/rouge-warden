@@ -1,6 +1,7 @@
 #include "QuebecTraces.h"
 #include "QuebecGameplay.h"
 #include "QuebecGTA.h"
+#include "QuebecParkedCars.h"
 #include "LaFontaineMap.h"
 
 #include "CollisionQueryParams.h"
@@ -24,6 +25,9 @@ namespace
     TMap<TWeakObjectPtr<UWorld>, TWeakObjectPtr<AQuebecTraceMarks>> TraceMarkLayers;
     // Every street prop of each game world, filled as props are spawned, so strikes read a short list.
     TMap<TWeakObjectPtr<UWorld>, TArray<TWeakObjectPtr<AQuebecStreetProp>>> StreetPropLists;
+    // The least rise from the road that counts as a curb. The replica curb rises 11 cm (asphalt top 7 cm, sidewalk
+    // top 18 cm); test_plateau_parking.py measures it on the Streets OBJs.
+    constexpr float CurbRise = 10.f;
 
     // Prop sizes (cm): footprint radius for strikes, hop height, lift when lying on a side, and mass for knock distance.
     struct FTracePropShape { float Radius; float Apex; float Lift; float Mass; };
@@ -87,7 +91,7 @@ bool QuebecStreet::FindCurb(const UWorld* World, const FVector& RoadPoint, const
             const float Rise = float(Hit.ImpactPoint.Z)-RoadZ;
             // Something taller than a curb before any curb: a wall, a planter or a step.
             if (Hit.bStartPenetrating || Rise > 32.f) return false;
-            if (Rise >= 12.f && Hit.ImpactNormal.Z >= .7f) Edge = Lateral;
+            if (Rise >= CurbRise && Hit.ImpactNormal.Z >= .7f) Edge = Lateral;
         }
         if (Edge < 0.f) return false;
         Edges[Sample] = Edge;
@@ -270,6 +274,14 @@ bool AQuebecStreetProp::Knock(const FVector& CarVelocity, const FVector& CarCent
     FHitResult Hit;
     if (PropWorld->SweepSingleByObjectType(Hit,Start+FVector(0.,0.,60.),Rest+FVector(0.,0.,60.),FQuat::Identity,Solid,FCollisionShape::MakeSphere(25.f),Query))
         Rest = Hit.bStartPenetrating ? Start : Hit.Location-FVector(0.,0.,60.)-Push*10.;
+    // The parked cars' boxes are WorldDynamic, so the sweep misses them: the flight's own line finds them, and the
+    // prop stops its radius and 10 cm short of the car's side, as at a wall.
+    if (const AQuebecParkedCars* Fill = AQuebecParkedCars::Find(PropWorld))
+    {
+        FVector Side = FVector::ZeroVector;
+        if (Fill->FindSlotOnLine(Start+FVector(0.,0.,60.),Rest+FVector(0.,0.,60.),Side) != INDEX_NONE)
+            Rest = FVector::Dist2D(Side,Start) <= 35. ? Start : Side-FVector(0.,0.,60.)-Push*35.;
+    }
     float GroundZ = float(Start.Z);
     QuebecStreet::GroundAt(PropWorld,Rest,GroundZ);
     Rest.Z = GroundZ;
@@ -426,7 +438,7 @@ int32 AQuebecStreetProp::SpawnStreetProps(UWorld* World)
             for (FVector& Spot : Spots)
             {
                 float SpotZ = 0.f;
-                bFits = bFits && QuebecStreet::GroundAt(World,Spot,SpotZ) && SpotZ-RoadZ >= 12.f && SpotZ-RoadZ <= 32.f;
+                bFits = bFits && QuebecStreet::GroundAt(World,Spot,SpotZ) && SpotZ-RoadZ >= CurbRise && SpotZ-RoadZ <= 32.f;
                 if (!bFits) break;
                 Spot.Z = SpotZ;
                 bFits = Clear(Spot,40.f);
@@ -439,6 +451,68 @@ int32 AQuebecStreetProp::SpawnStreetProps(UWorld* World)
         }
     }
     UE_LOG(LogTemp,Display,TEXT("NORD_TRACES street_props=%d chantiers=%d bin_pairs=%d"),Count,Zones,BinPairs);
+    return Count;
+}
+
+AQuebecLanePaint::AQuebecLanePaint()
+{
+    PrimaryActorTick.bCanEverTick = false;
+    Dashes = CreateDefaultSubobject<UInstancedStaticMeshComponent>(TEXT("CenterDashes"));
+    RootComponent = Dashes;
+    Dashes->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+    Dashes->SetGenerateOverlapEvents(false);
+    Dashes->SetCanEverAffectNavigation(false);
+    Dashes->SetCastShadow(false);
+    Dashes->SetCullDistance(14000.f);
+    static ConstructorHelpers::FObjectFinder<UStaticMesh> Plane(TEXT("/Engine/BasicShapes/Plane.Plane"));
+    if (Plane.Succeeded()) Dashes->SetStaticMesh(Plane.Object);
+}
+
+int32 AQuebecLanePaint::Spawn(UWorld* World)
+{
+    if (!World || World->GetNetMode() == NM_DedicatedServer || QuebecDistrict::IsToronto(World)) return 0;
+    for (TActorIterator<AQuebecLanePaint> It(World); It; ++It) return 0;
+    AQuebecLanePaint* Paint = World->SpawnActor<AQuebecLanePaint>();
+    if (!Paint || !Paint->Dashes) return 0;
+    if (UMaterialInterface* White = TraceMaterial(TEXT("M_White"))) Paint->Dashes->SetMaterial(0, White);
+    int32 Count = 0;
+    int32 Bars = 0;
+    for (int32 Road = 0; Road < UE_ARRAY_COUNT(LaFontaine::RoadSegments); ++Road)
+    {
+        const float Width = LaFontaine::RoadSegmentWidths[Road];
+        const FVector Start = LaFontaine::RoadSegments[Road][0];
+        const FVector End = LaFontaine::RoadSegments[Road][1];
+        const float Length = float(FVector::Dist2D(Start, End));
+        // Local streets stay unmarked. A wide road gets a broken line down its middle.
+        if (Width < 900.f || Length < 1500.f) continue;
+        const FVector Direction = (End - Start).GetSafeNormal2D();
+        const float Yaw = float(Direction.Rotation().Yaw);
+        for (float Along = 250.f; Along < Length - 250.f; Along += 450.f)
+        {
+            FVector Point = Start + Direction * Along;
+            float GroundZ = 0.f;
+            if (!QuebecStreet::GroundAt(World, Point, GroundZ)) continue;
+            Point.Z = GroundZ + 2.f;
+            // The engine plane is 100 cm. 1.8 by 0.22 is a dash 180 cm long and 22 cm wide.
+            Paint->Dashes->AddInstance(FTransform(FRotator(0.f, Yaw, 0.f), Point, FVector(1.8f, .22f, 1.f)));
+            ++Count;
+        }
+        // Ladder crossing at the middle of the avenue. No rendering paper fits a painted bar.
+        // Eight bars run across the road, 40 cm along it, with a 50 cm gap, stopping 80 cm short of each curb.
+        const float BarSpan = (Width - 160.f) / 100.f;
+        const float Mid = Length * .5f;
+        for (int32 Bar = 0; Bar < 8; ++Bar)
+        {
+            const float AlongBar = Mid + (static_cast<float>(Bar) - 3.5f) * 90.f;
+            FVector BarPoint = Start + Direction * AlongBar;
+            float BarGround = 0.f;
+            if (!QuebecStreet::GroundAt(World, BarPoint, BarGround)) continue;
+            BarPoint.Z = BarGround + 2.f;
+            Paint->Dashes->AddInstance(FTransform(FRotator(0.f, Yaw, 0.f), BarPoint, FVector(.40f, BarSpan, 1.f)));
+            ++Bars;
+        }
+    }
+    UE_LOG(LogTemp, Display, TEXT("NORD_TRACES center_dashes=%d crosswalk_bars=%d"), Count, Bars);
     return Count;
 }
 

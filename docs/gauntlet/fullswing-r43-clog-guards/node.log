@@ -1,0 +1,1 @@
+PASS: 20 guard spawns match reference; boundary/completion/once/reload; zero snapshots

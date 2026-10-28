@@ -1,0 +1,6 @@
+{"samples":[{"calls":60,"throwable":true},{"calls":60,"throwable":true}],"changed":true,"idleCalls":0,"state":"play"}
+PASS: one actual selector query per HUD update on desktop and phone
+PASS: eligible actual goon exposes throw action
+PASS: cooldown and no-fight state use current availability
+PASS: play and no page errors
+PASS: HUD throw query

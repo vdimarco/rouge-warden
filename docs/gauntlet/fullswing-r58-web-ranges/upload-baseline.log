@@ -1,0 +1,12 @@
+[{"n":1,"count":6,"bytes":1088,"expected":408,"diff":0,"varied":1197},{"n":2,"count":12,"bytes":1088,"expected":816,"diff":0,"varied":2154},{"n":1,"count":6,"bytes":1088,"expected":408,"diff":0,"varied":1197},{"n":0,"count":0,"bytes":0,"expected":0,"diff":0,"varied":0},{"n":1,"count":6,"bytes":1088,"expected":408,"diff":0,"varied":1197}]
+FAIL live web segment uploads and pixels
+  {"n":1,"count":6,"bytes":1088,"expected":408,"diff":0,"varied":1197}
+FAIL live web segment uploads and pixels
+  {"n":2,"count":12,"bytes":1088,"expected":816,"diff":0,"varied":2154}
+FAIL live web segment uploads and pixels
+  {"n":1,"count":6,"bytes":1088,"expected":408,"diff":0,"varied":1197}
+PASS: live web segment uploads and pixels
+FAIL live web segment uploads and pixels
+  {"n":1,"count":6,"bytes":1088,"expected":408,"diff":0,"varied":1197}
+PASS: no page errors
+FAIL: web uploads (4 failed, 2 passed)

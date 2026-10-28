@@ -1,0 +1,4 @@
+- [x] Weight a reflected sky colour onto glossy bodywork
+- [x] Shade the seventies coupe before and after from the walking camera
+- [x] Run `Scripts/test_coat.py`, `Scripts/test_cloud.py`, `Scripts/test_horizon_haze.py`, `Scripts/test_plateau_trees.py`, `Scripts/test_crew_colour.py`, and `Scripts/test_contact.py`
+- [ ] Apply the comic material in Unreal (editor not available here)

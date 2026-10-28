@@ -1,0 +1,7 @@
+# A column of taps, not an anisotropic lobe
+
+Sébastien Lagarde, "Water drop 3a – Physically Based Wet Surfaces" (2013), describes how a rough wet plane stretches bright reflections toward the viewer. The darkened albedo and the puddle roughness already live in the ground graph. An anisotropic lobe does not fit the comic post-process node. What was adapted is that stretch: sixteen samples from the pixel toward the horizon, at the same screen x, keeping the brightest warm or white tap.
+
+The puddle mask is zero on a clear night, so the mix follows `NightFactor` instead of `Puddles`. At NightFactor 0, including the clear 15:00 contract, the colour is unchanged. The gather uses the same warm and white gates as the night spill, so a dark brick sample adds nothing. Upward normals in the road range pass `smoothstep(0.85, 0.96, NormalC.z)`. Roughness in the asphalt range passes `smoothstep(0.55, 0.75, Roughness)`, which leaves paint at 0.30, glass at 0.18 and chrome at 0.23 on the clearcoat. Sky, printed crew, foliage and the pond's smooth-reflection case stay out. The horizon row comes from the view forward and view up already used by the haze, so a pixel above the horizon does not sample downward into the street.
+
+Unreal is not installed here. The offline picture is the walking-camera night plate (arm 420, socket Y 70, socket Z 110, pitch −12, horizontal FOV 90). The before frame is that plate with the moon and the spill. The after frame is the same plate plus this column. The coupe is a box stand-in. It is not an engine capture.

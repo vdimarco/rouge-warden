@@ -1,0 +1,3 @@
+- [x] A chase that is falling behind adds a clock to the groove, and closing takes it away
+- [x] The first-lesson hold stays quiet
+- [x] An offline render of the groove is brighter with the clock than without it

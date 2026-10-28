@@ -725,7 +725,7 @@ try {
       for (const edge of [1280, 960, 800, 640]) sizes[edge] = streamDimensions(true, area.width, area.height, true, edge).join('x');
       // Hold a known clear profile before stepping through each injected pressure level.
       await page.evaluate(() => {
-        window.__nordQaReceiverFps = 30;
+        window.__nordQaReceiverFps = 35;
         for (const peer of window.__nordQaPeers) {
           const original = peer.getStats.bind(peer);
           peer.__nordOriginalStats = original;
@@ -739,7 +739,7 @@ try {
       });
       await page.waitForFunction(size => document.body.dataset.streamSize === size, sizes[1280], { timeout: 35000 });
       await streamSettled();
-      await page.evaluate(() => { window.__nordQaReceiverFps = 20; });
+      await page.evaluate(() => { window.__nordQaReceiverFps = 28; });
       report.input.adaptiveDebug = await page.evaluate(() => window.__nordQaStats.slice(-8));
       await page.waitForFunction(size => document.body.dataset.streamSize === size, sizes[960], { timeout: 30000 });
       await streamSettled();
@@ -756,7 +756,7 @@ try {
       await streamSettled();
       await advancingMedia('adaptiveEmergencyFrame');
       report.input.adaptiveStream.emergency = sizes[640];
-      await page.evaluate(() => { window.__nordQaReceiverFps = 30; });
+      await page.evaluate(() => { window.__nordQaReceiverFps = 35; });
       await page.waitForFunction(size => document.body.dataset.streamSize === size, sizes[1280], { timeout: 100000 });
       await streamSettled();
       await advancingMedia('adaptiveRecoveredFrame');

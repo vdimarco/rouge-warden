@@ -1,0 +1,5 @@
+- [x] Shade the rain streak with a core, skirt, and leading knot in `plateau_atmosphere.py`
+- [x] Assert the mist-to-white base colour in `test_plateau_atmosphere.py`
+- [x] Shade the streak mask before and after
+- [x] Run `Scripts/test_plateau_atmosphere.py`
+- [ ] Apply the rain material in Unreal (editor not available here)
