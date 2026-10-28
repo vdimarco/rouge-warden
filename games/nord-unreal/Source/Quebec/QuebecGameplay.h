@@ -548,6 +548,7 @@ public:
     void PlayFeedback(EQuebecFeedbackCue Cue);
     void PlayRank(int32 ChainAfter, bool bWasSpoiled);
     void PlayImpact();
+    void PlaySlide();
     void PlayStepTone(int32 Foot);
     void PlayLoss();
     virtual void BeginPlay() override;
@@ -688,6 +689,10 @@ private:
     void PlayLossTone();
     UPROPERTY() TObjectPtr<class UAudioComponent> LossAudio;
     UPROPERTY() TObjectPtr<class USoundWaveProcedural> LossWave;
+    UFUNCTION(Client, Unreliable) void ClientPlaySlide();
+    void PlaySlideTone();
+    UPROPERTY() TObjectPtr<class UAudioComponent> SlideAudio;
+    UPROPERTY() TObjectPtr<class USoundWaveProcedural> SlideWave;
     void ExitCar(AQuebecCar* Car);
     // Server: the walker gets into the driver's seat.
     void EnterCar(AQuebecCharacter* Character, AQuebecCar* Car);

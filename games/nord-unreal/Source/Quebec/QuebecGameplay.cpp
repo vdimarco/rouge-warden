@@ -17,6 +17,7 @@
 #include "QuebecRankTone.h"
 #include "QuebecSkidTone.h"
 #include "QuebecImpactTone.h"
+#include "QuebecSlideTone.h"
 #include "QuebecStep.h"
 #include "QuebecPlace.h"
 #include "QuebecLossTone.h"
@@ -1758,7 +1759,10 @@ void AQuebecCar::SimulateDrive(float Step, bool bFailsafe)
         if (AController* Driver = GetDriverController())
         {
             if (Slide.Tick(Step, Speed, LateralSpeed, bHandbrake && !bFailsafe))
+            {
                 QuebecNotice::Show(Driver, TEXT("SLIDE"), TEXT("Through the corner"), QuebecSlide::NoticeSeconds);
+                if (AQuebecController* Player = Cast<AQuebecController>(Driver)) Player->PlaySlide();
+            }
         }
     }
     MoveWithCollision(Step,(GetActorForwardVector().GetSafeNormal2D()*Speed+GetActorRightVector().GetSafeNormal2D()*LateralSpeed)*Step);
@@ -2084,6 +2088,10 @@ AQuebecController::AQuebecController()
     ImpactAudio->bAutoActivate = false;
     ImpactAudio->bAllowSpatialization = false;
     ImpactAudio->VolumeMultiplier = .8f;
+    SlideAudio = CreateDefaultSubobject<UAudioComponent>(TEXT("SlideAudio"));
+    SlideAudio->bAutoActivate = false;
+    SlideAudio->bAllowSpatialization = false;
+    SlideAudio->VolumeMultiplier = .6f;
     StepAudio = CreateDefaultSubobject<UAudioComponent>(TEXT("StepAudio"));
     StepAudio->bAutoActivate = false;
     StepAudio->bAllowSpatialization = false;
@@ -2489,6 +2497,38 @@ void AQuebecController::PlayImpact()
 void AQuebecController::ClientPlayImpact_Implementation()
 {
     PlayImpactTone();
+}
+
+void AQuebecController::PlaySlide()
+{
+    ClientPlaySlide();
+}
+
+void AQuebecController::ClientPlaySlide_Implementation()
+{
+    PlaySlideTone();
+}
+
+void AQuebecController::PlaySlideTone()
+{
+    if (!SlideAudio || !GetWorld() || !GetWorld()->AllowAudioPlayback()) return;
+    if (!SlideWave)
+    {
+        SlideWave = NewObject<USoundWaveProcedural>(this);
+        SlideWave->SetSampleRate(static_cast<uint32>(QuebecSlideTone::SampleRate));
+        SlideWave->NumChannels = 1;
+        SlideWave->Duration = static_cast<float>(QuebecSlideTone::Frames) / static_cast<float>(QuebecSlideTone::SampleRate);
+        SlideAudio->SetSound(SlideWave);
+    }
+    SlideWave->ResetAudio();
+    int16 Pcm[QuebecSlideTone::Frames];
+    for (int32 Frame = 0; Frame < QuebecSlideTone::Frames; ++Frame)
+    {
+        const float Sample = FMath::Clamp(static_cast<float>(QuebecSlideTone::SampleAt(Frame)), -1.f, 1.f);
+        Pcm[Frame] = static_cast<int16>(Sample * 32767.f);
+    }
+    SlideWave->QueueAudio(reinterpret_cast<const uint8*>(Pcm), QuebecSlideTone::Frames * static_cast<int32>(sizeof(int16)));
+    SlideAudio->Play();
 }
 
 void AQuebecController::PlayImpactTone()

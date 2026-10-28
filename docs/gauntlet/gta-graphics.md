@@ -2978,3 +2978,40 @@ Unreal is not available in this environment, so in-engine frames are the last co
 - Playability raw: 44 / 10 dimensions, index 44
 - Total: 134 / 200
 - Delta vs last round: +1
+
+### Round 86 — 2026-10-28 — rubric v1
+
+- What changed: the slide pay plays two rising notes, 587 Hz then 784 Hz, 0.24 s in all, on the same frame as the SLIDE banner. Only the driver hears them. The lock chirp still plays on the catch. A slide that does not pay stays quiet.
+- Why it helped: round 85 named the silent slide as the next line a test can move. The chirp comes about 0.35 s before the pay, so the player heard the catch and never the win. The notes rise, and the loss sting falls.
+- Screenshots: `docs/gauntlet/gta-graphics/round-86/slide-notes.png` plots the wave the driver hears. It is not a game view. `Scripts/test_slide_tone.py` passed (52 assertions on c++, g++, and clang++, plus the wiring check). `Scripts/test_slide.py`, the skid, loss, impact, and rank tone tests passed. The offline syntax check passed `QuebecGameplay.cpp` in game and editor. The link check shows the same `QuebecDrive.cpp` gap as before this round and no new missing symbol. Unreal did not run, and the notes were not heard in the city. OpenSpec CLI is not installed, so `openspec validate` did not run.
+- Next target: pacing, difficulty, and variety are tied at 4 on the play lines. Sound design moved by one because the notes were not heard in Unreal.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 9 | Unchanged. |
+| Color palette | 9 | Unchanged. |
+| Detail density | 9 | Unchanged. |
+| Texture and material quality | 9 | Unchanged. |
+| Composition and camera | 9 | Unchanged. |
+| Atmosphere | 9 | Unchanged. |
+| Character models | 9 | Unchanged. |
+| Animation smoothness | 9 | Unchanged. |
+| Particles and VFX | 9 | Unchanged. |
+| UI polish | 9 | Unchanged. |
+| Responsiveness and input latency | 5 | Unchanged. |
+| Controls feel | 5 | Unchanged. |
+| Mission clarity | 5 | Unchanged. |
+| Pacing | 4 | Unchanged mission slice. |
+| Fun factor | 4 | The slide banner stays. The notes were not heard in play. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 4 | Unchanged. The banner and the notes share one frame. |
+| Sound design | 5 | The slide pay has two rising notes, off every tone the city already plays. Tested, not heard in Unreal. |
+| Variety | 4 | Unchanged. |
+| Performance stability | 5 | Unchanged. One 0.24 s wave is built on a pay, the same as the other cues. |
+
+- Aesthetics raw: 90 / 10 dimensions, index 90
+- Playability raw: 45 / 10 dimensions, index 45
+- Total: 135 / 200
+- Delta vs last round: +1 (round 85 was 134). Sound design 4 → 5. Every other score held.
+
+![The slide notes the driver hears](gta-graphics/round-86/slide-notes.png)
