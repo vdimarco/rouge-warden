@@ -24,6 +24,12 @@ export const JOB = {
   pizza: { speed: 12, spare: 18, reach: 4.5, reward: 25, bonus: 15 },
   balloon: { rise: 2.4, drift: 1.1, top: 170, reach: 2.6, back: 4.5, slip: 1.2, clear: 5, reward: 20 }, // clear: it can be caught once this high
   brawl: { time: 120, wave1: 4, wave2: 3, reward: 35 },
+  // the Gauntlet: round after round on one roof until the hero is knocked out. Round n brings base + n goons (at most most), and
+  // from round bruteFrom a brute, one more every bruteEvery rounds (at most brutes). Each round the gang walks pace faster (at
+  // most paceMost) and winds up windupK shorter (never under windupMin s). Between rounds: rest s, and heal hearts back. It pays
+  // reward Loonies times the round for each round cleared. The roof is city.arena (city.js ARENA).
+  gauntlet: { base: 2, most: 8, bruteFrom: 3, bruteEvery: 3, brutes: 2, pace: 0.05, paceMost: 1.35, windupK: 0.04, windupMin: 0.32,
+    windup: 0.55, rest: 4, first: 2.5, heal: 2, reward: 5 },
   sludge: { speed: 5.4, crew: 3, runnerHp: 2, reward: 50, spare: 6 },
   // taxi: the fare's drop is this far off; the clock gives this road speed plus spare; get out for longer than walk and they leave
   taxi: { near: 260, far: 560, speed: 13, spare: 20, reach: 9, walk: 4, reward: 35, tip: 20, hail: 6 },
@@ -43,7 +49,16 @@ export const CRIME_LINES = {
   thief: ["Stop, thief!", "A purse snatcher! Get him!"],
 };
 export const QUIPS = ["Nobody expects the plunger.", "That's a clean sweep.", "Flushed out!", "All in a day's plunge.", "Back to the sewer with you."];
-export const JOB_NAMES = { sludge: "Sludge Run", catch: "Catch!", washer: "Window Washer", pizza: "Pizza Rush", balloon: "Balloon Chase", brawl: "Rooftop Brawl", taxi: "Taxi!", thief: "Stop, Thief!", mugging: "Mugging", getaway: "Getaway Car", tanker: "Sludge Tanker" };
+// Gauntlet round n (1, 2, ...): { goons, brutes, pace, windup }
+export function gauntletRound(n) {
+  const G = JOB.gauntlet;
+  n = Math.max(1, Math.floor(n));
+  const brutes = n < G.bruteFrom ? 0 : Math.min(G.brutes, 1 + Math.floor((n - G.bruteFrom) / G.bruteEvery));
+  return { goons: Math.min(G.most, G.base + n), brutes, pace: Math.min(G.paceMost, 1 + G.pace * (n - 1)), windup: Math.max(G.windupMin, G.windup * (1 - G.windupK * (n - 1))) };
+}
+// Loonies for a Gauntlet that cleared rounds rounds
+export const gauntletPay = (rounds) => (JOB.gauntlet.reward * rounds * (rounds + 1)) / 2;
+export const JOB_NAMES = { gauntlet: "The Gauntlet", sludge: "Sludge Run", catch: "Catch!", washer: "Window Washer", pizza: "Pizza Rush", balloon: "Balloon Chase", brawl: "Rooftop Brawl", taxi: "Taxi!", thief: "Stop, Thief!", mugging: "Mugging", getaway: "Getaway Car", tanker: "Sludge Tanker" };
 // what the marker says, and the toast when you take the job
 export const JOB_LINES = {
   catch: "Someone is falling off a roof! Catch them.",
@@ -51,6 +66,7 @@ export const JOB_LINES = {
   pizza: "Pizza Rush: deliver it hot.",
   balloon: "A kid lost a balloon. Get it back!",
   brawl: "The Sludge Gang took this roof. Clear it.",
+  gauntlet: "The Gauntlet: wave after wave. How long can you last?",
   taxi: "A fare! Get them across town, fast.",
   thief: "Stop, thief! A goon grabbed a purse. Run him down!",
   sludge: "Mission 1: catch the runner before he blows the Market drain!",
@@ -154,6 +170,7 @@ export function createJobs({ city, combat, cars = null, seed = 4711 }) {
     const [lo, hi] = near;
     let at = null, extra = {};
     if (type === "catch") { const q = pickRoof(fx, fz, lo, hi, 45, 150, clearEdge); if (q) { at = { x: q.x, y: q.y, z: q.z }; extra.bid = q.b.id; extra.edge = q.extra; } }
+    else if (type === "gauntlet") { const q = arena(); if (q) { at = { x: q.x, y: q.y, z: q.z }; extra.bid = q.b.id; extra.rect = q.rect; } }
     else if (type === "brawl") { const q = pickRoof(fx, fz, lo, hi, 14, 70); if (q) { at = { x: q.x, y: q.y, z: q.z }; extra.bid = q.b.id; } }
     else if (type === "washer") {
       const q = pickRoof(fx, fz, lo, hi, 55, 200);
@@ -189,7 +206,18 @@ export function createJobs({ city, combat, cars = null, seed = 4711 }) {
     J.offers = [];
     const types = ["catch", "washer", "pizza", "balloon", "brawl", "taxi", "thief"].sort(() => r() - 0.5).slice(0, JOB.offers);
     for (const t of types) { const o = makeOffer(t, fx, fz); if (o) J.offers.push(o); }
+    // the Gauntlet's marker is always there, on the same roof
+    const g = makeOffer("gauntlet", fx, fz);
+    if (g) J.offers.push(g);
   }
+  // The Gauntlet's roof: chosen with the city (city.js pickArena), so the roof props keep off it. { b, x, y, z, rect } or null.
+  let arenaRoof;
+  function arena() {
+    if (arenaRoof !== undefined) return arenaRoof;
+    const a = city.arena, b = a && city.buildings.find((q) => q.id === a.bid);
+    return (arenaRoof = b ? { b, x: a.x, y: a.y, z: a.z, rect: { ...a.rect } } : null);
+  }
+  J.arena = () => { const q = arena(); return q && { x: q.x, y: q.y, z: q.z, rect: { ...q.rect }, bid: q.b.id }; };
 
   // A crime near the hero (type: one of CRIMES, or null for any): an offer that shouts, has a marker and ends after JOB.crime.last
   // s. t: the game clock. Returns the offer or null.
@@ -227,7 +255,7 @@ export function createJobs({ city, combat, cars = null, seed = 4711 }) {
     emit({ type: "start", job: type, line: JOB_LINES[type] });
     return A;
   };
-  function end(ok, why, quiet) {
+  function end(ok, why, quiet, more = {}) {
     const A = J.active;
     if (!A) return;
     combat.clearGroup("job");
@@ -237,7 +265,7 @@ export function createJobs({ city, combat, cars = null, seed = 4711 }) {
     J.active = null;
     if (ok) { J.done[A.type] = (J.done[A.type] || 0) + 1; J.stats.done++; if (A.type === "sludge") J.story.sludge = true; }
     else if (!quiet) { J.failed[A.type] = (J.failed[A.type] || 0) + 1; J.stats.failed++; }
-    if (!quiet) emit({ type: ok ? "done" : "failed", job: A.type, why, reward: ok ? A.reward : 0, x: A.o.x, y: A.o.y, z: A.o.z, crime: !!A.o.crime });
+    if (!quiet) emit({ type: ok ? "done" : "failed", job: A.type, why, reward: ok ? A.reward : 0, x: A.o.x, y: A.o.y, z: A.o.z, crime: !!A.o.crime, ...more });
     if (ok && A.o.crime) emit({ type: "say", line: QUIPS[Math.floor(r() * QUIPS.length)] });
     offerAt = null; // fresh offers round wherever you are
   }
@@ -340,6 +368,12 @@ export function createJobs({ city, combat, cars = null, seed = 4711 }) {
       A.timer = JOB.tanker.time;
       A.reward = JOB.tanker.reward;
     },
+    gauntlet(A, h) {
+      const q = A.o.rect ? A.o : (() => { const a = arena(); return a ? { ...A.o, x: a.x, y: a.y, z: a.z, rect: a.rect } : A.o; })();
+      A.o = q;
+      A.data = { round: 0, rest: JOB.gauntlet.first, cleared: 0, best: 0 };
+      A.reward = 0;
+    },
     brawl(A) {
       A.data = { wave: 1 };
       spawnRing(A.o, JOB.brawl.wave1);
@@ -353,6 +387,21 @@ export function createJobs({ city, combat, cars = null, seed = 4711 }) {
       const g = combat.spawn(o.x + Math.cos(a) * d, o.y, o.z + Math.sin(a) * d, "job");
       g.aggro = true;
     }
+  }
+
+  // a Gauntlet round on the arena roof: brutes first, then the gang, round its middle and never over its edge
+  function spawnRound(A, n) {
+    const R = gauntletRound(n), o = A.o, q = o.rect;
+    const put = (k, all, brute) => {
+      const a = (k / all) * Math.PI * 2 + r() * 0.8, d = 4 + r() * 5;
+      let x = o.x + Math.cos(a) * d, z = o.z + Math.sin(a) * d;
+      if (q) { x = clamp(x, q.minX, q.maxX); z = clamp(z, q.minZ, q.maxZ); }
+      const g = combat.spawn(x, o.y, z, "job", { brute, pace: R.pace, windup: brute ? undefined : R.windup });
+      g.aggro = true;
+    };
+    const all = R.goons + R.brutes;
+    for (let k = 0; k < all; k++) put(k, all, k < R.brutes);
+    return R;
   }
 
   /* ---------------- the frame ---------------- */
@@ -386,7 +435,7 @@ export function createJobs({ city, combat, cars = null, seed = 4711 }) {
     for (const p of J.people) p.poseT += dt;
     if (!A) { J.card = null; return; }
     A.t += dt;
-    if (!ROAMS[A.type] && Math.hypot(h.x - A.o.x, h.z - A.o.z) > JOB.leave && !A.data.caught) { end(false, "left"); return; }
+    if (!ROAMS[A.type] && Math.hypot(h.x - A.o.x, h.z - A.o.z) > JOB.leave && !A.data.caught) { end(A.type === "gauntlet" && A.data.cleared > 0, "left", false, A.type === "gauntlet" ? { rounds: A.data.cleared, best: A.data.best } : {}); return; }
     run[A.type](A, dt, h);
   };
   const fmt = (s) => Math.max(0, Math.ceil(s)) + " s";
@@ -547,6 +596,32 @@ export function createJobs({ city, combat, cars = null, seed = 4711 }) {
       A.card = card("SLUDGE TANKER " + fmt(A.timer), what, sealed ? crew.find((q) => combat.alive(q)) || D.leak : D.leak, { short: fmt(A.timer), n: left });
       J.card = A.card;
     },
+    gauntlet(A, dt, h) {
+      const D = A.data, G = JOB.gauntlet;
+      D.best = Math.max(D.best, combat.hits || 0);
+      const left = combat.group("job").filter((q) => combat.alive(q)).length;
+      if (D.rest > 0) {
+        D.rest -= dt;
+        if (D.rest <= 0) {
+          D.round++;
+          const R = spawnRound(A, D.round);
+          emit({ type: "round", n: D.round, goons: R.goons, brutes: R.brutes, x: A.o.x, y: A.o.y, z: A.o.z });
+          if (R.brutes && D.round === G.bruteFrom) emit({ type: "say", line: "Whoa, that one's big. Punches won't stop him. When he charges, dodge!" });
+        }
+      } else if (left === 0) {
+        D.cleared = D.round; D.rest = G.rest;
+        A.reward = gauntletPay(D.cleared);
+        combat.mend(G.heal);
+        emit({ type: "roundClear", n: D.round, reward: A.reward, x: A.o.x, y: A.o.y, z: A.o.z });
+      }
+      const title = "THE GAUNTLET · ROUND " + Math.max(1, D.round + (D.rest > 0 ? 1 : 0));
+      const detail = D.rest > 0 ? (D.round ? "Round " + D.round + " cleared! Next in " : "Get ready: ") + fmt(D.rest) : left + " left";
+      // the gang is in plain sight on the roof: no marker beam over them (it would hide the goon in it); the roof is the goal only
+      // for a hero who has left it
+      const away = Math.hypot(h.x - A.o.x, h.z - A.o.z) > 24 || Math.abs(h.y - A.o.y) > 6;
+      A.card = card(title, detail, away ? A.o : null, { short: "R" + Math.max(1, D.round), n: left });
+      J.card = A.card;
+    },
     brawl(A, dt, h) {
       A.timer -= dt;
       const crew = combat.group("job"), left = crew.filter((q) => combat.alive(q)).length;
@@ -558,7 +633,12 @@ export function createJobs({ city, combat, cars = null, seed = 4711 }) {
     },
   };
   // the hero was knocked out: a fight job is lost
-  J.knockedOut = () => { if (J.active && ["brawl", "sludge", "thief", "mugging", "getaway", "tanker"].includes(J.active.type)) end(false, "knockout"); };
+  // The Gauntlet ends at a knock-out: it pays for every round cleared (no round cleared is a loss)
+  J.knockedOut = () => {
+    const A = J.active;
+    if (A && A.type === "gauntlet") { A.reward = gauntletPay(A.data.cleared); end(A.data.cleared > 0, "knockout", false, { rounds: A.data.cleared, best: A.data.best }); return; }
+    if (J.active && ["brawl", "sludge", "thief", "mugging", "getaway", "tanker"].includes(J.active.type)) end(false, "knockout");
+  };
   // a rope that catches a falling person or the balloon catches them
   J.ropeTargets = function ropeTargets(h) {
     const A = J.active, out = [];
@@ -591,7 +671,8 @@ export function createJobs({ city, combat, cars = null, seed = 4711 }) {
   J.carrying = () => !!(J.active && J.active.data.caught && (J.active.type === "catch" || J.active.type === "washer"));
   J.info = () => ({
     active: J.active ? { type: J.active.type, phase: J.active.phase, timer: J.active.timer, t: J.active.t, crime: !!J.active.o.crime,
-      data: { caught: !!J.active.data.caught, falling: !!J.active.data.falling, crew: !!J.active.data.crew, stopped: !!J.active.data.stopped, seals: J.active.data.seals || 0 } } : null,
+      data: { caught: !!J.active.data.caught, falling: !!J.active.data.falling, crew: !!J.active.data.crew, stopped: !!J.active.data.stopped, seals: J.active.data.seals || 0,
+        round: J.active.data.round || 0, cleared: J.active.data.cleared || 0, rest: J.active.data.rest || 0 } } : null,
     offers: J.offers.map((o) => ({ id: o.id, type: o.type, x: o.x, y: o.y, z: o.z, crime: !!o.crime })), crimeT, done: { ...J.done }, failed: { ...J.failed }, story: { ...J.story }, stats: { ...J.stats }, card: J.card,
   });
   return J;

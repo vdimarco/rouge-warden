@@ -23,7 +23,7 @@ import { createStreet, STREET } from "./street.js";
 import { createStreetView, createFigures } from "./streetview.js";
 import { createCombat, FIGHT } from "./combat.js";
 import { createCars, nearTraffic, trafficAt, CAR } from "./cars.js";
-import { createJobs, JOB_NAMES } from "./jobs.js";
+import { createJobs, JOB_NAMES, gauntletPay } from "./jobs.js";
 import { createActionView } from "./actionview.js";
 import { createActionHud } from "./actionhud.js";
 import { createBloom } from "./bloom.js";
@@ -39,6 +39,7 @@ const FLAGS = {
   emulate: QS.has("emulate") ? (QS.get("emulate") === "ar" ? "ar" : "vr") : null,
   room: ROOMS.includes(QS.get("room")) ? QS.get("room") : "office_small",
   pwa: QS.get("source") === "pwa",
+  gauntlet: QS.has("gauntlet"), // play starts in the Gauntlet (a link from the arcade, and the Gauntlet's own tests)
 };
 const TOUCH_ONLY = navigator.maxTouchPoints > 0 || matchMedia("(any-pointer: coarse)").matches;
 const REDUCED = matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -325,7 +326,20 @@ function handOff() {
   saveNow();
   // Mission 1, the Sludge Run, starts at once (the King's comic played before the cottage room); a returning save that has not
   // done it gets it too. The tests (?nocut, ?skipintro) start it only when they ask (G.test.job).
-  if (!FLAGS.nocut && !FLAGS.skipintro) { if (lakeDrop) lakeDrop.sludge = true; else startSludge(); }
+  if (FLAGS.gauntlet) startGauntlet();
+  else if (!FLAGS.nocut && !FLAGS.skipintro) { if (lakeDrop) lakeDrop.sludge = true; else startSludge(); }
+}
+// The Gauntlet: to its roof, and the first round (?gauntlet, G.test.gauntlet)
+function startGauntlet() {
+  const a = jobs.arena();
+  if (!a || !actionOn()) return false;
+  if (lakeDrop) endLakeDrop();
+  if (driving) exitCar();
+  G.rigYaw = Math.atan2(-(a.x - city.start.x), -(a.z - city.start.z));
+  fadeMove(a.x, a.y, a.z);
+  if (flatOn) { flatcam.reset(G.rigYaw); hero.setYaw(G.rigYaw); }
+  jobs.start("gauntlet", jobs.offers.find((o) => o.type === "gauntlet") || null, heroFight());
+  return true;
 }
 function coldOpen() {
   save.seen.opening = true;
@@ -638,6 +652,7 @@ function actionFrame(dt, inp) {
   for (const e of jobs.events) jobEvent(e);
   jobs.events.length = 0;
   game.setJob(jobs.card);
+  game.hush(!!jobs.active && jobs.active.type === "gauntlet");
   syncRopeTargets();
   if (lakeDrop && ((lakeDrop.t += dt) > LAKE_DROP.max || (lakeDrop.t > 0.5 && P.onGround && !respawning))) endLakeDrop();
   if (sludgeRetry > 0 && (sludgeRetry -= dt) <= 0) { sludgeRetry = -1; startSludge(); }
@@ -660,7 +675,8 @@ function combatEvent(e) {
       hero.hit(dx / d, dz / d);
       if (P.onGround) { P.vel.x += (dx / d) * 4; P.vel.z += (dz / d) * 4; }
       actHud.flash(); audio.sfx("hurt"); haptic(0, 0.9, 80); haptic(1, 0.9, 80);
-      impact(VERSE_HIT.hurt);
+      impact(e.heavy ? VERSE_HIT.heavy : VERSE_HIT.hurt);
+      if (e.heavy) fx.word("THUCK", FXP.set(P.pos.x, P.pos.y + 2, P.pos.z), { scale: 1.5, tint: [0.91, 0.16, 0.12] });
       if (G.input.easySwing) D.mobile.buzz?.([60, 40, 60]);
       break;
     }
@@ -675,6 +691,9 @@ function combatEvent(e) {
     case "dodge": fx.word("WHOOSH", FXP.set(e.x, e.y + 2, e.z), { scale: e.perfect ? 1.4 : 1 }); audio.sfx("release", { vol: 0.7 }); break;
     case "finisher": fx.word("KASPLASH", FXP.set(e.x, e.y + 2.4, e.z), { scale: 2, size: flatOn && !isXR() ? screenWide(FXP, 1 / 3) : 0 }); audio.sfx("kick", { vol: 1.5 }); haptic(0, 1, 120); haptic(1, 1, 120); impact(VERSE_HIT.finisher); break;
     case "slam": impact(VERSE_HIT.slam); break;
+    // a brute: a punch only dents him (a grey THUCK); his charge starts with a stamp and a WHOOSH
+    case "hit": if (e.armor) fx.word("THUCK", FXP.set(e.x, e.y + 2.6, e.z), { scale: 1.2, tint: [0.62, 0.6, 0.66] }); break;
+    case "charge": fx.word("WHOOSH", FXP.set(e.x, e.y + 2.4, e.z), { scale: 1.6, tint: [0.91, 0.16, 0.12] }); audio.sfx("bump", { pos: e, vol: 1.1 }); if (G.mode === "desktop") flatcam.shake(0.25); break;
     case "windup": if (fightHints < 1 && !G.input.easySwing) { fightHints++; ui.say("A goon! Get close and press " + (G.input.kind === "pad" ? "RT" : "the left mouse button") + " to punch. When he winds up, press " + (G.input.kind === "pad" ? "A" : "Space") + " to dodge.", 4); } break;
   }
 }
@@ -696,7 +715,17 @@ function jobEvent(e) {
     case "leak": fx.word("GLUG", FXP.set(e.x, e.y + 1, e.z), { scale: 1.1 }); break;
     case "seal": fx.word("SPLORT", FXP.set(e.x, e.y + 0.6, e.z), { scale: 1.3 }); audio.sfx("pump"); if (e.n >= e.of) ui.toast("Leak sealed!"); break;
     case "caught": audio.sfx("unlock"); haptic(1, 0.6, 50); break;
+    // the Gauntlet: a banner for each round, and a stamp when it is cleared
+    case "round":
+      actHud.banner("ROUND " + e.n, e.brutes ? (e.brutes > 1 ? e.brutes + " BRUTES" : "A BRUTE") + " + " + e.goons + " GOONS" : e.goons + " GOONS");
+      audio.sfx("trialStart"); fx.word("KASPLASH", FXP.set(e.x, e.y + 3.5, e.z), { scale: 1.6 });
+      break;
+    case "roundClear":
+      actHud.banner("CLEARED!", "ROUND " + e.n + " · " + e.reward + " LOONIES SO FAR", true);
+      audio.sfx("unlock"); haptic(0, 0.6, 60); haptic(1, 0.6, 60);
+      break;
     case "done": {
+      if (e.job === "gauntlet") { gauntletOver(e); break; }
       audio.sfx("trialEnd");
       game.reward(e.reward);
       if (e.job === "sludge") {
@@ -709,10 +738,22 @@ function jobEvent(e) {
       break;
     }
     case "failed":
+      if (e.job === "gauntlet") { gauntletOver(e); break; }
       ui.toast(FAIL_LINES[e.why] || "Job failed.");
       if (e.job === "sludge") sludgeRetry = 3.5;
       break;
   }
+}
+// the Gauntlet is over (a knock-out, or the hero left it): the pay, and the best round on this device
+function gauntletOver(e) {
+  const n = e.rounds || 0, best = save.best.gauntlet || 0;
+  if (e.reward) game.reward(e.reward);
+  if (n > best) save.best.gauntlet = n;
+  actHud.banner(n ? n + (n > 1 ? " ROUNDS" : " ROUND") : "DOWN!", n > best ? "NEW BEST! +" + (e.reward || 0) + " LOONIES" : "BEST " + Math.max(best, n) + " · +" + (e.reward || 0) + " LOONIES", true);
+  ui.toast(n ? "The Gauntlet: " + n + " rounds cleared. +" + gauntletPay(n) + " Loonies" : "The Gauntlet got you. Try again: the marker is on the roof near the start.");
+  audio.sfx("trialEnd");
+  if (n) { save.jobs.done.gauntlet = (save.jobs.done.gauntlet || 0) + 1; }
+  saveNow();
 }
 // Mission 1: the gang runner and his clog bomb (the story's fast start)
 function startSludge() {
@@ -770,6 +811,7 @@ function goonOnThrees(g) {
     v.phase = g.phase; v.poseT = g.poseT; v.stride = g.stride; v.yaw = g.yaw; v.bp = g.bp; v.br = g.br; v.lift = g.lift; v.delay = g.delay;
   }
   v.x = g.x; v.y = g.y; v.z = g.z;
+  v.flash = g.flash; v.tele = g.tele;
   v.shirt = g.shirt; v.pants = g.pants; v.skin = g.skin; v.height = g.height;
   return v;
 }
@@ -777,7 +819,7 @@ function goonOnThrees(g) {
 const VERSE_HIT = {
   punch: { stop: 0.045, shake: 0.2 }, kick: { stop: 0.08, shake: 0.38, frame: true }, zip: { stop: 0.09, shake: 0.42, frame: true },
   finisher: { stop: 0.12, shake: 0.6, frame: true }, slam: { stop: 0.06, shake: 0.45, frame: true }, pull: { stop: 0.05, shake: 0.22 },
-  hurt: { stop: 0.05, shake: 0.4 }, car: { stop: 0.03, shake: 0.3 },
+  hurt: { stop: 0.05, shake: 0.4 }, car: { stop: 0.03, shake: 0.3 }, heavy: { stop: 0.1, shake: 0.7, frame: true },
 };
 // twos: the hero's poses a second; goons: the gang's; plate: px of slip at 1080 lines, at rest and at full speed (speed m/s),
 // doubled for a moment after a burst or a heavy blow; edge: more slip toward the frame edge; grain: the paper's darkening;
@@ -2248,6 +2290,8 @@ G.test = {
   goonView(id) { const g = combat.goons.find((q) => q.id === id); if (!g) return null; const v = goonOnThrees(g); return { phase: v.phase, poseT: v.poseT, pose: v.pose, x: v.x, z: v.z }; },
   // start a job (type: sludge, catch, washer, pizza, balloon, brawl, taxi, thief) at the nearest offer of that type, or at the hero
   job(type) { const o = jobs.offers.find((q) => q.type === type) || null; jobs.start(type, o, heroFight()); return jobs.info(); },
+  gauntlet() { return startGauntlet() ? jobs.info() : null; },
+  arena: () => jobs.arena(),
   jobOffers(on = true) { save.jobs.sludge = !!on; return jobs.info().offers; },
   spawnGoon(x, y, z, aggro = true) { const g = combat.spawn(x, y, z, "test"); g.aggro = aggro; return g.id; },
   // get into the nearest parked car (or the given one), and out

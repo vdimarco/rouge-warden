@@ -27,13 +27,17 @@ attribute vec4 aA;  // walk phase, stride (m/s), pose code, time in the pose
 attribute vec4 aC1; // shirt rgb, height scale
 attribute vec3 aC2; // trousers rgb
 attribute vec3 aC3; // skin rgb
-attribute vec4 aB;  // the whole body's pitch (+ falls forward) and roll about the feet, a lift, unused
+attribute vec4 aB;  // the whole body's pitch (+ falls forward) and roll about the feet, a lift, and the fight marks: the hit flash
+                    // (0..1) plus 2 while he winds up a blow (a red, heavier outline: the spider-sense on him)
 uniform float uTime;
 uniform float uHull; // 0 the body, 1 the ink hull
 uniform float uInkK, uInkPx;
 varying vec3 vN;
 varying vec3 vCol;
 varying float vDist;
+varying float vFlash;
+varying float vTele;
+varying vec3 vView;
 mat3 rotX(float a) { float c = cos(a), s = sin(a); return mat3(1.0, 0.0, 0.0, 0.0, c, s, 0.0, -s, c); }
 mat3 rotZ(float a) { float c = cos(a), s = sin(a); return mat3(c, s, 0.0, -s, c, 0.0, 0.0, 0.0, 1.0); }
 void main() {
@@ -135,7 +139,10 @@ void main() {
   vec3 w = Y * p + aP.xyz;
   vec3 wn = normalize(Y * n);
   vDist = distance(w, cameraPosition);
-  if (uHull > 0.5) w += wn * max(0.012, uInkPx * uInkK * vDist);
+  vTele = step(1.5, aB.w);
+  vView = normalize(cameraPosition - w);
+  vFlash = aB.w - 2.0 * vTele;
+  if (uHull > 0.5) w += wn * max(0.012, uInkPx * uInkK * vDist) * (1.0 + vTele * (1.6 + 0.6 * sin(uTime * 18.0)));
   vN = wn;
   vCol = part == 1 ? aC3 : (part == 2 || part == 3) ? aC2 : aC1.rgb;
   if ((part == 4 || part == 5) && position.y < 0.95) vCol = aC3; // the hands
@@ -149,12 +156,21 @@ uniform float uHull;
 varying vec3 vN;
 varying vec3 vCol;
 varying float vDist;
+varying float vFlash;
+varying float vTele;
+varying vec3 vView;
+uniform float uTime;
 ${GLSL.toon}
 ${FOG}
 void main() {
-  if (uHull > 0.5) { gl_FragColor = vec4(streetFog(${hexv(INK)}, vDist), 1.0); return; }
+  if (uHull > 0.5) { gl_FragColor = vec4(streetFog(mix(${hexv(INK)}, vec3(0.91, 0.16, 0.12), vTele), vDist), 1.0); return; }
   float band = comicBand(comicLight(normalize(vN), ${SUN}), 0.14, 0.5);
-  gl_FragColor = vec4(streetFog(comicCel(vCol, band), vDist), 1.0);
+  vec3 col = comicCel(vCol, band);
+  // on his way to a blow: a hard red rim round him (the spider-sense), pulsing; the ink lines of the post pass keep their place
+  float rim = step(0.55, 1.0 - abs(dot(normalize(vN), vView)));
+  col = mix(col, vec3(0.95, 0.16, 0.1), vTele * max(rim, 0.25 + 0.15 * sin(uTime * 18.0)));
+  // a blow: the figure flashes paper white, then the colour comes back
+  gl_FragColor = vec4(streetFog(mix(col, vec3(1.0, 0.99, 0.94), clamp(vFlash * 2.0, 0.0, 1.0)), vDist), 1.0);
 }
 `;
 
@@ -278,7 +294,8 @@ void main() {
 
 // Figures: up to max comic figures, drawn in two calls. Each frame: begin(cam), then add(f) for every figure to draw (the ones
 // further than reach from the camera are skipped), then end(). A figure: { x, y, z, yaw, phase, stride, pose, poseT, height,
-// shirt, pants, skin (rgb arrays), and optional bp, br (the body's pitch and roll), lift }.
+// shirt, pants, skin (rgb arrays), and optional bp, br (the body's pitch and roll), lift, flash (0..1, white after a blow), tele
+// (true: a red outline, he winds up a blow) }.
 export function createFigures(scene, max = 240, reach = PEOPLE_REACH) {
   const U = { uTime: { value: 0 } };
   const base = figure();
@@ -324,7 +341,7 @@ export function createFigures(scene, max = 240, reach = PEOPLE_REACH) {
       c1[o4] = p.shirt[0]; c1[o4 + 1] = p.shirt[1]; c1[o4 + 2] = p.shirt[2]; c1[o4 + 3] = p.height;
       c2[o3] = p.pants[0]; c2[o3 + 1] = p.pants[1]; c2[o3 + 2] = p.pants[2];
       c3[o3] = p.skin[0]; c3[o3 + 1] = p.skin[1]; c3[o3 + 2] = p.skin[2];
-      aB[o4] = p.bp || 0; aB[o4 + 1] = p.br || 0; aB[o4 + 2] = p.lift || 0; aB[o4 + 3] = 0;
+      aB[o4] = p.bp || 0; aB[o4 + 1] = p.br || 0; aB[o4 + 2] = p.lift || 0; aB[o4 + 3] = (p.flash || 0) + (p.tele ? 2 : 0);
       counts[tag] = (counts[tag] || 0) + 1;
       n++;
       return true;

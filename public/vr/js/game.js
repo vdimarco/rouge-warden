@@ -1746,7 +1746,7 @@ export function createGame({ scene, city, view, ropes, hands, ui, audio, P, save
     progress.tutorial = i; // the next row's number: 0 (the gold ring) while the first row is open
     if (i >= 0) trainSay(train.items[i]);
   }
-  const trainSay = (r) => { if (r.line != null) say("tutorial", r.line); else saySoon(r.say, 6); };
+  const trainSay = (r) => { if (train.hush) return; if (r.line != null) say("tutorial", r.line); else saySoon(r.say, 6); };
   function trainTick(id) {
     const r = train.on && train.items.find((x) => x.id === id);
     if (!r || r.done) return;
@@ -2056,6 +2056,8 @@ export function createGame({ scene, city, view, ropes, hands, ui, audio, P, save
     targets, travelSpots,
     cancelTrial,
     skipTutorial() { tutFinish(true); },
+    // hush(true): the training checklist folds away and says nothing (the Gauntlet); its rows still tick, and it comes back after
+    hush(on) { on = !!on; if (train.hush === on) return; train.hush = on; progress.trainHush = on; if (!on && train.on && progress.training && progress.training.now >= 0) { train.t = 0; trainSay(train.items[progress.training.now]); } },
     // jobs.js: Loonies for a job done, and the mission card while a job runs ({ title, detail, short, n, of, goal } or null)
     reward(n) { addBonus(n); setBank(); },
     setJob(card) { if (!!card !== !!jobCard) objT = 0; jobCard = card || null; },

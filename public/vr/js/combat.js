@@ -34,10 +34,16 @@ export const FIGHT = {
   // to the goon between min and max m away within cone degrees of the view (and within up m up or down); he takes dmg and push.
   // A zip that has not arrived after time s ends. The hero bounces off him back m/s and up m/s.
   zip: { chain: 2, min: 2.6, max: 14, cone: 50, up: 4, speed: 26, time: 0.7, dmg: 2, push: 3.5, back: 3, bounce: 5 },
+  // the brute (the Gauntlet's heavy): more hp, slower, a long wind-up and a blow that takes two hearts. A punch hurts him but
+  // does not stop him; a kick, a zip, a throw, a slam or a finisher staggers him. A rope cannot yank him off his feet: it staggers him.
+  // He charges too: from charge[0] to charge[1] m away he winds up, then lunges at lunge m/s for the length of his swing.
+  brute: { hp: 6, speed: 0.8, windup: 0.85, dmg: 2, height: 1.42, reach: 1.9, charge: [3.2, 8], lunge: 15, swing: 0.42 },
+  flash: 0.14, // s a goon shows white after a blow (g.flash runs from 1 to 0 over it; the view holds white for its first half)
   focus: { punch: 0.1, zip: 0.14, kick: 0.16, rope: 0.12, slam: 0.12, takedown: 0.25, dodge: 0.08, perfect: 0.2, r: 3.5 },
 };
 // the gang's clothes: sludge-green hoodies, dark trousers, a green sludge mask; the runner wears hazard yellow
 const GANG = { shirt: [0.2, 0.46, 0.18], pants: [0.12, 0.12, 0.15], skin: [0.55, 0.8, 0.22] };
+const BRUTE = { shirt: [0.36, 0.14, 0.42], pants: [0.1, 0.09, 0.12], skin: [0.5, 0.74, 0.2] };
 const RUNNER = { shirt: [0.9, 0.82, 0.12], pants: [0.14, 0.14, 0.16], skin: [0.55, 0.8, 0.22] };
 
 export function createCombat(city) {
@@ -46,19 +52,21 @@ export function createCombat(city) {
   const C = {
     goons, hp: FIGHT.hp, quiet: 99, combo: 0, comboT: 9, cool: 0, events: [],
     hits: 0, hitsT: 9, focus: 0, dodgeT: 0, dodgeCool: 0, throwCool: 0, // the combo count (blows with no gap over 2 s), focus 0..1, the dodge clocks
-    stats: { punches: 0, kicks: 0, pulls: 0, slams: 0, kos: 0, hurt: 0, knockouts: 0, carHits: 0, dodges: 0, perfect: 0, takedowns: 0, finishers: 0, heaps: 0, throws: 0, zips: 0 },
+    stats: { punches: 0, kicks: 0, pulls: 0, slams: 0, kos: 0, hurt: 0, knockouts: 0, carHits: 0, dodges: 0, perfect: 0, takedowns: 0, finishers: 0, heaps: 0, throws: 0, zips: 0, charges: 0 },
   };
   const emit = (e) => { C.events.push(e); if (C.events.length > 64) C.events.shift(); };
 
-  // A goon at (x, y, z) on whatever is under him. group: a name to find his crew by (a clog guard, a job). o: { hp, runner, home }.
+  // A goon at (x, y, z) on whatever is under him. group: a name to find his crew by (a clog guard, a job). o: { hp, runner, brute,
+  // path, speed (a runner's), pace (a walk and run speed factor), windup (s) }.
   C.spawn = function spawn(x, y, z, group = "", o = {}) {
     const tb = city.topBelow(x, y + 1, z, 0.3);
     const gy = tb ? tb.y : Math.max(0, city.groundY(x, z));
-    const look = o.runner ? RUNNER : GANG;
+    const B = FIGHT.brute, look = o.runner ? RUNNER : o.brute ? BRUTE : GANG;
     const g = {
-      id: nextId++, on: true, group, runner: !!o.runner, x, y: gy, z, yaw: Math.random() * 6.28, hp: o.hp || FIGHT.goon.hp,
+      id: nextId++, on: true, group, runner: !!o.runner, x, y: gy, z, yaw: Math.random() * 6.28, hp: o.hp || (o.brute ? B.hp : FIGHT.goon.hp), brute: !!o.brute,
       state: "idle", t: 0, home: { x, y: gy, z }, aggro: false, cool: 0.6 + Math.random(), phase: Math.random() * 6, stride: 0,
-      pose: 1, poseT: 0, height: 1.02 + Math.random() * 0.12, shirt: look.shirt, pants: look.pants, skin: look.skin,
+      pose: 1, poseT: 0, height: o.brute ? B.height : 1.02 + Math.random() * 0.12, flash: 0,
+      pace: (o.pace || 1) * (o.brute ? B.speed : 1), windup: o.windup || (o.brute ? B.windup : FIGHT.goon.windup), shirt: look.shirt, pants: look.pants, skin: look.skin,
       bp: 0, br: 0, lift: 0, path: o.path || null, pathI: 0, speed: o.speed || 0, from: null, pullT: 0, hitBy: "",
     };
     goons.push(g);
@@ -70,6 +78,7 @@ export function createCombat(city) {
   C.group = (name) => goons.filter((g) => g.on && g.group === name);
   C.clearGroup = (name) => { for (const g of goons) if (g.group === name) g.on = false; prune(); };
   C.heal = () => { C.hp = FIGHT.hp; C.quiet = 99; };
+  C.mend = (n) => { if (C.hp > 0) C.hp = Math.min(FIGHT.hp, C.hp + n); };
   function prune() { for (let i = goons.length - 1; i >= 0; i--) if (!goons[i].on) goons.splice(i, 1); }
 
   // move a goon by (dx, dz) on his own surface: never off an edge, never into a wall
@@ -91,14 +100,17 @@ export function createCombat(city) {
     const dx = g.x - fromX, dz = g.z - fromZ, d = Math.hypot(dx, dz) || 1;
     // the push: along the ground, as far as the surface lets him go
     for (let i = 0; i < 6; i++) walk(g, (dx / d) * (push / 6), (dz / d) * (push / 6));
-    g.aggro = true; g.hitBy = why;
+    g.aggro = true; g.hitBy = why; g.flash = 1;
     if (g.hp <= 0) {
-      g.state = "down"; g.t = FIGHT.goon.down; setPose(g, 11); g.bp = -1.45; g.lift = 0.12; g.stride = 0;
+      g.state = "down"; g.charge = false; g.t = FIGHT.goon.down; setPose(g, 11); g.bp = -1.45; g.lift = 0.12; g.stride = 0;
       face(g, fromX, fromZ);
       C.stats.kos++;
       emit({ type: "ko", id: g.id, group: g.group, runner: g.runner, x: g.x, y: g.y, z: g.z, why });
+    } else if (g.brute && (why === "punch" || g.state === "windup" || g.state === "swing")) {
+      // a punch does not stop a brute, and nothing stops his wind-up or his charge: dodge it
+      emit({ type: "hit", id: g.id, x: g.x, y: g.y, z: g.z, why, armor: true });
     } else {
-      g.state = "stagger"; g.t = FIGHT.goon.stagger; setPose(g, 10); g.stride = 0;
+      g.state = "stagger"; g.t = FIGHT.goon.stagger; setPose(g, 10); g.stride = 0; g.charge = false;
       emit({ type: "hit", id: g.id, x: g.x, y: g.y, z: g.z, why });
     }
     return true;
@@ -177,9 +189,10 @@ export function createCombat(city) {
       return "takedown";
     }
     C.stats.pulls++;
+    if (g.brute) { knock(g, h.x, h.z, FIGHT.pull.dmg, 0.8, "rope"); scored("rope"); emit({ type: "pulled", id: g.id, x: g.x, y: g.y, z: g.z, brute: true }); return "pull"; }
     const dx = g.x - h.x, dz = g.z - h.z, d = Math.hypot(dx, dz) || 1, H = FIGHT.heap;
     // the goons beside him come along on the same rope: a heap at the hero's feet
-    const crew = goons.filter((q) => q !== g && C.alive(q) && Math.abs(q.y - g.y) < 1.6 && Math.hypot(q.x - g.x, q.z - g.z) < H.r)
+    const crew = goons.filter((q) => q !== g && C.alive(q) && !q.brute && Math.abs(q.y - g.y) < 1.6 && Math.hypot(q.x - g.x, q.z - g.z) < H.r)
       .sort((a, b) => Math.hypot(a.x - g.x, a.z - g.z) - Math.hypot(b.x - g.x, b.z - g.z)).slice(0, H.n);
     [g, ...crew].forEach((q, k) => {
       q.state = "pulled"; q.pullT = 0; q.from = { x: q.x, y: q.y, z: q.z }; q.heap = crew.length > 0;
@@ -192,14 +205,16 @@ export function createCombat(city) {
     scored("rope");
     return "pull";
   };
+  // how near a goon on his way to a blow is a threat: a charging brute from further off
+  const threatNear = (g) => (g.charge ? FIGHT.brute.charge[1] + 1 : FIGHT.dodge.near);
   // The goon that threatens the hero now: the nearest one within dodge.near that winds up or is mid-swing (before his blow lands).
   C.threat = function threat(h) {
     if (!h) return null;
-    let best = null, bd = FIGHT.dodge.near;
+    let best = null, bd = Infinity;
     for (const g of goons) {
       if (!g.on || !(g.state === "windup" || (g.state === "swing" && !g.struck)) || Math.abs(g.y - h.y) > 1.6) continue;
       const d = Math.hypot(g.x - h.x, g.z - h.z);
-      if (d < bd) { bd = d; best = g; }
+      if (d < threatNear(g) && d < bd) { bd = d; best = g; }
     }
     return best;
   };
@@ -208,11 +223,12 @@ export function createCombat(city) {
   C.dodge = function dodge(h, mx = 0, mz = 0) {
     const g = C.threat(h);
     if (!g || C.dodgeCool > 0) return null;
-    const D = FIGHT.dodge, perfect = g.state === "windup";
+    // a brute's charge is dodged only by a dodge still on when he arrives (no mark: dodgeT below); a dodge in his lunge is perfect
+    const D = FIGHT.dodge, perfect = g.charge ? g.state === "swing" : g.state === "windup";
     C.dodgeT = D.time; C.dodgeCool = D.time + D.cool;
     C.stats.dodges++; if (perfect) C.stats.perfect++;
     // every blow on its way within reach now misses, however late it lands
-    for (const q of goons) if (q.on && (q.state === "windup" || (q.state === "swing" && !q.struck)) && Math.hypot(q.x - h.x, q.z - h.z) < D.near) q.dodged = true;
+    for (const q of goons) if (q.on && (q.state === "windup" || (q.state === "swing" && !q.struck)) && !q.charge && Math.hypot(q.x - h.x, q.z - h.z) < threatNear(q)) q.dodged = true;
     C.focus = Math.min(1, C.focus + (perfect ? FIGHT.focus.perfect : FIGHT.focus.dodge));
     const ax = h.x - g.x, az = h.z - g.z, al = Math.hypot(ax, az) || 1;
     let sx = -az / al, sz = ax / al; // to one side of the line from the goon
@@ -288,9 +304,9 @@ export function createCombat(city) {
   // the hero takes a blow from (fx, fz); nothing while rolling or in a car
   function hurtHero(h, g) {
     if (h.safe || C.dodgeT > 0) { emit({ type: "miss", id: g.id, dodged: C.dodgeT > 0 }); return; }
-    C.hp = Math.max(0, C.hp - FIGHT.goon.dmg);
+    C.hp = Math.max(0, C.hp - (g.brute ? FIGHT.brute.dmg : FIGHT.goon.dmg));
     C.quiet = 0; C.stats.hurt++;
-    emit({ type: "hurt", hp: C.hp, fromX: g.x, fromZ: g.z, x: h.x, y: h.y, z: h.z });
+    emit({ type: "hurt", hp: C.hp, heavy: !!g.brute, fromX: g.x, fromZ: g.z, x: h.x, y: h.y, z: h.z });
     if (C.hp <= 0) { C.stats.knockouts++; emit({ type: "knockout" }); }
   }
 
@@ -305,7 +321,7 @@ export function createCombat(city) {
     let fighting = 0;
     for (const g of goons) {
       if (!g.on) continue;
-      g.poseT += dt; g.cool = Math.max(0, g.cool - dt);
+      g.poseT += dt; g.cool = Math.max(0, g.cool - dt); g.flash = Math.max(0, g.flash - dt / FIGHT.flash);
       if (g.stride > 0) g.phase = (g.phase + dt * g.stride * 2.2) % (Math.PI * 200); // the walk cycle, as street.js steps people
       const dx = h ? h.x - g.x : 0, dz = h ? h.z - g.z : 0, dy = h ? h.y - g.y : 99, d = Math.hypot(dx, dz);
       if (h && d > FIGHT.keep && !g.aggro && !g.path) { g.on = false; continue; }
@@ -349,17 +365,24 @@ export function createCombat(city) {
         case "windup":
           g.t -= dt; g.stride = 0;
           if (h) face(g, h.x, h.z, 0.3);
-          if (g.t <= 0) { g.state = "swing"; g.t = G.swing; setPose(g, 8); }
+          if (g.t <= 0) { g.state = "swing"; g.t = g.brute ? FIGHT.brute.swing : G.swing; setPose(g, 8); if (g.charge) C.stats.charges++, emit({ type: "charge", id: g.id, x: g.x, y: g.y, z: g.z }); }
           break;
-        case "swing":
+        case "swing": {
           g.t -= dt;
-          if (h && g.t <= G.swing * 0.5 && !g.struck) {
+          const sw = g.brute ? FIGHT.brute.swing : G.swing;
+          if (g.charge && h && d > 0.9) {
+            // the lunge: straight at where the hero stands, as fast as the roof lets him (he stops at an edge)
+            const st = Math.min(FIGHT.brute.lunge * dt, d - 0.9);
+            walk(g, (dx / d) * st, (dz / d) * st); g.stride = FIGHT.brute.lunge * 0.5;
+          }
+          if (h && g.t <= sw * (g.charge ? 0.2 : 0.5) && !g.struck) {
             g.struck = true;
             if (g.dodged) emit({ type: "miss", id: g.id, dodged: true });
-            else if (d < G.reach + 0.5 && Math.abs(dy) < 1.4) hurtHero(h, g); else emit({ type: "miss", id: g.id });
+            else if (d < (g.brute ? FIGHT.brute.reach : G.reach) + 0.5 && Math.abs(dy) < 1.4) hurtHero(h, g); else emit({ type: "miss", id: g.id });
           }
-          if (g.t <= 0) { g.state = "chase"; g.cool = G.cool + Math.random() * 0.5; g.struck = false; g.dodged = false; setPose(g, 0); }
+          if (g.t <= 0) { g.state = "chase"; g.cool = G.cool + Math.random() * 0.5 + (g.charge ? 1 : 0); g.struck = false; g.dodged = false; g.charge = false; setPose(g, 0); }
           break;
+        }
         default: {
           // a runner keeps to his path; the others guard, see the hero, chase and punch
           if (g.path && g.pathI < g.path.length) { runPath(g, dt); break; } // a runner only stops when he is down
@@ -368,13 +391,18 @@ export function createCombat(city) {
           if (g.aggro && h && d < G.sight * 1.6 && Math.abs(dy) < G.up) {
             g.state = "chase"; fighting++;
             face(g, h.x, h.z, 0.25);
-            if (d > G.reach) {
-              const sp = d > 8 ? G.run : G.speed, st = Math.min(sp * dt, d - G.reach * 0.8);
+            const gr = g.brute ? FIGHT.brute.reach : G.reach, Bc = FIGHT.brute.charge;
+            if (g.brute && d > Bc[0] && d < Bc[1] && g.cool <= 0 && !h.safe) {
+              // the charge: he plants his feet and winds up, then runs the hero down
+              g.state = "windup"; g.charge = true; g.dodged = false; g.t = g.windup; g.stride = 0; setPose(g, 9);
+              emit({ type: "windup", id: g.id, brute: true, charge: true });
+            } else if (d > gr) {
+              const sp = (d > 8 ? G.run : G.speed) * (g.pace || 1), st = Math.min(sp * dt, d - gr * 0.8);
               const moved = walk(g, (dx / d) * st, (dz / d) * st);
               g.stride = moved ? sp : 0; setPose(g, 0);
             } else {
               g.stride = 0; setPose(g, 1);
-              if (g.cool <= 0 && !h.safe) { g.state = "windup"; g.dodged = false; g.t = G.windup; setPose(g, 9); emit({ type: "windup", id: g.id }); }
+              if (g.cool <= 0 && !h.safe) { g.state = "windup"; g.dodged = false; g.t = g.windup || G.windup; setPose(g, 9); emit({ type: "windup", id: g.id, brute: g.brute }); }
             }
           } else {
             // back home, or stand guard with a taunt now and then
@@ -392,6 +420,8 @@ export function createCombat(city) {
         if (e > 1e-3 && e < 0.8) walk(g, (ex / e) * (0.8 - e) * 0.5, (ez / e) * (0.8 - e) * 0.5);
       }
     }
+    // the marks the view draws: a red outline on a goon on his way to a blow
+    for (const g of goons) g.tele = g.on && (g.state === "windup" || (g.state === "swing" && !g.struck));
     C.fighting = fighting;
     prune();
   };
@@ -415,6 +445,6 @@ export function createCombat(city) {
   };
   C.info = () => ({ hp: C.hp, goons: goons.filter((g) => g.on).length, alive: goons.filter(C.alive).length, fighting: C.fighting || 0, stats: { ...C.stats },
     hits: C.hits, focus: C.focus, dodging: C.dodgeT > 0,
-    list: goons.map((g) => ({ id: g.id, group: g.group, state: g.state, hp: g.hp, x: g.x, y: g.y, z: g.z, runner: g.runner, aggro: g.aggro })) });
+    list: goons.map((g) => ({ id: g.id, group: g.group, state: g.state, hp: g.hp, x: g.x, y: g.y, z: g.z, runner: g.runner, brute: g.brute, aggro: g.aggro, flash: g.flash })) });
   return C;
 }

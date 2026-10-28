@@ -10,7 +10,7 @@ import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 
 // marker colours (linear, a little over 1 so the bloom picks them out)
 const JOB_COL = { catch: [2.2, 0.5, 0.4], washer: [0.4, 1.4, 2.4], pizza: [2.4, 1.3, 0.3], balloon: [2.3, 0.4, 1.6], brawl: [0.7, 2.2, 0.4], taxi: [2.5, 2.2, 0.2], thief: [1.6, 0.5, 2.4], sludge: [0.9, 2.4, 0.4], goal: [2.6, 2.0, 0.4],
-  mugging: [2.6, 0.3, 0.3], getaway: [2.6, 0.3, 0.3], tanker: [2.6, 0.3, 0.3] }; // a crime: red
+  gauntlet: [2.2, 0.3, 1.9], mugging: [2.6, 0.3, 0.3], getaway: [2.6, 0.3, 0.3], tanker: [2.6, 0.3, 0.3] }; // a crime: red
 const MAX_MARK = 8;
 const CAR_REACH = 90; // cars drawn within this of the camera
 // The nearest MODEL_N cars show their model (2,500 triangles, and a 600-triangle hull for its ink); the others the built-in box car. Job cars and
@@ -155,6 +155,63 @@ export function createActionView(scene, { cars, jobs, traffic = null }) {
   ringGeo.setAttribute("aCol", new THREE.InstancedBufferAttribute(new Float32Array(MAX_MARK * 3), 3));
   root.add(rings);
 
+  /* ---- the Gauntlet's roof: a painted fight ring ---- */
+  // One quad on the arena roof with a texture painted here on a canvas (a decal: no file to load): a hazard-striped ring in the
+  // comic yellow and ink, a halftone band inside it and the gang's sludge-green splat in the middle. It lies there always (it is
+  // paint); while the Gauntlet runs it lights up and its stripes crawl round.
+  const A = jobs.arena && jobs.arena();
+  let arenaMesh = null, arenaOn = 0;
+  const arenaU = { uMap: { value: null }, uTime: { value: 0 }, uOn: { value: 0 } };
+  if (A && typeof document !== "undefined") {
+    const N = 512, cv = document.createElement("canvas");
+    cv.width = cv.height = N;
+    const g = cv.getContext("2d"), c = N / 2;
+    // the splat: a lumpy sludge-green blot, inked
+    g.beginPath();
+    for (let i = 0; i <= 28; i++) { const a = (i / 28) * Math.PI * 2, r = N * (0.085 + 0.025 * Math.sin(i * 2.7) + 0.015 * Math.cos(i * 5.3)); g.lineTo(c + Math.cos(a) * r, c + Math.sin(a) * r); }
+    g.closePath(); g.fillStyle = "#4f8a2a"; g.fill(); g.lineWidth = 8; g.strokeStyle = "#140a18"; g.stroke();
+    // the halftone band
+    g.fillStyle = "rgba(20,10,24,0.55)";
+    for (let y = 0; y < N; y += 12) for (let x = (y / 12) % 2 ? 6 : 0; x < N; x += 12) {
+      const r = Math.hypot(x - c, y - c) / c;
+      if (r > 0.6 && r < 0.8) { g.beginPath(); g.arc(x, y, 3.4 * (r - 0.6) / 0.2 + 0.6, 0, Math.PI * 2); g.fill(); }
+    }
+    // the hazard ring: ink, yellow, ink
+    g.lineWidth = N * 0.075; g.strokeStyle = "#ffd84a"; g.beginPath(); g.arc(c, c, N * 0.44, 0, Math.PI * 2); g.stroke();
+    g.save(); g.beginPath(); g.arc(c, c, N * 0.4775, 0, Math.PI * 2); g.arc(c, c, N * 0.4025, 0, Math.PI * 2, true); g.clip();
+    g.fillStyle = "#140a18";
+    for (let i = 0; i < 48; i++) { const a = (i / 48) * Math.PI * 2; g.beginPath(); g.moveTo(c, c); g.arc(c, c, N * 0.5, a, a + Math.PI / 96); g.closePath(); g.fill(); }
+    g.restore();
+    g.lineWidth = 6; g.strokeStyle = "#140a18";
+    for (const r of [0.4775, 0.4025]) { g.beginPath(); g.arc(c, c, N * r, 0, Math.PI * 2); g.stroke(); }
+    const tex = new THREE.CanvasTexture(cv);
+    tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 4;
+    arenaU.uMap.value = tex;
+    const q = A.rect, size = Math.min(q.maxX - q.minX, q.maxZ - q.minZ) + 2;
+    const geo = new THREE.PlaneGeometry(size, size);
+    geo.rotateX(-Math.PI / 2);
+    const mat = new THREE.ShaderMaterial({
+      uniforms: arenaU, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2,
+      vertexShader: "varying vec2 vUv; void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }",
+      fragmentShader: `uniform sampler2D uMap; uniform float uTime, uOn; varying vec2 vUv;
+        void main() {
+          vec2 d = vUv - 0.5; float a = atan(d.y, d.x), r = length(d) * 2.0;
+          // while the Gauntlet runs the stripes crawl round (the texture turns in the ring only) and the paint glows
+          float ring = smoothstep(0.78, 0.8, r) * (1.0 - smoothstep(0.97, 0.99, r));
+          float t = uTime * 0.25 * uOn * ring;
+          vec2 uv = 0.5 + mat2(cos(t), -sin(t), sin(t), cos(t)) * d;
+          vec4 c = texture2D(uMap, uv);
+          c.rgb *= 0.78 + uOn * (0.5 + 0.25 * sin(uTime * 5.0) * ring);
+          gl_FragColor = vec4(c.rgb, c.a * (0.82 + 0.18 * uOn));
+        }`,
+    });
+    arenaMesh = new THREE.Mesh(geo, mat);
+    arenaMesh.name = "gauntlet-ring";
+    arenaMesh.position.set(A.x, A.y + 0.02, A.z);
+    arenaMesh.renderOrder = 1;
+    root.add(arenaMesh);
+  }
+
   /* ---- the balloon ---- */
   const balloon = new THREE.Group();
   const bm = toonify(new THREE.MeshLambertMaterial({ color: 0xe0283c }), { dots: 0 });
@@ -260,13 +317,19 @@ export function createActionView(scene, { cars, jobs, traffic = null }) {
       beams.count = rings.count = m;
       beams.instanceMatrix.needsUpdate = rings.instanceMatrix.needsUpdate = true;
       bCol.needsUpdate = true; rings.geometry.attributes.aCol.needsUpdate = true;
+      // the fight ring lights up while the Gauntlet runs
+      if (arenaMesh) {
+        const want = jobs.active && jobs.active.type === "gauntlet" ? 1 : 0;
+        arenaOn += (want - arenaOn) * Math.min(1, dt * 3);
+        arenaU.uOn.value = arenaOn; arenaU.uTime.value = time;
+      }
       // the balloon
       const b = jobs.balloons && jobs.balloons[0];
       balloon.visible = !!b;
       if (b) { balloon.position.set(b.x, b.y, b.z); balloon.rotation.z = Math.sin(time * 1.7) * 0.15; }
     },
     setVisible(v) { root.visible = !!v; },
-    info: () => ({ cars: counts.reduce((a, b) => a + b, 0) + carMesh.count, modelCars: modelsOk ? counts.reduce((a, b) => a + b, 0) : 0, models: modelsOk ? MODELS.map((m) => m.src) : null, streetModels: promoted.size, markers: beams.count, balloon: balloon.visible }),
+    info: () => ({ cars: counts.reduce((a, b) => a + b, 0) + carMesh.count, modelCars: modelsOk ? counts.reduce((a, b) => a + b, 0) : 0, models: modelsOk ? MODELS.map((m) => m.src) : null, streetModels: promoted.size, markers: beams.count, balloon: balloon.visible, arena: arenaMesh ? +arenaOn.toFixed(2) : -1 }),
   };
   return V;
 }

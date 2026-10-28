@@ -1601,7 +1601,7 @@ body:has(#phoneControls:not([hidden])) .fs-top:has(.fs-pill:not([hidden]):not(.f
       if (ob) { k.mTitle.textContent = ob.title + (ob.of ? " " + ob.n + "/" + ob.of : ""); k.mDetail.textContent = ob.detail; k.mDetail.hidden = !ob.detail; k.mShort.textContent = ob.short || ""; }
       k.mission.classList.toggle("no-short", !(ob && ob.short));
     }
-    const trn = pg.training, ts = trn ? trn.now + "|" + (trn.done ? 1 : 0) + "|" + trn.items.map((r) => (r.done ? "1" : "0") + r.n).join("") : "";
+    const trn = pg.trainHush ? null : pg.training, ts = trn ? trn.now + "|" + (trn.done ? 1 : 0) + "|" + trn.items.map((r) => (r.done ? "1" : "0") + r.n).join("") : "";
     if (dh.train !== ts) { dh.train = ts; drawTraining(trn); }
     const pu = pg.pump, touch = !!(inp && inp.easySwing), ps = pu ? pu.kind + pu.n + "/" + pu.of + (touch ? "t" : "m") : "";
     if (dh.pump !== ps) { dh.pump = ps; k.pump.hidden = !pu; if (pu) drawPump(pu, touch); }
