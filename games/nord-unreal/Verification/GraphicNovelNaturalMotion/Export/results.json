@@ -1,0 +1,185 @@
+{
+  "passed": true,
+  "scope": "SelectedcompactwholebodyCPUcheckpointonly;notnative/art/defaultadoption",
+  "authoring_process_exit_codes": {
+    "control": 0,
+    "trial": 0
+  },
+  "comparison_process_exit_code": 0,
+  "sample_count_per_clip": 37,
+  "bone_count_per_clip": 24,
+  "fps": 30,
+  "seconds": 1.2,
+  "allowed_rotation_bones": [
+    "LeftArm",
+    "LeftFoot",
+    "LeftForeArm",
+    "LeftLeg",
+    "LeftUpLeg",
+    "RightArm",
+    "RightFoot",
+    "RightForeArm",
+    "RightLeg",
+    "RightUpLeg",
+    "Spine01",
+    "neck"
+  ],
+  "all_retained_source_files_unchanged": true,
+  "body_copies_binary_identical": true,
+  "neutral_endpoints_passed": true,
+  "object_root_static": true,
+  "authored_scale_curves_unchanged": true,
+  "authored_scale_curve_count": 72,
+  "authored_scale_keys_per_curve": 37,
+  "authored_scale_curves_sha256": "5d96849a2402c5ed3c627617359b5e059640c21b6315213a7c5f930869ecb45b",
+  "comparison": {
+    "rest_matrix_max_abs": 0.0,
+    "object_matrix_max_abs": 0.0,
+    "local_translation_max_abs": 5.53131103515625e-05,
+    "local_scale_max_abs": 1.3113021850585938e-06,
+    "forbidden_rotation_max_radians": 2.136828495721514e-06,
+    "allowed_rotation_max_radians": {
+      "LeftLeg": 0.7849882659376984,
+      "Spine01": 0.15694976867175045,
+      "RightArm": 1.8325458863760424,
+      "neck": 0.1465411211949706,
+      "RightForeArm": 1.7449296729009642,
+      "RightFoot": 0.3488957781610054,
+      "LeftUpLeg": 0.5756585712160771,
+      "LeftArm": 1.570696383358105,
+      "LeftForeArm": 2.0066794694285,
+      "RightLeg": 1.133894121734035,
+      "RightUpLeg": 0.8024417504841233,
+      "LeftFoot": 0.26165873982077115
+    }
+  },
+  "precision_exception": {
+    "old_scale_bound": 1e-06,
+    "approved_scale_bound": 2e-06,
+    "native_scale_bound": 1e-05,
+    "reason": "MeasuredFBXfloatdecomposition:controlRightUpLegX1.0000014305114746vstrial1.0000001192092896atsample14,delta1.3113021850585938e-6;authoredscalecurvesidentical.",
+    "failed_receipt": "rejected-scale-1e-6/strict-scale-failure.json",
+    "curve_surgery_performed": false
+  },
+  "candidate_specific_knee_check": {
+    "expected_degrees": 55,
+    "roundtrip_bound_degrees": [
+      50,
+      60
+    ],
+    "rejected_old_check_degrees_greater_than": 70,
+    "failed_log": "rejected-inherited-knee-assert/trial-authoring.log"
+  },
+  "trial_fbx": "trial/CurlyMetalhead/jump.fbx",
+  "trial_sha256": "71277e693654e02d365d22d7d34cf534045a4aa9ed77b4c19d4744a0839680ac",
+  "reviewed_recipe_note": "Frozenoldbody-basedgenerator+explicit12reviewedkeys;notcurrentdefaultgenerator.Neckrotationexplicitlychanged;Headlocalunchanged.",
+  "temporal_scope": "Twoordered24frameQAcontactsheetscoverall48actualCPUpreviewframes;encoding24fpsisnotnativeperformance/continuousplaybackacceptance.",
+  "limitations": [
+    "No UE/GPU/nativecompressed/blended-pose or finalartacceptance.",
+    "Staticopenfingers andwhiteactualOBJgeometryproxy;noclosedgrasp.",
+    "Physics/rootunchanged;CPUballisticactoroffsetandcamera-followforpreviewonly.",
+    "Candidateincludesexplicitneckrotation;head_and_neck_unchangedFalseistruthfullyreported."
+  ],
+  "artifact_manifest": [
+    {
+      "file": "cpu-preflight.json",
+      "bytes": 5688,
+      "sha256": "026718510e9b5ac7b9014b9d322a2e824edd83f0bdb72d41f2727765557d73eb"
+    },
+    {
+      "file": "retained_author_template.py",
+      "bytes": 8369,
+      "sha256": "ed50ad1d4a09a9d6b71ee45c108a4f0e404b222ebfe311df3302929a6602aebd"
+    },
+    {
+      "file": "control_jump.py",
+      "bytes": 9386,
+      "sha256": "4e1c8d7d9f081503b82165e7ece3eeaef7a2fb767041f17ae9c533dd7f2aac4a"
+    },
+    {
+      "file": "trial_jump.py",
+      "bytes": 11042,
+      "sha256": "fe320851fa8fdb9aa2129306c14ee188e29f03fff9428fdd3977d5f4f08e3245"
+    },
+    {
+      "file": "verify_candidate.py",
+      "bytes": 10105,
+      "sha256": "2a4e5af6ab9e9977eceb8f91154ccc1128e771c3c71fdb120051dc775aa0feb3"
+    },
+    {
+      "file": "control-authoring.json",
+      "bytes": 579,
+      "sha256": "4124277d9f200c7545ad4853a82e7fd6902b60467bb937f996fb3f70008ae1c2"
+    },
+    {
+      "file": "trial-authoring.json",
+      "bytes": 656,
+      "sha256": "1c90ac85a524c55c8a354519090ee1006ed3636f50ae8c1b112c2fc6d4e49ab6"
+    },
+    {
+      "file": "control-authoring.log",
+      "bytes": 279,
+      "sha256": "a9a32ae56c7dfc6c30dfc70a62ef6da0f2b65f7df260f831ccde5d4588d30453"
+    },
+    {
+      "file": "trial-authoring.log",
+      "bytes": 277,
+      "sha256": "c477e5ec3536f76800a0caa5ff95e55e9a9a9319e38bfc4014e201509eb89e3b"
+    },
+    {
+      "file": "semantic-comparison.json",
+      "bytes": 1489861,
+      "sha256": "f9f7475aae8a9faa651e22b700194066141066ba93b498b93cd93ebecf17655f"
+    },
+    {
+      "file": "semantic-comparison.log",
+      "bytes": 225,
+      "sha256": "b950d2d7a2ee7c656de841cdb016c2df09f76bb674e9c78b35806a88483ccc8e"
+    },
+    {
+      "file": "control/CurlyMetalhead/jump.fbx",
+      "bytes": 221356,
+      "sha256": "ad8454b8d7de3d4fd0355d0c52f8c6c553f468a8f92735351da4f2030817f368"
+    },
+    {
+      "file": "control/CurlyMetalhead/jump.json",
+      "bytes": 5070,
+      "sha256": "66ade62283933ecedd95fab4e0b037306051659f0372d0712b7974c402d0046e"
+    },
+    {
+      "file": "control/CurlyMetalhead/authored-scales.json",
+      "bytes": 55907,
+      "sha256": "5d96849a2402c5ed3c627617359b5e059640c21b6315213a7c5f930869ecb45b"
+    },
+    {
+      "file": "trial/CurlyMetalhead/jump.fbx",
+      "bytes": 221420,
+      "sha256": "71277e693654e02d365d22d7d34cf534045a4aa9ed77b4c19d4744a0839680ac"
+    },
+    {
+      "file": "trial/CurlyMetalhead/jump.json",
+      "bytes": 19617,
+      "sha256": "d9f5ecb420112ac8868303f7f07f3e45b99ac4bc11a3082b35e3c960bec77c76"
+    },
+    {
+      "file": "trial/CurlyMetalhead/authored-scales.json",
+      "bytes": 55907,
+      "sha256": "5d96849a2402c5ed3c627617359b5e059640c21b6315213a7c5f930869ecb45b"
+    },
+    {
+      "file": "Temporal/Selection.json",
+      "bytes": 36471,
+      "sha256": "385d36a9296097336b88f87dcee983281f858687ed15aa12c53d19a25ba5d74b"
+    },
+    {
+      "file": "Temporal/ordered-frames-00-23.png",
+      "bytes": 6626427,
+      "sha256": "8cff4ef1213b512303f6ae44963cc3b9a5e60910166407de5d318ae90f86a33b"
+    },
+    {
+      "file": "Temporal/ordered-frames-24-47.png",
+      "bytes": 6522289,
+      "sha256": "f0eb9be9a4565d42bfa7c97e211f2a503931727d66f593024bc71c5cd83311dc"
+    }
+  ]
+}

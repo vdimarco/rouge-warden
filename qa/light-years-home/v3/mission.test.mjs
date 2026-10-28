@@ -223,11 +223,24 @@ test('orBetter stunt goals ask for one star more than the player holds (at most 
 });
 
 test('starting by itself, by TAKE JOB after a call, and the opening ending at the chase', () => {
-  // WHICH WAY HOME starts by itself near Node 0 after 54 s, or anywhere at 80 s; the opening's lines left go to the log.
-  const game = newGame({ seed: 1, fresh: true });
-  const r = run(game, (g) => ({ steer: g.t > 40 ? 0.3 : 0, source: 'keys' }), 85, { until: (g) => !!g.mission });
+  // WHICH WAY HOME starts by itself: driving into Node 0's ring (the first orange objective) from 12 s, near Node 0
+  // from 25 s, or anywhere at 80 s; the opening's lines left go to the log.
+  const since = (g) => g.t - g.story.playAt;
+  // Straight up the Sloan road with no input: into the ring at about 13 s, and the Magpie comes at once.
+  let game = newGame({ seed: 1, fresh: true });
+  let r = run(game, () => ({ source: 'keys' }), 30, { until: (g) => !!g.mission });
   assert.equal(game.mission?.id, 'which-way-home');
-  assert.ok(game.t - game.story.playAt >= 54 - 1e-6, `started at ${(game.t - game.story.playAt).toFixed(1)}`);
+  assert.ok(since(game) >= 12 - 1e-6 && since(game) < 20, `into the ring: started at ${since(game).toFixed(1)}`);
+  assert.ok(Math.hypot(game.ship.pos[0], game.ship.pos[1]) <= 40 + 1, 'inside Node 0 ring');
+  // Circling 70 to 140 u from Node 0, outside its ring: at 25 s.
+  game = newGame({ seed: 1, fresh: true, at: [0, -70, 0], heading: 90, speed: 24 });
+  r = run(game, (g) => ({ steer: 0.4, source: 'keys' }), 40, { until: (g) => !!g.mission });
+  assert.ok(since(game) >= 25 - 1e-6 && since(game) < 26, `near Node 0: started at ${since(game).toFixed(1)}`);
+  // Far away, circling near the drop-out: at 80 s, wherever you are.
+  game = newGame({ seed: 1, fresh: true });
+  r = run(game, (g) => ({ steer: since(g) > 1 ? 0.3 : 0, source: 'keys' }), 85, { until: (g) => !!g.mission });
+  assert.equal(game.mission?.id, 'which-way-home');
+  assert.ok(since(game) >= 80 - 1e-6 && since(game) < 81, `anywhere: started at ${since(game).toFixed(1)}`);
   assert.equal(of(r.events, 'missionStart').length, 1);
   assert.ok(game.talk.log.includes('dot.samedist'), 'the toLog premise lines are in the log');
   // FIRST SHOUT is offered by Redshift's call after red.woke; TAKE JOB starts it.
@@ -277,4 +290,57 @@ test('the chapter bot plays the Wall, rides J1 and drives on in Coma, the same t
   } finally {
     wireAll();
   }
+});
+
+// ---------------------------------------------------------------- Round 1 playtest fixes
+
+test('on auto-cruise (no gas, no boost) a chaser takes the thief down within 30 s, 5 seeds; GAS is quicker', (t) => {
+  const wrap = (a) => Math.atan2(Math.sin(a), Math.cos(a));
+  const chase = (seed, extra) => {
+    const game = newGame({ seed, at: [-16, 89, 0], heading: 180, speed: 24, done: [] });
+    startMission(game, 'which-way-home');
+    let at = null;
+    run(game, (g) => {
+      const a = actorById(g, 'chart-thief'), s = g.ship;
+      if (!a) return {};
+      const d = Math.hypot(a.pos[0] - s.pos[0], a.pos[1] - s.pos[1]), lead = Math.min(1, d / 40);
+      const want = Math.atan2(a.pos[0] + a.vel[0] * lead - s.pos[0], a.pos[1] + a.vel[1] * lead - s.pos[1]);
+      return { steer: Math.max(-1, Math.min(1, 3 * wrap(want - Math.atan2(s.vel[0], s.vel[1])))), source: 'touch',
+        ...extra };
+    }, 60, { onEvent: (e, g) => { if (e.type === 'takedown' && e.id === 'chart-thief' && at === null) at = g.t; },
+      until: () => at !== null });
+    return at;
+  };
+  const cruise = SEEDS.map((seed) => chase(seed, {})), gas = SEEDS.map((seed) => chase(seed, { gas: 1 }));
+  t.diagnostic(`no gas: ${cruise.map((x) => x?.toFixed(1)).join(', ')} s; gas held: ${gas.map((x) => x?.toFixed(1)).join(', ')} s`);
+  for (const [i, x] of cruise.entries()) assert.ok(x !== null && x <= 30, `seed ${SEEDS[i]}: ${x}`);
+  const mean = (l) => l.reduce((a, b) => a + b, 0) / l.length;
+  assert.ok(mean(gas) < mean(cruise), 'holding GAS still pays');
+});
+
+test('Cruise: within 60 u behind the thief it runs 3 u/s slower than you (never under 18); Pilot keeps 27', () => {
+  for (const assists of ['cruise', 'pilot']) {
+    const game = newGame({ seed: 1, at: [-300, -300, 0], heading: 0, speed: 24, settings: { assists }, done: [] });
+    startMission(game, 'which-way-home');
+    const thief = actorById(game, 'chart-thief');
+    run(game, () => ({}), 4);                                    // it bolts and joins its loop
+    // Put the Tern 30 u behind it on its line, at cruise.
+    const yaw = thief.yaw, back = [thief.pos[0] - Math.sin(yaw) * 30, thief.pos[1] - Math.cos(yaw) * 30, 0];
+    place(game, back, (yaw * 180) / Math.PI, 24);
+    run(game, () => ({}), 1.5);
+    const want = assists === 'cruise' ? Math.max(18, game.ship.speed - 3) : 27;
+    assert.ok(Math.abs(thief.speed - want) < 1.2, `${assists}: ${thief.speed.toFixed(2)} u/s, want ${want.toFixed(1)}`);
+  }
+});
+
+test('a towed load is never taken down: ramming the Pelican only bumps it (Round 2 data)', () => {
+  unwire();
+  wire(playSlots());
+  registerZone(COMA);
+  const game = newGame({ zone: COMA, seed: 1, at: [-110, 25, 0], heading: 0, speed: 30, done: [] });
+  spawn(game, { id: 'pelican', kind: 'towable', pos: [-110, 45, 0], state: 'holding', hull: 'pelican', label: 'PELICAN' },
+    null);
+  const { events } = run(game, () => ({ gas: 1 }), 2);
+  assert.equal(of(events, 'takedown').filter((e) => e.id === 'pelican').length, 0);
+  wireAll();
 });

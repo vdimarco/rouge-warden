@@ -1,0 +1,178 @@
+{
+  "reviewer": "Independent /root/style_review",
+  "reviewed_utc": "2026-10-17T14:57:27.725900+00:00",
+  "scope": "Rejected startup history only. Earlier individual Standard still passes remain distinct; neither failed full window is relabelled successful.",
+  "attempts": [
+    {
+      "window": "Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T142404Z",
+      "overall_passed": false,
+      "restored": true,
+      "reason": "Immersive startup inherited ListenServer/two-client settings, producing two PIE worlds and a Vulkan allocation failure before the Python fixture could take ownership.",
+      "jobs": [
+        {
+          "name": "Standard1280",
+          "process_exit_code": 0,
+          "passed": true,
+          "report": "Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T142404Z/PrivateCapture/Capture/Standard/PlayerQuality1280.json",
+          "report_sha256": "3568ebacd59e99a542862e27a882308ff7cc2fab9f019f98b6ab643d998a47bd",
+          "accepted_scope": "Individual still fixture pass only"
+        },
+        {
+          "name": "Standard1920",
+          "process_exit_code": 0,
+          "passed": true,
+          "report": "Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T142404Z/PrivateCapture/Capture/Standard/PlayerQuality1920.json",
+          "report_sha256": "83ff90a3f750e2c98b213ae46ca7daddcf5394f8d875da3e0c90638f3a2afb2c",
+          "accepted_scope": "Individual still fixture pass only"
+        },
+        {
+          "name": "Motion1920Standard",
+          "process_exit_code": 1,
+          "passed": false,
+          "report": "Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T142404Z/PrivateCapture/Capture/Motion/Standard/PlayerMotion1920.json",
+          "report_sha256": null,
+          "accepted_scope": "Rejected incomplete/failed native job"
+        }
+      ],
+      "raw_window_status": {
+        "path": "Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T142404Z/window-status.json",
+        "sha256": "1bf1fc8bb695d2475d6cea2c8de17e234ab870cd9c470915847967600ec5f1c1"
+      },
+      "raw_baseline": {
+        "path": "Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T142404Z/baseline.json",
+        "sha256": "a016ed747cbc14d19688d38c2bbdee97e20b5caf9e0015353cb13efc1aa205bf"
+      },
+      "raw_native_motion_log": {
+        "path": "Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T142404Z/Motion1920Standard/native.log",
+        "sha256": "819ecd18e5c183f248d91ad39c795863cc88def3bbc2c0eb0de33566c20ab3a0"
+      },
+      "frozen_factory_original": {
+        "path": "Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T142404Z/FrozenFactory-0ac0d461.py",
+        "sha256": "0ac0d461068dd3f632a75b6036ab9e23f0dd8c6c89f5b3f5b8fe1b2af8bad099"
+      },
+      "frozen_factory_curated": {
+        "path": "Verification/GraphicNovelJumpArmTrial/Rejected/Factories/FrozenFactory-0ac0d461.py",
+        "sha256": "0ac0d461068dd3f632a75b6036ab9e23f0dd8c6c89f5b3f5b8fe1b2af8bad099"
+      },
+      "observed_PIE_world_names": [
+        "UEDPIE_0_LaFontaine",
+        "UEDPIE_1_LaFontaine"
+      ],
+      "relevant_log_evidence": [
+        {
+          "line": 2664,
+          "text": "[2026.10.17-14.34.58:074][  0]LogPlayLevel: PIE: Created PIE world by copying editor world from /Game/Maps/LaFontaine.LaFontaine to /Game/Maps/UEDPIE_0_LaFontaine.LaFontaine (0.354331s)"
+        },
+        {
+          "line": 2997,
+          "text": "[2026.10.17-14.35.03:075][  6]LogVulkanRHI: Warning: Out of memory on Vulkan; MemoryTypeIndex=1, AllocSize=256.000MB"
+        },
+        {
+          "line": 2999,
+          "text": "[2026.10.17-14.35.03:075][  6]LogVulkanRHI: Warning: Out of memory on Vulkan; MemoryTypeIndex=4, AllocSize=256.000MB"
+        }
+      ],
+      "source_editor_ini_play_settings_before": {
+        "PlayNetMode": "PIE_ListenServer",
+        "PlayNumberOfClients": "2",
+        "RunUnderOneProcess": "True"
+      },
+      "CLI_standalone_override_present": false,
+      "preservation": {
+        "global_settings_restored": true,
+        "source_settings_restored": true,
+        "protected_changed": [],
+        "all_content_changed": [],
+        "frozen_source_changed": [],
+        "live_package_changed": [],
+        "source_savegames_unchanged": true
+      },
+      "sanitization": "Only job outcomes, content/settings preservation, selected startup/alloc-failure lines and hashes retained here. Service environments, process IDs, connection addresses and full command lines omitted."
+    },
+    {
+      "window": "Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T143627Z",
+      "overall_passed": false,
+      "restored": true,
+      "reason": "Standalone startup overrides prevented the second network world; the fixture then ended/restarted the startup world, and Vulkan allocation failed after the replacement PIE world was created.",
+      "jobs": [
+        {
+          "name": "Motion1920Standard",
+          "process_exit_code": 1,
+          "passed": false,
+          "report": "Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T143627Z/PrivateCapture/Capture/Motion/Standard/PlayerMotion1920.json",
+          "report_sha256": null,
+          "accepted_scope": "Rejected incomplete/failed native job"
+        }
+      ],
+      "raw_window_status": {
+        "path": "Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T143627Z/window-status.json",
+        "sha256": "8c5f6a5f9c2b31f1cca96797f3c2e1fde499b08e1d1c87703ce742b958ea177b"
+      },
+      "raw_baseline": {
+        "path": "Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T143627Z/baseline.json",
+        "sha256": "c14cf8e2fecfb0030973ea0657202f1627d99c95808bddfb1ba0fe30f4d11b36"
+      },
+      "raw_native_motion_log": {
+        "path": "Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T143627Z/Motion1920Standard/native.log",
+        "sha256": "84e9c8a69c9cb3d0a8f76a6c88bb18de1ce6f64c038e73b5009ef90a1b6ae5e0"
+      },
+      "frozen_factory_original": {
+        "path": "Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T143627Z/FrozenFactory-561e84dc.py",
+        "sha256": "561e84dc5a4cff609d67494ca08589b0ea3ecae252f61ea82240462939a1064c"
+      },
+      "frozen_factory_curated": {
+        "path": "Verification/GraphicNovelJumpArmTrial/Rejected/Factories/FrozenFactory-561e84dc.py",
+        "sha256": "561e84dc5a4cff609d67494ca08589b0ea3ecae252f61ea82240462939a1064c"
+      },
+      "observed_PIE_world_names": [
+        "UEDPIE_0_LaFontaine"
+      ],
+      "relevant_log_evidence": [
+        {
+          "line": 2663,
+          "text": "[2026.10.17-14.38.20:757][  0]LogPlayLevel: PIE: Created PIE world by copying editor world from /Game/Maps/LaFontaine.LaFontaine to /Game/Maps/UEDPIE_0_LaFontaine.LaFontaine (0.350291s)"
+        },
+        {
+          "line": 2885,
+          "text": "[2026.10.17-14.38.25:423][  8]LogPython: NORD_PLAYER_MOTION_IMMERSIVE_RESTART"
+        },
+        {
+          "line": 2900,
+          "text": "[2026.10.17-14.38.26:010][ 10]LogPlayLevel: PIE: Created PIE world by copying editor world from /Game/Maps/LaFontaine.LaFontaine to /Game/Maps/UEDPIE_0_LaFontaine.LaFontaine (0.184191s)"
+        },
+        {
+          "line": 2929,
+          "text": "[2026.10.17-14.38.26:583][ 10]LogVulkanRHI: Warning: Out of memory on Vulkan; MemoryTypeIndex=1, AllocSize=256.000MB"
+        },
+        {
+          "line": 2931,
+          "text": "[2026.10.17-14.38.26:583][ 10]LogVulkanRHI: Warning: Out of memory on Vulkan; MemoryTypeIndex=4, AllocSize=256.000MB"
+        }
+      ],
+      "source_editor_ini_play_settings_before": {
+        "PlayNetMode": "PIE_ListenServer",
+        "PlayNumberOfClients": "2",
+        "RunUnderOneProcess": "True"
+      },
+      "CLI_standalone_override_present": true,
+      "preservation": {
+        "global_settings_restored": true,
+        "source_settings_restored": true,
+        "protected_changed": [],
+        "all_content_changed": [],
+        "frozen_source_changed": [],
+        "live_package_changed": [],
+        "source_savegames_unchanged": true
+      },
+      "sanitization": "Only job outcomes, content/settings preservation, selected startup/alloc-failure lines and hashes retained here. Service environments, process IDs, connection addresses and full command lines omitted."
+    }
+  ],
+  "eventual_correction": "CLI standalone/one-client/one-process overrides, then adoption of the exact existing startup world with earlier passed pre-PIE flags guarded by identical saved body/module/source. See separately owned successful baseline aggregate.",
+  "does_not_accept": [
+    "raw interrupted motion video",
+    "final art",
+    "FPS",
+    "continuous fluidity"
+  ],
+  "existing_rejected_windows_file_preserved_sha256": "e3501ce16233e1a7272abaad1df9372481a57169b52c9f3f38d4631a1ef153fe"
+}

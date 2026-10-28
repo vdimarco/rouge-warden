@@ -1,0 +1,10 @@
+{
+  "source_glb": {
+    "path": "Data/GraphicNovel/Crew/WhiteCap/tripo-h31-body-20261017/body.glb",
+    "sha256": "163e86ec12c6ee9a53ccee29f500dfba720d230c8046c9d968430262ee24e4d4"
+  },
+  "provider_fbx": {
+    "path": "Data/GraphicNovel/Crew/WhiteCap/tripo-h31-rig-20261017/rig.fbx",
+    "sha256": "3c447abf193e012825c068838ec74b5da2af63e1f42c7b756be35ccb989648d4"
+  }
+}

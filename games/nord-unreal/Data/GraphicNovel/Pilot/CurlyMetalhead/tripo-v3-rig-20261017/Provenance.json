@@ -1,0 +1,40 @@
+{
+  "recorded_at_utc": "2026-10-17T20:16:55.896218+00:00",
+  "provider": "Tripo direct API v3",
+  "endpoint": "/animations/rig",
+  "task_id": "64103a99-91c2-499d-8866-0304e0beceb1",
+  "parameters": {
+    "model": "v3.0-20260909",
+    "rig_type": "biped",
+    "spec": "unreal",
+    "out_format": "fbx"
+  },
+  "source_glb": "../generated-v2-high-detail/body.glb",
+  "source_glb_sha256": "25041be9666422c30ba39449cb283a83928bb3de596fe063389707c070335613",
+  "input_reference": "Actual uploaded file token is retained only in ignored Saved/Tests/TripoPilot-20261017T2010/rig-input.json",
+  "task_status": "success",
+  "created_at": "2026-10-17T20:13:48.261116Z",
+  "completed_at": "2026-10-17T20:13:58.645326Z",
+  "credits_consumed": 25.0,
+  "usd_at_published_0_01_per_credit": 0.25,
+  "api_balance_after_credits": 75.0,
+  "api_frozen_after_credits": 0.0,
+  "pricing_source": "https://developers.tripo3d.ai/en/pricing",
+  "output_source_host": "tripo-data.rg1.data.tripo3d.com",
+  "output_urls": "Full provider response retained privately under Saved/Tests/TripoPilot-20261017T2010/rig-status-1.json; signed URLs omitted here.",
+  "files": {
+    "rig.fbx": {
+      "bytes": 9477372,
+      "sha256": "baaeb99a7e86fadadd4f64f6de6ea7e648777b33bcadd2ecb72347c4afe3dcc2"
+    },
+    "provider-preview.png": {
+      "bytes": 86716,
+      "sha256": "80dccfe995077c7da73042102c2c8cdaed61ef38c6f0ed10db747b1c28ac12ad"
+    }
+  },
+  "limits": [
+    "Actual downloaded FBX, not a locally renamed GLB; binary header checked.",
+    "Provider preview is a static side view, not motion/native/quality acceptance.",
+    "CPU audit and native integration are separate; no installed game change."
+  ]
+}

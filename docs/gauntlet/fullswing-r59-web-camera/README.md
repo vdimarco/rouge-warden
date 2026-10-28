@@ -1,0 +1,5 @@
+# Increment59 — shared web camera preparation
+
+Moved camera.updateMatrixWorld from putWeb to its sole caller drawWeb in the 3D branch. No camera transform changes between the two rope projections. Actual explicit calls2→1for two ropes and fading pairs; baseline2fail6pass, candidate8checksPASS including live GPU bytes/exactnonblank fullupload reference pixels/zero/regrow/hiddenresume. Existing11web-linechecks preserve1–2px width/20.6pxsag/color/150msfade;4buildingchecksPASS realanchors/above-roof. No new helper, cache, dependency or per-frame array.
+
+All20dimensions: Lighting, Color palette, Detail density, Texture/material, Composition/camera, Atmosphere, Character models, Animation smoothness, Particles/VFX, UI polish, Responsiveness/input latency, Controls feel, Mission clarity, Pacing, Fun factor, Difficulty curve, Feedback, Sound design, Variety, Performance stability: no new points. Actual affected Chrome120Hz, physical devices, listening and full playthrough unverified; no FPS claim; total/delta withheld. OpenSpec checked manually; CLI unavailable. Review/CI/current authenticated preview/bothrebases/exactmerge/production pending.

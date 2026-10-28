@@ -1,5 +1,8 @@
 #include "QuebecGameplay.h"
+#include "QuebecBanner.h"
 #include "QuebecCampaign.h"
+#include "QuebecKnockModel.h"
+#include "QuebecPedestrian.h"
 
 #include "Components/SceneComponent.h"
 #include "Engine/World.h"
@@ -41,7 +44,8 @@ float AQuebecParkResident::RouteTime(float ServerTime) const
 
 bool AQuebecParkResident::Acknowledge(AActor* Player, bool bManual)
 {
-    if (!HasAuthority() || !IsValid(Player) || IsHidden() ||
+    // People: a resident knocked down, running or walking back never stops to greet.
+    if (!HasAuthority() || !IsValid(Player) || IsHidden() || Stride != 0 ||
         AQuebecCharacter::IsCrewTaken(GetWorld(),Style) ||
         FVector::DistSquared(Player->GetActorLocation(),GetActorLocation()) > FMath::Square(1200.f)) return false;
     const float Now = GetWorld()->GetTimeSeconds();
@@ -62,6 +66,35 @@ void AQuebecController::TickResidentGreetings(float DeltaTime)
     if (ResidentGreetingElapsed < .3f) return;
     ResidentGreetingElapsed = 0.f;
     const float Now = GetWorld()->GetTimeSeconds();
+    // People: at every scan, people in a fast player car's body path freeze facing it, so an aimed hit lands; people
+    // beside the path dive away from it (QuebecKnock::CarReaction). Only the warning caption cools down.
+    if (AQuebecCar* Car = Cast<AQuebecCar>(GetPawn()); Car && Car->Occupant && Car->GetController() == this)
+    {
+        const FVector Velocity = Car->GetActorForwardVector()*Car->Speed+Car->GetActorRightVector()*Car->LateralSpeed;
+        const FVector Lane = FVector::CrossProduct(FVector::UpVector,Velocity.GetSafeNormal2D());
+        const auto React = [Car,&Velocity,&Lane](const FVector& Person, FVector& Source)
+        {
+            if (!CarApproachingResident(Person,Car->GetActorLocation(),Velocity)) return QuebecKnock::ECarReaction::None;
+            const double Lateral = FVector::DotProduct(Person-Car->GetActorLocation(),Lane);
+            // A diver runs from a point beyond the car's path, toward the side they already stand on.
+            Source = Person-Lane*(Lateral >= 0. ? 300. : -300.);
+            return QuebecKnock::CarReaction(static_cast<float>(Lateral));
+        };
+        FVector Source;
+        for (TActorIterator<AQuebecParkResident> It(GetWorld()); It; ++It)
+        {
+            if (It->IsHidden() || It->IsAway()) continue;
+            const QuebecKnock::ECarReaction Reaction = React(It->GetActorLocation(),Source);
+            if (Reaction == QuebecKnock::ECarReaction::Dive) It->Flee(Source,1.6f);
+            else if (Reaction == QuebecKnock::ECarReaction::Flinch) It->Acknowledge(Car,true);
+        }
+        for (TActorIterator<AQuebecPedestrian> It(GetWorld()); It; ++It)
+        {
+            const QuebecKnock::ECarReaction Reaction = React(It->GetActorLocation(),Source);
+            if (Reaction == QuebecKnock::ECarReaction::Dive) It->Flee(Source,1.6f);
+            else if (Reaction == QuebecKnock::ECarReaction::Flinch) It->Brace(Car->GetActorLocation(),1.2f);
+        }
+    }
     if (Now < NextResidentGreetingAt) return;
 
     if (AQuebecCar* Car = Cast<AQuebecCar>(GetPawn()))
@@ -72,18 +105,18 @@ void AQuebecController::TickResidentGreetings(float DeltaTime)
         double Best = FMath::Square(1200.f);
         for (TActorIterator<AQuebecParkResident> It(GetWorld()); It; ++It)
         {
-            if (It->IsHidden() || AQuebecCharacter::IsCrewTaken(GetWorld(),It->Style)) continue;
+            if (It->IsHidden() || It->IsKnockedDown() || AQuebecCharacter::IsCrewTaken(GetWorld(),It->Style)) continue;
             const double Distance = FVector::DistSquared(Car->GetActorLocation(),It->GetActorLocation());
             if (Distance > Best || !CarApproachingResident(It->GetActorLocation(),Car->GetActorLocation(),Velocity) ||
                 !ClearResidentView(GetWorld(),Car,*It)) continue;
             Best = Distance;
             Nearest = *It;
         }
-        if (Nearest && Nearest->Acknowledge(Car))
+        // People: the nearest one shouts a warning while diving aside, instead of stopping in the car's path.
+        if (Nearest)
         {
-            const TCHAR* Warnings[] = {TEXT("Hé! Doucement, y'a du monde ici!"),
-                TEXT("Attention! Le parc, c'est pas une piste de course!"),TEXT("Oups! Lève le pied, mon ami!")};
-            ClientResidentGreeting(FString(AQuebecParkResident::NameForStyle(Nearest->Style))+TEXT("  /  ")+Warnings[FMath::Clamp(Nearest->Style,0,10)%3]);
+            const int32 Which = FMath::Clamp(Nearest->Style, 0, 10) % QuebecBanner::SpeechCount;
+            ClientResidentGreeting(FString(AQuebecParkResident::NameForStyle(Nearest->Style)) + TEXT("  /  ") + FString(UTF8_TO_TCHAR(QuebecBanner::Warnings[Which])));
             NextResidentGreetingAt = Now+10.f;
         }
         return;
@@ -96,9 +129,8 @@ void AQuebecController::TickResidentGreetings(float DeltaTime)
         if (!It->GetInteractionPrompt(this).IsEmpty()) return;
     if (AQuebecParkResident* Resident = FindInteractableResident(); Resident && Resident->Acknowledge(Walker))
     {
-        const TCHAR* Greetings[] = {TEXT("Salut! Ça fait du bien, un tour au parc."),
-            TEXT("Allô! Belle journée pour prendre ça relax."),TEXT("Ça va bien? On se croise au chalet tantôt!")};
-        ClientResidentGreeting(FString(AQuebecParkResident::NameForStyle(Resident->Style))+TEXT("  /  ")+Greetings[FMath::Clamp(Resident->Style,0,10)%3]);
+        const int32 Which = FMath::Clamp(Resident->Style, 0, 10) % QuebecBanner::SpeechCount;
+        ClientResidentGreeting(FString(AQuebecParkResident::NameForStyle(Resident->Style)) + TEXT("  /  ") + FString(UTF8_TO_TCHAR(QuebecBanner::Greetings[Which])));
         NextResidentGreetingAt = Now+30.f;
     }
 }

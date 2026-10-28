@@ -1,0 +1,308 @@
+{
+  "device": "CPU",
+  "threads": 4,
+  "samples": 16,
+  "denoising_gpu": false,
+  "changed": "OnlyLeft/RightForeArm signs in copied prior trial; upperarms/wholebody unchanged for isolation",
+  "corrected_keys": {
+    "RightForeArm": [
+      [
+        0,
+        0
+      ],
+      [
+        0.1,
+        -20
+      ],
+      [
+        0.23,
+        -25
+      ],
+      [
+        0.47,
+        -35
+      ],
+      [
+        0.73,
+        -25
+      ],
+      [
+        0.93,
+        -18
+      ],
+      [
+        1.2,
+        0
+      ]
+    ],
+    "LeftForeArm": [
+      [
+        0,
+        0
+      ],
+      [
+        0.1,
+        -35
+      ],
+      [
+        0.23,
+        -60
+      ],
+      [
+        0.47,
+        -75
+      ],
+      [
+        0.73,
+        -40
+      ],
+      [
+        0.93,
+        -30
+      ],
+      [
+        1.2,
+        0
+      ]
+    ]
+  },
+  "source_copies_unchanged": true,
+  "pose_vectors": [
+    {
+      "mode": "rejected",
+      "time": 0.43254,
+      "label": "apex",
+      "vectors": {
+        "Left": {
+          "upper_arm_world": [
+            0.2702970802783966,
+            -0.5526361465454102,
+            -0.7883734703063965
+          ],
+          "forearm_world": [
+            0.36310967803001404,
+            0.3524821102619171,
+            -0.8625008463859558
+          ],
+          "elbow_forward_from_shoulder_cm": 13.743420208182378,
+          "wrist_forward_from_elbow_cm": -8.775965515788386,
+          "bend_signed_degrees_about_lateral": 52.29269522384447,
+          "wrist_world_m": [
+            0.342191606760025,
+            -0.05138249695301056,
+            1.0197932720184326
+          ]
+        },
+        "Right": {
+          "upper_arm_world": [
+            -0.2785217761993408,
+            -0.20940256118774414,
+            -0.9373238682746887
+          ],
+          "forearm_world": [
+            -0.3537277579307556,
+            0.10868889838457108,
+            -0.92901211977005
+          ],
+          "elbow_forward_from_shoulder_cm": 5.308832324502477,
+          "wrist_forward_from_elbow_cm": -2.77674829546648,
+          "bend_signed_degrees_about_lateral": 17.3881251982862,
+          "wrist_world_m": [
+            -0.34942427277565,
+            -0.02792290225625038,
+            0.9633790254592896
+          ]
+        }
+      }
+    },
+    {
+      "mode": "corrected",
+      "time": 0.43254,
+      "label": "apex",
+      "vectors": {
+        "Left": {
+          "upper_arm_world": [
+            0.2702970802783966,
+            -0.5526361465454102,
+            -0.7883734703063965
+          ],
+          "forearm_world": [
+            0.3782835006713867,
+            -0.7537574172019958,
+            0.5373558402061462
+          ],
+          "elbow_forward_from_shoulder_cm": 13.743420208182378,
+          "wrist_forward_from_elbow_cm": 18.766767154991683,
+          "bend_signed_degrees_about_lateral": -83.90488644844135,
+          "wrist_world_m": [
+            0.3459695279598236,
+            -0.326809823513031,
+            1.3683242797851562
+          ]
+        },
+        "Right": {
+          "upper_arm_world": [
+            -0.2785217761993408,
+            -0.20940256118774414,
+            -0.9373238682746887
+          ],
+          "forearm_world": [
+            -0.34839192032814026,
+            -0.8293940424919128,
+            -0.43672487139701843
+          ],
+          "elbow_forward_from_shoulder_cm": 5.308832324502477,
+          "wrist_forward_from_elbow_cm": 21.189075360226116,
+          "bend_signed_degrees_about_lateral": -45.24725003915377,
+          "wrist_world_m": [
+            -0.34806105494499207,
+            -0.26758113503456116,
+            1.0891469717025757
+          ]
+        }
+      }
+    },
+    {
+      "mode": "corrected",
+      "time": 0.23,
+      "label": "liftoff",
+      "vectors": {
+        "Left": {
+          "upper_arm_world": [
+            0.2724916636943817,
+            -0.7631162405014038,
+            -0.5860050916671753
+          ],
+          "forearm_world": [
+            0.37872377038002014,
+            -0.72283935546875,
+            0.5779892206192017
+          ],
+          "elbow_forward_from_shoulder_cm": 18.977812197640965,
+          "wrist_forward_from_elbow_cm": 17.99697465826229,
+          "bend_signed_degrees_about_lateral": -69.91846205631212,
+          "wrist_world_m": [
+            0.3465798497200012,
+            -0.3336678445339203,
+            1.4223171472549438
+          ]
+        },
+        "Right": {
+          "upper_arm_world": [
+            -0.27706295251846313,
+            -0.5281559228897095,
+            -0.8026751279830933
+          ],
+          "forearm_world": [
+            -0.3465392291545868,
+            -0.8995953798294067,
+            -0.265779584646225
+          ],
+          "elbow_forward_from_shoulder_cm": 13.389956676377789,
+          "wrist_forward_from_elbow_cm": 22.982540380350216,
+          "bend_signed_degrees_about_lateral": -36.55797045739495,
+          "wrist_world_m": [
+            -0.3472616970539093,
+            -0.3276293873786926,
+            1.1606115102767944
+          ]
+        }
+      }
+    },
+    {
+      "mode": "corrected",
+      "time": 0.73,
+      "label": "descent",
+      "vectors": {
+        "Left": {
+          "upper_arm_world": [
+            0.26936253905296326,
+            -0.4031195342540741,
+            -0.8746076226234436
+          ],
+          "forearm_world": [
+            0.37092751264572144,
+            -0.9178486466407776,
+            -0.14130385220050812
+          ],
+          "elbow_forward_from_shoulder_cm": 10.025108122598247,
+          "wrist_forward_from_elbow_cm": 22.852239373970317,
+          "bend_signed_degrees_about_lateral": -51.487301290327764,
+          "wrist_world_m": [
+            0.34389758110046387,
+            -0.31669285893440247,
+            1.1770356893539429
+          ]
+        },
+        "Right": {
+          "upper_arm_world": [
+            -0.27861228585243225,
+            -0.16762158274650574,
+            -0.9456628561019897
+          ],
+          "forearm_world": [
+            -0.3501345217227936,
+            -0.7213749289512634,
+            -0.5975149273872375
+          ],
+          "elbow_forward_from_shoulder_cm": 4.2495903589995665,
+          "wrist_forward_from_elbow_cm": 18.429425008867906,
+          "bend_signed_degrees_about_lateral": -36.60611192127254,
+          "wrist_world_m": [
+            -0.3485364019870758,
+            -0.21527813374996185,
+            1.0451451539993286
+          ]
+        }
+      }
+    },
+    {
+      "mode": "corrected",
+      "time": 0.93,
+      "label": "landing",
+      "vectors": {
+        "Left": {
+          "upper_arm_world": [
+            0.26840293407440186,
+            0.01736428774893284,
+            -0.9631502628326416
+          ],
+          "forearm_world": [
+            0.36537304520606995,
+            -0.6626719236373901,
+            -0.6537343263626099
+          ],
+          "elbow_forward_from_shoulder_cm": -0.43182933670129486,
+          "wrist_forward_from_elbow_cm": 16.49895644009409,
+          "bend_signed_degrees_about_lateral": -42.208316061375825,
+          "wrist_world_m": [
+            0.3431052267551422,
+            -0.1796703338623047,
+            0.9184062480926514
+          ]
+        },
+        "Right": {
+          "upper_arm_world": [
+            -0.2786732614040375,
+            0.13169467449188232,
+            -0.9513137340545654
+          ],
+          "forearm_world": [
+            -0.35281866788864136,
+            -0.4015366733074188,
+            -0.8451551795005798
+          ],
+          "elbow_forward_from_shoulder_cm": -3.3387570611569384,
+          "wrist_forward_from_elbow_cm": 10.25831813124256,
+          "bend_signed_degrees_about_lateral": -30.14449159370575,
+          "wrist_world_m": [
+            -0.34841033816337585,
+            -0.08946721255779266,
+            0.8712441325187683
+          ]
+        }
+      }
+    }
+  ],
+  "limits": "Elbow diagnostic only; no natural whole-body or grasp acceptance; actualOBJ whitegeometryproxy,neutralreferencecalibration"
+}

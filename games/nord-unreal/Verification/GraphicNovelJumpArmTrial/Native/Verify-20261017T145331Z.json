@@ -1,0 +1,32 @@
+{
+  "passed": true,
+  "mode": "verify",
+  "started_utc": "2026-10-17T14:53:32.442757+00:00",
+  "backup": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Recovery/private-jump-arm-20261017T145315Z",
+  "command": [
+    "/home/von/.local/share/Epic/UE_5.8.3/Engine/Binaries/Linux/UnrealEditor-Cmd",
+    "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Quebec.uproject",
+    "/Engine/Maps/Entry",
+    "-NullRHI",
+    "-unattended",
+    "-nop4",
+    "-nosound",
+    "-UDPMESSAGING_TRANSPORT_ENABLE=0",
+    "-NordGraphicNovelCandidate",
+    "-NordGraphicNovelGenerated",
+    "-NordGraphicNovelHighDetail",
+    "-ExecutePythonScript=/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/GraphicNovel/PrivateJumpArmPlan-20261017/native_trial.py",
+    "-NordPrivateJumpTrialBackup=/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Recovery/private-jump-arm-20261017T145315Z",
+    "-abslog=/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/GraphicNovel/PrivateJumpArmPlan-20261017/Verify-20261017T145331Z/native.log",
+    "-NordPrivateJumpTrialVerify"
+  ],
+  "owned_process_group": 2373499,
+  "exit_code": 0,
+  "native_passed": true,
+  "changed_content": [],
+  "only_declared_content_changes": true,
+  "settings_restored": true,
+  "saves_unchanged": true,
+  "sources_binary_unchanged": true,
+  "finished_utc": "2026-10-17T14:53:44.654041+00:00"
+}

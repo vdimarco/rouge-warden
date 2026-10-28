@@ -1,0 +1,12 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+const source=fs.readFileSync(new URL('../../public/vr/js/cityview.js',import.meta.url),'utf8');
+const body=source.slice(source.indexOf('function trafficCars('),source.indexOf('\n  function hideTraffic('));
+let cars=null;
+const read=new Function('getCars',`return ${body.replaceAll('cars','getCars()')}`)(()=>cars);
+const out={};assert.equal(read(out),null);assert.deepEqual(out,{});
+const data=n=>({n,attrs:Object.fromEntries(['aLane','aMove','aColor'].map(k=>[k,{array:new Float32Array(n*4)}]))});
+cars=data(2);assert.equal(read(out),out);const old=out.lane;assert.notEqual(read(),read());
+cars=data(3);assert.equal(read(out),out);assert.equal(out.n,3);assert.equal(out.lane,cars.attrs.aLane.array);assert.notEqual(out.lane,old);
+cars=null;assert.equal(read(out),null);
+console.log('PASS actual traffic accessor: unavailable data, fresh default, reusable output and replacement arrays/count');

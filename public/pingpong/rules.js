@@ -37,7 +37,6 @@ export const RULES = Object.freeze({
   pushSpeed: 6,
   driveSpeed: 11,
   smashSpeed: 17,
-  smashClearance: 0.15,
   peakWindow: 0.15,
   smoothSamples: 3,
   cooldown: 0.35,
@@ -116,14 +115,13 @@ export function mulberry32(seed) {
   };
 }
 
-export function shotFromPeak(peak, ballY) {
+// Height does not pick the shot. Above the drive band is a smash, high or low.
+export function shotFromPeak(peak, _ballY) {
   const p = Number(peak) || 0;
   if (p < RULES.swingStart) return { kind: null, speed: 0 };
   if (p <= RULES.pushMax) return { kind: 'push', speed: RULES.pushSpeed };
   if (p <= RULES.driveMax) return { kind: 'drive', speed: RULES.driveSpeed };
-  const high = ballY >= RULES.netHeight + RULES.smashClearance;
-  if (high) return { kind: 'smash', speed: RULES.smashSpeed };
-  return { kind: 'drive', speed: RULES.driveSpeed };
+  return { kind: 'smash', speed: RULES.smashSpeed };
 }
 
 // offsetMs is negative when the swing is early. hook widens the window and treats it as perfect.

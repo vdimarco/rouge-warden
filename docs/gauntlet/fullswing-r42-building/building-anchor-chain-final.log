@@ -1,0 +1,9 @@
+chain {"frames":353,"cue":20,"wallAt":-1,"first":{"t":"attach","tag":"building","id":952,"bid":812,"frame":89},"building":{"t":"attach","tag":"building","id":955,"bid":813,"frame":442},"fires":2,"y":47.9,"log":[{"t":"fire","tag":"building","id":952,"bid":812,"frame":89},{"t":"attach","tag":"building","id":952,"bid":812,"frame":89},{"t":"detach","frame":385},{"t":"fire","tag":"building","id":955,"bid":813,"frame":442},{"t":"attach","tag":"building","id":955,"bid":813,"frame":442}]}
+PASS: holding E through the cue catches a different building
+PASS: the first web is a building and the swing does not hit the wall
+PASS: the next web is not a new press and not a dry fire
+PASS: letting E up lets the rope go and does not catch another building
+water {"frames":240,"sky":false,"dropped":false,"still":false,"detaches":0,"attached":false,"y":0}
+PASS: holding over open water cannot create a rope
+PASS: no page errors
+PASS: holdchain

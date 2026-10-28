@@ -1,0 +1,12 @@
+{
+  "character": "LimeJacket",
+  "task_id": "5451c762-6de7-487d-9170-e9aa51d5bf57",
+  "source_body_task_id": "647104d8-4e97-4e99-a0ee-8929d83b632b",
+  "status": "success",
+  "credits_consumed": 0.0,
+  "output": {
+    "riggable": true,
+    "rig_type": "biped"
+  },
+  "scope": "Actual free biped compatibility; source and deformation review separate"
+}

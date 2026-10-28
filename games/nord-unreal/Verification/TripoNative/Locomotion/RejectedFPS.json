@@ -1,0 +1,22 @@
+{
+  "reason": "Provider FBX import reset Blender scene to24Hz after initial30Hz setup. Exported curves retained31/19frame intervals but FBX declared1.291667/.791667s; prior Blender frame-range-only checks missed this. Native30Hz import rejects the mismatched fractional boundary. Correct actual FBX timing; no tolerance relaxation or native snap acceptance.",
+  "files": {
+    "prepare_tripo_locomotion.py": "a5e8b37c8a41ea948ab3a0e938d2c686c87cc012865997f0f5e6ded30a814c30",
+    "walk.fbx": "2123f241b917ce191b32469ae87d841560a829ab4928f9bff3d4a4da2667e184",
+    "run.fbx": "d4c0684a2ac7225c15dea118055e816e1797e17cf6bb00f1c917fa81ceffdd90",
+    "inventory_fbx_time.py": "00c53d44795e9123531855dd1dcfde566f7303fd815b57e7c703e073e5931e6f",
+    "FBXTiming.json": "520b5474e51fb659970c93c0a82048ffc8b311837322d07cf659a7223dd88f05",
+    "Locomotion/verify.py": "c6b47e80a028e0b9ee5b08e9fb2ebbf5dc2cf597d145351eb2183bd549268b97",
+    "Locomotion/Locomotion.json": "e3aff2b8c66ca0b4e92525b195e988caddfb263243464e0475b13440aee03d57",
+    "Locomotion/Independent.json": "317937c8ef49f98ba2a86d715b40778a88017092802b6ab80874d75e82cca15d",
+    "Locomotion/author.log": "91738737c3c409709220f8a9d93d0cc1ff557ee720b9a111a6d6439cd90d667b",
+    "Locomotion/independent.log": "f9a1f9c5bcf374d849727868e1d3565ca7fbe10f2a2a3f5528d8022270ec2fbb",
+    "Locomotion/inventory.py": "0bbd498688e03a2231544bc29b612f0f77f1514214418c49221ab273ed772a8b",
+    "Locomotion/Inventory.json": "8cbf046919acd88db043211982ee6afc5cf1d7a9ebb1bf9bd0cf13bdf40a6dc5",
+    "Locomotion/inventory.log": "1523122b7c08c3f25037fdceba2dbdd54d0343ca4af2aebac1dce81473a2cd8a",
+    "Locomotion/Manifest.json": "a188d9211f4d14a1040a8e1a5bd08c6f4f2271a8d5da5ba8cfbdc0aeb4049eac",
+    "Locomotion/README.md": "5e1f948f1eb8da38ebd7eae02f017b9e1f7fb94f195e4c428645e4a259eaeb3f",
+    "Locomotion/SHA256SUMS": "2646dfc3239ecf479526d584b5df618bca1dee57a2ac670088c8ff2c5b2a6e82",
+    "Locomotion/RejectedRootName.json": "bb2a83912064b50fccb50bc7bc117a5cfd9b84580c313d881688de32537f604a"
+  }
+}

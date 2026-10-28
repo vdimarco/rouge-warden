@@ -1,0 +1,435 @@
+{
+  "Data/GraphicNovel/Pilot/CurlyMetalhead/tripo-v3-rig-20261017/derived/native-ready/body.fbx": {
+    "sha256": "d54515ecf9b730e0c9ffa3b011272c68b4633af062d54cdf1942edcf6c8ac2d8",
+    "binary_fbx_models": [
+      {
+        "id": 274541089,
+        "name": "Armature.001\u0000\u0001Model",
+        "kind": "Null",
+        "properties": {
+          "Lcl Translation": [
+            -1.4901161193847656e-06,
+            -1.7487473087385297e-05,
+            1.080334186553955e-05
+          ],
+          "Lcl Rotation": [
+            -90.00000933466734,
+            -0.0,
+            0.0
+          ],
+          "Lcl Scaling": [
+            100.0,
+            100.0,
+            100.0
+          ]
+        }
+      },
+      {
+        "id": 297433389,
+        "name": "char1.001\u0000\u0001Model",
+        "kind": "Mesh",
+        "properties": {
+          "Lcl Translation": [
+            -2.0372681319713593e-07,
+            49.99995803833008,
+            4.525774784269743e-06
+          ],
+          "Lcl Rotation": [
+            -90.00000933466734,
+            4.869179861833617e-07,
+            6.336603825217293e-07
+          ],
+          "Lcl Scaling": [
+            99.9999771118164,
+            99.9999771118164,
+            99.9999771118164
+          ]
+        }
+      },
+      {
+        "id": 793966279,
+        "name": "root\u0000\u0001Model",
+        "kind": "LimbNode",
+        "properties": {
+          "Lcl Translation": [
+            0.001953153870999813,
+            0.001953184138983488,
+            1.1920928955078125e-07
+          ],
+          "Lcl Rotation": [
+            -3.1112605218405324e-06,
+            0.0,
+            0.0
+          ]
+        }
+      }
+    ],
+    "blender": {
+      "armature": "Armature.001",
+      "matrix_world": [
+        [
+          1.0,
+          0.0,
+          0.0,
+          -1.4901161193847656e-08
+        ],
+        [
+          0.0,
+          1.0,
+          1.6292067073209182e-07,
+          -1.0803341865539551e-07
+        ],
+        [
+          0.0,
+          -1.6292067073209182e-07,
+          1.0,
+          -1.7487472803168203e-07
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "root_bones": [
+        "root"
+      ],
+      "bone_count": 61,
+      "armature_parent": null
+    }
+  },
+  "Data/GraphicNovel/Pilot/CurlyMetalhead/tripo-v3-rig-20261017/derived/natural-pose-20261017/relaxed-idle.fbx": {
+    "sha256": "f5cf127b897cd54b52676932ff89461033becf1a19e8cf109a33d30c8958dfbc",
+    "binary_fbx_models": [
+      {
+        "id": 381597095,
+        "name": "Armature\u0000\u0001Model",
+        "kind": "Null",
+        "properties": {
+          "Lcl Translation": [
+            -1.4901161193847656e-06,
+            -1.7487473087385297e-05,
+            1.080334186553955e-05
+          ],
+          "Lcl Rotation": [
+            -90.00000933466734,
+            -0.0,
+            0.0
+          ],
+          "Lcl Scaling": [
+            100.0,
+            100.0,
+            100.0
+          ]
+        }
+      },
+      {
+        "id": 398817686,
+        "name": "root\u0000\u0001Model",
+        "kind": "LimbNode",
+        "properties": {
+          "Lcl Translation": [
+            0.001953153870999813,
+            0.001953184138983488,
+            1.1920928955078125e-07
+          ],
+          "Lcl Rotation": [
+            -3.1112605218405324e-06,
+            0.0,
+            0.0
+          ],
+          "Lcl Scaling": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        }
+      }
+    ],
+    "blender": {
+      "armature": "Armature",
+      "matrix_world": [
+        [
+          1.0,
+          0.0,
+          0.0,
+          -1.4901161193847656e-08
+        ],
+        [
+          0.0,
+          1.0,
+          1.6292067073209182e-07,
+          -1.0803341865539551e-07
+        ],
+        [
+          0.0,
+          -1.6292067073209182e-07,
+          1.0,
+          -1.7487472803168203e-07
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "root_bones": [
+        "root"
+      ],
+      "bone_count": 61,
+      "armature_parent": null
+    }
+  },
+  "Data/GraphicNovel/Pilot/CurlyMetalhead/tripo-v3-rig-20261017/derived/natural-pose-20261017/natural-jump.fbx": {
+    "sha256": "11b1f85e5d84f38ab6aa4e17ff951116a43cd16b08bfa02938ad0e781010ace1",
+    "binary_fbx_models": [
+      {
+        "id": 381597095,
+        "name": "Armature\u0000\u0001Model",
+        "kind": "Null",
+        "properties": {
+          "Lcl Translation": [
+            -1.4901161193847656e-06,
+            -1.7487473087385297e-05,
+            1.080334186553955e-05
+          ],
+          "Lcl Rotation": [
+            -90.00000933466734,
+            -0.0,
+            0.0
+          ],
+          "Lcl Scaling": [
+            100.0,
+            100.0,
+            100.0
+          ]
+        }
+      },
+      {
+        "id": 398817686,
+        "name": "root\u0000\u0001Model",
+        "kind": "LimbNode",
+        "properties": {
+          "Lcl Translation": [
+            0.001953153870999813,
+            0.001953184138983488,
+            1.1920928955078125e-07
+          ],
+          "Lcl Rotation": [
+            -3.1112605218405324e-06,
+            0.0,
+            0.0
+          ],
+          "Lcl Scaling": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        }
+      }
+    ],
+    "blender": {
+      "armature": "Armature",
+      "matrix_world": [
+        [
+          1.0,
+          0.0,
+          0.0,
+          -1.4901161193847656e-08
+        ],
+        [
+          0.0,
+          1.0,
+          1.6292067073209182e-07,
+          -1.0803341865539551e-07
+        ],
+        [
+          0.0,
+          -1.6292067073209182e-07,
+          1.0,
+          -1.7487472803168203e-07
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "root_bones": [
+        "root"
+      ],
+      "bone_count": 61,
+      "armature_parent": null
+    }
+  },
+  "Data/GraphicNovel/Pilot/CurlyMetalhead/tripo-v3-rig-20261017/derived/native-ready/walk.fbx": {
+    "sha256": "c464a301eac9ed3f61a9f5684025a68c05b6983a3d4df5a7a6df82c0d152a159",
+    "binary_fbx_models": [
+      {
+        "id": 106778017,
+        "name": "Armature.001\u0000\u0001Model",
+        "kind": "Null",
+        "properties": {
+          "Lcl Translation": [
+            -1.4901161193847656e-06,
+            -1.7487473087385297e-05,
+            1.080334186553955e-05
+          ],
+          "Lcl Rotation": [
+            -90.00000933466734,
+            -0.0,
+            0.0
+          ],
+          "Lcl Scaling": [
+            100.0,
+            100.0,
+            100.0
+          ]
+        }
+      },
+      {
+        "id": 865625869,
+        "name": "root\u0000\u0001Model",
+        "kind": "LimbNode",
+        "properties": {
+          "Lcl Translation": [
+            0.001953153870999813,
+            0.001953184138983488,
+            1.1920928955078125e-07
+          ],
+          "Lcl Rotation": [
+            -3.1112605218405324e-06,
+            0.0,
+            0.0
+          ],
+          "Lcl Scaling": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        }
+      }
+    ],
+    "blender": {
+      "armature": "Armature.001",
+      "matrix_world": [
+        [
+          1.0,
+          0.0,
+          0.0,
+          -1.4901161193847656e-08
+        ],
+        [
+          0.0,
+          1.0,
+          1.6292067073209182e-07,
+          -1.0803341865539551e-07
+        ],
+        [
+          0.0,
+          -1.6292067073209182e-07,
+          1.0,
+          -1.7487472803168203e-07
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "root_bones": [
+        "root"
+      ],
+      "bone_count": 61,
+      "armature_parent": null
+    }
+  },
+  "Data/GraphicNovel/Pilot/CurlyMetalhead/tripo-v3-rig-20261017/derived/native-ready/run.fbx": {
+    "sha256": "7a068955ddb41f686572b9af8f2d22e980d2460e88b1f0f014ff9da3b791d8f5",
+    "binary_fbx_models": [
+      {
+        "id": 106778017,
+        "name": "Armature.001\u0000\u0001Model",
+        "kind": "Null",
+        "properties": {
+          "Lcl Translation": [
+            -1.4901161193847656e-06,
+            -1.7487473087385297e-05,
+            1.080334186553955e-05
+          ],
+          "Lcl Rotation": [
+            -90.00000933466734,
+            -0.0,
+            0.0
+          ],
+          "Lcl Scaling": [
+            100.0,
+            100.0,
+            100.0
+          ]
+        }
+      },
+      {
+        "id": 865625869,
+        "name": "root\u0000\u0001Model",
+        "kind": "LimbNode",
+        "properties": {
+          "Lcl Translation": [
+            0.001953153870999813,
+            0.001953184138983488,
+            1.1920928955078125e-07
+          ],
+          "Lcl Rotation": [
+            -3.1112605218405324e-06,
+            0.0,
+            0.0
+          ],
+          "Lcl Scaling": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        }
+      }
+    ],
+    "blender": {
+      "armature": "Armature.001",
+      "matrix_world": [
+        [
+          1.0,
+          0.0,
+          0.0,
+          -1.4901161193847656e-08
+        ],
+        [
+          0.0,
+          1.0,
+          1.6292067073209182e-07,
+          -1.0803341865539551e-07
+        ],
+        [
+          0.0,
+          -1.6292067073209182e-07,
+          1.0,
+          -1.7487472803168203e-07
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "root_bones": [
+        "root"
+      ],
+      "bone_count": 61,
+      "armature_parent": null
+    }
+  },
+  "scope": "Read-only CPU binary models and fresh Blender import object transforms; no export/render"
+}

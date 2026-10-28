@@ -1,0 +1,30 @@
+PASS: connected button 0 emits one action per press
+PASS: disconnected button 0 emits no action
+FAIL reconnected button 0 starts a fresh edge
+  {"button":0,"name":"jumpDown","first":true,"held":false,"absent":false,"reconnected":false,"reheld":false}
+PASS: connected button 1 emits one action per press
+PASS: disconnected button 1 emits no action
+FAIL reconnected button 1 starts a fresh edge
+  {"button":1,"name":"carDown","first":true,"held":false,"absent":false,"reconnected":false,"reheld":false}
+PASS: connected button 2 emits one action per press
+PASS: disconnected button 2 emits no action
+FAIL reconnected button 2 starts a fresh edge
+  {"button":2,"name":"yank","first":true,"held":false,"absent":false,"reconnected":false,"reheld":false}
+PASS: connected button 3 emits one action per press
+PASS: disconnected button 3 emits no action
+FAIL reconnected button 3 starts a fresh edge
+  {"button":3,"name":"viewDown","first":true,"held":false,"absent":false,"reconnected":false,"reheld":false}
+PASS: connected button 5 emits one action per press
+PASS: disconnected button 5 emits no action
+FAIL reconnected button 5 starts a fresh edge
+  {"button":5,"name":"yank","first":true,"held":false,"absent":false,"reconnected":false,"reheld":false}
+PASS: connected button 9 emits one action per press
+PASS: disconnected button 9 emits no action
+FAIL reconnected button 9 starts a fresh edge
+  {"button":9,"name":"menuDown","first":true,"held":false,"absent":false,"reconnected":false,"reheld":false}
+PASS: connected button 12 emits one action per press
+PASS: disconnected button 12 emits no action
+FAIL reconnected button 12 starts a fresh edge
+  {"button":12,"name":"throwDown","first":true,"held":false,"absent":false,"reconnected":false,"reheld":false}
+PASS: no page errors
+FAIL: pad reconnect (7 failed, 15 passed)

@@ -1,0 +1,11 @@
+{"rows":[{"n":3,"bounded":true,"bytes":192,"expected":192,"cars":3,"markers":3,"fallback":0},{"n":1,"bounded":true,"bytes":64,"expected":64,"cars":1,"markers":1,"fallback":0},{"n":0,"bounded":true,"bytes":0,"expected":0,"cars":0,"markers":0,"fallback":0},{"n":7,"bounded":true,"bytes":448,"expected":448,"cars":7,"markers":7,"fallback":3},{"n":20,"bounded":true,"bytes":1280,"expected":1280,"cars":20,"markers":8,"fallback":16},{"n":2,"bounded":true,"bytes":128,"expected":128,"cars":2,"markers":2,"fallback":0}],"different":0,"varied":25974,"maxDelta":0}
+PASS: bounded action transfer 3
+PASS: bounded action transfer 1
+PASS: bounded action transfer 0
+PASS: bounded action transfer 7
+PASS: bounded action transfer 20
+PASS: bounded action transfer 2
+PASS: model and fallback cars both exercised
+PASS: unchanged nonblank car and marker image
+PASS: no page errors
+PASS: action uploads

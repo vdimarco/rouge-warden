@@ -1,0 +1,14 @@
+00:00.019  color_management | Using OCIO=/home/von/.local/opt/blender-5.2.2-linux-x64/5.2/datafiles/colormanagement/config.ocio
+Traceback (most recent call last):
+  File "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Scripts/capture_tripo_source_jump.py", line 93, in <module>
+    main()
+    ~~~~^^
+  File "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Scripts/capture_tripo_source_jump.py", line 36, in main
+    assert digest(body) == args.body_sha256, 'Pinned original source body mismatch'
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Pinned original source body mismatch
+
+Error: script failed, file: '/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Scripts/capture_tripo_source_jump.py', exiting.
+Blender 5.2.2 LTS (hash d13f752e3b9c built 2026-09-15 01:34:58)
+
+Blender quit

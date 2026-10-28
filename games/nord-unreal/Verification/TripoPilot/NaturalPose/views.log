@@ -1,0 +1,26 @@
+16:44:20 | INFO: Data are loaded, start creating Blender stuff
+16:44:20 | INFO: Blender create Mesh node Mesh_0
+16:44:20 | INFO: glTF import finished in 0.48s
+/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Verification/TripoPilot/NaturalPose/render.py:77: DeprecationWarning: 'World.use_nodes' is expected to be removed in Blender 6.0
+  scene.world.use_nodes = True
+/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Verification/TripoPilot/NaturalPose/render.py:100: DeprecationWarning: 'Material.use_nodes' is expected to be removed in Blender 6.0
+  lm.use_nodes = True
+00:08.694  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Views/idle-threequarter.png'
+FBX version: 7400
+FBX version: 7400
+FBX version: 7400
+RELAXED_POSE_VIEW idle-threequarter
+00:15.674  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Views/idle-front.png'
+RELAXED_POSE_VIEW idle-front
+00:22.312  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Views/idle-side.png'
+RELAXED_POSE_VIEW idle-side
+00:29.688  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Views/jump-threequarter.png'
+RELAXED_POSE_VIEW jump-threequarter
+00:36.236  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Views/jump-side.png'
+RELAXED_POSE_VIEW jump-side
+00:45.115  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Views/hand-left.png'
+RELAXED_POSE_VIEW hand-left
+NATURAL_POSE_RENDER_COMPLETE /tmp/nord-tripo-natural-pose-20261017-v4/Views
+Blender 5.2.2 LTS (hash d13f752e3b9c built 2026-09-15 01:34:58)
+
+Blender quit

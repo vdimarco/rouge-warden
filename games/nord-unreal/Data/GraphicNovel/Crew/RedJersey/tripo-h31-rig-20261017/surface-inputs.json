@@ -1,0 +1,10 @@
+{
+  "source_glb": {
+    "path": "Data/GraphicNovel/Crew/RedJersey/tripo-h31-body-20261017/body.glb",
+    "sha256": "13bf9c9dc76a7a925ba31ad5fadf6ef5e3a7436ee0450e6579a221f1fabd96c8"
+  },
+  "provider_fbx": {
+    "path": "Data/GraphicNovel/Crew/RedJersey/tripo-h31-rig-20261017/rig.fbx",
+    "sha256": "53d2bdfd3c8958865cf0865db4d8f92a85fc1079ef02f8fe441dd32e9c1afa67"
+  }
+}

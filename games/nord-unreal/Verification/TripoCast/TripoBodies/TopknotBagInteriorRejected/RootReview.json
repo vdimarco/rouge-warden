@@ -1,0 +1,121 @@
+{
+  "reviewer": "root",
+  "at_utc": "2026-10-18T00:23:26.688299+00:00",
+  "viewed_all_nine_paired_comparisons": true,
+  "full_resolution_views": [
+    "Compare-jump-threequarter.png",
+    "Compare-run-threequarter.png"
+  ],
+  "remaining_seven_reviewed_in": "Saved/Tests/TripoTopknotBagRepair-v1/AllComparisons.png",
+  "decision": "Reject adoption; partial diagnostic improvement only",
+  "findings": [
+    "Run bag interior hangs lower instead of following the thigh.",
+    "Jump and upper bag boundary still bunch/corrugate. Interior-only weight transfer leaves an incoherent transition.",
+    "Unchanged bag edge still hides the left wrist; physical contact and continuous motion remain unaccepted."
+  ],
+  "source_normal_UV_geometry_bind_and_outside_weight_proof_passed": true,
+  "native_import_allowed": false,
+  "final_art_accepted": false,
+  "retained_exact_files": [
+    {
+      "file": "body.fbx",
+      "sha256": "941f15dbda08322ad1206753a8c6c843ffae3560a452bd0e231677067698ed48",
+      "bytes": 8544860
+    },
+    {
+      "file": "BinaryProof.json",
+      "sha256": "43fd0fad1ad7bd92bb92436cff90309f9fbb92f14ebd3175a8144597d5e6de2e",
+      "bytes": 167621
+    },
+    {
+      "file": "Repair.json",
+      "sha256": "f41e295d064c2da45d98428f0857aab12283b2f5b3e45a200e9b37f23d75f863",
+      "bytes": 387282
+    },
+    {
+      "file": "Mapping.json",
+      "sha256": "6aba8d8c175b906acd3c9932eb275cc53a48e26d093942bf2bf8c57c98af6ffa",
+      "bytes": 639794
+    },
+    {
+      "file": "WeightProofArrays.npz",
+      "sha256": "c4869f30bf2de8cf575cf0d66e51722d9515239af5a311af494cbabb50029a07",
+      "bytes": 3022906
+    },
+    {
+      "file": "ReviewPacket.json",
+      "sha256": "f74c612cf6c05c19ee5851598df78789dde15cf120c4460f6b8a5e160e6251d6",
+      "bytes": 1881
+    },
+    {
+      "file": "repair_cluster_only.py",
+      "sha256": "5956aca1df9e83b35edfab734c0e9a81a286e6382f766c04f356ba3be220ae5a",
+      "bytes": 14514
+    },
+    {
+      "file": "cluster_patch.py",
+      "sha256": "1e2563c1844feb296ac6e5330e07ed33958940cadc6f20bdc4712d8b71285814",
+      "bytes": 7110
+    },
+    {
+      "file": "Comparisons.json",
+      "sha256": "b69a19715b1720322838447f08b53d083975303157a68a6b169decb132bf437c",
+      "bytes": 3989
+    },
+    {
+      "file": "Compare-hand-l.png",
+      "sha256": "f8fca437acb5abde37fa7b5ab016c6db85b3c604b179076dbe5bb5a240d3f85f",
+      "bytes": 352370
+    },
+    {
+      "file": "Compare-hand-r.png",
+      "sha256": "754b6e1f87d165b5bda9a013a3db3f9a6c7ba76bc9c4e3afa8afb75ace167fc1",
+      "bytes": 373678
+    },
+    {
+      "file": "Compare-idle-back.png",
+      "sha256": "b3b21d0f1158f6236573f964fdc17f44f0d16d12b49714a1273abaddddc0271e",
+      "bytes": 354887
+    },
+    {
+      "file": "Compare-idle-front.png",
+      "sha256": "53b9c17721127cb0d943f892a234f54a55f173647599438a97215bcf04718e07",
+      "bytes": 354638
+    },
+    {
+      "file": "Compare-idle-side.png",
+      "sha256": "f670e62c82e1cc87bed72ecb72d998e8c4a52605d4d7f9910176007cb6cc77c3",
+      "bytes": 357761
+    },
+    {
+      "file": "Compare-idle-threequarter.png",
+      "sha256": "56545ae883bfc55a9a09b1a4b823cdeb749bd3b5961e0617e68427d3c46d8115",
+      "bytes": 350750
+    },
+    {
+      "file": "Compare-jump-threequarter.png",
+      "sha256": "fbe9356edf75d55c0c393ce15d1fdc12a5b5a252dafe22114bd42df80d37d48f",
+      "bytes": 387932
+    },
+    {
+      "file": "Compare-run-threequarter.png",
+      "sha256": "b328d3278be62abac8fd44e6e9db8ce9be6324a7ee926397d1092fc6d18e5edd",
+      "bytes": 388010
+    },
+    {
+      "file": "Compare-walk-threequarter.png",
+      "sha256": "294e357283f4ca69b4b50f24060d9e654d04ee96b26d3fece4c6420373cc3a57",
+      "bytes": 391520
+    },
+    {
+      "file": "Candidate.json",
+      "sha256": "2998199eb8699289930220578f83fe3dcf468574476e3031725e4a5141cf1dc0",
+      "bytes": 490003
+    },
+    {
+      "file": "SelectionArrays.npz",
+      "sha256": "feb6c1816306bac1fe079747673ab168edf414accfc5755731ea0d02a22bb13a",
+      "bytes": 2742693
+    }
+  ]
+}

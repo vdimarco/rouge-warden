@@ -1,0 +1,878 @@
+{
+  "environment": {
+    "renderer": "ANGLE (NVIDIA Corporation, NVIDIA GeForce RTX 4090/PCIe/SSE2, OpenGL ES 3.2)",
+    "ua": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.0.0 Safari/537.36",
+    "width": 3840,
+    "height": 1080,
+    "ratio": 1.4142135623730951,
+    "dpr": 2,
+    "drawingWidth": 5430,
+    "drawingHeight": 1527,
+    "state": "play",
+    "settings": {
+      "preset": "moderate",
+      "vignette": "off",
+      "turn": "smooth",
+      "snap": 45,
+      "aim": "high",
+      "vignetteLook": "room",
+      "seated": false,
+      "height": 0,
+      "hand": "right",
+      "hold": "hold",
+      "cue": true,
+      "hz": 72,
+      "foveation": 0.5,
+      "music": true,
+      "speedLines": true,
+      "verse": "full",
+      "easySwing": false
+    },
+    "source": "/home/von/Work/fullswing-performance-evidence-20261022/r34-main.js",
+    "gpuStart": "2026/10/22 21:09:17.651, 87 %, 21594 MiB, 239.60 W",
+    "gpuEnd": "2026/10/22 21:16:27.882, 99 %, 15318 MiB, 294.95 W"
+  },
+  "results": [
+    {
+      "workload": "combat",
+      "variant": "baseline",
+      "index": 0,
+      "invalidFrames": 0,
+      "frames": 1565,
+      "gameFrames": 1534,
+      "elapsedMs": 59997.600000000006,
+      "fps": 26.084376708401667,
+      "p50Ms": 33.39999999999418,
+      "p95Ms": 50,
+      "p99Ms": 50.10000000000582,
+      "over50": 78,
+      "state": "play",
+      "pos": {
+        "x": -271.62,
+        "y": 31.29307232901607,
+        "z": -254.00003536869028
+      },
+      "render": {
+        "calls": 55,
+        "tris": 1101028,
+        "views": 1
+      },
+      "sun": {
+        "active": 0,
+        "total": 0
+      },
+      "buffer": {
+        "width": 5430,
+        "height": 1527,
+        "ratio": 1.4142135623730951
+      },
+      "inputTiming": {
+        "frames": 600,
+        "elapsedMs": 22799.100000000006,
+        "fps": 26.316828295853778,
+        "medianMs": 33.39999999999418,
+        "p95Ms": 50.09999999999127,
+        "p99Ms": 50.10000000000582,
+        "over50": 33,
+        "inputs": 35,
+        "inputSubmitP95Ms": 39.70000000298023
+      },
+      "scene": {
+        "state": "play",
+        "job": {
+          "type": "brawl",
+          "phase": "go",
+          "timer": 69.4265666666707,
+          "t": 50.57343333333358,
+          "crime": false,
+          "data": {
+            "caught": false,
+            "falling": false,
+            "crew": false,
+            "stopped": false,
+            "seals": 0,
+            "run": 0,
+            "heat": 0
+          }
+        },
+        "combat": {
+          "hp": 5,
+          "goons": 4,
+          "alive": 4,
+          "fighting": 0,
+          "stats": {
+            "punches": 0,
+            "kicks": 0,
+            "pulls": 0,
+            "slams": 0,
+            "kos": 0,
+            "hurt": 17,
+            "knockouts": 0,
+            "carHits": 0,
+            "dodges": 0,
+            "perfect": 0,
+            "takedowns": 0,
+            "finishers": 0,
+            "heaps": 0,
+            "throws": 0,
+            "zips": 0
+          },
+          "hits": 0,
+          "focus": 0,
+          "dodging": false,
+          "list": [
+            {
+              "id": 0,
+              "group": "job",
+              "state": "idle",
+              "hp": 3,
+              "x": -277.2854911359887,
+              "y": 41.5,
+              "z": -252.70146445337053,
+              "runner": false,
+              "aggro": false
+            },
+            {
+              "id": 1,
+              "group": "job",
+              "state": "idle",
+              "hp": 3,
+              "x": -282.7582590032051,
+              "y": 41.5,
+              "z": -249.1772782321684,
+              "runner": false,
+              "aggro": false
+            },
+            {
+              "id": 2,
+              "group": "job",
+              "state": "idle",
+              "hp": 3,
+              "x": -284.1723616898692,
+              "y": 41.5,
+              "z": -256.1818947232639,
+              "runner": false,
+              "aggro": false
+            },
+            {
+              "id": 3,
+              "group": "job",
+              "state": "idle",
+              "hp": 3,
+              "x": -279.0527552288983,
+              "y": 41.5,
+              "z": -257.52299677450685,
+              "runner": false,
+              "aggro": false
+            }
+          ]
+        }
+      },
+      "gpu": {
+        "available": false,
+        "times": []
+      }
+    },
+    {
+      "workload": "combat",
+      "variant": "candidate",
+      "index": 1,
+      "invalidFrames": 0,
+      "frames": 1527,
+      "gameFrames": 1518,
+      "elapsedMs": 60014.20000000001,
+      "fps": 25.443978258478822,
+      "p50Ms": 33.39999999999418,
+      "p95Ms": 50.09999999999127,
+      "p99Ms": 50.10000000000582,
+      "over50": 97,
+      "state": "play",
+      "pos": {
+        "x": -523.5059669599068,
+        "y": 0,
+        "z": -205.54494091706755
+      },
+      "render": {
+        "calls": 57,
+        "tris": 1126588,
+        "views": 1
+      },
+      "sun": {
+        "active": 9168,
+        "total": 9168
+      },
+      "buffer": {
+        "width": 5430,
+        "height": 1527,
+        "ratio": 1.4142135623730951
+      },
+      "inputTiming": {
+        "frames": 600,
+        "elapsedMs": 23815.70000000001,
+        "fps": 25.193464815226918,
+        "medianMs": 33.39999999999418,
+        "p95Ms": 50.10000000000582,
+        "p99Ms": 50.10000000000582,
+        "over50": 39,
+        "inputs": 35,
+        "inputSubmitP95Ms": 37.400000005960464
+      },
+      "scene": {
+        "state": "play",
+        "job": {
+          "type": "brawl",
+          "phase": "go",
+          "timer": 69.80776666667177,
+          "t": 50.192233333333434,
+          "crime": false,
+          "data": {
+            "caught": false,
+            "falling": false,
+            "crew": false,
+            "stopped": false,
+            "seals": 0,
+            "run": 0,
+            "heat": 0
+          }
+        },
+        "combat": {
+          "hp": 5,
+          "goons": 4,
+          "alive": 4,
+          "fighting": 0,
+          "stats": {
+            "punches": 0,
+            "kicks": 0,
+            "pulls": 0,
+            "slams": 0,
+            "kos": 0,
+            "hurt": 22,
+            "knockouts": 0,
+            "carHits": 0,
+            "dodges": 0,
+            "perfect": 0,
+            "takedowns": 0,
+            "finishers": 0,
+            "heaps": 0,
+            "throws": 0,
+            "zips": 0
+          },
+          "hits": 0,
+          "focus": 0,
+          "dodging": false,
+          "list": [
+            {
+              "id": 4,
+              "group": "job",
+              "state": "idle",
+              "hp": 3,
+              "x": -533.9254423449308,
+              "y": 33.5,
+              "z": -207.887637678294,
+              "runner": false,
+              "aggro": false
+            },
+            {
+              "id": 5,
+              "group": "job",
+              "state": "idle",
+              "hp": 3,
+              "x": -536.8456396069953,
+              "y": 33.5,
+              "z": -206.2915834076949,
+              "runner": false,
+              "aggro": false
+            },
+            {
+              "id": 6,
+              "group": "job",
+              "state": "idle",
+              "hp": 3,
+              "x": -540.4400166772568,
+              "y": 33.5,
+              "z": -213.60303269582897,
+              "runner": false,
+              "aggro": false
+            },
+            {
+              "id": 7,
+              "group": "job",
+              "state": "idle",
+              "hp": 3,
+              "x": -535.2041643230942,
+              "y": 33.5,
+              "z": -215.1985256557631,
+              "runner": false,
+              "aggro": false
+            }
+          ]
+        }
+      },
+      "gpu": {
+        "available": false,
+        "times": []
+      }
+    },
+    {
+      "workload": "combat",
+      "variant": "candidate",
+      "index": 2,
+      "invalidFrames": 0,
+      "frames": 1514,
+      "gameFrames": 1499,
+      "elapsedMs": 59981,
+      "fps": 25.241326420033012,
+      "p50Ms": 33.39999999999418,
+      "p95Ms": 50.10000000000582,
+      "p99Ms": 50.10000000000582,
+      "over50": 114,
+      "state": "play",
+      "pos": {
+        "x": -449.7327286242108,
+        "y": 0,
+        "z": -9.708392918153049
+      },
+      "render": {
+        "calls": 57,
+        "tris": 1118980,
+        "views": 1
+      },
+      "sun": {
+        "active": 9090,
+        "total": 9090
+      },
+      "buffer": {
+        "width": 5430,
+        "height": 1527,
+        "ratio": 1.4142135623730951
+      },
+      "inputTiming": {
+        "frames": 600,
+        "elapsedMs": 23715.800000000017,
+        "fps": 25.299589303333622,
+        "medianMs": 33.39999999999418,
+        "p95Ms": 50.09999999997672,
+        "p99Ms": 50.10000000000582,
+        "over50": 33,
+        "inputs": 35,
+        "inputSubmitP95Ms": 44.599999994039536
+      },
+      "scene": {
+        "state": "play",
+        "job": {
+          "type": "brawl",
+          "phase": "go",
+          "timer": 70.32570000000497,
+          "t": 49.67430000000036,
+          "crime": false,
+          "data": {
+            "caught": false,
+            "falling": false,
+            "crew": false,
+            "stopped": false,
+            "seals": 0,
+            "run": 0,
+            "heat": 0
+          }
+        },
+        "combat": {
+          "hp": 5,
+          "goons": 4,
+          "alive": 4,
+          "fighting": 0,
+          "stats": {
+            "punches": 0,
+            "kicks": 0,
+            "pulls": 0,
+            "slams": 0,
+            "kos": 0,
+            "hurt": 30,
+            "knockouts": 0,
+            "carHits": 0,
+            "dodges": 0,
+            "perfect": 0,
+            "takedowns": 0,
+            "finishers": 0,
+            "heaps": 0,
+            "throws": 0,
+            "zips": 0
+          },
+          "hits": 0,
+          "focus": 0,
+          "dodging": false,
+          "list": [
+            {
+              "id": 8,
+              "group": "job",
+              "state": "idle",
+              "hp": 3,
+              "x": -462.515573366309,
+              "y": 39,
+              "z": -4.573464025980559,
+              "runner": false,
+              "aggro": false
+            },
+            {
+              "id": 9,
+              "group": "job",
+              "state": "idle",
+              "hp": 3,
+              "x": -467.7030090224699,
+              "y": 39,
+              "z": -5.145601204181518,
+              "runner": false,
+              "aggro": false
+            },
+            {
+              "id": 10,
+              "group": "job",
+              "state": "idle",
+              "hp": 3,
+              "x": -469.4999371308136,
+              "y": 39,
+              "z": -10.421784942709104,
+              "runner": false,
+              "aggro": false
+            },
+            {
+              "id": 11,
+              "group": "job",
+              "state": "idle",
+              "hp": 3,
+              "x": -462.35092329504283,
+              "y": 39,
+              "z": -10.269703086026766,
+              "runner": false,
+              "aggro": false
+            }
+          ]
+        }
+      },
+      "gpu": {
+        "available": false,
+        "times": []
+      }
+    },
+    {
+      "workload": "combat",
+      "variant": "baseline",
+      "index": 3,
+      "invalidFrames": 0,
+      "frames": 1510,
+      "gameFrames": 1467,
+      "elapsedMs": 60030.899999999994,
+      "fps": 25.153712504726734,
+      "p50Ms": 33.39999999999418,
+      "p95Ms": 50.09999999997672,
+      "p99Ms": 50.100000000034925,
+      "over50": 113,
+      "state": "play",
+      "pos": {
+        "x": -314.5376188906701,
+        "y": 0,
+        "z": -144.22188664097516
+      },
+      "render": {
+        "calls": 57,
+        "tris": 1118980,
+        "views": 1
+      },
+      "sun": {
+        "active": 0,
+        "total": 0
+      },
+      "buffer": {
+        "width": 5430,
+        "height": 1527,
+        "ratio": 1.4142135623730951
+      },
+      "inputTiming": {
+        "frames": 600,
+        "elapsedMs": 23215.70000000001,
+        "fps": 25.84457931486019,
+        "medianMs": 33.399999999965075,
+        "p95Ms": 50.09999999997672,
+        "p99Ms": 50.100000000034925,
+        "over50": 37,
+        "inputs": 35,
+        "inputSubmitP95Ms": 42.1000000089407
+      },
+      "scene": {
+        "state": "play",
+        "job": {
+          "type": "brawl",
+          "phase": "go",
+          "timer": 71.4743333333381,
+          "t": 48.52566666666704,
+          "crime": false,
+          "data": {
+            "caught": false,
+            "falling": false,
+            "crew": false,
+            "stopped": false,
+            "seals": 0,
+            "run": 0,
+            "heat": 0
+          }
+        },
+        "combat": {
+          "hp": 5,
+          "goons": 4,
+          "alive": 4,
+          "fighting": 0,
+          "stats": {
+            "punches": 0,
+            "kicks": 0,
+            "pulls": 0,
+            "slams": 0,
+            "kos": 0,
+            "hurt": 52,
+            "knockouts": 0,
+            "carHits": 0,
+            "dodges": 0,
+            "perfect": 0,
+            "takedowns": 0,
+            "finishers": 0,
+            "heaps": 0,
+            "throws": 0,
+            "zips": 0
+          },
+          "hits": 0,
+          "focus": 0,
+          "dodging": false,
+          "list": [
+            {
+              "id": 12,
+              "group": "job",
+              "state": "idle",
+              "hp": 3,
+              "x": -327.55824709373144,
+              "y": 44.5,
+              "z": -155.96834000921444,
+              "runner": false,
+              "aggro": false
+            },
+            {
+              "id": 13,
+              "group": "job",
+              "state": "idle",
+              "hp": 3,
+              "x": -333.2296940230632,
+              "y": 44.5,
+              "z": -155.0829743065048,
+              "runner": false,
+              "aggro": false
+            },
+            {
+              "id": 14,
+              "group": "job",
+              "state": "idle",
+              "hp": 3,
+              "x": -334.76339716931113,
+              "y": 44.5,
+              "z": -159.40648050642804,
+              "runner": false,
+              "aggro": false
+            },
+            {
+              "id": 15,
+              "group": "job",
+              "state": "idle",
+              "hp": 3,
+              "x": -329.24556538557175,
+              "y": 44.5,
+              "z": -163.47973112472582,
+              "runner": false,
+              "aggro": false
+            }
+          ]
+        }
+      },
+      "gpu": {
+        "available": false,
+        "times": []
+      }
+    },
+    {
+      "workload": "combat",
+      "variant": "baseline",
+      "index": 4,
+      "invalidFrames": 0,
+      "frames": 1479,
+      "gameFrames": 1429,
+      "elapsedMs": 59980.90000000002,
+      "fps": 24.657849415397227,
+      "p50Ms": 33.40000000002328,
+      "p95Ms": 50.09999999997672,
+      "p99Ms": 50.100000000034925,
+      "over50": 117,
+      "state": "play",
+      "pos": {
+        "x": -90.30952897284834,
+        "y": 0,
+        "z": 34.35987910604863
+      },
+      "render": {
+        "calls": 57,
+        "tris": 1118980,
+        "views": 1
+      },
+      "sun": {
+        "active": 0,
+        "total": 0
+      },
+      "buffer": {
+        "width": 5430,
+        "height": 1527,
+        "ratio": 1.4142135623730951
+      },
+      "inputTiming": {
+        "frames": 600,
+        "elapsedMs": 23632.400000000023,
+        "fps": 25.38887290330222,
+        "medianMs": 33.40000000002328,
+        "p95Ms": 50.09999999997672,
+        "p99Ms": 50.100000000034925,
+        "over50": 42,
+        "inputs": 35,
+        "inputSubmitP95Ms": 40.79999999701977
+      },
+      "scene": {
+        "state": "play",
+        "job": {
+          "type": "brawl",
+          "phase": "go",
+          "timer": 72.53813333333821,
+          "t": 47.4618666666667,
+          "crime": false,
+          "data": {
+            "caught": false,
+            "falling": false,
+            "crew": false,
+            "stopped": false,
+            "seals": 0,
+            "run": 0,
+            "heat": 0
+          }
+        },
+        "combat": {
+          "hp": 5,
+          "goons": 4,
+          "alive": 4,
+          "fighting": 0,
+          "stats": {
+            "punches": 0,
+            "kicks": 0,
+            "pulls": 0,
+            "slams": 0,
+            "kos": 0,
+            "hurt": 77,
+            "knockouts": 0,
+            "carHits": 0,
+            "dodges": 0,
+            "perfect": 0,
+            "takedowns": 0,
+            "finishers": 0,
+            "heaps": 0,
+            "throws": 0,
+            "zips": 0
+          },
+          "hits": 0,
+          "focus": 0,
+          "dodging": false,
+          "list": [
+            {
+              "id": 16,
+              "group": "job",
+              "state": "idle",
+              "hp": 3,
+              "x": -103.54029965987029,
+              "y": 33,
+              "z": 39.99711749831418,
+              "runner": false,
+              "aggro": false
+            },
+            {
+              "id": 17,
+              "group": "job",
+              "state": "idle",
+              "hp": 3,
+              "x": -110.0578393836394,
+              "y": 33,
+              "z": 42.88373295112173,
+              "runner": false,
+              "aggro": false
+            },
+            {
+              "id": 18,
+              "group": "job",
+              "state": "idle",
+              "hp": 3,
+              "x": -111.33090360050754,
+              "y": 33,
+              "z": 37.661906872305394,
+              "runner": false,
+              "aggro": false
+            },
+            {
+              "id": 19,
+              "group": "job",
+              "state": "idle",
+              "hp": 3,
+              "x": -104.64883199953918,
+              "y": 33,
+              "z": 35.81649799230451,
+              "runner": false,
+              "aggro": false
+            }
+          ]
+        }
+      },
+      "gpu": {
+        "available": false,
+        "times": []
+      }
+    },
+    {
+      "workload": "combat",
+      "variant": "candidate",
+      "index": 5,
+      "invalidFrames": 0,
+      "frames": 1570,
+      "gameFrames": 1531,
+      "elapsedMs": 60030.90000000002,
+      "fps": 26.1531977698152,
+      "p50Ms": 33.399999999965075,
+      "p95Ms": 50,
+      "p99Ms": 50.100000000034925,
+      "over50": 78,
+      "state": "play",
+      "pos": {
+        "x": -408.7191659167336,
+        "y": 16,
+        "z": -189.2649508008032
+      },
+      "render": {
+        "calls": 55,
+        "tris": 1115068,
+        "views": 1
+      },
+      "sun": {
+        "active": 9426,
+        "total": 9426
+      },
+      "buffer": {
+        "width": 5430,
+        "height": 1527,
+        "ratio": 1.4142135623730951
+      },
+      "inputTiming": {
+        "frames": 600,
+        "elapsedMs": 22482.400000000023,
+        "fps": 26.68754225527521,
+        "medianMs": 33.399999999965075,
+        "p95Ms": 50,
+        "p99Ms": 50.100000000034925,
+        "over50": 23,
+        "inputs": 35,
+        "inputSubmitP95Ms": 36.1000000089407
+      },
+      "scene": {
+        "state": "play",
+        "job": {
+          "type": "brawl",
+          "phase": "go",
+          "timer": 69.37756666667183,
+          "t": 50.62243333333388,
+          "crime": false,
+          "data": {
+            "caught": false,
+            "falling": false,
+            "crew": false,
+            "stopped": false,
+            "seals": 0,
+            "run": 0,
+            "heat": 0
+          }
+        },
+        "combat": {
+          "hp": 5,
+          "goons": 4,
+          "alive": 4,
+          "fighting": 0,
+          "stats": {
+            "punches": 0,
+            "kicks": 0,
+            "pulls": 0,
+            "slams": 0,
+            "kos": 0,
+            "hurt": 98,
+            "knockouts": 0,
+            "carHits": 0,
+            "dodges": 0,
+            "perfect": 0,
+            "takedowns": 0,
+            "finishers": 0,
+            "heaps": 0,
+            "throws": 0,
+            "zips": 0
+          },
+          "hits": 0,
+          "focus": 0,
+          "dodging": false,
+          "list": [
+            {
+              "id": 20,
+              "group": "job",
+              "state": "idle",
+              "hp": 3,
+              "x": -421.66668862155507,
+              "y": 22.5,
+              "z": -191.20161008012195,
+              "runner": false,
+              "aggro": false
+            },
+            {
+              "id": 21,
+              "group": "job",
+              "state": "idle",
+              "hp": 3,
+              "x": -429.6062127709174,
+              "y": 22.5,
+              "z": -191.45524729700733,
+              "runner": false,
+              "aggro": false
+            },
+            {
+              "id": 22,
+              "group": "job",
+              "state": "idle",
+              "hp": 3,
+              "x": -429.2048942628829,
+              "y": 22.5,
+              "z": -197.39884974920494,
+              "runner": false,
+              "aggro": false
+            },
+            {
+              "id": 23,
+              "group": "job",
+              "state": "idle",
+              "hp": 3,
+              "x": -422.16527967389237,
+              "y": 22.5,
+              "z": -196.85170577035714,
+              "runner": false,
+              "aggro": false
+            }
+          ]
+        }
+      },
+      "gpu": {
+        "available": false,
+        "times": []
+      }
+    }
+  ],
+  "errors": []
+}

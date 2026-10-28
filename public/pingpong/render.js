@@ -339,9 +339,10 @@ export function createView(canvas) {
   let ghostSeen = 4;
   let splat = null;
   let splatKey = '';
-  let splatFade = 0;
   let splatSeen = -1;
-  let splatFading = false;
+  let splatMarks = 0;
+  const splatList = [];
+  const SPLAT_LIFE = 0.6;
   let slash = null;
   const art = {};
   let neighbourSwing = null;
@@ -371,7 +372,9 @@ export function createView(canvas) {
   }
 
   function pixelRatio() {
-    return Math.min(RULES.dprCap, window.devicePixelRatio || 1, dprLimit);
+    const cssWidth = Math.max(1, canvas.clientWidth || 1);
+    const scale = Math.min(window.devicePixelRatio || 1, 1920 / cssWidth);
+    return Math.min(RULES.dprCap, window.devicePixelRatio || 1, dprLimit, scale);
   }
 
   function setDprCap(n) {
@@ -400,13 +403,12 @@ export function createView(canvas) {
     drawStatic(g, w, h, art);
     key = next;
     if (!splat || splatKey !== next) {
+      const seen = splatSeen;
       splat = document.createElement('canvas');
       splat.width = layer.width;
       splat.height = layer.height;
       splatKey = next;
-      splatFade = 0;
-      splatSeen = -1;
-      splatFading = false;
+      splatSeen = seen;
     }
   }
 
@@ -511,88 +513,143 @@ export function createView(canvas) {
       ctx.globalAlpha = 1;
     }
 
-    drawSlash(ctx, state, w, h);
     drawNeighbour(ctx, w, h, state);
     drawBat(ctx, w, h, state, pose);
+    drawSlash(ctx, state, w, h, pose);
     drawSparks(ctx, state, w, h);
     drawHud(ctx, w, h, state);
+    drawAim(ctx, pose);
   }
 
-  function stampSplat(state, w, h, dpr) {
-    const land = state.lastLanding;
-    if (!splat || !land || land.t === splatSeen) return;
-    if (state.phase === 'pause' || state.phase === 'gameover') return;
-    splatSeen = land.t;
+  function drawAim(ctx, pose) {
+    const dot = pose && pose.dot;
+    if (!dot || !Number.isFinite(dot.x) || !Number.isFinite(dot.y)) return;
+    ctx.save();
+    ctx.fillStyle = PAPER;
+    ctx.strokeStyle = INK;
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.arc(dot.x, dot.y, 4, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function splatColor(kind) {
+    if (kind === 'smash') return EMBER;
+    if (kind === 'push') return SEA;
+    if (kind === 'drive') return OCHRE;
+    return INK;
+  }
+
+  function wipeSplats() {
+    splatList.length = 0;
+    splatMarks = 0;
+    if (!splat) return;
     const g = splat.getContext('2d');
-    g.setTransform(dpr, 0, 0, dpr, 0, 0);
-    const at = project(land.x, 0, land.z, w, h);
+    g.setTransform(1, 0, 0, 1, 0, 0);
+    g.clearRect(0, 0, splat.width, splat.height);
+  }
+
+  function noteSplat(state) {
+    const land = state.lastLanding;
+    if (!land || land.t === splatSeen) return;
+    splatSeen = land.t;
     const kind = state.lastShot && state.lastShot.kind;
-    g.fillStyle = kind === 'smash' ? EMBER : kind === 'push' ? SEA : kind === 'drive' ? OCHRE : INK;
-    g.globalAlpha = 0.22;
-    g.beginPath();
-    g.ellipse(at.x, at.y, Math.max(4, 8 * at.s), Math.max(2, 3.4 * at.s), 0.3, 0, Math.PI * 2);
-    g.fill();
-    g.globalAlpha = 1;
-    splatFade = 1;
-    splatFading = false;
+    splatList.push({
+      x: land.x,
+      z: land.z,
+      color: splatColor(kind),
+      born: state.time,
+    });
   }
 
   function blitSplats(ctx, state, w, h, dpr) {
-    stampSplat(state, w, h, dpr);
-    const ending = state.phase === 'pause' || state.phase === 'gameover';
-    if (ending && splatFade > 0) splatFading = true;
-    if (splatFading) {
-      splatFade = Math.max(0, splatFade - (1 / 60) / 0.6);
-      if (splatFade === 0 && splat) {
-        const g = splat.getContext('2d');
-        g.setTransform(1, 0, 0, 1, 0, 0);
-        g.clearRect(0, 0, splat.width, splat.height);
-        splatFading = false;
-        splatSeen = -1;
-      }
+    if (state.phase === 'count') {
+      if (splatMarks) wipeSplats();
+      return;
     }
-    if (!(splatFade > 0) || !splat) return;
+    noteSplat(state);
+    for (let i = splatList.length - 1; i >= 0; i--) {
+      if (state.time - splatList[i].born >= SPLAT_LIFE) splatList.splice(i, 1);
+    }
+    splatMarks = splatList.length;
+    if (!splat) return;
+    const g = splat.getContext('2d');
+    g.setTransform(1, 0, 0, 1, 0, 0);
+    g.clearRect(0, 0, splat.width, splat.height);
+    if (!splatList.length) return;
+    g.setTransform(dpr, 0, 0, dpr, 0, 0);
+    for (let i = 0; i < splatList.length; i++) {
+      const mark = splatList[i];
+      const at = project(mark.x, 0, mark.z, w, h);
+      const age = Math.max(0, state.time - mark.born);
+      g.globalAlpha = Math.max(0, 1 - age / SPLAT_LIFE);
+      g.fillStyle = mark.color;
+      g.beginPath();
+      g.ellipse(at.x, at.y, Math.max(4, 8 * at.s), Math.max(2, 3.4 * at.s), 0.3, 0, Math.PI * 2);
+      g.fill();
+    }
+    g.globalAlpha = 1;
     ctx.save();
-    ctx.globalAlpha = splatFade;
+    ctx.globalAlpha = 0.25;
     ctx.drawImage(splat, 0, 0, w, h);
     ctx.restore();
   }
 
-  function drawSlash(ctx, state, w, h) {
+  function batFace(state, pose, w, h) {
+    const held = state.bat || { x: 0, depth: RULES.batHomeZ, roll: 0 };
+    const face = batPresentation({
+      roll: pose && Number.isFinite(pose.roll) ? pose.roll : held.roll,
+      tiltY: pose && pose.tiltY,
+      push: pose && pose.push,
+      x: held.x,
+    });
+    const z = Math.max(RULES.batBackZ - 0.02, Math.min(RULES.batInZ + RULES.swingPush, held.depth + face.pushZ));
+    const anchor = project(held.x, batHover(held.x), z, w, h);
+    const width = Math.min(w, h) * (w > h * 1.15 ? 0.22 : 0.32) * (0.62 + 0.38 * anchor.s);
+    const hang = width * 0.62;
+    const y = Math.min(anchor.y, h - RULES.safePx - hang);
+    return { x: anchor.x, y: y - width * 0.11, width };
+  }
+
+  function slashStyle(kind) {
+    if (kind === 'push') return { color: INK, width: 2, spans: 1.35 };
+    if (kind === 'smash') return { color: EMBER, width: 6, spans: 2 };
+    return { color: OCHRE, width: 4, spans: 2 };
+  }
+
+  function drawSlash(ctx, state, w, h, pose) {
     const shot = state.lastShot;
     if (shot && shot.struckAt != null && shot.band !== 'miss' && state.lastContact) {
       if (!slash || slash.id !== shot.struckAt) {
-        const kind = shot.kind;
+        const look = slashStyle(shot.kind);
         slash = {
           id: shot.struckAt,
           t: shot.struckAt,
-          perfect: shot.band === 'perfect',
-          color: kind === 'push' ? SEA : kind === 'smash' ? EMBER : OCHRE,
-          len: 26 + Math.min(36, (shot.speed || 8) * 1.4),
-          dir: shot.pullDeg < 0 ? -1 : 1,
+          kind: shot.kind,
+          color: look.color,
+          width: look.width,
+          spans: look.spans,
+          len: 0,
+          dir: pose && pose.swingDir === 'backhand' ? -1 : 1,
         };
       }
     }
     if (!slash || !state.lastContact) return;
     const age = state.time - slash.t;
     if (age < 0 || age > 0.25) return;
-    const at = project(state.lastContact.x, state.lastContact.y, state.lastContact.z, w, h);
-    const alpha = 1 - age / 0.25;
+    const face = batFace(state, pose, w, h);
+    slash.len = face.width * slash.spans;
     ctx.save();
-    ctx.translate(at.x, at.y);
-    ctx.rotate(slash.dir * 0.5);
+    ctx.translate(face.x, face.y);
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
-    if (slash.perfect) {
-      ctx.globalAlpha = alpha * 0.95;
-      ctx.strokeStyle = GOLD;
-      ctx.lineWidth = 7;
-      brush(ctx, slash.len + 4);
-    }
-    ctx.globalAlpha = alpha;
+    const fade = 1 - age / 0.25;
+    ctx.globalAlpha = fade;
     ctx.strokeStyle = slash.color;
-    ctx.lineWidth = 3.2;
-    brush(ctx, slash.len);
+    ctx.lineWidth = slash.width;
+    faceSlash(ctx, slash.len, slash.dir, slash.width, fade, slash.kind !== 'push');
     ctx.restore();
   }
 
@@ -776,7 +833,29 @@ export function createView(canvas) {
     }
   }
 
-  return { frame, resize, setTrailCap, setDprCap, pixelRatio, ghostCount: () => ghostSeen };
+  function lastSlash() {
+    if (!slash) return null;
+    return {
+      kind: slash.kind,
+      color: slash.color,
+      len: slash.len,
+      width: slash.width,
+      dir: slash.dir,
+      perfect: !!slash.perfect,
+      t: slash.t,
+    };
+  }
+
+  return {
+    frame,
+    resize,
+    setTrailCap,
+    setDprCap,
+    pixelRatio,
+    ghostCount: () => ghostSeen,
+    lastSlash,
+    splatCount: () => splatMarks,
+  };
 }
 
 let glowSprite = null;
@@ -794,19 +873,37 @@ function ballGlow() {
   return glowSprite;
 }
 
-function brush(ctx, len) {
-  ctx.beginPath();
-  for (let i = 0; i < 6; i++) {
-    const t0 = i / 6;
-    const t1 = (i + 1) / 6;
-    const y0 = -len * 0.5 + len * t0;
-    const y1 = -len * 0.5 + len * t1;
-    const bow0 = Math.sin(t0 * Math.PI) * len * 0.16;
-    const bow1 = Math.sin(t1 * Math.PI) * len * 0.16;
-    ctx.moveTo(bow0 * 0.35, y0);
-    ctx.quadraticCurveTo(len * 0.2, (y0 + y1) * 0.5, bow1, y1);
+function faceSlash(ctx, len, dir, width, fade, taper) {
+  const ex = dir * len;
+  const ey = -len * 0.28;
+  const cx = dir * len * 0.34;
+  const cy = -len * 0.46;
+  const at = (t) => {
+    const u = 1 - t;
+    return { x: 2 * u * t * cx + t * t * ex, y: 2 * u * t * cy + t * t * ey };
+  };
+  if (!taper) {
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.quadraticCurveTo(cx, cy, ex, ey);
+    ctx.stroke();
+    return;
   }
-  ctx.stroke();
+  const steps = 8;
+  for (let i = 0; i < steps; i++) {
+    const t0 = i / steps;
+    const t1 = (i + 1) / steps;
+    const p0 = at(t0);
+    const p1 = at(t1);
+    const mix = (1 - t0) * t1 + t0 * (1 - t1);
+    const head = 1 - t0;
+    ctx.beginPath();
+    ctx.moveTo(p0.x, p0.y);
+    ctx.quadraticCurveTo(mix * cx + t0 * t1 * ex, mix * cy + t0 * t1 * ey, p1.x, p1.y);
+    ctx.lineWidth = Math.max(0.5, width * head);
+    ctx.globalAlpha = fade * head;
+    ctx.stroke();
+  }
 }
 
 function roundRect(ctx, x, y, w, h, r) {

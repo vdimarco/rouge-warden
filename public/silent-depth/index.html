@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <script src="/arcade/quiet.js"></script>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#101b1c">
+  <meta name="description" content="Command a submarine in an original Pacific patrol game. Track the convoy, fire torpedoes, and slip beneath the waves. Play with keyboard, mouse, or touch.">
+  <title>Silent Depth — Pacific Patrol</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%23101b1c'/%3E%3Cpath d='M8 36h48c-4 13-39 13-48 0ZM28 35V24h10v11M33 24V15h9' fill='none' stroke='%23b0cbb8' stroke-width='3'/%3E%3C/svg%3E">
+  <link rel="preload" href="assets/ocean.webp" as="image">
+  <link rel="stylesheet" href="style.css">
+  <script type="module" src="main.js"></script>
+</head>
+<body>
+  <svg class="icon-defs" aria-hidden="true"><defs>
+    <symbol id="i-sub" viewBox="0 0 48 28"><path d="M3 16h42c-3 11-34 11-42 0ZM19 15V8h10v7M24 8V2h8M8 12v8M38 12v8"/></symbol>
+    <symbol id="i-scope" viewBox="0 0 24 24"><path d="M3 12h6m6 0h6M12 3v6m0 6v6"/><circle cx="12" cy="12" r="7"/></symbol>
+    <symbol id="i-map" viewBox="0 0 24 24"><path d="m3 5 6-2 6 2 6-2v16l-6 2-6-2-6 2V5Zm6-2v16m6-14v16"/></symbol>
+    <symbol id="i-sonar" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><path d="m12 12 6-7"/></symbol>
+    <symbol id="i-sound" viewBox="0 0 24 24"><path d="m11 4-5 4H3v8h3l5 4V4Zm4 4a6 6 0 0 1 0 8m3-11a10 10 0 0 1 0 14"/></symbol>
+    <symbol id="i-mute" viewBox="0 0 24 24"><path d="m11 4-5 4H3v8h3l5 4V4Zm5 5 6 6m0-6-6 6"/></symbol>
+    <symbol id="i-pause" viewBox="0 0 24 24"><path d="M8 5v14m8-14v14"/></symbol>
+    <symbol id="i-play" viewBox="0 0 24 24"><path d="m7 4 13 8-13 8V4Z"/></symbol>
+    <symbol id="i-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9 9a3 3 0 0 1 6 0c0 2-3 2-3 5m0 2v1"/></symbol>
+    <symbol id="i-left" viewBox="0 0 24 24"><path d="m14 6-6 6 6 6"/></symbol>
+    <symbol id="i-right" viewBox="0 0 24 24"><path d="m10 6 6 6-6 6"/></symbol>
+    <symbol id="i-torpedo" viewBox="0 0 24 24"><path d="M4 9h12c6 0 6 6 0 6H4V9Zm0 3H1m3-3L1 6m3 9-3 3m7-9v6"/></symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M4 12h16m-6-6 6 6-6 6"/></symbol>
+  </defs></svg>
+  <main class="app">
+    <header class="masthead">
+      <a class="brand" href="/" aria-label="Cottage Arcade home"><svg class="sub-logo"><use href="#i-sub"/></svg><span>SILENT DEPTH<span class="brand-sub">PACIFIC PATROL</span></span></a>
+      <div class="location">Luzon Strait<span class="separator">/</span>24 October 1943</div>
+      <div class="header-actions">
+        <button class="icon-button" id="other-games" data-switch aria-label="Other games" title="Other games"><svg><use href="#i-map"/></svg></button>
+        <button class="icon-button" id="sound" aria-label="Enable sound" title="Sound"><svg><use href="#i-mute"/></svg></button>
+        <button class="icon-button" id="help" aria-label="Patrol instructions" title="Instructions (H)"><svg><use href="#i-help"/></svg></button>
+        <button class="icon-button" id="pause" aria-label="Pause patrol" title="Pause (P)"><svg><use href="#i-pause"/></svg></button>
+      </div>
+    </header>
+    <div class="station-bar">
+      <nav aria-label="Submarine stations" class="stations">
+        <button class="station active" data-station="command" aria-pressed="true"><span class="station-number">01</span><svg><use href="#i-sub"/></svg><span>Control room</span></button>
+        <button class="station" data-station="scope" aria-pressed="false"><span class="station-number">02</span><svg><use href="#i-scope"/></svg><span>Periscope</span></button>
+        <button class="station" data-station="chart" aria-pressed="false"><span class="station-number">03</span><svg><use href="#i-map"/></svg><span>Chart table</span></button>
+        <button class="station" data-station="torpedo" aria-pressed="false"><span class="station-number">04</span><svg><use href="#i-torpedo"/></svg><span>Torpedo control</span></button>
+        <button class="station" data-station="sonar" aria-pressed="false"><span class="station-number">05</span><svg><use href="#i-sonar"/></svg><span>Hydrophone</span></button>
+      </nav>
+      <div class="watch"><span class="status-dot"></span><span id="clock">05:40:00</span><span class="watch-label">SHIP'S TIME</span></div>
+    </div>
+    <section class="battle-station" aria-label="Patrol station">
+      <div class="viewport" id="viewport">
+        <canvas id="scene" tabindex="0" aria-label="Periscope view. Drag to look, tap a ship to track it. You can also use Next contact.">Submarine patrol view. Use the station buttons and Next contact to operate the instruments.</canvas>
+        <div id="control-room" class="control-room">
+          <div class="room-stations" aria-label="Control room equipment">
+            <button class="room-chart" data-station="chart"><svg viewBox="0 0 527 313" preserveAspectRatio="none" aria-hidden="true"><path d="M0 9 L505 5 Q523 5 522 22 L364 306 Q358 313 344 311 L0 310 Z" vector-effect="non-scaling-stroke"/></svg><span>Chart table</span></button>
+            <button class="room-scope" data-station="scope"><svg viewBox="0 0 290 715" preserveAspectRatio="none" aria-hidden="true"><path d="M104 0 L203 0 L200 299 L273 299 Q286 299 285 316 Q285 328 273 329 L200 329 L198 623 Q200 644 228 653 Q271 668 267 688 Q261 713 145 713 Q44 711 41 687 Q37 667 89 650 L105 638 L105 329 L16 329 Q2 328 2 315 Q2 300 17 299 L105 299 Z" vector-effect="non-scaling-stroke"/></svg><span>Periscope</span></button>
+            <button class="room-torpedo" data-station="torpedo"><svg viewBox="0 0 329 143" preserveAspectRatio="none" aria-hidden="true"><path d="M9 66 L81 9 L268 0 L324 57 L319 83 L230 141 L0 91 Z" vector-effect="non-scaling-stroke"/></svg><span>Torpedo control</span></button>
+            <button class="room-sonar" data-station="sonar"><svg viewBox="0 0 154 117" preserveAspectRatio="none" aria-hidden="true"><path d="M5 52 Q10 16 44 6 Q82 -4 115 22 Q140 38 142 65 L151 85 Q154 107 135 114 Q113 121 101 98 L91 67 L88 51 Q67 25 45 45 L42 67 L49 93 Q48 114 28 112 Q8 111 5 91 Z" vector-effect="non-scaling-stroke"/></svg><span>Hydrophone</span></button>
+            <button class="room-helm" id="visit-helm"><svg viewBox="0 0 250 131" preserveAspectRatio="none" aria-hidden="true"><path d="M30 7 L248 0 L225 125 L0 130 Z" vector-effect="non-scaling-stroke"/></svg><span>Helm orders</span></button>
+          </div>
+        </div>
+        <div id="torpedo-station" class="torpedo-station" hidden><div class="weapon-heading"><div><span class="label">Bow battery</span><h2>Torpedo control</h2></div><svg><use href="#i-torpedo"/></svg></div><div class="weapon-target"><span class="label">Tracked contact</span><strong id="weapon-target">Merchant freighter</strong><span class="label">Solution <b id="weapon-solution">0%</b></span></div><div class="weapon-tubes"><button data-tube="0" aria-pressed="true"><span class="label">Tube 01</span><svg><use href="#i-torpedo"/></svg><span class="tube-state">Ready</span></button><button data-tube="1" aria-pressed="false"><span class="label">Tube 02</span><svg><use href="#i-torpedo"/></svg><span class="tube-state">Ready</span></button><button data-tube="2" aria-pressed="false"><span class="label">Tube 03</span><svg><use href="#i-torpedo"/></svg><span class="tube-state">Ready</span></button><button data-tube="3" aria-pressed="false"><span class="label">Tube 04</span><svg><use href="#i-torpedo"/></svg><span class="tube-state">Ready</span></button></div><div class="weapon-aim"><div><span class="label">Lead bearing</span><strong id="lead-bearing">—</strong></div><div><span class="label">Time to intercept</span><strong id="run-time">—</strong></div></div><button id="torpedo-fire" class="button primary" disabled><svg><use href="#i-torpedo"/></svg><span id="torpedo-fire-label">Fire tube 1</span></button><p id="torpedo-reason" class="fire-status">Awaiting solution</p></div>
+        <div class="scene-top"><span id="station-title">Observation periscope</span><span id="depth-status">12 m · Periscope depth</span></div>
+        <div id="bearing-label" class="bearing-label">032°</div>
+        <div class="scene-bottom"><span id="scene-tip">Drag to look · Tap a vessel to identify</span><div class="scope-actions"><button id="scope-toggle" class="scene-button" hidden>Lower scope</button><button id="zoom" class="scene-button" aria-label="Zoom in">1×</button></div></div>
+        <div id="submerged" class="submerged" hidden><svg><use href="#i-sub"/></svg><h2 id="submerged-title">Below the surface</h2><p id="submerged-description">The periscope is submerged. Use the hydrophone to listen, or return to scope depth.</p><button class="button" id="raise-scope">Return to scope depth</button></div>
+        <div id="damage-flash" class="damage-flash"></div>
+      </div>
+      <aside class="contact-panel" aria-label="Target and fire control">
+        <div class="contact-heading"><span class="label" id="contact-number">Contact 01</span><span class="contact-type" id="contact-type">MERCHANT</span></div>
+        <h1 id="contact-name">Merchant freighter</h1>
+        <p id="contact-status" class="contact-status">Visual contact · Tracking</p>
+        <dl class="contact-data"><div><dt>Range</dt><dd id="range">1,300 <small>m</small></dd></div><div><dt>Bearing</dt><dd id="bearing">035°</dd></div><div><dt>Course</dt><dd id="course">270° <span>W</span></dd></div></dl>
+        <div class="solution-heading"><span class="label">Firing solution</span><span id="solution-value">0%</span></div>
+        <div class="progress-track" role="progressbar" id="solution" aria-label="Firing solution" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span></span></div>
+        <p class="solution-tip" id="solution-tip">Keep the contact in view to calculate its course.</p>
+        <div class="tube-heading"><span class="label">Bow tubes</span><span id="ammo">8 TORPEDOES</span></div>
+        <div class="tubes" id="tubes" aria-label="Torpedo tube status"></div>
+        <button id="fire" class="button primary fire" disabled><svg><use href="#i-torpedo"/></svg><span>Fire torpedo</span><kbd>SPACE</kbd></button>
+        <div id="fire-status" class="fire-status" role="status">Awaiting your command</div>
+        <button id="next-contact" class="next-contact">Next contact<svg><use href="#i-arrow"/></svg></button>
+      </aside>
+    </section>
+    <section class="helm" aria-label="Submarine controls">
+      <div class="helm-control heading-control"><div class="instrument-heading"><span class="label">Heading</span><span class="order" id="heading-order">HOLD COURSE</span></div><div class="heading-row"><button class="square-button" data-turn="-5" aria-label="Turn 5 degrees to port"><svg><use href="#i-left"/></svg></button><div class="instrument-value" id="heading">000<span>° N</span></div><button class="square-button" data-turn="5" aria-label="Turn 5 degrees to starboard"><svg><use href="#i-right"/></svg></button></div></div>
+      <div class="helm-control"><div class="instrument-heading"><span class="label">Engine</span><span class="instrument-value small" id="speed">3.0 <span>kn</span></span></div><div class="segmented"><button data-speed="3" class="active" aria-pressed="true">Silent</button><button data-speed="7" aria-pressed="false">Ahead</button><button data-speed="14" aria-pressed="false">Flank</button></div></div>
+      <div class="helm-control"><div class="instrument-heading"><span class="label">Depth</span><span class="instrument-value small" id="depth">12 <span>m</span></span></div><div class="segmented"><button data-depth="0" aria-pressed="false">Surface</button><button data-depth="12" class="active" aria-pressed="true">Scope</button><button data-depth="80" aria-pressed="false">Deep</button></div></div>
+    </section>
+    <section class="condition-band" aria-label="Submarine condition"><div><span class="label">Hull</span><span class="mini-track"><i id="hull-bar"></i></span><span id="hull-value">100%</span></div><div><span class="label">Battery</span><span class="mini-track"><i id="battery-bar"></i></span><span id="battery-value">100%</span></div><div><span class="label">Air</span><span class="mini-track"><i id="air-bar"></i></span><span id="air-value">100%</span></div><div class="detection"><span class="status-dot" id="alert-dot"></span><span id="detection">Undetected</span></div></section>
+    <section class="log-section" aria-label="Captain’s log"><div class="log-title"><h2>Captain’s log</h2><span id="log-count">01 ENTRY</span></div><div id="log" class="log-entries" aria-live="polite" aria-relevant="additions"></div></section>
+    <footer class="patrol-footer"><div class="objective"><span class="objective-icon">◇</span><span id="objective">Sink 2 merchants, then escape.</span><strong id="score">0 / 2</strong></div><div class="time-controls"><span class="label">Time</span><button data-rate="1" aria-label="Normal time" aria-pressed="false">1×</button><button data-rate="4" class="active" aria-label="Four times speed" aria-pressed="true">4×</button><button data-rate="12" aria-label="Twelve times speed" aria-pressed="false">12×</button></div></footer>
+    <div class="page-note"><span>An original submarine patrol.</span><span>HEADPHONES RECOMMENDED</span></div>
+  </main>
+  <dialog id="modal" aria-labelledby="modal-title">
+    <div class="modal-inner"><svg class="modal-sub"><use href="#i-sub"/></svg><span id="modal-kicker" class="label">Your orders, Captain</span><h2 id="modal-title">A quiet sea.<br>A dangerous crossing.</h2><p id="modal-description">Luzon Strait, October 1943. A convoy is crossing your patrol sector. You have eight torpedoes and one chance to get your crew home.</p><div id="briefing-steps" class="briefing-steps"><div><span>01</span><p><strong>Take your station.</strong> Start in the control room. Visit the periscope to observe a merchant and build a firing solution.</p></div><div><span>02</span><p><strong>Make the shot.</strong> Visit Torpedo Control, select a ready tube and fire at 75% solution. Allow time for the torpedo to arrive.</p></div><div><span>03</span><p><strong>Disappear.</strong> Sink two merchants, then order Deep and Silent at the helm. Stay hidden for 40 ship seconds to escape.</p></div></div><div id="result-stats" class="result-stats" hidden></div><p id="modal-note" class="modal-note">Choose a station · Give helm orders · All controls work with touch<br><span>Keyboard: 1–5 stations · A/D turn · W/S engine · C dive · Space fire · P pause</span></p><button id="modal-action" class="button primary">Take command<svg><use href="#i-arrow"/></svg></button><button id="modal-secondary" class="modal-secondary" hidden>Return to patrol</button></div>
+  </dialog>
+  <script src="/arcade/analytics.js" data-game="silent-depth"></script>
+  <script src="/arcade/switch.js"></script>
+</body>
+</html>

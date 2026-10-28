@@ -1,0 +1,4 @@
+- [x] Set the walker socket and the combat idle socket to (0, 70, 55)
+- [x] Shade the street before and after from the spring arm
+- [x] Run the framing port in `Scripts/test_camera_shoulder.py`
+- [ ] Apply the camera in Unreal (editor not available here)

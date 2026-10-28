@@ -2,64 +2,80 @@
   "models": [
     {
       "file": "Canopy0_0.obj",
-      "triangles": 7649,
+      "triangles": 6429,
       "materials": [
+        "Leaf0",
         "Leaf1",
+        "Leaf2",
         "Wood"
       ]
     },
     {
       "file": "Canopy0_1.obj",
-      "triangles": 7324,
+      "triangles": 6459,
       "materials": [
+        "Leaf0",
         "Leaf1",
+        "Leaf2",
         "Wood"
       ]
     },
     {
       "file": "Canopy0_2.obj",
-      "triangles": 9187,
+      "triangles": 7998,
       "materials": [
+        "Leaf0",
         "Leaf1",
+        "Leaf2",
         "Wood"
       ]
     },
     {
       "file": "Canopy0_3.obj",
-      "triangles": 7877,
+      "triangles": 7199,
       "materials": [
+        "Leaf0",
+        "Leaf2",
         "Leaf1",
         "Wood"
       ]
     },
     {
       "file": "Canopy1_0.obj",
-      "triangles": 10451,
+      "triangles": 8503,
       "materials": [
+        "Leaf0",
         "Leaf1",
+        "Leaf2",
         "Wood"
       ]
     },
     {
       "file": "Canopy1_1.obj",
-      "triangles": 9840,
+      "triangles": 8227,
       "materials": [
+        "Leaf0",
+        "Leaf2",
         "Leaf1",
         "Wood"
       ]
     },
     {
       "file": "Canopy1_2.obj",
-      "triangles": 8073,
+      "triangles": 6660,
       "materials": [
+        "Leaf0",
         "Leaf1",
+        "Leaf2",
         "Wood"
       ]
     },
     {
       "file": "Canopy1_3.obj",
-      "triangles": 7809,
+      "triangles": 6831,
       "materials": [
+        "Leaf0",
+        "Leaf2",
         "Leaf1",
         "Wood"
       ]

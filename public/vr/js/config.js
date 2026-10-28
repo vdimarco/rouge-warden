@@ -2,7 +2,7 @@
 // Plain data with no imports, so the Node tests and the page share it.
 // Units are metres and seconds. Y is up, street level is y = 0, and the lake lies to the south (+z).
 
-export const VERSION = "1.21.0";
+export const VERSION = "1.24.2";
 export const SAVE_KEY = "plungerd.vr.v1";
 export const PACKAGE_ID = "com.cottagearcade.fullswing";
 
@@ -43,6 +43,7 @@ export const SWING = {
   lenRate: 15, // the rope length moves toward its target this fast, so a change never pops the body
   catchTime: 0.12, // a slack rope that goes taut catches the body over this time
   chestH: 1.25, // the rope pulls on the chest, at this height above the feet (scaled by calibrated height)
+  bodyH: 1.8, // the hero's height. Easy swing measures ahead, up, reach and the rope in these.
   reelSpeedMax: 9, // grip fully squeezed
   yank: { threshold: 1.2, gain: 2.2, maxDV: 7, cooldown: 0.35, shorten: 1.5 },
   handOverHandGain: 1.3,
@@ -63,10 +64,15 @@ export const MOVES = {
   sprint: 2.2, drain: 0.2, fill: 0.16, wait: 0.8, minEnergy: 0.12,
   roll: { time: 0.62, minSpeed: 6, friction: 1.4, fall: 13 },
   // the release boost (mouse and pad): a rope let go while the GO cue shows adds forward m/s along the flight and up m/s, widens
-  // the view by kick degrees and flips the hero over flip s. One boost per cool s.
-  release: { forward: 4, up: 3.5, kick: 7, flip: 0.55, cool: 0.6 },
+  // the view by kick degrees and flips the hero over flip s. A fast let-go outside that cue still carries: carryForward and
+  // carryUp, once the flight across the ground is at least carry m/s. A slow drop does not. One boost per cool s.
+  release: { forward: 4, up: 3.5, kick: 7, flip: 0.55, cool: 0.6, carry: 8, carryForward: 2.2, carryUp: 1.6, carryKick: 3 },
   // the finisher: the world runs at slow speed for time s (real time) after it, and the view narrows by zoom degrees
   finisher: { slow: 0.3, time: 0.7, zoom: 10 },
+  // a won job in flat play: up m/s off the street, forward m/s along the flight, and the view widens by kick degrees. A miss does not.
+  // winBig: a roof fight, a getaway, a tanker, or the Sludge Run. An errand keeps win.
+  win: { up: 8, forward: 3.5, kick: 6 },
+  winBig: { up: 14, forward: 5, kick: 9 },
   // the glide (hold jump in the air with no rope, after minAir s): the fall eases to sink m/s, lift of the fall it stops turns into
   // speed along the ground, which stays between min and max m/s; the move input turns it at turn rad/s
   glide: { sink: 3.2, min: 14, max: 32, lift: 0.6, turn: 1.6, minAir: 0.25, grow: 8 },
@@ -191,7 +197,7 @@ export const GAME = {
   clogRadius: 2.5,
   loonieRadius: 2.2,
   looniesPerFlush: 5,
-  king: { unlock: 12, pipes: 3, hearts: 3, throwEvery: 3.5, windUp: 1, ballSpeed: 14, ballGravity: 4, ballRadius: 0.5, hitRadius: 0.3, grace: 3, firstDelay: 5, height: 16, reactAt: [4, 8] },
+  king: { unlock: 12, pipes: 3, hearts: 3, throwEvery: 3.5, windUp: 1, ballSpeed: 14, ballGravity: 4, ballRadius: 0.5, hitRadius: 0.3, grace: 3, firstDelay: 5, height: 16, reactAt: [4, 8], stompRadius: 28, pullRadius: 16, pullDrag: 14, belchRadius: 8, sweepRadius: 36, sweepHalf: 0.45, grabRadius: 8 },
   bankMax: 140,
   unlocks: { stripe: 30, cup: 60, launcher: 100, fireworks: 140 },
   tutorialRepeat: 8, tutorialTimeout: 30,
@@ -206,7 +212,7 @@ export const GAME = {
 // order; the first is the gold ring, as in the spoken tutorial. A headset keeps the spoken tutorial. "of": a live count.
 export const TRAINING = {
   mouse: [
-    { id: "rope", text: "Swing at the gold ring", keys: ["HOLD W", "+ LEFT MOUSE"], line: 0 },
+    { id: "rope", text: "Swing at the gold ring", keys: ["LEFT MOUSE", "OR E"], line: 0 },
     { id: "swing", text: "Let go when the ring says GO", keys: ["RELEASE"], line: 1 },
     { id: "again", text: "Swing again before you land", keys: ["LEFT MOUSE", "OR E"], line: 2 },
     { id: "reel", text: "Reel in", keys: ["HOLD SHIFT"], line: 3 },
@@ -216,7 +222,7 @@ export const TRAINING = {
     { id: "plunge", text: "Plunge a clog: rope it, then pump", keys: ["F", "F", "F"], of: 3, line: 7 },
   ],
   pad: [
-    { id: "rope", text: "Swing at the gold ring", keys: ["LEFT STICK UP", "+ RT"], line: 0 },
+    { id: "rope", text: "Swing at the gold ring", keys: ["RT"], line: 0 },
     { id: "swing", text: "Let go when the ring says GO", keys: ["RELEASE RT"], line: 1 },
     { id: "again", text: "Swing again before you land", keys: ["RT"], line: 2 },
     { id: "reel", text: "Reel in", keys: ["HOLD LB"], line: 3 },
@@ -261,7 +267,7 @@ export const LINES_HANDS = {
 // Mouse and keys. The game picks the building, so the lines say look at it and let go when the ring says GO.
 export const LINES_DESKTOP = {
   intro: ["Shoes off. Plunger up.", "Hear that? Something is backing up.", "Aim at the crack. Hold the left mouse button.", "Now press F to yank.", "Clear the space around you.", "Give yourself some room.", "The toilet is overflowing! Aim at it. Hold the left mouse button.", "Now press F to yank. Hold on!"],
-  tutorial: ["Look at the gold ring. Hold W and the left mouse button.", "Swing out. Let go when the ring says GO.", "Swing again before you land.", "Hold Shift to reel in.", "Press F to yank.", "Move the mouse to look around.", "Your score is at the top of the screen.", "That green light is a clog. Look at it and swing."],
+  tutorial: ["Look at the gold ring. Hold the left mouse button.", "Swing out. Let go when the ring says GO.", "Swing again before you land.", "Hold Shift to reel in.", "Press F to yank.", "Move the mouse to look around.", "Your score is at the top of the screen.", "That green light is a clog. Look at it and swing."],
   clog: ["That's a clog. Look at it and swing.", "Press F three times to pump.", "Flushed.", "The city thanks you. Quietly."],
   king: LINES.king, splash: LINES.splash,
   wall: ["On the wall. W and S climb, A and D go along it. Space jumps off."],
@@ -269,7 +275,7 @@ export const LINES_DESKTOP = {
 // A game pad. The words fit an Xbox pad and a PlayStation pad: trigger, bumper, stick and "the bottom button".
 export const LINES_PAD = {
   intro: ["Shoes off. Plunger up.", "Hear that? Something is backing up.", "Aim at the crack. Hold the right trigger.", "Now press the right bumper to yank.", "Clear the space around you.", "Give yourself some room.", "The toilet is overflowing! Aim at it. Hold the right trigger.", "Now press the right bumper to yank. Hold on!"],
-  tutorial: ["Look at the gold ring. Hold the left stick up and the right trigger.", "Swing out. Let go when the ring says GO.", "Swing again before you land.", "Hold the left bumper to reel in.", "Press the right bumper to yank.", "Push the right stick to look around.", "Your score is at the top of the screen.", "That green light is a clog. Look at it and swing."],
+  tutorial: ["Look at the gold ring. Hold the right trigger.", "Swing out. Let go when the ring says GO.", "Swing again before you land.", "Hold the left bumper to reel in.", "Press the right bumper to yank.", "Push the right stick to look around.", "Your score is at the top of the screen.", "That green light is a clog. Look at it and swing."],
   clog: ["That's a clog. Look at it and swing.", "Press the right bumper three times to pump.", "Flushed.", "The city thanks you. Quietly."],
   king: LINES.king, splash: LINES.splash,
   wall: ["On the wall. Push the left stick to climb. Press the bottom button to jump off."],

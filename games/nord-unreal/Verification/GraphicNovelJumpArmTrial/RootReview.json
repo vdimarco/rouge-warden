@@ -1,0 +1,29 @@
+{
+  "reviewer": "root",
+  "scope": "Direct actual-image inspection; no full continuous playback or performance acceptance",
+  "stills_inspected": [
+    "Baseline Standard720 Airborne",
+    "Trial Standard720 Airborne",
+    "Trial Standard1080 Airborne/Landing",
+    "Baseline Comic720 Airborne",
+    "Trial Comic720 Airborne",
+    "Trial Comic1080 Airborne/Landing"
+  ],
+  "temporal_inspected": [
+    "Actual baseline and trial Standard video frames at 5.2 s",
+    "Trial and baseline Comic 13-frame source-video contact sheets at4.4\u20136.8s"
+  ],
+  "observations": [
+    "Lowered upper-arm pose reduces raised shoulder lobes in front views; angular sleeve-cap pinching remains.",
+    "Standard 5.2 s trial frame visibly places plunger head over side-view face/mouth; baseline5.2s frame holds it above/forward of the face.",
+    "Comic contact samples show similar side-view occlusion over several selected frames.",
+    "Video PTS is not an exact native clip-time mapping; samples do not prove 3D intersection or continuous fluidity."
+  ],
+  "decision": "Reject adoption of this isolated arm-only derivative; original private clip retained/restored. Next pass must consider pose, prop clearance and sleeve anatomy together.",
+  "standard_sample_png_sha256": {
+    "TrialStandard5p2.png": "dfca640bcd78294ff2d33cd1618717a77ad5b2f4f3b351a2cec63af62272f8ed",
+    "BaselineStandard5p2.png": "83a6c2598c2efc89a04d9688e61fde610f77148656a5025c345ea572702fd767"
+  },
+  "graphics_accepted": false,
+  "adopted": false
+}

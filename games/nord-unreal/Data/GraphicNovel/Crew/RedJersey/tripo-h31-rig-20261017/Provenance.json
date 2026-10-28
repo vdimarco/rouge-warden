@@ -1,0 +1,29 @@
+{
+  "character": "RedJersey",
+  "source_provider": "Tripo H3.1",
+  "source_body_task_id": "8845fab9-3804-44f5-8dbb-fd63d29d98cb",
+  "rig_task_id": "61597069-f8a8-4405-8289-c328a4999c08",
+  "credits_consumed": 25,
+  "model": "v3.0-20260909",
+  "rig_type": "biped",
+  "spec": "unreal",
+  "out_format": "fbx",
+  "source": {
+    "path": "Data/GraphicNovel/Crew/RedJersey/tripo-h31-body-20261017/body.glb",
+    "sha256": "13bf9c9dc76a7a925ba31ad5fadf6ef5e3a7436ee0450e6579a221f1fabd96c8"
+  },
+  "outputs": {
+    "rig.fbx": {
+      "bytes": 7319884,
+      "sha256": "53d2bdfd3c8958865cf0865db4d8f92a85fc1079ef02f8fe441dd32e9c1afa67"
+    },
+    "provider-preview.png": {
+      "bytes": 130110,
+      "sha256": "f4715a4e99169aad44b60959534bf7f615dc0d9cae53303add456651bb018f73"
+    }
+  },
+  "signed_urls_private_only": true,
+  "raw_provider_files_unchanged": true,
+  "native_or_art_accepted": false,
+  "recorded_utc": "2026-10-17T23:37:04.102594+00:00"
+}

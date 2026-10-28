@@ -1,0 +1,4 @@
+- [x] Shed ten drifting cards from the nearest crown
+- [x] Shade the opening walk camera before and after
+- [x] Run `Scripts/test_leaves.py`
+- [ ] Confirm the cards in Unreal (editor not available here)

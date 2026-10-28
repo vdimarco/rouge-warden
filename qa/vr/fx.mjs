@@ -242,19 +242,18 @@ try {
     G.test.teleport(S.x, S.y + 120, S.z); __f.step(2);
     P.frozen = true; // the body stays where it is; only its speed matters here
     const speed = (v) => { P.vel.x = 0; P.vel.y = 0; P.vel.z = -v; };
-    // the BONK run above ends in a wall-run, whose WHOOSH shares the 4 s wait: let it pass, and count only new words
-    speed(0); __f.step(250);
-    const made0 = __f.made("WHOOSH"), made = () => __f.made("WHOOSH") - made0;
-    speed(12); __f.step(3); out.slow = made();
-    speed(25); __f.step(2); out.first = made();
+    speed(12); __f.step(300); // settle the cooldown from the preceding wall-impact scenario
+    const before = __f.made("WHOOSH");
+    speed(12); __f.step(3); out.slow = __f.made("WHOOSH") - before;
+    speed(25); __f.step(2); out.first = __f.made("WHOOSH") - before;
     const w = __f.words().find((q) => q.name === "WHOOSH"), h = __f.head();
     out.ahead = w ? { dz: +(w.z - h.z).toFixed(2), dist: +Math.hypot(w.x - h.x, w.y - h.y, w.z - h.z).toFixed(2), w: +w.w.toFixed(2) } : null;
     speed(10); __f.step(30); // under 17 m/s it re-arms
-    speed(25); __f.step(30); out.within4 = made(); // 1 s after the first: too soon
+    speed(25); __f.step(30); out.within4 = __f.made("WHOOSH") - before; // 1 s after the first: too soon
     speed(10); __f.step(30);
     speed(25); __f.step(240); // more than 4 s after the first
     speed(10); __f.step(30);
-    speed(25); __f.step(2); out.after4 = made();
+    speed(25); __f.step(2); out.after4 = __f.made("WHOOSH") - before;
     P.frozen = false; P.vel.x = P.vel.y = P.vel.z = 0;
     return out;
   });

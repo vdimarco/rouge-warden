@@ -9,7 +9,8 @@ import {
 } from '../../../public/light-years-home/core/world/index.js';
 import { EARLIER } from '../../../public/light-years-home/core/milestones.js';
 
-const zones = await Promise.all(ZONE_IDS.map(loadZone));
+// Every round's text is checked, the work in progress for Round 2 included (core/world/round.js).
+const zones = await Promise.all(ZONE_IDS.map((id) => loadZone(id, 2)));
 const events = zones.flatMap((z) => z.events);
 const LABEL = 26;              // ring, gate and far labels: one row, the toast budget
 const SCALE = 60;              // the scale card: two rows of the grey info box

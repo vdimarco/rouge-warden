@@ -1,0 +1,2 @@
+- [x] The compass points at the clog the card names, and a job still titles it as the job
+- [x] Check that title in a 1280×800 play

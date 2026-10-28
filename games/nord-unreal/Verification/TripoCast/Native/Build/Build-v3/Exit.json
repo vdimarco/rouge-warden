@@ -1,0 +1,1 @@
+{"command": ["/home/von/.local/share/Epic/UE_5.8.3/Engine/Build/BatchFiles/Linux/Build.sh", "QuebecEditor", "Linux", "Development", "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Quebec.uproject", "-NoHotReload", "-MaxParallelActions=4"], "exit_code": 0}

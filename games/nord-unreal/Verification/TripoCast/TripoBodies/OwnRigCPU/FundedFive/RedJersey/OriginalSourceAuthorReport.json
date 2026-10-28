@@ -1,0 +1,19 @@
+{
+  "passed": true,
+  "source_root": "Saved/Tests/TripoCastMotion-ibmlazfo/corrected-source",
+  "characters": [
+    {
+      "name": "Character",
+      "authoring": "original local skeletal keyframes; no paid generation",
+      "body_sha256": "6fa600d9ef8cd6478cf9de943853d5900f8756a386b776fd2f6ba288e626fa86",
+      "jump_sha256": "5da751ea9efb647f031597ffdaf216c7f035c12a60914a47e9735a247476b34c",
+      "seconds": 1.2,
+      "fps": 30,
+      "bones": 24,
+      "head_and_neck_unchanged": true,
+      "actor_root_motion": false,
+      "fbx_round_trip_passed": true,
+      "exported_forward_elbow_flex_passed": true
+    }
+  ]
+}

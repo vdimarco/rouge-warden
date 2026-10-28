@@ -176,8 +176,8 @@ A rope that a real swing input fired (left or right mouse button, E, Q, RT, LT) 
 
 #### Scenario: Swing from the start roof with the button alone
 - **WHEN** a player on the start roof holds the left mouse button and does not hold W
-- **THEN** the rope attaches and the kick slides the hero across the roof, and friction stops the hero on it (measured: still on the roof after 6 s)
-- **AND** this is why the first tutorial line and the hint strip tell the player to hold W with the button
+- **THEN** the rope attaches and the hero is in the air within 4 s
+- **AND** while the rope drags the hero along the roof the LET GO caption shows, and the first frame in the air gives none
 
 #### Scenario: Swing in the air
 - **WHEN** a body falls at 5 m/s with a target ahead and the player holds the left mouse button
@@ -200,7 +200,7 @@ A rope that a real swing input fired (left or right mouse button, E, Q, RT, LT) 
 - **THEN** no `hop` event and no `kick` event show
 
 ### Requirement: A hint strip for the first minute
-For the first 60 s of play in a session that starts with an unfinished tutorial, a comic caption strip SHALL show at the bottom of the screen, for a mouse or a pad. For a mouse it SHALL read: HOLD W AND LEFT MOUSE (OR E): SWING. LET GO WHEN THE RING SAYS GO. MOUSE: LOOK. For a pad it SHALL read: HOLD LEFT STICK UP AND RIGHT TRIGGER: SWING. LET GO WHEN THE RING SAYS GO. RIGHT STICK: LOOK. The text SHALL fit inside the strip. The strip SHALL be at most 36 px high. While it shows, the spoken line SHALL move up so that its box and its tail clear the strip. The strip SHALL NOT cover the toast or the score pills. It SHALL NOT show in a session with a finished tutorial, in the opening, when paused, on a touch device, or in a headset.
+For the first 60 s of play in a session that starts with an unfinished tutorial, a comic caption strip SHALL show at the bottom of the screen, for a mouse or a pad. For a mouse it SHALL read: LEFT MOUSE (OR E): SWING. LET GO WHEN THE RING SAYS GO. MOUSE: LOOK. For a pad it SHALL read: RIGHT TRIGGER: SWING. LET GO WHEN THE RING SAYS GO. RIGHT STICK: LOOK. The text SHALL fit inside the strip. The strip SHALL be at most 36 px high. While it shows, the spoken line SHALL move up so that its box and its tail clear the strip. The strip SHALL NOT cover the toast or the score pills. It SHALL NOT show in a session with a finished tutorial, in the opening, when paused, on a touch device, or in a headset.
 
 #### Scenario: First run
 - **WHEN** a player starts play with an unfinished tutorial and a mouse
@@ -263,11 +263,11 @@ A player who uses only the swing input and W SHALL attach to three different bui
 - **THEN** all three pass
 
 ### Requirement: The tutorial speaks of the mouse
-The tutorial and the clog lines for a mouse SHALL name W, the left mouse button, Shift and F. They SHALL tell the player to look at the target and to let go when the ring says GO. The lines SHALL NOT name a pad button.
+The tutorial and the clog lines for a mouse SHALL name the left mouse button, Shift and F. The wall line SHALL name W. They SHALL tell the player to look at the target and to let go when the ring says GO. The first swing line SHALL NOT ask the player to hold W. The lines SHALL NOT name a pad button.
 
 #### Scenario: First tutorial line
 - **WHEN** the tutorial starts with a mouse
-- **THEN** the first line reads "Look at the gold ring. Hold W and the left mouse button."
+- **THEN** the first line reads "Look at the gold ring. Hold the left mouse button."
 
 #### Scenario: Release line
 - **WHEN** the tutorial reaches step 1 with a mouse

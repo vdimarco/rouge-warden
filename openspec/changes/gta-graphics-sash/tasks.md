@@ -1,0 +1,5 @@
+- [x] Draw the sash larger than the glass
+- [x] Keep a wall under five metres blank
+- [x] Keep the opening pitch, the aim, and the socket
+- [x] Run `Scripts/test_window_sash.py`
+- [ ] Confirm the sash in Unreal (editor not available here)

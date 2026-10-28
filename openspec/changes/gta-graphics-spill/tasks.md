@@ -1,0 +1,4 @@
+- [x] Add the warm apron under lit panes in `city_facade.hlsl`
+- [x] Shade the wall before and after
+- [x] Run `Scripts/test_facade_spill.py`
+- [ ] Apply the facade material in Unreal (editor not available here)

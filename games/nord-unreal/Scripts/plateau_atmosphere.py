@@ -30,7 +30,10 @@ RAIN_HLSL = ROOT / 'Scripts/rain_streak.hlsl'
 # offset on each axis to this value and pads each instance's culling bounds by it; 0 would cull streaks
 # whose pivot is off screen. Scripts/water_shader_test.cpp checks that the offset stays inside it.
 RAIN_MAX_OFFSET = 3200.
+# QuebecGloss.h WetRoadRoughness. A water film, smoother than dry asphalt.
+WET_ROAD_ROUGHNESS = 0.15
 PUDDLE_HLSL = ROOT / 'Scripts/wet_puddles.hlsl'
+SPLASH_HLSL = ROOT / 'Scripts/rain_splash.hlsl'
 RAIN_INPUTS = ('Pivot', 'WorldPos', 'CameraPos', 'Time', 'Rand', 'Rain', 'Wind', 'WindDirX', 'WindDirY')
 WET = tuple('/Game/Plateau/Materials/M_' + name for name in ('Asphalt', 'Concrete', 'ConcreteDark', 'Gravel', 'ParkEarth'))
 WINDOWS = tuple('/Game/Plateau/Materials/M_' + name for name in ('Glow', 'InteriorWarm', 'Tail'))
@@ -40,7 +43,7 @@ UNLIT = ('/Game/Materials/M_Glow', '/Game/ParkComic/M_Paper', '/Game/ParkComic/M
 TOUCHED = (COLLECTION, plateau_water.TEXTURE, plateau_water.MATERIAL, RAIN) + WET + WINDOWS + UNLIT
 MARKER = 'NordSky'
 # Collection parameters each wrapper adds, by property name; verify() expects exactly one of each.
-WRAPPERS = {'wet': {'MP_BASE_COLOR': ('Wetness',), 'MP_ROUGHNESS': ('Wetness', 'Puddles'), 'MP_NORMAL': ('Puddles',)},
+WRAPPERS = {'wet': {'MP_BASE_COLOR': ('Wetness', 'RainIntensity'), 'MP_ROUGHNESS': ('Wetness', 'Puddles'), 'MP_NORMAL': ('Puddles',)},
             'window': {'MP_EMISSIVE_COLOR': ('WindowGlow',)},
             'exposure': {'MP_EMISSIVE_COLOR': ('ExposureScale', 'NightFactor')}}
 PROPERTIES = ('MP_BASE_COLOR', 'MP_NORMAL', 'MP_ROUGHNESS', 'MP_EMISSIVE_COLOR', 'MP_OPACITY',
@@ -212,13 +215,85 @@ def rain_material(u, mpc):
     shape = g.node(u.MaterialExpressionMultiply)
     g.link(line, '', shape, 'A')
     g.link(along, '', shape, 'B')
-    faint = g.node(u.MaterialExpressionMultiply, const_b=.35)
-    g.link(shape, '', faint, 'A')
+    # A tight core, a soft skirt, and a bright knot at the leading end. The displacement shader is unchanged.
+    square = g.node(u.MaterialExpressionMultiply)
+    g.link(line, '', square, 'A')
+    g.link(line, '', square, 'B')
+    cube = g.node(u.MaterialExpressionMultiply)
+    g.link(square, '', cube, 'A')
+    g.link(line, '', cube, 'B')
+    core = g.node(u.MaterialExpressionMultiply)
+    g.link(cube, '', core, 'A')
+    g.link(along, '', core, 'B')
+    core_gain = g.node(u.MaterialExpressionMultiply, const_b=.85)
+    g.link(core, '', core_gain, 'A')
+    halo = g.node(u.MaterialExpressionMultiply, const_b=.18)
+    g.link(shape, '', halo, 'A')
+    lead = g.node(u.MaterialExpressionSubtract, const_b=.12)
+    g.link(g.mask(uv, 'g'), '', lead, 'A')
+    lead_abs = g.node(u.MaterialExpressionAbs)
+    g.link(lead, '', lead_abs, '')
+    lead_scale = g.node(u.MaterialExpressionMultiply, const_b=10.)
+    g.link(lead_abs, '', lead_scale, 'A')
+    lead_inv = g.node(u.MaterialExpressionOneMinus)
+    g.link(lead_scale, '', lead_inv, '')
+    lead_span = g.node(u.MaterialExpressionClamp, min_default=0., max_default=1.)
+    g.link(lead_inv, '', lead_span, '')
+    head = g.node(u.MaterialExpressionMultiply)
+    g.link(lead_span, '', head, 'A')
+    g.link(line, '', head, 'B')
+    head_gain = g.node(u.MaterialExpressionMultiply, const_b=.7)
+    g.link(head, '', head_gain, 'A')
+    # A round head on the 10 cm card. In UV the card is much longer than it is wide, so the
+    # circle is flat in v: 4 cm is 0.4 of the width and about 0.065 of a 62 cm streak.
+    u_off = g.node(u.MaterialExpressionSubtract, const_b=.5)
+    g.link(g.mask(uv, 'r'), '', u_off, 'A')
+    v_off = g.node(u.MaterialExpressionSubtract, const_b=.18)
+    g.link(g.mask(uv, 'g'), '', v_off, 'A')
+    u_n = g.node(u.MaterialExpressionMultiply, const_b=2.5)
+    g.link(u_off, '', u_n, 'A')
+    v_n = g.node(u.MaterialExpressionMultiply, const_b=15.4)
+    g.link(v_off, '', v_n, 'A')
+    u2 = g.node(u.MaterialExpressionMultiply)
+    g.link(u_n, '', u2, 'A')
+    g.link(u_n, '', u2, 'B')
+    v2 = g.node(u.MaterialExpressionMultiply)
+    g.link(v_n, '', v2, 'A')
+    g.link(v_n, '', v2, 'B')
+    rad = g.node(u.MaterialExpressionAdd)
+    g.link(u2, '', rad, 'A')
+    g.link(v2, '', rad, 'B')
+    rad_inv = g.node(u.MaterialExpressionOneMinus)
+    g.link(rad, '', rad_inv, '')
+    disc = g.node(u.MaterialExpressionClamp, min_default=0., max_default=1.)
+    g.link(rad_inv, '', disc, '')
+    disc_gain = g.node(u.MaterialExpressionMultiply, const_b=.95)
+    g.link(disc, '', disc_gain, 'A')
+    skirt = g.node(u.MaterialExpressionAdd)
+    g.link(core_gain, '', skirt, 'A')
+    g.link(halo, '', skirt, 'B')
+    body = g.node(u.MaterialExpressionAdd)
+    g.link(skirt, '', body, 'A')
+    g.link(head_gain, '', body, 'B')
+    with_head = g.node(u.MaterialExpressionAdd)
+    g.link(body, '', with_head, 'A')
+    g.link(disc_gain, '', with_head, 'B')
     opacity = g.node(u.MaterialExpressionMultiply)
-    g.link(faint, '', opacity, 'A')
+    g.link(with_head, '', opacity, 'A')
     g.link(visible, '', opacity, 'B')
     g.connect(opacity, '', u.MaterialProperty.MP_OPACITY)
-    g.connect(g.node(u.MaterialExpressionConstant3Vector, constant=u.LinearColor(.7, .74, .78, 1)), '', u.MaterialProperty.MP_BASE_COLOR)
+    mist = g.node(u.MaterialExpressionConstant3Vector, constant=u.LinearColor(.55, .64, .74, 1))
+    hot = g.node(u.MaterialExpressionConstant3Vector, constant=u.LinearColor(.96, .97, 1, 1))
+    bright = g.node(u.MaterialExpressionAdd)
+    g.link(core, '', bright, 'A')
+    g.link(disc, '', bright, 'B')
+    bright_span = g.node(u.MaterialExpressionClamp, min_default=0., max_default=1.)
+    g.link(bright, '', bright_span, '')
+    tint = g.node(u.MaterialExpressionLinearInterpolate)
+    g.link(mist, '', tint, 'A')
+    g.link(hot, '', tint, 'B')
+    g.link(bright_span, '', tint, 'Alpha')
+    g.connect(tint, '', u.MaterialProperty.MP_BASE_COLOR)
     g.library.set_base_material_usage(mat, u.MaterialUsage.MATUSAGE_INSTANCED_STATIC_MESHES, True)
     assert g.library.has_material_usage(mat, u.MaterialUsage.MATUSAGE_INSTANCED_STATIC_MESHES)
     g.library.recompile_material(mat)
@@ -226,11 +301,13 @@ def rain_material(u, mpc):
     return mat, {'asset': RAIN, 'blend_mode': 'translucent', 'two_sided': True,
                  'translucency_lighting_mode': 'volumetric non-directional',
                  'max_world_position_offset_displacement_cm': RAIN_MAX_OFFSET, 'custom_inputs': list(RAIN_INPUTS),
-                 'hlsl_sha256': _sha256(RAIN_HLSL), 'base_color': [.7, .74, .78], 'opacity': 'streak mask x .35 x visible-instance mask'}
+                 'hlsl_sha256': _sha256(RAIN_HLSL), 'base_color': 'lerp mist (.55, .64, .74) to white by the streak core and the round head',
+                 'opacity': 'bright core plus soft skirt plus leading knot plus a round head, times the visible-instance mask'}
 
 
 def wet_ground(u, mat, mpc):
-    """Base colour x lerp(1, .5, Wetness); roughness to x.45 when wet and .03 in puddles; flat normal in puddles."""
+    """Base colour x lerp(1, .5, Wetness), plus a splash ring where RainIntensity is up.
+    Roughness lerps to the water film when wet and .03 in puddles; flat normal in puddles."""
     g, P, added = Graph(u, mat, mpc), u.MaterialProperty, []
     puddles = []
 
@@ -250,16 +327,26 @@ def wet_ground(u, mat, mpc):
         root = g.node(u.MaterialExpressionMultiply)
         g.link(source, output, root, 'A')
         g.link(darken, '', root, 'B')
-        g.connect(root, '', P.MP_BASE_COLOR)
+        splash = g.custom(SPLASH_HLSL, ('WorldPos', 'Time', 'Rain'), u.CustomMaterialOutputType.CMOT_FLOAT1, 'NordSky rain splash')
+        g.link(g.node(u.MaterialExpressionWorldPosition), '', splash, 'WorldPos')
+        g.link(g.node(u.MaterialExpressionTime), '', splash, 'Time')
+        g.link(g.parameter('RainIntensity'), '', splash, 'Rain')
+        # A pale lift. The ring stays off the streak material; this is the ground it lands on.
+        scaled = g.node(u.MaterialExpressionMultiply, const_b=1.45)
+        g.link(root, '', scaled, 'A')
+        lifted = g.node(u.MaterialExpressionAdd, const_b=.18)
+        g.link(scaled, '', lifted, 'A')
+        hit = g.node(u.MaterialExpressionLinearInterpolate)
+        g.link(root, '', hit, 'A')
+        g.link(lifted, '', hit, 'B')
+        g.link(splash, '', hit, 'Alpha')
+        g.connect(hit, '', P.MP_BASE_COLOR)
         added.append('MP_BASE_COLOR')
     source, output, wrapped = g.current(P.MP_ROUGHNESS)
     assert source is not None, mat.get_path_name()
     if not wrapped:
-        glossy = g.node(u.MaterialExpressionMultiply, const_b=.45)
-        g.link(source, output, glossy, 'A')
-        wet = g.node(u.MaterialExpressionLinearInterpolate)
+        wet = g.node(u.MaterialExpressionLinearInterpolate, const_b=WET_ROAD_ROUGHNESS)
         g.link(source, output, wet, 'A')
-        g.link(glossy, '', wet, 'B')
         g.link(g.parameter('Wetness'), '', wet, 'Alpha')
         root = g.node(u.MaterialExpressionLinearInterpolate, const_b=.03)
         g.link(wet, '', root, 'A')

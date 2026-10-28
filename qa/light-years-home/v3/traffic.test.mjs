@@ -16,8 +16,9 @@ const COMA = await zone('coma', COMA_FIXTURE);
 
 test('positions are pure functions of time', () => {
   const tr = buildTraffic(COMA, 7);
-  const n = (COMA.roads || []).reduce((a, r) => a + r.count, 0) + COMA.swarms.reduce((a, s) => a + s.count, 0);
-  assert.equal(tr.n, n, 'one body per road and swarm count');
+  const n = (COMA.roads || []).reduce((a, r) => a + r.count + (r.seeded?.length || 0), 0)
+    + COMA.swarms.reduce((a, s) => a + s.count, 0);
+  assert.equal(tr.n, n, 'one body per road and swarm count, plus the seeded galaxies');
   const a = [0, 0, 0], b = [0, 0, 0], v = [0, 0, 0];
   for (let i = 0; i < tr.n; i += 37) {
     posAt(tr, i, 12.5, a);

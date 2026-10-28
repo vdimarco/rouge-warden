@@ -1,0 +1,10 @@
+{
+  "source_glb": {
+    "path": "Data/GraphicNovel/Crew/BlackCap/tripo-h31-body-20261017/body.glb",
+    "sha256": "ff4d393b98d5fba212295305b714ab7fce04229e34b14196c7e2f4c210467d70"
+  },
+  "provider_fbx": {
+    "path": "Data/GraphicNovel/Crew/BlackCap/tripo-h31-rig-20261017/rig.fbx",
+    "sha256": "54db95e20649c34c1d6dd2f28e1a1ec44a91250b0f73f6041774ac722764848b"
+  }
+}

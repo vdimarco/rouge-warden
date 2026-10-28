@@ -1,0 +1,234 @@
+{
+  "passed": true,
+  "inputs": {
+    "surface": {
+      "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoH31RemainingPlan-20261017-v3/WhiteCap/prepared-v1/surface/report/Surface.json",
+      "sha256": "14dc797db71625933ffc22789ae17ee3d9caaac90203d971ec25ed4e1598defa"
+    },
+    "motion": {
+      "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoH31RemainingPlan-20261017-v3/WhiteCap/prepared-v1/motion/report/Motion.json",
+      "sha256": "1444f4f45ffb2a55e17d0f8c8bf32715d403dbdb6791ab9cece770aa846b3a43"
+    },
+    "recipe": {
+      "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoOwnMotionReview-Remaining-20261017-v1/review_hand_angles.py",
+      "sha256": "f1ca5ea325727a9c8c3bd9b85a920c6215b8e756b54c05bb2b010e70672da2cb"
+    },
+    "original": {
+      "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Crew/WhiteCap/tripo-h31-body-20261017/body.glb",
+      "sha256": "163e86ec12c6ee9a53ccee29f500dfba720d230c8046c9d968430262ee24e4d4"
+    },
+    "body": {
+      "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoH31RemainingPlan-20261017-v3/WhiteCap/prepared-v1/surface/body/body.fbx",
+      "sha256": "9a50f28b05f0e28cba4a56e9fa962fc9478667693739aed064b2a88ddd6b23e3"
+    },
+    "idle": {
+      "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoH31RemainingPlan-20261017-v3/WhiteCap/prepared-v1/motion/clips/idle.fbx",
+      "sha256": "4f3d428172aeb608b4465117abf66519965f55bc016d72fe34014b4c0f1e70f8"
+    },
+    "jump": {
+      "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoH31RemainingPlan-20261017-v3/WhiteCap/prepared-v1/motion/clips/jump.fbx",
+      "sha256": "3a8150b16b53c12e3629d4d7892140b447cb0d9e7a61721671c03cf29b34cb94"
+    },
+    "walk": {
+      "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoH31RemainingPlan-20261017-v3/WhiteCap/prepared-v1/motion/clips/walk.fbx",
+      "sha256": "789aeac186de4dbef8e0874be6e7d0be55d326e993fea9ee972e0e38b2550d3e"
+    },
+    "run": {
+      "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoH31RemainingPlan-20261017-v3/WhiteCap/prepared-v1/motion/clips/run.fbx",
+      "sha256": "c4154af026da052691e665ef3bb64b87e38f0eaa33ae3c2ebe1b905a4662a4d5"
+    }
+  },
+  "reference_matrix_errors": {
+    "idle": 1.5139579772949219e-05,
+    "walk": 1.5139579772949219e-05,
+    "run": 1.5139579772949219e-05,
+    "jump": 1.5139579772949219e-05
+  },
+  "unanimated_body_negative_control_error": 1.5564181804656982,
+  "device": "CPU",
+  "threads": 4,
+  "gpu_denoising": false,
+  "samples": 16,
+  "dimensions": [
+    512,
+    640
+  ],
+  "fps": 30,
+  "frames": [
+    {
+      "file": "hand-l-plane-positive.png",
+      "clip": "idle",
+      "seconds": 0,
+      "frame": 2.0,
+      "body_vs_clip_pose_error": 1.519918441772461e-05,
+      "sha256": "89f252ea8c505a926be363860cec18de7c310d5635beb42ba13c00877904a2b6",
+      "camera_location": [
+        -0.09083309769630432,
+        -1.6715514659881592,
+        1.448707103729248
+      ],
+      "camera_aim": [
+        0.11457788944244385,
+        0.22374659776687622,
+        0.8440157771110535
+      ],
+      "ortho_scale": 0.38
+    },
+    {
+      "file": "hand-l-plane-negative.png",
+      "clip": "idle",
+      "seconds": 0,
+      "frame": 2.0,
+      "body_vs_clip_pose_error": 1.519918441772461e-05,
+      "sha256": "56d959f019329dfed282d55140a1f421dad42138845adf8bbcb4b021709151a3",
+      "camera_location": [
+        0.319988876581192,
+        2.119044542312622,
+        0.2393243908882141
+      ],
+      "camera_aim": [
+        0.11457788944244385,
+        0.22374659776687622,
+        0.8440157771110535
+      ],
+      "ortho_scale": 0.38
+    },
+    {
+      "file": "hand-l-radial-profile.png",
+      "clip": "idle",
+      "seconds": 0,
+      "frame": 2.0,
+      "body_vs_clip_pose_error": 1.519918441772461e-05,
+      "sha256": "107e0c61e8fd9a1c0f6bda3377fd92f86161b46810d42cb9d6fa60cff06a7cca",
+      "camera_location": [
+        1.7257709503173828,
+        -0.3354167938232422,
+        1.8887135982513428
+      ],
+      "camera_aim": [
+        0.11457788944244385,
+        0.22374659776687622,
+        0.8440157771110535
+      ],
+      "ortho_scale": 0.38
+    },
+    {
+      "file": "hand-r-plane-positive.png",
+      "clip": "idle",
+      "seconds": 0,
+      "frame": 2.0,
+      "body_vs_clip_pose_error": 1.519918441772461e-05,
+      "sha256": "60742046e1fa12d70281e2d9f5124ed441565261a8e24b6f9576e54f867f1465",
+      "camera_location": [
+        0.4495992660522461,
+        -2.053037405014038,
+        0.20345419645309448
+      ],
+      "camera_aim": [
+        0.14847256243228912,
+        -0.18917220830917358,
+        0.8632488250732422
+      ],
+      "ortho_scale": 0.38
+    },
+    {
+      "file": "hand-r-plane-negative.png",
+      "clip": "idle",
+      "seconds": 0,
+      "frame": 2.0,
+      "body_vs_clip_pose_error": 1.519918441772461e-05,
+      "sha256": "c63738c2a3d31170a2a6a489c6a82690dbe8f450464a39b93ee4814f73230924",
+      "camera_location": [
+        -0.15265415608882904,
+        1.6746931076049805,
+        1.5230433940887451
+      ],
+      "camera_aim": [
+        0.14847256243228912,
+        -0.18917220830917358,
+        0.8632488250732422
+      ],
+      "ortho_scale": 0.38
+    },
+    {
+      "file": "hand-r-radial-profile.png",
+      "clip": "idle",
+      "seconds": 0,
+      "frame": 2.0,
+      "body_vs_clip_pose_error": 1.519918441772461e-05,
+      "sha256": "bb19db5d52f4355fdd1d2231684e9b94d9dbdf869c567af7fcc6f950da49c978",
+      "camera_location": [
+        1.8820157051086426,
+        -0.8902118802070618,
+        1.57273530960083
+      ],
+      "camera_aim": [
+        0.14847256243228912,
+        -0.18917220830917358,
+        0.8632488250732422
+      ],
+      "ortho_scale": 0.38
+    }
+  ],
+  "preview_only_uniform_height_scale": 1.8581656689317325,
+  "original_GLB_material_graph": true,
+  "retained_inputs_unchanged": true,
+  "native_or_final_art_acceptance": false,
+  "limitations": [
+    "In-place clips with hard cuts, no native transitions/actor flight/prop grip.",
+    "Inclusive endpoints add four duplicate endpoint frames to the encoded timeline."
+  ],
+  "additional_hand_views_only": true,
+  "hand_view_bases": {
+    "l": {
+      "center_world_m": [
+        0.11457788944244385,
+        0.22374659776687622,
+        0.8440157771110535
+      ],
+      "longitudinal": [
+        0.4364987909793854,
+        -0.31606152653694153,
+        -0.8423621654510498
+      ],
+      "radial": [
+        0.893823504447937,
+        0.04545830190181732,
+        0.446108877658844
+      ],
+      "plane_normal": [
+        -0.10270549356937408,
+        -0.9476490020751953,
+        0.3023456931114197
+      ],
+      "scope": "Camera framing from actual evaluated own hand bones; no geometry, pose, weight or skeleton edits."
+    },
+    "r": {
+      "center_world_m": [
+        0.14847256243228912,
+        -0.18917220830917358,
+        0.8632488250732422
+      ],
+      "longitudinal": [
+        0.4745253920555115,
+        0.36087360978126526,
+        -0.8028672933578491
+      ],
+      "radial": [
+        0.8672694563865662,
+        -0.035662245005369186,
+        0.4965600073337555
+      ],
+      "plane_normal": [
+        0.15056335926055908,
+        -0.9319326281547546,
+        -0.32989731431007385
+      ],
+      "scope": "Camera framing from actual evaluated own hand bones; no geometry, pose, weight or skeleton edits."
+    }
+  },
+  "frozen_shared_recipe": {
+    "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Scripts/review_tripo_cast_motion.py",
+    "sha256": "62bb0b2824744baf47ef806605b3de2f89653784d03a4e0d64844bc6f94f5926"
+  }
+}

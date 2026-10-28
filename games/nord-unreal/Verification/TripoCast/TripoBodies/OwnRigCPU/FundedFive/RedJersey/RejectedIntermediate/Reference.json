@@ -1,0 +1,41 @@
+{
+  "passed": false,
+  "role": "Rejected optional original-source transport; never own target clip",
+  "retained_fbx": {
+    "path": "Verification/TripoCast/TripoBodies/OwnRigCPU/FundedFive/RedJersey/RejectedIntermediate/jump.fbx",
+    "sha256": "5da751ea9efb647f031597ffdaf216c7f035c12a60914a47e9735a247476b34c"
+  },
+  "diagnostic": {
+    "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoCastMotion-ibmlazfo/corrected-source/Character/jump.fbx",
+    "sha256": "5da751ea9efb647f031597ffdaf216c7f035c12a60914a47e9735a247476b34c",
+    "reference_passed": false,
+    "reference_errors": {
+      "matrix": 8.392333984375e-05,
+      "angle_rad": 4.430086138070435e-06,
+      "head": 8.53005567851633e-05,
+      "scale": 2.0623207092285156e-05,
+      "world_head_m": 7.944416299330857e-07,
+      "basis_matrix": 1.990795135498047e-05
+    },
+    "poses_consumed": false,
+    "binary_fbx": {
+      "version": 7400,
+      "time_mode": 6,
+      "custom_frame_rate": 30.0,
+      "stack_time_ticks": {
+        "LocalStart": 1539538600,
+        "LocalStop": 56962928200,
+        "ReferenceStart": 1539538600,
+        "ReferenceStop": 56962928200
+      },
+      "declared_seconds": 1.2,
+      "curve_max_grid_error_ktime_ticks": 1,
+      "source_exact_or_float32_30Hz_max_tick_error": 1,
+      "strict_export_clock": false,
+      "null_models": [
+        "Armature\u0000\u0001Model"
+      ]
+    }
+  },
+  "accepted_original_scene_transport": true
+}

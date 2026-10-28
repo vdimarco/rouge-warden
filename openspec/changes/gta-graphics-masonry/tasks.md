@@ -1,0 +1,4 @@
+- [x] Add per-course tone and base dirt to `city_facade.hlsl`
+- [x] Shade the shader port before and after
+- [x] Run `Scripts/test_environment_refresh.py`
+- [ ] Apply the facade material in Unreal (editor not available here)

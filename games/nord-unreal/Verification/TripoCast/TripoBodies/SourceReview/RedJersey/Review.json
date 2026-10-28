@@ -1,0 +1,788 @@
+{
+  "passed": true,
+  "created_utc": "2026-10-17T23:31:16.240816+00:00",
+  "source": {
+    "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Crew/RedJersey/tripo-h31-body-20261017/body.glb",
+    "sha256": "13bf9c9dc76a7a925ba31ad5fadf6ef5e3a7436ee0450e6579a221f1fabd96c8",
+    "copied_input": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoRemainingBodyReviews-20261017-v1/RedJersey-views/input/body.glb"
+  },
+  "recipe_sha256": "5d972731f6ae482dd95f0eec119fd10d6a817f95b51234f5fc50c0bc708e59c6",
+  "input_helper_sha256": "ada98f3780a8a4a10c7c89b496d5ea32d1ed975823682bb5622717ce3be33e07",
+  "anchors_sha256": "5f5baffae8a1f6f242ae7051a692385cdacc125255c03741fd4cd9b5d2ad9fc5",
+  "blender": "5.2.2 LTS",
+  "render": {
+    "engine": "CYCLES",
+    "device": "CPU",
+    "threads": 4,
+    "samples": 16,
+    "denoising": false,
+    "gpu_denoising": false,
+    "dimensions": [
+      512,
+      640
+    ]
+  },
+  "source_glb_inventory": {
+    "asset": {
+      "generator": "https://tripo3d.ai",
+      "version": "2.0"
+    },
+    "nodes": [
+      {
+        "name": "tripo_node_8845fab9-3804-44f5-8dbb-fd63d29d98cb",
+        "matrix": [
+          0.9999192357063293,
+          0.0,
+          -0.012708676047623158,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.012708676047623158,
+          0.0,
+          0.9999192357063293,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "mesh": 0
+      }
+    ],
+    "meshes": [
+      {
+        "extras": {
+          "name": "tripo_mesh_8845fab9-3804-44f5-8dbb-fd63d29d98cb"
+        },
+        "name": "tripo_mesh_8845fab9-3804-44f5-8dbb-fd63d29d98cb",
+        "primitives": [
+          {
+            "attributes": {
+              "POSITION": 1,
+              "NORMAL": 3,
+              "TEXCOORD_0": 2
+            },
+            "indices": 0,
+            "material": 0,
+            "mode": 4
+          }
+        ]
+      }
+    ],
+    "materials": [
+      {
+        "name": "tripo_material_8845fab9-3804-44f5-8dbb-fd63d29d98cb",
+        "pbrMetallicRoughness": {
+          "baseColorFactor": [
+            1,
+            1,
+            1,
+            1
+          ],
+          "baseColorTexture": {
+            "index": 0
+          },
+          "metallicFactor": 1.0,
+          "roughnessFactor": 1.0,
+          "metallicRoughnessTexture": {
+            "index": 1
+          }
+        },
+        "normalTexture": {
+          "index": 2,
+          "scale": 1.0
+        },
+        "doubleSided": false
+      }
+    ],
+    "images": [
+      {
+        "name": "Color_8845fab9-3804-44f5-8dbb-fd63d29d98cb",
+        "mimeType": "image/jpeg",
+        "bufferView": 4
+      },
+      {
+        "name": "ORM_8845fab9-3804-44f5-8dbb-fd63d29d98cb",
+        "mimeType": "image/jpeg",
+        "bufferView": 5
+      },
+      {
+        "name": "NormalGL_8845fab9-3804-44f5-8dbb-fd63d29d98cb",
+        "mimeType": "image/png",
+        "bufferView": 6
+      }
+    ],
+    "textures": [
+      {
+        "source": 0
+      },
+      {
+        "source": 1
+      },
+      {
+        "source": 2
+      }
+    ],
+    "skins": [],
+    "animations": []
+  },
+  "body": {
+    "height_source_units": 0.9788011908531189,
+    "vertices": 54560,
+    "triangles": 97918,
+    "armatures": 0,
+    "bounds_world_source_units": [
+      [
+        -0.09243316203355789,
+        -0.3143099844455719,
+        -0.4893217086791992
+      ],
+      [
+        0.09274394065141678,
+        0.3153155744075775,
+        0.4894794821739197
+      ]
+    ],
+    "evaluated_geometry_sha256": "efe181e9c69e6e264f693b662bd044bae85746c524df90cf8fe8e124ae109918",
+    "original_material_sha256": "70cece8b9f70f480157bfc5ec925dc9abbbf96a672e6c03fae9a63ecaa11d793"
+  },
+  "parts": [
+    {
+      "object": "tripo_node_8845fab9-3804-44f5-8dbb-fd63d29d98cb",
+      "vertices": 54560,
+      "triangles": 97918,
+      "matrix_world": [
+        [
+          0.9999192357063293,
+          -0.01270868070423603,
+          0.0,
+          0.0
+        ],
+        [
+          0.01270868070423603,
+          0.9999192357063293,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          1.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "bounds_world_source_units": [
+        [
+          -0.09243316203355789,
+          -0.3143099844455719,
+          -0.4893217086791992
+        ],
+        [
+          0.09274394065141678,
+          0.3153155744075775,
+          0.4894794821739197
+        ]
+      ],
+      "positions_triangles_sha256": "83c7d2ffa59851b7adc5216c884d4c4f5a7df0bf770fe6530b43db18c5d84b47",
+      "corner_normals_sha256": "cd73864f1c6149b285f7b2c9bbbd781f7881fb09cb6e04321d6871d0d8f0f2dc",
+      "uv_layers_sha256": {
+        "UVMap": "dad88816276a0d48b2c8d4beb0d3b0f69303271e6d2f0179c1403c7aa3f37d7e"
+      },
+      "polygon_material_indices_sha256": "b7e3677532ab41fd64f4025c65fc484df05f53a8fade0965f19586db6c540f36",
+      "material_slots": [
+        "tripo_material_8845fab9-3804-44f5-8dbb-fd63d29d98cb"
+      ]
+    }
+  ],
+  "anchors": {
+    "character": "RedJersey",
+    "source_sha256": "13bf9c9dc76a7a925ba31ad5fadf6ef5e3a7436ee0450e6579a221f1fabd96c8",
+    "expected_meshes": 1,
+    "expected_triangles": 97918,
+    "basis_world": {
+      "left": [
+        -0.01270868070423603,
+        0.9999192357063293,
+        0.0
+      ],
+      "forward": [
+        0.9999192357063293,
+        0.01270868070423603,
+        0.0
+      ],
+      "up": [
+        0.0,
+        0.0,
+        1.0
+      ]
+    },
+    "crops_basis_left_forward_up": {
+      "face": [
+        [
+          -0.1371373352792237,
+          -0.10087320921220494,
+          0.2643552082777023
+        ],
+        [
+          0.13692699815964962,
+          0.10136845856665458,
+          0.509055505990982
+        ]
+      ],
+      "hand-left": [
+        [
+          0.19824486989706142,
+          -0.10087320921220494,
+          -0.07810130029916763
+        ],
+        [
+          0.32941818018689617,
+          0.10136845856665458,
+          0.08340089619159699
+        ]
+      ],
+      "hand-right": [
+        [
+          -0.32962851730647025,
+          -0.10087320921220494,
+          -0.0784513732790947
+        ],
+        [
+          -0.1984552070166355,
+          0.10136845856665458,
+          0.08305082321166993
+        ]
+      ]
+    },
+    "measurement_basis": "Projected original mesh local+X is candidate front; world+Z is up; up cross forward defines character-left. Actual views must confirm heading and crop identities.",
+    "source_bounds_world": [
+      [
+        -0.09243316203355789,
+        -0.3143099844455719,
+        -0.4893217086791992
+      ],
+      [
+        0.09274394065141678,
+        0.3153155744075775,
+        0.4894794821739197
+      ]
+    ],
+    "source_height_units": 0.9788011908531189,
+    "crop_scope": "Actual source-space candidate morphology crops only, not joints, skin groups or semantic/deletion masks. No source scaling, rotation or translation applied."
+  },
+  "embedded_images": [
+    {
+      "name": "Color_8845fab9-3804-44f5-8dbb-fd63d29d98cb",
+      "mime_type": "image/jpeg",
+      "bytes": 2800100,
+      "sha256": "cb85d90d94182fa32298957ca629b341fc0c2d705ca43d1805bd283abee0fb40"
+    },
+    {
+      "name": "ORM_8845fab9-3804-44f5-8dbb-fd63d29d98cb",
+      "mime_type": "image/jpeg",
+      "bytes": 1575301,
+      "sha256": "2e8ea173f17bea990d88d4da966fb5aa01ea7edaf982d2578771924ae4afe501"
+    },
+    {
+      "name": "NormalGL_8845fab9-3804-44f5-8dbb-fd63d29d98cb",
+      "mime_type": "image/png",
+      "bytes": 4039622,
+      "sha256": "a6d4c01c3df2d71655c65219251778f26496746b1d9c0ef18c4cdefeafd45385"
+    }
+  ],
+  "materials": {
+    "materials": [
+      {
+        "name": "tripo_material_8845fab9-3804-44f5-8dbb-fd63d29d98cb",
+        "use_backface_culling": true,
+        "surface_render_method": "DITHERED",
+        "nodes": [
+          {
+            "name": "Principled BSDF",
+            "type": "BSDF_PRINCIPLED",
+            "defaults": {
+              "Base Color": [
+                0.800000011920929,
+                0.800000011920929,
+                0.800000011920929,
+                1.0
+              ],
+              "Metallic": 0.0,
+              "Roughness": 0.5,
+              "IOR": 1.5,
+              "Alpha": 1.0,
+              "Thin Wall": false,
+              "Normal": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "Weight": 0.0,
+              "Diffuse Roughness": 0.0,
+              "Subsurface Weight": 0.0,
+              "Subsurface Radius": [
+                1.0,
+                0.20000000298023224,
+                0.10000000149011612
+              ],
+              "Subsurface Scale": 0.004999999888241291,
+              "Subsurface IOR": 1.399999976158142,
+              "Subsurface Anisotropy": 0.0,
+              "Specular IOR Level": 0.5,
+              "Specular Tint": [
+                1.0,
+                1.0,
+                1.0,
+                1.0
+              ],
+              "Anisotropic": 0.0,
+              "Anisotropic Rotation": 0.0,
+              "Tangent": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "Transmission Weight": 0.0,
+              "Coat Weight": 0.0,
+              "Coat Roughness": 0.029999999329447746,
+              "Coat IOR": 1.5,
+              "Coat Tint": [
+                1.0,
+                1.0,
+                1.0,
+                1.0
+              ],
+              "Coat Normal": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "Sheen Weight": 0.0,
+              "Sheen Roughness": 0.5,
+              "Sheen Tint": [
+                1.0,
+                1.0,
+                1.0,
+                1.0
+              ],
+              "Emission Color": [
+                1.0,
+                1.0,
+                1.0,
+                1.0
+              ],
+              "Emission Strength": 0.0,
+              "Thin Film Thickness": 0.0,
+              "Thin Film IOR": 1.3300000429153442
+            }
+          },
+          {
+            "name": "Material Output",
+            "type": "OUTPUT_MATERIAL",
+            "defaults": {
+              "Displacement": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "Thickness": 0.0
+            }
+          },
+          {
+            "name": "Image Texture",
+            "type": "TEX_IMAGE",
+            "image": "Color_8845fab9-3804-44f5-8dbb-fd63d29d98cb",
+            "defaults": {
+              "Vector": [
+                0.0,
+                0.0,
+                0.0
+              ]
+            }
+          },
+          {
+            "name": "Separate Color",
+            "type": "SEPARATE_COLOR",
+            "defaults": {
+              "Color": [
+                0.800000011920929,
+                0.800000011920929,
+                0.800000011920929,
+                1.0
+              ]
+            }
+          },
+          {
+            "name": "Image Texture.001",
+            "type": "TEX_IMAGE",
+            "image": "ORM_8845fab9-3804-44f5-8dbb-fd63d29d98cb",
+            "defaults": {
+              "Vector": [
+                0.0,
+                0.0,
+                0.0
+              ]
+            }
+          },
+          {
+            "name": "Normal Map",
+            "type": "NORMAL_MAP",
+            "defaults": {
+              "Strength": 1.0,
+              "Color": [
+                0.5,
+                0.5,
+                1.0,
+                1.0
+              ]
+            }
+          },
+          {
+            "name": "Image Texture.002",
+            "type": "TEX_IMAGE",
+            "image": "NormalGL_8845fab9-3804-44f5-8dbb-fd63d29d98cb",
+            "defaults": {
+              "Vector": [
+                0.0,
+                0.0,
+                0.0
+              ]
+            }
+          }
+        ],
+        "links": [
+          [
+            "Principled BSDF",
+            "BSDF",
+            "Material Output",
+            "Surface"
+          ],
+          [
+            "Image Texture",
+            "Color",
+            "Principled BSDF",
+            "Base Color"
+          ],
+          [
+            "Separate Color",
+            "Blue",
+            "Principled BSDF",
+            "Metallic"
+          ],
+          [
+            "Separate Color",
+            "Green",
+            "Principled BSDF",
+            "Roughness"
+          ],
+          [
+            "Image Texture.001",
+            "Color",
+            "Separate Color",
+            "Color"
+          ],
+          [
+            "Normal Map",
+            "Normal",
+            "Principled BSDF",
+            "Normal"
+          ],
+          [
+            "Image Texture.002",
+            "Color",
+            "Normal Map",
+            "Color"
+          ]
+        ]
+      }
+    ],
+    "images": {
+      "Color_8845fab9-3804-44f5-8dbb-fd63d29d98cb": {
+        "size": [
+          4096,
+          4096
+        ],
+        "colorspace": "sRGB",
+        "packed_sha256": "cb85d90d94182fa32298957ca629b341fc0c2d705ca43d1805bd283abee0fb40",
+        "pixel_float32_sha256": "51d51b71586b40729cf2dfb845199f5608ae47c6a5f5fd90378b2087b5b30837"
+      },
+      "ORM_8845fab9-3804-44f5-8dbb-fd63d29d98cb": {
+        "size": [
+          4096,
+          4096
+        ],
+        "colorspace": "Non-Color",
+        "packed_sha256": "2e8ea173f17bea990d88d4da966fb5aa01ea7edaf982d2578771924ae4afe501",
+        "pixel_float32_sha256": "72d806f204386cd8fd0b59fc5745f05ab1618b66d29b32e3c5d55dce36c7ccff"
+      },
+      "NormalGL_8845fab9-3804-44f5-8dbb-fd63d29d98cb": {
+        "size": [
+          4096,
+          4096
+        ],
+        "colorspace": "Non-Color",
+        "packed_sha256": "a6d4c01c3df2d71655c65219251778f26496746b1d9c0ef18c4cdefeafd45385",
+        "pixel_float32_sha256": "bb8cfc4ba04284cec680f5b42895b6f7f3980bdfe8842996078dfa35b0c65cd4"
+      }
+    }
+  },
+  "views": [
+    {
+      "file": "front.png",
+      "sha256": "871795fbe3c36bfd006bd8e3719a32cfc8d15e33ce24f09df9b9fcf4e4070763",
+      "camera_world": [
+        2.936321973800659,
+        0.03782060742378235,
+        7.888674736022949e-05
+      ],
+      "target_world": [
+        0.00015538930892944336,
+        0.0005027949810028076,
+        7.888674736022949e-05
+      ],
+      "ortho_scale_source_units": 1.174562644958496,
+      "crop_vertices": 54560,
+      "crop_bounds_world_source_units": [
+        [
+          -0.09243316203355789,
+          -0.3143099844455719,
+          -0.4893217086791992
+        ],
+        [
+          0.09274394065141678,
+          0.3153155744075775,
+          0.4894794821739197
+        ]
+      ],
+      "evaluated_geometry_sha256": "efe181e9c69e6e264f693b662bd044bae85746c524df90cf8fe8e124ae109918",
+      "original_material_sha256": "70cece8b9f70f480157bfc5ec925dc9abbbf96a672e6c03fae9a63ecaa11d793"
+    },
+    {
+      "file": "threequarter.png",
+      "sha256": "a16112b6802d9698196226fed19658414e6ae735b7fa14ef5fa5704f69723b02",
+      "camera_world": [
+        2.102726459503174,
+        -2.04929256439209,
+        7.888674736022949e-05
+      ],
+      "target_world": [
+        0.00015538930892944336,
+        0.0005027949810028076,
+        7.888674736022949e-05
+      ],
+      "ortho_scale_source_units": 1.1745617151260375,
+      "crop_vertices": 54560,
+      "crop_bounds_world_source_units": [
+        [
+          -0.09243316203355789,
+          -0.3143099844455719,
+          -0.4893217086791992
+        ],
+        [
+          0.09274394065141678,
+          0.3153155744075775,
+          0.4894794821739197
+        ]
+      ],
+      "evaluated_geometry_sha256": "efe181e9c69e6e264f693b662bd044bae85746c524df90cf8fe8e124ae109918",
+      "original_material_sha256": "70cece8b9f70f480157bfc5ec925dc9abbbf96a672e6c03fae9a63ecaa11d793"
+    },
+    {
+      "file": "side.png",
+      "sha256": "76bef326f0d8b377a60ee7ce64575b063a62bbfaf48c950ac9a6048dbd0384ce",
+      "camera_world": [
+        0.037473201751708984,
+        -2.9356637001037598,
+        7.888674736022949e-05
+      ],
+      "target_world": [
+        0.00015538930892944336,
+        0.0005027949810028076,
+        7.888674736022949e-05
+      ],
+      "ortho_scale_source_units": 1.1745617866516114,
+      "crop_vertices": 54560,
+      "crop_bounds_world_source_units": [
+        [
+          -0.09243316203355789,
+          -0.3143099844455719,
+          -0.4893217086791992
+        ],
+        [
+          0.09274394065141678,
+          0.3153155744075775,
+          0.4894794821739197
+        ]
+      ],
+      "evaluated_geometry_sha256": "efe181e9c69e6e264f693b662bd044bae85746c524df90cf8fe8e124ae109918",
+      "original_material_sha256": "70cece8b9f70f480157bfc5ec925dc9abbbf96a672e6c03fae9a63ecaa11d793"
+    },
+    {
+      "file": "back.png",
+      "sha256": "052b61243598a7c6053cbe95d589e4187fa4fcb9aae5ff3dde8bdba4d14598a7",
+      "camera_world": [
+        -2.9360110759735107,
+        -0.03681501746177673,
+        7.888674736022949e-05
+      ],
+      "target_world": [
+        0.00015538930892944336,
+        0.0005027949810028076,
+        7.888674736022949e-05
+      ],
+      "ortho_scale_source_units": 1.1745617866516114,
+      "crop_vertices": 54560,
+      "crop_bounds_world_source_units": [
+        [
+          -0.09243316203355789,
+          -0.3143099844455719,
+          -0.4893217086791992
+        ],
+        [
+          0.09274394065141678,
+          0.3153155744075775,
+          0.4894794821739197
+        ]
+      ],
+      "evaluated_geometry_sha256": "efe181e9c69e6e264f693b662bd044bae85746c524df90cf8fe8e124ae109918",
+      "original_material_sha256": "70cece8b9f70f480157bfc5ec925dc9abbbf96a672e6c03fae9a63ecaa11d793"
+    },
+    {
+      "file": "face-front.png",
+      "sha256": "4d1eaa49acc3fef4a3073b15c8d75f610581fd4de6457181986cf6d9f69f5806",
+      "camera_world": [
+        2.9306135177612305,
+        0.03687027841806412,
+        0.3769264221191406
+      ],
+      "target_world": [
+        -0.005552925169467926,
+        -0.0004475340247154236,
+        0.3769264221191406
+      ],
+      "ortho_scale_source_units": 0.4118138551712036,
+      "crop_vertices": 10092,
+      "crop_bounds_world_source_units": [
+        [
+          -0.08873312920331955,
+          -0.13781902194023132,
+          0.2643733322620392
+        ],
+        [
+          0.0776272788643837,
+          0.13692395389080048,
+          0.4894794821739197
+        ]
+      ],
+      "evaluated_geometry_sha256": "efe181e9c69e6e264f693b662bd044bae85746c524df90cf8fe8e124ae109918",
+      "original_material_sha256": "70cece8b9f70f480157bfc5ec925dc9abbbf96a672e6c03fae9a63ecaa11d793"
+    },
+    {
+      "file": "face-threequarter.png",
+      "sha256": "ef6ef5f932e9638bbafb45c069ff20c6dcee5437582336dcf7e6a10a552a3000",
+      "camera_world": [
+        2.097018003463745,
+        -2.0502429008483887,
+        0.3769264221191406
+      ],
+      "target_world": [
+        -0.005552925169467926,
+        -0.0004475340247154236,
+        0.3769264221191406
+      ],
+      "ortho_scale_source_units": 0.41109439730644226,
+      "crop_vertices": 10092,
+      "crop_bounds_world_source_units": [
+        [
+          -0.08873312920331955,
+          -0.13781902194023132,
+          0.2643733322620392
+        ],
+        [
+          0.0776272788643837,
+          0.13692395389080048,
+          0.4894794821739197
+        ]
+      ],
+      "evaluated_geometry_sha256": "efe181e9c69e6e264f693b662bd044bae85746c524df90cf8fe8e124ae109918",
+      "original_material_sha256": "70cece8b9f70f480157bfc5ec925dc9abbbf96a672e6c03fae9a63ecaa11d793"
+    },
+    {
+      "file": "hand-left.png",
+      "sha256": "f779b2094c8ee4a342c572934c925f82971884d905f8d847c83e9046b8d3a461",
+      "camera_world": [
+        2.679166555404663,
+        1.4956374168395996,
+        0.009937919676303864
+      ],
+      "target_world": [
+        0.01692698337137699,
+        0.25670742988586426,
+        0.009937919676303864
+      ],
+      "ortho_scale_source_units": 0.176058429479599,
+      "crop_vertices": 1483,
+      "crop_bounds_world_source_units": [
+        [
+          -0.03417525067925453,
+          0.1980992555618286,
+          -0.06341928243637085
+        ],
+        [
+          0.06802921742200851,
+          0.3153155744075775,
+          0.08329512178897858
+        ]
+      ],
+      "evaluated_geometry_sha256": "efe181e9c69e6e264f693b662bd044bae85746c524df90cf8fe8e124ae109918",
+      "original_material_sha256": "70cece8b9f70f480157bfc5ec925dc9abbbf96a672e6c03fae9a63ecaa11d793"
+    },
+    {
+      "file": "hand-right.png",
+      "sha256": "c5f6223df8d8f03476d72846798a9bf3dea952bebc56d5ad873a0c5cfdbc31a3",
+      "camera_world": [
+        2.7149059772491455,
+        -1.427536129951477,
+        0.009601112455129623
+      ],
+      "target_world": [
+        0.02203892171382904,
+        -0.2566680908203125,
+        0.009601112455129623
+      ],
+      "ortho_scale_source_units": 0.1760902762413025,
+      "crop_vertices": 1496,
+      "crop_bounds_world_source_units": [
+        [
+          -0.03155539929866791,
+          -0.3143099844455719,
+          -0.06376935541629791
+        ],
+        [
+          0.07563324272632599,
+          -0.1990262269973755,
+          0.08297158032655716
+        ]
+      ],
+      "evaluated_geometry_sha256": "efe181e9c69e6e264f693b662bd044bae85746c524df90cf8fe8e124ae109918",
+      "original_material_sha256": "70cece8b9f70f480157bfc5ec925dc9abbbf96a672e6c03fae9a63ecaa11d793"
+    }
+  ],
+  "duration_seconds": 20.39995548297884,
+  "raw_source_unchanged": true,
+  "original_material_geometry_normals_uvs_unchanged": true,
+  "scope": "Actual unrigged original Tripo GLB source-pose morphology/identity/material review only.",
+  "limits": [
+    "Source units are measured, not a meter or production-height claim.",
+    "No rig, animation, skinning, native appearance, prop grip, final-art or performance acceptance.",
+    "No geometry/bitmap/material edits, scale normalization, provider, GPU, Unreal or service operation."
+  ]
+}

@@ -1,0 +1,4 @@
+- [x] Paint the salt crust on clay, above the joint and before the mortar
+- [x] Shade a brick elevation before and after
+- [x] Run `Scripts/test_facade_crust.py` and the existing facade tests
+- [ ] Apply the facade material in Unreal (editor not available here)

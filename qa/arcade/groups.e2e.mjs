@@ -1,6 +1,6 @@
 // Checks the arcade's group cabinets against openspec/specs/arcade-groups.
 // Serve public/ first: python3 -m http.server 8765 --directory public
-// Run: NODE_PATH=qa/browser/node_modules node qa/arcade/groups.e2e.mjs   (SHOTS=/tmp/dir saves screenshots)
+// Run: NODE_PATH=qa/browser/node_modules node qa/arcade/groups.e2e.mjs   (SHOTS=/tmp/dir saves screenshots; CHROME or CHROMIUM_PATH picks the browser)
 import { createRequire } from "module";
 import fs from "fs";
 import path from "path";
@@ -44,7 +44,8 @@ const settle = (page) => page.waitForTimeout(600);
 // All Games opens a moment after the page loads, so give it time before deciding it stayed shut
 const boardOpens = (page) => page.waitForSelector(".gsw.scoreboard:not([hidden])", { timeout: 3000 }).then(() => true, () => false);
 
-const browser = await chromium.launch(process.env.CHROME ? { executablePath: process.env.CHROME } : {});
+const chrome = process.env.CHROME || process.env.CHROMIUM_PATH;
+const browser = await chromium.launch(chrome ? { executablePath: chrome } : {});
 for (const size of SIZES) {
   console.log(size.name + " " + size.width + "x" + size.height);
   const ctx = await browser.newContext(size.touch ? { viewport: size, isMobile: true, hasTouch: true, deviceScaleFactor: 2 } : { viewport: size });
@@ -70,7 +71,7 @@ for (const size of SIZES) {
   await page.keyboard.press("Enter");
   await settle(page);
   s = await state(page);
-  check(JSON.stringify(s.visible) === JSON.stringify(["olympus", "crimson", "tidebreak", "moonwell", "primordia", "river-rush"]), "Action shows its six games: " + s.visible.join(", "));
+  check(JSON.stringify(s.visible) === JSON.stringify(["olympus", "crimson", "tidebreak", "moonwell", "primordia", "river-rush", "ahead-of-the-light", "light-years-home", "first-breath"]), "Action shows its nine games, First Breath last: " + s.visible.join(", "));
   check(s.on === "olympus", "first game selected");
   check(s.tokens === tokens, "opening a group spends no token");
   check(s.hash === "#action" && /ACTION/.test(s.sign) && !!s.back, "sign, address and back control show the group");
@@ -95,7 +96,7 @@ for (const size of SIZES) {
   await page.evaluate(() => document.querySelector('.cab[data-opens="strategy"]').click());
   await settle(page);
   s = await state(page);
-  check(JSON.stringify(s.visible) === JSON.stringify(["breakthrough", "follow-suit"]) && s.hash === "#strategy", "clicking Strategy opens it");
+  check(JSON.stringify(s.visible) === JSON.stringify(["breakthrough", "follow-suit", "silent-depth"]) && s.hash === "#strategy", "clicking Strategy opens it");
   await page.goBack();
   await settle(page);
   s = await state(page);

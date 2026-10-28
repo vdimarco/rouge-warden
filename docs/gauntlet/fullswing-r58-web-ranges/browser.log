@@ -1,0 +1,10 @@
+[{"label":"one","n":1,"count":6,"bytes":408,"expected":408,"diff":0,"varied":906},{"label":"two","n":2,"count":12,"bytes":816,"expected":816,"diff":0,"varied":2100},{"label":"fading","n":0,"count":12,"bytes":816,"expected":816,"diff":0,"varied":1968},{"label":"expired","n":0,"count":0,"bytes":0,"expected":0,"diff":0,"varied":0},{"label":"regrow","n":1,"count":6,"bytes":408,"expected":408,"diff":0,"varied":906},{"label":"hidden","n":1,"count":6,"bytes":0,"expected":0,"diff":0,"varied":0},{"label":"resume","n":1,"count":6,"bytes":408,"expected":408,"diff":0,"varied":906}]
+PASS: live web segment uploads and pixels
+PASS: live web segment uploads and pixels
+PASS: live web segment uploads and pixels
+PASS: live web segment uploads and pixels
+PASS: live web segment uploads and pixels
+PASS: live web segment uploads and pixels
+PASS: live web segment uploads and pixels
+PASS: no page errors
+PASS: web uploads

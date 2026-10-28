@@ -1,0 +1,416 @@
+{
+  "scope": "Independent baseline still-image review only; private original high-detail jump; no trial comparison or art acceptance",
+  "created_utc": "2026-10-17T14:36:59.315169+00:00",
+  "reviewed_images": [
+    {
+      "file": "Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T142404Z/PrivateCapture/Capture/Standard/1280/Resident9_Airborne.png",
+      "sha256": "6c229b00be5792b60d4cb6c7971191311659cca89ad9e4570bce3cb9ba262b97",
+      "mode": "Standard",
+      "resolution": [
+        1280,
+        720
+      ],
+      "actual_image_inspected": true,
+      "report_passed": true,
+      "native_process_exit_code": 0,
+      "job_passed": true,
+      "report": "Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T142404Z/PrivateCapture/Capture/Standard/PlayerQuality1280.json",
+      "report_sha256": "3568ebacd59e99a542862e27a882308ff7cc2fab9f019f98b6ab643d998a47bd",
+      "native_state": {
+        "clip_time": 0.43253,
+        "clip_path": "/Game/ParkComic/CrewGraphicNovelHighDetail/Resident9/A_Jump.A_Jump",
+        "clip_weights": {
+          "Idle": 0.0,
+          "Walk": 0.0,
+          "Run": 0.0,
+          "Jump": 1.0
+        },
+        "cached_camera": {
+          "position_cm": [
+            6604.00035,
+            40867.49067,
+            309.65044
+          ],
+          "rotation_degrees": [
+            -3.4050464630126953,
+            -172.59309387207034,
+            4.9784055644766625e-17
+          ],
+          "horizontal_fov_degrees": 60.0,
+          "unpaused_prepare_frames": 2
+        },
+        "mesh_relative_cm": [
+          0.0,
+          0.0,
+          -96.0
+        ]
+      },
+      "findings": [
+        "Both skin-toned shoulder/upper-arm lobes rise prominently beside the upper torso; short-sleeve caps compress/retract at the sockets with angular pinching.",
+        "No obvious hand-to-head or forearm-to-torso intersection is visible from this front view; inner armpit/back surfaces are not cleared."
+      ]
+    },
+    {
+      "file": "Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T142404Z/PrivateCapture/Capture/Standard/1280/Resident9_Landing.png",
+      "sha256": "389ac85130ad75952b7ffebe189584f3318a0c038989bfd69756e2184cb9011f",
+      "mode": "Standard",
+      "resolution": [
+        1280,
+        720
+      ],
+      "actual_image_inspected": true,
+      "report_passed": true,
+      "native_process_exit_code": 0,
+      "job_passed": true,
+      "report": "Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T142404Z/PrivateCapture/Capture/Standard/PlayerQuality1280.json",
+      "report_sha256": "3568ebacd59e99a542862e27a882308ff7cc2fab9f019f98b6ab643d998a47bd",
+      "native_state": {
+        "clip_time": 0.93417,
+        "clip_path": "/Game/ParkComic/CrewGraphicNovelHighDetail/Resident9/A_Jump.A_Jump",
+        "clip_weights": {
+          "Idle": 0.0,
+          "Walk": 0.0,
+          "Run": 0.0,
+          "Jump": 1.0
+        },
+        "cached_camera": {
+          "position_cm": [
+            6604.00035,
+            40867.49067,
+            132.15001
+          ],
+          "rotation_degrees": [
+            -3.4050464630126953,
+            -172.59309387207034,
+            4.9784055644766625e-17
+          ],
+          "horizontal_fov_degrees": 60.0,
+          "unpaused_prepare_frames": 171
+        },
+        "mesh_relative_cm": [
+          0.0,
+          0.0,
+          -96.0
+        ]
+      },
+      "findings": [
+        "Lowered arms restore a rounded shoulder and readable short-sleeve silhouette; hands and forearms remain visibly separated from the torso.",
+        "This ~0.934s pose is beyond the two modified arm-key intervals and is a useful unchanged-region control, subject to matching native phase/camera readback."
+      ]
+    },
+    {
+      "file": "Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T142404Z/PrivateCapture/Capture/Standard/1280/Resident9_Face.png",
+      "sha256": "2a9bf9fb7d46ff1a30e95cca936150520d76c846e75e02656c79c779b3806cc4",
+      "mode": "Standard",
+      "resolution": [
+        1280,
+        720
+      ],
+      "actual_image_inspected": true,
+      "report_passed": true,
+      "native_process_exit_code": 0,
+      "job_passed": true,
+      "report": "Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T142404Z/PrivateCapture/Capture/Standard/PlayerQuality1280.json",
+      "report_sha256": "3568ebacd59e99a542862e27a882308ff7cc2fab9f019f98b6ab643d998a47bd",
+      "native_state": {
+        "clip_time": 1.17043,
+        "clip_path": "/Game/ParkComic/CrewGraphicNovelHighDetail/Resident9/A_Idle.A_Idle",
+        "clip_weights": {
+          "Idle": 1.0,
+          "Walk": 0.0,
+          "Run": 0.0,
+          "Jump": 0.0
+        },
+        "cached_camera": {
+          "position_cm": [
+            4710.34615,
+            40667.79203,
+            162.0102
+          ],
+          "rotation_degrees": [
+            -1.3748347759246824,
+            76.1002197265625,
+            9.942095466686248e-17
+          ],
+          "horizontal_fov_degrees": 38.0,
+          "unpaused_prepare_frames": 2,
+          "face_orbit_degrees": 0.0,
+          "face_horizontal_distance_cm": 125.0
+        },
+        "mesh_relative_cm": [
+          0.0,
+          0.0,
+          -96.0
+        ]
+      },
+      "findings": [
+        "The pale uneven collar rim and small dark central front notch remain visible; face/hair identity is readable but static controls and coarse glossy hair geometry remain limitations."
+      ]
+    },
+    {
+      "file": "Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T142404Z/PrivateCapture/Capture/Standard/1280/Resident9_FaceThreeQuarter.png",
+      "sha256": "75788224f3beecf4a2cb05229cba963a6e95e354454d7540cb7560f04fd881df",
+      "mode": "Standard",
+      "resolution": [
+        1280,
+        720
+      ],
+      "actual_image_inspected": true,
+      "report_passed": true,
+      "native_process_exit_code": 0,
+      "job_passed": true,
+      "report": "Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T142404Z/PrivateCapture/Capture/Standard/PlayerQuality1280.json",
+      "report_sha256": "3568ebacd59e99a542862e27a882308ff7cc2fab9f019f98b6ab643d998a47bd",
+      "native_state": {
+        "clip_time": 1.40377,
+        "clip_path": "/Game/ParkComic/CrewGraphicNovelHighDetail/Resident9/A_Idle.A_Idle",
+        "clip_weights": {
+          "Idle": 1.0,
+          "Walk": 0.0,
+          "Run": 0.0,
+          "Jump": 0.0
+        },
+        "cached_camera": {
+          "position_cm": [
+            4828.29028,
+            40696.67567,
+            160.91104
+          ],
+          "rotation_degrees": [
+            -1.3748347759246826,
+            133.0303192138672,
+            -0.0
+          ],
+          "horizontal_fov_degrees": 38.0,
+          "unpaused_prepare_frames": 2,
+          "face_orbit_degrees": 35.0,
+          "face_horizontal_distance_cm": 125.0
+        },
+        "mesh_relative_cm": [
+          0.0,
+          0.0,
+          -96.0
+        ]
+      },
+      "findings": [
+        "The collar has a pale jagged boundary, central front notch and irregular side seam; the rest pose already contains these defects, so a jump-only change cannot resolve them."
+      ]
+    },
+    {
+      "file": "Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T142404Z/PrivateCapture/Capture/Standard/1920/Resident9_Airborne.png",
+      "sha256": "0a2a3e66b947d876267385ed18e0f29da8f21df2de3c9c80af4aea84a95c7ca1",
+      "mode": "Standard",
+      "resolution": [
+        1920,
+        1080
+      ],
+      "actual_image_inspected": true,
+      "report_passed": true,
+      "native_process_exit_code": 0,
+      "job_passed": true,
+      "report": "Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T142404Z/PrivateCapture/Capture/Standard/PlayerQuality1920.json",
+      "report_sha256": "83ff90a3f750e2c98b213ae46ca7daddcf5394f8d875da3e0c90638f3a2afb2c",
+      "native_state": {
+        "clip_time": 0.43254,
+        "clip_path": "/Game/ParkComic/CrewGraphicNovelHighDetail/Resident9/A_Jump.A_Jump",
+        "clip_weights": {
+          "Idle": 0.0,
+          "Walk": 0.0,
+          "Run": 0.0,
+          "Jump": 1.0
+        },
+        "cached_camera": {
+          "position_cm": [
+            6604.00399,
+            40867.49067,
+            309.6505
+          ],
+          "rotation_degrees": [
+            -3.4050464630126953,
+            -172.59309387207034,
+            4.9784055644766625e-17
+          ],
+          "horizontal_fov_degrees": 60.0,
+          "unpaused_prepare_frames": 2
+        },
+        "mesh_relative_cm": [
+          0.0,
+          0.0,
+          -96.0
+        ]
+      },
+      "findings": [
+        "Both skin-toned shoulder/upper-arm lobes rise prominently beside the upper torso; short-sleeve caps compress/retract at the sockets with angular pinching.",
+        "No obvious hand-to-head or forearm-to-torso intersection is visible from this front view; inner armpit/back surfaces are not cleared."
+      ]
+    },
+    {
+      "file": "Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T142404Z/PrivateCapture/Capture/Standard/1920/Resident9_Landing.png",
+      "sha256": "9c2688e6bf3544686d872364098a42c84c50bf2af96e405a685df225ddb28842",
+      "mode": "Standard",
+      "resolution": [
+        1920,
+        1080
+      ],
+      "actual_image_inspected": true,
+      "report_passed": true,
+      "native_process_exit_code": 0,
+      "job_passed": true,
+      "report": "Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T142404Z/PrivateCapture/Capture/Standard/PlayerQuality1920.json",
+      "report_sha256": "83ff90a3f750e2c98b213ae46ca7daddcf5394f8d875da3e0c90638f3a2afb2c",
+      "native_state": {
+        "clip_time": 0.93417,
+        "clip_path": "/Game/ParkComic/CrewGraphicNovelHighDetail/Resident9/A_Jump.A_Jump",
+        "clip_weights": {
+          "Idle": 0.0,
+          "Walk": 0.0,
+          "Run": 0.0,
+          "Jump": 1.0
+        },
+        "cached_camera": {
+          "position_cm": [
+            6604.00399,
+            40867.49067,
+            132.15001
+          ],
+          "rotation_degrees": [
+            -3.4050464630126953,
+            -172.59309387207034,
+            4.9784055644766625e-17
+          ],
+          "horizontal_fov_degrees": 60.0,
+          "unpaused_prepare_frames": 171
+        },
+        "mesh_relative_cm": [
+          0.0,
+          0.0,
+          -96.0
+        ]
+      },
+      "findings": [
+        "Lowered arms restore a rounded shoulder and readable short-sleeve silhouette; hands and forearms remain visibly separated from the torso.",
+        "This ~0.934s pose is beyond the two modified arm-key intervals and is a useful unchanged-region control, subject to matching native phase/camera readback."
+      ]
+    },
+    {
+      "file": "Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T142404Z/PrivateCapture/Capture/Standard/1920/Resident9_Face.png",
+      "sha256": "bbdf9496df86d34b09fcd133fee405df9aacfeaa18b2efbb1830efbc1c9bbadc",
+      "mode": "Standard",
+      "resolution": [
+        1920,
+        1080
+      ],
+      "actual_image_inspected": true,
+      "report_passed": true,
+      "native_process_exit_code": 0,
+      "job_passed": true,
+      "report": "Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T142404Z/PrivateCapture/Capture/Standard/PlayerQuality1920.json",
+      "report_sha256": "83ff90a3f750e2c98b213ae46ca7daddcf5394f8d875da3e0c90638f3a2afb2c",
+      "native_state": {
+        "clip_time": 1.17113,
+        "clip_path": "/Game/ParkComic/CrewGraphicNovelHighDetail/Resident9/A_Idle.A_Idle",
+        "clip_weights": {
+          "Idle": 1.0,
+          "Walk": 0.0,
+          "Run": 0.0,
+          "Jump": 0.0
+        },
+        "cached_camera": {
+          "position_cm": [
+            4710.21713,
+            40667.81455,
+            162.00723
+          ],
+          "rotation_degrees": [
+            -1.3748347759246828,
+            76.04737854003906,
+            3.9768381866744993e-16
+          ],
+          "horizontal_fov_degrees": 38.0,
+          "unpaused_prepare_frames": 2,
+          "face_orbit_degrees": 0.0,
+          "face_horizontal_distance_cm": 125.0
+        },
+        "mesh_relative_cm": [
+          0.0,
+          0.0,
+          -96.0
+        ]
+      },
+      "findings": [
+        "The pale uneven collar rim and small dark central front notch remain visible; face/hair identity is readable but static controls and coarse glossy hair geometry remain limitations."
+      ]
+    },
+    {
+      "file": "Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T142404Z/PrivateCapture/Capture/Standard/1920/Resident9_FaceThreeQuarter.png",
+      "sha256": "afb5f4c7c4c2beaeb28ad3cf2e0ddb2b1acb771c24cc605b4ef5f6c41d5e99ed",
+      "mode": "Standard",
+      "resolution": [
+        1920,
+        1080
+      ],
+      "actual_image_inspected": true,
+      "report_passed": true,
+      "native_process_exit_code": 0,
+      "job_passed": true,
+      "report": "Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T142404Z/PrivateCapture/Capture/Standard/PlayerQuality1920.json",
+      "report_sha256": "83ff90a3f750e2c98b213ae46ca7daddcf5394f8d875da3e0c90638f3a2afb2c",
+      "native_state": {
+        "clip_time": 1.40446,
+        "clip_path": "/Game/ParkComic/CrewGraphicNovelHighDetail/Resident9/A_Idle.A_Idle",
+        "clip_weights": {
+          "Idle": 1.0,
+          "Walk": 0.0,
+          "Run": 0.0,
+          "Jump": 0.0
+        },
+        "cached_camera": {
+          "position_cm": [
+            4828.84829,
+            40697.15176,
+            160.90228
+          ],
+          "rotation_degrees": [
+            -1.3748347759246824,
+            133.3518524169922,
+            -0.0
+          ],
+          "horizontal_fov_degrees": 38.0,
+          "unpaused_prepare_frames": 2,
+          "face_orbit_degrees": 35.0,
+          "face_horizontal_distance_cm": 125.0
+        },
+        "mesh_relative_cm": [
+          0.0,
+          0.0,
+          -96.0
+        ]
+      },
+      "findings": [
+        "The collar has a pale jagged boundary, central front notch and irregular side seam; the rest pose already contains these defects, so a jump-only change cannot resolve them."
+      ]
+    }
+  ],
+  "reviewed_image_count": 8,
+  "baseline_native_jump_package_sha256": "1e62a9debd7aec41beac0466ac6a5114741ce79de6bce102f6cdbe5d3cd52f26",
+  "window_status": {
+    "passed": false,
+    "restored": true,
+    "phase": "failed",
+    "error": "Traceback (most recent call last):\n  File \"/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T142404Z/run_window.py\", line 140, in <module>\n    assert process.returncode == 0, 'Unreal process did not exit cleanly'\n           ^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: Unreal process did not exit cleanly\n",
+    "sha256": "1bf1fc8bb695d2475d6cea2c8de17e234ab870cd9c470915847967600ec5f1c1"
+  },
+  "standard_still_cells_passed": true,
+  "matrix_scope": "Standard1280 and1920 seven-still native jobs passed; four relevant actual stills per size reviewed. Later Motion1920Standard process exited1, making the whole window fail; do not promote the entire window as passed. No Comic cells reviewed.",
+  "additional_baseline_observation": "A small detached dark ground fragment is visible in the1920 Airborne frame below the player; it predates this arm trial and is not attributed to the source or renderer by this review.",
+  "a_b_pending": true,
+  "continuous_playback_reviewed": false,
+  "graphics_accepted": false,
+  "adoption": false,
+  "comparison_requirements": [
+    "Only compare after a passing native trial author/readback and renderer job.",
+    "Record actual clip time, weights and camera for both images; phases are observed, not guaranteed identical.",
+    "Inspect sleeves/shoulder silhouette, hand/head intersections and landing control pose in both modes/sizes before any adoption.",
+    "A still improvement cannot establish full motion quality or anatomical weights; collar/hair/static hand/face limits remain."
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "passed": true,
+  "mode": "restore",
+  "started_utc": "2026-10-17T18:56:14.720518+00:00",
+  "backup": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Recovery/compound-jump-repair-20261017T185459Z",
+  "native_passed": true,
+  "restored_files": [
+    "Content/ParkComic/CrewGraphicNovelHighDetail/Resident9/A_Jump.uasset"
+  ],
+  "complete_original_content_restored": true,
+  "changed_content": [
+    "Content/ParkComic/CrewGraphicNovelHighDetail/Resident9/A_Jump.uasset"
+  ],
+  "only_declared_content_changes": true,
+  "settings_restored": true,
+  "saves_unchanged": true,
+  "sources_binary_unchanged": true,
+  "finished_utc": "2026-10-17T18:56:17.796245+00:00"
+}

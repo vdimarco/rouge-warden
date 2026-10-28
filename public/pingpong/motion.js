@@ -3,7 +3,7 @@
 import { BAT, RULES, clamp } from './rules.js';
 
 export function sampleSpeed(sample) {
-  return Math.hypot(Number(sample.alpha) || 0, Number(sample.beta) || 0);
+  return Math.max(Math.hypot(Number(sample.alpha) || 0, Number(sample.beta) || 0), Number(sample.linearSpeed) || 0);
 }
 
 export function smoothSpeed(samples) {
@@ -65,6 +65,7 @@ export function createSwingDetector() {
     tracking() {
       return open != null;
     },
+    reset() { samples = []; open = null; coolUntil = -Infinity; },
   };
 }
 
@@ -85,33 +86,93 @@ export function swipeToSwing(gesture) {
   return { degPerSec, dir, tiltX, tiltY: 0, rollDegPerSec };
 }
 
-// Desktop pointer. The position maps into the same tilt angles the spring already follows.
-// A flick is pointer speed over about 60 ms. 1600 px/s is the phone's 300 deg/s line,
-// so a calm move only places the bat and a fast flick lands on the same shot bands.
+// Desktop pointer. The bat tracks the ball sideways. Cursor x is the aim,
+// cursor y is the lean. A flick is pointer speed over about 60 ms, in
+// window widths per second, so a 2560 window reads the same as 1280.
 export const POINTER = Object.freeze({
   window: 0.06,
-  pxAtStart: 1600,
-  medium: 850,
-  clickPx: 12,
+  push: 1.2,
+  drive: 2.3,
+  smash: 4.3,
+  bend: 20,
 });
 
-export function tiltFromCanvas(u, v) {
+// 0 is the left edge, 1 is the right edge. Centre aims straight. The ends are ±30 deg.
+export function aimFromCanvas(u) {
   const x = clamp(Number(u) || 0, 0, 1);
-  const y = clamp(Number(v) || 0, 0, 1);
-  return {
-    tiltX: (x - 0.5) * 2 * BAT.fullSide,
-    tiltY: (0.5 - y) * 2 * BAT.fullLean,
-  };
+  return (x - 0.5) * 2 * RULES.aimGamma;
 }
 
-export function flickFromSamples(samples, now, windowSec = POINTER.window) {
+// 0 is the top of the court (toward the net), 1 is the near edge.
+export function leanFromCanvas(v) {
+  const y = clamp(Number(v) || 0, 0, 1);
+  return (0.5 - y) * 2 * BAT.fullLean;
+}
+
+function headingBetween(a, b) {
+  const sx = b.x - a.x;
+  const sy = b.y - a.y;
+  if (sx * sx + sy * sy < 1e-8) return null;
+  return Math.atan2(-sy, Math.abs(sx)) * (180 / Math.PI);
+}
+
+function headingInSpan(ordered, t0, t1) {
+  let first = null;
+  let last = null;
+  for (let i = 0; i < ordered.length; i++) {
+    const sample = ordered[i];
+    if (sample.t < t0 - 1e-9 || sample.t > t1 + 1e-9) continue;
+    if (!first) first = sample;
+    last = sample;
+  }
+  if (!first || first === last) return null;
+  return headingBetween(first, last);
+}
+
+// The bend is the later heading minus the earlier one. When that change is
+// under 20 degrees, a straight diagonal of 20 degrees or more still spins.
+export function flickBend(ordered, diagonalDeg) {
+  if (!ordered || ordered.length < 2) return Number(diagonalDeg) || 0;
+  let peakAt = ordered[ordered.length - 1].t;
+  let peakV = -1;
+  for (let i = 1; i < ordered.length; i++) {
+    const dt = ordered[i].t - ordered[i - 1].t;
+    if (!(dt > 1e-6)) continue;
+    const v = Math.hypot(ordered[i].x - ordered[i - 1].x, ordered[i].y - ordered[i - 1].y) / dt;
+    if (v >= peakV) {
+      peakV = v;
+      peakAt = ordered[i].t;
+    }
+  }
+  const start = ordered[0].t;
+  const span = 0.05;
+  const early = headingInSpan(ordered, start, start + span);
+  const late = headingInSpan(ordered, peakAt - span, peakAt);
+  const curve = early == null || late == null ? 0 : late - early;
+  const diagonal = Number(diagonalDeg) || 0;
+  if (Math.abs(curve) + 1e-4 >= POINTER.bend) return curve;
+  return diagonal;
+}
+
+// While the ball is coming in, the bat's sideways target is the ball.
+// Any other phase rests at the middle.
+export function sideTarget(phase, ballX) {
+  if (phase !== 'incoming') return 0;
+  const line = Number(ballX);
+  return Number.isFinite(line) ? line : 0;
+}
+
+export function flickFromSamples(samples, now, viewWidth, windowSec = POINTER.window) {
   const t = Number(now) || 0;
+  const width = Math.max(1, Number(viewWidth) || 1);
   let oldest = null;
   let newest = null;
+  const windowed = [];
   const list = samples || [];
   for (let i = 0; i < list.length; i++) {
     const sample = list[i];
     if (!sample || t - sample.t > windowSec + 1e-6) continue;
+    windowed.push(sample);
     if (!oldest || sample.t < oldest.t) oldest = sample;
     if (!newest || sample.t >= newest.t) newest = sample;
   }
@@ -119,21 +180,42 @@ export function flickFromSamples(samples, now, windowSec = POINTER.window) {
   const dt = Math.max(1 / 120, newest.t - oldest.t);
   const dx = newest.x - oldest.x;
   const dy = newest.y - oldest.y;
-  const pxPerSec = Math.hypot(dx, dy) / dt;
-  const degPerSec = pxPerSec * (RULES.swingStart / POINTER.pxAtStart);
-  if (!(degPerSec > RULES.swingStart)) return null;
-  const dir = dx >= 0 ? 'forehand' : 'backhand';
-  const vy = dy / dt;
+  const widthsPerSec = Math.hypot(dx, dy) / dt / width;
+  if (!(widthsPerSec + 1e-8 >= POINTER.push)) return null;
+  let degPerSec;
+  if (widthsPerSec <= POINTER.drive + 1e-8) {
+    const u = (widthsPerSec - POINTER.push) / (POINTER.drive - POINTER.push);
+    degPerSec = RULES.swingStart + Math.min(1, Math.max(0, u)) * (RULES.pushMax - RULES.swingStart);
+  } else if (widthsPerSec <= POINTER.smash + 1e-8) {
+    const u = (widthsPerSec - POINTER.drive) / (POINTER.smash - POINTER.drive);
+    degPerSec = RULES.pushMax + Math.min(1, Math.max(0, u)) * (RULES.driveMax - RULES.pushMax);
+    if (degPerSec <= RULES.pushMax) degPerSec = RULES.pushMax + 1e-6;
+  } else {
+    degPerSec = RULES.driveMax + (widthsPerSec - POINTER.smash) * (RULES.swingStart / POINTER.push);
+    if (degPerSec <= RULES.driveMax) degPerSec = RULES.driveMax + 1e-6;
+  }
+  // Compare the first 50 ms of the stroke with the last 50 ms before the
+  // speed peaks. Screen y points down, so upward is a positive heading.
+  // A straight diagonal of 20 degrees or more counts as well.
+  const ordered = [];
+  for (let i = 0; i < list.length; i++) {
+    if (list[i]) ordered.push(list[i]);
+  }
+  ordered.sort((a, b) => a.t - b.t);
+  const bend = flickBend(ordered, Math.atan2(-dy, Math.abs(dx)) * (180 / Math.PI));
   let rollDegPerSec = 0;
-  if (vy < -400) rollDegPerSec = 650;
-  else if (vy > 280) rollDegPerSec = -650;
-  return { degPerSec, dir, rollDegPerSec, at: newest.t, pxPerSec };
+  if (bend + 1e-4 >= POINTER.bend) rollDegPerSec = 360;
+  else if (bend - 1e-4 <= -POINTER.bend) rollDegPerSec = -360;
+  const dir = dx >= 0 ? 'forehand' : 'backhand';
+  return { degPerSec, dir, rollDegPerSec, at: newest.t, widthsPerSec, bend };
 }
 
 // Portrait gamma is side tilt. In landscape the axes swap, same as Lawn Tennis.
 export function mapAxes(beta, gamma, angle) {
   const turn = ((Number(angle) || 0) % 360 + 360) % 360;
-  if (turn === 90 || turn === 270) return { beta: gamma, gamma: beta };
+  if (turn === 90) return { beta: -gamma, gamma: beta };
+  if (turn === 270) return { beta: gamma, gamma: -beta };
+  if (turn === 180) return { beta: -beta, gamma: -gamma };
   return { beta: Number(beta) || 0, gamma: Number(gamma) || 0 };
 }
 
@@ -224,6 +306,18 @@ export function springStep(state, target, dt, w = BAT.springW) {
   return { x: dest + y, v: vn };
 }
 
+// Desktop auto-track. The spring eases toward the ball, and it is not allowed
+// to fall outside the side reach while the ball is coming in.
+export function trackIncomingX(spring, ballX, phase, dt) {
+  const target = sideTarget(phase, ballX);
+  const next = springStep(spring, target, dt);
+  if (phase !== 'incoming') return next;
+  const limit = Math.max(0, RULES.reachX - 0.02);
+  const dx = next.x - target;
+  if (!(Math.abs(dx) > limit)) return next;
+  return { x: target + Math.sign(dx) * limit, v: next.v };
+}
+
 // A still phone, with the bat already near the middle, lets the neutral pose
 // follow a slow grip shift. Tau is 2 s. A swing or a bat at the side does not drift.
 export function driftNeutral(neutral, angle, rate, batX, dt) {
@@ -271,5 +365,51 @@ export function batPresentation({ roll, tiltY, push, x }) {
     scaleY: Math.max(0.86, 1 - pitch * 0.12) * open,
     shear: -pitch * 0.32,
     pushZ: jab * RULES.swingPush,
+  };
+}
+
+// Heading is circular: crossing north must not send the bat across the table.
+export function headingDelta(alpha, neutral) {
+  if (!Number.isFinite(alpha) || !Number.isFinite(neutral)) return 0;
+  return ((alpha - neutral + 540) % 360 + 360) % 360 - 180;
+}
+
+// Screen right and horizontal forward, from gravity-free device acceleration.
+export function phoneAcceleration(sample, angle, pitch) {
+  if (!sample || ![sample.x, sample.y, sample.z].every(Number.isFinite)) return { x: 0, z: 0 };
+  const a = (Number(angle) || 0) * Math.PI / 180;
+  const b = (Number(pitch) || 0) * Math.PI / 180;
+  const x = sample.x * Math.cos(a) + sample.y * Math.sin(a);
+  const up = sample.y * Math.cos(a) - sample.x * Math.sin(a);
+  return { x, z: up * Math.cos(b) - sample.z * Math.sin(b) };
+}
+
+// Short strokes, not unbounded inertial navigation. A spring stops sensor drift.
+export function createPhoneTravel() {
+  let x = 0, z = 0, vx = 0, vz = 0, ax = 0, az = 0, at = -Infinity;
+  return {
+    sample(acceleration, angle, pitch, now) {
+      const a = phoneAcceleration(acceleration, angle, pitch);
+      ax = Math.abs(a.x) < 0.25 ? 0 : clamp(a.x, -18, 18);
+      az = Math.abs(a.z) < 0.25 ? 0 : clamp(a.z, -18, 18);
+      at = now;
+    },
+    step(dt, now) {
+      const elapsed = clamp(Number(dt) || 0, 0, 0.05);
+      const live = now - at < 0.1;
+      const n = Math.max(1, Math.ceil(elapsed / (1 / 120)));
+      const h = elapsed / n;
+      for (let i = 0; i < n; i++) {
+        vx += ((live ? ax * 2.8 : 0) - 16 * x - 8 * vx) * h;
+        vz += ((live ? az * 2.8 : 0) - 16 * z - 8 * vz) * h;
+        vx = clamp(vx, -2.5, 2.5); vz = clamp(vz, -2.5, 2.5);
+        x = clamp(x + vx * h, -0.45, 0.45);
+        z = clamp(z + vz * h, -0.32, 0.48);
+        if (Math.abs(x) >= 0.45 && Math.sign(vx) === Math.sign(x)) vx = 0;
+        if ((z <= -0.32 && vz < 0) || (z >= 0.48 && vz > 0)) vz = 0;
+      }
+      return { x, z };
+    },
+    reset() { x = z = vx = vz = ax = az = 0; at = -Infinity; },
   };
 }

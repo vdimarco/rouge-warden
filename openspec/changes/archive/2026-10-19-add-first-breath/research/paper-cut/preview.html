@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>First Breath art</title>
+<link rel="icon" href="data:,">
+<style>
+  :root { --ink: #1a0610; --text: #fff4ea; --dim: #c9a9b0; --cue: #ffd77a; --line: rgba(255, 244, 234, 0.12); }
+  html, body { margin: 0; background: var(--ink); color: var(--text); font: 15px/1.4 ui-rounded, "SF Pro Rounded", "Nunito", system-ui, -apple-system, "Segoe UI", sans-serif; }
+  canvas { display: block; }
+  #stage { width: 100vw; height: 100vh; }
+  .gallery { max-width: 1200px; margin: 0 auto; padding: 20px 16px 48px; }
+  .gallery h1 { font-size: 22px; margin: 4px 0 2px; }
+  .gallery p.sub { color: var(--dim); margin: 0 0 18px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; }
+  .tile { border: 1px solid var(--line); border-radius: 14px; overflow: hidden; background: #12040b; }
+  .tile canvas { width: 100%; aspect-ratio: 9 / 14; }
+  .tile .meta { padding: 10px 12px 12px; }
+  .tile b { display: block; }
+  .tile small { color: var(--dim); display: block; margin-top: 2px; }
+  .tile a { color: var(--cue); display: inline-block; min-height: 44px; line-height: 44px; margin-right: 14px; }
+  .empty { color: var(--dim); }
+  .err { position: fixed; left: 8px; bottom: 8px; right: 8px; color: #ffd0c0; background: rgba(26, 6, 16, 0.9); padding: 8px 10px; border-radius: 8px; font: 12px/1.35 ui-monospace, monospace; white-space: pre-wrap; }
+</style>
+<script src="kit.js"></script>
+</head>
+<body>
+<script>
+(async function () {
+  const qs = new URLSearchParams(location.search);
+  const id = qs.get('scene');
+  const tParam = qs.get('t');
+  const bench = +qs.get('bench') || 0;
+  const flush = qs.get('flush') === '1';
+  window.__errors = [];
+  window.__ready = false;
+  const showErr = (msg) => {
+    window.__errors.push(String(msg));
+    let el = document.querySelector('.err');
+    if (!el) { el = document.createElement('div'); el.className = 'err'; document.body.appendChild(el); }
+    el.textContent = window.__errors.join('\n');
+  };
+  window.addEventListener('error', (e) => showErr(e.message + (e.filename ? ' (' + e.filename.split('/').pop() + ':' + e.lineno + ')' : '')));
+  window.addEventListener('unhandledrejection', (e) => showErr('promise: ' + (e.reason && e.reason.stack || e.reason)));
+
+  const load = (src) => new Promise((resolve) => {
+    const s = document.createElement('script');
+    s.src = src + '?v=' + Date.now();
+    s.onload = () => resolve(true);
+    s.onerror = () => { showErr('could not load ' + src); resolve(false); };
+    document.head.appendChild(s);
+  });
+  let list = [];
+  try { list = await (await fetch('scenes/list.json', { cache: 'no-store' })).json(); } catch (e) { showErr('scenes/list.json: ' + e.message); }
+  if (!Array.isArray(list)) list = [];
+  for (const sid of list) await load('scenes/' + sid + '.js');
+  if (id && !FB.scenes[id]) await load('scenes/' + id + '.js');
+
+  if (qs.get('low') === '1' && window.PaperCut) { const PC = window.PaperCut; const p0 = PC.paper, s0 = PC.shadow; PC.paper = function (c, path, col, o) { return p0.call(PC, c, path, col, Object.assign({}, o, { grain: 0, core: 0 })); }; PC.shadow = function (c, path, h, o) { return s0.call(PC, c, path, h, Object.assign({}, o, { blur: 0 })); }; }
+  if (!id) return gallery(list);
+  const scene = FB.scenes[id];
+  if (!scene) { showErr('no scene "' + id + '"'); window.__ready = true; return; }
+  document.title = (scene.title || id) + ' preview';
+  window.__scene = { id, title: scene.title, stage: scene.stage, caption: scene.caption, still: scene.still };
+
+  const cv = document.createElement('canvas');
+  cv.id = 'stage';
+  const w = +qs.get('w'), h = +qs.get('h');
+  if (w) cv.style.width = w + 'px';
+  if (h) cv.style.height = h + 'px';
+  document.body.appendChild(cv);
+  const dprCap = +qs.get('dpr') || 2;
+
+  if (bench) {
+    // Draw `bench` frames on requestAnimationFrame with t advancing 1/60 s, timing scene.draw with
+    // performance.now(). With flush=1 a 1 px getImageData after each draw forces the raster work into
+    // the measured time (an upper bound: it also waits for the GPU or the software rasterizer).
+    const t0 = tParam == null || tParam === 'still' ? (scene.still || 0) : +tParam;
+    const ctx = cv.getContext('2d', { alpha: false, willReadFrequently: qs.get('wrf') === '1' });
+    const rect = cv.getBoundingClientRect();
+    const dpr = Math.min(dprCap, window.devicePixelRatio || 1);
+    const W = rect.width, H = rect.height;
+    cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
+    FB.dpr = dpr;
+    const state = scene.init ? scene.init(W, H) || {} : {};
+    const warm = 10, js = [], tot = [], gaps = [];
+    let i = 0, last = 0;
+    await new Promise((done) => {
+      function tick(now) {
+        if (last) gaps.push(now - last);
+        last = now;
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
+        const a = performance.now();
+        try { scene.draw(ctx, W, H, t0 + i / 60, state); } catch (e) { showErr(e.stack || e); done(); return; }
+        const b = performance.now();
+        if (flush) ctx.getImageData(0, 0, 1, 1);
+        const c = performance.now();
+        if (i >= warm) { js.push(b - a); tot.push(c - a); }
+        i++;
+        if (i < warm + bench) requestAnimationFrame(tick); else done();
+      }
+      requestAnimationFrame(tick);
+    });
+    const stats = (arr) => { const s = arr.slice().sort((x, y) => x - y); const q = (p) => s[Math.min(s.length - 1, Math.floor(p * s.length))]; return { mean: +(s.reduce((x, y) => x + y, 0) / s.length).toFixed(3), p50: +q(0.5).toFixed(3), p95: +q(0.95).toFixed(3), max: +s[s.length - 1].toFixed(3) }; };
+    window.__bench = { scene: id, frames: js.length, w: W, h: H, dpr, flush, drawMs: stats(js), withFlushMs: flush ? stats(tot) : null, rafGapMs: stats(gaps.slice(warm)) };
+    window.__ready = true;
+    return;
+  }
+
+  if (tParam != null) {
+    const t = tParam === 'still' ? (scene.still || 0) : +tParam;
+    try {
+      const r = FB.drawOnce(cv, scene, t, { dprCap });
+      window.__frameMs = r.ms;
+    } catch (e) { showErr(e.stack || e); }
+    requestAnimationFrame(() => requestAnimationFrame(() => { window.__ready = true; }));
+    return;
+  }
+
+  FB.run(cv, scene, { dprCap });
+  requestAnimationFrame(() => requestAnimationFrame(() => { window.__ready = true; }));
+
+  function gallery(ids) {
+    document.title = 'First Breath art';
+    const wrap = document.createElement('div');
+    wrap.className = 'gallery';
+    wrap.innerHTML = '<h1>First Breath art examples</h1><p class="sub">Warm Lantern. Each tile runs live and pauses off screen.</p>';
+    const grid = document.createElement('div');
+    grid.className = 'grid';
+    wrap.appendChild(grid);
+    document.body.appendChild(wrap);
+    const shown = ids.filter((sid) => FB.scenes[sid]);
+    if (!shown.length) { const p = document.createElement('p'); p.className = 'empty'; p.textContent = 'No scenes yet. Add ids to scenes/list.json.'; wrap.appendChild(p); }
+    for (const sid of shown) {
+      const sc = FB.scenes[sid];
+      const tile = document.createElement('div');
+      tile.className = 'tile';
+      const c = document.createElement('canvas');
+      tile.appendChild(c);
+      const meta = document.createElement('div');
+      meta.className = 'meta';
+      const b = document.createElement('b'); b.textContent = sc.title || sid;
+      const sm = document.createElement('small'); sm.textContent = [sc.stage, sc.caption].filter(Boolean).join(' · ');
+      const a1 = document.createElement('a'); a1.href = '?scene=' + encodeURIComponent(sid); a1.textContent = 'Open';
+      const a2 = document.createElement('a'); a2.href = '?scene=' + encodeURIComponent(sid) + '&t=still'; a2.textContent = 'Still';
+      meta.append(b, sm, a1, a2);
+      tile.appendChild(meta);
+      grid.appendChild(tile);
+      FB.run(c, sc);
+    }
+    window.__ready = true;
+  }
+})();
+</script>
+</body>
+</html>

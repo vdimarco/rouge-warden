@@ -1,0 +1,1 @@
+PASS: 4096 prompt/button/state combinations equivalent; throw queries 2272 -> 2048, at most one per invocation

@@ -1,0 +1,2 @@
+# Design
+Inspect createFX.word/update/clear/setVisible and callers before code. Reuse existing clearUpdateRanges/addUpdateRange pattern from populated figures/action markers. Spawn and update must mark live prefixes; zero live words suppress updates. Full initial buffer upload expected. Swap removal occurs within live prefix; tests cover grow/shrink/empty/regrow and actual bufferSubData/nonblank pixel equivalence. No static atlas dirty caching in this increment.

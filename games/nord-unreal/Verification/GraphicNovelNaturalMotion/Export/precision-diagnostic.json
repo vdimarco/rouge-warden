@@ -1,0 +1,34 @@
+{
+  "strict_passed": false,
+  "strict_error": "AssertionError(('Unexpected semantic difference', 'local_scale_max_abs', 1.3113021850585938e-06, 1e-06))",
+  "retained_vs_control": {
+    "rest_matrix_max_abs": 0.0,
+    "object_matrix_max_abs": 0.0,
+    "local_translation_max_abs": 0.0,
+    "local_scale_max_abs": 0.0,
+    "forbidden_rotation_max_radians": 0.0,
+    "allowed_rotation_max_radians": {}
+  },
+  "control_vs_trial": {
+    "rest_matrix_max_abs": 0.0,
+    "object_matrix_max_abs": 0.0,
+    "local_translation_max_abs": 5.53131103515625e-05,
+    "local_scale_max_abs": 1.3113021850585938e-06,
+    "forbidden_rotation_max_radians": 2.136828495721514e-06,
+    "allowed_rotation_max_radians": {
+      "RightUpLeg": 0.8024417504841233,
+      "LeftArm": 1.570696383358105,
+      "RightLeg": 1.133894121734035,
+      "LeftForeArm": 2.0066794694285,
+      "neck": 0.1465411211949706,
+      "RightForeArm": 1.7449296729009642,
+      "LeftLeg": 0.7849882659376984,
+      "LeftFoot": 0.26165873982077115,
+      "RightFoot": 0.3488957781610054,
+      "LeftUpLeg": 0.5756585712160771,
+      "RightArm": 1.8325458863760424,
+      "Spine01": 0.15694976867175045
+    }
+  },
+  "scope": "Metricdiagnosticonly;strictgateunmodified;nopassclaim.Temporaryscaleassertdisabledonlyheretocheckallotherfields."
+}

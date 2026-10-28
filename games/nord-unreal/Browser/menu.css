@@ -9,10 +9,29 @@
 .menu-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 8px; }
 .menu button { min-height: 44px; background: var(--ink); color: var(--paper); border-color: var(--ink); font-size: 14px; }
 .menu button:hover:enabled { background: var(--paper); color: var(--ink); border-color: var(--ink); }
+#place-sherbrooke[aria-pressed="true"], #place-rachel[aria-pressed="true"] { background: var(--paper); color: var(--ink); }
 .menu-close { width: 100%; margin-top: 16px; }
+.menu-install { margin-top: 18px; padding-top: 16px; border-top: 2px solid var(--ink); }
+.menu-install button { width: 100%; }
+.menu-install .small { margin: 10px 0 0; color: var(--ink); line-height: 1.5; }
 /* The game buttons send keys through the touch controls, which only run while playing on a touch screen. */
 .menu-game { display: none; }
 .touch-input[data-state="playing"] .menu-game { display: block; }
 /* In fullscreen the header is out of view, so the title screen gets its own menu button. */
 .overlay-menu { display: none; position: absolute; top: 12px; right: 12px; z-index: 1; min-height: 44px; }
 #frame:fullscreen .overlay-menu { display: block; }
+
+/* A quiet reminder leaves gameplay focus and the lower touch controls alone. */
+.install-nudge { position: absolute; z-index: 4; top: max(12px, env(safe-area-inset-top)); left: 50%; transform: translateX(-50%); width: min(430px, calc(100% - 32px)); max-height: calc(100% - 32px); overflow-y: auto; display: grid; grid-template-columns: 44px 1fr; gap: 10px 12px; padding: 14px; color: var(--ink); background: var(--yellow); border: 3px solid var(--ink); box-shadow: 5px 5px 0 var(--cyan); }
+.install-nudge h2 { margin: 0 0 5px; font: 900 18px/1.1 Impact, "Arial Black", Arial, sans-serif; }
+.install-nudge p { margin: 0; font-size: 12px; line-height: 1.4; }
+.install-nudge-actions { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 8px; }
+.install-nudge button { min-height: 44px; background: var(--ink); border-color: var(--ink); }
+.install-nudge #install-nudge-dismiss { background: transparent; color: var(--ink); }
+.install-nudge .small { grid-column: 1 / -1; }
+
+.touch-input .install-nudge { top: calc(max(12px, env(safe-area-inset-top)) + 76px); max-height: calc(100% - 264px); }
+
+@media (orientation: landscape) and (max-height: 600px) {
+  .touch-input .install-nudge { top: max(12px, env(safe-area-inset-top)); left: calc(max(16px, env(safe-area-inset-left)) + 76px); transform: none; width: min(430px, calc(100% - 300px)); max-height: calc(100% - 132px); }
+}

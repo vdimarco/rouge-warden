@@ -1,0 +1,5 @@
+- [x] Give a parked car a headlight spot once the street lamps are on
+- [x] Keep daytime rain on driven and traffic cars only
+- [x] Draw the spawn car's headlights in the sunset shade
+- [x] Run `Scripts/test_opening_lamps.py`
+- [ ] Confirm the parked headlight in Unreal (editor not available here)

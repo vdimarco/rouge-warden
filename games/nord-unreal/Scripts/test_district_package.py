@@ -85,11 +85,34 @@ with tempfile.TemporaryDirectory() as directory:
     with patch.object(qa, 'verify_plateau_inventory', return_value={'old_guard':'called'}) as legacy:
         result = qa.verify_inventory(montreal, 'montreal', root)
         assert result['east_extension_meshes'] == 40 and result['plateau'] == {'old_guard':'called'}
+        assert 'east_details_meshes' not in result, 'No-Details source baseline changed'
         legacy.assert_called_once_with(montreal, root)
         for bad in (montreal.replace(ext_rows[0], ''), montreal+'\n'+ext_rows[0],
                     montreal.replace(ext_rows[0], 'Warning: '+ext_rows[0]),
                     montreal.replace(ext_rows[0], ext_rows[0].replace('LaFontaine.LaFontaine:', 'CollegeBathurst.CollegeBathurst:'))):
             reject(lambda bad=bad: qa.verify_inventory(bad, 'montreal', root), 'bad east extension live inventory')
+        details_path = root/'Data/Plateau/EastDetails/details.json'
+        details_path.parent.mkdir()
+        detail_names = ('Glass','Iron','Trim')
+        packages = [f'Content/Plateau/EastDetails/SM_{name}.uasset' for name in detail_names]
+        details_path.write_text(json.dumps({'native_contract':{'new_packages':packages}}))
+        detail_rows = meshes('LaFontaine','/Game/Plateau/EastDetails',detail_names)
+        with_details = montreal+'\n'+'\n'.join(detail_rows)
+        assert qa.verify_inventory(with_details,'montreal',root)['east_details_meshes'] == 3
+        for row in detail_rows:
+            for bad in (with_details.replace(row,''), with_details+'\n'+row,
+                        with_details+'\n'+row.replace('StaticMeshActor_','DuplicateActor_'),
+                        with_details.replace(row,'LogLinker: Warning: '+row),
+                        with_details.replace(row,row.replace('LaFontaine.LaFontaine:','CollegeBathurst.CollegeBathurst:'))):
+                reject(lambda bad=bad:qa.verify_inventory(bad,'montreal',root),'missing/duplicate/warning/wrong-map East Details mesh')
+        extra = meshes('LaFontaine','/Game/Plateau/EastDetails',['Unexpected'])[0].replace('StaticMeshActor_','UnexpectedActor_')
+        reject(lambda:qa.verify_inventory(with_details+'\n'+extra,'montreal',root),'extra East Details mesh')
+        for bad_packages in (packages[:-1], [packages[0],packages[0],packages[2]],
+                             [packages[0].replace('/EastDetails/','/Other/'),*packages[1:]], packages+['Content/Plateau/EastDetails/SM_Unexpected.uasset']):
+            details_path.write_text(json.dumps({'native_contract':{'new_packages':bad_packages}}))
+            reject(lambda:qa.verify_inventory(with_details,'montreal',root),'changed East Details source contract')
+        details_path.write_text(json.dumps({'native_contract':{'new_packages':packages}}))
+        assert 'east_details_meshes' not in qa.verify_inventory(good,'toronto',root)
     partial = '\n'.join(state('montreal', client=True))
     qa.verify_inventory(partial, 'montreal', root, dependencies=False, authoritative=False)
     reject(lambda: qa.verify_inventory(partial, 'montreal', root, dependencies=False), 'partial authority population')
@@ -99,6 +122,25 @@ with tempfile.TemporaryDirectory() as directory:
     assert qa.hull_transforms(transform, 'CollegeBathurst') == {'QuebecCar_0': ((10.25,-20.,100.),15.322)}
     reject(lambda: qa.hull_transforms(transform.replace('VehicleHull','Collision'), 'CollegeBathurst'), 'deprecated car box transforms')
     reject(lambda: qa.hull_transforms(transform.replace('CollegeBathurst.CollegeBathurst:', 'LaFontaine.LaFontaine:'), 'CollegeBathurst'), 'wrong-map hull')
+    # Acceleration crosses 100 cm/s before the hull necessarily travels 10 cm.
+    # Keep polling the same bounded observation until both requirements hold.
+    drive_start = (2770.615, 354.556, 102.934575)
+    def drive_rows(speed, point):
+        rows = [actor('CollegeBathurst','StaticMeshComponent','QuebecCar_0.VehicleHull','RelativeLocation',
+                      '(X=%s,Y=%s,Z=%s)' % point),
+                actor('CollegeBathurst','StaticMeshComponent','QuebecCar_0.VehicleHull','RelativeRotation',
+                      '(Pitch=0,Yaw=15.322,Roll=0)')]
+        if speed is not None:
+            rows.append(actor('CollegeBathurst','QuebecCar','QuebecCar_0','Speed',str(speed)))
+        return '\n'.join(rows)
+    early = (2778.183121, 356.629527, 102.934575)
+    later = (2790.615, 354.556, 102.934575)
+    assert qa.driving_sample(drive_rows(123.519, early), 'CollegeBathurst', 'QuebecCar_0', drive_start) is None
+    assert qa.driving_sample(drive_rows(150, later), 'CollegeBathurst', 'QuebecCar_0', drive_start) == {
+        'speed_cm_s': 150., 'position_cm': later}
+    assert qa.driving_sample(drive_rows(0, later), 'CollegeBathurst', 'QuebecCar_0', drive_start) is None
+    assert qa.driving_sample(drive_rows(150, drive_start), 'CollegeBathurst', 'QuebecCar_0', drive_start) is None
+    assert qa.driving_sample(drive_rows(None, later), 'CollegeBathurst', 'QuebecCar_0', drive_start) is None
     pawn = actor('CollegeBathurst','QuebecController','QuebecController_0','Pawn', "QuebecCharacter'/Game/Maps/CollegeBathurst.CollegeBathurst:PersistentLevel.QuebecCharacter_1'")
     assert qa.local_walker(pawn,'CollegeBathurst') == 'QuebecCharacter_1'
     assert qa.controller_pawn(pawn.replace('QuebecCharacter_1','QuebecCar_0').replace("QuebecCharacter'", "QuebecCar'"),'CollegeBathurst') == 'QuebecCar_0'

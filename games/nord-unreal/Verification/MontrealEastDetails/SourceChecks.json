@@ -1,0 +1,118 @@
+{
+  "passed": true,
+  "tested_base_commit": "efb2c2da62972468f756daa2addab2b45335b4da",
+  "files": {
+    "Scripts/prepare_montreal_east_details.py": "240bcaec073168e19b449abd7169e23f70b5f869191d53fa231052bc91559d1f",
+    "Scripts/apply_montreal_east_details.py": "9e3d9773bfdd3b356c9cd5c2f4f991292daba3623cfc8bacbe77e3c2c7b7e3af",
+    "Scripts/test_montreal_east_details.py": "e243ee3c632c9223ce1fac43be4f46b37b3c618840072b7a5e53eb1b027e7209",
+    "Scripts/test_apply_montreal_east_details.py": "14263fd41324b8652604f38bd4715ae5e472e02aa9c6b201b842d7d2df76a589",
+    "Scripts/apply_montreal_east_extension.py": "f35d111547ca53d713b816722cd4a15692770fd2b221a4cca95ae8296547a769",
+    "Scripts/verify_plateau.py": "49100ea9b1c6672bdc04af48ce02cd866e35985d0cb9c3c8b21474b83d08b415",
+    "Scripts/verify_district_package.py": "a7d8b5e82f1401479e8efed86f382969fec7c3ae6ba7739ec501b5917725941b",
+    "Scripts/test_district_package.py": "765770897d8c7d9dfd9d19d421ab0106b02e8d53c2e6a61c47884081da8801ac",
+    "Data/Plateau/EastDetails/source-subset.osm.xml": "c3c6923e3748be28955a91361a53c9a6e6b2443f2c12f3064d977f86ad168291",
+    "Data/Plateau/EastDetails/details.json": "ad7e9860068c029782cea2ed869bd4e15d112d7164dd4a84bb078c1b5bc580cb",
+    "Data/Plateau/EastDetails/cpu-checks.json": "4676053a1931a538964d9829f9643761df29c1cab247bba6bbb33de28ac715db",
+    "Data/Plateau/EastDetails/README.md": "1dcc66b018235c657320de75b8d2acddb7e117285ace4cdb33ebac734eb10936",
+    "Data/Plateau/EastDetails/manifest.json": "f8f9e6ccc3480042ba95ba5de5379c7d70d42f009f9b9978626b43b50068fd02",
+    "Data/Plateau/EastDetails/Geometry/Glass.obj": "02f015e6a803af08f4ad16931c3ee707ca026b0d0e9263a1e217f523522dd987",
+    "Data/Plateau/EastDetails/Geometry/Iron.obj": "16141ab0f92b99d540c884b484522edff3c3eaad847574929c129a655767f818",
+    "Data/Plateau/EastDetails/Geometry/Trim.obj": "90488baac64a7ec7bc761aa64f68d5fe8b216ade316b6dff7694f04a690c6494",
+    "Content/Plateau/EastDetails/SM_Glass.uasset": "058224533fe869842007ed0b2e1531d9e0990c6d0eabd1dac6fa3f43c9d570d0",
+    "Content/Plateau/EastDetails/SM_Iron.uasset": "6c35f79f81a11e40ede529d202294a45399f7aa823e90ff96d123fb3a90218ca",
+    "Content/Plateau/EastDetails/SM_Trim.uasset": "6742168b7f797522e09146e379cbcce20c6c6227692fa10c149b86f1c1790171",
+    "Content/Maps/LaFontaine.umap": "1e0cf1e0a309e588469e98d22e30350b873e456e2b68fa0a3500878181039b28"
+  },
+  "source_pins": {
+    "Data/LaFontaine/osm.xml": "fe4410d45007a627bf6d9b9ddeeae329fa9cdd7492dfb5fa6beff851e7cf8f86",
+    "Data/Plateau/ContextGeometry/context.json": "74764fd01528c320439692fdc6eefd3394770e547f425b886ceabbd73fc9392a",
+    "Data/Plateau/EastExtension/extension.json": "c19300127f80c9ebd4483610544acab9162a05280ab5a2717376c88c6770dcbf",
+    "Scripts/plateau_context.py": "b5df165d154c2c18697cc7884cd486c5f3e056886398cda220e96b9cfcfbf5be",
+    "Scripts/plateau_mesh.py": "0db445d502ffeb5a0d77c49fb1cb9d3a1bd49492b6956f37ce96bad505033217",
+    "Scripts/plateau_ground.py": "9ba1e57a062d94c6eb2c3ecef2ea191d63d5cf97ada05cccf9e9441a1ce7c445",
+    "Scripts/plateau_batches.py": "8a2a46cf1ba27373472d9050d69a4461aa4df8b2202d10bdbaebad261302e6af",
+    "Scripts/plateau_streets.py": "9e246e7c2d66e370be709117912df167be7edae5e6857adacc9d0641829c1179",
+    "Scripts/prepare_lafontaine.py": "e7b6e5f068a96ee7306b1fff247fa73158f5cf7c343dc5510ab8cce92ee3c924",
+    "Scripts/prepare_montreal_east_details.py": "240bcaec073168e19b449abd7169e23f70b5f869191d53fa231052bc91559d1f",
+    "Scripts/apply_montreal_east_details.py": "9e3d9773bfdd3b356c9cd5c2f4f991292daba3623cfc8bacbe77e3c2c7b7e3af",
+    "Scripts/apply_montreal_east_extension.py": "f35d111547ca53d713b816722cd4a15692770fd2b221a4cca95ae8296547a769",
+    "Scripts/montreal_east_extension.py": "3d5a3f60a7dd99059c464905f55e8d941d4b120c8a141ebf73a7eb785a13dfe9",
+    "Scripts/verify_plateau_context.py": "76459b0bde9519251515f56fe5a562bc10f4f4f0ab1a3193a7845e891d013acc",
+    "Data/Plateau/EastDetails/details.json": "ad7e9860068c029782cea2ed869bd4e15d112d7164dd4a84bb078c1b5bc580cb",
+    "Data/Plateau/EastDetails/source-subset.osm.xml": "c3c6923e3748be28955a91361a53c9a6e6b2443f2c12f3064d977f86ad168291",
+    "Data/Plateau/EastDetails/Geometry/Glass.obj": "02f015e6a803af08f4ad16931c3ee707ca026b0d0e9263a1e217f523522dd987",
+    "Data/Plateau/EastDetails/Geometry/Iron.obj": "16141ab0f92b99d540c884b484522edff3c3eaad847574929c129a655767f818",
+    "Data/Plateau/EastDetails/Geometry/Trim.obj": "90488baac64a7ec7bc761aa64f68d5fe8b216ade316b6dff7694f04a690c6494"
+  },
+  "author_backup_manifest_sha256": "9f1c4485a5819a79972fa2e3defa5b32ebe020c44ae2db8753f991ef7cb8811b",
+  "native_process_reports_sha256": {
+    "Author": "d800e9fcb94a6a489ae8339edc3a78394875f7452617ebe0412f8fa2095a0f76",
+    "Verify": "1249d4c9fba71248f3e1602235e3b063c651d0c6dbc0f19e9bf2907ea7219f18",
+    "Canonical": "959af9827a615884e2eee7ee21333fbf2da274c8beffd667aa29158d1c975b2a",
+    "Snapshot": "076152550256809d2a79a351297fb647897fb0da35741ec4b8873d04dec7e859"
+  },
+  "current_actor_epoch_sha256": "5ae1fd3b20e4573dac3d3b73b57a1afd5c106a586f83d88863207c7a2b136dd3",
+  "tests": [
+    {
+      "argv": [
+        "/home/von/.cache/nord-geo-venv/bin/python",
+        "-B",
+        "Scripts/test_montreal_east_details.py"
+      ],
+      "exit_code": 0,
+      "output": "NORD_EAST_DETAILS_CPU_OK:50source/8fully-occluded/42candidate panes,3groups/2604triangles, exact producer/source reuse, bounded frames, concave/height culling, restored gate, OBJ/float32 and immutable Content guards"
+    },
+    {
+      "argv": [
+        "python3",
+        "-B",
+        "Scripts/test_apply_montreal_east_details.py"
+      ],
+      "exit_code": 0,
+      "output": "NORD_EAST_DETAILS_AUTHOR_CPU_OK:20 unsafe preflights rejected before mutation; exact original actor/Content preservation; three saved package roots/declared sidecars; immutable backup seal; 84 outward saved-card triangles/missing/repeated/inward/moved rejection"
+    },
+    {
+      "argv": [
+        "python3",
+        "-B",
+        "Scripts/test_district_package.py"
+      ],
+      "exit_code": 0,
+      "output": "NORD_DISTRICT_PACKAGE_CPU_OK: strict district inventories, current hull/pawn parsing, immutable archive paths, isolated argv and bounded macro snapshots"
+    },
+    {
+      "argv": [
+        "python3",
+        "-B",
+        "Saved/Tests/DistrictRuntime/test_east_capture.py"
+      ],
+      "exit_code": 0,
+      "output": "NORD_EAST_CAPTURE_CPU_OK: frozen source/input hashes, 3 surveyed views, 6x1920 stills, unchanged native lifecycle, strict active campaign/population/save scope"
+    },
+    {
+      "argv": [
+        "git",
+        "diff",
+        "--check"
+      ],
+      "exit_code": 0,
+      "output": ""
+    }
+  ],
+  "budget": {
+    "authorized_usd": 25,
+    "reserved_usd": 4,
+    "estimated_completed_usd": 3.04,
+    "uncommitted_usd": 21,
+    "new_jobs_this_checkpoint": 0,
+    "provider_balance_verified": false
+  },
+  "spec_validation": {
+    "mode": "manual; OpenSpec CLI unavailable",
+    "archived_change": "openspec/changes/archive/2026-10-17-nord-east-facade-detail",
+    "documents": 4,
+    "requirements": 1,
+    "scenarios": 3,
+    "unchecked_tasks": 0
+  }
+}

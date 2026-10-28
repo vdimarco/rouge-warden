@@ -1,0 +1,13 @@
+{"stable":true,"time":60,"moved":true,"color":true,"grown":true,"hidden":true,"shown":true,"goal":true,"zeroTransfers":true,"image":true}
+PASS: stable
+PASS: time
+PASS: moved
+PASS: color
+PASS: grown
+PASS: hidden
+PASS: shown
+PASS: goal
+PASS: zeroTransfers
+PASS: image
+PASS: no page errors
+PASS: marker dirty

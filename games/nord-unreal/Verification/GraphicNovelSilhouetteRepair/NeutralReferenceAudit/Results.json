@@ -1,0 +1,44 @@
+{
+  "passed": true,
+  "quaternion_order": "xyzw; componentQ = parentQ * localQ",
+  "native_chain": [
+    "Armature",
+    "Hips",
+    "Spine02",
+    "Spine01",
+    "Spine",
+    "RightShoulder",
+    "RightArm",
+    "RightForeArm",
+    "RightHand"
+  ],
+  "reference_hand_component_quaternion_xyzw": [
+    -0.9378648152710662,
+    -0.3124863755584396,
+    -0.10953791638768545,
+    0.10374631675564644
+  ],
+  "jump_endpoint_reference_error_degrees": [
+    0.0,
+    0.0
+  ],
+  "initial_hand_reference_error_degrees": 17.355324585802666,
+  "recorded_relative_formula_error_degrees": 1.4312496066585827e-14,
+  "ideal_neutral_relative_quaternion_xyzw": [
+    0.0746121380784118,
+    0.224637684893198,
+    -0.9553328060518326,
+    0.17694679725364926
+  ],
+  "ideal_offset_cm": [
+    -0.7567321044396016,
+    -5.467347089357475,
+    10.655302545052614
+  ],
+  "recorded_bake_neutral_cup_axis_error_degrees": 7.053652769980658,
+  "pure_jump_crosscheck_samples": 42,
+  "pure_jump_hand_rotation_error_degrees_min_max": [
+    0.0003928848673859502,
+    0.002497200545827984
+  ]
+}

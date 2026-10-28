@@ -51,8 +51,15 @@ namespace
     }
 }
 
+bool QuebecPondContains(float X, float Y)
+{
+    float Depth = 0.f;
+    return PondWaterAt(FVector2D(X, Y), Depth);
+}
+
 void AQuebecCharacter::Jump()
 {
+    if (IsInputLocked()) return; // People: no jumping while knocked down, K.-O. or arrested.
     if (GetCharacterMovement()->IsSwimming())
     {
         SwimStrokeUntil = GetWorld()->GetTimeSeconds() + .2f;

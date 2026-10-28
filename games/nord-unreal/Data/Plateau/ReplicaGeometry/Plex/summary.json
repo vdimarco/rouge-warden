@@ -1,0 +1,275 @@
+{
+ "fronts": 1307,
+ "corner_side_fronts": 383,
+ "types": {
+  "conciergerie": 105,
+  "duplex": 223,
+  "triplex": 979
+ },
+ "stairs": {
+  "curved": 260,
+  "none": 656,
+  "straight": 391
+ },
+ "crowns": {
+  "cornice_metal": 549,
+  "cornice_wood": 221,
+  "flat": 104,
+  "mansard": 183,
+  "parapet": 250
+ },
+ "masonry": {
+  "Brick_Brown": 251,
+  "Brick_BrownDark": 107,
+  "Brick_Buff_Even": 182,
+  "Brick_Orange": 104,
+  "Brick_Red": 239,
+  "Brick_RedDark": 91,
+  "Stone": 333
+ },
+ "commercial_ground_floors": 152,
+ "storeys_histogram": {
+  "2": 227,
+  "3": 1012,
+  "4": 55,
+  "5": 5,
+  "6": 2,
+  "8": 5,
+  "9": 1
+ },
+ "storeys_sources": {
+  "OSM building:levels": 596,
+  "OSM building:levels +1 storey to cover the retained mass": 1,
+  "assessment roll": 354,
+  "assessment roll +1 storey to cover the retained mass": 114,
+  "assessment roll, checked against the LOD2 roof (32.2 m)": 1,
+  "default 3 storeys": 133,
+  "municipal LOD2 (h - 4.9 m) / 3.26 m": 81,
+  "municipal LOD2 (h - 4.9 m) / 3.26 m +1 storey to cover the retained mass": 27
+ },
+ "era_sources": {
+  "assessment roll": 1089,
+  "override: OMHM, Habitations De Mentana: in operation since 1974 (https://omhm.qc.ca/en/node/15296); red brick, concrete balcony slabs with painted guards, patio doors and wall panels under the windows (OMHM Infochantier De Mentana, October 2008, https://www.omhm.qc.ca/sites/default/files/infochantier/DeMentanav210.08.pdf)": 1,
+  "seeded from roll decade histogram": 217
+ },
+ "streets_covered": {
+  "Rue de Mentana": 135,
+  "Rue Saint-André": 103,
+  "Rue Cartier": 83,
+  "Rue Saint-Christophe": 76,
+  "Rue Fabre": 66,
+  "Rue Dorion": 62,
+  "Rue Garnier": 59,
+  "Avenue De Chateaubriand": 58,
+  "Rue Marie-Anne Est": 52,
+  "Rue De Lanaudière": 44,
+  "Rue de Brébeuf": 44,
+  "Rue Sherbrooke Est": 42,
+  "Avenue Duluth Est": 41,
+  "Rue Chambord": 41,
+  "Rue Marquette": 38,
+  "Rue De La Roche": 34,
+  "Rue Saint-Hubert": 33,
+  "Rue Berri": 32,
+  "Rue Gauthier": 32,
+  "Rue de Bordeaux": 30,
+  "Rue Napoléon": 24,
+  "Rue Cherrier": 20,
+  "Rue Roy Est": 20,
+  "Rue Beaudry": 19,
+  "Rue Montcalm": 19,
+  "Rue Rachel Est": 19,
+  "Rue Rivard": 19,
+  "Rue Wolfe": 15,
+  "Avenue Christophe-Colomb": 12,
+  "Avenue Papineau": 12,
+  "Rue De Champlain": 8,
+  "Rue de la Visitation": 7,
+  "Rue Atateken": 4,
+  "Avenue De Lorimier": 2,
+  "Avenue du Parc-La Fontaine": 1,
+  "Place du Pain-et-des-Roses": 1
+ },
+ "skipped_buildings": 100,
+ "skipped_reasons": {
+  "footprint under 25 m2": 6,
+  "institutional or outbuilding": 11,
+  "no exposed edge facing a named street": 75,
+  "tower over 24 m": 8
+ },
+ "triangles_per_front": {
+  "median": 1564,
+  "max": 13700
+ },
+ "roofs": {
+  "materials": {
+   "Roof_Gravel": 364,
+   "Roof_Membrane": 811,
+   "Roof_Tar": 132
+  },
+  "chimneys": 1301,
+  "hatches": 1266,
+  "terraces": 33,
+  "party_copings": 2345,
+  "party_skins": 659,
+  "triangles": 90546
+ },
+ "rear": {
+  "back_walls": {
+   "lane": 311,
+   "long": 460,
+   "rear": 1708,
+   "side": 1757,
+   "street": 283
+  },
+  "lots_with_galleries": 830,
+  "galleries": 1709,
+  "stairs": {
+   "spiral": 491,
+   "straight": 403
+  },
+  "flights": 1709,
+  "no_gallery_reasons": {
+   "a building, structure or traffic lane behind the wall": 115,
+   "no rear wall of 3 m or more and no long wall": 224,
+   "no rear wall of 3 m or more; long walls carry galleries up to 4 storeys only": 2,
+   "post-1945 apartment block: a balcony on every bay, no rear galleries": 6,
+   "yard too shallow or lot too narrow for a gallery and stair": 130
+  },
+  "fences": {
+   "lane": 537,
+   "rear_lot_line": 414,
+   "gates": 536,
+   "kinds": {
+    "boards": 395,
+    "chain": 182,
+    "lattice": 94,
+    "low": 162,
+    "slats": 118
+   }
+  },
+  "outbuildings": {
+   "garage": 28,
+   "shed": 156
+  },
+  "yards": {
+   "lots": 1079,
+   "mixes": {
+    "garden": 184,
+    "gravel": 99,
+    "lawn": 380,
+    "patio": 251,
+    "paved": 165
+   },
+   "lane_edges": {
+    "fence": 789,
+    "low": 162,
+    "none": 47,
+    "open": 81
+   },
+   "parking_pads": 81,
+   "area_m2": {
+    "Yard_Grass": 21806.1,
+    "Yard_Gravel": 5840.6,
+    "Yard_Pavers": 22295.8,
+    "Yard_Soil": 9384.7
+   },
+   "ground_decks": 71,
+   "trees": {
+    "ash": 103,
+    "elm": 37,
+    "maple": 200,
+    "small": 225
+   },
+   "tree_height_m": {
+    "min": 7.5,
+    "median": 12.5,
+    "max": 18.0
+   }
+  },
+  "triangles": 745920
+ },
+ "background": {
+  "masses": 252,
+  "kinds": {
+   "perimeter": 154,
+   "skipped: footprint under 25 m2": 6,
+   "skipped: institutional or outbuilding": 10,
+   "skipped: no exposed edge facing a named street": 74,
+   "skipped: tower over 24 m": 8
+  },
+  "walls": {
+   "lane": 140,
+   "long": 202,
+   "rear": 264,
+   "side": 613,
+   "street": 126
+  },
+  "windows": 10601,
+  "party_skins": 26,
+  "roofs": {
+   "materials": {
+    "Roof_Gravel": 90,
+    "Roof_Membrane": 151,
+    "Roof_Tar": 11
+   },
+   "chimneys": 240,
+   "hatches": 234,
+   "penthouses": 9
+  },
+  "triangles": 215670
+ },
+ "glass_cards": {
+  "status": {
+   "detail": 4493,
+   "hidden": 31088,
+   "landmark_enclosed": 87,
+   "landmark_removed": 393,
+   "plex_front": 11718,
+   "skin": 27560
+  },
+  "floating_on": []
+ },
+ "walls_pass": {
+  "year_overrides": {
+   "356220851": 1974
+  },
+  "post_1945_kit": {
+   "lots": [
+    "131285491",
+    "345482790",
+    "356220851",
+    "356257089",
+    "356740897",
+    "358133794"
+   ],
+   "towers": [
+    "347041020",
+    "355960989",
+    "357948906",
+    "358275482",
+    "358275641",
+    "359275176",
+    "359321925",
+    "359325613"
+   ],
+   "balconies": 2137
+  },
+  "open_ground": {
+   "lots": 133,
+   "area_m2": {
+    "Yard_Grass": 3435.0,
+    "Asphalt_Lot": 1264.4
+   },
+   "stall_lines": 71
+  },
+  "collision": {
+   "guard_runs": 6465,
+   "flight_runs": 379,
+   "balcony_rail_runs": 1270,
+   "traffic_band_units": 135,
+   "traffic_band_lots": 64,
+   "traffic_band_visual_faces": 2011
+  }
+ }
+}

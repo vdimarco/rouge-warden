@@ -1,0 +1,70 @@
+{
+  "recorded_utc": "2026-10-17T21:16:15.796839+00:00",
+  "passed": true,
+  "baseline_sha256": "6e14bc5125c37a4579220359c59e31f4a9f34ce3d4c9ae21d9b58e908bc0790a",
+  "checks": {
+    "content": {
+      "files_checked": 6850,
+      "changed": []
+    },
+    "packages": {
+      "files_checked": 96,
+      "changed": []
+    },
+    "settings": {
+      "files_checked": 4,
+      "changed": []
+    },
+    "saves": {
+      "files_checked": 26,
+      "changed": []
+    }
+  },
+  "added_content": {
+    "Content/ParkComic/CrewGraphicNovelTripo/Resident9/SK_Body.uasset": "b1e3c8959db4ef16e3b0b5559e058bdca3026445953e3d57a0300894d04258f9",
+    "Content/ParkComic/CrewGraphicNovelTripo/Resident9/SK_Body_Skeleton.uasset": "e47eb543d0c7a051902a7c9f5c194d86c43533e1c4d956adbef45f6edad6a1bd",
+    "Content/ParkComic/CrewGraphicNovelTripo/Resident9/M_Crew.uasset": "3c0af8f9096c1b451f8efc6ad8aee5cd386ed8efa73f2e8a3040a0c7c0c90c9f",
+    "Content/ParkComic/CrewGraphicNovelTripo/Resident9/BS_Locomotion.uasset": "9492d7e0a521d144e0faabe182a55ca49fc9502147cc5a46e2a2e31c2339345d",
+    "Content/ParkComic/CrewGraphicNovelTripo/Resident9/A_Jump.uasset": "f371fa9c8a5d7310a44ae81321683d33eb527474f3f4bdd56b6b16c1df077b80",
+    "Content/ParkComic/CrewGraphicNovelTripo/Resident9/A_Run.uasset": "20d4bdb2d686ef15d5e2c6ab42bc002565c7f03d4bfb119bfb67afe938785d1f",
+    "Content/ParkComic/CrewGraphicNovelTripo/Resident9/T_base_color.uasset": "add88afbfe1fd70d6105b51f143dc59770ec12a5399bbde260543e7f5e593eb2",
+    "Content/ParkComic/CrewGraphicNovelTripo/Resident9/A_Walk.uasset": "9fac292c2e1d2e25e145cbe0fc2ec006714629d455a2e87cd11c4a3efe96580f",
+    "Content/ParkComic/CrewGraphicNovelTripo/Resident9/T_normal.uasset": "475d4f81e5aafff9053487f7a6344a9074adf59d5c29a4a1c681c48c65741696",
+    "Content/ParkComic/CrewGraphicNovelTripo/Resident9/A_Idle.uasset": "93ac882ba19376f40ea4c677154efa21f49d6835998acb8851d1ea4a16128f58",
+    "Content/ParkComic/CrewGraphicNovelTripo/Resident9/T_metallic_roughness.uasset": "c1f707cffddda731ab67f2e8890a77d4f57a039b29b7af412f11098cf92513f1"
+  },
+  "restored_editor_settings": [
+    "Saved/Config/LinuxEditor/EditorPerProjectUserSettings.ini"
+  ],
+  "services": {
+    "nord-browser-demo.service": {
+      "ActiveState": "active",
+      "MainPID": "3956730"
+    },
+    "nord-browser-public.service": {
+      "ActiveState": "active",
+      "MainPID": "109459"
+    },
+    "nord-browser-funnel.service": {
+      "ActiveState": "active",
+      "MainPID": "109441"
+    },
+    "nord-browser-turn-funnel.service": {
+      "ActiveState": "active",
+      "MainPID": "109422"
+    }
+  },
+  "native_editor_module": {
+    "path": "Binaries/Linux/libUnrealEditor-Quebec.so",
+    "sha256": "04102739741d8c4b9f29fdc6c82ced6e7f6ec47069d905be09fef88e615792f0",
+    "scope": "Owned editor build changed intentionally; installed packages unchanged."
+  },
+  "gpu_snapshot": "2026/10/17 17:16:15.792, 3167, 20898",
+  "live_promotion": false,
+  "paid_jobs_this_checkpoint": 0,
+  "limits": [
+    "No rendered Vulkan, package, browser decode, physical-device, off-LAN or performance acceptance.",
+    "Source import had one smoothing-group warning; explicit authored normals persist and rendering remains open.",
+    "TEDS disabled only for native test process after its experimental editor startup assertion; no persisted config change."
+  ]
+}

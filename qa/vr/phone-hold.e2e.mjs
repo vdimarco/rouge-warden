@@ -39,6 +39,8 @@ try {
     const S = G.city.start;
     for (const r of [0, 1]) if (G.P.ropes[r].state !== "idle") G.test.release?.(r);
     G.test.teleport(S.x, S.y + 30, S.z); G.rigYaw = S.yaw; G.flatcam.reset(S.yaw);
+    // Isolate held-rope gestures from the independent wall-grab transition.
+    G.P.wallCool = 10;
     G.P.vel.x = G.P.vel.z = 0; G.P.vel.y = -3; G.P.onGround = false; step(3); return G.frame;
   });
   const events = (f0) => page.evaluate((f0) => G.test.events().filter((e) => e.frame >= f0 && e.type !== "input").map((e) => e.type), f0);

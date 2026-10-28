@@ -1,0 +1,6 @@
+{"ids":1,"sameOut":true,"fields":true,"fresh":true,"live":true,"runtime":1}
+PASS: explicit output reuses one record
+PASS: default fresh/live arrays and fields preserved
+PASS: actual street model frames reuse private traffic record
+PASS: no page errors
+PASS: traffic record

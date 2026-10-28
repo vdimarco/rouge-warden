@@ -1,0 +1,32 @@
+{
+  "character": "Memphis33",
+  "source_sha256": "c8e0491c768b71108391a309e07b3b9b4f32074a84ce65fff7f7e7d3aa63138e",
+  "review_receipt": {
+    "path": "Saved/Tests/TripoRemainingBodyReviews-20261017-v1/Memphis33-views/Review.json",
+    "sha256": "0cdb94b0b29b6485f08ec0f6d6da939d7d6e86e8c7f6f6a1a07f8f78b799b00c"
+  },
+  "inventory": {
+    "path": "Saved/Tests/TripoRemainingBodyReviews-20261017-v1/Memphis33-measure/Inventory.json",
+    "sha256": "738cb7f8de218fa46d58f70b4df18a84df5ad4354f720ec2e84343eec9aabcaf"
+  },
+  "all_eight_original_PBR_views_inspected": true,
+  "reference_pin_verified": true,
+  "candidate_heading_and_hand_crops_confirmed": true,
+  "rig_trial_recommendation": "Hold for root visual decision before paid rig: short nearly flattened thumbs and glasses-shape mismatch are original source geometry/likeness limits, not rig fixes. No paid retry requested by this reviewer.",
+  "observations": [
+    "Adult cap/beard identity and red Memphis33 jersey/white trim/navy shorts/calf socks/high-top outfit are recognizable; chest lettering and33 remain readable.",
+    "Generated glasses are round aviator-like lenses, unlike the reference brown rectangular frames. Beard/face are broader and less specifically matched.",
+    "Both hands have four separated long fingers but the thumbs are extremely short flattened nubs against the palm; opposition/grip readiness is not established.",
+    "Skin/PBR is visibly glossy in this original studio; shoes lose some reference lace/detail contrast. No gross limb loss or extra bag/accessory observed."
+  ],
+  "technical_counts": {
+    "vertices": 53281,
+    "triangles": 96170,
+    "raw_zero_length_corner_normals": 0,
+    "exact_zero_area_triangles": 0,
+    "uv_duplicate_groups": 0,
+    "uv_corner_ties": 0
+  },
+  "native_or_final_art_acceptance": false,
+  "scope": "Static-source original-PBR morphology only; no rig/skin/motion/grip/native acceptance."
+}

@@ -1,367 +1,239 @@
-// Ahead of the Light: the page. Boot, URL options, the fixed 120 Hz loop (frame delta clamped to 0.25 s), the
-// screens' switch, and window.__race, the test hook (final.md 20).
-// SPINE (WP0): it draws a blank ring on the 2D overlay and runs the core's stubs. The world (render/), input, HUD,
-// sound and screens (ui/) arrive with WP1, WP6 and WP7; their hooks below are marked WP.
-import { SLUG, parseOverrides } from './core/tune.js';
-import { ringView, captionY } from './core/ringmath.js';
-import { stepRace, STEP, NO_INTENT } from './core/race.js';
-import {
-  createRun, startLeg, endLeg, breakOf, pick, skip, reroll, banish, chooseLane, snapshot, restore,
-} from './core/run.js';
-import { buy, refund } from './core/survival.js';
-import { ROUTE, LEG_TYPES } from './core/course/legs.js';
-import { buildLeg } from './core/course/gen.js';
-import { validateLeg } from './core/course/validate.js';
-import { chartView } from './core/chart.js';
-import { driverFor, DRIVERS, PRESETS } from './core/bots.js';
-import { serialize, restoreSave } from './core/save.js';
-import { daySeed, cottageDay } from '../lab/kit/rng.js';
+// Ahead of the Light: the page. A fixed 120 Hz step of core/flight.js, drawn in characters by render/ascii.js (an
+// ascii.rest piece), with ui/sound.js's score. The title flies a bot down the starbow behind its menu. Screens:
+// title → run → result (or pause). window.__race is the hook the QA scripts use.
+import { newRun, step, gapOf, TUNE } from './core/flight.js';
+import { createBot } from './core/bot.js';
+import { SECTORS, SECTOR_LEN, COURSE_LEN, sectorAt } from './core/world.js';
+import { createAsciiView } from './render/ascii.js';
+import { banner } from './vendor/ascii-rest/banner.js';
+import { createInput } from './ui/input.js';
+import { createSound } from './ui/sound.js';
 
 const $ = (id) => document.getElementById(id);
-const KEY_RUN = `${SLUG}.run.v1`, KEY_META = `${SLUG}.meta.v1`, KEY_LOG = `${SLUG}.log.v1`;
-const EVENT_KEEP = 4000;
+const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+const params = new URLSearchParams(location.search);
 
-// ---------- URL options and tuning ----------
-const url = parseOverrides(location.search);
-const tune = url.tune;
-const opt = url.options;
-const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
-const coarse = window.matchMedia?.('(pointer: coarse)').matches ?? false;
-document.documentElement.dataset.input = coarse ? 'touch' : 'desk';
+// ---- storage: every read and write in try/catch, so blocked storage only loses the best run ----
+const META = 'ahead-of-the-light.meta.v2', OLD_META = 'ahead-of-the-light.meta.v1', SOUND = 'arcade.sound';
+function load(key) { try { const t = localStorage.getItem(key); return t === null ? null : JSON.parse(t); } catch (e) { return null; } }
+function save(key, v) { try { localStorage.setItem(key, JSON.stringify(v)); return true; } catch (e) { return false; } }
+function meta() {
+  const m = load(META);
+  return m && typeof m === 'object' ? { runs: m.runs | 0, bestD: Number(m.bestD) || 0, home: m.home | 0, bestT: Number(m.bestT) || 0 }
+    : { runs: 0, bestD: 0, home: 0, bestT: 0 };
+}
+// The homepage cabinet reads its line from the old save's records.best.legNo: keep it fed.
+function feedCabinet(m) {
+  const legNo = m.home ? SECTORS.length - 1 : clamp(sectorAt(m.bestD), 0, SECTORS.length - 1);
+  save(OLD_META, { records: { best: { home: false, legNo } } });
+}
 
-// ---------- storage (every read and write in try/catch; blocked storage plays on and says nothing) ----------
-const store = {
-  get(key) { try { return localStorage.getItem(key); } catch (e) { return null; } },
-  set(key, text) { try { localStorage.setItem(key, text); return true; } catch (e) { return false; } },
-  del(key) { try { localStorage.removeItem(key); } catch (e) { /* blocked */ } },
-};
-let meta = restoreSave(store.get(KEY_META)) || { v: 1, seen: {}, runs: 0 };
+const touch = matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window;
+document.documentElement.dataset.input = touch ? 'touch' : 'desk';
+const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-// ---------- seeds ----------
-const LETTERS = 'BCDFGHJKLMNPRSTVZ', VOWELS = 'AEIOU';
-function newSeed() {
-  let s = '';
-  for (let i = 0; i < 6; i++) {
-    const set = i % 2 ? VOWELS : LETTERS;
-    s += set[Math.floor(Math.random() * set.length)];
+const G = { mode: 'title', run: null, attract: null, bot: null, acc: 0, last: 0, paused: false, autopilot: null,
+  hintGone: false, result: null, ms: [] };
+
+const view = createAsciiView({ canvas: $('view'), reduced, touch });
+const input = createInput({ surface: $('view'), boostBtn: $('boost') });
+const sound = createSound({ on: load(SOUND) !== false, onToggle: (on) => { save(SOUND, on); soundLabels(); } });
+function soundLabels() {
+  for (const id of ['soundBtn', 'pSound']) {
+    const b = $(id);
+    b.lastChild.textContent = sound.isOn() ? 'SOUND ON' : 'SOUND OFF';
+    b.setAttribute('aria-pressed', String(sound.isOn()));
   }
-  return s;
 }
+soundLabels();
 
-// ---------- the game ----------
-let mode = 'title';                    // 'title' | 'play' | 'break' | 'result'
-let paused = false;
-let run = null, race = null;
-let ranked = url.ranked;
-const recent = [];                     // the last EVENT_KEEP events, for __race.events(n)
-const manual = { target: null, turn: 0 };
-const edge = { action: null, burn: false };
-let driver = null, driverName = null;
-const intents = { you: NO_INTENT };
-const timing = { firstInputMs: null, firstSteerMs: null, lastRetryMs: null, fps: 0 };
-let playAt = 0, retryAt = null;
-const feedback = { sounds: {}, effects: {}, haptics: {} };    // WP7 counts what it starts, per event type
-
-function newRun(seed = opt.seed || newSeed()) {
-  run = createRun({ seed, ship: opt.ship || 'lantern', tune, meta });
-  race = startLeg(run, tune);
-  recent.length = 0;
-  return run.seed;
+// ---- the logo: ascii.rest's block letters, LIGHT in the spectrum, sized to fit ----
+function blocks(text) { return banner(text, { effect: 'still' }).default()(0).split('\n'); }
+function logo() {
+  const tall = innerWidth / innerHeight < 0.8;
+  const lines = tall ? [['AHEAD', ''], ['OF THE', ''], ['LIGHT', 'light']] : [['AHEAD OF THE', ''], ['LIGHT', 'light']];
+  const art = lines.map(([t, cls]) => ({ rows: blocks(t), cls }));
+  const widest = Math.max(...art.map((a) => a.rows[0].length));
+  const avail = tall ? innerWidth - 40 : Math.min(innerWidth * 0.62, 900);
+  const px = clamp(Math.floor((avail / (widest * 0.6)) * 10) / 10, 4, 15);
+  const el = $('logo');
+  el.style.setProperty('--logo', `${px}px`);
+  el.innerHTML = art.map((a) => `<span class="${a.cls}">${a.rows.map((r) => r.replace(/&/g, '&amp;').replace(/</g, '&lt;')).join('\n')}</span>`).join('\n');
 }
+addEventListener('resize', () => { view.resize(); if (G.mode === 'title') logo(); });
 
-function legIndex(leg) {
-  if (leg === undefined || leg === null || leg === '') return 0;
-  const n = Number(leg);
-  if (Number.isInteger(n)) return Math.max(0, Math.min(ROUTE.length - 1, n > 0 ? n - 1 : 0));
-  const i = ROUTE.indexOf(String(leg).toLowerCase());
-  return i < 0 ? 0 : i;
+// ---- screens ----
+const SCREENS = ['title', 'result', 'paused'];
+function show(id) { for (const s of SCREENS) $(s).hidden = s !== id; }
+const fmtT = (t) => `${Math.floor(t / 60)}:${String(Math.floor(t % 60)).padStart(2, '0')}`;
+function bestLine(m) {
+  if (m.home) return `HOME ${m.home}× · BEST ${fmtT(m.bestT)}`;
+  if (m.bestD > 0) return `BEST: ${SECTORS[sectorAt(m.bestD)].name} · ${(m.bestD / 1000).toFixed(1)} KM`;
+  return 'FIRST RUN';
 }
-
-// Jump straight into a leg (unranked): ?leg=virgo&lane=M87, or __race.goto.
-function gotoLeg({ leg, lane, seed, beat, build, ship } = {}) {
-  run = createRun({ seed: seed || opt.seed || newSeed(), ship: ship || opt.ship || 'lantern', tune, meta });
-  run.ranked = false;
-  ranked = false;
-  run.leg = legIndex(leg);
-  const lanes = run.chart[run.leg] || [];
-  const want = lane ? String(lane).toUpperCase() : null;
-  run.lanes[run.leg] = lanes.find((l) => want && (l.id === lane || l.name === want)) || lanes[0] || null;
-  if (Array.isArray(build)) run.build = build.map((b) => (typeof b === 'string' ? { id: b, r: 0 } : b));
-  race = startLeg(run, tune);
-  if (Number.isFinite(beat)) for (const s of race.ships) s.dist = beat;
-  recent.length = 0;
-  play();
-  return { seed: run.seed, leg: ROUTE[run.leg] };
+function newAttract() {
+  G.attract = newRun({ seed: 1 + Math.floor(Math.random() * 9999) });
+  G.attract.light.d = -1e9;
+  G.bot = createBot(0.9, G.attract.seed);
 }
-
-function play() {
-  mode = 'play';
-  paused = false;
-  playAt = performance.now();
-  $('title').hidden = true;
-  $('hud').hidden = false;
+function toTitle() {
+  G.mode = 'title'; G.paused = false; G.run = null;
+  $('touch').hidden = true;
+  view.clear();
+  $('best').textContent = bestLine(meta());
+  logo();
+  show('title');
+  if (!G.attract) newAttract();
+  sound.setPaused(false);
 }
-
 function start() {
-  if (mode !== 'title') return;
-  if (opt.leg) gotoLeg({ leg: opt.leg, lane: opt.lane, seed: opt.seed });
-  else { newRun(); play(); }
+  sound.start();
+  sound.ui('pick');
+  sound.setLeg(0, 0);
+  input.reset();
+  G.run = newRun({ seed: params.has('seed') ? Number(params.get('seed')) | 0 : 1 + Math.floor(Math.random() * 99999) });
+  G.mode = 'play'; G.paused = false; G.acc = 0; G.autopilot = null;
+  view.clear();
+  show(null);
+  $('touch').hidden = !touch;
+  $('steerHint').classList.toggle('gone', G.hintGone);
+  view.sectorBanner(0, G.run);
+  // the tips for a player's first three runs (or ?tips)
+  view.tips(meta().runs < 3 || params.has('tips'));
+}
+function finish() {
+  const r = G.run, m = meta();
+  m.runs++;
+  const home = r.mode === 'home';
+  const newBest = home ? (!m.home || r.t < m.bestT) : r.ship.d > m.bestD;
+  if (home) { m.home++; m.bestT = m.bestT ? Math.min(m.bestT, r.t) : r.t; m.bestD = COURSE_LEN; }
+  else m.bestD = Math.max(m.bestD, r.ship.d);
+  save(META, m);
+  feedCabinet(m);
+  G.mode = 'result';
+  G.result = { mode: r.mode, d: r.ship.d, t: r.t, newBest };
+  $('touch').hidden = true;
+  $('rKicker').textContent = home ? 'YOU MADE IT' : `RUN OVER · SECTOR ${String(sectorAt(r.ship.d) + 1).padStart(2, '0')}`;
+  $('rTitle').textContent = home ? 'HOME AHEAD OF THE LIGHT' : r.mode === 'wreck' ? 'HULL LOST' : 'THE LIGHT CAUGHT YOU';
+  const rows = [
+    ['DISTANCE', `${(Math.min(r.ship.d, COURSE_LEN) / 1000).toFixed(2)} / ${(COURSE_LEN / 1000).toFixed(1)} KM`],
+    ['REACHED', SECTORS[sectorAt(r.ship.d)].name],
+    ['TIME', fmtT(r.t)],
+    ['RINGS', `${r.stats.rings} · BEST ×${r.rings.best}`],
+    ['SKIMS', String(r.stats.grazes)],
+    ['HITS', String(r.stats.hits)],
+  ];
+  $('rStats').innerHTML = rows.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('');
+  $('rWhy').textContent = home ? 'The burst never caught you.'
+    : r.mode === 'wreck' ? 'Too many stars hit you. Watch for red [ ] and steer round them.'
+    : r.stats.rings < (r.stats.rings + r.stats.missed) * 0.6 ? 'The light caught up: you missed most gold rings. Each one speeds you up.'
+    : 'The light caught up. Skim past stars to charge, then hold BOOST when the gap gets short.';
+  $('rBest').textContent = newBest ? 'NEW BEST' : bestLine(m);
+  show('result');
+  $('again').focus({ preventScroll: true });
+}
+function pause(p) {
+  if (G.mode !== 'play') return;
+  G.paused = p;
+  show(p ? 'paused' : null);
+  $('touch').hidden = p || !touch;
+  sound.setPaused(p);
+  input.reset();
+  if (p) $('resume').focus({ preventScroll: true });
 }
 
-function restart(seed) {
-  retryAt = performance.now();
-  timing.lastRetryMs = null;
-  const s = newRun(seed || newSeed());
-  play();
-  return s;
+$('go').addEventListener('click', start);
+$('again').addEventListener('click', start);
+$('toTitle').addEventListener('click', toTitle);
+$('resume').addEventListener('click', () => pause(false));
+$('quit').addEventListener('click', toTitle);
+$('pause').addEventListener('click', () => pause(true));
+for (const id of ['soundBtn', 'pSound']) $(id).addEventListener('click', () => { sound.start(); sound.toggle(); });
+for (const b of document.querySelectorAll('.screen button')) b.addEventListener('pointerdown', () => { sound.start(); sound.ui('tap'); });
+// the menus: the line under the pointer lights
+for (const menu of document.querySelectorAll('.menu')) {
+  for (const it of menu.querySelectorAll('.item')) it.addEventListener('pointerenter', () => { for (const o of menu.querySelectorAll('.item')) o.classList.toggle('on', o === it); });
 }
-
-// ---------- one fixed step ----------
-function stepOnce() {
-  if (!race || race.phase === 'done') return [];
-  const you = race.ships[0];
-  let want = NO_INTENT;
-  if (driver) want = driver(race, you) || NO_INTENT;
-  else if (manual.target !== null || manual.turn !== 0 || edge.action || edge.burn) {
-    want = { target: manual.target, turn: manual.turn, action: edge.action, burn: edge.burn };
-  }
-  edge.action = null;
-  edge.burn = false;
-  intents.you = want;
-  const ev = stepRace(race, intents, STEP);
-  for (const e of ev) {
-    recent.push(e);
-    if (e.type === 'legEnd') onLegEnd();
-  }
-  if (recent.length > EVENT_KEEP) recent.splice(0, recent.length - EVENT_KEEP);
-  return ev;
-}
-
-function onLegEnd() {
-  endLeg(run, race);
-  if (run.phase === 'break') {
-    mode = 'break';
-    store.set(KEY_RUN, serialize(snapshot(run)));            // the run saves at every break (9.2)
-  } else {
-    mode = 'result';
-    store.del(KEY_RUN);
-    meta.runs = (meta.runs || 0) + 1;
-    store.set(KEY_META, serialize(meta));
-  }
-}
-
-// The spine's own stand-in for the break and result screens (WP7): a tap goes on.
-function nextFromScreen() {
-  if (mode === 'break') {
-    chooseLane(run, 0);
-    race = startLeg(run, tune);
-    play();
-  } else if (mode === 'result') restart();
-}
-
-// ---------- drawing (SPINE: a blank ring; WP6 replaces this with render/ and the overlay) ----------
-const glCanvas = $('view'), overlay = $('overlay');
-const ctx = overlay.getContext('2d');
-let W = 0, H = 0, ratio = 1;
-function resize() {
-  W = window.innerWidth;
-  H = window.innerHeight;
-  ratio = Math.min(window.devicePixelRatio || 1, 2);
-  for (const c of [glCanvas, overlay]) {
-    c.width = Math.max(1, Math.round(W * ratio));
-    c.height = Math.max(1, Math.round(H * ratio));
-  }
-  const v = ringView({ w: W, h: H, tune });
-  const root = document.documentElement.style;
-  root.setProperty('--cx', `${v.cx}px`);
-  root.setProperty('--cy', `${v.cy}px`);
-  root.setProperty('--cap-y', `${captionY(v, tune)}px`);
-}
-window.addEventListener('resize', resize);
-resize();
-
-function viewNow() {
-  const you = race ? race.ships[0] : null;
-  return ringView({ w: W, h: H, eta: you ? you.eta : tune.ETA0, punch: you ? you.punch : 0,
-    lightspeed: you ? you.lightspeed : false, tune });
-}
-
-function draw() {
-  const v = viewNow();
-  ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
-  ctx.clearRect(0, 0, W, H);
-  if (mode !== 'play') return;                              // the title shows the sky only (16)
-  ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
-  ctx.lineWidth = v.desk ? 2 : 1.5;
-  ctx.beginPath();
-  ctx.arc(v.cx, v.cy, v.R, 0, Math.PI * 2);
-  ctx.stroke();
-}
-
-// ---------- the loop ----------
-let last = null, acc = 0, fpsAvg = 60;
-function frame(now) {
-  const dt = last === null ? 0 : Math.min(0.25, Math.max(0, (now - last) / 1000));
-  last = now;
-  if (dt > 0) fpsAvg += (1 / dt - fpsAvg) * 0.05;
-  timing.fps = Math.round(fpsAvg);
-  if (mode === 'play' && !paused) {
-    acc += dt;
-    while (acc >= STEP) { stepOnce(); acc -= STEP; }
-    if (retryAt !== null && timing.lastRetryMs === null) { timing.lastRetryMs = now - retryAt; retryAt = null; }
-  } else acc = 0;
-  draw();
-  requestAnimationFrame(frame);
-}
-requestAnimationFrame(frame);
-
-// ---------- input (SPINE: start and go on; WP1's ui/input.js brings steering, the flick and the whip) ----------
-function noteInput() {
-  if (timing.firstInputMs === null && mode === 'play') timing.firstInputMs = performance.now() - playAt;
-}
-$('title').addEventListener('pointerdown', (e) => {
-  e.stopPropagation();
-  if (e.target.closest('a, button')) return;
-  start();
-});
-document.body.addEventListener('pointerdown', () => {
-  if (mode === 'break' || mode === 'result') nextFromScreen();
-  else noteInput();
-});
-window.addEventListener('keydown', (e) => {
+addEventListener('keydown', (e) => {
   if (e.repeat) return;
-  if (mode === 'title' && (e.code === 'Space' || e.code === 'Enter')) { e.preventDefault(); start(); return; }
-  if ((mode === 'break' || mode === 'result') && (e.code === 'Space' || e.code === 'Enter')) {
-    e.preventDefault();
-    nextFromScreen();
+  if (G.mode === 'title' && (e.code === 'Enter' || e.code === 'Space') && !document.activeElement?.closest('.menu')) { e.preventDefault(); start(); }
+  else if (G.mode === 'result' && (e.code === 'KeyR' || (e.code === 'Enter' && !document.activeElement?.closest('.menu')))) { e.preventDefault(); start(); }
+  else if (G.mode === 'play' && (e.code === 'Escape' || e.code === 'KeyP')) pause(!G.paused);
+});
+document.addEventListener('visibilitychange', () => { if (document.hidden && G.mode === 'play' && !G.paused) pause(true); });
+
+function buzz(ms) { try { if (navigator.vibrate) navigator.vibrate(ms); } catch (e) { /* not on this phone */ } }
+function feedback(run, events) {
+  if (!events.length) return;
+  sound.onEvents(events, { you: 'you', race: null });
+  view.onEvents(events, run);
+  for (const e of events) {
+    if (e.type === 'sector') sound.setLeg(e.sector, 0);
+    if (e.type === 'hit') buzz(50);
+    else if (e.type === 'grab' || e.type === 'hair') buzz(12);
+    else if (e.type === 'caught' || e.type === 'wreck') buzz([160, 60, 260]);
+  }
+}
+
+// ---- the loop: the simulation here; ascii.rest's mount draws the piece at its own rate ----
+const DT = 1 / 120;
+function frame(now) {
+  requestAnimationFrame(frame);
+  const f0 = performance.now();
+  const dt = clamp((now - (G.last || now)) / 1000, 0, 0.1);
+  G.last = now;
+  if (G.mode === 'title' || !G.run) {
+    const a = G.attract;
+    if (a) {
+      G.acc += dt;
+      while (G.acc >= DT) { step(a, G.bot(a), DT); G.acc -= DT; }
+      if (a.mode !== 'fly' || a.ship.d > COURSE_LEN - 300) newAttract();
+      view.show(G.attract, { title: true });
+    }
+    sound.frame({ mode: G.mode === 'title' ? 'title' : 'result', gear: 0, eta: 1 }, dt);
     return;
   }
-  if (mode === 'play' && (e.code === 'Escape' || e.code === 'KeyP')) { paused = !paused; return; }
-  noteInput();
-});
-$('pause').addEventListener('click', () => { if (mode === 'play') paused = !paused; });
-document.addEventListener('visibilitychange', () => { if (document.hidden && mode === 'play') paused = true; });
-
-// ---------- the test hook (20) ----------
-const plain = (o) => JSON.parse(JSON.stringify(o ?? null));
-const youShip = () => (race ? race.ships[0] : null);
-function advance(seconds = 1, input) {
-  if (input) window.__race.input(input);
-  if (mode === 'title') start();
-  const n = Math.max(0, Math.round(seconds / STEP)), out = [];
-  for (let i = 0; i < n && mode === 'play'; i++) for (const e of stepOnce()) out.push(e);
-  draw();
-  return plain(out);
-}
-
-window.__race = {
-  id: SLUG, version: 1, tune,
-  state() {
-    const s = youShip();
-    const v = viewNow();
-    return plain({
-      mode, paused, ranked, seed: run && run.seed, leg: run ? run.leg : null, type: run ? ROUTE[run.leg] : null,
-      phase: race ? race.phase : null, t: race ? race.t : 0, real: race ? race.real : 0,
-      layout: { kind: v.kind, w: v.w, h: v.h, cx: v.cx, cy: v.cy, R: v.R, R0: v.R0 },
-      you: s && { bearing: s.bearing, target: s.target, dist: s.dist, eta: s.eta, gear: s.gear, light: s.light },
-      ships: race ? race.ships.length : 0, set: url.set, options: opt, driver: driverName,
-    });
-  },
-  run: () => (run ? snapshot(run) : null),
-  survival() {
-    const s = youShip();
-    if (!s) return null;
-    return plain({ gap: s.gap, ttc: s.ttc, light: s.light, hull: s.hull, hullMax: s.hullMax, shield: s.shield,
-      shieldT: s.shieldT, fuel: s.fuel, fuelCap: s.fuelCap, years: s.years, earth: s.earth,
-      cap: tune.GAP_CAP[race.legNo], leg: race.legNo });
-  },
-  rivals() {
-    if (!race) return [];
-    const me = youShip();
-    return plain(race.ships.slice(1).map((r) => ({
-      id: r.id, mode: r.ai ? r.ai.mode ?? null : null, gapAhead: (r.dist - me.dist), lightGap: r.gap, eta: r.eta,
-      gear: r.gear, hull: r.hull, fuel: r.fuel, glare: r.light === 'glare', nemesis: Boolean(r.ai && r.ai.nemesis),
-      target: r.ai ? r.ai.target ?? null : null, alive: !r.caught && !r.wrecked })));
-  },
-  events: (n = 50) => plain(recent.slice(-Math.max(0, n))),
-  timing: () => ({ ...timing }),
-  perf: () => ({ fps: timing.fps, drawCalls: 0, points: 0, glScale: 1, tier: opt.tier || null }),   // WP6
-  feedback: () => plain(feedback),
-  restart,
-  advance,
-  input(intent = {}) {
-    if ('target' in intent) manual.target = Number.isFinite(intent.target) ? intent.target : null;
-    if ('turn' in intent) manual.turn = Math.max(-1, Math.min(1, Math.round(intent.turn) || 0));
-    if (intent.action === 'down' || intent.action === 'up') edge.action = intent.action;
-    if (intent.burn) edge.burn = true;
-    if (timing.firstSteerMs === null && mode === 'play' && (manual.target !== null || manual.turn)) {
-      timing.firstSteerMs = performance.now() - playAt;
+  const r = G.run;
+  if (G.mode === 'play' && !G.paused) {
+    G.acc += dt;
+    while (G.acc >= DT && r.mode === 'fly') {
+      const inp = G.autopilot ? G.autopilot(r) : input.read();
+      if (!G.hintGone && (Math.abs(inp.x) > 0.3 || Math.abs(inp.y) > 0.3)) { G.hintGone = true; $('steerHint').classList.add('gone'); }
+      step(r, inp, DT);
+      feedback(r, r.events);
+      G.acc -= DT;
     }
-    return { ...manual, ...edge };
-  },
-  bot(name, opts = {}) {
-    if (!name) { driver = null; driverName = null; return true; }
-    if (!DRIVERS[name] && !PRESETS[name]) return false;
-    driver = driverFor(name, opts);
-    driverName = name;
-    return true;
-  },
-  rivalBot: (id, overrides) => null,                        // WP4
-  field: (spec) => null,                                    // WP4
-  pick: (i) => (run ? (pick(run, i), breakOf(run)) : null),
-  skip: () => (run ? (skip(run), breakOf(run)) : null),
-  reroll: () => (run ? (reroll(run), breakOf(run)) : null),
-  banish: (i) => (run ? (banish(run, i), breakOf(run)) : null),
-  lane(i = 0) {
-    if (!run || !chooseLane(run, i)) return false;
-    race = startLeg(run, tune);
-    play();
-    return true;
-  },
-  buy: (chip) => (run ? buy(run, chip, tune) : false),
-  refund: (chip) => (run ? refund(run, chip, tune) : false),
-  leg() {
-    if (!race) return null;
-    const L = race.leg;
-    return plain({ type: L.type, name: LEG_TYPES[L.type] ? LEG_TYPES[L.type].name : null, lane: L.lane, seed: L.seed,
-      beats: L.beats, hash: L.hash, items: L.items.length, gate: L.gate, phase: race.phase });
-  },
-  course({ from = 0, to = Infinity } = {}) {
-    return race ? plain(race.leg.items.filter((it) => it.beat >= from && it.beat <= to)) : [];
-  },
-  gen({ seed = 1, type = 'web', lane = null, mods = {} } = {}) {
-    const L = buildLeg({ runSeed: seed, type, lane, mods, tune });
-    return plain({ type: L.type, seed: L.seed, beats: L.beats, hash: L.hash, items: L.items.length, report: L.report });
-  },
-  validate({ seed = 1, type = 'web', lane = null } = {}) {
-    return plain(validateLeg(buildLeg({ runSeed: seed, type, lane, tune })));
-  },
-  chart: () => (run ? plain(chartView(run)) : null),
-  goto: gotoLeg,
-  save() {
-    if (!run) return null;
-    const text = serialize(snapshot(run));
-    store.set(KEY_RUN, text);
-    return text;
-  },
-  load(json) {
-    const o = typeof json === 'string' ? restoreSave(json) : json;
-    if (!o) return false;
-    run = restore(o);
-    race = startLeg(run, tune);
-    recent.length = 0;
-    play();
-    return true;
-  },
-  clearSave() { for (const k of [KEY_RUN, KEY_META, KEY_LOG]) store.del(k); return true; },
-  meta: () => plain(meta),
-  setMeta(obj) {
-    meta = plain(obj) || { v: 1, seen: {}, runs: 0 };
-    store.set(KEY_META, serialize(meta));
-    return true;
-  },
-  daily(date = cottageDay()) { return { date, seed: daySeed('race', date) }; },
-};
+    if (r.mode !== 'fly') { G.acc = 0; G.mode = 'ending'; setTimeout(() => { if (G.run === r && G.mode === 'ending') finish(); }, 900); }
+  }
+  view.show(r);
+  $('boost').classList.toggle('on', r.ship.boosting);
+  sound.frame({ mode: G.mode === 'play' && !G.paused ? 'play' : G.paused ? 'paused' : 'result', gear: r.gear,
+    eta: 1 + r.ship.speed / 45, bpm: 108 }, dt);
+  G.ms.push(performance.now() - f0);
+  if (G.ms.length > 240) G.ms.shift();
+}
+toTitle();
+requestAnimationFrame(frame);
 
-if (opt.bot) window.__race.bot(opt.bot);
-if (reduced) document.documentElement.dataset.motion = 'reduced';
+// ---- the QA hook ----
+window.__race = {
+  get mode() { return G.paused ? 'paused' : G.mode; },
+  get run() { return G.run; },
+  get attract() { return G.attract; },
+  get result() { return G.result; },
+  get drawn() { return view.drawn; },
+  get grid() { return view.grid; },
+  start, toTitle, pause,
+  autopilot(skill = 0.9) { G.autopilot = skill === null ? null : createBot(skill, 7); },
+  // jump ahead to distance d with the light at the same gap
+  warp(d) {
+    const r = G.run; if (!r) return;
+    const gap = gapOf(r);
+    r.ship.d = d; r.light.d = d - gap;
+    r.rings.i = Math.max(2, Math.floor(d / 170));
+  },
+  drawMs: () => view.drawMs(),
+  frameMs() { const a = [...G.ms].sort((x, y) => x - y); return a.length ? { p50: a[a.length >> 1], p95: a[Math.floor(a.length * 0.95)] } : null; },
+  sound: () => ({ on: sound.isOn(), played: sound.played(), ctx: sound.context() }),
+  tune: TUNE, SECTOR_LEN, COURSE_LEN,
+};

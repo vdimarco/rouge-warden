@@ -1,0 +1,4 @@
+- [x] Add the cool road fill after the lamp pool
+- [x] Shade the night street before and after
+- [x] Run `Scripts/test_pool.py` and the comic regression tests
+- [ ] Rebuild the comic material in Unreal (editor not available here)

@@ -1,0 +1,30 @@
+# Work log and handoff — 17 October 2026
+
+Superseded pose: the user rejected this four-track candidate for awkward/backward arms. Continue from the [forward-elbow fix and compact candidate handoff](../GraphicNovelNaturalMotion/Handoff.md). Preserve the receipts below as historical evidence; their native/headless results do not validate the newer twelve-track candidate.
+
+Status: private repair checkpoint; waiting for a rendered comparison with sufficient GPU headroom. No persistent adoption, normal-cast replacement or package deployment. Root asked about GPU availability; no reply was received by this checkpoint. Do not interrupt the user's Dota 2 or desktop sessions.
+
+## Completed
+
+- Confirmed the rejected screenshot's decoded RGB exactly matches the earlier private Comic/1280 Airborne baseline. Reviewed the chosen mature illustrated style and the prior rejected upper-arm-only experiment.
+- CPU-audited the actual retained body, normalized shoulder weights and local poses. The extreme symmetric jump stretches the sleeve boundaries; broad weight smoothing was not justified. Authored an asymmetric four-track derivative with unchanged other channels and raw inputs. Retained/control semantic comparison is exact. Inspected the actual matched front/side/three-quarter CPU images.
+- 14:55 Montréal: separate NullRHI author and fresh reload pass; only private A_Jump changes. The subsequent bounded Vulkan comparison runs out of GPU memory before PIE. The manager restores the normal demo, settings/saves/package and protected tunnel/TURN identities; the parent restores every original Content byte.
+- 15:03 Montréal: actual seven-state NullRHI compound check passes, including native physics/recoil/recovery and wrist anchoring. Complete Content/source/module/save/settings/service/TURN preservation passes.
+- Independently reconstruct the native reference chain and 42 observed jump hand rotations. The starting live hand differs 17.355° from neutral; reject its timing-dependent transform as a persistent neutral bake.
+- 15:09 Montréal: a fresh reference-derived headless compound run passes all seven states and complete restoration. Native API measurement matches the independent reference math. Retain the actual prototype, receipts and limitations. All current source code and Content remain original.
+
+No additional generation: US$25 total authorized, US$4 reserved by the two previous completed jobs (US$3.04 estimate), US$21 uncommitted. No new requests, billing ambiguities or paid resubmissions.
+
+## Next actual render
+
+Use the existing checkout `/home/von/Work/rouge-warden-codex-nord-unreal`, continuation branch `codex/nord-character-silhouette`. Re-read current repository instructions, git status, active `nord-city-quality`, this checkpoint and observable resource ownership before editing. Root alone owns engine/GPU/service operations; subagents can do independent CPU review.
+
+Do not rerun the failed/expired manager or its old socket-calibrated prop helper. Prepare a **new** Saved plan/window from `Saved/Tests/GraphicNovel/CompoundJumpRepair-20261017T1846`, retaining its guards and six-job matrix. Use the reference-derived helper from `Saved/Tests/GraphicNovel/HeadlessCompoundReferencePlan-20261017/crew_prop_trial.py` (SHA `9edc5f36934c86e2dfb80cb9620b78f973cb645e4f2dc27c947f6f1339120da3`), repin its factory/wrapper and add reference provenance. Keep all earlier receipts immutable. Point fresh candidate pins at the durable `Verification/GraphicNovelSilhouetteRepair/CPU` artifacts, not `/tmp`; the tested FBX SHA is `7bc042e812872fc0d1709a861d9623512d3d93a3c9969c8c9e99c7223d2f69ab`. Supply a fresh bounded deadline and recovery directory, author in fresh NullRHI, independently reload, and restore the original private clip in an unconditional parent finally after capture.
+
+At the completed CPU/native checkpoint, the original A_Jump SHA is `1e62a9debd7aec41beac0466ac6a5114741ce79de6bce102f6cdbe5d3cd52f26`, the native module SHA is `2742ca45629a6e97db771a2c3f56b3a8076b8c4b228f8a4d9b86a8633c0623c3`, and all 6,850 original Content files match the recovery manifest. Recheck these; do not assume they remain current. Earlier baseline `SingleRenderWindow-20261017T144012Z` and individual saved-body proof `SingleRenderWindow-20261017T142404Z` may be reused only if every existing exact body/module/frozen-source/settings/package guard still passes. The latter overall window failed later motion; its passed individual Standard job must not be relabelled as an overall pass.
+
+Preserve the unchanged global 12,000 MiB guard. Given the observed startup exhaustion, obtain more headroom before a new owned window; do not repeatedly pause the demo or lower quality while external GPU contention persists. Stop only the lifecycle-owned normal demo within the bounded manager; preserve public/funnel/TURN services and restore the exact demo recipe. Review actual full 1× side jump/landing/recovery plus original camera/phase in Standard/Comic at both sizes. CPU previews, seven sampled headless states and 60-fps encoding do not establish that result.
+
+If the compound correction survives actual pixel/motion review, retain the derivative separately from the original 23 generation files. The full private high-detail importer currently reloads the original jump and must select the same checked derivative after adoption. The prop fix also needs a private runtime transform/reset on every style switch; a PIE helper is not persistent gameplay. The inert `Saved/Tests/GraphicNovel/PersistentCompoundPlan-20261017` uses same-window passed Standard1920 pre-PIE proof and native readback-only prop checks for that later build. Its config remains unready. Any C++ rebuild invalidates historical module/source proof and needs new native tests/captures.
+
+Remaining art defects: static open fingers/face, restrained posing, faceted shirt/collar/hair, grounding, material/line treatment and scene focal hierarchy. Keep art, native/package performance, browser decode, physical devices and off-LAN claims separate.

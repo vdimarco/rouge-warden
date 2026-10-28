@@ -82,6 +82,13 @@ def verify_inventory(text, district, root=ROOT, *, dependencies=True, authoritat
             extension = json.loads((root/'Data/Plateau/EastExtension/extension.json').read_text())
             assert extension['road_segments'] == 143 and len(extension['materials']) == 40
             result['east_extension_meshes'] = mesh_inventory(text, map_name, '/Game/Plateau/EastExtension', extension['materials'])
+            details_path = root/'Data/Plateau/EastDetails/details.json'
+            if details_path.is_file():
+                details = json.loads(details_path.read_text())
+                names = ('Glass', 'Iron', 'Trim')
+                packages = details['native_contract']['new_packages']
+                assert len(packages) == 3 and set(packages) == {f'Content/Plateau/EastDetails/SM_{name}.uasset' for name in names}, 'East Details source contract changed'
+                result['east_details_meshes'] = mesh_inventory(text, map_name, '/Game/Plateau/EastDetails', names)
             parts = set(re.findall(r'SM_Resident(\d+)(Body|Head|LeftArm|RightArm|LeftLeg|RightLeg)', text))
             assert len(parts) == 66, ('Cooked resident parts', len(parts))
     else:
@@ -200,6 +207,16 @@ def missing_streaming_assets(text, root=ROOT):
 def scalar(text, actor, prop):
     values = re.findall(r'\.'+re.escape(actor)+r'\.'+re.escape(prop)+r' = ([-\d.]+)', text)
     return float(values[-1]) if values else None
+
+
+def driving_sample(text, map_name, car, start_position):
+    speed = scalar(text, car, 'Speed')
+    if speed is None or speed <= 100:
+        return None
+    position = hull_transforms(text, map_name)[car][0]
+    if math.dist(position[:2], start_position[:2]) <= 10:
+        return None
+    return {'speed_cm_s': speed, 'position_cm': position}
 
 
 def occupant(text, car):
@@ -535,8 +552,7 @@ def run_district(args, district, runner, output, macros, peers):
     client.until('getall QuebecController Pawn', lambda text: controller_pawn(text, map_name) == client_car)
     client.snapshot('ke '+client_car+' DisableInput None\nke '+client_car+' ReleaseHandbrake\nke '+client_car+' MoveForward 1.0')
     driving = host.until('getall QuebecCar Speed\n'+TRANSFORMS,
-        lambda text: {'speed_cm_s': scalar(text, car, 'Speed'), 'position_cm': hull_transforms(text, map_name)[car][0]}
-        if scalar(text, car, 'Speed') is not None and scalar(text, car, 'Speed') > 100 else None, timeout=12)
+        lambda text: driving_sample(text, map_name, car, position), timeout=12)
     assert math.dist(driving['position_cm'][:2], position[:2]) > 10, 'Speed changed without actual hull movement'
     result['native_drive'] = driving
     client.snapshot('ke '+client_car+' ApplyHandbrake')

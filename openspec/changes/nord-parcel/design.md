@@ -1,0 +1,5 @@
+# Cross with the parcel
+
+No new rendering technique. The parcel, the stoop, and the two street cars are the same flat cubes the other beats already use. None of the usual art references fit.
+
+The street runs from (60966.786, -37733.027) to (63440.647, -31813.030). The parcel is 22 m off the middle, on one side. The stoop is 22 m off the other side. Recover is 10 m past the parcel, still off the road. The street cars drive at 280 cm/s and do not steer. One is on the crossing as you pick the parcel up. The other reaches it two seconds later. A walk or a sprint that starts at once meets a car. Waiting four seconds, then walking or sprinting, reaches the stoop with time left. Waiting eight seconds loses the clock. One frame spends at most a quarter of a second. Picking the parcel up does not also reach the stoop. The purse is 620, once. The step index is the only saved field. The clock and where the street cars are stay in the session, and a reload during the crossing starts the clock again with the cars at their marks.

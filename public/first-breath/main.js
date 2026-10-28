@@ -1,0 +1,1333 @@
+// First Breath: the page (design.md 5.3, 8, 11, 16.1, 16.3, 16.8 to 16.10; tasks.md 1.11). It boots the game, reads
+// the URL flags, runs the 60 Hz fixed step with an accumulator, maps input times to core time, drives core/run.js,
+// draws its view through render/renderer.js and render/rings.js, feeds the HUD, the captions, the screens and the
+// sound (her beats from run.beats(), one-shots from the events), pauses on Esc, P, the pause button,
+// visibilitychange and pagehide (never on blur), keeps the save through ui/store.js, and hangs the test hook
+// window.__fb (16.9) on the page. It is wired to every module through the frozen signatures of 16.2, so the wave-1
+// files drop in behind them.
+//
+// Core time (16.3): raw = (wallMs − wallStart − pausedMs) / 1000 and t = raw − offsetMs / 1000 (ui/input.js applies
+// the offset). Here wallBase = wallStart + pausedMs: it moves on while the run is paused, while realtime is off and
+// when a long frame drops time (more than 0.5 s behind), so core time always equals run.t at a step boundary. Each
+// fixed step covers [run.t, run.t + DT); the loop steps while the step's end is in the past, so every event of the
+// step has arrived. A new run restarts run.t at 0, and the base moves with it.
+//
+// Contract choices (16.9 and 16.10 give the members and flags; these fill the gaps):
+// - goto(stage, { seed, carry, assist, oneButton }) starts a practice run of that stage (core/run.js start:
+//   { practice, carry }): no card, and after its overlay (none after Birth or the ending) the run result. seed is
+//   the run seed (else the current run's); assist and oneButton set the live settings. ?stage= does the same at boot,
+//   and ?moment= then jumps to that moment (also after Play when no ?stage is given).
+// - state().stage is the stage number 1 to 8, "ending" for the ending, or null on the title. score is the current
+//   stage's total so far, runScore the run summary's total, grade the stage's grade word once it is done. prompt is
+//   the stage's prompt plus `line`, its text through core/text.js. Extras: frames, realtime, practice, done, live
+//   (the input's live gesture and keys), judges (the last 8 judge events, core seconds) and stageStart (the stage's
+//   start in core seconds, the clock of sound.beats).
+// - step(n, intents) takes intents in stage seconds: its presses, releases and taps are queued once (at
+//   stageStart + t), its other fields hold for the n steps. Without intents the held ones (input()) apply over the
+//   live input. step and the other hook calls present the frame at once, so the DOM matches the state they return.
+// - tap() presses at the next tap or press target's t + errMs and lifts 80 ms later; press() presses there;
+//   release() lets go at the next release target's t + errMs. With no such target they act now. Each returns
+//   { t, target } (stage seconds) or null off the stage. raw = t + offsetMs / 1000, as live input would give.
+// - bot(skill) drives with core/bots.js (createBot(skill, run seed)), its run-level choices included; bot(false)
+//   stops it. Live input is dropped while it drives.
+// - targets() → { boxes: [{ id, act, text, x, y, w, h }] (every visible button, link and control), anchor, cue }.
+// - race() and guard() add `screen` ({ x, y } px) beside every world point of the stage's probe, and guard() adds
+//   arc.screenAngle (atan2 in screen px, y down, render/camera.js). Both are null in other stages and in the stubs.
+// - perf, sound and motion are getters that return plain copies. sound adds hearing (the hearing milestone) and
+//   beats ({ mother, you }: the last 8 beat times scheduled, core seconds) to the sound stats.
+// - The seed of a new run is ?seed when given, else random (main.js is not core; Math.random is allowed here).
+// - Sound: run.js hands on every stage time in core seconds (t and an sfx's or a song's `at`), so a sound plays at
+//   `at` when the event has one, else at its t: sound.sfx(id, ctxTime, event), sound.hum(notes, ctxTime, { clear,
+//   lit, noteS, gapS, muffled }), and the ending's inhale, cry and breath through sound.breath(id, ctxTime, event).
+// - Captions: one path. A `caption` event's id is a string (core/text.js) or, failing that, a fact; a `fact` event
+//   whose where (its own, else the fact's) is "caption" is a fact caption. Every caption is one call,
+//   captions.say(id, text, { dir, ms, kind }) with its final text; kind is "say", "fact" (once per stage, text
+//   "<clock label>: <fact text>", no label in the ending, with fact, label and body beside it) or "cue" (a sound's
+//   caption, design.md 12: a stage's own "<stage>.sfx.<id>" string, else the shared cue.* string, once per stage). A
+//   stage 1 caption lasts 2.5 s. An unknown id shows nothing, never the id. The captions' clocks stop with the pause
+//   screen (captions.pause and resume). A sub-goal line the prompt line already shows is never also a caption. In
+//   portrait the caption band follows the subject's body (fitCapBand, steerCapBand); main.js also sets --hud-tags-b
+//   (the in-world panels) and --scale-r (the landscape band) for style.css.
+// - The prompt line names keys on a desktop (a fine pointer, or a mouse or key used last): the prompt's textKeys,
+//   else "<text>.keys" or "<text>Keys" when registered; a caption or sub-goal line takes its ".keys" form there too.
+//   In one-button mode a drag or drag-and-hold prompt takes "<text>.one" when registered (hold words, no arrows or
+//   mouse). The game switcher, while open, takes every key. In Birth the HUD score counts live,
+//   as in every stage (the runner's tags pop its points; 6.8's rule now only means no overlay). The ending's run time line takes run.ms
+//   (none in practice).
+// - A prompt with no gesture ("Wait here. The egg is coming.") shows its line too, with no icon. From 29 s into the
+//   ending, a tap in the play area or a quick Space or Enter goes on to the run result (6.9).
+// - ?q=low|full pins the tier and ?gl=0 is its alias (14.5): FLAGS.gl is false for the low tier.
+// - Settings changed through the URL (?assist, ?one, ?carer, ?rm) hold for the visit and are not saved; a key
+//   toggle (C) saves only its own field. M toggles and writes arcade.sound; ?mute=1 mutes the visit.
+// - The score (openspec/changes/first-breath-score/contract.md, "Integration"): ui/music.js is built with the sound on
+//   the Play tap (into sound.scoreDest(), after mute and past the womb filters) and loads its samples then, after the
+//   stage starts (with Music off, once it is turned on); the boot fetches no score file. The 25 ms sound timer ticks it (the title too). Each stage's cue
+//   starts at its stageStart with the stage's mood(state), read every 100 ms after that (a lower level waits 2.5 s, so
+//   the music does not flicker); the overlay, the Almost card and the card keep the cue going at level 0; a new run
+//   fades the last one's music. Which stingers the run's events play is core/music/wiring.js stingsFor(), with a
+//   memory for each stage attempt: at the overlay the cue's end stinger, then the grade's; ko at a knock-out (act.ko;
+//   stage 1's out); gate at a gate passed (stage 1's place sfx); item at an item used; gift at a gift taken (stage 3)
+//   and at the first pool you link and the last of the pools (stage 4); win at act.win (stage 7: the Big Germ's pop
+//   only, none at its clear); light as birth's light comes, then the score fades out over 1 s, done before the light
+//   ends, so no score note sounds from the ending's white to the cry; the warm chord 0.9 s after the cry. boss plays
+//   here, as a stage's mood turns boss. The run result plays the lullaby (cueFor("result")); the title, and Stages,
+//   Settings and Sources opened over it or the result, the overture (on a first visit the title is silent: the
+//   AudioContext starts on Play).
+//   Stage 6's cue follows her laid beats (run.beats(…, "mother") → music.sync). Music (Settings, next to Sound) is on
+//   by default and saved under first-breath.music. A cue's caption ("♪ spy-chase music", music.<cue>) shows once
+//   when it starts in a stage: a sound's caption that must show (captions.say(…, { kind: "cue", wait: true })), so it
+//   waits its turn behind a busy line instead of being dropped, cuts nothing, and goes if Music or the sound goes off.
+import { DT, label as gaLabel } from "./core/clock.js";
+import { makeIntents, shiftIntents } from "./core/intent.js";
+import { createRun, TIMERS } from "./core/run.js";
+import { createBot } from "./core/bots.js";
+import { SAVE_KEY, parse, recordStage, recordRun, recordCarryIn } from "./core/save.js";
+import { say, has, ordinal, minSec, CARERS } from "./core/text.js";
+import { byId as factById, line as factLine } from "./core/facts.js";
+import { grade as gradeOf, runTotal } from "./core/score.js";
+import { ENDING, TUNES } from "./core/stages/index.js";
+import * as store from "./ui/store.js";
+import { createInput } from "./ui/input.js";
+import { createHud } from "./ui/hud.js";
+import { createCaptions } from "./ui/captions.js";
+import { createScreens } from "./ui/screens.js";
+import { createSound } from "./ui/sound.js";
+import { createMusic } from "./ui/music.js";
+import { CUES as SCORE, cueFor } from "./core/music/score.js";
+import { stingsFor, stingMemory } from "./core/music/wiring.js";
+import { createRenderer } from "./render/renderer.js";
+import { makeCamera } from "./render/camera.js";
+import { createRings } from "./render/rings.js";
+import { createPops } from "./ui/pops.js";
+
+const LOOKAHEAD_S = 0.1;      // the sound scheduler looks this far ahead (11, "A tale of two clocks")
+const SOUND_TICK_MS = 25;
+const MAX_BEHIND_S = 0.5;     // a longer stall drops time instead of running steps to catch up (core time stays
+                              //   on the wall clock, and so on the audio clock, through any shorter hitch)
+const MAX_STEPS = 32;
+const START_LEAD_S = 0.01;    // a run's clock starts this much (plus the output latency) after its first frame is up
+const MAX_LEAD_S = 0.1;
+const STARTS = new Set(["play", "again", "practice"]);   // the actions that start a run from a menu
+const TAP_LIFT_S = 0.08;
+const HELD = ["steer", "touching", "dir", "turn", "aim"];
+const PLAYING = new Set(["stage", "ending"]);
+const PAUSABLE = new Set(["stage", "ending", "overlay", "almost", "card"]);
+const MUSIC_KEY = "first-breath.music";   // the Music setting, saved on its own (core/save.js keeps only its fields)
+const MOOD_EVERY_MS = 100;                // the stage's mood is read this often
+const MOOD_HOLD_S = 2.5;                  // a lower music level waits this long (core s), so it does not flicker
+const MUSIC_CAP_S = 12;                   // a cue's caption is offered within this long of its stage's start, or never
+const ENDING_FADE_S = 1.0;                // the ending fades whatever score is left (none after birth's light)
+const LIGHT_FADE_S = 1.0;                 // birth's light: its stinger and the cue fade out over this, ending this long
+const LIGHT_LEAD_S = 1.5;                 // ... before the light ends, so no score note sounds in the ending's white
+const BIRTH_LIGHT_S = (({ exposureS, whiteS, holdS }) => exposureS + whiteS + holdS)(TUNES.birth);   // birth.js LIGHT_S
+const NEW_RUN_FADE_S = 0.5;               // a new run (Play again, a practice stage) fades the last run's music
+const fin = (v) => typeof v === "number" && Number.isFinite(v);
+const clamp01 = (v) => Math.max(0, Math.min(1, v));
+const $ = (id) => document.getElementById(id);
+
+// ---- URL flags (16.10)
+const Q = new URLSearchParams(location.search);
+const flagOn = (k) => Q.get(k) === "1";
+function parseInset(s) {
+  if (!s) return null;
+  const v = s.split(",").map((x) => Number(x));
+  if (v.length !== 4 || !v.every((x) => Number.isFinite(x) && x >= 0)) return null;
+  return v;
+}
+const FLAGS = Object.freeze({
+  seed: Q.has("seed") && Q.get("seed") !== "" && Number.isFinite(Number(Q.get("seed"))) ? Number(Q.get("seed")) >>> 0 : null,
+  stage: Q.get("stage") || null,
+  moment: Q.get("moment") || null,
+  // ?q=low|full pins the paper tier; ?gl=0 is an alias for ?q=low (14.3, 14.5). gl: true is the full tier.
+  q: Q.get("q") === "low" || Q.get("q") === "full" ? Q.get("q") : Q.get("gl") === "0" ? "low" : null,
+  gl: Q.get("q") === "full" ? true : Q.get("q") === "low" ? false : Q.get("gl") !== "0",
+  res: Q.has("res") && Number(Q.get("res")) > 0 ? Number(Q.get("res")) : null,
+  freeze: flagOn("freeze"),
+  test: flagOn("test"),
+  assist: flagOn("assist"),
+  one: flagOn("one"),
+  rm: flagOn("rm"),
+  mute: flagOn("mute"),
+  probe: flagOn("probe"),
+  inset: parseInset(Q.get("inset")),
+  carer: Q.get("carer"),
+});
+
+// ---- the save and the settings
+let save = parse(store.get(SAVE_KEY, null));
+const settings = { ...save.settings };
+if (FLAGS.assist) settings.assist = true;
+if (FLAGS.one) settings.oneButton = true;
+if (FLAGS.carer && Object.prototype.hasOwnProperty.call(CARERS, FLAGS.carer)) settings.carer = FLAGS.carer;
+if (FLAGS.rm) settings.motion = "reduced";
+settings.music = store.get(MUSIC_KEY, true) !== false;
+
+const persist = () => store.set(SAVE_KEY, save);
+function saveSetting(key) {
+  save = parse(save);
+  save.settings = { ...save.settings, [key]: settings[key] };
+  save = parse(save);
+  persist();
+}
+
+// ---- motion, insets, large text
+const motion = { reduced: false, warpAmp: 1, bounce: 1 };
+function updateMotion() {
+  let prefers = false;
+  try { prefers = !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches); } catch (e) { /* none */ }
+  const reduced = FLAGS.rm || settings.motion === "reduced" || (settings.motion !== "full" && prefers);
+  motion.reduced = reduced;
+  motion.warpAmp = reduced ? 0.5 : 1;
+  motion.bounce = reduced ? 0 : 1;
+}
+updateMotion();
+const root = document.documentElement;
+if (FLAGS.inset) {
+  const [t, r, b, l] = FLAGS.inset;
+  root.style.setProperty("--inset-t", t + "px");
+  root.style.setProperty("--inset-r", r + "px");
+  root.style.setProperty("--inset-b", b + "px");
+  root.style.setProperty("--inset-l", l + "px");
+}
+root.classList.toggle("large", !!settings.largeText);
+root.classList.toggle("reduced", motion.reduced);
+
+// The safe area in CSS px, from the same --safe-* the HUD and the captions use (style.css: env(safe-area-inset-*)
+// plus ?inset), read through a hidden probe, since a custom property with env() does not compute to px by itself.
+const safeProbe = document.createElement("div");
+safeProbe.setAttribute("aria-hidden", "true");
+safeProbe.style.cssText = "position:fixed;left:0;top:0;width:0;height:0;visibility:hidden;pointer-events:none;"
+  + "padding:var(--safe-t) var(--safe-r) var(--safe-b) var(--safe-l)";
+document.body.appendChild(safeProbe);
+const safe = { t: 0, r: 0, b: 0, l: 0 };
+function readSafe() {
+  try {
+    const cs = getComputedStyle(safeProbe);
+    for (const [k, p] of [["t", "paddingTop"], ["r", "paddingRight"], ["b", "paddingBottom"], ["l", "paddingLeft"]]) {
+      const v = parseFloat(cs[p]);
+      safe[k] = Number.isFinite(v) && v > 0 ? v : 0;
+    }
+  } catch (e) { /* keep the last */ }
+}
+readSafe();
+
+// ---- the modules
+const area = $("area"), canvas = $("view"), svg = $("rings"), stickEl = $("stick");
+const hudRoot = $("hud"), pauseBtn = $("pause");
+let vw = Math.max(1, window.innerWidth), vh = Math.max(1, window.innerHeight);
+
+const renderer = createRenderer(canvas, { gl: FLAGS.gl, q: Q.get("q"), res: FLAGS.res, probe: FLAGS.probe, motion });
+renderer.resize(vw, vh);
+const rings = createRings(svg);
+const pops = createPops(area);          // the action layer's number pops (DOM tags over the play area)
+const hud = createHud(hudRoot);
+const captions = createCaptions($("captions"), { on: () => settings.captions !== false });
+const screens = createScreens($("screens"), { act: (name, arg) => { uiAct(name, arg); }, settings: () => settings });
+
+let run = null;
+let realtime = !FLAGS.test && !FLAGS.freeze;
+let wallBase = performance.now();
+let camera = makeCamera(vw, vh, null);
+let lastView = null;
+let lastScreen = { name: "title", data: null };
+let menu = null;                  // a menu opened over the title, the result or pause: { name }
+let botDriver = null;
+let held = {};
+let placeText = null, placeNum = null, raceText = null;
+let momentPending = FLAGS.moment;
+let frames = 0, stopped = false;
+let audioCtx = null, sound = null, hearing = false;
+let music = null;                 // the score (ui/music.js), built with the sound
+let musicCue = null;              // the cue main.js last asked for
+let musicCap = null;              // { id, cue, t }: a stage's music caption waiting for its cue to start
+let musicCapId = null;            // the music caption handed to the captions (it may wait there for its turn)
+let stingMem = stingMemory();     // what this stage attempt's stingers remember (core/music/wiring.js)
+let moodAt = -Infinity, moodKey = "";
+let lightFade = null;             // core time: birth's light fades the score out then
+const moodLv = { level: 0, since: null, boss: false };
+let muted = FLAGS.mute || !store.soundOn();
+const lastBeat = { mother: -Infinity, you: -Infinity };
+const recent = { mother: [], you: [] };
+const judges = [];
+
+const coreTime = (wallMs) => (realtime && run && !run.paused ? (wallMs - wallBase) / 1000 : run ? run.t : 0);
+const coreNow = () => coreTime(performance.now());
+const anchor = () => { wallBase = performance.now() - (run ? run.t : 0) * 1000; };
+
+const input = createInput(area, { coreTime, camera: () => camera, settings: () => settings });
+
+// ---- runs
+const newSeed = () => (FLAGS.seed !== null ? FLAGS.seed : (Math.random() * 4294967296) >>> 0);
+
+function newRun(start = "new", seed = newSeed()) {
+  if (music) { music.fadeOut(NEW_RUN_FADE_S); musicCue = null; musicCap = null; lightFade = null; }
+  run = createRun({ seed, settings, save, start });
+  anchor();
+  lastBeat.mother = lastBeat.you = -Infinity;
+  placeText = null;
+  placeNum = null;
+  raceText = null;
+  menu = null;
+  judges.length = 0;
+  captions.resume();                       // a new run is never paused
+  input.flush();
+  processEvents();
+}
+
+function goto(stage, { seed = null, carry = null, assist, oneButton } = {}) {
+  let id = stage;
+  if (typeof id === "string" && /^\d+$/.test(id)) id = Number(id);
+  if (typeof assist === "boolean") settings.assist = assist;
+  if (typeof oneButton === "boolean") settings.oneButton = oneButton;
+  const sd = seed !== null && seed !== undefined && Number.isFinite(Number(seed)) ? Number(seed) >>> 0 : run ? run.seed : newSeed();
+  const start = { practice: id };
+  if (carry) start.carry = carry;
+  newRun(start, sd);
+  if (!run.practice) return false;
+  applyMoment();
+  return true;
+}
+
+function applyMoment() {
+  if (!momentPending || !run.state || !PLAYING.has(run.screen)) return;
+  const m = momentPending;
+  momentPending = null;
+  run.jump(m);
+  processEvents();
+}
+
+// ---- sound (built on the Play tap, 11)
+function ensureAudio() {
+  if (sound) { sound.resume(); return; }
+  let ctx = null;
+  try {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (AC) ctx = new AC();
+  } catch (e) { ctx = null; }
+  try { if (navigator.audioSession) navigator.audioSession.type = "playback"; } catch (e) { /* not there */ }
+  audioCtx = ctx;
+  sound = createSound(ctx, { seed: run ? run.seed : 1, latencyS: null });
+  sound.setMuted(muted);
+  sound.start();
+  // the score: into the sound's score input (after mute, not through the womb filters); it fetches nothing yet
+  if (ctx && sound.scoreDest()) {
+    try {
+      music = createMusic(ctx, { dest: sound.scoreDest(), seed: run ? run.seed : 1, latencyS: null });
+      music.setEnabled(settings.music !== false);
+    } catch (e) { music = null; }
+  }
+}
+
+// core seconds → the audio clock (wall seconds when there is no context)
+const toCtx = (tc) => (audioCtx ? audioCtx.currentTime : performance.now() / 1000) + (tc - coreNow());
+
+// The womb bus cutoff over the run (11).
+function cutoffFor(id, ga) {
+  if (id === "answer") return 250 + 200 * clamp01((ga - 105) / (189 - 105));
+  if (id === "turn") return 450 + 150 * clamp01((ga - 196) / (280 - 196));
+  if (id === "birth") return 300;
+  return 150;
+}
+
+// Her beats (and yours) for the next 100 ms plus the output latency, from run.beats(), each one once.
+function scheduleSound() {
+  tickMusic();
+  if (!sound || !run || run.paused || run.screen === "title") return;
+  const now = coreNow();
+  const s = sound.stats();
+  if (run.stageId && run.stageId !== "ending") {
+    const c = cutoffFor(run.stageId, run.gaDay);
+    if (Math.abs(c - s.cutoffHz) > 0.5) sound.setScene({ cutoffHz: c });
+  }
+  const until = now + LOOKAHEAD_S + (fin(s.latencyS) ? s.latencyS : 0);
+  for (const heart of ["mother", "you"]) {
+    const from = Math.max(now - 0.02, lastBeat[heart] + 1e-4);
+    if (!(until > from)) continue;
+    const times = run.beats(from, until, heart).filter((t) => t > lastBeat[heart] + 1e-4);
+    if (!times.length) continue;
+    sound.schedule(heart, times, toCtx);
+    lastBeat[heart] = times[times.length - 1];
+    recent[heart].push(...times);
+    if (recent[heart].length > 8) recent[heart].splice(0, recent[heart].length - 8);
+  }
+}
+
+// ---- the score (openspec/changes/first-breath-score/contract.md, "Integration")
+// The mood asked for now: the stage's mood(state) on the stage (a stage with none: level 1), the overture's level 1
+// on the title, and level 0 everywhere else (the overlay, the Almost card and the card keep the cue going softly).
+function rawMood() {
+  if (run.screen === "title" || (menu && !run.paused && cueFor(menu.name) === "title")) return { level: 1 };
+  if (run.screen !== "stage" || !run.state || !run.mod) return { level: 0 };
+  if (typeof run.mod.mood !== "function") return { level: 1 };
+  try {
+    const m = run.mod.mood(run.state);
+    return m && typeof m === "object" ? m : { level: 1 };
+  } catch (e) { return { level: 1 }; }
+}
+// ... smoothed: a higher level (and any change off the stage) at once, a lower one once it has held MOOD_HOLD_S
+function moodNow() {
+  const raw = rawMood();
+  const lv = fin(raw.level) ? Math.max(0, Math.min(2, Math.round(raw.level))) : 1;
+  if (lv >= moodLv.level || run.screen !== "stage") { moodLv.level = lv; moodLv.since = null; }
+  else if (moodLv.since === null || moodLv.since > run.t) moodLv.since = run.t;
+  else if (run.t - moodLv.since >= MOOD_HOLD_S - 1e-9) { moodLv.level = lv; moodLv.since = null; }
+  return { level: moodLv.level, boss: run.screen === "stage" && !!raw.boss, tempo: fin(raw.tempo) && raw.tempo > 0 ? raw.tempo : 1 };
+}
+const moodKeyOf = (m) => m.level + "|" + m.boss + "|" + m.tempo;
+
+// Every 100 ms: the title's cue (the title, and Stages, Settings and Sources over it or the run result: cueFor), the run
+// result's lullaby, the mood (a boss arriving plays its stinger), and a cue's caption once its music has started.
+function musicMood() {
+  const scr = menu && !run.paused && cueFor(menu.name) ? menu.name : run.screen;
+  const want = scr === "title" || scr === "result" || (menu && scr === menu.name) ? cueFor(scr) : null;
+  const m = moodNow();
+  if (want && want !== musicCue) { music.cue(want, undefined, m); musicCue = want; }
+  if (m.boss && !moodLv.boss && !run.paused) music.sting("boss", toCtx(coreNow()));
+  moodLv.boss = m.boss;
+  const key = moodKeyOf(m);
+  if (key !== moodKey) { moodKey = key; music.setMood(m); }
+}
+
+// A stage's cue caption ("♪ spy-chase music"), once, when its music has started, within MUSIC_CAP_S of the stage's
+// start; never with the music off or muted. It is a sound's caption that must show: on a busy line it waits its turn
+// (ui/captions.js), so a stage whose lines and facts fill its first seconds (stages 2 and 4) still names its music.
+function musicCaption() {
+  const c = musicCap;
+  if (!c) return;
+  if (!PLAYING.has(run.screen) || run.t - c.t > MUSIC_CAP_S || muted || settings.music === false || capSeen.has("music:" + c.cue)) {
+    musicCap = null;
+    return;
+  }
+  if (music.stats().cue !== c.cue) return;           // the last cue's bar still runs out
+  const text = textOf(c.id);
+  if (!text) { musicCap = null; return; }
+  if (captions.say(c.id, text, { kind: "cue", wait: true, ms: 2500 })) {
+    capSeen.add("music:" + c.cue);
+    musicCap = null;
+    musicCapId = c.id;
+  }
+}
+// Music or the sound turned off: the music caption goes, waiting or on screen.
+function dropMusicCaption() {
+  musicCap = null;
+  if (musicCapId) captions.drop(musicCapId);
+  musicCapId = null;
+}
+
+// From the 25 ms sound timer: the mood, stage 6's sync to her laid beats (1 s ahead), then the scheduler.
+function tickMusic() {
+  if (!music || !run) return;
+  const wall = performance.now();
+  if (wall - moodAt >= MOOD_EVERY_MS || wall < moodAt) {
+    moodAt = wall;
+    musicMood();
+    if (!run.paused) musicCaption();
+  }
+  if (lightFade !== null && !run.paused && coreNow() >= lightFade) {
+    lightFade = null;
+    music.fadeOut(LIGHT_FADE_S);
+    musicCue = null;
+  }
+  if (musicCue === "answer" && !run.paused) {
+    // all her beats in the span, and the span itself, so a beat laid before at another phase (a Try again) is dropped
+    const now = coreNow();
+    music.sync(run.beats(now - 0.5, now + 1.0, "mother").map(toCtx), toCtx(now - 0.5), toCtx(now + 1.0));
+  }
+  music.tick(audioCtx ? audioCtx.currentTime : 0);
+}
+
+// What the run's events ask of the score: each stage's cue at its start, the stingers, the ending's own timing.
+function musicOn(ev) {
+  if (!music) return;
+  switch (ev.name) {
+    case "stageStart": {
+      moodLv.level = 0;                             // a new attempt takes its own level at once
+      moodLv.since = null;
+      lightFade = null;
+      stingMem = stingMemory();
+      musicCapId = null;                            // the captions clear at each stage start
+      if (ev.id === "ending") {
+        // the ending stays calm: birth's light has faded the score out already (a practice ending or a Try again fades
+        // what is left); only the warm chord comes, after the cry
+        music.fadeOut(ENDING_FADE_S);
+        musicCue = null;
+        musicCap = null;
+        moodLv.boss = false;
+        break;
+      }
+      const id = cueFor(ev.id);
+      if (!id) break;
+      const m = moodNow();
+      moodKey = moodKeyOf(m);
+      moodLv.boss = m.boss;
+      // its caption only when the cue is new (a Try again keeps the music going)
+      musicCap = id !== musicCue ? { id: "music." + id, cue: id, t: ev.t } : null;
+      music.cue(id, toCtx(ev.t), m);
+      musicCue = id;
+      break;
+    }
+    case "screen":
+      if (ev.screen === "card" && ev.data && cueFor(ev.data.id)) {
+        void SCORE[cueFor(ev.data.id)];             // build the next cue now (a few ms), not on its stage's first frame
+      }
+      break;
+    case "moment":
+      // birth's light: its end stinger (the choir, below), then the score fades out before the light ends (design 2.5)
+      if (ev.stage === "birth" && ev.id === "light") lightFade = ev.t + Math.max(0, BIRTH_LIGHT_S - LIGHT_LEAD_S);
+      break;
+    default: break;
+  }
+  // the stingers this event plays (core/music/wiring.js); the stinger queue plays an end and a grade one after another
+  for (const s of stingsFor(ev, stingMem, run.state)) music.sting(s.id, toCtx(s.at));
+}
+
+// The samples load once a run has started (the boot fetches no score file); the synth plays until they do. With Music
+// off they wait until it is turned on (about 1.5 MB to fetch and 45 MB decoded that nobody would hear).
+function musicLoad() {
+  if (!music || settings.music === false) return;
+  try { const p = music.load(); if (p && typeof p.catch === "function") p.catch(() => {}); } catch (e) { /* the synth plays on */ }
+}
+
+function setMuted(m) {
+  muted = !!m;
+  if (sound) sound.setMuted(muted);
+  if (muted) dropMusicCaption();
+}
+function toggleMute() {
+  const on = muted;                 // muted now → sound goes on
+  store.setSoundOn(on);
+  setMuted(!on);
+  if (screens.current === "pause") screens.show("pause", { soundOn: !muted });
+  else if (screens.current === "title") screens.show("title", titleData());
+  else if (screens.current === "settings") showSettingsAgain();
+}
+
+// Settings shows the sound as heard (?mute=1 mutes the visit while arcade.sound stays on), and is drawn again,
+// focus kept, when M or C changes a switch under it.
+const menuData = () => ({ save, settings, soundOn: !muted });
+function showSettingsAgain() {
+  screens.show("settings", menuData(), { keep: document.activeElement });
+}
+
+// ---- events from the run (16.6, 16.8)
+const CUES = new Set(["bump", "bounce", "stick", "loose", "goldIn", "enter", "seal"]);
+
+function processEvents() {
+  const evs = run.events;
+  while (evs.length) {
+    const list = evs.splice(0, evs.length);
+    for (const ev of list) onEvent(ev);
+  }
+}
+
+// ---- the one caption path (12, 15.1). Nothing raw reaches the screen: a string id goes through core/text.js, a
+// fact id through core/facts.js with its clock label in front, and an id that is neither shows nothing.
+const capSeen = new Set();            // this stage's fact captions and once-per-stage sound captions
+const textOf = (id, vars = {}) => (has(id) ? say(id, vars || {}, settings) : null);
+const capMs = () => (run && run.stageId === "swim" ? 2500 : 4000);   // stage 1: one line for 2.5 s (8, 9)
+
+// Every caption goes out as captions.say(id, text, { dir, ms, kind }), the text final. kind is "say" (a stage's
+// caption or sub-goal line), "fact" (with label and body beside it) or "cue" (a sound's caption, design.md 12), so
+// the captions can rank them: a fact waits behind a line, a cue shows only when nothing else does.
+function sayCaption(id, text, extra = {}) {
+  if (!text) return false;
+  return captions.say(id, text, { kind: "say", ms: capMs(), ...extra, dir: extra.dir || null });
+}
+
+// A fact as a caption, once per stage: "Week 10: From about now you are called a fetus. …" (no label in the ending).
+function factCaption(id, dir = null) {
+  const key = "fact:" + id;
+  if (capSeen.has(key)) return false;
+  const ln = factLine(id, settings);
+  if (!ln) return false;
+  capSeen.add(key);
+  return sayCaption(id, ln.label ? ln.label + ": " + ln.text : ln.text, { dir, kind: "fact", fact: id, label: ln.label, body: ln.text });
+}
+
+// A caption event: a registered string first (an id can be both, such as egg.seal), else a fact.
+function caption(id, vars = {}, dir = null, kind = "say") {
+  if (!id) return false;
+  const text = textOf(sayForm(id), vars);           // on a desktop, its desktop form when it has one
+  if (text) return sayCaption(id, text, { dir, kind });
+  if (factById(id)) return factCaption(id, dir);
+  return false;
+}
+
+// A sound cue's caption, once per stage.
+function cueCaption(id) {
+  if (capSeen.has("cue:" + id)) return false;
+  capSeen.add("cue:" + id);
+  return caption(id, {}, null, "cue");
+}
+
+// The sound captions (design.md 12): a stage's own "<stage>.sfx.<id>" string (split.sfx.pling), else the shared one
+// for that sound, each once per stage. The other one-shots go uncaptioned: their stage already says what happens.
+const CUE_OF = {
+  bump: "cue.pack", bounce: "cue.bounce", goldIn: "cue.goldIn", seal: "cue.seal",
+  "swim:swell": "cue.wave", "birth:birth.swell": "cue.wave", "root:root.link": "cue.link", "root:root.linkBeat": "cue.link",
+  "grow:bell": "cue.bell", "grow:move": "cue.move", "birth:birth.open": "cue.open",
+};
+function cueOf(ev) {
+  if (ev.name === "sfx") {
+    const id = String(ev.id || "");
+    const own = id.includes(".") ? id.replace(/^([^.]+)\./, "$1.sfx.") : `${ev.stage}.sfx.${id}`;
+    if (has(own)) return own;
+    return CUE_OF[`${ev.stage}:${id}`] || null;
+  }
+  if (ev.name === "bump" && !(ev.a === "you" || ev.b === "you")) return null;    // only the bumps you are in
+  return CUE_OF[ev.name] || null;
+}
+
+// The ending's run time line: {time} from the ending's own vars, else run.ms; none in practice (run.ms 0).
+function endingTime(ev) {
+  if (ev.vars && ev.vars.time) return caption(ev.id, ev.vars, ev.dir);
+  if (!(run.ms > 0)) return false;
+  return caption(ev.id, { time: minSec(run.ms) }, ev.dir);
+}
+
+// Sound times: every stage time reaches the host in core seconds (run.js moves t and at); a sound plays at `at`
+// when the event has one (a beat-locked cue laid ahead), else at its t.
+const soundAt = (ev) => toCtx(fin(ev.at) ? ev.at : ev.t);
+const BREATHS = new Set(["inhale", "cry", "breath"]);
+
+function onEvent(ev) {
+  musicOn(ev);
+  switch (ev.name) {
+    case "screen": onScreen(ev.screen, ev.data); break;
+    case "stageStart":
+      placeText = null;
+      placeNum = null;
+      raceText = null;
+      hearing = false;
+      capSeen.clear();
+      captions.clear();
+      if (ev.index === 0 && ev.attempt === 1 && !ev.practice) cueCaption("cue.mother");   // at Play: her heartbeat
+      if (sound) sound.setScene({ stage: ev.id, cutoffHz: ev.id === "ending" ? 300 : cutoffFor(ev.id, run.gaDay), hearing: false });
+      break;
+    case "carryIn":
+      if (!run.practice) { save = recordCarryIn(save, ev.id, ev.carry); persist(); }
+      break;
+    case "crossfade": renderer.crossfade(ev.seconds); break;
+    case "stageEnd": save = recordStage(save, ev.id, ev.result, ev.marks); persist(); break;
+    case "runEnd": save = recordRun(save, ev.summary); persist(); break;
+    case "prompt": input.setLive(ev.gesture || "none", ev.keys || "steer", ev.t); break;   // from its core time (5.3)
+    case "caption":
+      if (ev.id === "ending.time") endingTime(ev);
+      else caption(ev.id, ev.vars || {}, ev.dir || null);
+      break;
+    case "fact": {
+      // card and overlay facts show on their screens (run.js puts them in the screen data); a caption fact here
+      const f = factById(ev.id);
+      if ((ev.where || (f && f.where)) === "caption") factCaption(ev.id, ev.dir || null);
+      break;
+    }
+    case "subgoal":
+      // a sub-goal line that the prompt line already shows (birth's waves and its "Rest. Another wave will come.",
+      // stage 6's beat) is not said again as a caption, whatever its state: the prompt line (role="status") says it
+      if (ev.text && !promptShows(ev.text)) caption(ev.text);
+      break;
+    case "place": {
+      // the place slot; the pluck only when you gain a place (11)
+      const gained = fin(ev.place) && fin(placeNum) && ev.place < placeNum;
+      if (fin(ev.place)) { placeText = say("hud.place", { place: ordinal(ev.place), of: fin(ev.of) ? ev.of : 20 }); placeNum = ev.place; }
+      if (sound && gained) sound.sfx("place", soundAt(ev), ev);
+      break;
+    }
+    case "race": {
+      // stage 1's tags under the place slot: how many still race (once the first sperm rests), the next gate's call,
+      // the item you hold; nothing to say hides the tag, so the portrait prompt line keeps its place
+      const bits = [fin(ev.racing) && ev.racing < (fin(ev.of) ? ev.of : 20) ? say("swim.tag.racing", { n: ev.racing }) : null,
+        ev.gate && fin(ev.gate.n) ? say("swim.tag.gate", { n: ev.gate.n, first: ev.gate.first }) : null,
+        ev.item ? say("swim.item." + ev.item) : ev.rolling ? say("swim.tag.rolling") : null];
+      raceText = bits.filter(Boolean).join(" · ") || null;
+      break;
+    }
+    case "judge":
+      judges.push({ target: ev.target, grade: ev.grade, errMs: ev.errMs, rawMs: ev.rawMs, heart: ev.heart, t: ev.t, stage: ev.stage });
+      if (judges.length > 32) judges.splice(0, judges.length - 32);
+      break;
+    case "sfx":
+      { const c = cueOf(ev); if (c) cueCaption(c); }
+      if (!sound) break;
+      if (ev.stage === "ending" && BREATHS.has(ev.id)) sound.breath(ev.id, soundAt(ev), ev);   // the birth bus
+      else sound.sfx(ev.id, soundAt(ev), ev);
+      break;
+    case "milestone":
+      if (ev.id === "hearing") hearing = true;
+      if (sound) {
+        sound.setScene({ hearing });
+        if (ev.id === "ready") sound.sfx("ready", soundAt(ev), ev);
+      }
+      break;
+    case "song":
+      if (sound) sound.hum(ev.notes, soundAt(ev), { clear: !!ev.clear, lit: ev.lit, noteS: ev.noteS, gapS: ev.gapS,
+        muffled: !!ev.muffled, stage: ev.stage });
+      break;
+    default:
+      { const c = cueOf(ev); if (c) cueCaption(c); }
+      if (CUES.has(ev.name) && sound) {
+        // a bump between two rivals plays 10 dB softer within 40 u of you (11); the sound needs to be told which
+        if (ev.name === "bump" && ev.a !== "you" && ev.b !== "you") {
+          const a = lastView && lastView.anchor;
+          ev.near = !!(a && fin(ev.x) && fin(ev.y) && Math.hypot(ev.x - a.x, ev.y - a.y) <= 40);
+        }
+        sound.sfx(ev.name, soundAt(ev), ev);
+      }
+      break;
+  }
+}
+
+function titleData() {
+  return { best: save.best && save.best.done ? save.best.score : null, soundOn: !muted };
+}
+
+// The screen the run is on, shown again (after a menu, pause or a new run).
+function showRunScreen() {
+  const { name, data } = lastScreen;
+  hudRoot.hidden = !(PLAYING.has(name) || name === "overlay" || name === "almost");
+  if (name === "title") screens.show("title", titleData());
+  else if (PLAYING.has(name)) screens.hide();
+  else screens.show(name, data);
+}
+
+function syncLive() {
+  if (PLAYING.has(run.screen) && run.state && !run.paused) {
+    const p = run.mod.prompt(run.state) || {};
+    input.setLive(p.gesture || "none", p.keys || "steer");
+  } else input.setLive("none");
+}
+
+function onScreen(name, data) {
+  lastScreen = { name, data };
+  if (run.paused) return;
+  menu = null;
+  showRunScreen();
+  if (PLAYING.has(name)) input.flush();
+  syncLive();
+  if (name === "ending" && sound) sound.open(1.5);
+}
+
+// ---- pause
+function pauseGame() {
+  if (!run || run.paused || !PAUSABLE.has(run.screen)) return false;
+  if (!run.act("pause")) return false;
+  menu = null;
+  captions.pause();                        // a caption under the pause screen keeps the time it had left
+  screens.show("pause", { soundOn: !muted });
+  if (sound) sound.suspend();
+  processEvents();
+  return true;
+}
+
+function resumeGame() {
+  if (!run.act("resume")) return false;
+  menu = null;
+  captions.resume();
+  input.flush({ resume: true });           // a hold let go while paused or hidden still ends (at the paused time)
+  anchor();
+  showRunScreen();
+  syncLive();
+  if (sound) sound.resume();
+  processEvents();
+  return true;
+}
+
+// ---- actions from the screens, the keys, the bot and the hook
+function act(name, arg = null) {
+  let ok = false;
+  switch (name) {
+    case "play":
+      ensureAudio();
+      if (run.screen !== "title") newRun("new");
+      ok = run.act("play");
+      processEvents();                       // stageStart names her heartbeat first (onEvent), then the stage speaks
+      applyMoment();
+      break;
+    case "again":
+      ensureAudio();
+      newRun("new");
+      ok = run.act("play");
+      break;
+    case "pause": ok = pauseGame(); break;
+    case "resume": ok = resumeGame(); break;
+    case "retry":
+      ok = run.act("retry");
+      if (ok) { menu = null; captions.resume(); input.flush(); anchor(); if (sound) sound.resume(); }
+      break;
+    case "settings": case "stages": case "sources": case "tapTest":
+      menu = { name };
+      ok = screens.show(name, menuData());
+      break;
+    case "back":
+      menu = null;
+      if (run.paused) screens.show("pause", { soundOn: !muted });
+      else showRunScreen();
+      ok = true;
+      break;
+    case "mute": toggleMute(); ok = true; break;
+    case "setting": {
+      // ui/screens.js has set the live settings and written the save; the page follows what it owns
+      const key = arg && arg.key;
+      if (key === "motion") { updateMotion(); root.classList.toggle("reduced", motion.reduced); }
+      if (key === "largeText") { root.classList.toggle("large", !!settings.largeText); fitCapBand(); }
+      if (key === "captions" && settings.captions === false) captions.clear();
+      if (key === "offsetMs") input.flush({ resume: !!(run && run.paused) });   // a hold let go while paused still ends
+      if (key === "music") {
+        store.set(MUSIC_KEY, settings.music !== false);
+        if (music) music.setEnabled(settings.music !== false);
+        if (settings.music === false) dropMusicCaption();
+        else musicLoad();          // the samples it waited for (music exists only once Play has been tapped)
+      }
+      ok = true;
+      break;
+    }
+    case "practice": ensureAudio(); ok = goto(arg); break;
+    default: ok = run.act(name); break;
+  }
+  processEvents();
+  if (ok && (name === "play" || name === "again" || name === "practice")) musicLoad();   // after the stage starts
+  return ok;
+}
+
+function uiAct(name, arg) {
+  const ok = act(name, arg);
+  present();
+  if (ok && STARTS.has(name)) startClock();
+  return ok;
+}
+
+// A run started from a menu (Play, Play again, a practice stage) starts its clock once its first frame is up. That
+// frame bakes the stage's paper, which can stall the page for most of a second, so the stall is dropped as a long
+// frame drops time: core time goes on from run.t when the frame is up. It goes on the output latency (at most
+// 0.1 s) plus 10 ms after now, and her beats are scheduled at once, so the beat on the stage's first instant (her
+// heartbeat at Play) is scheduled on time, latency-early, and heard with its drawn beat. The scheduler's rule stays:
+// a beat already more than 20 ms late is dropped, never played late (ui/sound.js).
+function startClock() {
+  if (!realtime || !run || run.paused || !PLAYING.has(run.screen)) return;
+  const lat = sound ? Number(sound.stats().latencyS) : 0;
+  const lead = Math.max(0, Math.min(MAX_LEAD_S, fin(lat) ? lat : 0)) + START_LEAD_S;
+  wallBase = performance.now() - (run.t - lead) * 1000;
+  scheduleSound();
+}
+
+// ---- one fixed step
+function stepOnce(extra = null) {
+  const tEnd = run.t + DT;
+  let it;
+  if (botDriver) {
+    const c = botDriver.choose(run.screen);
+    if (c) act(c);
+    input.intents(tEnd);                       // live input is dropped while the bot drives
+    const live = PLAYING.has(run.screen) && run.state && !run.paused;
+    it = live ? shiftIntents(botDriver.intents(run.mod, run.state), -run.stageStart) : makeIntents();
+  } else {
+    it = input.intents(tEnd);
+    for (const k of HELD) if (held[k] !== undefined) it[k] = held[k];
+    if (extra) for (const k of HELD) if (extra[k] !== undefined) it[k] = extra[k];
+  }
+  // the ending goes on to the run result on a tap from 29 s (design 6.9): a quick touch or click in the play area
+  const skip = !botDriver && run.screen === "ending" && Array.isArray(it.taps)
+    && it.taps.some((p) => p && fin(p.t) && p.t - run.stageStart >= TIMERS.endingSkipS - 1e-9);
+  run.step(it);
+  processEvents();
+  if (skip) act("skip");
+}
+
+// ... or a quick Space or Enter (down and up within 0.25 s), taken at the key's release, so the key never reaches a
+// button of the result
+let endingKey = null;
+const ENDING_KEYS = new Set(["Space", "Enter", "NumpadEnter"]);
+window.addEventListener("keydown", (e) => {
+  if (ENDING_KEYS.has(e.code) && !e.repeat) endingKey = run && run.screen === "ending" ? { code: e.code, at: e.timeStamp } : null;
+}, true);
+window.addEventListener("keyup", (e) => {
+  const k = endingKey;
+  if (!k || k.code !== e.code) return;
+  endingKey = null;
+  if (!(e.timeStamp - k.at <= 250) || !run || run.paused || run.screen !== "ending" || !run.state) return;
+  if (run.state.t >= TIMERS.endingSkipS - 1e-9 && uiAct("skip")) e.preventDefault();
+}, true);
+
+// ---- the picture, the rings, the HUD
+const MM_TEXT = [[1000, "1 m"], [100, "10 cm"], [10, "1 cm"], [1, "1 mm"], [0.1, "0.1 mm"]];
+function scaleText(scale) {
+  if (!scale) return "";
+  if (typeof scale.you === "string") return say("hud.you", { size: scale.you }, settings);
+  if (fin(scale.mm)) {
+    for (const [v, t] of MM_TEXT) if (Math.abs(scale.mm - v) < 1e-9) return t;
+    return scale.mm >= 10 ? scale.mm / 10 + " cm" : scale.mm + " mm";
+  }
+  return "";
+}
+
+// The scale bar for the HUD: { text, px } with px the bar's round length drawn at the camera's px per mm (the size
+// line of stages 1 and 2 is text only).
+function scaleBar(view) {
+  const text = scaleText(view.scale);
+  if (!text || !view.scale || !fin(view.scale.mm)) return text;
+  const c = view.camera || {};
+  const px = fin(c.mmPerU) && c.mmPerU > 0 && fin(camera.pxPerU) ? (view.scale.mm / c.mmPerU) * camera.pxPerU : null;
+  return fin(px) ? { text, px: Math.round(px) } : text;
+}
+
+function liveScore() {
+  const sum = run.summary();
+  const id = run.stageId;
+  let total = runTotal(sum.stages.filter((s) => s.id !== id));
+  const mine = sum.stages.find((s) => s.id === id);
+  // Birth (the runner, design.md 5.8) counts live like the other stages; it still has no stage-end overlay (6.8)
+  if (run.screen === "stage" && run.mod && run.mod.meta.scored && run.state) {
+    const r = run.result();
+    const live = r && r.score && fin(r.score.total) ? r.score.total : 0;
+    total += Math.max(live, mine ? mine.score.total : 0);
+  } else if (mine) total += mine.score.total;
+  return total;
+}
+
+// Keys or touch: the prompt names keys on a desktop (a fine pointer, a mouse or a key used last) and gestures on
+// touch (a touch or pen used last). A prompt's textKeys, else its text id + ".keys" or + "Keys" when registered
+// (turn.breathe.keys, egg.guardKeys), is the desktop form.
+let device = (() => {
+  try { return window.matchMedia && window.matchMedia("(hover: hover) and (pointer: fine)").matches ? "keys" : "touch"; }
+  catch (e) { return "touch"; }
+})();
+let lastTouch = null;                 // { x, y } CSS px of the last touch-down in the play area (the ending's thumb ring)
+window.addEventListener("pointerdown", (e) => {
+  device = e.pointerType === "mouse" ? "keys" : "touch";
+  if (e.pointerType !== "mouse") lastTouch = { x: e.clientX, y: e.clientY };
+}, true);
+window.addEventListener("keydown", () => { device = "keys"; }, true);
+
+// A string id's desktop form, "<id>.keys" or "<id>Keys", when registered (else null).
+const keysForm = (id) => [id + ".keys", id + "Keys"].find((k) => has(k)) || null;
+// The id a caption or sub-goal line shows: on a desktop its desktop form, when there is one (root.yours.keys).
+const sayForm = (id) => (device === "keys" && keysForm(id)) || id;
+
+// One-button mode (16.4): any key or touch is the button and the run steers, so a drag, drag-and-hold or move prompt says
+// to hold, with no arrows, mouse or drag: the prompt's "<text>.one". Every drag or drag-and-hold prompt that names
+// a drag, an arrow or the mouse has one (prompts.test.mjs); the others ("Ride the waves.", "Rest.") keep their words,
+// as does a tap or hold prompt (Space is a key, and a tap is a touch).
+function promptText(p) {
+  if (!p || !p.text) return null;
+  if (settings.oneButton && (p.gesture === "drag" || p.gesture === "dragHold" || p.gesture === "move") && has(p.text + ".one")) {
+    return textOf(p.text + ".one");
+  }
+  if (device === "keys") {
+    const k = (has(p.textKeys) && p.textKeys) || keysForm(p.text);
+    if (k) return textOf(k);
+  }
+  return textOf(p.text);
+}
+
+// Does the prompt line show this line now: the same string id (in its touch or desktop form), or the same words?
+function promptShows(id) {
+  if (!PLAYING.has(run.screen) || !run.state) return false;
+  const p = run.mod.prompt(run.state) || {};
+  if (!p.text) return false;
+  if (p.text === id || p.textKeys === id) return true;
+  const line = promptText(p), said = textOf(sayForm(id));
+  return !!line && line === said;
+}
+
+function promptLine() {
+  if (!PLAYING.has(run.screen) || !run.state) return null;
+  const p = run.mod.prompt(run.state) || {};
+  if (!p.text) return null;                    // a line with no gesture ("Wait here. The egg is coming.") shows too
+  const text = promptText(p);
+  return text ? { text, gesture: p.gesture, keys: device === "keys" } : null;
+}
+
+let hudPromptKey = null;
+const fmtLen = (n) => (fin(n) ? Math.round(n).toLocaleString("en-US").length : String(n ?? "").length);
+function updateHud(view) {
+  const st = run.state, mod = run.mod;
+  const v = {
+    stageName: mod ? mod.meta.name : "",
+    clock: st && mod !== ENDING ? gaLabel(st.gaDay, { fertilized: !!st.fertilized }) : "",
+    score: mod && mod.meta.scored ? liveScore() : "",
+    place: run.stageId === "swim" ? placeText : null,
+    race: run.stageId === "swim" && PLAYING.has(run.screen) ? raceText : null,
+    scale: mod && mod !== ENDING ? scaleBar(view) : "",
+    prompt: promptLine(),
+    hp: PLAYING.has(run.screen) && view && view.action && view.action.hp
+      ? { ...view.action.hp, label: say("hud.hp", { n: view.action.hp.n, max: view.action.hp.max }, settings) } : null,
+    // the boss bar: the stage's label id (its aria-label) or the shared one, with the share left in whole percent
+    boss: PLAYING.has(run.screen) && view && view.action && view.action.boss
+      ? { ...view.action.boss, label: say(view.action.boss.label || "hud.boss", { n: Math.round(100 * view.action.boss.hp) }, settings) } : null,
+  };
+  hud.set(v);
+  // the words set the HUD's height: measure its bottom again when a line changes, or the score gets a digit (a wider
+  // score narrows the left block, and the clock may wrap); the ResizeObserver also does, at the next frame, and this
+  // keeps the caption band right in the same frame
+  const sc = v.scale && typeof v.scale === "object" ? v.scale.text : v.scale;
+  // in landscape the bar's length (to 8 px) too: the scale tag's right edge keeps the caption band clear of it
+  const scPx = vw > vh && v.scale && typeof v.scale === "object" && fin(v.scale.px) ? Math.round(v.scale.px / 8) : "";
+  const key = [run.stageId, hudRoot.hidden, v.stageName, v.clock, fmtLen(v.score), v.place, sc, scPx,
+    v.prompt ? v.prompt.text : "", v.boss ? "boss" : "", v.hp ? v.hp.max : ""].join("|");
+  if (key !== hudPromptKey) { hudPromptKey = key; trackHud(); }
+}
+
+function updateStick() {
+  const s = input.stick;
+  const g = input.live().gesture;
+  const show = s.on && run.screen === "stage" && !run.paused && (g === "drag" || g === "dragHold" || g === "move");
+  if (stickEl.hidden !== !show) stickEl.hidden = !show;
+  if (show) stickEl.style.transform = `translate(${s.ox.toFixed(1)}px, ${s.oy.toFixed(1)}px)`;
+}
+
+// The HUD's bottom (CSS px) as --hud-b, for the portrait caption band under the prompt line (style.css). Within a
+// stage it only moves down, so a caption never jumps up when the prompt line hides between moments.
+let hudB = 0, hudBStage = null;
+// Two more for style.css: --hud-tags-b, the bottom of the HUD's corner blocks without the prompt line (the in-world
+// overlay and Almost card sit under it in portrait), and --scale-r, the right edge of the scale tag at the bottom left
+// in landscape (the caption band keeps clear of it; like --hud-b it only grows within a stage, so a caption never
+// jumps as the bar's length changes with the zoom).
+let scaleR = 0;
+function trackHud() {
+  if (hudRoot.hidden) return;
+  const b = Math.ceil(hudRoot.getBoundingClientRect().bottom);
+  const stage = run ? run.stageId : null;
+  const same = stage === hudBStage;
+  const next = same ? Math.max(hudB, b) : b;
+  hudBStage = stage;
+  if (next !== hudB || !root.style.getPropertyValue("--hud-b")) { hudB = next; root.style.setProperty("--hud-b", hudB + "px"); }
+  let tags = 0;
+  for (const el of hudRoot.querySelectorAll(".hud-left, .hud-right")) tags = Math.max(tags, el.getBoundingClientRect().bottom);
+  root.style.setProperty("--hud-tags-b", Math.ceil(tags) + "px");
+  const sc = hudRoot.querySelector('[data-hud="scale"]');
+  const r = sc && !sc.hidden && getComputedStyle(sc).position === "fixed" ? Math.ceil(sc.getBoundingClientRect().right) : 0;
+  const nextR = same ? Math.max(scaleR, r) : r;
+  if (nextR !== scaleR || !root.style.getPropertyValue("--scale-r")) { scaleR = nextR; root.style.setProperty("--scale-r", scaleR + "px"); }
+}
+if (typeof ResizeObserver === "function") new ResizeObserver(trackHud).observe(hudRoot);
+
+let stageAttr = null;
+function present(frameStart) {
+  const view = run.view();
+  lastView = view;
+  camera = makeCamera(vw, vh, view.camera);
+  renderer.draw(view, fin(frameStart) ? { frameStart } : {});
+  rings.draw(view.rings, camera, motion, view.stage, { lastTouch, device, safe });
+  pops.draw(PLAYING.has(run.screen) && view.action ? view.action.pops : null, camera);
+  updateHud(view);
+  updateStick();
+  const sa = run.stageId || "title";
+  if (sa !== stageAttr) { root.dataset.stage = sa; stageAttr = sa; fitCapBand(); }
+  steerCapBand(view);
+}
+
+// In portrait the caption band of stages 1, 3, 4 and 7 sits under the subject's body, to 60% (design.md 9, style.css
+// reads --cap-top). The body's reach from the subject point grows with the width (the camera fits its span across
+// it): BODY_REACH gives, per stage, the subject point's share of the height, the 390 × 844 band top, and the body's
+// greatest reach over the stage above and below the subject point as shares of the width (measured with the ref bot
+// at 320 × 568 to 820 × 1180). The band starts 8 px under the body, but never so low that one caption line no longer
+// fits above 60%. When that still covers the body by more than 12 px (a tablet) and the top band, 8 px under the HUD,
+// covers less of it, the captions move there: html[data-capband="top"]. Set at each stage change, resize and Large
+// text change.
+const BODY_REACH = {
+  swim: { at: 0.45, top: 0.52, up: 0.02, down: 0.127 },
+  split: { at: 0.45, top: 0.53, up: 0.152, down: 0.152 },
+  root: { at: 0.45, top: 0.55, up: 0.43, down: 0.187 },
+  turn: { at: 0.42, top: 0.53, up: 0.195, down: 0.215 },
+};
+const CAP_SLACK = 12;
+const CAP_BACK_S = 0.8;      // the body clear of the home band this long (game time) brings the captions back
+let capTopPx = null;
+let capLowPx = null;         // the low band's top as set: capTopPx, raised for a caption that would end below 60%
+let capHome = "low";         // the band fitCapBand chose for this stage and screen ("low" or "top")
+let capClearAt = null;
+function fitCapBand() {
+  if (root.dataset.capband) delete root.dataset.capband;
+  const b = BODY_REACH[stageAttr];
+  capTopPx = null;
+  if (!b || vh < vw) { root.style.removeProperty("--cap-top"); return; }
+  const cap = parseFloat(getComputedStyle(root).getPropertyValue("--cap")) || 18;
+  const line = cap * 1.22 + 7;
+  const want = Math.max(b.top * vh, b.at * vh + b.down * vw + 8);    // 8 px under the body's lowest point
+  const top = Math.min(want, 0.6 * vh - line);                        // one line still fits above 60%
+  capTopPx = Math.round(top);
+  capLowPx = capTopPx;
+  root.style.setProperty("--cap-top", capTopPx + "px");
+  const under = want - top;                                           // how far a caption there reaches into the body
+  capHome = "low";
+  capClearAt = null;
+  if (under <= CAP_SLACK) return;
+  const over = hudB + 8 + 0.08 * vh - (b.at * vh - b.up * vw);        // ... and a caption in the top band
+  if (over <= CAP_SLACK && over < under) { root.dataset.capband = "top"; capHome = "top"; }
+}
+
+// ... and as the stage goes on: when the subject's body, as drawn this frame, reaches the band the captions are in
+// and the other band is clear of it, they move there (stage 4's body is tall in its roots and grows down by its
+// end). The body is your sperm's head and tail in stage 1, else the figure, the heart, the cells by the subject and
+// the disc that holds it (renderer.lastBodies).
+function bodyBox(view) {
+  const a = view && view.anchor && fin(view.anchor.x) ? camera.toScreen(view.anchor.x, view.anchor.y) : null;
+  if (!a) return null;
+  if (stageAttr === "swim") { const k = Math.min(vw, vh) / 150; return { t: a.y - 3 * k, b: a.y + 19 * k }; }
+  let t = Infinity, b = -Infinity;
+  for (const s of renderer.lastBodies || []) {
+    const d = Math.hypot(s.x - a.x, s.y - a.y);
+    if (s.kind === "figure" || s.kind === "heart" || (s.kind === "cells" && d < 70) || (s.kind === "solo" && d <= s.r + 2 && s.r < 80)) {
+      t = Math.min(t, s.y - s.r);
+      b = Math.max(b, s.y + s.r);
+    }
+  }
+  return b > t ? { t, b } : null;
+}
+function steerCapBand(view) {
+  if (capTopPx === null || !PLAYING.has(run.screen)) return;
+  // a caption taller than the low band rises in it (never above the stage's own band top), so it still ends above
+  // 60% (a two-line caption on a tablet, where the body's reach sets the band low)
+  const el = document.querySelector("#captions .cap"), reach = BODY_REACH[stageAttr];
+  const capH = el ? el.getBoundingClientRect().height : 0;
+  const low = Math.round(Math.max(reach ? reach.top * vh : 0, Math.min(capTopPx, 0.6 * vh - capH - 1)));
+  if (low !== capLowPx) { capLowPx = low; root.style.setProperty("--cap-top", low + "px"); }
+  const box = bodyBox(view);
+  if (!box) return;
+  const inTop = root.dataset.capband === "top";
+  const topBand = [hudB + 8, hudB + 8 + 0.08 * vh], lowBand = [capLowPx, 0.6 * vh];
+  const hits = ([y0, y1]) => Math.max(0, Math.min(y1, box.b) - Math.max(y0, box.t));
+  const here = inTop ? topBand : lowBand, there = inTop ? lowBand : topBand;
+  // a body that roams (stage 7's arena) may only graze the band: move off it as soon as the other band is clearer
+  if (hits(here) > 0.5 && hits(there) < hits(here)) {
+    if (inTop) delete root.dataset.capband; else root.dataset.capband = "top";
+    capClearAt = null;
+    return;
+  }
+  // ... and back to the stage's own band once the body has left it (12 px to spare) for CAP_BACK_S: a player who
+  // dips low in the womb and comes back up gets the captions back in their band
+  if ((capHome === "top") === inTop) { capClearAt = null; return; }
+  const home = capHome === "top" ? topBand : lowBand;
+  if (hits([home[0] - CAP_SLACK, home[1] + CAP_SLACK]) > 0) { capClearAt = null; return; }
+  if (capClearAt === null || capClearAt > run.t) capClearAt = run.t;
+  else if (run.t - capClearAt >= CAP_BACK_S) {
+    if (capHome === "top") root.dataset.capband = "top"; else delete root.dataset.capband;
+    capClearAt = null;
+  }
+}
+
+// ---- the loop: fixed steps with an accumulator, then one draw
+function frame() {
+  if (stopped) return;
+  requestAnimationFrame(frame);
+  const t0 = performance.now();
+  if (realtime && !run.paused) {
+    let target = (t0 - wallBase) / 1000;
+    if (target - run.t > MAX_BEHIND_S) { wallBase += (target - run.t - MAX_BEHIND_S) * 1000; target = run.t + MAX_BEHIND_S; }
+    let n = 0;
+    while (run.t + DT <= target + 1e-9 && n < MAX_STEPS) { stepOnce(); n++; }
+  } else anchor();
+  present(t0);
+  frames++;
+  if (FLAGS.freeze) stopped = true;
+}
+
+// ---- the page's own keys (menus, pause, mute, captions); ui/input.js reads the game keys
+window.addEventListener("keydown", (e) => {
+  if (e.repeat || !run) return;
+  if (e.target && e.target.closest && e.target.closest("input, select, textarea")) return;
+  // The game switcher is a dialog over the title or pause: while it is open no game key acts (P would resume the run
+  // behind it), and Esc closes it, also when the focus has left it; the focus goes back to its Switch game button.
+  const gs = window.GameSwitch;
+  if (gs && gs.isOpen) {
+    if (e.code === "Escape") {
+      e.preventDefault();
+      gs.close();
+      const back = document.querySelector("#screens .screen:not([hidden]) [data-switch]");
+      if (back) { try { back.focus({ preventScroll: true }); } catch (err) { /* not focusable */ } }
+    }
+    return;
+  }
+  if (e.code === "Escape" || e.code === "KeyP") {
+    if (menu) uiAct("back");
+    else if (run.paused) uiAct("resume");
+    else if (pauseGame()) present();
+    if (e.code === "Escape") e.preventDefault();
+    return;
+  }
+  if (e.code === "KeyM") { toggleMute(); return; }
+  if (e.code === "KeyC") {
+    settings.captions = settings.captions === false;
+    if (!settings.captions) captions.clear();
+    saveSetting("captions");
+    if (screens.current === "settings") showSettingsAgain();
+  }
+});
+pauseBtn.addEventListener("click", (e) => { e.stopPropagation(); if (pauseGame()) present(); });
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden" && pauseGame()) present(); });
+window.addEventListener("pagehide", () => { if (pauseGame()) present(); });
+window.addEventListener("resize", () => {
+  vw = Math.max(1, window.innerWidth);
+  vh = Math.max(1, window.innerHeight);
+  readSafe();
+  hudBStage = null;                  // the HUD's bottom is measured again for the new size
+  renderer.resize(vw, vh);
+  present();
+  trackHud();
+  fitCapBand();
+});
+
+// ---- the test hook (16.9); every time it takes or returns is in stage seconds
+function screenOf(cam, p) {
+  return p && fin(p.x) && fin(p.y) ? cam.toScreen(p.x, p.y) : null;
+}
+
+// A copy of a probe with `screen` px beside every world point.
+function mapProbe(obj, cam) {
+  if (Array.isArray(obj)) return obj.map((v) => mapProbe(v, cam));
+  if (!obj || typeof obj !== "object") return obj;
+  const out = {};
+  for (const [k, v] of Object.entries(obj)) out[k] = mapProbe(v, cam);
+  if (fin(obj.x) && fin(obj.y)) out.screen = cam.toScreen(obj.x, obj.y);
+  return out;
+}
+
+function probeOf(id) {
+  if (run.stageId !== id || !run.state || !PLAYING.has(run.screen)) return null;
+  const p = run.mod.probe(run.state);
+  if (!p) return null;
+  const cam = makeCamera(vw, vh, run.view().camera);
+  const out = mapProbe(p, cam);
+  if (id === "egg" && out.arc && fin(out.arc.angle)) out.arc.screenAngle = cam.screenAngle(out.arc.angle);
+  return out;
+}
+
+function fbState() {
+  const st = run.state, mod = run.mod;
+  const view = run.view();
+  const cam = makeCamera(vw, vh, view.camera);
+  const res = st ? run.result() : null;
+  const total = res && res.score && fin(res.score.total) ? res.score.total : null;
+  const playing = PLAYING.has(run.screen) && st;
+  const pr = playing ? mod.prompt(st) || null : null;
+  return {
+    screen: run.screen,
+    stage: mod ? (mod === ENDING ? "ending" : mod.meta.index + 1) : null,
+    stageId: run.stageId,
+    moment: st ? st.moment : null,
+    t: st ? st.t : null,
+    gaDay: run.gaDay,
+    label: st && mod !== ENDING ? gaLabel(st.gaDay, { fertilized: !!st.fertilized }) : null,
+    fertilized: st ? !!st.fertilized : false,
+    score: total,
+    runScore: run.summary().total,
+    grade: res && res.done && mod.meta.scored ? gradeOf(total || 0, !!res.goalMet) : null,
+    prompt: pr ? { ...pr, line: promptText(pr) } : null,
+    subgoals: st && st.subgoals ? { ...st.subgoals } : {},
+    paused: run.paused,
+    seed: run.seed,
+    settings: { ...settings },
+    anchor: screenOf(cam, view.anchor),
+    cue: screenOf(cam, view.cue),
+    ms: run.ms,
+    place: run.stageId === "swim" ? placeText : null,
+    frames,
+    realtime,
+    practice: run.practice,
+    done: run.done,
+    live: input.live(),
+    judges: judges.slice(-8),
+    stageStart: run.state ? run.stageStart : null,
+    device,
+    tier: FLAGS.q,
+  };
+}
+
+// Queue a timed press or release at the next target of these kinds (stage time), else now.
+function injectAt(kinds, errMs, events) {
+  if (!run.state || !PLAYING.has(run.screen)) return null;
+  const list = (run.mod.targets(run.state, 60) || []).filter((x) => kinds.includes(x.kind)).sort((a, b) => a.t - b.t);
+  const tgt = list[0] || null;
+  const tS = tgt ? tgt.t + (fin(errMs) ? errMs : 0) / 1000 : run.state.t;
+  const off = (fin(settings.offsetMs) ? settings.offsetMs : 0) / 1000;
+  const ss = run.stageStart;
+  input.inject(events.map(([type, dt]) => ({ type, t: tS + dt + ss, raw: tS + dt + ss + off })));
+  return { t: tS, target: tgt ? tgt.id : null };
+}
+
+function visible(e) {
+  if (!e.getClientRects().length) return false;
+  const cs = getComputedStyle(e);
+  return cs.visibility !== "hidden" && cs.display !== "none";
+}
+
+window.__fb = {
+  state: fbState,
+  goto(stage, opts = {}) { const ok = goto(stage, opts || {}); present(); return ok; },
+  jump(moment) { const ok = run.jump(moment); processEvents(); present(); return ok; },
+  realtime(on) { realtime = !!on && !FLAGS.freeze; anchor(); return realtime; },
+  step(n = 1, intents = null) {
+    const k = Math.max(0, Math.floor(Number(n) || 0));
+    let extra = null;
+    if (intents && typeof intents === "object") {
+      const ss = run.stageStart;
+      const ev = [];
+      for (const p of intents.presses || []) if (p && fin(p.t)) ev.push({ type: "press", t: p.t + ss, raw: fin(p.raw) ? p.raw + ss : undefined });
+      for (const p of intents.releases || []) if (p && fin(p.t)) ev.push({ type: "release", t: p.t + ss, raw: fin(p.raw) ? p.raw + ss : undefined });
+      for (const p of intents.taps || []) if (p && fin(p.t)) ev.push({ type: "tap", t: p.t + ss });
+      input.inject(ev);
+      extra = {};
+      for (const key of HELD) if (key in intents) extra[key] = intents[key];
+    }
+    for (let i = 0; i < k && !run.paused; i++) stepOnce(extra);
+    anchor();
+    present();
+    return fbState();
+  },
+  input(partial) {
+    if (!partial) held = {};
+    else for (const k of HELD) if (k in partial) { if (partial[k] === undefined) delete held[k]; else held[k] = partial[k]; }
+    return { ...held };
+  },
+  tap({ errMs = 0 } = {}) { return injectAt(["tap", "press"], errMs, [["press", 0], ["release", TAP_LIFT_S]]); },
+  press({ errMs = 0 } = {}) { return injectAt(["tap", "press"], errMs, [["press", 0]]); },
+  release({ errMs = 0 } = {}) { return injectAt(["release"], errMs, [["release", 0]]); },
+  nextTarget() {
+    if (!run.state || !PLAYING.has(run.screen)) return null;
+    const x = (run.mod.targets(run.state, 60) || []).slice().sort((a, b) => a.t - b.t)[0];
+    return x ? { t: x.t, P: x.P, kind: x.kind, heart: x.heart, id: x.id } : null;
+  },
+  bot(skill) {
+    botDriver = skill === false || skill === null || skill === undefined ? null : createBot(Number(skill), run.seed);
+    return !!botDriver;
+  },
+  finish() { const ok = run.finish(); processEvents(); present(); return ok; },
+  retry() { return uiAct("retry"); },
+  skip() { return uiAct("skip"); },
+  act(name, arg = null) { return uiAct(name, arg); },
+  result() { return run.screen === "result" ? run.summary() : run.result(); },
+  targets() {
+    const boxes = [];
+    for (const e of document.querySelectorAll("button, a[href], input, select, textarea, [data-act], [tabindex]")) {
+      if (!visible(e)) continue;
+      const r = e.getBoundingClientRect();
+      boxes.push({ id: e.id || null, act: e.dataset.act || null, text: (e.textContent || "").trim().slice(0, 48),
+        x: r.left, y: r.top, w: r.width, h: r.height });
+    }
+    const s = fbState();
+    return { boxes, anchor: s.anchor, cue: s.cue };
+  },
+  facts() { return run.summary().facts; },
+  race() { return probeOf("swim"); },
+  guard() { return probeOf("egg"); },
+  get perf() { return { ...renderer.perf }; },
+  get sound() {
+    const s = sound ? sound.stats() : { state: "none", cutoffHz: null, scheduled: { mother: 0, you: 0 }, muted, voices: 0, latencyS: 0 };
+    return { state: s.state, cutoffHz: s.cutoffHz, hearing, beats: { mother: recent.mother.slice(), you: recent.you.slice() },
+      scheduled: { ...s.scheduled }, muted: s.muted, voices: s.voices, latencyS: s.latencyS,
+      // the last context times her beats and yours were scheduled at (heard time less the latency), as music.bars[].at
+      times: s.times ? { mother: (s.times.mother || []).slice(), you: (s.times.you || []).slice() } : null };
+  },
+  // the score: ui/music.js's stats, plus want (the cue main.js asked for) and setting (the Music setting)
+  get music() { return music ? { ...music.stats(), want: musicCue, setting: settings.music !== false } : null; },
+  get motion() { return { ...motion }; },
+  lum() { return renderer.lum(); },
+  save() { return parse(save); },
+};
+
+// ---- boot
+newRun("new");
+if (FLAGS.stage) goto(FLAGS.stage);
+present();
+requestAnimationFrame(frame);
+setInterval(scheduleSound, SOUND_TICK_MS);

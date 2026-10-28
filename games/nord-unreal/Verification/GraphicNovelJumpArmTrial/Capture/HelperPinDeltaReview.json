@@ -1,0 +1,41 @@
+{
+  "passed": true,
+  "reviewer": "Independent /root/style_review",
+  "scope": "Only the pinned native-helper digest changed in the capture factory; the corrected native track logic is reviewed and tested separately by its owner.",
+  "previous_factory": {
+    "path": "Saved/Tests/GraphicNovel/PrivateJumpArmPlan-20261017/BeforeNativeTrackFix-518196d0-prepare_capture.py",
+    "sha256": "518196d00494d1e5c0c81d05d18849738de8906a9514d69a7efa26baaadbd37a"
+  },
+  "current_factory": {
+    "path": "Saved/Tests/GraphicNovel/PrivateJumpArmPlan-20261017/prepare_capture.py",
+    "sha256": "c35672300abaeeb178f3348d46d836c1f53f8e55ee15a75e25ace83808ef56ea"
+  },
+  "old_helper_pin": "53357cb83b891afc9624af4b391f49d1e0fccd2d899a869dad10afa70960a798",
+  "new_helper_pin": "81110214ce1c2a14c1348bf44ef0377046651a139fde3a00bcc0959cb7110679",
+  "actual_helper": {
+    "path": "Saved/Tests/GraphicNovel/PrivateJumpArmPlan-20261017/native_trial.py",
+    "sha256": "81110214ce1c2a14c1348bf44ef0377046651a139fde3a00bcc0959cb7110679"
+  },
+  "textual_delta_exactly_one_digest": true,
+  "AST_equal_after_one_constant_replacement": true,
+  "fixture_guards_cameras_settings_and_manager_unchanged_by_this_pin_update": true,
+  "executed_CPU_checks": [
+    {
+      "command": "python3 Saved/Tests/GraphicNovel/PrivateJumpArmPlan-20261017/test_capture_factory.py",
+      "source_sha256": "d0fb9ece6b7576947cc2cacd31e9d794d2a3741f5de0b5a0c119a69eae15c7e4",
+      "passed": true
+    },
+    {
+      "command": "python3 Saved/Tests/GraphicNovel/PrivateJumpArmPlan-20261017/test_adopt_capture.py",
+      "source_sha256": "cb448fa4a3fc1419ef257386cb6dbca2c04538d776e6cb0760adab17ddf6a958",
+      "passed": true
+    }
+  ],
+  "factory_CPU_receipt": {
+    "path": "Saved/Tests/GraphicNovel/PrivateJumpArmPlan-20261017/capture-cpu-check.json",
+    "sha256": "86b409dba5b90e88e90af7b59b03343891b6c5aba8f86d01e1d0ae537b4b9c18"
+  },
+  "adoption_model": "One safe adoption success; nine unsafe-world/route/pin cases reject; no begin/end-play call in the adoption function.",
+  "native_or_service_execution_by_reviewer": false,
+  "current_factory_and_trial_window_unchanged_during_curation": true
+}

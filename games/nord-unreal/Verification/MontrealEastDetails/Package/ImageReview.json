@@ -1,0 +1,290 @@
+{
+  "reviewer": "Independent /root/style_review",
+  "reviewed_utc": "2026-10-17T14:19:47.979803+00:00",
+  "verdict": "PASS_SCOPED_PACKAGE_STARTUP_RENDERING_AND_READABILITY",
+  "all_actual_images_viewed": 14,
+  "scope": "No blank/error viewport or obvious new missing/checkerboard asset; both districts have readable HUD, mini-map, attribution, objective, jump and car prompts.",
+  "images": [
+    {
+      "district": "montreal",
+      "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T141409Z/Package/montreal-standalone/User/Saved/Screenshots/Linux/NordComic_Car.png",
+      "sha256": "aa9007966af9e88c67fd178fef800e19a2560f3e88aae33a4c2aac29f0128d82",
+      "dimensions": [
+        1280,
+        720
+      ],
+      "actual_pixels_viewed": true,
+      "observation": "Car, road, facades and trees render; exit/speed/HUD legible. Large foreground tree trunk obstructs right-center scene: camera composition not approved."
+    },
+    {
+      "district": "montreal",
+      "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T141409Z/Package/montreal-standalone/User/Saved/Screenshots/Linux/NordComic_East.png",
+      "sha256": "05a5025136d13420abdc1f1c8978df4c7a6ed84771d1cedf947d29a54175cac9",
+      "dimensions": [
+        1280,
+        720
+      ],
+      "actual_pixels_viewed": true,
+      "observation": "Default skull-shirt body/red prop, windows/brick/stairs and tree shadows render with readable HUD; generic character/rig quality remains."
+    },
+    {
+      "district": "montreal",
+      "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T141409Z/Package/montreal-standalone/User/Saved/Screenshots/Linux/NordComic_Jump.png",
+      "sha256": "8c267d8c717c20babac82afbdd62dff3fcf77dbedfa437b48e293b2a67c0bdec",
+      "dimensions": [
+        1280,
+        720
+      ],
+      "actual_pixels_viewed": true,
+      "observation": "Airborne default body, prop, HOP burst and frontage render; readable HUD. Single state cannot establish motion quality."
+    },
+    {
+      "district": "montreal",
+      "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T141409Z/Package/montreal-standalone/User/Saved/Screenshots/Linux/NordComic_North.png",
+      "sha256": "cceadd20832caa5b2d2ac61df301d2590abaeda3c8f90bec7d57420ac78258f6",
+      "dimensions": [
+        1280,
+        720
+      ],
+      "actual_pixels_viewed": true,
+      "observation": "Parked cars, intersection, facades, trees, mini-map/attribution/objective readable. Thin outlined curb edge visible."
+    },
+    {
+      "district": "montreal",
+      "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T141409Z/Package/montreal-standalone/User/Saved/Screenshots/Linux/NordComic_West.png",
+      "sha256": "d6c53654088b4229f4f3d5bca9be740a6f7e8fed8a030f07b63e372e107d8010",
+      "dimensions": [
+        1280,
+        720
+      ],
+      "actual_pixels_viewed": true,
+      "observation": "Opposite frontage/trees/cars and body render; readable HUD. Existing repetitive distant shell and outlined ground joins remain."
+    },
+    {
+      "district": "montreal",
+      "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T141409Z/Package/montreal-standalone/User/Saved/Screenshots/Linux/NordRealistic_East.png",
+      "sha256": "becb929885b29e05a52a0d56afaf5c62d963ab926cb4d6503ff5c59bf0ee7d6a",
+      "dimensions": [
+        1280,
+        720
+      ],
+      "actual_pixels_viewed": true,
+      "observation": "Standard brick/windows/stairs/tree shadows and moving default body/prop render; readable HUD, no obvious missing asset."
+    },
+    {
+      "district": "montreal",
+      "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T141409Z/Package/montreal-standalone/User/Saved/Screenshots/Linux/NordRealistic_North.png",
+      "sha256": "0727201d22f1d064993925d8ef8a5d0d055f304155d8f974f926d3fde5f16fe8",
+      "dimensions": [
+        1280,
+        720
+      ],
+      "actual_pixels_viewed": true,
+      "observation": "Standard street/trees/cars and default body/prop render with legible HUD. Stills provide no animation fluidity or camera-clearance proof."
+    },
+    {
+      "district": "toronto",
+      "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T141409Z/Package/toronto-standalone/User/Saved/Screenshots/Linux/NordComic_Car.png",
+      "sha256": "492d7a93db2a9a72fe08494f2a460535d1b173c56f1b29dc9fff4787732a4ef2",
+      "dimensions": [
+        1280,
+        720
+      ],
+      "actual_pixels_viewed": true,
+      "observation": "Car/rails/road markings and shell corridor render; free-roam, attribution, mini-map, exit/speed/control HUD readable. Sparse frontage and distant empty horizon remain."
+    },
+    {
+      "district": "toronto",
+      "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T141409Z/Package/toronto-standalone/User/Saved/Screenshots/Linux/NordComic_East.png",
+      "sha256": "04d69357a6ff4ad826a7a25835f11c9ca0130f6e3cdb77bf41aaed5535030872",
+      "dimensions": [
+        1280,
+        720
+      ],
+      "actual_pixels_viewed": true,
+      "observation": "Original landmark stone/windows/door and cropped forward-reading fascia render. Existing paving joins and empty corridor remain."
+    },
+    {
+      "district": "toronto",
+      "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T141409Z/Package/toronto-standalone/User/Saved/Screenshots/Linux/NordComic_Jump.png",
+      "sha256": "ac1715ae1819ce71b7813414308c367591551c792259578d710a61a6c572b70c",
+      "dimensions": [
+        1280,
+        720
+      ],
+      "actual_pixels_viewed": true,
+      "observation": "Corrected SNEAKY DEE'S lettering reads forward with left edge cropped; cladding/trim, body/prop and HOP burst render. Does not frame all complete signs."
+    },
+    {
+      "district": "toronto",
+      "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T141409Z/Package/toronto-standalone/User/Saved/Screenshots/Linux/NordComic_North.png",
+      "sha256": "a5002b7ff6caeee507c7c85078d768735956c1a7e19edad55e17efa089eb3a66",
+      "dimensions": [
+        1280,
+        720
+      ],
+      "actual_pixels_viewed": true,
+      "observation": "Default character/car/shell frontage render; HUD readable. Generic character detail and thin diagonal paving joins remain."
+    },
+    {
+      "district": "toronto",
+      "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T141409Z/Package/toronto-standalone/User/Saved/Screenshots/Linux/NordComic_West.png",
+      "sha256": "e386b6aba540b0e4c6996f8a1269465f8aefc92a8e7ae6cd82826bb8c021dab0",
+      "dimensions": [
+        1280,
+        720
+      ],
+      "actual_pixels_viewed": true,
+      "observation": "Landmark windows/door/partial fascia and side corridor render; readable HUD. Shell facades, cropped signage and angular road joins remain."
+    },
+    {
+      "district": "toronto",
+      "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T141409Z/Package/toronto-standalone/User/Saved/Screenshots/Linux/NordRealistic_East.png",
+      "sha256": "65b26bde0333b3a2da74cf04e18f62cfd81c9455044a19e39c5eb36787c12272",
+      "dimensions": [
+        1280,
+        720
+      ],
+      "actual_pixels_viewed": true,
+      "observation": "Standard landmark stone/window/door materials, body/prop and car render; HUD readable. Sparse corridor remains."
+    },
+    {
+      "district": "toronto",
+      "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T141409Z/Package/toronto-standalone/User/Saved/Screenshots/Linux/NordRealistic_North.png",
+      "sha256": "5572f3bb025cb203e3df5d213555a3056de943ab9ab9edc4b4f205767543e920",
+      "dimensions": [
+        1280,
+        720
+      ],
+      "actual_pixels_viewed": true,
+      "observation": "Standard default body/shirt/hair/prop and shell/car assets render; HUD readable despite dark shell shadows."
+    }
+  ],
+  "renderer_settings_before_after": {
+    "montreal": {
+      "renderer_settings_before_cycle": {
+        "sg.ViewDistanceQuality": 3.0,
+        "sg.AntiAliasingQuality": 3.0,
+        "sg.ShadowQuality": 3.0,
+        "sg.GlobalIlluminationQuality": 3.0,
+        "sg.ReflectionQuality": 3.0,
+        "sg.PostProcessQuality": 3.0,
+        "sg.TextureQuality": 3.0,
+        "sg.EffectsQuality": 3.0,
+        "sg.FoliageQuality": 3.0,
+        "sg.ShadingQuality": 3.0,
+        "sg.LandscapeQuality": 3.0,
+        "r.ScreenPercentage": 100.0
+      },
+      "renderer_settings_after_cycle": {
+        "sg.ViewDistanceQuality": 3.0,
+        "sg.AntiAliasingQuality": 3.0,
+        "sg.ShadowQuality": 3.0,
+        "sg.GlobalIlluminationQuality": 3.0,
+        "sg.ReflectionQuality": 3.0,
+        "sg.PostProcessQuality": 3.0,
+        "sg.TextureQuality": 3.0,
+        "sg.EffectsQuality": 3.0,
+        "sg.FoliageQuality": 3.0,
+        "sg.ShadingQuality": 3.0,
+        "sg.LandscapeQuality": 3.0,
+        "r.ScreenPercentage": 100.0
+      }
+    },
+    "toronto": {
+      "renderer_settings_before_cycle": {
+        "sg.ViewDistanceQuality": 3.0,
+        "sg.AntiAliasingQuality": 3.0,
+        "sg.ShadowQuality": 3.0,
+        "sg.GlobalIlluminationQuality": 3.0,
+        "sg.ReflectionQuality": 3.0,
+        "sg.PostProcessQuality": 3.0,
+        "sg.TextureQuality": 3.0,
+        "sg.EffectsQuality": 3.0,
+        "sg.FoliageQuality": 3.0,
+        "sg.ShadingQuality": 3.0,
+        "sg.LandscapeQuality": 3.0,
+        "r.ScreenPercentage": 100.0
+      },
+      "renderer_settings_after_cycle": {
+        "sg.ViewDistanceQuality": 3.0,
+        "sg.AntiAliasingQuality": 3.0,
+        "sg.ShadowQuality": 3.0,
+        "sg.GlobalIlluminationQuality": 3.0,
+        "sg.ReflectionQuality": 3.0,
+        "sg.PostProcessQuality": 3.0,
+        "sg.TextureQuality": 3.0,
+        "sg.EffectsQuality": 3.0,
+        "sg.FoliageQuality": 3.0,
+        "sg.ShadingQuality": 3.0,
+        "sg.LandscapeQuality": 3.0,
+        "r.ScreenPercentage": 100.0
+      }
+    }
+  },
+  "capture_report": {
+    "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T141409Z/Package/report.json",
+    "sha256": "253ad8aed2563cc6840801272a399010dde9afa047dc876f2a4a5d638fc30cf6",
+    "passed": true,
+    "archive_preserved": true,
+    "fixture_source_sha256": {
+      "Scripts/verify_district_package.py": "a7d8b5e82f1401479e8efed86f382969fec7c3ae6ba7739ec501b5917725941b",
+      "Scripts/package_inventory.py": "6e427a1b8aa90215a4b51f449188d1e5fca8720f42d3c9dac2139526ef1f9fc1",
+      "Scripts/render_log_guard.py": "fefcc6497b39deee609372ef6cedad98c0f7ad5deec1ddf027ed30d3e1541620",
+      "Data/Plateau/EastExtension/extension.json": "c19300127f80c9ebd4483610544acab9162a05280ab5a2717376c88c6770dcbf",
+      "Data/CollegeBathurst/SneakyDees/facade.json": "2f054cb949fc0f63da185a99e75ecc290fcba15b3c6b44511d467366b2bb49b3"
+    }
+  },
+  "window": {
+    "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T141409Z/window-status.json",
+    "sha256": "f5aa0269563ab7585d9178ebcda1f789db2c96e001988292a9a123b1452204ec",
+    "passed": true,
+    "restored": true,
+    "global_settings_restored": true,
+    "source_settings_restored": true,
+    "all_content_changed": [],
+    "frozen_source_changed": [],
+    "source_savegames_unchanged": true
+  },
+  "native_peers": [
+    {
+      "name": "montreal-standalone",
+      "exit_code": 0,
+      "missing_package_warning_count": 0
+    },
+    {
+      "name": "montreal-host",
+      "exit_code": 0,
+      "missing_package_warning_count": 0
+    },
+    {
+      "name": "montreal-client",
+      "exit_code": 0,
+      "missing_package_warning_count": 0
+    },
+    {
+      "name": "toronto-standalone",
+      "exit_code": 0,
+      "missing_package_warning_count": 0
+    },
+    {
+      "name": "toronto-host",
+      "exit_code": 0,
+      "missing_package_warning_count": 0
+    },
+    {
+      "name": "toronto-client",
+      "exit_code": 0,
+      "missing_package_warning_count": 0
+    }
+  ],
+  "limits": [
+    "Montreal Car has a large foreground trunk obstructing the right-center scene; camera composition is not accepted.",
+    "New Visitation details are not framed in these startup views; the separate six-image /tmp/nord-east-detail-image-review review supplies that visible-extent evidence.",
+    "Generic default character/rig/prop, sparse Toronto shell frontage, empty horizon, paving joins and cropped signage remain.",
+    "No continuous playback, temporal/flicker stability, FPS, mobile, audio, natural physical-input trip or final-art acceptance.",
+    "No source/native/Git/GPU/service edit or launch by reviewer."
+  ],
+  "final_art_accepted": false,
+  "continuous_playback_viewed": false
+}

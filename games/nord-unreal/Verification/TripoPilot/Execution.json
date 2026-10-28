@@ -1,0 +1,50 @@
+{
+  "recorded_at_utc": "2026-10-17T20:27:22.563379+00:00",
+  "status": "One paid Tripo rig completed; CPU audit, six deformation views and one retargeted apex checked; no native adoption",
+  "api_key_authenticated": true,
+  "api_credit_balance_at_authentication": 0.0,
+  "api_credits_frozen_at_authentication": 0.0,
+  "original_glb_uploaded": true,
+  "rig_check_task_id": "135d424c-cccc-4aec-909b-57fae1ce2d05",
+  "riggable": true,
+  "rig_type": "biped",
+  "rig_check_credits_consumed": 0,
+  "paid_rig_submitted": true,
+  "tripo_spend_usd": 0.25,
+  "published_rig_quote_credits": 25,
+  "next_step": "Prepare the isolated material/scale/corner-normal correction plus remaining own locomotion/grip and mapped sockets, then run fresh guarded native import/render/behavior checks before adoption.",
+  "private_resume_directory": "Saved/Tests/TripoPilot-20261017T2010",
+  "credentials_file": "Saved/Secrets/tripo.env (Git ignored, owner-only permissions; never print or commit its value)",
+  "fal_ledger_unchanged": {
+    "authorized_usd": 25,
+    "reserved_prior_usd": 4,
+    "uncommitted_usd": 21
+  },
+  "native_or_package_changes": false,
+  "limits": [
+    "Returned FBX normal input incorrectly references albedo; original normal/packed metallic-roughness absent. Preserve original and reconstruct materials explicitly on an isolated derivative.",
+    "Returned body is normalized to1m and needs measured scale restoration to1.82m.",
+    "No compatible locomotion/jump retarget, native import/render or deployment has run."
+  ],
+  "rig_task_id": "64103a99-91c2-499d-8866-0304e0beceb1",
+  "rig_model": "v3.0-20260909",
+  "rig_spec": "unreal",
+  "out_format": "fbx",
+  "rig_task_status": "success",
+  "rig_credits_consumed": 25,
+  "api_balance_after_rig_credits": 75,
+  "api_frozen_after_rig_credits": 0,
+  "funding_observed_after_user_ready_credits": 100,
+  "cpu_audit_passes": {
+    "geometry_uv_correspondence": true,
+    "all_30_finger_bones_weighted": true,
+    "both_elbows_forward": true,
+    "one_compact_jump_61_bone_roundtrip": true,
+    "actual_retarget_apex_view": true
+  },
+  "cpu_diagnostics_limits": [
+    "Preview-only scale/original material restoration; provider FBX remains unmodified and materially defective.",
+    "Imported corner normals changed; no preservation or repair pass.",
+    "Seven stills are not continuous/native motion, grasp or final-art acceptance."
+  ]
+}

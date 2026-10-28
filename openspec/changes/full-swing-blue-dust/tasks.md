@@ -1,0 +1,4 @@
+- [x] Walk the low haze from sunset rose to blue-hour violet
+- [x] Shoot the street at both hours before and after, and measure the dust
+- [x] Pass `qa/vr/render.mjs`, including canyon ink under 35% and the painted-sky checks
+- [x] Record the score only if the blue-hour still shows the violet dust

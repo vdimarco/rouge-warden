@@ -1,0 +1,15 @@
+{"stable":false,"time":60,"moved":true,"color":true,"grown":true,"hidden":true,"shown":true,"goal":true,"zeroTransfers":false,"image":true}
+FAIL stable
+  {"stable":false,"time":60,"moved":true,"color":true,"grown":true,"hidden":true,"shown":true,"goal":true,"zeroTransfers":false,"image":true}
+PASS: time
+PASS: moved
+PASS: color
+PASS: grown
+PASS: hidden
+PASS: shown
+PASS: goal
+FAIL zeroTransfers
+  {"stable":false,"time":60,"moved":true,"color":true,"grown":true,"hidden":true,"shown":true,"goal":true,"zeroTransfers":false,"image":true}
+PASS: image
+PASS: no page errors
+FAIL: marker dirty (2 failed, 9 passed)

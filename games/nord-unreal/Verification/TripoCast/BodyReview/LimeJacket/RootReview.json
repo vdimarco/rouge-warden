@@ -1,0 +1,24 @@
+{
+  "at_utc": "2026-10-17T22:20:25.296122+00:00",
+  "source_sha256": "3eda089ac9baea41e1cc1c5c15ca027e218e41a39f9d3ac814bbd89f671139ff",
+  "viewed": [
+    {
+      "file": "front.png",
+      "sha256": "e3fabc84a18805b99f86a92aa772eb3fee7fb9023ba6fbc57266456912ba3ec8"
+    },
+    {
+      "file": "face-threequarter.png",
+      "sha256": "095964e46385b9dae4c2e3c333f3fd668e254678ab2e87c7ecd4691cae19bb49"
+    },
+    {
+      "file": "hand-right.png",
+      "sha256": "99a7741fe37a4db51d35bcd7837fc9bb1aba67308101e41405852f830e5c915b"
+    }
+  ],
+  "bounded_rig_trial_allowed": true,
+  "final_art_accepted": false,
+  "observations": [
+    "Calm olderadult, limejacket and checkedgaiter remain readable.",
+    "Thin pointed napehair and pressed/webbedfingers remain; neck/cloth/prop clearance untested."
+  ]
+}

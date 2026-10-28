@@ -1,0 +1,12 @@
+{
+  "passed": false,
+  "original_content_restored": true,
+  "phase": "failed",
+  "window": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T185533Z",
+  "backup": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Recovery/compound-jump-repair-20261017T185459Z",
+  "manager_timeout_seconds": 900,
+  "owned_manager_process_group": 3954815,
+  "manager_exit_code": 1,
+  "error": "Traceback (most recent call last):\n  File \"/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/GraphicNovel/CompoundJumpRepair-20261017T1846/run_compound_window.py\", line 39, in <module>\n    assert manager.returncode==0, 'Native comparison failed; inspect retained window'\n           ^^^^^^^^^^^^^^^^^^^^^\nAssertionError: Native comparison failed; inspect retained window\n",
+  "finished_utc": "2026-10-17T18:56:18.543636+00:00"
+}

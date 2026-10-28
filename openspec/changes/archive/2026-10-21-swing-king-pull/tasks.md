@@ -1,0 +1,6 @@
+- [x] With every pipe on, the next attack is a throw
+- [x] After a pipe is off, the attack after a throw is a stomp, and the attack after that stomp is a pull
+- [x] The pull card says to shoot a web
+- [x] In the air with no rope, 20 m out, the pull drags you in and takes a heart; 40 m out it drags you and takes none
+- [x] On the ground, and in the air with a rope, the pull leaves you where you are
+- [x] Check it in a 1280×800 play

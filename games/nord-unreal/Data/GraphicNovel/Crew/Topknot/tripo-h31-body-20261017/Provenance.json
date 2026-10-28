@@ -1,0 +1,23 @@
+{
+  "character": "Topknot",
+  "task_id": "7c59f469-ad8a-4825-913f-14a69d0ba61b",
+  "status": "completed_downloaded",
+  "credits_consumed": 60,
+  "request_path": "request.json",
+  "request_sha256": "e19f53507083883eda9152ab6cba55be8a886ee8192548d18142e335a5fdf90a",
+  "source_reference_sha256": "ea303ba5b08813fb7ff5c3da1eae5d842094a0687f78a06e0d4abed158ab7b3b",
+  "outputs": {
+    "body.glb": {
+      "bytes": 11058924,
+      "sha256": "621c65ce305a29d27b7ee974ee928011c3a0d78a979bf9cc3b73ecb13d54fae2"
+    },
+    "provider-preview.png": {
+      "bytes": 127997,
+      "sha256": "f262b4568fb3dd72a54d5e2d49f36bd23cb8750ec9362999de194381e71b9820"
+    }
+  },
+  "preview_format_from_actual_magic": true,
+  "signed_urls_private_only": true,
+  "native_or_art_accepted": false,
+  "recorded_utc": "2026-10-17T22:45:53.412048+00:00"
+}

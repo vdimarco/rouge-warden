@@ -4,9 +4,19 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#0b0a16">
-  <meta name="description" content="NORD / Montréal is a comic-book adventure around Parc La Fontaine. Play the PC-hosted game in your browser with a friend.">
-  <title>NORD / Montréal — Save Parc La Fontaine</title>
-  <link rel="icon" href="/icons/favicon.svg" type="image/svg+xml">
+  <meta name="description" content="GTA: NORTH is a two-player comic-book adventure around Parc La Fontaine in Montréal. Play it in your browser with a friend.">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="GTA: NORTH · Save Parc La Fontaine">
+  <meta property="og:description" content="Race Montréal. Find your crew. Save Parc La Fontaine from the Boogeyman.">
+  <meta property="og:url" content="https://arcade.uptick.systems/gta/">
+  <meta property="og:image" content="https://arcade.uptick.systems/gta/comic-badge.png">
+  <meta property="og:image:alt" content="GTA: NORTH comic collage: Montréal streets, crew and a yellow muscle car">
+  <meta name="twitter:card" content="summary">
+  <title>GTA: NORTH · Save Parc La Fontaine</title>
+  <link rel="icon" href="./favicon-32.png" type="image/png" sizes="32x32">
+  <link rel="icon" href="./favicon.svg" type="image/svg+xml" sizes="any">
+  <link rel="apple-touch-icon" href="./apple-touch-icon.png?v=comic-badge-20261017" sizes="180x180">
+  <link rel="preload" href="./comic-badge.webp" as="image" type="image/webp">
   <script src="/arcade/quiet.js"></script>
   <link rel="stylesheet" href="./style.css">
 </head>
@@ -18,26 +28,35 @@
     </header>
 
     <main class="hero">
-      <div class="copy">
-        <h1><span>NORD</span><span class="slash">/</span><span>MONTRÉAL</span></h1>
-        <p class="lead">The park is in trouble.<br>Bring your crew.</p>
-        <p class="description">Race through the streets around Parc La Fontaine, find your friends, and save the neighbourhood from the Boogeyman in a playable comic-book Montréal.</p>
+      <div class="badge-launch">
+        <picture>
+          <source srcset="./comic-badge.webp" type="image/webp">
+          <img class="comic-badge" src="./comic-badge.png" width="512" height="512" alt="GTA: NORTH comic collage: Montréal streets, crew and a yellow muscle car">
+        </picture>
         <a class="play" href="https://nord-montreal.vercel.app/">PLAY IN BROWSER <span aria-hidden="true">↗</span></a>
-        <p class="availability">The game streams from a host PC. The player page shows when the host is offline or both slots are occupied.</p>
+        <p class="status">2 player slots · host PC must be online</p>
       </div>
-
-      <section class="feature" aria-label="NORD / Montréal trailer">
-        <div class="frame">
-          <video id="game-trailer" class="trailer-video" src="https://d2ol7oe51mr4n9.cloudfront.net/user_3JnxFRyLd68bfjwUMHz1De16TMw/850ec3d7-3375-4695-bcb6-0ad320dc8ad2.mp4" poster="https://d2ol7oe51mr4n9.cloudfront.net/user_3JnxFRyLd68bfjwUMHz1De16TMw/99050026-3935-46bc-9571-17b60049cb1f.jpg" autoplay muted loop playsinline controls preload="metadata" aria-label="NORD / Montréal trailer"></video>
-        </div>
-        <p class="frame-caption">The NORD / Montréal trailer. Turn the sound on in the player.</p>
-      </section>
+      <div class="copy">
+        <h1>The park is in trouble.<br>Bring your crew.</h1>
+        <p class="description">Race Montréal. Find your crew. Save Parc La Fontaine from the Boogeyman.</p>
+        <ol class="steps" aria-label="How to join">
+          <li>Select <b>Play in browser</b>. The game streams from the host PC.</li>
+          <li>Take a free player slot. A friend takes the other one.</li>
+          <li>To keep the game on your device, open <b>Menu</b> in the game and select <b>Install GTA: NORTH</b>.</li>
+        </ol>
+        <section class="feature" aria-label="GTA: NORTH trailer">
+          <div class="frame">
+            <video id="game-trailer" class="trailer-video" src="https://d2ol7oe51mr4n9.cloudfront.net/user_3JnxFRyLd68bfjwUMHz1De16TMw/850ec3d7-3375-4695-bcb6-0ad320dc8ad2.mp4" poster="https://d2ol7oe51mr4n9.cloudfront.net/user_3JnxFRyLd68bfjwUMHz1De16TMw/99050026-3935-46bc-9571-17b60049cb1f.jpg" autoplay muted loop playsinline controls preload="metadata" aria-label="GTA: NORTH trailer"></video>
+          </div>
+          <p class="frame-caption">Trailer. Turn on the sound in the player.</p>
+        </section>
+      </div>
     </main>
 
     <footer class="controls" aria-label="How to play">
-      <div><strong>ON FOOT / IN THE CAR</strong><span><b>WASD</b> move & drive <i>·</i> <b>Mouse</b> look <i>·</i> <b>Shift</b> sprint <i>·</i> <b>Space</b> jump & brake</span></div>
-      <div><strong>YOUR CREW</strong><span><b>E</b> interact & enter car <i>·</i> <b>C</b> switch character <i>·</i> <b>R</b> recover</span></div>
-      <p>On a phone, use the game’s touch controls. Each friend needs a separate player slot.</p>
+      <div class="keys"><strong>ON FOOT / IN THE CAR</strong><span><kbd>WASD</kbd> move & drive</span> <span><kbd>Mouse</kbd> look</span> <span><kbd>Shift</kbd> sprint</span> <span><kbd>Space</kbd> jump & brake</span></div>
+      <div class="keys"><strong>YOUR CREW</strong><span><kbd>E</kbd> interact & enter car</span> <span><kbd>C</kbd> switch character</span> <span><kbd>R</kbd> recover</span></div>
+      <p>On a phone, use the touch controls in the game.</p>
     </footer>
   </div>
   <script src="./title.js" defer></script>

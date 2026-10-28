@@ -1,0 +1,195 @@
+{
+  "device": "CPU",
+  "threads": 4,
+  "samples": 16,
+  "angles_degrees": {
+    "LeftArm": [
+      0,
+      15,
+      -15,
+      -20,
+      -10,
+      -15,
+      0
+    ],
+    "RightArm": [
+      0,
+      10,
+      5,
+      -5,
+      0,
+      -5,
+      0
+    ],
+    "LeftForeArm": [
+      0,
+      -30,
+      -35,
+      -50,
+      -40,
+      -45,
+      0
+    ],
+    "RightForeArm": [
+      0,
+      -25,
+      -25,
+      -35,
+      -25,
+      -30,
+      0
+    ],
+    "LeftUpLeg": [
+      0,
+      -25,
+      -5,
+      -25,
+      -12,
+      -28,
+      0
+    ],
+    "RightUpLeg": [
+      0,
+      -25,
+      -3,
+      -12,
+      -8,
+      -26,
+      0
+    ],
+    "LeftLeg": [
+      0,
+      55,
+      12,
+      55,
+      28,
+      60,
+      0
+    ],
+    "RightLeg": [
+      0,
+      55,
+      8,
+      35,
+      23,
+      56,
+      0
+    ],
+    "LeftFoot": [
+      0,
+      -25,
+      -7,
+      -15,
+      -14,
+      -28,
+      0
+    ],
+    "RightFoot": [
+      0,
+      -25,
+      -5,
+      -10,
+      -10,
+      -28,
+      0
+    ],
+    "Spine01": [
+      0,
+      12,
+      4,
+      6,
+      8,
+      12,
+      0
+    ],
+    "neck": [
+      0,
+      -8,
+      -2.8,
+      -4.2,
+      -5.6,
+      -8.4,
+      0
+    ]
+  },
+  "key_seconds": [
+    0,
+    0.1,
+    0.23,
+    0.47,
+    0.73,
+    0.93,
+    1.2
+  ],
+  "pelvis_roll_yaw_changed": false,
+  "clavicle_changed": false,
+  "original_hips_translation_unchanged": true,
+  "measurements": [
+    {
+      "phase": "liftoff",
+      "clip_s": 0.23,
+      "minimum_shoe_z_m": 0.008570435456931591,
+      "maximum_shoe_z_m": 0.18658661842346191,
+      "arms": {
+        "Left": {
+          "signed_bend_degrees": -46.70637436553106,
+          "wrist_ahead_of_elbow_cm": 20.167410373687744
+        },
+        "Right": {
+          "signed_bend_degrees": -36.55691350163985,
+          "wrist_ahead_of_elbow_cm": 11.995896697044373
+        }
+      }
+    },
+    {
+      "phase": "apex",
+      "clip_s": 0.47,
+      "minimum_shoe_z_m": 0.04186275228857994,
+      "maximum_shoe_z_m": 0.33576494455337524,
+      "arms": {
+        "Left": {
+          "signed_bend_degrees": -60.73239965186338,
+          "wrist_ahead_of_elbow_cm": 22.702257335186005
+        },
+        "Right": {
+          "signed_bend_degrees": -45.805542832106,
+          "wrist_ahead_of_elbow_cm": 17.85585582256317
+        }
+      }
+    },
+    {
+      "phase": "descent",
+      "clip_s": 0.73,
+      "minimum_shoe_z_m": 0.026807570829987526,
+      "maximum_shoe_z_m": 0.22491157054901123,
+      "arms": {
+        "Left": {
+          "signed_bend_degrees": -51.45528065668264,
+          "wrist_ahead_of_elbow_cm": 19.47557032108307
+        },
+        "Right": {
+          "signed_bend_degrees": -36.59074349933466,
+          "wrist_ahead_of_elbow_cm": 12.440415471792221
+        }
+      }
+    },
+    {
+      "phase": "landing",
+      "clip_s": 0.93,
+      "minimum_shoe_z_m": 0.021215135231614113,
+      "maximum_shoe_z_m": 0.24322792887687683,
+      "arms": {
+        "Left": {
+          "signed_bend_degrees": -56.041982487110815,
+          "wrist_ahead_of_elbow_cm": 20.643022656440735
+        },
+        "Right": {
+          "signed_bend_degrees": -41.143536573372515,
+          "wrist_ahead_of_elbow_cm": 14.478938281536102
+        }
+      }
+    }
+  ],
+  "scope": "Onecompactwholebodycandidate; sourcegeometryproxy andstaticopenfingers; notnative/artacceptance",
+  "stills_seconds": 23.854210452991538
+}

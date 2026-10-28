@@ -24,7 +24,7 @@ small grey info boxes, and bold uppercase captions with the current word in oran
 - The sky shows real aberration, Doppler colour and brightness change.
 - Keyboard and mouse on desktop. Touch on phones, in portrait and landscape. Pause, page lifecycle, mute, saves, reduced
   motion and a graphics error card.
-- Add the game to the Cottage Arcade: a cabinet, the seventh and last machine in the Action group, a switcher entry,
+- Add the game to the Cottage Arcade: a cabinet, the last machine in the Action group, a switcher entry,
   a best-score line and key art.
 - Add node tests for the pure game logic, a bot, and browser checks for play, layouts, visuals and performance.
 

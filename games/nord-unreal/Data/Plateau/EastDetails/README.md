@@ -1,0 +1,21 @@
+# Montréal east: bounded Visitation detail study
+
+This CPU-only additive source layer contains **42 candidate window panes**, four thin Iron bars and one Trim sill per pane. Exactly three single-material OBJ groups total **2,604 triangles**: Glass84, Iron2,016 and Trim504. No native import or visual acceptance is claimed. This does not repair Panet’s missing building coverage/horizon or former-edge ground seams.
+
+The unchanged `plateau_context.build_context` producer receives a temporary OSM subset containing exactly ways345567245,345578954 and345578982 with their original node order, coordinates and tags. Only its in-memory distance gate changes from50m to200m for this disposable computation and is restored in `finally`; a temporary large grid keeps the source panes uncut. No shell, roof, apron or road output is retained. Source emission remains50 panes (18/12/20). A whole-pane adjacent-shell containment check, including polygon-edge intervals and height, culls8 panes inside retained solid shells345567218/345579124, leaving14/12/16 candidates.42 visible windows is not claimed.
+
+Footprints are sourced from the retained OSM snapshot. The existing9.6m height, regular window rhythm,3cm frame width and sill proportions are artistic estimates. Cards sit3cm off the original walls; frames/sills remain within10cm of them and z163.5–643cm. They decorate solid walls and do not create actual openings or interiors. Reuse the existing named Glass/Iron/Trim palette and the recorded NORD graphic-novel direction; no texture generation, new material or global style change is included.
+
+The [metadata](details.json) pins nine source/helper hashes, the exact original50-pane face hash, retained42-pane hash, all three OBJ hashes, selected source subset and the proposed native contract. [CPU evidence](cpu-checks.json) records source/Content preservation, deterministic regeneration, outward/writer winding, float32 nondegeneracy, local frame bounds, concave/height culling and rejection of coordinated OBJ/hash edits. A fresh source-only reload passes. Original context files and every current Content package remain byte-identical.
+
+## Native handoff contract — pending separate authoring
+
+Use only `Geometry/Glass.obj`, `Geometry/Iron.obj` and `Geometry/Trim.obj`, imported to `/Game/Plateau/EastDetails/SM_{Glass,Iron,Trim}`. Never import a directory glob or reimport old assets. Reuse `/Game/Plateau/Materials/M_{Glass,Iron,Trim}` after read-only native class/usage validation. Only three new actors are declared: `Plateau east details Glass`, `Plateau east details Iron` and `Plateau east details Trim`, with identity transforms, visible components, NoCollision and disabled shadows/distance-field/dynamic-indirect lighting.
+
+Preflight all hashes, source geometry, materials, absent destinations/labels, exact saved LaFontaine and clean packages before mutation. In a fresh NullRHI process, first preserve every current actor semantic and Content path/hash plus all present LaFontaine map-package files in a fresh sealed `Saved/Recovery` backup. Permit changes only to that map package and these three new mesh packages/declared sidecars. Fresh-process verification must prove the exact actor delta and all original bytes/semantics.
+
+The existing east canonical verifier still requires exactly54 extension additions. Later integration must independently verify the Details receipt and remove only its three exact new actor paths/labels before checking those54 unchanged actors; no broad prefix exemption is appropriate. Keep all742 original context actor/material/source checks exact. Do not edit the old context manifest/generator or weaken original protection.
+
+After saved native readback, compare matched Visitation1920×1080 Standard/Comic views and former-edge/Panet regression views with active population and unchanged full quality. Reject z-fighting, incorrect normals, added ink noise or any collision/progression change. Source tests cannot accept the resulting appearance.
+
+Geography: © OpenStreetMap contributors, [ODbL1.0 attribution](https://www.openstreetmap.org/copyright). Existing texture/material provenance is retained under [Plateau](../README.md) and [Art](../../Art/README.md).

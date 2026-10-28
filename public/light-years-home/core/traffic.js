@@ -230,7 +230,8 @@ export function buildTraffic(zoneData, seed = 1, tune = TUNE) {
     for (let k = 0; k < (s.count | 0); k++, i++) {
       let x = 0, y = 0;
       // Dwarfs trace the web: a share of each swarm gathers along the roads (the filaments), the rest spreads out.
-      const onRoad = roads.length > 0 && rng() < ROAD_SHARE;
+      // A swarm's own nearRoads sets the share (a cluster is a ball: 0).
+      const onRoad = roads.length > 0 && rng() < (s.nearRoads ?? ROAD_SHARE);
       for (let tries = 0; tries < 24; tries++) {
         if (onRoad) {
           const ri = pickRoad(rng() * roadW[roadW.length - 1]);
@@ -243,7 +244,8 @@ export function buildTraffic(zoneData, seed = 1, tune = TUNE) {
           x = road.x[j] + road.rx[j] * off;
           y = road.y[j] + road.ry[j] * off;
         } else {
-          const a = rng() * TAU, rr = R * Math.sqrt(rng());
+          // core: how the swarm thins out from its centre (0.5 is even; 1 is a cluster's dense core).
+          const a = rng() * TAU, rr = R * (s.core === undefined ? Math.sqrt(rng()) : rng() ** s.core);
           x = c[0] + rr * Math.cos(a);
           y = c[1] + rr * Math.sin(a);
         }
@@ -256,7 +258,13 @@ export function buildTraffic(zoneData, seed = 1, tune = TUNE) {
       t.bx[i] = x;
       t.by[i] = y;
       // Along a road they keep to the plane, where you drive; out in the field 60% stay near it, the rest fill the slab.
-      t.bz[i] = (rng() * 2 - 1) * (onRoad ? ROAD_H : rng() < 0.6 ? 0.12 * h : h);
+      // A swarm with flat keeps that share in a thin layer flatH u either side of the plane, where you drive.
+      if (s.flat !== undefined && !onRoad) {
+        const z = rng() * 2 - 1;
+        t.bz[i] = z * (rng() < s.flat ? s.flatH ?? ROAD_H : h);
+      } else {
+        t.bz[i] = (rng() * 2 - 1) * (onRoad ? ROAD_H : rng() < 0.6 ? 0.12 * h : h);
+      }
       t.offset[i] = pick(rng, s.drift ?? [1, 3]);
       t.speed[i] = 0.04 + 0.08 * rng();                          // rad/s: a slow Lissajous drift
       t.s0[i] = rng() * TAU;

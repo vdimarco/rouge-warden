@@ -111,3 +111,14 @@ A stunt SHALL start when the ship enters it, with no ring to arm, show a live va
 #### Scenario: Sloan Pads
 - **WHEN** the player hits all four Sloan Pads within 1.5 s of each other, each within 0.8 u of its centre
 - **THEN** each pad plays a rising note with a PERFECT tick and adds speed, and the line scores three stars
+
+### Requirement: Stunt readouts
+A stunt's live value SHALL read by its kind (`TIER 2`, `41 U/S`, `NEARS 3`, `PADS 2/4`) over the next star's target (`★★ AT 44 U/S`), so the player knows what the next star needs. An oncoming stretch SHALL not start while a mission runs, so no count shows that the player did not choose.
+
+#### Scenario: The next star in view
+- **WHEN** the player drifts inside the Sloan Bend ring at tier 1
+- **THEN** the top row reads `SLOAN BEND TIER 1` over `★★ AT TIER 2`
+
+#### Scenario: No count nobody asked for
+- **WHEN** WHICH WAY HOME's chase runs out the B road against its traffic
+- **THEN** OUTBOUND does not start and no `NEARS 0` sits under the objective

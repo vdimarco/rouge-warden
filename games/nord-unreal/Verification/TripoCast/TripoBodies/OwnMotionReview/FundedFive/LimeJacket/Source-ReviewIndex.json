@@ -1,0 +1,125 @@
+{
+  "scope": "Three actual own Tripo-body/own-rig clip candidates; 27 frozen nine-view stills plus 18 Saved-only hand-angle stills, all inspected. No continuous sequence/native/prop/final-art acceptance.",
+  "passed_render_receipts": true,
+  "characters": {
+    "Memphis33": {
+      "assessment": {
+        "path": "Saved/Tests/TripoOwnMotionReview-Remaining-20261017-v1/Memphis33-Assessment.json",
+        "sha256": "84cae7a27c48f3308b8aaca0dde161adcfd2338bb8dbc498b99b5c51ac879dd2"
+      },
+      "receipts": {
+        "nine": {
+          "path": "Saved/Tests/TripoOwnMotionReview-Remaining-20261017-v1/Memphis33-nine/Readback.json",
+          "sha256": "bdb1cb485060184b49c43ab8eb7387926598f7556ff6dc12fd3cf4827da5bcc6",
+          "frames": 9,
+          "exit_code": 0,
+          "maximum_body_vs_clip_pose_error": 1.4454126358032227e-05,
+          "unanimated_negative_error": 1.5328903198242188,
+          "log": {
+            "path": "Saved/Tests/TripoOwnMotionReview-Remaining-20261017-v1/Memphis33-nine.log",
+            "sha256": "b4ede35d76368a5a1fc2591feb90109b739ed7cbf8cb78eb7bf1cbba50504eb4"
+          }
+        },
+        "hands": {
+          "path": "Saved/Tests/TripoOwnMotionReview-Remaining-20261017-v1/Memphis33-hands/Readback.json",
+          "sha256": "859eed95441a4471b6eef5ba2b2402174ae5a8b089701319579f42a36d4814a4",
+          "frames": 6,
+          "exit_code": 0,
+          "maximum_body_vs_clip_pose_error": 1.4454126358032227e-05,
+          "unanimated_negative_error": 1.5328903198242188,
+          "log": {
+            "path": "Saved/Tests/TripoOwnMotionReview-Remaining-20261017-v1/Memphis33-hands.log",
+            "sha256": "9f4402e29d8e2e3c1a04ba2837708e342471c096beac618c098c7810fc083592"
+          }
+        }
+      }
+    },
+    "WhiteCap": {
+      "assessment": {
+        "path": "Saved/Tests/TripoOwnMotionReview-Remaining-20261017-v1/WhiteCap-Assessment.json",
+        "sha256": "ecb244afec6b2bddba88740adb70d0ac5dacba77307d687ab91f8e033c2419b7"
+      },
+      "receipts": {
+        "nine": {
+          "path": "Saved/Tests/TripoOwnMotionReview-Remaining-20261017-v1/WhiteCap-nine/Readback.json",
+          "sha256": "2a2aa948f600b91430b90ef1b1c279dc44678570c03154fe9a166c6ffb74aa12",
+          "frames": 9,
+          "exit_code": 0,
+          "maximum_body_vs_clip_pose_error": 1.800060272216797e-05,
+          "unanimated_negative_error": 1.5564181804656982,
+          "log": {
+            "path": "Saved/Tests/TripoOwnMotionReview-Remaining-20261017-v1/WhiteCap-nine.log",
+            "sha256": "3095eff620ab0a7494d2322874701e66c7680b5115e7062c35435ecf69d37198"
+          }
+        },
+        "hands": {
+          "path": "Saved/Tests/TripoOwnMotionReview-Remaining-20261017-v1/WhiteCap-hands/Readback.json",
+          "sha256": "2a657f22ba0108d05197d35933bb6bb7a643ff7e1fcdef3a370c51a6b56693dc",
+          "frames": 6,
+          "exit_code": 0,
+          "maximum_body_vs_clip_pose_error": 1.519918441772461e-05,
+          "unanimated_negative_error": 1.5564181804656982,
+          "log": {
+            "path": "Saved/Tests/TripoOwnMotionReview-Remaining-20261017-v1/WhiteCap-hands.log",
+            "sha256": "0a50bc5e5498f9bf82a2d341e4c6f42edc426f7b59ff6dedb78356857271b62d"
+          }
+        }
+      }
+    },
+    "LimeJacket": {
+      "assessment": {
+        "path": "Saved/Tests/TripoOwnMotionReview-Remaining-20261017-v1/LimeJacket-Assessment.json",
+        "sha256": "e0a8863ba61cb115d41dca3a4e586bcec358d8f58d5137e88217e2a4c991d920"
+      },
+      "receipts": {
+        "nine": {
+          "path": "Saved/Tests/TripoOwnMotionReview-Remaining-20261017-v1/LimeJacket-nine/Readback.json",
+          "sha256": "f6d4023301d60724fab69fef98180258fa814fe15c7db43f0dea70134675e9a8",
+          "frames": 9,
+          "exit_code": 0,
+          "maximum_body_vs_clip_pose_error": 1.4781951904296875e-05,
+          "unanimated_negative_error": 1.3634607791900635,
+          "log": {
+            "path": "Saved/Tests/TripoOwnMotionReview-Remaining-20261017-v1/LimeJacket-nine.log",
+            "sha256": "b884f1ddfd716358583344b4931967015a22322d0db1fed62c51027bff8deea0"
+          }
+        },
+        "hands": {
+          "path": "Saved/Tests/TripoOwnMotionReview-Remaining-20261017-v1/LimeJacket-hands/Readback.json",
+          "sha256": "4d3ea52bf83fa0bee6ae311413f01f1d7c7b235714643fc16d9272c7ba079231",
+          "frames": 6,
+          "exit_code": 0,
+          "maximum_body_vs_clip_pose_error": 1.233816146850586e-05,
+          "unanimated_negative_error": 1.3634607791900635,
+          "log": {
+            "path": "Saved/Tests/TripoOwnMotionReview-Remaining-20261017-v1/LimeJacket-hands.log",
+            "sha256": "d28963d9dce24bf5c59595667b2e61ecfc95ecf0ff1b1e87272d6e0eb1f6bbf5"
+          }
+        }
+      }
+    }
+  },
+  "shared_recipe_unchanged": true,
+  "owned_job_exit_codes": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
+  "owned_jobs_closed": true,
+  "all_45_png_hashes_verified": true,
+  "warnings": [
+    "Reverse hand camera views may be occluded by intact geometry or crop portions of the target hand. Use the radial profiles together with the original views; no deletion-mask inference.",
+    "Pose and input-hash checks establish these exact CPU stills only."
+  ],
+  "preflight": {
+    "path": "Saved/Tests/TripoOwnMotionReview-Remaining-20261017-v1/Preflight.json",
+    "sha256": "b80246d34007f59842afdcf259c9f048e6dfcb53c8b5498d48e5950726f3454d"
+  },
+  "hand_variant": {
+    "path": "Saved/Tests/TripoOwnMotionReview-Remaining-20261017-v1/HandVariant.json",
+    "sha256": "31c5901fa5189409dc7ca64f977323ee2e8c8dae5cb32f4ad32ca1d738c089c2"
+  }
+}

@@ -1,0 +1,168 @@
+{
+  "source_baseline": {
+    "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/base_color.png": "f300cbf5d78c411cad36cfedee17a36c787d1a50c968c2adb2827ecf0e43d774",
+    "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/body.fbx": "b7e7ca0d9c486412108cba85e1cd4a5512fecd4ad36b8cfdb4677259ff6f9244",
+    "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/body.glb": "25041be9666422c30ba39449cb283a83928bb3de596fe063389707c070335613",
+    "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/files.json": "d942b4ec45c3b28ef54c0afeb991278528fd74252ec7208cd518519277fd18bc",
+    "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/generation.json": "a23277ea16f38bf8123e4c5f8e4b64323c6b07843158a4b84a7f2bcf7d910632",
+    "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/idle.fbx": "b1a7bd95403aa7358f067a3a352d060ca2cd56d9c65d9f8d6fe497dbf4343641",
+    "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/jump.fbx": "36d74356ca903188a9b3956db69e51367260866972cda9215fab6a66d5362aa3",
+    "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/jump.json": "94deb47f51e5cbfd6e5694efb8dcb8052c2abf6c91df7ceee2a35def47838e3f",
+    "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/metallic.png": "2e0e9b79402c506cdcf5fe11f4e81e7a376b0b81fa5982b6b6584f5e35402309",
+    "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/normal.png": "7845864ce13d1e3ce10e8149ef2ef98a048b8be249a60749dfc70c4897e9e7ab",
+    "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/preview.png": "8b0e3ba80a30dd9f6d438be6f81728e9744dc057c9f1df50759379b2dc57a8d4",
+    "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/pricing.json": "6ff6e0d5f7a22b9cf85119d4ad1cb6e8f30e6acb4804a61b563e27b347663d32",
+    "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/reference.png": "c00eb6f0ea1f5743b1a236295ecedfa27e15763d9ab5a717942ebf3713e778be",
+    "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/request.json": "47209121445fc43283c50481d7fc6adece8274fdf049ddec31e52c58f4a352d1",
+    "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/result-receipt.json": "192c42733e1ab51fd1b4d799bd4167b7c457ed2b5a3d48d3ccb910729b3c8ba7",
+    "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/result.json": "da1d5ae7bc3856dde6e1b7f642182814eeb1ff22f2d69cc7aaf8a4ebde5dbdab",
+    "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/roughness.png": "cf28e5b2f2b3d1d85b3e3a6b8228b0bde61f82c60133b393a6159b5d3a7a9f89",
+    "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/run.fbx": "b0f8e4c359d21ca3a51dde5c94b45b4d9f4a3d27dedb2d44f671b69e41f6e8ae",
+    "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/run.glb": "b59e018d32513f3519f4f64a6a29de42cdc952cc53a5416b91ee60bc82229b30",
+    "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/schema.json": "4779033055c3bed4def386892cc4844f22ed9bd718d6795318efa395dafc219b",
+    "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/source-review.json": "a2ea79458aef0ad20ee1cb00b262269c509db230ca94b9c03cfc8bebeaacd3d8",
+    "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/submit-response.json": "47209121445fc43283c50481d7fc6adece8274fdf049ddec31e52c58f4a352d1",
+    "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/walk.fbx": "0fe2b4d83846f826e3d448c870fcb77816c25fe6d106c873d755cd7a3d871d9e"
+  },
+  "retained_author_template_sha256": "ed50ad1d4a09a9d6b71ee45c108a4f0e404b222ebfe311df3302929a6602aebd",
+  "live_prepare_script_not_executed": true,
+  "live_prepare_script_snapshot_sha256": "51cbc1072264c31eeafdd65cf1dfef76b36ac154e84d6a93b97f425a3e73a857",
+  "recipe_scope": "Reviewed compact12rotationcandidate uses frozen originalbody-basedtemplate+explicit reviewedkeys, not currentdefaultgenerator",
+  "allowed_rotation_bones": [
+    "LeftArm",
+    "LeftFoot",
+    "LeftForeArm",
+    "LeftLeg",
+    "LeftUpLeg",
+    "RightArm",
+    "RightFoot",
+    "RightForeArm",
+    "RightLeg",
+    "RightUpLeg",
+    "Spine01",
+    "neck"
+  ],
+  "reviewed_key_seconds": [
+    0,
+    0.1,
+    0.23,
+    0.47,
+    0.73,
+    0.93,
+    1.2
+  ],
+  "reviewed_angles_degrees": {
+    "LeftArm": [
+      0,
+      15,
+      -15,
+      -20,
+      -10,
+      -15,
+      0
+    ],
+    "RightArm": [
+      0,
+      10,
+      5,
+      -5,
+      0,
+      -5,
+      0
+    ],
+    "LeftForeArm": [
+      0,
+      -30,
+      -35,
+      -50,
+      -40,
+      -45,
+      0
+    ],
+    "RightForeArm": [
+      0,
+      -25,
+      -25,
+      -35,
+      -25,
+      -30,
+      0
+    ],
+    "LeftUpLeg": [
+      0,
+      -25,
+      -5,
+      -25,
+      -12,
+      -28,
+      0
+    ],
+    "RightUpLeg": [
+      0,
+      -25,
+      -3,
+      -12,
+      -8,
+      -26,
+      0
+    ],
+    "LeftLeg": [
+      0,
+      55,
+      12,
+      55,
+      28,
+      60,
+      0
+    ],
+    "RightLeg": [
+      0,
+      55,
+      8,
+      35,
+      23,
+      56,
+      0
+    ],
+    "LeftFoot": [
+      0,
+      -25,
+      -7,
+      -15,
+      -14,
+      -28,
+      0
+    ],
+    "RightFoot": [
+      0,
+      -25,
+      -5,
+      -10,
+      -10,
+      -28,
+      0
+    ],
+    "Spine01": [
+      0,
+      12,
+      4,
+      6,
+      8,
+      12,
+      0
+    ],
+    "neck": [
+      0,
+      -8,
+      -2.8,
+      -4.2,
+      -5.6,
+      -8.4,
+      0
+    ]
+  },
+  "reviewed_stills_receipt_sha256": "074be8016665f53e97cf4e716acca60e194266fef5bae17e48685410ea2a5ae0",
+  "reviewed_motion_sha256": "9d028ed48d4b84ba73a69baa7018c5538534b089463e7dfc010dbac7b97f2042",
+  "preflight_passed": true,
+  "all_23_raw_sources_unchanged": true
+}

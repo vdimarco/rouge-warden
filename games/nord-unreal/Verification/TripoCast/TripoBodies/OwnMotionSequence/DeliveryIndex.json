@@ -1,0 +1,754 @@
+{
+  "passed": true,
+  "recorded_utc": "2026-10-18T00:20:30.309598+00:00",
+  "scope": "Single technical retention index. Preserves historical worker documents and independently verifies existing retained files. No rendering, encoding, image viewing or new visual-review assertion performed for this audit. Root owns its separate visual review.",
+  "original_final_index": {
+    "source": {
+      "path": "Saved/Tests/TripoOwnMotionSequence-Remaining-20261017-v1/FinalIndex.json",
+      "sha256": "7052e9a4722481c3eb9e3b0e90f18f4bc41b37286b74bab4e50dfe1f86b72c2e",
+      "bytes": 6778
+    },
+    "document": {
+      "passed": true,
+      "scope": "Technical delivery of three exact previously reviewed own-body/own-rig210-frame CPU sequences plus Green/Red15-view still batches. No sequence playback or native/final-art acceptance claimed.",
+      "accepted_sequences": {
+        "Memphis33": {
+          "readback": {
+            "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoOwnMotionSequence-Remaining-20261017-v1/Memphis33/Readback.json",
+            "sha256": "0d94e404a6daee65ea33a9eddaca189f41a62585bc7d274e13532d677e5a934a"
+          },
+          "log": {
+            "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoOwnMotionSequence-Remaining-20261017-v1/Memphis33.log",
+            "sha256": "fbacb531a3f9d4d4470af0fa5a22478263b796ea25b85b6e4819b8287c54be58"
+          },
+          "process_exit_code": 0,
+          "frames": 210,
+          "exact_frame_map_verified": true,
+          "clip_counts": {
+            "idle": 121,
+            "walk": 32,
+            "run": 20,
+            "jump": 37
+          },
+          "maximum_body_vs_clip_pose_error": 1.4916062355041504e-05,
+          "unanimated_body_negative_error": 1.5328903198242188
+        },
+        "WhiteCap": {
+          "readback": {
+            "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoOwnMotionSequence-Remaining-20261017-v1/WhiteCap/Readback.json",
+            "sha256": "565405e603709c8dc3a3674e517820aaa972cabc49baabe80b584ad9e48d5888"
+          },
+          "log": {
+            "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoOwnMotionSequence-Remaining-20261017-v1/WhiteCap.log",
+            "sha256": "e4d95d9bbc935005b43488c9f1421121c31cf3bc57911f7a79925c0d2a6fd71f"
+          },
+          "process_exit_code": 0,
+          "frames": 210,
+          "exact_frame_map_verified": true,
+          "clip_counts": {
+            "idle": 121,
+            "walk": 32,
+            "run": 20,
+            "jump": 37
+          },
+          "maximum_body_vs_clip_pose_error": 1.811981201171875e-05,
+          "unanimated_body_negative_error": 1.5564181804656982
+        },
+        "LimeJacket": {
+          "readback": {
+            "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoOwnMotionSequence-LimeJacket-20261017-v2/sequence/Readback.json",
+            "sha256": "d2a7f22b24ae48627063c2d9fc338dee27298b266113fb5c87980cfbfc54165c"
+          },
+          "log": {
+            "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoOwnMotionSequence-LimeJacket-20261017-v2/blender.log",
+            "sha256": "1715243d3ebe9da476dbf932440496f8e7f728e91320f4d3c9b3186700417ebe"
+          },
+          "process_exit_code": 0,
+          "frames": 210,
+          "exact_frame_map_verified": true,
+          "clip_counts": {
+            "idle": 121,
+            "walk": 32,
+            "run": 20,
+            "jump": 37
+          },
+          "maximum_body_vs_clip_pose_error": 1.4722347259521484e-05,
+          "unanimated_body_negative_error": 1.3634607791900635
+        }
+      },
+      "new_still_batches": {
+        "GreenCap51": {
+          "assessment": {
+            "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoOwnMotionReview-GreenCap51-20261017-v1/Assessment.json",
+            "sha256": "8564d49e6b2a3ad4419e6eaabd1048f2285f15eb7826336caad326c06fad1b0b"
+          },
+          "execution": {
+            "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoOwnMotionReview-GreenCap51-20261017-v1/Execution.json",
+            "sha256": "072805f104635195162874ac7befe72e8c006f045897accd7f68405f2247e9d7"
+          },
+          "frames_inspected": 15
+        },
+        "RedJersey": {
+          "assessment": {
+            "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoOwnMotionReview-RedJersey-20261017-v1/Assessment.json",
+            "sha256": "a81e46a7ba7bc8ea994b940234ddc0fbd5cb17197f3a58cfc452b123b462f0c3"
+          },
+          "execution": {
+            "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoOwnMotionReview-RedJersey-20261017-v1/Execution.json",
+            "sha256": "d8495ee72ff30847d689002744deb686890d614fddc826c3058711561844cdd1"
+          },
+          "frames_inspected": 15
+        }
+      },
+      "sequence_total_frames": 630,
+      "cpu": {
+        "threads_per_job": 4,
+        "serial": true,
+        "samples": 4,
+        "dimensions": [
+          384,
+          480
+        ],
+        "fps": 30
+      },
+      "all_accepted_png_and_input_hashes_verified": true,
+      "all_owned_processes_closed": true,
+      "shared_recipe_unchanged_sha256": "62bb0b2824744baf47ef806605b3de2f89653784d03a4e0d64844bc6f94f5926",
+      "no_video_encoding_or_contact_sheets": true,
+      "sequence_playback_reviewed_by_this_worker": false,
+      "native_or_final_art_acceptance": false,
+      "retained_interrupted_attempt": {
+        "accepted": false,
+        "scope": "Lime original aggregate queue endedSIGTERM143 after58PNGs; cause unconfirmed, root reported no intentional stop. Partial was preserved and excluded.",
+        "receipt": {
+          "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoOwnMotionSequence-Remaining-20261017-v1/InterruptedAttempt.json",
+          "sha256": "40f95cec37e7bfed7a7dba28fc15fe2416ccd205982373fc070282b7f7cdd8be"
+        },
+        "partial_png_hashes": {
+          "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoOwnMotionSequence-Remaining-20261017-v1/LimeJacketPartialFrameHashes.json",
+          "sha256": "94d479a1d089f0ce78d6bb0077787f59c6ee1ff4e795c133fcc61880e3ae23b7"
+        },
+        "original_stale_status_retained_without_rewriting": {
+          "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoOwnMotionSequence-Remaining-20261017-v1/Status.json",
+          "sha256": "5dafb5d90b2e2ffa6e49c5dc40619a3b7004b161f8d6e72db9fe70b4e9da4f2f"
+        }
+      },
+      "sequence_plan": {
+        "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoOwnMotionSequence-Remaining-20261017-v1/Jobs.json",
+        "sha256": "0aca087649a11afd76a57f8a661cb61fe9d982b9d648445f1449e7c0ede00961"
+      },
+      "lime_retry_plan": {
+        "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoOwnMotionSequence-LimeJacket-20261017-v2/Plan.json",
+        "sha256": "15ae38e81380be5a7ae6d55b7e21e237d6c530c15008d6e46e2afc3d5b7e7be7"
+      },
+      "lime_retry_status": {
+        "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoOwnMotionSequence-LimeJacket-20261017-v2/Status.json",
+        "sha256": "29eefb82124d00d22d9297891732be7559c8371c9f9ba6fb3dbaa3461925d1dd"
+      },
+      "lime_retry_launch": {
+        "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoOwnMotionSequence-LimeJacket-20261017-v2/Launch.json",
+        "sha256": "71432fa93f56ccd8adab71503d19deebb9ff9727d793f4402b9624b8fecd0a7f"
+      }
+    }
+  },
+  "lime_interrupted_attempt": {
+    "source": {
+      "path": "Saved/Tests/TripoOwnMotionSequence-Remaining-20261017-v1/InterruptedAttempt.json",
+      "sha256": "40f95cec37e7bfed7a7dba28fc15fe2416ccd205982373fc070282b7f7cdd8be",
+      "bytes": 1135
+    },
+    "document": {
+      "scope": "Retain interrupted original sequence attempt; not an accepted render receipt",
+      "recorded_utc": "2026-10-18T00:02:24.306027+00:00",
+      "runner_session": 75183,
+      "runner_exit_code": 143,
+      "cause": "External SIGTERM; initiator unknown, no pose assertion observed",
+      "last_status": {
+        "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoOwnMotionSequence-Remaining-20261017-v1/Status.json",
+        "sha256": "5dafb5d90b2e2ffa6e49c5dc40619a3b7004b161f8d6e72db9fe70b4e9da4f2f"
+      },
+      "character": "LimeJacket",
+      "partial_png_count": 58,
+      "last_file": "057.png",
+      "log": {
+        "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoOwnMotionSequence-Remaining-20261017-v1/LimeJacket.log",
+        "sha256": "972553587cf4d57ef5c1ec4d5f738d002640c7033b2cd09f1e3d52699d8df42a"
+      },
+      "completed_sequence_receipts_retained": {
+        "Memphis33": "0d94e404a6daee65ea33a9eddaca189f41a62585bc7d274e13532d677e5a934a",
+        "WhiteCap": "565405e603709c8dc3a3674e517820aaa972cabc49baabe80b584ad9e48d5888"
+      },
+      "no_owned_process_remains": true,
+      "passed": false
+    },
+    "partial_frame_hashes_source": {
+      "path": "Saved/Tests/TripoOwnMotionSequence-Remaining-20261017-v1/LimeJacketPartialFrameHashes.json",
+      "sha256": "94d479a1d089f0ce78d6bb0077787f59c6ee1ff4e795c133fcc61880e3ae23b7",
+      "bytes": 8733
+    },
+    "all58_retained_partial_PNG_hashes_rechecked": true,
+    "accepted_sequence": false
+  },
+  "lime_accepted_retry": {
+    "status": {
+      "source": {
+        "path": "Saved/Tests/TripoOwnMotionSequence-LimeJacket-20261017-v2/Status.json",
+        "sha256": "29eefb82124d00d22d9297891732be7559c8371c9f9ba6fb3dbaa3461925d1dd",
+        "bytes": 1764
+      },
+      "document": {
+        "passed": true,
+        "worker_pid": 1028605,
+        "worker_pgid": 1028605,
+        "timeout_seconds": 600,
+        "plan_sha256": "15ae38e81380be5a7ae6d55b7e21e237d6c530c15008d6e46e2afc3d5b7e7be7",
+        "started_utc": "2026-10-18T00:04:33.264436+00:00",
+        "command": [
+          "/home/von/.local/bin/blender",
+          "-b",
+          "-t",
+          "4",
+          "--python-exit-code",
+          "1",
+          "--python",
+          "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Scripts/review_tripo_cast_motion.py",
+          "--",
+          "--surface",
+          "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoH31RemainingPlan-20261017-v3/LimeJacket/prepared-v1/surface/report/Surface.json",
+          "--motion",
+          "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoH31RemainingPlan-20261017-v3/LimeJacket/prepared-v1/motion/report/Motion.json",
+          "--output",
+          "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoOwnMotionSequence-LimeJacket-20261017-v2/sequence",
+          "--sequence"
+        ],
+        "errors": [],
+        "blender_pid": 1028610,
+        "blender_pgid": 1028610,
+        "running": false,
+        "process_exit_code": 0,
+        "readback": {
+          "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoOwnMotionSequence-LimeJacket-20261017-v2/sequence/Readback.json",
+          "sha256": "d2a7f22b24ae48627063c2d9fc338dee27298b266113fb5c87980cfbfc54165c"
+        },
+        "frames": 210,
+        "exact_frame_map_verified": true,
+        "all_png_hashes_verified": true,
+        "maximum_body_vs_clip_pose_error": 1.4722347259521484e-05,
+        "log_sha256": "1715243d3ebe9da476dbf932440496f8e7f728e91320f4d3c9b3186700417ebe",
+        "owned_blender_closed": true,
+        "elapsed_seconds": 238.29658071999438,
+        "finished_utc": "2026-10-18T00:08:31.561133+00:00"
+      }
+    },
+    "plan": {
+      "source": {
+        "path": "Saved/Tests/TripoOwnMotionSequence-LimeJacket-20261017-v2/Plan.json",
+        "sha256": "15ae38e81380be5a7ae6d55b7e21e237d6c530c15008d6e46e2afc3d5b7e7be7",
+        "bytes": 4211
+      },
+      "document": {
+        "scope": "Fresh Lime-only retry after unexplainedSIGTERM of aggregate queue; completed Memphis/White untouched",
+        "interrupted": {
+          "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoOwnMotionSequence-Remaining-20261017-v1/InterruptedAttempt.json",
+          "sha256": "40f95cec37e7bfed7a7dba28fc15fe2416ccd205982373fc070282b7f7cdd8be"
+        },
+        "command": [
+          "/home/von/.local/bin/blender",
+          "-b",
+          "-t",
+          "4",
+          "--python-exit-code",
+          "1",
+          "--python",
+          "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Scripts/review_tripo_cast_motion.py",
+          "--",
+          "--surface",
+          "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoH31RemainingPlan-20261017-v3/LimeJacket/prepared-v1/surface/report/Surface.json",
+          "--motion",
+          "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoH31RemainingPlan-20261017-v3/LimeJacket/prepared-v1/motion/report/Motion.json",
+          "--output",
+          "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoOwnMotionSequence-LimeJacket-20261017-v2/sequence",
+          "--sequence"
+        ],
+        "working_directory": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal",
+        "pins": {
+          "surface": {
+            "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoH31RemainingPlan-20261017-v3/LimeJacket/prepared-v1/surface/report/Surface.json",
+            "sha256": "3db86feef03f8df68adc4276b0ec7f61af9f250c53fc1fe729b029e9f91575ba"
+          },
+          "motion": {
+            "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoH31RemainingPlan-20261017-v3/LimeJacket/prepared-v1/motion/report/Motion.json",
+            "sha256": "e0b39ca494a26ff3a68a176516063dbe1d31337c4b033a63df03b67e6a13b0f7"
+          },
+          "recipe": {
+            "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Scripts/review_tripo_cast_motion.py",
+            "sha256": "62bb0b2824744baf47ef806605b3de2f89653784d03a4e0d64844bc6f94f5926"
+          },
+          "original": {
+            "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Crew/LimeJacket/tripo-h31-body-20261017/body.glb",
+            "sha256": "178a21d8a3c963a9cf91e4014807a3f69f2c6bee0e95b472796740bf7179ab77"
+          },
+          "body": {
+            "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoH31RemainingPlan-20261017-v3/LimeJacket/prepared-v1/surface/body/body.fbx",
+            "sha256": "782ba33479b7d0f2adaf8f533df829287f351673afd3e859dd9fc580bec734c5"
+          },
+          "idle": {
+            "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoH31RemainingPlan-20261017-v3/LimeJacket/prepared-v1/motion/clips/idle.fbx",
+            "sha256": "0c5b0115b0b507c3e869310d7f42aeb186ae95602e52342b0b6ba726afa785f9"
+          },
+          "jump": {
+            "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoH31RemainingPlan-20261017-v3/LimeJacket/prepared-v1/motion/clips/jump.fbx",
+            "sha256": "f6ec2fc234e16b903c47aeb8e69c681a696e5f1572240facca4bb9d674964a70"
+          },
+          "walk": {
+            "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoH31RemainingPlan-20261017-v3/LimeJacket/prepared-v1/motion/clips/walk.fbx",
+            "sha256": "e85edcb25347a76b20a193b45b74bee30ac89c9578949f1f9a18288a7eb52500"
+          },
+          "run": {
+            "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoH31RemainingPlan-20261017-v3/LimeJacket/prepared-v1/motion/clips/run.fbx",
+            "sha256": "ddd1af993c4c4700bc451cdc9a52cd8271bdb579e0ed3ea97c514df7b38623fe"
+          }
+        },
+        "helper": {
+          "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Scripts/review_tripo_cast_motion.py",
+          "sha256": "62bb0b2824744baf47ef806605b3de2f89653784d03a4e0d64844bc6f94f5926"
+        },
+        "output": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoOwnMotionSequence-LimeJacket-20261017-v2/sequence",
+        "log": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoOwnMotionSequence-LimeJacket-20261017-v2/blender.log"
+      }
+    },
+    "launch": {
+      "source": {
+        "path": "Saved/Tests/TripoOwnMotionSequence-LimeJacket-20261017-v2/Launch.json",
+        "sha256": "71432fa93f56ccd8adab71503d19deebb9ff9727d793f4402b9624b8fecd0a7f",
+        "bytes": 405
+      },
+      "document": {
+        "worker_pid": 1028605,
+        "script": {
+          "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoOwnMotionSequence-LimeJacket-20261017-v2/run_owned.py",
+          "sha256": "55ce6ddc6f6093cc0302a17be8291d83b5fd29ab8b121dd8a77e3b9f839e6463"
+        },
+        "pattern_reference": "Scripts/verify_district_package.py:372,426",
+        "detached_new_session": true,
+        "timeout_seconds": 600
+      }
+    }
+  },
+  "retention_audit": {
+    "Memphis33": {
+      "retention": {
+        "path": "Verification/TripoCast/TripoBodies/OwnMotionSequence/Memphis33-v1/Retention.json",
+        "sha256": "1706e41fae26c533ee76186a47001275d1c32b3cf78c55605668f0138fb5870c",
+        "bytes": 4605
+      },
+      "retained_readback": {
+        "path": "Verification/TripoCast/TripoBodies/OwnMotionSequence/Memphis33-v1/Readback.json",
+        "sha256": "0d94e404a6daee65ea33a9eddaca189f41a62585bc7d274e13532d677e5a934a",
+        "bytes": 56275
+      },
+      "byte_identical_to_accepted_source_readback": true,
+      "executed_render_recipe": {
+        "path": "Verification/TripoCast/TripoBodies/OwnMotionSequence/Memphis33-v1/ExecutedRecipe.py",
+        "sha256": "62bb0b2824744baf47ef806605b3de2f89653784d03a4e0d64844bc6f94f5926",
+        "bytes": 10686
+      },
+      "executed_retention_recipe": {
+        "path": "Verification/TripoCast/TripoBodies/OwnMotionSequence/Memphis33-v1/ExecutedRetentionRecipe.py",
+        "sha256": "63b88aeefbe2fbb4b3d727aacf99ed861b069639b48b6cf002e4c2d6d642835e",
+        "bytes": 4004
+      },
+      "source_210_PNG_hashes_and_dimensions_checked": true,
+      "exact_clip_time_file_frame_map_checked": true,
+      "clip_counts": {
+        "idle": 121,
+        "walk": 32,
+        "run": 20,
+        "jump": 37
+      },
+      "video": {
+        "path": "Verification/TripoCast/TripoBodies/OwnMotionSequence/Memphis33-v1/Memphis33-own-rig-cpu.mp4",
+        "sha256": "f39743a6771e6ab38720ac8d695a6a3c0d49d6846347ba9028fd0667d23ced8b",
+        "bytes": 210452,
+        "current_ffprobe": {
+          "codec_name": "h264",
+          "width": 384,
+          "height": 480,
+          "pix_fmt": "yuv420p",
+          "r_frame_rate": "30/1",
+          "avg_frame_rate": "30/1",
+          "duration": "7.000000",
+          "nb_frames": "210",
+          "nb_read_frames": "210"
+        },
+        "probe_command": [
+          "ffprobe",
+          "-v",
+          "error",
+          "-threads",
+          "4",
+          "-select_streams",
+          "v:0",
+          "-count_frames",
+          "-show_entries",
+          "stream=codec_name,width,height,r_frame_rate,avg_frame_rate,nb_frames,nb_read_frames,duration,pix_fmt",
+          "-of",
+          "json",
+          "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Verification/TripoCast/TripoBodies/OwnMotionSequence/Memphis33-v1/Memphis33-own-rig-cpu.mp4"
+        ],
+        "encode_input_matches_accepted_source_directory": true
+      },
+      "sheets": [
+        {
+          "path": "Verification/TripoCast/TripoBodies/OwnMotionSequence/Memphis33-v1/idle-a.jpg",
+          "sha256": "4c33b015cac2120a00810d5d1d5030fd72604513b344e6d4582f71f4123a3df1",
+          "bytes": 192816,
+          "frame_count": 64,
+          "first_frame": 0,
+          "last_frame": 63,
+          "dimensions": [
+            768,
+            1088
+          ]
+        },
+        {
+          "path": "Verification/TripoCast/TripoBodies/OwnMotionSequence/Memphis33-v1/idle-b.jpg",
+          "sha256": "02039f76471e0a154bf025ce3c4e6e6cace87e775c4b58c23aeff545ca72749c",
+          "bytes": 173234,
+          "frame_count": 57,
+          "first_frame": 64,
+          "last_frame": 120,
+          "dimensions": [
+            768,
+            1088
+          ]
+        },
+        {
+          "path": "Verification/TripoCast/TripoBodies/OwnMotionSequence/Memphis33-v1/walk.jpg",
+          "sha256": "f40b1ccb74295fb42dd0cdc2e061bfc9704d7808b374e0c4e620a0be5dbfd5b6",
+          "bytes": 143985,
+          "frame_count": 32,
+          "first_frame": 121,
+          "last_frame": 152,
+          "dimensions": [
+            1024,
+            704
+          ]
+        },
+        {
+          "path": "Verification/TripoCast/TripoBodies/OwnMotionSequence/Memphis33-v1/run.jpg",
+          "sha256": "c6eb5082fddaa3e8baafb5f267bf4e4b48fd07a15d3ea46c69b33c0d6946580f",
+          "bytes": 115417,
+          "frame_count": 20,
+          "first_frame": 153,
+          "last_frame": 172,
+          "dimensions": [
+            770,
+            832
+          ]
+        },
+        {
+          "path": "Verification/TripoCast/TripoBodies/OwnMotionSequence/Memphis33-v1/jump.jpg",
+          "sha256": "b4f152b0c530cc790e34658c13b15bb6d98aeda1bdbf81fdda48c689780e4223",
+          "bytes": 164599,
+          "frame_count": 37,
+          "first_frame": 173,
+          "last_frame": 209,
+          "dimensions": [
+            1024,
+            880
+          ]
+        }
+      ],
+      "coverage": {
+        "frames": 210,
+        "unique_frames": 210,
+        "first": 0,
+        "last": 209,
+        "gaps": [],
+        "duplicates": []
+      }
+    },
+    "WhiteCap": {
+      "retention": {
+        "path": "Verification/TripoCast/TripoBodies/OwnMotionSequence/WhiteCap-v1/Retention.json",
+        "sha256": "22635d7e67fcedc04ba255f9153d0c502de0d631084360f0369e260d51bc8cf0",
+        "bytes": 4601
+      },
+      "retained_readback": {
+        "path": "Verification/TripoCast/TripoBodies/OwnMotionSequence/WhiteCap-v1/Readback.json",
+        "sha256": "565405e603709c8dc3a3674e517820aaa972cabc49baabe80b584ad9e48d5888",
+        "bytes": 56140
+      },
+      "byte_identical_to_accepted_source_readback": true,
+      "executed_render_recipe": {
+        "path": "Verification/TripoCast/TripoBodies/OwnMotionSequence/WhiteCap-v1/ExecutedRecipe.py",
+        "sha256": "62bb0b2824744baf47ef806605b3de2f89653784d03a4e0d64844bc6f94f5926",
+        "bytes": 10686
+      },
+      "executed_retention_recipe": {
+        "path": "Verification/TripoCast/TripoBodies/OwnMotionSequence/WhiteCap-v1/ExecutedRetentionRecipe.py",
+        "sha256": "63b88aeefbe2fbb4b3d727aacf99ed861b069639b48b6cf002e4c2d6d642835e",
+        "bytes": 4004
+      },
+      "source_210_PNG_hashes_and_dimensions_checked": true,
+      "exact_clip_time_file_frame_map_checked": true,
+      "clip_counts": {
+        "idle": 121,
+        "walk": 32,
+        "run": 20,
+        "jump": 37
+      },
+      "video": {
+        "path": "Verification/TripoCast/TripoBodies/OwnMotionSequence/WhiteCap-v1/WhiteCap-own-rig-cpu.mp4",
+        "sha256": "957ec6b46edf880f4974373a77ae91933397ac43df882ac84c38da92ad1259f8",
+        "bytes": 204390,
+        "current_ffprobe": {
+          "codec_name": "h264",
+          "width": 384,
+          "height": 480,
+          "pix_fmt": "yuv420p",
+          "r_frame_rate": "30/1",
+          "avg_frame_rate": "30/1",
+          "duration": "7.000000",
+          "nb_frames": "210",
+          "nb_read_frames": "210"
+        },
+        "probe_command": [
+          "ffprobe",
+          "-v",
+          "error",
+          "-threads",
+          "4",
+          "-select_streams",
+          "v:0",
+          "-count_frames",
+          "-show_entries",
+          "stream=codec_name,width,height,r_frame_rate,avg_frame_rate,nb_frames,nb_read_frames,duration,pix_fmt",
+          "-of",
+          "json",
+          "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Verification/TripoCast/TripoBodies/OwnMotionSequence/WhiteCap-v1/WhiteCap-own-rig-cpu.mp4"
+        ],
+        "encode_input_matches_accepted_source_directory": true
+      },
+      "sheets": [
+        {
+          "path": "Verification/TripoCast/TripoBodies/OwnMotionSequence/WhiteCap-v1/idle-a.jpg",
+          "sha256": "1f0fc8833fd034441ad257af3958fb57c312706e81118635214c764d66c642bf",
+          "bytes": 189897,
+          "frame_count": 64,
+          "first_frame": 0,
+          "last_frame": 63,
+          "dimensions": [
+            768,
+            1088
+          ]
+        },
+        {
+          "path": "Verification/TripoCast/TripoBodies/OwnMotionSequence/WhiteCap-v1/idle-b.jpg",
+          "sha256": "db07464cc7aa8b81e65d9fa57cde3169948faca0b1c2ccb77e4a579750306dcd",
+          "bytes": 170950,
+          "frame_count": 57,
+          "first_frame": 64,
+          "last_frame": 120,
+          "dimensions": [
+            768,
+            1088
+          ]
+        },
+        {
+          "path": "Verification/TripoCast/TripoBodies/OwnMotionSequence/WhiteCap-v1/walk.jpg",
+          "sha256": "f2deef3d2c3ad500b40ceb7e8234e30f12045f8411aa9659d1d3af0b5a92417a",
+          "bytes": 140058,
+          "frame_count": 32,
+          "first_frame": 121,
+          "last_frame": 152,
+          "dimensions": [
+            1024,
+            704
+          ]
+        },
+        {
+          "path": "Verification/TripoCast/TripoBodies/OwnMotionSequence/WhiteCap-v1/run.jpg",
+          "sha256": "d06ef50037a4a5440e1280083851d42e0d891c9fa4a6aa89c8491023c63d4706",
+          "bytes": 111079,
+          "frame_count": 20,
+          "first_frame": 153,
+          "last_frame": 172,
+          "dimensions": [
+            770,
+            832
+          ]
+        },
+        {
+          "path": "Verification/TripoCast/TripoBodies/OwnMotionSequence/WhiteCap-v1/jump.jpg",
+          "sha256": "ee687bd4c8f77dc00d6cb7eb00fc3f7e7800b6fbf8066d3a6ec3d81522538eb4",
+          "bytes": 162683,
+          "frame_count": 37,
+          "first_frame": 173,
+          "last_frame": 209,
+          "dimensions": [
+            1024,
+            880
+          ]
+        }
+      ],
+      "coverage": {
+        "frames": 210,
+        "unique_frames": 210,
+        "first": 0,
+        "last": 209,
+        "gaps": [],
+        "duplicates": []
+      }
+    },
+    "LimeJacket": {
+      "retention": {
+        "path": "Verification/TripoCast/TripoBodies/OwnMotionSequence/LimeJacket-v1/Retention.json",
+        "sha256": "fc80370c6f19089a41dcec5be651039d9a4cfa6ec25b9f30c65187632076184c",
+        "bytes": 4608
+      },
+      "retained_readback": {
+        "path": "Verification/TripoCast/TripoBodies/OwnMotionSequence/LimeJacket-v1/Readback.json",
+        "sha256": "d2a7f22b24ae48627063c2d9fc338dee27298b266113fb5c87980cfbfc54165c",
+        "bytes": 56161
+      },
+      "byte_identical_to_accepted_source_readback": true,
+      "executed_render_recipe": {
+        "path": "Verification/TripoCast/TripoBodies/OwnMotionSequence/LimeJacket-v1/ExecutedRecipe.py",
+        "sha256": "62bb0b2824744baf47ef806605b3de2f89653784d03a4e0d64844bc6f94f5926",
+        "bytes": 10686
+      },
+      "executed_retention_recipe": {
+        "path": "Verification/TripoCast/TripoBodies/OwnMotionSequence/LimeJacket-v1/ExecutedRetentionRecipe.py",
+        "sha256": "63b88aeefbe2fbb4b3d727aacf99ed861b069639b48b6cf002e4c2d6d642835e",
+        "bytes": 4004
+      },
+      "source_210_PNG_hashes_and_dimensions_checked": true,
+      "exact_clip_time_file_frame_map_checked": true,
+      "clip_counts": {
+        "idle": 121,
+        "walk": 32,
+        "run": 20,
+        "jump": 37
+      },
+      "video": {
+        "path": "Verification/TripoCast/TripoBodies/OwnMotionSequence/LimeJacket-v1/LimeJacket-own-rig-cpu.mp4",
+        "sha256": "9784f3a621ad793ce285330c5114bda98e6457c78a71a85ab721f21f7fbb4085",
+        "bytes": 232081,
+        "current_ffprobe": {
+          "codec_name": "h264",
+          "width": 384,
+          "height": 480,
+          "pix_fmt": "yuv420p",
+          "r_frame_rate": "30/1",
+          "avg_frame_rate": "30/1",
+          "duration": "7.000000",
+          "nb_frames": "210",
+          "nb_read_frames": "210"
+        },
+        "probe_command": [
+          "ffprobe",
+          "-v",
+          "error",
+          "-threads",
+          "4",
+          "-select_streams",
+          "v:0",
+          "-count_frames",
+          "-show_entries",
+          "stream=codec_name,width,height,r_frame_rate,avg_frame_rate,nb_frames,nb_read_frames,duration,pix_fmt",
+          "-of",
+          "json",
+          "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Verification/TripoCast/TripoBodies/OwnMotionSequence/LimeJacket-v1/LimeJacket-own-rig-cpu.mp4"
+        ],
+        "encode_input_matches_accepted_source_directory": true
+      },
+      "sheets": [
+        {
+          "path": "Verification/TripoCast/TripoBodies/OwnMotionSequence/LimeJacket-v1/idle-a.jpg",
+          "sha256": "24a505de87b053a882f94dace3b854e804b7db6976de09dd70044e4fee4df71b",
+          "bytes": 185985,
+          "frame_count": 64,
+          "first_frame": 0,
+          "last_frame": 63,
+          "dimensions": [
+            768,
+            1088
+          ]
+        },
+        {
+          "path": "Verification/TripoCast/TripoBodies/OwnMotionSequence/LimeJacket-v1/idle-b.jpg",
+          "sha256": "19bb5992862b1739a9e946165ef7500224447ea7a2d3a3cdccc2d235a7a9c4df",
+          "bytes": 167358,
+          "frame_count": 57,
+          "first_frame": 64,
+          "last_frame": 120,
+          "dimensions": [
+            768,
+            1088
+          ]
+        },
+        {
+          "path": "Verification/TripoCast/TripoBodies/OwnMotionSequence/LimeJacket-v1/walk.jpg",
+          "sha256": "b81d9c112ba5ded49094d573f1d87f0a6b494738ba895b10bb849c54773a86e3",
+          "bytes": 141273,
+          "frame_count": 32,
+          "first_frame": 121,
+          "last_frame": 152,
+          "dimensions": [
+            1024,
+            704
+          ]
+        },
+        {
+          "path": "Verification/TripoCast/TripoBodies/OwnMotionSequence/LimeJacket-v1/run.jpg",
+          "sha256": "56811460cae9c8a268e85df8bce2cb8ab25dc416896ee850e4232ca218978b7f",
+          "bytes": 113091,
+          "frame_count": 20,
+          "first_frame": 153,
+          "last_frame": 172,
+          "dimensions": [
+            770,
+            832
+          ]
+        },
+        {
+          "path": "Verification/TripoCast/TripoBodies/OwnMotionSequence/LimeJacket-v1/jump.jpg",
+          "sha256": "6c068d28ef3a17441a5b50704cfa6ec1ec19dfa4e86f8d8e3d6c4711088e24bf",
+          "bytes": 160860,
+          "frame_count": 37,
+          "first_frame": 173,
+          "last_frame": 209,
+          "dimensions": [
+            1024,
+            880
+          ]
+        }
+      ],
+      "coverage": {
+        "frames": 210,
+        "unique_frames": 210,
+        "first": 0,
+        "last": 209,
+        "gaps": [],
+        "duplicates": []
+      }
+    }
+  },
+  "totals": {
+    "accepted_sequences": 3,
+    "accepted_frames": 630,
+    "retained_videos": 3,
+    "retained_contact_sheets": 15,
+    "partial_interrupted_frames_excluded": 58
+  },
+  "source_jsons_unchanged": true,
+  "root_review_created_or_modified_by_this_worker": false,
+  "new_visual_review_asserted_by_this_worker": false,
+  "native_or_final_art_acceptance": false,
+  "audit_limits": [
+    "Hashes and declared frame coverage were independently checked; visual conclusions belong to root.",
+    "MP4 is a lossy encoding: this verifies its current hash,210 decoded frames,7-second duration,30Hz,dimensions and recorded source command, not pixel identity to the PNGs."
+  ]
+}

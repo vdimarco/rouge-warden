@@ -59,6 +59,8 @@ export function createActionView(scene, { cars, jobs, traffic = null }) {
   carMesh.frustumCulled = false;
   carMesh.count = 0;
   carMesh.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(cars.cars.length * 3), 3);
+  // Initial bufferData consumes colors too; clear ranges only after an actual upload.
+  carMesh.instanceColor.onUpload(() => carMesh.instanceColor.clearUpdateRanges());
   root.add(carMesh);
   carMesh.add(outlineOf(carMesh, { width: 0.03 }));
   // The models: front to -z (they come facing +z), scaled into the game's car (4.4 m long, 2 m wide at most), wheels on the ground.
@@ -108,6 +110,7 @@ export function createActionView(scene, { cars, jobs, traffic = null }) {
         // culled as a whole by a sphere round its instances (set in update), and its ink with it, so a view away from the cars skips them
         im.name = "car-" + m.src; im.count = 0; im.boundingSphere = new THREE.Sphere();
         im.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array((cars.cars.length + MODEL_N) * 3), 3);
+        im.instanceColor.onUpload(() => im.instanceColor.clearUpdateRanges());
         const ink = outlineOf(im, { width: 0.03, geometry: hull.g });
         ink.boundingSphere = im.boundingSphere;
         im.add(ink);
@@ -171,7 +174,11 @@ export function createActionView(scene, { cars, jobs, traffic = null }) {
   // The nearest street cars as models: pick them (lanes on the ground, so not the expressway nor a stolen car, clear of their
   // lane's ends, where the shader shrinks them), veil their shader cars, draw the models where trafficAt puts them, and give back the ones
   // that lose their slot. The model is picked by the index, as for the parked cars.
-  const promoted = new Set(), pick = [], TQ = {}, slots = [], keep = new Set(), BOX = new THREE.Box3();
+  const promoted = new Set(), pick = [], TQ = {}, slots = [], slotPool = [], keep = new Set(), BOX = new THREE.Box3();
+  const addSlot = (c, i, d) => {
+    const slot = slotPool[slots.length] ||= { c: null, i: 0, d: 0 };
+    slot.c = c; slot.i = i; slot.d = d; slots.push(slot);
+  };
   // the street cars within TRAFFIC_REACH, into pick as index, distance² pairs
   function streetNear(cam, time) {
     pick.length = 0;
@@ -198,9 +205,16 @@ export function createActionView(scene, { cars, jobs, traffic = null }) {
       Q.setFromAxisAngle(UP, TQ.yaw);
       M.compose(Pv.set(TQ.x, 0, TQ.z), Q, S1);
       const k = i % models.length, im = models[k], n = counts[k]++;
-      im.setMatrixAt(n, M); im.instanceColor.setXYZ(n, TQ.paint[0], TQ.paint[1], TQ.paint[2]);
+      im.setMatrixAt(n, M); paint(im.instanceColor, n, TQ.paint);
     }
   }
+  function paint(a, i, col) {
+    const o = i * 3, r = Math.fround(col[0]), g = Math.fround(col[1]), b = Math.fround(col[2]);
+    if (a.array[o] === r && a.array[o + 1] === g && a.array[o + 2] === b) return;
+    a.setXYZ(i, r, g, b); a.addUpdateRange(o, 3); a.needsUpdate = true;
+  }
+  const markerState = new Float64Array(MAX_MARK * 6).fill(NaN);
+  const upload = (a, n) => { a.clearUpdateRanges(); if (n > 0) { a.addUpdateRange(0, n * a.itemSize); a.needsUpdate = true; } };
   const V = {
     root,
     update(dt, time, opts = {}) {
@@ -212,10 +226,10 @@ export function createActionView(scene, { cars, jobs, traffic = null }) {
       const cam = opts.cam, R2 = CAR_REACH * CAR_REACH;
       // the nearest MODEL_N cars, job cars and street cars together (the one you drive first), show their model
       near.length = 0; slots.length = 0; keep.clear();
-      const T = modelsOk && cam ? streetNear(cam, time) : null;
+      const T = modelsOk ? streetNear(cam, time) : null;
       for (const c of cars.cars) if (c.on && (c === cars.driving || !cam || (c.x - cam.x) ** 2 + (c.z - cam.z) ** 2 < MODEL_REACH * MODEL_REACH))
-        slots.push({ c, d: !cam || c === cars.driving ? -1 : (c.x - cam.x) ** 2 + (c.z - cam.z) ** 2 });
-      for (let k = 0; k < pick.length; k += 2) slots.push({ i: pick[k], d: pick[k + 1] });
+        addSlot(c, 0, !cam || c === cars.driving ? -1 : (c.x - cam.x) ** 2 + (c.z - cam.z) ** 2);
+      for (let k = 0; k < pick.length; k += 2) addSlot(null, pick[k], pick[k + 1]);
       slots.sort((a, b) => a.d - b.d);
       for (let k = 0; k < Math.min(MODEL_N, slots.length); k++) if (slots[k].c) near.push(slots[k].c); else keep.add(slots[k].i);
       let nb = 0;
@@ -226,10 +240,10 @@ export function createActionView(scene, { cars, jobs, traffic = null }) {
         M.compose(Pv.set(c.x, c.y, c.z), Q, S1);
         if (modelsOk && near.includes(c)) {
           const k = c.id % models.length, im = models[k], i = counts[k]++;
-          im.setMatrixAt(i, M); im.instanceColor.setXYZ(i, c.paint[0], c.paint[1], c.paint[2]);
+          im.setMatrixAt(i, M); paint(im.instanceColor, i, c.paint);
         } else {
           carMesh.setMatrixAt(nb, M);
-          carMesh.instanceColor.setXYZ(nb, c.paint[0], c.paint[1], c.paint[2]);
+          paint(carMesh.instanceColor, nb, c.paint);
           nb++;
         }
         n++;
@@ -237,29 +251,38 @@ export function createActionView(scene, { cars, jobs, traffic = null }) {
       if (modelsOk && traffic) streetModels(T, time);
       if (modelsOk) for (let k = 0; k < models.length; k++) {
         const im = models[k];
-        im.count = counts[k]; im.instanceMatrix.needsUpdate = true; im.instanceColor.needsUpdate = true;
+        im.count = counts[k]; upload(im.instanceMatrix, im.count);
         BOX.makeEmpty();
         for (let i = 0; i < im.count; i++) BOX.expandByPoint(Pv.fromArray(im.instanceMatrix.array, i * 16 + 12));
         if (im.count) BOX.getBoundingSphere(im.boundingSphere).radius += 4; // half a van and its ink
         else im.boundingSphere.set(Pv.set(0, -1e4, 0), 0);
       }
-      carMesh.count = nb; carMesh.visible = nb > 0; carMesh.instanceMatrix.needsUpdate = true; carMesh.instanceColor.needsUpdate = true;
+      carMesh.count = nb; carMesh.visible = nb > 0; upload(carMesh.instanceMatrix, nb);
       // markers: the offers, or the running job's goal
-      let m = 0;
+      let m = 0, markersDirty = false;
       const put = (x, y, z, col) => {
         if (m >= MAX_MARK) return;
-        M.makeTranslation(x, y + 0.05, z);
-        beams.setMatrixAt(m, M); rings.setMatrixAt(m, M);
-        bCol.setXYZ(m, col[0], col[1], col[2]); rings.geometry.attributes.aCol.setXYZ(m, col[0], col[1], col[2]);
+        const i = m * 6;
+        if (markerState[i] !== x || markerState[i + 1] !== y || markerState[i + 2] !== z || markerState[i + 3] !== col[0] || markerState[i + 4] !== col[1] || markerState[i + 5] !== col[2]) {
+          markerState[i] = x; markerState[i + 1] = y; markerState[i + 2] = z;
+          markerState[i + 3] = col[0]; markerState[i + 4] = col[1]; markerState[i + 5] = col[2];
+          M.makeTranslation(x, y + 0.05, z);
+          beams.setMatrixAt(m, M); rings.setMatrixAt(m, M);
+          bCol.setXYZ(m, col[0], col[1], col[2]); rings.geometry.attributes.aCol.setXYZ(m, col[0], col[1], col[2]);
+          markersDirty = true;
+        }
         m++;
       };
       if (opts.markers !== false) {
         if (!jobs.active) for (const o of jobs.offers) put(o.x, o.y, o.z, JOB_COL[o.type] || JOB_COL.goal);
         else if (jobs.card && jobs.card.goal) { const g = jobs.card.goal; put(g.x, g.y, g.z, JOB_COL.goal); }
       }
+      markersDirty ||= beams.count !== m;
       beams.count = rings.count = m;
-      beams.instanceMatrix.needsUpdate = rings.instanceMatrix.needsUpdate = true;
-      bCol.needsUpdate = true; rings.geometry.attributes.aCol.needsUpdate = true;
+      if (markersDirty) {
+        upload(beams.instanceMatrix, m); upload(rings.instanceMatrix, m);
+        upload(bCol, m); upload(rings.geometry.attributes.aCol, m);
+      }
       // the balloon
       const b = jobs.balloons && jobs.balloons[0];
       balloon.visible = !!b;

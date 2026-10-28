@@ -1,0 +1,20 @@
+{
+  "at_utc": "2026-10-17T22:16:51.505868+00:00",
+  "source_sha256": "310b173814108907c7041dbfc51bb0f5228a9b94a7a3323ac7b87243f6fe5a6c",
+  "viewed": [
+    {
+      "file": "face-front.png",
+      "sha256": "51fb86f1843be08bcb9f1f0b536a8bdc87f9b3dff43d54672e0e7bd47d07a2c8"
+    },
+    {
+      "file": "face-threequarter.png",
+      "sha256": "6cc4534728656ce6d7e60f9fcdba4d3d7a1b635fa1b82412db7a800cd52c9453"
+    }
+  ],
+  "bounded_rig_trial_allowed": false,
+  "final_art_accepted": false,
+  "observations": [
+    "Dangling extra glasses stems run beside both cheeks; rigging will not fix this geometry.",
+    "Hold paid rig pending a bounded local correction and fresh review."
+  ]
+}

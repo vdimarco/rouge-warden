@@ -135,7 +135,7 @@ test('the face rolls with the phone, pitches with tilt, and the swing pushes for
   let back = push;
   for (let i = 0; i < 40; i++) back = swingPush(back, 0, 1 / 60);
   assert.ok(back < push * 0.25, back);
-  assert.deepEqual(mapAxes(10, 4, 90), { beta: 4, gamma: 10 });
+  assert.deepEqual(mapAxes(10, 4, 90), { beta: -4, gamma: 10 });
 });
 
 test('a hit uses the bat position and aim stays on the swing angle', () => {
@@ -153,19 +153,40 @@ test('a hit uses the bat position and aim stays on the swing angle', () => {
   const wide = feedAt(0, 0.7);
   wide.setBat({ x: -0.7, depth: RULES.hitZ, roll: 0 });
   wide.swing({ degPerSec: 500, dir: 'forehand', tiltX: 0, tiltY: 0, rollDegPerSec: 0, offsetMs: 0 });
-  let missed = wide.state();
-  for (let i = 0; i < 360 && !(missed.lastShot && missed.lastShot.reason === 'reach'); i++) missed = wide.step();
-  assert.equal(missed.lastShot.band, 'miss');
-  assert.equal(missed.lastShot.reason, 'reach');
-  assert.ok(Math.abs(missed.lastShot.batX - (-0.7)) < 1e-9);
+  const met = untilShot(wide);
+  assert.notEqual(met.lastShot.band, 'miss');
+  assert.notEqual(met.lastShot.reason, 'reach');
 
   const deep = feedAt(0, 0.4);
   deep.setBat({ x: 0, depth: RULES.batInZ, roll: 0 });
   const whiff = deep.swing({ degPerSec: 500, dir: 'forehand', tiltX: 0, tiltY: 0, rollDegPerSec: 0, offsetMs: 0 });
   assert.equal(whiff.accepted, true);
   const gone = deep.state();
-  assert.equal(gone.lastShot.reason, 'reach');
-  assert.ok(Math.abs(gone.lastShot.batDepth - RULES.batInZ) < 1e-9);
+  assert.notEqual(gone.lastShot.band, 'miss');
+  assert.notEqual(gone.lastShot.reason, 'reach');
+
+  const aside = feedAt(0.20, 0.30);
+  aside.setBat({ x: 0, depth: 0.30, roll: 0 });
+  aside.swing({ degPerSec: 700, dir: 'forehand', tiltX: 0, tiltY: 0, rollDegPerSec: 0, offsetMs: -9 });
+  const close = aside.state().lastShot;
+  assert.equal(close.offsetMs, -9);
+  assert.notEqual(close.band, 'miss');
+  assert.notEqual(close.reason, 'reach');
+
+  const over = feedAt(0.23, 0.30);
+  over.setBat({ x: 0, depth: 0.30, roll: 0 });
+  over.swing({ degPerSec: 700, dir: 'forehand', tiltX: 0, tiltY: 0, rollDegPerSec: 0, offsetMs: -9 });
+  const wideEarly = over.state().lastShot;
+  assert.equal(wideEarly.offsetMs, -9);
+  assert.notEqual(wideEarly.band, 'miss');
+  assert.notEqual(wideEarly.reason, 'reach');
+
+  const edge = feedAt(0.4, 0.7);
+  edge.setBat({ x: 0, depth: RULES.hitZ, roll: 0 });
+  edge.swing({ degPerSec: 700, dir: 'forehand', tiltX: 0, tiltY: 0, rollDegPerSec: 0, offsetMs: -120 });
+  const onEdge = untilShot(edge);
+  assert.equal(onEdge.lastShot.offsetMs, -120);
+  assert.notEqual(onEdge.lastShot.band, 'miss');
 
   const early = feedAt(0, 0.9);
   early.setBat({ x: 0, depth: 0.55, roll: 0 });

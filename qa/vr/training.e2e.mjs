@@ -46,7 +46,7 @@ try {
   /* ---------------- the card on a first run ---------------- */
   const c0 = await page.evaluate(() => { __t.step(3); const t = __t.tr(); return { n: t && t.items.length, now: t && t.now, kind: t && t.kind, tut: G.game.progress.tutorial, card: __t.card(), shown: !document.querySelector('.fs-train').hidden, said: __t.said() }; });
   assert(c0.n === 8 && c0.now === 0 && c0.kind === 'mouse' && c0.tut === 0 && c0.shown && c0.card.length === 8 && c0.card[0].now && !c0.card[1].now, 'a first run shows the training card with 8 rows, the gold ring first and lit: ' + JSON.stringify(c0));
-  assert(/HOLD W/.test(c0.card[0].text) && /LEFT MOUSE/.test(c0.card[0].text) && /F/.test(c0.card[7].text), 'each row shows its keys: ' + JSON.stringify(c0.card.map((r) => r.text)));
+  assert(/LEFT MOUSE/.test(c0.card[0].text) && /OR E/.test(c0.card[0].text) && !/HOLD W/.test(c0.card[0].text) && /F/.test(c0.card[7].text), 'each row shows its keys: ' + JSON.stringify(c0.card.map((r) => r.text)));
   assert.equal(c0.said, L[0], 'the line said is the first tutorial line');
   console.log('PASS the training card: 8 rows, the next one lit, its keys and its line');
   await page.screenshot({ path: out + '/training-card.png' });

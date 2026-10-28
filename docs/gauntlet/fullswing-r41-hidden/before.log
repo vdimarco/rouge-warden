@@ -1,0 +1,21 @@
+PASS: visible gameplay moves the hero
+PASS: hidden probe executes sixty simulation callbacks
+FAIL hidden flat input reports not visible
+  {"state":"play","visible":true,"frame":171,"vel":{"x":7.077773155458893,"y":-13.72672368960516,"z":0},"pos":{"x":11.375604279598859,"y":189.35104372547656,"z":0}}
+FAIL hidden callbacks preserve hero position
+  {"start":{"state":"play","visible":true,"frame":81,"vel":{"x":8,"y":0,"z":0},"pos":{"x":0,"y":200,"z":0}},"moving":{"state":"play","visible":true,"frame":111,"vel":{"x":7.752828160096341,"y":-4.820872851566608,"z":0},"pos":{"x":3.938299041038062,"y":198.767875675501,"z":0}},"hidden":{"state":"play","visible":true,"frame":171,"vel":{"x":7.077773155458893,"y":-13.72672368960516,"z":0},"pos":{"x":11.375604279598859,"y":189.35104372547656,"z":0}},"resumed":{"state":"play","visible":true,"frame":201,"vel":{"x":6.63558950894324,"y":-17.606873388479478,"z":0},"pos":{"x":14.804540493487275,"y":181.48273543915118,"z":0}}}
+FAIL hidden callbacks preserve hero velocity
+  {"start":{"state":"play","visible":true,"frame":81,"vel":{"x":8,"y":0,"z":0},"pos":{"x":0,"y":200,"z":0}},"moving":{"state":"play","visible":true,"frame":111,"vel":{"x":7.752828160096341,"y":-4.820872851566608,"z":0},"pos":{"x":3.938299041038062,"y":198.767875675501,"z":0}},"hidden":{"state":"play","visible":true,"frame":171,"vel":{"x":7.077773155458893,"y":-13.72672368960516,"z":0},"pos":{"x":11.375604279598859,"y":189.35104372547656,"z":0}},"resumed":{"state":"play","visible":true,"frame":201,"vel":{"x":6.63558950894324,"y":-17.606873388479478,"z":0},"pos":{"x":14.804540493487275,"y":181.48273543915118,"z":0}}}
+PASS: returning to the page resumes physics
+PASS: no page errors at 960
+PASS: visible gameplay moves the hero
+PASS: hidden probe executes sixty simulation callbacks
+FAIL hidden flat input reports not visible
+  {"state":"play","visible":true,"frame":171,"vel":{"x":7.077773155458893,"y":-13.72672368960516,"z":0},"pos":{"x":11.375604279598859,"y":189.35104372547656,"z":0}}
+FAIL hidden callbacks preserve hero position
+  {"start":{"state":"play","visible":true,"frame":81,"vel":{"x":8,"y":0,"z":0},"pos":{"x":0,"y":200,"z":0}},"moving":{"state":"play","visible":true,"frame":111,"vel":{"x":7.752828160096341,"y":-4.820872851566608,"z":0},"pos":{"x":3.938299041038062,"y":198.767875675501,"z":0}},"hidden":{"state":"play","visible":true,"frame":171,"vel":{"x":7.077773155458893,"y":-13.72672368960516,"z":0},"pos":{"x":11.375604279598859,"y":189.35104372547656,"z":0}},"resumed":{"state":"play","visible":true,"frame":201,"vel":{"x":6.63558950894324,"y":-17.606873388479478,"z":0},"pos":{"x":14.804540493487275,"y":181.48273543915118,"z":0}}}
+FAIL hidden callbacks preserve hero velocity
+  {"start":{"state":"play","visible":true,"frame":81,"vel":{"x":8,"y":0,"z":0},"pos":{"x":0,"y":200,"z":0}},"moving":{"state":"play","visible":true,"frame":111,"vel":{"x":7.752828160096341,"y":-4.820872851566608,"z":0},"pos":{"x":3.938299041038062,"y":198.767875675501,"z":0}},"hidden":{"state":"play","visible":true,"frame":171,"vel":{"x":7.077773155458893,"y":-13.72672368960516,"z":0},"pos":{"x":11.375604279598859,"y":189.35104372547656,"z":0}},"resumed":{"state":"play","visible":true,"frame":201,"vel":{"x":6.63558950894324,"y":-17.606873388479478,"z":0},"pos":{"x":14.804540493487275,"y":181.48273543915118,"z":0}}}
+PASS: returning to the page resumes physics
+PASS: no page errors at 390
+FAIL: flat page visibility (6 failed, 8 passed)

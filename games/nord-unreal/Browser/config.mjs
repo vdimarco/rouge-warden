@@ -36,16 +36,23 @@ export function receiverFps(stats, previous) {
 }
 
 export function receiverLagging(stats, previous) {
-  if (receiverFps(stats, previous) < 24) return true;
+  if (receiverFps(stats, previous) < 29) return true;
   if (!previous || !(stats.jitterBufferEmittedCount > previous.jitterBufferEmittedCount)) return false;
   return (stats.jitterBufferDelay - previous.jitterBufferDelay)
     / (stats.jitterBufferEmittedCount - previous.jitterBufferEmittedCount) > .12;
 }
 
-const phoneProfiles = [{ edge: 1280, bitrate: 4000 }, { edge: 960, bitrate: 2000 }, { edge: 800, bitrate: 1500 }, { edge: 640, bitrate: 1000 }];
+const phoneProfiles = [{ edge: 1280, bitrate: 6000 }, { edge: 960, bitrate: 2000 }, { edge: 800, bitrate: 1500 }, { edge: 640, bitrate: 1000 }];
 
-export function phoneStreamState(now) {
-  return { ...phoneProfiles[1], level: 1, changedAt: now, poor: 0, healthy: 0, critical: 0 };
+// A QA build (NORD_QA_PIN) holds one phone rung from ?pin=0-3 for a whole gauntlet sample; production ignores the query.
+export function pinnedLevel(search, qaBuild) {
+  const pin = qaBuild ? new URLSearchParams(search).get('pin') : null;
+  return /^\d$/.test(pin) && Number(pin) < phoneProfiles.length ? Number(pin) : null;
+}
+
+export function phoneStreamState(now, pinned = null) {
+  const level = pinned ?? 1;
+  return { ...phoneProfiles[level], level, changedAt: now, poor: 0, healthy: 0, critical: 0 };
 }
 
 export function adaptPhoneStream(state, video, now) {
@@ -58,7 +65,8 @@ export function adaptPhoneStream(state, video, now) {
   const poor = video.freezeCount > previous?.freezeCount || receiverLagging(video, previous);
   state.poor = poor ? state.poor + 1 : 0;
   state.critical = receiverFps(video, previous) < 12 ? state.critical + 1 : 0;
-  state.healthy = !poor && receiverFps(video, previous) >= 28 ? state.healthy + 1 : 0;
+  // Require headroom above 30 FPS before restoring a more demanding profile.
+  state.healthy = !poor && receiverFps(video, previous) >= 35 ? state.healthy + 1 : 0;
   if ((state.poor >= 5 || state.critical >= 2) && state.level < phoneProfiles.length - 1) state.level++;
   else if (state.healthy >= 15 && state.level > 0) state.level--;
   else return false;

@@ -18,11 +18,11 @@ const ZONE_KEYS = ['id', 'name', 'chapter', 'kind', 'parent', 'object', 'R', 'sl
   'far', 'sets', 'rumours', 'secrets', 'lookHome', 'zoneCard', 'missions', 'backdrop', 'art', 'events', 'scans',
   'jet', 'knots', 'blobs', 'onArrive'];
 const TIMED_KEYS = ['id', 'type', 'title', 'zone', 'start', 'runup', 'line', 'closed', 'laps', 'gates', 'opponent',
-  'rival', 'ghostRival', 'wellsOff', 'length', 'tern', 'gold', 'silver', 'bronze', 'note', 'moment'];
+  'rival', 'ghostRival', 'wellsOff', 'length', 'tern', 'gold', 'silver', 'bronze', 'note', 'moment', 'round'];
 const STUNT_KEYS = ['id', 'type', 'title', 'zone', 'area', 'ring', 'road', 'body', 'pads', 'window', 'exitSpeed',
-  'minTurn', 'stars', 'note'];
+  'minTurn', 'stars', 'note', 'round'];
 const MISSION_KEYS = ['id', 'title', 'zone', 'story', 'kind', 'giver', 'start', 'setup', 'beats', 'fails', 'medals',
-  'rewards', 'lines'];
+  'rewards', 'lines', 'round'];
 const BEAT_KEYS = ['objective', 'counter', 'checkpoint', 'zone', 'setup', 'goal', 'fails', 'lines', 'onDone'];
 const LINE_KEYS = ['id', 'speaker', 'text', 'pri', 'log'];
 

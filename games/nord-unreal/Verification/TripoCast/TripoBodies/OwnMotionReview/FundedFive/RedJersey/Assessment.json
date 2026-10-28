@@ -1,0 +1,33 @@
+{
+  "character": "RedJersey",
+  "scope": "Exact finalv6 own body + imported authored Idle/Walk/Run/Jump stills; all15 images inspected",
+  "receipts": {
+    "nine": {
+      "path": "Saved/Tests/TripoOwnMotionReview-RedJersey-20261017-v1/nine/Readback.json",
+      "sha256": "e0ddb6ea2de07d5ff2da33fd6b9a3a82b3308e890bfdadf428530ea722100a6b",
+      "frames": 9,
+      "exit_code": 0,
+      "maximum_body_vs_clip_pose_error": 7.12275505065918e-06,
+      "unanimated_negative_error": 1.6057252883911133
+    },
+    "hands": {
+      "path": "Saved/Tests/TripoOwnMotionReview-RedJersey-20261017-v1/hands/Readback.json",
+      "sha256": "49a46f05cfccb0a111798a2c13c44f952e77581bec88768a900d3eed14a8b6d5",
+      "frames": 6,
+      "exit_code": 0,
+      "maximum_body_vs_clip_pose_error": 5.342066287994385e-06,
+      "unanimated_negative_error": 1.6057252883911133
+    }
+  },
+  "findings": [
+    "Adult backward-cap/blue-glasses/red outlinedW jersey/black shorts design remains recognizable, with softer likeness and cloth/detail than the reference.",
+    "Sampled idle, walk, run and apex show physical elbow/knee flexion, connected sleeves/legs and no obvious severe accessory/groin deformation.",
+    "Additional radial/visible dorsal hand views show distinct projecting thumbs on both sides. Blunt/faceted tips and contours remain; exact3D proportions are unmeasured.",
+    "Some reverse plane views are body/opposite-hand occluded or cropped. All geometry remains present, with no mask inferred or model change."
+  ],
+  "source_jump_scope": "This exact v6 Jump uses the unchanged original-author scene37integer samples; failed optional source FBX reference is explicitly retained/not consumed. Still review does not establish identical original half-frame interpolation.",
+  "continuous_motion_reviewed": false,
+  "prop_or_native_grip_reviewed": false,
+  "native_or_final_art_acceptance": false,
+  "recommendation": "Root review of bounded stills before broader art/native acceptance; continuous motion and actual grasp remain open."
+}

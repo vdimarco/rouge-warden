@@ -1,0 +1,76 @@
+{
+  "character": "Topknot",
+  "source_sha256": "621c65ce305a29d27b7ee974ee928011c3a0d78a979bf9cc3b73ecb13d54fae2",
+  "expected_meshes": 1,
+  "expected_triangles": 98953,
+  "basis_world": {
+    "left": [
+      -0.02743474207818508,
+      -0.9996235966682434,
+      0.0
+    ],
+    "forward": [
+      0.9996235966682434,
+      -0.02743474207818508,
+      0.0
+    ],
+    "up": [
+      0.0,
+      0.0,
+      1.0
+    ]
+  },
+  "crops_basis_left_forward_up": {
+    "face": [
+      [
+        -0.1199826083548543,
+        -0.14997826044356788,
+        0.31995226627394285
+      ],
+      [
+        0.1199826083548543,
+        0.14997826044356788,
+        0.5099247295024621
+      ]
+    ],
+    "hand-left": [
+      [
+        0.2199681153172329,
+        -0.15997681113980575,
+        -0.1599781671454744
+      ],
+      [
+        0.34994927436832507,
+        0.15997681113980575,
+        0.0399928467792828
+      ]
+    ],
+    "hand-right": [
+      [
+        -0.34994927436832507,
+        -0.15997681113980575,
+        -0.1599781671454744
+      ],
+      [
+        -0.2199681153172329,
+        0.15997681113980575,
+        0.0399928467792828
+      ]
+    ]
+  },
+  "measurement_basis": "Own actual imported static source mesh matrix and source bounds; projected local+X is candidate front, world+Z up and forward cross up gives character-left. CPU front/face/hand images must confirm crop identity before acceptance.",
+  "source_bounds_world": [
+    [
+      -0.10737147077720947,
+      -0.29801664837004305,
+      -0.4896429777145386
+    ],
+    [
+      0.10905902648931207,
+      0.29451860893372916,
+      0.4896402657032013
+    ]
+  ],
+  "source_height_units": 0.9792832434177399,
+  "crop_scope": "Measured source-space candidate morphology boxes, not joints, skin groups or deletion masks; no source transform or scale applied."
+}

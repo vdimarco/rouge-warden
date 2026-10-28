@@ -1,0 +1,2 @@
+- [x] Turn the mission card hot while a chase is pulling away, and bring the ink pill back when the jog returns
+- [x] Check both states in a 1280×800 play

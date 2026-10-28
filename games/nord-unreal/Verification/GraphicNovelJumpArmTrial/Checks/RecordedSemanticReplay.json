@@ -1,0 +1,34 @@
+{
+  "passed": true,
+  "scope": "Replay of previously recorded CPU transform arrays; no fresh FBX/Blender import",
+  "sample_frames_per_clip": 37,
+  "deformation_bones": 24,
+  "comparison": {
+    "retained_vs_control": {
+      "rest_matrix_max_abs": 0.0,
+      "object_matrix_max_abs": 0.0,
+      "local_translation_max_abs": 0.0,
+      "local_scale_max_abs": 0.0,
+      "forbidden_rotation_max_radians": 0.0,
+      "allowed_rotation_max_radians": {}
+    },
+    "control_vs_trial": {
+      "rest_matrix_max_abs": 0.0,
+      "object_matrix_max_abs": 0.0,
+      "local_translation_max_abs": 2.9085772439430002e-05,
+      "local_scale_max_abs": 4.76837158203125e-07,
+      "forbidden_rotation_max_radians": 3.528908786222075e-07,
+      "allowed_rotation_max_radians": {
+        "RightArm": 0.6980818032673806,
+        "LeftArm": 0.698081914032167
+      }
+    }
+  },
+  "neutral_endpoints_rechecked": true,
+  "object_and_hips_recorded_bounds_rechecked": true,
+  "checker_sha256": "c078c6d5e7ae66f1bf1955eb0f9db60753e2f285c471bfe33c32153b19de16fa",
+  "semantic_receipt_sha256": "5c3616f84bd814d2fae3ec1208131383285cdccb4c70ec53866fe9cef84cf006",
+  "full_blender_checker_executed": false,
+  "graphics_accepted": false,
+  "adopted": false
+}

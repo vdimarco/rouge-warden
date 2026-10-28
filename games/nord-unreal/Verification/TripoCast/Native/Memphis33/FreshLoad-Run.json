@@ -1,0 +1,31 @@
+{
+  "command": [
+    "/home/von/.local/share/Epic/UE_5.8.3/Engine/Binaries/Linux/UnrealEditor-Cmd",
+    "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Quebec.uproject",
+    "-run=pythonscript",
+    "-script=/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Scripts/verify_tripo_cast.py",
+    "-NullRHI",
+    "-unattended",
+    "-nosplash",
+    "-nosound",
+    "-nop4",
+    "-stdout",
+    "-FullStdOutLogOutput",
+    "-abslog=/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoCastNative/Memphis33/FreshLoad-Engine.log"
+  ],
+  "started_utc": "2026-10-17T23:51:36.403245+00:00",
+  "controller_pid": 967922,
+  "recipes": {
+    "verify_tripo_cast.py": "414197e2ad9b80ebc2c2b9a2ca3ae4f073b50bae46f6d2932fb417b0ed2978cd",
+    "import_tripo_pilot.py": "80377f85a05ccf6e1e4258d8288a1b4fb08ed5e0a66d200cd23e6e8ab731b833",
+    "verify_tripo_pilot.py": "10e65ac31ed0ba9022021b6216586d3e19fc77675b3bde5c1913853334efb8c1"
+  },
+  "editor_module_sha256": "ba967029f2493ea0b0063fd509824ac17378a491784e5f2576096bcb7fbd3f18",
+  "character": "Memphis33",
+  "NullRHI": true,
+  "service_operations": false,
+  "editor_pid": 967927,
+  "exit_code": 0,
+  "finished_utc": "2026-10-17T23:51:45.302691+00:00",
+  "report_exists": true
+}

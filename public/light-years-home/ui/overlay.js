@@ -17,6 +17,7 @@ export const MIN_RING_PX = 14;
 export const MAX_RINGS = 20;
 export const MAX_CHEVRONS = 4;
 export const CHEVRON_INSET = 22;
+export const LABEL_PX = 12;           // labels and leaders: 12 px at every size (10.5 was too small on a phone)
 const NEAR_Z = 0.05;
 const TAU = Math.PI * 2;
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
@@ -148,8 +149,10 @@ export function calloutOf(e) {
     case 'nine': text = c.text[e.n]; if (!text) return null; pri += e.n === 3 ? 2 : 0; break;
     case 'chainUp': text = `CHAIN ×${fin(e.mult, 2)}`; break;
     case 'chainBank':
-      if (!(fin(e.points) > 0)) return null;
-      text = `+${Math.round(e.points).toLocaleString('en-US')}`;
+      // A drive chain pays into boost; a jump chain has no bar and keeps its points as score.
+      if (fin(e.bar) > 0) text = `×${fin(e.mult, 2)} · BOOST +${Math.round(fin(e.bar) * 100)}%`;
+      else if (e.bar == null && fin(e.points) > 0) text = `+${Math.round(e.points).toLocaleString('en-US')}`;
+      else return null;
       break;
     case 'hairline': case 'jHairline': if (fin(e.rel) >= 40) pri += 1; break;
     default: break;
@@ -230,7 +233,11 @@ export function marksFrom(game, zone, opts = {}) {
       priority: kind === 'objective' ? 100 : 40, radar: st === 'scanned' ? null : 'scan',
       chevron: kind === 'objective' });
   }
-  // Far things in their real directions. An objective far ring is orange but unlabelled until scanned.
+  // Far things in their real directions. An objective far ring is orange but unlabelled until scanned. Once the exit
+  // is open, the next place's ring carries the exit's label (COMA CLUSTER · 737 MLY): one label for one place.
+  const exitTo = zr.exitOpen ? zone.exit?.to : null;
+  const nextObj = exitTo ? (zone.exit?.autoRunup?.object || exitTo) : null;
+  let merged = false;
   if (opts.dirOf) {
     for (const f of zone.far || []) {
       const dir = opts.dirOf(f.object, [0, 0, 0]);
@@ -239,8 +246,10 @@ export function marksFrom(game, zone, opts = {}) {
       const st = f.scan ? stateOf(f.scan) : 'scanned';
       const obj = isObj(id) && st !== 'scanned';
       const kind = obj ? 'objective' : st === 'scanned' ? 'scanned' : st === 'scanning' ? 'scanning' : 'scan';
-      out.push({ id, dir, rPx: 18, kind, label: obj ? '' : upper(f.label || f.object),
-        progress: st === 'scanning' ? scanProgress(true) : 0, priority: obj ? 90 : st === 'scanned' ? 30 : 20,
+      const next = !!nextObj && f.object === nextObj && st === 'scanned';
+      if (next) merged = true;
+      out.push({ id, dir, rPx: 18, kind, label: obj ? '' : upper(next ? zone.exit.label : f.label || f.object),
+        progress: st === 'scanning' ? scanProgress(true) : 0, priority: obj ? 90 : next ? 70 : st === 'scanned' ? 30 : 20,
         chevron: obj, scanning: st === 'scanning' });
     }
   }
@@ -280,11 +289,13 @@ export function marksFrom(game, zone, opts = {}) {
         radar: 'objective' });
     }
   }
-  // The exit gate, once open.
-  if (zone.exit?.pos && zr.exitOpen) {
+  // The exit gate, once open (not in the run-up: the launch rings lead the way). Its label moves to the next place's
+  // ring above unless the gate is close.
+  if (zone.exit?.pos && zr.exitOpen && game.mode !== 'runup') {
+    const close = dist2(ship, zone.exit.pos) < 150;
     out.push({ id: 'exit', pos: zone.exit.pos, r: fin(zone.exit.r, 10), kind: isObj('exit') ? 'objective' : 'exit',
-      ring: false, label: upper(zone.exit.label || zone.exit.to), priority: 80, radar: 'exit',
-      chevron: isObj('exit') });
+      ring: false, label: merged && !close ? (isObj('exit') ? 'EXIT' : '') : upper(zone.exit.label || zone.exit.to),
+      priority: 80, radar: 'exit', chevron: isObj('exit') });
   }
   // Actors: the objective's ring, and the radar's shapes.
   for (const a of game.actors || []) {
@@ -370,18 +381,25 @@ export function createOverlay(canvas, { tune = TUNE } = {}) {
   const toward = (p) => ({ front: false, behind: !p.front, vx: p.front ? p.x - W / 2 : p.vx,
     vy: p.front ? H / 2 - p.y : p.vy });
 
-  // Slide a chevron off any HUD box it lands on: inward from a side edge, up or down from the top or bottom.
+  // Slide a chevron off any HUD box it lands on. Along a side edge it moves up past the thumb controls (BOOST, GAS,
+  // BRAKE, the chip) and down past the top row's boxes, staying on the edge's track; from the top or bottom edge it
+  // moves aside, or up from the bottom. The track is the screen's edge inset round the controls.
+  const CONTROLS = new Set(['boost', 'gas', 'brake', 'chip']);
   function clearOfHud(c, layout) {
     const rects = Object.entries(layout?.rects || {}).filter(([n]) => n !== 'ship' && n !== 'pips');
-    for (let k = 0; k < 4; k++) {
-      const hit = rects.find(([, r]) => c.x > r[0] - 8 && c.x < r[0] + r[2] + 8 && c.y > r[1] - 8
-        && c.y < r[1] + r[3] + 8);
+    const pad = 14;
+    for (let k = 0; k < 6; k++) {
+      const hit = rects.find(([, r]) => c.x > r[0] - pad && c.x < r[0] + r[2] + pad && c.y > r[1] - pad
+        && c.y < r[1] + r[3] + pad);
       if (!hit) break;
-      const r = hit[1];
-      if (c.edge === 'right') c.x = r[0] - 14;
-      else if (c.edge === 'left') c.x = r[0] + r[2] + 14;
-      else if (c.edge === 'bottom') c.y = r[1] - 14;
-      else c.y = r[1] + r[3] + 14;
+      const [name, r] = hit;
+      const side = c.edge === 'right' || c.edge === 'left';
+      if (side && CONTROLS.has(name)) c.y = r[1] - pad - 4;
+      else if (side && r[1] < H / 2) c.y = r[1] + r[3] + pad + 4;
+      else if (c.edge === 'right') c.x = r[0] - pad - 4;
+      else if (c.edge === 'left') c.x = r[0] + r[2] + pad + 4;
+      else if (c.edge === 'bottom') c.y = r[1] - pad - 4;
+      else c.y = r[1] + r[3] + pad + 4;
     }
     return c;
   }
@@ -562,9 +580,9 @@ export function createOverlay(canvas, { tune = TUNE } = {}) {
         ctx.strokeStyle = obj ? ORANGE : 'rgba(255,255,255,0.7)'; ctx.lineWidth = 1; ctx.stroke();
       }
     }
-    // Home: an orange tick on the rim.
+    // Home: an orange tick on the rim (none when home lies straight out of the plane: it has no bearing).
     const hd = view.home?.dir;
-    if (hd && Math.hypot(hd[0], hd[1]) > 1e-6) {
+    if (hd && Math.hypot(hd[0], hd[1]) > 0.35) {
       radarXY(hd[0], hd[1], head, 1, xy);
       const a = Math.atan2(xy[1], xy[0]);
       ctx.beginPath();
@@ -587,10 +605,23 @@ export function createOverlay(canvas, { tune = TUNE } = {}) {
 
   // Where callouts go: just above the drift pips (above the hint when a short screen puts it there); the big ones
   // (the nines, LIGHT SPEED) under the reading rows.
-  function calloutSpot(L, big) {
+  function calloutSpot(L, big, shipX = null, sky = false) {
     const pips = L.rects.pips || L.rects.ship;
     const px = (L.kind === 'desktop' ? 22 : L.kind === 'landscape' ? 17 : 19) * (big ? 1.35 : 1);
-    const x = pips[0] + pips[2] / 2;
+    // Over the ship, wherever the camera has it (inside the middle 44% of the screen).
+    const x0 = pips[0] + pips[2] / 2;
+    const x = Number.isFinite(shipX) ? clamp(shipX, x0 - 0.22 * W, x0 + 0.22 * W) : x0;
+    // At light speed the corridor's vanishing point, where hazards come from, sits low, under the ship: the words go
+    // above the ship, under the reading rows.
+    if (sky) {
+      // Under the reading rows in the top half (in landscape the info slot sits just above), over the ship.
+      let ys = H * (L.kind === 'landscape' ? 0.44 : 0.4) - (big ? px * 0.4 : 0);
+      for (const n of ['toast', 'info', 'hint']) {
+        const r = L.rects[n];
+        if (r && r[1] < H / 2) ys = Math.max(ys, r[1] + r[3] + px * 0.75);
+      }
+      return { x: W / 2, y: Math.min(ys, pips[1] - px * 0.6), px };
+    }
     let y = big ? H * 0.38 : pips[1] - px * 0.9;
     if (big && L.rects.toast) y = Math.max(y, L.rects.toast[1] + L.rects.toast[3] + px * 2);
     // Under the reading rows (toast, info box, a hint in its slot) that sit in the top half.
@@ -605,9 +636,9 @@ export function createOverlay(canvas, { tune = TUNE } = {}) {
     return { x, y, px };
   }
   // The box labels keep clear of: the callout's line, with room for its rise.
-  function calloutBox(L, text = null) {
+  function calloutBox(L, text = null, shipX = null) {
     if (!L?.rects?.pips && !L?.rects?.ship) return null;
-    const { x, y, px } = calloutSpot(L, false);
+    const { x, y, px } = calloutSpot(L, false, shipX);
     const w = text ? measure(text, font(px * 1.3, 800)) + 16 : px * 9;
     return { x: x - w / 2, y: y - px - 14, w, h: px * 2 + 14 };
   }
@@ -623,7 +654,8 @@ export function createOverlay(canvas, { tune = TUNE } = {}) {
     const pop = view.reduced ? 1 : 1 + 0.3 * Math.max(0, 1 - (t - c.pop) / 0.12);
     const alpha = clamp((life - age) / 0.3, 0, 1);
     const rise = view.reduced ? 0 : Math.min(1, age / life) * 12;
-    const { x, y: y0, px } = calloutSpot(L, big);
+    const sky = view.game?.mode === 'punch' || view.game?.mode === 'tunnel';
+    const { x, y: y0, px } = calloutSpot(L, big, shipScreenX(view), sky);
     const y = y0 - (big ? 0 : rise);
     const label = c.n > 1 ? `${c.text} ×${c.n}` : c.text;
     drawn.callout = label;
@@ -634,18 +666,28 @@ export function createOverlay(canvas, { tune = TUNE } = {}) {
     ctx.font = font(px, 800);
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.lineWidth = 3;
-    ctx.strokeStyle = 'rgba(0,0,0,0.55)';
+    // A darker outline at light speed, over the white of the punch and the streaks.
+    ctx.lineWidth = sky ? 5 : 3;
+    ctx.strokeStyle = sky ? 'rgba(0,0,0,0.85)' : 'rgba(0,0,0,0.55)';
     ctx.strokeText(label, 0, 0);
     ctx.fillStyle = c.colour || (c.tone === 'orange' ? ORANGE : c.tone === 'grey' ? '#a6a6a6' : '#fff');
     ctx.fillText(label, 0, 0);
     ctx.restore();
   }
 
+  // The ship's x on screen (CSS px) through the zone camera, or null (at light speed, or with no camera).
+  const shipPt = {};
+  function shipScreenX(view) {
+    const g = view.game, cam = view.cam;
+    if (!g?.ship?.pos || !cam || g.mode === 'punch' || g.mode === 'tunnel') return null;
+    projectPoint(cam, g.ship.pos, 1, shipPt);
+    return shipPt.front ? shipPt.x : null;
+  }
+
   // ---------- one frame
 
   function draw(view) {
-    clock += clamp(fin(view.dt, 1 / 60), 0, 0.25);
+    clock += clamp(fin(view.dt, 1 / 60), 0, 0.5);
     clear();
     ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
     const g = view.game, L = view.layout, cam = view.cam;
@@ -674,7 +716,7 @@ export function createOverlay(canvas, { tune = TUNE } = {}) {
         rings.push(entry);
         if (on && m.label && LABELLED.has(m.kind)) {
           items.push({ id: m.id, x: pt.x, y: pt.y, r: m.ring === false ? r * 0.9 : r, text: m.label,
-            width: measure(m.label, font(L?.kind === 'desktop' ? 12 : 10.5, 600)),
+            width: measure(m.label, font(LABEL_PX, 600)),
             priority: fin(m.priority) + (m.kind === 'objective' ? 1000 : 0) });
         }
       }
@@ -696,9 +738,9 @@ export function createOverlay(canvas, { tune = TUNE } = {}) {
         .map(([, r]) => rectBox(r));
       // The callout's line is kept clear only while a callout shows (in landscape it covers the middle of the view).
       const cur = callouts.current(clock);
-      const cb = cur ? calloutBox(L, cur.n > 1 ? `${cur.text} ×${cur.n}` : cur.text) : null;
+      const cb = cur ? calloutBox(L, cur.n > 1 ? `${cur.text} ×${cur.n}` : cur.text, shipScreenX(view)) : null;
       if (cb) avoid.push(cb);
-      const fpx = L?.kind === 'desktop' ? 12 : 10.5;
+      const fpx = LABEL_PX;
       const placed = placeLabels(items, { width: W, height: H, avoid, max: MAX_LABELS, fontPx: fpx,
         box: { x: box.x, y: Math.max(0, box.y - 30), w: box.w, h: box.h + 30 }, leader: 16, run: 12 });
       ctx.font = font(fpx, 600);
@@ -733,6 +775,7 @@ export function createOverlay(canvas, { tune = TUNE } = {}) {
       // and of the labels placed above.
       const hudBoxes = Object.entries(L?.rects || {}).filter(([n]) => n !== 'ship').map(([, r]) => r)
         .concat(drawn.labels.map((l) => l.rect));
+      if (cb) hudBoxes.push([cb.x, cb.y, cb.w, cb.h]);   // and of the callout by the ship
       const onScreen = (e) => e.front && e.x >= 0 && e.x <= W && e.y >= 0 && e.y <= H;
       const off = rings.filter((e) => e.mark.chevron && !onScreen(e));
       off.sort((a, b) => (b.kind === 'objective') - (a.kind === 'objective'));
@@ -749,7 +792,12 @@ export function createOverlay(canvas, { tune = TUNE } = {}) {
       // small rings on screen.
       const ringBoxes = drawn.rings.filter((e) => e.r < Math.min(W, H) * 0.15)
         .map((e) => [e.x - e.r, e.y - e.r, e.r * 2, e.r * 2]);
-      if (view.home?.dir) {
+      // In a sky-plane zone (Coma) home lies straight out of the plane: its marker would sit under the ship all the
+      // time, so it shows only while you look for it (the nose pitched toward it).
+      const hd = view.home?.dir;
+      const offPlane = hd && Math.abs(fin(hd[2])) > 0.75;
+      const looking = offPlane && fin(g?.ship?.pitch) * Math.sign(hd[2]) > 8 * Math.PI / 180;
+      if (hd && (!offPlane || looking)) {
         projectPoint(cam, view.home.dir, 0, pt);
         const visible = pt.front && pt.x >= 8 && pt.x <= W - 8 && pt.y >= 8 && pt.y <= H - 8;
         const c = visible ? null : chevronAt(toward(pt), box);

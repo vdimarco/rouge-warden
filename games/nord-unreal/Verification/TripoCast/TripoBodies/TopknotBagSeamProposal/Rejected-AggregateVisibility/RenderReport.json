@@ -1,0 +1,811 @@
+{
+  "proposal_only": true,
+  "accepted": false,
+  "rendered": true,
+  "device": "CPU",
+  "threads": 4,
+  "gpu_denoising": false,
+  "camera_only_overlay_no_tinted_indirect_light": true,
+  "copied_geometry_and_weights_unchanged": true,
+  "inputs_unchanged": true,
+  "frames": [
+    {
+      "file": "front-original.png",
+      "sha256": "8a561ea16768b51e3b98699f79dbfc51dcb5aac3ca687791dd94798a0fda0c25",
+      "mode": "original",
+      "camera": [
+        3,
+        0,
+        0.6
+      ],
+      "aim": [
+        0,
+        0,
+        0.49
+      ],
+      "ortho_scale": 1.12
+    },
+    {
+      "file": "front-clay.png",
+      "sha256": "98304dcc81b3380d27ca338554838e033b44e16bbaa629ba4ef81404b7df6bdb",
+      "mode": "clay",
+      "camera": [
+        3,
+        0,
+        0.6
+      ],
+      "aim": [
+        0,
+        0,
+        0.49
+      ],
+      "ortho_scale": 1.12
+    },
+    {
+      "file": "front-mask.png",
+      "sha256": "38b79687b56bf7fec6b9f83a49a5318c4a9f3950133f2d4fa757ac0abd5fe2b8",
+      "mode": "mask",
+      "camera": [
+        3,
+        0,
+        0.6
+      ],
+      "aim": [
+        0,
+        0,
+        0.49
+      ],
+      "ortho_scale": 1.12
+    },
+    {
+      "file": "front-seam.png",
+      "sha256": "a9a803cfda204229b212a5114c700aa59ae6de3b43f242aaba968f039e96e598",
+      "mode": "seam",
+      "camera": [
+        3,
+        0,
+        0.6
+      ],
+      "aim": [
+        0,
+        0,
+        0.49
+      ],
+      "ortho_scale": 1.12
+    },
+    {
+      "file": "left-original.png",
+      "sha256": "428005bd14dce2131a67b61aedce5522801bb97bceae1d6726121900ab656a18",
+      "mode": "original",
+      "camera": [
+        0,
+        3,
+        0.6
+      ],
+      "aim": [
+        0,
+        0,
+        0.49
+      ],
+      "ortho_scale": 1.12
+    },
+    {
+      "file": "left-clay.png",
+      "sha256": "8495a7c485b0ff1ce680f7e381544783bbdf4d2eca19026b0306d0f58fccb236",
+      "mode": "clay",
+      "camera": [
+        0,
+        3,
+        0.6
+      ],
+      "aim": [
+        0,
+        0,
+        0.49
+      ],
+      "ortho_scale": 1.12
+    },
+    {
+      "file": "left-mask.png",
+      "sha256": "80462dcc409c2f951525e7b51e37c8225ce27b48f8c6693a4dcb5b25ba92179f",
+      "mode": "mask",
+      "camera": [
+        0,
+        3,
+        0.6
+      ],
+      "aim": [
+        0,
+        0,
+        0.49
+      ],
+      "ortho_scale": 1.12
+    },
+    {
+      "file": "left-seam.png",
+      "sha256": "4536220be20634334a3efa361196766141d3d6429db4b6a5fe579d004fdcb3fd",
+      "mode": "seam",
+      "camera": [
+        0,
+        3,
+        0.6
+      ],
+      "aim": [
+        0,
+        0,
+        0.49
+      ],
+      "ortho_scale": 1.12
+    },
+    {
+      "file": "back-original.png",
+      "sha256": "70b0fc56c5097b925e0a85e80c86979389a58f4b6edc1a7cc19deaa067d05bed",
+      "mode": "original",
+      "camera": [
+        -3,
+        0,
+        0.6
+      ],
+      "aim": [
+        0,
+        0,
+        0.49
+      ],
+      "ortho_scale": 1.12
+    },
+    {
+      "file": "back-clay.png",
+      "sha256": "5117f8191eff598372507e320e7cfb01310d3ff2cf3a8dfff060f734705523b8",
+      "mode": "clay",
+      "camera": [
+        -3,
+        0,
+        0.6
+      ],
+      "aim": [
+        0,
+        0,
+        0.49
+      ],
+      "ortho_scale": 1.12
+    },
+    {
+      "file": "back-mask.png",
+      "sha256": "23eee62e190d767acdd41d6f4bc398b2004186b4703d5e9c1531f9fbdbd379dd",
+      "mode": "mask",
+      "camera": [
+        -3,
+        0,
+        0.6
+      ],
+      "aim": [
+        0,
+        0,
+        0.49
+      ],
+      "ortho_scale": 1.12
+    },
+    {
+      "file": "back-seam.png",
+      "sha256": "d5051142a277a32f63731b8d5a1e733cc32a7ce66044b56f4cf17252e6336341",
+      "mode": "seam",
+      "camera": [
+        -3,
+        0,
+        0.6
+      ],
+      "aim": [
+        0,
+        0,
+        0.49
+      ],
+      "ortho_scale": 1.12
+    },
+    {
+      "file": "right-original.png",
+      "sha256": "e51c036de79c0ff58504155355f8b2a371d67abba3f0360694b9c5d658b566b9",
+      "mode": "original",
+      "camera": [
+        0,
+        -3,
+        0.6
+      ],
+      "aim": [
+        0,
+        0,
+        0.49
+      ],
+      "ortho_scale": 1.12
+    },
+    {
+      "file": "right-clay.png",
+      "sha256": "e7a80c2c40ef36cf75fefe58d667e4a5c84ea145cdb411652f08a1a1190124cc",
+      "mode": "clay",
+      "camera": [
+        0,
+        -3,
+        0.6
+      ],
+      "aim": [
+        0,
+        0,
+        0.49
+      ],
+      "ortho_scale": 1.12
+    },
+    {
+      "file": "right-mask.png",
+      "sha256": "62d0f77625c58ade385e42c40a687ef98bacfcd73f37033e87c8c29385ee7c16",
+      "mode": "mask",
+      "camera": [
+        0,
+        -3,
+        0.6
+      ],
+      "aim": [
+        0,
+        0,
+        0.49
+      ],
+      "ortho_scale": 1.12
+    },
+    {
+      "file": "right-seam.png",
+      "sha256": "09b85e414b3895eed8febde9edb471a742e2c14982708a65a83fed9aff954718",
+      "mode": "seam",
+      "camera": [
+        0,
+        -3,
+        0.6
+      ],
+      "aim": [
+        0,
+        0,
+        0.49
+      ],
+      "ortho_scale": 1.12
+    },
+    {
+      "file": "bag-front-original.png",
+      "sha256": "dc75d73ca2f093e374bd29da4a23a1c4858bbe15242bd674757702b7f57e0073",
+      "mode": "original",
+      "camera": [
+        2,
+        0.15,
+        0.64
+      ],
+      "aim": [
+        0.055,
+        0.075,
+        0.585
+      ],
+      "ortho_scale": 0.34
+    },
+    {
+      "file": "bag-front-clay.png",
+      "sha256": "9fa6a17be13682460b0ca1e72a25ef8ab7eaa81692f7ff99abbf8ccf6b3889da",
+      "mode": "clay",
+      "camera": [
+        2,
+        0.15,
+        0.64
+      ],
+      "aim": [
+        0.055,
+        0.075,
+        0.585
+      ],
+      "ortho_scale": 0.34
+    },
+    {
+      "file": "bag-front-mask.png",
+      "sha256": "2a034b027ae106bf785a54d7a791671f00675bda53cef2ef29152cc1daebe8b3",
+      "mode": "mask",
+      "camera": [
+        2,
+        0.15,
+        0.64
+      ],
+      "aim": [
+        0.055,
+        0.075,
+        0.585
+      ],
+      "ortho_scale": 0.34
+    },
+    {
+      "file": "bag-front-seam.png",
+      "sha256": "1fc09b54ee00ba8bf9e022630a2e9f8ec17b7648786939a61e2efd63b92b47f6",
+      "mode": "seam",
+      "camera": [
+        2,
+        0.15,
+        0.64
+      ],
+      "aim": [
+        0.055,
+        0.075,
+        0.585
+      ],
+      "ortho_scale": 0.34
+    },
+    {
+      "file": "bag-back-original.png",
+      "sha256": "04ddb99f23306f0cac5cf761be1b1403a60fb583d328364f4d0df93ab544d93d",
+      "mode": "original",
+      "camera": [
+        -2,
+        0.2,
+        0.64
+      ],
+      "aim": [
+        -0.03,
+        0.1,
+        0.585
+      ],
+      "ortho_scale": 0.34
+    },
+    {
+      "file": "bag-back-clay.png",
+      "sha256": "dd4e8dee24db17faffc91c32feecaac74d1766dd5eaa1a86efa8050c485b2763",
+      "mode": "clay",
+      "camera": [
+        -2,
+        0.2,
+        0.64
+      ],
+      "aim": [
+        -0.03,
+        0.1,
+        0.585
+      ],
+      "ortho_scale": 0.34
+    },
+    {
+      "file": "bag-back-mask.png",
+      "sha256": "4daa295697cbf6c3a242ab25f446926cd9df2f504d38169fb40743f4d0536c8a",
+      "mode": "mask",
+      "camera": [
+        -2,
+        0.2,
+        0.64
+      ],
+      "aim": [
+        -0.03,
+        0.1,
+        0.585
+      ],
+      "ortho_scale": 0.34
+    },
+    {
+      "file": "bag-back-seam.png",
+      "sha256": "04ebdc34f7f56a913c1a43b00da93097414434f328000b2043d0fa9b89c0b4f2",
+      "mode": "seam",
+      "camera": [
+        -2,
+        0.2,
+        0.64
+      ],
+      "aim": [
+        -0.03,
+        0.1,
+        0.585
+      ],
+      "ortho_scale": 0.34
+    },
+    {
+      "file": "strap-front-original.png",
+      "sha256": "dce4754b9b83793d72feb7c98a6060a40fdccef8d5220e6a20c7e0bd018dea1e",
+      "mode": "original",
+      "camera": [
+        2,
+        -0.1,
+        0.78
+      ],
+      "aim": [
+        0.025,
+        -0.015,
+        0.755
+      ],
+      "ortho_scale": 0.36
+    },
+    {
+      "file": "strap-front-clay.png",
+      "sha256": "1271770440f7c3fa923e3d819f5c209ec24b4cc69dc92b905be143635ad12c4f",
+      "mode": "clay",
+      "camera": [
+        2,
+        -0.1,
+        0.78
+      ],
+      "aim": [
+        0.025,
+        -0.015,
+        0.755
+      ],
+      "ortho_scale": 0.36
+    },
+    {
+      "file": "strap-front-mask.png",
+      "sha256": "a0e35afaa0761ce336ca6bdab997612aabd714e95fbb7eeccc472be831eb25c5",
+      "mode": "mask",
+      "camera": [
+        2,
+        -0.1,
+        0.78
+      ],
+      "aim": [
+        0.025,
+        -0.015,
+        0.755
+      ],
+      "ortho_scale": 0.36
+    },
+    {
+      "file": "strap-front-seam.png",
+      "sha256": "02ad67ddf1f8e9ba8390f31369e62375d018ffb04b92736e7bc1256acbff750d",
+      "mode": "seam",
+      "camera": [
+        2,
+        -0.1,
+        0.78
+      ],
+      "aim": [
+        0.025,
+        -0.015,
+        0.755
+      ],
+      "ortho_scale": 0.36
+    },
+    {
+      "file": "contact-A-original.png",
+      "sha256": "342789a217d170b7cfda25da5634f0ea9e8afccffad4cb22d9e25e9a1c462f2f",
+      "mode": "original",
+      "camera": [
+        2,
+        -0.1,
+        0.68
+      ],
+      "aim": [
+        0.063,
+        0.031,
+        0.58
+      ],
+      "ortho_scale": 0.13
+    },
+    {
+      "file": "contact-A-clay.png",
+      "sha256": "ff9160e0fd3c9f56525e8bee0463c2798141120f3ca4e2f82692d804aa4aff7a",
+      "mode": "clay",
+      "camera": [
+        2,
+        -0.1,
+        0.68
+      ],
+      "aim": [
+        0.063,
+        0.031,
+        0.58
+      ],
+      "ortho_scale": 0.13
+    },
+    {
+      "file": "contact-A-mask.png",
+      "sha256": "0454a8ff9df1f9228519bed143c25e1977830bbbe0514244345d5379eb829a49",
+      "mode": "mask",
+      "camera": [
+        2,
+        -0.1,
+        0.68
+      ],
+      "aim": [
+        0.063,
+        0.031,
+        0.58
+      ],
+      "ortho_scale": 0.13
+    },
+    {
+      "file": "contact-A-seam.png",
+      "sha256": "d17bf4add39bf1cfef5262ae7233212c28e2fa7df304be7f4cf54fa9e6cc5087",
+      "mode": "seam",
+      "camera": [
+        2,
+        -0.1,
+        0.68
+      ],
+      "aim": [
+        0.063,
+        0.031,
+        0.58
+      ],
+      "ortho_scale": 0.13
+    },
+    {
+      "file": "contact-B-original.png",
+      "sha256": "5ea0f1e6e127f60ce73f83ea6101763180b27e120e931e9d80ed032a4b355674",
+      "mode": "original",
+      "camera": [
+        -2,
+        0.12,
+        0.58
+      ],
+      "aim": [
+        -0.055,
+        0.091,
+        0.548
+      ],
+      "ortho_scale": 0.13
+    },
+    {
+      "file": "contact-B-clay.png",
+      "sha256": "69c30351975313f19a038da2bae9ac2c2b3adf584c3abf6a2ecc82045f0f691e",
+      "mode": "clay",
+      "camera": [
+        -2,
+        0.12,
+        0.58
+      ],
+      "aim": [
+        -0.055,
+        0.091,
+        0.548
+      ],
+      "ortho_scale": 0.13
+    },
+    {
+      "file": "contact-B-mask.png",
+      "sha256": "8da2f8ca3485ca8160ee281efd69ed2f6243c88310bb0c77331129d6148cacc1",
+      "mode": "mask",
+      "camera": [
+        -2,
+        0.12,
+        0.58
+      ],
+      "aim": [
+        -0.055,
+        0.091,
+        0.548
+      ],
+      "ortho_scale": 0.13
+    },
+    {
+      "file": "contact-B-seam.png",
+      "sha256": "357b24ac65861e2679206fb4da002ac38ce692e0906e8fe35d4c987ae45e4ec9",
+      "mode": "seam",
+      "camera": [
+        -2,
+        0.12,
+        0.58
+      ],
+      "aim": [
+        -0.055,
+        0.091,
+        0.548
+      ],
+      "ortho_scale": 0.13
+    },
+    {
+      "file": "contact-D-original.png",
+      "sha256": "30ebd08e9195ff61b75c7d45603470b002e2a3bb5e7552994ac44c8874b759e8",
+      "mode": "original",
+      "camera": [
+        0.7,
+        1,
+        0.3
+      ],
+      "aim": [
+        0.063,
+        0.114,
+        0.474
+      ],
+      "ortho_scale": 0.14
+    },
+    {
+      "file": "contact-D-clay.png",
+      "sha256": "4eac633a02b67e4d1f392c8ea653a044843b88c467ea64603ab86c287359a187",
+      "mode": "clay",
+      "camera": [
+        0.7,
+        1,
+        0.3
+      ],
+      "aim": [
+        0.063,
+        0.114,
+        0.474
+      ],
+      "ortho_scale": 0.14
+    },
+    {
+      "file": "contact-D-mask.png",
+      "sha256": "bc50a24998c17db461dc19f13d4aa37e6209464ef4de8d87c9cca9904f35e0f9",
+      "mode": "mask",
+      "camera": [
+        0.7,
+        1,
+        0.3
+      ],
+      "aim": [
+        0.063,
+        0.114,
+        0.474
+      ],
+      "ortho_scale": 0.14
+    },
+    {
+      "file": "contact-D-seam.png",
+      "sha256": "ed5f24d4792932d40b88ff448c465ea9cc07fb575314c1d038e90843c25a5cb3",
+      "mode": "seam",
+      "camera": [
+        0.7,
+        1,
+        0.3
+      ],
+      "aim": [
+        0.063,
+        0.114,
+        0.474
+      ],
+      "ortho_scale": 0.14
+    },
+    {
+      "file": "hidden-back-high-original.png",
+      "sha256": "e77b9dbdd7cea000cbc4fa86abb7b3538c145a9df8e9e090270247905358b43f",
+      "mode": "original",
+      "camera": [
+        -1.5,
+        1.0,
+        1.2
+      ],
+      "aim": [
+        -0.03,
+        0.1,
+        0.56
+      ],
+      "ortho_scale": 0.3
+    },
+    {
+      "file": "hidden-back-high-clay.png",
+      "sha256": "2d92c606cb93080075f30aef2364581bdedfad0ba42cec5059e92d962fd6694a",
+      "mode": "clay",
+      "camera": [
+        -1.5,
+        1.0,
+        1.2
+      ],
+      "aim": [
+        -0.03,
+        0.1,
+        0.56
+      ],
+      "ortho_scale": 0.3
+    },
+    {
+      "file": "hidden-back-high-mask.png",
+      "sha256": "ce65bef62641a234cc91483f3c59a78a2994cf5a2de4fc64e1d3f9d0f39d9a0e",
+      "mode": "mask",
+      "camera": [
+        -1.5,
+        1.0,
+        1.2
+      ],
+      "aim": [
+        -0.03,
+        0.1,
+        0.56
+      ],
+      "ortho_scale": 0.3
+    },
+    {
+      "file": "hidden-back-high-seam.png",
+      "sha256": "89d0b7be7e69394c7d49968df34a0793dc6d98d0cb8ece712cee2796bce0335a",
+      "mode": "seam",
+      "camera": [
+        -1.5,
+        1.0,
+        1.2
+      ],
+      "aim": [
+        -0.03,
+        0.1,
+        0.56
+      ],
+      "ortho_scale": 0.3
+    },
+    {
+      "file": "hidden-under-original.png",
+      "sha256": "d27730a97b70bad38f747eee64b8098cf57ee6065d9e46828ee773f254701c07",
+      "mode": "original",
+      "camera": [
+        0.8,
+        0.6,
+        0.2
+      ],
+      "aim": [
+        0.025,
+        0.08,
+        0.51
+      ],
+      "ortho_scale": 0.3
+    },
+    {
+      "file": "hidden-under-clay.png",
+      "sha256": "4aec20c69042b198eb30082720636857f1462c3a9b45f0b7afd9cd2cbfaf7008",
+      "mode": "clay",
+      "camera": [
+        0.8,
+        0.6,
+        0.2
+      ],
+      "aim": [
+        0.025,
+        0.08,
+        0.51
+      ],
+      "ortho_scale": 0.3
+    },
+    {
+      "file": "hidden-under-mask.png",
+      "sha256": "0869fbc4e3725816b19d8ca3c95a831e0e760051b379e380e97bd64d7ba7a036",
+      "mode": "mask",
+      "camera": [
+        0.8,
+        0.6,
+        0.2
+      ],
+      "aim": [
+        0.025,
+        0.08,
+        0.51
+      ],
+      "ortho_scale": 0.3
+    },
+    {
+      "file": "hidden-under-seam.png",
+      "sha256": "92b17e6ec880cef357d3c74581e30fff365444d7fc6fd860d368e0f3399ca02f",
+      "mode": "seam",
+      "camera": [
+        0.8,
+        0.6,
+        0.2
+      ],
+      "aim": [
+        0.025,
+        0.08,
+        0.51
+      ],
+      "ortho_scale": 0.3
+    }
+  ],
+  "counts": {
+    "fixed_or_unclaimed_body": {
+      "faces": 81416,
+      "vertices": 41103
+    },
+    "proposed_bag_pouches_connectors": {
+      "faces": 9197,
+      "vertices": 5205
+    },
+    "proposed_contents": {
+      "faces": 1411,
+      "vertices": 835
+    },
+    "proposed_plain_strap_band": {
+      "faces": 93,
+      "vertices": 97
+    },
+    "fixed_upper_strap": {
+      "faces": 2340,
+      "vertices": 1398
+    },
+    "unresolved_do_not_guess": {
+      "faces": 4496,
+      "vertices": 3121
+    }
+  },
+  "uncertain_faces": 4496,
+  "recipe_sha256": "ce65a68e32dbda30eab2989ca77fd49e90c8392042c2a0fa451cb435aadcf6e9",
+  "ownership_sha256": "b490bb30f25e1979033413b157f453bf0ed4e77ffc506541d06c25754ade9803",
+  "arrays_sha256": "aeb7c8e58990eb763e3b9a5dbd277f8e12b90ee146065f6db509f9a6ca476560"
+}

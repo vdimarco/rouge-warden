@@ -1,0 +1,5 @@
+# Scripts/blender/plateau_trees.py: material slots of Tree_small.obj
+newmtl small_bark
+Kd 0.4314 0.3961 0.3569
+newmtl small_leaves
+Kd 0.6902 0.1804 0.1176

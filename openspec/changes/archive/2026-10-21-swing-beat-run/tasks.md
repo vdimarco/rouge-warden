@@ -1,0 +1,6 @@
+- [x] The first flush keeps the clog card
+- [x] The second flush starts a falling rescue, the King still sleeps, and the clog card returns at 2/12
+- [x] The third flush keeps the clog card
+- [x] The fifth flush starts a purse snatcher, the King still sleeps, and the clog card returns at 5/12
+- [x] The seventh flush starts a mugging, the King still sleeps, and the clog card returns at 7/12
+- [x] The balloon, the pizza, the 36 second washer, the roof fight, and the eleventh clog card are unchanged

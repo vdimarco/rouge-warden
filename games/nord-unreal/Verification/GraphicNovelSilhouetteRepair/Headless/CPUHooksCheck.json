@@ -1,0 +1,20 @@
+{
+  "passed": true,
+  "utc": "2026-10-17T19:02:06.075142+00:00",
+  "cpu_only": true,
+  "native_launched": false,
+  "content_written": false,
+  "settings_touched": false,
+  "ttl_snapshot_created": false,
+  "exit_code": 0,
+  "test_log": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/GraphicNovel/HeadlessCompoundPlan-20261017/test_headless_plan.log",
+  "files": {
+    "build_plan.py": "4332a07560ffa73bd795132c60560a4d26c835edf5c559d55b1827d3b49ea9c7",
+    "fixture.py": "13b934a20f70a0f3075d94dba759a7be074cd2c00e2eb6fbbbbfba386ad3ac47",
+    "wrapper.py": "53483f3845b6659c926d4529b3a5bb2f9de18d6ef514fdb71f6f6dbf617b823d",
+    "headless_hooks.py": "cae02256d25902e608f299ce2e5f7553a429fc99b125ecee5e6214eb060f7a62",
+    "source-pins.json": "7fbd5a896b25d916daee2e83811874916d1036d1c97826dc035fd8c573df5d9e",
+    "test_headless_plan.py": "08b51625fca4bc42c6aa37026b782bebcbf4deb6df85a00afbbd4843c858f187"
+  },
+  "scope": "Exact original two-literal fixture AST, hook/guard order, seven state readbacks, initial Q recording, restoration and rejection tests. Native headless execution remains root-owned and unperformed by this agent."
+}

@@ -1,0 +1,372 @@
+{
+  "device": "CPU",
+  "threads": 4,
+  "samples": 16,
+  "gpu_denoising": false,
+  "renders": [
+    {
+      "file": "01-original-neutral-threequarter.png",
+      "label": "ORIGINAL / retained GLB material",
+      "camera": [
+        -3.6,
+        -3.6,
+        1.1
+      ],
+      "target": [
+        0,
+        0,
+        0.93
+      ],
+      "ortho_scale_m": 2.12,
+      "dimensions": [
+        720,
+        900
+      ],
+      "sha256": "99e4e08dc9d6bf705f564fbcae266af650805677a64b4d6830d454ddd1faea6f"
+    },
+    {
+      "file": "02-tripo-neutral-threequarter.png",
+      "label": "TRIPO / original material / 1.82m preview",
+      "camera": [
+        -3.6,
+        -3.6,
+        1.1
+      ],
+      "target": [
+        0,
+        0,
+        0.93
+      ],
+      "ortho_scale_m": 2.12,
+      "dimensions": [
+        720,
+        900
+      ],
+      "sha256": "22e8a565ee81c4af310e8a7ae261beb38a4c8ea392f637de610da0e031beae17"
+    },
+    {
+      "file": "03-elbow-l-forward.png",
+      "label": "TRIPO / L elbow +65deg anatomical flex",
+      "camera": [
+        3.5,
+        -3.5,
+        1.25
+      ],
+      "target": [
+        0,
+        -0.08,
+        1.25
+      ],
+      "ortho_scale_m": 1.28,
+      "dimensions": [
+        720,
+        900
+      ],
+      "sha256": "5cdb7a50cb6e278a94855713178ba3590f836d138c4cec1284906af261fab61d"
+    },
+    {
+      "file": "04-elbow-r-forward.png",
+      "label": "TRIPO / R elbow +65deg anatomical flex",
+      "camera": [
+        -3.5,
+        -3.5,
+        1.25
+      ],
+      "target": [
+        0,
+        -0.08,
+        1.25
+      ],
+      "ortho_scale_m": 1.28,
+      "dimensions": [
+        720,
+        900
+      ],
+      "sha256": "9ea24a3a0ffa6ac95734164a91ab060693b5bcf67bd5b968d2b4be6c086ad61a"
+    },
+    {
+      "file": "05-hand-left-neutral.png",
+      "label": "TRIPO / LEFT HAND / NEUTRAL",
+      "camera": [
+        1.7591578960418701,
+        -1.941748857498169,
+        1.219555377960205
+      ],
+      "target": [
+        0.359157919883728,
+        -0.04174882918596268,
+        0.8695553541183472
+      ],
+      "ortho_scale_m": 0.34,
+      "dimensions": [
+        720,
+        720
+      ],
+      "sha256": "1edb6fc1546bc5b244b7a8255b4d7f9f3f175dc44404111433f6bf4fa385ab4a"
+    },
+    {
+      "file": "06-hand-left-flex.png",
+      "label": "TRIPO / LEFT FINGERS / MODEST FLEX",
+      "camera": [
+        1.7591578960418701,
+        -1.941748857498169,
+        1.219555377960205
+      ],
+      "target": [
+        0.359157919883728,
+        -0.04174882918596268,
+        0.8695553541183472
+      ],
+      "ortho_scale_m": 0.34,
+      "dimensions": [
+        720,
+        720
+      ],
+      "sha256": "7eacb0b7ff0dec4c548e4ceccf169b4f28293f855955709469c27437d1c5b87f"
+    }
+  ],
+  "duration_s": 39.56691190699348,
+  "input_sources_unchanged": true,
+  "normalization_preview_only": {
+    "matrix": [
+      [
+        1.8200008869171143,
+        -1.2290541917536757e-07,
+        -5.740845310242548e-08,
+        -8.94083314051386e-08
+      ],
+      [
+        1.2290543338622228e-07,
+        1.8200008869171143,
+        3.2923009030128014e-07,
+        -2.0179909654416406e-07
+      ],
+      [
+        5.740843533885709e-08,
+        -3.2923009030128014e-07,
+        1.8200008869171143,
+        3.4656852676562266e-07
+      ],
+      [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ]
+    ],
+    "scale": 1.8200008461895905,
+    "returned_original_height_m": 0.9999995249043925,
+    "target_original_height_m": 1.8200001840844693,
+    "not_exported": true
+  },
+  "material_diagnostic": {
+    "returned_bad_material_observation": "/tmp/nord-tripo-rig-audit-20261017T201543Z/FBX-payloads.json",
+    "returned_albedo_wired_to_normal_confirmed": true,
+    "preview_uses_exact_original_GLB_material_object": true,
+    "original_packed_images": {
+      "Image_0": {
+        "size": [
+          2048,
+          2048
+        ],
+        "channels": 4,
+        "color_space": "sRGB",
+        "packed_bytes": 4213353,
+        "packed_sha256": "adf54ff0228275f6557fa5afbacb9ab0e5651fe1ddec0c638afa2cd197dba5d7",
+        "pixel_sha256_float32": "a205ee54f95aff79d6188f81b41cdae73ead8e28ba05a9476cf14781b615a3d5",
+        "pixel_sha256_8bit": "6832c32cdf30be71831e725ef24c9b569fa4e1f8e35c6c93864e80278a87eca0",
+        "pixel_min": 0.0,
+        "pixel_max": 1.0
+      },
+      "Image_1": {
+        "size": [
+          2048,
+          2048
+        ],
+        "channels": 4,
+        "color_space": "Non-Color",
+        "packed_bytes": 2249463,
+        "packed_sha256": "b10a5ce423ce8922dce64f90edec8a750e0f3aad64588daa2cd4fbb710d86bcf",
+        "pixel_sha256_float32": "f877a11778d24a7bbbe3095fd7d9232bd1b51ff00c82ad1028a2eaef70bce237",
+        "pixel_sha256_8bit": "c8b789be504c6208b7e08818be013887dc7ee23422fdcea891262e0eb61cf6f1",
+        "pixel_min": 0.0,
+        "pixel_max": 1.0
+      },
+      "normal": {
+        "size": [
+          2048,
+          2048
+        ],
+        "channels": 4,
+        "color_space": "Non-Color",
+        "packed_bytes": 6648844,
+        "packed_sha256": "7845864ce13d1e3ce10e8149ef2ef98a048b8be249a60749dfc70c4897e9e7ab",
+        "pixel_sha256_float32": "aa07e903b3cc73d05a8d33d3ccbce63ab649a8859589226d76d1826b3a438dc0",
+        "pixel_sha256_8bit": "f788975ea81b5ca3b624bbef96b042f6d6b2b7fc0159fad33ae1727e3ce70957",
+        "pixel_min": 0.0,
+        "pixel_max": 1.0
+      }
+    },
+    "no_source_bitmap_changed": true,
+    "provider_FBX_not_rewritten": true
+  },
+  "corner_normals_comparison": {
+    "matched_corner_samples": 310632,
+    "max_angle_deg": 177.7258533327671,
+    "mean_angle_deg": 21.033028008203654,
+    "p99_angle_deg": 99.33967352962024,
+    "over_1deg": 223466,
+    "over_10deg": 182004,
+    "method": "Normals in world/rest space, corresponding sorted quantized UV triangle corners at1e-6. Similarity orientation differs <1e-5deg; no geometry normal recompute performed."
+  },
+  "finger_recipe": [
+    {
+      "bone": "index_01_l",
+      "angle_deg": 25,
+      "local_axis": [
+        -0.1061452254652977,
+        2.793967155412247e-07,
+        0.9943506717681885
+      ]
+    },
+    {
+      "bone": "index_02_l",
+      "angle_deg": 35,
+      "local_axis": [
+        0.26799246668815613,
+        2.0676857559465134e-07,
+        0.9634210467338562
+      ]
+    },
+    {
+      "bone": "index_03_l",
+      "angle_deg": 20,
+      "local_axis": [
+        0.2679912745952606,
+        2.1046962217496912e-07,
+        0.9634212851524353
+      ]
+    },
+    {
+      "bone": "middle_01_l",
+      "angle_deg": 25,
+      "local_axis": [
+        0.02187604457139969,
+        2.756714252427628e-07,
+        0.9997606873512268
+      ]
+    },
+    {
+      "bone": "middle_02_l",
+      "angle_deg": 35,
+      "local_axis": [
+        0.3061944246292114,
+        2.3562458295600663e-07,
+        0.9519690275192261
+      ]
+    },
+    {
+      "bone": "middle_03_l",
+      "angle_deg": 20,
+      "local_axis": [
+        0.3061932623386383,
+        2.3748719968352816e-07,
+        0.95196932554245
+      ]
+    },
+    {
+      "bone": "ring_01_l",
+      "angle_deg": 25,
+      "local_axis": [
+        0.06207382306456566,
+        2.535437602091406e-07,
+        0.998071551322937
+      ]
+    },
+    {
+      "bone": "ring_02_l",
+      "angle_deg": 35,
+      "local_axis": [
+        0.280918151140213,
+        2.1606680888908159e-07,
+        0.9597316980361938
+      ]
+    },
+    {
+      "bone": "ring_03_l",
+      "angle_deg": 20,
+      "local_axis": [
+        0.280917227268219,
+        2.272426513627579e-07,
+        0.959731936454773
+      ]
+    },
+    {
+      "bone": "pinky_01_l",
+      "angle_deg": 25,
+      "local_axis": [
+        0.012975125573575497,
+        2.6775521178024064e-07,
+        0.9999157786369324
+      ]
+    },
+    {
+      "bone": "pinky_02_l",
+      "angle_deg": 35,
+      "local_axis": [
+        0.3018215298652649,
+        1.9744035739677201e-07,
+        0.9533644914627075
+      ]
+    },
+    {
+      "bone": "pinky_03_l",
+      "angle_deg": 20,
+      "local_axis": [
+        0.30182185769081116,
+        2.2538000621352694e-07,
+        0.9533643126487732
+      ]
+    },
+    {
+      "bone": "thumb_01_l",
+      "angle_deg": 10,
+      "local_axis": [
+        0.6251503825187683,
+        -3.203748804025963e-07,
+        0.7805042862892151
+      ]
+    },
+    {
+      "bone": "thumb_02_l",
+      "angle_deg": 15,
+      "local_axis": [
+        0.3959406614303589,
+        -4.097817907222634e-08,
+        0.9182760119438171
+      ]
+    },
+    {
+      "bone": "thumb_03_l",
+      "angle_deg": 10,
+      "local_axis": [
+        0.39593663811683655,
+        -3.539024362453347e-08,
+        0.9182778596878052
+      ]
+    }
+  ],
+  "finger_flex_measurements": {
+    "finite": true,
+    "vertices_moved_over_0_1mm": 950,
+    "max_vertex_displacement_m": 0.08971354365348816,
+    "p99_vertex_displacement_m": 0.010957269929349422
+  },
+  "limitations": [
+    "Preview material intentionally restores missing original GLB normal and metallic/roughness maps; raw FBX is materially incorrect.",
+    "Images are isolated static deformation diagnostics, not original/current locomotion or runtime acceptance.",
+    "No prop, grasp fit, collision or native import evaluated.",
+    "Original geometry including collar/sleeve source defects remains unchanged.",
+    "Finger axis approximation is a modest diagnostic flex; not an authored production hand pose."
+  ]
+}

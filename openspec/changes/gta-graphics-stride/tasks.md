@@ -1,0 +1,4 @@
+- [x] Lock one run cycle at 600 cm from the sprint speed and the play rate
+- [x] Keep the opening pitch, the aim, and the socket
+- [x] Run `Scripts/test_run_cycle.py`
+- [ ] Confirm the run plays in Unreal (editor not available here)

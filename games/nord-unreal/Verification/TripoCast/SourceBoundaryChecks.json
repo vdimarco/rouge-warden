@@ -1,0 +1,17 @@
+{
+  "passed": true,
+  "checks": {
+    "source_plan": "test_graphic_novel_cast_plan.py passed",
+    "source_review_boundary": "test_graphic_novel_cast_review.py passed",
+    "tripo_static_review_boundary": "test_review_tripo_body.py passed",
+    "static_bind_semantic_boundaries": "Blender test_tripo_bind_semantics.py exit0"
+  },
+  "recipe_sha256": {
+    "prepare_graphic_novel_cast.py": "07f26e9d041df486dcba522b5ef0512539f660f85c0490754a280f3bb6a23abc",
+    "review_graphic_novel_cast.py": "ada98f3780a8a4a10c7c89b496d5ea32d1ed975823682bb5622717ce3be33e07",
+    "review_tripo_body.py": "5d972731f6ae482dd95f0eec119fd10d6a817f95b51234f5fc50c0bc708e59c6",
+    "prepare_tripo_cast_surface.py": "f83bdba794fc88472418253002cd7f9fec7701619d609b5ec635ae0699556a34",
+    "test_tripo_bind_semantics.py": "7adebacc4566d7f428c6d18a98351cd3b4295ae6f20562da3fa6b36bbb1fcb1f"
+  },
+  "scope": "Source and trust-boundary checks; no art, native or motion acceptance implied"
+}

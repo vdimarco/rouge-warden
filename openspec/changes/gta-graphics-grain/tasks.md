@@ -1,0 +1,4 @@
+- [x] Mix a second asphalt sample into the colour
+- [x] Shade the walking camera before and after
+- [x] Run `Scripts/test_asphalt_grain.py`
+- [ ] Confirm the broken repeat in Unreal (editor not available here)

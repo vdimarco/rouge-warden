@@ -1,0 +1,467 @@
+{
+  "passed": true,
+  "revision": 2,
+  "at_utc": "2026-10-18T00:20:22.392652+00:00",
+  "scope": "Read-only current source-plan/output/approval metadata audit; only this audit JSON updated. No UE, Blender, provider/API or new pose process.",
+  "importer_recipe": {
+    "path": "Scripts/import_tripo_cast.py",
+    "sha256": "42b7090430fe996cb98f12748a0913bda7e50bb5003b937c6f5cfb59fd3f68ae"
+  },
+  "immutable_funded_five_retention_summary": {
+    "path": "Verification/TripoCast/TripoBodies/OwnRigCPU/FundedFive/RetentionSummary.json",
+    "sha256": "dbc21e80aa921de4e223f8d260c96186db8077b8fd8af09b2938290e3aed573c"
+  },
+  "historical_retention_recipe": {
+    "path": "Verification/TripoCast/TripoBodies/OwnRigCPU/FundedFive/RetentionRecipe.py",
+    "sha256": "2f687d348623235edaa2dc87ef40f381f1615f42bfa44d3f416d0f219ab34383"
+  },
+  "characters": {
+    "BlackCap": {
+      "passed": true,
+      "current_provenance": {
+        "path": "Data/GraphicNovel/Crew/BlackCap/tripo-h31-rig-20261017/derived/natural-v1/Provenance.json",
+        "sha256": "2e3e86016680998e4611182fe69ec5a5c5dab79ce739f2cfc99aa2008f924aec"
+      },
+      "source_plan_passed": true,
+      "source_plan_import_scale": 1.8582327566206034,
+      "eight_output_roles_match_current_provenance_and_exact_CPU_proofs": {
+        "body": "1a81ac6d9485899203c1a37d8c52ab3ece40320536292bb382babf37fa3bd168",
+        "base_color": "8ce8eff69e6f9d71e063dacb34f628e5a21fbd1b3c2cf9dda648eb47a7581156",
+        "metallic_roughness": "e311d9760701b30e416273e7144cd815fdeef6731c7e96f3b41cebf84095f23e",
+        "normal": "193be451678e0f69245b33436d692377ad680c9a51601d4d7ad5c746e7292609",
+        "idle": "ae2ec76c910647b13c528957a7389f526535ccf9292a1e739d2e2d0e1cbbde77",
+        "jump": "d1ba8858f136da357a07bdb62bad2f698e36eb17389865ad9f6ecc77cbbccd99",
+        "walk": "628304f7d0d9f84ed044600fc4532fbf426bb8840d817a8f7ff511a58e5f9f9b",
+        "run": "4ed3b9c0c80b6ef98640449f58e3549ff3607393cc2b69369c7e0bd4d03687cb"
+      },
+      "current_native_import_trial_allowed": true,
+      "bounded_visual_root_review": {
+        "pin": {
+          "path": "Verification/TripoCast/TripoBodies/OwnMotionSequence/BlackCap-v1/RootReview.json",
+          "sha256": "6217f40d5f90724783000bb4f8ff7cce983b240977143bffbeba487a68fd357b"
+        },
+        "sequence_readback": {
+          "path": "Verification/TripoCast/TripoBodies/OwnMotionSequence/BlackCap-v1/Readback.json",
+          "sha256": "0d7ffa49e13377ac63fd2b5cc5365d5dc1532060811c883f65dc3e5deb6e7ea2"
+        },
+        "retained_manifest": {
+          "path": "Verification/TripoCast/TripoBodies/OwnMotionSequence/BlackCap-v1/SHA256SUMS",
+          "sha256": "6130dca309473f12ca1a4786c63ee7a59cae9c6a5f0902f5f89b7e1ad1066e87"
+        },
+        "all_manifest_file_hashes_verified": 12,
+        "source_body_clips_and_CPU_proofs_match_current_outputs": true,
+        "scope": "Existing BlackCap bounded210-frame/contact-sheet review; no new playback or art/native acceptance by this audit"
+      },
+      "historical_metadata_evolution": {
+        "scope": "BlackCap predates funded-five retention; historical funded-five Provenance reconstruction is not applicable. Current sources/proofs/review pins verified."
+      }
+    },
+    "GreenCap51": {
+      "passed": true,
+      "current_provenance": {
+        "path": "Data/GraphicNovel/Crew/GreenCap51/tripo-h31-rig-20261017/derived/natural-v1/Provenance.json",
+        "sha256": "3f21af2a5ea8fd2dc8961fc91c258d875d32c77529df52ffada1809362595ff5"
+      },
+      "source_plan_passed": true,
+      "source_plan_import_scale": 1.857820021230722,
+      "eight_output_roles_match_current_provenance_and_exact_CPU_proofs": {
+        "body": "aa9dbc4d91be92912a814f4fbfacead14429ea80bb305edea4312acac9e0a835",
+        "base_color": "512ea65c6bab15951c3f4c9afab0367100942502d1c96b7c55d6ee314915d487",
+        "metallic_roughness": "482e32e9ea75f88a11946c8c06b88477acb90b158a7606d3cb82eda48e69ab09",
+        "normal": "e37454e6ff4e2c8aae9e49c794968130c967a7ba840c0ae85c4abec4ed402a42",
+        "idle": "a2007b52e589131a738da8af75dfbd6b130b6ff7a77ca3d161665f805f962c3b",
+        "jump": "9f6b16eccde6b329ae92a194d57c728ee3097f84f72459469d303f48c74bf8e3",
+        "walk": "0a0576f67d68f703bd11115a3f530c387f716b01ff4e63fb96f211a95da375d5",
+        "run": "3a0da5e964738c0455a4498e2afb1314df8f3e4a6133de9c8ac56d8d1df6b75e"
+      },
+      "current_native_import_trial_allowed": true,
+      "historical_metadata_evolution": {
+        "passed": true,
+        "historical_provenance_sha256": "a0f7771551d8b16fd395d69d655e486275feb6f684ec4eb39ead3386831a8079",
+        "current_provenance_sha256": "3f21af2a5ea8fd2dc8961fc91c258d875d32c77529df52ffada1809362595ff5",
+        "historical_hash_differs_from_current": true,
+        "exact_original_bytes_reconstruct_sha256": "a0f7771551d8b16fd395d69d655e486275feb6f684ec4eb39ead3386831a8079",
+        "reconstruction": "Parse current JSON; remove bounded_visual_review; restore native_import_trial_allowed_at_retention from immutable RetentionSummary; for GreenCap51/RedJersey restore native_import_trial_scope to the exact historical string recorded below; serialize json.dumps(indent=2)+newline. This exactly recovers the historical SHA.",
+        "only_approval_metadata_changed": true,
+        "changes": [
+          {
+            "field": "bounded_visual_review",
+            "historical": null,
+            "current": {
+              "path": "Verification/TripoCast/TripoBodies/OwnMotionReview/FundedFive/GreenCap51/RootReview.json",
+              "sha256": "711193425f4562081baa9f56db932fc5cb96df5cda98eb90fca8cc8fccbe73d8"
+            }
+          },
+          {
+            "field": "native_import_trial_allowed",
+            "historical": false,
+            "current": true
+          },
+          {
+            "field": "native_import_trial_scope",
+            "historical": "Pending root own-body visual review; retention alone does not authorize native import",
+            "current": "Root reviewed all fifteen retained own-body/hand stills and permits isolated native import; final art, continuous native motion and physical grip remain unaccepted."
+          }
+        ]
+      },
+      "bounded_visual_root_review": {
+        "pin": {
+          "path": "Verification/TripoCast/TripoBodies/OwnMotionReview/FundedFive/GreenCap51/RootReview.json",
+          "sha256": "711193425f4562081baa9f56db932fc5cb96df5cda98eb90fca8cc8fccbe73d8"
+        },
+        "root_approved_isolated_native_trial": true,
+        "readbacks": {
+          "nine": {
+            "pin": {
+              "path": "Verification/TripoCast/TripoBodies/OwnMotionReview/FundedFive/GreenCap51/nine/Readback.json",
+              "sha256": "b95e650100ea0e11a9aafa413e92a365c4b5ab2d7a7e388678831998c2c5c6ec"
+            },
+            "source_body_clips_and_CPU_proofs_match_current_outputs": true,
+            "rendered_png_count_verified": 9
+          },
+          "hands": {
+            "pin": {
+              "path": "Verification/TripoCast/TripoBodies/OwnMotionReview/FundedFive/GreenCap51/hands/Readback.json",
+              "sha256": "779393d48670a46614a688800b88e6ea1e3a9826d2a98a4c45f9d99c5dc3db2b"
+            },
+            "source_body_clips_and_CPU_proofs_match_current_outputs": true,
+            "rendered_png_count_verified": 6
+          }
+        },
+        "all15_viewed_png_hashes_verified": true,
+        "continuous_sequence_review_completed": false,
+        "native_or_final_art_accepted": false
+      },
+      "stale_historical_scope_text": {
+        "present": false,
+        "historical_text": "Pending root own-body visual review; retention alone does not authorize native import",
+        "current_text": "Root reviewed all fifteen retained own-body/hand stills and permits isolated native import; final art, continuous native motion and physical grip remain unaccepted.",
+        "meaning": "Root corrected only this approval scope string after audit revision1; exact prior and retention bytes remain reconstructable."
+      },
+      "scope_metadata_revision": {
+        "passed": true,
+        "previous_current_provenance_sha256": "4e5fefcdc29f69255cd50a2ef723a935fca6eff8961a58846956fe87ed63ca17",
+        "only_field_changed_since_previous_audit": "native_import_trial_scope",
+        "historical_scope_restoration": "Pending root own-body visual review; retention alone does not authorize native import",
+        "current_scope": "Root reviewed all fifteen retained own-body/hand stills and permits isolated native import; final art, continuous native motion and physical grip remain unaccepted.",
+        "exact_previous_audit_bytes_reconstructable": true
+      }
+    },
+    "Memphis33": {
+      "passed": true,
+      "current_provenance": {
+        "path": "Data/GraphicNovel/Crew/Memphis33/tripo-h31-rig-20261017/derived/natural-v1/Provenance.json",
+        "sha256": "aa81c2676c309e1c46c314273d6a9a1ef6036c83b51cd72516a95776c564f3d3"
+      },
+      "source_plan_passed": true,
+      "source_plan_import_scale": 1.8578451211389828,
+      "eight_output_roles_match_current_provenance_and_exact_CPU_proofs": {
+        "body": "f1a7ebc4d44c94dde9b9cc81b1460e0fa4b9b4837e77e2be6fb97796f1ddfdb5",
+        "base_color": "30968d487dae955613beb168a2b352353f27b9a7d66713057dff435b4108ea86",
+        "metallic_roughness": "918733bfde365f6d78751b373945e5c9d6328acef63b20b26c06aa4c25126835",
+        "normal": "3fc2f93f8a85a767018b18b32419a8940ea60ec104dfbd5854bbf3407e6e4b61",
+        "idle": "fa7ed17b97cea698c9cd664da9bcb4fb51a7cb0e3bb79c9cca42d4e2fc29ef52",
+        "jump": "7d1e954af23571aa4bd9916378170955eba03e0c23afae06b98977902680a952",
+        "walk": "7b0deb8dda02b21af63864c919ff2116ca7afdec00d722b8c11511d29b80a1cd",
+        "run": "9b38d7b214eb7f2107e841dd913685ed50dd8e9f2eb2177180ad1b99202a7b12"
+      },
+      "current_native_import_trial_allowed": true,
+      "historical_metadata_evolution": {
+        "passed": true,
+        "historical_provenance_sha256": "1ab4d173755e4b41ca74f9a3e2aa5be0e57372baad8660123d11b785d44c9deb",
+        "current_provenance_sha256": "aa81c2676c309e1c46c314273d6a9a1ef6036c83b51cd72516a95776c564f3d3",
+        "historical_hash_differs_from_current": true,
+        "exact_original_bytes_reconstruct_sha256": "1ab4d173755e4b41ca74f9a3e2aa5be0e57372baad8660123d11b785d44c9deb",
+        "reconstruction": "Parse current JSON; remove bounded_visual_review; restore native_import_trial_allowed_at_retention from immutable RetentionSummary; for GreenCap51/RedJersey restore native_import_trial_scope to the exact historical string recorded below; serialize json.dumps(indent=2)+newline. This exactly recovers the historical SHA.",
+        "only_approval_metadata_changed": true,
+        "changes": [
+          {
+            "field": "bounded_visual_review",
+            "historical": null,
+            "current": {
+              "path": "Verification/TripoCast/TripoBodies/OwnMotionReview/FundedFive/Memphis33/RootReview.json",
+              "sha256": "14202133f959b80e20d1020941c1e063b819c8134cefdc562d6293cb4adf4c8b"
+            }
+          }
+        ]
+      },
+      "bounded_visual_root_review": {
+        "pin": {
+          "path": "Verification/TripoCast/TripoBodies/OwnMotionReview/FundedFive/Memphis33/RootReview.json",
+          "sha256": "14202133f959b80e20d1020941c1e063b819c8134cefdc562d6293cb4adf4c8b"
+        },
+        "root_approved_isolated_native_trial": true,
+        "readbacks": {
+          "nine": {
+            "pin": {
+              "path": "Verification/TripoCast/TripoBodies/OwnMotionReview/FundedFive/Memphis33/nine/Readback.json",
+              "sha256": "bdb1cb485060184b49c43ab8eb7387926598f7556ff6dc12fd3cf4827da5bcc6"
+            },
+            "source_body_clips_and_CPU_proofs_match_current_outputs": true,
+            "rendered_png_count_verified": 9
+          },
+          "hands": {
+            "pin": {
+              "path": "Verification/TripoCast/TripoBodies/OwnMotionReview/FundedFive/Memphis33/hands/Readback.json",
+              "sha256": "859eed95441a4471b6eef5ba2b2402174ae5a8b089701319579f42a36d4814a4"
+            },
+            "source_body_clips_and_CPU_proofs_match_current_outputs": true,
+            "rendered_png_count_verified": 6
+          }
+        },
+        "all15_viewed_png_hashes_verified": true,
+        "continuous_sequence_review_completed": false,
+        "native_or_final_art_accepted": false
+      },
+      "stale_historical_scope_text": {
+        "present": false,
+        "text": "Root authorized isolated candidate import after reviewing15 own-body stills; continuous motion/native/package/final art acceptance separate",
+        "meaning": "Current scope text is consistent with bounded trial approval."
+      }
+    },
+    "WhiteCap": {
+      "passed": true,
+      "current_provenance": {
+        "path": "Data/GraphicNovel/Crew/WhiteCap/tripo-h31-rig-20261017/derived/natural-v1/Provenance.json",
+        "sha256": "6cff8fb5c0ac9a8b6436cd3e4ed519f8855bb3cdc85d16b90bbacc173722cda6"
+      },
+      "source_plan_passed": true,
+      "source_plan_import_scale": 1.8581655898718021,
+      "eight_output_roles_match_current_provenance_and_exact_CPU_proofs": {
+        "body": "9a50f28b05f0e28cba4a56e9fa962fc9478667693739aed064b2a88ddd6b23e3",
+        "base_color": "9621e1d2fa65e3434f5bfa87e30edda5c4bd4f16e7693bb93afdd1f6af24c826",
+        "metallic_roughness": "515cb160f618c05e849804382c9fc25d5e1fa6e5f8bca13fe929948ee1afc16a",
+        "normal": "eef8531b0749d069847ce143370909adc0384bb41b8c61a0237c82ff53620743",
+        "idle": "4f3d428172aeb608b4465117abf66519965f55bc016d72fe34014b4c0f1e70f8",
+        "jump": "3a8150b16b53c12e3629d4d7892140b447cb0d9e7a61721671c03cf29b34cb94",
+        "walk": "789aeac186de4dbef8e0874be6e7d0be55d326e993fea9ee972e0e38b2550d3e",
+        "run": "c4154af026da052691e665ef3bb64b87e38f0eaa33ae3c2ebe1b905a4662a4d5"
+      },
+      "current_native_import_trial_allowed": true,
+      "historical_metadata_evolution": {
+        "passed": true,
+        "historical_provenance_sha256": "3c6e5065132c0532c23522afb1618e8373c61deec699edf3388cea10d21ab230",
+        "current_provenance_sha256": "6cff8fb5c0ac9a8b6436cd3e4ed519f8855bb3cdc85d16b90bbacc173722cda6",
+        "historical_hash_differs_from_current": true,
+        "exact_original_bytes_reconstruct_sha256": "3c6e5065132c0532c23522afb1618e8373c61deec699edf3388cea10d21ab230",
+        "reconstruction": "Parse current JSON; remove bounded_visual_review; restore native_import_trial_allowed_at_retention from immutable RetentionSummary; for GreenCap51/RedJersey restore native_import_trial_scope to the exact historical string recorded below; serialize json.dumps(indent=2)+newline. This exactly recovers the historical SHA.",
+        "only_approval_metadata_changed": true,
+        "changes": [
+          {
+            "field": "bounded_visual_review",
+            "historical": null,
+            "current": {
+              "path": "Verification/TripoCast/TripoBodies/OwnMotionReview/FundedFive/WhiteCap/RootReview.json",
+              "sha256": "16a171d726a2994821fc170c5c8536daac81980fb610403862fb1767d145287d"
+            }
+          }
+        ]
+      },
+      "bounded_visual_root_review": {
+        "pin": {
+          "path": "Verification/TripoCast/TripoBodies/OwnMotionReview/FundedFive/WhiteCap/RootReview.json",
+          "sha256": "16a171d726a2994821fc170c5c8536daac81980fb610403862fb1767d145287d"
+        },
+        "root_approved_isolated_native_trial": true,
+        "readbacks": {
+          "nine": {
+            "pin": {
+              "path": "Verification/TripoCast/TripoBodies/OwnMotionReview/FundedFive/WhiteCap/nine/Readback.json",
+              "sha256": "2a2aa948f600b91430b90ef1b1c279dc44678570c03154fe9a166c6ffb74aa12"
+            },
+            "source_body_clips_and_CPU_proofs_match_current_outputs": true,
+            "rendered_png_count_verified": 9
+          },
+          "hands": {
+            "pin": {
+              "path": "Verification/TripoCast/TripoBodies/OwnMotionReview/FundedFive/WhiteCap/hands/Readback.json",
+              "sha256": "2a657f22ba0108d05197d35933bb6bb7a643ff7e1fcdef3a370c51a6b56693dc"
+            },
+            "source_body_clips_and_CPU_proofs_match_current_outputs": true,
+            "rendered_png_count_verified": 6
+          }
+        },
+        "all15_viewed_png_hashes_verified": true,
+        "continuous_sequence_review_completed": false,
+        "native_or_final_art_accepted": false
+      },
+      "stale_historical_scope_text": {
+        "present": false,
+        "text": "Root authorized isolated candidate import after reviewing15 own-body stills; continuous motion/native/package/final art acceptance separate",
+        "meaning": "Current scope text is consistent with bounded trial approval."
+      }
+    },
+    "RedJersey": {
+      "passed": true,
+      "current_provenance": {
+        "path": "Data/GraphicNovel/Crew/RedJersey/tripo-h31-rig-20261017/derived/natural-v1/Provenance.json",
+        "sha256": "f52f069a066fed9761afa59341a141fea79db96e49d468b6cd06914c77c1473f"
+      },
+      "source_plan_passed": true,
+      "source_plan_import_scale": 1.8594175176385108,
+      "eight_output_roles_match_current_provenance_and_exact_CPU_proofs": {
+        "body": "e76def5603bfc515768f95617222b5b0c0cb4cf381cfd64b691eefb21a17b306",
+        "base_color": "cb85d90d94182fa32298957ca629b341fc0c2d705ca43d1805bd283abee0fb40",
+        "metallic_roughness": "2e8ea173f17bea990d88d4da966fb5aa01ea7edaf982d2578771924ae4afe501",
+        "normal": "a6d4c01c3df2d71655c65219251778f26496746b1d9c0ef18c4cdefeafd45385",
+        "idle": "664373214318ef85b591b8c0b7c22fc7d0a2297e83c4c37bceb7c99b0c0966e4",
+        "jump": "fadbce913e3be6433c7c6634385a89583c11cbe23ae543588d8353e73d755a00",
+        "walk": "253374d86ebbcc23afe134cdf03bf26b6b0f19d1cf5228de5819ac4d07219bc6",
+        "run": "8f523185d565fc81e68878e62c4f3b77960c58fc3f68586c0da00edfeab16fda"
+      },
+      "current_native_import_trial_allowed": true,
+      "historical_metadata_evolution": {
+        "passed": true,
+        "historical_provenance_sha256": "e4d3c1e4d8c3e65276e2279c5296ea5e60bbd693cae0e7ca72e7dfe92d462830",
+        "current_provenance_sha256": "f52f069a066fed9761afa59341a141fea79db96e49d468b6cd06914c77c1473f",
+        "historical_hash_differs_from_current": true,
+        "exact_original_bytes_reconstruct_sha256": "e4d3c1e4d8c3e65276e2279c5296ea5e60bbd693cae0e7ca72e7dfe92d462830",
+        "reconstruction": "Parse current JSON; remove bounded_visual_review; restore native_import_trial_allowed_at_retention from immutable RetentionSummary; for GreenCap51/RedJersey restore native_import_trial_scope to the exact historical string recorded below; serialize json.dumps(indent=2)+newline. This exactly recovers the historical SHA.",
+        "only_approval_metadata_changed": true,
+        "changes": [
+          {
+            "field": "bounded_visual_review",
+            "historical": null,
+            "current": {
+              "path": "Verification/TripoCast/TripoBodies/OwnMotionReview/FundedFive/RedJersey/RootReview.json",
+              "sha256": "3b54bbb09e865b38a73a4652e188dee9391237185d598c534ab2014cde35f7cc"
+            }
+          },
+          {
+            "field": "native_import_trial_allowed",
+            "historical": false,
+            "current": true
+          },
+          {
+            "field": "native_import_trial_scope",
+            "historical": "Pending root own-body visual review; retention alone does not authorize native import",
+            "current": "Root reviewed all fifteen retained own-body/hand stills and permits isolated native import; final art, continuous native motion and physical grip remain unaccepted."
+          }
+        ]
+      },
+      "bounded_visual_root_review": {
+        "pin": {
+          "path": "Verification/TripoCast/TripoBodies/OwnMotionReview/FundedFive/RedJersey/RootReview.json",
+          "sha256": "3b54bbb09e865b38a73a4652e188dee9391237185d598c534ab2014cde35f7cc"
+        },
+        "root_approved_isolated_native_trial": true,
+        "readbacks": {
+          "nine": {
+            "pin": {
+              "path": "Verification/TripoCast/TripoBodies/OwnMotionReview/FundedFive/RedJersey/nine/Readback.json",
+              "sha256": "e0ddb6ea2de07d5ff2da33fd6b9a3a82b3308e890bfdadf428530ea722100a6b"
+            },
+            "source_body_clips_and_CPU_proofs_match_current_outputs": true,
+            "rendered_png_count_verified": 9
+          },
+          "hands": {
+            "pin": {
+              "path": "Verification/TripoCast/TripoBodies/OwnMotionReview/FundedFive/RedJersey/hands/Readback.json",
+              "sha256": "49a46f05cfccb0a111798a2c13c44f952e77581bec88768a900d3eed14a8b6d5"
+            },
+            "source_body_clips_and_CPU_proofs_match_current_outputs": true,
+            "rendered_png_count_verified": 6
+          }
+        },
+        "all15_viewed_png_hashes_verified": true,
+        "continuous_sequence_review_completed": false,
+        "native_or_final_art_accepted": false
+      },
+      "stale_historical_scope_text": {
+        "present": false,
+        "historical_text": "Pending root own-body visual review; retention alone does not authorize native import",
+        "current_text": "Root reviewed all fifteen retained own-body/hand stills and permits isolated native import; final art, continuous native motion and physical grip remain unaccepted.",
+        "meaning": "Root corrected only this approval scope string after audit revision1; exact prior and retention bytes remain reconstructable."
+      },
+      "scope_metadata_revision": {
+        "passed": true,
+        "previous_current_provenance_sha256": "128bfee53ddbab1cf859f8acda0b0d3062767d51199cbbfd13cc613dbac07db0",
+        "only_field_changed_since_previous_audit": "native_import_trial_scope",
+        "historical_scope_restoration": "Pending root own-body visual review; retention alone does not authorize native import",
+        "current_scope": "Root reviewed all fifteen retained own-body/hand stills and permits isolated native import; final art, continuous native motion and physical grip remain unaccepted.",
+        "exact_previous_audit_bytes_reconstructable": true
+      }
+    },
+    "LimeJacket": {
+      "passed": true,
+      "current_provenance": {
+        "path": "Data/GraphicNovel/Crew/LimeJacket/tripo-h31-rig-20261017/derived/natural-v1/Provenance.json",
+        "sha256": "39485746a98a26fb86e5723b12191a35b19154b074472b456bd079a2f29dc3bf"
+      },
+      "source_plan_passed": true,
+      "source_plan_import_scale": 1.8590655478867146,
+      "eight_output_roles_match_current_provenance_and_exact_CPU_proofs": {
+        "body": "782ba33479b7d0f2adaf8f533df829287f351673afd3e859dd9fc580bec734c5",
+        "base_color": "61611c35a680845cecc72bc589c3ad4d67b64b24040536a3875482df70e9fca7",
+        "metallic_roughness": "b382c9961f38368fe63bc9c3ebdbaf46a4fbc62d8168dfda03409d3151ebd3be",
+        "normal": "cab7d7bfc765412e47141b5ebc7bc123192ab63c245bb5374a46a81374f6c033",
+        "idle": "0c5b0115b0b507c3e869310d7f42aeb186ae95602e52342b0b6ba726afa785f9",
+        "jump": "f6ec2fc234e16b903c47aeb8e69c681a696e5f1572240facca4bb9d674964a70",
+        "walk": "e85edcb25347a76b20a193b45b74bee30ac89c9578949f1f9a18288a7eb52500",
+        "run": "ddd1af993c4c4700bc451cdc9a52cd8271bdb579e0ed3ea97c514df7b38623fe"
+      },
+      "current_native_import_trial_allowed": true,
+      "historical_metadata_evolution": {
+        "passed": true,
+        "historical_provenance_sha256": "fe706f18c577949f447db2cad36d396c18b3492989787ac1954ffb90e2ac8a0b",
+        "current_provenance_sha256": "39485746a98a26fb86e5723b12191a35b19154b074472b456bd079a2f29dc3bf",
+        "historical_hash_differs_from_current": true,
+        "exact_original_bytes_reconstruct_sha256": "fe706f18c577949f447db2cad36d396c18b3492989787ac1954ffb90e2ac8a0b",
+        "reconstruction": "Parse current JSON; remove bounded_visual_review; restore native_import_trial_allowed_at_retention from immutable RetentionSummary; for GreenCap51/RedJersey restore native_import_trial_scope to the exact historical string recorded below; serialize json.dumps(indent=2)+newline. This exactly recovers the historical SHA.",
+        "only_approval_metadata_changed": true,
+        "changes": [
+          {
+            "field": "bounded_visual_review",
+            "historical": null,
+            "current": {
+              "path": "Verification/TripoCast/TripoBodies/OwnMotionReview/FundedFive/LimeJacket/RootReview.json",
+              "sha256": "177686b96f312d1d517d7dc2b5af6c81a4a91536b939b65966f171f7c78a1889"
+            }
+          }
+        ]
+      },
+      "bounded_visual_root_review": {
+        "pin": {
+          "path": "Verification/TripoCast/TripoBodies/OwnMotionReview/FundedFive/LimeJacket/RootReview.json",
+          "sha256": "177686b96f312d1d517d7dc2b5af6c81a4a91536b939b65966f171f7c78a1889"
+        },
+        "root_approved_isolated_native_trial": true,
+        "readbacks": {
+          "nine": {
+            "pin": {
+              "path": "Verification/TripoCast/TripoBodies/OwnMotionReview/FundedFive/LimeJacket/nine/Readback.json",
+              "sha256": "f6d4023301d60724fab69fef98180258fa814fe15c7db43f0dea70134675e9a8"
+            },
+            "source_body_clips_and_CPU_proofs_match_current_outputs": true,
+            "rendered_png_count_verified": 9
+          },
+          "hands": {
+            "pin": {
+              "path": "Verification/TripoCast/TripoBodies/OwnMotionReview/FundedFive/LimeJacket/hands/Readback.json",
+              "sha256": "4d3ea52bf83fa0bee6ae311413f01f1d7c7b235714643fc16d9272c7ba079231"
+            },
+            "source_body_clips_and_CPU_proofs_match_current_outputs": true,
+            "rendered_png_count_verified": 6
+          }
+        },
+        "all15_viewed_png_hashes_verified": true,
+        "continuous_sequence_review_completed": false,
+        "native_or_final_art_accepted": false
+      },
+      "stale_historical_scope_text": {
+        "present": false,
+        "text": "Root authorized isolated candidate import after reviewing15 own-body stills; continuous motion/native/package/final art acceptance separate",
+        "meaning": "Current scope text is consistent with bounded trial approval."
+      }
+    }
+  },
+  "all6_source_plans_passed": true,
+  "all48_current_output_hashes_match_proofs": true,
+  "all5_historical_provenance_hash_differences_exactly_reconstructable_approval_only": true,
+  "stale_scope_text_characters": [],
+  "audited_original_sources_and_receipts_unchanged": true,
+  "data_content_shared_helpers_or_historical_receipts_edited": false,
+  "new_native_or_art_acceptance_claimed": false,
+  "previous_audit_sha256": "069a852db20757b6f6f673054db462dd02381f895f0e9758d8bf5c0a9148c420",
+  "all_current_approval_scope_strings_consistent_with_pinned_root_review": true
+}

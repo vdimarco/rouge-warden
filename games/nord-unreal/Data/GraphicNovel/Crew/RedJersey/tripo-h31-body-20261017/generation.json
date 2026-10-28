@@ -1,0 +1,19 @@
+{
+  "character": "RedJersey",
+  "style": 7,
+  "provider": "Tripo API",
+  "endpoint": "/v3/generation/image-to-model",
+  "source_reference_sha256": "3270ff8a8a29209ae1b1e7cb454a7883375b955adc651b12feb71332a2086bac",
+  "status": "completed_downloaded",
+  "body_published_credits": 60,
+  "paired_rig_reserved_credits": 25,
+  "configured_pilot_reserved_credits": 85,
+  "native_or_art_accepted": false,
+  "user_provider_choice": "Tripo for both bodies and rigs",
+  "pricing_source": "https://developers.tripo3d.ai/en/pricing",
+  "docs_source": "https://developers.tripo3d.ai/en/docs/generation-image-to-model/standard",
+  "prepared_utc": "2026-10-17T23:21:38.215246+00:00",
+  "task_id": "8845fab9-3804-44f5-8dbb-fd63d29d98cb",
+  "completed_at_utc": "2026-10-17T23:22:54.203704Z",
+  "credits_consumed": 60
+}

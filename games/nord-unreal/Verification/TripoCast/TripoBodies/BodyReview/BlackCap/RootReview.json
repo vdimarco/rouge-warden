@@ -1,0 +1,46 @@
+{
+  "at_utc": "2026-10-17T22:40:57.126884+00:00",
+  "source_sha256": "ff4d393b98d5fba212295305b714ab7fce04229e34b14196c7e2f4c210467d70",
+  "viewed": [
+    {
+      "file": "front.png",
+      "sha256": "c477aefb9f049d30389aded792edfb9dc8d04607cbdcd87c48fd37073b1a423f"
+    },
+    {
+      "file": "threequarter.png",
+      "sha256": "ec348a056305f885b56c08a0ce6c978e9a8abc1eda247d3e7af59809e17b37fb"
+    },
+    {
+      "file": "side.png",
+      "sha256": "6c322f4ef61cfe6f47b449e125606773524b99c1962f26408dfc7d5d9d8cebc3"
+    },
+    {
+      "file": "back.png",
+      "sha256": "2624a68b9c587776192ba53fbeb187aba8585ca950967b025ce38e3f95c762cd"
+    },
+    {
+      "file": "face-front.png",
+      "sha256": "8c173711d9d1e98cd9d95a7c29846d7d2a61b329aec6aa4a4e3c256c4231d6d9"
+    },
+    {
+      "file": "face-threequarter.png",
+      "sha256": "b6495efb2d8a48e8e986d1a0eb78dfbb7546c58b64d5f1d8a1755891a2e50dca"
+    },
+    {
+      "file": "hand-left.png",
+      "sha256": "76eba62d771b8f03ce072f827c18c30c12fe2cfc939e2fd5ce5eba6f382826e1"
+    },
+    {
+      "file": "hand-right.png",
+      "sha256": "f0144dbab9699575cf7da8405396716f708731103e96bae35b66b32e0d59a1bc"
+    }
+  ],
+  "bounded_rig_trial_allowed": true,
+  "final_art_accepted": false,
+  "observations": [
+    "Mature adult likeness/build, black cap/tee, cargo shorts and shoes retained.",
+    "The earlier comparison body hanging cheek stems are absent from these actual face/side views.",
+    "Thumb and four long digits have visible distal separation; rounded web/finger surfaces remain coarse.",
+    "Glasses/lens/eye details and beard/face are simplified; these source poses do not establish deformation or grasp."
+  ]
+}

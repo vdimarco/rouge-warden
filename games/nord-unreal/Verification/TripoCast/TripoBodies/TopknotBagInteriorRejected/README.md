@@ -1,0 +1,9 @@
+# Rejected Topknot bag-interior pilot
+
+Root reviewed all nine old-left/new-right comparisons and rejects adoption. [Run](Compare-run-threequarter.png) shows a less compressed hanging interior, but [Jump](Compare-jump-threequarter.png) still folds at the unchanged upper boundary. Left-wrist contact remains hidden. This does not fix the accessory or permit native import.
+
+The conservative primary-mask interior contains4,826 vertices. Only their leg contribution moves to pelvis; all straps, boundary/shared/uncertain/unselected vertices and all other channels stay fixed. [Candidate.json](Candidate.json), [SelectionArrays.npz](SelectionArrays.npz), [Mapping.json](Mapping.json) and [WeightProofArrays.npz](WeightProofArrays.npz) retain the exact mask, raw-to-derived correspondence and expected weight deltas.
+
+The private narrow FBX writer changes eight Indexes/Weights arrays in four skin clusters. [BinaryProof.json](BinaryProof.json) verifies all5,648 non-weight typed properties across2,275 elements exactly, with no exemptions. [Repair.json](Repair.json) retains fresh geometry/UV/normal residual0, identical binds, exact outside/other-channel weights and unchanged PBR reload. The original providers, passed source and frozen four clips remain unchanged. [body.fbx](body.fbx) is the rejected derivative, retained here as evidence rather than adopted source Data.
+
+[ReviewPacket.json](ReviewPacket.json) retains actual CPU exits and independent review; [RootReview.json](RootReview.json) pins this selected packet. The original full Saved packet also retains failed guards, the rejected whole-export normal drift, original/repaired renders and logs. A coherent bag/attachment boundary and any required bag-side seam split need separate visual/proof review. No Data, Content, native, GPU, API or service change follows from this pilot.

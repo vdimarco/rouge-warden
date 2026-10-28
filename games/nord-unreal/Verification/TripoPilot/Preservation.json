@@ -1,0 +1,33 @@
+{
+  "recorded_at_utc": "2026-10-17T20:23:00.167236+00:00",
+  "read_only_verification": true,
+  "content_files_checked": 6850,
+  "content_matches_previous_restored_baseline": true,
+  "changed_content": [],
+  "native_module_sha256": "2742ca45629a6e97db771a2c3f56b3a8076b8c4b228f8a4d9b86a8633c0623c3",
+  "no_engine_or_service_operation_started_by_this_pilot": true,
+  "services": {
+    "nord-browser-demo.service": {
+      "ActiveState": "active",
+      "MainPID": "3956730"
+    },
+    "nord-browser-public.service": {
+      "ActiveState": "active",
+      "MainPID": "109459"
+    },
+    "nord-browser-funnel.service": {
+      "ActiveState": "active",
+      "MainPID": "109441"
+    },
+    "nord-browser-turn-funnel.service": {
+      "ActiveState": "active",
+      "MainPID": "109422"
+    }
+  },
+  "gpu_inventory": "18164 MiB, 5901 MiB, 52 %",
+  "limits": [
+    "No fresh package/browser/device/off-LAN test.",
+    "No pilot writes to production saves/settings; no claim about legitimate gameplay save changes during this work.",
+    "GPU inventory is a snapshot, not a performance measurement."
+  ]
+}

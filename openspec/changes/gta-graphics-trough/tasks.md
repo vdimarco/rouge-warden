@@ -1,0 +1,4 @@
+- [x] Draw the trough and lip in `city_facade.hlsl`
+- [x] Shade the elevation before and after
+- [x] Run `Scripts/test_facade_trough.py`, `Scripts/test_facade_palette.py`, `Scripts/test_facade_spill.py`, and `Scripts/test_environment_refresh.py`
+- [ ] Apply the facade material in Unreal (editor not available here)

@@ -1,0 +1,35 @@
+{
+  "files": {
+    "Geometry/Glass.obj": {
+      "sha256": "02f015e6a803af08f4ad16931c3ee707ca026b0d0e9263a1e217f523522dd987",
+      "bytes": 10450
+    },
+    "Geometry/Iron.obj": {
+      "sha256": "16141ab0f92b99d540c884b484522edff3c3eaad847574929c129a655767f818",
+      "bytes": 270795
+    },
+    "Geometry/Trim.obj": {
+      "sha256": "90488baac64a7ec7bc761aa64f68d5fe8b216ade316b6dff7694f04a690c6494",
+      "bytes": 65211
+    },
+    "README.md": {
+      "sha256": "1dcc66b018235c657320de75b8d2acddb7e117285ace4cdb33ebac734eb10936",
+      "bytes": 4224
+    },
+    "cpu-checks.json": {
+      "sha256": "d5d79e0ccb8dbfb8e3f7151b368de44c1abccac5b86b7be04f1389a9759cd4aa",
+      "bytes": 3457
+    },
+    "details.json": {
+      "sha256": "b037a03f7aa26b82866102df17c60f44d86c88210e82ef5984a6edb513db9e22",
+      "bytes": 46149
+    },
+    "source-subset.osm.xml": {
+      "sha256": "c3c6923e3748be28955a91361a53c9a6e6b2443f2c12f3064d977f86ad168291",
+      "bytes": 3949
+    }
+  },
+  "count": 7,
+  "source_only": true,
+  "native_imported": false
+}

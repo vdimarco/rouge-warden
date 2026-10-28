@@ -2,6 +2,15 @@
 
 Run apply(unreal) outside PIE, then apply_comic_style.py and capture actual renders.
 Saved/Recovery retains every affected asset before writes; no map save or import occurs.
+
+Leaf colour has two modes. The default is late October, as the rest of the Plateau replica: every leaf shifts toward
+autumn, the texture's luminance (its own light and dark veins and edges) times a per-instance palette that runs from
+a few still-green trees through yellow and orange to some red (AUTUMN_STOPS), and the cut-out clip rises from 1/3 to
+AUTUMN_MASK_CLIP so the crowns thin out as if many leaves had already fallen. The old summer look (the leaf texture
+desaturated 35 % and tinted from green to gold by each instance's random value) needs apply(u, autumn=False), or the
+editor command-line flag -NordTreeSummer when autumn is left as None (-NordTreeAutumn is still accepted and changes
+nothing). The same material colours QuebecVegetation's falling leaf cards. leaf_colour() evaluates the same graph on
+the CPU, so the tests check the colours without Unreal.
 """
 from datetime import datetime, timezone
 import hashlib
@@ -19,6 +28,103 @@ DIFFUSE = '/Game/Art/Tree/tree_small_02/Textures/tree_small_02_leaves_diff-tree_
 GREEN_TINT = (.85, 1.35, .75)
 GOLD_TINT = (1.8, 1.2, .5)
 MASK_CLIP = 1. / 3.
+AUTUMN_FLAG = '-NordTreeAutumn'           # the old opt-in; autumn is the default now
+SUMMER_FLAG = '-NordTreeSummer'           # opt out: the summer green-to-gold graph
+# Late October on the Plateau: per-instance random value r -> linear tint of the leaf luminance. Lerp between
+# neighbouring stops: the first sixth of the trees keeps some green, most are yellow to amber, then orange and a
+# few red. The leaf texture's linear luminance is about .40 over its opaque texels (tree_small_02_leaves_diff_1k,
+# p10-p90 .31-.49), so yellow lands near sRGB #C4982B, orange near #CB6A1E, red near #A5381E.
+AUTUMN_STOPS = ((0., (.5, .68, .1)), (.16, (1.4, .8, .06)), (.55, (1.5, .62, .05)), (.85, (1.5, .36, .035)),
+                (1., (.95, .1, .035)))
+AUTUMN_LIFT = (.01, .006, .001)
+AUTUMN_MASK_CLIP = .45     # thinner crowns: many leaves are down by late October
+
+
+def autumn_flag(u):
+    """True (late October, the default) unless the editor was started with -NordTreeSummer."""
+    import shlex
+    try:
+        return SUMMER_FLAG not in shlex.split(u.SystemLibrary.get_command_line())
+    except AttributeError:
+        return True
+
+
+def luminance(rgb):
+    """Unreal's Desaturation luminance weights (MaterialExpressionDesaturation default)."""
+    return .3 * rgb[0] + .59 * rgb[1] + .11 * rgb[2]
+
+
+def autumn_tint(r):
+    """The AUTUMN_STOPS palette at the per-instance random value r (piecewise-linear, as the node graph)."""
+    out = AUTUMN_STOPS[0][1]
+    for (t0, c0), (t1, c1) in zip(AUTUMN_STOPS, AUTUMN_STOPS[1:]):
+        f = min(1., max(0., (r - t0) / (t1 - t0)))
+        out = tuple(a + (b - a) * f for a, b in zip(out, c1)) if r > t0 else out
+    return out
+
+
+def leaf_colour(texel, r, autumn=True):
+    """Linear base colour of the leaf material for a linear texture colour and per-instance random value r."""
+    if not autumn:
+        grey = luminance(texel)
+        desat = tuple(c + (grey - c) * .35 for c in texel)
+        tint = tuple(g + (o - g) * r for g, o in zip(GREEN_TINT, GOLD_TINT))
+        return tuple(d * t + l for d, t, l in zip(desat, tint, (.025, .035, .008)))
+    grey = luminance(texel)
+    return tuple(grey * t + l for t, l in zip(autumn_tint(r), AUTUMN_LIFT))
+
+
+def leaf_graph(u, mat, diffuse, autumn):
+    """The leaf material's colour nodes: the summer green-to-gold graph, or the autumn palette. Returns the node
+    that feeds base colour (transmission = base colour x .65 is wired by the caller)."""
+    library = u.MaterialEditingLibrary
+
+    def node(cls, **properties):
+        n = library.create_material_expression(mat, cls)
+        for name, value in properties.items():
+            n.set_editor_property(name, value)
+        return n
+
+    def link(a, output, b, name):
+        assert library.connect_material_expressions(a, output, b, name), name
+
+    texture = node(u.MaterialExpressionTextureSample, texture=diffuse,
+                   sampler_type=u.MaterialSamplerType.SAMPLERTYPE_COLOR)
+    random = node(u.MaterialExpressionPerInstanceRandom)
+    desat = node(u.MaterialExpressionDesaturation)
+    link(texture, 'RGB', desat, '')
+    if not autumn:
+        link(node(u.MaterialExpressionConstant, r=.35), '', desat, 'Fraction')
+        tint = node(u.MaterialExpressionLinearInterpolate)
+        link(node(u.MaterialExpressionConstant3Vector, constant=u.LinearColor(*GREEN_TINT, 1)), '', tint, 'A')
+        link(node(u.MaterialExpressionConstant3Vector, constant=u.LinearColor(*GOLD_TINT, 1)), '', tint, 'B')
+        link(random, '', tint, 'Alpha')
+        lift_colour = (.025, .035, .008)
+    else:
+        # Full desaturation keeps only the texture's luminance; the palette brings the colour.
+        link(node(u.MaterialExpressionConstant, r=1.), '', desat, 'Fraction')
+        tint = node(u.MaterialExpressionConstant3Vector, constant=u.LinearColor(*AUTUMN_STOPS[0][1], 1))
+        for (t0, _), (t1, c1) in zip(AUTUMN_STOPS, AUTUMN_STOPS[1:]):
+            # f = clamp((r - t0) / (t1 - t0), 0, 1); tint = lerp(tint, c1, f)
+            shift = node(u.MaterialExpressionSubtract, const_b=t0)
+            link(random, '', shift, 'A')
+            scale = node(u.MaterialExpressionMultiply, const_b=1. / (t1 - t0))
+            link(shift, '', scale, 'A')
+            clamp = node(u.MaterialExpressionClamp, min_default=0., max_default=1.)
+            link(scale, '', clamp, '')
+            step = node(u.MaterialExpressionLinearInterpolate)
+            link(tint, '', step, 'A')
+            link(node(u.MaterialExpressionConstant3Vector, constant=u.LinearColor(*c1, 1)), '', step, 'B')
+            link(clamp, '', step, 'Alpha')
+            tint = step
+        lift_colour = AUTUMN_LIFT
+    color = node(u.MaterialExpressionMultiply)
+    link(desat, '', color, 'A')
+    link(tint, '', color, 'B')
+    lift = node(u.MaterialExpressionAdd)
+    link(color, '', lift, 'A')
+    link(node(u.MaterialExpressionConstant3Vector, constant=u.LinearColor(*lift_colour, 1)), '', lift, 'B')
+    return lift
 
 
 def source_inventory(root=ROOT):
@@ -95,7 +201,12 @@ def verified_source_bounds(before, after, bounds):
     return expected
 
 
-def apply(u):
+def apply(u, autumn=None):
+    """autumn: True (the default through None, unless -NordTreeSummer) shifts the leaves to late-October colours and
+    thins the crowns; False keeps the summer green to gold."""
+    if autumn is None:
+        autumn = autumn_flag(u)
+    clip = AUTUMN_MASK_CLIP if autumn else MASK_CLIP
     assert not u.EditorLevelLibrary.get_pie_worlds(True), 'Stop PIE before refining tree assets'
     assert u.EditorLevelLibrary.get_editor_world().get_path_name() == '/Game/Maps/LaFontaine.LaFontaine'
     source = source_inventory()
@@ -138,12 +249,12 @@ def apply(u):
     alpha.set_editor_property('srgb', False)
     alpha.set_editor_property('compression_settings', u.TextureCompressionSettings.TC_MASKS)
     alpha.set_editor_property('do_scale_mips_for_alpha_coverage', True)
-    alpha.set_editor_property('alpha_coverage_thresholds', u.Vector4(MASK_CLIP, 0, 0, 0))
+    alpha.set_editor_property('alpha_coverage_thresholds', u.Vector4(clip, 0, 0, 0))
     assert assets.save_loaded_asset(alpha)
     library.delete_all_material_expressions(mat)
     mat.set_editor_property('blend_mode', u.BlendMode.BLEND_MASKED)
     mat.set_editor_property('two_sided', True)
-    mat.set_editor_property('opacity_mask_clip_value', MASK_CLIP)
+    mat.set_editor_property('opacity_mask_clip_value', clip)
 
     def node(cls, **properties):
         n = library.create_material_expression(mat, cls)
@@ -157,21 +268,7 @@ def apply(u):
     def property(n, output, prop):
         assert library.connect_material_property(n, output, prop), prop
 
-    texture = node(u.MaterialExpressionTextureSample, texture=diffuse,
-                   sampler_type=u.MaterialSamplerType.SAMPLERTYPE_COLOR)
-    desat = node(u.MaterialExpressionDesaturation)
-    link(texture, 'RGB', desat, '')
-    link(node(u.MaterialExpressionConstant, r=.35), '', desat, 'Fraction')
-    random = node(u.MaterialExpressionPerInstanceRandom)
-    tint = node(u.MaterialExpressionLinearInterpolate)
-    link(node(u.MaterialExpressionConstant3Vector, constant=u.LinearColor(*GREEN_TINT, 1)), '', tint, 'A')
-    link(node(u.MaterialExpressionConstant3Vector, constant=u.LinearColor(*GOLD_TINT, 1)), '', tint, 'B')
-    link(random, '', tint, 'Alpha')
-    color = node(u.MaterialExpressionMultiply)
-    link(desat, '', color, 'A'); link(tint, '', color, 'B')
-    lift = node(u.MaterialExpressionAdd)
-    link(color, '', lift, 'A')
-    link(node(u.MaterialExpressionConstant3Vector, constant=u.LinearColor(.025, .035, .008, 1)), '', lift, 'B')
+    lift = leaf_graph(u, mat, diffuse, autumn)
     property(lift, '', u.MaterialProperty.MP_BASE_COLOR)
     transmission = node(u.MaterialExpressionMultiply, const_b=.65)
     link(lift, '', transmission, 'A')
@@ -198,7 +295,7 @@ def apply(u):
     assert mesh.get_editor_property('nanite_settings').get_editor_property('shape_preservation') == u.NaniteShapePreservation.PRESERVE_AREA
     assert mat.get_editor_property('blend_mode') == u.BlendMode.BLEND_MASKED
     assert mat.get_editor_property('two_sided')
-    assert abs(mat.get_editor_property('opacity_mask_clip_value') - MASK_CLIP) < 1.e-6
+    assert abs(mat.get_editor_property('opacity_mask_clip_value') - clip) < 1.e-6
     assert library.get_material_property_input_node(mat, u.MaterialProperty.MP_OPACITY_MASK) == mask
     assert mesh.get_editor_property('body_setup') == body and body.get_editor_property('collision_trace_flag') == collision
     bounds = mesh.get_bounds()
@@ -226,8 +323,11 @@ def apply(u):
               'source_geometry_transforms_collision_unchanged': True,
               'runtime_bounds_exactly_match_raw_source': True,
               'geometry_diagnostic': str(diagnostic_path.relative_to(ROOT)),
+              'autumn': autumn,
+              'leaf_palette': ({'stops': AUTUMN_STOPS, 'lift': AUTUMN_LIFT} if autumn else
+                               {'green_tint': GREEN_TINT, 'gold_tint': GOLD_TINT}),
               'green_tint': GREEN_TINT, 'gold_tint': GOLD_TINT,
-              'mask_clip': MASK_CLIP, 'nanite_shape_preservation': 'PreserveArea'}
+              'mask_clip': clip, 'nanite_shape_preservation': 'PreserveArea'}
     out = ROOT / 'Saved/Tests/TreeGraphicsApplied.json'
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(report, indent=2) + '\n')

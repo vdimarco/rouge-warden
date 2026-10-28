@@ -1,0 +1,4 @@
+- [x] Raise the walker and combat sockets, keeping the aim lift
+- [x] Shade the street before and after
+- [x] Run `Scripts/test_camera_shoulder.py`
+- [ ] Run `Quebec.Camera.LookBounds` in Unreal (editor not available here)

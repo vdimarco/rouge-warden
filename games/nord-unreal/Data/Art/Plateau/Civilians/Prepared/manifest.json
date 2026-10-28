@@ -162,6 +162,10 @@
       "Walk": {
         "file": "A_MenHoodie_Walk.fbx",
         "duration": 1.3333333333333333
+      },
+      "Run": {
+        "file": "A_MenHoodie_Run.fbx",
+        "duration": 0.7916666666666666
       }
     }
   },

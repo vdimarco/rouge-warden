@@ -1,0 +1,240 @@
+// Offline UE 5.x API stub: Components/PrimitiveComponent.h
+#pragma once
+#include "Components/SceneComponent.h"
+#include "CollisionQueryParams.h"
+#include "CollisionShape.h"
+#include "Engine/OverlapResult.h"
+
+class UMaterialInterface;
+class UMaterialInstanceDynamic;
+class UPhysicalMaterial;
+class UPrimitiveComponent;
+struct FBodyInstance;
+struct FOverlapInfo;
+struct FKey;
+
+DECLARE_DYNAMIC_MULTICAST_SPARSE_DELEGATE_FiveParams(FComponentHitSignature, UPrimitiveComponent, OnComponentHit, UPrimitiveComponent*, HitComponent, AActor*, OtherActor, UPrimitiveComponent*, OtherComp, FVector, NormalImpulse, const FHitResult&, Hit);
+DECLARE_DYNAMIC_MULTICAST_SPARSE_DELEGATE_SixParams(FComponentBeginOverlapSignature, UPrimitiveComponent, OnComponentBeginOverlap, UPrimitiveComponent*, OverlappedComponent, AActor*, OtherActor, UPrimitiveComponent*, OtherComp, int32, OtherBodyIndex, bool, bFromSweep, const FHitResult&, SweepResult);
+DECLARE_DYNAMIC_MULTICAST_SPARSE_DELEGATE_FourParams(FComponentEndOverlapSignature, UPrimitiveComponent, OnComponentEndOverlap, UPrimitiveComponent*, OverlappedComponent, AActor*, OtherActor, UPrimitiveComponent*, OtherComp, int32, OtherBodyIndex);
+DECLARE_DYNAMIC_MULTICAST_SPARSE_DELEGATE_TwoParams(FComponentWakeSignature, UPrimitiveComponent, OnComponentWake, UPrimitiveComponent*, WakingComponent, FName, BoneName);
+DECLARE_DYNAMIC_MULTICAST_SPARSE_DELEGATE_TwoParams(FComponentSleepSignature, UPrimitiveComponent, OnComponentSleep, UPrimitiveComponent*, SleepingComponent, FName, BoneName);
+DECLARE_DYNAMIC_MULTICAST_SPARSE_DELEGATE_TwoParams(FComponentOnClickedSignature, UPrimitiveComponent, OnClicked, UPrimitiveComponent*, TouchedComponent, FKey, ButtonPressed);
+DECLARE_DYNAMIC_MULTICAST_SPARSE_DELEGATE_OneParam(FComponentBeginCursorOverSignature, UPrimitiveComponent, OnBeginCursorOver, UPrimitiveComponent*, TouchedComponent);
+DECLARE_DYNAMIC_MULTICAST_SPARSE_DELEGATE_OneParam(FComponentEndCursorOverSignature, UPrimitiveComponent, OnEndCursorOver, UPrimitiveComponent*, TouchedComponent);
+
+enum ECanBeCharacterBase : int { ECB_No, ECB_Yes, ECB_Owner, ECB_MAX };
+namespace EHasCustomNavigableGeometry { enum Type : int { No, Yes, EvenIfNotCollidable, DontExport }; }
+enum class EDOFMode : uint8 { Default, SixDOF, YZPlane, XZPlane, XYPlane, CustomPlane, None };
+
+struct FBodyInstance
+{
+    FBodyInstance();
+    void SetCollisionEnabled(ECollisionEnabled::Type NewType, bool bUpdatePhysicsFilterData = true);
+    ECollisionEnabled::Type GetCollisionEnabled() const;
+    void SetResponseToChannel(ECollisionChannel Channel, ECollisionResponse NewResponse);
+    void SetObjectType(ECollisionChannel Channel);
+    void SetMassOverride(float MassInKG, bool bNewOverrideMass = true);
+    float GetBodyMass() const;
+    void SetLinearVelocity(const FVector& NewVel, bool bAddToCurrent, bool bAutoWake = true);
+    FVector GetUnrealWorldVelocity() const;
+    void AddImpulse(const FVector& Impulse, bool bVelChange);
+    void SetInstanceSimulatePhysics(bool bSimulate, bool bMaintainPhysicsBlending = false, bool bPreserveExistingAttachment = false);
+    bool IsInstanceSimulatingPhysics() const;
+    void SetEnableGravity(bool bGravityEnabled);
+    float LinearDamping;
+    float AngularDamping;
+    uint8 bSimulatePhysics : 1;
+    uint8 bOverrideMass : 1;
+    uint8 bEnableGravity : 1;
+    uint8 bLockXRotation : 1;
+    uint8 bLockYRotation : 1;
+    uint8 bLockZRotation : 1;
+    uint8 bNotifyRigidBodyCollision : 1;
+    float MassScale;
+};
+
+class UPrimitiveComponent : public USceneComponent
+{
+    UESTUB_UCLASS_BODY(UPrimitiveComponent, USceneComponent)
+    UPrimitiveComponent(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
+
+    float MinDrawDistance;
+    float LDMaxDrawDistance;
+    float CachedMaxDrawDistance;
+    float BoundsScale;
+    int32 TranslucencySortPriority;
+    int32 CustomDepthStencilValue;
+    uint8 bRenderCustomDepth : 1;
+    uint8 bRenderInMainPass : 1;
+    uint8 bRenderInDepthPass : 1;
+    uint8 bReceivesDecals : 1;
+    uint8 bOwnerNoSee : 1;
+    uint8 bOnlyOwnerSee : 1;
+    uint8 bTreatAsBackgroundForOcclusion : 1;
+    uint8 bUseAsOccluder : 1;
+    uint8 bSelectable : 1;
+    uint8 bHasPerInstanceHitProxies : 1;
+    uint8 CastShadow : 1;
+    uint8 bCastDynamicShadow : 1;
+    uint8 bCastStaticShadow : 1;
+    uint8 bCastHiddenShadow : 1;
+    uint8 bAffectDynamicIndirectLighting : 1;
+    uint8 bAffectDistanceFieldLighting : 1;
+    uint8 bVisibleInReflectionCaptures : 1;
+    uint8 bVisibleInRayTracing : 1;
+    uint8 bHiddenInSceneCapture : 1;
+    uint8 bIgnoreRadialImpulse : 1;
+    uint8 bIgnoreRadialForce : 1;
+    uint8 bApplyImpulseOnDamage : 1;
+    uint8 bReplicatePhysicsToAutonomousProxy : 1;
+    uint8 bFillCollisionUnderneathForNavmesh : 1;
+    uint8 AlwaysLoadOnClient : 1;
+    uint8 AlwaysLoadOnServer : 1;
+    uint8 bMultiBodyOverlap : 1;
+    uint8 bTraceComplexOnMove : 1;
+    uint8 bReturnMaterialOnMove : 1;
+    uint8 bAllowCullDistanceVolume : 1;
+    TEnumAsByte<enum ECanBeCharacterBase> CanCharacterStepUpOn;
+    FLightingChannels LightingChannels;
+    FBodyInstance BodyInstance;
+    FComponentHitSignature OnComponentHit;
+    FComponentBeginOverlapSignature OnComponentBeginOverlap;
+    FComponentEndOverlapSignature OnComponentEndOverlap;
+    FComponentWakeSignature OnComponentWake;
+    FComponentSleepSignature OnComponentSleep;
+    FComponentOnClickedSignature OnClicked;
+    FComponentBeginCursorOverSignature OnBeginCursorOver;
+    FComponentEndCursorOverSignature OnEndCursorOver;
+
+    // collision setup
+    virtual void SetCollisionEnabled(ECollisionEnabled::Type NewType);
+    virtual ECollisionEnabled::Type GetCollisionEnabled() const;
+    bool IsCollisionEnabled() const;
+    bool IsQueryCollisionEnabled() const;
+    bool IsPhysicsCollisionEnabled() const;
+    virtual void SetCollisionProfileName(FName InCollisionProfileName, bool bUpdateOverlaps = true);
+    FName GetCollisionProfileName() const;
+    virtual void SetCollisionObjectType(ECollisionChannel Channel);
+    ECollisionChannel GetCollisionObjectType() const;
+    void SetCollisionResponseToChannel(ECollisionChannel Channel, ECollisionResponse NewResponse);
+    void SetCollisionResponseToAllChannels(ECollisionResponse NewResponse);
+    void SetCollisionResponseToChannels(const FCollisionResponseContainer& NewResponses);
+    ECollisionResponse GetCollisionResponseToChannel(ECollisionChannel Channel) const;
+    const FCollisionResponseContainer& GetCollisionResponseToChannels() const;
+    void SetGenerateOverlapEvents(bool bInGenerateOverlapEvents);
+    bool GetGenerateOverlapEvents() const;
+    void SetNotifyRigidBodyCollision(bool bNewNotifyRigidBodyCollision);
+    bool IsSimulatingPhysics(FName BoneName = NAME_None) const;
+    void IgnoreActorWhenMoving(const AActor* Actor, bool bShouldIgnore);
+    void IgnoreComponentWhenMoving(UPrimitiveComponent* Component, bool bShouldIgnore);
+    void ClearMoveIgnoreActors();
+    void ClearMoveIgnoreComponents();
+    TArray<AActor*> CopyArrayOfMoveIgnoreActors();
+    const TArray<AActor*>& GetMoveIgnoreActors() const;
+    bool CanCharacterStepUp(class APawn* Pawn) const;
+    // overlaps / traces
+    void GetOverlappingActors(TArray<AActor*>& OverlappingActors, TSubclassOf<AActor> ClassFilter = nullptr) const;
+    void GetOverlappingActors(TSet<AActor*>& OverlappingActors, TSubclassOf<AActor> ClassFilter = nullptr) const;
+    void GetOverlappingComponents(TArray<UPrimitiveComponent*>& OutOverlappingComponents) const;
+    void GetOverlappingComponents(TSet<UPrimitiveComponent*>& OutOverlappingComponents) const;
+    bool IsOverlappingActor(const AActor* Other) const;
+    bool IsOverlappingComponent(const UPrimitiveComponent* OtherComp) const;
+    virtual bool LineTraceComponent(FHitResult& OutHit, const FVector Start, const FVector End, const FCollisionQueryParams& Params);
+    virtual bool SweepComponent(FHitResult& OutHit, const FVector Start, const FVector End, const FQuat& ShapeWorldRotation, const FCollisionShape& CollisionShape, bool bTraceComplex = false);
+    virtual bool OverlapComponent(const FVector& Pos, const FQuat& Rot, const FCollisionShape& CollisionShape) const;
+    bool ComponentOverlapMulti(TArray<struct FOverlapResult>& OutOverlaps, const class UWorld* InWorld, const FVector& Pos, const FQuat& Rot, ECollisionChannel TestChannel, const struct FComponentQueryParams& Params = FComponentQueryParams::DefaultComponentQueryParam, const struct FCollisionObjectQueryParams& ObjectQueryParams = FCollisionObjectQueryParams::DefaultObjectQueryParam) const;
+    bool ComponentOverlapMulti(TArray<struct FOverlapResult>& OutOverlaps, const class UWorld* InWorld, const FVector& Pos, const FRotator& Rot, ECollisionChannel TestChannel, const struct FComponentQueryParams& Params = FComponentQueryParams::DefaultComponentQueryParam, const struct FCollisionObjectQueryParams& ObjectQueryParams = FCollisionObjectQueryParams::DefaultObjectQueryParam) const;
+    bool ComponentOverlapComponent(class UPrimitiveComponent* PrimComp, const FVector Pos, const FQuat& Rot, const FCollisionQueryParams& Params);
+    // physics
+    virtual void SetSimulatePhysics(bool bSimulate);
+    virtual void SetEnableGravity(bool bGravityEnabled);
+    virtual bool IsGravityEnabled() const;
+    virtual void AddImpulse(FVector Impulse, FName BoneName = NAME_None, bool bVelChange = false);
+    virtual void AddImpulseAtLocation(FVector Impulse, FVector Location, FName BoneName = NAME_None);
+    virtual void AddAngularImpulseInRadians(FVector Impulse, FName BoneName = NAME_None, bool bVelChange = false);
+    virtual void AddAngularImpulseInDegrees(FVector Impulse, FName BoneName = NAME_None, bool bVelChange = false);
+    virtual void AddRadialImpulse(FVector Origin, float Radius, float Strength, enum ERadialImpulseFalloff Falloff, bool bVelChange = false);
+    virtual void AddForce(FVector Force, FName BoneName = NAME_None, bool bAccelChange = false);
+    virtual void AddForceAtLocation(FVector Force, FVector Location, FName BoneName = NAME_None);
+    virtual void AddForceAtLocationLocal(FVector Force, FVector Location, FName BoneName = NAME_None);
+    virtual void AddRadialForce(FVector Origin, float Radius, float Strength, enum ERadialImpulseFalloff Falloff, bool bAccelChange = false);
+    virtual void AddTorqueInRadians(FVector Torque, FName BoneName = NAME_None, bool bAccelChange = false);
+    virtual void AddTorqueInDegrees(FVector Torque, FName BoneName = NAME_None, bool bAccelChange = false);
+    virtual void SetPhysicsLinearVelocity(FVector NewVel, bool bAddToCurrent = false, FName BoneName = NAME_None);
+    FVector GetPhysicsLinearVelocity(FName BoneName = NAME_None);
+    FVector GetPhysicsLinearVelocityAtPoint(FVector Point, FName BoneName = NAME_None);
+    virtual void SetAllPhysicsLinearVelocity(FVector NewVel, bool bAddToCurrent = false);
+    virtual void SetPhysicsAngularVelocityInDegrees(FVector NewAngVel, bool bAddToCurrent = false, FName BoneName = NAME_None);
+    virtual void SetPhysicsAngularVelocityInRadians(FVector NewAngVel, bool bAddToCurrent = false, FName BoneName = NAME_None);
+    FVector GetPhysicsAngularVelocityInDegrees(FName BoneName = NAME_None) const;
+    FVector GetPhysicsAngularVelocityInRadians(FName BoneName = NAME_None) const;
+    virtual void SetPhysicsMaxAngularVelocityInDegrees(float NewMaxAngVel, bool bAddToCurrent = false, FName BoneName = NAME_None);
+    void SetMassOverrideInKg(FName BoneName = NAME_None, float MassInKg = 1.f, bool bOverrideMass = true);
+    void SetMassScale(FName BoneName = NAME_None, float InMassScale = 1.f);
+    float GetMass() const;
+    float GetMassScale(FName BoneName = NAME_None) const;
+    FVector GetInertiaTensor(FName BoneName = NAME_None) const;
+    FVector GetCenterOfMass(FName BoneName = NAME_None) const;
+    void SetCenterOfMass(FVector CenterOfMassOffset, FName BoneName = NAME_None);
+    void SetLinearDamping(float InDamping);
+    float GetLinearDamping() const;
+    void SetAngularDamping(float InDamping);
+    float GetAngularDamping() const;
+    void SetConstraintMode(EDOFMode ConstraintMode);
+    void WakeRigidBody(FName BoneName = NAME_None);
+    virtual void WakeAllRigidBodies();
+    void PutRigidBodyToSleep(FName BoneName = NAME_None);
+    bool RigidBodyIsAwake(FName BoneName = NAME_None) const;
+    void SetPhysMaterialOverride(UPhysicalMaterial* NewPhysMaterial);
+    virtual FBodyInstance* GetBodyInstance(FName BoneName = NAME_None, bool bGetWelded = true, int32 Index = INDEX_NONE) const;
+    float GetClosestPointOnCollision(const FVector& Point, FVector& OutPointOnBody, FName BoneName = NAME_None) const;
+    // rendering / materials
+    virtual int32 GetNumMaterials() const;
+    virtual UMaterialInterface* GetMaterial(int32 ElementIndex) const;
+    virtual void SetMaterial(int32 ElementIndex, UMaterialInterface* Material);
+    virtual void SetMaterialByName(FName MaterialSlotName, class UMaterialInterface* Material);
+    virtual int32 GetMaterialIndex(FName MaterialSlotName) const;
+    virtual TArray<FName> GetMaterialSlotNames() const;
+    virtual bool IsMaterialSlotNameValid(FName MaterialSlotName) const;
+    virtual UMaterialInterface* GetMaterialByName(FName MaterialSlotName) const;
+    virtual void GetUsedMaterials(TArray<UMaterialInterface*>& OutMaterials, bool bGetDebugMaterials = false) const;
+    virtual UMaterialInstanceDynamic* CreateDynamicMaterialInstance(int32 ElementIndex, class UMaterialInterface* SourceMaterial = nullptr, FName OptionalName = NAME_None);
+    virtual UMaterialInstanceDynamic* CreateAndSetMaterialInstanceDynamic(int32 ElementIndex);
+    virtual UMaterialInstanceDynamic* CreateAndSetMaterialInstanceDynamicFromMaterial(int32 ElementIndex, class UMaterialInterface* Parent);
+    void SetCastShadow(bool NewCastShadow);
+    void SetCastHiddenShadow(bool NewCastHiddenShadow);
+    void SetCastInsetShadow(bool bInCastInsetShadow);
+    void SetCastContactShadow(bool bInCastContactShadow);
+    void SetRenderCustomDepth(bool bValue);
+    void SetCustomDepthStencilValue(int32 Value);
+    void SetCustomDepthStencilWriteMask(int32 WriteMaskBit);
+    void SetRenderInMainPass(bool bValue);
+    void SetRenderInDepthPass(bool bValue);
+    void SetVisibleInSceneCaptureOnly(bool bValue);
+    void SetHiddenInSceneCapture(bool bValue);
+    void SetOnlyOwnerSee(bool bNewOnlyOwnerSee);
+    void SetOwnerNoSee(bool bNewOwnerNoSee);
+    void SetReceivesDecals(bool bNewReceivesDecals);
+    void SetTranslucentSortPriority(int32 NewTranslucentSortPriority);
+    void SetCullDistance(float NewCullDistance);
+    void SetBoundsScale(float NewBoundsScale = 1.f);
+    void SetLightingChannels(bool bChannel0, bool bChannel1, bool bChannel2);
+    void SetCustomPrimitiveDataFloat(int32 DataIndex, float Value);
+    void SetCustomPrimitiveDataVector2(int32 DataIndex, FVector2D Value);
+    void SetCustomPrimitiveDataVector3(int32 DataIndex, FVector Value);
+    void SetCustomPrimitiveDataVector4(int32 DataIndex, FVector4 Value);
+    void SetDefaultCustomPrimitiveDataFloat(int32 DataIndex, float Value);
+    void SetDefaultCustomPrimitiveDataVector4(int32 DataIndex, FVector4 Value);
+    void SetScalarParameterForCustomPrimitiveData(FName ParameterName, float Value);
+    void SetVectorParameterForCustomPrimitiveData(FName ParameterName, FVector4 Value);
+    float GetLastRenderTime() const;
+    float GetLastRenderTimeOnScreen() const;
+    bool WasRecentlyRendered(float Tolerance = 0.2f) const;
+    void SetSingleSampleShadowFromStationaryLights(bool bNewSingleSampleShadowFromStationaryLights);
+    void SetExcludeFromLightAttachmentGroup(bool bInExcludeFromLightAttachmentGroup);
+    virtual void PushSelectionToProxy();
+    virtual void BeginPlay() override;
+    virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+    virtual void SetMobility(EComponentMobility::Type NewMobility) override;
+    virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+};

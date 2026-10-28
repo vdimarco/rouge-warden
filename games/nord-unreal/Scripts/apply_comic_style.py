@@ -72,9 +72,10 @@ float3 Chroma = Color / max(Lum, 1.0e-3);
 Color = saturate(Chroma * Light);
 float L2 = dot(Color, float3(0.299, 0.587, 0.114));
 Color = saturate(lerp(L2.xxx, Color, Saturation));
-// Shadows read as violet ink wash, never as black.
+// Shadows on the city read as a cool sky wash, never as black and never as violet.
+// Printed crew skips that wash. It was repainting dark cloth before the key.
 float ShadowAmount = 1.0 - smoothstep(0.04, 0.32, L2);
-Color += float3(0.10, 0.05, 0.19) * ShadowAmount * (Sky ? 0.0 : 1.0) * lerp(1.0, 0.35, NovelCrew);
+Color += float3(0.05, 0.07, 0.11) * ShadowAmount * (Sky ? 0.0 : 1.0) * (1.0 - PrintedCrew);
 L2 = dot(Color, float3(0.299, 0.587, 0.114));
 
 // Ben-Day dots on a 45 degree screen: bigger in shade, absent from the sky.
@@ -84,14 +85,294 @@ float Dist = length(frac(R) - 0.5);
 float Shade = Sky ? 0.0 : saturate((0.28 - L2) / 0.28);
 float Radius = sqrt(Shade) * 0.6;
 float Dot = 1.0 - smoothstep(Radius - 0.05, Radius + 0.05, Dist);
-float3 DotInk = Sky ? Color * float3(0.72, 0.62, 1.05) : Color * float3(0.45, 0.32, 0.62) + float3(0.05, 0.0, 0.1);
+float3 DotInk = Sky ? Color * float3(0.78, 0.86, 1.05) : Color * float3(0.55, 0.62, 0.78) + float3(0.02, 0.03, 0.05);
 Color = lerp(Color, saturate(DotInk), Dot * 0.18 * (1.0 - max(PrintedCrew, Foliage)));
 
 // Hatching in the deepest shadow.
 float Hatch = step(frac((Pixel.x - Pixel.y) / (DotSize * 0.9)), 0.25) * (1.0 - smoothstep(0.1, 0.17, L2));
-Color = lerp(Color, float3(0.05, 0.02, 0.1), Hatch * (Sky ? 0.0 : 0.12) * (1.0 - max(PrintedCrew, Foliage)));
+Color = lerp(Color, float3(0.03, 0.04, 0.07), Hatch * (Sky ? 0.0 : 0.12) * (1.0 - max(PrintedCrew, Foliage)));
+
+// The crew material is an emissive fill, so the body has no directional shade. Half-lambert
+// (Mitchell, Francke, Eng, Team Fortress 2, 2007) gives a lit side from the afternoon sun.
+// The value range matches the old key's luminance. The multiply stays a scalar so a warm-dark
+// tee does not pick up the blue shadow colour. The city is left alone: PrintedCrew is 0 there.
+float3 ToSun = normalize(float3(-0.62, -0.48, 0.62));
+float Half = saturate(dot(NormalC, ToSun) * 0.5 + 0.5);
+Half *= Half;
+float CrewShade = lerp(0.70, 1.08, Half);
+Color = lerp(Color, saturate(Color * CrewShade), PrintedCrew);
+// Broad grazing rim from the same paper. The upward-only term sat inside the key
+// and did not separate the figure, so the edge follows (1 - n·v)^4 around the silhouette.
+float3 ToEye = -normalize(View.ViewForward);
+float Grazing = saturate(1.0 - dot(NormalC, ToEye));
+float Fresnel = Grazing * Grazing;
+Fresnel *= Fresnel;
+float3 Rim = float3(0.90, 0.94, 1.0) * Fresnel;
+Color = lerp(Color, saturate(Color + Rim), PrintedCrew);
 
 Color = lerp(Color, float3(0.025, 0.015, 0.05), saturate(Ink) * (Sky ? 0.0 : 1.0));
+
+// Contact where an upright surface meets the street. Eight taps, the same idea as
+// Mittring's SSAO (SIGGRAPH 2007) cut down to the ground: a nearer sample is the
+// silhouette, which the ink already draws, so the tap has to sit near this depth.
+float GroundHere = smoothstep(0.82, 0.94, NormalC.z) * (Sky ? 0.0 : 1.0);
+float Contact = 0.0;
+const float2 ContactTap[8] = {
+    float2(6, 0), float2(-6, 0), float2(0, 6), float2(0, -6),
+    float2(12, 0), float2(-12, 0), float2(0, 12), float2(0, -12)
+};
+for (int Tap = 0; Tap < 8; Tap++)
+{
+    float2 Offset = ContactTap[Tap] * Texel;
+    float NeighborDepth = SceneTextureLookup(GeometryUV + Offset, 1, false).r;
+    float3 NeighborN = normalize(SceneTextureLookup(GeometryUV + Offset, 8, false).rgb + 1.0e-4);
+    float Upright = 1.0 - smoothstep(0.35, 0.55, NeighborN.z);
+    float Close = 1.0 - smoothstep(40.0, 70.0, abs(NeighborDepth - DepthC));
+    Contact += Upright * Close;
+}
+Color *= lerp(1.0, 0.38, saturate(Contact / 3.0) * GroundHere);
+
+// Aerial perspective: distant surfaces take the afternoon sky. Near the camera the street stays.
+// Hoffman and Preetham, "Rendering Outdoor Light Scattering in Real-Time" (2002). A horizontal
+// ray spends more of its path in the haze than a steep ray at the same depth. The clear-day fog
+// multipliers stay at 1, and this node still has no fog volume, so the extra path is the ray's
+// elevation. ColorUV is the post-process viewport, origin at the top left.
+float2 Ndc = ColorUV * float2(2.0, -2.0) + float2(-1.0, 1.0);
+float2 TanHalf = View.TanAndInvTanHalfFOV.xy;
+float3 Ray = normalize(View.ViewForward + View.ViewRight * Ndc.x * TanHalf.x + View.ViewUp * Ndc.y * TanHalf.y);
+float Elevation = abs(Ray.z);
+float Horizon = pow(saturate(1.0 - Elevation), 3.0);
+float Aerial = smoothstep(2500.0, 14000.0, DepthC);
+float Haze = Aerial * lerp(0.25, 1.0, Horizon);
+Color = lerp(Color, float3(0.62, 0.70, 0.80), Haze * 0.85 * (Sky ? 0.0 : 1.0));
+
+// Street dust under the far aerial window. Hoffman and Preetham weight a horizontal
+// ray more than a steep one; that window still starts at 25 m, so the walking street
+// has no air. This band rises from 5 m to 18 m and is gone by 70 m, before the far
+// window is full. The dust is warmer than the sky haze. NightFactor 1 leaves the colour.
+float StreetNear = smoothstep(500.0, 1800.0, DepthC);
+float StreetFar = 1.0 - smoothstep(2200.0, 7000.0, DepthC);
+float StreetAir = StreetNear * StreetFar * Horizon * (Sky ? 0.0 : 1.0) * (1.0 - saturate(NightFactor));
+Color = lerp(Color, float3(0.74, 0.71, 0.64), StreetAir * 0.62);
+
+// Afternoon cumulus on sky pixels. Schneider, "The Real-Time Volumetric Cloudscapes
+// of Horizon: Zero Dawn" (SIGGRAPH 2015), marches a cloud layer. This node has no
+// volume, so only the layer remains: the view ray projects onto a plane above the
+// camera, two octaves of value noise set the coverage, and the afternoon sun tints
+// the thinner edge. The weather cover scalar stays 0.15. The haze mix above is unchanged,
+// and a street pixel multiplies the paint by zero.
+float2 CloudUv = Ray.xy / max(Ray.z, 0.07);
+float WarpN = 0.0;
+float LowN = 0.0;
+float HighN = 0.0;
+float SlopeN = 0.0;
+for (int Octave = 0; Octave < 4; Octave++)
+{
+    float2 CloudP = CloudUv * 0.28 + float2(2.0, 7.0);
+    if (Octave > 0)
+    {
+        float2 Uv2 = CloudUv * 0.55 + float2(WarpN, WarpN * 0.65) * 1.6;
+        if (Octave == 1) CloudP = Uv2;
+        if (Octave == 2) CloudP = CloudUv * 1.265 + float2(3.2, 8.4);
+        if (Octave == 3) CloudP = Uv2 + float2(0.18, 0.0);
+    }
+    float2 Pi = floor(CloudP);
+    float2 Pf = frac(CloudP);
+    Pf = Pf * Pf * (float2(3.0, 3.0) - Pf * 2.0);
+    float N = 0.0;
+    for (int Corner = 0; Corner < 4; Corner++)
+    {
+        float SX = (Corner == 1 || Corner == 3) ? 1.0 : 0.0;
+        float SY = (Corner >= 2) ? 1.0 : 0.0;
+        float WX = (SX > 0.5) ? Pf.x : (1.0 - Pf.x);
+        float WY = (SY > 0.5) ? Pf.y : (1.0 - Pf.y);
+        N += WX * WY * frac(sin((Pi.x + SX) * 127.1 + (Pi.y + SY) * 311.7) * 43758.5453);
+    }
+    if (Octave == 0) WarpN = N;
+    if (Octave == 1) LowN = N;
+    if (Octave == 2) HighN = N;
+    if (Octave == 3) SlopeN = N;
+}
+float Field = LowN * 0.75 + HighN * 0.25;
+float Cover = smoothstep(0.52, 0.68, Field);
+float Skirt = smoothstep(0.45, 0.54, Field) * 0.50;
+float Body = max(Cover, Skirt);
+float Lift = smoothstep(0.04, 0.13, Ray.z);
+float Thick = saturate((Field - 0.48) / 0.24);
+float SunX = normalize(float2(-0.62, -0.48)).x;
+float Face = saturate((SlopeN - LowN) / 0.18 * SunX * 4.0 + 0.5);
+float CloudShade = (1.0 - Thick) * Face;
+float3 CloudCol = lerp(float3(0.48, 0.54, 0.64), float3(0.98, 0.98, 0.96), Thick);
+CloudCol = lerp(CloudCol, float3(0.96, 0.82, 0.64), CloudShade);
+float CloudMask = saturate(Body * Lift);
+Color = lerp(Color, CloudCol, CloudMask * (Sky ? 1.0 : 0.0));
+
+// Clearcoat on the glossy bodywork. Schlick, "An Inexpensive BRDF Model for
+// Physically-based Rendering" (1994), approximates Fresnel as (1 - n·v)^5.
+// A full clearcoat lobe does not fit this node, so the sky colour along the
+// reflected view ray is weighted by that Fresnel. Paint .30, glass .18 and
+// chrome .23 pick it up. Rubber, the pond's smooth-reflection case, printed
+// crew and foliage stay matte. The weather scalars and the haze mix stay.
+float3 Refl = reflect(Ray, NormalC);
+float2 ReflUv = Refl.xy / max(Refl.z, 0.07);
+float2 ReflPi = floor(ReflUv * 0.55);
+float2 ReflPf = frac(ReflUv * 0.55);
+ReflPf = ReflPf * ReflPf * (float2(3.0, 3.0) - ReflPf * 2.0);
+float ReflN = 0.0;
+for (int ReflCorner = 0; ReflCorner < 4; ReflCorner++)
+{
+    float CoatSX = (ReflCorner == 1 || ReflCorner == 3) ? 1.0 : 0.0;
+    float CoatSY = (ReflCorner >= 2) ? 1.0 : 0.0;
+    float CoatWX = (CoatSX > 0.5) ? ReflPf.x : (1.0 - ReflPf.x);
+    float CoatWY = (CoatSY > 0.5) ? ReflPf.y : (1.0 - ReflPf.y);
+    ReflN += CoatWX * CoatWY * frac(sin((ReflPi.x + CoatSX) * 127.1 + (ReflPi.y + CoatSY) * 311.7) * 43758.5453);
+}
+float ReflCloud = smoothstep(0.52, 0.72, ReflN) * smoothstep(0.04, 0.13, Refl.z);
+float3 SkyRefl = lerp(float3(0.64, 0.76, 0.90), float3(0.30, 0.50, 0.84), saturate(Refl.z / 0.40));
+SkyRefl = lerp(SkyRefl, float3(0.97, 0.97, 0.95), ReflCloud);
+float SkyHit = smoothstep(0.0, 0.08, Refl.z);
+float Clear = (1.0 - smoothstep(0.20, 0.42, Roughness)) * (1.0 - SmoothReflection) * (1.0 - PrintedCrew) * (1.0 - Foliage) * (Sky ? 0.0 : 1.0);
+float CoatNdV = saturate(dot(NormalC, -Ray));
+float CoatEdge = pow(1.0 - CoatNdV, 5.0);
+float Coat = Clear * (0.62 + 0.38 * CoatEdge) * SkyHit;
+Color = lerp(Color, SkyRefl, Coat);
+
+// Warm sun, cool shade, on the clear day. Johannes Itten, The Art of Color
+// (1961), the warm-cool contrast. The crew key already has the half-lambert
+// and this node has no shadow ray, so that term is the split. The multiply
+// is put back to the pixel's luminance, so the exposure stays and only the
+// hue moves. Pixels the cool wash already owns stay. Gloss, the sky and the
+// printed crew stay. NightFactor 1 leaves the colour for the night grade.
+float DayLum = dot(Color, float3(0.299, 0.587, 0.114));
+float DayOpen = smoothstep(0.08, 0.16, DayLum);
+float DayMatte = smoothstep(0.28, 0.62, Roughness);
+float3 DayCool = float3(0.62, 0.96, 1.18);
+float3 DayWarm = float3(1.55, 1.12, 0.42);
+float3 DayTint = lerp(DayCool, DayWarm, Half);
+float DayShare = DayMatte * DayOpen * (1.0 - saturate(NightFactor)) * (Sky ? 0.0 : 1.0) * (1.0 - PrintedCrew);
+float3 DayGraded = saturate(Color * DayTint);
+float DayKept = dot(DayGraded, float3(0.299, 0.587, 0.114));
+DayGraded *= DayLum / max(DayKept, 1.0e-3);
+Color = lerp(Color, saturate(DayGraded), DayShare);
+
+// Directional shade on that same clear day. Mitchell, Francke and Eng,
+// "Illustrative Rendering in Team Fortress 2" (2007), the half-lambert
+// already used for the crew. The hue above keeps its luminance. This term
+// is the value: shade goes darker, and a surface toward the sun stays at 1
+// so the clear-day exposure does not move. Gloss, the sky and the printed
+// crew stay. NightFactor 1 leaves the colour for the night grade.
+float KeyOpen = smoothstep(0.12, 0.48, Half);
+float KeyShade = lerp(0.58, 1.0, KeyOpen);
+float KeyShare = DayMatte * (1.0 - saturate(NightFactor)) * (Sky ? 0.0 : 1.0) * (1.0 - PrintedCrew);
+Color *= lerp(1.0, KeyShade, KeyShare);
+
+// Night grade. Masaki Kawase, "Frame Buffer Postprocessing Effects in
+// DOUBLE-S.T.E.A.L (Wreckless)" (GDC 2003), gathers bloom from wide taps.
+// A pyramid does not fit this node, so sixteen taps are the gather. The moon
+// disc uses the authored moon colour. Night exposure, window glow and the lamp
+// switch stay in the sky model. NightFactor 0 returns the clear-day colour.
+float3 MoonDir = normalize(float3(0.90, 0.22, 0.25));
+float MoonDot = saturate(dot(Ray, MoonDir));
+float MoonDisc = pow(MoonDot, 900.0);
+float MoonHalo = pow(MoonDot, 5.0);
+float3 MoonCol = float3(0.62, 0.72, 1.0);
+float HaloMix = saturate(MoonHalo * 0.65);
+float3 NightSky = Color * (1.0 - HaloMix) + MoonCol * HaloMix;
+NightSky = NightSky * (1.0 - MoonDisc) + float3(0.93, 0.95, 1.0) * MoonDisc;
+
+float3 Here = SceneTextureLookup(ColorUV, 14, false).rgb;
+float HerePeak = max(Here.r, max(Here.g, Here.b));
+float HereWarm = saturate((Here.r - Here.b) / max(HerePeak, 1.0e-3));
+float HereHot = smoothstep(0.20, 0.48, HerePeak) * smoothstep(0.34, 0.60, HereWarm);
+float HereWhite = smoothstep(0.62, 0.88, HerePeak) * (1.0 - smoothstep(0.25, 0.45, HereWarm));
+float3 HereNeon = saturate(float3(HerePeak * 1.2, HerePeak * 0.40, HerePeak * 0.16));
+float3 HereLamp = saturate(float3(HerePeak, HerePeak * 0.96, HerePeak * 0.82));
+
+const float2 NightTap[16] = {
+    float2(6, 0), float2(4, 4), float2(0, 6), float2(-4, 4),
+    float2(-6, 0), float2(-4, -4), float2(0, -6), float2(4, -4),
+    float2(14, 0), float2(10, 10), float2(0, 14), float2(-10, 10),
+    float2(-14, 0), float2(-10, -10), float2(0, -14), float2(10, -10)
+};
+float3 Bloom = float3(0, 0, 0);
+for (int NightI = 0; NightI < 16; NightI++)
+{
+    float3 TapRgb = SceneTextureLookup(ColorUV + NightTap[NightI] * Texel, 14, false).rgb;
+    float TapPeak = max(TapRgb.r, max(TapRgb.g, TapRgb.b));
+    float TapWarm = saturate((TapRgb.r - TapRgb.b) / max(TapPeak, 1.0e-3));
+    float TapHot = smoothstep(0.20, 0.48, TapPeak) * smoothstep(0.34, 0.60, TapWarm);
+    float TapWhite = smoothstep(0.62, 0.88, TapPeak) * (1.0 - smoothstep(0.25, 0.45, TapWarm));
+    float3 TapNeon = saturate(float3(TapPeak * 1.2, TapPeak * 0.40, TapPeak * 0.16));
+    float3 TapLamp = saturate(float3(TapPeak, TapPeak * 0.96, TapPeak * 0.82));
+    Bloom += TapNeon * TapHot + TapLamp * TapWhite;
+}
+Bloom *= (1.0 / 16.0);
+float3 NightBody = saturate(Color + Bloom * 1.6);
+NightBody = lerp(NightBody, max(NightBody, HereNeon), step(0.5, HereHot));
+NightBody = lerp(NightBody, max(NightBody, HereLamp), step(0.5, HereWhite));
+float3 NightCol = Sky ? NightSky : NightBody;
+Color = lerp(Color, NightCol, saturate(NightFactor));
+
+// Night sheen on rough ground. Sébastien Lagarde, "Water drop 3a – Physically
+// Based Wet Surfaces" (2013), stretches bright reflections down a rough plane.
+// An anisotropic lobe does not fit this node, so sixteen taps toward the
+// horizon, at this screen x, gather the same warm and white gates as the
+// spill. The puddle mask stays at zero on a clear night, so this mix follows
+// NightFactor. NightFactor 0 leaves the colour. Paint, glass and chrome stay
+// on the coat.
+float HorizonNdc = -View.ViewForward.z / max(View.ViewUp.z * TanHalf.y, 1.0e-3);
+float HorizonV = saturate(HorizonNdc * -0.5 + 0.5);
+float Below = step(HorizonV, ColorUV.y);
+float3 Sheen = float3(0, 0, 0);
+for (int SheenI = 1; SheenI <= 16; SheenI++)
+{
+    float Along = float(SheenI) / 16.0;
+    float2 SheenUV = float2(ColorUV.x, lerp(ColorUV.y, HorizonV, Along));
+    float3 SheenRgb = SceneTextureLookup(SheenUV, 14, false).rgb;
+    float SheenPeak = max(SheenRgb.r, max(SheenRgb.g, SheenRgb.b));
+    float SheenWarm = saturate((SheenRgb.r - SheenRgb.b) / max(SheenPeak, 1.0e-3));
+    float SheenHot = smoothstep(0.20, 0.48, SheenPeak) * smoothstep(0.34, 0.60, SheenWarm);
+    float SheenWhite = smoothstep(0.62, 0.88, SheenPeak) * (1.0 - smoothstep(0.25, 0.45, SheenWarm));
+    float3 SheenNeon = saturate(float3(SheenPeak * 1.2, SheenPeak * 0.40, SheenPeak * 0.16));
+    float3 SheenLamp = saturate(float3(SheenPeak, SheenPeak * 0.96, SheenPeak * 0.82));
+    Sheen = max(Sheen, SheenNeon * SheenHot + SheenLamp * SheenWhite);
+}
+float RoadUp = smoothstep(0.85, 0.96, NormalC.z);
+float RoadMat = smoothstep(0.55, 0.75, Roughness);
+float RoadMask = RoadUp * RoadMat * Below * (Sky ? 0.0 : 1.0) * (1.0 - PrintedCrew) * (1.0 - Foliage) * (1.0 - SmoothReflection);
+float RoadMix = RoadMask * 0.85 * saturate(NightFactor);
+Color = lerp(Color, saturate(Color + Sheen), RoadMix);
+// Warm pool under a lamp head. This node is after tonemap, so the point
+// light's 18 m reach is not in this colour. A road pixel looks up the screen
+// for a head that is brighter than a window and warmer than a headlight.
+// NightFactor 0 leaves the colour.
+float PoolW = 0.0;
+const float2 PoolTap[35] = {
+    float2(-64, -40), float2(-32, -40), float2(0, -40), float2(32, -40), float2(64, -40),
+    float2(-64, -56), float2(-32, -56), float2(0, -56), float2(32, -56), float2(64, -56),
+    float2(-64, -72), float2(-32, -72), float2(0, -72), float2(32, -72), float2(64, -72),
+    float2(-64, -88), float2(-32, -88), float2(0, -88), float2(32, -88), float2(64, -88),
+    float2(-64, -104), float2(-32, -104), float2(0, -104), float2(32, -104), float2(64, -104),
+    float2(-64, -120), float2(-32, -120), float2(0, -120), float2(32, -120), float2(64, -120),
+    float2(-64, -136), float2(-32, -136), float2(0, -136), float2(32, -136), float2(64, -136)
+};
+for (int PoolI = 0; PoolI < 35; PoolI++)
+{
+    float3 PoolRgb = SceneTextureLookup(ColorUV + PoolTap[PoolI] * Texel, 14, false).rgb;
+    float PoolPeak = max(PoolRgb.r, max(PoolRgb.g, PoolRgb.b));
+    float PoolWarm = saturate((PoolRgb.r - PoolRgb.b) / max(PoolPeak, 1.0e-3));
+    float PoolHit = step(0.82, PoolPeak) * step(0.40, PoolWarm) * step(PoolWarm, 0.78);
+    float PoolDist = length(PoolTap[PoolI]);
+    PoolW = max(PoolW, PoolHit * saturate(1.0 - PoolDist / 180.0));
+}
+float3 PoolCol = float3(0.45, 0.22, 0.07);
+Color = lerp(Color, saturate(Color + PoolCol * PoolW), RoadMask * saturate(NightFactor));
+// Cool fill on the road the pool did not claim. James Gurney, Color and Light
+// (2010): warm light, cool shadow. This node has no shadow ray, so the cool
+// colour is a flat add. NightFactor 0 leaves the colour.
+float3 MoonFill = float3(0.05, 0.07, 0.12);
+float MoonShare = (1.0 - saturate(PoolW * 4.0)) * RoadMask * saturate(NightFactor);
+Color = lerp(Color, saturate(Color + MoonFill), MoonShare);
 return Color;
 '''
 
@@ -118,7 +399,7 @@ mat.set_editor_property('material_domain', u.MaterialDomain.MD_POST_PROCESS)
 mat.set_editor_property('blendable_location', u.BlendableLocation.BL_SCENE_COLOR_AFTER_TONEMAPPING)
 
 custom = node(mat, u.MaterialExpressionCustom, code=HLSL, output_type=u.CustomMaterialOutputType.CMOT_FLOAT3, description='ComicInk')
-names = ['UV', 'Center', 'Depth', 'Normal', 'StencilInput', 'CrewDepthInput', 'FoliageInput', 'RoughnessInput', 'InkWidth', 'Misregistration', 'Bands', 'Saturation', 'DotSize']
+names = ['UV', 'Center', 'Depth', 'Normal', 'StencilInput', 'CrewDepthInput', 'FoliageInput', 'RoughnessInput', 'InkWidth', 'Misregistration', 'Bands', 'Saturation', 'DotSize', 'NightFactor']
 inputs = []
 for name in names:
     entry = u.CustomInput()
@@ -137,6 +418,14 @@ link(scene(u.SceneTextureId.PPI_SHADING_MODEL_ID), 'Color', custom, 'FoliageInpu
 link(scene(u.SceneTextureId.PPI_ROUGHNESS), 'Color', custom, 'RoughnessInput')
 for name, value in [('InkWidth', 1.0), ('Misregistration', 0.10), ('Bands', 5.0), ('Saturation', 1.05), ('DotSize', 5.0)]:
     link(node(mat, u.MaterialExpressionScalarParameter, parameter_name=name, default_value=value), '', custom, name)
+# The sky writes NightFactor on this collection (default 0). A scalar on the comic
+# material would stay at day, so the grade only goes night when the collection exists.
+mpc_path = '/Game/Art/Atmosphere/MPC_NordAtmosphere'
+if assets.does_asset_exist(mpc_path):
+    mpc = assets.load_asset(mpc_path)
+    link(node(mat, u.MaterialExpressionCollectionParameter, collection=mpc, parameter_name='NightFactor'), '', custom, 'NightFactor')
+else:
+    link(node(mat, u.MaterialExpressionConstant, r=0.0), '', custom, 'NightFactor')
 M.connect_material_property(custom, '', u.MaterialProperty.MP_EMISSIVE_COLOR)
 M.recompile_material(mat)
 assets.save_loaded_asset(mat)

@@ -1,0 +1,54 @@
+{
+  "passed": true,
+  "completed_utc": "2026-10-14T16:46:56.667152+00:00",
+  "historical": "The record of this run. Its hashes are those of that day. The seventh pass changed only the recorded source hashes in details.json and EastExtension/extension.json (the east pin), and test_montreal_east_details.py passes on them; manifest.json lists the current hashes.",
+  "command": "python Scripts/test_montreal_east_details.py",
+  "exit_code": 0,
+  "stdout_marker": "NORD_EAST_DETAILS_CPU_OK",
+  "generator_sha256": "240bcaec073168e19b449abd7169e23f70b5f869191d53fa231052bc91559d1f",
+  "test_sha256": "e243ee3c632c9223ce1fac43be4f46b37b3c618840072b7a5e53eb1b027e7209",
+  "details_manifest_sha256": "ad7e9860068c029782cea2ed869bd4e15d112d7164dd4a84bb078c1b5bc580cb",
+  "fresh_source_reload_passed": true,
+  "independent_review": {
+    "reviewer": "/root/character_audit/east_guard_review",
+    "result": "PASS",
+    "scope": "CPU exact source extraction/gate restoration/whole-pane concave and height culling/bounded frame geometry/OBJ winding/float32/coordinated manifest+OBJ tamper guards. No native import."
+  },
+  "original_sources_match_pinned_hashes": {
+    "Data/LaFontaine/osm.xml": "fe4410d45007a627bf6d9b9ddeeae329fa9cdd7492dfb5fa6beff851e7cf8f86",
+    "Data/Plateau/ContextGeometry/context.json": "74764fd01528c320439692fdc6eefd3394770e547f425b886ceabbd73fc9392a",
+    "Data/Plateau/EastExtension/extension.json": "c19300127f80c9ebd4483610544acab9162a05280ab5a2717376c88c6770dcbf",
+    "Scripts/plateau_context.py": "b5df165d154c2c18697cc7884cd486c5f3e056886398cda220e96b9cfcfbf5be",
+    "Scripts/plateau_mesh.py": "0db445d502ffeb5a0d77c49fb1cb9d3a1bd49492b6956f37ce96bad505033217",
+    "Scripts/plateau_ground.py": "9ba1e57a062d94c6eb2c3ecef2ea191d63d5cf97ada05cccf9e9441a1ce7c445",
+    "Scripts/plateau_batches.py": "8a2a46cf1ba27373472d9050d69a4461aa4df8b2202d10bdbaebad261302e6af",
+    "Scripts/plateau_streets.py": "9e246e7c2d66e370be709117912df167be7edae5e6857adacc9d0641829c1179",
+    "Scripts/prepare_lafontaine.py": "e7b6e5f068a96ee7306b1fff247fa73158f5cf7c343dc5510ab8cce92ee3c924"
+  },
+  "all_current_content_matches_prior_curated_manifest": true,
+  "current_Content_files": 6842,
+  "current_Content_inventory_sha256": "b283baf6b40e6598fcabff6a05f86d58f744f287b09eb5986fc0e8e2342473b6",
+  "curated_content_manifest": "Verification/DistrictExpansion/CurrentChecks/ContentManifest.json",
+  "curated_content_manifest_sha256": "0a98831358309612d8a7c9075c019ce7d77d857bf6e3ba334cd51cf316b9ea61",
+  "existing_material_asset_files_sha256": {
+    "Content/Plateau/Materials/M_Glass.uasset": "d242955aa1a14252005dba0311db8404dde1ae12cba0a187f12aa8c263509f9d",
+    "Content/Plateau/Materials/M_Iron.uasset": "af3c078e03e83be5bbb6cc05a0de5a7299b48aba3712879dd316067b90e642dc",
+    "Content/Plateau/Materials/M_Trim.uasset": "4f916d5156dbd52aed971b930575ad38052ce56b15793168285a8b2f8c71d4e7"
+  },
+  "occluding_neighbor_sources": {
+    "way/345567218": {
+      "building_tag": "yes",
+      "height_cm": 960
+    },
+    "way/345579124": {
+      "building_tag": "yes",
+      "height_cm": 960
+    }
+  },
+  "limits": [
+    "Material files exist unchanged; native class/usage/property readback remains pending.",
+    "The completed CPU selfcheck compares its pre/post full Content inventories and all pinned source bytes.",
+    "42 candidates is not42 independently observed visible windows.",
+    "No UE, GPU, build, service, Git or paid job was run."
+  ]
+}

@@ -1,10 +1,32 @@
 """Check pond holes, furniture collision clearance and bounded park meshes."""
+import json
 import math
 
 from plateau_ground import signed_area, triangulate, district_bounds
 from plateau_park import build_park, park_survey
 from plateau_streets import _inside, _local, _distance, _road_rectangle
+from prepare_lafontaine import ROOT
 from prepare_plateau import geography
+
+
+def rounded(value):
+    """Floats rounded to 1e-6, through lists and dicts. Python 3.12's float sum moved the last digit of a pond area."""
+    if isinstance(value, float):
+        return round(value, 6)
+    if isinstance(value, list):
+        return [rounded(v) for v in value]
+    if isinstance(value, dict):
+        return {k: rounded(v) for k, v in value.items()}
+    return value
+
+
+def check_committed_park(report):
+    """build_park() gives the committed park.json, which the park OBJs and the saved map hold. Its fallen leaves follow
+    the OSM tree nodes (plateau_rendering.osm_tree_positions), not Streets/street_trees.json."""
+    saved = json.loads((ROOT / 'Data/Plateau/ParkGeometry/park.json').read_text())
+    built = json.loads(json.dumps(report))
+    assert built['fallen_leaves'] == saved['fallen_leaves'], ('fallen leaves', built['fallen_leaves'], saved['fallen_leaves'])
+    assert rounded(built) == rounded(saved), 'build_park() differs from the committed park.json'
 
 
 def main():
@@ -21,6 +43,7 @@ def main():
             assert any(_inside(center, r) for r in pond['outer'])
             assert not any(_inside(center, r) for r in pond['inner']), 'Pond island filled with water'
     mesh, report = build_park()
+    check_committed_park(report)
     assert report['new_collision'] == 'mapped benches only'
     assert all(b['collision'] == (b['material'] in ('Iron', 'ParkWood')) for b in report['materials'].values())
     assert len(report['benches']) >= 220

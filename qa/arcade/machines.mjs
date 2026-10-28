@@ -5,14 +5,14 @@
 import fs from "fs";
 import path from "path";
 import { createRequire } from "module";
-import { fileURLToPath } from "url";
+import { fileURLToPath, pathToFileURL } from "url";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const PUB = path.join(ROOT, "public");
 const BASE = (process.env.ARCADE_URL || "http://localhost:8765/").replace(/\/?$/, "/");
 const GTA_URL = "/gta/";
 const SHOTS = process.env.SHOTS || ""; // a folder for screenshots; none are taken without it
-const PARTS = (process.env.PARTS || "gta,walk,layout,switcher,saves,credits,focus,backlinks").split(","); // run only some of the browser parts while you work on the page
+const PARTS = (process.env.PARTS || "gta,walk,layout,marquee,switcher,saves,firstbreath,credits,focus,backlinks").split(","); // run only some of the browser parts while you work on the page
 const read = (p) => fs.readFileSync(path.join(ROOT, p), "utf8");
 const fails = [];
 setTimeout(() => { console.log("  FAIL the run did not finish in 30 minutes"); process.exit(1); }, 30 * 60 * 1000).unref();
@@ -110,11 +110,56 @@ for (const f of fs.readdirSync(path.join(PUB, "arcade")).filter((n) => /^(lab|wo
   const b = fs.readFileSync(path.join(PUB, "arcade", f));
   check(b.length < 60 * 1024 && b.toString("latin1", 0, 4) === "RIFF" && b.toString("latin1", 8, 12) === "WEBP", `arcade/${f} is a WebP under 60 KB (${(b.length / 1024).toFixed(1)} KB)`);
 }
+// Ahead of the Light's and Light Years Home's screens are cut from real screenshots of the game in play: WebPs 480 px wide and under 60 KB
+for (const id of ["ahead-of-the-light", "light-years-home"]) {
+  const f = path.join(PUB, "arcade/key", id + ".webp");
+  const b = fs.existsSync(f) ? fs.readFileSync(f) : Buffer.alloc(32);
+  const vp8x = b.toString("latin1", 12, 16) === "VP8X", w = vp8x ? 1 + b.readUIntLE(24, 3) : b.toString("latin1", 12, 16) === "VP8 " ? b.readUInt16LE(26) & 0x3fff : 1 + (b.readUInt32LE(21) & 0x3fff);
+  check(b.length < 60 * 1024 && b.toString("latin1", 8, 12) === "WEBP" && w === 480, `arcade/key/${id}.webp is a WebP 480 px wide under 60 KB (${w} px, ${(b.length / 1024).toFixed(1)} KB)`);
+}
 // the painted art from Higgsfield (higgsfield/arcade-key-art.json): one WebP for each entry, each under 100 KB
 for (const { id } of JSON.parse(read("higgsfield/arcade-key-art.json")).art) {
   const f = path.join(PUB, "arcade", "key", id + ".webp");
   const b = fs.existsSync(f) ? fs.readFileSync(f) : Buffer.alloc(0);
   check(b.length > 0 && b.length < 100 * 1024 && b.toString("latin1", 0, 4) === "RIFF" && b.toString("latin1", 8, 12) === "WEBP", `arcade/key/${id}.webp is a WebP under 100 KB (${(b.length / 1024).toFixed(1)} KB)`);
+}
+/* ---------------- First Breath's machine (openspec/changes/archive/2026-10-19-add-first-breath, design.md 10) ---------------- */
+{
+  const articleOf = (id) => (html.match(new RegExp(`<article class="cab ${id}"[\\s\\S]*?</article>`)) || [""])[0];
+  const fb = articleOf("first-breath"), aotl = articleOf("ahead-of-the-light");
+  // a whole copy of the Ahead of the Light article: with the names blanked out, the two are the same text
+  const blank = (a) => a.replace(/^<article[^>]*>/, "<article>").replace(/<b>[^<]*<\/b><small>[^<]*<\/small>/, "<b></b><small></small>")
+    .replace(/<img src="[^"]*" alt="[^"]*"/, '<img src="" alt=""').replace(/<p class="hi">[^<]*<\/p>/, '<p class="hi"></p>').replace(/aria-label="Drop a token into [^"]*"/g, 'aria-label="Drop a token into"');
+  check(fb !== "" && blank(fb) === blank(aotl), "First Breath's article is a whole copy of the Ahead of the Light article (marquee, bezel, screen, .osd, panel with START, door with two slots, kick)");
+  const want = [
+    ['<article class="cab first-breath" data-game="first-breath" data-url="/first-breath/" aria-label="First Breath: a baby\'s journey to birth">', "the article's class, id, route and label"],
+    ["<b>FIRST BREATH</b><small>BE BORN</small>", "the marquee"],
+    ['<img src="arcade/key/first-breath.svg" alt="A cut-paper egg in cream rings and a cloud of paper dots on wine red, with a cream arc round it and a small marigold sperm coming in" loading="lazy" decoding="async">', "the screen image, its alt text, lazy and async"],
+    ['<p class="hi">RACE · GUARD · CRY</p>', "the attract line"],
+  ];
+  for (const [t, what] of want) check(fb.includes(t), `First Breath's machine has ${what}: ${t}`);
+  check((fb.match(/<button class="slot" type="button" aria-label="Drop a token into First Breath">/g) || []).length === 2 && (fb.match(/class="slot"/g) || []).length === 2, 'both coin slots of First Breath are labelled "Drop a token into First Breath"');
+  const order = [...html.matchAll(/<article class="cab[^"]*"[^>]*data-game="([^"]+)"/g)].map((m) => m[1]);
+  check(order.indexOf("first-breath") === order.indexOf("light-years-home") + 1, "the First Breath article stands right after the Light Years Home article in #row");
+  check(html.includes(".cab.ahead-of-the-light { --c1: #0b0b14; --c2: #f08a2c; --glow: rgba(240, 138, 44, 0.45); }\n.cab.first-breath { --c1: #5e1c34; --c2: #ffc53d; --glow: rgba(255, 197, 61, 0.45); }"), ".cab.first-breath sets the wine board and the marigold accent (--c1 #5e1c34, --c2 #ffc53d, --glow rgba(255, 197, 61, 0.45)) next to the Ahead of the Light rule");
+  check(/\{ id: "action", label: "Action", games: \["olympus", "crimson", "tidebreak", "moonwell", "primordia", "river-rush", "ahead-of-the-light", "light-years-home", "first-breath"\]/.test(html), 'the Action group lists "first-breath" last of its nine games');
+  check(html.includes('localStorage.getItem("first-breath.save.v1")'), "the arcade page reads First Breath's save first-breath.save.v1 for the cabinet line");
+  const entry = '{ id: "first-breath", name: "First Breath", sub: "A baby\'s journey to birth", url: "/first-breath/", art: "/arcade/key/first-breath.svg", color: "#ffc53d" },';
+  const gamesText = sw.slice(sw.indexOf("const GAMES")).split("];")[0], lines = gamesText.split("\n").map((l) => l.trim());
+  check(lines.indexOf(entry) > 0 && lines[lines.indexOf(entry) - 1].startsWith('{ id: "ahead-of-the-light",'), "switch.js GAMES has the First Breath entry right after Ahead of the Light, with the marigold #ffc53d");
+  // the screen: hand-drawn cut paper, small and self-contained (no script, no outside reference, no filter, no text)
+  const f = path.join(PUB, "arcade/key/first-breath.svg"), b = fs.existsSync(f) ? fs.readFileSync(f) : Buffer.alloc(0), t = b.toString("utf8");
+  const refs = [...t.matchAll(/\b(?:xlink:)?href\s*=\s*["']([^"']*)["']|url\(\s*["']?([^"')]*)/g)].map((m) => m[1] ?? m[2]).filter((u) => !u.startsWith("#"));
+  const bad = [
+    !(b.length > 0 && b.length < 10 * 1024) && `${(b.length / 1024).toFixed(1)} KB`,
+    !/^<svg\b[^>]*\sviewBox="0 0 480 396"/.test(t.trim()) && "the viewBox is not 0 0 480 396",
+    /<script|\son[a-z]+\s*=|javascript:/i.test(t) && "a script",
+    (refs.length > 0 || /https?:\/\/(?!www\.w3\.org\/(?:2000\/svg|1999\/xlink)")/.test(t) || /@import/.test(t)) && "an outside reference " + refs.join(" "),
+    /<filter\b|\sfilter\s*=|filter\s*:/i.test(t) && "a filter",
+    /<(?:text|image|foreignObject|iframe)\b/i.test(t) && "text or an embedded image",
+    ...["#5e1c34", "#ffc49c", "#fff0dc", "#ffc53d", "#1a0610"].filter((c) => !t.toLowerCase().includes(c)).map((c) => "no " + c),
+  ].filter(Boolean);
+  check(bad.length === 0, `arcade/key/first-breath.svg is a self-contained SVG under 10 KB, viewBox 0 0 480 396, in the paper-cut palette, with no script, outside reference, filter or text (${(b.length / 1024).toFixed(2)} KB${bad.length ? "; " + bad.join("; ") : ""})`);
 }
 // the arcade page opens the same grid as ALL GAMES
 check(/<button[^>]*class="all-games"[^>]*data-switch/.test(html) && html.includes('<script src="/arcade/switch.js"></script>'), "the arcade page has an ALL GAMES button that opens the game grid");
@@ -127,7 +172,8 @@ try { ({ chromium } = createRequire(import.meta.url)("playwright")); } catch (e)
 const ARGS = ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist"];
 
 // a new page with the errors collected. The only thing allowed to fail to load is the Google font.
-async function open(browser, { width, height, store = {}, mobile = width < 800, machines = true }) {
+// init: a function run in the page before its own scripts (after the store is filled), for a page whose storage misbehaves
+async function open(browser, { width, height, store = {}, mobile = width < 800, machines = true, init = null }) {
   const ctx = await browser.newContext({ viewport: { width, height }, deviceScaleFactor: mobile ? 2 : 1, ...(mobile ? { isMobile: true, hasTouch: true } : {}) });
   const page = await ctx.newPage();
   const errors = [], moves = [];
@@ -142,6 +188,7 @@ async function open(browser, { width, height, store = {}, mobile = width < 800, 
     if (r.request().isNavigationRequest()) { const u = new URL(r.request().url()); moves.push(u.pathname + u.hash); r.abort("aborted"); } else r.continue();
   });
   await page.addInitScript((store) => { try { localStorage.clear(); for (const [k, v] of Object.entries(store)) localStorage.setItem(k, v); } catch (e) { /* storage off */ } }, { "arcade.tokens": "99", "arcade.sound": "false", ...store });
+  if (init) await page.addInitScript(init);
   // ?machines is Old arcade: the machines, without All Games over them; machines: false opens the default All Games scoreboard
   await page.goto(machines ? BASE + "?machines" : BASE);
   await page.waitForSelector(machines ? ".cab.on" : ".scoreboard .board-launch");
@@ -355,12 +402,52 @@ if (chromium) {
   }
 
   await relaunch();
+  /* ----- the two newest machines: the title and the sub line fit on the marquee, on a computer and on phones ----- */
+  // The marquee is a box 13 % of the machine's height that hides what spills out, and its type stops shrinking at 12 px. At
+  // 320 x 700 (or 375 x 667) the machine is about 122 x 265 and the box 112 x 34: room for the title on two lines and a sub
+  // line of 8 characters. Wider, the title takes one line. In a shorter window (360 x 640 or 800 x 600: a machine about
+  // 235 px tall, a box 99 x 30) the sub line is hidden and the title shows whole on two lines. Each size: the most title
+  // lines, and whether the sub line shows.
+  const MARQUEE = [[1280, 720, 1, true], [1280, 800, 1, true], [390, 844, 1, true], [360, 740, 2, true], [375, 667, 2, true], [320, 700, 2, true],
+    [360, 640, 2, false], [800, 600, 2, false]];
+  for (const [width, height, most, sub] of PARTS.includes("marquee") ? MARQUEE : []) {
+    const tag = `${width}x${height}`;
+    const { ctx, page, errors } = await open(browser, { width, height });
+    await page.evaluate(() => document.fonts.ready);
+    for (const id of ["light-years-home", "ahead-of-the-light", "first-breath"]) {
+      await page.selectOption("#machinePicker", id);
+      await page.waitForFunction((id) => document.querySelector(".cab.on")?.dataset.game === id, id);
+      await settle(page);
+      const f = await page.evaluate((id) => {
+        const m = document.querySelector(`.cab[data-game="${id}"] .marquee`), box = m.getBoundingClientRect(), block = m.firstElementChild.getBoundingClientRect();
+        const lines = (el) => { const r = document.createRange(); r.selectNodeContents(el); return [...r.getClientRects()]; };
+        const t = lines(m.querySelector("b")), s = lines(m.querySelector("small"));
+        const rows = (rs) => new Set(rs.map((r) => Math.round(r.top))).size;
+        // a line wider than the box is cut at its sides; lines that stack taller than the box are cut at its top and bottom
+        const sides = Math.max(0, ...[...t, ...s].map((r) => Math.max(box.left - r.left, r.right - box.right)));
+        const ends = Math.max(0, box.top - block.top, block.bottom - box.bottom);
+        // the machine itself: inside the window, below the sign and above the token tray
+        const r = (q) => document.querySelector(q).getBoundingClientRect(), cab = r(".cab.on"), sign = r(".sign"), tray = r(".tray");
+        const whole = cab.left >= -1 && cab.right <= innerWidth + 1 && cab.top >= sign.bottom - 2 && cab.bottom <= tray.top + 2;
+        return { title: m.querySelector("b").textContent, sub: m.querySelector("small").textContent, titleRows: rows(t), subRows: rows(s), sides, ends, w: Math.round(box.width), h: Math.round(box.height),
+          whole, at: `${Math.round(cab.left)} to ${Math.round(cab.right)} of ${innerWidth}, ${Math.round(cab.top)} to ${Math.round(cab.bottom)} between ${Math.round(sign.bottom)} and ${Math.round(tray.top)}` };
+      }, id);
+      check(f.whole, `${tag}: ${id}'s machine shows whole, not under the sign or the token tray (${f.at})`);
+      const want = `${most === 1 ? "1 line" : "1 or 2 lines"}, ${sub ? "the sub line on 1" : "no sub line"}`;
+      check(f.sides <= 0.5 && f.ends <= 0.5 && f.titleRows >= 1 && f.titleRows <= most && f.subRows === (sub ? 1 : 0), `${tag}: ${id}'s marquee (${f.w}x${f.h}) shows ${f.title} on ${f.titleRows} line${f.titleRows > 1 ? "s" : ""} and ${f.sub} on ${f.subRows} (want ${want}), and spills ${f.sides.toFixed(1)} px past its sides and ${f.ends.toFixed(1)} px past its top and bottom (want 0)`);
+      if (SHOTS) await page.locator(`.cab[data-game="${id}"] .marquee`).screenshot({ path: path.join(SHOTS, `marquee-${tag}-${id}.png`) });
+    }
+    check(errors.length === 0, `${tag}: the marquees cause no page errors${errors.length ? ": " + errors.join("; ") : ""}`);
+    await ctx.close();
+  }
+
+  await relaunch();
   /* ----- the game switcher: all games, the right one marked, tiles you can tap, and the exits in reach ----- */
   for (const [width, height] of PARTS.includes("switcher") ? [[360, 740], [1280, 720]] : []) {
     const tag = `${width}x${height}`;
     const { ctx, page, errors } = await open(browser, { width, height });
     // the page answers to a game's address, so the switcher can work out where it is
-    const here = { "/gta/": "GTA Montréal", "/lab/": "The Lab", "/lab/worlds/": "Small Worlds", "/lab/plunge/": "Take the Plunge", "/lab/rules/": "House Rules", "/fall/": "Down the Drain", "/breakthrough2/": "Breakthrough", "/echo/": "Loon Echo", "/olympus/x": "Olympus" };
+    const here = { "/gta/": "GTA Montréal", "/lab/": "The Lab", "/lab/worlds/": "Small Worlds", "/lab/plunge/": "Take the Plunge", "/lab/rules/": "House Rules", "/fall/": "Down the Drain", "/breakthrough2/": "Breakthrough", "/echo/": "Loon Echo", "/olympus/x": "Olympus", "/light-years-home/": "Light Years Home", "/ahead-of-the-light/": "Ahead of the Light" };
     for (const [p, name] of Object.entries(here)) {
       await page.evaluate(async (p) => { history.replaceState({}, "", p); GameSwitch.close(); await GameSwitch.open(); }, p);
       await page.waitForSelector(".gsw-game");
@@ -389,18 +476,25 @@ if (chromium) {
   await relaunch();
   /* ----- the high-score lines: a game's own save shows, and junk never throws ----- */
   const JUNK = ["not json", "null", "[]", "{}", "[1,2]", "-5", "0", "1e999", "\"x\"", "{\"best\":\"x\",\"ms\":[],\"runs\":{}}", "true"];
-  const KEYS = ["primordia.best", "neon-best", "loon-echo-rescue-best", "tilt.voyage.best", "lab.stats.plunge", "lab.stats.creek", "lab.stats.rules", "lab.rules.clears", "small-worlds-best-threadwake", "small-worlds-best-heartship", "follow-suit:best-chain", "moonwell.best.v1"];
+  const KEYS = ["primordia.best", "neon-best", "loon-echo-rescue-best", "tilt.voyage.best", "lab.stats.plunge", "lab.stats.creek", "lab.stats.rules", "lab.rules.clears", "small-worlds-best-threadwake", "small-worlds-best-heartship", "follow-suit:best-chain", "moonwell.best.v1", "ahead-of-the-light.meta.v1", "light-years-home.v3.save", "first-breath.save.v1"];
   const lines = (page) => page.$$eval(".cab[data-game]", (cs) => Object.fromEntries(cs.map((c) => [c.dataset.game, c.querySelector(".hi").textContent])));
+  // First Breath's plain line, and a finished best run as core/save.js stores it (design.md 10)
+  const FB_PLAIN = "RACE · GUARD · CRY";
+  const FB_SAVE = { v: 1, best: { score: 61240, ms: 401000, done: true, assist: false, oneButton: false, grades: ["Good", "Great", "Glowing", "Great", "Good", "Great", "Glowing", "Great"] }, reached: 8, stages: {}, carryIn: {}, settings: {} };
+  // the machines that wear a gold frame (Ahead of the Light's last log unlock)
+  const framed = (page) => page.$$eval(".cab.gold", (cs) => cs.map((c) => c.dataset.game));
+  // an Ahead of the Light meta save with this best run
+  const aotl = (best, pages, more = {}) => ({ "ahead-of-the-light.meta.v1": JSON.stringify({ v: 1, pages, records: { best }, ...more }) });
   if (PARTS.includes("saves")) {
     const clean = await open(browser, { width: 390, height: 844 });
     const plain = await lines(clean.page);
     await clean.ctx.close();
     for (const junk of JUNK) {
       const { ctx, page, errors } = await open(browser, { width: 390, height: 844, store: Object.fromEntries(KEYS.map((k) => [k, junk])) });
-      const got = await lines(page);
+      const got = await lines(page), gold = await framed(page);
       const same = Object.keys(plain).filter((g) => got[g] !== plain[g]);
-      // "0", "-5" and the like are not scores; "1e999" is not a finite number; none may change a line
-      check(errors.length === 0 && same.length === 0, `junk save ${JSON.stringify(junk)}: no error, and the lines stay plain${same.length ? " (changed: " + same.map((g) => g + " -> " + got[g]).join("; ") + ")" : ""}${errors.length ? " " + errors.join("; ") : ""}`);
+      // "0", "-5" and the like are not scores; "1e999" is not a finite number; none may change a line or put on a frame
+      check(errors.length === 0 && same.length === 0 && gold.length === 0, `junk save ${JSON.stringify(junk)}: no error, and the lines stay plain${same.length ? " (changed: " + same.map((g) => g + " -> " + got[g]).join("; ") + ")" : ""}${gold.length ? " (framed: " + gold.join(", ") + ")" : ""}${errors.length ? " " + errors.join("; ") : ""}`);
       await ctx.close();
     }
     const good = {
@@ -409,15 +503,186 @@ if (chromium) {
       "lab.stats.rules": JSON.stringify({ ms: 100, runs: 1 }), "lab.rules.clears": JSON.stringify({ a1: 40, b2: 95 }),
       "small-worlds-best-threadwake": "120", "small-worlds-best-heartship": "80", "follow-suit:best-chain": "5432",
       "moonwell.best.v1": JSON.stringify({ score: 12345, island: 17 }),
+      "ahead-of-the-light.meta.v1": JSON.stringify({ v: 1, pages: ["home", "first-home"], records: { best: { home: true, legNo: 7, years: 14.23, ship: "lantern" } } }),
+      // Light Years Home: where the save is and its golds (a tern medal counts as a gold), from races and jumps
+      "light-years-home.v3.save": JSON.stringify({ v: 1, zoneId: "coma", events: { "wall-sprint": { medal: "gold" }, "wall-loop": { medal: "silver" }, "coma-dash": { medal: "tern" } }, jumps: { "wall-coma": { medal: "gold" } } }),
+      "first-breath.save.v1": JSON.stringify(FB_SAVE),
     };
     const { ctx, page, errors } = await open(browser, { width: 390, height: 844, store: good });
     const got = await lines(page);
-    const want = { primordia: "BEST 4,200", neon: "BEST 12,345", echo: "BEST 210", tilt: "BEST 9,800", plunge: "BEST 1,234 M", creek: "RUNS 3", rules: "CLEARS 2", worlds: "WORLDS DONE 2/6", lab: "TOYS TRIED 4/4", "follow-suit": "BEST CHAIN 5,432", moonwell: "BEST 12,345 · ISLAND 17" };
+    const want = { primordia: "BEST 4,200", neon: "BEST 12,345", echo: "BEST 210", tilt: "BEST 9,800", plunge: "BEST 1,234 M", creek: "RUNS 3", rules: "CLEARS 2", worlds: "WORLDS DONE 2/6", lab: "TOYS TRIED 4/4", "follow-suit": "BEST CHAIN 5,432", moonwell: "BEST 12,345 · ISLAND 17", "ahead-of-the-light": "FIRST HOME · 14.2 YR", "light-years-home": "COMA CITY · GOLDS 3", "first-breath": "BEST 61,240" };
     for (const [g, t] of Object.entries(want)) check(got[g] === t, `a real save shows on the ${g} machine: "${got[g]}" (want "${t}")`);
     // a save must change only its own machine's line
     const moved = Object.keys(plain).filter((g) => !(g in want) && got[g] !== plain[g]);
     check(moved.length === 0, `a real save changes no other machine's line${moved.length ? " (changed: " + moved.map((g) => g + " -> " + got[g]).join("; ") + ")" : ""}`);
     check(errors.length === 0, "real saves: no page errors" + (errors.length ? ": " + errors.join("; ") : ""));
+    await ctx.close();
+    // Ahead of the Light's other two lines: home but not first, and the furthest leg of a run that never got home
+    for (const [best, pages, t] of [[{ home: true, legNo: 7, years: 31.04 }, ["home"], "HOME IN 31.0 YR"], [{ home: false, legNo: 2, years: 9.5 }, [], "BEST: VIRGO"]]) {
+      const o = await open(browser, { width: 390, height: 844, store: aotl(best, pages) });
+      const line = (await lines(o.page))["ahead-of-the-light"];
+      check(line === t && o.errors.length === 0, `Ahead of the Light's machine reads "${line}" (want "${t}")`);
+      await o.ctx.close();
+    }
+    // Ahead of the Light's line fits its screen on a small phone, whichever line it is: a word wider than the screen is cut
+    // on both sides. The machine's size follows the window's height, so 375 x 667 is as narrow a screen as 320 x 700.
+    const AOTL_LINES = [...Array(8).keys()].map((legNo) => aotl({ home: false, legNo, years: 9.5 }, []))
+      .concat([aotl({ home: true, legNo: 7, years: 31.04 }, ["home"]), aotl({ home: true, legNo: 7, years: 14.23 }, ["home", "first-home"])]);
+    for (const [width, height] of [[320, 700], [375, 667]]) {
+      const cut = [];
+      for (const store of AOTL_LINES) {
+        const o = await open(browser, { width, height, store });
+        await o.page.selectOption("#machinePicker", "ahead-of-the-light");
+        await o.page.waitForFunction(() => document.querySelector(".cab.on")?.dataset.game === "ahead-of-the-light");
+        await settle(o.page);
+        const f = await o.page.evaluate(() => {
+          const c = document.querySelector('.cab[data-game="ahead-of-the-light"]'), hi = c.querySelector(".hi");
+          const s = c.querySelector(".screen").getBoundingClientRect(), h = hi.getBoundingClientRect();
+          return { text: hi.textContent, by: Math.max(0, s.left - h.left, h.right - s.right) };
+        });
+        if (f.by > 0.5 || o.errors.length) cut.push(`"${f.text}" by ${f.by.toFixed(1)} px${o.errors.length ? " " + o.errors.join("; ") : ""}`);
+        await o.ctx.close();
+      }
+      check(cut.length === 0, `${width}x${height}: each of Ahead of the Light's ${AOTL_LINES.length} lines fits inside its screen${cut.length ? " (cut: " + cut.join("; ") + ")" : ""}`);
+    }
+    // the log's last unlock, at 84 pages, puts a gold frame round the screen; without it, or with unlocks that are not a list, there is none
+    const UNLOCKED = ["reroll-2", "banish-1", "lucky-star", "reroll-3", "banish-2"];
+    for (const [more, gold, what] of [[{ unlocks: [...UNLOCKED, "gold-frame"] }, true, "84 pages"], [{ unlocks: UNLOCKED }, false, "83 pages"], [{ unlocks: "gold-frame" }, false, "unlocks that are not a list"]]) {
+      const o = await open(browser, { width: 390, height: 844, store: aotl({ home: false, legNo: 2, years: 9.5 }, [], more) });
+      const f = await o.page.evaluate(() => { const c = document.querySelector('.cab[data-game="ahead-of-the-light"]'); return { gold: c.classList.contains("gold"), shadow: getComputedStyle(c.querySelector(".bezel")).boxShadow }; });
+      const on = f.gold && /rgb\(255, 207, 74\)/.test(f.shadow), others = (await framed(o.page)).filter((g) => g !== "ahead-of-the-light");
+      check(on === gold && others.length === 0 && o.errors.length === 0, `Ahead of the Light with ${what}: ${gold ? "a" : "no"} gold frame round its screen (class ${f.gold}, bezel ${f.shadow})`);
+      await o.ctx.close();
+    }
+    // Light Years Home's other lines: the chapter done; a save in a zone the machine does not know, or of another version, leaves the plain line
+    const LYH = "light-years-home.v3.save";
+    for (const [save, t] of [
+      [{ v: 1, zoneId: "virgo", chapterDone: true, events: { a: { medal: "gold" }, b: { medal: "gold" } }, jumps: { c: { medal: "tern" }, d: { medal: "bronze" } } }, "CHAPTER I DONE · GOLDS 3"],
+      [{ v: 1, zoneId: "wall", events: [{ medal: "gold" }], jumps: { a: "gold", b: null, c: { medal: ["gold"] } } }, "THE WALL · GOLDS 0"],
+      [{ v: 1, zoneId: "nowhere", events: { a: { medal: "gold" } } }, plain["light-years-home"]],
+      [{ v: 2, zoneId: "coma", events: { a: { medal: "gold" } } }, plain["light-years-home"]],
+      [{ v: 1, zoneId: "toString" }, plain["light-years-home"]],
+    ]) {
+      const o = await open(browser, { width: 390, height: 844, store: { [LYH]: JSON.stringify(save) } });
+      const line = (await lines(o.page))["light-years-home"];
+      check(line === t && o.errors.length === 0, `Light Years Home's machine reads "${line}" for ${JSON.stringify(save)} (want "${t}")${o.errors.length ? " " + o.errors.join("; ") : ""}`);
+      await o.ctx.close();
+    }
+    // First Breath (design.md 10): only a finished best run with a score above 0 shows. The page applies cabinetLine() of
+    // public/first-breath/core/save.js to the stored text, so each stored text is also run through that function here.
+    let cabinetLine = null;
+    try { ({ cabinetLine } = await import(pathToFileURL(path.join(PUB, "first-breath/core/save.js")).href)); } catch (e) { check(false, `first-breath/core/save.js imports in node, for cabinetLine() (${e.message})`); }
+    const cases = [
+      ["a finished best run", JSON.stringify(FB_SAVE), "BEST 61,240"],
+      ["a score over a million", JSON.stringify({ v: 1, best: { score: 1234567, done: true }, reached: 8 }), "BEST 1,234,567"],
+      ["a score with a fraction", JSON.stringify({ v: 1, best: { score: 61240.5, done: true } }), "BEST 61,240.5"],
+      ["a run not finished that reached 6 stages", JSON.stringify({ v: 1, best: { score: 61240, done: false }, reached: 6 }), FB_PLAIN],
+      ["no best run", JSON.stringify({ v: 1, best: null, reached: 6 }), FB_PLAIN],
+      ["a score of 0", JSON.stringify({ v: 1, best: { score: 0, done: true } }), FB_PLAIN],
+      ["a score below 0", JSON.stringify({ v: 1, best: { score: -5, done: true } }), FB_PLAIN],
+      ["a score in a string", JSON.stringify({ v: 1, best: { score: "61240", done: true } }), FB_PLAIN],
+      ["done in a string", JSON.stringify({ v: 1, best: { score: 61240, done: "true" } }), FB_PLAIN],
+      ["no done", JSON.stringify({ v: 1, best: { score: 61240 } }), FB_PLAIN],
+      ["a score too big to be finite", '{"v":1,"best":{"score":1e999,"done":true}}', FB_PLAIN],
+      ["a save stored twice over as a JSON string", JSON.stringify(JSON.stringify(FB_SAVE)), FB_PLAIN],
+      ["text that is not JSON", "{best:", FB_PLAIN],
+    ];
+    for (const [what, text, t] of cases) {
+      const o = await open(browser, { width: 390, height: 844, store: { "first-breath.save.v1": text } });
+      const line = (await lines(o.page))["first-breath"], mirror = cabinetLine ? cabinetLine(text) : t;
+      check(line === t && mirror === t && o.errors.length === 0, `First Breath's machine with ${what} reads "${line}" (want "${t}"; cabinetLine() gives "${mirror}")${o.errors.length ? " " + o.errors.join("; ") : ""}`);
+      await o.ctx.close();
+    }
+    // storage that throws when the save is read
+    const o = await open(browser, { width: 390, height: 844, store: { "first-breath.save.v1": JSON.stringify(FB_SAVE) }, init: () => {
+      const get = Storage.prototype.getItem;
+      Storage.prototype.getItem = function (k) { if (k === "first-breath.save.v1") throw new DOMException("The operation is insecure.", "SecurityError"); return get.call(this, k); };
+    } });
+    const line = (await lines(o.page))["first-breath"];
+    check(line === FB_PLAIN && o.errors.length === 0, `First Breath's machine reads its plain line when storage throws ("${line}")${o.errors.length ? " " + o.errors.join("; ") : ""}`);
+    await o.ctx.close();
+  }
+
+  await relaunch();
+  /* ----- First Breath (openspec/changes/archive/2026-10-19-add-first-breath, task 4.4b): the last machine of Action at the sizes AGENTS.md names ----- */
+  const ACTION = ["olympus", "crimson", "tidebreak", "moonwell", "primordia", "river-rush", "ahead-of-the-light", "light-years-home", "first-breath"];
+  // the other groups as they stood before First Breath was added: adding it leaves them alone
+  const OTHERS = {
+    cottage: ["plungerd", "drain", "brawl", "wild", "fish", "vr", "pingpong"],
+    ascii: ["ascii-front", "battle-tanks"],
+    strategy: ["breakthrough", "follow-suit", "silent-depth"],
+    gta: ["gta"],
+    lab: ["lab", "worlds", "neon", "echo", "tellme", "plunge", "creek", "tilt", "rules", "afterlight", "lighthouse-keeper", "echoes-under-ice", "last-train-home", "firefly-courier", "mirage-runner", "orbital-gardener", "last-light"],
+  };
+  // 320 x 700 as the small-phone checks above: at 320 x 568 every machine's screen is about 52 x 43 px, too small for any attract line
+  for (const [width, height] of PARTS.includes("firstbreath") ? [[390, 844], [320, 700], [1280, 720]] : []) {
+    await relaunch();
+    const tag = `${width}x${height} First Breath`;
+    const { ctx, page, errors, moves } = await open(browser, { width, height });
+    const hall = await page.$$eval(SHOWN, (cs) => cs.map((c) => c.dataset.opens || c.dataset.game));
+    check(hall.join() === "cottage,action,ascii,strategy,gta,lab", `${tag}: the hall still shows the six groups in order (${hall.join(", ")})`);
+    await enter(page, "action");
+    const members = await page.$$eval(SHOWN, (cs) => cs.map((c) => c.dataset.game));
+    check(members.join() === ACTION.join(), `${tag}: Action shows its nine machines, First Breath last (${members.join(", ")})`);
+    // the last machine: the left key from the first wraps to it
+    await page.keyboard.press("ArrowLeft");
+    await settle(page);
+    await page.waitForFunction(() => { const i = document.querySelector(".cab.on .screen img"); return i && i.complete && i.naturalWidth > 0; }, null, { timeout: 5000 }).catch(() => {});
+    const m = await page.evaluate(() => {
+      const r = (el) => { const b = el.getBoundingClientRect(); return { l: b.left, r: b.right, t: b.top, b: b.bottom, w: b.width, h: b.height }; };
+      const shown = [...document.querySelectorAll(".cab:not([hidden])")], cab = document.querySelector(".cab.on"), hi = cab.querySelector(".hi"), img = cab.querySelector(".screen img");
+      const name = (el) => el.id ? "#" + el.id : el.matches(".slot, .start") ? "." + el.className.split(" ")[0] : el.textContent.replace(/\s+/g, " ").trim();
+      const controls = [...cab.querySelectorAll(".slot"), cab.querySelector(".start"), document.querySelector("#prevBtn"), document.querySelector("#nextBtn"), ...document.querySelectorAll(".section-nav button, .section-nav a")]
+        .map((el) => ({ name: name(el), shown: el.getClientRects().length > 0 && getComputedStyle(el).visibility !== "hidden", ...r(el) }));
+      return { last: shown[shown.length - 1].dataset.game, on: cab.dataset.game, cab: r(cab), sign: r(document.querySelector(".sign")), tray: r(document.querySelector(".tray")), vw: innerWidth, vh: innerHeight,
+        screen: r(cab.querySelector(".screen")), hi: r(hi), hiText: hi.textContent, controls, img: img.getAttribute("src"), loaded: img.complete && img.naturalWidth > 0 };
+    });
+    check(m.last === "first-breath" && m.on === "first-breath", `${tag}: the last visible cabinet is First Breath, and the left key from the first machine selects it (last ${m.last}, selected ${m.on})`);
+    check(m.cab.l >= -1 && m.cab.r <= m.vw + 1 && m.cab.t >= -1 && m.cab.b <= m.vh + 1, `${tag}: the machine sits inside the window (${Math.round(m.cab.l)} to ${Math.round(m.cab.r)} of ${m.vw}, ${Math.round(m.cab.t)} to ${Math.round(m.cab.b)} of ${m.vh})`);
+    check(m.cab.t >= m.sign.b - 2 && m.cab.b <= m.tray.t + 2, `${tag}: the machine is not under the sign or the token tray (machine ${Math.round(m.cab.t)} to ${Math.round(m.cab.b)}, sign ends ${Math.round(m.sign.b)}, tray starts ${Math.round(m.tray.t)})`);
+    check(m.img === "arcade/key/first-breath.svg" && m.loaded, `${tag}: the cut-paper screen ${m.img} loads`);
+    const small = m.controls.filter((c) => !c.shown || Math.min(c.w, c.h) < 44);
+    check(m.controls.length >= 10 && small.length === 0, `${tag}: the coin slots, START, the row arrows, the collection controls and All Games are each at least 44 px on the shorter side (${m.controls.length} measured${small.length ? "; too small or hidden: " + small.map((c) => `${c.name} ${c.shown ? Math.round(c.w) + "x" + Math.round(c.h) : "hidden"}`).join(", ") : ""})`);
+    const inside = m.hi.l >= m.screen.l - 0.5 && m.hi.r <= m.screen.r + 0.5 && m.hi.t >= m.screen.t - 0.5 && m.hi.b <= m.screen.b + 0.5;
+    check(m.hiText === FB_PLAIN && inside, `${tag}: with no save the .hi line reads "${m.hiText}" and stays inside the cabinet's .screen (line ${Math.round(m.hi.w)}x${Math.round(m.hi.h)} at ${Math.round(m.hi.l - m.screen.l)},${Math.round(m.hi.t - m.screen.t)} in a screen of ${Math.round(m.screen.w)}x${Math.round(m.screen.h)})`);
+    if (SHOTS) await page.screenshot({ path: path.join(SHOTS, `home-${width}.png`) });
+    // a tap on a coin slot, then START, goes to the game
+    await page.evaluate(() => document.activeElement && document.activeElement.blur());
+    const tapped = await page.locator(".cab.on .slot").first().click({ timeout: 4000 }).then(() => true, () => false);
+    if (!tapped) await page.keyboard.press("5");
+    const credited = await page.waitForFunction(() => /CREDIT 1/.test(document.querySelector(".cab.on .credit").textContent), null, { timeout: 4000 }).then(() => true, () => false);
+    check(tapped && credited, `${tag}: a tap on a coin slot drops a token into First Breath (tap ${tapped ? "landed" : "was blocked"}, credit ${credited ? "1" : "not shown"})`);
+    moves.length = 0;
+    const started = await page.locator(".cab.on .start").click({ timeout: 4000 }).then(() => true, () => false);
+    const t0 = Date.now();
+    while (!moves.length && Date.now() - t0 < 6000) await page.waitForTimeout(50);
+    check(started && moves.length === 1 && moves[0].replace(/#.*$/, "") === "/first-breath/", `${tag}: START goes to /first-breath/ (went to ${moves.join(",") || "nowhere"}${started ? "" : "; START could not be clicked"})`);
+    await page.evaluate(() => document.querySelectorAll(".boot").forEach((b) => b.remove()));
+    // the other groups keep their machines and their order
+    for (const [g, want] of Object.entries(OTHERS)) {
+      await enter(page, g);
+      const got = await page.$$eval(SHOWN, (cs) => cs.map((c) => c.dataset.game));
+      check(got.join() === want.join(), `${tag}: ${g} keeps its ${want.length} machines in order${got.join() === want.join() ? "" : " (now " + got.join(", ") + ")"}`);
+    }
+    // All Games finds First Breath by its subtitle and shows its screen art; on its own page the switcher marks it (spec: The switcher knows it)
+    await page.evaluate(async () => { history.replaceState({}, "", "/"); GameSwitch.close(); await GameSwitch.open(); });
+    await page.waitForSelector(".gsw:not([hidden]) .gsw-game");
+    for (const q of ["baby", "birth"]) {
+      await page.fill(".gsw:not([hidden]) input[type=search]", q);
+      const found = await page.waitForFunction(() => {
+        const a = [...document.querySelectorAll(".gsw:not([hidden]) .gsw-game:not([hidden]) a.board-launch")].find((x) => x.getAttribute("href") === "/first-breath/"), img = a && a.querySelector("img");
+        return a && img.complete && img.naturalWidth > 0 ? a.querySelector("b").textContent : false;
+      }, null, { timeout: 5000 }).then((h) => h.jsonValue(), () => null);
+      check(found === "First Breath", `${tag}: All Games search for "${q}" finds First Breath, with its screen art (${found || "not found"})`);
+    }
+    // the switcher keeps its search text, so clear it before the switcher opens on the game's page
+    await page.fill(".gsw:not([hidden]) input[type=search]", "");
+    await page.evaluate(async () => { GameSwitch.close(); history.replaceState({}, "", "/first-breath/"); await GameSwitch.open(); });
+    await page.waitForSelector(".gsw:not([hidden]) .gsw-game.here", { timeout: 5000 }).catch(() => {});
+    const marked = await page.$$eval(".gsw:not([hidden]) .gsw-game.here b", (bs) => bs.map((b) => b.textContent));
+    check(marked.length === 1 && marked[0] === "First Breath", `${tag}: on /first-breath/ the switcher marks First Breath as the game being played (marked: ${marked.join(", ") || "none"})`);
+    await page.evaluate(() => { GameSwitch.close(); history.replaceState({}, "", "/"); });
+    check(errors.length === 0, `${tag}: no page errors${errors.length ? ":\n    " + errors.join("\n    ") : ""}`);
     await ctx.close();
   }
 

@@ -1,0 +1,29 @@
+{
+  "at_utc": "2026-10-17T22:16:51.496664+00:00",
+  "source_sha256": "21b94450bf55cb3e2020e84ad7105973bd7bd4cd6ee0d97da96fc243ce84b69e",
+  "viewed": [
+    {
+      "file": "front.png",
+      "sha256": "98385de1415192b1d5ce0ca5b07247586decf39f7c51297e0d95d99095437eef"
+    },
+    {
+      "file": "back.png",
+      "sha256": "5b0843cdab3560e471d9deffd0bdf437b15d410d5bcc46f8d7896012f0b34dd1"
+    },
+    {
+      "file": "face-threequarter.png",
+      "sha256": "7379085519c77f3910d5338ff605f20bbf2ee0d6213aacd2b9d5cfa03992a2ec"
+    },
+    {
+      "file": "hand-right.png",
+      "sha256": "699a6d3de09a498c4465b346573de1d352d5f0dbf32553364325b085e8eae3e8"
+    }
+  ],
+  "bounded_rig_trial_allowed": true,
+  "final_art_accepted": false,
+  "observations": [
+    "Adult identity, white shirt, navy shorts and bag/strap silhouette read clearly.",
+    "Chunky faceted bun with stray loops, rounder glasses and shallow finger webs remain.",
+    "Bag/strap deformation and hand clearance require motion review."
+  ]
+}

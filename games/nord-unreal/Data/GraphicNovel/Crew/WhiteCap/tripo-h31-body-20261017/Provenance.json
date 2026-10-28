@@ -1,0 +1,23 @@
+{
+  "character": "WhiteCap",
+  "task_id": "eb23c465-06bc-4b1d-a2fb-60a48190adc4",
+  "status": "completed_downloaded",
+  "credits_consumed": 60,
+  "request_path": "request.json",
+  "request_sha256": "6c2e3d1aca2f40b8ec9cd5e9343c345a5de6e39ec5de25a9e489a907fa11535e",
+  "source_reference_sha256": "61bbfd6c38e51506f59f8f1293b44f89bef39d148d9d3c948906d8be8e24fb33",
+  "outputs": {
+    "body.glb": {
+      "bytes": 11179456,
+      "sha256": "163e86ec12c6ee9a53ccee29f500dfba720d230c8046c9d968430262ee24e4d4"
+    },
+    "provider-preview.png": {
+      "bytes": 128358,
+      "sha256": "10bf34f4ca515f97cfe8a902563d54ac490d2d2491ec7ac8aad20ba963564f3d"
+    }
+  },
+  "preview_format_from_actual_magic": true,
+  "signed_urls_private_only": true,
+  "native_or_art_accepted": false,
+  "recorded_utc": "2026-10-17T23:24:07.197301+00:00"
+}

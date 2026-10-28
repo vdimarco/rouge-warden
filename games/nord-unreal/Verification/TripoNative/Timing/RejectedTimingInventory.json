@@ -1,0 +1,236 @@
+{
+  "walk": {
+    "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/tripo-v3-rig-20261017/derived/native-ready/walk.fbx",
+    "sha256": "2123f241b917ce191b32469ae87d841560a829ab4928f9bff3d4a4da2667e184",
+    "version": 7400,
+    "time_global": {
+      "TimeMode": [
+        11
+      ],
+      "TimeSpanStart": [
+        0
+      ],
+      "TimeSpanStop": [
+        46186158000
+      ],
+      "CustomFrameRate": [
+        24.0
+      ]
+    },
+    "stacks": [
+      {
+        "name": "Scene\u0000\u0001AnimStack",
+        "properties": {
+          "LocalStart": [
+            1924423250
+          ],
+          "LocalStop": [
+            61581544000
+          ],
+          "ReferenceStart": [
+            1924423250
+          ],
+          "ReferenceStop": [
+            61581544000
+          ]
+        },
+        "seconds": 1.2916666666666667
+      }
+    ]
+  },
+  "run": {
+    "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/tripo-v3-rig-20261017/derived/native-ready/run.fbx",
+    "sha256": "d4c0684a2ac7225c15dea118055e816e1797e17cf6bb00f1c917fa81ceffdd90",
+    "version": 7400,
+    "time_global": {
+      "TimeMode": [
+        11
+      ],
+      "TimeSpanStart": [
+        0
+      ],
+      "TimeSpanStop": [
+        46186158000
+      ],
+      "CustomFrameRate": [
+        24.0
+      ]
+    },
+    "stacks": [
+      {
+        "name": "Scene\u0000\u0001AnimStack",
+        "properties": {
+          "LocalStart": [
+            1924423250
+          ],
+          "LocalStop": [
+            38488465000
+          ],
+          "ReferenceStart": [
+            1924423250
+          ],
+          "ReferenceStop": [
+            38488465000
+          ]
+        },
+        "seconds": 0.7916666666666666
+      }
+    ]
+  },
+  "idle": {
+    "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/tripo-v3-rig-20261017/derived/natural-pose-20261017/relaxed-idle.fbx",
+    "sha256": "f5cf127b897cd54b52676932ff89461033becf1a19e8cf109a33d30c8958dfbc",
+    "version": 7400,
+    "time_global": {
+      "TimeMode": [
+        11
+      ],
+      "TimeSpanStart": [
+        0
+      ],
+      "TimeSpanStop": [
+        46186158000
+      ],
+      "CustomFrameRate": [
+        24.0
+      ]
+    },
+    "stacks": [
+      {
+        "name": "Scene\u0000\u0001AnimStack",
+        "properties": {
+          "LocalStart": [
+            1924423250
+          ],
+          "LocalStop": [
+            232855213250
+          ],
+          "ReferenceStart": [
+            1924423250
+          ],
+          "ReferenceStop": [
+            232855213250
+          ]
+        },
+        "seconds": 5.0
+      }
+    ]
+  },
+  "jump": {
+    "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/tripo-v3-rig-20261017/derived/natural-pose-20261017/natural-jump.fbx",
+    "sha256": "11b1f85e5d84f38ab6aa4e17ff951116a43cd16b08bfa02938ad0e781010ace1",
+    "version": 7400,
+    "time_global": {
+      "TimeMode": [
+        11
+      ],
+      "TimeSpanStart": [
+        0
+      ],
+      "TimeSpanStop": [
+        46186158000
+      ],
+      "CustomFrameRate": [
+        24.0
+      ]
+    },
+    "stacks": [
+      {
+        "name": "Scene\u0000\u0001AnimStack",
+        "properties": {
+          "LocalStart": [
+            1924423250
+          ],
+          "LocalStop": [
+            71203660250
+          ],
+          "ReferenceStart": [
+            1924423250
+          ],
+          "ReferenceStop": [
+            71203660250
+          ]
+        },
+        "seconds": 1.5
+      }
+    ]
+  },
+  "source_walk": {
+    "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/walk.fbx",
+    "sha256": "0fe2b4d83846f826e3d448c870fcb77816c25fe6d106c873d755cd7a3d871d9e",
+    "version": 7400,
+    "time_global": {
+      "TimeMode": [
+        6
+      ],
+      "CustomFrameRate": [
+        30.0
+      ],
+      "TimeSpanStart": [
+        0
+      ],
+      "TimeSpanStop": [
+        47725695132
+      ]
+    },
+    "stacks": [
+      {
+        "name": "Armature|Armature|walking_man|baselayer\u0000\u0001AnimStack",
+        "properties": {
+          "LocalStart": [
+            0
+          ],
+          "LocalStop": [
+            47725695132
+          ],
+          "ReferenceStart": [
+            0
+          ],
+          "ReferenceStop": [
+            47725695132
+          ]
+        },
+        "seconds": 1.0333333015489186
+      }
+    ]
+  },
+  "source_run": {
+    "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/run.fbx",
+    "sha256": "b0f8e4c359d21ca3a51dde5c94b45b4d9f4a3d27dedb2d44f671b69e41f6e8ae",
+    "version": 7400,
+    "time_global": {
+      "TimeMode": [
+        6
+      ],
+      "CustomFrameRate": [
+        30.0
+      ],
+      "TimeSpanStart": [
+        0
+      ],
+      "TimeSpanStop": [
+        29251233033
+      ]
+    },
+    "stacks": [
+      {
+        "name": "Armature|Armature|running|baselayer\u0000\u0001AnimStack",
+        "properties": {
+          "LocalStart": [
+            0
+          ],
+          "LocalStop": [
+            29251233033
+          ],
+          "ReferenceStart": [
+            0
+          ],
+          "ReferenceStop": [
+            29251233033
+          ]
+        },
+        "seconds": 0.6333333253872296
+      }
+    ]
+  }
+}

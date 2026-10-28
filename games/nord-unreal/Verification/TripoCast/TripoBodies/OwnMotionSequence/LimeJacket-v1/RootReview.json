@@ -1,0 +1,38 @@
+{
+  "reviewer": "root",
+  "character": "LimeJacket",
+  "review_recorded_utc": "2026-10-18T00:17:37.657129+00:00",
+  "viewed_all210_frames_in_five_exhaustive_contact_sheets": true,
+  "contact_sheet_files": [
+    {
+      "file": "idle-a.jpg",
+      "sha256": "24a505de87b053a882f94dace3b854e804b7db6976de09dd70044e4fee4df71b"
+    },
+    {
+      "file": "idle-b.jpg",
+      "sha256": "19bb5992862b1739a9e946165ef7500224447ea7a2d3a3cdccc2d235a7a9c4df"
+    },
+    {
+      "file": "walk.jpg",
+      "sha256": "b81d9c112ba5ded49094d573f1d87f0a6b494738ba895b10bb849c54773a86e3"
+    },
+    {
+      "file": "run.jpg",
+      "sha256": "56811460cae9c8a268e85df8bce2cb8ab25dc416896ee850e4232ca218978b7f"
+    },
+    {
+      "file": "jump.jpg",
+      "sha256": "6c068d28ef3a17441a5b50704cfa6ec1ec19dfa4e86f8d8e3d6c4711088e24bf"
+    }
+  ],
+  "bounded_findings": [
+    "All 210 frames were inspected in five exhaustive contact sheets; no obvious isolated arm flip or sudden body collapse was observed at thumbnail resolution.",
+    "Resting palms face inward, elbows remain soft and the own body retains the reviewed character identity.",
+    "Walk/Run retain broad source torso sway and fast leg acting. Natural gait, ground contact, blending and physical prop clearance remain unaccepted.",
+    "Jump is an in-place pose clip; these previews do not simulate actor flight. The four complete clips meet at hard cuts.",
+    "Neck-gaiter and cuff/skin boundaries require native clearance and close-up review."
+  ],
+  "video_playback_review_performed": false,
+  "scope": "Complete CPU frame-sequence contact-sheet review, not native/final-art or subjective fluidity acceptance",
+  "native_or_final_art_accepted": false
+}

@@ -1,0 +1,381 @@
+{
+  "created_utc": "2026-10-17T22:22:59.294151+00:00",
+  "scope": "CPU component/bounds analysis of actual original BlackCap GLB; copied input only; no source repair",
+  "source": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Crew/BlackCap/generated-v1-high-detail/body.glb",
+  "source_sha256": "310b173814108907c7041dbfc51bb0f5228a9b94a7a3323ac7b87243f6fe5a6c",
+  "evaluated_geometry_sha256": "919ac66035be9a81f0af256874635c7692688e46ac10c3dfc8cc3097fe321712",
+  "base_to_evaluated_max_error_m": 2.407356265396403e-07,
+  "head_world_m": [
+    -0.003926153760403395,
+    0.03550596162676811,
+    1.5641108751296997
+  ],
+  "head_ROI_minmax_m": [
+    [
+      -0.1639261537604034,
+      -0.2144940383732319,
+      1.5341108751296997
+    ],
+    [
+      0.1560738462395966,
+      0.11550596162676811,
+      1.9141108751296998
+    ]
+  ],
+  "original_unchanged": true,
+  "blender": "5.2.2 LTS",
+  "threads": 4,
+  "measurements": {
+    "0": {
+      "components": 3486,
+      "vertices_after": 74484,
+      "faces_after": 103225,
+      "largest_components": [
+        {
+          "vertices": 774,
+          "faces": 1381,
+          "area_m2": 0.047947707161284825,
+          "boundary_edges": 185,
+          "bounds_min_m": [
+            0.09416073560714722,
+            -0.11697135865688324,
+            1.3618452548980713
+          ],
+          "bounds_max_m": [
+            0.3037070333957672,
+            0.13990993797779083,
+            1.5186443328857422
+          ],
+          "face_ROI_triangles": 0,
+          "component_id": 0
+        },
+        {
+          "vertices": 620,
+          "faces": 1108,
+          "area_m2": 0.06289211363582581,
+          "boundary_edges": 130,
+          "bounds_min_m": [
+            -0.19992312788963318,
+            -0.03482463210821152,
+            1.0373404026031494
+          ],
+          "bounds_max_m": [
+            0.014300073496997356,
+            0.1738569289445877,
+            1.35722815990448
+          ],
+          "face_ROI_triangles": 0,
+          "component_id": 1
+        },
+        {
+          "vertices": 609,
+          "faces": 1078,
+          "area_m2": 0.025548961672598125,
+          "boundary_edges": 150,
+          "bounds_min_m": [
+            -0.2423974871635437,
+            0.006859296001493931,
+            0.009569462388753891
+          ],
+          "bounds_max_m": [
+            -0.09999028593301773,
+            0.17067350447177887,
+            0.09716156870126724
+          ],
+          "face_ROI_triangles": 0,
+          "component_id": 2
+        },
+        {
+          "vertices": 561,
+          "faces": 993,
+          "area_m2": 0.046139384128082384,
+          "boundary_edges": 133,
+          "bounds_min_m": [
+            -0.2436944842338562,
+            -0.15942354500293732,
+            1.2858093976974487
+          ],
+          "bounds_max_m": [
+            -0.0005600377917289734,
+            -0.029565824195742607,
+            1.505216360092163
+          ],
+          "face_ROI_triangles": 0,
+          "component_id": 3
+        },
+        {
+          "vertices": 532,
+          "faces": 934,
+          "area_m2": 0.03309241266100571,
+          "boundary_edges": 154,
+          "bounds_min_m": [
+            -0.0035213616210967302,
+            -0.14511527121067047,
+            0.6578118205070496
+          ],
+          "bounds_max_m": [
+            0.159829780459404,
+            -0.05456579476594925,
+            0.9141860604286194
+          ],
+          "face_ROI_triangles": 0,
+          "component_id": 4
+        },
+        {
+          "vertices": 512,
+          "faces": 921,
+          "area_m2": 0.027433245676917295,
+          "boundary_edges": 115,
+          "bounds_min_m": [
+            -0.07471811026334763,
+            -0.08562983572483063,
+            1.692808747291565
+          ],
+          "bounds_max_m": [
+            0.08335045725107193,
+            0.08725489675998688,
+            1.8199998140335083
+          ],
+          "face_ROI_triangles": 921,
+          "component_id": 5
+        },
+        {
+          "vertices": 542,
+          "faces": 877,
+          "area_m2": 0.014958298246668278,
+          "boundary_edges": 223,
+          "bounds_min_m": [
+            -0.026343341916799545,
+            -0.04702087119221687,
+            1.5663200616836548
+          ],
+          "bounds_max_m": [
+            0.08723669499158859,
+            0.08309219777584076,
+            1.7157800197601318
+          ],
+          "face_ROI_triangles": 877,
+          "component_id": 6
+        },
+        {
+          "vertices": 491,
+          "faces": 871,
+          "area_m2": 0.02749037221542494,
+          "boundary_edges": 111,
+          "bounds_min_m": [
+            0.08742809295654297,
+            -0.03130852058529854,
+            0.9027721285820007
+          ],
+          "bounds_max_m": [
+            0.2217933088541031,
+            0.16945594549179077,
+            1.0589103698730469
+          ],
+          "face_ROI_triangles": 0,
+          "component_id": 7
+        },
+        {
+          "vertices": 493,
+          "faces": 846,
+          "area_m2": 0.016072984142880387,
+          "boundary_edges": 154,
+          "bounds_min_m": [
+            0.15613432228565216,
+            -0.14106743037700653,
+            0.00010630897304508835
+          ],
+          "bounds_max_m": [
+            0.24493220448493958,
+            -0.010831049643456936,
+            0.08481837064027786
+          ],
+          "face_ROI_triangles": 0,
+          "component_id": 8
+        },
+        {
+          "vertices": 480,
+          "faces": 845,
+          "area_m2": 0.01778648016542661,
+          "boundary_edges": 135,
+          "bounds_min_m": [
+            0.22007201611995697,
+            -0.14106743037700653,
+            0.00016086269170045853
+          ],
+          "bounds_max_m": [
+            0.29448434710502625,
+            -0.0010556398192420602,
+            0.08443672955036163
+          ],
+          "face_ROI_triangles": 0,
+          "component_id": 9
+        }
+      ],
+      "removed_degenerate_polygons": 0,
+      "components_intersecting_head_ROI": 1063,
+      "head_component_ids": "Full raw chart list retained in ignored Topology.json"
+    },
+    "1e-06": {
+      "components": 1,
+      "vertices_after": 51579,
+      "faces_after": 103225,
+      "largest_components": [
+        {
+          "vertices": 51579,
+          "faces": 103225,
+          "area_m2": 2.810448339521688,
+          "boundary_edges": 48,
+          "bounds_min_m": [
+            -0.553375244140625,
+            -0.17787905037403107,
+            -3.1526715815743955e-07
+          ],
+          "bounds_max_m": [
+            0.5533753633499146,
+            0.17787887156009674,
+            1.8199998140335083
+          ],
+          "face_ROI_triangles": 15660,
+          "component_id": 0
+        }
+      ],
+      "removed_degenerate_polygons": 0,
+      "components_intersecting_head_ROI": 1,
+      "head_component_ids": [
+        0
+      ]
+    },
+    "1e-05": {
+      "components": 1,
+      "vertices_after": 51579,
+      "faces_after": 103225,
+      "largest_components": [
+        {
+          "vertices": 51579,
+          "faces": 103225,
+          "area_m2": 2.810448339521688,
+          "boundary_edges": 48,
+          "bounds_min_m": [
+            -0.553375244140625,
+            -0.17787905037403107,
+            -3.1526715815743955e-07
+          ],
+          "bounds_max_m": [
+            0.5533753633499146,
+            0.17787887156009674,
+            1.8199998140335083
+          ],
+          "face_ROI_triangles": 15660,
+          "component_id": 0
+        }
+      ],
+      "removed_degenerate_polygons": 0,
+      "components_intersecting_head_ROI": 1,
+      "head_component_ids": [
+        0
+      ]
+    }
+  },
+  "focus_regions": {
+    "image-left-cheek-focus": {
+      "selection_bounds_world_m": [
+        [
+          -0.105,
+          -0.14,
+          1.62
+        ],
+        [
+          -0.045,
+          0.015,
+          1.7
+        ]
+      ],
+      "centroid_selected_triangles": 2124,
+      "selected_vertices": 2175,
+      "actual_selected_vertex_bounds_world_m": [
+        [
+          -0.09018177539110184,
+          -0.12407521158456802,
+          1.611053466796875
+        ],
+        [
+          -0.038959529250860214,
+          0.023981725797057152,
+          1.709917426109314
+        ]
+      ],
+      "one_micrometre_weld_component_ids": [
+        0
+      ],
+      "selection_scope": "Approximate diagnostic focus volume, not a safe deletion mask or exact appendage segmentation"
+    },
+    "image-right-cheek-focus": {
+      "selection_bounds_world_m": [
+        [
+          0.04,
+          -0.14,
+          1.62
+        ],
+        [
+          0.1,
+          0.015,
+          1.7
+        ]
+      ],
+      "centroid_selected_triangles": 1969,
+      "selected_vertices": 2016,
+      "actual_selected_vertex_bounds_world_m": [
+        [
+          0.03580687567591667,
+          -0.12174614518880844,
+          1.60942804813385
+        ],
+        [
+          0.087236687541008,
+          0.02379712276160717,
+          1.7128080129623413
+        ]
+      ],
+      "one_micrometre_weld_component_ids": [
+        0
+      ],
+      "selection_scope": "Approximate diagnostic focus volume, not a safe deletion mask or exact appendage segmentation"
+    },
+    "upper-frame-focus": {
+      "selection_bounds_world_m": [
+        [
+          -0.11,
+          -0.15,
+          1.68
+        ],
+        [
+          0.11,
+          0.03,
+          1.75
+        ]
+      ],
+      "centroid_selected_triangles": 5579,
+      "selected_vertices": 6011,
+      "actual_selected_vertex_bounds_world_m": [
+        [
+          -0.08986517786979675,
+          -0.16188454627990723,
+          1.670380711555481
+        ],
+        [
+          0.08687132596969604,
+          0.0451432466506958,
+          1.7616496086120605
+        ]
+      ],
+      "one_micrometre_weld_component_ids": [
+        0
+      ],
+      "selection_scope": "Approximate diagnostic focus volume, not a safe deletion mask or exact appendage segmentation"
+    }
+  },
+  "no_safe_disconnected_component_deletion": true,
+  "clay_stills_confirm_actual_protruding_geometry": true,
+  "raw_source_and_copy_unchanged": true
+}

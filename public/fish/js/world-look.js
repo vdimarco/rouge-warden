@@ -9,6 +9,9 @@
 //   nightShadow  the shadow of a following fish is hidden when the night value is above this (null: never)
 //   swell        how tall the big waves are (1 = Loon Lake)
 //   flow         null, or { x, z, foam }: the water noise scrolls at this speed (m/s); foam streaks on high quality
+//   waves        null, or the FFT wind waves with crest foam (sea-waves.js), on top of the swell: { amp, foam, scale }
+//                (amp: how steep, foam: how much crest foam, scale: wave length; 1 = the open sea at Gull Rock.
+//                A scale of 0.5625 runs the loop in 6 s, so the clock's hour still holds whole loops)
 //   water        null (the water plane is the depth box), or { x0, z0, w, h }
 //   shore        what the water mirrors: the far shore is an ellipse c, trees treeH tall (amp, tips: how ragged),
 //                nothing lower than minEl, and up to two round hills `isles` [{ x, z, r, h }] (h: how tall, 1 = Loon's island)
@@ -28,6 +31,13 @@ import { hex, mix3, mul3 } from "./world-env.js";
 import { noise, smooth, clamp, capsule, boxInset } from "./places/util.js";
 
 const lerp = (a, b, t) => a + (b - a) * t;
+
+// the wind waves of each place: short, low ones on the lakes, a little less in the sheltered bay, the open sea at Gull Rock.
+// On the river they drift with the current
+const LAKE_WAVES = { amp: 0.5, foam: 0.3, scale: 0.5625 };
+const BAY_WAVES = { amp: 0.4, foam: 0.2, scale: 0.5625 };
+const RIVER_WAVES = { amp: 0.45, foam: 0.35, scale: 0.5625 };
+const SEA_WAVES = { amp: 1, foam: 1, scale: 1 };
 
 /* ---------------- the hours ---------------- */
 
@@ -315,7 +325,7 @@ const LOON_BAY = { x: 5, z: -95, rx: 140, rz: 115 };
 
 export const LOOK = {
   loon: {
-    hours: LOON_HOURS, sunTurn: 0, moon: null, fog: null, nightShadow: null, swell: 1, flow: null, water: null,
+    hours: LOON_HOURS, sunTurn: 0, moon: null, fog: null, nightShadow: null, swell: 1, flow: null, water: null, waves: LAKE_WAVES,
     shore: { c: LOON_BAY, treeH: 15, amp: 5, tips: 28, minEl: 0.045, isles: [{ x: 34, z: -128, r: 15, h: 1 }] },
     depthBox: { x0: -150, z0: -235, w: 310, h: 280, nx: 256, nz: 256 },
     terrain: { x: [-175, 190], z: [-255, 55], far: { x: [-620, 640], z: [-700, 380] }, step: { low: 4.4, high: 2.8 }, grade: null },
@@ -336,7 +346,7 @@ export const LOOK = {
     hours: STUMP_HOURS, sunTurn: 0,
     moon: { from: 21.2, fade: 0.5, az: 10, el: 20, col: "#c8d4ff", si: 0.35 },
     fog: null,   // the table already holds Loon Lake fog x 0.6
-    nightShadow: 0.5, swell: 1, flow: null,
+    nightShadow: 0.5, swell: 1, flow: null, waves: BAY_WAVES,
     water: null,
     shore: { c: { x: 0, z: -70, rx: 125, rz: 90 }, treeH: 13, amp: 4, tips: 30, minEl: 0.05, isles: [] },
     depthBox: { x0: -140, z0: -170, w: 280, h: 200, nx: 256, nz: 256 },
@@ -358,7 +368,7 @@ export const LOOK = {
     hours: RIVER_HOURS, sunTurn: 0, moon: null,
     // dawn mist: near 12, far 200 until 6.0, lifting to the table's fog by 10.0
     fog: (h, b) => { const w = 1 - smooth(6, 10, h); return { near: lerp(b.near, 12, w), far: lerp(b.far, 200, w), col: "#dcd0c8", k: w * 0.3 }; },
-    nightShadow: null, swell: 1,
+    nightShadow: null, swell: 1, waves: RIVER_WAVES,
     flow: { x: -0.9, z: 0, foam: 1 },
     water: null,
     shore: { c: { x: 0, z: -32, rx: 420, rz: 31 }, treeH: 17, amp: 6, tips: 14, minEl: 0.05, isles: [] },
@@ -381,7 +391,7 @@ export const LOOK = {
     hours: SEA_HOURS, sunTurn: 40, moon: null,
     // a morning fog bank: near 20, far 260 until 7.0, gone by 9.0
     fog: (h, b) => { const w = 1 - smooth(7, 9, h); return { near: lerp(b.near, 20, w), far: lerp(b.far, 260, w), col: "#cdd4d6", k: w * 0.6 }; },
-    nightShadow: null, swell: 2.5, flow: null,
+    nightShadow: null, swell: 2.5, flow: null, waves: SEA_WAVES,
     water: { x0: -800, z0: -1400, w: 1600, h: 1600 },
     // an open horizon: no far shore. The headland is the one hill in the mirror
     shore: { c: { x: 0, z: 0, rx: 1e6, rz: 1e6 }, treeH: 15, amp: 5, tips: 28, minEl: 0, isles: [{ x: 60, z: -76, r: 30, h: 1.1 }, { x: 100, z: -10, r: 44, h: 1.1 }] },

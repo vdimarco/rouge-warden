@@ -20,12 +20,16 @@ const LIST = [
   {
     id: 'which-way-home', title: 'WHICH WAY HOME', zone: 'wall', story: true, kind: 'chase and investigation',
     giver: 'dot',
-    // Near Node 0 after 54 s, or anywhere at 80 s: arriving never means a drive to a ring before anything happens.
-    start: { auto: { afterPlay: 54, near: { pos: [0, 0], within: 150 }, orAfterPlay: 80 } },
+    // Into Node 0's ring (the first orange objective) from 12 s, near Node 0 from 25 s, or anywhere at 80 s:
+    // the objective is never a dead end, and arriving never means a drive to a ring before anything happens.
+    start: { auto: { afterPlay: 25, near: { pos: [0, 0], within: 150, label: 'NODE 0' }, orAfterPlay: 80,
+      enter: { within: 40, afterPlay: 12 } } },
     // A Magpie breaks out of Node 0's traffic, clips the Tern and bolts. At 80 s it comes out 40 u ahead of you
-    // and joins the loop. Cruise: it drops to 22 u/s when 100 u ahead. Any contact at 6 u/s closing takes it down.
+    // and joins the loop. Cruise: it drops to 22 u/s when 100 u ahead, and within 60 u it runs 3 u/s slower than
+    // you (never under 18), so auto-cruise closes in too. Any contact at 6 u/s closing takes it down.
     setup: [{ spawn: { id: 'chart-thief', kind: 'runner', at: 'node0', orAhead: 40, speed: 27,
-      cruiseBand: { far: 100, speed: 22 }, carries: 'chart', takedownAny: 6, loop: true, path: THIEF_LOOP,
+      cruiseBand: { far: 100, speed: 22, near: 60, lead: 3, min: 18 }, carries: 'chart', takedownAny: 6, loop: true,
+      path: THIEF_LOOP,
       clip: true, hull: 'magpie', label: 'MAGPIE' } }],
     beats: [
       { objective: 'CATCH THAT MAGPIE', setup: [{ objectiveRing: 'actor:chart-thief' }],
@@ -61,9 +65,9 @@ const LIST = [
     rewards: [{ tape: 'wake-up-call' }, { shout: 'red.chain' }, { card: 'galaxy-flow' }],
   },
 
-  // ---------------------------------------------------------------- COMA CITY (data for Round 2)
+  // ---------------------------------------------------------------- COMA CITY (data for Round 2: round 2)
   {
-    id: 'pelican-down', title: 'PELICAN DOWN', zone: 'coma', story: true, kind: 'tow', giver: 'ferro',
+    id: 'pelican-down', title: 'PELICAN DOWN', zone: 'coma', story: true, kind: 'tow', giver: 'ferro', round: 2,
     start: { ring: 'ferro-sos', call: { afterArrival: 6, line: 'ferro.tug' } },
     setup: [{ spawn: { id: 'pelican', kind: 'towable', pos: [-110, 45, 0], state: 'holding', sinkTo: 'ngc4889',
       sinkSpeed: 3, hull: 'pelican', label: 'PELICAN' } }],
@@ -93,7 +97,7 @@ const LIST = [
   },
 
   {
-    id: 'fragile', title: 'FRAGILE', zone: 'coma', story: false, kind: 'delivery', giver: 'ferro',
+    id: 'fragile', title: 'FRAGILE', zone: 'coma', story: false, kind: 'delivery', giver: 'ferro', round: 2,
     start: { ring: 'ferro-yard', call: { afterMission: 'pelican-down', delay: 20, line: 'ferro.glass2' } },
     setup: [{ cargo: { kind: 'glass' } }],
     beats: [

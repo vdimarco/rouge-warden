@@ -52,8 +52,9 @@ export default {
   key: 'chapter-1',
   // The game's first frame: the misfire drops you onto the Sloan Road, heading north, at 38 u/s.
   entry: { pos: [0, -400, 0], heading: 0, speed: 38, bar: 0.5 },
+  // Beat 2 is the three far scans. Finish them facing Coma (within 60°) and the run-up starts where you are.
   exit: { pos: [335, 295, 0], r: 10, to: 'coma', label: 'COMA CLUSTER · 737 MLY',
-    opensWhen: 'beatDone:which-way-home:2' },                             // beat 2 = the three far scans
+    opensWhen: 'beatDone:which-way-home:2', autoRunup: { within: 60, object: 'coma' } },
   bodies: [
     // The first drift, at the S-bend: a well that makes the circle easy.
     { id: 'bend-giant', pos: [-48, -222, 0], r: 9, rc: 4.5, look: 'elliptical-warm', well: { rs: 14 }, skim: true,

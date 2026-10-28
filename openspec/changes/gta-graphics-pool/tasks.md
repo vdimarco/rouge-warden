@@ -1,0 +1,4 @@
+- [x] Add the lamp-pool gather after the street sheen
+- [x] Shade a La Fontaine night street before and after
+- [x] Run `Scripts/test_pool.py` and the comic regression tests
+- [ ] Rebuild the comic material in Unreal (editor not available here)

@@ -1,0 +1,37 @@
+{
+  "passed": true,
+  "scope": "Private animation-only trial; no body/material/skeleton/production changes or adoption",
+  "content_files": 6850,
+  "changed_content": [
+    "Content/ParkComic/CrewGraphicNovelHighDetail/Resident9/A_Jump.uasset"
+  ],
+  "original_private_clip_sha256": "1e62a9debd7aec41beac0466ac6a5114741ce79de6bce102f6cdbe5d3cd52f26",
+  "trial_private_clip_sha256": "90f03ece6f027126037e21ef5dd725444f94b82f130098c524ccb82be98692e9",
+  "original_manifest_sha256": "08827131968ce583c44284642db394452134aaa04d4c3d97b38dc3ad498d7f40",
+  "sealed_backup_manifest_sha256": "d07120b8aa156c8e3bff0d3cf3e5996fbef612ff92bece4ea77790da94a134cb",
+  "native_pose_gate": {
+    "passed": true,
+    "sample_frames": 37,
+    "bones": 25,
+    "tolerances": {
+      "translation_cm": 0.001,
+      "scale": 1e-05,
+      "rotation_radians": 0.0001
+    },
+    "deformation_bones": 24,
+    "static_import_root": "Armature",
+    "unchanged_field_maxima": {
+      "translation_cm": 0.0,
+      "scale": 0.0,
+      "rotation_radians": 8.82678836756059e-07
+    },
+    "allowed_arm_rotation_max_radians": {
+      "RightArm": 0.6980814880491368,
+      "LeftArm": 0.6980815681578443
+    }
+  },
+  "raw_source_files_unchanged": 23,
+  "native_helper_sha256": "81110214ce1c2a14c1348bf44ef0377046651a139fde3a00bcc0959cb7110679",
+  "native_helper_tests_sha256": "de645cbbc2c16f677da29d775a287cd5b145b24dda9e009c1b00531a09edb910",
+  "restore_required": true
+}

@@ -1,0 +1,3 @@
+- [x] Speed the purse snatcher and the sludge runner when the hero is behind them, and ease back when close
+- [x] Hold a lesson card on a miss, then retry the story chase
+- [x] Check Stop, Thief! in a 1280×800 play: pulling away, then GOT AWAY, then the chase again

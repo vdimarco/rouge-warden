@@ -1,0 +1,14 @@
+INFO web-line {"near":{"onScreen":true,"width":2,"center":[43,42,51],"inkD":0,"dist":10.52,"y":176.8},"far":{"onScreen":true,"width":1,"center":[43,42,51],"inkD":0,"dist":20.37,"y":12.1},"hits":4,"sagPx":20.59210485959858,"speed":4.001331957737377,"mesh":{"visible":true,"count":7,"name":"easyWeb"},"offscreen":true,"canvasHidden":true,"tension":0}
+INFO web-fade {"trace":[{"i":0,"st":"idle","n":7,"f":0.13333333333333333,"v":true},{"i":1,"st":"idle","n":7,"f":0.11666666666666667,"v":true},{"i":2,"st":"idle","n":7,"f":0.1,"v":true},{"i":3,"st":"idle","n":7,"f":0.08333333333333334,"v":true},{"i":4,"st":"idle","n":7,"f":0.06666666666666668,"v":true},{"i":5,"st":"idle","n":7,"f":0.05000000000000002,"v":true},{"i":6,"st":"idle","n":7,"f":0.033333333333333354,"v":true},{"i":7,"st":"idle","n":7,"f":0.016666666666666687,"v":true},{"i":8,"st":"idle","n":0,"f":2.0816681711721685e-17,"v":false},{"i":9,"st":"idle","n":0,"f":0,"v":false},{"i":10,"st":"idle","n":0,"f":0,"v":false},{"i":11,"st":"idle","n":0,"f":0,"v":false},{"i":12,"st":"idle","n":0,"f":0,"v":false},{"i":13,"st":"idle","n":0,"f":0,"v":false}],"fadeCount":7,"goneCount":0,"goneVisible":false}
+PASS: the easy web attaches in the 3D scene
+PASS: the web is the world-space mesh, not a screen stroke
+PASS: the overlay stays hidden until the paper speed lines come on
+PASS: the web attaches to a real building
+PASS: near the hand the line is about 2 px (2)
+PASS: farther along, the line is still about 2 px (1)
+PASS: the width does not change with distance
+PASS: the line sags about 16 px at the start (20.6)
+PASS: the line is ink #2B2A33
+PASS: the line is still out 4 frames after release and gone after 150 ms
+PASS: no page errors
+PASS: web-line

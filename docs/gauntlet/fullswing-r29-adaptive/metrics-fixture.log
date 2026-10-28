@@ -1,0 +1,8 @@
+INFO software-rendered diagnostic sample {"metrics":{"frames":4,"elapsedMs":2733.199999999999,"fps":1.4634860237084741,"medianMs":583.4000000000015,"p95Ms":1216.5999999999985,"p99Ms":1216.5999999999985,"over50":3,"inputs":2,"inputSubmitP95Ms":1809.7000000029802},"debug":"55 calls  1129k tris  1 view(s)\ndesktop / play  pos -76.0 44.0 72.1\nPlay: 2.1 fps • p95 916.6 / p99 916.6 ms\n>50ms: 1/2 • input→submit p95 922.2 ms (1)\n3D: 816×459 • scale 0.85","ua":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/134.0.0.0 Safari/537.36","width":960,"height":540,"dpr":1}
+PASS: real frame intervals are recorded
+PASS: keyboard events produce input-to-submit samples
+PASS: overlay labels frame pacing and latency proxy
+PASS: invisible input frames do not count as gameplay
+PASS: held simulation does not masquerade as gameplay
+PASS: no page errors
+PASS: frame diagnostics

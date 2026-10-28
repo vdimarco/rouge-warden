@@ -3,13 +3,17 @@
   "EngineAssociation": "5.8",
   "Category": "Games",
   "Description": "NORD — an original neighborhood co-op prototype",
-  "Modules": [{"Name": "Quebec", "Type": "Runtime", "LoadingPhase": "Default"}],
+  "Modules": [
+    {"Name": "Quebec", "Type": "Runtime", "LoadingPhase": "Default"},
+    {"Name": "QuebecGauntletTest", "Type": "Runtime", "LoadingPhase": "Default", "TargetConfigurationDenyList": ["Shipping"]}
+  ],
   "Plugins": [
     {"Name": "PythonScriptPlugin", "Enabled": true},
     {"Name": "EditorScriptingUtilities", "Enabled": true},
     {"Name": "ModelContextProtocol", "Enabled": true},
     {"Name": "AllToolsets", "Enabled": true},
     {"Name": "PixelStreaming2", "Enabled": true},
+    {"Name": "Gauntlet", "Enabled": true, "TargetConfigurationDenyList": ["Shipping"]},
     {"Name": "AndroidFileServer", "Enabled": false}
   ]
 }

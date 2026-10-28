@@ -1,0 +1,219 @@
+{
+  "passed": true,
+  "created_utc": "2026-10-17T14:22:47.540095+00:00",
+  "scope": "CPU jump-only authoring and fresh-import semantic verification; no rendering, UE, services, Content edits or art acceptance",
+  "temporary_authoring_root": "/tmp/nord-jump-arm-ab-20261017T1359",
+  "source_pins": {
+    "Scripts/prepare_meshy_jump.py": "ed50ad1d4a09a9d6b71ee45c108a4f0e404b222ebfe311df3302929a6602aebd",
+    "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/body.fbx": "b7e7ca0d9c486412108cba85e1cd4a5512fecd4ad36b8cfdb4677259ff6f9244",
+    "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/jump.fbx": "36d74356ca903188a9b3956db69e51367260866972cda9215fab6a66d5362aa3",
+    "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/jump.json": "94deb47f51e5cbfd6e5694efb8dcb8052c2abf6c91df7ceee2a35def47838e3f"
+  },
+  "all_retained_source_files_unchanged": true,
+  "retained_source_file_count": 23,
+  "delivery_manifest_file_count": 14,
+  "blender": "5.2.2 LTS",
+  "authoring_process_exit_codes": {
+    "control": 0,
+    "trial": 0
+  },
+  "comparison_process_exit_code": 0,
+  "executed_commands": {
+    "control": [
+      "/home/von/.local/opt/blender-5.2.2-linux-x64/blender",
+      "-t",
+      "4",
+      "--background",
+      "--factory-startup",
+      "--python-exit-code",
+      "1",
+      "--python",
+      "/tmp/nord-jump-arm-ab-20261017T1359/Scripts/control_jump.py",
+      "--",
+      "--source-root",
+      "/tmp/nord-jump-arm-ab-20261017T1359/control",
+      "--names",
+      "CurlyMetalhead",
+      "--report",
+      "/tmp/nord-jump-arm-ab-20261017T1359/control-authoring.json"
+    ],
+    "trial": [
+      "/home/von/.local/opt/blender-5.2.2-linux-x64/blender",
+      "-t",
+      "4",
+      "--background",
+      "--factory-startup",
+      "--python-exit-code",
+      "1",
+      "--python",
+      "/tmp/nord-jump-arm-ab-20261017T1359/Scripts/trial_jump.py",
+      "--",
+      "--source-root",
+      "/tmp/nord-jump-arm-ab-20261017T1359/trial",
+      "--names",
+      "CurlyMetalhead",
+      "--report",
+      "/tmp/nord-jump-arm-ab-20261017T1359/trial-authoring.json"
+    ],
+    "semantic_comparison": [
+      "/home/von/.local/opt/blender-5.2.2-linux-x64/blender",
+      "-t",
+      "4",
+      "--background",
+      "--factory-startup",
+      "--python-exit-code",
+      "1",
+      "--python",
+      "/tmp/nord-jump-arm-ab-20261017T1359/Scripts/verify_jump_ab.py"
+    ]
+  },
+  "sample_count_per_clip": 37,
+  "bone_count_per_clip": 24,
+  "fps": 30,
+  "seconds": 1.2,
+  "imported_frame_range": [
+    2,
+    38
+  ],
+  "retained_vs_control": {
+    "rest_matrix_max_abs": 0.0,
+    "object_matrix_max_abs": 0.0,
+    "local_translation_max_abs": 0.0,
+    "local_scale_max_abs": 0.0,
+    "forbidden_rotation_max_radians": 0.0,
+    "allowed_rotation_max_radians": {}
+  },
+  "control_vs_trial": {
+    "rest_matrix_max_abs": 0.0,
+    "object_matrix_max_abs": 0.0,
+    "local_translation_max_abs": 2.9085772439430002e-05,
+    "local_scale_max_abs": 4.76837158203125e-07,
+    "forbidden_rotation_max_radians": 3.528908786222075e-07,
+    "allowed_rotation_max_radians": {
+      "RightArm": 0.6980818032673806,
+      "LeftArm": 0.698081914032167
+    }
+  },
+  "tolerances": {
+    "rest_matrix_abs": 0.0001,
+    "object_matrix_abs": 1e-06,
+    "local_translation_abs": 0.0001,
+    "local_scale_abs": 1e-06,
+    "local_rotation_radians": 0.0001,
+    "frame_abs": 1e-06,
+    "hips_perpendicular_world_m": 1e-05,
+    "hips_axial_world_m": 0.111
+  },
+  "neutral_endpoints_passed": true,
+  "object_root_static": true,
+  "hips_crouch_preserved": {
+    "anatomical_up_world": [
+      -0.007575212046504021,
+      0.0079323286190629,
+      0.9999398589134216
+    ],
+    "axial_range_m": [
+      -0.10995012836156093,
+      0.0
+    ],
+    "max_perpendicular_m": 3.822435533567004e-08,
+    "endpoint_return_m": 0.0,
+    "scope": "Static object and no Hips perpendicular drift; authored vertical anticipation/landing crouch remains allowed."
+  },
+  "native_private_jump": {
+    "asset": "/Game/ParkComic/CrewGraphicNovelHighDetail/Resident9/A_Jump.A_Jump",
+    "package_sha256": "1e62a9debd7aec41beac0466ac6a5114741ce79de6bce102f6cdbe5d3cd52f26",
+    "unchanged_from_proposal": true
+  },
+  "native_or_visual_execution": false,
+  "graphics_accepted": false,
+  "adopted": false,
+  "reused_openspec": "openspec/changes/nord-city-quality/specs/nord-unreal/spec.md: Isolated native pilot review / Compare a higher-detail body independently",
+  "next_minimum": "Root-owned fresh native baseline plus private A_Jump-only author/readback and matched Standard1920 seven-still+unpaused-motion before/after; restore original private package. Comic/both sizes and continuous pixel review required before adoption.",
+  "native_preparation_gaps": [
+    "No jump-only NullRHI author/readback helper exists yet. Full import_meshy_crew.py must not be run because it reauthors unrelated assets.",
+    "Current capture opens absent Saved/Tests/GraphicNovel/HighDetailImport.json. A fresh ignored wrapper must explicitly use the retained curated NativeImport receipt for immutable raw-body provenance plus a separate fresh trial-native receipt; never forge raw source receipts.",
+    "Historical high-detail manager exists only in the older graphics checkout; its baseline/jobs/service ownership and output paths must be refreshed from current preservation pattern rather than replaying old jobs.",
+    "Original private native clip source path may point at the older graphics checkout; read back actual saved import metadata and verify source SHA instead of assuming process-local/source filenames."
+  ],
+  "limitations": [
+    "All 37 imported integer frames are sampled; no continuous interpolation/native compression or blended-pose claim.",
+    "Bind/object representation differences fail at the stated tolerances; no automatic correction.",
+    "Allowed upper-arm local changes naturally move descendant hands/forearms in world space.",
+    "Vertical Hips crouch is allowed; object animation and perpendicular Hips drift are rejected.",
+    "No collar derivative, mesh weighting or topology repair is included.",
+    "Player controls/collision code is unchanged; no new native behavior, co-op/package/performance pass is claimed."
+  ],
+  "artifact_manifest": [
+    {
+      "file": "cpu-preflight.json",
+      "bytes": 4693,
+      "sha256": "827f618212b3b6caaa6f8c7e7cddb3b6106565f4fa099f7837c18b5ab049072d"
+    },
+    {
+      "file": "control-authoring.json",
+      "bytes": 537,
+      "sha256": "f5b6f6e6f3ff9e15afb05fa8fe264097b945f824f73523b9df626a6293d572db"
+    },
+    {
+      "file": "control-authoring.log",
+      "bytes": 268,
+      "sha256": "c81b75bb75083422e1db8714ec8e79a0208771ca4312ad2dc6b8caf5ebe1dcbc"
+    },
+    {
+      "file": "trial-authoring.json",
+      "bytes": 535,
+      "sha256": "ac93da8c8e22d45fd31473a7ef2fdf0cd12b6af71829c1646f3ee4643e434221"
+    },
+    {
+      "file": "trial-authoring.log",
+      "bytes": 266,
+      "sha256": "254ce99131a9ecbf7aae02c534598bae3eddaf7ffa457cdf9da91b2f0f9147d4"
+    },
+    {
+      "file": "semantic-comparison.json",
+      "bytes": 1478630,
+      "sha256": "5c3616f84bd814d2fae3ec1208131383285cdccb4c70ec53866fe9cef84cf006"
+    },
+    {
+      "file": "semantic-comparison.log",
+      "bytes": 227,
+      "sha256": "7516c963f26243315e5645c06069468799cf15bbbd300ff001980431b2b98a4d"
+    },
+    {
+      "file": "Scripts/control_jump.py",
+      "bytes": 8369,
+      "sha256": "ed50ad1d4a09a9d6b71ee45c108a4f0e404b222ebfe311df3302929a6602aebd"
+    },
+    {
+      "file": "Scripts/trial_jump.py",
+      "bytes": 8368,
+      "sha256": "ae574ab5af000a38f6075926d8e1c3fb183d2fa287ed6813c422e38dc6e8165c"
+    },
+    {
+      "file": "Scripts/verify_jump_ab.py",
+      "bytes": 12298,
+      "sha256": "c078c6d5e7ae66f1bf1955eb0f9db60753e2f285c471bfe33c32153b19de16fa"
+    },
+    {
+      "file": "control/CurlyMetalhead/jump.fbx",
+      "bytes": 221356,
+      "sha256": "8aa9a10943923715482188e4105d7e836891addbf96f936de26edefa7b38b8ed"
+    },
+    {
+      "file": "control/CurlyMetalhead/jump.json",
+      "bytes": 5070,
+      "sha256": "ecbfdb016090d6b5b610325e5fbb485bbe61473aca87c25a89135b41f5e83eab"
+    },
+    {
+      "file": "trial/CurlyMetalhead/jump.fbx",
+      "bytes": 221308,
+      "sha256": "e35071099841d099eea5dda9de96a31b10cd07c4dfe73543bfee42f395c4833e"
+    },
+    {
+      "file": "trial/CurlyMetalhead/jump.json",
+      "bytes": 5070,
+      "sha256": "df01b444794260082fa5cfb1d1bb09c45264aaaa5c1aba816e130283198f19bb"
+    }
+  ]
+}

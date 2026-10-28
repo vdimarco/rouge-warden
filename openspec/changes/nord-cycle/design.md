@@ -1,0 +1,5 @@
+# One bike, and the cars stay cars
+
+No new rendering technique is involved, so none of the usual art references fit. The bike uses the car body that is already in the world. The new part is the pedal rule.
+
+The stand is the dry point (34800, -4000), about 53 m from the spawn. The nearest road centre is more than 11 m away, and a curb slot on a road wide enough to park stays more than 6 m from the stand, so the bike does not take a population space. It is also outside the door reach of the stall, the atelier, the three sidewalk posts, the pedalo, and the south-pond wade. On land the pedals top out at 900 cm/s. In the water the same hold only creeps. A slow bike turns tighter than a fast one: 70 degrees a second at a stop, 31.5 at the top. It does not use the handbrake slide, and body damage does not apply, so a brush does not wreck it. The thud still plays. A car that hits the bike still dents. Boarding uses the ordinary visibility trace, and a swimmer still cannot enter. The v1 save is untouched. Car handling is the branch this rule does not take.

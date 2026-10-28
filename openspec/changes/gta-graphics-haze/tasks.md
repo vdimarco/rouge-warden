@@ -1,0 +1,4 @@
+- [x] Add a depth fade toward the sky in `apply_comic_style.py`
+- [x] Shade a near wall and a far wall before and after
+- [x] Run `Scripts/test_plateau_trees.py`
+- [ ] Apply the comic material in Unreal (editor not available here)

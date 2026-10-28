@@ -5,15 +5,24 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#0b0a16">
     <title>GTA: NORTH — Play</title>
+    <link rel="icon" href="./favicon-32.png" type="image/png" sizes="32x32">
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml" sizes="any">
+    <link rel="apple-touch-icon" href="./apple-touch-icon.png?v=comic-badge-20261017" sizes="180x180">
+    <link rel="manifest" href="./manifest.webmanifest">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="NORTH">
     <link rel="stylesheet" href="./styles.css">
     <link rel="stylesheet" href="./hero.css">
     <link rel="stylesheet" href="./intro.css">
     <link rel="stylesheet" href="./menu.css">
     <script type="module" src="./player.js"></script>
+    <script type="module" src="./mission-card.js"></script>
     <script type="module" src="./hero.js"></script>
     <script type="module" src="./crew.js"></script>
+    <script type="module" src="./place.js"></script>
     <script type="module" src="./intro.js"></script>
     <script type="module" src="./menu.js"></script>
+    <script type="module" src="./install.js"></script>
   </head>
   <body data-state="offline">
     <header>
@@ -22,9 +31,8 @@
     </header>
     <main id="frame" aria-label="NORD game">
       <video id="hero-video" class="hero-video" loop playsinline preload="auto" poster="https://d2ol7oe51mr4n9.cloudfront.net/user_3JnxFRyLd68bfjwUMHz1De16TMw/99050026-3935-46bc-9571-17b60049cb1f.jpg" aria-hidden="true"
-        data-landscape-src="https://d2ol7oe51mr4n9.cloudfront.net/user_3JnxFRyLd68bfjwUMHz1De16TMw/a7a1e663-b152-4806-9a6c-6907f9738a44.mp4"
-        data-portrait-src="https://d2ol7oe51mr4n9.cloudfront.net/user_3JnxFRyLd68bfjwUMHz1De16TMw/4d0928ae-27d4-4c7e-92ec-f3927c66a4b0.mp4"></video>
-      <button id="hero-sound" class="hero-sound" type="button" hidden>🔊 Sound on</button>
+        data-landscape-src="./title-loop-wide.mp4"
+        data-portrait-src="./title-loop-tall.mp4"></video>
       <div id="video" class="fixed-size" tabindex="-1" aria-label="Game video. Click to control; Escape releases the mouse."></div>
       <div id="touch-controls" aria-label="Touch game controls" hidden>
         <!-- Key senders for the menu's game buttons; touch-controls.js holds a key for a click on them. -->
@@ -32,6 +40,8 @@
           <button data-key="82" tabindex="-1">Recover</button>
           <button data-key="84" tabindex="-1">Race</button>
           <button data-key="113" tabindex="-1">Comic</button>
+          <button data-key="57" tabindex="-1">Sherbrooke</button>
+          <button data-key="48" tabindex="-1">Rachel</button>
         </div>
         <div id="crew-picker" class="crew-picker" role="group" aria-label="Choose your crew member" hidden>
           <button data-key="49">1 · GREEN CAP 51</button>
@@ -47,16 +57,18 @@
         <div class="touch-stick move-stick" data-stick="move" role="group" aria-label="Movement and steering touch stick">
           <span class="stick-knob"></span><span class="stick-label">MOVE</span>
         </div>
-        <div class="touch-steering" role="group" aria-label="Steering" hidden>
-          <button data-key="65" aria-label="Steer left"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="m17 6-10 10 10 10M7 16h20"/></svg>Left</button>
-          <button data-key="68" aria-label="Steer right"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="m15 6 10 10-10 10M5 16h20"/></svg>Right</button>
+        <div class="touch-steering" data-stick="steer" role="group" aria-label="Steering wheel: drag left or right to steer, up to accelerate, down to brake and reverse" hidden>
+          <svg class="steering-wheel" viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="43"/><circle cx="50" cy="50" r="9"/><path d="M8 44h33m18 0h33M50 59v34"/></svg>
+          <span class="steering-hint">Drag to drive</span>
+          <button data-key="65" aria-label="Steer left"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="m17 6-10 10 10 10M7 16h20"/></svg><b>Left</b></button>
+          <button data-key="68" aria-label="Steer right"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="m15 6 10 10-10 10M5 16h20"/></svg><b>Right</b></button>
         </div>
         <div class="touch-primary" role="group" aria-label="Game actions">
           <button id="touch-gas" data-key="16" aria-label="Hold to sprint">
             <svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="21" cy="5" r="3"/><path d="m10 13 6-5 5 7 6 1M16 8l-3 11 7 4 2 6M13 19l-5 8H3M11 12l-6 1"/></svg>
             <b>Sprint</b><span>Hold</span>
           </button>
-          <button id="touch-brake" data-key="32" aria-label="Jump on foot or hold handbrake in car">
+          <button id="touch-brake" data-key="32" aria-label="Jump on foot">
             <svg viewBox="0 0 32 32" aria-hidden="true"><path d="m9 8 7-6 7 6M16 2v9"/><circle cx="16" cy="16" r="3"/><path d="M16 19v5m-7-6 7 3 7-3m-7 6-5 6m5-6 5 6"/></svg>
             <b>Jump</b><span>On foot</span>
           </button>
@@ -66,30 +78,95 @@
           </button>
           <button id="touch-menu" type="button" data-menu-toggle aria-expanded="false" aria-controls="menu" aria-label="Menu">
             <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M6 8h20M6 16h20M6 24h20"/></svg>
-            Menu
+            <b>Menu</b><span>Options</span>
           </button>
         </div>
+        <!-- On foot: Fire holds F, Aim holds the right mouse button, Weapon taps Q (the native Fire, Aim and NextWeapon bindings). -->
+        <div class="touch-combat" role="group" aria-label="Combat">
+          <button id="touch-weapon" data-key="81" aria-label="Next weapon">
+            <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M6 13a10 10 0 0 1 18-4M26 19a10 10 0 0 1-18 4M24 3v6h-6M8 29v-6h6"/></svg>
+            <b>Weapon</b>
+          </button>
+          <button id="touch-aim" data-mouse="2" aria-label="Hold to aim">
+            <svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="9"/><path d="M16 3v7m0 12v7M3 16h7m12 0h7"/></svg>
+            <b>Aim</b>
+          </button>
+          <button id="touch-fire" data-key="70" aria-label="Hold to fire or punch">
+            <svg viewBox="0 0 32 32" aria-hidden="true"><path d="m16 3 3 7 7-3-3 7 6 3-7 2 1 8-6-5-6 5 1-8-7-2 6-3-3-7 7 3Z"/></svg>
+            <b>Fire</b>
+          </button>
+        </div>
+        <!-- In a car: Auto holds Gas until Brake is touched or Auto is tapped again. Lock holds Space, the handbrake, and does not drop Auto. -->
+        <button id="touch-auto" class="touch-auto" type="button" data-toggle="auto" aria-pressed="false" aria-label="Auto gas: keep accelerating until you brake" hidden><b>Auto</b><span>Gas</span></button>
+        <button id="touch-lock" class="touch-lock" type="button" data-key="32" aria-label="Hold to lock the wheels" hidden><b>Lock</b><span>Skid</span></button>
       </div>
+      <aside id="mission-card" hidden aria-label="Mission">
+        <p id="mission-title"></p>
+        <p id="mission-objective"></p>
+        <p id="mission-stage"></p>
+        <p id="mission-fail" hidden></p>
+        <div class="mission-map">
+          <canvas id="mission-map" width="112" height="112" aria-hidden="true"></canvas>
+          <p id="mission-distance"></p>
+        </div>
+      </aside>
+      <aside id="payout-pop" hidden aria-label="Payout">
+        <p id="payout-cue"></p>
+        <p id="payout-amount"></p>
+      </aside>
+      <aside id="job-banner" hidden aria-label="Job result">
+        <p id="job-head"></p>
+        <p id="job-line"></p>
+      </aside>
+      <aside id="heat-plate" hidden aria-label="Heat">
+        <p id="heat-head"></p>
+        <p id="heat-line"></p>
+      </aside>
+      <aside id="job-column" hidden aria-label="Side job">
+        <p id="column-title"></p>
+        <p id="column-objective"></p>
+        <p id="column-info"></p>
+      </aside>
+      <aside id="weapon-chip" hidden aria-label="Weapon">
+        <p id="weapon-name"></p>
+      </aside>
+      <aside id="sky-plate" hidden aria-label="Time and weather">
+        <p id="sky-line"></p>
+      </aside>
+      <!-- Five foot puffs, ages from the walk, drawn with the same rule as the city. -->
+      <canvas id="scuff-dust" width="200" height="78" hidden aria-hidden="true"></canvas>
+      <!-- Six tail puffs, ages from a running car, drawn with the same rule as the city. -->
+      <canvas id="exhaust-puff" width="210" height="130" hidden aria-hidden="true"></canvas>
+      <!-- A resident's English line, shown while the caption is up. -->
+      <aside id="speech" hidden aria-label="Someone nearby">
+        <p id="speech-line"></p>
+      </aside>
       <section id="overlay" aria-labelledby="status-title">
         <!-- In fullscreen the header is out of view; this button keeps the menu reachable. -->
         <button id="overlay-menu" class="overlay-menu" type="button" data-menu-toggle aria-expanded="false" aria-controls="menu">☰ Menu</button>
-        <div class="hero">
-          <p class="hero-title">GTA: NORTH</p>
-          <p class="hero-tagline">EIGHT FRIENDS. TWO CITIES. ZERO CHILL.</p>
-          <div class="hero-actions">
-            <button id="start" type="button">▶ Start</button>
-            <button id="watch-trailer" type="button">Watch the trailer</button>
+        <button id="start" class="badge-launch" type="button" aria-label="Play GTA: NORTH">
+          <img class="comic-badge" src="./icon-512.png?v=comic-badge-20261017" width="512" height="512" alt="">
+          <span class="play-label" aria-hidden="true">PLAY</span>
+        </button>
+        <div class="panel">
+          <div class="hero">
+            <p class="hero-title">GTA: NORTH</p>
+            <p class="hero-tagline">EIGHT FRIENDS. TWO CITIES. ZERO CHILL.</p>
           </div>
-        </div>
-        <div class="caption" role="status" aria-live="polite">
-          <p class="eyebrow" id="status-label">HOST OFFLINE</p>
-          <h1 id="status-title">The city is taking a breather.</h1>
-          <p id="status-detail">The game host hasn’t been connected to this page yet.</p>
-          <div class="actions">
-            <button id="connect" disabled>Connect</button>
-            <button id="play" hidden>Play with sound</button>
+          <div class="caption" role="status" aria-live="polite">
+            <p class="eyebrow" id="status-label">HOST OFFLINE</p>
+            <h1 id="status-title">The city is taking a breather.</h1>
+            <p id="status-detail">The game host hasn’t been connected to this page yet.</p>
+            <div class="actions">
+              <button id="connect" disabled>Connect</button>
+              <button id="play" hidden>Play with sound</button>
+            </div>
+            <p class="small">Each player slot accepts one browser. Change slot, sound and fullscreen in the menu.</p>
           </div>
-          <p class="small">Each player slot accepts one browser. Change slot, sound and fullscreen in the menu.</p>
+          <div class="media-actions">
+            <button id="watch-trailer" class="secondary" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>Watch trailer</button>
+            <button id="hero-sound" class="secondary hero-sound" type="button" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9z"/><path class="wave" d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12"/></svg>Sound on</button>
+          </div>
         </div>
       </section>
       <section id="intro" class="intro" aria-label="Start screen" hidden>
@@ -128,6 +205,18 @@
         </div>
         <p id="intro-status" class="intro-status" role="status"></p>
       </section>
+      <aside id="install-nudge" class="install-nudge" aria-labelledby="install-nudge-title" hidden>
+        <img src="./icon-192.png?v=comic-badge-20261017" alt="" width="44" height="44">
+        <div>
+          <h2 id="install-nudge-title">TAKE THE CITY WITH YOU.</h2>
+          <p>Add NORTH to your home screen. Internet and the game host are required.</p>
+        </div>
+        <div class="install-nudge-actions">
+          <button id="install-nudge-button" type="button" aria-describedby="install-nudge-help">Install GTA: NORTH</button>
+          <button id="install-nudge-dismiss" type="button">Not now</button>
+        </div>
+        <p id="install-nudge-help" class="small" role="status" hidden></p>
+      </aside>
       <section id="menu" class="menu" aria-label="Menu" hidden>
         <div class="menu-panel">
           <h2>MENU</h2>
@@ -136,6 +225,8 @@
             <button id="mute" type="button" disabled aria-pressed="false">Mute</button>
             <button id="fullscreen" type="button" disabled>Fullscreen</button>
             <button id="disconnect" type="button" disabled>Disconnect</button>
+            <button id="place-sherbrooke" type="button" aria-pressed="true">Sherbrooke</button>
+            <button id="place-rachel" type="button" aria-pressed="false">Rachel</button>
           </div>
           <div class="menu-game">
             <h3>GAME</h3>
@@ -146,7 +237,12 @@
               <button type="button" data-send="113">Comic view</button>
               <button id="gyro-look" type="button" aria-pressed="false" aria-describedby="gyro-status" disabled>Gyro look</button>
             </div>
-            <p id="gyro-status" class="small" role="status">Drag anywhere on the game to look.</p>
+            <p id="gyro-status" class="small" role="status">Drag with a second finger to look.</p>
+          </div>
+          <div class="menu-install">
+            <button id="install-app" type="button" aria-describedby="install-help">Install GTA: NORTH</button>
+            <p id="install-help" class="small" role="status" hidden>In your browser menu, choose Install app or Add to Home Screen. On iPhone or iPad, open in Safari, then Share → Add to Home Screen. In Safari on Mac, choose File → Add to Dock.</p>
+            <p class="small">Play from your home screen. Internet and the game host are required.</p>
           </div>
           <button id="menu-close" class="menu-close" type="button">Close</button>
         </div>
@@ -163,7 +259,7 @@
     </dialog>
     <footer>
       <p id="input-note">Keyboard, mouse and touch supported. The host PC must stay online.</p>
-      <p class="controls"><b>WASD</b> Move / drive &nbsp; <b>Mouse</b> Look &nbsp; <b>Shift</b> Sprint &nbsp; <b>Space</b> Jump / handbrake &nbsp; <b>E</b> Interact / car &nbsp; <b>1–8</b> Choose crew &nbsp; <b>C</b> Next crew &nbsp; <b>F2</b> Comic &nbsp; <b>R</b> Recover &nbsp; <b>T</b> Race replay &nbsp; <b>Esc</b> Release mouse</p>
+      <p class="controls"><b>WASD</b> or arrows Move / drive &nbsp; <b>Mouse</b> Look &nbsp; <b>Shift</b> Sprint &nbsp; <b>Space</b> Jump / handbrake &nbsp; <b>E</b> Interact / car &nbsp; <b>F</b> Fire &nbsp; <b>Right-click</b> Aim &nbsp; <b>Q</b> Weapon &nbsp; <b>1–8</b> Choose crew &nbsp; <b>9</b> Sherbrooke &nbsp; <b>0</b> Rachel &nbsp; <b>C</b> Next crew &nbsp; <b>F2</b> Comic &nbsp; <b>R</b> Recover &nbsp; <b>T</b> Race replay &nbsp; <b>Esc</b> Release mouse</p>
     </footer>
   </body>
 </html>

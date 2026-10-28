@@ -1,0 +1,11 @@
+{
+  "scope": "CPU copied-input topology analysis and two diagnostic clay stills only; no repair",
+  "raw_source_sha256": "310b173814108907c7041dbfc51bb0f5228a9b94a7a3323ac7b87243f6fe5a6c",
+  "full_run_ignored_path": "Saved/Tests/TripoCastBlackCapDiagnosis-20261017-v2",
+  "full_topology_report_sha256": "dd8af657dd524638e8693e71b28626881ae842c46fbbb7645ab01ed3e5d2ec44",
+  "topology_log_sha256": "e2790487e64c311535cb7556e2f9107325d8349381443e4e4ff2fc5ac79f018f",
+  "clay_log_sha256": "9930957cce67b6b8276d33c5eeb67ea840962ffd928634766e9eb0a1a4cf4cf8",
+  "topology_exit": 0,
+  "clay_exit": 0,
+  "failed_preflight": "v1 compared raw base geometry bytes with prior evaluated geometry hash, before any render/repair; v2 explicitly measures the0.241micrometre base/evaluated difference and matches the actual evaluated hash."
+}

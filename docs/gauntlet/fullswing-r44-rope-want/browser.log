@@ -1,0 +1,6 @@
+{"calls":60,"maps":1,"state":"play"}
+PASS: sixty real action frames reconcile targets
+PASS: all frames reuse the same desired Map
+PASS: play remains active
+PASS: no page errors
+PASS: rope desired map

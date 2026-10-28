@@ -1,0 +1,2 @@
+# Design
+combat.group(name,out=[]) clears and fills existing on/group membership in order. createJobs owns crewScratch; all five job queries consume it synchronously for counts/first-live goals and do not retain the array. Cards retain goon objects, which remain unchanged. Default debug/test callers still get fresh arrays. Keep existing alive-count filtering and job state machines; no extra helper or graphics change. No FPS claim.

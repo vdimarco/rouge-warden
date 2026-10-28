@@ -1,0 +1,4 @@
+- [x] The eleventh flush starts Seat the Lid, and the card does not say to flush the clogs
+- [x] Standing on the ground within 4 m fills a 6 s hold; leaving slips it; 24 s with an empty hold pops it
+- [x] Seating the lid returns the clog card at 11/12, and the King still sleeps
+- [x] The unit test and the clog-beat play match those scenarios

@@ -1,0 +1,58 @@
+{
+  "character": "Topknot",
+  "outputs": {
+    "body": {
+      "path": "Data/GraphicNovel/Crew/Topknot/tripo-h31-rig-20261017/derived/bag-rejected-v1/body.fbx",
+      "sha256": "5f5335fa0ec1e6df7ce39262894fef2c1f4a5c6704f0ed25fe33fa3783a040fa"
+    },
+    "base_color": {
+      "path": "Data/GraphicNovel/Crew/Topknot/tripo-h31-rig-20261017/derived/bag-rejected-v1/base_color.jpg",
+      "sha256": "ecb21c998306bd0f65b3b8f052bba19066d981039dedd7cc7fa1bef556c8a397"
+    },
+    "metallic_roughness": {
+      "path": "Data/GraphicNovel/Crew/Topknot/tripo-h31-rig-20261017/derived/bag-rejected-v1/metallic_roughness.jpg",
+      "sha256": "c8b7f38acbcb41eb40b0e4b6c0aa504f5af77d262b0cc0d1fbf93c4439e5f738"
+    },
+    "normal": {
+      "path": "Data/GraphicNovel/Crew/Topknot/tripo-h31-rig-20261017/derived/bag-rejected-v1/normal.png",
+      "sha256": "94e48a30195739c80857de8802cf5a48f1260c387bdde94ab8c3834281a6ab40"
+    },
+    "idle": {
+      "path": "Data/GraphicNovel/Crew/Topknot/tripo-h31-rig-20261017/derived/bag-rejected-v1/idle.fbx",
+      "sha256": "be74b1503f902c8b8555ff93e2ff956e581256599fb91cc8ecf20e5fb2e8b8d2"
+    },
+    "jump": {
+      "path": "Data/GraphicNovel/Crew/Topknot/tripo-h31-rig-20261017/derived/bag-rejected-v1/jump.fbx",
+      "sha256": "4ab6b0bd4dd7f6d1ebd0b39214b502f27f3333261e850426efc71c4cafa34260"
+    },
+    "walk": {
+      "path": "Data/GraphicNovel/Crew/Topknot/tripo-h31-rig-20261017/derived/bag-rejected-v1/walk.fbx",
+      "sha256": "6ae8236f44e4d5476531b5f72e0622506b546bfe72ef530edaea0db9f8526c6b"
+    },
+    "run": {
+      "path": "Data/GraphicNovel/Crew/Topknot/tripo-h31-rig-20261017/derived/bag-rejected-v1/run.fbx",
+      "sha256": "3589bd91d495f03262e15bd1fab851560c53abaf07a867790b82551c6b9a8bd6"
+    }
+  },
+  "byte_identical_copies_of_passed_CPU_outputs": true,
+  "proofs": {
+    "Surface.json": {
+      "path": "Verification/TripoCast/TripoBodies/OwnRigCPU/20261017-natural-palms/Topknot/Surface.json",
+      "sha256": "6748ebbff2e64f684bd2b74b14d8fc9a73304ab03da206131220b7f0be475689"
+    },
+    "Motion.json": {
+      "path": "Verification/TripoCast/TripoBodies/OwnRigCPU/20261017-natural-palms/Topknot/Motion.json",
+      "sha256": "88a8178eaf59bf03866b5ee40d6875bbba350e5890b439b96affcba160b7e4db"
+    },
+    "Test.json": {
+      "path": "Verification/TripoCast/TripoBodies/OwnRigCPU/20261017-natural-palms/Topknot/Test.json",
+      "sha256": "d438a4cc8d251162561e3b7a117e95b6593320c03cbb3f172e97456e5c1524fd"
+    }
+  },
+  "geometry_binds_and_source_weights_preserved": true,
+  "accepted": false,
+  "rejection": "Actual jump bag compression/leg pull; accessory-weight diagnosis pending.",
+  "visual_review": "Verification/TripoCast/TripoBodies/OwnMotionReview/Topknot-v1/RootReview.json",
+  "native_import_allowed": false,
+  "native_or_final_art_accepted": false
+}

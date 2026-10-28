@@ -133,6 +133,12 @@ def measure_crowd(now):
         name, point = ped.get_name(), ped.get_actor_location()
         sample = STATE["crowd_motion"][name]
         travelled = distance(point, sample["last"])
+        # A knocked, fleeing or returning resident (Stride != 0) leaves its route pace on purpose.
+        away = ped.get_editor_property("Stride") != 0
+        if away or sample.get("away"):
+            REPORT["crowd_away_samples"] = REPORT.get("crowd_away_samples", 0) + 1
+            sample["away"], sample["last"] = away, point
+            continue
         pace = ped.get_editor_property("Pace")
         # Slate samples independently of resident ticks; allow one tick of quantization.
         sample_dt, tick_interval = now - previous, ped.get_actor_tick_interval()

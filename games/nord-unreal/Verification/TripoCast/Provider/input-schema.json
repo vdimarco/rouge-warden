@@ -1,0 +1,205 @@
+{
+  "type": "object",
+  "title": "ImageTo3DV71Input",
+  "description": "Input for Meshy-7.1 Image to 3D conversion.",
+  "properties": {
+    "should_remesh": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether to enable the remesh phase",
+      "title": "Should Remesh"
+    },
+    "model_type": {
+      "type": "string",
+      "default": "standard",
+      "description": "Type of 3D mesh generation. 'standard' produces a regular high-detail mesh; 'lowpoly' produces a low-poly mesh optimized for cleaner polygons; 'smart-topology' uses Meshy-T2 for clean, natively separated parts. When set to 'lowpoly', the remesh controls (topology, target_polycount, should_remesh) are ignored by Meshy.",
+      "enum": [
+        "standard",
+        "lowpoly",
+        "smart-topology"
+      ],
+      "title": "Model Type"
+    },
+    "enable_pbr": {
+      "type": "boolean",
+      "default": false,
+      "description": "Generate PBR Maps (metallic, roughness, normal) in addition to base color",
+      "title": "Enable Pbr"
+    },
+    "should_texture": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether to generate textures",
+      "title": "Should Texture"
+    },
+    "image_url": {
+      "max_file_size": 20971520,
+      "type": "string",
+      "description": "Image URL or base64 data URI for 3D model creation. Supports .jpg, .jpeg, and .png formats. Also supports AVIF and HEIF formats which will be automatically converted.",
+      "max_pixels": 178956970,
+      "examples": [
+        "https://v3b.fal.media/files/b/zebra/3osHJDI8IZ2wl6sGtEUeB_image.png"
+      ],
+      "title": "Image Url"
+    },
+    "target_polycount": {
+      "maximum": 300000,
+      "type": "integer",
+      "minimum": 100,
+      "description": "Target number of polygons in the generated model. When model_type is 'smart-topology' and this is left unset, Meshy's lower smart-topology default (4,000) is used instead; smart topology accepts at most 15,000.",
+      "default": 30000,
+      "title": "Target Polycount"
+    },
+    "animation_action_id": {
+      "type": "integer",
+      "examples": [
+        92
+      ],
+      "description": "Animation preset ID from Meshy's library. Only used when enable_animation is true; in that case it must be in [0, 696] (``0`` is the \"Idle\" preset) and is otherwise rejected with a 422. See https://docs.meshy.ai/en/api/animation-library for available action IDs.",
+      "default": 92,
+      "title": "Animation Action Id"
+    },
+    "enable_rigging": {
+      "type": "boolean",
+      "default": false,
+      "description": "Automatically rig the generated model as a humanoid character. Includes basic walking and running animations. Best results with humanoid characters that have clearly defined limbs.",
+      "title": "Enable Rigging"
+    },
+    "is_a_t_pose": {
+      "type": "boolean",
+      "default": false,
+      "description": "Deprecated: use pose_mode instead. When true, generates a T-pose model.",
+      "deprecated": true,
+      "title": "Is A T Pose"
+    },
+    "ultra_mode": {
+      "type": "boolean",
+      "default": false,
+      "description": "Deprecated: use geometry_resolution='2k'. If both fields are provided, geometry_resolution takes precedence.",
+      "deprecated": true,
+      "title": "Ultra Mode"
+    },
+    "topology": {
+      "type": "string",
+      "default": "triangle",
+      "description": "Specify the topology of the generated model. Quad for smooth surfaces, Triangle for detailed geometry.",
+      "enum": [
+        "quad",
+        "triangle"
+      ],
+      "title": "Topology"
+    },
+    "pose_mode": {
+      "type": "string",
+      "default": "",
+      "description": "Pose mode for the generated model. 'a-pose' generates an A-pose, 't-pose' generates a T-pose, empty string for no specific pose.",
+      "enum": [
+        "a-pose",
+        "t-pose",
+        ""
+      ],
+      "title": "Pose Mode"
+    },
+    "enable_animation": {
+      "type": "boolean",
+      "default": false,
+      "description": "Apply an animation preset to the rigged model. Requires enable_rigging to be true.",
+      "title": "Enable Animation"
+    },
+    "geometry_resolution": {
+      "anyOf": [
+        {
+          "type": "string",
+          "enum": [
+            "standard",
+            "2k",
+            "4k"
+          ]
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Geometry Resolution",
+      "description": "Geometry resolution. 4k is only available with Meshy-7.1."
+    },
+    "symmetry_mode": {
+      "type": "string",
+      "default": "auto",
+      "description": "Controls symmetry behavior during model generation. Off disables symmetry, Auto determines it automatically, On enforces symmetry.",
+      "enum": [
+        "off",
+        "auto",
+        "on"
+      ],
+      "title": "Symmetry Mode"
+    },
+    "enable_safety_checker": {
+      "type": "boolean",
+      "default": true,
+      "description": "If set to true, input data will be checked for safety before processing.",
+      "title": "Enable Safety Checker"
+    },
+    "texture_image_url": {
+      "anyOf": [
+        {
+          "type": "string",
+          "ui": {
+            "field": "image"
+          }
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "max_file_size": 20971520,
+      "title": "Texture Image Url",
+      "description": "2D image to guide the texturing process",
+      "max_pixels": 178956970
+    },
+    "rigging_height_meters": {
+      "type": "number",
+      "default": 1.7,
+      "description": "Approximate height of the character in meters. Only used when enable_rigging is true.",
+      "exclusiveMinimum": 0,
+      "title": "Rigging Height Meters"
+    },
+    "texture_prompt": {
+      "anyOf": [
+        {
+          "type": "string",
+          "maxLength": 600
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Texture Prompt",
+      "description": "Text prompt to guide the texturing process"
+    }
+  },
+  "required": [
+    "image_url"
+  ],
+  "x-fal-order-properties": [
+    "image_url",
+    "model_type",
+    "topology",
+    "target_polycount",
+    "symmetry_mode",
+    "should_remesh",
+    "should_texture",
+    "enable_pbr",
+    "is_a_t_pose",
+    "pose_mode",
+    "texture_prompt",
+    "texture_image_url",
+    "enable_rigging",
+    "rigging_height_meters",
+    "enable_animation",
+    "animation_action_id",
+    "enable_safety_checker",
+    "geometry_resolution",
+    "ultra_mode"
+  ]
+}

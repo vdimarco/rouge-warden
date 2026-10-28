@@ -1,0 +1,2 @@
+- [x] Add visibility guard and focused hide/move/resume checks
+- [x] Review, CI, deployed preview, rebase and release

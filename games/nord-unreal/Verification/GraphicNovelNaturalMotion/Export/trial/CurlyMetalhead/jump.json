@@ -1,0 +1,756 @@
+{
+  "name": "CurlyMetalhead",
+  "authoring": "original local skeletal keyframes; no paid generation",
+  "body_sha256": "b7e7ca0d9c486412108cba85e1cd4a5512fecd4ad36b8cfdb4677259ff6f9244",
+  "jump_sha256": "71277e693654e02d365d22d7d34cf534045a4aa9ed77b4c19d4744a0839680ac",
+  "seconds": 1.2,
+  "fps": 30,
+  "bones": 24,
+  "head_and_neck_unchanged": false,
+  "head_unchanged": true,
+  "neck_rotation_explicitly_changed": true,
+  "actor_root_motion": false,
+  "fbx_round_trip_passed": true,
+  "samples": [
+    {
+      "time": 0.0,
+      "hip_drop_cm": 0.0,
+      "reviewed_local_degrees": {
+        "LeftArm": 0.0,
+        "RightArm": 0.0,
+        "LeftForeArm": 0.0,
+        "RightForeArm": 0.0,
+        "LeftUpLeg": 0.0,
+        "RightUpLeg": 0.0,
+        "LeftLeg": 0.0,
+        "RightLeg": 0.0,
+        "LeftFoot": 0.0,
+        "RightFoot": 0.0,
+        "Spine01": 0.0,
+        "neck": 0.0
+      },
+      "thigh_degrees": 0.0,
+      "knee_degrees": 0.0
+    },
+    {
+      "time": 0.033333,
+      "hip_drop_cm": -2.5926,
+      "reviewed_local_degrees": {
+        "LeftArm": 3.8889,
+        "RightArm": 2.5926,
+        "LeftForeArm": -7.7778,
+        "RightForeArm": -6.4815,
+        "LeftUpLeg": -6.4815,
+        "RightUpLeg": -6.4815,
+        "LeftLeg": 14.2593,
+        "RightLeg": 14.2593,
+        "LeftFoot": -6.4815,
+        "RightFoot": -6.4815,
+        "Spine01": 3.1111,
+        "neck": -2.0741
+      },
+      "thigh_degrees": -6.4815,
+      "knee_degrees": 14.2593
+    },
+    {
+      "time": 0.066667,
+      "hip_drop_cm": -7.4074,
+      "reviewed_local_degrees": {
+        "LeftArm": 11.1111,
+        "RightArm": 7.4074,
+        "LeftForeArm": -22.2222,
+        "RightForeArm": -18.5185,
+        "LeftUpLeg": -18.5185,
+        "RightUpLeg": -18.5185,
+        "LeftLeg": 40.7407,
+        "RightLeg": 40.7407,
+        "LeftFoot": -18.5185,
+        "RightFoot": -18.5185,
+        "Spine01": 8.8889,
+        "neck": -5.9259
+      },
+      "thigh_degrees": -18.5185,
+      "knee_degrees": 40.7407
+    },
+    {
+      "time": 0.1,
+      "hip_drop_cm": -10.0,
+      "reviewed_local_degrees": {
+        "LeftArm": 15.0,
+        "RightArm": 10.0,
+        "LeftForeArm": -30.0,
+        "RightForeArm": -25.0,
+        "LeftUpLeg": -25.0,
+        "RightUpLeg": -25.0,
+        "LeftLeg": 55.0,
+        "RightLeg": 55.0,
+        "LeftFoot": -25.0,
+        "RightFoot": -25.0,
+        "Spine01": 12.0,
+        "neck": -8.0
+      },
+      "thigh_degrees": -25.0,
+      "knee_degrees": 55.0
+    },
+    {
+      "time": 0.133333,
+      "hip_drop_cm": -8.3648,
+      "reviewed_local_degrees": {
+        "LeftArm": 10.0943,
+        "RightArm": 9.1824,
+        "LeftForeArm": -30.8176,
+        "RightForeArm": -25.0,
+        "LeftUpLeg": -21.7295,
+        "RightUpLeg": -21.4025,
+        "LeftLeg": 47.9685,
+        "RightLeg": 47.3144,
+        "LeftFoot": -22.0566,
+        "RightFoot": -21.7295,
+        "Spine01": 10.6918,
+        "neck": -7.1497
+      },
+      "thigh_degrees": -21.7295,
+      "knee_degrees": 47.9685
+    },
+    {
+      "time": 0.166667,
+      "hip_drop_cm": -4.8077,
+      "reviewed_local_degrees": {
+        "LeftArm": -0.5768,
+        "RightArm": 7.4039,
+        "LeftForeArm": -32.5961,
+        "RightForeArm": -25.0,
+        "LeftUpLeg": -14.6155,
+        "RightUpLeg": -13.577,
+        "LeftLeg": 32.6733,
+        "RightLeg": 30.5964,
+        "LeftFoot": -15.6539,
+        "RightFoot": -14.6155,
+        "Spine01": 7.8462,
+        "neck": -5.3
+      },
+      "thigh_degrees": -14.6155,
+      "knee_degrees": 32.6733
+    },
+    {
+      "time": 0.2,
+      "hip_drop_cm": -1.3518,
+      "reviewed_local_degrees": {
+        "LeftArm": -10.9445,
+        "RightArm": 5.6759,
+        "LeftForeArm": -34.3241,
+        "RightForeArm": -25.0,
+        "LeftUpLeg": -7.7037,
+        "RightUpLeg": -5.9741,
+        "LeftLeg": 17.8129,
+        "RightLeg": 14.3537,
+        "LeftFoot": -9.4333,
+        "RightFoot": -7.7037,
+        "Spine01": 5.0815,
+        "neck": -3.503
+      },
+      "thigh_degrees": -7.7037,
+      "knee_degrees": 17.8129
+    },
+    {
+      "time": 0.233333,
+      "hip_drop_cm": 0.0,
+      "reviewed_local_degrees": {
+        "LeftArm": -15.0029,
+        "RightArm": 4.9943,
+        "LeftForeArm": -35.0086,
+        "RightForeArm": -25.0057,
+        "LeftUpLeg": -5.0115,
+        "RightUpLeg": -3.0052,
+        "LeftLeg": 12.0247,
+        "RightLeg": 8.0155,
+        "LeftFoot": -7.0046,
+        "RightFoot": -5.0029,
+        "Spine01": 4.0011,
+        "neck": -2.8008
+      },
+      "thigh_degrees": -5.0115,
+      "knee_degrees": 12.0247
+    },
+    {
+      "time": 0.266667,
+      "hip_drop_cm": 0.0,
+      "reviewed_local_degrees": {
+        "LeftArm": -15.3145,
+        "RightArm": 4.3711,
+        "LeftForeArm": -35.9434,
+        "RightForeArm": -25.6289,
+        "LeftUpLeg": -6.2578,
+        "RightUpLeg": -3.566,
+        "LeftLeg": 14.7043,
+        "RightLeg": 9.6981,
+        "LeftFoot": -7.5031,
+        "RightFoot": -5.3145,
+        "Spine01": 4.1258,
+        "neck": -2.888
+      },
+      "thigh_degrees": -6.2578,
+      "knee_degrees": 14.7043
+    },
+    {
+      "time": 0.3,
+      "hip_drop_cm": 0.0,
+      "reviewed_local_degrees": {
+        "LeftArm": -16.0279,
+        "RightArm": 2.9442,
+        "LeftForeArm": -38.0838,
+        "RightForeArm": -27.0558,
+        "LeftUpLeg": -9.1117,
+        "RightUpLeg": -4.8503,
+        "LeftLeg": 20.8401,
+        "RightLeg": 13.5508,
+        "LeftFoot": -8.6447,
+        "RightFoot": -6.0279,
+        "Spine01": 4.4112,
+        "neck": -3.0878
+      },
+      "thigh_degrees": -9.1117,
+      "knee_degrees": 20.8401
+    },
+    {
+      "time": 0.333333,
+      "hip_drop_cm": 0.0,
+      "reviewed_local_degrees": {
+        "LeftArm": -16.9825,
+        "RightArm": 1.035,
+        "LeftForeArm": -40.9475,
+        "RightForeArm": -28.965,
+        "LeftUpLeg": -12.9301,
+        "RightUpLeg": -6.5685,
+        "LeftLeg": 29.0496,
+        "RightLeg": 18.7056,
+        "LeftFoot": -10.172,
+        "RightFoot": -6.9825,
+        "Spine01": 4.793,
+        "neck": -3.3551
+      },
+      "thigh_degrees": -12.9301,
+      "knee_degrees": 29.0496
+    },
+    {
+      "time": 0.366667,
+      "hip_drop_cm": 0.0,
+      "reviewed_local_degrees": {
+        "LeftArm": -18.0175,
+        "RightArm": -1.035,
+        "LeftForeArm": -44.0525,
+        "RightForeArm": -31.035,
+        "LeftUpLeg": -17.0699,
+        "RightUpLeg": -8.4315,
+        "LeftLeg": 37.9504,
+        "RightLeg": 24.2944,
+        "LeftFoot": -11.828,
+        "RightFoot": -8.0175,
+        "Spine01": 5.207,
+        "neck": -3.6449
+      },
+      "thigh_degrees": -17.0699,
+      "knee_degrees": 37.9504
+    },
+    {
+      "time": 0.4,
+      "hip_drop_cm": 0.0,
+      "reviewed_local_degrees": {
+        "LeftArm": -18.9721,
+        "RightArm": -2.9442,
+        "LeftForeArm": -46.9162,
+        "RightForeArm": -32.9442,
+        "LeftUpLeg": -20.8883,
+        "RightUpLeg": -10.1497,
+        "LeftLeg": 46.1599,
+        "RightLeg": 29.4492,
+        "LeftFoot": -13.3553,
+        "RightFoot": -8.9721,
+        "Spine01": 5.5888,
+        "neck": -3.9122
+      },
+      "thigh_degrees": -20.8883,
+      "knee_degrees": 46.1599
+    },
+    {
+      "time": 0.433333,
+      "hip_drop_cm": 0.0,
+      "reviewed_local_degrees": {
+        "LeftArm": -19.6855,
+        "RightArm": -4.3711,
+        "LeftForeArm": -49.0566,
+        "RightForeArm": -34.3711,
+        "LeftUpLeg": -23.7422,
+        "RightUpLeg": -11.434,
+        "LeftLeg": 52.2957,
+        "RightLeg": 33.3019,
+        "LeftFoot": -14.4969,
+        "RightFoot": -9.6855,
+        "Spine01": 5.8742,
+        "neck": -4.112
+      },
+      "thigh_degrees": -23.7422,
+      "knee_degrees": 52.2957
+    },
+    {
+      "time": 0.466667,
+      "hip_drop_cm": 0.0,
+      "reviewed_local_degrees": {
+        "LeftArm": -19.9971,
+        "RightArm": -4.9943,
+        "LeftForeArm": -49.9914,
+        "RightForeArm": -34.9943,
+        "LeftUpLeg": -24.9885,
+        "RightUpLeg": -11.9948,
+        "LeftLeg": 54.9753,
+        "RightLeg": 34.9845,
+        "LeftFoot": -14.9954,
+        "RightFoot": -9.9971,
+        "Spine01": 5.9989,
+        "neck": -4.1992
+      },
+      "thigh_degrees": -24.9885,
+      "knee_degrees": 54.9753
+    },
+    {
+      "time": 0.5,
+      "hip_drop_cm": 0.0,
+      "reviewed_local_degrees": {
+        "LeftArm": -19.6313,
+        "RightArm": -4.8157,
+        "LeftForeArm": -49.6313,
+        "RightForeArm": -34.6313,
+        "LeftUpLeg": -24.5207,
+        "RightUpLeg": -11.8525,
+        "LeftLeg": 54.0046,
+        "RightLeg": 34.5576,
+        "LeftFoot": -14.9631,
+        "RightFoot": -10.0,
+        "Spine01": 6.0737,
+        "neck": -4.2516
+      },
+      "thigh_degrees": -24.5207,
+      "knee_degrees": 54.0046
+    },
+    {
+      "time": 0.533333,
+      "hip_drop_cm": 0.0,
+      "reviewed_local_degrees": {
+        "LeftArm": -18.509,
+        "RightArm": -4.2545,
+        "LeftForeArm": -48.509,
+        "RightForeArm": -33.509,
+        "LeftUpLeg": -23.0617,
+        "RightUpLeg": -11.4036,
+        "LeftLeg": 50.9743,
+        "RightLeg": 33.2108,
+        "LeftFoot": -14.8509,
+        "RightFoot": -10.0,
+        "Spine01": 6.2982,
+        "neck": -4.4087
+      },
+      "thigh_degrees": -23.0617,
+      "knee_degrees": 50.9743
+    },
+    {
+      "time": 0.566667,
+      "hip_drop_cm": 0.0,
+      "reviewed_local_degrees": {
+        "LeftArm": -16.8809,
+        "RightArm": -3.4405,
+        "LeftForeArm": -46.8809,
+        "RightForeArm": -31.8809,
+        "LeftUpLeg": -20.9452,
+        "RightUpLeg": -10.7524,
+        "LeftLeg": 46.5785,
+        "RightLeg": 31.2571,
+        "LeftFoot": -14.6881,
+        "RightFoot": -10.0,
+        "Spine01": 6.6238,
+        "neck": -4.6367
+      },
+      "thigh_degrees": -20.9452,
+      "knee_degrees": 46.5785
+    },
+    {
+      "time": 0.6,
+      "hip_drop_cm": 0.0,
+      "reviewed_local_degrees": {
+        "LeftArm": -15.0,
+        "RightArm": -2.5,
+        "LeftForeArm": -45.0,
+        "RightForeArm": -30.0,
+        "LeftUpLeg": -18.5,
+        "RightUpLeg": -10.0,
+        "LeftLeg": 41.5,
+        "RightLeg": 29.0,
+        "LeftFoot": -14.5,
+        "RightFoot": -10.0,
+        "Spine01": 7.0,
+        "neck": -4.9
+      },
+      "thigh_degrees": -18.5,
+      "knee_degrees": 41.5
+    },
+    {
+      "time": 0.633333,
+      "hip_drop_cm": 0.0,
+      "reviewed_local_degrees": {
+        "LeftArm": -13.1191,
+        "RightArm": -1.5595,
+        "LeftForeArm": -43.1191,
+        "RightForeArm": -28.1191,
+        "LeftUpLeg": -16.0548,
+        "RightUpLeg": -9.2476,
+        "LeftLeg": 36.4215,
+        "RightLeg": 26.7429,
+        "LeftFoot": -14.3119,
+        "RightFoot": -10.0,
+        "Spine01": 7.3762,
+        "neck": -5.1633
+      },
+      "thigh_degrees": -16.0548,
+      "knee_degrees": 36.4215
+    },
+    {
+      "time": 0.666667,
+      "hip_drop_cm": 0.0,
+      "reviewed_local_degrees": {
+        "LeftArm": -11.491,
+        "RightArm": -0.7455,
+        "LeftForeArm": -41.491,
+        "RightForeArm": -26.491,
+        "LeftUpLeg": -13.9383,
+        "RightUpLeg": -8.5964,
+        "LeftLeg": 32.0257,
+        "RightLeg": 24.7892,
+        "LeftFoot": -14.1491,
+        "RightFoot": -10.0,
+        "Spine01": 7.7018,
+        "neck": -5.3913
+      },
+      "thigh_degrees": -13.9383,
+      "knee_degrees": 32.0257
+    },
+    {
+      "time": 0.7,
+      "hip_drop_cm": 0.0,
+      "reviewed_local_degrees": {
+        "LeftArm": -10.3687,
+        "RightArm": -0.1843,
+        "LeftForeArm": -40.3687,
+        "RightForeArm": -25.3687,
+        "LeftUpLeg": -12.4793,
+        "RightUpLeg": -8.1475,
+        "LeftLeg": 28.9954,
+        "RightLeg": 23.4424,
+        "LeftFoot": -14.0369,
+        "RightFoot": -10.0,
+        "Spine01": 7.9263,
+        "neck": -5.5484
+      },
+      "thigh_degrees": -12.4793,
+      "knee_degrees": 28.9954
+    },
+    {
+      "time": 0.733333,
+      "hip_drop_cm": -0.0091,
+      "reviewed_local_degrees": {
+        "LeftArm": -10.0041,
+        "RightArm": -0.0041,
+        "LeftForeArm": -40.0041,
+        "RightForeArm": -25.0041,
+        "LeftUpLeg": -12.0132,
+        "RightUpLeg": -8.0148,
+        "LeftLeg": 28.0264,
+        "RightLeg": 23.0272,
+        "LeftFoot": -14.0115,
+        "RightFoot": -10.0148,
+        "Spine01": 8.0033,
+        "neck": -5.6023
+      },
+      "thigh_degrees": -12.0132,
+      "knee_degrees": 28.0264
+    },
+    {
+      "time": 0.766667,
+      "hip_drop_cm": -0.9736,
+      "reviewed_local_degrees": {
+        "LeftArm": -10.4425,
+        "RightArm": -0.4425,
+        "LeftForeArm": -40.4425,
+        "RightForeArm": -25.4425,
+        "LeftUpLeg": -13.4161,
+        "RightUpLeg": -9.5932,
+        "LeftLeg": 30.8323,
+        "RightLeg": 25.9208,
+        "LeftFoot": -15.2391,
+        "RightFoot": -11.5932,
+        "Spine01": 8.354,
+        "neck": -5.8478
+      },
+      "thigh_degrees": -13.4161,
+      "knee_degrees": 30.8323
+    },
+    {
+      "time": 0.8,
+      "hip_drop_cm": -3.0993,
+      "reviewed_local_degrees": {
+        "LeftArm": -11.4088,
+        "RightArm": -1.4088,
+        "LeftForeArm": -41.4087,
+        "RightForeArm": -26.4088,
+        "LeftUpLeg": -16.508,
+        "RightUpLeg": -13.0715,
+        "LeftLeg": 37.016,
+        "RightLeg": 32.2978,
+        "LeftFoot": -17.9445,
+        "RightFoot": -15.0715,
+        "Spine01": 9.127,
+        "neck": -6.3889
+      },
+      "thigh_degrees": -16.508,
+      "knee_degrees": 37.016
+    },
+    {
+      "time": 0.833333,
+      "hip_drop_cm": -5.7749,
+      "reviewed_local_degrees": {
+        "LeftArm": -12.625,
+        "RightArm": -2.625,
+        "LeftForeArm": -42.625,
+        "RightForeArm": -27.625,
+        "LeftUpLeg": -20.3999,
+        "RightUpLeg": -17.4498,
+        "LeftLeg": 44.7997,
+        "RightLeg": 40.3247,
+        "LeftFoot": -21.3499,
+        "RightFoot": -19.4498,
+        "Spine01": 10.1,
+        "neck": -7.07
+      },
+      "thigh_degrees": -20.3999,
+      "knee_degrees": 44.7997
+    },
+    {
+      "time": 0.866667,
+      "hip_drop_cm": -8.3894,
+      "reviewed_local_degrees": {
+        "LeftArm": -13.8134,
+        "RightArm": -3.8134,
+        "LeftForeArm": -43.8134,
+        "RightForeArm": -28.8134,
+        "LeftUpLeg": -24.2028,
+        "RightUpLeg": -21.7282,
+        "LeftLeg": 52.4056,
+        "RightLeg": 48.1683,
+        "LeftFoot": -24.6775,
+        "RightFoot": -23.7282,
+        "Spine01": 11.0507,
+        "neck": -7.7355
+      },
+      "thigh_degrees": -24.2028,
+      "knee_degrees": 52.4056
+    },
+    {
+      "time": 0.9,
+      "hip_drop_cm": -10.3317,
+      "reviewed_local_degrees": {
+        "LeftArm": -14.6962,
+        "RightArm": -4.6962,
+        "LeftForeArm": -44.6962,
+        "RightForeArm": -29.6962,
+        "LeftUpLeg": -27.028,
+        "RightUpLeg": -24.9065,
+        "LeftLeg": 58.056,
+        "RightLeg": 53.9952,
+        "LeftFoot": -27.1495,
+        "RightFoot": -26.9065,
+        "Spine01": 11.757,
+        "neck": -8.2299
+      },
+      "thigh_degrees": -27.028,
+      "knee_degrees": 58.056
+    },
+    {
+      "time": 0.933333,
+      "hip_drop_cm": -10.995,
+      "reviewed_local_degrees": {
+        "LeftArm": -14.9932,
+        "RightArm": -4.9977,
+        "LeftForeArm": -44.9796,
+        "RightForeArm": -29.9864,
+        "LeftUpLeg": -27.9873,
+        "RightUpLeg": -25.9882,
+        "LeftLeg": 59.9728,
+        "RightLeg": 55.9746,
+        "LeftFoot": -27.9873,
+        "RightFoot": -27.9873,
+        "Spine01": 11.9946,
+        "neck": -8.3962
+      },
+      "thigh_degrees": -27.9873,
+      "knee_degrees": 59.9728
+    },
+    {
+      "time": 0.966667,
+      "hip_drop_cm": -10.4465,
+      "reviewed_local_degrees": {
+        "LeftArm": -14.2452,
+        "RightArm": -4.7484,
+        "LeftForeArm": -42.7357,
+        "RightForeArm": -28.4905,
+        "LeftUpLeg": -26.5911,
+        "RightUpLeg": -24.6917,
+        "LeftLeg": 56.9809,
+        "RightLeg": 53.1822,
+        "LeftFoot": -26.5911,
+        "RightFoot": -26.5911,
+        "Spine01": 11.3962,
+        "neck": -7.9773
+      },
+      "thigh_degrees": -26.5911,
+      "knee_degrees": 56.9809
+    },
+    {
+      "time": 1.0,
+      "hip_drop_cm": -9.1653,
+      "reviewed_local_degrees": {
+        "LeftArm": -12.4981,
+        "RightArm": -4.166,
+        "LeftForeArm": -37.4943,
+        "RightForeArm": -24.9962,
+        "LeftUpLeg": -23.3298,
+        "RightUpLeg": -21.6634,
+        "LeftLeg": 49.9924,
+        "RightLeg": 46.6596,
+        "LeftFoot": -23.3298,
+        "RightFoot": -23.3298,
+        "Spine01": 9.9985,
+        "neck": -6.9989
+      },
+      "thigh_degrees": -23.3298,
+      "knee_degrees": 49.9924
+    },
+    {
+      "time": 1.033333,
+      "hip_drop_cm": -7.3997,
+      "reviewed_local_degrees": {
+        "LeftArm": -10.0905,
+        "RightArm": -3.3635,
+        "LeftForeArm": -30.2715,
+        "RightForeArm": -20.181,
+        "LeftUpLeg": -18.8356,
+        "RightUpLeg": -17.4902,
+        "LeftLeg": 40.362,
+        "RightLeg": 37.6712,
+        "LeftFoot": -18.8356,
+        "RightFoot": -18.8356,
+        "Spine01": 8.0724,
+        "neck": -5.6507
+      },
+      "thigh_degrees": -18.8356,
+      "knee_degrees": 40.362
+    },
+    {
+      "time": 1.066667,
+      "hip_drop_cm": -5.3982,
+      "reviewed_local_degrees": {
+        "LeftArm": -7.3611,
+        "RightArm": -2.4537,
+        "LeftForeArm": -22.0834,
+        "RightForeArm": -14.7222,
+        "LeftUpLeg": -13.7408,
+        "RightUpLeg": -12.7593,
+        "LeftLeg": 29.4445,
+        "RightLeg": 27.4815,
+        "LeftFoot": -13.7408,
+        "RightFoot": -13.7408,
+        "Spine01": 5.8889,
+        "neck": -4.1222
+      },
+      "thigh_degrees": -13.7408,
+      "knee_degrees": 29.4445
+    },
+    {
+      "time": 1.1,
+      "hip_drop_cm": -3.409,
+      "reviewed_local_degrees": {
+        "LeftArm": -4.6487,
+        "RightArm": -1.5496,
+        "LeftForeArm": -13.946,
+        "RightForeArm": -9.2974,
+        "LeftUpLeg": -8.6775,
+        "RightUpLeg": -8.0577,
+        "LeftLeg": 18.5947,
+        "RightLeg": 17.3551,
+        "LeftFoot": -8.6775,
+        "RightFoot": -8.6775,
+        "Spine01": 3.7189,
+        "neck": -2.6033
+      },
+      "thigh_degrees": -8.6775,
+      "knee_degrees": 18.5947
+    },
+    {
+      "time": 1.133333,
+      "hip_drop_cm": -1.6807,
+      "reviewed_local_degrees": {
+        "LeftArm": -2.2919,
+        "RightArm": -0.764,
+        "LeftForeArm": -6.8756,
+        "RightForeArm": -4.5838,
+        "LeftUpLeg": -4.2782,
+        "RightUpLeg": -3.9726,
+        "LeftLeg": 9.1675,
+        "RightLeg": 8.5564,
+        "LeftFoot": -4.2782,
+        "RightFoot": -4.2782,
+        "Spine01": 1.8335,
+        "neck": -1.2835
+      },
+      "thigh_degrees": -4.2782,
+      "knee_degrees": 9.1675
+    },
+    {
+      "time": 1.166667,
+      "hip_drop_cm": -0.4616,
+      "reviewed_local_degrees": {
+        "LeftArm": -0.6294,
+        "RightArm": -0.2098,
+        "LeftForeArm": -1.8883,
+        "RightForeArm": -1.2588,
+        "LeftUpLeg": -1.1749,
+        "RightUpLeg": -1.091,
+        "LeftLeg": 2.5177,
+        "RightLeg": 2.3498,
+        "LeftFoot": -1.1749,
+        "RightFoot": -1.1749,
+        "Spine01": 0.5035,
+        "neck": -0.3525
+      },
+      "thigh_degrees": -1.1749,
+      "knee_degrees": 2.5177
+    },
+    {
+      "time": 1.2,
+      "hip_drop_cm": 0.0,
+      "reviewed_local_degrees": {
+        "LeftArm": 0.0,
+        "RightArm": 0.0,
+        "LeftForeArm": 0.0,
+        "RightForeArm": 0.0,
+        "LeftUpLeg": 0.0,
+        "RightUpLeg": 0.0,
+        "LeftLeg": 0.0,
+        "RightLeg": 0.0,
+        "LeftFoot": 0.0,
+        "RightFoot": 0.0,
+        "Spine01": 0.0,
+        "neck": 0.0
+      },
+      "thigh_degrees": 0.0,
+      "knee_degrees": 0.0
+    }
+  ]
+}

@@ -1,0 +1,85 @@
+{
+  "_doc": {
+    "what": "Expected statistics of frametimes.csv. Scripts/test_gauntlet_model.py checks QuebecGauntletModel.h against it, and the Python gauntlet metrics use the same pair.",
+    "csv": "frametimes.csv has a header row and the columns frame_ms (milliseconds, 3 decimals) and leg (a leg name such as S1-S2). Rows are in frame order. Every row belongs to a measured leg; there are no warm-up or hold rows.",
+    "percentile": "sorted(values)[ceil((n - 1) * fraction)], the rule of Scripts/profile_package.py. p50_ms uses the same rule, not the mean of the two middle values.",
+    "counts": "over_33_3ms, over_50ms, over_66_7ms and over_250ms count frames strictly over 33.3, 50, 66.7 and 250 ms. The CSV has frames exactly at each limit, which do not count.",
+    "seconds": "Sum of frame_ms in row order, divided by 1000, rounded to 6 decimals. Compare it within 1e-6 s (QuebecGauntletModel.h prints 3 decimals, so that comparison uses 5e-4 s).",
+    "lap": "All rows.",
+    "legs": "Rows of each leg, in drive order."
+  },
+  "lap": {
+    "frames": 1000,
+    "seconds": 24.247554,
+    "p50_ms": 22.035,
+    "p95_ms": 34.009,
+    "p99_ms": 51.0,
+    "max_ms": 400.25,
+    "over_33_3ms": 57,
+    "over_50ms": 11,
+    "over_66_7ms": 6,
+    "over_250ms": 2
+  },
+  "legs": {
+    "S1-S2": {
+      "frames": 240,
+      "seconds": 7.090775,
+      "p50_ms": 27.624,
+      "p95_ms": 37.567,
+      "p99_ms": 66.7,
+      "max_ms": 120.5,
+      "over_33_3ms": 48,
+      "over_50ms": 4,
+      "over_66_7ms": 2,
+      "over_250ms": 0
+    },
+    "S2-S3": {
+      "frames": 200,
+      "seconds": 4.484918,
+      "p50_ms": 19.55,
+      "p95_ms": 25.291,
+      "p99_ms": 250.0,
+      "max_ms": 250.001,
+      "over_33_3ms": 2,
+      "over_50ms": 2,
+      "over_66_7ms": 2,
+      "over_250ms": 1
+    },
+    "S3-S4": {
+      "frames": 80,
+      "seconds": 1.518103,
+      "p50_ms": 17.279,
+      "p95_ms": 20.588,
+      "p99_ms": 75.25,
+      "max_ms": 75.25,
+      "over_33_3ms": 2,
+      "over_50ms": 1,
+      "over_66_7ms": 1,
+      "over_250ms": 0
+    },
+    "S4-S5": {
+      "frames": 200,
+      "seconds": 4.633473,
+      "p50_ms": 20.147,
+      "p95_ms": 27.214,
+      "p99_ms": 33.3,
+      "max_ms": 400.25,
+      "over_33_3ms": 1,
+      "over_50ms": 1,
+      "over_66_7ms": 1,
+      "over_250ms": 1
+    },
+    "S5-S1": {
+      "frames": 280,
+      "seconds": 6.520285,
+      "p50_ms": 21.751,
+      "p95_ms": 29.316,
+      "p99_ms": 51.0,
+      "max_ms": 66.7,
+      "over_33_3ms": 4,
+      "over_50ms": 3,
+      "over_66_7ms": 0,
+      "over_250ms": 0
+    }
+  }
+}

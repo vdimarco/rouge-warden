@@ -23,6 +23,8 @@ Sound stops when a page is hidden. On a phone, a tab you leave, a browser you mi
 
 ## Play
 
+Silent Depth (`/silent-depth/`) is a Pacific submarine patrol for desktop and phones. Track a convoy through the periscope, chart or hydrophone, launch torpedoes, then dive and evade the escort. Start in its control room and visit the periscope, chart, individual torpedo tubes, hydrophone and helm. Its circular periscope has etched angular marks, lens shading and 1.5×/6× optical power. Its ocean has GPU-animated traveling ripples and reflections, with a static fallback. Find its cabinet at the end of Strategy or search All Games. Tests: `node --test qa/silent-depth/*.test.mjs`; browser: `NODE_PATH=qa/browser/node_modules node qa/silent-depth/smoke.e2e.mjs`.
+
 The arcade is live at <https://arcade.uptick.systems/>. To run your own copy, deploy to Vercel, or serve `public/` from any static server and open it in a browser. Opened locally, a built-in stand-in answers for Jev.
 
 - The How to play card, and the How to play chip on the title screen, show a short clip of each move.
@@ -506,6 +508,40 @@ Moonwell (`/moonwell/`) is pinball on its side. A pearl travels right across an 
 
 The islands are drawn in code. The bumper, portal, star, pearl and flipper sprites, and the far islands, come from the original Moonwell paintings (`qa/moonwell/sprites.sh` cuts them). A bot plays behind the title.
 
+## Ahead of the Light
+
+Ahead of the Light (`/ahead-of-the-light/`) is a flight home at the edge of light speed, drawn in characters with [ascii.rest](https://github.com/bas3line/ascii) (MIT). At that speed the stars crowd ahead of you and turn blue, a ring of colour stands round the way ahead, and the sky at the edges reddens: the starbow. You fly a tube of stars toward Earth through eight sectors named for the route home: the cosmic web, Coma, Virgo, the Local Group, the Milky Way, the Orion Arm, the Sun's stars and Earth. A run is about 19 km and three minutes.
+
+- **The light** of a gamma-ray burst starts 520 m behind you. For the first kilometre it only keeps pace with you, then it grows faster than you cruise. The meter at the top right runs from BURST to YOU, and the edges of the frame whiten as the light comes. When it reaches you, the run is over, and the card says why and what to try. A player's first three runs show one tip at a time.
+- **Stars** in your path are hits: they take your shield, then your hull, and most of your speed. A star you would hit soon gets red brackets. Slip past one close (SKIM, or HAIRLINE) and it charges your boost.
+- **Gold rings** hang in the tube about every 170 m: they are your target. Fly through one for charge and a kick of speed; rings in a row make a chain. The next one pulses and wears +SPEED, and an arrow at the edge points to it when it is off screen.
+- **Boost** spends charge for speed. Charge also trickles in on its own.
+- **Controls.** On a computer, A D W S or the arrows steer, Shift or Space boosts, and Esc or P pauses. A drag on the view also steers. On a phone, drag anywhere to steer and hold BOOST. A gamepad uses the left stick and RT or A.
+- **Your best** run stays in this browser, and the machine shows the furthest sector (BEST: VIRGO).
+
+The game is one ascii.rest piece sized to the window: `render/ascii.js` lights a grid of cells, and the library's `mount` draws each cell as a character in the starbow's colours. The library's `galaxy` piece is the galaxy ahead, and its `banner` draws the title and each sector's name in block letters (`vendor/ascii-rest/`). The run is pure code in `core/` that node tests and bots fly headless. The music is the cinematic score in `ui/sound.js`, which grows over the run.
+
+## First Breath
+
+First Breath (`/first-breath/`) is a baby's journey to birth, seen from the baby. It has eight short stages and an ending, and a run takes about 8 to 10 minutes. The look is paper cut: flat sheets of coloured paper stacked like a shadow box, with hand-cut edges and soft drop shadows. The heartbeat of the one who carries you plays through the whole run, and most moves keep time with it. Only the first stage has a goal you can miss: if you are not in the top 3, the Almost card lets you try again or go on.
+
+1. **The Race.** Swim with 19 rivals to the meeting place, and arrive in the top 3.
+2. **The Egg.** Guard your shell: turn an arc round it, and the other sperm bounce off. Let your own sperm in, then seal the shell.
+3. **The Embryo: first cells.** Tap as each ring closes, and the cells split. Then hold, and let go at the glow.
+4. **The Placenta.** Drift into a soft spot, and grow roots to 8 pools. Then tap with your first heartbeat.
+5. **First Trimester.** Tap when the light reaches your heart, and drag to stretch.
+6. **Second Trimester.** Tap with the heartbeat. Then listen to each hummed phrase and answer it.
+7. **Third Trimester.** Practise four breaths, and turn head-down when there is room.
+8. **Birth.** Ride 8 waves. Hold through each wave, and drag the way the prompt shows. Then the light grows from below and fills the screen. The ending is your first breath.
+
+- **Controls.** On a phone, drag anywhere to steer. The stick starts where you touch. Tap, or hold and let go, as the prompt line says. On a computer, the arrow keys or WASD steer, and Space, Enter or Z is the tap and the hold. In the egg stage the left and right arrows (or A and D) turn the arc, or the mouse points it. In Birth, hold the arrow of the prompted direction. Esc or P pauses, M mutes and C turns the captions on or off.
+- **One-button mode** (Settings) makes any key or tap the one button. Hold it, and the game steers for you.
+- **Settings** also hold Assist, the word for the one who carries you (mother, mum, mom or parent), Motion (Auto, Full or Reduced), Captions, Large text, the Tap test and the timing offset.
+- **Facts.** Each stage shows short facts, each with its week or day. Each fact has a source, and Sources on the title lists them all. The run result says what was real and what is the game's.
+- **Your best** run stays in this browser, and the machine shows it (BEST 61,240). With no finished run, the machine shows RACE · GUARD · CRY.
+
+The game is pure code in `core/` that node tests and bots play headless. A Canvas 2D renderer in `render/` draws it as paper, and its low tier keeps the paper look on a slow phone. The sound is made in code in `ui/sound.js`. The plan, the facts table and the sources are in `openspec/changes/archive/2026-10-19-add-first-breath/`.
+
 ## The lab
 
 The lab at `/lab/` holds toys. A toy is a small build that tests the core move of a new game idea before anyone builds the game. The arcade shows the lab: The Lab machine opens `/lab/`, the **LAB ↗** link under the sign does too, and each toy has a machine of its own. The game switcher lists the lab and its toys. Each lab page asks search engines not to index it. The ideas, and the bar a new game must pass, are in `docs/game-ideas.md`.
@@ -605,6 +641,17 @@ The terminal draws the pinball table, the brick wall and the Lenia dish with hal
 | `public/fish/privacy.html` | The privacy policy. The web serves it, and the game shows it in Settings with no network |
 | `qa/fish/` | Tests for Reel It In (see below) |
 | `apps/fish/` | The iPhone and Android app: a Capacitor 8 project, the script that builds a self-contained `www/` from `public/fish/` and checks it, the native projects, the icons and the splash, and the store kit in `store/`. Its README has the release steps |
+| `public/ahead-of-the-light/index.html`, `style.css`, `main.js` | Ahead of the Light: the page, the title (the logo in ascii.rest's block letters), pause and result screens, the fixed 120 Hz loop, the touch buttons and `window.__race` (the test hook: `autopilot`, `warp`, `frameMs`, `drawMs`) |
+| `public/ahead-of-the-light/core/` | Ahead of the Light's run, pure and node-tested: `world.js` (the tube of stars, the rings and the sectors for a seed), `flight.js` (one step: steering, boost, hits, skims, rings and the light) and `bot.js` (a pilot for the title and the tests) |
+| `public/ahead-of-the-light/render/`, `ui/`, `vendor/ascii-rest/` | Ahead of the Light's view (`render/ascii.js`, the game as an ascii.rest piece), its input and sound, and the vendored ascii.rest renderer, banner and galaxy (MIT) |
+| `public/arcade/key/ahead-of-the-light.webp` | The Ahead of the Light machine's screen, a frame of the flight in characters |
+| `public/arcade/key/light-years-home.webp` | The Light Years Home machine's screen, cut from a frame of the drop-out into Coma City |
+| `qa/ahead-of-the-light/` | Tests for Ahead of the Light (see below) |
+| `public/first-breath/index.html`, `style.css`, `main.js` | First Breath: the page, the paper-tag styles for the HUD and the screens, the 60 Hz fixed-step loop, the URL flags, and `window.__fb` (the test hook) |
+| `public/first-breath/core/` | First Breath's game, pure and node-tested: the clock and its labels, the beats, the judge, the run, the bots, the save and the cabinet line, the facts and their sources, the words, `lib/` (targets, sub-goals, steering, flow, the root tree and the baby figure) and `stages/` (each stage with its `.tune.js`, `.facts.js` and `.text.js`) |
+| `public/first-breath/render/`, `ui/` | First Breath's paper-cut renderer (Canvas 2D: the paper kit, the bakes, the items, the low tier, the frame cost, the colour script and the DOM rings) and its input, HUD, captions, screens, sound and storage |
+| `public/arcade/key/first-breath.svg` | The First Breath machine's screen, drawn by hand as cut paper |
+| `qa/first-breath/` | Tests for First Breath (see below) |
 | `public/lab/index.html` | The lab: the four toys, and your play time in each |
 | `public/lab/kit/` | What the toys share: sound made in code, the frame loop, the start and end cards, play time, and a seeded random with a byte codec for links |
 | `public/lab/plunge/` | Take the Plunge: `sim.js` (the flight, the dives and the lakes, exact in every browser), `ghost.js` (ghost links), and `main.js` |
@@ -720,14 +767,56 @@ Run these from the repo root. The browser checks need `public/` served at http:/
 | `NODE_PATH=qa/browser/node_modules node qa/moonwell/smoke.e2e.mjs` | The title, keys, pause and blur, sound, the camera both ways, a trip back, a shrine with the 2 key, the end of a run and the save, junk saves, two thumbs on a phone, landscape, and reduced motion |
 | `NODE_PATH=qa/browser/node_modules node qa/moonwell/cabinet-art.mjs` | Makes the machine art, `public/arcade/moonwell.webp`, from a frame of the real game |
 
-### Arcade tests
+### Ahead of the Light tests
 
-Serve `public/` (for example `cd public && python3 -m http.server 8765`), then run the script from the repo root with Playwright on `NODE_PATH` (for example `NODE_PATH=$(npm root -g)`). Set `ARCADE_URL` to test another address of the same tree, `SHOTS` to a folder to save screenshots, and `PARTS` (`walk`, `layout`, `switcher`, `saves`, `credits`) to run only some of the browser parts. `quiet.mjs` reads `QUIET_URL` instead (default `http://localhost:8912`, so serve on 8912 or set `QUIET_URL=http://localhost:8765`), and takes `--old`, `--only=`, `--skip=` and `--modes=`. The whole run takes a few minutes, because the page is slow in a headless browser. It exits with code 1 when something fails.
+Run these from the repo root. Each node test runs alone and exits with code 1 when something fails. The browser checks need `public/` served at http://127.0.0.1:8765/ (or set `BASE_URL`) and Playwright on `NODE_PATH`.
 
 | Script | What it checks |
 | --- | --- |
-| `qa/arcade/machines.mjs` | Every game folder in `public/` (and every toy folder in `public/lab/`) has a machine and a place in `switch.js`, and the pictures are there. Then, at 390×844 and 1280×720, the arrows walk to every machine, a token goes in (dragged, tapped, or with key 5), START or key 1 or Enter picks the right address, and the page has no errors. It also checks the last machine by key and by swipe at seven window sizes, that no machine is clipped or overlapped, that the game switcher shows every game, marks the right one for each address, and keeps its exit buttons in reach, and that a junk save never breaks a screen line. A game with no machine must be in the `ALLOW` list in the script, with the reason. Each machine and its switcher entry must have the same id and the same name. The end card of Crimson Rogue, which lists the games of the switcher, keeps its buttons in the window at 360×740, 390×844 and 1280×720. |
-| `qa/arcade/quiet.mjs` | Every page that makes sound loads `quiet.js` first (the scan). The script itself, on small test pages: contexts, media, SoundCloud songs, speech, `interrupted` contexts, a page with no `AudioContext`, and a script that loads twice. Then every game page, started the way a player starts it: the sound runs, goes silent when the page is hidden (even when the page pokes at its sound, and after 3 s), and runs again when the page is visible. It hides pages four ways: a page-level `visibilitychange`, `pagehide` then `pageshow`, a second tab on top, and a page freeze. A full run takes about 25 minutes. `--old` shows which pages are loud without the script. |
+| `for f in qa/ahead-of-the-light/*.test.mjs; do node $f \|\| echo FAIL $f; done` | The tube (the same for a seed, stars thicker toward Earth, a way through every slice, rings inside the tube and clear) and the run (doing nothing loses, a good bot gets home on most seeds and a weak one is caught on some, hits, skims, rings, boost, the tube's wall, determinism and the end) |
+| `NODE_PATH=qa/browser/node_modules node qa/ahead-of-the-light/smoke.e2e.mjs` | At 1280 × 800, 800 × 600, 390 × 844, 320 × 568 and 844 × 390: the title fits with the logo whole, 44 px buttons, FLY, the grid fits the window, the ship on screen, steering by keys or drag, boost by Shift, Space or the button, pause, a sector's name in block letters, the caught card and FLY AGAIN, home and the best line, and no page errors; it reports the time to build a frame; shots in `/tmp/ahead-of-the-light-smoke` |
+
+### First Breath tests
+
+Run these from the repo root. Each node test runs alone and exits with code 1 when something fails. The browser checks start `python3 -m http.server 8765 --directory public` when nothing answers there, and need Playwright on `NODE_PATH`. They run headless Chromium with `--disable-gpu` and no SwiftShader flags, so the canvas draws in software. They do not test a real phone, real touch latency or phone speakers.
+
+| Script | What it checks |
+| --- | --- |
+| `for f in qa/first-breath/*.test.mjs; do node $f \|\| echo FAIL $f; done` | Every node test: the clock and its labels, the beats, the judge and the targets, the draw-list limits, the save and the cabinet line, the run (stage order, retries, carry, one-button mode), the purity of `core/`, each stage (`stage-<id>.test.mjs`) and the ending, the facts and their sources (`facts.test.mjs`), the words (`text.test.mjs`: every string id resolves, no unfilled `{var}`, no em dash, the banned words and pronouns), the prompt words for keys, touch and one-button mode (`prompts.test.mjs`), the input's fresh-press rule (`input.test.mjs`), the captions queue (`captions.test.mjs`), each stage's step cost (`perf.test.mjs`: p99 1 ms or less), the paper kit with the colour script's contrast rules (`paper.test.mjs`), the score's cues and stingers (`music.test.mjs`), the score engine's scheduler on a fake AudioContext (`music-engine.test.mjs`: bar lines, swing, tempo, cue changes, stage 6's sync, stops and resumes, nodes freed, the voice cap, its cost), and the bots' whole-run gates over 20 seeds and 4 skills (`sim.test.mjs`) |
+| `node qa/first-breath/bot.mjs 20 0.7 1` | Bots play whole runs headless (the number of runs, the skill from 0 to 1, the first seed) and report each stage's time, score, grade and accuracy, and the run time |
+| `node qa/first-breath/race-sim.mjs` | A numeric model of the stage 1 race, apart from the game: the places and arrival times of the ref, mid and idle players and every rival over 20 seeds |
+| `NODE_PATH=qa/browser/node_modules node qa/first-breath/boot.e2e.mjs` | At 390 × 844, 844 × 390 and 1440 × 900: the scripts in the right order, every member of `window.__fb`, Play, a whole run to the result, every stage by `goto`, and no errors |
+| `NODE_PATH=qa/browser/node_modules node qa/first-breath/smoke.e2e.mjs` | The first 10 seconds, every stage by `goto`, the bot from Play to the run result, the low tier in every stage (`?q=low` and `?gl=0`), and no raw string ids, console errors or failed requests |
+| `NODE_PATH=qa/browser/node_modules node qa/first-breath/input.e2e.mjs` | Real touch at 390 × 844 and 844 × 390, and keys and the mouse at 1440 × 900: Play by a tap, a click or Enter; each stage's first gesture moves the game; one-button mode clears stage 1; a held key never clicks a new screen's button; the pause button over the overlay; the game switcher's keys; releases while paused or hidden; many keys as one hold; and the prompt words for each device |
+| `NODE_PATH=qa/browser/node_modules node qa/first-breath/screens.e2e.mjs` | The screens and captions in the page: no caption repeats the prompt line, the Settings switches over pause, every screen named by its own words, a caption kept across a pause, and fact captions shown for their whole reading time |
+| `NODE_PATH=qa/browser/node_modules node qa/first-breath/layout.e2e.mjs` | Every screen and stage with `?inset=47,0,34,0`: 44 px targets, the safe area, no overlaps, the caption bands, the thumb reach, the stage 1 place slot and fork, the egg and its arc, your sperm's path in portrait, the ending's thumb ring, and Large text (`SHOTS` keeps a screenshot of each) |
+| `NODE_PATH=qa/browser/node_modules node qa/first-breath/perf.e2e.mjs` | The frame cost of every stage at the pinned steps under `?probe=1`: full tier p95 16 ms or less, low tier 10 ms or less, 400 draws or fewer, and the adaptive scale and the tier switch |
+| `NODE_PATH=qa/browser/node_modules node qa/first-breath/visual.e2e.mjs` | No text on the canvas, the brightest cue, the paper cell, the light rising from stage to stage, the flash rule, the birth light and its opening, the ending's warmth, reduced motion, and the low tier |
+| `NODE_PATH=qa/browser/node_modules node qa/first-breath/sound.e2e.mjs` | The sound in an `OfflineAudioContext` (the womb filter, the opening at birth, beat times within 5 ms, the output latency) and in the page (no sound before Play, her beats even across cards, M, `?mute=1` and a hidden page) |
+| `NODE_PATH=qa/browser/node_modules node qa/first-breath/music.e2e.mjs` | The score, offline (it bypasses the womb filter, a mood change on a bar line, stage 6's downbeats on her beats, Music off and Sound off, the mix peak under -1 dBFS, her heartbeat clear over every cue) and in the page (no score file at boot, nor with Music off until it is turned on, the cue's opening kept through the Play tap's first-frame stall, the samples or the fallback synth, the Music setting, a hidden page, the stingers, the caption, the ending's fade and warm chord) |
+| `NODE_PATH=qa/browser/node_modules node qa/first-breath/music-demo.mjs` | Renders every cue (each level, and the boss) and every stinger to mp3 with ffmpeg in `DEMO` (default the system temp folder), so a person can listen |
+| `SHOTS=<folder> NODE_PATH=qa/browser/node_modules node qa/first-breath/shots.mjs` | Screenshots of every stage at the three sizes in both tiers, the birth light, and a 1 s strip of stage 1 at `?res=0.5` to review the sway |
+
+### Table Tennis tests
+
+Run these from the repo root. The desktop checks open Chromium through the Playwright package in `qa/browser`. Install that package, then install Chromium with `npx playwright install chromium` in `qa/browser`:
+
+```sh
+npm ci --prefix qa/browser
+(cd qa/browser && npx playwright install chromium)
+node --test qa/pingpong/*.test.mjs
+```
+
+The 48 checks cover the rules, the rally, the bat, the gate, phone motion, the desktop court, and the win rate.
+
+### Arcade tests
+
+Serve `public/` (for example `cd public && python3 -m http.server 8765`), then run the script from the repo root with Playwright on `NODE_PATH` (for example `NODE_PATH=$(npm root -g)`). Set `ARCADE_URL` to test another address of the same tree, `SHOTS` to a folder to save screenshots, and `PARTS` (`gta`, `walk`, `layout`, `marquee`, `switcher`, `saves`, `credits`, `focus`, `backlinks`) to run only some of the browser parts. `quiet.mjs` reads `QUIET_URL` instead (default `http://localhost:8912`, so serve on 8912 or set `QUIET_URL=http://localhost:8765`), and takes `--old`, `--only=`, `--skip=` and `--modes=`. The whole run takes a few minutes, because the page is slow in a headless browser. It exits with code 1 when something fails.
+
+| Script | What it checks |
+| --- | --- |
+| `qa/arcade/machines.mjs` | Every game folder in `public/` (and every toy folder in `public/lab/`) has a machine and a place in `switch.js`, and the pictures are there. Then, at 390×844 and 1280×720, the arrows walk to every machine, a token goes in (dragged, tapped, or with key 5), START or key 1 or Enter picks the right address, and the page has no errors. It also checks the last machine by key and by swipe at seven window sizes, that no machine is clipped or overlapped, that the marquees of Light Years Home and Ahead of the Light show their whole title and sub line at 1280, 390, 375, 360 and 320 wide and their whole title, with the sub line hidden, in a short window (360×640 and 800×600), that the game switcher shows every game, marks the right one for each address, and keeps its exit buttons in reach, and that a junk save never breaks a screen line. A game with no machine must be in the `ALLOW` list in the script, with the reason. Each machine and its switcher entry must have the same id and the same name. The end card of Crimson Rogue, which lists the games of the switcher, keeps its buttons in the window at 360×740, 390×844 and 1280×720. |
+| `qa/arcade/quiet.mjs` | Every page that makes sound loads `quiet.js` first (the scan). The script itself, on small test pages: contexts, media, SoundCloud songs, speech, `interrupted` contexts, a page with no `AudioContext`, and a script that loads twice. Then every game page, started the way a player starts it: the sound runs, goes silent when the page is hidden (even when the page pokes at its sound, and after 3 s), and runs again when the page is visible. It hides pages four ways: a page-level `visibilitychange`, `pagehide` then `pageshow`, a second tab on top, and a page freeze. The scan also fails when a game's page with sound has no entry in `PAGES` (`UNPLAYED` lists the older ones, each with the reason), and `--only=` fails on a name it does not know. A full run takes about 25 minutes. `--old` shows which pages are loud without the script. |
 
 ### Lab tests
 

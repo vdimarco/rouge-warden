@@ -1,0 +1,4 @@
+- [x] Lay a broken center line on roads at least 9 m wide
+- [x] Shade the walking camera before and after
+- [x] Run `Scripts/test_lane_paint.py`
+- [ ] Confirm the dashes in Unreal (editor not available here)

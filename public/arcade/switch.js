@@ -22,7 +22,11 @@
     { id: "primordia", name: "Primordia", sub: "A Lenia arcade", url: "/primordia/", art: "/arcade/key/primordia.webp", color: "#3ff0e0" },
     { id: "breakthrough", name: "Breakthrough", sub: "Climate strategy", url: "/breakthrough2/", art: "/arcade/key/breakthrough.webp", color: "#f0c56a" },
     { id: "follow-suit", name: "Follow Suit", sub: "A card roguelike", url: "/follow-suit/", art: "/arcade/key/follow-suit.webp", color: "#e9c46a" },
+    { id: "silent-depth", name: "Silent Depth", sub: "Pacific submarine patrol", url: "/silent-depth/", art: "/arcade/key/silent-depth.webp", color: "#b0cbb8" },
     { id: "river-rush", name: "River Rush", sub: "Three wild rivers", url: "/river-rush/", art: "/arcade/key/river-rush.webp", color: "#f9c65b" },
+    { id: "light-years-home", name: "Light Years Home", sub: "Drive on", url: "/light-years-home/", art: "/arcade/key/light-years-home.webp", color: "#cfe0ff" },
+    { id: "ahead-of-the-light", name: "Ahead of the Light", sub: "Run home", url: "/ahead-of-the-light/", art: "/arcade/key/ahead-of-the-light.webp", color: "#f08a2c" },
+    { id: "first-breath", name: "First Breath", sub: "A baby's journey to birth", url: "/first-breath/", art: "/arcade/key/first-breath.svg", color: "#ffc53d" },
     // credits: false keeps a game off the end card of Crimson Rogue (the Lab tile covers the four toys)
   // The Lab and the games it lists. A game inside the Lab has a longer address than the Lab, and the longest match wins.
   // labOnly: a game that stands only in the Lab. All Games leaves it out (the Lab tile covers it), and so do the Crimson Rogue credits.
@@ -45,6 +49,25 @@
     { id: "last-light", name: "Last Light", sub: "An ASCII sailing adventure", url: "/last-light/", art: "/last-light/art/sunset.svg", color: "#ffcd62", labOnly: true },
   ];
   const home = location.pathname === "/" || location.pathname === "/index.html";
+  // Public vote routes documented at https://vibetoplist.com/api-docs.
+  // No player identifiers, callback secrets, or reward claims are needed.
+  const VOTE_SLUGS = Object.freeze({
+    fish: 'reel-it-in-lake-fishing', tidebreak: 'shore-of-the-ancients',
+    wild: 'breath-of-the-lake', vr: 'in-full-swing',
+    crimson: 'crimson-rogue', 'river-rush': 'river-rush',
+  });
+  function voteLink(game) {
+    const slug = game && VOTE_SLUGS[game.id];
+    if (!slug) return null;
+    const link = document.createElement('a');
+    link.className = 'arcade-vote';
+    link.href = 'https://vibetoplist.com/vote/' + slug;
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
+    link.textContent = 'Vote on VibeTopList ↗';
+    link.setAttribute('aria-label', 'Vote for ' + game.name + ' on VibeTopList (opens in a new tab)');
+    return link;
+  }
   const readPlays = () => { try { const v = JSON.parse(localStorage.getItem('cottage-plays') || '{}'); return v && typeof v === 'object' && !Array.isArray(v) ? v : {}; } catch { return {}; } };
   const count = id => { const n = readPlays()[id]; return Number.isSafeInteger(n) && n > 0 ? n : 0; };
   function record(id) { if (!GAMES.some(g => g.id === id)) return; try { localStorage.setItem('cottage-plays', JSON.stringify({...readPlays(), [id]: Math.min(count(id) + 1, 1000000)})); } catch {} }
@@ -273,7 +296,16 @@
       }
       a.addEventListener('click', () => { if (g.id !== here) record(g.id); });
       if (g.id === here) a.onclick = e => { e.preventDefault(); close(); };
+      if (home) {
+        const vote = voteLink(g);
+        if (vote) tile.append(vote);
+      }
       list.append(tile);
+    }
+    if (!home) {
+      box.querySelector('.arcade-vote')?.remove();
+      const vote = voteLink(GAMES.find(g => g.id === here));
+      if (vote) box.querySelector('.gsw-row').prepend(vote);
     }
     filter();
   }
@@ -287,6 +319,7 @@
     }
     const st = document.createElement("style");
     st.textContent = css;
+    st.textContent += `.scoreboard .gsw-card{min-width:0;}@media(max-width:360px){.scoreboard .board-head{grid-template-columns:minmax(0,1fr) auto;}.scoreboard .board-head h2{white-space:normal;font-size:12px;}}.gsw .arcade-vote{display:flex;align-items:center;justify-content:center;min-height:44px;margin:4px;padding:10px 8px;border:1px solid #ffcf4a88;border-radius:6px;background:#201a10;color:#ffcf4a;font:12px/1.5 system-ui,sans-serif;text-align:center;text-decoration:none;overflow-wrap:anywhere;}.gsw .arcade-vote:hover{background:#3b2b10;}.gsw .arcade-vote:focus-visible{outline:3px solid #3ff0ff;outline-offset:2px;}`;
     document.head.appendChild(st);
     box = document.createElement("div");
     box.className = "gsw" + (home ? " scoreboard" : "");

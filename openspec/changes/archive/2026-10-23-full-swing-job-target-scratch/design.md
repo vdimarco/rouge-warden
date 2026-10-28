@@ -1,0 +1,2 @@
+# Design
+jobs.ropeTargets(h,out=[]) clears the array before inspecting the active job. Only main consumes production results, synchronously. Main owns jobTargets. Keep freshly constructed target records: ropes retains these records, so reusing them across different jobs could mutate retained targets. Preserve each position object's live identity and existing radius/state conditions. No graphics technique or FPS claim.

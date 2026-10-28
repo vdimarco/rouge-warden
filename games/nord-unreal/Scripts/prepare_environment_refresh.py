@@ -77,7 +77,11 @@ def crown_mesh(style, Mesh, variant=0):
 
 
 def broadleaf_mesh(style,variant,Mesh):
-    """Eight uneven, open bough structures; elongated leaf masses follow their limbs."""
+    """Eight uneven bough structures. Leaf masses stay on the limbs and leave sky between them.
+
+    Alpha-card foliage pipelines do not fit this opaque isosurface path, so the gaps are
+    carved in the existing marching-tetrahedra field instead of adding leaf cards.
+    """
     import numpy as np
     mesh=Mesh();clusters=[];branches=[]
     count=5+(variant+style*2)%4
@@ -115,9 +119,12 @@ def broadleaf_mesh(style,variant,Mesh):
             q=points-center
             q=np.column_stack((q[:,0]*math.cos(angle)+q[:,1]*math.sin(angle),
                                -q[:,0]*math.sin(angle)+q[:,1]*math.cos(angle),q[:,2]))/size
-            values+=np.exp(-1.7*np.sum(q*q,axis=1))
-        values*=1+.24*np.sin(points[:,0]*.041+variant)*np.cos(points[:,1]*.037)*np.sin(points[:,2]*.043)
-        return values-.43
+            # Slightly tighter than the old fused balloons, still full enough to read as a crown.
+            values+=np.exp(-1.95*np.sum(q*q,axis=1))
+        ripple=np.sin(points[:,0]*.041+variant)*np.cos(points[:,1]*.037)*np.sin(points[:,2]*.043)
+        wells=np.maximum(0., np.sin(points[:,0]*.017+phase)*np.sin(points[:,1]*.019+variant)*np.sin(points[:,2]*.015))
+        values*=1+.2*ripple
+        return values-.47-.06*wells
     step=42.
     xs=np.arange(-900,949,step);ys=np.arange(-900,949,step);zs=np.arange(300,1177,step)
     grid=np.stack(np.meshgrid(xs,ys,zs,indexing='ij'),axis=-1)
@@ -145,7 +152,9 @@ def broadleaf_mesh(style,variant,Mesh):
             hits.sort(key=lambda p:math.atan2(np.dot(p-center,side),np.dot(p-center,axis)))
             for i in range(1,len(hits)-1):
                 if np.linalg.norm(np.cross(hits[i]-hits[0],hits[i+1]-hits[0]))>1.e-7:
-                    mesh.face([tuple(hits[0]),tuple(hits[i]),tuple(hits[i+1])],'Leaf1',outward)
+                    # Sunlit caps and shaded undersides. The importer reads the last digit as the shade.
+                    shade=2 if center[2]>840 and outward[2]>.4 else (0 if outward[2]<-.25 else 1)
+                    mesh.face([tuple(hits[0]),tuple(hits[i]),tuple(hits[i+1])],'Leaf'+str(shade),outward)
     tapered_branch(mesh,(0,0,220),(lean*.25,0,460),23,17)
     for a,b,base,tip in branches:tapered_branch(mesh,a,b,base,tip)
     return mesh

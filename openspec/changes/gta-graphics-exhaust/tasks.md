@@ -1,0 +1,4 @@
+- [x] Emit exhaust from the tail while the engine is turning
+- [x] Shade the walking camera before and after
+- [x] Run `Scripts/test_exhaust.py`
+- [ ] Confirm the column in Unreal (editor not available here)

@@ -1,0 +1,10 @@
+{
+  "passed": false,
+  "character": "Memphis33",
+  "reason": "Original GLB embeds JPEG normal while the separate returned PNG is not byte-identical; no conversion, replacement or false identity accepted.",
+  "process_exit_code": 1,
+  "preserved_attempt": "Saved/Recovery/tripo-cast-20261017/Memphis33-surface-rejected-v1",
+  "source_normal_mime": "image/jpeg",
+  "source_normal_sha256": "331cde6e456ae94b9ab4f3de6f4891d2ae627657c9ffc2162074a52d81573799",
+  "retained_inputs_unchanged": true
+}

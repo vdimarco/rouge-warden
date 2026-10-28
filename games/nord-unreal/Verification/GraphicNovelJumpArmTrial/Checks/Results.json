@@ -1,0 +1,95 @@
+{
+  "passed": true,
+  "started_utc": "2026-10-17T14:59:26.338479+00:00",
+  "finished_utc": "2026-10-17T14:59:26.583450+00:00",
+  "scope": "Focused CPU-only negative/static checks and replay of retained semantic/native evidence",
+  "commands": [
+    {
+      "argv": [
+        "/usr/bin/python3",
+        "-B",
+        "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/GraphicNovel/PrivateJumpArmPlan-20261017/test_native_trial.py"
+      ],
+      "cwd": "/home/von/Work/rouge-warden-codex-nord-unreal",
+      "started_utc": "2026-10-17T14:59:26.339805+00:00",
+      "finished_utc": "2026-10-17T14:59:26.430066+00:00",
+      "exit_code": 0,
+      "stdout": "native-negative.stdout.log",
+      "stderr": "native-negative.stderr.log",
+      "stdout_sha256": "a7b45aa979f2eb1bc2d55fd651c64a7c560d01ff0f29c70340e4fcbc3a49b0ea",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "argv": [
+        "/usr/bin/python3",
+        "-B",
+        "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/GraphicNovel/PrivateJumpArmPlan-20261017/prepare.py",
+        "--check"
+      ],
+      "cwd": "/home/von/Work/rouge-warden-codex-nord-unreal",
+      "started_utc": "2026-10-17T14:59:26.430113+00:00",
+      "finished_utc": "2026-10-17T14:59:26.489327+00:00",
+      "exit_code": 0,
+      "stdout": "prepare-check.stdout.log",
+      "stderr": "prepare-check.stderr.log",
+      "stdout_sha256": "7a7dfeadf2a7f92007a329c3e91450e3802046e4fc85d12e2e453a26c7b1d7d8",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "checker_source_pins": {
+    "Saved/Tests/GraphicNovel/PrivateJumpArmPlan-20261017/native_trial.py": "81110214ce1c2a14c1348bf44ef0377046651a139fde3a00bcc0959cb7110679",
+    "Saved/Tests/GraphicNovel/PrivateJumpArmPlan-20261017/test_native_trial.py": "de645cbbc2c16f677da29d775a287cd5b145b24dda9e009c1b00531a09edb910",
+    "Saved/Tests/GraphicNovel/PrivateJumpArmPlan-20261017/CPUAuthoring-20261017T142247Z/results.json": "15bf5c7fb878fcd2b792482ff24535cd684d718bb79d09ce4e35cc50d8333c8f",
+    "Saved/Tests/GraphicNovel/PrivateJumpArmPlan-20261017/CPUAuthoring-20261017T142247Z/semantic-comparison.json": "5c3616f84bd814d2fae3ec1208131383285cdccb4c70ec53866fe9cef84cf006",
+    "Saved/Tests/GraphicNovel/PrivateJumpArmPlan-20261017/CPUAuthoring-20261017T142247Z/Scripts/verify_jump_ab.py": "c078c6d5e7ae66f1bf1955eb0f9db60753e2f285c471bfe33c32153b19de16fa",
+    "Saved/Tests/GraphicNovel/PrivateJumpArmPlan-20261017/prepare.py": "0e644d903009806fbe502e33d9f3d04c924b1b9df124fdc148ed68d27eb6cd7d"
+  },
+  "source_pins": {
+    "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/base_color.png": "f300cbf5d78c411cad36cfedee17a36c787d1a50c968c2adb2827ecf0e43d774",
+    "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/body.fbx": "b7e7ca0d9c486412108cba85e1cd4a5512fecd4ad36b8cfdb4677259ff6f9244",
+    "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/body.glb": "25041be9666422c30ba39449cb283a83928bb3de596fe063389707c070335613",
+    "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/files.json": "d942b4ec45c3b28ef54c0afeb991278528fd74252ec7208cd518519277fd18bc",
+    "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/generation.json": "a23277ea16f38bf8123e4c5f8e4b64323c6b07843158a4b84a7f2bcf7d910632",
+    "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/idle.fbx": "b1a7bd95403aa7358f067a3a352d060ca2cd56d9c65d9f8d6fe497dbf4343641",
+    "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/jump.fbx": "36d74356ca903188a9b3956db69e51367260866972cda9215fab6a66d5362aa3",
+    "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/jump.json": "94deb47f51e5cbfd6e5694efb8dcb8052c2abf6c91df7ceee2a35def47838e3f",
+    "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/metallic.png": "2e0e9b79402c506cdcf5fe11f4e81e7a376b0b81fa5982b6b6584f5e35402309",
+    "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/normal.png": "7845864ce13d1e3ce10e8149ef2ef98a048b8be249a60749dfc70c4897e9e7ab",
+    "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/preview.png": "8b0e3ba80a30dd9f6d438be6f81728e9744dc057c9f1df50759379b2dc57a8d4",
+    "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/pricing.json": "6ff6e0d5f7a22b9cf85119d4ad1cb6e8f30e6acb4804a61b563e27b347663d32",
+    "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/reference.png": "c00eb6f0ea1f5743b1a236295ecedfa27e15763d9ab5a717942ebf3713e778be",
+    "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/request.json": "47209121445fc43283c50481d7fc6adece8274fdf049ddec31e52c58f4a352d1",
+    "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/result-receipt.json": "192c42733e1ab51fd1b4d799bd4167b7c457ed2b5a3d48d3ccb910729b3c8ba7",
+    "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/result.json": "da1d5ae7bc3856dde6e1b7f642182814eeb1ff22f2d69cc7aaf8a4ebde5dbdab",
+    "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/roughness.png": "cf28e5b2f2b3d1d85b3e3a6b8228b0bde61f82c60133b393a6159b5d3a7a9f89",
+    "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/run.fbx": "b0f8e4c359d21ca3a51dde5c94b45b4d9f4a3d27dedb2d44f671b69e41f6e8ae",
+    "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/run.glb": "b59e018d32513f3519f4f64a6a29de42cdc952cc53a5416b91ee60bc82229b30",
+    "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/schema.json": "4779033055c3bed4def386892cc4844f22ed9bd718d6795318efa395dafc219b",
+    "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/source-review.json": "a2ea79458aef0ad20ee1cb00b262269c509db230ca94b9c03cfc8bebeaacd3d8",
+    "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/submit-response.json": "47209121445fc43283c50481d7fc6adece8274fdf049ddec31e52c58f4a352d1",
+    "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/walk.fbx": "0fe2b4d83846f826e3d448c870fcb77816c25fe6d106c873d755cd7a3d871d9e",
+    "Verification/GraphicNovelHighDetailPilot/NativeImport.json": "90374db5083e6115513032f74c6f8c7b31a45c5226bf1800bf91fae6ab3c88ca",
+    "Scripts/import_meshy_crew.py": "a08101d3a3e5e7355df9e90cfccf6f19c71de3ce2f1b0a0b4127aecf9e88ebcc",
+    "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/GraphicNovel/PrivateJumpArmPlan-20261017/native_trial.py": "81110214ce1c2a14c1348bf44ef0377046651a139fde3a00bcc0959cb7110679",
+    "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/GraphicNovel/PrivateJumpArmPlan-20261017/CPUAuthoring-20261017T142247Z/results.json": "15bf5c7fb878fcd2b792482ff24535cd684d718bb79d09ce4e35cc50d8333c8f",
+    "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/GraphicNovel/PrivateJumpArmPlan-20261017/CPUAuthoring-20261017T142247Z/semantic-comparison.json": "5c3616f84bd814d2fae3ec1208131383285cdccb4c70ec53866fe9cef84cf006",
+    "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/GraphicNovel/PrivateJumpArmPlan-20261017/CPUAuthoring-20261017T142247Z/trial/CurlyMetalhead/jump.fbx": "e35071099841d099eea5dda9de96a31b10cd07c4dfe73543bfee42f395c4833e"
+  },
+  "reports": [
+    "RecordedSemanticReplay.json",
+    "NativeScopeAudit.json",
+    "OpenSpecStructure.json"
+  ],
+  "skipped": [
+    {
+      "checker": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/GraphicNovel/PrivateJumpArmPlan-20261017/CPUAuthoring-20261017T142247Z/Scripts/verify_jump_ab.py",
+      "reason": "Full checker imports bpy, resets Blender scene, imports FBXs and writes a new comparison; only pinned pure math functions replayed on existing arrays."
+    }
+  ],
+  "no_ue_blender_gpu_service_git_execution": true,
+  "no_content_mutation": true,
+  "full_content_rehash_performed": false,
+  "graphics_accepted": false,
+  "adopted": false,
+  "runner_sha256": "f56e561e624baf18dcd9bbb8ca047a5da9dc89444a1d503671822c7065d2b5b5"
+}

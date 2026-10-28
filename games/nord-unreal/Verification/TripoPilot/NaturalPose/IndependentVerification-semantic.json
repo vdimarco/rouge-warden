@@ -1,0 +1,4077 @@
+{
+  "passed": true,
+  "started_utc": "2026-10-17T20:44:01.375058+00:00",
+  "verification_recipe_sha256": "b1f7f7b68f9c5bd9c685faacbb1d26085d9c4c37a259871be30b6791ec453eca",
+  "diagnostic_collect_all": false,
+  "scope": "Independent actual FBX CPU sampling; no rendering, Unreal, native or art acceptance",
+  "input_sha256": {
+    "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/base_color.png": "f300cbf5d78c411cad36cfedee17a36c787d1a50c968c2adb2827ecf0e43d774",
+    "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/body.fbx": "b7e7ca0d9c486412108cba85e1cd4a5512fecd4ad36b8cfdb4677259ff6f9244",
+    "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/body.glb": "25041be9666422c30ba39449cb283a83928bb3de596fe063389707c070335613",
+    "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/files.json": "d942b4ec45c3b28ef54c0afeb991278528fd74252ec7208cd518519277fd18bc",
+    "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/generation.json": "a23277ea16f38bf8123e4c5f8e4b64323c6b07843158a4b84a7f2bcf7d910632",
+    "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/idle.fbx": "b1a7bd95403aa7358f067a3a352d060ca2cd56d9c65d9f8d6fe497dbf4343641",
+    "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/jump.fbx": "36d74356ca903188a9b3956db69e51367260866972cda9215fab6a66d5362aa3",
+    "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/jump.json": "94deb47f51e5cbfd6e5694efb8dcb8052c2abf6c91df7ceee2a35def47838e3f",
+    "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/metallic.png": "2e0e9b79402c506cdcf5fe11f4e81e7a376b0b81fa5982b6b6584f5e35402309",
+    "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/normal.png": "7845864ce13d1e3ce10e8149ef2ef98a048b8be249a60749dfc70c4897e9e7ab",
+    "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/preview.png": "8b0e3ba80a30dd9f6d438be6f81728e9744dc057c9f1df50759379b2dc57a8d4",
+    "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/pricing.json": "6ff6e0d5f7a22b9cf85119d4ad1cb6e8f30e6acb4804a61b563e27b347663d32",
+    "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/reference.png": "c00eb6f0ea1f5743b1a236295ecedfa27e15763d9ab5a717942ebf3713e778be",
+    "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/request.json": "47209121445fc43283c50481d7fc6adece8274fdf049ddec31e52c58f4a352d1",
+    "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/result-receipt.json": "192c42733e1ab51fd1b4d799bd4167b7c457ed2b5a3d48d3ccb910729b3c8ba7",
+    "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/result.json": "da1d5ae7bc3856dde6e1b7f642182814eeb1ff22f2d69cc7aaf8a4ebde5dbdab",
+    "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/roughness.png": "cf28e5b2f2b3d1d85b3e3a6b8228b0bde61f82c60133b393a6159b5d3a7a9f89",
+    "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/run.fbx": "b0f8e4c359d21ca3a51dde5c94b45b4d9f4a3d27dedb2d44f671b69e41f6e8ae",
+    "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/run.glb": "b59e018d32513f3519f4f64a6a29de42cdc952cc53a5416b91ee60bc82229b30",
+    "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/schema.json": "4779033055c3bed4def386892cc4844f22ed9bd718d6795318efa395dafc219b",
+    "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/source-review.json": "a2ea79458aef0ad20ee1cb00b262269c509db230ca94b9c03cfc8bebeaacd3d8",
+    "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/submit-response.json": "47209121445fc43283c50481d7fc6adece8274fdf049ddec31e52c58f4a352d1",
+    "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/walk.fbx": "0fe2b4d83846f826e3d448c870fcb77816c25fe6d106c873d755cd7a3d871d9e",
+    "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/tripo-v3-rig-20261017/rig.fbx": "baaeb99a7e86fadadd4f64f6de6ea7e648777b33bcadd2ecb72347c4afe3dcc2",
+    "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/tripo-v3-rig-20261017/derived/compact-jump.fbx": "402d2c768e405badf5c1efab6a8841e5ff7523720e45d0e27babbc27cf6319b6",
+    "/tmp/nord-tripo-natural-pose-20261017-v4/relaxed-idle.fbx": "f5cf127b897cd54b52676932ff89461033becf1a19e8cf109a33d30c8958dfbc",
+    "/tmp/nord-tripo-natural-pose-20261017-v4/natural-jump.fbx": "11b1f85e5d84f38ab6aa4e17ff951116a43cd16b08bfa02938ad0e781010ace1"
+  },
+  "explicitly_allowed_finger_bones": [
+    "index_01_l",
+    "index_01_r",
+    "index_02_l",
+    "index_02_r",
+    "index_03_l",
+    "index_03_r",
+    "middle_01_l",
+    "middle_01_r",
+    "middle_02_l",
+    "middle_02_r",
+    "middle_03_l",
+    "middle_03_r",
+    "pinky_01_l",
+    "pinky_01_r",
+    "pinky_02_l",
+    "pinky_02_r",
+    "pinky_03_l",
+    "pinky_03_r",
+    "ring_01_l",
+    "ring_01_r",
+    "ring_02_l",
+    "ring_02_r",
+    "ring_03_l",
+    "ring_03_r",
+    "thumb_01_l",
+    "thumb_01_r",
+    "thumb_02_l",
+    "thumb_02_r",
+    "thumb_03_l",
+    "thumb_03_r"
+  ],
+  "fixed_limits": {
+    "reference_matrix_round_trip_precision": 2e-05,
+    "reference_head_translation_and_scale": 1e-05,
+    "reference_angle_rad": 0.0001,
+    "local_translation_and_scale": 1e-05,
+    "endpoint_rotation_rad": 0.0001,
+    "elbow_forward_delta_min_deg": -0.5,
+    "knee_backward_delta_min_deg": -1.0,
+    "idle_rotation_step_deg_per_30Hz_frame": 3.0,
+    "jump_rotation_step_deg_per_30Hz_frame": 20.0
+  },
+  "clips": {
+    "relaxed-idle": {
+      "sha256": "f5cf127b897cd54b52676932ff89461033becf1a19e8cf109a33d30c8958dfbc",
+      "bones": 61,
+      "frame_range": [
+        2.0,
+        122.0
+      ],
+      "fps": 30,
+      "half_frame_samples": 241,
+      "metrics": {
+        "reference_matrix_error": 1.0818243026733398e-05,
+        "reference_angular_error_rad": 7.19307642695806e-06,
+        "reference_head_translation_target_units": 6.07130893599856e-07,
+        "reference_scale_error": 8.225440979003906e-06,
+        "raw_quaternion_channel_norm_error_half_frames": 1.1920928955078125e-07,
+        "raw_quaternion_channel_norm_error_integer_keyframes": 1.1920928955078125e-07,
+        "evaluated_component_quaternion_norm_error": 2.384185791015625e-07,
+        "local_translation_error": 3.1300233205153703e-07,
+        "local_scale_error": 8.106231689453125e-06,
+        "unchanged_root_and_twist_rotation_error_rad": 2.3514368088956979e-07,
+        "root_matrix_error": 3.552713678800501e-15,
+        "object_matrix_error": 0.0,
+        "maximum_rotation_step_deg_per_30Hz_frame": 0.07938412163887847,
+        "maximum_rotation_step_details": {
+          "bone": "index_03_l",
+          "space": "component",
+          "frame": 95.5
+        },
+        "maximum_arm_and_finger_rotation_step_deg_per_30Hz_frame": 0.07938412163887847,
+        "maximum_authored_rotation_step_deg_per_30Hz_frame": 0.07938412163887847,
+        "maximum_authored_rotation_step_details": {
+          "bone": "index_03_l",
+          "space": "component",
+          "frame": 95.5
+        },
+        "seam_rotation_error_rad": 8.971687627231552e-08,
+        "seam_matrix_error": 0.0,
+        "minimum_elbow_forward_delta_deg": 13.999993494199371,
+        "minimum_knee_backward_delta_deg": 4.261626197532564e-05,
+        "maximum_pelvis_vertical_target_units": 0.0
+      },
+      "local_motion_from_first_pose_deg": {
+        "index_01_r": 0.7999925903740231,
+        "pinky_02_r": 0.7999955953552874,
+        "thumb_02_l": 0.8000055618149954,
+        "pinky_03_l": 0.7999889885177753,
+        "thumb_02_r": 0.799987129929691,
+        "middle_01_r": 0.8000010032534467,
+        "ring_02_l": 0.8000081078974365,
+        "middle_01_l": 0.8000152411129791,
+        "pinky_01_r": 0.8000108378867944,
+        "pinky_03_r": 0.8000057175235412,
+        "upperarm_r": 0.42216766305991543,
+        "middle_02_r": 0.8000044057260294,
+        "hand_r": 0.40000595572944647,
+        "lowerarm_l": 1.1999965744054957,
+        "middle_03_l": 0.8000085034801524,
+        "thumb_01_r": 0.799996569232507,
+        "middle_03_r": 0.7999849381347129,
+        "index_03_r": 0.8000084369356835,
+        "index_03_l": 0.799985496087706,
+        "ring_02_r": 0.8000051442575555,
+        "lowerarm_r": 1.2000080371731885,
+        "index_02_r": 0.7999997956034642,
+        "thumb_01_l": 0.8000048664624082,
+        "pinky_01_l": 0.7999934027401696,
+        "index_01_l": 0.8000069087728687,
+        "upperarm_l": 0.41974117561389146,
+        "clavicle_l": 0.3999860616554076,
+        "thumb_03_r": 0.7999859252828819,
+        "pinky_02_l": 0.7999993292943501,
+        "hand_l": 0.4000051985422863,
+        "middle_02_l": 0.8000078346571097,
+        "clavicle_r": 0.20002958099338858,
+        "ring_01_r": 0.7999937450871006,
+        "ring_03_r": 0.8000073724768376,
+        "index_02_l": 0.8000000336251828,
+        "ring_03_l": 0.7999906745934356,
+        "ring_01_l": 0.7999948883035969,
+        "thumb_03_l": 0.8000155577998197
+      },
+      "samples": [
+        {
+          "time_s": 0.0,
+          "elbow_forward_delta_deg": {
+            "l": 13.999993494199371,
+            "r": 18.000003269258386
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 0.016666666666666666,
+          "elbow_forward_delta_deg": {
+            "l": 14.000408271124277,
+            "r": 18.00041571956644
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 0.03333333333333333,
+          "elbow_forward_delta_deg": {
+            "l": 14.000814521120313,
+            "r": 18.000817794640028
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 0.05,
+          "elbow_forward_delta_deg": {
+            "l": 14.00205575045104,
+            "r": 18.002065996645648
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 0.06666666666666667,
+          "elbow_forward_delta_deg": {
+            "l": 14.003293076795758,
+            "r": 18.003288067420236
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 0.08333333333333333,
+          "elbow_forward_delta_deg": {
+            "l": 14.005322777985358,
+            "r": 18.00533830600299
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 0.1,
+          "elbow_forward_delta_deg": {
+            "l": 14.00737383751762,
+            "r": 18.0073800605784
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 0.11666666666666667,
+          "elbow_forward_delta_deg": {
+            "l": 14.01024191351524,
+            "r": 18.010243270969468
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 0.13333333333333333,
+          "elbow_forward_delta_deg": {
+            "l": 14.013100437869019,
+            "r": 18.013107661118745
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 0.15,
+          "elbow_forward_delta_deg": {
+            "l": 14.016785057267407,
+            "r": 18.016781571077196
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 0.16666666666666666,
+          "elbow_forward_delta_deg": {
+            "l": 14.020469530065048,
+            "r": 18.020459304205737
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 0.18333333333333332,
+          "elbow_forward_delta_deg": {
+            "l": 14.02492217323267,
+            "r": 18.02490995338023
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 0.2,
+          "elbow_forward_delta_deg": {
+            "l": 14.029374107638338,
+            "r": 18.029351848105385
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 0.21666666666666667,
+          "elbow_forward_delta_deg": {
+            "l": 14.034611534656163,
+            "r": 18.034595244798147
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 0.23333333333333334,
+          "elbow_forward_delta_deg": {
+            "l": 14.039835803555805,
+            "r": 18.039847310931513
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 0.25,
+          "elbow_forward_delta_deg": {
+            "l": 14.045853634705894,
+            "r": 18.04585627420022
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 0.26666666666666666,
+          "elbow_forward_delta_deg": {
+            "l": 14.051881831917639,
+            "r": 18.051884799272372
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 0.2833333333333333,
+          "elbow_forward_delta_deg": {
+            "l": 14.05862376263295,
+            "r": 18.05864349538821
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 0.3,
+          "elbow_forward_delta_deg": {
+            "l": 14.06539373353347,
+            "r": 18.065406643747778
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 0.31666666666666665,
+          "elbow_forward_delta_deg": {
+            "l": 14.072873812454231,
+            "r": 18.072903158553125
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 0.3333333333333333,
+          "elbow_forward_delta_deg": {
+            "l": 14.080382274420264,
+            "r": 18.080409234488883
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 0.35,
+          "elbow_forward_delta_deg": {
+            "l": 14.088583143416786,
+            "r": 18.088597759829426
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 0.36666666666666664,
+          "elbow_forward_delta_deg": {
+            "l": 14.096824343102407,
+            "r": 18.096805870053714
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 0.38333333333333336,
+          "elbow_forward_delta_deg": {
+            "l": 14.105709183901562,
+            "r": 18.105725800016536
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 0.4,
+          "elbow_forward_delta_deg": {
+            "l": 14.114600206976638,
+            "r": 18.114626578022623
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 0.4166666666666667,
+          "elbow_forward_delta_deg": {
+            "l": 14.124145245630094,
+            "r": 18.12418537113708
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 0.43333333333333335,
+          "elbow_forward_delta_deg": {
+            "l": 14.133701715996006,
+            "r": 18.133722517049897
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 0.45,
+          "elbow_forward_delta_deg": {
+            "l": 14.143928303297924,
+            "r": 18.143923657014547
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 0.4666666666666667,
+          "elbow_forward_delta_deg": {
+            "l": 14.154132163041664,
+            "r": 18.154134914713758
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 0.48333333333333334,
+          "elbow_forward_delta_deg": {
+            "l": 14.164940240607118,
+            "r": 18.1649536144663
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 0.5,
+          "elbow_forward_delta_deg": {
+            "l": 14.175722986937101,
+            "r": 18.175767917083085
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 0.5166666666666667,
+          "elbow_forward_delta_deg": {
+            "l": 14.187118963161636,
+            "r": 18.187169683597766
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 0.5333333333333333,
+          "elbow_forward_delta_deg": {
+            "l": 14.198503838476144,
+            "r": 18.198549651533064
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 0.55,
+          "elbow_forward_delta_deg": {
+            "l": 14.210462314060484,
+            "r": 18.21048132955754
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 0.5666666666666667,
+          "elbow_forward_delta_deg": {
+            "l": 14.222402729376162,
+            "r": 18.222420819631587
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 0.5833333333333334,
+          "elbow_forward_delta_deg": {
+            "l": 14.234866922768076,
+            "r": 18.234886531432828
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 0.6,
+          "elbow_forward_delta_deg": {
+            "l": 14.247330060578685,
+            "r": 18.24733663284568
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 0.6166666666666667,
+          "elbow_forward_delta_deg": {
+            "l": 14.260265555878936,
+            "r": 18.260291433102445
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 0.6333333333333333,
+          "elbow_forward_delta_deg": {
+            "l": 14.273221947847935,
+            "r": 18.273223599365636
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 0.65,
+          "elbow_forward_delta_deg": {
+            "l": 14.286600274457891,
+            "r": 18.286612041909528
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 0.6666666666666666,
+          "elbow_forward_delta_deg": {
+            "l": 14.300008087580698,
+            "r": 18.300014469123738
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 0.6833333333333333,
+          "elbow_forward_delta_deg": {
+            "l": 14.313810015492086,
+            "r": 18.313817760308055
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 0.7,
+          "elbow_forward_delta_deg": {
+            "l": 14.327607748165429,
+            "r": 18.327637090911026
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 0.7166666666666667,
+          "elbow_forward_delta_deg": {
+            "l": 14.341786967468154,
+            "r": 18.341805763494662
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 0.7333333333333333,
+          "elbow_forward_delta_deg": {
+            "l": 14.355957900986978,
+            "r": 18.355972742137
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 0.75,
+          "elbow_forward_delta_deg": {
+            "l": 14.370480753465342,
+            "r": 18.37047457827247
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 0.7666666666666667,
+          "elbow_forward_delta_deg": {
+            "l": 14.384998104376466,
+            "r": 18.385006275471063
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 0.7833333333333333,
+          "elbow_forward_delta_deg": {
+            "l": 14.39978106470487,
+            "r": 18.399804830653608
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 0.8,
+          "elbow_forward_delta_deg": {
+            "l": 14.414571194109813,
+            "r": 18.414608142493435
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 0.8166666666666667,
+          "elbow_forward_delta_deg": {
+            "l": 14.429638570697298,
+            "r": 18.42965985093896
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 0.8333333333333334,
+          "elbow_forward_delta_deg": {
+            "l": 14.444700788238189,
+            "r": 18.444727887209183
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 0.85,
+          "elbow_forward_delta_deg": {
+            "l": 14.459973343816168,
+            "r": 18.459977899739677
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 0.8666666666666667,
+          "elbow_forward_delta_deg": {
+            "l": 14.475254920845044,
+            "r": 18.475238419739647
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 0.8833333333333333,
+          "elbow_forward_delta_deg": {
+            "l": 14.490693855715074,
+            "r": 18.490686823909606
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 0.9,
+          "elbow_forward_delta_deg": {
+            "l": 14.506134695084723,
+            "r": 18.506144114753468
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 0.9166666666666666,
+          "elbow_forward_delta_deg": {
+            "l": 14.52169924191305,
+            "r": 18.521729949052137
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 0.9333333333333333,
+          "elbow_forward_delta_deg": {
+            "l": 14.537264769725853,
+            "r": 18.537305609115435
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 0.95,
+          "elbow_forward_delta_deg": {
+            "l": 14.552942045279591,
+            "r": 18.552945545195172
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 0.9666666666666667,
+          "elbow_forward_delta_deg": {
+            "l": 14.568593046583691,
+            "r": 18.568598390061766
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 0.9833333333333333,
+          "elbow_forward_delta_deg": {
+            "l": 14.584290637976368,
+            "r": 18.58430345649468
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 1.0,
+          "elbow_forward_delta_deg": {
+            "l": 14.599992961094403,
+            "r": 18.599985117509704
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 1.0166666666666666,
+          "elbow_forward_delta_deg": {
+            "l": 14.615709904293618,
+            "r": 18.615720094291966
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 1.0333333333333334,
+          "elbow_forward_delta_deg": {
+            "l": 14.631419207417595,
+            "r": 18.631427576521197
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 1.05,
+          "elbow_forward_delta_deg": {
+            "l": 14.647067919584908,
+            "r": 18.64707839955377
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 1.0666666666666667,
+          "elbow_forward_delta_deg": {
+            "l": 14.662730512301485,
+            "r": 18.662719866569255
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 1.0833333333333333,
+          "elbow_forward_delta_deg": {
+            "l": 14.67827738227688,
+            "r": 18.678311452551362
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 1.1,
+          "elbow_forward_delta_deg": {
+            "l": 14.693849528076344,
+            "r": 18.693885389578185
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 1.1166666666666667,
+          "elbow_forward_delta_deg": {
+            "l": 14.709305048656843,
+            "r": 18.709319928228368
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 1.1333333333333333,
+          "elbow_forward_delta_deg": {
+            "l": 14.724754585880595,
+            "r": 18.724752415529508
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 1.15,
+          "elbow_forward_delta_deg": {
+            "l": 14.740024041279097,
+            "r": 18.740030122836203
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 1.1666666666666667,
+          "elbow_forward_delta_deg": {
+            "l": 14.755293548556056,
+            "r": 18.75529271324733
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 1.1833333333333333,
+          "elbow_forward_delta_deg": {
+            "l": 14.7703456651172,
+            "r": 18.770354255359592
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 1.2,
+          "elbow_forward_delta_deg": {
+            "l": 14.785420179868032,
+            "r": 18.785412649144682
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 1.2166666666666666,
+          "elbow_forward_delta_deg": {
+            "l": 14.80023469389298,
+            "r": 18.800226438334313
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 1.2333333333333334,
+          "elbow_forward_delta_deg": {
+            "l": 14.815034387154187,
+            "r": 18.81503591038809
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 1.25,
+          "elbow_forward_delta_deg": {
+            "l": 14.829522707394135,
+            "r": 18.829549194770088
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 1.2666666666666666,
+          "elbow_forward_delta_deg": {
+            "l": 14.844036368575432,
+            "r": 18.844038500835367
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 1.2833333333333334,
+          "elbow_forward_delta_deg": {
+            "l": 14.858205409714953,
+            "r": 18.858232504887276
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 1.3,
+          "elbow_forward_delta_deg": {
+            "l": 14.872406452043043,
+            "r": 18.872409208180713
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 1.3166666666666667,
+          "elbow_forward_delta_deg": {
+            "l": 14.88620318147309,
+            "r": 18.88623168770375
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 1.3333333333333333,
+          "elbow_forward_delta_deg": {
+            "l": 14.899994374706663,
+            "r": 18.900029986727503
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 1.35,
+          "elbow_forward_delta_deg": {
+            "l": 14.913385120151558,
+            "r": 18.91341352734441
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 1.3666666666666667,
+          "elbow_forward_delta_deg": {
+            "l": 14.926769060915932,
+            "r": 18.92680491939175
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 1.3833333333333333,
+          "elbow_forward_delta_deg": {
+            "l": 14.939726395431629,
+            "r": 18.939746372620988
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 1.4,
+          "elbow_forward_delta_deg": {
+            "l": 14.952672370832177,
+            "r": 18.952673174710924
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 1.4166666666666667,
+          "elbow_forward_delta_deg": {
+            "l": 14.965127754664083,
+            "r": 18.965137534524395
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 1.4333333333333333,
+          "elbow_forward_delta_deg": {
+            "l": 14.977610219842182,
+            "r": 18.977584031053674
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 1.45,
+          "elbow_forward_delta_deg": {
+            "l": 14.989555034953009,
+            "r": 18.989546397304963
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 1.4666666666666666,
+          "elbow_forward_delta_deg": {
+            "l": 15.001489773186302,
+            "r": 19.00148329957488
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 1.4833333333333334,
+          "elbow_forward_delta_deg": {
+            "l": 15.012872004772634,
+            "r": 19.012880530689195
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 1.5,
+          "elbow_forward_delta_deg": {
+            "l": 15.024263768953395,
+            "r": 19.024275892347376
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 1.5166666666666666,
+          "elbow_forward_delta_deg": {
+            "l": 15.035069864531062,
+            "r": 19.03509060485895
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 1.5333333333333334,
+          "elbow_forward_delta_deg": {
+            "l": 15.04588075085856,
+            "r": 19.045913160380735
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 1.55,
+          "elbow_forward_delta_deg": {
+            "l": 15.056069750937796,
+            "r": 19.056100401794254
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 1.5666666666666667,
+          "elbow_forward_delta_deg": {
+            "l": 15.066276167543537,
+            "r": 19.066281797998002
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 1.5833333333333333,
+          "elbow_forward_delta_deg": {
+            "l": 15.075850713219525,
+            "r": 19.07585444624734
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 1.6,
+          "elbow_forward_delta_deg": {
+            "l": 15.085416364697194,
+            "r": 19.08542048232958
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 1.6166666666666667,
+          "elbow_forward_delta_deg": {
+            "l": 15.094330027524263,
+            "r": 19.09431285614737
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 1.6333333333333333,
+          "elbow_forward_delta_deg": {
+            "l": 15.10320902055951,
+            "r": 19.103221864473888
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 1.65,
+          "elbow_forward_delta_deg": {
+            "l": 15.111428845663822,
+            "r": 19.111420991149643
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 1.6666666666666667,
+          "elbow_forward_delta_deg": {
+            "l": 15.11962331345127,
+            "r": 19.119621742464794
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 1.6833333333333333,
+          "elbow_forward_delta_deg": {
+            "l": 15.127134610718285,
+            "r": 19.12711705629774
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 1.7,
+          "elbow_forward_delta_deg": {
+            "l": 15.134628761593616,
+            "r": 19.134620155094865
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 1.7166666666666666,
+          "elbow_forward_delta_deg": {
+            "l": 15.141366244343649,
+            "r": 19.141393164308546
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 1.7333333333333334,
+          "elbow_forward_delta_deg": {
+            "l": 15.148113208826464,
+            "r": 19.148137786384908
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 1.75,
+          "elbow_forward_delta_deg": {
+            "l": 15.154124342597003,
+            "r": 19.154144975765497
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 1.7666666666666666,
+          "elbow_forward_delta_deg": {
+            "l": 15.160129137456979,
+            "r": 19.160163093852567
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 1.7833333333333334,
+          "elbow_forward_delta_deg": {
+            "l": 15.165369899056605,
+            "r": 19.16540823352716
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 1.8,
+          "elbow_forward_delta_deg": {
+            "l": 15.170635327920555,
+            "r": 19.17064327156755
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 1.8166666666666667,
+          "elbow_forward_delta_deg": {
+            "l": 15.175095583005186,
+            "r": 19.175105051384335
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 1.8333333333333333,
+          "elbow_forward_delta_deg": {
+            "l": 15.179564515284278,
+            "r": 19.17954878551464
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 1.85,
+          "elbow_forward_delta_deg": {
+            "l": 15.183225240995386,
+            "r": 19.183227944256124
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 1.8666666666666667,
+          "elbow_forward_delta_deg": {
+            "l": 15.186898508616258,
+            "r": 19.186904469242755
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 1.8833333333333333,
+          "elbow_forward_delta_deg": {
+            "l": 15.189749337925099,
+            "r": 19.189763264242615
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 1.9,
+          "elbow_forward_delta_deg": {
+            "l": 15.192610698028735,
+            "r": 19.19260690714924
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 1.9166666666666667,
+          "elbow_forward_delta_deg": {
+            "l": 15.194659784726552,
+            "r": 19.194660450773995
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 1.9333333333333333,
+          "elbow_forward_delta_deg": {
+            "l": 15.196716492581656,
+            "r": 19.19672162398212
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 1.95,
+          "elbow_forward_delta_deg": {
+            "l": 15.197945685851865,
+            "r": 19.197963952288326
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 1.9666666666666666,
+          "elbow_forward_delta_deg": {
+            "l": 15.19917938404762,
+            "r": 19.199188224049422
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 1.9833333333333334,
+          "elbow_forward_delta_deg": {
+            "l": 15.19958546699779,
+            "r": 19.199593384220783
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 2.0,
+          "elbow_forward_delta_deg": {
+            "l": 15.199997025585043,
+            "r": 19.19999510058497
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 2.0166666666666666,
+          "elbow_forward_delta_deg": {
+            "l": 15.199594494590135,
+            "r": 19.199606411557966
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 2.033333333333333,
+          "elbow_forward_delta_deg": {
+            "l": 15.199195127833187,
+            "r": 19.199222458323796
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 2.05,
+          "elbow_forward_delta_deg": {
+            "l": 15.197953286835917,
+            "r": 19.197977649973858
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 2.066666666666667,
+          "elbow_forward_delta_deg": {
+            "l": 15.196697652799687,
+            "r": 19.19670804735678
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 2.0833333333333335,
+          "elbow_forward_delta_deg": {
+            "l": 15.194670529094202,
+            "r": 19.194663501984714
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 2.1,
+          "elbow_forward_delta_deg": {
+            "l": 15.192618928009614,
+            "r": 19.19261614437397
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 2.1166666666666667,
+          "elbow_forward_delta_deg": {
+            "l": 15.189756569765139,
+            "r": 19.18977432434098
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 2.1333333333333333,
+          "elbow_forward_delta_deg": {
+            "l": 15.186866944306106,
+            "r": 19.18690825726972
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 2.15,
+          "elbow_forward_delta_deg": {
+            "l": 15.183213197512975,
+            "r": 19.183231319704916
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 2.1666666666666665,
+          "elbow_forward_delta_deg": {
+            "l": 15.179564857545207,
+            "r": 19.179574434021617
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 2.183333333333333,
+          "elbow_forward_delta_deg": {
+            "l": 15.175090633119142,
+            "r": 19.175099988994702
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 2.2,
+          "elbow_forward_delta_deg": {
+            "l": 15.170635302003449,
+            "r": 19.17065670626672
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 2.216666666666667,
+          "elbow_forward_delta_deg": {
+            "l": 15.165407927087566,
+            "r": 19.165388537801554
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 2.2333333333333334,
+          "elbow_forward_delta_deg": {
+            "l": 15.160165842064293,
+            "r": 19.160135610485305
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 2.25,
+          "elbow_forward_delta_deg": {
+            "l": 15.154142389994506,
+            "r": 19.154121382915548
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 2.2666666666666666,
+          "elbow_forward_delta_deg": {
+            "l": 15.148128036034842,
+            "r": 19.148127206319266
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 2.283333333333333,
+          "elbow_forward_delta_deg": {
+            "l": 15.141370706258835,
+            "r": 19.14137349760957
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 2.3,
+          "elbow_forward_delta_deg": {
+            "l": 15.13461879430527,
+            "r": 19.134603876437673
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 2.316666666666667,
+          "elbow_forward_delta_deg": {
+            "l": 15.127141307300134,
+            "r": 19.12712395289796
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 2.3333333333333335,
+          "elbow_forward_delta_deg": {
+            "l": 15.119623883821559,
+            "r": 19.119620884579476
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 2.35,
+          "elbow_forward_delta_deg": {
+            "l": 15.111423782018425,
+            "r": 19.111417372522133
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 2.3666666666666667,
+          "elbow_forward_delta_deg": {
+            "l": 15.103209481670808,
+            "r": 19.10321643497401
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 2.3833333333333333,
+          "elbow_forward_delta_deg": {
+            "l": 15.094296949997913,
+            "r": 19.09431389671368
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 2.4,
+          "elbow_forward_delta_deg": {
+            "l": 15.085399567579556,
+            "r": 19.08541825853466
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 2.4166666666666665,
+          "elbow_forward_delta_deg": {
+            "l": 15.075851663709107,
+            "r": 19.0758567465449
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 2.433333333333333,
+          "elbow_forward_delta_deg": {
+            "l": 15.066294675451436,
+            "r": 19.06630942774124
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 2.45,
+          "elbow_forward_delta_deg": {
+            "l": 15.056095511562324,
+            "r": 19.05608995189757
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 2.466666666666667,
+          "elbow_forward_delta_deg": {
+            "l": 15.045874723558759,
+            "r": 19.04590277246733
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 2.4833333333333334,
+          "elbow_forward_delta_deg": {
+            "l": 15.035090040258867,
+            "r": 19.035091427431396
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 2.5,
+          "elbow_forward_delta_deg": {
+            "l": 15.02429229501521,
+            "r": 19.02427849695281
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 2.5166666666666666,
+          "elbow_forward_delta_deg": {
+            "l": 15.012901472769409,
+            "r": 19.012882695986235
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 2.533333333333333,
+          "elbow_forward_delta_deg": {
+            "l": 15.001491124797026,
+            "r": 19.001477391442236
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 2.55,
+          "elbow_forward_delta_deg": {
+            "l": 14.989549755379725,
+            "r": 18.989533603560744
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 2.566666666666667,
+          "elbow_forward_delta_deg": {
+            "l": 14.977597698537538,
+            "r": 18.977576053231054
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 2.5833333333333335,
+          "elbow_forward_delta_deg": {
+            "l": 14.96513616073767,
+            "r": 18.965152160403605
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 2.6,
+          "elbow_forward_delta_deg": {
+            "l": 14.952667139271133,
+            "r": 18.952708093432122
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 2.6166666666666667,
+          "elbow_forward_delta_deg": {
+            "l": 14.93971915294741,
+            "r": 18.939749662253284
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 2.6333333333333333,
+          "elbow_forward_delta_deg": {
+            "l": 14.926779061691919,
+            "r": 18.926811431372336
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 2.65,
+          "elbow_forward_delta_deg": {
+            "l": 14.913389981409212,
+            "r": 18.91339265791632
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 2.6666666666666665,
+          "elbow_forward_delta_deg": {
+            "l": 14.899992017873688,
+            "r": 18.899998407964944
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 2.683333333333333,
+          "elbow_forward_delta_deg": {
+            "l": 14.886191885204534,
+            "r": 18.886193077899208
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 2.7,
+          "elbow_forward_delta_deg": {
+            "l": 14.872391684348974,
+            "r": 18.872416739053122
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 2.716666666666667,
+          "elbow_forward_delta_deg": {
+            "l": 14.858200428747418,
+            "r": 18.85821937585957
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 2.7333333333333334,
+          "elbow_forward_delta_deg": {
+            "l": 14.844036292542045,
+            "r": 18.844066563147003
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 2.75,
+          "elbow_forward_delta_deg": {
+            "l": 14.829535542022386,
+            "r": 18.829553060263173
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 2.7666666666666666,
+          "elbow_forward_delta_deg": {
+            "l": 14.815031610379377,
+            "r": 18.81504150150458
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 2.783333333333333,
+          "elbow_forward_delta_deg": {
+            "l": 14.80021572863876,
+            "r": 18.800214852785146
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 2.8,
+          "elbow_forward_delta_deg": {
+            "l": 14.785405840633137,
+            "r": 18.78541643933095
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 2.816666666666667,
+          "elbow_forward_delta_deg": {
+            "l": 14.770357564263817,
+            "r": 18.770362509508978
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 2.8333333333333335,
+          "elbow_forward_delta_deg": {
+            "l": 14.755284295778933,
+            "r": 18.755302889215216
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 2.85,
+          "elbow_forward_delta_deg": {
+            "l": 14.740023173545394,
+            "r": 18.739998115892185
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 2.8666666666666667,
+          "elbow_forward_delta_deg": {
+            "l": 14.724752903251046,
+            "r": 18.724731992561452
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 2.8833333333333333,
+          "elbow_forward_delta_deg": {
+            "l": 14.709301806700028,
+            "r": 18.709300045362625
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 2.9,
+          "elbow_forward_delta_deg": {
+            "l": 14.69385176014333,
+            "r": 18.693877633363442
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 2.9166666666666665,
+          "elbow_forward_delta_deg": {
+            "l": 14.678271325203402,
+            "r": 18.678287845716383
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 2.933333333333333,
+          "elbow_forward_delta_deg": {
+            "l": 14.66269141124195,
+            "r": 18.662711383339015
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 2.95,
+          "elbow_forward_delta_deg": {
+            "l": 14.64704716866587,
+            "r": 18.647069582230102
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 2.966666666666667,
+          "elbow_forward_delta_deg": {
+            "l": 14.631394152795318,
+            "r": 18.631407463796307
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 2.9833333333333334,
+          "elbow_forward_delta_deg": {
+            "l": 14.615705505655525,
+            "r": 18.6157090212699
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 3.0,
+          "elbow_forward_delta_deg": {
+            "l": 14.600007364523693,
+            "r": 18.599992394028988
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 3.0166666666666666,
+          "elbow_forward_delta_deg": {
+            "l": 14.584315244175611,
+            "r": 18.584282807146977
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 3.033333333333333,
+          "elbow_forward_delta_deg": {
+            "l": 14.56858789533013,
+            "r": 18.568591959042664
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 3.05,
+          "elbow_forward_delta_deg": {
+            "l": 14.552950034514852,
+            "r": 18.55293484636264
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 3.066666666666667,
+          "elbow_forward_delta_deg": {
+            "l": 14.53729692542843,
+            "r": 18.537273409247845
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 3.0833333333333335,
+          "elbow_forward_delta_deg": {
+            "l": 14.521712843482879,
+            "r": 18.52171262884344
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 3.1,
+          "elbow_forward_delta_deg": {
+            "l": 14.506139727934597,
+            "r": 18.506143800664887
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 3.1166666666666667,
+          "elbow_forward_delta_deg": {
+            "l": 14.49069973981763,
+            "r": 18.4906933648017
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 3.1333333333333333,
+          "elbow_forward_delta_deg": {
+            "l": 14.475249089289631,
+            "r": 18.475261414897105
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 3.15,
+          "elbow_forward_delta_deg": {
+            "l": 14.459971411815866,
+            "r": 18.459984163572464
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 3.1666666666666665,
+          "elbow_forward_delta_deg": {
+            "l": 14.444693798102575,
+            "r": 18.444702710312768
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 3.183333333333333,
+          "elbow_forward_delta_deg": {
+            "l": 14.429646124837811,
+            "r": 18.42966751798557
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 3.2,
+          "elbow_forward_delta_deg": {
+            "l": 14.414595738235137,
+            "r": 18.414600703354303
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 3.216666666666667,
+          "elbow_forward_delta_deg": {
+            "l": 14.399792371317753,
+            "r": 18.399804192018067
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 3.2333333333333334,
+          "elbow_forward_delta_deg": {
+            "l": 14.38498807901666,
+            "r": 18.384985745085686
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 3.25,
+          "elbow_forward_delta_deg": {
+            "l": 14.370451313312527,
+            "r": 18.370484030723176
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 3.2666666666666666,
+          "elbow_forward_delta_deg": {
+            "l": 14.355943851836704,
+            "r": 18.355981074948836
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 3.283333333333333,
+          "elbow_forward_delta_deg": {
+            "l": 14.341754440652307,
+            "r": 18.341798136495264
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 3.3,
+          "elbow_forward_delta_deg": {
+            "l": 14.327598045981118,
+            "r": 18.32762331669676
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 3.316666666666667,
+          "elbow_forward_delta_deg": {
+            "l": 14.313808924640659,
+            "r": 18.313810331313007
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 3.3333333333333335,
+          "elbow_forward_delta_deg": {
+            "l": 14.30000215578369,
+            "r": 18.3000257567571
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 3.35,
+          "elbow_forward_delta_deg": {
+            "l": 14.286587078850372,
+            "r": 18.28663929324687
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 3.3666666666666667,
+          "elbow_forward_delta_deg": {
+            "l": 14.27320792982245,
+            "r": 18.273229297236433
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 3.3833333333333333,
+          "elbow_forward_delta_deg": {
+            "l": 14.26026517244921,
+            "r": 18.26029461830271
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 3.4,
+          "elbow_forward_delta_deg": {
+            "l": 14.247324957131278,
+            "r": 18.247366841895555
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 3.4166666666666665,
+          "elbow_forward_delta_deg": {
+            "l": 14.234856225211727,
+            "r": 18.234892171928706
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 3.433333333333333,
+          "elbow_forward_delta_deg": {
+            "l": 14.222396627150326,
+            "r": 18.222426014609646
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 3.45,
+          "elbow_forward_delta_deg": {
+            "l": 14.210451916442187,
+            "r": 18.21049014422801
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 3.466666666666667,
+          "elbow_forward_delta_deg": {
+            "l": 14.198503571609857,
+            "r": 18.198525390536247
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 3.4833333333333334,
+          "elbow_forward_delta_deg": {
+            "l": 14.18711736526077,
+            "r": 18.187137071242624
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 3.5,
+          "elbow_forward_delta_deg": {
+            "l": 14.175717881185887,
+            "r": 18.175752240687544
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 3.5166666666666666,
+          "elbow_forward_delta_deg": {
+            "l": 14.164915086840347,
+            "r": 18.164935593986364
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 3.533333333333333,
+          "elbow_forward_delta_deg": {
+            "l": 14.154112148653704,
+            "r": 18.154132022627934
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 3.55,
+          "elbow_forward_delta_deg": {
+            "l": 14.143917937109551,
+            "r": 18.143925393433015
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 3.566666666666667,
+          "elbow_forward_delta_deg": {
+            "l": 14.13371090519645,
+            "r": 18.133703389945268
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 3.5833333333333335,
+          "elbow_forward_delta_deg": {
+            "l": 14.124145352010308,
+            "r": 18.124150796050976
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 3.6,
+          "elbow_forward_delta_deg": {
+            "l": 14.11458549112445,
+            "r": 18.114594149080197
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 3.6166666666666667,
+          "elbow_forward_delta_deg": {
+            "l": 14.1056883602555,
+            "r": 18.10569507598312
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 3.6333333333333333,
+          "elbow_forward_delta_deg": {
+            "l": 14.096800118809453,
+            "r": 18.096791940680987
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 3.65,
+          "elbow_forward_delta_deg": {
+            "l": 14.088596649637475,
+            "r": 18.088593757801092
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 3.6666666666666665,
+          "elbow_forward_delta_deg": {
+            "l": 14.080392975384475,
+            "r": 18.080412838660976
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 3.683333333333333,
+          "elbow_forward_delta_deg": {
+            "l": 14.072903152417476,
+            "r": 18.0729237310141
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 3.7,
+          "elbow_forward_delta_deg": {
+            "l": 14.065407229239414,
+            "r": 18.065414456850974
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 3.716666666666667,
+          "elbow_forward_delta_deg": {
+            "l": 14.058630617732325,
+            "r": 18.05863144752938
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 3.7333333333333334,
+          "elbow_forward_delta_deg": {
+            "l": 14.051880555204496,
+            "r": 18.051856209249976
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 3.75,
+          "elbow_forward_delta_deg": {
+            "l": 14.045845781801967,
+            "r": 18.04586257262367
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 3.7666666666666666,
+          "elbow_forward_delta_deg": {
+            "l": 14.039823181764396,
+            "r": 18.03986205908795
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 3.783333333333333,
+          "elbow_forward_delta_deg": {
+            "l": 14.034602649357753,
+            "r": 18.03462035948686
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 3.8,
+          "elbow_forward_delta_deg": {
+            "l": 14.029379589566647,
+            "r": 18.029365745649756
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 3.816666666666667,
+          "elbow_forward_delta_deg": {
+            "l": 14.024918702117395,
+            "r": 18.024907459632523
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 3.8333333333333335,
+          "elbow_forward_delta_deg": {
+            "l": 14.020437072830985,
+            "r": 18.020464250129343
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 3.85,
+          "elbow_forward_delta_deg": {
+            "l": 14.016786334114501,
+            "r": 18.01677511873462
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 3.8666666666666667,
+          "elbow_forward_delta_deg": {
+            "l": 14.013131163745276,
+            "r": 18.013105845081533
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 3.8833333333333333,
+          "elbow_forward_delta_deg": {
+            "l": 14.010256855140154,
+            "r": 18.010240508773443
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 3.9,
+          "elbow_forward_delta_deg": {
+            "l": 14.007389775610038,
+            "r": 18.00741709808821
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 3.9166666666666665,
+          "elbow_forward_delta_deg": {
+            "l": 14.005342265716505,
+            "r": 18.00535826493833
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 3.933333333333333,
+          "elbow_forward_delta_deg": {
+            "l": 14.00327452691563,
+            "r": 18.00327468760527
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 3.95,
+          "elbow_forward_delta_deg": {
+            "l": 14.002049475669237,
+            "r": 18.002063937241537
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 3.966666666666667,
+          "elbow_forward_delta_deg": {
+            "l": 14.000793130944158,
+            "r": 18.000835736887375
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 3.9833333333333334,
+          "elbow_forward_delta_deg": {
+            "l": 14.000393530185677,
+            "r": 18.000422726185377
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        },
+        {
+          "time_s": 4.0,
+          "elbow_forward_delta_deg": {
+            "l": 13.999993494199371,
+            "r": 18.000003269258386
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.4260160803943904e-05,
+            "r": 4.261626197532564e-05
+          },
+          "pelvis_vertical_target_units": 0.0
+        }
+      ]
+    },
+    "natural-jump": {
+      "sha256": "11b1f85e5d84f38ab6aa4e17ff951116a43cd16b08bfa02938ad0e781010ace1",
+      "bones": 61,
+      "frame_range": [
+        2.0,
+        38.0
+      ],
+      "fps": 30,
+      "half_frame_samples": 73,
+      "metrics": {
+        "reference_matrix_error": 1.0818243026733398e-05,
+        "reference_angular_error_rad": 7.19307642695806e-06,
+        "reference_head_translation_target_units": 6.07130893599856e-07,
+        "reference_scale_error": 8.225440979003906e-06,
+        "raw_quaternion_channel_norm_error_half_frames": 0.006668150424957275,
+        "raw_quaternion_channel_norm_error_integer_keyframes": 1.1920928955078125e-07,
+        "evaluated_component_quaternion_norm_error": 2.384185791015625e-07,
+        "local_translation_error": 4.32224947508822e-07,
+        "local_scale_error": 8.58306884765625e-06,
+        "unchanged_root_and_twist_rotation_error_rad": 2.941387465818743e-07,
+        "root_matrix_error": 3.552713678800501e-15,
+        "object_matrix_error": 0.0,
+        "maximum_rotation_step_deg_per_30Hz_frame": 26.48149413989536,
+        "maximum_rotation_step_details": {
+          "bone": "calf_r",
+          "space": "local",
+          "frame": 4.0
+        },
+        "maximum_arm_and_finger_rotation_step_deg_per_30Hz_frame": 11.989312469403874,
+        "maximum_authored_rotation_step_deg_per_30Hz_frame": 11.989312469403874,
+        "maximum_authored_rotation_step_details": {
+          "bone": "index_02_l",
+          "space": "component",
+          "frame": 6.5
+        },
+        "seam_rotation_error_rad": 6.705522537231443e-08,
+        "seam_matrix_error": 0.0,
+        "minimum_elbow_forward_delta_deg": 13.999994706749147,
+        "minimum_knee_backward_delta_deg": 4.289895514553166e-05,
+        "maximum_pelvis_vertical_target_units": 0.06040853261947632,
+        "inherited_compact_jump_pelvis_and_leg_matrix_error": 4.291534423828125e-06
+      },
+      "local_motion_from_first_pose_deg": {
+        "index_01_r": 9.399468907908666e-06,
+        "pinky_02_r": 2.0854196857311397e-05,
+        "thumb_02_l": 1.815528034494029e-05,
+        "pinky_03_l": 5.034654052449725e-06,
+        "thumb_02_r": 1.159341282627612e-05,
+        "middle_01_r": 9.875074253681958e-06,
+        "ring_02_l": 1.4551769721903232e-05,
+        "middle_01_l": 1.1597364831038529e-05,
+        "pinky_01_r": 1.5326366553381803e-05,
+        "pinky_03_r": 5.234497612373457e-06,
+        "upperarm_r": 12.16377134824707,
+        "middle_02_r": 1.3704498186880327e-05,
+        "hand_r": 4.877143458641951e-06,
+        "lowerarm_l": 35.99082249559323,
+        "middle_03_l": 5.981127228038929e-06,
+        "thumb_01_r": 1.6511194541917526e-05,
+        "middle_03_r": 7.702491258904741e-06,
+        "index_03_r": 9.409154705617453e-06,
+        "index_03_l": 1.0710360505782723e-05,
+        "ring_02_r": 2.4838026797851927e-05,
+        "lowerarm_r": 16.99716212019952,
+        "index_02_r": 1.053305931462611e-05,
+        "thumb_01_l": 1.8972468327360342e-05,
+        "pinky_01_l": 1.5214488324723572e-05,
+        "index_01_l": 7.905832319350622e-06,
+        "upperarm_l": 12.075360241129175,
+        "clavicle_l": 2.0203972031728982e-05,
+        "thumb_03_r": 6.467816691200051e-06,
+        "pinky_02_l": 2.1168594016749968e-05,
+        "hand_l": 6.427768631835922e-06,
+        "middle_02_l": 2.0929701963759884e-05,
+        "clavicle_r": 1.9692396034153463e-05,
+        "ring_01_r": 1.8201918018805465e-05,
+        "ring_03_r": 2.736693895177625e-06,
+        "index_02_l": 2.2993760529144237e-05,
+        "ring_03_l": 4.831983734052724e-06,
+        "ring_01_l": 7.276863591231475e-06,
+        "thumb_03_l": 8.574044478964133e-06
+      },
+      "samples": [
+        {
+          "time_s": 0.0,
+          "elbow_forward_delta_deg": {
+            "l": 13.999994706749147,
+            "r": 17.99998475773551
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.423077803572539e-05,
+            "r": 4.289895514553166e-05
+          },
+          "pelvis_vertical_target_units": -5.960464477539063e-08
+        },
+        {
+          "time_s": 0.016666666666666666,
+          "elbow_forward_delta_deg": {
+            "l": 15.037047562627526,
+            "r": 18.51851839070705
+          },
+          "knee_backward_delta_deg": {
+            "l": 7.0622111521092705,
+            "r": 7.083031025627916
+          },
+          "pelvis_vertical_target_units": -0.007122159004211426
+        },
+        {
+          "time_s": 0.03333333333333333,
+          "elbow_forward_delta_deg": {
+            "l": 16.074123036204,
+            "r": 19.03702890047265
+          },
+          "knee_backward_delta_deg": {
+            "l": 14.123763685351651,
+            "r": 14.16575187949744
+          },
+          "pelvis_vertical_target_units": -0.014244318008422852
+        },
+        {
+          "time_s": 0.05,
+          "elbow_forward_delta_deg": {
+            "l": 18.000025960259322,
+            "r": 20.000001363374622
+          },
+          "knee_backward_delta_deg": {
+            "l": 27.235308972716805,
+            "r": 27.318238375661885
+          },
+          "pelvis_vertical_target_units": -0.027470946311950684
+        },
+        {
+          "time_s": 0.06666666666666667,
+          "elbow_forward_delta_deg": {
+            "l": 19.92592555169187,
+            "r": 20.962940515652242
+          },
+          "knee_backward_delta_deg": {
+            "l": 40.3434001448332,
+            "r": 40.46991112607609
+          },
+          "pelvis_vertical_target_units": -0.04069763422012329
+        },
+        {
+          "time_s": 0.08333333333333333,
+          "elbow_forward_delta_deg": {
+            "l": 20.9629567495602,
+            "r": 21.481460936592256
+          },
+          "knee_backward_delta_deg": {
+            "l": 47.40127987649437,
+            "r": 47.55213100690175
+          },
+          "pelvis_vertical_target_units": -0.04781973361968994
+        },
+        {
+          "time_s": 0.1,
+          "elbow_forward_delta_deg": {
+            "l": 22.000001348772244,
+            "r": 21.99999807857067
+          },
+          "knee_backward_delta_deg": {
+            "l": 54.46026691615977,
+            "r": 54.63567854011955
+          },
+          "pelvis_vertical_target_units": -0.054941803216934204
+        },
+        {
+          "time_s": 0.11666666666666667,
+          "elbow_forward_delta_deg": {
+            "l": 22.981137502237388,
+            "r": 22.654105015378107
+          },
+          "knee_backward_delta_deg": {
+            "l": 50.979160574893314,
+            "r": 50.81751056944821
+          },
+          "pelvis_vertical_target_units": -0.05044972896575928
+        },
+        {
+          "time_s": 0.13333333333333333,
+          "elbow_forward_delta_deg": {
+            "l": 23.962246803814885,
+            "r": 23.308200241391354
+          },
+          "knee_backward_delta_deg": {
+            "l": 47.498507883862985,
+            "r": 46.9998486090968
+          },
+          "pelvis_vertical_target_units": -0.04595768451690674
+        },
+        {
+          "time_s": 0.15,
+          "elbow_forward_delta_deg": {
+            "l": 26.096489815960524,
+            "r": 24.73102046195516
+          },
+          "knee_backward_delta_deg": {
+            "l": 39.92781342433558,
+            "r": 38.69653866610082
+          },
+          "pelvis_vertical_target_units": -0.036186158657073975
+        },
+        {
+          "time_s": 0.16666666666666666,
+          "elbow_forward_delta_deg": {
+            "l": 28.23072148860075,
+            "r": 26.153861709749812
+          },
+          "knee_backward_delta_deg": {
+            "l": 32.35704642479173,
+            "r": 30.393764418230113
+          },
+          "pelvis_vertical_target_units": -0.02641463279724121
+        },
+        {
+          "time_s": 0.18333333333333332,
+          "elbow_forward_delta_deg": {
+            "l": 30.3042482978886,
+            "r": 27.53617000761541
+          },
+          "knee_backward_delta_deg": {
+            "l": 25.000714320363212,
+            "r": 22.326902542991185
+          },
+          "pelvis_vertical_target_units": -0.01692098379135132
+        },
+        {
+          "time_s": 0.2,
+          "elbow_forward_delta_deg": {
+            "l": 32.37778744247335,
+            "r": 28.9185291350458
+          },
+          "knee_backward_delta_deg": {
+            "l": 17.64315588457514,
+            "r": 14.259529744816605
+          },
+          "pelvis_vertical_target_units": -0.007427394390106201
+        },
+        {
+          "time_s": 0.21666666666666667,
+          "elbow_forward_delta_deg": {
+            "l": 33.193509148440214,
+            "r": 29.46070807477112
+          },
+          "knee_backward_delta_deg": {
+            "l": 14.776960661905846,
+            "r": 11.111341893149854
+          },
+          "pelvis_vertical_target_units": -0.0037137269973754883
+        },
+        {
+          "time_s": 0.23333333333333334,
+          "elbow_forward_delta_deg": {
+            "l": 34.009195766213786,
+            "r": 30.00287036394434
+          },
+          "knee_backward_delta_deg": {
+            "l": 11.910586476188467,
+            "r": 7.963094570999152
+          },
+          "pelvis_vertical_target_units": -5.960464477539063e-08
+        },
+        {
+          "time_s": 0.25,
+          "elbow_forward_delta_deg": {
+            "l": 34.50771571475871,
+            "r": 30.15868667098455
+          },
+          "knee_backward_delta_deg": {
+            "l": 13.237577516126478,
+            "r": 8.798853271778599
+          },
+          "pelvis_vertical_target_units": -5.960464477539063e-08
+        },
+        {
+          "time_s": 0.26666666666666666,
+          "elbow_forward_delta_deg": {
+            "l": 35.006290252526426,
+            "r": 30.31447166805188
+          },
+          "knee_backward_delta_deg": {
+            "l": 14.564526511231016,
+            "r": 9.634603871160957
+          },
+          "pelvis_vertical_target_units": -5.960464477539063e-08
+        },
+        {
+          "time_s": 0.2833333333333333,
+          "elbow_forward_delta_deg": {
+            "l": 36.147888705012484,
+            "r": 30.67123353188728
+          },
+          "knee_backward_delta_deg": {
+            "l": 17.602833086690122,
+            "r": 11.548282516047129
+          },
+          "pelvis_vertical_target_units": -5.960464477539063e-08
+        },
+        {
+          "time_s": 0.3,
+          "elbow_forward_delta_deg": {
+            "l": 37.289448109087495,
+            "r": 31.0279868076843
+          },
+          "knee_backward_delta_deg": {
+            "l": 20.640927591016528,
+            "r": 13.461938281464418
+          },
+          "pelvis_vertical_target_units": -5.960464477539063e-08
+        },
+        {
+          "time_s": 0.31666666666666665,
+          "elbow_forward_delta_deg": {
+            "l": 38.81675024856638,
+            "r": 31.505229693837045
+          },
+          "knee_backward_delta_deg": {
+            "l": 24.705423404409974,
+            "r": 16.022293976847223
+          },
+          "pelvis_vertical_target_units": -5.960464477539063e-08
+        },
+        {
+          "time_s": 0.3333333333333333,
+          "elbow_forward_delta_deg": {
+            "l": 40.344056520029966,
+            "r": 31.98252909950059
+          },
+          "knee_backward_delta_deg": {
+            "l": 28.769552361761495,
+            "r": 18.58260033367921
+          },
+          "pelvis_vertical_target_units": -5.960464477539063e-08
+        },
+        {
+          "time_s": 0.35,
+          "elbow_forward_delta_deg": {
+            "l": 41.99999359900136,
+            "r": 32.500007080514465
+          },
+          "knee_backward_delta_deg": {
+            "l": 33.17549912380957,
+            "r": 21.358419792124415
+          },
+          "pelvis_vertical_target_units": -5.960464477539063e-08
+        },
+        {
+          "time_s": 0.36666666666666664,
+          "elbow_forward_delta_deg": {
+            "l": 43.655981826101524,
+            "r": 33.01747693665506
+          },
+          "knee_backward_delta_deg": {
+            "l": 37.5811509742402,
+            "r": 24.134186211385853
+          },
+          "pelvis_vertical_target_units": -5.960464477539063e-08
+        },
+        {
+          "time_s": 0.38333333333333336,
+          "elbow_forward_delta_deg": {
+            "l": 45.18331967510783,
+            "r": 33.49476815052439
+          },
+          "knee_backward_delta_deg": {
+            "l": 41.64454302917001,
+            "r": 26.69429700449229
+          },
+          "pelvis_vertical_target_units": -5.960464477539063e-08
+        },
+        {
+          "time_s": 0.4,
+          "elbow_forward_delta_deg": {
+            "l": 46.7106890382286,
+            "r": 33.972042944070324
+          },
+          "knee_backward_delta_deg": {
+            "l": 45.707970781943544,
+            "r": 29.25437593121096
+          },
+          "pelvis_vertical_target_units": -5.960464477539063e-08
+        },
+        {
+          "time_s": 0.4166666666666667,
+          "elbow_forward_delta_deg": {
+            "l": 47.85218512048399,
+            "r": 34.32879815815798
+          },
+          "knee_backward_delta_deg": {
+            "l": 48.74513258151606,
+            "r": 31.16775847370465
+          },
+          "pelvis_vertical_target_units": -5.960464477539063e-08
+        },
+        {
+          "time_s": 0.43333333333333335,
+          "elbow_forward_delta_deg": {
+            "l": 48.993691606282866,
+            "r": 34.68550673420179
+          },
+          "knee_backward_delta_deg": {
+            "l": 51.782530532582115,
+            "r": 33.0811350048761
+          },
+          "pelvis_vertical_target_units": -5.960464477539063e-08
+        },
+        {
+          "time_s": 0.45,
+          "elbow_forward_delta_deg": {
+            "l": 49.49227890720102,
+            "r": 34.84134030863212
+          },
+          "knee_backward_delta_deg": {
+            "l": 53.10915807523834,
+            "r": 33.91675026839985
+          },
+          "pelvis_vertical_target_units": -5.960464477539063e-08
+        },
+        {
+          "time_s": 0.4666666666666667,
+          "elbow_forward_delta_deg": {
+            "l": 49.99086116248557,
+            "r": 34.99714355124447
+          },
+          "knee_backward_delta_deg": {
+            "l": 54.43583594491781,
+            "r": 34.7523630942652
+          },
+          "pelvis_vertical_target_units": -5.960464477539063e-08
+        },
+        {
+          "time_s": 0.48333333333333334,
+          "elbow_forward_delta_deg": {
+            "l": 49.73733082586392,
+            "r": 34.90636749905682
+          },
+          "knee_backward_delta_deg": {
+            "l": 53.955202880155284,
+            "r": 34.540354820534965
+          },
+          "pelvis_vertical_target_units": -5.960464477539063e-08
+        },
+        {
+          "time_s": 0.5,
+          "elbow_forward_delta_deg": {
+            "l": 49.483794795881415,
+            "r": 34.81562900026434
+          },
+          "knee_backward_delta_deg": {
+            "l": 53.47458268959835,
+            "r": 34.32832015761524
+          },
+          "pelvis_vertical_target_units": -5.960464477539063e-08
+        },
+        {
+          "time_s": 0.5166666666666667,
+          "elbow_forward_delta_deg": {
+            "l": 48.698203349546304,
+            "r": 34.53508210459134
+          },
+          "knee_backward_delta_deg": {
+            "l": 51.97437057509825,
+            "r": 33.65946547396376
+          },
+          "pelvis_vertical_target_units": -5.960464477539063e-08
+        },
+        {
+          "time_s": 0.5333333333333333,
+          "elbow_forward_delta_deg": {
+            "l": 47.91262849991949,
+            "r": 34.254516835320835
+          },
+          "knee_backward_delta_deg": {
+            "l": 50.474252687510415,
+            "r": 32.990604313787685
+          },
+          "pelvis_vertical_target_units": -5.960464477539063e-08
+        },
+        {
+          "time_s": 0.55,
+          "elbow_forward_delta_deg": {
+            "l": 46.77296706612519,
+            "r": 33.84749428552031
+          },
+          "knee_backward_delta_deg": {
+            "l": 48.29827978906086,
+            "r": 32.02035727425935
+          },
+          "pelvis_vertical_target_units": -5.960464477539063e-08
+        },
+        {
+          "time_s": 0.5666666666666667,
+          "elbow_forward_delta_deg": {
+            "l": 45.633356241188906,
+            "r": 33.44046939735216
+          },
+          "knee_backward_delta_deg": {
+            "l": 46.12245651224974,
+            "r": 31.05009101613001
+          },
+          "pelvis_vertical_target_units": -5.960464477539063e-08
+        },
+        {
+          "time_s": 0.5833333333333334,
+          "elbow_forward_delta_deg": {
+            "l": 44.31667696492133,
+            "r": 32.97023760848514
+          },
+          "knee_backward_delta_deg": {
+            "l": 43.60873224750112,
+            "r": 29.929133027929353
+          },
+          "pelvis_vertical_target_units": -5.960464477539063e-08
+        },
+        {
+          "time_s": 0.6,
+          "elbow_forward_delta_deg": {
+            "l": 43.00000130856592,
+            "r": 32.49999042812426
+          },
+          "knee_backward_delta_deg": {
+            "l": 41.09504876180351,
+            "r": 28.808159927285928
+          },
+          "pelvis_vertical_target_units": -5.960464477539063e-08
+        },
+        {
+          "time_s": 0.6166666666666667,
+          "elbow_forward_delta_deg": {
+            "l": 41.68335822437778,
+            "r": 32.029770044131936
+          },
+          "knee_backward_delta_deg": {
+            "l": 38.581378454541664,
+            "r": 27.687192565139334
+          },
+          "pelvis_vertical_target_units": -5.960464477539063e-08
+        },
+        {
+          "time_s": 0.6333333333333333,
+          "elbow_forward_delta_deg": {
+            "l": 40.36670333322945,
+            "r": 31.559548477034674
+          },
+          "knee_backward_delta_deg": {
+            "l": 36.067655361825146,
+            "r": 26.566212377430908
+          },
+          "pelvis_vertical_target_units": -5.960464477539063e-08
+        },
+        {
+          "time_s": 0.65,
+          "elbow_forward_delta_deg": {
+            "l": 39.22704271864257,
+            "r": 31.152515028421966
+          },
+          "knee_backward_delta_deg": {
+            "l": 33.89184862476634,
+            "r": 25.59592336702525
+          },
+          "pelvis_vertical_target_units": -5.960464477539063e-08
+        },
+        {
+          "time_s": 0.6666666666666666,
+          "elbow_forward_delta_deg": {
+            "l": 38.087416252286246,
+            "r": 30.745496716546235
+          },
+          "knee_backward_delta_deg": {
+            "l": 31.71596085479678,
+            "r": 24.625628766453147
+          },
+          "pelvis_vertical_target_units": -5.960464477539063e-08
+        },
+        {
+          "time_s": 0.6833333333333333,
+          "elbow_forward_delta_deg": {
+            "l": 37.30177022248629,
+            "r": 30.464924190511823
+          },
+          "knee_backward_delta_deg": {
+            "l": 30.215972674587572,
+            "r": 23.95675583004855
+          },
+          "pelvis_vertical_target_units": -5.960464477539063e-08
+        },
+        {
+          "time_s": 0.7,
+          "elbow_forward_delta_deg": {
+            "l": 36.51613325033204,
+            "r": 30.184371186331298
+          },
+          "knee_backward_delta_deg": {
+            "l": 28.71594318147238,
+            "r": 23.287879011923195
+          },
+          "pelvis_vertical_target_units": -5.960464477539063e-08
+        },
+        {
+          "time_s": 0.7166666666666667,
+          "elbow_forward_delta_deg": {
+            "l": 36.2527497223204,
+            "r": 30.089722903020345
+          },
+          "knee_backward_delta_deg": {
+            "l": 28.236211952864767,
+            "r": 23.08163769252414
+          },
+          "pelvis_vertical_target_units": -2.4974346160888672e-05
+        },
+        {
+          "time_s": 0.7333333333333333,
+          "elbow_forward_delta_deg": {
+            "l": 35.98932435452247,
+            "r": 29.995049514564798
+          },
+          "knee_backward_delta_deg": {
+            "l": 27.756471923337333,
+            "r": 22.875397432829857
+          },
+          "pelvis_vertical_target_units": -4.9948692321777344e-05
+        },
+        {
+          "time_s": 0.75,
+          "elbow_forward_delta_deg": {
+            "l": 35.41933268252162,
+            "r": 29.732002371921133
+          },
+          "knee_backward_delta_deg": {
+            "l": 29.145505780128044,
+            "r": 24.312522799853383
+          },
+          "pelvis_vertical_target_units": -0.002699553966522217
+        },
+        {
+          "time_s": 0.7666666666666667,
+          "elbow_forward_delta_deg": {
+            "l": 34.84932764599006,
+            "r": 29.468963848316
+          },
+          "knee_backward_delta_deg": {
+            "l": 30.534492447295296,
+            "r": 25.7496308803413
+          },
+          "pelvis_vertical_target_units": -0.005349159240722656
+        },
+        {
+          "time_s": 0.7833333333333333,
+          "elbow_forward_delta_deg": {
+            "l": 33.59327859871044,
+            "r": 28.889210584117187
+          },
+          "knee_backward_delta_deg": {
+            "l": 33.595409491710754,
+            "r": 28.916691700922883
+          },
+          "pelvis_vertical_target_units": -0.011188507080078125
+        },
+        {
+          "time_s": 0.8,
+          "elbow_forward_delta_deg": {
+            "l": 32.33723339001873,
+            "r": 28.309465816963204
+          },
+          "knee_backward_delta_deg": {
+            "l": 36.6562054057779,
+            "r": 32.08372203153857
+          },
+          "pelvis_vertical_target_units": -0.017027854919433594
+        },
+        {
+          "time_s": 0.8166666666666667,
+          "elbow_forward_delta_deg": {
+            "l": 30.756169948482068,
+            "r": 27.579754088601206
+          },
+          "knee_backward_delta_deg": {
+            "l": 40.50883363606778,
+            "r": 36.07014144447761
+          },
+          "pelvis_vertical_target_units": -0.024378061294555664
+        },
+        {
+          "time_s": 0.8333333333333334,
+          "elbow_forward_delta_deg": {
+            "l": 29.17509099527824,
+            "r": 26.85005650395741
+          },
+          "knee_backward_delta_deg": {
+            "l": 44.3614552682501,
+            "r": 40.05663668873793
+          },
+          "pelvis_vertical_target_units": -0.031728267669677734
+        },
+        {
+          "time_s": 0.85,
+          "elbow_forward_delta_deg": {
+            "l": 27.63014316595379,
+            "r": 26.136993843111867
+          },
+          "knee_backward_delta_deg": {
+            "l": 48.12627937091477,
+            "r": 43.952236438649734
+          },
+          "pelvis_vertical_target_units": -0.03891068696975708
+        },
+        {
+          "time_s": 0.8666666666666667,
+          "elbow_forward_delta_deg": {
+            "l": 26.085194039699857,
+            "r": 25.423929315395235
+          },
+          "knee_backward_delta_deg": {
+            "l": 51.89140915509002,
+            "r": 47.848108605885336
+          },
+          "pelvis_vertical_target_units": -0.046093106269836426
+        },
+        {
+          "time_s": 0.8833333333333333,
+          "elbow_forward_delta_deg": {
+            "l": 24.937451788275418,
+            "r": 24.89421032008672
+          },
+          "knee_backward_delta_deg": {
+            "l": 54.68883114408858,
+            "r": 50.742572072358094
+          },
+          "pelvis_vertical_target_units": -0.051428794860839844
+        },
+        {
+          "time_s": 0.9,
+          "elbow_forward_delta_deg": {
+            "l": 23.789735420424165,
+            "r": 24.36450290043217
+          },
+          "knee_backward_delta_deg": {
+            "l": 57.4866574506398,
+            "r": 53.6373287375609
+          },
+          "pelvis_vertical_target_units": -0.05676448345184326
+        },
+        {
+          "time_s": 0.9166666666666666,
+          "elbow_forward_delta_deg": {
+            "l": 23.392819688637033,
+            "r": 24.180895022194335
+          },
+          "knee_backward_delta_deg": {
+            "l": 58.43590853720626,
+            "r": 54.62069848780055
+          },
+          "pelvis_vertical_target_units": -0.05858650803565979
+        },
+        {
+          "time_s": 0.9333333333333333,
+          "elbow_forward_delta_deg": {
+            "l": 22.99591515426689,
+            "r": 23.99729596126413
+          },
+          "knee_backward_delta_deg": {
+            "l": 59.385220285665625,
+            "r": 55.604116224495286
+          },
+          "pelvis_vertical_target_units": -0.06040853261947632
+        },
+        {
+          "time_s": 0.95,
+          "elbow_forward_delta_deg": {
+            "l": 22.771530572581227,
+            "r": 23.8477034032719
+          },
+          "knee_backward_delta_deg": {
+            "l": 57.90350938709358,
+            "r": 54.21673017724854
+          },
+          "pelvis_vertical_target_units": -0.05890172719955444
+        },
+        {
+          "time_s": 0.9666666666666667,
+          "elbow_forward_delta_deg": {
+            "l": 22.547157448985566,
+            "r": 23.698107495226957
+          },
+          "knee_backward_delta_deg": {
+            "l": 56.42193713735938,
+            "r": 52.82942363470039
+          },
+          "pelvis_vertical_target_units": -0.05739492177963257
+        },
+        {
+          "time_s": 0.9833333333333333,
+          "elbow_forward_delta_deg": {
+            "l": 22.023022983688243,
+            "r": 23.348676287125073
+          },
+          "knee_backward_delta_deg": {
+            "l": 52.9617457524981,
+            "r": 49.58919649118733
+          },
+          "pelvis_vertical_target_units": -0.05387529730796814
+        },
+        {
+          "time_s": 1.0,
+          "elbow_forward_delta_deg": {
+            "l": 21.49887483027237,
+            "r": 22.999252297807125
+          },
+          "knee_backward_delta_deg": {
+            "l": 49.502105685164935,
+            "r": 46.34930447082349
+          },
+          "pelvis_vertical_target_units": -0.05035564303398132
+        },
+        {
+          "time_s": 1.0166666666666666,
+          "elbow_forward_delta_deg": {
+            "l": 20.77656306765644,
+            "r": 22.517702248211123
+          },
+          "knee_backward_delta_deg": {
+            "l": 44.735130657772615,
+            "r": 41.884996121953435
+          },
+          "pelvis_vertical_target_units": -0.045505404472351074
+        },
+        {
+          "time_s": 1.0333333333333334,
+          "elbow_forward_delta_deg": {
+            "l": 20.054264644628347,
+            "r": 22.036147957261257
+          },
+          "knee_backward_delta_deg": {
+            "l": 39.96843447106896,
+            "r": 37.42094833454539
+          },
+          "pelvis_vertical_target_units": -0.04065519571304321
+        },
+        {
+          "time_s": 1.05,
+          "elbow_forward_delta_deg": {
+            "l": 19.235454840253496,
+            "r": 21.490296410363463
+          },
+          "knee_backward_delta_deg": {
+            "l": 34.564663241479565,
+            "r": 32.36042931972597
+          },
+          "pelvis_vertical_target_units": -0.03515678644180298
+        },
+        {
+          "time_s": 1.0666666666666667,
+          "elbow_forward_delta_deg": {
+            "l": 18.41665529788515,
+            "r": 20.944449885620948
+          },
+          "knee_backward_delta_deg": {
+            "l": 29.16049808454753,
+            "r": 27.29987578812105
+          },
+          "pelvis_vertical_target_units": -0.02965843677520752
+        },
+        {
+          "time_s": 1.0833333333333333,
+          "elbow_forward_delta_deg": {
+            "l": 17.602941178142544,
+            "r": 20.40194972028374
+          },
+          "knee_backward_delta_deg": {
+            "l": 23.789259118593097,
+            "r": 22.27056526589294
+          },
+          "pelvis_vertical_target_units": -0.02419412136077881
+        },
+        {
+          "time_s": 1.1,
+          "elbow_forward_delta_deg": {
+            "l": 16.789223068337783,
+            "r": 19.859451939522863
+          },
+          "knee_backward_delta_deg": {
+            "l": 18.417341878039185,
+            "r": 17.24106067909684
+          },
+          "pelvis_vertical_target_units": -0.018729865550994873
+        },
+        {
+          "time_s": 1.1166666666666667,
+          "elbow_forward_delta_deg": {
+            "l": 16.082164571269125,
+            "r": 19.388102739488048
+          },
+          "knee_backward_delta_deg": {
+            "l": 13.749248668121652,
+            "r": 12.870808530233843
+          },
+          "pelvis_vertical_target_units": -0.013981997966766357
+        },
+        {
+          "time_s": 1.1333333333333333,
+          "elbow_forward_delta_deg": {
+            "l": 15.375107315861653,
+            "r": 18.91672827480196
+          },
+          "knee_backward_delta_deg": {
+            "l": 9.08071958221112,
+            "r": 8.500408210263247
+          },
+          "pelvis_vertical_target_units": -0.009234130382537842
+        },
+        {
+          "time_s": 1.15,
+          "elbow_forward_delta_deg": {
+            "l": 14.876378115476074,
+            "r": 18.584260538549188
+          },
+          "knee_backward_delta_deg": {
+            "l": 5.787383276372182,
+            "r": 5.417485202295083
+          },
+          "pelvis_vertical_target_units": -0.005885064601898193
+        },
+        {
+          "time_s": 1.1666666666666667,
+          "elbow_forward_delta_deg": {
+            "l": 14.377647505800281,
+            "r": 18.251764897347357
+          },
+          "knee_backward_delta_deg": {
+            "l": 2.493935366473785,
+            "r": 2.334519272665256
+          },
+          "pelvis_vertical_target_units": -0.002535998821258545
+        },
+        {
+          "time_s": 1.1833333333333333,
+          "elbow_forward_delta_deg": {
+            "l": 14.188822481879308,
+            "r": 18.125883047074232
+          },
+          "knee_backward_delta_deg": {
+            "l": 1.2469958716703875,
+            "r": 1.1672835737087528
+          },
+          "pelvis_vertical_target_units": -0.0012680292129516602
+        },
+        {
+          "time_s": 1.2,
+          "elbow_forward_delta_deg": {
+            "l": 13.999994706749147,
+            "r": 17.99998475773551
+          },
+          "knee_backward_delta_deg": {
+            "l": 4.423077803572539e-05,
+            "r": 4.289895514553166e-05
+          },
+          "pelvis_vertical_target_units": -5.960464477539063e-08
+        }
+      ]
+    }
+  },
+  "errors": [],
+  "fixed_bound_violations": [],
+  "previous_compact_jump_step_deg_per_30Hz_frame": {
+    "whole_body": 26.481484318174797,
+    "authored_upper_body": 15.295332452535458,
+    "inherited_lower_body": 26.481484318174797
+  },
+  "previous_compact_jump_step_details": {
+    "whole_body": {
+      "bone": "calf_r",
+      "space": "local",
+      "frame": 4.0
+    },
+    "authored_upper_body": {
+      "bone": "pinky_03_l",
+      "space": "component",
+      "frame": 6.5
+    },
+    "inherited_lower_body": {
+      "bone": "calf_r",
+      "space": "local",
+      "frame": 4.0
+    }
+  },
+  "idle_finger_local_deviation_from_bind_deg": {
+    "index_01_r": 12.799983930320861,
+    "pinky_02_r": 33.799972637569034,
+    "thumb_02_l": 10.000032731271824,
+    "pinky_03_l": 7.000004770261311,
+    "thumb_02_r": 10.799992672476819,
+    "middle_01_r": 16.79998804366886,
+    "ring_02_l": 28.00001221600016,
+    "middle_01_l": 15.999988551245758,
+    "pinky_01_r": 24.799985623480396,
+    "pinky_03_r": 7.800176745530757,
+    "middle_02_r": 23.80000406165389,
+    "middle_03_l": 5.000000458771088,
+    "thumb_01_r": 13.537768699223445,
+    "middle_03_r": 5.799963835013435,
+    "index_03_r": 4.799999369098799,
+    "index_03_l": 4.000156218834826,
+    "ring_02_r": 28.800052481697595,
+    "index_02_r": 18.799986501535408,
+    "thumb_01_l": 13.021281426633927,
+    "pinky_01_l": 24.000006130090362,
+    "index_01_l": 12.000017059151455,
+    "thumb_03_r": 3.7999402359177847,
+    "pinky_02_l": 33.00000729468988,
+    "middle_02_l": 22.999990961553266,
+    "ring_01_r": 20.799994945013033,
+    "ring_03_r": 6.799950197666702,
+    "index_02_l": 17.999931919382142,
+    "ring_03_l": 6.000084465940635,
+    "ring_01_l": 19.99998905458901,
+    "thumb_03_l": 2.9999663992148258
+  },
+  "idle_jump_relaxed_endpoint_matrix_error": 5.364418029785156e-07,
+  "all_retained_inputs_unchanged": true,
+  "finished_utc": "2026-10-17T20:44:02.416152+00:00"
+}

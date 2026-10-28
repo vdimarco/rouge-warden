@@ -1,0 +1,455 @@
+{
+  "passed": true,
+  "created_utc": "2026-10-17T22:13:22.406262+00:00",
+  "source": {
+    "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Crew/GreenCap51/generated-v1-high-detail/body.glb",
+    "sha256": "729b56b0ed6d74be020f73ea87513d3963f6fb77a630d9f978ce66f0570599f6",
+    "copied_input": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoCastReview-GreenCap51-20261017-v2/input/body.glb"
+  },
+  "recipe_sha256": "ada98f3780a8a4a10c7c89b496d5ea32d1ed975823682bb5622717ce3be33e07",
+  "blender": "5.2.2 LTS",
+  "render": {
+    "engine": "CYCLES",
+    "device": "CPU",
+    "threads": 4,
+    "samples": 16,
+    "denoising": false,
+    "gpu_denoising": false,
+    "dimensions": [
+      512,
+      640
+    ]
+  },
+  "body": {
+    "height_m": 1.8200005951229912,
+    "vertices": 111564,
+    "triangles": 102957,
+    "bones": 24,
+    "bounds_world_m": [
+      [
+        -0.44402211904525757,
+        -0.19078168272972107,
+        -3.042523246676865e-07
+      ],
+      [
+        0.44402235746383667,
+        0.19078212976455688,
+        1.8200002908706665
+      ]
+    ],
+    "evaluated_geometry_sha256": "2bbe45f3f9131203aa10c6ba49eeb93370b0387b3958f030e9a84ac3506a71f2",
+    "original_material_sha256": "65c8fa228f8f2cfa724d45df41c54c950e0d1edd47aed57cb5a190f7018f32c3"
+  },
+  "anchors": {
+    "up": [
+      0.01514963898807764,
+      -0.0025757437106221914,
+      0.9998818635940552
+    ],
+    "forward": [
+      -3.90559398510959e-05,
+      -0.9999967217445374,
+      -0.0025754475500434637
+    ],
+    "left": [
+      0.9998643398284912,
+      0.0029288139194250107,
+      0.01621309295296669
+    ],
+    "camera_direction_projected_to_world_ground": true,
+    "head": [
+      4.652323681852977e-08,
+      -0.023132821545004845,
+      1.5484049320220947
+    ],
+    "headfront": [
+      4.827412070085302e-08,
+      -0.07752030342817307,
+      1.5484051704406738
+    ]
+  },
+  "materials": {
+    "materials": [
+      {
+        "name": "Material_0",
+        "nodes": [
+          {
+            "name": "Principled BSDF",
+            "type": "BSDF_PRINCIPLED",
+            "defaults": {
+              "Base Color": [
+                0.800000011920929,
+                0.800000011920929,
+                0.800000011920929,
+                1.0
+              ],
+              "Metallic": 0.0,
+              "Roughness": 0.5,
+              "IOR": 1.5,
+              "Alpha": 1.0,
+              "Thin Wall": false,
+              "Normal": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "Weight": 0.0,
+              "Diffuse Roughness": 0.0,
+              "Subsurface Weight": 0.0,
+              "Subsurface Radius": [
+                1.0,
+                0.20000000298023224,
+                0.10000000149011612
+              ],
+              "Subsurface Scale": 0.004999999888241291,
+              "Subsurface IOR": 1.399999976158142,
+              "Subsurface Anisotropy": 0.0,
+              "Specular IOR Level": 0.5,
+              "Specular Tint": [
+                1.0,
+                1.0,
+                1.0,
+                1.0
+              ],
+              "Anisotropic": 0.0,
+              "Anisotropic Rotation": 0.0,
+              "Tangent": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "Transmission Weight": 0.0,
+              "Coat Weight": 0.0,
+              "Coat Roughness": 0.029999999329447746,
+              "Coat IOR": 1.5,
+              "Coat Tint": [
+                1.0,
+                1.0,
+                1.0,
+                1.0
+              ],
+              "Coat Normal": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "Sheen Weight": 0.0,
+              "Sheen Roughness": 0.5,
+              "Sheen Tint": [
+                1.0,
+                1.0,
+                1.0,
+                1.0
+              ],
+              "Emission Color": [
+                1.0,
+                1.0,
+                1.0,
+                1.0
+              ],
+              "Emission Strength": 0.0,
+              "Thin Film Thickness": 0.0,
+              "Thin Film IOR": 1.3300000429153442
+            }
+          },
+          {
+            "name": "Material Output",
+            "type": "OUTPUT_MATERIAL",
+            "defaults": {
+              "Displacement": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "Thickness": 0.0
+            }
+          },
+          {
+            "name": "Image Texture",
+            "type": "TEX_IMAGE",
+            "image": "Image_0",
+            "defaults": {
+              "Vector": [
+                0.0,
+                0.0,
+                0.0
+              ]
+            }
+          },
+          {
+            "name": "Separate Color",
+            "type": "SEPARATE_COLOR",
+            "defaults": {
+              "Color": [
+                0.800000011920929,
+                0.800000011920929,
+                0.800000011920929,
+                1.0
+              ]
+            }
+          },
+          {
+            "name": "Image Texture.001",
+            "type": "TEX_IMAGE",
+            "image": "Image_1",
+            "defaults": {
+              "Vector": [
+                0.0,
+                0.0,
+                0.0
+              ]
+            }
+          },
+          {
+            "name": "Normal Map",
+            "type": "NORMAL_MAP",
+            "defaults": {
+              "Strength": 1.0,
+              "Color": [
+                0.5,
+                0.5,
+                1.0,
+                1.0
+              ]
+            }
+          },
+          {
+            "name": "Image Texture.002",
+            "type": "TEX_IMAGE",
+            "image": "normal",
+            "defaults": {
+              "Vector": [
+                0.0,
+                0.0,
+                0.0
+              ]
+            }
+          }
+        ],
+        "links": [
+          [
+            "Principled BSDF",
+            "BSDF",
+            "Material Output",
+            "Surface"
+          ],
+          [
+            "Image Texture",
+            "Color",
+            "Principled BSDF",
+            "Base Color"
+          ],
+          [
+            "Separate Color",
+            "Blue",
+            "Principled BSDF",
+            "Metallic"
+          ],
+          [
+            "Separate Color",
+            "Green",
+            "Principled BSDF",
+            "Roughness"
+          ],
+          [
+            "Image Texture.001",
+            "Color",
+            "Separate Color",
+            "Color"
+          ],
+          [
+            "Normal Map",
+            "Normal",
+            "Principled BSDF",
+            "Normal"
+          ],
+          [
+            "Image Texture.002",
+            "Color",
+            "Normal Map",
+            "Color"
+          ]
+        ]
+      }
+    ],
+    "images": {
+      "Image_0": {
+        "size": [
+          2048,
+          2048
+        ],
+        "colorspace": "sRGB",
+        "packed_sha256": "379cf5613b880b43cbff9fdccd385b7b35fdea0b4c44720565b64423164d7b66",
+        "pixel_float32_sha256": "d8dd29e3956dee6d9b56bdab04aacdcc7588109e78ecd600a12ca6dbafd5a5ef"
+      },
+      "Image_1": {
+        "size": [
+          2048,
+          2048
+        ],
+        "colorspace": "Non-Color",
+        "packed_sha256": "a6fd3e3127ff4cd0f8d3e6c523c673d4d645e9fcea90d6b36f214f1e1e0a9cfd",
+        "pixel_float32_sha256": "896d63b97c4c02fa099b306610c93bcd71cb8ef9e18599041426c8a0e4ca93b3"
+      },
+      "normal": {
+        "size": [
+          2048,
+          2048
+        ],
+        "colorspace": "Non-Color",
+        "packed_sha256": "366b7e5c510d5d3e61c2e1bbd597c5e3f4851e5be13058f44b76d5704374c016",
+        "pixel_float32_sha256": "7943b7dd88f0df2be249e4330c3c4632f3fd89d84de2ce9e48b5c363f68b0e36"
+      }
+    }
+  },
+  "hidden_importer_bone_widgets": [
+    "Icosphere"
+  ],
+  "views": [
+    {
+      "file": "front.png",
+      "sha256": "03478c5338fc5d1b7a9e90ddf7a5b378c2f2ead0040bc2c2c110fa988dc0ff90",
+      "camera": [
+        -0.00021312701574061066,
+        -5.4600019454956055,
+        0.9099999666213989
+      ],
+      "target": [
+        1.1920928955078125e-07,
+        2.2351741790771484e-07,
+        0.9099999666213989
+      ],
+      "ortho_scale_m": 2.1840027809143066,
+      "crop_vertices": 111564,
+      "evaluated_geometry_sha256": "2bbe45f3f9131203aa10c6ba49eeb93370b0387b3958f030e9a84ac3506a71f2"
+    },
+    {
+      "file": "threequarter.png",
+      "sha256": "95fadbc4b3e55314314b8b16601d53c193ca8f6bab981fd184189a1dc86e31d2",
+      "camera": [
+        -3.8549742698669434,
+        -3.8666255474090576,
+        0.9099999666213989
+      ],
+      "target": [
+        1.1920928955078125e-07,
+        2.2351741790771484e-07,
+        0.9099999666213989
+      ],
+      "ortho_scale_m": 2.1840012073516846,
+      "crop_vertices": 111564,
+      "evaluated_geometry_sha256": "2bbe45f3f9131203aa10c6ba49eeb93370b0387b3958f030e9a84ac3506a71f2"
+    },
+    {
+      "file": "side.png",
+      "sha256": "4c00881c193dd92049f9c00aa907906a57af37cfbf08946760fd77992560e6d3",
+      "camera": [
+        -5.459978103637695,
+        -0.015993207693099976,
+        0.9099999666213989
+      ],
+      "target": [
+        1.1920928955078125e-07,
+        2.2351741790771484e-07,
+        0.9099999666213989
+      ],
+      "ortho_scale_m": 2.184001064300537,
+      "crop_vertices": 111564,
+      "evaluated_geometry_sha256": "2bbe45f3f9131203aa10c6ba49eeb93370b0387b3958f030e9a84ac3506a71f2"
+    },
+    {
+      "file": "back.png",
+      "sha256": "4ad2ef0ae88f63db2e584e90cf336b43218e37e55dbbf375728995335df462f5",
+      "camera": [
+        0.00021336543431971222,
+        5.4600019454956055,
+        0.9099999666213989
+      ],
+      "target": [
+        1.1920928955078125e-07,
+        2.2351741790771484e-07,
+        0.9099999666213989
+      ],
+      "ortho_scale_m": 2.1840027809143066,
+      "crop_vertices": 111564,
+      "evaluated_geometry_sha256": "2bbe45f3f9131203aa10c6ba49eeb93370b0387b3958f030e9a84ac3506a71f2"
+    },
+    {
+      "file": "face-front.png",
+      "sha256": "ad236a23b79a0dfae6e6f5a5b903695eed436aa4fe05439738afa7c359e0a5ba",
+      "camera": [
+        0.0017617946723476052,
+        -5.483470439910889,
+        1.678755283355713
+      ],
+      "target": [
+        0.0019750408828258514,
+        -0.023468609899282455,
+        1.678755283355713
+      ],
+      "ortho_scale_m": 0.5551142692565918,
+      "crop_vertices": 67832,
+      "evaluated_geometry_sha256": "2bbe45f3f9131203aa10c6ba49eeb93370b0387b3958f030e9a84ac3506a71f2"
+    },
+    {
+      "file": "face-threequarter.png",
+      "sha256": "a01a72865f2510a2df904ad8f6ad2a704bce54d70ee604a159629fc6b8ac5c48",
+      "camera": [
+        -3.852999210357666,
+        -3.89009428024292,
+        1.678755283355713
+      ],
+      "target": [
+        0.0019750408828258514,
+        -0.023468609899282455,
+        1.678755283355713
+      ],
+      "ortho_scale_m": 0.5433955639600754,
+      "crop_vertices": 67832,
+      "evaluated_geometry_sha256": "2bbe45f3f9131203aa10c6ba49eeb93370b0387b3958f030e9a84ac3506a71f2"
+    },
+    {
+      "file": "hand-left.png",
+      "sha256": "4955a50e9e5ef5ff385ff9432ec006e9504f1f1c2974a9820468038ab34ee950",
+      "camera": [
+        2.6260883808135986,
+        -5.074360370635986,
+        0.8532035946846008
+      ],
+      "target": [
+        0.38344699144363403,
+        -0.09618978947401047,
+        0.8532035946846008
+      ],
+      "ortho_scale_m": 0.26591169834136963,
+      "crop_vertices": 2682,
+      "evaluated_geometry_sha256": "2bbe45f3f9131203aa10c6ba49eeb93370b0387b3958f030e9a84ac3506a71f2"
+    },
+    {
+      "file": "hand-right.png",
+      "sha256": "0b31ad119d71554c9accb562bf8cc0acd125091a6d5eb5ea7ba0c574b94fb5d5",
+      "camera": [
+        -2.6214756965637207,
+        -5.07651424407959,
+        0.844717264175415
+      ],
+      "target": [
+        -0.383421927690506,
+        -0.0962790995836258,
+        0.844717264175415
+      ],
+      "ortho_scale_m": 0.2452628195285797,
+      "crop_vertices": 2222,
+      "evaluated_geometry_sha256": "2bbe45f3f9131203aa10c6ba49eeb93370b0387b3958f030e9a84ac3506a71f2"
+    }
+  ],
+  "duration_seconds": 11.297452823026106,
+  "raw_source_unchanged": true,
+  "original_material_and_geometry_unchanged": true,
+  "scope": "Actual original GLB neutral bind morphology/identity/material review only.",
+  "limits": [
+    "No Tripo rig, animation, native appearance, prop grip or final art acceptance.",
+    "Crops derive from source head/hand anchors and weighted vertices; fingers may remain fused.",
+    "No source bitmap/geometry edits, scale normalization, provider request, GPU, UE or service operation."
+  ]
+}

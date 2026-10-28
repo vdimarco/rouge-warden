@@ -1,0 +1,47 @@
+{
+  "at_utc": "2026-10-17T23:33:25.931296+00:00",
+  "source_sha256": "13bf9c9dc76a7a925ba31ad5fadf6ef5e3a7436ee0450e6579a221f1fabd96c8",
+  "reference_sha256": "3270ff8a8a29209ae1b1e7cb454a7883375b955adc651b12feb71332a2086bac",
+  "viewed": [
+    {
+      "file": "front.png",
+      "sha256": "871795fbe3c36bfd006bd8e3719a32cfc8d15e33ce24f09df9b9fcf4e4070763"
+    },
+    {
+      "file": "threequarter.png",
+      "sha256": "a16112b6802d9698196226fed19658414e6ae735b7fa14ef5fa5704f69723b02"
+    },
+    {
+      "file": "side.png",
+      "sha256": "76bef326f0d8b377a60ee7ce64575b063a62bbfaf48c950ac9a6048dbd0384ce"
+    },
+    {
+      "file": "back.png",
+      "sha256": "052b61243598a7c6053cbe95d589e4187fa4fcb9aae5ff3dde8bdba4d14598a7"
+    },
+    {
+      "file": "face-front.png",
+      "sha256": "4d1eaa49acc3fef4a3073b15c8d75f610581fd4de6457181986cf6d9f69f5806"
+    },
+    {
+      "file": "face-threequarter.png",
+      "sha256": "ef6ef5f932e9638bbafb45c069ff20c6dcee5437582336dcf7e6a10a552a3000"
+    },
+    {
+      "file": "hand-left.png",
+      "sha256": "f779b2094c8ee4a342c572934c925f82971884d905f8d847c83e9046b8d3a461"
+    },
+    {
+      "file": "hand-right.png",
+      "sha256": "c5f6223df8d8f03476d72846798a9bf3dea952bebc56d5ad873a0c5cfdbc31a3"
+    }
+  ],
+  "bounded_rig_trial_allowed": true,
+  "final_art_accepted": false,
+  "observations": [
+    "Adult lean build, navy backward cap, mirrored blue glasses and red W jersey retained; facial hair/age details weakened.",
+    "Raw normals are valid; two Blender-importer-zero corners require the same authoritative recovery, not invented normals.",
+    "Thumbs appear short/flattened in front-biased views; actual3D length/opposition and reverse angles must be measured after rigging before deciding whether repair is necessary. No geometry change authorized on2D appearance alone."
+  ],
+  "hand_review_required": true
+}

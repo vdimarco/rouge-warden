@@ -1,0 +1,33 @@
+# Tripo cast handoff — 18 October 2026 UTC
+
+Continue on `codex/nord-tripo-cast`, draft [PR387](https://github.com/vdimarco/rouge-warden/pull/387), OpenSpec `nord-city-quality`. User selected Tripo for both bodies and rigs, funded the API and authorized the cast continuation. Original references/provider files, merged Resident9, production Content/maps/crew and installed game remain protected. Browser/PWA/icon/Branding changes are separately owned and excluded.
+
+## Delivered checked checkpoint
+
+All seven selected Tripo H3.1 body/v3 Unreal-rig pairs completed and are retained with task/hash/cost receipts. They consume595 API credits plus75 historical comparison credits; current actual balance5 available/0 frozen and no outstanding or ambiguous paid job. No new fal generation or credit purchase occurred. The separate fal allowance reservesUS$18 ofUS$25, leavingUS$7 uncommitted; settled charges are unavailable.
+
+The remaining five surfaces and four-clip sets pass2,080 fresh half-frame checks, preserving original PBR/normals/geometry/UV/weights/binds. Exact source-normal recovery, component-reference neutral quaternions, dynamic-local scale checks and Red's original-author jump capture fix measured import/transport defects without widening gates. Frozen executed recipes, failures and four focused positive/negative regressions are retained in `TripoBodies/OwnRigCPU/FundedFive/`.
+
+Root reviewed all 75 new own-body/hand stills and all 1,050 frames of Green/Memphis/White/Red/Lime through exhaustive contact sheets; BlackCap's earlier 210-frame review remains retained. Thus all six new native candidates have complete CPU sequences. `DeliveryIndex-GreenRed.json` independently verifies the final 420 PNGs, two decoded 210-frame/30Hz/7-second MP4s, exact frame partitions and all four worker/Blender PIDs closed. `SixCandidatesCPU.jpg` is an evidence contact sheet of actual reviewed idle stills, not Unreal/comic rendering. Thumb radial views expose projecting geometry, so no thumb stretching was performed. Broad source gait acting, blunt fingertips, some cuff/neck boundaries and physical grasp remain unaccepted.
+
+Six new native candidates (Resident3–8,66 assets) import and fresh-reload successfully. All12 `Quebec.Animation` tests pass in a separate fresh NullRHI process, including existing production checks and merged pilot. The all-four-flags opt-in uses complete own folders; defaults/packages stay unchanged. Native QA exposed and fixed100× Jump root-scale shrink in memory while retaining saved clip bytes. Plunger/tube dimensions and each evaluated root/hand-relative socket now pass. See `Native/README.md` and pinned build/run/source/module evidence. Process-only TEDS workaround remains disclosed.
+
+Topknot's numeric motion still passes but actual bag deformation fails. A Saved-only4,826-interior-vertex weight pilot preserves every non-weight FBX property and fresh normal/bind/PBR byte while transferring leg influence to pelvis. Root reviewed allnine paired images: run sags more plausibly, but jump/upper boundary still corrugates; reject adoption. No Top native asset or Data promotion is authorized by those proofs. Its original/rejected inputs remain immutable. The final 48-panel ownership/seam proposal also remains unapproved: 5,327 unresolved faces (2,699 hidden), 1,376 blocked interface vertices and 15 open candidate seam components. Only one local bag/shirt fan is confirmed; no actual split/export/reimport was performed. `TopknotBagInteriorRejected/` and `TopknotBagSeamProposal/` retain exact selected proof/views and the manual separation/retopology handoff. Do not treat a one-vertex illustration as a repair or assume missing backing/hidden hand clearance.
+
+## Preservation and remaining gates
+
+All owned native/CPU processes completed before settings restoration; original per-project settings are restored byte-for-byte. `Preservation.json` verifies12,609 original Content/Data files,96 installed package files,26 saves,four settings and original active demo/public/funnel/TURN PIDs. Only the declared editor-module rebuild and isolated new candidate files differ. No GPU/service operation or live deployment occurred.
+
+The unchanged 12,000 MiB VRAM guard cannot provide safe rendering/restoration while Dota remains open. Do not close it, stop the demo or weaken guards. Continue independent CPU accessory work; root alone owns API/native/GPU/service actions. Next rendered work must inspect actual both-mode/two-size continuous native motion, sleeve/hand/tool clearance and preserved controls/co-op. Current packaged performance, browser decode, physical phone and off-LAN acceptance remain open. Do not report all cast graphics accepted or merge/promote on headless evidence alone.
+
+
+The checked native code/assets checkpoint is pushed at `5e86a8d7`; this later evidence checkpoint changes no production behavior. Final credit read confirms 5 available/0 frozen (`Native/FinalCreditBalance.json`), no paid jobs. All owned Blender/encoder/Unreal jobs are closed. Current preservation still passes; normal demo/tunnel/TURN identities remain unchanged. Keep PR387 in draft until remaining visual/gameplay acceptance is complete.
+
+
+## Superseding deployment checkpoint — 18 October 2026 UTC
+
+The user explicitly authorized merging/deployment and closing Dota after the earlier handoff. PR387 merged as22c2986; Dota was terminated normally and remains closed. The earlier “do not close Dota / keep PR387 draft” instructions above are historical and superseded. No paid jobs were submitted.
+
+The bounded facing correction is in PR395/native implementation38d15e1a. Corrected native12, two-map cook48/77headers,196 Vulkan stills, two motion recordings/322 sampled frames, both-district six-peer native QA and all seven current-production performance scenes pass. Rejected fixture attempts and complete restorations are retained. The checked package is installed inBuilds/Browser/Linux with all five Saved roots preserved, existing tunnels/TURN retained, both actual native executable hashes/four flags verified, and all8 ordinary public stream/input/recovery checks passing. Root inspected GreenCap/Memphis public screenshots. See [deployment report](DEPLOY-20261018.md) and [machine record](Deployment-20261018.json) for exact evidence and operational wrapper/rollback paths.
+
+The live managed launcher now uses the fixed Saved Tripo wrapper; preserve it and its pinned lifecycle during restarts. Original package rollback remains available. Topknot retains production; physical grasp, foot planting/final art, physical-device/off-LAN/full-campaign and citywide performance remain open. Separately owned frontend/PWA/Branding changes were excluded.

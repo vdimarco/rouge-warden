@@ -1,0 +1,3 @@
+- [x] Give the chase clock a wood-block body, heavier when falling behind
+- [x] Measure that falling behind is louder than keeping pace
+- [x] Keep closing and the first-lesson wait quiet

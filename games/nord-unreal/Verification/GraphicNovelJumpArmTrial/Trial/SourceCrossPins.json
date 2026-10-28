@@ -1,0 +1,33 @@
+{
+  "scope": "Historical baseline/trial inputs and completed capture preservation; no private baseline contents.",
+  "baseline_window": "SingleRenderWindow-20261017T144012Z",
+  "trial_window": "SingleRenderWindow-20261017T145346Z",
+  "baseline_snapshot_sha256": "ab3a9cf5038fc0b370f2988704aaea3b424672349d94269f97da80529bad2fc2",
+  "trial_snapshot_sha256": "c074347617e1c8d30bfdd222af3221e7c37e07ee5ab4327db8ed435d06f900a4",
+  "trial_status_sha256": "c911ab803add1547b087dd5f34b93a20057615c51689a00818fbc2fff837810e",
+  "content_count": 6850,
+  "same_content_inventory": true,
+  "changed_content": [
+    "Content/ParkComic/CrewGraphicNovelHighDetail/Resident9/A_Jump.uasset"
+  ],
+  "original_private_clip_sha256": "1e62a9debd7aec41beac0466ac6a5114741ce79de6bce102f6cdbe5d3cd52f26",
+  "trial_private_clip_sha256": "90f03ece6f027126037e21ef5dd725444f94b82f130098c524ccb82be98692e9",
+  "all_other_content_byte_identical": true,
+  "frozen_source_count": 344,
+  "frozen_sources_exactly_identical": true,
+  "source_inventory_digest_sha256": "cbb89a5d39be029332fab1d4577864145ec43878a5d87d285b8969ce45149985",
+  "source_binary_sha256": "2742ca45629a6e97db771a2c3f56b3a8076b8c4b228f8a4d9b86a8633c0623c3",
+  "trial_render_did_not_change_content": true,
+  "trial_render_did_not_change_sources": true,
+  "source_saves_unchanged": true,
+  "restoration_receipts": [
+    {
+      "source": "Saved/Tests/GraphicNovel/PrivateJumpArmPlan-20261017/Restore-20261017T150010Z/result.json",
+      "sha256": "0530d507a0f7df08cce19609b7889e63b5c9e4a9135986f7d7a2e31d7cc4e8d9",
+      "passed": true,
+      "complete_original_content_restored": true
+    }
+  ],
+  "source_generation_manifest_unchanged": true,
+  "trial_matches_raw_jump_claimed": false
+}

@@ -1,0 +1,2 @@
+- [x] Launch the hero off the street on a flat-play win, and not on a miss, in reduced motion, or in a headset
+- [x] Check the hop and the miss in a 1280×800 play, and that reduced motion keeps the word without the hop

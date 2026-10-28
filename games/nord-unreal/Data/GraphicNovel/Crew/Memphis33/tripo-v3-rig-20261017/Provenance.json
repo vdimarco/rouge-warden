@@ -1,0 +1,28 @@
+{
+  "recorded_utc": "2026-10-17T22:22:14.718929+00:00",
+  "character": "Memphis33",
+  "rig_task_id": "aefee195-9e7b-4dde-ae97-edb9c0c852cc",
+  "status": "success",
+  "credits_consumed": 25.0,
+  "model": "v3.0-20260909",
+  "rig_type": "biped",
+  "spec": "unreal",
+  "out_format": "fbx",
+  "source": {
+    "path": "Data/GraphicNovel/Crew/Memphis33/generated-v1-high-detail/body.glb",
+    "sha256": "e3bb935c87891489a9c967eeb8e46d3af3156dd8469bcbb17fa0c78715fbf1a8"
+  },
+  "outputs": {
+    "rig.fbx": {
+      "bytes": 8729564,
+      "sha256": "0b6815c73efcf00f654330c905ecc8a49eafa5743825fe56e027d84db55186f4"
+    },
+    "provider-preview.png": {
+      "bytes": 91790,
+      "sha256": "b01dd0f015348f0e36420d60cfd399ff80a40177bd1c58f59befcc4cabb63793"
+    }
+  },
+  "signed_urls_retained_only_in_private_receipts": true,
+  "raw_provider_files_unchanged": true,
+  "geometry_motion_native_accepted": false
+}

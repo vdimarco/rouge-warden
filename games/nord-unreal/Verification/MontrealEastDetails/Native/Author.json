@@ -1,0 +1,135 @@
+{
+  "passed": true,
+  "map": "/Game/Maps/LaFontaine.LaFontaine",
+  "backup": "Saved/Recovery/montreal-east-details-20261017T140808Z",
+  "backup_manifest_sha256": "9f1c4485a5819a79972fa2e3defa5b32ebe020c44ae2db8753f991ef7cb8811b",
+  "map_package_files": [
+    "Content/Maps/LaFontaine.umap"
+  ],
+  "source_hashes": {
+    "Data/LaFontaine/osm.xml": "fe4410d45007a627bf6d9b9ddeeae329fa9cdd7492dfb5fa6beff851e7cf8f86",
+    "Data/Plateau/ContextGeometry/context.json": "74764fd01528c320439692fdc6eefd3394770e547f425b886ceabbd73fc9392a",
+    "Data/Plateau/EastExtension/extension.json": "c19300127f80c9ebd4483610544acab9162a05280ab5a2717376c88c6770dcbf",
+    "Scripts/plateau_context.py": "b5df165d154c2c18697cc7884cd486c5f3e056886398cda220e96b9cfcfbf5be",
+    "Scripts/plateau_mesh.py": "0db445d502ffeb5a0d77c49fb1cb9d3a1bd49492b6956f37ce96bad505033217",
+    "Scripts/plateau_ground.py": "9ba1e57a062d94c6eb2c3ecef2ea191d63d5cf97ada05cccf9e9441a1ce7c445",
+    "Scripts/plateau_batches.py": "8a2a46cf1ba27373472d9050d69a4461aa4df8b2202d10bdbaebad261302e6af",
+    "Scripts/plateau_streets.py": "9e246e7c2d66e370be709117912df167be7edae5e6857adacc9d0641829c1179",
+    "Scripts/prepare_lafontaine.py": "e7b6e5f068a96ee7306b1fff247fa73158f5cf7c343dc5510ab8cce92ee3c924",
+    "Scripts/prepare_montreal_east_details.py": "240bcaec073168e19b449abd7169e23f70b5f869191d53fa231052bc91559d1f",
+    "Scripts/apply_montreal_east_details.py": "9e3d9773bfdd3b356c9cd5c2f4f991292daba3623cfc8bacbe77e3c2c7b7e3af",
+    "Scripts/apply_montreal_east_extension.py": "f35d111547ca53d713b816722cd4a15692770fd2b221a4cca95ae8296547a769",
+    "Scripts/montreal_east_extension.py": "3d5a3f60a7dd99059c464905f55e8d941d4b120c8a141ebf73a7eb785a13dfe9",
+    "Scripts/verify_plateau_context.py": "76459b0bde9519251515f56fe5a562bc10f4f4f0ab1a3193a7845e891d013acc",
+    "Data/Plateau/EastDetails/details.json": "ad7e9860068c029782cea2ed869bd4e15d112d7164dd4a84bb078c1b5bc580cb",
+    "Data/Plateau/EastDetails/source-subset.osm.xml": "c3c6923e3748be28955a91361a53c9a6e6b2443f2c12f3064d977f86ad168291",
+    "Data/Plateau/EastDetails/Geometry/Glass.obj": "02f015e6a803af08f4ad16931c3ee707ca026b0d0e9263a1e217f523522dd987",
+    "Data/Plateau/EastDetails/Geometry/Iron.obj": "16141ab0f92b99d540c884b484522edff3c3eaad847574929c129a655767f818",
+    "Data/Plateau/EastDetails/Geometry/Trim.obj": "90488baac64a7ec7bc761aa64f68d5fe8b216ade316b6dff7694f04a690c6494"
+  },
+  "original_content_count": 6847,
+  "original_actor_count": 3102,
+  "new_actors": {
+    "Glass": "/Game/Maps/LaFontaine.LaFontaine:PersistentLevel.StaticMeshActor_3028",
+    "Iron": "/Game/Maps/LaFontaine.LaFontaine:PersistentLevel.StaticMeshActor_3029",
+    "Trim": "/Game/Maps/LaFontaine.LaFontaine:PersistentLevel.StaticMeshActor_3030"
+  },
+  "native_visual_acceptance": false,
+  "limits": [
+    "Additive decorative cards and estimated frames; no actual wall openings/interiors or measured facade details.",
+    "Building footprints are sourced; 9.6m heights and window rhythm are retained illustrative estimates.",
+    "50 source emissions minus 8 wholly neighbour-contained panes leave 42 candidate panes; 42 visible windows is not claimed.",
+    "This does not repair Panet source coverage/horizon, former-edge ground seams or establish final graphic-novel appearance.",
+    "CPU authoring only; fresh offline native import/readback, unchanged collision and matched actual images remain required."
+  ],
+  "readback": [
+    {
+      "name": "Glass",
+      "actor": "/Game/Maps/LaFontaine.LaFontaine:PersistentLevel.StaticMeshActor_3028",
+      "mesh": "/Game/Plateau/EastDetails/SM_Glass.SM_Glass",
+      "triangles": 84,
+      "bounds_cm": [
+        [
+          59664.2890625,
+          -32209.8984375,
+          170.0
+        ],
+        [
+          62527.765625,
+          -27216.46875,
+          640.0
+        ]
+      ],
+      "source_vertex_tolerance_cm": 0.00490625,
+      "material": "/Game/Plateau/Materials/M_Glass.M_Glass",
+      "collision": "NoCollision",
+      "cast_shadow": false,
+      "affect_distance_field_lighting": false,
+      "affect_dynamic_indirect_lighting": false,
+      "saved_card_winding": {
+        "outward_triangles": 84,
+        "source_panes": 42,
+        "minimum_normal_dot": 0.9999999997434394
+      }
+    },
+    {
+      "name": "Iron",
+      "actor": "/Game/Maps/LaFontaine.LaFontaine:PersistentLevel.StaticMeshActor_3029",
+      "mesh": "/Game/Plateau/EastDetails/SM_Iron.SM_Iron",
+      "triangles": 2016,
+      "bounds_cm": [
+        [
+          59660.13671875,
+          -32213.87890625,
+          167.0
+        ],
+        [
+          62531.921875,
+          -27212.31640625,
+          643.0
+        ]
+      ],
+      "source_vertex_tolerance_cm": 0.00490625,
+      "material": "/Game/Plateau/Materials/M_Iron.M_Iron",
+      "collision": "NoCollision",
+      "cast_shadow": false,
+      "affect_distance_field_lighting": false,
+      "affect_dynamic_indirect_lighting": false,
+      "saved_card_winding": null
+    },
+    {
+      "name": "Trim",
+      "actor": "/Game/Maps/LaFontaine.LaFontaine:PersistentLevel.StaticMeshActor_3030",
+      "mesh": "/Game/Plateau/EastDetails/SM_Trim.SM_Trim",
+      "triangles": 504,
+      "bounds_cm": [
+        [
+          59653.76171875,
+          -32220.09375,
+          163.5
+        ],
+        [
+          62538.30078125,
+          -27206.232421875,
+          488.5
+        ]
+      ],
+      "source_vertex_tolerance_cm": 0.00490625,
+      "material": "/Game/Plateau/Materials/M_Trim.M_Trim",
+      "collision": "NoCollision",
+      "cast_shadow": false,
+      "affect_distance_field_lighting": false,
+      "affect_dynamic_indirect_lighting": false,
+      "saved_card_winding": null
+    }
+  ],
+  "new_content_files": {
+    "Content/Plateau/EastDetails/SM_Glass.uasset": "058224533fe869842007ed0b2e1531d9e0990c6d0eabd1dac6fa3f43c9d570d0",
+    "Content/Plateau/EastDetails/SM_Iron.uasset": "6c35f79f81a11e40ede529d202294a45399f7aa823e90ff96d123fb3a90218ca",
+    "Content/Plateau/EastDetails/SM_Trim.uasset": "6742168b7f797522e09146e379cbcce20c6c6227692fa10c149b86f1c1790171"
+  },
+  "map_after_sha256": {
+    "Content/Maps/LaFontaine.umap": "1e0cf1e0a309e588469e98d22e30350b873e456e2b68fa0a3500878181039b28"
+  },
+  "original_non_map_content_preserved": 6846
+}

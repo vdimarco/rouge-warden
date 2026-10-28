@@ -1,0 +1,9 @@
+name = "wrist-relay"
+main = "src/index.js"
+compatibility_date = "2026-10-01"
+workers_dev = true
+
+# HERMES_API_URL must be a public https address. 127.0.0.1 is not reachable from Cloudflare.
+# Set secrets with: npx wrangler secret put WATCH_RELAY_KEY
+# and: npx wrangler secret put HERMES_API_KEY
+# node deploy.mjs does the token and the deploy, then prints the pairing link.

@@ -1,0 +1,2621 @@
+{
+ "layer": "Streets",
+ "generator": "Scripts/plateau_replica.py",
+ "frame": "x east, y north, cm, z up",
+ "batches": [
+  {
+   "file": "Asphalt_Replica_XM001_YM001.obj",
+   "mesh": "SM_Asphalt_Replica_XM001_YM001",
+   "material": "asphalt",
+   "collision": "none",
+   "triangles": 650,
+   "faces": 582,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    -44317.82,
+    -47486.25,
+    7.0,
+    7243.32,
+    3552.95,
+    7.0
+   ],
+   "sha256": "c77b5fbb34a8365094c1dac623586e83f21a9fed8aeb5015ff96d0600443da88"
+  },
+  {
+   "file": "Asphalt_Replica_XM001_YP000.obj",
+   "mesh": "SM_Asphalt_Replica_XM001_YP000",
+   "material": "asphalt",
+   "collision": "none",
+   "triangles": 402,
+   "faces": 328,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    -44196.69,
+    -959.31,
+    7.0,
+    2993.39,
+    69649.89,
+    7.0
+   ],
+   "sha256": "4e43b6b9f010c8f97f55c546f274b713ce9e3e1f9f67856135559dce584bf27b"
+  },
+  {
+   "file": "Asphalt_Replica_XP000_YM001.obj",
+   "mesh": "SM_Asphalt_Replica_XP000_YM001",
+   "material": "asphalt",
+   "collision": "none",
+   "triangles": 365,
+   "faces": 311,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    -7729.74,
+    -47275.16,
+    7.0,
+    55741.04,
+    3841.95,
+    7.0
+   ],
+   "sha256": "756780f29f078d60d2bf7207b56548e44bc21afa9db895731ade7883d7c26cb6"
+  },
+  {
+   "file": "Asphalt_Replica_XP000_YP000.obj",
+   "mesh": "SM_Asphalt_Replica_XP000_YP000",
+   "material": "asphalt",
+   "collision": "none",
+   "triangles": 336,
+   "faces": 294,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    -1999.61,
+    830.69,
+    7.0,
+    55957.46,
+    69635.38,
+    7.0
+   ],
+   "sha256": "598deaf7bddccf9c6657c8e12356459a5d43f423eaae9113ebe44442c912b5c3"
+  },
+  {
+   "file": "Asphalt_Replica_Alley_XM001_YM001.obj",
+   "mesh": "SM_Asphalt_Replica_Alley_XM001_YM001",
+   "material": "alley",
+   "collision": "none",
+   "triangles": 2214,
+   "faces": 1079,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    -43983.69,
+    -47981.18,
+    6.75,
+    202.34,
+    157.22,
+    6.8
+   ],
+   "sha256": "e87630ff3adb50c961e537fbbe220f87dcde9a60bbd6f451bba79bc9e8319724"
+  },
+  {
+   "file": "Asphalt_Replica_Alley_XM001_YP000.obj",
+   "mesh": "SM_Asphalt_Replica_Alley_XM001_YP000",
+   "material": "alley",
+   "collision": "none",
+   "triangles": 4979,
+   "faces": 2420,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    -44349.79,
+    -48.66,
+    6.75,
+    392.8,
+    70112.38,
+    6.8
+   ],
+   "sha256": "31be4e188a5930f457f80196fe0b4f7d4c66cd0863180bd4ec8278a603649ea3"
+  },
+  {
+   "file": "Asphalt_Replica_Alley_XP000_YM001.obj",
+   "mesh": "SM_Asphalt_Replica_Alley_XP000_YM001",
+   "material": "alley",
+   "collision": "none",
+   "triangles": 1553,
+   "faces": 763,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    -152.43,
+    -47531.51,
+    6.75,
+    26938.46,
+    -22939.94,
+    6.8
+   ],
+   "sha256": "6f1e0998461efb40b7be867bba53506d3d15e5d0c3f79cfcf47f310e7cb6d993"
+  },
+  {
+   "file": "Asphalt_Replica_Alley_XP000_YP000.obj",
+   "mesh": "SM_Asphalt_Replica_Alley_XP000_YP000",
+   "material": "alley",
+   "collision": "none",
+   "triangles": 3698,
+   "faces": 1758,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    -390.06,
+    263.66,
+    6.75,
+    56416.23,
+    69984.88,
+    6.8
+   ],
+   "sha256": "af6594fe94c4a967bd8a3c4753b047d61766a39ee896c2b7ddd967ea1399af1a"
+  },
+  {
+   "file": "Concrete_Collision_Replica_XM002_YM002.obj",
+   "mesh": "SM_Concrete_Collision_Replica_XM002_YM002",
+   "material": "sidewalk",
+   "collision": "complex",
+   "triangles": 1164,
+   "faces": 610,
+   "tile_cm": 38000,
+   "bounds_cm": [
+    -44179.37,
+    -44856.86,
+    0.0,
+    -37950.25,
+    -37931.72,
+    18.0
+   ],
+   "sha256": "31773cc3dd25c6f63bf9526bcf5e72f4582ec5963308589c82628f145948a537"
+  },
+  {
+   "file": "Concrete_Collision_Replica_XM002_YM001.obj",
+   "mesh": "SM_Concrete_Collision_Replica_XM002_YM001",
+   "material": "sidewalk",
+   "collision": "complex",
+   "triangles": 3704,
+   "faces": 1866,
+   "tile_cm": 38000,
+   "bounds_cm": [
+    -44554.75,
+    -38129.99,
+    0.0,
+    -37845.17,
+    168.92,
+    18.0
+   ],
+   "sha256": "bd9256dad6b3f449cfe7ac472dff4546164e781d64dc4089584dc486c1bfc632"
+  },
+  {
+   "file": "Concrete_Collision_Replica_XM002_YP000.obj",
+   "mesh": "SM_Concrete_Collision_Replica_XM002_YP000",
+   "material": "sidewalk",
+   "collision": "complex",
+   "triangles": 2588,
+   "faces": 1297,
+   "tile_cm": 38000,
+   "bounds_cm": [
+    -44124.83,
+    -106.23,
+    0.0,
+    -37890.93,
+    38111.3,
+    18.0
+   ],
+   "sha256": "56938defe9c9474dfac1613fabb9186109fca357c48bbfe2382fb8e9168cfad5"
+  },
+  {
+   "file": "Concrete_Collision_Replica_XM002_YP001.obj",
+   "mesh": "SM_Concrete_Collision_Replica_XM002_YP001",
+   "material": "sidewalk",
+   "collision": "complex",
+   "triangles": 2858,
+   "faces": 1469,
+   "tile_cm": 38000,
+   "bounds_cm": [
+    -44355.36,
+    37988.3,
+    0.0,
+    -37886.9,
+    69697.62,
+    18.0
+   ],
+   "sha256": "6efcd8378e79b4682d3dce646aa9c17ff634384c963fb18cedf50c45dd378df5"
+  },
+  {
+   "file": "Concrete_Collision_Replica_XM001_YM002.obj",
+   "mesh": "SM_Concrete_Collision_Replica_XM001_YM002",
+   "material": "sidewalk",
+   "collision": "complex",
+   "triangles": 4637,
+   "faces": 2358,
+   "tile_cm": 38000,
+   "bounds_cm": [
+    -38086.21,
+    -47703.95,
+    0.0,
+    40.15,
+    -37885.58,
+    18.0
+   ],
+   "sha256": "e143c24931b965d2434cbcab825e2c657d689683095d2005868f7646e1b1ca5d"
+  },
+  {
+   "file": "Concrete_Collision_Replica_XM001_YM001.obj",
+   "mesh": "SM_Concrete_Collision_Replica_XM001_YM001",
+   "material": "sidewalk",
+   "collision": "complex",
+   "triangles": 18346,
+   "faces": 9392,
+   "tile_cm": 38000,
+   "bounds_cm": [
+    -38088.31,
+    -38145.68,
+    0.0,
+    111.98,
+    48.0,
+    18.0
+   ],
+   "sha256": "4f1e67fd87a74b26a93bb3ec11f785cb2e3f1fe13533c120eb61eb402cecc9c7"
+  },
+  {
+   "file": "Concrete_Collision_Replica_XM001_YP000.obj",
+   "mesh": "SM_Concrete_Collision_Replica_XM001_YP000",
+   "material": "sidewalk",
+   "collision": "complex",
+   "triangles": 10428,
+   "faces": 5241,
+   "tile_cm": 38000,
+   "bounds_cm": [
+    -43623.54,
+    -103.1,
+    0.0,
+    -111.1,
+    38099.12,
+    18.0
+   ],
+   "sha256": "012648f1131e81703b769be3c549d0a34159c452eede121e2e2ad3b46555742d"
+  },
+  {
+   "file": "Concrete_Collision_Replica_XM001_YP001.obj",
+   "mesh": "SM_Concrete_Collision_Replica_XM001_YP001",
+   "material": "sidewalk",
+   "collision": "complex",
+   "triangles": 13283,
+   "faces": 6745,
+   "tile_cm": 38000,
+   "bounds_cm": [
+    -38110.54,
+    37898.35,
+    0.0,
+    139.89,
+    69882.54,
+    18.0
+   ],
+   "sha256": "e5c909d8ef80692de58160c7ed11fe6cc7eb4004cd518a7b353139b4a52f40c9"
+  },
+  {
+   "file": "Concrete_Collision_Replica_XP000_YM002.obj",
+   "mesh": "SM_Concrete_Collision_Replica_XP000_YM002",
+   "material": "sidewalk",
+   "collision": "complex",
+   "triangles": 4680,
+   "faces": 2362,
+   "tile_cm": 38000,
+   "bounds_cm": [
+    -95.59,
+    -47352.44,
+    0.0,
+    38031.93,
+    -37770.27,
+    18.0
+   ],
+   "sha256": "1c836d24275ab8da1ba1b325ed0987abd91efc6b2617c6aa76a38afbca580c7f"
+  },
+  {
+   "file": "Concrete_Collision_Replica_XP000_YM001.obj",
+   "mesh": "SM_Concrete_Collision_Replica_XP000_YM001",
+   "material": "sidewalk",
+   "collision": "complex",
+   "triangles": 7344,
+   "faces": 3751,
+   "tile_cm": 38000,
+   "bounds_cm": [
+    -68.35,
+    -38131.87,
+    0.0,
+    38079.47,
+    -18607.47,
+    18.0
+   ],
+   "sha256": "6fb6ce17867a24c5810829c1642ec075e08afeb0cc3e2ee9dffb80f9513370d5"
+  },
+  {
+   "file": "Concrete_Collision_Replica_XP000_YP000.obj",
+   "mesh": "SM_Concrete_Collision_Replica_XP000_YP000",
+   "material": "sidewalk",
+   "collision": "complex",
+   "triangles": 940,
+   "faces": 470,
+   "tile_cm": 38000,
+   "bounds_cm": [
+    20047.69,
+    670.69,
+    0.0,
+    38114.43,
+    38122.07,
+    18.0
+   ],
+   "sha256": "ac4a489beaa9047358ce2aa7cdfb5fabb359bf1a0271b76c88b935aa601e904d"
+  },
+  {
+   "file": "Concrete_Collision_Replica_XP000_YP001.obj",
+   "mesh": "SM_Concrete_Collision_Replica_XP000_YP001",
+   "material": "sidewalk",
+   "collision": "complex",
+   "triangles": 11657,
+   "faces": 5935,
+   "tile_cm": 38000,
+   "bounds_cm": [
+    -148.42,
+    37888.84,
+    0.0,
+    38109.83,
+    69528.67,
+    18.0
+   ],
+   "sha256": "e11cc4d29f8d277015ded1465c6d0ba32871f1235386e7a91918aad589565e2b"
+  },
+  {
+   "file": "Concrete_Collision_Replica_XP001_YM002.obj",
+   "mesh": "SM_Concrete_Collision_Replica_XP001_YM002",
+   "material": "sidewalk",
+   "collision": "complex",
+   "triangles": 2628,
+   "faces": 1328,
+   "tile_cm": 38000,
+   "bounds_cm": [
+    37855.92,
+    -47434.3,
+    0.0,
+    55685.58,
+    -37876.58,
+    18.0
+   ],
+   "sha256": "f3dfb7e31e29175d0ffe8bc0e5d0c476b249ca4bf97ef4ad2c6ce893d156c900"
+  },
+  {
+   "file": "Concrete_Collision_Replica_XP001_YM001.obj",
+   "mesh": "SM_Concrete_Collision_Replica_XP001_YM001",
+   "material": "sidewalk",
+   "collision": "complex",
+   "triangles": 5678,
+   "faces": 2866,
+   "tile_cm": 38000,
+   "bounds_cm": [
+    37840.09,
+    -38200.22,
+    0.0,
+    55900.64,
+    120.24,
+    18.0
+   ],
+   "sha256": "7021b4ad575e785840b061b58f3abdaa4ef1be17c1c78fde1dc9388097ae4167"
+  },
+  {
+   "file": "Concrete_Collision_Replica_XP001_YP000.obj",
+   "mesh": "SM_Concrete_Collision_Replica_XP001_YP000",
+   "material": "sidewalk",
+   "collision": "complex",
+   "triangles": 5376,
+   "faces": 2735,
+   "tile_cm": 38000,
+   "bounds_cm": [
+    37959.53,
+    -43.57,
+    0.0,
+    56048.32,
+    38147.91,
+    18.0
+   ],
+   "sha256": "06e2c4def21b75724441284880b22013e10c702a0412ab352af61ffcbc3d42b2"
+  },
+  {
+   "file": "Concrete_Collision_Replica_XP001_YP001.obj",
+   "mesh": "SM_Concrete_Collision_Replica_XP001_YP001",
+   "material": "sidewalk",
+   "collision": "complex",
+   "triangles": 7878,
+   "faces": 4000,
+   "tile_cm": 38000,
+   "bounds_cm": [
+    37897.01,
+    37914.54,
+    0.0,
+    56133.81,
+    69865.9,
+    18.0
+   ],
+   "sha256": "748fface3ca169279979e294ff2488717bcdc84a92e4a00f7e73583e3040c8b4"
+  },
+  {
+   "file": "Streets_curb_XM001_YM001.obj",
+   "mesh": "SM_Streets_curb_XM001_YM001",
+   "material": "curb",
+   "collision": "none",
+   "triangles": 9893,
+   "faces": 5254,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    -44330.51,
+    -47498.81,
+    0.0,
+    35.22,
+    41.13,
+    18.1
+   ],
+   "sha256": "4bdda7a00512b8e6bcd2ccf0a01e5e9d3529af8ec7c0f74ed98c34b4f35763c8"
+  },
+  {
+   "file": "Streets_curb_XM001_YP000.obj",
+   "mesh": "SM_Streets_curb_XM001_YP000",
+   "material": "curb",
+   "collision": "none",
+   "triangles": 10265,
+   "faces": 5297,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    -44209.21,
+    -57.09,
+    0.0,
+    53.79,
+    69662.35,
+    18.1
+   ],
+   "sha256": "d4ce0809ca0619e9859dda4010df547eebd3d1b56d1506fd051db95d509f837b"
+  },
+  {
+   "file": "Streets_curb_XP000_YM001.obj",
+   "mesh": "SM_Streets_curb_XP000_YM001",
+   "material": "curb",
+   "collision": "none",
+   "triangles": 7130,
+   "faces": 3706,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    -61.93,
+    -47287.73,
+    0.0,
+    55753.64,
+    37.97,
+    18.1
+   ],
+   "sha256": "c3353d2255cc75b9826bbee14dc406346031fa4082e71a992a13d91c94f4d176"
+  },
+  {
+   "file": "Streets_curb_XP000_YP000.obj",
+   "mesh": "SM_Streets_curb_XP000_YP000",
+   "material": "curb",
+   "collision": "none",
+   "triangles": 9529,
+   "faces": 4975,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    -81.65,
+    -43.57,
+    0.0,
+    55965.73,
+    69647.73,
+    18.1
+   ],
+   "sha256": "5e17a507e3b9657ccc4ab9775bbd0f31c00ce13e66e86f41988da80ca72ab969"
+  },
+  {
+   "file": "Streets_joint_XM001_YM001.obj",
+   "mesh": "SM_Streets_joint_XM001_YM001",
+   "material": "joint",
+   "collision": "none",
+   "triangles": 8064,
+   "faces": 4032,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    -44482.14,
+    -47631.12,
+    7.2,
+    27.05,
+    59.76,
+    18.12
+   ],
+   "sha256": "24c3ac3af353e59f90cb003e92f31e35afa68353034e9beba8d5e636013b2b92"
+  },
+  {
+   "file": "Streets_joint_XM001_YP000.obj",
+   "mesh": "SM_Streets_joint_XM001_YP000",
+   "material": "joint",
+   "collision": "none",
+   "triangles": 9458,
+   "faces": 4729,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    -44274.52,
+    -45.17,
+    7.2,
+    88.72,
+    69799.72,
+    18.12
+   ],
+   "sha256": "6fc85152a4167c42a864979eeb8982db4e9c297854fcec538245e3e9cbaacae4"
+  },
+  {
+   "file": "Streets_joint_XP000_YM001.obj",
+   "mesh": "SM_Streets_joint_XP000_YM001",
+   "material": "joint",
+   "collision": "none",
+   "triangles": 6528,
+   "faces": 3264,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    -52.78,
+    -47356.64,
+    7.2,
+    55818.43,
+    36.69,
+    18.12
+   ],
+   "sha256": "98b8041e11f698470a2f89ec0da95bfd2ed3531cbeacd906b3b0a85fe0aa7b1d"
+  },
+  {
+   "file": "Streets_joint_XP000_YP000.obj",
+   "mesh": "SM_Streets_joint_XP000_YP000",
+   "material": "joint",
+   "collision": "none",
+   "triangles": 8140,
+   "faces": 4070,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    -96.21,
+    -43.68,
+    7.2,
+    56007.48,
+    69781.89,
+    18.12
+   ],
+   "sha256": "60b1a5545f5cefc8bc3d5f358cf226d5c2bda861032ebd072fe129f2635f212e"
+  },
+  {
+   "file": "Streets_Concrete_Lane_Aged_XM001_YM001.obj",
+   "mesh": "SM_Streets_Concrete_Lane_Aged_XM001_YM001",
+   "material": "Concrete_Lane_Aged",
+   "collision": "none",
+   "triangles": 383,
+   "faces": 223,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    -43684.55,
+    -46769.56,
+    6.3,
+    -152.43,
+    -227.55,
+    6.8
+   ],
+   "sha256": "ddb1ab5aafad1acfa03ecfe777ecc7d618dbdfa0ced0e1750c18c7816610757b"
+  },
+  {
+   "file": "Streets_Concrete_Lane_Aged_XM001_YP000.obj",
+   "mesh": "SM_Streets_Concrete_Lane_Aged_XM001_YP000",
+   "material": "Concrete_Lane_Aged",
+   "collision": "none",
+   "triangles": 1020,
+   "faces": 608,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    -43689.88,
+    -252.46,
+    6.3,
+    76.49,
+    69033.4,
+    6.8
+   ],
+   "sha256": "8066d1fecbdbf4d3cfb782a1adbc6bf62c2ff24b12468c654205f9c2b74badc9"
+  },
+  {
+   "file": "Streets_Concrete_Lane_Aged_XP000_YM001.obj",
+   "mesh": "SM_Streets_Concrete_Lane_Aged_XP000_YM001",
+   "material": "Concrete_Lane_Aged",
+   "collision": "none",
+   "triangles": 248,
+   "faces": 150,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    -312.7,
+    -46764.58,
+    6.3,
+    25953.73,
+    -23790.45,
+    6.8
+   ],
+   "sha256": "7ca6ed9d11fcca15cb13c092f922f5d90e3947f6ea0ae8da8c8cc941049642cf"
+  },
+  {
+   "file": "Streets_Concrete_Lane_Aged_XP000_YP000.obj",
+   "mesh": "SM_Streets_Concrete_Lane_Aged_XP000_YP000",
+   "material": "Concrete_Lane_Aged",
+   "collision": "none",
+   "triangles": 717,
+   "faces": 431,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    46.22,
+    470.58,
+    6.3,
+    55390.82,
+    69033.42,
+    6.8
+   ],
+   "sha256": "8fb5c3ee27d42cc5bd9acd374382773fb2fa55f4fc529d50462c041266ca14d8"
+  },
+  {
+   "file": "Streets_Iron_Wrought_XM001_YM001.obj",
+   "mesh": "SM_Streets_Iron_Wrought_XM001_YM001",
+   "material": "Iron_Wrought",
+   "collision": "none",
+   "triangles": 2674,
+   "faces": 1337,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    -43400.48,
+    -46702.25,
+    9.15,
+    -51.03,
+    -1433.84,
+    62.11
+   ],
+   "sha256": "923d9fc48d76f931c5554f0a24fcb6bd3a59669b2df22199ba01907e5326aaa6"
+  },
+  {
+   "file": "Streets_Iron_Wrought_XM001_YP000.obj",
+   "mesh": "SM_Streets_Iron_Wrought_XM001_YP000",
+   "material": "Iron_Wrought",
+   "collision": "none",
+   "triangles": 3720,
+   "faces": 1860,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    -43741.66,
+    777.06,
+    9.15,
+    -100.31,
+    68584.49,
+    62.13
+   ],
+   "sha256": "5388098ac816f3c1345d971c6be55e92f08d618f3e56a008e5d9917e74e1fe5a"
+  },
+  {
+   "file": "Streets_Iron_Wrought_XP000_YM001.obj",
+   "mesh": "SM_Streets_Iron_Wrought_XP000_YM001",
+   "material": "Iron_Wrought",
+   "collision": "none",
+   "triangles": 1874,
+   "faces": 937,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    303.38,
+    -46713.57,
+    18.15,
+    55339.85,
+    -426.86,
+    62.13
+   ],
+   "sha256": "f5e1db40dfa70d7247497320a43b4f979621f8a7dba06238e233586c04bdd16f"
+  },
+  {
+   "file": "Streets_Iron_Wrought_XP000_YP000.obj",
+   "mesh": "SM_Streets_Iron_Wrought_XP000_YP000",
+   "material": "Iron_Wrought",
+   "collision": "none",
+   "triangles": 1876,
+   "faces": 938,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    71.23,
+    -23.6,
+    9.15,
+    55360.65,
+    68223.6,
+    62.12
+   ],
+   "sha256": "fedd6b4ebe313bd1d98ad5765bc79038fa3914f1a8858b1e002ffd0be20afc03"
+  },
+  {
+   "file": "Streets_Plant_Pit_Flowers_XM001_YM001.obj",
+   "mesh": "SM_Streets_Plant_Pit_Flowers_XM001_YM001",
+   "material": "Plant_Pit_Flowers",
+   "collision": "none",
+   "triangles": 1652,
+   "faces": 826,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    -43380.69,
+    -46668.16,
+    9.15,
+    -70.82,
+    -1460.46,
+    64.15
+   ],
+   "sha256": "6d3b82df580cd381ea909eebd9b16beeae2f3588664f745fab539f4948f19e7b"
+  },
+  {
+   "file": "Streets_Plant_Pit_Flowers_XM001_YP000.obj",
+   "mesh": "SM_Streets_Plant_Pit_Flowers_XM001_YP000",
+   "material": "Plant_Pit_Flowers",
+   "collision": "none",
+   "triangles": 2306,
+   "faces": 1153,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    -43724.46,
+    801.59,
+    9.15,
+    -125.01,
+    68484.77,
+    64.14
+   ],
+   "sha256": "2a4e42535e372e8e3e60115aee29b26617ff407ce4f7b5a8046749be0ded2838"
+  },
+  {
+   "file": "Streets_Plant_Pit_Flowers_XP000_YM001.obj",
+   "mesh": "SM_Streets_Plant_Pit_Flowers_XP000_YM001",
+   "material": "Plant_Pit_Flowers",
+   "collision": "none",
+   "triangles": 1132,
+   "faces": 566,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    367.68,
+    -46689.1,
+    18.15,
+    55315.26,
+    -448.53,
+    64.14
+   ],
+   "sha256": "d356d721c0e017c542653529f83d3f58acede022326abdea141e1ac3b1171598"
+  },
+  {
+   "file": "Streets_Plant_Pit_Flowers_XP000_YP000.obj",
+   "mesh": "SM_Streets_Plant_Pit_Flowers_XP000_YP000",
+   "material": "Plant_Pit_Flowers",
+   "collision": "none",
+   "triangles": 1108,
+   "faces": 554,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    101.38,
+    3.03,
+    9.15,
+    55286.27,
+    68204.94,
+    64.11
+   ],
+   "sha256": "93e218e072327e04a2c752da0f6aa1978048dec39073e52d86627e47d950ded3"
+  },
+  {
+   "file": "Streets_paint_white_XM001_YM001.obj",
+   "mesh": "SM_Streets_paint_white_XM001_YM001",
+   "material": "paint_white",
+   "collision": "none",
+   "triangles": 1612,
+   "faces": 810,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    -43659.11,
+    -47116.69,
+    7.1,
+    6375.65,
+    2649.73,
+    7.12
+   ],
+   "sha256": "6cf99e6622f3bb96360f9b54327679936ff0fc5c1d2d923f95ed8c2afc88e34b"
+  },
+  {
+   "file": "Streets_paint_white_XM001_YP000.obj",
+   "mesh": "SM_Streets_paint_white_XM001_YP000",
+   "material": "paint_white",
+   "collision": "none",
+   "triangles": 7247,
+   "faces": 3631,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    -43632.34,
+    1267.28,
+    7.1,
+    66.29,
+    69318.42,
+    122.0
+   ],
+   "sha256": "7163e1ff3e529384a368eb1baf483c214b4b5459b1e95001d2239107db87ff1c"
+  },
+  {
+   "file": "Streets_paint_white_XP000_YM001.obj",
+   "mesh": "SM_Streets_paint_white_XP000_YM001",
+   "material": "paint_white",
+   "collision": "none",
+   "triangles": 1539,
+   "faces": 774,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    -1360.74,
+    -46463.47,
+    7.1,
+    54984.01,
+    -18988.24,
+    7.12
+   ],
+   "sha256": "1d00b7a6a345504f2d154785de1aa1ca84f9b6fa2f10e9645de24431577b7bd1"
+  },
+  {
+   "file": "Streets_paint_white_XP000_YP000.obj",
+   "mesh": "SM_Streets_paint_white_XP000_YP000",
+   "material": "paint_white",
+   "collision": "none",
+   "triangles": 3234,
+   "faces": 1621,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    -1119.31,
+    1996.59,
+    7.1,
+    55298.26,
+    69223.38,
+    111.0
+   ],
+   "sha256": "9864f6102ca742e8dbbe73d9bb1c2d95a1cb296723135576d6f9e2baed884048"
+  },
+  {
+   "file": "Streets_paint_yellow_XM001_YM001.obj",
+   "mesh": "SM_Streets_paint_yellow_XM001_YM001",
+   "material": "paint_yellow",
+   "collision": "none",
+   "triangles": 154,
+   "faces": 77,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    -43435.52,
+    -46373.03,
+    7.1,
+    -6392.52,
+    -2804.58,
+    7.1
+   ],
+   "sha256": "6c81ff5ccc55de957414a7f2bc20d164432742fd4cae7be001219f80cbe08881"
+  },
+  {
+   "file": "Streets_paint_yellow_XM001_YP000.obj",
+   "mesh": "SM_Streets_paint_yellow_XM001_YP000",
+   "material": "paint_yellow",
+   "collision": "none",
+   "triangles": 576,
+   "faces": 288,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    -43647.52,
+    358.89,
+    7.1,
+    1778.92,
+    68780.48,
+    7.1
+   ],
+   "sha256": "3dac216d9d45eb5a5ae6c13fd95323819bdc41a995ce09f910891bedd2ee7d0b"
+  },
+  {
+   "file": "Streets_paint_yellow_XP000_YM001.obj",
+   "mesh": "SM_Streets_paint_yellow_XP000_YM001",
+   "material": "paint_yellow",
+   "collision": "none",
+   "triangles": 198,
+   "faces": 99,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    1337.48,
+    -46513.17,
+    7.1,
+    55125.62,
+    59.3,
+    7.1
+   ],
+   "sha256": "79418a821fd3389eaa4217f4490636163d457eab58e21b6842c6276da8429055"
+  },
+  {
+   "file": "Streets_paint_yellow_XP000_YP000.obj",
+   "mesh": "SM_Streets_paint_yellow_XP000_YP000",
+   "material": "paint_yellow",
+   "collision": "none",
+   "triangles": 158,
+   "faces": 79,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    34.47,
+    380.35,
+    7.1,
+    54536.74,
+    69057.31,
+    7.1
+   ],
+   "sha256": "8254b458755b9e937eed6e7ee6edef3c9918fe0a03df8efa05bbac7c7ecdb914"
+  },
+  {
+   "file": "Streets_paint_green_XM001_YM001.obj",
+   "mesh": "SM_Streets_paint_green_XM001_YM001",
+   "material": "paint_green",
+   "collision": "none",
+   "triangles": 6,
+   "faces": 3,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    -12464.78,
+    -37630.62,
+    7.1,
+    -2026.04,
+    -30045.72,
+    7.1
+   ],
+   "sha256": "6a88492eff66405930114b2d1907c71ef1ad706b2d91ce60e79b0da067a30e4a"
+  },
+  {
+   "file": "Streets_paint_green_XM001_YP000.obj",
+   "mesh": "SM_Streets_paint_green_XM001_YP000",
+   "material": "paint_green",
+   "collision": "none",
+   "triangles": 18,
+   "faces": 9,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    -40699.87,
+    2503.68,
+    7.1,
+    -1538.44,
+    53736.33,
+    7.1
+   ],
+   "sha256": "453a6a2802b89cada158a968ec8b23aad4c2b8f56cf7701ee5c7f6501606ebb9"
+  },
+  {
+   "file": "Streets_paint_green_XP000_YM001.obj",
+   "mesh": "SM_Streets_paint_green_XP000_YM001",
+   "material": "paint_green",
+   "collision": "none",
+   "triangles": 8,
+   "faces": 4,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    8416.58,
+    -41854.76,
+    7.1,
+    35023.55,
+    -21075.53,
+    7.1
+   ],
+   "sha256": "fc321beb203df628f27980c2e2d501fe06807e8a5fa92be0f87ce39c7fa16d61"
+  },
+  {
+   "file": "Streets_paint_green_XP000_YP000.obj",
+   "mesh": "SM_Streets_paint_green_XP000_YP000",
+   "material": "paint_green",
+   "collision": "none",
+   "triangles": 6,
+   "faces": 3,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    1722.15,
+    21967.77,
+    7.1,
+    44052.0,
+    62154.23,
+    7.1
+   ],
+   "sha256": "307cf58232227648a72c1b7c605d5d4e772ee15ae8c937c3d9ff40a4e3057113"
+  },
+  {
+   "file": "Streets_legacy_marking_XP000_YM001.obj",
+   "mesh": "SM_Streets_legacy_marking_XP000_YM001",
+   "material": "legacy_marking",
+   "collision": "none",
+   "triangles": 70,
+   "faces": 35,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    34852.84,
+    -21052.58,
+    8.0,
+    39227.77,
+    -179.81,
+    8.0
+   ],
+   "sha256": "dbf508cfcaeb1aeefcb9106b41a01c87a61683c128fc879fbd758118194104d6"
+  },
+  {
+   "file": "Streets_legacy_marking_XP000_YP000.obj",
+   "mesh": "SM_Streets_legacy_marking_XP000_YP000",
+   "material": "legacy_marking",
+   "collision": "none",
+   "triangles": 12,
+   "faces": 6,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    39321.11,
+    276.55,
+    8.0,
+    39931.0,
+    3013.04,
+    8.0
+   ],
+   "sha256": "f9566938509291a1a0b48d68c0b5b065ca4c9dcd5437ada208c287da57a6c66c"
+  },
+  {
+   "file": "Streets_cast_iron_XM001_YM001.obj",
+   "mesh": "SM_Streets_cast_iron_XM001_YM001",
+   "material": "cast_iron",
+   "collision": "none",
+   "triangles": 1910,
+   "faces": 687,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    -44168.24,
+    -47333.02,
+    7.0,
+    -164.11,
+    26.31,
+    7.15
+   ],
+   "sha256": "32deca11a968fe619d273135a208ad86c3dec76a4a7842b17515b0caf6ab874c"
+  },
+  {
+   "file": "Streets_cast_iron_XM001_YP000.obj",
+   "mesh": "SM_Streets_cast_iron_XM001_YP000",
+   "material": "cast_iron",
+   "collision": "none",
+   "triangles": 1800,
+   "faces": 628,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    -44042.6,
+    343.07,
+    7.0,
+    -167.44,
+    69494.12,
+    7.15
+   ],
+   "sha256": "86a6b153a94daa8519de3c333a01d1c06d992b58d5899d5dee4f979e1c276793"
+  },
+  {
+   "file": "Streets_cast_iron_XP000_YM001.obj",
+   "mesh": "SM_Streets_cast_iron_XP000_YM001",
+   "material": "cast_iron",
+   "collision": "none",
+   "triangles": 1400,
+   "faces": 504,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    977.33,
+    -47040.48,
+    7.0,
+    55588.91,
+    -1616.6,
+    7.15
+   ],
+   "sha256": "310281014011072b900b2620a93b65c46b0149a93821dc4928e652f44b1a065d"
+  },
+  {
+   "file": "Streets_cast_iron_XP000_YP000.obj",
+   "mesh": "SM_Streets_cast_iron_XP000_YP000",
+   "material": "cast_iron",
+   "collision": "none",
+   "triangles": 1570,
+   "faces": 553,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    652.78,
+    1357.4,
+    7.0,
+    55643.01,
+    69200.09,
+    7.15
+   ],
+   "sha256": "4456171cdbf8bbef2d49e32d2a2df530fecddccb7acf82d68e6a9e708d2ab557"
+  },
+  {
+   "file": "Streets_Yard_Grass_XM001_YM001.obj",
+   "mesh": "SM_Streets_Yard_Grass_XM001_YM001",
+   "material": "Yard_Grass",
+   "collision": "complex",
+   "triangles": 9085,
+   "faces": 4546,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    -44215.16,
+    -48172.08,
+    0.0,
+    62.89,
+    175.15,
+    18.3
+   ],
+   "sha256": "d3d05e6186b97617e6d42d96d76896dbbaf82456bc25501c412b57fe2268a3c8"
+  },
+  {
+   "file": "Streets_Yard_Grass_XM001_YP000.obj",
+   "mesh": "SM_Streets_Yard_Grass_XM001_YP000",
+   "material": "Yard_Grass",
+   "collision": "complex",
+   "triangles": 9426,
+   "faces": 4723,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    -44320.73,
+    -193.32,
+    0.0,
+    162.92,
+    70115.06,
+    18.3
+   ],
+   "sha256": "0aae998b9adb334aa4f97914b5cebd0a1830decf31511bca2b431d1d9a21a77b"
+  },
+  {
+   "file": "Streets_Yard_Grass_XP000_YM001.obj",
+   "mesh": "SM_Streets_Yard_Grass_XP000_YM001",
+   "material": "Yard_Grass",
+   "collision": "complex",
+   "triangles": 8587,
+   "faces": 4295,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    -536.39,
+    -48041.0,
+    0.0,
+    55959.46,
+    4.41,
+    18.3
+   ],
+   "sha256": "2656b7628cd2ed43bb9320fdd76e6badafa3cc983c0d21a66f0c665986eaf099"
+  },
+  {
+   "file": "Streets_Yard_Grass_XP000_YP000.obj",
+   "mesh": "SM_Streets_Yard_Grass_XP000_YP000",
+   "material": "Yard_Grass",
+   "collision": "complex",
+   "triangles": 9081,
+   "faces": 4543,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    -235.77,
+    119.52,
+    0.0,
+    56906.27,
+    70055.41,
+    18.3
+   ],
+   "sha256": "c6266f68c08682076783bf4b130c6dd7eee2a54f528ca28654a23332c6aa6f14"
+  },
+  {
+   "file": "Streets_Yard_Soil_XM001_YM001.obj",
+   "mesh": "SM_Streets_Yard_Soil_XM001_YM001",
+   "material": "Yard_Soil",
+   "collision": "complex",
+   "triangles": 5443,
+   "faces": 2722,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    -44590.55,
+    -46986.74,
+    0.0,
+    242.18,
+    263.76,
+    18.3
+   ],
+   "sha256": "96189294fd2ca9ce13807430b4b845f56c42250d3c754d586b35b7a2a4f57c83"
+  },
+  {
+   "file": "Streets_Yard_Soil_XM001_YP000.obj",
+   "mesh": "SM_Streets_Yard_Soil_XM001_YP000",
+   "material": "Yard_Soil",
+   "collision": "complex",
+   "triangles": 5684,
+   "faces": 2843,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    -44386.11,
+    -264.96,
+    0.0,
+    162.92,
+    70535.65,
+    18.3
+   ],
+   "sha256": "20688f2fc13ae7441e3c7288c4d0215c96189d30a726387caa9cf8c1df9b0997"
+  },
+  {
+   "file": "Streets_Yard_Soil_XP000_YM001.obj",
+   "mesh": "SM_Streets_Yard_Soil_XP000_YM001",
+   "material": "Yard_Soil",
+   "collision": "complex",
+   "triangles": 4630,
+   "faces": 2317,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    -87.11,
+    -48336.27,
+    0.0,
+    55935.6,
+    160.19,
+    18.3
+   ],
+   "sha256": "da53c4b003c30a4fa57fb9bfd17b2fa8a127850e3e715e1b3a96bf2a6fa202c8"
+  },
+  {
+   "file": "Streets_Yard_Soil_XP000_YP000.obj",
+   "mesh": "SM_Streets_Yard_Soil_XP000_YP000",
+   "material": "Yard_Soil",
+   "collision": "complex",
+   "triangles": 5032,
+   "faces": 2519,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    -214.2,
+    4.41,
+    0.0,
+    56679.69,
+    70448.17,
+    18.3
+   ],
+   "sha256": "61870ed7b425e4ca33fb6aad6e49697b64c3f2891afd5c4515fcca1c40c0bd3e"
+  },
+  {
+   "file": "Streets_yard_path_XM001_YM001.obj",
+   "mesh": "SM_Streets_yard_path_XM001_YM001",
+   "material": "yard_path",
+   "collision": "complex",
+   "triangles": 3223,
+   "faces": 1613,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    -43953.3,
+    -47866.69,
+    0.0,
+    36.89,
+    324.43,
+    18.3
+   ],
+   "sha256": "97c3043bd6c5ff037ab635f963a407469006d7102257299d1a55ff0fd7ffa1bb"
+  },
+  {
+   "file": "Streets_yard_path_XM001_YP000.obj",
+   "mesh": "SM_Streets_yard_path_XM001_YP000",
+   "material": "yard_path",
+   "collision": "complex",
+   "triangles": 2806,
+   "faces": 1406,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    -44677.68,
+    315.24,
+    0.0,
+    75.13,
+    70027.24,
+    18.3
+   ],
+   "sha256": "dd76d209faa45e6c8ff36327fecf98bceb12d580754205a1fde5f853c99a1e5b"
+  },
+  {
+   "file": "Streets_yard_path_XP000_YM001.obj",
+   "mesh": "SM_Streets_yard_path_XP000_YM001",
+   "material": "yard_path",
+   "collision": "complex",
+   "triangles": 2540,
+   "faces": 1270,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    -56.44,
+    -48262.8,
+    0.0,
+    55882.49,
+    29.39,
+    18.3
+   ],
+   "sha256": "2cf78c5244f73e9a1e6cca03acfaefc00e1e959b411f174e6b2803db3bb31907"
+  },
+  {
+   "file": "Streets_yard_path_XP000_YP000.obj",
+   "mesh": "SM_Streets_yard_path_XP000_YP000",
+   "material": "yard_path",
+   "collision": "complex",
+   "triangles": 2067,
+   "faces": 1034,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    -305.61,
+    -48.54,
+    0.0,
+    55880.44,
+    70553.48,
+    18.3
+   ],
+   "sha256": "823a3d6a2a11c0228cc53afcb741a88bfffb8c9ac16fd9bc74bd0a5fefd07729"
+  },
+  {
+   "file": "Streets_grass_edge_XM001_YM001.obj",
+   "mesh": "SM_Streets_grass_edge_XM001_YM001",
+   "material": "grass_edge",
+   "collision": "none",
+   "triangles": 15005,
+   "faces": 7506,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    -44188.64,
+    -47688.49,
+    0.0,
+    17.34,
+    -3.39,
+    18.44
+   ],
+   "sha256": "158dc28f324dfd2e1fcb722abbcf1e5d8fc6d169f0957f6444f1ce310cccb6db"
+  },
+  {
+   "file": "Streets_grass_edge_XM001_YP000.obj",
+   "mesh": "SM_Streets_grass_edge_XM001_YP000",
+   "material": "grass_edge",
+   "collision": "none",
+   "triangles": 19532,
+   "faces": 9776,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    -44133.77,
+    -7.8,
+    0.0,
+    3.35,
+    69709.95,
+    18.44
+   ],
+   "sha256": "bcb0a6d018a2facf281e88420a26c5ad70d2837e5896c531deb7d70b392cc3e5"
+  },
+  {
+   "file": "Streets_grass_edge_XP000_YM001.obj",
+   "mesh": "SM_Streets_grass_edge_XP000_YM001",
+   "material": "grass_edge",
+   "collision": "none",
+   "triangles": 12417,
+   "faces": 6210,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    -16.04,
+    -47336.52,
+    0.0,
+    55909.62,
+    -196.44,
+    18.44
+   ],
+   "sha256": "a878eb37c12abf36644d17937001d7d3f15281caa5e90d4b7e9741d7f7d961f5"
+  },
+  {
+   "file": "Streets_grass_edge_XP000_YP000.obj",
+   "mesh": "SM_Streets_grass_edge_XP000_YP000",
+   "material": "grass_edge",
+   "collision": "none",
+   "triangles": 17184,
+   "faces": 8603,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    -1.95,
+    213.13,
+    0.0,
+    56016.69,
+    69520.59,
+    18.44
+   ],
+   "sha256": "512cf3db804ccdd3a0ef2eaed84e8c736793984c4cf16c61cd9d3606720259bb"
+  },
+  {
+   "file": "Streets_soil_XM001_YM001.obj",
+   "mesh": "SM_Streets_soil_XM001_YM001",
+   "material": "soil",
+   "collision": "none",
+   "triangles": 794,
+   "faces": 400,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    -43403.25,
+    -46705.0,
+    0.0,
+    -48.26,
+    -1431.08,
+    18.15
+   ],
+   "sha256": "795812081cad7fdae4b60704a7b49d123c72110f550ab6dab5b3e642df730b2f"
+  },
+  {
+   "file": "Streets_soil_XM001_YP000.obj",
+   "mesh": "SM_Streets_soil_XM001_YP000",
+   "material": "soil",
+   "collision": "none",
+   "triangles": 1208,
+   "faces": 609,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    -43744.44,
+    774.29,
+    0.0,
+    -97.53,
+    68587.27,
+    18.15
+   ],
+   "sha256": "49399ca3448ed5809362a071e59a26ec3b2d39400b7c64427aa19824c66025f7"
+  },
+  {
+   "file": "Streets_soil_XP000_YM001.obj",
+   "mesh": "SM_Streets_soil_XP000_YM001",
+   "material": "soil",
+   "collision": "none",
+   "triangles": 593,
+   "faces": 297,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    300.61,
+    -46716.33,
+    0.0,
+    55342.62,
+    76.21,
+    18.15
+   ],
+   "sha256": "6b23ec20dd36d3a78e1e00ea0502e01c40d12fe21eac79d017b45bf4450f91a5"
+  },
+  {
+   "file": "Streets_soil_XP000_YP000.obj",
+   "mesh": "SM_Streets_soil_XP000_YP000",
+   "material": "soil",
+   "collision": "none",
+   "triangles": 848,
+   "faces": 428,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    68.47,
+    -201.4,
+    0.0,
+    55363.04,
+    68225.99,
+    18.15
+   ],
+   "sha256": "a6de0f648c6ab7239ae61600be8739a9ccab6340ff38cba52adc94b6d31da5d4"
+  },
+  {
+   "file": "Streets_Yard_Gravel_XM001_YM001.obj",
+   "mesh": "SM_Streets_Yard_Gravel_XM001_YM001",
+   "material": "Yard_Gravel",
+   "collision": "none",
+   "triangles": 1388,
+   "faces": 694,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    -42940.89,
+    -46604.42,
+    7.05,
+    -171.99,
+    -626.21,
+    7.05
+   ],
+   "sha256": "19e850e38c71d86b85389bfebf2e3db0369138f96e85da06782e922f5080a26f"
+  },
+  {
+   "file": "Streets_Yard_Gravel_XM001_YP000.obj",
+   "mesh": "SM_Streets_Yard_Gravel_XM001_YP000",
+   "material": "Yard_Gravel",
+   "collision": "none",
+   "triangles": 4038,
+   "faces": 2019,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    -43702.7,
+    2581.23,
+    7.05,
+    -1.82,
+    69177.49,
+    7.05
+   ],
+   "sha256": "7a87e8e337c16dd4c0d8a766e8c08ab9500675b22507fc6ee13aca80192b2cb2"
+  },
+  {
+   "file": "Streets_Yard_Gravel_XP000_YM001.obj",
+   "mesh": "SM_Streets_Yard_Gravel_XP000_YM001",
+   "material": "Yard_Gravel",
+   "collision": "none",
+   "triangles": 684,
+   "faces": 342,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    837.5,
+    -46598.78,
+    7.05,
+    25720.3,
+    -24600.58,
+    7.05
+   ],
+   "sha256": "8f1a482db8c25aa68d3a4c9b7e972db454bfe40814debb8436c43a68f1c1ab54"
+  },
+  {
+   "file": "Streets_Yard_Gravel_XP000_YP000.obj",
+   "mesh": "SM_Streets_Yard_Gravel_XP000_YP000",
+   "material": "Yard_Gravel",
+   "collision": "none",
+   "triangles": 2166,
+   "faces": 1083,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    -17.4,
+    528.16,
+    7.05,
+    55290.84,
+    69155.46,
+    7.05
+   ],
+   "sha256": "537e35e545c46a885983b821ad35c9e721963a1e992372f02582c60bd036a824"
+  },
+  {
+   "file": "Streets_iron_XM003_YM003.obj",
+   "mesh": "SM_Streets_iron_XM003_YM003",
+   "material": "iron",
+   "collision": "none",
+   "triangles": 432,
+   "faces": 240,
+   "tile_cm": 19000,
+   "bounds_cm": [
+    -43522.49,
+    -44809.0,
+    18.0,
+    -38051.25,
+    -38539.74,
+    99.0
+   ],
+   "sha256": "0b89986fccfe7317633b9d94981944bc73042facd76738b1e478b4abca694daf"
+  },
+  {
+   "file": "Streets_iron_XM003_YM002.obj",
+   "mesh": "SM_Streets_iron_XM003_YM002",
+   "material": "iron",
+   "collision": "none",
+   "triangles": 1692,
+   "faces": 930,
+   "tile_cm": 19000,
+   "bounds_cm": [
+    -43342.93,
+    -31425.1,
+    18.0,
+    -38404.61,
+    -27225.71,
+    107.0
+   ],
+   "sha256": "a1abf2b3ea89f09f26992282c7a295a6502f2037133a0dbba284dcd4b19d1578"
+  },
+  {
+   "file": "Streets_iron_XM003_YM001.obj",
+   "mesh": "SM_Streets_iron_XM003_YM001",
+   "material": "iron",
+   "collision": "none",
+   "triangles": 3858,
+   "faces": 2123,
+   "tile_cm": 19000,
+   "bounds_cm": [
+    -43422.63,
+    -17464.62,
+    18.0,
+    -38006.14,
+    -3024.02,
+    107.0
+   ],
+   "sha256": "64e31a40541c46c7dc7aebf4c8a62405835cbeda582c01f781a2a6f2f48de787"
+  },
+  {
+   "file": "Streets_iron_XM003_YP000.obj",
+   "mesh": "SM_Streets_iron_XM003_YP000",
+   "material": "iron",
+   "collision": "none",
+   "triangles": 3960,
+   "faces": 2172,
+   "tile_cm": 19000,
+   "bounds_cm": [
+    -44114.45,
+    1921.48,
+    18.0,
+    -37888.99,
+    15647.84,
+    107.0
+   ],
+   "sha256": "2fd2ae5194d55b1e22b4c5cf4ac4cf1db5a84eec851a794a9f987be33a53b44f"
+  },
+  {
+   "file": "Streets_iron_XM003_YP001.obj",
+   "mesh": "SM_Streets_iron_XM003_YP001",
+   "material": "iron",
+   "collision": "none",
+   "triangles": 4584,
+   "faces": 2508,
+   "tile_cm": 19000,
+   "bounds_cm": [
+    -44121.89,
+    22405.76,
+    18.0,
+    -38000.9,
+    38084.16,
+    107.0
+   ],
+   "sha256": "6fe4157e0245d03ec511157de0c7d2dc654a1a788046147579c33dddc18c56b2"
+  },
+  {
+   "file": "Streets_iron_XM003_YP002.obj",
+   "mesh": "SM_Streets_iron_XM003_YP002",
+   "material": "iron",
+   "collision": "none",
+   "triangles": 3420,
+   "faces": 1872,
+   "tile_cm": 19000,
+   "bounds_cm": [
+    -44006.0,
+    38002.21,
+    18.0,
+    -37917.59,
+    55898.05,
+    107.0
+   ],
+   "sha256": "ef07574c50f2d839e108087a3379d64175bc0af0ea5340f69083becbda7b2b02"
+  },
+  {
+   "file": "Streets_iron_XM003_YP003.obj",
+   "mesh": "SM_Streets_iron_XM003_YP003",
+   "material": "iron",
+   "collision": "none",
+   "triangles": 5034,
+   "faces": 2761,
+   "tile_cm": 19000,
+   "bounds_cm": [
+    -44125.17,
+    57145.05,
+    18.0,
+    -38010.36,
+    69702.19,
+    107.0
+   ],
+   "sha256": "b051698a09e95115dfeeb7e44eb96582c21435dcb23d0fa6f826e761f1c603e3"
+  },
+  {
+   "file": "Streets_iron_XM002_YM003.obj",
+   "mesh": "SM_Streets_iron_XM002_YM003",
+   "material": "iron",
+   "collision": "none",
+   "triangles": 6066,
+   "faces": 3329,
+   "tile_cm": 19000,
+   "bounds_cm": [
+    -37694.3,
+    -46987.85,
+    18.0,
+    -22256.99,
+    -38008.79,
+    107.0
+   ],
+   "sha256": "2cd1ca4cc6d434a3c45f53746ead903220ededb66ea6e605c29cb6f24c1e7ccf"
+  },
+  {
+   "file": "Streets_iron_XM002_YM002.obj",
+   "mesh": "SM_Streets_iron_XM002_YM002",
+   "material": "iron",
+   "collision": "none",
+   "triangles": 10920,
+   "faces": 5990,
+   "tile_cm": 19000,
+   "bounds_cm": [
+    -37920.47,
+    -38035.76,
+    18.0,
+    -18922.53,
+    -19020.93,
+    107.0
+   ],
+   "sha256": "07c85a3ad512d3cf0b828b17a9cf5f2884de0b664460296f95e297116d99ef9d"
+  },
+  {
+   "file": "Streets_iron_XM002_YM001.obj",
+   "mesh": "SM_Streets_iron_XM002_YM001",
+   "material": "iron",
+   "collision": "none",
+   "triangles": 15222,
+   "faces": 8337,
+   "tile_cm": 19000,
+   "bounds_cm": [
+    -38164.95,
+    -18628.12,
+    18.0,
+    -19113.59,
+    130.13,
+    107.0
+   ],
+   "sha256": "f980e61176425d7079762cb9f6b84b581bc4466b3896b3a7f7f1566fa613c58e"
+  },
+  {
+   "file": "Streets_iron_XM002_YP000.obj",
+   "mesh": "SM_Streets_iron_XM002_YP000",
+   "material": "iron",
+   "collision": "none",
+   "triangles": 4374,
+   "faces": 2391,
+   "tile_cm": 19000,
+   "bounds_cm": [
+    -37995.61,
+    6.39,
+    18.0,
+    -28841.09,
+    18618.44,
+    107.0
+   ],
+   "sha256": "4e504798635560603a612c3052916e481040e52ebde69ccb6cbde0caf3d6e966"
+  },
+  {
+   "file": "Streets_iron_XM002_YP001.obj",
+   "mesh": "SM_Streets_iron_XM002_YP001",
+   "material": "iron",
+   "collision": "none",
+   "triangles": 12990,
+   "faces": 7105,
+   "tile_cm": 19000,
+   "bounds_cm": [
+    -38103.8,
+    19044.42,
+    18.0,
+    -21873.25,
+    38126.45,
+    107.0
+   ],
+   "sha256": "1509af4fc669c94c6b6209b8946c9a78f1f7783cff577110488cdcff386b5fdd"
+  },
+  {
+   "file": "Streets_iron_XM002_YP002.obj",
+   "mesh": "SM_Streets_iron_XM002_YP002",
+   "material": "iron",
+   "collision": "none",
+   "triangles": 18180,
+   "faces": 9930,
+   "tile_cm": 19000,
+   "bounds_cm": [
+    -38030.6,
+    37909.87,
+    18.0,
+    -18913.1,
+    57088.96,
+    107.0
+   ],
+   "sha256": "04bea0eae0bff460dda2e9209672054aaefacf81794f0110c1e3a6620d1b625f"
+  },
+  {
+   "file": "Streets_iron_XM002_YP003.obj",
+   "mesh": "SM_Streets_iron_XM002_YP003",
+   "material": "iron",
+   "collision": "none",
+   "triangles": 8718,
+   "faces": 4769,
+   "tile_cm": 19000,
+   "bounds_cm": [
+    -38056.25,
+    56970.79,
+    18.0,
+    -19000.48,
+    69639.27,
+    107.0
+   ],
+   "sha256": "265434a7997e7a42673848aa09198ac10fb9030c83775f03c876ca0d64a55b02"
+  },
+  {
+   "file": "Streets_iron_XM001_YM003.obj",
+   "mesh": "SM_Streets_iron_XM001_YM003",
+   "material": "iron",
+   "collision": "none",
+   "triangles": 3018,
+   "faces": 1655,
+   "tile_cm": 19000,
+   "bounds_cm": [
+    -16364.7,
+    -44031.68,
+    18.0,
+    42.1,
+    -37779.54,
+    107.0
+   ],
+   "sha256": "3de95ec3f1f5498c6e635691ce017bf59183a6aa1e5d40775c8ba6b4277b521c"
+  },
+  {
+   "file": "Streets_iron_XM001_YM002.obj",
+   "mesh": "SM_Streets_iron_XM001_YM002",
+   "material": "iron",
+   "collision": "none",
+   "triangles": 15024,
+   "faces": 8224,
+   "tile_cm": 19000,
+   "bounds_cm": [
+    -19031.11,
+    -38000.43,
+    18.0,
+    50.3,
+    -19001.12,
+    107.0
+   ],
+   "sha256": "bc56fed9f3380a116c195024c1f74cbe71c423a756922fcce290fbab7249baf8"
+  },
+  {
+   "file": "Streets_iron_XM001_YM001.obj",
+   "mesh": "SM_Streets_iron_XM001_YM001",
+   "material": "iron",
+   "collision": "none",
+   "triangles": 6564,
+   "faces": 3586,
+   "tile_cm": 19000,
+   "bounds_cm": [
+    -18693.53,
+    -19191.37,
+    18.0,
+    -54.77,
+    -6808.76,
+    107.0
+   ],
+   "sha256": "c01db41792898dd88207e70c1a65f45bd4c687cf9593927525b38dd6f44a9b87"
+  },
+  {
+   "file": "Streets_iron_XM001_YP001.obj",
+   "mesh": "SM_Streets_iron_XM001_YP001",
+   "material": "iron",
+   "collision": "none",
+   "triangles": 750,
+   "faces": 411,
+   "tile_cm": 19000,
+   "bounds_cm": [
+    -18641.23,
+    30523.42,
+    18.0,
+    -16510.83,
+    34771.99,
+    107.0
+   ],
+   "sha256": "9aae20eb0dd79abd4617ab8fd85189583b9a7841a8396d10f3ac00bea2929e99"
+  },
+  {
+   "file": "Streets_iron_XM001_YP002.obj",
+   "mesh": "SM_Streets_iron_XM001_YP002",
+   "material": "iron",
+   "collision": "none",
+   "triangles": 9576,
+   "faces": 5226,
+   "tile_cm": 19000,
+   "bounds_cm": [
+    -19052.65,
+    38739.63,
+    18.0,
+    -3144.93,
+    56992.31,
+    107.0
+   ],
+   "sha256": "441607509afe64c2c7e54b1dc7b7dd164487ab3e848f74785973f6104968e4f4"
+  },
+  {
+   "file": "Streets_iron_XM001_YP003.obj",
+   "mesh": "SM_Streets_iron_XM001_YP003",
+   "material": "iron",
+   "collision": "none",
+   "triangles": 6102,
+   "faces": 3329,
+   "tile_cm": 19000,
+   "bounds_cm": [
+    -19156.08,
+    56933.94,
+    18.0,
+    -6267.94,
+    65666.86,
+    107.0
+   ],
+   "sha256": "161ee159761c3a17323531a134b152c289ddc3ae846b2f2b39d66fec5354a978"
+  },
+  {
+   "file": "Streets_iron_XP000_YM003.obj",
+   "mesh": "SM_Streets_iron_XP000_YM003",
+   "material": "iron",
+   "collision": "none",
+   "triangles": 10230,
+   "faces": 5593,
+   "tile_cm": 19000,
+   "bounds_cm": [
+    0.29,
+    -47251.84,
+    18.0,
+    18947.4,
+    -37968.76,
+    107.0
+   ],
+   "sha256": "c8fc747908aa2a423b08c29cd9f96ec8828356651c38a742898e1e6dae6301d3"
+  },
+  {
+   "file": "Streets_iron_XP000_YM002.obj",
+   "mesh": "SM_Streets_iron_XP000_YM002",
+   "material": "iron",
+   "collision": "none",
+   "triangles": 7578,
+   "faces": 4151,
+   "tile_cm": 19000,
+   "bounds_cm": [
+    7.96,
+    -37996.99,
+    18.0,
+    18907.37,
+    -19260.31,
+    107.0
+   ],
+   "sha256": "81187f39958cb0a07d18eb781803d16a95d61e5e1bb5685a4fec291bacbad58e"
+  },
+  {
+   "file": "Streets_iron_XP000_YP003.obj",
+   "mesh": "SM_Streets_iron_XP000_YP003",
+   "material": "iron",
+   "collision": "none",
+   "triangles": 4566,
+   "faces": 2505,
+   "tile_cm": 19000,
+   "bounds_cm": [
+    10086.52,
+    61233.91,
+    18.0,
+    19037.83,
+    68335.05,
+    107.0
+   ],
+   "sha256": "8fd199277d92c16398b3c182115e311fb57439decb4e0b3231390827587f1574"
+  },
+  {
+   "file": "Streets_iron_XP001_YM003.obj",
+   "mesh": "SM_Streets_iron_XP001_YM003",
+   "material": "iron",
+   "collision": "none",
+   "triangles": 4260,
+   "faces": 2326,
+   "tile_cm": 19000,
+   "bounds_cm": [
+    19592.25,
+    -45367.82,
+    18.0,
+    38199.17,
+    -37880.75,
+    107.0
+   ],
+   "sha256": "aee03f6a78b08a9bb91f16afc04f734f23a146e95eea8ced7130b4d6f590175d"
+  },
+  {
+   "file": "Streets_iron_XP001_YM002.obj",
+   "mesh": "SM_Streets_iron_XP001_YM002",
+   "material": "iron",
+   "collision": "none",
+   "triangles": 11064,
+   "faces": 6064,
+   "tile_cm": 19000,
+   "bounds_cm": [
+    19006.19,
+    -37987.11,
+    18.0,
+    38257.87,
+    -21757.84,
+    107.0
+   ],
+   "sha256": "dbf2bdf09ef0b175cd0eac1f9fb8497e9fac8083ab7bfa513f1bfc331910c53f"
+  },
+  {
+   "file": "Streets_iron_XP001_YP000.obj",
+   "mesh": "SM_Streets_iron_XP001_YP000",
+   "material": "iron",
+   "collision": "none",
+   "triangles": 2616,
+   "faces": 1430,
+   "tile_cm": 19000,
+   "bounds_cm": [
+    20048.66,
+    1364.99,
+    18.0,
+    28620.75,
+    6858.67,
+    107.0
+   ],
+   "sha256": "5069a61011fdeab80310be91c15c2055c0d2961c15a4d9a1004c643d51c3b860"
+  },
+  {
+   "file": "Streets_iron_XP001_YP002.obj",
+   "mesh": "SM_Streets_iron_XP001_YP002",
+   "material": "iron",
+   "collision": "none",
+   "triangles": 9132,
+   "faces": 4994,
+   "tile_cm": 19000,
+   "bounds_cm": [
+    19478.5,
+    49110.04,
+    18.0,
+    37995.57,
+    57021.63,
+    107.0
+   ],
+   "sha256": "a9c2a8547a28d60311f5c60ceb9f14e982aaf5b0d3c18f6c5366ee814f5fe218"
+  },
+  {
+   "file": "Streets_iron_XP001_YP003.obj",
+   "mesh": "SM_Streets_iron_XP001_YP003",
+   "material": "iron",
+   "collision": "none",
+   "triangles": 12528,
+   "faces": 6864,
+   "tile_cm": 19000,
+   "bounds_cm": [
+    18975.33,
+    56958.95,
+    18.0,
+    38057.63,
+    69837.03,
+    107.0
+   ],
+   "sha256": "b6b64d19eeca417cceb48595f4c3611d82f108a693abcf6394a9cc03af84da68"
+  },
+  {
+   "file": "Streets_iron_XP002_YM003.obj",
+   "mesh": "SM_Streets_iron_XP002_YM003",
+   "material": "iron",
+   "collision": "none",
+   "triangles": 7674,
+   "faces": 4203,
+   "tile_cm": 19000,
+   "bounds_cm": [
+    38015.85,
+    -46845.8,
+    18.0,
+    55035.35,
+    -38005.05,
+    107.0
+   ],
+   "sha256": "00a867314899a157ed92a2724bfaf2aa0de3c3389d7ba86163ce7b58fd9b1178"
+  },
+  {
+   "file": "Streets_iron_XP002_YM002.obj",
+   "mesh": "SM_Streets_iron_XP002_YM002",
+   "material": "iron",
+   "collision": "none",
+   "triangles": 11736,
+   "faces": 6414,
+   "tile_cm": 19000,
+   "bounds_cm": [
+    38015.63,
+    -38074.75,
+    18.0,
+    55798.07,
+    -18929.96,
+    107.0
+   ],
+   "sha256": "f7be7ee199e300ca065eecc1aaaf822dbaa2f7d5816b67512b5364004abfda95"
+  },
+  {
+   "file": "Streets_iron_XP002_YM001.obj",
+   "mesh": "SM_Streets_iron_XP002_YM001",
+   "material": "iron",
+   "collision": "none",
+   "triangles": 6564,
+   "faces": 3586,
+   "tile_cm": 19000,
+   "bounds_cm": [
+    44928.92,
+    -18987.22,
+    18.0,
+    55821.07,
+    -39.92,
+    107.0
+   ],
+   "sha256": "076e756c7ad0062bd7be26cfb2e6be6500bb2cc2b1ed2072659d69edae770df2"
+  },
+  {
+   "file": "Streets_iron_XP002_YP000.obj",
+   "mesh": "SM_Streets_iron_XP002_YP000",
+   "material": "iron",
+   "collision": "none",
+   "triangles": 4476,
+   "faces": 2444,
+   "tile_cm": 19000,
+   "bounds_cm": [
+    40959.69,
+    23.13,
+    18.0,
+    54268.33,
+    18967.94,
+    107.0
+   ],
+   "sha256": "2889cd1aa03bbf9d524418189f5b2dd805c8cd46cd4dded97eb8985b83d238ba"
+  },
+  {
+   "file": "Streets_iron_XP002_YP001.obj",
+   "mesh": "SM_Streets_iron_XP002_YP001",
+   "material": "iron",
+   "collision": "none",
+   "triangles": 1128,
+   "faces": 620,
+   "tile_cm": 19000,
+   "bounds_cm": [
+    43106.36,
+    19030.98,
+    18.0,
+    50926.69,
+    24235.4,
+    107.0
+   ],
+   "sha256": "278f14daf2ca4e64e832d37be075c13f0cea06ec4f90b958dd9ee55ae7975744"
+  },
+  {
+   "file": "Streets_iron_XP002_YP002.obj",
+   "mesh": "SM_Streets_iron_XP002_YP002",
+   "material": "iron",
+   "collision": "none",
+   "triangles": 9918,
+   "faces": 5421,
+   "tile_cm": 19000,
+   "bounds_cm": [
+    37886.27,
+    38032.01,
+    18.0,
+    55703.38,
+    56705.72,
+    107.0
+   ],
+   "sha256": "afe3d994947bb0243d618816e6e15a4df5bca62ce87bb9f8fa692ce7abf1ca45"
+  },
+  {
+   "file": "Streets_iron_XP002_YP003.obj",
+   "mesh": "SM_Streets_iron_XP002_YP003",
+   "material": "iron",
+   "collision": "none",
+   "triangles": 6318,
+   "faces": 3453,
+   "tile_cm": 19000,
+   "bounds_cm": [
+    37708.19,
+    57135.59,
+    18.0,
+    48185.9,
+    65409.52,
+    107.0
+   ],
+   "sha256": "fe30f6133086350856423a9cea8f348ca7b1a94618c106462d424623010ad86c"
+  },
+  {
+   "file": "Streets_bollard_green_XM001_YP000.obj",
+   "mesh": "SM_Streets_bollard_green_XM001_YP000",
+   "material": "bollard_green",
+   "collision": "none",
+   "triangles": 2694,
+   "faces": 1796,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    -43284.72,
+    3573.06,
+    7.0,
+    2.69,
+    57683.04,
+    137.0
+   ],
+   "sha256": "2e15ec8b1f55fe2e0809282e8b59e6b3305f63549674d65a87e1dc3419c18381"
+  },
+  {
+   "file": "Streets_bollard_green_XP000_YP000.obj",
+   "mesh": "SM_Streets_bollard_green_XP000_YP000",
+   "material": "bollard_green",
+   "collision": "none",
+   "triangles": 420,
+   "faces": 280,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    -0.31,
+    57672.65,
+    7.0,
+    7357.12,
+    68777.35,
+    126.0
+   ],
+   "sha256": "65bd0c0f5c95178eedb7a3f8888c99a89b89561ad3bd6034875046db8e243228"
+  }
+ ],
+ "materials": {
+  "asphalt": {
+   "base_color_srgb": "#3a3b40",
+   "roughness": 0.92,
+   "metallic": 0.0,
+   "texture": "/Game/Art/Textures/asphalt_02_diff",
+   "batch_prefix": "Asphalt_Replica",
+   "collision": "none"
+  },
+  "alley": {
+   "base_color_srgb": "#55565a",
+   "roughness": 0.95,
+   "metallic": 0.0,
+   "texture": "/Game/Art/Textures/asphalt_02_diff",
+   "batch_prefix": "Asphalt_Replica_Alley",
+   "collision": "none"
+  },
+  "sidewalk": {
+   "base_color_srgb": "#b5b8b8",
+   "roughness": 0.85,
+   "metallic": 0.0,
+   "batch_prefix": "Concrete_Collision_Replica",
+   "collision": "complex"
+  },
+  "curb": {
+   "base_color_srgb": "#c8cac7",
+   "roughness": 0.8,
+   "metallic": 0.0,
+   "batch_prefix": "Streets_curb",
+   "collision": "none"
+  },
+  "joint": {
+   "base_color_srgb": "#7c7e7d",
+   "roughness": 0.9,
+   "metallic": 0.0,
+   "batch_prefix": "Streets_joint",
+   "collision": "none"
+  },
+  "Concrete_Lane_Aged": {
+   "base_color_srgb": "#746c62",
+   "roughness": 0.83,
+   "metallic": 0.0,
+   "batch_prefix": "Streets_Concrete_Lane_Aged",
+   "collision": "none"
+  },
+  "Iron_Wrought": {
+   "base_color_srgb": "#251f1b",
+   "roughness": 0.49,
+   "metallic": 0.0,
+   "batch_prefix": "Streets_Iron_Wrought",
+   "collision": "none"
+  },
+  "Plant_Pit_Flowers": {
+   "base_color_srgb": "#846f58",
+   "roughness": 0.73,
+   "metallic": 0.0,
+   "batch_prefix": "Streets_Plant_Pit_Flowers",
+   "collision": "none"
+  },
+  "paint_white": {
+   "base_color_srgb": "#f2f2ee",
+   "roughness": 0.6,
+   "metallic": 0.0,
+   "batch_prefix": "Streets_paint_white",
+   "collision": "none"
+  },
+  "paint_yellow": {
+   "base_color_srgb": "#f2b705",
+   "roughness": 0.6,
+   "metallic": 0.0,
+   "batch_prefix": "Streets_paint_yellow",
+   "collision": "none"
+  },
+  "paint_green": {
+   "base_color_srgb": "#2e9e5a",
+   "roughness": 0.65,
+   "metallic": 0.0,
+   "batch_prefix": "Streets_paint_green",
+   "collision": "none"
+  },
+  "legacy_marking": {
+   "base_color_srgb": "#eddea8",
+   "roughness": 0.6,
+   "metallic": 0.0,
+   "batch_prefix": "Streets_legacy_marking",
+   "collision": "none"
+  },
+  "cast_iron": {
+   "base_color_srgb": "#2e2d2b",
+   "roughness": 0.55,
+   "metallic": 0.6,
+   "batch_prefix": "Streets_cast_iron",
+   "collision": "none"
+  },
+  "Yard_Grass": {
+   "base_color_srgb": "#606a31",
+   "roughness": 0.9,
+   "metallic": 0.0,
+   "batch_prefix": "Streets_Yard_Grass",
+   "collision": "complex"
+  },
+  "Yard_Soil": {
+   "base_color_srgb": "#453526",
+   "roughness": 0.88,
+   "metallic": 0.0,
+   "batch_prefix": "Streets_Yard_Soil",
+   "collision": "complex"
+  },
+  "yard_path": {
+   "base_color_srgb": "#9e9c97",
+   "roughness": 0.85,
+   "metallic": 0.0,
+   "batch_prefix": "Streets_yard_path",
+   "collision": "complex"
+  },
+  "grass_edge": {
+   "base_color_srgb": "#606a31",
+   "roughness": 0.9,
+   "metallic": 0.0,
+   "texture": "/Game/Plateau/Replica/Textures/T_Replica_Lawn_diff",
+   "batch_prefix": "Streets_grass_edge",
+   "collision": "none"
+  },
+  "soil": {
+   "base_color_srgb": "#3e2f24",
+   "roughness": 0.9,
+   "metallic": 0.0,
+   "texture": "/Game/Plateau/Replica/Textures/T_Replica_Soil_diff",
+   "batch_prefix": "Streets_soil",
+   "collision": "none"
+  },
+  "Yard_Gravel": {
+   "base_color_srgb": "#827f7b",
+   "roughness": 0.88,
+   "metallic": 0.0,
+   "batch_prefix": "Streets_Yard_Gravel",
+   "collision": "none"
+  },
+  "iron": {
+   "base_color_srgb": "#1c1c1c",
+   "roughness": 0.5,
+   "metallic": 0.7,
+   "batch_prefix": "Streets_iron",
+   "collision": "none"
+  },
+  "bollard_green": {
+   "base_color_srgb": "#2f7d46",
+   "roughness": 0.5,
+   "metallic": 0.2,
+   "batch_prefix": "Streets_bollard_green",
+   "collision": "none"
+  }
+ },
+ "counts": {
+  "carriageway_quads": 238,
+  "junction_polygons": 89,
+  "sidewalk_pieces": 15906,
+  "concave_pieces": 2,
+  "bowtie_pieces_dropped": 15,
+  "sidewalk_metres": 22398,
+  "curb_ramps": 112,
+  "dropped_aprons": 500,
+  "corner_pieces": 801,
+  "yards": 2741,
+  "yard_square_metres": 67060,
+  "fence_metres": 6937,
+  "tree_pits": 1319,
+  "stop_bars": 71,
+  "stop_bars_signal": 50,
+  "stop_bars_osm_stop": 21,
+  "crosswalks_continental_white": 103,
+  "crosswalks_continental_yellow": 21,
+  "crosswalks_lines_white": 37,
+  "crosswalks_generated_at_stops": 3,
+  "centre_line_metres": 1268,
+  "lane_line_metres": 1287,
+  "parking_line_metres": 93,
+  "parking_line_sides": 1,
+  "bike_track_metres": 1103,
+  "bollards": 173,
+  "bike_pictograms": 22,
+  "green_conflict_zones": 19,
+  "manholes": 242,
+  "storm_drains": 426,
+  "ruelle_metres": 6924,
+  "skipped_route_segments": 8,
+  "stop_nodes_off_network": 5,
+  "yard_slabs": 9888,
+  "yard_slabs_in_traffic_band": 208,
+  "ruelle_square_metres": 46680,
+  "ruelle_pieces": 2937,
+  "ruelle_edge_metres": 6908,
+  "ruelle_joint_wedges": 16,
+  "street_trees": 4682,
+  "street_trees_inventory": 4595,
+  "street_trees_osm": 87,
+  "trees_on_carriageway": 102,
+  "sidewalk_pits": 1238,
+  "sidewalk_pits_moved": 1181,
+  "sidewalk_pit_metres_moved": 1097,
+  "trees_kept_in_place": 3349,
+  "trees_on_sidewalk_without_pit": 0,
+  "trees_dropped_in_buildings": 2,
+  "curb_extensions": 57,
+  "curb_extension_trees": 81,
+  "curb_extensions_merged": 13,
+  "curb_extensions_flush": 2,
+  "curb_extensions_part_flush": 7,
+  "curb_extension_metres": 343,
+  "curb_extensions_on_verges": 23,
+  "curb_extensions_on_corners": 1,
+  "curb_extensions_saillie": 33,
+  "curb_extensions_median": 22,
+  "curb_extensions_choker": 0,
+  "curb_extensions_corner": 2,
+  "trees_for_host": 25,
+  "yard_slabs_past_ruelle_mouths": 51,
+  "sidewalk_risers": 223,
+  "corner_risers": 14,
+  "yard_risers": 517,
+  "yard_mouth_wedges": 248,
+  "yard_mouth_wedge_square_metres": 54,
+  "sidewalk_pieces_split": 237,
+  "passages": 118,
+  "passage_square_metres": 5716,
+  "passage_lead_ins": 115,
+  "pit_guard_cards": 5072,
+  "pit_flower_cards": 3099,
+  "curb_extension_back_walls": 4,
+  "apron_walls": 799,
+  "tree_pits_slid": 9,
+  "ruelle_gutter_metres": 6924,
+  "trees_reseated": 21,
+  "trees_reseated_pit": 7,
+  "trees_reseated_parterre": 13,
+  "trees_reseated_median": 1,
+  "bike_lane_line_metres": 3617,
+  "bike_lane_marks": 40,
+  "sharrows": 26,
+  "bus_diamonds": 14,
+  "bike_paint_sides": 42,
+  "bike_paint_too_narrow": 0,
+  "track_buffers": 4,
+  "track_buffer_metres": 384,
+  "sidewalk_pieces_to_walls": 291,
+  "legacy_route_dashes": 41,
+  "curb_measurement": {
+   "measured_sides": 204,
+   "fallback_sides": 82,
+   "median_sides": 0
+  },
+  "osm_stop_nodes_inside": 26,
+  "osm_crossings_on_replica": 179,
+  "signalised_approaches": 69,
+  "batches": 123,
+  "triangles": 623468
+ },
+ "source_sha256": {
+  "Data/LaFontaine/osm.xml": "fe4410d45007a627bf6d9b9ddeeae329fa9cdd7492dfb5fa6beff851e7cf8f86",
+  "Data/LaFontaine/layout.json": "4238d6ed45d5fb890e0f8dbcb672de0803c6dc7079b0b6a86b386d82ebbb4250",
+  "Scripts/plateau_replica.py": "3b95c6729872a495412bd48d8c77eabe20bdcb0d4ecf55ba2136ad1808a74e2c",
+  "Scripts/prepare_lafontaine.py": "e7b6e5f068a96ee7306b1fff247fa73158f5cf7c343dc5510ab8cce92ee3c924",
+  "Data/Plateau/BaseGeometry/Marking.obj": "2d82cbca59041aa6af5e6f3fffaf6a01b2c3e672eea9732e8a5fecbb7cee35dd",
+  "Data/Plateau/ReplicaGeometry/Plex/fronts.json": "18f03aa2131ddab7409c92e8e42c2e21bd0f149ebcda428963bf3424ad0b5ca6",
+  "Data/Plateau/ReplicaGeometry/Soul/ruelles_vertes_clip.json": "6ca991f5b585f4f0567baed799c37db2d3476f451e0b88fdb315a959e2d7d216",
+  "Data/Plateau/ReplicaGeometry/Plex/manifest.json": "918fd3495a443beeb7aef34e10a9a1d670ee52393f676bd5efebf24ef954390a",
+  "Data/Plateau/ReplicaGeometry/Props/manifest.json": "1e4c7f296491aaa271fe47977ae870d3d6ddd7f5b1ca62d0f00a13f05972ed98",
+  "Data/Plateau/Inventory/trees_pmr.json": "78ee70b8165af47cdee11a56c9653b69a1543c42cf78ab618145441d756831c1",
+  "Data/Plateau/Inventory/trees_vm.json": "103be208d2135cbb989198a8b33cff081584a40792323fab2d2cd65ca2a8fc35",
+  "Data/Plateau/Inventory/sign_poles.json": "3d77a221def94a78024c587148cfa86a3dcfb385d7c9db118714735771283cfd",
+  "Data/Plateau/Inventory/park_signs.json": "2564aace477f46945f6250048ef8138354db2ddf251c6ccd0ab87d95c4cd8de4",
+  "Scripts/plateau_park_signs.py": "7fbf73b266a8a977281f9f315ac93bd4af4f113738d36c8965853c703f1e7bf7",
+  "Data/Plateau/ReplicaGeometry/Textures/textures.json": "d3c44cc89c3ac1027ff2b2cf4f74907dff4e567deb820161c3e48acb932c7794",
+  "Data/Plateau/ReplicaGeometry/Trees/manifest.json": "91b4e48c9a05414a1af4dc3729eb7dbd29c3312e2ccd3d243583b262af003ffb",
+  "Data/Plateau/ReplicaGeometry/Plex/yard_trees.json": "c2b001bf09e28051f1b2c31cec565bfda3ed80b0b8947bdf036c8d6e80b8f106",
+  "Data/Plateau/BaseGeometry/Grass.obj": "fefb28c0bce380bb446f387073cdc53b5041d9b2ad839fcf3de1eb18ee543f0a",
+  "Data/Plateau/BaseGeometry/Path.obj": "0778ed81724fa1adda30a18b439eb72bec0dbe85165bd37e7d49d0831fc12bc9",
+  "Data/Plateau/BaseGeometry/Water.obj": "155dd0d25631985f0a001860513276a10d586f0f4686f80f986d624b1f4d5ed6",
+  "Data/Plateau/BaseGeometry/Court.obj": "a0621b610a1f71a47d46fd854dbc699241acd0057ed203b67b0375fb45cb6fc9",
+  "Data/Plateau/BaseGeometry/Road.obj": "e4b16175fa72063c31804f71a34648c90e8cafdaea57e373de947548b3fbed71",
+  "Data/Plateau/ParkGeometry/AutumnGold_XP000_YM001.obj": "2d5b592eed24e37dd1d3cff75948db5af66758923d72f5206075be6dd64a5cf6",
+  "Data/Plateau/ParkGeometry/AutumnGold_XP000_YM002.obj": "d04edff4cd05400945e20bf570a00adab11c3b55f1ab78b04a949fb610957997",
+  "Data/Plateau/ParkGeometry/AutumnGold_XP000_YM003.obj": "6566571ffb8ce3c4bc06f4872fe35b3fd9d9ff21ced201278eb864bd26570f34",
+  "Data/Plateau/ParkGeometry/AutumnGold_XP001_YM001.obj": "a3ecd2d6b8e0e71f959db0ed37f89b6929e8db55342c8930c6cb8a1361c1b106",
+  "Data/Plateau/ParkGeometry/AutumnGold_XP001_YM002.obj": "c543d841009bfb9b67eaaac158cbdbe90e21b2b0bc9cdea63e2003637c6914e9",
+  "Data/Plateau/ParkGeometry/AutumnGold_XP001_YM003.obj": "f79f313499defb3fb3d4a0b31b3677090cbcefeb85d7bd28d2f4105057cfc22f",
+  "Data/Plateau/ParkGeometry/AutumnGold_XP001_YP000.obj": "ea92a893c863d4f45c67b356385d21b20d68863b21ec6b46ff28843a3e7ea21c",
+  "Data/Plateau/ParkGeometry/AutumnGold_XP002_YM002.obj": "3ef9cddc4257a72c44477155061ac9a4a65b36d7cd14e0225a1c72523ee5f5eb",
+  "Data/Plateau/ParkGeometry/AutumnGold_XP002_YM003.obj": "24d61dd6c6f43e9b32b40b627fa5b1cd21d3e04405fa32f0eeaacc92d8b8a8c1",
+  "Data/Plateau/ParkGeometry/AutumnGold_XP003_YP000.obj": "d5026047f0806a201568c31b1924d7c4f4ff2cae22a13b09d491ccb24b4c0304",
+  "Data/Plateau/ParkGeometry/AutumnGold_XP004_YM001.obj": "051912898249aebee4c1cd9dc5254b109c9208f425afd199424b8ec89a491c1e",
+  "Data/Plateau/ParkGeometry/AutumnGold_XP004_YP000.obj": "bffbb5fa341eee2a43c373bb6feb36e958145f357721e11cf6559d21e819628e",
+  "Data/Plateau/ParkGeometry/AutumnGold_XP004_YP001.obj": "fa7acc49a7f890bf1ccb59ff21c97f5e641b4ffbd065654db54088e199a4e4f1",
+  "Data/Plateau/ParkGeometry/AutumnGold_XP005_YM001.obj": "9de7bae8d4a022c7f4da6b7503ebf629cc666f5b3421416a15dab31c453bd226",
+  "Data/Plateau/ParkGeometry/AutumnGold_XP005_YP000.obj": "e7213f70ea262ef02800f20438c0ed625cd842a3fe55fcda4715f7f0547de4fa",
+  "Data/Plateau/ParkGeometry/AutumnGold_XP005_YP001.obj": "e1d171e5a6b1fbf3a0c608a0d95e50f570606bf5f3bed7f731922f84e9ea6f01",
+  "Data/Plateau/ParkGeometry/AutumnRust_XP000_YM001.obj": "f2803c4d9eac23ffbf29570ad91d9c2eb7ea3c220d06a94181a9450e459c0c1d",
+  "Data/Plateau/ParkGeometry/AutumnRust_XP000_YM002.obj": "22915341f041ee410733f7e77c95260781719ed869920c63c4c3a6f78d1a3840",
+  "Data/Plateau/ParkGeometry/AutumnRust_XP000_YM003.obj": "2076175bf76ebef49f1773e52cb3c8c68c170cfc0bfaaab3a4570aa75f4f6157",
+  "Data/Plateau/ParkGeometry/AutumnRust_XP001_YM001.obj": "4c720d8ff1085ea48aa76c16529b44cf8d6bfb7628ff2d105067058ca2b93cb9",
+  "Data/Plateau/ParkGeometry/AutumnRust_XP001_YM002.obj": "9135540b9dba8b53f13006bc2a0dce97cb2633fe00a4b9a4c27d15be692ce0d1",
+  "Data/Plateau/ParkGeometry/AutumnRust_XP001_YM003.obj": "265261b3a271de8300043ed460287944829913069c76aa57bc12d4bfa6ba6ad4",
+  "Data/Plateau/ParkGeometry/AutumnRust_XP001_YP000.obj": "8ff5f33930daae78e2e45c5c6e9d4232196cf75ae1411903b683f033f8d60b61",
+  "Data/Plateau/ParkGeometry/AutumnRust_XP002_YM002.obj": "824b2a630e7064cbb3ab6b14563e64a69bcbb3495656fe92245ddef91cdee909",
+  "Data/Plateau/ParkGeometry/AutumnRust_XP002_YM003.obj": "b0c82efc187156f12712fabf0681129e915a44caf3976856f0621ebf61b48995",
+  "Data/Plateau/ParkGeometry/AutumnRust_XP003_YP000.obj": "0bdc95f51d3323a6e4a1af783ee209a795ec7afef7b51d8ed2f12986b25860ee",
+  "Data/Plateau/ParkGeometry/AutumnRust_XP004_YM001.obj": "ec886734067fa67664115d1bcae50c4ccb863eef652abbb8e1345b3b015104b3",
+  "Data/Plateau/ParkGeometry/AutumnRust_XP004_YP000.obj": "451c7e4ef9542d0d892f0f3e6ede72e0e540654e1e195bfff72dd9859825ab7f",
+  "Data/Plateau/ParkGeometry/AutumnRust_XP004_YP001.obj": "38dd699d4d502f5c1b27a328ff8904e9cea67d8f4c44465d7311317c3d771eac",
+  "Data/Plateau/ParkGeometry/AutumnRust_XP005_YP000.obj": "a071df7d88341476e9148d1fcea0a445dda98556c8e2ca01f6b7181d533d1cb9",
+  "Data/Plateau/ParkGeometry/AutumnRust_XP005_YP001.obj": "a9cbc0ea7e03ee0ba6c03f33ef767c10f10fb3bdd821a1767ec603f92a592b6f"
+ },
+ "attribution": "© OpenStreetMap contributors, ODbL 1.0; authored street details and original murals",
+ "z_cm": {
+  "alley": 6.8,
+  "asphalt": 7.0,
+  "paint": 7.1,
+  "sidewalk_top": 18.0,
+  "dropped_curb": 9.0
+ },
+ "runtime": {
+  "asphalt_mesh_prefix": "SM_Asphalt",
+  "curb_mesh_prefix": "SM_Concrete_Collision",
+  "curb_top_cm": 18.0,
+  "curb_min_from_traffic_centreline_cm": 550.0,
+  "traffic_clear_cm": 300.0
+ },
+ "cameras": [
+  {
+   "name": "ReplicaMentana",
+   "position": [
+    -30500,
+    21800,
+    170
+   ],
+   "target": [
+    -27000,
+    26500,
+    300
+   ]
+  },
+  {
+   "name": "ReplicaFabre",
+   "position": [
+    -6000,
+    44000,
+    170
+   ],
+   "target": [
+    -2600,
+    48800,
+    300
+   ]
+  },
+  {
+   "name": "ReplicaRachelPark",
+   "position": [
+    -15500,
+    30500,
+    170
+   ],
+   "target": [
+    -11000,
+    33500,
+    250
+   ]
+  },
+  {
+   "name": "ReplicaPapineau",
+   "position": [
+    24500,
+    44000,
+    170
+   ],
+   "target": [
+    27500,
+    49500,
+    300
+   ]
+  },
+  {
+   "name": "ReplicaSherbrooke",
+   "position": [
+    36000,
+    6200,
+    170
+   ],
+   "target": [
+    41000,
+    8800,
+    300
+   ]
+  }
+ ],
+ "street_trees": "street_trees.json",
+ "street_trees_sha256": "08a433fdc38a40dfab9130d51a9364fb341fba34d8cf6e48fc104a7f27849a3d",
+ "bike_paint": "bike_paint.json",
+ "bike_paint_sha256": "ac20d2dca4a0fc2c8b363e63213046548302b380355b23b729a9b809924180fe",
+ "paint_marks": "paint_marks.json",
+ "paint_marks_sha256": "0dc4e409b2818c9d4b2466f2fc75d1b8a3a9f8043b550db71a909075d9d65712"
+}

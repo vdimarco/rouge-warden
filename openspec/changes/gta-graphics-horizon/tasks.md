@@ -1,0 +1,4 @@
+- [x] Weight the comic aerial fade by view-ray elevation
+- [x] Shade a long street before and after
+- [x] Run `Scripts/test_horizon_haze.py` and the comic checks in `Scripts/test_plateau_trees.py`
+- [ ] Apply the comic material in Unreal (editor not available here)

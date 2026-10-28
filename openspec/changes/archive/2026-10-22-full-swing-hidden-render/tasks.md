@@ -1,0 +1,5 @@
+- [x] Inspect rendering/visibility paths and reproduce hidden draws.
+- [x] Add the scoped flat-page guard.
+- [x] Focused browser checks; CI integration added.
+- [x] PR/review/current preview/rebase/merge/production.
+- [x] Canonical spec/archive after release.

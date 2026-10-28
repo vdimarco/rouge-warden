@@ -16,6 +16,7 @@ const SPEC = {
     S_TOP: k(30, 26, 36),           // u/s, gas held
     S_BOOST: k(42, 38, 50),         // u/s, boost held
     S_DB_X: k(1.25, 1.15, 1.35),    // drift-boost target = S_TOP × this (37.5 u/s)
+    ENTRY_HOLD: k(2, 0, 3),         // s an arrival faster than S_TOP keeps its speed before easing to cruise
     S_CAP: k(48, 44, 56),           // u/s, nothing goes faster
     K_LOW: k(3.0, 2.5, 4.0),        // per s, approach below cruise
     K_GAS: k(0.75, 0.6, 1.0),       // per s, cruise to top
@@ -110,6 +111,7 @@ const SPEC = {
     CHAIN_GAP: k(3, 2, 5),          // s with no event banks the chain
     CHAIN_STEPS: k([3, 6, 10, 15], [2, 4, 7, 11], [4, 8, 13, 20]), // chain length for each multiplier step
     CHAIN_MULT: k([2, 3, 4, 5], [2, 3, 4, 5], [2, 3, 4, 5]),
+    CHAIN_BAR: k(0.03, 0, 0.06),    // bar a banked chain pays per multiplier step (×4: +12%)
   },
 
   // Plane, pitch, bank and the floor (6.5).
@@ -160,6 +162,7 @@ const SPEC = {
     TAKEDOWN_SPIN: k(1.2, 0.8, 2.0),// s the target spins
     TAKEDOWN_SPIN_X: k(0.4, 0.2, 0.6), // its speed while spinning
     TAKEDOWN_KEEP: k(0.95, 0.85, 1),
+    TAKEDOWN_STOP: k(0.1, 0, 0.15), // s of hit-stop on a takedown (a side hit or a ram)
     CONTACT_HARD: k(6, 4, 8),       // u/s, a cargo contact
   },
 
@@ -257,17 +260,19 @@ const SPEC = {
     DUST_PLANE_H: k(5, 2, 10),      // u
     DUST_STREAK: k(45, 30, 70),     // ms of speed per streak
     DUST_STREAK_MAX: k(2.4, 1.2, 4),// u
-    SHAKE_MAX: k(4, 2, 6),          // deg; shake = trauma²
+    SHAKE_MAX: k(4, 2, 6),          // deg; shake = the larger of trauma² and SHAKE_LIN × trauma
+    SHAKE_LIN: k(0.5, 0, 1),        // the linear floor, so a NEAR (0.24°) and a HAIRLINE (0.4°) can be seen
     SHAKE_MAX_U: k(0.3, 0.1, 0.5),  // u
     SHAKE_DECAY: k(1, 0.5, 2),      // trauma per s
     TRAUMA: {                       // trauma added by each event type
       near: k(0.12, 0, 0.3),
       hairline: k(0.20, 0, 0.4),
-      driftBoost: k([0.10, 0.15, 0.20], [0, 0, 0], [0.3, 0.3, 0.4]), // per tier
+      driftBoost: k([0.25, 0.35, 0.45], [0, 0, 0], [0.4, 0.5, 0.6]), // per tier
       boostStart: k(0.15, 0, 0.3),
       scrape: k(0.30, 0.1, 0.5),
       crash: k(0.60, 0.3, 0.8),
       bigCrash: k(0.85, 0.5, 1),
+      takedown: k(0.50, 0.2, 0.8),  // harder than a crash feels: you won
       punch: k(0.50, 0.2, 0.8),
     },
     BOOST_PHI: k(0.12, 0, 0.25),    // sky rapidity hint × boost fraction in zones
@@ -289,7 +294,6 @@ const SPEC = {
     RUNUP_BEND: k(40, 20, 60),      // deg per ring toward the target
     RING_R: k(3.5, 2.5, 5),         // u, launch ring radius
     RUNUP_REFORM: k(80, 50, 120),   // u ahead after a miss
-    RUNUP_CANCEL: k(1, 0.5, 2),     // s of brake calls it off
     PUNCH_STOP: k(0.12, 0.05, 0.2), // s of hit-stop
     PUNCH_LOCK: k(0.4, 0.2, 0.6),   // s with input locked
     PUNCH_T: k(1.5, 1, 2),          // s, punch to the run
@@ -350,6 +354,7 @@ const SPEC = {
     // The corridor (WP5): sizes in u, times in s.
     SOFT_L: k(18, 14, 24),          // s, the soft first jump's length
     RUNUP_PASS: k(1.4, 1, 2),       // a launch ring counts within this × RING_R
+    RUNUP_PASS_TOUCH: k(2, 1, 2.5), // the same on touch (a thumb lines up less tightly)
     RUNUP_WAIT: k(110, 90, 150),    // deg: a target further off than this holds the first ring back
     ARRIVE_S: k(42, 30, 48),        // u/s at the drop-out
     SHIP_R: k(0.6, 0.4, 0.9),       // the ship's hit radius in the corridor

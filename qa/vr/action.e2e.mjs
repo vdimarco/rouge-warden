@@ -237,6 +237,96 @@ try {
   });
   check(now.names.some((n) => /^Your job/.test(n)) && !now.names.some((n) => /^Odd job/.test(n)), "while you are on a job the map pins that job, and no other markers", now.names);
 
+  const wheel = await page.evaluate(() => {
+    if (G.ui.paused) G.ui.closePause();
+    if (G.jobs.active) G.jobs.cancel();
+    G.test.job("wheel");
+    QA.step(8);
+    const ob = G.game.progress.objective;
+    G.test.render(0);
+    return { title: ob && ob.title, detail: ob && ob.detail, job: G.test.action().jobs.active && G.test.action().jobs.active.type, state: G.state };
+  });
+  await page.screenshot({ path: out + "/wheel.png" });
+  check(wheel.job === "wheel" && /STOP THE WHEEL/.test(wheel.title || "") && /front of it/i.test(wheel.detail || ""), "a loose wheel asks you to get in front of it", wheel);
+  const stop = await page.evaluate(() => {
+    const goal = G.game.progress.objective && G.game.progress.objective.goal;
+    if (!goal) return { air: null, y: 0, job: "missing" };
+    G.P.pos.x = goal.x; G.P.pos.y = goal.y + 6; G.P.pos.z = goal.z;
+    G.P.onGround = false; G.P.vel.x = G.P.vel.y = G.P.vel.z = 0;
+    QA.step(2);
+    const air = { job: G.test.action().jobs.active && G.test.action().jobs.active.type, detail: G.game.progress.objective && G.game.progress.objective.detail };
+    const g2 = G.game.progress.objective && G.game.progress.objective.goal;
+    if (g2) { G.P.pos.x = g2.x; G.P.pos.y = 0; G.P.pos.z = g2.z; }
+    G.P.onGround = true; G.P.vel.x = G.P.vel.y = G.P.vel.z = 0;
+    QA.step(1);
+    return { air, y: G.P.vel.y, job: G.test.action().jobs.active && G.test.action().jobs.active.type, title: G.game.progress.objective && G.game.progress.objective.title };
+  });
+  check(stop.air && stop.air.job === "wheel" && /Land in front/.test(stop.air.detail || ""), "the air does not stop the wheel", stop);
+  check(stop.y > 3 && !stop.job, "landing in front of the wheel bumps you off it", stop);
+
+  const kite = await page.evaluate(() => {
+    if (G.ui.paused) G.ui.closePause();
+    if (G.jobs.active) G.jobs.cancel();
+    G.test.job("kite");
+    QA.step(8);
+    const ob = G.game.progress.objective;
+    G.test.render(0);
+    return { title: ob && ob.title, detail: ob && ob.detail, job: G.test.action().jobs.active && G.test.action().jobs.active.type, state: G.state };
+  });
+  await page.screenshot({ path: out + "/kite.png" });
+  check(kite.job === "kite" && /HOLD THE KITE/.test(kite.title || "") && /Stay above/i.test(kite.detail || ""), "a kite asks you to stay above it", kite);
+  const held = await page.evaluate(() => {
+    const goal = G.game.progress.objective && G.game.progress.objective.goal;
+    if (!goal) return { low: null, y: 0, job: "missing" };
+    G.P.pos.x = goal.x; G.P.pos.y = 0; G.P.pos.z = goal.z;
+    G.P.onGround = true; G.P.vel.x = G.P.vel.y = G.P.vel.z = 0;
+    QA.step(2);
+    const low = { job: G.test.action().jobs.active && G.test.action().jobs.active.type, detail: G.game.progress.objective && G.game.progress.objective.detail };
+    let won = null;
+    for (let i = 0; i < 360 && !won; i++) {
+      const g = G.game.progress.objective && G.game.progress.objective.goal;
+      if (!g) { won = { y: G.P.vel.y, title: G.game.progress.objective && G.game.progress.objective.title, i }; break; }
+      G.P.pos.x = g.x; G.P.pos.y = g.y + 3; G.P.pos.z = g.z;
+      G.P.onGround = false; G.P.vel.x = G.P.vel.y = G.P.vel.z = 0;
+      QA.step(1);
+      if (!(G.test.action().jobs.active)) won = { y: G.P.vel.y, title: G.game.progress.objective && G.game.progress.objective.title, i };
+    }
+    return { low, won, job: G.test.action().jobs.active && G.test.action().jobs.active.type };
+  });
+  check(held.low && held.low.job === "kite" && /Stay above/i.test(held.low.detail || ""), "the ground does not hold the kite", held);
+  check(held.won && held.won.y > 3 && !held.job, "staying above the kite launches you", held);
+
+  const line = await page.evaluate(() => {
+    if (G.ui.paused) G.ui.closePause();
+    if (G.jobs.active) G.jobs.cancel();
+    G.test.job("line");
+    QA.step(8);
+    const ob = G.game.progress.objective;
+    G.test.render(0);
+    return { title: ob && ob.title, detail: ob && ob.detail, job: G.test.action().jobs.active && G.test.action().jobs.active.type, state: G.state };
+  });
+  await page.screenshot({ path: out + "/line.png" });
+  check(line.job === "line" && /RIDE THE LINE/.test(line.title || "") && /Swing onto/i.test(line.detail || ""), "a line asks you to swing onto it", line);
+  const ride = await page.evaluate(() => {
+    const goal = G.game.progress.objective && G.game.progress.objective.goal;
+    if (!goal) return { slow: null, y: 0, job: "missing" };
+    G.P.pos.x = goal.x; G.P.pos.y = 0; G.P.pos.z = goal.z;
+    G.P.onGround = true; G.P.vel.x = 16; G.P.vel.y = 0; G.P.vel.z = 0;
+    QA.step(2);
+    const slow = { job: G.test.action().jobs.active && G.test.action().jobs.active.type, detail: G.game.progress.objective && G.game.progress.objective.detail };
+    const g2 = G.game.progress.objective && G.game.progress.objective.goal;
+    if (g2) { G.P.pos.x = g2.x; G.P.pos.y = g2.y; G.P.pos.z = g2.z; }
+    G.P.onGround = false; G.P.vel.x = 16; G.P.vel.y = 0; G.P.vel.z = 0;
+    let won = null;
+    for (let i = 0; i < 180 && !won; i++) {
+      QA.step(1);
+      if (!(G.test.action().jobs.active)) won = { y: G.P.vel.y, title: G.game.progress.objective && G.game.progress.objective.title, i };
+    }
+    return { slow, won, job: G.test.action().jobs.active && G.test.action().jobs.active.type };
+  });
+  check(ride.slow && ride.slow.job === "line" && /Swing onto/i.test(ride.slow.detail || ""), "standing on the line does not catch it", ride);
+  check(ride.won && ride.won.y > 3 && !ride.job, "swinging onto the line carries you off the end", ride);
+
   check(page.errors.length === 0, "no errors in flat play", page.errors);
   await page.context().close();
 } catch (e) { check(false, "the flat-play run threw", e.stack || String(e)); }

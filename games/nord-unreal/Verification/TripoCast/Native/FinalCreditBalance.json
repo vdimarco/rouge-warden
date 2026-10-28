@@ -1,0 +1,18 @@
+{
+  "recorded_utc": "2026-10-18T00:36:34.517935+00:00",
+  "scope": "Read-only actual API credit snapshot after all cast jobs; no paid task or purchase",
+  "balance": {
+    "balance": 5.0,
+    "frozen": 0.0
+  },
+  "endpoint": "GET /v3/account/balance",
+  "official_endpoint_reference": "https://developers.tripo3d.ai/en/docs/account",
+  "private_receipt_sha256": "533277aebb0bc91468cd1d042442374808d1841acfeb7ab210d914f892df0a54",
+  "paid_jobs_submitted": 0,
+  "prior_read_only_probe": {
+    "endpoint": "GET /v3/user/balance",
+    "http_status": 404,
+    "paid_job_or_charge": false,
+    "correction": "Checked current official account documentation before this different endpoint; failed receipt preserved privately"
+  }
+}

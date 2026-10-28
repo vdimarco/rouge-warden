@@ -1,0 +1,62 @@
+PASS: a goon who sees the hero walks up, winds up and punches; the hero loses a heart
+PASS: no blow lands while the hero rolls or drives (safe)
+PASS: a goon on the street goes round a block corner to the hero, not into the wall
+PASS: a goon whose straight way a post blocks slides past it
+PASS: punch, punch, kick: the combo knocks a goon down, and he sinks away
+PASS: a punch out of reach does nothing
+PASS: a rope yanks a goon to the hero's feet and he goes down
+PASS: a dive landing flattens the goons round it; a car knocks them over
+PASS: goons keep to their surface: a roof guard never walks off the edge
+PASS: the hero's hearts come back after a quiet while
+PASS: a goon who winds up near the hero is a threat; a dodge in the wind-up makes his blow miss (a perfect dodge)
+PASS: with no dodge, the same blow lands
+PASS: perch takedown: from above, an unaware guard is lifted and hangs; the guard beside him does not notice
+PASS: no takedown on a guard who has seen the hero, or from the same level: a plain pull
+PASS: the combo count and the focus meter; a full meter finishes every goon in reach
+PASS: a rope pull drags the goons beside the caught one into a heap at the hero's feet
+PASS: a throw hits the goon the hero faces, in range, then waits its cool-down
+PASS: parked cars wait at kerbs round the player, clear of buildings and junctions
+PASS: in, drive, steer, brake, out
+PASS: a car never drives into a building: it stops and bounces
+PASS: car against car: a driven car meets a parked car, they never overlap, and the parked car is pushed
+PASS: the driven car hits a street car: it becomes a real car and takes the hit
+PASS: trafficAt follows the traffic shader for every heading, and wraps like GLSL mod
+PASS: nearTraffic: a street car beside the hero is in reach; expressway, hidden and lane-end cars are not
+PASS: steal: the street car becomes a stopped car to drive, in its colour; it outlives the parked range, then gives the traffic car back
+PASS: steal with every car slot taken reuses the farthest car; no theft while driving
+PASS: the robbed driver jumps out, runs to the sidewalk and flees away from the hero
+PASS: a crime starts near the hero with a shout and a marker, is taken from close, and is over after a minute if nobody comes
+PASS: Mugging: beat the three goons and the victim thanks you, with a quip
+PASS: Getaway Car: it drives itself along the streets; a rope stops it, the crew jumps out, and beating them ends it
+PASS: Getaway Car: left alone it gets away
+PASS: Sludge Tanker: three plunges seal the leak; with the crew down it is done; the clock runs out and it floods
+PASS: Sludge Run: catch the runner, beat his crew, the bomb is defused
+PASS: Sludge Run left alone: the runner reaches the drain and it fails
+PASS: Sludge Run waits out the first swing: the runner and the clock stay until the chase is released
+PASS: Catch!: be there when they fall, then land to set them down
+PASS: Catch! missed: the dumpster breaks the fall and the job fails
+  INFO: 97 catch jobs, the shortest fall 3.6 s
+PASS: Catch!: every fall drops clear to the street, with time to get there (no ledge in the way)
+PASS: Window Washer: reach him, carry him down to the street
+PASS: the eighth-flush washer hangs for 36 s inside a swing, and an odd job keeps 60
+PASS: Pizza Rush: on the roof in time pays, late is a cold pizza
+PASS: Balloon Chase: grab it, give it back; or it floats away
+PASS: Rooftop Brawl: two waves, then it is cleared
+PASS: Taxi!: on foot the fare only shouts; driving into the marker takes the job
+PASS: driving through any other marker starts nothing, and the marker stays
+PASS: Taxi!: drive the fare to the pin for the fare and a tip; out of the car too long, or too slow, and they leave
+PASS: Taxi!: the drop is on a street across town, and the clock allows the drive
+PASS: Stop, Thief!: run him down and the purse goes back; let him run and he gets away
+PASS: Stop, Thief!: his run keeps to the streets, clear of buildings and water, and turns corners
+PASS: Stop, Thief!: falling behind speeds him up, and staying close keeps the jog
+PASS: Sludge Run: falling behind speeds the runner, and the first-swing wait still holds him
+PASS: A miss names itself: got away, and the drain
+PASS: markers: four offers of different jobs round the player, and walking into one starts it
+PASS: After the bomb the story is a thief, a catch, a brawl, then a pizza, and none of them is a clog
+PASS: a long clock turns the card hot in the last stretch, and time put back brings the ink
+PASS: the crew clock is a new opening, so a fresh 40 s is not already hot
+PASS: a short edge stays ink, and a falling person turns the card hot
+PASS: a low balloon stays ink, and one at 140 m turns the card hot
+PASS: the ninth-flush car drives faster than an odd-job getaway
+PASS: Seat the Lid: standing on it for 6 s seats it, leaving slips the hold, and the clock pops it
+PASS: action

@@ -1,0 +1,4 @@
+- [x] Fill the radar heading and case it in ink
+- [x] Shade the disc before and after
+- [x] Run `Scripts/test_radar_arrow.py`
+- [ ] Confirm the wedge in Unreal (editor not available here)

@@ -1,19 +1,138 @@
-/* Title screen: the trailer plays behind the start card. */
+@font-face { font-family: Bungee; src: url("./bungee-400.woff2") format("woff2"); font-display: swap; }
+@font-face { font-family: Barlow; src: url("./barlow-condensed-500.woff2") format("woff2"); font-weight: 500; font-display: swap; }
+@font-face { font-family: Barlow; src: url("./barlow-condensed-700.woff2") format("woff2"); font-weight: 700; font-display: swap; }
+
+/* Title screen: the trailer loop plays full bleed behind the badge and one comic panel. */
 .hero-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; pointer-events: none; }
-#overlay { align-content: safe center; gap: 22px; overflow-y: auto; background: linear-gradient(180deg, #0b0a1699 0%, #0b0a16c7 55%, #0b0a16f0 100%); }
-.hero { text-align: center; text-shadow: 0 2px 12px #000; }
-.hero-title { margin: 0; color: var(--yellow); font: 900 clamp(46px, 8vw, 108px)/.92 Impact, "Arial Black", Arial, sans-serif; letter-spacing: -1px; text-shadow: 6px 6px 0 #c2185b, 0 0 28px #000; }
-.hero-tagline { margin: 12px 0 16px; font-size: clamp(13px, 1.6vw, 18px); font-weight: 900; letter-spacing: 2px; }
-#watch-trailer { min-height: 44px; padding: 10px 18px; background: var(--yellow); color: var(--ink); border-color: var(--ink); font-size: 15px; box-shadow: 5px 5px 0 var(--cyan); }
-#watch-trailer:hover { background: var(--paper); color: var(--ink); border-color: var(--ink); }
+#overlay { --pink: #ed2865; grid-template-columns: minmax(0, 1fr) minmax(300px, 440px); align-items: center; justify-items: stretch; justify-content: center; align-content: center; gap: 24px clamp(28px, 5vw, 72px); overflow-y: auto; padding: 24px max(24px, calc((100% - 1180px) / 2));
+  /* The badge's angled cyan, yellow and hot-pink panels, partly see-through so the title loop shows. */
+  background: radial-gradient(circle, #0b0a162e 1px, transparent 1.5px) 0 0 / 6px 6px, linear-gradient(155deg, transparent 0 76%, var(--ink) 76% 77%, #ed2865cc 77%), linear-gradient(25deg, #ffe33fcc 0 12%, var(--ink) 12% 13%, transparent 13%), #24c9db99; }
+#overlay, body > header, body > footer { font-family: Barlow, "Arial Narrow", Arial, sans-serif; }
+
+/* The badge is the Play button; a yellow stamp marks its lower third. */
+#overlay #start.badge-launch { position: relative; justify-self: center; width: min(100%, 64dvh, 560px); aspect-ratio: 1; padding: 0; border: 0; border-radius: 50%; background: transparent; box-shadow: none; transition: transform .15s; }
+#overlay #start.badge-launch:hover { background: transparent; transform: rotate(-2deg) scale(1.02); }
+#overlay #start.badge-launch:focus-visible { outline: 4px solid var(--yellow); outline-offset: 6px; }
+.comic-badge { display: block; width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(8px 8px 0 var(--ink)); }
+.play-label { position: absolute; top: 76%; left: 50%; transform: translate(-50%, -50%); padding: .2em .7em .15em; border: 3px solid var(--ink); background: var(--yellow); color: var(--ink); box-shadow: 5px 5px 0 var(--ink); font: 400 clamp(24px, 3.2vw, 40px)/1 Bungee, Impact, sans-serif; letter-spacing: .04em; white-space: nowrap; animation: play-pulse 1.8s ease-in-out infinite; pointer-events: none; }
+.play-label::before { content: "▶"; margin-right: .35em; font-size: .7em; vertical-align: .12em; }
+@keyframes play-pulse { 0%, 100% { transform: translate(-50%, -50%) scale(1); } 50% { transform: translate(-50%, -50%) scale(1.07); } }
+
+/* One cream panel: title, connection status, then the actions. */
+#overlay .panel { min-width: 0; border: 4px solid var(--ink); background: var(--paper); color: var(--ink); box-shadow: 9px 9px 0 var(--pink), 13px 13px 0 var(--ink); }
+#overlay .hero { padding: 20px 24px 14px; border-bottom: 3px solid var(--ink); background: var(--yellow); text-align: left; text-shadow: none; }
+#overlay .hero-title { margin: 0; color: var(--ink); font: 400 clamp(30px, 3.4vw, 44px)/1.05 Bungee, Impact, sans-serif; letter-spacing: -.02em; text-shadow: none; }
+#overlay .hero-tagline { margin: 6px 0 0; font-size: 16px; font-weight: 700; letter-spacing: .08em; }
+#overlay .caption { width: auto; padding: 18px 24px 20px; border: 0; border-left: 7px solid var(--pink); background: none; box-shadow: none; color: var(--ink); }
+#overlay .eyebrow { display: inline-flex; align-items: center; gap: 7px; margin: 0 0 8px; padding: 3px 9px 2px; border: 2px solid var(--ink); color: #9d1643; font: 400 12px/1 Bungee, Impact, sans-serif; letter-spacing: .08em; }
+#overlay .eyebrow::before { content: ""; width: 9px; height: 9px; border-radius: 50%; background: #9c9590; }
+body[data-state="idle"] #overlay .eyebrow::before, body[data-state="ready"] #overlay .eyebrow::before { background: #12a150; }
+body:is([data-state="connecting"], [data-state="selecting"]) #overlay .eyebrow::before { background: #e7a400; }
+body:is([data-state="error"], [data-state="disconnected"], [data-state="offline"]) #overlay .eyebrow::before { background: var(--pink); }
+#overlay .caption h1 { margin: 0 0 6px; font: 400 clamp(20px, 2vw, 26px)/1.15 Bungee, Impact, sans-serif; letter-spacing: -.03em; }
+#overlay #status-detail { font-size: 18px; line-height: 1.3; }
+/* Buttons: one big yellow main action with an arrow, then a row of smaller paper buttons. */
+#overlay .actions { display: flex; margin-top: 16px; }
+#overlay .actions button { flex: 1; display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 60px; padding: 10px 20px; border: 3px solid var(--ink); background: var(--yellow); color: var(--ink); box-shadow: 5px 5px 0 var(--ink); font: 400 21px/1 Bungee, Impact, sans-serif; letter-spacing: .02em; transition: transform .08s, box-shadow .08s; }
+#overlay .actions button::after { content: "→"; font: 700 28px/1 Arial, sans-serif; }
+#overlay .actions button:hover:enabled { background: var(--cyan); border-color: var(--ink); color: var(--ink); }
+#overlay .actions button:active:enabled { transform: translate(4px, 4px); box-shadow: 1px 1px 0 var(--ink); }
+/* With the host offline, Connect reads as waiting rather than as a broken button. */
+#overlay .actions button:disabled { opacity: 1; border-style: dashed; background: transparent; color: #7a736c; box-shadow: none; cursor: not-allowed; }
+#overlay .actions button:disabled::after { content: "WAITING FOR HOST"; font: 700 14px/1 Barlow, "Arial Narrow", Arial, sans-serif; letter-spacing: .08em; }
+#overlay .media-actions { display: flex; gap: 10px; padding: 0 24px 20px; border-left: 7px solid var(--pink); }
+#overlay .secondary { flex: 1 1 0; display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-width: 0; min-height: 46px; padding: 8px 14px; border: 2px solid var(--ink); background: var(--paper); color: var(--ink); box-shadow: 3px 3px 0 var(--ink); font: 400 13px/1 Bungee, Impact, sans-serif; letter-spacing: .02em; white-space: nowrap; transition: transform .08s, box-shadow .08s; }
+#overlay .secondary svg { width: 18px; height: 18px; flex: none; fill: currentColor; stroke: currentColor; stroke-width: 0; }
+#overlay .secondary svg .wave { fill: none; stroke-width: 2; stroke-linecap: round; }
+#overlay .secondary:hover:enabled { background: var(--cyan); border-color: var(--ink); color: var(--ink); }
+#overlay .secondary:active:enabled { transform: translate(3px, 3px); box-shadow: 0 0 0 var(--ink); }
+#overlay :is(.actions button, .secondary):focus-visible { outline: 3px solid #9c1041; outline-offset: 3px; }
+#overlay .small { margin: 14px 0 0; font-size: 14px; line-height: 1.35; color: #47414a; }
+
+#frame:fullscreen #overlay { padding-top: 68px; }
+
 /* The full trailer covers the whole screen, with Close in the top corner. */
 #trailer-dialog { width: 100%; height: 100%; max-width: none; max-height: none; margin: 0; padding: 0; border: 0; background: #000; color: var(--paper); overflow: hidden; }
 #trailer-dialog::backdrop { background: #000; }
 .trailer-stage { position: relative; width: 100%; height: 100%; background: #000; }
 #trailer-video { display: block; width: 100%; height: 100%; object-fit: contain; background: #000; }
 #close-trailer { position: absolute; top: max(12px, env(safe-area-inset-top)); right: max(12px, env(safe-area-inset-right)); z-index: 1; min-height: 44px; background: var(--yellow); color: var(--ink); border-color: var(--ink); box-shadow: 4px 4px 0 #c2185b; }
-@media (max-width: 900px) { #overlay { gap: 14px; } .hero-tagline { margin: 8px 0 12px; letter-spacing: 1px; } }
-.hero-sound { position: absolute; top: 12px; right: 12px; z-index: 2; background: var(--yellow); color: var(--ink); border-color: var(--ink); }
-.touch-input .hero-sound { min-height: 44px; }
-/* In fullscreen the title screen's ☰ Menu takes the top right corner. */
-#frame:fullscreen .hero-sound { right: auto; left: max(12px, env(safe-area-inset-left)); }
+
+/* Header and footer read as the printed page around the cover. */
+/* Header and footer: cream lettering on ink with a hot-pink rule, like the badge. */
+body > header { background: var(--ink); color: var(--paper); border-bottom: 4px solid var(--pink, #ed2865); }
+body > header .brand strong { color: var(--paper); font: 400 22px/1 Bungee, Impact, sans-serif; letter-spacing: .02em; text-shadow: 2px 2px 0 #a81044; }
+body > header .brand span { color: var(--paper); font-size: 15px; font-weight: 500; }
+/* ☰ Menu matches the panel buttons: paper face, ink border, hard shadow. */
+:is(body > header, #overlay) .menu-toggle, #overlay .overlay-menu { min-height: 44px; padding: 8px 16px; border: 2px solid var(--ink); background: var(--yellow); color: var(--ink); box-shadow: 3px 3px 0 #ed2865; font: 400 14px/1 Bungee, Impact, sans-serif; letter-spacing: .02em; }
+:is(body > header .menu-toggle, #overlay .overlay-menu):hover:enabled { background: var(--paper); color: var(--ink); border-color: var(--ink); }
+:is(body > header .menu-toggle, #overlay .overlay-menu):active:enabled { transform: translate(3px, 3px); box-shadow: 0 0 0 var(--ink); }
+body > footer { background: var(--ink); color: var(--paper); border-top: 4px solid #ed2865; font-size: 15px; }
+body > footer #input-note, body > footer .controls { color: var(--paper); }
+body > footer .controls b { display: inline-block; margin-right: 3px; padding: 0 5px; border: 2px solid var(--paper); border-radius: 3px; color: var(--paper); line-height: 1.3; }
+body:not([data-state="playing"]) { height: 100dvh; }
+body:not([data-state="playing"]) #frame { min-height: 0; }
+
+/* Phones: a big badge, then the status and two large buttons. The badge already names the game. */
+@media (max-width: 760px) {
+  body:not([data-state="playing"]) > header { padding: 6px 12px; }
+  body:not([data-state="playing"]) > header .brand span { display: none; }
+  body:not([data-state="playing"]) > footer { padding: 6px 12px; font-size: 13px; line-height: 1.3; text-align: center; }
+  body:not([data-state="playing"]) > footer .controls { display: none; }
+  body > header .brand { min-width: 0; white-space: normal; }
+  body > header .brand strong { font-size: 19px; }
+  #overlay { grid-template-columns: minmax(0, 1fr); align-content: center; gap: 18px; padding: 14px 16px 20px; }
+  #overlay #start.badge-launch { width: min(90vw, calc(100dvh - 330px), 440px); min-width: 180px; }
+  .comic-badge { filter: drop-shadow(5px 5px 0 var(--ink)); }
+  .play-label { font-size: clamp(20px, 6.4vw, 30px); box-shadow: 4px 4px 0 var(--ink); }
+  #overlay .panel { box-shadow: 6px 6px 0 var(--pink), 9px 9px 0 var(--ink); }
+  #overlay .hero { display: none; }
+  #overlay .caption { padding: 12px 14px 14px; }
+  #overlay .eyebrow { font-size: 11px; margin-bottom: 6px; }
+  #overlay :is(.caption, .media-actions) { border-left-width: 6px; }
+  #overlay .caption h1 { font-size: 19px; margin-bottom: 4px; }
+  #overlay #status-detail { font-size: 16px; line-height: 1.25; }
+  #overlay .actions { margin-top: 12px; }
+  #overlay .actions button { min-height: 54px; padding: 8px 16px; font-size: 19px; box-shadow: 4px 4px 0 var(--ink); }
+  #overlay .media-actions { padding: 0 14px 14px; gap: 8px; }
+  #overlay .secondary { padding: 8px 8px; font-size: 12px; }
+  #overlay .small { display: none; }
+}
+/* Short phones: a smaller badge keeps the panel on screen without scrolling. */
+@media (max-width: 760px) and (max-height: 700px) {
+  body:not([data-state="playing"]) > footer { font-size: 12px; }
+  #overlay { gap: 12px; padding: 10px 14px 14px; }
+  #overlay #start.badge-launch { width: min(90vw, calc(100dvh - 350px)); min-width: 150px; }
+  .play-label { font-size: 18px; }
+  #overlay .caption h1 { font-size: 17px; }
+  #overlay #status-detail { font-size: 15px; }
+  #overlay .actions button { min-height: 48px; font-size: 17px; }
+  #overlay .media-actions { gap: 8px; }
+  #overlay .secondary { gap: 6px; min-height: 44px; padding: 6px 6px; font-size: 11px; letter-spacing: 0; }
+  #overlay .secondary svg { width: 15px; height: 15px; }
+}
+/* Phones turned sideways and short windows: badge left, compact panel right. */
+@media (max-height: 500px) and (min-width: 761px) {
+  body:not([data-state="playing"]) > header { padding: 4px 12px; }
+  body:not([data-state="playing"]) > header .brand span, body:not([data-state="playing"]) > footer { display: none; }
+  #overlay { gap: 12px 28px; padding: 10px 24px; }
+  #overlay #start.badge-launch { width: min(100%, calc(100dvh - 90px)); }
+  .play-label { font-size: 22px; }
+  #overlay .hero { padding: 10px 16px 8px; }
+  #overlay .hero-title { font-size: 26px; }
+  #overlay .hero-tagline { font-size: 12px; }
+  #overlay .caption { padding: 10px 16px 12px; }
+  #overlay .eyebrow { font-size: 10px; margin-bottom: 4px; }
+  #overlay .caption h1 { font-size: 17px; margin-bottom: 2px; }
+  #overlay #status-detail { font-size: 14px; }
+  #overlay .actions { margin-top: 8px; }
+  #overlay .actions button { min-height: 46px; font-size: 17px; }
+  #overlay .media-actions { padding: 0 16px 12px; }
+  #overlay .secondary { min-height: 44px; font-size: 12px; }
+  #overlay .small { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .play-label { animation: none; }
+  #overlay #start.badge-launch, #overlay .actions button, #overlay .secondary { transition: none; }
+  #overlay #start.badge-launch:hover { transform: none; }
+}

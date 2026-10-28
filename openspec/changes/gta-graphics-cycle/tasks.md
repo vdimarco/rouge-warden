@@ -1,0 +1,5 @@
+- [x] Sample the hoodie walk at six times across its cycle
+- [x] Keep the opening pitch, the socket, the sway, and the null run
+- [x] Check that the thigh and the arm change pose across the cycle
+- [x] Run `Scripts/test_walk_cycle.py`
+- [ ] Confirm the imported walk sequence in Unreal (editor not available here)

@@ -1,0 +1,16 @@
+Traceback (most recent call last):
+  File "/tmp/nord-natural-jump-export-20261017T194039Z/verify_candidate.py", line 142, in <module>
+    report['control_vs_trial']=compare(report['clips']['control'],report['clips']['trial'],ARMS)
+                               ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/nord-natural-jump-export-20261017T194039Z/verify_candidate.py", line 131, in compare
+    assert result[key] <= TOL[tolerance], ('Unexpected semantic difference', key, result[key], TOL[tolerance])
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ('Unexpected semantic difference', 'local_scale_max_abs', 1.3113021850585938e-06, 1e-06)
+FBX version: 7400
+FBX version: 7400
+FBX version: 7400
+
+Error: script failed, file: '/tmp/nord-natural-jump-export-20261017T194039Z/verify_candidate.py', exiting.
+Blender 5.2.2 LTS (hash d13f752e3b9c built 2026-09-15 01:34:58)
+
+Blender quit

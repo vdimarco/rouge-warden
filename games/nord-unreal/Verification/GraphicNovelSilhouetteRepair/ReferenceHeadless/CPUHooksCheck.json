@@ -1,0 +1,47 @@
+{
+  "passed": true,
+  "utc": "2026-10-17T19:08:02.612736+00:00",
+  "cpu_only": true,
+  "native_launched": false,
+  "content_written": false,
+  "settings_touched": false,
+  "ttl_snapshot_created": false,
+  "old_plan_preserved": true,
+  "parent_runner_copy_identical": true,
+  "tests": {
+    "test_crew_prop_reference.py": {
+      "passed": true,
+      "exit_code": 0,
+      "log": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/GraphicNovel/HeadlessCompoundReferencePlan-20261017/test_crew_prop_reference.py.log"
+    },
+    "test_headless_plan.py": {
+      "passed": true,
+      "exit_code": 0,
+      "log": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/GraphicNovel/HeadlessCompoundReferencePlan-20261017/test_headless_plan.py.log"
+    }
+  },
+  "files": {
+    "build_plan.py": "f337308ed001b666d782d79c6f11be41982afd1d9b20673e8c72176996faac8d",
+    "fixture.py": "4c10d999dae16b514e037466ad3f6d33205cf177bf215ec40ce9294ac0c646a9",
+    "wrapper.py": "1bbd860ee5b9eadedd61628d7bf5f9615612e33e98fabe68b80a49ff349d4af9",
+    "headless_hooks.py": "6a78f7b671f3007c1295638b696329fadbbc2ed18beefe77a963d34102fe8331",
+    "crew_prop_trial.py": "9edc5f36934c86e2dfb80cb9620b78f973cb645e4f2dc27c947f6f1339120da3",
+    "source-pins.json": "fe8324037659b21c537710b4b9d20428a6a0b04bc509e1438faf863ddea0122a",
+    "test_headless_plan.py": "82680f006368855f7d20ff0d2a1076f428f6923ff73775ce95a8a30fdf9814a5",
+    "test_crew_prop_reference.py": "c9559927eec0b2031ebec769c8c4b979a2a6931996a7d817675f4f0359612c28",
+    "run_headless.py": "994549d3702d4dd4fe2dbc9813c4a7fa237660480f18e80fa730462042a9d233"
+  },
+  "native_reference_measurement_pending": true,
+  "cpu_predicted_reference_relative_quaternion_xyzw": [
+    0.0746121380784118,
+    0.224637684893198,
+    -0.9553328060518326,
+    0.17694679725364926
+  ],
+  "cpu_predicted_reference_relative_offset_cm": [
+    -0.7567321044396016,
+    -5.467347089357475,
+    10.655302545052614
+  ],
+  "scope": "Reference-derived local transform; live hand readback anchors current animation but does not set calibration. CPU predictions are not a native v2 result or graphics acceptance."
+}

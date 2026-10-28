@@ -1,0 +1,168 @@
+{
+  "passed": true,
+  "refreshed_utc": "2026-10-17T15:05:17.465467+00:00",
+  "method": "Manual delta structure and final diagnostic scope review with lightweight assertions; official OpenSpec CLI not invoked",
+  "cli_on_path": null,
+  "change": "nord-city-quality",
+  "files_sha256": {
+    "proposal.md": "57e0e01d1d240dd387eaa0a54e67fc97ef324c4fbf38d1d304f994365609edab",
+    "design.md": "c813e27904bbfb0efd7a620ace0d0bc71cbe6dec3b9a12850c1d2453d24b390d",
+    "tasks.md": "f98e44fd36fe4955810dd8203d4632331ee77dae8d566b716aaf8518ffd08ec3",
+    "verification.md": "961b8cb7c50f3b314e15e14b27aafd5cabbf6eeb8893dcea9c46463849c3664a",
+    "specs/nord-unreal/spec.md": "14171a1ac2e058d67949144c679ad2eb815f8b509c0d6124b50093131c73f83f"
+  },
+  "requirements": [
+    "Mature graphic-novel character direction",
+    "Isolated native pilot review",
+    "Detailed animated playable crew",
+    "Relaxed default crew expressions",
+    "Populated mapped district",
+    "Recognizable park district appearance",
+    "Save the park story campaign",
+    "Resumable solo and shared campaign",
+    "First story slice observable acceptance",
+    "Responsive racing-style driving",
+    "Smooth character animation",
+    "Textured cottage crew",
+    "Interchangeable playable crew"
+  ],
+  "scenario_count": 29,
+  "scenarios": [
+    {
+      "requirement": "Mature graphic-novel character direction",
+      "scenario": "Review the first style study"
+    },
+    {
+      "requirement": "Mature graphic-novel character direction",
+      "scenario": "Review an implemented character pilot"
+    },
+    {
+      "requirement": "Isolated native pilot review",
+      "scenario": "Opt into the local character"
+    },
+    {
+      "requirement": "Isolated native pilot review",
+      "scenario": "Observe native motion without a renderer"
+    },
+    {
+      "requirement": "Isolated native pilot review",
+      "scenario": "Refine a funded pilot without replacing provenance"
+    },
+    {
+      "requirement": "Isolated native pilot review",
+      "scenario": "Compare a higher-detail body independently"
+    },
+    {
+      "requirement": "Detailed animated playable crew",
+      "scenario": "Inspect and move each character"
+    },
+    {
+      "requirement": "Relaxed default crew expressions",
+      "scenario": "Inspect a resting character"
+    },
+    {
+      "requirement": "Relaxed default crew expressions",
+      "scenario": "Accept a relaxed-expression replacement"
+    },
+    {
+      "requirement": "Populated mapped district",
+      "scenario": "Explore the streets and park"
+    },
+    {
+      "requirement": "Populated mapped district",
+      "scenario": "Observe varied neighbourhood activity"
+    },
+    {
+      "requirement": "Recognizable park district appearance",
+      "scenario": "Inspect reference views"
+    },
+    {
+      "requirement": "Recognizable park district appearance",
+      "scenario": "Read local details at walking height"
+    },
+    {
+      "requirement": "Recognizable park district appearance",
+      "scenario": "Verify the neighbourhood correction"
+    },
+    {
+      "requirement": "Save the park story campaign",
+      "scenario": "Discover the Curator's trap"
+    },
+    {
+      "requirement": "Save the park story campaign",
+      "scenario": "Play varied encounters and finish the story"
+    },
+    {
+      "requirement": "Resumable solo and shared campaign",
+      "scenario": "Play alone or change the party"
+    },
+    {
+      "requirement": "Resumable solo and shared campaign",
+      "scenario": "Accept the first playable story slice"
+    },
+    {
+      "requirement": "First story slice observable acceptance",
+      "scenario": "Learn and perform the terrace rescue"
+    },
+    {
+      "requirement": "First story slice observable acceptance",
+      "scenario": "Race, retry and change the party"
+    },
+    {
+      "requirement": "First story slice observable acceptance",
+      "scenario": "Resume and inspect the first slice"
+    },
+    {
+      "requirement": "Responsive racing-style driving",
+      "scenario": "Brake, corner and recover"
+    },
+    {
+      "requirement": "Responsive racing-style driving",
+      "scenario": "Retain safe shared driving"
+    },
+    {
+      "requirement": "Smooth character animation",
+      "scenario": "Watch the character run"
+    },
+    {
+      "requirement": "Textured cottage crew",
+      "scenario": "Inspect the crew"
+    },
+    {
+      "requirement": "Textured cottage crew",
+      "scenario": "Walk and talk online"
+    },
+    {
+      "requirement": "Textured cottage crew",
+      "scenario": "Revised skull-shirt likeness"
+    },
+    {
+      "requirement": "Interchangeable playable crew",
+      "scenario": "Choose a character"
+    },
+    {
+      "requirement": "Interchangeable playable crew",
+      "scenario": "Share and retain the appearance"
+    }
+  ],
+  "sections": [
+    "ADDED Requirements",
+    "MODIFIED Requirements"
+  ],
+  "checks": [
+    "Every requirement uses SHALL and contains at least one #### Scenario.",
+    "Every scenario contains explicit WHEN and THEN bullets.",
+    "Private diagnostic is checked as a completed rejected experiment; wider cast and pilot art/fluidity acceptance tasks remain open.",
+    "Existing isolated native pilot and smooth-animation requirements cover the diagnostic; no new default behavior is specified.",
+    "Final design records native/render execution, visible side-view prop occlusion, rejected adoption and original Content restoration; these outcomes are parent-curated evidence, not new execution by this structure check."
+  ],
+  "diagnostic_task_checked": true,
+  "diagnostic_outcome": "Rejected adoption; original private clip retained",
+  "graphics_accepted": false,
+  "adopted": false,
+  "official_cli_validation_performed": false,
+  "openspec_files_modified_by_this_check": false,
+  "refresh_only": true,
+  "superseded_structure_receipt_sha256": "4371851837c2266ecc5235baa768d10145fadd70e48ea572a7c59962c165e887",
+  "cpu_and_native_audit_receipts_unchanged": true
+}

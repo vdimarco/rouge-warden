@@ -1,0 +1,42 @@
+{
+  "at_utc": "2026-10-18T00:16:48.981625+00:00",
+  "partial_pilot_only": true,
+  "native_or_art_accepted": false,
+  "output_sha256": "941f15dbda08322ad1206753a8c6c843ffae3560a452bd0e231677067698ed48",
+  "changed_vertices": 4826,
+  "scope": "Approved conservative interior bag/contents vertices only; leg weights to pelvis; straps, uncertainty/boundary/shared vertices unchanged",
+  "process_exit_codes": {
+    "attempt_01_unused_group_guard": 1,
+    "attempt_02_rejected_normal_drift": 1,
+    "cluster_only_proof": 0,
+    "old_render": 0,
+    "repaired_render": 0
+  },
+  "independent_reviewer": "/root/merge_review/viewport_guard_review/bag_mask_review",
+  "independent_technical_review": {
+    "raw_base_fresh_maps_recomputed_bijective": true,
+    "eligibility_recomputed_from_incident_faces": true,
+    "expected_fresh_outside_other_channel_float_bits_rechecked": true,
+    "all_retained_input_copy_hashes_rechecked": true,
+    "non_weight_FBX_property_proof_reviewed": true
+  },
+  "independent_visual_review": {
+    "comparison_PNGs_viewed": 9,
+    "observations": [
+      "Four idle views near-identical at capture resolution; no obvious new body/clothing/face/strap shading change.",
+      "Walk/run bag lower interior hangs longer and more vertically; clearest partial improvement is run-threequarter.",
+      "Jump interior hangs larger/downward; connector still bunches into accordion-like folds and strap/contact discontinuity remains.",
+      "Left bag edge still occludes upper hand/wrist; no clear clearance improvement. Right hand appears unchanged."
+    ],
+    "not_accepted": [
+      "Continuous motion",
+      "Full accessory mask",
+      "Contact clearance",
+      "Native adoption",
+      "Final art"
+    ]
+  },
+  "data_content_shared_helper_or_source_writes": false,
+  "API_GPU_native_or_service_jobs": false,
+  "final_source_and_image_hashes_verified": true
+}

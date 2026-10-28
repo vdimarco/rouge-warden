@@ -17,7 +17,9 @@ const EDGE_YAW = 2.2, EDGE_PITCH = 1.2; // rad/s of turn with the free cursor at
 const ESC_GAP = 250; // ms: an Esc that comes with the browser's own unlock is the same press
 const RETRY_MS = 1300; // Chrome refuses a new lock for about a second after the user's own Esc
 const PENDING_MS = 2000; // a lock request with no answer by then is over
-const RELOCK_MS = 3000; // our own let-go (see relock) answers within this, even on a slow machine
+// Our own let-go (see relock) is the next unlock that comes, however late: a slow first frame of play (shaders compiling) can hold
+// it back for seconds. This is only the limit for an answer that never comes.
+const RELOCK_MS = 15000;
 const RAW = { unadjustedMovement: true };
 const PITCH_MAX = (85 * Math.PI) / 180;
 const YANK_F = 3.5; // m/s of synthetic pull for F (and the pad's X and right bumper)
@@ -321,7 +323,10 @@ export function createDesktop(canvas, camera, settings) {
       const up = padButton(gp, 12); // the d-pad up throws
       if (up && !pad.up) thr = true;
       pad.a = a; pad.x = x; pad.y = yb; pad.rb = rb; pad.start = st; pad.up = up;
-    } else gamepad.rt = gamepad.lt = false;
+    } else {
+      gamepad.rt = gamepad.lt = false;
+      for (const button in pad) pad[button] = false;
+    }
     inp.muteDown = Q.mute;
     Q.jump = Q.menu = Q.map = Q.yank = Q.mute = Q.car = Q.throw = false;
     wheel = Math.max(0, wheel - dt);
@@ -331,7 +336,7 @@ export function createDesktop(canvas, camera, settings) {
     inp.move.x = mx; inp.move.y = my;
     inp.turn = turn; inp.pitch = pitch;
     inp.jumpDown = jump; inp.menuDown = menu; inp.mapDown = map; inp.viewDown = view; inp.carDown = car; inp.throwDown = thr; inp.sprintHeld = sprint; inp.jumpHeld = keys.has("Space") || (gp ? padButton(gp, 0) : false);
-    inp.visible = true;
+    inp.visible = !document.hidden;
     // which device the player holds, for the tutorial words: a phone, the pad (once it moves), else the mouse
     const kind = inp.kind = mobile.enabled ? "touch" : usingPad ? "pad" : "mouse";
 
@@ -553,9 +558,9 @@ body.keyhints .fs-sub,body.keyhints .fs-toast{margin-bottom:52px}
   };
   // the first-minute strip at the bottom of the screen, for a mouse or a pad. It lifts the spoken line and the toast with it.
   const HINTS = {
-    // the first swing from the start roof needs the hero to walk (W, or the stick) while the rope pulls, so the first item says both
-    mouse: ["<b>HOLD W AND LEFT MOUSE (OR E)</b>: SWING.", "LET GO WHEN THE RING SAYS <b>GO</b>.", "<b>MOUSE</b>: LOOK."],
-    pad: ["<b>HOLD LEFT STICK UP AND RIGHT TRIGGER</b>: SWING.", "LET GO WHEN THE RING SAYS <b>GO</b>.", "<b>RIGHT STICK</b>: LOOK."],
+    // one button starts the swing: the rope walks you off the roof. W and the left stick still steer when you hold them.
+    mouse: ["<b>LEFT MOUSE (OR E)</b>: SWING.", "LET GO WHEN THE RING SAYS <b>GO</b>.", "<b>MOUSE</b>: LOOK."],
+    pad: ["<b>RIGHT TRIGGER</b>: SWING.", "LET GO WHEN THE RING SAYS <b>GO</b>.", "<b>RIGHT STICK</b>: LOOK."],
   };
   D.hints = (on) => {
     const kind = on ? (inp.kind === "pad" ? "pad" : inp.kind === "mouse" ? "mouse" : "") : "";

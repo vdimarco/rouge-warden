@@ -42,6 +42,130 @@ bool FQuebecRaceResultTest::RunTest(const FString& Parameters)
         TestEqual(TEXT("Invalid or timed-out elapsed preserves last valid result"), Race->LastRaceTime, 10.f);
     }
     Race->Phase = EQuebecCampaignPhase::Complete;
+    Race->PondStep = 0;
+    TestTrue(TEXT("An open pond step names recover instead of the lap card"),
+        Race->GetStatusText().Contains(TEXT("R recovers this step")));
+    Race->PondStep = AQuebecCampaign::PondBankedStep;
+    Race->CourtStep = 0;
+    TestTrue(TEXT("A banked picnic opens the court rally instead of the lap card"),
+        Race->GetStatusText().Contains(TEXT("R recovers this rally")));
+    Race->CourtStep = AQuebecCampaign::CourtBankedStep;
+    Race->ShowStep = 0;
+    TestTrue(TEXT("A banked court opens the ovation instead of the lap card"),
+        Race->GetStatusText().Contains(TEXT("R recovers this cue")));
+    Race->ShowStep = AQuebecCampaign::ShowBankedStep;
+    Race->RescueMask = 0;
+    TestTrue(TEXT("A banked ovation opens the groups instead of the lap card"),
+        Race->GetStatusText().Contains(TEXT("R recovers this group")));
+    Race->RescueMask = AQuebecCampaign::RescueDone;
+    Race->ConvoyStep = 0;
+    TestTrue(TEXT("Finished groups open the convoy instead of the lap card"),
+        Race->GetStatusText().Contains(TEXT("R recovers this wagon")));
+    Race->ConvoyStep = AQuebecCampaign::ConvoyBankedStep;
+    Race->BlankStep = 0;
+    TestTrue(TEXT("A banked convoy opens the last page instead of the lap card"),
+        Race->GetStatusText().Contains(TEXT("R recovers this page")));
+    Race->BlankStep = AQuebecCampaign::BlankBankedStep;
+    Race->TourStep = 0;
+    TestTrue(TEXT("A blank page opens the tour instead of the lap card"),
+        Race->GetStatusText().Contains(TEXT("R recovers this tour")));
+    Race->TourStep = AQuebecCampaign::TourBankedStep;
+    Race->HomeStep = 0;
+    TestTrue(TEXT("A banked tour opens the home beat instead of the lap card"),
+        Race->GetStatusText().Contains(TEXT("R recovers this home")));
+    Race->HomeStep = AQuebecCampaign::HomeBankedStep;
+    Race->EscortStep = 0;
+    TestTrue(TEXT("A home day opens the walk instead of the lap card"),
+        Race->GetStatusText().Contains(TEXT("R recovers this walk")));
+    Race->EscortStep = AQuebecCampaign::EscortBankedStep;
+    Race->ShadeStep = 0;
+    TestTrue(TEXT("A finished walk opens the crossing instead of the lap card"),
+        Race->GetStatusText().Contains(TEXT("R recovers this dark")));
+    Race->ShadeStep = AQuebecCampaign::ShadeBankedStep;
+    Race->GrabStep = 0;
+    TestTrue(TEXT("A dark lawn opens the window instead of the lap card"),
+        Race->GetStatusText().Contains(TEXT("R recovers this window")));
+    Race->GrabStep = AQuebecCampaign::GrabBankedStep;
+    Race->CutStep = 0;
+    TestTrue(TEXT("A banked grab opens the short way instead of the lap card"),
+        Race->GetStatusText().Contains(TEXT("R recovers this cut")));
+    Race->CutStep = AQuebecCampaign::CutBankedStep;
+    Race->ChaseStep = 0;
+    TestTrue(TEXT("A banked short way opens the tail instead of the lap card"),
+        Race->GetStatusText().Contains(TEXT("R recovers this tail")));
+    Race->ChaseStep = AQuebecCampaign::ChaseBankedStep;
+    Race->FinaleStep = 0;
+    TestTrue(TEXT("A lost tail opens the day instead of the lap card"),
+        Race->GetStatusText().Contains(TEXT("R recovers this day")));
+    Race->FinaleStep = AQuebecCampaign::FinaleBankedStep;
+    Race->FollowStep = 0;
+    TestTrue(TEXT("A finished day opens the gap instead of the lap card"),
+        Race->GetStatusText().Contains(TEXT("R recovers this gap")));
+    Race->FollowStep = AQuebecCampaign::FollowBankedStep;
+    Race->RollStep = 0;
+    TestTrue(TEXT("A finished gap opens the cart instead of the lap card"),
+        Race->GetStatusText().Contains(TEXT("R recovers this cart")));
+    Race->RollStep = AQuebecCampaign::RollBankedStep;
+    Race->BellStep = 0;
+    TestTrue(TEXT("A finished cart opens the order instead of the lap card"),
+        Race->GetStatusText().Contains(TEXT("R recovers this order")));
+    Race->BellStep = AQuebecCampaign::BellBankedStep;
+    Race->BlockStep = 0;
+    TestTrue(TEXT("A finished order opens the road instead of the lap card"),
+        Race->GetStatusText().Contains(TEXT("R recovers this road")));
+    Race->BlockStep = AQuebecCampaign::BlockBankedStep;
+    Race->SendStep = 0;
+    TestTrue(TEXT("A finished road opens the send-off instead of the lap card"),
+        Race->GetStatusText().Contains(TEXT("R recovers this send-off")));
+    Race->SendStep = AQuebecCampaign::SendBankedStep;
+    Race->PursueStep = 0;
+    TestTrue(TEXT("A finished send-off opens the pursuit instead of the lap card"),
+        Race->GetStatusText().Contains(TEXT("R recovers this pursuit")));
+    Race->PursueStep = AQuebecCampaign::PursueBankedStep;
+    Race->NoseStep = 0;
+    TestTrue(TEXT("A finished pursuit opens the stall instead of the lap card"),
+        Race->GetStatusText().Contains(TEXT("R recovers this stall")));
+    Race->NoseStep = AQuebecCampaign::NoseBankedStep;
+    Race->SlipStep = 0;
+    TestTrue(TEXT("A finished stall opens the slip instead of the lap card"),
+        Race->GetStatusText().Contains(TEXT("R recovers this slip")));
+    Race->SlipStep = AQuebecCampaign::SlipBankedStep;
+    Race->MarchStep = 0;
+    TestTrue(TEXT("A finished slip opens the march instead of the lap card"),
+        Race->GetStatusText().Contains(TEXT("R recovers this march")));
+    Race->MarchStep = AQuebecCampaign::MarchBankedStep;
+    Race->DitchStep = 0;
+    TestTrue(TEXT("A finished march opens the ditch instead of the lap card"),
+        Race->GetStatusText().Contains(TEXT("R recovers this ditch")));
+    Race->DitchStep = AQuebecCampaign::DitchBankedStep;
+    Race->ParcelStep = 0;
+    TestTrue(TEXT("A finished ditch opens the parcel instead of the lap card"),
+        Race->GetStatusText().Contains(TEXT("R recovers this parcel")));
+    Race->ParcelStep = AQuebecCampaign::ParcelBankedStep;
+    Race->BoltStep = 0;
+    TestTrue(TEXT("A finished parcel opens the bolt instead of the lap card"),
+        Race->GetStatusText().Contains(TEXT("R recovers this bolt")));
+    Race->BoltStep = AQuebecCampaign::BoltBankedStep;
+    Race->YardStep = 0;
+    TestTrue(TEXT("A finished bolt opens the yard instead of the lap card"),
+        Race->GetStatusText().Contains(TEXT("R recovers this yard")));
+    Race->YardStep = AQuebecCampaign::YardBankedStep;
+    Race->LiftStep = 0;
+    TestTrue(TEXT("A finished yard opens the lift instead of the lap card"),
+        Race->GetStatusText().Contains(TEXT("R recovers this lift")));
+    Race->LiftStep = AQuebecCampaign::LiftBankedStep;
+    Race->PostStep = 0;
+    TestTrue(TEXT("A finished lift opens the post instead of the lap card"),
+        Race->GetStatusText().Contains(TEXT("R recovers this post")));
+    Race->PostStep = AQuebecCampaign::PostBankedStep;
+    Race->TabStep = 0;
+    TestTrue(TEXT("A finished post opens the tab instead of the lap card"),
+        Race->GetStatusText().Contains(TEXT("R recovers this tab")));
+    Race->TabStep = AQuebecCampaign::TabBankedStep;
+    Race->CarryStep = 0;
+    TestTrue(TEXT("A finished tab opens the carry instead of the lap card"),
+        Race->GetStatusText().Contains(TEXT("R recovers this carry")));
+    Race->CarryStep = AQuebecCampaign::CarryBankedStep;
     const FString Status = Race->GetStatusText();
     TestTrue(TEXT("Result presents recovered time and clean session best"),
         Status.Contains(TEXT("10.0s")) && Status.Contains(TEXT("recovered")) && Status.Contains(TEXT("60.0s")));

@@ -1,0 +1,11 @@
+PASS (b) PLAY: lock (raw, then plain) before full screen, and the lock again after the full-screen change lock:raw fs lock exit lock
+PASS (a) locked: the mouse turns the view {"dyaw":-0.22,"dpitch":0.132}
+PASS (e) the browser's Esc pauses (the key also reaches the page); RESUME takes the lock in its click (Mac: taken again after full screen) lock fs exit lock
+PASS (e) the browser's Esc pauses; RESUME takes the lock in its click (Windows: kept) lock fs
+PASS (e) the game's own Esc pauses and lets go; a click beside the menu resumes locked
+PASS a lock refused just after Esc (Chrome) is taken again a moment later, with the prompt meanwhile
+PASS (c) unlocked: the cursor turns the view, and the right edge keeps turning it {"perFrame":-0.0367,"want":-0.0367}
+PASS (c) the top edge tilts up; the middle and a cursor outside the window turn nothing
+PASS (d) a click with no lock takes it and fires no rope; locked, a click fires
+PASS a browser that keeps refusing the lock gets its clicks back for the ropes
+PASS (f) no runtime errors

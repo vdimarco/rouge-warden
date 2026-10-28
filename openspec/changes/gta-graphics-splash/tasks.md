@@ -1,0 +1,4 @@
+- [x] Add `rain_splash.hlsl` and composite it on wet-ground base colour
+- [x] Shade the street before and after
+- [x] Run `Scripts/test_plateau_atmosphere.py`, and compile `water_shader_test.cpp` with g++
+- [ ] Apply the wet-ground materials in Unreal (editor not available here)

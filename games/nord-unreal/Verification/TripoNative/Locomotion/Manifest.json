@@ -1,0 +1,28 @@
+{
+  "scope": "Own normalized61-bone gait loops, explicit declared30Hz after provider import, same1.82 nativeimportscale asbody/idle/jump",
+  "authoring_receipt": "Locomotion.json",
+  "independent_receipt": "Independent.json",
+  "rejected_root_name_receipt": "RejectedRootName.json",
+  "rejected_fps_receipt": "RejectedFPS.json",
+  "output": {
+    "games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/tripo-v3-rig-20261017/derived/native-ready/walk.fbx": {
+      "bytes": 541692,
+      "sha256": "c70f0830452bf468eebb6ae8d970931391c89fb5c3e8eb81c0eed54e1068dd0c"
+    },
+    "games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/tripo-v3-rig-20261017/derived/native-ready/run.fbx": {
+      "bytes": 473628,
+      "sha256": "d9d45afae9d93edfba105a338ce9f847385d04b9db5108201ba685e035ae2b58"
+    }
+  },
+  "executed_commands": [
+    "blender -b -t 4 --python games/nord-unreal/Scripts/prepare_tripo_locomotion.py -- --output /tmp/nord-tripo-locomotion-20261017-fps-v3",
+    "blender -b -t 4 --python-exit-code 1 --python games/nord-unreal/Verification/TripoNative/Locomotion/verify.py -- --clips /tmp/nord-tripo-locomotion-20261017-fps-v3 --receipt /tmp/nord-tripo-locomotion-20261017-fps-v3/Independent-FBXTiming.json"
+  ],
+  "process_exits": {
+    "inventory": 0,
+    "authoring": 0,
+    "independent_verification": 0,
+    "expected_24Hz_timing_negative_control": 1
+  },
+  "no_render_gpu_unreal_api_or_service_operations": true
+}

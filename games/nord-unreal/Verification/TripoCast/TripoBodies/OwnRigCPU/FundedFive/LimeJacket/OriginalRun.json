@@ -1,0 +1,70 @@
+{
+  "passed": true,
+  "character": "LimeJacket",
+  "started_utc": "2026-10-17T23:39:18.284436+00:00",
+  "runner_sha256": "f6336b292c08b0b0f73251e3a3bc1343dc93f620fbfce21e3ee78fe05c66c836",
+  "no_api_render_unreal_gpu_service_or_data_writes": true,
+  "surface_manifest": {
+    "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Crew/LimeJacket/tripo-h31-rig-20261017/surface-inputs.json",
+    "sha256": "f9182a1b68c1143d7a0398dd026d1870fe4aa73de751225b18a96d64f252549b"
+  },
+  "processes": [
+    {
+      "stage": "surface",
+      "command": [
+        "/home/von/.local/bin/blender",
+        "-b",
+        "-t",
+        "4",
+        "--python-exit-code",
+        "1",
+        "--python",
+        "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Scripts/prepare_tripo_cast_surface.py",
+        "--",
+        "--manifest",
+        "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Crew/LimeJacket/tripo-h31-rig-20261017/surface-inputs.json",
+        "--output",
+        "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoH31RemainingPlan-20261017-v3/LimeJacket/prepared-v1/surface/body",
+        "--report",
+        "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoH31RemainingPlan-20261017-v3/LimeJacket/prepared-v1/surface/report"
+      ],
+      "exit_code": 0
+    },
+    {
+      "stage": "motion",
+      "command": [
+        "/home/von/.local/bin/blender",
+        "-b",
+        "-t",
+        "4",
+        "--python-exit-code",
+        "1",
+        "--python",
+        "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Scripts/prepare_tripo_cast_motion.py",
+        "--",
+        "--manifest",
+        "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoH31RemainingPlan-20261017-v3/LimeJacket/prepared-v1/motion-inputs.json",
+        "--output",
+        "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoH31RemainingPlan-20261017-v3/LimeJacket/prepared-v1/motion/clips",
+        "--report",
+        "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoH31RemainingPlan-20261017-v3/LimeJacket/prepared-v1/motion/report"
+      ],
+      "exit_code": 0
+    }
+  ],
+  "errors": [],
+  "surface_receipt": {
+    "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoH31RemainingPlan-20261017-v3/LimeJacket/prepared-v1/surface/report/Surface.json",
+    "sha256": "3db86feef03f8df68adc4276b0ec7f61af9f250c53fc1fe729b029e9f91575ba"
+  },
+  "motion_manifest": {
+    "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoH31RemainingPlan-20261017-v3/LimeJacket/prepared-v1/motion-inputs.json",
+    "sha256": "5a5a530d1dfdb90d1ffa581a62b2f635a81502a5a5327df893d8cc58ab9f2951"
+  },
+  "motion_receipt": {
+    "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoH31RemainingPlan-20261017-v3/LimeJacket/prepared-v1/motion/report/Motion.json",
+    "sha256": "e0b39ca494a26ff3a68a176516063dbe1d31337c4b033a63df03b67e6a13b0f7"
+  },
+  "art_native_package_acceptance": false,
+  "finished_utc": "2026-10-17T23:39:29.111332+00:00"
+}

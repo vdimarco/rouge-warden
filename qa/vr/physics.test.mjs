@@ -382,6 +382,28 @@ section("The first swing");
   check(ok, `1.5 s after letting go you are ${after ? (after.ground ? "on a roof" : "still flying, " + f2(after.y) + " m up") : "?"} (you come down on ${where || "nothing yet"})`);
 }
 
+/* ---------------- one button ---------------- */
+section("One button leaves the roof");
+{
+  const S = city.start, G = city.goldRing, P = createPlayer(city);
+  const hp = { x: S.x + 0.25, y: S.y + 1.3, z: S.z - 0.2 };
+  const hit = city.raycast(hp.x, hp.y, hp.z, G.x - hp.x, G.y - hp.y, G.z - hp.z, SWING.ropeRange * SWING.rangeGrace, {});
+  fire(P, 1, hp, { ...hit, tag: hit.collider.tag, id: hit.collider.id });
+  let left = -1, t = 0;
+  run(P, Math.round(6 / h), (Q) => {
+    t += h;
+    if (left < 0 && t > 1 && !Q.onGround) left = t;
+    return inp({ hands: [hand({ holding: false }), hand({ holding: true })] });
+  });
+  check(left > 0.5 && left <= 4, `the swing button alone walks you off the start roof in ${f2(left)} s`);
+  const Clog = createPlayer(city);
+  const at = { x: Clog.pos.x, z: Clog.pos.z };
+  fire(Clog, 0, chestOf(Clog), { x: S.x + 30, y: S.y + 4, z: S.z, tag: "clog", id: "clog:0" });
+  run(Clog, Math.round(1.2 / h), () => inp({ hands: [hand({ holding: true }), hand({ holding: false })] }));
+  const slid = Math.hypot(Clog.pos.x - at.x, Clog.pos.z - at.z);
+  check(slid < 1.5 && Math.hypot(Clog.vel.x, Clog.vel.z) < 0.5, `a rope on a clog does not walk you (${f2(slid)} m, ${f2(Math.hypot(Clog.vel.x, Clog.vel.z))} m/s)`);
+}
+
 /* ---------------- wall climbing (flat play) ---------------- */
 section("Wall climbing");
 {

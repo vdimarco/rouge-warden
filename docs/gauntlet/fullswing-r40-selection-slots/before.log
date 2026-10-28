@@ -1,0 +1,8 @@
+{"rows":40,"equal":true,"identities":236,"released":true,"different":0,"varied":8667}
+PASS: actual mixed selection matches reference
+FAIL ten warmed records reused through shrink/grow
+  {"rows":40,"equal":true,"identities":236,"released":true,"different":0,"varied":8667}
+PASS: street promotion released without camera
+PASS: unchanged nonblank image
+PASS: no page errors
+FAIL: selection slots (1 failed, 4 passed)

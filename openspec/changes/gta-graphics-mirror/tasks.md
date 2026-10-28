@@ -1,0 +1,4 @@
+- [x] Stretch warm and white lights down rough ground, as a no-op at NightFactor 0
+- [x] Shade the night plate before and after from the walking camera
+- [x] Run `Scripts/test_street.py`, `Scripts/test_night.py`, `Scripts/test_coat.py`, `Scripts/test_cloud.py`, `Scripts/test_horizon_haze.py`, `Scripts/test_plateau_trees.py`, `Scripts/test_crew_colour.py`, and `Scripts/test_contact.py`
+- [ ] Apply the comic material in Unreal (editor not available here)

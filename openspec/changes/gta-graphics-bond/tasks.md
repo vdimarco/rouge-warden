@@ -1,0 +1,4 @@
+- [x] Split odd courses into headers
+- [x] Shade the elevation before and after
+- [x] Run `Scripts/test_facade_bond.py` and the existing facade tests
+- [ ] Apply the facade material in Unreal (editor not available here)
