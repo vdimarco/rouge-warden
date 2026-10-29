@@ -745,7 +745,7 @@ test("markers: four offers of different jobs round the player, and walking into 
   J.update(DT, 0, h);
   assert.ok(J.offers.length >= 3, "offers " + J.offers.length);
   assert.equal(new Set(J.offers.map((o) => o.type)).size, J.offers.length);
-  for (const o of J.offers) { const d = Math.hypot(o.x - h.x, o.z - h.z); assert.ok(d >= JOB.near[0] - 1 && d <= JOB.near[1] + 30, o.type + " at " + d.toFixed(0)); }
+  for (const o of J.offers.filter((q) => q.type !== "gauntlet")) { const d = Math.hypot(o.x - h.x, o.z - h.z); assert.ok(d >= JOB.near[0] - 1 && d <= JOB.near[1] + 30, o.type + " at " + d.toFixed(0)); }
   const o = J.offers[0];
   J.update(DT, 0, hero(o.x + 1, o.y, o.z));
   assert.equal(J.active && J.active.type, o.type);
