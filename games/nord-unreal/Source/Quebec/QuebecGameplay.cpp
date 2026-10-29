@@ -1758,8 +1758,13 @@ void AQuebecCar::SimulateDrive(float Step, bool bFailsafe)
         if (AController* Driver = GetDriverController())
         {
             if (Slide.Tick(Step, Speed, LateralSpeed, bHandbrake, bFailsafe))
-                QuebecNotice::Show(Driver, FString(QuebecSlide::Title(Slide.LastGrade)),
+            {
+                // Slides paid within 5 s of each other count up: BIG SLIDE x2.
+                char Title[24];
+                QuebecSlide::ChainTitle(Slide.LastGrade, Slide.Chain, Title);
+                QuebecNotice::Show(Driver, FString(Title),
                     FString::Printf(TEXT("Held for %.1f s"), Slide.LastSeconds), QuebecSlide::NoticeSeconds);
+            }
         }
         // A slide left behind with no driver never pays the next one.
         else Slide = QuebecSlide::FState();
