@@ -1,0 +1,21 @@
+2026-10-29T03:31:07.7039348Z INFO software-rendered diagnostic sample {"metrics":{"frames":3,"elapsedMs":15482.700000000012,"fps":0.19376465345191715,"medianMs":3216.5,"p95Ms":10582.900000000009,"p99Ms":10582.900000000009,"over50":3,"inputs":1,"inputSubmitP95Ms":11966.900000000023},"debug":"59 calls  1131k tris  1 view(s)\ndesktop / play  pos -76.0 44.0 72.1\nPlay: 0.1 fps • p95 10582.9 / p99 10582.9 ms\n>50ms: 1/1 • input→submit p95 11966.9 ms (1)\n3D: 960×540 • scale 1.00","ua":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/134.0.6998.35 Safari/537.36","width":960,"height":540,"dpr":1}
+2026-10-29T03:31:07.7043518Z PASS: real frame intervals are recorded
+2026-10-29T03:31:07.7076440Z PASS: keyboard events produce input-to-submit samples
+2026-10-29T03:31:07.7126384Z PASS: overlay labels frame pacing and latency proxy
+2026-10-29T03:31:49.0226749Z PASS: invisible input frames do not count as gameplay
+2026-10-29T03:31:50.0462747Z PASS: held simulation does not masquerade as gameplay
+2026-10-29T03:31:50.0467612Z PASS: no page errors
+2026-10-29T03:31:55.0516706Z PASS: frame diagnostics
+2026-10-29T03:35:56.3719928Z INFO shot skipped shot timed out
+2026-10-29T03:40:54.9166807Z FAIL: swing meter (timed out after 480 s)
+2026-10-29T03:40:54.9491509Z ##[error]Process completed with exit code 1.
+2026-10-29T03:40:54.9640377Z ##[group]Run actions/upload-artifact@v4
+2026-10-29T03:40:54.9640859Z with:
+2026-10-29T03:40:54.9641443Z   name: swing-flat-missions
+2026-10-29T03:40:54.9641847Z   path: test-results/flat-missions
+2026-10-29T03:40:54.9642261Z   retention-days: 14
+2026-10-29T03:40:54.9642615Z   if-no-files-found: warn
+2026-10-29T03:40:54.9642987Z   compression-level: 6
+2026-10-29T03:40:54.9643340Z   overwrite: false
+2026-10-29T03:40:54.9643698Z   include-hidden-files: false
+2026-10-29T03:40:54.9644091Z ##[endgroup]

@@ -1,0 +1,3 @@
+PASS: six jobs retained; parsed workflow identical except one required swing benchmark step removed
+PASS: frame-metrics unit and browser checks remain required; runtime and QA scripts unchanged
+PASS: frame metrics unit checks — elapsed FPS, percentiles, stalls, inactive gaps, bounds, reset

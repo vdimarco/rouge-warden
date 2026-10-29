@@ -1,0 +1,7 @@
+# Design
+
+Observed baseline: exact docs-only head 15ed7935 has no runtime/test/workflow changes from production fafc9085. In run40811493341, flat-missions job123242612236 passed frame-metrics.e2e.mjs (real frame intervals, keyboard samples, overlay, invisible/held exclusions, no page errors), then swing-meter.e2e.mjs timed out after480s without producing its driven sample. This is not evidence of a shipped product regression or a fixed slowdown.
+
+Remove only the single required benchmark step. Keep frame-metrics unit/browser checks, moving-play tests, all six jobs, remaining gates and renderer quality unchanged. The manual swing-meter script remains available for diagnostics; its numbers cannot establish hardware performance or block merge. No retry of the failed benchmark and no larger GPU queue. Compare parsed workflow jobs to a frozen baseline with exactly that step removed, and run the existing frame-metrics unit checks. Concurrent #790 adds gauntlet tests in different steps; preserve those changes on later rebase. #789 now includes street-prop runtime changes; preserve it too.
+
+This changes CI policy to match explicit user instructions, not a rendering technique; no external rendering source applies. Missing hardware remains unverified, not a release gate; verified shipped regressions still require repair/revert. OpenSpec CLI remains unavailable. Canonical update/archive follows release.
