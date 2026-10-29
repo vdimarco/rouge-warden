@@ -1,0 +1,5 @@
+- [x] Inspect failed exact-head CI, benchmark and retained functional coverage; preserve concurrent work.
+- [x] Record OpenSpec and freeze the workflow before implementation.
+- [x] Remove only the required benchmark step; verify workflow structure and frame-metrics unit checks.
+- [ ] Open/attach focused PR; pass fresh CI, Entire/deploy/preview/rebases and exact-head merge.
+- [ ] Verify production unchanged; reconcile canonical performance policy and archive after release.
