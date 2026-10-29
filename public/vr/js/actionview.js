@@ -46,7 +46,7 @@ function carGeometry() {
   return mergeGeometries(parts);
 }
 
-export function createActionView(scene, { cars, jobs, traffic = null }) {
+export function createActionView(scene, { cars, jobs, traffic = null, renderer = null }) {
   const root = new THREE.Group();
   root.name = "action";
   scene.add(root);
@@ -190,6 +190,8 @@ export function createActionView(scene, { cars, jobs, traffic = null }) {
     const tex = new THREE.CanvasTexture(cv);
     tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 4;
     arenaU.uMap.value = tex;
+    // upload it now: its first draw (the roof coming into view mid-swing) must not stall on the upload
+    if (renderer && renderer.initTexture) renderer.initTexture(tex);
     const q = A.rect, size = Math.min(q.maxX - q.minX, q.maxZ - q.minZ) + 2;
     const geo = new THREE.PlaneGeometry(size, size);
     geo.rotateX(-Math.PI / 2);

@@ -190,7 +190,7 @@ function createWorld() {
   combat = G.combat = createCombat(city);
   cars = G.cars = createCars(city);
   jobs = G.jobs = createJobs({ city, combat, cars });
-  actionView = G.actionView = createActionView(scene, { cars, jobs, traffic: { cars: () => view.traffic && view.traffic(TRAFFIC_DATA), hide: (i, on) => view.veilTraffic && view.veilTraffic(i, on) } });
+  actionView = G.actionView = createActionView(scene, { cars, jobs, renderer, traffic: { cars: () => view.traffic && view.traffic(TRAFFIC_DATA), hide: (i, on) => view.veilTraffic && view.veilTraffic(i, on) } });
   actHud = G.actHud = createActionHud();
   ropes = G.ropes = createRopes(scene, city, settings);
   ensureWeb(); // the easy web's world-space line, compiled with the city so the first swing does not hitch
