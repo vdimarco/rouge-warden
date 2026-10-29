@@ -17,6 +17,7 @@
 #include "QuebecRankTone.h"
 #include "QuebecSkidTone.h"
 #include "QuebecImpactTone.h"
+#include "QuebecSlidePay.h"
 #include "QuebecStep.h"
 #include "QuebecPlace.h"
 #include "QuebecLossTone.h"
@@ -1764,6 +1765,7 @@ void AQuebecCar::SimulateDrive(float Step, bool bFailsafe)
                 QuebecSlide::ChainTitle(Slide.LastGrade, Slide.Chain, Title);
                 QuebecNotice::Show(Driver, FString(Title),
                     FString::Printf(TEXT("Held for %.1f s"), Slide.LastSeconds), QuebecSlide::NoticeSeconds);
+                if (AQuebecController* Player = Cast<AQuebecController>(Driver)) Player->PlaySlidePay(Slide.Chain);
             }
         }
         // A slide left behind with no driver never pays the next one.
@@ -2097,6 +2099,10 @@ AQuebecController::AQuebecController()
     ImpactAudio->bAutoActivate = false;
     ImpactAudio->bAllowSpatialization = false;
     ImpactAudio->VolumeMultiplier = .8f;
+    SlidePayAudio = CreateDefaultSubobject<UAudioComponent>(TEXT("SlidePayAudio"));
+    SlidePayAudio->bAutoActivate = false;
+    SlidePayAudio->bAllowSpatialization = false;
+    SlidePayAudio->VolumeMultiplier = .6f;
     StepAudio = CreateDefaultSubobject<UAudioComponent>(TEXT("StepAudio"));
     StepAudio->bAutoActivate = false;
     StepAudio->bAllowSpatialization = false;
@@ -2502,6 +2508,40 @@ void AQuebecController::PlayImpact()
 void AQuebecController::ClientPlayImpact_Implementation()
 {
     PlayImpactTone();
+}
+
+void AQuebecController::PlaySlidePay(int32 Chain)
+{
+    ClientPlaySlidePay(Chain);
+}
+
+void AQuebecController::ClientPlaySlidePay_Implementation(int32 Chain)
+{
+    PlaySlidePayTone(Chain);
+}
+
+void AQuebecController::PlaySlidePayTone(int32 Chain)
+{
+    if (!SlidePayAudio || !GetWorld() || !GetWorld()->AllowAudioPlayback()) return;
+    if (!SlidePayWave)
+    {
+        SlidePayWave = NewObject<USoundWaveProcedural>(this);
+        SlidePayWave->SetSampleRate(static_cast<uint32>(QuebecSlidePay::SampleRate));
+        SlidePayWave->NumChannels = 1;
+        SlidePayAudio->SetSound(SlidePayWave);
+    }
+    // A chain adds short repeats, so the length changes with each pay.
+    const int32 Frames = QuebecSlidePay::FramesFor(Chain);
+    SlidePayWave->Duration = static_cast<float>(Frames) / static_cast<float>(QuebecSlidePay::SampleRate);
+    SlidePayWave->ResetAudio();
+    int16 Pcm[QuebecSlidePay::MaxFrames];
+    for (int32 Frame = 0; Frame < Frames; ++Frame)
+    {
+        const float Sample = FMath::Clamp(static_cast<float>(QuebecSlidePay::SampleAt(Frame, Chain)), -1.f, 1.f);
+        Pcm[Frame] = static_cast<int16>(Sample * 32767.f);
+    }
+    SlidePayWave->QueueAudio(reinterpret_cast<const uint8*>(Pcm), Frames * static_cast<int32>(sizeof(int16)));
+    SlidePayAudio->Play();
 }
 
 void AQuebecController::PlayImpactTone()

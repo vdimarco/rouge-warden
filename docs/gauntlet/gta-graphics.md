@@ -3085,3 +3085,40 @@ Unreal is not available in this environment, so in-engine frames are the last co
 - Delta vs last round: +1 (round 87 was 136). Difficulty curve 4 → 5. Every other score held.
 
 ![Quick slides chain, and a pause starts over](gta-graphics/round-88/slide-chain.png)
+
+### Round 89 — 2026-10-29 — rubric v1
+
+- What changed: the slide pay is heard. When the graded banner shows, 587 Hz then 784 Hz play, 0.24 s. Each link of a chain adds a 0.06 s repeat of the high note, up to four. Only the driver hears it. A voided slide stays quiet. The scream still plays during the slide.
+- Why it helped: round 88 said the chain had no sound of its own. The scream says a slide is happening. Nothing said it paid, or how long the chain was, unless the driver read the banner.
+- Screenshots: `docs/gauntlet/gta-graphics/round-89/slide-pay.png` plots the cue for one slide and for chains of 2, 3, and 5. It is not a game view. `Scripts/test_slide_pay.py` passed (94 assertions on c++, g++, and clang++, plus the wiring check). `Scripts/test_slide.py`, `Scripts/test_slide_tone.py`, and the skid, loss, impact, and rank tone tests passed. The offline syntax check passed `QuebecGameplay.cpp` in game and editor. The link check shows the same 16 `QuebecDrive.cpp` gaps as `main`. Unreal did not run, and the cue was not heard in the city. OpenSpec CLI is not installed, so `openspec validate` did not run.
+- Next target: pacing, fun factor, and variety are tied at 4.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 9 | Unchanged. |
+| Color palette | 9 | Unchanged. |
+| Detail density | 9 | Unchanged. |
+| Texture and material quality | 9 | Unchanged. |
+| Composition and camera | 9 | Unchanged. |
+| Atmosphere | 9 | Unchanged. |
+| Character models | 9 | Unchanged. |
+| Animation smoothness | 9 | Unchanged. |
+| Particles and VFX | 9 | Unchanged. |
+| UI polish | 9 | Unchanged. |
+| Responsiveness and input latency | 5 | Unchanged. |
+| Controls feel | 5 | Unchanged. |
+| Mission clarity | 5 | Unchanged. |
+| Pacing | 4 | Unchanged mission slice. |
+| Fun factor | 4 | Unchanged. Not played in Unreal. |
+| Difficulty curve | 5 | Unchanged. |
+| Feedback | 5 | Unchanged. |
+| Sound design | 6 | The slide now has a sound for the slide, the scream, and a sound for the pay, the notes. The chain is heard as repeats. Tested, not heard in Unreal. |
+| Variety | 4 | Unchanged. |
+| Performance stability | 5 | Unchanged. The longest cue is 0.48 s, built once per pay. |
+
+- Aesthetics raw: 90 / 10 dimensions, index 90
+- Playability raw: 48 / 10 dimensions, index 48
+- Total: 138 / 200
+- Delta vs last round: +1 (round 88 was 137). Sound design 5 → 6. Every other score held.
+
+![The slide pay cue for one slide and for chains](gta-graphics/round-89/slide-pay.png)
