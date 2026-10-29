@@ -390,13 +390,14 @@ async function timeouts() {
 // A headset with no passthrough (VR) opens in a cottage room (portal.js buildRoom). Each solid part of its toilet and its lamp shade has an
 // ink outline: comic.js outlineOf, a second draw of the same shape with the back faces pushed out, as a child of the part. In AR the real
 // room shows, so there is no cottage room and no outline (room() checks that). The parts have no names, so a part is found by its place
-// in the room: the meshes of the toilet group (not the two flat discs of the sludge and the glow) and the one cone of the room group.
+// in the room: the meshes of the toilet group (not the two flat discs of the sludge and the glow, nor the open tube of the eruption, which
+// stays hidden in a headset) and the one cone of the room group.
 // armOutlines counts the draws of each part and of its outline (onBeforeRender runs once per draw) and keeps the list in window.__ol.
 const armOutlines = (page) => page.evaluate(() => {
   const room = G.rig.getObjectByName("portal:room");
   if (!room) return 0;
   const toilet = room.children.find((c) => c.isGroup), shade = room.children.find((c) => c.isMesh && c.geometry.type === "ConeGeometry"), solid = [];
-  toilet.traverse((o) => { if (o.isMesh && !o.parent.isMesh && o.geometry.type !== "CircleGeometry") solid.push(o); });
+  toilet.traverse((o) => { if (o.isMesh && !o.parent.isMesh && o.geometry.type !== "CircleGeometry" && !o.geometry.parameters.openEnded) solid.push(o); });
   const list = (window.__ol = solid.map((o, i) => ({ what: "toilet " + i + " " + o.geometry.type, lamp: false, o })).concat([{ what: "lamp shade " + shade.geometry.type, lamp: true, o: shade }]));
   const hook = (o) => { o.userData.draws = 0; const f = o.onBeforeRender; o.onBeforeRender = function (...a) { o.userData.draws++; return f.apply(this, a); }; };
   for (const p of list) { hook(p.o); for (const h of p.o.children) if (h.isMesh) hook(h); }
