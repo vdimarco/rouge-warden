@@ -1,0 +1,6 @@
+PASS: 640×360: exact selected car, stealing, entry/exit, stats and events
+PASS: 640×360: exact nonblank car pixels
+PASS: 390×844: exact selected car, stealing, entry/exit, stats and events
+PASS: 390×844: exact nonblank car pixels
+PASS: no page errors
+PASS: traffic winner

@@ -1,0 +1,25 @@
+PASS 300 exact query results across four headings, clock wraps, lane fades and reach boundaries (56 hits)
+PASS missing/empty, expressway, hidden, short lanes, first tie and fallback paint
+PASS retained car and paint snapshots survive later queries and source changes
+{"baselineResultRecords":4,"candidateResultRecords":4,"baselinePaintArrays":4,"candidatePaintArrays":4}
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: only the winning car should build a result record and paint array
+
+4 !== 1
+
+    at file:///home/von/Work/rouge-warden-fullswing-plan-next/qa/vr/traffic-winner.test.mjs:37:8
+    at ModuleJob.run (node:internal/modules/esm/module_job:569:25)
+    at async node:internal/modules/esm/loader:650:26
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5) {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: 4,
+  expected: 1,
+  operator: 'strictEqual',
+  diff: 'simple'
+}
+
+Node.js v26.7.0

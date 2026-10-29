@@ -1614,7 +1614,7 @@ body:has(#phoneControls:not([hidden])) .fs-top:has(.fs-pill:not([hidden]):not(.f
     // the mission card, the training checklist and the pump sticker (game.progress objective, training, pump)
     // the objective is written later in the same frame (game.update): paintMission writes this card again then
     const os = syncMission(pg, k);
-    const trn = pg.training, ts = trn ? trn.now + "|" + (trn.done ? 1 : 0) + "|" + trn.items.map((r) => (r.done ? "1" : "0") + r.n).join("") : "";
+    const trn = pg.trainHush ? null : pg.training, ts = trn ? trn.now + "|" + (trn.done ? 1 : 0) + "|" + trn.items.map((r) => (r.done ? "1" : "0") + r.n).join("") : "";
     if (dh.train !== ts) { dh.train = ts; drawTraining(trn); }
     const pu = pg.pump, touch = !!(inp && inp.easySwing), ps = pu ? pu.kind + pu.n + "/" + pu.of + (touch ? "t" : "m") : "";
     if (dh.pump !== ps) { dh.pump = ps; k.pump.hidden = !pu; if (pu) drawPump(pu, touch); }

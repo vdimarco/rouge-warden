@@ -2703,6 +2703,8 @@ export function createCityView(renderer, scene, city, opts = {}) {
   for (const s of city.safe) keepOut.push([s.x, s.y, s.z, 4]);
   for (const l of city.loonies) keepOut.push([l.x, l.y - 1.7, l.z, 3]);
   for (const t of city.trials) if (t.start) keepOut.push([t.start.x, t.start.y, t.start.z, 7]);
+  // the Gauntlet's roof stays open: a fight with nothing to hide behind
+  if (city.arena) { const q = city.arena.rect; keepOut.push([city.arena.x, city.arena.y, city.arena.z, Math.hypot(q.maxX - q.minX, q.maxZ - q.minZ) / 2 + 3]); }
   const blocked = (x, y, z, r) => keepOut.some((k) => Math.abs(k[1] - y) < 4 && Math.hypot(k[0] - x, k[2] - z) < k[3] + r);
 
   // The four sides of a tier: outward normal, the plane's coordinate, and the span along the face.

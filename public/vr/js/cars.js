@@ -62,7 +62,7 @@ export function trafficAt(T, i, t, out = {}) {
 const TQ = {};
 export function nearTraffic(T, x, z, t, reach = CAR.steal) {
   if (!T || !T.n) return null;
-  let best = null, bd = reach;
+  let best = -1, bd = reach;
   const L = T.lane, M = T.move;
   for (let i = 0; i < T.n; i++) {
     const o = i * 4;
@@ -74,9 +74,11 @@ export function nearTraffic(T, x, z, t, reach = CAR.steal) {
     if (TQ.s < 8 || TQ.len - TQ.s < 8) continue;
     const dx = x - TQ.x, dz = z - TQ.z, along = clamp(dx * TQ.fx + dz * TQ.fz, -CAR.half.l, CAR.half.l);
     const d = Math.hypot(dx - TQ.fx * along, dz - TQ.fz * along);
-    if (d < bd) { bd = d; best = trafficAt(T, i, t, {}); best.dist = d; }
+    if (d < bd) { bd = d; best = i; }
   }
-  return best;
+  if (best < 0) return null;
+  const car = trafficAt(T, best, t, {}); car.dist = bd;
+  return car;
 }
 
 export function createCars(city, opts = {}) {

@@ -1,0 +1,5 @@
+PASS 300 exact query results across four headings, clock wraps, lane fades and reach boundaries (56 hits)
+PASS missing/empty, expressway, hidden, short lanes, first tie and fallback paint
+PASS retained car and paint snapshots survive later queries and source changes
+{"baselineResultRecords":4,"candidateResultRecords":1,"baselinePaintArrays":4,"candidatePaintArrays":1}
+PASS one result materialization on a hit, none on a miss
