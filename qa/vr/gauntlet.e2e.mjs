@@ -164,15 +164,17 @@ async function play(size, tag, init) {
         const b = QA.live().find((g) => g.brute);
         if (!b) return;
         G.test.teleport(b.x + 6, b.y, b.z); QA.face(b);
-        b.state = "windup"; b.charge = true; b.t = 0.05; b.cool = 0; QA.step(8);
+        b.state = "windup"; b.charge = true; b.t = 0.05; b.cool = 0; b.pose = 16; QA.step(8);
       });
       await shot("5-charge");
+      R.clip = await page.evaluate(() => { const b = QA.live().find((g) => g.brute); return { loaded: G.figures.info().clip, pose: b && b.pose, phase: b && +b.poseT.toFixed(2) }; });
     }
   }
   R.rounds = rounds;
   check(rounds[0] && rounds[0].cleared && /CLEARED/.test(rounds[0].banner), tag + ": the bot clears round 1 and the stamp says CLEARED", rounds[0]);
   check(rounds[1] && rounds[1].next && rounds[1].next.brutes === 1, tag + ": round 3 brings a brute", rounds.map((r) => r.next));
   check(rounds.every((r) => r.did.press > 0), tag + ": the swing input fights every round", rounds.map((r) => r.did));
+  check(R.clip && R.clip.loaded >= 2 && R.clip.pose === 16 && R.clip.phase > 1, tag + ": the brute's charge plays the baked MotionBricks clip", R.clip);
 
   /* ---- the end: a knock-out pays for the rounds cleared and keeps the best ---- */
   const end = await page.evaluate(() => {

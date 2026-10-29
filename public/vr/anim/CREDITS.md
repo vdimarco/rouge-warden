@@ -35,3 +35,16 @@
 4. **Feet.** The loop is set on the floor. A planted foot rolls from the heel to the ball without sliding on a floor that moves back at the clip's speed. The legs reach the pinned ankle by two-bone IK, with the knee kept in its plane. Where a straight leg cannot reach at the heel strike, the hips sink a little, the same at both steps. The clip speed is the speed at which the hero's own planted feet travel.
 
 To rebuild, download the files above into one folder (for example `mocap/`, outside the repo) and run `node qa/vr/bake-mocap.mjs mocap`. `node qa/vr/mocap-sheet.mjs out.png` draws contact sheets of the result on crew5.
+
+# The brute's charge
+
+`brute-charge.json` is the Gauntlet brute's charge (`streetview.js` pose 16). MotionBricks generated it, and `qa/vr/motionbricks/`
+reduced it to the street figure's limbs. `qa/vr/motionbricks/README.md` gives the steps.
+
+| Clip | Source | Author | Licence |
+| --- | --- | --- | --- |
+| brute charge | MotionBricks-SOMA-RP-v1, generated between poses made in `qa/vr/motionbricks/bake.py` | NVIDIA (model) | Output of a model under the NVIDIA Open Model Agreement; NVIDIA claims no ownership of outputs |
+
+- Model: https://github.com/NVlabs/motionbricks (code Apache 2.0) and https://huggingface.co/nvidia/MotionBricks. Paper: T. Wang et al., "MotionBricks: Scalable Real-Time Motions with Modular Latent Generative Model and Smart Primitives", ACM Transactions on Graphics 45(4), 2026.
+- No sample clip from the MotionBricks release was used: the poses that condition the model were made from the SOMA rest pose.
+

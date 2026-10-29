@@ -18,6 +18,14 @@ requirement has SHALL and at least one scenario. A box is ticked only when the c
 - [x] The red rim and outline, the white flash (`streetview.js` `aB.w`; `combat.js` `g.tele`, `g.flash`).
 - [x] The heavy impact, the THUCK words, the charge WHOOSH (`main.js`).
 
+## The baked charge
+
+- [x] MotionBricks on the CPU (`qa/vr/motionbricks/cpu_engine.py`), the bake from our own poses (`bake.py`), the contact sheets
+  (`sheet.py`) and the figure's channels (`to_goon.py`); `public/vr/anim/brute-charge.json`; credits in `anim/CREDITS.md`.
+- [x] Pose 16 in the street figure shader, `figures.setClip`, the charge's phase in `combat.js`, the load in `main.js`, the
+  file in the offline cache (`sw.js`).
+- [x] Unit test (phase and file) in `gauntlet.test.mjs`; the browser check that the charging brute plays the clip.
+
 ## The loop
 
 - [x] `qa/vr/gauntlet-bot.mjs` and `qa/vr/gauntlet.test.mjs` pass.

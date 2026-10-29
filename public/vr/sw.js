@@ -44,6 +44,7 @@ const PRECACHE = [
   "./art/cutscene/king-awake.webp",
   "./art/cutscene/finale.webp",
   "./anim/locomotion.json",
+  "./anim/brute-charge.json",
   ...JS.map((f) => "./js/" + f),
   ...LIB.map((f) => "./lib/" + f),
   "/wild/models/king.glb",

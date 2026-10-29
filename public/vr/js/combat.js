@@ -483,11 +483,16 @@ export function createCombat(city) {
         case "windup":
           g.t -= dt; g.stride = 0;
           if (h) face(g, h.x, h.z, 0.3);
-          if (g.t <= 0) { g.state = "swing"; g.t = g.brute ? FIGHT.brute.swing : G.swing; setPose(g, 8); if (g.charge) C.stats.charges++, emit({ type: "charge", id: g.id, x: g.x, y: g.y, z: g.z }); }
+          if (g.charge) g.poseT = 1 - Math.max(0, g.t) / g.windup; // the charge clip's phase, 0 to 1 (pose 16)
+          if (g.t <= 0) {
+            g.state = "swing"; g.t = g.brute ? FIGHT.brute.swing : G.swing; setPose(g, g.charge ? 16 : 8);
+            if (g.charge) { g.poseT = 1; C.stats.charges++; emit({ type: "charge", id: g.id, x: g.x, y: g.y, z: g.z }); }
+          }
           break;
         case "swing": {
           g.t -= dt;
           const sw = g.brute ? FIGHT.brute.swing : G.swing;
+          if (g.charge) g.poseT = 2 - Math.max(0, g.t) / sw; // the lunge half of the clip, 1 to 2
           if (g.charge && h && d > 0.9) {
             // the lunge: straight at where the hero stands, as fast as the roof lets him (he stops at an edge)
             const st = Math.min(FIGHT.brute.lunge * dt, d - 0.9);
@@ -512,7 +517,7 @@ export function createCombat(city) {
             const gr = g.brute ? FIGHT.brute.reach : G.reach, Bc = FIGHT.brute.charge;
             if (g.brute && d > Bc[0] && d < Bc[1] && g.cool <= 0 && !h.safe) {
               // the charge: he plants his feet and winds up, then runs the hero down
-              g.state = "windup"; g.charge = true; g.dodged = false; g.t = g.windup; g.stride = 0; setPose(g, 9);
+              g.state = "windup"; g.charge = true; g.dodged = false; g.t = g.windup; g.stride = 0; setPose(g, 16); // the baked charge (streetview.js)
               emit({ type: "windup", id: g.id, brute: true, charge: true });
             } else if (d > gr) {
               const sp = (d > 8 ? G.run : G.speed) * (g.pace || 1), st = Math.min(sp * dt, d - gr * 0.8);

@@ -14,6 +14,11 @@ when he arrives; a dodge during his lunge is a perfect one. A rope SHALL stagger
 - **WHEN** the player dodges at the start of the brute's wind-up
 - **THEN** the dodge is over when he arrives, and the hero loses two hearts
 
+#### Scenario: The charge is a run, not a punch
+- **WHEN** a brute 6 m away charges
+- **THEN** he drops into a planted lunge through his wind-up, then runs at the hero with his body low and his leading arm up,
+  played from the baked clip (pose 16), and the hand-made stand-in only when the clip did not load
+
 #### Scenario: Punch a brute
 - **WHEN** the player punches a brute who winds up
 - **THEN** he takes a point, shows a grey THUCK, and his wind-up goes on

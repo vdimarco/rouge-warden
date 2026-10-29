@@ -12,6 +12,10 @@
   timing rule (the dodge must be live when he arrives) is ours: the bot showed that any dodge in his wind-up was enough.
 - **Hit flash.** A white flash on a hit body is a common "game feel" device. The game already had hit-stop, shake and impact frames
   (`swing-verse-style`); the flash puts the blow on the body as well.
+- **The brute's charge motion.** Generated with MotionBricks (T. Wang et al., "MotionBricks: Scalable Real-Time Motions with
+  Modular Latent Generative Model and Smart Primitives", ACM TOG 45(4), SIGGRAPH 2026; https://github.com/NVlabs/motionbricks).
+  It fills in motion between context and target poses. We gave it our own stand, wind-up and charge-end poses and baked the
+  result offline (`qa/vr/motionbricks/README.md`); the game ships the clip, not the model.
 - **The fight ring.** A decal: one textured quad with polygon offset over the roof, its texture painted on a canvas at load (no
   file). No outside source fit better for one flat roof; the three.js DecalGeometry is for curved surfaces.
 
@@ -29,6 +33,16 @@
   edge pixels (a hard step on the view angle, in the comic cel style) and a pulse colours the rest of him a little.
 - **The bot plays fair, not well.** It reacts after a set delay with some spread, dodges a brute when his lunge starts, and walks at
   5.5 m/s. It teleports for a zip (the zip's flight is main.js). Its numbers are for comparing passes, not a target to hit.
+
+- **The charge as a clip on the street figure.** The goons are the instanced street figures, posed in the vertex shader; they
+  have no skeleton. The baked motion is reduced to the figure's own joints (a pitch per leg, a pitch and a raise per arm, the
+  lean, the head and the bob) at 15 Hz, 20 frames, and sent as uniforms (three vec4 a frame, 60 in all). Pose 16 samples it.
+  `combat.js` stays free of the clip: it gives the charge's phase as the pose clock (0 to 1 over the wind-up, 1 to 2 over the
+  lunge), and the shader maps that onto the clip's own wind-up and run. Without the file, pose 16 shows a hand-made stand-in.
+- **MotionBricks on a CPU.** Its runtime needs TensorRT. Only the inference call does, so `cpu_engine.py` stubs the TensorRT
+  import and runs that call on ONNX Runtime; the release's own Warp kernels prepare the inputs and decode the outputs on the
+  CPU. One generation takes about a second on four cores.
+- **No sample clips.** The release's sample motions are for internal evaluation only, so none of them conditions the model.
 
 ## The loop and what each pass found
 

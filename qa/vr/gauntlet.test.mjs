@@ -5,6 +5,7 @@ import { generate, ARENA } from "../../public/vr/js/city.js";
 import { createCombat, FIGHT } from "../../public/vr/js/combat.js";
 import { createJobs, JOB, gauntletRound, gauntletPay } from "../../public/vr/js/jobs.js";
 import { playGauntlet } from "./gauntlet-bot.mjs";
+import { readFileSync } from "node:fs";
 
 const city = generate();
 let fails = 0;
@@ -47,6 +48,22 @@ test("a brute: six points, punches do not stop him, a kick staggers him, a rope 
   for (let i = 0; i < 5 / DT && C2.hp === FIGHT.hp; i++) { C2.update(DT, h2); for (const e of C2.events) seen.push(e); C2.events.length = 0; }
   assert.equal(C2.hp, FIGHT.hp - FIGHT.brute.dmg, JSON.stringify(seen.map((e) => e.type)));
   assert.ok(seen.find((e) => e.type === "hurt").heavy);
+});
+test("the charge plays the baked clip: pose 16, its phase 0 to 1 over the wind-up and 1 to 2 over the lunge; the clip fits the figure", () => {
+  const C = createCombat(city), h = hero(-150, 0, 2);
+  const g = C.spawn(-156, 0, 2, "t", { brute: true }); g.aggro = true; g.cool = 0;
+  const seen = [];
+  for (let i = 0; i < 2 / DT && seen.length < 200; i++) { C.update(DT, h); if (g.charge) seen.push([g.state, g.pose, g.poseT]); }
+  const wind = seen.filter((s) => s[0] === "windup"), lunge = seen.filter((s) => s[0] === "swing");
+  assert.ok(wind.length > 10 && lunge.length > 5, JSON.stringify(seen.slice(0, 3)));
+  assert.ok(wind.every((s) => s[1] === 16) && lunge.every((s) => s[1] === 16), "pose 16 all the way");
+  for (const part of [wind, lunge]) for (let i = 1; i < part.length; i++) assert.ok(part[i][2] >= part[i - 1][2], "the phase only goes forward");
+  assert.ok(wind[0][2] < 0.1 && wind.at(-1)[2] <= 1 && lunge[0][2] >= 1 && lunge.at(-1)[2] <= 2);
+  const clip = JSON.parse(readFileSync(new URL("../../public/vr/anim/brute-charge.json", import.meta.url)));
+  assert.equal(clip.channels.length, 10);
+  assert.ok(clip.frames.length >= 2 && clip.frames.length <= 24 && clip.frames.every((r) => r.length === 10 && r.every(Number.isFinite)));
+  assert.ok(clip.wind > 0 && clip.length > clip.wind && Math.abs((clip.frames.length - 1) / clip.hz - clip.length) < 1 / clip.hz);
+  assert.ok(clip.frames.at(-1)[9] > 4, "the clip runs forward (travel " + clip.frames.at(-1)[9] + " m)");
 });
 test("the brute's charge: a dodge as he lunges is perfect and he misses; a dodge early in his wind-up is over when he arrives", () => {
   const run = (when) => {

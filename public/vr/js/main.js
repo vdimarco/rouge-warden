@@ -184,6 +184,8 @@ function createWorld() {
   view = G.view = createCityView(renderer, scene, city, { low: false });
   street = G.street = createStreet(city); // people on the sidewalks and the shop signs (js/street.js)
   figures = G.figures = createFigures(scene, 240); // the people, the Sludge Gang and the job people, in two draws
+  // the brute's charge, baked with MotionBricks (anim/CREDITS.md); without it pose 16 keeps its stand-in
+  fetch(new URL("../anim/brute-charge.json", import.meta.url)).then((r) => (r.ok ? r.json() : null)).then((c) => c && figures.setClip(c)).catch(() => {});
   streetView = G.streetView = createStreetView(scene, street, figures);
   combat = G.combat = createCombat(city);
   cars = G.cars = createCars(city);
