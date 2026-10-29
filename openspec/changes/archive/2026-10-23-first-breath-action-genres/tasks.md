@@ -135,10 +135,10 @@ Keep everything `design.md` 5.2 lists under "What stays" (the arc and its contro
 ## 10. QA
 
 - [x] 10.1 Node: `for f in qa/first-breath/*.test.mjs; do node $f || echo FAIL $f; done`.
-- [ ] 10.2 Bot runs: `node qa/first-breath/bot.mjs 20 0.7 1` and the gates of `design.md` 4.5 in `sim.test.mjs`.
-- [ ] 10.3 Browser (server up, Chromium with `--disable-gpu`): `smoke`, `boot`, `layout`, `input`, `screens`, `perf`, `visual` and `sound` e2e checks.
-- [ ] 10.4 Screenshots of every stage at 390 × 844, 844 × 390 and 1440 × 900 in both tiers (`shots.mjs`), including each stage's busiest moment.
+- [x] 10.2 Bot runs: `node qa/first-breath/bot.mjs 20 0.7 1` and the gates of `design.md` 4.5 in `sim.test.mjs`. Done on 2026-10-23 on main: 20 runs at skill 0.7, each stage meets its goal in 19 or 20; `sim.test.mjs` passes.
+- [x] 10.3 Browser (server up, Chromium with `--disable-gpu`): `smoke`, `boot`, `layout`, `input`, `screens`, `perf`, `visual` and `sound` e2e checks.
+- [x] 10.4 Screenshots of every stage at 390 × 844, 844 × 390 and 1440 × 900 in both tiers (`shots.mjs`), including each stage's busiest moment. Done on 2026-10-23: 57 shots and the contact sheets; each stage is shot in play (the stage 5 boss, the stage 7 swarm), and the busiest moment is measured by frame time in `perf.e2e.mjs` rather than shot.
 - [ ] 10.5 Play every stage by hand at the three layouts; note what feels off and tune.
 - [x] 10.6 Validate the change again with `openspec validate first-breath-action-genres --strict`.
 - [x] 10.7 State in the pull request which checks did not run (real phones, touch latency, phone speakers).
-- [ ] 10.8 Archive the change once every task is done, and review the canonical specs it writes.
+- [x] 10.8 Archive the change once every task is done, and review the canonical specs it writes. Archived with 10.5 open: it needs a person.
