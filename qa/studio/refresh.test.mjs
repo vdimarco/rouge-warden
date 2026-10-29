@@ -218,7 +218,9 @@ check("a branch with no session becomes an agent of its own kind", () => {
   assert.equal(local.state, "idle", "no commit in 2 hours reads as idle");
 });
 check("work trees: open, merged, even and local, with their pull requests and games", () => {
-  assert.equal(board.worktrees.items.length, 6);
+  // six branches here, and the deleted claude/gone-branch kept from the older page
+  assert.equal(board.worktrees.items.length, 7);
+  assert.equal(tree("claude/gone-branch").state, "even");
   assert.deepEqual(pickT(tree("ccr-1234abcd-q1w2e3")), { state: "open", ahead: 1, pr: { number: 7, state: "open" }, games: ["lab"], agent: "session_01Lab" });
   assert.deepEqual(pickT(tree("claude/fish-gyro-x8akp2")), { state: "merged", ahead: 0, pr: { number: 5, state: "merged" }, games: ["fish"], agent: "session_02Fish" });
   assert.deepEqual(tree("claude/vr-swing-zz9zz9").games, ["vr", "arcade"]);
@@ -317,6 +319,37 @@ check("a game in development goes live when its branch merges", () => {
   assert.ok(texts.includes("The Lab is live in the arcade."), texts.slice(0, 5).join(" | "));
   assert.ok(texts.includes("ccr-1234abcd-q1w2e3 merged into main (PR #7)."), texts.slice(0, 5).join(" | "));
 });
+check("short session records: the page remembers each session's repo, so only new sessions need a lookup", () => {
+  // list_sessions now returns no repo and no branch; the board learns them once from get_session
+  const slim = (id, title, bucket, extra = {}) => ({ id, title, session_status: "SESSION_STATUS_IDLE", status_bucket: "SESSION_STATUS_BUCKET_" + bucket, created_at: "2026-09-28T12:50:00Z", updated_at: "2026-09-28T13:10:00Z", origin: "android", ...extra });
+  const list = path.join(tmp, "slim.json");
+  writeFileSync(list, JSON.stringify({ ccr: { data: [
+    slim("session_01Lab", "Lab brainstorm", "WORKING"),
+    slim("session_09New", "New idea", "WORKING"),
+    slim("session_10Other", "Another repo", "WORKING"),
+    slim("session_11Keeper", "Studio keeper", "WORKING", { tags: ["studio-keeper"] }),
+  ] } }));
+  const need = (page) => { const r = run("--need", "--page", page, "--sessions", list); assert.equal(r.code, 0, r.out); return r.out.trim().split("\n").filter(Boolean); };
+  assert.deepEqual(need(out1), ["session_09New", "session_10Other"], "a known session or the keeper was sent for a lookup");
+  const whereFile = path.join(tmp, "where.json");
+  writeFileSync(whereFile, JSON.stringify([
+    { id: "session_09New", repos: ["owner/game", "owner/other"], branches: ["codex/loon-echo"] },
+    { ccr: { id: "session_10Other", session_context: { sources: [{ git_repository: { url: "https://github.com/other/thing" } }] } } },
+  ]));
+  const out5 = path.join(tmp, "out5.html"), json5 = path.join(tmp, "out5.json");
+  const r = run("--page", out1, "--sessions", list, "--where", whereFile, "--out", out5, "--json", json5, "--now", "2026-09-28T13:15:00Z");
+  assert.equal(r.code, 0, r.out);
+  const b5 = JSON.parse(readFileSync(json5, "utf8"));
+  const a = (id) => b5.agents.items.find((x) => x.id === id);
+  assert.deepEqual([a("session_09New").state, a("session_09New").branch], ["working", "codex/loon-echo"]);
+  assert.equal(a("session_01Lab").branch, "ccr-1234abcd-q1w2e3", "a known session lost its branch");
+  assert.equal(a("session_01Lab").state, "working", "a known session was not refreshed");
+  assert.ok(!a("session_10Other") && !a("session_11Keeper"), "another repo's session or the keeper is on the board");
+  assert.ok(b5.auto.where.session_09New && !b5.auto.where.session_10Other);
+  assert.equal(b5.auto.elsewhere.length, 1, "the other repo's session was not remembered");
+  assert.ok(!JSON.stringify(b5.auto.elsewhere).includes("session_10Other"), "the page shows another repo's session id");
+  assert.deepEqual(need(out5), [], "a remembered session was sent for a lookup again");
+});
 check("the script refuses to run without the live page or the sessions", () => {
   const a = run("--sessions", sessionsFile, "--out", path.join(tmp, "x.html"));
   assert.equal(a.code, 1);
@@ -364,7 +397,7 @@ await (async () => {
       assert.ok(got.cards.includes("VR </script><b>game</b>"), "the title with markup did not show as plain text");
       assert.ok(got.states.includes("Needs you") && got.states.some((s) => /Working/.test(s)), got.states.join(", "));
       assert.equal(got.finished, 3);
-      assert.equal(got.rows, 6);
+      assert.equal(got.rows, 7);
       assert.equal(got.cabs, 6);
       assert.equal(got.dev, 3);
       assert.equal(got.prod, true);
