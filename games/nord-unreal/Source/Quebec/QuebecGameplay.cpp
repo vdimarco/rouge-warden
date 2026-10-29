@@ -1754,12 +1754,15 @@ void AQuebecCar::SimulateDrive(float Step, bool bFailsafe)
         if (bFailsafe || FMath::Abs(Speed)<100.f)
             LateralSpeed = FMath::FInterpConstantTo(LateralSpeed,0.f,Step,3600.f);
         if (FMath::Abs(Speed)<1.f && FMath::Abs(Throttle)<.01f) Speed=0.f;
-        // A held handbrake shove at speed earns one banner. A tap, a straight run and a gripped turn do not.
+        // A held handbrake shove at speed earns one graded banner when it ends. A tap, a straight run and a gripped turn do not.
         if (AController* Driver = GetDriverController())
         {
-            if (Slide.Tick(Step, Speed, LateralSpeed, bHandbrake && !bFailsafe))
-                QuebecNotice::Show(Driver, TEXT("SLIDE"), TEXT("Through the corner"), QuebecSlide::NoticeSeconds);
+            if (Slide.Tick(Step, Speed, LateralSpeed, bHandbrake, bFailsafe))
+                QuebecNotice::Show(Driver, FString(QuebecSlide::Title(Slide.LastGrade)),
+                    FString::Printf(TEXT("Held for %.1f s"), Slide.LastSeconds), QuebecSlide::NoticeSeconds);
         }
+        // A slide left behind with no driver never pays the next one.
+        else Slide = QuebecSlide::FState();
     }
     MoveWithCollision(Step,(GetActorForwardVector().GetSafeNormal2D()*Speed+GetActorRightVector().GetSafeNormal2D()*LateralSpeed)*Step);
 }
@@ -1948,6 +1951,7 @@ void AQuebecCar::UpdateDriveAudio(float DeltaSeconds)
     if (!IsLocallyControlled() || !Controller || !Occupant)
     {
         if (DriveAudio->IsPlaying()) { DriveAudio->Stop(); if (DriveWave) DriveWave->ResetAudio(); }
+        SlideToneGain=0.f;
         return;
     }
     if (!DriveWave)
@@ -1963,6 +1967,7 @@ void AQuebecCar::UpdateDriveAudio(float DeltaSeconds)
     const float Load=bHandbrake ? 0.f : FMath::Max(0.f,Throttle);
     AudioFrequency=FMath::FInterpTo(AudioFrequency,32.f+45.f*SpeedRatio+38.f*GearPhase+12.f*Load,DeltaSeconds,8.f);
     const float Tire=FMath::Clamp(FMath::Abs(LateralSpeed)/450.f+(bHandbrake ? SpeedRatio*.3f : 0.f),0.f,1.f);
+    const float SlideGoal=QuebecSlideTone::Target(Speed,LateralSpeed,bHandbrake);
     const int32 Frames=FMath::Clamp(3600-DriveWave->GetAvailableAudioByteCount()/2,0,3600);
     if (Frames>0)
     {
@@ -1975,7 +1980,10 @@ void AQuebecCar::UpdateDriveAudio(float DeltaSeconds)
             const float Noise=float(AudioNoise>>8)/8388607.5f-1.f;
             const float Engine=(FMath::Sin(AudioPhase*2.f*PI)+.4f*FMath::Sin(AudioPhase*4.f*PI)+.18f*FMath::Sin(AudioPhase*8.f*PI))*(.045f+.025f*Load+.015f*SpeedRatio);
             const float Squeal=Tire*.045f*(Noise*.35f+FMath::Sin(TirePhase*2.f*PI)*.65f);
-            Sample=int16(FMath::Clamp(Engine+Squeal,-1.f,1.f)*32767.f);
+            // A slide on the banner's line screams over the hiss; the gain eases per sample, so it never clicks.
+            SlideToneGain=QuebecSlideTone::Follow(SlideToneGain,SlideGoal,1.f/static_cast<float>(QuebecSlideTone::SampleRate));
+            const float Scream=SlideVoice.Sample(SlideToneGain);
+            Sample=int16(FMath::Clamp(Engine+Squeal+Scream,-1.f,1.f)*32767.f);
         }
         DriveWave->QueueAudio(reinterpret_cast<const uint8*>(PCM.GetData()),PCM.Num()*sizeof(int16));
     }
