@@ -11,6 +11,8 @@
 // --sessions  the Claude Code Remote list_sessions result: as the tool saved it, or a JSON array of sessions.
 // --out       the page to publish. With --if-changed nothing is written when no agent, work tree or cabinet
 //             changed, and the first word printed is "unchanged".
+// --need prints the listed sessions whose repo the page does not know yet; --where <file> gives their get_session
+//   answers, which the page then remembers.
 // Other flags: --prs <GitHub pull request list as JSON>, --repo-dir <dir>, --remote origin, --base main,
 //   --repo owner/name, --no-fetch, --now <ISO time>, --json <file> (also write the board data), --template <file>,
 //   --fresh (start without --page), --no-sessions (agents from branches only).
@@ -121,8 +123,8 @@ export function gameDir(g) {
 
 export function parseArgs(argv) {
   const a = { remote: "origin", base: "main", fetch: true };
-  const flags = { "--no-fetch": "noFetch", "--if-changed": "ifChanged", "--fresh": "fresh", "--no-sessions": "noSessions" };
-  const values = { "--page": "page", "--sessions": "sessions", "--out": "out", "--prs": "prs", "--repo-dir": "repoDir", "--remote": "remote", "--base": "base", "--repo": "repo", "--now": "now", "--json": "json", "--template": "template" };
+  const flags = { "--no-fetch": "noFetch", "--if-changed": "ifChanged", "--fresh": "fresh", "--no-sessions": "noSessions", "--need": "need" };
+  const values = { "--page": "page", "--sessions": "sessions", "--out": "out", "--prs": "prs", "--repo-dir": "repoDir", "--remote": "remote", "--base": "base", "--repo": "repo", "--now": "now", "--json": "json", "--template": "template", "--where": "where" };
   for (let i = 0; i < argv.length; i++) {
     const k = argv[i];
     if (flags[k]) a[flags[k]] = true;
@@ -146,9 +148,15 @@ export function parseJsonLoose(text) {
 }
 
 // the sessions on this repo, in one shape, from list_sessions output or from a short hand-written list
-export function readSessions(text, repo) {
+export function sessionList(text) {
   const raw = parseJsonLoose(text);
-  const list = Array.isArray(raw) ? raw : (raw.ccr && raw.ccr.data) || raw.data || raw.sessions || [];
+  return Array.isArray(raw) ? raw : (raw.ccr && raw.ccr.data) || raw.data || raw.sessions || [];
+}
+
+// list_sessions now gives a short record with no repo or branch. `where` (id -> { repo, branches }) fills that in,
+// from the page's memory of earlier lookups and from new get_session answers.
+export function readSessions(text, repo, where = new Map()) {
+  const list = sessionList(text);
   const want = slug(repo);
   const out = [];
   for (const s of list) {
@@ -172,6 +180,8 @@ export function readSessions(text, repo) {
     // the short form: { id, title, repo, branch, bucket, status, created, updated, origin, summary, tags }
     if (s.repo) repos.add(slug(s.repo));
     if (!s.repo || slug(s.repo) === want) for (const b of [].concat(s.branch || [], s.branches || [])) branches.add(b);
+    const w = where.get(s.id);
+    if (w && w.repo) { repos.add(slug(w.repo)); if (slug(w.repo) === want) for (const b of w.branches || []) branches.add(b); }
     if (!repos.has(want)) continue;
     // the studio keeper refreshes this board; it is no agent of the studio
     const tags = Array.isArray(s.tags) ? s.tags : [];
@@ -565,6 +575,50 @@ export function buildBoard({ prev = {}, sessions = null, git, now, repo, prs = n
   return { board, changed, fingerprint, counts };
 }
 
+/* ---------------- where each session works ---------------- */
+
+const idHash = (id) => createHash("sha1").update(String(id)).digest("hex").slice(0, 12);
+const knowsRepo = (s) => !!(s.session_context || s.external_metadata || s.repo);
+
+// What the page remembers: the branches of each session on this repo (from its agents and auto.where), and a
+// hash of each session id that is on another repo, so that it is not looked up again.
+export function rememberedWhere(prev, repo) {
+  const here = new Map(), elsewhere = new Set(((prev.auto && prev.auto.elsewhere) || []));
+  for (const [id, branches] of Object.entries((prev.auto && prev.auto.where) || {})) here.set(id, { repo, branches });
+  for (const a of (prev.agents && prev.agents.items) || []) {
+    if (a && a.session && !here.has(a.id)) here.set(a.id, { repo, branches: a.branch ? [a.branch] : [] });
+  }
+  return { here, elsewhere };
+}
+
+// the listed sessions that need one get_session lookup: no repo in the record, and not remembered either way
+export function sessionsToLookUp(text, mem) {
+  const keeper = (s) => (Array.isArray(s.tags) && s.tags.includes(KEEPER_TAG)) || /^studio keeper\b/i.test(String(s.title || "").trim());
+  return sessionList(text).filter((s) => s && typeof s.id === "string" && !keeper(s) && !knowsRepo(s) && !mem.here.has(s.id) && !mem.elsewhere.has(idHash(s.id))).map((s) => s.id);
+}
+
+// get_session answers (full records, or short { id, repos, branches } entries) as id -> { repos, branches }
+export function readWhere(text) {
+  const raw = parseJsonLoose(text);
+  const list = Array.isArray(raw) ? raw : [raw];
+  const out = new Map();
+  for (const r of list) {
+    const s = (r && r.ccr) || r;
+    if (!s || typeof s.id !== "string") continue;
+    if (s.repos !== undefined || s.repo !== undefined) {
+      out.set(s.id, { repos: [].concat(s.repos || s.repo || []).filter(Boolean).map(slug), branches: [].concat(s.branches || s.branch || []).filter(Boolean) });
+      continue;
+    }
+    const ctx = s.session_context || {}, em = s.external_metadata || {};
+    const repos = (ctx.sources || []).map((x) => x.git_repository && x.git_repository.url).filter(Boolean).map(slug);
+    const branches = new Set();
+    for (const o of ctx.outcomes || []) { const gi = o.git_repository && o.git_repository.git_info; if (gi) { if (gi.repo) repos.push(slug(gi.repo)); for (const b of gi.branches || []) branches.add(b); } }
+    for (const b of Object.values(em.current_branches || {})) if (b) branches.add(b);
+    out.set(s.id, { repos: [...new Set(repos)], branches: [...branches] });
+  }
+  return out;
+}
+
 /* ---------------- main ---------------- */
 
 function main() {
@@ -574,14 +628,30 @@ function main() {
   const cwd = path.resolve(a.repoDir || process.cwd());
   const prev = a.page ? extractBoard(readFileSync(a.page, "utf8")) : {};
   if (!prev) throw new Error("no board-data script in " + a.page);
+  const mem = rememberedWhere(prev, a.repo || slug(gitIn(path.resolve(a.repoDir || process.cwd()))(["remote", "get-url", a.remote], { allowFail: true }) || ""));
+  if (a.need) {
+    if (!a.sessions) throw new Error("--need reads the --sessions file");
+    for (const id of sessionsToLookUp(readFileSync(a.sessions, "utf8"), mem)) console.log(id);
+    return;
+  }
   const template = readFileSync(a.template || path.join(HERE, "page.html"), "utf8");
   const git = collectGit({ cwd, remote: a.remote, base: a.base, fetch: a.fetch, games: (prev.games && prev.games.items) || [] });
   const repo = a.repo || slug(git.url);
-  const sessions = a.sessions ? readSessions(readFileSync(a.sessions, "utf8"), repo) : null;
+  const learned = a.where ? readWhere(readFileSync(a.where, "utf8")) : new Map();
+  const where = new Map(mem.here);
+  for (const [id, w] of learned) {
+    if (w.repos.includes(slug(repo))) where.set(id, { repo, branches: w.branches });
+    else mem.elsewhere.add(idHash(id));
+  }
+  const sessions = a.sessions ? readSessions(readFileSync(a.sessions, "utf8"), repo, where) : null;
   const prs = a.prs ? readPrs(readFileSync(a.prs, "utf8")) : null;
   const now = a.now ? new Date(a.now) : new Date();
   if (isNaN(now)) throw new Error("--now is not a date: " + a.now);
-  const { board, changed, counts } = buildBoard({ prev, sessions, git, now, repo, prs });
+  const { board, changed: moved, counts } = buildBoard({ prev, sessions, git, now, repo, prs });
+  board.auto.where = Object.fromEntries([...where].map(([id, w]) => [id, w.branches]));
+  board.auto.elsewhere = [...mem.elsewhere].slice(-1000);
+  // a new lookup is worth a publish too, so the next refresh does not repeat it
+  const changed = moved || learned.size > 0;
   const c = counts;
   const line = `${c.agents} agents (${c.working} working, ${c.review} ready for review, ${c.blocked} need you) · ${c.trees} work trees (${c.open} open) · ${c.live} cabinets live, ${c.dev} in development · ${c.events} feed events`;
   if (a.ifChanged && !changed) { console.log("unchanged · " + line); return; }
