@@ -41,7 +41,8 @@ class SlideTests(unittest.TestCase):
         self.assertIn("inline constexpr float MinLateral = 180.f;", HEADER)
         self.assertIn("inline constexpr float AgainSeconds = 1.5f;", HEADER)
         self.assertIn("Slide.Tick(Step, Speed, LateralSpeed, bHandbrake && !bFailsafe)", GAME)
-        self.assertIn('TEXT("SLIDE")', GAME)
+        self.assertIn("QuebecSlide::Title(Slide.Chain, Title);", GAME)
+        self.assertIn("inline constexpr float ChainSeconds = 5.f;", HEADER)
         self.assertIn("QuebecSlide::NoticeSeconds", GAME)
         self.assertIn("QuebecNotice::Show", GAME)
 

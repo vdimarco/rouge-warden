@@ -29,7 +29,7 @@ GAME = (ROOT / "Source/Quebec/QuebecGameplay.cpp").read_text()
 HEADER = (ROOT / "Source/Quebec/QuebecGameplay.h").read_text()
 pay = GAME.index("if (Slide.Tick(Step, Speed, LateralSpeed, bHandbrake && !bFailsafe))")
 block = GAME[pay:GAME.index("MoveWithCollision", pay)]
-assert 'TEXT("SLIDE")' in block and "Player->PlaySlide();" in block, "the slide pay does not play the notes"
+assert "QuebecSlide::Title(Slide.Chain, Title);" in block and "Player->PlaySlide();" in block, "the slide pay does not play the notes"
 assert GAME.count("Player->PlaySlide();") == 1, "the slide notes play from more than one place"
 assert "UFUNCTION(Client, Unreliable) void ClientPlaySlide();" in HEADER, "the notes do not reach the driver's client"
 assert "QuebecSkidTone::Caught(bLocked, bWasSkidLocked, Speed)" in GAME, "the lock chirp lost its catch"

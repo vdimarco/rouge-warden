@@ -12,6 +12,7 @@
 #include <cmath>
 #include <cstdarg>
 #include <cstdio>
+#include <cstring>
 #include <vector>
 
 namespace
@@ -146,6 +147,31 @@ namespace
         Expect(Early.Pays == 1, "one pay");
         Expect(!Early.Tick(1.f / 60.f, 2000.f, 400.f, true), "holding on does not pay again");
 
+        Expect(QuebecSlide::ChainSeconds == 5.f, "ChainSeconds");
+        Expect(Early.Chain == 1, "the first pay is a chain of one");
+        QuebecSlide::FState Link;
+        auto PayOnce = [&Link]() {
+            for (int Frame = 0; Frame < 21; ++Frame) Link.Tick(1.f / 60.f, 2000.f, 400.f, true);
+            Link.Tick(1.f / 60.f, 2000.f, 0.f, true);
+        };
+        for (int Slide = 0; Slide < 12; ++Slide)
+        {
+            PayOnce();
+            for (int Frame = 0; Frame < 120; ++Frame) Link.Tick(1.f / 60.f, 2000.f, 0.f, false);
+        }
+        Expect(Link.Pays == 12 && Link.Chain == QuebecSlide::MaxChain, "the chain stops at %d, got %d", QuebecSlide::MaxChain, Link.Chain);
+        for (int Frame = 0; Frame < 301; ++Frame) Link.Tick(1.f / 60.f, 2000.f, 0.f, false);
+        PayOnce();
+        Expect(Link.Chain == 1, "a pay more than 5 s later starts over, got %d", Link.Chain);
+        char Title[16];
+        QuebecSlide::Title(1, Title);
+        Expect(std::strcmp(Title, "SLIDE") == 0, "one slide reads %s", Title);
+        QuebecSlide::Title(2, Title);
+        Expect(std::strcmp(Title, "SLIDE x2") == 0, "two read %s", Title);
+        QuebecSlide::Title(40, Title);
+        Expect(std::strcmp(Title, "SLIDE x9") == 0, "the cap reads %s", Title);
+        QuebecSlide::Title(0, Title);
+        Expect(std::strcmp(Title, "SLIDE") == 0, "no chain reads %s", Title);
         QuebecSlide::FState Wiggle;
         for (int Frame = 0; Frame < 60; ++Frame) Wiggle.Tick(1.f / 60.f, 2000.f, 50.f, true);
         Expect(Wiggle.Pays == 0, "a lane wiggle is not a slide");
@@ -191,7 +217,23 @@ namespace
             {3.f, false, 0.f, true}, {1.2f, true, 1.f, false},
             {3.f, false, 0.f, true}, {1.2f, true, 1.f, false},
         };
-        Expect(Play(Twice, 4, nullptr).Slide.Pays == 2, "a second slide after getting up to speed pays again");
+        const FCar Chained = Play(Twice, 4, nullptr);
+        Expect(Chained.Slide.Pays == 2, "a second slide after getting up to speed pays again");
+        Expect(Chained.Slide.Chain == 2, "a slide about 4.2 s after the last one chains, got %d", Chained.Slide.Chain);
+        const FPhase Slow[] = {
+            {3.f, false, 0.f, true}, {1.2f, true, 1.f, false},
+            {2.f, false, 0.f, false},
+            {3.f, false, 0.f, true}, {1.2f, true, 1.f, false},
+        };
+        const FCar Broken = Play(Slow, 5, nullptr);
+        Expect(Broken.Slide.Pays == 2 && Broken.Slide.Chain == 1, "a coast of 2 s breaks the chain, pays %d chain %d",
+            Broken.Slide.Pays, Broken.Slide.Chain);
+        const FPhase Run[] = {
+            {3.f, false, 0.f, true}, {1.2f, true, 1.f, false},
+            {3.f, false, 0.f, true}, {1.2f, true, -1.f, false},
+            {3.f, false, 0.f, true}, {1.2f, true, 1.f, false},
+        };
+        Expect(Play(Run, 6, nullptr).Slide.Chain == 3, "three quick slides make x3");
         const FPhase Quick[] = {
             {3.f, false, 0.f, true}, {.7f, true, 1.f, false},
             {.2f, false, 0.f, false}, {.8f, true, 1.f, false},

@@ -1760,7 +1760,9 @@ void AQuebecCar::SimulateDrive(float Step, bool bFailsafe)
         {
             if (Slide.Tick(Step, Speed, LateralSpeed, bHandbrake && !bFailsafe))
             {
-                QuebecNotice::Show(Driver, TEXT("SLIDE"), TEXT("Through the corner"), QuebecSlide::NoticeSeconds);
+                char Title[16];
+                QuebecSlide::Title(Slide.Chain, Title);
+                QuebecNotice::Show(Driver, FString(UTF8_TO_TCHAR(Title)), TEXT("Through the corner"), QuebecSlide::NoticeSeconds);
                 if (AQuebecController* Player = Cast<AQuebecController>(Driver)) Player->PlaySlide();
             }
         }

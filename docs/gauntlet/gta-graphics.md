@@ -3015,3 +3015,40 @@ Unreal is not available in this environment, so in-engine frames are the last co
 - Delta vs last round: +1 (round 85 was 134). Sound design 4 → 5. Every other score held.
 
 ![The slide notes the driver hears](gta-graphics/round-86/slide-notes.png)
+
+### Round 87 — 2026-10-29 — rubric v1
+
+- What changed: quick slides chain. A slide that pays within 5 s of the last pay reads SLIDE x2, then x3, up to x9. A longer gap starts over at SLIDE. No cash is paid for a slide.
+- Why it helped: round 86 left pacing, difficulty, and variety tied at 4. Every slide showed the same banner, so sliding corner after corner earned no more than one slide. The chain asks the driver to keep the car moving between corners.
+- Screenshots: `docs/gauntlet/gta-graphics/round-87/slide-chain.png` plots a scripted session. It is not a game view. Three quick slides pay at 3.57, 7.77, and 11.97 s and read SLIDE, x2, x3. After a 2 s coast, the fourth pays at 18.17 s and reads SLIDE. `Scripts/test_slide.py` passed (51 assertions in the compiled test). `Scripts/test_slide_tone.py` passed. The offline syntax check passed `QuebecGameplay.cpp` in game and editor. Unreal did not run. OpenSpec CLI is not installed, so `openspec validate` did not run.
+- Next target: pacing and variety are still 4. Feedback is 4, and a chain has no sound of its own.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 9 | Unchanged. |
+| Color palette | 9 | Unchanged. |
+| Detail density | 9 | Unchanged. |
+| Texture and material quality | 9 | Unchanged. |
+| Composition and camera | 9 | Unchanged. |
+| Atmosphere | 9 | Unchanged. |
+| Character models | 9 | Unchanged. |
+| Animation smoothness | 9 | Unchanged. |
+| Particles and VFX | 9 | Unchanged. |
+| UI polish | 9 | Unchanged. The count uses the same banner. |
+| Responsiveness and input latency | 5 | Unchanged. |
+| Controls feel | 5 | Unchanged. |
+| Mission clarity | 5 | Unchanged. |
+| Pacing | 4 | Unchanged mission slice. |
+| Fun factor | 4 | Unchanged. The chain was not played in Unreal. |
+| Difficulty curve | 5 | A chain asks for 3 s back to speed after each slide. A 2 s coast breaks it. Scripted, not driven. |
+| Feedback | 4 | Unchanged. |
+| Sound design | 5 | Unchanged. |
+| Variety | 4 | Unchanged. |
+| Performance stability | 5 | Unchanged. |
+
+- Aesthetics raw: 90 / 10 dimensions, index 90
+- Playability raw: 46 / 10 dimensions, index 46
+- Total: 136 / 200
+- Delta vs last round: +1 (round 86 was 135). Difficulty curve 4 → 5. Every other score held.
+
+![Quick slides chain, and a pause starts over](gta-graphics/round-87/slide-chain.png)
