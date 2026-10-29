@@ -113,11 +113,13 @@ async function play(size, tag, init) {
       return [Math.max(0, cx - r), Math.max(0, cy - r), Math.min(2 * r, c.width - cx + r), Math.min(2 * r, c.height - cy + r)];
     };
     g.state = "stagger"; g.t = 99; g.flash = 0; QA.step(2);
+    // the clock stands still from here (a frame of 0 s refills the figures and moves nothing), so only the wind-up can
+    // turn pixels red: the hero's idle, the crowd and the city's flicker stay as they were
     const B = box(), calm = QA.pixels(...B);
-    QA.step(2);
-    const noise = QA.redder(calm, QA.pixels(...B)); // what turns red with nothing changed (the city's own flicker)
-    g.state = "windup"; g.t = 99; QA.step(2);
-    const turned = QA.redder(calm, QA.pixels(...B));
+    G.test.step(0, 1);
+    const still = QA.pixels(...B), noise = QA.redder(calm, still); // what turns red with nothing changed
+    g.state = "windup"; g.t = 99; G.test.step(0, 1);
+    const turned = QA.redder(still, QA.pixels(...B));
     return { noise, turned, tele: g.tele, box: B };
   });
   R.telegraph = tele;
