@@ -1,0 +1,29 @@
+{
+  "checkedAt": "2026-10-27T20:47:29.229846+00:00",
+  "main": "6fa470d2b0f4913342d5c30b242a1c1eaed46986",
+  "archiveMerge": "aa7368eec26fa6b3e42efc3cdca81d8a77d32df5",
+  "files": [
+    {
+      "path": "index.html",
+      "status": 200,
+      "sha256": "203a5663bd9e2da6cfbc734ec97f60e30935dfe93e597c73fa08d56e619ee90d",
+      "expectedSha256": "203a5663bd9e2da6cfbc734ec97f60e30935dfe93e597c73fa08d56e619ee90d",
+      "exact": true
+    },
+    {
+      "path": "js/cars.js",
+      "status": 200,
+      "sha256": "3ea9645e09e8ba3cf55974a11478d22f849043aaa1f081308b51fac0b4a1b9eb",
+      "expectedSha256": "3ea9645e09e8ba3cf55974a11478d22f849043aaa1f081308b51fac0b4a1b9eb",
+      "exact": true
+    },
+    {
+      "path": "js/combat.js",
+      "status": 200,
+      "sha256": "24933b759fab55be014148c99d0c0ed99777a676bee08e9b3a0a9940b0bc966d",
+      "expectedSha256": "24933b759fab55be014148c99d0c0ed99777a676bee08e9b3a0a9940b0bc966d",
+      "exact": true
+    }
+  ],
+  "scope": "HTTP and byte checks only; combined runtime behavior unverified; no AgentReview, fresh six-job CI, authenticated preview or required rebases completed before external merge"
+}

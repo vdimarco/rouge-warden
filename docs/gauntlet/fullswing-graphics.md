@@ -1734,3 +1734,6 @@ Playability was scored from a flat boot and the city render check, not a full pl
 
 Playability was scored from a flat boot and the city render check, not a full playthrough. OpenSpec CLI validation was not run; the `openspec` command is not installed.
 
+
+
+Performance increment 71 (pending): nearTraffic now materializes only its final winner; selection/distance/paint snapshots match 300 original-query comparisons, filter/tie/ownership checks and existing action simulation. Five SwiftShader car-scene assertions pass at 640×360 and 390×844 with exact nonblank before/after PNGs. Fixture result records/paint arrays 4→1; no FPS/latency claim or inherited points, all twenty limitations in fullswing-r71-traffic-winner/README.md, total withheld. Full release gates and canonical/archive remain pending. Prior #712 docs/archive merged externally as aa7368ee without AgentReview/fresh six-job CI/final authenticated preview/required rebases; not a waiver. Current production byte checks only, combined runtime behavior unverified.

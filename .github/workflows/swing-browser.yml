@@ -168,7 +168,7 @@ jobs:
           NODE_PATH: ${{ github.workspace }}/qa/browser/node_modules
           SHOTS: ${{ github.workspace }}/test-results/flat-world
       - name: City action (sprint, the roll, fights, cars, jobs, the opening)
-        run: node qa/vr/goon-slide-rotations.e2e.mjs && node qa/vr/action.e2e.mjs && node qa/vr/gauntlet.e2e.mjs
+        run: node qa/vr/traffic-winner.test.mjs && node qa/vr/traffic-winner.e2e.mjs && node qa/vr/goon-slide-rotations.e2e.mjs && node qa/vr/action.e2e.mjs && node qa/vr/gauntlet.e2e.mjs
         env:
           NODE_PATH: ${{ github.workspace }}/qa/browser/node_modules
           SHOTS: ${{ github.workspace }}/test-results/flat-world
