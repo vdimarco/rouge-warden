@@ -4,7 +4,7 @@ The named street view has lanes, trees, and lamps, and the sidewalks are still e
 
 ## What changes
 
-One instanced curb mesh adds a bin, a bollard, and a hydrant on both sidewalks. Each spot keeps one of the three. They fade out past the near block so distant specks do not flicker. No new art, no colliders, and no extra full-screen pass.
+Three instanced meshes add a bin, a bollard, and a hydrant on both sidewalks. Each spot keeps one of the three. They fade out past the near block so distant specks do not flicker, and spots past the fade are not sent to the GPU, so the city stays inside its triangle budget. No new art, no colliders, and no extra full-screen pass.
 
 ## Capabilities
 

@@ -14,6 +14,17 @@ A curb prop farther than about 110 m from the camera SHALL not draw. A lamp pole
 - **WHEN** the named `street` camera looks down the avenue
 - **THEN** furniture is visible on the near sidewalk and does not fill the far skyline with specks
 
+### Requirement: Street props stay inside the triangle budget
+A street lamp, a curb prop, or a steam puff that its shader hides SHALL send no triangles. Each curb spot SHALL send only the triangles of its own kind. Every named camera shot SHALL stay within `PERF.drawsPerViewMax` draws and `PERF.trisPerViewMax` triangles per view, on the title and in flat play.
+
+#### Scenario: The budget check
+- **WHEN** `qa/vr/perf.mjs` measures the named shots on the title and in flat play
+- **THEN** every shot draws at most 120 calls and 800k triangles
+
+#### Scenario: Near furniture still shows
+- **WHEN** the named `street` camera draws in flat play, before and after this change
+- **THEN** the bins, bollards, hydrants, lamps, and steam on the near block look the same
+
 ### Requirement: Other cel meshes stay on the stock bands
 The stock `toonify` colour SHALL stay as it was.
 
