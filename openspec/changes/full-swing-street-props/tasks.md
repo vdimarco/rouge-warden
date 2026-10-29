@@ -14,3 +14,4 @@
 - [x] Run the suites that draw the city, each alone: `render` 51, `flat` 221, `street.e2e` 21, `play` 88, `boot` 34, `perf` 15, `city.test`: all pass.
 - [ ] A headset check: frame time at 72 Hz on a Quest. It cannot run here.
 - Note: flat play `harbour` has 3.6k triangles to spare. The crowd's shoulder line (`full-swing-character-read`) took 240 triangles a figure from 96, about 17k more in that view, so the next addition to that view may need its own saving.
+- [x] `perf` runs in CI: the last step of the `flat-payoff` job in `.github/workflows/swing-browser.yml` (the shortest job, about 10 of its 90 minutes). On main with this change merged it passed in 103 s here; flat play `harbour` 795,714 triangles.
