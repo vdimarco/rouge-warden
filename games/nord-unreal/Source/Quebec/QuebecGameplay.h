@@ -10,6 +10,7 @@
 #include "QuebecSteerAssist.h" // Lag-tolerant driving: AQuebecCar keeps a QuebecSteer::FAssistState.
 #include "QuebecSlide.h" // A handbrake slide earns one banner: AQuebecCar keeps a QuebecSlide::FState.
 #include "QuebecSlideTone.h" // The slide screams in the drive loop: AQuebecCar keeps a QuebecSlideTone::FVoice.
+#include "QuebecNearMiss.h" // Passing a car close and fast, untouched, earns one NEAR MISS banner.
 #include "Engine/TimerHandle.h" // Traffic street life: AQuebecCar blinks its signal lamps on a timer.
 #include "QuebecTrafficModel.h" // Traffic street life: ARRÊT stops, yielding and curb stops.
 #include "QuebecGameplay.generated.h"
@@ -453,6 +454,9 @@ private:
     QuebecSteer::FAssistState SteerAssist;
     // One SLIDE banner per held handbrake shove. Cleared when the shove ends.
     QuebecSlide::FState Slide;
+    // One NEAR MISS banner per clean, fast pass of another car. Any contact voids it for a second.
+    QuebecNearMiss::FState NearMiss;
+    void TickNearMiss(float Step, AController* Driver);
     FVector LastWallNormal = FVector::ZeroVector;
     float NextRamReportAt = 0.f;
     // Server clock for the dent thud. A grind inside the gap stays quiet. Not saved.

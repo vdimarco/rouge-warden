@@ -1770,8 +1770,35 @@ void AQuebecCar::SimulateDrive(float Step, bool bFailsafe)
         }
         // A slide left behind with no driver never pays the next one.
         else Slide = QuebecSlide::FState();
+        TickNearMiss(Step, GetDriverController());
     }
     MoveWithCollision(Step,(GetActorForwardVector().GetSafeNormal2D()*Speed+GetActorRightVector().GetSafeNormal2D()*LateralSpeed)*Step);
+}
+
+void AQuebecCar::TickNearMiss(float Step, AController* Driver)
+{
+    NearMiss.Tick(Step, false);
+    AQuebecController* Player = Cast<AQuebecController>(Driver);
+    if (!Player || FMath::Abs(Speed) < QuebecNearMiss::MinSpeed || !GetWorld()) return;
+    const FVector Here = GetActorLocation();
+    const FVector Forward = GetActorForwardVector().GetSafeNormal2D();
+    const FVector Right = GetActorRightVector().GetSafeNormal2D();
+    const FVector Mine = PlanarVelocity();
+    for (TActorIterator<AQuebecCar> It(GetWorld()); It; ++It)
+    {
+        const AQuebecCar* Other = *It;
+        if (Other == this) continue;
+        const FVector Now = Other->GetActorLocation()-Here;
+        if (Now.SizeSquared2D() > FMath::Square(1500.f)) continue;
+        // Where the other car sat one step ago, with both cars stepped back along their own velocity.
+        const FVector Before = Now-(Other->PlanarVelocity()-Mine)*Step;
+        const QuebecNearMiss::FOffset Was{static_cast<float>(FVector::DotProduct(Before,Forward)),static_cast<float>(FVector::DotProduct(Before,Right))};
+        const QuebecNearMiss::FOffset Is{static_cast<float>(FVector::DotProduct(Now,Forward)),static_cast<float>(FVector::DotProduct(Now,Right))};
+        if (!NearMiss.Pass(Speed, Was, Is)) continue;
+        QuebecNotice::Show(Player, TEXT("NEAR MISS"),
+            FString::Printf(TEXT("Past at %d km/h"), QuebecNearMiss::Kmh(Speed)), QuebecNearMiss::NoticeSeconds);
+        return;
+    }
 }
 
 QuebecCarImpact::FResult QuebecCarImpact::Resolve(const FVector& VelocityA, const FVector& VelocityB, const FVector& Normal,

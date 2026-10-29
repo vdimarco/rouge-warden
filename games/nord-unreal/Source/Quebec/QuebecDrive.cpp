@@ -194,6 +194,8 @@ bool AQuebecCar::PassStruckPerson(const FHitResult& Hit, const FVector& From, co
 void AQuebecCar::PlayImpactThud(float Closing, bool bWall)
 {
     if (!HasAuthority() || !GetWorld()) return;
+    // Any contact, even one too soft to thud, voids a near miss for a second.
+    NearMiss.Tick(0.f, true);
     const double Now = GetWorld()->GetTimeSeconds();
     if (!QuebecImpactTone::Due(Closing, bWall, Now, NextImpactToneAt)) return;
     AQuebecController* Driver = Cast<AQuebecController>(GetDriverController());
