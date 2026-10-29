@@ -105,17 +105,19 @@ The game page SHALL load `/arcade/quiet.js` as the first script in its `<head>`,
 - **CHECK** `qa/arcade/quiet.mjs`
 
 ### Requirement: Sound follows the arcade
-The game SHALL start its AudioContext on the Play tap, use `navigator.audioSession.type = "playback"` where it exists, follow the arcade's shared mute `arcade.sound` and the M key, and be silent while the page is hidden.
+The game SHALL start its AudioContext on the Play tap, use `navigator.audioSession.type = "playback"` where it exists, follow the arcade's shared mute `arcade.sound` and the M key, and be silent while the page is hidden. The score SHALL follow the same mute, and SHALL schedule nothing while the page is hidden.
 
 #### Scenario: Hidden page
+- **GIVEN** the quiet check's First Breath entry, which plays its own music
 - **WHEN** the quiet check presses `#play` and then hides the page in the middle of a stage
-- **THEN** its sound stops while hidden and the game pauses
+- **THEN** its sound stops while hidden, the score schedules nothing new, and the game pauses
 - **CHECK** `qa/arcade/quiet.mjs`
 
 #### Scenario: Muted in the arcade
-- **WHEN** the arcade's sound is muted and the player opens First Breath
-- **THEN** the game starts muted, and captions and rings still show every cue
-- **CHECK** `qa/first-breath/smoke.e2e.mjs`
+- **GIVEN** `arcade.sound` set to off
+- **WHEN** the player opens First Breath and taps Play
+- **THEN** the game starts muted with no score heard, and captions and rings still show every cue
+- **CHECK** `qa/first-breath/music.e2e.mjs`
 
 ### Requirement: The homepage at three widths
 The homepage SHALL be checked at 390 × 844, 320 × 700 and 1280 × 720. At each size, with the Action collection open, the First Breath machine SHALL be the last cabinet in the row, whole, inside the window and not under the sign or the token tray, and START SHALL go to `/first-breath/`. Screenshots of the three sizes SHALL be in the pull request.
