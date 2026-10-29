@@ -1739,13 +1739,12 @@ void main() {
   float keep = 1.0;
   // street lamps shrink away in the distance: a thin pole far off would only flicker
   if (aPart > 5.5 && aPart < 7.5) p *= 1.0 - smoothstep(170.0, 240.0, dist);
-  // one mesh holds the bin, the bollard and the hydrant; the hash keeps one and drops the rest
+  // curb furniture (the bin, the bollard, the hydrant: one mesh each) fades out past the near block; nearProps sends none
+  // further than 110 m
   if (aPart > 7.5) {
-    float kind = aS.w < 0.34 ? 8.0 : (aS.w < 0.67 ? 9.0 : 10.0);
-    float match = 1.0 - step(0.5, abs(aPart - kind));
     float fade = 1.0 - smoothstep(70.0, 110.0, dist);
-    keep = match * step(0.04, fade);
-    p *= match * fade;
+    keep = step(0.04, fade);
+    p *= fade;
   }
   p = vec3(p.x * c + p.z * s, p.y, -p.x * s + p.z * c);
   vec3 n = vec3(normal.x * c + normal.z * s, normal.y, -normal.x * s + normal.z * c);
@@ -2801,8 +2800,9 @@ export function createCityView(renderer, scene, city, opts = {}) {
   }
 
   /* ---- roof props ---- */
-  const PROP_TYPES = ["box", "tower", "mast", "garden", "lamp", "curb"];
-  const PROP_MAX = { box: 6000, tower: 500, mast: 900, garden: 1400, lamp: 2400, curb: 4200 };
+  const PROP_TYPES = ["box", "tower", "mast", "garden", "lamp", "bin", "bollard", "hydrant"];
+  const PROP_MAX = { box: 6000, tower: 500, mast: 900, garden: 1400, lamp: 2400, bin: 1400, bollard: 1400, hydrant: 1400 };
+  const CURB_KINDS = ["bin", "bollard", "hydrant"];
   const props = {};
   const BEACON_MAX = 900;
   let beaconMesh = null;
@@ -2826,13 +2826,17 @@ export function createCityView(renderer, scene, city, opts = {}) {
       addGeo(b, new THREE.CylinderGeometry(0.06, 0.09, 6.6, 6, 1, true), M.makeTranslation(0, 3.3, 0), 7, { aCol: dark });
       addGeo(b, new THREE.BoxGeometry(1.5, 0.08, 0.08), M.makeTranslation(0.72, 6.55, 0), 7, { aCol: dark });
       addGeo(b, new THREE.BoxGeometry(0.62, 0.16, 0.3), M.makeTranslation(1.4, 6.5, 0), 6, { aCol: dark });
-    } else if (type === "curb") {
-      // one mesh, three kinds: the instance hash keeps one. Local +x faces the road.
-      const bin = () => [0.16, 0.28, 0.26], metal = () => [0.18, 0.19, 0.22], red = () => [0.72, 0.16, 0.13];
+    } else if (type === "bin") {
+      // curb furniture, one mesh per kind, so a spot draws only its own shape. Local +x faces the road.
+      const bin = () => [0.16, 0.28, 0.26];
       addGeo(b, new THREE.BoxGeometry(0.72, 1.05, 0.52), M.makeTranslation(0, 0.525, 0), 8, { aCol: bin });
       addGeo(b, new THREE.BoxGeometry(0.78, 0.1, 0.58), M.makeTranslation(0, 1.08, 0), 8, { aCol: bin });
+    } else if (type === "bollard") {
+      const metal = () => [0.18, 0.19, 0.22];
       addGeo(b, new THREE.CylinderGeometry(0.11, 0.13, 0.9, 6), M.makeTranslation(0, 0.45, 0), 9, { aCol: metal });
       addGeo(b, new THREE.CylinderGeometry(0.14, 0.14, 0.06, 6), M.makeTranslation(0, 0.9, 0), 9, { aCol: metal });
+    } else if (type === "hydrant") {
+      const red = () => [0.72, 0.16, 0.13];
       addGeo(b, new THREE.CylinderGeometry(0.16, 0.18, 0.62, 6), M.makeTranslation(0, 0.31, 0), 10, { aCol: red });
       addGeo(b, new THREE.CylinderGeometry(0.2, 0.16, 0.16, 6), M.makeTranslation(0, 0.68, 0), 10, { aCol: red });
       addGeo(b, new THREE.BoxGeometry(0.28, 0.12, 0.12), M.makeTranslation(0.2, 0.42, 0), 10, { aCol: red });
@@ -3029,7 +3033,7 @@ export function createCityView(renderer, scene, city, opts = {}) {
           if (partial.some((q) => q.axis !== axis && across > q.from && across < q.to && Math.abs(across - q.at) < roadHalf(q))) continue;
           if (Math.hypot(x - N0.x, z - N0.z) < 36 || Math.hypot(x - D0.x, z - D0.z) < D0.r + 9) continue;
           const size = l.w > 24 ? 4.2 : 3.6;
-          for (let p = 0; p < 2; p++) push(steam, { aP: [x, 0.15, z, (k * 0.17 + p * 0.5) % 1], aS: [size, 3.6, 0.38, p + (k % 5) * 0.2] });
+          for (let p = 0; p < 2; p++) spot(steamSet, 0, [x, 0.15, z, (k * 0.17 + p * 0.5) % 1], [size, 3.6, 0.38, p + (k % 5) * 0.2]);
         }
       }
     };
@@ -3045,8 +3049,7 @@ export function createCityView(renderer, scene, city, opts = {}) {
           if ((axis === "x" ? lines.z : lines.x).some((q) => Math.abs(across - q.at) < roadHalf(q))) continue;
           if (partial.some((q) => q.axis !== axis && across > q.from && across < q.to && Math.abs(across - q.at) < roadHalf(q))) continue;
           if (Math.hypot(x - N0.x, z - N0.z) < 36 || Math.hypot(x - D0.x, z - D0.z) < D0.r + 9) continue;
-          const kind = k % 3;
-          chunkOf(x, z).curbs.push(x, z, yaw, kind === 0 ? 0.1 : kind === 1 ? 0.5 : 0.85);
+          chunkOf(x, z).curbs.push(x, z, yaw, k % 3);
         }
       }
     };
@@ -3091,7 +3094,6 @@ export function createCityView(renderer, scene, city, opts = {}) {
       if (lines.x.some((l) => Math.abs(x - l.at) < l.w / 2 + 2)) continue;
       if (r() < 0.85) put(x, city.shoreZ - 4.5, 1.1);
     }
-    if (part === 7) flush(steam);
   }
   function makeTrees() {
     trees = instancedMesh(treeGeometry(), { aT: 4, aTc: 4 }, 4200, treeMat, 0, treeInk);
@@ -3099,25 +3101,47 @@ export function createCityView(renderer, scene, city, opts = {}) {
   function makeSteam() {
     steam = instancedMesh(new THREE.PlaneGeometry(1, 1), { aP: 4, aS: 4 }, 3200, steamMat, 4);
   }
+  // Street things that their shader hides past a distance: the lamps shrink to nothing by 240 m, the curb furniture and
+  // the sidewalk steam fade out by 110 m. Their spots stay on the CPU, and nearProps sends the GPU only those inside
+  // that distance, so the far ones cost no triangles (an end cull distance, as Unreal's instanced meshes have). The set
+  // is made again once the camera has moved NEAR_SLACK. A spot is 9 numbers: the kind (an index into meshes()), aP, aS.
+  const NEAR_SLACK = 8;
+  const nearSet = (far, meshes) => ({ far, meshes, spots: [], at: new THREE.Vector3(1e9, 0, 0), dirty: false });
+  const lampSet = nearSet(240, () => [props.lamp]);
+  const curbSet = nearSet(110, () => CURB_KINDS.map((t) => props[t]));
+  const steamSet = nearSet(110, () => [steam]);
+  const spot = (S, kind, p, q) => { S.spots.push(kind, p[0], p[1], p[2], p[3], q[0], q[1], q[2], q[3]); S.dirty = true; };
   // lamps: runs of 3 numbers (x, z, turn). The spots stay, so a pavement pool can find the nearest ones.
   const lampSpots = [];
   function addLamps(c) {
-    const l = c.lamps, I = props.lamp;
+    const l = c.lamps;
     for (let o = 0; o < l.length; o += 3) {
       lampSpots.push(l[o], l[o + 1]);
-      const i = slot(I);
-      if (i < 0) break;
-      put(I, "aP", i, l[o], 0, l[o + 1], l[o + 2]); put(I, "aS", i, 1, 1, 1, 0.5);
+      spot(lampSet, 0, [l[o], 0, l[o + 1], l[o + 2]], [1, 1, 1, 0.5]);
     }
   }
-  // curbs: runs of 4 numbers (x, z, turn, hash)
+  // curbs: runs of 4 numbers (x, z, turn, kind: 0 bin, 1 bollard, 2 hydrant)
   function addCurbs(c) {
-    const l = c.curbs, I = props.curb;
-    for (let o = 0; o < l.length; o += 4) {
-      const i = slot(I);
-      if (i < 0) break;
-      put(I, "aP", i, l[o], 0, l[o + 1], l[o + 2]); put(I, "aS", i, 1, 1, 1, l[o + 3]);
+    const l = c.curbs;
+    for (let o = 0; o < l.length; o += 4) spot(curbSet, l[o + 3], [l[o], 0, l[o + 1], l[o + 2]], [1, 1, 1, 0]);
+  }
+  function nearProps(S, camPos) {
+    if (!camPos) return;
+    const I = S.meshes();
+    if (!I.every(Boolean)) return; // the build makes one mesh per step
+    if (!S.dirty && S.at.distanceToSquared(camPos) < NEAR_SLACK * NEAR_SLACK) return;
+    S.dirty = false;
+    S.at.copy(camPos);
+    const sp = S.spots, r = S.far + NEAR_SLACK, r2 = r * r;
+    for (const J of I) J.n = J.sent = 0;
+    for (let o = 0; o < sp.length; o += 9) {
+      const dx = sp[o + 1] - camPos.x, dy = sp[o + 2] - camPos.y, dz = sp[o + 3] - camPos.z;
+      if (dx * dx + dy * dy + dz * dz > r2) continue;
+      const J = I[sp[o]], i = slot(J);
+      if (i < 0) continue;
+      put(J, "aP", i, sp[o + 1], sp[o + 2], sp[o + 3], sp[o + 4]); put(J, "aS", i, sp[o + 5], sp[o + 6], sp[o + 7], sp[o + 8]);
     }
+    for (const J of I) flush(J);
   }
   // a chunk's trees are flat runs of 8 numbers: x, y, z, scale, r, g, b, turn
   function addTrees(c) {
@@ -3364,6 +3388,9 @@ export function createCityView(renderer, scene, city, opts = {}) {
       U.uFinale.value += (finaleWant - U.uFinale.value) * (1 - Math.exp(-dt * 0.8));
       if (sky && camPos) sky.position.set(camPos.x, camPos.y, camPos.z);
       nearLamps(camPos);
+      nearProps(lampSet, camPos);
+      nearProps(curbSet, camPos);
+      nearProps(steamSet, camPos);
       // ink lines are a few pixels wide: a touch wider on the headset's finer pixels and on a big flat window
       renderer.getDrawingBufferSize(inkSize);
       U.uInkS.value = renderer.xr.isPresenting ? 1.15 : clamp(inkSize.y / 540, 1, 1.5);
@@ -3387,6 +3414,10 @@ export function createCityView(renderer, scene, city, opts = {}) {
     warm(r, camera) {
       const saved = [];
       root.traverse((o) => { if (o.isMesh) { saved.push([o, o.frustumCulled]); o.frustumCulled = false; } });
+      // an instanced mesh with no instances near the camera yet (nearProps) still compiles: the draw of none is skipped
+      // after its program is set
+      const hidden = instMeshes.filter((m) => !m.visible);
+      for (const m of hidden) m.visible = true;
       const ms = new Set(); root.traverse((o) => { if (o.material) ms.add(o.material); });
       const mm = [...ms].map((m) => [m, m.colorWrite, m.depthWrite]);
       for (const [m] of mm) { m.colorWrite = false; m.depthWrite = false; }
@@ -3396,6 +3427,7 @@ export function createCityView(renderer, scene, city, opts = {}) {
       r.autoClear = ac; root.visible = vis;
       for (const [m, c, d] of mm) { m.colorWrite = c; m.depthWrite = d; }
       for (const [o, f] of saved) o.frustumCulled = f;
+      for (const m of hidden) m.visible = false;
     },
     // A live miniature: the city's long side fits sizeMetres. It shares the chunk, tree and landmark geometry.
     makeDiorama(size = 1) {
