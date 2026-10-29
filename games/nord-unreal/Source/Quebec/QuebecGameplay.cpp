@@ -1754,12 +1754,15 @@ void AQuebecCar::SimulateDrive(float Step, bool bFailsafe)
         if (bFailsafe || FMath::Abs(Speed)<100.f)
             LateralSpeed = FMath::FInterpConstantTo(LateralSpeed,0.f,Step,3600.f);
         if (FMath::Abs(Speed)<1.f && FMath::Abs(Throttle)<.01f) Speed=0.f;
-        // A held handbrake shove at speed earns one banner. A tap, a straight run and a gripped turn do not.
+        // A held handbrake shove at speed earns one graded banner when it ends. A tap, a straight run and a gripped turn do not.
         if (AController* Driver = GetDriverController())
         {
-            if (Slide.Tick(Step, Speed, LateralSpeed, bHandbrake && !bFailsafe))
-                QuebecNotice::Show(Driver, TEXT("SLIDE"), TEXT("Through the corner"), QuebecSlide::NoticeSeconds);
+            if (Slide.Tick(Step, Speed, LateralSpeed, bHandbrake, bFailsafe))
+                QuebecNotice::Show(Driver, FString(QuebecSlide::Title(Slide.LastGrade)),
+                    FString::Printf(TEXT("Held for %.1f s"), Slide.LastSeconds), QuebecSlide::NoticeSeconds);
         }
+        // A slide left behind with no driver never pays the next one.
+        else Slide = QuebecSlide::FState();
     }
     MoveWithCollision(Step,(GetActorForwardVector().GetSafeNormal2D()*Speed+GetActorRightVector().GetSafeNormal2D()*LateralSpeed)*Step);
 }

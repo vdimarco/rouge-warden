@@ -126,7 +126,7 @@ namespace
         const float Frame = 1.f / 60.f;
         Expect(Live >= 0 && Pay >= 0 && Loud >= 0 && End >= 0 && Quiet >= 0, "live %d pay %d loud %d end %d quiet %d", Live, Pay, Loud, End, Quiet);
         Expect(Loud - Live <= 6, "the scream is loud inside 0.1 s of the shove, took %d frames", Loud - Live);
-        Expect(Pay >= 0 && Heard.Gain[static_cast<std::size_t>(Pay)] > .45f, "the banner lands on a loud scream");
+        Expect(Pay >= 0 && Heard.Gain[static_cast<std::size_t>(Pay)] > .45f, "the banner lands as the scream fades, still loud");
         Expect(Heard.PeakGain > .9f, "a full slide screams near full, peak %f", static_cast<double>(Heard.PeakGain));
         Expect(Quiet - End <= 18, "the tires go quiet inside 0.3 s of the slide's end, took %d frames", Quiet - End);
         for (int Index = Live; Index < End; ++Index)

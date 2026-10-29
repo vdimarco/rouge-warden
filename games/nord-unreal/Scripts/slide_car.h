@@ -84,7 +84,7 @@ namespace SlideCar
             if (std::fabs(Speed) < 100.f)
                 Lateral = QuebecSteer::MoveToward(Lateral, 0.f, Dt, 3600.f);
             PeakLateral = std::max(PeakLateral, std::fabs(Lateral));
-            Slide.Tick(Dt, Speed, Lateral, bBrake);
+            Slide.Tick(Dt, Speed, Lateral, bBrake, false);
         }
     };
 
