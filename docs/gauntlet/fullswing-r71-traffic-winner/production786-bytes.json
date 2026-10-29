@@ -1,0 +1,44 @@
+{
+  "head": "fafc908542f4641929ed5d99c8315ac3cfe42230",
+  "deployment": "dpl_HkGiuLwLQ5DyJrutGR2iZ9NgUJUc",
+  "checkedAt": "2026-10-29T03:17:51.556Z",
+  "publicProduction": true,
+  "files": [
+    {
+      "name": "index.html",
+      "status": 200,
+      "sha256": "203a5663bd9e2da6cfbc734ec97f60e30935dfe93e597c73fa08d56e619ee90d",
+      "expectedSha256": "203a5663bd9e2da6cfbc734ec97f60e30935dfe93e597c73fa08d56e619ee90d",
+      "exact": true,
+      "sourceExact": true,
+      "vercelToolbarInjected": false
+    },
+    {
+      "name": "js/main.js",
+      "status": 200,
+      "sha256": "8b85055a9cb408d7ac5d4b16a9064112b8fa1a16d7321d5c966c26745cce12e7",
+      "expectedSha256": "8b85055a9cb408d7ac5d4b16a9064112b8fa1a16d7321d5c966c26745cce12e7",
+      "exact": true,
+      "sourceExact": true,
+      "vercelToolbarInjected": false
+    },
+    {
+      "name": "js/cars.js",
+      "status": 200,
+      "sha256": "64c41461c3526eadf7fb0b449162a5aa85821aa5d1b1916e563ae9c543569bff",
+      "expectedSha256": "64c41461c3526eadf7fb0b449162a5aa85821aa5d1b1916e563ae9c543569bff",
+      "exact": true,
+      "sourceExact": true,
+      "vercelToolbarInjected": false
+    },
+    {
+      "name": "js/actionview.js",
+      "status": 200,
+      "sha256": "13c2a4fcb4c902b9502588aefe150568393435b1ae65f6dc6aa76f11bbdcccf0",
+      "expectedSha256": "13c2a4fcb4c902b9502588aefe150568393435b1ae65f6dc6aa76f11bbdcccf0",
+      "exact": true,
+      "sourceExact": true,
+      "vercelToolbarInjected": false
+    }
+  ]
+}

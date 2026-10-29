@@ -1,0 +1,9 @@
+- [x] Inspect both track logs, current main, callers and existing traffic specifications; preserve concurrent work.
+- [x] Write proposal, design and observable scenarios before runtime edits.
+- [x] Freeze original query and demonstrate redundant result construction.
+- [x] Materialize only the final winner; verify equivalence and retained snapshots.
+- [x] Verify car simulation, desktop/portrait rendered equivalence and all twenty rubric limitations (evidence r71).
+- [x] Commit/open/attach PR #786; pass all six CI jobs and Entire Gates on exact head b433ef96.
+- Review availability: Vercel agents were disabled by the human. Agent Review is unavailable, not passed; authorized vdimarco approval satisfies Entire.
+- [x] Rebase before and after final authenticated preview, verify exact source bytes and five browser assertions, merge exact tested head as fafc9085.
+- [x] Verify production raw bytes, downloaded-car queries and five focused browser assertions; publish canonical scenarios and archive after release.

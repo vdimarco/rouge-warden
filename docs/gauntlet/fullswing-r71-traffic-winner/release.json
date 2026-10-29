@@ -1,0 +1,95 @@
+{
+  "pr": "https://github.com/vdimarco/rouge-warden/pull/786",
+  "testedHead": "b433ef9616b441d36e0238c0ecb07855cafa7e81",
+  "baseBeforeMerge": "0c058c544580243c3e6721543146db559c2bfabd",
+  "merge": "fafc908542f4641929ed5d99c8315ac3cfe42230",
+  "mergedAt": "2026-10-29T03:13:21Z",
+  "ciRun": 40807352767,
+  "jobs": [
+    {
+      "name": "flat-world",
+      "conclusion": "success",
+      "completedAt": "2026-10-29T02:57:48Z"
+    },
+    {
+      "name": "flat-play",
+      "conclusion": "success",
+      "completedAt": "2026-10-29T03:11:29Z"
+    },
+    {
+      "name": "flat-scenes",
+      "conclusion": "success",
+      "completedAt": "2026-10-29T02:46:39Z"
+    },
+    {
+      "name": "flat-payoff",
+      "conclusion": "success",
+      "completedAt": "2026-10-29T02:47:48Z"
+    },
+    {
+      "name": "flat-missions",
+      "conclusion": "success",
+      "completedAt": "2026-10-29T02:55:17Z"
+    },
+    {
+      "name": "city-and-one-thumb",
+      "conclusion": "success",
+      "completedAt": "2026-10-29T02:59:01Z"
+    }
+  ],
+  "entire": {
+    "conclusion": "success",
+    "completedAt": "2026-10-29T03:11:32Z",
+    "approval": "vdimarco; Count author approvals enabled with explicit human authorization"
+  },
+  "agentReview": "unavailable; Vercel agents disabled by user; not claimed passed",
+  "finalPreview": {
+    "head": "b433ef9616b441d36e0238c0ecb07855cafa7e81",
+    "deployment": "dpl_2JLCeu2h3QxUp2yWghcm4PsoZHZT",
+    "checkedAt": "2026-10-29T03:13:01.345Z",
+    "authenticated": true,
+    "files": [
+      {
+        "name": "index.html",
+        "status": 200,
+        "sha256": "b4cf7e0bac4db15fc4fb746af16035177beea15d25629516ad9006be2beff48d",
+        "expectedSha256": "203a5663bd9e2da6cfbc734ec97f60e30935dfe93e597c73fa08d56e619ee90d",
+        "exact": false,
+        "sourceExact": true,
+        "vercelToolbarInjected": true
+      },
+      {
+        "name": "js/main.js",
+        "status": 200,
+        "sha256": "8b85055a9cb408d7ac5d4b16a9064112b8fa1a16d7321d5c966c26745cce12e7",
+        "expectedSha256": "8b85055a9cb408d7ac5d4b16a9064112b8fa1a16d7321d5c966c26745cce12e7",
+        "exact": true,
+        "sourceExact": true,
+        "vercelToolbarInjected": false
+      },
+      {
+        "name": "js/cars.js",
+        "status": 200,
+        "sha256": "64c41461c3526eadf7fb0b449162a5aa85821aa5d1b1916e563ae9c543569bff",
+        "expectedSha256": "64c41461c3526eadf7fb0b449162a5aa85821aa5d1b1916e563ae9c543569bff",
+        "exact": true,
+        "sourceExact": true,
+        "vercelToolbarInjected": false
+      },
+      {
+        "name": "js/actionview.js",
+        "status": 200,
+        "sha256": "13c2a4fcb4c902b9502588aefe150568393435b1ae65f6dc6aa76f11bbdcccf0",
+        "expectedSha256": "13c2a4fcb4c902b9502588aefe150568393435b1ae65f6dc6aa76f11bbdcccf0",
+        "exact": true,
+        "sourceExact": true,
+        "vercelToolbarInjected": false
+      }
+    ]
+  },
+  "rebases": "Fresh fetch/rebase before and after final authenticated preview; both up to date, tested head unchanged.",
+  "focusedPreviewBrowserAssertions": 5,
+  "focusedProductionBrowserAssertions": 5,
+  "productionQueryComparisons": 300,
+  "hardwarePerformance": "unverified; all twenty scores and total/delta withheld"
+}
