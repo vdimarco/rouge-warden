@@ -16,20 +16,49 @@ namespace QuebecSlideTone
     inline constexpr double LowHz = 587.;
     inline constexpr double HighHz = 784.;
 
-    inline double SampleAt(int Frame)
+    // Each link after the first adds one short repeat of the high note, up to four.
+    // SLIDE plays two notes. SLIDE x3 plays two notes and two repeats. The count is heard, not only read.
+    inline constexpr int EchoFrames = 1323;
+    inline constexpr int MaxEchoes = 4;
+
+    inline int EchoesFor(int Chain)
     {
-        if (Frame < 0 || Frame >= Frames) return 0.;
-        const bool bHigh = Frame >= NoteFrames;
-        const double Hz = bHigh ? HighHz : LowHz;
-        const double Time = static_cast<double>(bHigh ? Frame - NoteFrames : Frame) / static_cast<double>(SampleRate);
+        const int Echoes = Chain - 1;
+        return Echoes < 0 ? 0 : (Echoes > MaxEchoes ? MaxEchoes : Echoes);
+    }
+
+    inline int FramesFor(int Chain)
+    {
+        return Frames + EchoesFor(Chain) * EchoFrames;
+    }
+
+    inline constexpr int MaxFrames = Frames + MaxEchoes * EchoFrames;
+
+    // One note that starts at Start frames, Length frames long, with a 5 ms attack and a 12 ms fade at its end.
+    inline double NoteAt(int Frame, int Start, int Length, double Hz, double Decay)
+    {
+        const double Time = static_cast<double>(Frame - Start) / static_cast<double>(SampleRate);
         const double Attack = Time < 0.005 ? Time / 0.005 : 1.;
-        // Each note fades over its last 12 ms, so neither the switch nor the end clicks.
-        const double Left = static_cast<double>(NoteFrames) / static_cast<double>(SampleRate) - Time;
+        const double Left = static_cast<double>(Length) / static_cast<double>(SampleRate) - Time;
         const double Release = Left < 0.012 ? Left / 0.012 : 1.;
-        const double Envelope = Attack * Release * std::exp(-Time * (bHigh ? 11. : 22.));
+        const double Envelope = Attack * Release * std::exp(-Time * Decay);
         const double Phase = 6.283185307179586 * Hz * Time;
         // A third harmonic gives the notes a reedy edge, so they read over the engine hum.
         const double Tone = std::sin(Phase) * 0.8 + std::sin(3. * Phase) * 0.2;
         return Tone * Envelope * Peak;
+    }
+
+    inline double SampleAt(int Frame, int Chain)
+    {
+        if (Frame < 0 || Frame >= FramesFor(Chain)) return 0.;
+        if (Frame < NoteFrames) return NoteAt(Frame, 0, NoteFrames, LowHz, 22.);
+        if (Frame < Frames) return NoteAt(Frame, NoteFrames, NoteFrames, HighHz, 11.);
+        const int Echo = (Frame - Frames) / EchoFrames;
+        return NoteAt(Frame, Frames + Echo * EchoFrames, EchoFrames, HighHz, 30.) * 0.8;
+    }
+
+    inline double SampleAt(int Frame)
+    {
+        return SampleAt(Frame, 1);
     }
 }

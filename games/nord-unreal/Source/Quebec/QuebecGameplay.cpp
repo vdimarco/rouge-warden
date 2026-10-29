@@ -1763,7 +1763,7 @@ void AQuebecCar::SimulateDrive(float Step, bool bFailsafe)
                 char Title[16];
                 QuebecSlide::Title(Slide.Chain, Title);
                 QuebecNotice::Show(Driver, FString(UTF8_TO_TCHAR(Title)), TEXT("Through the corner"), QuebecSlide::NoticeSeconds);
-                if (AQuebecController* Player = Cast<AQuebecController>(Driver)) Player->PlaySlide();
+                if (AQuebecController* Player = Cast<AQuebecController>(Driver)) Player->PlaySlide(Slide.Chain);
             }
         }
     }
@@ -2501,17 +2501,17 @@ void AQuebecController::ClientPlayImpact_Implementation()
     PlayImpactTone();
 }
 
-void AQuebecController::PlaySlide()
+void AQuebecController::PlaySlide(int32 Chain)
 {
-    ClientPlaySlide();
+    ClientPlaySlide(Chain);
 }
 
-void AQuebecController::ClientPlaySlide_Implementation()
+void AQuebecController::ClientPlaySlide_Implementation(int32 Chain)
 {
-    PlaySlideTone();
+    PlaySlideTone(Chain);
 }
 
-void AQuebecController::PlaySlideTone()
+void AQuebecController::PlaySlideTone(int32 Chain)
 {
     if (!SlideAudio || !GetWorld() || !GetWorld()->AllowAudioPlayback()) return;
     if (!SlideWave)
@@ -2519,17 +2519,19 @@ void AQuebecController::PlaySlideTone()
         SlideWave = NewObject<USoundWaveProcedural>(this);
         SlideWave->SetSampleRate(static_cast<uint32>(QuebecSlideTone::SampleRate));
         SlideWave->NumChannels = 1;
-        SlideWave->Duration = static_cast<float>(QuebecSlideTone::Frames) / static_cast<float>(QuebecSlideTone::SampleRate);
         SlideAudio->SetSound(SlideWave);
     }
+    // A chain adds short repeats, so the length changes with each pay.
+    const int32 Frames = QuebecSlideTone::FramesFor(Chain);
+    SlideWave->Duration = static_cast<float>(Frames) / static_cast<float>(QuebecSlideTone::SampleRate);
     SlideWave->ResetAudio();
-    int16 Pcm[QuebecSlideTone::Frames];
-    for (int32 Frame = 0; Frame < QuebecSlideTone::Frames; ++Frame)
+    int16 Pcm[QuebecSlideTone::MaxFrames];
+    for (int32 Frame = 0; Frame < Frames; ++Frame)
     {
-        const float Sample = FMath::Clamp(static_cast<float>(QuebecSlideTone::SampleAt(Frame)), -1.f, 1.f);
+        const float Sample = FMath::Clamp(static_cast<float>(QuebecSlideTone::SampleAt(Frame, Chain)), -1.f, 1.f);
         Pcm[Frame] = static_cast<int16>(Sample * 32767.f);
     }
-    SlideWave->QueueAudio(reinterpret_cast<const uint8*>(Pcm), QuebecSlideTone::Frames * static_cast<int32>(sizeof(int16)));
+    SlideWave->QueueAudio(reinterpret_cast<const uint8*>(Pcm), Frames * static_cast<int32>(sizeof(int16)));
     SlideAudio->Play();
 }
 

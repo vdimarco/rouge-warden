@@ -104,6 +104,33 @@ int main()
         Expect(SecondHigh > PowerAt(static_cast<double>(Hz), NoteFrames, Frames) * 20., "the second note leans on %d Hz", Hz);
     }
 
+    // A chain adds short repeats of the high note. A single slide stays two notes.
+    Expect(FramesFor(1) == Frames && FramesFor(0) == Frames, "a single slide grew");
+    Expect(FramesFor(2) == Frames + EchoFrames, "x2 does not add one repeat");
+    Expect(FramesFor(5) == MaxFrames && FramesFor(9) == MaxFrames, "the repeats do not stop at four");
+    Expect(EchoFrames == 1323 && MaxEchoes == 4, "the repeat left 0.06 s or four");
+    bool bSameStart = true;
+    for (int Frame = 0; Frame < Frames; ++Frame)
+        if (SampleAt(Frame, 3) != SampleAt(Frame)) bSameStart = false;
+    Expect(bSameStart, "a chain changes the first two notes");
+    Expect(SampleAt(Frames, 1) == 0., "a single slide plays a repeat");
+    for (int Chain = 2; Chain <= 9; ++Chain)
+    {
+        double Peaks = 0.;
+        bool bQuiet = true;
+        for (int Frame = Frames; Frame < FramesFor(Chain); ++Frame)
+            Peaks = std::max(Peaks, std::fabs(SampleAt(Frame, Chain)));
+        for (int Echo = 0; Echo < EchoesFor(Chain); ++Echo)
+        {
+            const int Start = Frames + Echo * EchoFrames;
+            if (std::fabs(SampleAt(Start, Chain)) > 1e-9 || std::fabs(SampleAt(Start + EchoFrames - 1, Chain)) > 0.002) bQuiet = false;
+        }
+        Expect(Peaks > 0.05, "x%d repeats are silent", Chain);
+        Expect(Peaks <= Peak, "x%d repeats are louder than the notes", Chain);
+        Expect(bQuiet, "a repeat in x%d clicks", Chain);
+        Expect(SampleAt(FramesFor(Chain), Chain) == 0., "x%d runs past its window", Chain);
+    }
+
     Apart("the lock chirp", [](int Frame) { return QuebecSkidTone::SampleAt(Frame); }, QuebecSkidTone::Frames);
     Apart("the pond tick", [](int Frame) { return QuebecPondTone::SampleAt(Frame); }, QuebecPondTone::TickFrames);
     Apart("the court whistle", [](int Frame) { return QuebecCourtTone::WhistleAt(Frame); }, QuebecCourtTone::WhistleFrames);

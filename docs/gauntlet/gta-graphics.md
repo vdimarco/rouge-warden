@@ -3052,3 +3052,40 @@ Unreal is not available in this environment, so in-engine frames are the last co
 - Delta vs last round: +1 (round 86 was 135). Difficulty curve 4 → 5. Every other score held.
 
 ![Quick slides chain, and a pause starts over](gta-graphics/round-87/slide-chain.png)
+
+### Round 88 — 2026-10-29 — rubric v1
+
+- What changed: a slide chain is heard. Each link after the first adds a 0.06 s repeat of the 784 Hz note, up to four repeats. SLIDE plays the two notes, SLIDE x3 adds two repeats, and x5 through x9 add four. A single slide sounds the same as before.
+- Why it helped: round 87 left feedback at 4 and said the chain had no sound of its own. A driver who watches the road could not tell x3 from x1.
+- Screenshots: `docs/gauntlet/gta-graphics/round-88/slide-echoes.png` plots the cue for x1, x2, x3, and x5. It is not a game view. `Scripts/test_slide_tone.py` passed (90 assertions on c++, g++, and clang++, plus the wiring check). `Scripts/test_slide.py` passed. The offline syntax check passed `QuebecGameplay.cpp` in game and editor. The link check shows the same 16 `QuebecDrive.cpp` gaps as `main`. Unreal did not run, and the repeats were not heard in the city. OpenSpec CLI is not installed, so `openspec validate` did not run.
+- Next target: pacing and variety are still 4.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 9 | Unchanged. |
+| Color palette | 9 | Unchanged. |
+| Detail density | 9 | Unchanged. |
+| Texture and material quality | 9 | Unchanged. |
+| Composition and camera | 9 | Unchanged. |
+| Atmosphere | 9 | Unchanged. |
+| Character models | 9 | Unchanged. |
+| Animation smoothness | 9 | Unchanged. |
+| Particles and VFX | 9 | Unchanged. |
+| UI polish | 9 | Unchanged. |
+| Responsiveness and input latency | 5 | Unchanged. |
+| Controls feel | 5 | Unchanged. |
+| Mission clarity | 5 | Unchanged. |
+| Pacing | 4 | Unchanged mission slice. |
+| Fun factor | 4 | Unchanged. The chain was not played in Unreal. |
+| Difficulty curve | 5 | Unchanged. |
+| Feedback | 5 | The chain count is heard as repeats of the high note, so the driver need not read the banner. Tested, not heard in Unreal. |
+| Sound design | 5 | Unchanged. No new pitch. |
+| Variety | 4 | Unchanged. |
+| Performance stability | 5 | Unchanged. The longest cue is 0.48 s. |
+
+- Aesthetics raw: 90 / 10 dimensions, index 90
+- Playability raw: 47 / 10 dimensions, index 47
+- Total: 137 / 200
+- Delta vs last round: +1 (round 87 was 136). Feedback 4 → 5. Every other score held.
+
+![The slide cue for x1, x2, x3, and x5](gta-graphics/round-88/slide-echoes.png)
