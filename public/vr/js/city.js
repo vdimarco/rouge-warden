@@ -871,6 +871,7 @@ export function generate(seed = WORLD.seed) {
     }
   }
   Q = makeQueries(colliders);
+  const arena = pickArena(buildings, start, [goldRing, ...clogs, ...loonies, ...trials.map((t) => t.start), ...safe], Q);
 
   const nearestSafe = (x, y, z) => {
     let best = safe[0], bd = Infinity;
@@ -884,8 +885,33 @@ export function generate(seed = WORLD.seed) {
     streets: { xs: XS.slice(), zs: ZS.slice(), width: WORLD.street, avenues: AVENUES.map((a) => ({ ...a })) }, parks,
     districts: DISTRICTS.map((d) => ({ ...d })),
     needle, dome: { x: DOME.x, z: DOME.z, r: DOME.r, h: DOME.h }, expressway: { ...XWAY },
-    start, clogs, loonies, goldRing, trials, safe,
+    start, clogs, loonies, goldRing, trials, safe, arena,
     groundY, isWater, nearestSafe, districtAt,
     raycast: Q.raycast, collideSphere: Q.collideSphere, topBelow: Q.topBelow, nearestSurface: Q.nearestSurface,
   };
+}
+// The Gauntlet's roof (jobs.js; cityview keeps its props off it): the flat roof nearest the start roof, at least ARENA.size m across
+// and lo to hi m up, open over a 6 by 6 grid of its rect (nothing to stand behind, no step, a clear view at head height; all of its
+// middle and ARENA.open of the rest), and with nothing else on it (a clog, a coin, a trial, a safe spot). { bid, x, y, z, rect } or null.
+export const ARENA = { size: 16, lo: 14, hi: 60, edge: 2, open: 0.9, from: 20 };
+function pickArena(buildings, start, spots, Q) {
+  const A = ARENA;
+  let best = null, bd = Infinity;
+  for (const b of buildings) {
+    const t = b.tiers[b.tiers.length - 1];
+    if (b.roofY < A.lo || b.roofY > A.hi || t.maxX - t.minX < A.size || t.maxZ - t.minZ < A.size || (b.masts && b.masts.length)) continue;
+    const x = (t.minX + t.maxX) / 2, z = (t.minZ + t.maxZ) / 2, d = Math.hypot(x - start.x, z - start.z);
+    if (d < A.from || d >= bd) continue;
+    if (spots.some((p) => p.x > t.minX - 2 && p.x < t.maxX + 2 && p.z > t.minZ - 2 && p.z < t.maxZ + 2 && Math.abs((p.y ?? b.roofY) - b.roofY) < 8)) continue;
+    const q = { minX: t.minX + A.edge, maxX: t.maxX - A.edge, minZ: t.minZ + A.edge, maxZ: t.maxZ - A.edge };
+    let open = 0, ok = true;
+    for (let i = 0; i < 6 && ok; i++) for (let j = 0; j < 6; j++) {
+      const px = q.minX + ((q.maxX - q.minX) * (i + 0.5)) / 6, pz = q.minZ + ((q.maxZ - q.minZ) * (j + 0.5)) / 6, tb = Q.topBelow(px, b.roofY + 3, pz, 0.3);
+      const free = !!tb && Math.abs(tb.y - b.roofY) < 0.3 && !Q.collideSphere(px, b.roofY + 1, pz, 0.9) && !Q.collideSphere(px, b.roofY + 2.4, pz, 0.9);
+      if (free) open++; else if (i > 0 && i < 5 && j > 0 && j < 5) { ok = false; break; }
+    }
+    if (!ok || open / 36 < A.open) continue;
+    best = { bid: b.id, x, y: b.roofY, z, rect: q }; bd = d;
+  }
+  return best;
 }

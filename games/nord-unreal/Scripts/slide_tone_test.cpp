@@ -1,28 +1,24 @@
-// Standalone test for Source/Quebec/QuebecSlideTone.h. Built by Scripts/test_slide_tone.py.
+// A played handbrake slide screams. A straight run and a gripped turn stay quiet.
+// The car is the same one the slide banner test drives. Pass a path to write the slide as a 24 kHz WAV.
 
 #ifdef QUEBEC_SLIDE_STRICT
 #include <cmath>
-#include <cstdint>
 #pragma GCC poison PI HALF_PI TWO_PI INV_PI UE_PI check checkf checkSlow verify verifyf ensure ensureMsgf TEXT SMALL_NUMBER KINDA_SMALL_NUMBER BIG_NUMBER DELTA FORCEINLINE UE_LOG FVector FString TArray
 #endif
+#include "slide_car.h"
 #include "../Source/Quebec/QuebecSlideTone.h"
-#include "../Source/Quebec/QuebecLossTone.h"
-#include "../Source/Quebec/QuebecImpactTone.h"
-#include "../Source/Quebec/QuebecRankTone.h"
-#include "../Source/Quebec/QuebecSkidTone.h"
-#include "../Source/Quebec/QuebecPondTone.h"
-#include "../Source/Quebec/QuebecCourtTone.h"
-#include "../Source/Quebec/QuebecShowTone.h"
 
 #include <algorithm>
 #include <cmath>
 #include <cstdarg>
+#include <cstdint>
 #include <cstdio>
-
-using namespace QuebecSlideTone;
+#include <vector>
 
 namespace
 {
+    using namespace SlideCar;
+
     int Failures = 0;
     int Assertions = 0;
 
@@ -33,112 +29,138 @@ namespace
         ++Failures;
         std::va_list Arguments;
         va_start(Arguments, Format);
-        std::fputs("FAIL: ", stderr);
         std::vfprintf(stderr, Format, Arguments);
         std::fputc('\n', stderr);
         va_end(Arguments);
     }
 
-    template <typename Sample>
-    void Apart(const char* Name, Sample Other, int OtherFrames)
+    struct FHeard
     {
-        double Gap = 0.;
-        const int Count = std::min(Frames, OtherFrames);
-        for (int Frame = 0; Frame < Count; ++Frame)
-            Gap = std::max(Gap, std::fabs(SampleAt(Frame) - Other(Frame)));
-        Expect(Gap > 0.05, "the slide notes match %s", Name);
+        std::vector<float> Pcm;
+        std::vector<float> Gain; // One per car frame, at the end of that frame's audio.
+        float PeakGain = 0.f;
+        float PeakSample = 0.f;
+        float BiggestStep = 0.f; // The largest gain change between two samples.
+    };
+
+    // The drive loop sets one goal per tick and eases the gain per sample, as UpdateDriveAudio does.
+    FHeard Listen(const std::vector<FSample>& Trace)
+    {
+        FHeard Heard;
+        QuebecSlideTone::FVoice Voice;
+        float Gain = 0.f;
+        const int PerFrame = QuebecSlideTone::SampleRate / 60;
+        for (const FSample& Frame : Trace)
+        {
+            const float Goal = QuebecSlideTone::Target(Frame.Speed, Frame.Lateral, Frame.bBrake);
+            for (int Index = 0; Index < PerFrame; ++Index)
+            {
+                const float Before = Gain;
+                Gain = QuebecSlideTone::Follow(Gain, Goal, 1.f / static_cast<float>(QuebecSlideTone::SampleRate));
+                const float Sample = Voice.Sample(Gain);
+                Heard.PeakSample = std::max(Heard.PeakSample, std::fabs(Sample));
+                Heard.BiggestStep = std::max(Heard.BiggestStep, std::fabs(Gain - Before));
+                Heard.Pcm.push_back(Sample);
+            }
+            Heard.PeakGain = std::max(Heard.PeakGain, Gain);
+            Heard.Gain.push_back(Gain);
+        }
+        return Heard;
     }
 
-    // Goertzel power at one pitch over a span of frames.
-    double PowerAt(double Hz, int From, int To)
+    void WriteWav(const char* Path, const std::vector<float>& Pcm)
     {
-        const double Step = 6.283185307179586 * Hz / static_cast<double>(SampleRate);
-        const double Coeff = 2. * std::cos(Step);
-        double Now = 0., Last = 0., Before = 0.;
-        for (int Frame = From; Frame < To; ++Frame)
+        std::FILE* File = std::fopen(Path, "wb");
+        if (!File) return;
+        const std::uint32_t Rate = QuebecSlideTone::SampleRate;
+        const std::uint32_t Bytes = static_cast<std::uint32_t>(Pcm.size() * 2);
+        auto U32 = [File](std::uint32_t Value) { std::fwrite(&Value, 4, 1, File); };
+        auto U16 = [File](std::uint16_t Value) { std::fwrite(&Value, 2, 1, File); };
+        std::fwrite("RIFF", 1, 4, File); U32(36 + Bytes); std::fwrite("WAVEfmt ", 1, 8, File);
+        U32(16); U16(1); U16(1); U32(Rate); U32(Rate * 2); U16(2); U16(16);
+        std::fwrite("data", 1, 4, File); U32(Bytes);
+        for (const float Sample : Pcm)
         {
-            Now = SampleAt(Frame) + Coeff * Last - Before;
-            Before = Last;
-            Last = Now;
+            const float Clamped = std::max(-1.f, std::min(1.f, Sample));
+            const std::int16_t Value = static_cast<std::int16_t>(std::lround(Clamped * 32767.f));
+            std::fwrite(&Value, 2, 1, File);
         }
-        return Last * Last + Before * Before - Coeff * Last * Before;
+        std::fclose(File);
+    }
+
+    void TestRule()
+    {
+        Expect(QuebecSlideTone::SampleRate == 24000, "the drive loop runs at 24 kHz");
+        Expect(QuebecSlideTone::Target(2000.f, 400.f, false) == 0.f, "no brake, no scream");
+        Expect(QuebecSlideTone::Target(300.f, 400.f, true) == 0.f, "a slow shove is quiet");
+        Expect(QuebecSlideTone::Target(2000.f, 170.f, true) == 0.f, "a lane wiggle is quiet");
+        Expect(QuebecSlideTone::Target(2000.f, 180.f, true) > .44f, "the banner's line starts the scream");
+        Expect(QuebecSlideTone::Target(2000.f, -600.f, true) == 1.f, "either side screams in full");
+        Expect(QuebecSlideTone::Target(-2000.f, 600.f, true) == 1.f, "a reverse slide screams too");
+        Expect(QuebecSlideTone::Follow(.3f, 1.f, 0.f) == .3f, "no time, no change");
+        Expect(QuebecSlideTone::Follow(.3f, 1.f, 10.f) == 1.f, "a long step lands on the goal");
+        QuebecSlideTone::FVoice Quiet;
+        float Silence = 0.f;
+        for (int Index = 0; Index < 2400; ++Index) Silence = std::max(Silence, std::fabs(Quiet.Sample(0.f)));
+        Expect(Silence == 0.f, "zero gain is silence, got %f", static_cast<double>(Silence));
+    }
+
+    void TestSession(const char* WavPath)
+    {
+        std::vector<FSample> Trace;
+        const FPhase Slide[] = {{3.f, false, 0.f, true}, {1.2f, true, 1.f, false}, {1.f, false, 0.f, false}};
+        const FCar Car = Play(Slide, 3, &Trace);
+        const FHeard Heard = Listen(Trace);
+        Expect(Car.Slide.Pays == 1, "the slide still pays once, got %d", Car.Slide.Pays);
+        int Live = -1, Pay = -1, Loud = -1, End = -1, Quiet = -1;
+        for (int Index = 0; Index < static_cast<int>(Trace.size()); ++Index)
+        {
+            const FSample& Frame = Trace[static_cast<std::size_t>(Index)];
+            if (Live < 0 && QuebecSlideTone::Target(Frame.Speed, Frame.Lateral, Frame.bBrake) > 0.f) Live = Index;
+            if (Pay < 0 && Frame.Pays == 1) Pay = Index;
+            if (Loud < 0 && Heard.Gain[static_cast<std::size_t>(Index)] > .4f) Loud = Index;
+            const bool bLive = QuebecSlideTone::Target(Frame.Speed, Frame.Lateral, Frame.bBrake) > 0.f;
+            if (Live >= 0 && End < 0 && !bLive) End = Index;
+            if (End >= 0 && Quiet < 0 && Heard.Gain[static_cast<std::size_t>(Index)] < .02f) Quiet = Index;
+        }
+        const float Frame = 1.f / 60.f;
+        Expect(Live >= 0 && Pay >= 0 && Loud >= 0 && End >= 0 && Quiet >= 0, "live %d pay %d loud %d end %d quiet %d", Live, Pay, Loud, End, Quiet);
+        Expect(Loud - Live <= 6, "the scream is loud inside 0.1 s of the shove, took %d frames", Loud - Live);
+        Expect(Pay >= 0 && Heard.Gain[static_cast<std::size_t>(Pay)] > .45f, "the banner lands as the scream fades, still loud");
+        Expect(Heard.PeakGain > .9f, "a full slide screams near full, peak %f", static_cast<double>(Heard.PeakGain));
+        Expect(Quiet - End <= 18, "the tires go quiet inside 0.3 s of the slide's end, took %d frames", Quiet - End);
+        for (int Index = Live; Index < End; ++Index)
+            Expect(Heard.Gain[static_cast<std::size_t>(Index)] > 0.f, "the scream holds through the slide, frame %d", Index);
+        Expect(Heard.PeakSample <= QuebecSlideTone::Peak + .001f, "peak sample %f", static_cast<double>(Heard.PeakSample));
+        Expect(Heard.BiggestStep < .001f, "the gain eases without a click, biggest step %f", static_cast<double>(Heard.BiggestStep));
+        const auto At = [Frame](int Index) { return static_cast<double>(static_cast<float>(Index + 1) * Frame); };
+        std::printf("live %.3f loud %.3f pay %.3f end %.3f quiet %.3f peak %.3f\n", At(Live), At(Loud), At(Pay), At(End), At(Quiet),
+            static_cast<double>(Heard.PeakGain));
+        for (std::size_t Index = 0; Index < Trace.size(); ++Index)
+            std::printf("gain %.4f %.2f %.4f %d\n", static_cast<double>(Trace[Index].Time), static_cast<double>(Trace[Index].Lateral),
+                static_cast<double>(Heard.Gain[Index]), Trace[Index].Pays);
+        if (WavPath) WriteWav(WavPath, Heard.Pcm);
+
+        std::vector<FSample> Straight;
+        const FPhase Gas[] = {{4.f, false, 0.f, true}};
+        Play(Gas, 1, &Straight);
+        Expect(Listen(Straight).PeakSample == 0.f, "a straight run is quiet");
+        std::vector<FSample> Gripped;
+        const FPhase NoBrake[] = {{3.f, false, 0.f, true}, {1.2f, false, 1.f, true}};
+        Play(NoBrake, 2, &Gripped);
+        Expect(Listen(Gripped).PeakSample == 0.f, "a gripped turn keeps only the drive-loop hiss");
+        std::vector<FSample> Stopped;
+        const FPhase Brake[] = {{3.f, false, 0.f, true}, {2.f, true, 0.f, false}};
+        Play(Brake, 2, &Stopped);
+        Expect(Listen(Stopped).PeakSample == 0.f, "a straight handbrake stop is the skid chirp only");
     }
 }
 
-int main()
+int main(int Count, char** Arguments)
 {
-    Expect(LowHz == 587. && HighHz == 784., "the notes left 587 Hz and 784 Hz");
-    Expect(HighHz > LowHz, "the second note does not rise");
-    Expect(NoteFrames * 2 == Frames, "the two notes are not the same length");
-    Expect(Frames == 5292, "the cue left 0.24 s");
-    Expect(Peak == 0.30, "the peak drifted");
-
-    double Loud = 0.;
-    bool bInside = true;
-    for (int Frame = 0; Frame < Frames; ++Frame)
-    {
-        const double Sample = SampleAt(Frame);
-        Loud = std::max(Loud, std::fabs(Sample));
-        if (std::fabs(Sample) > 1.) bInside = false;
-    }
-    Expect(Loud > 0.05, "the slide notes are silent");
-    Expect(bInside, "a slide sample leaves the unit range");
-    Expect(SampleAt(-1) == 0. && SampleAt(Frames) == 0., "the slide notes run outside their window");
-    Expect(std::fabs(SampleAt(0)) < 1e-9 && std::fabs(SampleAt(NoteFrames)) < 1e-9, "a note starts with a click");
-    Expect(std::fabs(SampleAt(NoteFrames - 1)) < 0.002 && std::fabs(SampleAt(Frames - 1)) < 0.002, "a note ends with a click");
-
-    const int Held[] = {
-        QuebecRankTone::ScrapeHz, QuebecRankTone::CleanHz, QuebecRankTone::ChainHz,
-        QuebecRankTone::HeatHz, QuebecRankTone::MaxHz, 90, 210, 740, 980, 1400, 1470
-    };
-    const double FirstLow = PowerAt(LowHz, 0, NoteFrames);
-    const double SecondHigh = PowerAt(HighHz, NoteFrames, Frames);
-    Expect(FirstLow > PowerAt(HighHz, 0, NoteFrames) * 20., "the first note is not 587 Hz");
-    Expect(SecondHigh > PowerAt(LowHz, NoteFrames, Frames) * 20., "the second note is not 784 Hz");
-    for (int Hz : Held)
-    {
-        char Name[32];
-        std::snprintf(Name, sizeof Name, "%d Hz", Hz);
-        Apart(Name, [Hz](int Frame) { return QuebecRankTone::SampleAt(Frame, Hz); }, QuebecRankTone::Frames);
-        Expect(FirstLow > PowerAt(static_cast<double>(Hz), 0, NoteFrames) * 20., "the first note leans on %d Hz", Hz);
-        Expect(SecondHigh > PowerAt(static_cast<double>(Hz), NoteFrames, Frames) * 20., "the second note leans on %d Hz", Hz);
-    }
-
-    // A chain adds short repeats of the high note. A single slide stays two notes.
-    Expect(FramesFor(1) == Frames && FramesFor(0) == Frames, "a single slide grew");
-    Expect(FramesFor(2) == Frames + EchoFrames, "x2 does not add one repeat");
-    Expect(FramesFor(5) == MaxFrames && FramesFor(9) == MaxFrames, "the repeats do not stop at four");
-    Expect(EchoFrames == 1323 && MaxEchoes == 4, "the repeat left 0.06 s or four");
-    bool bSameStart = true;
-    for (int Frame = 0; Frame < Frames; ++Frame)
-        if (SampleAt(Frame, 3) != SampleAt(Frame)) bSameStart = false;
-    Expect(bSameStart, "a chain changes the first two notes");
-    Expect(SampleAt(Frames, 1) == 0., "a single slide plays a repeat");
-    for (int Chain = 2; Chain <= 9; ++Chain)
-    {
-        double Peaks = 0.;
-        bool bQuiet = true;
-        for (int Frame = Frames; Frame < FramesFor(Chain); ++Frame)
-            Peaks = std::max(Peaks, std::fabs(SampleAt(Frame, Chain)));
-        for (int Echo = 0; Echo < EchoesFor(Chain); ++Echo)
-        {
-            const int Start = Frames + Echo * EchoFrames;
-            if (std::fabs(SampleAt(Start, Chain)) > 1e-9 || std::fabs(SampleAt(Start + EchoFrames - 1, Chain)) > 0.002) bQuiet = false;
-        }
-        Expect(Peaks > 0.05, "x%d repeats are silent", Chain);
-        Expect(Peaks <= Peak, "x%d repeats are louder than the notes", Chain);
-        Expect(bQuiet, "a repeat in x%d clicks", Chain);
-        Expect(SampleAt(FramesFor(Chain), Chain) == 0., "x%d runs past its window", Chain);
-    }
-
-    Apart("the lock chirp", [](int Frame) { return QuebecSkidTone::SampleAt(Frame); }, QuebecSkidTone::Frames);
-    Apart("the pond tick", [](int Frame) { return QuebecPondTone::SampleAt(Frame); }, QuebecPondTone::TickFrames);
-    Apart("the court whistle", [](int Frame) { return QuebecCourtTone::WhistleAt(Frame); }, QuebecCourtTone::WhistleFrames);
-    Apart("the court rasp", [](int Frame) { return QuebecCourtTone::RaspAt(Frame); }, QuebecCourtTone::RaspFrames);
-    Apart("the theatre page", [](int Frame) { return QuebecShowTone::SampleAt(Frame); }, QuebecShowTone::PageFrames);
-    Apart("the dent thud", [](int Frame) { return QuebecImpactTone::SampleAt(Frame); }, QuebecImpactTone::Frames);
-    Apart("the loss sting", [](int Frame) { return QuebecLossTone::SampleAt(Frame); }, QuebecLossTone::Frames);
-
-    std::printf("%d assertions, %d failures\n", Assertions, Failures);
+    TestRule();
+    TestSession(Count > 1 ? Arguments[1] : nullptr);
+    std::printf("%d failures\n", Failures);
+    std::printf("%d assertions\n", Assertions);
     return Failures == 0 ? 0 : 1;
 }

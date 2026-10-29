@@ -41,6 +41,17 @@ const CSS = `
 #actTouch .dodge{right:18px;top:calc(42% + 88px);width:96px;height:96px;background:#e8402a;color:#fffdf5;font-size:22px}
 #actTouch .throw{right:18px;top:calc(42% - 88px);background:#ffd84a;font-size:18px}
 #actTouch .glide{left:50%;bottom:96px;width:120px;height:64px;margin-left:-60px;border-radius:32px;background:#5ec2e8;font-size:22px}
+#actBanner{position:fixed;left:50%;top:31%;z-index:12;pointer-events:none;transform:translate(-50%,0) rotate(-3deg);padding:8px 26px 4px;background:#e8402a;border:4px solid #140a18;box-shadow:6px 6px 0 #140a18;font-family:var(--comic,"Bangers",Impact,"Arial Black",sans-serif);color:#fffdf5;text-align:center;white-space:nowrap;background-image:radial-gradient(rgba(20,10,24,.22) 1.3px,transparent 1.6px);background-size:7px 7px}
+#actBanner[hidden]{display:none}
+#actBanner b{display:block;font-size:44px;line-height:1;letter-spacing:.04em;text-shadow:3px 3px 0 #140a18}
+#actBanner small{display:block;margin-top:2px;font-size:18px;letter-spacing:.06em;color:#ffd84a;text-shadow:2px 2px 0 #140a18}
+#actBanner.stamp{background-color:#ffd84a;color:#140a18;transform:translate(-50%,0) rotate(2deg)}
+#actBanner.stamp b{color:#140a18;text-shadow:3px 3px 0 #fffdf5}
+#actBanner.stamp small{color:#140a18;text-shadow:none}
+#actBanner.go{animation:actSlam .28s cubic-bezier(.2,1.6,.4,1) both}
+@keyframes actSlam{from{transform:translate(-50%,0) rotate(-3deg) scale(2.4);opacity:0}to{opacity:1}}
+@media (max-width:600px){#actBanner{top:24%;padding:6px 16px 3px;max-width:calc(100vw - 32px);box-sizing:border-box}#actBanner b{font-size:36px}#actBanner small{font-size:15px;white-space:normal}}
+@media (prefers-reduced-motion:reduce){#actBanner.go{animation:none}}
 #actGoal{position:fixed;left:0;top:0;z-index:12;pointer-events:none;transform:translate(-50%,-115%);padding:3px 12px 2px;background:#ffd84a;border:3px solid #140a18;box-shadow:4px 4px 0 #140a18;font-family:var(--comic,"Bangers",Impact,"Arial Black",sans-serif);color:#140a18;text-align:center;white-space:nowrap}
 #actGoal[hidden]{display:none}
 #actGoal b{display:block;font-size:22px;line-height:1;letter-spacing:.06em}
@@ -51,7 +62,7 @@ const CSS = `
 #actGoal:not(.off):after{content:"";position:absolute;left:50%;bottom:-12px;margin-left:-7px;border:7px solid transparent;border-top:8px solid #140a18}
 #actGoal .arr{display:none;margin-top:2px;font-size:18px;line-height:1}
 #actGoal.off .arr{display:block}
-body.cutscene #actHud,body.cutscene #actPrompt,body.cutscene #actTouch,body.cutscene #actShout,body.cutscene #actWarn,body.cutscene #actFight,body.cutscene #actGoal{visibility:hidden}
+body.cutscene #actBanner,body.cutscene #actHud,body.cutscene #actPrompt,body.cutscene #actTouch,body.cutscene #actShout,body.cutscene #actWarn,body.cutscene #actFight,body.cutscene #actGoal{visibility:hidden}
 `;
 
 // Where the job sticker sits. dir is the goal in camera space (Three.js: +x right, +y up, −z forward).
@@ -95,6 +106,10 @@ export function createActionHud() {
   hit.id = "actHit";
   const warn = document.createElement("div");
   warn.id = "actWarn"; warn.hidden = true; warn.textContent = "!";
+  const banner = document.createElement("div");
+  banner.id = "actBanner"; banner.hidden = true; banner.setAttribute("role", "status");
+  banner.innerHTML = "<b></b><small></small>";
+  let bannerT = 0;
   const goal = document.createElement("div");
   goal.id = "actGoal"; goal.hidden = true; goal.setAttribute("role", "status");
   goal.innerHTML = "<b></b><small></small><span class=\"arr\">▲</span>";
@@ -102,7 +117,7 @@ export function createActionHud() {
   touchEl.id = "actTouch";
   const btn = (k, label) => { const b = document.createElement("button"); b.className = k; b.textContent = label; b.hidden = true; b.type = "button"; touchEl.appendChild(b); return b; };
   const B = { glide: btn("glide", "GLIDE"), throw: btn("throw", "THROW"), dodge: btn("dodge", "DODGE"), car: btn("car", "CAR") };
-  document.body.append(hud, fightEl, prompt, shout, warn, goal, hit, touchEl);
+  document.body.append(hud, fightEl, prompt, shout, warn, goal, hit, banner, touchEl);
   const hearts = hud.querySelector(".hearts"), energy = hud.querySelector(".energy"), bar = energy.querySelector("i");
   const comboEl = fightEl.querySelector(".combo"), focusEl = fightEl.querySelector(".focus"), focusBar = focusEl.querySelector("i");
   const goalName = goal.querySelector("b"), goalSub = goal.querySelector("small"), goalArr = goal.querySelector(".arr");
@@ -179,6 +194,14 @@ export function createActionHud() {
       else if (!touch.glide || !s.phone) { B.glide.hidden = true; touch.glide = false; B.glide.classList.remove("on"); }
       B.car.textContent = s.driving ? "OUT" : "CAR";
       if (hitT > 0) { hitT -= dt; if (hitT <= 0) hit.style.opacity = "0"; }
+      if (bannerT > 0 && (bannerT -= dt) <= 0) banner.hidden = true;
+    },
+    // a comic banner over the middle of the view for time s: the Gauntlet's rounds (red), and a yellow stamp when one is cleared
+    banner(title, sub = "", stamp = false, time = 1.6) {
+      banner.querySelector("b").textContent = title; banner.querySelector("small").textContent = sub;
+      banner.classList.toggle("stamp", !!stamp);
+      banner.classList.remove("go"); void banner.offsetWidth; banner.classList.add("go");
+      banner.hidden = false; bannerT = time;
     },
     // read and clear the CAR press
     takeCar() { const v = touch.car; touch.car = false; return v; },
@@ -186,7 +209,7 @@ export function createActionHud() {
     takeDodge() { const v = touch.dodge; touch.dodge = false; return v; },
     takeThrow() { const v = touch.throw; touch.throw = false; return v; },
     flash() { hit.style.opacity = "1"; hitT = 0.25; },
-    info: () => ({ hidden: hud.hidden, hearts: shown.hp, energy: shown.e, combo: shown.c, focus: shown.f, warn: !warn.hidden, prompt: prompt.hidden ? "" : prompt.textContent, shout: shout.hidden ? "" : shout.textContent, car: !B.car.hidden, dodge: !B.dodge.hidden, throw: !B.throw.hidden, glide: !B.glide.hidden, goal: goal.hidden ? "" : goal.innerText.replace(/\n/g, " "), goalOff: goal.classList.contains("off") }),
+    info: () => ({ hidden: hud.hidden, hearts: shown.hp, energy: shown.e, combo: shown.c, focus: shown.f, warn: !warn.hidden, prompt: prompt.hidden ? "" : prompt.textContent, shout: shout.hidden ? "" : shout.textContent, banner: banner.hidden ? "" : banner.textContent, car: !B.car.hidden, dodge: !B.dodge.hidden, throw: !B.throw.hidden, glide: !B.glide.hidden, goal: goal.hidden ? "" : goal.innerText.replace(/\n/g, " "), goalOff: goal.classList.contains("off") }),
   };
   return H;
 }

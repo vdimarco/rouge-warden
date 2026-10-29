@@ -1,22 +1,23 @@
-// A played drive: gas, then a handbrake turn, earns one slide banner.
+// A played drive: gas, then a handbrake turn, earns one graded slide banner when the slide ends.
 // A straight run, a tap and a turn without the brake earn none.
 
 #ifdef QUEBEC_SLIDE_STRICT
 #include <cmath>
 #pragma GCC poison PI HALF_PI TWO_PI INV_PI UE_PI check checkf checkSlow verify verifyf ensure ensureMsgf TEXT SMALL_NUMBER KINDA_SMALL_NUMBER BIG_NUMBER DELTA FORCEINLINE UE_LOG FVector FString TArray
 #endif
-#include "../Source/Quebec/QuebecSlide.h"
-#include "../Source/Quebec/QuebecSteerAssist.h"
+#include "slide_car.h"
 
 #include <algorithm>
 #include <cmath>
 #include <cstdarg>
 #include <cstdio>
-#include <cstring>
+#include <string>
 #include <vector>
 
 namespace
 {
+    using namespace SlideCar;
+
     int Failures = 0;
     int Assertions = 0;
 
@@ -32,146 +33,55 @@ namespace
         va_end(Arguments);
     }
 
-    struct FSample
-    {
-        float Time = 0.f;
-        float Speed = 0.f;
-        float Lateral = 0.f;
-        int Pays = 0;
-    };
-
-    struct FCar
-    {
-        float Speed = 0.f;
-        float Lateral = 0.f;
-        float Yaw = 0.f;
-        float SteeringState = 0.f;
-        float DriveThrottle = 0.f;
-        float PeakLateral = 0.f;
-        QuebecSlide::FState Slide;
-
-        // One substep of the player car in QuebecGameplay.cpp: pedal slew, the handbrake brake,
-        // the bicycle yaw, the momentum split and the grip. No collision and no road assist.
-        void Advance(float Dt, bool bBrake, float Steer, bool bGas)
-        {
-            const float Throttle = bGas ? 1.f : 0.f;
-            DriveThrottle = QuebecSteer::MoveToward(DriveThrottle, Throttle, Dt, QuebecSteer::ThrottleRate);
-            SteeringState = QuebecSteer::MoveToward(SteeringState, Steer, Dt,
-                QuebecSteer::TurnInRate(Speed, Steer, SteeringState, false));
-            if (bBrake)
-                Speed = QuebecSteer::MoveToward(Speed, 0.f, Dt, 2300.f);
-            else if (Throttle * Speed < 0.f)
-                Speed = QuebecSteer::MoveToward(Speed, 0.f, Dt, 3200.f * std::fabs(Throttle));
-            else if (std::fabs(Throttle) > .01f)
-            {
-                const float Corner = QuebecSteer::Lerp(2400.f, 900.f,
-                    QuebecSteer::Clamp((std::fabs(SteeringState) - .2f) / .8f, 0.f, 1.f));
-                if (Throttle > 0.f && std::fabs(SteeringState) > .2f && Speed > Corner)
-                    Speed = QuebecSteer::MoveToward(Speed, Corner, Dt, 1200.f);
-                else
-                {
-                    const float Power = QuebecSteer::Lerp(1050.f, 700.f,
-                        QuebecSteer::Clamp(std::fabs(Speed) / 3000.f, 0.f, 1.f));
-                    const float Requested = std::max(0.f, DriveThrottle * (Throttle > 0.f ? 1.f : -1.f)) * (Throttle > 0.f ? 1.f : -1.f);
-                    Speed += Requested * Power * Dt;
-                    Speed = QuebecSteer::MoveToward(Speed, 0.f, Dt, 100.f + Speed * Speed * .000035f);
-                }
-            }
-            else Speed = QuebecSteer::MoveToward(Speed, 0.f, Dt, 360.f + Speed * Speed * .000035f);
-            Speed = QuebecSteer::Clamp(Speed, -950.f, 3000.f);
-
-            const float YawRad = Yaw * (QuebecSteer::Pi / 180.f);
-            const float ForwardX = std::cos(YawRad);
-            const float ForwardY = std::sin(YawRad);
-            const float RightX = -std::sin(YawRad);
-            const float RightY = std::cos(YawRad);
-            const float MomentumX = ForwardX * Speed + RightX * Lateral;
-            const float MomentumY = ForwardY * Speed + RightY * Lateral;
-            if (std::fabs(Speed) > 15.f)
-                Yaw += QuebecSteer::YawRateFor(Speed, SteeringState, bBrake) * Dt;
-            const float Yaw2 = Yaw * (QuebecSteer::Pi / 180.f);
-            const float Forward2X = std::cos(Yaw2);
-            const float Forward2Y = std::sin(Yaw2);
-            const float Right2X = -std::sin(Yaw2);
-            const float Right2Y = std::cos(Yaw2);
-            Speed = MomentumX * Forward2X + MomentumY * Forward2Y;
-            Lateral = MomentumX * Right2X + MomentumY * Right2Y;
-            const float Grip = bBrake ? 1.15f : 8.f;
-            Lateral += (0.f - Lateral) * QuebecSteer::Clamp(Dt * Grip, 0.f, 1.f);
-            const float Cap = std::fabs(Speed) * .7f + 80.f;
-            Lateral = QuebecSteer::Clamp(Lateral, -Cap, Cap);
-            if (std::fabs(Speed) < 100.f)
-                Lateral = QuebecSteer::MoveToward(Lateral, 0.f, Dt, 3600.f);
-            PeakLateral = std::max(PeakLateral, std::fabs(Lateral));
-            Slide.Tick(Dt, Speed, Lateral, bBrake);
-        }
-    };
-
-    struct FPhase
-    {
-        float Seconds;
-        bool bBrake;
-        float Steer;
-        bool bGas;
-    };
-
-    FCar Play(const FPhase* Phases, int Count, std::vector<FSample>* Trace)
-    {
-        FCar Car;
-        float Time = 0.f;
-        const float Dt = 1.f / 60.f;
-        for (int Phase = 0; Phase < Count; ++Phase)
-        {
-            const int Steps = static_cast<int>(std::lround(Phases[Phase].Seconds / Dt));
-            for (int Step = 0; Step < Steps; ++Step)
-            {
-                Car.Advance(Dt, Phases[Phase].bBrake, Phases[Phase].Steer, Phases[Phase].bGas);
-                Time += Dt;
-                if (Trace) Trace->push_back({Time, Car.Speed, Car.Lateral, Car.Slide.Pays});
-            }
-        }
-        return Car;
-    }
-
     void TestRule()
     {
         Expect(QuebecSlide::HoldSeconds == .35f, "HoldSeconds %f", static_cast<double>(QuebecSlide::HoldSeconds));
         Expect(QuebecSlide::MinSpeed == 450.f, "MinSpeed");
         Expect(QuebecSlide::MinLateral == 180.f, "MinLateral");
         Expect(QuebecSlide::AgainSeconds == 1.5f, "AgainSeconds");
+        Expect(QuebecSlide::MaxSeconds == 2.5f, "MaxSeconds");
+        const float Step = 1.f / 60.f;
         QuebecSlide::FState Early;
-        for (int Frame = 0; Frame < 20; ++Frame)
-            Expect(!Early.Tick(1.f / 60.f, 2000.f, 400.f, true), "frame %d paid early", Frame);
-        Expect(Early.Pays == 0, "20 frames is under the hold");
-        Expect(Early.Tick(1.f / 60.f, 2000.f, 400.f, true), "frame 21 pays");
-        Expect(Early.Pays == 1, "one pay");
-        Expect(!Early.Tick(1.f / 60.f, 2000.f, 400.f, true), "holding on does not pay again");
+        for (int Index = 0; Index < 30; ++Index)
+            Expect(!Early.Tick(Step, 2000.f, 400.f, true), "frame %d paid during the slide", Index);
+        Expect(Early.Tick(Step, 2000.f, 400.f, false), "the slide pays when the brake comes off");
+        Expect(Early.Pays == 1 && Early.LastGrade == QuebecSlide::EGrade::Slide, "one plain SLIDE");
+        Expect(std::fabs(Early.LastSeconds - .5f) < .01f, "held %f", static_cast<double>(Early.LastSeconds));
+        Expect(!Early.Tick(Step, 2000.f, 400.f, false), "the end pays once");
 
-        Expect(QuebecSlide::ChainSeconds == 5.f, "ChainSeconds");
-        Expect(Early.Chain == 1, "the first pay is a chain of one");
-        QuebecSlide::FState Link;
-        auto PayOnce = [&Link]() {
-            for (int Frame = 0; Frame < 21; ++Frame) Link.Tick(1.f / 60.f, 2000.f, 400.f, true);
-            Link.Tick(1.f / 60.f, 2000.f, 0.f, true);
-        };
-        for (int Slide = 0; Slide < 12; ++Slide)
+        QuebecSlide::FState Short;
+        for (int Index = 0; Index < 20; ++Index) Short.Tick(Step, 2000.f, 400.f, true);
+        Expect(!Short.Tick(Step, 2000.f, 400.f, false) && Short.Pays == 0, "0.33 s is under the hold");
+
+        QuebecSlide::FState Graded;
+        const float Peaks[] = {400.f, 549.f, 550.f, 699.f, 700.f, 820.f};
+        const QuebecSlide::EGrade Grades[] = {QuebecSlide::EGrade::Slide, QuebecSlide::EGrade::Slide, QuebecSlide::EGrade::Big,
+            QuebecSlide::EGrade::Big, QuebecSlide::EGrade::Huge, QuebecSlide::EGrade::Huge};
+        for (int Case = 0; Case < 6; ++Case)
         {
-            PayOnce();
-            for (int Frame = 0; Frame < 120; ++Frame) Link.Tick(1.f / 60.f, 2000.f, 0.f, false);
+            for (int Index = 0; Index < 30; ++Index) Graded.Tick(Step, 2000.f, Index == 15 ? Peaks[Case] : 300.f, true);
+            Graded.Tick(2.f, 2000.f, 0.f, false);
+            Expect(Graded.LastGrade == Grades[Case], "peak %.0f graded %d", static_cast<double>(Peaks[Case]),
+                static_cast<int>(Graded.LastGrade));
         }
-        Expect(Link.Pays == 12 && Link.Chain == QuebecSlide::MaxChain, "the chain stops at %d, got %d", QuebecSlide::MaxChain, Link.Chain);
-        for (int Frame = 0; Frame < 301; ++Frame) Link.Tick(1.f / 60.f, 2000.f, 0.f, false);
-        PayOnce();
-        Expect(Link.Chain == 1, "a pay more than 5 s later starts over, got %d", Link.Chain);
-        char Title[16];
-        QuebecSlide::Title(1, Title);
-        Expect(std::strcmp(Title, "SLIDE") == 0, "one slide reads %s", Title);
-        QuebecSlide::Title(2, Title);
-        Expect(std::strcmp(Title, "SLIDE x2") == 0, "two read %s", Title);
-        QuebecSlide::Title(40, Title);
-        Expect(std::strcmp(Title, "SLIDE x9") == 0, "the cap reads %s", Title);
-        QuebecSlide::Title(0, Title);
-        Expect(std::strcmp(Title, "SLIDE") == 0, "no chain reads %s", Title);
+        Expect(Graded.Pays == 6, "six graded pays, got %d", Graded.Pays);
+        Expect(std::string(QuebecSlide::Title(QuebecSlide::EGrade::Huge)) == "HUGE SLIDE", "huge title");
+        Expect(std::string(QuebecSlide::Title(QuebecSlide::EGrade::Big)) == "BIG SLIDE", "big title");
+        Expect(std::string(QuebecSlide::Title(QuebecSlide::EGrade::Slide)) == "SLIDE", "plain title");
+        Expect(std::string(QuebecSlide::Title(QuebecSlide::EGrade::None)).empty(), "no title");
+
+        QuebecSlide::FState Endless;
+        int EndlessPays = 0;
+        for (int Index = 0; Index < 400; ++Index) EndlessPays += Endless.Tick(Step, 2000.f, 400.f, true) ? 1 : 0;
+        Expect(EndlessPays == 1, "an endless slide pays once, got %d", EndlessPays);
+        Expect(std::fabs(Endless.LastSeconds - QuebecSlide::MaxSeconds) < .02f, "at the cap, %f", static_cast<double>(Endless.LastSeconds));
+        Expect(!Endless.Tick(Step, 2000.f, 400.f, false), "its end does not pay again");
+
+        QuebecSlide::FState Failsafe;
+        for (int Index = 0; Index < 30; ++Index) Failsafe.Tick(Step, 2000.f, 400.f, true);
+        Expect(!Failsafe.Tick(Step, 2000.f, 400.f, true, true) && Failsafe.Pays == 0, "a failsafe stop voids the slide");
+        Expect(!Failsafe.Tick(Step, 2000.f, 400.f, false) && Failsafe.Pays == 0, "and nothing pays after it");
+
         QuebecSlide::FState Wiggle;
         for (int Frame = 0; Frame < 60; ++Frame) Wiggle.Tick(1.f / 60.f, 2000.f, 50.f, true);
         Expect(Wiggle.Pays == 0, "a lane wiggle is not a slide");
@@ -196,9 +106,16 @@ namespace
             Peak = std::max(Peak, std::fabs(Sample.Lateral));
             if (PayTime < 0.f && Sample.Pays == 1) PayTime = Sample.Time;
         }
-        Expect(PayTime > 3.4f && PayTime < 3.8f, "pay time %f", static_cast<double>(PayTime));
+        Expect(PayTime > 3.55f && PayTime < 3.8f, "the banner comes as the slide ends, pay time %f", static_cast<double>(PayTime));
+        Expect(Paid.Slide.LastGrade == QuebecSlide::EGrade::Big, "a full turn after 3 s of gas is a BIG SLIDE, got %d",
+            static_cast<int>(Paid.Slide.LastGrade));
+        Expect(Paid.Slide.LastSeconds > .35f && Paid.Slide.LastSeconds < .6f, "held %f", static_cast<double>(Paid.Slide.LastSeconds));
+        for (const FSample& Sample : Trace)
+            if (Sample.Time >= PayTime - .001f && Sample.Time <= PayTime + .001f)
+                Expect(std::fabs(Sample.Speed) > 300.f, "the car is still moving at the banner, %f", static_cast<double>(Sample.Speed));
         Expect(Peak > 400.f, "peak lateral %f", static_cast<double>(Peak));
-        std::printf("pay %.3f peak %.1f\n", static_cast<double>(PayTime), static_cast<double>(Peak));
+        std::printf("pay %.3f peak %.1f held %.3f grade %s\n", static_cast<double>(PayTime), static_cast<double>(Peak),
+            static_cast<double>(Paid.Slide.LastSeconds), QuebecSlide::Title(Paid.Slide.LastGrade));
         for (const FSample& Sample : Trace)
             std::printf("trace %.4f %.2f %.2f %d\n", static_cast<double>(Sample.Time),
                 static_cast<double>(Sample.Speed), static_cast<double>(Sample.Lateral), Sample.Pays);
@@ -217,28 +134,21 @@ namespace
             {3.f, false, 0.f, true}, {1.2f, true, 1.f, false},
             {3.f, false, 0.f, true}, {1.2f, true, 1.f, false},
         };
-        const FCar Chained = Play(Twice, 4, nullptr);
-        Expect(Chained.Slide.Pays == 2, "a second slide after getting up to speed pays again");
-        Expect(Chained.Slide.Chain == 2, "a slide about 4.2 s after the last one chains, got %d", Chained.Slide.Chain);
-        const FPhase Slow[] = {
-            {3.f, false, 0.f, true}, {1.2f, true, 1.f, false},
-            {2.f, false, 0.f, false},
-            {3.f, false, 0.f, true}, {1.2f, true, 1.f, false},
-        };
-        const FCar Broken = Play(Slow, 5, nullptr);
-        Expect(Broken.Slide.Pays == 2 && Broken.Slide.Chain == 1, "a coast of 2 s breaks the chain, pays %d chain %d",
-            Broken.Slide.Pays, Broken.Slide.Chain);
-        const FPhase Run[] = {
-            {3.f, false, 0.f, true}, {1.2f, true, 1.f, false},
-            {3.f, false, 0.f, true}, {1.2f, true, -1.f, false},
-            {3.f, false, 0.f, true}, {1.2f, true, 1.f, false},
-        };
-        Expect(Play(Run, 6, nullptr).Slide.Chain == 3, "three quick slides make x3");
+        Expect(Play(Twice, 4, nullptr).Slide.Pays == 2, "a second slide after getting up to speed pays again");
         const FPhase Quick[] = {
             {3.f, false, 0.f, true}, {.7f, true, 1.f, false},
             {.2f, false, 0.f, false}, {.8f, true, 1.f, false},
         };
         Expect(Play(Quick, 4, nullptr).Slide.Pays == 1, "a second shove inside 1.5 s stays on the first banner");
+
+        const FPhase Half[] = {{3.f, false, 0.f, true}, {1.2f, true, .5f, false}};
+        const FCar Gentle = Play(Half, 2, nullptr);
+        Expect(Gentle.Slide.Pays == 1 && Gentle.Slide.LastGrade == QuebecSlide::EGrade::Slide, "a half turn is a plain SLIDE");
+        const FPhase Fast[] = {{6.f, false, 0.f, true}, {1.2f, true, 1.f, false}};
+        const FCar Wild = Play(Fast, 2, nullptr);
+        Expect(Wild.Slide.Pays == 1 && Wild.Slide.LastGrade == QuebecSlide::EGrade::Huge, "a full turn at top speed is a HUGE SLIDE");
+        std::printf("half %s %.2f s, fast %s %.2f s\n", QuebecSlide::Title(Gentle.Slide.LastGrade), static_cast<double>(Gentle.Slide.LastSeconds),
+            QuebecSlide::Title(Wild.Slide.LastGrade), static_cast<double>(Wild.Slide.LastSeconds));
     }
 }
 

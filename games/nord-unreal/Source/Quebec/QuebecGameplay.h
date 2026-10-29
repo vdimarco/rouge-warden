@@ -9,6 +9,7 @@
 #include "GameFramework/PlayerController.h"
 #include "QuebecSteerAssist.h" // Lag-tolerant driving: AQuebecCar keeps a QuebecSteer::FAssistState.
 #include "QuebecSlide.h" // A handbrake slide earns one banner: AQuebecCar keeps a QuebecSlide::FState.
+#include "QuebecSlideTone.h" // The slide screams in the drive loop: AQuebecCar keeps a QuebecSlideTone::FVoice.
 #include "Engine/TimerHandle.h" // Traffic street life: AQuebecCar blinks its signal lamps on a timer.
 #include "QuebecTrafficModel.h" // Traffic street life: ARRÊT stops, yielding and curb stops.
 #include "QuebecGameplay.generated.h"
@@ -412,6 +413,9 @@ private:
     float AudioFrequency = 35.f;
     float TirePhase = 0.f;
     uint32 AudioNoise = 0x35a72f19;
+    // The handbrake slide scream, on the banner's live line. Only the driver's own client hears it.
+    float SlideToneGain = 0.f;
+    QuebecSlideTone::FVoice SlideVoice;
     UPROPERTY(Replicated) float VisualSteering = 0.f;
     int32 TrafficSegment = INDEX_NONE;
     bool bTrafficForward = true;
@@ -548,7 +552,6 @@ public:
     void PlayFeedback(EQuebecFeedbackCue Cue);
     void PlayRank(int32 ChainAfter, bool bWasSpoiled);
     void PlayImpact();
-    void PlaySlide(int32 Chain);
     void PlayStepTone(int32 Foot);
     void PlayLoss();
     virtual void BeginPlay() override;
@@ -689,10 +692,6 @@ private:
     void PlayLossTone();
     UPROPERTY() TObjectPtr<class UAudioComponent> LossAudio;
     UPROPERTY() TObjectPtr<class USoundWaveProcedural> LossWave;
-    UFUNCTION(Client, Unreliable) void ClientPlaySlide(int32 Chain);
-    void PlaySlideTone(int32 Chain);
-    UPROPERTY() TObjectPtr<class UAudioComponent> SlideAudio;
-    UPROPERTY() TObjectPtr<class USoundWaveProcedural> SlideWave;
     void ExitCar(AQuebecCar* Car);
     // Server: the walker gets into the driver's seat.
     void EnterCar(AQuebecCharacter* Character, AQuebecCar* Car);

@@ -1,64 +1,64 @@
 #pragma once
 
-// Two quick rising notes when a handbrake slide earns its banner. No cooked asset and no Unreal types.
-// The notes sit off the rank pitches, the lock chirp, the pond tick, the court whistle,
-// the court rasp, the theatre page, the dent thud and the falling loss sting.
-// The lock chirp still marks the catch. This marks the pay, about 0.35 s later.
+// The tire scream of a handbrake slide. It uses the same live line as the SLIDE banner,
+// so a gripped turn keeps only the quiet tire hiss of the drive loop.
+// No Unreal includes, so Scripts/test_slide_tone.py can build and run it with the system compiler.
+// Speeds are cm/s, times are seconds, and the drive loop runs at 24 kHz.
+
+#include "QuebecSlide.h"
 
 #include <cmath>
+#include <cstdint>
 
 namespace QuebecSlideTone
 {
-    inline constexpr int SampleRate = 22050;
-    inline constexpr int Frames = 5292;
-    inline constexpr int NoteFrames = 2646;
-    inline constexpr double Peak = 0.30;
-    inline constexpr double LowHz = 587.;
-    inline constexpr double HighHz = 784.;
+    inline constexpr int SampleRate = 24000;
+    // A full scream at this sideways speed. The handbrake slide peaks near 600 cm/s.
+    inline constexpr float FullLateral = 520.f;
+    // Fast in, so the scream starts with the shove. A short tail when the tires grip again.
+    inline constexpr float AttackRate = 18.f;
+    inline constexpr float ReleaseRate = 14.f;
+    // Louder than the 0.045 hiss and the engine, under the 0.34 skid chirp.
+    inline constexpr float Peak = .12f;
+    inline constexpr float BaseHz = 1050.f;
+    inline constexpr float RiseHz = 520.f;
+    inline constexpr float WobbleHz = 7.5f;
 
-    // Each link after the first adds one short repeat of the high note, up to four.
-    // SLIDE plays two notes. SLIDE x3 plays two notes and two repeats. The count is heard, not only read.
-    inline constexpr int EchoFrames = 1323;
-    inline constexpr int MaxEchoes = 4;
-
-    inline int EchoesFor(int Chain)
+    // 0 under the banner's live line, then up with the sideways shove.
+    inline float Target(float Speed, float Lateral, bool bBrake)
     {
-        const int Echoes = Chain - 1;
-        return Echoes < 0 ? 0 : (Echoes > MaxEchoes ? MaxEchoes : Echoes);
+        if (!bBrake || std::fabs(Speed) < QuebecSlide::MinSpeed || std::fabs(Lateral) < QuebecSlide::MinLateral) return 0.f;
+        const float Span = (std::fabs(Lateral) - QuebecSlide::MinLateral) / (FullLateral - QuebecSlide::MinLateral);
+        return .45f + .55f * (Span < 0.f ? 0.f : (Span > 1.f ? 1.f : Span));
     }
 
-    inline int FramesFor(int Chain)
+    // One drive-loop update: move the gain toward the target at the attack or release rate.
+    inline float Follow(float Gain, float Goal, float Delta)
     {
-        return Frames + EchoesFor(Chain) * EchoFrames;
+        if (!(Delta > 0.f)) return Gain;
+        const float Rate = Goal > Gain ? AttackRate : ReleaseRate;
+        const float Step = Delta * Rate > 1.f ? 1.f : Delta * Rate;
+        return Gain + (Goal - Gain) * Step;
     }
 
-    inline constexpr int MaxFrames = Frames + MaxEchoes * EchoFrames;
-
-    // One note that starts at Start frames, Length frames long, with a 5 ms attack and a 12 ms fade at its end.
-    inline double NoteAt(int Frame, int Start, int Length, double Hz, double Decay)
+    struct FVoice
     {
-        const double Time = static_cast<double>(Frame - Start) / static_cast<double>(SampleRate);
-        const double Attack = Time < 0.005 ? Time / 0.005 : 1.;
-        const double Left = static_cast<double>(Length) / static_cast<double>(SampleRate) - Time;
-        const double Release = Left < 0.012 ? Left / 0.012 : 1.;
-        const double Envelope = Attack * Release * std::exp(-Time * Decay);
-        const double Phase = 6.283185307179586 * Hz * Time;
-        // A third harmonic gives the notes a reedy edge, so they read over the engine hum.
-        const double Tone = std::sin(Phase) * 0.8 + std::sin(3. * Phase) * 0.2;
-        return Tone * Envelope * Peak;
-    }
+        float Phase = 0.f;
+        float Wobble = 0.f;
+        std::uint32_t Noise = 0x9e3779b9u;
 
-    inline double SampleAt(int Frame, int Chain)
-    {
-        if (Frame < 0 || Frame >= FramesFor(Chain)) return 0.;
-        if (Frame < NoteFrames) return NoteAt(Frame, 0, NoteFrames, LowHz, 22.);
-        if (Frame < Frames) return NoteAt(Frame, NoteFrames, NoteFrames, HighHz, 11.);
-        const int Echo = (Frame - Frames) / EchoFrames;
-        return NoteAt(Frame, Frames + Echo * EchoFrames, EchoFrames, HighHz, 30.) * 0.8;
-    }
-
-    inline double SampleAt(int Frame)
-    {
-        return SampleAt(Frame, 1);
-    }
+        // One sample at 24 kHz. Two detuned partials and a little grit, like rubber on asphalt.
+        float Sample(float Gain)
+        {
+            Wobble += WobbleHz / static_cast<float>(SampleRate);
+            Wobble -= std::floor(Wobble);
+            const float Hz = BaseHz + RiseHz * Gain + 38.f * std::sin(Wobble * 6.2831853f);
+            Phase += Hz / static_cast<float>(SampleRate);
+            Phase -= std::floor(Phase);
+            Noise = Noise * 1664525u + 1013904223u;
+            const float Grit = static_cast<float>(Noise >> 8) / 8388607.5f - 1.f;
+            const float Tone = std::sin(Phase * 6.2831853f) * .7f + std::sin(Phase * 2.f * 6.2831853f + 1.3f) * .18f;
+            return Gain * Peak * (Tone + Grit * .12f);
+        }
+    };
 }

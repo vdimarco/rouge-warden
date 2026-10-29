@@ -7,6 +7,7 @@ import { PERF, COLORS, SUN_DIR } from "./config.js";
 import { GLSL, INK, inkK, syncInk } from "./comic.js";
 import { NEON } from "./street.js";
 
+const CLIP_MAX = 24; // the frames a baked figure clip may hold (three vec4 uniforms each)
 const hexv = (h) => `vec3(${((h >> 16) & 255) / 255}, ${((h >> 8) & 255) / 255}, ${(h & 255) / 255})`;
 const f5 = (v) => (+v).toFixed(5);
 const SUN = `vec3(${f5(SUN_DIR.x)}, ${f5(SUN_DIR.y)}, ${f5(SUN_DIR.z)})`;
@@ -27,14 +28,21 @@ attribute vec4 aA;  // walk phase, stride (m/s), pose code, time in the pose
 attribute vec4 aC1; // shirt rgb, height scale
 attribute vec3 aC2; // trousers rgb
 attribute vec3 aC3; // skin rgb
-attribute vec4 aB;  // the whole body's pitch (+ falls forward) and roll about the feet, a lift, unused
+attribute vec4 aB;  // the whole body's pitch (+ falls forward) and roll about the feet, a lift, and the fight marks: the hit flash
+                    // (0..1) plus 2 while he winds up a blow (a red, heavier outline: the spider-sense on him)
 uniform float uTime;
+// a baked clip (pose 16, the brute's charge: anim/brute-charge.json): per frame three vec4, (legR, legL, lean, headP),
+// (armRp, armRr, armLp, armLr), (bob, travel, -, -). uClipInfo: frames, Hz, wind-up seconds, length seconds (0 frames: none)
+uniform vec4 uClip[${CLIP_MAX * 3}];
+uniform vec4 uClipInfo;
 uniform float uHull; // 0 the body, 1 the ink hull
 uniform float uInkK, uInkPx;
 varying vec3 vN;
 varying vec3 vW;
 varying vec3 vCol;
 varying float vDist;
+varying float vFlash;
+varying float vTele;
 mat3 rotX(float a) { float c = cos(a), s = sin(a); return mat3(1.0, 0.0, 0.0, 0.0, c, s, 0.0, -s, c); }
 mat3 rotZ(float a) { float c = cos(a), s = sin(a); return mat3(c, s, 0.0, -s, c, 0.0, 0.0, 0.0, 1.0); }
 void main() {
@@ -114,6 +122,27 @@ void main() {
     if (part == 4 || part == 5) raise = sx * 0.7;
     lean = -0.2 * thrust;
   }
+  if (pose == 16) { // the brute's charge, baked: t is its phase, 0 to 1 the wind-up, 1 to 2 the lunge
+    if (uClipInfo.x > 1.5) {
+      float ct = t < 1.0 ? t * uClipInfo.z : uClipInfo.z + (t - 1.0) * (uClipInfo.w - uClipInfo.z);
+      float fi = clamp(ct * uClipInfo.y, 0.0, uClipInfo.x - 1.001);
+      int i = int(fi) * 3; float f = fract(fi);
+      vec4 c0 = mix(uClip[i], uClip[i + 3], f), c1 = mix(uClip[i + 1], uClip[i + 4], f), c2 = mix(uClip[i + 2], uClip[i + 5], f);
+      if (part == 2) pitch = c0.x;
+      if (part == 3) pitch = c0.y;
+      if (part == 4) { pitch = c1.x; raise = c1.y; }
+      if (part == 5) { pitch = c1.z; raise = c1.w; }
+      lean = c0.z; headP = c0.w; bob = c2.x;
+    } else if (t < 1.0) { // no clip: the wind-up pose
+      if (part == 4) { pitch = -0.9; raise = 0.35; }
+      if (part == 5) pitch = 0.9;
+      lean = -0.12;
+    } else { // and a shoulder-first run
+      if (part == 2 || part == 3) pitch = sx * 0.6 * sin(uTime * 14.0);
+      if (part == 4 || part == 5) pitch = 0.9;
+      lean = 0.45;
+    }
+  }
   vec3 pivot = vec3(0.0);
   if (part == 1) { pivot = vec3(0.0, 1.45, 0.0); p = pivot + rotX(headP) * (p - pivot); n = rotX(headP) * n; }
   if (part == 2 || part == 3) { pivot = vec3(sx * 0.1, 0.86, 0.0); p = pivot + rotX(pitch) * (p - pivot); n = rotX(pitch) * n; }
@@ -136,7 +165,9 @@ void main() {
   vec3 w = Y * p + aP.xyz;
   vec3 wn = normalize(Y * n);
   vDist = distance(w, cameraPosition);
-  if (uHull > 0.5) w += wn * max(0.012, uInkPx * uInkK * vDist);
+  vTele = step(1.5, aB.w);
+  vFlash = aB.w - 2.0 * vTele;
+  if (uHull > 0.5) w += wn * max(0.012, uInkPx * uInkK * vDist) * (1.0 + vTele * (1.6 + 0.6 * sin(uTime * 18.0)));
   vN = wn;
   vW = w;
   vCol = part == 1 ? aC3 : (part == 2 || part == 3) ? aC2 : aC1.rgb;
@@ -153,10 +184,13 @@ varying vec3 vN;
 varying vec3 vW;
 varying vec3 vCol;
 varying float vDist;
+varying float vFlash;
+varying float vTele;
+uniform float uTime;
 ${GLSL.toon}
 ${FOG}
 void main() {
-  if (uHull > 0.5) { gl_FragColor = vec4(streetFog(${hexv(INK)}, vDist), 1.0); return; }
+  if (uHull > 0.5) { gl_FragColor = vec4(streetFog(mix(${hexv(INK)}, vec3(0.91, 0.16, 0.12), vTele), vDist), 1.0); return; }
   vec3 N = normalize(vN);
   float band = comicBand(comicLight(N, ${SUN}), 0.14, 0.5);
   vec3 col = comicCel(vCol, band);
@@ -166,7 +200,10 @@ void main() {
   float key = clamp(dot(N, ${SUN}), 0.0, 1.0);
   col += vec3(1.0, 0.55, 0.28) * rim * mix(0.45, 1.0, key) * 0.32;
   col += vec3(0.32, 0.46, 0.78) * rim * (1.0 - key) * 0.16;
-  gl_FragColor = vec4(streetFog(col, vDist), 1.0);
+  // on his way to a blow: a hard red rim round him (the spider-sense), pulsing; the ink lines of the post pass keep their place
+  col = mix(col, vec3(0.95, 0.16, 0.1), vTele * max(step(0.45, 1.0 - nd), 0.25 + 0.15 * sin(uTime * 18.0)));
+  // a blow: the figure flashes paper white, then the colour comes back
+  gl_FragColor = vec4(streetFog(mix(col, vec3(1.0, 0.99, 0.94), clamp(vFlash * 2.0, 0.0, 1.0)), vDist), 1.0);
 }
 `;
 
@@ -302,7 +339,8 @@ void main() {
 
 // Figures: up to max comic figures, drawn in two calls. Each frame: begin(cam), then add(f) for every figure to draw (the ones
 // further than reach from the camera are skipped), then end(). A figure: { x, y, z, yaw, phase, stride, pose, poseT, height,
-// shirt, pants, skin (rgb arrays), and optional bp, br (the body's pitch and roll), lift }.
+// shirt, pants, skin (rgb arrays), and optional bp, br (the body's pitch and roll), lift, flash (0..1, white after a blow), tele
+// (true: a red outline, he winds up a blow) }.
 export function createFigures(scene, max = 240, reach = PEOPLE_REACH) {
   const U = { uTime: { value: 0 } };
   const base = figure();
@@ -317,8 +355,9 @@ export function createFigures(scene, max = 240, reach = PEOPLE_REACH) {
     A[k] = a;
   }
   g.instanceCount = 0;
-  const bodyU = { ...U, uHull: { value: 0 }, uInkK: inkK, uInkPx: { value: 1.6 } };
-  const hullU = { ...U, uHull: { value: 1 }, uInkK: inkK, uInkPx: { value: 1.6 } };
+  const clipU = { uClip: { value: Array.from({ length: CLIP_MAX * 3 }, () => new THREE.Vector4()) }, uClipInfo: { value: new THREE.Vector4() } };
+  const bodyU = { ...U, ...clipU, uHull: { value: 0 }, uInkK: inkK, uInkPx: { value: 1.6 } };
+  const hullU = { ...U, ...clipU, uHull: { value: 1 }, uInkK: inkK, uInkPx: { value: 1.6 } };
   const bodyMat = new THREE.ShaderMaterial({ vertexShader: PEOPLE_VS, fragmentShader: PEOPLE_FS, uniforms: bodyU, fog: false });
   const hullMat = new THREE.ShaderMaterial({ vertexShader: PEOPLE_VS, fragmentShader: PEOPLE_FS, uniforms: hullU, fog: false, side: THREE.BackSide });
   const root = new THREE.Group();
@@ -338,7 +377,8 @@ export function createFigures(scene, max = 240, reach = PEOPLE_REACH) {
     root, mesh, hull,
     begin(c, time) { n = 0; cam = c; for (const tag in counts) delete counts[tag]; if (time != null) U.uTime.value = time; },
     // tag: a name to count by (people, goons, jobs) for the tests
-    add(p, tag = "people") {
+    // marks: where the fight marks come from (flash, tele), when p is a view of the figure (a goon on threes)
+    add(p, tag = "people", marks = p) {
       if (n >= max) return false;
       if (cam && (p.x - cam.x) ** 2 + (p.z - cam.z) ** 2 + (p.y - cam.y) ** 2 > R2) return false; // a far figure is a few pixels: not drawn
       const o4 = n * 4, o3 = n * 3, aP = A.aP.array, aA = A.aA.array, c1 = A.aC1.array, c2 = A.aC2.array, c3 = A.aC3.array, aB = A.aB.array;
@@ -348,7 +388,7 @@ export function createFigures(scene, max = 240, reach = PEOPLE_REACH) {
       c1[o4] = p.shirt[0]; c1[o4 + 1] = p.shirt[1]; c1[o4 + 2] = p.shirt[2]; c1[o4 + 3] = p.height;
       c2[o3] = p.pants[0]; c2[o3 + 1] = p.pants[1]; c2[o3 + 2] = p.pants[2];
       c3[o3] = p.skin[0]; c3[o3 + 1] = p.skin[1]; c3[o3 + 2] = p.skin[2];
-      aB[o4] = p.bp || 0; aB[o4 + 1] = p.br || 0; aB[o4 + 2] = p.lift || 0; aB[o4 + 3] = 0;
+      aB[o4] = p.bp || 0; aB[o4 + 1] = p.br || 0; aB[o4 + 2] = p.lift || 0; aB[o4 + 3] = (marks.flash || 0) + (marks.tele ? 2 : 0);
       counts[tag] = (counts[tag] || 0) + 1;
       n++;
       return true;
@@ -362,7 +402,17 @@ export function createFigures(scene, max = 240, reach = PEOPLE_REACH) {
       }
     },
     setVisible(v) { root.visible = !!v; },
-    info: () => ({ drawn: g.instanceCount, counts: { ...counts }, visible: root.visible }),
+    // the clip pose 16 plays (anim/brute-charge.json): { hz, wind, length, frames: [[legR, legL, lean, headP, armRp, armRr,
+    // armLp, armLr, bob, travel], ...] }. Returns false (pose 16 keeps its stand-in) for a clip that does not fit.
+    setClip(c) {
+      const fr = c && Array.isArray(c.frames) ? c.frames : null;
+      if (!fr || fr.length < 2 || fr.length > CLIP_MAX || !(c.hz > 0) || !(c.length > c.wind && c.wind > 0)) return false;
+      const v = clipU.uClip.value;
+      fr.forEach((r, k) => { v[k * 3].set(r[0], r[1], r[2], r[3]); v[k * 3 + 1].set(r[4], r[5], r[6], r[7]); v[k * 3 + 2].set(r[8], r[9] || 0, 0, 0); });
+      clipU.uClipInfo.value.set(fr.length, c.hz, c.wind, c.length);
+      return true;
+    },
+    info: () => ({ drawn: g.instanceCount, counts: { ...counts }, visible: root.visible, clip: clipU.uClipInfo.value.x }),
   };
   return F;
 }

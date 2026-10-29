@@ -568,11 +568,12 @@ The [Cottage Arcade Studio](https://claude.ai/artifact/1XZhrTjde2i2zNrqxT5KfT) i
 
 A keeper session refreshes the board every hour. To refresh it by hand, do the same steps:
 
-1. Save the `list_sessions` result (your own sessions, limit 50) to a file.
-2. Read the live page with the Artifact tool, which saves it to a file.
-3. Save the pull request list (all states) to a file: `gh api "repos/<owner>/<repo>/pulls?state=all&per_page=100"`, one call per page. A pull request that was squash-merged leaves its branch ahead of main, so only the list can tell that the work tree is merged.
-4. Run `node studio/refresh.mjs --page <saved page> --sessions <sessions file> --prs <pull request file> --out studio.html --if-changed` in a clone that can fetch from GitHub.
-5. If the first word it prints is `changed`, publish `studio.html` to the same artifact.
+1. Save the `list_sessions` result (your own sessions, limit 25) to a file. Its records no longer say which repo or branch a session is on.
+2. Read the live page with the Artifact tool, which saves it to a file. The page remembers the repo of every session it has seen.
+3. Run `node studio/refresh.mjs --need --page <saved page> --sessions <sessions file>`. It prints the sessions the page has not seen yet, one id per line. Call `get_session` for each, and save `[{ "id", "repos": [...], "branches": [...] }]` to a file. The repos come from `session_context.sources` and `outcomes`, and the branches from `outcomes` and `external_metadata.current_branches`.
+4. Save the pull request list (all states) to a file: `gh api "repos/<owner>/<repo>/pulls?state=all&per_page=100"`, one call per page. A pull request that was squash-merged leaves its branch ahead of main, so only the list can tell that the work tree is merged.
+5. Run `node studio/refresh.mjs --page <saved page> --sessions <sessions file> --where <lookup file> --prs <pull request file> --out studio.html --if-changed` in a clone that can fetch from GitHub.
+6. If the first word it prints is `changed`, publish `studio.html` to the same artifact.
 
 | Agent state | When |
 | --- | --- |

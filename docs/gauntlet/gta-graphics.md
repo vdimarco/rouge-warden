@@ -2981,111 +2981,70 @@ Unreal is not available in this environment, so in-engine frames are the last co
 
 ### Round 86 — 2026-10-28 — rubric v1
 
-- What changed: the slide pay plays two rising notes, 587 Hz then 784 Hz, 0.24 s in all, on the same frame as the SLIDE banner. Only the driver hears them. The lock chirp still plays on the catch. A slide that does not pay stays quiet.
-- Why it helped: round 85 named the silent slide as the next line a test can move. The chirp comes about 0.35 s before the pay, so the player heard the catch and never the win. The notes rise, and the loss sting falls.
-- Screenshots: `docs/gauntlet/gta-graphics/round-86/slide-notes.png` plots the wave the driver hears. It is not a game view. `Scripts/test_slide_tone.py` passed (52 assertions on c++, g++, and clang++, plus the wiring check). `Scripts/test_slide.py`, the skid, loss, impact, and rank tone tests passed. The offline syntax check passed `QuebecGameplay.cpp` in game and editor. The link check shows the same `QuebecDrive.cpp` gap as before this round and no new missing symbol. Unreal did not run, and the notes were not heard in the city. OpenSpec CLI is not installed, so `openspec validate` did not run.
-- Next target: pacing, difficulty, and variety are tied at 4 on the play lines. Sound design moved by one because the notes were not heard in Unreal.
+- What changed: a handbrake slide now screams in the drive loop. The scream starts on the SLIDE banner's line: handbrake held, 450 cm/s or faster, and 180 cm/s or more sideways. It gets louder and higher as the shove grows, from 1,050 Hz to about 1,570 Hz. It fades in about 0.3 s when the slide ends. Before this, the slide had a 0.1 s lock chirp and a tire hiss under the engine. Only the driver hears the scream.
+- Why it helped: sound design was the line round 85 named, because the slide was silent. In the round-85 drive, the scream starts at 3.23 s and is loud at 3.30 s. It is still loud when the banner fires at 3.57 s. The car drops under 450 cm/s at 3.65 s, and the scream is quiet at 3.92 s. A straight run, a gripped turn and a straight handbrake stop make no scream. Nobody listened in Unreal, so the score moves by one.
+- Screenshots: `docs/gauntlet/gta-graphics/round-86/slide-tone.png` plots that drive and its spectrogram. It is not a game view. `round-86/slide-tone.wav` is the scream alone for that drive, without the engine. `Scripts/test_slide_tone.py` passed (46 assertions), with g++ and clang++ in strict mode. `Scripts/test_slide.py`, the lap model, the pedal test, the place test and the steering tests passed. The round-85 car moved to `Scripts/slide_car.h`, so both slide tests drive one car. The Unreal syntax check did not run: its tool and engine headers are not in this container. Unreal did not run. OpenSpec CLI is not installed, so the change files were not validated with `openspec`.
+- Next target: pacing, fun factor, difficulty and feedback are tied at 4. Pacing is still the same mission slice.
 
 | Dimension | Score | Why |
 | --- | ---: | --- |
-| Lighting | 9 | Unchanged. |
+| Lighting | 9 | Unchanged. The night lamps stay. |
 | Color palette | 9 | Unchanged. |
 | Detail density | 9 | Unchanged. |
 | Texture and material quality | 9 | Unchanged. |
 | Composition and camera | 9 | Unchanged. |
-| Atmosphere | 9 | Unchanged. |
+| Atmosphere | 9 | The 22:00 clock stays. |
 | Character models | 9 | Unchanged. |
 | Animation smoothness | 9 | Unchanged. |
 | Particles and VFX | 9 | Unchanged. |
 | UI polish | 9 | Unchanged. |
-| Responsiveness and input latency | 5 | Unchanged. |
-| Controls feel | 5 | Unchanged. |
-| Mission clarity | 5 | Unchanged. |
+| Responsiveness and input latency | 5 | Full gas in 50 ms stays. The scream can start up to 0.15 s late, the same as the hiss, because the drive loop fills that far ahead. |
+| Controls feel | 5 | The pedal and the steering rates stay. This was not driven. |
+| Mission clarity | 5 | The objective words are unchanged. |
 | Pacing | 4 | Unchanged mission slice. |
-| Fun factor | 4 | The slide banner stays. The notes were not heard in play. |
+| Fun factor | 4 | The slide and its banner stay. Not driven in Unreal. |
 | Difficulty curve | 4 | Unchanged. |
-| Feedback | 4 | Unchanged. The banner and the notes share one frame. |
-| Sound design | 5 | The slide pay has two rising notes, off every tone the city already plays. Tested, not heard in Unreal. |
-| Variety | 4 | Unchanged. |
-| Performance stability | 5 | Unchanged. One 0.24 s wave is built on a pay, the same as the other cues. |
+| Feedback | 4 | The banner now lands on a loud scream. Hits and the dent thud are unchanged. |
+| Sound design | 5 | A held slide screams from the shove to 0.3 s after it ends, and a gripped turn stays quiet. Rendered and measured, not heard in the game. |
+| Variety | 4 | The two starts stay. |
+| Performance stability | 5 | The scream adds one sine pair and one noise step per sample to the 24 kHz loop. Frame time was not remeasured. |
 
 - Aesthetics raw: 90 / 10 dimensions, index 90
 - Playability raw: 45 / 10 dimensions, index 45
 - Total: 135 / 200
 - Delta vs last round: +1 (round 85 was 134). Sound design 4 → 5. Every other score held.
 
-![The slide notes the driver hears](gta-graphics/round-86/slide-notes.png)
-
 ### Round 87 — 2026-10-29 — rubric v1
 
-- What changed: quick slides chain. A slide that pays within 5 s of the last pay reads SLIDE x2, then x3, up to x9. A longer gap starts over at SLIDE. No cash is paid for a slide.
-- Why it helped: round 86 left pacing, difficulty, and variety tied at 4. Every slide showed the same banner, so sliding corner after corner earned no more than one slide. The chain asks the driver to keep the car moving between corners.
-- Screenshots: `docs/gauntlet/gta-graphics/round-87/slide-chain.png` plots a scripted session. It is not a game view. Three quick slides pay at 3.57, 7.77, and 11.97 s and read SLIDE, x2, x3. After a 2 s coast, the fourth pays at 18.17 s and reads SLIDE. `Scripts/test_slide.py` passed (51 assertions in the compiled test). `Scripts/test_slide_tone.py` passed. The offline syntax check passed `QuebecGameplay.cpp` in game and editor. Unreal did not run. OpenSpec CLI is not installed, so `openspec validate` did not run.
-- Next target: pacing and variety are still 4. Feedback is 4, and a chain has no sound of its own.
+- What changed: the slide banner now comes when the slide ends, and it grades the slide. Peak sideways speed under 550 cm/s is a SLIDE. From 550 cm/s it is a BIG SLIDE, and from 700 cm/s a HUGE SLIDE. The detail line says how long the slide held, for example "Held for 0.4 s". Before, every slide got "SLIDE · Through the corner" 0.35 s in. A slide still going at 2.5 s gets its banner then. A failsafe stop now ends a slide with no banner.
+- Why it helped: feedback was tied for the lowest line. A gentle turn and a full turn at top speed read the same. Now the round-86 scream gives the live feedback, and the banner gives the result. The grade lines come from 48 drives of the test car: every slide that held lasted 0.4 to 0.8 s, so time alone did not separate them, and peak sideways speed did. A half turn after 3 s of gas is a SLIDE (367 cm/s). A full turn after 3 s of gas is a BIG SLIDE (599 cm/s), with its banner at 3.65 s instead of 3.57 s. A full turn at top speed is a HUGE SLIDE (822 cm/s). It was not driven in Unreal, so the score moves by one.
+- Screenshots: `docs/gauntlet/gta-graphics/round-87/grades.png` plots the three turns and where each banner fires. It is not a game view. `Scripts/test_slide.py` passed (73 assertions) and `Scripts/test_slide_tone.py` passed, with g++ and clang++ in strict mode. The lap, pedal, place, steering and clock tests passed. The Unreal syntax check did not run: its tool and engine headers are not in this container. Unreal did not run. OpenSpec CLI is not installed, so the change files were not validated with `openspec`.
+- Next target: pacing, fun factor and difficulty are tied at 4. Pacing is still the same mission slice.
 
 | Dimension | Score | Why |
 | --- | ---: | --- |
-| Lighting | 9 | Unchanged. |
+| Lighting | 9 | Unchanged. The night lamps stay. |
 | Color palette | 9 | Unchanged. |
 | Detail density | 9 | Unchanged. |
 | Texture and material quality | 9 | Unchanged. |
 | Composition and camera | 9 | Unchanged. |
-| Atmosphere | 9 | Unchanged. |
+| Atmosphere | 9 | The 22:00 clock stays. |
 | Character models | 9 | Unchanged. |
 | Animation smoothness | 9 | Unchanged. |
 | Particles and VFX | 9 | Unchanged. |
-| UI polish | 9 | Unchanged. The count uses the same banner. |
-| Responsiveness and input latency | 5 | Unchanged. |
-| Controls feel | 5 | Unchanged. |
-| Mission clarity | 5 | Unchanged. |
+| UI polish | 9 | Unchanged. The banner uses the same notice plate, which sizes to its text. |
+| Responsiveness and input latency | 5 | Unchanged. The banner is 0.08 s later in the test drive. The scream covers that time. |
+| Controls feel | 5 | The pedal and the steering rates stay. This was not driven. |
+| Mission clarity | 5 | The objective words are unchanged. |
 | Pacing | 4 | Unchanged mission slice. |
-| Fun factor | 4 | Unchanged. The chain was not played in Unreal. |
-| Difficulty curve | 5 | A chain asks for 3 s back to speed after each slide. A 2 s coast breaks it. Scripted, not driven. |
-| Feedback | 4 | Unchanged. |
-| Sound design | 5 | Unchanged. |
-| Variety | 4 | Unchanged. |
-| Performance stability | 5 | Unchanged. |
+| Fun factor | 4 | A bigger slide now earns a bigger word. Not driven in Unreal. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 5 | The banner grades the slide in three steps and says how long it held. A half turn, a full turn and a full turn at speed get three different words. Not seen in the game. |
+| Sound design | 5 | The slide scream stays. |
+| Variety | 4 | The two starts stay. |
+| Performance stability | 5 | The slide state adds one comparison per car step. Frame time was not remeasured. |
 
 - Aesthetics raw: 90 / 10 dimensions, index 90
 - Playability raw: 46 / 10 dimensions, index 46
 - Total: 136 / 200
-- Delta vs last round: +1 (round 86 was 135). Difficulty curve 4 → 5. Every other score held.
-
-![Quick slides chain, and a pause starts over](gta-graphics/round-87/slide-chain.png)
-
-### Round 88 — 2026-10-29 — rubric v1
-
-- What changed: a slide chain is heard. Each link after the first adds a 0.06 s repeat of the 784 Hz note, up to four repeats. SLIDE plays the two notes, SLIDE x3 adds two repeats, and x5 through x9 add four. A single slide sounds the same as before.
-- Why it helped: round 87 left feedback at 4 and said the chain had no sound of its own. A driver who watches the road could not tell x3 from x1.
-- Screenshots: `docs/gauntlet/gta-graphics/round-88/slide-echoes.png` plots the cue for x1, x2, x3, and x5. It is not a game view. `Scripts/test_slide_tone.py` passed (90 assertions on c++, g++, and clang++, plus the wiring check). `Scripts/test_slide.py` passed. The offline syntax check passed `QuebecGameplay.cpp` in game and editor. The link check shows the same 16 `QuebecDrive.cpp` gaps as `main`. Unreal did not run, and the repeats were not heard in the city. OpenSpec CLI is not installed, so `openspec validate` did not run.
-- Next target: pacing and variety are still 4.
-
-| Dimension | Score | Why |
-| --- | ---: | --- |
-| Lighting | 9 | Unchanged. |
-| Color palette | 9 | Unchanged. |
-| Detail density | 9 | Unchanged. |
-| Texture and material quality | 9 | Unchanged. |
-| Composition and camera | 9 | Unchanged. |
-| Atmosphere | 9 | Unchanged. |
-| Character models | 9 | Unchanged. |
-| Animation smoothness | 9 | Unchanged. |
-| Particles and VFX | 9 | Unchanged. |
-| UI polish | 9 | Unchanged. |
-| Responsiveness and input latency | 5 | Unchanged. |
-| Controls feel | 5 | Unchanged. |
-| Mission clarity | 5 | Unchanged. |
-| Pacing | 4 | Unchanged mission slice. |
-| Fun factor | 4 | Unchanged. The chain was not played in Unreal. |
-| Difficulty curve | 5 | Unchanged. |
-| Feedback | 5 | The chain count is heard as repeats of the high note, so the driver need not read the banner. Tested, not heard in Unreal. |
-| Sound design | 5 | Unchanged. No new pitch. |
-| Variety | 4 | Unchanged. |
-| Performance stability | 5 | Unchanged. The longest cue is 0.48 s. |
-
-- Aesthetics raw: 90 / 10 dimensions, index 90
-- Playability raw: 47 / 10 dimensions, index 47
-- Total: 137 / 200
-- Delta vs last round: +1 (round 87 was 136). Feedback 4 → 5. Every other score held.
-
-![The slide cue for x1, x2, x3, and x5](gta-graphics/round-88/slide-echoes.png)
+- Delta vs last round: +1 (round 86 was 135). Feedback 4 → 5. Every other score held.
