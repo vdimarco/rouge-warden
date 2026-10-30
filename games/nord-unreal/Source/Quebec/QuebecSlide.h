@@ -6,6 +6,7 @@
 // Speeds are cm/s and times are seconds.
 
 #include <cmath>
+#include <cstdio>
 
 namespace QuebecSlide
 {
@@ -46,6 +47,19 @@ namespace QuebecSlide
         }
     }
 
+    // A slide that pays within this long of the last pay adds a link. In the test drive, getting
+    // back up to speed and sliding again takes about 4.2 s, so a quick driver chains and a coast starts over.
+    inline constexpr float ChainSeconds = 5.f;
+    // The count stops here, so the title keeps one digit.
+    inline constexpr int MaxChain = 9;
+
+    // The grade, then the count for a chain: BIG SLIDE, then BIG SLIDE x2.
+    inline void ChainTitle(EGrade Grade, int Chain, char (&Out)[24])
+    {
+        if (Chain <= 1) std::snprintf(Out, sizeof Out, "%s", Title(Grade));
+        else std::snprintf(Out, sizeof Out, "%s x%d", Title(Grade), Chain < MaxChain ? Chain : MaxChain);
+    }
+
     struct FState
     {
         float Held = 0.f;
@@ -53,6 +67,8 @@ namespace QuebecSlide
         float SincePay = AgainSeconds;
         bool bPaid = false;
         int Pays = 0;
+        // Slides in a row, each paid within ChainSeconds of the one before. 1 for a lone slide.
+        int Chain = 0;
         // The last banner: its grade, how long the slide held and its peak sideways speed.
         EGrade LastGrade = EGrade::None;
         float LastSeconds = 0.f;
@@ -84,6 +100,7 @@ namespace QuebecSlide
         {
             if (Held < HoldSeconds || SincePay < AgainSeconds) return false;
             bPaid = true;
+            Chain = Pays > 0 && SincePay <= ChainSeconds ? (Chain < MaxChain ? Chain + 1 : MaxChain) : 1;
             SincePay = 0.f;
             ++Pays;
             LastGrade = GradeFor(Peak);

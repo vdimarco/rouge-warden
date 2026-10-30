@@ -17,6 +17,7 @@
 #include "QuebecRankTone.h"
 #include "QuebecSkidTone.h"
 #include "QuebecImpactTone.h"
+#include "QuebecSlidePay.h"
 #include "QuebecStep.h"
 #include "QuebecPlace.h"
 #include "QuebecLossTone.h"
@@ -1758,13 +1759,46 @@ void AQuebecCar::SimulateDrive(float Step, bool bFailsafe)
         if (AController* Driver = GetDriverController())
         {
             if (Slide.Tick(Step, Speed, LateralSpeed, bHandbrake, bFailsafe))
-                QuebecNotice::Show(Driver, FString(QuebecSlide::Title(Slide.LastGrade)),
+            {
+                // Slides paid within 5 s of each other count up: BIG SLIDE x2.
+                char Title[24];
+                QuebecSlide::ChainTitle(Slide.LastGrade, Slide.Chain, Title);
+                QuebecNotice::Show(Driver, FString(Title),
                     FString::Printf(TEXT("Held for %.1f s"), Slide.LastSeconds), QuebecSlide::NoticeSeconds);
+                if (AQuebecController* Player = Cast<AQuebecController>(Driver)) Player->PlaySlidePay(Slide.Chain);
+            }
         }
         // A slide left behind with no driver never pays the next one.
         else Slide = QuebecSlide::FState();
+        TickNearMiss(Step, GetDriverController());
     }
     MoveWithCollision(Step,(GetActorForwardVector().GetSafeNormal2D()*Speed+GetActorRightVector().GetSafeNormal2D()*LateralSpeed)*Step);
+}
+
+void AQuebecCar::TickNearMiss(float Step, AController* Driver)
+{
+    NearMiss.Tick(Step, false);
+    AQuebecController* Player = Cast<AQuebecController>(Driver);
+    if (!Player || FMath::Abs(Speed) < QuebecNearMiss::MinSpeed || !GetWorld()) return;
+    const FVector Here = GetActorLocation();
+    const FVector Forward = GetActorForwardVector().GetSafeNormal2D();
+    const FVector Right = GetActorRightVector().GetSafeNormal2D();
+    const FVector Mine = PlanarVelocity();
+    for (TActorIterator<AQuebecCar> It(GetWorld()); It; ++It)
+    {
+        const AQuebecCar* Other = *It;
+        if (Other == this) continue;
+        const FVector Now = Other->GetActorLocation()-Here;
+        if (Now.SizeSquared2D() > FMath::Square(1500.f)) continue;
+        // Where the other car sat one step ago, with both cars stepped back along their own velocity.
+        const FVector Before = Now-(Other->PlanarVelocity()-Mine)*Step;
+        const QuebecNearMiss::FOffset Was{static_cast<float>(FVector::DotProduct(Before,Forward)),static_cast<float>(FVector::DotProduct(Before,Right))};
+        const QuebecNearMiss::FOffset Is{static_cast<float>(FVector::DotProduct(Now,Forward)),static_cast<float>(FVector::DotProduct(Now,Right))};
+        if (!NearMiss.Pass(Speed, Was, Is)) continue;
+        QuebecNotice::Show(Player, TEXT("NEAR MISS"),
+            FString::Printf(TEXT("Past at %d km/h"), QuebecNearMiss::Kmh(Speed)), QuebecNearMiss::NoticeSeconds);
+        return;
+    }
 }
 
 QuebecCarImpact::FResult QuebecCarImpact::Resolve(const FVector& VelocityA, const FVector& VelocityB, const FVector& Normal,
@@ -2092,6 +2126,10 @@ AQuebecController::AQuebecController()
     ImpactAudio->bAutoActivate = false;
     ImpactAudio->bAllowSpatialization = false;
     ImpactAudio->VolumeMultiplier = .8f;
+    SlidePayAudio = CreateDefaultSubobject<UAudioComponent>(TEXT("SlidePayAudio"));
+    SlidePayAudio->bAutoActivate = false;
+    SlidePayAudio->bAllowSpatialization = false;
+    SlidePayAudio->VolumeMultiplier = .6f;
     StepAudio = CreateDefaultSubobject<UAudioComponent>(TEXT("StepAudio"));
     StepAudio->bAutoActivate = false;
     StepAudio->bAllowSpatialization = false;
@@ -2497,6 +2535,40 @@ void AQuebecController::PlayImpact()
 void AQuebecController::ClientPlayImpact_Implementation()
 {
     PlayImpactTone();
+}
+
+void AQuebecController::PlaySlidePay(int32 Chain)
+{
+    ClientPlaySlidePay(Chain);
+}
+
+void AQuebecController::ClientPlaySlidePay_Implementation(int32 Chain)
+{
+    PlaySlidePayTone(Chain);
+}
+
+void AQuebecController::PlaySlidePayTone(int32 Chain)
+{
+    if (!SlidePayAudio || !GetWorld() || !GetWorld()->AllowAudioPlayback()) return;
+    if (!SlidePayWave)
+    {
+        SlidePayWave = NewObject<USoundWaveProcedural>(this);
+        SlidePayWave->SetSampleRate(static_cast<uint32>(QuebecSlidePay::SampleRate));
+        SlidePayWave->NumChannels = 1;
+        SlidePayAudio->SetSound(SlidePayWave);
+    }
+    // A chain adds short repeats, so the length changes with each pay.
+    const int32 Frames = QuebecSlidePay::FramesFor(Chain);
+    SlidePayWave->Duration = static_cast<float>(Frames) / static_cast<float>(QuebecSlidePay::SampleRate);
+    SlidePayWave->ResetAudio();
+    int16 Pcm[QuebecSlidePay::MaxFrames];
+    for (int32 Frame = 0; Frame < Frames; ++Frame)
+    {
+        const float Sample = FMath::Clamp(static_cast<float>(QuebecSlidePay::SampleAt(Frame, Chain)), -1.f, 1.f);
+        Pcm[Frame] = static_cast<int16>(Sample * 32767.f);
+    }
+    SlidePayWave->QueueAudio(reinterpret_cast<const uint8*>(Pcm), Frames * static_cast<int32>(sizeof(int16)));
+    SlidePayAudio->Play();
 }
 
 void AQuebecController::PlayImpactTone()
