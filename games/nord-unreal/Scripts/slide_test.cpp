@@ -69,6 +69,33 @@ namespace
         Expect(std::string(QuebecSlide::Title(QuebecSlide::EGrade::Big)) == "BIG SLIDE", "big title");
         Expect(std::string(QuebecSlide::Title(QuebecSlide::EGrade::Slide)) == "SLIDE", "plain title");
         Expect(std::string(QuebecSlide::Title(QuebecSlide::EGrade::None)).empty(), "no title");
+        Expect(QuebecSlide::ChainSeconds == 5.f && QuebecSlide::MaxChain == 9, "the chain left 5 s or 9");
+        char Chained[24];
+        QuebecSlide::ChainTitle(QuebecSlide::EGrade::Big, 1, Chained);
+        Expect(std::string(Chained) == "BIG SLIDE", "one slide reads %s", Chained);
+        QuebecSlide::ChainTitle(QuebecSlide::EGrade::Big, 2, Chained);
+        Expect(std::string(Chained) == "BIG SLIDE x2", "two read %s", Chained);
+        QuebecSlide::ChainTitle(QuebecSlide::EGrade::Huge, 40, Chained);
+        Expect(std::string(Chained) == "HUGE SLIDE x9", "the cap reads %s", Chained);
+        QuebecSlide::ChainTitle(QuebecSlide::EGrade::Slide, 0, Chained);
+        Expect(std::string(Chained) == "SLIDE", "no chain reads %s", Chained);
+        // Each slide pays at its end. Twelve, 2 s apart, stop at x9. One more after 5.1 s of nothing starts over.
+        QuebecSlide::FState Link;
+        auto PayOnce = [&Link, Step]() {
+            for (int Index = 0; Index < 30; ++Index) Link.Tick(Step, 2000.f, 400.f, true);
+            return Link.Tick(Step, 2000.f, 0.f, false);
+        };
+        Expect(PayOnce() && Link.Chain == 1, "the first pay is a chain of one, got %d", Link.Chain);
+        for (int Slide = 1; Slide < 12; ++Slide)
+        {
+            for (int Index = 0; Index < 90; ++Index) Link.Tick(Step, 2000.f, 0.f, false);
+            PayOnce();
+        }
+        Expect(Link.Pays == 12 && Link.Chain == QuebecSlide::MaxChain, "the chain stops at %d, got %d after %d pays",
+            QuebecSlide::MaxChain, Link.Chain, Link.Pays);
+        for (int Index = 0; Index < 306; ++Index) Link.Tick(Step, 2000.f, 0.f, false);
+        PayOnce();
+        Expect(Link.Chain == 1, "a pay more than 5 s later starts over, got %d", Link.Chain);
 
         QuebecSlide::FState Endless;
         int EndlessPays = 0;
@@ -134,7 +161,23 @@ namespace
             {3.f, false, 0.f, true}, {1.2f, true, 1.f, false},
             {3.f, false, 0.f, true}, {1.2f, true, 1.f, false},
         };
-        Expect(Play(Twice, 4, nullptr).Slide.Pays == 2, "a second slide after getting up to speed pays again");
+        const FCar Chained = Play(Twice, 4, nullptr);
+        Expect(Chained.Slide.Pays == 2, "a second slide after getting up to speed pays again");
+        Expect(Chained.Slide.Chain == 2, "a slide about 4.2 s after the last one chains, got %d", Chained.Slide.Chain);
+        const FPhase Coast[] = {
+            {3.f, false, 0.f, true}, {1.2f, true, 1.f, false},
+            {2.f, false, 0.f, false},
+            {3.f, false, 0.f, true}, {1.2f, true, 1.f, false},
+        };
+        const FCar Broken = Play(Coast, 5, nullptr);
+        Expect(Broken.Slide.Pays == 2 && Broken.Slide.Chain == 1, "a 2 s coast breaks the chain, pays %d chain %d",
+            Broken.Slide.Pays, Broken.Slide.Chain);
+        const FPhase Run[] = {
+            {3.f, false, 0.f, true}, {1.2f, true, 1.f, false},
+            {3.f, false, 0.f, true}, {1.2f, true, -1.f, false},
+            {3.f, false, 0.f, true}, {1.2f, true, 1.f, false},
+        };
+        Expect(Play(Run, 6, nullptr).Slide.Chain == 3, "three quick slides make x3");
         const FPhase Quick[] = {
             {3.f, false, 0.f, true}, {.7f, true, 1.f, false},
             {.2f, false, 0.f, false}, {.8f, true, 1.f, false},

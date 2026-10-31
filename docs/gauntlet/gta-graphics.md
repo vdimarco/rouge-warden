@@ -3048,3 +3048,114 @@ Unreal is not available in this environment, so in-engine frames are the last co
 - Playability raw: 46 / 10 dimensions, index 46
 - Total: 136 / 200
 - Delta vs last round: +1 (round 86 was 135). Feedback 4 → 5. Every other score held.
+
+### Round 88 — 2026-10-29 — rubric v1
+
+- What changed: quick slides chain on the graded banner. A slide that pays within 5 s of the last pay adds the count to its grade: BIG SLIDE x2, then x3, up to x9. A longer gap starts over. No cash is paid for a slide. The grades, the end-of-slide timing, and the scream are unchanged.
+- Why it helped: round 87 left difficulty tied for the lowest line. Each slide stood alone, so a driver who slid corner after corner earned no more than one slide. The chain asks the driver to keep the car moving between corners.
+- Screenshots: `docs/gauntlet/gta-graphics/round-88/slide-chain.png` plots a scripted session. It is not a game view. Three full turns pay at 3.65, 7.85, and 12.05 s and read BIG SLIDE, x2, x3. After a 2 s coast, the fourth pays at 18.25 s and reads BIG SLIDE. `Scripts/test_slide.py` and `Scripts/test_slide_tone.py` passed. The offline syntax check passed `QuebecGameplay.cpp` in game and editor. Unreal did not run. OpenSpec CLI is not installed, so `openspec validate` did not run.
+- Next target: pacing and fun factor are still 4. The chain has no sound of its own.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 9 | Unchanged. |
+| Color palette | 9 | Unchanged. |
+| Detail density | 9 | Unchanged. |
+| Texture and material quality | 9 | Unchanged. |
+| Composition and camera | 9 | Unchanged. |
+| Atmosphere | 9 | Unchanged. |
+| Character models | 9 | Unchanged. |
+| Animation smoothness | 9 | Unchanged. |
+| Particles and VFX | 9 | Unchanged. |
+| UI polish | 9 | Unchanged. The count uses the same notice plate. |
+| Responsiveness and input latency | 5 | Unchanged. |
+| Controls feel | 5 | Unchanged. |
+| Mission clarity | 5 | Unchanged. |
+| Pacing | 4 | Unchanged mission slice. |
+| Fun factor | 4 | Unchanged. The chain was not played in Unreal. |
+| Difficulty curve | 5 | A chain asks for 3 s back to speed after each slide. A 2 s coast breaks it. Scripted, not driven. |
+| Feedback | 5 | Unchanged. |
+| Sound design | 5 | Unchanged. |
+| Variety | 4 | Unchanged. |
+| Performance stability | 5 | Unchanged. |
+
+- Aesthetics raw: 90 / 10 dimensions, index 90
+- Playability raw: 47 / 10 dimensions, index 47
+- Total: 137 / 200
+- Delta vs last round: +1 (round 87 was 136). Difficulty curve 4 → 5. Every other score held.
+
+![Quick slides chain, and a pause starts over](gta-graphics/round-88/slide-chain.png)
+
+### Round 89 — 2026-10-29 — rubric v1
+
+- What changed: the slide pay is heard. When the graded banner shows, 587 Hz then 784 Hz play, 0.24 s. Each link of a chain adds a 0.06 s repeat of the high note, up to four. Only the driver hears it. A voided slide stays quiet. The scream still plays during the slide.
+- Why it helped: round 88 said the chain had no sound of its own. The scream says a slide is happening. Nothing said it paid, or how long the chain was, unless the driver read the banner.
+- Screenshots: `docs/gauntlet/gta-graphics/round-89/slide-pay.png` plots the cue for one slide and for chains of 2, 3, and 5. It is not a game view. `Scripts/test_slide_pay.py` passed (94 assertions on c++, g++, and clang++, plus the wiring check). `Scripts/test_slide.py`, `Scripts/test_slide_tone.py`, and the skid, loss, impact, and rank tone tests passed. The offline syntax check passed `QuebecGameplay.cpp` in game and editor. The link check shows the same 16 `QuebecDrive.cpp` gaps as `main`. Unreal did not run, and the cue was not heard in the city. OpenSpec CLI is not installed, so `openspec validate` did not run.
+- Next target: pacing, fun factor, and variety are tied at 4.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 9 | Unchanged. |
+| Color palette | 9 | Unchanged. |
+| Detail density | 9 | Unchanged. |
+| Texture and material quality | 9 | Unchanged. |
+| Composition and camera | 9 | Unchanged. |
+| Atmosphere | 9 | Unchanged. |
+| Character models | 9 | Unchanged. |
+| Animation smoothness | 9 | Unchanged. |
+| Particles and VFX | 9 | Unchanged. |
+| UI polish | 9 | Unchanged. |
+| Responsiveness and input latency | 5 | Unchanged. |
+| Controls feel | 5 | Unchanged. |
+| Mission clarity | 5 | Unchanged. |
+| Pacing | 4 | Unchanged mission slice. |
+| Fun factor | 4 | Unchanged. Not played in Unreal. |
+| Difficulty curve | 5 | Unchanged. |
+| Feedback | 5 | Unchanged. |
+| Sound design | 6 | The slide now has a sound for the slide, the scream, and a sound for the pay, the notes. The chain is heard as repeats. Tested, not heard in Unreal. |
+| Variety | 4 | Unchanged. |
+| Performance stability | 5 | Unchanged. The longest cue is 0.48 s, built once per pay. |
+
+- Aesthetics raw: 90 / 10 dimensions, index 90
+- Playability raw: 48 / 10 dimensions, index 48
+- Total: 138 / 200
+- Delta vs last round: +1 (round 88 was 137). Sound design 5 → 6. Every other score held.
+
+![The slide pay cue for one slide and for chains](gta-graphics/round-89/slide-pay.png)
+
+### Round 90 — 2026-10-29 — rubric v1
+
+- What changed: a second driving stunt. Passing another car at 54 km/h or more, with the centres no more than 3.3 m apart, and no touch in the last second, shows NEAR MISS. The detail gives the speed, for example "Past at 65 km/h". Being overtaken does not count. A line of cars gives one banner per 1.5 s. No cash and no sound.
+- Why it helped: variety has been 4 since round 83, and the slide was the only stunt. Oncoming traffic, an overtake, and a parked car at the curb now each give the player something to aim at.
+- Screenshots: `docs/gauntlet/gta-graphics/round-90/near-miss.png` plots one scripted drive at 65 km/h past four cars. It is not a game view. Two passes at 3.0 m pay. A pass at 5.2 m and a pass 0.4 s after a scrape do not. `Scripts/test_near_miss.py` passed (16 assertions on c++, g++, and clang++, plus the wiring check). With the side line moved to 600 cm and the touch rule removed, the same test failed three times, then passed again with the real rule. The slide tests passed. The offline syntax check passed `QuebecGameplay.cpp` in game and editor. `QuebecDrive.cpp` keeps the same one shadow error it has on `main`. Unreal did not run. OpenSpec CLI is not installed, so `openspec validate` did not run.
+- Next target: pacing and fun factor are still 4. The near miss has no sound.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 9 | Unchanged. |
+| Color palette | 9 | Unchanged. |
+| Detail density | 9 | Unchanged. |
+| Texture and material quality | 9 | Unchanged. |
+| Composition and camera | 9 | Unchanged. |
+| Atmosphere | 9 | Unchanged. |
+| Character models | 9 | Unchanged. |
+| Animation smoothness | 9 | Unchanged. |
+| Particles and VFX | 9 | Unchanged. |
+| UI polish | 9 | Unchanged. The banner uses the same notice plate. |
+| Responsiveness and input latency | 5 | Unchanged. |
+| Controls feel | 5 | Unchanged. |
+| Mission clarity | 5 | Unchanged. |
+| Pacing | 4 | Unchanged mission slice. |
+| Fun factor | 4 | Unchanged. Not driven in Unreal. |
+| Difficulty curve | 5 | Unchanged. |
+| Feedback | 5 | Unchanged. |
+| Sound design | 6 | Unchanged. |
+| Variety | 5 | Two driving stunts now: the slide and the near miss. Traffic, police, and parked cars all count. Scripted, not driven. |
+| Performance stability | 5 | One loop over nearby cars per step, only above 54 km/h. Frame time was not remeasured. |
+
+- Aesthetics raw: 90 / 10 dimensions, index 90
+- Playability raw: 49 / 10 dimensions, index 49
+- Total: 139 / 200
+- Delta vs last round: +1 (round 89 was 138). Variety 4 → 5. Every other score held.
+
+![One drive past four cars: two near misses](gta-graphics/round-90/near-miss.png)
