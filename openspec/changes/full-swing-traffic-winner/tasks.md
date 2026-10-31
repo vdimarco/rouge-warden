@@ -1,8 +1,0 @@
-- [x] Inspect both track logs, current main, callers and existing traffic specifications; preserve concurrent work.
-- [x] Write proposal, design and observable scenarios before runtime edits.
-- [x] Freeze original query and demonstrate redundant result construction.
-- [x] Materialize only the final winner; verify equivalence and retained snapshots.
-- [x] Verify car simulation, desktop/portrait rendered equivalence and all twenty rubric limitations (evidence r71).
-- [ ] Commit, open and attach PR; pass fresh six-job CI and automated review.
-- [ ] Rebase before authenticated current-head preview, verify exact bytes, rebase after preview and merge exact head.
-- [ ] Verify production, publish canonical scenarios and archive after release.

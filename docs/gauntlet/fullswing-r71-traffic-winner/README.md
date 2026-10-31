@@ -10,7 +10,13 @@ Before/after PNG SHA-256 values are identical per layout:
 
 ## Release state and prior archive reconciliation
 
-Runtime release is pending fresh six-job CI, successful automated review, current authenticated preview/exact bytes, rebase before and after preview, exact-head merge and production verification. Canonical scenarios and archive follow release. `openspec` CLI is unavailable; Markdown structure/scenarios are checked manually.
+PR [#786](https://github.com/vdimarco/rouge-warden/pull/786) merged on 2026-10-29 at 03:13:21 UTC as `fafc908542f4641929ed5d99c8315ac3cfe42230`, from exact tested head `b433ef9616b441d36e0238c0ecb07855cafa7e81`. All six jobs in CI run `40807352767`, Entire Gates and both deployments passed. The human explicitly authorized repository-wide Count author approvals and approval of #786 as vdimarco; the recorded approval satisfied Entire without bypass. Vercel agents were disabled by the human, so Agent Review is unavailable and is not claimed passed.
+
+The final authenticated preview at 03:13 passed five focused browser assertions. Main/cars/actionview bytes exactly match the tested head. Preview index raw bytes differ only by the exact 163-byte deployment-specific Vercel feedback script; removing that script yields exact source. Fresh fetch/rebase before and after preview both stayed up to date on main `0c058c54`, with the tested head unchanged. `release.json` retains the check and byte evidence.
+
+Production deployment `dpl_HkGiuLwLQ5DyJrutGR2iZ9NgUJUc` is ready for the merge. At 03:17 UTC, public production index/main/cars/actionview all returned HTTP 200 and raw bytes exactly matched the merge. Downloaded production cars passed 300 query comparisons plus filter/tie/snapshot/materialization checks. Five production browser assertions passed with desktop/portrait PNGs identical to the pre-release images above; images were visually inspected. See `production786-{bytes.json,query.log,traffic.log}`. This verifies focused traffic behavior, not a combined full-city playthrough or hardware performance.
+
+Canonical scenarios and archive are published separately after this production verification. `openspec` CLI is unavailable; Markdown structure/scenarios are checked manually.
 
 PR #712 was externally merged by vdimarco at 2026-10-27 20:43:14 UTC as `aa7368eec26fa6b3e42efc3cdca81d8a77d32df5` from `63b75416bf37f7b92e77df444b0afb6fba2e52ce`. AgentReview remained absent; the only new check was neutral Entire Gates. Fresh six-job CI, authenticated final preview and required rebases were not completed before that external merge. No future waiver is inferred. #785 merged afterward and changes NORD only. #712 has no runtime changes. `archive712-production-bytes.json` verifies HTTP 200 and exact current-main index/cars/combat bytes on Oct 27; it does not verify the combined runtime's behavior. Oct 25 production #711 action/frame evidence remains historical.
 
