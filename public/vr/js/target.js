@@ -216,10 +216,14 @@ export function createTarget(city, cfg = TARGET) {
   }
   function findRing(ctx) {
     if (!ringInReach(ctx)) return null;
-    const g = ctx.ring, head = ctx.head, dx = g.x - head.x, dy = g.y - head.y, dz = g.z - head.z, dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
-    const h = ray(head.x, head.y, head.z, dx, dy, dz, dist + 3, HC);
-    if (!h || Math.abs(h.t - dist) > 3 || !reach(h.y, h.ny, h.collider, h.t, cfg.tier3, ctx)) return null;
-    const r = fill(SPR, h, h.t, 0, 1);
+    const g = ctx.ring, head = ctx.head;
+    // the face the ring is painted on, from just outside it: a nearer tower does not steal the lesson
+    const ox = g.x + (g.nx || 0) * 0.6, oy = g.y + (g.ny || 0) * 0.6, oz = g.z + (g.nz || 0) * 0.6;
+    const h = ray(ox, oy, oz, -(g.nx || 0), -(g.ny || 0), -(g.nz || 0), 2, HC);
+    if (!h || !h.collider) return null;
+    const dist = Math.hypot(h.x - head.x, h.y - head.y, h.z - head.z);
+    if (!reach(h.y, h.ny, h.collider, dist, cfg.tier3, ctx)) return null;
+    const r = fill(SPR, h, dist, 0, 1);
     r.kind = "ring"; r.prio = true;
     return r;
   }

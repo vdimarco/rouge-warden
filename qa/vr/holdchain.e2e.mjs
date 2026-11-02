@@ -118,13 +118,15 @@ try {
       if (r) sky = true;
       if (sky && !G.P.ropes.some((q) => q.state === "attached")) { dropped = true; break; }
     }
-    const still = G.P.ropes.some((q) => q.state === "attached" && q.target && q.target.tag === "sky");
+    const live = G.P.ropes.find((q) => q.state === "attached" && q.target && q.target.tag === "sky");
+    const still = !!live;
+    const dist = live ? Math.hypot(live.anchor.x - G.P.pos.x, live.anchor.y - (G.P.pos.y + G.P.chest), live.anchor.z - G.P.pos.z) : 0;
     const detaches = G.test.events().filter((e) => e.frame > mark && e.type === "detach").length;
-    return { frames, sky, dropped, still, detaches, y: +G.P.pos.y.toFixed(1) };
+    return { frames, sky, dropped, still, detaches, dist: +dist.toFixed(2), y: +G.P.pos.y.toFixed(1) };
   });
   await page.screenshot({ path: out + "/water.png" });
   console.log("water", JSON.stringify(water));
-  check(!water.sky && !water.still, "holding over open water never attaches to an invisible sky point", water);
+  check(water.sky && water.still && !water.dropped && water.dist > 0 && water.dist <= 28.8, "holding over open water keeps a sky rope inside 16 body-heights", water);
   check(page.errors.length === 0, "no page errors", page.errors);
 } catch (e) {
   check(false, "the hold-chain run threw", e.stack || String(e));
