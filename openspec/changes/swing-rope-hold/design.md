@@ -1,6 +1,6 @@
 # Design
 
-The sky point is computed in `easyAnchor` and then scaled toward the chest when it would sit past 16 body-heights. No new helper. The farther building searches (10h and 16h balls, then the lock-on) are removed so a building outside 6 body-heights does not beat sky.
+The sky point is computed in `easyAnchor` and, only when the result is sky, scaled toward the chest so it never sits past 16 body-heights. The building search still looks in the wider balls after the 6h ball, so a real tower beats sky. Sky is what remains when those miss.
 
 The gold ring is resolved by a short ray from just outside the published face, so the collider is the tower the ring sits on. A building between the head and the ring does not replace it while the ring is in reach.
 

@@ -166,13 +166,7 @@ export function easyAnchor(P, dx, dz, opt) {
   dx /= hl; dz /= hl;
   const ahead = opt && opt.ahead != null ? opt.ahead : 10, up = opt && opt.up != null ? opt.up : 12, reach = opt && opt.reach != null ? opt.reach : 6;
   const avoid = opt && opt.avoid != null ? opt.avoid : undefined;
-  let ax = P.pos.x + dx * ahead * H, ay = P.pos.y + up * H, az = P.pos.z + dz * ahead * H, R = reach * H;
-  // the sky point: never farther than 16 body-heights from the chest
-  {
-    const cx = P.pos.x, cy = P.pos.y + (P.chest || 0), cz = P.pos.z;
-    let sx = ax - cx, sy = ay - cy, sz = az - cz, sd = Math.hypot(sx, sy, sz), cap = 16 * H;
-    if (sd > cap) { const k = cap / sd; ax = cx + sx * k; ay = cy + sy * k; az = cz + sz * k; }
-  }
+  const ax = P.pos.x + dx * ahead * H, ay = P.pos.y + up * H, az = P.pos.z + dz * ahead * H, R = reach * H;
   const o = EASY_OUT;
   o.easy = true; o.easyH = H; o.valid = true; o.same = false; o.special = false; o.sky = true;
   o.x = ax; o.y = ay; o.z = az; o.nx = 0; o.ny = -1; o.nz = 0; o.tag = "sky"; o.id = "sky"; o.bid = -1;
@@ -209,6 +203,11 @@ export function easyAnchor(P, dx, dz, opt) {
   // 3. Sky, unless the gold-ring lesson names its tower. That face wins even past 16h, so the tower is never sky while it is in range.
   const lesson = o.sky && opt && opt.lesson;
   if (lesson && lesson.x != null) takeFace(o, lesson);
+  else if (o.sky) {
+    const cx = P.pos.x, cy = P.pos.y + (P.chest || 0), cz = P.pos.z;
+    let sx = o.x - cx, sy = o.y - cy, sz = o.z - cz, sd = Math.hypot(sx, sy, sz), cap = 16 * H;
+    if (sd > cap) { const k = cap / sd; o.x = cx + sx * k; o.y = cy + sy * k; o.z = cz + sz * k; }
+  }
   return o;
 }
 
