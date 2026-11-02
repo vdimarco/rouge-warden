@@ -181,6 +181,8 @@ export function createCutscenes({ camera }) {
 
   const CS = {
     get playing() { return !!S.panels; },
+    // a painted panel covers the canvas, so the city under it is not on screen
+    get painted() { return !!S.art; },
     // play(name, ctx, done(skipped)): ctx gives the places (see SCENES)
     play(name, ctx, done) {
       const panels = SCENES[name];
