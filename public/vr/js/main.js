@@ -1693,8 +1693,8 @@ let easyAvoid = -1;
 let noneAt = -99;
 const PICK_OPTS = { avoidBid: -1 }; // reused: the options of the second pick when both swing inputs go down in one frame
 const PHONE_DIR = new THREE.Vector3(), PROJ = { x: 0, y: 0, depth: 0, behind: false, inView: false };
-// Flat play never aims the web. Holding swing takes a point 12 body-heights ahead and 14 up; a building within 6
-// snaps; without a suitable building there is no attachment. A test aim (G.test.aimAt) and a headset
+// Flat play never aims the web. Holding swing takes a point 10 body-heights ahead and 12 up, clamped to 16;
+// a building within 6 snaps; with none, the rope takes that sky point. A test aim (G.test.aimAt) and a headset
 // still use the old ray. A new web waits 150 ms after the last one let go.
 let easyDx = 0, easyDz = -1;
 const CAM = { cam: { x: 0, y: 0, z: 0 }, yaw: 0, pitch: 0, fov: 70, aspect: 1 };
@@ -1743,25 +1743,12 @@ function canHang(a) {
 }
 function playerEasy(avoid) {
   easyDir();
-  const tries = [{}, { up: 8, ahead: 20, reach: 10 }, { up: 4, ahead: 34, reach: 16 }];
-  for (let t = 0; t < tries.length; t++) {
-    const opt = avoid != null && avoid >= 0 ? { ...tries[t], avoid } : (t ? tries[t] : undefined);
-    const a = easyAnchor(P, easyDx, easyDz, opt);
-    if (!a || a.sky) continue;
-    if (!(avoid != null && a.bid === avoid)) return { ...aimCopy(a), easy: canHang(a) };
-  }
-  // The visible lock-on may find a real building beyond the automatic search samples.
-  // Reject points that would shorten the rope and pull the hero into the ground-clearance cap.
-  if (pickerOn) {
-    const res = picker.pick(TCTX, { avoidBid: avoid ?? -1 });
-    if (res && res.valid && res.tag === "building" && res.bid !== avoid) {
-      const copy = aimCopy(res);
-      if (copy.easyH == null) copy.easyH = (P.cfg && P.cfg.bodyH) || SWING.bodyH;
-      copy.easy = canHang(copy);
-      return copy;
-    }
-  }
-  return null;
+  // mission or ring within 16h is the aimed cup (markedCup). Then a building within 6h. Then sky.
+  const opt = avoid != null && avoid >= 0 ? { avoid } : undefined;
+  const a = easyAnchor(P, easyDx, easyDz, opt);
+  if (!a) return null;
+  if (!a.sky && !(avoid != null && a.bid === avoid)) return { ...aimCopy(a), easy: canHang(a) };
+  return { ...aimCopy(a), easy: true };
 }
 // The building the other rope already holds, or the one this frame's first shot just took.
 function otherWeb(i) {
@@ -2002,9 +1989,9 @@ function phoneClear(i) { phoneRopeT[i] = phoneGroundT[i] = phoneSlowT[i] = 0; ha
 function phoneReleaseRope(i, dt) {
   const r = P.ropes[i], R = PHONE.release;
   if (r.state !== "attached" || r.sticky || SPECIAL_TAGS[r.target.tag]) { phoneClear(i); return; }
-  // a finger holds it down: no hand-off, and no let-go at the bottom of the arc or while it hangs still (only a roof ends it)
+  // a finger still down has no timer: not the roof, not a stall, not the bottom of the arc
   const held = phoneHeld(i);
-  if (held) handoffT[i] = -1;
+  if (held) { handoffT[i] = -1; return; }
   if (handoffT[i] >= 0 && (handoffT[i] -= dt) <= 0) { release(P, i); phoneClear(i); D.mobile.released(i); pushRing({ type: "handoff", side: i }); return; }
   phoneRopeT[i] += dt;
   if (P.onGround) phoneGroundT[i] += dt; // all the time on roofs since the rope caught: a rope that drags you over them lets go
@@ -2348,6 +2335,11 @@ function webCss() {
   const h = innerHeight || renderer.domElement.clientHeight || 1;
   return e5 > 0 && h > 0 ? (2 / e5) / h : 0.001;
 }
+// 2 CSS px at 1280 wide, 1.5 CSS px at 390 wide. The mesh radius is half of that.
+function webPx() {
+  const w = innerWidth || 1280, t = (w - 390) / (1280 - 390), k = t < 0 ? 0 : t > 1 ? 1 : t;
+  return 1.5 + 0.5 * k;
+}
 function ensureWeb() {
   if (webMesh || !scene) return;
   const geo = new THREE.CylinderGeometry(1, 1, 1, 6, 1, true).translate(0, 0.5, 0);
@@ -2380,7 +2372,7 @@ function ensureWeb() {
   webMesh.renderOrder = 2;
   webMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
   webFadeAttr.setUsage(THREE.DynamicDrawUsage);
-  webMesh.onBeforeRender = () => { mat.uniforms.uPix.value = webCss(); };
+  webMesh.onBeforeRender = () => { mat.uniforms.uPix.value = webCss() * webPx() * 0.5; };
   scene.add(webMesh);
 }
 function webSagPx(tension) {
@@ -2500,7 +2492,7 @@ function strokeWeb(ctx, hand, anchor, sag, alpha, w, h) {
   if (!seg.ok) return;
   ctx.strokeStyle = "#2B2A33";
   ctx.globalAlpha = alpha;
-  ctx.lineWidth = 2;
+  ctx.lineWidth = webPx();
   ctx.lineCap = "round";
   ctx.beginPath();
   ctx.moveTo(seg.x0, seg.y0);
