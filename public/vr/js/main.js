@@ -2741,6 +2741,9 @@ function render(frame, rdt = 0) {
     if (G.viewDone && !titleCompiled) { titleCompiled = true; renderer.compile(scene, camera); }
     return;
   }
+  // A painted comic panel covers the canvas. The draw under it is what a software frame spends its time on,
+  // and that stall runs past the music horizon, so the scene goes quiet while the music step still moves.
+  if (!xr && G.state === "cutscene" && cutscenes.painted && !shot && !samples.length && !FLAGS.debug) return;
   if (!xr) {
     const vs = verseFrame(rdt);
     bloom.render(scene, camera, bloomLevel(), vs, sunShaft());
