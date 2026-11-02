@@ -105,10 +105,11 @@ export function armEasy(r, hgt) {
   return r;
 }
 
-// The point a held swing takes: 12h ahead along (dx, dz) and 14h above the feet. Order: a marked tutorial or
-// mission point within 16h, else the nearest building within 6h (including a point inside the solid; a ray from
-// inside a box does not hit it), else sky. opt.avoid is the building just left: another tier or its antenna is
-// not a new anchor. opt.lesson is the gold-ring tower and wins over sky even past 16h.
+// The point a held swing takes: 10h ahead along (dx, dz) and 12h above the feet, and that sky point is
+// pulled in so it never sits past 16h from the chest. Order: a marked tutorial or mission point within 16h,
+// else the nearest building within 6h (including a point inside the solid; a ray from inside a box does not
+// hit it), else sky. opt.avoid is the building just left: another tier or its antenna is not a new anchor.
+// opt.lesson is the gold-ring tower and wins over sky even past 16h.
 // One reused result, so a caller copies it.
 const EASY_OUT = { x: 0, y: 0, z: 0, nx: 0, ny: -1, nz: 0, tag: "sky", id: "sky", bid: -1, easy: true, easyH: 1.8, sky: true, valid: true, same: false, special: false };
 const EASY_DIRS = [];
@@ -163,9 +164,15 @@ export function easyAnchor(P, dx, dz, opt) {
   const H = (P.cfg && P.cfg.bodyH) || SWING.bodyH;
   const hl = len2(dx, dz) || 1;
   dx /= hl; dz /= hl;
-  const ahead = opt && opt.ahead != null ? opt.ahead : 12, up = opt && opt.up != null ? opt.up : 14, reach = opt && opt.reach != null ? opt.reach : 6;
+  const ahead = opt && opt.ahead != null ? opt.ahead : 10, up = opt && opt.up != null ? opt.up : 12, reach = opt && opt.reach != null ? opt.reach : 6;
   const avoid = opt && opt.avoid != null ? opt.avoid : undefined;
-  const ax = P.pos.x + dx * ahead * H, ay = P.pos.y + up * H, az = P.pos.z + dz * ahead * H, R = reach * H;
+  let ax = P.pos.x + dx * ahead * H, ay = P.pos.y + up * H, az = P.pos.z + dz * ahead * H, R = reach * H;
+  // the sky point: never farther than 16 body-heights from the chest
+  {
+    const cx = P.pos.x, cy = P.pos.y + (P.chest || 0), cz = P.pos.z;
+    let sx = ax - cx, sy = ay - cy, sz = az - cz, sd = Math.hypot(sx, sy, sz), cap = 16 * H;
+    if (sd > cap) { const k = cap / sd; ax = cx + sx * k; ay = cy + sy * k; az = cz + sz * k; }
+  }
   const o = EASY_OUT;
   o.easy = true; o.easyH = H; o.valid = true; o.same = false; o.special = false; o.sky = true;
   o.x = ax; o.y = ay; o.z = az; o.nx = 0; o.ny = -1; o.nz = 0; o.tag = "sky"; o.id = "sky"; o.bid = -1;
@@ -636,7 +643,9 @@ export function step(P, h, inp) {
   wall(P, 0.5, c.kneeRadius, vy);
 
   /* ---- climbing: a wall the chest touched in the air, or walked into, holds you ---- */
-  if (c.climb && P.touch.on && P.wallCool <= 0 && !P.dead) {
+  // a rope the player is still holding is not a timer: the wall does not take it
+  const ropeHeld = inp && inp.hands && P.ropes.some((r, i) => r.state === "attached" && inp.hands[i] && inp.hands[i].holding);
+  if (!ropeHeld && c.climb && P.touch.on && P.wallCool <= 0 && !P.dead) {
     const t = P.touch, into = -(mx * t.nx + mz * t.nz), cc = c.climb;
     // in the air: a wall you fly at holds you, a wall you only brush at speed does not stop the swing
     const air = t.speed < cc.brushSpeed || t.into >= cc.headOn * t.speed;

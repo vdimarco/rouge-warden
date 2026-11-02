@@ -1,6 +1,7 @@
 // Easy swinging, with no browser: node qa/vr/easy.test.mjs
 // Twenty swings over open water (no building in reach) all attach, and the feet stay at least 1.5 body-heights up.
-// Ten swings chained with forward held keep the average speed at or above the speed they started with.
+// Ten swings chained with forward held keep the average speed within 0.1 m/s of the speed they started with.
+// The sky point is 10h ahead and 12h up, so the rope is shorter than the old 12h/14h point and the average can sit a hair under.
 import { generate } from "../../public/vr/js/city.js";
 import { createPlayer, easyAnchor, armEasy, easyBoost, fire, release, step, teleport } from "../../public/vr/js/physics.js";
 import { SWING, WORLD } from "../../public/vr/js/config.js";
@@ -116,7 +117,7 @@ console.log("\nchain");
   const avg = sum / n;
   console.log("  start " + start.toFixed(2) + " m/s, average " + avg.toFixed(2) + " m/s over " + n + " samples, " + attached + " attached");
   check(attached === 10, "10 chained swings all attach");
-  check(avg >= start - 1e-6, `average speed ${avg.toFixed(2)} m/s stays at or above the start ${start.toFixed(2)} m/s`);
+  check(avg >= start - 0.1, `average speed ${avg.toFixed(2)} m/s stays within 0.1 m/s of the start ${start.toFixed(2)} m/s`);
 }
 
 console.log("\ngold ring");
@@ -199,6 +200,8 @@ console.log("\nrope cap");
   const P = body();
   const g = swing(P);
   check(g.len <= cap + 1e-6, `open-ground rope ${g.len.toFixed(1)} m is within the ${cap.toFixed(1)} m cap`);
+  const skyD = Math.hypot(P.ropes[0].anchor.x - P.pos.x, P.ropes[0].anchor.y - (P.pos.y + P.chest), P.ropes[0].anchor.z - P.pos.z);
+  check(skyD <= cap + 1e-6, `the sky anchor is within 16h of the chest (${skyD.toFixed(2)} m, cap ${cap.toFixed(1)} m)`);
   const far = createPlayer(city);
   teleport(far, 0, 40, 400);
   const from = { x: far.pos.x, y: far.pos.y + far.chest, z: far.pos.z };
