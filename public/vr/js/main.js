@@ -1741,14 +1741,30 @@ function canHang(a) {
   const gy = city.isWater(P.pos.x, P.pos.z) ? 0 : city.groundY(P.pos.x, P.pos.z);
   return d <= a.y - P.chest - (gy + 1.5 * H);
 }
-function playerEasy(avoid) {
+function playerEasy(avoid, pick) {
   easyDir();
-  // mission or ring within 16h is the aimed cup (markedCup). Then a building within 6h. Then sky.
-  const opt = avoid != null && avoid >= 0 ? { avoid } : undefined;
-  const a = easyAnchor(P, easyDx, easyDz, opt);
-  if (!a) return null;
-  if (!a.sky && !(avoid != null && a.bid === avoid)) return { ...aimCopy(a), easy: canHang(a) };
-  return { ...aimCopy(a), easy: true };
+  // mission or ring within 16h is the aimed cup (markedCup). A building within 6h is the first
+  // sky alternative. The wider samples still prefer a real building over sky. Sky is last, and
+  // easyAnchor keeps that point inside 16h of the chest.
+  const tries = [{}, { up: 8, ahead: 20, reach: 10 }, { up: 4, ahead: 34, reach: 16 }];
+  let sky = null;
+  for (let t = 0; t < tries.length; t++) {
+    const opt = avoid != null && avoid >= 0 ? { ...tries[t], avoid } : (t ? tries[t] : undefined);
+    const a = easyAnchor(P, easyDx, easyDz, opt);
+    if (!a) continue;
+    if (a.sky) { if (!sky) sky = aimCopy(a); continue; }
+    if (!(avoid != null && a.bid === avoid)) return { ...aimCopy(a), easy: canHang(a) };
+  }
+  if (pick !== false && pickerOn) {
+    const res = picker.pick(TCTX, { avoidBid: avoid ?? -1 });
+    if (res && res.valid && res.tag === "building" && res.bid !== avoid) {
+      const copy = aimCopy(res);
+      if (copy.easyH == null) copy.easyH = (P.cfg && P.cfg.bodyH) || SWING.bodyH;
+      copy.easy = canHang(copy);
+      return copy;
+    }
+  }
+  return sky ? { ...sky, easy: true } : null;
 }
 // The building the other rope already holds, or the one this frame's first shot just took.
 function otherWeb(i) {
@@ -1781,9 +1797,8 @@ function aimAndFire(dt, inp) {
     if (useEasy && !inp.easySwing) {
       if (markedCup()) useEasy = false;
       else {
-        easyDir();
-        const probe = easyAnchor(P, easyDx, easyDz);
-        if (probe.sky) {
+        const found = playerEasy(undefined, false);
+        if (!found || found.sky) {
           const res = pickerOn ? picker.result() : null;
           const openWater = !P.onGround && P.city.isWater(P.pos.x, P.pos.z);
           if (!openWater && ((res && res.valid && !res.same) || P.onGround)) useEasy = false;
