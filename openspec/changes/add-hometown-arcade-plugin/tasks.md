@@ -1,0 +1,13 @@
+- [x] Read the Hermes plugin guide, the catalog rules and the validator source; check the catalog for similar plugins.
+- [x] Match the install scanner's critical and high patterns against the plugin files by hand: no hits.
+- [x] Write the proposal, design and scenarios.
+- [x] OSM download, parsing and world build, tested on a cropped NORD La Fontaine fixture.
+- [x] WebGL2 game page: map, car, bike, on foot, missions, free roam, HUD, minimap, labels, touch, sound.
+- [x] Tools, slash command, skill, settings; local server with results.
+- [x] Unit tests (29) and browser test (24 checks) at 1280x720 and 390x844 with touch, on the fixture and on the full La Fontaine data.
+- [x] Path-filtered CI workflow.
+- [ ] Run `hermes plugins validate hermes-plugins/hometown-arcade --install-deps` on a machine with Hermes Agent (not allowed in the build container).
+- [x] Live build of "St-Viateur Bagel, Montréal" through Nominatim and Overpass: 681 buildings, 129 places, a mission. One Overpass mirror hung, so each server now gets 45 s.
+- [ ] Merge, pin the merge commit in `docs/catalog-entry.yaml`, and open the catalog PR from the owner's account.
+- [ ] Record the demo video (under 90 s), post it on X tagging @NousResearch, submit the form.
+- [ ] Archive this change after release.

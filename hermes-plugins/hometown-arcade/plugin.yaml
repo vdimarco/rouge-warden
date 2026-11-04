@@ -1,0 +1,31 @@
+name: hometown-arcade
+version: 1.0.0
+manifest_version: 2
+api_version: 1
+description: "Turn any real address into a drivable 3D browser game built from OpenStreetMap, with missions Hermes writes from the real places nearby and race times the game sends back."
+author: vdimarco
+license: MIT
+homepage: https://github.com/vdimarco/rouge-warden/tree/main/hermes-plugins/hometown-arcade
+tags: [game, maps, openstreetmap, webgl, fun]
+requires_hermes: ">=0.21.6"
+provides_tools:
+  - hometown_build
+  - hometown_places
+  - hometown_mission
+  - hometown_open
+  - hometown_scores
+  - hometown_maps
+provides_hooks: []
+config_schema:
+  default_radius_m:
+    type: int
+    default: 350
+    description: "Half the width of a new map in metres (120 to 1000)."
+  port:
+    type: int
+    default: 0
+    description: "Port for the local game server on 127.0.0.1. 0 picks a free port."
+  overpass_urls:
+    type: list
+    default: []
+    description: "Overpass API servers to try, in order (https only). Empty uses the public servers."

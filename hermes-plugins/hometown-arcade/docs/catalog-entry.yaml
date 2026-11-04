@@ -1,0 +1,28 @@
+# Draft of plugin-catalog/hometown-arcade.yaml for a PR to NousResearch/hermes-agent.
+# Before submitting: set sha to the full 40-character merge commit on main, and point the
+# image URLs at that same sha. Submit from the repository owner's account (catalog rule 5).
+name: hometown-arcade
+repo: https://github.com/vdimarco/rouge-warden
+sha: 0000000000000000000000000000000000000000
+subdir: hermes-plugins/hometown-arcade
+title: Hometown Arcade
+description: "Turn any real address into a drivable 3D browser game built from OpenStreetMap: real buildings with heights, named streets, parks, water and trees. The agent writes missions around the real cafés, parks and landmarks nearby, the game times your run on a car, a bike or on foot, and sends the result back so the agent can coach you or write a harder run. Six tools (build, places, mission, open, scores, maps), the /hometown slash command and a mission-writing skill. Disclosure — a build sends the place text to Nominatim (skipped for lat,lon) and the map's bounding box to public Overpass servers, falling back to the OpenStreetMap API for maps of 600 m or less; a local .osm file builds offline. The first build starts a web server on 127.0.0.1 in a background thread for the life of the Hermes process; it serves the game pages and accepts only finished-run results (Host-checked, 8 KB, schema-checked). Maps, missions and results are stored under <HERMES_HOME>/plugin-data/hometown-arcade/. With open_browser (and /hometown) it asks the OS to open the game URL. No credentials, no shell commands, no telemetry, no Python dependencies."
+maintainer: vdimarco
+tier: community
+category: tools
+requires_hermes: ">=0.21.6"
+docs_url: https://github.com/vdimarco/rouge-warden/tree/main/hermes-plugins/hometown-arcade#readme
+version: "1.0.0"
+image: https://raw.githubusercontent.com/vdimarco/rouge-warden/<sha>/hermes-plugins/hometown-arcade/docs/hero.jpg
+screenshots:
+  - https://raw.githubusercontent.com/vdimarco/rouge-warden/<sha>/hermes-plugins/hometown-arcade/docs/street-day.jpg
+  - https://raw.githubusercontent.com/vdimarco/rouge-warden/<sha>/hermes-plugins/hometown-arcade/docs/overhead.jpg
+  - https://raw.githubusercontent.com/vdimarco/rouge-warden/<sha>/hermes-plugins/hometown-arcade/docs/night.jpg
+  - https://raw.githubusercontent.com/vdimarco/rouge-warden/<sha>/hermes-plugins/hometown-arcade/docs/result.jpg
+  - https://raw.githubusercontent.com/vdimarco/rouge-warden/<sha>/hermes-plugins/hometown-arcade/docs/phone-menu.jpg
+platforms: [linux, macos, windows]
+capabilities:
+  provides_tools: [hometown_build, hometown_places, hometown_mission, hometown_open, hometown_scores, hometown_maps]
+  provides_hooks: []
+  provides_middleware: []
+  requires_env: []

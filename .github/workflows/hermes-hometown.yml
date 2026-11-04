@@ -1,0 +1,50 @@
+name: Hometown Arcade Hermes plugin
+on:
+  pull_request:
+    paths:
+      - 'hermes-plugins/hometown-arcade/**'
+      - 'qa/browser/package*.json'
+      - '.github/workflows/hermes-hometown.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'hermes-plugins/hometown-arcade/**'
+      - 'qa/browser/package*.json'
+      - '.github/workflows/hermes-hometown.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: hometown-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  plugin:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: hermes-plugins/hometown-arcade
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: pip install pyyaml
+      - name: Unit tests (geometry, world, tools, local server)
+        run: python -m unittest discover -s tests -v
+      - run: npm ci --prefix ../../qa/browser
+      - run: cd ../../qa/browser && npx playwright install --with-deps chromium
+      - name: Browser game (desktop and phone)
+        run: NODE_PATH=../../qa/browser/node_modules node tests/smoke.e2e.mjs
+        env:
+          SHOTS: ${{ github.workspace }}/test-results/hometown
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: hometown-screenshots
+          path: test-results/hometown
+          if-no-files-found: warn
+          retention-days: 14

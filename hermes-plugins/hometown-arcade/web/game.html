@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>@@TITLE@@ · Hometown Arcade</title>
+<style>
+:root{--ink:#f4efe6;--dim:#b9b2a6;--panel:rgba(16,18,24,.78);--line:rgba(255,255,255,.14);--gold:#ffc94a;--go:#5ee08c;--bad:#ff6b5e;--accent:#ff8a3d}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:#0d0f14;color:var(--ink);font:15px/1.35 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none}
+canvas#gl{position:fixed;inset:0;width:100%;height:100%;display:block}
+.hud{position:fixed;pointer-events:none;z-index:2}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+#objective{top:max(12px,env(safe-area-inset-top));left:12px;max-width:min(440px,calc(100vw - 150px));padding:10px 14px}
+#objective .m{font-weight:700;letter-spacing:.02em;color:var(--gold);font-size:13px;text-transform:uppercase}
+#objective .s{margin-top:2px;font-size:16px}
+#objective .d{margin-top:4px;color:var(--dim);font-size:13px;display:flex;align-items:center;gap:8px}
+#arrow{width:22px;height:22px;flex:none;transition:transform .08s linear}
+#timer{top:max(12px,env(safe-area-inset-top));right:12px;padding:8px 14px;text-align:right;font-variant-numeric:tabular-nums}
+#timer b{font-size:24px;display:block}
+#timer small{color:var(--dim)}
+#timer.warn b{color:var(--bad)}
+#speedo{right:12px;bottom:max(12px,env(safe-area-inset-bottom));padding:8px 14px;text-align:right;min-width:150px}
+#speedo b{font-size:28px;font-variant-numeric:tabular-nums}
+#speedo .st{color:var(--dim);font-size:13px;max-width:44vw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#mini{left:12px;bottom:max(12px,env(safe-area-inset-bottom));width:168px;height:168px;border-radius:50%;border:2px solid var(--line);box-shadow:0 6px 24px rgba(0,0,0,.4)}
+#toast{left:50%;top:22%;transform:translateX(-50%);padding:12px 18px;font-size:18px;text-align:center;opacity:0;transition:opacity .25s;max-width:min(560px,90vw)}
+#toast.on{opacity:1}
+#labels{position:fixed;inset:0;pointer-events:none;z-index:1;overflow:hidden}
+.lbl{position:absolute;transform:translate(-50%,-100%);padding:2px 7px;border-radius:7px;background:rgba(16,18,24,.7);font-size:12px;white-space:nowrap;color:var(--ink);border:1px solid var(--line)}
+.lbl.stop{background:var(--accent);color:#1a0f05;font-weight:700;border-color:transparent}
+.lbl.found{color:var(--go)}
+#attrib{position:fixed;right:8px;bottom:2px;font-size:10px;color:rgba(255,255,255,.55);z-index:3;pointer-events:auto}
+#attrib a{color:inherit}
+.overlay{position:fixed;inset:0;z-index:5;display:none;align-items:center;justify-content:center;background:radial-gradient(ellipse at center,rgba(13,15,20,.55),rgba(13,15,20,.92));padding:16px}
+.overlay.on{display:flex}
+.card{width:min(560px,100%);max-height:calc(100vh - 32px);overflow:auto;padding:22px}
+.card h1{margin:0;font-size:clamp(24px,6vw,34px);line-height:1.1}
+.card h1 small{display:block;font-size:13px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);margin-bottom:6px}
+.card p{color:var(--dim);margin:8px 0 0}
+.list{margin-top:16px;display:grid;gap:10px}
+button.opt{all:unset;cursor:pointer;display:block;padding:12px 14px;border-radius:12px;border:1px solid var(--line);background:rgba(255,255,255,.04);min-height:44px}
+button.opt:hover,button.opt:focus-visible{border-color:var(--accent);background:rgba(255,138,61,.12)}
+button.opt b{display:block;font-size:16px}
+button.opt span{display:block;color:var(--dim);font-size:13px;margin-top:2px}
+button.opt em{float:right;font-style:normal;color:var(--gold);font-size:13px}
+.keys{margin-top:16px;color:var(--dim);font-size:13px}
+.keys kbd{display:inline-block;min-width:22px;padding:1px 6px;border:1px solid var(--line);border-bottom-width:2px;border-radius:6px;text-align:center;color:var(--ink);font:12px ui-monospace,monospace}
+.row{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
+.row button{all:unset;cursor:pointer;padding:10px 16px;border-radius:10px;background:var(--accent);color:#1a0f05;font-weight:700;min-height:24px}
+.row button.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+.stars{font-size:34px;letter-spacing:6px;color:var(--gold);margin-top:10px}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:6px 16px;margin-top:12px;font-variant-numeric:tabular-nums}
+.stats div{color:var(--dim)} .stats b{color:var(--ink);float:right}
+#sent{margin-top:12px;font-size:13px;color:var(--dim)}
+#touch{position:fixed;inset:auto 0 0 0;z-index:3;display:none;justify-content:space-between;padding:0 12px max(196px,calc(env(safe-area-inset-bottom) + 196px));pointer-events:none}
+#touch.on{display:flex}
+#touch div{display:flex;gap:10px;pointer-events:auto}
+#touch button{all:unset;width:64px;height:64px;border-radius:50%;background:rgba(16,18,24,.6);border:1px solid var(--line);display:grid;place-items:center;font-size:22px;color:var(--ink)}
+#touch button.on{background:rgba(255,138,61,.5)}
+#err{position:fixed;inset:0;display:none;align-items:center;justify-content:center;text-align:center;padding:24px;z-index:9}
+@media (max-width:520px){#mini{width:120px;height:120px}#speedo{min-width:0}#speedo b{font-size:22px}#objective .s{font-size:14px}}
+@media (prefers-reduced-motion:reduce){#toast,#arrow{transition:none}}
+</style>
+</head>
+<body>
+<canvas id="gl"></canvas>
+<div id="labels"></div>
+<div id="objective" class="hud panel"><div class="m" id="mName">Free roam</div><div class="s" id="mStep">Drive around and find places</div><div class="d"><svg id="arrow" viewBox="0 0 24 24"><path d="M12 2 20 20 12 15 4 20Z" fill="#ffc94a"/></svg><span id="mDist"></span></div></div>
+<div id="timer" class="hud panel"><b id="tVal">0:00</b><small id="tSub"></small></div>
+<canvas id="mini" class="hud" width="336" height="336"></canvas>
+<div id="speedo" class="hud panel"><b id="kmh">0</b> km/h<div class="st" id="street"></div></div>
+<div id="toast" class="hud panel"></div>
+<div id="touch"><div><button data-k="left" aria-label="Steer left">◀</button><button data-k="right" aria-label="Steer right">▶</button></div><div><button data-k="brake" aria-label="Brake">■</button><button data-k="gas" aria-label="Accelerate">▲</button></div></div>
+<div id="attrib"></div>
+
+<div id="menu" class="overlay on"><div class="card panel">
+  <h1><small>Hometown Arcade</small><span id="title"></span></h1>
+  <p id="sub"></p>
+  <div class="list" id="missions"></div>
+  <div class="keys"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> or arrows drive · <kbd>Space</kbd> handbrake · <kbd>Shift</kbd> boost · <kbd>C</kbd> camera · <kbd>T</kbd> time of day · <kbd>R</kbd> reset · <kbd>M</kbd> sound · <kbd>Esc</kbd> menu</div>
+</div></div>
+
+<div id="result" class="overlay"><div class="card panel">
+  <h1><small id="rKicker">Mission complete</small><span id="rTitle"></span></h1>
+  <div class="stars" id="rStars"></div>
+  <div class="stats" id="rStats"></div>
+  <div id="sent"></div>
+  <div class="row"><button id="rAgain">Play again</button><button class="ghost" id="rMenu">Menu</button></div>
+</div></div>
+
+<div id="err" class="panel"></div>
+<script>window.HOMETOWN_WORLD=@@WORLD@@;window.HOMETOWN_MISSIONS=@@MISSIONS@@;window.HOMETOWN_CONFIG=@@CONFIG@@;</script>
+<script>
+@@GAME_JS@@
+</script>
+</body>
+</html>
