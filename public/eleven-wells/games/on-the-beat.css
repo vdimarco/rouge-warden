@@ -1,0 +1,143 @@
+/* on-the-beat theme: NITESHIFT, a neon night club. Magenta and cyan light on near-black.
+   --p (0..1) is the beat pulse, set on .game every frame by the game; everything that glows reads it. */
+:root[data-game="on-the-beat"] {
+  --ink: #05030a;
+  --cabinet: #0a0612;
+  --well: #040208;
+  --panel: #0c0816;
+  --line: #2e1f4c;
+  --fg: #f7f0ff;
+  --muted: #ab9fcb;
+  --accent: #ff2bd6;
+  --accent-ink: #1c0018;
+  --good: #19e6ff;
+  --bad: #ff6a3d;
+  --cool: #19e6ff;
+  --mag: #ff2bd6;
+  --cyan: #19e6ff;
+  --display: "Exo 2", system-ui, sans-serif;
+  --body: "Exo 2", system-ui, sans-serif;
+  --sign: "Monoton", "Exo 2", sans-serif;
+  color-scheme: dark;
+}
+:root[data-game="on-the-beat"] body { background: transparent; }
+:root[data-game="on-the-beat"] .otb-backdrop { position: fixed; inset: 0; width: 100%; height: 100%; z-index: -1; pointer-events: none; image-rendering: auto; }
+:root[data-game="on-the-beat"] .game { --p: 0; }
+
+/* header: the club sign */
+:root[data-game="on-the-beat"] .topbar { background: rgba(5, 3, 10, 0.88); border-bottom: 1px solid rgba(255, 43, 214, 0.35); box-shadow: 0 1px 18px rgba(255, 43, 214, 0.12); }
+:root[data-game="on-the-beat"] .topbar h2 { font-family: var(--sign); font-weight: 400; font-size: 26px; letter-spacing: 0.04em; color: #fff; text-shadow: 0 0 6px var(--mag), 0 0 16px var(--mag), 0 0 30px rgba(255, 43, 214, 0.6); }
+:root[data-game="on-the-beat"] .topbar .mix { color: var(--cyan); font-weight: 600; letter-spacing: 0.16em; text-shadow: 0 0 8px rgba(25, 230, 255, 0.5); }
+
+/* buttons: lit outlines */
+:root[data-game="on-the-beat"] .btn { background: rgba(10, 6, 18, 0.9); border: 1px solid rgba(25, 230, 255, 0.55); color: var(--fg); border-radius: 4px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; font-size: 13px; }
+:root[data-game="on-the-beat"] .btn:hover:not(:disabled) { border-color: var(--cyan); box-shadow: 0 0 12px rgba(25, 230, 255, 0.45), inset 0 0 8px rgba(25, 230, 255, 0.2); }
+:root[data-game="on-the-beat"] .btn.primary { background: var(--mag); color: var(--accent-ink); border-color: #ff8cec; font-weight: 800; box-shadow: 0 0 16px rgba(255, 43, 214, 0.55); }
+:root[data-game="on-the-beat"] .btn.primary:hover:not(:disabled) { background: #ff5ce0; box-shadow: 0 0 26px rgba(255, 43, 214, 0.85); }
+:root[data-game="on-the-beat"] :focus-visible { outline-color: var(--cyan); }
+
+/* the well: a magenta tube frame that throbs with the beat */
+:root[data-game="on-the-beat"] .board-frame {
+  background: #030106; border: 2px solid var(--mag); border-radius: 6px; padding: 5px;
+  box-shadow:
+    0 0 calc(6px + 26px * var(--p)) rgb(255 43 214 / calc(0.35 + 0.5 * var(--p))),
+    inset 0 0 calc(4px + 12px * var(--p)) rgb(255 43 214 / calc(0.25 + 0.35 * var(--p))),
+    0 0 0 5px #05030a,
+    0 0 0 6px rgb(25 230 255 / calc(0.2 + 0.6 * var(--p)));
+}
+:root[data-game="on-the-beat"] canvas.board { border-radius: 2px; }
+:root[data-game="on-the-beat"] .board-overlay { inset: 5px; background: rgba(4, 2, 8, 0.88); border-radius: 2px; }
+:root[data-game="on-the-beat"] .ov-card h3, :root[data-game="on-the-beat"] .modal h3 {
+  font-family: var(--sign); font-weight: 400; font-size: 34px; line-height: 1.1; color: #fff; letter-spacing: 0.03em;
+  text-shadow: 0 0 6px var(--mag), 0 0 18px var(--mag), 0 0 34px rgba(255, 43, 214, 0.5);
+}
+:root[data-game="on-the-beat"] .ov-body { font-size: 14px; }
+:root[data-game="on-the-beat"] .ov-body li::marker { color: var(--mag); }
+:root[data-game="on-the-beat"] .ov-body b { color: var(--cyan); }
+:root[data-game="on-the-beat"] .otb-quote { font-style: italic; font-weight: 600; font-size: 15px; color: #fff; border-left: 2px solid var(--cyan); padding-left: 10px; }
+:root[data-game="on-the-beat"] .otb-quote span { display: block; font-style: normal; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--cyan); margin-top: 2px; }
+
+/* MC Strobe's booth, above the well */
+:root[data-game="on-the-beat"] .otb-mc { display: flex; align-items: center; gap: 8px; max-width: 100%; min-width: 0; }
+:root[data-game="on-the-beat"] .otb-face { width: 52px; height: 46px; flex: none; }
+:root[data-game="on-the-beat"] .otb-bubble {
+  position: relative; flex: 1; min-width: 0; display: grid; padding: 3px 10px 4px; border-radius: 8px;
+  background: #07040d; border: 1px solid rgb(25 230 255 / calc(0.45 + 0.5 * var(--p)));
+  box-shadow: 0 0 calc(4px + 10px * var(--p)) rgb(25 230 255 / 0.35);
+}
+:root[data-game="on-the-beat"] .otb-bubble::before { content: ""; position: absolute; left: -6px; top: 50%; width: 9px; height: 9px; margin-top: -5px; background: #07040d; border-left: 1px solid var(--cyan); border-bottom: 1px solid var(--cyan); transform: rotate(45deg); }
+:root[data-game="on-the-beat"] .otb-name { font-size: 9px; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; color: var(--cyan); }
+:root[data-game="on-the-beat"] .otb-line { font-style: italic; font-weight: 800; font-size: 19px; line-height: 1.1; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-shadow: 0 0 8px rgba(25, 230, 255, 0.7); }
+:root[data-game="on-the-beat"] .otb-line.hot { color: #fff; text-shadow: 0 0 6px var(--mag), 0 0 16px var(--mag); }
+:root[data-game="on-the-beat"] .otb-line.bad { color: #ffb59c; text-shadow: 0 0 8px rgba(255, 106, 61, 0.7); }
+:root[data-game="on-the-beat"] .otb-line.pop { animation: otb-pop 0.28s cubic-bezier(.2, 1.6, .4, 1); transform-origin: left center; }
+@keyframes otb-pop { from { transform: scale(1.35); opacity: 0.4; } }
+
+/* the stage: beat lane and crowd */
+:root[data-game="on-the-beat"] .otb-stage { display: block; max-width: 100%; border-radius: 4px; border: 1px solid rgb(255 43 214 / calc(0.3 + 0.5 * var(--p))); }
+:root[data-game="on-the-beat"] .otb-flash { position: fixed; inset: 0; pointer-events: none; z-index: 25; opacity: 0; display: none; background: radial-gradient(ellipse at 50% 60%, rgba(255, 220, 252, 0.9), rgba(255, 43, 214, 0.55) 45%, rgba(25, 230, 255, 0.2) 80%); mix-blend-mode: screen; }
+
+/* readouts */
+:root[data-game="on-the-beat"] .panel, :root[data-game="on-the-beat"] .stat { background: rgba(10, 6, 18, 0.92); border: 1px solid var(--line); border-radius: 6px; }
+:root[data-game="on-the-beat"] .panel h3, :root[data-game="on-the-beat"] .side h3 { font-family: var(--body); font-weight: 800; font-size: 11px; letter-spacing: 0.2em; color: var(--cyan); text-shadow: 0 0 8px rgba(25, 230, 255, 0.45); }
+:root[data-game="on-the-beat"] .panel h3 span { color: var(--muted); font-weight: 600; letter-spacing: 0.08em; text-shadow: none; text-transform: none; margin-left: 6px; }
+:root[data-game="on-the-beat"] .stat-label { font-weight: 600; letter-spacing: 0.16em; color: var(--muted); }
+:root[data-game="on-the-beat"] .stat-value { font-family: var(--body); font-weight: 800; font-style: italic; font-size: 22px; text-shadow: 0 0 calc(2px + 12px * var(--p)) currentColor; }
+:root[data-game="on-the-beat"] .stat-value small { font-size: 14px; color: var(--muted); text-shadow: none; }
+:root[data-game="on-the-beat"] .stat.accent { border-color: rgb(255 43 214 / calc(0.3 + 0.55 * var(--p))); }
+:root[data-game="on-the-beat"] .stat.good { border-color: rgb(25 230 255 / calc(0.25 + 0.5 * var(--p))); }
+:root[data-game="on-the-beat"] .otb-p { margin: 0; font-size: 13px; }
+:root[data-game="on-the-beat"] .otb-m { color: var(--muted); }
+:root[data-game="on-the-beat"] .otb-c { color: var(--cyan); font-weight: 700; }
+:root[data-game="on-the-beat"] .otb-v { color: #c48bff; font-weight: 700; }
+:root[data-game="on-the-beat"] .log { font-size: 13px; }
+:root[data-game="on-the-beat"] .log b { color: var(--mag); }
+:root[data-game="on-the-beat"] .chip { background: transparent; border-radius: 3px; font-weight: 600; }
+:root[data-game="on-the-beat"] .chip.good { box-shadow: 0 0 8px rgba(25, 230, 255, 0.25); }
+:root[data-game="on-the-beat"] .chip.bad { border-color: var(--bad); color: #ffb59c; }
+
+/* the mix: one lamp per layer of the band */
+:root[data-game="on-the-beat"] .otb-lamps { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 5px; }
+:root[data-game="on-the-beat"] .otb-lamp { display: grid; justify-items: center; gap: 1px; padding: 6px 2px 4px; border: 1px solid var(--line); border-radius: 4px; color: #6f6390; min-width: 0; }
+:root[data-game="on-the-beat"] .otb-lamp b { font-size: 11px; font-weight: 800; font-style: italic; letter-spacing: 0.04em; }
+:root[data-game="on-the-beat"] .otb-lamp small { font-size: 10px; color: #8a7eac; }
+:root[data-game="on-the-beat"] .otb-lamp.next { border-style: dashed; border-color: rgba(255, 43, 214, 0.6); color: #d6a8ff; }
+:root[data-game="on-the-beat"] .otb-lamp.on { color: #fff; border-color: var(--mag); background: rgba(255, 43, 214, calc(0.12 + 0.25 * var(--p))); box-shadow: 0 0 calc(3px + 12px * var(--p)) rgba(255, 43, 214, 0.6); }
+:root[data-game="on-the-beat"] .otb-lamp.on:nth-child(even) { border-color: var(--cyan); background: rgba(25, 230, 255, calc(0.1 + 0.22 * var(--p))); box-shadow: 0 0 calc(3px + 12px * var(--p)) rgba(25, 230, 255, 0.6); }
+:root[data-game="on-the-beat"] .otb-lamp.on small { color: #f0dcff; }
+
+/* the booth (shop) */
+:root[data-game="on-the-beat"] .modal-layer { background: rgba(3, 1, 7, 0.8); }
+:root[data-game="on-the-beat"] .modal { background: #08050f; border: 2px solid var(--mag); border-radius: 6px; box-shadow: 0 0 30px rgba(255, 43, 214, 0.4), 0 0 0 5px #05030a, 0 0 0 6px rgba(25, 230, 255, 0.45); }
+:root[data-game="on-the-beat"] .modal h4 { margin: 4px 0 -4px; font-size: 11px; font-weight: 800; letter-spacing: 0.22em; text-transform: uppercase; color: var(--cyan); }
+:root[data-game="on-the-beat"] .tile { background: #0c0816; border: 1px solid var(--line); border-radius: 5px; }
+:root[data-game="on-the-beat"] .tile .t-name { font-weight: 800; font-style: italic; }
+:root[data-game="on-the-beat"] .tile .t-cost { font-family: var(--body); font-weight: 800; color: var(--mag); }
+:root[data-game="on-the-beat"] .tile:hover:not(:disabled) { border-color: var(--cyan); }
+:root[data-game="on-the-beat"] .tile.on { border-color: var(--mag); box-shadow: 0 0 14px rgba(255, 43, 214, 0.45), inset 0 0 12px rgba(255, 43, 214, 0.18); }
+
+:root[data-game="on-the-beat"] .toast { background: #08050f; border-color: var(--mag); font-style: italic; font-weight: 800; box-shadow: 0 0 16px rgba(255, 43, 214, 0.45); }
+:root[data-game="on-the-beat"] .toast.good { border-color: var(--cyan); box-shadow: 0 0 16px rgba(25, 230, 255, 0.4); }
+:root[data-game="on-the-beat"] .pad-btn { background: #0c0816; border-color: rgba(25, 230, 255, 0.5); color: var(--fg); border-radius: 6px; }
+:root[data-game="on-the-beat"] .pad-btn:active { background: rgba(255, 43, 214, 0.35); border-color: var(--mag); }
+:root[data-game="on-the-beat"] .keys-hint { color: var(--muted); }
+
+@media (max-width: 760px) {
+  :root[data-game="on-the-beat"] .topbar h2 { font-size: 21px; }
+  :root[data-game="on-the-beat"] .otb-line { font-size: 17px; }
+  :root[data-game="on-the-beat"] .board-overlay { padding: 10px; }
+  :root[data-game="on-the-beat"] .ov-card { gap: 9px; }
+  :root[data-game="on-the-beat"] .ov-card h3 { font-size: 28px; }
+  :root[data-game="on-the-beat"] .ov-body { font-size: 13px; gap: 6px; }
+  :root[data-game="on-the-beat"] .otb-quote { font-size: 14px; }
+}
+
+/* hub card */
+.card[data-game="on-the-beat"] { background: #07040d; border-color: #3a1f58; }
+.card[data-game="on-the-beat"]:hover, .card[data-game="on-the-beat"]:focus-visible { border-color: #ff2bd6; box-shadow: 0 0 22px rgba(255, 43, 214, 0.4), inset 0 0 0 1px rgba(25, 230, 255, 0.25); }
+.card[data-game="on-the-beat"] canvas.card-art { background: #05030a; }
+.card[data-game="on-the-beat"] .num { font-family: "Exo 2", sans-serif; font-weight: 800; color: #19e6ff; letter-spacing: 0.2em; }
+.card[data-game="on-the-beat"] h2 { font-family: "Monoton", sans-serif; font-weight: 400; font-size: 25px; letter-spacing: 0.03em; color: #fff; text-shadow: 0 0 5px #ff2bd6, 0 0 14px #ff2bd6; }
+.card[data-game="on-the-beat"] .mix { color: #19e6ff; font-family: "Exo 2", sans-serif; font-weight: 700; letter-spacing: 0.14em; }
+.card[data-game="on-the-beat"] p { color: #b4a8d2; font-family: "Exo 2", sans-serif; }
+.card[data-game="on-the-beat"] .play { font-family: "Exo 2", sans-serif; font-weight: 800; font-style: italic; text-transform: uppercase; letter-spacing: 0.1em; color: #ff2bd6; }

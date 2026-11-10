@@ -1,0 +1,216 @@
+/* harvest-rows theme: "Nana Pell's Allotment". A light watercolour storybook on off-white paper.
+   The season (data-hr-season, set by the game) recolours the accent and the washes. */
+:root[data-game="harvest-rows"] {
+  color-scheme: light;
+  --ink: #f4eedf;
+  --cabinet: #fbf7ec;
+  --well: #fbf6ea;
+  --panel: #fdfaf2;
+  --line: #9c8670;
+  --fg: #3b2f24;
+  --muted: #66584a;
+  --accent: #b2456e;
+  --accent-ink: #ffffff;
+  --good: #3c7a35;
+  --bad: #ad3628;
+  --cool: #2c6390;
+  --display: "Grandstander", "Nunito", system-ui, sans-serif;
+  --body: "Nunito", system-ui, sans-serif;
+  --hr-pencil: #4a3626;
+  --hr-wash1: #cfe6b6;
+  --hr-wash2: #f5c8d6;
+  --hr-r1: 14px 9px 16px 8px / 9px 15px 8px 13px;
+  --hr-r2: 9px 15px 8px 14px / 14px 8px 15px 9px;
+  background-color: var(--ink);
+  background-image: var(--hr-wash, none), var(--hr-paper, none);
+  background-size: cover, auto;
+  background-attachment: fixed, fixed;
+  background-repeat: no-repeat, repeat;
+  transition: background-color 0.6s;
+}
+:root[data-game="harvest-rows"][data-hr-season="summer"] { --accent: #8a5f0c; --hr-wash1: #f2d98a; --hr-wash2: #f7eab9; --ink: #f6efd9; }
+:root[data-game="harvest-rows"][data-hr-season="autumn"] { --accent: #a3421b; --hr-wash1: #ebb08a; --hr-wash2: #e6cc9f; --ink: #f5ebdc; }
+:root[data-game="harvest-rows"][data-hr-season="winter"] { --accent: #2c6390; --hr-wash1: #cfe1f1; --hr-wash2: #eaf2f9; --ink: #eef2f3; }
+
+:root[data-game="harvest-rows"] body { background: transparent; font-size: 15px; }
+:root[data-game="harvest-rows"] body::before { background: var(--ink); }
+
+/* header */
+:root[data-game="harvest-rows"] .topbar {
+  background: var(--ink) var(--hr-paper, none);
+  border-bottom: 0;
+  box-shadow: 0 1.5px 0 rgba(74, 54, 38, 0.45), 0 4px 0 -2px rgba(74, 54, 38, 0.15);
+}
+:root[data-game="harvest-rows"] .topbar h2 { font-weight: 800; font-size: 26px; color: var(--hr-pencil); letter-spacing: 0.005em; }
+:root[data-game="harvest-rows"] .topbar .mix { color: var(--accent); font-weight: 800; letter-spacing: 0.06em; }
+
+/* buttons: hand-cut card with a pencil edge */
+:root[data-game="harvest-rows"] .btn {
+  font-family: var(--display); font-weight: 800; letter-spacing: 0.01em;
+  background: var(--panel); color: var(--fg);
+  border: 2px solid var(--hr-pencil); border-radius: var(--hr-r1);
+  box-shadow: 2px 2px 0 rgba(74, 54, 38, 0.25);
+}
+:root[data-game="harvest-rows"] .btn:hover:not(:disabled) { border-color: var(--accent); transform: rotate(-0.6deg); }
+:root[data-game="harvest-rows"] .btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--hr-pencil); }
+
+/* the well: a watercolour page tipped onto a paper mat, outlined twice in pencil */
+:root[data-game="harvest-rows"] .board-frame {
+  background: var(--well);
+  padding: 7px;
+  border: 2px solid var(--hr-pencil);
+  border-radius: var(--hr-r2);
+  box-shadow: 4px 5px 0 rgba(74, 54, 38, 0.12);
+}
+:root[data-game="harvest-rows"] .board-frame::before {
+  content: ""; position: absolute; inset: -5px -3px -4px -6px; pointer-events: none;
+  border: 1.2px solid rgba(74, 54, 38, 0.38); border-radius: var(--hr-r1); transform: rotate(-0.45deg);
+}
+:root[data-game="harvest-rows"] canvas.board { border-radius: 3px; }
+:root[data-game="harvest-rows"] .board-overlay { inset: 7px; background: rgba(251, 246, 234, 0.9); }
+:root[data-game="harvest-rows"] .ov-card { max-width: 330px; gap: 14px; }
+:root[data-game="harvest-rows"] .ov-card h3 { font-weight: 800; font-size: 28px; line-height: 1.05; color: var(--accent); transform: rotate(-1.2deg); }
+:root[data-game="harvest-rows"] .ov-body { font-size: 14.5px; }
+:root[data-game="harvest-rows"] .ov-body ul { gap: 6px; }
+:root[data-game="harvest-rows"] .hr-quote { font-style: italic; font-size: 15px; color: var(--hr-pencil); border-left: 3px solid var(--hr-wash1); padding-left: 10px; }
+
+/* side column: paper notes */
+:root[data-game="harvest-rows"] .panel {
+  background: color-mix(in srgb, var(--hr-wash2) 22%, var(--panel));
+  border: 1.6px solid var(--hr-pencil); border-radius: var(--hr-r1);
+  box-shadow: 2px 3px 0 rgba(74, 54, 38, 0.1);
+}
+:root[data-game="harvest-rows"] .panel h3, :root[data-game="harvest-rows"] .side h3 {
+  font-weight: 800; font-size: 14px; letter-spacing: 0.02em; text-transform: none; color: var(--accent);
+}
+:root[data-game="harvest-rows"] .stat {
+  background: var(--panel); border: 1.6px solid var(--hr-pencil); border-radius: var(--hr-r2); padding: 6px 10px;
+}
+:root[data-game="harvest-rows"] .stat-label { font-weight: 800; font-size: 11px; letter-spacing: 0.05em; color: var(--muted); }
+:root[data-game="harvest-rows"] .stat-value { font-weight: 800; font-size: 22px; color: var(--fg); }
+:root[data-game="harvest-rows"] .stat-value small { font-family: var(--body); font-size: 13px; color: var(--muted); font-weight: 700; }
+:root[data-game="harvest-rows"] .stat.wide { background: color-mix(in srgb, var(--hr-wash1) 45%, var(--panel)); }
+:root[data-game="harvest-rows"] .stat.accent .stat-value { color: var(--accent); }
+:root[data-game="harvest-rows"] .hr-season-name { color: var(--accent); }
+:root[data-game="harvest-rows"] .log { color: var(--muted); font-size: 13.5px; }
+:root[data-game="harvest-rows"] .log li:first-child { color: var(--fg); }
+:root[data-game="harvest-rows"] .keys-hint { color: var(--muted); font-style: italic; }
+:root[data-game="harvest-rows"] .chip { background: var(--panel); border: 1.3px solid var(--line); border-radius: 12px 9px 13px 8px; font-weight: 700; color: var(--fg); }
+:root[data-game="harvest-rows"] .chip.accent { border-color: var(--accent); color: var(--accent); }
+:root[data-game="harvest-rows"] .chip.good { border-color: var(--good); color: var(--good); }
+:root[data-game="harvest-rows"] .chip.bad { border-color: var(--bad); color: var(--bad); }
+
+/* Nana Pell and the basket */
+:root[data-game="harvest-rows"] .hr-host {
+  display: grid; grid-template-columns: 72px minmax(0, 1fr); grid-template-areas: "nana bubble" "basket basket";
+  gap: 8px 10px; align-items: center; background: color-mix(in srgb, var(--hr-wash1) 30%, var(--panel));
+}
+:root[data-game="harvest-rows"] .hr-nana { grid-area: nana; width: 72px; height: 72px; display: block; }
+:root[data-game="harvest-rows"] .hr-bubble {
+  grid-area: bubble; position: relative; background: #fffdf7; border: 1.6px solid var(--hr-pencil);
+  border-radius: 16px 12px 18px 10px / 12px 18px 10px 16px; padding: 7px 11px 8px; min-height: 54px;
+}
+:root[data-game="harvest-rows"] .hr-bubble::before {
+  content: ""; position: absolute; left: -9px; top: 22px; width: 14px; height: 12px; background: #fffdf7;
+  border-left: 1.6px solid var(--hr-pencil); border-bottom: 1.6px solid var(--hr-pencil); transform: skewY(-28deg) rotate(8deg);
+}
+:root[data-game="harvest-rows"] .hr-bubble.pop { animation: hr-pop 0.32s cubic-bezier(.3, 1.6, .5, 1); }
+@keyframes hr-pop { from { transform: scale(0.94) rotate(-1deg); } }
+:root[data-game="harvest-rows"] .hr-name { font-family: var(--display); font-weight: 800; font-size: 12px; color: var(--accent); display: block; line-height: 1.1; }
+:root[data-game="harvest-rows"] .hr-say { margin: 2px 0 0; font-size: 14px; line-height: 1.32; color: var(--fg); font-weight: 700; }
+:root[data-game="harvest-rows"] .hr-basket { grid-area: basket; display: flex; align-items: center; gap: 10px; padding-top: 2px; border-top: 1.4px dashed rgba(74, 54, 38, 0.35); }
+:root[data-game="harvest-rows"] .hr-basket canvas { width: 96px; height: 64px; display: block; }
+:root[data-game="harvest-rows"] .hr-basket.bump canvas { animation: hr-bump 0.3s ease-out; transform-origin: 50% 90%; }
+@keyframes hr-bump { 30% { transform: scale(1.12, 0.9) rotate(-2deg); } 65% { transform: scale(0.96, 1.05); } }
+:root[data-game="harvest-rows"] .hr-count { display: grid; line-height: 1; }
+:root[data-game="harvest-rows"] .hr-count b { font-family: var(--display); font-weight: 800; font-size: 30px; color: var(--accent); }
+:root[data-game="harvest-rows"] .hr-count span { font-size: 13px; color: var(--muted); font-weight: 700; }
+:root[data-game="harvest-rows"] .hr-fly { position: fixed; inset: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 25; }
+
+/* almanac */
+:root[data-game="harvest-rows"] .hr-wheel { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }
+:root[data-game="harvest-rows"] .hr-wheel span {
+  font-family: var(--display); font-weight: 800; font-size: 12.5px; text-align: center; padding: 3px 0 4px;
+  color: var(--muted); border-bottom: 3px solid rgba(74, 54, 38, 0.15); border-radius: 0 0 6px 8px;
+}
+:root[data-game="harvest-rows"] .hr-wheel span.past { color: #8a7c6d; text-decoration: line-through; text-decoration-thickness: 1.5px; }
+:root[data-game="harvest-rows"] .hr-wheel span.now { color: var(--c); border-bottom-color: var(--c); transform: rotate(-2deg) scale(1.08); }
+:root[data-game="harvest-rows"] .hr-days { display: flex; gap: 4px; flex-wrap: wrap; }
+:root[data-game="harvest-rows"] .hr-days i { width: 12px; height: 12px; border: 1.4px solid var(--hr-pencil); border-radius: 50% 45% 55% 48%; opacity: 0.55; }
+:root[data-game="harvest-rows"] .hr-days i.on { background: var(--accent); opacity: 1; }
+:root[data-game="harvest-rows"] .hr-rule { margin: 0; font-size: 14px; font-weight: 700; }
+:root[data-game="harvest-rows"] .hr-small { margin: 0; font-size: 12.5px; color: var(--muted); }
+
+/* price list */
+:root[data-game="harvest-rows"] .hr-price-grid { display: grid; grid-template-columns: 26px auto auto 1fr; gap: 1px 8px; align-items: center; font-size: 13.5px; }
+:root[data-game="harvest-rows"] .hr-price-grid img { display: block; }
+:root[data-game="harvest-rows"] .hr-price-grid b { font-family: var(--display); text-align: right; }
+:root[data-game="harvest-rows"] .hr-price-grid b.pos { color: var(--good); }
+:root[data-game="harvest-rows"] .hr-price-grid b.neg { color: var(--bad); }
+:root[data-game="harvest-rows"] .hr-note { color: var(--muted); font-size: 12.5px; }
+
+/* season's-end letter and seed packets from the shed */
+:root[data-game="harvest-rows"] .modal-layer { background: rgba(74, 54, 38, 0.32); }
+:root[data-game="harvest-rows"] .modal {
+  background: var(--panel) var(--hr-paper, none); border: 2px solid var(--hr-pencil); border-radius: var(--hr-r2);
+  box-shadow: 6px 8px 0 rgba(74, 54, 38, 0.18);
+}
+:root[data-game="harvest-rows"] .modal h3 { font-weight: 800; font-size: 28px; color: var(--accent); transform: rotate(-1deg); transform-origin: left; }
+:root[data-game="harvest-rows"] .hr-letter { font-size: 16px; font-style: italic; color: var(--hr-pencil); }
+:root[data-game="harvest-rows"] .hr-next { color: var(--muted); }
+:root[data-game="harvest-rows"] .modal h3.hr-shed { font-size: 17px; transform: none; color: var(--fg); }
+:root[data-game="harvest-rows"] .tile.hr-packet {
+  position: relative; background: #fffdf7; border: 1.8px solid var(--hr-pencil); border-radius: 4px 4px 10px 8px;
+  padding: 26px 12px 12px; gap: 5px; box-shadow: 3px 3px 0 rgba(74, 54, 38, 0.15); transition: transform 0.12s;
+}
+:root[data-game="harvest-rows"] .tile.hr-packet::before {
+  content: ""; position: absolute; inset: 0 0 auto; height: 16px; background: var(--pk); opacity: 0.85;
+  border-bottom: 1.6px dashed rgba(255, 255, 255, 0.8); border-radius: 2px 2px 0 0;
+}
+:root[data-game="harvest-rows"] .tile.hr-packet:hover { transform: rotate(-1.5deg) translateY(-2px); border-color: var(--pk); }
+:root[data-game="harvest-rows"] .tile.hr-packet .t-name { font-family: var(--display); font-weight: 800; font-size: 16px; color: var(--fg); }
+:root[data-game="harvest-rows"] .tile.hr-packet .t-desc { color: var(--fg); font-size: 13.5px; }
+:root[data-game="harvest-rows"] .tile.hr-packet .t-quip { font-style: italic; font-size: 12.5px; color: var(--muted); }
+
+/* toasts: a paper label */
+:root[data-game="harvest-rows"] .toast {
+  font-family: var(--display); font-weight: 800; font-size: 17px; background: var(--panel);
+  border: 2px solid var(--accent); color: var(--accent); border-radius: var(--hr-r1); transform: rotate(-1.5deg);
+  box-shadow: 3px 3px 0 rgba(74, 54, 38, 0.18);
+}
+
+/* touch pad: wooden plant labels */
+:root[data-game="harvest-rows"] .pad-btn {
+  background: #f1e3c8; color: var(--hr-pencil); border: 1.8px solid var(--hr-pencil); border-radius: var(--hr-r1);
+  font-family: var(--display); font-weight: 800; box-shadow: 2px 2px 0 rgba(74, 54, 38, 0.2);
+}
+:root[data-game="harvest-rows"] .pad-btn:active { background: var(--hr-wash1); }
+
+@media (max-width: 760px) {
+  :root[data-game="harvest-rows"] .hr-host {
+    grid-template-columns: 52px minmax(0, 1fr) auto; grid-template-areas: "nana bubble basket"; padding: 8px; gap: 8px; width: 100%;
+  }
+  :root[data-game="harvest-rows"] .hr-nana { width: 52px; height: 52px; }
+  :root[data-game="harvest-rows"] .hr-say { font-size: 12.5px; }
+  :root[data-game="harvest-rows"] .hr-bubble { min-height: 0; padding: 5px 8px 6px; }
+  :root[data-game="harvest-rows"] .hr-basket { border-top: 0; display: grid; justify-items: center; gap: 0; padding: 0; }
+  :root[data-game="harvest-rows"] .hr-basket canvas { width: 60px; height: 40px; }
+  :root[data-game="harvest-rows"] .hr-count { grid-auto-flow: column; align-items: baseline; gap: 3px; }
+  :root[data-game="harvest-rows"] .hr-count b { font-size: 18px; }
+  :root[data-game="harvest-rows"] .hr-count span { font-size: 10px; }
+  :root[data-game="harvest-rows"] .topbar h2 { font-size: 21px; }
+}
+
+/* hub card */
+.card[data-game="harvest-rows"] {
+  background: #fbf6ea; color: #3b2f24;
+  border: 2px solid #4a3626; border-radius: 14px 9px 16px 8px / 9px 15px 8px 13px;
+  box-shadow: 3px 4px 0 rgba(74, 54, 38, 0.35);
+}
+.card[data-game="harvest-rows"]:hover, .card[data-game="harvest-rows"]:focus-visible { border-color: #b2456e; transform: translateY(-2px) rotate(-0.6deg); }
+.card[data-game="harvest-rows"] canvas.card-art { background: #fbf6ea; border-bottom: 1.6px solid rgba(74, 54, 38, 0.5); }
+.card[data-game="harvest-rows"] .num { font-family: "Grandstander", sans-serif; font-weight: 800; color: #7a6a58; }
+.card[data-game="harvest-rows"] h2 { font-family: "Grandstander", sans-serif; font-weight: 800; font-size: 23px; color: #3b2f24; }
+.card[data-game="harvest-rows"] .mix { font-family: "Nunito", sans-serif; font-weight: 800; color: #a3421b; letter-spacing: 0.04em; }
+.card[data-game="harvest-rows"] p { font-family: "Nunito", sans-serif; color: #5a4c3e; font-size: 14px; }
+.card[data-game="harvest-rows"] .play { font-family: "Grandstander", sans-serif; font-weight: 800; color: #b2456e; }

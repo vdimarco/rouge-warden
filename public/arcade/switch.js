@@ -47,6 +47,7 @@
     { id: "firefly-courier", name: "Firefly Courier", sub: "Carry a little light through the forest", url: "/firefly-courier/", art: "/arcade/key/firefly-courier.svg", color: "#f2c97e", labOnly: true },
     { id: "mirage-runner", name: "Mirage Runner", sub: "Sail the dunes beneath the stars", url: "/mirage-runner/", art: "/arcade/key/mirage-runner.svg", color: "#f5c98e", labOnly: true },
     { id: "orbital-gardener", name: "Orbital Gardener", sub: "Grow a garden under Earthrise", url: "/orbital-gardener/", art: "/arcade/key/orbital-gardener.svg", color: "#a8d3f6", labOnly: true },
+    { id: "eleven-wells", name: "Eleven Wells", sub: "Falling blocks crossed with eleven other games", url: "/eleven-wells/", art: "/arcade/eleven-wells.webp", color: "#ffb547", labOnly: true },
     { id: "last-light", name: "Last Light", sub: "An ASCII sailing adventure", url: "/last-light/", art: "/last-light/art/sunset.svg", color: "#ffcd62", labOnly: true },
   ];
   const home = location.pathname === "/" || location.pathname === "/index.html";

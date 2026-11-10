@@ -152,6 +152,7 @@ button { font: inherit; color: inherit; }
 .cab.firefly-courier { --c1: #274943; --c2: #f2c97e; --glow: #f2c97e66; }
 .cab.mirage-runner { --c1: #34477a; --c2: #f5c98e; --glow: #f5c98e66; }
 .cab.orbital-gardener { --c1: #262f4a; --c2: #a8d3f6; --glow: #a8d3f666; }
+.cab.eleven-wells { --c1: #1b1f45; --c2: #ffb547; --glow: #ffb54766; }
 .cab.afterlight { --c1: #234c56; --c2: #b6e5ce; --glow: #b6e5ce66; }
 .cab.ascii-front { --c1: #263d2c; --c2: #d2f584; --glow: #d2f58466; }
 .cab.last-light { --c1: #552a74; --c2: #ffcd62; --glow: rgba(255, 205, 98, 0.45); }
@@ -701,6 +702,16 @@ button { font: inherit; color: inherit; }
       <div class="door"><button class="slot" type="button" aria-label="Drop a token into Orbital Gardener"><i></i><span>25¢</span></button><button class="slot" type="button" aria-label="Drop a token into Orbital Gardener"><i></i><span>25¢</span></button></div>
       <div class="kick"></div>
       </article>
+      <article class="cab eleven-wells" data-game="eleven-wells" data-url="/eleven-wells/" aria-label="Eleven Wells: Falling blocks crossed with eleven other games">
+      <div class="marquee"><div><b>ELEVEN WELLS</b><small>FALLING BLOCKS × ELEVEN GAMES</small></div></div>
+      <div class="bezel"><div class="screen">
+      <img src="arcade/eleven-wells.webp" alt="The Eleven Wells game cards" loading="lazy" decoding="async">
+      <div class="osd"><p class="hi">STACK · CLEAR · CASH IN</p><p class="press">INSERT COIN</p><p class="credit">CREDIT 0</p></div>
+      </div></div>
+      <div class="panel"><span class="stick"></span><span class="pbtn a"></span><span class="pbtn b"></span><button class="start" type="button">START</button></div>
+      <div class="door"><button class="slot" type="button" aria-label="Drop a token into Eleven Wells"><i></i><span>25¢</span></button><button class="slot" type="button" aria-label="Drop a token into Eleven Wells"><i></i><span>25¢</span></button></div>
+      <div class="kick"></div>
+      </article>
       <article class="cab last-light" data-game="last-light" data-url="/last-light/" aria-label="Last Light: an ASCII sailing adventure">
       <div class="marquee"><div><b>LAST LIGHT</b><small>CARRY THE SPARKS HOME</small></div></div>
       <div class="bezel"><div class="screen">
@@ -855,7 +866,7 @@ const GROUPS = [
   { id: "ascii", label: "ASCII Scenes", games: ["ascii-front", "battle-tanks"], c1: "#344238", c2: "#d2f584", glow: "rgba(210, 245, 132, 0.45)", art: "ascii-front/key.svg", art2: "battle-tanks/key.svg" },
   { id: "strategy", label: "Strategy", games: ["breakthrough", "follow-suit", "silent-depth"], c1: "#3e5c44", c2: "#f0c56a", glow: "rgba(232, 176, 84, 0.62)", art: "arcade/follow-suit.webp", art2: "arcade/breakthrough.webp" },
   { id: "gta", label: "GTA", games: ["gta"], c1: "#5a3410", c2: "#f2c14e", glow: "rgba(242, 193, 78, 0.5)", art: "arcade/gta.webp" },
-  { id: "lab", label: "Lab", games: ["lab", "worlds", "neon", "echo", "tellme", "plunge", "creek", "tilt", "rules", "afterlight", "last-light", "lighthouse-keeper", "echoes-under-ice", "last-train-home", "firefly-courier", "mirage-runner", "orbital-gardener"], c1: "#17414c", c2: "#f0b848", glow: "rgba(240, 184, 72, 0.5)", art: "arcade/lab.webp", art2: "arcade/worlds.webp" },
+  { id: "lab", label: "Lab", games: ["lab", "worlds", "neon", "echo", "tellme", "plunge", "creek", "tilt", "rules", "afterlight", "last-light", "lighthouse-keeper", "echoes-under-ice", "last-train-home", "firefly-courier", "mirage-runner", "orbital-gardener", "eleven-wells"], c1: "#17414c", c2: "#f0b848", glow: "rgba(240, 184, 72, 0.5)", art: "arcade/lab.webp", art2: "arcade/worlds.webp" },
 ];
 const games = $$(".cab");
 // a machine that no group names still gets a group, so none is ever out of reach

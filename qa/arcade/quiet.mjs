@@ -382,6 +382,9 @@ const PAGES = [
   { id: "fish", path: "/fish/", boot: () => !!document.querySelector("#title") && !document.querySelector("#title").hidden, start: click("#freeBtn"), sound: "ctx", slow: true },
   { id: "brawl", path: "/brawl/", start: click("#enter-game"), sound: "ctx" },
   { id: "echo", path: "/echo/", start: click("#start"), sound: "ctx" },
+  // the hash opens Niteshift, the Eleven Wells prototype with a backing track ("?qa" keeps the path matching played()). Its intro
+  // card is taller than the board until the web fonts load, so wait for them and bring the button into view before the tap.
+  { id: "eleven-wells", path: "/eleven-wells/?qa#on-the-beat", boot: () => document.fonts.status === "loaded" && !!document.querySelector(".board-overlay:not([hidden]) .btn.primary"), start: async (t) => { await t.eval(() => document.querySelector(".board-overlay:not([hidden]) .btn.primary").scrollIntoView({ block: "center" })); await t.tapEl(".board-overlay:not([hidden]) .btn.primary"); }, sound: "ctx", music: true },
   { id: "lab/plunge", path: "/lab/plunge/", start: click(".card.start .go"), sound: "ctx" },
   { id: "lab/creek", path: "/lab/creek/", start: click(".card.start .go"), sound: "ctx" },
   { id: "lab/tilt", path: "/lab/tilt/", start: click("#play-button"), sound: "ctx" },

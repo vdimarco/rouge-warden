@@ -1,0 +1,211 @@
+/* 03 Rule Rows: Department of Row Compliance.
+   Light theme: desk beige, manila folder, ruled form paper, typewriter type, red stamp ink, blue carbon. */
+:root[data-game="rule-rows"] {
+  --ink: #dbd5c5;
+  --cabinet: #e0c27f;
+  --well: #fbf8ef;
+  --panel: #fcfaf3;
+  --line: #b3a68a;
+  --fg: #23201b;
+  --muted: #554d40;
+  --accent: #b3171d;
+  --accent-ink: #fff9ee;
+  --good: #1d6638;
+  --bad: #b3171d;
+  --cool: #22409e;
+  --display: "Special Elite", "Courier Prime", monospace;
+  --body: "Courier Prime", "Courier New", monospace;
+  color-scheme: light;
+}
+:root[data-game="rule-rows"] body {
+  background-color: var(--ink);
+  background-image:
+    radial-gradient(rgba(90, 72, 40, 0.09) 1px, transparent 1.3px),
+    radial-gradient(rgba(255, 255, 255, 0.4) 1px, transparent 1.3px);
+  background-size: 7px 7px, 11px 11px;
+  background-position: 0 0, 3px 5px;
+}
+
+/* ---------- header ---------- */
+:root[data-game="rule-rows"] .topbar { background: var(--ink); border-bottom: 3px double #6f6450; }
+:root[data-game="rule-rows"] .topbar h2 { font-family: var(--display); font-size: 25px; letter-spacing: 0.02em; }
+:root[data-game="rule-rows"] .topbar .mix { color: var(--accent); font-weight: 700; letter-spacing: 0.14em; }
+
+/* ---------- buttons: typed labels on card stock ---------- */
+:root[data-game="rule-rows"] .btn {
+  background: #fcfaf3; color: var(--fg); border: 1px solid #3b352b; border-radius: 2px;
+  box-shadow: 2px 2px 0 #3b352b; font-family: var(--body); font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.06em; font-size: 13px;
+}
+:root[data-game="rule-rows"] .btn.small { font-size: 12px; }
+:root[data-game="rule-rows"] .btn:hover:not(:disabled) { border-color: var(--accent); box-shadow: 2px 2px 0 var(--accent); }
+:root[data-game="rule-rows"] .btn:active:not(:disabled) { transform: translate(2px, 2px); box-shadow: none; }
+:root[data-game="rule-rows"] .btn.primary { background: var(--accent); color: var(--accent-ink); border-color: #6e0d10; box-shadow: 2px 2px 0 #6e0d10; }
+
+/* ---------- the folder ---------- */
+:root[data-game="rule-rows"] .board-col { padding-top: 12px; }
+:root[data-game="rule-rows"] .board-frame {
+  background: linear-gradient(175deg, #e6c987, #d9b86f);
+  border: 1px solid #a8873f; border-radius: 0 6px 6px 6px;
+  padding: 30px 9px 9px;
+  box-shadow: 3px 3px 0 #f6f1e2, 4px 4px 0 #b9ad92, 7px 7px 0 #eee7d4, 8px 8px 0 #ada185, 0 16px 30px rgba(70, 52, 20, 0.22);
+}
+:root[data-game="rule-rows"] .board-frame::before {
+  content: ""; position: absolute; left: -1px; top: -12px; width: 46%; height: 13px;
+  background: #e6c987; border: 1px solid #a8873f; border-bottom: 0; border-radius: 7px 12px 0 0;
+}
+:root[data-game="rule-rows"] .board-frame::after {
+  content: "RR-03 \00B7  ROW COMPLIANCE"; position: absolute; left: 10px; top: 6px;
+  font: 700 11px/1.4 var(--body); letter-spacing: 0.1em; color: var(--fg);
+  background: #fffdf6; border: 1px solid #9c8a62; padding: 0 7px; box-shadow: 1px 1px 0 rgba(70, 52, 20, 0.25);
+}
+:root[data-game="rule-rows"] canvas.board { border-radius: 0; box-shadow: 0 1px 2px rgba(70, 52, 20, 0.35); }
+:root[data-game="rule-rows"] .board-overlay { inset: 30px 9px 9px; background: rgba(205, 178, 115, 0.5); border-radius: 0; padding: 10px; }
+
+/* overlay card: a typed memo */
+:root[data-game="rule-rows"] .ov-card {
+  max-width: 300px; padding: 14px 14px 14px 32px; gap: 10px;
+  background-color: #fffdf6;
+  background-image:
+    linear-gradient(90deg, transparent 22px, rgba(200, 40, 40, 0.4) 22px, rgba(200, 40, 40, 0.4) 23px, transparent 23px),
+    repeating-linear-gradient(180deg, transparent 0 19px, rgba(60, 110, 180, 0.14) 19px 20px);
+  border: 1px solid #c9bc9a; box-shadow: 3px 4px 0 rgba(70, 52, 20, 0.2); transform: rotate(-0.6deg);
+}
+:root[data-game="rule-rows"] .ov-card h3 { font-family: var(--display); color: var(--fg); font-size: 22px; border-bottom: 2px solid var(--fg); padding-bottom: 2px; }
+:root[data-game="rule-rows"] .ov-body { font-size: 13px; line-height: 1.4; gap: 7px; }
+:root[data-game="rule-rows"] .ov-body ul { padding-left: 14px; }
+
+/* ---------- side column ---------- */
+:root[data-game="rule-rows"] .panel {
+  background-color: var(--panel);
+  background-image:
+    linear-gradient(90deg, transparent 20px, rgba(200, 40, 40, 0.32) 20px, rgba(200, 40, 40, 0.32) 21px, transparent 21px),
+    repeating-linear-gradient(180deg, transparent 0 21px, rgba(60, 110, 180, 0.13) 21px 22px);
+  border: 1px solid var(--line); border-radius: 1px; box-shadow: 2px 3px 0 rgba(80, 65, 40, 0.14);
+  padding: 10px 12px 12px 30px;
+}
+:root[data-game="rule-rows"] .panel h3, :root[data-game="rule-rows"] .side h3 {
+  font-family: var(--display); font-size: 13px; letter-spacing: 0.12em; color: var(--fg);
+  border-bottom: 1px solid var(--fg); padding-bottom: 2px;
+}
+
+/* HUD: boxes on a form */
+:root[data-game="rule-rows"] .hud {
+  counter-reset: fld; gap: 0; background: var(--panel);
+  border-top: 1.5px solid #3b352b; border-left: 1.5px solid #3b352b; box-shadow: 2px 3px 0 rgba(80, 65, 40, 0.14);
+}
+:root[data-game="rule-rows"] .stat {
+  background: transparent; border: 0; border-radius: 0;
+  border-right: 1.5px solid #3b352b; border-bottom: 1.5px solid #3b352b; padding: 3px 8px 6px;
+}
+:root[data-game="rule-rows"] .stat-label {
+  font-family: var(--body); font-weight: 700; font-size: 15px; line-height: 1.2; text-transform: lowercase;
+  font-variant: small-caps; letter-spacing: 0.06em; color: var(--muted);
+}
+:root[data-game="rule-rows"] .stat-label::before { counter-increment: fld; content: counter(fld) ". "; color: var(--accent); }
+:root[data-game="rule-rows"] .stat-value {
+  font-family: var(--display); font-size: 22px; color: var(--fg);
+  border-bottom: 1px dotted #8a7f68; padding-left: 4px;
+}
+:root[data-game="rule-rows"] .stat.accent .stat-value { color: var(--fg); font-size: 26px; }
+:root[data-game="rule-rows"] .stat.good .stat-value { color: var(--cool); }
+:root[data-game="rule-rows"] .stat.bad .stat-value { color: var(--bad); }
+
+/* the log is a stack of blue carbon copies */
+:root[data-game="rule-rows"] .log { font-family: var(--body); color: #3550a6; font-size: 13px; }
+:root[data-game="rule-rows"] .log li { text-shadow: 0 0 0.7px rgba(34, 64, 158, 0.7); }
+:root[data-game="rule-rows"] .log li:first-child { color: #1d3591; }
+:root[data-game="rule-rows"] .log li:nth-child(n + 4) { opacity: 0.72; }
+:root[data-game="rule-rows"] .log b { color: inherit; }
+:root[data-game="rule-rows"] .keys-hint { font-family: var(--body); color: var(--muted); }
+
+:root[data-game="rule-rows"] .chip { border-radius: 1px; background: #fffdf6; border-color: #9c8f73; font-family: var(--body); font-weight: 700; }
+:root[data-game="rule-rows"] .chip.bad { border-color: var(--bad); color: var(--bad); }
+:root[data-game="rule-rows"] .chip.accent { border-color: #9c6c14; color: #7a520c; }
+
+/* toast: sticky note */
+:root[data-game="rule-rows"] .toast {
+  background: #fff0a0; color: var(--fg); border: 0; border-radius: 0; font-family: var(--display);
+  box-shadow: 2px 4px 8px rgba(60, 45, 20, 0.25); transform: rotate(-1.5deg); padding: 10px 16px;
+}
+
+/* touch pad: typewriter keys */
+:root[data-game="rule-rows"] .pad-btn {
+  width: 46px; min-width: 46px; height: 46px; border-radius: 50%;
+  background: radial-gradient(circle at 50% 40%, #fffdf6 0 55%, #e9e2cf 70%);
+  border: 2.5px solid #2c2822; box-shadow: 0 3px 0 #2c2822; color: var(--fg);
+  font-family: var(--body); font-weight: 700; font-size: 16px;
+}
+:root[data-game="rule-rows"] .pad-btn:active { transform: translateY(3px); box-shadow: none; background: #ece5d2; }
+
+/* ---------- game-specific bits ---------- */
+.rr .rr-memo { grid-template-columns: 58px minmax(0, 1fr); gap: 10px; align-items: start; padding-left: 12px; background-image: none; background-color: #fffdf6; }
+.rr .rr-portrait { display: block; }
+.rr .rr-memo-body { display: grid; gap: 4px; min-width: 0; }
+.rr .rr-memo-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 2px 10px; font: 700 11px/1.3 var(--body); text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent); border-bottom: 1px solid var(--fg); padding-bottom: 2px; }
+.rr .rr-memo-text { margin: 0; font-family: var(--display); font-size: 15px; line-height: 1.35; min-height: 3.9em; color: var(--fg); }
+.rr .rr-memo-text.typing::after { content: "_"; animation: rr-blink 0.5s steps(1) infinite; }
+@keyframes rr-blink { 50% { opacity: 0; } }
+
+.rr .rr-none { margin: 0; color: var(--muted); font-size: 13px; }
+:root[data-game="rule-rows"] .rr-slip {
+  display: inline-block; font: 700 12px/1 var(--body); padding: 3px 5px 2px; margin: 1px 3px 1px 0;
+  border: 1px solid rgba(60, 48, 25, 0.45); box-shadow: 1px 1px 0 rgba(60, 45, 20, 0.28);
+  letter-spacing: 0.03em; color: #1f1d1a; background: #fff; vertical-align: 1px;
+}
+:root[data-game="rule-rows"] .rr-slip.is { background: #ead08f; }
+:root[data-game="rule-rows"] .rr-slip.prop { background: #f8c3ce; }
+:root[data-game="rule-rows"] .rr-slip.good { color: #22409e; }
+:root[data-game="rule-rows"] .rr-slip.bad { color: #b3171d; }
+:root[data-game="rule-rows"] .rr-ink-blue { color: #22409e; }
+:root[data-game="rule-rows"] .rr-ink-red { color: #b3171d; }
+
+.rr .rr-policy-list { display: grid; gap: 8px; }
+.rr .rr-policy { display: grid; gap: 2px; font-size: 13px; padding-left: 6px; border-left: 3px solid transparent; }
+.rr .rr-policy.current { border-left-color: var(--accent); }
+.rr .rr-policy-words { display: flex; flex-wrap: wrap; align-items: center; gap: 2px; }
+.rr .rr-policy-fx { color: var(--muted); }
+.rr .rr-policy-fx b { color: var(--fg); }
+.rr .rr-mini-stamp {
+  margin-left: 6px; font: 400 11px/1 var(--display); text-transform: uppercase; letter-spacing: 0.08em;
+  color: #c21f27; border: 1.5px solid #c21f27; border-radius: 3px; padding: 2px 4px 1px; transform: rotate(-4deg);
+}
+.rr .rr-policy.bad .rr-mini-stamp { border-style: dashed; }
+.rr details summary { cursor: pointer; font-size: 12px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+.rr .rr-handbook { display: grid; gap: 4px; font-size: 12px; margin-top: 6px; color: var(--muted); }
+
+.rr .rr-tray-row { display: flex; gap: 4px; align-items: center; flex-wrap: wrap; font-size: 13px; }
+.rr .rr-stock { width: 20px; height: 18px; display: inline-grid; place-items: center; font: 700 12px/1 var(--body); color: #1f1d1a; border: 1px solid rgba(60, 48, 25, 0.5); margin-right: 4px; }
+
+.rr .rr-sum { font-family: var(--display); font-size: 19px; }
+.rr .rr-sum i { font-style: normal; color: var(--muted); }
+.rr .rr-sum b { font-weight: 400; color: var(--cool); border-bottom: 3px double var(--cool); }
+.rr .rr-sum-key { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+
+/* intro + game-over */
+.rr .rr-memo-lines { display: grid; gap: 1px; font-size: 13px; border-bottom: 1px solid var(--fg); padding-bottom: 5px; }
+.rr .rr-memo-lines i { font-style: normal; font-weight: 700; display: inline-block; width: 46px; text-transform: uppercase; color: var(--muted); }
+.rr .rr-big-stamp {
+  justify-self: center; font: 400 34px/1 var(--display); text-transform: uppercase; letter-spacing: 0.1em;
+  color: #c21f27; border: 4px double #c21f27; border-radius: 6px; padding: 6px 14px 3px; transform: rotate(-7deg);
+  mix-blend-mode: multiply; opacity: 0.9;
+}
+.rr .rr-fields { display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; margin: 0; }
+.rr .rr-fields dt { font-weight: 700; text-transform: lowercase; font-variant: small-caps; color: var(--muted); }
+.rr .rr-fields dd { margin: 0; font-family: var(--display); border-bottom: 1px dotted #8a7f68; }
+.rr .rr-slips { display: flex; flex-wrap: wrap; gap: 6px; }
+.rr .rr-written { white-space: nowrap; }
+
+/* ---------- hub card: a manila file ---------- */
+.card[data-game="rule-rows"] {
+  background: linear-gradient(178deg, #e9cf91, #dfc07c); border: 1px solid #a8873f; border-radius: 3px 3px 6px 6px; color: #23201b;
+}
+.card[data-game="rule-rows"]:hover, .card[data-game="rule-rows"]:focus-visible { border-color: #b3171d; }
+.card[data-game="rule-rows"] .num { font-family: "Courier Prime", monospace; font-weight: 700; color: #6a5a36; }
+.card[data-game="rule-rows"] h2 { font-family: "Special Elite", monospace; font-size: 23px; color: #23201b; }
+.card[data-game="rule-rows"] .mix { font-family: "Courier Prime", monospace; font-weight: 700; color: #a3151b; }
+.card[data-game="rule-rows"] p { font-family: "Courier Prime", monospace; color: #3b3326; font-size: 13.5px; }
+.card[data-game="rule-rows"] .play {
+  justify-self: start; font-family: "Special Elite", monospace; color: #b3171d; border: 2px solid #b3171d;
+  border-radius: 3px; padding: 2px 8px 0; transform: rotate(-3deg); text-transform: uppercase; letter-spacing: 0.08em;
+}

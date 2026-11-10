@@ -1,0 +1,238 @@
+/* alchemy-well theme: Dr. Fizzwick's Laboratory. Lab steel, toxic green, hot orange, hazard stripes, a clipboard of notes. */
+:root[data-game="alchemy-well"] {
+  --ink: #0f1514;
+  --cabinet: #182120;
+  --well: #050c0a;
+  --panel: #151c1b;
+  --line: #2f3a38;
+  --fg: #e4efe8;
+  --muted: #9aaca3;
+  --accent: #a6ff2e;
+  --accent-ink: #0e1a00;
+  --good: #a6ff2e;
+  --bad: #ff5a36;
+  --cool: #7fe3ff;
+  --hot: #ff7a1f;
+  --hazard: #ffcc1a;
+  --paper: #f1ead2;
+  --pen: #1f2a52;
+  --display: "Rubik Mono One", "Space Mono", monospace;
+  --body: "Space Mono", ui-monospace, monospace;
+  color-scheme: dark;
+}
+:root[data-game="alchemy-well"] body {
+  font-size: 14px;
+  background-color: #111816;
+  background-image:
+    radial-gradient(circle, #46524f 1.6px, #0a0e0d 2.4px, transparent 3px),
+    radial-gradient(circle, #46524f 1.6px, #0a0e0d 2.4px, transparent 3px),
+    linear-gradient(90deg, rgba(0, 0, 0, 0.55) 1px, transparent 1px),
+    linear-gradient(rgba(0, 0, 0, 0.55) 1px, rgba(255, 255, 255, 0.025) 1px, transparent 3px),
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.014) 0 1px, transparent 1px 3px);
+  background-size: 240px 240px, 240px 240px, 240px 240px, 240px 240px, auto;
+  background-position: 10px 10px, 230px 230px, 0 0, 0 0, 0 0;
+  background-attachment: fixed;
+}
+
+/* ---------- header ---------- */
+:root[data-game="alchemy-well"] .topbar {
+  background: var(--ink);
+  border-bottom: 5px solid transparent;
+  border-image: repeating-linear-gradient(-45deg, var(--hazard) 0 9px, #14130e 9px 18px) 5;
+}
+:root[data-game="alchemy-well"] .topbar h2 { font-size: 20px; letter-spacing: 0.02em; text-shadow: 0 0 18px rgba(166, 255, 46, 0.25); }
+:root[data-game="alchemy-well"] .topbar .mix { color: var(--accent); letter-spacing: 0.06em; }
+
+/* ---------- buttons ---------- */
+:root[data-game="alchemy-well"] .btn {
+  background: linear-gradient(#2c3634, #1b2322);
+  border: 1px solid #4b5855; border-radius: 4px;
+  font-weight: 700; box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 2px 0 #090c0b;
+}
+:root[data-game="alchemy-well"] .btn:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+:root[data-game="alchemy-well"] .btn.primary {
+  background: var(--accent); color: var(--accent-ink); border-color: #d7ff9b;
+  font-family: var(--display); font-weight: 400; font-size: 13px; text-transform: uppercase; letter-spacing: 0.02em;
+  box-shadow: 0 3px 0 #4f8a0c, 0 0 18px rgba(166, 255, 46, 0.35);
+}
+:root[data-game="alchemy-well"] .btn.primary:hover:not(:disabled) { color: var(--accent-ink); filter: brightness(1.08); }
+:root[data-game="alchemy-well"] .btn.primary:active { transform: translateY(2px); box-shadow: 0 1px 0 #4f8a0c; }
+
+/* ---------- the containment tank ---------- */
+:root[data-game="alchemy-well"] .board-frame {
+  --aw-glow: 0;
+  padding: 10px; border: 0; border-radius: 5px;
+  background: repeating-linear-gradient(-45deg, var(--hazard) 0 9px, #15140f 9px 18px);
+  box-shadow:
+    0 0 0 6px #2c3634, 0 0 0 7px #4d5a57, 0 0 0 9px #0a0e0d,
+    0 16px 40px rgba(0, 0, 0, 0.6),
+    0 0 calc(18px + var(--aw-glow) * 80px) calc(var(--aw-glow) * 10px) rgba(166, 255, 46, calc(var(--aw-glow) * 0.55));
+  transition: box-shadow 0.25s ease;
+  will-change: transform;
+}
+:root[data-game="alchemy-well"] .board-frame.aw-hot {
+  box-shadow:
+    0 0 0 6px #2c3634, 0 0 0 7px #4d5a57, 0 0 0 9px #0a0e0d,
+    0 16px 40px rgba(0, 0, 0, 0.6),
+    0 0 calc(18px + var(--aw-glow) * 90px) calc(var(--aw-glow) * 14px) rgba(255, 122, 31, calc(var(--aw-glow) * 0.6));
+}
+:root[data-game="alchemy-well"] .board-frame::before {
+  content: ""; position: absolute; inset: -5px; pointer-events: none; z-index: 2;
+  background-image:
+    radial-gradient(circle, #d0dad7 1.3px, #56625f 2.3px, transparent 3px), radial-gradient(circle, #d0dad7 1.3px, #56625f 2.3px, transparent 3px),
+    radial-gradient(circle, #d0dad7 1.3px, #56625f 2.3px, transparent 3px), radial-gradient(circle, #d0dad7 1.3px, #56625f 2.3px, transparent 3px),
+    radial-gradient(circle, #d0dad7 1.3px, #56625f 2.3px, transparent 3px), radial-gradient(circle, #d0dad7 1.3px, #56625f 2.3px, transparent 3px);
+  background-size: 8px 8px; background-repeat: no-repeat;
+  background-position: 0 0, 100% 0, 0 100%, 100% 100%, 0 50%, 100% 50%;
+}
+:root[data-game="alchemy-well"] canvas.board { border-radius: 3px; box-shadow: 0 0 0 3px #1b2321, 0 0 0 4px #56625f; }
+:root[data-game="alchemy-well"] .board-overlay { inset: 10px; background: rgba(3, 10, 8, 0.72); border-radius: 3px; z-index: 3; }
+
+/* intro / game-over card: a sheet clipped to the tank */
+:root[data-game="alchemy-well"] .ov-card {
+  position: relative; max-width: 300px; margin-top: 10px;
+  background:
+    linear-gradient(90deg, transparent 22px, rgba(200, 60, 60, 0.4) 22px 23px, transparent 23px),
+    repeating-linear-gradient(transparent 0 20px, rgba(60, 90, 160, 0.22) 20px 21px),
+    var(--paper);
+  color: var(--pen); padding: 26px 14px 16px 30px; border-radius: 3px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.55); transform: rotate(-1deg);
+}
+:root[data-game="alchemy-well"] .ov-card::before {
+  content: ""; position: absolute; top: -9px; left: 50%; width: 84px; height: 22px; transform: translateX(-50%);
+  background: linear-gradient(#e2e8e6, #8b9693 55%, #5d6866); border-radius: 4px 4px 8px 8px; box-shadow: 0 2px 3px rgba(0, 0, 0, 0.4);
+}
+:root[data-game="alchemy-well"] .ov-card h3 { color: #b0360b; font-size: 18px; line-height: 1.15; }
+:root[data-game="alchemy-well"] .ov-body { color: var(--pen); font-size: 12.5px; line-height: 1.5; gap: 8px; }
+:root[data-game="alchemy-well"] .ov-body b { color: #2f6b00; }
+:root[data-game="alchemy-well"] .ov-body ul { padding-left: 16px; }
+:root[data-game="alchemy-well"] .aw-scrawl { font-style: italic; transform: rotate(-0.6deg); }
+:root[data-game="alchemy-well"] .aw-big { font-family: var(--display); font-size: 15px; }
+:root[data-game="alchemy-well"] .aw-big b { color: #b0360b; }
+
+/* ---------- side column ---------- */
+:root[data-game="alchemy-well"] .panel {
+  border-radius: 4px; border-color: var(--line);
+  background-color: var(--panel);
+  background-image:
+    radial-gradient(circle, #4b5855 1.2px, transparent 2px), radial-gradient(circle, #4b5855 1.2px, transparent 2px),
+    radial-gradient(circle, #4b5855 1.2px, transparent 2px), radial-gradient(circle, #4b5855 1.2px, transparent 2px),
+    linear-gradient(rgba(255, 255, 255, 0.025), transparent 40%);
+  background-size: 8px 8px, 8px 8px, 8px 8px, 8px 8px, auto;
+  background-repeat: no-repeat;
+  background-position: 3px 3px, calc(100% - 3px) 3px, 3px calc(100% - 3px), calc(100% - 3px) calc(100% - 3px), 0 0;
+}
+:root[data-game="alchemy-well"] .panel h3, :root[data-game="alchemy-well"] .side h3 { color: var(--hazard); font-size: 11px; letter-spacing: 0.08em; }
+:root[data-game="alchemy-well"] .stat { background: #091210; border-color: var(--line); border-radius: 3px; box-shadow: inset 0 0 12px rgba(166, 255, 46, 0.05); }
+:root[data-game="alchemy-well"] .stat-label { font-size: 10px; letter-spacing: 0.08em; }
+:root[data-game="alchemy-well"] .stat-value { font-size: 17px; color: #d7f5c0; }
+:root[data-game="alchemy-well"] .stat.accent .stat-value { color: var(--accent); font-size: 22px; text-shadow: 0 0 12px rgba(166, 255, 46, 0.45); }
+:root[data-game="alchemy-well"] .stat.good .stat-value { color: var(--hot); text-shadow: 0 0 10px rgba(255, 122, 31, 0.45); }
+:root[data-game="alchemy-well"] .aw-q { display: grid; gap: 3px; justify-items: center; }
+:root[data-game="alchemy-well"] .aw-q small { color: var(--muted); font-size: 10px; }
+
+/* reaction pressure */
+:root[data-game="alchemy-well"] .aw-chain-row { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+:root[data-game="alchemy-well"] .aw-chain-x { font-family: var(--display); font-size: 32px; line-height: 1; color: var(--muted); transition: color 0.2s; }
+:root[data-game="alchemy-well"] .aw-chain-x.on { color: var(--accent); text-shadow: 0 0 16px rgba(166, 255, 46, 0.6); }
+:root[data-game="alchemy-well"] .aw-chain-x.hot { color: var(--hot); text-shadow: 0 0 18px rgba(255, 122, 31, 0.7); }
+:root[data-game="alchemy-well"] .aw-chain-sub { color: var(--muted); font-size: 12px; }
+:root[data-game="alchemy-well"] .aw-gauge { height: 10px; background: #071010; border: 1px solid var(--line); border-radius: 2px; overflow: hidden; }
+:root[data-game="alchemy-well"] .aw-gauge > div { height: 100%; width: 0; background: repeating-linear-gradient(-45deg, var(--accent) 0 6px, #78c41a 6px 12px); box-shadow: 0 0 10px rgba(166, 255, 46, 0.6); }
+:root[data-game="alchemy-well"] .aw-fine { margin: 0; color: var(--muted); font-size: 11.5px; line-height: 1.45; }
+
+/* discoveries notebook */
+:root[data-game="alchemy-well"] .aw-notebook {
+  background-color: #0d1916;
+  background-image:
+    linear-gradient(rgba(166, 255, 46, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(166, 255, 46, 0.05) 1px, transparent 1px);
+  background-size: 12px 12px; background-repeat: repeat; background-position: 0 0;
+  border-color: #2c4a3c;
+}
+:root[data-game="alchemy-well"] .aw-count { color: var(--accent); margin-left: 4px; }
+:root[data-game="alchemy-well"] .aw-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); gap: 5px; }
+:root[data-game="alchemy-well"] .aw-entry {
+  display: grid; gap: 3px; padding: 5px 6px; min-width: 0;
+  border: 1px dashed #2f4a40; border-radius: 3px; background: rgba(5, 12, 10, 0.6);
+}
+:root[data-game="alchemy-well"] .aw-entry canvas { opacity: 0.28; filter: grayscale(1); }
+:root[data-game="alchemy-well"] .aw-name { font-size: 10.5px; line-height: 1.25; color: #66786f; overflow-wrap: anywhere; }
+:root[data-game="alchemy-well"] .aw-entry.known .aw-name { color: var(--muted); font-style: italic; }
+:root[data-game="alchemy-well"] .aw-entry.known canvas { opacity: 0.5; }
+:root[data-game="alchemy-well"] .aw-entry.got { border: 1px solid rgba(166, 255, 46, 0.45); background: rgba(166, 255, 46, 0.06); }
+:root[data-game="alchemy-well"] .aw-entry.got canvas { opacity: 1; filter: none; }
+:root[data-game="alchemy-well"] .aw-entry.got .aw-name { color: var(--fg); font-weight: 700; }
+:root[data-game="alchemy-well"] .aw-entry.fresh { animation: aw-ink 1.4s ease-out; }
+@keyframes aw-ink { 0% { background: rgba(166, 255, 46, 0.55); box-shadow: 0 0 18px rgba(166, 255, 46, 0.7); } 100% { background: rgba(166, 255, 46, 0.06); box-shadow: none; } }
+:root[data-game="alchemy-well"] .aw-latest { margin: 0; font-size: 12px; color: var(--fg); border-left: 3px solid var(--accent); padding-left: 8px; }
+:root[data-game="alchemy-well"] .aw-latest b { color: var(--accent); }
+
+/* reagent safety sheet */
+:root[data-game="alchemy-well"] .aw-legend summary { list-style: none; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
+:root[data-game="alchemy-well"] .aw-legend summary::-webkit-details-marker { display: none; }
+:root[data-game="alchemy-well"] .aw-legend summary::after { content: "+"; font-family: var(--display); color: var(--hazard); font-size: 14px; }
+:root[data-game="alchemy-well"] .aw-legend[open] summary::after { content: "–"; }
+:root[data-game="alchemy-well"] .aw-legend-list { display: grid; gap: 6px; margin-top: 8px; }
+:root[data-game="alchemy-well"] .aw-legend-row { display: flex; gap: 8px; align-items: flex-start; font-size: 12px; line-height: 1.35; }
+:root[data-game="alchemy-well"] .aw-legend-row span span { color: var(--muted); }
+:root[data-game="alchemy-well"] .aw-swatch { flex: none; border-radius: 2px; box-shadow: 0 0 0 1px #2f3a38; }
+
+/* the clipboard: Dr. Fizzwick's lab notes */
+:root[data-game="alchemy-well"] .aw-clipboard {
+  position: relative; margin: 14px 8px 8px; padding: 18px 12px 12px;
+  background:
+    linear-gradient(90deg, transparent 24px, rgba(200, 60, 60, 0.4) 24px 25px, transparent 25px),
+    repeating-linear-gradient(transparent 0 21px, rgba(60, 90, 160, 0.22) 21px 22px),
+    var(--paper);
+  background-size: auto; background-position: 0 0;
+  color: var(--pen); border: 0; border-radius: 2px;
+  box-shadow: 0 0 0 8px #7a5532, 0 0 0 9px #3d2914, 0 10px 24px rgba(0, 0, 0, 0.5);
+}
+:root[data-game="alchemy-well"] .aw-clipboard::before {
+  content: ""; position: absolute; top: -18px; left: 50%; width: 96px; height: 24px; transform: translateX(-50%);
+  background: linear-gradient(#e6ece9, #8f9a97 55%, #5d6866); border-radius: 5px 5px 10px 10px; box-shadow: 0 3px 4px rgba(0, 0, 0, 0.45);
+}
+:root[data-game="alchemy-well"] .aw-clipboard h3 { color: #a33208; padding-left: 20px; }
+:root[data-game="alchemy-well"] .aw-doc { display: flex; gap: 10px; align-items: center; padding-left: 20px; }
+:root[data-game="alchemy-well"] .aw-portrait { flex: none; background: #cfe0d6; border: 3px solid #fff; box-shadow: 0 2px 5px rgba(0, 0, 0, 0.35); transform: rotate(-4deg); }
+:root[data-game="alchemy-well"] .aw-doc-name { display: grid; gap: 1px; }
+:root[data-game="alchemy-well"] .aw-doc-name b { font-family: var(--display); font-weight: 400; font-size: 13px; color: var(--pen); }
+:root[data-game="alchemy-well"] .aw-doc-name span { font-size: 11px; color: #555b70; font-style: italic; }
+:root[data-game="alchemy-well"] .aw-clipboard .log { color: #3a4366; font-size: 12px; line-height: 1.5; gap: 6px; padding-left: 20px; }
+:root[data-game="alchemy-well"] .aw-clipboard .log li { transform: rotate(-0.4deg); }
+:root[data-game="alchemy-well"] .aw-clipboard .log li:nth-child(even) { transform: rotate(0.35deg); }
+:root[data-game="alchemy-well"] .aw-clipboard .log li:first-child { color: var(--pen); font-weight: 700; }
+:root[data-game="alchemy-well"] .aw-clipboard .log b { color: #a33208; }
+:root[data-game="alchemy-well"] .aw-tag { font-family: var(--display); font-size: 9px; background: #2f6b00; color: var(--paper); padding: 1px 4px; border-radius: 2px; letter-spacing: 0.04em; }
+:root[data-game="alchemy-well"] .keys-hint { font-size: 11px; }
+
+/* ---------- popups and touch ---------- */
+:root[data-game="alchemy-well"] .toast { background: #151c1b; border: 1px solid #4b5855; border-left: 6px solid var(--accent); border-radius: 3px; font-size: 13px; }
+:root[data-game="alchemy-well"] .toast.good { border-left-color: var(--hot); }
+:root[data-game="alchemy-well"] .modal { background: var(--cabinet); border-radius: 4px; border-top: 6px solid var(--hazard); }
+:root[data-game="alchemy-well"] .pad-btn {
+  background: linear-gradient(#2c3634, #1a2120); border: 1px solid #4b5855; border-radius: 5px; color: var(--accent);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 3px 0 #090c0b;
+}
+:root[data-game="alchemy-well"] .pad-btn:active { background: #0b1412; transform: translateY(2px); box-shadow: none; }
+
+@media (max-width: 760px) {
+  :root[data-game="alchemy-well"] .topbar h2 { font-size: 17px; }
+  :root[data-game="alchemy-well"] .board-frame { padding: 8px; }
+  :root[data-game="alchemy-well"] .board-overlay { inset: 8px; padding: 8px; }
+}
+
+/* ---------- hub card ---------- */
+.card[data-game="alchemy-well"] {
+  --display: "Rubik Mono One", "Space Mono", monospace;
+  background: linear-gradient(#1a2220, #121816);
+  border: 1px solid #34413e; border-radius: 4px;
+}
+.card[data-game="alchemy-well"]:hover, .card[data-game="alchemy-well"]:focus-visible { border-color: #a6ff2e; box-shadow: 0 0 22px rgba(166, 255, 46, 0.18); }
+.card[data-game="alchemy-well"] canvas.card-art { background: #141a19; }
+.card[data-game="alchemy-well"] h2 { font-size: 17px; color: #e4efe8; }
+.card[data-game="alchemy-well"] .num { color: #ffcc1a; }
+.card[data-game="alchemy-well"] .mix { color: #a6ff2e; font-family: "Space Mono", monospace; font-size: 11px; }
+.card[data-game="alchemy-well"] p { font-family: "Space Mono", monospace; font-size: 12.5px; color: #a3b3ab; }
+.card[data-game="alchemy-well"] .play { color: #a6ff2e; font-size: 12px; }
