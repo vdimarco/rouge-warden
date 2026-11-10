@@ -609,7 +609,7 @@ if (chromium) {
   const ACTION = ["olympus", "crimson", "tidebreak", "moonwell", "primordia", "river-rush", "ahead-of-the-light", "light-years-home", "first-breath"];
   // the other groups as they stood before First Breath was added: adding it leaves them alone
   const OTHERS = {
-    cottage: ["plungerd", "drain", "brawl", "wild", "fish", "vr", "pingpong"],
+    cottage: ["plungerd", "drain", "brawl", "wild", "fish", "vr", "pingpong", "lake-brawl"],
     ascii: ["ascii-front", "battle-tanks"],
     strategy: ["breakthrough", "follow-suit", "silent-depth"],
     gta: ["gta"],

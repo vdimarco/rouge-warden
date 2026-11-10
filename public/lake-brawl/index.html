@@ -1,0 +1,767 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Lake Brawl</title>
+<script src="/arcade/quiet.js"></script>
+<script src="/arcade/switch.js"></script>
+<style>
+  html, body { margin: 0; height: 100%; background: #0b1020; overflow: hidden; overscroll-behavior: none; touch-action: none; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+  body { display: flex; align-items: center; justify-content: center; }
+  #wrap { position: relative; width: min(100vw, calc(100dvh * 16 / 9)); aspect-ratio: 16 / 9; }
+  #switchBtn { display: none; position: absolute; z-index: 2; top: 3%; right: 2%; min-height: 44px; padding: 0 16px; border-radius: 22px; border: 2px solid rgba(255,255,255,.75);
+    background: rgba(16,26,60,.7); color: #fff; font: 700 15px/1 Impact, "Arial Black", sans-serif; letter-spacing: .04em; cursor: pointer; }
+  body.title #switchBtn { display: block; }
+  #wrap canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+
+  /* touch controls: only on touch screens, only during a fight */
+  #pad { display: none; --b: clamp(54px, 15vmin, 88px); }
+  @media (pointer: coarse) {
+    body.fighting #pad { display: block; }
+    @media (orientation: portrait) { body { align-items: flex-start; padding-top: max(8px, env(safe-area-inset-top)); box-sizing: border-box; } }
+  }
+  #pad .side { position: fixed; bottom: max(14px, env(safe-area-inset-bottom)); display: grid; gap: 10px; }
+  #pad .left { left: max(14px, env(safe-area-inset-left)); grid-template-columns: calc(var(--b) * 2.3); }
+  #pad .right { right: max(14px, env(safe-area-inset-right)); grid-template-columns: var(--b) var(--b); }
+  #pad button, #move { height: var(--b); border-radius: calc(var(--b) / 2); border: 3px solid rgba(255,255,255,.75); background: rgba(16,26,60,.5); color: #fff;
+    font: 700 calc(var(--b) * .2)/1 Impact, "Arial Black", sans-serif; letter-spacing: .04em; padding: 0; touch-action: none; -webkit-tap-highlight-color: transparent; }
+  #pad button.on, #move span.on { background: rgba(255,210,63,.85); color: #1a1a2e; }
+  #pad .right button { width: var(--b); }
+  #pad #bSpecial { border-color: #ffd23f; }
+  #pad #bBlock { width: calc(var(--b) * 1.3); }
+  #move { display: flex; overflow: hidden; }
+  #move span { flex: 1; display: flex; align-items: center; justify-content: center; font-size: calc(var(--b) * .4); pointer-events: none; }
+</style>
+</head>
+<body>
+<div id="wrap">
+  <canvas id="back" width="1920" height="1080"></canvas>
+  <canvas id="front" width="1920" height="1080"></canvas>
+  <button id="switchBtn" type="button" data-switch>Switch game</button>
+</div>
+<div id="pad">
+  <div class="side left">
+    <button id="bBlock" data-k="KeyS">BLOCK</button>
+    <div id="move"><span>&#9664;</span><span>&#9654;</span></div>
+  </div>
+  <div class="side right">
+    <button data-k="KeyW">JUMP</button>
+    <button id="bSpecial" data-k="KeyL">SPECIAL</button>
+    <button data-k="KeyJ">PUNCH</button>
+    <button data-k="KeyK">KICK</button>
+  </div>
+</div>
+<script type="module">
+// back: stage, signs, shadows, fighters.  front: effects + HUD.
+const wrap = document.getElementById('wrap');
+const bctx = document.getElementById('back').getContext('2d'), fctx = document.getElementById('front').getContext('2d');
+let ctx = bctx;
+const W = 960, H = 540, GROUND = 468, SS = 2;
+const OUT = '#1a1a2e';
+const FONT = 'Impact, "Arial Black", "Anton", sans-serif';
+
+// ---------- input ----------
+const keys = {}, pressed = {};
+addEventListener('keydown', e => {
+  if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space'].includes(e.code)) e.preventDefault();
+  if (!e.repeat) pressed[e.code] = true;
+  keys[e.code] = true;
+  initAudio();
+});
+addEventListener('keyup', e => { keys[e.code] = false; });
+addEventListener('blur', () => { for (const k in keys) keys[k] = false; });
+
+// ---------- touch ----------
+const TOUCH = matchMedia('(pointer: coarse)').matches;
+const setKey = (code, down) => { if (down && !keys[code]) pressed[code] = true; keys[code] = down; };
+for (const b of document.querySelectorAll('#pad button')) {
+  const hold = down => e => { e.preventDefault(); initAudio(); setKey(b.dataset.k, down); b.classList.toggle('on', down); };
+  b.addEventListener('pointerdown', e => { b.setPointerCapture(e.pointerId); hold(true)(e); });
+  for (const ev of ['pointerup', 'pointercancel', 'lostpointercapture']) b.addEventListener(ev, hold(false));
+}
+{ // one bar for left/right so a thumb can slide between them
+  const bar = document.getElementById('move'), [l, r] = bar.children;
+  const steer = e => {
+    e.preventDefault();
+    const box = bar.getBoundingClientRect(), right = e.clientX > box.left + box.width / 2;
+    setKey('KeyA', !right); setKey('KeyD', right); l.classList.toggle('on', !right); r.classList.toggle('on', right);
+  };
+  const release = () => { setKey('KeyA', false); setKey('KeyD', false); l.classList.remove('on'); r.classList.remove('on'); };
+  bar.addEventListener('pointerdown', e => { bar.setPointerCapture(e.pointerId); initAudio(); steer(e); });
+  bar.addEventListener('pointermove', e => { if (bar.hasPointerCapture(e.pointerId)) steer(e); });
+  for (const ev of ['pointerup', 'pointercancel', 'lostpointercapture']) bar.addEventListener(ev, release);
+}
+// taps on the game itself drive the menus
+document.getElementById('front').addEventListener('pointerdown', e => {
+  initAudio();
+  const box = e.currentTarget.getBoundingClientRect(), x = (e.clientX - box.left) / box.width * W, y = (e.clientY - box.top) / box.height * H;
+  if (game.phase === 'title') {
+    const i = Math.round((y - MENU_Y) / MENU_DY);
+    if (i >= 0 && i < titleMenu().length) { run.menu = i; pressed.Enter = true; }
+  } else if (game.phase === 'story') pressed.Enter = true;
+  else if (game.phase === 'select') {
+    const col = Math.floor((x - SEL.x0) / SEL.cw), row = Math.floor((y - SEL.y0) / SEL.ch), i = row * COLS + col;
+    if (col >= 0 && col < COLS && row >= 0 && i < ROSTER.length) { sel.cur = i; pressed.Enter = true; }
+    else if (y < SEL.y0) pressed.Escape = true;
+  } else if (game.phase === 'win') pressed[x < W / 2 || (run.mode === 'campaign' && game.winner === game.p1) ? 'Enter' : 'Escape'] = true;
+});
+addEventListener('contextmenu', e => e.preventDefault());
+
+// ---------- audio ----------
+let ac = null;
+function initAudio() { if (!ac) { try { ac = new AudioContext(); } catch (e) {} } }
+function tone(freq, to, dur, type, vol) {
+  if (!ac) return;
+  const o = ac.createOscillator(), g = ac.createGain(), t = ac.currentTime;
+  o.type = type; o.frequency.setValueAtTime(freq, t); o.frequency.exponentialRampToValueAtTime(Math.max(20, to), t + dur);
+  g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+  o.connect(g).connect(ac.destination); o.start(t); o.stop(t + dur);
+}
+function noise(dur, vol) {
+  if (!ac) return;
+  const n = Math.floor(ac.sampleRate * dur), buf = ac.createBuffer(1, n, ac.sampleRate), d = buf.getChannelData(0);
+  for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / n);
+  const s = ac.createBufferSource(), g = ac.createGain();
+  s.buffer = buf; g.gain.value = vol; s.connect(g).connect(ac.destination); s.start();
+}
+const sfx = {
+  swing: () => tone(500, 180, 0.09, 'triangle', 0.08),
+  hit: () => { noise(0.09, 0.25); tone(180, 60, 0.1, 'square', 0.12); },
+  block: () => tone(900, 700, 0.05, 'square', 0.07),
+  big: () => { noise(0.3, 0.4); tone(140, 30, 0.35, 'sawtooth', 0.2); },
+  jump: () => tone(300, 600, 0.1, 'sine', 0.06),
+  ko: () => { noise(0.6, 0.5); tone(700, 40, 0.9, 'sawtooth', 0.22); },
+  win: () => [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => tone(f, f, 0.22, 'square', 0.1), i * 130)),
+  go: () => tone(880, 880, 0.25, 'square', 0.1),
+  tick: () => tone(660, 660, 0.04, 'square', 0.05),
+};
+
+// ---------- data ----------
+const ATK = {
+  punch:   { start: 0.07, active: 0.09, rec: 0.14, range: 82,  dmg: 5,  kb: 170, meter: 12 },
+  kick:    { start: 0.13, active: 0.11, rec: 0.24, range: 102, dmg: 9,  kb: 320, meter: 18 },
+  special: { start: 0.28, active: 0.14, rec: 0.45, range: 155, dmg: 24, kb: 640, meter: 0 },
+};
+// build: 0 slim/fast, 1 medium, 2 heavy/slow/hits harder
+const BUILDS = [
+  { halfW: 20, speed: 305, power: 0.93 },
+  { halfW: 22, speed: 280, power: 1 },
+  { halfW: 38, speed: 232, power: 1.14 },
+];
+// sign: true plants a lake sign on the special. A new leader needs a row here, a portrait in assets/portraits/,
+// and eight pose sprites plus meta.json in assets/sprites/<id>/ (id is the name in lowercase).
+const ROSTER = [
+  { name: 'TRUMP',     lake: 'AMERICA',   build: 2, shout: 'MINE!', sign: true },
+  { name: 'CARNEY',    lake: 'ONTARIO',   build: 1, shout: 'SLAPSHOT!' },
+  { name: 'MACRON',    lake: 'FRANCE',    build: 0, shout: 'BAGUETTE!' },
+  { name: 'STARMER',   lake: 'BRITAIN',   build: 1, shout: 'BROLLY!' },
+  { name: 'MERZ',      lake: 'GERMANY',   build: 0, shout: 'AKTENKOFFER!' },
+  { name: 'MELONI',    lake: 'ITALY',     build: 0, shout: 'MAMMA MIA!' },
+  { name: 'PUTIN',     lake: 'RUSSIA',    build: 1, shout: 'JUDO CHOP!' },
+  { name: 'ZELENSKYY', lake: 'UKRAINE',   build: 1, shout: 'MIC DROP!' },
+  { name: 'XI',        lake: 'CHINA',     build: 2, shout: 'GREAT WALLOP!' },
+  { name: 'MODI',      lake: 'INDIA',     build: 1, shout: 'SIXER!' },
+  { name: 'LULA',      lake: 'BRAZIL',    build: 1, shout: 'GOLAÇO!' },
+  { name: 'MILEI',     lake: 'ARGENTINA', build: 1, shout: 'AFUERA!' },
+  { name: 'SHEINBAUM', lake: 'MEXICO',    build: 0, shout: '¡ÓRALE!' },
+  { name: 'KIM',       lake: 'KOREA',     build: 2, shout: 'SUPREME SLAP!' },
+];
+
+// Campaign: five fights, one per stage, each harder than the last.
+const STAGES = [
+  { id: 'lake',   name: 'THE ICE', ice: true },
+  { id: 'hall',   name: 'SUMMIT HALL' },
+  { id: 'tarmac', name: 'THE TARMAC' },
+  { id: 'studio', name: 'THE DEBATE' },
+  { id: 'tower',  name: 'TOWER TOP' },
+];
+const cap = s => s[0] + s.slice(1).toLowerCase();
+const STORY = {
+  intro: me => ['One night, someone hammered a sign into the frozen lake. By morning every leader on Earth had flown in with a sign of their own.',
+    `${me.name} has a simpler plan: knock them all off the ice and name it Lake ${cap(me.lake)}.`],
+  stages: [
+    (me, foe) => [`${foe.name} got here first and is already hammering in a sign that reads LAKE ${foe.lake}. The ice is slippery. So is ${foe.name}.`],
+    (me, foe) => [`An emergency summit is called with one item on the agenda. ${foe.name} proposes settling it with a 400-page communiqué. ${me.name} proposes something shorter.`],
+    (me, foe) => [`${foe.name}'s jet is parked nose to nose with yours, and neither pilot will reverse. Diplomacy has left the runway.`],
+    (me, foe) => [`The moderators have fled. Live on every channel, ${foe.name} insists it was always called Lake ${cap(foe.lake)}. Viewers are promised a rebuttal.`],
+    (me, foe) => [`One sign is left, bolted to the top of the tower, and ${foe.name} is guarding it. Whoever walks back down gets to name the lake.`],
+  ],
+  ending: me => [`It is officially renamed Lake ${cap(me.lake)}. There is a ceremony. There are speeches. Somebody cuts a ribbon.`,
+    'The beavers, who actually live here, were not consulted. By morning they have chewed down every sign and gone back to calling it home.'],
+};
+const FOE_POWER = [0.75, 0.85, 0.95, 1.05, 1.15];
+
+let T = 0, game;
+const sel = { step: 0, cur: 1, p1: 1, p2: 0 };
+const run = { mode: 'versus', stage: 0, foes: [], menu: 0, vsStage: 0 };
+// saved progress: the campaign in flight, and which leaders have finished it
+let save = { run: null, cleared: [] };
+try { save = { ...save, ...JSON.parse(localStorage.getItem('lake-brawl.save.v1') || '{}') }; } catch (e) {}
+if (!Array.isArray(save.cleared)) save.cleared = [];
+{ const r = save.run, idx = i => Number.isInteger(i) && i >= 0 && i < ROSTER.length;
+  if (!(r && idx(r.p1) && Array.isArray(r.foes) && r.foes.length === STAGES.length && r.foes.every(idx) && Number.isInteger(r.stage) && r.stage >= 0 && r.stage < STAGES.length)) save.run = null; }
+const persist = () => { save.total = ROSTER.length; try { localStorage.setItem('lake-brawl.save.v1', JSON.stringify(save)); } catch (e) {} };
+const MENU_Y = 320, MENU_DY = 52;
+const titleMenu = () => [...(save.run ? ['CONTINUE CAMPAIGN', 'NEW CAMPAIGN'] : ['CAMPAIGN']), 'VERSUS'];
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const rnd = (a, b) => a + Math.random() * (b - a);
+
+function mkFighter(ch, x, facing) {
+  return { ...ch, ...BUILDS[ch.build], x, y: GROUND, vx: 0, vy: 0, facing, hp: 100, hpLag: 100, meter: 100,
+    atk: null, stun: 0, block: false, onGround: true, flash: 0, ko: false, spin: 0, koScale: 1, seed: Math.random() * 9 };
+}
+function reset(phase) {
+  const camp = run.mode === 'campaign' && phase !== 'title';
+  if (camp) sel.p2 = run.foes[run.stage];
+  game = {
+    phase, t: 0, timer: 99, hitstop: 0, shake: 0, slow: 0, card: null,
+    stage: phase === 'title' ? 0 : camp ? run.stage : run.vsStage, level: camp ? run.stage : 2,
+    p1: mkFighter(ROSTER[sel.p1], 300, 1), p2: mkFighter(ROSTER[sel.p2], 660, -1),
+    sign: null, parts: [], texts: [], winner: null, twinkle: null,
+    ai: { t: 0.6, mx: 0, block: 0 },
+  };
+  if (camp) game.p2.power *= FOE_POWER[run.stage];
+}
+reset('title');
+
+function startCampaign(p1) {
+  // four random rivals, then the boss: Trump, or Carney if you are Trump
+  const boss = p1 === 0 ? 1 : 0, pool = ROSTER.map((_, i) => i).filter(i => i !== p1 && i !== boss);
+  for (let i = pool.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [pool[i], pool[j]] = [pool[j], pool[i]]; }
+  Object.assign(run, { mode: 'campaign', stage: 0, foes: [...pool.slice(0, 4), boss] });
+  sel.p1 = p1; save.run = { p1, foes: run.foes, stage: 0 }; persist();
+  reset('story');
+  game.card = { kind: 'intro', kicker: 'PROLOGUE', title: 'THE SIGN', lines: STORY.intro(game.p1) };
+}
+function stageCard() {
+  reset('story');
+  game.card = { kind: 'stage', vs: true, kicker: `CHAPTER ${run.stage + 1} OF ${STAGES.length}`, title: STAGES[run.stage].name, lines: STORY.stages[run.stage](game.p1, game.p2) };
+}
+function updateStory() {
+  if (!pressed.Enter) return;
+  sfx.go();
+  const k = game.card.kind;
+  if (k === 'intro') stageCard();
+  else if (k === 'stage') { game.phase = 'intro'; game.t = 0; game.card = null; }
+  else { run.mode = 'versus'; reset('title'); }
+}
+function campaignAdvance() {
+  run.stage++;
+  if (run.stage < STAGES.length) { save.run.stage = run.stage; persist(); stageCard(); return; }
+  run.stage = STAGES.length - 1;
+  if (!save.cleared.includes(ROSTER[sel.p1].name)) save.cleared.push(ROSTER[sel.p1].name);
+  save.run = null; persist();
+  reset('story');
+  game.card = { kind: 'ending', kicker: 'EPILOGUE', title: `${game.p1.name} WINS THE LAKE`, lines: STORY.ending(game.p1) };
+  sfx.win();
+}
+
+// ---------- gameplay ----------
+function startAtk(f, type) {
+  f.atk = { type, t: 0, hit: false, planted: false };
+  if (type === 'special') {
+    f.meter -= 100;
+    game.texts.push({ s: f.shout, x: f.x, y: f.y - 205, life: 0.9, max: 0.9, c: f === game.p1 ? '#ffd23f' : '#ff3b1f' });
+  }
+  sfx.swing();
+}
+
+function burst(x, y, n, colors, sp) {
+  for (let i = 0; i < n; i++) {
+    const a = rnd(0, Math.PI * 2), v = rnd(sp * 0.3, sp);
+    game.parts.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v - sp * 0.3, life: rnd(0.3, 0.7), c: colors[i % colors.length], r: rnd(2, 6) });
+  }
+}
+
+function tryHit(f, o) {
+  const a = ATK[f.atk.type];
+  const d = (o.x - f.x) * f.facing;
+  if (d < -10 || d > a.range + o.halfW || Math.abs(f.y - o.y) > 95) return;
+  f.atk.hit = true;
+  const special = f.atk.type === 'special';
+  const blocked = o.block && o.facing === -f.facing;
+  const dmg = a.dmg * f.power * (blocked ? 0.2 : 1);
+  o.hp = Math.max(0, o.hp - dmg);
+  o.vx = f.facing * a.kb * (blocked ? 0.45 : 1);
+  f.meter = Math.min(300, f.meter + a.meter);
+  o.meter = Math.min(300, o.meter + a.meter * 0.5 + dmg);
+  const hx = o.x - f.facing * o.halfW, hy = o.y - 95;
+  if (blocked && o.hp > 0) {
+    sfx.block(); burst(hx, hy, 6, ['#bfe9ff', '#fff'], 180); game.hitstop = 0.04;
+  } else {
+    o.atk = null; o.block = false; o.flash = 0.12;
+    o.stun = special ? 0.55 : 0.22;
+    if (special) { o.vy = -380; o.onGround = false; }
+    game.hitstop = special ? 0.15 : 0.05;
+    game.shake = special ? 16 : 5;
+    burst(hx, hy, special ? 28 : 9, special ? ['#ffd23f', '#ff8c1a', '#fff'] : ['#fff', '#ffe08a'], special ? 520 : 260);
+    special ? sfx.big() : sfx.hit();
+  }
+  if (o.hp <= 0) startKO(f, o);
+}
+
+function startKO(w, l) {
+  game.phase = 'ko'; game.t = 0; game.winner = w; game.slow = 0.7; game.shake = 24; game.hitstop = 0.25;
+  l.ko = true; l.atk = null; l.block = false; l.stun = 99;
+  l.vx = w.facing * 620; l.vy = -470; l.onGround = false;
+  w.atk = w.atk && w.atk.type === 'special' ? w.atk : null;
+  burst(l.x, l.y - 90, 40, ['#ffd23f', '#ff8c1a', '#fff', '#bfe9ff'], 620);
+  sfx.ko();
+}
+
+function startWin(w) {
+  game.phase = 'win'; game.t = 0; game.winner = w;
+  const sx = clamp(w.x + w.facing * 120, 140, W - 140);
+  game.sign = { x: sx, text: w.lake, t: 0, beavers: true };
+  burst(sx, GROUND - 20, 14, ['#fff', '#bfe9ff'], 240);
+  sfx.win();
+}
+
+function playerInput() {
+  return {
+    mx: (keys.KeyD || keys.ArrowRight ? 1 : 0) - (keys.KeyA || keys.ArrowLeft ? 1 : 0),
+    jump: pressed.KeyW || pressed.ArrowUp || pressed.Space,
+    block: keys.KeyS || keys.ArrowDown,
+    punch: pressed.KeyJ, kick: pressed.KeyK, special: pressed.KeyL,
+  };
+}
+
+function aiInput(f, o, dt) {
+  const ai = game.ai, inp = { mx: ai.mx, jump: false, block: ai.block > 0, punch: false, kick: false, special: false };
+  const dist = Math.abs(o.x - f.x), toward = o.x > f.x ? 1 : -1;
+  ai.block -= dt; ai.t -= dt;
+  // react to an incoming attack some of the time
+  if (o.atk && o.atk.t < ATK[o.atk.type].start && dist < 190 && ai.block <= 0 && Math.random() < dt * (2 + game.level * 1.5)) { ai.block = 0.4; ai.mx = 0; }
+  if (ai.t <= 0) {
+    const r = Math.random(), slow = 1.3 - game.level * 0.12;
+    if (dist > 150) { ai.mx = r < 0.85 ? toward : 0; ai.t = rnd(0.2, 0.45) * slow; if (r > 0.95) inp.jump = true; }
+    else {
+      ai.mx = 0; ai.t = rnd(0.25, 0.55) * slow;
+      if (f.meter >= 100 && r < 0.22) inp.special = true;
+      else if (r < 0.48) inp.punch = true;
+      else if (r < 0.72) inp.kick = true;
+      else if (r < 0.86) { ai.mx = -toward; }
+      else ai.block = 0.45;
+    }
+  }
+  return inp;
+}
+
+function updateFighter(f, o, inp, dt) {
+  f.flash -= dt;
+  f.hpLag = Math.max(f.hp, f.hpLag - dt * 22);
+  if (f.ko) {
+    f.x += f.vx * dt; f.y += f.vy * dt; f.spin += dt * 11 * Math.sign(f.vx || 1); f.koScale = Math.max(0.15, f.koScale - dt * 0.55);
+    if (!game.twinkle && (f.y < -40 || f.x < -60 || f.x > W + 60)) game.twinkle = { x: clamp(f.x, 40, W - 40), y: clamp(f.y, 60, 200), t: 0 };
+    return;
+  }
+  if (f.stun > 0) { f.stun -= dt; f.block = false; }
+  else if (f.atk) {
+    const a = ATK[f.atk.type]; f.atk.t += dt;
+    const act = f.atk.t >= a.start && f.atk.t < a.start + a.active;
+    if (act && !f.atk.hit && !o.ko) tryHit(f, o);
+    if (f.atk && act && f.atk.type === 'special' && f.sign && !f.atk.planted) {
+      f.atk.planted = true;
+      game.sign = { x: clamp(f.x + f.facing * 95, 80, W - 80), text: f.lake, t: 0, beavers: false };
+      burst(game.sign.x, GROUND - 10, 12, ['#fff', '#bfe9ff'], 260); game.shake = Math.max(game.shake, 8); sfx.hit();
+    }
+    if (f.atk && f.atk.t >= a.start + a.active + a.rec) f.atk = null;
+  } else if (inp) {
+    f.facing = o.x >= f.x ? 1 : -1;
+    f.block = !!inp.block && f.onGround;
+    if (!f.block) {
+      if (inp.special && f.meter >= 100) startAtk(f, 'special');
+      else if (inp.punch) startAtk(f, 'punch');
+      else if (inp.kick) startAtk(f, 'kick');
+      else if (inp.jump && f.onGround) { f.vy = -740; f.onGround = false; sfx.jump(); }
+    }
+  }
+  // on ice you are slow to start and slower to stop; everywhere else has grip
+  const free = inp && f.stun <= 0 && !f.block && !f.atk, ice = STAGES[game.stage].ice;
+  const target = free ? inp.mx * f.speed : 0;
+  const acc = !f.onGround ? 350 : (free && inp.mx ? (ice ? 1500 : 2800) : (ice ? 620 : 2200));
+  f.vx += clamp(target - f.vx, -acc * dt, acc * dt);
+  f.x += f.vx * dt;
+  if (!f.onGround) {
+    f.vy += 2100 * dt; f.y += f.vy * dt;
+    if (f.y >= GROUND) { f.y = GROUND; f.vy = 0; f.onGround = true; }
+  }
+  if (f.x < 45) { f.x = 45; f.vx = Math.max(0, f.vx); }
+  if (f.x > W - 45) { f.x = W - 45; f.vx = Math.min(0, f.vx); }
+}
+
+function separate(a, b) {
+  if (a.ko || b.ko || Math.abs(a.y - b.y) > 80) return;
+  const min = a.halfW + b.halfW + 8, dx = b.x - a.x;
+  if (Math.abs(dx) < min) {
+    const push = (min - Math.abs(dx)) / 2, s = dx >= 0 ? 1 : -1;
+    a.x = clamp(a.x - s * push, 45, W - 45); b.x = clamp(b.x + s * push, 45, W - 45);
+  }
+}
+
+const COLS = 7, SEL = { cw: 124, ch: 168, x0: (W - 7 * 124) / 2, y0: 112 };
+function updateSelect() {
+  const n = ROSTER.length; let c = sel.cur;
+  if (pressed.KeyA || pressed.ArrowLeft) c = (c + n - 1) % n;
+  if (pressed.KeyD || pressed.ArrowRight) c = (c + 1) % n;
+  if (pressed.KeyW || pressed.ArrowUp || pressed.KeyS || pressed.ArrowDown) c = (c + COLS) % n;
+  if (pressed.KeyR) c = Math.floor(Math.random() * n);
+  if (c !== sel.cur) { sel.cur = c; sfx.tick(); }
+  if (pressed.Escape) { if (sel.step === 1) sel.step = 0; else { run.mode = 'versus'; reset('title'); return; } }
+  if (pressed.Enter) {
+    sfx.go();
+    if (run.mode === 'campaign') startCampaign(c);
+    else if (sel.step === 0) { sel.p1 = c; sel.step = 1; sel.cur = (c + 1) % n; }
+    else { sel.p2 = c; run.vsStage = Math.floor(Math.random() * STAGES.length); reset('intro'); }
+  }
+}
+
+function update(rawDt) {
+  T += rawDt;
+  const g = game;
+  if (g.phase === 'title') {
+    const m = titleMenu();
+    if (pressed.KeyW || pressed.ArrowUp) { run.menu = (run.menu + m.length - 1) % m.length; sfx.tick(); }
+    if (pressed.KeyS || pressed.ArrowDown) { run.menu = (run.menu + 1) % m.length; sfx.tick(); }
+    run.menu = Math.min(run.menu, m.length - 1);
+    if (pressed.Enter) {
+      const pick = m[run.menu]; sfx.go();
+      if (pick === 'CONTINUE CAMPAIGN') { Object.assign(run, { mode: 'campaign', stage: save.run.stage, foes: save.run.foes }); sel.p1 = save.run.p1; stageCard(); }
+      else { run.mode = pick === 'VERSUS' ? 'versus' : 'campaign'; g.phase = 'select'; sel.step = 0; sel.cur = sel.p1; }
+    }
+    return;
+  }
+  if (g.phase === 'select') { updateSelect(); return; }
+  if (g.phase === 'story') { updateStory(); return; }
+  g.shake = Math.max(0, g.shake - rawDt * 50);
+  if (g.hitstop > 0) { g.hitstop -= rawDt; return; }
+  let dt = rawDt;
+  if (g.slow > 0) { g.slow -= rawDt; dt *= 0.3; }
+  g.t += dt;
+
+  if (g.phase === 'intro') {
+    if (g.t > 1.7) { g.phase = 'fight'; g.t = 0; sfx.go(); }
+  } else if (g.phase === 'fight') {
+    g.timer -= dt;
+    updateFighter(g.p1, g.p2, playerInput(), dt);
+    if (g.phase === 'fight') updateFighter(g.p2, g.p1, aiInput(g.p2, g.p1, dt), dt);
+    separate(g.p1, g.p2);
+    if (g.phase === 'fight' && g.timer <= 0) {
+      g.timer = 0;
+      const w = g.p1.hp >= g.p2.hp ? g.p1 : g.p2, l = w === g.p1 ? g.p2 : g.p1;
+      l.stun = 99; l.atk = null; w.atk = null; startWin(w);
+    }
+  } else if (g.phase === 'ko') {
+    updateFighter(g.p1, g.p2, null, dt); updateFighter(g.p2, g.p1, null, dt);
+    if (g.t > 1.7) startWin(g.winner);
+  } else if (g.phase === 'win') {
+    updateFighter(g.p1, g.p2, null, dt); updateFighter(g.p2, g.p1, null, dt);
+    if (g.t > 1.2 && run.mode === 'campaign') {
+      if (pressed.Enter) { if (g.winner === g.p1) campaignAdvance(); else reset('intro'); }
+      else if (pressed.Escape && g.winner !== g.p1) { run.mode = 'versus'; reset('title'); }
+    } else if (g.t > 1.2 && pressed.Enter) reset('intro');
+    else if (g.t > 1.2 && pressed.Escape) { g.phase = 'select'; sel.step = 0; sel.cur = sel.p1; }
+  }
+  if (g.sign) g.sign.t += dt;
+  if (g.twinkle) g.twinkle.t += dt;
+  for (const p of g.parts) { p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 900 * dt; p.life -= dt; }
+  g.parts = g.parts.filter(p => p.life > 0);
+  for (const t of g.texts) { t.life -= dt; t.y -= 30 * dt; }
+  g.texts = g.texts.filter(t => t.life > 0);
+}
+
+// ---------- generated art ----------
+// each leader has eight pose sprites in assets/sprites/<id>/, cut from one generated pose sheet
+const img = src => { const i = new Image(); i.src = src; return i; };
+for (const st of STAGES) st.img = img(`assets/stages/${st.id}.jpg`);
+const beaver = { idle: img('assets/beaver_idle.webp'), cheer: img('assets/beaver_cheer.webp') };
+const POSES = ['idle', 'walk', 'punch', 'kick', 'special', 'block', 'hit', 'win'];
+for (const c of ROSTER) {
+  c.id = c.name.toLowerCase();
+  c.art = img(`assets/portraits/${c.id}.webp`);
+  const sp = c.sprites = { ready: false, img: {} };
+  fetch(`assets/sprites/${c.id}/meta.json`).then(r => r.json()).then(meta => {
+    sp.meta = meta; let n = 0;
+    for (const p of POSES) { const i = sp.img[p] = new Image(); i.onload = () => { if (++n === POSES.length) sp.ready = true; }; i.src = `assets/sprites/${c.id}/${p}.webp`; }
+  }).catch(() => {});   // no sprites yet: the drawn stand-in is used
+}
+
+function spritePose(f) {
+  if (f.ko || f.stun > 0) return 'hit';
+  if (game.phase === 'win' && game.winner === f) return 'win';
+  if (f.atk) return f.atk.type;
+  if (f.block) return 'block';
+  if (!f.onGround) return 'walk';
+  if (Math.abs(f.vx) > 45) return Math.floor(T * 6 + f.seed) % 2 ? 'walk' : 'idle';
+  return 'idle';
+}
+
+function drawSprite(f) {
+  const sp = f.sprites, pose = spritePose(f), m = sp.meta[pose], hpx = f.build === 2 ? 236 : 252;
+  let lunge = 0, sy = 1 + Math.sin(T * 4 + f.seed) * 0.012, tilt = 0;
+  if (f.atk) {
+    const a = ATK[f.atk.type], t = f.atk.t;
+    const k = t < a.start ? t / a.start : t < a.start + a.active ? 1 : Math.max(0, 1 - (t - a.start - a.active) / a.rec);
+    lunge = k * (f.atk.type === 'special' ? 26 : 14); tilt = f.atk.type === 'special' ? (k - 0.5) * 0.16 : 0;
+  }
+  if (f.stun > 0 && !f.ko) lunge = -Math.min(1, f.stun * 4) * 10;
+  if (pose === 'win') sy = 1 + Math.abs(Math.sin(T * 5)) * 0.03;
+  ctx.save();
+  ctx.translate(f.x, f.y);
+  if (f.ko) { ctx.translate(0, -100); ctx.rotate(f.spin); ctx.scale(f.koScale, f.koScale); ctx.translate(0, 100); }
+  ctx.scale(f.facing, sy); ctx.rotate(tilt);
+  if (f.flash > 0) ctx.filter = 'brightness(1.9)';
+  ctx.imageSmoothingQuality = 'high';
+  ctx.drawImage(sp.img[pose], -m.fx * hpx + lunge, -m.h * hpx + 4, m.w * hpx, m.h * hpx);
+  ctx.restore();
+}
+function drawFighter(f) {
+  if (f.sprites.ready) return drawSprite(f);
+  if (f.ko) return;
+  // sprites still loading: a plain stand-in the size of the hit box
+  ctx.fillStyle = 'rgba(26,26,46,.55)'; ctx.beginPath(); ctx.roundRect(f.x - f.halfW, f.y - 190, f.halfW * 2, 190, 18); ctx.fill();
+}
+
+// ---------- drawing helpers ----------
+function blob(x, y, rx, ry, c) {
+  ctx.fillStyle = c; ctx.strokeStyle = OUT; ctx.lineWidth = 2.5;
+  ctx.beginPath(); ctx.ellipse(x, y, rx, ry, 0, 0, 7); ctx.fill(); ctx.stroke();
+}
+function comicText(s, x, y, size, fill, stroke, rot) {
+  ctx.save(); ctx.translate(x, y); ctx.rotate(rot || 0);
+  ctx.font = `${size}px ${FONT}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.lineJoin = 'round';
+  ctx.strokeStyle = OUT; ctx.lineWidth = size * 0.26; ctx.strokeText(s, 0, size * 0.05);
+  ctx.strokeStyle = stroke; ctx.lineWidth = size * 0.13; ctx.strokeText(s, 0, 0);
+  ctx.fillStyle = fill; ctx.fillText(s, 0, 0);
+  ctx.restore();
+}
+
+// portrait disc centred on (hx, hy); the art faces +x
+function drawHead(c, hx, hy, hr) {
+  const r = hr * 1.25;
+  ctx.save(); ctx.beginPath(); ctx.arc(hx, hy, r, 0, 7); ctx.clip();
+  ctx.fillStyle = '#dfeeff'; ctx.fill();
+  if (c.art.complete && c.art.naturalWidth) ctx.drawImage(c.art, hx - r, hy - r, r * 2, r * 2);
+  ctx.restore();
+  ctx.strokeStyle = OUT; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.arc(hx, hy, r, 0, 7); ctx.stroke();
+}
+
+function drawShadow(f) {
+  if (f.ko) return;
+  ctx.fillStyle = 'rgba(10,40,90,.38)'; ctx.beginPath(); ctx.ellipse(f.x, GROUND + 4, (f.build === 2 ? 66 : 48) * (1 - (GROUND - f.y) / 500), 10, 0, 0, 7); ctx.fill();
+}
+
+function drawSwing(f) {
+  if (!f.atk || f.atk.type !== 'special' || f.sign) return;
+  const a = ATK.special, t = f.atk.t;
+  if (t < a.start || t >= a.start + a.active + 0.12) return;
+  const sw = clamp((t - a.start) / a.active, 0, 1);
+  ctx.save(); ctx.translate(f.x, f.y - 150); ctx.scale(f.facing * 1.2, 1.2);
+  ctx.globalAlpha = 0.85 * (1 - sw * 0.5); ctx.lineCap = 'round';
+  for (const [w, c] of [[30, '#ff8c1a'], [16, '#ffd23f'], [6, '#fff']]) {
+    ctx.strokeStyle = c; ctx.lineWidth = w; ctx.beginPath(); ctx.arc(0, 0, 135, -1.7, -1.7 + 2.9 * Math.max(0.15, sw)); ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function drawSignBoard(x, y, name, sc) {
+  ctx.save(); ctx.translate(x, y); ctx.scale(sc, sc);
+  ctx.fillStyle = '#d19a4c'; ctx.strokeStyle = '#5a3716'; ctx.lineWidth = 4; ctx.lineJoin = 'round';
+  ctx.beginPath(); ctx.roundRect(-72, -42, 144, 84, 6); ctx.fill(); ctx.stroke();
+  ctx.strokeStyle = 'rgba(90,55,22,.35)'; ctx.lineWidth = 1.5;
+  for (const yy of [-22, 2, 24]) { ctx.beginPath(); ctx.moveTo(-64, yy); ctx.lineTo(64, yy + 3); ctx.stroke(); }
+  ctx.fillStyle = '#4a2c10'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.font = `30px ${FONT}`; ctx.fillText('LAKE', 0, -18);
+  ctx.font = `${name.length > 7 ? 23 : name.length > 6 ? 28 : 32}px ${FONT}`; ctx.fillText(name, 0, 18);
+  ctx.restore();
+}
+
+function drawSign(s) {
+  const k = Math.min(1, s.t / 0.18), drop = (1 - k) * -90, wob = Math.sin(s.t * 28) * Math.max(0, 0.12 - s.t * 0.3);
+  ctx.save(); ctx.translate(s.x, GROUND + 6 + drop); ctx.rotate(wob);
+  ctx.fillStyle = '#b07a35'; ctx.strokeStyle = '#5a3716'; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.rect(-7, -150, 14, 150); ctx.fill(); ctx.stroke();
+  drawSignBoard(0, -118, s.text, 1);
+  ctx.restore();
+  ctx.fillStyle = '#f4fbff'; ctx.beginPath(); ctx.ellipse(s.x, GROUND + 7, 26, 7, 0, 0, 7); ctx.fill();
+  if (s.beavers) [-78, 80].forEach((dx, i) => drawBeaver(s.x + dx, clamp((s.t - 0.5 - i * 0.25) / 0.3, 0, 1), i ? -1 : 1));
+}
+
+function drawBeaver(x, k, face) {
+  if (k <= 0) return;
+  const e = 1 - Math.pow(1 - k, 3), hop = k >= 1 ? Math.abs(Math.sin(T * 6 + x)) : 0;
+  const bi = hop > 0.45 ? beaver.cheer : beaver.idle;
+  if (!bi.complete || !bi.naturalWidth) return;
+  const h = 92, w = h * bi.naturalWidth / bi.naturalHeight;
+  ctx.save(); ctx.translate(x, GROUND + 8 - hop * 7); ctx.scale(face * e, e);
+  ctx.imageSmoothingQuality = 'high'; ctx.drawImage(bi, -w / 2, -h + 4, w, h);
+  ctx.restore();
+}
+
+// ---------- HUD ----------
+function drawBar(f, left) {
+  const bw = 370, x = left ? 60 : W - 60 - bw, y = 34;
+  ctx.fillStyle = OUT; ctx.fillRect(x - 4, y - 4, bw + 8, 26);
+  ctx.fillStyle = '#5a1420'; ctx.fillRect(x, y, bw, 18);
+  const lag = bw * f.hpLag / 100, hp = bw * f.hp / 100;
+  ctx.fillStyle = '#e0262b'; ctx.fillRect(left ? x + bw - lag : x, y, lag, 18);
+  const g = ctx.createLinearGradient(0, y, 0, y + 18); g.addColorStop(0, '#fff27a'); g.addColorStop(1, '#f5a400');
+  ctx.fillStyle = g; ctx.fillRect(left ? x + bw - hp : x, y, hp, 18);
+  const label = f.name + (left ? '' : '  (CPU)');
+  ctx.font = `italic 17px ${FONT}`; ctx.textBaseline = 'alphabetic'; ctx.textAlign = left ? 'left' : 'right';
+  ctx.lineWidth = 4; ctx.strokeStyle = OUT; ctx.strokeText(label, left ? x : x + bw, y - 9);
+  ctx.fillStyle = '#fff'; ctx.fillText(label, left ? x : x + bw, y - 9);
+  // portrait
+  const px = left ? 30 : W - 30;
+  blob(px, 36, 25, 25, left ? '#c8102e' : '#1f5fd0');
+  ctx.save(); ctx.translate(px, 38); ctx.scale(left ? 1 : -1, 1); drawHead(f, 0, 0, 15); ctx.restore();
+  // meter
+  const mw = 210, mx = left ? 60 : W - 60 - mw, my = TOUCH ? 68 : H - 30, stocks = Math.floor(f.meter / 100), part = f.meter >= 300 ? 1 : (f.meter % 100) / 100;
+  ctx.fillStyle = OUT; ctx.fillRect(mx - 3, my - 3, mw + 6, 16);
+  ctx.fillStyle = '#23304f'; ctx.fillRect(mx, my, mw, 10);
+  ctx.fillStyle = left ? '#ff9a1f' : '#39c6ff';
+  ctx.fillRect(left ? mx : mx + mw * (1 - part), my, mw * part, 10);
+  comicText(String(stocks), left ? 34 : W - 34, TOUCH ? my + 22 : my, TOUCH ? 30 : 40, stocks ? '#ffd23f' : '#9aa0a8', stocks ? '#ff7a00' : '#444');
+  if (f.meter >= 300) comicText('MAX', left ? 84 : W - 84, TOUCH ? my + 24 : my - 16, 14, '#fff', '#ff7a00');
+}
+
+function drawHUD() {
+  drawBar(game.p1, true); drawBar(game.p2, false);
+  ctx.save(); ctx.translate(W / 2, 40); ctx.fillStyle = OUT; ctx.beginPath();
+  for (let i = 0; i < 20; i++) { const a = i * Math.PI / 10, r = i % 2 ? 26 : 38; ctx.lineTo(Math.cos(a) * r, Math.sin(a) * r); }
+  ctx.fill(); ctx.restore();
+  comicText(String(Math.ceil(game.timer)).padStart(2, '0'), W / 2, 42, 34, '#ffd23f', '#ff7a00');
+}
+
+function drawSelect() {
+  ctx.fillStyle = 'rgba(8,16,40,.72)'; ctx.fillRect(0, 0, W, H);
+  comicText(sel.step === 0 ? 'CHOOSE YOUR LEADER' : 'CHOOSE THE OPPONENT', W / 2, 58, 50, '#ffd23f', '#ff7a00');
+  comicText(run.mode === 'campaign' ? 'CAMPAIGN' : 'VERSUS', W / 2, 96, 18, '#fff', '#1f5fd0');
+  const { cw, ch: chh, x0, y0 } = SEL;
+  ROSTER.forEach((c, i) => {
+    const x = x0 + (i % COLS) * cw, y = y0 + Math.floor(i / COLS) * chh, cur = i === sel.cur, mine = sel.step === 1 && i === sel.p1;
+    ctx.fillStyle = cur ? '#ffd23f' : mine ? '#c8102e' : '#1b2a55'; ctx.strokeStyle = OUT; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.roundRect(x + 6, y + 6 - (cur ? 4 : 0), cw - 12, chh - 12, 10); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = cur ? '#fff6cf' : '#31457f'; ctx.beginPath(); ctx.roundRect(x + 14, y + 14 - (cur ? 4 : 0), cw - 28, 98, 6); ctx.fill();
+    drawHead(c, x + cw / 2 - 3, y + 70 - (cur ? 4 : 0), 30);
+    ctx.font = `${c.name.length > 8 ? 17 : 20}px ${FONT}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillStyle = cur ? OUT : '#fff'; ctx.fillText(c.name, x + cw / 2, y + 132 - (cur ? 4 : 0));
+    if (mine) comicText('YOU', x + 34, y + 20, 18, '#fff', '#c8102e', -0.15);
+    if (save.cleared.includes(c.name)) comicText('★', x + cw - 26, y + 24, 24, '#ffd23f', '#ff7a00');
+  });
+  const c = ROSTER[sel.cur];
+  ctx.font = '17px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.fillStyle = '#e8f4ff';
+  ctx.fillText(`Special: ${c.shout}     ${['Light & quick', 'All-rounder', 'Heavy hitter'][c.build]}     Claims: Lake ${c.lake[0] + c.lake.slice(1).toLowerCase()}`, W / 2, 470);
+  ctx.fillStyle = '#9fb6dd'; ctx.fillText(TOUCH ? 'Tap a leader      Tap the title to go back' : 'A / D / W / S  move      ENTER  pick      R  random' + (sel.step ? '      ESC  back' : ''), W / 2, 506);
+}
+
+function wrapText(text, x, y, maxW, lh) {
+  let line = '';
+  for (const word of text.split(' ')) {
+    if (line && ctx.measureText(line + ' ' + word).width > maxW) { ctx.fillText(line, x, y); y += lh; line = word; }
+    else line = line ? line + ' ' + word : word;
+  }
+  ctx.fillText(line, x, y); return y + lh;
+}
+
+function drawStory() {
+  const c = game.card;
+  ctx.fillStyle = 'rgba(8,16,40,.8)'; ctx.fillRect(0, 0, W, H);
+  comicText(c.kicker, W / 2, 52, 22, '#fff', '#1f5fd0');
+  comicText(c.title, W / 2, 104, c.title.length > 18 ? 46 : 62, '#ffd23f', '#ff7a00', -0.03);
+  let y = 200;
+  if (c.vs) {
+    drawHead(game.p1, 330, 212, 44);
+    ctx.save(); ctx.translate(630, 212); ctx.scale(-1, 1); drawHead(game.p2, 0, 0, 44); ctx.restore();
+    comicText('VS', W / 2, 212, 46, '#fff', '#e0262b', -0.08);
+    comicText(game.p1.name, 330, 286, 20, '#fff', '#c8102e'); comicText(game.p2.name, 630, 286, 20, '#fff', '#1f5fd0');
+    y = 338;
+  }
+  ctx.font = '21px Georgia, "Times New Roman", serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = '#eef6ff';
+  for (const line of c.lines) y = wrapText(line, W / 2, y, 700, 30) + 12;
+  if (Math.sin(T * 6) > -0.3) comicText(TOUCH ? 'TAP TO CONTINUE' : 'PRESS ENTER', W / 2, 502, 26, '#fff', '#e0262b');
+}
+
+// ---------- frame ----------
+function draw() {
+  const g = game, menu = g.phase === 'title' || g.phase === 'select' || g.phase === 'story', stage = STAGES[g.stage].img;
+  document.body.classList.toggle('title', g.phase === 'title');
+  document.body.classList.toggle('fighting', g.phase === 'intro' || g.phase === 'fight' || g.phase === 'ko');
+  const sh = g.shake > 0 && !menu ? g.shake : 0;
+  wrap.style.transform = sh ? `translate(${rnd(-1, 1) * sh / 9.6}%, ${rnd(-1, 1) * sh / 5.4}%)` : '';
+
+  ctx = bctx; ctx.setTransform(SS, 0, 0, SS, 0, 0);
+  if (stage.complete && stage.naturalWidth) ctx.drawImage(stage, 0, 0, W, H);
+  else { ctx.fillStyle = '#7fc4ee'; ctx.fillRect(0, 0, W, H); }
+  fctx.setTransform(SS, 0, 0, SS, 0, 0); fctx.clearRect(0, 0, W, H);
+
+  if (menu) {
+    ctx = fctx;
+    if (g.phase === 'title') {
+      ctx.fillStyle = 'rgba(8,16,40,.55)'; ctx.fillRect(0, 0, W, H);
+      comicText('LAKE BRAWL', W / 2, 150 + Math.sin(T * 2) * 5, 110, '#ffd23f', '#ff7a00', -0.05);
+      comicText('WHOSE LAKE IS IT ANYWAY?', W / 2, 232, 26, '#fff', '#1f5fd0');
+      titleMenu().forEach((label, i) => {
+        const on = i === run.menu, note = label === 'CONTINUE CAMPAIGN' ? `  ·  ${ROSTER[save.run.p1].name}, chapter ${save.run.stage + 1}` : '';
+        comicText(label + note, W / 2, MENU_Y + i * MENU_DY, on ? 38 : 30, on ? '#fff' : '#9fb6dd', on ? '#e0262b' : '#1b2a55');
+      });
+      ctx.font = '15px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.fillStyle = '#c9dcf5';
+      ctx.fillText(TOUCH ? 'Tap a mode.  In a fight: slide the arrows to move, hold BLOCK to guard, SPECIAL costs 1 meter stock.'
+        : 'W / S + ENTER to choose     ·     A / D move   W jump   S block   J punch   K kick   L special (1 meter stock)', W / 2, 516);
+    } else if (g.phase === 'select') drawSelect();
+    else drawStory();
+    return;
+  }
+
+  if (g.sign) drawSign(g.sign);
+  const order = g.p1.atk ? [g.p2, g.p1] : [g.p1, g.p2];
+  order.forEach(drawShadow);
+  order.forEach(drawFighter);
+
+  ctx = fctx;
+  order.forEach(drawSwing);
+  for (const p of g.parts) { ctx.globalAlpha = Math.min(1, p.life * 3); ctx.fillStyle = p.c; ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, 7); ctx.fill(); }
+  ctx.globalAlpha = 1;
+  for (const t of g.texts) { const k = 1 - t.life / t.max; comicText(t.s, clamp(t.x, 190, W - 190), t.y, 58 * Math.min(1, 0.4 + k * 4), t.c, '#fff', -0.08); }
+  if (g.twinkle && g.twinkle.t < 0.7) {
+    const k = g.twinkle.t / 0.7, r = Math.sin(k * Math.PI) * 34;
+    ctx.fillStyle = '#fff'; ctx.save(); ctx.translate(g.twinkle.x, g.twinkle.y); ctx.rotate(k * 2); ctx.beginPath();
+    for (let i = 0; i < 8; i++) { const a = i * Math.PI / 4, rr = i % 2 ? r * 0.2 : r; ctx.lineTo(Math.cos(a) * rr, Math.sin(a) * rr); }
+    ctx.fill(); ctx.restore();
+  }
+
+  drawHUD();
+  if (g.phase === 'intro') {
+    if (g.t < 1.05) comicText(run.mode === 'campaign' ? STAGES[g.stage].name : 'ROUND 1', W / 2, 250, 90 * Math.min(1, g.t * 5), '#fff', '#1f5fd0');
+    else comicText('FIGHT!', W / 2, 250, 120, '#ffd23f', '#e0262b', -0.05);
+  } else if (g.phase === 'fight' && g.t < 0.5) {
+    ctx.globalAlpha = 1 - g.t * 2; comicText('FIGHT!', W / 2, 250, 120 + g.t * 80, '#ffd23f', '#e0262b', -0.05); ctx.globalAlpha = 1;
+  } else if (g.phase === 'ko') {
+    comicText('K.O.', W / 2, 250, 150 * Math.min(1, 0.3 + g.t * 6), '#ffd23f', '#e0262b', -0.06);
+  } else if (g.phase === 'win') {
+    const k = Math.min(1, g.t / 0.35), s = k + Math.sin(k * Math.PI) * 0.25, big = g.winner.name.length > 7 ? 92 : 120;
+    if (g.timer <= 0 && g.t < 1) comicText('TIME!', W / 2, 110, 60, '#fff', '#1f5fd0');
+    comicText(g.winner.name, W / 2, 125, big * 0.72 * s, '#ffd23f', '#ff7a00', -0.07);
+    comicText('WINS!', W / 2 + 20, 205, 86 * s, '#ffd23f', '#ff7a00', -0.07);
+    const camp = run.mode === 'campaign', won = g.winner === g.p1;
+    const hint = camp && won ? (TOUCH ? 'TAP TO CONTINUE' : 'ENTER — CONTINUE')
+      : camp ? (TOUCH ? 'TAP LEFT — RETRY      TAP RIGHT — QUIT' : 'ENTER — RETRY      ESC — QUIT')
+      : TOUCH ? 'TAP LEFT — REMATCH      TAP RIGHT — ROSTER' : 'ENTER — REMATCH      ESC — ROSTER';
+    if (g.t > 1.2 && Math.sin(T * 6) > -0.3) comicText(hint, W / 2, 500, 22, '#fff', '#e0262b');
+  }
+}
+
+let last = performance.now();
+function frame(now) {
+  const dt = Math.min(0.033, (now - last) / 1000); last = now;
+  update(dt); draw();
+  for (const k in pressed) delete pressed[k];
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+// console/debug handle
+window.dbg = { get game() { return game; }, get save() { return save; }, sel, run, reset, update, draw, startAtk, pressed, ROSTER };
+</script>
+</body>
+</html>

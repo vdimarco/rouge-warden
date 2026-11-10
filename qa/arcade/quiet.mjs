@@ -406,6 +406,7 @@ const PAGES = [
   { id: "tellme", path: "/tellme/", start: click("#start-btn"), sound: "ctx" },
   // Follow Suit makes its sound context when the first chain is played: start table 1, tap a card, play it
   { id: "follow-suit", path: "/follow-suit/?seed=K7QX2M", start: async (t) => { await t.tapEl('[data-testid="stop-intro"] .btn.primary'); await t.tapEl('[data-testid="hand"] [data-legal="true"]'); await t.tapEl(".actions .btn.primary"); }, sound: "ctx" },
+  { id: "lake-brawl", path: "/lake-brawl/", boot: () => !!window.dbg, start: (t) => t.key("Enter"), sound: "ctx" },
   // In Full Swing does not load quiet.js. Its own code stops the sound on visibilitychange when it is played flat on a phone (not on pagehide, not in a headset).
   { id: "vr", path: "/vr/", start: click("#playFlat"), sound: "ctx", slow: true, own: true, only: ["emulate", "real"] },
   { id: "tidebreak", path: "/tidebreak/", boot: () => { const b = document.querySelector("#play"); return b && !b.disabled; }, start: click("#play"), sound: "ctx" },
