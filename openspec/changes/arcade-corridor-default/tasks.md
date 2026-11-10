@@ -4,6 +4,6 @@
 - [x] Add All games to the Corridor: top bar on wide screens, category strip at 760px and narrower
 - [x] Add Corridor to All Games: the bar above 480px, Menu at 480px and narrower
 - [x] Check the default, both controls, persistence, group links and same-site game links at 1280, 390 and 320 with `qa/arcade/default-view.e2e.mjs`
-- [x] Run `qa/arcade/groups.e2e.mjs` and `qa/arcade/machines.mjs` to confirm the hall is unchanged
+- [x] Run `qa/arcade/groups.e2e.mjs`, `qa/arcade/voting.e2e.mjs` and `qa/arcade/machines.mjs` to confirm the hall is unchanged, with `corridor` listed as not a game
 - [ ] Check on a phone: touch scrolling through the Corridor and its frame rate
 - [ ] The OpenSpec CLI is not installed, so `openspec validate` could not run
