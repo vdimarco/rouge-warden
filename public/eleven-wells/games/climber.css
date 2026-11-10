@@ -1,0 +1,174 @@
+/* 09 Pip vs. the Big Mitt: Saturday-morning cartoon. Bright sky, flat primaries, thick black ink on
+   everything you can touch. Backdrop clouds are inked in blue so the foreground keeps the black lines. */
+:root[data-game="climber"] {
+  --ink: #5cc3ff;
+  --cabinet: #ffffff;
+  --well: #45b4ff;
+  --panel: #ffffff;
+  --line: #15121f;
+  --fg: #15121f;
+  --muted: #474b63;
+  --accent: #ffd23f;
+  --accent-ink: #15121f;
+  --good: #138a3e;
+  --bad: #d91f36;
+  --cool: #2f6bff;
+  --display: "Luckiest Guy", "Baloo 2", system-ui, sans-serif;
+  --body: "Baloo 2", system-ui, sans-serif;
+  --pip-shadow: 4px 4px 0 #15121f;
+  color-scheme: light;
+}
+:root[data-game="climber"] body {
+  background: #5cc3ff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='720' height='520'%3E%3Cg fill='%232a8fd8'%3E%3Ccircle cx='70.0' cy='104.0' r='33.0'/%3E%3Ccircle cx='110.0' cy='80.0' r='43.0'/%3E%3Ccircle cx='154.0' cy='88.0' r='39.0'/%3E%3Ccircle cx='192.0' cy='106.0' r='29.0'/%3E%3Ccircle cx='130.0' cy='108.0' r='33.0'/%3E%3Ccircle cx='90.0' cy='114.0' r='25.0'/%3E%3Ccircle cx='172.0' cy='114.0' r='25.0'/%3E%3Crect x='53.0' y='95.0' width='158.0' height='44.0' rx='21.0'/%3E%3C/g%3E%3Cg fill='%23e3f4ff'%3E%3Ccircle cx='70.0' cy='104.0' r='28.0'/%3E%3Ccircle cx='110.0' cy='80.0' r='38.0'/%3E%3Ccircle cx='154.0' cy='88.0' r='34.0'/%3E%3Ccircle cx='192.0' cy='106.0' r='24.0'/%3E%3Ccircle cx='130.0' cy='108.0' r='28.0'/%3E%3Ccircle cx='90.0' cy='114.0' r='20.0'/%3E%3Ccircle cx='172.0' cy='114.0' r='20.0'/%3E%3Crect x='58.0' y='100.0' width='148.0' height='34.0' rx='16.0'/%3E%3C/g%3E%3Cg fill='%232a8fd8'%3E%3Ccircle cx='460.0' cy='198.0' r='24.8'/%3E%3Ccircle cx='490.0' cy='180.0' r='32.3'/%3E%3Ccircle cx='523.0' cy='186.0' r='29.3'/%3E%3Ccircle cx='551.5' cy='199.5' r='21.8'/%3E%3Ccircle cx='505.0' cy='201.0' r='24.8'/%3E%3Ccircle cx='475.0' cy='205.5' r='18.8'/%3E%3Ccircle cx='536.5' cy='205.5' r='18.8'/%3E%3Crect x='447.3' y='191.3' width='118.5' height='33.0' rx='15.8'/%3E%3C/g%3E%3Cg fill='%23e3f4ff'%3E%3Ccircle cx='460.0' cy='198.0' r='21.0'/%3E%3Ccircle cx='490.0' cy='180.0' r='28.5'/%3E%3Ccircle cx='523.0' cy='186.0' r='25.5'/%3E%3Ccircle cx='551.5' cy='199.5' r='18.0'/%3E%3Ccircle cx='505.0' cy='201.0' r='21.0'/%3E%3Ccircle cx='475.0' cy='205.5' r='15.0'/%3E%3Ccircle cx='536.5' cy='205.5' r='15.0'/%3E%3Crect x='451.0' y='195.0' width='111.0' height='25.5' rx='12.0'/%3E%3C/g%3E%3Cg fill='%232a8fd8'%3E%3Ccircle cx='174.0' cy='368.4' r='19.8'/%3E%3Ccircle cx='198.0' cy='354.0' r='25.8'/%3E%3Ccircle cx='224.4' cy='358.8' r='23.4'/%3E%3Ccircle cx='247.2' cy='369.6' r='17.4'/%3E%3Ccircle cx='210.0' cy='370.8' r='19.8'/%3E%3Ccircle cx='186.0' cy='374.4' r='15.0'/%3E%3Ccircle cx='235.2' cy='374.4' r='15.0'/%3E%3Crect x='163.8' y='363.0' width='94.8' height='26.4' rx='12.6'/%3E%3C/g%3E%3Cg fill='%23e3f4ff'%3E%3Ccircle cx='174.0' cy='368.4' r='16.8'/%3E%3Ccircle cx='198.0' cy='354.0' r='22.8'/%3E%3Ccircle cx='224.4' cy='358.8' r='20.4'/%3E%3Ccircle cx='247.2' cy='369.6' r='14.4'/%3E%3Ccircle cx='210.0' cy='370.8' r='16.8'/%3E%3Ccircle cx='186.0' cy='374.4' r='12.0'/%3E%3Ccircle cx='235.2' cy='374.4' r='12.0'/%3E%3Crect x='166.8' y='366.0' width='88.8' height='20.4' rx='9.6'/%3E%3C/g%3E%3Cg fill='%232a8fd8'%3E%3Ccircle cx='594.0' cy='454.4' r='28.1'/%3E%3Ccircle cx='628.0' cy='434.0' r='36.5'/%3E%3Ccircle cx='665.4' cy='440.8' r='33.2'/%3E%3Ccircle cx='697.7' cy='456.1' r='24.6'/%3E%3Ccircle cx='645.0' cy='457.8' r='28.1'/%3E%3Ccircle cx='611.0' cy='462.9' r='21.3'/%3E%3Ccircle cx='680.7' cy='462.9' r='21.3'/%3E%3Crect x='579.5' y='446.8' width='134.3' height='37.4' rx='17.9'/%3E%3C/g%3E%3Cg fill='%23e3f4ff'%3E%3Ccircle cx='594.0' cy='454.4' r='23.8'/%3E%3Ccircle cx='628.0' cy='434.0' r='32.3'/%3E%3Ccircle cx='665.4' cy='440.8' r='28.9'/%3E%3Ccircle cx='697.7' cy='456.1' r='20.4'/%3E%3Ccircle cx='645.0' cy='457.8' r='23.8'/%3E%3Ccircle cx='611.0' cy='462.9' r='17.0'/%3E%3Ccircle cx='680.7' cy='462.9' r='17.0'/%3E%3Crect x='583.8' y='451.0' width='125.8' height='28.9' rx='13.6'/%3E%3C/g%3E%3C/svg%3E") 0 0 / 720px 520px repeat;
+  font-weight: 500;
+}
+:root[data-game="climber"] :focus-visible { outline: 3px solid #15121f; outline-offset: 3px; }
+
+/* header */
+:root[data-game="climber"] .topbar { background: #5cc3ff; border-bottom: 3px solid var(--line); }
+:root[data-game="climber"] body::before { background: #5cc3ff; }
+:root[data-game="climber"] .topbar h2 {
+  font-size: 30px; letter-spacing: 0.02em; color: #ffd23f; line-height: 1.05;
+  -webkit-text-stroke: 1.5px #15121f; paint-order: stroke fill;
+  text-shadow: 3px 3px 0 #15121f;
+}
+:root[data-game="climber"] .topbar .mix { color: #15121f; font-weight: 800; letter-spacing: 0.06em; }
+
+/* buttons */
+:root[data-game="climber"] .btn {
+  border: 3px solid var(--line); border-radius: 12px; background: #fff; color: var(--fg);
+  font-family: var(--display); font-weight: 400; letter-spacing: 0.03em; padding: 7px 14px 5px;
+  box-shadow: 3px 3px 0 var(--line); transition: transform 0.08s ease, box-shadow 0.08s ease;
+}
+:root[data-game="climber"] .btn.small { padding: 4px 10px 2px; font-size: 14px; }
+:root[data-game="climber"] .btn:hover:not(:disabled) { border-color: var(--line); transform: translate(-1px, -1px); box-shadow: 4px 4px 0 var(--line); }
+:root[data-game="climber"] .btn:active:not(:disabled) { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--line); }
+:root[data-game="climber"] .btn.primary { background: #ffd23f; color: #15121f; border-color: var(--line); }
+
+/* the well: a fat inked frame with the Mitt's strip of sky on top */
+:root[data-game="climber"] .board-frame {
+  background: #fff; border: 4px solid var(--line); border-radius: 18px; padding: 6px;
+  box-shadow: 6px 6px 0 var(--line);
+}
+:root[data-game="climber"] canvas.board { border-radius: 0 0 10px 10px; }
+:root[data-game="climber"] canvas.mitt-sky {
+  position: absolute; left: 6px; top: 6px; pointer-events: none; border-radius: 10px 10px 0 0; display: block;
+}
+:root[data-game="climber"] .board-overlay { z-index: 2; background: rgba(69, 180, 255, 0.55); border-radius: 10px; }
+:root[data-game="climber"] .ov-card {
+  background: #fff; border: 4px solid var(--line); border-radius: 18px; padding: 16px 16px 18px;
+  box-shadow: 6px 6px 0 var(--line); max-width: 330px;
+}
+:root[data-game="climber"] .ov-card h3, :root[data-game="climber"] .modal h3 {
+  font-size: 30px; line-height: 1; color: #ffd23f; letter-spacing: 0.02em;
+  -webkit-text-stroke: 1.5px #15121f; paint-order: stroke fill; text-shadow: 3px 3px 0 #15121f;
+}
+:root[data-game="climber"] .ov-body { font-size: 15px; line-height: 1.35; }
+:root[data-game="climber"] .ov-body .ov-lede { font-weight: 700; }
+:root[data-game="climber"] .ov-body ul { padding-left: 0; list-style: none; gap: 6px; }
+:root[data-game="climber"] .ov-body li { position: relative; padding-left: 22px; }
+:root[data-game="climber"] .ov-body li::before {
+  content: ""; position: absolute; left: 2px; top: 6px; width: 11px; height: 11px; border-radius: 3px;
+  border: 2px solid #15121f; background: #ff4b4b;
+}
+:root[data-game="climber"] .ov-body li:nth-child(2)::before { background: #ffd23f; }
+:root[data-game="climber"] .ov-body li:nth-child(3)::before { background: #2f6bff; }
+:root[data-game="climber"] .ov-body li:nth-child(4)::before { background: #35c95a; }
+:root[data-game="climber"] .ov-body li:nth-child(5)::before { background: #9b5cff; }
+:root[data-game="climber"] .ov-body b { font-weight: 800; }
+:root[data-game="climber"] .hot { color: #d91f36; font-weight: 800; }
+
+/* side column: white cartoon cards */
+:root[data-game="climber"] .panel,
+:root[data-game="climber"] .stat {
+  background: #fff; border: 3px solid var(--line); border-radius: 14px; box-shadow: var(--pip-shadow);
+}
+:root[data-game="climber"] .hud { gap: 10px; }
+:root[data-game="climber"] .side { gap: 14px; }
+:root[data-game="climber"] .panel h3, :root[data-game="climber"] .side h3 {
+  font-size: 19px; letter-spacing: 0.03em; color: var(--fg); text-transform: none;
+}
+:root[data-game="climber"] .stat { padding: 6px 12px 6px; }
+:root[data-game="climber"] .stat-label { font-weight: 800; font-size: 12px; letter-spacing: 0.06em; color: var(--muted); }
+:root[data-game="climber"] .stat-value { font-size: 24px; line-height: 1.1; color: var(--fg); }
+:root[data-game="climber"] .stat.accent { background: #ffd23f; }
+:root[data-game="climber"] .stat.accent .stat-label { color: #15121f; }
+:root[data-game="climber"] .stat.accent .stat-value { color: #15121f; }
+:root[data-game="climber"] .stat-value small { font-family: var(--body); font-size: 14px; font-weight: 700; }
+:root[data-game="climber"] .hearts { display: inline-flex; gap: 2px; padding-top: 2px; }
+:root[data-game="climber"] .hearts svg { display: block; }
+
+:root[data-game="climber"] .mitt-mood { display: flex; align-items: center; gap: 10px; }
+:root[data-game="climber"] .mood-dot { width: 16px; height: 16px; border-radius: 50%; border: 3px solid #15121f; flex: none; }
+:root[data-game="climber"] .mood-label { font-family: var(--display); font-size: 20px; letter-spacing: 0.02em; line-height: 1.1; }
+:root[data-game="climber"] .mitt-arm { display: grid; gap: 4px; }
+:root[data-game="climber"] .arm-row { display: flex; justify-content: space-between; font-size: 13px; font-weight: 800; }
+:root[data-game="climber"] .arm-state { font-family: var(--display); font-weight: 400; letter-spacing: 0.03em; }
+:root[data-game="climber"] .meter { height: 14px; border: 3px solid #15121f; border-radius: 99px; background: #e9f6ff; overflow: hidden; }
+:root[data-game="climber"] .meter i { display: block; height: 100%; background: #9fd8f8; border-right: 3px solid #15121f; transition: width 0.15s linear; }
+:root[data-game="climber"] .meter i.ready { background: #ff4b4b; }
+:root[data-game="climber"] .mitt-note { margin: 0; font-size: 14px; line-height: 1.3; color: var(--muted); }
+:root[data-game="climber"] .mitt-note.small { font-size: 13px; }
+
+:root[data-game="climber"] canvas.mini { filter: none; }
+:root[data-game="climber"] .queue { gap: 12px; }
+
+:root[data-game="climber"] .log { font-size: 14px; color: var(--muted); }
+:root[data-game="climber"] .log li:first-child { color: var(--fg); font-weight: 700; }
+:root[data-game="climber"] .log b {
+  color: #15121f; background: #ffd23f; font-family: var(--display); font-weight: 400;
+  padding: 1px 5px 0; border-radius: 6px; border: 2px solid #15121f; letter-spacing: 0.02em;
+}
+:root[data-game="climber"] .keys-hint {
+  background: #fff; border: 3px solid var(--line); border-radius: 12px; padding: 6px 10px;
+  color: var(--fg); font-size: 13px; font-weight: 600;
+}
+
+:root[data-game="climber"] .toast {
+  background: #fff; color: #15121f; border: 3px solid #15121f; border-radius: 14px;
+  box-shadow: 4px 4px 0 #15121f; font-weight: 800;
+}
+:root[data-game="climber"] .toast.good { background: #c9f5d6; border-color: #15121f; }
+:root[data-game="climber"] .toast.bad { background: #ffd2d8; border-color: #15121f; }
+
+:root[data-game="climber"] .modal { background: #fff; border: 4px solid var(--line); border-radius: 18px; box-shadow: 6px 6px 0 var(--line); }
+
+/* touch pad */
+:root[data-game="climber"] .pad { gap: 8px; }
+:root[data-game="climber"] .pad-btn {
+  background: #fff; color: #15121f; border: 3px solid #15121f; border-radius: 14px;
+  box-shadow: 3px 3px 0 #15121f; font-family: var(--display); font-size: 17px; min-width: 56px; height: 48px; padding: 0 10px;
+}
+:root[data-game="climber"] .pad-btn[aria-label="jump"] { background: #ffd23f; min-width: 88px; }
+:root[data-game="climber"] .pad-btn[aria-label^="p2"] { background: #e3efff; font-size: 15px; }
+:root[data-game="climber"] .pad-btn:active { background: #ffe98a; transform: translate(2px, 2px); box-shadow: 1px 1px 0 #15121f; }
+
+@media (max-width: 760px) {
+  :root[data-game="climber"] .topbar h2 { font-size: 24px; }
+  :root[data-game="climber"] .board-frame { box-shadow: 4px 4px 0 var(--line); }
+  :root[data-game="climber"] .board-overlay { padding: 6px; }
+  :root[data-game="climber"] .ov-card { padding: 10px 10px 12px; gap: 8px; border-width: 3px; box-shadow: 4px 4px 0 var(--line); }
+  :root[data-game="climber"] .ov-card h3 { font-size: 23px; text-shadow: 2px 2px 0 #15121f; }
+  :root[data-game="climber"] .ov-body { font-size: 13px; line-height: 1.25; gap: 6px; }
+  :root[data-game="climber"] .ov-body ul { gap: 3px; }
+  :root[data-game="climber"] .ov-body li { padding-left: 18px; }
+  :root[data-game="climber"] .ov-body li::before { width: 9px; height: 9px; top: 4px; }
+}
+
+/* hub card */
+.card[data-game="climber"] {
+  background: #fff; border: 3px solid #15121f; border-radius: 16px; box-shadow: 5px 5px 0 #15121f; color: #15121f;
+}
+.card[data-game="climber"]:hover, .card[data-game="climber"]:focus-visible { border-color: #15121f; transform: translate(-2px, -2px); box-shadow: 7px 7px 0 #15121f; }
+.card[data-game="climber"] canvas.card-art { border-bottom: 3px solid #15121f; background: #45b4ff; }
+.card[data-game="climber"] .num { font-family: "Luckiest Guy", sans-serif; color: #474b63; letter-spacing: 0.06em; }
+.card[data-game="climber"] h2 {
+  font-family: "Luckiest Guy", sans-serif; font-size: 25px; color: #ffd23f; letter-spacing: 0.02em;
+  -webkit-text-stroke: 1.2px #15121f; paint-order: stroke fill; text-shadow: 2px 2px 0 #15121f;
+}
+.card[data-game="climber"] .mix { color: #d91f36; font-family: "Baloo 2", sans-serif; font-weight: 800; }
+.card[data-game="climber"] p { color: #33364a; font-family: "Baloo 2", sans-serif; font-weight: 500; font-size: 15px; line-height: 1.3; }
+.card[data-game="climber"] .play {
+  justify-self: start; font-family: "Luckiest Guy", sans-serif; color: #15121f; background: #ffd23f;
+  border: 3px solid #15121f; border-radius: 99px; padding: 3px 14px 1px; box-shadow: 2px 2px 0 #15121f;
+}

@@ -1,0 +1,250 @@
+/* fortress-well theme: "Bunker Nine". Green-phosphor vector CRT radar console.
+   Monochrome green; amber for warnings; red only for reactor damage. */
+:root[data-game="fortress-well"] {
+  --ink: #010603;
+  --cabinet: #07120b;
+  --well: #010502;
+  --panel: #04100a;
+  --line: #17552d;
+  --fg: #a8ffc2;
+  --muted: #5fb57b;
+  --accent: #3dff7f;
+  --accent-ink: #001a08;
+  --good: #3dff7f;
+  --bad: #ff3b30;
+  --cool: #9dffc0;
+  --warn: #ffb000;
+  --glow: 0 0 6px rgba(61, 255, 127, 0.55);
+  --display: "VT323", "Share Tech Mono", monospace;
+  --body: "Share Tech Mono", ui-monospace, monospace;
+  color-scheme: dark;
+}
+:root[data-game="fortress-well"] body {
+  background:
+    radial-gradient(ellipse at 50% 30%, rgba(30, 120, 60, 0.12), transparent 60%),
+    var(--ink);
+  font-size: 14px;
+  text-shadow: 0 0 4px rgba(61, 255, 127, 0.25);
+}
+/* whole-page scanlines */
+:root[data-game="fortress-well"] body::after {
+  content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 60;
+  background: repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.18) 0 1px, transparent 1px 3px);
+  mix-blend-mode: multiply;
+}
+
+/* ---------- header ---------- */
+:root[data-game="fortress-well"] .topbar { border-bottom: 1px solid var(--line); box-shadow: 0 1px 0 #020a05, 0 3px 0 rgba(23, 85, 45, 0.5); }
+:root[data-game="fortress-well"] .topbar h2 { font-size: 40px; line-height: 0.9; letter-spacing: 0.04em; text-transform: uppercase; color: var(--accent); text-shadow: 0 0 8px rgba(61, 255, 127, 0.7), 0 0 22px rgba(61, 255, 127, 0.3); }
+:root[data-game="fortress-well"] .topbar .mix { color: var(--muted); letter-spacing: 0.18em; }
+:root[data-game="fortress-well"] .topbar .mix::before { content: "SCOPE 1 // "; color: var(--warn); }
+
+/* ---------- buttons: console keys ---------- */
+:root[data-game="fortress-well"] .btn {
+  font-family: var(--body); text-transform: uppercase; letter-spacing: 0.1em; font-weight: 400; font-size: 13px;
+  border-radius: 2px; border: 1px solid var(--line); background: linear-gradient(#0a1d11, #04100a);
+  color: var(--fg); box-shadow: inset 0 1px 0 rgba(61, 255, 127, 0.12), 0 2px 0 #000;
+}
+:root[data-game="fortress-well"] .btn:hover:not(:disabled) { border-color: var(--accent); box-shadow: inset 0 1px 0 rgba(61, 255, 127, 0.2), 0 0 10px rgba(61, 255, 127, 0.3); }
+:root[data-game="fortress-well"] .btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); text-shadow: none; box-shadow: 0 0 14px rgba(61, 255, 127, 0.55), 0 2px 0 #0a5a25; }
+:root[data-game="fortress-well"] .btn.primary:hover { background: #8dffb3; }
+
+/* ---------- the scope: bezel, glass, scanlines ---------- */
+:root[data-game="fortress-well"] .board-frame {
+  padding: 14px; border-radius: 14px;
+  background:
+    radial-gradient(circle at 9px 9px, #2c3a30 0 2px, transparent 3px),
+    radial-gradient(circle at calc(100% - 9px) 9px, #2c3a30 0 2px, transparent 3px),
+    radial-gradient(circle at 9px calc(100% - 9px), #2c3a30 0 2px, transparent 3px),
+    radial-gradient(circle at calc(100% - 9px) calc(100% - 9px), #2c3a30 0 2px, transparent 3px),
+    linear-gradient(160deg, #18221b, #0b120d 60%, #070b08);
+  border: 1px solid #253a2b;
+  box-shadow: 0 0 0 3px #030604, 0 0 0 4px #1b2c20, 0 18px 50px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+:root[data-game="fortress-well"] .board-frame::before {
+  content: "SCOPE 1 · WELL"; position: absolute; top: -1px; left: 50%; transform: translate(-50%, -50%);
+  font: 11px/1 var(--body); letter-spacing: 0.3em; color: #0b140e; background: #5c7a63; padding: 3px 8px; border-radius: 2px; z-index: 3; text-shadow: none;
+}
+:root[data-game="fortress-well"] canvas.board {
+  border-radius: 10px;
+  box-shadow: 0 0 0 1px #000, 0 0 0 3px #0b140e, inset 0 0 30px #000;
+  filter: brightness(1.05) contrast(1.08);
+}
+:root[data-game="fortress-well"] .board-frame::after {
+  content: ""; position: absolute; inset: 14px; border-radius: 10px; pointer-events: none; z-index: 2;
+  background:
+    repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.32) 0 1px, transparent 1px 3px),
+    radial-gradient(ellipse at 50% 45%, transparent 55%, rgba(0, 0, 0, 0.55) 100%),
+    linear-gradient(170deg, rgba(200, 255, 220, 0.05), transparent 30%);
+  box-shadow: inset 0 0 22px rgba(0, 0, 0, 0.8), inset 0 0 2px rgba(61, 255, 127, 0.4);
+  animation: fw-flicker 4s steps(1) infinite;
+}
+@keyframes fw-flicker { 0%, 100% { opacity: 1; } 47% { opacity: 0.85; } 48% { opacity: 1; } 82% { opacity: 0.92; } 83% { opacity: 1; } }
+:root[data-game="fortress-well"] .board-frame.fw-jolt canvas.board { animation: fw-jolt 0.34s steps(7) both; }
+@keyframes fw-jolt {
+  0% { transform: translate(0, 0) skewX(0); filter: brightness(2.2) contrast(1.3); }
+  15% { transform: translate(-4px, 2px) skewX(-2deg); }
+  30% { transform: translate(5px, -1px) skewX(1.5deg) scaleY(1.01); filter: brightness(1.6); }
+  45% { transform: translate(-2px, 0) skewX(-0.8deg); }
+  60% { transform: translate(2px, 1px); filter: brightness(1.25); }
+  80% { transform: translate(-1px, 0); }
+  100% { transform: none; filter: brightness(1.05) contrast(1.08); }
+}
+:root[data-game="fortress-well"] .board-frame.fw-breach { border-color: var(--bad); box-shadow: 0 0 0 3px #030604, 0 0 0 4px var(--bad), 0 0 30px rgba(255, 59, 48, 0.45); }
+:root[data-game="fortress-well"] .board-overlay { inset: 14px; border-radius: 10px; background: rgba(1, 8, 3, 0.88); z-index: 4; }
+:root[data-game="fortress-well"] .ov-card { gap: 14px; }
+:root[data-game="fortress-well"] .ov-card h3 { font-size: 52px; line-height: 0.85; letter-spacing: 0.04em; color: var(--accent); text-shadow: 0 0 10px rgba(61, 255, 127, 0.8), 0 0 30px rgba(61, 255, 127, 0.35); }
+:root[data-game="fortress-well"] .ov-body { font-size: 13.5px; color: var(--fg); }
+:root[data-game="fortress-well"] .ov-body b { color: var(--accent); font-weight: 400; }
+:root[data-game="fortress-well"] .ov-body ul { padding-left: 0; list-style: none; gap: 6px; }
+:root[data-game="fortress-well"] .ov-body li { padding-left: 16px; position: relative; }
+:root[data-game="fortress-well"] .ov-body li::before { content: ">"; position: absolute; left: 0; color: var(--warn); }
+:root[data-game="fortress-well"] .fw-brief { font-family: var(--display); font-size: 22px; line-height: 1.05; color: var(--accent); letter-spacing: 0.03em; }
+:root[data-game="fortress-well"] .fw-dim { color: var(--muted); font-size: 12px; letter-spacing: 0.1em; }
+:root[data-game="fortress-well"] .fw-tally { display: grid; grid-template-columns: 1fr auto; gap: 2px 16px; font-size: 12px; letter-spacing: 0.15em; color: var(--muted); border-block: 1px dashed var(--line); padding-block: 8px; }
+:root[data-game="fortress-well"] .fw-tally b { font-family: var(--display); font-weight: 400; font-size: 26px; line-height: 1; color: var(--fg); text-align: right; }
+
+/* ---------- panels: console bezels with stencilled plates ---------- */
+:root[data-game="fortress-well"] .panel,
+:root[data-game="fortress-well"] .stat {
+  border-radius: 4px; border: 1px solid #1d3424;
+  background:
+    radial-gradient(circle at 6px 6px, #2a3a2e 0 1.5px, transparent 2.5px),
+    radial-gradient(circle at calc(100% - 6px) 6px, #2a3a2e 0 1.5px, transparent 2.5px),
+    radial-gradient(circle at 6px calc(100% - 6px), #2a3a2e 0 1.5px, transparent 2.5px),
+    radial-gradient(circle at calc(100% - 6px) calc(100% - 6px), #2a3a2e 0 1.5px, transparent 2.5px),
+    linear-gradient(#0a140d, #050b07);
+  box-shadow: inset 0 0 0 4px #050b07, inset 0 0 0 5px rgba(23, 85, 45, 0.6), 0 2px 0 #000;
+}
+:root[data-game="fortress-well"] .panel { padding: 14px 16px; }
+:root[data-game="fortress-well"] .panel h3,
+:root[data-game="fortress-well"] .side h3 {
+  font-family: var(--body); font-size: 11px; letter-spacing: 0.28em; color: #0b140e; text-shadow: none;
+  background: #5c7a63; justify-self: start; padding: 2px 8px 1px; border-radius: 1px; width: max-content; max-width: 100%;
+}
+:root[data-game="fortress-well"] .hud { gap: 6px; }
+:root[data-game="fortress-well"] .stat { padding: 9px 12px 6px; }
+:root[data-game="fortress-well"] .stat-label { font-size: 10.5px; letter-spacing: 0.22em; color: var(--muted); }
+:root[data-game="fortress-well"] .stat-value { font-size: 34px; line-height: 0.95; color: var(--fg); text-shadow: var(--glow); }
+:root[data-game="fortress-well"] .stat.accent .stat-value { color: var(--accent); font-size: 44px; letter-spacing: 0.08em; text-shadow: 0 0 10px rgba(61, 255, 127, 0.7); }
+:root[data-game="fortress-well"] .stat.bad .stat-value { color: var(--warn); text-shadow: 0 0 8px rgba(255, 176, 0, 0.6); }
+:root[data-game="fortress-well"] .stat.good .stat-value { color: var(--accent); }
+
+:root[data-game="fortress-well"] .fw-core { display: grid; grid-template-columns: auto 1fr; gap: 12px; align-items: center; --c: var(--accent); }
+:root[data-game="fortress-well"] .fw-core.warn { --c: var(--warn); }
+:root[data-game="fortress-well"] .fw-core.crit { --c: var(--bad); }
+:root[data-game="fortress-well"] .fw-core-num { font-family: var(--display); font-size: 40px; line-height: 0.8; color: var(--c); text-shadow: 0 0 8px var(--c); }
+:root[data-game="fortress-well"] .fw-core-num small { font-size: 20px; color: var(--muted); text-shadow: none; }
+:root[data-game="fortress-well"] .fw-seg { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 3px; height: 16px; }
+:root[data-game="fortress-well"] .fw-seg i { border: 1px solid color-mix(in srgb, var(--c) 45%, transparent); border-radius: 1px; }
+:root[data-game="fortress-well"] .fw-seg i.on { background: var(--c); box-shadow: 0 0 6px var(--c); }
+:root[data-game="fortress-well"] .fw-core.crit .fw-seg i.on { animation: fw-blink 0.5s steps(1) infinite; }
+@keyframes fw-blink { 50% { opacity: 0.35; } }
+:root[data-game="fortress-well"] .fw-note { margin: 0; font-size: 12px; line-height: 1.45; color: var(--muted); }
+:root[data-game="fortress-well"] .fw-note b { color: var(--fg); font-weight: 400; }
+:root[data-game="fortress-well"] .fw-ord { display: grid; grid-template-columns: 22px 1fr auto auto auto; gap: 4px 10px; align-items: center; font-size: 13px; font-variant-numeric: tabular-nums; }
+:root[data-game="fortress-well"] .fw-h { font-size: 10px; letter-spacing: 0.2em; color: var(--muted); }
+:root[data-game="fortress-well"] .fw-glyph { width: 20px; height: 20px; display: block; fill: none; stroke: var(--muted); stroke-width: 1.8; stroke-linecap: round; }
+:root[data-game="fortress-well"] .fw-ic.on .fw-glyph { stroke: var(--accent); filter: drop-shadow(0 0 3px var(--accent)); }
+:root[data-game="fortress-well"] .fw-nm { text-transform: uppercase; letter-spacing: 0.08em; }
+:root[data-game="fortress-well"] .fw-nm.on { color: var(--accent-ink); background: var(--accent); padding: 0 4px; text-shadow: none; justify-self: start; }
+:root[data-game="fortress-well"] .chip { border-radius: 1px; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; background: transparent; }
+:root[data-game="fortress-well"] .chip.accent { border-color: var(--line); color: var(--fg); }
+:root[data-game="fortress-well"] canvas.mini { filter: drop-shadow(0 0 3px rgba(61, 255, 127, 0.35)); }
+
+/* ---------- radio log: static-burst teletype ---------- */
+:root[data-game="fortress-well"] .log-panel { position: relative; overflow: hidden; }
+:root[data-game="fortress-well"] .log-panel::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none; opacity: 0.06;
+  background: repeating-linear-gradient(90deg, #3dff7f 0 1px, transparent 1px 3px), repeating-linear-gradient(0deg, transparent 0 2px, #3dff7f 2px 3px);
+  background-size: 7px 5px, 11px 4px;
+  animation: fw-static 0.35s steps(4) infinite;
+}
+@keyframes fw-static { 25% { background-position: 3px 1px, -5px 2px; } 50% { background-position: -2px 3px, 4px -1px; } 75% { background-position: 5px -2px, -3px 3px; } }
+:root[data-game="fortress-well"] .log { font-size: 12.5px; gap: 5px; color: #3f8a58; text-transform: uppercase; letter-spacing: 0.04em; }
+:root[data-game="fortress-well"] .log li { display: grid; grid-template-columns: auto 1fr; gap: 8px; }
+:root[data-game="fortress-well"] .log li:first-child { color: var(--fg); animation: fw-rx 0.55s steps(1) both; }
+:root[data-game="fortress-well"] .log li:nth-child(n + 5) { opacity: 0.55; }
+:root[data-game="fortress-well"] .fw-ts { color: #2f6b43; }
+:root[data-game="fortress-well"] .log li:first-child .fw-msg { text-shadow: var(--glow); }
+:root[data-game="fortress-well"] .fw-msg.warn { color: var(--warn); }
+:root[data-game="fortress-well"] .fw-msg.red { color: var(--bad); }
+:root[data-game="fortress-well"] .log li:first-child .fw-msg.hot { color: #d6ffe2; }
+@keyframes fw-rx {
+  0% { opacity: 0; transform: translateX(-3px); text-shadow: 3px 0 #3dff7f, -3px 0 #3dff7f; }
+  12% { opacity: 1; transform: translateX(2px); }
+  24% { opacity: 0.3; transform: translateX(-1px); }
+  36% { opacity: 1; transform: none; text-shadow: 1px 0 #3dff7f; }
+  50% { opacity: 0.6; }
+  62% { opacity: 1; text-shadow: none; }
+  100% { opacity: 1; }
+}
+:root[data-game="fortress-well"] .keys-hint { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: #3f8a58; }
+
+/* ---------- modal: resupply drop ---------- */
+:root[data-game="fortress-well"] .modal-layer { background: rgba(0, 4, 1, 0.8); }
+:root[data-game="fortress-well"] .modal {
+  border-radius: 6px; border: 1px solid #253a2b;
+  background: linear-gradient(160deg, #111b14, #070c08);
+  box-shadow: 0 0 0 3px #030604, 0 0 0 4px #1b2c20, 0 24px 60px rgba(0, 0, 0, 0.8);
+}
+:root[data-game="fortress-well"] .modal h3 { font-size: 44px; line-height: 0.85; color: var(--warn); letter-spacing: 0.05em; text-shadow: 0 0 10px rgba(255, 176, 0, 0.5); }
+:root[data-game="fortress-well"] .tile {
+  border-radius: 3px; border: 1px solid var(--line); padding: 12px; gap: 6px;
+  background: repeating-linear-gradient(-45deg, rgba(61, 255, 127, 0.03) 0 6px, transparent 6px 12px), #050d08;
+  box-shadow: inset 0 1px 0 rgba(61, 255, 127, 0.1), 0 3px 0 #000;
+}
+:root[data-game="fortress-well"] .tile:hover:not(:disabled) { border-color: var(--accent); box-shadow: 0 0 14px rgba(61, 255, 127, 0.35), 0 3px 0 #000; }
+:root[data-game="fortress-well"] .tile .t-cost { font-family: var(--body); font-size: 10.5px; letter-spacing: 0.25em; color: var(--warn); }
+:root[data-game="fortress-well"] .tile .t-name { font-family: var(--display); font-weight: 400; font-size: 28px; line-height: 0.9; color: var(--accent); text-transform: uppercase; text-shadow: var(--glow); }
+:root[data-game="fortress-well"] .tile .t-desc { font-size: 12.5px; color: var(--fg); }
+
+/* ---------- toasts: stencilled warning plates ---------- */
+:root[data-game="fortress-well"] .toast {
+  font-family: var(--display); font-size: 26px; font-weight: 400; letter-spacing: 0.12em; line-height: 1;
+  border-radius: 2px; padding: 8px 16px; background: #050b07; color: var(--accent); border: 1px solid var(--accent);
+  text-shadow: var(--glow);
+}
+:root[data-game="fortress-well"] .toast.warn {
+  color: #1a1000; background: var(--warn); border-color: var(--warn); text-shadow: none;
+  box-shadow: 0 0 0 3px #050b07, 0 0 0 4px var(--warn), 0 0 18px rgba(255, 176, 0, 0.4);
+}
+:root[data-game="fortress-well"] .toast.bad { color: #fff; background: #3a0603; border-color: var(--bad); text-shadow: 0 0 8px var(--bad); animation: toast-in 0.18s ease-out, fw-blink 0.3s steps(1) 3; }
+
+/* ---------- touch keys ---------- */
+:root[data-game="fortress-well"] .pad-btn {
+  border-radius: 3px; border: 1px solid var(--line); color: var(--accent); font-family: var(--body); font-size: 16px; letter-spacing: 0.05em;
+  background: linear-gradient(#0d1d12, #050b07); box-shadow: inset 0 1px 0 rgba(61, 255, 127, 0.15), 0 3px 0 #000;
+}
+:root[data-game="fortress-well"] .pad-btn:active { background: var(--accent); color: var(--accent-ink); transform: translateY(2px); box-shadow: none; }
+
+@media (max-width: 760px) {
+  :root[data-game="fortress-well"] .board-frame { padding: 10px; }
+  :root[data-game="fortress-well"] .board-frame::after, :root[data-game="fortress-well"] .board-overlay { inset: 10px; }
+  :root[data-game="fortress-well"] .topbar h2 { font-size: 32px; }
+  :root[data-game="fortress-well"] .ov-card h3 { font-size: 42px; }
+}
+
+/* ---------- hub card ---------- */
+.card[data-game="fortress-well"] {
+  background: linear-gradient(#07110a, #030805);
+  border: 1px solid #1d3a26; border-radius: 6px;
+  font-family: "Share Tech Mono", ui-monospace, monospace;
+  box-shadow: inset 0 0 0 1px #000, 0 0 0 1px rgba(61, 255, 127, 0.06);
+}
+.card[data-game="fortress-well"]:hover, .card[data-game="fortress-well"]:focus-visible { border-color: #3dff7f; box-shadow: 0 0 18px rgba(61, 255, 127, 0.25); }
+.card[data-game="fortress-well"] canvas.card-art { background: #010502; border-bottom: 1px solid #1d3a26; }
+.card[data-game="fortress-well"] .num { font-family: "Share Tech Mono", monospace; color: #ffb000; letter-spacing: 0.25em; }
+.card[data-game="fortress-well"] h2 { font-family: "VT323", monospace; font-size: 34px; line-height: 0.85; text-transform: uppercase; letter-spacing: 0.04em; color: #3dff7f; text-shadow: 0 0 8px rgba(61, 255, 127, 0.6); }
+.card[data-game="fortress-well"] .mix { color: #5fb57b; letter-spacing: 0.16em; }
+.card[data-game="fortress-well"] p { color: #8fdca6; font-size: 13px; }
+.card[data-game="fortress-well"] .play { font-family: "VT323", monospace; font-size: 22px; color: #3dff7f; text-transform: uppercase; letter-spacing: 0.1em; }
+.card[data-game="fortress-well"] .play::before { content: "> "; color: #ffb000; }
+@media (max-width: 760px) {
+  :root[data-game="fortress-well"] .toast { font-size: 20px; white-space: nowrap; letter-spacing: 0.08em; }
+}
+@media (max-width: 420px) {
+  :root[data-game="fortress-well"] .pad { gap: 5px; }
+  :root[data-game="fortress-well"] .pad-btn { min-width: 38px; padding: 0 4px; }
+  :root[data-game="fortress-well"] .pad-btn[aria-label="hold"], :root[data-game="fortress-well"] .pad-btn[aria-label="turret"] { font-size: 12px; }
+}

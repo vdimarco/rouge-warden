@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0b0d1c">
+<title>Eleven Wells · Cottage Arcade</title>
+<script src="/arcade/quiet.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bungee&family=Chakra+Petch:wght@400;600;700&family=Limelight&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Cinzel+Decorative:wght@400;700&family=Cormorant+Garamond:ital,wght@0,500;0,700;1,500&family=Special+Elite&family=Courier+Prime:wght@400;700&family=VT323&family=Share+Tech+Mono&family=Grandstander:wght@600;800&family=Nunito:wght@400;700;800&family=Rubik+Mono+One&family=Space+Mono:wght@400;700&family=Pirata+One&family=Alegreya:wght@400;700&family=Monoton&family=Exo+2:wght@400;600;800&family=Luckiest+Guy&family=Baloo+2:wght@500;700;800&family=Shrikhand&family=Barlow+Condensed:wght@500;700&family=Syne:wght@600;800&family=Space+Grotesk:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="games/stackjack.css">
+<link rel="stylesheet" href="games/hand-of-pieces.css">
+<link rel="stylesheet" href="games/rule-rows.css">
+<link rel="stylesheet" href="games/fortress-well.css">
+<link rel="stylesheet" href="games/harvest-rows.css">
+<link rel="stylesheet" href="games/alchemy-well.css">
+<link rel="stylesheet" href="games/stack-strike.css">
+<link rel="stylesheet" href="games/on-the-beat.css">
+<link rel="stylesheet" href="games/climber.css">
+<link rel="stylesheet" href="games/slot-well.css">
+<link rel="stylesheet" href="games/turnwell.css">
+</head>
+<body>
+<div class="wrap" id="app">
+  <section id="hub">
+    <header class="marquee">
+      <h1>Eleven Wells</h1>
+      <p>Eleven playable prototypes. Each one crosses falling blocks with a mechanic from another genre: poker scoring, tower defense, farming, rhythm, slot machines and more. They are rough on purpose, built to test whether each idea is fun.</p>
+      <div class="meta">
+        <a class="btn small" href="/">← Arcade</a>
+        <button class="btn small" type="button" id="mute-hub"></button>
+        <span class="chip">Keyboard: arrows, Z, Space, C</span>
+        <span class="chip">Touch buttons appear on phones</span>
+      </div>
+    </header>
+    <div class="rack" id="rack"></div>
+  </section>
+  <section id="play" hidden>
+    <div class="topbar">
+      <button class="btn" type="button" id="back">← All wells</button>
+      <div class="title"><span class="mix" id="play-mix"></span><h2 id="play-title"></h2></div>
+      <button class="btn small" type="button" id="restart">Restart</button>
+      <button class="btn small" type="button" id="mute"></button>
+    </div>
+    <div id="stage"></div>
+  </section>
+</div>
+
+<script src="engine.js" charset="utf-8"></script>
+<script src="games/stackjack.js" charset="utf-8"></script>
+<script src="games/hand-of-pieces.js" charset="utf-8"></script>
+<script src="games/rule-rows.js" charset="utf-8"></script>
+<script src="games/fortress-well.js" charset="utf-8"></script>
+<script src="games/harvest-rows.js" charset="utf-8"></script>
+<script src="games/alchemy-well.js" charset="utf-8"></script>
+<script src="games/stack-strike.js" charset="utf-8"></script>
+<script src="games/on-the-beat.js" charset="utf-8"></script>
+<script src="games/climber.js" charset="utf-8"></script>
+<script src="games/slot-well.js" charset="utf-8"></script>
+<script src="games/turnwell.js" charset="utf-8"></script>
+<script>
+(function () {
+  const W = window.Wells;
+  const hub = document.getElementById('hub');
+  const play = document.getElementById('play');
+  const rack = document.getElementById('rack');
+  const stage = document.getElementById('stage');
+  let current = null;
+
+  const ART_W = 280, ART_H = 120;
+  function cardArt(g) {
+    const cv = document.createElement('canvas');
+    cv.className = 'card-art';
+    const dpr = window.devicePixelRatio || 1;
+    cv.width = ART_W * dpr; cv.height = ART_H * dpr;
+    const ctx = cv.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    if (g.art) {
+      try { g.art(ctx, ART_W, ART_H); return cv; } catch (e) { console.error(e); ctx.setTransform(dpr, 0, 0, dpr, 0, 0); }
+    }
+    const s = 12;
+    ctx.translate((ART_W - 8 * s) / 2, ART_H - 8 * s - 4);
+    const r = W.rng([...g.id].reduce((a, c) => a * 31 + c.charCodeAt(0), 7));
+    const pal = g.palette || Object.values(W.COLORS);
+    for (let x = 0; x < 8; x++) {
+      const h = 2 + r.int(5);
+      for (let y = 8 - h; y < 8; y++) if (!(r.chance(0.12))) W.drawBlock(ctx, x * s, y * s, s, pal[r.int(pal.length)]);
+    }
+    return cv;
+  }
+
+  function renderRack() {
+    rack.innerHTML = '';
+    for (const g of W.games) {
+      const b = document.createElement('button');
+      b.className = 'card';
+      b.type = 'button';
+      b.dataset.game = g.id;
+      b.innerHTML = `<div class="card-top"><div class="num">No. ${String(g.num).padStart(2, '0')}</div><h2>${W.esc(g.title)}</h2><div class="mix">${W.esc(g.mix)}</div></div><p>${W.esc(g.pitch)}</p><span class="play">Play →</span>`;
+      b.prepend(cardArt(g));
+      b.addEventListener('click', () => open(g.id));
+      rack.appendChild(b);
+    }
+  }
+
+  function unmount() {
+    if (current) { current.sh.destroy(); current = null; }
+  }
+  function open(id, fromHash) {
+    const g = W.games.find((x) => x.id === id);
+    if (!g) return close();
+    unmount();
+    hub.hidden = true;
+    play.hidden = false;
+    document.getElementById('play-title').textContent = g.title;
+    document.getElementById('play-mix').textContent = g.mix;
+    document.documentElement.dataset.game = g.id;
+    const sh = W.shell(stage, g.shell || {});
+    current = { g, sh };
+    window.__wellsCurrent = current; // debug handle for playtesting
+    try { g.mount(sh, W); } catch (e) { console.error(e); stage.innerHTML = `<p>This prototype failed to start: ${W.esc(e.message)}</p>`; }
+    if (!fromHash) history.replaceState(null, '', '#' + g.id);
+    window.scrollTo(0, 0);
+  }
+  function close() {
+    unmount();
+    delete document.documentElement.dataset.game;
+    play.hidden = true;
+    hub.hidden = false;
+    history.replaceState(null, '', location.pathname + location.search);
+  }
+  document.getElementById('back').addEventListener('click', close);
+  document.getElementById('restart').addEventListener('click', () => current && open(current.g.id));
+  const muteBtns = [document.getElementById('mute'), document.getElementById('mute-hub')];
+  const paintMute = () => muteBtns.forEach((b) => (b.textContent = W.muted ? 'Sound: off' : 'Sound: on'));
+  muteBtns.forEach((b) => b.addEventListener('click', () => {
+    W.muted = !W.muted;
+    try { localStorage.setItem('wells-muted', W.muted ? '1' : '0'); } catch (e) { /* storage blocked */ }
+    paintMute();
+  }));
+  paintMute();
+  renderRack();
+  const h = location.hash.slice(1);
+  if (h) open(h, true);
+})();
+</script>
+</body>
+</html>
