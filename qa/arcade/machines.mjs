@@ -25,6 +25,7 @@ const NOT_GAMES = {
   icons: "the site's icons",
   fonts: "self-hosted faces for the arcade home (Press Start 2P, Monoton, Bungee)",
   lib: "shared libraries",
+  corridor: "the walk-through view of the whole arcade, the default view of the home (openspec/changes/arcade-corridor-default)",
   ".well-known": "files that app stores read",
 };
 // Games that have no machine of their own, each with the reason. "coveredBy" names the machine that stands in for it.
