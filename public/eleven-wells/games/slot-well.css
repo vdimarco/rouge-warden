@@ -1,0 +1,210 @@
+/* slot-well theme: "Lucky Pier", a seaside boardwalk arcade at dusk.
+   Candy-stripe red and cream, sea teal, chrome, sunset sky. Enamel-sign panels with hard ink shadows. */
+:root[data-game="slot-well"] {
+  --ink: #23103f;
+  --cabinet: #fff3dc;
+  --well: #0c3b45;
+  --panel: #fff3dc;
+  --line: #2a1230;
+  --fg: #2a1230;
+  --muted: #6e4658;
+  --accent: #c81e33;
+  --accent-ink: #fff3dc;
+  --good: #0b7a5c;
+  --bad: #c81e33;
+  --cool: #137f8a;
+  --display: "Shrikhand", "Georgia", cursive;
+  --body: "Barlow Condensed", "Arial Narrow", sans-serif;
+  --pier-red: #d6283a;
+  --pier-cream: #fff3dc;
+  --pier-gold: #ffcf3a;
+  --pier-teal: #1fa8b3;
+  color-scheme: light;
+}
+:root[data-game="slot-well"] body { background: transparent; }
+:root[data-game="slot-well"] {
+  background:
+    radial-gradient(circle at 50% 100%, rgba(255, 226, 138, 0.55) 0, rgba(255, 178, 87, 0.25) 22vh, transparent 46vh),
+    linear-gradient(180deg, #23103f 0%, #4a1a5c 26%, #96305f 50%, #e0604c 74%, #ffa95a 92%, #ffc46a 100%) fixed;
+  background-color: #23103f;
+}
+:root[data-game="slot-well"] body { font-size: 16px; font-weight: 500; }
+
+/* ---------- topbar: dusk sky with a candy awning ---------- */
+:root[data-game="slot-well"] .topbar { background: #23103f; border-bottom: 0; margin-bottom: 30px; }
+:root[data-game="slot-well"] .topbar::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: -14px; height: 14px; pointer-events: none;
+  background: repeating-linear-gradient(90deg, var(--pier-red) 0 22px, var(--pier-cream) 22px 44px);
+  -webkit-mask: radial-gradient(circle at 11px 0, #000 11px, transparent 11.5px) 0 0 / 22px 14px repeat-x;
+  mask: radial-gradient(circle at 11px 0, #000 11px, transparent 11.5px) 0 0 / 22px 14px repeat-x;
+}
+:root[data-game="slot-well"] .topbar h2 { font-family: var(--display); font-weight: 400; font-size: 28px; color: var(--pier-cream); text-shadow: 2px 3px 0 var(--pier-red), 4px 5px 0 #120822; letter-spacing: 0.01em; }
+:root[data-game="slot-well"] .topbar .mix { color: var(--pier-gold); font-weight: 700; letter-spacing: 0.14em; }
+
+/* ---------- buttons: enamel pills ---------- */
+:root[data-game="slot-well"] .btn {
+  background: var(--pier-cream); color: var(--fg); border: 2px solid var(--line); border-radius: 99px;
+  font-family: var(--body); font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;
+  box-shadow: 0 3px 0 var(--line); padding: 6px 16px; transition: transform 0.06s ease, box-shadow 0.06s ease;
+}
+:root[data-game="slot-well"] .btn:hover:not(:disabled) { border-color: var(--line); background: #ffe7b3; }
+:root[data-game="slot-well"] .btn:active:not(:disabled) { transform: translateY(2px); box-shadow: 0 1px 0 var(--line); }
+:root[data-game="slot-well"] .btn.primary { background: var(--pier-red); color: var(--pier-cream); border-color: var(--line); }
+:root[data-game="slot-well"] .btn.primary:hover:not(:disabled) { background: #e8394b; }
+:root[data-game="slot-well"] .btn.small { padding: 4px 12px; font-size: 14px; }
+:root[data-game="slot-well"] :focus-visible { outline: 3px solid var(--pier-gold); outline-offset: 2px; }
+
+/* ---------- the board: candy-stripe frame, marquee bulbs, chrome rim ---------- */
+:root[data-game="slot-well"] .board-frame {
+  padding: 18px; border: 3px solid var(--line); border-radius: 20px;
+  background: repeating-linear-gradient(45deg, var(--pier-red) 0 12px, var(--pier-cream) 12px 24px);
+  box-shadow: 0 6px 0 var(--line), 0 24px 60px rgba(20, 6, 30, 0.5);
+}
+:root[data-game="slot-well"] .pier-bulbs { position: absolute; left: 0; top: 0; pointer-events: none; z-index: 0; border-radius: 17px; }
+:root[data-game="slot-well"] canvas.board { position: relative; z-index: 1; border-radius: 6px; box-shadow: 0 0 0 3px #e6eaf0, 0 0 0 5px var(--line); }
+:root[data-game="slot-well"] .boss-here .board-frame { animation: pier-boss 0.5s ease-in-out 2; }
+@keyframes pier-boss { 50% { filter: saturate(0.4) brightness(0.75); transform: translateY(2px); } }
+
+:root[data-game="slot-well"] .board-overlay { inset: 18px; z-index: 2; background: rgba(35, 16, 63, 0.7); border-radius: 6px; padding: 12px; }
+:root[data-game="slot-well"] .ov-card {
+  background: var(--pier-cream); color: var(--fg); border: 3px solid var(--line); border-radius: 16px;
+  box-shadow: 0 5px 0 var(--line), 0 0 0 6px var(--pier-red), 0 0 0 8px var(--line); padding: 16px; gap: 10px; max-width: 300px;
+}
+:root[data-game="slot-well"] .ov-card h3 { font-family: var(--display); font-size: 32px; line-height: 1; color: var(--pier-red); text-shadow: 2px 2px 0 var(--pier-gold); }
+:root[data-game="slot-well"] .ov-body { color: var(--fg); font-size: 16px; line-height: 1.3; }
+:root[data-game="slot-well"] .ov-body .barker { font-family: var(--display); font-size: 19px; color: var(--cool); }
+:root[data-game="slot-well"] .ov-body b { color: var(--pier-red); }
+
+/* ---------- side column ---------- */
+:root[data-game="slot-well"] .side { position: relative; }
+:root[data-game="slot-well"] .pier-spill { position: absolute; left: 0; top: 0; pointer-events: none; z-index: 4; }
+:root[data-game="slot-well"] .panel {
+  background: var(--pier-cream); border: 3px solid var(--line); border-radius: 14px; box-shadow: 0 4px 0 var(--line); padding: 10px 12px 12px;
+}
+:root[data-game="slot-well"] .panel h3, :root[data-game="slot-well"] .side h3 {
+  font-family: var(--display); font-weight: 400; font-size: 18px; letter-spacing: 0; text-transform: none; color: var(--pier-red); line-height: 1.15;
+}
+:root[data-game="slot-well"] .panel h3 .won { color: var(--good); }
+:root[data-game="slot-well"] .panel h3 .mult { color: var(--cool); font-size: 15px; }
+:root[data-game="slot-well"] .fine { margin: 0; font-size: 14px; color: var(--muted); line-height: 1.3; }
+:root[data-game="slot-well"] .keys-hint { color: #ffe9c9; font-size: 14px; text-shadow: 0 1px 0 #3a1430; }
+
+:root[data-game="slot-well"] .hud { gap: 8px; }
+:root[data-game="slot-well"] .stat { background: var(--pier-cream); border: 3px solid var(--line); border-radius: 12px; box-shadow: 0 3px 0 var(--line); padding: 5px 10px 6px; }
+:root[data-game="slot-well"] .stat-label { font-weight: 700; font-size: 12px; letter-spacing: 0.1em; color: var(--muted); }
+:root[data-game="slot-well"] .stat-value { font-family: var(--display); font-size: 24px; color: var(--fg); }
+:root[data-game="slot-well"] .stat.good .stat-value { color: var(--good); }
+:root[data-game="slot-well"] .stat.accent .stat-value { color: var(--pier-red); }
+:root[data-game="slot-well"] .stat.wide .stat-value { display: flex; align-items: center; gap: 10px; }
+:root[data-game="slot-well"] .rent-bulbs { display: flex; gap: 4px; flex-wrap: wrap; flex: 1; }
+:root[data-game="slot-well"] .rent-bulbs i { width: 12px; height: 12px; border-radius: 50%; background: #c9b89c; border: 2px solid var(--line); }
+:root[data-game="slot-well"] .rent-bulbs i.on { background: radial-gradient(circle at 40% 35%, #fffef0 0 15%, var(--pier-gold) 45%, #e8962a 100%); box-shadow: 0 0 6px rgba(255, 207, 58, 0.9); }
+:root[data-game="slot-well"] .stat.bad { background: #ffe1d6; }
+:root[data-game="slot-well"] .stat.bad .rent-bulbs i.on { background: radial-gradient(circle at 40% 35%, #fff 0 15%, #ff4a4a 50%, #b0141e 100%); box-shadow: 0 0 7px rgba(255, 60, 60, 0.9); animation: pier-blink 0.6s steps(2) infinite; }
+:root[data-game="slot-well"] .rent-n { font-size: 24px; min-width: 1.4em; text-align: right; }
+:root[data-game="slot-well"] .stat.bad .rent-n { color: var(--bad); }
+@keyframes pier-blink { 50% { opacity: 0.35; } }
+
+/* the lever panel */
+:root[data-game="slot-well"] .meter { position: relative; height: 22px; border: 2px solid var(--line); border-radius: 99px; overflow: hidden; background: #f1dfc0; }
+:root[data-game="slot-well"] .meter div { height: 100%; background: repeating-linear-gradient(45deg, var(--pier-red) 0 8px, #ef4b5c 8px 16px); transition: width 0.3s ease; }
+:root[data-game="slot-well"] .meter.full div { background: repeating-linear-gradient(45deg, #11957a 0 8px, #22b394 8px 16px); }
+:root[data-game="slot-well"] .meter span { position: absolute; inset: 0; display: grid; place-items: center; font-weight: 700; font-size: 13px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--fg); text-shadow: 0 0 3px #fff3dc, 0 0 3px #fff3dc; }
+:root[data-game="slot-well"] .lever-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+:root[data-game="slot-well"] .robo { margin: 0; font-size: 15px; line-height: 1.3; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; }
+:root[data-game="slot-well"] .robo-tag { font-family: var(--display); color: var(--cool); }
+:root[data-game="slot-well"] .robo b { color: var(--good); }
+:root[data-game="slot-well"] .robo-note { margin: 0; font-weight: 700; color: var(--cool); }
+
+/* last pull strip: little reel windows */
+:root[data-game="slot-well"] .strip { display: grid; gap: 3px; text-align: center; }
+:root[data-game="slot-well"] .strip .cell { display: grid; justify-items: center; background: linear-gradient(#ffffff, #c6ccd5 45%, #7a8291 55%, #e6eaf0); border: 1.5px solid var(--line); border-radius: 6px; padding: 3px 0 1px; }
+:root[data-game="slot-well"] .strip .cell img { width: 20px; height: 20px; background: #fff7e8; border-radius: 3px; }
+:root[data-game="slot-well"] .strip .cell span { font-family: var(--display); font-size: 13px; line-height: 1.1; color: var(--fg); }
+:root[data-game="slot-well"] .strip .cell span.hi { color: var(--good); }
+:root[data-game="slot-well"] .strip .cell span.zero { color: #6b6f7c; }
+:root[data-game="slot-well"] .strip .cell.hit { background: linear-gradient(#fff6c8, #f2c14e 45%, #a8741c 55%, #ffe08a); }
+
+/* icons, chips, log */
+:root[data-game="slot-well"] img.pier-sym { width: 22px; height: 22px; vertical-align: -6px; display: inline-block; }
+:root[data-game="slot-well"] img.pier-sym.sm { width: 20px; height: 20px; }
+:root[data-game="slot-well"] img.pier-sym.big { width: 46px; height: 46px; }
+:root[data-game="slot-well"] .chip { background: #fff; border: 2px solid var(--line); color: var(--fg); font-weight: 700; font-size: 14px; padding: 1px 8px 1px 4px; display: inline-flex; align-items: center; gap: 3px; }
+:root[data-game="slot-well"] .chip.accent { background: var(--pier-gold); border-color: var(--line); color: var(--fg); padding-left: 8px; }
+:root[data-game="slot-well"] .chip.bad { background: #ffd4cc; border-color: var(--bad); color: var(--bad); }
+:root[data-game="slot-well"] button.chip { cursor: pointer; }
+:root[data-game="slot-well"] button.chip:disabled { opacity: 0.5; cursor: not-allowed; }
+:root[data-game="slot-well"] .log { font-size: 15px; color: var(--muted); gap: 3px; }
+:root[data-game="slot-well"] .log li:first-child { color: var(--fg); }
+:root[data-game="slot-well"] .log b { color: var(--good); font-family: var(--display); font-weight: 400; }
+:root[data-game="slot-well"] .log-panel { background: #24402f; background: linear-gradient(#2c4a3a, #213a2e); }
+:root[data-game="slot-well"] .log-panel h3 { color: var(--pier-gold); }
+:root[data-game="slot-well"] .log-panel .log, :root[data-game="slot-well"] .log-panel .log li { color: #cfe3d3; }
+:root[data-game="slot-well"] .log-panel .log li:first-child { color: #ffffff; }
+:root[data-game="slot-well"] .log-panel .log b { color: var(--pier-gold); }
+
+/* ---------- Big Rosie ---------- */
+:root[data-game="slot-well"] .rosie { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 10px; align-items: center; }
+:root[data-game="slot-well"] .rosie-face { width: 84px; height: 84px; display: block; filter: drop-shadow(0 4px 0 var(--line)); }
+:root[data-game="slot-well"] .rosie-talk {
+  position: relative; background: #fff; border: 3px solid var(--line); border-radius: 16px; box-shadow: 0 4px 0 var(--line); padding: 6px 12px 8px; min-height: 64px; display: grid; align-content: center;
+}
+:root[data-game="slot-well"] .rosie-talk::before { content: ""; position: absolute; left: -12px; top: 50%; margin-top: -9px; border: 9px solid transparent; border-right: 12px solid var(--line); border-left: 0; }
+:root[data-game="slot-well"] .rosie-talk::after { content: ""; position: absolute; left: -7px; top: 50%; margin-top: -6px; border: 6px solid transparent; border-right: 8px solid #fff; border-left: 0; }
+:root[data-game="slot-well"] .rosie-name { font-family: var(--display); color: var(--pier-red); font-size: 15px; line-height: 1; }
+:root[data-game="slot-well"] .rosie-line { margin: 2px 0 0; font-weight: 700; font-size: 18px; line-height: 1.15; color: var(--fg); }
+:root[data-game="slot-well"] .rosie.pop .rosie-talk { animation: pier-pop 0.25s ease-out; }
+@keyframes pier-pop { from { transform: scale(0.94) rotate(-1deg); } }
+
+/* ---------- rent dialog: a boardwalk ticket ---------- */
+:root[data-game="slot-well"] .modal-layer { background: rgba(28, 10, 40, 0.72); }
+:root[data-game="slot-well"] .modal {
+  background: var(--pier-cream); border: 3px solid var(--line); border-radius: 18px;
+  box-shadow: 0 0 0 7px var(--pier-red), 0 0 0 10px var(--line), 0 24px 60px rgba(0, 0, 0, 0.5); padding: 18px 20px; gap: 12px;
+}
+:root[data-game="slot-well"] .modal h3 { font-family: var(--display); font-size: 30px; line-height: 1.05; color: var(--pier-red); text-shadow: 2px 2px 0 var(--pier-gold); }
+:root[data-game="slot-well"] .modal h4 { margin: 4px 0 0; font-family: var(--display); font-weight: 400; font-size: 19px; color: var(--cool); }
+:root[data-game="slot-well"] .pick-ticket { font-size: 17px; padding: 8px 12px; border: 2px dashed var(--pier-red); border-radius: 10px; background: #fff; }
+:root[data-game="slot-well"] .pick-ticket b { color: var(--pier-red); }
+:root[data-game="slot-well"] .tile { background: #fff; border: 3px solid var(--line); border-radius: 14px; box-shadow: 0 4px 0 var(--line); padding: 10px 12px; gap: 4px; justify-items: start; }
+:root[data-game="slot-well"] .tile:hover:not(:disabled) { border-color: var(--line); background: #fff8e8; }
+:root[data-game="slot-well"] .tile.on { background: #ffe9a6; border-color: var(--line); box-shadow: 0 4px 0 var(--line), 0 0 0 3px var(--pier-red); }
+:root[data-game="slot-well"] .tile .t-name { font-family: var(--display); font-weight: 400; font-size: 18px; color: var(--fg); }
+:root[data-game="slot-well"] .tile .t-desc { font-size: 15px; color: var(--muted); line-height: 1.25; }
+:root[data-game="slot-well"] .tile .t-cost { font-family: var(--body); font-weight: 700; color: var(--cool); font-size: 14px; text-transform: uppercase; letter-spacing: 0.06em; }
+
+:root[data-game="slot-well"] .toast { background: var(--pier-cream); color: var(--fg); border: 3px solid var(--line); border-radius: 99px; box-shadow: 0 4px 0 var(--line); font-weight: 700; padding: 6px 16px; }
+:root[data-game="slot-well"] .toast.good { background: #c9f3e3; }
+:root[data-game="slot-well"] .toast.bad { background: #ffd4cc; }
+
+/* touch pad: red arcade buttons */
+:root[data-game="slot-well"] .pad-btn {
+  background: radial-gradient(circle at 40% 30%, #ff7a7a, var(--pier-red) 55%, #9e1426); color: var(--pier-cream);
+  border: 3px solid var(--line); border-radius: 14px; box-shadow: 0 4px 0 var(--line); font-weight: 700;
+}
+:root[data-game="slot-well"] .pad-btn:active { background: #9e1426; transform: translateY(3px); box-shadow: 0 1px 0 var(--line); }
+:root[data-game="slot-well"] .pad-btn[aria-label="auto"] { background: radial-gradient(circle at 40% 30%, #6fe0e8, var(--pier-teal) 55%, #0e6e76); font-size: 15px; text-transform: uppercase; }
+
+@media (max-width: 760px) {
+  :root[data-game="slot-well"] .board-col .rosie { width: 100%; max-width: 380px; }
+  :root[data-game="slot-well"] .rosie-face { width: 60px; height: 60px; }
+  :root[data-game="slot-well"] .rosie-talk { min-height: 52px; padding: 4px 10px 6px; }
+  :root[data-game="slot-well"] .rosie-line { font-size: 16px; }
+  :root[data-game="slot-well"] .board-frame { padding: 14px; }
+  :root[data-game="slot-well"] .board-overlay { inset: 14px; }
+  :root[data-game="slot-well"] .topbar h2 { font-size: 24px; }
+}
+
+/* ---------- hub card ---------- */
+.card[data-game="slot-well"] {
+  background: #fff3dc; border: 3px solid #2a1230; border-radius: 14px; box-shadow: 0 5px 0 #2a1230; color: #2a1230;
+  font-family: "Barlow Condensed", sans-serif;
+}
+.card[data-game="slot-well"]:hover, .card[data-game="slot-well"]:focus-visible { border-color: #2a1230; box-shadow: 0 7px 0 #2a1230, 0 0 0 3px #d6283a; }
+.card[data-game="slot-well"] canvas.card-art { border-bottom: 3px solid #2a1230; }
+.card[data-game="slot-well"] .num { font-family: "Barlow Condensed", sans-serif; font-weight: 700; color: #6e4658; font-size: 14px; letter-spacing: 0.14em; }
+.card[data-game="slot-well"] h2 { font-family: "Shrikhand", cursive; font-size: 26px; color: #d6283a; text-shadow: 2px 2px 0 #ffcf3a; }
+.card[data-game="slot-well"] .mix { color: #137f8a; font-weight: 700; font-size: 13px; letter-spacing: 0.1em; }
+.card[data-game="slot-well"] p { color: #5a3a4c; font-size: 16px; line-height: 1.3; font-weight: 500; }
+.card[data-game="slot-well"] .play { font-family: "Shrikhand", cursive; color: #d6283a; font-size: 17px; }
+:root[data-game="slot-well"] .keys-hint { justify-self: start; background: rgba(35, 16, 63, 0.82); color: #fff3dc; text-shadow: none; padding: 5px 12px; border-radius: 99px; font-weight: 600; }

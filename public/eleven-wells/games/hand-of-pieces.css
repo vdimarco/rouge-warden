@@ -1,0 +1,326 @@
+/* hand-of-pieces theme: Madame Tetra's Parlour.
+   A fortune teller's tent: midnight-purple velvet, candlelight, gilt filigree, tarot cards. */
+:root[data-game="hand-of-pieces"] {
+  --ink: #0e0618;
+  --cabinet: #1a0d2a;
+  --well: #12081f;
+  --panel: #1c0f2e;
+  --line: #4d3762;
+  --fg: #f4e8d2;
+  --muted: #c3aed2;
+  --accent: #e8c26a;
+  --accent-ink: #241300;
+  --good: #9be8b8;
+  --bad: #ff8a98;
+  --cool: #a9d4ff;
+  --rose: #ffa0c0;
+  --gilt: linear-gradient(180deg, #f6dc94 0%, #d6a94e 48%, #a8792c 100%);
+  --display: "Cinzel Decorative", "Cinzel", Georgia, serif;
+  --body: "Cormorant Garamond", Georgia, serif;
+  color-scheme: dark;
+  /* the tent: velvet drapes hanging in folds, darker toward the corners */
+  background:
+    radial-gradient(ellipse 70% 55% at 50% 30%, rgba(255, 168, 80, 0.07), transparent 70%),
+    radial-gradient(ellipse 120% 90% at 50% 40%, transparent 55%, rgba(0, 0, 0, 0.55) 100%),
+    repeating-linear-gradient(90deg, #170a26 0px, #22103a 38px, #2a1446 52px, #1b0c2d 78px, #13081f 110px),
+    #0e0618;
+  background-attachment: fixed;
+}
+:root[data-game="hand-of-pieces"] body {
+  background: transparent;
+  font-size: 18px;
+  line-height: 1.35;
+}
+/* candlelight breathing over the whole tent */
+:root[data-game="hand-of-pieces"] body::after {
+  content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  background: radial-gradient(ellipse 60% 45% at 50% 100%, rgba(255, 150, 60, 0.16), transparent 70%);
+  animation: mt-flicker 3.7s ease-in-out infinite;
+}
+@keyframes mt-flicker {
+  0%, 100% { opacity: 0.85; } 18% { opacity: 1; } 31% { opacity: 0.7; } 47% { opacity: 0.95; } 63% { opacity: 0.78; } 80% { opacity: 1; }
+}
+
+/* ---------- topbar: a scalloped tent valance ---------- */
+:root[data-game="hand-of-pieces"] .topbar {
+  background: linear-gradient(#1f0d33, #160926);
+  border-bottom: 1px solid #a8792c;
+  margin-bottom: 30px;
+  box-shadow: 0 1px 0 #3a2050;
+}
+:root[data-game="hand-of-pieces"] .topbar::after {
+  content: ""; position: absolute; left: 0; right: 0; top: 100%; height: 14px; pointer-events: none;
+  background:
+    radial-gradient(circle at 50% 0, #160926 0 10px, #c9a24a 10px 11px, transparent 11.5px) 0 0 / 26px 14px repeat-x;
+}
+:root[data-game="hand-of-pieces"] .topbar h2 {
+  font-family: var(--display); font-weight: 700; font-size: 25px; letter-spacing: 0.02em;
+  background: var(--gilt); -webkit-background-clip: text; background-clip: text; color: transparent;
+  text-shadow: none; filter: drop-shadow(0 1px 0 rgba(0, 0, 0, 0.6));
+}
+:root[data-game="hand-of-pieces"] .topbar .mix {
+  font-family: var(--body); font-style: italic; font-size: 16px; text-transform: none; letter-spacing: 0.02em; color: var(--rose);
+}
+
+/* ---------- buttons: gilt and velvet ---------- */
+:root[data-game="hand-of-pieces"] .btn {
+  font-family: var(--display); font-weight: 700; font-size: 13px; letter-spacing: 0.04em;
+  background: #241238; border: 1px solid #8a6a34; color: #f3e3bf; border-radius: 4px;
+  box-shadow: inset 0 0 0 2px #241238, inset 0 0 0 3px rgba(232, 194, 106, 0.25);
+}
+:root[data-game="hand-of-pieces"] .btn:hover:not(:disabled) { border-color: var(--accent); color: #fff3d6; }
+:root[data-game="hand-of-pieces"] .btn.primary {
+  background: var(--gilt); color: #2a1500; border-color: #f6dc94;
+  box-shadow: inset 0 0 0 2px rgba(255, 245, 210, 0.35), 0 0 18px rgba(255, 190, 90, 0.25);
+}
+:root[data-game="hand-of-pieces"] .btn.small { font-size: 12px; }
+
+/* ---------- the well, in a gilt frame with filigree corners ---------- */
+:root[data-game="hand-of-pieces"] .board-frame {
+  background: #12081f; padding: 7px; border-radius: 3px; border: 1px solid #b38a3e;
+  box-shadow:
+    0 0 0 3px #1a0c28, 0 0 0 4px #d9b45a, 0 0 0 8px #1a0c28, 0 0 0 9px rgba(201, 162, 74, 0.45),
+    0 22px 60px rgba(0, 0, 0, 0.65), 0 0 80px rgba(255, 150, 60, 0.12);
+}
+:root[data-game="hand-of-pieces"] .board-frame::before {
+  content: ""; position: absolute; inset: -16px; pointer-events: none; z-index: 1;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' fill='none' stroke='%23e8c26a' stroke-width='1.4'%3E%3Cpath d='M4 36 C4 18 10 8 28 4'/%3E%3Cpath d='M9 30 C12 20 18 13 30 10 C36 9 37 15 32 17 C28 18 27 14 30 13'/%3E%3Ccircle cx='6' cy='6' r='3' fill='%23e8c26a'/%3E%3C/svg%3E") top left / 40px no-repeat,
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' fill='none' stroke='%23e8c26a' stroke-width='1.4'%3E%3Cg transform='translate(40 0) scale(-1 1)'%3E%3Cpath d='M4 36 C4 18 10 8 28 4'/%3E%3Cpath d='M9 30 C12 20 18 13 30 10 C36 9 37 15 32 17 C28 18 27 14 30 13'/%3E%3Ccircle cx='6' cy='6' r='3' fill='%23e8c26a'/%3E%3C/g%3E%3C/svg%3E") top right / 40px no-repeat,
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' fill='none' stroke='%23e8c26a' stroke-width='1.4'%3E%3Cg transform='translate(0 40) scale(1 -1)'%3E%3Cpath d='M4 36 C4 18 10 8 28 4'/%3E%3Cpath d='M9 30 C12 20 18 13 30 10 C36 9 37 15 32 17 C28 18 27 14 30 13'/%3E%3Ccircle cx='6' cy='6' r='3' fill='%23e8c26a'/%3E%3C/g%3E%3C/svg%3E") bottom left / 40px no-repeat,
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' fill='none' stroke='%23e8c26a' stroke-width='1.4'%3E%3Cg transform='translate(40 40) scale(-1 -1)'%3E%3Cpath d='M4 36 C4 18 10 8 28 4'/%3E%3Cpath d='M9 30 C12 20 18 13 30 10 C36 9 37 15 32 17 C28 18 27 14 30 13'/%3E%3Ccircle cx='6' cy='6' r='3' fill='%23e8c26a'/%3E%3C/g%3E%3C/svg%3E") bottom right / 40px no-repeat;
+}
+:root[data-game="hand-of-pieces"] canvas.board { border-radius: 1px; }
+:root[data-game="hand-of-pieces"] .board-overlay { inset: 7px; background: rgba(14, 6, 24, 0.84); z-index: 2; }
+
+/* intro / game-over card: a gilt-edged reading card */
+:root[data-game="hand-of-pieces"] .ov-card {
+  max-width: 300px; padding: 18px 16px 16px; gap: 12px; position: relative;
+  background: linear-gradient(#2a1542, #190b2a); border: 1px solid #d6a94e; border-radius: 6px;
+  box-shadow: inset 0 0 0 4px #1d0e2f, inset 0 0 0 5px rgba(232, 194, 106, 0.45), 0 18px 40px rgba(0, 0, 0, 0.6);
+}
+:root[data-game="hand-of-pieces"] .ov-card h3 {
+  font-family: var(--display); font-weight: 700; font-size: 21px; line-height: 1.15; text-align: center;
+  background: var(--gilt); -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+:root[data-game="hand-of-pieces"] .ov-card h3::after {
+  content: "✦"; display: block; font-size: 12px; margin-top: 6px; color: var(--accent); -webkit-text-fill-color: var(--accent); letter-spacing: 0;
+}
+:root[data-game="hand-of-pieces"] .ov-body { font-size: 17px; line-height: 1.3; gap: 10px; }
+:root[data-game="hand-of-pieces"] .ov-body .ov-lead { font-style: italic; font-size: 19px; color: #ffe9c2; text-align: center; }
+:root[data-game="hand-of-pieces"] .ov-body ul { padding-left: 16px; gap: 6px; }
+:root[data-game="hand-of-pieces"] .ov-body li::marker { content: "✧  "; color: var(--accent); font-size: 13px; }
+:root[data-game="hand-of-pieces"] .ov-body b { color: var(--accent); font-weight: 700; }
+:root[data-game="hand-of-pieces"] .ov-actions { justify-content: center; }
+
+/* ---------- the hand of tarot cards (under the well) ---------- */
+.mt-hand { display: grid; justify-items: center; gap: 2px; width: 100%; margin-top: 10px; }
+.mt-fan {
+  display: flex; justify-content: center; align-items: flex-start;
+  height: calc(var(--ch, 106px) + 34px); padding-top: 18px;
+}
+.tc {
+  position: relative; flex: none; width: var(--cw, 66px); height: var(--ch, 106px); margin: 0 -2px; padding: 0;
+  border: 0; background: none; cursor: pointer; border-radius: 6px;
+  transform: translateY(calc(var(--arc, 0px) + var(--lift, 0px))) rotate(var(--rot, 0deg));
+  transform-origin: 50% 130%;
+  transition: transform 0.22s cubic-bezier(0.3, 0.7, 0.3, 1), filter 0.2s;
+}
+.tc:disabled { cursor: default; }
+.tc:hover:not(:disabled) { --lift: -6px; }
+.tc.on { --lift: -16px; z-index: 2; }
+.tc.muted { filter: saturate(0.4) brightness(0.65); }
+.tc:focus-visible { outline: none; }
+.tc:focus-visible .tc-face { box-shadow: 0 0 0 2px var(--accent); }
+.tc-inner {
+  position: absolute; inset: 0; transform-style: preserve-3d;
+  transform: perspective(520px) rotateY(0deg);
+  transition: transform 0.55s cubic-bezier(0.3, 0.7, 0.2, 1);
+}
+.tc.down .tc-inner { transform: perspective(520px) rotateY(180deg); }
+.tc-face, .tc-back {
+  position: absolute; inset: 0; border-radius: 6px; overflow: hidden;
+  -webkit-backface-visibility: hidden; backface-visibility: hidden;
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.55);
+}
+.tc-back { transform: rotateY(180deg); }
+.tc canvas { display: block; width: 100% !important; height: 100% !important; }
+.tc.on .tc-face {
+  box-shadow: 0 0 0 1.5px #f6dc94, 0 0 22px rgba(255, 196, 100, 0.6), 0 10px 18px rgba(0, 0, 0, 0.6);
+}
+.tc-key {
+  position: absolute; left: 0; right: 0; bottom: -21px; text-align: center;
+  font-family: var(--display); font-weight: 700; font-size: 12px; color: var(--muted); opacity: 0.8;
+}
+.tc.on .tc-key { color: var(--accent); opacity: 1; }
+.tc.dealt { animation: tc-deal 0.55s cubic-bezier(0.2, 0.8, 0.25, 1) both; animation-delay: calc(var(--i) * 120ms); }
+.tc.drawn { animation: tc-draw 0.32s cubic-bezier(0.2, 0.8, 0.25, 1) both; }
+@keyframes tc-deal {
+  from { transform: translate(var(--from, -120px), -70px) rotate(-28deg) scale(0.75); opacity: 0; }
+  30% { opacity: 1; }
+}
+@keyframes tc-draw { from { transform: translateY(40px) scale(0.85); opacity: 0; } }
+.tc-caption {
+  font-family: var(--display); font-weight: 700; font-size: 15px; letter-spacing: 0.03em; color: #f3e3bf;
+  min-height: 22px; text-align: center; margin-top: 4px;
+}
+.tc-caption .tc-num { color: var(--accent); margin-right: 4px; }
+
+/* ---------- Madame Tetra ---------- */
+.mt-host {
+  display: grid; grid-template-columns: 72px minmax(0, 1fr); gap: 14px; align-items: center;
+  padding: 4px 0 2px;
+}
+.mt-portrait { width: 72px; height: 88px; border-radius: 50%; position: relative; }
+.mt-portrait::after {
+  content: ""; position: absolute; inset: -6px; border-radius: 50%; pointer-events: none;
+  box-shadow: 0 0 22px rgba(255, 170, 80, 0.35);
+  animation: mt-flicker 2.9s ease-in-out infinite;
+}
+.mt-host.speaking .mt-portrait::after { animation: mt-flicker 2.9s ease-in-out infinite, mt-flare 0.9s ease-out; }
+@keyframes mt-flare { from { box-shadow: 0 0 34px rgba(255, 200, 110, 0.85); } }
+.mt-bubble {
+  position: relative; background: linear-gradient(#2b1644, #1f0f33); border: 1px solid #a8792c; border-radius: 8px;
+  padding: 8px 12px 10px; display: grid; gap: 2px; min-height: 76px; align-content: center;
+  box-shadow: inset 0 0 0 3px #22113a, inset 0 0 0 4px rgba(232, 194, 106, 0.2);
+}
+.mt-bubble::before {
+  content: ""; position: absolute; left: -8px; top: 50%; width: 14px; height: 14px; margin-top: -7px;
+  background: #261340; border-left: 1px solid #a8792c; border-bottom: 1px solid #a8792c; transform: rotate(45deg);
+}
+.mt-name { font-family: var(--display); font-weight: 700; font-size: 12px; letter-spacing: 0.08em; color: var(--accent); }
+.mt-say { margin: 0; font-family: var(--body); font-style: italic; font-weight: 500; font-size: 18px; line-height: 1.22; color: #fff1dc; }
+.mt-say::before { content: "“"; color: var(--accent); }
+.mt-say::after { content: "”"; color: var(--accent); }
+.mt-say.fresh { animation: mt-say-in 0.45s ease-out; }
+@keyframes mt-say-in { from { opacity: 0; transform: translateY(3px); filter: blur(2px); } }
+
+/* ---------- side panels ---------- */
+:root[data-game="hand-of-pieces"] .panel {
+  background: linear-gradient(#21103a, #190b2b); border: 1px solid #5b3f72; border-radius: 6px;
+  box-shadow: inset 0 1px 0 rgba(232, 194, 106, 0.12);
+}
+:root[data-game="hand-of-pieces"] .panel h3, :root[data-game="hand-of-pieces"] .side h3 {
+  font-family: var(--display); font-weight: 700; font-size: 13px; letter-spacing: 0.08em; text-transform: none; color: var(--accent);
+  display: flex; align-items: center; gap: 8px;
+}
+:root[data-game="hand-of-pieces"] .panel h3::after {
+  content: ""; flex: 1; height: 1px; background: linear-gradient(90deg, rgba(232, 194, 106, 0.55), transparent);
+}
+:root[data-game="hand-of-pieces"] .stat {
+  background: linear-gradient(#22113a, #1a0c2b); border: 1px solid #5b3f72; border-radius: 6px; padding: 6px 10px 7px;
+}
+:root[data-game="hand-of-pieces"] .stat-label {
+  font-family: var(--display); font-weight: 700; font-size: 11px; letter-spacing: 0.06em; text-transform: none; color: var(--muted);
+}
+:root[data-game="hand-of-pieces"] .stat-value { font-family: var(--display); font-weight: 700; font-size: 22px; color: #f6e7c8; display: flex; align-items: baseline; gap: 4px; }
+:root[data-game="hand-of-pieces"] .stat-value small { font-family: var(--body); font-weight: 500; font-style: italic; font-size: 16px; color: var(--muted); }
+:root[data-game="hand-of-pieces"] .stat.accent .stat-value { color: var(--accent); }
+:root[data-game="hand-of-pieces"] .stat.good .stat-value { color: var(--good); }
+:root[data-game="hand-of-pieces"] .stat.bad .stat-value { color: var(--bad); }
+
+/* the candle that burns down with your turns */
+.mt-candle {
+  position: relative; display: inline-block; width: 8px; height: 22px; margin-right: 6px; align-self: flex-end;
+}
+.mt-candle i {
+  position: absolute; left: 0; right: 0; bottom: 0; min-height: 2px; border-radius: 1px;
+  background: linear-gradient(90deg, #d4bf94, #fff3d6 50%, #b39b6c); transition: height 0.4s;
+}
+.mt-candle i::before {
+  content: ""; position: absolute; left: 50%; bottom: 100%; width: 6px; height: 10px; margin-left: -3px; margin-bottom: 1px;
+  border-radius: 50% 50% 50% 50% / 70% 70% 30% 30%;
+  background: radial-gradient(ellipse at 50% 70%, #fff8e0 0 25%, #ffc65a 45%, rgba(255, 120, 40, 0.9) 75%);
+  box-shadow: 0 0 10px 3px rgba(255, 170, 70, 0.45);
+  animation: mt-flame 0.9s ease-in-out infinite alternate;
+  transform-origin: 50% 100%;
+}
+@keyframes mt-flame { from { transform: scale(1, 1) rotate(-3deg); } to { transform: scale(0.85, 1.12) rotate(4deg); } }
+
+.mt-thread { height: 6px; border-radius: 3px; background: #12081f; border: 1px solid #4d3762; position: relative; }
+.mt-thread i {
+  position: absolute; left: 0; top: 0; bottom: 0; border-radius: 3px; background: var(--gilt); transition: width 0.5s;
+  box-shadow: 0 0 10px rgba(255, 190, 90, 0.5);
+}
+.mt-thread i::after {
+  content: "✦"; position: absolute; right: -6px; top: 50%; transform: translateY(-52%); font-size: 13px; color: #fff3d6;
+  text-shadow: 0 0 6px #ffc65a;
+}
+.mt-sum { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; font-family: var(--display); font-weight: 700; font-size: 22px; }
+.mt-sum .op { color: var(--muted); font-size: 16px; }
+.st { color: var(--cool); }
+.ft { color: var(--rose); }
+.mt-table { display: grid; grid-template-columns: auto 1fr auto; gap: 1px 12px; font-size: 16px; color: var(--muted); }
+.mt-table .nm { color: var(--fg); font-weight: 700; }
+.mt-quiet { margin: 0; font-size: 16px; color: var(--muted); line-height: 1.3; }
+:root[data-game="hand-of-pieces"] .chip {
+  font-size: 15px; border-radius: 3px; background: #170a26; border-color: #5b3f72; font-style: italic; padding: 1px 8px;
+}
+:root[data-game="hand-of-pieces"] .chip.accent { border-color: #a8792c; color: var(--accent); }
+.mt-omen-list { display: grid; gap: 8px; }
+.mt-omen { display: grid; grid-template-columns: 34px minmax(0, 1fr); column-gap: 10px; align-items: center; }
+.mt-omen canvas { grid-row: span 2; }
+.mt-omen .nm { font-family: var(--display); font-weight: 700; font-size: 13px; color: var(--accent); }
+.mt-omen .ds { font-size: 15px; color: var(--muted); line-height: 1.2; font-style: italic; }
+
+:root[data-game="hand-of-pieces"] .log { font-size: 16px; gap: 3px; }
+:root[data-game="hand-of-pieces"] .log li { font-style: italic; }
+:root[data-game="hand-of-pieces"] .log b { color: var(--accent); font-style: normal; font-family: var(--display); font-size: 14px; }
+:root[data-game="hand-of-pieces"] .keys-hint { font-size: 15px; font-style: italic; }
+
+/* ---------- the omen cabinet (shop) ---------- */
+:root[data-game="hand-of-pieces"] .modal-layer { background: rgba(8, 3, 14, 0.78); }
+:root[data-game="hand-of-pieces"] .modal {
+  background: linear-gradient(#24123a, #170a27); border: 1px solid #d6a94e; border-radius: 6px;
+  box-shadow: inset 0 0 0 5px #1e0f31, inset 0 0 0 6px rgba(232, 194, 106, 0.4), 0 30px 80px rgba(0, 0, 0, 0.7), 0 0 90px rgba(255, 150, 60, 0.12);
+}
+:root[data-game="hand-of-pieces"] .modal h3 {
+  font-family: var(--display); font-weight: 700; font-size: 25px;
+  background: var(--gilt); -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+:root[data-game="hand-of-pieces"] .modal-body h3 { font-size: 15px; letter-spacing: 0.04em; }
+.mt-purse { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+:root[data-game="hand-of-pieces"] .tiles { grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; }
+:root[data-game="hand-of-pieces"] .tile {
+  background: linear-gradient(#2c1745, #1a0b2a); border: 1px solid #8a6a34; border-radius: 6px; padding: 14px 12px 12px;
+  box-shadow: inset 0 0 0 3px #22113a, inset 0 0 0 4px rgba(232, 194, 106, 0.22);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+:root[data-game="hand-of-pieces"] .tile.omen { justify-items: center; text-align: center; }
+:root[data-game="hand-of-pieces"] .tile:hover:not(:disabled) {
+  transform: translateY(-3px); border-color: var(--accent);
+  box-shadow: inset 0 0 0 3px #22113a, inset 0 0 0 4px rgba(232, 194, 106, 0.4), 0 0 24px rgba(255, 190, 90, 0.25);
+}
+:root[data-game="hand-of-pieces"] .tile .t-name { font-family: var(--display); font-weight: 700; font-size: 15px; color: #f6e7c8; }
+:root[data-game="hand-of-pieces"] .tile .t-desc { font-size: 16px; font-style: italic; color: var(--muted); line-height: 1.25; }
+:root[data-game="hand-of-pieces"] .tile .t-cost { font-family: var(--display); font-weight: 700; font-size: 13px; color: var(--accent); }
+
+:root[data-game="hand-of-pieces"] .toast {
+  font-family: var(--body); font-style: italic; font-size: 17px; background: #1f0f33; border-color: #d6a94e; border-radius: 4px;
+}
+:root[data-game="hand-of-pieces"] .pad-btn {
+  background: #241238; border: 1px solid #8a6a34; color: #f3e3bf; border-radius: 4px; font-family: var(--display); font-weight: 700; font-size: 15px;
+}
+:root[data-game="hand-of-pieces"] .pad-btn:active { background: #3a2156; }
+
+@media (max-width: 760px) {
+  :root[data-game="hand-of-pieces"] .topbar h2 { font-size: 20px; }
+  .mt-host { grid-template-columns: 60px minmax(0, 1fr); }
+  .mt-portrait, .mt-portrait canvas { width: 60px !important; height: 73px !important; }
+}
+
+/* ---------- hub card ---------- */
+.card[data-game="hand-of-pieces"] {
+  background: linear-gradient(#211038, #160a26); border: 1px solid #8a6a34; border-radius: 6px;
+  box-shadow: inset 0 0 0 3px #1c0d2e, inset 0 0 0 4px rgba(232, 194, 106, 0.22);
+}
+.card[data-game="hand-of-pieces"]:hover, .card[data-game="hand-of-pieces"]:focus-visible { border-color: #f6dc94; box-shadow: inset 0 0 0 3px #1c0d2e, inset 0 0 0 4px rgba(232, 194, 106, 0.4), 0 0 26px rgba(255, 180, 80, 0.2); }
+.card[data-game="hand-of-pieces"] canvas.card-art { background: #12081f; border-bottom: 1px solid #8a6a34; }
+.card[data-game="hand-of-pieces"] .num { font-family: "Cinzel Decorative", serif; font-weight: 700; color: #c9a24a; }
+.card[data-game="hand-of-pieces"] h2 {
+  font-family: "Cinzel Decorative", serif; font-weight: 700; font-size: 19px; line-height: 1.15;
+  background: linear-gradient(180deg, #f6dc94 0%, #d6a94e 55%, #a8792c 100%); -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.card[data-game="hand-of-pieces"] .mix { font-family: "Cormorant Garamond", serif; font-style: italic; font-weight: 500; font-size: 16px; text-transform: none; letter-spacing: 0.01em; color: #ffa0c0; }
+.card[data-game="hand-of-pieces"] p { font-family: "Cormorant Garamond", serif; font-weight: 500; font-size: 17px; line-height: 1.25; color: #d4c2e0; }
+.card[data-game="hand-of-pieces"] .play { font-family: "Cinzel Decorative", serif; font-weight: 700; color: #e8c26a; }

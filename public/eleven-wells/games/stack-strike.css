@@ -1,0 +1,193 @@
+/* stack-strike theme: "The Undercroft". Torchlit rough stone, ember / gold / blood, parchment for the route. */
+:root[data-game="stack-strike"] {
+  --ink: #0c0807;
+  --cabinet: #17110e;
+  --well: #0e0907;
+  --panel: #1c1512;
+  --line: #3d2e24;
+  --fg: #eadfca;
+  --muted: #b09c80;
+  --accent: #e3a33c;
+  --accent-ink: #1e1206;
+  --good: #9ccb62;
+  --bad: #e2564a;
+  --cool: #9fbdd4;
+  --display: "Pirata One", Georgia, serif;
+  --body: "Alegreya", Georgia, serif;
+  color-scheme: dark;
+}
+:root[data-game="stack-strike"] body {
+  background:
+    radial-gradient(ellipse 70% 45% at 50% -8%, rgba(255, 128, 40, 0.16), transparent 70%),
+    radial-gradient(ellipse 50% 40% at 50% 110%, rgba(120, 20, 12, 0.18), transparent 70%),
+    repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.22) 0 2px, transparent 2px 46px),
+    linear-gradient(#120c0a, #0a0605);
+  background-attachment: fixed;
+  font-size: 16px;
+}
+:root[data-game="stack-strike"] .topbar {
+  background: linear-gradient(#140d0b, #0e0907);
+  border-bottom: 1px solid #4a3828;
+  box-shadow: 0 1px 0 rgba(227, 163, 60, 0.18);
+}
+:root[data-game="stack-strike"] .topbar h2 { font-size: 30px; font-weight: 400; color: var(--accent); text-shadow: 0 2px 0 #3a1d08, 0 0 22px rgba(255, 120, 40, 0.3); letter-spacing: 0.01em; }
+:root[data-game="stack-strike"] .topbar .mix { color: #cf9455; font-style: italic; text-transform: none; letter-spacing: 0.02em; font-size: 14px; }
+
+/* buttons: iron-banded stone, and gold for the main action */
+:root[data-game="stack-strike"] .btn {
+  background: linear-gradient(#2c211b, #1a1310);
+  border: 1px solid #4f3b2b;
+  border-radius: 3px;
+  color: var(--fg);
+  font-family: var(--body);
+  font-weight: 700;
+  box-shadow: inset 0 1px 0 rgba(255, 225, 180, 0.08), 0 2px 0 #070403;
+}
+:root[data-game="stack-strike"] .btn:hover:not(:disabled) { border-color: var(--accent); color: #fff3dc; }
+:root[data-game="stack-strike"] .btn.primary {
+  background: linear-gradient(#f2bd55, #b8731c);
+  color: #1e1206;
+  border-color: #6b4310;
+  font-family: var(--display);
+  font-weight: 400;
+  font-size: 19px;
+  letter-spacing: 0.03em;
+  padding: 6px 20px;
+  text-shadow: 0 1px 0 rgba(255, 240, 200, 0.5);
+}
+
+/* the pit: heavy stone surround, torchlight spilling over it */
+:root[data-game="stack-strike"] .board-frame {
+  padding: 6px;
+  border-radius: 2px;
+  border: 1px solid #4a3828;
+  background:
+    repeating-linear-gradient(0deg, #2a201a 0 11px, #110b09 11px 12px),
+    #241a15;
+  box-shadow: 0 0 0 3px #0a0605, 0 0 0 4px #3a2a1e, 0 18px 50px rgba(0, 0, 0, 0.7), 0 -10px 60px rgba(255, 110, 30, 0.1);
+  transition: none;
+}
+:root[data-game="stack-strike"] canvas.ss-enc { display: block; max-width: 100%; height: auto; }
+:root[data-game="stack-strike"] canvas.ss-fx { position: absolute; pointer-events: none; z-index: 2; }
+:root[data-game="stack-strike"] canvas.board { border-radius: 0; }
+:root[data-game="stack-strike"] .board-overlay { z-index: 3; inset: 6px; border-radius: 0; background: rgba(9, 5, 4, 0.88); }
+:root[data-game="stack-strike"] .ov-card h3 { font-size: 34px; line-height: 1; color: var(--accent); text-shadow: 0 2px 0 #3a1d08; }
+:root[data-game="stack-strike"] .ov-body { font-size: 15px; line-height: 1.4; }
+:root[data-game="stack-strike"] .ov-body ul { gap: 6px; }
+
+/* side column: carved panels */
+:root[data-game="stack-strike"] .panel,
+:root[data-game="stack-strike"] .stat {
+  background: linear-gradient(180deg, #221915, #17110e);
+  border: 1px solid #3d2e24;
+  border-radius: 3px;
+  box-shadow: inset 0 1px 0 rgba(255, 220, 170, 0.06), inset 0 0 0 1px rgba(0, 0, 0, 0.35);
+}
+:root[data-game="stack-strike"] .panel h3,
+:root[data-game="stack-strike"] .side h3 {
+  font-family: var(--display);
+  font-size: 19px;
+  letter-spacing: 0.02em;
+  text-transform: none;
+  color: var(--accent);
+  font-weight: 400;
+}
+:root[data-game="stack-strike"] .stat-label { font-variant: small-caps; text-transform: lowercase; font-size: 15px; letter-spacing: 0.06em; color: var(--muted); }
+:root[data-game="stack-strike"] .stat-value { font-family: var(--display); font-size: 26px; font-weight: 400; }
+:root[data-game="stack-strike"] .stat-value small { color: var(--muted); font-size: 18px; }
+:root[data-game="stack-strike"] .stat.good .stat-value { color: #ff8a7a; }
+:root[data-game="stack-strike"] .stat.bad .stat-value { color: var(--bad); text-shadow: 0 0 12px rgba(226, 86, 74, 0.5); }
+:root[data-game="stack-strike"] .stat.accent .stat-value { color: var(--cool); }
+
+:root[data-game="stack-strike"] .ss-ico { display: inline-block; vertical-align: -3px; flex: none; }
+:root[data-game="stack-strike"] .ss-desc { margin: 0; color: var(--muted); font-size: 14px; font-style: italic; }
+:root[data-game="stack-strike"] .ss-foe-name { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+:root[data-game="stack-strike"] .ss-foe-name b { font-family: var(--display); font-weight: 400; font-size: 24px; line-height: 1; margin-right: 4px; }
+:root[data-game="stack-strike"] .ss-intents { display: grid; gap: 6px; }
+:root[data-game="stack-strike"] .ss-intent { display: flex; gap: 8px; align-items: center; font-size: 15px; line-height: 1.25; }
+:root[data-game="stack-strike"] .ss-count {
+  flex: none; width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center;
+  font-family: var(--display); font-size: 16px; background: #2a201a; border: 1.5px solid #6a5640; color: var(--fg);
+}
+:root[data-game="stack-strike"] .ss-intent.hot .ss-count { background: #7a1a14; border-color: #ff6a50; color: #ffe2d0; }
+:root[data-game="stack-strike"] .ss-when { color: var(--muted); font-style: italic; }
+:root[data-game="stack-strike"] .ss-intent.hot .ss-when { color: #ff8a7a; }
+:root[data-game="stack-strike"] .ss-ward { color: var(--cool); }
+:root[data-game="stack-strike"] .ss-frozen { color: #c4ecff; }
+:root[data-game="stack-strike"] .ss-card { display: flex; gap: 10px; align-items: center; min-width: 0; }
+:root[data-game="stack-strike"] .ss-card-txt { min-width: 0; font-size: 15px; line-height: 1.25; }
+:root[data-game="stack-strike"] .ss-next { display: grid; gap: 7px; }
+:root[data-game="stack-strike"] .ss-route { width: 100%; height: auto; display: block; }
+:root[data-game="stack-strike"] .ss-relic { display: inline-flex; gap: 4px; align-items: center; border-color: #6b4e22; color: var(--accent); }
+:root[data-game="stack-strike"] .ss-chip-iron { display: inline-flex; gap: 4px; align-items: center; border-color: #4f6a80; color: var(--cool); }
+:root[data-game="stack-strike"] .ss-chip-moss { display: inline-flex; gap: 4px; align-items: center; border-color: #4f6a2e; color: var(--good); }
+:root[data-game="stack-strike"] .chip { background: #140e0b; border-radius: 2px; font-size: 13px; }
+
+/* rune tones (dark ground) */
+:root[data-game="stack-strike"] .ss-t-atk { color: #ff7a5e; }
+:root[data-game="stack-strike"] .ss-t-def { color: #a9cdea; }
+:root[data-game="stack-strike"] .ss-t-util { color: #f0b950; }
+:root[data-game="stack-strike"] .ss-t-heal { color: #a9d870; }
+:root[data-game="stack-strike"] .ss-t-plain { color: var(--fg); }
+
+/* chronicle: a grim narrator */
+:root[data-game="stack-strike"] .log { font-size: 15px; font-style: italic; gap: 5px; color: #8f7c64; }
+:root[data-game="stack-strike"] .log li:first-child { color: var(--fg); }
+:root[data-game="stack-strike"] .log b { color: var(--accent); font-style: normal; font-family: var(--display); font-weight: 400; font-size: 17px; }
+:root[data-game="stack-strike"] .log .ss-note { font-style: normal; font-size: 13px; color: var(--muted); }
+:root[data-game="stack-strike"] .keys-hint { font-size: 13px; font-style: italic; }
+
+/* parchment: the route, spoils and the campfire */
+:root[data-game="stack-strike"] .modal-layer { background: rgba(6, 3, 2, 0.82); }
+:root[data-game="stack-strike"] .modal {
+  color: #2a1a10;
+  background:
+    radial-gradient(ellipse at 20% 10%, rgba(255, 250, 230, 0.55), transparent 55%),
+    radial-gradient(ellipse at 85% 90%, rgba(120, 80, 30, 0.28), transparent 60%),
+    radial-gradient(ellipse at 50% 50%, transparent 55%, rgba(110, 70, 30, 0.38) 100%),
+    #e6d5ad;
+  border: 1px solid #8a6a40;
+  border-radius: 2px;
+  box-shadow: 0 0 0 4px #2a1a10, 0 0 0 5px #6b4e22, 0 30px 80px rgba(0, 0, 0, 0.8);
+}
+:root[data-game="stack-strike"] .modal h3 { font-size: 36px; line-height: 1; color: #8a1a12; font-weight: 400; }
+:root[data-game="stack-strike"] .modal .ss-flav { color: #4a3220; font-style: italic; font-size: 16px; }
+:root[data-game="stack-strike"] .modal canvas.ss-map { display: block; width: 100%; height: auto; border-top: 1px solid rgba(90, 60, 30, 0.35); border-bottom: 1px solid rgba(90, 60, 30, 0.35); }
+:root[data-game="stack-strike"] .modal .tile {
+  background: rgba(255, 249, 232, 0.5);
+  border: 1px solid rgba(90, 60, 30, 0.45);
+  border-radius: 2px;
+  color: #2a1a10;
+}
+:root[data-game="stack-strike"] .modal .tile:hover:not(:disabled) { border-color: #8a1a12; background: rgba(255, 249, 232, 0.8); box-shadow: 0 2px 0 rgba(90, 60, 30, 0.3); }
+:root[data-game="stack-strike"] .modal .tile .t-name { font-family: var(--display); font-weight: 400; font-size: 21px; line-height: 1.05; }
+:root[data-game="stack-strike"] .modal .tile .t-desc { color: #5a4028; font-size: 14px; }
+:root[data-game="stack-strike"] .modal .tile .t-cost { display: block; font-family: var(--body); font-style: italic; font-size: 13px; color: #8a1a12; }
+:root[data-game="stack-strike"] .modal .ss-node-head { display: flex; gap: 8px; align-items: center; }
+:root[data-game="stack-strike"] .modal .ss-t-atk { color: #8a1f17; }
+:root[data-game="stack-strike"] .modal .ss-t-def { color: #2d4a68; }
+:root[data-game="stack-strike"] .modal .ss-t-util { color: #74500e; }
+:root[data-game="stack-strike"] .modal .ss-t-heal { color: #3a5c1e; }
+:root[data-game="stack-strike"] .modal .ss-t-plain { color: #2a1a10; }
+:root[data-game="stack-strike"] .modal .btn { background: transparent; border-color: #6b4e22; color: #3a2414; box-shadow: none; }
+:root[data-game="stack-strike"] .modal .btn:hover:not(:disabled) { border-color: #8a1a12; color: #8a1a12; }
+
+:root[data-game="stack-strike"] .toast { background: #17110e; border-color: var(--accent); border-radius: 2px; font-style: italic; }
+:root[data-game="stack-strike"] .toast.bad { border-color: #c4ecff; color: #dff4ff; }
+:root[data-game="stack-strike"] .pad-btn { background: linear-gradient(#2c211b, #1a1310); border-color: #4f3b2b; border-radius: 3px; color: var(--fg); }
+:root[data-game="stack-strike"] .pad-btn:last-child { font-family: var(--display); color: var(--accent); }
+
+/* hub card */
+.card[data-game="stack-strike"] {
+  background: linear-gradient(180deg, #211814, #140e0b);
+  border-color: #4a3828;
+  border-radius: 3px;
+  color: #eadfca;
+}
+.card[data-game="stack-strike"]:hover, .card[data-game="stack-strike"]:focus-visible { border-color: #e3a33c; box-shadow: 0 0 24px rgba(255, 120, 40, 0.18); }
+.card[data-game="stack-strike"] canvas.card-art { background: #0e0907; border-bottom: 1px solid #4a3828; }
+.card[data-game="stack-strike"] .num { font-family: "Alegreya", Georgia, serif; font-style: italic; color: #b09c80; letter-spacing: 0.04em; font-size: 13px; }
+.card[data-game="stack-strike"] h2 { font-family: "Pirata One", Georgia, serif; font-size: 30px; color: #e3a33c; letter-spacing: 0.01em; }
+.card[data-game="stack-strike"] .mix { font-family: "Alegreya", Georgia, serif; font-style: italic; text-transform: none; letter-spacing: 0.02em; font-size: 14px; color: #cf9455; }
+.card[data-game="stack-strike"] p { font-family: "Alegreya", Georgia, serif; color: #b09c80; font-size: 15px; }
+.card[data-game="stack-strike"] .play { font-family: "Pirata One", Georgia, serif; font-size: 18px; color: #e3a33c; }

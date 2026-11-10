@@ -1,0 +1,4 @@
+- [x] Add the Eleven Wells page and assets under `public/eleven-wells/`
+- [x] Add the Lab cabinet, its screen image and the switcher entry
+- [x] Verify every prototype starts and plays without errors on desktop and phone widths, and the cabinet opens the page
+- [x] Archive OpenSpec
