@@ -10,9 +10,8 @@ Add Lake Brawl at `/lake-brawl/`, a one-on-one 2D fighting game with a cabinet i
 - A campaign of five chapters with a story card before each fight, a prologue and an epilogue. Opponents get stronger and quicker each chapter. Progress is saved in the browser.
 - A versus mode against the computer on a random stage.
 - Keyboard play, and touch play in landscape and portrait.
-- A cabinet, a Switch game entry, and a cabinet line that reads the game's save.
+- A cabinet in the Cottage group after Table Tennis, a Switch game entry and button, and a cabinet line that reads the game's save.
 
 ## Out of scope
 
 - Two-player play, online play, and props held during special moves.
-- A place in one of the arcade's named groups. The cabinet shows under **More** until the group lists and their checks are updated.

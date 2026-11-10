@@ -7,5 +7,8 @@
 - [x] Versus mode
 - [x] Touch controls and tap-driven menus; landscape and portrait layouts
 - [x] Arcade cabinet, key art, Switch game entry and cabinet save line
-- [x] Scripted browser check of the campaign from menu to epilogue
+- [x] Browser check of the campaign from menu to epilogue: `node qa/lake-brawl/campaign.e2e.mjs`
+- [x] Cabinet in the Cottage group, after Table Tennis
+- [ ] Screenshots of the homepage at 390, 320 and 1280 in the pull request
+- [ ] Difficulty tuned by play
 - [ ] Hand play on a real phone

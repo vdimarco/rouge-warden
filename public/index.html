@@ -433,6 +433,16 @@ button { font: inherit; color: inherit; }
         <div class="door"><button class="slot" type="button" aria-label="Drop a token into Table Tennis"><i></i><span>25¢</span></button><button class="slot" type="button" aria-label="Drop a token into Table Tennis"><i></i><span>25¢</span></button></div>
         <div class="kick"></div>
       </article>
+      <article class="cab lake-brawl" data-game="lake-brawl" data-url="/lake-brawl/" aria-label="Lake Brawl: a cartoon summit fighting game">
+      <div class="marquee"><div><b>LAKE BRAWL</b><small>WHOSE LAKE IS IT ANYWAY?</small></div></div>
+      <div class="bezel"><div class="screen">
+      <img src="arcade/key/lake-brawl.webp" alt="" loading="lazy" decoding="async">
+      <div class="osd"><p class="hi">5 CHAPTERS · 14 LEADERS</p><p class="press">INSERT COIN</p><p class="credit">CREDIT 0</p></div>
+      </div></div>
+      <div class="panel"><span class="stick"></span><span class="pbtn a"></span><span class="pbtn b"></span><button class="start" type="button">START</button></div>
+      <div class="door"><button class="slot" type="button" aria-label="Drop a token into Lake Brawl"><i></i><span>25¢</span></button><button class="slot" type="button" aria-label="Drop a token into Lake Brawl"><i></i><span>25¢</span></button></div>
+      <div class="kick"></div>
+      </article>
       <article class="cab gta" data-game="gta" data-url="/gta/" aria-label="GTA Montréal: Park La Fontaine">
       <div class="marquee"><div><b>GTA MONTRÉAL</b><small>PARK LA FONTAINE</small></div></div>
       <div class="bezel"><div class="screen">
@@ -752,16 +762,6 @@ button { font: inherit; color: inherit; }
       <div class="door"><button class="slot" type="button" aria-label="Drop a token into First Breath"><i></i><span>25¢</span></button><button class="slot" type="button" aria-label="Drop a token into First Breath"><i></i><span>25¢</span></button></div>
       <div class="kick"></div>
       </article>
-      <article class="cab lake-brawl" data-game="lake-brawl" data-url="/lake-brawl/" aria-label="Lake Brawl: a cartoon summit fighting game">
-      <div class="marquee"><div><b>LAKE BRAWL</b><small>WHOSE LAKE IS IT ANYWAY?</small></div></div>
-      <div class="bezel"><div class="screen">
-      <img src="arcade/key/lake-brawl.webp" alt="" loading="lazy" decoding="async">
-      <div class="osd"><p class="hi">5 CHAPTERS · 14 LEADERS</p><p class="press">INSERT COIN</p><p class="credit">CREDIT 0</p></div>
-      </div></div>
-      <div class="panel"><span class="stick"></span><span class="pbtn a"></span><span class="pbtn b"></span><button class="start" type="button">START</button></div>
-      <div class="door"><button class="slot" type="button" aria-label="Drop a token into Lake Brawl"><i></i><span>25¢</span></button><button class="slot" type="button" aria-label="Drop a token into Lake Brawl"><i></i><span>25¢</span></button></div>
-      <div class="kick"></div>
-      </article>
     </div>
     <button class="nav next" id="nextBtn" type="button" aria-label="Next machine">▶</button>
   </main>
@@ -861,7 +861,7 @@ $("#changeBtn").onclick = () => {
 // The hall shows one cabinet per group. Playing a group cabinet opens a row of its games.
 // Every game cabinet stays in the page (hidden while its group is closed), so its attract screen and high score keep working.
 const GROUPS = [
-  { id: "cottage", label: "Cottage", games: ["plungerd", "drain", "brawl", "wild", "fish", "vr", "pingpong"], c1: "#d2332a", c2: "#ffcf4a", glow: "rgba(255, 90, 60, 0.55)", art: "arcade/plungerd.webp", art2: "arcade/plungerd-bosses.webp" },
+  { id: "cottage", label: "Cottage", games: ["plungerd", "drain", "brawl", "wild", "fish", "vr", "pingpong", "lake-brawl"], c1: "#d2332a", c2: "#ffcf4a", glow: "rgba(255, 90, 60, 0.55)", art: "arcade/plungerd.webp", art2: "arcade/plungerd-bosses.webp" },
   { id: "action", label: "Action", games: ["olympus", "crimson", "tidebreak", "moonwell", "primordia", "river-rush", "ahead-of-the-light", "light-years-home", "first-breath"], c1: "#7a0a10", c2: "#ff2a2a", glow: "rgba(255, 30, 30, 0.45)", art: "crimson/art/keyart2.webp", art2: "olympus/art/asphodel.webp" },
   { id: "ascii", label: "ASCII Scenes", games: ["ascii-front", "battle-tanks"], c1: "#344238", c2: "#d2f584", glow: "rgba(210, 245, 132, 0.45)", art: "ascii-front/key.svg", art2: "battle-tanks/key.svg" },
   { id: "strategy", label: "Strategy", games: ["breakthrough", "follow-suit", "silent-depth"], c1: "#3e5c44", c2: "#f0c56a", glow: "rgba(232, 176, 84, 0.62)", art: "arcade/follow-suit.webp", art2: "arcade/breakthrough.webp" },
@@ -1529,7 +1529,7 @@ try {
 // Lake Brawl's cabinet shows how many leaders have finished the campaign.
 try {
   const lb = store.get("lake-brawl.save.v1", null), n = lb && Array.isArray(lb.cleared) ? lb.cleared.length : 0;
-  if (n > 0) $(".hi", $('.cab[data-game="lake-brawl"]')).textContent = "CAMPAIGN CLEARED " + n + "/14";
+  if (n > 0) $(".hi", $('.cab[data-game="lake-brawl"]')).textContent = "CAMPAIGN CLEARED " + n + (Number.isInteger(lb.total) && lb.total >= n ? "/" + lb.total : "");
 } catch (e) { /* a save that cannot be read leaves the plain line */ }
 // River Rush shares its browser-local best score with its cabinet.
 try {
