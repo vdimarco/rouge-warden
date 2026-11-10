@@ -35,7 +35,7 @@ The Corridor SHALL offer an All games control that opens `/` on All Games. That 
 - **THEN** the Corridor control is in Menu and the bar's links do not overlap the title
 
 ### Requirement: The Corridor can be walked without a wheel
-The Corridor SHALL show a step bar with Previous cabinet and Next cabinet buttons, each at least 44px, and a progress line between them. A cue SHALL read Scroll on pointer devices and Swipe up on touch devices, and SHALL fade once the visitor has moved. A click or tap on the hall that hits no cabinet SHALL walk one cabinet forward. Opening a cabinet SHALL show its key art leaving that cabinet's monitor. At 760px and narrower the Play control SHALL stay on screen while the details scroll.
+The Corridor SHALL show a step bar with Previous cabinet and Next cabinet buttons, each at least 44px, and a progress line between them. A cue SHALL read Scroll on pointer devices and Swipe up on touch devices, and SHALL fade once the visitor has moved. A click or tap on the hall that hits no cabinet SHALL walk one cabinet forward. Opening a cabinet SHALL show its key art lifting off that cabinet's marquee, where it is already shown. At 760px and narrower the Play control SHALL stay on screen while the details scroll.
 
 #### Scenario: Stepping
 - **WHEN** a visitor selects Next cabinet twice and Previous cabinet once
