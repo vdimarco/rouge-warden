@@ -10,7 +10,7 @@ permissions:
   contents: read
 jobs:
   city-and-one-thumb:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
@@ -79,7 +79,7 @@ jobs:
   # still passing when the 45 minute cap cancelled it, so the check stayed red.
   # The suites are split so each job can finish inside its own cap.
   flat-play:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
@@ -126,7 +126,7 @@ jobs:
           retention-days: 14
 
   flat-scenes:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
@@ -148,7 +148,7 @@ jobs:
           retention-days: 14
 
   flat-world:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
@@ -180,7 +180,7 @@ jobs:
           retention-days: 14
 
   flat-missions:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
@@ -249,7 +249,7 @@ jobs:
           retention-days: 14
 
   flat-payoff:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
