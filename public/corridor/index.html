@@ -1635,7 +1635,7 @@ void main() {
             this.tunnel = this.buildTunnel();
             PIECES.forEach((work, i) => this.pieces.push(this.buildPiece(work, i, piecePlace(work, i), false)));
             PIECES.forEach((work, i) => this.cabinets.push(this.buildCabinet(work, i)));
-            this.pieces.forEach((pc, i) => this.seatPiece(pc, this.cabinets[i].screenQuad));
+            this.pieces.forEach((pc, i) => this.seatPiece(pc, this.cabinets[i].artQuad || this.cabinets[i].screenQuad));
             this.signs = this.buildSigns();
             this.post = this.buildPost();
             this.setTheme(this.dark);
@@ -1811,8 +1811,9 @@ void main() {
           }
 
           /* A piece is only drawn while it is open, peeling out to the
-             overlay — so it rests on its own cabinet's monitor and comes
-             off the glass, not down from the ceiling. q is that screen's
+             overlay — so it rests where its cabinet already shows the
+             keyart, the marquee on top (the table has none, so its glass),
+             and lifts off from there. q is that face's
              quad — bottom-left, bottom-right, top-right, top-left — and normal. */
           seatPiece(pc, q) {
             const positions = [], normals = [], uvs = [], indices = [];
@@ -1934,7 +1935,8 @@ void main() {
               parts.push({ geo: this.buffers(P, N, UV, I), prog: this.cabProg, part, tex: null, texA: 1, sw, sh });
             };
             let corners = null, center, mqPos, screenPos, screenDims, sideDims;
-            let screenQuad = null;                              // the monitor's four corners and normal: where the keyart peels from
+            let screenQuad = null;                              // the monitor's four corners and normal
+            let artQuad = null;                                 // the marquee showing the keyart: where it peels from
             if (profile === 'upright') {
               /* A real upright: two side panels cut to the classic profile,
                  everything else slung between them. PR is that profile up
@@ -1977,8 +1979,9 @@ void main() {
               /* part 2 · the marquee lightbox, between the panels */
               const eM = edge(6);
               build(2, 2 * wi, eM.len, (f) => {
-                f.quad(pos(-wi * rs, PR[6][1], PR[6][0] - IN), pos(wi * rs, PR[6][1], PR[6][0] - IN),
-                       pos(wi * rs, PR[7][1], PR[7][0] - IN), pos(-wi * rs, PR[7][1], PR[7][0] - IN), eM.n, 0, 1);
+                artQuad = [pos(-wi * rs, PR[6][1], PR[6][0] - IN), pos(wi * rs, PR[6][1], PR[6][0] - IN),
+                           pos(wi * rs, PR[7][1], PR[7][0] - IN), pos(-wi * rs, PR[7][1], PR[7][0] - IN), eM.n];
+                f.quad(...artQuad, 0, 1);
               });
               /* part 3 · the screen, leaned back in its bezel (4:5, like
                  its 512×640 attract canvas) */
@@ -2097,7 +2100,8 @@ void main() {
                 const vv = [U[0] * mc - F[0] * ms, U[1] * mc - F[1] * ms, U[2] * mc - F[2] * ms];
                 const c = mq(0, MH / 2, 0);
                 const off = (k, m) => [c[0] + ud[0] * k + vv[0] * m, c[1] + ud[1] * k + vv[1] * m, c[2] + ud[2] * k + vv[2] * m];
-                f.quad(off(-MW, -MH / 2), off(MW, -MH / 2), off(MW, MH / 2), off(-MW, MH / 2), nF, 0, 1);
+                artQuad = [off(-MW, -MH / 2), off(MW, -MH / 2), off(MW, MH / 2), off(-MW, MH / 2), nF];
+                f.quad(...artQuad, 0, 1);
                 f.quad(mq(-MW, MH, 0), mq(MW, MH, 0), mq(MW, MH, MD), mq(-MW, MH, MD), nT, 2, 3);
                 f.quad(mq(-MW, 0, MD), mq(MW, 0, MD), mq(MW, MH, MD), mq(-MW, MH, MD), neg(nF), 2, 3);
                 f.quad(mq(-MW, 0, 0), mq(MW, 0, 0), mq(MW, 0, MD), mq(-MW, 0, MD), neg(nT), 2, 3);
@@ -2186,7 +2190,7 @@ void main() {
               });
             }
             return {
-              work, parts, index, center, corners, mqPos, screenPos, screenQuad,
+              work, parts, index, center, corners, mqPos, screenPos, screenQuad, artQuad,
               profile, screenDims, sideDims,
               isCab: true,
               gen: 0,
@@ -2791,7 +2795,7 @@ void main() {
               const rgb = hexToRGB(pc.work.color);
               pc.dim = isOpen ? 0 : openE * (this.dark ? 0.78 : 0.7);
               pc.artTime = this.art + i * 7.3;
-              pc.sway = 0;                                       // seated on a monitor: nothing hangs, nothing sways
+              pc.sway = 0;                                       // seated on its cabinet: nothing hangs, nothing sways
               /* Its cabinet powers on with the piece, hovers and dims with
                  it; its marquee glow takes the piece's own light slot (i). */
               const cb = this.cabinets[i];
@@ -2887,7 +2891,7 @@ void main() {
                 gl.uniform1f(u.uDim, openE * (this.dark ? 0.72 : 0.6));
                 const cur = this.pieces[this.shownIdx].place;
                 gl.uniform4f(u.uOpenRect, cur.s0, cur.t0, cur.s1, cur.t1);
-                gl.uniform1f(u.uOpenK, 0);                          // the art leaves a monitor now, not a ceiling frame
+                gl.uniform1f(u.uOpenK, 0);                          // the art leaves its cabinet now, not a ceiling frame
                 gl.uniform3fv(u.uOpenCol, hexToRGB(this.pieces[this.shownIdx].work.color));
                 gl.uniform3fv(u.uPP, this.lightPP);
                 gl.uniform3fv(u.uPC, this.lightPC);
