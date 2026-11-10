@@ -16,6 +16,27 @@
 <meta property="og:image" content="https://arcade.uptick.systems/og.jpg">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:image" content="https://arcade.uptick.systems/og.jpg">
+<script>
+// The walk-through corridor at /corridor/ is the default view. This hall stays for ?view=classic (remembered),
+// a group link such as #cottage, automated browsers, and browsers without WebGL. ?view=walk forgets the choice.
+(() => {
+  const want = new URLSearchParams(location.search).get("view");
+  let kept = null;
+  try {
+    if (want === "classic") localStorage.setItem("arcade.view", "classic");
+    else if (want === "walk") localStorage.removeItem("arcade.view");
+    kept = localStorage.getItem("arcade.view");
+  } catch (e) { /* storage off */ }
+  if (want !== "walk") {
+    if (want === "classic" || kept === "classic" || location.hash.length > 1 || navigator.webdriver) return;
+    try {
+      const c = document.createElement("canvas");
+      if (!(c.getContext("webgl") || c.getContext("experimental-webgl"))) return;
+    } catch (e) { return; }
+  }
+  location.replace("/corridor/");
+})();
+</script>
 <script src="/arcade/quiet.js"></script>
 <style data-arcade-fonts>
 /* Latin subsets of the three faces this page uses, weight 400 only. SIL Open Font License: /fonts/OFL-*.txt */
