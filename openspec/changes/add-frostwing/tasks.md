@@ -9,6 +9,7 @@
 - [x] HUD: systems, boost, bombs, scoreboard, clock, kill feed, radio lines, radar, ship outline, objective banner, reticles, lock bracket, name tags
 - [x] Screens: title with attract flight, pilot select, how to fly, pause, results
 - [x] Keyboard, mouse, gamepad and touch controls; pitch direction setting
+- [x] Touch: drag anywhere to steer and fire, tap for a homing shot (the sim's quick shot), four buttons for roll, U-turn, bomb and boost, a first-match hint
 - [x] Mouse flight: pointer-lock virtual stick with spring-back, a stick ring, a click-to-fly hint, a Mouse flight / Keys only setting
 - [x] Generated 3D models (Meshy 7 ships, Tripo H3.1 props) packed with `higgsfield/models3d/pack-ship.mjs`
 - [x] High graphics: sun shadows, bloom, sky reflections, snow ripples and glints, clouds, the gas giant, ribbon trails, explosion lights; Fast graphics for phones; automatic drop to Fast

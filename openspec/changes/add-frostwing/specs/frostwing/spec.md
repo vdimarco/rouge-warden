@@ -62,7 +62,7 @@ The ship SHALL turn and climb as the player steers. Boost speeds up and widens t
 
 ### Requirement: Controls on every device
 
-Every action SHALL be playable from the keyboard, a gamepad and a touch screen, and fire and charge also from the mouse. Every touch button SHALL be at least 44 px. The pitch direction SHALL be settable to "up = climb" or "up = dive", and the game SHALL save the choice. The key map is on the How to fly screen.
+Every action SHALL be playable from the keyboard and a gamepad, and fire and charge also from the mouse. A touch screen SHALL use drag and tap: a drag anywhere steers and fires the lasers, and a tap sends a homing shot. Roll, U-turn, bomb and boost SHALL have touch buttons. Brake is on the keyboard and gamepad only. Every touch button SHALL be at least 44 px. The pitch direction SHALL be settable to "up = climb" or "up = dive", and the game SHALL save the choice. The key map is on the How to fly screen.
 
 #### Scenario: Mouse flight
 
@@ -70,11 +70,27 @@ Every action SHALL be playable from the keyboard, a gamepad and a touch screen, 
 - WHEN the player clicks the screen and moves the mouse
 - THEN the mouse is captured, a ring shows the virtual stick, the ship turns and climbs with the mouse, the stick eases back to centre when the mouse stops, the left button fires, the right button locks on, and Esc frees the mouse and pauses
 
+#### Scenario: Drag and tap on a phone
+
+- GIVEN a match on a touch screen
+- WHEN the player drags a finger anywhere on the screen
+- THEN a ring shows where the drag began, the ship turns and climbs with the drag, and the lasers fire while the finger steers
+- AND WHEN the player taps a rival ship
+- THEN a homing shot goes after that ship, the inner reticle dims while the shot recharges for the pilot's lock time plus one second, and a tap during the recharge fires nothing
+- AND WHEN the player taps open sky
+- THEN the homing shot goes to the rival nearest the nose
+
+#### Scenario: Touch hint
+
+- GIVEN a player on a touch screen who has not yet dragged and tapped
+- WHEN a match starts
+- THEN "DRAG TO STEER AND FIRE · TAP A RIVAL FOR A HOMING SHOT" shows for up to 20 seconds, and it goes once the player has done both
+
 #### Scenario: Phone in portrait
 
 - GIVEN a phone held upright, 320 px wide or more
 - WHEN a match starts
-- THEN the scoreboard, systems panel, banner, radar and buttons are inside the screen and do not overlap, and the steering area covers the lower left
+- THEN the scoreboard, systems panel, banner, radar and the four buttons are inside the screen and do not overlap, and the whole screen takes drags and taps
 
 #### Scenario: Phone in landscape
 

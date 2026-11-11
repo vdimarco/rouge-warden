@@ -159,7 +159,8 @@ export function createMatch(opts = {}) {
       x: 0, y: 0, z: 0, vx: 0, vy: 0, vz: 0, yaw: 0, pitch: 0, bank: 0, speed: BASE_SPEED * P.speed,
       shield: hp, maxShield: hp, boost: 1, bombs: P.bombs, charge: 0, lock: null, fireCd: 0, rollCd: 0, roll: 0, rollDir: 0,
       uturn: 0, uturnYaw: 0, alive: true, respawn: 0, invuln: 2, kills: 0, deaths: 0, energy: 0, lastHitBy: null, hitFlash: 0, warn: 0,
-      input: { pitch: 0, yaw: 0, fire: false, charge: false, boost: false, brake: false, bomb: false, rollL: false, rollR: false, uturn: false },
+      input: { pitch: 0, yaw: 0, fire: false, charge: false, boost: false, brake: false, bomb: false, rollL: false, rollR: false, uturn: false, quick: false, quickTarget: 0 },
+      quickCd: 0,
       prevCharge: false, prevBomb: false, ai: { target: null, think: rand() * diff.think, wobble: rand() * 10, mode: "hunt", evade: 0 },
     };
     spawn(m, s, true);
@@ -527,6 +528,23 @@ function fly(m, s, dt) {
     s.charge = Math.max(0, s.charge - dt * 4); if (s.charge <= 0) s.lock = null;
   }
   s.prevCharge = inp.charge;
+  // The quick shot (a tap on a touch screen): one request fires a charged shot at once, at the named rival when it is
+  // within 900 units and in the front 60 degrees, or else at the rival nearest the nose. It then recharges for the
+  // pilot's lock time plus one second, so it is never faster than charging by hand.
+  s.quickCd = Math.max(0, s.quickCd - dt);
+  if (inp.quick) {
+    inp.quick = false;
+    if (s.quickCd <= 0 && s.uturn <= 0 && !inp.charge) {
+      const f = forward(s.yaw, s.pitch);
+      const ahead = (o) => { const dx = o.x - s.x, dy = o.y - s.y, dz = o.z - s.z, d = len(dx, dy, dz); return d > 1 && d < 900 && (dx * f.x + dy * f.y + dz * f.z) / d > 0.5; };
+      const named = inp.quickTarget ? m.ships.find((o) => o.id === inp.quickTarget && o.alive && o.team !== s.team && ahead(o)) : null;
+      s.lock = named || findLock(m, s, 0.45, 800);
+      if (s.lock) emit(m, { type: "lock", ship: s.id, target: s.lock.id });
+      fireCharge(m, s);
+      s.quickCd = P.lock + 1;
+    }
+    inp.quickTarget = 0;
+  }
   if (inp.bomb && !s.prevBomb && s.bombs > 0) dropBomb(m, s);
   s.prevBomb = inp.bomb;
   // the veteran: allies close to Silas repair slowly
