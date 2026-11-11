@@ -1,0 +1,5 @@
+node_modules/
+.keys/
+contract/target/
+mock-intents/target/
+runs/

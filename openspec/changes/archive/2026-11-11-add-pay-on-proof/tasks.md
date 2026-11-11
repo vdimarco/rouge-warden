@@ -1,0 +1,6 @@
+- [x] Contract: jobs, bids, one counter and one answer, hire, deliver with on-chain check, payout by NEAR or NEAR Intents, expire, cap, close; unit tests
+- [x] Build the wasm; run a full job on testnet
+- [x] Warden agent with a function-call key and a spend policy; two reference sellers; seller MCP server
+- [x] Mainnet: deploy, add the Warden key, delete the full-access key, run real paid jobs
+- [x] On chain view in Warden's Ledger with receipts and playable passed maps
+- [x] README, demo video, checks, archive (the OpenSpec CLI was not installed; a script checked the spec structure)
