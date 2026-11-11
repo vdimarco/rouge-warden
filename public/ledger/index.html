@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Warden's Ledger</title>
+<meta name="description" content="A contractor agent with a NEAR wallet. Post tasks, haggle once, hire agents, check their work, and pay through NEAR Intents.">
+<meta name="theme-color" content="#13261f">
+<link rel="icon" href="/favicon.ico">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IM+Fell+English:ital@0;1&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="top">
+  <div class="brand"><h1>Warden's Ledger</h1><p class="sub" id="dayline">A contractor agent with a NEAR wallet</p></div>
+  <dl class="wallet" aria-label="Wallet">
+    <div><dt>Wallet</dt><dd id="w-wallet">–</dd></div>
+    <div><dt>Free</dt><dd id="w-free">–</dd></div>
+    <div><dt>Locked</dt><dd id="w-locked">–</dd></div>
+    <div><dt>Spent</dt><dd id="w-spent">–</dd></div>
+  </dl>
+  <div class="tools">
+    <span class="chip" id="mode" title="Where payment quotes come from">Quotes: checking…</span>
+    <button type="button" class="btn" id="auto" aria-pressed="false">Auto</button>
+    <button type="button" class="btn" id="menu" data-switch>Switch game</button>
+  </div>
+</header>
+
+<nav class="tabs" aria-label="Views">
+  <button type="button" class="tab" data-tab="board" aria-selected="true">Board</button>
+  <button type="button" class="tab" data-tab="receipts" aria-selected="false">Receipts <span id="rcount">0</span></button>
+  <button type="button" class="tab" data-tab="agents" aria-selected="false">Agents</button>
+</nav>
+
+<main id="main">
+  <section class="pane board" id="pane-board" data-pane="board">
+    <article class="card commission" id="commission"></article>
+    <div class="clock" aria-label="Work hours"><div class="clock-fill" id="clock-fill"></div><span id="clock-text">0 of 8 hours</span></div>
+    <div class="inspect" id="inspect" hidden></div>
+    <ol class="tasks" id="tasks"></ol>
+    <div class="actions">
+      <button type="button" class="btn big" id="next">Next delivery</button>
+      <button type="button" class="btn big ghost" id="endday">Close the day</button>
+    </div>
+    <ul class="log" id="log" aria-live="polite"></ul>
+  </section>
+
+  <section class="pane side receipts" id="pane-receipts" data-pane="receipts">
+    <div class="pane-head"><h2>Receipts</h2><button type="button" class="btn" id="export">Export JSON</button></div>
+    <p class="note">One receipt per finished task. Payments are dry runs: real signed NEAR Intents quotes, no funds moved.</p>
+    <ol class="receipt-list" id="receipts"></ol>
+  </section>
+
+  <section class="pane side agents" id="pane-agents" data-pane="agents">
+    <div class="pane-head"><h2>Agents</h2></div>
+    <p class="note">What each agent earned, and what it spent on paid APIs and other agents this season. Agent spending is simulated.</p>
+    <div class="agent-list" id="agents"></div>
+  </section>
+</main>
+
+<dialog id="title" class="sheet">
+  <h2>Warden's Ledger</h2>
+  <p class="lede">You are the Warden, a contractor agent with a wallet of wNEAR. Each day a client commissions a new stop for the arcade.</p>
+  <ol class="how">
+    <li><b>Post.</b> The job splits into tasks: a map, a roster of critters, a palette, a tune.</li>
+    <li><b>Haggle.</b> Agents bid in their own token on their own chain. You get one counter-offer per bid.</li>
+    <li><b>Hire.</b> Hiring locks the cost in escrow. You cannot lock more than the budget.</li>
+    <li><b>Check.</b> Each delivery is checked. A pass pays the agent. A fail pays nothing, and the client docks you.</li>
+    <li><b>Pay.</b> Payment is a NEAR Intents 1Click quote from wNEAR to the agent's token and chain.</li>
+  </ol>
+  <p class="fine">Dry run: this page holds no keys and moves no funds. The quotes are real and signed.</p>
+  <div class="row">
+    <button type="button" class="btn big" id="start" autofocus>Start the season</button>
+    <button type="button" class="btn big ghost" id="start-auto">Watch the Warden play</button>
+  </div>
+</dialog>
+
+<dialog id="summary" class="sheet"><div id="summary-body"></div><div class="row"><button type="button" class="btn big" id="summary-go">Next day</button></div></dialog>
+
+<script src="/arcade/switch.js"></script>
+<script type="module" src="app.js"></script>
+</body>
+</html>
