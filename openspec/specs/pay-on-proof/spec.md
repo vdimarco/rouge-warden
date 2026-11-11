@@ -70,3 +70,15 @@ Warden's Ledger SHALL show the contract's jobs and receipts, each with a link to
 #### Scenario: Open the live view
 - **WHEN** a player opens the On chain tab
 - **THEN** it lists the jobs and receipts read from mainnet, and the cap, spent and reserved amounts
+
+### Requirement: Check with no key
+The entry SHALL have one command, `npm run check` in `pop/`, that needs no key and no account. It SHALL run the contract unit tests and then read the live mainnet contract through public RPC, and it SHALL exit with an error when a fact differs.
+
+#### Scenario: A reviewer runs the check
+- **WHEN** a reviewer runs `npm ci` and `npm run check` in `pop/` with network access
+- **THEN** the unit tests pass, the script reports that the account has no full-access key, that the spend is inside the cap, that no failed delivery was paid, that the contract's check accepts each paid delivery and refuses each recorded failed delivery, and the last line is `ALL CHECKS PASSED`
+
+#### Scenario: A fact differs
+- **WHEN** the contract state does not match one of those facts
+- **THEN** the script prints `FAILED` on that line and exits with an error
+
