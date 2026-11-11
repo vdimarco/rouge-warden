@@ -10,7 +10,7 @@ if (TOUCH) document.body.classList.add("touch");
 
 /* ---------------- save ---------------- */
 const SAVE_KEY = "frostwing.save.v1";
-const save = (() => { try { return Object.assign({ best: 0, wins: 0, played: 0, pilot: "juno", diff: "ace", invert: 0, sound: 1 }, JSON.parse(localStorage.getItem(SAVE_KEY) || "{}")); } catch (e) { return { best: 0, wins: 0, played: 0, pilot: "juno", diff: "ace", invert: 0, sound: 1 }; } })();
+const save = (() => { try { return Object.assign({ best: 0, wins: 0, played: 0, pilot: "juno", diff: "ace", invert: 0, sound: 1, mouse: 1, mouseSens: 1 }, JSON.parse(localStorage.getItem(SAVE_KEY) || "{}")); } catch (e) { return { best: 0, wins: 0, played: 0, pilot: "juno", diff: "ace", invert: 0, sound: 1, mouse: 1, mouseSens: 1 }; } })();
 const store = () => { try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (e) { /* private mode */ } };
 
 /* ---------------- renderer ---------------- */
@@ -394,8 +394,34 @@ addEventListener("keydown", (e) => {
 });
 addEventListener("keyup", (e) => keys.delete(e.code));
 addEventListener("blur", () => { keys.clear(); mouse.fire = mouse.charge = false; });
-$("#gl").addEventListener("mousedown", (e) => { if (state !== "play") return; if (e.button === 0) mouse.fire = true; if (e.button === 2) mouse.charge = true; });
+// Mouse flight: a click captures the pointer, and mouse movement pushes a virtual stick that springs back to centre.
+// Left button fires, right button charges a lock-on. Esc (or losing the pointer) pauses.
+const fly = { x: 0, y: 0, locked: false, fake: false, idle: 0 };
+const mouseOn = () => save.mouse !== 0 && !TOUCH;
+function grabPointer() {
+  if (!mouseOn() || fly.locked) return;
+  const c = $("#gl");
+  try { const p = c.requestPointerLock && c.requestPointerLock(); if (p && p.catch) p.catch(() => {}); } catch (e) { /* no pointer lock here */ }
+}
+document.addEventListener("pointerlockchange", () => {
+  const was = fly.locked;
+  fly.locked = document.pointerLockElement === $("#gl") || fly.fake;
+  if (!fly.locked) { fly.x = fly.y = 0; mouse.fire = mouse.charge = false; }
+  if (was && !fly.locked && state === "play") pause(true);
+});
+$("#gl").addEventListener("mousedown", (e) => {
+  if (state !== "play") return;
+  if (mouseOn() && !fly.locked) { grabPointer(); return; } // the first click only captures the mouse
+  if (e.button === 0) mouse.fire = true; if (e.button === 2) mouse.charge = true;
+});
 addEventListener("mouseup", (e) => { if (e.button === 0) mouse.fire = false; if (e.button === 2) mouse.charge = false; });
+addEventListener("mousemove", (e) => {
+  if (!fly.locked || state !== "play") return;
+  const k = 1 / (90 * (save.mouseSens || 1));
+  fly.x = clamp(fly.x + e.movementX * k, -1, 1); fly.y = clamp(fly.y + e.movementY * k, -1, 1);
+  const l = Math.hypot(fly.x, fly.y); if (l > 1) { fly.x /= l; fly.y /= l; }
+  fly.idle = 0;
+});
 $("#gl").addEventListener("contextmenu", (e) => e.preventDefault());
 
 // touch: a floating stick on the left, held buttons on the right
@@ -428,6 +454,7 @@ function readInput(s) {
   let boost = k("ShiftLeft") || k("ShiftRight") || touch.boost, brake = k("KeyC") || touch.brake, bomb = k("KeyB") || k("KeyL") || touch.bomb;
   let rollL = k("KeyQ") || touch.rollL, rollR = k("KeyE") || touch.rollR, uturn = k("KeyR") || touch.uturn;
   if (touch.active) { yaw -= touch.x * 1.15; pitch -= touch.y * 1.1; }
+  if (fly.locked) { yaw -= fly.x * 1.2; pitch -= fly.y * 1.15; }
   const gp = navigator.getGamepads ? [...navigator.getGamepads()].find((g) => g && g.connected) : null;
   if (gp) {
     const dz = (v) => (Math.abs(v) < 0.15 ? 0 : v), b = (i) => !!(gp.buttons[i] && gp.buttons[i].pressed);
@@ -445,7 +472,7 @@ function readInput(s) {
 const hud = {
   shield: $("#shieldBar i"), shieldBar: $("#shieldBar"), boost: $("#boostBar i"), bombN: $("#bombN"), s0: $("#s0"), s1: $("#s1"), clock: $("#clock"),
   feed: $("#feed"), radio: $("#radio"), objective: $("#objective"), tugA: $("#tug .a"), tugB: $("#tug .b"), na: $("#tug .na"), nb: $("#tug .nb"),
-  radar: $("#radar"), sil: $("#sil"), tags: $("#tags"), reticle: $("#reticle"), lock: $("#lock"), center: $("#center"), warn: $("#warn"), hurt: $("#hurt"), hitmark: $("#hitmark"), popups: $("#popups"),
+  radar: $("#radar"), mouse: $("#mouseStick"), mouseHint: $("#mouseHint"), sil: $("#sil"), tags: $("#tags"), reticle: $("#reticle"), lock: $("#lock"), center: $("#center"), warn: $("#warn"), hurt: $("#hurt"), hitmark: $("#hitmark"), popups: $("#popups"),
 };
 hud.reticle.innerHTML = '<svg width="56" height="56" viewBox="-28 -28 56 56" id="r1"><path d="M-22 -10v-12h12M10 -22h12v12M22 10v12h-12M-10 22h-12v-12" fill="none" stroke="#6dff9e" stroke-width="2.5"/><circle r="2" fill="#6dff9e"/></svg><svg width="30" height="30" viewBox="-15 -15 30 30" id="r2"><rect x="-11" y="-11" width="22" height="22" fill="none" stroke="#6dff9e" stroke-width="2" opacity=".7"/></svg>';
 hud.lock.innerHTML = '<svg width="80" height="80" viewBox="-40 -40 80 80"><path d="M-14 -34h-14v68h14M14 -34h14v68h-14" fill="none" stroke="currentColor" stroke-width="4"/></svg>';
@@ -747,6 +774,10 @@ function updateHud(m, me, dt) {
     } else hud.lock.classList.add("hidden");
     r1.querySelector("path").setAttribute("stroke", charging ? (me.charge >= 1 ? "#ffd23f" : "#9fffc0") : "#6dff9e");
   } else { hud.reticle.style.display = "none"; hud.lock.classList.add("hidden"); }
+  // mouse flight: a ring shows the virtual stick; before the first click, a hint says how to start
+  hud.mouse.style.display = fly.locked && me.alive ? "" : "none";
+  if (fly.locked) hud.mouse.style.transform = "translate(calc(-50% + " + (fly.x * 70) + "px), calc(-50% + " + (fly.y * 70) + "px))";
+  hud.mouseHint.classList.toggle("hidden", !(mouseOn() && !fly.locked && countdown <= 0 && me.alive));
   radarT -= dt; if (radarT <= 0) { radarT = 1 / 20; drawRadar(m, me.alive ? me : { ...me }); }
   updateTags(m, me);
   if (m.time < 60 && !m.minuteSaid) { m.minuteSaid = true; say("minute", true); }
@@ -790,7 +821,9 @@ function buildCards() {
 function segs() {
   $$("#diff button").forEach((b) => b.classList.toggle("on", b.dataset.d === diffSel));
   $$("#inv button").forEach((b) => b.classList.toggle("on", +b.dataset.i === save.invert));
+  $$("#mouseSeg button").forEach((b) => b.classList.toggle("on", +b.dataset.m === save.mouse));
 }
+$$("#mouseSeg button").forEach((b) => b.addEventListener("click", () => { save.mouse = +b.dataset.m; store(); SND.ui(); segs(); }));
 $$("#diff button").forEach((b) => b.addEventListener("click", () => { diffSel = b.dataset.d; SND.ui(); segs(); }));
 $$("#inv button").forEach((b) => b.addEventListener("click", () => { save.invert = +b.dataset.i; store(); SND.ui(); segs(); }));
 function bestLine() {
@@ -809,15 +842,17 @@ function launch() {
   const f = S.forward(me.yaw, me.pitch);
   cam.pos.set(me.x - f.x * 120 + 40, me.y + 50, me.z - f.z * 120); cam.look.set(me.x, me.y, me.z);
   countdown = 3.2; state = "play"; show(null);
+  fly.x = fly.y = 0; grabPointer();
   SND.music(true);
   centerMsg("3", "LANTERN SQUADRON · LAUNCH", 900);
 }
 function pause(on) {
-  if (on && state === "play") { state = "pause"; show("pause"); soundLabel(); SND.suspend(); keys.clear(); }
-  else if (!on && state === "pause") { state = "play"; show(null); SND.resume(); last = performance.now(); }
+  if (on && state === "play") { state = "pause"; show("pause"); soundLabel(); SND.suspend(); keys.clear(); if (document.pointerLockElement) document.exitPointerLock(); }
+  else if (!on && state === "pause") { state = "play"; show(null); SND.resume(); last = performance.now(); grabPointer(); }
 }
 function endMatch() {
   state = "results";
+  if (document.pointerLockElement) document.exitPointerLock();
   const m = match, me = m.player, win = m.winner === me.team, draw = m.winner < 0;
   save.played++; if (win) save.wins++; save.best = Math.max(save.best, m.score[0]); store();
   $("#resultTitle").textContent = draw ? "DRAW" : win ? "VICTORY" : "DEFEAT";
@@ -832,7 +867,7 @@ function endMatch() {
   setTimeout(() => { if (state === "results") show("results"); }, 1600);
   centerMsg(draw ? "TIME" : win ? "MISSION COMPLETE" : "MISSION FAILED", "", 1600);
 }
-function toTitle() { state = "title"; SND.music(false); show("title"); bestLine(); startAttract(); }
+function toTitle() { if (document.pointerLockElement) document.exitPointerLock(); state = "title"; SND.music(false); show("title"); bestLine(); startAttract(); }
 
 $("#playBtn").addEventListener("click", () => { SND.init(); SND.ui(); state = "select"; buildCards(); segs(); show("select"); });
 $("#howBtn").addEventListener("click", () => { SND.init(); SND.ui(); state = "how"; show("how"); });
@@ -862,7 +897,8 @@ let last = performance.now(), acc = 0;
 const DT = 1 / 60;
 function frame(now) {
   requestAnimationFrame(frame);
-  let dt = Math.min(0.1, (now - last) / 1000); last = now;
+  const realDt = Math.min(1, Math.max(0, (now - last) / 1000));
+  let dt = Math.min(0.1, realDt); last = now;
   if (state === "pause") { renderer.render(scene, camera); return; }
   SND.tick();
   const m = match;
@@ -876,7 +912,12 @@ function frame(now) {
     if (countdown <= 0) { centerMsg("GO!", "Four minutes · most points wins", 1200); say("start", true); setTimeout(() => say("start"), 3600); }
     followCamera(me, dt, false);
   } else if (state === "play" || state === "title" || state === "select" || state === "how" || state === "results") {
-    if (state === "play") readInput(me);
+    if (state === "play") {
+      // the mouse stick drifts back to centre once the mouse stops, so a still mouse means level flight
+      fly.idle += realDt;
+      if (fly.idle > 0.15) { const k = Math.exp(-realDt * 2.6); fly.x *= k; fly.y *= k; }
+      readInput(me);
+    }
     if (!(state === "results" && m.over)) {
       acc += dt;
       let n = 0;
@@ -915,6 +956,9 @@ window.__fw = {
   skipCountdown: () => { countdown = 0.001; },
   fastForward: (sec) => { for (let i = 0; i < sec * 60 && !match.over; i++) S.step(match, DT); },
   get save() { return { ...save }; },
+  get fly() { return { ...fly }; },
+  // headless browsers cannot take pointer lock, so tests stand in for it
+  fakeLock: (on) => { fly.fake = on; if (on) fly.locked = true; else document.dispatchEvent(new Event("pointerlockchange")); },
 };
 
 bestLine();

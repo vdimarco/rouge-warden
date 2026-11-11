@@ -81,6 +81,42 @@ const shot = async (page, name) => { if (SHOTS) await page.screenshot({ path: pa
   await ctx.close();
 }
 
+/* ---------- desktop: mouse flight ---------- */
+{
+  const tag = "1280x720 mouse";
+  const { ctx, page, errors } = await open({ viewport: { width: 1280, height: 720 } });
+  // Launch asks for the pointer. Refuse it here, so the test drives the stand-in lock and sees the hint first.
+  check(await page.evaluate(() => { let asked = false; HTMLCanvasElement.prototype.requestPointerLock = function () { asked = true; }; __fw.launch("juno", "cadet"); return asked; }), `${tag}: Launch asks to capture the mouse`);
+  await page.evaluate(() => __fw.skipCountdown());
+  await page.waitForTimeout(300);
+  check(await page.isVisible("#mouseHint"), `${tag}: before the mouse is captured, the screen says to click to fly with the mouse`);
+  await page.evaluate(() => __fw.fakeLock(true)); // headless Chromium cannot take pointer lock
+  const y0 = await page.evaluate(() => __fw.match.player.yaw);
+  // keep the mouse moving right for about a second: one burst of moves every animation frame
+  const mid = await page.evaluate(() => new Promise((done) => {
+    let top = 0; const t0 = performance.now();
+    const tick = () => { for (let i = 0; i < 3; i++) dispatchEvent(new MouseEvent("mousemove", { movementX: 10, movementY: 0 })); top = Math.max(top, __fw.fly.x); if (performance.now() - t0 < 1000) requestAnimationFrame(tick); else done({ yaw: __fw.match.player.yaw, x: top }); };
+    requestAnimationFrame(tick);
+  }));
+  check(mid.x > 0.4 && mid.yaw - y0 < -0.08, `${tag}: moving the mouse right pushes the stick right and turns the ship right (stick ${mid.x.toFixed(2)}, yaw ${y0.toFixed(2)} to ${mid.yaw.toFixed(2)})`);
+  check(await page.isVisible("#mouseStick") && !(await page.isVisible("#mouseHint")), `${tag}: the stick ring shows and the hint hides once the mouse is captured`);
+  await page.waitForTimeout(1500);
+  const rest = await page.evaluate(() => __fw.fly.x);
+  check(Math.abs(rest) < 0.15, `${tag}: the stick eases back to centre when the mouse stops (${rest.toFixed(2)})`);
+  const p0 = await page.evaluate(() => __fw.match.player.pitch);
+  await page.evaluate(() => new Promise((done) => { const t0 = performance.now(); const tick = () => { for (let i = 0; i < 3; i++) dispatchEvent(new MouseEvent("mousemove", { movementX: 0, movementY: -10 })); if (performance.now() - t0 < 800) requestAnimationFrame(tick); else done(); }; requestAnimationFrame(tick); }));
+  check(await page.evaluate((p) => __fw.match.player.pitch - p > 0.1, p0), `${tag}: moving the mouse up climbs`);
+  await page.mouse.move(640, 360); await page.mouse.down();
+  await page.waitForTimeout(300);
+  const bolts = await page.evaluate(() => __fw.match.bolts.filter((b) => b.owner === __fw.match.player.id).length);
+  await page.mouse.up();
+  check(bolts > 0, `${tag}: the left button fires (${bolts} bolts)`);
+  await page.evaluate(() => __fw.fakeLock(false));
+  check(await page.evaluate(() => __fw.state === "pause"), `${tag}: losing the mouse capture pauses the match`);
+  check(errors.length === 0, `${tag}: no page errors (${errors.join("; ")})`);
+  await ctx.close();
+}
+
 /* ---------- phones: touch layout and play ---------- */
 for (const [name, dev] of [["portrait", devices["iPhone 13"]], ["landscape", devices["iPhone 13 landscape"]], ["small", { ...devices["iPhone SE"], viewport: { width: 320, height: 568 } }]]) {
   const { ctx, page, errors } = await open({ ...dev });
@@ -106,7 +142,7 @@ for (const [name, dev] of [["portrait", devices["iPhone 13"]], ["landscape", dev
   const cdp = await ctx.newCDPSession(page);
   const tp = (type, x, y) => cdp.send("Input.dispatchTouchEvent", { type, touchPoints: type === "touchEnd" ? [] : [{ x, y, id: 1 }] });
   await tp("touchStart", z.x, z.y); await tp("touchMove", z.x + 60, z.y);
-  await page.waitForTimeout(700);
+  await page.waitForTimeout(1200);
   const y1 = await page.evaluate(() => __fw.match.player.yaw);
   await tp("touchEnd");
   check(y1 - y0 < -0.25, `${tag}: dragging right on the left side turns the ship right (yaw ${y0.toFixed(2)} to ${y1.toFixed(2)})`);

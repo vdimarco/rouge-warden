@@ -93,6 +93,10 @@ button { font: inherit; color: inherit; }
 #popups { position: absolute; inset: 0; }
 .pop { position: absolute; transform: translate(-50%, -50%); font-size: 1.3em; color: var(--yellow); text-shadow: 0 0 6px #000; animation: rise 1s ease-out forwards; }
 #warn { position: absolute; left: 50%; top: 44%; transform: translateX(-50%); color: #ff6b5a; font-size: 1.15em; letter-spacing: 0.1em; text-shadow: 0 0 8px #000; animation: blink 0.6s steps(2) infinite; }
+#mouseStick { position: absolute; left: 50%; top: 50%; width: 22px; height: 22px; border: 2px solid rgba(255, 255, 255, 0.85); border-radius: 50%; box-shadow: 0 0 6px rgba(0, 0, 0, 0.6); }
+#mouseStick::after { content: ""; position: absolute; left: 50%; top: 50%; width: 4px; height: 4px; margin: -2px; border-radius: 50%; background: #fff; }
+#mouseHint { position: absolute; left: 50%; top: 62%; transform: translateX(-50%); color: #fff; font-size: 0.95em; letter-spacing: 0.08em; text-shadow: 0 0 8px #000; animation: blink 1.2s steps(2) infinite; }
+body.touch #mouseHint, body.touch #mouseSeg { display: none !important; }
 #hurt { position: absolute; inset: 0; background: radial-gradient(ellipse at center, transparent 55%, rgba(255, 40, 30, 0.55)); opacity: 0; transition: opacity 0.15s; }
 #hitmark { position: absolute; left: 50%; top: 50%; width: 26px; height: 26px; transform: translate(-50%, -50%) rotate(45deg); opacity: 0; }
 #hitmark::before, #hitmark::after { content: ""; position: absolute; background: #fff; }
@@ -220,6 +224,8 @@ body.touch.playing #pad { display: block; }
   <canvas id="radar" width="220" height="220"></canvas><span id="radarLab">RADAR</span>
   <div id="center"></div>
   <div id="warn" class="hidden display">TURN BACK · STORM WALL</div>
+  <div id="mouseStick" style="display:none"></div>
+  <div id="mouseHint" class="hidden display">CLICK TO FLY WITH THE MOUSE</div>
   <button id="pauseBtn" type="button" aria-label="Pause">❚❚</button>
 </div>
 
@@ -249,6 +255,7 @@ body.touch.playing #pad { display: block; }
   <div class="row">
     <span>Rivals</span>
     <div class="seg" id="diff" role="radiogroup" aria-label="Difficulty"><button type="button" data-d="cadet">CADET</button><button type="button" data-d="ace">ACE</button><button type="button" data-d="veteran">VETERAN</button></div>
+    <div class="seg" id="mouseSeg" role="radiogroup" aria-label="Mouse flight"><button type="button" data-m="1">MOUSE FLIGHT</button><button type="button" data-m="0">KEYS ONLY</button></div>
     <div class="seg" id="inv" role="radiogroup" aria-label="Pitch"><button type="button" data-i="0">UP = CLIMB</button><button type="button" data-i="1">UP = DIVE</button></div>
   </div>
   <div class="btns"><button id="backBtn" class="btn" type="button">BACK</button><button id="launchBtn" class="btn go" type="button">LAUNCH</button></div>
@@ -258,6 +265,7 @@ body.touch.playing #pad { display: block; }
   <h2 class="display">HOW TO FLY</h2>
   <p class="note">Two squadrons, four minutes. A downed ship scores 10. Every few minutes a meteor shower falls: shoot the rocks, then fly through the amber energy they drop. Each orb scores 5, and the team that gathers more energy in a shower earns 25 more. Red orbs are bombs. Green orbs repair your shield.</p>
   <div class="keys">
+    <span>Mouse</span><span>Click to capture the mouse, then move it to steer. The ring shows the stick, and it eases back to centre when the mouse stops. Left button fires, right button locks on. Esc frees the mouse and pauses.</span>
     <span><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> or arrows</span><span>Steer</span>
     <span><kbd>Space</kbd> or <kbd>J</kbd> or click</span><span>Fire lasers (hold)</span>
     <span><kbd>K</kbd> or <kbd>X</kbd> or right-click</span><span>Hold to charge and lock on, release to fire a homing shot</span>

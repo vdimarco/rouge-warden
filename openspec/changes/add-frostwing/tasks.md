@@ -9,6 +9,7 @@
 - [x] HUD: systems, boost, bombs, scoreboard, clock, kill feed, radio lines, radar, ship outline, objective banner, reticles, lock bracket, name tags
 - [x] Screens: title with attract flight, pilot select, how to fly, pause, results
 - [x] Keyboard, mouse, gamepad and touch controls; pitch direction setting
+- [x] Mouse flight: pointer-lock virtual stick with spring-back, a stick ring, a click-to-fly hint, a Mouse flight / Keys only setting
 - [x] Synthesized sound and music; pause suspends sound
 - [x] Arcade cabinet at the end of the Action row, Switch game entry, cabinet save line, `quiet.mjs` entry
 - [x] `qa/arcade/machines.mjs` updated for the new last Action machine and the Frostwing marquee

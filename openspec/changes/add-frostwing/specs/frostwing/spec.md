@@ -64,6 +64,12 @@ The ship SHALL turn and climb as the player steers. Boost speeds up and widens t
 
 Every action SHALL be playable from the keyboard, a gamepad and a touch screen, and fire and charge also from the mouse. Every touch button SHALL be at least 44 px. The pitch direction SHALL be settable to "up = climb" or "up = dive", and the game SHALL save the choice. The key map is on the How to fly screen.
 
+#### Scenario: Mouse flight
+
+- GIVEN mouse flight is on (the default on a computer) and a match has started
+- WHEN the player clicks the screen and moves the mouse
+- THEN the mouse is captured, a ring shows the virtual stick, the ship turns and climbs with the mouse, the stick eases back to centre when the mouse stops, the left button fires, the right button locks on, and Esc frees the mouse and pauses
+
 #### Scenario: Phone in portrait
 
 - GIVEN a phone held upright, 320 px wide or more
