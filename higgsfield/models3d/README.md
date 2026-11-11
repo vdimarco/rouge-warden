@@ -27,3 +27,11 @@ simplified with smooth normals, a WebP base colour, and quantized attributes. A 
 the car's ink outline (`<car>-ink.glb`). It does not meshopt-compress, because
 `public/vr/js/actionview.js` loads the cars with a plain GLTFLoader. The commands and job IDs are in
 `public/vr/models/cars/CREDITS.md`.
+
+# Ships and props for Frostwing
+
+`node pack-ship.mjs in.glb` prints a model's bounds, triangles and materials. `node pack-ship.mjs in.glb out.glb <triangles> <size>
+[turnDegrees] [textureSize] [--height] [--floor]` packs a Higgsfield image-to-3D model (Meshy 7 or Tripo H3.1) for
+`public/frostwing/models/`: centred, scaled by its longest horizontal side (or by height with `--height`), turned so the front
+faces -z, simplified, PBR maps kept as WebP, meshopt-compressed. `--floor` puts the base on y = 0. The commands and job IDs are in
+`public/frostwing/models/sources.json`.

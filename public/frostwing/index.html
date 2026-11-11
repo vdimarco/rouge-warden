@@ -1,0 +1,367 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Frostwing</title>
+<meta name="description" content="Frostwing: a four-on-four team dogfight over a frozen moon. Shoot the meteorites, collect their energy, and bring the squadron home.">
+<script src="/arcade/quiet.js"></script>
+<script src="/arcade/switch.js"></script>
+<style>
+@font-face { font-family: "Bungee"; font-style: normal; font-weight: 400; font-display: swap; src: url("/fonts/bungee-400-latin.woff2") format("woff2"); }
+:root {
+  --blue: #46b8ff; --blue2: #1d6fd6; --violet: #b06bff; --violet2: #7a3ad6; --yellow: #ffd23f; --green: #49ff9a; --ink: #e8f4ff;
+  --panel: rgba(8, 18, 34, 0.72); --edge: rgba(120, 200, 255, 0.55);
+  --ui: clamp(10px, min(1.5vw, 2.2vh), 17px);
+  --safe-l: env(safe-area-inset-left, 0px); --safe-r: env(safe-area-inset-right, 0px); --safe-t: env(safe-area-inset-top, 0px); --safe-b: env(safe-area-inset-bottom, 0px);
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; background: #0a1220; color: var(--ink); overflow: hidden; overscroll-behavior: none; touch-action: none;
+  -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; font: 600 var(--ui)/1.3 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+#gl { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
+button { font: inherit; color: inherit; }
+.hidden { display: none !important; }
+.display { font-family: "Bungee", Impact, "Arial Black", sans-serif; font-weight: 400; letter-spacing: 0.02em; }
+
+/* ---------------- the HUD ---------------- */
+#hud { position: fixed; inset: 0; pointer-events: none; }
+.frame { position: absolute; background: var(--panel); border: 2px solid var(--edge); box-shadow: 0 0 12px rgba(70, 184, 255, 0.25), inset 0 0 10px rgba(70, 184, 255, 0.12); }
+#sys { left: calc(10px + var(--safe-l)); top: calc(8px + var(--safe-t)); width: clamp(150px, 19vw, 260px); padding: 6px 10px 8px; border-radius: 0 0 14px 0; clip-path: polygon(0 0, 100% 0, 100% 72%, 88% 100%, 0 100%); border-color: rgba(120, 255, 170, 0.6); }
+#sys .lab { font-size: 0.7em; letter-spacing: 0.14em; color: #9effc6; text-align: right; }
+.bar { height: calc(var(--ui) * 1.05); margin: 3px 0; background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.25); transform: skewX(-18deg); overflow: hidden; }
+.bar i { display: block; height: 100%; width: 100%; transform-origin: left; transition: transform 0.12s linear; }
+#shieldBar i { background: linear-gradient(#fff27a, #ffd23f 50%, #d9a400); }
+#shieldBar.low i { background: linear-gradient(#ff8a7a, #ff3b3b); animation: blink 0.5s steps(2) infinite; }
+#boostBar { height: calc(var(--ui) * 0.7); width: 80%; }
+#boostBar i { background: linear-gradient(#9fe2ff, var(--blue)); }
+#bombs { display: flex; align-items: center; gap: 6px; margin-top: 4px; font-size: 1.3em; }
+#bombs svg { width: 1.2em; height: 1.2em; }
+#board { left: 50%; top: calc(4px + var(--safe-t)); transform: translateX(-50%); padding: 4px 18px 6px; display: grid; grid-template-columns: auto auto auto auto; align-items: center; gap: 4px 12px;
+  clip-path: polygon(0 0, 100% 0, 94% 100%, 6% 100%); border-top: 0; min-width: clamp(240px, 34vw, 460px); justify-content: center; }
+#board .team { font-size: 0.6em; letter-spacing: 0.16em; grid-row: 1; }
+#board .t0 { color: var(--blue); } #board .t1 { color: var(--violet); text-align: right; }
+#board .sc { font-size: 2.1em; line-height: 1; font-variant-numeric: tabular-nums; }
+#board .emb { width: 1.9em; height: 1.9em; }
+#clock { grid-column: 1 / -1; text-align: center; font-size: 1.6em; line-height: 1; color: #fff; font-variant-numeric: tabular-nums; }
+#clock.hurry { color: #ff6b5a; }
+#feed { position: absolute; right: calc(10px + var(--safe-r)); top: calc(56px + var(--safe-t)); display: flex; flex-direction: column; gap: 6px; align-items: flex-end; }
+.kcard { display: flex; align-items: center; gap: 6px; animation: slidein 0.25s ease-out; }
+.kcard figure { margin: 0; width: calc(var(--ui) * 4.2); text-align: center; font-size: 0.72em; text-shadow: 0 0 3px #000, 0 0 6px #000; }
+.kcard img { width: 100%; aspect-ratio: 1; display: block; border: 2px solid currentColor; background: #111; }
+.kcard .vic { position: relative; }
+.kcard .vic img { filter: grayscale(0.85) brightness(0.55); }
+.kcard .vic b { position: absolute; left: 0; right: 0; top: 32%; color: #ff7a4a; font-size: 1.15em; text-shadow: 0 0 6px #000; }
+.kcard .arrow { width: calc(var(--ui) * 2.4); height: calc(var(--ui) * 1.4); background: currentColor; clip-path: polygon(0 25%, 60% 25%, 60% 0, 100% 50%, 60% 100%, 60% 75%, 0 75%); opacity: 0.85; }
+.kcard.t0 { color: var(--blue); } .kcard.t1 { color: var(--violet); }
+.kcard.out { opacity: 0; transition: opacity 0.4s; }
+#banner { left: 50%; bottom: calc(12px + var(--safe-b)); transform: translateX(-50%); width: min(62vw, 640px); display: grid; grid-template-columns: auto 1fr; gap: 4px 10px; padding: 6px 10px;
+  border-color: rgba(255, 210, 63, 0.75); clip-path: polygon(2% 0, 98% 0, 100% 50%, 98% 100%, 2% 100%, 0 50%); }
+#banner .ico { grid-row: span 2; width: calc(var(--ui) * 2.8); height: calc(var(--ui) * 2.8); }
+#objective { font-size: 0.86em; letter-spacing: 0.06em; color: #fff3b0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#tug { position: relative; height: calc(var(--ui) * 1.45); display: flex; border: 2px solid rgba(255, 210, 63, 0.6); background: rgba(0, 0, 0, 0.55); }
+#tug i { display: block; height: 100%; transition: width 0.3s; }
+#tug .a { background: linear-gradient(90deg, var(--blue2), var(--blue)); }
+#tug .b { background: linear-gradient(90deg, var(--violet), var(--violet2)); margin-left: auto; }
+#tug::after { content: ""; position: absolute; left: 50%; top: -3px; bottom: -3px; width: 2px; background: #ffd23f; }
+#tug span { position: absolute; top: 50%; transform: translateY(-50%); font-size: 0.75em; color: #fff; text-shadow: 0 0 4px #000; }
+#tug .na { left: 6px; } #tug .nb { right: 6px; }
+#radar { position: absolute; right: calc(10px + var(--safe-r)); bottom: calc(10px + var(--safe-b)); width: clamp(110px, 17vw, 220px); aspect-ratio: 1; border: 2px solid rgba(120, 255, 170, 0.55); background: rgba(0, 20, 10, 0.72); border-radius: 6px; }
+#radarLab { position: absolute; right: calc(16px + var(--safe-r)); bottom: calc(12px + var(--safe-b)); font-size: 0.55em; letter-spacing: 0.2em; color: #7dffb0; }
+#sil { position: absolute; left: calc(14px + var(--safe-l)); bottom: calc(12px + var(--safe-b)); width: clamp(64px, 10vw, 130px); filter: drop-shadow(0 0 6px currentColor); color: #49ff9a; opacity: 0.85; }
+#radio { left: calc(10px + var(--safe-l)); bottom: calc(14px + var(--safe-b) + clamp(64px, 10vw, 130px) * 0.9); display: flex; gap: 8px; align-items: center; padding: 5px 10px 5px 5px; max-width: min(44vw, 380px); border-radius: 4px;
+  opacity: 0; transform: translateX(-12px); transition: opacity 0.25s, transform 0.25s; }
+#radio.on { opacity: 1; transform: none; }
+#radio img { width: calc(var(--ui) * 3.4); aspect-ratio: 1; border: 2px solid var(--blue); }
+#radio.t1 img { border-color: var(--violet); }
+#radio b { display: block; font-size: 0.72em; letter-spacing: 0.12em; color: var(--blue); }
+#radio.t1 b { color: var(--violet); }
+#radio p { margin: 0; font-size: 0.86em; }
+#reticle { position: absolute; left: 0; top: 0; width: 0; height: 0; }
+#reticle svg { position: absolute; transform: translate(-50%, -50%); overflow: visible; }
+#lock { position: absolute; left: 0; top: 0; color: var(--green); }
+#lock svg { position: absolute; transform: translate(-50%, -50%); overflow: visible; }
+#tags { position: absolute; inset: 0; overflow: hidden; }
+.tag { position: absolute; transform: translate(-50%, -100%); text-align: center; font-size: 0.85em; white-space: nowrap; text-shadow: 0 0 4px #000, 0 0 2px #000; }
+.tag.t0 { color: #8fd2ff; } .tag.t1 { color: #d2a8ff; }
+.tag .hp { width: 4.5em; height: 5px; margin: 0 auto 2px; background: rgba(0, 0, 0, 0.6); border: 1px solid rgba(255, 255, 255, 0.4); }
+.tag .hp i { display: block; height: 100%; background: currentColor; transform-origin: left; }
+.tag .tri { width: 0; height: 0; margin: 2px auto 0; border: 6px solid transparent; border-top-color: currentColor; border-bottom: 0; }
+.tag.edge { font-size: 0.7em; }
+#center { position: absolute; left: 50%; top: 30%; transform: translate(-50%, -50%); text-align: center; pointer-events: none; }
+#center .big { font-size: clamp(26px, 6vw, 64px); color: #fff; text-shadow: 0 0 18px var(--blue), 0 3px 0 #0a2a50; animation: pop 0.35s ease-out; }
+#center .small { font-size: 1.2em; color: #fff3b0; text-shadow: 0 0 6px #000; }
+#popups { position: absolute; inset: 0; }
+.pop { position: absolute; transform: translate(-50%, -50%); font-size: 1.3em; color: var(--yellow); text-shadow: 0 0 6px #000; animation: rise 1s ease-out forwards; }
+#warn { position: absolute; left: 50%; top: 44%; transform: translateX(-50%); color: #ff6b5a; font-size: 1.15em; letter-spacing: 0.1em; text-shadow: 0 0 8px #000; animation: blink 0.6s steps(2) infinite; }
+#mouseStick { position: absolute; left: 50%; top: 50%; width: 22px; height: 22px; border: 2px solid rgba(255, 255, 255, 0.85); border-radius: 50%; box-shadow: 0 0 6px rgba(0, 0, 0, 0.6); }
+#mouseStick::after { content: ""; position: absolute; left: 50%; top: 50%; width: 4px; height: 4px; margin: -2px; border-radius: 50%; background: #fff; }
+#mouseHint { position: absolute; left: 50%; top: 62%; transform: translateX(-50%); color: #fff; font-size: 0.95em; letter-spacing: 0.08em; text-shadow: 0 0 8px #000; animation: blink 1.2s steps(2) infinite; }
+body.touch #mouseHint, body.touch #mouseSeg { display: none !important; }
+#hurt { position: absolute; inset: 0; background: radial-gradient(ellipse at center, transparent 55%, rgba(255, 40, 30, 0.55)); opacity: 0; transition: opacity 0.15s; }
+#hitmark { position: absolute; left: 50%; top: 50%; width: 26px; height: 26px; transform: translate(-50%, -50%) rotate(45deg); opacity: 0; }
+#hitmark::before, #hitmark::after { content: ""; position: absolute; background: #fff; }
+#hitmark::before { left: 50%; top: 0; bottom: 0; width: 2px; margin-left: -1px; clip-path: polygon(0 0, 100% 0, 100% 35%, 0 35%, 0 65%, 100% 65%, 100% 100%, 0 100%); }
+#hitmark::after { top: 50%; left: 0; right: 0; height: 2px; margin-top: -1px; clip-path: polygon(0 0, 35% 0, 35% 100%, 0 100%, 0 0, 65% 0, 100% 0, 100% 100%, 65% 100%); }
+#pauseBtn { position: absolute; right: calc(10px + var(--safe-r)); top: calc(8px + var(--safe-t)); pointer-events: auto; width: 44px; height: 44px; border-radius: 8px; border: 2px solid var(--edge); background: var(--panel); font-size: 16px; }
+#feed { top: calc(60px + var(--safe-t)); }
+@keyframes blink { 50% { opacity: 0.35; } }
+@keyframes pop { from { transform: scale(1.6); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes rise { to { transform: translate(-50%, -160%); opacity: 0; } }
+@keyframes slidein { from { transform: translateX(30px); opacity: 0; } }
+
+/* ---------------- menus ---------------- */
+.screen { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: calc(14px + var(--safe-t)) calc(14px + var(--safe-r)) calc(14px + var(--safe-b)) calc(14px + var(--safe-l));
+  background: radial-gradient(ellipse at 50% 40%, rgba(10, 30, 60, 0.35), rgba(4, 8, 18, 0.88)); overflow-y: auto; touch-action: pan-y; }
+#title { background: linear-gradient(rgba(4, 10, 24, 0.15), rgba(4, 10, 24, 0.75)), url("art/key.webp") center / cover; }
+.logo { font-size: clamp(40px, 10vw, 110px); line-height: 0.95; color: #fff; text-shadow: 0 0 24px var(--blue), 0 5px 0 #0d3768, 0 9px 18px rgba(0, 0, 0, 0.6); margin: 0; }
+.tagline { font-size: clamp(12px, 2vw, 20px); letter-spacing: 0.2em; color: #ffe08a; text-shadow: 0 2px 6px #000; margin: 0 0 8px; text-align: center; }
+.btns { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+.btn { min-height: 48px; min-width: 150px; padding: 10px 20px; border-radius: 6px; border: 2px solid var(--blue); background: rgba(10, 30, 60, 0.85); color: #fff; cursor: pointer; letter-spacing: 0.08em;
+  font-family: "Bungee", Impact, sans-serif; font-size: clamp(13px, 1.6vw, 18px); box-shadow: 0 0 12px rgba(70, 184, 255, 0.35); }
+.btn.go { background: linear-gradient(#ffcc4a, #ff8a1f); border-color: #ffe7a0; color: #2a1400; box-shadow: 0 0 18px rgba(255, 170, 40, 0.6); }
+.btn:focus-visible, .btn.focus, .pcard:focus-visible, .seg button:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
+.btn:hover { filter: brightness(1.15); }
+.btn:disabled { opacity: 0.6; cursor: progress; filter: grayscale(0.4); }
+h2 { margin: 0; font-size: clamp(20px, 3.4vw, 36px); text-shadow: 0 0 14px var(--blue); }
+#cards { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; width: min(100%, 1040px); }
+.pcard { position: relative; border: 2px solid rgba(120, 200, 255, 0.45); background: rgba(8, 20, 40, 0.85); border-radius: 8px; padding: 8px; text-align: left; cursor: pointer; display: flex; flex-direction: column; gap: 4px; }
+.pcard img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 4px; display: block; }
+.pcard .nm { font-family: "Bungee", Impact, sans-serif; font-size: 1.05em; }
+.pcard .rl { color: #ffd98a; font-size: 0.78em; letter-spacing: 0.1em; }
+.pcard .pk { font-size: 0.78em; color: #bcd6ee; font-weight: 500; }
+.pcard .vet { position: absolute; top: 12px; left: 12px; background: #ff8a1f; color: #2a1400; font-size: 0.7em; padding: 2px 6px; border-radius: 3px; letter-spacing: 0.1em; }
+.pcard.sel { border-color: #ffd23f; box-shadow: 0 0 0 2px #ffd23f, 0 0 22px rgba(255, 210, 63, 0.5); }
+.stats { display: grid; grid-template-columns: auto 1fr; gap: 2px 6px; font-size: 0.7em; align-items: center; color: #9fc4e6; }
+.stats i { display: block; height: 6px; background: linear-gradient(90deg, var(--blue), #9fe2ff); border-radius: 3px; }
+.seg { display: flex; gap: 0; border: 2px solid var(--blue); border-radius: 6px; overflow: hidden; }
+.seg button { min-height: 44px; min-width: 96px; padding: 6px 12px; background: rgba(10, 30, 60, 0.85); border: 0; border-right: 1px solid rgba(70, 184, 255, 0.4); cursor: pointer; }
+.seg button:last-child { border-right: 0; }
+.seg button.on { background: var(--blue); color: #04121f; }
+.row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: center; }
+.note { max-width: 760px; text-align: center; color: #bcd6ee; font-weight: 500; margin: 0; }
+#how .keys { display: grid; grid-template-columns: auto 1fr; gap: 6px 16px; max-width: 720px; background: rgba(8, 20, 40, 0.8); padding: 14px 18px; border-radius: 8px; border: 1px solid var(--edge); }
+#how kbd { display: inline-block; min-width: 1.8em; padding: 1px 6px; border: 1px solid #9fc4e6; border-radius: 4px; background: #0b2440; font: 700 0.85em system-ui, sans-serif; text-align: center; margin: 1px; }
+#results table { border-collapse: collapse; width: min(100%, 720px); background: rgba(8, 20, 40, 0.8); font-variant-numeric: tabular-nums; }
+#results td, #results th { padding: 5px 8px; border-bottom: 1px solid rgba(120, 200, 255, 0.2); text-align: right; }
+#results td:first-child, #results th:first-child { text-align: left; }
+#results tr.t0 td:first-child { color: var(--blue); } #results tr.t1 td:first-child { color: var(--violet); }
+#results tr.me { background: rgba(255, 210, 63, 0.12); }
+#results .face { width: 26px; height: 26px; vertical-align: middle; margin-right: 6px; border-radius: 3px; }
+#resultTitle { font-size: clamp(30px, 6vw, 64px); margin: 0; }
+#resultTitle.win { color: var(--blue); text-shadow: 0 0 20px var(--blue); } #resultTitle.lose { color: var(--violet); text-shadow: 0 0 20px var(--violet); }
+#finalScore { font-size: clamp(20px, 3vw, 32px); }
+#mvp { display: flex; gap: 10px; align-items: center; } #mvp img { width: 64px; height: 64px; border-radius: 6px; border: 2px solid #ffd23f; }
+#fail { background: #0a1220; }
+
+/* ---------------- cut scenes and the logbook ---------------- */
+#scene { position: fixed; inset: 0; background: #000; overflow: hidden; }
+#sceneStage { position: absolute; inset: 0; cursor: pointer; }
+#sceneStage .layer { position: absolute; inset: -7%; background-size: cover; background-position: center; opacity: 0; transition: opacity 0.9s; will-change: transform, opacity; }
+#sceneStage .layer.on { opacity: 1; }
+.pan-in { animation: panIn 18s linear forwards; } .pan-out { animation: panOut 18s linear forwards; }
+.pan-left { animation: panLeft 18s linear forwards; } .pan-right { animation: panRight 18s linear forwards; } .pan-up { animation: panUp 18s linear forwards; }
+@keyframes panIn { from { transform: scale(1); } to { transform: scale(1.12); } }
+@keyframes panOut { from { transform: scale(1.12); } to { transform: scale(1); } }
+@keyframes panLeft { from { transform: translateX(4%) scale(1.04); } to { transform: translateX(-4%) scale(1.04); } }
+@keyframes panRight { from { transform: translateX(-4%) scale(1.04); } to { transform: translateX(4%) scale(1.04); } }
+@keyframes panUp { from { transform: translateY(-4%) scale(1.04); } to { transform: translateY(4%) scale(1.04); } }
+#scene::before, #scene::after { content: ""; position: absolute; left: 0; right: 0; height: 9vh; z-index: 1; pointer-events: none; }
+#scene::before { top: 0; background: linear-gradient(#000, rgba(0, 0, 0, 0)); }
+#scene::after { bottom: 0; height: 34vh; background: linear-gradient(rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.85)); }
+#sceneTitle { position: absolute; z-index: 2; left: calc(16px + var(--safe-l)); top: calc(12px + var(--safe-t)); font-size: clamp(11px, 1.5vw, 16px); letter-spacing: 0.16em; color: #ffe08a; text-shadow: 0 2px 6px #000; }
+#sceneBox { position: absolute; z-index: 2; left: 50%; bottom: calc(72px + var(--safe-b)); transform: translateX(-50%); width: min(calc(100vw - 24px), 880px); min-height: 5.6em; display: flex; gap: 12px; align-items: flex-start;
+  padding: 12px 16px; background: rgba(6, 12, 24, 0.84); border: 2px solid var(--edge); border-radius: 8px; }
+#sceneFace { width: clamp(52px, 8vw, 84px); aspect-ratio: 1; border-radius: 6px; border: 2px solid var(--blue); flex: none; }
+#sceneBox.t1 #sceneFace { border-color: var(--violet); } #sceneBox.t1 #sceneWho { color: var(--violet); }
+#sceneBox.narr #sceneFace { display: none; } #sceneBox.narr { text-align: center; justify-content: center; font-style: italic; border-color: rgba(255, 224, 138, 0.5); }
+#sceneBox > div { flex: 1; min-width: 0; }
+#sceneWho { display: block; font-size: 0.76em; letter-spacing: 0.12em; color: var(--blue); font-style: normal; }
+#sceneText { margin: 2px 0 0; font-size: clamp(14px, 1.9vw, 20px); line-height: 1.45; font-weight: 500; min-height: 2.9em; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+#sceneBtns { position: absolute; z-index: 2; right: calc(12px + var(--safe-r)); bottom: calc(12px + var(--safe-b)); display: flex; gap: 10px; }
+#sceneBtns .btn { min-width: 110px; }
+@media (prefers-reduced-motion: reduce) { #sceneStage .layer { animation: none !important; transition: none; } }
+#log { justify-content: flex-start; }
+#logList { width: min(100%, 860px); display: grid; gap: 10px; }
+#logList article { background: rgba(8, 20, 40, 0.86); border: 1px solid var(--edge); border-radius: 8px; padding: 10px 14px; }
+#logList h3 { margin: 0 0 4px; color: #ffd98a; font-size: 1.05em; }
+#logList p { margin: 0; font-weight: 500; line-height: 1.5; color: #d6e6f6; }
+#logList .locked { opacity: 0.55; }
+#opLine { color: #ffe9b0; }
+
+/* ---------------- touch controls ---------------- */
+#pad { display: none; position: fixed; inset: 0; pointer-events: none; --b: clamp(50px, 13vmin, 78px); }
+body.touch.playing #pad { display: block; }
+#stickZone { position: absolute; left: 0; top: 18%; bottom: 0; width: 46%; pointer-events: auto; touch-action: none; }
+#stick { position: absolute; width: calc(var(--b) * 2); height: calc(var(--b) * 2); border-radius: 50%; border: 3px solid rgba(255, 255, 255, 0.45); background: rgba(10, 30, 60, 0.3); transform: translate(-50%, -50%); display: none; }
+#stick i { position: absolute; left: 50%; top: 50%; width: var(--b); height: var(--b); border-radius: 50%; background: rgba(160, 220, 255, 0.55); transform: translate(-50%, -50%); }
+#btns { position: absolute; right: calc(10px + var(--safe-r)); bottom: calc(10px + var(--safe-b) + clamp(110px, 17vw, 220px) + 8px); display: grid; grid-template-columns: var(--b) var(--b) calc(var(--b) * 1.25); gap: 8px; pointer-events: auto; justify-items: center; }
+#btns button { width: var(--b); height: var(--b); border-radius: 50%; border: 3px solid rgba(255, 255, 255, 0.7); background: rgba(10, 30, 60, 0.5); font: 700 calc(var(--b) * 0.19)/1 "Bungee", Impact, sans-serif; letter-spacing: 0.02em; padding: 0; touch-action: none; -webkit-tap-highlight-color: transparent; }
+#btns button.on { background: rgba(255, 210, 63, 0.85); color: #1a1a2e; }
+#btns #tFire { border-color: var(--green); width: calc(var(--b) * 1.25); height: calc(var(--b) * 1.25); grid-column: 3; grid-row: 2 / span 2; align-self: end; }
+#btns #tCharge { border-color: var(--green); }
+/* landscape phones: radar smaller, buttons beside it */
+@media (pointer: coarse) and (orientation: landscape) and (max-height: 520px) {
+  #radar { width: 96px; } #sil { width: 56px; } #banner { width: min(44vw, 360px); bottom: auto; top: calc(76px + var(--safe-t)); }
+  #feed { top: calc(130px + var(--safe-t)); }
+  #btns { bottom: calc(10px + var(--safe-b)); right: calc(116px + var(--safe-r)); }
+  #radio { display: none; }
+}
+@media (orientation: portrait) {
+  #board { min-width: 0; max-width: calc(100vw - 128px); padding: 2px 12px 5px; gap: 0 8px; font-size: 0.9em; }
+  #board .team { visibility: hidden; height: 0; overflow: hidden; font-size: 0; }
+  #sys { width: 112px; top: calc(68px + var(--safe-t)); padding: 4px 8px 6px; }
+  #banner { left: 132px; right: 10px; width: auto; transform: none; bottom: auto; top: calc(68px + var(--safe-t)); padding: 5px 10px; }
+  #objective { font-size: 0.75em; }
+  #banner .ico { display: none; }
+  #banner { grid-template-columns: 1fr; }
+  #radar { width: 96px; bottom: auto; top: calc(150px + var(--safe-t)); }
+  #radarLab { display: none; }
+  #sil { display: none; }
+  #radio { bottom: auto; top: calc(150px + var(--safe-t)); max-width: calc(100vw - 124px); }
+  #feed { top: calc(254px + var(--safe-t)); }
+  #cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  #btns { bottom: calc(14px + var(--safe-b)); }
+  #stickZone { top: 40%; width: 55%; }
+  .pcard .pk { display: none; }
+}
+@media (max-height: 560px) and (orientation: landscape) {
+  #cards { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .pcard .pk, .stats { display: none; }
+  .pcard img { aspect-ratio: 4 / 3; }
+  .screen { justify-content: flex-start; gap: 8px; }
+}
+</style>
+</head>
+<body>
+<canvas id="gl" aria-label="Frostwing: the battle over the frozen moon"></canvas>
+
+<div id="hud" class="hidden" aria-hidden="true">
+  <div id="hurt"></div>
+  <div id="tags"></div>
+  <div id="reticle"></div>
+  <div id="lock" class="hidden"></div>
+  <div id="hitmark"></div>
+  <div id="popups"></div>
+  <div id="sys" class="frame"><div class="lab">SYSTEMS</div><div id="shieldBar" class="bar"><i></i></div><div id="boostBar" class="bar"><i></i></div>
+    <div id="bombs"><svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="8" fill="#49ff9a" opacity=".25" stroke="#49ff9a" stroke-width="2"/><path d="M12 9v8M8 13h8" stroke="#49ff9a" stroke-width="2"/><path d="M15 5l3-2" stroke="#ffd23f" stroke-width="2"/></svg><span id="bombN">1</span></div></div>
+  <div id="board" class="frame">
+    <span class="team t0 display">LANTERN</span><span></span><span></span><span class="team t1 display">CORVID</span>
+    <svg class="emb" viewBox="0 0 32 32" aria-hidden="true"><path d="M16 3l3 4h-6z" fill="#46b8ff"/><rect x="10" y="8" width="12" height="16" rx="3" fill="none" stroke="#46b8ff" stroke-width="2.4"/><path d="M16 12c3 3 3 6 0 9c-3-3-3-6 0-9z" fill="#ffb347"/><rect x="9" y="24" width="14" height="4" rx="1" fill="#46b8ff"/></svg>
+    <span id="s0" class="sc display t0">0</span><span id="s1" class="sc display t1">0</span>
+    <svg class="emb" viewBox="0 0 32 32" aria-hidden="true"><path d="M5 9l11-5 11 5-3 9-8 10-8-10z" fill="none" stroke="#b06bff" stroke-width="2.4"/><circle cx="12" cy="13" r="2.4" fill="#b06bff"/><circle cx="20" cy="13" r="2.4" fill="#b06bff"/><path d="M16 17l-3 7h6z" fill="#b06bff"/></svg>
+    <div id="clock" class="display">4:00</div>
+  </div>
+  <div id="feed"></div>
+  <div id="radio" class="frame"><img alt=""><div><b></b><p></p></div></div>
+  <svg id="sil" viewBox="0 0 100 100" aria-hidden="true"><path d="M50 6l7 30 30 34-4 6-24-8-2 14 10 8-2 4H35l-2-4 10-8-2-14-24 8-4-6 30-34z" fill="currentColor" fill-opacity=".12" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/><path d="M46 30h8l-1 12h-6z" fill="currentColor" opacity=".6"/></svg>
+  <div id="banner" class="frame"><svg class="ico" viewBox="0 0 40 40" aria-hidden="true"><path d="M8 32l14-14" stroke="#ffd23f" stroke-width="3"/><path d="M22 6l4 6 7 1-5 5 1 7-7-3-6 3 1-7-5-5 7-1z" fill="#ffb347" stroke="#ffd23f" stroke-width="1.5"/></svg>
+    <div id="objective" class="display">PREPARE FOR LAUNCH</div>
+    <div id="tug"><i class="a"></i><i class="b"></i><span class="na">0</span><span class="nb">0</span></div></div>
+  <canvas id="radar" width="220" height="220"></canvas><span id="radarLab">RADAR</span>
+  <div id="center"></div>
+  <div id="warn" class="hidden display">TURN BACK · STORM WALL</div>
+  <div id="mouseStick" style="display:none"></div>
+  <div id="mouseHint" class="hidden display">CLICK TO FLY WITH THE MOUSE</div>
+  <button id="pauseBtn" type="button" aria-label="Pause">❚❚</button>
+</div>
+
+<div id="pad" aria-hidden="true">
+  <div id="stickZone"><div id="stick"><i></i></div></div>
+  <div id="btns">
+    <button id="tRollL" type="button">ROLL</button><button id="tUturn" type="button">U-TURN</button><button id="tRollR" type="button">ROLL</button>
+    <button id="tBrake" type="button">BRAKE</button><button id="tBoost" type="button">BOOST</button><button id="tFire" type="button">FIRE</button>
+    <button id="tBomb" type="button">BOMB</button><button id="tCharge" type="button">LOCK</button>
+  </div>
+</div>
+
+<section id="title" class="screen">
+  <h1 class="logo display">FROSTWING</h1>
+  <p class="tagline display">FOUR ON FOUR OVER A FROZEN MOON</p>
+  <div class="btns">
+    <button id="storyBtn" class="btn go" type="button" disabled>LOADING…</button>
+    <button id="playBtn" class="btn" type="button" disabled>QUICK MATCH</button>
+    <button id="logBtn" class="btn" type="button">LOGBOOK</button>
+    <button id="howBtn" class="btn" type="button">HOW TO FLY</button>
+    <button id="switchBtn" class="btn" type="button" data-switch>SWITCH GAME</button>
+  </div>
+  <p id="best" class="note"></p>
+</section>
+
+<section id="select" class="screen hidden">
+  <h2 id="selTitle" class="display">CHOOSE YOUR PILOT</h2>
+  <p id="opLine" class="note hidden"></p>
+  <div id="cards" role="listbox" aria-label="Pilots"></div>
+  <div class="row">
+    <span id="rivalLab">Rivals</span>
+    <div class="seg" id="diff" role="radiogroup" aria-label="Difficulty"><button type="button" data-d="cadet">CADET</button><button type="button" data-d="ace">ACE</button><button type="button" data-d="veteran">VETERAN</button></div>
+    <div class="seg" id="skySeg" role="radiogroup" aria-label="Sky"><button type="button" data-s="day">DAY</button><button type="button" data-s="dusk">DUSK</button><button type="button" data-s="night">NIGHT</button><button type="button" data-s="storm">STORM</button></div>
+    <div class="seg" id="mouseSeg" role="radiogroup" aria-label="Mouse flight"><button type="button" data-m="1">MOUSE FLIGHT</button><button type="button" data-m="0">KEYS ONLY</button></div>
+    <div class="seg" id="gfxSeg" role="radiogroup" aria-label="Graphics"><button type="button" data-g="1">GRAPHICS HIGH</button><button type="button" data-g="0">FAST</button></div>
+    <div class="seg" id="inv" role="radiogroup" aria-label="Pitch"><button type="button" data-i="0">UP = CLIMB</button><button type="button" data-i="1">UP = DIVE</button></div>
+  </div>
+  <div class="btns"><button id="backBtn" class="btn" type="button">BACK</button><button id="launchBtn" class="btn go" type="button">LAUNCH</button></div>
+</section>
+
+<section id="how" class="screen hidden">
+  <h2 class="display">HOW TO FLY</h2>
+  <p class="note">Two squadrons, four minutes. A downed ship scores 10. Every few minutes a meteor shower falls: shoot the rocks, then fly through the amber energy they drop. Each orb scores 5, and the team that gathers more energy in a shower earns 25 more. Red orbs are bombs. Green orbs repair your shield.</p>
+  <div class="keys">
+    <span>Mouse</span><span>Click to capture the mouse, then move it to steer. The ring shows the stick, and it eases back to centre when the mouse stops. Left button fires, right button locks on. Esc frees the mouse and pauses.</span>
+    <span><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> or arrows</span><span>Steer</span>
+    <span><kbd>Space</kbd> or <kbd>J</kbd> or click</span><span>Fire lasers (hold)</span>
+    <span><kbd>K</kbd> or <kbd>X</kbd> or right-click</span><span>Hold to charge and lock on, release to fire a homing shot</span>
+    <span><kbd>Shift</kbd> / <kbd>C</kbd></span><span>Boost / brake (tighter turns)</span>
+    <span><kbd>Q</kbd> / <kbd>E</kbd></span><span>Barrel roll left / right: turns most bolts away</span>
+    <span><kbd>R</kbd></span><span>U-turn: loop back onto the ship behind you</span>
+    <span><kbd>B</kbd> or <kbd>L</kbd></span><span>Smart bomb</span>
+    <span><kbd>Esc</kbd> or <kbd>P</kbd> · <kbd>M</kbd></span><span>Pause · sound on or off</span>
+    <span>Gamepad</span><span>Stick steers. A fires, X locks, RT boosts, LT brakes, B bombs, LB/RB roll, Y U-turns.</span>
+    <span>Touch</span><span>Drag on the left to steer. Buttons on the right.</span>
+  </div>
+  <div class="btns"><button id="howBack" class="btn go" type="button">GOT IT</button></div>
+</section>
+
+<section id="pause" class="screen hidden">
+  <h2 class="display">PAUSED</h2>
+  <div class="btns" style="flex-direction:column">
+    <button id="resumeBtn" class="btn go" type="button">RESUME</button>
+    <button id="soundBtn" class="btn" type="button">SOUND: ON</button>
+    <button id="quitBtn" class="btn" type="button">QUIT TO TITLE</button>
+    <button class="btn" type="button" data-switch>SWITCH GAME</button>
+  </div>
+</section>
+
+<section id="results" class="screen hidden">
+  <h2 id="resultTitle" class="display">VICTORY</h2>
+  <div id="finalScore" class="display"></div>
+  <p id="resultNote" class="note"></p>
+  <div id="mvp"></div>
+  <table><thead><tr><th>Pilot</th><th>Downs</th><th>Lost</th><th>Energy</th></tr></thead><tbody id="tally"></tbody></table>
+  <div class="btns"><button id="contBtn" class="btn go hidden" type="button">CONTINUE ▸</button><button id="againBtn" class="btn go" type="button">FLY AGAIN</button><button id="pilotBtn" class="btn" type="button">CHANGE PILOT</button><button class="btn" type="button" data-switch>SWITCH GAME</button></div>
+</section>
+
+<section id="scene" class="hidden">
+  <div id="sceneStage"></div>
+  <div id="sceneTitle" class="display"></div>
+  <div id="sceneBox" class="narr"><img id="sceneFace" alt=""><div><b id="sceneWho" class="display"></b><p id="sceneText" aria-hidden="true"></p><p id="sceneSr" class="sr" aria-live="polite"></p></div></div>
+  <div id="sceneBtns"><button id="sceneSkip" class="btn" type="button">SKIP</button><button id="sceneNext" class="btn go" type="button">NEXT ▸</button></div>
+</section>
+
+<section id="log" class="screen hidden">
+  <h2 class="display">LOGBOOK</h2>
+  <p id="logCount" class="note"></p>
+  <div id="logList"></div>
+  <div class="btns"><button id="logBack" class="btn go" type="button">BACK</button></div>
+</section>
+
+<section id="fail" class="screen hidden">
+  <h2 class="display">NO 3D GRAPHICS</h2>
+  <p class="note">This browser could not start WebGL, which Frostwing needs. Try another browser, or turn on hardware acceleration.</p>
+  <div class="btns"><button class="btn" type="button" data-switch>SWITCH GAME</button></div>
+</section>
+
+<script type="importmap">{ "imports": { "three": "./lib/three.module.min.js" } }</script>
+<script type="module" src="game.js"></script>
+</body>
+</html>
