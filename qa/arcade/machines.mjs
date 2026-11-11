@@ -173,12 +173,14 @@ for (const { id } of JSON.parse(read("higgsfield/arcade-key-art.json")).art) {
     "the index": walk.includes(`Index <sup>${n}</sup>`),
     "the counter": walk.includes(`/ ${n}</span>`),
     "the count in words": !WORDS[n] || walk.split(`${WORDS[n]} games, free entry`).length === 3,
-    "uPP and uPC": walk.includes(`uniform vec3 uPP[${n * 3}];`) && walk.includes(`uniform vec3 uPC[${n * 3}];`) && walk.includes(`for (int i = 0; i < ${n * 3}; i++) {`),
-    "lightPP and lightPC": walk.includes(`this.lightPP = new Float32Array(${n * 3} * 3)`) && walk.includes(`this.lightPC = new Float32Array(${n * 3} * 3)`),
-    "the two light offsets": walk.split(`(${n} + i) * 3`).length === 5 && walk.split(`(${2 * n} + i) * 3`).length === 5,
+    // two light slots for each cabinet: the marquee glow at i and the screen light at n + i. No slot is left dark.
+    "uPP and uPC": walk.includes(`uniform vec3 uPP[${n * 2}];`) && walk.includes(`uniform vec3 uPC[${n * 2}];`) && walk.includes(`for (int i = 0; i < ${n * 2}; i++) {`),
+    "lightPP and lightPC": walk.includes(`this.lightPP = new Float32Array(${n * 2} * 3)`) && walk.includes(`this.lightPC = new Float32Array(${n * 2} * 3)`),
+    "the screen light offset": walk.split(`(${n} + i) * 3`).length === 5 && !walk.includes(`(${2 * n} + i) * 3`),
+    "no dark slots": !/light(PP|PC)\.fill\(0/.test(walk),
   };
   const off = Object.keys(written).filter((k) => !written[k]);
-  check(off.length === 0, `the Corridor's written counts and its ${n * 3} light slots match its ${n} cabinets${off.length ? " (wrong: " + off.join(", ") + ")" : ""}`);
+  check(off.length === 0, `the Corridor's written counts and its ${n * 2} light slots match its ${n} cabinets${off.length ? " (wrong: " + off.join(", ") + ")" : ""}`);
 }
 
 /* ---------------- Frostwing in the Corridor and in the All Games dates (openspec/changes/add-frostwing) ---------------- */
@@ -189,8 +191,8 @@ for (const { id } of JSON.parse(read("higgsfield/arcade-key-art.json")).art) {
   check(at >= 0 && pieces[at].title === "Frostwing" && pieces[at - 1].url === "/first-breath/", `the Corridor has a Frostwing cabinet that opens /frostwing/, right after First Breath (${at >= 0 ? "number " + pieces[at].n : "missing"})`);
   check(pieces.every((p, i) => Number(p.n) === i + 1), `the Corridor's ${pieces.length} cabinets are numbered 01 to ${String(pieces.length).padStart(2, "0")} with no gap`);
   const n = pieces.length;
-  check(walk.includes(`style="--n: ${n}"`) && walk.includes(`Index <sup>${n}</sup>`) && walk.includes(`/ ${n}</span>`) && walk.includes(`An arcade hall of ${n} games.`) && walk.includes(`uniform vec3 uPP[${n * 3}];`) && walk.includes(`new Float32Array(${n * 3} * 3)`),
-    `the Corridor's written counts and its ${n * 3} light slots match its ${n} cabinets`);
+  check(walk.includes(`style="--n: ${n}"`) && walk.includes(`Index <sup>${n}</sup>`) && walk.includes(`/ ${n}</span>`) && walk.includes(`An arcade hall of ${n} games.`) && walk.includes(`uniform vec3 uPP[${n * 2}];`) && walk.includes(`new Float32Array(${n * 2} * 3)`),
+    `the Corridor's written counts and its ${n * 2} light slots match its ${n} cabinets`);
   check(/frostwing: 'data:image\/webp;base64,/.test(walk), "the Corridor carries Frostwing's screen art");
   const dates = JSON.parse(read("public/arcade/game-dates.json")).games.frostwing;
   check(!!dates && dates.path === "public/frostwing" && Number.isFinite(Date.parse(dates.added)) && Number.isFinite(Date.parse(dates.updated)), "game-dates.json has Frostwing's added and updated dates, so All Games can rank it under New and Updated");

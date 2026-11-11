@@ -21,7 +21,7 @@ Each cabinet is these edits to the page:
 - a 448 by 370 WebP in `ART`, as a data URI
 - an entry in `PIECES` after the last cabinet of its group, with `n` renumbered so the numbers have no gap
 - the written counts: `--n`, the aria label, the role line, the index, the counter, and the count in words in the two About texts
-- three light slots in the tunnel shader: `uPP`, `uPC`, the loop bound, `lightPP`, `lightPC`, and the two offsets (`n` and `2n`)
+- two light slots in the tunnel shader: `uPP`, `uPC`, the loop bound, `lightPP`, `lightPC`, and the screen light's offset (`n`)
 
 Lake Brawl is cabinet 08, the last of Cottage. Eleven Wells is cabinet 41 and Warden's Ledger is cabinet 42, the last of The Lab. These numbers follow Ember Drift, which joined Action as cabinet 19 (`openspec/changes/archive/2026-11-11-add-ember-drift`). Title, route and subtitle come from `public/arcade/switch.js` and the hall cabinet's marquee. The dot color is the hall cabinet's `--c1` for Lake Brawl (`#1F5FD0`) and `--c2` for Eleven Wells (`#FFB547`) and Warden's Ledger (`#F3CF7A`).
 
@@ -58,11 +58,19 @@ A redirect was chosen over moving the hall to another path. The hall owns the ha
 
 The hall is built once from its game list, so the Order control stores the choice and reloads the page. The import script bakes the dates from `public/arcade/game-dates.json` into the page, so the first visit sorts without waiting. The page also reads that file in the background and keeps it in localStorage (`corridor-dates`) for the next visit, so a run of `qa/arcade/game-dates.mjs` reaches the Corridor without another import.
 
+## Light slots
+
+The tunnel shader lights the hall from two arrays, `uPP` (positions) and `uPC` (colors). Each cabinet had three slots: its marquee glow at `i`, a slot at `n + i` that an earlier frame light used and that was filled with zero on each frame, and its screen light at `2n + i`. The shader skips a dark slot, so the dark third added nothing to the picture. It did add two uniform vectors for each cabinet. At 43 cabinets the shader declared 272 uniform vectors, and a device whose `MAX_FRAGMENT_UNIFORM_VECTORS` is 256 or fewer could not link it.
+
+The dark slots are gone. The screen light is at `n + i`, the arrays have `2n` entries, and the shader declares 186 uniform vectors at 43 cabinets. Still frames with reduced motion at cabinets 1, 8, 22 and 43, at 1280 and 390, are the same pixel for pixel before and after. A control page with the screen lights cut off differs in 49,704 pixels at cabinet 8, so the comparison does see the lights.
+
+This is an edit to the imported page. The source (`afterglow-corridor`) needs the same edit before the next import.
+
 ## Known limits
 
 - The Corridor has 43 cabinets. Frostwing's cabinet (18, the last of Action) is part of `openspec/changes/add-frostwing`.
 - The Corridor file is 1.4 MB before compression, because its art is inline.
-- Each cabinet uses six uniform vectors in the tunnel shader. At 43 cabinets the shader declares 272. A device that allows 256 or fewer shows the flat list. A third of the light slots (`n` to `2n`) are always dark. Without them the shader declares 186, so the source can drop them.
+- Each cabinet uses four uniform vectors in the tunnel shader: a position and a color for its marquee glow, and the same for its screen light. At 43 cabinets the shader declares 186. A device that allows fewer shows the flat list.
 - On a phone, the picture of an open cabinet can sit partly behind the next section sign. This applies to the last cabinet of each group, and it was so before Lake Brawl and Eleven Wells took those places.
 - The Corridor does not rebuild its scene after a lost WebGL context.
 - A game opened from the Corridor does not add to the Plays count that All Games keeps on the device.
