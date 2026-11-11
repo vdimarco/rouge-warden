@@ -28,6 +28,7 @@
     { id: "ahead-of-the-light", name: "Ahead of the Light", sub: "Run home", url: "/ahead-of-the-light/", art: "/arcade/key/ahead-of-the-light.webp", color: "#f08a2c" },
     { id: "first-breath", name: "First Breath", sub: "A baby's journey to birth", url: "/first-breath/", art: "/arcade/key/first-breath.svg", color: "#ffc53d" },
     { id: "frostwing", name: "Frostwing", sub: "Four-on-four dogfight over a frozen moon", url: "/frostwing/", art: "/arcade/key/frostwing.webp", color: "#ffb347" },
+    { id: "ember-drift", name: "Ember Drift", sub: "Light stars to stay alive", url: "/ember-drift/", art: "/arcade/key/ember-drift.webp", color: "#ffae5c" },
     { id: "lake-brawl", name: "Lake Brawl", sub: "Whose lake is it anyway?", url: "/lake-brawl/", art: "/arcade/key/lake-brawl.webp", color: "#ffd23f" },
     // credits: false keeps a game off the end card of Crimson Rogue (the Lab tile covers the four toys)
   // The Lab and the games it lists. A game inside the Lab has a longer address than the Lab, and the longest match wins.

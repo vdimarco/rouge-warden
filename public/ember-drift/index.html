@@ -1,0 +1,781 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script src="/arcade/quiet.js"></script>
+<script src="/arcade/switch.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Ember Drift: steer a dying ember through the night sky. Light stars to stay alive in an endless run or 16 puzzle stages.">
+<meta name="theme-color" content="#08071a">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%27 height=%2732%27 rx=%277%27 fill=%27%2308071a%27/%3E%3Ccircle cx=%2716%27 cy=%2716%27 r=%276%27 fill=%27%23ffae5c%27/%3E%3C/svg%3E">
+<title>Ember Drift</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Tektur:wght@500;700;800&family=Figtree:wght@400;500;600&display=swap">
+<style>
+:root{
+--night:#08071a; --ink:#120f2c; --haze:#2b2754; --text:#efe9ff; --muted:#a39cc9;
+--ember:#ffae5c; --spark:#ffe1b5; --cold:#86a6ff; --cloud:#c2427f;
+--f-display:"Tektur","Arial Narrow",system-ui,sans-serif;
+--f-body:"Figtree",system-ui,-apple-system,"Segoe UI",sans-serif;
+color-scheme:dark;
+}
+html,body{height:100%;margin:0;overflow:hidden;background:var(--night)}
+body{color:var(--text);font-family:var(--f-body);font-size:15px;line-height:1.45;touch-action:none;-webkit-user-select:none;user-select:none}
+canvas{position:fixed;inset:0;width:100%;height:100%;display:block;cursor:crosshair}
+.hud{position:fixed;inset:0;pointer-events:none;display:flex;flex-direction:column;justify-content:space-between;
+padding:calc(env(safe-area-inset-top,0px) + 14px) max(16px,env(safe-area-inset-right,0px)) calc(env(safe-area-inset-bottom,0px) + 14px) max(16px,env(safe-area-inset-left,0px))}
+.top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.score{font:800 clamp(34px,6vw,54px)/1 var(--f-display);font-variant-numeric:tabular-nums;letter-spacing:.01em}
+.chain{margin-top:6px;font:600 14px var(--f-display);color:var(--spark);letter-spacing:.06em;min-height:20px;display:flex;align-items:center;gap:8px}
+.chain i{display:block;height:3px;width:70px;background:var(--haze);border-radius:2px;overflow:hidden}
+.chain i b{display:block;height:100%;background:var(--ember);width:0}
+.goal{font:500 14px var(--f-body);color:var(--muted);max-width:30ch;margin-top:2px}
+.side{display:flex;flex-direction:column;align-items:flex-end;gap:8px}
+.meta{font:500 13px var(--f-display);color:var(--muted);text-align:right;font-variant-numeric:tabular-nums;letter-spacing:.04em}
+.meta b{color:var(--text);font-weight:700}
+.btns{display:flex;gap:6px;pointer-events:auto}
+.icon-btn{font:600 13px var(--f-body);color:var(--text);background:rgba(18,15,44,.7);border:1px solid var(--haze);border-radius:999px;padding:6px 12px;cursor:pointer}
+.icon-btn:hover{border-color:var(--ember)}
+.icon-btn:focus-visible,.go:focus-visible{outline:3px solid var(--ember);outline-offset:2px}
+.region{position:fixed;left:0;right:0;top:28%;text-align:center;font:700 clamp(20px,3.4vw,30px) var(--f-display);letter-spacing:.3em;text-transform:uppercase;color:var(--muted);opacity:0;transition:opacity .8s;pointer-events:none}
+.region.show{opacity:.85}
+.fuel{display:flex;align-items:center;gap:10px}
+.fuel span{font:600 12px var(--f-display);letter-spacing:.14em;color:var(--muted);text-transform:uppercase}
+.bar{flex:1;height:8px;border-radius:4px;background:var(--haze);overflow:hidden}
+.bar b{display:block;height:100%;width:60%;background:linear-gradient(90deg,var(--cloud),var(--ember) 35%,var(--spark));border-radius:4px}
+.boost-btn{pointer-events:auto;touch-action:none;padding:9px 18px;font-weight:700}
+.boost-btn[aria-pressed="true"]{background:var(--ember);color:var(--night);border-color:var(--ember)}
+.bar.low b{animation:blink .5s steps(2) infinite}
+@keyframes blink{50%{opacity:.35}}
+.menu{position:fixed;inset:0;display:grid;place-items:center;background:rgba(8,7,26,.62);z-index:5;
+padding:calc(env(safe-area-inset-top,0px) + 16px) max(16px,env(safe-area-inset-right,0px)) calc(env(safe-area-inset-bottom,0px) + 16px) max(16px,env(safe-area-inset-left,0px));overflow:auto}
+.menu[hidden],.hud[hidden]{display:none}
+.panel{width:100%;max-width:560px;background:rgba(18,15,44,.92);border:1px solid var(--haze);border-radius:18px;padding:24px;display:flex;flex-direction:column;gap:16px;box-shadow:0 30px 80px rgba(0,0,0,.5)}
+.panel h1{font:800 clamp(44px,9vw,68px)/.95 var(--f-display);letter-spacing:.02em;margin:0;color:var(--spark);text-wrap:balance}
+.panel h2{font:800 34px/1 var(--f-display);margin:0;color:var(--spark)}
+.panel p{margin:0;color:var(--muted);max-width:60ch}
+.how{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:10px}
+.how li{display:grid;grid-template-columns:28px 1fr;gap:10px;align-items:start}
+.how svg{width:28px;height:28px}
+.stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 16px}
+.stats div{display:flex;flex-direction:column}
+.stats span{font:600 11px var(--f-display);letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.stats b{font:700 26px var(--f-display);font-variant-numeric:tabular-nums}
+.stats .new{color:var(--ember)}
+.runs>span{font:600 11px var(--f-display);letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.runs ol{margin:6px 0 0;padding-left:22px;display:flex;flex-direction:column;gap:2px;font-variant-numeric:tabular-nums}
+.runs li{color:var(--muted)}
+.runs li b{color:var(--text);font:700 15px var(--f-display);margin-right:10px}
+.runs li.me b{color:var(--ember)}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.go{font:700 16px var(--f-display);letter-spacing:.08em;color:var(--night);background:var(--ember);border:0;border-radius:999px;padding:12px 26px;cursor:pointer}
+.go:hover{background:var(--spark)}
+.key{font:600 12px var(--f-display);color:var(--muted)}
+.eyebrow{font:600 12px var(--f-display);letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+.panel .goal-big{font:700 19px var(--f-display);color:var(--text)}
+.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+@media (max-width:460px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.stage-btn{display:flex;flex-direction:column;align-items:flex-start;gap:4px;padding:10px;background:var(--ink);border:1px solid var(--haze);border-radius:12px;color:var(--text);text-align:left;cursor:pointer;font-family:var(--f-body);min-width:0}
+.stage-btn:hover:not([disabled]){border-color:var(--ember)}
+.stage-btn:focus-visible{outline:3px solid var(--ember);outline-offset:2px}
+.stage-btn[disabled]{opacity:.4;cursor:not-allowed}
+.stage-btn .sn{font:800 20px/1 var(--f-display);color:var(--spark)}
+.stage-btn .nm{font-size:12px;line-height:1.25;color:var(--muted);overflow-wrap:anywhere}
+.sparks{display:inline-flex;gap:3px}
+.sparks svg{width:14px;height:14px}
+.panel>.sparks svg{width:30px;height:30px}
+@media (prefers-reduced-motion:reduce){.region{transition:none}.bar.low b{animation:none}}
+
+[hidden]{display:none!important}
+body{margin:0}
+</style>
+</head>
+<body>
+<canvas id="sky" aria-label="Ember Drift play area"></canvas>
+<div class="hud" id="hud">
+<div class="top">
+<div>
+<div class="score" id="score">0</div>
+<div class="chain" id="chain"></div>
+<div class="goal" id="goal"></div>
+</div>
+<div class="side">
+<div class="btns">
+<button class="icon-btn" type="button" id="soundBtn" aria-pressed="true">Sound on</button>
+<button class="icon-btn" type="button" id="pauseBtn">Pause</button>
+<button class="icon-btn" type="button" id="hudSwitch" data-switch>Switch game</button>
+</div>
+<div class="meta" id="meta"></div>
+</div>
+</div>
+<div class="fuel"><span>Fuel</span><div class="bar" id="bar"><b id="fuel"></b></div><button class="icon-btn boost-btn" type="button" id="boostBtn" aria-pressed="false">Boost</button></div>
+</div>
+<div class="region" id="region"></div>
+<div class="menu" id="menu">
+<div class="panel" id="panel"></div>
+</div>
+<script>
+(() => {
+const cv = document.getElementById('sky'), ctx = cv.getContext('2d');
+const $ = id => document.getElementById(id);
+const RM = matchMedia('(prefers-reduced-motion: reduce)').matches;
+let W = 0, H = 0, DPR = 1;
+function resize(){ DPR = Math.min(2, window.devicePixelRatio || 1); W = cv.clientWidth; H = cv.clientHeight; cv.width = Math.round(W*DPR); cv.height = Math.round(H*DPR); ctx.setTransform(DPR,0,0,DPR,0,0); }
+addEventListener('resize', resize); resize();
+const store = { get(k, d){ try { const v = localStorage.getItem(k); return v==null ? d : v; } catch(e){ return d; } }, set(k, v){ try { localStorage.setItem(k, String(v)); } catch(e){} } };
+function mulberry(a){ return () => { a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+function cellRng(i, j, seed){ let h = Math.imul(i, 374761393) ^ Math.imul(j, 668265263) ^ Math.imul(seed, 2246822519); h = Math.imul(h ^ h >>> 13, 1274126177); return mulberry(h ^ h >>> 16); }
+function glowSprite(rgb, size){
+const c = document.createElement('canvas'); c.width = c.height = size; const g = c.getContext('2d');
+const grd = g.createRadialGradient(size/2,size/2,0,size/2,size/2,size/2);
+grd.addColorStop(0, `rgba(${rgb},0.9)`); grd.addColorStop(0.25, `rgba(${rgb},0.35)`); grd.addColorStop(1, `rgba(${rgb},0)`);
+g.fillStyle = grd; g.fillRect(0,0,size,size); return c;
+}
+const GLOW_WARM = glowSprite('255,174,92', 128), GLOW_COLD = glowSprite('134,166,255', 128), GLOW_WHITE = glowSprite('255,225,181', 128);
+const DUST = []; { const r = mulberry(7); for(let l=0;l<3;l++) for(let k=0;k<70;k++) DUST.push({x:r()*2000, y:r()*2000, p:0.05+l*0.12, a:0.2+l*0.2+r()*0.2, s:0.6+l*0.4}); }
+const CELL = 620, BASE = 250, MAXV = 900, CHAIN_TIME = 2.1, LINK_R = 30;
+const REGIONS = [[0,'The Shallows'],[4,'Ember Reach'],[9,'Ash Fields'],[15,'The Long Dark'],[24,'Edge of Night']];
+let G = null, cells = new Map(), starId = 0;
+function cellAt(i, j){
+const key = i + ',' + j; let c = cells.get(key); if(c) return c;
+const r = cellRng(i, j, G.seed); const cx = (i+.5)*CELL, cy = (j+.5)*CELL; const D = Math.hypot(cx, cy)/1000;
+const n = Math.max(2, Math.round(7.5 - D*0.22 + r()*3));
+const stars = [], clouds = [];
+for(let k=0;k<n;k++){
+const x = i*CELL + r()*CELL, y = j*CELL + r()*CELL;
+if(Math.hypot(x, y) < 160) continue;
+const big = r() < 0.07 + Math.min(0.08, D*0.004);
+const flare = !big && D > 0.8 && r() < 0.035; const fa = r()*6.28;
+stars.push({id:starId++, x, y, s:big ? 7+r()*3 : flare ? 5 : 2.6+r()*2.6, big, flare, lit:false, tw:r()*6.28, fx:Math.cos(fa)*45, fy:Math.sin(fa)*45});
+}
+if(D > 1.2 && r() < Math.min(0.75, (D-1)*0.08)){
+const x = i*CELL + r()*CELL, y = j*CELL + r()*CELL;
+if(Math.hypot(x, y) > 500) clouds.push({x, y, r:80 + r()*100*(1 + Math.min(1.5, D*0.05)), ph:r()*6.28});
+}
+c = {i, j, stars, clouds}; cells.set(key, c); return c;
+}
+function nearCells(x, y, rad){
+if(G.mode==='stage') return [G.stageCell];
+const out = []; const i0 = Math.floor((x-rad)/CELL), i1 = Math.floor((x+rad)/CELL), j0 = Math.floor((y-rad)/CELL), j1 = Math.floor((y+rad)/CELL);
+for(let i=i0;i<=i1;i++) for(let j=j0;j<=j1;j++) out.push(cellAt(i, j));
+return out;
+}
+function pruneCells(){ const ci = Math.floor(G.x/CELL), cj = Math.floor(G.y/CELL); for(const [k,c] of cells) if(Math.abs(c.i-ci) > 6 || Math.abs(c.j-cj) > 6) cells.delete(k); }
+let AC = null, soundOn = store.get('ember-sound', '1') === '1';
+const SCALE = [0,2,4,7,9,12,14,16,19,21,24,26,28,31];
+function tone(step, when = 0, dur = 0.35, vol = 0.07){
+if(!AC || !soundOn) return;
+const t = AC.currentTime + when, o = AC.createOscillator(), g = AC.createGain();
+o.type = 'sine'; o.frequency.value = 196 * Math.pow(2, step/12);
+g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vol, t+0.015); g.gain.exponentialRampToValueAtTime(0.0008, t+dur);
+o.connect(g).connect(AC.destination); o.start(t); o.stop(t+dur+0.05);
+}
+function ensureAudio(){ if(AC) { if(AC.state==='suspended') AC.resume(); return; } try { AC = new (window.AudioContext || window.webkitAudioContext)(); } catch(e){ AC = null; } }
+const input = {px:0, py:0, active:false, left:false, right:false, mouse:false, boost:false};
+let best = +store.get('ember-best', 0) || 0;
+function baseState(){
+return {state:'play', mode:'endless', seed:(Math.random()*1e9)|0, x:0, y:0, ang:-Math.PI/2, v:BASE, fuel:70, score:0, dist:0, time:0,
+chain:[], chainT:0, fading:[], shapes:[], fx:[], trail:[], cam:{x:0,y:0,z:1}, region:-1, longest:0, shapesMade:0, lit:0, shake:0,
+parts:[], comets:[], cometT:4, beacon:null, beaconT:8, hits:0, closeCalls:0, beacons:0, flash:0};
+}
+function newRun(){
+cells = new Map(); shown = {};
+G = baseState();
+input.active = false; input.left = input.right = false;
+hideMenu(); setRegion(0); last = performance.now();
+}
+const P = Math.PI;
+const st = (x, y, o = {}) => ({x, y, ...o});
+const RING8 = [4,7,2,5,0,3,6,1];
+const STAGES = [
+{name:'First Light', goal:'all', fuel:24, tip:'Fly close to each star to light it.', start:[0,320,-P/2], R:520, par:3,
+stars:[st(0,150), st(50,0), st(0,-150), st(-50,-300)]},
+{name:'Tight Turns', goal:'all', fuel:45, tip:'Turn early. A wide turn takes you into the clouds.', start:[-220,430,-P/2], R:540, par:5.5,
+stars:[st(-220,250), st(0,120), st(220,0), st(0,-120), st(-220,-250)],
+clouds:[[220,200,80],[-220,20,80],[220,-210,80]]},
+{name:'Keep It Going', goal:'chain', fuel:33, n:6, tip:'Light each star before the chain bar under your score runs out.', start:[0,580,-P/2], R:680, par:5,
+stars:[0,1,2,3,4,5,6,7].map(k => st(Math.round(220*Math.sin(k*1.1)), 420 - k*130))},
+{name:'Close the Ring', goal:'shape', fuel:55, n:3, chainTime:2.8, clouds:[[0,30,90]], tip:'Light all three stars, then fly back to the first one. Go around the cloud.', start:[0,400,-P/2], R:540, par:7,
+stars:[st(0,-200), st(180,120), st(-180,120)]},
+{name:'Count to Five', goal:'order', fuel:98, tip:'A wrong star puts out every star you lit. Fly around the others.', start:[0,430,-P/2], R:570, par:12,
+stars:[st(150,150,{n:1}), st(-200,-50,{n:2}), st(200,-200,{n:3}), st(-150,250,{n:4}), st(0,-330,{n:5})]},
+{name:'The Big Pull', goal:'all', fuel:42, tip:'The big star pulls you in. Use its pull to swing around the ring.', start:[0,440,-P/2], R:560, par:7,
+stars:[st(0,0,{big:1}), ...[0,1,2,3,4,5].map(k => st(Math.round(200*Math.cos(k*P/3+P/6)), Math.round(200*Math.sin(k*P/3+P/6))))]},
+{name:'Smoke Lanes', goal:'all', fuel:56, tip:'Dark clouds burn fuel very fast. Weave through the lanes between them.', start:[0,440,-P/2], R:600, par:6,
+stars:[st(60,150), st(-60,0), st(60,-150), st(-60,-300), st(0,-440)],
+clouds:[[-170,150,110],[170,0,110],[-170,-150,110],[170,-300,100]]},
+{name:'One Breath', goal:'allChain', fuel:48, chainTime:1.9, tip:'If the chain breaks, every star goes out.', start:[-430,380,-0.7], R:620, par:9,
+stars:[st(-250,250), st(-80,120), st(150,200), st(280,0), st(100,-160), st(-150,-120), st(-60,-360)]},
+{name:'Four Corners', goal:'shape', fuel:72, n:4, chainTime:2.8, clouds:[[0,0,100,110,0,1.1,0]], tip:'A triangle is not enough. Go around all four corners and watch the moving cloud.', start:[0,460,-P/2], R:560, par:9.5,
+stars:[st(-170,170), st(170,170), st(170,-170), st(-170,-170), st(330,-330), st(-330,330)]},
+{name:'Clockwork', goal:'all', fuel:73, tip:'These stars move along their tracks. Aim for where a star will be.', start:[0,540,-P/2], R:650, par:11.5,
+stars:[st(0,0,{big:1}), st(0,0,{orbit:[150,0.8,0]}), st(0,0,{orbit:[150,0.8,P]}), st(0,0,{orbit:[270,-0.5,P/2]}), st(0,0,{orbit:[270,-0.5,-P/2]}), st(0,0,{orbit:[390,0.3,0.4]}), st(0,0,{orbit:[390,0.3,0.4+P]})]},
+{name:'Twin Shapes', goal:'shapes', fuel:58, n:2, chainTime:2.8, clouds:[[0,-60,70,0,120,1.3,0]], tip:'Each triangle can be one shape. A cloud moves up and down between them.', start:[0,430,-P/2], R:600, par:10,
+stars:[st(-340,40), st(-120,40), st(-230,-160), st(120,40), st(340,40), st(230,-160)]},
+{name:'Star Path', goal:'order', fuel:92, drain:4.5, tip:'The numbers jump across the ring. The big star in the middle bends your path.', start:[0,520,-P/2], R:600, par:20,
+stars:[st(0,0,{big:1}), ...[0,1,2,3,4,5,6,7].map(i => st(Math.round(300*Math.cos(i*P/4 - P/2)), Math.round(300*Math.sin(i*P/4 - P/2)), {n:RING8.indexOf(i)+1}))]},
+{name:'Running on Empty', goal:'all', fuel:34, drain:10, tip:'Fuel is low and burns fast. Fly the spiral without a gap.', start:[380,-320,P/2], R:560, par:7.5,
+stars:[0,1,2,3,4,5,6,7,8,9].map(k => st(Math.round((380-k*28)*Math.cos(k*0.7)), Math.round((380-k*28)*Math.sin(k*0.7))))},
+{name:'Sliding Doors', goal:'chain', fuel:73, n:6, chainTime:2.3, tip:'The stars slide from side to side. Time each pass.', start:[0,520,-P/2], R:620, par:10.5,
+stars:[300,180,60,-60,-180,-300].map((y,k) => st(0, y, {slide:[170,0,1.2+k*0.1,k*1.3]})),
+clouds:[[-360,240,120],[360,0,120],[-360,-240,120]]},
+{name:'Full Circle', goal:'shapeAll', fuel:39, chainTime:2.4, clouds:[[0,0,120]], tip:'Light all six stars in one chain, then return to the first. Stay out of the middle.', start:[0,460,-P/2], R:560, par:7,
+stars:[0,1,2,3,4,5].map(k => st(Math.round(230*Math.cos(k*P/3 + P/2)), Math.round(230*Math.sin(k*P/3 + P/2))))},
+{name:'Night Crown', goal:'order', fuel:57, drain:4.5, tip:'Moving stars, dark clouds and a big star, all at once.', start:[0,520,-P/2], R:640, par:14.5,
+stars:[st(0,0,{big:1}), st(0,280,{n:1}), st(0,0,{n:2,orbit:[160,0.9,0]}), st(-320,-40,{n:3}), st(0,0,{n:4,orbit:[300,-0.4,1]}), st(320,-200,{n:5}), st(0,0,{n:6,orbit:[160,0.9,P]}), st(0,-440,{n:7})],
+clouds:[[-260,260,90],[260,220,90],[0,-300,80,260,0,0.9,0]]},
+];
+const SHAPE_GOALS = ['shape','shapes','shapeAll'];
+function goalText(sg){
+switch(sg.goal){
+case 'all': return 'Light every star.';
+case 'chain': return `Make a chain of ${sg.n} stars.`;
+case 'shape': return `Close a shape with ${sg.n} or more stars.`;
+case 'shapes': return `Close ${sg.n} shapes.`;
+case 'order': return 'Light the numbered stars in order.';
+case 'allChain': return 'Light every star in one chain.';
+case 'shapeAll': return 'Close one shape through every star.';
+}
+return '';
+}
+function buildStage(k){
+const sg = STAGES[k];
+const stars = sg.stars.map(o => ({id:starId++, bx:o.x, by:o.y, x:o.x, y:o.y, s:o.big ? 9 : 3.8, big:!!o.big, lit:false, tw:Math.random()*6.28, n:o.n ?? null, orbit:o.orbit || null, slide:o.slide || null}));
+const clouds = (sg.clouds || []).map(([x,y,r,dx=0,dy=0,w=0,p0=0]) => ({x, y, r, bx:x, by:y, slide:w ? [dx,dy,w,p0] : null, ph:Math.random()*6.28}));
+return {stars, clouds};
+}
+function moveStars(t){
+for(const s of G.stageCell.stars){
+if(s.orbit){ const [r,w,ph] = s.orbit; s.x = s.bx + r*Math.cos(w*t + ph); s.y = s.by + r*Math.sin(w*t + ph); }
+else if(s.slide){ const [dx,dy,w,ph] = s.slide; const f = Math.sin(w*t + ph); s.x = s.bx + dx*f; s.y = s.by + dy*f; }
+}
+for(const c of G.stageCell.clouds) if(c.slide){ const [dx,dy,w,ph] = c.slide; const f = Math.sin(w*t + ph); c.x = c.bx + dx*f; c.y = c.by + dy*f; }
+}
+function startStage(k){
+cells = new Map(); const sg = STAGES[k];
+G = Object.assign(baseState(), {mode:'stage', stageIdx:k, sg, state:'ready', stageCell:buildStage(k), x:sg.start[0], y:sg.start[1], ang:sg.start[2], fuel:sg.fuel || 70, nextN:1, wrongT:0, bigLoop:0});
+input.active = false; input.left = input.right = false;
+moveStars(0); camera(0, true); shown = {};
+showMenu(`<span class="eyebrow">Stage ${k+1} of 16</span><h2>${sg.name}</h2><p class="goal-big">${goalText(sg)}</p><p>${sg.tip}</p>
+<div class="row"><button class="go" type="button" data-go="go">Fly</button><button class="icon-btn" type="button" data-go="stages">All stages</button><span class="key">Press R to restart a stage</span></div>`);
+}
+function stageProgress(){
+const sg = G.sg, stars = G.stageCell.stars, lit = stars.filter(s => s.lit).length;
+switch(sg.goal){
+case 'all': case 'allChain': return `${lit}/${stars.length}`;
+case 'order': return `${G.nextN-1}/${stars.filter(s => s.n!=null).length}`;
+case 'chain': return `${Math.min(G.chain.length, sg.n)}/${sg.n}`;
+case 'shape': return `${G.bigLoop}/${sg.n}`;
+case 'shapes': return `${G.shapesMade}/${sg.n}`;
+case 'shapeAll': return `${G.chain.length}/${stars.length}`;
+}
+return '';
+}
+function checkWin(){
+if(G.mode!=='stage' || G.state!=='play') return;
+const sg = G.sg, stars = G.stageCell.stars; let ok = false;
+switch(sg.goal){
+case 'all': case 'allChain': ok = stars.every(s => s.lit); break;
+case 'order': ok = G.nextN > Math.max(...stars.filter(s => s.n!=null).map(s => s.n)); break;
+case 'chain': ok = G.chain.length >= sg.n; break;
+case 'shape': ok = G.bigLoop >= sg.n; break;
+case 'shapes': ok = G.shapesMade >= sg.n; break;
+case 'shapeAll': ok = G.bigLoop >= stars.length; break;
+}
+if(ok) winStage();
+}
+function resetStars(msg){
+for(const s of G.stageCell.stars) s.lit = false;
+G.nextN = 1; G.lit = 0; G.shake = 0.2;
+G.fx.push({x:G.x, y:G.y - 30, text:msg, t:0, big:true});
+tone(-10, 0, 0.5, 0.06); tone(-14, 0.08, 0.6, 0.05);
+}
+function wrongOrder(){ breakChain(); resetStars('Wrong star'); G.wrongT = 0.8; }
+const sparkSVG = on => `<svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="6" fill="${on ? '#ffae5c' : 'none'}" stroke="${on ? '#ffe1b5' : '#4a4480'}" stroke-width="1.6"/></svg>`;
+const sparksHTML = n => `<span class="sparks" role="img" aria-label="${n} of 3 sparks">${[1,2,3].map(i => sparkSVG(i<=n)).join('')}</span>`;
+const stageSparks = k => +store.get('ember-stage-' + k, 0) || 0;
+function winStage(){
+G.state = 'won';
+const k = G.stageIdx, t = G.time, par = G.sg.par;
+const sparks = t <= par ? 3 : t <= par*1.35 ? 2 : 1;
+if(sparks > stageSparks(k)) store.set('ember-stage-' + k, sparks);
+const prevT = +store.get('ember-stime-' + k, 0) || 0; const isBestT = !prevT || t < prevT;
+if(isBestT) store.set('ember-stime-' + k, t.toFixed(2));
+[0,4,7,11,14].forEach((s,i) => tone(s + 12, i*0.08, 0.8, 0.05));
+const last = k === STAGES.length - 1;
+showMenu(`<span class="eyebrow">Stage ${k+1} of 16</span><h2>${last ? 'Every stage clear' : 'Stage clear'}</h2>${sparksHTML(sparks)}
+<div class="stats">
+<div><span>Time</span><b class="${isBestT?'new':''}">${t.toFixed(1)} s</b></div>
+<div><span>Par</span><b>${par} s</b></div>
+<div><span>Best time</span><b>${(isBestT ? t : prevT).toFixed(1)} s</b></div>
+<div><span>Sparks</span><b>${sparks} of 3</b></div>
+</div>
+<p>${sparks===3 ? 'You beat the par time.' : `Clear it in ${par} s or less for 3 sparks.`}</p>
+<div class="row">${last ? '' : '<button class="go" type="button" data-go="next">Next stage</button>'}<button class="${last?'go':'icon-btn'}" type="button" data-go="retry">Try again</button><button class="icon-btn" type="button" data-go="stages">All stages</button></div>`);
+}
+function stagesMenu(){
+showMenu(`<h2>Puzzle stages</h2><p>Sixteen hand-made skies. Clear a stage to open the next one. Clear it within the par time for 3 sparks.</p>
+<div class="grid">${STAGES.map((sg,k) => { const open = k===0 || stageSparks(k-1) > 0;
+return `<button class="stage-btn" type="button" data-go="stage" data-k="${k}" ${open ? '' : 'disabled'}><span class="sn">${k+1}</span><span class="nm">${open ? sg.name : 'Locked'}</span>${sparksHTML(stageSparks(k))}</button>`; }).join('')}</div>
+<div class="row"><button class="icon-btn" type="button" data-go="help">Back</button></div>`);
+const first = $('panel').querySelector('.stage-btn:not([disabled])'); if(first) first.focus();
+}
+const GLOW_RED = glowSprite('255,96,96', 128), GLOW_BLUE = glowSprite('134,220,255', 128);
+function burst(x, y, n, rgb, speed = 160){
+if(RM) n = Math.ceil(n/3);
+for(let i=0;i<n;i++){ const a = Math.random()*6.283, v = speed*(0.3 + Math.random()); G.parts.push({x, y, vx:Math.cos(a)*v, vy:Math.sin(a)*v, t:0, life:0.35 + Math.random()*0.5, c:rgb}); }
+if(G.parts.length > 500) G.parts.splice(0, G.parts.length - 500);
+}
+function hazards(dt, D){
+if(D > 0.6){
+G.cometT -= dt;
+if(G.cometT <= 0){
+G.cometT = Math.max(1.0, 5 - D*0.2 - G.time*0.012) * (0.7 + Math.random()*0.6);
+const count = D > 8 && Math.random() < 0.4 ? 2 : 1;
+for(let n=0;n<count;n++){
+// Aim at where the ember will be when the comet arrives, give or take a little.
+const T = 2 + n*0.5, sp = 480 + Math.min(420, D*14), miss = (Math.random() - 0.5)*160;
+const px = G.x + Math.cos(G.ang)*G.v*T + Math.cos(G.ang + Math.PI/2)*miss, py = G.y + Math.sin(G.ang)*G.v*T + Math.sin(G.ang + Math.PI/2)*miss;
+const a = G.ang + Math.PI/2 * (Math.random() < 0.5 ? 1 : -1) + (Math.random() - 0.5)*1.4;
+const sx = px + Math.cos(a)*sp*T, sy = py + Math.sin(a)*sp*T;
+G.comets.push({x:sx, y:sy, vx:-Math.cos(a)*sp, vy:-Math.sin(a)*sp, r:12, t:0, minD:1e9, skim:false, hit:false}); G.spawned = (G.spawned || 0) + 1;
+}
+}
+}
+for(const c of G.comets){
+c.t += dt; c.x += c.vx*dt; c.y += c.vy*dt;
+if(G.state!=='play') continue;
+const d = Math.hypot(c.x - G.x, c.y - G.y);
+if(d < c.r + 10){ c.hit = true; hitByComet(); continue; }
+c.minD = Math.min(c.minD, d);
+if(!c.skim && c.minD < 70 && d > 120){ c.skim = true; closeCall(); }
+}
+G.comets = G.comets.filter(c => !c.hit && (c.t < 2.5 || Math.hypot(c.x - G.x, c.y - G.y) < 1600));
+if(!G.beacon){ G.beaconT -= dt; if(G.beaconT <= 0) placeBeacon(); }
+else { G.beacon.left -= dt; if(G.beacon.left <= 0){ G.fx.push({x:G.x, y:G.y - 40, text:'Beacon lost', t:0, big:false}); G.beacon = null; G.beaconT = 12; } }
+}
+function hitByComet(){
+G.fuel -= 25; G.hits++; breakChain(); G.shake = 0.5; G.flash = 0.35; burst(G.x, G.y, 30, '255,107,107', 260);
+G.fx.push({x:G.x, y:G.y - 30, text:'Hit: fuel −25', t:0, big:true}); tone(-17, 0, 0.5, 0.09); tone(-22, 0.05, 0.6, 0.08);
+}
+function closeCall(){
+const pts = Math.round(60 * Math.max(1, Math.min(12, G.chain.length))); G.score += pts; G.closeCalls++;
+G.fuel = Math.min(100, G.fuel + 4);
+G.fx.push({x:G.x, y:G.y - 30, text:`Close call +${pts}`, t:0, big:false}); tone(19, 0, 0.2, 0.05);
+}
+function placeBeacon(){
+const pool = [];
+for(const c of nearCells(G.x, G.y, 1300)) for(const s of c.stars){ if(s.lit || s.flare) continue; const d = Math.hypot(s.x - G.x, s.y - G.y); if(d > 700 && d < 1250) pool.push(s); }
+if(!pool.length){ G.beaconT = 3; return; }
+const star = pool[Math.floor(Math.random()*pool.length)], d = Math.hypot(star.x - G.x, star.y - G.y);
+const left = d/Math.max(G.v, BASE)*1.25 + 2.5;
+G.beacon = {star, left, total:left};
+tone(24, 0, 0.3, 0.04); tone(28, 0.1, 0.3, 0.04);
+}
+function beaconHit(){
+const b = G.beacon, pts = Math.round(300 + 600*b.left/b.total);
+G.score += pts; G.fuel = Math.min(100, G.fuel + 30); G.beacons++;
+G.fx.push({x:b.star.x, y:b.star.y - 30, text:`Beacon +${pts}`, t:0, big:true}); burst(b.star.x, b.star.y, 40, '134,220,255', 240);
+[0,7,12,19].forEach((st,k) => tone(st + 12, k*0.05, 0.6, 0.05));
+G.beacon = null; G.beaconT = 10;
+}
+function edgeArrow(sx, sy, rgb, label){
+// Keep arrows clear of the score at the top and the fuel bar at the bottom.
+const mx = 34, mt = 120, mb = 80; if(sx > mx && sx < W - mx && sy > mt && sy < H - mb) return;
+const cx = W/2, cy = (mt + H - mb)/2, dx = sx - cx, dy = sy - cy;
+const k = Math.min((W/2 - mx)/Math.max(1e-6, Math.abs(dx)), ((H - mb - mt)/2)/Math.max(1e-6, Math.abs(dy)));
+const ex = cx + dx*k, ey = cy + dy*k, a = Math.atan2(dy, dx);
+ctx.save(); ctx.translate(ex, ey); ctx.rotate(a); ctx.fillStyle = `rgba(${rgb},.95)`;
+ctx.beginPath(); ctx.moveTo(13, 0); ctx.lineTo(-8, -9); ctx.lineTo(-8, 9); ctx.closePath(); ctx.fill(); ctx.restore();
+if(label){ ctx.fillStyle = `rgba(${rgb},.95)`; ctx.font = '700 13px Tektur, "Arial Narrow", sans-serif'; ctx.textAlign = 'center'; ctx.fillText(label, ex - Math.cos(a)*26, ey - Math.sin(a)*26 + 4); }
+}
+function topRuns(){ try { const v = JSON.parse(localStorage.getItem('ember-top') || '[]'); return Array.isArray(v) ? v : []; } catch(e){ return []; } }
+function saveRun(sc, ly){ const list = topRuns(); list.push({sc, ly, d:new Date().toISOString().slice(0,10)}); list.sort((a,b) => b.sc - a.sc); try { localStorage.setItem('ember-top', JSON.stringify(list.slice(0,5))); } catch(e){} return list.slice(0,5); }
+function link(s){
+s.lit = true; G.lit++;
+G.chain.push(s); G.chainT = chainTime(); G.longest = Math.max(G.longest, G.chain.length);
+const mult = Math.min(12, G.chain.length);
+const pace = 1 + Math.max(0, G.v - BASE) / BASE * 0.6;
+const pts = Math.round(10 * mult * pace * (s.flare ? 3 : s.big ? 2 : 1) * (G.chain.length >= 8 ? 2 : 1));
+burst(s.x, s.y, s.flare ? 26 : 10, s.flare ? '255,211,107' : '255,174,92');
+if(G.chain.length === 8){ G.fx.push({x:G.x, y:G.y - 50, text:'Blaze! Double points', t:0, big:true}); tone(31, 0, 0.4, 0.05); }
+G.score += pts; G.fuel = Math.min(100, G.fuel + (s.flare ? 25 : s.big ? 12 : 5) + Math.min(6, G.chain.length - 1));
+if(s.flare){ G.chainT += 1; G.shake = 0.2; }
+G.fx.push({x:s.x, y:s.y - 14, text:s.flare ? `Flare +${pts}` : `+${pts}`, t:0, big:!!s.flare});
+tone(SCALE[Math.min(SCALE.length-1, G.chain.length-1)] + (s.big ? -12 : 0));
+if(G.beacon && G.beacon.star === s) beaconHit();
+if(G.mode==='stage'){ if(s.n!=null) G.nextN++; checkWin(); }
+}
+function closeShape(at){
+const loop = G.chain.slice(at); const pts2 = loop.map(s => [s.x, s.y]);
+let area = 0; for(let k=0;k<pts2.length;k++){ const [x1,y1] = pts2[k], [x2,y2] = pts2[(k+1)%pts2.length]; area += x1*y2 - x2*y1; }
+area = Math.abs(area)/2;
+const mult = Math.min(12, G.chain.length);
+const pts = Math.round(40 * loop.length * mult + area/250);
+G.score += pts; G.fuel = Math.min(100, G.fuel + 7*loop.length); G.shapesMade++;
+G.shapes.push({pts:pts2, born:G.time});
+const cx = pts2.reduce((a,p)=>a+p[0],0)/pts2.length, cy = pts2.reduce((a,p)=>a+p[1],0)/pts2.length;
+const perfect = G.mode!=='stage' && loop.length >= 5; if(perfect) G.fuel = 100;
+G.fx.push({x:cx, y:cy, text:perfect ? `Perfect shape +${pts}` : `Shape +${pts}`, t:0, big:true}); G.shake = 0.25; burst(cx, cy, perfect ? 60 : 36, '255,225,181', 220);
+[0,4,7,12].forEach((st,k) => tone(st + 12, k*0.06, 0.7, 0.06));
+G.chain = [G.chain[at]]; G.chainT = chainTime(); G.bigLoop = Math.max(G.bigLoop || 0, loop.length);
+checkWin();
+}
+function breakChain(){
+for(let k=1;k<G.chain.length;k++) G.fading.push({a:G.chain[k-1], b:G.chain[k], t:0});
+G.chain = []; G.chainT = 0;
+if(G.mode==='stage' && G.state==='play' && G.sg.goal==='allChain' && G.stageCell.stars.some(s => s.lit)) resetStars('Chain broke');
+}
+const chainTime = () => (G.mode==='stage' && G.sg.chainTime) || CHAIN_TIME;
+function regionIndex(D){ let r = 0; REGIONS.forEach(([d],k) => { if(D >= d) r = k; }); return r; }
+let regionTimer = 0;
+function setRegion(k){ if(G.region === k) return; G.region = k; const el = $('region'); el.textContent = REGIONS[k][1]; el.classList.add('show'); clearTimeout(regionTimer); regionTimer = setTimeout(() => el.classList.remove('show'), 2200); }
+function update(dt){
+G.time += dt;
+const stage = G.mode==='stage';
+if(stage){ moveStars(G.time); G.wrongT = Math.max(0, G.wrongT - dt); }
+const D = stage ? 0 : Math.hypot(G.x, G.y)/1000;
+const base = stage ? BASE : BASE * (1 + Math.min(0.5, D*0.025));
+if(!stage) for(const c of nearCells(G.x, G.y, 900)){
+for(const s of c.stars) if(s.flare && !s.lit){ s.x += s.fx*dt; s.y += s.fy*dt; }
+if(D > 5) for(const cl of c.clouds){ const dx = G.x - cl.x, dy = G.y - cl.y, d = Math.hypot(dx, dy); if(d < 900 && d > 1){ const sp = (30 + D*2)*dt; cl.x += dx/d*sp; cl.y += dy/d*sp; } }
+}
+const sx = (G.x - G.cam.x)*G.cam.z + W/2, sy = (G.y - G.cam.y)*G.cam.z + H/2;
+const turnRate = 3.6 * Math.sqrt(BASE / G.v);
+if(input.left || input.right){ G.ang += (input.right ? 1 : -1) * turnRate * dt; }
+else if(input.active){
+const dx = input.px - sx, dy = input.py - sy;
+if(dx*dx + dy*dy > 400){ let d = Math.atan2(dy, dx) - G.ang; d = Math.atan2(Math.sin(d), Math.cos(d)); G.ang += Math.max(-turnRate*dt, Math.min(turnRate*dt, d)); }
+}
+let vx = Math.cos(G.ang)*G.v, vy = Math.sin(G.ang)*G.v;
+let inCloud = false;
+for(const c of nearCells(G.x, G.y, 240)){
+for(const s of c.stars){
+const dx = s.x - G.x, dy = s.y - G.y, d2 = dx*dx + dy*dy;
+if(d2 > 220*220) continue;
+const d = Math.sqrt(d2) || 1;
+const pull = (s.big ? 2.6 : 1) * 1.6e6 / Math.max(d2, 900);
+vx += dx/d * pull * dt; vy += dy/d * pull * dt;
+const graze = s.s + 40;
+if(d < graze) G.v += 170 * dt * (1 - d/graze) * (s.big ? 1.6 : 1);
+if(d < LINK_R + s.s){
+if(G.state!=='play' && G.state!=='demo') break;
+if(!s.lit){
+if(stage && G.sg.goal==='order' && s.n!=null && s.n!==G.nextN){ if(G.wrongT<=0) wrongOrder(); }
+else if(!(stage && G.wrongT>0 && s.n!=null)) link(s);
+}
+else if(!stage || SHAPE_GOALS.includes(G.sg.goal)){ const at = G.chain.indexOf(s); if(at >= 0 && at <= G.chain.length - 3) closeShape(at); }
+}
+}
+for(const cl of c.clouds){ if(Math.hypot(cl.x - G.x, cl.y - G.y) < cl.r) inCloud = true; }
+}
+G.ang = Math.atan2(vy, vx);
+G.v = Math.min(MAXV, G.v);
+G.v += (G.v > base ? (base - G.v) * 0.3 : (base - G.v) * 2) * dt;
+G.boosting = input.boost && G.fuel > 4 && G.state==='play';
+if(G.boosting) G.v = Math.min(MAXV, G.v + (base*2 - G.v) * 2.5 * dt);
+G.x += Math.cos(G.ang) * G.v * dt; G.y += Math.sin(G.ang) * G.v * dt;
+G.dist += G.v * dt;
+G.score += G.v * dt / 120;
+const outside = stage && Math.hypot(G.x, G.y) > G.sg.R;
+G.outside = outside; G.outT = outside ? (G.outT || 0) + dt : 0;
+G.fuel -= ((stage ? (G.sg.drain ?? 7) : 6 + D*0.4 + Math.min(10, G.time*0.055)) + (inCloud ? 24 : 0) + (G.boosting ? 11 : 0)) * dt;
+if(stage && G.outT > 1.2 && G.state==='play'){ G.lost = true; G.fuel = 0; }
+G.inCloud = inCloud;
+if(G.chain.length && G.state==='play' || G.chain.length && G.state==='demo'){ G.chainT -= dt; if(G.chainT <= 0) breakChain(); }
+G.fading = G.fading.filter(f => (f.t += dt) < 1.2);
+G.fx = G.fx.filter(f => (f.t += dt) < (f.big ? 1.8 : 1));
+if(!stage && G.state!=='demo') hazards(dt, D);
+G.flash = Math.max(0, (G.flash || 0) - dt);
+for(const q of G.parts){ q.t += dt; q.x += q.vx*dt; q.y += q.vy*dt; q.vx *= 0.97; q.vy *= 0.97; }
+G.parts = G.parts.filter(q => q.t < q.life);
+G.shapes = G.shapes.filter(s => Math.hypot(s.pts[0][0] - G.x, s.pts[0][1] - G.y) < 4000);
+G.trail.push(G.x, G.y); if(G.trail.length > 90) G.trail.splice(0, 2);
+G.shake = Math.max(0, G.shake - dt);
+if(!stage){ setRegion(regionIndex(D)); if(Math.floor(G.time*2) % 4 === 0) pruneCells(); }
+camera(dt, false);
+if(G.fuel <= 0 && G.state==='play'){ G.fuel = 0; endRun(); }
+}
+function camera(dt, snap){
+let tx, ty, tz;
+const fit = G.mode==='stage' ? Math.min(W, H)/(2*G.sg.R + 120) : 0;
+if(G.mode==='stage' && fit >= 0.5){ tx = 0; ty = 0; tz = Math.min(1.1, fit); }
+else {
+const lead = 0.35; tx = G.x + Math.cos(G.ang)*G.v*lead; ty = G.y + Math.sin(G.ang)*G.v*lead;
+const baseZ = Math.min(1.1, Math.max(0.62, Math.min(W, H)/760));
+tz = G.mode==='stage' ? 0.6 : baseZ * Math.max(0.68, 1 - (G.v - BASE)/1500);
+}
+if(snap){ G.cam.x = tx; G.cam.y = ty; G.cam.z = tz; return; }
+const k = 1 - Math.exp(-3*dt); G.cam.x += (tx - G.cam.x)*k; G.cam.y += (ty - G.cam.y)*k;
+G.cam.z += (tz - G.cam.z) * (1 - Math.exp(-1.5*dt));
+}
+function draw(){
+const z = G.cam.z; let ox = W/2 - G.cam.x*z, oy = H/2 - G.cam.y*z;
+if(G.shake && !RM){ ox += (Math.random()-.5)*10*G.shake; oy += (Math.random()-.5)*10*G.shake; }
+const X = x => x*z + ox, Y = y => y*z + oy;
+ctx.fillStyle = '#08071a'; ctx.fillRect(0, 0, W, H);
+const bg = ctx.createRadialGradient(W*.3, H*.2, 0, W*.5, H*.5, Math.max(W,H));
+bg.addColorStop(0, 'rgba(43,39,84,.55)'); bg.addColorStop(1, 'rgba(8,7,26,0)'); ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+for(const d of DUST){
+const x = ((d.x - G.cam.x*d.p) % W + W) % W, y = ((d.y - G.cam.y*d.p) % H + H) % H;
+ctx.globalAlpha = d.a; ctx.fillStyle = '#cfc8ff'; ctx.fillRect(x, y, d.s, d.s);
+}
+ctx.globalAlpha = 1;
+const view = Math.max(W, H)/z/2 + 120;
+const cs = nearCells(G.cam.x, G.cam.y, view);
+// clouds
+for(const c of cs) for(const cl of c.clouds){
+const r = cl.r*z, x = X(cl.x), y = Y(cl.y);
+const g = ctx.createRadialGradient(x, y, r*0.2, x, y, r);
+g.addColorStop(0, 'rgba(10,6,22,.95)'); g.addColorStop(0.8, 'rgba(60,18,52,.55)'); g.addColorStop(1, 'rgba(194,66,127,0)');
+ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI*2); ctx.fill();
+ctx.strokeStyle = 'rgba(194,66,127,.35)'; ctx.lineWidth = 1; ctx.setLineDash([3, 7]); ctx.lineDashOffset = -G.time*12;
+ctx.beginPath(); ctx.arc(x, y, r*0.92 + Math.sin(G.time + cl.ph)*3, 0, Math.PI*2); ctx.stroke(); ctx.setLineDash([]);
+}
+if(G.mode==='stage'){
+ctx.strokeStyle = G.outside ? 'rgba(194,66,127,.6)' : 'rgba(134,166,255,.22)'; ctx.lineWidth = 1.5; ctx.setLineDash([2, 10]);
+ctx.beginPath(); ctx.arc(X(0), Y(0), G.sg.R*z, 0, Math.PI*2); ctx.stroke(); ctx.setLineDash([]);
+ctx.strokeStyle = 'rgba(134,166,255,.12)'; ctx.lineWidth = 1;
+for(const s of G.stageCell.stars){
+if(s.orbit){ ctx.beginPath(); ctx.arc(X(s.bx), Y(s.by), s.orbit[0]*z, 0, Math.PI*2); ctx.stroke(); }
+else if(s.slide){ ctx.beginPath(); ctx.moveTo(X(s.bx - s.slide[0]), Y(s.by - s.slide[1])); ctx.lineTo(X(s.bx + s.slide[0]), Y(s.by + s.slide[1])); ctx.stroke(); }
+}
+}
+// shapes
+for(const s of G.shapes){
+const age = G.time - s.born, flash = Math.max(0, 1 - age/0.6);
+ctx.beginPath(); s.pts.forEach(([x,y],k) => k ? ctx.lineTo(X(x), Y(y)) : ctx.moveTo(X(x), Y(y))); ctx.closePath();
+ctx.fillStyle = `rgba(255,174,92,${0.07 + flash*0.25})`; ctx.fill();
+ctx.strokeStyle = `rgba(255,225,181,${0.35 + flash*0.5})`; ctx.lineWidth = 1.2; ctx.stroke();
+}
+// lines
+for(const f of G.fading){ ctx.strokeStyle = `rgba(255,174,92,${0.5*(1 - f.t/1.2)})`; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(X(f.a.x), Y(f.a.y)); ctx.lineTo(X(f.b.x), Y(f.b.y)); ctx.stroke(); }
+if(G.chain.length){
+const a = 0.45 + 0.55*Math.min(1, G.chainT/chainTime());
+ctx.strokeStyle = `rgba(255,225,181,${a})`; ctx.lineWidth = 2; ctx.beginPath();
+G.chain.forEach((s,k) => k ? ctx.lineTo(X(s.x), Y(s.y)) : ctx.moveTo(X(s.x), Y(s.y)));
+if(G.state==='play'){ ctx.setLineDash([4, 6]); ctx.lineTo(X(G.x), Y(G.y)); }
+ctx.stroke(); ctx.setLineDash([]);
+}
+// stars
+const chainIds = new Set(G.chain.map(s => s.id));
+for(const c of cs) for(const s of c.stars){
+const x = X(s.x), y = Y(s.y); if(x < -60 || y < -60 || x > W+60 || y > H+60) continue;
+const tw = RM ? 1 : 0.75 + 0.25*Math.sin(G.time*2.2 + s.tw);
+const r = s.s * z;
+if(s.flare && !s.lit){
+const pulse = RM ? 1 : 0.8 + 0.2*Math.sin(G.time*6 + s.tw), g = 9 * r * pulse;
+ctx.drawImage(GLOW_WARM, x - g/2, y - g/2, g, g);
+ctx.fillStyle = '#ffd36b'; ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI*2); ctx.fill();
+ctx.strokeStyle = 'rgba(255,211,107,.5)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(x, y, (LINK_R + s.s)*z*pulse, 0, Math.PI*2); ctx.stroke();
+continue;
+}
+if(s.lit){
+const g = (s.big ? 9 : 6) * r * (chainIds.has(s.id) ? 1.25 : 1);
+ctx.globalAlpha = 0.9; ctx.drawImage(GLOW_WARM, x - g/2, y - g/2, g, g); ctx.globalAlpha = 1;
+ctx.fillStyle = chainIds.has(s.id) ? '#fff3e0' : '#ffae5c'; ctx.beginPath(); ctx.arc(x, y, r*0.8, 0, Math.PI*2); ctx.fill();
+} else {
+const g = (s.big ? 8 : 5) * r;
+ctx.globalAlpha = 0.55*tw; ctx.drawImage(GLOW_COLD, x - g/2, y - g/2, g, g); ctx.globalAlpha = 1;
+ctx.strokeStyle = `rgba(178,198,255,${0.6 + 0.4*tw})`; ctx.lineWidth = s.big ? 2 : 1.4; ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI*2); ctx.stroke();
+if(s.big || G.mode==='stage'){ ctx.strokeStyle = 'rgba(134,166,255,.25)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(x, y, (LINK_R + s.s)*z, 0, Math.PI*2); ctx.stroke(); }
+}
+}
+if(G.mode==='stage'){
+ctx.textAlign = 'center'; ctx.font = '700 15px Tektur, "Arial Narrow", sans-serif';
+for(const s of G.stageCell.stars){ if(s.n==null) continue;
+const x = X(s.x), y = Y(s.y), r = (LINK_R + s.s)*z;
+if(!s.lit && s.n===G.nextN){ ctx.strokeStyle = `rgba(255,225,181,${0.45 + 0.3*Math.sin(G.time*5)})`; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI*2); ctx.stroke(); }
+ctx.fillStyle = s.lit ? '#ffae5c' : '#dfe6ff'; ctx.fillText(String(s.n), x, y - r - 6);
+}
+}
+// comets, beacon, particles
+for(const c of G.comets){
+const x = X(c.x), y = Y(c.y), sp = Math.hypot(c.vx, c.vy), tx = -c.vx/sp, ty = -c.vy/sp;
+for(let k=0;k<4;k++){ ctx.strokeStyle = `rgba(255,${120 + k*30},${110 + k*20},${0.55 - k*0.12})`; ctx.lineWidth = (9 - k*2)*z; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + tx*(40 + k*35)*z, y + ty*(40 + k*35)*z); ctx.stroke(); }
+const g = 70*z; ctx.drawImage(GLOW_RED, x - g/2, y - g/2, g, g);
+ctx.fillStyle = '#ffe3e3'; ctx.beginPath(); ctx.arc(x, y, c.r*z, 0, Math.PI*2); ctx.fill();
+if(Math.hypot(c.x - G.x, c.y - G.y) < 1250 && G.state==='play') edgeArrow(x, y, '255,107,107', '');
+}
+if(G.beacon){
+const b = G.beacon, x = X(b.star.x), y = Y(b.star.y), rr = (LINK_R + b.star.s + 8)*z;
+const g = 120*z; ctx.globalAlpha = 0.7; ctx.drawImage(GLOW_BLUE, x - g/2, y - g/2, g, g); ctx.globalAlpha = 1;
+ctx.strokeStyle = 'rgba(134,220,255,.35)'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(x, y, rr, 0, Math.PI*2); ctx.stroke();
+ctx.strokeStyle = 'rgba(134,220,255,.95)'; ctx.beginPath(); ctx.arc(x, y, rr, -Math.PI/2, -Math.PI/2 + Math.PI*2*b.left/b.total); ctx.stroke();
+edgeArrow(x, y, '134,220,255', b.left.toFixed(1) + ' s');
+}
+ctx.globalCompositeOperation = 'lighter';
+for(const q of G.parts){ const a = 1 - q.t/q.life; ctx.fillStyle = `rgba(${q.c},${a})`; const sz = (1.5 + 2.5*a)*z; ctx.fillRect(X(q.x) - sz/2, Y(q.y) - sz/2, sz, sz); }
+ctx.globalCompositeOperation = 'source-over';
+// trail and ember
+const tr = G.trail;
+for(let k=2;k<tr.length;k+=2){
+const f = k/tr.length; ctx.strokeStyle = G.chain.length >= 8 ? `rgba(${200 + 55*f|0},${225 + 30*f|0},255,${f*0.9})` : `rgba(255,${150 + 80*f|0},${80 + 100*f|0},${f*0.8})`; ctx.lineWidth = 1 + f*4*z;
+ctx.beginPath(); ctx.moveTo(X(tr[k-2]), Y(tr[k-1])); ctx.lineTo(X(tr[k]), Y(tr[k+1])); ctx.stroke();
+}
+if(G.state!=='over'){
+const ex = X(G.x), ey = Y(G.y), life = Math.max(0.15, G.fuel/100);
+const gs = (40 + 70*life) * z * (G.boosting ? 1.4 : 1); ctx.globalAlpha = G.inCloud ? 0.5 : 1; ctx.drawImage(GLOW_WHITE, ex - gs/2, ey - gs/2, gs, gs); ctx.globalAlpha = 1;
+ctx.fillStyle = '#fff6ea'; ctx.beginPath(); ctx.arc(ex, ey, (3 + 3*life)*z, 0, Math.PI*2); ctx.fill();
+}
+if(G.flash > 0){ ctx.fillStyle = `rgba(255,70,70,${G.flash*0.5})`; ctx.fillRect(0, 0, W, H); }
+// floating points
+ctx.textAlign = 'center';
+for(const f of G.fx){
+const life = f.big ? 1.8 : 1, a = 1 - f.t/life;
+ctx.globalAlpha = a; ctx.fillStyle = f.big ? '#ffe1b5' : '#ffae5c';
+ctx.font = `700 ${f.big ? 22 : 14}px Tektur, "Arial Narrow", sans-serif`;
+ctx.fillText(f.text, X(f.x), Y(f.y) - f.t*30);
+}
+ctx.globalAlpha = 1;
+}
+let shown = {};
+function hud(){
+let sc, goal, meta;
+if(G.mode==='stage'){ sc = stageProgress(); goal = goalText(G.sg); meta = `Stage <b>${G.stageIdx+1}</b> of 16<br>Time <b>${G.time.toFixed(1)}</b> s · Par <b>${G.sg.par}</b> s`; }
+else { sc = Math.floor(G.score).toLocaleString('en-US'); goal = ''; meta = `Distance <b>${Math.floor(G.dist/1000)}</b> ly<br>Best <b>${best.toLocaleString('en-US')}</b>`; }
+if(shown.sc !== sc){ $('score').textContent = sc; shown.sc = sc; }
+if(shown.goal !== goal){ $('goal').textContent = goal; shown.goal = goal; }
+if(shown.meta !== meta){ $('meta').innerHTML = meta; shown.meta = meta; }
+$('fuel').style.width = G.fuel.toFixed(1) + '%';
+const bp = String(!!G.boosting); if(shown.bp !== bp){ $('boostBtn').setAttribute('aria-pressed', bp); shown.bp = bp; }
+$('bar').classList.toggle('low', G.fuel < 22);
+const n = G.chain.length;
+if(shown.n !== n){ $('chain').innerHTML = n > 1 ? `${n >= 8 ? 'Blaze ×2 · ' : ''}Chain ×${Math.min(12,n)} <i><b id="ct"></b></i>` : ''; shown.n = n; }
+const ct = document.getElementById('ct'); if(ct) ct.style.width = (100*G.chainT/chainTime()).toFixed(0) + '%';
+}
+const ICONS = {
+steer:`<svg viewBox="0 0 28 28"><circle cx="9" cy="19" r="3" fill="#fff6ea"/><path d="M11 17 L21 7" stroke="#ffae5c" stroke-width="2" stroke-dasharray="3 3"/><path d="M17 6h5v5" fill="none" stroke="#ffae5c" stroke-width="2"/></svg>`,
+light:`<svg viewBox="0 0 28 28"><circle cx="14" cy="14" r="5" fill="none" stroke="#b2c6ff" stroke-width="2"/><circle cx="14" cy="14" r="10" fill="none" stroke="#86a6ff" stroke-opacity=".4"/></svg>`,
+chain:`<svg viewBox="0 0 28 28"><path d="M4 20 L12 9 L22 15" stroke="#ffe1b5" stroke-width="2" fill="none"/><circle cx="4" cy="20" r="2.5" fill="#ffae5c"/><circle cx="12" cy="9" r="2.5" fill="#ffae5c"/><circle cx="22" cy="15" r="2.5" fill="#ffae5c"/></svg>`,
+shape:`<svg viewBox="0 0 28 28"><path d="M5 21 L13 5 L23 19 Z" fill="rgba(255,174,92,.3)" stroke="#ffe1b5" stroke-width="2"/></svg>`,
+pull:`<svg viewBox="0 0 28 28"><circle cx="18" cy="14" r="4" fill="none" stroke="#b2c6ff" stroke-width="2"/><path d="M3 24 C10 22 11 7 18 7 C23 7 25 12 25 14" stroke="#ffae5c" stroke-width="2" fill="none"/></svg>`,
+comet:`<svg viewBox="0 0 28 28"><path d="M4 24 L17 11" stroke="#ff8a8a" stroke-width="4" stroke-linecap="round" opacity=".6"/><circle cx="19" cy="9" r="4" fill="#ffe3e3"/></svg>`,
+beacon:`<svg viewBox="0 0 28 28"><circle cx="14" cy="14" r="3" fill="#dfe6ff"/><path d="M14 4 A10 10 0 1 1 4 14" fill="none" stroke="#86dcff" stroke-width="2.5"/></svg>`,
+boost:`<svg viewBox="0 0 28 28"><path d="M3 14h12M5 9h9M5 19h9" stroke="#ffae5c" stroke-width="2" stroke-linecap="round"/><circle cx="21" cy="14" r="4" fill="#fff6ea"/></svg>`,
+flare:`<svg viewBox="0 0 28 28"><circle cx="14" cy="14" r="5" fill="#ffd36b"/><circle cx="14" cy="14" r="10" fill="none" stroke="#ffd36b" stroke-opacity=".5"/></svg>`,
+fuel:`<svg viewBox="0 0 28 28"><circle cx="14" cy="14" r="10" fill="rgba(60,18,52,.8)" stroke="#c2427f" stroke-dasharray="3 3"/></svg>`
+};
+const HOW = [
+['steer','Steer with the mouse or a finger. The ember turns toward the pointer. The arrow keys or A and D also turn it.'],
+['light','Fly close to a star to light it. Each lit star gives you fuel and points.'],
+['chain','Light stars quickly, one after another, to build a chain. Each new star in the chain gives more points and more fuel. At 8 stars your ember blazes and scores double.'],
+['shape','Fly back to an earlier star in your chain to close a shape. A shape gives a large bonus. A shape of 5 or more stars fills your fuel.'],
+['comet','Red comets cross your path. A hit costs fuel and breaks your chain. A near miss scores points.'],
+['beacon','A blue beacon marks a far star. Reach it before its timer runs out for a big bonus.'],
+['pull','Fly close past a star and its pull speeds you up. More speed gives more points per star.'],
+['boost','Hold the mouse button, Space or the Boost button to go faster. Boost burns fuel quickly.'],
+['flare','Gold flare stars drift away from you. Catch one for triple points and a big refill.'],
+['fuel','Your fuel burns all the time. It burns faster the longer you fly and the deeper you go. Dark clouds burn it very fast, and deep clouds follow you.'],
+];
+function showMenu(html){ $('panel').innerHTML = html; $('menu').hidden = false;
+const rows = $('panel').querySelectorAll('.row'), lastRow = rows[rows.length - 1];
+if(lastRow && !lastRow.querySelector('[data-switch]')) lastRow.insertAdjacentHTML('beforeend', '<button class="icon-btn" type="button" data-switch>Switch game</button>');
+window.GameSwitch?.wire(); const b = $('panel').querySelector('.go'); if(b) b.focus(); }
+function hideMenu(){ $('menu').hidden = true; }
+function titleMenu(){
+showMenu(`<h1>Ember Drift</h1><p>You are a small ember with a short life. Light stars to keep burning, and see how far into the night you can go.</p>
+<ul class="how">${HOW.map(([k,t]) => `<li>${ICONS[k]}<span>${t}</span></li>`).join('')}</ul>
+<div class="row"><button class="go" type="button" data-go="start">Endless flight</button><button class="go" type="button" data-go="stages">Puzzle stages</button></div>`);
+}
+function pauseMenu(){ showMenu(`<h2>Paused</h2><p>Your ember waits for you.</p><div class="row"><button class="go" type="button" data-go="resume">Resume</button><button class="icon-btn" type="button" data-go="quit">End run</button></div>`); }
+function endRun(){
+G.state = 'over'; breakChain();
+if(G.mode==='stage'){
+tone(-5, 0, 1.2, 0.06);
+showMenu(`<span class="eyebrow">Stage ${G.stageIdx+1} of 16</span><h2>${G.lost ? 'Lost in the dark' : 'Your ember went out'}</h2>${G.lost ? '<p>Stay inside the dashed ring. Outside it, the ember goes out after one second.</p>' : ''}<p class="goal-big">${goalText(G.sg)}</p><p>${G.sg.tip}</p>
+<div class="row"><button class="go" type="button" data-go="retry">Try again</button><button class="icon-btn" type="button" data-go="stages">All stages</button></div>`);
+return;
+}
+const sc = Math.floor(G.score), isBest = sc > best; if(isBest){ best = sc; store.set('ember-best', best); }
+const top = saveRun(sc, Math.floor(G.dist/1000));
+tone(-5, 0, 1.2, 0.06); tone(-12, 0.1, 1.4, 0.05);
+showMenu(`<h2>${isBest ? 'New best' : 'Your ember went out'}</h2>
+<div class="stats">
+<div><span>Score</span><b class="${isBest?'new':''}">${sc.toLocaleString('en-US')}</b></div>
+<div><span>Best</span><b>${best.toLocaleString('en-US')}</b></div>
+<div><span>Distance</span><b>${Math.floor(G.dist/1000)} ly</b></div>
+<div><span>Deepest region</span><b style="font-size:18px">${REGIONS[G.region][1]}</b></div>
+<div><span>Stars lit</span><b>${G.lit}</b></div>
+<div><span>Shapes closed</span><b>${G.shapesMade}</b></div>
+<div><span>Longest chain</span><b>${G.longest}</b></div>
+<div><span>Beacons reached</span><b>${G.beacons}</b></div>
+<div><span>Close calls</span><b>${G.closeCalls}</b></div>
+<div><span>Comet hits</span><b>${G.hits}</b></div>
+</div>
+<div class="runs"><span>Your top runs</span><ol>${top.map(r => `<li${r.sc===sc ? ' class="me"' : ''}><b>${r.sc.toLocaleString('en-US')}</b><span>${r.ly} ly · ${r.d}</span></li>`).join('')}</ol></div>
+<div class="row"><button class="go" type="button" data-go="start">Fly again</button><button class="icon-btn" type="button" data-go="help">How to play</button></div>`);
+}
+function setPointer(e){ const r = cv.getBoundingClientRect(); input.px = e.clientX - r.left; input.py = e.clientY - r.top; }
+cv.addEventListener('pointermove', e => { if(e.pointerType==='mouse'){ input.mouse = true; input.active = true; setPointer(e); } else if(e.buttons){ input.active = true; setPointer(e); } });
+cv.addEventListener('pointerdown', e => { input.active = true; if(e.pointerType==='mouse') input.boost = true; setPointer(e); ensureAudio(); try { cv.setPointerCapture(e.pointerId); } catch(err){} });
+cv.addEventListener('pointerup', e => { if(e.pointerType!=='mouse') input.active = false; else input.boost = false; });
+const bb = $('boostBtn');
+bb.addEventListener('pointerdown', e => { e.preventDefault(); input.boost = true; try { bb.setPointerCapture(e.pointerId); } catch(err){} });
+['pointerup','pointercancel','lostpointercapture'].forEach(t => bb.addEventListener(t, () => { input.boost = false; }));
+addEventListener('blur', () => { input.boost = false; });
+cv.addEventListener('pointercancel', () => { input.active = false; });
+addEventListener('keydown', e => {
+if(window.GameSwitch?.isOpen) return;
+if(e.key===' ' && $('menu').hidden){ input.boost = true; e.preventDefault(); }
+if(e.key==='ArrowLeft' || e.key==='a' || e.key==='A'){ input.left = true; e.preventDefault(); }
+if(e.key==='ArrowRight' || e.key==='d' || e.key==='D'){ input.right = true; e.preventDefault(); }
+if((e.key==='r' || e.key==='R') && G && G.mode==='stage' && G.state!=='pause'){ startStage(G.stageIdx); return; }
+if((e.key==='Escape' || e.key==='p' || e.key==='P') && G){ if(G.state==='play') pause(); else if(G.state==='pause') resume(); }
+if(e.key==='Enter' && !$('menu').hidden && document.activeElement?.dataset?.go == null){ const b = $('panel').querySelector('.go'); if(b) b.click(); }
+});
+addEventListener('keyup', e => {
+if(e.key===' ') input.boost = false;
+if(e.key==='ArrowLeft' || e.key==='a' || e.key==='A') input.left = false;
+if(e.key==='ArrowRight' || e.key==='d' || e.key==='D') input.right = false;
+});
+document.addEventListener('visibilitychange', () => { if(document.hidden && G && G.state==='play') pause(); });
+function pause(){ G.state = 'pause'; pauseMenu(); }
+function resume(){ G.state = 'play'; hideMenu(); last = performance.now(); }
+$('hudSwitch').addEventListener('click', () => { if(G && G.state==='play') pause(); });
+$('pauseBtn').addEventListener('click', () => { if(G.state==='play') pause(); else if(G.state==='pause') resume(); });
+function syncSound(){ $('soundBtn').textContent = soundOn ? 'Sound on' : 'Sound off'; $('soundBtn').setAttribute('aria-pressed', String(soundOn)); }
+$('soundBtn').addEventListener('click', () => { soundOn = !soundOn; store.set('ember-sound', soundOn ? '1' : '0'); ensureAudio(); syncSound(); });
+syncSound();
+$('panel').addEventListener('click', e => {
+const b = e.target.closest('[data-go]'); if(!b) return; ensureAudio();
+const go = b.dataset.go;
+if(go==='start') newRun();
+else if(go==='resume') resume();
+else if(go==='quit'){ if(G.mode==='stage'){ G.state = 'over'; stagesMenu(); } else { G.state = 'play'; G.fuel = 0; endRun(); } }
+else if(go==='stages') stagesMenu();
+else if(go==='stage') startStage(+b.dataset.k);
+else if(go==='go'){ G.state = 'play'; hideMenu(); last = performance.now(); }
+else if(go==='retry') startStage(G.stageIdx);
+else if(go==='next') startStage(G.stageIdx + 1);
+else if(go==='help') titleMenu();
+});
+let last = performance.now();
+function frame(now){
+const dt = Math.min(1/30, (now - last)/1000); last = now;
+if(G.state==='play') update(dt);
+else if(G.state==='demo') demo(dt);
+draw(); $('hud').hidden = G.state==='demo'; if(G.state!=='demo') hud();
+requestAnimationFrame(frame);
+}
+function demo(dt){
+const t = G.time; input.active = true; input.left = input.right = false;
+const sx = (G.x - G.cam.x)*G.cam.z + W/2, sy = (G.y - G.cam.y)*G.cam.z + H/2;
+let target = null, bd = 1e9;
+for(const c of nearCells(G.x, G.y, 500)) for(const s of c.stars){ if(s.lit) continue; const d = Math.hypot(s.x - G.x, s.y - G.y); const ahead = Math.cos(Math.atan2(s.y - G.y, s.x - G.x) - G.ang); if(ahead > 0.2 && d < bd){ bd = d; target = s; } }
+if(target){ input.px = (target.x - G.cam.x)*G.cam.z + W/2; input.py = (target.y - G.cam.y)*G.cam.z + H/2; }
+else { input.px = sx + Math.cos(G.ang + Math.sin(t)*0.6)*100; input.py = sy + Math.sin(G.ang + Math.sin(t)*0.6)*100; }
+update(dt); G.fuel = 80; G.score = 0; G.state = 'demo';
+}
+function startDemo(){
+cells = new Map();
+G = Object.assign(baseState(), {state:'demo', seed:20261105, ang:-0.4, fuel:80, region:0});
+}
+startDemo(); titleMenu();
+requestAnimationFrame(frame);
+})();
+</script>
+<script src="/arcade/analytics.js" data-game="ember-drift"></script>
+</body>
+</html>

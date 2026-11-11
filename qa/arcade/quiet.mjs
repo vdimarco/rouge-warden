@@ -409,6 +409,7 @@ const PAGES = [
   // Frostwing makes its context on the first tap (here QUICK MATCH, enabled once the models load) and starts its title theme, an <audio> element
   // routed through that context; a hidden page pauses the match, and the game pauses its music and suspends its own context
   { id: "frostwing", path: "/frostwing/", boot: () => !!window.__fw && !document.querySelector("#title").classList.contains("hidden") && !document.querySelector("#playBtn").disabled, start: click("#playBtn"), sound: "ctx", music: true },
+  { id: "ember-drift", path: "/ember-drift/", boot: () => !!document.querySelector('#panel [data-go="start"]'), start: click('#panel [data-go="start"]'), sound: "ctx" },
   { id: "lake-brawl", path: "/lake-brawl/", boot: () => !!window.dbg, start: (t) => t.key("Enter"), sound: "ctx" },
   // In Full Swing does not load quiet.js. Its own code stops the sound on visibilitychange when it is played flat on a phone (not on pagehide, not in a headset).
   { id: "vr", path: "/vr/", start: click("#playFlat"), sound: "ctx", slow: true, own: true, only: ["emulate", "real"] },
