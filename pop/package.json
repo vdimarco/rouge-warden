@@ -1,0 +1,16 @@
+{
+  "name": "pay-on-proof",
+  "private": true,
+  "type": "module",
+  "description": "Pay on Proof: an escrow on NEAR that pays agents when their delivery passes an on-chain check",
+  "scripts": {
+    "test": "cd contract && cargo test",
+    "build": "cd contract && cargo near build non-reproducible-wasm",
+    "agents:test": "node test/agents.test.mjs"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.32.2",
+    "near-api-js": "7.5.1",
+    "zod": "^3.25.0"
+  }
+}
