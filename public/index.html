@@ -1026,6 +1026,8 @@ function pick(i, quiet) {
   };
   stage.addEventListener("pointerup", end);
   stage.addEventListener("pointercancel", end);
+  // a mouse swipe that starts on a machine's screen picture would drag the picture, and the browser would cancel the swipe
+  stage.addEventListener("dragstart", (e) => e.preventDefault());
   // a swipe is not a tap: keep it from pressing the button under your finger
   stage.addEventListener("click", (e) => { if (stage.dataset.swiped) { e.stopPropagation(); e.preventDefault(); delete stage.dataset.swiped; } }, true);
 }

@@ -255,10 +255,16 @@ async function open(browser, { width, height, store = {}, mobile = width < 800, 
 // the row slides for about half a second after a pick: wait until every move on the page has ended and two frames have been drawn
 // (a slow computer draws few frames, so a position read in between would be old)
 async function settle(page) {
-  await page.evaluate(async () => {
+  await within(page.evaluate(async () => {
     await Promise.all(document.getAnimations().filter((a) => isFinite(a.effect.getComputedTiming().endTime)).map((a) => a.finished.catch(() => {})));
     await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
-  });
+  }), 15000, "the page did not settle: an animation did not end, or no frame was drawn");
+}
+// a step that can wait forever (a mouse move, a page script) fails with this message instead. Mouse moves and page scripts have no
+// Playwright time limit of their own.
+function within(step, ms, what) {
+  let timer;
+  return Promise.race([step, new Promise((_, no) => { timer = setTimeout(() => no(new Error(`${what} (stuck for ${ms / 1000} s)`)), ms); })]).finally(() => clearTimeout(timer));
 }
 // the row shows the hall (one cabinet per group) or one group's machines; a selection is counted among the cabinets on show
 const SHOWN = ".cab:not([hidden])";
@@ -270,6 +276,8 @@ if (chromium) {
   let browser = await chromium.launch({ args: ARGS, executablePath: process.env.CHROMIUM_PATH || undefined });
   // a fresh browser for each part: a headless browser with a software GPU slows down over a long run and can stop answering mouse moves
   const relaunch = async () => { await browser.close().catch(() => {}); browser = await chromium.launch({ args: ARGS, executablePath: process.env.CHROMIUM_PATH || undefined }); };
+  // a stuck step outside the layout part (see within) ends the browser checks with its message, and the summary still prints
+  try {
 
   /* ----- the Montréal cabinet: collection, artwork, pointer and keyboard launch ----- */
   for (const vp of PARTS.includes("gta") ? [{ width: 390, height: 844 }, { width: 1280, height: 720 }] : []) {
@@ -398,11 +406,14 @@ if (chromium) {
     // Each swipe-heavy size gets a fresh software GPU, as do the larger test parts.
     await relaunch();
     const { ctx, page, errors } = await open(browser, { width, height });
+    // a step that is stuck fails this size with a message, and the next size still runs
+    let tag = `${width}x${height}`;
+    try {
     // the hall first, then the group with the most machines
     const biggest = await page.$$eval(".cab[data-opens]", (cs) => cs.map((c) => [c.dataset.opens, Number(c.querySelector(".marquee small").textContent.match(/\d+/)[0])]).sort((a, b) => b[1] - a[1])[0][0]);
     for (const where of ["hall", biggest]) {
     if (where !== "hall") await enter(page, where);
-    const tag = `${width}x${height} ${where}`;
+    tag = `${width}x${height} ${where}`;
     const n = await page.$$eval(SHOWN, (cs) => cs.length);
     // the hall and each group open on their first cabinet
     check(await sel(page) === 0, `${tag}: opens on the first cabinet`);
@@ -430,14 +441,21 @@ if (chromium) {
       await page.keyboard.press("ArrowRight"); await settle(page);
       check(await sel(page) === 0, `${tag}: the right key goes back to the first machine`);
       const y = Math.round(box.stage.t + (box.stage.b - box.stage.t) * 0.25);
+      // A swipe may start on a machine's screen picture. The browser's own drag of that picture would cancel the swipe, and it
+      // left Playwright's mouse move waiting forever: count each drag the page lets start.
+      await page.evaluate(() => { window.__drags = 0; document.addEventListener("dragstart", (e) => { if (!e.defaultPrevented) window.__drags++; }); });
       for (let k = 0; k < n + 1; k++) {
-        await page.mouse.move(width * 0.85, y);
-        await page.mouse.down();
-        await page.mouse.move(width * 0.15, y, { steps: 6 });
-        await page.mouse.up();
+        await within((async () => {
+          await page.mouse.move(width * 0.85, y);
+          await page.mouse.down();
+          await page.mouse.move(width * 0.15, y, { steps: 6 });
+          await page.mouse.up();
+        })(), 15000, `swipe ${k + 1} of ${n + 1} did not end`);
         await page.waitForTimeout(60);
       }
       check(await sel(page) === n - 1, `${tag}: ${n + 1} swipes left end on the last machine, and do not go past it (${await sel(page)})`);
+      const drags = await page.evaluate(() => window.__drags);
+      check(drags === 0, `${tag}: a swipe does not drag a machine's picture (${drags} drags started)`);
     }
     // the machine list under the machines (inside a group), and the scroll wheel
     if (where !== "hall") {
@@ -448,14 +466,15 @@ if (chromium) {
       check(first === 0 && await sel(page) === n - 1, `${tag}: the machine list goes to the first machine and to the last`);
     }
     await page.keyboard.press("ArrowRight"); await settle(page);
-    await page.mouse.move(width / 2, box.stage.t + 40); await settle(page);
+    await within(page.mouse.move(width / 2, box.stage.t + 40), 15000, "the mouse move over the row did not end"); await settle(page);
     // pointing at a machine may choose it (where the row does not slide): count the flick from there
     const before = await sel(page);
-    await page.mouse.wheel(0, 120); await page.waitForTimeout(400); await settle(page);
+    await within(page.mouse.wheel(0, 120), 15000, "the scroll wheel flick did not end"); await page.waitForTimeout(400); await settle(page);
     check(await sel(page) === (before + 1) % n, `${tag}: one flick of the scroll wheel moves one machine`);
     }
     check(errors.length === 0, `${width}x${height}: no page errors${errors.length ? ":\n    " + errors.join("\n    ") : ""}`);
-    await ctx.close();
+    } catch (e) { check(false, `${tag}: ${e.message}`); }
+    await within(ctx.close(), 15000, "the page did not close").catch(() => {});
   }
 
   await relaunch();
@@ -855,7 +874,8 @@ if (chromium) {
       await ctx.close();
     }
   }
-  await browser.close();
+  } catch (e) { check(false, `the browser checks stopped: ${e.message}`); }
+  await within(browser.close(), 15000, "the browser did not close").catch(() => {});
 }
 
 function finish() {
