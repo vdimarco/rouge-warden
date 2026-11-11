@@ -16,7 +16,17 @@ const PARTS = (process.env.PARTS || "gta,walk,layout,marquee,switcher,saves,firs
 const read = (p) => fs.readFileSync(path.join(ROOT, p), "utf8");
 const fails = [];
 setTimeout(() => { console.log("  FAIL the run did not finish in 30 minutes"); process.exit(1); }, 30 * 60 * 1000).unref();
-const check = (ok, msg) => { console.log((ok ? "  ok   " : "  FAIL ") + msg); if (!ok) fails.push(msg); return ok; };
+const check = (ok, msg) => { console.log((ok ? "  ok   " : "  FAIL ") + msg); if (!ok) fails.push(msg); lastCheck = Date.now(); lastMsg = msg; doing = ""; return ok; };
+// The watchdog: when no check ends for STALL_MS (3 minutes), the run stops with the step it was in and prints its summary. A step
+// with no time limit of its own (a page script, a browser that does not close) cannot hang the run in silence. step() names that step.
+const STALL_MS = Number(process.env.STALL_MS) || 3 * 60 * 1000;
+let lastCheck = Date.now(), lastMsg = "", doing = "";
+const step = (what) => { doing = what; lastCheck = Date.now(); };
+setInterval(() => {
+  if (Date.now() - lastCheck < STALL_MS) return;
+  check(false, `no check ended for ${Math.round(STALL_MS / 1000)} s. Stuck${doing ? " at: " + doing + "," : ""} after the check "${lastMsg || "(none yet)"}"`);
+  finish();
+}, 5000).unref();
 
 /* ---------------- what is a game ---------------- */
 // Folders of public/ that are not games, each with the reason.
@@ -287,7 +297,7 @@ async function enter(page, id) { await page.evaluate((id) => { location.hash = i
 if (chromium) {
   let browser = await chromium.launch({ args: ARGS, executablePath: process.env.CHROMIUM_PATH || undefined });
   // a fresh browser for each part: a headless browser with a software GPU slows down over a long run and can stop answering mouse moves
-  const relaunch = async () => { await browser.close().catch(() => {}); browser = await chromium.launch({ args: ARGS, executablePath: process.env.CHROMIUM_PATH || undefined }); };
+  const relaunch = async () => { step("closing the browser"); await within(browser.close(), 15000, "").catch(() => {}); step("starting a browser"); browser = await chromium.launch({ args: ARGS, executablePath: process.env.CHROMIUM_PATH || undefined }); };
   // a stuck step outside the layout part (see within) ends the browser checks with its message, and the summary still prints
   try {
 
@@ -455,8 +465,10 @@ if (chromium) {
       const y = Math.round(box.stage.t + (box.stage.b - box.stage.t) * 0.25);
       // A swipe may start on a machine's screen picture. The browser's own drag of that picture would cancel the swipe, and it
       // left Playwright's mouse move waiting forever: count each drag the page lets start.
-      await page.evaluate(() => { window.__drags = 0; document.addEventListener("dragstart", (e) => { if (!e.defaultPrevented) window.__drags++; }); });
+      step(`${tag}: counting picture drags in the page`);
+      await within(page.evaluate(() => { window.__drags = 0; document.addEventListener("dragstart", (e) => { if (!e.defaultPrevented) window.__drags++; }); }), 15000, `${tag}: the page did not answer`);
       for (let k = 0; k < n + 1; k++) {
+        step(`${tag}: swipe ${k + 1} of ${n + 1}`);
         await within((async () => {
           await page.mouse.move(width * 0.85, y);
           await page.mouse.down();
