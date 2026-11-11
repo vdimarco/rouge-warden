@@ -14,7 +14,7 @@ Run the script again after the Corridor changes. Do not edit `public/corridor/in
 
 ## Cabinets added in this repository
 
-Lake Brawl and Eleven Wells joined the arcade after the import. Their cabinets were added directly to `public/corridor/index.html`, because the source file is in another repository (`afterglow-corridor`). The source needs the same two entries before the next import. An import without them removes both cabinets, and `qa/arcade/machines.mjs` then fails.
+Lake Brawl, Eleven Wells and Warden's Ledger joined the arcade after the import. Their cabinets were added directly to `public/corridor/index.html`, because the source file is in another repository (`afterglow-corridor`). The source needs the same three entries before the next import. An import without them removes the cabinets, and `qa/arcade/machines.mjs` then fails.
 
 Each cabinet is these edits to the page:
 
@@ -23,12 +23,13 @@ Each cabinet is these edits to the page:
 - the written counts: `--n`, the aria label, the role line, the index, the counter, and the count in words in the two About texts
 - three light slots in the tunnel shader: `uPP`, `uPC`, the loop bound, `lightPP`, `lightPC`, and the two offsets (`n` and `2n`)
 
-Lake Brawl is cabinet 08, the last of Cottage. Eleven Wells is cabinet 40, the last of The Lab. Title, route and subtitle come from `public/arcade/switch.js` and the hall cabinet's marquee. The dot color is the hall cabinet's `--c1` for Lake Brawl (`#1F5FD0`) and `--c2` for Eleven Wells (`#FFB547`).
+Lake Brawl is cabinet 08, the last of Cottage. Eleven Wells is cabinet 40 and Warden's Ledger is cabinet 41, the last of The Lab. Title, route and subtitle come from `public/arcade/switch.js` and the hall cabinet's marquee. The dot color is the hall cabinet's `--c1` for Lake Brawl (`#1F5FD0`) and `--c2` for Eleven Wells (`#FFB547`) and Warden's Ledger (`#F3CF7A`).
 
 The screens:
 
 - Lake Brawl: `public/arcade/key/lake-brawl.webp` (480 by 270), cropped to the screen's shape around the two fighters and scaled to 448 by 370.
 - Eleven Wells: the hall art (`public/arcade/eleven-wells.webp`, 480 by 207) is too wide to crop to this shape. The screen is drawn from the game's own page: its title in the middle, with the eleven game-card pictures above and below. The cabinet marquee shows the middle band of the art, so the title is there.
+- Warden's Ledger: the hall art (`public/arcade/ledger.webp`, 480 by 360), with 22 pixels cut from each side to make the screen's shape, scaled to 448 by 370. It shows a checked map delivery and its payment quote.
 
 No rendering technique is added. The art goes through the page's existing texture path.
 
@@ -59,9 +60,9 @@ The hall is built once from its game list, so the Order control stores the choic
 
 ## Known limits
 
-- The Corridor has 41 cabinets. Frostwing's cabinet (18, the last of Action) is part of `openspec/changes/add-frostwing`.
+- The Corridor has 42 cabinets. Frostwing's cabinet (18, the last of Action) is part of `openspec/changes/add-frostwing`.
 - The Corridor file is 1.4 MB before compression, because its art is inline.
-- Each cabinet uses six uniform vectors in the tunnel shader. At 41 cabinets the shader declares 260. A device that allows 256 or fewer shows the flat list. A third of the light slots (`n` to `2n`) are always dark. Without them the shader declares 178, so the source can drop them.
+- Each cabinet uses six uniform vectors in the tunnel shader. At 42 cabinets the shader declares 266. A device that allows 256 or fewer shows the flat list. A third of the light slots (`n` to `2n`) are always dark. Without them the shader declares 182, so the source can drop them.
 - On a phone, the picture of an open cabinet can sit partly behind the next section sign. This applies to the last cabinet of each group, and it was so before Lake Brawl and Eleven Wells took those places.
 - The Corridor does not rebuild its scene after a lost WebGL context.
 - A game opened from the Corridor does not add to the Plays count that All Games keeps on the device.

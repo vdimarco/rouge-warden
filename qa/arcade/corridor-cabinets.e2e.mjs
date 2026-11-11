@@ -1,6 +1,6 @@
-// Checks the Corridor cabinets of Lake Brawl and Eleven Wells against openspec/changes/arcade-corridor-default.
+// Checks the Corridor cabinets of Lake Brawl, Eleven Wells and Warden's Ledger against openspec/changes/arcade-corridor-default.
 // Serve public/ first: python3 -m http.server 8765 --directory public
-// Run: NODE_PATH=qa/browser/node_modules node qa/arcade/corridor-cabinets.e2e.mjs   (SHOTS=/tmp/dir saves screenshots; SIZES=390 runs one width; CHROME or CHROMIUM_PATH picks the browser)
+// Run: NODE_PATH=qa/browser/node_modules node qa/arcade/corridor-cabinets.e2e.mjs   (SHOTS=/tmp/dir saves screenshots; SIZES=390 runs one width; ONLY=ledger runs one game; CHROME or CHROMIUM_PATH picks the browser)
 import { createRequire } from "module";
 import path from "path";
 const { chromium } = createRequire(import.meta.url)("playwright");
@@ -16,7 +16,8 @@ const SIZES = [
 const GAMES = [
   { id: "lake-brawl", title: "Lake Brawl", kind: "Cottage", after: "Table Tennis", medium: "WHOSE LAKE IS IT ANYWAY?", url: "/lake-brawl/" },
   { id: "eleven-wells", title: "Eleven Wells", kind: "THE LAB", after: "Orbital Gardener", medium: "FALLING BLOCKS × ELEVEN GAMES", url: "/eleven-wells/" },
-];
+  { id: "ledger", title: "Warden's Ledger", kind: "THE LAB", after: "Eleven Wells", medium: "HIRE AGENTS · PAY IN NEAR", url: "/ledger/" },
+].filter((g) => !process.env.ONLY || process.env.ONLY.split(",").includes(g.id)); // ONLY=ledger runs one game
 let failures = 0;
 const check = (ok, what) => { console.log((ok ? "  ok   " : "  FAIL ") + what); if (!ok) failures++; return ok; };
 
@@ -71,7 +72,7 @@ for (const size of SIZES) {
   await enter();
   check(await page.evaluate(() => !!document.querySelector(".cr-stage canvas")), "the corridor draws on a canvas");
 
-  // the index lists both games, each after the last cabinet of its group
+  // the index lists each game, right after the cabinet it follows in its group
   const rows = await page.evaluate(() => [...document.querySelectorAll("#list button")].map((b) => ({
     n: b.querySelector(".cr-list-n").textContent, title: b.querySelector(".cr-list-b").textContent, kind: b.querySelector(".cr-list-t").textContent,
   })));
@@ -93,7 +94,7 @@ for (const size of SIZES) {
     const r = b.getBoundingClientRect();
     return r.width > 0 && r.height > 0 && r.left >= 0 && r.right <= innerWidth + 1;
   }), GAMES.map((g) => g.title));
-  check(shown.every(Boolean), "both rows are on the open index, inside the screen's width");
+  check(shown.every(Boolean), "each game's row is on the open index, inside the screen's width");
   if (SHOTS) await page.screenshot({ path: path.join(SHOTS, `${size.name}-index.png`) });
   await page.click("#index-btn");
   await page.waitForTimeout(400);

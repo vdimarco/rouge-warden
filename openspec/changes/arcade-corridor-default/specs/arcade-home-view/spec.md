@@ -56,21 +56,25 @@ The Corridor SHALL offer an Order control at the end of its category strip with 
 - **WHEN** that visitor opens the Corridor again
 - **THEN** Updated is still selected and the order is the same
 
-### Requirement: Lake Brawl and Eleven Wells have Corridor cabinets
-The Corridor SHALL have a cabinet for Lake Brawl as the last cabinet of Cottage and a cabinet for Eleven Wells as the last cabinet of The Lab. Each cabinet SHALL show the game's title, its screen art and its marquee subtitle, and its Insert coin · Play control SHALL open the game's route on the same site. The cabinets SHALL be numbered in walk order with no gap, and the Index count, the counter and the hall's spoken label SHALL state the number of cabinets. The Newest and Updated orders SHALL place both games by their dates in `public/arcade/game-dates.json`.
+### Requirement: Lake Brawl, Eleven Wells and Warden's Ledger have Corridor cabinets
+The Corridor SHALL have a cabinet for Lake Brawl as the last cabinet of Cottage, a cabinet for Eleven Wells in The Lab after Orbital Gardener, and a cabinet for Warden's Ledger as the last cabinet of The Lab. Each cabinet SHALL show the game's title, its screen art and its marquee subtitle, and its Insert coin · Play control SHALL open the game's route on the same site. The cabinets SHALL be numbered in walk order with no gap, and the Index count, the counter and the hall's spoken label SHALL state the number of cabinets. The Newest and Updated orders SHALL place the three games by their dates in `public/arcade/game-dates.json`.
 
-#### Scenario: The index lists both games
+#### Scenario: The index lists the three games
 - **WHEN** a visitor opens Index at 1280×800 or 390×844
-- **THEN** Lake Brawl is listed under Cottage after Table Tennis, Eleven Wells is listed under The Lab after Orbital Gardener, and both rows are inside the screen's width
+- **THEN** Lake Brawl is listed under Cottage after Table Tennis, Eleven Wells is listed under The Lab after Orbital Gardener, Warden's Ledger is listed under The Lab after Eleven Wells, and the three rows are inside the screen's width
 
 #### Scenario: The walk reaches Lake Brawl
 - **WHEN** a visitor selects Next cabinet seven times from the entrance
-- **THEN** the caption reads Lake Brawl and the counter reads 08 of 41
+- **THEN** the caption reads Lake Brawl and the counter reads 08 of 42
 
 #### Scenario: The walk reaches Eleven Wells
+- **WHEN** a visitor presses End and then selects Previous cabinet twice
+- **THEN** the caption reads Eleven Wells and the counter reads 40 of 42
+
+#### Scenario: The walk reaches Warden's Ledger
 - **WHEN** a visitor presses End and then selects Previous cabinet once
-- **THEN** the caption reads Eleven Wells and the counter reads 40 of 41
+- **THEN** the caption reads Warden's Ledger and the counter reads 41 of 42
 
 #### Scenario: Opening a cabinet and playing
-- **WHEN** a visitor presses Enter at either cabinet, at 1280×800 or 390×844
-- **THEN** the panel shows that game's title, subtitle and art, Insert coin · Play is on screen and at least 44px tall, and selecting it opens `/lake-brawl/` or `/eleven-wells/`
+- **WHEN** a visitor presses Enter at one of the three cabinets, at 1280×800 or 390×844
+- **THEN** the panel shows that game's title, subtitle and art, Insert coin · Play is on screen and at least 44px tall, and selecting it opens `/lake-brawl/`, `/eleven-wells/` or `/ledger/`
