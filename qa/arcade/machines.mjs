@@ -801,7 +801,10 @@ if (chromium) {
       const f = path.join(PUB, "crimson/lib/addons", r.request().url().split("/examples/jsm/")[1].split("?")[0]);
       if (fs.existsSync(f)) r.fulfill({ contentType: "application/javascript", body: fs.readFileSync(f) }); else r.continue();
     });
-    await page.goto(BASE + "crimson/", { waitUntil: "domcontentloaded" });
+    // ?nomusic leaves out the SoundCloud player of the background song (the credits music is a file of the game's own).
+    // That player is a page from w.soundcloud.com, and its scripts can throw errors (an aborted request, createPattern on a
+    // canvas of size 0) that this check would count as errors of the game, as in qa/crimson/playthrough.mjs
+    await page.goto(BASE + "crimson/?nomusic", { waitUntil: "domcontentloaded" });
     await page.waitForTimeout(2500);
     const res = await within(page.evaluate(async () => {
       const m = await import("/crimson/js/credits.js");
