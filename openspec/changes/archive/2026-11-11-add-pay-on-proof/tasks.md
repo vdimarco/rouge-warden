@@ -3,4 +3,4 @@
 - [x] Warden agent with a function-call key and a spend policy; two reference sellers; seller MCP server
 - [x] Mainnet: deploy, add the Warden key, delete the full-access key, run real paid jobs
 - [x] On chain view in Warden's Ledger with receipts and playable passed maps
-- [ ] README, demo script, checks, archive
+- [x] README, demo video, checks, archive (the OpenSpec CLI was not installed; a script checked the spec structure)
