@@ -109,6 +109,43 @@ const quietBots = (m) => { for (const s of m.ships) if (!s.human) { s.alive = fa
   check(ev.some((e) => e.type === "hit" && e.ship === foe.id && e.kind === "charge"), "the homing bolts hit the locked ship");
 }
 
+// Scenario: Drag and tap on a phone (the quick homing shot)
+{
+  const setup = () => {
+    const m = S.createMatch({ seed: 12, pilot: "juno" });
+    quietBots(m);
+    const me = m.player, f = S.forward(me.yaw, me.pitch), right = { x: Math.cos(me.yaw), z: -Math.sin(me.yaw) };
+    const [a, b] = m.ships.filter((s) => s.team === 1);
+    for (const [o, side] of [[a, -1], [b, 1]]) { Object.assign(o, { alive: true, respawn: 0, invuln: 0, human: true, x: me.x + f.x * 300 + right.x * side * 60, y: me.y, z: me.z + f.z * 300 + right.z * side * 60, yaw: me.yaw }); }
+    return { m, me, a, b };
+  };
+  {
+    const { m, me, b } = setup();
+    me.input.quick = true; me.input.quickTarget = b.id;
+    S.step(m, 1 / 60);
+    const shots = m.bolts.filter((x) => x.kind === "charge" && x.owner === me.id);
+    check(shots.length === 1 && shots[0].target === b.id && me.input.quick === false, "a quick shot fires one homing bolt at the named rival, at once");
+    check(Math.abs(me.quickCd - (S.PILOTS.juno.lock + 1)) < 0.02, `it then recharges for the pilot's lock time plus one second (${me.quickCd.toFixed(2)} s)`);
+    me.input.quick = true; me.input.quickTarget = b.id;
+    S.step(m, 1 / 60);
+    check(m.bolts.filter((x) => x.kind === "charge" && x.owner === me.id).length === 1, "a second request during the recharge fires nothing");
+    const ev = run(m, 1.5);
+    check(ev.some((e) => e.type === "hit" && e.ship === b.id && e.kind === "charge"), "the quick shot homes onto the named rival and hits it");
+    run(m, 1);
+    me.input.quick = true; me.input.quickTarget = 0;
+    S.step(m, 1 / 60);
+    check(m.bolts.some((x) => x.kind === "charge" && x.owner === me.id && x.target), "after the recharge, a quick shot with no named rival picks the one nearest the nose");
+  }
+  {
+    const { m, me, a } = setup();
+    a.x = me.x - (a.x - me.x); a.z = me.z - (a.z - me.z); // behind the player
+    me.input.quick = true; me.input.quickTarget = a.id;
+    S.step(m, 1 / 60);
+    const shots = m.bolts.filter((x) => x.kind === "charge" && x.owner === me.id);
+    check(shots.length === 1 && shots[0].target !== a.id, "a named rival behind the ship is not locked; the shot goes to a rival ahead");
+  }
+}
+
 // Scenario: The storm wall
 {
   const m = S.createMatch({ seed: 8, pilot: "juno" });

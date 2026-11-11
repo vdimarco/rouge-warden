@@ -97,6 +97,7 @@ button { font: inherit; color: inherit; }
 #mouseStick::after { content: ""; position: absolute; left: 50%; top: 50%; width: 4px; height: 4px; margin: -2px; border-radius: 50%; background: #fff; }
 #mouseHint { position: absolute; left: 50%; top: 62%; transform: translateX(-50%); color: #fff; font-size: 0.95em; letter-spacing: 0.08em; text-shadow: 0 0 8px #000; animation: blink 1.2s steps(2) infinite; }
 body.touch #mouseHint, body.touch #mouseSeg { display: none !important; }
+#touchHint { position: absolute; left: 50%; top: 60%; transform: translateX(-50%); width: max-content; max-width: calc(100vw - 24px); text-align: center; color: #fff; font-size: 0.9em; line-height: 1.5; letter-spacing: 0.06em; text-shadow: 0 0 8px #000; }
 #hurt { position: absolute; inset: 0; background: radial-gradient(ellipse at center, transparent 55%, rgba(255, 40, 30, 0.55)); opacity: 0; transition: opacity 0.15s; }
 #hitmark { position: absolute; left: 50%; top: 50%; width: 26px; height: 26px; transform: translate(-50%, -50%) rotate(45deg); opacity: 0; }
 #hitmark::before, #hitmark::after { content: ""; position: absolute; background: #fff; }
@@ -192,14 +193,13 @@ h2 { margin: 0; font-size: clamp(20px, 3.4vw, 36px); text-shadow: 0 0 14px var(-
 /* ---------------- touch controls ---------------- */
 #pad { display: none; position: fixed; inset: 0; pointer-events: none; --b: clamp(50px, 13vmin, 78px); }
 body.touch.playing #pad { display: block; }
-#stickZone { position: absolute; left: 0; top: 18%; bottom: 0; width: 46%; pointer-events: auto; touch-action: none; }
+#stickZone { position: absolute; inset: 0; pointer-events: auto; touch-action: none; }
 #stick { position: absolute; width: calc(var(--b) * 2); height: calc(var(--b) * 2); border-radius: 50%; border: 3px solid rgba(255, 255, 255, 0.45); background: rgba(10, 30, 60, 0.3); transform: translate(-50%, -50%); display: none; }
 #stick i { position: absolute; left: 50%; top: 50%; width: var(--b); height: var(--b); border-radius: 50%; background: rgba(160, 220, 255, 0.55); transform: translate(-50%, -50%); }
-#btns { position: absolute; right: calc(10px + var(--safe-r)); bottom: calc(10px + var(--safe-b) + clamp(110px, 17vw, 220px) + 8px); display: grid; grid-template-columns: var(--b) var(--b) calc(var(--b) * 1.25); gap: 8px; pointer-events: auto; justify-items: center; }
+#btns { position: absolute; right: calc(10px + var(--safe-r)); bottom: calc(10px + var(--safe-b) + clamp(110px, 17vw, 220px) + 8px); display: grid; grid-template-columns: var(--b) var(--b); gap: 8px; pointer-events: auto; justify-items: center; }
 #btns button { width: var(--b); height: var(--b); border-radius: 50%; border: 3px solid rgba(255, 255, 255, 0.7); background: rgba(10, 30, 60, 0.5); font: 700 calc(var(--b) * 0.19)/1 "Bungee", Impact, sans-serif; letter-spacing: 0.02em; padding: 0; touch-action: none; -webkit-tap-highlight-color: transparent; }
 #btns button.on { background: rgba(255, 210, 63, 0.85); color: #1a1a2e; }
-#btns #tFire { border-color: var(--green); width: calc(var(--b) * 1.25); height: calc(var(--b) * 1.25); grid-column: 3; grid-row: 2 / span 2; align-self: end; }
-#btns #tCharge { border-color: var(--green); }
+#btns #tBoost { border-color: var(--blue); }
 /* landscape phones: radar smaller, buttons beside it */
 @media (pointer: coarse) and (orientation: landscape) and (max-height: 520px) {
   #radar { width: 96px; } #sil { width: 56px; } #banner { width: min(44vw, 360px); bottom: auto; top: calc(76px + var(--safe-t)); }
@@ -222,7 +222,6 @@ body.touch.playing #pad { display: block; }
   #feed { top: calc(254px + var(--safe-t)); }
   #cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   #btns { bottom: calc(14px + var(--safe-b)); }
-  #stickZone { top: 40%; width: 55%; }
   .pcard .pk { display: none; }
 }
 @media (max-height: 560px) and (orientation: landscape) {
@@ -235,6 +234,14 @@ body.touch.playing #pad { display: block; }
 </head>
 <body>
 <canvas id="gl" aria-label="Frostwing: the battle over the frozen moon"></canvas>
+
+<div id="pad" aria-hidden="true">
+  <div id="stickZone"><div id="stick"><i></i></div></div>
+  <div id="btns">
+    <button id="tRoll" type="button">ROLL</button><button id="tUturn" type="button">U-TURN</button>
+    <button id="tBomb" type="button">BOMB</button><button id="tBoost" type="button">BOOST</button>
+  </div>
+</div>
 
 <div id="hud" class="hidden" aria-hidden="true">
   <div id="hurt"></div>
@@ -263,16 +270,8 @@ body.touch.playing #pad { display: block; }
   <div id="warn" class="hidden display">TURN BACK · STORM WALL</div>
   <div id="mouseStick" style="display:none"></div>
   <div id="mouseHint" class="hidden display">CLICK TO FLY WITH THE MOUSE</div>
+  <div id="touchHint" class="hidden display">DRAG TO STEER AND FIRE<br>TAP A RIVAL FOR A HOMING SHOT</div>
   <button id="pauseBtn" type="button" aria-label="Pause">❚❚</button>
-</div>
-
-<div id="pad" aria-hidden="true">
-  <div id="stickZone"><div id="stick"><i></i></div></div>
-  <div id="btns">
-    <button id="tRollL" type="button">ROLL</button><button id="tUturn" type="button">U-TURN</button><button id="tRollR" type="button">ROLL</button>
-    <button id="tBrake" type="button">BRAKE</button><button id="tBoost" type="button">BOOST</button><button id="tFire" type="button">FIRE</button>
-    <button id="tBomb" type="button">BOMB</button><button id="tCharge" type="button">LOCK</button>
-  </div>
 </div>
 
 <section id="title" class="screen">
@@ -317,7 +316,7 @@ body.touch.playing #pad { display: block; }
     <span><kbd>B</kbd> or <kbd>L</kbd></span><span>Smart bomb</span>
     <span><kbd>Esc</kbd> or <kbd>P</kbd> · <kbd>M</kbd></span><span>Pause · sound on or off</span>
     <span>Gamepad</span><span>Stick steers. A fires, X locks, RT boosts, LT brakes, B bombs, LB/RB roll, Y U-turns.</span>
-    <span>Touch</span><span>Drag on the left to steer. Buttons on the right.</span>
+    <span>Touch</span><span>Drag anywhere to steer. The lasers fire while your finger steers. Tap a rival to send a homing shot at it, or tap open sky to fire one at the rival nearest your nose. It recharges in about two seconds. Buttons: roll (toward the side you steer), U-turn, bomb and boost.</span>
   </div>
   <div class="btns"><button id="howBack" class="btn go" type="button">GOT IT</button></div>
 </section>

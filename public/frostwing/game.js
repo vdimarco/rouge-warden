@@ -450,7 +450,7 @@ const SND = (() => {
 /* ---------------- input ---------------- */
 const keys = new Set();
 const mouse = { fire: false, charge: false };
-const touch = { x: 0, y: 0, active: false, fire: false, charge: false, boost: false, brake: false, bomb: false, rollL: false, rollR: false, uturn: false };
+const touch = { x: 0, y: 0, active: false, moved: false, t0: 0, boost: false, bomb: false, roll: false, uturn: false, didDrag: false, didTap: false };
 addEventListener("keydown", (e) => {
   if (e.repeat && keys.has(e.code)) return;
   keys.add(e.code);
@@ -492,23 +492,60 @@ addEventListener("mousemove", (e) => {
 });
 $("#gl").addEventListener("contextmenu", (e) => e.preventDefault());
 
-// touch: a floating stick on the left, held buttons on the right
+// Touch: drag anywhere to steer, and the lasers fire while a finger steers. A tap sends a homing shot at the rival
+// under the finger, or at the rival nearest the nose. Four buttons hold the rest: roll, U-turn, bomb and boost.
 {
   const zone = $("#stickZone"), stick = $("#stick"), knob = $("#stick i");
-  let id = null, ox = 0, oy = 0;
+  const pts = new Map();
+  let steer = null;
   const R = () => stick.offsetWidth / 2 || 60;
-  zone.addEventListener("pointerdown", (e) => { id = e.pointerId; zone.setPointerCapture(id); ox = e.clientX; oy = e.clientY; stick.style.left = ox + "px"; stick.style.top = (oy - zone.getBoundingClientRect().top) + "px"; stick.style.display = "block"; touch.active = true; move(e); });
-  const move = (e) => { if (e.pointerId !== id) return; const r = R(); let dx = (e.clientX - ox) / r, dy = (e.clientY - oy) / r; const l = Math.hypot(dx, dy); if (l > 1) { dx /= l; dy /= l; } touch.x = dx; touch.y = dy; knob.style.transform = `translate(calc(-50% + ${dx * r * 0.6}px), calc(-50% + ${dy * r * 0.6}px))`; };
-  zone.addEventListener("pointermove", move);
-  const end = (e) => { if (e.pointerId !== id) return; id = null; touch.x = touch.y = 0; touch.active = false; stick.style.display = "none"; };
+  zone.addEventListener("pointerdown", (e) => {
+    if (state !== "play") return;
+    SND.init();
+    try { zone.setPointerCapture(e.pointerId); } catch (x) { /* the pointer is already gone */ }
+    pts.set(e.pointerId, { x: e.clientX, y: e.clientY, t: performance.now(), moved: false });
+    if (steer !== null) return; // a second finger can only tap
+    steer = e.pointerId; touch.active = true; touch.x = touch.y = 0; touch.t0 = performance.now(); touch.moved = false;
+    stick.style.left = e.clientX + "px"; stick.style.top = e.clientY + "px"; stick.style.display = "block"; knob.style.transform = "translate(-50%, -50%)";
+  });
+  zone.addEventListener("pointermove", (e) => {
+    const p = pts.get(e.pointerId); if (!p) return;
+    if (Math.hypot(e.clientX - p.x, e.clientY - p.y) > 12) p.moved = true;
+    if (e.pointerId !== steer) return;
+    const r = R(); let dx = (e.clientX - p.x) / r, dy = (e.clientY - p.y) / r; const l = Math.hypot(dx, dy); if (l > 1) { dx /= l; dy /= l; }
+    touch.x = dx; touch.y = dy; if (p.moved) { touch.moved = true; touch.didDrag = true; }
+    knob.style.transform = `translate(calc(-50% + ${dx * r * 0.6}px), calc(-50% + ${dy * r * 0.6}px))`;
+  });
+  const end = (e) => {
+    const p = pts.get(e.pointerId); if (!p) return;
+    pts.delete(e.pointerId);
+    if (e.type === "pointerup" && !p.moved && performance.now() - p.t < 300) tapShot(e.clientX, e.clientY);
+    if (e.pointerId !== steer) return;
+    steer = null; touch.x = touch.y = 0; touch.active = false; touch.moved = false; stick.style.display = "none";
+  };
   zone.addEventListener("pointerup", end); zone.addEventListener("pointercancel", end);
-  const map = { tFire: "fire", tCharge: "charge", tBoost: "boost", tBrake: "brake", tBomb: "bomb", tRollL: "rollL", tRollR: "rollR", tUturn: "uturn" };
+  const map = { tBoost: "boost", tBomb: "bomb", tRoll: "roll", tUturn: "uturn" };
   for (const [elId, k] of Object.entries(map)) {
     const b = document.getElementById(elId);
     const down = (e) => { e.preventDefault(); b.setPointerCapture(e.pointerId); touch[k] = true; b.classList.add("on"); SND.init(); };
     const up = () => { touch[k] = false; b.classList.remove("on"); };
     b.addEventListener("pointerdown", down); b.addEventListener("pointerup", up); b.addEventListener("pointercancel", up); b.addEventListener("lostpointercapture", up);
   }
+}
+// a tap: ask the sim for a quick homing shot, at the rival within 110 px of the finger when there is one
+function tapShot(x, y) {
+  const m = match, me = m && m.player;
+  if (state !== "play" || !me || !me.alive || countdown > 0) return;
+  let best = null, bd = 110;
+  for (const o of m.ships) {
+    if (!o.alive || o.team === me.team) continue;
+    const p = toScreen(o.x, o.y, o.z); if (!p.front) continue;
+    const d = Math.hypot(p.x - x, p.y - y); if (d < bd) { bd = d; best = o; }
+  }
+  touch.didTap = true;
+  if (me.quickCd > 0) return;
+  me.input.quick = true; me.input.quickTarget = best ? best.id : 0;
+  if (best) popup(best.x, best.y + 8, best.z, "HOMING", "#49ff9a");
 }
 let padPrev = {};
 function readInput(s) {
@@ -518,9 +555,12 @@ function readInput(s) {
   if (k("KeyD") || k("ArrowRight")) yaw -= 1;
   if (k("KeyW") || k("ArrowUp")) pitch += 1;
   if (k("KeyS") || k("ArrowDown")) pitch -= 1;
-  let fire = k("Space") || k("KeyJ") || mouse.fire || touch.fire, charge = k("KeyK") || k("KeyX") || mouse.charge || touch.charge;
-  let boost = k("ShiftLeft") || k("ShiftRight") || touch.boost, brake = k("KeyC") || touch.brake, bomb = k("KeyB") || k("KeyL") || touch.bomb;
-  let rollL = k("KeyQ") || touch.rollL, rollR = k("KeyE") || touch.rollR, uturn = k("KeyR") || touch.uturn;
+  // touch: the lasers fire once a finger drags, or rests for a moment (so a quick tap does not also fire them)
+  const tfire = touch.active && (touch.moved || performance.now() - touch.t0 > 180);
+  let fire = k("Space") || k("KeyJ") || mouse.fire || tfire, charge = k("KeyK") || k("KeyX") || mouse.charge;
+  let boost = k("ShiftLeft") || k("ShiftRight") || touch.boost, brake = k("KeyC"), bomb = k("KeyB") || k("KeyL") || touch.bomb;
+  // the one touch roll button rolls toward the side the finger steers, right when it is centred
+  let rollL = k("KeyQ") || (touch.roll && touch.x < -0.15), rollR = k("KeyE") || (touch.roll && touch.x >= -0.15), uturn = k("KeyR") || touch.uturn;
   if (touch.active) { yaw -= touch.x * 1.15; pitch -= touch.y * 1.1; }
   if (fly.locked) { yaw -= fly.x * 1.2; pitch -= fly.y * 1.15; }
   const gp = navigator.getGamepads ? [...navigator.getGamepads()].find((g) => g && g.connected) : null;
@@ -540,7 +580,7 @@ function readInput(s) {
 const hud = {
   shield: $("#shieldBar i"), shieldBar: $("#shieldBar"), boost: $("#boostBar i"), bombN: $("#bombN"), s0: $("#s0"), s1: $("#s1"), clock: $("#clock"),
   feed: $("#feed"), radio: $("#radio"), objective: $("#objective"), tugA: $("#tug .a"), tugB: $("#tug .b"), na: $("#tug .na"), nb: $("#tug .nb"),
-  radar: $("#radar"), mouse: $("#mouseStick"), mouseHint: $("#mouseHint"), sil: $("#sil"), tags: $("#tags"), reticle: $("#reticle"), lock: $("#lock"), center: $("#center"), warn: $("#warn"), hurt: $("#hurt"), hitmark: $("#hitmark"), popups: $("#popups"),
+  radar: $("#radar"), mouse: $("#mouseStick"), mouseHint: $("#mouseHint"), touchHint: $("#touchHint"), sil: $("#sil"), tags: $("#tags"), reticle: $("#reticle"), lock: $("#lock"), center: $("#center"), warn: $("#warn"), hurt: $("#hurt"), hitmark: $("#hitmark"), popups: $("#popups"),
 };
 hud.reticle.innerHTML = '<svg width="56" height="56" viewBox="-28 -28 56 56" id="r1"><path d="M-22 -10v-12h12M10 -22h12v12M22 10v12h-12M-10 22h-12v-12" fill="none" stroke="#6dff9e" stroke-width="2.5"/><circle r="2" fill="#6dff9e"/></svg><svg width="30" height="30" viewBox="-15 -15 30 30" id="r2"><rect x="-11" y="-11" width="22" height="22" fill="none" stroke="#6dff9e" stroke-width="2" opacity=".7"/></svg>';
 hud.lock.innerHTML = '<svg width="80" height="80" viewBox="-40 -40 80 80"><path d="M-14 -34h-14v68h14M14 -34h14v68h-14" fill="none" stroke="currentColor" stroke-width="4"/></svg>';
@@ -851,6 +891,9 @@ function updateHud(m, me, dt) {
   hud.mouse.style.display = fly.locked && me.alive ? "" : "none";
   if (fly.locked) hud.mouse.style.transform = "translate(calc(-50% + " + (fly.x * 70) + "px), calc(-50% + " + (fly.y * 70) + "px))";
   hud.mouseHint.classList.toggle("hidden", !(mouseOn() && !fly.locked && countdown <= 0 && me.alive));
+  // touch: the hint stays for the first 20 s of a match until the player has dragged and tapped; the inner reticle dims while the homing shot recharges
+  hud.touchHint.classList.toggle("hidden", !(TOUCH && countdown <= 0 && me.alive && !(touch.didDrag && touch.didTap) && m.length - m.time < 20));
+  r2.style.opacity = TOUCH && me.quickCd > 0 ? 0.25 : 1;
   radarT -= dt; if (radarT <= 0) { radarT = 1 / 20; drawRadar(m, me.alive ? me : { ...me }); }
   updateTags(m, me);
   if (m.time < 60 && !m.minuteSaid) { m.minuteSaid = true; say("minute", true); }
@@ -1153,6 +1196,8 @@ window.__fw = {
   weather: (w) => look.setWeather(w),
   dbg: { scene, renderer, camera, look },
   get fly() { return { ...fly }; },
+  get touch() { return { ...touch }; },
+  screenOf: (id) => { const o = match.ships.find((s) => s.id === id); return toScreen(o.x, o.y, o.z); },
   get story() { return { mode, op: opIx, won: storyWon(), left: cut.q.length, text: cut.full }; },
   sceneNext: () => nextSlide(), sceneSkip: () => endScene(),
   // headless browsers cannot take pointer lock, so tests stand in for it

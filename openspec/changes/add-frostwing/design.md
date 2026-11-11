@@ -16,6 +16,10 @@ Each bot picks a target every 0.6 to 1.4 s, depending on difficulty. The target 
 
 The player's lasers bend 60% toward the lead point of a ship within 4 degrees of the nose. This aim assist makes touch play fair.
 
+## Touch: drag and tap
+
+The user asked for "tap and drag on mobile". The first version had a steering area on the left and eight buttons on the right, which covered a third of a phone screen. Now the whole screen is the control. A drag anywhere steers from the point where it began, and a ring marks that point. The lasers fire while a finger steers, because lasers have no ammunition and a held fire button added nothing. A touch that lifts within 300 ms and moves under 12 px is a tap. A tap asks the sim for a quick shot: a charged homing shot fired at once at the rival within 110 px of the finger, or at the rival nearest the nose. The sim then holds the next quick shot for the pilot's lock time plus one second, so a tap is never faster than charging by hand on a keyboard, and the pilots keep their differences. A second finger can tap while the first steers. Four buttons remain: roll (toward the side the finger steers), U-turn, bomb and boost. Brake has no touch control. The drag area sits under the HUD in the page, so the pause button stays on top of it.
+
 ## Terrain, snow and light
 
 The ground is one heightfield from `groundY()`, shared by collisions and the mesh. It is a five-octave value-noise fBm, with the upper octaves folded into ridges. A rim term past 82% of the arena radius raises a ring of peaks, so the arena reads as a bowl. Vertex colours pick snow or rock by slope, with a little noise at the boundary and a blue ice tint on low flats. Exponential fog and a gradient sky dome that matches the fog colour at the horizon hide the far edge.

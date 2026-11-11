@@ -246,29 +246,62 @@ for (const [name, dev] of [["portrait", devices["iPhone 13"]], ["landscape", dev
   await page.waitForFunction(() => __fw.state === "play");
   await page.evaluate(() => __fw.skipCountdown());
   await page.waitForTimeout(200);
-  check(await page.isVisible("#btns") && await page.isVisible("#stickZone"), `${tag}: touch buttons and the steering area show during play`);
+  check(await page.isVisible("#btns") && await page.isVisible("#stickZone"), `${tag}: touch buttons and the drag area show during play`);
+  const ids = (await page.$$eval("#btns button", (bs) => bs.map((b) => b.id))).join();
+  check(ids === "tRoll,tUturn,tBomb,tBoost", `${tag}: the touch buttons are roll, U-turn, bomb and boost, with no fire or lock button (${ids})`);
   const small = await page.$$eval("#btns button, #pauseBtn", (bs) => bs.filter((b) => { const r = b.getBoundingClientRect(); return Math.min(r.width, r.height) < 44; }).map((b) => b.id));
   check(small.length === 0, `${tag}: every touch button is at least 44 px (${small.join(", ") || "all"})`);
   check(await within(page, "#btns button, #sys, #board, #radar, #banner"), `${tag}: buttons and HUD panels sit inside the screen`);
   const clash = [];
   for (const [a, b] of [["#btns", "#radar"], ["#banner", "#board"], ["#banner", "#radar"], ["#btns", "#banner"], ["#sys", "#board"]]) if (await overlap(page, a, b)) clash.push(a + "/" + b);
   check(clash.length === 0, `${tag}: buttons, radar, banner and scoreboard do not overlap (${clash.join(", ") || "none"})`);
-  // steer with the stick: drag right from the middle of the left area
-  const z = await page.$eval("#stickZone", (e) => { const r = e.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; });
-  const y0 = await page.evaluate(() => __fw.match.player.yaw);
+  check(await page.isVisible("#touchHint"), `${tag}: a hint says to drag to steer and tap a rival`);
   const cdp = await ctx.newCDPSession(page);
-  const tp = (type, x, y) => cdp.send("Input.dispatchTouchEvent", { type, touchPoints: type === "touchEnd" ? [] : [{ x, y, id: 1 }] });
-  await tp("touchStart", z.x, z.y); await tp("touchMove", z.x + 60, z.y);
+  const tp = (type, x, y, id = 1) => cdp.send("Input.dispatchTouchEvent", { type, touchPoints: type === "touchEnd" ? [] : [{ x, y, id }] });
+  const vp = dev.viewport;
+  // keep the rivals out of the way and give the player a clean start
+  await page.evaluate(() => { const m = __fw.match; for (const s of m.ships) if (s.team === 1) { s.alive = false; s.respawn = 1e9; } m.bolts.length = 0; });
+  // a quick tap on open sky: no steering, no lasers
+  const y00 = await page.evaluate(() => __fw.match.player.yaw);
+  await tp("touchStart", vp.width * 0.3, vp.height * 0.5); await tp("touchEnd");
+  await gameWait(page, 0.2);
+  const tap0 = await page.evaluate(() => ({ lasers: __fw.match.bolts.filter((b) => b.owner === __fw.match.player.id && b.kind === "laser").length, yaw: __fw.match.player.yaw }));
+  check(tap0.lasers === 0 && Math.abs(tap0.yaw - y00) < 0.05, `${tag}: a quick tap does not steer or fire the lasers`);
+  // drag from the right half of the screen: the whole screen steers, and the lasers fire while the finger steers
+  const sx = vp.width * 0.62, sy = vp.height * 0.45;
+  const y0 = await page.evaluate(() => __fw.match.player.yaw);
+  await tp("touchStart", sx, sy); await tp("touchMove", sx + 30, sy); await tp("touchMove", sx + 60, sy);
   await gameWait(page, 1);
-  const y1 = await page.evaluate(() => __fw.match.player.yaw);
+  const d = await page.evaluate(() => ({ yaw: __fw.match.player.yaw, lasers: __fw.match.bolts.filter((b) => b.owner === __fw.match.player.id && b.kind === "laser").length, stick: getComputedStyle(document.querySelector("#stick")).display }));
+  check(d.yaw - y0 < -0.25, `${tag}: a drag to the right, started on the right half of the screen, turns the ship right (yaw ${y0.toFixed(2)} to ${d.yaw.toFixed(2)})`);
+  check(d.lasers > 0 && d.stick === "block", `${tag}: the lasers fire while a finger steers, and a ring shows where the drag began (${d.lasers} bolts)`);
   await tp("touchEnd");
-  check(y1 - y0 < -0.25, `${tag}: dragging right on the left side turns the ship right (yaw ${y0.toFixed(2)} to ${y1.toFixed(2)})`);
-  const f = await page.$eval("#tFire", (e) => { const r = e.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; });
-  await cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x: f.x, y: f.y, id: 2 }] });
-  await gameWait(page, 0.4);
-  const bolts = await page.evaluate(() => __fw.match.bolts.filter((b) => b.owner === __fw.match.player.id).length);
-  await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
-  check(bolts > 0, `${tag}: holding FIRE shoots (${bolts} bolts)`);
+  check(await page.evaluate(() => getComputedStyle(document.querySelector("#stick")).display === "none" && !__fw.touch.active), `${tag}: lifting the finger ends the steering`);
+  // tap a rival: a homing shot goes after that ship
+  const foe = await page.evaluate(() => {
+    const m = __fw.match, me = m.player, f = __fw.S.forward(me.yaw, me.pitch), o = m.ships.find((s) => s.team === 1);
+    Object.assign(o, { alive: true, respawn: 0, invuln: 0, human: true, x: me.x + f.x * 260 + 30, y: me.y + f.y * 260 + 14, z: me.z + f.z * 260, yaw: me.yaw, pitch: me.pitch });
+    o.input.yaw = 0; o.input.pitch = 0;
+    return o.id;
+  });
+  await page.waitForTimeout(400); // let the camera settle on the new frame
+  const at = await page.evaluate((id) => __fw.screenOf(id), foe);
+  await tp("touchStart", at.x, at.y); await tp("touchEnd");
+  await gameWait(page, 0.1);
+  const q = await page.evaluate((id) => { const m = __fw.match, me = m.player; return { shots: m.bolts.filter((b) => b.owner === me.id && b.kind === "charge").map((b) => b.target), cd: me.quickCd, id }; }, foe);
+  check(at.front && q.shots.length >= 1 && q.shots.every((t) => t === foe) && q.cd > 0, `${tag}: a tap on a rival sends a homing shot at that ship and starts the recharge (${q.shots.length} shot, ${q.cd.toFixed(1)} s)`);
+  await tp("touchStart", at.x, at.y); await tp("touchEnd");
+  await gameWait(page, 0.1);
+  const again = await page.evaluate(() => { const m = __fw.match; return m.bolts.filter((b) => b.owner === m.player.id && b.kind === "charge").length; });
+  check(again === q.shots.length, `${tag}: a second tap during the recharge fires nothing`);
+  check(!(await page.isVisible("#touchHint")), `${tag}: the hint goes once the player has dragged and tapped`);
+  // the roll button rolls
+  const rb = await page.$eval("#tRoll", (e) => { const r = e.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; });
+  await tp("touchStart", rb.x, rb.y);
+  await gameWait(page, 0.1);
+  const rolled = await page.evaluate(() => __fw.match.player.roll > 0 && __fw.match.player.rollDir === 1);
+  await tp("touchEnd");
+  check(rolled, `${tag}: the ROLL button rolls right when the finger is not steering`);
   await page.waitForTimeout(300);
   await shot(page, `play-${name}`);
   await page.tap("#pauseBtn");
