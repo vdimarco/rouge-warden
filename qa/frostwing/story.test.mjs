@@ -60,6 +60,19 @@ check(LOG.length === 16 && LOG.every((e) => e.title && e.text && Number.isIntege
 check(LOG.filter((e) => e.need === 0).length === 8 && [1, 2, 3, 4, 5].every((n) => LOG.some((e) => e.need === n)), "eight entries are open at the start, and every operation opens at least one more");
 check(LOG.every((e, i) => i === 0 || e.need >= LOG[i - 1].need), "logbook entries are listed in the order they open");
 
+// the music: every track the game names is a file in audio/ and has a record in audio/sources.json
+{
+  const game = fs.readFileSync(path.join(ROOT, "game.js"), "utf8");
+  const named = [...game.matchAll(/(\w+): \{ src: "(audio\/[\w-]+\.mp3)", gain: ([\d.]+)/g)].map((m) => ({ name: m[1], src: m[2], gain: +m[3] }));
+  const rec = JSON.parse(fs.readFileSync(path.join(ROOT, "audio/sources.json"), "utf8")).tracks;
+  check(named.length === 6 && named.map((t) => t.name).join() === "title,battleA,battleB,story,win,lose", `the game names six music tracks (${named.map((t) => t.name).join(", ")})`);
+  const bad = named.filter((t) => { const f = path.join(ROOT, t.src); return !fs.existsSync(f) || fs.statSync(f).size < 50000 || !rec[t.name] || "audio/" + rec[t.name].file !== t.src || rec[t.name].gain !== t.gain || !rec[t.name].job; });
+  check(bad.length === 0, `each track is an MP3 in audio/ with its job id and the same gain in audio/sources.json${bad.length ? " (" + bad.map((t) => t.name).join(", ") + ")" : ""}`);
+  const total = named.reduce((n, t) => n + fs.statSync(path.join(ROOT, t.src)).size, 0);
+  check(total < 8e6, `the six tracks total under 8 MB (${(total / 1e6).toFixed(1)} MB)`);
+  check(!/createOscillator\(\)[^\n]*mus\b/.test(game) && !game.includes("ROOTS"), "the synthesized music loop is gone");
+}
+
 // nothing from the game this one is not: no borrowed names in the story text
 {
   const text = JSON.stringify([PROLOGUE, OPS, LOG]).toLowerCase();

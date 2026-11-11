@@ -7,7 +7,7 @@
 - [x] Run `qa/arcade/groups.e2e.mjs`, `qa/arcade/voting.e2e.mjs` and `qa/arcade/machines.mjs` to confirm the hall is unchanged, with `corridor` listed as not a game
 - [x] Import the Corridor's step bar, scroll cue, click-to-walk, monitor key art and phone layout
 - [x] Add the Order control (Arcade, Newest, Updated), with dates baked from `public/arcade/game-dates.json` by the import script and refreshed by the page
-- [x] Add Corridor cabinets for Lake Brawl (08, Cottage) and Eleven Wells (39, The Lab): art, entries, counts and light slots
+- [x] Add Corridor cabinets for Lake Brawl (08, Cottage) and Eleven Wells (40, The Lab): art, entries, counts and light slots
 - [x] Check both cabinets in `qa/arcade/machines.mjs` (files) and `qa/arcade/corridor-cabinets.e2e.mjs` (index, walk, panel, Play) at 1280 and 390
 - [ ] Add the same two entries to the Corridor source (`afterglow-corridor`), which is outside this repository, before the next import
 - [ ] Check on a phone: touch scrolling through the Corridor and its frame rate
