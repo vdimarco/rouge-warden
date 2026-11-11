@@ -133,7 +133,55 @@ grd.addColorStop(0, `rgba(${rgb},0.9)`); grd.addColorStop(0.25, `rgba(${rgb},0.3
 g.fillStyle = grd; g.fillRect(0,0,size,size); return c;
 }
 const GLOW_WARM = glowSprite('255,174,92', 128), GLOW_COLD = glowSprite('134,166,255', 128), GLOW_WHITE = glowSprite('255,225,181', 128);
-const DUST = []; { const r = mulberry(7); for(let l=0;l<3;l++) for(let k=0;k<70;k++) DUST.push({x:r()*2000, y:r()*2000, p:0.05+l*0.12, a:0.2+l*0.2+r()*0.2, s:0.6+l*0.4}); }
+// Far dust for parallax. Positions are fractions of the screen, so the dust covers any screen size; the count follows the
+// screen's area (about one dot per 13000 square px per layer, the density the first version had at 1280x720).
+let DUST = [], dustFor = '';
+function makeDust(){
+  const r = mulberry(7), per = Math.round(Math.max(40, Math.min(260, W*H/13000)));
+  DUST = []; for(let l=0;l<3;l++) for(let k=0;k<per;k++) DUST.push({u:r(), v:r(), p:0.05+l*0.12, a:0.2+l*0.2+r()*0.2, s:0.6+l*0.4});
+  dustFor = W + 'x' + H;
+}
+// Each region has its own sky: a glow colour, a base colour, and three soft nebula clouds. Entering a region crossfades
+// to its sky over 2 s. Each sky is painted once per screen size into an offscreen canvas at half resolution, with
+// up to one level of random noise per pixel, either way. A plain canvas gradient this dark only has about 40 levels from top to bottom on a
+// phone, which shows as bands; the noise breaks the bands up and the half-resolution canvas keeps the paint cheap.
+const SKIES = [
+  { glow:[43,39,84],  base:[8,7,26],  neb:[[88,62,160],[40,70,150],[120,50,130]] },  // The Shallows: violet
+  { glow:[86,40,64],  base:[14,7,22], neb:[[170,70,60],[120,40,90],[200,110,60]] },  // Ember Reach: plum and ember
+  { glow:[32,58,70],  base:[6,11,18], neb:[[70,120,130],[90,90,100],[50,90,110]] },  // Ash Fields: slate teal
+  { glow:[20,24,54],  base:[3,4,11],  neb:[[40,50,110],[30,30,70],[60,40,100]] },    // The Long Dark: near black
+  { glow:[92,24,36],  base:[12,4,10], neb:[[170,40,60],[110,30,80],[200,70,50]] },   // Edge of Night: deep red
+];
+const skyCache = new Map(); let skyFor = '';
+const sky = { prev:0, cur:0, since:-1e9 };
+function skyCanvas(k){
+  const key = W + 'x' + H + '@' + DPR;
+  if(skyFor !== key){ skyCache.clear(); skyFor = key; }
+  let c = skyCache.get(k); if(c) return c;
+  const S = SKIES[k], w = Math.max(1, Math.round(W*DPR/2)), h = Math.max(1, Math.round(H*DPR/2));
+  c = document.createElement('canvas'); c.width = w; c.height = h;
+  const g = c.getContext('2d'), img = g.createImageData(w, h), px = img.data, R = Math.max(w, h);
+  const r = mulberry(101 + k*17), blobs = S.neb.map(col => ({x:r()*w, y:r()*h*0.9, rad:R*(0.22 + r()*0.2), col, a:0.10 + r()*0.06}));
+  const gx = w*0.3, gy = h*0.2;
+  for(let y=0;y<h;y++) for(let x=0;x<w;x++){
+    const t = Math.min(1, Math.hypot(x - gx, y - gy)/R), f = 0.55*Math.pow(1 - t, 1.6);
+    let cr = S.base[0] + (S.glow[0] - S.base[0])*f, cg = S.base[1] + (S.glow[1] - S.base[1])*f, cb = S.base[2] + (S.glow[2] - S.base[2])*f;
+    for(const b of blobs){ const d2 = ((x - b.x)**2 + (y - b.y)**2)/(b.rad*b.rad); if(d2 < 4){ const m = b.a*Math.exp(-d2*1.6); cr += (b.col[0] - cr)*m; cg += (b.col[1] - cg)*m; cb += (b.col[2] - cb)*m; } }
+    const i = (y*w + x)*4, n = (Math.random() - 0.5)*2;
+    px[i] = cr + n; px[i+1] = cg + n; px[i+2] = cb + n; px[i+3] = 255;
+  }
+  g.putImageData(img, 0, 0); skyCache.set(k, c); return c;
+}
+function drawSky(){
+  const k = G.mode==='endless' && G.region >= 0 ? Math.min(SKIES.length - 1, G.region) : 0, now = performance.now();
+  if(k !== sky.cur){ sky.prev = sky.cur; sky.cur = k; sky.since = now; }
+  const f = RM ? 1 : Math.min(1, (now - sky.since)/2000);
+  // no smoothing: smoothing the half-size canvas up to the screen averages the noise away and the bands come back
+  ctx.imageSmoothingEnabled = false;
+  ctx.globalAlpha = 1; ctx.drawImage(skyCanvas(f < 1 ? sky.prev : sky.cur), 0, 0, W, H);
+  if(f < 1){ ctx.globalAlpha = f; ctx.drawImage(skyCanvas(sky.cur), 0, 0, W, H); ctx.globalAlpha = 1; }
+  ctx.imageSmoothingEnabled = true;
+}
 const CELL = 620, BASE = 250, MAXV = 900, CHAIN_TIME = 2.1, LINK_R = 30;
 const REGIONS = [[0,'The Shallows'],[4,'Ember Reach'],[9,'Ash Fields'],[15,'The Long Dark'],[24,'Edge of Night']];
 let G = null, cells = new Map(), starId = 0;
@@ -514,11 +562,10 @@ function draw(){
 const z = G.cam.z; let ox = W/2 - G.cam.x*z, oy = H/2 - G.cam.y*z;
 if(G.shake && !RM){ ox += (Math.random()-.5)*10*G.shake; oy += (Math.random()-.5)*10*G.shake; }
 const X = x => x*z + ox, Y = y => y*z + oy;
-ctx.fillStyle = '#08071a'; ctx.fillRect(0, 0, W, H);
-const bg = ctx.createRadialGradient(W*.3, H*.2, 0, W*.5, H*.5, Math.max(W,H));
-bg.addColorStop(0, 'rgba(43,39,84,.55)'); bg.addColorStop(1, 'rgba(8,7,26,0)'); ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+drawSky();
+if(dustFor !== W + 'x' + H) makeDust();
 for(const d of DUST){
-const x = ((d.x - G.cam.x*d.p) % W + W) % W, y = ((d.y - G.cam.y*d.p) % H + H) % H;
+const x = ((d.u*W - G.cam.x*d.p) % W + W) % W, y = ((d.v*H - G.cam.y*d.p) % H + H) % H;
 ctx.globalAlpha = d.a; ctx.fillStyle = '#cfc8ff'; ctx.fillRect(x, y, d.s, d.s);
 }
 ctx.globalAlpha = 1;
