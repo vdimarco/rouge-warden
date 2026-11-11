@@ -126,6 +126,21 @@ for (const { id } of JSON.parse(read("higgsfield/arcade-key-art.json")).art) {
   const b = fs.existsSync(f) ? fs.readFileSync(f) : Buffer.alloc(0);
   check(b.length > 0 && b.length < 100 * 1024 && b.toString("latin1", 0, 4) === "RIFF" && b.toString("latin1", 8, 12) === "WEBP", `arcade/key/${id}.webp is a WebP under 100 KB (${(b.length / 1024).toFixed(1)} KB)`);
 }
+/* ---------------- Frostwing in the Corridor and in the All Games dates (openspec/changes/add-frostwing) ---------------- */
+{
+  const walk = read("public/corridor/index.html");
+  const pieces = [...walk.slice(walk.indexOf("const PIECES = ["), walk.indexOf("const COUNT = PIECES.length;")).matchAll(/\{ n: '(\d\d)', title: "([^"]+)"[^\n]*url: "([^"]+)"/g)].map((m) => ({ n: m[1], title: m[2], url: m[3] }));
+  const at = pieces.findIndex((p) => p.url === "/frostwing/");
+  check(at >= 0 && pieces[at].title === "Frostwing" && pieces[at - 1].url === "/first-breath/", `the Corridor has a Frostwing cabinet that opens /frostwing/, right after First Breath (${at >= 0 ? "number " + pieces[at].n : "missing"})`);
+  check(pieces.every((p, i) => Number(p.n) === i + 1), `the Corridor's ${pieces.length} cabinets are numbered 01 to ${String(pieces.length).padStart(2, "0")} with no gap`);
+  const n = pieces.length;
+  check(walk.includes(`style="--n: ${n}"`) && walk.includes(`Index <sup>${n}</sup>`) && walk.includes(`/ ${n}</span>`) && walk.includes(`An arcade hall of ${n} games.`) && walk.includes(`uniform vec3 uPP[${n * 3}];`) && walk.includes(`new Float32Array(${n * 3} * 3)`),
+    `the Corridor's written counts and its ${n * 3} light slots match its ${n} cabinets`);
+  check(/frostwing: 'data:image\/webp;base64,/.test(walk), "the Corridor carries Frostwing's screen art");
+  const dates = JSON.parse(read("public/arcade/game-dates.json")).games.frostwing;
+  check(!!dates && dates.path === "public/frostwing" && Number.isFinite(Date.parse(dates.added)) && Number.isFinite(Date.parse(dates.updated)), "game-dates.json has Frostwing's added and updated dates, so All Games can rank it under New and Updated");
+}
+
 /* ---------------- First Breath's machine (openspec/changes/archive/2026-10-19-add-first-breath, design.md 10) ---------------- */
 {
   const articleOf = (id) => (html.match(new RegExp(`<article class="cab ${id}"[\\s\\S]*?</article>`)) || [""])[0];

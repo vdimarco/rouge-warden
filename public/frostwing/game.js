@@ -353,8 +353,7 @@ function buildView(m) {
 
 /* ---------------- sound ---------------- */
 const SND = (() => {
-  let padGain = null;
-  let ctx = null, master, sfx, mus, engine, engineGain, engineFilter, noiseBuf, musicTimer = 0, nextNote = 0, step16 = 0, on = save.sound !== 0;
+  let ctx = null, master, sfx, mus, engine, engineGain, engineFilter, noiseBuf, on = save.sound !== 0;
   function init() {
     if (ctx) { if (ctx.state === "suspended") ctx.resume().catch(() => {}); return; }
     const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
@@ -362,15 +361,16 @@ const SND = (() => {
     master = ctx.createGain(); master.gain.value = on ? 0.8 : 0; master.connect(ctx.destination);
     const comp = ctx.createDynamicsCompressor(); comp.threshold.value = -14; comp.ratio.value = 4; comp.connect(master);
     sfx = ctx.createGain(); sfx.gain.value = 0.7; sfx.connect(comp);
-    mus = ctx.createGain(); mus.gain.value = 0.28; mus.connect(comp);
+    mus = ctx.createGain(); mus.gain.value = MUSIC; mus.connect(master);
     noiseBuf = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate);
     const d = noiseBuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
     engine = ctx.createOscillator(); engine.type = "sawtooth"; engine.frequency.value = 60;
     engineFilter = ctx.createBiquadFilter(); engineFilter.type = "lowpass"; engineFilter.frequency.value = 400;
     engineGain = ctx.createGain(); engineGain.gain.value = 0;
     engine.connect(engineFilter); engineFilter.connect(engineGain); engineGain.connect(sfx); engine.start();
-    nextNote = ctx.currentTime + 0.1;
+    if (want) play(want);
   }
+  const MUSIC = 0.5;
   const t = () => ctx.currentTime;
   function tone(type, f0, f1, dur, vol, dest = sfx, delay = 0) {
     if (!ctx) return;
@@ -386,30 +386,51 @@ const SND = (() => {
     g.gain.setValueAtTime(vol, s); g.gain.exponentialRampToValueAtTime(0.0001, s + dur);
     n.connect(f); f.connect(g); g.connect(dest); n.start(s, Math.random() * 0.5); n.stop(s + dur + 0.02);
   }
-  // music: a driving minor-key loop. Bass on eighths, an arpeggio on sixteenths, kick and snare from noise.
-  const ROOTS = [45, 41, 48, 43, 45, 41, 43, 40]; // A F C G A F G E, one bar each
-  const ARP = [0, 7, 12, 15, 12, 7, 3, 7];
-  const hz = (n) => 440 * Math.pow(2, (n - 69) / 12);
-  let intensity = 0;
-  function schedule() {
-    if (!ctx || !playingMusic) return;
-    const spb = 60 / 138 / 4;
-    while (nextNote < t() + 0.15) {
-      const bar = Math.floor(step16 / 16) % ROOTS.length, i = step16 % 16, root = ROOTS[bar], s = nextNote - t();
-      if (i % 2 === 0) tone("triangle", hz(root - 12 + (i % 8 === 6 ? 12 : 0)), hz(root - 12), spb * 1.8, 0.5, mus, s);
-      tone("square", hz(root + 12 + ARP[i % 8] + (bar % 2 && i > 11 ? 2 : 0)), hz(root + 12 + ARP[i % 8]), spb * 0.9, 0.07 + intensity * 0.05, mus, s);
-      if (i % 4 === 0) tone("sine", 140, 40, 0.18, 0.7, mus, s);
-      if (i % 8 === 4) noise(0.14, 0.35, 3000, 900, "bandpass", mus, s);
-      if (intensity > 0.5 && i % 2 === 1) noise(0.04, 0.12, 9000, 7000, "highpass", mus, s);
-      nextNote += spb; step16++;
-    }
+  // Music: six generated tracks (audio/sources.json), streamed and routed through the audio graph so the game sets
+  // each one's level. A looping track dips for a moment at its seam. A one-shot sting hands on when it ends.
+  const TRACKS = {
+    title: { src: "audio/title.mp3", gain: 1.3 }, battleA: { src: "audio/battle-a.mp3", gain: 0.85 }, battleB: { src: "audio/battle-b.mp3", gain: 0.62 },
+    story: { src: "audio/story.mp3", gain: 1.1 }, win: { src: "audio/win.mp3", gain: 0.65, once: true }, lose: { src: "audio/lose.mp3", gain: 3.4, once: true },
+  };
+  const players = {};
+  let cur = null, want = null;
+  function player(name) {
+    if (players[name]) return players[name];
+    const T = TRACKS[name], el = new Audio(T.src), g = ctx.createGain();
+    el.preload = "auto"; el.loop = !T.once; g.gain.value = 0;
+    ctx.createMediaElementSource(el).connect(g); g.connect(mus);
+    const p = (players[name] = { name, el, g, gain: T.gain, once: !!T.once, dip: false, then: null });
+    el.addEventListener("timeupdate", () => {
+      if (p !== cur || p.once || !(el.duration > 0)) return;
+      const left = el.duration - el.currentTime;
+      if (left < 1.3 && !p.dip) { p.dip = true; g.gain.setTargetAtTime(0, t(), 0.35); }
+      else if (p.dip && el.currentTime < 1 && left > 2) { p.dip = false; g.gain.setTargetAtTime(p.gain, t(), 0.3); }
+    });
+    el.addEventListener("ended", () => { if (p === cur && p.once) { cur = null; const f = p.then; p.then = null; if (f) f(); } });
+    return p;
   }
-  let playingMusic = false;
+  // play a track by name (false stops the music). It starts at once when the audio context exists, and on the
+  // player's first tap or key when it does not: browsers do not let a page start sound by itself.
+  function play(name, then) {
+    want = name || null;
+    if (!ctx) return;
+    if (cur && cur.name === want && !cur.once) return;
+    if (cur) { const old = cur; old.g.gain.cancelScheduledValues(t()); old.g.gain.setTargetAtTime(0, t(), 0.25); setTimeout(() => { if (cur !== old) old.el.pause(); }, 1200); }
+    cur = null;
+    if (!want) return;
+    const p = player(want); p.then = then || null; p.dip = false;
+    try { p.el.currentTime = 0; } catch (e) { /* not loaded yet: it starts from the top anyway */ }
+    const started = p.el.play(); if (started && started.catch) started.catch(() => {});
+    p.g.gain.cancelScheduledValues(t()); p.g.gain.setTargetAtTime(p.gain, t(), p.once ? 0.05 : 0.5);
+    cur = p;
+  }
   return {
     init, get ctx() { return ctx; },
-    music(onoff) { playingMusic = onoff; if (ctx && onoff) { nextNote = Math.max(nextNote, t() + 0.05); } },
-    intensity(v) { intensity = v; },
-    tick() { schedule(); },
+    music: play,
+    get track() { return cur ? cur.name : null; }, get wanted() { return want; },
+    get playing() { return !!cur && !cur.el.paused; },
+    // a meteor shower and the last minute lift the music a little
+    intensity(v) { if (ctx) mus.gain.setTargetAtTime(MUSIC * (v ? 1.18 : 1), t(), 0.8); },
     toggle() { on = !on; save.sound = on ? 1 : 0; store(); if (master) master.gain.setTargetAtTime(on ? 0.8 : 0, t(), 0.05); return on; },
     get on() { return on; },
     engine(speed, alive) { if (!ctx) return; engine.frequency.setTargetAtTime(45 + speed * 0.32, t(), 0.1); engineFilter.frequency.setTargetAtTime(250 + speed * 4, t(), 0.1); engineGain.gain.setTargetAtTime(alive ? 0.09 : 0, t(), 0.1); },
@@ -425,25 +446,10 @@ const SND = (() => {
     alarm() { for (let i = 0; i < 3; i++) { tone("square", 880, 880, 0.12, 0.08, sfx, i * 0.28); tone("square", 660, 660, 0.12, 0.08, sfx, i * 0.28 + 0.14); } },
     ui() { tone("triangle", 660, 990, 0.08, 0.12); },
     type() { tone("triangle", 880, 700, 0.03, 0.025); },
-    // cut scenes: four slow voices (A, E, A, E) that breathe at different rates
-    pad(on) {
-      if (!ctx) return;
-      if (!padGain) {
-        padGain = ctx.createGain(); padGain.gain.value = 0;
-        const lp = ctx.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 900; lp.connect(padGain); padGain.connect(master);
-        for (const [n, cents] of [[45, -4], [52, 3], [57, 5], [64, -6]]) {
-          const o = ctx.createOscillator(), g = ctx.createGain(), l = ctx.createOscillator(), lg = ctx.createGain();
-          o.type = n > 55 ? "sine" : "triangle"; o.frequency.value = hz(n); o.detune.value = cents; g.gain.value = 0.22;
-          l.frequency.value = 0.06 + Math.random() * 0.1; lg.gain.value = 0.12; l.connect(lg); lg.connect(g.gain);
-          o.connect(g); g.connect(lp); o.start(); l.start();
-        }
-      }
-      padGain.gain.setTargetAtTime(on ? 0.2 : 0, t(), on ? 0.8 : 0.25);
-    },
     rock() { noise(0.18, 0.3, 1200, 200); },
     land() { noise(0.5, 0.25, 600, 60); },
-    suspend() { if (ctx && ctx.state === "running") ctx.suspend().catch(() => {}); },
-    resume() { if (ctx && ctx.state === "suspended") ctx.resume().catch(() => {}); },
+    suspend() { if (cur) cur.el.pause(); if (ctx && ctx.state === "running") ctx.suspend().catch(() => {}); },
+    resume() { if (ctx && ctx.state === "suspended") ctx.resume().catch(() => {}); if (cur) { const p = cur.el.play(); if (p && p.catch) p.catch(() => {}); } },
   };
 })();
 
@@ -970,7 +976,7 @@ function launch() {
   cam.pos.set(me.x - f.x * 120 + 40, me.y + 50, me.z - f.z * 120); cam.look.set(me.x, me.y, me.z);
   countdown = 2.999; state = "play"; show(null);
   fly.x = fly.y = 0; grabPointer();
-  SND.music(true);
+  SND.music(["night", "storm", "dawn"].includes(look.weather) ? "battleB" : "battleA");
   centerMsg("3", op ? opLabel(opIx) : "LANTERN SQUADRON · LAUNCH", 900);
 }
 function pause(on) {
@@ -997,11 +1003,12 @@ function endMatch() {
   $("#tally").innerHTML = [...m.ships].sort((a, b) => a.team - b.team || b.kills - a.kills).map((s) =>
     `<tr class="t${s.team}${s === me ? " me" : ""}"><td><img class="face" src="${portrait(s.pilot)}" alt="">${s.name}${s === me ? " (you)" : ""}</td><td>${s.kills}</td><td>${s.deaths}</td><td>${s.energy}</td></tr>`).join("");
   say(win ? "win" : "lose", true);
-  SND.music(false);
+  // a short sting, then the title theme under the results
+  if (draw) SND.music("title"); else SND.music(win ? "win" : "lose", () => { if (state === "results") SND.music("title"); });
   setTimeout(() => { if (state === "results") show("results"); }, 1600);
   centerMsg(draw ? "TIME" : win ? "MISSION COMPLETE" : "MISSION FAILED", "", 1600);
 }
-function toTitle() { if (document.pointerLockElement) document.exitPointerLock(); state = "title"; SND.music(false); show("title"); bestLine(); startAttract(); }
+function toTitle() { if (document.pointerLockElement) document.exitPointerLock(); state = "title"; SND.music("title"); show("title"); bestLine(); startAttract(); }
 
 $("#playBtn").addEventListener("click", () => { SND.init(); SND.ui(); mode = "quick"; toSelect(); });
 $("#storyBtn").addEventListener("click", startStory);
@@ -1051,7 +1058,7 @@ function playScene(slides, label, done) {
   cut.q = slides.slice(); cut.done = done; cut.key = ""; cut.full = ""; cut.shown = 0;
   $("#sceneTitle").textContent = label || "";
   if (document.pointerLockElement) document.exitPointerLock();
-  state = "scene"; show("scene"); SND.init(); SND.music(false); SND.pad(true);
+  state = "scene"; show("scene"); SND.init(); SND.music("story");
   nextSlide();
 }
 function nextSlide() {
@@ -1085,7 +1092,6 @@ function nextSlide() {
 function endScene() {
   if (state !== "scene") return;
   clearInterval(cut.timer); cut.q = []; cut.full = ""; cut.shown = 0; cut.layer = null; cut.key = "";
-  SND.pad(false);
   $("#sceneStage").innerHTML = ""; // before the callback: it may start the next scene, which adds its own layer
   const d = cut.done; cut.done = null;
   if (d) d();
@@ -1104,7 +1110,7 @@ function toSelect() {
   $("#opLine").classList.toggle("hidden", !op);
   if (op) $("#opLine").textContent = `${op.place} · Rivals: ${S.DIFFICULTY[op.difficulty].label} · ${op.goal}`;
   for (const id of ["#rivalLab", "#diff", "#skySeg"]) $(id).classList.toggle("hidden", !!op);
-  state = "select"; buildCards(); segs(); show("select");
+  state = "select"; buildCards(); segs(); show("select"); SND.music("title");
 }
 function buildLog() {
   const n = Math.max(save.log | 0, storyWon()), open = LOG.filter((e) => e.need <= n).length;
@@ -1124,7 +1130,6 @@ function frame(now) {
   let dt = Math.min(0.1, realDt); last = now;
   if (state === "pause") { look.render(); return; }
   if (state === "scene") return;
-  SND.tick();
   const m = match;
   if (!m) return;
   const me = m.player;
@@ -1196,6 +1201,7 @@ window.__fw = {
   weather: (w) => look.setWeather(w),
   dbg: { scene, renderer, camera, look },
   get fly() { return { ...fly }; },
+  get music() { return { track: SND.track, wanted: SND.wanted, playing: SND.playing }; },
   get touch() { return { ...touch }; },
   screenOf: (id) => { const o = match.ships.find((s) => s.id === id); return toScreen(o.x, o.y, o.z); },
   get story() { return { mode, op: opIx, won: storyWon(), left: cut.q.length, text: cut.full }; },
@@ -1206,6 +1212,9 @@ window.__fw = {
 
 bestLine();
 show("title");
+// the title theme starts with the player's first tap, click or key anywhere on the page
+SND.music("title");
+for (const ev of ["pointerdown", "keydown"]) addEventListener(ev, () => SND.init(), { capture: true });
 requestAnimationFrame(frame);
 const loaded = Promise.race([look.load(), new Promise((_, no) => setTimeout(() => no(new Error("models timed out")), 15000))])
   .catch((e) => { console.warn("Frostwing: using simple ships;", e && e.message); });

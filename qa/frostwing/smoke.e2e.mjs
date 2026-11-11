@@ -43,6 +43,12 @@ const shot = async (page, name) => { if (SHOTS) await page.screenshot({ path: pa
   const { ctx, page, errors } = await open({ viewport: { width: 1280, height: 720 } });
   await shot(page, "title-1280");
   check(await page.evaluate(() => document.activeElement && document.activeElement.id) === "storyBtn", `${tag}: the title opens with STORY in focus`);
+  const quiet0 = await page.evaluate(() => __fw.music);
+  check(quiet0.wanted === "title" && !quiet0.playing, `${tag}: no music plays before the player's first tap or key`);
+  await page.mouse.click(640, 60); // a click on the title art, not on a button
+  await page.waitForFunction(() => __fw.music.playing, null, { timeout: 8000 }).catch(() => {});
+  const m0 = await page.evaluate(() => __fw.music);
+  check(m0.track === "title" && m0.playing, `${tag}: the first click anywhere starts the title theme (${JSON.stringify(m0)})`);
   await page.click("#playBtn"); // QUICK MATCH
   await page.waitForSelector("#select:not(.hidden)");
   check((await page.$$eval(".pcard", (c) => c.map((x) => x.dataset.pilot))).join() === "juno,pip,brann,silas", `${tag}: the pilot screen offers Juno, Pip, Brann and Silas Vane`);
@@ -53,6 +59,7 @@ const shot = async (page, name) => { if (SHOTS) await page.screenshot({ path: pa
   await page.click("#launchBtn");
   await page.waitForFunction(() => __fw.state === "play");
   check(await page.evaluate(() => __fw.match.player.pilot === "silas" && __fw.match.diff.label === "Cadet"), `${tag}: the match starts with Silas Vane against Cadet rivals`);
+  check(await page.evaluate(() => __fw.music.track === "battleA" && __fw.music.playing), `${tag}: a match by day plays the first battle theme`);
   await page.evaluate(() => __fw.skipCountdown());
   await page.waitForTimeout(300);
   const y0 = await page.evaluate(() => __fw.match.player.yaw);
@@ -71,14 +78,21 @@ const shot = async (page, name) => { if (SHOTS) await page.screenshot({ path: pa
   await shot(page, "play-1280");
   await page.keyboard.press("Escape");
   check(await page.evaluate(() => __fw.state === "pause") && await page.isVisible("#pause"), `${tag}: Esc pauses`);
+  check(await page.evaluate(() => !__fw.music.playing), `${tag}: the music pauses with the game`);
   const t1 = await page.evaluate(() => __fw.match.time); await page.waitForTimeout(600);
   check(await page.evaluate((t) => __fw.match.time === t, t1), `${tag}: the clock stops while paused`);
   await page.click("#resumeBtn");
   check(await page.evaluate(() => __fw.state === "play"), `${tag}: Resume goes back to the fight`);
+  await page.waitForFunction(() => __fw.music.playing, null, { timeout: 5000 }).catch(() => {});
+  check(await page.evaluate(() => __fw.music.track === "battleA" && __fw.music.playing), `${tag}: the battle theme resumes`);
   await page.evaluate(() => __fw.fastForward(260));
   await page.waitForSelector("#results:not(.hidden)", { timeout: 10000 });
   const res = await page.evaluate(() => ({ rows: document.querySelectorAll("#tally tr").length, title: document.querySelector("#resultTitle").textContent, save: __fw.save }));
   check(res.rows === 8 && /VICTORY|DEFEAT|DRAW/.test(res.title), `${tag}: the results list all eight pilots under ${res.title}`);
+  const sting = await page.evaluate(() => __fw.music.track);
+  check(res.title === "DRAW" ? sting === "title" : sting === (res.title === "VICTORY" ? "win" : "lose"), `${tag}: the match ends on the ${res.title === "VICTORY" ? "victory" : res.title === "DEFEAT" ? "defeat" : "title"} music (${sting})`);
+  const after = await page.waitForFunction(() => __fw.music.track === "title" && __fw.music.playing, null, { timeout: 25000 }).then(() => true, () => false);
+  check(after, `${tag}: after the sting the title theme plays under the results`);
   check(res.save.played === 1 && res.save.pilot === "silas", `${tag}: the result is saved (played ${res.save.played})`);
   await shot(page, "results-1280");
   await page.click("#againBtn");
@@ -98,6 +112,7 @@ const shot = async (page, name) => { if (SHOTS) await page.screenshot({ path: pa
   await page.keyboard.press("Enter"); // STORY has focus
   await page.waitForSelector("#scene:not(.hidden)");
   const s1 = await page.evaluate(() => ({ title: document.querySelector("#sceneTitle").textContent, layer: !!document.querySelector("#sceneStage .layer.on"), box: document.querySelector("#sceneBox").className, left: __fw.story.left }));
+  check(await page.evaluate(() => __fw.music.track === "story"), `${tag}: a cut scene plays the story underscore`);
   check(s1.title === "HOLLOWMERE" && s1.layer && s1.box === "narr" && s1.left === 5, `${tag}: STORY opens the prologue: a still, a narrator caption and five more slides (${JSON.stringify(s1)})`);
   await page.waitForTimeout(250);
   const typed = await page.textContent("#sceneText");
@@ -161,6 +176,7 @@ const shot = async (page, name) => { if (SHOTS) await page.screenshot({ path: pa
   await page.evaluate(() => { HTMLCanvasElement.prototype.requestPointerLock = function () {}; });
   await page.click("#storyBtn"); await page.click("#sceneSkip"); await page.click("#launchBtn");
   const m5 = await page.evaluate(() => { const v = __fw.match.ships.find((s) => s.pilot === "vex"); return { boss: v.boss, shield: v.maxShield, weather: __fw.look.weather, len: __fw.match.length }; });
+  check(await page.evaluate(() => __fw.music.track === "battleB"), `${tag}: Operation 5 plays the second battle theme`);
   check(m5.boss && m5.shield > 200 && m5.weather === "dawn" && m5.len === 240, `${tag}: in Operation 5 Vex flies the Nightjar with a ${m5.shield}-point shield, at dawn`);
   await page.evaluate(() => { __fw.skipCountdown(); });
   await page.waitForTimeout(300);

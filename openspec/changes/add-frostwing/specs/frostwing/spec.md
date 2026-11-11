@@ -198,9 +198,37 @@ The game SHALL offer High and Fast graphics. High shows sun shadows, bloom and r
 - WHEN the title screen opens
 - THEN PLAY is enabled and the match uses the simple built-in ships
 
+### Requirement: Music
+
+The game SHALL play recorded instrumental music: a title theme, a battle theme that depends on the sky, a story underscore in cut scenes, and a short sting when a match is won or lost. The music SHALL start on the player's first tap, click or key, pause with the game, and follow the sound setting.
+
+#### Scenario: Music across the screens
+
+- GIVEN a player opens the game and clicks anywhere
+- WHEN the player goes from the title to a match by day, wins it, and then starts the story
+- THEN the title theme plays, then the first battle theme, then the victory sting followed by the title theme under the results, then the story underscore in the cut scene
+
+#### Scenario: Night, storm and dawn
+
+- GIVEN a match at night, in a storm or at dawn
+- WHEN the match starts
+- THEN the second, darker battle theme plays
+
+#### Scenario: Pause and a hidden page
+
+- GIVEN music is playing in a match
+- WHEN the player pauses, or the page is hidden
+- THEN the music stops, and it continues when the player resumes or the page shows again
+
 ### Requirement: The game has an arcade cabinet
 
-Frostwing SHALL have a cabinet at the end of the Action row of the arcade home and an entry in the game switcher.
+Frostwing SHALL have a cabinet at the end of the Action row of the arcade home, a cabinet in the Corridor after First Breath, an entry in the game switcher, and dates for the All Games New and Updated orders.
+
+#### Scenario: Corridor
+
+- GIVEN the arcade home opens on the Corridor
+- WHEN the player opens the index and picks Frostwing, or walks to cabinet 17
+- THEN the cabinet shows Frostwing's screen art, and "Insert coin · Play" opens `/frostwing/`
 
 #### Scenario: Cabinet
 
