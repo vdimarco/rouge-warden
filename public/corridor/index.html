@@ -24,6 +24,7 @@
       /* the top bar has no room on a phone: there the control joins the category strip */
       @media (max-width: 760px) { #classic-link { display: none; } #classic-pill { display: inline-flex; } }
     </style>
+    <script>window.CORRIDOR_DATES_URL = "/arcade/game-dates.json";</script>
     <!--
       Afterglow Corridor — a clean-room rebuild of the "Corridor" portfolio-hero
       section, reverse-engineered from the published minified bundle.
@@ -305,6 +306,10 @@
         text-transform: uppercase;
         white-space: nowrap;
       }
+      .cr-order { position: relative; flex: none; display: inline-flex; }
+      .cr-order select { appearance: none; -webkit-appearance: none; padding-right: 28px; color: var(--fg); cursor: pointer; }
+      .cr-order select option { background: var(--bg); color: var(--fg); text-transform: none; }
+      .cr-order:after { content: ""; position: absolute; right: 12px; top: 50%; width: 6px; height: 6px; margin-top: -5px; border-right: 1.5px solid currentColor; border-bottom: 1.5px solid currentColor; transform: rotate(45deg); pointer-events: none; opacity: .7; }
       .cr-cat-btn[aria-current=true] { background: var(--glass-h); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--fg) 35%, transparent); }
       .cr-cat-menu {
         position: absolute;
@@ -832,6 +837,43 @@
           { n: '39', title: "GTA Montréal", client: 'Cottage Arcade', kind: "GTA", year: '2026', place: 'arcade.uptick.systems', medium: "PARK LA FONTAINE", size: 'Free play', surface: 'ceil', w: 3, h: 4, at: 1.0, color: '#00C3CC', img: ART.gta, url: "/gta/",
             text: "A boxy teal car drifts down Plateau streets. Explore, drive, save the park." },
         ];
+
+        /* When each game was added and last updated — the arcade's git dates,
+           by route. The arcade's copy of this page refreshes them. */
+        const DATES = {"/gta/":["2026-10-10T23:49:08-04:00","2026-10-18T09:57:12-04:00"],"/ascii-front/":["2026-10-09T12:43:20-04:00","2026-10-09T15:21:35-04:00"],"/battle-tanks/":["2026-10-09T11:01:28-04:00","2026-10-11T15:13:47Z"],"/tidebreak/":["2026-09-29T11:43:48-04:00","2026-10-09T14:00:11-04:00"],"/brawl/":["2026-09-30T15:22:39-04:00","2026-10-08T11:28:41-04:00"],"/lab/worlds/":["2026-09-29T11:33:05-04:00","2026-10-08T11:28:41-04:00"],"/plungerd/":["2026-09-24T23:16:38Z","2026-10-08T11:28:41-04:00"],"/fall/":["2026-09-24T16:07:00Z","2026-10-08T11:28:41-04:00"],"/crimson/":["2026-09-25T05:10:42Z","2026-10-12T13:49:36Z"],"/wild/":["2026-09-25T05:32:34Z","2026-10-08T11:28:41-04:00"],"/fish/":["2026-09-27T22:29:24Z","2026-10-18T00:28:51-04:00"],"/vr/":["2026-09-28T20:59:28Z","2026-10-29T14:40:30Z"],"/pingpong/":["2026-10-15T11:41:46-04:00","2026-10-23T16:28:16-04:00"],"/olympus/":["2026-09-30T10:05:15-04:00","2026-10-08T11:28:41-04:00"],"/moonwell/":["2026-09-30T11:46:42-04:00","2026-10-08T11:28:41-04:00"],"/primordia/":["2026-10-03T05:45:54Z","2026-10-08T11:28:41-04:00"],"/breakthrough2/":["2026-10-01T09:47:06-04:00","2026-10-16T02:44:08Z"],"/follow-suit/":["2026-10-03T19:03:07-04:00","2026-10-08T11:28:41-04:00"],"/silent-depth/":["2026-10-24T14:01:39-04:00","2026-10-24T18:50:34-04:00"],"/river-rush/":["2026-10-04T19:19:41Z","2026-10-09T14:51:32Z"],"/light-years-home/":["2026-10-13T05:28:17Z","2026-10-17T00:08:20Z"],"/ahead-of-the-light/":["2026-10-14T07:26:22Z","2026-10-19T18:16:12-04:00"],"/first-breath/":["2026-10-18T15:01:19-04:00","2026-10-20T12:29:27-04:00"],"/frostwing/":["2026-11-10T22:52:42-05:00","2026-11-11T06:43:38-05:00"],"/lake-brawl/":["2026-11-10T11:02:51-05:00","2026-11-10T11:02:51-05:00"],"/lab/":["2026-09-28T21:25:13Z","2026-10-12T13:46:14Z"],"/neon/":["2026-09-29T11:34:10-04:00","2026-10-08T11:28:41-04:00"],"/echo/":["2026-09-28T18:40:26-04:00","2026-10-08T11:28:41-04:00"],"/tellme/":["2026-09-30T23:36:53-04:00","2026-10-08T11:28:41-04:00"],"/lab/plunge/":["2026-09-28T21:43:09Z","2026-10-08T11:28:41-04:00"],"/lab/creek/":["2026-09-28T22:00:48Z","2026-10-08T11:28:41-04:00"],"/lab/tilt/":["2026-09-28T22:34:07Z","2026-10-08T11:28:41-04:00"],"/lab/rules/":["2026-09-28T22:47:44Z","2026-10-08T11:28:41-04:00"],"/afterlight/":["2026-10-08T20:43:33-04:00","2026-10-11T15:13:47Z"],"/lighthouse-keeper/":["2026-10-08T20:12:07-04:00","2026-10-11T15:13:47Z"],"/echoes-under-ice/":["2026-10-08T20:12:07-04:00","2026-10-11T15:13:47Z"],"/last-train-home/":["2026-10-08T20:12:07-04:00","2026-10-11T15:13:47Z"],"/firefly-courier/":["2026-10-08T20:12:07-04:00","2026-10-11T15:13:47Z"],"/mirage-runner/":["2026-10-08T20:12:07-04:00","2026-10-11T15:13:47Z"],"/orbital-gardener/":["2026-10-08T20:12:07-04:00","2026-10-11T15:13:47Z"],"/eleven-wells/":["2026-11-10T09:35:20-05:00","2026-11-10T09:35:20-05:00"],"/last-light/":["2026-10-08T19:24:54-04:00","2026-10-11T15:13:47Z"]};
+        const ORDER_KEY = 'corridor-order', DATES_KEY = 'corridor-dates';
+        let ORDER = 'arcade';                    // 'arcade' (by category), 'new' or 'updated'
+        try {
+          const o = localStorage.getItem(ORDER_KEY);
+          if (o === 'new' || o === 'updated') ORDER = o;
+          const fresh = JSON.parse(localStorage.getItem(DATES_KEY) || 'null');
+          if (fresh && typeof fresh === 'object') Object.assign(DATES, fresh);
+        } catch {}
+        if (window.CORRIDOR_DATES_URL) {
+          fetch(window.CORRIDOR_DATES_URL).then((r) => r.json()).then((j) => {
+            const map = {};
+            for (const g of Object.values(j.games)) map['/' + g.path.replace(/^public\//, '') + '/'] = [g.added, g.updated];
+            localStorage.setItem(DATES_KEY, JSON.stringify(map));   // sorted in on the next visit
+          }).catch(() => {});
+        }
+        {
+          const day = (ms) => new Date(ms).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+          PIECES.forEach((p, i) => {
+            p.shape = p.n === '06' ? 'sitdown' : p.n === '07' ? 'cocktail' : 'upright';   // the two odd cabinets keep their games
+            const d = DATES[p.url.replace(/^https?:\/\/[^/]+/, '')] || [];
+            p.added = Date.parse(d[0]) || 0;
+            p.updated = Date.parse(d[1]) || 0;
+            p.rank = i;
+          });
+          if (ORDER !== 'arcade') {
+            const key = ORDER === 'new' ? 'added' : 'updated';
+            PIECES.sort((a, b) => b[key] - a[key] || a.rank - b.rank);
+            PIECES.forEach((p, i) => {
+              p.n = String(i + 1).padStart(2, '0');
+              if (p[key]) p.when = (ORDER === 'new' ? 'Added ' : 'Updated ') + day(p[key]);
+            });
+          }
+        }
 
         const COUNT = PIECES.length;
 
@@ -1855,7 +1897,7 @@ void main() {
              The screen runs a UNIQUE generated attract canvas per game —
              never the framed keyart. */
           buildCabinet(work, index) {
-            const profile = work.n === '06' ? 'sitdown' : work.n === '07' ? 'cocktail' : 'upright';
+            const profile = work.shape;
             const side = index % 2 === 0 ? 'left' : 'right';     // even games line the left wall
             let CW, CH, CD;                                      // width (along the corridor), height, depth (to the aisle)
             if (profile === 'sitdown') { CW = 2.6; CH = 2.2; CD = 0.95; }
@@ -2219,6 +2261,7 @@ void main() {
             const norm = (v) => { const l = Math.hypot(v[0], v[1], v[2]); return [v[0] / l, v[1] / l, v[2] / l]; };
             const seen = new Set();
             const signs = [];
+            if (ORDER !== 'arcade') return signs;                 // sorted by date the categories mix, so no section signs
             PIECES.forEach((work, i) => {
               if (seen.has(work.kind)) return;
               seen.add(work.kind);
@@ -3035,7 +3078,7 @@ void main() {
         /* ---- static DOM built from the data ---- */
         rollStrip.innerHTML = PIECES.map((p) => `<span>${p.n}</span>`).join('');
         capStack.innerHTML = PIECES.map((p) =>
-          `<div class="cr-cap-item" data-i="${p.n}"><h2>${p.title}</h2><p><i style="background:${p.color}"></i>${p.kind} · ${p.client} · ${p.year}</p></div>`
+          `<div class="cr-cap-item" data-i="${p.n}"><h2>${p.title}</h2><p><i style="background:${p.color}"></i>${p.kind} · ${p.client} · ${p.when || p.year}</p></div>`
         ).join('');
         railEl.innerHTML = PIECES.map((p) =>
           `<li><button type="button" aria-label="${p.title}, ${p.kind}" data-i="${p.n}"><span>${p.title}</span></button></li>`
@@ -3043,7 +3086,7 @@ void main() {
         listEl.innerHTML = PIECES.map((p) =>
           `<li style="--i:${Number(p.n) - 1}"><button type="button" data-i="${p.n}">
             <span class="cr-list-n">${p.n}</span><i style="background:${p.color}"></i>
-            <span class="cr-list-b">${p.title}</span><span class="cr-list-t">${p.kind}</span><span class="cr-list-y">${p.year}</span>
+            <span class="cr-list-b">${p.title}</span><span class="cr-list-t">${p.kind}</span><span class="cr-list-y">${p.when || p.year}</span>
           </button></li>`
         ).join('');
         const capItems = [...capStack.children];
@@ -3168,7 +3211,7 @@ void main() {
           const p = PIECES[i], next = PIECES[wrap(i + 1)];
           $('#panel').style.setProperty('--c', p.color);
           $('#p-dot').style.background = p.color;
-          $('#p-k').textContent = `${p.n} · ${p.kind} · ${p.year}`;
+          $('#p-k').textContent = `${p.n} · ${p.kind} · ${p.when || p.year}`;
           $('#cr-case-title').textContent = p.title;
           $('#p-t').textContent = `For ${p.client}`;
           $('#p-p').textContent = p.text;
@@ -3248,6 +3291,20 @@ void main() {
             </div>
           </div>`;
         }).join('');
+        /* The order of the walk: by category, newest first, or most recently
+           updated first. The hall is built once, so a change reloads it. */
+        catsEl.insertAdjacentHTML('beforeend', `<label class="cr-order"><span class="cr-sr">Order of games</span>
+          <select id="order" class="cr-btn cr-cat-btn">
+            <option value="arcade">Order: Arcade</option><option value="new">Order: Newest</option><option value="updated">Order: Updated</option>
+          </select></label>`);
+        const orderEl = $('#order');
+        orderEl.value = ORDER;
+        orderEl.addEventListener('change', () => {
+          try { localStorage.setItem(ORDER_KEY, orderEl.value); } catch {}
+          history.scrollRestoration = 'manual';     // start the new walk at its first cabinet
+          scrollTo(0, 0);
+          location.reload();
+        });
         const catWraps = [...catsEl.querySelectorAll('.cr-cat')];
         const catBtns = catWraps.map((w) => w.querySelector('.cr-cat-btn'));
         const catMenus = catWraps.map((w) => w.querySelector('.cr-cat-menu'));
