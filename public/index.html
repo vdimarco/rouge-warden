@@ -293,7 +293,9 @@ button { font: inherit; color: inherit; }
 .cab.live .screen canvas.lenia-screen { opacity: 1; }
 .machine-picker { display: flex; align-items: center; gap: 8px; font-family: var(--pixel); font-size: 12px; color: var(--muted); }
 .machine-picker select { min-height: 44px; max-width: 190px; padding: 8px; border: 1px solid #5b4e78; border-radius: 8px; color: var(--ink); background: #140c24; font: 13px system-ui, sans-serif; }
-@media (max-width: 760px) { .tray { gap: 8px; } .help { display: none; } .where { flex-basis: 100%; justify-content: center; } .where:has(.back:not([hidden])) .word { display: none; } }
+@media (max-width: 760px) { .tray { gap: 8px; } .help { display: none; } .where { flex-basis: 100%; justify-content: center; } .where:has(.back:not([hidden])) .word { display: none; }
+  /* in a group, Back, the machine list and the count are wider than a phone: the list gives up the space, so Back stays in the window */
+  .where, .machine-picker, .machine-picker select { min-width: 0; } }
 @media (max-height: 520px) { .where { flex-basis: auto; } .where:has(.back:not([hidden])) .word { display: none; } .where:has(.back:not([hidden])) select { max-width: 150px; } }
 /* groups: the hall shows one cabinet per group; playing one opens a row of its games */
 .cab[hidden] { display: none; }
@@ -302,9 +304,6 @@ button { font: inherit; color: inherit; }
 .cab.group .door small { font-size: 12px; line-height: 1.45; color: var(--muted); text-wrap: balance; }
 /* the way back to the hall sits in the tray, beside the machine picker, so it never covers a cabinet */
 .where { display: flex; align-items: center; gap: 10px; }
-/* on a narrow phone the machine list gets narrower, so the way back and the count stay inside the window */
-.where, .where .machine-picker, .where select { min-width: 0; }
-.where .back, #machineCount { flex-shrink: 0; }
 #machineCount { white-space: nowrap; }
 @media (max-width: 760px) { #machineCount .grp { display: none; } }
 .back { min-height: 44px; padding: 10px 14px; border-radius: 10px; border: 1px solid var(--gold); background: rgba(20, 12, 36, 0.85); font-family: var(--pixel); font-size: 12px; color: var(--gold); cursor: pointer; white-space: nowrap; }
@@ -1051,10 +1050,10 @@ function pick(i, quiet) {
   };
   stage.addEventListener("pointerup", end);
   stage.addEventListener("pointercancel", end);
-  // a mouse swipe that starts on a machine's screen picture would drag the picture, and the browser would cancel the swipe
-  stage.addEventListener("dragstart", (e) => e.preventDefault());
   // a swipe is not a tap: keep it from pressing the button under your finger
   stage.addEventListener("click", (e) => { if (stage.dataset.swiped) { e.stopPropagation(); e.preventDefault(); delete stage.dataset.swiped; } }, true);
+  // a mouse swipe that starts on a screen picture or a link would drag a copy of it and cancel the swipe
+  stage.addEventListener("dragstart", (e) => e.preventDefault());
 }
 // tabbing to a machine brings it to the middle (a mouse click on a side machine is left alone)
 for (const c of [...groupCabs, ...games]) {
