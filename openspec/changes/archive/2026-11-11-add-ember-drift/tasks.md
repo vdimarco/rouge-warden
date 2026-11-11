@@ -1,0 +1,10 @@
+- [x] Build the game: endless flight, boost, flares, comets, beacons, blaze, perfect shapes, top runs, 16 stages with unlocks and sparks
+- [x] Tune the 16 stages with the autopilot harness and measure endless survival before and after
+- [x] Arcade page: quiet.js, switch.js with a Switch game button in the HUD and every menu, analytics, pause when the switcher opens
+- [x] Action cabinet with screen art, palette and best-score line, last in the Action group
+- [x] Switcher entry, game-dates entry, quiet.mjs `PAGES` entry
+- [x] Corridor piece 19 with its screen art, renumbered pieces, written counts and 126 light slots
+- [x] Update `qa/arcade/machines.mjs` for the new last machine of the Action row
+- [x] Run `node qa/arcade/machines.mjs` and the quiet check against the served site
+- [x] Screenshots of the hall and the game at 390, 320 and 1280 wide in `shots/`
+- [x] Check the spec structure by hand (the OpenSpec CLI is not installed in this session) and archive the change
