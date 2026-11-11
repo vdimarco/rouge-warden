@@ -29,8 +29,9 @@ const cfg = await view(net, C, "get_config");
 log({ who: "run", act: "start", contract: C, cap: fmt(cfg.cap), spent: fmt(cfg.spent), reserved: fmt(cfg.reserved), kinds, budget });
 const r = rng(Date.now());
 const TITLES = { map: "The dock", roster: "Who bites at dusk", paint: "The cabin", tune: "Campfire" };
-const ids = [];
-for (const k of kinds) ids.push(await warden.post(k, TITLES[k], specFor(k, r), budget, 20));
+// --jobs 3,4 picks up jobs already posted instead of posting new ones
+const ids = arg("--jobs") ? arg("--jobs").split(",").map(Number) : [];
+if (!ids.length) for (const k of kinds) ids.push(await warden.post(k, TITLES[k], specFor(k, r), budget, 20));
 
 const t0 = Date.now();
 while (Date.now() - t0 < timeoutMs) {

@@ -4,6 +4,10 @@
 import { account, call, view, near, fmt, TGAS } from "../lib/near.mjs";
 import { make } from "../lib/make.mjs";
 
+// A NEAR account must hold its gas limit at a worst-case price (about 0.1 NEAR per 100 Tgas) to send a call;
+// the unused part comes back. A delivery that pays through NEAR Intents needs about 110 Tgas in all.
+export const DELIVER_GAS = 150n * TGAS;
+
 export const PERSONAS = {
   "seller-a": { name: "Marg", kinds: ["map", "paint", "tune"], askFrac: 0.85, floorFrac: 0.7, rail: "intents", faultRate: 0.3, careful: true, note: "I test every map on chain before I ship it." },
   "seller-b": { name: "Gravel", kinds: ["map", "roster", "paint", "tune"], askFrac: 0.55, floorFrac: 0.5, rail: "near", faultRate: 0.45, careful: false, note: "Cheapest on the lake." },
@@ -31,7 +35,7 @@ export class Seller {
 
   async bid(j) {
     const ask = (BigInt(j.budget) * BigInt(Math.round(this.askFrac * 1000))) / 1000n;
-    const r = await call(this.acc, this.contract, "bid", { job_id: j.id, ask: ask.toString(), rail: this.rail, note: this.note });
+    const r = await call(this.acc, this.contract, "bid", { job_id: j.id, ask: ask.toString(), rail: this.rail, note: this.note }, { gas: 20n * TGAS });
     this.log({ who: this.name, act: "bid", job: j.id, ask: fmt(ask), rail: this.rail, tx: r.tx, error: r.failed || undefined });
   }
 
@@ -44,7 +48,7 @@ export class Seller {
       const fin = floor > offer && floor < ask ? floor : null;
       args = fin && offer * 10n >= floor * 8n ? { job_id: j.id, bid: i, answer: "final", final_price: fin.toString() } : { job_id: j.id, bid: i, answer: "walk" };
     }
-    const r = await call(this.acc, this.contract, "respond", args);
+    const r = await call(this.acc, this.contract, "respond", args, { gas: 20n * TGAS });
     this.log({ who: this.name, act: "answer", job: j.id, answer: args.answer, offer: fmt(offer), final: args.final_price ? fmt(args.final_price) : undefined, tx: r.tx, error: r.failed || undefined });
   }
 
@@ -59,7 +63,7 @@ export class Seller {
       if (preview.pass) break;
       this.log({ who: this.name, act: "self-check", job: j.id, pass: false, reason: preview.reason });
     }
-    const r = await call(this.acc, this.contract, "deliver", { job_id: j.id, data: JSON.stringify(data) }, { gas: 300n * TGAS });
+    const r = await call(this.acc, this.contract, "deliver", { job_id: j.id, data: JSON.stringify(data) }, { gas: DELIVER_GAS });
     this.log({ who: this.name, act: "deliver", job: j.id, kind: j.kind, pass: r.result, reason: r.logs.find((l) => /^(pass|fail) job/.test(l)), payout: r.logs.find((l) => l.startsWith("payout")), tx: r.tx, error: r.failed || undefined, later: r.laterFailures?.length ? r.laterFailures : undefined });
   }
 }

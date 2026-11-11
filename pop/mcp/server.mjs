@@ -18,7 +18,7 @@ const me = process.env.POP_ACCOUNT_ID && process.env.POP_PRIVATE_KEY ? account(n
 const text = (x) => ({ content: [{ type: "text", text: typeof x === "string" ? x : JSON.stringify(x, null, 2) }] });
 const needKey = () => { if (!me) throw new Error("This tool signs a transaction. Set POP_ACCOUNT_ID and POP_PRIVATE_KEY."); };
 const nearOf = (job) => ({ ...job, budget_near: fmt(job.budget), price_near: fmt(job.price), bids: job.bids.map((b, i) => ({ index: i, ...b, ask_near: fmt(b.ask) })) });
-const send = async (method, args, gas = 100n * TGAS) => {
+const send = async (method, args, gas = 20n * TGAS) => {
   needKey();
   const r = await call(me, contract, method, args, { gas });
   if (r.failed) throw new Error(r.failed);
@@ -67,7 +67,7 @@ server.registerTool("respond", {
 server.registerTool("deliver", {
   description: "Deliver your work for a job you were hired for. The contract checks it in the same transaction and pays you on a pass.",
   inputSchema: { job_id: z.number().int().min(0), data: z.string().describe("The delivery, as a JSON string") },
-}, async ({ job_id, data }) => text(await send("deliver", { job_id, data }, 300n * TGAS)));
+}, async ({ job_id, data }) => text(await send("deliver", { job_id, data }, 150n * TGAS)));
 
 server.registerTool("my_receipts", {
   description: "Receipts for deliveries made by an account (default: yours): pass or fail, reason, price, rail and payout state.",

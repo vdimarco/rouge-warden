@@ -60,7 +60,7 @@ async function main() {
     pop = ks.get("pop");
     for (const name of ["seller-a", "seller-b"]) { if (!ks.get(name)) ks.put(name, freshKey()); sellers.push(ks.get(name)); }
     const st = await accountState(net, pop.accountId);
-    const need = Number(arg("--need", "5.5")); // code storage ~2.1, the cap ~2.7, seller gas 0.1, buffer
+    const need = Number(arg("--need", "5.5")); // code storage ~2.1, the cap ~2.7, seller gas 0.4, buffer
 
     const have = st ? Number(BigInt(st.amount) / 10n ** 18n) / 1e6 : 0;
     step("Funding");
@@ -101,7 +101,9 @@ async function main() {
     step("Gas money for the reference sellers");
     for (const s of sellers) {
       const st = await accountState(net, s.accountId);
-      if (!st) { const out = await popAcc.transfer({ receiverId: s.accountId, amount: near(0.05) }); console.log(`  sent 0.05 NEAR to ${s.accountId}, tx ${out.transaction.hash}`); }
+      // a call must hold its gas limit at a worst-case price: a 150 Tgas delivery needs about 0.15 NEAR on hand
+      const have = st ? BigInt(st.amount) : 0n, want = near(0.2);
+      if (have < want) { const out = await popAcc.transfer({ receiverId: s.accountId, amount: want - have }); console.log(`  topped ${s.accountId} up to 0.2 NEAR, tx ${out.transaction.hash}`); }
     }
   }
 

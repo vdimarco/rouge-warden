@@ -67,7 +67,7 @@ export class Warden {
   }
 
   async act(method, args, info) {
-    const r = await call(this.acc, this.contract, method, args, { gas: 50n * TGAS });
+    const r = await call(this.acc, this.contract, method, args, { gas: 30n * TGAS });
     this.log({ who: "warden", act: method, ...info, tx: r.tx, error: r.failed || undefined });
     return !r.failed;
   }

@@ -58,6 +58,10 @@ node scripts/setup.mjs mainnet --beneficiary <you.near> --cap-usd 10
 
 Keys go to `pop/.keys/<network>.json`, which git ignores. Run logs go to `pop/runs/`.
 
+## Gas on mainnet
+
+A NEAR account must hold its gas limit at a worst-case price to send a call, about 0.1 NEAR per 100 Tgas; the unused part comes back. Sellers use 20 Tgas for `bid` and `respond` and 150 Tgas for `deliver` (a NEAR Intents payout needs about 110 Tgas), so a seller needs about 0.15 NEAR on hand to deliver. Setup gives each reference seller 0.2 NEAR.
+
 ## Testnet notes
 
 NEAR Intents has no testnet. On testnet, `mock-intents/` stands in for `intents.near` and keeps the one method the escrow uses, `ft_on_transfer`. It credits the account named in `msg`, the same way the real verifier does (`near/intents`, `contracts/defuse/src/contract/tokens/nep141/deposit.rs`). The wNEAR contract is the real `wrap.testnet`.
@@ -66,4 +70,5 @@ NEAR Intents has no testnet. On testnet, `mock-intents/` stands in for `intents.
 
 - Testnet contract `pop-mwbiijzv.testnet`: 13 of 13 end-to-end checks pass. They cover a counter and a final price, a failed map that pays nothing, a pass paid through the Intents stand-in, a pass paid in NEAR, a failed payout recovered by `retry_payout`, and a Warden key that cannot send NEAR or deliver.
 - The agents ran a commission alone: 3 jobs posted, counters accepted, one self-check caught a map with a room cut off, and 3 passes paid.
-- Mainnet: see the On chain page.
+- **Mainnet** contract `ee4994a509efa3cc516411e75f2633b2d8eac2d05fc30cc558bfd43329cde827`, funded from Solana through two NEAR Intents 1Click swaps (`scripts/fund-via-intents.mjs`). Cap 2.7027 NEAR ($10 on deployment day), beneficiary `proto_von.near`. Its full-access key was deleted in [tx HvyGdLvt…](https://nearblocks.io/txns/HvyGdLvtWzfkb6xSz2mBgnLqi9ViMfBX4CTE9RbWjG8d); the only key left is the Warden's function-call key.
+- Two commissions on mainnet, six jobs, eight receipts. The contract refused to pay for a map with a room cut off and for a tune with two notes out of key. It paid five passes in NEAR and two through NEAR Intents: Marg's wNEAR balance in `intents.near` matches what she was paid. Total spent 0.4725 NEAR of the 2.7027 cap.
