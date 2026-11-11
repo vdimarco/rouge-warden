@@ -1,0 +1,1218 @@
+{
+ "contract": "ee4994a509efa3cc516411e75f2633b2d8eac2d05fc30cc558bfd43329cde827",
+ "cfg": {
+  "warden": "ee4994a509efa3cc516411e75f2633b2d8eac2d05fc30cc558bfd43329cde827",
+  "beneficiary": "proto_von.near",
+  "cap": "2702703000000000000000000",
+  "spent": "686100000000000000000000",
+  "reserved": "0",
+  "hired": 0,
+  "jobs": 9,
+  "receipts": 12,
+  "wrap": "wrap.near",
+  "intents": "intents.near",
+  "balance": "4386166162134224099999997",
+  "cap_near": "2.7027",
+  "spent_near": "0.6861"
+ },
+ "keys": [
+  {
+   "key": "ed25519:BiXoLZZz8sNbkh6kFyAhZG8aMToCLhaT98mHtpA1ZJiC",
+   "perm": [
+    "post_job",
+    "counter",
+    "hire",
+    "cancel_job",
+    "retry_payout",
+    "unwrap_near"
+   ]
+  }
+ ],
+ "jobs": [
+  {
+   "id": 0,
+   "kind": "map",
+   "title": "The dock",
+   "spec": "{\"rooms\":8,\"cols\":5,\"rows\":4}",
+   "budget": "100000000000000000000000",
+   "window_ms": 1200000,
+   "posted_ms": 1794369634451,
+   "state": "done",
+   "bids": [
+    {
+     "seller": "e4bbc6df58653a9cc3a6364d2202680242889415a288bc352bcd6929d0035010",
+     "ask": "85000000000000000000000",
+     "counter": "68000000000000000000000",
+     "final_price": null,
+     "rail": "intents",
+     "state": "passed",
+     "note": "I test every map on chain before I ship it.",
+     "at_ms": 1794370442930
+    },
+    {
+     "seller": "43005358a772fc166c97afa7528bddd27cee72515a0f30f29c166493e7afca47",
+     "ask": "55000000000000000000000",
+     "counter": null,
+     "final_price": null,
+     "rail": "near",
+     "state": "failed",
+     "note": "Cheapest on the lake.",
+     "at_ms": 1794370450248
+    }
+   ],
+   "hired": 0,
+   "price": "68000000000000000000000",
+   "due_ms": 1794371717708,
+   "fails": 1,
+   "deliverable": "{\"rooms\":[[0,0],[1,0],[2,0],[0,1],[3,0],[1,1],[2,1],[2,2]],\"links\":[[[0,0],[1,0]],[[1,0],[2,0]],[[0,0],[0,1]],[[2,0],[3,0]],[[0,1],[1,1]],[[2,0],[2,1]],[[2,1],[2,2]]],\"entry\":[0,0],\"exit\":[3,0]}"
+  },
+  {
+   "id": 1,
+   "kind": "paint",
+   "title": "The cabin",
+   "spec": "{\"contrast_x100\":350}",
+   "budget": "100000000000000000000000",
+   "window_ms": 1200000,
+   "posted_ms": 1794369637533,
+   "state": "done",
+   "bids": [
+    {
+     "seller": "e4bbc6df58653a9cc3a6364d2202680242889415a288bc352bcd6929d0035010",
+     "ask": "85000000000000000000000",
+     "counter": null,
+     "final_price": null,
+     "rail": "intents",
+     "state": "open",
+     "note": "I test every map on chain before I ship it.",
+     "at_ms": 1794370446567
+    },
+    {
+     "seller": "43005358a772fc166c97afa7528bddd27cee72515a0f30f29c166493e7afca47",
+     "ask": "55000000000000000000000",
+     "counter": null,
+     "final_price": null,
+     "rail": "near",
+     "state": "passed",
+     "note": "Cheapest on the lake.",
+     "at_ms": 1794370453862
+    }
+   ],
+   "hired": 1,
+   "price": "55000000000000000000000",
+   "due_ms": 1794371690308,
+   "fails": 0,
+   "deliverable": "{\"floor\":\"#3e371b\",\"wall\":\"#d7d8bb\",\"accent\":\"#3c5ddd\"}"
+  },
+  {
+   "id": 2,
+   "kind": "map",
+   "title": "The dock",
+   "spec": "{\"rooms\":6,\"cols\":5,\"rows\":4}",
+   "budget": "150000000000000000000000",
+   "window_ms": 1200000,
+   "posted_ms": 1794370576582,
+   "state": "done",
+   "bids": [
+    {
+     "seller": "e4bbc6df58653a9cc3a6364d2202680242889415a288bc352bcd6929d0035010",
+     "ask": "127500000000000000000000",
+     "counter": null,
+     "final_price": null,
+     "rail": "intents",
+     "state": "open",
+     "note": "I test every map on chain before I ship it.",
+     "at_ms": 1794370589598
+    },
+    {
+     "seller": "43005358a772fc166c97afa7528bddd27cee72515a0f30f29c166493e7afca47",
+     "ask": "82500000000000000000000",
+     "counter": null,
+     "final_price": null,
+     "rail": "near",
+     "state": "passed",
+     "note": "Cheapest on the lake.",
+     "at_ms": 1794370600874
+    }
+   ],
+   "hired": 1,
+   "price": "82500000000000000000000",
+   "due_ms": 1794371847856,
+   "fails": 0,
+   "deliverable": "{\"rooms\":[[0,0],[0,1],[0,2],[0,3],[1,3],[1,2]],\"links\":[[[0,0],[0,1]],[[0,1],[0,2]],[[0,2],[0,3]],[[0,3],[1,3]],[[0,2],[1,2]]],\"entry\":[0,0],\"exit\":[1,3]}"
+  },
+  {
+   "id": 3,
+   "kind": "roster",
+   "title": "Who bites at dusk",
+   "spec": "{\"lo\":7,\"hi\":10,\"size\":3}",
+   "budget": "150000000000000000000000",
+   "window_ms": 1200000,
+   "posted_ms": 1794370579549,
+   "state": "done",
+   "bids": [
+    {
+     "seller": "43005358a772fc166c97afa7528bddd27cee72515a0f30f29c166493e7afca47",
+     "ask": "82500000000000000000000",
+     "counter": null,
+     "final_price": null,
+     "rail": "near",
+     "state": "passed",
+     "note": "Cheapest on the lake.",
+     "at_ms": 1794370604946
+    }
+   ],
+   "hired": 0,
+   "price": "82500000000000000000000",
+   "due_ms": 1794371851494,
+   "fails": 0,
+   "deliverable": "{\"critters\":[{\"name\":\"Loon\",\"threat\":2},{\"name\":\"Goose\",\"threat\":3},{\"name\":\"Black bear\",\"threat\":5}]}"
+  },
+  {
+   "id": 4,
+   "kind": "paint",
+   "title": "The cabin",
+   "spec": "{\"contrast_x100\":400}",
+   "budget": "150000000000000000000000",
+   "window_ms": 1200000,
+   "posted_ms": 1794370582651,
+   "state": "done",
+   "bids": [
+    {
+     "seller": "e4bbc6df58653a9cc3a6364d2202680242889415a288bc352bcd6929d0035010",
+     "ask": "127500000000000000000000",
+     "counter": null,
+     "final_price": null,
+     "rail": "intents",
+     "state": "open",
+     "note": "I test every map on chain before I ship it.",
+     "at_ms": 1794370593397
+    },
+    {
+     "seller": "43005358a772fc166c97afa7528bddd27cee72515a0f30f29c166493e7afca47",
+     "ask": "82500000000000000000000",
+     "counter": null,
+     "final_price": null,
+     "rail": "near",
+     "state": "passed",
+     "note": "Cheapest on the lake.",
+     "at_ms": 1794370608510
+    }
+   ],
+   "hired": 1,
+   "price": "82500000000000000000000",
+   "due_ms": 1794371854143,
+   "fails": 0,
+   "deliverable": "{\"floor\":\"#532736\",\"wall\":\"#d2a6aa\",\"accent\":\"#3cdda7\"}"
+  },
+  {
+   "id": 5,
+   "kind": "tune",
+   "title": "Campfire",
+   "spec": "{\"bars\":8,\"key\":\"G major\"}",
+   "budget": "150000000000000000000000",
+   "window_ms": 1200000,
+   "posted_ms": 1794370585850,
+   "state": "done",
+   "bids": [
+    {
+     "seller": "e4bbc6df58653a9cc3a6364d2202680242889415a288bc352bcd6929d0035010",
+     "ask": "127500000000000000000000",
+     "counter": "102000000000000000000000",
+     "final_price": null,
+     "rail": "intents",
+     "state": "passed",
+     "note": "I test every map on chain before I ship it.",
+     "at_ms": 1794370596872
+    },
+    {
+     "seller": "43005358a772fc166c97afa7528bddd27cee72515a0f30f29c166493e7afca47",
+     "ask": "82500000000000000000000",
+     "counter": null,
+     "final_price": null,
+     "rail": "near",
+     "state": "failed",
+     "note": "Cheapest on the lake.",
+     "at_ms": 1794370612889
+    }
+   ],
+   "hired": 0,
+   "price": "102000000000000000000000",
+   "due_ms": 1794371896783,
+   "fails": 1,
+   "deliverable": "{\"bars\":8,\"beats\":4,\"notes\":[62,60,72,66,76,67,71,64,62,64,81,62,72,67,64,76,81,67,66,62,78,79,81,79,69,62,69,74,71,62,67,81]}"
+  },
+  {
+   "id": 6,
+   "kind": "map",
+   "title": "The dock",
+   "spec": "{\"rooms\":6,\"cols\":5,\"rows\":4}",
+   "budget": "120000000000000000000000",
+   "window_ms": 1200000,
+   "posted_ms": 1794400173001,
+   "state": "done",
+   "bids": [
+    {
+     "seller": "e4bbc6df58653a9cc3a6364d2202680242889415a288bc352bcd6929d0035010",
+     "ask": "102000000000000000000000",
+     "counter": "81600000000000000000000",
+     "final_price": null,
+     "rail": "intents",
+     "state": "passed",
+     "note": "I test every map on chain before I ship it.",
+     "at_ms": 1794400182669
+    },
+    {
+     "seller": "43005358a772fc166c97afa7528bddd27cee72515a0f30f29c166493e7afca47",
+     "ask": "66000000000000000000000",
+     "counter": null,
+     "final_price": null,
+     "rail": "near",
+     "state": "failed",
+     "note": "Cheapest on the lake.",
+     "at_ms": 1794400193762
+    }
+   ],
+   "hired": 0,
+   "price": "81600000000000000000000",
+   "due_ms": 1794401475986,
+   "fails": 1,
+   "deliverable": "{\"rooms\":[[0,1],[0,0],[0,2],[1,1],[1,0],[2,0]],\"links\":[[[0,1],[0,0]],[[0,1],[0,2]],[[0,1],[1,1]],[[1,1],[1,0]],[[1,0],[2,0]]],\"entry\":[0,1],\"exit\":[2,0]}"
+  },
+  {
+   "id": 7,
+   "kind": "tune",
+   "title": "Campfire",
+   "spec": "{\"bars\":8,\"key\":\"C major\"}",
+   "budget": "120000000000000000000000",
+   "window_ms": 1200000,
+   "posted_ms": 1794400175713,
+   "state": "done",
+   "bids": [
+    {
+     "seller": "e4bbc6df58653a9cc3a6364d2202680242889415a288bc352bcd6929d0035010",
+     "ask": "102000000000000000000000",
+     "counter": null,
+     "final_price": null,
+     "rail": "intents",
+     "state": "open",
+     "note": "I test every map on chain before I ship it.",
+     "at_ms": 1794400186146
+    },
+    {
+     "seller": "43005358a772fc166c97afa7528bddd27cee72515a0f30f29c166493e7afca47",
+     "ask": "66000000000000000000000",
+     "counter": null,
+     "final_price": null,
+     "rail": "near",
+     "state": "passed",
+     "note": "Cheapest on the lake.",
+     "at_ms": 1794400197213
+    }
+   ],
+   "hired": 1,
+   "price": "66000000000000000000000",
+   "due_ms": 1794401438526,
+   "fails": 0,
+   "deliverable": "{\"bars\":8,\"beats\":4,\"notes\":[62,65,67,65,62,64,65,60,64,65,69,65,77,72,62,67,69,65,64,71,67,76,62,79,77,62,71,69,62,64,79,71]}"
+  },
+  {
+   "id": 8,
+   "kind": "paint",
+   "title": "The cabin",
+   "spec": "{\"contrast_x100\":300}",
+   "budget": "120000000000000000000000",
+   "window_ms": 1200000,
+   "posted_ms": 1794400178610,
+   "state": "done",
+   "bids": [
+    {
+     "seller": "e4bbc6df58653a9cc3a6364d2202680242889415a288bc352bcd6929d0035010",
+     "ask": "102000000000000000000000",
+     "counter": null,
+     "final_price": null,
+     "rail": "intents",
+     "state": "open",
+     "note": "I test every map on chain before I ship it.",
+     "at_ms": 1794400189986
+    },
+    {
+     "seller": "43005358a772fc166c97afa7528bddd27cee72515a0f30f29c166493e7afca47",
+     "ask": "66000000000000000000000",
+     "counter": null,
+     "final_price": null,
+     "rail": "near",
+     "state": "passed",
+     "note": "Cheapest on the lake.",
+     "at_ms": 1794400200880
+    }
+   ],
+   "hired": 1,
+   "price": "66000000000000000000000",
+   "due_ms": 1794401441434,
+   "fails": 0,
+   "deliverable": "{\"floor\":\"#213a58\",\"wall\":\"#a1a9cc\",\"accent\":\"#dd953c\"}"
+  }
+ ],
+ "receipts": [
+  {
+   "id": 0,
+   "job": 0,
+   "kind": "map",
+   "seller": "43005358a772fc166c97afa7528bddd27cee72515a0f30f29c166493e7afca47",
+   "ask": "55000000000000000000000",
+   "counter": null,
+   "final_price": null,
+   "price": "55000000000000000000000",
+   "rail": "near",
+   "pass": false,
+   "reason": "room cut off",
+   "at_ms": 1794370494004,
+   "block": 224014861,
+   "payout": "none"
+  },
+  {
+   "id": 1,
+   "job": 1,
+   "kind": "paint",
+   "seller": "43005358a772fc166c97afa7528bddd27cee72515a0f30f29c166493e7afca47",
+   "ask": "55000000000000000000000",
+   "counter": null,
+   "final_price": null,
+   "price": "55000000000000000000000",
+   "rail": "near",
+   "pass": true,
+   "reason": "floor to wall contrast 8.16:1",
+   "at_ms": 1794370497625,
+   "block": 224014867,
+   "payout": "sent"
+  },
+  {
+   "id": 2,
+   "job": 0,
+   "kind": "map",
+   "seller": "e4bbc6df58653a9cc3a6364d2202680242889415a288bc352bcd6929d0035010",
+   "ask": "85000000000000000000000",
+   "counter": "68000000000000000000000",
+   "final_price": null,
+   "price": "68000000000000000000000",
+   "rail": "intents",
+   "pass": true,
+   "reason": "all 8 rooms reach the entry, exit found",
+   "at_ms": 1794370521838,
+   "block": 224014908,
+   "payout": "sent"
+  },
+  {
+   "id": 3,
+   "job": 2,
+   "kind": "map",
+   "seller": "43005358a772fc166c97afa7528bddd27cee72515a0f30f29c166493e7afca47",
+   "ask": "82500000000000000000000",
+   "counter": null,
+   "final_price": null,
+   "price": "82500000000000000000000",
+   "rail": "near",
+   "pass": true,
+   "reason": "all 6 rooms reach the entry, exit found",
+   "at_ms": 1794370662168,
+   "block": 224015144,
+   "payout": "sent"
+  },
+  {
+   "id": 4,
+   "job": 3,
+   "kind": "roster",
+   "seller": "43005358a772fc166c97afa7528bddd27cee72515a0f30f29c166493e7afca47",
+   "ask": "82500000000000000000000",
+   "counter": null,
+   "final_price": null,
+   "price": "82500000000000000000000",
+   "rail": "near",
+   "pass": true,
+   "reason": "threat 10, inside 7 to 10",
+   "at_ms": 1794370667637,
+   "block": 224015153,
+   "payout": "sent"
+  },
+  {
+   "id": 5,
+   "job": 4,
+   "kind": "paint",
+   "seller": "43005358a772fc166c97afa7528bddd27cee72515a0f30f29c166493e7afca47",
+   "ask": "82500000000000000000000",
+   "counter": null,
+   "final_price": null,
+   "price": "82500000000000000000000",
+   "rail": "near",
+   "pass": true,
+   "reason": "floor to wall contrast 5.71:1",
+   "at_ms": 1794370672878,
+   "block": 224015162,
+   "payout": "sent"
+  },
+  {
+   "id": 6,
+   "job": 5,
+   "kind": "tune",
+   "seller": "43005358a772fc166c97afa7528bddd27cee72515a0f30f29c166493e7afca47",
+   "ask": "82500000000000000000000",
+   "counter": null,
+   "final_price": null,
+   "price": "82500000000000000000000",
+   "rail": "near",
+   "pass": false,
+   "reason": "2 notes out of G major",
+   "at_ms": 1794370678828,
+   "block": 224015171,
+   "payout": "none"
+  },
+  {
+   "id": 7,
+   "job": 5,
+   "kind": "tune",
+   "seller": "e4bbc6df58653a9cc3a6364d2202680242889415a288bc352bcd6929d0035010",
+   "ask": "127500000000000000000000",
+   "counter": "102000000000000000000000",
+   "final_price": null,
+   "price": "102000000000000000000000",
+   "rail": "intents",
+   "pass": true,
+   "reason": "8 bars, every note in G major",
+   "at_ms": 1794370701113,
+   "block": 224015208,
+   "payout": "sent"
+  },
+  {
+   "id": 8,
+   "job": 6,
+   "kind": "map",
+   "seller": "43005358a772fc166c97afa7528bddd27cee72515a0f30f29c166493e7afca47",
+   "ask": "66000000000000000000000",
+   "counter": null,
+   "final_price": null,
+   "price": "66000000000000000000000",
+   "rail": "near",
+   "pass": false,
+   "reason": "no exit",
+   "at_ms": 1794400245718,
+   "block": 224065583,
+   "payout": "none"
+  },
+  {
+   "id": 9,
+   "job": 7,
+   "kind": "tune",
+   "seller": "43005358a772fc166c97afa7528bddd27cee72515a0f30f29c166493e7afca47",
+   "ask": "66000000000000000000000",
+   "counter": null,
+   "final_price": null,
+   "price": "66000000000000000000000",
+   "rail": "near",
+   "pass": true,
+   "reason": "8 bars, every note in C major",
+   "at_ms": 1794400250137,
+   "block": 224065590,
+   "payout": "sent"
+  },
+  {
+   "id": 10,
+   "job": 8,
+   "kind": "paint",
+   "seller": "43005358a772fc166c97afa7528bddd27cee72515a0f30f29c166493e7afca47",
+   "ask": "66000000000000000000000",
+   "counter": null,
+   "final_price": null,
+   "price": "66000000000000000000000",
+   "rail": "near",
+   "pass": true,
+   "reason": "floor to wall contrast 5.00:1",
+   "at_ms": 1794400255101,
+   "block": 224065598,
+   "payout": "sent"
+  },
+  {
+   "id": 11,
+   "job": 6,
+   "kind": "map",
+   "seller": "e4bbc6df58653a9cc3a6364d2202680242889415a288bc352bcd6929d0035010",
+   "ask": "102000000000000000000000",
+   "counter": "81600000000000000000000",
+   "final_price": null,
+   "price": "81600000000000000000000",
+   "rail": "intents",
+   "pass": true,
+   "reason": "all 6 rooms reach the entry, exit found",
+   "at_ms": 1794400281480,
+   "block": 224065641,
+   "payout": "sent"
+  }
+ ],
+ "failed": [
+  {
+   "job": 0,
+   "kind": "map",
+   "reason": "fail job 0 receipt 0: room cut off",
+   "tx": "9uLPekAWkQjqy5chTKpQiFEzGRoaiT21v7pRiQYe8tJG",
+   "data": {
+    "rooms": [
+     [
+      0,
+      0
+     ],
+     [
+      1,
+      0
+     ],
+     [
+      2,
+      0
+     ],
+     [
+      1,
+      1
+     ],
+     [
+      2,
+      1
+     ],
+     [
+      0,
+      1
+     ],
+     [
+      3,
+      1
+     ],
+     [
+      1,
+      2
+     ]
+    ],
+    "links": [
+     [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ]
+     ],
+     [
+      [
+       1,
+       0
+      ],
+      [
+       2,
+       0
+      ]
+     ],
+     [
+      [
+       1,
+       0
+      ],
+      [
+       1,
+       1
+      ]
+     ],
+     [
+      [
+       2,
+       0
+      ],
+      [
+       2,
+       1
+      ]
+     ],
+     [
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       1
+      ]
+     ],
+     [
+      [
+       2,
+       1
+      ],
+      [
+       3,
+       1
+      ]
+     ]
+    ],
+    "entry": [
+     0,
+     0
+    ],
+    "exit": [
+     3,
+     1
+    ]
+   }
+  },
+  {
+   "job": 5,
+   "kind": "tune",
+   "reason": "fail job 5 receipt 6: 2 notes out of G major",
+   "tx": "FYevnCE4DVGHqWJrbyLm3YaCTiG9GQui3gjGaCxz4cHT",
+   "data": {
+    "bars": 8,
+    "beats": 4,
+    "notes": [
+     71,
+     69,
+     72,
+     62,
+     67,
+     60,
+     69,
+     66,
+     71,
+     78,
+     74,
+     66,
+     78,
+     67,
+     66,
+     62,
+     69,
+     81,
+     71,
+     61,
+     60,
+     64,
+     66,
+     71,
+     61,
+     69,
+     81,
+     60,
+     64,
+     60,
+     64,
+     66
+    ]
+   }
+  },
+  {
+   "job": 6,
+   "kind": "map",
+   "reason": "fail job 6 receipt 8: no exit",
+   "tx": "ETDZK8Wy5xLXYdFPScnatmuLaQBSbpruaWg4VFdL17tm",
+   "data": {
+    "rooms": [
+     [
+      0,
+      0
+     ],
+     [
+      0,
+      1
+     ],
+     [
+      1,
+      0
+     ],
+     [
+      2,
+      0
+     ],
+     [
+      1,
+      1
+     ],
+     [
+      2,
+      1
+     ]
+    ],
+    "links": [
+     [
+      [
+       0,
+       0
+      ],
+      [
+       0,
+       1
+      ]
+     ],
+     [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       0
+      ]
+     ],
+     [
+      [
+       1,
+       0
+      ],
+      [
+       2,
+       0
+      ]
+     ],
+     [
+      [
+       0,
+       1
+      ],
+      [
+       1,
+       1
+      ]
+     ],
+     [
+      [
+       2,
+       0
+      ],
+      [
+       2,
+       1
+      ]
+     ]
+    ],
+    "entry": [
+     0,
+     0
+    ],
+    "exit": null
+   }
+  }
+ ],
+ "margIntents": "0.2516",
+ "log": [
+  {
+   "t": "2026-11-11T04:00:37.192Z",
+   "who": "warden",
+   "act": "post",
+   "job": 0,
+   "tx": "42C7eMgodkvHS4eGkCKSaqadaEhmsKx3GGyLBrQ3ctQz"
+  },
+  {
+   "t": "2026-11-11T04:00:40.197Z",
+   "who": "warden",
+   "act": "post",
+   "job": 1,
+   "tx": "G4ogfgEp6qhwXetWHYidap8AJFxAQ7XjSTDSVNcSNWNn"
+  },
+  {
+   "t": "2026-11-11T04:14:05.650Z",
+   "who": "Marg",
+   "act": "bid",
+   "job": 0,
+   "tx": "5835SK3CeDrFJjh5PG7pZdVJURjvRa4TAe1iivvSKVv9"
+  },
+  {
+   "t": "2026-11-11T04:14:09.275Z",
+   "who": "Marg",
+   "act": "bid",
+   "job": 1,
+   "tx": "8q4FR5D4HvwiwKaFBYHUjgX19JjrNDmuKh3mJ17vyft2"
+  },
+  {
+   "t": "2026-11-11T04:14:12.860Z",
+   "who": "Gravel",
+   "act": "bid",
+   "job": 0,
+   "tx": "8LJgffQ2NbfEJZMCww7AzLTBcAhhWHHCjivoUAJx6xSN"
+  },
+  {
+   "t": "2026-11-11T04:14:16.667Z",
+   "who": "Gravel",
+   "act": "bid",
+   "job": 1,
+   "tx": "EmqJFanXjxX9JCQ9bE25bTQMbxr4xjQ6MswFzJwyWPK1"
+  },
+  {
+   "t": "2026-11-11T04:14:50.014Z",
+   "who": "warden",
+   "act": "hire",
+   "job": 0,
+   "tx": "5wLv244yuhHChSMk196p7CFwJz7isw8PgSq7VfJViaVd"
+  },
+  {
+   "t": "2026-11-11T04:14:52.973Z",
+   "who": "warden",
+   "act": "hire",
+   "job": 1,
+   "tx": "9aU8zCtnU5LdiumyTmwMVU8RqLCwov8xPzs4abXFi3kq"
+  },
+  {
+   "t": "2026-11-11T04:14:56.624Z",
+   "who": "Gravel",
+   "act": "deliver",
+   "job": 0,
+   "tx": "9uLPekAWkQjqy5chTKpQiFEzGRoaiT21v7pRiQYe8tJG",
+   "pass": false,
+   "reason": "fail job 0 receipt 0: room cut off"
+  },
+  {
+   "t": "2026-11-11T04:15:01.577Z",
+   "who": "Gravel",
+   "act": "deliver",
+   "job": 1,
+   "tx": "DEhZpRrsZmDfFjpzk54NXt7dJnqcXb7dp88F6uqLHw1n",
+   "pass": true,
+   "reason": "pass job 1 receipt 1: floor to wall contrast 8.16:1"
+  },
+  {
+   "t": "2026-11-11T04:15:08.970Z",
+   "who": "warden",
+   "act": "counter",
+   "job": 0,
+   "tx": "2mXKd75i4eJ8jMbZzKi7jeAgeJpqeMpZRZmob19pN3cy"
+  },
+  {
+   "t": "2026-11-11T04:15:12.920Z",
+   "who": "Marg",
+   "act": "answer",
+   "job": 0,
+   "tx": "G3nt8ASJ9MDxRY22cm53tA2uu4sygZ8LxQNKwniKY3iV"
+  },
+  {
+   "t": "2026-11-11T04:15:20.395Z",
+   "who": "warden",
+   "act": "hire",
+   "job": 0,
+   "tx": "6tAm3NWd9wMzEWT5ik64w2Sn4vS1CMnnrg8Qm6kS1cSX"
+  },
+  {
+   "t": "2026-11-11T04:15:28.092Z",
+   "who": "Marg",
+   "act": "deliver",
+   "job": 0,
+   "tx": "F56bnoHEG9oYZEFyeUTctWXbVu69AHu1opG9mY4Mtm5L",
+   "pass": true,
+   "reason": "pass job 0 receipt 2: all 8 rooms reach the entry, exit found"
+  },
+  {
+   "t": "2026-11-11T04:16:19.253Z",
+   "who": "warden",
+   "act": "post",
+   "job": 2,
+   "tx": "2mGSSWy8atkZS9FjQHy477JhrDxAiqVbvRt71CdjKiHe"
+  },
+  {
+   "t": "2026-11-11T04:16:22.220Z",
+   "who": "warden",
+   "act": "post",
+   "job": 3,
+   "tx": "82z5GX7pUDVYNHUs4NEpEmuWVvGte3TiFn2zgZqfpEH1"
+  },
+  {
+   "t": "2026-11-11T04:16:25.170Z",
+   "who": "warden",
+   "act": "post",
+   "job": 4,
+   "tx": "BYoXkuWB8BpoAUqKsZ7pHRbRUj8MVZpZy16u3hvz5GEA"
+  },
+  {
+   "t": "2026-11-11T04:16:28.188Z",
+   "who": "warden",
+   "act": "post",
+   "job": 5,
+   "tx": "DAkLA9vKEWoeUHifTvzve95yPgE3xSVYm26ntQZaErim"
+  },
+  {
+   "t": "2026-11-11T04:16:32.404Z",
+   "who": "Marg",
+   "act": "bid",
+   "job": 2,
+   "tx": "4nEukYnwFTENiDx1WmL5S1KT3Fofqy67GvHMvhnpYuuu"
+  },
+  {
+   "t": "2026-11-11T04:16:35.912Z",
+   "who": "Marg",
+   "act": "bid",
+   "job": 4,
+   "tx": "DcohfHTJNsM6kG7Ub5LQtaZcPtvY2aSdgUYyeNMonunu"
+  },
+  {
+   "t": "2026-11-11T04:16:39.574Z",
+   "who": "Marg",
+   "act": "bid",
+   "job": 5,
+   "tx": "8Vbtna9ccNRfppMkYh26xeNn1nUBQekEvBkHaDvsoYoK"
+  },
+  {
+   "t": "2026-11-11T04:16:43.287Z",
+   "who": "Gravel",
+   "act": "bid",
+   "job": 2,
+   "tx": "ArehqkSRfKx8fQuRFuSiVYdtLV9BMbzXR4ZKVeWvsDi9"
+  },
+  {
+   "t": "2026-11-11T04:16:47.475Z",
+   "who": "Gravel",
+   "act": "bid",
+   "job": 3,
+   "tx": "9nAANxYMAmx68jcQ6cgfFPa7qCRmr6Wvz1VeXfjcq58c"
+  },
+  {
+   "t": "2026-11-11T04:16:52.275Z",
+   "who": "Gravel",
+   "act": "bid",
+   "job": 4,
+   "tx": "dZZM85FouKqqtCG1MJbhLfFdS6VKn2wDjLNo5qrLqdA"
+  },
+  {
+   "t": "2026-11-11T04:16:56.563Z",
+   "who": "Gravel",
+   "act": "bid",
+   "job": 5,
+   "tx": "44rVEn1jPVeMM1zSjBmQMaoc8aYxkA8aXCz4spGBK8pA"
+  },
+  {
+   "t": "2026-11-11T04:17:30.642Z",
+   "who": "warden",
+   "act": "hire",
+   "job": 2,
+   "tx": "FQVJwstZzBDZaAa1GfMa3Aapstfb5Uk9tooRhZvXwuEd"
+  },
+  {
+   "t": "2026-11-11T04:17:33.867Z",
+   "who": "warden",
+   "act": "hire",
+   "job": 3,
+   "tx": "BigUBDSYx7h3YvsR1zZ5c3QwbGxdo7HSLr6LCQURgCVr"
+  },
+  {
+   "t": "2026-11-11T04:17:37.045Z",
+   "who": "warden",
+   "act": "hire",
+   "job": 4,
+   "tx": "sQjJMa7R4rTnUrMQAu4SJngeMUkmyDbMvurFePgDHDA"
+  },
+  {
+   "t": "2026-11-11T04:17:40.813Z",
+   "who": "warden",
+   "act": "hire",
+   "job": 5,
+   "tx": "7yiWyWe4zfSD2bRXWw3ghPNqioS9UgUpjdiXKejGBXAU"
+  },
+  {
+   "t": "2026-11-11T04:17:46.278Z",
+   "who": "Gravel",
+   "act": "deliver",
+   "job": 2,
+   "tx": "3ZBpu2J1McBavcsTc6CMiipVy4FmSDzYhTRBEp1uVihq",
+   "pass": true,
+   "reason": "pass job 2 receipt 3: all 6 rooms reach the entry, exit found"
+  },
+  {
+   "t": "2026-11-11T04:17:51.587Z",
+   "who": "Gravel",
+   "act": "deliver",
+   "job": 3,
+   "tx": "BDBxEdVaGLRcBYwDVtt6dadjyF3QhjsJsBn7uEV7u79W",
+   "pass": true,
+   "reason": "pass job 3 receipt 4: threat 10, inside 7 to 10"
+  },
+  {
+   "t": "2026-11-11T04:17:56.528Z",
+   "who": "Gravel",
+   "act": "deliver",
+   "job": 4,
+   "tx": "4uPRaJtKwnTyw6MwaHREiQeN8gGGdqRY82f7kFsETiWt",
+   "pass": true,
+   "reason": "pass job 4 receipt 5: floor to wall contrast 5.71:1"
+  },
+  {
+   "t": "2026-11-11T04:18:00.857Z",
+   "who": "Gravel",
+   "act": "deliver",
+   "job": 5,
+   "tx": "FYevnCE4DVGHqWJrbyLm3YaCTiG9GQui3gjGaCxz4cHT",
+   "pass": false,
+   "reason": "fail job 5 receipt 6: 2 notes out of G major"
+  },
+  {
+   "t": "2026-11-11T04:18:08.330Z",
+   "who": "warden",
+   "act": "counter",
+   "job": 5,
+   "tx": "6BSMSahbMpzrn2Xq1sRmcofHwXZdCMmFQJVWgEYRawhz"
+  },
+  {
+   "t": "2026-11-11T04:18:11.907Z",
+   "who": "Marg",
+   "act": "answer",
+   "job": 5,
+   "tx": "6x3WQKW52BCp8iAzumWY9nBDhGrnL4QYd2z3TnfD1iQG"
+  },
+  {
+   "t": "2026-11-11T04:18:19.393Z",
+   "who": "warden",
+   "act": "hire",
+   "job": 5,
+   "tx": "5A2yUSsAtxPUsQz5ctKMGMittz1xPWsmASZSz2vTmJ8s"
+  },
+  {
+   "t": "2026-11-11T04:18:27.379Z",
+   "who": "Marg",
+   "act": "deliver",
+   "job": 5,
+   "tx": "AY4vCwqAND2kKvCMudbPNhGGNtpWZQCqXXgfi74kTskX",
+   "pass": true,
+   "reason": "pass job 5 receipt 7: 8 bars, every note in G major"
+  },
+  {
+   "t": "2026-11-11T12:29:35.359Z",
+   "who": "warden",
+   "act": "post",
+   "job": 6,
+   "tx": "7ky8vmswhECK9y4E6EgjdKaXWhvvtLRuf4ungdFMcmDz"
+  },
+  {
+   "t": "2026-11-11T12:29:38.306Z",
+   "who": "warden",
+   "act": "post",
+   "job": 7,
+   "tx": "4e8E2MpkX6XcBCv4zT9EquzPaCKY4AsyX3udfWB92xVB"
+  },
+  {
+   "t": "2026-11-11T12:29:41.258Z",
+   "who": "warden",
+   "act": "post",
+   "job": 8,
+   "tx": "81qQbaYb8rFuycpti31aHnLapvGejae1qQm9uLMNYd2s"
+  },
+  {
+   "t": "2026-11-11T12:29:45.297Z",
+   "who": "Marg",
+   "act": "bid",
+   "job": 6,
+   "tx": "2QzGkWdRTWxzt3F9oYKzUYy1iY8nmvSWEw31vW84RADL"
+  },
+  {
+   "t": "2026-11-11T12:29:48.991Z",
+   "who": "Marg",
+   "act": "bid",
+   "job": 7,
+   "tx": "746iDxu6YfgqSMLzfxth7C2qBwTcvtfRxDSUz9KrzVsa"
+  },
+  {
+   "t": "2026-11-11T12:29:52.735Z",
+   "who": "Marg",
+   "act": "bid",
+   "job": 8,
+   "tx": "7gsH16FcNx5Gy85EGYhjJHwXCwjFDeGY2MStuNREBXhW"
+  },
+  {
+   "t": "2026-11-11T12:29:56.244Z",
+   "who": "Gravel",
+   "act": "bid",
+   "job": 6,
+   "tx": "D3cXV1LE7uFHX6ZvQrToev4gknT7AUtsKL9eodf3v5cM"
+  },
+  {
+   "t": "2026-11-11T12:29:59.608Z",
+   "who": "Gravel",
+   "act": "bid",
+   "job": 7,
+   "tx": "8pVAboNDjiANHBCj8cwYZbJSqVoc7yz6AC4t8SZDTPJf"
+  },
+  {
+   "t": "2026-11-11T12:30:03.665Z",
+   "who": "Gravel",
+   "act": "bid",
+   "job": 8,
+   "tx": "6uqAx8nKuKXdFLwjjuNHu5SqfLJTtjetie9XSxGCDHs9"
+  },
+  {
+   "t": "2026-11-11T12:30:37.410Z",
+   "who": "warden",
+   "act": "hire",
+   "job": 6,
+   "tx": "GK3pCcMSyQDgLBJjCBRZnYqvNfHuVzDRC4KGThUMoU2P"
+  },
+  {
+   "t": "2026-11-11T12:30:41.031Z",
+   "who": "warden",
+   "act": "hire",
+   "job": 7,
+   "tx": "9oxnLr2ADR6kdx1b8Evp1tjDxANN2kSFBxSneL8kDiuL"
+  },
+  {
+   "t": "2026-11-11T12:30:44.352Z",
+   "who": "warden",
+   "act": "hire",
+   "job": 8,
+   "tx": "6bGWFi2MWRc9FsAmimLpKzJsq5XbtHbSaCeNMWQZujzo"
+  },
+  {
+   "t": "2026-11-11T12:30:48.991Z",
+   "who": "Gravel",
+   "act": "deliver",
+   "job": 6,
+   "tx": "ETDZK8Wy5xLXYdFPScnatmuLaQBSbpruaWg4VFdL17tm",
+   "pass": false,
+   "reason": "fail job 6 receipt 8: no exit"
+  },
+  {
+   "t": "2026-11-11T12:30:54.291Z",
+   "who": "Gravel",
+   "act": "deliver",
+   "job": 7,
+   "tx": "7fpe8vvJHY7ZtH4GshCuLDuE1K3hezVcUeLzTDBXEVzu",
+   "pass": true,
+   "reason": "pass job 7 receipt 9: 8 bars, every note in C major"
+  },
+  {
+   "t": "2026-11-11T12:30:58.870Z",
+   "who": "Gravel",
+   "act": "deliver",
+   "job": 8,
+   "tx": "3F7EjPVeV9z8L2vHrKZaQnjaYQyZEAdGP7EsVHLTWZpv",
+   "pass": true,
+   "reason": "pass job 8 receipt 10: floor to wall contrast 5.00:1"
+  },
+  {
+   "t": "2026-11-11T12:31:06.533Z",
+   "who": "warden",
+   "act": "counter",
+   "job": 6,
+   "tx": "CdjGjz6XZCPTjEKHnzdwZr4DxuV9MjLw7YHJkrq2CT6C"
+  },
+  {
+   "t": "2026-11-11T12:31:11.166Z",
+   "who": "Marg",
+   "act": "answer",
+   "job": 6,
+   "tx": "DH6hPy6oqZq5nvW336KnZ3FwVvg85RsZ7ARu7pNrvCma"
+  },
+  {
+   "t": "2026-11-11T12:31:19.365Z",
+   "who": "warden",
+   "act": "hire",
+   "job": 6,
+   "tx": "ESGmLHJRqCSEMbdu9z2zLgjUev2bvGkbGzk3E1iAXgGX"
+  },
+  {
+   "t": "2026-11-11T12:31:28.057Z",
+   "who": "Marg",
+   "act": "deliver",
+   "job": 6,
+   "tx": "CubmKmqcpzEmo1rGY4TisywmqwtWTta76cxNDqXDL41f",
+   "pass": true,
+   "reason": "pass job 6 receipt 11: all 6 rooms reach the entry, exit found"
+  }
+ ]
+}

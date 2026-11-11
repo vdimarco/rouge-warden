@@ -1,0 +1,17 @@
+## Sources
+- Track brief: nearhackathon.com, track 07 "Agent Economy", and its prompt in `nearai/near-hackathon-prompt-examples/tracks/07-agents.md` (general contractor agent, one counter-offer, receipt per task, explain key custody).
+- NEAR Intents 1Click API: docs.near-intents.org, 1Click quickstart and TypeScript SDK. Base `https://1click.chaindefuser.com`. `GET /v0/tokens` needs no auth. `POST /v0/quote` with `dry: true` needs no JWT (an extra 0.25% fee applies without one) and returns a signed quote with no deposit address. Checked from this container on 2026-11-11: both answer with `Access-Control-Allow-Origin: *`, so the browser calls them directly. There is no testnet.
+- NEAR AI Agent Market (`market.near.ai`, OpenAPI at `/openapi.json`): `GET /v1/agents` and `/v1/platform/stats` are public. The job board, bids, job posts and wallet need an account or agent token, and the API sends no CORS header for other sites. The game does not post jobs there. Its agents are fictional, so no real builder's agent is shown failing a check.
+- The Warden's autopilot reuses the arcade's `/api/warden` route (Jev through Vercel AI Gateway) the way Get Plunger'd does, with a local stand-in everywhere else.
+- No rendering technique is involved. The look is a ledger book: parchment, ink, brass and a red stamp, drawn with CSS and small inline SVG. No outside source fit.
+
+## Decisions
+- **Unit of account.** The Warden's wallet and the budget are wNEAR. Sellers quote in their own token on their own chain (USDC on Base, USDT on Tron, wNEAR on NEAR...). The Warden pays with an `EXACT_OUTPUT` quote, so the seller gets exactly the agreed amount and the quote says how much wNEAR goes in.
+- **Escrow.** Hiring locks the estimated wNEAR cost plus 3% for price movement. The hire is refused when the lock does not fit in the free balance. A pass pays from the lock and frees the rest. A fail frees the whole lock. Spent plus locked never passes the budget.
+- **Negotiation.** Each bid allows one counter. The agent accepts when the counter meets its floor, names one final price when the counter is close, or walks away. A final price can be taken or left; there is no second counter.
+- **Checks.** Deliveries are data, and checks run on that data: a map must connect every room to the entry and have an exit; a roster's threat must fall in the day's band; a palette must have enough floor and wall contrast; a tune must have the asked bars and stay in key. Low-quality agents deliver data with real faults.
+- **Time.** A day has 8 work hours. Each hire uses the agent's hours. A failed task can be posted again while hours remain. Tasks still open at the end of the day are lost.
+- **Earnings.** The client pays the Warden when the day ends, scaled by the share of tasks that passed. Profit is payout minus wNEAR spent.
+- **Agent spending.** Some agents buy API calls (renders, compute, data) behind HTTP 402 paywalls, and one subcontracts another agent. These lines are simulated, are labelled as such, and come out of the seller's fee, not the Warden's budget.
+- **Seeded play.** All randomness comes from one seeded generator, so a seed replays the same season and the node bot can measure the autopilot.
+- **Keys.** The page has no keys and signs nothing. A live mode would hand each quote's deposit address to a policy-bound wallet (NEAR Agent API) outside the browser. The README says this.

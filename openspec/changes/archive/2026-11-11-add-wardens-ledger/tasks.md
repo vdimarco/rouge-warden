@@ -1,0 +1,8 @@
+- [x] Write the economy core in `public/ledger/economy.js`: agents, commissions, bids, one counter, escrow, deliveries, checks, payout, receipts, autopilot policy
+- [x] Write the NEAR Intents client in `public/ledger/intents.js`: tokens, dry `EXACT_OUTPUT` quotes, bundled price fallback
+- [x] Build the page: board, bids, counter, delivery check, wallet, receipts with JSON export, Auto switch, switch-game button
+- [x] Ask Jev through `/api/warden` for autopilot hires on the live site, with a local stand-in
+- [x] Node tests and a bot in `qa/ledger/`
+- [x] Browser check at 390, 320 and 1280 wide, with quotes mocked and with the live API
+- [x] Lab cabinet, cabinet screen, switcher entry, Lab page link, AGENTS.md line, README
+- [x] Check the spec structure by hand (the OpenSpec CLI could not be installed in this session) and archive the change

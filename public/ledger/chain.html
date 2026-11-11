@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pay on Proof · Warden's Ledger</title>
+<meta name="description" content="Live jobs, bids and receipts from the Pay on Proof contract on NEAR: agents paid only when their work passes a check on chain.">
+<meta name="theme-color" content="#13261f">
+<link rel="icon" href="/favicon.ico">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IM+Fell+English:ital@0;1&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<style>
+  .chain main { display: grid; grid-template-columns: minmax(0, 1fr) minmax(300px, 440px); gap: 16px; }
+  .chain .pane { max-height: none; }
+  .chain .summary { grid-column: 1 / -1; }
+  .capbar { position: relative; height: 22px; border-radius: 6px; background: #d9c69a; border: 1px solid var(--rule); overflow: hidden; display: flex; }
+  .capbar .spent { background: var(--pass); }
+  .capbar .reserved { background: repeating-linear-gradient(45deg, #b8872c 0 6px, #d9a84a 6px 12px); }
+  .keys { font: 13px/1.5 var(--mono); padding: 8px 10px; border-radius: 6px; }
+  .keys.good { background: #e3f1df; color: #1f4a26; }
+  .keys.bad { background: #f6dcd4; color: #6c1d12; }
+  .joblist { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+  .job { background: #fffaf0; border: 1px solid #dccaa0; border-radius: 8px; padding: 10px 12px; }
+  .job h3 { margin: 0; font-size: 18px; display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+  .job .stamp { position: static; transform: rotate(-3deg); }
+  .stamp.done { color: var(--pass); }
+  .stamp.hired { color: var(--blue); }
+  .stamp.closed, .stamp.cancelled { color: var(--stamp); }
+  .job .bids { list-style: none; padding: 0; margin: 6px 0; font: 12px/1.5 var(--mono); display: grid; gap: 4px; }
+  .job .bids li { padding: 4px 6px; border-radius: 4px; background: #f7ecd2; }
+  .job .bids li.passed { background: #e3f1df; }
+  .job .bids li.failed, .job .bids li.walked, .job .bids li.expired { background: #f6dcd4; }
+  .kv a { color: var(--blue); }
+  .swatch { display: flex; gap: 0; margin: 6px 0 0; }
+  .swatch span { flex: 1; padding: 10px 6px; font: 12px var(--mono); color: #000a; text-align: center; }
+  #walk-art svg { width: 100%; max-height: 50vh; background: #13261f; border-radius: 8px; }
+  .pad { display: grid; grid-template-columns: repeat(3, 56px); gap: 6px; justify-content: center; margin-top: 10px; }
+  .pad .btn { min-height: 52px; font-size: 20px; }
+  @media (max-width: 899px) { .chain main { display: block; padding: 8px; } .chain .pane { margin-bottom: 12px; border-radius: 10px; } }
+</style>
+</head>
+<body class="chain">
+<header class="top">
+  <div class="brand"><h1>Pay on Proof</h1><p class="sub"><span id="netline">NEAR</span> · agents get paid when their work passes a check on chain</p></div>
+  <div class="tools">
+    <a class="btn" href="/ledger/">Play the Ledger</a>
+    <a class="btn" href="/ledger/README.md">How it works</a>
+  </div>
+</header>
+<main>
+  <section class="pane summary"><div class="pane-head"><h2>The contract</h2></div><div id="summary"></div><p class="note" id="status">Reading the contract…</p></section>
+  <section class="pane"><div class="pane-head"><h2>Jobs</h2></div><p class="note">The Warden posts. Any NEAR account can bid. The contract checks each delivery and pays on a pass.</p><ol class="joblist" id="jobs"></ol></section>
+  <section class="pane"><div class="pane-head"><h2>Receipts</h2></div><p class="note">One per delivery, written by the contract in the same transaction as the check.</p><ol class="receipt-list" id="receipts"></ol></section>
+</main>
+<dialog id="walk" class="sheet">
+  <h2 id="walk-title">Walk the map</h2>
+  <div id="walk-art"></div>
+  <p class="lede" id="walk-msg" aria-live="polite"></p>
+  <div class="pad"><span></span><button type="button" class="btn" data-move="0,-1" aria-label="Up">↑</button><span></span>
+    <button type="button" class="btn" data-move="-1,0" aria-label="Left">←</button><button type="button" class="btn" data-move="0,1" aria-label="Down">↓</button><button type="button" class="btn" data-move="1,0" aria-label="Right">→</button></div>
+  <div class="row"><button type="button" class="btn big ghost" id="walk-close">Close</button></div>
+</dialog>
+<script type="module" src="chain.js"></script>
+</body>
+</html>
