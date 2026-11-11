@@ -1089,8 +1089,8 @@ uniform float uDim;
 uniform vec4 uOpenRect;
 uniform float uOpenK;
 uniform vec3 uOpenCol;
-uniform vec3 uPP[129];
-uniform vec3 uPC[129];
+uniform vec3 uPP[86];
+uniform vec3 uPC[86];
 varying vec2 vST;
 varying vec3 vW;
 varying float vDepth;
@@ -1114,7 +1114,7 @@ void main() {
   // the grid and spills onto the surfaces round it.
   vec3 G = vec3(0.0);
   float Gs = 0.0;
-  for (int i = 0; i < 129; i++) {
+  for (int i = 0; i < 86; i++) {
     vec3 C = uPC[i];
     float cm = max(C.r, max(C.g, C.b));
     if (cm < 0.004) continue;                 // dark slots cost nothing
@@ -1818,8 +1818,8 @@ void main() {
             const geo = this.buffers(positions, normals, uvs, indices);
             const prog = this.program(TUNNEL_VS, TUNNEL_FS);
             const uni = { uPP: [], uPC: [] };                            // per-frame scratch
-            this.lightPP = new Float32Array(129 * 3);                   // 43 marquee glows + 43 retired + 43 screens
-            this.lightPC = new Float32Array(129 * 3);
+            this.lightPP = new Float32Array(86 * 3);                    // 43 marquee glows + 43 screens
+            this.lightPC = new Float32Array(86 * 3);
             return { geo, prog, uni };
           }
 
@@ -2877,13 +2877,11 @@ void main() {
               this.lightPC[i * 3] = rgb[0] * mglow;
               this.lightPC[i * 3 + 1] = rgb[1] * mglow;
               this.lightPC[i * 3 + 2] = rgb[2] * mglow;
-              this.lightPP.fill(0, (43 + i) * 3, (43 + i) * 3 + 3);     // the old marquee slots retire dark
-              this.lightPC.fill(0, (43 + i) * 3, (43 + i) * 3 + 3);
               const sglow = cb.on * 0.30 * (0.9 + cb.hover * 0.3) * (this.dark ? 1 : 0.9);
-              this.lightPP.set(cb.screenPos, (86 + i) * 3);              // CRT spill washes the carpet in front
-              this.lightPC[(86 + i) * 3] = (rgb[0] * 0.45 + 0.55) * sglow;
-              this.lightPC[(86 + i) * 3 + 1] = (rgb[1] * 0.45 + 0.55) * sglow;
-              this.lightPC[(86 + i) * 3 + 2] = (rgb[2] * 0.45 + 0.55) * sglow;
+              this.lightPP.set(cb.screenPos, (43 + i) * 3);              // CRT spill washes the carpet in front
+              this.lightPC[(43 + i) * 3] = (rgb[0] * 0.45 + 0.55) * sglow;
+              this.lightPC[(43 + i) * 3 + 1] = (rgb[1] * 0.45 + 0.55) * sglow;
+              this.lightPC[(43 + i) * 3 + 2] = (rgb[2] * 0.45 + 0.55) * sglow;
             }
 
             /* Hanging neon signs: power on as the reveal reaches them, dim
