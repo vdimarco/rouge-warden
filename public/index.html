@@ -1052,6 +1052,8 @@ function pick(i, quiet) {
   stage.addEventListener("pointercancel", end);
   // a swipe is not a tap: keep it from pressing the button under your finger
   stage.addEventListener("click", (e) => { if (stage.dataset.swiped) { e.stopPropagation(); e.preventDefault(); delete stage.dataset.swiped; } }, true);
+  // a mouse swipe that starts on a screen picture or a link would drag a copy of it and cancel the swipe
+  stage.addEventListener("dragstart", (e) => e.preventDefault());
 }
 // tabbing to a machine brings it to the middle (a mouse click on a side machine is left alone)
 for (const c of [...groupCabs, ...games]) {
