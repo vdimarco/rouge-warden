@@ -27,9 +27,9 @@ export const PILOTS = {
   silas: { id: "silas", team: 0, name: "Silas Vane", call: "OLD LANTERN", role: "Veteran ace", shield: 115, speed: 1, dmg: 1.1, regen: 1, lock: 0.9, bombs: 1, volley: 3,
     perk: "Founder of Lantern Squadron. His charged shot is a three-bolt volley, and allies near him repair faster." },
   vex: { id: "vex", team: 1, name: "Vex Morrow", call: "CORVID LEAD", role: "Pack leader", shield: 115, speed: 1.02, dmg: 1.1, regen: 1, lock: 0.8, bombs: 1, volley: 1 },
-  nyra: { id: "nyra", team: 1, name: "Nyra Kade", call: "QUILL", role: "Hunter", shield: 85, speed: 1.12, dmg: 0.95, regen: 1.5, lock: 0.9, bombs: 1, volley: 1, roll: 0.55 },
+  nyra: { id: "nyra", team: 1, name: "Nyra Kade", call: "QUILL", role: "Hunter", shield: 90, speed: 1.12, dmg: 1.02, regen: 1.5, lock: 0.9, bombs: 1, volley: 1, roll: 0.55 },
   grell: { id: "grell", team: 1, name: "Grell", call: "TALON", role: "Bruiser", shield: 140, speed: 0.9, dmg: 1.1, regen: 0.9, lock: 1, bombs: 2, volley: 1 },
-  sable: { id: "sable", team: 1, name: "Sable", call: "HUSH", role: "Wing", shield: 100, speed: 1, dmg: 1, regen: 1, lock: 0.85, bombs: 1, volley: 1 },
+  sable: { id: "sable", team: 1, name: "Sable", call: "HUSH", role: "Wing", shield: 110, speed: 1.02, dmg: 1.06, regen: 1, lock: 0.85, bombs: 1, volley: 1 },
 };
 export const LANTERN = ["juno", "pip", "brann", "silas"];
 export const CORVID = ["vex", "nyra", "grell", "sable"];
@@ -81,17 +81,32 @@ export function groundY(x, z) {
   return -10 + n * 40 + ridge + rim;
 }
 
-// tilted monolith slabs and old gate frames. Each is a vertical cylinder for collisions.
+// Ruins of the Quiet Makers: leaning monolith slabs, broken gates (two pillars with a gap you can fly through),
+// and each team's lantern beacon at its launch line. cols lists the vertical cylinders that ships and bolts hit.
+export const GATE_SPAN = 70, PILLAR_R = 10;
 export function makeRuins(seed = 7) {
   const r = rng(seed), out = [];
   const spots = [[180, -260], [-320, 140], [420, 380], [-120, 520], [600, -420], [-640, -300], [80, 60], [-520, 620], [700, 160], [-300, -640], [300, -700], [-760, 80]];
   for (const [x, z] of spots) {
     const kind = r() < 0.3 ? "gate" : "slab";
     const h = kind === "gate" ? 120 + r() * 50 : 60 + r() * 70;
-    out.push({ kind, x, z, y: groundY(x, z) - 6, h, r: kind === "gate" ? 30 : 18 + r() * 8, tilt: (r() - 0.5) * 0.5, turn: r() * Math.PI * 2 });
+    const y = groundY(x, z) - 6, turn = r() * Math.PI * 2, tilt = (r() - 0.5) * 0.5;
+    if (kind === "gate") {
+      const sx = Math.sin(turn) * GATE_SPAN / 2, sz = Math.cos(turn) * GATE_SPAN / 2;
+      out.push({ kind, x, z, y, h, r: GATE_SPAN / 2, tilt: 0, turn, cols: [{ x: x + sx, z: z + sz, r: PILLAR_R }, { x: x - sx, z: z - sz, r: PILLAR_R }] });
+    } else {
+      const rad = 18 + r() * 8;
+      out.push({ kind, x, z, y, h, r: rad, tilt, turn, cols: [{ x, z, r: rad }] });
+    }
+  }
+  for (const team of [0, 1]) {
+    const x = 0, z = (team === 0 ? 1 : -1) * ARENA * 0.9, y = groundY(x, z);
+    out.push({ kind: "beacon", team, x, z, y, h: 110, r: 16, tilt: 0, turn: team ? Math.PI : 0, cols: [{ x, z, r: 16 }] });
   }
   return out;
 }
+// every collision cylinder with its base and height
+export function colliders(ruins) { return ruins.flatMap((q) => q.cols.map((c) => ({ x: c.x, z: c.z, r: c.r, y: q.y, h: q.h }))); }
 
 /* ---------------- vectors ---------------- */
 const len = (x, y, z) => Math.hypot(x, y, z);
@@ -129,9 +144,10 @@ export function createMatch(opts = {}) {
   const m = {
     seed, rand, diff, time: MATCH_TIME, elapsed: 0, over: false, winner: -1,
     score: [0, 0], ships: [], bolts: [], bombs: [], meteors: [], orbs: [], events: [],
-    ruins: makeRuins(), wave: { on: false, t: WAVE_EVERY - 18, n: 0, energy: [0, 0] },
+    ruins: makeRuins(), cols: null, wave: { on: false, t: WAVE_EVERY - 18, n: 0, energy: [0, 0] },
     player: null, nextId: 1,
   };
+  m.cols = colliders(m.ruins);
   const roster = [...LANTERN.map((p) => [p, 0]), ...CORVID.map((p) => [p, 1])];
   roster.forEach(([pid, team], i) => {
     const P = PILOTS[pid];
@@ -336,9 +352,9 @@ function think(m, s, dt) {
   if (clear < 55) wp = Math.max(wp, 0.5 + (55 - clear) / 80);
   if (s.y > CEILING - 40) wp = Math.min(wp, -0.2);
   if (Math.hypot(s.x, s.z) > ARENA * 0.86) { const c = aimAngles(-s.x, 0, -s.z); wy = c.yaw; }
-  for (const r of m.ruins) { // swerve round the monoliths
+  for (const r of m.cols) { // swerve round the monoliths and pillars
     const dx = r.x - (s.x + f.x * 70), dz = r.z - (s.z + f.z * 70);
-    if (dx * dx + dz * dz < (r.r + 30) ** 2 && s.y < r.y + r.h + 20) wp = Math.max(wp, 0.6);
+    if (dx * dx + dz * dz < (r.r + 22) ** 2 && s.y < r.y + r.h + 20) wp = Math.max(wp, 0.6);
   }
   const dyaw = angleWrap(wy - s.yaw), dpitch = wp - s.pitch;
   inp.yaw = Math.max(-1, Math.min(1, dyaw * 2.2));
@@ -481,7 +497,7 @@ function fly(m, s, dt) {
     if (s.invuln <= 0) { emit(m, { type: "scrape", ship: s.id, x: s.x, y: s.y, z: s.z }); damage(m, s, 14, null, "ground"); s.invuln = s.alive ? 0.4 : 0; }
   }
   if (s.y > CEILING) { s.y = CEILING; s.pitch = Math.min(s.pitch, 0); }
-  for (const r of m.ruins) {
+  for (const r of m.cols) {
     const dx = s.x - r.x, dz = s.z - r.z, d = Math.hypot(dx, dz);
     if (d < r.r + 4 && s.y < r.y + r.h) {
       const k = (r.r + 5) / Math.max(d, 0.01); s.x = r.x + dx * k; s.z = r.z + dz * k; s.yaw = angleWrap(s.yaw + Math.PI * 0.5);
@@ -535,7 +551,7 @@ function moveBolt(m, b, dt) {
   }
   b.x += dx; b.y += dy; b.z += dz; b.life -= dt;
   if (b.y < groundY(b.x, b.z)) { b.life = 0; emit(m, { type: "spark", x: b.x, y: b.y + 1, z: b.z }); return; }
-  for (const r of m.ruins) if (Math.hypot(b.x - r.x, b.z - r.z) < r.r && b.y < r.y + r.h) { b.life = 0; emit(m, { type: "spark", x: b.x, y: b.y, z: b.z }); return; }
+  for (const r of m.cols) if (Math.hypot(b.x - r.x, b.z - r.z) < r.r && b.y < r.y + r.h) { b.life = 0; emit(m, { type: "spark", x: b.x, y: b.y, z: b.z }); return; }
 }
 
 // drain the events the renderer has not read yet

@@ -1,6 +1,7 @@
 // Frostwing: rendering, input, sound and screens. The match itself lives in sim.js.
 import * as THREE from "./lib/three.module.min.js";
 import * as S from "./sim.js";
+import { createLook } from "./look.js";
 
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
@@ -42,7 +43,11 @@ addEventListener("resize", resize);
 resize();
 
 /* ---------------- sky, light, land ---------------- */
-{
+// High quality (the default on a computer): sun shadows, bloom and point-light flashes. Fast (the default on a phone): none.
+const HIGH = save.gfx === undefined ? !TOUCH : save.gfx === 1;
+const look = createLook({ renderer, scene, camera, high: HIGH, TOUCH });
+addEventListener("resize", () => look.resize());
+if (false) {
   const sky = new THREE.Mesh(new THREE.SphereGeometry(5000, 32, 16), new THREE.ShaderMaterial({
     side: THREE.BackSide, depthWrite: false, fog: false,
     uniforms: { top: { value: new THREE.Color(0x7f9dc2) }, mid: { value: FOG.clone() }, sun: { value: new THREE.Vector3(0.4, 0.35, -0.85).normalize() } },
@@ -53,10 +58,6 @@ resize();
   scene.add(sky);
   scene.userData.sky = sky;
 }
-scene.add(new THREE.HemisphereLight(0xdbe8ff, 0x5a6a80, 1.6));
-const sunLight = new THREE.DirectionalLight(0xfff2e0, 2.1);
-sunLight.position.set(400, 700, -800);
-scene.add(sunLight);
 
 function buildTerrain() {
   const SIZE = S.ARENA * 3.4, N = TOUCH ? 150 : 210;
@@ -78,7 +79,8 @@ function buildTerrain() {
     col[i * 3] = c.r; col[i * 3 + 1] = c.g; col[i * 3 + 2] = c.b;
   }
   geo.setAttribute("color", new THREE.BufferAttribute(col, 3));
-  const land = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ vertexColors: true }));
+  const land = new THREE.Mesh(geo, look.terrainMaterial());
+  look.setLand(land);
   scene.add(land);
 }
 buildTerrain();
@@ -93,8 +95,16 @@ const MAT = {
   glowBlue: new THREE.MeshBasicMaterial({ color: 0x5fc6ff }),
 };
 function buildRuins(ruins) {
+  if (look.ready) return buildRuinModels(ruins);
   for (const r of ruins) {
     const g = new THREE.Group();
+    if (r.kind === "beacon") {
+      const tower = new THREE.Mesh(new THREE.CylinderGeometry(4, 9, 90, 6), MAT.stoneDark); tower.position.y = 45; g.add(tower);
+      const lamp = new THREE.Mesh(new THREE.OctahedronGeometry(7), r.team === 0 ? MAT.glowBlue : MAT.glowViolet); lamp.position.y = 98; g.add(lamp);
+      const halo = glowSprite(r.team === 0 ? 0x5fc6ff : 0xc58cff, 60, 0.8); halo.position.y = 98; g.add(halo);
+      g.position.set(r.x, r.y, r.z); scene.add(g); beacons.push(lamp);
+      continue;
+    }
     if (r.kind === "slab") {
       const w = r.r * 1.6, d = r.r * 0.7;
       const slab = new THREE.Mesh(new THREE.BoxGeometry(w, r.h, d, 1, 3, 1), MAT.stone);
@@ -121,18 +131,34 @@ function buildRuins(ruins) {
     g.rotation.set(r.tilt * 0.4, r.turn, r.tilt);
     scene.add(g);
   }
-  // a beacon at each team's launch line
-  for (const team of [0, 1]) {
-    const z = (team === 0 ? 1 : -1) * S.ARENA * 0.9, x = 0, y = S.groundY(x, z);
-    const g = new THREE.Group();
-    const tower = new THREE.Mesh(new THREE.CylinderGeometry(4, 9, 90, 6), MAT.stoneDark); tower.position.y = 45; g.add(tower);
-    const lamp = new THREE.Mesh(new THREE.OctahedronGeometry(7), team === 0 ? MAT.glowBlue : MAT.glowViolet); lamp.position.y = 98; g.add(lamp);
-    const halo = glowSprite(team === 0 ? 0x5fc6ff : 0xc58cff, 60, 0.8); halo.position.y = 98; g.add(halo);
-    g.position.set(x, y, z); scene.add(g);
-    beacons.push(lamp);
-  }
 }
 const beacons = [];
+// Models are unit height (slab, gate, beacon). A slab is scaled to its collision radius; a gate's two pillars sit
+// 0.4 of its depth from the middle, so its depth scales to the sim's pillar spacing.
+function buildRuinModels(ruins) {
+  for (const r of ruins) {
+    const g = new THREE.Group();
+    if (r.kind === "slab") {
+      const m = look.clone("slab"), k = (r.r * 2) / 0.47;
+      m.scale.set(k, r.h, k); g.add(m);
+      g.rotation.set(r.tilt * 0.4, r.turn, r.tilt);
+    } else if (r.kind === "gate") {
+      const m = look.clone("gate"), k = S.GATE_SPAN / 0.8;
+      m.scale.set(k, r.h, k); g.add(m);
+      g.rotation.y = r.turn;
+      // the light the gate's red seams cast into the gap
+      const glow = glowSprite(0xff4d5e, 70, 0.35); glow.position.y = r.h * 0.5; g.add(glow);
+    } else if (r.kind === "beacon") {
+      const m = look.clone("beacon"); m.scale.setScalar(r.h); g.add(m);
+      const color = r.team === 0 ? 0x5fc6ff : 0xc58cff;
+      const lamp = glowSprite(color, 70, 0.9); lamp.position.y = r.h * 0.9; g.add(lamp);
+      const core = glowSprite(0xffffff, 16, 1); core.position.y = r.h * 0.9; g.add(core);
+      beacons.push(lamp);
+    }
+    g.position.set(r.x, r.y, r.z);
+    scene.add(g);
+  }
+}
 
 /* ---------------- glow sprites and particles ---------------- */
 const glowTex = (() => {
@@ -159,7 +185,7 @@ const FX = (() => {
   geo.setAttribute("alpha", new THREE.BufferAttribute(alpha, 1).setUsage(THREE.DynamicDrawUsage));
   const mat = new THREE.ShaderMaterial({
     transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, uniforms: { scale: { value: 600 } },
-    vertexShader: "attribute float size; attribute float alpha; attribute vec3 color; varying vec3 vc; varying float va; uniform float scale; void main(){ vc = color; va = alpha; vec4 mv = modelViewMatrix * vec4(position,1.0); gl_PointSize = size * scale / max(-mv.z, 1.0); gl_Position = projectionMatrix * mv; }",
+    vertexShader: "attribute float size; attribute float alpha; attribute vec3 color; varying vec3 vc; varying float va; uniform float scale; void main(){ vc = color; va = alpha; vec4 mv = modelViewMatrix * vec4(position,1.0); gl_PointSize = min(size * scale / max(-mv.z, 1.0), 90.0); va *= smoothstep(3.0, 16.0, -mv.z); gl_Position = projectionMatrix * mv; }",
     fragmentShader: "varying vec3 vc; varying float va; void main(){ vec2 d = gl_PointCoord - 0.5; float r = dot(d,d) * 4.0; if (r > 1.0) discard; gl_FragColor = vec4(vc * va * (1.0 - r) * (1.0 - r), 1.0); }",
   });
   const pts = new THREE.Points(geo, mat); pts.frustumCulled = false; scene.add(pts);
@@ -195,16 +221,24 @@ const FX = (() => {
 
 // blowing snow that wraps around the camera
 const SNOW = (() => {
-  const N = TOUCH ? 1400 : 2600, R = 160;
+  const N = TOUCH ? 1600 : 3200, R = 160;
   const p = new Float32Array(N * 3);
   for (let i = 0; i < N * 3; i++) p[i] = (Math.random() * 2 - 1) * R;
   const geo = new THREE.BufferGeometry(); geo.setAttribute("position", new THREE.BufferAttribute(p, 3));
-  const mat = new THREE.PointsMaterial({ color: 0xffffff, size: 0.9, transparent: true, opacity: 0.8, depthWrite: false, map: glowTex, sizeAttenuation: true });
+  const mat = new THREE.ShaderMaterial({
+    transparent: true, depthWrite: false, uniforms: { scale: { value: 500 }, tint: { value: new THREE.Color(0xffffff) } },
+    vertexShader: "uniform float scale; varying float va; void main(){ vec4 mv = modelViewMatrix * vec4(position, 1.0); float d = -mv.z; gl_PointSize = clamp(0.9 * scale / max(d, 1.0), 1.0, 7.0); va = smoothstep(2.0, 9.0, d) * (1.0 - smoothstep(110.0, 160.0, d)); gl_Position = projectionMatrix * mv; }",
+    fragmentShader: "uniform vec3 tint; varying float va; void main(){ vec2 c = gl_PointCoord - 0.5; float r = dot(c, c) * 4.0; if (r > 1.0) discard; gl_FragColor = vec4(tint, va * (1.0 - r) * 0.85); }",
+  });
   const pts = new THREE.Points(geo, mat); pts.frustumCulled = false; scene.add(pts);
   const wind = new THREE.Vector3(38, -14, 22);
   function update(dt, cam) {
+    const v = look.snow.v;
+    geo.setDrawRange(0, Math.round(N * clamp(0.35 + 0.27 * v, 0, 1)));
+    mat.uniforms.scale.value = innerHeight * 0.5 / Math.tan(camera.fov * Math.PI / 360);
+    const wx = wind.x * (0.6 + 0.5 * v), wy = wind.y, wz = wind.z * (0.6 + 0.5 * v);
     for (let i = 0; i < N; i++) {
-      let x = p[i * 3] + wind.x * dt, y = p[i * 3 + 1] + wind.y * dt, z = p[i * 3 + 2] + wind.z * dt;
+      let x = p[i * 3] + wx * dt, y = p[i * 3 + 1] + wy * dt, z = p[i * 3 + 2] + wz * dt;
       const dx = x - cam.x, dy = y - cam.y, dz = z - cam.z;
       if (dx > R) x -= 2 * R; else if (dx < -R) x += 2 * R;
       if (dy > R) y -= 2 * R; else if (dy < -R) y += 2 * R;
@@ -265,6 +299,19 @@ function corvidShip() {
   const j = glowSprite(0xc58cff, 5, 0.85); j.position.set(0, 0, 7.2); g.add(j);
   return { g, jets: [j] };
 }
+// engine nozzles in model space (models face -z, 18 units long)
+const ENGINES = { 0: [[-1.35, -0.15, 8.7], [1.35, -0.15, 8.7]], 1: [[0, 0.1, 8.9]] };
+function makeShip(team) {
+  if (!look.ready) return team === 0 ? lanternShip() : corvidShip();
+  const g = new THREE.Group(), body = look.clone(team === 0 ? "lantern" : "corvid");
+  g.add(body);
+  const jets = [], engines = [];
+  for (const [x, y, z] of ENGINES[team]) {
+    const j = glowSprite(team === 0 ? 0x6fe8ff : 0xc58cff, 3.5, 0.9); j.position.set(x, y, z + 0.4); g.add(j); jets.push(j);
+    engines.push(new THREE.Vector3(x, y, z + 1));
+  }
+  return { g, jets, engines };
+}
 const shadowMat = new THREE.MeshBasicMaterial({ color: 0x1a2a40, transparent: true, opacity: 0.28, depthWrite: false });
 const shadowGeo = new THREE.CircleGeometry(7, 16).rotateX(-Math.PI / 2);
 
@@ -274,7 +321,7 @@ function boltMesh(color) {
   const m = new THREE.InstancedMesh(new THREE.BoxGeometry(0.55, 0.55, 16), new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.95, blending: THREE.AdditiveBlending, depthWrite: false }), MAXB);
   m.instanceMatrix.setUsage(THREE.DynamicDrawUsage); m.frustumCulled = false; m.count = 0; scene.add(m); return m;
 }
-const BOLTS = [boltMesh(0x6dff9e), boltMesh(0xff6be6)];
+const BOLTS = [boltMesh(new THREE.Color(0x6dff9e).multiplyScalar(2.2)), boltMesh(new THREE.Color(0xff6be6).multiplyScalar(2.2))];
 const dummy = new THREE.Object3D();
 const rockGeo = (() => {
   const g = new THREE.IcosahedronGeometry(1, 1), p = g.attributes.position;
@@ -287,15 +334,18 @@ const ORBCOL = { energy: 0xffb52e, bomb: 0xff4a4a, repair: 0x49ff9a };
 /* ---------------- the world view of a match ---------------- */
 let match = null, view = null;
 function buildView(m) {
-  if (view) { for (const o of view.objects) scene.remove(o); }
-  view = { objects: [], ships: new Map(), rocks: new Map(), orbs: new Map(), charges: [], bombs: [] };
+  if (view) { for (const o of view.objects) scene.remove(o); for (const t of view.trails) { t.clear(); t.on = false; } }
+  view = { objects: [], ships: new Map(), rocks: new Map(), orbs: new Map(), charges: [], bombs: [], trails: [] };
   const add = (o) => { scene.add(o); view.objects.push(o); return o; };
   if (!view.ruinsBuilt && !scene.userData.ruins) { buildRuins(m.ruins); scene.userData.ruins = true; }
   for (const s of m.ships) {
-    const built = s.team === 0 ? lanternShip() : corvidShip();
+    const built = makeShip(s.team);
     add(built.g);
     const sh = add(new THREE.Mesh(shadowGeo, shadowMat));
-    view.ships.set(s.id, { g: built.g, jets: built.jets, shadow: sh, trail: 0, tag: null, wasAlive: true });
+    const engines = built.engines || ENGINES[s.team].map(([x, y, z]) => new THREE.Vector3(x, y, z));
+    const trails = engines.map(() => look.trail(s.team === 0 ? 0x5fdcff : 0xb070ff, s.team === 0 ? 0.55 : 0.8));
+    view.trails.push(...trails);
+    view.ships.set(s.id, { g: built.g, jets: built.jets, shadow: sh, trail: 0, tag: null, wasAlive: true, engines, trails });
   }
   view.add = add;
 }
@@ -614,20 +664,22 @@ function followCamera(s, dt, cinematic) {
 }
 
 /* ---------------- drawing a match ---------------- */
-const rollVis = new Map();
+const rollVis = new Map(), wp = new THREE.Vector3();
 function drawMatch(m, dt) {
   const t = performance.now() / 1000;
   for (const s of m.ships) {
     const V = view.ships.get(s.id);
     V.g.visible = s.alive && !(s.invuln > 0 && s.alive && Math.floor(t * 12) % 2 === 0 && s.invuln < 2.4 && s.invuln > 0.05);
-    V.shadow.visible = s.alive;
-    if (!s.alive) continue;
+    V.shadow.visible = s.alive && !look.high;
+    if (!s.alive) { for (const tr of V.trails) tr.clear(); continue; }
     let roll = s.bank;
     if (s.roll > 0) roll += -s.rollDir * (1 - s.roll / 0.55) * Math.PI * 2;
     V.g.position.set(s.x, s.y, s.z);
     V.g.rotation.set(s.pitch, s.yaw, roll, "YXZ");
     const boosting = s.input.boost && s.boost > 0.02;
     for (const j of V.jets) j.scale.setScalar((s.team === 0 ? 1 : 1.3) * (boosting ? 6.5 : 3.6) * (0.85 + Math.random() * 0.3));
+    V.g.updateMatrixWorld();
+    V.engines.forEach((e, k) => { wp.copy(e).applyMatrix4(V.g.matrixWorld); V.trails[k].push(wp, boosting); });
     const gy = S.groundY(s.x, s.z), h = s.y - gy;
     V.shadow.position.set(s.x, gy + 0.6, s.z); V.shadow.scale.setScalar(clamp(1 + h / 120, 1, 3)); V.shadow.material.opacity = clamp(0.35 - h / 900, 0.05, 0.35);
     // exhaust and contrails
@@ -668,7 +720,10 @@ function drawMatch(m, dt) {
     seen.add(r.id);
     let V = view.rocks.get(r.id);
     if (!V) {
-      const g = new THREE.Group(); const mesh = new THREE.Mesh(rockGeo, rockMat); mesh.scale.setScalar(r.r); g.add(mesh);
+      const g = new THREE.Group();
+      let mesh;
+      if (look.ready) { mesh = look.clone("rock"); mesh.scale.setScalar(r.r * 2.1); } else { mesh = new THREE.Mesh(rockGeo, rockMat); mesh.scale.setScalar(r.r); }
+      g.add(mesh);
       const halo = glowSprite(0xffa33a, r.r * 3.2, 0.55); g.add(halo);
       view.add(g); V = { g, mesh }; view.rocks.set(r.id, V);
     }
@@ -822,7 +877,9 @@ function segs() {
   $$("#diff button").forEach((b) => b.classList.toggle("on", b.dataset.d === diffSel));
   $$("#inv button").forEach((b) => b.classList.toggle("on", +b.dataset.i === save.invert));
   $$("#mouseSeg button").forEach((b) => b.classList.toggle("on", +b.dataset.m === save.mouse));
+  $$("#gfxSeg button").forEach((b) => b.classList.toggle("on", +b.dataset.g === (look.high ? 1 : 0)));
 }
+$$("#gfxSeg button").forEach((b) => b.addEventListener("click", () => { save.gfx = +b.dataset.g; store(); look.setQuality(save.gfx === 1); SND.ui(); segs(); }));
 $$("#mouseSeg button").forEach((b) => b.addEventListener("click", () => { save.mouse = +b.dataset.m; store(); SND.ui(); segs(); }));
 $$("#diff button").forEach((b) => b.addEventListener("click", () => { diffSel = b.dataset.d; SND.ui(); segs(); }));
 $$("#inv button").forEach((b) => b.addEventListener("click", () => { save.invert = +b.dataset.i; store(); SND.ui(); segs(); }));
@@ -894,12 +951,13 @@ function menuKey(e) {
 
 /* ---------------- the loop ---------------- */
 let last = performance.now(), acc = 0;
+const perf = { t: 0, n: 0 };
 const DT = 1 / 60;
 function frame(now) {
   requestAnimationFrame(frame);
   const realDt = Math.min(1, Math.max(0, (now - last) / 1000));
   let dt = Math.min(0.1, realDt); last = now;
-  if (state === "pause") { renderer.render(scene, camera); return; }
+  if (state === "pause") { look.render(); return; }
   SND.tick();
   const m = match;
   if (!m) return;
@@ -940,13 +998,18 @@ function frame(now) {
     }
     if (state === "play" && m.over && me) endMatch();
   }
+  // a machine that cannot hold High at 22 fps drops to Fast, unless the player chose a setting
+  if (state === "play" && look.high && save.gfx === undefined && countdown <= 0) {
+    perf.t += realDt; perf.n++;
+    if (perf.t >= 4) { if (perf.n / perf.t < 22) { look.setQuality(false); centerMsg("GRAPHICS: FAST", "for a smoother flight", 1600); } perf.t = 0; perf.n = 0; }
+  }
   drawMatch(m, dt);
   FX.update(dt);
   SNOW.update(dt, camera.position);
-  scene.userData.sky.position.copy(camera.position);
+  look.update(dt, me && me.alive ? me : attractShip || me);
   if (state === "play" && me) { updateHud(m, me, dt); radioTick(dt); SND.engine(me.speed, me.alive); }
   else SND.engine(0, false);
-  renderer.render(scene, camera);
+  look.render();
 }
 
 // tests read the game through this
@@ -956,12 +1019,21 @@ window.__fw = {
   skipCountdown: () => { countdown = 0.001; },
   fastForward: (sec) => { for (let i = 0; i < sec * 60 && !match.over; i++) S.step(match, DT); },
   get save() { return { ...save }; },
+  get look() { return { ready: look.ready, high: look.high, weather: look.weather }; },
+  weather: (w) => look.setWeather(w),
+  dbg: { scene, renderer, camera, look },
   get fly() { return { ...fly }; },
   // headless browsers cannot take pointer lock, so tests stand in for it
   fakeLock: (on) => { fly.fake = on; if (on) fly.locked = true; else document.dispatchEvent(new Event("pointerlockchange")); },
 };
 
 bestLine();
-startAttract();
 show("title");
 requestAnimationFrame(frame);
+const loaded = Promise.race([look.load(), new Promise((_, no) => setTimeout(() => no(new Error("models timed out")), 15000))])
+  .catch((e) => { console.warn("Frostwing: using simple ships;", e && e.message); });
+loaded.then(() => {
+  if (!match) startAttract();
+  const b = $("#playBtn"); b.disabled = false; b.textContent = "PLAY";
+  if (state === "title" && !TOUCH) b.focus({ preventScroll: true });
+});

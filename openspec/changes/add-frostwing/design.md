@@ -27,6 +27,27 @@ Sources adapted:
 
 Particles (exhaust, sparks, explosions, kicked-up snow) share one additive `Points` buffer of 2,400 soft discs with one draw call. Lasers are two `InstancedMesh` batches of stretched boxes with additive blending. No source was needed for these. They are the standard three.js instancing and additive-blend patterns.
 
+## Graphics: generated models and the High look
+
+The user asked for the graphics to be raised "using Meshy or whatever is needed". `look.js` holds that work, and `game.js` keeps the scene and the match view.
+
+Models. The two ships, the monolith, the broken gate, the beacon tower and the meteorite are generated meshes. Each started as an original GPT Image 2.6 product render on grey. The ships went through Meshy 7 image-to-3D with PBR maps and symmetry on. The props went through Tripo H3.1. `higgsfield/models3d/pack-ship.mjs` centres, scales and turns each one to face -z, simplifies it, converts the textures to WebP and meshopt-compresses it. The six files total 2.9 MB. Job ids and pack commands are in `public/frostwing/models/sources.json`. Tripo returned the gate as two pillars with no lintel, so the sim now treats a gate as two pillar cylinders 70 units apart, and ships can fly through the gap. If the models fail to load in 15 seconds, the game falls back to the first version's ships built from primitives.
+
+High and Fast. High is the default on a computer. It adds sun shadows, bloom, point-light flashes on explosions, the PBR snow shader and sky reflections on the models. Fast is the default on touch screens. It uses a Lambert ground, Lambert twins of the model materials, two cloud octaves and no post-processing. The pilot screen has a Graphics High / Fast setting. When the player has not chosen and High holds under 22 frames per second for 4 seconds, the game drops to Fast and says so.
+
+Sources adapted:
+- Image-based light: three.js `PMREMGenerator`, baked from the game's own sky shader each time the weather changes. The split-sum approach behind it is Brian Karis, "Real Shading in Unreal Engine 4" (SIGGRAPH 2013).
+- Bloom: three.js `UnrealBloomPass`, a mip-chain blur after Unreal Engine's bloom, with `OutputPass` for tone mapping. The threshold is above lit snow, so only lasers, engines, glints, lamps and explosions bloom.
+- Shadows: three.js `PCFSoftShadowMap` on one directional light whose 360-unit box follows the player. Ships that are far away fall outside the box and get no shadow.
+- Snow: wind ripples as a world-space normal perturbation and sparse glints that flash when a grain's facet faces the half vector, after John Edwards, "Sand Rendering in Journey" (GDC 2013).
+- Clouds: fBm on the sky dome projected to a plane, after Inigo Quilez's fBm and cloud articles. Stars are a hashed grid. No source fit the aurora; it is one fBm curtain between two heights.
+- Engine trails: camera-facing ribbons sampled at 45 Hz that taper and fade, the same idea as Unity's `TrailRenderer`. They fade in fog and near the lens.
+- Model pipeline: this repository's `higgsfield/models3d` steps (gltf-transform and meshoptimizer), first written for Shore of the Ancients.
+
+Weather. `WEATHER` in `look.js` holds four presets: day, dusk, night with stars and an aurora, and storm with thick fog and heavy snow. Each sets the sky, fog, sun, ambient light, exposure, snowfall and where the gas giant Varrow sits. The story picks one per operation.
+
+How it is checked. `qa/frostwing/smoke.e2e.mjs` starts High, confirms the models load, runs a match through every weather and expects no page errors. The gameplay checks run on Fast, because software WebGL draws High at about 2 frames per second. They wait on game time, not wall time. Frame rate on a real GPU and on a phone has not been measured.
+
 ## Art
 
 Pilot portraits and the key art come from Higgsfield `gpt_image_2_6`, prompted for original designs in a "painted sci-fi arcade illustration, crisp cel-shaded edges" look. Lantern wears cyan and white with an orange lantern emblem. The Corvids wear black and violet with a crow-skull emblem. The ships in the 3D scene are built from primitives to match the key art: Lantern flies a white delta with orange bands and twin cyan engines, and the Corvids fly a dark core inside forward-curving blades. The images are 256 px WebP portraits, a 1280 px title image and a 640 px cabinet screen.

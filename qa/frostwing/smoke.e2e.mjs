@@ -12,14 +12,17 @@ const fails = [];
 const check = (ok, msg) => { console.log((ok ? "  ok   " : "  FAIL ") + msg); if (!ok) fails.push(msg); return ok; };
 
 const browser = await chromium.launch({ args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"] });
-async function open(opts) {
+// Gameplay checks run on Fast graphics: software WebGL draws High (shadows and bloom) at about 2 fps, too slow for
+// timing checks. A separate block below starts High and checks the models, shadows and bloom load without errors.
+async function open(opts, gfx = 0) {
   const ctx = await browser.newContext(opts);
   const page = await ctx.newPage();
+  await page.addInitScript((g) => { try { const k = "frostwing.save.v1", s = JSON.parse(localStorage.getItem(k) || "{}"); if (s.gfx === undefined) localStorage.setItem(k, JSON.stringify({ ...s, gfx: g })); } catch (e) { /* storage off */ } }, gfx);
   const errors = [];
   page.on("pageerror", (e) => errors.push(e.message));
   page.on("console", (m) => { if (m.type() === "error") errors.push(m.text()); });
   await page.goto(BASE);
-  await page.waitForFunction(() => window.__fw && __fw.state === "title");
+  await page.waitForFunction(() => window.__fw && __fw.state === "title" && !document.querySelector("#playBtn").disabled, null, { timeout: 30000 });
   return { ctx, page, errors };
 }
 const within = (page, sel) => page.evaluate((sel) => [...document.querySelectorAll(sel)].filter((e) => e.getClientRects().length).every((e) => {
@@ -30,6 +33,8 @@ const overlap = (page, a, b) => page.evaluate(([a, b]) => {
   if (!document.querySelector(a).getClientRects().length || !document.querySelector(b).getClientRects().length) return false;
   return !(A.right <= B.left || B.right <= A.left || A.bottom <= B.top || B.bottom <= A.top);
 }, [a, b]);
+// wait for game time, not wall time: software WebGL can run the game well below real time
+const gameWait = (page, sec) => page.evaluate((sec) => new Promise((done) => { const t0 = __fw.match.time; const tick = () => (t0 - __fw.match.time >= sec || __fw.match.over || __fw.state !== "play" ? done() : setTimeout(tick, 30)); tick(); }), sec);
 const shot = async (page, name) => { if (SHOTS) await page.screenshot({ path: path.join(SHOTS, `frostwing-${name}.png`) }); };
 
 /* ---------- desktop: keyboard play from title to results ---------- */
@@ -51,13 +56,13 @@ const shot = async (page, name) => { if (SHOTS) await page.screenshot({ path: pa
   await page.waitForTimeout(300);
   const y0 = await page.evaluate(() => __fw.match.player.yaw);
   await page.keyboard.down("KeyA"); await page.keyboard.down("Space");
-  await page.waitForTimeout(900);
+  await gameWait(page, 0.9);
   await page.keyboard.up("KeyA");
   const r = await page.evaluate(() => ({ yaw: __fw.match.player.yaw, bolts: __fw.match.bolts.filter((b) => b.owner === __fw.match.player.id).length }));
   check(Math.abs(r.yaw - y0) > 0.3, `${tag}: A turns the ship left (yaw ${y0.toFixed(2)} to ${r.yaw.toFixed(2)})`);
   check(r.bolts > 0, `${tag}: Space fires lasers (${r.bolts} bolts in the air)`);
   await page.keyboard.up("Space");
-  await page.keyboard.down("ShiftLeft"); await page.waitForTimeout(700);
+  await page.keyboard.down("ShiftLeft"); await gameWait(page, 0.8);
   check(await page.evaluate(() => __fw.match.player.speed > 180), `${tag}: Shift boosts`);
   await page.keyboard.up("ShiftLeft");
   check(await within(page, "#sys, #board, #banner, #radar"), `${tag}: the HUD panels sit inside the window`);
@@ -81,6 +86,21 @@ const shot = async (page, name) => { if (SHOTS) await page.screenshot({ path: pa
   await ctx.close();
 }
 
+/* ---------- desktop: High graphics start cleanly ---------- */
+{
+  const tag = "1280x720 high";
+  const { ctx, page, errors } = await open({ viewport: { width: 1280, height: 720 } }, 1);
+  const look = await page.evaluate(() => __fw.look);
+  check(look.ready && look.high, `${tag}: the generated models load and High graphics are on (${JSON.stringify(look)})`);
+  await page.evaluate(() => { HTMLCanvasElement.prototype.requestPointerLock = function () {}; __fw.launch("silas", "ace"); __fw.skipCountdown(); });
+  await page.waitForTimeout(2500);
+  for (const w of ["dusk", "night", "storm", "day"]) await page.evaluate((w) => __fw.weather(w), w);
+  await page.waitForTimeout(1500);
+  await shot(page, "play-high");
+  check(errors.length === 0, `${tag}: a match with shadows, bloom and every weather runs with no page errors (${errors.join("; ")})`);
+  await ctx.close();
+}
+
 /* ---------- desktop: mouse flight ---------- */
 {
   const tag = "1280x720 mouse";
@@ -94,20 +114,20 @@ const shot = async (page, name) => { if (SHOTS) await page.screenshot({ path: pa
   const y0 = await page.evaluate(() => __fw.match.player.yaw);
   // keep the mouse moving right for about a second: one burst of moves every animation frame
   const mid = await page.evaluate(() => new Promise((done) => {
-    let top = 0; const t0 = performance.now();
-    const tick = () => { for (let i = 0; i < 3; i++) dispatchEvent(new MouseEvent("mousemove", { movementX: 10, movementY: 0 })); top = Math.max(top, __fw.fly.x); if (performance.now() - t0 < 1000) requestAnimationFrame(tick); else done({ yaw: __fw.match.player.yaw, x: top }); };
+    let top = 0; const g0 = __fw.match.time;
+    const tick = () => { for (let i = 0; i < 3; i++) dispatchEvent(new MouseEvent("mousemove", { movementX: 10, movementY: 0 })); top = Math.max(top, __fw.fly.x); if (g0 - __fw.match.time < 1) requestAnimationFrame(tick); else done({ yaw: __fw.match.player.yaw, x: top }); };
     requestAnimationFrame(tick);
   }));
-  check(mid.x > 0.4 && mid.yaw - y0 < -0.08, `${tag}: moving the mouse right pushes the stick right and turns the ship right (stick ${mid.x.toFixed(2)}, yaw ${y0.toFixed(2)} to ${mid.yaw.toFixed(2)})`);
+  check(mid.x > 0.4 && mid.yaw - y0 < -0.15, `${tag}: moving the mouse right pushes the stick right and turns the ship right (stick ${mid.x.toFixed(2)}, yaw ${y0.toFixed(2)} to ${mid.yaw.toFixed(2)})`);
   check(await page.isVisible("#mouseStick") && !(await page.isVisible("#mouseHint")), `${tag}: the stick ring shows and the hint hides once the mouse is captured`);
   await page.waitForTimeout(1500);
   const rest = await page.evaluate(() => __fw.fly.x);
   check(Math.abs(rest) < 0.15, `${tag}: the stick eases back to centre when the mouse stops (${rest.toFixed(2)})`);
   const p0 = await page.evaluate(() => __fw.match.player.pitch);
-  await page.evaluate(() => new Promise((done) => { const t0 = performance.now(); const tick = () => { for (let i = 0; i < 3; i++) dispatchEvent(new MouseEvent("mousemove", { movementX: 0, movementY: -10 })); if (performance.now() - t0 < 800) requestAnimationFrame(tick); else done(); }; requestAnimationFrame(tick); }));
+  await page.evaluate(() => new Promise((done) => { const g0 = __fw.match.time; const tick = () => { for (let i = 0; i < 3; i++) dispatchEvent(new MouseEvent("mousemove", { movementX: 0, movementY: -10 })); if (g0 - __fw.match.time < 0.8) requestAnimationFrame(tick); else done(); }; requestAnimationFrame(tick); }));
   check(await page.evaluate((p) => __fw.match.player.pitch - p > 0.1, p0), `${tag}: moving the mouse up climbs`);
   await page.mouse.move(640, 360); await page.mouse.down();
-  await page.waitForTimeout(300);
+  await gameWait(page, 0.4);
   const bolts = await page.evaluate(() => __fw.match.bolts.filter((b) => b.owner === __fw.match.player.id).length);
   await page.mouse.up();
   check(bolts > 0, `${tag}: the left button fires (${bolts} bolts)`);
@@ -142,13 +162,13 @@ for (const [name, dev] of [["portrait", devices["iPhone 13"]], ["landscape", dev
   const cdp = await ctx.newCDPSession(page);
   const tp = (type, x, y) => cdp.send("Input.dispatchTouchEvent", { type, touchPoints: type === "touchEnd" ? [] : [{ x, y, id: 1 }] });
   await tp("touchStart", z.x, z.y); await tp("touchMove", z.x + 60, z.y);
-  await page.waitForTimeout(1200);
+  await gameWait(page, 1);
   const y1 = await page.evaluate(() => __fw.match.player.yaw);
   await tp("touchEnd");
   check(y1 - y0 < -0.25, `${tag}: dragging right on the left side turns the ship right (yaw ${y0.toFixed(2)} to ${y1.toFixed(2)})`);
   const f = await page.$eval("#tFire", (e) => { const r = e.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; });
   await cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x: f.x, y: f.y, id: 2 }] });
-  await page.waitForTimeout(400);
+  await gameWait(page, 0.4);
   const bolts = await page.evaluate(() => __fw.match.bolts.filter((b) => b.owner === __fw.match.player.id).length);
   await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
   check(bolts > 0, `${tag}: holding FIRE shoots (${bolts} bolts)`);

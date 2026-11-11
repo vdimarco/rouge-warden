@@ -88,6 +88,28 @@ Every action SHALL be playable from the keyboard, a gamepad and a touch screen, 
 - WHEN the player presses Esc, taps the pause button, or the page is hidden
 - THEN the clock stops, the sound stops, and the pause menu offers Resume, Sound, Quit and Switch game
 
+### Requirement: Graphics quality
+
+The game SHALL offer High and Fast graphics. High shows sun shadows, bloom and reflections on the ships. Fast leaves them out. High is the default on a computer and Fast is the default on a touch screen.
+
+#### Scenario: Choosing Fast
+
+- GIVEN the pilot screen
+- WHEN the player picks FAST
+- THEN the next match draws with no shadows and no bloom, and the game saves the choice
+
+#### Scenario: A slow machine
+
+- GIVEN the player has not chosen a graphics setting and a match runs on High
+- WHEN the frame rate stays under 22 frames per second for 4 seconds
+- THEN the game changes to Fast and shows "GRAPHICS: FAST"
+
+#### Scenario: Models fail to load
+
+- GIVEN the model files do not arrive within 15 seconds
+- WHEN the title screen opens
+- THEN PLAY is enabled and the match uses the simple built-in ships
+
 ### Requirement: The game has an arcade cabinet
 
 Frostwing SHALL have a cabinet at the end of the Action row of the arcade home and an entry in the game switcher.

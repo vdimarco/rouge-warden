@@ -10,6 +10,9 @@
 - [x] Screens: title with attract flight, pilot select, how to fly, pause, results
 - [x] Keyboard, mouse, gamepad and touch controls; pitch direction setting
 - [x] Mouse flight: pointer-lock virtual stick with spring-back, a stick ring, a click-to-fly hint, a Mouse flight / Keys only setting
+- [x] Generated 3D models (Meshy 7 ships, Tripo H3.1 props) packed with `higgsfield/models3d/pack-ship.mjs`
+- [x] High graphics: sun shadows, bloom, sky reflections, snow ripples and glints, clouds, the gas giant, ribbon trails, explosion lights; Fast graphics for phones; automatic drop to Fast
+- [x] Four weather presets: day, dusk, night and storm
 - [x] Synthesized sound and music; pause suspends sound
 - [x] Arcade cabinet at the end of the Action row, Switch game entry, cabinet save line, `quiet.mjs` entry
 - [x] `qa/arcade/machines.mjs` updated for the new last Action machine and the Frostwing marquee

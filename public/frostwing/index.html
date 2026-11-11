@@ -121,6 +121,7 @@ body.touch #mouseHint, body.touch #mouseSeg { display: none !important; }
 .btn.go { background: linear-gradient(#ffcc4a, #ff8a1f); border-color: #ffe7a0; color: #2a1400; box-shadow: 0 0 18px rgba(255, 170, 40, 0.6); }
 .btn:focus-visible, .btn.focus, .pcard:focus-visible, .seg button:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
 .btn:hover { filter: brightness(1.15); }
+.btn:disabled { opacity: 0.6; cursor: progress; filter: grayscale(0.4); }
 h2 { margin: 0; font-size: clamp(20px, 3.4vw, 36px); text-shadow: 0 0 14px var(--blue); }
 #cards { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; width: min(100%, 1040px); }
 .pcard { position: relative; border: 2px solid rgba(120, 200, 255, 0.45); background: rgba(8, 20, 40, 0.85); border-radius: 8px; padding: 8px; text-align: left; cursor: pointer; display: flex; flex-direction: column; gap: 4px; }
@@ -242,7 +243,7 @@ body.touch.playing #pad { display: block; }
   <h1 class="logo display">FROSTWING</h1>
   <p class="tagline display">FOUR ON FOUR OVER A FROZEN MOON</p>
   <div class="btns">
-    <button id="playBtn" class="btn go" type="button">PLAY</button>
+    <button id="playBtn" class="btn go" type="button" disabled>LOADING…</button>
     <button id="howBtn" class="btn" type="button">HOW TO FLY</button>
     <button id="switchBtn" class="btn" type="button" data-switch>SWITCH GAME</button>
   </div>
@@ -256,6 +257,7 @@ body.touch.playing #pad { display: block; }
     <span>Rivals</span>
     <div class="seg" id="diff" role="radiogroup" aria-label="Difficulty"><button type="button" data-d="cadet">CADET</button><button type="button" data-d="ace">ACE</button><button type="button" data-d="veteran">VETERAN</button></div>
     <div class="seg" id="mouseSeg" role="radiogroup" aria-label="Mouse flight"><button type="button" data-m="1">MOUSE FLIGHT</button><button type="button" data-m="0">KEYS ONLY</button></div>
+    <div class="seg" id="gfxSeg" role="radiogroup" aria-label="Graphics"><button type="button" data-g="1">GRAPHICS HIGH</button><button type="button" data-g="0">FAST</button></div>
     <div class="seg" id="inv" role="radiogroup" aria-label="Pitch"><button type="button" data-i="0">UP = CLIMB</button><button type="button" data-i="1">UP = DIVE</button></div>
   </div>
   <div class="btns"><button id="backBtn" class="btn" type="button">BACK</button><button id="launchBtn" class="btn go" type="button">LAUNCH</button></div>
@@ -304,6 +306,7 @@ body.touch.playing #pad { display: block; }
   <div class="btns"><button class="btn" type="button" data-switch>SWITCH GAME</button></div>
 </section>
 
+<script type="importmap">{ "imports": { "three": "./lib/three.module.min.js" } }</script>
 <script type="module" src="game.js"></script>
 </body>
 </html>
