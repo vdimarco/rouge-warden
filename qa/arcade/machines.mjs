@@ -62,6 +62,8 @@ const html = read("public/index.html");
 const sw = read("public/arcade/switch.js");
 const machineUrls = [...html.matchAll(/<article class="cab[^"]*"[^>]*data-url="([^"]+)"/g)].map((m) => m[1]);
 const switchUrls = [...sw.slice(sw.indexOf("const GAMES")).split("];")[0].matchAll(/"?url"?:\s*"([^"]+)"/g)].map((m) => m[1]);
+// Lab-only games (labOnly: true): the home All Games list leaves them out, under the Lab tile (AGENTS.md, New games)
+const labOnlyUrls = [...sw.slice(sw.indexOf("const GAMES")).split("];")[0].matchAll(/\{[^}]*url:\s*"([^"]+)"[^}]*labOnly:\s*true[^}]*\}/g)].map((m) => m[1]);
 const switchIds = [...sw.slice(sw.indexOf("const GAMES")).split("];")[0].matchAll(/"?id"?:\s*"([^"]+)"/g)].map((m) => m[1]);
 const switchArt = [...sw.slice(sw.indexOf("const GAMES")).split("];")[0].matchAll(/"?art"?:\s*"([^"]+)"/g)].map((m) => m[1]);
 
@@ -448,7 +450,7 @@ if (chromium) {
     const tag = `${width}x${height}`;
     const { ctx, page, errors } = await open(browser, { width, height });
     // the page answers to a game's address, so the switcher can work out where it is
-    const here = { "/gta/": "GTA Montréal", "/lab/": "The Lab", "/lab/worlds/": "Small Worlds", "/lab/plunge/": "Take the Plunge", "/lab/rules/": "House Rules", "/fall/": "Down the Drain", "/breakthrough2/": "Breakthrough", "/echo/": "Loon Echo", "/olympus/x": "Olympus", "/light-years-home/": "Light Years Home", "/ahead-of-the-light/": "Ahead of the Light" };
+    const here = { "/gta/": "GTA Montréal", "/lab/": "The Lab", "/lab/worlds/": "Small Worlds", "/lab/rules/": "House Rules", "/fall/": "Down the Drain", "/breakthrough2/": "Breakthrough", "/olympus/x": "Olympus", "/light-years-home/": "Light Years Home", "/ahead-of-the-light/": "Ahead of the Light" };
     for (const [p, name] of Object.entries(here)) {
       await page.evaluate(async (p) => { history.replaceState({}, "", p); GameSwitch.close(); await GameSwitch.open(); }, p);
       await page.waitForSelector(".gsw-game");
@@ -461,7 +463,10 @@ if (chromium) {
       const box = document.querySelector(".gsw:not([hidden])"), tiles = [...box.querySelectorAll(".gsw-game")], links = tiles.map((t) => t.matches("a") ? t : t.querySelector("a.board-launch")), controls = box.querySelector(".gsw-row, .board-head").getBoundingClientRect();
       return { n: tiles.length, hrefs: links.map((a) => a.getAttribute("href")), small: links.filter((a) => { const r = a.getBoundingClientRect(); return r.height < 44 || r.width < 44; }).length, scrolls: box.scrollHeight > box.clientHeight, controlsIn: controls.top >= 0 && controls.bottom <= innerHeight + 1, vh: innerHeight };
     });
-    check(info.n === switchUrls.length && switchUrls.every((u) => info.hrefs.includes(u) || u === "/wild/"), `${tag}: the switcher shows a tile for each of the ${switchUrls.length} games (${info.n})`);
+    // the home list shows every game but the Lab-only ones, which sit under the Lab tile
+    const homeUrls = switchUrls.filter((u) => !labOnlyUrls.includes(u));
+    check(info.n === homeUrls.length && homeUrls.every((u) => info.hrefs.includes(u) || u === "/wild/"), `${tag}: the switcher shows a tile for each of the ${homeUrls.length} games that are not Lab-only (${info.n})`);
+    check(labOnlyUrls.length > 0 && !labOnlyUrls.some((u) => info.hrefs.includes(u)), `${tag}: the home switcher leaves out the ${labOnlyUrls.length} Lab-only games`);
     check(info.small === 0, `${tag}: every tile is at least 44 pixels each way`);
     check(info.controlsIn, `${tag}: switcher navigation controls stay in the window while the list is at the top`);
     check(info.scrolls || width > 800, `${tag}: a long list scrolls`);
