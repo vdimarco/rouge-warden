@@ -33,7 +33,12 @@ A redirect was chosen over moving the hall to another path. The hall owns the ha
 - All Games, wider than 480px: `Corridor ↗` beside Old arcade and 3D arcade.
 - All Games, 480px and narrower: `Corridor view` in Menu, because a third link in the bar runs under the title at 320px.
 
+## Order
+
+The hall is built once from its game list, so the Order control stores the choice and reloads the page. The import script bakes the dates from `public/arcade/game-dates.json` into the page, so the first visit sorts without waiting. The page also reads that file in the background and keeps it in localStorage (`corridor-dates`) for the next visit, so a run of `qa/arcade/game-dates.mjs` reaches the Corridor without another import.
+
 ## Known limits
+- The Corridor has 38 cabinets. Games added to the arcade since (Lake Brawl, Frostwing, Eleven Wells) have none yet.
 
 - The Corridor file is 1.3 MB before compression, because its art is inline.
 - The Corridor does not rebuild its scene after a lost WebGL context.

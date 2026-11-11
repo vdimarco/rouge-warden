@@ -5,9 +5,12 @@ Usage: python3 scripts/import-corridor.py /path/to/afterglow-corridor/index.html
 
 The Corridor is one self-contained file made for its own address. This turns
 it into the arcade's default view: same-site game links, the arcade's own
-head tags, and a control that goes back to the All Games list.
+head tags, a control that goes back to the All Games list, and the game dates
+that its Newest and Updated orders sort by.
 """
+import json
 import os
+import re
 import sys
 
 HEAD_OLD = "    <title>Corridor — Cottage Arcade</title>\n"
@@ -49,6 +52,7 @@ TAIL_NEW = """    <script>
     </script>
   </body>
 """
+DATES_URL = '    <script>window.CORRIDOR_DATES_URL = "/arcade/game-dates.json";</script>\n'
 URL_OLD = 'url: "https://arcade.uptick.systems/'
 URL_NEW = 'url: "/'
 
@@ -60,12 +64,25 @@ def swap(page, old, new, count=1):
     return page.replace(old, new)
 
 
+def bake_dates(page):
+    """Replace the page's baked game dates with public/arcade/game-dates.json."""
+    here = os.path.dirname(os.path.abspath(__file__))
+    with open(os.path.join(here, "..", "public", "arcade", "game-dates.json"), encoding="utf-8") as f:
+        games = json.load(f)["games"]
+    dates = {"/" + g["path"].split("public/", 1)[1] + "/": [g["added"], g["updated"]] for g in games.values()}
+    found = re.findall(r"^        const DATES = \{.*\};$", page, flags=re.M)
+    if len(found) != 1:
+        sys.exit(f"expected one baked DATES line, found {len(found)}")
+    return page.replace(found[0], "        const DATES = " + json.dumps(dates, separators=(",", ":")) + ";")
+
+
 def main():
     if len(sys.argv) != 2:
         sys.exit(__doc__)
     with open(sys.argv[1], encoding="utf-8") as f:
         page = f.read()
-    page = swap(page, HEAD_OLD, HEAD_NEW)
+    page = swap(page, HEAD_OLD, HEAD_NEW + DATES_URL)
+    page = bake_dates(page)
     page = swap(page, MARK_OLD, MARK_NEW)
     page = swap(page, NAV_OLD, NAV_NEW)
     page = swap(page, URL_OLD, URL_NEW, None)
