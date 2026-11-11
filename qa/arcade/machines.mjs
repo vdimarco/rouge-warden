@@ -262,10 +262,21 @@ async function open(browser, { width, height, store = {}, mobile = width < 800, 
 // the row slides for about half a second after a pick: wait until every move on the page has ended and two frames have been drawn
 // (a slow computer draws few frames, so a position read in between would be old)
 async function settle(page) {
-  await page.evaluate(async () => {
+  await within(page.evaluate(async () => {
     await Promise.all(document.getAnimations().filter((a) => isFinite(a.effect.getComputedTiming().endTime)).map((a) => a.finished.catch(() => {})));
     await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+  }), 15000, "the page did not settle: an animation did not end, or no frame was drawn").catch(async (e) => {
+    // name what is still moving, so the message says where to look
+    const left = await within(page.evaluate(() => document.getAnimations().filter((a) => a.playState !== "finished" && isFinite(a.effect.getComputedTiming().endTime))
+      .map((a) => `${a.animationName || a.transitionProperty || "script"} on ${a.effect.target?.id ? "#" + a.effect.target.id : a.effect.target?.className || a.effect.target?.tagName} (${a.playState})`).join(", ") || "none"), 5000, "").catch(() => "the page does not answer");
+    throw new Error(`${e.message}; unfinished animations: ${left}`);
   });
+}
+// a step that can wait forever (a mouse move, a page script) fails with this message instead. Mouse moves and page scripts have no
+// Playwright time limit of their own.
+function within(step, ms, what) {
+  let timer;
+  return Promise.race([step, new Promise((_, no) => { timer = setTimeout(() => no(new Error(`${what} (stuck for ${ms / 1000} s)`)), ms); })]).finally(() => clearTimeout(timer));
 }
 // the row shows the hall (one cabinet per group) or one group's machines; a selection is counted among the cabinets on show
 const SHOWN = ".cab:not([hidden])";
@@ -277,6 +288,8 @@ if (chromium) {
   let browser = await chromium.launch({ args: ARGS, executablePath: process.env.CHROMIUM_PATH || undefined });
   // a fresh browser for each part: a headless browser with a software GPU slows down over a long run and can stop answering mouse moves
   const relaunch = async () => { await browser.close().catch(() => {}); browser = await chromium.launch({ args: ARGS, executablePath: process.env.CHROMIUM_PATH || undefined }); };
+  // a stuck step outside the layout part (see within) ends the browser checks with its message, and the summary still prints
+  try {
 
   /* ----- the Montréal cabinet: collection, artwork, pointer and keyboard launch ----- */
   for (const vp of PARTS.includes("gta") ? [{ width: 390, height: 844 }, { width: 1280, height: 720 }] : []) {
@@ -405,11 +418,14 @@ if (chromium) {
     // Each swipe-heavy size gets a fresh software GPU, as do the larger test parts.
     await relaunch();
     const { ctx, page, errors } = await open(browser, { width, height });
+    // a step that is stuck fails this size with a message, and the next size still runs
+    let tag = `${width}x${height}`;
+    try {
     // the hall first, then the group with the most machines
     const biggest = await page.$$eval(".cab[data-opens]", (cs) => cs.map((c) => [c.dataset.opens, Number(c.querySelector(".marquee small").textContent.match(/\d+/)[0])]).sort((a, b) => b[1] - a[1])[0][0]);
     for (const where of ["hall", biggest]) {
     if (where !== "hall") await enter(page, where);
-    const tag = `${width}x${height} ${where}`;
+    tag = `${width}x${height} ${where}`;
     const n = await page.$$eval(SHOWN, (cs) => cs.length);
     // the hall and each group open on their first cabinet
     check(await sel(page) === 0, `${tag}: opens on the first cabinet`);
@@ -437,14 +453,21 @@ if (chromium) {
       await page.keyboard.press("ArrowRight"); await settle(page);
       check(await sel(page) === 0, `${tag}: the right key goes back to the first machine`);
       const y = Math.round(box.stage.t + (box.stage.b - box.stage.t) * 0.25);
+      // A swipe may start on a machine's screen picture. The browser's own drag of that picture would cancel the swipe, and it
+      // left Playwright's mouse move waiting forever: count each drag the page lets start.
+      await page.evaluate(() => { window.__drags = 0; document.addEventListener("dragstart", (e) => { if (!e.defaultPrevented) window.__drags++; }); });
       for (let k = 0; k < n + 1; k++) {
-        await page.mouse.move(width * 0.85, y);
-        await page.mouse.down();
-        await page.mouse.move(width * 0.15, y, { steps: 6 });
-        await page.mouse.up();
+        await within((async () => {
+          await page.mouse.move(width * 0.85, y);
+          await page.mouse.down();
+          await page.mouse.move(width * 0.15, y, { steps: 6 });
+          await page.mouse.up();
+        })(), 15000, `swipe ${k + 1} of ${n + 1} did not end`);
         await page.waitForTimeout(60);
       }
       check(await sel(page) === n - 1, `${tag}: ${n + 1} swipes left end on the last machine, and do not go past it (${await sel(page)})`);
+      const drags = await page.evaluate(() => window.__drags);
+      check(drags === 0, `${tag}: a swipe does not drag a machine's picture (${drags} drags started)`);
     }
     // the machine list under the machines (inside a group), and the scroll wheel
     if (where !== "hall") {
@@ -453,16 +476,20 @@ if (chromium) {
       const first = await sel(page);
       await page.selectOption("#machinePicker", ids[n - 1]); await settle(page);
       check(first === 0 && await sel(page) === n - 1, `${tag}: the machine list goes to the first machine and to the last`);
+      // the way back, the machine list and the count under the machines stay whole inside the window
+      const out = await page.evaluate(() => ["#backBtn", "#machinePicker", "#machineCount"].map((q) => [q, document.querySelector(q).getBoundingClientRect()]).filter(([, b]) => b.left < -1 || b.right > innerWidth + 1).map(([q, b]) => `${q} ${Math.round(b.left)} to ${Math.round(b.right)}`));
+      check(out.length === 0, `${tag}: the back button, the machine list and the count are inside the window${out.length ? " (" + out.join(", ") + " of " + width + ")" : ""}`);
     }
     await page.keyboard.press("ArrowRight"); await settle(page);
-    await page.mouse.move(width / 2, box.stage.t + 40); await settle(page);
+    await within(page.mouse.move(width / 2, box.stage.t + 40), 15000, "the mouse move over the row did not end"); await settle(page);
     // pointing at a machine may choose it (where the row does not slide): count the flick from there
     const before = await sel(page);
-    await page.mouse.wheel(0, 120); await page.waitForTimeout(400); await settle(page);
+    await within(page.mouse.wheel(0, 120), 15000, "the scroll wheel flick did not end"); await page.waitForTimeout(400); await settle(page);
     check(await sel(page) === (before + 1) % n, `${tag}: one flick of the scroll wheel moves one machine`);
     }
     check(errors.length === 0, `${width}x${height}: no page errors${errors.length ? ":\n    " + errors.join("\n    ") : ""}`);
-    await ctx.close();
+    } catch (e) { check(false, `${tag}: ${e.message}`); }
+    await within(ctx.close(), 15000, "the page did not close").catch(() => {});
   }
 
   await relaunch();
@@ -680,13 +707,13 @@ if (chromium) {
     ascii: ["ascii-front", "battle-tanks"],
     strategy: ["breakthrough", "follow-suit", "silent-depth"],
     gta: ["gta"],
-    lab: ["lab", "worlds", "neon", "echo", "tellme", "plunge", "creek", "tilt", "rules", "afterlight", "lighthouse-keeper", "echoes-under-ice", "last-train-home", "firefly-courier", "mirage-runner", "orbital-gardener", "eleven-wells", "last-light"],
+    lab: ["lab", "worlds", "neon", "echo", "tellme", "plunge", "creek", "tilt", "rules", "afterlight", "lighthouse-keeper", "echoes-under-ice", "last-train-home", "firefly-courier", "mirage-runner", "orbital-gardener", "eleven-wells", "last-light", "ledger"],
   };
   // 320 x 700 as the small-phone checks above: at 320 x 568 every machine's screen is about 52 x 43 px, too small for any attract line
   for (const [width, height] of PARTS.includes("firstbreath") ? [[390, 844], [320, 700], [1280, 720]] : []) {
     await relaunch();
     const tag = `${width}x${height} First Breath`;
-    const { ctx, page, errors, moves } = await open(browser, { width, height });
+    let { ctx, page, errors, moves } = await open(browser, { width, height });
     const hall = await page.$$eval(SHOWN, (cs) => cs.map((c) => c.dataset.opens || c.dataset.game));
     check(hall.join() === "cottage,action,ascii,strategy,gta,lab", `${tag}: the hall still shows the six groups in order (${hall.join(", ")})`);
     await enter(page, "action");
@@ -724,7 +751,13 @@ if (chromium) {
     const t0 = Date.now();
     while (!moves.length && Date.now() - t0 < 6000) await page.waitForTimeout(50);
     check(started && moves.length === 1 && moves[0].replace(/#.*$/, "") === "/first-breath/", `${tag}: START goes to /first-breath/ (went to ${moves.join(",") || "nowhere"}${started ? "" : "; START could not be clicked"})`);
-    await page.evaluate(() => document.querySelectorAll(".boot").forEach((b) => b.remove()));
+    // START began a page change that the test stopped. A player never has a page change stopped, and after one the software GPU
+    // sometimes drew no more frames for that tab, even for a new page loaded in it, so settle() waited for ever (3 of 15 runs).
+    // Go on in a fresh browser, and keep the page errors seen so far.
+    const seen = errors;
+    await relaunch();
+    ({ ctx, page, errors, moves } = await open(browser, { width, height }));
+    errors.unshift(...seen);
     // the other groups keep their machines and their order
     for (const [g, want] of Object.entries(OTHERS)) {
       await enter(page, g);
@@ -770,16 +803,19 @@ if (chromium) {
     });
     await page.goto(BASE + "crimson/", { waitUntil: "domcontentloaded" });
     await page.waitForTimeout(2500);
-    const res = await page.evaluate(async () => {
+    const res = await within(page.evaluate(async () => {
       const m = await import("/crimson/js/credits.js");
       let clk = 1000;
       m.rollCredits({ crew: [{ name: "Ann", perk: "" }, { name: "Bo", perk: "" }], pick: 0, stats: { time: 120, parries: 3, deaths: 0 }, touch: innerWidth < 800, now: () => clk, onAgain() {} });
       await new Promise((r) => setTimeout(r, 300));
       clk = 1000 + 1500 + 200000; // the roll has run to its end
-      await new Promise((r) => setTimeout(r, 2500));
+      // the roll moves on the next frame drawn. With a software GPU the 3D game behind it can take seconds a frame, so wait for
+      // frames, not for a fixed time
+      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+      await new Promise((r) => setTimeout(r, 300));
       const box = (e) => { const r = e.getBoundingClientRect(); return { top: r.top, bottom: r.bottom }; };
       return { tiles: document.querySelectorAll("#roll .game").length, again: box(document.querySelector("#creditsAgain")), arcade: box(document.querySelector("#roll .again a")), vh: innerHeight };
-    });
+    }), 60000, `${width}x${height}: the Crimson Rogue credits drew no frame`);
     const tag = `${width}x${height}`;
     check(res.tiles >= 8, `${tag}: the end card of Crimson Rogue lists the other games (${res.tiles} tiles)`);
     check(res.again.top >= 0 && res.again.bottom <= res.vh, `${tag}: at the end of the credits the play-again button is in the window (${Math.round(res.again.top)} to ${Math.round(res.again.bottom)} of ${res.vh})`);
@@ -855,7 +891,8 @@ if (chromium) {
       await ctx.close();
     }
   }
-  await browser.close();
+  } catch (e) { check(false, `the browser checks stopped: ${e.message}`); }
+  await within(browser.close(), 15000, "the browser did not close").catch(() => {});
 }
 
 function finish() {
