@@ -70,7 +70,15 @@ Pilot portraits and the key art come from Higgsfield `gpt_image_2_6`, prompted f
 
 ## Sound
 
-Every sound is synthesized: square-wave lasers, filtered-noise explosions, a sawtooth engine that follows speed, and chimes for orbs. The music is a 138 BPM loop in A minor (A F C G A F G E) with a triangle bass, a square arpeggio and noise drums. It gets busier in a shower and in the last minute. The game suspends its own AudioContext on pause, and `quiet.js` handles a hidden page.
+The sound effects are synthesized: square-wave lasers, filtered-noise explosions, a sawtooth engine that follows speed, and chimes for orbs.
+
+The music is recorded. The first version looped a synthesized 138 BPM pattern, and the user asked for "actually nice music". Six instrumental tracks now come from ElevenLabs Music v2.5 on Higgsfield: a title theme, two battle themes, a story underscore, and a victory and a defeat sting. `public/frostwing/audio/sources.json` holds each job id, prompt, measured loudness and gain. The files are the generator's own 128 kbit/s MP3s (6.9 MB in total), streamed and not re-encoded.
+
+Each track is an `<audio>` element routed through the game's AudioContext, so the game sets its level (a phone ignores an audio element's own volume) and `quiet.js` can silence it when the page is hidden. The gains bring the tracks to about the same loudness. The music skips the compressor that the effects share, so explosions do not pump it. A looping track fades down in its last second and back up after the seam. A sting plays once and then hands on to the title theme.
+
+Which track plays: the title theme on the title, pilot screen, logbook and results; the story underscore in cut scenes; the first battle theme by day and at dusk; the second battle theme at night, in a storm and at dawn. A meteor shower and the last minute lift the music by about 1.5 dB. Browsers do not let a page start sound by itself, so the title theme starts on the player's first tap, click or key. Pause stops the music and Resume continues it.
+
+How it is checked: `smoke.e2e.mjs` reads which track plays on each screen and that it pauses and resumes, `story.test.mjs` checks the six files against `sources.json`, and `quiet.mjs` checks silence when hidden. No test can judge how the music sounds. Loudness was measured with ffmpeg's EBU R128 meter, and nobody has listened to the tracks in the game yet.
 
 ## Layout
 

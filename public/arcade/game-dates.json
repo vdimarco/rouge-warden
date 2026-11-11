@@ -117,6 +117,16 @@
       "added": "2026-10-18T15:01:19-04:00",
       "updated": "2026-10-20T12:29:27-04:00"
     },
+    "frostwing": {
+      "path": "public/frostwing",
+      "added": "2026-11-10T22:52:42-05:00",
+      "updated": "2026-11-11T06:43:38-05:00"
+    },
+    "lake-brawl": {
+      "path": "public/lake-brawl",
+      "added": "2026-11-10T11:02:51-05:00",
+      "updated": "2026-11-10T11:02:51-05:00"
+    },
     "lab": {
       "path": "public/lab",
       "added": "2026-09-28T21:25:13Z",

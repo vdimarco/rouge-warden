@@ -14,7 +14,9 @@
 - [x] Generated 3D models (Meshy 7 ships, Tripo H3.1 props) packed with `higgsfield/models3d/pack-ship.mjs`
 - [x] High graphics: sun shadows, bloom, sky reflections, snow ripples and glints, clouds, the gas giant, ribbon trails, explosion lights; Fast graphics for phones; automatic drop to Fast
 - [x] Four weather presets: day, dusk, night and storm
-- [x] Synthesized sound and music; pause suspends sound
+- [x] Synthesized sound effects; pause suspends sound
+- [x] Recorded music: six generated tracks (title, two battle themes, story, win and lose stings) in place of the synthesized loop
+- [x] Frostwing in the Corridor (cabinet 17, after First Breath) and in the All Games dates
 - [x] Story: a prologue, five operations with their own sky, clock, rosters and rivals, the Nightjar boss, saved progress
 - [x] Cut scenes: eight generated stills with slow pans, typed captions, portraits, Next and Skip, a soft pad; reduced-motion support
 - [x] Logbook of 16 world entries that open with story progress
@@ -26,5 +28,5 @@
 - [x] Browser check of desktop, portrait phone, landscape phone and 320 px: `NODE_PATH=qa/browser/node_modules node qa/frostwing/smoke.e2e.mjs`
 - [x] Homepage screenshots at 390, 320 and 1280 for the pull request
 - [ ] Frame rate on a real GPU and on a real phone
-- [ ] Sound heard on a device (headless runs cannot listen)
+- [ ] Sound and the new music heard on a device (headless runs cannot listen)
 - [ ] Difficulty tuned by human play
