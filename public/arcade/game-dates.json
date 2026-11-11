@@ -216,6 +216,11 @@
       "path": "public/last-light",
       "added": "2026-10-08T19:24:54-04:00",
       "updated": "2026-10-11T15:13:47Z"
+    },
+    "ember-drift": {
+      "path": "public/ember-drift",
+      "added": "2026-11-11T16:08:03+00:00",
+      "updated": "2026-11-11T16:08:03+00:00"
     }
   }
 }

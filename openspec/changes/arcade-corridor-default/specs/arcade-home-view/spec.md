@@ -65,15 +65,15 @@ The Corridor SHALL have a cabinet for Lake Brawl as the last cabinet of Cottage,
 
 #### Scenario: The walk reaches Lake Brawl
 - **WHEN** a visitor selects Next cabinet seven times from the entrance
-- **THEN** the caption reads Lake Brawl and the counter reads 08 of 42
+- **THEN** the caption reads Lake Brawl and the counter reads 08 of 43
 
 #### Scenario: The walk reaches Eleven Wells
 - **WHEN** a visitor presses End and then selects Previous cabinet twice
-- **THEN** the caption reads Eleven Wells and the counter reads 40 of 42
+- **THEN** the caption reads Eleven Wells and the counter reads 41 of 43
 
 #### Scenario: The walk reaches Warden's Ledger
 - **WHEN** a visitor presses End and then selects Previous cabinet once
-- **THEN** the caption reads Warden's Ledger and the counter reads 41 of 42
+- **THEN** the caption reads Warden's Ledger and the counter reads 42 of 43
 
 #### Scenario: Opening a cabinet and playing
 - **WHEN** a visitor presses Enter at one of the three cabinets, at 1280×800 or 390×844

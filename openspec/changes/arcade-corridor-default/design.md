@@ -23,7 +23,7 @@ Each cabinet is these edits to the page:
 - the written counts: `--n`, the aria label, the role line, the index, the counter, and the count in words in the two About texts
 - three light slots in the tunnel shader: `uPP`, `uPC`, the loop bound, `lightPP`, `lightPC`, and the two offsets (`n` and `2n`)
 
-Lake Brawl is cabinet 08, the last of Cottage. Eleven Wells is cabinet 40 and Warden's Ledger is cabinet 41, the last of The Lab. Title, route and subtitle come from `public/arcade/switch.js` and the hall cabinet's marquee. The dot color is the hall cabinet's `--c1` for Lake Brawl (`#1F5FD0`) and `--c2` for Eleven Wells (`#FFB547`) and Warden's Ledger (`#F3CF7A`).
+Lake Brawl is cabinet 08, the last of Cottage. Eleven Wells is cabinet 41 and Warden's Ledger is cabinet 42, the last of The Lab. These numbers follow Ember Drift, which joined Action as cabinet 19 (`openspec/changes/archive/2026-11-11-add-ember-drift`). Title, route and subtitle come from `public/arcade/switch.js` and the hall cabinet's marquee. The dot color is the hall cabinet's `--c1` for Lake Brawl (`#1F5FD0`) and `--c2` for Eleven Wells (`#FFB547`) and Warden's Ledger (`#F3CF7A`).
 
 The screens:
 
@@ -60,9 +60,9 @@ The hall is built once from its game list, so the Order control stores the choic
 
 ## Known limits
 
-- The Corridor has 42 cabinets. Frostwing's cabinet (18, the last of Action) is part of `openspec/changes/add-frostwing`.
+- The Corridor has 43 cabinets. Frostwing's cabinet (18, the last of Action) is part of `openspec/changes/add-frostwing`.
 - The Corridor file is 1.4 MB before compression, because its art is inline.
-- Each cabinet uses six uniform vectors in the tunnel shader. At 42 cabinets the shader declares 266. A device that allows 256 or fewer shows the flat list. A third of the light slots (`n` to `2n`) are always dark. Without them the shader declares 182, so the source can drop them.
+- Each cabinet uses six uniform vectors in the tunnel shader. At 43 cabinets the shader declares 272. A device that allows 256 or fewer shows the flat list. A third of the light slots (`n` to `2n`) are always dark. Without them the shader declares 186, so the source can drop them.
 - On a phone, the picture of an open cabinet can sit partly behind the next section sign. This applies to the last cabinet of each group, and it was so before Lake Brawl and Eleven Wells took those places.
 - The Corridor does not rebuild its scene after a lost WebGL context.
 - A game opened from the Corridor does not add to the Plays count that All Games keeps on the device.
