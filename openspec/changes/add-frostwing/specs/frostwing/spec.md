@@ -4,7 +4,7 @@
 
 ### Requirement: A match is two teams of four against a clock
 
-A match SHALL put four Lantern Squadron ships against four Corvid Pack ships. The player flies one Lantern ship. Bots fly the rest. A match lasts four minutes. A down scores 10 for the team of the ship that fired, and a crash scores 10 for the other team. A downed ship comes back with a full shield after four seconds.
+A quick match SHALL put four Lantern Squadron ships against four Corvid Pack ships. A story operation can field three ships a side. The player flies one Lantern ship. Bots fly the rest. A match lasts four minutes. A down scores 10 for the team of the ship that fired, and a crash scores 10 for the other team. A downed ship comes back with a full shield after four seconds.
 
 #### Scenario: Downing a rival
 
@@ -87,6 +87,78 @@ Every action SHALL be playable from the keyboard, a gamepad and a touch screen, 
 - GIVEN a match is under way
 - WHEN the player presses Esc, taps the pause button, or the page is hidden
 - THEN the clock stops, the sound stops, and the pause menu offers Resume, Sound, Quit and Switch game
+
+### Requirement: A story of five operations
+
+The game SHALL offer a story of five operations, each a match with its own place, sky, clock, rosters and rivals. A cut scene SHALL play before the first operation, before each operation and after each win. Progress SHALL be saved after each win.
+
+#### Scenario: Starting the story
+
+- GIVEN a player with no story progress
+- WHEN the player chooses STORY
+- THEN the prologue plays, then the briefing for Operation 1, then the pilot screen offers Juno, Pip and Brann for a three-on-three match
+
+#### Scenario: Winning an operation
+
+- GIVEN a story operation ends with Lantern ahead
+- WHEN the results show
+- THEN they read OPERATION COMPLETE, CONTINUE plays the debrief and the next briefing, and the title later offers CONTINUE STORY
+
+#### Scenario: Losing an operation
+
+- GIVEN a story operation ends with Lantern behind or level
+- WHEN the results show
+- THEN they read OPERATION FAILED or DRAW with a line from the squad, TRY AGAIN restarts the same operation, and no progress is lost
+
+#### Scenario: Silas Vane returns
+
+- GIVEN Operation 1 is won
+- WHEN Operation 2 begins
+- THEN its briefing tells how Silas Vane comes out of retirement, and he joins the pilot screen from then on
+
+#### Scenario: The last operation
+
+- GIVEN Operation 5
+- WHEN the match starts at dawn
+- THEN Vex Morrow flies the Nightjar with 1.8 times his shield and a quarter more gun damage, and a win plays the ending and marks the story complete
+
+### Requirement: Cut scenes
+
+A cut scene SHALL show stills with a slow pan and a caption that types out. A pilot's line SHALL show their portrait and name. The player SHALL be able to finish the line, go to the next slide, or skip the scene, with a key, a click or a tap.
+
+#### Scenario: Reading a cut scene
+
+- GIVEN a cut scene is on screen
+- WHEN the player presses Enter or taps while the caption is still typing
+- THEN the whole line shows, and the next press goes to the next slide
+
+#### Scenario: Skipping
+
+- GIVEN a cut scene is on screen
+- WHEN the player presses Esc or SKIP
+- THEN the scene ends and the game goes to what follows it
+
+#### Scenario: Cut scene on a phone
+
+- GIVEN a phone in portrait or landscape, 320 px wide or more
+- WHEN a cut scene plays
+- THEN the whole caption fits above the Next and Skip buttons, and both buttons are at least 44 px tall
+
+#### Scenario: Reduced motion
+
+- GIVEN the device asks for reduced motion
+- WHEN a cut scene plays
+- THEN the stills do not pan and each caption shows at once
+
+### Requirement: Logbook
+
+The title SHALL offer a logbook of 16 entries about the world. Eight SHALL be open at the start, and each won operation SHALL open more.
+
+#### Scenario: Opening entries
+
+- GIVEN a player wins Operation 1
+- WHEN the player opens the logbook
+- THEN the entries on the Corvid Pack and Ostrander Deepcore are open, and the locked entries say which operation opens them
 
 ### Requirement: Graphics quality
 

@@ -153,6 +153,42 @@ h2 { margin: 0; font-size: clamp(20px, 3.4vw, 36px); text-shadow: 0 0 14px var(-
 #mvp { display: flex; gap: 10px; align-items: center; } #mvp img { width: 64px; height: 64px; border-radius: 6px; border: 2px solid #ffd23f; }
 #fail { background: #0a1220; }
 
+/* ---------------- cut scenes and the logbook ---------------- */
+#scene { position: fixed; inset: 0; background: #000; overflow: hidden; }
+#sceneStage { position: absolute; inset: 0; cursor: pointer; }
+#sceneStage .layer { position: absolute; inset: -7%; background-size: cover; background-position: center; opacity: 0; transition: opacity 0.9s; will-change: transform, opacity; }
+#sceneStage .layer.on { opacity: 1; }
+.pan-in { animation: panIn 18s linear forwards; } .pan-out { animation: panOut 18s linear forwards; }
+.pan-left { animation: panLeft 18s linear forwards; } .pan-right { animation: panRight 18s linear forwards; } .pan-up { animation: panUp 18s linear forwards; }
+@keyframes panIn { from { transform: scale(1); } to { transform: scale(1.12); } }
+@keyframes panOut { from { transform: scale(1.12); } to { transform: scale(1); } }
+@keyframes panLeft { from { transform: translateX(4%) scale(1.04); } to { transform: translateX(-4%) scale(1.04); } }
+@keyframes panRight { from { transform: translateX(-4%) scale(1.04); } to { transform: translateX(4%) scale(1.04); } }
+@keyframes panUp { from { transform: translateY(-4%) scale(1.04); } to { transform: translateY(4%) scale(1.04); } }
+#scene::before, #scene::after { content: ""; position: absolute; left: 0; right: 0; height: 9vh; z-index: 1; pointer-events: none; }
+#scene::before { top: 0; background: linear-gradient(#000, rgba(0, 0, 0, 0)); }
+#scene::after { bottom: 0; height: 34vh; background: linear-gradient(rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.85)); }
+#sceneTitle { position: absolute; z-index: 2; left: calc(16px + var(--safe-l)); top: calc(12px + var(--safe-t)); font-size: clamp(11px, 1.5vw, 16px); letter-spacing: 0.16em; color: #ffe08a; text-shadow: 0 2px 6px #000; }
+#sceneBox { position: absolute; z-index: 2; left: 50%; bottom: calc(72px + var(--safe-b)); transform: translateX(-50%); width: min(calc(100vw - 24px), 880px); min-height: 5.6em; display: flex; gap: 12px; align-items: flex-start;
+  padding: 12px 16px; background: rgba(6, 12, 24, 0.84); border: 2px solid var(--edge); border-radius: 8px; }
+#sceneFace { width: clamp(52px, 8vw, 84px); aspect-ratio: 1; border-radius: 6px; border: 2px solid var(--blue); flex: none; }
+#sceneBox.t1 #sceneFace { border-color: var(--violet); } #sceneBox.t1 #sceneWho { color: var(--violet); }
+#sceneBox.narr #sceneFace { display: none; } #sceneBox.narr { text-align: center; justify-content: center; font-style: italic; border-color: rgba(255, 224, 138, 0.5); }
+#sceneBox > div { flex: 1; min-width: 0; }
+#sceneWho { display: block; font-size: 0.76em; letter-spacing: 0.12em; color: var(--blue); font-style: normal; }
+#sceneText { margin: 2px 0 0; font-size: clamp(14px, 1.9vw, 20px); line-height: 1.45; font-weight: 500; min-height: 2.9em; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+#sceneBtns { position: absolute; z-index: 2; right: calc(12px + var(--safe-r)); bottom: calc(12px + var(--safe-b)); display: flex; gap: 10px; }
+#sceneBtns .btn { min-width: 110px; }
+@media (prefers-reduced-motion: reduce) { #sceneStage .layer { animation: none !important; transition: none; } }
+#log { justify-content: flex-start; }
+#logList { width: min(100%, 860px); display: grid; gap: 10px; }
+#logList article { background: rgba(8, 20, 40, 0.86); border: 1px solid var(--edge); border-radius: 8px; padding: 10px 14px; }
+#logList h3 { margin: 0 0 4px; color: #ffd98a; font-size: 1.05em; }
+#logList p { margin: 0; font-weight: 500; line-height: 1.5; color: #d6e6f6; }
+#logList .locked { opacity: 0.55; }
+#opLine { color: #ffe9b0; }
+
 /* ---------------- touch controls ---------------- */
 #pad { display: none; position: fixed; inset: 0; pointer-events: none; --b: clamp(50px, 13vmin, 78px); }
 body.touch.playing #pad { display: block; }
@@ -243,7 +279,9 @@ body.touch.playing #pad { display: block; }
   <h1 class="logo display">FROSTWING</h1>
   <p class="tagline display">FOUR ON FOUR OVER A FROZEN MOON</p>
   <div class="btns">
-    <button id="playBtn" class="btn go" type="button" disabled>LOADING…</button>
+    <button id="storyBtn" class="btn go" type="button" disabled>LOADING…</button>
+    <button id="playBtn" class="btn" type="button" disabled>QUICK MATCH</button>
+    <button id="logBtn" class="btn" type="button">LOGBOOK</button>
     <button id="howBtn" class="btn" type="button">HOW TO FLY</button>
     <button id="switchBtn" class="btn" type="button" data-switch>SWITCH GAME</button>
   </div>
@@ -251,11 +289,13 @@ body.touch.playing #pad { display: block; }
 </section>
 
 <section id="select" class="screen hidden">
-  <h2 class="display">CHOOSE YOUR PILOT</h2>
+  <h2 id="selTitle" class="display">CHOOSE YOUR PILOT</h2>
+  <p id="opLine" class="note hidden"></p>
   <div id="cards" role="listbox" aria-label="Pilots"></div>
   <div class="row">
-    <span>Rivals</span>
+    <span id="rivalLab">Rivals</span>
     <div class="seg" id="diff" role="radiogroup" aria-label="Difficulty"><button type="button" data-d="cadet">CADET</button><button type="button" data-d="ace">ACE</button><button type="button" data-d="veteran">VETERAN</button></div>
+    <div class="seg" id="skySeg" role="radiogroup" aria-label="Sky"><button type="button" data-s="day">DAY</button><button type="button" data-s="dusk">DUSK</button><button type="button" data-s="night">NIGHT</button><button type="button" data-s="storm">STORM</button></div>
     <div class="seg" id="mouseSeg" role="radiogroup" aria-label="Mouse flight"><button type="button" data-m="1">MOUSE FLIGHT</button><button type="button" data-m="0">KEYS ONLY</button></div>
     <div class="seg" id="gfxSeg" role="radiogroup" aria-label="Graphics"><button type="button" data-g="1">GRAPHICS HIGH</button><button type="button" data-g="0">FAST</button></div>
     <div class="seg" id="inv" role="radiogroup" aria-label="Pitch"><button type="button" data-i="0">UP = CLIMB</button><button type="button" data-i="1">UP = DIVE</button></div>
@@ -295,9 +335,24 @@ body.touch.playing #pad { display: block; }
 <section id="results" class="screen hidden">
   <h2 id="resultTitle" class="display">VICTORY</h2>
   <div id="finalScore" class="display"></div>
+  <p id="resultNote" class="note"></p>
   <div id="mvp"></div>
   <table><thead><tr><th>Pilot</th><th>Downs</th><th>Lost</th><th>Energy</th></tr></thead><tbody id="tally"></tbody></table>
-  <div class="btns"><button id="againBtn" class="btn go" type="button">FLY AGAIN</button><button id="pilotBtn" class="btn" type="button">CHANGE PILOT</button><button class="btn" type="button" data-switch>SWITCH GAME</button></div>
+  <div class="btns"><button id="contBtn" class="btn go hidden" type="button">CONTINUE ▸</button><button id="againBtn" class="btn go" type="button">FLY AGAIN</button><button id="pilotBtn" class="btn" type="button">CHANGE PILOT</button><button class="btn" type="button" data-switch>SWITCH GAME</button></div>
+</section>
+
+<section id="scene" class="hidden">
+  <div id="sceneStage"></div>
+  <div id="sceneTitle" class="display"></div>
+  <div id="sceneBox" class="narr"><img id="sceneFace" alt=""><div><b id="sceneWho" class="display"></b><p id="sceneText" aria-hidden="true"></p><p id="sceneSr" class="sr" aria-live="polite"></p></div></div>
+  <div id="sceneBtns"><button id="sceneSkip" class="btn" type="button">SKIP</button><button id="sceneNext" class="btn go" type="button">NEXT ▸</button></div>
+</section>
+
+<section id="log" class="screen hidden">
+  <h2 class="display">LOGBOOK</h2>
+  <p id="logCount" class="note"></p>
+  <div id="logList"></div>
+  <div class="btns"><button id="logBack" class="btn go" type="button">BACK</button></div>
 </section>
 
 <section id="fail" class="screen hidden">

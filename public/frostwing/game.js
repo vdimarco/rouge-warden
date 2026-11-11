@@ -2,6 +2,7 @@
 import * as THREE from "./lib/three.module.min.js";
 import * as S from "./sim.js";
 import { createLook } from "./look.js";
+import { PROLOGUE, OPS, LOG } from "./story.js";
 
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
@@ -352,6 +353,7 @@ function buildView(m) {
 
 /* ---------------- sound ---------------- */
 const SND = (() => {
+  let padGain = null;
   let ctx = null, master, sfx, mus, engine, engineGain, engineFilter, noiseBuf, musicTimer = 0, nextNote = 0, step16 = 0, on = save.sound !== 0;
   function init() {
     if (ctx) { if (ctx.state === "suspended") ctx.resume().catch(() => {}); return; }
@@ -422,6 +424,22 @@ const SND = (() => {
     whoosh() { noise(0.6, 0.35, 400, 2400, "bandpass"); },
     alarm() { for (let i = 0; i < 3; i++) { tone("square", 880, 880, 0.12, 0.08, sfx, i * 0.28); tone("square", 660, 660, 0.12, 0.08, sfx, i * 0.28 + 0.14); } },
     ui() { tone("triangle", 660, 990, 0.08, 0.12); },
+    type() { tone("triangle", 880, 700, 0.03, 0.025); },
+    // cut scenes: four slow voices (A, E, A, E) that breathe at different rates
+    pad(on) {
+      if (!ctx) return;
+      if (!padGain) {
+        padGain = ctx.createGain(); padGain.gain.value = 0;
+        const lp = ctx.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 900; lp.connect(padGain); padGain.connect(master);
+        for (const [n, cents] of [[45, -4], [52, 3], [57, 5], [64, -6]]) {
+          const o = ctx.createOscillator(), g = ctx.createGain(), l = ctx.createOscillator(), lg = ctx.createGain();
+          o.type = n > 55 ? "sine" : "triangle"; o.frequency.value = hz(n); o.detune.value = cents; g.gain.value = 0.22;
+          l.frequency.value = 0.06 + Math.random() * 0.1; lg.gain.value = 0.12; l.connect(lg); lg.connect(g.gain);
+          o.connect(g); g.connect(lp); o.start(); l.start();
+        }
+      }
+      padGain.gain.setTargetAtTime(on ? 0.2 : 0, t(), on ? 0.8 : 0.25);
+    },
     rock() { noise(0.18, 0.3, 1200, 200); },
     land() { noise(0.5, 0.25, 600, 60); },
     suspend() { if (ctx && ctx.state === "running") ctx.suspend().catch(() => {}); },
@@ -558,7 +576,7 @@ const LINES = {
 };
 let radioQ = [], radioT = 0, radioCool = {};
 function say(kind, force) {
-  const opts = LINES[kind].filter(([p]) => !match || !match.player || p !== match.player.pilot);
+  const opts = LINES[kind].filter(([p]) => !match || !match.player || (p !== match.player.pilot && match.ships.some((s) => s.pilot === p)));
   if (!opts.length) return;
   const now = performance.now();
   if (!force && radioCool[kind] && now - radioCool[kind] < 9000) return;
@@ -843,13 +861,14 @@ let radarT = 0;
 /* ---------------- screens and flow ---------------- */
 let state = "title", pilotSel = save.pilot in S.PILOTS && S.PILOTS[save.pilot].team === 0 ? save.pilot : "juno", diffSel = save.diff in S.DIFFICULTY ? save.diff : "ace";
 let countdown = 0, attractShip = null, attractT = 0;
-const screens = ["title", "select", "how", "pause", "results"];
+const screens = ["title", "select", "how", "pause", "results", "scene", "log"];
 function show(name) {
   for (const s of screens) $("#" + s).classList.toggle("hidden", s !== name);
   const playing = name === null;
   $("#hud").classList.toggle("hidden", !(playing || name === "pause"));
   document.body.classList.toggle("playing", playing);
-  const first = name && $("#" + name + " .btn.go");
+  if (name === "title") bestLine();
+  const first = name && $("#" + name + " .btn.go:not(.hidden)");
   if (first && !TOUCH) first.focus({ preventScroll: true });
 }
 function startAttract() {
@@ -862,7 +881,7 @@ function startAttract() {
 function buildCards() {
   const box = $("#cards"); box.innerHTML = "";
   const bar = (v) => `<i style="width:${clamp(v, 0.1, 1) * 100}%"></i>`;
-  for (const pid of S.LANTERN) {
+  for (const pid of roster()) {
     const P = S.PILOTS[pid];
     const c = document.createElement("button");
     c.type = "button"; c.className = "pcard" + (pid === pilotSel ? " sel" : ""); c.dataset.pilot = pid; c.setAttribute("role", "option"); c.setAttribute("aria-selected", pid === pilotSel);
@@ -878,13 +897,19 @@ function segs() {
   $$("#inv button").forEach((b) => b.classList.toggle("on", +b.dataset.i === save.invert));
   $$("#mouseSeg button").forEach((b) => b.classList.toggle("on", +b.dataset.m === save.mouse));
   $$("#gfxSeg button").forEach((b) => b.classList.toggle("on", +b.dataset.g === (look.high ? 1 : 0)));
+  $$("#skySeg button").forEach((b) => b.classList.toggle("on", b.dataset.s === (save.sky || "day")));
 }
+$$("#skySeg button").forEach((b) => b.addEventListener("click", () => { save.sky = b.dataset.s; store(); look.setWeather(save.sky); SND.ui(); segs(); }));
 $$("#gfxSeg button").forEach((b) => b.addEventListener("click", () => { save.gfx = +b.dataset.g; store(); look.setQuality(save.gfx === 1); SND.ui(); segs(); }));
 $$("#mouseSeg button").forEach((b) => b.addEventListener("click", () => { save.mouse = +b.dataset.m; store(); SND.ui(); segs(); }));
 $$("#diff button").forEach((b) => b.addEventListener("click", () => { diffSel = b.dataset.d; SND.ui(); segs(); }));
 $$("#inv button").forEach((b) => b.addEventListener("click", () => { save.invert = +b.dataset.i; store(); SND.ui(); segs(); }));
 function bestLine() {
-  $("#best").textContent = save.played ? `Best score ${save.best} · ${save.wins} win${save.wins === 1 ? "" : "s"} in ${save.played} match${save.played === 1 ? "" : "es"}` : "";
+  const won = storyWon(), tale = save.storyDone ? "Story complete" : won ? `Story: operation ${won + 1} of ${OPS.length}` : "";
+  const tally = save.played ? `Best score ${save.best} · ${save.wins} win${save.wins === 1 ? "" : "s"} in ${save.played} match${save.played === 1 ? "" : "es"}` : "";
+  $("#best").textContent = [tale, tally].filter(Boolean).join(" · ");
+  const b = $("#storyBtn");
+  if (!b.disabled) b.textContent = won >= OPS.length ? "REPLAY STORY" : won ? "CONTINUE STORY" : "STORY";
 }
 function soundLabel() { $("#soundBtn").textContent = "SOUND: " + (SND.on ? "ON" : "OFF"); }
 
@@ -893,15 +918,17 @@ function launch() {
   save.pilot = pilotSel; save.diff = diffSel; store();
   for (const [, V] of view ? view.ships : []) if (V.tag) V.tag.remove();
   hud.tags.innerHTML = ""; hud.feed.innerHTML = ""; hud.popups.innerHTML = ""; radioQ = []; radioT = 0; lastHud = {};
-  match = S.createMatch({ pilot: pilotSel, difficulty: diffSel });
+  const op = mode === "story" ? OPS[opIx] : null;
+  match = S.createMatch(op ? { pilot: pilotSel, difficulty: op.difficulty, lantern: op.lantern, corvid: op.corvid, time: op.time, waveEvery: op.waveEvery, boss: op.boss } : { pilot: pilotSel, difficulty: diffSel });
+  look.setWeather(op ? op.weather : save.sky || "day");
   buildView(match);
   const me = match.player;
   const f = S.forward(me.yaw, me.pitch);
   cam.pos.set(me.x - f.x * 120 + 40, me.y + 50, me.z - f.z * 120); cam.look.set(me.x, me.y, me.z);
-  countdown = 3.2; state = "play"; show(null);
+  countdown = 2.999; state = "play"; show(null);
   fly.x = fly.y = 0; grabPointer();
   SND.music(true);
-  centerMsg("3", "LANTERN SQUADRON · LAUNCH", 900);
+  centerMsg("3", op ? opLabel(opIx) : "LANTERN SQUADRON · LAUNCH", 900);
 }
 function pause(on) {
   if (on && state === "play") { state = "pause"; show("pause"); soundLabel(); SND.suspend(); keys.clear(); if (document.pointerLockElement) document.exitPointerLock(); }
@@ -911,8 +938,15 @@ function endMatch() {
   state = "results";
   if (document.pointerLockElement) document.exitPointerLock();
   const m = match, me = m.player, win = m.winner === me.team, draw = m.winner < 0;
-  save.played++; if (win) save.wins++; save.best = Math.max(save.best, m.score[0]); store();
-  $("#resultTitle").textContent = draw ? "DRAW" : win ? "VICTORY" : "DEFEAT";
+  const op = mode === "story" ? OPS[opIx] : null;
+  save.played++; if (win) save.wins++; save.best = Math.max(save.best, m.score[0]);
+  if (op && win) { save.story = Math.max(storyWon(), opIx + 1); save.log = Math.max(save.log | 0, save.story); if (save.story >= OPS.length) save.storyDone = 1; }
+  store();
+  $("#resultNote").textContent = op && !win ? `${S.PILOTS[op.lose[0]].name}: “${op.lose[1]}”` : "";
+  $("#contBtn").classList.toggle("hidden", !(op && win));
+  $("#againBtn").classList.toggle("go", !(op && win));
+  $("#againBtn").textContent = op ? (win ? "FLY IT AGAIN" : "TRY AGAIN") : "FLY AGAIN";
+  $("#resultTitle").textContent = draw ? "DRAW" : op ? (win ? "OPERATION COMPLETE" : "OPERATION FAILED") : win ? "VICTORY" : "DEFEAT";
   $("#resultTitle").className = "display " + (draw ? "" : win ? "win" : "lose");
   $("#finalScore").innerHTML = `<span style="color:var(--blue)">LANTERN ${m.score[0]}</span> · <span style="color:var(--violet)">${m.score[1]} CORVID</span>`;
   const best = S.mvp(m);
@@ -926,7 +960,18 @@ function endMatch() {
 }
 function toTitle() { if (document.pointerLockElement) document.exitPointerLock(); state = "title"; SND.music(false); show("title"); bestLine(); startAttract(); }
 
-$("#playBtn").addEventListener("click", () => { SND.init(); SND.ui(); state = "select"; buildCards(); segs(); show("select"); });
+$("#playBtn").addEventListener("click", () => { SND.init(); SND.ui(); mode = "quick"; toSelect(); });
+$("#storyBtn").addEventListener("click", startStory);
+$("#logBtn").addEventListener("click", () => { SND.init(); SND.ui(); buildLog(); state = "log"; show("log"); });
+$("#logBack").addEventListener("click", () => { SND.ui(); state = "title"; show("title"); });
+$("#contBtn").addEventListener("click", () => {
+  SND.ui();
+  const last = opIx + 1 >= OPS.length;
+  playScene(OPS[opIx].win, opLabel(opIx), () => { if (last) { mode = "quick"; toTitle(); } else { opIx++; briefing(); } });
+});
+$("#sceneNext").addEventListener("click", nextSlide);
+$("#sceneStage").addEventListener("click", nextSlide);
+$("#sceneSkip").addEventListener("click", endScene);
 $("#howBtn").addEventListener("click", () => { SND.init(); SND.ui(); state = "how"; show("how"); });
 $("#howBack").addEventListener("click", () => { SND.ui(); state = "title"; show("title"); });
 $("#backBtn").addEventListener("click", () => { SND.ui(); state = "title"; show("title"); });
@@ -936,17 +981,94 @@ $("#soundBtn").addEventListener("click", () => { SND.toggle(); soundLabel(); });
 $("#quitBtn").addEventListener("click", () => { SND.resume(); toTitle(); });
 $("#pauseBtn").addEventListener("click", () => pause(true));
 $("#againBtn").addEventListener("click", launch);
-$("#pilotBtn").addEventListener("click", () => { SND.ui(); state = "select"; buildCards(); segs(); show("select"); });
+$("#pilotBtn").addEventListener("click", () => { SND.ui(); toSelect(); });
 document.addEventListener("visibilitychange", () => { if (document.hidden && state === "play") pause(true); });
 
 // arrow keys and Enter move through menus; on the pilot screen left and right pick a pilot
 function menuKey(e) {
   if (state === "select" && (e.code === "ArrowLeft" || e.code === "ArrowRight")) {
-    const i = S.LANTERN.indexOf(pilotSel), n = S.LANTERN.length;
-    pilotSel = S.LANTERN[(i + (e.code === "ArrowRight" ? 1 : n - 1)) % n]; SND.ui(); buildCards(); e.preventDefault();
+    const r = roster(), i = r.indexOf(pilotSel), n = r.length;
+    pilotSel = r[(i + (e.code === "ArrowRight" ? 1 : n - 1)) % n]; SND.ui(); buildCards(); e.preventDefault();
   } else if (state === "select" && e.code === "Enter" && !(document.activeElement && document.activeElement.matches(".btn, .seg button"))) { e.preventDefault(); launch(); }
   else if (state === "select" && e.code === "Escape") { state = "title"; show("title"); }
-  else if (state === "how" && e.code === "Escape") { state = "title"; show("title"); }
+  else if ((state === "how" || state === "log") && e.code === "Escape") { state = "title"; show("title"); }
+  else if (state === "scene" && (e.code === "Enter" || e.code === "ArrowRight")) { e.preventDefault(); nextSlide(); }
+  else if (state === "scene" && e.code === "Escape") endScene();
+}
+
+/* ---------------- story: cut scenes, operations and the logbook ---------------- */
+let mode = "quick", opIx = 0;
+const storyWon = () => clamp(save.story | 0, 0, OPS.length);
+const opLabel = (i) => `OPERATION ${i + 1} · ${OPS[i].name}`;
+const roster = () => (mode === "story" ? OPS[opIx].lantern : S.LANTERN);
+const REDUCED = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const cut = { q: [], done: null, timer: 0, full: "", shown: 0, layer: null, key: "" };
+// A cut scene: stills with a slow pan, a caption that types out, and Next and Skip. The first press finishes the line.
+function playScene(slides, label, done) {
+  cut.q = slides.slice(); cut.done = done; cut.key = ""; cut.full = ""; cut.shown = 0;
+  $("#sceneTitle").textContent = label || "";
+  if (document.pointerLockElement) document.exitPointerLock();
+  state = "scene"; show("scene"); SND.init(); SND.music(false); SND.pad(true);
+  nextSlide();
+}
+function nextSlide() {
+  if (state !== "scene") return;
+  if (cut.shown < cut.full.length) { cut.shown = cut.full.length; $("#sceneText").textContent = cut.full; return; }
+  const s = cut.q.shift();
+  if (!s) return endScene();
+  const key = s.img + ":" + (s.pan || "in");
+  if (key !== cut.key) {
+    cut.key = key;
+    const el = document.createElement("div");
+    el.className = "layer pan-" + (s.pan || "in"); el.style.backgroundImage = `url("art/story/${s.img}.webp")`;
+    $("#sceneStage").appendChild(el); void el.offsetWidth; el.classList.add("on");
+    const old = cut.layer; cut.layer = el; if (old) setTimeout(() => old.remove(), 1000);
+  }
+  const P = s.who ? S.PILOTS[s.who] : null;
+  $("#sceneBox").className = P ? "t" + P.team : "narr";
+  if (P) $("#sceneFace").src = portrait(s.who);
+  $("#sceneWho").textContent = P ? `${P.name.toUpperCase()} · ${P.call}` : "";
+  $("#sceneSr").textContent = (P ? P.name + ": " : "") + s.text;
+  cut.full = s.text; cut.shown = REDUCED ? s.text.length : 0;
+  $("#sceneText").textContent = cut.full.slice(0, cut.shown);
+  $("#sceneNext").textContent = cut.q.length ? "NEXT ▸" : "CONTINUE ▸";
+  clearInterval(cut.timer);
+  cut.timer = setInterval(() => {
+    if (state !== "scene" || cut.shown >= cut.full.length) return clearInterval(cut.timer);
+    cut.shown = Math.min(cut.full.length, cut.shown + 2); $("#sceneText").textContent = cut.full.slice(0, cut.shown);
+    if (cut.shown % 6 === 0) SND.type();
+  }, 30);
+}
+function endScene() {
+  if (state !== "scene") return;
+  clearInterval(cut.timer); cut.q = []; cut.full = ""; cut.shown = 0; cut.layer = null; cut.key = "";
+  SND.pad(false);
+  $("#sceneStage").innerHTML = ""; // before the callback: it may start the next scene, which adds its own layer
+  const d = cut.done; cut.done = null;
+  if (d) d();
+}
+function startStory() {
+  SND.init(); SND.ui(); mode = "story";
+  if (storyWon() >= OPS.length) { save.story = 0; store(); } // a finished story starts again; the logbook stays open
+  opIx = storyWon();
+  if (opIx === 0) playScene(PROLOGUE, "HOLLOWMERE", briefing); else briefing();
+}
+function briefing() { playScene(OPS[opIx].brief, opLabel(opIx), toSelect); }
+function toSelect() {
+  const op = mode === "story" ? OPS[opIx] : null;
+  if (!roster().includes(pilotSel)) pilotSel = roster()[0];
+  $("#selTitle").textContent = op ? opLabel(opIx) : "CHOOSE YOUR PILOT";
+  $("#opLine").classList.toggle("hidden", !op);
+  if (op) $("#opLine").textContent = `${op.place} · Rivals: ${S.DIFFICULTY[op.difficulty].label} · ${op.goal}`;
+  for (const id of ["#rivalLab", "#diff", "#skySeg"]) $(id).classList.toggle("hidden", !!op);
+  state = "select"; buildCards(); segs(); show("select");
+}
+function buildLog() {
+  const n = Math.max(save.log | 0, storyWon()), open = LOG.filter((e) => e.need <= n).length;
+  $("#logCount").textContent = `${open} of ${LOG.length} entries open. Win story operations to open the rest.`;
+  $("#logList").innerHTML = LOG.map((e) => (e.need <= n
+    ? `<article><h3 class="display">${e.title}</h3><p>${e.text}</p></article>`
+    : `<article class="locked"><h3 class="display">? ? ?</h3><p>Win operation ${e.need} to open this entry.</p></article>`)).join("");
 }
 
 /* ---------------- the loop ---------------- */
@@ -958,6 +1080,7 @@ function frame(now) {
   const realDt = Math.min(1, Math.max(0, (now - last) / 1000));
   let dt = Math.min(0.1, realDt); last = now;
   if (state === "pause") { look.render(); return; }
+  if (state === "scene") return;
   SND.tick();
   const m = match;
   if (!m) return;
@@ -967,9 +1090,16 @@ function frame(now) {
     countdown -= dt;
     const n = Math.ceil(countdown);
     if (n !== before && n > 0) { centerMsg(String(n), "", 800); SND.ui(); }
-    if (countdown <= 0) { centerMsg("GO!", "Four minutes · most points wins", 1200); say("start", true); setTimeout(() => say("start"), 3600); }
+    if (countdown <= 0) {
+      const len = m.length, clock = `${Math.floor(len / 60)}:${String(len % 60).padStart(2, "0")}`;
+      centerMsg("GO!", `${clock} on the clock · most points wins`, 1200);
+      const op = mode === "story" ? OPS[opIx] : null;
+      // a story operation opens with its own two radio lines (never one from the player's own pilot)
+      const line = (i) => { const [p, text] = op.radio[i]; if (match === m && p !== me.pilot && radioQ.length < 2) radioQ.push({ p, text }); };
+      if (op) { line(0); setTimeout(() => line(1), 3600); } else { say("start", true); setTimeout(() => say("start"), 3600); }
+    }
     followCamera(me, dt, false);
-  } else if (state === "play" || state === "title" || state === "select" || state === "how" || state === "results") {
+  } else if (state === "play" || state === "title" || state === "select" || state === "how" || state === "results" || state === "log") {
     if (state === "play") {
       // the mouse stick drifts back to centre once the mouse stops, so a still mouse means level flight
       fly.idle += realDt;
@@ -1023,6 +1153,8 @@ window.__fw = {
   weather: (w) => look.setWeather(w),
   dbg: { scene, renderer, camera, look },
   get fly() { return { ...fly }; },
+  get story() { return { mode, op: opIx, won: storyWon(), left: cut.q.length, text: cut.full }; },
+  sceneNext: () => nextSlide(), sceneSkip: () => endScene(),
   // headless browsers cannot take pointer lock, so tests stand in for it
   fakeLock: (on) => { fly.fake = on; if (on) fly.locked = true; else document.dispatchEvent(new Event("pointerlockchange")); },
 };
@@ -1034,6 +1166,7 @@ const loaded = Promise.race([look.load(), new Promise((_, no) => setTimeout(() =
   .catch((e) => { console.warn("Frostwing: using simple ships;", e && e.message); });
 loaded.then(() => {
   if (!match) startAttract();
-  const b = $("#playBtn"); b.disabled = false; b.textContent = "PLAY";
+  $("#playBtn").disabled = false;
+  const b = $("#storyBtn"); b.disabled = false; bestLine();
   if (state === "title" && !TOUCH) b.focus({ preventScroll: true });
 });

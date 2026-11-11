@@ -48,6 +48,18 @@ Weather. `WEATHER` in `look.js` holds four presets: day, dusk, night with stars 
 
 How it is checked. `qa/frostwing/smoke.e2e.mjs` starts High, confirms the models load, runs a match through every weather and expects no page errors. The gameplay checks run on Fast, because software WebGL draws High at about 2 frames per second. They wait on game time, not wall time. Frame rate on a real GPU and on a phone has not been measured.
 
+## Story and world
+
+The user asked for cut scenes and story "to do some worldbuilding". The world is Frostwing's own. Hollowmere is a frozen moon of the gas giant Varrow, settled by a refugee fleet three generations ago. Twice a year the Fall brings meteorites that hold amberlight, the crystal that powers each town's lantern towers. Lantern Squadron are volunteers who harvest the Fall. Ostrander Deepcore, a mining combine, claims the whole Fall and hires the Corvid Pack to enforce it. The Quiet Makers left the monoliths and gates that wake during the Fall. Silas Vane founded the squadron, closed Karrow Gate twenty years ago at the cost of two wings, and retired. Vex Morrow, his best cadet, now leads the Pack and wants the gates open.
+
+`story.js` is data only: the prologue, five operations and the logbook. Each operation names its place, sky, clock, shower interval, rosters, rival level and optional boss, plus a briefing, two opening radio lines, a debrief and a line for a loss. `sim.js` takes those as `createMatch` options (`lantern`, `corvid`, `time`, `waveEvery`, `boss`). Operation 1 is three on three, because Silas has not returned and Vex has not shown himself. Rivals fly at Cadet for operations 1 and 2 and at Ace after that. In operation 5 Vex flies the Nightjar. With bots flying every ship, Lantern wins between 4 and 8 of 10 matches per operation, so a player who flies better than an Ace bot wins.
+
+A cut scene is DOM over the page, not 3D. Each slide is a generated 16:9 still with a slow CSS pan (the Ken Burns move), a caption that types at about 65 characters a second, and for dialogue the speaker's portrait, name and call sign. Enter, the right arrow, a click or a tap finishes the line and then advances. Esc or SKIP ends the scene. A soft four-voice pad plays under it. The 3D scene does not draw behind a cut scene. With reduced motion the stills hold still and captions show at once. A hidden live region holds each full caption for screen readers.
+
+The save adds `story` (operations won in this run), `log` (the most ever won, which opens logbook entries), `storyDone` and `sky`. A win is saved when the match ends, before the debrief. A finished story starts again from operation 1 and keeps the logbook open.
+
+`qa/frostwing/story.test.mjs` checks that every still and portrait exists, every speaker is a pilot, every radio line comes from a pilot in that match, each caption has at most 240 characters, and the story text uses none of the Nintendo series' names.
+
 ## Art
 
 Pilot portraits and the key art come from Higgsfield `gpt_image_2_6`, prompted for original designs in a "painted sci-fi arcade illustration, crisp cel-shaded edges" look. Lantern wears cyan and white with an orange lantern emblem. The Corvids wear black and violet with a crow-skull emblem. The ships in the 3D scene are built from primitives to match the key art: Lantern flies a white delta with orange bands and twin cyan engines, and the Corvids fly a dark core inside forward-curving blades. The images are 256 px WebP portraits, a 1280 px title image and a 640 px cabinet screen.

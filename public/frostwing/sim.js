@@ -142,19 +142,22 @@ export function createMatch(opts = {}) {
   const diff = DIFFICULTY[opts.difficulty] || DIFFICULTY.ace;
   const playerPilot = opts.pilot === null ? null : (opts.pilot || "juno");
   const m = {
-    seed, rand, diff, time: MATCH_TIME, elapsed: 0, over: false, winner: -1,
+    seed, rand, diff, time: opts.time || MATCH_TIME, length: opts.time || MATCH_TIME, waveEvery: opts.waveEvery || WAVE_EVERY, elapsed: 0, over: false, winner: -1,
     score: [0, 0], ships: [], bolts: [], bombs: [], meteors: [], orbs: [], events: [],
-    ruins: makeRuins(), cols: null, wave: { on: false, t: WAVE_EVERY - 18, n: 0, energy: [0, 0] },
+    ruins: makeRuins(), cols: null, wave: { on: false, t: (opts.waveEvery || WAVE_EVERY) - 18, n: 0, energy: [0, 0] },
     player: null, nextId: 1,
   };
   m.cols = colliders(m.ruins);
-  const roster = [...LANTERN.map((p) => [p, 0]), ...CORVID.map((p) => [p, 1])];
-  roster.forEach(([pid, team], i) => {
-    const P = PILOTS[pid];
+  // opts.lantern and opts.corvid name the pilots on each side (a story operation can field three a side).
+  // opts.boss names one pilot who flies a prototype: 1.8 times the shield and a quarter more gun damage.
+  const lantern = opts.lantern || LANTERN, corvid = opts.corvid || CORVID;
+  const roster = [...lantern.map((p, i) => [p, 0, i]), ...corvid.map((p, i) => [p, 1, i])];
+  roster.forEach(([pid, team, slot]) => {
+    const P = PILOTS[pid], boss = opts.boss === pid, hp = P.shield * (boss ? 1.8 : 1);
     const s = {
-      id: m.nextId++, pilot: pid, name: P.name, call: P.call, team, human: pid === playerPilot, slot: i % 4,
+      id: m.nextId++, pilot: pid, name: P.name, call: P.call, team, human: pid === playerPilot, slot, boss, gun: boss ? 1.25 : 1,
       x: 0, y: 0, z: 0, vx: 0, vy: 0, vz: 0, yaw: 0, pitch: 0, bank: 0, speed: BASE_SPEED * P.speed,
-      shield: P.shield, maxShield: P.shield, boost: 1, bombs: P.bombs, charge: 0, lock: null, fireCd: 0, rollCd: 0, roll: 0, rollDir: 0,
+      shield: hp, maxShield: hp, boost: 1, bombs: P.bombs, charge: 0, lock: null, fireCd: 0, rollCd: 0, roll: 0, rollDir: 0,
       uturn: 0, uturnYaw: 0, alive: true, respawn: 0, invuln: 2, kills: 0, deaths: 0, energy: 0, lastHitBy: null, hitFlash: 0, warn: 0,
       input: { pitch: 0, yaw: 0, fire: false, charge: false, boost: false, brake: false, bomb: false, rollL: false, rollR: false, uturn: false },
       prevCharge: false, prevBomb: false, ai: { target: null, think: rand() * diff.think, wobble: rand() * 10, mode: "hunt", evade: 0 },
@@ -234,7 +237,7 @@ function fireLaser(m, s) {
   }
   for (const side of [-1, 1]) {
     m.bolts.push({ kind: "laser", team: s.team, owner: s.id, x: s.x + rx * side * 4.5 + f.x * 6, y: s.y - 0.6 + f.y * 6, z: s.z + rz * side * 4.5 + f.z * 6,
-      vx: dx * LASER_SPEED + s.vx * 0.3, vy: dy * LASER_SPEED + s.vy * 0.3, vz: dz * LASER_SPEED + s.vz * 0.3, life: LASER_LIFE, dmg: LASER_DMG * P.dmg, target: null });
+      vx: dx * LASER_SPEED + s.vx * 0.3, vy: dy * LASER_SPEED + s.vy * 0.3, vz: dz * LASER_SPEED + s.vz * 0.3, life: LASER_LIFE, dmg: LASER_DMG * P.dmg * s.gun, target: null });
   }
   emit(m, { type: "fire", ship: s.id, kind: "laser" });
 }
@@ -249,7 +252,7 @@ function fireCharge(m, s) {
     const g = forward(s.yaw + spread, s.pitch + (n > 1 && i === 1 ? 0.12 : 0));
     m.bolts.push({ kind: "charge", team: s.team, owner: s.id, x: s.x + f.x * 8 + rx * 0.1, y: s.y + f.y * 8, z: s.z + f.z * 8 + rz * 0.1,
       vx: g.x * CHARGE_SPEED + s.vx * 0.5, vy: g.y * CHARGE_SPEED + s.vy * 0.5, vz: g.z * CHARGE_SPEED + s.vz * 0.5, life: 2.4,
-      dmg: (n > 1 ? CHARGE_DMG * 0.7 : CHARGE_DMG) * P.dmg, target: target ? target.id : null });
+      dmg: (n > 1 ? CHARGE_DMG * 0.7 : CHARGE_DMG) * P.dmg * s.gun, target: target ? target.id : null });
   }
   emit(m, { type: "fire", ship: s.id, kind: "charge", volley: n });
 }
@@ -399,7 +402,7 @@ export function step(m, dt) {
     const due = Math.floor((WAVE_LEN - W.t) / WAVE_LEN * 16) + 4;
     while (W.spawned < due && W.spawned < 18) { spawnMeteor(m); W.spawned++; }
     if (W.t <= 0) {
-      W.on = false; W.t = WAVE_EVERY - WAVE_LEN;
+      W.on = false; W.t = m.waveEvery - WAVE_LEN;
       const [a, b] = W.energy, win = a === b ? -1 : a > b ? 0 : 1;
       if (win >= 0) m.score[win] += SCORE.wave;
       emit(m, { type: "waveEnd", winner: win, energy: [a, b] });

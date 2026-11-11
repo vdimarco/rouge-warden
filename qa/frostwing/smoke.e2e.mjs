@@ -42,7 +42,8 @@ const shot = async (page, name) => { if (SHOTS) await page.screenshot({ path: pa
   const tag = "1280x720";
   const { ctx, page, errors } = await open({ viewport: { width: 1280, height: 720 } });
   await shot(page, "title-1280");
-  await page.keyboard.press("Enter"); // PLAY has focus
+  check(await page.evaluate(() => document.activeElement && document.activeElement.id) === "storyBtn", `${tag}: the title opens with STORY in focus`);
+  await page.click("#playBtn"); // QUICK MATCH
   await page.waitForSelector("#select:not(.hidden)");
   check((await page.$$eval(".pcard", (c) => c.map((x) => x.dataset.pilot))).join() === "juno,pip,brann,silas", `${tag}: the pilot screen offers Juno, Pip, Brann and Silas Vane`);
   for (let i = 0; i < 3; i++) await page.keyboard.press("ArrowRight");
@@ -82,6 +83,92 @@ const shot = async (page, name) => { if (SHOTS) await page.screenshot({ path: pa
   await shot(page, "results-1280");
   await page.click("#againBtn");
   check(await page.evaluate(() => __fw.state === "play" && __fw.match.time > 200), `${tag}: Fly Again starts a fresh match`);
+  check(errors.length === 0, `${tag}: no page errors (${errors.join("; ")})`);
+  await ctx.close();
+}
+
+/* ---------- desktop: the story, its cut scenes and the logbook ---------- */
+{
+  const tag = "1280x720 story";
+  const { ctx, page, errors } = await open({ viewport: { width: 1280, height: 720 } });
+  await page.click("#logBtn");
+  const log0 = await page.evaluate(() => ({ all: document.querySelectorAll("#logList article").length, locked: document.querySelectorAll("#logList article.locked").length }));
+  check(log0.all === 16 && log0.locked === 8, `${tag}: a new logbook shows 16 entries, 8 of them locked (${log0.all}, ${log0.locked} locked)`);
+  await page.keyboard.press("Escape");
+  await page.keyboard.press("Enter"); // STORY has focus
+  await page.waitForSelector("#scene:not(.hidden)");
+  const s1 = await page.evaluate(() => ({ title: document.querySelector("#sceneTitle").textContent, layer: !!document.querySelector("#sceneStage .layer.on"), box: document.querySelector("#sceneBox").className, left: __fw.story.left }));
+  check(s1.title === "HOLLOWMERE" && s1.layer && s1.box === "narr" && s1.left === 5, `${tag}: STORY opens the prologue: a still, a narrator caption and five more slides (${JSON.stringify(s1)})`);
+  await page.waitForTimeout(250);
+  const typed = await page.textContent("#sceneText");
+  await page.keyboard.press("Enter");
+  const whole = await page.textContent("#sceneText");
+  check(typed.length < whole.length && whole === await page.evaluate(() => __fw.story.text) && await page.evaluate(() => __fw.story.left) === 5, `${tag}: the caption types out, and the first Enter finishes the line without leaving the slide (${typed.length} of ${whole.length} characters typed)`);
+  await page.keyboard.press("Enter");
+  check(await page.evaluate(() => __fw.story.left) === 4, `${tag}: the next Enter goes to the next slide`);
+  for (let i = 0; i < 8; i++) await page.keyboard.press("Enter"); // to the last slide, a line of dialogue
+  const s2 = await page.evaluate(() => ({ box: document.querySelector("#sceneBox").className, who: document.querySelector("#sceneWho").textContent, face: document.querySelector("#sceneFace").getAttribute("src"), next: document.querySelector("#sceneNext").textContent }));
+  check(s2.box === "t0" && /^JUNO REYES/.test(s2.who) && s2.face === "art/juno.webp" && /CONTINUE/.test(s2.next), `${tag}: a pilot's line shows their portrait and name, and the last slide's button reads CONTINUE (${JSON.stringify(s2)})`);
+  check(await within(page, "#sceneBox, #sceneBtns .btn"), `${tag}: the caption and the Next and Skip buttons sit inside the window`);
+  await shot(page, "scene-1280");
+  await page.click("#sceneSkip");
+  check(await page.evaluate(() => __fw.state === "scene" && document.querySelector("#sceneTitle").textContent === "OPERATION 1 · FIRST LIGHT" && !!document.querySelector("#sceneStage .layer")), `${tag}: after the prologue the briefing for Operation 1 starts, with its still`);
+  await page.keyboard.press("Escape");
+  await page.waitForSelector("#select:not(.hidden)");
+  const sel = await page.evaluate(() => ({ title: document.querySelector("#selTitle").textContent, cards: [...document.querySelectorAll(".pcard")].map((c) => c.dataset.pilot).join(), diff: document.querySelector("#diff").classList.contains("hidden"), line: document.querySelector("#opLine").textContent }));
+  check(sel.title === "OPERATION 1 · FIRST LIGHT" && sel.cards === "juno,pip,brann" && sel.diff && /Brannoch Vale/.test(sel.line), `${tag}: Esc skips to the pilot screen for Operation 1 with three pilots and no rival setting (${sel.cards})`);
+  await page.evaluate(() => { HTMLCanvasElement.prototype.requestPointerLock = function () {}; });
+  await page.click("#launchBtn");
+  const m = await page.evaluate(() => ({ ships: __fw.match.ships.map((s) => s.pilot).join(), len: __fw.match.length, weather: __fw.look.weather }));
+  check(m.ships === "juno,pip,brann,nyra,grell,sable" && m.len === 180 && m.weather === "day", `${tag}: Operation 1 is three on three for three minutes by day (${JSON.stringify(m)})`);
+  // lose it first
+  await page.evaluate(() => { __fw.skipCountdown(); });
+  await page.waitForTimeout(300);
+  await page.evaluate(() => { __fw.match.score[1] = 900; __fw.fastForward(400); });
+  await page.waitForSelector("#results:not(.hidden)", { timeout: 20000 });
+  const lost = await page.evaluate(() => ({ title: document.querySelector("#resultTitle").textContent, cont: document.querySelector("#contBtn").classList.contains("hidden"), again: document.querySelector("#againBtn").textContent, note: document.querySelector("#resultNote").textContent, won: __fw.story.won }));
+  check(lost.title === "OPERATION FAILED" && lost.cont && lost.again === "TRY AGAIN" && /Juno Reyes/.test(lost.note) && lost.won === 0, `${tag}: a lost operation reads OPERATION FAILED with TRY AGAIN and a line from the squad, and saves no progress`);
+  await page.click("#againBtn");
+  await page.evaluate(() => { __fw.skipCountdown(); });
+  await page.waitForTimeout(300);
+  await page.evaluate(() => { __fw.match.score[0] = 900; __fw.fastForward(400); });
+  await page.waitForSelector("#results:not(.hidden)", { timeout: 20000 });
+  const won = await page.evaluate(() => ({ title: document.querySelector("#resultTitle").textContent, cont: !document.querySelector("#contBtn").classList.contains("hidden"), won: __fw.story.won, saved: __fw.save.story }));
+  check(won.title === "OPERATION COMPLETE" && won.cont && won.won === 1 && won.saved === 1, `${tag}: a won operation reads OPERATION COMPLETE, offers CONTINUE and saves the progress`);
+  await page.click("#contBtn");
+  await page.waitForSelector("#scene:not(.hidden)");
+  await page.click("#sceneSkip"); // the debrief
+  const b2 = await page.evaluate(() => ({ title: document.querySelector("#sceneTitle").textContent, layer: !!document.querySelector("#sceneStage .layer"), op: __fw.story.op }));
+  check(b2.title === "OPERATION 2 · EMBERS AT DUSK" && b2.layer && b2.op === 1, `${tag}: after the debrief the briefing for Operation 2 starts, with its still`);
+  await page.click("#sceneSkip");
+  await page.waitForSelector("#select:not(.hidden)");
+  check((await page.$$eval(".pcard", (c) => c.map((x) => x.dataset.pilot))).join() === "juno,pip,brann,silas", `${tag}: Silas Vane joins the pilot screen in Operation 2`);
+  await page.click('.pcard[data-pilot="silas"]');
+  await page.click("#launchBtn");
+  const m2 = await page.evaluate(() => ({ n: __fw.match.ships.length, weather: __fw.look.weather, me: __fw.match.player.pilot }));
+  check(m2.n === 8 && m2.weather === "dusk" && m2.me === "silas", `${tag}: Operation 2 is four on four at dusk (${JSON.stringify(m2)})`);
+  await page.keyboard.press("Escape"); await page.click("#quitBtn");
+  const t = await page.evaluate(() => ({ best: document.querySelector("#best").textContent, btn: document.querySelector("#storyBtn").textContent }));
+  check(/Story: operation 2 of 5/.test(t.best) && t.btn === "CONTINUE STORY", `${tag}: the title shows the story progress and CONTINUE STORY ("${t.best}")`);
+  await page.click("#logBtn");
+  check(await page.evaluate(() => document.querySelectorAll("#logList article.locked").length) === 6, `${tag}: winning Operation 1 opens two more logbook entries`);
+  await shot(page, "log-1280");
+  // the last operation: Vex flies the Nightjar, and winning it ends the story
+  await page.keyboard.press("Escape");
+  await page.evaluate(() => { const s = JSON.parse(localStorage.getItem("frostwing.save.v1")); s.story = 4; s.log = 4; localStorage.setItem("frostwing.save.v1", JSON.stringify(s)); });
+  await page.reload();
+  await page.waitForFunction(() => window.__fw && !document.querySelector("#storyBtn").disabled, null, { timeout: 30000 });
+  await page.evaluate(() => { HTMLCanvasElement.prototype.requestPointerLock = function () {}; });
+  await page.click("#storyBtn"); await page.click("#sceneSkip"); await page.click("#launchBtn");
+  const m5 = await page.evaluate(() => { const v = __fw.match.ships.find((s) => s.pilot === "vex"); return { boss: v.boss, shield: v.maxShield, weather: __fw.look.weather, len: __fw.match.length }; });
+  check(m5.boss && m5.shield > 200 && m5.weather === "dawn" && m5.len === 240, `${tag}: in Operation 5 Vex flies the Nightjar with a ${m5.shield}-point shield, at dawn`);
+  await page.evaluate(() => { __fw.skipCountdown(); });
+  await page.waitForTimeout(300);
+  await page.evaluate(() => { __fw.match.score[0] = 900; __fw.fastForward(400); });
+  await page.waitForSelector("#results:not(.hidden)", { timeout: 20000 });
+  await page.click("#contBtn"); await page.click("#sceneSkip");
+  const end = await page.evaluate(() => ({ state: __fw.state, best: document.querySelector("#best").textContent, btn: document.querySelector("#storyBtn").textContent, done: __fw.save.storyDone }));
+  check(end.state === "title" && /Story complete/.test(end.best) && end.btn === "REPLAY STORY" && end.done === 1, `${tag}: winning Operation 5 plays the ending, returns to the title and marks the story complete`);
   check(errors.length === 0, `${tag}: no page errors (${errors.join("; ")})`);
   await ctx.close();
 }
@@ -141,6 +228,16 @@ const shot = async (page, name) => { if (SHOTS) await page.screenshot({ path: pa
 for (const [name, dev] of [["portrait", devices["iPhone 13"]], ["landscape", devices["iPhone 13 landscape"]], ["small", { ...devices["iPhone SE"], viewport: { width: 320, height: 568 } }]]) {
   const { ctx, page, errors } = await open({ ...dev });
   const tag = `${name} ${dev.viewport.width}x${dev.viewport.height}`;
+  await page.tap("#storyBtn");
+  await page.waitForSelector("#scene:not(.hidden)");
+  await page.tap("#sceneNext"); await page.waitForTimeout(700);
+  const fit = await page.evaluate(() => { const r = (q) => document.querySelector(q).getBoundingClientRect(), box = r("#sceneBox"), btn = r("#sceneBtns"), t = document.querySelector("#sceneText");
+    return { inside: box.left >= 0 && box.right <= innerWidth + 1 && box.top >= 0 && btn.bottom <= innerHeight + 1, apart: box.bottom <= btn.top + 1, small: [...document.querySelectorAll("#sceneBtns .btn")].filter((b) => b.getBoundingClientRect().height < 44).length, clipped: t.scrollHeight > t.clientHeight + 1 }; });
+  check(fit.inside && fit.apart && fit.small === 0 && !fit.clipped, `${tag}: a cut scene's caption fits the screen above 44 px Next and Skip buttons (${JSON.stringify(fit)})`);
+  await shot(page, `scene-${name}`);
+  await page.tap("#sceneSkip"); await page.tap("#sceneSkip");
+  await page.waitForSelector("#select:not(.hidden)");
+  await page.tap("#backBtn");
   await page.tap("#playBtn");
   await page.waitForSelector("#select:not(.hidden)");
   await shot(page, `select-${name}`);

@@ -14,8 +14,13 @@
 - [x] High graphics: sun shadows, bloom, sky reflections, snow ripples and glints, clouds, the gas giant, ribbon trails, explosion lights; Fast graphics for phones; automatic drop to Fast
 - [x] Four weather presets: day, dusk, night and storm
 - [x] Synthesized sound and music; pause suspends sound
+- [x] Story: a prologue, five operations with their own sky, clock, rosters and rivals, the Nightjar boss, saved progress
+- [x] Cut scenes: eight generated stills with slow pans, typed captions, portraits, Next and Skip, a soft pad; reduced-motion support
+- [x] Logbook of 16 world entries that open with story progress
+- [x] Quick match sky setting: day, dusk, night or storm
 - [x] Arcade cabinet at the end of the Action row, Switch game entry, cabinet save line, `quiet.mjs` entry
 - [x] `qa/arcade/machines.mjs` updated for the new last Action machine and the Frostwing marquee
+- [x] Story data tests: `node qa/frostwing/story.test.mjs`
 - [x] Node tests: `node qa/frostwing/sim.test.mjs`; bot runs: `node qa/frostwing/bot.mjs 8 ace 1`
 - [x] Browser check of desktop, portrait phone, landscape phone and 320 px: `NODE_PATH=qa/browser/node_modules node qa/frostwing/smoke.e2e.mjs`
 - [x] Homepage screenshots at 390, 320 and 1280 for the pull request

@@ -16,6 +16,7 @@ export const WEATHER = {
   day: { top: 0x5f86b8, fog: 0xa6bcd4, density: 0.00078, sun: [0.4, 0.35, -0.85], sunColor: 0xfff2e0, sunI: 2.0, hemiSky: 0xd4e2f8, hemiGround: 0x52627a, hemiI: 1.05, cloud: 0xf4f8ff, clouds: 0.5, snow: 1, stars: 0, aurora: 0, exposure: 0.92, planet: [-0.55, 0.32, -0.77], planetSize: 2400 },
   dusk: { top: 0x34477e, fog: 0xb38d88, density: 0.0009, sun: [-0.3, 0.12, -0.95], sunColor: 0xffb070, sunI: 2.2, hemiSky: 0xe6b8a4, hemiGround: 0x3a3a58, hemiI: 0.95, cloud: 0xffc7a0, clouds: 0.6, snow: 0.8, stars: 0.25, aurora: 0, exposure: 0.95, planet: [0.55, 0.22, -0.8], planetSize: 3000 },
   night: { top: 0x070d20, fog: 0x1e2c48, density: 0.0011, sun: [0.3, 0.55, -0.78], sunColor: 0x9fb8ff, sunI: 1.1, hemiSky: 0x5a74b0, hemiGround: 0x101828, hemiI: 1.0, cloud: 0x2c3c60, clouds: 0.3, snow: 0.9, stars: 1, aurora: 1, exposure: 1.25, planet: [-0.4, 0.4, -0.82], planetSize: 2800 },
+  dawn: { top: 0x4a5a9a, fog: 0xd9a48e, density: 0.00085, sun: [0.25, 0.1, -0.96], sunColor: 0xffc08a, sunI: 2.3, hemiSky: 0xf2c4b0, hemiGround: 0x40405e, hemiI: 1.0, cloud: 0xffd2b0, clouds: 0.5, snow: 0.6, stars: 0.15, aurora: 0, exposure: 0.98, planet: [0.5, 0.3, -0.81], planetSize: 3200 },
   storm: { top: 0x4a5a70, fog: 0x8b9bb0, density: 0.0024, sun: [0.2, 0.5, -0.84], sunColor: 0xdfe8ff, sunI: 1.2, hemiSky: 0xc8d4e4, hemiGround: 0x4a5464, hemiI: 1.6, cloud: 0xb8c4d4, clouds: 0.95, snow: 2.4, stars: 0, aurora: 0, exposure: 1.0, planet: [-0.5, 0.3, -0.8], planetSize: 2400 },
 };
 
