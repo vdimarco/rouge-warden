@@ -747,7 +747,10 @@ if (chromium) {
     const t0 = Date.now();
     while (!moves.length && Date.now() - t0 < 6000) await page.waitForTimeout(50);
     check(started && moves.length === 1 && moves[0].replace(/#.*$/, "") === "/first-breath/", `${tag}: START goes to /first-breath/ (went to ${moves.join(",") || "nowhere"}${started ? "" : "; START could not be clicked"})`);
-    await page.evaluate(() => document.querySelectorAll(".boot").forEach((b) => b.remove()));
+    // START began a page change that the test stopped. A player never has a page change stopped, and a hash change soon after
+    // one sometimes left headless Chromium drawing no more frames, so settle() waited for ever. Go on from a fresh arcade page.
+    await page.goto(BASE + "?machines");
+    await page.waitForSelector(".cab.on");
     // the other groups keep their machines and their order
     for (const [g, want] of Object.entries(OTHERS)) {
       await enter(page, g);
