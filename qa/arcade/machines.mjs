@@ -258,7 +258,12 @@ async function settle(page) {
   await within(page.evaluate(async () => {
     await Promise.all(document.getAnimations().filter((a) => isFinite(a.effect.getComputedTiming().endTime)).map((a) => a.finished.catch(() => {})));
     await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
-  }), 15000, "the page did not settle: an animation did not end, or no frame was drawn");
+  }), 15000, "the page did not settle: an animation did not end, or no frame was drawn").catch(async (e) => {
+    // name what is still moving, so the message says where to look
+    const left = await within(page.evaluate(() => document.getAnimations().filter((a) => a.playState !== "finished" && isFinite(a.effect.getComputedTiming().endTime))
+      .map((a) => `${a.animationName || a.transitionProperty || "script"} on ${a.effect.target?.id ? "#" + a.effect.target.id : a.effect.target?.className || a.effect.target?.tagName} (${a.playState})`).join(", ") || "none"), 5000, "").catch(() => "the page does not answer");
+    throw new Error(`${e.message}; unfinished animations: ${left}`);
+  });
 }
 // a step that can wait forever (a mouse move, a page script) fails with this message instead. Mouse moves and page scripts have no
 // Playwright time limit of their own.
@@ -695,7 +700,7 @@ if (chromium) {
     ascii: ["ascii-front", "battle-tanks"],
     strategy: ["breakthrough", "follow-suit", "silent-depth"],
     gta: ["gta"],
-    lab: ["lab", "worlds", "neon", "echo", "tellme", "plunge", "creek", "tilt", "rules", "afterlight", "lighthouse-keeper", "echoes-under-ice", "last-train-home", "firefly-courier", "mirage-runner", "orbital-gardener", "eleven-wells", "last-light"],
+    lab: ["lab", "worlds", "neon", "echo", "tellme", "plunge", "creek", "tilt", "rules", "afterlight", "lighthouse-keeper", "echoes-under-ice", "last-train-home", "firefly-courier", "mirage-runner", "orbital-gardener", "eleven-wells", "last-light", "ledger"],
   };
   // 320 x 700 as the small-phone checks above: at 320 x 568 every machine's screen is about 52 x 43 px, too small for any attract line
   for (const [width, height] of PARTS.includes("firstbreath") ? [[390, 844], [320, 700], [1280, 720]] : []) {
@@ -788,16 +793,19 @@ if (chromium) {
     });
     await page.goto(BASE + "crimson/", { waitUntil: "domcontentloaded" });
     await page.waitForTimeout(2500);
-    const res = await page.evaluate(async () => {
+    const res = await within(page.evaluate(async () => {
       const m = await import("/crimson/js/credits.js");
       let clk = 1000;
       m.rollCredits({ crew: [{ name: "Ann", perk: "" }, { name: "Bo", perk: "" }], pick: 0, stats: { time: 120, parries: 3, deaths: 0 }, touch: innerWidth < 800, now: () => clk, onAgain() {} });
       await new Promise((r) => setTimeout(r, 300));
       clk = 1000 + 1500 + 200000; // the roll has run to its end
-      await new Promise((r) => setTimeout(r, 2500));
+      // the roll moves on the next frame drawn. With a software GPU the 3D game behind it can take seconds a frame, so wait for
+      // frames, not for a fixed time
+      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+      await new Promise((r) => setTimeout(r, 300));
       const box = (e) => { const r = e.getBoundingClientRect(); return { top: r.top, bottom: r.bottom }; };
       return { tiles: document.querySelectorAll("#roll .game").length, again: box(document.querySelector("#creditsAgain")), arcade: box(document.querySelector("#roll .again a")), vh: innerHeight };
-    });
+    }), 60000, `${width}x${height}: the Crimson Rogue credits drew no frame`);
     const tag = `${width}x${height}`;
     check(res.tiles >= 8, `${tag}: the end card of Crimson Rogue lists the other games (${res.tiles} tiles)`);
     check(res.again.top >= 0 && res.again.bottom <= res.vh, `${tag}: at the end of the credits the play-again button is in the window (${Math.round(res.again.top)} to ${Math.round(res.again.bottom)} of ${res.vh})`);
