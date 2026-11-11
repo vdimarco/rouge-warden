@@ -162,15 +162,16 @@ button { font: inherit; color: inherit; }
 .cab.ahead-of-the-light { --c1: #0b0b14; --c2: #f08a2c; --glow: rgba(240, 138, 44, 0.45); }
 .cab.first-breath { --c1: #5e1c34; --c2: #ffc53d; --glow: rgba(255, 197, 61, 0.45); }
 .cab.frostwing { --c1: #12304f; --c2: #ffb347; --glow: rgba(70, 184, 255, 0.45); }
+.cab.ember-drift { --c1: #120f2c; --c2: #ffae5c; --glow: rgba(255, 174, 92, 0.45); }
 /* The newest marquees: the title takes one line where it can. At the 12px floor it takes two close lines over a
    one-line sub of 8 characters, with no gap between them, which needs a box 100px wide inside (a machine 259px tall).
    In a narrower box the sub line goes, so it is never cut in half, and the title shows whole on a machine down to about
    230px tall. On a landscape phone every marquee is cut. The box is an inline-size container: its width is a fixed
    share of the machine's height, and the 100cqh in --h still means the stage. */
-.cab.light-years-home .marquee, .cab.ahead-of-the-light .marquee, .cab.first-breath .marquee, .cab.frostwing .marquee, .cab.ledger .marquee { container-type: inline-size; }
-.cab.light-years-home .marquee b, .cab.ahead-of-the-light .marquee b, .cab.first-breath .marquee b, .cab.frostwing .marquee b, .cab.ledger .marquee b { display: block; font-size: max(12px, calc(var(--h) * 0.03)); line-height: max(10.8px, calc(var(--h) * 0.03)); }
-.cab.light-years-home .marquee small, .cab.ahead-of-the-light .marquee small, .cab.first-breath .marquee small, .cab.frostwing .marquee small, .cab.ledger .marquee small { margin-top: clamp(0px, calc(var(--h) * 0.03 - 9px), 3px); }
-@container (width < 100px) { .cab.light-years-home .marquee small, .cab.ahead-of-the-light .marquee small, .cab.first-breath .marquee small, .cab.frostwing .marquee small, .cab.ledger .marquee small { display: none; } }
+.cab.light-years-home .marquee, .cab.ahead-of-the-light .marquee, .cab.first-breath .marquee, .cab.frostwing .marquee, .cab.ledger .marquee, .cab.ember-drift .marquee { container-type: inline-size; }
+.cab.light-years-home .marquee b, .cab.ahead-of-the-light .marquee b, .cab.first-breath .marquee b, .cab.frostwing .marquee b, .cab.ledger .marquee b, .cab.ember-drift .marquee b { display: block; font-size: max(12px, calc(var(--h) * 0.03)); line-height: max(10.8px, calc(var(--h) * 0.03)); }
+.cab.light-years-home .marquee small, .cab.ahead-of-the-light .marquee small, .cab.first-breath .marquee small, .cab.frostwing .marquee small, .cab.ledger .marquee small, .cab.ember-drift .marquee small { margin-top: clamp(0px, calc(var(--h) * 0.03 - 9px), 3px); }
+@container (width < 100px) { .cab.light-years-home .marquee small, .cab.ahead-of-the-light .marquee small, .cab.first-breath .marquee small, .cab.frostwing .marquee small, .cab.ledger .marquee small, .cab.ember-drift .marquee small { display: none; } }
 /* Ahead of the Light's last log unlock (84 pages): a gold frame round the screen, drawn as a shadow so no size changes */
 .cab.ahead-of-the-light.gold .bezel { box-shadow: 0 0 0 3px var(--gold), 0 0 14px rgba(255, 207, 74, 0.5), inset 0 0 0 2px rgba(255, 255, 255, 0.06), 0 2px 0 rgba(0, 0, 0, 0.6); }
 .cab.gta { --c1: #174b4a; --c2: #ffc65b; --glow: rgba(255, 198, 91, 0.45); }
@@ -787,6 +788,16 @@ button { font: inherit; color: inherit; }
       <div class="door"><button class="slot" type="button" aria-label="Drop a token into Frostwing"><i></i><span>25¢</span></button><button class="slot" type="button" aria-label="Drop a token into Frostwing"><i></i><span>25¢</span></button></div>
       <div class="kick"></div>
       </article>
+      <article class="cab ember-drift" data-game="ember-drift" data-url="/ember-drift/" aria-label="Ember Drift: steer a dying ember and light stars to stay alive">
+      <div class="marquee"><div><b>EMBER DRIFT</b><small>LIGHT THE NIGHT</small></div></div>
+      <div class="bezel"><div class="screen">
+      <img src="arcade/key/ember-drift.webp" alt="A glowing ember trails a chain of lit stars across a dark violet sky" loading="lazy" decoding="async">
+      <div class="osd"><p class="hi">ENDLESS · 16 STAGES</p><p class="press">INSERT COIN</p><p class="credit">CREDIT 0</p></div>
+      </div></div>
+      <div class="panel"><span class="stick"></span><span class="pbtn a"></span><span class="pbtn b"></span><button class="start" type="button">START</button></div>
+      <div class="door"><button class="slot" type="button" aria-label="Drop a token into Ember Drift"><i></i><span>25¢</span></button><button class="slot" type="button" aria-label="Drop a token into Ember Drift"><i></i><span>25¢</span></button></div>
+      <div class="kick"></div>
+      </article>
     </div>
     <button class="nav next" id="nextBtn" type="button" aria-label="Next machine">▶</button>
   </main>
@@ -887,7 +898,7 @@ $("#changeBtn").onclick = () => {
 // Every game cabinet stays in the page (hidden while its group is closed), so its attract screen and high score keep working.
 const GROUPS = [
   { id: "cottage", label: "Cottage", games: ["plungerd", "drain", "brawl", "wild", "fish", "vr", "pingpong", "lake-brawl"], c1: "#d2332a", c2: "#ffcf4a", glow: "rgba(255, 90, 60, 0.55)", art: "arcade/plungerd.webp", art2: "arcade/plungerd-bosses.webp" },
-  { id: "action", label: "Action", games: ["olympus", "crimson", "tidebreak", "moonwell", "primordia", "river-rush", "ahead-of-the-light", "light-years-home", "first-breath", "frostwing"], c1: "#7a0a10", c2: "#ff2a2a", glow: "rgba(255, 30, 30, 0.45)", art: "crimson/art/keyart2.webp", art2: "olympus/art/asphodel.webp" },
+  { id: "action", label: "Action", games: ["olympus", "crimson", "tidebreak", "moonwell", "primordia", "river-rush", "ahead-of-the-light", "light-years-home", "first-breath", "frostwing", "ember-drift"], c1: "#7a0a10", c2: "#ff2a2a", glow: "rgba(255, 30, 30, 0.45)", art: "crimson/art/keyart2.webp", art2: "olympus/art/asphodel.webp" },
   { id: "ascii", label: "ASCII Scenes", games: ["ascii-front", "battle-tanks"], c1: "#344238", c2: "#d2f584", glow: "rgba(210, 245, 132, 0.45)", art: "ascii-front/key.svg", art2: "battle-tanks/key.svg" },
   { id: "strategy", label: "Strategy", games: ["breakthrough", "follow-suit", "silent-depth"], c1: "#3e5c44", c2: "#f0c56a", glow: "rgba(232, 176, 84, 0.62)", art: "arcade/follow-suit.webp", art2: "arcade/breakthrough.webp" },
   { id: "gta", label: "GTA", games: ["gta"], c1: "#5a3410", c2: "#f2c14e", glow: "rgba(242, 193, 78, 0.5)", art: "arcade/gta.webp" },
@@ -1598,6 +1609,11 @@ try {
 try {
   const s = JSON.parse(localStorage.getItem("frostwing.save.v1"));
   if (s && Number.isInteger(s.best) && s.best > 0) $(".hi", $('.cab[data-game="frostwing"]')).textContent = "BEST " + s.best + (Number.isInteger(s.wins) && s.wins > 0 ? " · WINS " + s.wins : "");
+} catch (e) { /* no save leaves the plain line */ }
+// Ember Drift keeps its best endless score as a plain number (openspec/changes/archive/2026-11-11-add-ember-drift)
+try {
+  const b = Number(localStorage.getItem("ember-best"));
+  if (Number.isInteger(b) && b > 0) $(".hi", $('.cab[data-game="ember-drift"]')).textContent = "BEST " + b.toLocaleString("en-US");
 } catch (e) { /* no save leaves the plain line */ }
 drawTokens();
 games.forEach(showCredit);

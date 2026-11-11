@@ -152,6 +152,38 @@ dialog .fine { font: 13px/1.4 var(--mono); color: var(--ink2); background: #f7ec
 .sumtable td:last-child { text-align: right; }
 .sumtable tr.total td { border-top: 2px solid var(--ink); font-weight: 600; }
 
+/* ------------------------------------------------ wide screens: the ledger fills the window
+   The header stays at the top and the three panes share the rest of the window, edge to edge. Each pane
+   scrolls by itself, so the page does not scroll. A window under 560px tall keeps the scrolling page,
+   because the panes would be too short to read. */
+@media (min-width: 900px) and (min-height: 560px) {
+  html, body { height: 100%; }
+  body { display: flex; flex-direction: column; height: 100vh; height: 100dvh; overflow: hidden; padding-bottom: 0; }
+  .top { flex: none; }
+  main {
+    flex: 1; min-height: 0; width: 100%; max-width: none; margin: 0;
+    grid-template-columns: minmax(0, 1fr) clamp(320px, 28vw, 560px);
+    grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
+    padding: 16px 16px calc(16px + env(safe-area-inset-bottom));
+  }
+  .pane { overflow: auto; overscroll-behavior: contain; background-attachment: local; }
+  .side { max-height: none; }
+  /* a wide board shows the day's tasks side by side */
+  .tasks { grid-template-columns: repeat(auto-fit, minmax(min(100%, 400px), 1fr)); align-items: start; }
+  /* Next delivery and Close the day stay in reach while the board scrolls */
+  .actions {
+    position: sticky; bottom: 0; z-index: 2; margin: 14px -16px 0; padding: 10px 16px;
+    background: var(--paper); border-top: 1px solid var(--rule); box-shadow: 0 -6px 12px -8px #0006;
+  }
+  .log { margin: 0; border-top: 0; }
+}
+/* at 1280 the header holds the title, the wallet and five controls in one row */
+@media (min-width: 900px) and (max-width: 1439px) {
+  .tools { gap: 6px; }
+  .tools .btn { padding: 8px 10px; }
+  .chip { padding: 6px 8px; }
+}
+
 /* ------------------------------------------------ narrow screens: one pane at a time behind tabs */
 @media (max-width: 899px) {
   .tabs { display: flex; position: sticky; top: 0; z-index: 3; }

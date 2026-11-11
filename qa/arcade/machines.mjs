@@ -126,16 +126,22 @@ for (const { id } of JSON.parse(read("higgsfield/arcade-key-art.json")).art) {
   const b = fs.existsSync(f) ? fs.readFileSync(f) : Buffer.alloc(0);
   check(b.length > 0 && b.length < 100 * 1024 && b.toString("latin1", 0, 4) === "RIFF" && b.toString("latin1", 8, 12) === "WEBP", `arcade/key/${id}.webp is a WebP under 100 KB (${(b.length / 1024).toFixed(1)} KB)`);
 }
-/* ---------------- Lake Brawl and Eleven Wells in the Corridor (openspec/changes/arcade-corridor-default) ---------------- */
+/* ---------------- Lake Brawl, Eleven Wells and Warden's Ledger in the Corridor (openspec/changes/arcade-corridor-default) ---------------- */
 {
   const walk = read("public/corridor/index.html");
   const pieces = [...walk.slice(walk.indexOf("const PIECES = ["), walk.indexOf("const COUNT = PIECES.length;")).matchAll(/\{ n: '(\d\d)', title: "([^"]+)"[^\n]*kind: "([^"]+)"[^\n]*url: "([^"]+)"/g)].map((m) => ({ n: m[1], title: m[2], kind: m[3], url: m[4] }));
   const dates = JSON.parse(read("public/arcade/game-dates.json")).games;
-  // each cabinet stands at the end of its group: the next cabinet, if there is one, starts another group
-  for (const g of [{ id: "lake-brawl", title: "Lake Brawl", kind: "Cottage", art: "lake_brawl" }, { id: "eleven-wells", title: "Eleven Wells", kind: "THE LAB", art: "eleven_wells" }]) {
+  // each cabinet stands in its group, right after the cabinet named here. The newest of a group is its last:
+  // the next cabinet, if there is one, starts another group
+  const ADDED = [
+    { id: "lake-brawl", title: "Lake Brawl", kind: "Cottage", art: "lake_brawl", after: "Table Tennis", last: true },
+    { id: "eleven-wells", title: "Eleven Wells", kind: "THE LAB", art: "eleven_wells", after: "Orbital Gardener" },
+    { id: "ledger", title: "Warden's Ledger", kind: "THE LAB", art: "ledger", after: "Eleven Wells", last: true },
+  ];
+  for (const g of ADDED) {
     const url = `/${g.id}/`, at = pieces.findIndex((p) => p.url === url), p = pieces[at], prev = pieces[at - 1], next = pieces[at + 1];
-    check(at > 0 && p.title === g.title && p.kind === g.kind && prev.kind === g.kind && (!next || next.kind !== g.kind),
-      `the Corridor's ${g.title} cabinet opens ${url} and is the last of ${g.kind} (${at >= 0 ? "number " + p.n + ", after " + prev.title : "missing"})`);
+    check(at > 0 && p.title === g.title && p.kind === g.kind && prev.kind === g.kind && prev.title === g.after && (!g.last || !next || next.kind !== g.kind),
+      `the Corridor's ${g.title} cabinet opens ${url} and stands in ${g.kind} after ${g.after}${g.last ? ", the last of its group" : ""} (${at >= 0 ? "number " + p.n + ", after " + prev.title : "missing"})`);
     check(new RegExp(`\\{ id: "${g.id}", name: "${g.title}", [^\\n]*url: "${url}"`).test(sw), `${g.title}'s Corridor cabinet has the title and route of its switcher entry`);
     // the screen: an inline WebP, 448 by 370
     const b = Buffer.from((walk.match(new RegExp(`^ +${g.art}: 'data:image/webp;base64,([^']+)',$`, "m")) || ["", ""])[1], "base64");
@@ -199,7 +205,8 @@ for (const { id } of JSON.parse(read("higgsfield/arcade-key-art.json")).art) {
   const order = [...html.matchAll(/<article class="cab[^"]*"[^>]*data-game="([^"]+)"/g)].map((m) => m[1]);
   check(order.indexOf("first-breath") === order.indexOf("light-years-home") + 1, "the First Breath article stands right after the Light Years Home article in #row");
   check(html.includes(".cab.ahead-of-the-light { --c1: #0b0b14; --c2: #f08a2c; --glow: rgba(240, 138, 44, 0.45); }\n.cab.first-breath { --c1: #5e1c34; --c2: #ffc53d; --glow: rgba(255, 197, 61, 0.45); }"), ".cab.first-breath sets the wine board and the marigold accent (--c1 #5e1c34, --c2 #ffc53d, --glow rgba(255, 197, 61, 0.45)) next to the Ahead of the Light rule");
-  check(/\{ id: "action", label: "Action", games: \["olympus", "crimson", "tidebreak", "moonwell", "primordia", "river-rush", "ahead-of-the-light", "light-years-home", "first-breath", "frostwing"\]/.test(html), 'the Action group lists "first-breath" and then "frostwing" (openspec/changes/add-frostwing) at the end of its ten games');
+  check(/\{ id: "action", label: "Action", games: \["olympus", "crimson", "tidebreak", "moonwell", "primordia", "river-rush", "ahead-of-the-light", "light-years-home", "first-breath", "frostwing", "ember-drift"\]/.test(html), 'the Action group lists "first-breath", "frostwing" (openspec/changes/add-frostwing) and then "ember-drift" (openspec/changes/archive/2026-11-11-add-ember-drift) at the end of its eleven games');
+  check(html.includes('localStorage.getItem("ember-best")'), "the arcade page reads Ember Drift's best endless score ember-best for the cabinet line");
   check(html.includes('localStorage.getItem("first-breath.save.v1")'), "the arcade page reads First Breath's save first-breath.save.v1 for the cabinet line");
   const entry = '{ id: "first-breath", name: "First Breath", sub: "A baby\'s journey to birth", url: "/first-breath/", art: "/arcade/key/first-breath.svg", color: "#ffc53d" },';
   const gamesText = sw.slice(sw.indexOf("const GAMES")).split("];")[0], lines = gamesText.split("\n").map((l) => l.trim());
@@ -498,7 +505,7 @@ if (chromium) {
     const tag = `${width}x${height}`;
     const { ctx, page, errors } = await open(browser, { width, height });
     await page.evaluate(() => document.fonts.ready);
-    for (const id of ["light-years-home", "ahead-of-the-light", "first-breath", "frostwing"]) {
+    for (const id of ["light-years-home", "ahead-of-the-light", "first-breath", "frostwing", "ember-drift"]) {
       await page.selectOption("#machinePicker", id);
       await page.waitForFunction((id) => document.querySelector(".cab.on")?.dataset.game === id, id);
       await settle(page);
@@ -692,8 +699,8 @@ if (chromium) {
 
   await relaunch();
   /* ----- First Breath (openspec/changes/archive/2026-10-19-add-first-breath, task 4.4b): the last machine of Action at the sizes AGENTS.md names ----- */
-  // Frostwing (openspec/changes/add-frostwing) joined after First Breath, so it is now the last machine of the row
-  const ACTION = ["olympus", "crimson", "tidebreak", "moonwell", "primordia", "river-rush", "ahead-of-the-light", "light-years-home", "first-breath", "frostwing"];
+  // Frostwing (openspec/changes/add-frostwing) joined after First Breath, and Ember Drift (openspec/changes/archive/2026-11-11-add-ember-drift) after Frostwing, so it is now the last machine of the row
+  const ACTION = ["olympus", "crimson", "tidebreak", "moonwell", "primordia", "river-rush", "ahead-of-the-light", "light-years-home", "first-breath", "frostwing", "ember-drift"];
   // the other groups as they stood before First Breath was added: adding it leaves them alone
   const OTHERS = {
     cottage: ["plungerd", "drain", "brawl", "wild", "fish", "vr", "pingpong", "lake-brawl"],
@@ -711,12 +718,9 @@ if (chromium) {
     check(hall.join() === "cottage,action,ascii,strategy,gta,lab", `${tag}: the hall still shows the six groups in order (${hall.join(", ")})`);
     await enter(page, "action");
     const members = await page.$$eval(SHOWN, (cs) => cs.map((c) => c.dataset.game));
-    check(members.join() === ACTION.join(), `${tag}: Action shows its ten machines, First Breath then Frostwing last (${members.join(", ")})`);
-    // the left key from the first machine wraps to the last (Frostwing); once more selects First Breath
-    await page.keyboard.press("ArrowLeft");
-    await settle(page);
-    await page.keyboard.press("ArrowLeft");
-    await settle(page);
+    check(members.join() === ACTION.join(), `${tag}: Action shows its eleven machines, First Breath, Frostwing, then Ember Drift last (${members.join(", ")})`);
+    // the left key from the first machine wraps to the last (Ember Drift); twice more selects First Breath
+    for (let k = 0; k < 3; k++) { await page.keyboard.press("ArrowLeft"); await settle(page); }
     await page.waitForFunction(() => { const i = document.querySelector(".cab.on .screen img"); return i && i.complete && i.naturalWidth > 0; }, null, { timeout: 5000 }).catch(() => {});
     const m = await page.evaluate(() => {
       const r = (el) => { const b = el.getBoundingClientRect(); return { l: b.left, r: b.right, t: b.top, b: b.bottom, w: b.width, h: b.height }; };
@@ -727,7 +731,7 @@ if (chromium) {
       return { last: shown[shown.length - 1].dataset.game, on: cab.dataset.game, cab: r(cab), sign: r(document.querySelector(".sign")), tray: r(document.querySelector(".tray")), vw: innerWidth, vh: innerHeight,
         screen: r(cab.querySelector(".screen")), hi: r(hi), hiText: hi.textContent, controls, img: img.getAttribute("src"), loaded: img.complete && img.naturalWidth > 0 };
     });
-    check(m.last === "frostwing" && m.on === "first-breath", `${tag}: the last visible cabinet is Frostwing, and the left key twice from the first machine selects First Breath (last ${m.last}, selected ${m.on})`);
+    check(m.last === "ember-drift" && m.on === "first-breath", `${tag}: the last visible cabinet is Ember Drift, and the left key three times from the first machine selects First Breath (last ${m.last}, selected ${m.on})`);
     check(m.cab.l >= -1 && m.cab.r <= m.vw + 1 && m.cab.t >= -1 && m.cab.b <= m.vh + 1, `${tag}: the machine sits inside the window (${Math.round(m.cab.l)} to ${Math.round(m.cab.r)} of ${m.vw}, ${Math.round(m.cab.t)} to ${Math.round(m.cab.b)} of ${m.vh})`);
     check(m.cab.t >= m.sign.b - 2 && m.cab.b <= m.tray.t + 2, `${tag}: the machine is not under the sign or the token tray (machine ${Math.round(m.cab.t)} to ${Math.round(m.cab.b)}, sign ends ${Math.round(m.sign.b)}, tray starts ${Math.round(m.tray.t)})`);
     check(m.img === "arcade/key/first-breath.svg" && m.loaded, `${tag}: the cut-paper screen ${m.img} loads`);

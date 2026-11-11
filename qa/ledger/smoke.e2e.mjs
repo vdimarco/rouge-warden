@@ -75,6 +75,13 @@ const browser = await chromium.launch();
   check("inspection shows the check", (await page.locator(".verdict").count()) === 1);
   await page.click("#summary-go");
   check("next day starts", (await state(page)).day === 2);
+  // Esc on the summary: the day is closed, so the next day starts
+  await page.click("#endday");
+  await page.waitForSelector("#summary[open]");
+  await page.keyboard.press("Escape");
+  await page.waitForFunction(() => window.__ledger.app.S.day.n === 3 && !window.__ledger.app.S.day.closed, null, { timeout: 3000 }).catch(() => {});
+  const s4 = await state(page);
+  check("Esc on the summary starts the next day", s4.day === 3 && !s4.closed && (await page.locator("#summary[open]").count()) === 0, `day ${s4.day}, closed ${s4.closed}`);
   await page.click('.tab[data-tab="receipts"]').catch(() => {});
   const dl = page.waitForEvent("download");
   await page.click("#export");
@@ -126,7 +133,7 @@ const browser = await chromium.launch();
 }
 
 /* ---------- 4. layouts */
-for (const [w, h] of [[1280, 800], [390, 844], [320, 640]]) {
+for (const [w, h] of [[1280, 800], [1920, 1080], [1280, 540], [390, 844], [320, 640]]) {
   const page = await browser.newPage({ viewport: { width: w, height: h } });
   await mock(page, "up");
   await page.goto(BASE + "/ledger/?seed=42");
@@ -146,6 +153,35 @@ for (const [w, h] of [[1280, 800], [390, 844], [320, 640]]) {
   check(`${w}px: controls at least 44px`, layout.small.length === 0, layout.small.slice(0, 5).join(", "));
   check(`${w}px: title sheet fits`, titleOk);
   check(`${w}px: tabs ${w < 900 ? "shown" : "hidden"}`, (layout.tabs !== "none") === (w < 900));
+  if (w >= 900) {
+    // a wide window: the ledger fills it, edge to edge, and each pane scrolls by itself
+    const fill = await page.evaluate(() => {
+      const box = (s) => document.querySelector(s).getBoundingClientRect();
+      const board = box("#pane-board"), rec = box("#pane-receipts"), ag = box("#pane-agents"), next = box("#next");
+      const pane = document.querySelector("#pane-board");
+      return {
+        pageScrolls: document.documentElement.scrollHeight > innerHeight + 1,
+        left: board.left, right: innerWidth - ag.right, bottom: innerHeight - Math.max(board.bottom, ag.bottom), top: board.top - box(".top").bottom,
+        sideUnder: Math.abs(rec.left - ag.left) < 1 && ag.top > rec.bottom, boardScrolls: pane.scrollHeight > pane.clientHeight + 1,
+        nextInView: next.top >= 0 && next.bottom <= innerHeight, cols: getComputedStyle(document.querySelector("#tasks")).gridTemplateColumns.split(" ").length,
+      };
+    });
+    if (h >= 560) {
+      check(`${w}x${h}: the page does not scroll`, !fill.pageScrolls);
+      check(`${w}x${h}: the panes reach the window's edges`, fill.left <= 16.5 && fill.right <= 16.5 && fill.bottom <= 16.5 && fill.top <= 16.5 && fill.sideUnder, JSON.stringify(fill));
+      check(`${w}x${h}: Next delivery is in view`, fill.nextInView);
+      check(`${w}x${h}: tasks sit in ${w >= 1900 ? "three or more columns" : "two columns"}`, w >= 1900 ? fill.cols >= 3 : fill.cols === 2, `${fill.cols} columns`);
+      // a delivery brings the board back to its top, where the check shows
+      await page.locator('#tasks button[data-act="hire"]:not([disabled])').first().click();
+      await page.evaluate(() => { document.querySelector("#pane-board").scrollTop = 9999; });
+      await page.click("#next");
+      await page.waitForFunction(() => !window.__ledger.app.busy);
+      const seen = await page.evaluate(() => { const r = document.querySelector("#inspect").getBoundingClientRect(); return !document.querySelector("#inspect").hidden && r.top >= 0 && r.top < innerHeight - 60; });
+      check(`${w}x${h}: a delivery shows at the top of the board`, seen);
+    } else {
+      check(`${w}x${h}: a short window keeps the scrolling page`, fill.pageScrolls);
+    }
+  }
   if (w < 900) {
     await page.click('.tab[data-tab="agents"]');
     check(`${w}px: Agents tab shows one pane`, await page.evaluate(() => [...document.querySelectorAll(".pane")].filter((p) => getComputedStyle(p).display !== "none").map((p) => p.dataset.pane).join() === "agents"));
@@ -153,7 +189,49 @@ for (const [w, h] of [[1280, 800], [390, 844], [320, 640]]) {
   await page.close();
 }
 
-/* ---------- 5. --live: a real dry quote from 1Click */
+/* ---------- 5. full screen */
+{
+  const ctx = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+  const page = await ctx.newPage();
+  await mock(page, "up");
+  await page.goto(BASE + "/ledger/?seed=42");
+  await page.waitForSelector("#title[open]");
+  const full = () => page.evaluate(() => ({ on: !!document.fullscreenElement, pressed: document.querySelector("#fs").getAttribute("aria-pressed"), saved: localStorage.getItem("ledger.fullscreen"), shown: !document.querySelector("#fs").hidden }));
+  const settle = (on) => page.waitForFunction((v) => !!document.fullscreenElement === v && document.querySelector("#fs").getAttribute("aria-pressed") === String(v), on, { timeout: 3000 }).catch(() => {});
+  check("the Full screen button shows where the browser has full screen", (await full()).shown);
+  await page.click("#start");
+  await settle(true);
+  let f = await full();
+  check("Start goes full screen", f.on && f.pressed === "true", JSON.stringify(f));
+  await page.click("#fs");
+  await settle(false);
+  f = await full();
+  check("the Full screen button leaves full screen and saves the choice", !f.on && f.pressed === "false" && f.saved === "off", JSON.stringify(f));
+  await page.reload();
+  await page.waitForSelector("#title[open]");
+  await page.click("#start");
+  await page.waitForTimeout(400);
+  f = await full();
+  check("with full screen turned off, Start stays in the window", !f.on && f.pressed === "false", JSON.stringify(f));
+  await page.click("#fs");
+  await settle(true);
+  f = await full();
+  check("the Full screen button goes full screen and saves the choice", f.on && f.pressed === "true" && f.saved === "on", JSON.stringify(f));
+  await ctx.close();
+}
+// a browser with no full screen mode for pages keeps the button out of the header
+{
+  const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
+  await page.addInitScript(() => { Object.defineProperty(Document.prototype, "fullscreenEnabled", { get: () => false }); Object.defineProperty(Document.prototype, "webkitFullscreenEnabled", { get: () => false }); });
+  await mock(page, "up");
+  await page.goto(BASE + "/ledger/?seed=42");
+  await page.waitForSelector("#title[open]");
+  await page.click("#start");
+  check("no full screen in the browser: no Full screen button, and the game starts", await page.evaluate(() => getComputedStyle(document.querySelector("#fs")).display === "none" && !document.querySelector("#title").open));
+  await page.close();
+}
+
+/* ---------- 6. --live: a real dry quote from 1Click */
 if (LIVE) {
   const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
   await page.goto(BASE + "/ledger/?seed=42");

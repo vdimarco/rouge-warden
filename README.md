@@ -548,6 +548,13 @@ First Breath (`/first-breath/`) is a baby's journey to birth, seen from the baby
 
 The game is pure code in `core/` that node tests and bots play headless. A Canvas 2D renderer in `render/` draws it as paper, and its low tier keeps the paper look on a slow phone. The sound is made in code in `ui/sound.js`. The plan, the facts table and the sources are in `openspec/changes/archive/2026-10-19-add-first-breath/`.
 
+
+## Ember Drift
+
+Ember Drift (`/ember-drift/`) is an Action game. You steer an ember that always loses fuel. Fly close to a star to light it for fuel and points. Stars lit one after another make a chain that scores more for each link and doubles at 8. Fly back to a star in the chain to close a shape; a shape of 5 or more stars fills the fuel. Hold the mouse button, Space or Boost to go faster at the cost of fuel.
+
+Endless flight makes the sky as you fly. Fuel burns faster with time and depth, dark clouds burn it fast and follow you, comets cross your path, gold flares drift away, and blue beacons give a timed bonus. Puzzle stages are 16 hand-made skies with one goal each; clearing a stage opens the next, and par time gives 3 sparks. The game is one `index.html` with no build step. See [`openspec/specs/ember-drift/spec.md`](openspec/specs/ember-drift/spec.md).
+
 ## The lab
 
 The lab at `/lab/` holds toys. A toy is a small build that tests the core move of a new game idea before anyone builds the game. The arcade shows the lab: The Lab machine opens `/lab/`, the **LAB ↗** link under the sign does too, and each toy has a machine of its own. The game switcher lists the lab and its toys. Each lab page asks search engines not to index it. The ideas, and the bar a new game must pass, are in `docs/game-ideas.md`.
