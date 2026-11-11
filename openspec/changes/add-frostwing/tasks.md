@@ -1,0 +1,29 @@
+# Tasks
+
+- [x] Match simulation: flight, lasers, charged lock-on shot, bombs, roll, U-turn, ground, ruins and storm wall (`public/frostwing/sim.js`)
+- [x] Scoring: downs, crashes, meteor showers, energy, bomb and repair orbs, clock, MVP
+- [x] Bots with lead aim, terrain avoidance, shower gathering and evasion; three rival difficulties
+- [x] Four Lantern pilots with different stats, including the veteran Silas Vane and his three-bolt volley
+- [x] Original portraits and key art from Higgsfield
+- [x] 3D view: terrain, ruins, beacons, ships, lasers, meteorites, orbs, particles, snow, chase camera
+- [x] HUD: systems, boost, bombs, scoreboard, clock, kill feed, radio lines, radar, ship outline, objective banner, reticles, lock bracket, name tags
+- [x] Screens: title with attract flight, pilot select, how to fly, pause, results
+- [x] Keyboard, mouse, gamepad and touch controls; pitch direction setting
+- [x] Mouse flight: pointer-lock virtual stick with spring-back, a stick ring, a click-to-fly hint, a Mouse flight / Keys only setting
+- [x] Generated 3D models (Meshy 7 ships, Tripo H3.1 props) packed with `higgsfield/models3d/pack-ship.mjs`
+- [x] High graphics: sun shadows, bloom, sky reflections, snow ripples and glints, clouds, the gas giant, ribbon trails, explosion lights; Fast graphics for phones; automatic drop to Fast
+- [x] Four weather presets: day, dusk, night and storm
+- [x] Synthesized sound and music; pause suspends sound
+- [x] Story: a prologue, five operations with their own sky, clock, rosters and rivals, the Nightjar boss, saved progress
+- [x] Cut scenes: eight generated stills with slow pans, typed captions, portraits, Next and Skip, a soft pad; reduced-motion support
+- [x] Logbook of 16 world entries that open with story progress
+- [x] Quick match sky setting: day, dusk, night or storm
+- [x] Arcade cabinet at the end of the Action row, Switch game entry, cabinet save line, `quiet.mjs` entry
+- [x] `qa/arcade/machines.mjs` updated for the new last Action machine and the Frostwing marquee
+- [x] Story data tests: `node qa/frostwing/story.test.mjs`
+- [x] Node tests: `node qa/frostwing/sim.test.mjs`; bot runs: `node qa/frostwing/bot.mjs 8 ace 1`
+- [x] Browser check of desktop, portrait phone, landscape phone and 320 px: `NODE_PATH=qa/browser/node_modules node qa/frostwing/smoke.e2e.mjs`
+- [x] Homepage screenshots at 390, 320 and 1280 for the pull request
+- [ ] Frame rate on a real GPU and on a real phone
+- [ ] Sound heard on a device (headless runs cannot listen)
+- [ ] Difficulty tuned by human play

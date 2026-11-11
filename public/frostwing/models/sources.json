@@ -1,0 +1,12 @@
+{
+  "note": "3D models for Frostwing, made on Higgsfield on 2026-11-11. Each began as an original GPT Image 2.6 product render on a grey background. The two ships went through Meshy 7 image-to-3D (textured, PBR, symmetry on, 12,000 triangles). The props went through Tripo H3.1 image-to-3D (PBR). All were packed with higgsfield/models3d/pack-ship.mjs: centred, scaled, turned to face -z, simplified, WebP textures, meshopt-compressed (decoder: ../lib/meshopt_decoder.mjs).",
+  "models": {
+    "lantern": { "image": "5cf92109-77e6-4e40-ab87-e7e9be8fe7e4", "mesh": "208436f2-9cd7-4dc8-84f5-259fec8f043c", "generator": "meshy_v7_image_to_3d", "pack": "node pack-ship.mjs lantern.glb lantern.glb 9000 18 -90 1024" },
+    "corvid": { "image": "3d2c727f-20a2-4bb5-b714-d57487cd365c", "mesh": "3e828076-b924-4365-b251-87d27c8dd5a7", "generator": "meshy_v7_image_to_3d", "pack": "node pack-ship.mjs corvid.glb corvid.glb 9000 18 -90 1024" },
+    "slab": { "image": "f7e3e932-afe0-4b83-ad09-ccd408d1e8e0", "mesh": "771aa9fe-ff1d-4fa1-ac1c-3b34429404c1", "generator": "tripo_h3_1_image_to_3d", "pack": "node pack-ship.mjs slab.glb slab.glb 4000 1 0 512 --height --floor" },
+    "gate": { "image": "2ef5c078-8f7f-49d8-bcb0-0dba19df3e8e", "mesh": "3515f0b6-d42d-4b60-a106-398d9e199668", "generator": "tripo_h3_1_image_to_3d", "pack": "node pack-ship.mjs gate.glb gate.glb 5000 1 0 512 --height --floor", "remark": "Tripo kept the two pillars and dropped the lintel; the game uses it as a broken gate you can fly through" },
+    "beacon": { "image": "4d3bfe2f-26d3-4417-a00e-bf661bc18ffb", "mesh": "444f76d7-eefd-4dcb-8908-824a66df1ba8", "generator": "tripo_h3_1_image_to_3d", "pack": "node pack-ship.mjs beacon.glb beacon.glb 5000 1 0 512 --height --floor" },
+    "rock": { "image": "df79aefe-71de-4d20-a170-bc8493b7a07f", "mesh": "6a0c436d-24e8-4b07-b36e-56a6a7372bf0", "generator": "tripo_h3_1_image_to_3d", "pack": "node pack-ship.mjs rock.glb rock.glb 2500 1 0 512" }
+  },
+  "sky": { "varrow": { "image": "bddf7ff4-635a-4aee-bcc8-27a820dcc436", "remark": "gas giant on black; art/varrow.webp gets its alpha from brightness" } }
+}

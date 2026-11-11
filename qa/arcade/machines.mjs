@@ -62,6 +62,8 @@ const html = read("public/index.html");
 const sw = read("public/arcade/switch.js");
 const machineUrls = [...html.matchAll(/<article class="cab[^"]*"[^>]*data-url="([^"]+)"/g)].map((m) => m[1]);
 const switchUrls = [...sw.slice(sw.indexOf("const GAMES")).split("];")[0].matchAll(/"?url"?:\s*"([^"]+)"/g)].map((m) => m[1]);
+// Lab-only games (labOnly: true): the home All Games list leaves them out, under the Lab tile (AGENTS.md, New games)
+const labOnlyUrls = [...sw.slice(sw.indexOf("const GAMES")).split("];")[0].matchAll(/\{[^}]*url:\s*"([^"]+)"[^}]*labOnly:\s*true[^}]*\}/g)].map((m) => m[1]);
 const switchIds = [...sw.slice(sw.indexOf("const GAMES")).split("];")[0].matchAll(/"?id"?:\s*"([^"]+)"/g)].map((m) => m[1]);
 const switchArt = [...sw.slice(sw.indexOf("const GAMES")).split("];")[0].matchAll(/"?art"?:\s*"([^"]+)"/g)].map((m) => m[1]);
 
@@ -143,7 +145,7 @@ for (const { id } of JSON.parse(read("higgsfield/arcade-key-art.json")).art) {
   const order = [...html.matchAll(/<article class="cab[^"]*"[^>]*data-game="([^"]+)"/g)].map((m) => m[1]);
   check(order.indexOf("first-breath") === order.indexOf("light-years-home") + 1, "the First Breath article stands right after the Light Years Home article in #row");
   check(html.includes(".cab.ahead-of-the-light { --c1: #0b0b14; --c2: #f08a2c; --glow: rgba(240, 138, 44, 0.45); }\n.cab.first-breath { --c1: #5e1c34; --c2: #ffc53d; --glow: rgba(255, 197, 61, 0.45); }"), ".cab.first-breath sets the wine board and the marigold accent (--c1 #5e1c34, --c2 #ffc53d, --glow rgba(255, 197, 61, 0.45)) next to the Ahead of the Light rule");
-  check(/\{ id: "action", label: "Action", games: \["olympus", "crimson", "tidebreak", "moonwell", "primordia", "river-rush", "ahead-of-the-light", "light-years-home", "first-breath"\]/.test(html), 'the Action group lists "first-breath" last of its nine games');
+  check(/\{ id: "action", label: "Action", games: \["olympus", "crimson", "tidebreak", "moonwell", "primordia", "river-rush", "ahead-of-the-light", "light-years-home", "first-breath", "frostwing"\]/.test(html), 'the Action group lists "first-breath" and then "frostwing" (openspec/changes/add-frostwing) at the end of its ten games');
   check(html.includes('localStorage.getItem("first-breath.save.v1")'), "the arcade page reads First Breath's save first-breath.save.v1 for the cabinet line");
   const entry = '{ id: "first-breath", name: "First Breath", sub: "A baby\'s journey to birth", url: "/first-breath/", art: "/arcade/key/first-breath.svg", color: "#ffc53d" },';
   const gamesText = sw.slice(sw.indexOf("const GAMES")).split("];")[0], lines = gamesText.split("\n").map((l) => l.trim());
@@ -415,7 +417,7 @@ if (chromium) {
     const tag = `${width}x${height}`;
     const { ctx, page, errors } = await open(browser, { width, height });
     await page.evaluate(() => document.fonts.ready);
-    for (const id of ["light-years-home", "ahead-of-the-light", "first-breath"]) {
+    for (const id of ["light-years-home", "ahead-of-the-light", "first-breath", "frostwing"]) {
       await page.selectOption("#machinePicker", id);
       await page.waitForFunction((id) => document.querySelector(".cab.on")?.dataset.game === id, id);
       await settle(page);
@@ -448,7 +450,7 @@ if (chromium) {
     const tag = `${width}x${height}`;
     const { ctx, page, errors } = await open(browser, { width, height });
     // the page answers to a game's address, so the switcher can work out where it is
-    const here = { "/gta/": "GTA Montréal", "/lab/": "The Lab", "/lab/worlds/": "Small Worlds", "/lab/plunge/": "Take the Plunge", "/lab/rules/": "House Rules", "/fall/": "Down the Drain", "/breakthrough2/": "Breakthrough", "/echo/": "Loon Echo", "/olympus/x": "Olympus", "/light-years-home/": "Light Years Home", "/ahead-of-the-light/": "Ahead of the Light" };
+    const here = { "/gta/": "GTA Montréal", "/lab/": "The Lab", "/lab/worlds/": "Small Worlds", "/lab/rules/": "House Rules", "/fall/": "Down the Drain", "/breakthrough2/": "Breakthrough", "/olympus/x": "Olympus", "/light-years-home/": "Light Years Home", "/ahead-of-the-light/": "Ahead of the Light" };
     for (const [p, name] of Object.entries(here)) {
       await page.evaluate(async (p) => { history.replaceState({}, "", p); GameSwitch.close(); await GameSwitch.open(); }, p);
       await page.waitForSelector(".gsw-game");
@@ -461,7 +463,10 @@ if (chromium) {
       const box = document.querySelector(".gsw:not([hidden])"), tiles = [...box.querySelectorAll(".gsw-game")], links = tiles.map((t) => t.matches("a") ? t : t.querySelector("a.board-launch")), controls = box.querySelector(".gsw-row, .board-head").getBoundingClientRect();
       return { n: tiles.length, hrefs: links.map((a) => a.getAttribute("href")), small: links.filter((a) => { const r = a.getBoundingClientRect(); return r.height < 44 || r.width < 44; }).length, scrolls: box.scrollHeight > box.clientHeight, controlsIn: controls.top >= 0 && controls.bottom <= innerHeight + 1, vh: innerHeight };
     });
-    check(info.n === switchUrls.length && switchUrls.every((u) => info.hrefs.includes(u) || u === "/wild/"), `${tag}: the switcher shows a tile for each of the ${switchUrls.length} games (${info.n})`);
+    // the home list shows every game but the Lab-only ones, which sit under the Lab tile
+    const homeUrls = switchUrls.filter((u) => !labOnlyUrls.includes(u));
+    check(info.n === homeUrls.length && homeUrls.every((u) => info.hrefs.includes(u) || u === "/wild/"), `${tag}: the switcher shows a tile for each of the ${homeUrls.length} games that are not Lab-only (${info.n})`);
+    check(labOnlyUrls.length > 0 && !labOnlyUrls.some((u) => info.hrefs.includes(u)), `${tag}: the home switcher leaves out the ${labOnlyUrls.length} Lab-only games`);
     check(info.small === 0, `${tag}: every tile is at least 44 pixels each way`);
     check(info.controlsIn, `${tag}: switcher navigation controls stay in the window while the list is at the top`);
     check(info.scrolls || width > 800, `${tag}: a long list scrolls`);
@@ -606,14 +611,15 @@ if (chromium) {
 
   await relaunch();
   /* ----- First Breath (openspec/changes/archive/2026-10-19-add-first-breath, task 4.4b): the last machine of Action at the sizes AGENTS.md names ----- */
-  const ACTION = ["olympus", "crimson", "tidebreak", "moonwell", "primordia", "river-rush", "ahead-of-the-light", "light-years-home", "first-breath"];
+  // Frostwing (openspec/changes/add-frostwing) joined after First Breath, so it is now the last machine of the row
+  const ACTION = ["olympus", "crimson", "tidebreak", "moonwell", "primordia", "river-rush", "ahead-of-the-light", "light-years-home", "first-breath", "frostwing"];
   // the other groups as they stood before First Breath was added: adding it leaves them alone
   const OTHERS = {
     cottage: ["plungerd", "drain", "brawl", "wild", "fish", "vr", "pingpong", "lake-brawl"],
     ascii: ["ascii-front", "battle-tanks"],
     strategy: ["breakthrough", "follow-suit", "silent-depth"],
     gta: ["gta"],
-    lab: ["lab", "worlds", "neon", "echo", "tellme", "plunge", "creek", "tilt", "rules", "afterlight", "lighthouse-keeper", "echoes-under-ice", "last-train-home", "firefly-courier", "mirage-runner", "orbital-gardener", "last-light"],
+    lab: ["lab", "worlds", "neon", "echo", "tellme", "plunge", "creek", "tilt", "rules", "afterlight", "lighthouse-keeper", "echoes-under-ice", "last-train-home", "firefly-courier", "mirage-runner", "orbital-gardener", "eleven-wells", "last-light"],
   };
   // 320 x 700 as the small-phone checks above: at 320 x 568 every machine's screen is about 52 x 43 px, too small for any attract line
   for (const [width, height] of PARTS.includes("firstbreath") ? [[390, 844], [320, 700], [1280, 720]] : []) {
@@ -624,8 +630,10 @@ if (chromium) {
     check(hall.join() === "cottage,action,ascii,strategy,gta,lab", `${tag}: the hall still shows the six groups in order (${hall.join(", ")})`);
     await enter(page, "action");
     const members = await page.$$eval(SHOWN, (cs) => cs.map((c) => c.dataset.game));
-    check(members.join() === ACTION.join(), `${tag}: Action shows its nine machines, First Breath last (${members.join(", ")})`);
-    // the last machine: the left key from the first wraps to it
+    check(members.join() === ACTION.join(), `${tag}: Action shows its ten machines, First Breath then Frostwing last (${members.join(", ")})`);
+    // the left key from the first machine wraps to the last (Frostwing); once more selects First Breath
+    await page.keyboard.press("ArrowLeft");
+    await settle(page);
     await page.keyboard.press("ArrowLeft");
     await settle(page);
     await page.waitForFunction(() => { const i = document.querySelector(".cab.on .screen img"); return i && i.complete && i.naturalWidth > 0; }, null, { timeout: 5000 }).catch(() => {});
@@ -638,7 +646,7 @@ if (chromium) {
       return { last: shown[shown.length - 1].dataset.game, on: cab.dataset.game, cab: r(cab), sign: r(document.querySelector(".sign")), tray: r(document.querySelector(".tray")), vw: innerWidth, vh: innerHeight,
         screen: r(cab.querySelector(".screen")), hi: r(hi), hiText: hi.textContent, controls, img: img.getAttribute("src"), loaded: img.complete && img.naturalWidth > 0 };
     });
-    check(m.last === "first-breath" && m.on === "first-breath", `${tag}: the last visible cabinet is First Breath, and the left key from the first machine selects it (last ${m.last}, selected ${m.on})`);
+    check(m.last === "frostwing" && m.on === "first-breath", `${tag}: the last visible cabinet is Frostwing, and the left key twice from the first machine selects First Breath (last ${m.last}, selected ${m.on})`);
     check(m.cab.l >= -1 && m.cab.r <= m.vw + 1 && m.cab.t >= -1 && m.cab.b <= m.vh + 1, `${tag}: the machine sits inside the window (${Math.round(m.cab.l)} to ${Math.round(m.cab.r)} of ${m.vw}, ${Math.round(m.cab.t)} to ${Math.round(m.cab.b)} of ${m.vh})`);
     check(m.cab.t >= m.sign.b - 2 && m.cab.b <= m.tray.t + 2, `${tag}: the machine is not under the sign or the token tray (machine ${Math.round(m.cab.t)} to ${Math.round(m.cab.b)}, sign ends ${Math.round(m.sign.b)}, tray starts ${Math.round(m.tray.t)})`);
     check(m.img === "arcade/key/first-breath.svg" && m.loaded, `${tag}: the cut-paper screen ${m.img} loads`);
