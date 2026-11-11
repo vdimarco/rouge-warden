@@ -793,13 +793,9 @@ if (chromium) {
     let outside = 0, stops = 0, seen = new Set();
     for (let i = 0; i < 70; i++) {
       await page.keyboard.press("Tab");
-      // the row slides to the new machine: wait until the focused control stops moving
-      for (let k = 0, prev = null; k < 30; k++) {
-        const x = await page.evaluate(() => Math.round(document.activeElement.getBoundingClientRect().left * 10));
-        if (x === prev) break;
-        prev = x;
-        await page.waitForTimeout(100);
-      }
+      // the row slides to the new machine: wait until the slide ends. Two equal reads 100 ms apart do not prove that:
+      // on a slow computer no frame is drawn in that time, the transition has not started, and the control is still outside.
+      await settle(page);
       const r = await page.evaluate(() => { const a = document.activeElement, b = a.getBoundingClientRect(); const cab = a.closest(".cab"); return { left: b.left, right: b.right, vw: innerWidth, game: cab ? cab.dataset.game || cab.dataset.opens : "", on: cab ? cab.classList.contains("on") : true, scroll: document.querySelector(".room").scrollLeft }; });
       stops++;
       if (r.game) seen.add(r.game);
