@@ -366,6 +366,17 @@ impl Contract {
             "wrap": self.wrap, "intents": self.intents, "balance": U128(env::account_balance().as_yoctonear()),
         })
     }
+    /// Runs a job's check on data without delivering it. Free to call, so a seller can test its work first.
+    pub fn preview_check(&self, job_id: u32, data: String) -> Value {
+        let job = self.jobs.get(job_id).unwrap_or_else(|| env::panic_str("no such job"));
+        let spec: Value = serde_json::from_str(&job.spec).unwrap();
+        let v = match serde_json::from_str::<Value>(&data) {
+            Ok(d) if data.len() <= MAX_DATA => checks::check(&job.kind, &spec, &d),
+            Ok(_) => checks::Verdict { pass: false, reason: "delivery over 4 KB".into() },
+            Err(_) => checks::Verdict { pass: false, reason: "delivery is not JSON".into() },
+        };
+        json!({ "pass": v.pass, "reason": v.reason })
+    }
     pub fn get_job(&self, job_id: u32) -> Option<Job> { self.jobs.get(job_id).cloned() }
     pub fn get_jobs(&self, from: Option<u32>, limit: Option<u32>) -> Vec<Job> {
         let from = from.unwrap_or(0);

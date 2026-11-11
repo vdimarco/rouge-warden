@@ -55,17 +55,18 @@ async function main() {
       console.log("  register mock intents with wNEAR", (await call(miAcc, NETS.testnet.wrap, "storage_deposit", { account_id: mi.accountId, registration_only: true }, { deposit: near(0.0125) })).failed || "ok");
   } else {
     beneficiary = arg("--beneficiary");
-    if (!beneficiary) throw new Error("--beneficiary <your NEAR account> is required on mainnet");
     intents = NETS.mainnet.intents;
     if (!ks.get("pop")) { const k = freshKey(); ks.put("pop", { ...k }); }
     pop = ks.get("pop");
     for (const name of ["seller-a", "seller-b"]) { if (!ks.get(name)) ks.put(name, freshKey()); sellers.push(ks.get(name)); }
     const st = await accountState(net, pop.accountId);
-    const need = 4.6;
+    const need = Number(arg("--need", "5.5")); // code storage ~2.1, the cap ~2.7, seller gas 0.1, buffer
+
     const have = st ? Number(BigInt(st.amount) / 10n ** 18n) / 1e6 : 0;
     step("Funding");
     console.log(`  contract account: ${pop.accountId}\n  ${accountLink(net, pop.accountId)}\n  balance ${have.toFixed(4)} NEAR, needs ${need}`);
     if (have < need) { console.log("  Send NEAR to the address above, then run this again."); return; }
+    if (!beneficiary) throw new Error("--beneficiary <your NEAR account> is required on mainnet");
   }
   const popAcc = account(net, pop.accountId, pop.secretKey);
   const keys = await popAcc.getAccessKeyList();

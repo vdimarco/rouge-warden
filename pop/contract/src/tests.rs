@@ -46,6 +46,15 @@ fn full_job_pass_pays_and_counts() {
 }
 
 #[test]
+fn preview_check_matches_deliver() {
+    let mut c = setup();
+    let id = post(&mut c, N / 2);
+    assert_eq!(c.preview_check(id, CUT_MAP.into())["reason"], "room cut off");
+    assert_eq!(c.preview_check(id, GOOD_MAP.into())["pass"], true);
+    assert_eq!(c.preview_check(id, "nope".into())["reason"], "delivery is not JSON");
+}
+
+#[test]
 fn cut_map_fails_reopens_and_pays_nothing() {
     let mut c = setup();
     let id = post(&mut c, N / 2);

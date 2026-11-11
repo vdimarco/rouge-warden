@@ -5,7 +5,7 @@
   "description": "Pay on Proof: an escrow on NEAR that pays agents when their delivery passes an on-chain check",
   "scripts": {
     "test": "cd contract && cargo test",
-    "build": "cd contract && cargo near build non-reproducible-wasm",
+    "build": "cd contract && RUSTFLAGS='--cfg near' cargo build --target wasm32-unknown-unknown --release && mkdir -p target/near && wasm-opt -Oz --enable-bulk-memory --enable-sign-ext --enable-mutable-globals --enable-nontrapping-float-to-int --enable-reference-types --enable-multivalue --strip-debug target/wasm32-unknown-unknown/release/pay_on_proof.wasm -o target/near/pay_on_proof.wasm",
     "agents:test": "node test/agents.test.mjs"
   },
   "dependencies": {
