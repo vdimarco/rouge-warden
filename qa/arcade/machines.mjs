@@ -126,6 +126,45 @@ for (const { id } of JSON.parse(read("higgsfield/arcade-key-art.json")).art) {
   const b = fs.existsSync(f) ? fs.readFileSync(f) : Buffer.alloc(0);
   check(b.length > 0 && b.length < 100 * 1024 && b.toString("latin1", 0, 4) === "RIFF" && b.toString("latin1", 8, 12) === "WEBP", `arcade/key/${id}.webp is a WebP under 100 KB (${(b.length / 1024).toFixed(1)} KB)`);
 }
+/* ---------------- Lake Brawl and Eleven Wells in the Corridor (openspec/changes/arcade-corridor-default) ---------------- */
+{
+  const walk = read("public/corridor/index.html");
+  const pieces = [...walk.slice(walk.indexOf("const PIECES = ["), walk.indexOf("const COUNT = PIECES.length;")).matchAll(/\{ n: '(\d\d)', title: "([^"]+)"[^\n]*kind: "([^"]+)"[^\n]*url: "([^"]+)"/g)].map((m) => ({ n: m[1], title: m[2], kind: m[3], url: m[4] }));
+  const dates = JSON.parse(read("public/arcade/game-dates.json")).games;
+  // each cabinet stands at the end of its group: the next cabinet, if there is one, starts another group
+  for (const g of [{ id: "lake-brawl", title: "Lake Brawl", kind: "Cottage", art: "lake_brawl" }, { id: "eleven-wells", title: "Eleven Wells", kind: "THE LAB", art: "eleven_wells" }]) {
+    const url = `/${g.id}/`, at = pieces.findIndex((p) => p.url === url), p = pieces[at], prev = pieces[at - 1], next = pieces[at + 1];
+    check(at > 0 && p.title === g.title && p.kind === g.kind && prev.kind === g.kind && (!next || next.kind !== g.kind),
+      `the Corridor's ${g.title} cabinet opens ${url} and is the last of ${g.kind} (${at >= 0 ? "number " + p.n + ", after " + prev.title : "missing"})`);
+    check(new RegExp(`\\{ id: "${g.id}", name: "${g.title}", [^\\n]*url: "${url}"`).test(sw), `${g.title}'s Corridor cabinet has the title and route of its switcher entry`);
+    // the screen: an inline WebP, 448 by 370
+    const b = Buffer.from((walk.match(new RegExp(`^ +${g.art}: 'data:image/webp;base64,([^']+)',$`, "m")) || ["", ""])[1], "base64");
+    const lossy = b.length > 30 && b.toString("latin1", 8, 16) === "WEBPVP8 ";
+    const w = lossy ? b.readUInt16LE(26) & 0x3fff : 0, h = lossy ? b.readUInt16LE(28) & 0x3fff : 0;
+    check(w === 448 && h === 370 && b.length < 60 * 1024, `the Corridor carries ${g.title}'s screen art, a 448 by 370 WebP under 60 KB (${w} by ${h}, ${(b.length / 1024).toFixed(1)} KB)`);
+    check(walk.includes(`img: ART.${g.art}, url: "${url}"`), `${g.title}'s cabinet shows that art`);
+    const d = dates[g.id];
+    check(!!d && d.path === `public/${g.id}` && Number.isFinite(Date.parse(d.added)) && Number.isFinite(Date.parse(d.updated)), `game-dates.json has ${g.title}'s added and updated dates, for the Newest and Updated orders`);
+    check(walk.includes(`"${url}":["${d ? d.added : ""}","${d ? d.updated : ""}"]`), `the Corridor's baked dates include ${url}`);
+  }
+  const n = pieces.length;
+  check(n >= 40 && pieces.every((p, i) => Number(p.n) === i + 1), `the Corridor's ${n} cabinets are numbered 01 to ${String(n).padStart(2, "0")} with no gap`);
+  const WORDS = { 38: "thirty-eight", 39: "thirty-nine", 40: "forty", 41: "forty-one", 42: "forty-two", 43: "forty-three", 44: "forty-four", 45: "forty-five" };
+  const written = {
+    "--n": walk.includes(`style="--n: ${n}"`),
+    "the aria label": walk.includes(`An arcade hall of ${n} games.`),
+    "the role line": walk.includes(`Free browser arcade · ${n} games · Montréal`),
+    "the index": walk.includes(`Index <sup>${n}</sup>`),
+    "the counter": walk.includes(`/ ${n}</span>`),
+    "the count in words": !WORDS[n] || walk.split(`${WORDS[n]} games, free entry`).length === 3,
+    "uPP and uPC": walk.includes(`uniform vec3 uPP[${n * 3}];`) && walk.includes(`uniform vec3 uPC[${n * 3}];`) && walk.includes(`for (int i = 0; i < ${n * 3}; i++) {`),
+    "lightPP and lightPC": walk.includes(`this.lightPP = new Float32Array(${n * 3} * 3)`) && walk.includes(`this.lightPC = new Float32Array(${n * 3} * 3)`),
+    "the two light offsets": walk.split(`(${n} + i) * 3`).length === 5 && walk.split(`(${2 * n} + i) * 3`).length === 5,
+  };
+  const off = Object.keys(written).filter((k) => !written[k]);
+  check(off.length === 0, `the Corridor's written counts and its ${n * 3} light slots match its ${n} cabinets${off.length ? " (wrong: " + off.join(", ") + ")" : ""}`);
+}
+
 /* ---------------- First Breath's machine (openspec/changes/archive/2026-10-19-add-first-breath, design.md 10) ---------------- */
 {
   const articleOf = (id) => (html.match(new RegExp(`<article class="cab ${id}"[\\s\\S]*?</article>`)) || [""])[0];
