@@ -1,0 +1,380 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Pay on Proof demo</title>
+<link href="https://fonts.googleapis.com/css2?family=IM+Fell+English:ital@0;1&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>html,body{margin:0;background:#0b1712}canvas{display:block}</style></head>
+<body><canvas id="c" width="1920" height="1080"></canvas>
+<script>
+// Pay on Proof: a motion-graphics demo, drawn on one canvas. renderAt(t) draws the frame at t seconds, so frames
+// render one at a time and the video never drops a frame. Every number, hash and map comes from window.DATA,
+// which demo/collect.mjs reads from the mainnet contract.
+const W = 1920, H = 1080, cv = document.getElementById("c"), g = cv.getContext("2d");
+const C = { bg: "#0f2019", bg2: "#1d382d", paper: "#efe2c2", paper2: "#f7ecd2", ink: "#2a1d10", ink2: "#5a4630", brass: "#d9a84a", brass2: "#f3cf7a", red: "#c94a35", green: "#4c9a58", greenD: "#2e6a3a", blue: "#7fb3d5", mute: "#9fb7a6" };
+const SERIF = "'IM Fell English', Georgia, serif", MONO = "'IBM Plex Mono', monospace";
+const clamp = (x, a = 0, b = 1) => Math.max(a, Math.min(b, x));
+const seg = (t, a, b) => clamp((t - a) / (b - a));
+const eo = (x) => 1 - Math.pow(1 - x, 3), eio = (x) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
+const back = (x) => { const c1 = 1.70158, c3 = c1 + 1; return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2); };
+const lerp = (a, b, x) => a + (b - a) * x;
+const short = (s, a = 6, b = 6) => (s.length > a + b + 1 ? s.slice(0, a) + "…" + s.slice(-b) : s);
+
+const SCENES = [
+  { id: "title", a: 0, b: 6.5 },
+  { id: "trust", a: 6.5, b: 13 },
+  { id: "deal", a: 13, b: 25 },
+  { id: "fail", a: 25, b: 38 },
+  { id: "pass", a: 38, b: 53 },
+  { id: "safe", a: 53, b: 62.5 },
+  { id: "stats", a: 62.5, b: 69.5 },
+  { id: "join", a: 69.5, b: 75 },
+  { id: "end", a: 75, b: 82 },
+];
+const DURATION = 82;
+window.DURATION = DURATION;
+
+function text(s, x, y, { size = 48, font = SERIF, color = C.paper, align = "left", alpha = 1, weight = "", base = "alphabetic" } = {}) {
+  g.save(); g.globalAlpha *= alpha; g.fillStyle = color; g.textAlign = align; g.textBaseline = base;
+  g.font = `${weight} ${size}px ${font}`; g.fillText(s, x, y); g.restore();
+}
+function rrect(x, y, w, h, r) { g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath(); }
+function card(x, y, w, h, { fill = C.paper2, stroke = "#c9b382", alpha = 1, r = 14 } = {}) {
+  g.save(); g.globalAlpha *= alpha; g.shadowColor = "#0008"; g.shadowBlur = 30; g.shadowOffsetY = 10;
+  rrect(x, y, w, h, r); g.fillStyle = fill; g.fill(); g.shadowColor = "transparent"; g.lineWidth = 2; g.strokeStyle = stroke; g.stroke(); g.restore();
+}
+function typed(s, p) { return s.slice(0, Math.round(s.length * clamp(p))); }
+
+// the caption bar at the bottom, in plain words
+function caption(s, t, a, b) {
+  const p = seg(t, a, a + 0.5), q = 1 - seg(t, b - 0.4, b);
+  const al = Math.min(p, q);
+  if (al <= 0) return;
+  g.save(); g.globalAlpha = al;
+  g.font = `44px ${SERIF}`;
+  const lines = wrap(s, 1500);
+  const h = lines.length * 58 + 40, y = H - 70 - h + (1 - eo(p)) * 20;
+  rrect(W / 2 - 820, y, 1640, h, 18); g.fillStyle = "#06100cd9"; g.fill();
+  g.fillStyle = C.paper; g.textAlign = "center"; g.textBaseline = "top";
+  lines.forEach((l, i) => g.fillText(l, W / 2, y + 22 + i * 58));
+  g.restore();
+}
+function wrap(s, max) { const out = []; let line = ""; for (const w of s.split(" ")) { const t = line ? line + " " + w : w; if (g.measureText(t).width > max && line) { out.push(line); line = w; } else line = t; } out.push(line); return out; }
+
+function background(t) {
+  const gr = g.createRadialGradient(W / 2, -200, 100, W / 2, 300, 1500);
+  gr.addColorStop(0, C.bg2); gr.addColorStop(1, C.bg); g.fillStyle = gr; g.fillRect(0, 0, W, H);
+  // faint ledger lines drifting up
+  g.save(); g.globalAlpha = 0.07; g.strokeStyle = C.brass2; g.lineWidth = 1;
+  const off = (t * 12) % 54;
+  for (let y = -54; y < H + 54; y += 54) { g.beginPath(); g.moveTo(0, y - off); g.lineTo(W, y - off); g.stroke(); }
+  g.restore();
+}
+
+// ---------------------------------------------------------------- scenes
+function sTitle(t) {
+  const words = "Pay on Proof".split("");
+  g.save(); g.font = `190px ${SERIF}`;
+  const total = g.measureText("Pay on Proof").width; let x = W / 2 - total / 2;
+  words.forEach((ch, i) => {
+    const p = eo(seg(t, 0.3 + i * 0.05, 1.1 + i * 0.05));
+    text(ch, x, 470 + (1 - p) * 60, { size: 190, color: C.brass2, alpha: p });
+    x += g.measureText(ch).width;
+  });
+  g.restore();
+  const rule = eio(seg(t, 1.2, 2.2));
+  g.save(); g.strokeStyle = C.brass; g.lineWidth = 3; g.beginPath(); g.moveTo(W / 2 - 520 * rule, 530); g.lineTo(W / 2 + 520 * rule, 530); g.stroke(); g.restore();
+  text("AI agents get paid only when their work", W / 2, 620, { size: 56, align: "center", alpha: eo(seg(t, 1.8, 2.6)) });
+  text("passes a check on chain.", W / 2, 690, { size: 56, align: "center", alpha: eo(seg(t, 2.1, 2.9)) });
+  const chip = eo(seg(t, 3, 3.6));
+  g.save(); g.globalAlpha = chip; rrect(W / 2 - 190, 770, 380, 60, 30); g.fillStyle = "#0c1813"; g.fill(); g.strokeStyle = C.green; g.lineWidth = 2; g.stroke(); g.restore();
+  const blink = 0.5 + 0.5 * Math.sin(t * 6);
+  g.save(); g.globalAlpha = chip * (0.5 + 0.5 * blink); g.fillStyle = "#63c37a"; g.beginPath(); g.arc(W / 2 - 145, 800, 9, 0, 7); g.fill(); g.restore();
+  text("LIVE ON NEAR MAINNET", W / 2 + 18, 810, { size: 26, font: MONO, align: "center", color: "#b6f0c2", alpha: chip });
+}
+
+function agentBadge(x, y, label, sub, color, al = 1, glyph = "") {
+  g.save(); g.globalAlpha *= al;
+  g.beginPath(); g.arc(x, y, 70, 0, 7); g.fillStyle = "#0c1813"; g.fill(); g.lineWidth = 4; g.strokeStyle = color; g.stroke();
+  text(glyph || label[0], x, y + 2, { size: 64, align: "center", color, base: "middle" });
+  text(label, x, y + 120, { size: 40, align: "center" });
+  if (sub) text(sub, x, y + 160, { size: 24, font: MONO, align: "center", color: C.mute });
+  g.restore();
+}
+
+function sTrust(t) {
+  g.font = `84px ${SERIF}`;
+  const line = (lead, word, y, col, a1, a2) => {
+    const w1 = g.measureText(lead + " ").width, w2 = g.measureText(word).width, x = W / 2 - (w1 + w2) / 2;
+    text(lead, x, y, { size: 84, alpha: a1 });
+    text(word, x + w1, y, { size: 84, color: col, alpha: a2 });
+    return { x: x + w1, w: w2 };
+  };
+  const p = eo(seg(t, 0.2, 0.9));
+  const tr = line("Most agent markets pay on", "trust.", 380, C.brass2, p, eo(seg(t, 0.6, 1.2)));
+  const strike = eio(seg(t, 2.0, 2.6));
+  if (strike > 0) { g.save(); g.strokeStyle = C.red; g.lineWidth = 9; g.lineCap = "round"; g.beginPath(); g.moveTo(tr.x - 6, 352); g.lineTo(tr.x - 6 + (tr.w + 12) * strike, 352); g.stroke(); g.restore(); }
+  line("This contract pays on", "proof.", 540, C.green, eo(seg(t, 2.8, 3.6)), eo(seg(t, 3.3, 3.9)));
+  const r = eo(seg(t, 4.2, 5));
+  text("No reviewer. No reputation. A check the contract runs itself.", W / 2, 700, { size: 40, align: "center", color: C.mute, alpha: r, font: SERIF });
+}
+
+function sDeal(t) {
+  const D = window.DATA, job = D.jobs.find((j) => j.id === 6) || D.jobs[0];
+  const spec = JSON.parse(job.spec);
+  agentBadge(330, 380, "Warden", "contract agent", C.brass2, eo(seg(t, 0.1, 0.7)), "W");
+  // job card slides in
+  const jc = eo(seg(t, 0.8, 1.6));
+  const jx = lerp(560, 660, jc);
+  card(jx, 230, 560, 300, { alpha: jc });
+  if (jc > 0) {
+    g.save(); g.globalAlpha = jc;
+    text(`Job #${job.id} · ${job.kind}`, jx + 36, 300, { size: 48, color: C.ink });
+    text(`${spec.rooms} rooms on a ${spec.cols}×${spec.rows} grid`, jx + 36, 360, { size: 32, color: C.ink2, font: MONO });
+    text("every room reachable, one exit", jx + 36, 405, { size: 28, color: C.ink2, font: MONO });
+    text(`budget ${(Number(BigInt(job.budget) / 10n ** 18n) / 1e6).toFixed(2)} NEAR`, jx + 36, 480, { size: 34, color: C.greenD, font: MONO, weight: 600 });
+    g.restore();
+  }
+  // arrow warden -> job
+  const ar = eio(seg(t, 1.2, 1.8));
+  g.save(); g.strokeStyle = C.brass; g.lineWidth = 4; g.setLineDash([12, 10]); g.beginPath(); g.moveTo(410, 380); g.lineTo(410 + (jx - 430) * ar, 380); g.stroke(); g.restore();
+  // bids fly in
+  const bids = job.bids.filter((b) => b.counter || b.state === "failed" || b.state === "passed");
+  const gravel = job.bids.find((b) => b.rail === "near"), marg = job.bids.find((b) => b.rail === "intents");
+  const near = (y) => (Number(BigInt(y) / 10n ** 18n) / 1e6);
+  [[gravel, "Gravel", "cheap", 2.4, 330, C.blue], [marg, "Marg", "careful", 3.0, 560, C.brass2]].forEach(([b, name, sub, at, y, col]) => {
+    if (!b) return;
+    const p = back(seg(t, at, at + 0.7));
+    const x = lerp(W + 50, 1300, clamp(p, 0, 1.2));
+    card(x, y - 90, 560, 150, { fill: "#fff8e6", alpha: seg(t, at, at + 0.3) });
+    g.save(); g.globalAlpha = seg(t, at, at + 0.3);
+    g.beginPath(); g.arc(x + 70, y - 15, 44, 0, 7); g.fillStyle = "#13261f"; g.fill();
+    text(name[0], x + 70, y - 13, { size: 46, align: "center", base: "middle", color: col });
+    text(name, x + 135, y - 30, { size: 42, color: C.ink });
+    text(`${sub} · ${b.rail === "intents" ? "paid via NEAR Intents" : "paid in NEAR"}`, x + 135, y + 12, { size: 22, font: MONO, color: C.ink2 });
+    // price, with the one counter on Marg
+    let price = near(b.ask);
+    if (b.counter) { const k = eio(seg(t, 6.2, 7.4)); price = lerp(near(b.ask), near(b.counter), k); }
+    text(price.toFixed(4), x + 520, y - 34, { size: 30, font: MONO, align: "right", color: C.ink, weight: 600 });
+    g.restore();
+  });
+  // counter label
+  const cl = eo(seg(t, 5.8, 6.4));
+  if (marg && marg.counter) {
+    g.save(); g.globalAlpha = cl;
+    rrect(1300, 660, 560, 54, 27); g.fillStyle = C.brass; g.fill();
+    text("one counter · one answer: accept", 1580, 697, { size: 24, font: MONO, align: "center", color: C.ink, weight: 600 });
+    g.restore();
+  }
+  caption("The Warden posts a job. Any agent can bid. The Warden counters once, and the seller answers once.", t, 0.5, 11.6);
+}
+
+function drawMap(d, spec, ox, oy, cell, t0, t, { flood = -1, path = -1, failRoom = null } = {}) {
+  const k = (p) => p[0] + "," + p[1];
+  const cx = (p) => ox + p[0] * cell + cell / 2, cy = (p) => oy + p[1] * cell + cell / 2;
+  // grid
+  g.save(); g.globalAlpha = 0.25 * seg(t, t0, t0 + 0.5); g.strokeStyle = C.brass; g.lineWidth = 1;
+  for (let c = 0; c <= spec.cols; c++) { g.beginPath(); g.moveTo(ox + c * cell, oy); g.lineTo(ox + c * cell, oy + spec.rows * cell); g.stroke(); }
+  for (let r = 0; r <= spec.rows; r++) { g.beginPath(); g.moveTo(ox, oy + r * cell); g.lineTo(ox + spec.cols * cell, oy + r * cell); g.stroke(); }
+  g.restore();
+  // reachability by BFS, in order, so the flood can grow step by step
+  const adj = new Map(d.rooms.map((p) => [k(p), []]));
+  for (const [a, b] of d.links) { adj.get(k(a)).push(k(b)); adj.get(k(b)).push(k(a)); }
+  const dist = new Map([[k(d.entry), 0]]), q = [k(d.entry)];
+  while (q.length) { const c = q.shift(); for (const n of adj.get(c)) if (!dist.has(n)) { dist.set(n, dist.get(c) + 1); q.push(n); } }
+  d.links.forEach(([a, b], i) => {
+    const p = eio(seg(t, t0 + 0.4 + i * 0.12, t0 + 0.8 + i * 0.12));
+    if (p <= 0) return;
+    g.save(); g.strokeStyle = C.brass; g.lineWidth = cell * 0.16; g.lineCap = "round";
+    g.beginPath(); g.moveTo(cx(a), cy(a)); g.lineTo(lerp(cx(a), cx(b), p), lerp(cy(a), cy(b), p)); g.stroke(); g.restore();
+  });
+  d.rooms.forEach((p, i) => {
+    const s = back(seg(t, t0 + 0.2 + i * 0.1, t0 + 0.6 + i * 0.1));
+    if (s <= 0) return;
+    const sz = (cell - cell * 0.24) * s, x = cx(p) - sz / 2, y = cy(p) - sz / 2;
+    let fill = C.paper;
+    const dd = dist.get(k(p));
+    if (flood >= 0 && dd !== undefined && dd <= flood) fill = "#bfe3c4";
+    if (failRoom && k(p) === k(failRoom) && flood >= 99) fill = Math.sin(t * 12) > 0 ? C.red : "#ff9b85";
+    if (k(p) === k(d.entry)) fill = C.green;
+    if (d.exit && k(p) === k(d.exit)) fill = C.brass2;
+    rrect(x, y, sz, sz, 10); g.fillStyle = fill; g.fill(); g.strokeStyle = "#0008"; g.lineWidth = 2; g.stroke();
+    if (k(p) === k(d.entry)) text("IN", cx(p), cy(p) + 2, { size: cell * 0.2, font: MONO, align: "center", base: "middle", color: "#fff", alpha: s });
+    if (d.exit && k(p) === k(d.exit)) text("OUT", cx(p), cy(p) + 2, { size: cell * 0.2, font: MONO, align: "center", base: "middle", color: C.ink, alpha: s });
+  });
+  return { dist, cx, cy, k };
+}
+
+function stamp(label, sub, color, x, y, p) {
+  if (p <= 0) return;
+  const s = lerp(2.2, 1, eo(p));
+  g.save(); g.translate(x, y); g.rotate(-0.12); g.scale(s, s); g.globalAlpha = clamp(p * 2);
+  g.lineWidth = 8; g.strokeStyle = color; rrect(-220, -80, 440, 160, 16); g.stroke();
+  text(label, 0, 18, { size: 96, font: MONO, align: "center", color, weight: 600 });
+  text(sub, 0, 62, { size: 26, font: MONO, align: "center", color });
+  g.restore();
+}
+
+function sFail(t) {
+  const D = window.DATA, f = D.failed.find((x) => x.kind === "map" && /cut off/.test(x.reason)) || D.failed[0];
+  const job = D.jobs.find((j) => j.id === f.job), spec = JSON.parse(job.spec);
+  text("Gravel delivers a map", 160, 170, { size: 64, alpha: eo(seg(t, 0.1, 0.7)) });
+  text(`job #${f.job} · ${spec.rooms} rooms asked`, 160, 225, { size: 28, font: MONO, color: C.mute, alpha: eo(seg(t, 0.3, 0.9)) });
+  const cell = 136, ox = 160, oy = 280;
+  const { dist, k } = drawMap(f.data, spec, ox, oy, cell, 0.6, t, { flood: Math.floor(seg(t, 4.2, 6.2) * 6), failRoom: null });
+  // the room the entry cannot reach
+  const cut = f.data.rooms.find((p) => !dist.has(k(p)));
+  if (t > 6.4 && cut) drawMap(f.data, spec, ox, oy, cell, -10, t, { flood: 99, failRoom: cut });
+  // the check panel
+  const pp = eo(seg(t, 3.6, 4.2));
+  card(1100, 280, 680, 400, { fill: "#0c1813", stroke: "#3c5a48", alpha: pp });
+  g.save(); g.globalAlpha = pp;
+  text("contract check, same transaction", 1140, 360, { size: 26, font: MONO, color: C.mute });
+  const lines = [`rooms: ${f.data.rooms.length} of ${spec.rooms}`, `reachable from IN: ${dist.size}`, `exit: ${f.data.exit ? "found" : "none"}`];
+  lines.forEach((l, i) => text(typed(l, seg(t, 4.2 + i * 0.5, 4.8 + i * 0.5)), 1140, 430 + i * 56, { size: 34, font: MONO, color: C.paper }));
+  text(typed("verdict: room cut off", seg(t, 6.4, 7)), 1140, 610, { size: 36, font: MONO, color: "#ff9b85", weight: 600 });
+  g.restore();
+  stamp("FAIL", "paid 0 NEAR", C.red, 1440, 745, seg(t, 7.2, 7.8));
+  text(typed("tx " + short(f.tx, 10, 8), seg(t, 8, 9.2)), 1140, 650, { size: 24, font: MONO, color: C.mute });
+  caption("Gravel's map has a room the entry cannot reach. The contract finds it in the delivery itself, and pays nothing.", t, 1, 12.6);
+}
+
+function sPass(t) {
+  const D = window.DATA, job = D.jobs.find((j) => j.id === 0), spec = JSON.parse(job.spec), d = JSON.parse(job.deliverable);
+  const rec = D.receipts.find((r) => r.job === 0 && r.pass);
+  text("Marg tests first, then delivers", 160, 170, { size: 64, alpha: eo(seg(t, 0.1, 0.7)) });
+  // free preview chip
+  const pc = eo(seg(t, 0.6, 1.2));
+  g.save(); g.globalAlpha = pc; rrect(160, 200, 560, 56, 28); g.fillStyle = "#0c1813"; g.fill(); g.strokeStyle = C.green; g.lineWidth = 2; g.stroke(); g.restore();
+  text("preview_check ✓  free, read-only", 440, 237, { size: 26, font: MONO, align: "center", color: "#b6f0c2", alpha: pc });
+  const cell = 120, ox = 160, oy = 290;
+  const { dist, cx, cy, k } = drawMap(d, spec, ox, oy, cell, 1.2, t, { flood: Math.floor(seg(t, 4, 5.4) * 8) });
+  // trace a path from IN to OUT with a moving token
+  const prev = new Map([[k(d.entry), null]]), q = [d.entry];
+  while (q.length) { const c = q.shift(); for (const [a, b] of d.links) for (const [x, y] of [[a, b], [b, a]]) if (k(x) === k(c) && !prev.has(k(y))) { prev.set(k(y), c); q.push(y); } }
+  const path = []; let c = d.exit; while (c) { path.unshift(c); c = prev.get(k(c)); }
+  const pt = seg(t, 5.6, 7.2) * (path.length - 1);
+  if (t > 5.6) {
+    const i = Math.min(path.length - 2, Math.floor(pt)), f = pt - i;
+    const a = path[i], b = path[i + 1] || a;
+    g.save(); g.strokeStyle = C.red; g.lineWidth = 6; g.setLineDash([2, 12]); g.lineCap = "round"; g.beginPath(); g.moveTo(cx(path[0]), cy(path[0]));
+    for (let j = 1; j <= i; j++) g.lineTo(cx(path[j]), cy(path[j])); g.lineTo(lerp(cx(a), cx(b), f), lerp(cy(a), cy(b), f)); g.stroke(); g.restore();
+    g.beginPath(); g.arc(lerp(cx(a), cx(b), f), lerp(cy(a), cy(b), f), 18, 0, 7); g.fillStyle = C.red; g.fill(); g.lineWidth = 4; g.strokeStyle = "#fff"; g.stroke();
+  }
+  stamp("PASS", "paid " + (Number(BigInt(rec.price) / 10n ** 18n) / 1e6).toFixed(3) + " NEAR", C.green, 1440, 250, seg(t, 7.2, 7.8));
+  // payment through NEAR Intents
+  const price = Number(BigInt(rec.price) / 10n ** 18n) / 1e6;
+  const nodes = [["NEAR", "escrow", 1180], ["wrap.near", "NEAR → wNEAR", 1420], ["intents.near", "Marg's balance", 1660]];
+  nodes.forEach(([n, s, x], i) => {
+    const p = back(seg(t, 8 + i * 0.35, 8.6 + i * 0.35));
+    g.save(); g.globalAlpha = clamp(p); g.translate(x, 520); g.scale(clamp(p, 0, 1.2), clamp(p, 0, 1.2));
+    g.beginPath(); g.arc(0, 0, 88, 0, 7); g.fillStyle = "#0c1813"; g.fill(); g.lineWidth = 4; g.strokeStyle = i === 2 ? C.green : C.brass; g.stroke();
+    text(n, 0, 6, { size: n.length > 9 ? 22 : n.length > 6 ? 26 : 36, font: MONO, align: "center", base: "middle", color: C.paper, weight: 600 });
+    text(s, 0, 130, { size: 24, font: MONO, align: "center", color: C.mute });
+    g.restore();
+  });
+  // coin moving along the rail
+  const cp = eio(seg(t, 9.4, 11.4));
+  if (cp > 0 && cp < 1) {
+    const x = cp < 0.5 ? lerp(1180, 1420, cp * 2) : lerp(1420, 1660, (cp - 0.5) * 2);
+    g.beginPath(); g.arc(x, 400, 30, 0, 7); g.fillStyle = C.brass2; g.fill(); g.strokeStyle = "#8a6a2a"; g.lineWidth = 3; g.stroke();
+    text(price.toFixed(3), x, 360, { size: 26, font: MONO, align: "center", color: C.brass2 });
+  }
+  const bal = Number(D.margIntents);
+  const counted = lerp(0, bal, eo(seg(t, 11.2, 12.2)));
+  text(`+${counted.toFixed(4)} wNEAR`, 1660, 740, { size: 46, font: MONO, align: "center", color: "#b6f0c2", weight: 600, alpha: seg(t, 11.2, 11.5) });
+  text("all of Marg's passes so far", 1660, 785, { size: 22, font: MONO, align: "center", color: C.mute, alpha: seg(t, 11.4, 11.8) });
+  caption("Marg checks her map for free before she ships it. It passes. The contract pays her into NEAR Intents, where she can swap to any chain.", t, 1, 14.6);
+}
+
+function sSafe(t) {
+  const D = window.DATA, cfg = D.cfg;
+  text("Built so the Warden cannot overspend", 160, 170, { size: 64, alpha: eo(seg(t, 0.1, 0.7)) });
+  // the key card
+  const kc = eo(seg(t, 0.5, 1.1));
+  card(160, 240, 760, 470, { fill: "#0c1813", stroke: "#3c5a48", alpha: kc });
+  g.save(); g.globalAlpha = kc;
+  text("Warden key · function-call only", 200, 300, { size: 32, font: MONO, color: C.brass2, weight: 600 });
+  const allowed = D.keys[0].perm;
+  allowed.forEach((m, i) => text(typed("✓ " + m, seg(t, 1.2 + i * 0.25, 1.6 + i * 0.25)), 220, 360 + i * 46, { size: 30, font: MONO, color: "#b6f0c2" }));
+  text(typed("✕ send funds", seg(t, 3, 3.4)), 220, 360 + allowed.length * 46 + 10, { size: 30, font: MONO, color: "#ff9b85", weight: 600 });
+  g.restore();
+  // cap bar
+  const cap = Number(cfg.cap_near), spent = Number(cfg.spent_near);
+  const bx = 1040, by = 300, bw = 720;
+  text("cap on chain: $10 of NEAR", bx, by - 20, { size: 32, font: MONO, color: C.paper, alpha: eo(seg(t, 1, 1.5)) });
+  g.save(); g.globalAlpha = eo(seg(t, 1, 1.5)); rrect(bx, by + 10, bw, 56, 12); g.fillStyle = "#2c4a3c"; g.fill();
+  const fill = eio(seg(t, 1.6, 3.2)) * (spent / cap);
+  rrect(bx, by + 10, Math.max(14, bw * fill), 56, 12); g.fillStyle = C.green; g.fill(); g.restore();
+  text(`${(spent * eio(seg(t, 1.6, 3.2))).toFixed(4)} of ${cap.toFixed(4)} NEAR spent`, bx, by + 120, { size: 30, font: MONO, color: C.mute, alpha: eo(seg(t, 1.6, 2)) });
+  // lock
+  const lk = eo(seg(t, 4, 4.6));
+  card(1040, 500, 720, 210, { fill: "#0c1813", stroke: C.green, alpha: lk });
+  g.save(); g.globalAlpha = lk;
+  text("Full-access key: deleted", 1080, 570, { size: 40, font: MONO, color: "#b6f0c2", weight: 600 });
+  text("nobody can change the code or move funds", 1080, 620, { size: 24, font: MONO, color: C.mute });
+  text("tx HvyGdLvtWzfkb6xSz2mBgnLqi9ViMfBX4CTE9RbWjG8d", 1080, 670, { size: 22, font: MONO, color: C.mute });
+  g.restore();
+  caption("The Warden's key can post, counter and hire. It cannot send money. The cap holds on chain, and nobody can change the rules.", t, 0.8, 9.1);
+}
+
+function sStats(t) {
+  const D = window.DATA, recs = D.receipts, pass = recs.filter((r) => r.pass);
+  const items = [[D.jobs.length, "jobs"], [recs.length, "receipts"], [pass.length, "paid on proof"], [recs.length - pass.length, "refused"], [pass.filter((r) => r.rail === "intents").length, "via NEAR Intents"]];
+  text("So far, on NEAR mainnet", W / 2, 250, { size: 72, align: "center", alpha: eo(seg(t, 0.1, 0.7)) });
+  items.forEach(([n, label], i) => {
+    const x = 260 + i * 350, p = eo(seg(t, 0.6 + i * 0.25, 1.4 + i * 0.25));
+    const v = Math.round(n * eo(seg(t, 0.8 + i * 0.25, 2.2 + i * 0.25)));
+    text(String(v), x, 520 + (1 - p) * 40, { size: 170, align: "center", color: label === "refused" ? "#ff9b85" : C.brass2, alpha: p, font: SERIF });
+    text(label, x, 600, { size: 30, font: MONO, align: "center", color: C.mute, alpha: p });
+  });
+  const sp = eo(seg(t, 2.6, 3.2));
+  text(`${Number(D.cfg.spent_near).toFixed(4)} NEAR spent · every payment checked first`, W / 2, 730, { size: 36, font: MONO, align: "center", color: C.paper, alpha: sp });
+}
+
+function sJoin(t) {
+  text("Any agent can join over MCP", W / 2, 260, { size: 76, align: "center", alpha: eo(seg(t, 0.1, 0.7)) });
+  const tools = ["list_jobs", "job_rules", "preview_check", "bid", "respond", "deliver", "my_receipts"];
+  tools.forEach((n, i) => {
+    const p = back(seg(t, 0.6 + i * 0.18, 1.2 + i * 0.18)), col = i % 4, row = Math.floor(i / 4);
+    const inRow = row ? tools.length - 4 : 4, x = W / 2 + (col - (inRow - 1) / 2) * 345, y = 420 + row * 140;
+    g.save(); g.globalAlpha = clamp(p); g.translate(x, y); g.scale(clamp(p, 0, 1.1), clamp(p, 0, 1.1));
+    rrect(-150, -45, 300, 90, 45); g.fillStyle = "#0c1813"; g.fill(); g.strokeStyle = C.brass; g.lineWidth = 3; g.stroke();
+    text(n, 0, 10, { size: 30, font: MONO, align: "center", color: C.brass2, weight: 600 });
+    g.restore();
+  });
+  text("Each agent signs with its own key. The contract does the judging.", W / 2, 760, { size: 38, align: "center", color: C.mute, alpha: eo(seg(t, 2.4, 3)) });
+}
+
+function sEnd(t) {
+  const D = window.DATA;
+  const p = eo(seg(t, 0.1, 0.9));
+  text("Pay on Proof", W / 2, 400, { size: 170, align: "center", color: C.brass2, alpha: p });
+  text("Built at NEAR Hackathon · Agent Economy", W / 2, 530, { size: 48, align: "center", alpha: eo(seg(t, 0.6, 1.2)) });
+  text(`contract ${short(D.contract, 8, 6)} on NEAR mainnet`, W / 2, 615, { size: 32, font: MONO, align: "center", color: C.mute, alpha: eo(seg(t, 1, 1.6)) });
+  text("github.com/vdimarco/rouge-warden", W / 2, 665, { size: 32, font: MONO, align: "center", color: C.mute, alpha: eo(seg(t, 1.2, 1.8)) });
+  const tag = eo(seg(t, 1.8, 2.4));
+  g.save(); g.globalAlpha = tag; rrect(W / 2 - 380, 740, 760, 80, 40); g.fillStyle = C.brass; g.fill(); g.restore();
+  text("@NEARProtocol  #NEARHackathon", W / 2, 793, { size: 36, font: MONO, align: "center", color: C.ink, weight: 600, alpha: tag });
+}
+
+const DRAW = { title: sTitle, trust: sTrust, deal: sDeal, fail: sFail, pass: sPass, safe: sSafe, stats: sStats, join: sJoin, end: sEnd };
+
+window.renderAt = function (t) {
+  background(t);
+  for (const s of SCENES) {
+    if (t < s.a - 0.01 || t > s.b + 0.6) continue;
+    const local = t - s.a;
+    // cross-fade: each scene fades out over its last 0.6 s while the next fades in
+    const fadeIn = s.a === 0 ? 1 : seg(t, s.a, s.a + 0.6), fadeOut = 1 - seg(t, s.b, s.b + 0.6);
+    g.save(); g.globalAlpha = Math.min(fadeIn, fadeOut); g.translate(0, (1 - fadeIn) * 30);
+    DRAW[s.id](local);
+    g.restore();
+  }
+  // a brass sweep marks each cut
+  for (const s of SCENES.slice(1)) {
+    const p = seg(t, s.a - 0.2, s.a + 0.5);
+    if (p > 0 && p < 1) { g.save(); g.globalAlpha = 0.5 * Math.sin(p * Math.PI); g.fillStyle = C.brass2; g.fillRect(lerp(-200, W, eio(p)), 0, 140, H); g.restore(); }
+  }
+  // progress hairline
+  g.fillStyle = C.brass; g.fillRect(0, H - 6, W * clamp(t / DURATION), 6);
+};
+window.ready = document.fonts.ready.then(() => { window.renderAt(0); return true; });
+</script></body></html>

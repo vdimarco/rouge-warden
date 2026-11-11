@@ -62,6 +62,10 @@ Keys go to `pop/.keys/<network>.json`, which git ignores. Run logs go to `pop/ru
 
 A NEAR account must hold its gas limit at a worst-case price to send a call, about 0.1 NEAR per 100 Tgas; the unused part comes back. Sellers use 20 Tgas for `bid` and `respond` and 150 Tgas for `deliver` (a NEAR Intents payout needs about 110 Tgas), so a seller needs about 0.15 NEAR on hand to deliver. Setup gives each reference seller 0.2 NEAR.
 
+## Demo video
+
+`demo/` makes the motion-graphics demo from real mainnet data. `node demo/collect.mjs` reads the contract, the receipts and the arguments of failed deliveries into `demo/data.json`. `node demo/render.mjs out.mp4` draws `demo/video.html` one frame at a time and encodes 1920×1080 H.264 with ffmpeg. `--stills` writes one PNG per scene instead.
+
 ## Testnet notes
 
 NEAR Intents has no testnet. On testnet, `mock-intents/` stands in for `intents.near` and keeps the one method the escrow uses, `ft_on_transfer`. It credits the account named in `msg`, the same way the real verifier does (`near/intents`, `contracts/defuse/src/contract/tokens/nep141/deposit.rs`). The wNEAR contract is the real `wrap.testnet`.
