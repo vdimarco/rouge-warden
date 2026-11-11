@@ -41,15 +41,57 @@ function newSeason() {
   render();
 }
 
+/* ------------------------------------------------------------------ full screen */
+// The page fills the window by itself (style.css). This is the browser's own full screen mode, which also hides
+// the browser's bars. A browser allows it only from a tap, a click or a key, so the two Start buttons ask for
+// it and the Full screen button turns it on and off. The button's choice is kept in 'ledger.fullscreen'.
+// A browser with no full screen mode for pages (Safari on an iPhone) keeps the button hidden.
+const FS = {
+  root: document.documentElement,
+  can() { return !!(document.fullscreenEnabled || document.webkitFullscreenEnabled) && !!(this.root.requestFullscreen || this.root.webkitRequestFullscreen); },
+  on() { return !!(document.fullscreenElement || document.webkitFullscreenElement); },
+  wanted() { try { return localStorage.getItem("ledger.fullscreen") !== "off"; } catch { return true; } },
+  save(on) { try { localStorage.setItem("ledger.fullscreen", on ? "on" : "off"); } catch { /* storage blocked */ } },
+  enter() {
+    if (!this.can() || this.on()) return;
+    try {
+      const p = this.root.requestFullscreen ? this.root.requestFullscreen({ navigationUI: "hide" }) : this.root.webkitRequestFullscreen();
+      if (p && p.catch) p.catch(() => {});
+    } catch { /* not allowed here */ }
+  },
+  leave() {
+    if (!this.on()) return;
+    try {
+      const p = (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+      if (p && p.catch) p.catch(() => {});
+    } catch { /* already out */ }
+  },
+  wire() {
+    const btn = $("#fs");
+    if (!this.can()) return;
+    btn.hidden = false;
+    btn.addEventListener("click", () => { const go = !this.on(); this.save(go); if (go) this.enter(); else this.leave(); });
+    const show = () => btn.setAttribute("aria-pressed", String(this.on()));
+    document.addEventListener("fullscreenchange", show);
+    document.addEventListener("webkitfullscreenchange", show);
+    show();
+  },
+};
+window.__ledger.FS = FS;
+
 /* ------------------------------------------------------------------ controls */
 function wire() {
-  $("#start").addEventListener("click", () => { $("#title").close(); focusFirst(); });
-  $("#start-auto").addEventListener("click", () => { $("#title").close(); setAuto(true); });
+  FS.wire();
+  $("#start").addEventListener("click", () => { $("#title").close(); if (FS.wanted()) FS.enter(); focusFirst(); });
+  $("#start-auto").addEventListener("click", () => { $("#title").close(); if (FS.wanted()) FS.enter(); setAuto(true); });
   $("#auto").addEventListener("click", () => setAuto(!app.auto));
   $("#next").addEventListener("click", () => deliverNext());
   $("#endday").addEventListener("click", () => closeDay(true));
   $("#export").addEventListener("click", exportReceipts);
   $("#summary-go").addEventListener("click", nextDay);
+  // Esc closes the summary too, and Esc is also the key that leaves full screen. A closed day has no other
+  // way forward, so a summary closed that way goes on to the next day.
+  $("#summary").addEventListener("close", () => { if (app.S.day.closed) nextDay(); });
   for (const b of document.querySelectorAll(".tab")) b.addEventListener("click", () => { app.tab = b.dataset.tab; render(); });
   $("#tasks").addEventListener("click", (ev) => {
     const btn = ev.target.closest("button[data-act]");
@@ -86,6 +128,7 @@ async function deliverNext() {
   const bid = t.bids.find((b) => b.id === t.hire.bid), agent = E.agentById(t.hire.agent);
   app.last = { t, agent, check: t.check, delivery: t.delivery, payment: null, paying: t.check.pass, hire: { ...t.hire } };
   render();
+  $("#pane-board").scrollTop = 0; // the delivery shows at the top of the board, which scrolls by itself on a wide screen
   let payment = null;
   if (t.check.pass) {
     payment = await pay({ asset: bid.asset, amount: bid.price, recipient: agent.recipient, online: app.online });

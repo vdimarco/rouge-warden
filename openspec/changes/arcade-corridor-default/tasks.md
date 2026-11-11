@@ -9,6 +9,7 @@
 - [x] Add the Order control (Arcade, Newest, Updated), with dates baked from `public/arcade/game-dates.json` by the import script and refreshed by the page
 - [x] Add Corridor cabinets for Lake Brawl (08, Cottage) and Eleven Wells (40, The Lab): art, entries, counts and light slots
 - [x] Check both cabinets in `qa/arcade/machines.mjs` (files) and `qa/arcade/corridor-cabinets.e2e.mjs` (index, walk, panel, Play) at 1280 and 390
-- [ ] Add the same two entries to the Corridor source (`afterglow-corridor`), which is outside this repository, before the next import
+- [x] Add the Corridor cabinet for Warden's Ledger (42 of 43, the last of The Lab), its entry in `public/arcade/game-dates.json` and its baked dates, with the same two checks (`ONLY=ledger` runs the browser check for this cabinet alone)
+- [ ] Add the same three entries to the Corridor source (`afterglow-corridor`), which is outside this repository, before the next import
 - [ ] Check on a phone: touch scrolling through the Corridor and its frame rate
 - [ ] The OpenSpec CLI is not installed, so `openspec validate` could not run

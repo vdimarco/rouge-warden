@@ -126,16 +126,22 @@ for (const { id } of JSON.parse(read("higgsfield/arcade-key-art.json")).art) {
   const b = fs.existsSync(f) ? fs.readFileSync(f) : Buffer.alloc(0);
   check(b.length > 0 && b.length < 100 * 1024 && b.toString("latin1", 0, 4) === "RIFF" && b.toString("latin1", 8, 12) === "WEBP", `arcade/key/${id}.webp is a WebP under 100 KB (${(b.length / 1024).toFixed(1)} KB)`);
 }
-/* ---------------- Lake Brawl and Eleven Wells in the Corridor (openspec/changes/arcade-corridor-default) ---------------- */
+/* ---------------- Lake Brawl, Eleven Wells and Warden's Ledger in the Corridor (openspec/changes/arcade-corridor-default) ---------------- */
 {
   const walk = read("public/corridor/index.html");
   const pieces = [...walk.slice(walk.indexOf("const PIECES = ["), walk.indexOf("const COUNT = PIECES.length;")).matchAll(/\{ n: '(\d\d)', title: "([^"]+)"[^\n]*kind: "([^"]+)"[^\n]*url: "([^"]+)"/g)].map((m) => ({ n: m[1], title: m[2], kind: m[3], url: m[4] }));
   const dates = JSON.parse(read("public/arcade/game-dates.json")).games;
-  // each cabinet stands at the end of its group: the next cabinet, if there is one, starts another group
-  for (const g of [{ id: "lake-brawl", title: "Lake Brawl", kind: "Cottage", art: "lake_brawl" }, { id: "eleven-wells", title: "Eleven Wells", kind: "THE LAB", art: "eleven_wells" }]) {
+  // each cabinet stands in its group, right after the cabinet named here. The newest of a group is its last:
+  // the next cabinet, if there is one, starts another group
+  const ADDED = [
+    { id: "lake-brawl", title: "Lake Brawl", kind: "Cottage", art: "lake_brawl", after: "Table Tennis", last: true },
+    { id: "eleven-wells", title: "Eleven Wells", kind: "THE LAB", art: "eleven_wells", after: "Orbital Gardener" },
+    { id: "ledger", title: "Warden's Ledger", kind: "THE LAB", art: "ledger", after: "Eleven Wells", last: true },
+  ];
+  for (const g of ADDED) {
     const url = `/${g.id}/`, at = pieces.findIndex((p) => p.url === url), p = pieces[at], prev = pieces[at - 1], next = pieces[at + 1];
-    check(at > 0 && p.title === g.title && p.kind === g.kind && prev.kind === g.kind && (!next || next.kind !== g.kind),
-      `the Corridor's ${g.title} cabinet opens ${url} and is the last of ${g.kind} (${at >= 0 ? "number " + p.n + ", after " + prev.title : "missing"})`);
+    check(at > 0 && p.title === g.title && p.kind === g.kind && prev.kind === g.kind && prev.title === g.after && (!g.last || !next || next.kind !== g.kind),
+      `the Corridor's ${g.title} cabinet opens ${url} and stands in ${g.kind} after ${g.after}${g.last ? ", the last of its group" : ""} (${at >= 0 ? "number " + p.n + ", after " + prev.title : "missing"})`);
     check(new RegExp(`\\{ id: "${g.id}", name: "${g.title}", [^\\n]*url: "${url}"`).test(sw), `${g.title}'s Corridor cabinet has the title and route of its switcher entry`);
     // the screen: an inline WebP, 448 by 370
     const b = Buffer.from((walk.match(new RegExp(`^ +${g.art}: 'data:image/webp;base64,([^']+)',$`, "m")) || ["", ""])[1], "base64");
