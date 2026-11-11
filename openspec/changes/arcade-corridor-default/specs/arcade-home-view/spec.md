@@ -44,3 +44,14 @@ The Corridor SHALL show a step bar with Previous cabinet and Next cabinet button
 #### Scenario: Phone
 - **WHEN** a cabinet is open at 320×640
 - **THEN** Insert coin · Play is on screen without scrolling
+
+### Requirement: The Corridor can be ordered by date
+The Corridor SHALL offer an Order control at the end of its category strip with Arcade, Newest and Updated. Arcade SHALL keep the category order. Newest SHALL order the cabinets by the day each game was added, newest first, and Updated by the day each game last changed, most recent first, using `public/arcade/game-dates.json`. The choice SHALL be stored under `corridor-order` and applied on later visits. A dated order SHALL show each game's day as "Added Sep 12" or "Updated Oct 10" and SHALL hide the section signs. Changing the order SHALL start the walk at its first cabinet.
+
+#### Scenario: Recently updated
+- **WHEN** a visitor selects Updated
+- **THEN** the walk restarts with the most recently changed game first, and its caption reads Updated plus that day
+
+#### Scenario: The choice persists
+- **WHEN** that visitor opens the Corridor again
+- **THEN** Updated is still selected and the order is the same
