@@ -69,7 +69,8 @@ button { font-family: inherit; touch-action: manipulation; }
   align-items: center;
   gap: 10px;
   padding: 0 14px;
-  z-index: 6;
+  /* above the start and end cards (20 and 25), like the mute and chat buttons, so the arcade link can be tapped over them */
+  z-index: 30;
 }
 #topbar h1 {
   margin: 0;

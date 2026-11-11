@@ -300,6 +300,9 @@ button { font: inherit; color: inherit; }
 .cab.group .door small { font-size: 12px; line-height: 1.45; color: var(--muted); text-wrap: balance; }
 /* the way back to the hall sits in the tray, beside the machine picker, so it never covers a cabinet */
 .where { display: flex; align-items: center; gap: 10px; }
+/* on a narrow phone the machine list gets narrower, so the way back and the count stay inside the window */
+.where, .where .machine-picker, .where select { min-width: 0; }
+.where .back, #machineCount { flex-shrink: 0; }
 #machineCount { white-space: nowrap; }
 @media (max-width: 760px) { #machineCount .grp { display: none; } }
 .back { min-height: 44px; padding: 10px 14px; border-radius: 10px; border: 1px solid var(--gold); background: rgba(20, 12, 36, 0.85); font-family: var(--pixel); font-size: 12px; color: var(--gold); cursor: pointer; white-space: nowrap; }

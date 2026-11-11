@@ -464,6 +464,9 @@ if (chromium) {
       const first = await sel(page);
       await page.selectOption("#machinePicker", ids[n - 1]); await settle(page);
       check(first === 0 && await sel(page) === n - 1, `${tag}: the machine list goes to the first machine and to the last`);
+      // the way back, the machine list and the count under the machines stay whole inside the window
+      const out = await page.evaluate(() => ["#backBtn", "#machinePicker", "#machineCount"].map((q) => [q, document.querySelector(q).getBoundingClientRect()]).filter(([, b]) => b.left < -1 || b.right > innerWidth + 1).map(([q, b]) => `${q} ${Math.round(b.left)} to ${Math.round(b.right)}`));
+      check(out.length === 0, `${tag}: the back button, the machine list and the count are inside the window${out.length ? " (" + out.join(", ") + " of " + width + ")" : ""}`);
     }
     await page.keyboard.press("ArrowRight"); await settle(page);
     await within(page.mouse.move(width / 2, box.stage.t + 40), 15000, "the mouse move over the row did not end"); await settle(page);
@@ -812,13 +815,9 @@ if (chromium) {
     let outside = 0, stops = 0, seen = new Set();
     for (let i = 0; i < 70; i++) {
       await page.keyboard.press("Tab");
-      // the row slides to the new machine: wait until the focused control stops moving
-      for (let k = 0, prev = null; k < 30; k++) {
-        const x = await page.evaluate(() => Math.round(document.activeElement.getBoundingClientRect().left * 10));
-        if (x === prev) break;
-        prev = x;
-        await page.waitForTimeout(100);
-      }
+      // the row slides to the new machine: wait until the slide has ended. Two equal reads of the control's place 100 ms apart
+      // are no proof: a software GPU can draw no frame in that time, and the control then reads as still while the row moves.
+      await settle(page);
       const r = await page.evaluate(() => { const a = document.activeElement, b = a.getBoundingClientRect(); const cab = a.closest(".cab"); return { left: b.left, right: b.right, vw: innerWidth, game: cab ? cab.dataset.game || cab.dataset.opens : "", on: cab ? cab.classList.contains("on") : true, scroll: document.querySelector(".room").scrollLeft }; });
       stops++;
       if (r.game) seen.add(r.game);
