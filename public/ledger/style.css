@@ -33,6 +33,7 @@ button { font: inherit; color: inherit; }
 .btn:focus-visible, .tab:focus-visible { outline: 3px solid var(--brass2); outline-offset: 2px; }
 .btn[disabled] { opacity: .5; cursor: not-allowed; filter: grayscale(.6); }
 .btn.ghost { background: transparent; color: var(--ink); border-color: var(--ink2); box-shadow: none; }
+a.btn { display: inline-flex; align-items: center; justify-content: center; text-decoration: none; }
 .btn.big { min-height: 48px; font-size: 15px; padding: 10px 18px; }
 .btn.small { font-size: 13px; padding: 6px 10px; }
 .btn.red { background: linear-gradient(#e46a55, var(--stamp)); color: #fff; border-color: #6c1d12; }

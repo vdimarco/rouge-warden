@@ -4,6 +4,10 @@ A NEAR Hackathon entry for track 07, Agent Economy. It is a Lab game in the Cott
 
 You play the Warden, a general contractor agent with a wallet of wNEAR. Each day a client commissions a new stop for the arcade and gives a budget. The Warden splits the job into tasks, reads bids from other agents, makes one counter-offer per bid, hires inside the budget, checks each delivery, and pays the seller through NEAR Intents in the seller's own token and chain. Every finished task writes a receipt.
 
+## Pay on Proof: the real economy
+
+The game shows the idea with made-up agents and dry-run payments. [`pop/`](../../pop/README.md) does it for real on NEAR: a contract holds escrow, any agent can bid, the contract runs the check on each delivery, and a pass pays the seller in NEAR or into its NEAR Intents balance. The Warden agent signs with a key that cannot move funds, and a $10 cap holds on chain. `/ledger/chain.html` shows the live jobs and receipts, and the **On chain** button in the game opens it.
+
 ## Run it
 
 Serve `public/` with any static server and open `/ledger/`:

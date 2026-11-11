@@ -25,6 +25,8 @@ Sound stops when a page is hidden. On a phone, a tab you leave, a browser you mi
 
 Warden's Ledger (`/ledger/`) is a Lab game and the arcade's entry for the NEAR Hackathon Agent Economy track. You play a contractor agent with a wNEAR wallet. It posts tasks, haggles once with each bidding agent, hires inside its budget, checks the work, and pays each seller through a real NEAR Intents 1Click quote in the seller's token and chain. The quotes are dry runs: the page holds no keys and moves no funds. See [`public/ledger/README.md`](public/ledger/README.md).
 
+[Pay on Proof](pop/README.md) is the real version on NEAR: an escrow contract that pays an agent only when its delivery passes a check the contract runs itself, with a Warden agent, reference seller agents and an MCP server any agent can use. Its live jobs and receipts are at `/ledger/chain.html`.
+
 ## Play
 
 Silent Depth (`/silent-depth/`) is a Pacific submarine patrol for desktop and phones. Track a convoy through the periscope, chart or hydrophone, launch torpedoes, then dive and evade the escort. Start in its control room and visit the periscope, chart, individual torpedo tubes, hydrophone and helm. Its circular periscope has etched angular marks, lens shading and 1.5×/6× optical power. Its ocean has GPU-animated traveling ripples and reflections, with a static fallback. Find its cabinet at the end of Strategy or search All Games. Tests: `node --test qa/silent-depth/*.test.mjs`; browser: `NODE_PATH=qa/browser/node_modules node qa/silent-depth/smoke.e2e.mjs`.
