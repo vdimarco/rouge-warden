@@ -713,7 +713,7 @@ if (chromium) {
   for (const [width, height] of PARTS.includes("firstbreath") ? [[390, 844], [320, 700], [1280, 720]] : []) {
     await relaunch();
     const tag = `${width}x${height} First Breath`;
-    const { ctx, page, errors, moves } = await open(browser, { width, height });
+    let { ctx, page, errors, moves } = await open(browser, { width, height });
     const hall = await page.$$eval(SHOWN, (cs) => cs.map((c) => c.dataset.opens || c.dataset.game));
     check(hall.join() === "cottage,action,ascii,strategy,gta,lab", `${tag}: the hall still shows the six groups in order (${hall.join(", ")})`);
     await enter(page, "action");
@@ -751,10 +751,13 @@ if (chromium) {
     const t0 = Date.now();
     while (!moves.length && Date.now() - t0 < 6000) await page.waitForTimeout(50);
     check(started && moves.length === 1 && moves[0].replace(/#.*$/, "") === "/first-breath/", `${tag}: START goes to /first-breath/ (went to ${moves.join(",") || "nowhere"}${started ? "" : "; START could not be clicked"})`);
-    // START began a page change that the test stopped. A player never has a page change stopped, and a hash change soon after
-    // one sometimes left headless Chromium drawing no more frames, so settle() waited for ever. Go on from a fresh arcade page.
-    await page.goto(BASE + "?machines");
-    await page.waitForSelector(".cab.on");
+    // START began a page change that the test stopped. A player never has a page change stopped, and after one the software GPU
+    // sometimes drew no more frames for that tab, even for a new page loaded in it, so settle() waited for ever (3 of 15 runs).
+    // Go on in a fresh browser, and keep the page errors seen so far.
+    const seen = errors;
+    await relaunch();
+    ({ ctx, page, errors, moves } = await open(browser, { width, height }));
+    errors.unshift(...seen);
     // the other groups keep their machines and their order
     for (const [g, want] of Object.entries(OTHERS)) {
       await enter(page, g);
