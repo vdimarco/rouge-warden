@@ -7,6 +7,7 @@
 - [x] Run `qa/arcade/groups.e2e.mjs`, `qa/arcade/voting.e2e.mjs` and `qa/arcade/machines.mjs` to confirm the hall is unchanged, with `corridor` listed as not a game
 - [x] Import the Corridor's step bar, scroll cue, click-to-walk, monitor key art and phone layout
 - [x] Add the Order control (Arcade, Newest, Updated), with dates baked from `public/arcade/game-dates.json` by the import script and refreshed by the page
+- [x] Make the Order control three buttons at the right end of the category strip, under All games, with the current order pressed; check them with `qa/arcade/corridor-order.e2e.mjs`
 - [x] Add Corridor cabinets for Lake Brawl (08, Cottage) and Eleven Wells (40, The Lab): art, entries, counts and light slots
 - [x] Check both cabinets in `qa/arcade/machines.mjs` (files) and `qa/arcade/corridor-cabinets.e2e.mjs` (index, walk, panel, Play) at 1280 and 390
 - [x] Add the Corridor cabinet for Warden's Ledger (42 of 43, the last of The Lab), its entry in `public/arcade/game-dates.json` and its baked dates, with the same two checks (`ONLY=ledger` runs the browser check for this cabinet alone)
