@@ -21,7 +21,8 @@ jobs:
       fail-fast: false
       matrix:
         viewport: [desktop, portrait, landscape, small-phone]
-    runs-on: ubuntu-latest
+    # Pinned: ubuntu-latest became Ubuntu 26.04, where Playwright 1.51 refuses to install Chromium.
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4

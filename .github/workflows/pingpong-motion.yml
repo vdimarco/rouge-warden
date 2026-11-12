@@ -9,7 +9,8 @@ permissions:
   contents: read
 jobs:
   phone-motion:
-    runs-on: ubuntu-latest
+    # Pinned: ubuntu-latest became Ubuntu 26.04, where Playwright 1.51 refuses to install Chromium.
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
