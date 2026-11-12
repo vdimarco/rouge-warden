@@ -1,8 +1,7 @@
 // HUD details in Shore of the Ancients, checked in Chromium at a desktop, an upright phone and a phone on its side:
-// - the skill card: a mouse over a skill (or a tap on a phone) shows its name, key, mana, cooldown, text and status; it
-//   covers no skill, badge, point button or quick-buy tab and stays on screen; on phones it is compact (at most 100 px
-//   high) and sits left of the skills, over the items; it goes when the mouse leaves, or about 2 s after a tap; a tap still
-//   casts a ready skill;
+// - the skill card: a mouse over a skill shows its name, key, mana, cooldown, text and status; it covers no skill, badge,
+//   point button or quick-buy tab, stays on screen and goes when the mouse leaves. On a phone a tap casts a ready skill
+//   and shows no card: the Spellbook explains spells there (openspec/changes/shore-hud-details);
 // - the Night Market: the Relics tab shows the relics on the first view and selects the first relic;
 // - the quick-buy tab sits above the item slots and says QUICK BUY; it previews the next purchase: its icon and price,
 //   saved/needed embers when it cannot be bought, and the build goal; a press buys it.
@@ -35,38 +34,41 @@ try {
     await page.evaluate(() => { document.getElementById('coach').hidden = true; });
     const at = name => `${size.name}: ${name}`;
 
-    // Skill card on a skill that is cooling down.
+    // Skill card on a skill that is cooling down (a mouse), or none (a phone: a tap on a skill that cannot cast).
     await page.evaluate(player('p.level = 3; p.skillPoints = 1; p.skillRanks = [2, 0, 0, 0]; p.cd = [6, 0, 0, 0]; p.mana = p.maxMana;'));
     await gameWait(page);
     const q = await (await page.$('.ability.dash')).boundingBox(), qx = q.x + q.width / 2, qy = q.y + q.height / 2;
-    if (size.touch) await page.touchscreen.tap(qx, qy); else await page.mouse.move(qx, qy);
-    await page.waitForTimeout(350);
-    const card = await page.evaluate(() => {
-      const c = document.getElementById('skill-card'), b = c.getBoundingClientRect();
-      const covers = [...document.querySelectorAll('.ability,.ability-upgrade:not([hidden]),#skill-points,#quick-buy')].filter(e => { const r = e.getBoundingClientRect(); return r.width && r.left < b.right && r.right > b.left && r.top < b.bottom && r.bottom > b.top; }).map(e => e.id || e.className);
-      return { hidden: c.hidden, text: c.innerText, covers, inView: b.left >= 0 && b.top >= 0 && b.right <= innerWidth && b.bottom <= innerHeight, height: b.height, centre: b.left + b.width / 2, skills: document.querySelector('.ability.dash').getBoundingClientRect().left };
-    });
-    assert.equal(card.hidden, false, at('the skill card shows'));
-    assert.match(card.text, /\bQ\b/); assert.match(card.text, /mana/); assert.match(card.text, /\d(\.\d)?s\b/, at('the card shows the cooldown')); assert.match(card.text, /Ready in \d+s/, at('the card shows the cooldown left'));
-    assert.deepEqual(card.covers, [], at('the card covers no skill, badge, point button or quick-buy tab')); assert.ok(card.inView, at('the card is on screen'));
-    if (size.touch) assert.ok(card.height <= 100 && card.centre < card.skills, at(`the phone card is compact and left of the skills: ${Math.round(card.height)} px high, centre at ${Math.round(card.centre)}, skills from ${Math.round(card.skills)}`));
-    checks++;
-    // An unlearned skill says how to learn it.
-    const e = await (await page.$('.ability.surge')).boundingBox();
-    if (size.touch) await page.touchscreen.tap(e.x + e.width / 2, e.y + e.height / 2); else await page.mouse.move(e.x + e.width / 2, e.y + e.height / 2);
-    await page.waitForTimeout(350);
-    assert.match(await page.evaluate(() => document.getElementById('skill-card').innerText), /Not learned yet|Learn at level/, at('an unlearned skill says how to learn it'));
-    if (size.touch) await page.waitForTimeout(3000); else await page.mouse.move(size.w / 2, 120);
-    await page.waitForTimeout(200);
-    assert.equal(await page.evaluate(() => document.getElementById('skill-card').hidden), true, at('the card goes away'));
-    checks++;
-    // A tap on a ready skill still casts it and shows its card.
     if (size.touch) {
+      await page.touchscreen.tap(qx, qy); await gameWait(page);
+      assert.equal(await page.evaluate(() => document.getElementById('skill-card').hidden), true, at('a tap on a phone shows no skill card'));
+      checks++;
+      // A tap on a ready skill still casts it, with no card.
       await page.evaluate(player('p.cd = [0, 0, 0, 0]; p.mana = p.maxMana; p.skillRanks = [1, 0, 0, 0];'));
       await gameWait(page);
       await page.touchscreen.tap(qx, qy); await gameWait(page);
       const after = await page.evaluate(player('return { cd: p.cd[0], card: !document.getElementById("skill-card").hidden };'));
-      assert.ok(after.cd > 0 && after.card, at(`a tap casts the skill and shows its card ${JSON.stringify(after)}`));
+      assert.ok(after.cd > 0 && !after.card, at(`a tap casts the skill and shows no card ${JSON.stringify(after)}`));
+      checks++;
+    } else {
+      await page.mouse.move(qx, qy);
+      await page.waitForTimeout(350);
+      const card = await page.evaluate(() => {
+        const c = document.getElementById('skill-card'), b = c.getBoundingClientRect();
+        const covers = [...document.querySelectorAll('.ability,.ability-upgrade:not([hidden]),#skill-points,#quick-buy')].filter(e => { const r = e.getBoundingClientRect(); return r.width && r.left < b.right && r.right > b.left && r.top < b.bottom && r.bottom > b.top; }).map(e => e.id || e.className);
+        return { hidden: c.hidden, text: c.innerText, covers, inView: b.left >= 0 && b.top >= 0 && b.right <= innerWidth && b.bottom <= innerHeight };
+      });
+      assert.equal(card.hidden, false, at('the skill card shows'));
+      assert.match(card.text, /\bQ\b/); assert.match(card.text, /mana/); assert.match(card.text, /\d(\.\d)?s\b/, at('the card shows the cooldown')); assert.match(card.text, /Ready in \d+s/, at('the card shows the cooldown left'));
+      assert.deepEqual(card.covers, [], at('the card covers no skill, badge, point button or quick-buy tab')); assert.ok(card.inView, at('the card is on screen'));
+      checks++;
+      // An unlearned skill says how to learn it.
+      const e = await (await page.$('.ability.surge')).boundingBox();
+      await page.mouse.move(e.x + e.width / 2, e.y + e.height / 2);
+      await page.waitForTimeout(350);
+      assert.match(await page.evaluate(() => document.getElementById('skill-card').innerText), /Not learned yet|Learn at level/, at('an unlearned skill says how to learn it'));
+      await page.mouse.move(size.w / 2, 120);
+      await page.waitForTimeout(200);
+      assert.equal(await page.evaluate(() => document.getElementById('skill-card').hidden), true, at('the card goes away'));
       checks++;
     }
 
