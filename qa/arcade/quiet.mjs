@@ -370,10 +370,14 @@ class CdpTab {
 /* ------------------------------------------------------------------ 3. the game pages */
 // start(t) does what a player does. sound is what to wait for: "ctx" (a context runs), "song" (also a SoundCloud song plays).
 // music is for pages with a song of their own made with chip.js or a scheduler: nothing new is scheduled while hidden.
+// resume(t), for a game that pauses itself when the page is hidden (its sound stays off on its pause screen), does what a
+// player does after the page shows again; the sound must then come back.
 const click = (sel) => (t) => t.tapEl(sel);
 const PAGES = [
   { id: "silent-depth", path: "/silent-depth/", boot: () => document.querySelector("#modal")?.open, start: async (t) => { await t.tapEl("#modal-action"); await t.tapEl("#sound"); }, sound: "ctx" },
-  { id: "arcade", path: "/", start: (t) => t.tap(5, 5), sound: "ctx", music: true },
+  // the hall, which has the sound: without ?view=classic a browser with WebGL and no navigator.webdriver (the plain Chromium
+  // of the "real" and "freeze" runs) goes on to the walk-through at /corridor/, which makes no sound
+  { id: "arcade", path: "/?view=classic", start: (t) => t.tap(5, 5), sound: "ctx", music: true },
   { id: "fall", path: "/fall/", start: (t) => t.key("Enter"), sound: "ctx", music: true },
   { id: "wild", path: "/wild/", boot: () => document.querySelector("#title") && !document.querySelector("#title").hidden && !document.querySelector("#tpress").hidden, start: (t) => t.key("Enter"), sound: "ctx", music: true, slow: true },
   // Game is a top-level const, and asking for it too soon is an error
@@ -391,7 +395,12 @@ const PAGES = [
   { id: "lab/rules", path: "/lab/rules/", start: click(".card.start .go"), sound: "ctx" },
   { id: "lab/worlds", path: "/lab/worlds/", start: click("#start-button"), sound: "ctx" },
   { id: "moonwell", path: "/moonwell/", start: click("#launch"), sound: "ctx" },
-  { id: "river-rush", path: "/river-rush/", boot: () => !!document.querySelector('button[aria-label="Enable sound"]'), start: click('button[aria-label="Enable sound"]'), sound: "ctx" },
+  // River Rush's sound is on unless the player turned it off, and its sound button shows only during a run, so a player
+  // starts the sound with Start run (enabled once the river and its graphics have loaded)
+  // A hidden page pauses the run (openspec/specs/river-rush: the simulation stops on page hide), and its music waits for
+  // Resume run.
+  { id: "river-rush", path: "/river-rush/", boot: () => { const b = document.querySelector('button[aria-label="Start run"]'); return !!b && !b.disabled; }, start: click('button[aria-label="Start run"]'), sound: "ctx",
+    resume: async (t) => { try { await t.until(() => !!document.querySelector('dialog[aria-label="Game paused"][open] button.primary'), null, 8000); } catch (e) { return; } await t.tapEl('dialog[aria-label="Game paused"] button.primary'); } },
   // Light Years Home makes its context on PLAY; its music is a few long-running oscillators, and a hidden page pauses the drive
   { id: "light-years-home", path: "/light-years-home/", boot: () => !!window.__lyh && !!document.querySelector(".m-title:not([hidden]) [data-act=play]"), start: click(".m-title [data-act=play]"), sound: "ctx", music: true },
   // Ahead of the Light makes its context on the first tap (TAP TO FLY); a hidden page pauses the race, and the pause card
@@ -463,6 +472,7 @@ async function cycle(P, driver, { policy, modes }) {
         // a frozen page cannot be asked anything: look after it wakes
         await sleep(800);
         await t.show(mode);
+        if (P.resume) await P.resume(t);
         const [ok, s] = await waitFor(t, back, 8000);
         c("sound is back after the page wakes" + tag, ok, brief(s));
         continue;
@@ -481,6 +491,7 @@ async function cycle(P, driver, { policy, modes }) {
         c("no notes are scheduled while hidden" + tag, b.nodes === a.nodes, `${b.nodes - a.nodes} new nodes in 2 s, clock ${b.times.map((x) => x.toFixed(2))}`);
       }
       await t.show(mode);
+      if (P.resume) await P.resume(t);
       const [ok1, s3] = await waitFor(t, back, 8000);
       c("sound is back when visible" + tag, ok1, brief(s3));
       // hide and show in one tick must leave the sound running; show and hide in one tick must leave it silent
@@ -488,12 +499,14 @@ async function cycle(P, driver, { policy, modes }) {
         const flip = (seq) => t.eval(([m, seq]) => { for (const hide of seq) m === "pagehide" ? window.__qaPage(true, hide) : window.__qaHide(hide); }, [mode, seq]);
         await flip([true, false]);
         await sleep(1200);
+        if (P.resume) await P.resume(t);
         const [ok2, s4] = await waitFor(t, back, 8000);
         c("hide then show in one tick: running" + tag, ok2, brief(s4));
         await flip([true, false, true]);
         const [ok3, s5] = await waitFor(t, quiet, 5000);
         c("hide, show, hide in one tick: silent" + tag, ok3, brief(s5));
         await t.show(mode);
+        if (P.resume) await P.resume(t);
         const [ok4, s6] = await waitFor(t, back, 8000);
         c("and running when shown again" + tag, ok4, brief(s6));
       }
