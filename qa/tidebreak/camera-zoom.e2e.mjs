@@ -17,7 +17,9 @@ const server = http.createServer((req, res) => {
 });
 await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
 const origin = `http://127.0.0.1:${server.address().port}`;
-const browser = await chromium.launch({ executablePath: process.env.SHORE_CHROMIUM, headless: true, args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
+// channel 'chromium': the full browser in new headless mode. Chrome 156's headless shell took about 90 s for the first
+// screenshot of this 3D page at desktop size (34 s in the full browser, 33 s in Chrome 134's shell), and CI runners passed the timeout.
+const browser = await chromium.launch({ executablePath: process.env.SHORE_CHROMIUM, channel: 'chromium', headless: true, args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
 try {
   for (const [name, width, height, touch] of [['desktop', 1440, 900, false], ['portrait', 390, 844, true], ['landscape', 844, 390, true], ['small-phone', 320, 568, true]].filter(([name])=>!process.env.VIEWPORT || process.env.VIEWPORT===name)) {
     const page = await browser.newPage({ viewport: { width, height }, hasTouch: touch, isMobile: touch }), errors = [];
@@ -95,7 +97,11 @@ try {
       await touchEvent('touchStart',[[1,x-65,y]]);
       await touchEvent('touchMove',[[1,x-40,y]]);await page.evaluate(()=>window.__pump(1));
       await touchEvent('touchStart',[[1,x-40,y],[2,x+60,y]]);
-      await touchEvent('touchMove',[[1,x-15,y],[2,x+35,y]]);await page.evaluate(()=>window.__pump(1));
+      // Chrome 156 (Playwright 1.64) delivers a two-finger move to the page after dispatchTouchEvent returns, so measuring
+      // at once read the zoom before the pinch. Wait until both fingers have moved. Poll on a timer: this page owns rAF.
+      await page.evaluate(()=>{window.__moved=new Set();document.addEventListener('pointermove',e=>window.__moved.add(e.pointerId),{capture:true});});
+      await touchEvent('touchMove',[[1,x-15,y],[2,x+35,y]]);
+      await page.waitForFunction(()=>window.__moved.size>=2,null,{polling:50,timeout:10000});await page.evaluate(()=>window.__pump(1));
       const pinched=await measure();assert(pinched.zoom>1.6,'real two-finger pinch zooms out');assert(!pinched.order,'pinch clears orders');
       await touchEvent('touchEnd',[[2,x+35,y]]);
       await touchEvent('touchMove',[[2,x+60,y]]);await page.evaluate(()=>window.__pump(1));

@@ -16,7 +16,9 @@ const server = http.createServer((req, res) => {
   res.setHeader('Content-Type', mime[path.extname(file)] || 'application/octet-stream'); fs.createReadStream(file).pipe(res);
 });
 await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
-const origin = `http://127.0.0.1:${server.address().port}`, browser = await chromium.launch({ executablePath: process.env.SHORE_CHROMIUM, headless: true, args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
+// channel 'chromium': the full browser in new headless mode. Chrome 156's headless shell took about 90 s for the first
+// screenshot of this 3D page at desktop size (34 s in the full browser, 33 s in Chrome 134's shell), and CI runners passed the timeout.
+const origin = `http://127.0.0.1:${server.address().port}`, browser = await chromium.launch({ executablePath: process.env.SHORE_CHROMIUM, channel: 'chromium', headless: true, args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
 try {
   const viewports = [['desktop', 1536, 864], ['phone', 390, 844], ['small-phone', 320, 568], ['landscape', 844, 390], ['compact-desktop', 1000, 700], ['short-desktop', 1536, 700]];
   assert(!process.env.CREATURE_VIEWPORT || viewports.some(([name]) => name === process.env.CREATURE_VIEWPORT), 'unknown viewport');

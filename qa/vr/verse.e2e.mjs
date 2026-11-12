@@ -5,7 +5,7 @@
 // swing. From the build guide: the gang on threes, squash and stretch, multiples, a kick that doubles the plates and snaps the
 // view in, a finisher word a third of the view wide, and wall words that stay. Run from the repo root (the server starts itself): NODE_PATH=/opt/node22/lib/node_modules node qa/vr/verse.e2e.mjs
 import { mkdir } from "node:fs/promises";
-import { newPage, open, close, checker, watchdog, SHOTS } from "./lib.mjs";
+import { newPage, open, close, checker, watchdog, SHOTS, resize } from "./lib.mjs";
 
 const { check, done } = checker("verse");
 watchdog(1500000, "verse");
@@ -320,7 +320,7 @@ try {
   check(ink.hatch > 0.002 && ink.hatch < 0.3, "hatching darkens the deepest shadows (" + (ink.hatch * 100).toFixed(2) + "% of pixels)", ink);
   // the rest reads no pixels: a small canvas keeps it fast. On SwiftShader a 960 x 540 frame takes about 2 s, and a long run of
   // draws in one task holds the memory of each frame until the task ends; at full size the 120 draws below ran the page out of memory
-  await page.setViewportSize({ width: 320, height: 180 });
+  await resize(page, { width: 320, height: 180 });
   await page.waitForFunction(() => G.renderer.domElement.width === 320);
   const mood = await page.evaluate(() => {
     QA.clear(); QA.street(); QA.draw(30, 0.1);

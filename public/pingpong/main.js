@@ -500,6 +500,9 @@ function notePointer(e) {
 
 function realMouseMove(e) {
   if (!e || e.isTrusted === false) return false;
+  // Headless Chrome 156 sends one trusted mousemove at (0, 0) with no movement when a phone page loads, and
+  // that switched an emulated phone to the mouse court. A real mouse moves, so a move of zero is not one.
+  if (e.movementX === 0 && e.movementY === 0) return false;
   if (e.pointerType && e.pointerType !== 'mouse') return false;
   const caps = e.sourceCapabilities;
   if (caps && caps.firesTouchEvents) return false;

@@ -20,8 +20,7 @@ jobs:
       - name: Verify exports, neutral behavior and full matches
         run: node qa/creatures/shared.test.mjs && node qa/tidebreak/creatures.test.mjs && node qa/tidebreak/base-attacks.test.mjs && node qa/tidebreak/hero-identities.test.mjs && node qa/tidebreak/legends.test.mjs && node qa/tidebreak/sim.test.mjs
   viewport:
-    # Pinned: ubuntu-latest became Ubuntu 26.04, where Playwright 1.51 refuses to install Chromium.
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     timeout-minutes: 15
     strategy:
       fail-fast: false

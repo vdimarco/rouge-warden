@@ -17,7 +17,9 @@ const server = http.createServer((req, res) => {
 });
 await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
 const origin = `http://127.0.0.1:${server.address().port}`;
-const browser = await chromium.launch({ executablePath: process.env.SHORE_CHROMIUM, headless: true, args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
+// channel 'chromium': the full browser in new headless mode. Chrome 156's headless shell took about 90 s for the first
+// screenshot of this 3D page at desktop size (34 s in the full browser, 33 s in Chrome 134's shell), and CI runners passed the timeout.
+const browser = await chromium.launch({ executablePath: process.env.SHORE_CHROMIUM, channel: 'chromium', headless: true, args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
 try {
   for (const [name, width, height, touch] of [['desktop', 1440, 900, false], ['portrait', 390, 844, true]]) {
     const page = await browser.newPage({ viewport: { width, height }, hasTouch: touch, isMobile: touch }), errors = [];

@@ -3,7 +3,7 @@
 // phone tutorial says phone words, and the phone buttons never cover the score or the spoken lines. Run from the repo root (the server is our own, see lib.mjs).
 import assert from 'node:assert/strict';
 import { mkdir } from 'node:fs/promises';
-import { newPage, open, close, watchdog } from './lib.mjs';
+import { newPage, open, close, watchdog, resize } from './lib.mjs';
 watchdog(240000, 'phone swing');
 const out = process.env.SHOTS || '/tmp/swing-qa'; await mkdir(out, { recursive: true });
 const page = await newPage({ width: 390, height: 844 });
@@ -173,12 +173,12 @@ try {
   let b = await boxes();
   assert(!b.top && !b.sub && !b.hero && !b.wide, 'portrait layout: ' + JSON.stringify(b));
   await page.screenshot({ path: out + '/phone-swing.png' });
-  await page.setViewportSize({ width: 844, height: 390 }); await page.evaluate(() => G.test.step(1 / 60, 2));
+  await resize(page, { width: 844, height: 390 }); await page.evaluate(() => G.test.step(1 / 60, 2));
   b = await boxes();
   assert(!b.top && !b.sub && !b.hero && !b.wide, 'landscape layout: ' + JSON.stringify(b));
   await page.screenshot({ path: out + '/phone-swing-landscape.png' });
   // a narrow phone (360 px): the top buttons stay on one row inside the screen
-  await page.setViewportSize({ width: 360, height: 780 }); await page.evaluate(() => G.test.step(1 / 60, 2));
+  await resize(page, { width: 360, height: 780 }); await page.evaluate(() => G.test.step(1 / 60, 2));
   const row = await page.evaluate(() => { const bs = [...document.querySelectorAll('.phone-top button')].map((b) => b.getBoundingClientRect()); return { tall: Math.max(...bs.map((r) => r.height)), left: Math.min(...bs.map((r) => r.left)), right: Math.max(...bs.map((r) => r.right)), w: innerWidth }; });
   b = await boxes();
   assert(row.tall <= 46 && row.left >= 0 && row.right <= row.w && !b.top && !b.wide, '360 px: one row of top buttons inside the screen: ' + JSON.stringify(row));

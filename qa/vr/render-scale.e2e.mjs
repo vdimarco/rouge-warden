@@ -1,6 +1,6 @@
 // Controlled callback timing tests integration; not a hardware FPS benchmark.
 import {readFile} from 'node:fs/promises';
-import {newPage,open,close,enterXR,checker,watchdog,shot} from './lib.mjs';
+import {newPage,open,close,enterXR,checker,watchdog,shot,resize} from './lib.mjs';
 const {check,done}=checker('adaptive resolution');watchdog(300000,'adaptive resolution');
 try {
  const p=await newPage({width:960,height:540});
@@ -18,7 +18,7 @@ try {
  check(await p.evaluate(()=>{const c=G.renderer.domElement,r=c.getBoundingClientRect();return r.width===960&&r.height===540&&G.camera.aspect===960/540;}),'canvas CSS and camera aspect remain native');
  await p.evaluate(()=>{G.ui.openPause();});check(await run(80,80)===reduced,'paused callbacks cannot change resolution');await p.evaluate(()=>G.ui.closePause());
  await p.evaluate(()=>Object.defineProperty(document,'hidden',{configurable:true,value:true}));check(await run(80,80)===reduced,'hidden callbacks cannot change resolution');await p.evaluate(()=>{delete document.hidden;dispatchEvent(new Event('visibilitychange'));});
- await p.setViewportSize({width:390,height:844});await p.waitForFunction(()=>G.camera.aspect===390/844);
+ await resize(p, {width:390,height:844});await p.waitForFunction(()=>G.camera.aspect===390/844);
  check(await p.evaluate(()=>G.renderer.getPixelRatio())===base,'phone resize restores normal device ratio');
  check(await p.evaluate(()=>{const c=G.renderer.domElement,r=c.getBoundingClientRect();return r.width===390&&r.height===844&&G.camera.aspect===390/844;}),'phone CSS and camera stay viewport-sized');
  check(await run(40,80)<base,'new viewport can trial a reduction');

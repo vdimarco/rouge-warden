@@ -269,6 +269,10 @@ body:has(#phoneControls:not([hidden])) .fs-sub { max-width:calc(100vw - 16px); p
   body:has(#phoneControls:not([hidden])) .fs-pill small[data-k$="T"] { display:none; }
   /* four pills at once (a trial, or the King's hearts): drop BANK so that the row still fits */
   body:has(#phoneControls:not([hidden])) .fs-top:has(.fs-pill:not([hidden]) ~ .fs-pill:not([hidden]) ~ .fs-pill:not([hidden]) ~ .fs-pill:not([hidden])) .fs-pill em { display:none; }
+  /* The heart has no glyph in Bangers, so its width comes from a fallback font, and that differs between phones and
+     browser builds. At 26 px, Chrome 156 made three hearts 124 px wide and pushed the row 6 px past a 360 px screen.
+     At 22 px the row keeps a margin for a wider fallback. */
+  body:has(#phoneControls:not([hidden])) .fs-heart { font-size:22px; margin:0; }
 }
 @media (max-height:480px) {
   body:has(#phoneControls:not([hidden])) .fs-sub, body:has(#phoneControls:not([hidden])) .fs-toast { max-width:calc(100vw - 320px); }

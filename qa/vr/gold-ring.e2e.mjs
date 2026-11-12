@@ -2,7 +2,7 @@
 // the right rope, at 1280 and again in a phone-shaped window. 0 page errors.
 // NODE_PATH=qa/browser/node_modules node qa/vr/gold-ring.e2e.mjs
 import { mkdir } from "node:fs/promises";
-import { newPage, open, close, checker, watchdog } from "./lib.mjs";
+import { newPage, open, close, checker, watchdog, resize } from "./lib.mjs";
 
 const { check, done } = checker("gold-ring");
 watchdog(420000, "gold-ring");
@@ -273,7 +273,7 @@ try {
   check(fade1280.line && fade1280.line.sideD > 8, "at 1280 the faded line is still visible", fade1280.line);
   check(gone1280.n === 0 && gone1280.hemp === 0, "at 1280 the line is gone by 150 ms and the hemp cup does not zip back", gone1280);
 
-  await page.setViewportSize({ width: 390, height: 844 });
+  await resize(page, { width: 390, height: 844 });
   await page.evaluate(() => {
     dispatchEvent(new Event("resize"));
     const S = G.city.start, R = G.city.goldRing;

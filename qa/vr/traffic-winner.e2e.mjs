@@ -1,5 +1,5 @@
 import {readFile,mkdir,writeFile} from 'node:fs/promises';
-import {newPage,open,close,enterXR,checker,watchdog} from './lib.mjs';
+import {newPage,open,close,enterXR,checker,watchdog,resize} from './lib.mjs';
 const {check,done}=checker('traffic winner');watchdog(180000,'traffic winner');
 const before=await readFile(new URL('./fixtures/near-traffic-before.js',import.meta.url),'utf8');
 try{
@@ -15,7 +15,7 @@ try{
  },before);
  await p.waitForFunction(()=>__traffic.view.info().models!==null);
  for(const [width,height] of [[640,360],[390,844]]){
-  await p.setViewportSize({width,height});
+  await resize(p, {width,height});
   const r=await p.evaluate(({width,height})=>{
    const {THREE,cars,scene,view,baseline,nearTraffic}=__traffic,renderer=G.renderer;
    renderer.setPixelRatio(1);renderer.setSize(width,height);
