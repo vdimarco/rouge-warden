@@ -1,7 +1,7 @@
 // Real WebGL compilation + one-thumb interactions. Run from the repo root.
 import assert from 'node:assert/strict';
 import { mkdir } from 'node:fs/promises';
-import {newPage,open,close,watchdog} from './lib.mjs';
+import {newPage,open,close,watchdog,resize} from './lib.mjs';
 watchdog(420000,'phone swing');
 const page=await newPage({width:390,height:844});
 const out=process.env.SHOTS || '/tmp/swing-qa';await mkdir(out,{recursive:true});
@@ -120,7 +120,7 @@ try {
  // Tap a building well off the screen centre (at least 0.5 NDC across, landscape like a real phone) with no aimAt override. The tap
  // ray comes from the view the player sees, so the rope lands on that building and not on what sits at the centre. Third person first,
  // then first person (V).
- await page.setViewportSize({width:844,height:390});await page.waitForFunction(()=>G.camera.aspect>2);
+ await resize(page, {width:844,height:390});await page.waitForFunction(()=>G.camera.aspect>2);
  // a second building for the switch: with only the right half to tap, turn the view left a little at a time until one shows there
  const pickTurn=async(skip)=>{for(let k=0;k<8;k++){const t=await pick(skip,.1);if(t)return t;await page.evaluate(()=>{G.test.look(.25,0);G.test.step(1/60,2);});}return null;};
  // minA: the least NDC across (the switch target may sit nearer the middle; the right half is half the view)
@@ -181,7 +181,7 @@ try {
  // tap ray must still come from the tapped pixel and not from the screen centre. The same rules as above: a building that shows on
  // screen and is at least 0.4 NDC off the centre, the rope on that building, then a second building to switch, third person and first.
  // From the start roof the narrow view shows no such building, so each view looks for a roof and a turn that show two of them.
- await page.setViewportSize({width:390,height:844});await page.waitForFunction(()=>G.camera.aspect<.6);
+ await resize(page, {width:390,height:844});await page.waitForFunction(()=>G.camera.aspect<.6);
  const upright=await page.evaluate(()=>({w:innerWidth,h:innerHeight,aspect:G.camera.aspect}));
  assert(upright.w===390&&upright.h===844&&upright.aspect<.5,'the page is upright at 390x844 '+JSON.stringify(upright));
  const standAt=at=>page.evaluate(({roof,turn})=>{const s=G.city.safe[roof];G.renderer.setAnimationLoop(null);G.test.press(1,false);G.test.aimAt(1,null);G.desktop.mobile.reset();G.test.teleport(s.x,s.y,s.z);G.rigYaw=G.city.start.yaw+turn*Math.PI/4;G.test.step(1/60,24);},at);
@@ -248,7 +248,7 @@ try {
  const pfp=await uprightTap('portrait first person',at1);console.log('PASS tap a building off the screen centre in portrait, first person',JSON.stringify({...at1,nx:+pfp.nx.toFixed(2),ny:+pfp.ny.toFixed(2),id:pfp.id}));
  await page.evaluate(()=>{G.flatcam.setFirstPerson(false);G.test.step(1/60,30);});
  // back to landscape for the checks below
- await page.setViewportSize({width:844,height:390});await page.waitForFunction(()=>G.camera.aspect>2);
+ await resize(page, {width:844,height:390});await page.waitForFunction(()=>G.camera.aspect>2);
  // A rope can catch and be let go in the same step (the chest grabs a wall and drops the ropes). The attach feedback must not read the
  // gone rope's target: the event queue then threw every frame and the picture froze.
  const stale=await page.evaluate(()=>{const s=G.city.start;G.test.press(1,false);G.test.teleport(s.x,s.y,s.z);G.test.step(1/60,2);const f0=G.frame;
@@ -271,7 +271,7 @@ try {
  console.log('PASS the chase view follows the flight on a phone',JSON.stringify({from:+fol.g0.toFixed(2),to:+fol.g1.toFixed(2)}));
  await page.evaluate(()=>{const s=G.city.start;G.test.teleport(s.x,s.y,s.z);G.test.step(1/60,2);});
  await page.evaluate(()=>{G.test.aimAt(1,null);G.test.camera('needle');});
- await page.setViewportSize({width:844,height:390});await page.screenshot({path:out+'/tower-landscape.png'});
+ await resize(page, {width:844,height:390});await page.screenshot({path:out+'/tower-landscape.png'});
  const overflow=await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth);assert.equal(overflow,false);
  assert.equal(page.errors.length,0,JSON.stringify(page.errors));console.log('PASS city shaders, page, landscape layout: no WebGL or runtime errors');
 } finally {await close();}

@@ -5,7 +5,7 @@
 // A check marked [join] needs the wiring of agent A in main.js and desktop.js (the marker each frame, G.test.target, the VIEW press,
 // the buzz, the title labels). It fails on a branch that has only agent B's files, and it must pass after the join.
 // Run from the repo root: NODE_PATH=/opt/node22/lib/node_modules node qa/vr/phone-controls.e2e.mjs   (SHOTS=dir keeps screenshots)
-import { newPage, open, close, watchdog, checker, shot } from "./lib.mjs";
+import { newPage, open, close, watchdog, checker, shot, resize } from "./lib.mjs";
 watchdog(1500000, "phone controls");
 const { check, done } = checker("phone-controls");
 const joinFails = [];
@@ -279,7 +279,7 @@ try {
   /* ---------------- sizes, both layouts, motion aim on and off ---------------- */
   const SIZES = [[390, 844, "portrait"], [844, 390, "landscape"], [360, 740, "narrow portrait"]];
   for (const [w, h, name] of SIZES) {
-    await main.setViewportSize({ width: w, height: h });
+    await resize(main, { width: w, height: h });
     await main.waitForFunction((a) => Math.abs(G.camera.aspect - a) < 0.01, w / h);
     for (const sensors of ["granted", "denied"]) {
       const tag = `${w}x${h} ${name}, motion aim ${sensors === "granted" ? "on" : "off"}`;
@@ -340,7 +340,7 @@ try {
   // on a wall the JUMP button shows (the left thumb climbs): 48 px or more, and the ring and arrow keep clear of it
   check(await main.evaluate(wallSetup), "a building to climb was found");
   for (const [w, h] of [[390, 844], [844, 390]]) {
-    await main.setViewportSize({ width: w, height: h });
+    await resize(main, { width: w, height: h });
     await main.waitForFunction((a) => Math.abs(G.camera.aspect - a) < 0.01, w / h);
     check(await main.evaluate(() => { const ok = QA.flyIn(); G.ui.say("Tap the next building while you fly.", 60); G.test.step(1 / 60, 3); return ok && !!G.P.wall; }), `${w}x${h}: the hero holds the wall`);
     const L = await main.evaluate(layout);
@@ -355,14 +355,14 @@ try {
   }
 
   /* ---------------- turn the phone during play ---------------- */
-  await main.setViewportSize({ width: 390, height: 844 });
+  await resize(main, { width: 390, height: 844 });
   await main.waitForFunction(() => Math.abs(G.camera.aspect - 390 / 844) < 0.01);
   const turn1 = await main.evaluate(() => ({ state: G.state, aspect: G.camera.aspect }));
-  await main.setViewportSize({ width: 844, height: 390 });
+  await resize(main, { width: 844, height: 390 });
   await main.waitForFunction(() => G.camera.aspect > 2);
   const turn2 = await main.evaluate(() => { G.test.step(1 / 60, 5); return { state: G.state, aspect: G.camera.aspect, card: /turn (your|the) (phone|device)/i.test(document.body.innerText) }; });
   check(turn1.state === "play" && turn2.state === "play" && Math.abs(turn2.aspect - 844 / 390) < 0.01 && !turn2.card, "turning the phone from portrait to landscape during play goes on playing: the camera aspect follows, no card shows", { turn1, turn2 });
-  await main.setViewportSize({ width: 390, height: 844 });
+  await resize(main, { width: 390, height: 844 });
   await main.waitForFunction(() => Math.abs(G.camera.aspect - 390 / 844) < 0.01);
   await main.evaluate(async () => { window.__sensors = "denied"; await G.desktop.mobile.start(); G.test.step(1 / 60, 3); });
 

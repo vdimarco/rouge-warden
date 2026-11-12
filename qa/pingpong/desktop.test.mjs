@@ -270,6 +270,9 @@ test('the desktop gate skips motion permission and the phone tap still asks', ()
   assert.match(main, /flickCool = t \+ RULES\.cooldown/);
   assert.match(main, /addEventListener\('mousemove'/);
   assert.match(main, /realMouseMove\(e\)/);
+  // Headless Chrome 156 sends one trusted mousemove at (0, 0) with no movement when a phone page loads.
+  // It must not switch a phone to the mouse court.
+  assert.match(main, /e\.movementX === 0 && e\.movementY === 0\) return false/);
   assert.match(main, /get lastSlash\(\)/);
   assert.match(main, /get splatCount\(\)/);
 });

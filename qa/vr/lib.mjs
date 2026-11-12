@@ -94,6 +94,22 @@ async function relay(route) {
 }
 
 /* ---------------- pages ---------------- */
+// resize(page, { width, height }) → page.setViewportSize that also works after the game went fullscreen.
+// The game asks for fullscreen when phone or desktop play starts. Headless Chrome 156 (Playwright 1.64) resizes the
+// viewport through the browser window, and it refuses to resize a fullscreen window ("restore it to normal state
+// first"). So leave fullscreen first. A real phone keeps fullscreen when it turns; only the tests need this step.
+export async function resize(page, size) {
+  await page.evaluate(() => document.fullscreenElement && document.exitFullscreen().catch(() => {}));
+  await page.waitForFunction(() => !document.fullscreenElement);
+  // Leaving fullscreen in the page does not always return the browser window to normal, so ask the browser too.
+  const cdp = await page.context().newCDPSession(page);
+  try {
+    const { windowId } = await cdp.send("Browser.getWindowForTarget");
+    await cdp.send("Browser.setWindowBounds", { windowId, bounds: { windowState: "normal" } });
+  } finally { await cdp.detach(); }
+  await page.setViewportSize(size);
+}
+
 // newPage({ width, height, clock, clear, sw }) → a page with page.errors collecting page errors and console errors
 // and warnings (except IGNORE). clock: true installs Playwright's fake clock before any script runs.
 export async function newPage({ width = 640, height = 360, clock = false, clear = true, sw = false } = {}) {

@@ -1,5 +1,5 @@
 // Same-frame output equivalence, not a frame-rate or physical-device benchmark.
-import {newPage,open,close,enterXR,checker,watchdog} from './lib.mjs';
+import {newPage,open,close,enterXR,checker,watchdog,resize} from './lib.mjs';
 import {mkdir,writeFile} from 'node:fs/promises';
 const {check,done}=checker('sky gather');watchdog(300000,'sky gather');
 try{
@@ -33,7 +33,7 @@ try{
  console.log('ENV '+JSON.stringify(environment));
  if(process.env.REQUIRE_HARDWARE)check(/NVIDIA/.test(environment.renderer)&&!/SwiftShader|llvmpipe/.test(environment.renderer),'recorded NVIDIA hardware renderer',environment);
  for(const [width,height] of [[640,360],[390,844]]){
-  await p.setViewportSize({width,height});await p.waitForFunction(aspect=>G.camera.aspect===aspect,width/height);
+  await resize(p, {width,height});await p.waitForFunction(aspect=>G.camera.aspect===aspect,width/height);
   const rows=await p.evaluate(()=>{const rows=[];for(const camera of ['needle','street'])for(const verse of ['full','off'])rows.push(window.__sky.compare(camera,verse));return rows;});
   console.log('PIXELS '+JSON.stringify({width,height,rows}));
   for(const r of rows)check(r.different===0&&r.varied>100,`${width} ${r.camera}/${r.verse}: identical RGBA output`,r);
