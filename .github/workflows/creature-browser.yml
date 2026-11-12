@@ -20,9 +20,7 @@ jobs:
       - name: Verify exports, neutral behavior and full matches
         run: node qa/creatures/shared.test.mjs && node qa/tidebreak/creatures.test.mjs && node qa/tidebreak/base-attacks.test.mjs && node qa/tidebreak/hero-identities.test.mjs && node qa/tidebreak/legends.test.mjs && node qa/tidebreak/sim.test.mjs
   viewport:
-    # Pinned to Ubuntu 24.04. On the ubuntu-latest image (26.04) the SwiftShader 3D page timed out in page.screenshot
-    # (120 to 180 s) on some viewports in each run, while the same tests with Playwright 1.64.1 pass on 24.04.
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     timeout-minutes: 15
     strategy:
       fail-fast: false

@@ -64,7 +64,9 @@ export async function serve() {
 }
 export async function launch() {
   if (browser) return browser;
-  browser = await chromium.launch({ args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist"] });
+  // channel "chromium": the full browser in new headless mode. Chrome 156's headless shell drew the WebGL pages so slowly
+  // that cutscene.e2e.mjs passed its 900 s limit on CI with no output; the full browser runs it in 86 s on 4 cores.
+  browser = await chromium.launch({ channel: "chromium", args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist"] });
   return browser;
 }
 // Closes the browser and our server (never anything else that runs on this machine).
