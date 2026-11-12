@@ -282,7 +282,7 @@ for (const [name, dev] of [["portrait", devices["iPhone 13"]], ["landscape", dev
   await tp("touchStart", vp.width * 0.3, vp.height * 0.5); await tp("touchEnd");
   await gameWait(page, 0.2);
   const tap0 = await page.evaluate(() => ({ lasers: __fw.match.bolts.filter((b) => b.owner === __fw.match.player.id && b.kind === "laser").length, yaw: __fw.match.player.yaw }));
-  check(tap0.lasers === 0 && Math.abs(tap0.yaw - y00) < 0.05, `${tag}: a quick tap does not steer or fire the lasers`);
+  check(tap0.lasers === 0 && Math.abs(tap0.yaw - y00) < 0.05, `${tag}: a quick tap does not steer or fire the lasers (${tap0.lasers} lasers, yaw ${y00.toFixed(3)} to ${tap0.yaw.toFixed(3)})`);
   // drag from the right half of the screen: the whole screen steers, and the lasers fire while the finger steers
   const sx = vp.width * 0.62, sy = vp.height * 0.45;
   const y0 = await page.evaluate(() => __fw.match.player.yaw);
