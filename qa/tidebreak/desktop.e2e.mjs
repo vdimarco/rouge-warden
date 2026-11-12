@@ -2,14 +2,17 @@
 // - the mouse pushes the following camera; the mouse may leave the window; the minimap look ends on release;
 // - Esc and the top-left Menu button open the menu; a held Esc opens it once; a resize keeps the hero's order and keys;
 //   leaving full screen offers windowed play and never forces full screen back;
-// - mouse play starts without the spellbook or touch-only HUD controls; K and the menu still open the spellbook;
-//   a touch phone keeps its movement pad, skill-point control and opening spellbook;
+// - mouse play starts without the spellbook or touch-only HUD controls, with the first-match guide in mouse words; K and
+//   the menu still open the spellbook; a touch phone keeps its movement pad and skill-point control and also starts
+//   without the spellbook (openspec/specs/moba-ui "Short first match");
 // - sound: the match is audible at the output with a clean harness; a saved mute shows a chip that turns it back on;
 //   a click that wakes a stopped context does not mute; Test sound reports the level;
 // - motion: at a simulated 144 Hz the hero moves smoothly on screen (no 60 Hz judder);
 // - an ultra-wide screen stays inside the pixel budget.
 // Needs the static server (see AGENTS.md): NODE_PATH=qa/browser/node_modules node qa/tidebreak/desktop.e2e.mjs
-// The browser runs without SwiftShader flags: they route the 2D canvas through an emulated GPU, which here is too slow.
+// Shore is 3D only, so the browser runs with SwiftShader. Software WebGL draws a frame every few seconds, even at the
+// lowest quality: the sound, menu, phone and pixel budget parts turn the 3D drawing off, and the camera and motion parts,
+// which read the camera, draw real frames at quality 0.2 and wait on game time or on the condition, for minutes if need be.
 import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
 import { existsSync } from 'node:fs';
@@ -37,13 +40,16 @@ async function reader(page) {
   return async expr => { const r = await cdp.send('Runtime.evaluate', { expression: expr, userGesture: false, returnByValue: true, awaitPromise: true }); if (r.exceptionDetails) throw new Error(r.exceptionDetails.text + ' ' + (r.exceptionDetails.exception?.description || '')); return r.result.value; };
 }
 const SNAP = `(async () => (await import('/tidebreak/main.js')).snapshot())()`;
-async function open(width, height, { init = [], query = '', touch = false } = {}) {
+async function open(width, height, { init = [], query = '', touch = false, draw = 'off' } = {}) {
   const page = await browser.newPage({ viewport: { width, height }, hasTouch: touch, isMobile: touch });
   const errors = []; page.on('pageerror', e => errors.push(e.message));
   await page.addInitScript(TAP); for (const f of init) await page.addInitScript(f);
   await page.goto(URL + query);
   const read = await reader(page);
-  for (let i = 0; i < 300 && await read(`document.getElementById('play').disabled`); i++) await page.waitForTimeout(200);
+  for (let i = 0; i < 1200 && await read(`document.getElementById('play').disabled`); i++) await page.waitForTimeout(200);
+  // 'off': no 3D picture (the HUD, the sim and input still run); 'low': real frames at quality 0.2 for the camera checks;
+  // 'full': real frames as a player gets them, for the pixel budget
+  if (draw !== 'full') await read(draw === 'off' ? `document.getElementById('battle').__shore3d.draw = () => {}` : `(() => { const r = document.getElementById('battle').__shore3d; r.quality = .2; r.resize(); })()`);
   return { page, errors, read, touch, snap: () => read(SNAP) };
 }
 const centre = async (read, selector) => read(`(() => { const r = document.querySelector(${JSON.stringify(selector)}).getBoundingClientRect(); return { x: r.x + r.width / 2, y: r.y + r.height / 2 }; })()`);
@@ -51,20 +57,20 @@ const shown = (read, selector) => read(`(() => { const e = document.querySelecto
 async function toMatch(t) {
   const play = await centre(t.read, '#play'); await t.page.mouse.click(play.x, play.y);
   for (let i = 0; i < 150 && !(await t.read(`!document.getElementById('hud').hidden`)); i++) { await t.page.keyboard.press('Enter'); await t.page.waitForTimeout(200); }
-  for (let i = 0; i < 100 && !(await t.snap()).running; i++) await t.page.waitForTimeout(200);
+  for (let i = 0; i < 600 && !(await t.snap()).running; i++) await t.page.waitForTimeout(200);
   await t.page.waitForTimeout(500);
   const desktop = await t.read(`matchMedia('(hover: hover) and (pointer: fine)').matches`);
   if (desktop) assert.equal(await t.read(`document.getElementById('sheet').open`), false, 'mouse play starts without an automatic spellbook');
   if (t.touch) {
     assert.equal(desktop, false, 'the phone context uses touch input');
-    assert.equal(await t.read(`document.getElementById('sheet').open && document.getElementById('sheet').classList.contains('spellbook-sheet')`), true, 'touch play retains the opening spellbook');
+    assert.equal(await t.read(`document.getElementById('sheet').open`), false, 'touch play starts without an automatic spellbook');
     assert.equal(await shown(t.read, '#joystick'), true, 'the touch movement pad remains visible');
     assert.equal(await shown(t.read, '#skill-points'), true, 'the touch skill-point control remains visible');
   }
   if (await t.read(`document.getElementById('sheet').open`)) await t.page.keyboard.press('Escape');
   await t.page.waitForTimeout(300);
 }
-const until = async (f, ok, tries = 60, wait = 250) => { let v; for (let i = 0; i < tries; i++) { v = await f(); if (ok(v)) return v; await new Promise(r => setTimeout(r, wait)); } return v; };
+const until = async (f, ok, tries = 2400, wait = 250) => { let v; for (let i = 0; i < tries; i++) { v = await f(); if (ok(v)) return v; await new Promise(r => setTimeout(r, wait)); } return v; };
 const rmsOver = async (t, ms) => { let peak = 0; for (let i = 0; i < ms / 250; i++) { await t.page.waitForTimeout(250); peak = Math.max(peak, await t.read('window.__rms()')); } return peak; };
 
 try {
@@ -78,7 +84,9 @@ try {
     assert(!plays.some(p => /NotAllowed/.test(p)), 'no track was refused: ' + plays);
     pass('a real click on Play gives an audible draft and match', { rms: +rms.toFixed(3) });
 
-    for (const selector of ['#joystick', '#coach', '#skill-points']) assert.equal(await shown(t.read, selector), false, selector + ' stays out of the desktop battlefield');
+    for (const selector of ['#joystick', '#skill-points']) assert.equal(await shown(t.read, selector), false, selector + ' stays out of the desktop battlefield');
+    assert.equal(await shown(t.read, '#coach'), true, 'a new player sees the first-match guide');
+    assert.match(await t.read(`document.getElementById('coach-text').textContent`), /^Click \+/, 'the guide speaks of the mouse');
     await t.page.keyboard.press('k');
     assert.equal(await t.read(`document.getElementById('sheet').open && document.getElementById('sheet').classList.contains('spellbook-sheet')`), true, 'K opens the spellbook');
     await t.page.keyboard.press('Escape');
@@ -133,14 +141,14 @@ try {
 
   /* ---------------- camera, menu and input ---------------- */
   {
-    const t = await open(1440, 900), { page, read, snap } = t;
+    const t = await open(1440, 900, { draw: 'low' }), { page, read, snap } = t;
     await toMatch(t);
     const menu = await page.locator('#pause').boundingBox();
     assert(menu && menu.x < 40 && menu.y < 40 && menu.width >= 80, 'the Menu button sits in the top left: ' + JSON.stringify(menu));
     assert.match(await page.locator('#pause').innerText(), /Menu\s*Esc/i);
     pass('the top-left Menu button reads Menu and Esc');
 
-    const settle = async (x, ok) => { await page.mouse.move(x, 450); return until(async () => (await snap()).graphics, g => ok(g.push), 80); };
+    const settle = async (x, ok) => { await page.mouse.move(x, 450); return until(async () => (await snap()).graphics, g => ok(g.push)); };
     const mid = await settle(720, p => Math.abs(p) < 40), right = await settle(1435, p => p > 400), left = await settle(5, p => p < -400);
     assert(Math.abs(mid.push) < 40 && right.push > 400 && left.push < -400, `the mouse pushes the view: ${mid.push} ${right.push} ${left.push}`);
     assert(!left.freeCam, 'the push does not detach the camera');
@@ -149,14 +157,13 @@ try {
     const before = (await snap()).time;
     await page.mouse.move(-50, 450);
     await read(`window.dispatchEvent(new MouseEvent('mouseout', { relatedTarget: null })), document.documentElement.dispatchEvent(new MouseEvent('mouseleave'))`);
-    await page.waitForTimeout(1500);
-    const outside = await snap();
+    const outside = await until(snap, s => s.time > before + .6);
     assert(!outside.paused && outside.time > before + .5 && outside.graphics.push < -200, 'the clock runs and the push holds with the mouse outside');
     pass('leaving the window with the mouse does not pause');
 
     // Holding Space centres the view on the hero.
     await page.keyboard.down(' ');
-    const held = await until(async () => (await snap()).graphics, g => Math.abs(g.push) < 30, 80);
+    const held = await until(async () => (await snap()).graphics, g => Math.abs(g.push) < 30);
     await page.keyboard.up(' ');
     assert(Math.abs(held.push) < 30, 'holding Space removes the push: ' + held.push);
     pass('holding Space centres the view on the hero');
@@ -178,46 +185,50 @@ try {
 
     // Minimap: the look lasts while it is held; release returns the view to the hero.
     const map = await centre(read, '#map-button');
-    await page.mouse.move(map.x, map.y - 30); await page.mouse.down(); await page.waitForTimeout(400);
-    assert.equal((await snap()).graphics.freeCam, true, 'holding the minimap looks there');
-    await page.mouse.up(); await page.waitForTimeout(200);
-    assert.equal((await snap()).graphics.freeCam, false, 'releasing the minimap returns the view to the hero');
+    await page.mouse.move(map.x, map.y - 30); await page.mouse.down();
+    assert.equal((await until(snap, s => s.graphics.freeCam)).graphics.freeCam, true, 'holding the minimap looks there');
+    await page.mouse.up();
+    assert.equal((await until(snap, s => !s.graphics.freeCam)).graphics.freeCam, false, 'releasing the minimap returns the view to the hero');
+    // the camera glides back a share of the way each frame, so wait for it to reach the hero (it is far off on release)
+    const onScreen = h => h && h.x > 1440 * .16 && h.x < 1440 * .84 && h.y > 0 && h.y < 900;
     await page.mouse.move(720, 450); await page.keyboard.down('d'); await page.waitForTimeout(2500); await page.keyboard.up('d');
-    const hero = (await snap()).graphics.heroScreen;
+    const hero = (await until(snap, s => onScreen(s.graphics.heroScreen))).graphics.heroScreen;
     assert(hero.x > 1440 * .16 && hero.x < 1440 * .84 && hero.y > 0 && hero.y < 900, 'the hero stays on screen: ' + JSON.stringify(hero));
     pass('the minimap look ends on release and the view follows the hero');
 
     // A resize keeps the move order and a held key.
     const p0 = (await snap()).player, target = await read(`(() => ({ x: innerWidth * .8, y: innerHeight * .45 }))()`);
     await page.mouse.click(target.x, target.y); await page.waitForTimeout(300);
-    await page.setViewportSize({ width: 1400, height: 880 }); await page.waitForTimeout(300);
-    const p1 = (await snap()).player;
+    await page.setViewportSize({ width: 1400, height: 880 });
+    const p1 = (await until(snap, s => s.player.order?.type === 'move')).player; // the order lands on the next game step
     assert.equal(p1.order?.type, 'move', 'the move order survives a resize: ' + JSON.stringify(p1.order));
     await page.keyboard.down('a'); await page.waitForTimeout(200);
-    await page.setViewportSize({ width: 1440, height: 900 }); const xa = (await snap()).player.x; await page.waitForTimeout(800);
-    const xb = (await snap()).player.x; await page.keyboard.up('a');
+    await page.setViewportSize({ width: 1440, height: 900 }); const xa = (await snap()).player.x;
+    const xb = (await until(snap, s => s.player.x < xa - 20)).player.x; await page.keyboard.up('a');
     assert(xb < xa - 20, `a held key keeps moving the hero after a resize: ${xa} -> ${xb}`);
     pass('a resize keeps the hero\'s order and held keys', { order: p1.order.type, moved: Math.round(xa - xb), from: Math.round(p0.x) });
 
-    // Leaving full screen during play offers windowed play; nothing forces full screen back.
-    await page.evaluate(() => document.documentElement.requestFullscreen().catch(() => {})); await page.waitForTimeout(300);
-    assert.equal(await read('!!document.fullscreenElement'), true, 'the test page entered full screen');
-    await read('document.exitFullscreen()'); await page.waitForTimeout(300);
-    assert.equal(await read(`!!document.getElementById('fullscreen-back') && document.getElementById('resume').textContent`), 'Keep playing windowed');
+    // Leaving full screen during play offers windowed play; nothing forces full screen back. The page answers the
+    // full-screen events after the frame it is drawing, which takes seconds here, so each step waits for its result.
+    const fullscreen = () => until(() => read('!!document.fullscreenElement'), v => v);
+    await page.evaluate(() => document.documentElement.requestFullscreen().catch(() => {}));
+    assert.equal(await fullscreen(), true, 'the test page entered full screen');
+    await read('document.exitFullscreen()');
+    assert.equal(await until(() => read(`!!document.getElementById('fullscreen-back') && document.getElementById('resume').textContent`), v => v === 'Keep playing windowed'), 'Keep playing windowed');
     const windowed = await centre(read, '#resume'); await page.mouse.click(windowed.x, windowed.y); await page.waitForTimeout(200);
     for (let i = 0; i < 3; i++) { await page.mouse.click(1440 * (.3 + i * .2), 900 * .5); await page.waitForTimeout(150); }
-    await page.mouse.click(1440 * .92, 900 * .3); const ordered = (await snap()).player.order?.type;
+    await page.mouse.click(1440 * .92, 900 * .3); const ordered = (await until(snap, s => ['move', 'attack'].includes(s.player.order?.type))).player.order?.type;
     assert.equal(await read('!!document.fullscreenElement'), false, 'clicks in the match do not return to full screen');
     assert(['move', 'attack'].includes(ordered), 'the clicks order the hero: ' + ordered);
     assert.equal(await read(`localStorage.getItem('tidebreak.fullscreen')`), 'off', 'the windowed choice is saved');
     pass('leaving full screen offers windowed play and keeps it');
 
     // Chrome's hold-Esc order: the menu is already open when full screen ends; the open menu then offers the choice.
-    await page.evaluate(() => document.documentElement.requestFullscreen().catch(() => {})); await page.waitForTimeout(300);
-    await page.keyboard.press('Escape'); await page.waitForTimeout(150);
-    assert.equal(await read(`!!document.getElementById('resume') && !document.getElementById('fullscreen-back')`), true, 'the normal menu is open first');
-    await read('document.exitFullscreen()'); await page.waitForTimeout(300);
-    assert.equal(await read(`!!document.getElementById('fullscreen-back')`), true, 'the open menu now offers Back to full screen');
+    await page.evaluate(() => document.documentElement.requestFullscreen().catch(() => {})); await fullscreen();
+    await page.keyboard.press('Escape');
+    assert.equal(await until(() => read(`!!document.getElementById('resume') && !document.getElementById('fullscreen-back')`), v => v), true, 'the normal menu is open first');
+    await read('document.exitFullscreen()');
+    assert.equal(await until(() => read(`!!document.getElementById('fullscreen-back')`), v => v), true, 'the open menu now offers Back to full screen');
     // Closing that menu with Esc, without a choice, still never forces full screen back.
     await page.keyboard.press('Escape'); await page.waitForTimeout(150);
     for (let i = 0; i < 3; i++) { await page.mouse.click(1440 * (.3 + i * .2), 900 * .5); await page.waitForTimeout(150); }
@@ -235,7 +246,7 @@ try {
       window.__pump = ts => { const q = queue; queue = []; for (const cb of q) cb(ts); };
       const tick = () => { if (window.__auto) window.__pump(performance.now()); real(tick); }; real(tick);
     };
-    const t = await open(1280, 720, { init: [VIRTUAL_RAF] });
+    const t = await open(1280, 720, { init: [VIRTUAL_RAF], draw: 'low' });
     await toMatch(t);
     // Each window starts the hero at the same open spot and walks it right for one second (about 500 units, short of
     // the first obstacle), after a quarter second for the camera to settle. A hero that does not move fails the check.
@@ -269,15 +280,17 @@ try {
     const overlaps = await t.read(`(() => { const s = document.querySelector('.score').getBoundingClientRect(); return [...document.querySelectorAll('.hud-corner > *')].filter(e => getComputedStyle(e).display !== 'none').map(e => [e.id, e.getBoundingClientRect()]).filter(([, r]) => r.right > s.left && r.left < s.right && r.bottom > s.top && r.top < s.bottom).map(([id]) => id); })()`);
     assert.deepEqual(overlaps, [], 'nothing in the top left covers the score on a phone');
     assert.equal(await t.read(`document.getElementById('hud-sound').getAttribute('aria-pressed')`), 'false', 'the speaker shows the saved mute');
-    pass('touch play retains its opening spellbook and controls; the score and saved mute stay visible');
+    pass('touch play starts without the spellbook and keeps its controls; the score and saved mute stay visible');
     assert.deepEqual(t.errors, []); await t.page.close();
   }
 
   /* ---------------- ultra-wide pixel budget and the performance readout ---------------- */
   {
-    const t = await open(3440, 1440, { query: '?perf' });
-    await toMatch(t); await t.page.waitForTimeout(1500);
-    const size = await t.read(`(() => { const c = document.getElementById('battle'); return c.width * c.height; })()`);
+    const t = await open(3440, 1440, { query: '?perf', draw: 'full' });
+    await toMatch(t);
+    // the canvas takes its size and the readout its numbers from real frames: wait for a few
+    assert(await until(() => t.read(`!document.getElementById('perf').hidden && /steps\\/frame \\d+/.test(document.querySelector('#perf pre').textContent) && document.getElementById('battle-3d').width > 300`), v => v), 'real frames size the 3D canvas and fill the readout');
+    const size = await t.read(`(() => { const c = document.getElementById('battle-3d'); return c.width * c.height; })()`);
     assert(size <= 2560 * 1440 * 1.01, 'an ultra-wide canvas stays inside the pixel budget: ' + size);
     const readout = await t.read(`document.getElementById('perf').hidden ? '' : document.querySelector('#perf pre').textContent`);
     assert.match(readout, /frame .* ms median/); assert.match(readout, /canvas \d+x\d+/);

@@ -1,6 +1,7 @@
 # Tasks
 - [x] Add `skill-card.js` and wire it in `main.js` with live rank, mana, cooldown and status.
 - [x] Show the card on mouse hover, keyboard focus and touch; keep tap-to-cast.
+- [x] Later decision: on phones a tap casts and shows no card; the Spellbook explains spells (as in the archived shore-playability change). `hud-details.e2e.mjs` checks that a tap casts with no card.
 - [x] Stop cutting the Night Market into pages; scroll the whole panel; select the first item of a tab; scroll to the detail on narrow screens.
 - [x] Show the next purchase, saved embers and the build goal on the quick-buy button.
 - [x] Add `qa/tidebreak/hud-details.e2e.mjs` and list it in `AGENTS.md`.

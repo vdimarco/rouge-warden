@@ -241,9 +241,10 @@
 }
 
 /* ---------- Clear of the bar ---------- */
-/* Upright phones: the team chat sits at the right, above the point button, clear of the movement pad and rally. */
+/* Upright phones: the team chat sits at the right, above the point button (whose top is 226 px up at 390x844),
+   clear of the movement pad and rally. */
 @media (max-width:600px) and (min-height:600px),(max-width:539px){
- #team-chat#team-chat{left:auto;right:10px;top:auto;bottom:calc(220px + env(safe-area-inset-bottom));width:min(220px,calc(100vw - 140px));align-items:flex-end}
+ #team-chat#team-chat{left:auto;right:10px;top:auto;bottom:calc(232px + env(safe-area-inset-bottom));width:min(220px,calc(100vw - 140px));align-items:flex-end}
 }
 /* The death recap. Landscape: above the bar, between the movement pad (which ends at 116 px) and the skill column.
    Upright: right of the movement pad and above the point button. */

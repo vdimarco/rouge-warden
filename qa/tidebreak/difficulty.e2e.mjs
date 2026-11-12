@@ -1,18 +1,21 @@
 // Enemy difficulty control and match label at five screen sizes. Needs the server on port 8765.
 // NODE_PATH=qa/browser/node_modules node qa/tidebreak/difficulty.e2e.mjs
+// The picker and label are menu and HUD, so once the 3D world has loaded (Play turns on) the check turns the 3D drawing
+// off: software WebGL draws a frame every few seconds.
 import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
 const { chromium } = createRequire(import.meta.url)('playwright');
 const URL = process.env.TIDEBREAK_URL || 'http://127.0.0.1:8765/tidebreak/';
 const hit = (a, b) => a && b && a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
 const rect = e => { if (!e) return null; const r = e.getBoundingClientRect(); return { x: r.x, y: r.y, w: r.width, h: r.height }; };
+const ready = async page => { await page.waitForFunction(() => !document.getElementById('play').disabled, null, { timeout: 240000 }); await page.evaluate(() => { document.getElementById('battle').__shore3d.draw = () => {}; }); };
 const browser = await chromium.launch({ executablePath: process.env.CHROMIUM || '/opt/pw-browsers/chromium', args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
 let checks = 0;
 for (const [w, h] of [[1440, 900], [390, 844], [844, 390], [320, 568], [568, 320]]) {
   const page = await browser.newPage({ viewport: { width: w, height: h }, hasTouch: w < 900 }), errors = [];
   page.on('pageerror', e => errors.push(e.message));
   await page.goto(URL); await page.evaluate(() => localStorage.setItem('tidebreak.difficulty', 'mythic')); await page.reload();
-  await page.waitForSelector('#difficulty-picker [data-difficulty]'); await page.waitForTimeout(1500);
+  await page.waitForSelector('#difficulty-picker [data-difficulty]'); await ready(page);
   // Every button is on screen, wide enough, and receives the tap. The picker covers no menu control.
   const menu = await page.evaluate(src => {
     const rect = new Function(`return ${src}`)();

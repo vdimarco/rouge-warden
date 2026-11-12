@@ -72,6 +72,8 @@ if (!(await answers())) {
 }
 
 const exe = process.env.CHROMIUM_PATH || process.env.CHROMIUM || "/opt/pw-browsers/chromium";
+// a new tab opens blank and then goes to the link: read its address once it has left about:blank (or "" before that)
+const addressOf = async (tab) => { await tab.waitForURL((u) => /^https?:/.test(u.href), { timeout: 5000 }).catch(() => {}); return tab.url(); };
 const browser = await pw.chromium.launch({
   ...(fs.existsSync(exe) ? { executablePath: exe } : {}),
   args: ["--disable-gpu", "--autoplay-policy=no-user-gesture-required"],
@@ -299,7 +301,7 @@ for (const size of Object.keys(SIZES)) {
     const first = src.facts[0].ns[0];
     await ctx.route(/^https:\/\/(?!127\.0\.0\.1)/, (r) => r.fulfill({ status: 200, contentType: "text/html", body: "<title>ok</title>" }));
     const [tab] = await Promise.all([ctx.waitForEvent("page", { timeout: 5000 }).catch(() => null), page.tap(`section[data-screen="sources"] ol.refs-list li:nth-child(${first}) a`)]);
-    const url = tab ? tab.url() : null;
+    const url = tab ? await addressOf(tab) : null;
     if (tab) await tab.close();
     check("a tap on a fact's source opens it in a new tab", !!url && url.replace(/\/$/, "") === src.refs[first - 1].href.replace(/\/$/, ""), String(url));
     await ctx.unroute(/^https:\/\/(?!127\.0\.0\.1)/);
@@ -328,7 +330,7 @@ for (const size of Object.keys(SIZES)) {
   const opened = [];
   for (let i = 0; i < links.length; i++) {
     const [tab] = await Promise.all([ctx.waitForEvent("page", { timeout: 5000 }).catch(() => null), page.tap(`section[data-screen="sources"] .credit-links li:nth-child(${i + 1}) a`)]);
-    if (tab) { await tab.waitForLoadState("domcontentloaded").catch(() => {}); opened.push(tab.url()); await tab.close(); } else opened.push(null);
+    if (tab) { opened.push(await addressOf(tab)); await tab.close(); } else opened.push(null);
   }
   check("a tap on each credit link opens its page in a new tab", opened.length === 3 && opened.every((u, i) => u && u.replace(/\/$/, "") === links[i].href.replace(/\/$/, "")), JSON.stringify(opened));
   // and each one answers online

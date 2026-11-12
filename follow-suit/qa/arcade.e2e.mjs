@@ -20,8 +20,15 @@ const button = (page, name) => page.getByRole('button', { name, exact: true });
 const settle = (page) => page.waitForFunction(() => !document.querySelector('[data-revealing="true"]'), null, { timeout: 15_000 });
 const saved = (page) => page.evaluate((key) => window.localStorage.getItem(key), BEST_KEY);
 
-/** The arcade page asks Google for its fonts. The check answers with an empty style sheet. */
-const quietFonts = (page) => page.route(/fonts\.(googleapis|gstatic)\.com/, (route) => route.fulfill({ body: '', contentType: 'text/css' }));
+/**
+ * The arcade page asks Google for its fonts, and asks /api/arcade-leaderboard (a Vercel function that a static server
+ * does not have) for the play counts. The check answers with an empty style sheet and an empty leaderboard, as
+ * qa/arcade/machines.mjs does, so neither shows up as a console error.
+ */
+const quietFonts = async (page) => {
+  await page.route(/fonts\.(googleapis|gstatic)\.com/, (route) => route.fulfill({ body: '', contentType: 'text/css' }));
+  await page.route('**/api/arcade-leaderboard', (route) => route.fulfill({ json: { source: 'qa', days: 30, games: {} } }));
+};
 
 async function startTable(page) {
   await page.goto(`${session.base}?seed=${SEED}`);

@@ -591,12 +591,16 @@ const watchAudio = () => {
   // each click's lead: its beat on the context's clock (mapped at the click's own scheduling) less its start time
   const leads = r.starts.map((s) => {
     const k = Math.round(((s.when - s.cur) * 1000 + s.perf - t0) / TAP_PERIOD_MS);
-    return { k, lead: s.cur + (t0 + k * TAP_PERIOD_MS - s.perf) / 1000 - s.when };
+    // the game reads the latency at each use (ui/sound.js), so each click is held to the latency of its own moment
+    return { k, lead: s.cur + (t0 + k * TAP_PERIOD_MS - s.perf) / 1000 - s.when, at: s.out > 0 ? s.out : s.base };
   });
-  const off = leads.filter((x) => Math.abs(x.lead - L) > 0.003);
+  // currentTime moves in steps of one audio callback (baseLatency, about 10.7 ms here), and the game and this check each
+  // pair it with performance.now() at their own moment, so the two pairings can differ by one step: 3 ms plus one step
+  const step = r.base > 0 ? r.base : 0.0107;
+  const off = leads.filter((x) => Math.abs(x.lead - x.at) > 0.003 + step);
   check("live: the Tap test's clicks are each scheduled the running context's output latency early",
     Number.isFinite(r.tapAt) && leads.length >= 3 && off.length === 0,
-    `latency ${L}, ${leads.length} clicks: ${leads.slice(0, 5).map((x) => `#${x.k} ${(x.lead * 1000).toFixed(1)} ms`).join(", ")}`);
+    `latency ${L} at the end, a clock step of ${(step * 1000).toFixed(1)} ms, ${leads.length} clicks: ${leads.slice(0, 5).map((x) => `#${x.k} ${(x.lead * 1000).toFixed(1)} ms early at ${(x.at * 1000).toFixed(1)} ms latency`).join(", ")}`);
   check("live: no page errors (Tap test)", errors.length === 0, errors.slice(0, 3).join("; "));
   await ctx.close();
 }
