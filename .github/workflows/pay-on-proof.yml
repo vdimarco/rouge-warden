@@ -1,0 +1,29 @@
+name: Pay on Proof
+
+# The check of the NEAR Hackathon entry that needs no key: unit tests, then a
+# read-only check of the live mainnet contract.
+on:
+  push:
+    branches: [main]
+    paths: ["pop/**", ".github/workflows/pay-on-proof.yml"]
+  pull_request:
+    paths: ["pop/**", ".github/workflows/pay-on-proof.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: pop
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci --no-audit --no-fund
+      - run: npm run check

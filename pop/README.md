@@ -45,9 +45,20 @@ The server has these tools: `list_jobs`, `get_job`, `job_rules`, `preview_check`
 
 ## Run it
 
+To check the entry with no key and no account, you need Rust, Node.js 22 and network access:
+
 ```sh
 cd pop && npm ci
+npm run check
+```
+
+`npm run check` runs the 10 contract unit tests. Then `scripts/verify.mjs` reads the live mainnet contract through public RPC. It checks that the account has no full-access key, that the spend is inside the cap, that no failed delivery was paid, and that the paid receipts add up to the spend. It runs the contract's own check again on every stored delivery, and it compares the NEAR Intents balance of the seller with what the contract paid. Expected last line: `ALL CHECKS PASSED`. It exits with an error if a fact differs.
+
+The other commands:
+
+```sh
 npm test                                   # 10 contract unit tests
+npm run verify                             # read-only check of the mainnet contract
 npm run build                              # contract wasm (needs Rust, the wasm32 target, wasm-opt)
 node scripts/setup.mjs testnet             # faucet accounts, deploy, Warden key, lock
 node scripts/e2e.mjs testnet               # 13 checks on a live network
@@ -76,3 +87,12 @@ NEAR Intents has no testnet. On testnet, `mock-intents/` stands in for `intents.
 - The agents ran a commission alone: 3 jobs posted, counters accepted, one self-check caught a map with a room cut off, and 3 passes paid.
 - **Mainnet** contract `ee4994a509efa3cc516411e75f2633b2d8eac2d05fc30cc558bfd43329cde827`, funded from Solana through two NEAR Intents 1Click swaps (`scripts/fund-via-intents.mjs`). Cap 2.7027 NEAR ($10 on deployment day), beneficiary `proto_von.near`. Its full-access key was deleted in [tx HvyGdLvt…](https://nearblocks.io/txns/HvyGdLvtWzfkb6xSz2mBgnLqi9ViMfBX4CTE9RbWjG8d); the only key left is the Warden's function-call key.
 - Three commissions on mainnet, nine jobs, twelve receipts. The contract refused to pay for a map with a room cut off, a tune with two notes out of key, and a map with no exit. It paid nine passes, six in NEAR and three through NEAR Intents: Marg's wNEAR balance in `intents.near` (0.2516) matches what she was paid. Total spent 0.6861 NEAR of the 2.7027 cap.
+
+## Hackathon notes
+
+- **Built in the hackathon window.** Pay on Proof and Warden's Ledger were written on 10 and 11 November 2026. They came into this repository in [pull request 803](https://github.com/vdimarco/rouge-warden/pull/803).
+- **What is new and what is older.** This repository is the Cottage Arcade, which is older than the hackathon and holds many games. The entry is the folders `pop/`, `public/ledger/` and `qa/ledger/`, and the specs `openspec/specs/pay-on-proof/` and `openspec/specs/wardens-ledger/`. The branch `pre-hackathon` marks `main` before the entry, and the branch `hackathon-submission` marks the entry. [The diff between the two branches](https://github.com/vdimarco/rouge-warden/compare/pre-hackathon...hackathon-submission) is the hackathon work. The other games are not part of the entry.
+- **Libraries.** Contract: `near-sdk` and `serde_json`. Agents, scripts and MCP server: `near-api-js`, `@modelcontextprotocol/sdk` and `zod`. Build: `wasm-opt` from Binaryen. The Warden's Ledger game calls the NEAR Intents 1Click API for dry quotes.
+- **AI-generated code.** AI coding agents wrote most of the code and the text of this entry, under the direction of the author.
+- **Second entry by the same author.** [Lock Before You Talk](https://github.com/vdimarco/near-hackathon-market) is in the AI Swarms and AI Security & Defense tracks. It is a jury contract where AI jurors lock a first opinion before they talk. The two projects are independent: they share no code and no contract.
+- **License.** The code in `pop/` is under the MIT license. See [LICENSE](LICENSE).
