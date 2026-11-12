@@ -32,6 +32,10 @@ try {
 
   /* ---- the release boost (a real mouse button: a test hook earns no boost, as it earns no kick) ---- */
   await page.mouse.move(480, 270);
+  // Take the pointer lock first, as a player does: the click that asks for the lock starts no swing (desktop.js). The headless
+  // shell had no pointer lock, so every click swung there; the full browser grants the lock like a real Chrome.
+  await page.mouse.click(480, 270);
+  await page.waitForFunction(() => G.desktop.locked);
   const boost = [];
   for (const dyaw of [0, Math.PI / 2, -Math.PI / 2, Math.PI]) {
     // 30 m over the start roof, a rope on a tower ahead: swing, and let go when the cue shows

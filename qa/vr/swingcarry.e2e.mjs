@@ -26,6 +26,10 @@ try {
     G.test.step(1 / 60, 20);
     return { yaw };
   });
+  // Take the pointer lock first, as a player does: the click that asks for the lock starts no swing (desktop.js). The headless
+  // shell had no pointer lock, so every click swung there; the full browser grants the lock like a real Chrome.
+  await page.mouse.click(640, 400);
+  await page.waitForFunction(() => G.desktop.locked);
   await page.mouse.down();
   const armed = await page.evaluate((yaw) => {
     let n = 0, attached = false;
