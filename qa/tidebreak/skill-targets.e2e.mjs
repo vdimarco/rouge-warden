@@ -10,6 +10,8 @@
 // the press. Mouse on desktop, touch on phones.
 // Needs the static server (see AGENTS.md): NODE_PATH=qa/browser/node_modules node qa/tidebreak/skill-targets.e2e.mjs
 // SHOTS=<folder> saves a picture of the cluster at each size.
+// These are HUD checks, so once the 3D world has loaded the check turns the 3D drawing off: software WebGL draws a frame
+// every few seconds, and the HUD redraws only as the game steps.
 import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
 import { existsSync } from 'node:fs';
@@ -77,8 +79,11 @@ try {
     const phone = w <= 430 || h <= 520, name = `${w}x${h}`;
     const page = await browser.newPage({ viewport: { width: w, height: h }, hasTouch: phone, isMobile: phone });
     const errors = []; page.on('pageerror', e => errors.push(e.message));
+    // a returning player: the first-match guide hides the team chat while it shows, and this check is not about the guide
+    await page.addInitScript(() => { try { localStorage.setItem('tidebreak.first-match', 'skipped'); } catch {} });
     await page.goto(URL);
-    await page.waitForFunction(() => !document.getElementById('play')?.disabled, null, { timeout: 90000 });
+    await page.waitForFunction(() => !document.getElementById('play')?.disabled, null, { timeout: 240000 });
+    await page.evaluate(() => { document.getElementById('battle').__shore3d.draw = () => {}; }); // HUD only: no 3D picture
     await page.evaluate(() => document.getElementById('play').click());
     for (let i = 0; i < 150 && await page.evaluate(() => document.getElementById('hud').hidden); i++) { await page.keyboard.press('Enter'); await page.waitForTimeout(200); }
     await page.waitForFunction(async () => (await import('/tidebreak/main.js')).snapshot().running, null, { timeout: 30000 });
@@ -155,6 +160,8 @@ try {
     }
     // Feeds: with three team chat lines and three kill feed lines, no shown line covers a skill, a badge or another HUD
     // part, and every shown line stays on the screen. The rally button keeps clear of the market button.
+    // hold the game first, so the announcer does not redraw the kill feed from the game state over the staged lines
+    await page.evaluate(() => { window.GameSwitch = { isOpen: true, open() {} }; });
     const feeds = await page.evaluate(() => {
       const box = el => { const r = el.getBoundingClientRect(); return { x: r.left, y: r.top, w: r.width, h: r.height }; };
       const shown = el => { const r = el.getBoundingClientRect(), cs = getComputedStyle(el); return r.width > 0 && r.height > 0 && cs.display !== 'none' && cs.visibility !== 'hidden'; };

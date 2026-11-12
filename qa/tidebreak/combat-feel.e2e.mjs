@@ -7,6 +7,8 @@
 //   the GPU note on desktop (also at 320x568, and there in sudden death, when the match clock turns crimson).
 // Needs the static server (see AGENTS.md): NODE_PATH=qa/browser/node_modules node qa/tidebreak/combat-feel.e2e.mjs
 // SHOTS=<dir> saves a screenshot of each staged state.
+// Software WebGL draws a frame every few seconds, so once the 3D world has loaded the check turns the 3D drawing off for
+// the HUD parts and draws real frames only for the tells; after it changes the game it waits for game time to pass.
 import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
 import { existsSync, mkdirSync } from 'node:fs';
@@ -46,7 +48,7 @@ async function hudLayout(page, gpuNote) {
     for (const team of [0, 1]) { const v = s.units.filter(u => u.kind === 'hero' && u.team === team && !u.player && u.hp > 0).at(-1), ward = s.units.find(u => u.kind === 'tower' && u.team !== team); if (v) { v.shield = 0; sim.damage(s, ward, v, v.maxHp * 5, 'attack'); } }
     document.getElementById('muted-chip').hidden = false; document.getElementById('gpu-note').hidden = !gpu;
   }, gpuNote);
-  await page.waitForTimeout(300);
+  await gameWait(page);
   const layout = await page.evaluate(HUD_LAYOUT);
   await page.evaluate(() => { document.getElementById('muted-chip').hidden = true; document.getElementById('gpu-note').hidden = true; });
   return layout;
@@ -59,7 +61,8 @@ function assertLayout(layout, name) {
 }
 async function startMatch(page) {
   await page.goto(URL);
-  for (let i = 0; i < 300 && await page.evaluate(() => document.getElementById('play').disabled); i++) await page.waitForTimeout(200);
+  await page.waitForFunction(() => !document.getElementById('play').disabled, null, { timeout: 240000 });
+  await page.evaluate(() => { const r = document.getElementById('battle').__shore3d; r.realDraw = r.draw; r.draw = () => {}; });
   await page.click('#play');
   for (let i = 0; i < 150 && await page.evaluate(() => document.getElementById('hud').hidden); i++) { await page.keyboard.press('Enter'); await page.waitForTimeout(200); }
   for (let i = 0; i < 100 && !(await page.evaluate(async () => (await import('/tidebreak/main.js')).snapshot().running)); i++) await page.waitForTimeout(200);
@@ -68,6 +71,10 @@ async function startMatch(page) {
 }
 // Stage a state, let it draw, then hold the sim (the arcade switcher flag stops stepping, drawing goes on).
 const hold = on => `window.GameSwitch = ${on ? '{ isOpen: true, open() {} }' : 'undefined'}`;
+// waits until the game clock has moved on by `s` seconds: the HUD updates only as the game steps
+const gameWait = (page, s = .25) => page.evaluate(async s => { const m = await import('/tidebreak/main.js'), t0 = m.qaState().time, end = Date.now() + 60000; while (m.qaState().time < t0 + s && Date.now() < end) await new Promise(r => setTimeout(r, 50)); }, s);
+// draws two real 3D frames, then turns the drawing off again
+const drawFrames = page => page.evaluate(async () => { const r = document.getElementById('battle').__shore3d; r.draw = r.realDraw; for (let i = 0; i < 2; i++) await new Promise(f => requestAnimationFrame(f)); r.draw = () => {}; });
 let checks = 0;
 try {
   for (const size of SIZES) {
@@ -78,7 +85,7 @@ try {
 
     // Objective clock with a rest hint, and a QUEUED button.
     await page.evaluate(async () => { const s = (await import('/tidebreak/main.js')).qaState(), p = s.units.find(u => u.id === s.playerId); s.objectiveAt = s.time + 35; p.lastHit = -100; p.skirmishUntil = 0; p.skillRanks[1] = 1; p.recoveryUntil = s.time + 30; p.queuedCast = { slot: 1, aim: { x: 0, y: -1 }, at: s.time, until: s.time + 30 }; });
-    await page.waitForTimeout(400);
+    await gameWait(page);
     const clock = await page.evaluate(() => document.getElementById('objective-clock').textContent);
     assert.match(clock, /WILD HUNT 0:3\d/); assert.match(clock, /QUIET/); checks++;
     const queued = await page.evaluate(() => [...document.querySelectorAll('[data-skill]')].map(b => b.querySelector('b').textContent));
@@ -99,7 +106,7 @@ try {
       const ally = s.units.find(u => u.kind === 'hero' && u.team === 0 && !u.player); Object.assign(ally, { x: p.x + 60, y: p.y + 120, pendingAttack: { target: foe.id, at: s.time + 30, variant: 2, amount: 1, telegraph: true }, attackWindup: 30 });
     });
     await page.evaluate(() => { const c = document.getElementById('coach'); if (c) c.hidden = true; });
-    await page.waitForTimeout(80); await page.evaluate(hold(true)); await page.waitForTimeout(250);
+    await gameWait(page, 1 / 60); await page.evaluate(hold(true)); await drawFrames(page); // one step turns the cast into an intent
     const tell = await page.evaluate(async () => { const s = (await import('/tidebreak/main.js')).qaState(); return { intent: s.units.find(u => u.kind === 'hero' && u.team === 1 && u.castIntent)?.castIntent?.shape?.shape, lock: s.units.some(u => u.kind === 'tower' && u.lockTarget === s.playerId) }; });
     assert.equal(tell.intent, 'path'); assert.ok(tell.lock); checks++;
     await shot('tells'); if (SHOTS && size.name === 'desktop') await page.screenshot({ path: `${SHOTS}/desktop-tells-zoom.png`, clip: { x: 150, y: 400, width: 220, height: 300 }, scale: 'device' });
@@ -114,7 +121,7 @@ try {
       s.hitContext = { source: foe.id, label: 'Devil leap', telegraphed: true, dodgeable: true }; sim.damage(s, foe, p, p.maxHp * .3); s.hitContext = null;
       sim.damage(s, tower, p, p.maxHp * .25, 'attack'); sim.damage(s, foe, p, p.maxHp * .2, 'attack'); sim.damage(s, foe, p, p.maxHp, 'attack');
     });
-    await page.waitForTimeout(500);
+    await gameWait(page, .5);
     const recap = await page.evaluate(sel => {
       const el = document.getElementById('death-recap'), r = el.getBoundingClientRect(), box = b => ({ x: b.x, y: b.y, w: b.width, h: b.height });
       const overlaps = sel.flatMap(s => [...document.querySelectorAll(s)]).filter(n => { const b = n.getBoundingClientRect(); return b.width && b.height && getComputedStyle(n).visibility !== 'hidden' && n.offsetParent !== null && b.x < r.right && b.right > r.x && b.y < r.bottom && b.bottom > r.y; }).map(n => n.id || n.className);
@@ -126,7 +133,7 @@ try {
     assert.match(recap.text, /Back in \d+ s/, 'the recap carries the respawn countdown'); checks++;
     // The countdown is large and runs while the recap stays open (players need not close it to see the timer).
     const count = () => page.evaluate(() => { const t = document.querySelector('#death-recap .recap-timer'); return { text: t.textContent, size: parseFloat(getComputedStyle(t).fontSize) }; });
-    const first = await count(); await page.waitForTimeout(1300); const later = await count();
+    const first = await count(); await gameWait(page, 1.3); const later = await count();
     assert.ok(first.size >= 20 && first.text !== later.text, `the recap countdown is large and counts down while open: ${JSON.stringify([first, later])}`); checks++;
     await page.click('#death-recap .recap-close');
     assert.equal(await page.evaluate(() => document.getElementById('death-recap').hidden), true, 'the close button hides the recap'); checks++;
@@ -142,7 +149,7 @@ try {
     await page.evaluate(async () => { const s = (await import('/tidebreak/main.js')).qaState(), p = s.units.find(u => u.id === s.playerId); s.objectiveAt = s.time + 125; p.lastHit = -100; p.skirmishUntil = 0; document.getElementById('coach').hidden = true; });
     assertLayout(await hudLayout(page, false), 'small phone'); checks++;
     await page.evaluate(async () => { (await import('/tidebreak/main.js')).qaState().time = 840 - .2; });
-    await page.waitForTimeout(500);
+    await gameWait(page, .3);
     const sudden = await page.evaluate(HUD_LAYOUT);
     assert.equal(sudden.suddenDeath, true, 'the match clock marks sudden death');
     assert.equal(sudden.clockColor, 'rgb(229, 153, 138)', 'the final countdown is crimson');
