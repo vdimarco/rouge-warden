@@ -46,15 +46,19 @@ The Corridor SHALL show a step bar with Previous cabinet and Next cabinet button
 - **THEN** Insert coin · Play is on screen without scrolling
 
 ### Requirement: The Corridor can be ordered by date
-The Corridor SHALL offer an Order control at the end of its category strip with Arcade, Newest and Updated. Arcade SHALL keep the category order. Newest SHALL order the cabinets by the day each game was added, newest first, and Updated by the day each game last changed, most recent first, using `public/arcade/game-dates.json`. The choice SHALL be stored under `corridor-order` and applied on later visits. A dated order SHALL show each game's day as "Added Sep 12" or "Updated Oct 10" and SHALL hide the section signs. Changing the order SHALL start the walk at its first cabinet.
+The Corridor SHALL offer three Order buttons, Arcade, Newest and Updated, at the right end of its category strip, under All games. They SHALL be separate buttons, not a drop-down list, and the button of the current order SHALL show as pressed. On a phone the buttons SHALL take their own line, at the right, under the All games button of the strip. Arcade SHALL keep the category order. Newest SHALL order the cabinets by the day each game was added, newest first, and Updated by the day each game last changed, most recent first, using `public/arcade/game-dates.json`. The choice SHALL be stored under `corridor-order` and applied on later visits. A dated order SHALL show each game's day as "Added Sep 12" or "Updated Oct 10" and SHALL hide the section signs. Changing the order SHALL start the walk at its first cabinet.
+
+#### Scenario: The order buttons
+- **WHEN** a visitor opens the Corridor at 1280×800, 390×844, 320×700, 360×640 or 800×600
+- **THEN** Arcade, Newest and Updated are three buttons side by side, whole inside the window, at the right side under All games and above the caption, and Arcade is pressed
 
 #### Scenario: Recently updated
-- **WHEN** a visitor selects Updated
+- **WHEN** a visitor presses Updated
 - **THEN** the walk restarts with the most recently changed game first, and its caption reads Updated plus that day
 
 #### Scenario: The choice persists
 - **WHEN** that visitor opens the Corridor again
-- **THEN** Updated is still selected and the order is the same
+- **THEN** Updated is still pressed and the order is the same
 
 ### Requirement: Lake Brawl, Eleven Wells and Warden's Ledger have Corridor cabinets
 The Corridor SHALL have a cabinet for Lake Brawl as the last cabinet of Cottage, a cabinet for Eleven Wells in The Lab after Orbital Gardener, and a cabinet for Warden's Ledger as the last cabinet of The Lab. Each cabinet SHALL show the game's title, its screen art and its marquee subtitle, and its Insert coin · Play control SHALL open the game's route on the same site. The cabinets SHALL be numbered in walk order with no gap, and the Index count, the counter and the hall's spoken label SHALL state the number of cabinets. The Newest and Updated orders SHALL place the three games by their dates in `public/arcade/game-dates.json`.

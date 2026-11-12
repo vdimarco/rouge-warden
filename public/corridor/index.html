@@ -306,10 +306,10 @@
         text-transform: uppercase;
         white-space: nowrap;
       }
-      .cr-order { position: relative; flex: none; display: inline-flex; }
-      .cr-order select { appearance: none; -webkit-appearance: none; padding-right: 28px; color: var(--fg); cursor: pointer; }
-      .cr-order select option { background: var(--bg); color: var(--fg); text-transform: none; }
-      .cr-order:after { content: ""; position: absolute; right: 12px; top: 50%; width: 6px; height: 6px; margin-top: -5px; border-right: 1.5px solid currentColor; border-bottom: 1.5px solid currentColor; transform: rotate(45deg); pointer-events: none; opacity: .7; }
+      /* The order buttons stand at the right end of the strip, under All games. On a phone they take their own line. */
+      .cr-order { flex: none; display: inline-flex; gap: 6px; margin-left: auto; }
+      .cr-order .cr-cat-btn { color: var(--fg); cursor: pointer; }
+      .cr-order .cr-cat-btn[aria-pressed=true] { background: var(--glass-h); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--fg) 35%, transparent); }
       .cr-cat-btn[aria-current=true] { background: var(--glass-h); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--fg) 35%, transparent); }
       .cr-cat-menu {
         position: absolute;
@@ -564,6 +564,7 @@
         .cr-list-t { display: none; }
         .cr-rail { display: none; }
         .cr-cats { top: 72px; }
+        .cr-order { flex-basis: 100%; justify-content: flex-end; }
         .cr-slot { top: 70px; height: 46svh; }
         .cr-panel { top: calc(84px + 46svh); }
       }
@@ -3303,14 +3304,14 @@ void main() {
         }).join('');
         /* The order of the walk: by category, newest first, or most recently
            updated first. The hall is built once, so a change reloads it. */
-        catsEl.insertAdjacentHTML('beforeend', `<label class="cr-order"><span class="cr-sr">Order of games</span>
-          <select id="order" class="cr-btn cr-cat-btn">
-            <option value="arcade">Order: Arcade</option><option value="new">Order: Newest</option><option value="updated">Order: Updated</option>
-          </select></label>`);
-        const orderEl = $('#order');
-        orderEl.value = ORDER;
-        orderEl.addEventListener('change', () => {
-          try { localStorage.setItem(ORDER_KEY, orderEl.value); } catch {}
+        const ORDERS = [['arcade', 'Arcade'], ['new', 'Newest'], ['updated', 'Updated']];
+        catsEl.insertAdjacentHTML('beforeend', `<div class="cr-order" id="order" role="group" aria-label="Order of games">
+          ${ORDERS.map(([v, t]) => `<button type="button" class="cr-btn cr-cat-btn" data-order="${v}" aria-pressed="${v === ORDER}">${t}</button>`).join('')}
+        </div>`);
+        $('#order').addEventListener('click', (e) => {
+          const b = e.target.closest('[data-order]');
+          if (!b || b.dataset.order === ORDER) return;
+          try { localStorage.setItem(ORDER_KEY, b.dataset.order); } catch {}
           history.scrollRestoration = 'manual';     // start the new walk at its first cabinet
           scrollTo(0, 0);
           location.reload();
@@ -3553,7 +3554,9 @@ void main() {
         a.className = 'cr-btn cr-cat-btn';
         a.href = '/?view=classic';
         a.textContent = 'All games';
-        document.getElementById('cats').appendChild(a);
+        // before the order buttons, so on a phone they stand under All games
+        const cats = document.getElementById('cats');
+        cats.insertBefore(a, document.getElementById('order'));
       });
     </script>
   </body>
