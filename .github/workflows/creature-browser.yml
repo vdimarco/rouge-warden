@@ -20,7 +20,8 @@ jobs:
       - name: Verify exports, neutral behavior and full matches
         run: node qa/creatures/shared.test.mjs && node qa/tidebreak/creatures.test.mjs && node qa/tidebreak/base-attacks.test.mjs && node qa/tidebreak/hero-identities.test.mjs && node qa/tidebreak/legends.test.mjs && node qa/tidebreak/sim.test.mjs
   viewport:
-    runs-on: ubuntu-latest
+    # Pinned: ubuntu-latest became Ubuntu 26.04, where Playwright 1.51 refuses to install Chromium.
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     strategy:
       fail-fast: false
@@ -32,7 +33,19 @@ jobs:
         with:
           node-version: '22'
       - run: npm ci --prefix qa/browser
-      - run: cd qa/browser && npx playwright install --with-deps chromium
+      # Chromium from Playwright's own host, cached by the lockfile. Not --with-deps in one step: on 2026-11-11 the
+      # runner's Ubuntu mirror stopped resolving and that apt step ran until the job was cancelled (see arcade-voting.yml).
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('qa/browser/package-lock.json') }}
+      - run: cd qa/browser && npx playwright install chromium
+        timeout-minutes: 4
+      # Fonts and system libraries through apt, best effort: when the mirror does not resolve, this gives up after
+      # 3 minutes instead of hanging the job, and the tests run with the fonts the runner image already has.
+      - run: cd qa/browser && npx playwright install-deps chromium
+        timeout-minutes: 3
+        continue-on-error: true
       - name: Verify reference selection, creature display and controls
         run: node qa/creatures/browser.mjs
         env:

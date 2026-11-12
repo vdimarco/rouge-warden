@@ -25,7 +25,18 @@ jobs:
         with:
           node-version: '22'
       - run: npm ci --prefix qa/browser
-      - run: cd qa/browser && npx playwright install --with-deps chromium
+      # The browser comes from Playwright's own download host, cached by the Playwright version in the lockfile.
+      # Not --with-deps: that runs apt-get for fonts and libraries, and on 2026-11-11 the runner's Ubuntu mirror stopped
+      # resolving (azure.archive.ubuntu.com). Every package then waited 20 s and failed, the step ran 14 minutes, and the
+      # job was cancelled at its 10 minute limit before any test ran, on this branch and on main alike. ubuntu-24.04
+      # already ships Google Chrome, so the libraries Chromium needs are on the image. The step limit makes a stuck
+      # download fail on its own step with a clear error instead of eating the whole job.
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('qa/browser/package-lock.json') }}
+      - run: cd qa/browser && npx playwright install chromium
+        timeout-minutes: 4
       - run: python3 -m http.server 8765 --directory public > /tmp/arcade-server.log 2>&1 &
       - run: node --check public/arcade/switch.js && node qa/arcade/voting.e2e.mjs
         env:

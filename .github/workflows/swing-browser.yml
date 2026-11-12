@@ -10,7 +10,8 @@ permissions:
   contents: read
 jobs:
   city-and-one-thumb:
-    runs-on: ubuntu-latest
+    # Pinned: ubuntu-latest became Ubuntu 26.04, where Playwright 1.51 refuses to install Chromium.
+    runs-on: ubuntu-24.04
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
@@ -18,7 +19,19 @@ jobs:
         with:
           node-version: '22'
       - run: npm ci --prefix qa/browser
-      - run: cd qa/browser && npx playwright install --with-deps chromium
+      # Chromium from Playwright's own host, cached by the lockfile. Not --with-deps in one step: on 2026-11-11 the
+      # runner's Ubuntu mirror stopped resolving and that apt step ran until the job was cancelled (see arcade-voting.yml).
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('qa/browser/package-lock.json') }}
+      - run: cd qa/browser && npx playwright install chromium
+        timeout-minutes: 4
+      # Fonts and system libraries through apt, best effort: when the mirror does not resolve, this gives up after
+      # 3 minutes instead of hanging the job, and the tests run with the fonts the runner image already has.
+      - run: cd qa/browser && npx playwright install-deps chromium
+        timeout-minutes: 3
+        continue-on-error: true
       - run: node qa/vr/render-scale.test.mjs && node qa/vr/frame-metrics.test.mjs && node qa/vr/physics.test.mjs && node qa/vr/city.test.mjs && node qa/vr/mobile.test.mjs && node qa/vr/target.test.mjs && node qa/vr/mobile-panel.test.mjs && node qa/vr/street.test.mjs && node qa/vr/crowd-height.test.mjs && node qa/vr/action.test.mjs && node qa/vr/goon-slide-rotations.test.mjs && node qa/vr/chainbid.test.mjs && node qa/vr/headset-comfort.test.mjs && node qa/vr/easy.test.mjs && node qa/vr/gauntlet.test.mjs
       - name: Compile city shaders and exercise one-thumb play
         run: node qa/vr/mobile.e2e.mjs
@@ -79,7 +92,8 @@ jobs:
   # still passing when the 45 minute cap cancelled it, so the check stayed red.
   # The suites are split so each job can finish inside its own cap.
   flat-play:
-    runs-on: ubuntu-latest
+    # Pinned: ubuntu-latest became Ubuntu 26.04, where Playwright 1.51 refuses to install Chromium.
+    runs-on: ubuntu-24.04
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
@@ -87,7 +101,19 @@ jobs:
         with:
           node-version: '22'
       - run: npm ci --prefix qa/browser
-      - run: cd qa/browser && npx playwright install --with-deps chromium
+      # Chromium from Playwright's own host, cached by the lockfile. Not --with-deps in one step: on 2026-11-11 the
+      # runner's Ubuntu mirror stopped resolving and that apt step ran until the job was cancelled (see arcade-voting.yml).
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('qa/browser/package-lock.json') }}
+      - run: cd qa/browser && npx playwright install chromium
+        timeout-minutes: 4
+      # Fonts and system libraries through apt, best effort: when the mirror does not resolve, this gives up after
+      # 3 minutes instead of hanging the job, and the tests run with the fonts the runner image already has.
+      - run: cd qa/browser && npx playwright install-deps chromium
+        timeout-minutes: 3
+        continue-on-error: true
       - name: Offline cache and versions
         run: node qa/vr/pwa.mjs
         env:
@@ -126,7 +152,8 @@ jobs:
           retention-days: 14
 
   flat-scenes:
-    runs-on: ubuntu-latest
+    # Pinned: ubuntu-latest became Ubuntu 26.04, where Playwright 1.51 refuses to install Chromium.
+    runs-on: ubuntu-24.04
     timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
@@ -134,7 +161,19 @@ jobs:
         with:
           node-version: '22'
       - run: npm ci --prefix qa/browser
-      - run: cd qa/browser && npx playwright install --with-deps chromium
+      # Chromium from Playwright's own host, cached by the lockfile. Not --with-deps in one step: on 2026-11-11 the
+      # runner's Ubuntu mirror stopped resolving and that apt step ran until the job was cancelled (see arcade-voting.yml).
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('qa/browser/package-lock.json') }}
+      - run: cd qa/browser && npx playwright install chromium
+        timeout-minutes: 4
+      # Fonts and system libraries through apt, best effort: when the mirror does not resolve, this gives up after
+      # 3 minutes instead of hanging the job, and the tests run with the fonts the runner image already has.
+      - run: cd qa/browser && npx playwright install-deps chromium
+        timeout-minutes: 3
+        continue-on-error: true
       - name: Interface, words and menus
         run: node qa/vr/ui.mjs
         env:
@@ -148,7 +187,8 @@ jobs:
           retention-days: 14
 
   flat-world:
-    runs-on: ubuntu-latest
+    # Pinned: ubuntu-latest became Ubuntu 26.04, where Playwright 1.51 refuses to install Chromium.
+    runs-on: ubuntu-24.04
     timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
@@ -156,7 +196,19 @@ jobs:
         with:
           node-version: '22'
       - run: npm ci --prefix qa/browser
-      - run: cd qa/browser && npx playwright install --with-deps chromium
+      # Chromium from Playwright's own host, cached by the lockfile. Not --with-deps in one step: on 2026-11-11 the
+      # runner's Ubuntu mirror stopped resolving and that apt step ran until the job was cancelled (see arcade-voting.yml).
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('qa/browser/package-lock.json') }}
+      - run: cd qa/browser && npx playwright install chromium
+        timeout-minutes: 4
+      # Fonts and system libraries through apt, best effort: when the mirror does not resolve, this gives up after
+      # 3 minutes instead of hanging the job, and the tests run with the fonts the runner image already has.
+      - run: cd qa/browser && npx playwright install-deps chromium
+        timeout-minutes: 3
+        continue-on-error: true
       - name: Third-person hero and chase camera
         run: node qa/vr/hero.mjs
         env:
@@ -180,7 +232,8 @@ jobs:
           retention-days: 14
 
   flat-missions:
-    runs-on: ubuntu-latest
+    # Pinned: ubuntu-latest became Ubuntu 26.04, where Playwright 1.51 refuses to install Chromium.
+    runs-on: ubuntu-24.04
     timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
@@ -188,7 +241,19 @@ jobs:
         with:
           node-version: '22'
       - run: npm ci --prefix qa/browser
-      - run: cd qa/browser && npx playwright install --with-deps chromium
+      # Chromium from Playwright's own host, cached by the lockfile. Not --with-deps in one step: on 2026-11-11 the
+      # runner's Ubuntu mirror stopped resolving and that apt step ran until the job was cancelled (see arcade-voting.yml).
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('qa/browser/package-lock.json') }}
+      - run: cd qa/browser && npx playwright install chromium
+        timeout-minutes: 4
+      # Fonts and system libraries through apt, best effort: when the mirror does not resolve, this gives up after
+      # 3 minutes instead of hanging the job, and the tests run with the fonts the runner image already has.
+      - run: cd qa/browser && npx playwright install-deps chromium
+        timeout-minutes: 3
+        continue-on-error: true
       - name: The job sticker on a chase
         run: node qa/vr/goalmark.e2e.mjs
         env:
@@ -249,7 +314,8 @@ jobs:
           retention-days: 14
 
   flat-payoff:
-    runs-on: ubuntu-latest
+    # Pinned: ubuntu-latest became Ubuntu 26.04, where Playwright 1.51 refuses to install Chromium.
+    runs-on: ubuntu-24.04
     timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
@@ -257,7 +323,19 @@ jobs:
         with:
           node-version: '22'
       - run: npm ci --prefix qa/browser
-      - run: cd qa/browser && npx playwright install --with-deps chromium
+      # Chromium from Playwright's own host, cached by the lockfile. Not --with-deps in one step: on 2026-11-11 the
+      # runner's Ubuntu mirror stopped resolving and that apt step ran until the job was cancelled (see arcade-voting.yml).
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('qa/browser/package-lock.json') }}
+      - run: cd qa/browser && npx playwright install chromium
+        timeout-minutes: 4
+      # Fonts and system libraries through apt, best effort: when the mirror does not resolve, this gives up after
+      # 3 minutes instead of hanging the job, and the tests run with the fonts the runner image already has.
+      - run: cd qa/browser && npx playwright install-deps chromium
+        timeout-minutes: 3
+        continue-on-error: true
       - name: A win pays off
         run: node qa/vr/winpay.e2e.mjs
         env:
