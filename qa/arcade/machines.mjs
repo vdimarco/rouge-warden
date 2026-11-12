@@ -2,6 +2,7 @@
 // Serve public/ first (for example: cd public && python3 -m http.server 8765), or set ARCADE_URL to the address of the same tree.
 // Needs Playwright (NODE_PATH=$(npm root -g)). The games are never loaded: the test stops each page change and reads where it was going.
 // To use a Chromium other than Playwright's own (for example a preinstalled one), set CHROMIUM_PATH to its executable.
+// To run only some of the browser parts, list them in PARTS, for example PARTS=focus,layout (the names are in PARTS below).
 // Exit code 1 on failure.
 import fs from "fs";
 import path from "path";
