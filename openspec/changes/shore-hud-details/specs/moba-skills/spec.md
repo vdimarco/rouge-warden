@@ -7,7 +7,7 @@ The HUD SHALL explain a skill in the command bar with its name, key, rank, mana 
 - **THEN** its card shows, and it goes when the mouse leaves.
 #### Scenario: Tap a skill on a phone
 - **WHEN** the player taps a skill at 390x844 or 844x390
-- **THEN** a ready skill casts as before, and a compact card (at most 100 px high) shows left of the skills, over the items, while the finger is down and for about 2 s after release.
+- **THEN** a ready skill casts as before and no card shows: on a phone the Spellbook, from the pause menu, explains each spell.
 #### Scenario: Read why a skill cannot be used
 - **WHEN** a skill is cooling down, short of mana or not learned
 - **THEN** the card says "Ready in N s", the mana still needed, or how to learn it.

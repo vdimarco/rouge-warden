@@ -148,8 +148,12 @@ try {
     await read('const r = window.__renderer; r.recenter(); r.cam = { x: p.x, y: p.y };'); await pump(2, 16);
 
     // world(project(x, y)) is the identity on the ground, and pick() finds an enemy under the cursor.
-    const trip = await page.evaluate(() => { const r = window.__renderer, out = []; for (const [dx, dy] of [[0, 0], [400, -300], [-600, 200], [900, -800]]) { const x = r.cam.x + dx, y = r.cam.y + dy, s = r.project(x, y), w = r.world(s.x, s.y); out.push(Math.hypot(w.x - x, w.y - y)); } return out; });
-    assert(Math.max(...trip) < 1, 'world(project(x, y)) round-trips: ' + trip);
+    // world() picks the first surface under the cursor, as a player sees it: a ground point behind a hill comes back as
+    // the hill in front. So each point must come back to itself, or as a surface nearer the camera; the centre must
+    // come back to itself.
+    const trips = await page.evaluate(() => { const r = window.__renderer, c = r.camera.position, far = (x, y) => Math.hypot(x - c.x, r.groundHeight(x, y) - c.y, y - c.z), out = []; for (const [dx, dy] of [[0, 0], [400, -300], [-600, 200], [900, -800]]) { const x = r.cam.x + dx, y = r.cam.y + dy, s = r.project(x, y), w = r.world(s.x, s.y); out.push({ error: Math.hypot(w.x - x, w.y - y), nearer: far(w.x, w.y) < far(x, y) - 1 }); } return out; });
+    const trip = trips.map(t => t.error);
+    assert(trips[0].error < 1 && trips.every(t => t.error < 1 || t.nearer), 'world(project(x, y)) round-trips, or meets a surface in front: ' + JSON.stringify(trips));
     const foe = await read(`const e = s.units.find(u => u.kind === 'hero' && u.team === 1); e.x = p.x + 260; e.y = p.y - 60; e.revealedUntil = s.time + 10; e.hp = e.maxHp; e.respawn = 0; window.__renderer.cam = { x: p.x, y: p.y }; return e.id;`);
     await pump(2, 16);
     const picked = await page.evaluate(async foe => { const m = await import('/tidebreak/main.js'), s = m.qaState(), r = window.__renderer, e = s.units.find(u => u.id === foe && r.visible.has(u.id)); if (!e) return { none: true }; const a = r.project(e.x, e.y, 110); return { id: e.id, got: r.pick(s, a.x, a.y), ground: r.pick(s, a.x, a.y + 400) }; }, foe);
@@ -185,8 +189,9 @@ try {
     const page = await browser.newPage();
     await page.addInitScript(() => { const get = HTMLCanvasElement.prototype.getContext; HTMLCanvasElement.prototype.getContext = function(type, ...args) { return type === 'webgl2' ? null : get.call(this, type, ...args); }; });
     await page.goto(URL, { waitUntil: 'domcontentloaded' });
-    await page.locator('#load-error').waitFor({ state: 'visible' });
-    assert.match(await page.locator('#load-error-message').textContent(), /Enable graphics acceleration/);
+    // the graphics message is the #graphics-error dialog (as terrain-3d.e2e.mjs reads it)
+    await page.locator('#graphics-error[open]').waitFor();
+    assert.match(await page.locator('#graphics-error').innerText(), /graphics acceleration/);
     assert.equal(await page.locator('#play').isEnabled(), false);
     assert.equal(await page.locator('#battle-3d').count(), 0);
     pass('unsupported graphics explain the failure and keep Play disabled');

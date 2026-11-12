@@ -4,10 +4,10 @@
 // - the selected hero's model stands on screen inside the portrait's box, and choosing another hero swaps the model
 //   without a flash of the painted stage; the hero keeps only a faint team rim light;
 // - the arena draws at most about 30 frames a second, a slow draw stretches the gap, and nothing draws while the tab
-//   is hidden; a lost WebGL context shows an interruption message;
+//   is hidden; a lost WebGL context shows the graphics message until it returns;
 // - the roster, the skill previews and Play stay on top and take clicks at five screen sizes;
 // - with reduced motion the camera holds still;
-// - starting the draft stops the arena, and the match draws with the gameplay camera;
+// - Play starts the match (the draft is optional): the arena goes, and the match draws with the gameplay camera;
 // - legacy ?renderer=2d URLs start the 3D arena.
 // Needs the static server (see AGENTS.md): NODE_PATH=qa/browser/node_modules node qa/tidebreak/hero-select-3d.e2e.mjs
 // SHOTS=<dir> also saves a screenshot of the hero select at each size.
@@ -97,11 +97,16 @@ try {
     const heavy = await count(30, 1000 / 60);
     assert(heavy >= 3 && heavy <= 6, 'a slow draw stretches the gap: ' + heavy);
     await page.evaluate(() => { delete document.getElementById('battle').__shore3d.draw; }); await draw(1);
-    // Context loss leaves the battlefield in 3D and shows an interruption message until it returns.
-    await page.evaluate(() => { document.getElementById('battle').__shore3d.lost = true; }); await pump(2);
-    assert.equal(await page.locator('#graphics-interrupted').isVisible(), true);
-    await page.evaluate(() => { document.getElementById('battle').__shore3d.lost = false; }); await draw(2);
-    assert.equal(await page.locator('#graphics-interrupted').isVisible(), false);
+    // A real context loss (as in terrain-3d.e2e.mjs) leaves the battlefield in 3D and shows the graphics message until it
+    // returns; Play waits with it.
+    await page.evaluate(() => { window.__lose = document.getElementById('battle').__shore3d.gl.getContext().getExtension('WEBGL_lose_context'); window.__lose.loseContext(); });
+    await page.locator('#graphics-error[open]').waitFor();
+    assert.equal(await page.locator('#graphics-error').isVisible(), true, 'a lost context shows the graphics message');
+    assert.equal(await page.evaluate(() => document.getElementById('play').disabled), true, 'Play waits while the graphics are lost');
+    await page.evaluate(() => window.__lose.restoreContext());
+    await page.locator('#graphics-error').waitFor({ state: 'hidden', timeout: 120000 });
+    await draw(2);
+    assert.equal(await page.evaluate(() => document.getElementById('play').disabled), false, 'Play comes back with the graphics');
     assert.equal(await page.evaluate(() => document.getElementById('menu').classList.contains('arena-3d')), true);
     // A hidden tab draws nothing.
     await page.evaluate(() => Object.defineProperty(document, 'hidden', { configurable: true, get: () => true }));
@@ -137,13 +142,11 @@ try {
     assert.equal(await page.evaluate(() => document.querySelector('#hero-preview [data-hero-spell="2"]').getAttribute('aria-pressed')), 'true');
     pass('the menu controls stay on top and work at every size', { sizes: SIZES });
 
-    // Play opens the draft: the arena stops. The match then draws with the gameplay camera.
-    await page.evaluate(() => { window.__auto = true; });
-    await page.click('#play');
-    await page.waitForFunction(() => !document.getElementById('draft').hidden, null, { timeout: 60000 });
+    // Play starts the match with the chosen hero (the draft is optional, under Settings: openspec/specs/moba-ui "Short
+    // first match"), so the arena behind the menu goes away, and the match draws with the gameplay camera.
+    // the click waits behind a running arena frame, which takes seconds here: click with the frames held, then let them run
     await page.evaluate(() => { window.__auto = false; });
-    const draftFrames = await count(3, 5000);
-    assert.equal(draftFrames, 0, 'no arena frames during the draft');
+    await page.click('#play', { timeout: 120000 });
     await page.evaluate(() => { window.__auto = true; });
     for (let i = 0; i < 160 && await page.evaluate(() => document.getElementById('hud').hidden); i++) { await page.keyboard.press('Enter'); await page.waitForTimeout(200); }
     await page.waitForFunction(() => !document.getElementById('hud').hidden, null, { timeout: 60000 });
@@ -151,7 +154,8 @@ try {
     await page.waitForFunction(() => !document.getElementById('battle').__shore3d.showcase, null, { timeout: 240000, polling: 500 });
     const g = await page.evaluate(() => { const r = document.getElementById('battle').__shore3d; return { ...r.stats(), offset: !!r.camera.view?.enabled, near: r.camera.near }; });
     assert(!g.showcase && g.fov === 34 && g.cameraPitch === 55 && !g.offset && g.near === 150, 'the match uses the gameplay camera: ' + JSON.stringify({ showcase: g.showcase, fov: g.fov, offset: g.offset, near: g.near }));
-    pass('starting the draft stops the arena; the match uses the gameplay camera', { draftFrames });
+    assert.equal(await page.evaluate(() => document.getElementById('menu').hidden), true, 'the hero select and its arena are gone in the match');
+    pass('Play starts the match; the arena goes and the match uses the gameplay camera');
     assert.deepEqual(t.errors, [], 'no console errors'); await page.close();
   }
   {

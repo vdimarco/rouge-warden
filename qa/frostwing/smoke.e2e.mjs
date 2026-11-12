@@ -277,12 +277,14 @@ for (const [name, dev] of [["portrait", devices["iPhone 13"]], ["landscape", dev
   const vp = dev.viewport;
   // keep the rivals out of the way and give the player a clean start
   await page.evaluate(() => { const m = __fw.match; for (const s of m.ships) if (s.team === 1) { s.alive = false; s.respawn = 1e9; } m.bolts.length = 0; });
-  // a quick tap on open sky: no steering, no lasers
-  const y00 = await page.evaluate(() => __fw.match.player.yaw);
+  // a quick tap on open sky: no steering, no lasers. The lasers start after a finger rests 180 ms, and software WebGL can
+  // take longer than that for one frame, so a tap would read as a rest: the drawing is off for the tap (input only)
+  const y00 = await page.evaluate(() => { const r = __fw.dbg.renderer; r.realRender = r.render; r.render = () => {}; return __fw.match.player.yaw; });
   await tp("touchStart", vp.width * 0.3, vp.height * 0.5); await tp("touchEnd");
   await gameWait(page, 0.2);
+  await page.evaluate(() => { const r = __fw.dbg.renderer; r.render = r.realRender; });
   const tap0 = await page.evaluate(() => ({ lasers: __fw.match.bolts.filter((b) => b.owner === __fw.match.player.id && b.kind === "laser").length, yaw: __fw.match.player.yaw }));
-  check(tap0.lasers === 0 && Math.abs(tap0.yaw - y00) < 0.05, `${tag}: a quick tap does not steer or fire the lasers`);
+  check(tap0.lasers === 0 && Math.abs(tap0.yaw - y00) < 0.05, `${tag}: a quick tap does not steer or fire the lasers (${tap0.lasers} lasers, yaw ${y00.toFixed(3)} to ${tap0.yaw.toFixed(3)})`);
   // drag from the right half of the screen: the whole screen steers, and the lasers fire while the finger steers
   const sx = vp.width * 0.62, sy = vp.height * 0.45;
   const y0 = await page.evaluate(() => __fw.match.player.yaw);
@@ -302,14 +304,20 @@ for (const [name, dev] of [["portrait", devices["iPhone 13"]], ["landscape", dev
   });
   await page.waitForTimeout(400); // let the camera settle on the new frame
   const at = await page.evaluate((id) => __fw.screenOf(id), foe);
+  // the quick tap on open sky above also sent a homing shot and started the recharge: wait for the recharge, and count
+  // only the shots this tap starts (the earlier one can still be in flight when the game runs slowly)
+  await page.waitForFunction(() => __fw.match.player.quickCd <= 0, null, { timeout: 120000 });
+  const charges = () => page.evaluate(() => { const m = __fw.match; window.__charges = new Set(m.bolts.filter((b) => b.owner === m.player.id && b.kind === "charge")); });
+  await charges();
   await tp("touchStart", at.x, at.y); await tp("touchEnd");
   await gameWait(page, 0.1);
-  const q = await page.evaluate((id) => { const m = __fw.match, me = m.player; return { shots: m.bolts.filter((b) => b.owner === me.id && b.kind === "charge").map((b) => b.target), cd: me.quickCd, id }; }, foe);
+  const q = await page.evaluate((id) => { const m = __fw.match, me = m.player; return { shots: m.bolts.filter((b) => b.owner === me.id && b.kind === "charge" && !window.__charges.has(b)).map((b) => b.target), cd: me.quickCd, id }; }, foe);
   check(at.front && q.shots.length >= 1 && q.shots.every((t) => t === foe) && q.cd > 0, `${tag}: a tap on a rival sends a homing shot at that ship and starts the recharge (${q.shots.length} shot, ${q.cd.toFixed(1)} s)`);
+  await charges();
   await tp("touchStart", at.x, at.y); await tp("touchEnd");
   await gameWait(page, 0.1);
-  const again = await page.evaluate(() => { const m = __fw.match; return m.bolts.filter((b) => b.owner === m.player.id && b.kind === "charge").length; });
-  check(again === q.shots.length, `${tag}: a second tap during the recharge fires nothing`);
+  const again = await page.evaluate(() => { const m = __fw.match; return m.bolts.filter((b) => b.owner === m.player.id && b.kind === "charge" && !window.__charges.has(b)).length; });
+  check(again === 0, `${tag}: a second tap during the recharge fires nothing (${again} new)`);
   check(!(await page.isVisible("#touchHint")), `${tag}: the hint goes once the player has dragged and tapped`);
   // the roll button rolls
   const rb = await page.$eval("#tRoll", (e) => { const r = e.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; });
