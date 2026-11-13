@@ -38,7 +38,8 @@ Build the guest before publishing a new binary:
 
 ```sh
 cargo +1.90.0 build --manifest-path pop/tee/checker/Cargo.toml --target wasm32-wasip2 --release --features guest
-cp pop/tee/checker/target/wasm32-wasip2/release/pop-tee-checker.wasm pop/tee/checker/pop-tee-checker.wasm
+wasm-tools strip --delete '^(\.debug_.*|producers|target_features|linking|reloc\..*|sourceMappingURL|external_debug_info|component-name)$' \
+  pop/tee/checker/target/wasm32-wasip2/release/pop-tee-checker.wasm -o pop/tee/checker/pop-tee-checker.wasm
 ```
 
 Rust 1.90 emits WASI 0.2.3 imports. OutLayer's worker is wasmtime 36, which provides WASI 0.2.6, and a newer import does not instantiate. The contract pins the sha256 of the committed file. The worker fetches those bytes from the URL stored at init.
