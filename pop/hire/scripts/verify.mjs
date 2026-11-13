@@ -82,7 +82,7 @@ ok("the parent job is done and the sub-job is done", job.state === "done" && sub
 const subReceipt = receipts.find((r) => r.role === "sub" && r.sub === run.subId);
 const parentReceipt = receipts.find((r) => r.role === "parent" && r.job === run.jobId && r.pass);
 ok("the sub-agent was paid its price from the parent budget", !!subReceipt && subReceipt.pass && subReceipt.payout === "sent" && subReceipt.rail === "near" && subReceipt.seller === run.sub && BigInt(subReceipt.price) === BigInt(sub.price), subReceipt ? `${fmt(subReceipt.price)} ${subReceipt.payout}` : "missing");
-ok("the parent was paid the remainder", !!parentReceipt && parentReceipt.payout === "sent" && parentReceipt.rail === "intents" && parentReceipt.seller === run.parent && BigInt(parentReceipt.price) + BigInt(subReceipt?.price || 0) === BigInt(job.price), parentReceipt ? `${fmt(parentReceipt.price)} ${parentReceipt.payout}` : "missing");
+ok("the parent remainder was paid to the owner in NEAR", !!parentReceipt && parentReceipt.payout === "sent" && parentReceipt.rail === "near" && parentReceipt.seller === run.owner && parentReceipt.seller !== run.parent && job.owner === run.owner && job.parent === run.parent && BigInt(parentReceipt.price) + BigInt(subReceipt?.price || 0) === BigInt(job.price), parentReceipt ? `${fmt(parentReceipt.price)} to ${parentReceipt.seller}` : "missing");
 const paid = receipts.filter((r) => r.pass).reduce((s, r) => s + BigInt(r.price), 0n);
 ok("spent equals the sum of the passing receipt prices", paid === BigInt(cfg.spent), fmt(paid));
 ok("the sub price stayed under the parent's hire price", BigInt(sub.budget) <= BigInt(job.price) && BigInt(sub.price) <= BigInt(sub.budget));
@@ -99,8 +99,8 @@ if (sub.deliverable) {
   ok("the sub-agent's delivery still passes the on-chain check", again.pass === true && again.reason === subReceipt?.reason, again.reason);
 }
 
-const intentsBal = BigInt(await view(cfg.intents, "mt_balance_of", { account_id: run.parent, token_id: "nep141:" + run.wrap }));
-ok("the parent's wNEAR in the intents contract covers its payout", intentsBal >= BigInt(parentReceipt?.price || 1), `balance ${fmt(intentsBal)}`);
+const ownerKeys = (await rpc("query", { request_type: "view_access_key_list", finality: "final", account_id: run.owner })).keys;
+ok("the owner account has a full-access key", ownerKeys.some((k) => k.access_key.permission === "FullAccess") && ownerKeys.some((k) => k.public_key === run.publicKeys.ownerFullAccess), `${ownerKeys.length} key(s)`);
 
 const over = await tx(run.txs.overspend, run.parent);
 const overCall = over.transaction.actions.map((a) => a.FunctionCall).find(Boolean);
@@ -110,6 +110,27 @@ ok("the overspend transaction was refused with over the cap",
   over.transaction.signer_id === run.parent && over.transaction.receiver_id === C && over.transaction.public_key === run.publicKeys.parentFunctionCall
   && overCall.method_name === "post_subjob" && BigInt(overArgs.budget) > BigInt(job.price) && overFail.includes("over the cap"),
   `${EXPLORER}/txns/${run.txs.overspend}`);
+
+if (run.txs.deliverParent) {
+  const delivered = await tx(run.txs.deliverParent, run.parent);
+  let paidOwner = false;
+  for (const o of delivered.receipts_outcome || []) {
+    const rec = await rpc("EXPERIMENTAL_receipt", { receipt_id: o.id });
+    const acts = rec.receipt?.Action?.actions || [];
+    if (rec.predecessor_id === C && rec.receiver_id === run.owner && acts.some((a) => a.Transfer && a.Transfer.deposit === parentReceipt.price)) paidOwner = true;
+  }
+  ok("the parent payment transaction transfers the remainder to the owner",
+    delivered.transaction.signer_id === run.parent && delivered.transaction.public_key === run.publicKeys.parentFunctionCall && paidOwner,
+    `${EXPLORER}/txns/${run.txs.deliverParent}`);
+}
+if (run.txs.ownerSpend) {
+  const spent = await tx(run.txs.ownerSpend, run.owner);
+  const transfer = spent.transaction.actions.map((a) => a.Transfer).find(Boolean);
+  ok("the owner spent some of the payout",
+    spent.transaction.signer_id === run.owner && spent.transaction.receiver_id === run.beneficiary && !!transfer
+    && BigInt(transfer.deposit) === BigInt(run.spendYocto) && BigInt(transfer.deposit) < BigInt(parentReceipt.price) && "SuccessValue" in spent.status,
+    `${EXPLORER}/txns/${run.txs.ownerSpend}`);
+}
 
 if (run.txs.deliverSub) {
   const delivered = await tx(run.txs.deliverSub, run.sub);

@@ -16,11 +16,11 @@ The hire contract reuses the checker by compiling `pop/contract/src/checks.rs` i
 
 The parent job's hire price is the parent's cap. `post_subjob` adds the sub budget to `sub_reserved`. It panics with `over the cap` when `paid_out + sub_reserved + new budget` would pass the hire price. A passing sub delivery moves the sub price from `reserved` to `spent` and pays the sub-agent. A passing parent delivery pays `hire price - paid_out` and releases the rest of that job's reserve. The global cap still bounds `post_job`.
 
-The sub-agent is paid in NEAR so the transfer is visible. The parent is paid through the testnet wNEAR wrapper into a mock NEAR Intents contract, the same `ft_on_transfer` path as `pop/mock-intents`. NEAR Intents has no testnet. Nothing in this flow is signed on mainnet.
+The sub-agent is paid in NEAR so the transfer is visible. The parent's remainder is paid in NEAR to an owner account named on the bid. That owner is not the parent. The parent's function-call key cannot change the owner, and it still cannot transfer. The owner has a full-access key, so it can spend the payout. The cap is the hire price, unchanged. NEAR Intents has no testnet, and the mock stand-in cannot pay wNEAR out, so this run does not leave the remainder there. Nothing in this flow is signed on mainnet.
 
 ## Keys and secrets
 
-Secret keys stay in `pop/hire/.keys/`, which git ignores. The committed run file records account ids, public keys, and transaction hashes. Full-access keys that remain (beneficiary, mock intents, sub-agent) are named there. The contract's full-access key and the parent's full-access key are deleted on testnet.
+Secret keys stay in `pop/hire/.keys/`, which git ignores. The committed run file records account ids, public keys, and transaction hashes. Full-access keys that remain (owner, beneficiary, mock intents, sub-agent) are named there. The contract's full-access key and the parent's full-access key are deleted on testnet.
 
 ## Checks
 

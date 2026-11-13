@@ -2,12 +2,17 @@
 
 ### Requirement: A hired parent can pay a sub-agent from its budget
 
-A parent hired on a job can post one sub-job whose budget fits in the hire price that is still unspent and not already reserved for another sub-job. Only a sub-account of that parent can bid. When the sub-agent delivers and the on-chain check passes, the contract pays the sub-agent and counts that price against the parent's cap. The parent can then deliver. When the parent's check passes, the contract pays the parent what remains of the hire price.
+A parent hired on a job can post one sub-job whose budget fits in the hire price that is still unspent and not already reserved for another sub-job. Only a sub-account of that parent can bid. When the sub-agent delivers and the on-chain check passes, the contract pays the sub-agent and counts that price against the parent's cap. The parent can then deliver. When the parent's check passes, the contract pays what remains of the hire price to the owner named on the parent's bid. The owner is not the parent account. The parent's key cannot change that owner.
 
-#### Scenario: Sub-agent then parent
+#### Scenario: Sub-agent then owner
 
-- **WHEN** a parent hired at 0.5 NEAR posts a 0.2 NEAR sub-job, its sub-account delivers work that passes, and the parent delivers work that passes
-- **THEN** the sub-agent is paid 0.2 NEAR, the parent is paid 0.3 NEAR, and spent rises by 0.5 NEAR while that job's reserve returns to zero
+- **WHEN** a parent hired at 0.5 NEAR names an owner, posts a 0.2 NEAR sub-job, its sub-account delivers work that passes, and the parent delivers work that passes
+- **THEN** the sub-agent is paid 0.2 NEAR, the owner is paid 0.3 NEAR, the parent account is not the payee, and spent rises by 0.5 NEAR while that job's reserve returns to zero
+
+#### Scenario: The owner spends the payout
+
+- **WHEN** the owner, which has a full-access key, sends part of that 0.3 NEAR to another account
+- **THEN** the transfer succeeds
 
 #### Scenario: A stranger cannot take the sub-job
 

@@ -6,6 +6,7 @@ const N: u128 = 1_000_000_000_000_000_000_000_000;
 
 fn me() -> AccountId { "hire.near".parse().unwrap() }
 fn parent() -> AccountId { "parent.near".parse().unwrap() }
+fn owner() -> AccountId { "owner.near".parse().unwrap() }
 fn crew() -> AccountId { "crew.parent.near".parse().unwrap() }
 fn stranger() -> AccountId { "stranger.near".parse().unwrap() }
 
@@ -33,7 +34,7 @@ fn post_and_hire(c: &mut Contract, budget: u128) -> u32 {
     ctx(&me(), 10);
     let id = c.post_job("map".into(), "Dock".into(), MAP_SPEC.into(), U128(budget), 30);
     ctx(&parent(), 20);
-    let b = c.bid(id, U128(budget), Rail::Intents, Some("I will hire a hand".into()));
+    let b = c.bid(id, U128(budget), Rail::Near, owner(), Some("I will hire a hand".into()));
     ctx(&me(), 30);
     c.hire(id, b);
     id
@@ -57,7 +58,9 @@ fn sub_then_parent_pays_from_the_cap() {
     let rec = c.get_receipts(None, None);
     assert_eq!(rec.len(), 2);
     assert!(rec[0].pass && rec[0].role == Role::Sub && rec[0].price.0 == N / 5 && rec[0].payout == Payout::Pending);
-    assert!(rec[1].pass && rec[1].role == Role::Parent && rec[1].price.0 == N / 2 - N / 5);
+    assert!(rec[1].pass && rec[1].role == Role::Parent && rec[1].seller == owner() && rec[1].rail == Rail::Near && rec[1].price.0 == N / 2 - N / 5);
+    assert_eq!(c.get_job(id).unwrap().owner, Some(owner()));
+    assert_eq!(c.get_job(id).unwrap().parent, Some(parent()));
     assert_eq!(c.spent, N / 2);
     assert_eq!(c.reserved, 0);
     assert_eq!(c.get_job(id).unwrap().state, JobState::Done);
@@ -66,6 +69,16 @@ fn sub_then_parent_pays_from_the_cap() {
     let paid = (N / 2).to_string();
     assert_eq!(cap["left"].as_str(), Some("0"));
     assert_eq!(cap["paid_out"].as_str(), Some(paid.as_str()));
+}
+
+#[test]
+#[should_panic(expected = "owner must be an account that can spend")]
+fn the_parent_cannot_name_itself_as_owner() {
+    let mut c = setup();
+    ctx(&me(), 10);
+    let id = c.post_job("map".into(), "Dock".into(), MAP_SPEC.into(), U128(N / 2), 30);
+    ctx(&parent(), 20);
+    c.bid(id, U128(N / 2), Rail::Near, parent(), None);
 }
 
 #[test]

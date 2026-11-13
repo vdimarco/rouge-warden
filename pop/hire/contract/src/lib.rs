@@ -39,6 +39,8 @@ pub struct Bid {
     pub seller: AccountId,
     pub ask: U128,
     pub rail: Rail,
+    /// Account that receives this bid's pay. For the parent, this is not the locked agent account.
+    pub owner: AccountId,
     pub state: BidState,
     pub note: String,
     pub at_ms: u64,
@@ -63,6 +65,8 @@ pub struct Job {
     pub bids: Vec<Bid>,
     pub hired: Option<u8>,
     pub parent: Option<AccountId>,
+    /// Where the parent's remainder is paid. Set when the parent is hired, and never changed.
+    pub owner: Option<AccountId>,
     pub price: U128,
     pub paid_out: U128,
     pub sub_reserved: U128,
@@ -193,7 +197,7 @@ impl Contract {
         let id = self.jobs.len();
         self.jobs.push(Job {
             id, kind, title, spec, budget, window_ms: window_mins as u64 * 60_000, posted_ms: env::block_timestamp_ms(),
-            state: JobState::Open, bids: Vec::new(), hired: None, parent: None, price: U128(0), paid_out: U128(0),
+            state: JobState::Open, bids: Vec::new(), hired: None, parent: None, owner: None, price: U128(0), paid_out: U128(0),
             sub_reserved: U128(0), sub_count: 0, due_ms: 0, fails: 0, deliverable: None,
         });
         env::log_str(&format!("post_job {}", id));
@@ -210,9 +214,11 @@ impl Contract {
         let price = b.ask;
         require!(price.0 <= job.budget.0, "price over budget");
         let parent = b.seller.clone();
+        let owner = b.owner.clone();
         b.state = BidState::Hired;
         job.hired = Some(bid);
         job.parent = Some(parent);
+        job.owner = Some(owner);
         job.price = price;
         job.due_ms = now + job.window_ms;
         job.state = JobState::Hired;
@@ -244,9 +250,11 @@ impl Contract {
 
     /* ------------------------------------------------------------ parent agent */
 
-    pub fn bid(&mut self, job_id: u32, ask: U128, rail: Rail, note: Option<String>) -> u8 {
+    pub fn bid(&mut self, job_id: u32, ask: U128, rail: Rail, owner: AccountId, note: Option<String>) -> u8 {
         let seller = env::predecessor_account_id();
         require!(seller != env::current_account_id(), "the Warden cannot bid");
+        require!(owner != seller, "owner must be an account that can spend");
+        require!(owner != env::current_account_id(), "the contract cannot be the owner");
         let note = note.unwrap_or_default();
         require!(note.len() <= 140, "note too long");
         let now = env::block_timestamp_ms();
@@ -255,7 +263,7 @@ impl Contract {
         require!(job.bids.len() < MAX_BIDS, "job has all its bids");
         require!(!job.bids.iter().any(|b| b.seller == seller), "one bid per seller");
         require!(ask.0 >= MIN_ASK && ask.0 <= job.budget.0, "ask must be 0.001 NEAR to the budget");
-        job.bids.push(Bid { seller, ask, rail, state: BidState::Open, note, at_ms: now });
+        job.bids.push(Bid { seller, ask, rail, owner, state: BidState::Open, note, at_ms: now });
         (job.bids.len() - 1) as u8
     }
 
@@ -331,9 +339,11 @@ impl Contract {
         let bi = job.hired.unwrap() as usize;
         let verdict = self.verdict(&job.kind, &job.spec, &data);
         let (rail, price, budget, paid) = (job.bids[bi].rail, job.price.0, job.budget.0, job.paid_out.0);
+        let payee = job.owner.clone().unwrap_or_else(|| env::panic_str("no owner"));
+        require!(payee != seller, "owner must be an account that can spend");
         require!(paid <= price && price <= budget, "books");
         let payout = price - paid;
-        let rid = self.push_receipt(job_id, None, Role::Parent, &job.kind, &seller, payout, rail, &verdict, now);
+        let rid = self.push_receipt(job_id, None, Role::Parent, &job.kind, &payee, payout, rail, &verdict, now);
         if verdict.pass {
             let j = self.job_mut(job_id);
             j.bids[bi].state = BidState::Passed;
@@ -343,8 +353,8 @@ impl Contract {
             self.reserved -= budget - paid;
             self.spent += payout;
             self.hired -= 1;
-            env::log_str(&format!("pass parent job {} receipt {}: {}", job_id, rid, verdict.reason));
-            self.settle(rid, &seller, payout, rail);
+            env::log_str(&format!("pass parent job {} receipt {} paid {}: {}", job_id, rid, payee, verdict.reason));
+            self.settle(rid, &payee, payout, rail);
         } else {
             let j = self.job_mut(job_id);
             j.fails += 1;
@@ -378,7 +388,7 @@ impl Contract {
         require!(!sub.bids.iter().any(|b| b.seller == seller), "one bid per seller");
         require!(ask.0 >= MIN_ASK && ask.0 <= sub.budget.0, "ask must be 0.001 NEAR to the budget");
         let sub = self.sub_mut(sub_id);
-        sub.bids.push(Bid { seller, ask, rail, state: BidState::Open, note, at_ms: now });
+        sub.bids.push(Bid { seller: seller.clone(), ask, rail, owner: seller, state: BidState::Open, note, at_ms: now });
         (sub.bids.len() - 1) as u8
     }
 
@@ -505,7 +515,7 @@ impl Contract {
         let job = self.jobs.get(job_id).unwrap_or_else(|| env::panic_str("no such job"));
         let left = job.price.0.saturating_sub(job.paid_out.0).saturating_sub(job.sub_reserved.0);
         json!({
-            "parent": job.parent, "cap": job.price, "budget": job.budget, "paid_out": job.paid_out,
+            "parent": job.parent, "owner": job.owner, "cap": job.price, "budget": job.budget, "paid_out": job.paid_out,
             "sub_reserved": job.sub_reserved, "left": U128(left), "state": job.state,
         })
     }

@@ -143,7 +143,7 @@ The organizers list hints for each track. This table says which ones this projec
 
 ## Hire a second agent (testnet)
 
-`pop/hire/` is a separate testnet contract. It does not change the locked mainnet contract. One job hires a parent agent that holds only a function-call key. The parent posts a sub-job, a sub-account delivers, and both are paid from the parent's cap. The steps and the transaction hashes are in [pop/hire/README.md](hire/README.md). `node pop/hire/scripts/verify.mjs` reads that run and does not use a key.
+`pop/hire/` is a separate testnet contract. It does not change the locked mainnet contract. One job hires a parent agent that holds only a function-call key. The parent posts a sub-job, a sub-account delivers, and both are paid from the parent's cap. The parent's remainder goes to an owner account that can spend it. The steps and the transaction hashes are in [pop/hire/README.md](hire/README.md). `node pop/hire/scripts/verify.mjs` reads that run and does not use a key.
 
 ## What was built, when
 

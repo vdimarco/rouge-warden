@@ -13,3 +13,4 @@
 
 - [x] Add `pop/hire/scripts/verify.mjs` and a README section with do-this, see-this steps.
 - [x] Confirm `node pop/scripts/verify.mjs mainnet` still passes 14 of 14.
+- [x] Pay the parent's remainder to an owner account, and show that owner spending it on testnet.

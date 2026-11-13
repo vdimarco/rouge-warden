@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Testnet only. One Pay on Proof job hires a second agent.
 // The parent keeps a function-call key and no full-access key. The contract refuses a sub-job over the parent's cap.
-// The sub-account is paid from that cap, then the parent is paid what is left.
+// The sub-account is paid from that cap. The parent's remainder is paid in NEAR to a separate owner account, which then spends some of it.
 //
 //   node pop/hire/scripts/run.mjs
 //
@@ -26,7 +26,8 @@ const WASM = path.join(here, "../contract/target/wasm32-unknown-unknown/release/
 const MOCK = path.join(here, "../../mock-intents/target/wasm32-unknown-unknown/release/mock_intents.wasm");
 const RUN = path.join(here, "../run.json");
 const ks = keyStore();
-const prog = loadProgress();
+let prog = loadProgress();
+if (prog.generation !== "v2") { prog = { generation: "v2" }; saveProgress(prog); }
 const step = (s) => console.log("\n== " + s);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const G = 100n * TGAS;
@@ -127,28 +128,30 @@ async function main() {
   if (!fs.existsSync(MOCK)) throw new Error("missing mock-intents wasm. Build pop/mock-intents first.");
 
   step("Accounts from the testnet faucet");
-  const contract = await faucet("contract");
+  const contract = await faucet("v2-contract");
   const ben = await faucet("ben");
   const intents = await faucet("intents");
-  const parent = await faucet("parent");
-  if (!ks.get("parent-fc")) {
+  const parent = await faucet("v2-parent");
+  const owner = await faucet("v2-owner");
+  if (!ks.get("v2-parent-fc")) {
     const k = freshKey();
-    ks.put("parent-fc", { accountId: parent.accountId, publicKey: k.publicKey, secretKey: k.secretKey });
+    ks.put("v2-parent-fc", { accountId: parent.accountId, publicKey: k.publicKey, secretKey: k.secretKey });
   }
-  if (!ks.get("warden")) {
+  if (!ks.get("v2-warden")) {
     const k = freshKey();
-    ks.put("warden", { accountId: contract.accountId, publicKey: k.publicKey, secretKey: k.secretKey });
+    ks.put("v2-warden", { accountId: contract.accountId, publicKey: k.publicKey, secretKey: k.secretKey });
   }
-  if (!ks.get("sub")) {
+  if (!ks.get("v2-sub")) {
     const k = freshKey();
-    ks.put("sub", { accountId: `crew.${parent.accountId}`, publicKey: k.publicKey, secretKey: k.secretKey });
+    ks.put("v2-sub", { accountId: `crew.${parent.accountId}`, publicKey: k.publicKey, secretKey: k.secretKey });
   }
-  const parentFc = ks.get("parent-fc");
-  const warden = ks.get("warden");
-  const sub = ks.get("sub");
+  const parentFc = ks.get("v2-parent-fc");
+  const warden = ks.get("v2-warden");
+  const sub = ks.get("v2-sub");
   const C = contract.accountId;
   console.log(`  contract ${accountLink(net, C)}`);
   console.log(`  parent   ${accountLink(net, parent.accountId)}`);
+  console.log(`  owner    ${accountLink(net, owner.accountId)}`);
   console.log(`  sub      ${sub.accountId}`);
 
   step("Mock intents (NEAR Intents has no testnet)");
@@ -243,7 +246,7 @@ async function main() {
   console.log(`  job ${jobId} state ${job.state} budget ${fmt(job.budget)}`);
   if (job.bids.length === 0) {
     const bid = await must(call(parentFcAcc, C, "bid", {
-      job_id: jobId, ask: near(0.5).toString(), rail: "intents", note: "I will hire a sub-account for the roster.",
+      job_id: jobId, ask: near(0.5).toString(), rail: "near", owner: owner.accountId, note: "Pay the owner, who can spend it.",
     }, { gas: G }), "bid");
     prog.bidTx = bid.tx;
     save();
@@ -312,19 +315,29 @@ async function main() {
   }
 
   job = await view(net, C, "get_job", { job_id: jobId });
+  const ownerAcc = acc(owner);
   if (job.state === "hired") {
-    const before = BigInt(await view(net, intents.accountId, "mt_balance_of", { account_id: parent.accountId, token_id: "nep141:" + NETS.testnet.wrap }));
-    const delivered = await must(call(parentFcAcc, C, "deliver", { job_id: jobId, data: GOOD_MAP }, { gas: 300n * TGAS }), "deliver parent");
+    const before = BigInt((await accountState(net, owner.accountId)).amount);
+    const delivered = await must(call(parentFcAcc, C, "deliver", { job_id: jobId, data: GOOD_MAP }, { gas: 200n * TGAS }), "deliver parent");
     prog.deliverParentTx = delivered.tx;
     save();
-    let after = before;
-    for (let i = 0; i < 6; i++) {
-      after = BigInt(await view(net, intents.accountId, "mt_balance_of", { account_id: parent.accountId, token_id: "nep141:" + NETS.testnet.wrap }));
-      if (after > before) break;
-      await sleep(2000);
-    }
-    console.log(`  parent intents ${fmt(before)} -> ${fmt(after)}`);
-    prog.parentIntents = after.toString();
+    const after = BigInt((await accountState(net, owner.accountId)).amount);
+    console.log(`  owner balance ${fmt(before)} -> ${fmt(after)} (${fmt(after - before)})`);
+    prog.ownerGain = (after - before).toString();
+  }
+  if (!prog.spendTx) {
+    const spent = await ownerAcc.signAndSendTransaction({
+      receiverId: ben.accountId,
+      actions: [actions.transfer(near(0.05))],
+      waitUntil: "FINAL",
+      throwOnFailure: false,
+    });
+    const failed = spent.status?.Failure;
+    if (failed) throw new Error(`owner spend failed: ${JSON.stringify(failed).slice(0, 300)}`);
+    prog.spendTx = spent.transaction.hash;
+    prog.spendYocto = near(0.05).toString();
+    save();
+    console.log(`  owner spent 0.05 NEAR ${txLink(net, prog.spendTx)}`);
   }
 
   step("The parent key cannot send NEAR");
@@ -364,6 +377,7 @@ async function main() {
     recordedAt: new Date().toISOString(),
     contract: C,
     parent: parent.accountId,
+    owner: owner.accountId,
     sub: sub.accountId,
     beneficiary: ben.accountId,
     intents: intents.accountId,
@@ -381,13 +395,14 @@ async function main() {
       parentDeletedFullAccess: parent.publicKey,
       parentFunctionCall: parentFc.publicKey,
       subFullAccess: sub.publicKey,
+      ownerFullAccess: owner.publicKey,
       beneficiaryFullAccess: ben.publicKey,
       intentsFullAccess: intents.publicKey,
     },
     fullAccessStillOnChain: {
       contract: fullKeys(finalContractKeys).map((k) => k.public_key),
       parent: fullKeys(parentKeys).map((k) => k.public_key),
-      note: "The sub-agent, the beneficiary, and the mock intents account still have full-access keys. Their secrets are only in pop/hire/.keys/testnet.json, which git ignores. The contract account and the parent account do not.",
+      note: "The owner, the sub-agent, the beneficiary, and the mock intents account still have full-access keys. Their secrets are only in pop/hire/.keys/testnet.json, which git ignores. The contract account and the parent account do not. The parent's pay goes to the owner.",
     },
     txs: {
       init: prog.initTx || null,
@@ -405,8 +420,10 @@ async function main() {
       hireSub: prog.hireSubTx || null,
       deliverSub: prog.deliverSubTx || null,
       deliverParent: prog.deliverParentTx || null,
+      ownerSpend: prog.spendTx || null,
       outside: prog.outsideTx || null,
     },
+    spendYocto: prog.spendYocto || near(0.05).toString(),
     overspendError: prog.overspendError || null,
     outsideError: prog.outsideError || null,
     parentKeyCount: parentKeys.length,
@@ -416,7 +433,7 @@ async function main() {
     spent: cfg.spent,
     reserved: cfg.reserved,
     receipts: receipts.map((r) => ({ id: r.id, role: r.role, pass: r.pass, price: r.price, payout: r.payout, rail: r.rail, reason: r.reason })),
-    secrets: "pop/hire/.keys/testnet.json is gitignored. It holds every testnet secret from this run, including full-access keys for the sub-agent, the beneficiary, and the mock intents account, plus the deleted full-access secrets of the contract and the parent.",
+    secrets: "pop/hire/.keys/testnet.json is gitignored. It holds every testnet secret from this run, including full-access keys for the owner, the sub-agent, the beneficiary, and the mock intents account, plus the deleted full-access secrets of the contract and the parent.",
   };
   fs.writeFileSync(RUN, JSON.stringify(run, null, 2) + "\n");
   console.log("\nWrote pop/hire/run.json");
