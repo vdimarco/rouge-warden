@@ -1,8 +1,32 @@
 # Pay on Proof
 
-An escrow on NEAR that pays an AI agent only when its work passes a check the contract runs itself. It is the NEAR Hackathon entry for track 07, Agent Economy, built with Warden's Ledger in the Cottage Arcade.
+An escrow on NEAR mainnet that pays an AI agent only when its work passes a check the contract runs itself. NEAR Hackathon entry for Agent Economy (`agents`), AI Security & Defense (`security`) and AI Swarms (`swarms`). It was built with Warden's Ledger in the Cottage Arcade.
 
 Most agent markets pay when a person approves the work, or they trust the seller's reputation. Pay on Proof pays on the delivered data. The hired agent sends its work to the contract. In the same transaction, the contract checks the work and either pays the agent or pays nothing. No person and no server judges the work.
+
+Live, read from mainnet in the browser: https://arcade.uptick.systems/ledger/chain.html
+
+## For judges: four checks
+
+| Do this | See this |
+| --- | --- |
+| Open https://arcade.uptick.systems/ledger/chain.html | The mainnet contract, read in your browser: the cap, the spend, the one function-call key, every job and bid, and every receipt with its reason. |
+| `node pop/scripts/verify.mjs` (Node 18 or newer, no install, no key) | 14 lines that start with `ok`, then `all 14 checks passed`. It reads the mainnet contract and checks the keys, the deployed methods, the books, every paid and every failed delivery, and the NEAR Intents payouts. |
+| `cd pop/contract && cargo test` | `10 passed` |
+| `cd pop && npm ci && node test/mcp-read.test.mjs` | 8 lines that start with `ok`. An MCP client uses the server with no key: it reads mainnet jobs, runs the on-chain check, and a tool that signs refuses. |
+
+GitHub runs the last three on each change to `pop/` ([workflow](../.github/workflows/pop.yml)).
+
+### Get only this folder
+
+This folder lives in a large game repository. To check out only Pay on Proof and its viewer:
+
+```sh
+git clone --filter=blob:none --sparse https://github.com/vdimarco/rouge-warden
+cd rouge-warden
+git sparse-checkout set pop public/ledger .github
+node pop/scripts/verify.mjs
+```
 
 ## What happens
 
@@ -47,12 +71,14 @@ The server has these tools: `list_jobs`, `get_job`, `job_rules`, `preview_check`
 
 ```sh
 cd pop && npm ci
+node scripts/verify.mjs mainnet            # 14 read-only checks of the live contract, no key
 npm test                                   # 10 contract unit tests
 npm run build                              # contract wasm (needs Rust, the wasm32 target, wasm-opt)
 node scripts/setup.mjs testnet             # faucet accounts, deploy, Warden key, lock
 node scripts/e2e.mjs testnet               # 13 checks on a live network
 node scripts/run.mjs testnet --kinds map,paint,tune --budget 0.25   # agents play a commission
-node test/mcp.test.mjs                     # MCP client against testnet
+node test/mcp.test.mjs                     # MCP client against your testnet deployment (uses .keys)
+node test/mcp-read.test.mjs                # MCP client against mainnet, no key
 node scripts/setup.mjs mainnet --beneficiary <you.near> --cap-usd 10
 ```
 
@@ -72,7 +98,52 @@ NEAR Intents has no testnet. On testnet, `mock-intents/` stands in for `intents.
 
 ## Results so far
 
-- Testnet contract `pop-mwbiijzv.testnet`: 13 of 13 end-to-end checks pass. They cover a counter and a final price, a failed map that pays nothing, a pass paid through the Intents stand-in, a pass paid in NEAR, a failed payout recovered by `retry_payout`, and a Warden key that cannot send NEAR or deliver.
-- The agents ran a commission alone: 3 jobs posted, counters accepted, one self-check caught a map with a room cut off, and 3 passes paid.
-- **Mainnet** contract `ee4994a509efa3cc516411e75f2633b2d8eac2d05fc30cc558bfd43329cde827`, funded from Solana through two NEAR Intents 1Click swaps (`scripts/fund-via-intents.mjs`). Cap 2.7027 NEAR ($10 on deployment day), beneficiary `proto_von.near`. Its full-access key was deleted in [tx HvyGdLvt…](https://nearblocks.io/txns/HvyGdLvtWzfkb6xSz2mBgnLqi9ViMfBX4CTE9RbWjG8d); the only key left is the Warden's function-call key.
-- Three commissions on mainnet, nine jobs, twelve receipts. The contract refused to pay for a map with a room cut off, a tune with two notes out of key, and a map with no exit. It paid nine passes, six in NEAR and three through NEAR Intents: Marg's wNEAR balance in `intents.near` (0.2516) matches what she was paid. Total spent 0.6861 NEAR of the 2.7027 cap.
+`node pop/scripts/verify.mjs` checks every mainnet line below from the chain.
+
+- **Mainnet** contract [`ee4994a5…cde827`](https://nearblocks.io/address/ee4994a509efa3cc516411e75f2633b2d8eac2d05fc30cc558bfd43329cde827), funded from Solana through two NEAR Intents 1Click swaps (`scripts/fund-via-intents.mjs`). Cap 2.7027 NEAR ($10 on deployment day), beneficiary `proto_von.near`. Its full-access key was deleted in [tx HvyGdLvt…](https://nearblocks.io/txns/HvyGdLvtWzfkb6xSz2mBgnLqi9ViMfBX4CTE9RbWjG8d); the only key left is the Warden's function-call key.
+- Three commissions on mainnet, nine jobs, twelve receipts. The contract refused to pay for a map with a room cut off, a tune with two notes out of key, and a map with no exit. It paid nine passes, six in NEAR and three through NEAR Intents: Marg's wNEAR balance in `intents.near` (0.2516) equals what she was paid (0.068 + 0.102 + 0.0816). Total spent 0.6861 NEAR of the 2.7027 cap.
+- Testnet contract `pop-mwbiijzv.testnet`: 14 jobs and 16 receipts. It was set up with `--no-lock`, so it keeps its full-access key; the mainnet contract does not.
+- **Reproduced from a clean checkout on 13 November 2026:** `node scripts/setup.mjs testnet` made fresh faucet accounts, deployed and locked [`pop-mwffvzkt.testnet`](https://testnet.nearblocks.io/address/pop-mwffvzkt.testnet), and `node scripts/e2e.mjs testnet` passed 13 of 13 checks. They cover a counter and a final price, a failed map that pays nothing, a pass paid through the Intents stand-in, a pass paid in NEAR, and a Warden key that cannot send NEAR or deliver. `node test/mcp.test.mjs` then passed against it.
+
+## See it on mainnet
+
+| Do this | See this |
+| --- | --- |
+| Open [the contract](https://nearblocks.io/address/ee4994a509efa3cc516411e75f2633b2d8eac2d05fc30cc558bfd43329cde827) and its keys | One key. It is a function-call key for six Warden methods. |
+| Open [a delivery that paid through NEAR Intents](https://nearblocks.io/txns/F56bnoHEG9oYZEFyeUTctWXbVu69AHu1opG9mY4Mtm5L) | One transaction: the contract logs `pass job 0 receipt 2`, wraps 0.068 NEAR at `wrap.near`, sends it to `intents.near`, and `intents.near` mints it to the seller (`mt_mint`, NEP-245). Then `payout receipt 2: Sent`. |
+| Open [a delivery that failed](https://nearblocks.io/txns/9uLPekAWkQjqy5chTKpQiFEzGRoaiT21v7pRiQYe8tJG) | `fail job 0 receipt 0: room cut off`, and no payment. The job opened again, and another seller passed it. |
+| Open [a counter-offer](https://nearblocks.io/txns/2mXKd75i4eJ8jMbZzKi7jeAgeJpqeMpZRZmob19pN3cy) | The Warden counters a bid once, signed with its function-call key. |
+| Call `contract_source_metadata` on the contract | NEP-330 metadata with `link: https://github.com/vdimarco/rouge-warden`. |
+
+## Track hints
+
+The organizers list hints for each track. This table says which ones this project uses.
+
+| Track | Hint | Here |
+| --- | --- | --- |
+| Agent Economy | Agent commerce: earn, spend, negotiate, hire | Yes. The Warden posts jobs, counters once, and hires. Sellers bid, answer, deliver, and earn. Any agent can join through the MCP server. |
+| Agent Economy | NEAR Intents | Yes. A pass on the `intents` rail lands as wNEAR in the seller's `intents.near` balance, ready for a 1Click swap or withdrawal. The contract was funded from Solana through 1Click. |
+| Agent Economy | Chain Signatures | No. |
+| AI Security & Defense | Spending limits, policy engine | Yes. The cap is in the contract: `spent + reserved` can never pass it. Pay only on a passing check. |
+| AI Security & Defense | Function call keys, sandboxed wallets | Yes. The contract account has no full-access key. The Warden's key can call six methods and cannot send NEAR or deliver. |
+| AI Security & Defense | TEE attestation | No. |
+| AI Swarms | Coordination markets, bidding | Yes. Up to eight bids per job, one counter per bid, one answer, and the Warden ranks sellers by their pass rate in the contract's own receipts. |
+| AI Swarms | Sub-accounts | No. Sellers are implicit accounts. |
+
+## Limits
+
+- **Both sellers so far are the author's reference agents** (Marg and Gravel, `agents/seller.mjs`). No outside agent has bid on mainnet yet. The contract and the MCP server accept any NEAR account.
+- **The agents are scripts, not language models.** The Warden and the sellers follow fixed rules. A model can act as a seller through the MCP server.
+- **The checks test structure, not quality.** A map passes when its rooms connect; a tune passes when every note is in key. Four kinds exist: map, roster, paint, tune.
+- **No bond to bid.** Any account can fill a job's eight bid slots, and the contract pays the storage for bids and receipts from a 0.2 NEAR buffer.
+- **If the Warden's key is stolen,** a thief can post jobs, hire its own bid, and be paid for passing work up to what is left under the cap.
+- **The deployed code is not a reproducible build.** `verify.mjs` checks that the deployed methods are exactly the public methods in `contract/src/lib.rs`, and the NEP-330 metadata names this repository, but the code hash was not rebuilt and compared.
+- **NEAR Intents has no testnet.** On testnet, `mock-intents/` stands in for `intents.near`.
+- **Payouts are wNEAR or NEAR.** A seller who wants USDC on another chain swaps its intents balance itself.
+
+## What was built, when
+
+- This repository was created on 22 September 2026 for the Cottage Arcade, a set of browser games. That is earlier work, and it is not part of this entry.
+- Pay on Proof (`pop/`) and Warden's Ledger (`public/ledger/`) were added in the hackathon window, in [pull request #803](https://github.com/vdimarco/rouge-warden/pull/803) on 11 November 2026, with ledger fixes in #810 and #815. Everything under `pop/` was written in the window.
+- Libraries: `near-sdk` 5.30 and `serde_json` in the contract; `near-api-js`, `@modelcontextprotocol/sdk` and `zod` in the agents and the MCP server.
+- **Second entry by the same author (rule Q-015).** [Lock Before You Talk](https://github.com/vdimarco/near-hackathon-market) is in the AI Swarms and AI Security & Defense tracks. It is a jury of six AI jurors who lock their first opinions on NEAR before they talk. The two projects are independent: they share no code and no contract.
