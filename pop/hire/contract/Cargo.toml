@@ -1,0 +1,26 @@
+[package]
+name = "pay-on-proof-hire"
+version = "0.1.0"
+edition = "2021"
+description = "Pay on Proof hire: a parent agent pays a sub-account from a capped budget"
+license = "MIT"
+repository = "https://github.com/vdimarco/rouge-warden"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+near-sdk = "5.30"
+serde_json = "1"
+
+[dev-dependencies]
+near-sdk = { version = "5.30", features = ["unit-testing"] }
+
+[profile.release]
+codegen-units = 1
+opt-level = "z"
+lto = true
+debug = false
+panic = "abort"
+strip = true
+overflow-checks = true
