@@ -1,0 +1,199 @@
+{
+  "version": 1,
+  "network": "testnet",
+  "contract": "xapp-mwfil00j.testnet",
+  "events": [
+    {
+      "id": "job_opened:0:0",
+      "at": "2026-11-13T21:55:19.296Z",
+      "type": "job_opened",
+      "job_id": 0,
+      "tx": "2vpWzLTsv9wvGoX7F7HoVeS8RnuUZ2knLJy2TnWsgqQp",
+      "tx_url": "https://testnet.nearblocks.io/txns/2vpWzLTsv9wvGoX7F7HoVeS8RnuUZ2knLJy2TnWsgqQp",
+      "account": "bda3be3a43610a19943fb49f5037af23e4dcd57ca668d70b08ba1ff4aa7c0cd6",
+      "data": {
+        "mention": "@payonproof make me a logo, 0.2 NEAR",
+        "kind": "paint",
+        "title": "logo",
+        "spec": {
+          "contrast_x100": 450
+        },
+        "budget_yocto": "200000000000000000000000",
+        "fund_tx": "CheMxrh738vqBJ2L1iX5xmRqQRN5E1Ng7XV8qwyZvnX1",
+        "requester": "bda3be3a43610a19943fb49f5037af23e4dcd57ca668d70b08ba1ff4aa7c0cd6"
+      }
+    },
+    {
+      "id": "bid:0:1",
+      "at": "2026-11-13T21:55:23.303Z",
+      "type": "bid",
+      "job_id": 0,
+      "tx": "VYwzCcGvf8XKgJAQqMccADQDShEnJrT1r5rauYoA5YJ",
+      "tx_url": "https://testnet.nearblocks.io/txns/VYwzCcGvf8XKgJAQqMccADQDShEnJrT1r5rauYoA5YJ",
+      "account": "xink-mwfil8ha.testnet",
+      "data": {
+        "name": "Ink",
+        "ask_yocto": "160000000000000000000000",
+        "bid": 0
+      }
+    },
+    {
+      "id": "bid:0:2",
+      "at": "2026-11-13T21:55:27.520Z",
+      "type": "bid",
+      "job_id": 0,
+      "tx": "FH7czyimiVyknL1Ye9Uqxp6aCvdGiDjHar4qWDifCXmX",
+      "tx_url": "https://testnet.nearblocks.io/txns/FH7czyimiVyknL1Ye9Uqxp6aCvdGiDjHar4qWDifCXmX",
+      "account": "xclay-mwfilcm0.testnet",
+      "data": {
+        "name": "Clay",
+        "ask_yocto": "110000000000000000000000",
+        "bid": 1
+      }
+    },
+    {
+      "id": "delivered:0:3",
+      "at": "2026-11-13T21:55:36.142Z",
+      "type": "delivered",
+      "job_id": 0,
+      "tx": "BPv5jiz9FYSuW4YP6wEaGX2tBcSu8t3fngQh6qi5ZZab",
+      "tx_url": "https://testnet.nearblocks.io/txns/BPv5jiz9FYSuW4YP6wEaGX2tBcSu8t3fngQh6qi5ZZab",
+      "account": "xink-mwfil8ha.testnet",
+      "data": {
+        "colors": {
+          "floor": "#222940",
+          "wall": "#bcbbe5"
+        },
+        "swatch": "logo.svg"
+      }
+    },
+    {
+      "id": "checked:0:4",
+      "at": "2026-11-13T21:55:36.142Z",
+      "type": "checked",
+      "job_id": 0,
+      "tx": "BPv5jiz9FYSuW4YP6wEaGX2tBcSu8t3fngQh6qi5ZZab",
+      "tx_url": "https://testnet.nearblocks.io/txns/BPv5jiz9FYSuW4YP6wEaGX2tBcSu8t3fngQh6qi5ZZab",
+      "account": "xapp-mwfil00j.testnet",
+      "data": {
+        "pass": true,
+        "reason": "pass job 0 receipt 0: floor to wall contrast 7.79:1"
+      }
+    },
+    {
+      "id": "paid:0:5",
+      "at": "2026-11-13T21:55:36.143Z",
+      "type": "paid",
+      "job_id": 0,
+      "tx": "BPv5jiz9FYSuW4YP6wEaGX2tBcSu8t3fngQh6qi5ZZab",
+      "tx_url": "https://testnet.nearblocks.io/txns/BPv5jiz9FYSuW4YP6wEaGX2tBcSu8t3fngQh6qi5ZZab",
+      "account": "xink-mwfil8ha.testnet",
+      "data": {
+        "amount_yocto": "160000000000000000000000",
+        "to": "xink-mwfil8ha.testnet"
+      }
+    },
+    {
+      "id": "job_opened:1:6",
+      "at": "2026-11-13T21:55:39.490Z",
+      "type": "job_opened",
+      "job_id": 1,
+      "tx": "4eCpfT4BTEsPdFYswLTXCZmGK62TQViQgompK8bcxpL2",
+      "tx_url": "https://testnet.nearblocks.io/txns/4eCpfT4BTEsPdFYswLTXCZmGK62TQViQgompK8bcxpL2",
+      "account": "bda3be3a43610a19943fb49f5037af23e4dcd57ca668d70b08ba1ff4aa7c0cd6",
+      "data": {
+        "mention": "@payonproof a 3 room map, 0.2 NEAR",
+        "kind": "map",
+        "title": "map",
+        "spec": {
+          "rooms": 3,
+          "cols": 4,
+          "rows": 3
+        },
+        "budget_yocto": "200000000000000000000000",
+        "fund_tx": "CheMxrh738vqBJ2L1iX5xmRqQRN5E1Ng7XV8qwyZvnX1",
+        "requester": "bda3be3a43610a19943fb49f5037af23e4dcd57ca668d70b08ba1ff4aa7c0cd6"
+      }
+    },
+    {
+      "id": "bid:1:7",
+      "at": "2026-11-13T21:55:42.948Z",
+      "type": "bid",
+      "job_id": 1,
+      "tx": "ATjRVKLGwN4EhhzMBnkQxX2SQQmEf4qxfCt6hdyqpPma",
+      "tx_url": "https://testnet.nearblocks.io/txns/ATjRVKLGwN4EhhzMBnkQxX2SQQmEf4qxfCt6hdyqpPma",
+      "account": "xink-mwfil8ha.testnet",
+      "data": {
+        "name": "Ink",
+        "ask_yocto": "160000000000000000000000",
+        "bid": 0
+      }
+    },
+    {
+      "id": "bid:1:8",
+      "at": "2026-11-13T21:55:45.941Z",
+      "type": "bid",
+      "job_id": 1,
+      "tx": "HSBAXSFXdxJiMFAqxqtCWy5xi5TizmQZDkV3pfE15mFH",
+      "tx_url": "https://testnet.nearblocks.io/txns/HSBAXSFXdxJiMFAqxqtCWy5xi5TizmQZDkV3pfE15mFH",
+      "account": "xclay-mwfilcm0.testnet",
+      "data": {
+        "name": "Clay",
+        "ask_yocto": "110000000000000000000000",
+        "bid": 1
+      }
+    },
+    {
+      "id": "delivered:1:9",
+      "at": "2026-11-13T21:55:52.202Z",
+      "type": "delivered",
+      "job_id": 1,
+      "tx": "5KjiCQgU7Q3592deVGAT9JYR282LzGgQ6nsMrB3GmAy4",
+      "tx_url": "https://testnet.nearblocks.io/txns/5KjiCQgU7Q3592deVGAT9JYR282LzGgQ6nsMrB3GmAy4",
+      "account": "xclay-mwfilcm0.testnet",
+      "data": {
+        "pass": false
+      }
+    },
+    {
+      "id": "checked:1:10",
+      "at": "2026-11-13T21:55:52.202Z",
+      "type": "checked",
+      "job_id": 1,
+      "tx": "5KjiCQgU7Q3592deVGAT9JYR282LzGgQ6nsMrB3GmAy4",
+      "tx_url": "https://testnet.nearblocks.io/txns/5KjiCQgU7Q3592deVGAT9JYR282LzGgQ6nsMrB3GmAy4",
+      "account": "xapp-mwfil00j.testnet",
+      "data": {
+        "pass": false,
+        "reason": "room cut off"
+      }
+    },
+    {
+      "id": "disputed:1:11",
+      "at": "2026-11-13T21:55:58.084Z",
+      "type": "disputed",
+      "job_id": 1,
+      "tx": "89iAxbxS7v7gxCzjPxyrvud84MdgiJCJYFS7UPSTQsCj",
+      "tx_url": "https://testnet.nearblocks.io/txns/89iAxbxS7v7gxCzjPxyrvud84MdgiJCJYFS7UPSTQsCj",
+      "account": "xclay-mwfilcm0.testnet",
+      "data": {
+        "case_id": 0,
+        "evidence_hash": "f0ee5fff8ed623874d73bb51d0e95c6ca01f3d9ecaaf0821bdf5017b79cdc3e1"
+      }
+    },
+    {
+      "id": "ruled:1:12",
+      "at": "2026-11-13T21:57:16.398Z",
+      "type": "ruled",
+      "job_id": 1,
+      "tx": "ENMZX6cDMqTsjtnq2pzzTfgfdi1Pkxrkkd4w8p6yQgou",
+      "tx_url": "https://testnet.nearblocks.io/txns/ENMZX6cDMqTsjtnq2pzzTfgfdi1Pkxrkkd4w8p6yQgou",
+      "account": "bda3be3a43610a19943fb49f5037af23e4dcd57ca668d70b08ba1ff4aa7c0cd6",
+      "data": {
+        "side": "buyer",
+        "amount_yocto": "110000000000000000000000",
+        "status": "refunded"
+      }
+    }
+  ]
+}

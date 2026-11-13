@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fund a Pay on Proof job</title>
+<style>
+  :root { color-scheme: dark; }
+  body { margin: 0; background: #14120c; color: #f6f1e6; font: 16px/1.45 system-ui, sans-serif; }
+  main { max-width: 28rem; margin: 0 auto; padding: 16px; }
+  h1 { font-size: 1.35rem; line-height: 1.2; margin: 0 0 8px; }
+  h2 { font-size: 1rem; margin: 20px 0 8px; }
+  p, li { overflow-wrap: anywhere; }
+  .card { background: #221f18; border-radius: 12px; padding: 12px; margin: 0 0 12px; }
+  button, a.btn { display: flex; align-items: center; justify-content: center; min-height: 48px; width: 100%; box-sizing: border-box; margin: 8px 0; padding: 12px; border: 0; border-radius: 10px; background: #f0e2c4; color: #1a160f; font: 600 16px/1.2 system-ui, sans-serif; text-decoration: none; text-align: center; }
+  button:focus, a.btn:focus { outline: 3px solid #f0c14a; outline-offset: 2px; }
+  a { color: #f0c14a; }
+  .acct { font-family: ui-monospace, monospace; font-size: 0.85rem; }
+  .muted { color: #d9c89a; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Fund this job</h1>
+  <p class="muted">No wallet install. The key stays in this browser. Testnet only.</p>
+  <section class="card" id="job">Loading the job…</section>
+  <h2>1. Create a key</h2>
+  <p>This makes an ed25519 key in the page. It does not install an extension and it does not show a seed phrase.</p>
+  <button type="button" id="make">Create a key in this browser</button>
+  <p class="acct" id="account"></p>
+  <h2>2. The testnet funding transaction</h2>
+  <section class="card" id="fund">Loading the recorded transaction…</section>
+  <h2>How the login works</h2>
+  <p>NEAR Auth at auth.near.org is the social login that works today: Google, Apple, email, or a passkey. It needs an Auth0 application (domain, client id, audience). This page does not create one.</p>
+  <p>Meteor, HOT, and Intear are wallet apps. They are not used here.</p>
+  <p>A NEP-366 delegate was sent on testnet. The deposit was taken from the relayer, and the requester's balance did not move, so that transaction is not the funding step. The recorded funding transaction is a transfer signed by the requester's own key.</p>
+  <p><a class="btn" href="thread.html">Open the thread replay</a></p>
+</main>
+<script>
+const jobBox = document.querySelector("#job");
+const fundBox = document.querySelector("#fund");
+const account = document.querySelector("#account");
+
+function hex(bytes) {
+  return [...bytes].map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+document.querySelector("#make").addEventListener("click", async () => {
+  if (!crypto.subtle || !crypto.subtle.generateKey) {
+    account.textContent = "This browser cannot create an ed25519 key. The recorded transaction below is still the testnet funding.";
+    return;
+  }
+  try {
+    const key = await crypto.subtle.generateKey({ name: "Ed25519" }, true, ["sign"]);
+    const raw = new Uint8Array(await crypto.subtle.exportKey("raw", key.publicKey));
+    account.textContent = "Implicit account " + hex(raw) + ". This key was not saved and it was not used on chain.";
+  } catch (e) {
+    account.textContent = "This browser did not create an ed25519 key (" + e.message + "). The recorded transaction below is still the testnet funding.";
+  }
+});
+
+async function load() {
+  let run = null;
+  let feed = null;
+  try { run = await (await fetch("run.json")).json(); } catch { /* not recorded yet */ }
+  try { feed = await (await fetch("events.json")).json(); } catch { /* not recorded yet */ }
+  if (!run || !feed) {
+    jobBox.textContent = "No testnet run is recorded in this copy yet.";
+    fundBox.textContent = "The funding transaction appears here after the testnet run.";
+    return;
+  }
+  const opened = feed.events.filter((e) => e.type === "job_opened");
+  jobBox.innerHTML = opened.map((e) => `<p><b>Job ${e.job_id}</b> ${e.data.title} (${e.data.kind})<br>${e.data.mention}</p>`).join("");
+  const url = "https://testnet.nearblocks.io/txns/" + run.txs.fund.hash;
+  fundBox.innerHTML = `<p>Requester <span class="acct">${run.requester}</span> signed this transfer and paid ${run.fundNear} NEAR.</p><p><a href="${url}">${url}</a></p>`;
+}
+load();
+</script>
+</body>
+</html>
