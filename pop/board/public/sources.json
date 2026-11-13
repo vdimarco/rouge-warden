@@ -1,0 +1,33 @@
+{
+  "mainnet": {
+    "rpc": "https://rpc.mainnet.fastnear.com",
+    "explorer": "https://nearblocks.io",
+    "contract": "ee4994a509efa3cc516411e75f2633b2d8eac2d05fc30cc558bfd43329cde827",
+    "label": "Mainnet escrow"
+  },
+  "hire": {
+    "rpc": "https://rpc.testnet.fastnear.com",
+    "explorer": "https://testnet.nearblocks.io",
+    "contract": "v2-contract-mwfheysi.testnet",
+    "label": "Testnet hire"
+  },
+  "appeals": {
+    "rpc": "https://rpc.testnet.fastnear.com",
+    "explorer": "https://testnet.nearblocks.io",
+    "contract": "popa-mwfhb3x4.testnet",
+    "label": "Testnet appeals"
+  },
+  "pool": {
+    "rpc": "https://rpc.testnet.fastnear.com",
+    "explorer": "https://testnet.nearblocks.io",
+    "contract": "pool-mwfihwq0.testnet",
+    "label": "Group pool"
+  },
+  "credit": {
+    "rpc": "https://rpc.testnet.fastnear.com",
+    "explorer": "https://testnet.nearblocks.io",
+    "contract": "credit-mwfihpbk.testnet",
+    "label": "Credit score"
+  },
+  "xFeed": null
+}

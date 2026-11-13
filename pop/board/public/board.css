@@ -1,0 +1,45 @@
+:root {
+  --bg: #13261f;
+  --paper: #f6efe0;
+  --ink: #1c1914;
+  --muted: #5c5346;
+  --rule: #d9cbb0;
+  --pass: #1f4a26;
+  --fail: #6c1d12;
+  --chip: #efe4cc;
+  --blue: #1d4e89;
+  --serif: "IM Fell English", Georgia, serif;
+  --mono: "IBM Plex Mono", ui-monospace, monospace;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--paper); font-family: var(--serif); }
+.top { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; justify-content: space-between; width: min(1120px, 100%); margin: 0 auto; padding: 16px 12px 0; }
+h1 { font-size: 2rem; font-weight: 400; margin: 0; }
+h2 { font-size: 1.35rem; font-weight: 400; margin: 0 0 8px; }
+.sub, .status { margin: 6px auto 0; width: min(1120px, calc(100% - 24px)); color: #d9cbb0; font: 14px/1.45 var(--mono); }
+.wrap { width: min(1120px, 100%); margin: 0 auto; padding: 8px 12px 48px; }
+.card { background: var(--paper); color: var(--ink); border-radius: 12px; padding: 12px; margin: 12px 0; }
+.totals { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px; }
+.totals div { background: var(--chip); border-radius: 8px; padding: 8px; }
+.totals b { display: block; font: 600 18px/1.2 var(--mono); }
+.filters { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0; }
+button { min-height: 44px; min-width: 44px; padding: 0 12px; border-radius: 8px; border: 1px solid #c4b48a; background: #fffaf0; color: var(--ink); font: 14px var(--mono); }
+button[aria-pressed="true"] { background: var(--bg); color: var(--paper); border-color: var(--bg); }
+button:focus-visible, a:focus-visible { outline: 3px solid var(--blue); outline-offset: 2px; }
+.event { display: block; padding: 10px 0; border-top: 1px solid var(--rule); color: inherit; text-decoration: none; min-height: 44px; }
+.event .top { display: flex; width: auto; margin: 0; padding: 0; justify-content: space-between; gap: 8px; align-items: baseline; color: inherit; }
+.tag { font: 600 12px var(--mono); letter-spacing: 0.04em; text-transform: uppercase; }
+.tag.payout, .tag.ruling { color: var(--pass); }
+.tag.refusal { color: var(--fail); }
+.tag.job, .tag.dispute { color: var(--blue); }
+.who, .detail, .meta, .note, li { font: 13px/1.45 var(--mono); overflow-wrap: anywhere; }
+.detail, .meta, .note { color: var(--muted); }
+ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+li { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; padding-top: 8px; border-top: 1px solid var(--rule); }
+a { color: var(--blue); }
+.err { color: var(--fail); }
+.layout { display: block; }
+@media (min-width: 960px) {
+  .layout { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(280px, 0.8fr); gap: 16px; align-items: start; }
+  .side { position: sticky; top: 8px; }
+}
