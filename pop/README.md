@@ -17,6 +17,17 @@ Live, read from mainnet in the browser: https://arcade.uptick.systems/ledger/cha
 
 GitHub runs the last three on each change to `pop/` ([workflow](../.github/workflows/pop.yml)).
 
+### Get only this folder
+
+This folder lives in a large game repository. To check out only Pay on Proof and its viewer:
+
+```sh
+git clone --filter=blob:none --sparse https://github.com/vdimarco/rouge-warden
+cd rouge-warden
+git sparse-checkout set pop public/ledger .github
+node pop/scripts/verify.mjs
+```
+
 ## For judges: an appeal on testnet
 
 When a delivery fails the check, the hired worker can open a dispute. A separate testnet contract asks [Lock Before You Talk](https://github.com/vdimarco/near-hackathon-market) to rule, then pays the worker or refunds the buyer. The mainnet contract is unchanged, and `node pop/scripts/verify.mjs mainnet` still reports 14 of 14.
@@ -30,17 +41,6 @@ The published jury `dev-20261111042208-14186395012630.testnet` has no keys left,
 | `node pop/appeals/verify.mjs` | `all 42 checks passed`. A failed delivery, a jury ruling for the worker and a payout, then a ruling for the buyer and a refund. No key. |
 | Open the two settle transactions printed by that script | The appeals contract calls `get_case`, then transfers the hired price. |
 | `cd pop/appeals/contract && cargo test` | 10 passed. A mismatched evidence hash or opener does not pay. |
-
-### Get only this folder
-
-This folder lives in a large game repository. To check out only Pay on Proof and its viewer:
-
-```sh
-git clone --filter=blob:none --sparse https://github.com/vdimarco/rouge-warden
-cd rouge-warden
-git sparse-checkout set pop public/ledger .github
-node pop/scripts/verify.mjs
-```
 
 ## What happens
 
@@ -142,7 +142,7 @@ The organizers list hints for each track. This table says which ones this projec
 | AI Security & Defense | Function call keys, sandboxed wallets | Yes. The contract account has no full-access key. The Warden's key can call six methods and cannot send NEAR or deliver. |
 | AI Security & Defense | TEE attestation | No. |
 | AI Swarms | Coordination markets, bidding | Yes. Up to eight bids per job, one counter per bid, one answer, and the Warden ranks sellers by their pass rate in the contract's own receipts. |
-| AI Swarms | Sub-accounts | No. Sellers are implicit accounts. |
+| AI Swarms | Sub-accounts | Yes, on testnet. `pop/hire/` hires `crew.<parent>` and pays it from the parent's cap. The mainnet sellers are still implicit accounts. |
 
 ## Limits
 
@@ -154,6 +154,10 @@ The organizers list hints for each track. This table says which ones this projec
 - **The deployed code is not a reproducible build.** `verify.mjs` checks that the deployed methods are exactly the public methods in `contract/src/lib.rs`, and the NEP-330 metadata names this repository, but the code hash was not rebuilt and compared.
 - **NEAR Intents has no testnet.** On testnet, `mock-intents/` stands in for `intents.near`.
 - **Payouts are wNEAR or NEAR.** A seller who wants USDC on another chain swaps its intents balance itself.
+
+## Hire a second agent (testnet)
+
+`pop/hire/` is a separate testnet contract. It does not change the locked mainnet contract. One job hires a parent agent that holds only a function-call key. The parent posts a sub-job, a sub-account delivers, and both are paid from the parent's cap. The parent's remainder goes to an owner account that can spend it. The steps and the transaction hashes are in [pop/hire/README.md](hire/README.md). `node pop/hire/scripts/verify.mjs` reads that run and does not use a key.
 
 ## What was built, when
 
