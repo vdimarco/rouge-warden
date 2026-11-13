@@ -1,0 +1,78 @@
+{
+  "network": "testnet",
+  "recordedAt": "2026-11-13T21:13:31.550Z",
+  "contract": "contract-mwfh2uli.testnet",
+  "parent": "parent-mwfh35a0.testnet",
+  "sub": "crew.parent-mwfh35a0.testnet",
+  "beneficiary": "ben-mwfh2ybi.testnet",
+  "intents": "intents-mwfh31oc.testnet",
+  "wrap": "wrap.testnet",
+  "jobId": 0,
+  "subId": 0,
+  "capYocto": "1000000000000000000000000",
+  "budgetYocto": "500000000000000000000000",
+  "parentPriceYocto": "500000000000000000000000",
+  "subBudgetYocto": "200000000000000000000000",
+  "overspendBudgetYocto": "600000000000000000000000",
+  "publicKeys": {
+    "contractDeletedFullAccess": "ed25519:FCg2Q9ogqj4tWDiiSe1owMjcekqN2HtzZXpwgUnjHHxH",
+    "wardenFunctionCall": "ed25519:4PF79URfxoSACb3k36YLxK2NGAeTeL9EQzGMigegeuQk",
+    "parentDeletedFullAccess": "ed25519:HHVMhMy3Sp4EnSH7yoA4esDmfLKBz2QHevLEAPaANSop",
+    "parentFunctionCall": "ed25519:5UAGhV3kxu9JH569jWrapF7FPzckE4JirxqJRombFNr",
+    "subFullAccess": "ed25519:HUfAXXHAjxMDRxVTPohKsE1D9nuCp3dP7YRThW7hxYTh",
+    "beneficiaryFullAccess": "ed25519:GnadnU5xUmafTYK3dqLN1S5qHNHsJtohthZL8uyk8kxv",
+    "intentsFullAccess": "ed25519:4Lcyut4is8eN5rgQQv2fDckgQ5HxDgEKojkVNLiE8NMu"
+  },
+  "fullAccessStillOnChain": {
+    "contract": [],
+    "parent": [],
+    "note": "The sub-agent, the beneficiary, and the mock intents account still have full-access keys. Their secrets are only in pop/hire/.keys/testnet.json, which git ignores. The contract account and the parent account do not."
+  },
+  "txs": {
+    "init": "6WnVzEJ5a9uLTwMhLjk8vxv1qDERjfVvu6tSrJR8XXgA",
+    "contractLock": "GmqqUHCQ9ztvVeCyoFXYik4z8Hn1p17oLoL1qTyLCtpr",
+    "wardenKey": "HmHkxrnBdRVJWjG65m7hbFbA2rrM4uUp7vwnvT8K8txv",
+    "createSub": "8Qfa6zBT8oony2PdJ8is1Qiv5ZiQjR4Fbo2532B8Tqk2",
+    "parentKey": "9QS6z4bNMp5tGKMys5qajQLZNxgFZgnXJSuwBsjWqrDX",
+    "postJob": "6CacHMavRfHL2ftKwJf4LF5PtddghWGa2aP4B7wkMCg5",
+    "bid": "C4AbCgMub5aVWHZwDzRGoPZFZCUp4MCgBJo1Agmdz6fg",
+    "parentLock": "FKnweN2cydpgyQNAuKZbabRrnWq8pM6TPr3J1Z5p45L1",
+    "hire": "99QCMcusgxzLm65RYz6EZgR8Nsr93coBVwbjaVCx4yZ5",
+    "overspend": "993mdvTjAZr8q9vDL31i9zH2VtAH3UTrc1h8WcX9X4WX",
+    "postSub": "DFoMuAJdMp7Ux2Ci2ZFHdrWmcQWywGSK9SUXbQsWdbf8",
+    "bidSub": "B3ht3aMcxGi1Dog3yjx1v6R4FwGCyg8w3uXxGqQFmfkc",
+    "hireSub": "7V3DS5fZZVGMAC36oGgmqCxSAvgEjPtFFZcMuy8NnNBQ",
+    "deliverSub": "G58fD5znJH6iDJENURKCJ9PRcoamhNTrWkTYFVPyq3DF",
+    "deliverParent": "9mZpdSrtDfXTrixodZB1Vkz5qYhjQKyMqNjrA7M4DXwD",
+    "outside": null
+  },
+  "overspendError": "{\"ActionError\":{\"index\":0,\"kind\":{\"FunctionCallError\":{\"ExecutionError\":\"Smart contract panicked: over the cap\"}}}}",
+  "outsideError": "Access key requires full access",
+  "parentKeyCount": 1,
+  "contractKeyCount": 1,
+  "jobState": "done",
+  "subState": "done",
+  "spent": "500000000000000000000000",
+  "reserved": "0",
+  "receipts": [
+    {
+      "id": 0,
+      "role": "sub",
+      "pass": true,
+      "price": "200000000000000000000000",
+      "payout": "sent",
+      "rail": "near",
+      "reason": "threat 10, inside 8 to 12"
+    },
+    {
+      "id": 1,
+      "role": "parent",
+      "pass": true,
+      "price": "300000000000000000000000",
+      "payout": "sent",
+      "rail": "intents",
+      "reason": "all 3 rooms reach the entry, exit found"
+    }
+  ],
+  "secrets": "pop/hire/.keys/testnet.json is gitignored. It holds every testnet secret from this run, including full-access keys for the sub-agent, the beneficiary, and the mock intents account, plus the deleted full-access secrets of the contract and the parent."
+}
