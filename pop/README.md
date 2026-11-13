@@ -138,7 +138,7 @@ The organizers list hints for each track. This table says which ones this projec
 | AI Security & Defense | Function call keys, sandboxed wallets | Yes. The contract account has no full-access key. The Warden's key can call six methods and cannot send NEAR or deliver. |
 | AI Security & Defense | TEE attestation | No. |
 | AI Swarms | Coordination markets, bidding | Yes. Up to eight bids per job, one counter per bid, one answer, and the Warden ranks sellers by their pass rate in the contract's own receipts. |
-| AI Swarms | Sub-accounts | No. Sellers are implicit accounts. |
+| AI Swarms | Sub-accounts | No. Sellers are implicit accounts. Yes, on testnet. `pop/hire/` hires `crew.<parent>` and pays it from the parent's cap. The mainnet sellers are still implicit accounts. |
 
 ## Limits
 
@@ -150,6 +150,10 @@ The organizers list hints for each track. This table says which ones this projec
 - **The deployed code is not a reproducible build.** `verify.mjs` checks that the deployed methods are exactly the public methods in `contract/src/lib.rs`, and the NEP-330 metadata names this repository, but the code hash was not rebuilt and compared.
 - **NEAR Intents has no testnet.** On testnet, `mock-intents/` stands in for `intents.near`.
 - **Payouts are wNEAR or NEAR.** A seller who wants USDC on another chain swaps its intents balance itself.
+
+## Hire a second agent (testnet)
+
+`pop/hire/` is a separate testnet contract. It does not change the locked mainnet contract. One job hires a parent agent that holds only a function-call key. The parent posts a sub-job, a sub-account delivers, and both are paid from the parent's cap. The parent's remainder goes to an owner account that can spend it. The steps and the transaction hashes are in [pop/hire/README.md](hire/README.md). `node pop/hire/scripts/verify.mjs` reads that run and does not use a key.
 
 ## What was built, when
 
