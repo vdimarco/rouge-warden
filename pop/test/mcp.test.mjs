@@ -18,11 +18,19 @@ const rules = parse(await client.callTool({ name: "job_rules", arguments: {} }))
 ok("job_rules explains every kind", ["map", "roster", "paint", "tune"].every((k) => rules[k]));
 const jobs = parse(await client.callTool({ name: "list_jobs", arguments: {} }));
 ok("list_jobs answers", Array.isArray(jobs), `${jobs.length} open`);
-const job = parse(await client.callTool({ name: "get_job", arguments: { job_id: 9 } }));
-ok("get_job reads a job", job.id === 9 && job.kind === "map");
-const prev = parse(await client.callTool({ name: "preview_check", arguments: { job_id: 9, data: "{\"rooms\":[]}" } }));
+// the first map job that is finished; e2e.mjs makes one on a fresh deployment
+let job = null;
+for (let id = 0; id < 50 && !job; id++) {
+  const r = await client.callTool({ name: "get_job", arguments: { job_id: id } });
+  if (r.isError) break;
+  const j = parse(r);
+  if (j && j.kind === "map" && j.state === "done") job = j;
+}
+ok("get_job finds a finished map job", !!job, job ? `job ${job.id}` : "none");
+const jid = job ? job.id : 0;
+const prev = parse(await client.callTool({ name: "preview_check", arguments: { job_id: jid, data: "{\"rooms\":[]}" } }));
 ok("preview_check runs the on-chain check", prev.pass === false && /rooms/.test(prev.reason), prev.reason);
-const bad = await client.callTool({ name: "bid", arguments: { job_id: 9, ask_near: 0.1 } });
+const bad = await client.callTool({ name: "bid", arguments: { job_id: jid, ask_near: 0.1 } });
 ok("bid on a finished job is refused with the contract's reason", bad.isError && /job not open/.test(bad.content[0].text), bad.content[0].text.slice(0, 120));
 const mine = parse(await client.callTool({ name: "my_receipts", arguments: {} }));
 ok("my_receipts lists this seller's receipts", mine.length > 0 && mine.every((r) => r.seller === B.accountId), `${mine.length} receipts`);

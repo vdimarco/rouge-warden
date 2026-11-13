@@ -9,7 +9,7 @@ const keys = (await provider(net).viewAccessKeyList({ accountId: C, finality: "o
 const runs = fs.readdirSync(new URL("../runs/", import.meta.url)).filter((f) => f.startsWith("mainnet")).flatMap((f) => fs.readFileSync(new URL("../runs/" + f, import.meta.url), "utf8").trim().split("\n").map((l) => JSON.parse(l)));
 // failed deliveries keep no data in the contract; the transaction's own arguments do
 async function txArgs(hash, sender) {
-  const r = await fetch("https://rpc.mainnet.fastnear.com", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "tx", params: { tx_hash: hash, sender_account_id: sender, wait_until: "NONE" } }) });
+  const r = await fetch("https://archival-rpc.mainnet.fastnear.com", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "tx", params: { tx_hash: hash, sender_account_id: sender, wait_until: "NONE" } }) });
   const t = (await r.json()).result.transaction;
   return JSON.parse(Buffer.from(t.actions[0].FunctionCall.args, "base64").toString());
 }
