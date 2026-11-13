@@ -1,0 +1,235 @@
+{
+  "network": "testnet",
+  "publishedJury": "dev-20261111042208-14186395012630.testnet",
+  "appeals": "popa-mwfhb3x4.testnet",
+  "jury": "popaj-mwfhb7wi.testnet",
+  "buyer": "popab-mwfhbfra.testnet",
+  "worker": "popaw-mwfhbbyw.testnet",
+  "jurors": [
+    "f60f0ca87db62e0dc15e6faf3134c47f9f99dc32bf9a089952210796b31c2c9a",
+    "a2b6b6bdc5cef92b10219482745b27e33cce94ba3f716cd746c52b0893fcc9f4",
+    "06b179571e05cee3d4b4a8abd86b48349b60266846440ce2f77bc91c8ae64154",
+    "638ce58b7b8446d03ddc17b94e90d5be110f5af5344ed4fbc2137568aebecbac",
+    "e7311d3a174573628b48a3300eaf5a031f84e761bf3ce647f2e762181d94d035",
+    "27818128885df6b40c17e8693c302ea1aa6f22a820ca2b73e4071de65844a52a"
+  ],
+  "wardenPublicKey": "ed25519:Ek4sJm4hpJENVS1w27i6ZMsr5dEg9wtsPCAEHpEbwiUc",
+  "jobs": {
+    "worker": {
+      "jobId": 0,
+      "receiptId": 0,
+      "disputeId": 0,
+      "caseId": 0
+    },
+    "buyer": {
+      "jobId": 1,
+      "receiptId": 1,
+      "disputeId": 1,
+      "caseId": 1
+    }
+  },
+  "txs": {
+    "lockJury": {
+      "hash": "AoD5xzgYP11Dgyc9KV1p1SaRpTguwwS9Z6TaH9QjsaFu",
+      "sender": "popaj-mwfhb7wi.testnet"
+    },
+    "lockAppeals": {
+      "hash": "3KDa2S5S1qpT1Mmuj3HmM2uJR7w5UMALeX29zaQwXUZD",
+      "sender": "popa-mwfhb3x4.testnet"
+    },
+    "deliverWorker": {
+      "hash": "6eqZLfZ7vuJq7QMJtrKCzd2z4dLdXRrotUXHsgvfUSk1",
+      "sender": "popaw-mwfhbbyw.testnet"
+    },
+    "disputeWorker": {
+      "hash": "8tGm9sZnwc37itBYEfKYz9fsZeeVVQqgYUyWSBvGuvZ2",
+      "sender": "popaw-mwfhbbyw.testnet"
+    },
+    "settleWorker": {
+      "hash": "ENnertbw2yt4EZQRpnNznNauZ1nz7zqFRCk3f7wWmyhT",
+      "sender": "popab-mwfhbfra.testnet"
+    },
+    "deliverBuyer": {
+      "hash": "BdHARgspbRHmHsP4MrJGwBv9gZ99cD5rJMiFiPFs8UvH",
+      "sender": "popaw-mwfhbbyw.testnet"
+    },
+    "disputeBuyer": {
+      "hash": "2L6H35qAdWZSzyeFnNkAMV9JwHGiLY988XTmGytuC9zQ",
+      "sender": "popaw-mwfhbbyw.testnet"
+    },
+    "settleBuyer": {
+      "hash": "WNFCFi8hUcUnEMHmAyspSkjTRMn6uw5V1uBreyknTHX",
+      "sender": "popab-mwfhbfra.testnet"
+    },
+    "deleteWorker": {
+      "hash": "2Do1pu65BFd1o3ukiVZGNEMYp1h4968Z4gaywgDR34oZ",
+      "sender": "popaw-mwfhbbyw.testnet"
+    },
+    "deleteBuyer": {
+      "hash": "EDFueg64vbcH9oddmApN9YMitXMoNUDSp2FS18CFwXca",
+      "sender": "popab-mwfhbfra.testnet"
+    }
+  },
+  "panels": {
+    "worker": {
+      "commits": [
+        {
+          "hash": "3zNdfrCNUyJTMhRtEbabWpjfHyq5mJyStd4iC2CMes7o",
+          "sender": "f60f0ca87db62e0dc15e6faf3134c47f9f99dc32bf9a089952210796b31c2c9a"
+        },
+        {
+          "hash": "B3y9KADx4taU3JR7LXNJz92aNmGqfWSJ33YC7bmhJriP",
+          "sender": "a2b6b6bdc5cef92b10219482745b27e33cce94ba3f716cd746c52b0893fcc9f4"
+        },
+        {
+          "hash": "4BpDXL6aukYM44PHdDBKDZSfLt1Ae5waByLcAq2UnwyQ",
+          "sender": "06b179571e05cee3d4b4a8abd86b48349b60266846440ce2f77bc91c8ae64154"
+        },
+        {
+          "hash": "HBgEy1hwoNwt8XMfkSgxCpiQsM3VRNAKBfYUECPbWU83",
+          "sender": "638ce58b7b8446d03ddc17b94e90d5be110f5af5344ed4fbc2137568aebecbac"
+        },
+        {
+          "hash": "2jAP6jUwaaCsBouTYNmp2s5qtiPe1HR7m3ZDn8mqFz4k",
+          "sender": "e7311d3a174573628b48a3300eaf5a031f84e761bf3ce647f2e762181d94d035"
+        },
+        {
+          "hash": "BFY6YyG7vCLBTymw5dNjAZrGzXUsqVkjFRPbY3dt9Sdf",
+          "sender": "27818128885df6b40c17e8693c302ea1aa6f22a820ca2b73e4071de65844a52a"
+        }
+      ],
+      "audits": [
+        {
+          "hash": "BJgm3eCYK2w6YJoKPh6ZFB6S4wePnW35UfN18b9nNvgR",
+          "sender": "f60f0ca87db62e0dc15e6faf3134c47f9f99dc32bf9a089952210796b31c2c9a"
+        },
+        {
+          "hash": "A1J7Kufx7srBQgT9e4niiVrdZiTXcmnmADtmhA49fYjX",
+          "sender": "a2b6b6bdc5cef92b10219482745b27e33cce94ba3f716cd746c52b0893fcc9f4"
+        },
+        {
+          "hash": "8NPAb5kca2wWXxnUxhZoeHirHZ2oR7SDLjpWHm9vMei5",
+          "sender": "06b179571e05cee3d4b4a8abd86b48349b60266846440ce2f77bc91c8ae64154"
+        },
+        {
+          "hash": "EnnrxZveX7iBecXRYLgWo18eCu9x9EMVwMDU8nfWsmR3",
+          "sender": "638ce58b7b8446d03ddc17b94e90d5be110f5af5344ed4fbc2137568aebecbac"
+        },
+        {
+          "hash": "5NvzLbGyzBtSgfD5uvbxUPZYhMm6iyTCz9RpAAyp8NXt",
+          "sender": "e7311d3a174573628b48a3300eaf5a031f84e761bf3ce647f2e762181d94d035"
+        },
+        {
+          "hash": "EegSphNhXMuZykdozaMu2SXrBBvpkwzw1VeGcZ5JiWsv",
+          "sender": "27818128885df6b40c17e8693c302ea1aa6f22a820ca2b73e4071de65844a52a"
+        }
+      ],
+      "reveals": [
+        {
+          "hash": "2o9ZfCckGqiKjUUFt7Vosh7Ca3vn89RaTXUqsEcChTGy",
+          "sender": "f60f0ca87db62e0dc15e6faf3134c47f9f99dc32bf9a089952210796b31c2c9a"
+        },
+        {
+          "hash": "EgTbMAwi3Lr45diDUe94RY5Zqr2iN3khQ9WcFSvz6eeT",
+          "sender": "a2b6b6bdc5cef92b10219482745b27e33cce94ba3f716cd746c52b0893fcc9f4"
+        },
+        {
+          "hash": "765mTLKCmPTe9x8WpHUw2gfQqmfYHDEzmGVR9VR4DYrK",
+          "sender": "06b179571e05cee3d4b4a8abd86b48349b60266846440ce2f77bc91c8ae64154"
+        },
+        {
+          "hash": "6HjfJJNgxXCjEjig2vYdkA9hL8ShWG3c39vgcCgGcsqP",
+          "sender": "638ce58b7b8446d03ddc17b94e90d5be110f5af5344ed4fbc2137568aebecbac"
+        },
+        {
+          "hash": "CjvNk8oTknbfcjY3r9KKMhdT6zjite7P4BadTYsGCdFN",
+          "sender": "e7311d3a174573628b48a3300eaf5a031f84e761bf3ce647f2e762181d94d035"
+        },
+        {
+          "hash": "DRp8oXi3yHVretdCmUyTeVntod9KkzaF3GkPspwbbRUN",
+          "sender": "27818128885df6b40c17e8693c302ea1aa6f22a820ca2b73e4071de65844a52a"
+        }
+      ]
+    },
+    "buyer": {
+      "commits": [
+        {
+          "hash": "CtRJjkx5vfGSSRYAYPha983eCWh4CFjartaxs7aybwvy",
+          "sender": "f60f0ca87db62e0dc15e6faf3134c47f9f99dc32bf9a089952210796b31c2c9a"
+        },
+        {
+          "hash": "8NYmv9cwUZaig8WkoByVqz49SE6XP9wRCzKqBSRMNyX6",
+          "sender": "a2b6b6bdc5cef92b10219482745b27e33cce94ba3f716cd746c52b0893fcc9f4"
+        },
+        {
+          "hash": "698WvetQifDhf9kCjrHDvz4VrYSkqeAJsaLRL9fYSjTM",
+          "sender": "06b179571e05cee3d4b4a8abd86b48349b60266846440ce2f77bc91c8ae64154"
+        },
+        {
+          "hash": "EJbAd6oQ12h6J4T2TA11s9XpdRR4CAKHLYEaq1TkuPd1",
+          "sender": "638ce58b7b8446d03ddc17b94e90d5be110f5af5344ed4fbc2137568aebecbac"
+        },
+        {
+          "hash": "9vGpa6z5hiSmXiHqeGCnSTae7X33zGEDVQXteiWKzvhk",
+          "sender": "e7311d3a174573628b48a3300eaf5a031f84e761bf3ce647f2e762181d94d035"
+        },
+        {
+          "hash": "9uMwZEWZZtvdwjzJoHmEFDrFYMV7tukYA1q4PeeQSnbZ",
+          "sender": "27818128885df6b40c17e8693c302ea1aa6f22a820ca2b73e4071de65844a52a"
+        }
+      ],
+      "audits": [
+        {
+          "hash": "AygCMDXHtB6FjsqbHseF5zcqKhZ4NJkr7aST6sx8QFiS",
+          "sender": "f60f0ca87db62e0dc15e6faf3134c47f9f99dc32bf9a089952210796b31c2c9a"
+        },
+        {
+          "hash": "AAeV98ryy1knyQTKdbdVMxNHyfDhqhvyt1Faop9coyLk",
+          "sender": "a2b6b6bdc5cef92b10219482745b27e33cce94ba3f716cd746c52b0893fcc9f4"
+        },
+        {
+          "hash": "BegfdBmtmd6ipgM4z7ZGUS9aKWeLyF1BZZmiQ51NpMGM",
+          "sender": "06b179571e05cee3d4b4a8abd86b48349b60266846440ce2f77bc91c8ae64154"
+        },
+        {
+          "hash": "51CVE7JSE4fMLyky89LheGmVNn4wQkETXs175aRfwbn3",
+          "sender": "638ce58b7b8446d03ddc17b94e90d5be110f5af5344ed4fbc2137568aebecbac"
+        },
+        {
+          "hash": "2b5jFRVQfcUmGaHovaJSAmfsDXc8ZJnAtxaEWu1Gegkj",
+          "sender": "e7311d3a174573628b48a3300eaf5a031f84e761bf3ce647f2e762181d94d035"
+        },
+        {
+          "hash": "FA1rKp1vDGjUfpQaWR6VCEz2YBrCFGpwm8tAmnrMWErt",
+          "sender": "27818128885df6b40c17e8693c302ea1aa6f22a820ca2b73e4071de65844a52a"
+        }
+      ],
+      "reveals": [
+        {
+          "hash": "7QLabEH7NtatRWoA1qeSs4zrRhSfAr51idCKJYM1XgSi",
+          "sender": "f60f0ca87db62e0dc15e6faf3134c47f9f99dc32bf9a089952210796b31c2c9a"
+        },
+        {
+          "hash": "7HZbUKQ1ZghqQyuHYA6TusQTTAnppW3VJABP1hGLSd71",
+          "sender": "a2b6b6bdc5cef92b10219482745b27e33cce94ba3f716cd746c52b0893fcc9f4"
+        },
+        {
+          "hash": "AHcxTqE197qWREw1zSCgzsYFpS2pA2wP4jPH6u6ftyrn",
+          "sender": "06b179571e05cee3d4b4a8abd86b48349b60266846440ce2f77bc91c8ae64154"
+        },
+        {
+          "hash": "DocfPDKptuXgEULYZGsAyZiivNbd2sArzzduWiWfhzzN",
+          "sender": "638ce58b7b8446d03ddc17b94e90d5be110f5af5344ed4fbc2137568aebecbac"
+        },
+        {
+          "hash": "2S6xcTZJE9PcCDFYx1YowPrcj6xVDyuw2RrCGjuEGPTj",
+          "sender": "e7311d3a174573628b48a3300eaf5a031f84e761bf3ce647f2e762181d94d035"
+        },
+        {
+          "hash": "9C2ryu6QoARVn3A3EEWRKyfzAVybbPJpwPLnqYFNuAsp",
+          "sender": "27818128885df6b40c17e8693c302ea1aa6f22a820ca2b73e4071de65844a52a"
+        }
+      ]
+    }
+  }
+}
