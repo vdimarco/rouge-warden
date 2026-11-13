@@ -27,10 +27,16 @@ The operator of this contract cannot swap the checker after `init_tee`. The wasm
 | Do this | See this |
 | --- | --- |
 | `cd pop/tee && npm ci && npm test` | Checker tests, contract tests (`5 passed`), and the codec test. No network and no key. |
-| `node pop/tee/scripts/verify.mjs` | One line per check, then `all N checks passed`. It reads testnet only. |
-| Open the contract from `deployment.json` on testnet.nearblocks.io | No full-access key. One function-call key for `post_job`, `hire`, and `cancel_job`. |
-| Open the pass transaction | `tee pass`, then a NEAR transfer. The arguments are a ciphertext, not the map. |
-| Open the fail transaction | `tee fail` and `room cut off`. No transfer. |
+| `node pop/tee/scripts/verify.mjs` | 36 lines that start with `ok`, then `all 36 checks passed`. It reads testnet only. |
+| Open [contract-mwfh7y7n.testnet](https://testnet.nearblocks.io/address/contract-mwfh7y7n.testnet) | No full-access key. One function-call key, for `post_job`, `hire`, and `cancel_job`. |
+| Open [the pass](https://testnet.nearblocks.io/txns/Cvzq7ubLYuUime1Y8MUy5AWQyJJW5sUF9c7fdwe4JHBp) | `tee pass job 0 receipt 0`, then a NEAR transfer. The delivery argument is ciphertext. |
+| Open [the fail](https://testnet.nearblocks.io/txns/ESV8jwR9H7a9h9EEme93W2UTXppFG9ekV43abg8PezP1) | `tee fail job 1 receipt 1: room cut off`. No transfer. |
+| Open [the init](https://testnet.nearblocks.io/txns/63L2iNKpftkynUP6KAasqqHJF5kTyDGdZeH8fFk3zLFA) | `tee ready` and the signing key `13f8eaab…c59e`. |
+| Open [the lock](https://testnet.nearblocks.io/txns/4TJDKjAAC9SeqvhbNBb1C8kKjuBpsokbubCHSoZTy89m) | The full-access key deleted. |
+
+The three Intel TDX quotes are at `https://testnet-api.outlayer.ai/attestations/by-tx/` plus the init, pass, and fail transaction hashes. Each quote is version 4 with TEE type `0x81` (TDX). Its report data is the SHA-256 of this run's task id, wasm hash, input hash, output hash, caller, block, and timestamp. `worker.outlayer.testnet` `is_measurements_approved` returns true for the five measurements in the quote. That contract checked Intel's signature when the worker registered. This script recomputes the report data and checks that approval. It does not repeat Intel's certificate check itself.
+
+The checker wasm sha256 is `b3ad2ebd4b314b278b60af0bf9bdb8799d17c4f76abb305103ec05b7a42ae594`.
 
 `node pop/tee/scripts/run.mjs testnet` is how this deployment was made. It creates faucet accounts, deploys, inits the TEE key, runs both jobs, and deletes the full-access key. Keys go to `pop/tee/.keys/`, which git ignores.
 

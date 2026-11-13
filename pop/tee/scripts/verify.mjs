@@ -5,8 +5,9 @@
 // Each line starts with "ok" or "FAIL". Exits 1 if any check fails.
 import fs from "node:fs";
 import path from "node:path";
+import { createHash } from "node:crypto";
 import { fileURLToPath } from "node:url";
-import { ed25519Ok, sha256hex, verdictMessage } from "../lib/message.mjs";
+import { ed25519Ok, initMessage, sha256hex, verdictMessage } from "../lib/message.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const RPC = "https://rpc.testnet.fastnear.com";
@@ -31,37 +32,50 @@ const view = async (account, method, args = {}) => {
   return JSON.parse(Buffer.from(res.result).toString());
 };
 
-function walk(v, acc) {
-  if (!v || typeof v !== "object") return;
-  if (typeof v.mrtd === "string" && typeof v.rtmr0 === "string" && typeof v.rtmr3 === "string") acc.measurements.push(v);
-  for (const [k, val] of Object.entries(v)) {
-    if (typeof val === "string") acc.strings.push([k, val]);
-    else walk(val, acc);
+// Offsets in an Intel TDX quote v4. RTMR3 starts at 520. Report data starts at 568.
+const QUOTE = { mrtd: 184, rtmr0: 376, rtmr1: 424, rtmr2: 472, rtmr3: 520, report: 568 };
+
+// OutLayer's V1 report-data binding. Absent optional fields are skipped.
+function reportData(a) {
+  const h = createHash("sha256");
+  h.update(Buffer.from(a.task_type));
+  const tid = Buffer.alloc(8); tid.writeBigInt64LE(BigInt(a.task_id)); h.update(tid);
+  if (a.repo) h.update(Buffer.from(a.repo));
+  if (a.commit) h.update(Buffer.from(a.commit));
+  if (a.build_target) h.update(Buffer.from(a.build_target));
+  if (a.wasm_hash) h.update(Buffer.from(a.wasm_hash));
+  if (a.input_hash) h.update(Buffer.from(a.input_hash));
+  h.update(Buffer.from(a.output_hash));
+  if (a.block_height !== undefined && a.block_height !== null) {
+    const b = Buffer.alloc(8); b.writeBigUInt64LE(BigInt(a.block_height)); h.update(b);
   }
+  if (a.caller_account_id) h.update(Buffer.from(a.caller_account_id));
+  if (a.project_id) h.update(Buffer.from(a.project_id));
+  if (a.secrets_ref) h.update(Buffer.from(a.secrets_ref));
+  const ts = Buffer.alloc(8); ts.writeBigInt64LE(BigInt(a.timestamp)); h.update(ts);
+  if (a.attached_usd !== undefined && a.attached_usd !== null) h.update(Buffer.from(String(a.attached_usd)));
+  return h.digest();
 }
 
 async function attestation(tx) {
-  const urls = [
-    `https://api.outlayer.ai/attestations/by-tx/${tx}`,
-    `https://api.outlayer.ai/attestations/by-request/${tx}`,
-  ];
-  for (const url of urls) {
-    const r = await fetch(url);
-    if (r.status === 404) continue;
-    const text = await r.text();
-    if (!r.ok) return { url, error: `${r.status} ${text.slice(0, 180)}` };
-    try { return { url, body: JSON.parse(text) }; }
-    catch { return { url, error: "not JSON" }; }
-  }
-  return { error: "no attestation" };
+  const url = `https://testnet-api.outlayer.ai/attestations/by-tx/${tx}`;
+  const r = await fetch(url);
+  const text = await r.text();
+  if (!r.ok) return { url, error: `${r.status} ${text.slice(0, 180)}` };
+  try { return { url, body: JSON.parse(text) }; }
+  catch { return { url, error: "not JSON" }; }
 }
 
-function quoteBytes(strings) {
-  const hit = strings.find(([k, v]) => /quote/i.test(k) && v.length > 500);
-  if (!hit) return null;
-  const raw = hit[1].replace(/\s/g, "");
-  try { return Buffer.from(raw, /^[0-9a-fA-F]+$/.test(raw) ? "hex" : "base64"); }
-  catch { return null; }
+async function txOutputs(tx, sender) {
+  const res = await rpc("EXPERIMENTAL_tx_status", { tx_hash: tx, sender_account_id: sender, wait_until: "NONE" });
+  const outs = [];
+  for (const o of res.receipts_outcome || []) {
+    const v = o.outcome?.status?.SuccessValue;
+    if (!v) continue;
+    const raw = Buffer.from(v, "base64");
+    if (raw.length) outs.push(raw);
+  }
+  return outs;
 }
 
 async function main() {
@@ -98,25 +112,43 @@ async function main() {
 
   for (const name of ["init", "pass", "fail"]) {
     const tx = file.txs?.[name];
-    if (!tx) { ok(`${name} attestation`, false, "no tx"); continue; }
+    const sender = file.senders?.[name];
+    if (!tx || !sender) { ok(`${name} attestation`, false, "no tx"); continue; }
     const got = await attestation(tx);
-    if (!got.body) { ok(`${name} attestation fetched`, false, got.error || ""); continue; }
-    ok(`${name} attestation fetched`, true, got.url.replace("https://api.outlayer.ai", ""));
-    const acc = { measurements: [], strings: [] };
-    walk(got.body, acc);
-    const quote = quoteBytes(acc.strings);
-    ok(`${name} quote bytes`, !!quote && quote.length > 1000, quote ? `${quote.length} bytes` : "missing");
-    const wasmField = acc.strings.find(([k, v]) => /wasm_hash|wasmHash/i.test(k) && v.toLowerCase() === localHash);
-    ok(`${name} quote names this wasm`, !!wasmField);
-    const meas = acc.measurements[0];
-    let approved = false;
-    if (meas) {
-      try { approved = await view("worker.outlayer.testnet", "is_measurements_approved", { measurements: { mrtd: meas.mrtd, rtmr0: meas.rtmr0, rtmr1: meas.rtmr1, rtmr2: meas.rtmr2, rtmr3: meas.rtmr3 } }); }
-      catch (e) { approved = false; }
+    const a = got.body;
+    ok(`${name} attestation fetched`, !!a && a.transaction_hash === tx, a ? `request ${a.request_id}` : (got.error || ""));
+    if (!a) continue;
+    ok(`${name} wasm`, a.wasm_hash === localHash && a.executed_wasm_sha256 === localHash && a.caller_account_id === sender);
+    const quote = Buffer.from(a.tdx_quote || "", "base64");
+    const tdx = quote.length > QUOTE.report + 64 && quote.readUInt16LE(0) === 4 && quote.readUInt32LE(4) === 0x81;
+    ok(`${name} TDX quote`, tdx, `${quote.length} bytes`);
+    if (!tdx) continue;
+    const meas = {
+      mrtd: quote.subarray(QUOTE.mrtd, QUOTE.mrtd + 48).toString("hex"),
+      rtmr0: quote.subarray(QUOTE.rtmr0, QUOTE.rtmr0 + 48).toString("hex"),
+      rtmr1: quote.subarray(QUOTE.rtmr1, QUOTE.rtmr1 + 48).toString("hex"),
+      rtmr2: quote.subarray(QUOTE.rtmr2, QUOTE.rtmr2 + 48).toString("hex"),
+      rtmr3: quote.subarray(QUOTE.rtmr3, QUOTE.rtmr3 + 48).toString("hex"),
+    };
+    ok(`${name} quote RTMR3`, meas.rtmr3 === a.worker_measurement);
+    const approved = await view("worker.outlayer.testnet", "is_measurements_approved", { measurements: meas });
+    ok(`${name} measurements approved`, approved === true, meas.mrtd.slice(0, 16));
+    const report = quote.subarray(QUOTE.report, QUOTE.report + 64);
+    const bound = reportData(a);
+    ok(`${name} report data`, report.subarray(0, 32).equals(bound) && report.subarray(32).every((b) => b === 0));
+    const outputs = await txOutputs(tx, sender);
+    const hashed = outputs.filter((raw) => sha256hex(raw) === a.output_hash);
+    ok(`${name} output hash`, hashed.length === 1, a.output_hash.slice(0, 16));
+    if (hashed.length === 1) {
+      const guest = JSON.parse(hashed[0].toString());
+      if (name === "init") {
+        const msg = initMessage(guest.box_pk);
+        ok("init signature in the quote output", ed25519Ok(msg, guest.signature, guest.sign_pk) && guest.sign_pk === tee.sign_pk);
+      } else {
+        const msg = verdictMessage(guest.job, guest.delivery, guest.input, guest.pass, guest.reason);
+        ok(`${name} signature in the quote output`, ed25519Ok(msg, guest.signature, tee.sign_pk));
+      }
     }
-    ok(`${name} measurements approved on chain`, approved === true);
-    fs.mkdirSync(path.join(ROOT, "run"), { recursive: true });
-    fs.writeFileSync(path.join(ROOT, "run", `${name}-attestation.json`), JSON.stringify(got.body));
   }
 
   console.log(`\n${fails ? "FAILED" : "all " + passes + " checks passed"}`);
