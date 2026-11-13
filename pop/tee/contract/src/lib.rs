@@ -222,7 +222,19 @@ impl Contract {
         }
     }
 
+    /// Points init at a published checker binary. Refused once the signing key is pinned.
+    pub fn set_wasm(&mut self, wasm_hash: String, wasm_url: String) {
+        warden_only();
+        require!(!self.ready && self.inflight.is_none(), "tee already set");
+        require!(hex_32(&wasm_hash).is_some(), "wasm hash");
+        require!(wasm_url.starts_with("https://") && wasm_url.len() <= 300, "wasm url");
+        self.wasm_hash = wasm_hash;
+        self.wasm_url = wasm_url;
+    }
+
     /// Asks the TEE checker to seal a fresh box key and publish its signing key. Once.
+    /// The attached NEAR pays the worker. Unused deposit is refunded by OutLayer.
+    #[payable]
     pub fn init_tee(&mut self, input: String) -> Promise {
         warden_only();
         require!(!self.ready && self.inflight.is_none(), "tee already set");
@@ -291,6 +303,8 @@ impl Contract {
     }
 
     /// The hired seller submits a ciphertext. The checker opens it. This contract stores the hash, not the delivery.
+    /// The attached NEAR pays the worker.
+    #[payable]
     pub fn deliver(&mut self, job_id: u32, box_b64: String) -> Promise {
         let seller = env::predecessor_account_id();
         require!(self.ready && self.inflight.is_none(), "checker is busy");

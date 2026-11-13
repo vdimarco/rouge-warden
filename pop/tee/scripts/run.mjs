@@ -150,11 +150,13 @@ async function main() {
   const pop = acc(contract);
   const st = await accountState("testnet", contract.accountId);
   console.log(`  contract ${contract.accountId} balance ${st ? fmt(st.amount) : "0"}`);
+  const listed0 = st ? await pop.getAccessKeyList() : { keys: [] };
+  const unlocked = listed0.keys.some((k) => k.public_key === contract.publicKey && k.access_key.permission === "FullAccess");
   const codeHash = st && st.code_hash;
-  if (!codeHash || codeHash === "11111111111111111111111111111111") {
+  if (!codeHash || codeHash === "11111111111111111111111111111111" || unlocked) {
     const out = await pop.deployContract(new Uint8Array(fs.readFileSync(CONTRACT_WASM)));
     console.log(`  deployed tx ${out.transaction.hash}`);
-  } else console.log(`  code already deployed`);
+  } else console.log(`  code already deployed and the account is locked`);
 
   let cfg = null;
   try { cfg = await view("testnet", contract.accountId, "get_config"); } catch { /* not initialised */ }
@@ -168,6 +170,12 @@ async function main() {
 
   let tee = await view("testnet", contract.accountId, "get_tee");
   let initTx = null;
+  if (!tee.ready && (tee.wasm_hash !== WASM_HASH || tee.wasm_url !== wasmUrl)) {
+    const r = await call(pop, contract.accountId, "set_wasm", { wasm_hash: WASM_HASH, wasm_url: wasmUrl });
+    if (r.failed) throw new Error(`set_wasm ${r.failed}`);
+    console.log(`  set_wasm tx ${r.tx}`);
+    tee = await view("testnet", contract.accountId, "get_tee");
+  }
   if (!tee.ready) {
     const r = await call(pop, contract.accountId, "init_tee", { input: '{"op":"init"}' }, { gas: 300n * TGAS, deposit: near(0.05) });
     initTx = r.tx;

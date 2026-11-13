@@ -37,8 +37,8 @@ The operator of this contract cannot swap the checker after `init_tee`. The wasm
 Build the guest before publishing a new binary:
 
 ```sh
-cargo build --manifest-path pop/tee/checker/Cargo.toml --target wasm32-wasip2 --release --features guest
+cargo +1.90.0 build --manifest-path pop/tee/checker/Cargo.toml --target wasm32-wasip2 --release --features guest
 cp pop/tee/checker/target/wasm32-wasip2/release/pop-tee-checker.wasm pop/tee/checker/pop-tee-checker.wasm
 ```
 
-The contract pins the sha256 of that file. The worker fetches the same bytes from the URL stored at init.
+Rust 1.90 emits WASI 0.2.3 imports. OutLayer's worker is wasmtime 36, which provides WASI 0.2.6, and a newer import does not instantiate. The contract pins the sha256 of the committed file. The worker fetches those bytes from the URL stored at init.
