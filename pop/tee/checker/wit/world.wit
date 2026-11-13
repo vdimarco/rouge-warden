@@ -1,0 +1,6 @@
+package pop:tee-checker@0.1.0;
+
+world checker {
+    import outlayer:signing-keys/api@0.1.0;
+    import outlayer:encryption-keys/api@0.1.0;
+}
