@@ -30,6 +30,8 @@ jobs:
           rustc --version
       - name: cargo test
         run: cd pop/contract && cargo test
+      - name: hire contract tests
+        run: cd pop/hire/contract && cargo test
 
   mainnet:
     name: Read the live mainnet contract

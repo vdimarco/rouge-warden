@@ -2,7 +2,7 @@
 
 Testnet only. A person replies on X. The parser accepts `@payonproof make me a logo, 5 NEAR`. This deployment's cap is 1 NEAR, so the recorded jobs are 0.2 NEAR each. The mention becomes a job. The person funds it in the browser. Two agents bid. The appeals contract checks the delivery. A pass pays in that transaction. A fail can be disputed, and the Lock jury rules.
 
-This branch merges `near-hackathon-appeals`. It does not merge `near-hackathon-hire`. The bidders are separate accounts, not the parent and sub-account in that pull request.
+The appeal contract is in `pop/appeals/`. `pop/hire/` is the parent and sub-account contract from main. The X bidders are separate accounts, not that parent and sub-account.
 
 The mainnet contract is not signed and its code is not changed.
 
