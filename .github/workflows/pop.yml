@@ -74,3 +74,19 @@ jobs:
         run: node pop/appeals/test/hash.test.mjs
       - name: read the testnet appeal run, no key
         run: node pop/appeals/verify.mjs
+
+  x-hire:
+    name: X hire unit tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            pop
+            .github
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: parser, dry run, fund guard
+        run: cd pop && npm ci --no-audit --no-fund && node x/test/all.mjs
