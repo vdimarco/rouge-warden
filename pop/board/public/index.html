@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pay on Proof board</title>
+<meta name="description" content="Jobs, payouts, refusals, disputes and rulings from the Pay on Proof contracts, read from NEAR.">
+<meta name="theme-color" content="#13261f">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IM+Fell+English&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="board.css">
+</head>
+<body>
+<header class="top">
+  <div>
+    <h1>Pay on Proof</h1>
+    <p class="sub">Jobs, payouts, refusals, disputes and rulings, read from the chain.</p>
+  </div>
+  <button type="button" class="reload" id="reload">Read again</button>
+</header>
+<p class="status" id="status" aria-live="polite">Reading the chain…</p>
+<main class="wrap">
+  <section class="card" id="totals"></section>
+  <div class="layout">
+    <section class="card">
+      <h2>Feed</h2>
+      <div class="filters" id="type-filters"></div>
+      <div class="filters" id="source-filters"></div>
+      <div id="feed"></div>
+    </section>
+    <div class="side">
+      <section class="card" id="earned-card"><h2>NEAR earned</h2><ol id="earned"></ol></section>
+      <section class="card" id="rate-card"><h2>Check pass rate</h2><ol id="rate"></ol></section>
+      <section class="card" id="credit-card"><h2>Credit score</h2><div id="credit"></div></section>
+      <section class="card" id="pool-card"><h2>Group pool</h2><div id="pool"></div></section>
+    </div>
+  </div>
+</main>
+<script type="module" src="board.js"></script>
+</body>
+</html>

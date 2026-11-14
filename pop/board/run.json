@@ -1,0 +1,198 @@
+{
+  "network": "testnet",
+  "recordedAt": "2026-11-13T21:51:36.534Z",
+  "txs": {
+    "deployCredit": "8VsnPo4X4GpaCDKPBhmLebS5Wuey4MSzPc7Vr4zuKNBu",
+    "initCredit": "D7Hw9VpMyhRa4DgXYt4PftTepQ67K3KvEmhzmEq4TTja",
+    "pullHire": [
+      "ACwknZtaj2U6v4mRDShrJnkX4KUZLWotjmuARYXJTsfe"
+    ],
+    "pullAppeals": [
+      "HKfeJLRq3t8ZSE7gPS4EZgWPp1x6krcdRJQqEUm3wuwj"
+    ],
+    "beginDisputes": "7ZW7qjXdUhB6JZkDn7uNsnEupHzd2SQL8wpPNt9EHg34",
+    "pullDispute": [
+      "FLn7uWTLvmU6GrXMPY7vkPWXGtsipEnYTUupKXK8tJiF",
+      "Gv6Hq38GsTmqDP8MWXxGfdrJ7M9oeYgcPbGpDf2xpDeL"
+    ],
+    "stakeTooBig": {
+      "tx": "4CMDgsCJ99k8ercyLNQtcFuHzGDTwfyDyKxPQDZmCUyp",
+      "failed": "{\"ActionError\":{\"index\":0,\"kind\":{\"FunctionCallError\":{\"ExecutionError\":\"Smart contract panicked: score too low for this budget\"}}}}"
+    },
+    "stakeShort": {
+      "tx": "12N12ZHYcP6NLFEWtabRJFChjvhY8vfSHHcmypPh6qEV",
+      "failed": "{\"ActionError\":{\"index\":0,\"kind\":{\"FunctionCallError\":{\"ExecutionError\":\"Smart contract panicked: deposit too small for this score\"}}}}"
+    },
+    "stake": "HtXQUthYEnyQj2EKXxQT6nNYdBaB33FjP6Nt7pJeJbMF",
+    "refund": "6ncFcBLWeGjoyqvURte6u47TLBpuv4CnMEjKA61W6QPV",
+    "probeHigh": "CwAD77gY28EEMZyc3hRPsnQ4UzhfrXeSt4CMRWcJ43S7",
+    "probeLowRefused": {
+      "tx": "CCqyD3cH6zSRwGvQChcGo76S67WqxpVXy5rn6gD4KHu4",
+      "failed": "{\"ActionError\":{\"index\":0,\"kind\":{\"FunctionCallError\":{\"ExecutionError\":\"Smart contract panicked: score too low for this budget\"}}}}"
+    },
+    "probeLow": "62SSXmESFK3ASXPmnwVTmUhMLawsBaoJ7NvVfXb2YLy6",
+    "lockCredit": "7zF3kift5PYTWug9kgLgcjjKJ6SLoAxKSqzfLQ8AdF4f",
+    "deployPool": "C6pM8MAmQD3ejnJ4Hoqqd1DrmKBp7TQQCtMwqeNGnrRt",
+    "initPool": "8VT1R6wGCXpSxJCCnxuFWGGhcxuWhrvGgSsqC6GqztKu",
+    "fund": [
+      {
+        "account": "funder-a-mwfii00j.testnet",
+        "tx": "BVH5GmZY4PQtBBNcDWcVuLV52cu5jXUoyFj5rtV4BweL"
+      },
+      {
+        "account": "funder-b-mwfii3f1.testnet",
+        "tx": "EaMFENMXCdCVbAvTxwbwKVZYvFhc3zCKZbQarKHCkTgg"
+      },
+      {
+        "account": "funder-c-mwfii780.testnet",
+        "tx": "5M92SDPSrqYFuithfC3xJezpKV9RAXVjBkKge8pCiy7R"
+      }
+    ],
+    "openJob": "FggHbds8t3DzJR3ZyCi4yBCxdMi8YVNhCoDxuMAGb2yg",
+    "take": "57ocZ4HkggyDo8vSadYLKvmcLCBDgxcTFTNv5UFWBy8m",
+    "deliverFail": {
+      "tx": "FrDN3RGDhkBLVNQmPsXYwtZcHjUptLcCjAJpMau1bnEG",
+      "result": false,
+      "failed": null
+    },
+    "deliverPass": "8RCdvpEv78qyunxxhMUTZ7JrBcarenm9ZiKy4SXfpJXS",
+    "lockPool": "86x35DhxCDRVbHjn56w5acUCPehN3yeswNT3vt71DMhW"
+  },
+  "notes": [],
+  "accounts": {
+    "credit": "credit-mwfihpbk.testnet",
+    "novice": "novice-mwfiht41.testnet",
+    "pool": "pool-mwfihwq0.testnet",
+    "funderA": "funder-a-mwfii00j.testnet",
+    "funderB": "funder-b-mwfii3f1.testnet",
+    "funderC": "funder-c-mwfii780.testnet",
+    "worker": "worker-mwfiiauj.testnet"
+  },
+  "publicKeys": {
+    "credit": "ed25519:6qMyMputgPU9U2WA7toYgKzLSPRAJ2CDwoJjQRj8tewi",
+    "novice": "ed25519:HD33nH4FBbt4wTs35tXAXn78zYHcXB8D2D94WK3MozhB",
+    "pool": "ed25519:AhfStaEhzD9WsSn7o4JcPDpdSCstMpTvuub44VhAUyCD",
+    "funderA": "ed25519:J3w58j4YPFGAiztp61FmB13ycEYGDMauwToxDdNEU5FE",
+    "funderB": "ed25519:77xSTW2w5xfAt5CkxPr55zDBmH94nU4ZFo96r7QCiuVc",
+    "funderC": "ed25519:7tDysCrTFdQF5EN4TQe7Y5RWR7F9Cmy37Gkxh7yiYLYG",
+    "worker": "ed25519:CZEqzxofNYgdxZakaerBDnSEf8vvkE5L83sDThztXUed"
+  },
+  "scores": {
+    "novice": 0,
+    "high": {
+      "agent": "crew.v2-parent-mwfhf2kc.testnet",
+      "score": 10,
+      "max": "220000000000000000000000",
+      "min": "10000000000000000000000"
+    },
+    "low": {
+      "agent": "popaw-mwfhbbyw.testnet",
+      "score": -13,
+      "max": "10000000000000000000000",
+      "min": "102000000000000000000000"
+    }
+  },
+  "dao": {
+    "funded": true,
+    "note": "The first proposal expired because the vote landed after the 20 second period. A second proposal, voted by both council members during the period, was Approved and the DAO funded the pool.",
+    "approvedProposal": 1,
+    "create": {
+      "tx": "AryNSMRcBfFDL17Vepw6Z6HxnHkggsNmCW18QtnvQpyg",
+      "failed": null
+    },
+    "dao": "pbmwfikb3e.sputnikv2.testnet",
+    "liquid": "1097020000000000000000000",
+    "proposal": {
+      "tx": "4dKa8TGBzxMSjdAFmxUSfVebs7rrtzv6osYLVcgT7m5s",
+      "failed": null,
+      "result": 0
+    },
+    "vote": {
+      "tx": "BddUrP9wYQE8QU9MkYMn1teLJF8VNDT2rk3WY6xf7YBH",
+      "failed": null
+    },
+    "secondProposal": {
+      "tx": "3SDVHEdyZdS4idj2EHD7kkw3zeB5TxwBHvVRSCe6SBHP",
+      "id": 1
+    },
+    "secondVoteB": "7x4US3z4urvBHKNexpHbatJemNwzUKMGC4Ad41acRE4D",
+    "secondVoteA": "44ty7GeA15456FLaAeK7rkDo9H1cmVg9Yg1c1Geo1w8U",
+    "secondStatus": "Approved",
+    "proposalView": {
+      "id": 0,
+      "proposer": "funder-a-mwfii00j.testnet",
+      "description": "Fund the Pay on Proof pool",
+      "kind": {
+        "FunctionCall": {
+          "receiver_id": "pool-mwfihwq0.testnet",
+          "actions": [
+            {
+              "method_name": "fund",
+              "args": "e30=",
+              "deposit": "200000000000000000000000",
+              "gas": "30000000000000"
+            }
+          ]
+        }
+      },
+      "status": "Expired",
+      "vote_counts": {
+        "council": [
+          1,
+          0,
+          0
+        ]
+      },
+      "votes": {
+        "funder-b-mwfii3f1.testnet": "Approve"
+      },
+      "submission_time": "1794606828640781747"
+    }
+  },
+  "funders": [
+    {
+      "account": "funder-a-mwfii00j.testnet",
+      "amount": "200000000000000000000000"
+    },
+    {
+      "account": "funder-b-mwfii3f1.testnet",
+      "amount": "200000000000000000000000"
+    },
+    {
+      "account": "funder-c-mwfii780.testnet",
+      "amount": "200000000000000000000000"
+    },
+    {
+      "account": "pbmwfikb3e.sputnikv2.testnet",
+      "amount": "200000000000000000000000"
+    }
+  ],
+  "pool": {
+    "jobId": 0,
+    "payout": "sent",
+    "reason": "threat 5, inside 4 to 8",
+    "workerGain": "149322534939798200000000"
+  },
+  "formula": {
+    "pass": 10,
+    "fail": 8,
+    "juryWin": 15,
+    "juryLoss": 12
+  },
+  "links": {
+    "credit": "https://testnet.nearblocks.io/address/credit-mwfihpbk.testnet",
+    "pool": "https://testnet.nearblocks.io/address/pool-mwfihwq0.testnet",
+    "stakeTooBig": "https://testnet.nearblocks.io/txns/4CMDgsCJ99k8ercyLNQtcFuHzGDTwfyDyKxPQDZmCUyp",
+    "stake": "https://testnet.nearblocks.io/txns/HtXQUthYEnyQj2EKXxQT6nNYdBaB33FjP6Nt7pJeJbMF",
+    "deliverFail": "https://testnet.nearblocks.io/txns/FrDN3RGDhkBLVNQmPsXYwtZcHjUptLcCjAJpMau1bnEG",
+    "deliverPass": "https://testnet.nearblocks.io/txns/8RCdvpEv78qyunxxhMUTZ7JrBcarenm9ZiKy4SXfpJXS"
+  },
+  "fullAccessStillOnChain": [
+    "novice novice-mwfiht41.testnet ed25519:HD33nH4FBbt4wTs35tXAXn78zYHcXB8D2D94WK3MozhB",
+    "funder-a funder-a-mwfii00j.testnet ed25519:J3w58j4YPFGAiztp61FmB13ycEYGDMauwToxDdNEU5FE",
+    "funder-b funder-b-mwfii3f1.testnet ed25519:77xSTW2w5xfAt5CkxPr55zDBmH94nU4ZFo96r7QCiuVc",
+    "funder-c funder-c-mwfii780.testnet ed25519:7tDysCrTFdQF5EN4TQe7Y5RWR7F9Cmy37Gkxh7yiYLYG",
+    "worker worker-mwfiiauj.testnet ed25519:CZEqzxofNYgdxZakaerBDnSEf8vvkE5L83sDThztXUed"
+  ],
+  "secrets": "pop/board/.keys/testnet.json is gitignored. It holds the testnet secrets for the accounts above, including the deleted full-access secrets of the credit contract and the pool."
+}

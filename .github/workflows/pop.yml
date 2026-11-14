@@ -51,6 +51,30 @@ jobs:
       - name: MCP server read tools, no key
         run: cd pop && npm ci --no-audit --no-fund && node test/mcp-read.test.mjs
 
+  board:
+    name: Board score, contracts, and live read
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            pop
+            .github
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Rust
+        run: rustup toolchain install stable --profile minimal
+      - name: score and event tests
+        run: node --test pop/board/test/*.test.mjs
+      - name: credit and pool contracts
+        run: |
+          cargo test --manifest-path pop/board/credit/contract/Cargo.toml
+          cargo test --manifest-path pop/board/pool/contract/Cargo.toml
+      - name: read the board sources, no key
+        run: node pop/board/scripts/verify.mjs
+
   appeals:
     name: Appeals contract and the testnet run
     runs-on: ubuntu-latest

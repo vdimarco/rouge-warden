@@ -99,6 +99,16 @@ The server has these tools: `list_jobs`, `get_job`, `job_rules`, `preview_check`
 
 `/ledger/chain.html` in the arcade reads the contract from NEAR in the browser. It shows the cap, the spend, the access keys, every job and bid, and every receipt. You can walk a map that passed, from the entry to the exit. `?net=testnet` shows the testnet deployment.
 
+## Board
+
+`pop/board/` is one public page of jobs, payouts, refusals, disputes and rulings. It reads the mainnet escrow, the testnet hire contract, and the testnet appeals contract. It shows the X-reply feed when that feed's URL is set. The credit score and the group bounty pool are testnet contracts. This page does not sign, and it does not change the mainnet escrow. The steps and the transaction hashes are in `pop/board/README.md`.
+
+| Do this | See this |
+| --- | --- |
+| Open https://flying-lilac-3g9cfwy.tmp.now/ | The board. This unclaimed preview expires about one hour after 2026-11-13 22:08 UTC. `pop/board/public/` is the same page. |
+| `node pop/board/scripts/verify.mjs` | Read-only checks of the board sources, no key |
+| `node pop/scripts/verify.mjs mainnet` | `all 14 checks passed` |
+
 ## Run it
 
 ```sh
@@ -160,7 +170,7 @@ The organizers list hints for each track. This table says which ones this projec
 | AI Security & Defense | Function call keys, sandboxed wallets | Yes. The contract account has no full-access key. The Warden's key can call six methods and cannot send NEAR or deliver. |
 | AI Security & Defense | TEE attestation | Yes, on testnet. `pop/tee/` runs the check inside an Intel TDX worker and the contract pays only when that signature verifies. The mainnet check still runs in the contract. |
 | AI Swarms | Coordination markets, bidding | Yes. Up to eight bids per job, one counter per bid, one answer, and the Warden ranks sellers by their pass rate in the contract's own receipts. |
-| AI Swarms | Sub-accounts | Yes, on testnet. `pop/hire/` hires `crew.<parent>` and pays it from the parent's cap. The mainnet sellers are still implicit accounts. |
+| AI Swarms | Sub-accounts | No. Sellers are implicit accounts. Yes, on testnet. `pop/hire/` hires `crew.<parent>` and pays it from the parent's cap. The mainnet sellers are still implicit accounts. |
 
 ## Limits
 
