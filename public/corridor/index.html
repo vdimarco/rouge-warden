@@ -20,9 +20,9 @@
     <meta name="twitter:image" content="https://arcade.uptick.systems/og.jpg">
     <style>
       a.cr-btn { display: inline-flex; align-items: center; text-decoration: none; white-space: nowrap; }
-      #classic-pill { display: none; }
-      /* the top bar has no room on a phone: there the control joins the category strip */
-      @media (max-width: 760px) { #classic-link { display: none; } #classic-pill { display: inline-flex; } }
+      #classic-pill, #scores-pill { display: none; }
+      /* the top bar has no room on a phone: there the controls join the category strip */
+      @media (max-width: 760px) { #classic-link, #scores-link { display: none; } #classic-pill, #scores-pill { display: inline-flex; } }
     </style>
     <script>window.CORRIDOR_DATES_URL = "/arcade/game-dates.json";</script>
     <!--
@@ -605,6 +605,7 @@
               </svg>
             </button>
             <a class="cr-btn" id="classic-link" href="/?view=classic" aria-label="All games: the arcade as a list">All games</a>
+            <a class="cr-btn" id="scores-link" href="/?view=board" aria-label="Scores">Scores</a>
             <button type="button" class="cr-btn" id="index-btn" aria-expanded="false">Index <sup>43</sup></button>
             <div class="cr-pop-wrap">
               <button type="button" class="cr-btn" id="contact-btn" aria-expanded="false" aria-controls="cr-contact">Contact</button>
@@ -3549,14 +3550,22 @@ void main() {
     <script>
       /* after the page has built its category strip */
       addEventListener('load', () => {
+        const cats = document.getElementById('cats');
+        const order = document.getElementById('order');
+        const scores = document.createElement('a');
+        scores.id = 'scores-pill';
+        scores.className = 'cr-btn cr-cat-btn';
+        scores.href = '/?view=board';
+        scores.setAttribute('aria-label', 'Scores');
+        scores.textContent = 'Scores';
         const a = document.createElement('a');
         a.id = 'classic-pill';
         a.className = 'cr-btn cr-cat-btn';
         a.href = '/?view=classic';
         a.textContent = 'All games';
-        // before the order buttons, so on a phone they stand under All games
-        const cats = document.getElementById('cats');
-        cats.insertBefore(a, document.getElementById('order'));
+        // All games stays immediately before the order buttons, so on a phone they stand under it
+        cats.insertBefore(scores, order);
+        cats.insertBefore(a, order);
       });
     </script>
   </body>

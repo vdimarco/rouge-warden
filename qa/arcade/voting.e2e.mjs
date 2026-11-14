@@ -23,7 +23,7 @@ try {
       return r.fallback();
     });
     await page.route('**/wild/',r=>r.request().method()==='HEAD'?r.fulfill({status:200,body:''}):r.fallback());
-    await page.goto(base);
+    await page.goto(base + "?view=classic");
     await page.locator('.scoreboard .arcade-vote').first().waitFor();
     assert.equal(await page.locator('.scoreboard .arcade-vote').count(),6);
     await page.screenshot({path:`test-results/voting/home-${width}.png`});

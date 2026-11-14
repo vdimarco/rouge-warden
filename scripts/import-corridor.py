@@ -29,25 +29,34 @@ HEAD_NEW = """    <title>Cottage Arcade</title>
     <meta name="twitter:image" content="https://arcade.uptick.systems/og.jpg">
     <style>
       a.cr-btn { display: inline-flex; align-items: center; text-decoration: none; white-space: nowrap; }
-      #classic-pill { display: none; }
-      /* the top bar has no room on a phone: there the control joins the category strip */
-      @media (max-width: 760px) { #classic-link { display: none; } #classic-pill { display: inline-flex; } }
+      #classic-pill, #scores-pill { display: none; }
+      /* the top bar has no room on a phone: there the controls join the category strip */
+      @media (max-width: 760px) { #classic-link, #scores-link { display: none; } #classic-pill, #scores-pill { display: inline-flex; } }
     </style>
 """
 MARK_OLD = '<a class="cr-mark" href="https://arcade.uptick.systems/"'
 MARK_NEW = '<a class="cr-mark" href="/"'
 NAV_OLD = '            <button type="button" class="cr-btn" id="index-btn"'
-NAV_NEW = '            <a class="cr-btn" id="classic-link" href="/?view=classic" aria-label="All games: the arcade as a list">All games</a>\n' + NAV_OLD
+NAV_NEW = '            <a class="cr-btn" id="classic-link" href="/?view=classic" aria-label="All games: the arcade as a list">All games</a>\n            <a class="cr-btn" id="scores-link" href="/?view=board" aria-label="Scores">Scores</a>\n' + NAV_OLD
 TAIL_OLD = "  </body>\n"
 TAIL_NEW = """    <script>
       /* after the page has built its category strip */
       addEventListener('load', () => {
+        const cats = document.getElementById('cats');
+        const order = document.getElementById('order');
+        const scores = document.createElement('a');
+        scores.id = 'scores-pill';
+        scores.className = 'cr-btn cr-cat-btn';
+        scores.href = '/?view=board';
+        scores.setAttribute('aria-label', 'Scores');
+        scores.textContent = 'Scores';
         const a = document.createElement('a');
         a.id = 'classic-pill';
         a.className = 'cr-btn cr-cat-btn';
         a.href = '/?view=classic';
         a.textContent = 'All games';
-        document.getElementById('cats').appendChild(a);
+        cats.insertBefore(scores, order);
+        cats.insertBefore(a, order);
       });
     </script>
   </body>

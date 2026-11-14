@@ -39,11 +39,11 @@ No rendering technique is added here. The Corridor's shaders and geometry arrive
 
 A short script at the top of `public/index.html` decides before anything else loads:
 
-1. `?view=classic` stores `arcade.view = "classic"` in localStorage and stays. `?view=walk` removes it and goes to `/corridor/`.
-2. A stored `classic`, any hash, an automated browser (`navigator.webdriver`) or a browser that cannot create a WebGL context stays on this page.
+1. `?view=classic` stores `arcade.view = "classic"` in localStorage and stays. `?view=walk` removes it and goes to `/corridor/`. `?view=board` stays and opens the scoreboard. It does not change the stored choice.
+2. A stored `classic`, any hash, or `?machines` stays on this page. A clean visit does not: automated browsers and browsers without WebGL take the same path as `?view=walk`.
 3. Otherwise `location.replace("/corridor/")`, so Back does not return to a page that redirects again.
 
-Automated browsers stay because about forty QA scripts open `/` and expect the hall and All Games. `qa/arcade/default-view.e2e.mjs` hides that flag to act as a visitor. Link previews and crawlers that do not run scripts keep reading the home page's tags.
+The scoreboard starts closed. Scores (`#scores-btn` on the hall, `#scores-link` / `#scores-pill` on the Corridor) opens it, and so does `/?view=board`. X, Esc, and a click outside it close it. The open board is a panel under the sign, and the sign sits above it, so All Games and Scores stay clickable. QA that still wants the machines uses `?machines`. QA that wants the list uses `?view=classic`.
 
 A redirect was chosen over moving the hall to another path. The hall owns the hash routes, the share tags and the return path from every game, and all of those keep working untouched.
 

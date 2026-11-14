@@ -267,8 +267,8 @@ async function open(browser, { width, height, store = {}, mobile = width < 800, 
   });
   await page.addInitScript((store) => { try { localStorage.clear(); for (const [k, v] of Object.entries(store)) localStorage.setItem(k, v); } catch (e) { /* storage off */ } }, { "arcade.tokens": "99", "arcade.sound": "false", ...store });
   if (init) await page.addInitScript(init);
-  // ?machines is Old arcade: the machines, without All Games over them; machines: false opens the default All Games scoreboard
-  await page.goto(machines ? BASE + "?machines" : BASE);
+  // ?machines is Old arcade: the machines, without All Games over them. The list is ?view=classic; a bare / opens the corridor.
+  await page.goto(machines ? BASE + "?machines" : BASE + "?view=classic");
   await page.waitForSelector(machines ? ".cab.on" : ".scoreboard .board-launch");
   await page.waitForTimeout(600);
   return { ctx, page, errors, moves };
@@ -309,7 +309,7 @@ if (chromium) {
   for (const vp of PARTS.includes("gta") ? [{ width: 390, height: 844 }, { width: 1280, height: 720 }] : []) {
     const tag = `${vp.width}x${vp.height}`;
     const { ctx, page, errors, moves } = await open(browser, { ...vp, machines: false });
-    check(page.url() === BASE && await page.title() === "Cottage Arcade" && await page.locator(".sign h1").innerText() === "COTTAGE ARCADE", `${tag}: the arcade identity and heading render before choosing GTA`);
+    check(page.url() === BASE + "?view=classic" && await page.title() === "Cottage Arcade" && await page.locator(".sign h1").innerText() === "COTTAGE ARCADE", `${tag}: the arcade identity and heading render before choosing GTA`);
     const defaultTile = page.locator(`.scoreboard .board-launch[href="${GTA_URL}"]`);
     check(await page.locator(".scoreboard").isVisible() && await defaultTile.locator("b").textContent() === "GTA Montréal", `${tag}: the default scoreboard contains the GTA Montréal launch link`);
     await defaultTile.click();
