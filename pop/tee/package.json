@@ -1,0 +1,13 @@
+{
+  "name": "pop-tee",
+  "private": true,
+  "type": "module",
+  "description": "Testnet TEE checker for Pay on Proof",
+  "scripts": {
+    "test": "cargo test --manifest-path checker/Cargo.toml --lib && cargo test --manifest-path contract/Cargo.toml --lib && node --test test/codec.test.mjs"
+  },
+  "dependencies": {
+    "@noble/ciphers": "1.3.0",
+    "@noble/curves": "1.9.7"
+  }
+}
