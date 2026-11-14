@@ -52,8 +52,8 @@ for (const size of SIZES) {
   const page = await ctx.newPage();
   const errors = [];
   page.on("pageerror", (e) => errors.push(e.message));
-  await page.goto(BASE);
-  check(await boardOpens(page), "/ opens All Games");
+  await page.goto(BASE + "?view=classic");
+  check(await boardOpens(page), "/?view=classic opens All Games");
   await page.locator(".gsw .machines-link").click();
   await settle(page);
 
@@ -100,7 +100,7 @@ for (const size of SIZES) {
   await page.goBack();
   await settle(page);
   s = await state(page);
-  check(s.groupsVisible === 6 && s.on === "strategy" && page.url() === BASE, "browser back returns to the hall");
+  check(s.groupsVisible === 6 && s.on === "strategy" && s.hash === "", "browser back returns to the hall");
 
   // the sign's collection buttons open their group
   const nav = page.locator('.section-nav button[data-section="cottage"]');

@@ -43,7 +43,7 @@ async function openBoard(page) {
     contentType: "application/json",
     body: JSON.stringify({ source: "posthog", days: 30, updatedAt: "2026-10-15T00:00:00.000Z", games: {} }),
   }));
-  await page.goto(BASE, { waitUntil: "networkidle" });
+  await page.goto(BASE + "?view=classic", { waitUntil: "networkidle" });
   await page.waitForSelector(".scoreboard .board-when");
   await page.waitForFunction(() => {
     const text = document.querySelector(".board-status")?.textContent || "";
@@ -171,7 +171,7 @@ async function datesPage(mode) {
       return real(input, init);
     };
   }, mode);
-  await page.goto(BASE, { waitUntil: "domcontentloaded" });
+  await page.goto(BASE + "?view=classic", { waitUntil: "domcontentloaded" });
   await page.waitForSelector(".scoreboard .board-sort");
   await page.waitForFunction(() => window.__dates.n >= 1 && !(document.querySelector(".board-status")?.textContent || "").startsWith("Loading"));
   return { ctx, page, errors };
