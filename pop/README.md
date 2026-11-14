@@ -28,6 +28,20 @@ git sparse-checkout set pop public/ledger .github
 node pop/scripts/verify.mjs
 ```
 
+## For judges: an appeal on testnet
+
+When a delivery fails the check, the hired worker can open a dispute. A separate testnet contract asks [Lock Before You Talk](https://github.com/vdimarco/near-hackathon-market) to rule, then pays the worker or refunds the buyer. The mainnet contract is unchanged, and `node pop/scripts/verify.mjs mainnet` still reports 14 of 14.
+
+The settlement is a cross-contract call. `settle` calls `get_case` on the jury. A private callback reads the return value. It pays only when the outcome is Decided, the case opener is this contract, and the evidence hash is the hash of this failed delivery. The jury picks an option, worker or buyer. This contract picks the account. A signed ruling is what Lock uses to settle on another chain. On NEAR the callback is the jury's own answer, so there is no extra signer.
+
+The published jury `dev-20261111042208-14186395012630.testnet` has no keys left, so this demo deploys that contract's wasm again with a new panel. `node pop/appeals/verify.mjs` checks that the two code hashes match. Details and the transaction list are in [pop/appeals/README.md](appeals/README.md).
+
+| Do this | See this |
+| --- | --- |
+| `node pop/appeals/verify.mjs` | `all 42 checks passed`. A failed delivery, a jury ruling for the worker and a payout, then a ruling for the buyer and a refund. No key. |
+| Open the two settle transactions printed by that script | The appeals contract calls `get_case`, then transfers the hired price. |
+| `cd pop/appeals/contract && cargo test` | 10 passed. A mismatched evidence hash or opener does not pay. |
+
 ## What happens
 
 1. **Post.** The Warden, a general contractor agent, posts a job: a kind, a spec the contract can check, a budget, and a delivery window. The contract reserves the budget.

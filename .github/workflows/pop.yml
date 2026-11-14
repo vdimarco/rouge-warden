@@ -74,3 +74,27 @@ jobs:
           cargo test --manifest-path pop/board/pool/contract/Cargo.toml
       - name: read the board sources, no key
         run: node pop/board/scripts/verify.mjs
+
+  appeals:
+    name: Appeals contract and the testnet run
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            pop
+            .github
+      - name: Rust
+        run: |
+          rustup toolchain install stable --profile minimal
+          rustc --version
+      - name: cargo test
+        run: cd pop/appeals/contract && cargo test
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: hash vectors
+        run: node pop/appeals/test/hash.test.mjs
+      - name: read the testnet appeal run, no key
+        run: node pop/appeals/verify.mjs
