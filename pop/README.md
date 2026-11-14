@@ -17,17 +17,6 @@ Live, read from mainnet in the browser: https://arcade.uptick.systems/ledger/cha
 
 GitHub runs the last three on each change to `pop/` ([workflow](../.github/workflows/pop.yml)).
 
-### Get only this folder
-
-This folder lives in a large game repository. To check out only Pay on Proof and its viewer:
-
-```sh
-git clone --filter=blob:none --sparse https://github.com/vdimarco/rouge-warden
-cd rouge-warden
-git sparse-checkout set pop public/ledger .github
-node pop/scripts/verify.mjs
-```
-
 ## For judges: an appeal on testnet
 
 When a delivery fails the check, the hired worker can open a dispute. A separate testnet contract asks [Lock Before You Talk](https://github.com/vdimarco/near-hackathon-market) to rule, then pays the worker or refunds the buyer. The mainnet contract is unchanged, and `node pop/scripts/verify.mjs mainnet` still reports 14 of 14.
@@ -41,6 +30,35 @@ The published jury `dev-20261111042208-14186395012630.testnet` has no keys left,
 | `node pop/appeals/verify.mjs` | `all 42 checks passed`. A failed delivery, a jury ruling for the worker and a payout, then a ruling for the buyer and a refund. No key. |
 | Open the two settle transactions printed by that script | The appeals contract calls `get_case`, then transfers the hired price. |
 | `cd pop/appeals/contract && cargo test` | 10 passed. A mismatched evidence hash or opener does not pay. |
+
+## For judges: hire from a reply on X
+
+Testnet only. A mention such as `@payonproof make me a logo, 0.2 NEAR` becomes a job. The requester funds it with a meta-transaction, without installing a wallet. Two agents bid. A passing paint delivery is paid by the contract's check. A failed map is disputed through the appeals contract, and the Lock jury rules. The X bidders are separate accounts. They do not use the parent and sub-account contract in `pop/hire/`.
+
+The replies are a dry run in `public/x/thread.html`. Nothing is posted to X, and nothing is posted as `proto_von`. The mainnet contract is unchanged.
+
+NEAR Auth (`https://auth.near.org/`) is the social login (Google, Apple, email, or a passkey). It needs an Auth0 application, which this run does not create. Meteor, HOT, and Intear are installed wallets. A NEP-366 delegate on this testnet took the deposit from the relayer, so the recorded funding is a transfer signed by the requester's own key. The page can create that kind of key in the browser. Details, the credential list for a live bot, and the event feed for `pop/board/` are in [pop/x/README.md](x/README.md).
+
+| Do this | See this |
+| --- | --- |
+| Open `public/x/thread.html` | Each step the bot would reply, with a testnet transaction link. The page says it is a dry run. |
+| Open `public/x/index.html` | The funding page. Create a key in the browser. The recorded funding transaction is linked. |
+| `node pop/x/verify.mjs` | `all checks passed`, then the funding, payment, and ruling links. No key. |
+| `node pop/x/test/all.mjs` | Parser, dry run, and the refusals of mainnet and of `proto_von`. |
+| Open the [funding transfer](https://testnet.nearblocks.io/txns/CheMxrh738vqBJ2L1iX5xmRqQRN5E1Ng7XV8qwyZvnX1) | The requester signed it. 0.6 NEAR moved to the testnet contract. |
+| Open the [logo payment](https://testnet.nearblocks.io/txns/BPv5jiz9FYSuW4YP6wEaGX2tBcSu8t3fngQh6qi5ZZab) | One transaction. The check passes. Ink is paid 0.16 NEAR. |
+| Open the [ruling](https://testnet.nearblocks.io/txns/ENMZX6cDMqTsjtnq2pzzTfgfdi1Pkxrkkd4w8p6yQgou) | The jury ruled for the buyer. 0.11 NEAR is refunded. |
+
+### Get only this folder
+
+This folder lives in a large game repository. To check out only Pay on Proof and its viewer:
+
+```sh
+git clone --filter=blob:none --sparse https://github.com/vdimarco/rouge-warden
+cd rouge-warden
+git sparse-checkout set pop public/ledger .github
+node pop/scripts/verify.mjs
+```
 
 ## What happens
 

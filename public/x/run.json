@@ -1,0 +1,101 @@
+{
+  "network": "testnet",
+  "publishedJury": "dev-20261111042208-14186395012630.testnet",
+  "contract": "xapp-mwfil00j.testnet",
+  "jury": "xjur-mwfil4ar.testnet",
+  "requester": "bda3be3a43610a19943fb49f5037af23e4dcd57ca668d70b08ba1ff4aa7c0cd6",
+  "relayer": "xrel-mwfikvsk.testnet",
+  "ink": "xink-mwfil8ha.testnet",
+  "clay": "xclay-mwfilcm0.testnet",
+  "wardenPublicKey": "ed25519:CKoHMvduRiCJdF3YNvLWMTVx4duTEW23WbA6MP7Gsqfg",
+  "mentions": [
+    "@payonproof make me a logo, 0.2 NEAR",
+    "@payonproof a 3 room map, 0.2 NEAR"
+  ],
+  "fundNear": "0.6",
+  "fundYocto": "600000000000000000000000",
+  "colors": {
+    "floor": "#222940",
+    "wall": "#bcbbe5"
+  },
+  "jobs": {
+    "logo": {
+      "id": 0,
+      "receiptId": 0,
+      "ask": "160000000000000000000000"
+    },
+    "map": {
+      "id": 1,
+      "receiptId": 1,
+      "ask": "110000000000000000000000",
+      "caseId": 0,
+      "disputeId": 0
+    }
+  },
+  "txs": {
+    "refused": {
+      "hash": "2tF5hFjLbhtH2C55jLSJ8MePNHUyqSgjoCvG1qWK4bpL",
+      "sender": "xapp-mwfil00j.testnet"
+    },
+    "fund": {
+      "hash": "CheMxrh738vqBJ2L1iX5xmRqQRN5E1Ng7XV8qwyZvnX1",
+      "sender": "bda3be3a43610a19943fb49f5037af23e4dcd57ca668d70b08ba1ff4aa7c0cd6"
+    },
+    "lockJury": {
+      "hash": "2WnpZZfngDzTcD9f6LK22kYeLKLEL4onjQZbcCGWHwfQ",
+      "sender": "xjur-mwfil4ar.testnet"
+    },
+    "lockAppeals": {
+      "hash": "DPtaH8gxRYDULbtKdgsqZYX764sABW5soEiYJXYMh7Xa",
+      "sender": "xapp-mwfil00j.testnet"
+    },
+    "openLogo": {
+      "hash": "2vpWzLTsv9wvGoX7F7HoVeS8RnuUZ2knLJy2TnWsgqQp",
+      "sender": "xapp-mwfil00j.testnet"
+    },
+    "bidInkLogo": {
+      "hash": "VYwzCcGvf8XKgJAQqMccADQDShEnJrT1r5rauYoA5YJ",
+      "sender": "xink-mwfil8ha.testnet"
+    },
+    "bidClayLogo": {
+      "hash": "FH7czyimiVyknL1Ye9Uqxp6aCvdGiDjHar4qWDifCXmX",
+      "sender": "xclay-mwfilcm0.testnet"
+    },
+    "hireLogo": {
+      "hash": "B2teF1GwCYjPiGjo2153o1n7ejjYAeixSzkd6d8tfsgC",
+      "sender": "xapp-mwfil00j.testnet"
+    },
+    "deliverLogo": {
+      "hash": "BPv5jiz9FYSuW4YP6wEaGX2tBcSu8t3fngQh6qi5ZZab",
+      "sender": "xink-mwfil8ha.testnet"
+    },
+    "openMap": {
+      "hash": "4eCpfT4BTEsPdFYswLTXCZmGK62TQViQgompK8bcxpL2",
+      "sender": "xapp-mwfil00j.testnet"
+    },
+    "bidInkMap": {
+      "hash": "ATjRVKLGwN4EhhzMBnkQxX2SQQmEf4qxfCt6hdyqpPma",
+      "sender": "xink-mwfil8ha.testnet"
+    },
+    "bidClayMap": {
+      "hash": "HSBAXSFXdxJiMFAqxqtCWy5xi5TizmQZDkV3pfE15mFH",
+      "sender": "xclay-mwfilcm0.testnet"
+    },
+    "hireMap": {
+      "hash": "AZNVNtzELRLC6ycpkTyzuBwyWyAy4syN2mqiVuDD3xDm",
+      "sender": "xapp-mwfil00j.testnet"
+    },
+    "deliverMap": {
+      "hash": "5KjiCQgU7Q3592deVGAT9JYR282LzGgQ6nsMrB3GmAy4",
+      "sender": "xclay-mwfilcm0.testnet"
+    },
+    "dispute": {
+      "hash": "89iAxbxS7v7gxCzjPxyrvud84MdgiJCJYFS7UPSTQsCj",
+      "sender": "xclay-mwfilcm0.testnet"
+    },
+    "settle": {
+      "hash": "ENMZX6cDMqTsjtnq2pzzTfgfdi1Pkxrkkd4w8p6yQgou",
+      "sender": "xrel-mwfikvsk.testnet"
+    }
+  }
+}
