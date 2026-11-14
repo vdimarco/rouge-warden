@@ -1,0 +1,22 @@
+{
+  "network": "testnet",
+  "contract": "contract-mwfh7y7n.testnet",
+  "beneficiary": "beneficiary-mwfh8236.testnet",
+  "seller": "seller-mwfh85so.testnet",
+  "wasm_sha256": "b3ad2ebd4b314b278b60af0bf9bdb8799d17c4f76abb305103ec05b7a42ae594",
+  "wasm_url": "https://raw.githubusercontent.com/vdimarco/rouge-warden/near-hackathon-tee/pop/tee/checker/pop-tee-checker.wasm",
+  "outlayer": "outlayer.testnet",
+  "sign_pk": "13f8eaab9bcee6c0493e5eb42ba7aafce82fa550ebb315e1f4bba49dab20c59e",
+  "senders": {
+    "init": "contract-mwfh7y7n.testnet",
+    "pass": "seller-mwfh85so.testnet",
+    "fail": "seller-mwfh85so.testnet",
+    "lock": "contract-mwfh7y7n.testnet"
+  },
+  "txs": {
+    "init": "63L2iNKpftkynUP6KAasqqHJF5kTyDGdZeH8fFk3zLFA",
+    "pass": "Cvzq7ubLYuUime1Y8MUy5AWQyJJW5sUF9c7fdwe4JHBp",
+    "fail": "ESV8jwR9H7a9h9EEme93W2UTXppFG9ekV43abg8PezP1",
+    "lock": "4TJDKjAAC9SeqvhbNBb1C8kKjuBpsokbubCHSoZTy89m"
+  }
+}

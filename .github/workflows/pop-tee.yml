@@ -1,0 +1,40 @@
+# Tests for pop/tee. No key, no network, no mainnet transaction.
+name: pay-on-proof-tee
+
+on:
+  push:
+    branches: [main, near-hackathon-judge-ready, near-hackathon-tee]
+    paths: ["pop/tee/**", ".github/workflows/pop-tee.yml"]
+  pull_request:
+    paths: ["pop/tee/**", ".github/workflows/pop-tee.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  tee:
+    name: TEE checker and testnet contract
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            pop/tee
+            pop/lib
+            .github
+      - name: Rust
+        run: |
+          rustup toolchain install stable --profile minimal
+          rustup target add wasm32-unknown-unknown
+          rustc --version
+      - name: cargo test
+        run: |
+          cargo test --manifest-path pop/tee/checker/Cargo.toml --lib
+          cargo test --manifest-path pop/tee/contract/Cargo.toml --lib
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: codec
+        run: cd pop/tee && npm ci --no-audit --no-fund && node --test test/codec.test.mjs

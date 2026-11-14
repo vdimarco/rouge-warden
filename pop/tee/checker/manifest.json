@@ -1,0 +1,8 @@
+{
+  "signing_keys": [
+    {"path": "verdict", "type": "ed25519", "bind": "wasm", "caller": "predecessor"}
+  ],
+  "encryption_keys": [
+    {"path": "box", "bind": "wasm", "caller": "predecessor"}
+  ]
+}
