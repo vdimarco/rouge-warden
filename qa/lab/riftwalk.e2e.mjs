@@ -112,7 +112,7 @@ try {
     const at = await t.q('return q.wispScreen(0);'); await page.touchscreen.tap(at.x, at.y); await t.until(s => s.caught === 1, 'a tap catches the wisp');
     await t.shot('riftwalk-phone.png');
     // The pad walks.
-    const from = (await t.state()).place; await page.touchscreen.tap(pad.x + pad.width / 2, pad.y + 8);
+    const from = (await t.state()).place;
     await page.dispatchEvent('#pad', 'pointerdown', { pointerId: 9, clientX: pad.x + pad.width / 2, clientY: pad.y + 6, pointerType: 'touch', isPrimary: true });
     await page.waitForTimeout(2500); await page.dispatchEvent('#pad', 'pointerup', { pointerId: 9, pointerType: 'touch' });
     const to = (await t.state()).place; assert(Math.hypot(to.x - from.x, to.z - from.z) > 0.15, 'the pad walks: ' + JSON.stringify([from, to]));

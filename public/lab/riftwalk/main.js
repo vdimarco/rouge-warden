@@ -231,7 +231,7 @@ function face(dx, dz, dt) {
 
 /* ---------------- input ---------------- */
 let drag = null;
-canvas.addEventListener('pointerdown', e => { if (game.phase !== 'play') return; drag = { id: e.pointerId, x: e.clientX, y: e.clientY, sx: e.clientX, sy: e.clientY, at: performance.now(), moved: 0 }; canvas.setPointerCapture(e.pointerId); canvas.classList.add('look'); });
+canvas.addEventListener('pointerdown', e => { if (game.phase !== 'play') return; drag = { id: e.pointerId, x: e.clientX, y: e.clientY, sx: e.clientX, sy: e.clientY, at: performance.now(), moved: 0 }; try { canvas.setPointerCapture(e.pointerId); } catch (error) { /* the drag still works inside the canvas */ } canvas.classList.add('look'); });
 canvas.addEventListener('pointermove', e => {
   if (!drag || e.pointerId !== drag.id) return;
   const dx = e.clientX - drag.x, dy = e.clientY - drag.y; drag.x = e.clientX; drag.y = e.clientY; drag.moved += Math.abs(dx) + Math.abs(dy);
@@ -249,7 +249,7 @@ addEventListener('keydown', e => {
 addEventListener('keyup', e => keys.delete(e.key.toLowerCase()));
 addEventListener('blur', () => { keys.clear(); stick.x = stick.y = 0; });
 function padMove(e) { const r = pad.getBoundingClientRect(), x = (e.clientX - r.left) / r.width * 2 - 1, y = (e.clientY - r.top) / r.height * 2 - 1, l = Math.max(1, Math.hypot(x, y)); stick.x = x / l; stick.y = y / l; nub.style.transform = `translate(${stick.x * 34}px, ${stick.y * 34}px)`; }
-pad.addEventListener('pointerdown', e => { stick.id = e.pointerId; pad.setPointerCapture(e.pointerId); padMove(e); });
+pad.addEventListener('pointerdown', e => { stick.id = e.pointerId; try { pad.setPointerCapture(e.pointerId); } catch (error) { /* a pointer that cannot be captured still moves the pad */ } padMove(e); });
 pad.addEventListener('pointermove', e => { if (e.pointerId === stick.id) padMove(e); });
 const padUp = e => { if (e.pointerId !== stick.id) return; stick.id = null; stick.x = stick.y = 0; nub.style.transform = ''; };
 pad.addEventListener('pointerup', padUp); pad.addEventListener('pointercancel', padUp);
@@ -284,7 +284,7 @@ requestAnimationFrame(tick);
 window.__riftwalk = {
   state: () => ({ phase: game.phase, world: here().id, caught: game.caught, jumps: game.jumps, rift: game.rift, open: game.open, gliding: !!game.glide, time: game.time, loaded: meshes.map(m => !!m), place: local(), visible: meshes.map(m => !!m?.visible) }),
   wispScreen: k => { const w = wisps[game.index][k]; if (!w || w.caught) return null; ndc.copy(w.group.position).project(camera); return ndc.z > 1 ? null : { x: (ndc.x + 1) / 2 * innerWidth, y: (1 - ndc.y) / 2 * innerHeight }; },
-  lookAt: (x, y, z) => { camera.getWorldPosition(eye); const dx = x - eye.x, dy = y - eye.y, dz = z - eye.z; game.yaw = Math.atan2(dx, -dz) + frameYaw(); game.pitch = Math.atan2(dy, Math.hypot(dx, dz)); },
+  lookAt: (x, y, z) => { camera.getWorldPosition(eye); const dx = x - eye.x, dy = y - eye.y, dz = z - eye.z; game.yaw = Math.atan2(dx, -dz) + frameYaw(); game.pitch = Math.atan2(dy, Math.hypot(dx, dz)); camera.rotation.set(game.pitch, -game.yaw, 0); camera.updateMatrixWorld(true); },
   wisp: k => { const p = wisps[game.index][k].group.position; return { x: p.x, y: p.y, z: p.z, caught: wisps[game.index][k].caught }; },
   rift: () => outRift(game.index),
   // Catch every wisp and open the rift at once, with no wait.
