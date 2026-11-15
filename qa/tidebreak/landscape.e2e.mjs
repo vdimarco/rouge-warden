@@ -48,7 +48,9 @@ try {
     });
     assert.equal((await page.evaluate(async () => (await import('/tidebreak/main.js')).snapshot())).graphics.renderer, 'Mythic 3D');
     assert.equal(await page.locator('#graphics-error').evaluate(el => el.open), false, '3D starts without a graphics failure');
-    await page.click('#play');
+    // The click waits for two steady frames. When all sixteen hero models parse in idle time before it settles, it takes
+    // 22 to 25 s on two cores (3 s otherwise), on main as on any branch, and a slower CI runner passed the default 30 s.
+    await page.click('#play', { timeout: 120000 });
     for (let i = 0; i < 120 && await page.locator('#hud').isHidden(); i++) { await page.keyboard.press('Enter'); await page.waitForTimeout(150); }
     await page.waitForFunction(async () => (await import('/tidebreak/main.js')).snapshot().running);
     if (await page.locator('#sheet').isVisible()) await page.keyboard.press('Escape');

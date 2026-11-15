@@ -51,6 +51,7 @@
     { id: "orbital-gardener", name: "Orbital Gardener", sub: "Grow a garden under Earthrise", url: "/orbital-gardener/", art: "/arcade/key/orbital-gardener.svg", color: "#a8d3f6", labOnly: true },
     { id: "eleven-wells", name: "Eleven Wells", sub: "Falling blocks crossed with eleven other games", url: "/eleven-wells/", art: "/arcade/eleven-wells.webp", color: "#ffb547", labOnly: true },
     { id: "ledger", name: "Warden's Ledger", sub: "Hire agents, pay through NEAR Intents", url: "/ledger/", art: "/arcade/ledger.webp", color: "#f3cf7a", labOnly: true },
+    { id: "riftwalk", name: "Riftwalk", sub: "Step between worlds", url: "/lab/riftwalk/", art: "/arcade/riftwalk.webp", color: "#ffb45e", labOnly: true },
     { id: "last-light", name: "Last Light", sub: "An ASCII sailing adventure", url: "/last-light/", art: "/last-light/art/sunset.svg", color: "#ffcd62", labOnly: true },
   ];
   const home = location.pathname === "/" || location.pathname === "/index.html";

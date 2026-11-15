@@ -148,10 +148,12 @@ for (const { id } of JSON.parse(read("higgsfield/arcade-key-art.json")).art) {
   const ADDED = [
     { id: "lake-brawl", title: "Lake Brawl", kind: "Cottage", art: "lake_brawl", after: "Table Tennis", last: true },
     { id: "eleven-wells", title: "Eleven Wells", kind: "THE LAB", art: "eleven_wells", after: "Orbital Gardener" },
-    { id: "ledger", title: "Warden's Ledger", kind: "THE LAB", art: "ledger", after: "Eleven Wells", last: true },
+    { id: "ledger", title: "Warden's Ledger", kind: "THE LAB", art: "ledger", after: "Eleven Wells" },
+    // a Lab toy lives under /lab/, so it names its route and its folder
+    { id: "riftwalk", title: "Riftwalk", kind: "THE LAB", art: "riftwalk", after: "Warden's Ledger", last: true, url: "/lab/riftwalk/", path: "public/lab/riftwalk" },
   ];
   for (const g of ADDED) {
-    const url = `/${g.id}/`, at = pieces.findIndex((p) => p.url === url), p = pieces[at], prev = pieces[at - 1], next = pieces[at + 1];
+    const url = g.url || `/${g.id}/`, at = pieces.findIndex((p) => p.url === url), p = pieces[at], prev = pieces[at - 1], next = pieces[at + 1];
     check(at > 0 && p.title === g.title && p.kind === g.kind && prev.kind === g.kind && prev.title === g.after && (!g.last || !next || next.kind !== g.kind),
       `the Corridor's ${g.title} cabinet opens ${url} and stands in ${g.kind} after ${g.after}${g.last ? ", the last of its group" : ""} (${at >= 0 ? "number " + p.n + ", after " + prev.title : "missing"})`);
     check(new RegExp(`\\{ id: "${g.id}", name: "${g.title}", [^\\n]*url: "${url}"`).test(sw), `${g.title}'s Corridor cabinet has the title and route of its switcher entry`);
@@ -162,7 +164,7 @@ for (const { id } of JSON.parse(read("higgsfield/arcade-key-art.json")).art) {
     check(w === 448 && h === 370 && b.length < 60 * 1024, `the Corridor carries ${g.title}'s screen art, a 448 by 370 WebP under 60 KB (${w} by ${h}, ${(b.length / 1024).toFixed(1)} KB)`);
     check(walk.includes(`img: ART.${g.art}, url: "${url}"`), `${g.title}'s cabinet shows that art`);
     const d = dates[g.id];
-    check(!!d && d.path === `public/${g.id}` && Number.isFinite(Date.parse(d.added)) && Number.isFinite(Date.parse(d.updated)), `game-dates.json has ${g.title}'s added and updated dates, for the Newest and Updated orders`);
+    check(!!d && d.path === (g.path || `public/${g.id}`) && Number.isFinite(Date.parse(d.added)) && Number.isFinite(Date.parse(d.updated)), `game-dates.json has ${g.title}'s added and updated dates, for the Newest and Updated orders`);
     check(walk.includes(`"${url}":["${d ? d.added : ""}","${d ? d.updated : ""}"]`), `the Corridor's baked dates include ${url}`);
   }
   const n = pieces.length;
@@ -723,7 +725,7 @@ if (chromium) {
     ascii: ["ascii-front", "battle-tanks"],
     strategy: ["breakthrough", "follow-suit", "silent-depth"],
     gta: ["gta"],
-    lab: ["lab", "worlds", "neon", "echo", "tellme", "plunge", "creek", "tilt", "rules", "afterlight", "lighthouse-keeper", "echoes-under-ice", "last-train-home", "firefly-courier", "mirage-runner", "orbital-gardener", "eleven-wells", "last-light", "ledger"],
+    lab: ["lab", "worlds", "neon", "echo", "tellme", "plunge", "creek", "tilt", "rules", "afterlight", "lighthouse-keeper", "echoes-under-ice", "last-train-home", "firefly-courier", "mirage-runner", "orbital-gardener", "eleven-wells", "last-light", "ledger", "riftwalk"],
   };
   // 320 x 700 as the small-phone checks above: at 320 x 568 every machine's screen is about 52 x 43 px, too small for any attract line
   for (const [width, height] of PARTS.includes("firstbreath") ? [[390, 844], [320, 700], [1280, 720]] : []) {
