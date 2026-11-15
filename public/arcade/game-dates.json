@@ -212,6 +212,11 @@
       "added": "2026-11-11T10:21:35-05:00",
       "updated": "2026-11-11T10:21:35-05:00"
     },
+    "riftwalk": {
+      "path": "public/lab/riftwalk",
+      "added": "2026-11-15T17:30:00-05:00",
+      "updated": "2026-11-15T17:30:00-05:00"
+    },
     "last-light": {
       "path": "public/last-light",
       "added": "2026-10-08T19:24:54-04:00",
