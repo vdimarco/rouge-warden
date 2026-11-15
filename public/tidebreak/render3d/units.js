@@ -62,6 +62,8 @@ class Rig {
     this.mixer = new THREE.AnimationMixer(root); this.actions = {}; this.weights = {}; this.targets = {};
     for (const n of names) if (clips[n]) { const a = this.mixer.clipAction(clips[n]); a.play(); a.setEffectiveWeight(0); a.enabled = false; this.actions[n] = a; this.weights[n] = 0; this.targets[n] = 0; }
   }
+  // Adds a clip after the rig is built.
+  add(name, clip) { if (this.actions[name] || !clip) return; const a = this.mixer.clipAction(clip); a.play(); a.setEffectiveWeight(0); a.enabled = false; this.actions[name] = a; this.weights[name] = 0; this.targets[name] = 0; }
   target(name, w) { if (name in this.targets) this.targets[name] = w; }
   clearTargets() { for (const k in this.targets) this.targets[k] = 0; }
   time(name, t) { const a = this.actions[name]; if (a) { a.time = Math.max(0, Math.min(a.getClip().duration - .001, t)); a.paused = true; } }
@@ -103,7 +105,7 @@ class HeroView {
     for (const o of parts) { const copy = o.isSkinnedMesh ? new THREE.SkinnedMesh(o.geometry, outline) : new THREE.Mesh(o.geometry, outline); if (o.isSkinnedMesh) { copy.bind(o.skeleton, o.bindMatrix); copy.bindMode = o.bindMode; } copy.frustumCulled = false; copy.name = 'outline'; o.add(copy); }
     this.outline = outline; this.outlines = parts.length;
     const mesh = skinnedMeshOf(model), clips = { ...clipsFor(this.slug, mesh, []), ...windupClips(this.slug, mesh) };
-    this.rig = new Rig(model, clips, ['idle', 'run', 'hit', 'death', ...this.clips, 'windup', 'crouch', this.dance]);
+    this.rig = new Rig(model, clips, ['idle', 'run', 'hit', 'death', ...this.clips, 'windup', 'crouch']); this.mesh = mesh;
     this.root.remove(this.stand); this.stand.traverse(o => { o.geometry?.dispose(); o.material?.dispose(); }); this.stand = null;
     this.root.add(model); this.model = model; return true;
   }
@@ -136,7 +138,7 @@ class HeroView {
     const g = this.rig; g.clearTargets();
     const [attackClip, castClip] = this.clips, cast = !dead && e.castIntent, casting = pose?.casting;
     if (dead) { g.target('death', 1); g.time('death', Math.min(2.3, since * 1.1)); }
-    else if (dancing) { g.target(this.dance, 1); g.run(this.dance, 1); this.units.poses.push({ id: e.id, hero: e.hero, identity: this.identity.id, stage: 'victory', clip: this.dance, model: this.slug }); }
+    else if (dancing) { if (!g.actions[this.dance]) g.add(this.dance, clipsFor(this.slug, this.mesh, [this.dance])[this.dance]); g.target(this.dance, 1); g.run(this.dance, 1); this.units.poses.push({ id: e.id, hero: e.hero, identity: this.identity.id, stage: 'victory', clip: this.dance, model: this.slug }); }
     else if (pose && !casting) {
       const timing = CLIP_TIMING[attackClip];
       if (timing) { g.target(attackClip, 1); g.time(attackClip, strikeTime(timing, pose.variant, pose.age, e.attackWindup || .12, pose.duration)); this.units.poses.push({ id: e.id, hero: e.hero, identity: this.identity.id, stage: pose.stage, clip: attackClip, model: this.slug }); }

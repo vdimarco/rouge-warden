@@ -13,7 +13,7 @@ Bone map: Mixamo `Spine`, `Spine1`, `Spine2` become Meshy `Spine02`, `Spine01`, 
 The clips are sampled at 15 keys each second (90 keys), in metres, with an armature scale of 1. Each clip adds about 77 KB to `clips.json` before compression.
 
 ## Game changes
-- `render3d/assets.js`: `DANCES` and `danceFor(slug)`. A hero's dance is retargeted with its other clips, so one dance is retargeted for each hero.
+- `render3d/assets.js`: `DANCES` and `danceFor(slug)`. A hero's dance is retargeted when a match is won, not when the hero loads, so it adds no work to startup. (The first version retargeted at load, and two Shore browser jobs then timed out on the Play click in CI.)
 - `render3d/units.js`: a hero dances when it is alive, `state.winner` equals its team, and reduced motion is off. It eases its facing to the camera and loops the clip with a 0.3 second blend. The pose list reports the stage `victory`.
 - `main.js`: the result waits `CELEBRATE_MS` (3500) after a team wins.
 
