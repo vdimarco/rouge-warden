@@ -295,6 +295,7 @@ function map() {
   renderer.drawMap(state, $('tactical-map'), waypoint);
 }
 function shop() { market(state, { sheet, close: closeSheet, changed: () => { try { localStorage.setItem('monster-mash.build.' + selected, player(state).build); } catch {} sound.coin(); updateUI(); } }); }
+const CELEBRATE_MS = 3500; let celebrateFrom = null;
 function result() {
   resultShown = true; telemetry.end(state); resetInput(); const p = player(state), victory = state.winner === 0; sound.setScene(victory ? 'victory' : 'defeat');
   try { const saved = JSON.parse(localStorage.getItem('monster-mash.record') || '{"wins":0,"matches":0}'); saved.matches++; if (victory) saved.wins++; localStorage.setItem('monster-mash.record', JSON.stringify(saved)); } catch {}
@@ -567,7 +568,13 @@ function frame(now) {
     const me = player(state); if (me.hp > 0 && me.hp < me.maxHp * .3) sound.heartbeat();
     const edge = Math.round(feel.edge * 20) / 20; if (hurtEdge.dataset.edge !== String(edge)) { hurtEdge.dataset.edge = edge; hurtEdge.style.opacity = edge; }
     sound.tick(state.time); uiTime += dt; if (uiTime > .09) { updateUI(); uiTime = 0; }
-    if (state.winner !== null && !resultShown) result();
+    // A won match holds the result for a moment so the winning heroes are seen dancing. A draw has no dancers and
+    // reduced motion keeps them still, so both show the result at once.
+    if (state.winner === null) celebrateFrom = null;
+    else if (!resultShown) {
+      if (celebrateFrom === null) { celebrateFrom = now; if (state.winner >= 0) sound.setScene(state.winner === 0 ? 'victory' : 'defeat'); }
+      if (state.winner === -1 || renderer?.reducedMotion || now - celebrateFrom >= CELEBRATE_MS) result();
+    }
   }
   // A held match keeps fading the shake, the hitstop and the red edge instead of freezing them.
   if (running && (paused || window.GameSwitch?.isOpen)) { feel.idle(dt); hurtEdge.style.opacity = hurtEdge.dataset.edge = Math.round(feel.edge * 20) / 20; }

@@ -19,6 +19,15 @@
     "bloodwake": { "image": "6991ff4a-86ba-4b7f-833a-6b34fff48966", "mesh": "c474a980-529b-426f-ba38-4831abf35857", "rig": "b5c1f73b-bfae-4ad4-b629-bb107c7c704b", "clip": "chop (Charged_Axe_Chop 237)" },
     "zephyrs": { "image": "6fdfc5c7-e025-4213-abfb-2cfacf01d35a", "mesh": "9d476067-5a12-4c01-a499-26faed745a8a", "rig": "f17646ab-3cbb-4ea2-80d1-57de12a2a1ae", "clip": "run (Run_02 14)" }
   },
+  "dances": {
+    "note": "Victory dances made with Viggle PINOC text to motion on 2026-11-15, through the PINOC MCP server. One 6 second task gave four samples. Each mixamo-glb sample was converted with higgsfield/models3d/pinoc-clip.mjs at 15 keys each second.",
+    "task": "f7b14d73-02f5-4abd-8b5f-04eab860ba9b",
+    "prompt": "A joyful victory dance on the spot: two fist pumps overhead, then a bouncy side to side groove with swinging arms and hip sways, feet staying near the same place, ending in the same standing pose it started in so it loops",
+    "dance1": "ae308146-2643-4a09-8879-117d6d1f1e4d",
+    "dance2": "59d5a6c9-9be6-445b-ad3b-a8745c5d00cc",
+    "dance3": "ad8d4358-e6a9-4bb6-93e6-74eb5b9bcd76",
+    "dance4": "d4790112-2fb8-4d78-85ff-6f82bca96192"
+  },
   "world": {
     "minion": { "image": "c114dde2-6ea9-4b66-8e39-69ab9dfcab65", "mesh": "20942160-bc07-4f3d-86b5-08c04b6791b5", "rig": "5429957a-40a7-424c-85d9-97fca1ada303", "clip": "march (Walk_Fight_Forward 21)" },
     "tower": { "image": "a3a34edb-2cc5-4204-b7d4-f28b6268a086", "mesh": "2fb5fc31-da3b-45c9-9edd-831dd726a441" },

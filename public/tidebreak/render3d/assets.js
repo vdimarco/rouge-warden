@@ -60,6 +60,10 @@ export const CLIP_TIMING = {
   maul: { from: .45, strikes: [1.1], to: 1.85 }, slash: { from: .3, strikes: [.8, 1.3], to: 1.75 }, chop: { from: 3.35, strikes: [4.45], to: 5.1 },
 };
 export const ANIMATED = ['idle', 'run', 'hit', 'death', 'march'];
+// Victory dances: four samples of one PINOC text-to-motion clip (models/sources.json). Each hero keeps one of them,
+// so a winning team does not dance in step.
+export const DANCES = ['dance1', 'dance2', 'dance3', 'dance4'];
+export const danceFor = slug => DANCES[Math.max(0, Object.keys(HERO_CLIPS).indexOf(slug)) % DANCES.length];
 // Retargeted clips are cached per model: clones of one hero share the bind pose, so they share clips.
 const clipCache = new Map();
 export function clipsFor(key, mesh, names) {
@@ -74,7 +78,7 @@ export function heroModel(slug) {
   const bytes = assets.heroBytes.get(slug); if (!bytes) return null;
   assets.parsing.set(slug, parse(bytes).then(g => {
     const scene = prepare(g.scene), mesh = skinnedMeshOf(scene), box = new THREE.Box3().setFromObject(scene);
-    clipsFor(slug, mesh, [...ANIMATED.filter(n => n !== 'march'), ...HERO_CLIPS[slug] || ['slash', 'cast']]);
+    clipsFor(slug, mesh, [...ANIMATED.filter(n => n !== 'march'), ...HERO_CLIPS[slug] || ['slash', 'cast'], danceFor(slug)]);
     assets.heroes.set(slug, { scene, mesh, height: box.max.y - box.min.y });
     assets.heroBytes.delete(slug);
   }).catch(error => { console.warn('Hero model unavailable:', slug, error); assets.failed.add(slug); }).finally(() => assets.parsing.delete(slug)));
