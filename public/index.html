@@ -173,6 +173,8 @@ button { font: inherit; color: inherit; }
 .cab.light-years-home .marquee b, .cab.ahead-of-the-light .marquee b, .cab.first-breath .marquee b, .cab.frostwing .marquee b, .cab.ledger .marquee b, .cab.riftwalk .marquee b, .cab.ember-drift .marquee b { display: block; font-size: max(12px, calc(var(--h) * 0.03)); line-height: max(10.8px, calc(var(--h) * 0.03)); }
 .cab.light-years-home .marquee small, .cab.ahead-of-the-light .marquee small, .cab.first-breath .marquee small, .cab.frostwing .marquee small, .cab.ledger .marquee small, .cab.riftwalk .marquee small, .cab.ember-drift .marquee small { margin-top: clamp(0px, calc(var(--h) * 0.03 - 9px), 3px); }
 @container (width < 100px) { .cab.light-years-home .marquee small, .cab.ahead-of-the-light .marquee small, .cab.first-breath .marquee small, .cab.frostwing .marquee small, .cab.ledger .marquee small, .cab.riftwalk .marquee small, .cab.ember-drift .marquee small { display: none; } }
+/* Riftwalk's subtitle is 19 characters: a marquee narrower than 120px shows the title alone. */
+@container (width < 120px) { .cab.riftwalk .marquee small { display: none; } }
 /* Ahead of the Light's last log unlock (84 pages): a gold frame round the screen, drawn as a shadow so no size changes */
 .cab.ahead-of-the-light.gold .bezel { box-shadow: 0 0 0 3px var(--gold), 0 0 14px rgba(255, 207, 74, 0.5), inset 0 0 0 2px rgba(255, 255, 255, 0.06), 0 2px 0 rgba(0, 0, 0, 0.6); }
 .cab.gta { --c1: #174b4a; --c2: #ffc65b; --glow: rgba(255, 198, 91, 0.45); }
