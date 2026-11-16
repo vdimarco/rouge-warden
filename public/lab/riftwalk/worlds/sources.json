@@ -1,112 +1,403 @@
 {
-  "note": "The zones of Riftwalk, one for each collection of the arcade. Each zone is a Gaussian splat world made with Marble by World Labs through the World Labs API on 2026-11-16 (UTC). The splat files in worlds/<zone>/ are Marble's own exports, unchanged. worlds/<zone>/screens.json holds the place of each cabinet screen, found in the world's panorama by games/riftwalk/tools/find-screens.py and placed in the world by games/riftwalk/tools/place-screens.mjs. worlds/<zone>/door.webp is a view into the zone, cut from its panorama by games/riftwalk/tools/door-art.py.",
-  "zones": {
-    "cottage": {
-      "world_id": "813454e2-60e3-483a-9eb8-2d7adb44f269",
-      "operation_id": "c30dd9d6-abe2-4478-9a6c-905c13ab9f73",
-      "model": "marble-1.1",
-      "cost_credits": 1580,
-      "semantics_metadata": {
-        "metric_scale_factor": 2.1470003,
-        "ground_plane_offset": 1.3122395
+  "note": "The hall of Riftwalk, a Gaussian splat world made with World Labs Atlas through its Developer API on 2026-11-16 (UTC). hall/hall.spz is Atlas's own export, unchanged: 2,000,000 splats. hall/screens.json holds each machine's screen, found as white patches in the 15 posed views and placed with their depth maps.",
+  "atlas": {
+    "steps": [
+      {
+        "task": "atlasTextToImage",
+        "operation_id": "d9b32e3895444d1fbeb2a76da979de0a",
+        "seed": 33,
+        "sample": 0,
+        "prompt": "Wide eye-level one-point-perspective view from the entrance of a very large, wide and deep rectangular cyberpunk arcade hall at night, looking straight at the back wall. The hall has six separate sections of arcade machines, two on each of three walls. On the left wall stand two clusters, the nearer one lit amber and the farther one lit hot magenta. On the back wall stand two clusters side by side, the left one lit acid green and the right one lit cyan. On the right wall stand two clusters, the farther one lit red and the nearer one lit violet. Each cluster is a long row of eight tall narrow retro arcade cabinets, eight in every cluster, in one tight row, shoulder to shoulder with no gaps, backs against the wall, facing into the room, with neon edge strips in its cluster's colour. Clear gaps of bare wall separate the clusters. Every cabinet has one large flat upright screen glowing plain white with no picture. On the wall above the middle of each cluster hangs one large round neon ring in that cluster's colour, like a portal: six rings in all. The middle of the hall is a wide open floor of wet black concrete that mirrors the neon. Dark steel walls with pipes, cables and vents, a dark ceiling with beams. Deep shadows, saturated colour, cinematic, sharp fine detail. No people, no text, no letters, no logos."
       },
-      "files": [
-        "150k",
-        "500k",
-        "full"
-      ],
-      "prompt": "A 360 degree view from the exact centre of a dark, crowded, cluttered cyberpunk arcade den with every wall packed with detail at night. Arcade cabinets surround the viewer completely in an unbroken circle: in front, to the left, to the right and behind, twenty-four tall retro cabinets standing shoulder to shoulder, all facing the centre, two metres away. Every cabinet has one large flat upright screen that is switched on and shows only plain bright white light with no picture. The cabinets are glossy black with thick glowing edge strips in warm amber, gold and orange. The room is lit only by neon: the walls and the low ceiling behind the cabinets are covered with glowing neon tubes, neon rings, neon arrows and abstract neon shapes in amber, gold, orange and soft red, with strings of small warm lamps, with tangled hanging cables, pipes, ducts and stacked old monitors showing static between them. Amber and rose haze fills the air. The floor is rain-wet black concrete that mirrors all the neon in long coloured streaks. Deep blacks, very saturated coloured light on every surface, high contrast, sharp fine detail, cinematic. No people. No readable text, no letters, no numbers, no logos, no brand names, no characters from real games.",
-      "note": "This world's screens are dim grey glass with a second panel under each. find-screens.py ran with level 0.27, top 0.40 and MIN_LAT=2.5, and face-screens.py rebuilt the screens to face the capture point."
-    },
-    "action": {
-      "world_id": "cb7ab700-3676-44aa-ab34-51425a1ba5fd",
-      "operation_id": "a49eb396-dbb6-4c4d-895f-9d6fe3230943",
-      "model": "marble-1.1",
-      "cost_credits": 1580,
-      "semantics_metadata": {
-        "metric_scale_factor": 1.5553787,
-        "ground_plane_offset": 0.92710257
+      {
+        "task": "images2PosedRGBD",
+        "operation_id": "1330742750a549858f2d6f8817ece0f2",
+        "targetResolution": [
+          1280,
+          720
+        ]
       },
-      "files": [
-        "150k",
-        "500k",
-        "full"
-      ],
-      "prompt": "A 360 degree view from the exact centre of a small, dark, crowded cyberpunk arcade den at night. Arcade cabinets surround the viewer completely in an unbroken circle: in front, to the left, to the right and behind, twenty-four tall retro cabinets standing shoulder to shoulder, all facing the centre, two metres away. Every cabinet has one large flat upright screen that is switched on and shows only plain bright white light with no picture. The cabinets are glossy black with thick glowing edge strips in hot magenta, electric cyan and violet. The room is lit only by neon: the walls and the low ceiling behind the cabinets are covered with glowing neon tubes, neon rings, neon arrows and abstract neon shapes in magenta, cyan, violet and acid green, with tangled hanging cables, pipes, ducts and stacked old monitors showing static between them. Purple and teal haze fills the air. The floor is rain-wet black concrete that mirrors all the neon in long coloured streaks. Deep blacks, very saturated coloured light on every surface, high contrast, sharp fine detail, cinematic. No people. No readable text, no letters, no numbers, no logos, no brand names, no characters from real games."
-    },
-    "ascii": {
-      "world_id": "4709ab97-6746-4514-a6a5-31c3cf7f1a87",
-      "operation_id": "77bfcc6d-36a8-4fc9-8fab-0837cd5d2359",
-      "model": "marble-1.1",
-      "cost_credits": 1580,
-      "semantics_metadata": {
-        "metric_scale_factor": 1.6968656,
-        "ground_plane_offset": 1.2966194
+      {
+        "task": "atlasGenerate",
+        "operation_id": "77c0167ca1a04257a21c5e76aaecdd13",
+        "views": 14,
+        "note": "Cameras along the middle of the hall, looking at each wall, back down the hall, and up at the rings.",
+        "targetCameras": [
+          {
+            "extrinsics": {
+              "position": [
+                0,
+                1.3,
+                -3.5
+              ],
+              "quaternion": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ],
+              "coordinateSystem": "rub"
+            },
+            "intrinsics": {
+              "fx": 800,
+              "fy": 800,
+              "cx": 640,
+              "cy": 360,
+              "width": 1280,
+              "height": 720
+            }
+          },
+          {
+            "extrinsics": {
+              "position": [
+                0.8,
+                1.3,
+                -5.5
+              ],
+              "quaternion": [
+                0.0,
+                0.608761,
+                0.0,
+                0.793353
+              ],
+              "coordinateSystem": "rub"
+            },
+            "intrinsics": {
+              "fx": 800,
+              "fy": 800,
+              "cx": 640,
+              "cy": 360,
+              "width": 1280,
+              "height": 720
+            }
+          },
+          {
+            "extrinsics": {
+              "position": [
+                -0.8,
+                1.3,
+                -5.5
+              ],
+              "quaternion": [
+                0.0,
+                -0.608761,
+                0.0,
+                0.793353
+              ],
+              "coordinateSystem": "rub"
+            },
+            "intrinsics": {
+              "fx": 800,
+              "fy": 800,
+              "cx": 640,
+              "cy": 360,
+              "width": 1280,
+              "height": 720
+            }
+          },
+          {
+            "extrinsics": {
+              "position": [
+                0,
+                1.3,
+                -8.5
+              ],
+              "quaternion": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ],
+              "coordinateSystem": "rub"
+            },
+            "intrinsics": {
+              "fx": 800,
+              "fy": 800,
+              "cx": 640,
+              "cy": 360,
+              "width": 1280,
+              "height": 720
+            }
+          },
+          {
+            "extrinsics": {
+              "position": [
+                0.8,
+                1.3,
+                -11
+              ],
+              "quaternion": [
+                0.0,
+                0.642788,
+                0.0,
+                0.766044
+              ],
+              "coordinateSystem": "rub"
+            },
+            "intrinsics": {
+              "fx": 800,
+              "fy": 800,
+              "cx": 640,
+              "cy": 360,
+              "width": 1280,
+              "height": 720
+            }
+          },
+          {
+            "extrinsics": {
+              "position": [
+                -0.8,
+                1.3,
+                -11
+              ],
+              "quaternion": [
+                0.0,
+                -0.642788,
+                0.0,
+                0.766044
+              ],
+              "coordinateSystem": "rub"
+            },
+            "intrinsics": {
+              "fx": 800,
+              "fy": 800,
+              "cx": 640,
+              "cy": 360,
+              "width": 1280,
+              "height": 720
+            }
+          },
+          {
+            "extrinsics": {
+              "position": [
+                -1.2,
+                1.3,
+                -11.5
+              ],
+              "quaternion": [
+                0.0,
+                0.087156,
+                0.0,
+                0.996195
+              ],
+              "coordinateSystem": "rub"
+            },
+            "intrinsics": {
+              "fx": 800,
+              "fy": 800,
+              "cx": 640,
+              "cy": 360,
+              "width": 1280,
+              "height": 720
+            }
+          },
+          {
+            "extrinsics": {
+              "position": [
+                1.2,
+                1.3,
+                -11.5
+              ],
+              "quaternion": [
+                0.0,
+                -0.087156,
+                0.0,
+                0.996195
+              ],
+              "coordinateSystem": "rub"
+            },
+            "intrinsics": {
+              "fx": 800,
+              "fy": 800,
+              "cx": 640,
+              "cy": 360,
+              "width": 1280,
+              "height": 720
+            }
+          },
+          {
+            "extrinsics": {
+              "position": [
+                0,
+                1.3,
+                -12
+              ],
+              "quaternion": [
+                0.0,
+                1.0,
+                0.0,
+                0.0
+              ],
+              "coordinateSystem": "rub"
+            },
+            "intrinsics": {
+              "fx": 800,
+              "fy": 800,
+              "cx": 640,
+              "cy": 360,
+              "width": 1280,
+              "height": 720
+            }
+          },
+          {
+            "extrinsics": {
+              "position": [
+                0.5,
+                1.3,
+                -8
+              ],
+              "quaternion": [
+                0.0,
+                0.92388,
+                0.0,
+                0.382683
+              ],
+              "coordinateSystem": "rub"
+            },
+            "intrinsics": {
+              "fx": 800,
+              "fy": 800,
+              "cx": 640,
+              "cy": 360,
+              "width": 1280,
+              "height": 720
+            }
+          },
+          {
+            "extrinsics": {
+              "position": [
+                -0.5,
+                1.3,
+                -8
+              ],
+              "quaternion": [
+                0.0,
+                -0.92388,
+                0.0,
+                0.382683
+              ],
+              "coordinateSystem": "rub"
+            },
+            "intrinsics": {
+              "fx": 800,
+              "fy": 800,
+              "cx": 640,
+              "cy": 360,
+              "width": 1280,
+              "height": 720
+            }
+          },
+          {
+            "extrinsics": {
+              "position": [
+                0,
+                1.3,
+                -7
+              ],
+              "quaternion": [
+                0.173648,
+                0.0,
+                0.0,
+                0.984808
+              ],
+              "coordinateSystem": "rub"
+            },
+            "intrinsics": {
+              "fx": 800,
+              "fy": 800,
+              "cx": 640,
+              "cy": 360,
+              "width": 1280,
+              "height": 720
+            }
+          },
+          {
+            "extrinsics": {
+              "position": [
+                1.5,
+                1.3,
+                -11.5
+              ],
+              "quaternion": [
+                0.190821,
+                0.65257,
+                -0.174856,
+                0.712155
+              ],
+              "coordinateSystem": "rub"
+            },
+            "intrinsics": {
+              "fx": 800,
+              "fy": 800,
+              "cx": 640,
+              "cy": 360,
+              "width": 1280,
+              "height": 720
+            }
+          },
+          {
+            "extrinsics": {
+              "position": [
+                -1.5,
+                1.3,
+                -11.5
+              ],
+              "quaternion": [
+                0.190821,
+                -0.65257,
+                0.174856,
+                0.712155
+              ],
+              "coordinateSystem": "rub"
+            },
+            "intrinsics": {
+              "fx": 800,
+              "fy": 800,
+              "cx": 640,
+              "cy": 360,
+              "width": 1280,
+              "height": 720
+            }
+          }
+        ]
       },
-      "files": [
-        "150k",
-        "500k",
-        "full"
-      ],
-      "prompt": "A 360 degree view from the exact centre of a dark, crowded, cluttered cyberpunk arcade den with every wall packed with detail at night. Arcade cabinets surround the viewer completely in an unbroken circle: in front, to the left, to the right and behind, twenty-four tall retro cabinets standing shoulder to shoulder, all facing the centre, two metres away. Every cabinet has one large flat upright screen that is switched on and shows only plain bright white light with no picture. The cabinets are glossy black with thick glowing edge strips in acid green, lime and ice blue. The room is lit only by neon: the walls and the low ceiling behind the cabinets are covered with glowing neon tubes, neon rings, neon grid lines and abstract neon shapes in acid green, lime, ice blue and white, with racks of old green-screen terminals, with tangled hanging cables, pipes, ducts and stacked old monitors showing static between them. Green and blue haze fills the air. The floor is rain-wet black concrete that mirrors all the neon in long coloured streaks. Deep blacks, very saturated coloured light on every surface, high contrast, sharp fine detail, cinematic. No people. No readable text, no letters, no numbers, no logos, no brand names, no characters from real games."
-    },
-    "strategy": {
-      "world_id": "a3819c78-f7ef-4c66-a830-12a4e8df86c9",
-      "model": "marble-1.1",
-      "cost_credits": 1580,
-      "semantics_metadata": {
-        "metric_scale_factor": 2.00722,
-        "ground_plane_offset": 1.3673925
-      },
-      "prompt": "The inside of a dark, crowded cyberpunk arcade den at night, seen from the centre of a small round clearing. Twenty tall retro arcade cabinets stand shoulder to shoulder in a tight circle all around the viewer, every one facing the centre, close enough to touch. Each cabinet has one large flat upright screen that is switched on and shows only plain bright white light, with no picture on it. The cabinets are black and chrome with glowing magenta, cyan and violet edge strips, lit joysticks and buttons. Behind and above them the room is dense and dark: tangled hanging cables, pipes, ventilation ducts, stacks of old monitors showing grey static, drifting steam, holographic glow, neon tubes and abstract neon shapes in magenta, cyan and acid green. The floor is rain-wet black concrete with puddles that mirror the neon. Deep shadows, high contrast, saturated neon, moody and cinematic, sharp fine detail. No people. No readable text, no letters, no numbers, no logos, no brand names, no characters from real games.",
-      "note": "A hall with one row of eleven cabinets in front of the visitor. It was made before the ring worlds and was first left out.",
-      "files": [
-        "150k",
-        "500k",
-        "full"
-      ]
-    },
-    "gta": {
-      "world_id": "92e5e14e-b031-485e-858d-ab9b865c3671",
-      "operation_id": "b2202efe-0a73-4106-9b2d-c671af72e897",
-      "model": "marble-1.1",
-      "cost_credits": 1580,
-      "semantics_metadata": {
-        "metric_scale_factor": 2.2473989,
-        "ground_plane_offset": 1.349822
-      },
-      "prompt": "The inside of a large cyberpunk arcade hall at night, seen from the middle of its open floor. The hall is dense and glowing: long rows of retro arcade cabinets with bright blank screens line every wall, their cases edged in hot magenta, electric cyan and amber light. Set into each of the four walls are two tall empty archways framed with thick bright neon tubes, eight archways in all, each opening into darkness. Above, a dark industrial ceiling of exposed pipes, vents and bundled cables carries long magenta and cyan neon strips and hanging lamps. Glowing abstract neon shapes, stripes and arrows hang on the brick and steel walls. The floor is wet black concrete that mirrors every light, with a wide clear circle in the middle. Thin coloured haze in the air. Deep saturated colour, strong contrast, sharp fine detail, cinematic and moody. No people. No readable text, no letters, no numbers, no logos, no brand names, no characters from real games.",
-      "note": "The first hall, with cabinets along brick walls and two neon arches. Its cabinets have two panels and stand far from the visitor, so find-screens.py ran with level 0.5 and MIN_LAT=2.5, face-screens.py rebuilt the screens, and the two nearest of them are used.",
-      "files": [
-        "150k",
-        "500k",
-        "full"
-      ]
-    },
-    "lab": {
-      "world_id": "3d07374e-27d4-40ad-b542-740704f967d9",
-      "operation_id": "d3e4df69-dff3-4123-8a0d-f28fbf87cedb",
-      "model": "marble-1.1",
-      "cost_credits": 1580,
-      "semantics_metadata": {
-        "metric_scale_factor": 1.6662352,
-        "ground_plane_offset": 1.2938564
-      },
-      "files": [
-        "150k",
-        "500k",
-        "full"
-      ],
-      "prompt": "A 360 degree view from the exact centre of a dark, crowded, cluttered cyberpunk arcade den with every wall packed with detail at night. Arcade cabinets surround the viewer completely in an unbroken circle: in front, to the left, to the right and behind, twenty-four tall retro cabinets standing shoulder to shoulder, all facing the centre, two metres away. Every cabinet has one large flat upright screen that is switched on and shows only plain bright white light with no picture. The cabinets are glossy black with thick glowing edge strips in violet, white and electric blue. The room is lit only by neon: the walls and the low ceiling behind the cabinets are covered with glowing neon tubes, neon rings, neon coils and abstract neon shapes in violet, white, electric blue and pink, with glass tubes, coiled wires and workbench clutter, with tangled hanging cables, pipes, ducts and stacked old monitors showing static between them. Violet and blue haze fills the air. The floor is rain-wet black concrete that mirrors all the neon in long coloured streaks. Deep blacks, very saturated coloured light on every surface, high contrast, sharp fine detail, cinematic. No people. No readable text, no letters, no numbers, no logos, no brand names, no characters from real games."
-    }
+      {
+        "task": "posedImages2Splats",
+        "operation_id": "17ede62a175a4574b0cc48e7dd36e8bb",
+        "frames": 15,
+        "cost_credits": 5000,
+        "splats": 2000000
+      }
+    ],
+    "known_costs": "posedImages2Splats 5,000 credits. The other steps have no listed price in the docs."
   },
-  "earlier": [
-    {
-      "model": "marble-1.0-draft",
-      "world_id": "b8fcd264-f8cf-4c3a-a590-647a1264a495",
-      "cost_credits": 230,
-      "note": "A layout check. Not shipped."
+  "earlier_marble_worlds": {
+    "note": "Seven Marble worlds were made before the hall and are no longer in the game: 230 + 6 x 1,580 = 9,710 Marble API credits.",
+    "worlds": {
+      "cottage": {
+        "world_id": "813454e2-60e3-483a-9eb8-2d7adb44f269",
+        "model": "marble-1.1"
+      },
+      "action": {
+        "world_id": "cb7ab700-3676-44aa-ab34-51425a1ba5fd",
+        "model": "marble-1.1"
+      },
+      "ascii": {
+        "world_id": "4709ab97-6746-4514-a6a5-31c3cf7f1a87",
+        "model": "marble-1.1"
+      },
+      "strategy": {
+        "world_id": "a3819c78-f7ef-4c66-a830-12a4e8df86c9",
+        "model": "marble-1.1"
+      },
+      "gta": {
+        "world_id": "92e5e14e-b031-485e-858d-ab9b865c3671",
+        "model": "marble-1.1"
+      },
+      "lab": {
+        "world_id": "3d07374e-27d4-40ad-b542-740704f967d9",
+        "model": "marble-1.1"
+      }
     }
-  ],
-  "total_cost_credits": 9710
+  }
 }
