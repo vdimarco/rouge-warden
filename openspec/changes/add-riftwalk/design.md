@@ -5,7 +5,7 @@ The user's words, in order: "a gaussian splot within worldlabs that mimics a cyb
 
 The world is a small dark den. Ten black cabinets stand in a circle around the visitor, about 2 m away, with neon edge strips in magenta, cyan and violet. Neon tubes, cables and old monitors cover the walls, haze fills the air, and the wet floor mirrors the light. The prompt asks for no readable text, logos or characters from real games. The prompt and the world ids are in `public/lab/riftwalk/worlds/sources.json`.
 
-Four worlds were made. A draft (`marble-1.0-draft`, 230 credits) checked the layout. The first full hall (`marble-1.1`, 1,580 credits) shipped with floating portals and was replaced. A darker hall with cabinets along the walls (1,580 credits) was not used: its screens were far away and few faced the middle. The den (1,580 credits) is the one in the game.
+Seven worlds were made in all: these four, and three more for the zones (see Zones). A draft (`marble-1.0-draft`, 230 credits) checked the layout. The first full hall (`marble-1.1`, 1,580 credits) shipped with floating portals and was replaced. A darker hall with cabinets along the walls (1,580 credits) was not used: its screens were far away and few faced the middle. The den (1,580 credits) is the one in the game.
 
 ## Portals on the machine screens
 Each cabinet screen is a portal to one game. The portal shows the game's key art, fitted to the screen with rounded corners. Its edge is live: a bright band in the game's colour with moving noise and a pulse that travels round the rim. A machine with no game shows dark glass with a faint rim. The game's name stands over the screen.
@@ -27,21 +27,36 @@ The world ships as Marble made it, in three files: 150,000 splats (2.3 MB) shows
 - Screen pose: a rectangle's two pairs of parallel sides meet at two vanishing points, and the cross product of those two directions is the plane's normal. This is the standard single-view rule (Hartley and Zisserman, "Multiple View Geometry", chapter 8), used here on a sphere of view rays.
 - Live edge: a rounded-box distance field (Inigo Quilez, "2D distance functions") gives the rim, and the noise band from the first version moves along it. These are not splat-to-splat portals, so Spark's `SparkPortals` class is not used.
 
-## Layout
-`public/lab/riftwalk/hall.js` holds the rules with no drawing. The collections are a copy of the homepage's `GROUPS`, and the node test compares the two game for game. Names, lines, routes and art come from `window.GameSwitch.GAMES` at run time.
+## Zones
+The user's words: "make it a bigger hall where you can move between zones".
 
-One collection is on at a time. Its first game goes on the front machine, the next games go on the neighbours to the right and left in turn. A collection with more than ten games has pages, and the More button shows the next page. The visitor can walk 1 m from the capture point, because a splat world is sharpest there. After a walk, the arrows turn to a machine as the visitor sees it from their place.
+A Marble world is sharp near the point it was made from, and it has room for about ten machines there. One world as a large hall would put most screens far from the visitor and would draw them badly. So the hall is four zones, and each zone is its own world from the same prompt with other colours: magenta and cyan (Action Den), amber (Cottage Row), green (Back Room), violet (The Lab). `marble-1.1-plus` makes larger worlds, and it was not tried: the screens of a larger world would be too far from its one panorama for `find-screens.py`.
+
+- `ZONES` in `hall.js` gives each zone its collections. The Back Room holds three small collections (ASCII Scenes, Strategy, GTA), so no zone is nearly empty.
+- Each zone has two rift doors. `doors()` puts one in the widest gap between machines on each side of the visitor, at the distance of the machines beside it, and as wide as the floor between their cabinets (0.36 m to 0.95 m). The left door leads to the zone before and the right door to the zone after, and the last zone leads on to the first.
+- A door is a portal like a screen, with the same shader. It shows a view into its zone (`door.webp`, cut from that zone's panorama by `door-art.py`) and the zone's name.
+- A way through: the visitor glides to the door, the view fills with the zone's colour, the zone's 150,000-splat world loads (2.3 MB), and the new zone stands around the visitor. A loaded world is kept, so the way back is instant.
+- The zone buttons at the top, the up and down arrow keys and the keys 1 to 4 also change the zone, for a visitor who does not want to turn to a door.
+
+The Cottage Row world came out with dim grey screens and a second panel under each. `find-screens.py` took a brightness ceiling and a latitude cut for it, and `face-screens.py` rebuilt its screens to face the capture point, because the tilt of a small dim screen measures badly. From the middle of the zone the portal covers the screen. After a walk its tilt differs a little from the cabinet's.
+
+The new zones ship the 150,000 and 500,000 files. The Action Den also ships its full file. The full files of the three new zones are 28 MB each and were left out of the repository.
+
+## Layout
+`public/lab/riftwalk/hall.js` holds the rules with no drawing. The collections are a copy of the homepage's `GROUPS`, and the node test compares the two game for game. It also checks that each collection is in one zone. Names, lines, routes and art come from `window.GameSwitch.GAMES` at run time.
+
+In a zone, the first game goes on the front machine, the next games go on the neighbours to the right and left in turn. A zone with more games than machines has pages, and the More button shows the next page. The visitor can walk 1 m from the capture point. After a walk, the arrows turn to a machine as the visitor sees it from their place.
 
 ## Controls
-- Look: drag the view. ◀ and ▶ (keys and buttons) turn to the next lit machine and go round the circle.
-- Collections: the buttons at the top, the up and down arrow keys, or the keys 1 to 6.
+- Look: drag the view. ◀ and ▶ (keys and buttons) turn to the next lit machine or door and go round the circle.
+- Zones: tap or click a rift door, or press Enter at it. Also the buttons at the top, the up and down arrow keys, or the keys 1 to 4.
 - More games: the More button, Page Down or M.
 - Play: tap or click a lit screen, press Enter or Space for the machine in the middle of the view, or use the Play button.
 - Walk: W A S D on a keyboard.
 A visitor can do everything with taps alone, with the buttons alone, or with the keyboard alone. Every game is also a plain link on the page for screen readers, and that list shows to everyone when WebGL2 is missing or the world does not load.
 
 ## Reduced motion
-The machines change at once, the arrows turn at once, the edge holds still, and a launch has no glide.
+The machines change at once, the arrows turn at once, the edge holds still, and a launch or a way through a door has no glide.
 
 ## Not done
-No sound. No true splat-to-splat portal. The eye is 0.93 m over the floor, which is the height Marble reports for this world.
+No sound. No true splat-to-splat portal: a door shows a picture of its zone, and the world changes behind a flash of light. The eye is at the height Marble reports for each world: 0.93 m in the Action Den and about 1.3 m in the other zones. A second try at the Cottage Row world, with brighter screens, did not start: the World Labs account had no credits left.

@@ -1,14 +1,69 @@
 {
-  "note": "The neon den of Riftwalk, a Gaussian splat world made with Marble by World Labs through the World Labs API on 2026-11-16 (UTC). The three files are Marble's own exports, unchanged: 150,000 splats, 500,000 splats and full resolution. screens.json holds the place of each cabinet screen, found in the world's panorama by games/riftwalk/tools/find-screens.py and placed in the world by games/riftwalk/tools/place-screens.mjs.",
-  "model": "marble-1.1",
-  "world_id": "cb7ab700-3676-44aa-ab34-51425a1ba5fd",
-  "operation_id": "a49eb396-dbb6-4c4d-895f-9d6fe3230943",
-  "cost_credits": 1580,
-  "semantics_metadata": {
-    "metric_scale_factor": 1.5553787,
-    "ground_plane_offset": 0.92710257
+  "note": "The zones of Riftwalk. Each zone is a Gaussian splat world made with Marble by World Labs through the World Labs API on 2026-11-16 (UTC). The splat files in worlds/<zone>/ are Marble's own exports, unchanged. worlds/<zone>/screens.json holds the place of each cabinet screen, found in the world's panorama by games/riftwalk/tools/find-screens.py and placed in the world by games/riftwalk/tools/place-screens.mjs. worlds/<zone>/door.webp is a view into the zone, cut from its panorama by games/riftwalk/tools/door-art.py.",
+  "zones": {
+    "action": {
+      "world_id": "cb7ab700-3676-44aa-ab34-51425a1ba5fd",
+      "operation_id": "a49eb396-dbb6-4c4d-895f-9d6fe3230943",
+      "model": "marble-1.1",
+      "cost_credits": 1580,
+      "semantics_metadata": {
+        "metric_scale_factor": 1.5553787,
+        "ground_plane_offset": 0.92710257
+      },
+      "files": [
+        "150k",
+        "500k",
+        "full"
+      ],
+      "prompt": "A 360 degree view from the exact centre of a small, dark, crowded cyberpunk arcade den at night. Arcade cabinets surround the viewer completely in an unbroken circle: in front, to the left, to the right and behind, twenty-four tall retro cabinets standing shoulder to shoulder, all facing the centre, two metres away. Every cabinet has one large flat upright screen that is switched on and shows only plain bright white light with no picture. The cabinets are glossy black with thick glowing edge strips in hot magenta, electric cyan and violet. The room is lit only by neon: the walls and the low ceiling behind the cabinets are covered with glowing neon tubes, neon rings, neon arrows and abstract neon shapes in magenta, cyan, violet and acid green, with tangled hanging cables, pipes, ducts and stacked old monitors showing static between them. Purple and teal haze fills the air. The floor is rain-wet black concrete that mirrors all the neon in long coloured streaks. Deep blacks, very saturated coloured light on every surface, high contrast, sharp fine detail, cinematic. No people. No readable text, no letters, no numbers, no logos, no brand names, no characters from real games."
+    },
+    "cottage": {
+      "world_id": "813454e2-60e3-483a-9eb8-2d7adb44f269",
+      "operation_id": "c30dd9d6-abe2-4478-9a6c-905c13ab9f73",
+      "model": "marble-1.1",
+      "cost_credits": 1580,
+      "semantics_metadata": {
+        "metric_scale_factor": 2.1470003,
+        "ground_plane_offset": 1.3122395
+      },
+      "files": [
+        "150k",
+        "500k"
+      ],
+      "prompt": "A 360 degree view from the exact centre of a dark, crowded, cluttered cyberpunk arcade den with every wall packed with detail at night. Arcade cabinets surround the viewer completely in an unbroken circle: in front, to the left, to the right and behind, twenty-four tall retro cabinets standing shoulder to shoulder, all facing the centre, two metres away. Every cabinet has one large flat upright screen that is switched on and shows only plain bright white light with no picture. The cabinets are glossy black with thick glowing edge strips in warm amber, gold and orange. The room is lit only by neon: the walls and the low ceiling behind the cabinets are covered with glowing neon tubes, neon rings, neon arrows and abstract neon shapes in amber, gold, orange and soft red, with strings of small warm lamps, with tangled hanging cables, pipes, ducts and stacked old monitors showing static between them. Amber and rose haze fills the air. The floor is rain-wet black concrete that mirrors all the neon in long coloured streaks. Deep blacks, very saturated coloured light on every surface, high contrast, sharp fine detail, cinematic. No people. No readable text, no letters, no numbers, no logos, no brand names, no characters from real games.",
+      "note": "This world's screens are dim grey glass with a second panel under each. find-screens.py ran with level 0.27, top 0.40 and MIN_LAT=2.5, and face-screens.py rebuilt the screens to face the capture point."
+    },
+    "back": {
+      "world_id": "4709ab97-6746-4514-a6a5-31c3cf7f1a87",
+      "operation_id": "77bfcc6d-36a8-4fc9-8fab-0837cd5d2359",
+      "model": "marble-1.1",
+      "cost_credits": 1580,
+      "semantics_metadata": {
+        "metric_scale_factor": 1.6968656,
+        "ground_plane_offset": 1.2966194
+      },
+      "files": [
+        "150k",
+        "500k"
+      ],
+      "prompt": "A 360 degree view from the exact centre of a dark, crowded, cluttered cyberpunk arcade den with every wall packed with detail at night. Arcade cabinets surround the viewer completely in an unbroken circle: in front, to the left, to the right and behind, twenty-four tall retro cabinets standing shoulder to shoulder, all facing the centre, two metres away. Every cabinet has one large flat upright screen that is switched on and shows only plain bright white light with no picture. The cabinets are glossy black with thick glowing edge strips in acid green, lime and ice blue. The room is lit only by neon: the walls and the low ceiling behind the cabinets are covered with glowing neon tubes, neon rings, neon grid lines and abstract neon shapes in acid green, lime, ice blue and white, with racks of old green-screen terminals, with tangled hanging cables, pipes, ducts and stacked old monitors showing static between them. Green and blue haze fills the air. The floor is rain-wet black concrete that mirrors all the neon in long coloured streaks. Deep blacks, very saturated coloured light on every surface, high contrast, sharp fine detail, cinematic. No people. No readable text, no letters, no numbers, no logos, no brand names, no characters from real games."
+    },
+    "lab": {
+      "world_id": "3d07374e-27d4-40ad-b542-740704f967d9",
+      "operation_id": "d3e4df69-dff3-4123-8a0d-f28fbf87cedb",
+      "model": "marble-1.1",
+      "cost_credits": 1580,
+      "semantics_metadata": {
+        "metric_scale_factor": 1.6662352,
+        "ground_plane_offset": 1.2938564
+      },
+      "files": [
+        "150k",
+        "500k"
+      ],
+      "prompt": "A 360 degree view from the exact centre of a dark, crowded, cluttered cyberpunk arcade den with every wall packed with detail at night. Arcade cabinets surround the viewer completely in an unbroken circle: in front, to the left, to the right and behind, twenty-four tall retro cabinets standing shoulder to shoulder, all facing the centre, two metres away. Every cabinet has one large flat upright screen that is switched on and shows only plain bright white light with no picture. The cabinets are glossy black with thick glowing edge strips in violet, white and electric blue. The room is lit only by neon: the walls and the low ceiling behind the cabinets are covered with glowing neon tubes, neon rings, neon coils and abstract neon shapes in violet, white, electric blue and pink, with glass tubes, coiled wires and workbench clutter, with tangled hanging cables, pipes, ducts and stacked old monitors showing static between them. Violet and blue haze fills the air. The floor is rain-wet black concrete that mirrors all the neon in long coloured streaks. Deep blacks, very saturated coloured light on every surface, high contrast, sharp fine detail, cinematic. No people. No readable text, no letters, no numbers, no logos, no brand names, no characters from real games."
+    }
   },
-  "prompt": "A 360 degree view from the exact centre of a small, dark, crowded cyberpunk arcade den at night. Arcade cabinets surround the viewer completely in an unbroken circle: in front, to the left, to the right and behind, twenty-four tall retro cabinets standing shoulder to shoulder, all facing the centre, two metres away. Every cabinet has one large flat upright screen that is switched on and shows only plain bright white light with no picture. The cabinets are glossy black with thick glowing edge strips in hot magenta, electric cyan and violet. The room is lit only by neon: the walls and the low ceiling behind the cabinets are covered with glowing neon tubes, neon rings, neon arrows and abstract neon shapes in magenta, cyan, violet and acid green, with tangled hanging cables, pipes, ducts and stacked old monitors showing static between them. Purple and teal haze fills the air. The floor is rain-wet black concrete that mirrors all the neon in long coloured streaks. Deep blacks, very saturated coloured light on every surface, high contrast, sharp fine detail, cinematic. No people. No readable text, no letters, no numbers, no logos, no brand names, no characters from real games.",
   "earlier": [
     {
       "model": "marble-1.0-draft",
@@ -30,5 +85,6 @@
       "cost_credits": 1580,
       "note": "A darker hall with cabinets along the walls. Not shipped: its screens were too far from the visitor and too few faced the middle."
     }
-  ]
+  ],
+  "total_cost_credits": 9710
 }

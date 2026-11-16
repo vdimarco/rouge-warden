@@ -15,5 +15,12 @@ The den of machines whose screens are portals:
 - [x] Look at the real world with the portals on a captured frame (150,000 splats, `shots/hall-machines.jpg`). The portals sit on the machine screens. The frame is the cabinet art.
 - [x] Update the cabinet art, the switcher line, the Corridor piece, the Lab card and the date.
 - [x] Pass the static part of `qa/arcade/machines.mjs` for the cabinet.
+
+The bigger hall with zones:
+- [x] Make three more worlds for the zones (amber, green, violet); record prompts, ids and costs.
+- [x] Find and place the screens of each zone; `face-screens.py` for the Cottage Row world; `door-art.py` for the door pictures.
+- [x] Rules: `ZONES`, `zoneGames`, `doors`. Page: zone worlds that load on the way, rift doors, zone buttons and keys.
+- [x] Pass `qa/lab/riftwalk.test.mjs` (20 checks) and `qa/lab/riftwalk.e2e.mjs` (9 checks, with two real 150,000-splat zones).
+- [x] Look at each zone and a door in a captured frame of the real worlds (150,000 splats, `shots/zones.jpg`).
 - [ ] See the 500,000 and full-resolution files drawn with the portals (software WebGL was too slow for a frame at that size in this session).
 - [ ] Play on a real phone and a real graphics card (not possible in this session).

@@ -75,15 +75,15 @@ const data = JSON.parse(read(`public/lab/riftwalk/worlds/${zone.id}/screens.json
   const ways = doors(SCREENS), places = SCREENS.concat(ways), all = places.map(() => true), eye = { x: 0, y: data.hall.ground, z: 0 };
   assert.deepEqual(ways.map(d => d.step), [-1, 1]); assert(ways[0].heading < 0 && ways[1].heading > 0);
   ways.forEach((d, k) => {
-    assert(near(Math.hypot(d.centre[0], d.centre[2]), DOOR.distance, 1e-6) && DOOR.distance > WALK + 0.5); assert(d.centre[1] - d.height / 2 >= 0 && d.centre[1] - d.height / 2 < 0.2, 'the door stands on the floor');
-    assert(near(d.normal[0] * d.centre[0] + d.normal[2] * d.centre[2], -DOOR.distance, 1e-6), 'the door faces the middle');
+    assert(near(Math.hypot(d.centre[0], d.centre[2]), d.distance, 1e-6) && d.distance > WALK + 0.4 && d.distance < 5, 'the door is in the ring of machines: ' + d.distance); assert(d.width >= DOOR.least && d.width <= DOOR.most && d.height === DOOR.height); assert(d.centre[1] - d.height / 2 >= 0 && d.centre[1] - d.height / 2 < 0.2, 'the door stands on the floor');
+    assert(near(d.normal[0] * d.centre[0] + d.normal[2] * d.centre[2], -d.distance, 1e-6), 'the door faces the middle');
     for (const s of SCREENS) { const apart = Math.abs(Math.atan2(Math.sin(s.heading - d.heading), Math.cos(s.heading - d.heading))); assert(apart > 0.2, `${zone.id}: door ${k} is ${apart.toFixed(2)} rad from a machine`); }
     const v = [d.centre[0], d.centre[1] - eye.y, d.centre[2]], l = Math.hypot(...v), i = SCREENS.length + k;
     assert.equal(pick(eye, { x: v[0] / l, y: v[1] / l, z: v[2] / l }, places, all), i, 'a ray at the door picks it'); assert.equal(facing(d.heading, places, all), i);
   });
   let h = places[0].heading; const lap = new Set(); for (let k = 0; k < places.length; k++) { const i = neighbour(h, places, all, 1); lap.add(i); h = places[i].heading; }
   assert.equal(lap.size, places.length, 'a lap of the arrows stops at every machine and both doors');
-  pass(`${zone.id}: two rift doors stand clear of the machines`, { left: Math.round(ways[0].heading * 57.3), right: Math.round(ways[1].heading * 57.3) });
+  pass(`${zone.id}: two rift doors stand clear of the machines`, ways.map(d => ({ at: Math.round(d.heading * 57.3), away: +d.distance.toFixed(2), wide: +d.width.toFixed(2) })));
 }
 
 { // Picking, facing, turning, on the real screens.

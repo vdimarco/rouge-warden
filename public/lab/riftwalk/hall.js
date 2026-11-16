@@ -47,20 +47,24 @@ export function zoneGames(zoneId, games) {
   const zone = ZONES.find(z => z.id === zoneId); if (!zone) return [];
   return zone.groups.flatMap(id => gamesOf(id, games));
 }
-// The two rift doors of a zone. Each stands in the widest gap between machines on its side of the visitor: the left
-// door leads to the zone before (step -1) and the right door to the zone after (step 1). A door has the same fields as
-// a screen, so pick, facing and neighbour treat it as one more place. Its foot is on the floor.
-export const DOOR = { width: 0.95, height: 1.9, distance: 2.7 };
+// The two rift doors of a zone. Each stands in the widest gap between machines on its side of the visitor, in the ring
+// of machines: as far away as the two machines beside it, and as wide as the floor between their cabinets allows. The
+// left door leads to the zone before (step -1) and the right door to the zone after (step 1). A door has the same
+// fields as a screen, so pick, facing and neighbour treat it as one more place. Its foot is on the floor.
+export const DOOR = { least: 0.36, most: 0.95, height: 1.9, body: 1.6 };   // body: a cabinet is this many screen widths wide
 export function doors(screens) {
-  const turns = screens.map(p => wrap(p.heading)).sort((a, b) => a - b);
+  const ring = [...screens].sort((a, b) => wrap(a.heading) - wrap(b.heading));
   return [-1, 1].map(step => {
-    let heading = step * Math.PI / 2, widest = 0;
-    turns.forEach((a, i) => {
-      const next = i + 1 < turns.length ? turns[i + 1] : turns[0] + 2 * Math.PI, gap = next - a, mid = wrap(a + gap / 2);
-      if (Math.sign(mid) === step && Math.abs(mid) > 0.6 && Math.abs(mid) < 2.6 && gap > widest) { widest = gap; heading = mid; }
+    let heading = step * Math.PI / 2, widest = 0, distance = 2.7, width = DOOR.most;
+    ring.forEach((a, i) => {
+      const b = ring[(i + 1) % ring.length], gap = (wrap(b.heading) - wrap(a.heading) + 2 * Math.PI) % (2 * Math.PI) || 2 * Math.PI, mid = wrap(wrap(a.heading) + gap / 2);
+      if (Math.sign(mid) === step && Math.abs(mid) > 0.6 && Math.abs(mid) < 2.6 && gap > widest) {
+        widest = gap; heading = mid; distance = (a.distance + b.distance) / 2;
+        width = Math.max(DOOR.least, Math.min(DOOR.most, distance * gap - DOOR.body * (a.width + b.width) / 2));
+      }
     });
     const d = direction(heading);
-    return { step, heading, distance: DOOR.distance, width: DOOR.width, height: DOOR.height, centre: [d.x * DOOR.distance, DOOR.height / 2 + 0.05, d.z * DOOR.distance], right: [-d.z, 0, d.x], up: [0, 1, 0], normal: [-d.x, 0, -d.z] };
+    return { step, heading, distance, width, height: DOOR.height, centre: [d.x * distance, DOOR.height / 2 + 0.05, d.z * distance], right: [-d.z, 0, d.x], up: [0, 1, 0], normal: [-d.x, 0, -d.z] };
   });
 }
 
