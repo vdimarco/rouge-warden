@@ -1,4 +1,4 @@
-"""Makes Riftwalk's cabinet art from one captured frame of the game.
+"""Makes Riftwalk's cabinet art from one captured frame of the hall.
 Writes public/arcade/riftwalk.webp (480 by 396, the homepage cabinet and the switcher) and puts a 448 by 370 WebP
 into the ART list of public/corridor/index.html as `riftwalk`, after `ledger`.
 Usage: python3 games/riftwalk/tools/cabinet-art.py <frame.png>   (needs Pillow)"""

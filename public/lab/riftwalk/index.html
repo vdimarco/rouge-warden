@@ -4,58 +4,92 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
 <meta name="robots" content="noindex">
-<meta name="theme-color" content="#0b1f26">
+<meta name="theme-color" content="#0a0612">
 <title>Riftwalk · The Lab</title>
 <link rel="icon" href="/favicon.ico">
 <link rel="stylesheet" href="/lab/kit/lab.css">
 <style>
+  :root { --neon: #ff4fd8; --cyan: #5ff2ff; }
+  html, body { background: #0a0612; }
   canvas.view { touch-action: none; cursor: grab; }
   canvas.view.look { cursor: grabbing; }
-  .hud span b { color: var(--gold); }
-  /* The line that says what to do next. It sits under the HUD, clear of the walk pad. */
-  .hint { position: fixed; left: 50%; top: calc(var(--sat) + 92px); margin: 0; transform: translateX(-50%); width: max-content; max-width: calc(100vw - 32px); padding: 8px 16px; border-radius: 22px; background: var(--panel); border: 1px solid var(--line); font: 600 15px/1.3 var(--body); text-align: center; pointer-events: none; z-index: 4; }
-  .hint[hidden] { display: none; }
-  /* The walk pad: touch screens only. Keys do the same on a desktop. */
-  .pad { position: fixed; left: calc(env(safe-area-inset-left, 0px) + 18px); bottom: calc(var(--sab) + 18px); width: 124px; height: 124px; border-radius: 50%; background: rgba(8, 26, 32, 0.55); border: 1px solid var(--line); z-index: 4; touch-action: none; }
-  .pad[hidden] { display: none; }
-  .pad i { position: absolute; left: 50%; top: 50%; width: 52px; height: 52px; margin: -26px 0 0 -26px; border-radius: 50%; background: var(--gold); opacity: 0.85; pointer-events: none; }
-  .pad small { position: absolute; left: 0; right: 0; top: -22px; text-align: center; color: var(--muted); font: 600 12px/1 var(--body); pointer-events: none; }
-  .load { position: fixed; left: 50%; bottom: calc(var(--sab) + 28px); transform: translateX(-50%); color: var(--muted); font: 600 14px/1 var(--body); z-index: 6; pointer-events: none; }
+  canvas.view.aim { cursor: pointer; }
+  /* The portal in the middle of the view: its name, a line about it, and what a press does. */
+  .target { position: fixed; left: 50%; bottom: calc(var(--sab) + 84px); transform: translateX(-50%); width: max-content; max-width: calc(100vw - 32px); padding: 10px 18px 11px; border-radius: 16px; background: rgba(10, 6, 18, 0.86); border: 1px solid var(--tint, var(--cyan)); box-shadow: 0 0 22px color-mix(in srgb, var(--tint, var(--cyan)) 45%, transparent); text-align: center; pointer-events: none; z-index: 4; }
+  .target[hidden] { display: none; }
+  .target b { display: block; font: 700 21px/1.15 var(--title); color: #fff; }
+  .target span { display: block; color: var(--muted); font: 500 14px/1.3 var(--body); margin-top: 2px; }
+  .target i { display: block; font: 700 12px/1 var(--body); font-style: normal; letter-spacing: 0.08em; text-transform: uppercase; color: var(--tint, var(--cyan)); margin-top: 7px; }
+  /* Turn to the next portal, go back a ring, and go in: big enough for a thumb. */
+  .keys { position: fixed; left: 0; right: 0; bottom: calc(var(--sab) + 16px); display: flex; justify-content: center; gap: 10px; z-index: 5; pointer-events: none; }
+  .keys[hidden] { display: none; }
+  .keys button { pointer-events: auto; min-width: 56px; height: 52px; padding: 0 16px; border-radius: 14px; border: 1px solid var(--line); background: rgba(10, 6, 18, 0.86); color: var(--ink); font: 700 17px/1 var(--body); cursor: pointer; }
+  .keys button.go { background: var(--gold); color: #1d1606; border-color: transparent; min-width: 112px; }
+  .keys button[hidden] { display: none; }
+  /* The zones of the hall: one button for each. A button takes the visitor to that zone. */
+  .groups { position: fixed; left: 0; right: 0; top: calc(var(--sat) + 48px); display: flex; gap: 8px; justify-content: safe center; padding: 0 12px; overflow-x: auto; scrollbar-width: none; z-index: 5; }
+  .groups::-webkit-scrollbar { display: none; }
+  .groups[hidden] { display: none; }
+  .groups button { flex: none; height: 44px; min-width: 44px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--line); background: rgba(10, 6, 18, 0.86); color: var(--ink); font: 700 14px/1 var(--body); cursor: pointer; white-space: nowrap; }
+  .groups button[aria-pressed="true"] { background: var(--tint, var(--gold)); color: #14100a; border-color: transparent; box-shadow: 0 0 16px color-mix(in srgb, var(--tint, var(--gold)) 60%, transparent); }
+  /* The zone's name, large for a moment on the way in. */
+  .zone { position: fixed; left: 0; right: 0; top: 30%; text-align: center; font: 700 clamp(34px, 8vw, 84px)/1 var(--title); letter-spacing: 0.04em; text-transform: uppercase; color: #fff; text-shadow: 0 0 18px var(--zone, var(--neon)), 0 0 46px var(--zone, var(--neon)); opacity: 0; pointer-events: none; z-index: 4; }
+  .zone.show { animation: zone-in 2.2s ease-out both; }
+  @keyframes zone-in { 0% { opacity: 0; transform: scale(1.12); } 14% { opacity: 1; transform: none; } 70% { opacity: 1; } 100% { opacity: 0; } }
+  @media (prefers-reduced-motion: reduce) { @keyframes zone-in { 0% { opacity: 1; } 80% { opacity: 1; } 100% { opacity: 0; } } }
+  .load { position: fixed; left: 50%; bottom: calc(var(--sab) + 28px); transform: translateX(-50%); color: var(--muted); font: 600 14px/1 var(--body); z-index: 6; pointer-events: none; text-align: center; width: max-content; max-width: calc(100vw - 32px); }
   .load[hidden] { display: none; }
+  /* The flash that covers the view while a game opens. */
+  /* The light that covers the view on the way into a game or a zone: it blooms from the portal in the middle of the view,
+     and on arrival it closes back to a point. */
+  .flash { position: fixed; inset: 0; background: radial-gradient(circle at 50% 46%, #fff, var(--tint, var(--cyan)) 45%, color-mix(in srgb, var(--tint, var(--cyan)) 35%, #0a0612)); clip-path: circle(0% at 50% 46%); pointer-events: none; z-index: 8; transition: clip-path 0.55s cubic-bezier(0.5, 0, 0.9, 0.4); }
+  .flash.on { clip-path: circle(125% at 50% 46%); }
   .card .credit { color: var(--muted); font-size: 13px; margin: 12px 0 0; }
   .card button:disabled { opacity: 0.5; cursor: default; }
-  @media (max-width: 430px) { .hud { gap: 5px; } .hud span { padding: 5px 8px; font-size: 13px; } }
-  @media (max-height: 520px) { .pad { width: 104px; height: 104px; } }
+  /* Every game as a plain link: read by screen readers always, and shown to everyone when 3D graphics are missing. */
+  .list { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .list.shown { position: fixed; inset: calc(var(--sat) + 56px) 0 0 0; width: auto; height: auto; overflow: auto; clip-path: none; white-space: normal; padding: 8px 20px 40px; z-index: 7; background: #0a0612; }
+  .list h2 { font: 700 20px/1.2 var(--title); color: var(--gold); margin: 18px 0 6px; }
+  .list ul { margin: 0; padding-left: 20px; } .list li { margin: 6px 0; } .list a { color: var(--ink); }
+  @media (max-width: 430px) { .target b { font-size: 18px; } .keys { gap: 7px; } .keys button { padding: 0 12px; } }
+  /* A short window: the card is one compact block, so it stays under the portal in front. */
+  @media (max-height: 640px) { .target { bottom: calc(var(--sab) + 76px); padding: 6px 14px 7px; } .target b { font-size: 17px; } .target span { font-size: 13px; } .target i { display: none; } }
+  @media (prefers-reduced-motion: reduce) { .flash { transition: none; } }
 </style>
 <script type="importmap">{"imports":{"three":"/vr/lib/three.module.min.js","three/addons/postprocessing/Pass.js":"/lab/riftwalk/lib/Pass.js","@sparkjsdev/spark":"/lab/riftwalk/lib/spark.module.min.js"}}</script>
 </head>
 <body class="toy">
-<canvas class="view" id="view" aria-label="Riftwalk: a view of a painted world. Drag to look around."></canvas>
+<canvas class="view" id="view" aria-label="Riftwalk: a neon alley at night. Each storefront is a portal to a world for one game category, and in that world each game floats in a portal frame that launches it."></canvas>
 <nav class="labbar"><a class="back" href="/lab/">◀ Lab</a><button type="button" id="menu" data-switch>Games</button></nav>
-<div class="hud" id="hud" hidden><span id="hWorld">Cottage</span><span id="hWisps">Wisps <b>0</b> of 3</span><span id="hTime">0:00</span></div>
-<p class="hint" id="hint" hidden role="status"></p>
-<div class="pad ui" id="pad" hidden aria-label="Walk"><small>Walk</small><i id="nub"></i></div>
-<p class="load" id="load">Loading the first world…</p>
+<div class="groups ui" id="groups" hidden role="group" aria-label="Storefronts of the alley"></div>
+<div class="target" id="target" hidden role="status" aria-live="polite"><b id="tTitle"></b><span id="tSub"></span><i id="tDo"></i></div>
+<div class="keys ui" id="keys" hidden>
+  <button type="button" id="kBack" hidden>Alley</button>
+  <button type="button" id="kRoom" hidden>Go in</button>
+  <button type="button" id="kPrev" aria-label="Turn to the portal on the left">◀</button>
+  <button type="button" id="kMore" hidden>More</button>
+  <button type="button" id="kGo" class="go">Play</button>
+  <button type="button" id="kNext" aria-label="Turn to the portal on the right">▶</button>
+</div>
+<div class="zone" id="zone" aria-hidden="true"></div>
+<p class="load" id="load">Loading the alley…</p>
+<div class="flash" id="flash"></div>
 <section class="card start" id="start">
   <h1>Riftwalk</h1>
-  <p class="pitch">Four painted worlds and a way between them. Find three wisps in each world to open its rift, then step through.</p>
+  <p class="pitch">The arcade as a neon alley at night. Each storefront is a portal to a world for one game category: a meadow, a temple, a diner, a space station, the Great Wall and an arcade hall. In each world the games float in portal frames.</p>
   <ul class="how">
-    <li><b>Look:</b> drag the view.</li>
-    <li><b>Wisps:</b> tap or click a wisp to catch it.</li>
-    <li><b>Rift:</b> tap or click the open rift to go through, or walk in.</li>
-    <li><b>Walk:</b> W A S D or the arrow keys. On a touch screen, use the pad.</li>
+    <li><b>Look:</b> drag the view, or use ◀ and ▶ to turn from portal to portal.</li>
+    <li><b>Storefronts:</b> the buttons at the top, or the up and down arrow keys, take you to a shop.</li>
+    <li><b>Go in:</b> tap the shop's door, or press Enter or R. The portal behind you, the Alley button or Esc brings you back.</li>
+    <li><b>Play:</b> tap or click a game's frame, or press Enter.</li>
+    <li><b>Walk:</b> W A S D, along the two streets.</li>
   </ul>
   <button class="go" type="button" id="go" disabled>Loading…</button>
-  <p class="credit">Worlds made with Viggle PINOC. Drawn with Spark by World Labs.</p>
+  <p class="credit">The alley and the worlds are Gaussian splat worlds made with Marble by World Labs, and their Spark library draws them.</p>
 </section>
-<section class="card end" id="end" hidden>
-  <h2>Home again</h2>
-  <p class="line" id="endLine"></p>
-  <dl><dt>Your time</dt><dd id="endTime"></dd><dt>Best time</dt><dd id="endBest"></dd></dl>
-  <button type="button" id="again">Walk again</button>
-</section>
+<nav class="list" id="list" aria-label="All games, as links"></nav>
+<script src="/arcade/switch.js"></script>
 <script type="module" src="./main.js"></script>
-<script src="/arcade/switch.js" defer></script>
 <script src="/arcade/analytics.js" data-game="riftwalk"></script>
 </body>
 </html>
