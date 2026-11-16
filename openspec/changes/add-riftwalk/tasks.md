@@ -53,6 +53,14 @@ One hall with Atlas:
 - [x] Each ring opens its zone's own room: the six earlier Marble worlds come back as rooms, with a ring back to the hall. Tests: 7 rule checks and 9 browser checks pass; a real room and the rings are seen in `shots/rings-and-room.jpg`.
 - [x] Games in the homepage order along each cluster; as many hall machines as games in each zone; rooms for the three large zones only, matched by size.
 - [x] Scenery rooms: `frameRing()` and floating portal frames for a room with no machines; GTA is the first, in the brick hall world. Tests: 7 rule checks and 9 browser checks pass; a frame over the real world is in `shots/frame-room.jpg`.
-- [ ] Make scenery rooms from the user's five Marble worlds. The splat files are not in the repository, and the Marble web app's files could not be read in this session.
-- [ ] See the whole world drawn with the portals. Software WebGL did not finish one frame of 2,000,000 splats in 25 minutes.
+
+The alley of storefront portals (the user's six Marble worlds):
+- [x] `scenery-room.py`: read a Marble app export, write the three world files, the door picture and the world's numbers.
+- [x] Five worlds behind the doors: meadow (Cottage), temple (Action), Great Wall (Strategy), diner (GTA), space station (Lab). The brick hall moves to ASCII Scenes.
+- [x] The Neon Alley as the main world: scale from its floor, two crossing streets to walk, six storefront doors measured from the splats.
+- [x] Page: box doors, room loading for both kinds of file, arrows from door to door, no stop at a door seen from behind, 8 frames a page.
+- [x] Rewrite `qa/lab/riftwalk.test.mjs` (6 checks) and `qa/lab/riftwalk.e2e.mjs` (10 checks, with the real alley file loaded). Both pass.
+- [x] See the alley with its doors (`shots/alley.jpg`, a 600,000-splat copy) and the meadow world with its frames (`shots/worlds.jpg`, 500,000 splats) drawn by the page.
+- [x] New cabinet art and wording in the homepage, the switcher, the Corridor and the Lab page.
+- [ ] See the alley at its full 2,000,000 splats. Software WebGL is too slow for it.
 - [ ] Play on a real phone and a real graphics card (not possible in this session).

@@ -59,33 +59,33 @@
 <script type="importmap">{"imports":{"three":"/vr/lib/three.module.min.js","three/addons/postprocessing/Pass.js":"/lab/riftwalk/lib/Pass.js","@sparkjsdev/spark":"/lab/riftwalk/lib/spark.module.min.js"}}</script>
 </head>
 <body class="toy">
-<canvas class="view" id="view" aria-label="Riftwalk: one dark neon arcade hall with a cluster of machines for each game category. Each machine's screen is a portal that launches a game, and a rift ring over each large category opens into a room of that category's machines."></canvas>
+<canvas class="view" id="view" aria-label="Riftwalk: a neon alley at night. Each storefront is a portal to a world for one game category, and in that world each game floats in a portal frame that launches it."></canvas>
 <nav class="labbar"><a class="back" href="/lab/">◀ Lab</a><button type="button" id="menu" data-switch>Games</button></nav>
-<div class="groups ui" id="groups" hidden role="group" aria-label="Zones of the hall"></div>
+<div class="groups ui" id="groups" hidden role="group" aria-label="Storefronts of the alley"></div>
 <div class="target" id="target" hidden role="status" aria-live="polite"><b id="tTitle"></b><span id="tSub"></span><i id="tDo"></i></div>
 <div class="keys ui" id="keys" hidden>
-  <button type="button" id="kBack" hidden>Hall</button>
-  <button type="button" id="kRoom" hidden>Room</button>
-  <button type="button" id="kPrev" aria-label="Turn to the machine on the left">◀</button>
+  <button type="button" id="kBack" hidden>Alley</button>
+  <button type="button" id="kRoom" hidden>Go in</button>
+  <button type="button" id="kPrev" aria-label="Turn to the portal on the left">◀</button>
   <button type="button" id="kMore" hidden>More</button>
   <button type="button" id="kGo" class="go">Play</button>
-  <button type="button" id="kNext" aria-label="Turn to the machine on the right">▶</button>
+  <button type="button" id="kNext" aria-label="Turn to the portal on the right">▶</button>
 </div>
 <div class="zone" id="zone" aria-hidden="true"></div>
-<p class="load" id="load">Loading the hall…</p>
+<p class="load" id="load">Loading the alley…</p>
 <div class="flash" id="flash"></div>
 <section class="card start" id="start">
   <h1>Riftwalk</h1>
-  <p class="pitch">The arcade as one dark neon hall. Each game category has its own cluster of machines, and every machine's screen is a portal to one of our games. Each category has as many machines as it has games, in the order of the arcade's rows. The three large categories also have a room of their own behind a rift ring, and GTA has a brick hall where its game floats in a portal frame.</p>
+  <p class="pitch">The arcade as a neon alley at night. Each storefront is a portal to a world for one game category: a meadow, a temple, a diner, a space station, the Great Wall and an arcade hall. In each world the games float in portal frames.</p>
   <ul class="how">
-    <li><b>Look:</b> drag the view, or use ◀ and ▶.</li>
-    <li><b>Zones:</b> the buttons at the top, or the up and down arrow keys, glide you to a cluster.</li>
-    <li><b>Rooms:</b> tap a rift ring, or use the Room button or R, to go into a large category's own room. Its ring, the Hall button or Esc brings you back.</li>
-    <li><b>Play:</b> tap or click a lit screen, or press Enter.</li>
-    <li><b>Walk:</b> W A S D, anywhere on the open floor.</li>
+    <li><b>Look:</b> drag the view, or use ◀ and ▶ to turn from portal to portal.</li>
+    <li><b>Storefronts:</b> the buttons at the top, or the up and down arrow keys, take you to a shop.</li>
+    <li><b>Go in:</b> tap the shop's door, or press Enter or R. The portal behind you, the Alley button or Esc brings you back.</li>
+    <li><b>Play:</b> tap or click a game's frame, or press Enter.</li>
+    <li><b>Walk:</b> W A S D, along the two streets.</li>
   </ul>
   <button class="go" type="button" id="go" disabled>Loading…</button>
-  <p class="credit">The hall is a Gaussian splat world made with Atlas by World Labs, the rooms are worlds made with Marble by World Labs, and their Spark library draws them.</p>
+  <p class="credit">The alley and the worlds are Gaussian splat worlds made with Marble by World Labs, and their Spark library draws them.</p>
 </section>
 <nav class="list" id="list" aria-label="All games, as links"></nav>
 <script src="/arcade/switch.js"></script>

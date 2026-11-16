@@ -7,6 +7,41 @@
 - "it looks awkward clean it up make it more natural and differentiated", "magically"
 - "The spacing between the machines doesn't make any sense. And why is this rift like wedged there? Like it should be its own little section where there's machines next to each other and they do their thing. And then there's a rift above it or beside it or behind it. ... there should be clusters"
 - "can we try atlas?", then "go ahead with the one hall plan"
+- "floating portal frames, you choose the categories"
+- With the Neon Alley world: "I really like this one, can we start with it as the main world and each storefront is a portal"
+
+## The present design: an alley of storefront portals
+The user gave six Marble worlds as splat files. The Neon Alley is the main world. The other five, and one world from an earlier version, are the worlds behind its storefronts. The Atlas hall and the rooms with machines are out of the page; the sections under "Earlier designs" tell how they were made.
+
+| Zone | Storefront in the alley | World behind the door | Games |
+| --- | --- | --- | --- |
+| Cottage | north-west corner, lit shutter under the long cyan sign | Fantasy Meadow | 8 |
+| Action | west side of the alley, warm lit door | Ancient Temple of Sacred Statues | 11 |
+| ASCII Scenes | east side of the alley, red shutter | brick neon hall (earlier Marble API world) | 2 |
+| Strategy | north-east corner, purple sign | Great Wall at sunset | 3 |
+| GTA | south-east corner, cyan sign and lit window | Retro Diner | 1 |
+| Lab | south-west, brick door under the cyan sign | Futuristic Space Station | 19 |
+
+Why these pairs: the meadow is the cottage look, Olympus leads the Action row and the temple is a hall of statues, the Great Wall is a fortification, the diner is a city interior for GTA Montréal, the station is a laboratory, and the brick hall with cabinets at its walls suits the two text scenes.
+
+### The alley
+- The file is a Marble app export: 2,000,000 splats, y up. It is not metric. The floor is 0.5415 units under the origin, so a scale of 2.678 puts the eye at 1.45 m. Then the alley is 4.3 m wide and a shop door is 2.1 m high, which reads right.
+- The world is a crossroads: a narrow alley along z and a street along x. The walking floor is two boxes that cross (`bounds.boxes`), and `walk()` ends a step in the nearer box, so the visitor cannot go through a corner building.
+- Finding the storefronts: `games/riftwalk/tools/scenery-room.py` has the splat reader. A scratch script drew eight views from the origin as points with a depth map and a top-down map. I chose six shop fronts in the views. The points of each front give its wall (the walls follow the two axes), its place along the wall and its top. Each door is a box 2.05 m high and at most 1.9 m wide, on the ground, 6 cm in front of the wall. The result is `worlds/hall/screens.json`.
+- A door is the same portal quad as before with a box shape (`ringPlace()` gives a box when the ring has a width and a height). It shows `door.webp`, a picture of the world behind it, under the slow swirl and stars of a rift.
+- A station is the place on the street 3 to 4 m in front of a door. The arrows turn from door to door. A door seen from behind is not a stop.
+- No source was adapted for the storefront layout or the point drawings. The frame and door quads draw after the splats, like every portal of this page.
+
+### The worlds
+- Five files are Marble app exports: metric, y up, with the floor at y = 0 (the Great Wall stands on a ridge, so ground goes far down around it). The page sets the eye 1.45 m over the origin. `turn` is the heading the visitor faces on arrival: 180 degrees for the Great Wall, so the gate tower is ahead.
+- `scenery-room.py` writes each world's `full.spz`, a 500,000 and a 150,000-splat copy (a random pick with larger splats to close the holes), `door.webp` (a point drawing from eye height with a median filter) and `screens.json`. The diner has 500,000 splats, so it has no larger file.
+- The brick hall is an API world: y down, with Marble's own scale and ground numbers. `flip` in a world's data tells the two kinds apart.
+- Games are floating frames (`frameRing()`): the first straight ahead, the next 0.36 rad to the right each. More than 8 frames reach behind the visitor and crowd the way back, so a page holds 8 and More shows the next page. Action has 2 pages and the Lab 3.
+
+### Size
+`worlds/` is about 215 MB: the alley 29 MB, and six worlds of 10 to 39 MB each.
+
+## Earlier designs
 
 ## The hall
 The hall is one Gaussian splat world: a dark steel room 8 m wide and 16 m long, with a wet black floor. Arcade cabinets stand shoulder to shoulder in clusters against all four walls, and each cluster has its own neon colour. Neon rings hang on the walls above the clusters. The world has 2,000,000 splats in one 30 MB file.
@@ -103,6 +138,7 @@ The visitor moves to a zone at once. There are no motes or sparks, the edge hold
 
 ## Not done, and known limits
 - No sound.
-- The world loads as one 30 MB file. There is no small first file.
-- Atlas put a wall with clusters near the first camera's place. The first view saw through that place, so the entrance end can show ghosted surfaces.
-- The Atlas docs list no price for the image and view steps, and the API reports no cost.
+- The alley loads as one 29 MB file. There is no small first file.
+- The storefront doors were placed from point drawings and checked in one drawn frame of a 600,000-splat copy (`shots/alley.jpg`). A door can be a little off its shop front.
+- The 500,000 and 150,000-splat copies of the worlds are random picks, so they are softer than Marble's own small files.
+- The Atlas hall (5,000 credits) is no longer in the page. Its file is in the git history of this branch.

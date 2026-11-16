@@ -63,7 +63,8 @@ const roomData = id => ROOMS[id] ? Promise.resolve(ROOMS[id]) : fetch(`./worlds/
 async function loadRoom(id, quality) {
   const response = await fetch(`./worlds/rooms/${id}/${quality}.spz`); if (!response.ok) throw new Error('Room file missing: ' + id);
   const mesh = new SplatMesh({ fileBytes: new Uint8Array(await response.arrayBuffer()) }); await mesh.initialized;
-  const h = ROOMS[id].hall; mesh.quaternion.set(1, 0, 0, 0); mesh.scale.setScalar(h.scale); mesh.position.set(0, h.ground, 0); return mesh;
+  // An API world has y down and turns half a turn about x. An app export has y up, and turns about y so the visitor faces its best view.
+  const h = ROOMS[id].hall; if (h.flip === false) mesh.rotation.y = h.turn || 0; else mesh.quaternion.set(1, 0, 0, 0); mesh.scale.setScalar(h.scale); mesh.position.set(0, h.ground, 0); return mesh;
 }
 function showWorld(mesh) { if (hall === mesh) return; if (hall) { scene.remove(hall); if (hall !== hallMesh) hall.dispose?.(); } hall = mesh; if (mesh) scene.add(mesh); }
 
@@ -87,12 +88,12 @@ const LOOKS = {
 const VERTEX = `varying vec2 vUv; void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`;
 const FRAGMENT = `
   varying vec2 vUv; uniform sampler2D uMap; uniform float uHasMap; uniform float uAspect; uniform vec3 uColor; uniform vec3 uZone; uniform vec2 uHalf; uniform vec2 uQuad;
-  uniform float uLit; uniform float uTime; uniform float uHot; uniform float uFlow; uniform float uSeed; uniform float uRadius; uniform float uWave; uniform float uScan; uniform float uDoor;
+  uniform float uLit; uniform float uTime; uniform float uHot; uniform float uFlow; uniform float uSeed; uniform float uRadius; uniform float uWave; uniform float uScan; uniform float uDoor; uniform float uBox;
   float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
   float noise(vec2 p) { vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f); return mix(mix(hash(i), hash(i + vec2(1, 0)), f.x), mix(hash(i + vec2(0, 1)), hash(i + vec2(1, 1)), f.x), f.y); }
   // Under 0 inside the shape. A screen is a box with round corners. A rift ring is a disc.
   float shape(vec2 p) {
-    if (uDoor > 0.5) return length(p) - uHalf.x;
+    if (uDoor > 0.5 && uBox < 0.5) return length(p) - uHalf.x;
     vec2 q = abs(p) - uHalf + uRadius; return length(max(q, 0.0)) + min(max(q.x, q.y), 0.0) - uRadius;
   }
   void main() {
@@ -179,7 +180,7 @@ const flat = { transparent: true, depthWrite: false, depthTest: false };
 function makePortal(place, index, zone) {
   const look = LOOKS[zone.id] || LOOKS.action;
   const group = new THREE.Group(), half = new THREE.Vector2(place.width / 2 * GROW, place.height / 2 * GROW), size = new THREE.Vector2(half.x + MARGIN * (place.ring ? 3 : 1), half.y + MARGIN * (place.ring ? 3 : 1));
-  const uniforms = { uMap: { value: null }, uHasMap: { value: 0 }, uAspect: { value: 1 }, uColor: { value: new THREE.Color('#5ff2ff') }, uHalf: { value: half }, uQuad: { value: size }, uLit: { value: 0 }, uTime: { value: 0 }, uHot: { value: 0 }, uSeed: { value: (index * 0.618) % 1 }, uFlow: { value: 0 }, uZone: { value: new THREE.Color(zone.color) }, uRadius: { value: look.radius }, uWave: { value: place.ring ? 0.03 : look.wave }, uScan: { value: look.scan }, uDoor: { value: place.ring ? 1 : 0 } };
+  const uniforms = { uMap: { value: null }, uHasMap: { value: 0 }, uAspect: { value: 1 }, uColor: { value: new THREE.Color('#5ff2ff') }, uHalf: { value: half }, uQuad: { value: size }, uLit: { value: 0 }, uTime: { value: 0 }, uHot: { value: 0 }, uSeed: { value: (index * 0.618) % 1 }, uFlow: { value: 0 }, uZone: { value: new THREE.Color(zone.color) }, uRadius: { value: look.radius }, uWave: { value: place.ring ? 0.03 : look.wave }, uScan: { value: look.scan }, uDoor: { value: place.ring ? 1 : 0 }, uBox: { value: place.box ? 1 : 0 } };
   const face = new THREE.Mesh(quad, new THREE.ShaderMaterial({ uniforms, vertexShader: VERTEX, fragmentShader: FRAGMENT, ...flat, premultipliedAlpha: true }));
   face.scale.set(size.x, size.y, 1); face.renderOrder = 16; face.frustumCulled = false; group.add(face);
   const label = new THREE.Mesh(labelGeometry, new THREE.MeshBasicMaterial({ ...flat, opacity: 0 })); label.renderOrder = 20; label.frustumCulled = false; label.visible = false;
@@ -223,7 +224,7 @@ function setPage(page) { const i = visit.zone, count = pagesIn(i); visit.page[i]
 function mark() {
   const zone = ZONES[visit.zone], count = pagesIn(visit.zone);
   for (const b of groupsBar.children) { const on = b.dataset.zone === zone.id; b.setAttribute('aria-pressed', String(on)); if (on && visit.phase !== 'title') b.scrollIntoView({ block: 'nearest', inline: 'center', behavior: reduced ? 'auto' : 'smooth' }); }
-  $('kBack').hidden = room === null; $('kRoom').hidden = room !== null || !STATIONS[visit.zone]?.room; $('kRoom').textContent = ZONES[visit.zone].label + ' room'; $('kMore').hidden = count < 2; $('kMore').textContent = `More ${visit.page[visit.zone] + 1}/${count}`;
+  $('kBack').hidden = room === null; $('kRoom').hidden = room !== null || !STATIONS[visit.zone]?.room; $('kRoom').textContent = 'Enter ' + ZONES[visit.zone].label; $('kMore').hidden = count < 2; $('kMore').textContent = `More ${visit.page[visit.zone] + 1}/${count}`;
 }
 function enter(index) { if (room !== null || index === visit.zone) return; visit.zone = index; mark(); banner(ZONES[index]); }
 // Going to another zone: the visitor glides across the hall to that zone's station and turns to its machines.
@@ -246,16 +247,16 @@ function buildHall() {
   const zoneOf = id => ZONES.find(z => z.id === id);
   portals = PLACES.map((place, i) => makePortal(place, i, place.ring ? ZONES[RINGS[i - SCREENS.length]] : zoneOf(place.zone)));
   ZONES.forEach((z, i) => { visit.page[i] = 0; fill(i); });
-  RINGS.forEach((i, k) => { const z = ZONES[i]; show(portals[SCREENS.length + k], { zone: i, id: 'ring-' + z.id, title: z.label, sub: `${gamesIn(i).length} ${gamesIn(i).length === 1 ? 'game' : 'games'} · a room of its own`, url: null, art: `./worlds/rooms/${z.id}/door.webp`, color: z.color }); });
+  RINGS.forEach((i, k) => { const z = ZONES[i]; show(portals[SCREENS.length + k], { zone: i, id: 'ring-' + z.id, title: z.label, sub: `${gamesIn(i).length} ${gamesIn(i).length === 1 ? 'game' : 'games'} · a world of its own`, url: null, art: `./worlds/rooms/${z.id}/door.webp`, color: z.color }); });
   if (!reduced) ZONES.forEach((z, i) => { const at = new THREE.Group(); at.position.set(STATIONS[i].station[0], 0, STATIONS[i].station[1]); scene.add(at); air.push(motes(touch ? 26 : 44, z.color, false, null, at)); const k = RINGS.indexOf(i); if (k >= 0) { const p = portals[SCREENS.length + k]; air.push(motes(30, z.color, true, p.uniforms.uHalf.value, p.group)); } });
 }
 // The places of a room: its machines, with the zone's games from the front machine outward, and the ring back to the hall.
 function buildRoom(index) {
   clearPlaces(); room = index; const zone = ZONES[index], data = ROOMS[zone.id];
   // A scenery room has no machines: its games hang as floating frames, one for each game.
-  HALL = { eye: data.hall.ground, reach: 1, frames: !!data.hall.frames }; SCREENS = (HALL.frames ? frameRing(gamesIn(index).length, HALL.eye) : data.screens).map(s => ({ ...s, zone: zone.id })); PLACES = SCREENS.concat([exitRing(SCREENS)]); camera.position.set(0, HALL.eye, 0);
+  HALL = { eye: data.hall.eye ?? data.hall.ground, reach: 1, frames: !!data.hall.frames }; SCREENS = (HALL.frames ? frameRing(gamesIn(index).length, HALL.eye) : data.screens).map(s => ({ ...s, zone: zone.id })); PLACES = SCREENS.concat([exitRing(SCREENS)]); camera.position.set(0, HALL.eye, 0);
   portals = PLACES.map((place, i) => makePortal(place, i, zone)); visit.page[index] = 0; fill(index);
-  show(portals[SCREENS.length], { exit: true, zone: index, id: 'ring-hall', title: 'The hall', sub: 'Back to the hall of all the games', url: null, art: null, color: '#ffffff' });
+  show(portals[SCREENS.length], { exit: true, zone: index, id: 'ring-hall', title: 'The alley', sub: 'Back to the alley of all the games', url: null, art: null, color: '#ffffff' });
   if (!reduced) { air.push(motes(touch ? 50 : 90, zone.color, false)); const p = portals[SCREENS.length]; air.push(motes(30, '#ffffff', true, p.uniforms.uHalf.value, p.group)); }
 }
 // Through a ring into a zone's room: the view fills with the zone's light, the room's world loads, and the visitor
@@ -299,7 +300,7 @@ function paint() {
   target.hidden = false; $('kGo').disabled = false; target.style.setProperty('--tint', p.game.color);
   $('tTitle').textContent = p.game.title; $('tSub').textContent = p.game.sub; $('tSub').hidden = !p.game.sub;
   $('kGo').textContent = p.door ? 'Go' : 'Play';
-  $('tDo').textContent = p.door ? (p.game.exit ? (touch ? 'Tap the ring to go back' : 'Click the ring or press Enter to go back') : touch ? 'Tap the ring to go in' : 'Click the ring or press Enter to go in') : touch ? 'Tap the screen to play' : 'Click the screen or press Enter to play';
+  $('tDo').textContent = p.door ? (p.game.exit ? (touch ? 'Tap the portal to go back' : 'Click the portal or press Enter to go back') : touch ? 'Tap the door to go in' : 'Click the door or press Enter to go in') : touch ? 'Tap the frame to play' : 'Click the frame or press Enter to play';
 }
 
 /* ---------------- looking and walking ---------------- */
@@ -313,10 +314,11 @@ function lookRay(clientX, clientY) {
 const portalAt = (x, y) => visit.phase === 'hall' ? pick(...lookRay(x, y), PLACES, lit(), touch ? 1.35 : 1.08) : -1;
 // The machines and rings as the visitor sees them from where they stand: each with its heading, its distance over the
 // floor and the look angle up to it.
-const seen = () => PLACES.map(p => { const dx = p.centre[0] - frame.position.x, dz = p.centre[2] - frame.position.z, distance = Math.hypot(dx, dz); return { ...p, heading: Math.atan2(dx, -dz), distance, pitch: Math.atan2(p.centre[1] - HALL.eye, distance) }; });
+const seen = () => PLACES.map(p => { const dx = p.centre[0] - frame.position.x, dz = p.centre[2] - frame.position.z, distance = Math.hypot(dx, dz); // front: the visitor is on the side the place faces. A door seen from behind is not a stop and has no name card.
+  return { ...p, heading: Math.atan2(dx, -dz), distance, pitch: Math.atan2(p.centre[1] - HALL.eye, distance), front: -(dx * p.normal[0] + dz * p.normal[2]) > 0.25 * distance }; });
 // The arrows start from the place in view, so one press moves on to the next place. In the hall they stop at machines
 // only: a ring hangs right over its machines, and the Room button and the R key open the room of the zone.
-function turn(step) { if (visit.phase !== 'hall' || visit.glide) return; const now = seen(), stops = lit().map((on, k) => on && !(room === null && portals[k].door)), i = neighbour(visit.turnTo ?? (visit.aim >= 0 ? now[visit.aim].heading : visit.yaw), now, stops, step, REACH); if (i >= 0) { visit.turnTo = now[i].heading; visit.pitchTo = now[i].pitch; visit.aimTo = i; } }
+function turn(step) { if (visit.phase !== 'hall' || visit.glide) return; const now = seen(), stops = lit().map((on, k) => on && now[k].front && !(room === null && SCREENS.length && portals[k].door)), i = neighbour(visit.turnTo ?? (visit.aim >= 0 ? now[visit.aim].heading : visit.yaw), now, stops, step, REACH); if (i >= 0) { visit.turnTo = now[i].heading; visit.pitchTo = now[i].pitch; visit.aimTo = i; } }
 const keys = new Set();
 const ease = t => t * t * (3 - 2 * t);
 function step(dt) {
@@ -345,7 +347,7 @@ function step(dt) {
   if (length > 0) { ahead /= length; side /= length; const a = visit.yaw, speed = (room !== null ? 1.3 : 2.2) * dt, step2 = { x: frame.position.x + (Math.sin(a) * ahead + Math.cos(a) * side) * speed, z: frame.position.z + (-Math.cos(a) * ahead + Math.sin(a) * side) * speed }, to = room !== null ? walkRoom(step2, HALL.reach) : walk(step2, HALL.bounds); frame.position.x = to.x; frame.position.z = to.z; if (room === null) enter(zoneAt(frame.position, STATIONS)); }
   // The lit place in the middle of the view is named on screen. A ring is high on the wall, so it counts only when
   // the visitor looks up at it.
-  const now = seen(), mask = lit().map((on, i) => on && Math.abs(now[i].pitch - visit.pitch) < 0.32);
+  const now = seen(), mask = lit().map((on, i) => on && now[i].front && Math.abs(now[i].pitch - visit.pitch) < 0.32);
   const aim = facing(visit.yaw, now, mask, 0.3, REACH); if (aim !== visit.aim) { visit.aim = aim; paint(); }
 }
 
@@ -395,15 +397,15 @@ function tick(now) {
 /* ---------------- start up ---------------- */
 // The places load first: every machine and ring is set up, each machine gets its game, and motes go into the air of
 // each zone. Then the world loads, with a line that shows the progress.
-const ready = () => { loadLine.hidden = true; go.disabled = false; go.textContent = 'Enter the hall'; go.focus({ preventScroll: true }); };
+const ready = () => { loadLine.hidden = true; go.disabled = false; go.textContent = 'Enter the alley'; go.focus({ preventScroll: true }); };
 fetch('./worlds/hall/screens.json').then(r => { if (!r.ok) throw new Error('screens.json missing'); return r.json(); }).then(data => {
   HALLDATA = data; buildHall();
   const at = query.get('zone') ? STATIONS[Math.max(0, ZONES.findIndex(z => z.id === query.get('zone')))] : null;
   frame.position.set(at ? at.station[0] : HALL.start.x, 0, at ? at.station[1] : HALL.start.z); visit.yaw = at ? at.facing : HALL.start.facing; visit.zone = zoneAt(frame.position, STATIONS); mark();
   document.documentElement.style.setProperty('--zone', ZONES[visit.zone].color);
   if (noWorld) return ready();
-  return loadHall(p => { loadLine.textContent = `Loading the hall… ${Math.round(p * 100)}%`; }).then(ready);
-}).catch(error => { console.error(error); noGraphics('The hall did not load.'); });
+  return loadHall(p => { loadLine.textContent = `Loading the alley… ${Math.round(p * 100)}%`; }).then(ready);
+}).catch(error => { console.error(error); noGraphics('The alley did not load.'); });
 requestAnimationFrame(tick);
 
 // A handle for the browser check (qa/lab/riftwalk.e2e.mjs). The page never reads it.

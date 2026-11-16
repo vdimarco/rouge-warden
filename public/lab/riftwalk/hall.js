@@ -61,7 +61,7 @@ export function seats(zoneId, screens, station, facing = 0) {
 }
 // How many pages a zone needs on its machines, and which game each machine shows on one page: seat k of the zone
 // takes game k of the page. The answer maps a screen index to a game; a machine with no game is left out.
-export const pages = (count, machines) => Math.max(1, Math.ceil(count / Math.max(1, machines)));
+export const pages = (count, machines) => machines < 1 ? 1 : Math.max(1, Math.ceil(count / machines));
 export function assign(seatList, games, page = 0) {
   const out = new Map(), start = page * seatList.length;
   seatList.forEach((seat, k) => { const game = games[start + k]; if (game) out.set(seat, game); });
@@ -69,10 +69,11 @@ export function assign(seatList, games, page = 0) {
 }
 
 // A rift ring as a place: a flat disc on the wall, with the same fields as a screen so pick, facing and neighbour
-// treat it as one more place. Its width and height are the ring's diameter.
+// treat it as one more place. Its width and height are the ring's diameter. A storefront door is a ring with a width
+// and a height in place of a radius: an upright box on the shop's front.
 export function ringPlace(ring) {
   const n = ring.normal, up = [0, 1, 0], right = [up[1] * n[2] - up[2] * n[1], up[2] * n[0] - up[0] * n[2], up[0] * n[1] - up[1] * n[0]];
-  return { ring: true, centre: ring.centre, right, up, normal: n, width: ring.radius * 2, height: ring.radius * 2 };
+  return ring.width ? { ring: true, box: true, centre: ring.centre, right, up, normal: n, width: ring.width, height: ring.height } : { ring: true, centre: ring.centre, right, up, normal: n, width: ring.radius * 2, height: ring.radius * 2 };
 }
 // A room is a small world of its own for one zone, with machines around the point the visitor stands on. Its machines
 // take games in order, clockwise: the first game is on the front machine, the next one is to its right, and so on round.
@@ -84,7 +85,7 @@ export function roomSeats(screens) {
 // A scenery room has no machines of its own, so its games hang in the air as portal frames: one frame for each game,
 // in a ring round the visitor at eye level, each turned to face them. The first frame is straight ahead and the others
 // follow to the right. A room with a few games has larger frames. No room shows more than FRAMES.most frames at once.
-export const FRAMES = { most: 12, radius: 2.5, step: 0.36, width: 0.62, height: 0.82 };
+export const FRAMES = { most: 8, radius: 2.5, step: 0.36, width: 0.62, height: 0.82 };
 export function frameRing(count, eye = 1.4) {
   const n = Math.max(0, Math.min(FRAMES.most, count)), grow = n <= 1 ? 1.5 : n <= 3 ? 1.25 : 1, out = [];
   for (let k = 0; k < n; k++) {
@@ -149,4 +150,9 @@ export function neighbour(heading, places, lit, step, reach = Infinity) {
 }
 
 // One walk step inside the hall's open floor: a box. A step that would leave the box slides along its side.
-export const walk = (to, bounds) => ({ x: Math.max(bounds.x[0], Math.min(bounds.x[1], to.x)), z: Math.max(bounds.z[0], Math.min(bounds.z[1], to.z)) });
+const clampBox = (to, b) => ({ x: Math.max(b.x[0], Math.min(b.x[1], to.x)), z: Math.max(b.z[0], Math.min(b.z[1], to.z)) });
+// The open floor is one box, or several boxes that overlap (two streets that cross): the step ends in the nearest one.
+export function walk(to, bounds) {
+  if (!bounds.boxes) return clampBox(to, bounds);
+  return bounds.boxes.map(b => clampBox(to, b)).reduce((best, p) => Math.hypot(p.x - to.x, p.z - to.z) < Math.hypot(best.x - to.x, best.z - to.z) ? p : best);
+}
