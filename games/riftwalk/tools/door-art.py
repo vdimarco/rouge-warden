@@ -7,7 +7,7 @@ from PIL import Image
 
 pano = np.asarray(Image.open(sys.argv[1]).convert('RGB')); H, W = pano.shape[:2]
 heading = np.radians(float(sys.argv[3])) if len(sys.argv) > 3 else 0.0
-w, h, fov = 320, 640, np.radians(84)            # a tall door, twice as high as wide
+w, h, fov = 512, 1024, np.radians(84)            # a tall door, twice as high as wide
 f = (h / 2) / np.tan(fov / 2)
 x, y = np.meshgrid(np.arange(w) - w / 2 + 0.5, h / 2 - np.arange(h) - 0.5)
 lon = heading + np.arctan2(x, f); lat = np.arctan2(y, np.hypot(x, f))

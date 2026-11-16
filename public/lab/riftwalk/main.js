@@ -4,7 +4,7 @@
 // hall.js holds the rules, and worlds/<zone>/screens.json says where the screens of a zone are.
 import * as THREE from 'three';
 import { SplatMesh, SparkRenderer } from '@sparkjsdev/spark';
-import { GROUPS, ZONES, GROW, gamesOf, zoneGames, doors, middle, pages, assign, pick, facing, neighbour, walk } from './hall.js';
+import { GROUPS, ZONES, FIRST, GROW, gamesOf, zoneGames, doors, middle, pages, assign, pick, facing, neighbour, walk } from './hall.js';
 
 const $ = id => document.getElementById(id);
 const canvas = $('view'), loadLine = $('load'), startCard = $('start'), go = $('go'), target = $('target'), keysBar = $('keys'), groupsBar = $('groups'), flash = $('flash'), list = $('list');
@@ -60,6 +60,12 @@ function loadHall(zone, quality, onProgress) {
   worlds.set(key, job); job.catch(() => worlds.delete(key)); return job;
 }
 function showHall(mesh) { if (hall === mesh) return; if (hall) scene.remove(hall); hall = mesh; if (mesh) scene.add(mesh); }
+// Memory: the page keeps the worlds of the zone the visitor is in and of the two zones its doors lead to. A world of
+// another zone is let go, and loads again if the visitor comes back.
+function keepNear(index) {
+  const near = new Set([0, -1, 1].map(step => ZONES[(index + step + ZONES.length) % ZONES.length].id));
+  for (const [key, job] of worlds) { if (near.has(key.split('/')[0])) continue; worlds.delete(key); job.then(mesh => { if (mesh !== hall) mesh.dispose?.(); }).catch(() => {}); }
+}
 
 /* ---------------- a machine's portal ---------------- */
 // One quad lies on the machine's screen and reaches a little past it. Inside the screen's rounded shape it shows the
@@ -99,7 +105,7 @@ const quad = new THREE.PlaneGeometry(2, 2), labelGeometry = new THREE.PlaneGeome
 const textures = new Map(), loader = new THREE.TextureLoader();
 function artTexture(url, done) {
   let entry = textures.get(url);
-  if (!entry) { entry = { texture: null, waiting: [] }; textures.set(url, entry); loader.load(url, t => { t.colorSpace = THREE.SRGBColorSpace; entry.texture = t; for (const f of entry.waiting) f(t); entry.waiting.length = 0; }, undefined, () => { /* a missing picture leaves the portal's own colour */ }); }
+  if (!entry) { entry = { texture: null, waiting: [] }; textures.set(url, entry); loader.load(url, t => { t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = renderer.capabilities.getMaxAnisotropy(); entry.texture = t; for (const f of entry.waiting) f(t); entry.waiting.length = 0; }, undefined, () => { /* a missing picture leaves the portal's own colour */ }); }
   if (entry.texture) done(entry.texture); else entry.waiting.push(done);
 }
 function labelTexture(title, color) {
@@ -165,8 +171,14 @@ function setPage(page = 0, turnToMiddle = true) {
 const want = query.get('q') || (touch ? '500k' : 'full'), noWorld = query.get('world') === 'none';
 const best = zone => { const files = DATA[zone].hall.files || ['150k']; return files.includes(want) ? want : files.includes('500k') && want !== '150k' ? '500k' : '150k'; };
 function sharpen(index) {
-  const zone = ZONES[index].id, quality = best(zone); if (noWorld || quality === '150k') return;
-  loadHall(zone, quality).then(mesh => { if (visit.zone === index && visit.phase !== 'travel') showHall(mesh); }).catch(() => { /* the small world stays */ });
+  const zone = ZONES[index].id, quality = best(zone); if (noWorld) return; if (quality === '150k') return ahead(index);
+  loadHall(zone, quality).then(mesh => { if (visit.zone === index && visit.phase !== 'travel') showHall(mesh); ahead(index); }).catch(() => { /* the small world stays */ });
+}
+// When the zone is sharp, the worlds behind its two doors load in the background, at their best, so a way through a
+// door arrives in a sharp zone. A phone on a metered or slow line loads nothing ahead.
+function ahead(index) {
+  if (noWorld || query.has('noahead') || navigator.connection?.saveData) return;
+  for (const step of [1, -1]) { const zone = ZONES[(index + step + ZONES.length) % ZONES.length].id; loadHall(zone, best(zone)).catch(() => {}); }
 }
 function travel(index, portal = null) {
   if (visit.phase !== 'hall' || visit.glide || index === visit.zone || !ZONES[index]) return;
@@ -177,7 +189,7 @@ function travel(index, portal = null) {
   // A world that is already sharp shows at once; a new one shows small first.
   const quality = worlds.has(zone.id + '/' + best(zone.id)) ? best(zone.id) : '150k';
   Promise.all([noWorld ? null : loadHall(zone.id, quality), wait(reduced ? 0 : portal ? 800 : 450)]).then(([mesh]) => {
-    visit.glide = null; showHall(mesh); enterZone(index); visit.phase = 'hall'; flash.classList.remove('on'); keysBar.hidden = groupsBar.hidden = false; paint(); sharpen(index);
+    visit.glide = null; showHall(mesh); enterZone(index); keepNear(index); visit.phase = 'hall'; flash.classList.remove('on'); keysBar.hidden = groupsBar.hidden = false; paint(); sharpen(index);
   }).catch(error => { console.error(error); visit.glide = null; frame.position.set(0, 0, 0); visit.phase = 'hall'; flash.classList.remove('on'); keysBar.hidden = groupsBar.hidden = false; loadLine.hidden = false; loadLine.textContent = `${zone.label} did not load.`; setTimeout(() => { loadLine.hidden = true; }, 4000); paint(); });
 }
 // Going into a game: the visitor glides to the machine while the view fills with its light, then the game's page opens.
@@ -279,7 +291,7 @@ function tick(now) {
 // 500,000-splat file and a desktop the largest file the zone has, and it replaces the small one when it is ready.
 const ready = () => { loadLine.hidden = true; go.disabled = false; go.textContent = 'Enter the hall'; go.focus({ preventScroll: true }); };
 Promise.all(ZONES.map(z => fetch(`./worlds/${z.id}/screens.json`).then(r => { if (!r.ok) throw new Error('screens.json missing: ' + z.id); return r.json(); }).then(data => { DATA[z.id] = data; }))).then(() => {
-  const first = Math.max(0, ZONES.findIndex(z => z.id === (query.get('zone') || 'action')));
+  const first = Math.max(0, ZONES.findIndex(z => z.id === (query.get('zone') || FIRST)));
   enterZone(first);
   if (noWorld) return ready();
   return loadHall(ZONES[first].id, '150k', p => { loadLine.textContent = `Loading the hall… ${Math.round(p * 100)}%`; }).then(mesh => { showHall(mesh); ready(); sharpen(first); });

@@ -5,7 +5,7 @@
 // Run: node qa/lab/riftwalk.test.mjs
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { WALK, GROW, GROUPS, ZONES, DOOR, SELF, direction, gamesOf, zoneGames, doors, middle, order, pages, assign, pick, facing, neighbour, walk } from '../../public/lab/riftwalk/hall.js';
+import { WALK, GROW, GROUPS, ZONES, FIRST, DOOR, SELF, direction, gamesOf, zoneGames, doors, middle, order, pages, assign, pick, facing, neighbour, walk } from '../../public/lab/riftwalk/hall.js';
 const root = new URL('../../', import.meta.url), read = p => readFileSync(new URL(p, root), 'utf8');
 const near = (a, b, e = 1e-9) => Math.abs(a - b) <= e;
 let n = 0; const pass = (name, data) => { n++; console.log('PASS ' + name + (data ? ' ' + JSON.stringify(data) : '')); };
@@ -21,10 +21,10 @@ pass('the six collections match the homepage rows, game for game');
 
 { // Every collection is in one zone, and each zone has its world files and its door picture.
   assert.deepEqual(ZONES.flatMap(z => z.groups).sort(), GROUPS.map(g => g.id).sort(), 'each collection is in one zone');
-  assert.equal(new Set(ZONES.map(z => z.id)).size, ZONES.length); assert(ZONES.length >= 3);
+  assert.equal(new Set(ZONES.map(z => z.id)).size, ZONES.length); assert.deepEqual(ZONES.map(z => [z.id, z.label, z.groups]), GROUPS.map(g => [g.id, g.label, [g.id]]), 'one zone for each collection, in the homepage order, with its name'); assert(ZONES.some(z => z.id === FIRST));
   for (const z of ZONES) { assert.match(z.color, /^#[0-9a-f]{6}$/); assert(z.label); const files = JSON.parse(read(`public/lab/riftwalk/worlds/${z.id}/screens.json`)).hall.files; assert(files.includes('150k'), z.id + ' has a small world');
     for (const f of files) assert(readFileSync(new URL(`public/lab/riftwalk/worlds/${z.id}/${f}.spz`, root)).length > 1e6, `${z.id}/${f}.spz`); assert(readFileSync(new URL(`public/lab/riftwalk/worlds/${z.id}/door.webp`, root)).length > 2000, z.id + ' door picture'); }
-  pass('every collection is in one zone, and each zone has its world and its door picture', { zones: ZONES.map(z => z.id) });
+  pass('each collection has its own zone, with its world files and its door picture', { zones: ZONES.map(z => z.id) });
 }
 
 // The arcade's list of games read from switch.js.
@@ -36,7 +36,7 @@ for (const zone of ZONES) {
 const data = JSON.parse(read(`public/lab/riftwalk/worlds/${zone.id}/screens.json`)), SCREENS = data.screens; machines += SCREENS.length;
 
 { // The screens are sound: unit axes at right angles, a normal that looks back at the capture point, a real size.
-  assert(SCREENS.length >= 6, 'the hall has machines: ' + SCREENS.length); assert(data.hall.scale > 0.2 && data.hall.ground > 0.5 && data.hall.ground < 2.2);
+  assert(SCREENS.length >= 2, 'the zone has machines: ' + SCREENS.length); assert(data.hall.scale > 0.2 && data.hall.ground > 0.5 && data.hall.ground < 2.2);
   const dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2], len = a => Math.hypot(...a), eye = [0, data.hall.ground, 0];
   SCREENS.forEach((s, i) => {
     for (const v of [s.right, s.up, s.normal]) assert(near(len(v), 1, 1e-3), `screen ${i}: unit axis`);
@@ -102,7 +102,7 @@ const data = JSON.parse(read(`public/lab/riftwalk/worlds/${zone.id}/screens.json
   assert.deepEqual(lap, [...SCREENS.keys()].slice(1).concat(0), 'a lap to the right'); h = SCREENS[0].heading; const back = []; for (let k = 0; k < SCREENS.length; k++) { const i = neighbour(h, SCREENS, all, -1); back.push(i); h = SCREENS[i].heading; }
   assert.deepEqual(back, [...SCREENS.keys()].reverse(), 'a lap to the left');
   // Dark machines are stepped over, and with one lit machine there is nowhere to turn.
-  const two = all.map((v, k) => k === 0 || k === 3); assert.equal(neighbour(SCREENS[0].heading, SCREENS, two, 1), 3); assert.equal(neighbour(SCREENS[3].heading, SCREENS, two, 1), 0);
+  if (SCREENS.length > 3) { const two = all.map((v, k) => k === 0 || k === 3); assert.equal(neighbour(SCREENS[0].heading, SCREENS, two, 1), 3); assert.equal(neighbour(SCREENS[3].heading, SCREENS, two, 1), 0); }
   assert.equal(neighbour(SCREENS[0].heading, SCREENS, all.map((v, k) => k === 0), 1), -1); assert.equal(neighbour(0, [], [], 1), -1);
   assert(near(direction(0).z, -1) && near(direction(Math.PI / 2).x, 1));
   pass(zone.id + ': a ray picks a lit screen, the view names the machine in its middle, and the arrows go round');

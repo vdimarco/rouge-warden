@@ -21,14 +21,19 @@ export const GROUPS = [
 // The hall does not offer a portal to itself.
 export const SELF = 'riftwalk';
 
-// The zones of the hall, in the order the doors link them (the last zone's door leads on to the first). Each zone
-// shows the games of its collections. `world` is the zone's folder in worlds/.
+// The zones of the hall: one for each collection, in the order of the homepage rows. The doors link them in that
+// order, and the last zone's door leads on to the first. A zone's id is its collection's id and the name of its folder
+// in worlds/. The colour is the neon of that zone's world.
 export const ZONES = [
-  { id: 'action', label: 'Action Den', color: '#ff4fd8', groups: ['action'] },
-  { id: 'cottage', label: 'Cottage Row', color: '#ffb84a', groups: ['cottage'] },
-  { id: 'back', label: 'Back Room', color: '#7dff6a', groups: ['ascii', 'strategy', 'gta'] },
-  { id: 'lab', label: 'The Lab', color: '#b98cff', groups: ['lab'] },
+  { id: 'cottage', label: 'Cottage', color: '#ffb84a', groups: ['cottage'] },
+  { id: 'action', label: 'Action', color: '#ff4fd8', groups: ['action'] },
+  { id: 'ascii', label: 'ASCII Scenes', color: '#7dff6a', groups: ['ascii'] },
+  { id: 'strategy', label: 'Strategy', color: '#e36bff', groups: ['strategy'] },
+  { id: 'gta', label: 'GTA', color: '#ffa13d', groups: ['gta'] },
+  { id: 'lab', label: 'Lab', color: '#b98cff', groups: ['lab'] },
 ];
+// The zone the visitor starts in: the one with the most machines in use.
+export const FIRST = 'action';
 
 const wrap = a => Math.atan2(Math.sin(a), Math.cos(a));
 // A heading is a compass turn in radians: 0 looks along -z and a quarter turn looks along +x.
@@ -48,20 +53,27 @@ export function zoneGames(zoneId, games) {
   return zone.groups.flatMap(id => gamesOf(id, games));
 }
 // The two rift doors of a zone. Each stands in the widest gap between machines on its side of the visitor, in the ring
-// of machines: as far away as the two machines beside it, and as wide as the floor between their cabinets allows. The
-// left door leads to the zone before (step -1) and the right door to the zone after (step 1). A door has the same
-// fields as a screen, so pick, facing and neighbour treat it as one more place. Its foot is on the floor.
-export const DOOR = { least: 0.36, most: 0.95, height: 1.9, body: 1.6 };   // body: a cabinet is this many screen widths wide
+// of machines: as far away as the two machines beside it, and as wide as the floor between their cabinets allows. A
+// gap with no room for a door is not used. Where the machines leave a long open wall, the door stands on that side of
+// the visitor, a quarter turn from the front if the wall reaches that far. The left door leads to the zone before
+// (step -1) and the right door to the zone after (step 1). A door has the same fields as a screen, so pick, facing and
+// neighbour treat it as one more place. Its foot is on the floor.
+export const DOOR = { least: 0.36, most: 0.95, height: 1.9, body: 1.6, open: 1.6, away: 2.7, clear: 0.45 };   // body: a cabinet is this many screen widths wide
 export function doors(screens) {
   const ring = [...screens].sort((a, b) => wrap(a.heading) - wrap(b.heading));
   return [-1, 1].map(step => {
-    let heading = step * Math.PI / 2, widest = 0, distance = 2.7, width = DOOR.most;
+    let heading = step * Math.PI / 2, widest = 0, distance = DOOR.away, width = DOOR.most;
     ring.forEach((a, i) => {
-      const b = ring[(i + 1) % ring.length], gap = (wrap(b.heading) - wrap(a.heading) + 2 * Math.PI) % (2 * Math.PI) || 2 * Math.PI, mid = wrap(wrap(a.heading) + gap / 2);
-      if (Math.sign(mid) === step && Math.abs(mid) > 0.6 && Math.abs(mid) < 2.6 && gap > widest) {
-        widest = gap; heading = mid; distance = (a.distance + b.distance) / 2;
-        width = Math.max(DOOR.least, Math.min(DOOR.most, distance * gap - DOOR.body * (a.width + b.width) / 2));
+      const b = ring[(i + 1) % ring.length], from = wrap(a.heading), gap = ring.length > 1 ? (wrap(b.heading) - from + 2 * Math.PI) % (2 * Math.PI) || 2 * Math.PI : 2 * Math.PI;
+      if (gap >= DOOR.open) {
+        // An open wall: the nearest point to a quarter turn on this side that is clear of both machines.
+        let want = step * Math.PI / 2; while (want < from) want += 2 * Math.PI;
+        const at = wrap(Math.max(from + DOOR.clear, Math.min(from + gap - DOOR.clear, want)));
+        if (Math.sign(at) === step && Math.abs(at) > 0.6 && Math.abs(at) < 2.6 && gap > widest) { widest = gap; heading = at; distance = DOOR.away; width = DOOR.most; }
+        return;
       }
+      const mid = wrap(from + gap / 2), away = (a.distance + b.distance) / 2, room = away * gap - DOOR.body * (a.width + b.width) / 2;
+      if (room >= DOOR.least && Math.sign(mid) === step && Math.abs(mid) > 0.6 && Math.abs(mid) < 2.6 && gap > widest) { widest = gap; heading = mid; distance = away; width = Math.min(DOOR.most, room); }
     });
     const d = direction(heading);
     return { step, heading, distance, width, height: DOOR.height, centre: [d.x * distance, DOOR.height / 2 + 0.05, d.z * distance], right: [-d.z, 0, d.x], up: [0, 1, 0], normal: [-d.x, 0, -d.z] };
