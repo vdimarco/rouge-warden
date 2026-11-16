@@ -5,7 +5,7 @@
 // where each cabinet's screen is ({ zone, centre, right, up, normal, width, height }), where a visitor stands to see
 // a zone's cluster, and where the rift ring above the cluster is. Each screen is a portal to one game. A rift ring
 // takes the visitor to its zone.
-export const GROW = 1.12;      // a portal covers a little more than the measured screen, so no bare glass shows at its rim
+export const GROW = 1.08;      // a portal covers a little more than the measured screen, so no bare glass shows at its rim
 
 // The collections of the arcade, in the order of the homepage rows. The node test checks this list against the GROUPS
 // array in public/index.html, so a game added to a row there cannot be missed here.

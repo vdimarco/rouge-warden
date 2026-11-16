@@ -1,11 +1,15 @@
 ## ADDED Requirements
 
 ### Requirement: One hall with a cluster of machines for each collection
-Riftwalk SHALL show one dark neon arcade hall at eye height, as a Gaussian splat world. Arcade machines SHALL stand in clusters against the walls. Each collection of the homepage (Cottage, Action, ASCII Scenes, Strategy, GTA, Lab) SHALL be a zone with its own cluster or clusters. Each machine's screen SHALL show a portal to one game of its zone, with the game's key art inside a moving bright edge, and every zone SHALL be lit at once. The name of a game SHALL show over the machine in the middle of the view only. A machine with no game SHALL idle dimly in its zone's colour and SHALL NOT launch. A zone with more games than machines SHALL offer a More control that shows its other games. Opening a portal SHALL load that game's route. Riftwalk SHALL NOT show a portal to itself.
+Riftwalk SHALL show one dark neon arcade hall at eye height, as a Gaussian splat world. Arcade machines SHALL stand in clusters against the walls. Each collection of the homepage (Cottage, Action, ASCII Scenes, Strategy, GTA, Lab) SHALL be a zone with its own cluster or clusters. Each machine's screen SHALL show a portal to one game of its zone, with the game's key art inside a moving bright edge, and every zone SHALL be lit at once. The name of a game SHALL show over the machine in the middle of the view only. The picture under the mouse pointer SHALL flow, and SHALL be still again when the pointer leaves it. A machine with no game SHALL idle dimly in its zone's colour and SHALL NOT launch. A zone with more games than machines SHALL offer a More control that shows its other games. Opening a portal SHALL load that game's route. Riftwalk SHALL NOT show a portal to itself.
 
 #### Scenario: Enter the hall
 - **WHEN** the visitor enters the hall
 - **THEN** machines in all six zones show games, no game is on two machines, and the button of the zone the visitor stands in is on
+
+#### Scenario: Hover
+- **WHEN** the mouse pointer rests on a lit screen
+- **THEN** that picture flows, and no other picture flows
 
 #### Scenario: See the rest of a large zone
 - **WHEN** the visitor is in the Lab zone and presses More

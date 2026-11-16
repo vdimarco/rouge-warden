@@ -35,7 +35,9 @@ Earlier versions used Marble, which makes a world from one text prompt. The plac
 Sources: the Atlas developer docs (docs.atlas.worldlabs.ai), mainly "Build a scene from images", "Make splats", "Splat best practices" and "Cameras and posed images". The steps follow those guides. The prompt, operation ids and target cameras are in `public/lab/riftwalk/worlds/sources.json`.
 
 ## Finding the screens
-Every view has a camera and a depth map, so a white screen in a view is a patch of known 3D points. A scratch script kept bright grey patches that are taller than wide, unprojected them, named the nearest wall, and merged the patches of one screen across views. Each screen is an upright rectangle on its wall. The result is `public/lab/riftwalk/worlds/hall/screens.json`, with each screen's zone, each zone's station and each zone's ring.
+Every view has a camera and a depth map, so a white screen in a view is a patch of known 3D points. A scratch script kept bright grey patches that are taller than wide, unprojected them, named the nearest wall, and merged the patches of one screen across views. Each screen is an upright rectangle on its wall.
+
+The first measure took the middle value over all views, and far and slanted views made the screens too small: the user saw that "the game pictures are not on the machine screens". The second measure takes each screen from its most direct view, with its edges at the 1st and 99th percentile of the patch. Machines in one cluster are the same model, so a cluster has one screen size, one height over the floor and one straight line along its wall. A drawn frame of the real magenta cluster (`shots/hall-cluster-real.jpg`, a full-detail cut of the world file) shows the pictures on the screens. The result is `public/lab/riftwalk/worlds/hall/screens.json`, with each screen's zone, each zone's station and each zone's ring.
 
 ## Zones, stations and rift rings
 - A zone has a station: a point on the open floor in front of its cluster, with a facing. The zone the visitor is in is the zone with the nearest station.
@@ -46,6 +48,7 @@ Every view has a camera and a depth map, so a white screen in a view is a patch 
 
 ## Look
 - A game shows as a picture on the machine's tube: scan lines, darker corners, a faint shine, and a thin live edge. Its name shows only over the machine in the middle of the view.
+- The user's words: "they should flow when mouse hover". The picture under the mouse pointer flows: it swells a little, drifts, and its surface moves like slow water (two octaves of value noise move the picture's coordinates). On a touch screen the picture of the machine in view flows. Reduced motion turns the flow off.
 - A machine with no game idles dimly in its zone's colour.
 - A ring is a disc of slow swirling light in its zone's colour, with stars that come and go.
 - Each zone has its own screen corner, edge motion, scan lines and letters (`LOOKS` in `main.js`).

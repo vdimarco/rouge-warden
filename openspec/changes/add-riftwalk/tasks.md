@@ -47,5 +47,7 @@ One hall with Atlas:
 - [x] Rules and page for one hall: zones as clusters, stations, rift rings, a glide between zones, walking the open floor.
 - [x] Pass `qa/lab/riftwalk.test.mjs` (6 checks) and `qa/lab/riftwalk.e2e.mjs` (9 checks, with the real world file loaded).
 - [x] Check the screens' places: the measured screens drawn over the Atlas views sit on the white screens (`shots/hall-screens-check.jpg`), and the world file's splat coordinates match the cameras' world (floor at 0, 8 m by 16 m).
-- [ ] See the portals on the machines in a drawn frame of the real world. Software WebGL did not finish one frame of 2,000,000 splats in 25 minutes.
+- [x] The user saw the pictures off the screens. Measure each screen again from its most direct view, with one size for each cluster, and see the pictures on the screens in a drawn frame of a full-detail cut of the world (`shots/hall-cluster-real.jpg`).
+- [x] The picture under the mouse pointer flows.
+- [ ] See the whole world drawn with the portals. Software WebGL did not finish one frame of 2,000,000 splats in 25 minutes.
 - [ ] Play on a real phone and a real graphics card (not possible in this session).

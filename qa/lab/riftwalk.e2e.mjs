@@ -5,7 +5,7 @@
 // - a zone button, a number key, the up and down keys, and a rift ring glide the visitor to that zone's station;
 // - ◀ and ▶ turn to the next place, a drag turns the view only, and W A S D walk the open floor;
 // - a zone with more games than machines has a More button, and its own ring also shows the next games;
-// - a click on a lit screen, Enter, and the Play button launch that game's route;
+// - the picture under the mouse pointer flows; a click on a lit screen, Enter, and the Play button launch its route;
 // - every game is also a plain link on the page;
 // - reduced motion moves at once with no motes; a phone layout fits, with 44 px buttons, and takes taps.
 // Needs the static server (see AGENTS.md): node qa/lab/riftwalk.e2e.mjs      SHOTS=<dir> saves pictures.
@@ -92,6 +92,9 @@ try {
     // A click on a lit screen launches its game.
     await page.keyboard.press('2'); s = await t.zone('action', 'Action again'); s = await t.until(s => s.aim >= 0 && s.aim < machines, 'a machine is in front'); const game = s.machines[s.aim];
     at = await page.evaluate(i => window.__riftwalk.screen(i), s.aim); assert(at && Math.abs(at.x - 480) < 140, 'the machine is near the middle of the view: ' + JSON.stringify(at));
+    // The picture under the mouse pointer flows, and stops when the pointer leaves it.
+    await page.mouse.move(at.x, at.y); await t.until(s2 => s2.hover === s.aim && s2.flow[s.aim] > 0.9, 'the picture under the pointer flows'); assert.equal((await t.state()).flow.filter(v => v > 0.5).length, 1, 'only that picture flows');
+    await page.mouse.move(at.x, 20); await t.until(s2 => s2.hover !== s.aim && s2.flow[s.aim] < 0.1, 'the flow stops when the pointer leaves'); await page.mouse.move(at.x, at.y);
     if (shots) await page.screenshot({ path: join(shots, 'riftwalk-machine.png') });
     await page.mouse.click(at.x, at.y); await t.until(s => s.phase === 'launch', 'the click launches');
     assert.deepEqual(await t.launched(), [game.url], 'the game page opens: ' + game.title);

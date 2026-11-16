@@ -76,7 +76,7 @@ const LOOKS = {
 const VERTEX = `varying vec2 vUv; void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`;
 const FRAGMENT = `
   varying vec2 vUv; uniform sampler2D uMap; uniform float uHasMap; uniform float uAspect; uniform vec3 uColor; uniform vec3 uZone; uniform vec2 uHalf; uniform vec2 uQuad;
-  uniform float uLit; uniform float uTime; uniform float uHot; uniform float uSeed; uniform float uRadius; uniform float uWave; uniform float uScan; uniform float uDoor;
+  uniform float uLit; uniform float uTime; uniform float uHot; uniform float uFlow; uniform float uSeed; uniform float uRadius; uniform float uWave; uniform float uScan; uniform float uDoor;
   float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
   float noise(vec2 p) { vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f); return mix(mix(hash(i), hash(i + vec2(1, 0)), f.x), mix(hash(i + vec2(0, 1)), hash(i + vec2(1, 1)), f.x), f.y); }
   // Under 0 inside the shape. A screen is a box with round corners. A rift ring is a disc.
@@ -93,7 +93,11 @@ const FRAGMENT = `
     float inside = smoothstep(0.003, -0.003, edge), rim = smoothstep(-0.07, 0.0, d);
     // The picture covers the shape: the longer side of the picture is cropped.
     vec2 uv = p / uHalf * 0.5; float form = uHalf.x / uHalf.y; if (uAspect > form) uv.x *= form / uAspect; else uv.y *= uAspect / form; uv += 0.5;
-    vec3 pic = mix(uColor * 0.35, texture2D(uMap, uv).rgb, uHasMap);
+    // Under the pointer the picture flows: it swells a little, drifts, and its surface moves like slow water.
+    vec2 fl = vec2(noise(uv * 3.0 + vec2(uTime * 0.35, uSeed * 7.0)), noise(uv * 3.0 + vec2(uSeed * 3.0, -uTime * 0.3))) - 0.5;
+    fl += 0.5 * (vec2(noise(uv * 7.0 - vec2(uTime * 0.5, 2.0)), noise(uv * 7.0 + vec2(5.0, uTime * 0.45))) - 0.5);
+    uv = (uv - 0.5) * (1.0 - 0.07 * uFlow) + 0.5 + fl * 0.06 * uFlow + vec2(sin(uTime * 0.4 + uSeed * 6.0), cos(uTime * 0.33)) * 0.012 * uFlow;
+    vec3 pic = mix(uColor * 0.35, texture2D(uMap, uv).rgb, uHasMap) * (1.0 + 0.12 * uFlow);
     // A game shows as a picture on the machine's own tube: scan lines, darker corners, and a faint shine on the glass.
     float lines = 1.0 - uScan * 0.15 * (0.5 + 0.5 * sin(p.y * 820.0));
     float shine = 0.045 * smoothstep(0.22, 0.0, abs(p.x / uHalf.x * 0.6 + p.y / uHalf.y - 0.55));
@@ -164,7 +168,7 @@ const flat = { transparent: true, depthWrite: false, depthTest: false };
 function makePortal(place, index, zone) {
   const look = LOOKS[zone.id] || LOOKS.action;
   const group = new THREE.Group(), half = new THREE.Vector2(place.width / 2 * GROW, place.height / 2 * GROW), size = new THREE.Vector2(half.x + MARGIN * (place.ring ? 3 : 1), half.y + MARGIN * (place.ring ? 3 : 1));
-  const uniforms = { uMap: { value: null }, uHasMap: { value: 0 }, uAspect: { value: 1 }, uColor: { value: new THREE.Color('#5ff2ff') }, uHalf: { value: half }, uQuad: { value: size }, uLit: { value: 0 }, uTime: { value: 0 }, uHot: { value: 0 }, uSeed: { value: (index * 0.618) % 1 }, uZone: { value: new THREE.Color(zone.color) }, uRadius: { value: look.radius }, uWave: { value: place.ring ? 0.03 : look.wave }, uScan: { value: look.scan }, uDoor: { value: place.ring ? 1 : 0 } };
+  const uniforms = { uMap: { value: null }, uHasMap: { value: 0 }, uAspect: { value: 1 }, uColor: { value: new THREE.Color('#5ff2ff') }, uHalf: { value: half }, uQuad: { value: size }, uLit: { value: 0 }, uTime: { value: 0 }, uHot: { value: 0 }, uSeed: { value: (index * 0.618) % 1 }, uFlow: { value: 0 }, uZone: { value: new THREE.Color(zone.color) }, uRadius: { value: look.radius }, uWave: { value: place.ring ? 0.03 : look.wave }, uScan: { value: look.scan }, uDoor: { value: place.ring ? 1 : 0 } };
   const face = new THREE.Mesh(quad, new THREE.ShaderMaterial({ uniforms, vertexShader: VERTEX, fragmentShader: FRAGMENT, ...flat, premultipliedAlpha: true }));
   face.scale.set(size.x, size.y, 1); face.renderOrder = 16; face.frustumCulled = false; group.add(face);
   const label = new THREE.Mesh(labelGeometry, new THREE.MeshBasicMaterial({ ...flat, opacity: 0 })); label.renderOrder = 20; label.frustumCulled = false; label.visible = false;
@@ -288,17 +292,17 @@ function step(dt) {
 }
 
 /* ---------------- input ---------------- */
-let drag = null;
+let drag = null, hover = -1;   // hover: the place under the mouse pointer
 canvas.addEventListener('pointerdown', e => { if (visit.phase !== 'hall') return; drag = { id: e.pointerId, x: e.clientX, y: e.clientY, sx: e.clientX, sy: e.clientY, at: performance.now(), moved: 0 }; try { canvas.setPointerCapture(e.pointerId); } catch (error) { /* the drag still works inside the canvas */ } canvas.classList.add('look'); });
 canvas.addEventListener('pointermove', e => {
-  if (!drag || e.pointerId !== drag.id) { if (e.pointerType === 'mouse') canvas.classList.toggle('aim', portalAt(e.clientX, e.clientY) >= 0); return; }
+  if (!drag || e.pointerId !== drag.id) { if (e.pointerType === 'mouse') { hover = portalAt(e.clientX, e.clientY); canvas.classList.toggle('aim', hover >= 0); } return; }
   const dx = e.clientX - drag.x, dy = e.clientY - drag.y; drag.x = e.clientX; drag.y = e.clientY; drag.moved += Math.abs(dx) + Math.abs(dy);
   if (visit.glide || drag.moved < 6) return;
   // The view follows the finger: a drag to the right turns the visitor to the left, and a drag down looks up.
   const k = (camera.fov * Math.PI / 180) / innerHeight * 1.15; visit.turnTo = null; visit.yaw = wrap(visit.yaw - dx * k); visit.pitch = clamp(visit.pitch + dy * k, -1.1, 1.1);
 });
 const lift = e => { if (!drag || e.pointerId !== drag.id) return; const tap = drag.moved < 10 && performance.now() - drag.at < 500, d = drag; drag = null; canvas.classList.remove('look'); if (tap && e.type === 'pointerup') { const i = portalAt(d.sx, d.sy); if (i >= 0) launch(i); } };
-canvas.addEventListener('pointerup', lift); canvas.addEventListener('pointercancel', lift);
+canvas.addEventListener('pointerup', lift); canvas.addEventListener('pointercancel', lift); canvas.addEventListener('pointerleave', () => { hover = -1; });
 const nextZone = step => travel((visit.zone + step + ZONES.length) % ZONES.length);
 addEventListener('keydown', e => {
   if (visit.phase !== 'hall' || window.GameSwitch?.isOpen) return; const k = e.key.toLowerCase();
@@ -323,7 +327,7 @@ function tick(now) {
   camera.rotation.set(visit.pitch, -visit.yaw, 0);
   const time = reduced ? 0 : now / 1000;
   for (const m of air) m.material.uniforms.uTime.value = time;
-  portals.forEach((p, i) => { p.uniforms.uTime.value = time; p.uniforms.uHot.value += ((i === visit.aim ? 1 : 0) - p.uniforms.uHot.value) * Math.min(1, dt * 10); p.label.material.opacity = p.lit * (p.door ? 0.75 + 0.25 * p.uniforms.uHot.value : p.uniforms.uHot.value); });
+  portals.forEach((p, i) => { p.uniforms.uTime.value = time; p.uniforms.uHot.value += ((i === visit.aim ? 1 : 0) - p.uniforms.uHot.value) * Math.min(1, dt * 10); p.uniforms.uFlow.value += ((!reduced && (i === hover || (touch && i === visit.aim)) ? 1 : 0) - p.uniforms.uFlow.value) * Math.min(1, dt * 5); p.label.material.opacity = p.lit * (p.door ? 0.75 + 0.25 * p.uniforms.uHot.value : p.uniforms.uHot.value); });
   renderer.render(scene, camera);
   requestAnimationFrame(tick);
 }
@@ -351,6 +355,7 @@ requestAnimationFrame(tick);
 // A handle for the browser check (qa/lab/riftwalk.e2e.mjs). The page never reads it.
 window.__riftwalk = {
   state: () => ({ phase: visit.phase, zone: ZONES[visit.zone].id, page: visit.page[visit.zone], pages: pagesIn(visit.zone), aim: visit.aim, yaw: visit.yaw, pitch: visit.pitch, turning: visit.turnTo !== null, gliding: !!visit.glide, place: { x: frame.position.x, z: frame.position.z }, hall: !!hall, splats: hall?.packedSplats?.numSplats ?? 0,
+    hover, flow: portals.map(p => +p.uniforms.uFlow.value.toFixed(2)),
     motes: air.reduce((n, m) => n + m.geometry.attributes.position.count, 0),
     machines: portals.slice(0, SCREENS.length).map(p => ({ zone: p.zone.id, game: p.game?.id ?? null, title: p.game?.title ?? null, url: p.game?.url ?? null, lit: p.lit, art: p.uniforms.uHasMap.value === 1 })),
     rings: portals.slice(SCREENS.length).map(p => ({ to: ZONES[p.game.zone].id, title: p.game.title, lit: p.lit })) }),
