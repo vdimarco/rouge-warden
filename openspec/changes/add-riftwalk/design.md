@@ -64,6 +64,13 @@ The user's words: "we need a better way to play things properly. The portals in 
 - Rooms: a zone has a room only when it has more than three games: Cottage, Action and the Lab. Each room is the earlier Marble world whose machine count is nearest to the zone's games: the green ring room (9 machines) for Cottage's 8, the row room (11) for Action's 11, the amber room (12) for the Lab's 19. The other three earlier worlds are removed, and `worlds/rooms/` is 29 MB.
 - ASCII Scenes, Strategy and GTA have no ring and no room. A zone button for one of them, pressed in a room, brings the visitor back to the hall at that zone.
 
+## Portals in fixed places, and sharper rooms
+The user's words: "games and portals, as well as higher quality backgrounds marbles".
+
+- The way back from a room was in the widest gap between its machines, which is a different place in each room. Now `exitRing()` puts it behind the visitor: they arrive with the first game in front, and the ring takes the gap nearest to straight behind them.
+- Each room ships its full-resolution Marble file again (about 29 MB each). A room shows its 150,000-splat file first, and then a desktop takes the full file and a phone the 500,000 file. `worlds/` is 144 MB.
+- A sharper room than Marble's full file needs a new world. One room from Atlas, like the hall, costs 5,000 credits.
+
 ## Look
 - A game shows as a picture on the machine's tube: scan lines, darker corners, a faint shine, and a thin live edge. Its name shows only over the machine in the middle of the view.
 - The user's words: "they should flow when mouse hover". The picture under the mouse pointer flows: it swells a little, drifts, and its surface moves like slow water (two octaves of value noise move the picture's coordinates). On a touch screen the picture of the machine in view flows. Reduced motion turns the flow off.

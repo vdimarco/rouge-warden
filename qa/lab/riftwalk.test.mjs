@@ -105,7 +105,7 @@ assert(GAMES.length >= 40, 'switch.js lists the games: ' + GAMES.length);
   const rooms = {};
   ZONES.filter((z, i) => STATIONS[i].room).forEach(zone => {
     const dir = `public/lab/riftwalk/worlds/rooms/${zone.id}/`, room = JSON.parse(read(dir + 'screens.json')), S = room.screens; rooms[zone.id] = S.length;
-    for (const f of ['150k.spz', '500k.spz']) assert(readFileSync(new URL(dir + f, root)).length > 1e6, dir + f); assert(readFileSync(new URL(dir + 'door.webp', root)).length > 2000, zone.id + ': the picture its ring shows');
+    for (const f of ['150k.spz', '500k.spz', 'full.spz']) assert(readFileSync(new URL(dir + f, root)).length > 1e6, dir + f); assert(readFileSync(new URL(dir + 'door.webp', root)).length > 2000, zone.id + ': the picture its ring shows');
     assert(S.length >= 1 && room.hall.scale > 0.2 && room.hall.ground > 0.5 && room.hall.ground < 2.2, zone.id + ' room numbers');
     for (const p of S) { for (const v of [p.right, p.up, p.normal]) assert(near(len(v), 1, 1e-3)); assert(p.width > 0.25 && p.height > 0.25 && p.distance > 1.3, zone.id + ': a machine is outside the walk circle'); assert(near(p.heading, Math.atan2(p.centre[0], -p.centre[2]), 1e-3)); }
     const order = roomSeats(S), games = zoneGames(zone.id, GAMES), count = pages(games.length, S.length); assert.deepEqual([...order].sort((a, b) => a - b), S.map((p, i) => i), 'every machine has a seat');
@@ -116,6 +116,8 @@ assert(GAMES.length >= 40, 'switch.js lists the games: ' + GAMES.length);
     const shown = []; for (let page = 0; page < count; page++) for (const [, game] of assign(order, games, page)) shown.push(game.id); assert.deepEqual(shown.sort(), games.map(g => g.id).sort(), zone.id + ': every game is in its room');
     const exit = exitRing(S), places = S.concat([exit]), all = places.map(() => true), eye = { x: 0, y: room.hall.ground, z: 0 };
     for (const p of S) { const apart = Math.abs(Math.atan2(Math.sin(p.heading - exit.heading), Math.cos(p.heading - exit.heading))); assert(apart > 0.22, `${zone.id}: the way out is ${apart.toFixed(2)} rad from a machine`); }
+    // The way back is behind the visitor, who arrives with the first game in front.
+    assert(Math.abs(Math.atan2(Math.sin(exit.heading - S[order[0]].heading), Math.cos(exit.heading - S[order[0]].heading))) > 1.7, zone.id + ': the way back is behind the visitor');
     assert(exit.distance > 1.6 && exit.distance <= 4.5 && near(len(exit.normal), 1, 1e-9) && exit.normal[0] * exit.centre[0] + exit.normal[2] * exit.centre[2] < 0, 'the way out faces the visitor');
     const v = [exit.centre[0], exit.centre[1] - eye.y, exit.centre[2]], l = Math.hypot(...v); assert.equal(pick(eye, { x: v[0] / l, y: v[1] / l, z: v[2] / l }, places, all), S.length, 'a ray at the way out picks it');
   });

@@ -81,11 +81,19 @@ export function roomSeats(screens) {
   const front = screens.reduce((best, p) => Math.abs(wrap(p.heading)) < Math.abs(wrap(best.heading)) ? p : best, screens[0]).heading;
   return screens.map((p, i) => ({ i, at: turn(p.heading - front) })).sort((a, b) => a.at - b.at).map(e => e.i);
 }
-// The way out of a room: a rift ring in the widest gap between its machines, a little behind them, at eye level.
+// The way out of a room: a rift ring at eye level, in a gap between the machines. The visitor arrives with the first
+// game in front, so the way back is behind them: the ring takes the gap with room for it that is nearest to straight
+// behind, and stands a little behind the machines beside it.
 export function exitRing(screens, radius = 0.55) {
-  const turns = screens.map(p => wrap(p.heading)).sort((a, b) => a - b); let heading = Math.PI, widest = 0, distance = 3;
-  turns.forEach((a, i) => { const next = i + 1 < turns.length ? turns[i + 1] : turns[0] + 2 * Math.PI, gap = next - a; if (gap > widest) { widest = gap; heading = wrap(a + gap / 2); } });
-  if (screens.length) distance = Math.min(4.5, Math.max(...screens.map(p => p.distance)) * (widest > 1.6 ? 0.8 : 1) + (widest > 1.6 ? 0 : 0.7));
+  const turn = a => ((a % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI), ring = [...screens].sort((a, b) => wrap(a.heading) - wrap(b.heading));
+  const front = screens.length ? screens.reduce((best, p) => Math.abs(wrap(p.heading)) < Math.abs(wrap(best.heading)) ? p : best, screens[0]).heading : 0, behind = wrap(front + Math.PI);
+  let heading = behind, distance = 3, least = Infinity;
+  ring.forEach((a, i) => {
+    const b = ring[(i + 1) % ring.length], gap = ring.length > 1 ? turn(wrap(b.heading) - wrap(a.heading)) || 2 * Math.PI : 2 * Math.PI; if (gap < 0.55) return;
+    // The point of this gap nearest to straight behind, kept clear of the two machines.
+    const into = turn(behind - wrap(a.heading)), at = wrap(wrap(a.heading) + Math.max(0.27, Math.min(gap - 0.27, into > gap ? (into - gap < 2 * Math.PI - into ? gap : 0) : into))), off = Math.abs(wrap(at - behind));
+    if (off < least) { least = off; heading = at; distance = gap > 1.6 ? Math.min(3.2, Math.max(a.distance, b.distance)) : Math.min(4.5, Math.max(a.distance, b.distance) + 0.7); }
+  });
   const d = direction(heading);
   return { ring: true, heading, distance, centre: [d.x * distance, 1.45, d.z * distance], right: [-d.z, 0, d.x], up: [0, 1, 0], normal: [-d.x, 0, -d.z], width: radius * 2, height: radius * 2 };
 }
