@@ -4,9 +4,9 @@ four-sided patch near eye level in the equirectangular panorama, and writes its 
 pixels as compass angles: lon (radians, 0 at the middle of the picture, positive to the right) and lat (radians,
 positive up).
 The second tool, place-screens.mjs, turns those angles into places in the hall.
-Usage: python3 games/riftwalk/tools/find-screens.py <pano.png> <corners.json> [overlay.jpg] [level]   (needs Pillow, numpy)
+Usage: python3 games/riftwalk/tools/find-screens.py <pano.png> <corners.json> [overlay.jpg] [level] [top]   (needs Pillow, numpy)
 level is the least brightness of a screen, 0 to 1. Without it, the script takes a level from the panorama itself."""
-import json, math, sys
+import os, json, math, sys
 import numpy as np
 from PIL import Image, ImageDraw
 
@@ -40,10 +40,12 @@ rows = np.arange(H)[:, None]
 near_level = np.abs((0.5 - (rows + 0.5) / H) * math.pi) < math.radians(40)
 # The level is relative: brighter than most of this panorama, and nearly without colour.
 level = float(sys.argv[4]) if len(sys.argv) > 4 else max(0.62, float(np.quantile(bright, 0.93)))
-seed = (bright > level) & (grey < 0.16) & near_level
+# top, when given, is the most brightness of a screen: for a world whose screens are dim grey glass, not white.
+top = float(sys.argv[5]) if len(sys.argv) > 5 else 2.0
+seed = (bright > level) & (bright < top) & (grey < (0.16 if top > 1 else 0.07)) & near_level
 # A screen can carry a tint from a neon tube near it. Pixels a little dimmer or a little coloured count as screen when
 # they join a patch that has plain bright pixels in it.
-mask = (bright > level * 0.86) & (grey < 0.30) & near_level
+mask = (bright > level * 0.86) & (bright < top * 1.1) & (grey < (0.30 if top > 1 else 0.10)) & near_level
 
 # Patches of joined pixels (4 neighbours), with a plain stack: no scipy here.
 seen = np.zeros_like(mask, dtype=bool); patches = []
@@ -66,7 +68,7 @@ for pts in patches:
     if area / (w * h) < 0.62: continue                             # not a filled four-sided patch
     if not 0.45 <= w / h <= 2.6: continue
     if x.min() >= W: continue                                      # the copy of a patch that sits in the padding
-    if lat_of(y.mean()) < math.radians(-18): continue              # under the cabinets: a reflection in the floor
+    if lat_of(y.mean()) < math.radians(float(os.environ.get('MIN_LAT', -18))): continue   # under the cabinets: a reflection in the floor. MIN_LAT raises the cut, for cabinets with a second panel under the screen
     # Corners: the four points of the patch's outline that span the largest four-sided shape. A screen seen at an angle
     # is a slanted four-sided patch, and this finds its true corners where a box or a diagonal would cut them.
     hull = convex_hull(pts[:, ::-1].astype(float))                 # (x, y) points, counter-clockwise

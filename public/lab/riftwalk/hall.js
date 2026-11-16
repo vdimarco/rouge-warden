@@ -1,9 +1,9 @@
 // Riftwalk: the plain rules of the hall, with no drawing. The page (main.js) and the node test
 // (qa/lab/riftwalk.test.mjs) share them.
-// The hall is one Gaussian splat world in metres: the floor is y = 0 and the visitor's eye starts at the point the
-// world was made from. The world has arcade cabinets, and worlds/screens.json says where each cabinet's screen is:
-// { centre, right, up, normal, width, height, heading }. Each screen is a portal to one game. The visitor picks a
-// collection of the arcade, the machines show that collection's games, and a machine's portal launches its game.
+// The hall has zones. Each zone is one Gaussian splat world in metres: the floor is y = 0 and the visitor's eye starts
+// at the point the world was made from. A zone has arcade cabinets, and worlds/<zone>/screens.json says where each
+// cabinet's screen is: { centre, right, up, normal, width, height, heading }. Each screen is a portal to one game of
+// the zone. Two rift doors stand between the machines: one leads to the zone before, one to the zone after.
 
 export const WALK = 1.0;       // the visitor stays inside this circle: a splat world is sharp near the point it was made from
 export const GROW = 1.12;      // a portal covers a little more than the measured screen, so no bare glass shows at its rim
@@ -21,6 +21,15 @@ export const GROUPS = [
 // The hall does not offer a portal to itself.
 export const SELF = 'riftwalk';
 
+// The zones of the hall, in the order the doors link them (the last zone's door leads on to the first). Each zone
+// shows the games of its collections. `world` is the zone's folder in worlds/.
+export const ZONES = [
+  { id: 'action', label: 'Action Den', color: '#ff4fd8', groups: ['action'] },
+  { id: 'cottage', label: 'Cottage Row', color: '#ffb84a', groups: ['cottage'] },
+  { id: 'back', label: 'Back Room', color: '#7dff6a', groups: ['ascii', 'strategy', 'gta'] },
+  { id: 'lab', label: 'The Lab', color: '#b98cff', groups: ['lab'] },
+];
+
 const wrap = a => Math.atan2(Math.sin(a), Math.cos(a));
 // A heading is a compass turn in radians: 0 looks along -z and a quarter turn looks along +x.
 export const direction = heading => ({ x: Math.sin(heading), z: -Math.cos(heading) });
@@ -31,6 +40,28 @@ export function gamesOf(groupId, games) {
   const group = GROUPS.find(g => g.id === groupId); if (!group) return [];
   const byId = new Map(games.map(g => [g.id, g]));
   return group.games.filter(id => id !== SELF && byId.has(id)).map(id => { const g = byId.get(id); return { id, title: g.name, sub: g.sub || '', url: g.url, art: g.art, color: g.color || group.color }; });
+}
+
+// The games of one zone: the games of its collections, one collection after the other.
+export function zoneGames(zoneId, games) {
+  const zone = ZONES.find(z => z.id === zoneId); if (!zone) return [];
+  return zone.groups.flatMap(id => gamesOf(id, games));
+}
+// The two rift doors of a zone. Each stands in the widest gap between machines on its side of the visitor: the left
+// door leads to the zone before (step -1) and the right door to the zone after (step 1). A door has the same fields as
+// a screen, so pick, facing and neighbour treat it as one more place. Its foot is on the floor.
+export const DOOR = { width: 0.95, height: 1.9, distance: 2.7 };
+export function doors(screens) {
+  const turns = screens.map(p => wrap(p.heading)).sort((a, b) => a - b);
+  return [-1, 1].map(step => {
+    let heading = step * Math.PI / 2, widest = 0;
+    turns.forEach((a, i) => {
+      const next = i + 1 < turns.length ? turns[i + 1] : turns[0] + 2 * Math.PI, gap = next - a, mid = wrap(a + gap / 2);
+      if (Math.sign(mid) === step && Math.abs(mid) > 0.6 && Math.abs(mid) < 2.6 && gap > widest) { widest = gap; heading = mid; }
+    });
+    const d = direction(heading);
+    return { step, heading, distance: DOOR.distance, width: DOOR.width, height: DOOR.height, centre: [d.x * DOOR.distance, DOOR.height / 2 + 0.05, d.z * DOOR.distance], right: [-d.z, 0, d.x], up: [0, 1, 0], normal: [-d.x, 0, -d.z] };
+  });
 }
 
 // The front machine: the one nearest to heading 0, the middle of the world's own picture. The visitor faces it at the

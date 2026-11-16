@@ -1,10 +1,11 @@
-// Riftwalk (public/lab/riftwalk/), the arcade as a hall of machines whose screens are portals, checked in Chromium
-// with SwiftShader. The check runs with ?world=none: the portals and the page with no hall world, because software
-// WebGL draws a splat world at a frame in seconds. One step loads the real 150,000-splat hall to see that it loads.
-// - Enter the hall: the Action collection is on, every machine shows a game with its art, the front one is named;
-// - ◀ and ▶ (keys and buttons) turn to the next machine and go round; a drag turns the view and launches nothing;
-// - the collection buttons, the up and down keys and the number keys change the games on the machines;
-// - a collection with more games than machines has a More button that shows the rest;
+// Riftwalk (public/lab/riftwalk/), the arcade as a hall of zones whose machine screens are portals, checked in
+// Chromium with SwiftShader. The check runs with ?world=none: the portals and the page with no splat world, because
+// software WebGL draws a splat world at a frame in seconds. One step loads two real 150,000-splat zones.
+// - Enter the hall: the Action Den is on, every machine shows a game with its art, the front one is named;
+// - ◀ and ▶ (keys and buttons) turn to the next machine or door and go round; a drag turns the view only;
+// - a rift door shows the zone next door, and a click on it, or Enter, takes the visitor to that zone;
+// - the zone buttons, the up and down arrow keys and the number keys also change the zone;
+// - a zone with more games than machines has a More button that shows the rest;
 // - a click on a lit screen, Enter, and the Play button launch that game's route;
 // - every game is also a plain link on the page;
 // - reduced motion launches with no glide; a phone layout fits, with 44 px buttons, and takes taps.
@@ -29,60 +30,70 @@ async function open(options = {}, query = 'world=none&px=1') {
   const state = () => page.evaluate(() => window.__riftwalk.state());
   const until = async (test, what, ms = 30000) => { const end = Date.now() + ms; for (;;) { const s = await state(); if (test(s)) return s; if (Date.now() > end) throw new Error('timed out: ' + what + ' ' + JSON.stringify(s).slice(0, 500)); await page.waitForTimeout(100); } };
   const text = id => page.evaluate(id => document.getElementById(id).textContent, id);
-  const settled = () => until(s => !s.turning && s.aim >= 0 && s.machines.every(m => m.lit === (m.game ? 1 : 0)), 'the machines settle');
+  const settled = () => until(s => !s.turning && s.aim >= 0 && s.machines.every(m => m.lit === (m.game ? 1 : 0)) && s.phase !== 'travel', 'the machines settle');
   const enterHall = async () => { await page.waitForFunction(() => !document.getElementById('go').disabled, null, { timeout: 120000 }); await page.click('#go'); await until(s => s.phase === 'hall', 'the hall opens'); return settled(); };
   const launched = async () => { const end = Date.now() + 15000; while (!moves.length && Date.now() < end) await page.waitForTimeout(100); return moves; };
   const pressed = () => page.evaluate(() => [...document.querySelectorAll('#groups button')].filter(b => b.getAttribute('aria-pressed') === 'true').map(b => b.textContent));
   return { page, errors, moves, state, until, text, settled, enterHall, launched, pressed };
 }
 const lit = s => s.machines.filter(m => m.game).length;
+const named = s => s.aim < s.machines.length ? s.machines[s.aim].title : s.doors[s.aim - s.machines.length].title;
+const ZONES = ['Action Den', 'Cottage Row', 'Back Room', 'The Lab'];
 try {
   {
     const t = await open(), { page } = t;
     assert.equal(await page.evaluate(() => document.getElementById('keys').hidden && document.getElementById('groups').hidden), true, 'no buttons on the title');
     let s = await t.enterHall(); const machines = s.machines.length;
-    assert(machines >= 6, 'the hall has machines: ' + machines); assert.equal(s.group, 'action'); assert.deepEqual(await t.pressed(), ['Action']);
+    assert(machines >= 6, 'the zone has machines: ' + machines); assert.equal(s.zone, 'action'); assert.deepEqual(await t.pressed(), ['Action Den']);
     assert.equal(lit(s), Math.min(11, machines), 'every machine shows an Action game'); await t.until(s => s.machines.every(m => !m.game || m.art), 'each lit screen has its art');
     assert.equal(s.machines[s.aim].title, 'Olympus', 'the first game is on the front machine'); assert.equal(await t.text('tTitle'), 'Olympus'); assert.match(await t.text('tDo'), /Click the screen or press Enter to play/);
-    assert.deepEqual(await page.evaluate(() => [...document.querySelectorAll('#groups button')].map(b => b.textContent)), ['Cottage', 'Action', 'ASCII Scenes', 'Strategy', 'GTA', 'Lab']);
+    assert.deepEqual(await page.evaluate(() => [...document.querySelectorAll('#groups button')].map(b => b.textContent)), ZONES);
+    assert.deepEqual(s.doors.map(d => d.to), ['lab', 'cottage'], 'the left door leads back and the right door leads on'); assert(s.doors[0].heading < 0 && s.doors[1].heading > 0); await t.until(s => s.doors.every(d => d.art && d.lit === 1), 'each door shows its zone');
     if (shots) await page.screenshot({ path: join(shots, 'riftwalk-hall.png') });
-    pass('the hall opens on the Action games, one on each machine, the front one named', { machines });
+    pass('the hall opens in the Action Den, one game on each machine, with two rift doors', { machines });
 
-    // The arrows turn machine by machine and go round the circle.
-    const first = s.aim; await page.keyboard.press('ArrowRight'); s = await t.until(s => !s.turning && s.aim !== first && s.aim >= 0, '▶ turns to the next machine'); const second = s.aim;
-    assert(s.machines[second].heading !== s.machines[first].heading); assert.equal(await t.text('tTitle'), s.machines[second].title);
+    // The arrows turn place by place and go round the circle: every lit machine and both doors.
+    const first = s.aim; await page.keyboard.press('ArrowRight'); s = await t.until(s => !s.turning && s.aim !== first && s.aim >= 0, '▶ turns to the next place'); const second = s.aim;
+    assert.equal(await t.text('tTitle'), named(s));
     await page.click('#kPrev'); await t.until(s => !s.turning && s.aim === first, 'the ◀ button turns back');
-    const seen = new Set([first]); for (let k = 0; k < machines - 1; k++) { const from = (await t.state()).aim; await page.click('#kNext'); s = await t.until(s => !s.turning && s.aim >= 0 && s.aim !== from, 'next machine ' + k); seen.add(s.aim); }
-    assert.equal(seen.size, lit(s), '▶ visits every lit machine'); await page.keyboard.press('ArrowRight'); await t.until(s => !s.turning && s.aim === first, '▶ comes round to the first machine');
+    const stops = lit(s) + 2, seen = new Set([first]); for (let k = 0; k < stops - 1; k++) { const from = (await t.state()).aim; await page.click('#kNext'); s = await t.until(s => !s.turning && s.aim >= 0 && s.aim !== from, 'next place ' + k); seen.add(s.aim); }
+    assert.equal(seen.size, stops, '▶ visits every lit machine and both doors'); await page.keyboard.press('ArrowRight'); await t.until(s => !s.turning && s.aim === first, '▶ comes round to the first machine');
     // A drag turns the view and launches nothing.
     const yaw = (await t.state()).yaw; await page.mouse.move(480, 270); await page.mouse.down(); await page.mouse.move(360, 270, { steps: 6 }); await page.mouse.up(); await page.waitForTimeout(200);
     s = await t.state(); assert.equal(s.phase, 'hall', 'a drag launches nothing'); assert(Math.abs(s.yaw - yaw) > 0.1, 'a drag turns the view: ' + (s.yaw - yaw));
-    // W walks a few steps and stops at the walk circle.
-    await page.keyboard.down('w'); await page.waitForTimeout(2500); await page.keyboard.up('w'); s = await t.state(); const far = Math.hypot(s.place.x, s.place.z); assert(far > 0.3 && far <= 1.0 + 1e-6, 'W walks inside the circle: ' + far);
-    pass('the arrows go round the machines, a drag looks, and W walks inside the circle', { walked: +far.toFixed(2) });
+    pass('the arrows go round the machines and doors, and a drag looks', { stops });
 
-    // The collection buttons, the up and down keys and the number keys change the games.
-    await page.click('#groups button[data-group="cottage"]'); s = await t.until(s => s.group === 'cottage', 'the Cottage button'); s = await t.settled();
-    assert.deepEqual(await t.pressed(), ['Cottage']); assert.equal(lit(s), Math.min(8, machines)); assert.equal(s.machines[s.aim].title, "Get Plunger'd", 'the view turns back to the front machine');
-    assert.equal(await page.evaluate(() => document.getElementById('kMore').hidden), machines >= 8, 'More shows only when a collection has more games than machines');
-    await page.keyboard.press('ArrowDown'); s = await t.until(s => s.group === 'action', 'the down key goes to the next collection'); await page.keyboard.press('ArrowUp'); await t.until(s => s.group === 'cottage', 'the up key goes back');
-    await page.keyboard.press('5'); s = await t.until(s => s.group === 'gta', 'the 5 key picks GTA'); s = await t.settled(); assert.equal(lit(s), 1, 'GTA lights one machine and the others go dark'); assert.equal(await t.text('tTitle'), 'GTA Montréal');
-    await page.keyboard.press('ArrowRight'); await page.waitForTimeout(400); assert.equal((await t.state()).aim, s.aim, 'with one lit machine the arrows stay');
+    // A rift door: the card names the zone, and a click on the door takes the visitor there.
+    const way = machines + 1; await page.evaluate(i => window.__riftwalk.face(i), s.machines.length + 1); s = await t.until(s => s.aim === way, 'the right door is in the middle of the view');
+    assert.equal(await t.text('tTitle'), 'Cottage Row'); assert.match(await t.text('tDo'), /Click the door or press Enter to go through/); assert.equal(await t.text('kGo'), 'Go');
+    let at = await page.evaluate(i => window.__riftwalk.screen(i), way); assert(at, 'the door is in view');
+    if (shots) await page.screenshot({ path: join(shots, 'riftwalk-door.png') });
+    await page.mouse.click(at.x, at.y); await t.until(s => s.phase === 'travel' || s.zone === 'cottage', 'the click starts the way through');
+    s = await t.until(s => s.zone === 'cottage' && s.phase === 'hall', 'the visitor arrives in Cottage Row'); s = await t.settled();
+    assert.deepEqual(await t.pressed(), ['Cottage Row']); assert.equal(lit(s), Math.min(8, s.machines.length)); assert.equal(s.machines[s.aim].title, "Get Plunger'd", 'the visitor faces the front machine'); assert(Math.hypot(s.place.x, s.place.z) < 1e-6, 'the visitor stands in the middle of the new zone');
+    assert.deepEqual(s.doors.map(d => d.to), ['action', 'back']); assert.equal(await page.evaluate(() => document.getElementById('flash').classList.contains('on')), false, 'the light clears'); assert.equal(await t.text('kGo'), 'Play');
+    // Enter at the left door goes back.
+    await page.evaluate(i => window.__riftwalk.face(i), s.machines.length); await t.until(s => s.aim === s.machines.length, 'the left door is in the middle of the view'); await page.keyboard.press('Enter');
+    s = await t.until(s => s.zone === 'action' && s.phase === 'hall', 'Enter at the door goes back to the Action Den');
+    pass('a rift door names its zone, and a click or Enter takes the visitor through');
+
+    // The zone buttons, the up and down keys and the number keys change the zone.
+    await page.click('#groups button[data-zone="back"]'); s = await t.until(s => s.zone === 'back' && s.phase === 'hall', 'the Back Room button'); s = await t.settled();
+    assert.equal(lit(s), 6, 'the Back Room shows the ASCII, Strategy and GTA games'); assert.equal(s.machines[s.aim].title, 'ASCII Front'); assert(s.machines.some(m => m.title === 'GTA Montréal')); assert.equal(await page.evaluate(() => document.getElementById('kMore').hidden), true);
+    await page.keyboard.press('ArrowDown'); s = await t.until(s => s.zone === 'lab' && s.phase === 'hall', 'the down key goes to the next zone'); await page.keyboard.press('ArrowUp'); await t.until(s => s.zone === 'back' && s.phase === 'hall', 'the up key goes back');
+    await page.keyboard.press('4'); s = await t.until(s => s.zone === 'lab' && s.phase === 'hall', 'the 4 key picks The Lab'); s = await t.settled();
     // The Lab has more games than machines: More shows the rest, and comes back round.
-    await page.click('#groups button[data-group="lab"]'); s = await t.until(s => s.group === 'lab', 'the Lab button'); s = await t.settled();
-    if (s.pages > 1) {
-      assert.equal(await page.evaluate(() => document.getElementById('kMore').hidden), false); assert.equal(await t.text('kMore'), `More 1/${s.pages}`); const page1 = s.machines.map(m => m.game).filter(Boolean);
-      await page.click('#kMore'); s = await t.until(s => s.page === 1, 'More shows the next page'); s = await t.settled(); const page2 = s.machines.map(m => m.game).filter(Boolean);
-      assert.equal(await t.text('kMore'), `More 2/${s.pages}`); assert(page2.length >= 1 && page2.every(id => !page1.includes(id)), 'the next page shows other games');
-      for (let k = 1; k < s.pages; k++) await page.keyboard.press('PageDown'); await t.until(s => s.page === 0, 'More comes back to the first page');
-    }
+    assert(s.pages > 1, 'The Lab has pages'); assert.equal(await t.text('kMore'), `More 1/${s.pages}`); const page1 = s.machines.map(m => m.game).filter(Boolean);
+    await page.click('#kMore'); s = await t.until(s => s.page === 1, 'More shows the next page'); s = await t.settled(); const page2 = s.machines.map(m => m.game).filter(Boolean);
+    assert.equal(await t.text('kMore'), `More 2/${s.pages}`); assert(page2.length >= 1 && page2.every(id => !page1.includes(id)), 'the next page shows other games');
+    for (let k = 1; k < s.pages; k++) await page.keyboard.press('PageDown'); await t.until(s => s.page === 0, 'More comes back to the first page');
     assert.deepEqual(t.moves, [], 'nothing launched yet');
-    pass('the collection buttons and keys change the games, and More shows the rest of a large collection', { labPages: s.pages });
+    pass('the zone buttons and keys change the zone, and More shows the rest of a large zone', { labPages: s.pages });
 
     // A click on a lit screen launches its game.
-    await page.keyboard.press('2'); await t.until(s => s.group === 'action', 'Action again'); s = await t.settled();
-    const front = s.aim; await page.keyboard.press('ArrowRight'); s = await t.until(s => !s.turning && s.aim >= 0 && s.aim !== front, 'turn to the next machine'); const game = s.machines[s.aim];
-    const at = await page.evaluate(i => window.__riftwalk.screen(i), s.aim); assert(at && Math.abs(at.x - 480) < 60, 'the machine is in the middle of the view: ' + JSON.stringify(at));
+    await page.keyboard.press('1'); await t.until(s => s.zone === 'action' && s.phase === 'hall', 'the Action Den again'); s = await t.settled();
+    const front = s.aim; await page.keyboard.press('ArrowRight'); s = await t.until(s => !s.turning && s.aim >= 0 && s.aim !== front && s.aim < s.machines.length, 'turn to the next machine'); const game = s.machines[s.aim];
+    at = await page.evaluate(i => window.__riftwalk.screen(i), s.aim); assert(at && Math.abs(at.x - 480) < 60, 'the machine is in the middle of the view: ' + JSON.stringify(at));
     if (shots) await page.screenshot({ path: join(shots, 'riftwalk-machine.png') });
     await page.mouse.click(at.x, at.y); await t.until(s => s.phase === 'launch', 'the click launches');
     assert.deepEqual(await t.launched(), [game.url], 'the game page opens: ' + game.title);
@@ -93,18 +104,20 @@ try {
   }
   {
     // Every game is also a plain link, grouped by collection. Enter launches the game in front.
-    const t = await open(), { page } = t; const s = await t.enterHall();
+    const t = await open(), { page } = t; let s = await t.enterHall();
+    // W walks a few steps toward the front machine and stops at the walk circle.
+    await page.keyboard.down('w'); await page.waitForTimeout(2500); await page.keyboard.up('w'); s = await t.state(); const far = Math.hypot(s.place.x, s.place.z); assert(far > 0.3 && far <= 1.0 + 1e-6, 'W walks inside the circle: ' + far); s = await t.settled();
     const links = await page.evaluate(() => [...document.querySelectorAll('#list a')].map(a => a.getAttribute('href'))), heads = await page.evaluate(() => [...document.querySelectorAll('#list h2')].map(h => h.textContent));
     assert.deepEqual(heads, ['Cottage', 'Action', 'ASCII Scenes', 'Strategy', 'GTA', 'Lab']); assert.equal(links.length, 44); assert(links.includes('/tidebreak/') && !links.includes('/lab/riftwalk/'));
     await page.keyboard.press('Enter'); assert.deepEqual(await t.launched(), [s.machines[s.aim].url], 'Enter launches the game in front');
-    pass('every game is a plain link, and Enter launches the game in front', { links: links.length });
+    pass('W walks inside the circle, every game is a plain link, and Enter launches the game in front', { links: links.length, walked: +far.toFixed(2) });
     await page.close();
   }
   {
     const t = await open({ reducedMotion: 'reduce' }), { page } = t; let s = await t.enterHall();
-    await page.click('#groups button[data-group="strategy"]'); s = await t.until(s => s.group === 'strategy' && !s.turning && s.aim >= 0 && s.machines.every(m => m.lit === (m.game ? 1 : 0)), 'reduced motion changes the machines at once', 3000);
+    await page.click('#groups button[data-zone="back"]'); s = await t.until(s => s.zone === 'back' && s.phase === 'hall' && !s.turning && s.aim >= 0 && s.machines.every(m => m.lit === (m.game ? 1 : 0)), 'reduced motion changes the zone at once', 3000);
     await page.click('#kGo'); assert.deepEqual(await t.launched(), [s.machines[s.aim].url]); assert.deepEqual(t.errors, []);
-    pass('reduced motion: the machines change at once and a launch has no glide');
+    pass('reduced motion: the zone changes at once and a launch has no glide');
     await page.close();
   }
   {
@@ -114,24 +127,28 @@ try {
     assert.match(await t.text('tDo'), /Tap the screen to play/);
     const box = id => page.locator(id).boundingBox(), card = await box('#target'), keys = await box('#keys'), groups = await box('#groups');
     for (const id of ['#kPrev', '#kNext', '#kGo']) { const b = await box(id); assert(b.width >= 44 && b.height >= 44, id + ' is 44 px: ' + JSON.stringify(b)); assert(b.x >= 0 && b.x + b.width <= 390); }
-    for (const b of await page.locator('#groups button').all()) { const r = await b.boundingBox(); assert(r.height >= 44 && r.width >= 44, 'a collection button is 44 px'); }
-    assert(card.y + card.height <= keys.y + 1, 'the name card is clear of the buttons'); assert(card.x >= 0 && card.x + card.width <= 390, 'the card fits the width'); assert(groups.y + groups.height < card.y, 'the collection buttons are over the card');
-    let at = await page.evaluate(i => window.__riftwalk.screen(i), s.aim); assert(at.y > groups.y + groups.height && at.y < card.y, 'the screen in front is between the collection buttons and the name card: ' + JSON.stringify(at));
-    // The last collection button can be reached: the row scrolls.
-    await page.tap('#groups button[data-group="lab"]'); s = await t.until(s => s.group === 'lab', 'a tap on the Lab button'); s = await t.settled();
+    for (const b of await page.locator('#groups button').all()) { const r = await b.boundingBox(); assert(r.height >= 44 && r.width >= 44, 'a zone button is 44 px'); }
+    assert(card.y + card.height <= keys.y + 1, 'the name card is clear of the buttons'); assert(card.x >= 0 && card.x + card.width <= 390, 'the card fits the width'); assert(groups.y + groups.height < card.y, 'the zone buttons are over the card');
+    let at = await page.evaluate(i => window.__riftwalk.screen(i), s.aim); assert(at.y > groups.y + groups.height && at.y < card.y, 'the screen in front is between the zone buttons and the name card: ' + JSON.stringify(at));
+    // A tap on a door goes through it. The last zone button can be reached: the row scrolls.
+    await page.evaluate(i => window.__riftwalk.face(i), s.machines.length + 1); await t.until(s => s.aim === s.machines.length + 1, 'the right door is in front'); assert.match(await t.text('tDo'), /Tap the door to go through/);
+    at = await page.evaluate(i => window.__riftwalk.screen(i), s.machines.length + 1); await page.touchscreen.tap(at.x, at.y); s = await t.until(s => s.zone === 'cottage' && s.phase === 'hall', 'a tap on the door goes to Cottage Row');
+    await page.tap('#groups button[data-zone="lab"]'); s = await t.until(s => s.zone === 'lab' && s.phase === 'hall', 'a tap on The Lab button'); s = await t.settled();
     if (shots) await page.screenshot({ path: join(shots, 'riftwalk-phone.png') });
-    await page.tap('#kNext'); s = await t.until(s => !s.turning && s.aim >= 0, 'the ▶ button turns'); s = await t.settled();
+    await page.tap('#kNext'); s = await t.until(s => !s.turning && s.aim >= 0 && s.aim < s.machines.length, 'the ▶ button turns to a machine'); s = await t.settled();
     at = await page.evaluate(i => window.__riftwalk.screen(i), s.aim); await page.touchscreen.tap(at.x, at.y);
     assert.deepEqual(await t.launched(), [s.machines[s.aim].url]); assert.deepEqual(t.errors, []);
-    pass('phone layout: 44 px buttons, the card fits, and taps change the collection and launch a game');
+    pass('phone layout: 44 px buttons, the card fits, and taps go through a door, change the zone and launch a game');
     await page.close();
   }
   {
-    // The real hall, at its smallest file: it loads, and the page counts its splats.
+    // The real worlds, at their smallest files: the first zone loads, and a way to the next zone loads that zone's world.
     const t = await open({ viewport: { width: 480, height: 270 } }, 'q=150k&px=0.5'), { page } = t;
     await page.waitForFunction(() => !document.getElementById('go').disabled, null, { timeout: 240000 });
-    const s = await t.state(); assert.equal(s.hall, true); assert.equal(s.splats, 150000); assert.deepEqual(t.errors, []);
-    pass('the hall world loads', { splats: s.splats });
+    let s = await t.state(); assert.equal(s.hall, true); assert.equal(s.splats, 150000);
+    await page.click('#go'); await t.until(s => s.phase === 'hall', 'the hall opens', 120000); await page.keyboard.press('2');
+    s = await t.until(s => s.zone === 'cottage' && s.phase === 'hall', 'the Cottage Row world loads', 240000); assert.equal(s.hall, true); assert.equal(s.splats, 150000); assert.deepEqual(t.errors, []);
+    pass('the zone worlds load', { splats: s.splats });
     await page.close();
   }
   console.log('riftwalk checks passed');

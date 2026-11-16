@@ -1,10 +1,10 @@
-// Riftwalk: the page. One Gaussian splat world, a dark neon arcade hall made with Marble by World Labs, is drawn by
-// Spark. Each cabinet's screen in that world is a portal to one game: the game's art inside a live edge of light.
-// The visitor picks a collection, the machines show its games, and a machine's portal launches its game.
-// hall.js holds the rules, and worlds/screens.json says where the screens are.
+// Riftwalk: the page. The hall has zones, and each zone is one Gaussian splat world, a dark neon arcade room made
+// with Marble by World Labs and drawn by Spark. Each cabinet's screen in a zone is a portal to one game: the game's art
+// inside a live edge of light. Two rift doors in each zone show the zones next to it, and a door takes the visitor there.
+// hall.js holds the rules, and worlds/<zone>/screens.json says where the screens of a zone are.
 import * as THREE from 'three';
 import { SplatMesh, SparkRenderer } from '@sparkjsdev/spark';
-import { GROUPS, GROW, gamesOf, middle, pages, assign, pick, facing, neighbour, walk } from './hall.js';
+import { GROUPS, ZONES, GROW, gamesOf, zoneGames, doors, middle, pages, assign, pick, facing, neighbour, walk } from './hall.js';
 
 const $ = id => document.getElementById(id);
 const canvas = $('view'), loadLine = $('load'), startCard = $('start'), go = $('go'), target = $('target'), keysBar = $('keys'), groupsBar = $('groups'), flash = $('flash'), list = $('list');
@@ -39,20 +39,27 @@ scene.add(new SparkRenderer({ renderer }));
 function resize() { const w = innerWidth, h = innerHeight; renderer.setSize(w, h, false); camera.aspect = w / h; camera.fov = w < h ? 78 : 62; camera.updateProjectionMatrix(); }
 addEventListener('resize', resize); resize();
 
-/* ---------------- the hall ---------------- */
-// worlds/screens.json carries Marble's own numbers for this world: the metres in one file unit (scale) and the height
-// of the capture point over the floor (ground). A Marble .spz has y down, so the mesh turns half a turn about x.
-let HALL = { scale: 1, ground: 1.35 }, SCREENS = [], hall = null;
-async function loadHall(file, onProgress) {
-  const response = await fetch('./worlds/' + file); if (!response.ok) throw new Error('Hall file missing: ' + file);
-  const total = +response.headers.get('content-length') || 0, reader = response.body.getReader(), parts = []; let got = 0;
-  for (;;) { const { done, value } = await reader.read(); if (done) break; parts.push(value); got += value.length; if (onProgress && total) onProgress(got / total); }
-  const bytes = new Uint8Array(got); let at = 0; for (const p of parts) { bytes.set(p, at); at += p.length; }
-  const mesh = new SplatMesh({ fileBytes: bytes }); await mesh.initialized;
-  mesh.quaternion.set(1, 0, 0, 0); mesh.scale.setScalar(HALL.scale); mesh.position.set(0, HALL.ground, 0);
-  if (hall) { scene.remove(hall); hall.dispose?.(); }
-  hall = mesh; scene.add(mesh); return mesh;
+/* ---------------- the zones ---------------- */
+// Each zone's screens.json carries Marble's own numbers for its world: the metres in one file unit (scale), the height
+// of the capture point over the floor (ground), and the splat files the zone has. A Marble .spz has y down, so the
+// mesh turns half a turn about x. A loaded world is kept, so a way back through a door is instant.
+const DATA = {};       // zone id -> { hall, screens }
+let HALL = { scale: 1, ground: 1.35 }, SCREENS = [], PLACES = [], hall = null;
+const worlds = new Map();
+function loadHall(zone, quality, onProgress) {
+  const key = zone + '/' + quality; if (worlds.has(key)) return worlds.get(key);
+  const job = (async () => {
+    const response = await fetch(`./worlds/${zone}/${quality}.spz`); if (!response.ok) throw new Error('World file missing: ' + key);
+    const total = +response.headers.get('content-length') || 0, reader = response.body.getReader(), parts = []; let got = 0;
+    for (;;) { const { done, value } = await reader.read(); if (done) break; parts.push(value); got += value.length; if (onProgress && total) onProgress(got / total); }
+    const bytes = new Uint8Array(got); let at = 0; for (const p of parts) { bytes.set(p, at); at += p.length; }
+    const mesh = new SplatMesh({ fileBytes: bytes }); await mesh.initialized;
+    const h = DATA[zone].hall; mesh.quaternion.set(1, 0, 0, 0); mesh.scale.setScalar(h.scale); mesh.position.set(0, h.ground, 0);
+    return mesh;
+  })();
+  worlds.set(key, job); job.catch(() => worlds.delete(key)); return job;
 }
+function showHall(mesh) { if (hall === mesh) return; if (hall) scene.remove(hall); hall = mesh; if (mesh) scene.add(mesh); }
 
 /* ---------------- a machine's portal ---------------- */
 // One quad lies on the machine's screen and reaches a little past it. Inside the screen's rounded shape it shows the
@@ -112,7 +119,7 @@ function makePortal(place, index) {
   // The quad's own axes are the screen's: x along its width, y up it, z out of the glass.
   const m = new THREE.Matrix4().makeBasis(new THREE.Vector3(...place.right), new THREE.Vector3(...place.up), new THREE.Vector3(...place.normal));
   group.quaternion.setFromRotationMatrix(m); group.position.set(...place.centre); scene.add(group);
-  return { place, group, uniforms, label, game: null, lit: 0, wantLit: 0 };
+  return { place, group, uniforms, face, label, game: null, lit: 0, wantLit: 0 };
 }
 let portals = [];
 function show(portal, game) {
@@ -125,23 +132,58 @@ function show(portal, game) {
 }
 
 /* ---------------- the visit ---------------- */
-// phase: title, hall, launch. group and page say which games the machines show.
-// REST is the look angle that puts the screens in the middle of the view: it is set when the screens' places load.
+// phase: title, hall, travel (between zones), launch. zone and page say which games the machines show.
+// REST is the look angle that puts the screens in the middle of the view: it is set when a zone's places load.
 let REST = 0;
-const visit = { phase: 'title', group: 0, page: 0, yaw: 0, pitch: 0, turnTo: null, aim: -1, glide: null };
+const visit = { phase: 'title', zone: 0, page: 0, yaw: 0, pitch: 0, turnTo: null, aim: -1, glide: null };
 const lit = () => portals.map(p => !!p.game);
-function setGroup(index, page = 0, turnToMiddle = true) {
-  const group = GROUPS[index]; if (!group) return; const games = gamesOf(group.id, GAMES), count = pages(games.length, SCREENS);
-  visit.group = index; visit.page = ((page % count) + count) % count; visit.aim = -1;
+const gamesHere = () => zoneGames(ZONES[visit.zone].id, GAMES);
+// The places of a zone: its machine screens, then its two rift doors. A door is a portal like a screen: it shows the
+// zone it leads to, and it is always lit.
+function enterZone(index) {
+  const zone = ZONES[index], data = DATA[zone.id];
+  for (const p of portals) { scene.remove(p.group); p.label.material.map?.dispose(); p.label.material.dispose(); p.face.material.dispose(); }
+  visit.zone = index; HALL = data.hall; SCREENS = data.screens; const ways = doors(SCREENS); PLACES = SCREENS.concat(ways);
+  camera.position.set(0, HALL.ground, 0); frame.position.set(0, 0, 0);
+  portals = PLACES.map(makePortal);
+  ways.forEach((door, k) => { const to = (index + door.step + ZONES.length) % ZONES.length, z = ZONES[to]; show(portals[SCREENS.length + k], { zone: to, id: 'door-' + z.id, title: z.label, sub: 'A rift door to the next zone', url: null, art: `./worlds/${z.id}/door.webp`, color: z.color }); });
+  REST = SCREENS.reduce((s, p) => s + Math.atan2(p.centre[1] - HALL.ground, p.distance), 0) / Math.max(1, SCREENS.length);
+  visit.yaw = middle(SCREENS); visit.pitch = REST; visit.turnTo = null;
+  for (const b of groupsBar.children) { const on = b.dataset.zone === zone.id; b.setAttribute('aria-pressed', String(on)); if (on && visit.phase !== 'title') b.scrollIntoView({ block: 'nearest', inline: 'center', behavior: reduced ? 'auto' : 'smooth' }); }
+  setPage(0, false);
+}
+function setPage(page = 0, turnToMiddle = true) {
+  const games = gamesHere(), count = pages(games.length, SCREENS);
+  visit.page = ((page % count) + count) % count; visit.aim = -1;
   assign(SCREENS, games, visit.page).forEach((game, i) => show(portals[i], game));
-  for (const b of groupsBar.children) { const on = b.dataset.group === group.id; b.setAttribute('aria-pressed', String(on)); if (on && visit.phase === 'hall') b.scrollIntoView({ block: 'nearest', inline: 'center', behavior: reduced ? 'auto' : 'smooth' }); }
   $('kMore').hidden = count < 2; $('kMore').textContent = `More ${visit.page + 1}/${count}`;
-  if (turnToMiddle) { if (reduced || visit.phase === 'title') { visit.yaw = middle(SCREENS); visit.turnTo = null; } else visit.turnTo = middle(SCREENS); }
+  if (turnToMiddle) { if (reduced) { visit.yaw = middle(SCREENS); visit.turnTo = null; } else visit.turnTo = middle(SCREENS); }
   paint();
+}
+// Going to another zone: the visitor glides to the door (when a door was used) while the view fills with the zone's
+// light and its world loads. Then the new zone stands around the visitor, and the light clears.
+const want = query.get('q') || (touch ? '500k' : 'full'), noWorld = query.get('world') === 'none';
+const best = zone => { const files = DATA[zone].hall.files || ['150k']; return files.includes(want) ? want : files.includes('500k') && want !== '150k' ? '500k' : '150k'; };
+function sharpen(index) {
+  const zone = ZONES[index].id, quality = best(zone); if (noWorld || quality === '150k') return;
+  loadHall(zone, quality).then(mesh => { if (visit.zone === index && visit.phase !== 'travel') showHall(mesh); }).catch(() => { /* the small world stays */ });
+}
+function travel(index, portal = null) {
+  if (visit.phase !== 'hall' || visit.glide || index === visit.zone || !ZONES[index]) return;
+  const zone = ZONES[index]; visit.phase = 'travel'; target.hidden = keysBar.hidden = groupsBar.hidden = true; canvas.classList.remove('aim'); flash.style.setProperty('--tint', zone.color);
+  if (portal && !reduced) visit.glide = { portal, t: 0, from: frame.position.clone() };
+  const wait = ms => new Promise(done => setTimeout(done, ms));
+  if (reduced) flash.classList.add('on'); else setTimeout(() => { if (visit.phase === 'travel') flash.classList.add('on'); }, portal ? 300 : 0);
+  // A world that is already sharp shows at once; a new one shows small first.
+  const quality = worlds.has(zone.id + '/' + best(zone.id)) ? best(zone.id) : '150k';
+  Promise.all([noWorld ? null : loadHall(zone.id, quality), wait(reduced ? 0 : portal ? 800 : 450)]).then(([mesh]) => {
+    visit.glide = null; showHall(mesh); enterZone(index); visit.phase = 'hall'; flash.classList.remove('on'); keysBar.hidden = groupsBar.hidden = false; paint(); sharpen(index);
+  }).catch(error => { console.error(error); visit.glide = null; frame.position.set(0, 0, 0); visit.phase = 'hall'; flash.classList.remove('on'); keysBar.hidden = groupsBar.hidden = false; loadLine.hidden = false; loadLine.textContent = `${zone.label} did not load.`; setTimeout(() => { loadLine.hidden = true; }, 4000); paint(); });
 }
 // Going into a game: the visitor glides to the machine while the view fills with its light, then the game's page opens.
 function launch(index) {
   const p = portals[index]; if (!p?.game || visit.phase !== 'hall' || visit.glide) return;
+  if (p.game.zone !== undefined) return travel(p.game.zone, p);
   visit.phase = 'launch'; visit.glide = { portal: p, t: 0, from: frame.position.clone() }; target.hidden = keysBar.hidden = groupsBar.hidden = true; flash.style.setProperty('--tint', p.game.color);
   const leave = () => { location.assign(p.game.url); };
   if (reduced) { flash.classList.add('on'); leave(); return; }
@@ -149,13 +191,14 @@ function launch(index) {
 }
 // A page kept in the back-forward cache comes back mid-launch: put the visitor back in the hall.
 addEventListener('pageshow', e => { if (!e.persisted || visit.phase !== 'launch') return; flash.classList.remove('on'); frame.position.set(0, 0, 0); visit.glide = null; visit.phase = 'hall'; keysBar.hidden = groupsBar.hidden = false; paint(); });
-function start() { visit.phase = 'hall'; startCard.hidden = true; keysBar.hidden = groupsBar.hidden = false; setGroup(visit.group, visit.page, true); }
+function start() { visit.phase = 'hall'; startCard.hidden = true; keysBar.hidden = groupsBar.hidden = false; paint(); }
 function paint() {
   const p = portals[visit.aim];
   if (visit.phase !== 'hall' || !p?.game) { target.hidden = true; $('kGo').disabled = true; canvas.classList.remove('aim'); return; }
   target.hidden = false; $('kGo').disabled = false; target.style.setProperty('--tint', p.game.color);
   $('tTitle').textContent = p.game.title; $('tSub').textContent = p.game.sub; $('tSub').hidden = !p.game.sub;
-  $('tDo').textContent = touch ? 'Tap the screen to play' : 'Click the screen or press Enter to play';
+  const door = p.game.zone !== undefined; $('kGo').textContent = door ? 'Go' : 'Play';
+  $('tDo').textContent = door ? (touch ? 'Tap the door to go through' : 'Click the door or press Enter to go through') : touch ? 'Tap the screen to play' : 'Click the screen or press Enter to play';
 }
 
 /* ---------------- looking and walking ---------------- */
@@ -166,10 +209,10 @@ function lookRay(clientX, clientY) {
   ndc.set(clientX / innerWidth * 2 - 1, -(clientY / innerHeight) * 2 + 1, 0.5).unproject(camera); dir.copy(ndc).sub(eye).normalize();
   return [{ x: eye.x, y: eye.y, z: eye.z }, { x: dir.x, y: dir.y, z: dir.z }];
 }
-const portalAt = (x, y) => visit.phase === 'hall' ? pick(...lookRay(x, y), SCREENS, lit(), touch ? 1.45 : 1.1) : -1;
-// The machines as the visitor sees them from where they stand: after a few steps, a machine's heading is not the one
+const portalAt = (x, y) => visit.phase === 'hall' ? pick(...lookRay(x, y), PLACES, lit(), touch ? 1.45 : 1.1) : -1;
+// The machines and doors as the visitor sees them from where they stand: after a few steps, a machine's heading is not the one
 // it has from the middle of the hall.
-const seen = () => SCREENS.map(p => ({ ...p, heading: Math.atan2(p.centre[0] - frame.position.x, -(p.centre[2] - frame.position.z)) }));
+const seen = () => PLACES.map(p => ({ ...p, heading: Math.atan2(p.centre[0] - frame.position.x, -(p.centre[2] - frame.position.z)) }));
 function turn(step) { if (visit.phase !== 'hall' || visit.glide) return; const now = seen(), i = neighbour(visit.turnTo ?? visit.yaw, now, lit(), step); if (i >= 0) visit.turnTo = now[i].heading; }
 const keys = new Set();
 function step(dt) {
@@ -203,20 +246,20 @@ canvas.addEventListener('pointermove', e => {
 });
 const lift = e => { if (!drag || e.pointerId !== drag.id) return; const tap = drag.moved < 10 && performance.now() - drag.at < 500, d = drag; drag = null; canvas.classList.remove('look'); if (tap && e.type === 'pointerup') { const i = portalAt(d.sx, d.sy); if (i >= 0) launch(i); } };
 canvas.addEventListener('pointerup', lift); canvas.addEventListener('pointercancel', lift);
-const nextGroup = step => setGroup((visit.group + step + GROUPS.length) % GROUPS.length);
+const nextZone = step => travel((visit.zone + step + ZONES.length) % ZONES.length);
 addEventListener('keydown', e => {
   if (visit.phase !== 'hall' || window.GameSwitch?.isOpen) return; const k = e.key.toLowerCase();
   if (k === 'arrowleft' || k === 'arrowright') { e.preventDefault(); turn(k === 'arrowright' ? 1 : -1); }
-  else if (k === 'arrowup' || k === 'arrowdown') { e.preventDefault(); nextGroup(k === 'arrowdown' ? 1 : -1); }
-  else if (k >= '1' && k <= String(GROUPS.length)) setGroup(+k - 1);
-  else if (k === 'pagedown' || k === 'm') { if (!$('kMore').hidden) { e.preventDefault(); setGroup(visit.group, visit.page + 1); } }
+  else if (k === 'arrowup' || k === 'arrowdown') { e.preventDefault(); nextZone(k === 'arrowdown' ? 1 : -1); }
+  else if (k >= '1' && k <= String(ZONES.length)) travel(+k - 1);
+  else if (k === 'pagedown' || k === 'm') { if (!$('kMore').hidden) { e.preventDefault(); setPage(visit.page + 1); } }
   else if (k === 'enter' || k === ' ') { if (e.target instanceof HTMLButtonElement) return; e.preventDefault(); if (!e.repeat && visit.aim >= 0) launch(visit.aim); }
   else if (['w', 'a', 's', 'd'].includes(k)) keys.add(k);
 });
 addEventListener('keyup', e => keys.delete(e.key.toLowerCase())); addEventListener('blur', () => keys.clear());
 $('kPrev').addEventListener('click', () => turn(-1)); $('kNext').addEventListener('click', () => turn(1));
-$('kGo').addEventListener('click', () => { if (visit.aim >= 0) launch(visit.aim); }); $('kMore').addEventListener('click', () => setGroup(visit.group, visit.page + 1));
-GROUPS.forEach((g, i) => { if (!gamesOf(g.id, GAMES).length) return; const b = document.createElement('button'); b.type = 'button'; b.dataset.group = g.id; b.textContent = g.label; b.style.setProperty('--tint', g.color); b.setAttribute('aria-pressed', 'false'); b.addEventListener('click', () => setGroup(i)); groupsBar.append(b); });
+$('kGo').addEventListener('click', () => { if (visit.aim >= 0) launch(visit.aim); }); $('kMore').addEventListener('click', () => setPage(visit.page + 1));
+ZONES.forEach((z, i) => { const b = document.createElement('button'); b.type = 'button'; b.dataset.zone = z.id; b.textContent = z.label; b.style.setProperty('--tint', z.color); b.setAttribute('aria-pressed', 'false'); b.addEventListener('click', () => travel(i)); groupsBar.append(b); });
 go.addEventListener('click', start);
 
 /* ---------------- the loop ---------------- */
@@ -232,29 +275,25 @@ function tick(now) {
 }
 
 /* ---------------- start up ---------------- */
-// The screens' places load first. Then a small hall file shows; a phone then takes the 500,000-splat file and a
-// desktop the full file, and each replaces the one before it when it is ready.
-const want = query.get('q') || (touch ? '500k' : 'full'), files = { '150k': 'hall-150k.spz', '500k': 'hall-500k.spz', full: 'hall-full.spz' };
+// The screens' places of every zone load first. Then the first zone's small world shows; a phone then takes the
+// 500,000-splat file and a desktop the largest file the zone has, and it replaces the small one when it is ready.
 const ready = () => { loadLine.hidden = true; go.disabled = false; go.textContent = 'Enter the hall'; go.focus({ preventScroll: true }); };
-fetch('./worlds/screens.json').then(r => { if (!r.ok) throw new Error('screens.json missing'); return r.json(); }).then(data => {
-  HALL = data.hall; SCREENS = data.screens; camera.position.set(0, HALL.ground, 0);
-  portals = SCREENS.map(makePortal); visit.yaw = middle(SCREENS);
-  REST = SCREENS.reduce((s, p) => s + Math.atan2(p.centre[1] - HALL.ground, p.distance), 0) / Math.max(1, SCREENS.length); visit.pitch = REST;
-  // The first collection that fills the most machines greets the visitor.
-  const first = GROUPS.findIndex(g => g.id === 'action'); setGroup(first < 0 ? 0 : first, 0, true);
-  if (query.get('world') === 'none') return ready();
-  return loadHall(files['150k'], p => { loadLine.textContent = `Loading the hall… ${Math.round(p * 100)}%`; }).then(() => {
-    ready();
-    if (want !== '150k' && files[want]) { loadLine.hidden = false; loadLine.textContent = 'Sharpening the hall…'; loadHall(files[want], p => { loadLine.textContent = `Sharpening the hall… ${Math.round(p * 100)}%`; }).then(() => { loadLine.hidden = true; }).catch(() => { loadLine.hidden = true; }); }
-  });
+Promise.all(ZONES.map(z => fetch(`./worlds/${z.id}/screens.json`).then(r => { if (!r.ok) throw new Error('screens.json missing: ' + z.id); return r.json(); }).then(data => { DATA[z.id] = data; }))).then(() => {
+  const first = Math.max(0, ZONES.findIndex(z => z.id === (query.get('zone') || 'action')));
+  enterZone(first);
+  if (noWorld) return ready();
+  return loadHall(ZONES[first].id, '150k', p => { loadLine.textContent = `Loading the hall… ${Math.round(p * 100)}%`; }).then(mesh => { showHall(mesh); ready(); sharpen(first); });
 }).catch(error => { console.error(error); noGraphics('The hall did not load.'); });
 requestAnimationFrame(tick);
 
 // A handle for the browser check (qa/lab/riftwalk.e2e.mjs). The page never reads it.
 window.__riftwalk = {
-  state: () => ({ phase: visit.phase, group: GROUPS[visit.group].id, page: visit.page, pages: pages(gamesOf(GROUPS[visit.group].id, GAMES).length, SCREENS), aim: visit.aim, yaw: visit.yaw, turning: visit.turnTo !== null, place: { x: frame.position.x, z: frame.position.z }, hall: !!hall, splats: hall?.packedSplats?.numSplats ?? 0,
-    machines: portals.map(p => ({ game: p.game?.id ?? null, title: p.game?.title ?? null, url: p.game?.url ?? null, heading: p.place.heading, lit: p.lit, art: p.uniforms.uHasMap.value === 1 })) }),
-  // Where a machine's screen centre is on the page, or null when it is behind the view.
+  state: () => ({ phase: visit.phase, zone: ZONES[visit.zone].id, page: visit.page, pages: pages(gamesHere().length, SCREENS), aim: visit.aim, yaw: visit.yaw, turning: visit.turnTo !== null, place: { x: frame.position.x, z: frame.position.z }, hall: !!hall, splats: hall?.packedSplats?.numSplats ?? 0,
+    machines: portals.slice(0, SCREENS.length).map(p => ({ game: p.game?.id ?? null, title: p.game?.title ?? null, url: p.game?.url ?? null, heading: p.place.heading, lit: p.lit, art: p.uniforms.uHasMap.value === 1 })),
+    doors: portals.slice(SCREENS.length).map(p => ({ to: ZONES[p.game.zone].id, title: p.game.title, heading: p.place.heading, lit: p.lit, art: p.uniforms.uHasMap.value === 1 })) }),
+  // Where a place's centre is on the page (the machines first, then the two doors), or null when it is behind the view.
   screen: i => { const p = portals[i]; if (!p) return null; camera.updateMatrixWorld(true); ndc.set(...p.place.centre).project(camera); return ndc.z > 1 ? null : { x: (ndc.x + 1) / 2 * innerWidth, y: (1 - ndc.y) / 2 * innerHeight }; },
+  // Turn at once to a place (a machine, or a door after the machines), as the visitor sees it from where they stand.
+  face: i => { const p = seen()[i]; if (p) window.__riftwalk.look(p.heading); },
   look: heading => { visit.turnTo = null; visit.yaw = wrap(heading); visit.pitch = REST; camera.rotation.set(visit.pitch, -visit.yaw, 0); camera.updateMatrixWorld(true); },
 };
