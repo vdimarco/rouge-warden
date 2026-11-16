@@ -72,10 +72,10 @@ const data = JSON.parse(read(`public/lab/riftwalk/worlds/${zone.id}/screens.json
 
 { // The two rift doors: one on each side, upright on the floor, facing the visitor, clear of the machines and outside
   // the walk circle. A ray at a door picks it, and the arrows stop at it.
-  const ways = doors(SCREENS), places = SCREENS.concat(ways), all = places.map(() => true), eye = { x: 0, y: data.hall.ground, z: 0 };
+  const ways = doors(SCREENS, data.hall.doors), places = SCREENS.concat(ways), all = places.map(() => true), eye = { x: 0, y: data.hall.ground, z: 0 };
   assert.deepEqual(ways.map(d => d.step), [-1, 1]); assert(ways[0].heading < 0 && ways[1].heading > 0);
   ways.forEach((d, k) => {
-    assert(near(Math.hypot(d.centre[0], d.centre[2]), d.distance, 1e-6) && d.distance > WALK + 0.4 && d.distance < 5, 'the door is in the ring of machines: ' + d.distance); assert(d.width >= DOOR.least && d.width <= DOOR.most && d.height === DOOR.height); assert(d.centre[1] - d.height / 2 >= 0 && d.centre[1] - d.height / 2 < 0.2, 'the door stands on the floor');
+    assert(near(Math.hypot(d.centre[0], d.centre[2]), d.distance, 1e-6) && d.distance > WALK + 0.4 && d.distance < 7, 'the door is in the zone: ' + d.distance); assert(d.width >= DOOR.least && d.width <= DOOR.most && d.height >= DOOR.height && d.height < 3.2); assert(d.centre[1] - d.height / 2 >= 0 && d.centre[1] - d.height / 2 < 0.2, 'the door stands on the floor');
     assert(near(d.normal[0] * d.centre[0] + d.normal[2] * d.centre[2], -d.distance, 1e-6), 'the door faces the middle');
     for (const s of SCREENS) { const apart = Math.abs(Math.atan2(Math.sin(s.heading - d.heading), Math.cos(s.heading - d.heading))); assert(apart > 0.2, `${zone.id}: door ${k} is ${apart.toFixed(2)} rad from a machine`); }
     const v = [d.centre[0], d.centre[1] - eye.y, d.centre[2]], l = Math.hypot(...v), i = SCREENS.length + k;

@@ -59,6 +59,17 @@ The user asked for higher fidelity. No new world could be made, so the gain is i
 
 The worlds folder is about 222 MB.
 
+## A cleaner, more natural look
+The user's words: "it looks awkward clean it up make it more natural and differentiated".
+
+- A game shows as a picture on the machine's own tube: scan lines, darker corners, a faint shine on the glass, a thin live edge and a small glow. The glow reaches 4.5 cm past the screen.
+- A game's name shows only over the machine in the middle of the view. The other machines carry no floating words.
+- A machine with no game idles in its zone's colour, with a slow bright bar that rolls down the tube. It is no longer a dark slab.
+- A rift door is an arch, with its zone seen through a slow swirl of that zone's light.
+- The GTA world has two neon arches of its own. `hall.doors` in that zone's `screens.json` puts the two rift doors in them.
+- Each zone has its own look (`LOOKS` in `main.js`): the corner of its screens, how much the edge wavers, the strength of the scan lines, and the letters of its names. ASCII Scenes has square corners, a steady edge, strong scan lines and monospace letters. The Lab has round corners and a restless edge.
+- The zone's name shows large for a moment on the way in, in the zone's colour.
+
 ## Layout
 `public/lab/riftwalk/hall.js` holds the rules with no drawing. The collections are a copy of the homepage's `GROUPS`, and the node test compares the two game for game. It also checks that each collection is in one zone. Names, lines, routes and art come from `window.GameSwitch.GAMES` at run time.
 

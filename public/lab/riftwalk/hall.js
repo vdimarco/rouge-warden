@@ -57,9 +57,11 @@ export function zoneGames(zoneId, games) {
 // gap with no room for a door is not used. Where the machines leave a long open wall, the door stands on that side of
 // the visitor, a quarter turn from the front if the wall reaches that far. The left door leads to the zone before
 // (step -1) and the right door to the zone after (step 1). A door has the same fields as a screen, so pick, facing and
-// neighbour treat it as one more place. Its foot is on the floor.
+// neighbour treat it as one more place. Its foot is on the floor. The page draws a door as an arch.
 export const DOOR = { least: 0.36, most: 0.95, height: 1.9, body: 1.6, open: 1.6, away: 2.7, clear: 0.45 };   // body: a cabinet is this many screen widths wide
-export function doors(screens) {
+export function doors(screens, fixed) {
+  // A zone whose world has its own doorways names them (hall.doors in its screens.json): the doors stand in those.
+  if (fixed && fixed.length === 2) return fixed.map((f, k) => { const d = direction(f.heading); return { step: k ? 1 : -1, heading: f.heading, distance: f.distance, width: f.width, height: f.height, centre: [d.x * f.distance, f.height / 2, d.z * f.distance], right: [-d.z, 0, d.x], up: [0, 1, 0], normal: [-d.x, 0, -d.z] }; });
   const ring = [...screens].sort((a, b) => wrap(a.heading) - wrap(b.heading));
   return [-1, 1].map(step => {
     let heading = step * Math.PI / 2, widest = 0, distance = DOOR.away, width = DOOR.most;

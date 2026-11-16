@@ -1,7 +1,7 @@
 ## ADDED Requirements
 
 ### Requirement: A hall of zones with machines whose screens are portals
-Riftwalk SHALL show a dark neon arcade hall at eye height. The hall SHALL have one zone for each collection of the homepage, with the collection's name and in the homepage's order: Cottage, Action, ASCII Scenes, Strategy, GTA and Lab. Each zone SHALL be a Gaussian splat world with arcade machines around the visitor. The visitor SHALL start in the Action zone. Each machine's screen SHALL show a portal to one game of the zone, in the homepage's order, with the game's key art inside a moving bright edge and the game's name over the screen. The first game SHALL be on the machine in front. A machine with no game SHALL stay dark and SHALL NOT launch. A zone with more games than machines SHALL offer a More control that shows its other games. Opening a portal SHALL load that game's route. Riftwalk SHALL NOT show a portal to itself.
+Riftwalk SHALL show a dark neon arcade hall at eye height. The hall SHALL have one zone for each collection of the homepage, with the collection's name and in the homepage's order: Cottage, Action, ASCII Scenes, Strategy, GTA and Lab. Each zone SHALL be a Gaussian splat world with arcade machines around the visitor. The visitor SHALL start in the Action zone. Each machine's screen SHALL show a portal to one game of the zone, in the homepage's order, with the game's key art inside a moving bright edge. The name of a game SHALL show over the machine in the middle of the view only. Each zone SHALL have its own screen style and letters, and SHALL show its name large for a moment when the visitor arrives. The first game SHALL be on the machine in front. A machine with no game SHALL idle dimly in its zone's colour and SHALL NOT launch. A zone with more games than machines SHALL offer a More control that shows its other games. Opening a portal SHALL load that game's route. Riftwalk SHALL NOT show a portal to itself.
 
 #### Scenario: Enter the hall
 - **WHEN** the visitor enters the hall
@@ -16,7 +16,7 @@ Riftwalk SHALL show a dark neon arcade hall at eye height. The hall SHALL have o
 - **THEN** the view moves to the screen, fills with its light, and the game's page loads
 
 ### Requirement: Move between zones
-Each zone SHALL have two rift doors between its machines. A door SHALL show a view of the zone it leads to, inside a moving bright edge, with that zone's name over it. The left door SHALL lead to the zone before and the right door to the zone after, and the last zone SHALL lead on to the first. A tap or a click on a door, or Enter with the door in the middle of the view, SHALL take the visitor to that zone: the view moves to the door, fills with light, and clears on the new zone, with the visitor in its middle and its first game in front. A button for each zone, the up and down arrow keys and the keys 1 to 6 SHALL also change the zone. A zone's world SHALL load when the visitor first goes there.
+Each zone SHALL have two rift doors between its machines. A door SHALL be an arch that shows a view of the zone it leads to, inside a moving bright edge, with that zone's name over it. The left door SHALL lead to the zone before and the right door to the zone after, and the last zone SHALL lead on to the first. A tap or a click on a door, or Enter with the door in the middle of the view, SHALL take the visitor to that zone: the view moves to the door, fills with light, and clears on the new zone, with the visitor in its middle and its first game in front. A button for each zone, the up and down arrow keys and the keys 1 to 6 SHALL also change the zone. A zone's world SHALL load when the visitor first goes there.
 
 #### Scenario: Go through a door
 - **WHEN** the visitor in the Action zone turns to the right door and clicks it
@@ -28,7 +28,7 @@ Each zone SHALL have two rift doors between its machines. A door SHALL show a vi
 
 #### Scenario: Use a zone button
 - **WHEN** the visitor presses the Strategy button
-- **THEN** three machines show the Strategy games, the other machines are dark, and no More control shows
+- **THEN** three machines show the Strategy games, the other machines idle, and no More control shows
 
 ### Requirement: Controls for mouse, keys and touch
 The visitor SHALL look by dragging the view, and a drag SHALL NOT launch a game. The lit machine in the middle of the view SHALL be named in a card, and Enter, Space and the Play button SHALL launch its game. The left and right arrow keys and the ◀ and ▶ buttons SHALL turn the view to the next lit machine or door and SHALL go round the circle. W A S D SHALL walk the visitor inside a circle of 1 m. Every on-screen button SHALL be at least 44 px on its shorter side.

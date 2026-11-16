@@ -28,5 +28,9 @@ One zone for each category, and higher fidelity:
 - [x] Full-resolution file for every zone; neighbour zones loaded ahead; three worlds kept in memory; art colours and filtering.
 - [x] Pass `qa/lab/riftwalk.test.mjs` (28 checks) and `qa/lab/riftwalk.e2e.mjs` (9 checks).
 - [x] Look at the Strategy and GTA zones in captured frames of the real worlds (`shots/zones.jpg`).
+
+A cleaner look:
+- [x] Tube look for screens, names only for the machine in view, idle machines in the zone's colour, arch doors, the GTA world's own arches, a look for each zone, the zone banner.
+- [x] Pass both tests again; look at three zones in captured frames (`shots/look.jpg`).
 - [ ] See the 500,000 and full-resolution files drawn with the portals (software WebGL was too slow for a frame at that size in this session).
 - [ ] Play on a real phone and a real graphics card (not possible in this session).

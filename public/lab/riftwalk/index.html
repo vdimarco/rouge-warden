@@ -31,7 +31,12 @@
   .groups::-webkit-scrollbar { display: none; }
   .groups[hidden] { display: none; }
   .groups button { flex: none; height: 44px; min-width: 44px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--line); background: rgba(10, 6, 18, 0.86); color: var(--ink); font: 700 14px/1 var(--body); cursor: pointer; white-space: nowrap; }
-  .groups button[aria-pressed="true"] { background: var(--tint, var(--gold)); color: #14100a; border-color: transparent; }
+  .groups button[aria-pressed="true"] { background: var(--tint, var(--gold)); color: #14100a; border-color: transparent; box-shadow: 0 0 16px color-mix(in srgb, var(--tint, var(--gold)) 60%, transparent); }
+  /* The zone's name, large for a moment on the way in. */
+  .zone { position: fixed; left: 0; right: 0; top: 30%; text-align: center; font: 700 clamp(34px, 8vw, 84px)/1 var(--title); letter-spacing: 0.04em; text-transform: uppercase; color: #fff; text-shadow: 0 0 18px var(--zone, var(--neon)), 0 0 46px var(--zone, var(--neon)); opacity: 0; pointer-events: none; z-index: 4; }
+  .zone.show { animation: zone-in 2.2s ease-out both; }
+  @keyframes zone-in { 0% { opacity: 0; transform: scale(1.12); } 14% { opacity: 1; transform: none; } 70% { opacity: 1; } 100% { opacity: 0; } }
+  @media (prefers-reduced-motion: reduce) { @keyframes zone-in { 0% { opacity: 1; } 80% { opacity: 1; } 100% { opacity: 0; } } }
   .load { position: fixed; left: 50%; bottom: calc(var(--sab) + 28px); transform: translateX(-50%); color: var(--muted); font: 600 14px/1 var(--body); z-index: 6; pointer-events: none; text-align: center; width: max-content; max-width: calc(100vw - 32px); }
   .load[hidden] { display: none; }
   /* The flash that covers the view while a game opens. */
@@ -62,6 +67,7 @@
   <button type="button" id="kGo" class="go">Play</button>
   <button type="button" id="kNext" aria-label="Turn to the machine on the right">▶</button>
 </div>
+<div class="zone" id="zone" aria-hidden="true"></div>
 <p class="load" id="load">Loading the hall…</p>
 <div class="flash" id="flash"></div>
 <section class="card start" id="start">

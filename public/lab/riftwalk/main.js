@@ -72,32 +72,53 @@ function keepNear(index) {
 // game's art, pulled slightly toward the rim like a view through an opening. On the rim runs the live edge: a band of
 // light that wavers with noise, with a brighter pulse that travels round it. A machine with no game shows dark glass
 // with a faint edge. The quad draws after the splats and writes no depth.
-const MARGIN = 0.07;   // metres of glow outside the screen
+const MARGIN = 0.045;   // metres of glow outside the screen
+// Each zone has its own look, so a visitor knows a zone by its screens as well as by its room: the corner of a screen
+// (radius, metres), how much its edge wavers (wave, metres), how strong its scan lines are (scan), and the letters of
+// its names (font).
+const LOOKS = {
+  cottage: { radius: 0.035, wave: 0.006, scan: 0.45, font: '700 74px Georgia, "Times New Roman", serif' },
+  action: { radius: 0.02, wave: 0.014, scan: 0.6, font: 'italic 800 74px "Arial Narrow", "Helvetica Neue", Arial, sans-serif' },
+  ascii: { radius: 0.003, wave: 0.0, scan: 1.0, font: '700 66px "Courier New", ui-monospace, monospace' },
+  strategy: { radius: 0.012, wave: 0.003, scan: 0.5, font: '600 70px "Palatino Linotype", Palatino, Georgia, serif' },
+  gta: { radius: 0.02, wave: 0.02, scan: 0.75, font: '900 76px Impact, "Arial Black", sans-serif' },
+  lab: { radius: 0.05, wave: 0.02, scan: 0.55, font: '600 68px "Trebuchet MS", "Segoe UI", sans-serif' },
+};
 const VERTEX = `varying vec2 vUv; void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`;
 const FRAGMENT = `
-  varying vec2 vUv; uniform sampler2D uMap; uniform float uHasMap; uniform float uAspect; uniform vec3 uColor; uniform vec2 uHalf; uniform vec2 uQuad;
-  uniform float uLit; uniform float uTime; uniform float uHot; uniform float uSeed;
+  varying vec2 vUv; uniform sampler2D uMap; uniform float uHasMap; uniform float uAspect; uniform vec3 uColor; uniform vec3 uZone; uniform vec2 uHalf; uniform vec2 uQuad;
+  uniform float uLit; uniform float uTime; uniform float uHot; uniform float uSeed; uniform float uRadius; uniform float uWave; uniform float uScan; uniform float uDoor;
   float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
   float noise(vec2 p) { vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f); return mix(mix(hash(i), hash(i + vec2(1, 0)), f.x), mix(hash(i + vec2(0, 1)), hash(i + vec2(1, 1)), f.x), f.y); }
-  float box(vec2 p, vec2 b, float r) { vec2 q = abs(p) - b + r; return length(max(q, 0.0)) + min(max(q.x, q.y), 0.0) - r; }
+  // Under 0 inside the shape. A screen is a box with round corners. A door is an arch: a box with a half circle on top.
+  float shape(vec2 p) {
+    if (uDoor > 0.5) { float cy = uHalf.y - uHalf.x; return p.y > cy ? length(p - vec2(0.0, cy)) - uHalf.x : max(abs(p.x) - uHalf.x, -p.y - uHalf.y); }
+    vec2 q = abs(p) - uHalf + uRadius; return length(max(q, 0.0)) + min(max(q.x, q.y), 0.0) - uRadius;
+  }
   void main() {
-    vec2 p = (vUv * 2.0 - 1.0) * uQuad;                       // metres from the screen's centre
-    float d = box(p, uHalf, 0.022);                           // under 0 inside the screen
+    vec2 p = (vUv * 2.0 - 1.0) * uQuad;                       // metres from the centre
+    float d = shape(p);
     float turn = atan(p.y / uHalf.y, p.x / uHalf.x); vec2 c = vec2(cos(turn), sin(turn));   // the way round the rim, with no seam
     float n = noise(c * 2.3 + vec2(uTime * 0.55 + uSeed, uSeed)) * 0.6 + noise(c * 6.0 - vec2(uSeed, uTime * 0.9)) * 0.4;
-    float edge = d - (n - 0.5) * 0.014;                       // the rim wavers
-    float inside = smoothstep(0.004, -0.004, edge);
-    // The art covers the screen: the longer side of the picture is cropped.
-    vec2 uv = p / uHalf * 0.5; float shape = uHalf.x / uHalf.y; if (uAspect > shape) uv.x *= shape / uAspect; else uv.y *= uAspect / shape;
-    float rim = smoothstep(-0.09, 0.0, d); uv += c * rim * 0.02 * sin(uTime * 0.8 + uSeed); uv += 0.5;
-    vec3 art = mix(uColor * 0.35, texture2D(uMap, uv).rgb, uHasMap) * (0.86 + 0.14 * uHot) * (1.0 - 0.45 * rim);
-    // Dark glass for a machine with no game: near black, with slow grey static.
-    vec3 glass = vec3(0.016, 0.012, 0.03) + 0.02 * noise(p * 60.0 + uTime * 3.0);
-    vec3 face = mix(glass, art, uLit);
+    float edge = d - (n - 0.5) * uWave;                       // the rim wavers
+    float inside = smoothstep(0.003, -0.003, edge), rim = smoothstep(-0.07, 0.0, d);
+    // The picture covers the shape: the longer side of the picture is cropped.
+    vec2 uv = p / uHalf * 0.5; float form = uHalf.x / uHalf.y; if (uAspect > form) uv.x *= form / uAspect; else uv.y *= uAspect / form; uv += 0.5;
+    vec3 pic = mix(uColor * 0.35, texture2D(uMap, uv).rgb, uHasMap);
+    // A game shows as a picture on the machine's own tube: scan lines, darker corners, and a faint shine on the glass.
+    float lines = 1.0 - uScan * 0.15 * (0.5 + 0.5 * sin(p.y * 820.0));
+    float shine = 0.045 * smoothstep(0.22, 0.0, abs(p.x / uHalf.x * 0.6 + p.y / uHalf.y - 0.55));
+    vec3 art = pic * lines * (1.0 - 0.38 * rim) * (0.9 + 0.1 * uHot) + shine;
+    // A door shows its zone through a slow swirl of that zone's light, thicker toward the rim.
+    if (uDoor > 0.5) { float r = length(p / uHalf); float swirl = noise(c * 1.6 + vec2(r * 3.0 - uTime * 0.45, uSeed)) * 0.6 + noise(c * 4.0 + vec2(uSeed, r * 5.0 + uTime * 0.3)) * 0.4; art = pic * (0.5 + 0.3 * swirl) * (1.0 - 0.55 * rim) + uColor * (0.06 + 0.5 * rim * swirl); }
+    // A machine with no game idles in its zone's colour: a dim tube with a slow bright bar that rolls down it.
+    float bar = exp(-pow((fract(p.y / (uHalf.y * 2.0) + uTime * 0.06 + uSeed) - 0.5) / 0.07, 2.0));
+    vec3 idle = (uZone * (0.07 + 0.05 * n + 0.14 * bar) + 0.012) * lines * (1.0 - 0.5 * rim);
+    vec3 face = mix(idle, art, uLit);
     float pulse = pow(0.5 + 0.5 * cos(turn - uTime * 1.7 - uSeed * 6.283), 10.0);
-    float band = exp(-pow(edge / 0.009, 2.0)) * (0.7 + 0.5 * uHot + 0.9 * pulse) + 0.42 * exp(-pow(max(edge, 0.0) / 0.035, 2.0)) * (0.5 + n) * (1.0 - 0.88 * inside);   // the soft glow is outside the rim: the art keeps its own colours
-    band *= mix(0.16, 1.0, uLit);
-    vec3 glow = mix(uColor, vec3(1.0), 0.5 * exp(-pow(edge / 0.004, 2.0)) + 0.35 * pulse);
+    float band = exp(-pow(edge / 0.006, 2.0)) * (0.75 + 0.5 * uHot + 0.8 * pulse) + 0.24 * exp(-pow(max(edge, 0.0) / 0.02, 2.0)) * (0.5 + n) * (1.0 - inside);
+    band *= mix(0.2, 1.0, uLit);
+    vec3 glow = mix(mix(uZone, uColor, uLit), vec3(1.0), 0.5 * exp(-pow(edge / 0.003, 2.0)) + 0.3 * pulse);
     float a = clamp(max(inside, band), 0.0, 1.0);
     gl_FragColor = vec4(face * inside + glow * band, a);     // premultiplied
   }`;
@@ -108,16 +129,17 @@ function artTexture(url, done) {
   if (!entry) { entry = { texture: null, waiting: [] }; textures.set(url, entry); loader.load(url, t => { t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = renderer.capabilities.getMaxAnisotropy(); entry.texture = t; for (const f of entry.waiting) f(t); entry.waiting.length = 0; }, undefined, () => { /* a missing picture leaves the portal's own colour */ }); }
   if (entry.texture) done(entry.texture); else entry.waiting.push(done);
 }
-function labelTexture(title, color) {
+function labelTexture(title, color, font = LOOKS.action.font) {
   const c = document.createElement('canvas'); c.width = 768; c.height = 128; const g = c.getContext('2d'); g.textAlign = 'center'; g.textBaseline = 'middle';
-  let size = 78; g.font = `700 ${size}px Georgia, "Times New Roman", serif`; while (size > 30 && g.measureText(title).width > 730) { size -= 4; g.font = `700 ${size}px Georgia, "Times New Roman", serif`; }
+  let size = +font.match(/(\d+)px/)[1]; const sized = () => font.replace(/\d+px/, size + 'px'); g.font = sized(); while (size > 30 && g.measureText(title).width > 730) { size -= 4; g.font = sized(); }
   g.shadowColor = color; g.shadowBlur = 20; g.fillStyle = '#ffffff'; g.fillText(title, 384, 66); g.fillText(title, 384, 66);
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
 }
 const flat = { transparent: true, depthWrite: false, depthTest: false };
-function makePortal(place, index) {
+function makePortal(place, index, zone) {
+  const look = LOOKS[zone.id] || LOOKS.action;
   const group = new THREE.Group(), half = new THREE.Vector2(place.width / 2 * GROW, place.height / 2 * GROW), size = new THREE.Vector2(half.x + MARGIN, half.y + MARGIN);
-  const uniforms = { uMap: { value: null }, uHasMap: { value: 0 }, uAspect: { value: 1 }, uColor: { value: new THREE.Color('#5ff2ff') }, uHalf: { value: half }, uQuad: { value: size }, uLit: { value: 0 }, uTime: { value: 0 }, uHot: { value: 0 }, uSeed: { value: (index * 0.618) % 1 } };
+  const uniforms = { uMap: { value: null }, uHasMap: { value: 0 }, uAspect: { value: 1 }, uColor: { value: new THREE.Color('#5ff2ff') }, uHalf: { value: half }, uQuad: { value: size }, uLit: { value: 0 }, uTime: { value: 0 }, uHot: { value: 0 }, uSeed: { value: (index * 0.618) % 1 }, uZone: { value: new THREE.Color(zone.color) }, uRadius: { value: look.radius }, uWave: { value: place.step ? 0.012 : look.wave }, uScan: { value: look.scan }, uDoor: { value: place.step ? 1 : 0 } };
   const face = new THREE.Mesh(quad, new THREE.ShaderMaterial({ uniforms, vertexShader: VERTEX, fragmentShader: FRAGMENT, ...flat, premultipliedAlpha: true }));
   face.scale.set(size.x, size.y, 1); face.renderOrder = 16; face.frustumCulled = false; group.add(face);
   const label = new THREE.Mesh(labelGeometry, new THREE.MeshBasicMaterial({ ...flat, opacity: 0 })); label.renderOrder = 20; label.frustumCulled = false; label.visible = false;
@@ -125,7 +147,7 @@ function makePortal(place, index) {
   // The quad's own axes are the screen's: x along its width, y up it, z out of the glass.
   const m = new THREE.Matrix4().makeBasis(new THREE.Vector3(...place.right), new THREE.Vector3(...place.up), new THREE.Vector3(...place.normal));
   group.quaternion.setFromRotationMatrix(m); group.position.set(...place.centre); scene.add(group);
-  return { place, group, uniforms, face, label, game: null, lit: 0, wantLit: 0 };
+  return { place, group, uniforms, face, label, look, door: !!place.step, game: null, lit: 0, wantLit: 0 };
 }
 let portals = [];
 function show(portal, game) {
@@ -133,7 +155,7 @@ function show(portal, game) {
   if (portal.label.material.map) { portal.label.material.map.dispose(); portal.label.material.map = null; }
   portal.label.visible = !!game; portal.uniforms.uHasMap.value = 0;
   if (!game) return;
-  portal.uniforms.uColor.value.set(game.color); portal.label.material.map = labelTexture(game.title, game.color); portal.label.material.needsUpdate = true;
+  portal.uniforms.uColor.value.set(game.color); portal.label.material.map = labelTexture(game.title, game.color, portal.look.font); portal.label.material.needsUpdate = true;
   if (game.art) artTexture(game.art, t => { if (portal.game !== game) return; portal.uniforms.uMap.value = t; portal.uniforms.uHasMap.value = 1; portal.uniforms.uAspect.value = (t.image.width || 1) / (t.image.height || 1); });
 }
 
@@ -144,14 +166,20 @@ let REST = 0;
 const visit = { phase: 'title', zone: 0, page: 0, yaw: 0, pitch: 0, turnTo: null, aim: -1, glide: null };
 const lit = () => portals.map(p => !!p.game);
 const gamesHere = () => zoneGames(ZONES[visit.zone].id, GAMES);
+// The zone's name shows large for a moment on the way in, and the page's accent takes the zone's colour.
+const zoneName = $('zone');
+function banner(zone) {
+  document.documentElement.style.setProperty('--zone', zone.color); if (visit.phase === 'title') return;
+  zoneName.textContent = zone.label; zoneName.classList.remove('show'); void zoneName.offsetWidth; zoneName.classList.add('show');
+}
 // The places of a zone: its machine screens, then its two rift doors. A door is a portal like a screen: it shows the
 // zone it leads to, and it is always lit.
 function enterZone(index) {
   const zone = ZONES[index], data = DATA[zone.id];
   for (const p of portals) { scene.remove(p.group); p.label.material.map?.dispose(); p.label.material.dispose(); p.face.material.dispose(); }
-  visit.zone = index; HALL = data.hall; SCREENS = data.screens; const ways = doors(SCREENS); PLACES = SCREENS.concat(ways);
+  visit.zone = index; HALL = data.hall; SCREENS = data.screens; const ways = doors(SCREENS, data.hall.doors); PLACES = SCREENS.concat(ways);
   camera.position.set(0, HALL.ground, 0); frame.position.set(0, 0, 0);
-  portals = PLACES.map(makePortal);
+  portals = PLACES.map((place, i) => makePortal(place, i, zone)); banner(zone);
   ways.forEach((door, k) => { const to = (index + door.step + ZONES.length) % ZONES.length, z = ZONES[to]; show(portals[SCREENS.length + k], { zone: to, id: 'door-' + z.id, title: z.label, sub: 'A rift door to the next zone', url: null, art: `./worlds/${z.id}/door.webp`, color: z.color }); });
   REST = SCREENS.reduce((s, p) => s + Math.atan2(p.centre[1] - HALL.ground, p.distance), 0) / Math.max(1, SCREENS.length);
   visit.yaw = middle(SCREENS); visit.pitch = REST; visit.turnTo = null;
@@ -203,7 +231,7 @@ function launch(index) {
 }
 // A page kept in the back-forward cache comes back mid-launch: put the visitor back in the hall.
 addEventListener('pageshow', e => { if (!e.persisted || visit.phase !== 'launch') return; flash.classList.remove('on'); frame.position.set(0, 0, 0); visit.glide = null; visit.phase = 'hall'; keysBar.hidden = groupsBar.hidden = false; paint(); });
-function start() { visit.phase = 'hall'; startCard.hidden = true; keysBar.hidden = groupsBar.hidden = false; paint(); }
+function start() { visit.phase = 'hall'; startCard.hidden = true; keysBar.hidden = groupsBar.hidden = false; banner(ZONES[visit.zone]); paint(); }
 function paint() {
   const p = portals[visit.aim];
   if (visit.phase !== 'hall' || !p?.game) { target.hidden = true; $('kGo').disabled = true; canvas.classList.remove('aim'); return; }
@@ -281,7 +309,7 @@ function tick(now) {
   if (!window.GameSwitch?.isOpen && !document.hidden) step(dt);
   camera.rotation.set(visit.pitch, -visit.yaw, 0);
   const time = reduced ? 0 : now / 1000;
-  portals.forEach((p, i) => { p.uniforms.uTime.value = time; p.uniforms.uHot.value += ((i === visit.aim ? 1 : 0) - p.uniforms.uHot.value) * Math.min(1, dt * 10); p.label.material.opacity = p.lit * (0.5 + 0.5 * p.uniforms.uHot.value); });
+  portals.forEach((p, i) => { p.uniforms.uTime.value = time; p.uniforms.uHot.value += ((i === visit.aim ? 1 : 0) - p.uniforms.uHot.value) * Math.min(1, dt * 10); p.label.material.opacity = p.lit * (p.door ? 0.7 + 0.3 * p.uniforms.uHot.value : p.uniforms.uHot.value); });
   renderer.render(scene, camera);
   requestAnimationFrame(tick);
 }
