@@ -45,7 +45,7 @@ One hall with Atlas:
 - [x] Make the hall with Atlas: image, pose, 14 views, splats (2,000,000 splats).
 - [x] Find the 41 screens in 3D from the posed views; write `worlds/hall/screens.json` with zones, stations and rings.
 - [x] Rules and page for one hall: zones as clusters, stations, rift rings, a glide between zones, walking the open floor.
-- [x] Pass `qa/lab/riftwalk.test.mjs` (6 checks) and the first 8 steps of `qa/lab/riftwalk.e2e.mjs`.
-- [ ] See the portals on the machines in a frame of the real world, and pass the world-load step. Software WebGL is very slow with 2,000,000 splats.
-- [ ] See the 500,000 and full-resolution files drawn with the portals (software WebGL was too slow for a frame at that size in this session).
+- [x] Pass `qa/lab/riftwalk.test.mjs` (6 checks) and `qa/lab/riftwalk.e2e.mjs` (9 checks, with the real world file loaded).
+- [x] Check the screens' places: the measured screens drawn over the Atlas views sit on the white screens (`shots/hall-screens-check.jpg`), and the world file's splat coordinates match the cameras' world (floor at 0, 8 m by 16 m).
+- [ ] See the portals on the machines in a drawn frame of the real world. Software WebGL did not finish one frame of 2,000,000 splats in 25 minutes.
 - [ ] Play on a real phone and a real graphics card (not possible in this session).
