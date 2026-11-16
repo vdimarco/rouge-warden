@@ -1,82 +1,83 @@
-// Riftwalk rules (public/lab/riftwalk/rules.js): where the rifts stand, the walk circle, the rays that catch a wisp
-// or pick the rift, and the clock. Run: node qa/lab/riftwalk.test.mjs
+// Riftwalk rules (public/lab/riftwalk/hall.js): the collections match the homepage, the rings of portals, the ray
+// that picks a portal, the portal in the middle of the view, the turn to the next portal, and the walk circle.
+// Run: node qa/lab/riftwalk.test.mjs
 import assert from 'node:assert/strict';
-import { WORLDS, EYE, SPACING, RIFT_RADIUS, RIFT_Y, WISPS, LANE, nextIndex, direction, centre, outRift, inRift, wispPlace, walk, rayNear, rayThroughRift, clock } from '../../public/lab/riftwalk/rules.js';
-const near = (a, b, e = 1e-6) => Math.abs(a - b) <= e;
+import { readFileSync } from 'node:fs';
+import { EYE, WALK, RING, PORTAL_Y, MAX_RADIUS, GROUPS, SELF, direction, ring, hallPortals, groupPortals, groupArt, pick, facing, neighbour, walk } from '../../public/lab/riftwalk/hall.js';
+const root = new URL('../../', import.meta.url), read = p => readFileSync(new URL(p, root), 'utf8');
+const near = (a, b, e = 1e-9) => Math.abs(a - b) <= e;
 let n = 0; const pass = name => { n++; console.log('PASS ' + name); };
 
-// Four worlds in a loop that ends where it starts.
-assert.equal(WORLDS.length, 4); assert.deepEqual(WORLDS.map(w => w.id), ['cottage', 'shore', 'ice', 'moonwell']);
-assert.deepEqual([0, 1, 2, 3].map(nextIndex), [1, 2, 3, 0]);
-for (const w of WORLDS) { assert.equal(w.wisps.length, WISPS); assert.match(w.file, /^[a-z]+\.spz$/); }
-pass('four worlds loop back to the cottage, with three wisps each');
-
-// Compass directions.
-assert(near(direction(0).z, -1) && near(direction(90).x, 1) && near(direction(180).z, 1) && near(direction(270).x, -1));
-// Worlds stand far apart: no world's splats (the largest reaches about 85 m) show in another.
-assert(SPACING >= 2 * 85 + 100);
-pass('compass directions and world spacing');
-
-for (let i = 0; i < WORLDS.length; i++) {
-  const w = WORLDS[i], c = centre(i), out = outRift(i), back = inRift(i);
-  // The out rift fronts the centre: its +z axis points from the rift to the centre.
-  const front = { x: Math.sin(out.yaw), z: Math.cos(out.yaw) }, toCentre = { x: (c.x - out.x) / w.outDist, z: (c.z - out.z) / w.outDist };
-  assert(near(front.x, toCentre.x, 1e-9) && near(front.z, toCentre.z, 1e-9), w.id + ': the out rift fronts the centre');
-  // The in rift fronts away from the centre, so a walker who leaves by the back of one arrives walking to the centre.
-  const inFront = { x: Math.sin(back.yaw), z: Math.cos(back.yaw) }, away = { x: (back.x - c.x) / w.inDist, z: (back.z - c.z) / w.inDist };
-  assert(near(inFront.x, away.x, 1e-9) && near(inFront.z, away.z, 1e-9), w.id + ': the in rift fronts away from the centre');
-  // The eye passes inside the disc, and the disc clears the floor.
-  assert(Math.abs(EYE - RIFT_Y) < RIFT_RADIUS * 0.5 && RIFT_Y - RIFT_RADIUS > 0);
-  // The two rifts of a world do not stand in the same place, and the out rift is outside the walk circle.
-  assert(Math.hypot(out.x - back.x, out.z - back.z) > 2 * RIFT_RADIUS, w.id + ': the two rifts are apart');
-  assert(w.outDist > w.walk, w.id + ': the out rift is past the walk circle');
-  // Every wisp can be seen and tapped from the centre: not behind the out rift's disc, not under the floor.
-  for (let k = 0; k < WISPS; k++) {
-    const p = wispPlace(i, k), eye = { x: c.x, y: EYE, z: c.z }, d = { x: p.x - eye.x, y: p.y - eye.y, z: p.z - eye.z }, l = Math.hypot(d.x, d.y, d.z), dir = { x: d.x / l, y: d.y / l, z: d.z / l };
-    assert(p.y > 0.3 && p.y < 3, w.id + ': wisp height'); assert(rayNear(eye, dir, p), w.id + ': a ray at the wisp catches it');
-    assert.equal(rayThroughRift(eye, dir, out), null, w.id + ': wisp ' + k + ' is not in front of the rift');
-    for (let j = 0; j < k; j++) { const q = wispPlace(i, j); assert(Math.hypot(p.x - q.x, p.y - q.y, p.z - q.z) > 1.2, w.id + ': wisps are apart'); }
-  }
+{ // The collections are the homepage's rows, game for game and in order.
+  const home = read('public/index.html'), block = home.slice(home.indexOf('const GROUPS = ['), home.indexOf('];', home.indexOf('const GROUPS = [')));
+  const rows = [...block.matchAll(/\{ id: "([^"]+)", label: "([^"]+)", games: \[([^\]]*)\]/g)].map(m => ({ id: m[1], label: m[2], games: [...m[3].matchAll(/"([^"]+)"/g)].map(x => x[1]) }));
+  assert.equal(rows.length, 6, 'the homepage has six rows');
+  assert.deepEqual(GROUPS.map(g => ({ id: g.id, label: g.label, games: g.games })), rows, 'hall.js GROUPS is the homepage GROUPS');
+  for (const g of GROUPS) assert.match(g.color, /^#[0-9a-f]{6}$/);
 }
-pass('rifts face the right way, and wisps are apart, in reach and clear of the rift');
+pass('the six collections match the homepage rows, game for game');
+
+// The arcade's list of games, read from switch.js.
+const sw = read('public/arcade/switch.js'), GAMES = [...sw.matchAll(/\{ id: "([^"]+)", name: "([^"]+)", sub: "([^"]*)", url: "([^"]+)", art: "([^"]+)", color: "([^"]+)"/g)].map(m => ({ id: m[1], name: m[2], sub: m[3], url: m[4], art: m[5], color: m[6] }));
+assert(GAMES.length >= 40, 'switch.js lists the games: ' + GAMES.length);
+{
+  const hall = hallPortals(); assert.equal(hall.length, 6); assert(hall.every(p => p.kind === 'group' && p.count >= 1));
+  let total = 0; const seen = new Set();
+  for (const g of GROUPS) {
+    const list = groupPortals(g.id, GAMES), games = list.filter(p => p.kind === 'game');
+    assert.equal(list.at(-1).kind, 'back', g.id + ': the back portal is the last one'); assert.equal(list.filter(p => p.kind === 'back').length, 1);
+    // Every game of the row has a switcher entry, so every game gets a portal. The hall has no portal to itself.
+    assert.deepEqual(games.map(p => p.id), g.games.filter(id => id !== SELF), g.id + ': one portal for each game of the row');
+    assert.equal(games.length, hall.find(p => p.id === g.id).count, g.id + ': the collection portal counts its games');
+    for (const p of games) { assert(p.url.startsWith('/') && p.url.endsWith('/'), p.id + ' route'); assert(p.title && p.art && /^#/.test(p.color)); assert(!seen.has(p.id), p.id + ' is in one collection'); seen.add(p.id); }
+    assert(groupArt(g.id, GAMES), g.id + ': the collection has a picture'); total += games.length;
+  }
+  assert(!seen.has(SELF)); assert.equal(total, GROUPS.reduce((s, g) => s + g.games.length, 0) - 1);
+  assert.deepEqual(groupPortals('nowhere', GAMES), []);
+  pass(`every game of every row has a portal (${total} games), and the hall has none to itself`);
+}
+
+{ // A ring of portals.
+  assert(near(direction(0).z, -1) && near(direction(Math.PI / 2).x, 1));
+  for (const count of [1, 2, 3, 6, 9, 12, 21]) {
+    const r = ring(count, 0.4); assert.equal(r.length, count);
+    r.forEach((p, i) => {
+      assert(near(Math.hypot(p.x, p.z), RING), 'on the ring'); assert.equal(p.y, PORTAL_Y); assert(p.radius > 0.2 && p.radius <= MAX_RADIUS);
+      // The portal fronts the centre: its +z axis points from the portal to the centre.
+      assert(near(Math.sin(p.yaw), -p.x / RING, 1e-9) && near(Math.cos(p.yaw), -p.z / RING, 1e-9), 'fronts the centre');
+      // Neighbours keep a gap.
+      const q = r[(i + 1) % count]; if (count > 1) assert(Math.hypot(p.x - q.x, p.z - q.z) >= (p.radius + q.radius) * 1.15, count + ' portals: a gap between neighbours');
+    });
+    assert(near(r[0].heading, 0.4, 1e-9), 'the first portal is where the visitor looks');
+  }
+  // The eye can pass through no portal while it stays in the walk circle, and a portal clears the floor.
+  assert(WALK + MAX_RADIUS < RING, 'the walk circle stays inside the ring'); assert(PORTAL_Y - MAX_RADIUS > 0.3 && Math.abs(EYE - PORTAL_Y) < 0.4);
+  pass('rings of 1 to 21 portals: on the ring, fronting the centre, with gaps');
+}
+
+{ // Picking, facing, turning.
+  const r = ring(6, 0), eye = { x: 0, y: EYE, z: 0 }, at = h => ({ ...direction(h), y: (PORTAL_Y - EYE) / RING });
+  const unit = v => { const l = Math.hypot(v.x, v.y, v.z); return { x: v.x / l, y: v.y / l, z: v.z / l }; };
+  r.forEach((p, i) => assert.equal(pick(eye, unit(at(p.heading)), r), i, 'a ray at portal ' + i + ' picks it'));
+  assert.equal(pick(eye, unit(at(Math.PI / 6)), r), -1, 'a ray between two portals picks none');
+  assert.equal(pick(eye, { x: 0, y: 1, z: 0 }, r), -1, 'a ray at the ceiling picks none');
+  assert.equal(pick({ x: 0.9, y: EYE, z: 0.3 }, unit({ x: r[2].x - 0.9, y: PORTAL_Y - EYE, z: r[2].z - 0.3 }), r), 2, 'a pick from off the centre');
+  assert.equal(facing(0.1, r), 0); assert.equal(facing(Math.PI / 6 + 0.2, r), 1);
+  assert.equal(facing(Math.PI / 6, ring(6, 0), 0.2), -1, 'between two portals, none is in the middle of the view');
+  // From a portal, right is the next one and left is the one before, and both wrap.
+  assert.equal(neighbour(r[0].heading, r, 1), 1); assert.equal(neighbour(r[0].heading, r, -1), 5); assert.equal(neighbour(r[5].heading, r, 1), 0);
+  // From between two portals, right goes to the one on the right and left to the one on the left.
+  assert.equal(neighbour(0.3, r, 1), 1); assert.equal(neighbour(0.3, r, -1), 0);
+  // A full lap by ▶ visits every portal once.
+  let h = r[0].heading; const lap = []; for (let i = 0; i < 6; i++) { const k = neighbour(h, r, 1); lap.push(k); h = r[k].heading; } assert.deepEqual(lap, [1, 2, 3, 4, 5, 0]);
+  assert.equal(neighbour(0, [], 1), -1);
+  pass('a ray picks a portal, the view names the one in its middle, and the arrows turn to the next');
+}
 
 { // The walk circle.
-  const w = WORLDS[1], d = direction(w.out), o = { x: 0, z: 0 };
-  assert.deepEqual(walk(w, o, { x: 0.5, z: 0.5 }, false), { x: 0.5, z: 0.5 });
-  // A step out of the circle is refused or slid along the circle.
-  const edge = { x: w.walk, z: 0 }, out = walk(w, edge, { x: w.walk + 0.4, z: 0.3 }, false);
-  assert(Math.hypot(out.x, out.z) <= w.walk + 1e-6, 'the walker stays in the circle: ' + JSON.stringify(out));
-  // The lane to the rift is shut while the rift is shut, and open when it is open.
-  const lip = { x: d.x * w.walk, z: d.z * w.walk }, step = { x: d.x * (w.walk + 0.3), z: d.z * (w.walk + 0.3) };
-  assert(Math.hypot(...Object.values(walk(w, lip, step, false))) <= w.walk + 1e-6, 'no lane while the rift is shut');
-  assert.deepEqual(walk(w, lip, step, true), step, 'the lane is open with the rift');
-  const wide = { x: step.x + d.z * (LANE + 0.3), z: step.z - d.x * (LANE + 0.3) };
-  assert.notDeepEqual(walk(w, step, wide, true), wide, 'the lane has sides');
-  // The lane reaches past the rift, so the walker can cross its plane.
-  const past = { x: d.x * (w.outDist + 0.4), z: d.z * (w.outDist + 0.4) };
-  assert.deepEqual(walk(w, { x: d.x * w.outDist, z: d.z * w.outDist }, past, true), past);
-  // After an arrival the walker is outside the circle and can only come nearer.
-  const arrive = direction(w.in), at = { x: arrive.x * w.inDist, z: arrive.z * w.inDist };
-  const inward = { x: at.x * 0.9, z: at.z * 0.9 }, outward = { x: at.x * 1.1, z: at.z * 1.1 };
-  assert.deepEqual(walk(w, at, inward, false), inward); assert.notDeepEqual(walk(w, at, outward, false), outward);
-  // A walk of many small steps in one direction never leaves the circle.
-  let p = { x: 0, z: 0 }; for (let i = 0; i < 400; i++) p = walk(w, p, { x: p.x + 0.03, z: p.z + 0.011 }, false);
-  assert(Math.hypot(p.x, p.z) <= w.walk + 1e-6);
+  assert.deepEqual(walk({ x: 0, z: 0 }, { x: 0.4, z: 0.3 }), { x: 0.4, z: 0.3 });
+  const out = walk({ x: WALK, z: 0 }, { x: WALK + 0.3, z: 0.2 }); assert(Math.hypot(out.x, out.z) <= WALK + 1e-9);
+  let p = { x: 0, z: 0 }; for (let i = 0; i < 300; i++) p = walk(p, { x: p.x + 0.03, z: p.z - 0.012 }); assert(Math.hypot(p.x, p.z) <= WALK + 1e-9);
+  pass('the visitor stays in the walk circle');
 }
-pass('the walk circle, the lane to an open rift, and the walk in after an arrival');
-
-{ // Rays.
-  const eye = { x: 0, y: EYE, z: 0 };
-  assert(rayNear(eye, { x: 0, y: 0, z: -1 }, { x: 0.1, y: EYE, z: -2 }));
-  assert.equal(rayNear(eye, { x: 0, y: 0, z: -1 }, { x: 1.2, y: EYE, z: -2 }), null, 'a wide miss');
-  assert.equal(rayNear(eye, { x: 0, y: 0, z: 1 }, { x: 0, y: EYE, z: -2 }), null, 'behind the eye');
-  const rift = outRift(1);
-  assert(rayThroughRift(eye, { x: 0, y: 0, z: -1 }, { ...rift, x: 0, z: -2.3 }));
-  assert.equal(rayThroughRift(eye, { x: 0.7, y: 0, z: -0.714 }, { ...rift, x: 0, z: -2.3 }), null, 'past the rim');
-  assert.equal(rayThroughRift(eye, { x: 0, y: 0, z: 1 }, { ...rift, x: 0, z: -2.3 }), null, 'looking away');
-}
-pass('look rays catch a wisp and pick the rift');
-
-assert.equal(clock(0), '0:00'); assert.equal(clock(59.9), '0:59'); assert.equal(clock(61), '1:01'); assert.equal(clock(600), '10:00'); assert.equal(clock(-3), '0:00');
-pass('the clock');
 console.log(n + ' checks passed');

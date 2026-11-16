@@ -173,7 +173,7 @@ button { font: inherit; color: inherit; }
 .cab.light-years-home .marquee b, .cab.ahead-of-the-light .marquee b, .cab.first-breath .marquee b, .cab.frostwing .marquee b, .cab.ledger .marquee b, .cab.riftwalk .marquee b, .cab.ember-drift .marquee b { display: block; font-size: max(12px, calc(var(--h) * 0.03)); line-height: max(10.8px, calc(var(--h) * 0.03)); }
 .cab.light-years-home .marquee small, .cab.ahead-of-the-light .marquee small, .cab.first-breath .marquee small, .cab.frostwing .marquee small, .cab.ledger .marquee small, .cab.riftwalk .marquee small, .cab.ember-drift .marquee small { margin-top: clamp(0px, calc(var(--h) * 0.03 - 9px), 3px); }
 @container (width < 100px) { .cab.light-years-home .marquee small, .cab.ahead-of-the-light .marquee small, .cab.first-breath .marquee small, .cab.frostwing .marquee small, .cab.ledger .marquee small, .cab.riftwalk .marquee small, .cab.ember-drift .marquee small { display: none; } }
-/* Riftwalk's subtitle is 19 characters: a marquee narrower than 120px shows the title alone. */
+/* Riftwalk's subtitle is 21 characters: a marquee narrower than 120px shows the title alone. */
 @container (width < 120px) { .cab.riftwalk .marquee small { display: none; } }
 /* Ahead of the Light's last log unlock (84 pages): a gold frame round the screen, drawn as a shadow so no size changes */
 .cab.ahead-of-the-light.gold .bezel { box-shadow: 0 0 0 3px var(--gold), 0 0 14px rgba(255, 207, 74, 0.5), inset 0 0 0 2px rgba(255, 255, 255, 0.06), 0 2px 0 rgba(0, 0, 0, 0.6); }
@@ -750,11 +750,11 @@ button { font: inherit; color: inherit; }
       <div class="door"><button class="slot" type="button" aria-label="Drop a token into Warden's Ledger"><i></i><span>25¢</span></button><button class="slot" type="button" aria-label="Drop a token into Warden's Ledger"><i></i><span>25¢</span></button></div>
       <div class="kick"></div>
       </article>
-      <article class="cab riftwalk" data-game="riftwalk" data-url="/lab/riftwalk/" aria-label="Riftwalk: step between painted worlds">
-      <div class="marquee"><div><b>RIFTWALK</b><small>STEP BETWEEN WORLDS</small></div></div>
+      <article class="cab riftwalk" data-game="riftwalk" data-url="/lab/riftwalk/" aria-label="Riftwalk: a neon hall of portals to every game">
+      <div class="marquee"><div><b>RIFTWALK</b><small>PORTALS TO EVERY GAME</small></div></div>
       <div class="bezel"><div class="screen">
-      <img src="arcade/riftwalk.webp" alt="A ring of light in a cottage room, with a sea shore ruin seen through it" loading="lazy" decoding="async">
-      <div class="osd"><p class="hi">CATCH · OPEN · STEP</p><p class="press">INSERT COIN</p><p class="credit">CREDIT 0</p></div>
+      <img src="arcade/riftwalk.webp" alt="A neon arcade hall with a glowing round portal that shows a game's art" loading="lazy" decoding="async">
+      <div class="osd"><p class="hi">LOOK · OPEN · PLAY</p><p class="press">INSERT COIN</p><p class="credit">CREDIT 0</p></div>
       </div></div>
       <div class="panel"><span class="stick"></span><span class="pbtn a"></span><span class="pbtn b"></span><button class="start" type="button">START</button></div>
       <div class="door"><button class="slot" type="button" aria-label="Drop a token into Riftwalk"><i></i><span>25¢</span></button><button class="slot" type="button" aria-label="Drop a token into Riftwalk"><i></i><span>25¢</span></button></div>

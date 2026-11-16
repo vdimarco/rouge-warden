@@ -1,45 +1,52 @@
 ## ADDED Requirements
 
-### Requirement: Walk between four splat worlds
-Riftwalk SHALL put the player in a Gaussian splat world at eye height, with three wisps to catch. When the third wisp is caught, a ring-shaped rift SHALL open in that world and SHALL show the next world through it. Crossing the rift SHALL put the player in the next world, and the rift SHALL shut behind the player. The worlds SHALL run cottage, shore ruin, ice cavern, moonwell, and back to the cottage. The fourth crossing SHALL end the walk with the player's time and best time, and a control to walk again.
+### Requirement: A hall of portals to every game
+Riftwalk SHALL show a Gaussian splat arcade hall at eye height with a ring of portals around the visitor. The first ring SHALL hold one portal for each collection of the homepage (Cottage, Action, ASCII Scenes, Strategy, GTA, Lab), with the collection's name, its count of games and a picture. Opening a collection SHALL replace the ring with one portal for each game of that collection, in the homepage's order, each with the game's name and key art, and one portal that leads back. Opening a game's portal SHALL load that game's route. Riftwalk SHALL NOT show a portal to itself.
 
-#### Scenario: Open the first rift
-- **WHEN** the player starts the walk and catches the three wisps in the cottage
-- **THEN** the HUD counts the wisps from 0 to 3, a rift opens, the shore ruin shows through it, and a hint says how to go through
+#### Scenario: Open a collection
+- **WHEN** the visitor enters the hall and opens the Action portal
+- **THEN** the ring shows the Action games with the first game in front, the place label reads "Neon hall · Action", and a Back control shows
 
-#### Scenario: Cross a rift
-- **WHEN** the player taps or clicks the open rift, presses Space, or walks into it
-- **THEN** the player arrives in the next world facing its centre, the rift shuts, the HUD names the new world, and three new wisps wait
+#### Scenario: Launch a game
+- **WHEN** the visitor opens a game's portal
+- **THEN** the view moves to the portal, fills with its light, and the game's page loads
 
-#### Scenario: Finish the walk
-- **WHEN** the player crosses the fourth rift
-- **THEN** the player is back in the cottage, a card shows the time and the best time, and Walk again starts a new walk at 0:00
+#### Scenario: Go back
+- **WHEN** the visitor uses the back portal, the Back button, or Esc inside a collection
+- **THEN** the six collection portals return
 
 ### Requirement: Controls for mouse, keys and touch
-The player SHALL look by dragging the view, and SHALL catch a wisp or enter an open rift with a tap or a click on it. A drag SHALL NOT catch a wisp. Space or Enter SHALL catch the wisp in the middle of the view, or enter the open rift. W A S D and the up and down arrows SHALL walk, and the left and right arrows SHALL turn. On a touch screen a walk pad of at least 100 px SHALL show at the lower left. The walker SHALL stay inside the world's walk circle, except on the way to an open rift.
+The visitor SHALL look by dragging the view, and a drag SHALL NOT open a portal. A tap or a click on a portal SHALL open it. The portal in the middle of the view SHALL be named in a card, and Enter, Space and the Open or Play button SHALL open that portal. The left and right arrow keys and the ◀ and ▶ buttons SHALL turn the view to the next portal and SHALL wrap around the ring. W A S D SHALL walk the visitor inside a circle of 1.2 m. Every on-screen button SHALL be at least 44 px on its shorter side.
 
-#### Scenario: Play with taps alone on a phone
-- **WHEN** a player on a 390 by 844 touch screen drags to look and taps each wisp, then taps the rift
-- **THEN** each wisp is caught, the rift opens, and the player crosses, with no use of the walk pad
+#### Scenario: Use the buttons alone on a phone
+- **WHEN** a visitor on a 390 by 844 touch screen presses ▶ and then Open, and then Play
+- **THEN** a collection opens and its first game launches, with no drag
 
-#### Scenario: Play with the keyboard
-- **WHEN** a player holds W on a desktop
-- **THEN** the walker moves and stops at the edge of the walk circle
+#### Scenario: Use the keyboard alone
+- **WHEN** a visitor presses the right arrow, Enter, and Enter again
+- **THEN** the view turns to the next collection, the collection opens, and its first game launches
 
 #### Scenario: Phone layout
-- **WHEN** the game runs at 390 by 844
-- **THEN** the HUD and the hint fit the width, the hint is clear of the walk pad, and Start is at least 44 px tall
+- **WHEN** the hall shows at 390 by 844
+- **THEN** the portal in front is over the name card, the name card is over the buttons, and all of them fit the width
 
-### Requirement: Load, fail and motion states
-Start SHALL stay disabled until the first world is loaded, with a line that shows the progress. If the next world is still loading when the third wisp is caught, a hint SHALL say so and the rift SHALL open when the world is ready. Without WebGL2 the page SHALL say that the game needs it. With reduced motion, the ring's motes and the wisps' bob SHALL stop, the rift SHALL open at once, and a crossing by tap or key SHALL be one cut. The walk SHALL hold while the arcade's Games menu is open or the tab is hidden.
+### Requirement: Fidelity and loading
+The hall SHALL load a small world file first and enable the start control when it is ready, with a line that shows the progress. It SHALL then replace the world with a 500,000-splat file on touch devices and the full-resolution file on others. It SHALL NOT thin or widen the splats of the world.
+
+#### Scenario: Sharpen after start
+- **WHEN** the small file has loaded on a desktop
+- **THEN** the visitor can enter the hall at once, and the full file replaces the small one when it has loaded
+
+### Requirement: Fallback and motion states
+Every game SHALL also be a plain link on the page, grouped by collection, for assistive technology. When WebGL2 is missing or the hall does not load, that list SHALL show to everyone with a line that says why. With reduced motion, rings SHALL change at once and a launch SHALL have no glide. The hall SHALL hold while the arcade's Games menu is open or the tab is hidden.
 
 #### Scenario: Reduced motion
-- **WHEN** a player who asks for reduced motion enters an open rift with Space
-- **THEN** the player is in the next world with no glide
+- **WHEN** a visitor who asks for reduced motion opens a collection and then a game
+- **THEN** the ring changes at once and the game's page loads with no glide
 
 ### Requirement: Arcade cabinet
-Riftwalk SHALL have a cabinet at the end of the Lab row on the homepage, an entry in the game switcher, a piece in the Corridor after the last Lab cabinet, and a card on the Lab page. Its id SHALL be `riftwalk`, its title "Riftwalk" and its route `/lab/riftwalk/`.
+Riftwalk SHALL keep its cabinet at the end of the Lab row on the homepage, its entry in the game switcher, its piece in the Corridor after the last Lab cabinet, and its card on the Lab page. Its id SHALL be `riftwalk`, its title "Riftwalk" and its route `/lab/riftwalk/`.
 
 #### Scenario: Open from the homepage
 - **WHEN** a player opens the Lab row at 390, 320 or 1280 px wide and starts the Riftwalk cabinet
-- **THEN** the marquee shows the whole title, and the game page loads
+- **THEN** the marquee shows the whole title, and the hall's page loads

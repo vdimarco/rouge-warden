@@ -1,34 +1,35 @@
 # Design
 
 ## Art direction
-The user's direction is the video: warm and cold painted rooms, seen through a bright ring with loose motes. The four worlds take their subjects from the arcade: a lakeside cottage room, a shore ruin at golden hour (Shore of the Ancients), an ice cavern under an aurora (Frostwing), and a moonlit well in a forest (Moonwell).
+The user's words: "a gaussian splot within worldlabs that mimics a cyberpunk arcade to showcase our games and open portals to launch them". The world's prompt asks for a cyberpunk arcade hall at night: rows of retro cabinets with blank screens, neon tubes in magenta, cyan and amber, tall neon archways, a wet mirror floor, and no readable text, logos or characters from real games. The prompt and the world id are in `public/lab/riftwalk/worlds/sources.json`.
 
-The first cottage scene from PINOC had arcade machines whose marquees and screens copied the look of real games. It was replaced by a room with no machines and no writing.
+A draft world (`marble-1.0-draft`, 230 credits) checked the layout first. It was pale and empty, so the prompt for the full world asked for more cabinets and stronger colour. The full world (`marble-1.1`, 1,580 credits) is the one in the game.
+
+## Fidelity
+The first version thinned each PINOC world from about 1,050,000 splats to 300,000 and widened the rest, and capped the pixel ratio at 1.25 to 1.5. The user saw the result as low fidelity.
+
+Now the hall ships as Marble made it, in three files: 150,000 splats (2.3 MB) shows first, then a phone takes the 500,000 file (7.5 MB) and a desktop the full file (28.8 MB), and each replaces the one before it. No splat is widened. The pixel ratio goes up to 2.
 
 ## Sources looked up, and what was adapted
-- Gaussian splat drawing: Spark 2.4.0 by World Labs (sparkjs.dev, MIT), a splat renderer for three.js. World Labs is where the video's author works, and Spark is the open library for this kind of scene. The arcade's three.js is r185, and Spark needs r180 or later. Spark is vendored at `public/lab/riftwalk/lib/spark.module.min.js` with its licence, and three's `postprocessing/Pass.js` (r185) beside it, because Spark imports it.
-- Portals: Spark's own `SparkPortals` class. It draws the scene twice: first from a second camera placed in the far world, clipped to the disc; then from the walker's camera, with every fragment behind the disc thrown away. It also moves the camera's parent frame when the walker crosses the disc. Riftwalk uses that class as it is. This is the stencil-free "two cameras, clip in the fragment shader" form of the classic portal method (as in Valve's Portal talks), which fits splats because splats write no depth.
-- The ring: no source fit, so it is new. One quad with a noise band on the disc edge hides the hard cut, and 260 points circle and drift outward. The angle is fed to the noise as a point on a circle, so the band has no seam.
-- Scene scale: PINOC's own rule. The capture point is the origin and the floor is about 1.5 m below it, so the nearest ground under the origin gives the metres in one file unit.
+- World: the World Labs API (docs.worldlabs.ai). `POST /marble/v1/worlds:generate` with a text prompt, then `GET /marble/v1/operations/{id}`. The answer holds `.spz` files at 100k, 150k, 500k and full resolution, and `semantics_metadata`.
+- Scale and floor: Marble's own rule ("Rendering Marble SPZ files in third-party engines"). Multiply by `metric_scale_factor` (2.2474 here) and move by `ground_plane_offset` (1.3498 m here). A scratch measure of the floor under the capture point gave 1.335 m, which agrees. A Marble `.spz` has y down, so the mesh turns half a turn about x.
+- Drawing: Spark 2.4.0 by World Labs (sparkjs.dev, MIT), already vendored.
+- Portals: these are not splat-to-splat portals. Each portal is a disc with the game's own key art, so Spark's `SparkPortals` class is no longer used. The rim band and its motes are the shaders written for the first version (a noise band fed by the angle as a point on a circle, so it has no seam). The disc shader is new: it fits the picture to the disc and swirls it a little near the rim. No outside source fit better for a picture in a ring.
 
-## Worlds
-`games/riftwalk/tools/pack-world.mjs` reads a raw PINOC scene (about 1,050,000 splats, 17 MB), scales it to metres with the floor on y = 0, keeps 300,000 splats chosen with a seeded shuffle, widens the kept ones by the square root of the thinning (capped at 1.8) so surfaces stay closed, and writes a gzip `.spz` with no spherical harmonics. Each world is about 4.7 to 5.0 MB. The first two load before Start, and the other two load during play.
+## Layout
+`public/lab/riftwalk/hall.js` holds the rules with no drawing. Portals stand on a ring 2.5 m from the capture point, because the hall is 7 m wide and a splat world is sharpest near the point it was made from. The visitor can walk 1.2 m from that point. A portal's radius shrinks when many share the ring (21 portals in the Lab ring), so neighbours keep a gap. A new ring starts where the visitor looks: the first game is in front, and the back portal is the last one, on the left.
 
-The same tool makes 6,000-splat copies in `worlds/lite/` (about 100 KB each). The browser check loads them with `?worlds=lite`, because software WebGL draws a full world at a frame in many seconds.
-
-The four worlds stand 400 m apart in one scene. Only the world the walker is in, and the one behind an open rift, are drawn.
-
-## Rules
-`public/lab/riftwalk/rules.js` holds the rules with no drawing: where each rift stands and which way it fronts, the walk circle, the lane to an open rift, and the rays that catch a wisp or pick the rift. A splat world is sharp near its capture point and falls apart far from it, so the walker stays in a circle of 1.1 to 2.0 m around that point.
+The collections are a copy of the homepage's `GROUPS`. The node test compares the two, game for game, so a game added to a row cannot be missed in the hall. Names, lines, routes and art come from `window.GameSwitch.GAMES` at run time.
 
 ## Controls
-- Look: drag the view (mouse or one finger). The view follows the finger.
-- Wisps and rift: tap or click. Space or Enter catches the wisp in the middle of the view, or enters the open rift.
-- Walk: W A S D and the arrow keys (left and right turn). On a touch screen, a walk pad at the lower left.
-A player can finish the game with taps alone, or with the keyboard alone.
+- Look: drag the view. ◀ and ▶ (keys and buttons) turn to the next portal.
+- Open: tap or click a portal, press Enter or Space for the portal in the middle of the view, or use the Open / Play button.
+- Back: the back portal, the Back button, Esc or Backspace.
+- Walk: W A S D on a keyboard.
+A visitor can do everything with taps alone, with the buttons alone, or with the keyboard alone. Every game is also a plain link on the page for screen readers, and that list shows to everyone when WebGL2 is missing or the hall does not load.
 
 ## Reduced motion
-The ring's motes and the wisps' bob stop, the rift opens at once, and a crossing by tap or key is one cut with no glide.
+No motes, no slow turn on the title, rings change at once, the arrows turn at once, and a launch has no glide.
 
 ## Not done
-No sound. No WebGPU. No fill of the scenes' unseen sides (PINOC "expand"), because the walker stays near the capture point.
+No sound. No true splat-to-splat portal. No art on the hall's own cabinet screens: the cabinets are part of the splat world, and their screens stay blank.

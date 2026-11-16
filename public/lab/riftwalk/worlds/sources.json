@@ -1,0 +1,10 @@
+{
+  "note": "The neon hall of Riftwalk, a Gaussian splat world made with Marble by World Labs through the World Labs API on 2026-11-16 (UTC). The three files are Marble's own exports, unchanged: 150,000 splats, 500,000 splats and full resolution.",
+  "model": "marble-1.1",
+  "world_id": "92e5e14e-b031-485e-858d-ab9b865c3671",
+  "operation_id": "b2202efe-0a73-4106-9b2d-c671af72e897",
+  "cost_credits": 1580,
+  "semantics_metadata": { "metric_scale_factor": 2.2473989, "ground_plane_offset": 1.349822 },
+  "prompt": "The inside of a large cyberpunk arcade hall at night, seen from the middle of its open floor. The hall is dense and glowing: long rows of retro arcade cabinets with bright blank screens line every wall, their cases edged in hot magenta, electric cyan and amber light. Set into each of the four walls are two tall empty archways framed with thick bright neon tubes, eight archways in all, each opening into darkness. Above, a dark industrial ceiling of exposed pipes, vents and bundled cables carries long magenta and cyan neon strips and hanging lamps. Glowing abstract neon shapes, stripes and arrows hang on the brick and steel walls. The floor is wet black concrete that mirrors every light, with a wide clear circle in the middle. Thin coloured haze in the air. Deep saturated colour, strong contrast, sharp fine detail, cinematic and moody. No people. No readable text, no letters, no numbers, no logos, no brand names, no characters from real games.",
+  "draft": { "model": "marble-1.0-draft", "world_id": "b8fcd264-f8cf-4c3a-a590-647a1264a495", "cost_credits": 230, "note": "A layout check. Not shipped." }
+}

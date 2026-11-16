@@ -1,293 +1,272 @@
-// Riftwalk: the page. Four Gaussian splat worlds stand far apart in one scene. Spark draws them, and its SparkPortals
-// class draws the world behind an open rift and moves the walker across. This file adds the game: wisps to catch, the
-// rift that opens when all three are caught, the ring around it, the walk rules and the controls.
+// Riftwalk: the page. One Gaussian splat world, a neon arcade hall made with Marble by World Labs, is drawn by Spark.
+// A ring of portals stands around the visitor. The first ring has one portal for each collection of the arcade; a
+// collection's portal opens a ring of its games; a game's portal launches the game. hall.js holds the rules.
 import * as THREE from 'three';
-import { SplatMesh, SparkPortals } from '@sparkjsdev/spark';
-import { WORLDS, EYE, SPACING, RIFT_RADIUS, WISPS, nextIndex, centre, outRift, inRift, wispPlace, walk, rayNear, rayThroughRift, clock } from './rules.js';
+import { SplatMesh, SparkRenderer } from '@sparkjsdev/spark';
+import { EYE, GROUPS, SELF, hallPortals, groupPortals, groupArt, ring, pick, facing, neighbour, walk } from './hall.js';
 
 const $ = id => document.getElementById(id);
-const canvas = $('view'), hud = $('hud'), hint = $('hint'), pad = $('pad'), nub = $('nub'), loadLine = $('load'), startCard = $('start'), go = $('go'), endCard = $('end');
+const canvas = $('view'), loadLine = $('load'), startCard = $('start'), go = $('go'), target = $('target'), keysBar = $('keys'), where = $('where'), flash = $('flash'), list = $('list');
+const query = new URLSearchParams(location.search);
 const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches, touch = matchMedia('(pointer: coarse)').matches;
-const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
-const BEST = 'lab.riftwalk.best';
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v)), wrap = a => Math.atan2(Math.sin(a), Math.cos(a));
+// The arcade's own list of games (switch.js). The page still works as a list of links if that script is missing.
+const GAMES = (window.GameSwitch && window.GameSwitch.GAMES) || [];
+
+/* ---------------- every game as a link ---------------- */
+// Screen readers get this list always. Everyone gets it when 3D graphics cannot start.
+for (const g of GROUPS) {
+  const games = groupPortals(g.id, GAMES).filter(p => p.kind === 'game'); if (!games.length) continue;
+  const h = document.createElement('h2'); h.textContent = g.label; const ul = document.createElement('ul');
+  for (const p of games) { const li = document.createElement('li'), a = document.createElement('a'); a.href = p.url; a.textContent = p.sub ? `${p.title}: ${p.sub}` : p.title; li.append(a); ul.append(li); }
+  list.append(h, ul);
+}
+function noGraphics(why) { startCard.hidden = true; loadLine.hidden = true; list.classList.add('shown'); const p = document.createElement('p'); p.textContent = why + ' Here is every game as a link.'; list.prepend(p); }
 
 /* ---------------- the scene ---------------- */
+// For the browser check: ?capture keeps the drawn frame readable, ?px=1 sets the pixel ratio, ?world=none draws the
+// portals with no hall (software WebGL draws a splat world at a frame in seconds), and ?q=150k, 500k or full picks a
+// hall file.
 let renderer;
-// For the browser check: ?capture keeps the drawn frame readable, and ?px=0.5 sets the pixel ratio (software WebGL
-// draws a splat world slowly).
-const query = new URLSearchParams(location.search);
 try { renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: 'high-performance', preserveDrawingBuffer: query.has('capture') }); if (!renderer.capabilities.isWebGL2) throw new Error('WebGL2'); }
-catch (e) { loadLine.textContent = 'Riftwalk needs WebGL2 graphics, and this browser has none to give.'; go.textContent = 'No 3D graphics'; throw e; }
-renderer.setPixelRatio(+query.get('px') || Math.min(devicePixelRatio || 1, touch ? 1.25 : 1.5));
-const scene = new THREE.Scene(), frame = new THREE.Group(), camera = new THREE.PerspectiveCamera(72, 1, 0.05, 700);
+catch (e) { noGraphics('Riftwalk needs WebGL2 graphics, and this browser has none to give.'); throw e; }
+renderer.setPixelRatio(+query.get('px') || Math.min(devicePixelRatio || 1, 2));
+renderer.setClearColor('#0a0612');
+const scene = new THREE.Scene(), frame = new THREE.Group(), camera = new THREE.PerspectiveCamera(72, 1, 0.05, 300);
 camera.rotation.order = 'YXZ'; camera.position.set(0, EYE, 0); frame.add(camera); scene.add(frame);
-const portals = new SparkPortals({ renderer, scene, camera, localFrame: frame, defaultPortalRadius: RIFT_RADIUS });
-const noRift = () => { portals.portalRenderer.uniforms.diskRadius.value = 0; };
-function resize() {
-  const w = innerWidth, h = innerHeight; renderer.setSize(w, h, false);
-  camera.aspect = w / h; camera.fov = w < h ? 86 : 72; camera.updateProjectionMatrix();
-  portals.camera2.fov = camera.fov; portals.updateAspect(camera.aspect);
-}
+scene.add(new SparkRenderer({ renderer }));
+function resize() { const w = innerWidth, h = innerHeight; renderer.setSize(w, h, false); camera.aspect = w / h; camera.fov = w < h ? 88 : 72; camera.updateProjectionMatrix(); }
 addEventListener('resize', resize); resize();
 
-/* ---------------- the worlds ---------------- */
-const meshes = WORLDS.map(() => null), loading = WORLDS.map(() => null);
-function loadWorld(i, onProgress) {
-  return loading[i] ||= (async () => {
-    // ?worlds=lite loads 6,000-splat copies, which software WebGL can draw at a useful speed in the browser check.
-    const response = await fetch('./worlds/' + (query.get('worlds') === 'lite' ? 'lite/' : '') + WORLDS[i].file); if (!response.ok) throw new Error('World file missing: ' + WORLDS[i].file);
-    const total = +response.headers.get('content-length') || 0, reader = response.body.getReader(), parts = []; let got = 0;
-    for (;;) { const { done, value } = await reader.read(); if (done) break; parts.push(value); got += value.length; if (onProgress && total) onProgress(got / total); }
-    const bytes = new Uint8Array(got); let at = 0; for (const p of parts) { bytes.set(p, at); at += p.length; }
-    const mesh = new SplatMesh({ fileBytes: bytes }); await mesh.initialized;
-    mesh.position.set(i * SPACING, 0, 0); mesh.visible = false; scene.add(mesh); meshes[i] = mesh; return mesh;
-  })();
+/* ---------------- the hall ---------------- */
+// Marble's own numbers for this world (assets.splats.semantics_metadata): the metres in one file unit, and the height
+// of the capture point over the floor. A Marble .spz has y down, so the mesh turns half a turn about x.
+const HALL = { scale: 2.2473989, ground: 1.349822 };
+let hall = null;
+async function loadHall(file, onProgress) {
+  const response = await fetch('./worlds/' + file); if (!response.ok) throw new Error('Hall file missing: ' + file);
+  const total = +response.headers.get('content-length') || 0, reader = response.body.getReader(), parts = []; let got = 0;
+  for (;;) { const { done, value } = await reader.read(); if (done) break; parts.push(value); got += value.length; if (onProgress && total) onProgress(got / total); }
+  const bytes = new Uint8Array(got); let at = 0; for (const p of parts) { bytes.set(p, at); at += p.length; }
+  const mesh = new SplatMesh({ fileBytes: bytes }); await mesh.initialized;
+  mesh.quaternion.set(1, 0, 0, 0); mesh.scale.setScalar(HALL.scale); mesh.position.set(0, HALL.ground, 0);
+  if (hall) { scene.remove(hall); hall.dispose?.(); }
+  hall = mesh; scene.add(mesh); return mesh;
 }
 
-/* ---------------- wisps ---------------- */
-// A wisp is one quad that always faces the eye: a white heart in a coloured halo. It draws after the splats and writes
-// no depth.
-const WISP_VERTEX = `uniform float uScale; varying vec2 vUv;
-  void main() { vUv = uv * 2.0 - 1.0; vec4 mv = modelViewMatrix * vec4(0.0, 0.0, 0.0, 1.0); mv.xy += position.xy * uScale; gl_Position = projectionMatrix * mv; }`;
-const WISP_FRAGMENT = `uniform vec3 uColor; uniform float uPulse; varying vec2 vUv;
-  void main() { float r = length(vUv); float heart = exp(-r * r * 38.0), halo = exp(-r * r * 4.0) * (0.8 + 0.2 * uPulse) * smoothstep(1.0, 0.6, r);
-    vec3 col = uColor * halo + vec3(1.0) * heart; gl_FragColor = vec4(col, max(halo, heart)); }`;
-const wispQuad = new THREE.PlaneGeometry(1, 1);
-const wisps = WORLDS.map((w, i) => w.wisps.map((_, k) => {
-  const p = wispPlace(i, k), uniforms = { uColor: { value: new THREE.Color(w.wisp) }, uScale: { value: 0.95 }, uPulse: { value: 0 } };
-  const g = new THREE.Mesh(wispQuad, new THREE.ShaderMaterial({ uniforms, vertexShader: WISP_VERTEX, fragmentShader: WISP_FRAGMENT, transparent: true, depthWrite: false, depthTest: false, blending: THREE.AdditiveBlending }));
-  g.frustumCulled = false; g.renderOrder = 20; g.position.set(p.x, p.y, p.z); g.visible = false; scene.add(g);
-  return { group: g, uniforms, home: new THREE.Vector3(p.x, p.y, p.z), caught: false, fly: 0, phase: k * 2.1 + i };
-}));
-
-/* ---------------- the rift ring ---------------- */
-// A soft band of light on the disc's edge and motes that circle it. The band hides the hard cut of the disc.
-const RING_VERTEX = `varying vec2 vUv; void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`;
-const RING_FRAGMENT = `
-  varying vec2 vUv; uniform float uTime; uniform vec3 uColor; uniform float uOpen;
+/* ---------------- portals ---------------- */
+// A portal is three flat parts that front the centre: a disc with a picture, a band of light on its rim with motes
+// that circle it, and a name over it. All draw after the splats and write no depth.
+const DISC_VERTEX = `varying vec2 vUv; void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`;
+const DISC_FRAGMENT = `
+  varying vec2 vUv; uniform sampler2D uMap; uniform float uHasMap; uniform float uAspect; uniform vec3 uColor; uniform float uOpen; uniform float uTime; uniform float uHot;
+  void main() {
+    vec2 p = vUv * 2.0 - 1.0; float r = length(p); if (r > 1.0) discard;
+    // The picture covers the disc: the longer side of the picture is cropped.
+    vec2 uv = p * 0.5; if (uAspect > 1.0) uv.x /= uAspect; else uv.y *= uAspect; uv += 0.5;
+    // A slow swirl near the rim, so the picture reads as something behind an opening.
+    float a = atan(p.y, p.x), pull = smoothstep(0.55, 1.0, r); uv += vec2(cos(a + uTime * 0.6), sin(a + uTime * 0.6)) * pull * 0.018;
+    vec3 art = mix(uColor * (0.25 + 0.35 * (1.0 - r)), texture2D(uMap, uv).rgb, uHasMap);
+    art *= 0.82 + 0.18 * uHot; art = mix(art, uColor, pull * 0.35);
+    gl_FragColor = vec4(art, uOpen * smoothstep(1.0, 0.97, r));
+  }`;
+const BAND_FRAGMENT = `
+  varying vec2 vUv; uniform float uTime; uniform vec3 uColor; uniform float uOpen; uniform float uHot;
   float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
   float noise(vec2 p) { vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f); return mix(mix(hash(i), hash(i + vec2(1, 0)), f.x), mix(hash(i + vec2(0, 1)), hash(i + vec2(1, 1)), f.x), f.y); }
   void main() {
-    vec2 p = vUv * 2.0 - 1.0; float r = length(p), a = atan(p.y, p.x);
-    vec2 c = vec2(cos(a), sin(a));                              // the angle as a point on a circle: no seam where it wraps
+    vec2 p = vUv * 2.0 - 1.0; float r = length(p), a = atan(p.y, p.x); vec2 c = vec2(cos(a), sin(a));   // the angle as a point on a circle: no seam
     float n = noise(c * 2.6 + vec2(uTime * 0.5, r * 5.0 - uTime * 0.6)) * 0.5 + noise(c * 6.0 - vec2(r * 9.0, uTime * 0.8)) * 0.5;
-    float edge = 0.70 + (n - 0.5) * 0.10;                       // the disc edge, in this quad's units
-    float band = 0.8 * exp(-pow((r - edge) / 0.032, 2.0)) + 0.4 * exp(-pow((r - edge - 0.05) / 0.12, 2.0)) * n;
-    vec3 col = mix(uColor, vec3(1.0), 0.45 * exp(-pow((r - edge) / 0.014, 2.0)));
+    float edge = 0.70 + (n - 0.5) * 0.05;
+    float band = (0.75 + 0.5 * uHot) * exp(-pow((r - edge) / 0.028, 2.0)) + 0.35 * exp(-pow((r - edge - 0.05) / 0.12, 2.0)) * n;
+    vec3 col = mix(uColor, vec3(1.0), 0.45 * exp(-pow((r - edge) / 0.012, 2.0)));
     gl_FragColor = vec4(col * band * uOpen, band * uOpen);
   }`;
 const MOTE_VERTEX = `
   attribute vec4 aSeed; uniform float uTime; uniform float uOpen; uniform float uSize; varying float vFade;
   void main() {
     float turn = aSeed.x + uTime * aSeed.y, drift = fract(aSeed.z + uTime * 0.11 * aSeed.w);
-    float r = (1.0 + drift * 0.55) * uOpen; vec3 p = vec3(cos(turn) * r, sin(turn) * r, (aSeed.w - 0.5) * 0.5 * drift);
+    float r = (1.0 + drift * 0.45) * uOpen; vec3 p = vec3(cos(turn) * r, sin(turn) * r, (aSeed.w - 0.5) * 0.4 * drift);
     vFade = (1.0 - drift) * smoothstep(0.0, 0.12, drift);
     vec4 mv = modelViewMatrix * vec4(p, 1.0); gl_Position = projectionMatrix * mv; gl_PointSize = uSize * (0.5 + aSeed.w) / max(0.2, -mv.z);
   }`;
 const MOTE_FRAGMENT = `varying float vFade; uniform vec3 uColor; uniform float uOpen;
   void main() { float d = length(gl_PointCoord - 0.5); float a = smoothstep(0.5, 0.0, d) * vFade * uOpen; gl_FragColor = vec4(mix(uColor, vec3(1.0), 0.4) * a, a); }`;
-function makeRing() {
-  const group = new THREE.Group(), uniforms = { uTime: { value: 0 }, uColor: { value: new THREE.Color('#fff') }, uOpen: { value: 0 }, uSize: { value: 60 } };
-  const band = new THREE.Mesh(new THREE.PlaneGeometry(2 / 0.70 * RIFT_RADIUS, 2 / 0.70 * RIFT_RADIUS), new THREE.ShaderMaterial({ uniforms, vertexShader: RING_VERTEX, fragmentShader: RING_FRAGMENT, transparent: true, depthWrite: false, depthTest: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide }));
-  const count = reduced ? 0 : 260, seeds = new Float32Array(count * 4), geometry = new THREE.BufferGeometry();
-  let s = 7; const random = () => (s = (s * 1664525 + 1013904223) >>> 0) / 4294967296;
+const discGeometry = new THREE.PlaneGeometry(2, 2), bandGeometry = new THREE.PlaneGeometry(2 / 0.70, 2 / 0.70), labelGeometry = new THREE.PlaneGeometry(1, 1);
+const moteGeometry = (() => {
+  const count = 90, seeds = new Float32Array(count * 4), g = new THREE.BufferGeometry(); let s = 7; const random = () => (s = (s * 1664525 + 1013904223) >>> 0) / 4294967296;
   for (let i = 0; i < count; i++) seeds.set([random() * 6.283, (random() < 0.5 ? -1 : 1) * (0.25 + random() * 0.7), random(), random()], i * 4);
-  geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(count * 3), 3)); geometry.setAttribute('aSeed', new THREE.BufferAttribute(seeds, 4));
-  const motes = new THREE.Points(geometry, new THREE.ShaderMaterial({ uniforms, vertexShader: MOTE_VERTEX, fragmentShader: MOTE_FRAGMENT, transparent: true, depthWrite: false, depthTest: false, blending: THREE.AdditiveBlending }));
-  motes.frustumCulled = false; band.renderOrder = 18; motes.renderOrder = 19; group.add(band, motes); group.visible = false; scene.add(group);
-  return { group, uniforms };
+  g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(count * 3), 3)); g.setAttribute('aSeed', new THREE.BufferAttribute(seeds, 4)); return g;
+})();
+const textures = new Map(), loader = new THREE.TextureLoader();
+function artTexture(url, uniforms) {
+  if (!url) return;
+  let entry = textures.get(url);
+  if (!entry) { entry = { texture: null, waiting: [] }; textures.set(url, entry); loader.load(url, t => { t.colorSpace = THREE.SRGBColorSpace; entry.texture = t; for (const u of entry.waiting) apply(u, t); entry.waiting.length = 0; }, undefined, () => { /* a missing picture leaves the portal's own colour */ }); }
+  if (entry.texture) apply(uniforms, entry.texture); else entry.waiting.push(uniforms);
+  function apply(u, t) { u.uMap.value = t; u.uHasMap.value = 1; u.uAspect.value = (t.image.width || 1) / (t.image.height || 1); }
 }
-const ringOut = makeRing(), ringIn = makeRing();
-const placeAt = (object, rift) => { object.position.set(rift.x, rift.y, rift.z); object.rotation.set(0, rift.yaw, 0); object.updateMatrixWorld(true); };
+// The back portal's picture, and every name, are drawn on a canvas.
+function backTexture() {
+  const c = document.createElement('canvas'); c.width = c.height = 256; const g = c.getContext('2d');
+  g.fillStyle = '#0a0612'; g.fillRect(0, 0, 256, 256); g.strokeStyle = '#e8f6ff'; g.lineWidth = 16; g.lineCap = g.lineJoin = 'round';
+  g.beginPath(); g.moveTo(150, 70); g.lineTo(92, 128); g.lineTo(150, 186); g.stroke(); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
+}
+const backArt = backTexture();
+function labelTexture(title, sub, color) {
+  const c = document.createElement('canvas'); c.width = 768; c.height = 192; const g = c.getContext('2d'); g.textAlign = 'center'; g.textBaseline = 'middle';
+  let size = 76; g.font = `700 ${size}px Georgia, "Times New Roman", serif`; while (size > 34 && g.measureText(title).width > 730) { size -= 4; g.font = `700 ${size}px Georgia, "Times New Roman", serif`; }
+  g.shadowColor = color; g.shadowBlur = 22; g.fillStyle = '#ffffff'; g.fillText(title, 384, sub ? 74 : 96); g.shadowBlur = 0;
+  if (sub) { g.font = '600 40px system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'; g.fillStyle = color; g.fillText(sub, 384, 146, 740); }
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
+}
+const flat = { transparent: true, depthWrite: false, depthTest: false };
+function makePortal(item, place) {
+  const group = new THREE.Group(), color = new THREE.Color(item.color || '#5ff2ff');
+  const uniforms = { uMap: { value: null }, uHasMap: { value: 0 }, uAspect: { value: 1 }, uColor: { value: color }, uOpen: { value: 0 }, uTime: { value: 0 }, uHot: { value: 0 }, uSize: { value: 40 } };
+  const disc = new THREE.Mesh(discGeometry, new THREE.ShaderMaterial({ uniforms, vertexShader: DISC_VERTEX, fragmentShader: DISC_FRAGMENT, ...flat }));
+  const band = new THREE.Mesh(bandGeometry, new THREE.ShaderMaterial({ uniforms, vertexShader: DISC_VERTEX, fragmentShader: BAND_FRAGMENT, ...flat, blending: THREE.AdditiveBlending }));
+  disc.renderOrder = 16; band.renderOrder = 18; group.add(disc, band);
+  if (!reduced) { const motes = new THREE.Points(moteGeometry, new THREE.ShaderMaterial({ uniforms, vertexShader: MOTE_VERTEX, fragmentShader: MOTE_FRAGMENT, ...flat, blending: THREE.AdditiveBlending })); motes.frustumCulled = false; motes.renderOrder = 19; group.add(motes); }
+  const count = item.kind === 'group' ? `${item.count} ${item.count === 1 ? 'game' : 'games'}` : '';
+  const map = labelTexture(item.title, count, '#' + color.getHexString());
+  const label = new THREE.Mesh(labelGeometry, new THREE.MeshBasicMaterial({ map, ...flat })); label.renderOrder = 20;
+  // A name is no wider than the room between two portals, so names in a full ring do not run into each other.
+  const width = place.radius * 2.3; label.scale.set(width, width / 4, 1); label.position.set(0, 1 + (width / 8 + 0.05) / place.radius, 0); label.scale.divideScalar(place.radius); group.add(label);
+  group.position.set(place.x, place.y, place.z); group.rotation.set(0, place.yaw, 0); group.scale.setScalar(place.radius); group.frustumCulled = false; scene.add(group);
+  if (item.kind === 'back') { uniforms.uMap.value = backArt; uniforms.uHasMap.value = 1; }
+  else artTexture(item.kind === 'group' ? groupArt(item.id, GAMES) : item.art, uniforms);
+  return { item, place, group, uniforms, label, map };
+}
+function dropPortal(p) { scene.remove(p.group); p.map.dispose(); p.group.traverse(o => { if (o.material) o.material.dispose(); }); }
 
-/* ---------------- the game ---------------- */
-// phase: title, play, end. rift: shut, opening, open, closing (the walker is across and the rift shrinks behind).
-const game = { phase: 'title', index: 0, caught: 0, jumps: 0, time: 0, rift: 'shut', open: 0, pair: null, from: 0, glide: null, yaw: 0, pitch: 0, waiting: false };
-const here = () => WORLDS[game.index];
-function showWorlds() {
-  const next = nextIndex(game.index);
-  meshes.forEach((m, i) => { if (m) m.visible = i === game.index || (game.pair && (i === next || i === game.from)); });
-  wisps.forEach((list, i) => list.forEach(w => { w.group.visible = game.phase !== 'title' && !w.caught && (i === game.index || (game.pair && i === next && game.rift !== 'closing')); }));
-}
-function enterWorld(i, fresh) {
-  game.index = i; game.caught = 0;
-  wisps[i].forEach(w => { w.caught = false; w.fly = 0; w.group.position.copy(w.home); });
-  if (fresh) { const c = centre(i); frame.position.set(c.x, 0, c.z); frame.quaternion.identity(); game.yaw = Math.PI * 0.5; game.pitch = 0; }
-  loadWorld(nextIndex(i)).catch(() => {});
-  paint(); showWorlds();
-}
-function openRift() {
-  const next = nextIndex(game.index);
-  if (!meshes[next]) { game.waiting = true; loadWorld(next).then(() => { if (game.waiting && game.rift === 'shut' && game.caught >= WISPS) { game.waiting = false; openRift(); } }); say('The next world is still loading.'); return; }
-  game.waiting = false; game.rift = 'opening'; game.open = reduced ? 1 : 0.02; game.from = game.index;
-  const pair = portals.addPortalPair({ radius: RIFT_RADIUS * game.open, onCross: crossed });
-  placeAt(pair.entryPortal, outRift(game.index)); placeAt(pair.exitPortal, inRift(next)); game.pair = pair;
-  placeAt(ringOut.group, outRift(game.index)); placeAt(ringIn.group, inRift(next));
-  ringOut.uniforms.uColor.value.set(WORLDS[next].tint); ringIn.uniforms.uColor.value.set(WORLDS[next].tint);
-  ringOut.group.visible = ringIn.group.visible = true; showWorlds();
-}
-function crossed(pair, fromEntry) {
-  if (!fromEntry) { game.index = game.from; game.rift = 'open'; paint(); showWorlds(); return; }     // the walker stepped back
-  game.jumps++; game.index = nextIndex(game.from); game.rift = 'closing'; game.caught = 0;
-  wisps[game.index].forEach(w => { w.caught = false; w.fly = 0; w.group.position.copy(w.home); });
-  paint(); showWorlds();
-}
-function closeRift() {
-  portals.removePortalPair(game.pair); game.pair = null; game.rift = 'shut'; game.open = 0; noRift();
-  ringOut.group.visible = ringIn.group.visible = false; showWorlds();
-  if (game.jumps >= WORLDS.length) finish(); else loadWorld(nextIndex(game.index)).catch(() => {});
-}
-function finish() {
-  game.phase = 'end'; game.glide = null; hud.hidden = hint.hidden = pad.hidden = true;
-  let best = null; try { best = +localStorage.getItem(BEST) || null; } catch (e) { /* storage off */ }
-  const record = best === null || game.time < best; if (record) { best = game.time; try { localStorage.setItem(BEST, String(Math.round(game.time * 10) / 10)); } catch (e) { /* storage off */ } }
-  $('endLine').textContent = record ? 'Four worlds and back to the fire. That is your best walk.' : 'Four worlds and back to the fire.';
-  $('endTime').textContent = clock(game.time); $('endBest').textContent = clock(best); endCard.hidden = false; $('again').focus({ preventScroll: true });
-}
-function start() {
-  if (game.pair) { portals.removePortalPair(game.pair); game.pair = null; noRift(); ringOut.group.visible = ringIn.group.visible = false; }
-  Object.assign(game, { phase: 'play', jumps: 0, time: 0, rift: 'shut', open: 0, glide: null, waiting: false });
-  startCard.hidden = endCard.hidden = true; hud.hidden = false; pad.hidden = !touch; enterWorld(0, true);
-}
-function say(text) { hint.textContent = text; hint.hidden = !text; }
-function paint() {
-  $('hWorld').textContent = here().name; $('hWisps').innerHTML = `Wisps <b>${Math.min(WISPS, game.caught)}</b> of ${WISPS}`; $('hTime').textContent = clock(game.time);
-  if (game.phase !== 'play') return;
-  if (game.rift === 'open' || game.rift === 'opening') say(touch ? 'The rift is open. Tap it, or walk in.' : 'The rift is open. Click it, press Space, or walk in.');
-  else if (game.rift === 'closing') say('');
-  else if (game.waiting) say('The next world is still loading.');
-  else say(game.jumps === 0 && game.caught === 0 ? (touch ? 'Drag to look around. Tap a wisp to catch it.' : 'Drag to look around. Click a wisp to catch it.') : `Find the wisps: ${WISPS - game.caught} left.`);
-}
-function catchWisp(w) {
-  if (w.caught) return; w.caught = true; w.fly = 0.001; game.caught++;
-  if (game.caught >= WISPS && game.rift === 'shut') openRift();
+/* ---------------- the visit ---------------- */
+// phase: title, hall, launch. ring: null for the collections, or the id of the open collection.
+const visit = { phase: 'title', ringId: null, portals: [], leaving: [], open: 0, yaw: 0, pitch: 0, turnTo: null, aim: -1, glide: null, time: 0 };
+const places = () => visit.portals.map(p => p.place);
+function showRing(groupId, lookAt) {
+  for (const p of visit.portals) visit.leaving.push(p);
+  const items = groupId ? groupPortals(groupId, GAMES) : hallPortals();
+  // The new ring starts where the visitor looks, so the first portal is in front of them.
+  const first = lookAt ?? visit.yaw, spots = ring(items.length, first);
+  visit.portals = items.map((item, i) => makePortal(item, spots[i])); visit.ringId = groupId; visit.open = reduced ? 1 : 0; visit.aim = -1;
+  const group = GROUPS.find(g => g.id === groupId); where.textContent = group ? `Neon hall · ${group.label}` : 'Neon hall · Collections'; $('kBack').hidden = !groupId;
   paint();
+}
+function enter(index) {
+  const p = visit.portals[index]; if (!p || visit.phase !== 'hall' || visit.glide) return;
+  if (p.item.kind === 'group') showRing(p.item.id, p.place.heading);
+  else if (p.item.kind === 'back') showRing(null, p.place.heading);
+  else launch(p);
+}
+function back() { if (visit.phase === 'hall' && visit.ringId && !visit.glide) showRing(null, visit.yaw); }
+// Going into a game: the visitor glides to the portal while the view fills with its light, then the game's page opens.
+function launch(p) {
+  visit.phase = 'launch'; visit.glide = { portal: p, t: 0 }; target.hidden = keysBar.hidden = true; flash.style.setProperty('--tint', '#' + p.uniforms.uColor.value.getHexString());
+  const leave = () => { location.assign(p.item.url); };
+  if (reduced) { flash.classList.add('on'); leave(); return; }
+  setTimeout(() => flash.classList.add('on'), 260); setTimeout(leave, 760);
+}
+// A page kept in the back-forward cache comes back mid-launch: put the visitor back in the hall.
+addEventListener('pageshow', e => { if (!e.persisted || visit.phase !== 'launch') return; flash.classList.remove('on'); frame.position.set(0, 0, 0); visit.glide = null; visit.phase = 'hall'; keysBar.hidden = false; paint(); });
+function start() { visit.phase = 'hall'; startCard.hidden = true; keysBar.hidden = false; where.hidden = false; visit.yaw = 0; visit.pitch = 0; showRing(null, 0); }
+function paint() {
+  const p = visit.portals[visit.aim];
+  if (visit.phase !== 'hall' || !p) { target.hidden = true; $('kGo').disabled = true; canvas.classList.remove('aim'); return; }
+  target.hidden = false; $('kGo').disabled = false; target.style.setProperty('--tint', '#' + p.uniforms.uColor.value.getHexString());
+  $('tTitle').textContent = p.item.title;
+  $('tSub').textContent = p.item.kind === 'group' ? `${p.item.count} ${p.item.count === 1 ? 'game' : 'games'}` : p.item.kind === 'back' ? 'Back to the six collections' : p.item.sub;
+  $('tSub').hidden = !$('tSub').textContent;
+  const verb = p.item.kind === 'game' ? 'play' : p.item.kind === 'back' ? 'go back' : 'open';
+  $('tDo').textContent = touch ? `Tap the portal to ${verb}` : `Click the portal or press Enter to ${verb}`;
+  $('kGo').textContent = p.item.kind === 'game' ? 'Play' : p.item.kind === 'back' ? 'Back' : 'Open';
 }
 
 /* ---------------- looking and walking ---------------- */
-const forward = new THREE.Vector3(), eye = new THREE.Vector3(), scratch = new THREE.Vector3(), ndc = new THREE.Vector3();
-const local = () => { camera.getWorldPosition(eye); const c = centre(game.index); return { x: eye.x - c.x, z: eye.z - c.z }; };
+// visit.yaw is a compass heading: 0 looks along -z and a quarter turn looks along +x.
+const eye = new THREE.Vector3(), dir = new THREE.Vector3(), ndc = new THREE.Vector3();
 function lookRay(clientX, clientY) {
-  camera.getWorldPosition(eye);
-  if (clientX === undefined) camera.getWorldDirection(forward);
-  else { ndc.set(clientX / innerWidth * 2 - 1, -(clientY / innerHeight) * 2 + 1, 0.5).unproject(camera); forward.copy(ndc).sub(eye).normalize(); }
-  return { origin: { x: eye.x, y: eye.y, z: eye.z }, dir: { x: forward.x, y: forward.y, z: forward.z } };
+  camera.updateMatrixWorld(true); camera.getWorldPosition(eye);
+  ndc.set(clientX / innerWidth * 2 - 1, -(clientY / innerHeight) * 2 + 1, 0.5).unproject(camera); dir.copy(ndc).sub(eye).normalize();
+  return [{ x: eye.x, y: eye.y, z: eye.z }, { x: dir.x, y: dir.y, z: dir.z }];
 }
-// A tap, a click or Space: catch the wisp on the ray, or go through the open rift on it.
-function act(clientX, clientY) {
-  if (game.phase !== 'play' || game.glide) return false;
-  const ray = lookRay(clientX, clientY), reach = clientX === undefined ? 0.6 : 0.34; let best = null;
-  for (const w of wisps[game.index]) { if (w.caught) continue; const hit = rayNear(ray.origin, ray.dir, w.group.position, reach); if (hit && (!best || hit.miss < best.hit.miss)) best = { w, hit }; }
-  if (best) { catchWisp(best.w); return true; }
-  if (game.rift === 'open' && (clientX === undefined || rayThroughRift(ray.origin, ray.dir, outRift(game.index)))) { game.glide = { stage: 'approach' }; say(''); return true; }
-  return false;
-}
-// game.yaw is a compass heading inside the frame: 0 looks along -z and a quarter turn looks along +x. A rift crossing
-// turns the frame about y by frameYaw(), so the heading in the scene is game.yaw - frameYaw().
-const frameYaw = () => { scratch.set(0, 0, -1).applyQuaternion(frame.quaternion); return Math.atan2(-scratch.x, -scratch.z); };
-function moveBy(dx, dz) {
-  const from = local(), to = walk(here(), from, { x: from.x + dx, z: from.z + dz }, game.rift === 'open' || game.rift === 'opening');
-  frame.position.x += to.x - from.x; frame.position.z += to.z - from.z;
-}
-const keys = new Set(), stick = { x: 0, y: 0, id: null };
+const portalAt = (x, y) => visit.phase === 'hall' && visit.open > 0.6 ? pick(...lookRay(x, y), places(), touch ? 1.25 : 1.1) : -1;
+function turn(step) { if (visit.phase !== 'hall' || visit.glide) return; const i = neighbour(visit.turnTo ?? visit.yaw, places(), step); if (i >= 0) visit.turnTo = visit.portals[i].place.heading; }
+const keys = new Set();
 function step(dt) {
-  if (game.phase !== 'play') return;
-  game.time += dt;
-  // The rift grows open, or shrinks shut behind the walker.
-  if (game.rift === 'opening') { game.open = Math.min(1, game.open + dt / 1.1); if (game.open >= 1) { game.rift = 'open'; } }
-  if (game.rift === 'closing' && !game.glide) { game.open = reduced ? 0 : Math.max(0, game.open - dt / 0.7); if (game.open <= 0.02) closeRift(); }
-  if (game.pair) { game.pair.radius = RIFT_RADIUS * Math.max(0.02, game.open); ringOut.uniforms.uOpen.value = game.open; }
-  // Wisps bob in place. A caught wisp flies to where the rift opens.
-  const target = outRift(game.index);
-  for (const w of wisps[game.index]) {
-    if (!w.caught) { w.uniforms.uScale.value = 0.95; if (!reduced) { w.group.position.y = w.home.y + Math.sin(game.time * 1.6 + w.phase) * 0.07; w.uniforms.uPulse.value = Math.sin(game.time * 3.1 + w.phase); } continue; }
-    if (w.fly <= 0) continue;
-    w.fly = Math.min(1, w.fly + dt / (reduced ? 0.01 : 0.7)); const k = w.fly * w.fly * (3 - 2 * w.fly);
-    w.group.position.lerpVectors(w.home, scratch.set(target.x, target.y, target.z), k); w.uniforms.uScale.value = 0.95 * (1 - k * 0.7); w.group.visible = w.fly < 1; if (w.fly >= 1) w.fly = 0;
+  visit.time += dt;
+  if (visit.phase === 'title') { if (!reduced) visit.yaw = wrap(visit.yaw + dt * 0.05); return; }
+  // The new ring grows open and the old one shrinks away.
+  visit.open = Math.min(1, visit.open + dt / 0.45);
+  for (const p of visit.portals) p.uniforms.uOpen.value = visit.open;
+  for (let i = visit.leaving.length - 1; i >= 0; i--) { const p = visit.leaving[i]; p.uniforms.uOpen.value = reduced ? 0 : Math.max(0, p.uniforms.uOpen.value - dt / 0.3); p.label.material.opacity = p.uniforms.uOpen.value; if (p.uniforms.uOpen.value <= 0) { dropPortal(p); visit.leaving.splice(i, 1); } }
+  if (visit.glide) {
+    const g = visit.glide, place = g.portal.place; g.t = Math.min(1, g.t + dt / 0.75); const k = g.t * g.t;
+    frame.position.set(place.x * k * 0.92, 0, place.z * k * 0.92); visit.yaw += wrap(place.heading - visit.yaw) * Math.min(1, dt * 8); visit.pitch += (0 - visit.pitch) * Math.min(1, dt * 8);
+    return;
   }
-  if (game.glide) return glide(dt);
-  // Keys and the pad walk the frame along the look direction.
-  const turn = (keys.has('arrowright') ? 1 : 0) - (keys.has('arrowleft') ? 1 : 0); game.yaw += turn * dt * 1.9;
-  let ahead = (keys.has('w') || keys.has('arrowup') ? 1 : 0) - (keys.has('s') || keys.has('arrowdown') ? 1 : 0) - stick.y, side = (keys.has('d') ? 1 : 0) - (keys.has('a') ? 1 : 0) + stick.x;
-  const length = Math.hypot(ahead, side); if (length > 1) { ahead /= length; side /= length; }
-  if (length > 0.01) { const a = game.yaw - frameYaw(), speed = 1.5 * dt; moveBy((Math.sin(a) * ahead + Math.cos(a) * side) * speed, (-Math.cos(a) * ahead + Math.sin(a) * side) * speed); }
-}
-// Going through the rift without the keys: walk to a point in front of it, cross it, then walk on to the new centre.
-function glide(dt) {
-  const g = game.glide, speed = reduced ? 1e3 : 2.3, limit = speed * dt; camera.getWorldPosition(eye);
-  const toward = (x, z) => { const dx = x - eye.x, dz = z - eye.z, d = Math.hypot(dx, dz), k = d > limit ? limit / d : 1; frame.position.x += dx * k; frame.position.z += dz * k; face(dx, dz, dt); return d <= limit + 1e-6; };
-  if (g.stage === 'approach') { const r = outRift(game.from = game.index); if (toward(r.x - r.away.x * 0.7, r.z - r.away.z * 0.7)) g.stage = 'through'; }
-  else if (g.stage === 'through') {
-    if (game.rift === 'closing') { g.stage = 'settle'; return; }
-    const r = outRift(game.index), d = Math.min(limit, 0.9); frame.position.x += r.away.x * d; frame.position.z += r.away.z * d; face(r.away.x, r.away.z, dt);
-  } else { const c = centre(game.index), r = inRift(game.index), rest = Math.min(here().walk * 0.6, 0.9); if (toward(c.x + r.away.x * rest, c.z + r.away.z * rest)) { game.glide = null; paint(); } }
-}
-// Turn the view toward a walking direction given in scene space.
-function face(dx, dz, dt) {
-  if (Math.hypot(dx, dz) < 1e-4) return;
-  let want = Math.atan2(dx, -dz) + frameYaw() - game.yaw; want = Math.atan2(Math.sin(want), Math.cos(want));
-  const k = reduced ? 1 : Math.min(1, dt * 5); game.yaw += want * k; game.pitch += (0 - game.pitch) * k;
+  // ◀ and ▶ turn the view to the next portal.
+  if (visit.turnTo !== null) { const off = wrap(visit.turnTo - visit.yaw); if (reduced || Math.abs(off) < 0.004) { visit.yaw = visit.turnTo; visit.turnTo = null; } else visit.yaw = wrap(visit.yaw + off * Math.min(1, dt * 9)); visit.pitch += (0 - visit.pitch) * Math.min(1, dt * 6); }
+  // W A S D walk a few steps around the middle.
+  let ahead = (keys.has('w') ? 1 : 0) - (keys.has('s') ? 1 : 0), side = (keys.has('d') ? 1 : 0) - (keys.has('a') ? 1 : 0); const length = Math.hypot(ahead, side);
+  if (length > 0) { ahead /= length; side /= length; const a = visit.yaw, speed = 1.4 * dt, from = { x: frame.position.x, z: frame.position.z }, to = walk(from, { x: from.x + (Math.sin(a) * ahead + Math.cos(a) * side) * speed, z: from.z + (-Math.cos(a) * ahead + Math.sin(a) * side) * speed }); frame.position.x = to.x; frame.position.z = to.z; }
+  // The portal in the middle of the view is named on screen.
+  const aim = facing(visit.yaw, places()); if (aim !== visit.aim) { visit.aim = aim; paint(); }
 }
 
 /* ---------------- input ---------------- */
 let drag = null;
-canvas.addEventListener('pointerdown', e => { if (game.phase !== 'play') return; drag = { id: e.pointerId, x: e.clientX, y: e.clientY, sx: e.clientX, sy: e.clientY, at: performance.now(), moved: 0 }; try { canvas.setPointerCapture(e.pointerId); } catch (error) { /* the drag still works inside the canvas */ } canvas.classList.add('look'); });
+canvas.addEventListener('pointerdown', e => { if (visit.phase !== 'hall') return; drag = { id: e.pointerId, x: e.clientX, y: e.clientY, sx: e.clientX, sy: e.clientY, at: performance.now(), moved: 0 }; try { canvas.setPointerCapture(e.pointerId); } catch (error) { /* the drag still works inside the canvas */ } canvas.classList.add('look'); });
 canvas.addEventListener('pointermove', e => {
-  if (!drag || e.pointerId !== drag.id) return;
+  if (!drag || e.pointerId !== drag.id) { if (e.pointerType === 'mouse') canvas.classList.toggle('aim', portalAt(e.clientX, e.clientY) >= 0); return; }
   const dx = e.clientX - drag.x, dy = e.clientY - drag.y; drag.x = e.clientX; drag.y = e.clientY; drag.moved += Math.abs(dx) + Math.abs(dy);
-  if (game.glide) return;
-  // The view follows the finger: a drag to the right turns the walker to the left, and a drag down looks up.
-  const k = (camera.fov * Math.PI / 180) / innerHeight * 1.15; game.yaw -= dx * k; game.pitch = clamp(game.pitch + dy * k, -1.2, 1.2);
+  if (visit.glide || drag.moved < 6) return;
+  // The view follows the finger: a drag to the right turns the visitor to the left, and a drag down looks up.
+  const k = (camera.fov * Math.PI / 180) / innerHeight * 1.15; visit.turnTo = null; visit.yaw = wrap(visit.yaw - dx * k); visit.pitch = clamp(visit.pitch + dy * k, -1.1, 1.1);
 });
-const lift = e => { if (!drag || e.pointerId !== drag.id) return; const tap = drag.moved < 10 && performance.now() - drag.at < 500; canvas.classList.remove('look'); const d = drag; drag = null; if (tap && e.type === 'pointerup') act(d.sx, d.sy); };
+const lift = e => { if (!drag || e.pointerId !== drag.id) return; const tap = drag.moved < 10 && performance.now() - drag.at < 500, d = drag; drag = null; canvas.classList.remove('look'); if (tap && e.type === 'pointerup') { const i = portalAt(d.sx, d.sy); if (i >= 0) enter(i); } };
 canvas.addEventListener('pointerup', lift); canvas.addEventListener('pointercancel', lift);
 addEventListener('keydown', e => {
-  const k = e.key.toLowerCase();
-  if (game.phase === 'play' && (k === ' ' || k === 'enter')) { e.preventDefault(); if (!e.repeat) act(); return; }
-  if (['w', 'a', 's', 'd', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(k)) { if (game.phase === 'play') e.preventDefault(); keys.add(k); }
+  if (visit.phase !== 'hall' || window.GameSwitch?.isOpen) return; const k = e.key.toLowerCase();
+  if (k === 'arrowleft' || k === 'arrowright') { e.preventDefault(); turn(k === 'arrowright' ? 1 : -1); }
+  else if (k === 'enter' || k === ' ') { if (e.target instanceof HTMLButtonElement) return; e.preventDefault(); if (!e.repeat && visit.aim >= 0) enter(visit.aim); }
+  else if (k === 'escape' || k === 'backspace') { if (visit.ringId) { e.preventDefault(); back(); } }
+  else if (['w', 'a', 's', 'd'].includes(k)) keys.add(k);
 });
-addEventListener('keyup', e => keys.delete(e.key.toLowerCase()));
-addEventListener('blur', () => { keys.clear(); stick.x = stick.y = 0; });
-function padMove(e) { const r = pad.getBoundingClientRect(), x = (e.clientX - r.left) / r.width * 2 - 1, y = (e.clientY - r.top) / r.height * 2 - 1, l = Math.max(1, Math.hypot(x, y)); stick.x = x / l; stick.y = y / l; nub.style.transform = `translate(${stick.x * 34}px, ${stick.y * 34}px)`; }
-pad.addEventListener('pointerdown', e => { stick.id = e.pointerId; try { pad.setPointerCapture(e.pointerId); } catch (error) { /* a pointer that cannot be captured still moves the pad */ } padMove(e); });
-pad.addEventListener('pointermove', e => { if (e.pointerId === stick.id) padMove(e); });
-const padUp = e => { if (e.pointerId !== stick.id) return; stick.id = null; stick.x = stick.y = 0; nub.style.transform = ''; };
-pad.addEventListener('pointerup', padUp); pad.addEventListener('pointercancel', padUp);
-go.addEventListener('click', start); $('again').addEventListener('click', start);
+addEventListener('keyup', e => keys.delete(e.key.toLowerCase())); addEventListener('blur', () => keys.clear());
+$('kPrev').addEventListener('click', () => turn(-1)); $('kNext').addEventListener('click', () => turn(1));
+$('kGo').addEventListener('click', () => { if (visit.aim >= 0) enter(visit.aim); }); $('kBack').addEventListener('click', back);
+go.addEventListener('click', start);
 
 /* ---------------- the loop ---------------- */
-let last = performance.now(), painted = -1, titleTurn = 0;
+let last = performance.now();
 function tick(now) {
   const dt = Math.min(0.05, Math.max(0, (now - last) / 1000)); last = now;
-  // The Games menu of the arcade holds the walk, and so does a hidden tab.
   if (!window.GameSwitch?.isOpen && !document.hidden) step(dt);
-  if (game.phase === 'title' && !reduced) { titleTurn += dt * 0.06; game.yaw = Math.PI * 0.5 + titleTurn; }
-  camera.rotation.set(game.pitch, -game.yaw, 0);
-  ringOut.uniforms.uTime.value = ringIn.uniforms.uTime.value = reduced ? 0 : now / 1000; ringIn.uniforms.uOpen.value = game.open;
-  ringOut.uniforms.uSize.value = ringIn.uniforms.uSize.value = innerHeight * 0.022 * renderer.getPixelRatio();
-  if (!game.pair) noRift();
-  portals.animateLoopHook();
-  const second = Math.floor(game.time); if (second !== painted && game.phase === 'play') { painted = second; $('hTime').textContent = clock(game.time); }
+  camera.rotation.set(visit.pitch, -visit.yaw, 0);
+  const time = reduced ? 0 : now / 1000, size = innerHeight * 0.02 * renderer.getPixelRatio();
+  for (const list of [visit.portals, visit.leaving]) for (const p of list) { p.uniforms.uTime.value = time; p.uniforms.uSize.value = size * p.place.radius; }
+  visit.portals.forEach((p, i) => { p.uniforms.uHot.value += ((i === visit.aim ? 1 : 0) - p.uniforms.uHot.value) * Math.min(1, dt * 10); p.label.material.opacity = visit.open * (0.55 + 0.45 * p.uniforms.uHot.value); });
+  renderer.render(scene, camera);
   requestAnimationFrame(tick);
 }
 
 /* ---------------- start up ---------------- */
-// The first world and the one behind its rift load before Start. The other two load while the walker plays.
-loadWorld(0, p => { loadLine.textContent = `Loading the first world… ${Math.round(p * 100)}%`; }).then(() => {
-  const c = centre(0); frame.position.set(c.x, 0, c.z); game.yaw = Math.PI * 0.5; showWorlds();
-  loadLine.hidden = true; go.disabled = false; go.textContent = 'Start walking'; go.focus({ preventScroll: true });
-  loadWorld(1).then(() => loadWorld(2)).then(() => loadWorld(3)).catch(() => {});
-}).catch(error => { loadLine.textContent = 'A world did not load. Check the connection and load the page again.'; console.error(error); });
+// A small hall file shows first. A phone then takes the 500,000-splat file and a desktop the full file, and each
+// replaces the one before it when it is ready.
+const want = query.get('q') || (touch ? '500k' : 'full'), files = { '150k': 'hall-150k.spz', '500k': 'hall-500k.spz', full: 'hall-full.spz' };
+const ready = () => { loadLine.hidden = true; go.disabled = false; go.textContent = 'Enter the hall'; go.focus({ preventScroll: true }); };
+if (query.get('world') === 'none') ready();
+else loadHall(files['150k'], p => { loadLine.textContent = `Loading the hall… ${Math.round(p * 100)}%`; }).then(() => {
+  ready();
+  if (want !== '150k' && files[want]) { loadLine.hidden = false; loadLine.textContent = 'Sharpening the hall…'; loadHall(files[want], p => { loadLine.textContent = `Sharpening the hall… ${Math.round(p * 100)}%`; }).then(() => { loadLine.hidden = true; }).catch(() => { loadLine.hidden = true; }); }
+}).catch(error => { console.error(error); noGraphics('The hall did not load.'); });
 requestAnimationFrame(tick);
 
-// A handle for the browser check (qa/lab/riftwalk.e2e.mjs). The game never reads it.
+// A handle for the browser check (qa/lab/riftwalk.e2e.mjs). The page never reads it.
 window.__riftwalk = {
-  state: () => ({ phase: game.phase, world: here().id, caught: game.caught, jumps: game.jumps, rift: game.rift, open: game.open, gliding: !!game.glide, time: game.time, loaded: meshes.map(m => !!m), place: local(), visible: meshes.map(m => !!m?.visible) }),
-  wispScreen: k => { const w = wisps[game.index][k]; if (!w || w.caught) return null; ndc.copy(w.group.position).project(camera); return ndc.z > 1 ? null : { x: (ndc.x + 1) / 2 * innerWidth, y: (1 - ndc.y) / 2 * innerHeight }; },
-  lookAt: (x, y, z) => { camera.getWorldPosition(eye); const dx = x - eye.x, dy = y - eye.y, dz = z - eye.z; game.yaw = Math.atan2(dx, -dz) + frameYaw(); game.pitch = Math.atan2(dy, Math.hypot(dx, dz)); camera.rotation.set(game.pitch, -game.yaw, 0); camera.updateMatrixWorld(true); },
-  wisp: k => { const p = wisps[game.index][k].group.position; return { x: p.x, y: p.y, z: p.z, caught: wisps[game.index][k].caught }; },
-  rift: () => outRift(game.index),
-  // Catch every wisp and open the rift at once, with no wait.
-  openNow: () => { for (const w of wisps[game.index]) if (!w.caught) catchWisp(w); if (game.rift === 'opening') { game.open = 1; game.rift = 'open'; } for (const w of wisps[game.index]) { w.fly = 0; w.group.visible = false; } paint(); },
-  stand: (x, z) => { const c = centre(game.index); frame.position.x = c.x + x; frame.position.z = c.z + z; },
+  state: () => ({ phase: visit.phase, ring: visit.ringId, open: visit.open, aim: visit.aim, yaw: visit.yaw, place: { x: frame.position.x, z: frame.position.z }, hall: !!hall, splats: hall?.packedSplats?.numSplats ?? 0, leaving: visit.leaving.length, portals: visit.portals.map(p => ({ kind: p.item.kind, id: p.item.id, title: p.item.title, url: p.item.url || null, heading: p.place.heading, radius: p.place.radius, art: p.uniforms.uHasMap.value === 1 })) }),
+  // Where a portal's centre is on screen, or null when it is behind the view.
+  screen: i => { const p = visit.portals[i]; if (!p) return null; camera.updateMatrixWorld(true); ndc.set(p.place.x, p.place.y, p.place.z).project(camera); return ndc.z > 1 ? null : { x: (ndc.x + 1) / 2 * innerWidth, y: (1 - ndc.y) / 2 * innerHeight }; },
+  look: heading => { visit.turnTo = null; visit.yaw = wrap(heading); visit.pitch = 0; camera.rotation.set(0, -visit.yaw, 0); camera.updateMatrixWorld(true); },
 };
