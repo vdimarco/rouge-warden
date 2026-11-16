@@ -1,10 +1,34 @@
 {
-  "note": "The neon hall of Riftwalk, a Gaussian splat world made with Marble by World Labs through the World Labs API on 2026-11-16 (UTC). The three files are Marble's own exports, unchanged: 150,000 splats, 500,000 splats and full resolution.",
+  "note": "The neon den of Riftwalk, a Gaussian splat world made with Marble by World Labs through the World Labs API on 2026-11-16 (UTC). The three files are Marble's own exports, unchanged: 150,000 splats, 500,000 splats and full resolution. screens.json holds the place of each cabinet screen, found in the world's panorama by games/riftwalk/tools/find-screens.py and placed in the world by games/riftwalk/tools/place-screens.mjs.",
   "model": "marble-1.1",
-  "world_id": "92e5e14e-b031-485e-858d-ab9b865c3671",
-  "operation_id": "b2202efe-0a73-4106-9b2d-c671af72e897",
+  "world_id": "cb7ab700-3676-44aa-ab34-51425a1ba5fd",
+  "operation_id": "a49eb396-dbb6-4c4d-895f-9d6fe3230943",
   "cost_credits": 1580,
-  "semantics_metadata": { "metric_scale_factor": 2.2473989, "ground_plane_offset": 1.349822 },
-  "prompt": "The inside of a large cyberpunk arcade hall at night, seen from the middle of its open floor. The hall is dense and glowing: long rows of retro arcade cabinets with bright blank screens line every wall, their cases edged in hot magenta, electric cyan and amber light. Set into each of the four walls are two tall empty archways framed with thick bright neon tubes, eight archways in all, each opening into darkness. Above, a dark industrial ceiling of exposed pipes, vents and bundled cables carries long magenta and cyan neon strips and hanging lamps. Glowing abstract neon shapes, stripes and arrows hang on the brick and steel walls. The floor is wet black concrete that mirrors every light, with a wide clear circle in the middle. Thin coloured haze in the air. Deep saturated colour, strong contrast, sharp fine detail, cinematic and moody. No people. No readable text, no letters, no numbers, no logos, no brand names, no characters from real games.",
-  "draft": { "model": "marble-1.0-draft", "world_id": "b8fcd264-f8cf-4c3a-a590-647a1264a495", "cost_credits": 230, "note": "A layout check. Not shipped." }
+  "semantics_metadata": {
+    "metric_scale_factor": 1.5553787,
+    "ground_plane_offset": 0.92710257
+  },
+  "prompt": "A 360 degree view from the exact centre of a small, dark, crowded cyberpunk arcade den at night. Arcade cabinets surround the viewer completely in an unbroken circle: in front, to the left, to the right and behind, twenty-four tall retro cabinets standing shoulder to shoulder, all facing the centre, two metres away. Every cabinet has one large flat upright screen that is switched on and shows only plain bright white light with no picture. The cabinets are glossy black with thick glowing edge strips in hot magenta, electric cyan and violet. The room is lit only by neon: the walls and the low ceiling behind the cabinets are covered with glowing neon tubes, neon rings, neon arrows and abstract neon shapes in magenta, cyan, violet and acid green, with tangled hanging cables, pipes, ducts and stacked old monitors showing static between them. Purple and teal haze fills the air. The floor is rain-wet black concrete that mirrors all the neon in long coloured streaks. Deep blacks, very saturated coloured light on every surface, high contrast, sharp fine detail, cinematic. No people. No readable text, no letters, no numbers, no logos, no brand names, no characters from real games.",
+  "earlier": [
+    {
+      "model": "marble-1.0-draft",
+      "world_id": "b8fcd264-f8cf-4c3a-a590-647a1264a495",
+      "cost_credits": 230,
+      "note": "A layout check. Not shipped."
+    },
+    {
+      "model": "marble-1.1",
+      "world_id": "92e5e14e-b031-485e-858d-ab9b865c3671",
+      "operation_id": "b2202efe-0a73-4106-9b2d-c671af72e897",
+      "cost_credits": 1580,
+      "note": "The first hall, with floating portals. Replaced: the user asked for a darker, denser world with the portals on the machine screens.",
+      "prompt": "The inside of a large cyberpunk arcade hall at night, seen from the middle of its open floor. The hall is dense and glowing: long rows of retro arcade cabinets with bright blank screens line every wall, their cases edged in hot magenta, electric cyan and amber light. Set into each of the four walls are two tall empty archways framed with thick bright neon tubes, eight archways in all, each opening into darkness. Above, a dark industrial ceiling of exposed pipes, vents and bundled cables carries long magenta and cyan neon strips and hanging lamps. Glowing abstract neon shapes, stripes and arrows hang on the brick and steel walls. The floor is wet black concrete that mirrors every light, with a wide clear circle in the middle. Thin coloured haze in the air. Deep saturated colour, strong contrast, sharp fine detail, cinematic and moody. No people. No readable text, no letters, no numbers, no logos, no brand names, no characters from real games."
+    },
+    {
+      "model": "marble-1.1",
+      "world_id": "a3819c78-f7ef-4c66-a830-12a4e8df86c9",
+      "cost_credits": 1580,
+      "note": "A darker hall with cabinets along the walls. Not shipped: its screens were too far from the visitor and too few faced the middle."
+    }
+  ]
 }

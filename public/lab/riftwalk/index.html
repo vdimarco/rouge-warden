@@ -26,8 +26,12 @@
   .keys button { pointer-events: auto; min-width: 56px; height: 52px; padding: 0 16px; border-radius: 14px; border: 1px solid var(--line); background: rgba(10, 6, 18, 0.86); color: var(--ink); font: 700 17px/1 var(--body); cursor: pointer; }
   .keys button.go { background: var(--gold); color: #1d1606; border-color: transparent; min-width: 112px; }
   .keys button[hidden] { display: none; }
-  .where { position: fixed; left: 50%; top: calc(var(--sat) + 52px); transform: translateX(-50%); width: max-content; max-width: calc(100vw - 32px); z-index: 4; pointer-events: none; background: var(--panel); border: 1px solid var(--line); border-radius: 999px; padding: 6px 13px; font: 700 14px/1 var(--body); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .where[hidden] { display: none; }
+  /* The collections: one button for each. The machines show the games of the one that is on. */
+  .groups { position: fixed; left: 0; right: 0; top: calc(var(--sat) + 48px); display: flex; gap: 8px; justify-content: safe center; padding: 0 12px; overflow-x: auto; scrollbar-width: none; z-index: 5; }
+  .groups::-webkit-scrollbar { display: none; }
+  .groups[hidden] { display: none; }
+  .groups button { flex: none; height: 44px; min-width: 44px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--line); background: rgba(10, 6, 18, 0.86); color: var(--ink); font: 700 14px/1 var(--body); cursor: pointer; white-space: nowrap; }
+  .groups button[aria-pressed="true"] { background: var(--tint, var(--gold)); color: #14100a; border-color: transparent; }
   .load { position: fixed; left: 50%; bottom: calc(var(--sab) + 28px); transform: translateX(-50%); color: var(--muted); font: 600 14px/1 var(--body); z-index: 6; pointer-events: none; text-align: center; width: max-content; max-width: calc(100vw - 32px); }
   .load[hidden] { display: none; }
   /* The flash that covers the view while a game opens. */
@@ -48,25 +52,25 @@
 <script type="importmap">{"imports":{"three":"/vr/lib/three.module.min.js","three/addons/postprocessing/Pass.js":"/lab/riftwalk/lib/Pass.js","@sparkjsdev/spark":"/lab/riftwalk/lib/spark.module.min.js"}}</script>
 </head>
 <body class="toy">
-<canvas class="view" id="view" aria-label="Riftwalk: a neon arcade hall with a ring of portals. Each portal opens a collection of games or launches a game."></canvas>
+<canvas class="view" id="view" aria-label="Riftwalk: a dark neon arcade hall. Each machine's screen is a portal that launches a game."></canvas>
 <nav class="labbar"><a class="back" href="/lab/">◀ Lab</a><button type="button" id="menu" data-switch>Games</button></nav>
-<p class="where" id="where" hidden></p>
+<div class="groups ui" id="groups" hidden role="group" aria-label="Collections"></div>
 <div class="target" id="target" hidden role="status" aria-live="polite"><b id="tTitle"></b><span id="tSub"></span><i id="tDo"></i></div>
 <div class="keys ui" id="keys" hidden>
-  <button type="button" id="kPrev" aria-label="Turn to the portal on the left">◀</button>
-  <button type="button" id="kBack" hidden>Back</button>
-  <button type="button" id="kGo" class="go">Enter</button>
-  <button type="button" id="kNext" aria-label="Turn to the portal on the right">▶</button>
+  <button type="button" id="kPrev" aria-label="Turn to the machine on the left">◀</button>
+  <button type="button" id="kMore" hidden>More</button>
+  <button type="button" id="kGo" class="go">Play</button>
+  <button type="button" id="kNext" aria-label="Turn to the machine on the right">▶</button>
 </div>
 <p class="load" id="load">Loading the hall…</p>
 <div class="flash" id="flash"></div>
 <section class="card start" id="start">
   <h1>Riftwalk</h1>
-  <p class="pitch">The arcade as a neon hall. A ring of portals stands around you: one for each collection, then one for each game. Step through a portal to play.</p>
+  <p class="pitch">The arcade as a dark neon hall. Every machine's screen is a portal to one of our games. Pick a collection, find a game, and step into its screen.</p>
   <ul class="how">
     <li><b>Look:</b> drag the view, or use ◀ and ▶.</li>
-    <li><b>Open:</b> tap or click a portal, or press Enter.</li>
-    <li><b>Back:</b> the Back portal, the Back button, or Esc.</li>
+    <li><b>Collections:</b> the buttons at the top, or the up and down arrow keys.</li>
+    <li><b>Play:</b> tap or click a lit screen, or press Enter.</li>
     <li><b>Walk:</b> W A S D, for a few steps around the middle.</li>
   </ul>
   <button class="go" type="button" id="go" disabled>Loading…</button>
