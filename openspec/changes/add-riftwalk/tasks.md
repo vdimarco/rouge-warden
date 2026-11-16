@@ -36,5 +36,9 @@ A cleaner look:
 Magic:
 - [x] Motes in the air, sparks and stars at the doors, a glint on the screen in view, a blooming light on the way through.
 - [x] Pass both tests; look at the motes over two real worlds (`shots/magic.jpg`).
+
+Clusters (the user's note on the machine spacing):
+- [x] Set the rift doors back behind the machines in the ring worlds (`shots/door-behind.jpg`).
+- [ ] Remake the Cottage, Action, ASCII Scenes, GTA and Lab worlds as clusters: a tight row of cabinets with an archway beside it. Blocked: the World Labs account has no credits (7,900 needed).
 - [ ] See the 500,000 and full-resolution files drawn with the portals (software WebGL was too slow for a frame at that size in this session).
 - [ ] Play on a real phone and a real graphics card (not possible in this session).

@@ -81,6 +81,12 @@ The user's word: "magically".
 
 No outside source was needed: these are point sprites and a hash-grid twinkle, both standard shader practice.
 
+## Rifts behind the machines, and the clusters still to come
+The user's words: "The spacing between the machines doesn't make any sense. And why is this rift like wedged there? Like it should be its own little section where there's machines next to each other and they do their thing. And then there's a rift above it or beside it or behind it. ... there should be clusters".
+
+- Done: in the four ring worlds the rift doors no longer stand between two cabinets. `hall.doorBack` in a zone's `screens.json` sets a door back behind the machines (2 m in the Action, ASCII Scenes and Lab zones, 0.35 m in Cottage where the machines stand at the walls). The door shows through the gap as a doorway at the back of the room.
+- Not done: clusters. The place of every cabinet is part of its Marble world, and the page cannot move a cabinet. The ring worlds came from a prompt that asked for cabinets in a circle. The Strategy world, from a prompt that asked for a row, has the layout the user describes. Five new worlds from a cluster prompt (a tight row of cabinets shoulder to shoulder, with a neon archway beside the row for the rift) cost 7,900 credits, and the account has none.
+
 ## Layout
 `public/lab/riftwalk/hall.js` holds the rules with no drawing. The collections are a copy of the homepage's `GROUPS`, and the node test compares the two game for game. It also checks that each collection is in one zone. Names, lines, routes and art come from `window.GameSwitch.GAMES` at run time.
 

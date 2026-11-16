@@ -214,7 +214,7 @@ function banner(zone) {
 function enterZone(index) {
   const zone = ZONES[index], data = DATA[zone.id];
   for (const p of portals) { scene.remove(p.group); p.label.material.map?.dispose(); p.label.material.dispose(); p.face.material.dispose(); }
-  visit.zone = index; HALL = data.hall; SCREENS = data.screens; const ways = doors(SCREENS, data.hall.doors); PLACES = SCREENS.concat(ways);
+  visit.zone = index; HALL = data.hall; SCREENS = data.screens; const ways = doors(SCREENS, data.hall.doors, data.hall.doorBack); PLACES = SCREENS.concat(ways);
   camera.position.set(0, HALL.ground, 0); frame.position.set(0, 0, 0);
   for (const m of air) { m.parent?.remove(m); m.geometry.dispose(); m.material.dispose(); } air = [];
   portals = PLACES.map((place, i) => makePortal(place, i, zone)); banner(zone);

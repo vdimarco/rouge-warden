@@ -59,7 +59,7 @@ export function zoneGames(zoneId, games) {
 // (step -1) and the right door to the zone after (step 1). A door has the same fields as a screen, so pick, facing and
 // neighbour treat it as one more place. Its foot is on the floor. The page draws a door as an arch.
 export const DOOR = { least: 0.36, most: 0.95, height: 1.9, body: 1.6, open: 1.6, away: 2.7, clear: 0.45 };   // body: a cabinet is this many screen widths wide
-export function doors(screens, fixed) {
+export function doors(screens, fixed, back = 0) {
   // A zone whose world has its own doorways names them (hall.doors in its screens.json): the doors stand in those.
   if (fixed && fixed.length === 2) return fixed.map((f, k) => { const d = direction(f.heading); return { step: k ? 1 : -1, heading: f.heading, distance: f.distance, width: f.width, height: f.height, centre: [d.x * f.distance, f.height / 2, d.z * f.distance], right: [-d.z, 0, d.x], up: [0, 1, 0], normal: [-d.x, 0, -d.z] }; });
   const ring = [...screens].sort((a, b) => wrap(a.heading) - wrap(b.heading));
@@ -75,7 +75,12 @@ export function doors(screens, fixed) {
         return;
       }
       const mid = wrap(from + gap / 2), away = (a.distance + b.distance) / 2, room = away * gap - DOOR.body * (a.width + b.width) / 2;
-      if (room >= DOOR.least && Math.sign(mid) === step && Math.abs(mid) > 0.6 && Math.abs(mid) < 2.6 && gap > widest) { widest = gap; heading = mid; distance = away; width = Math.min(DOOR.most, room); }
+      if (room >= DOOR.least && Math.sign(mid) === step && Math.abs(mid) > 0.6 && Math.abs(mid) < 2.6 && gap > widest) {
+        widest = gap; heading = mid; distance = away; width = Math.min(DOOR.most, room);
+        // A zone can set its doors back (hall.doorBack, metres): the door then stands behind the machines, seen through
+        // the gap, and no longer between two cabinets. It is as wide as the open view between them allows.
+        if (back > 0) { const open = gap - DOOR.body * (a.width / a.distance + b.width / b.distance) / 2; distance = Math.max(a.distance, b.distance) + back; width = Math.max(DOOR.least, Math.min(DOOR.most, 0.8 * distance * open)); }
+      }
     });
     const d = direction(heading);
     return { step, heading, distance, width, height: DOOR.height, centre: [d.x * distance, DOOR.height / 2 + 0.05, d.z * distance], right: [-d.z, 0, d.x], up: [0, 1, 0], normal: [-d.x, 0, -d.z] };

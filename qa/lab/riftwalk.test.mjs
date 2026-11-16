@@ -72,7 +72,7 @@ const data = JSON.parse(read(`public/lab/riftwalk/worlds/${zone.id}/screens.json
 
 { // The two rift doors: one on each side, upright on the floor, facing the visitor, clear of the machines and outside
   // the walk circle. A ray at a door picks it, and the arrows stop at it.
-  const ways = doors(SCREENS, data.hall.doors), places = SCREENS.concat(ways), all = places.map(() => true), eye = { x: 0, y: data.hall.ground, z: 0 };
+  const ways = doors(SCREENS, data.hall.doors, data.hall.doorBack), places = SCREENS.concat(ways), all = places.map(() => true), eye = { x: 0, y: data.hall.ground, z: 0 };
   assert.deepEqual(ways.map(d => d.step), [-1, 1]); assert(ways[0].heading < 0 && ways[1].heading > 0);
   ways.forEach((d, k) => {
     assert(near(Math.hypot(d.centre[0], d.centre[2]), d.distance, 1e-6) && d.distance > WALK + 0.4 && d.distance < 7, 'the door is in the zone: ' + d.distance); assert(d.width >= DOOR.least && d.width <= DOOR.most && d.height >= DOOR.height && d.height < 3.2); assert(d.centre[1] - d.height / 2 >= 0 && d.centre[1] - d.height / 2 < 0.2, 'the door stands on the floor');
