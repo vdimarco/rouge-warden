@@ -67,7 +67,8 @@ The alley of storefront portals (the user's six Marble worlds):
 Resolution (after the merge of pull request 838):
 - [x] Draw at 2 device pixels for each CSS pixel on a desktop, with a step down on slow frames; multisampling off; Spark `focalAdjustment` 2.
 - [x] Compare `focalAdjustment` 1 and 2 on a full-density piece of the alley in software WebGL.
-- [x] Door pictures drawn by the page at 1024 px (`door-shots.mjs`).
+- [x] Door pictures drawn by the page at 1024 px (`door-shots.mjs`, `shots/doors.jpg`).
+- [x] Camera range from 300 m to 30 km: the meadow's sky had a dark hole.
 - [ ] Measure the frame rate at the new pixel ratio on a real graphics card (not possible in this session).
 - [ ] See the alley at its full 2,000,000 splats. Software WebGL is too slow for it.
 - [ ] Play on a real phone and a real graphics card (not possible in this session).

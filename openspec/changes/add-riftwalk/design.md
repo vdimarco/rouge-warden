@@ -46,6 +46,8 @@ The user's words: "merge it and then focus on increasing the resolution".
 - Sharpness: Spark's `focalAdjustment` is 2 (its guide: "higher values will tend to sharpen the splats", and 2 matches PlayCanvas). A full-density piece of the alley drawn at 1 and at 2 showed sharper sign letters at 2 and no holes.
 - Multisampling is off. Spark's guide says it "doesn't improve Gaussian Splatting rendering and significantly reduces performance". The portals smooth their own edges in the shader.
 - Door pictures: each door showed a 512 px point drawing with speckles. Now `games/riftwalk/tools/door-shots.mjs` has the page draw each world with Spark at 1024 by 1024, with no frames, and that picture is the door's view.
+- Range: the camera stopped at 300 m. The meadow's sky is 300 to 430 m away and the Great Wall's hills are kilometres away, so a part of the sky was a dark hole. The camera now reaches 30 km.
+- Four of the new door pictures are in `shots/doors.jpg`. They also show that the page draws the temple, the Great Wall, the space station and the brick hall as it should.
 - Source: the Spark documentation (sparkjs.dev/docs/spark-renderer and /docs/performance).
 - Not changed: the world files. The alley and four worlds already load at Marble's full export size on a desktop.
 
