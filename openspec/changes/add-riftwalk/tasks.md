@@ -62,5 +62,6 @@ The alley of storefront portals (the user's six Marble worlds):
 - [x] Rewrite `qa/lab/riftwalk.test.mjs` (6 checks) and `qa/lab/riftwalk.e2e.mjs` (10 checks, with the real alley file loaded). Both pass.
 - [x] See the alley with its doors (`shots/alley.jpg`, a 600,000-splat copy) and the meadow world with its frames (`shots/worlds.jpg`, 500,000 splats) drawn by the page.
 - [x] New cabinet art and wording in the homepage, the switcher, the Corridor and the Lab page.
+- [x] Oval doors with riptide rims, at the user's word; both tests pass and the doors are seen in `shots/alley.jpg` (a 250,000-splat copy).
 - [ ] See the alley at its full 2,000,000 splats. Software WebGL is too slow for it.
 - [ ] Play on a real phone and a real graphics card (not possible in this session).

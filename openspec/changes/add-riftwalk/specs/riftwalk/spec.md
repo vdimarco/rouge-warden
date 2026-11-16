@@ -1,7 +1,7 @@
 ## ADDED Requirements
 
 ### Requirement: A neon alley whose storefronts are portals
-Riftwalk SHALL open in a neon alley at night, at a crossroads, as a Gaussian splat world seen at eye height. Each collection of the homepage (Cottage, Action, ASCII Scenes, Strategy, GTA, Lab) SHALL be a zone with one storefront of the alley. A door-sized portal SHALL stand on the front of each storefront, on the ground, with the zone's name over it, a moving bright edge in the zone's colour, and a view into the zone's world. All six doors SHALL be lit at once. The alley SHALL have no arcade machines. The picture under the mouse pointer SHALL flow, and SHALL be still again when the pointer leaves it. Riftwalk SHALL NOT show a portal to itself.
+Riftwalk SHALL open in a neon alley at night, at a crossroads, as a Gaussian splat world seen at eye height. Each collection of the homepage (Cottage, Action, ASCII Scenes, Strategy, GTA, Lab) SHALL be a zone with one storefront of the alley. A door-sized portal SHALL stand on the front of each storefront, on the ground, with the zone's name over it and a view into the zone's world. The portal SHALL be an upright oval, and its edge SHALL ripple like water in the zone's colour. With reduced motion the edge SHALL hold still. All six doors SHALL be lit at once. The alley SHALL have no arcade machines. The picture under the mouse pointer SHALL flow, and SHALL be still again when the pointer leaves it. Riftwalk SHALL NOT show a portal to itself.
 
 #### Scenario: Enter the alley
 - **WHEN** the visitor enters the alley

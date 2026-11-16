@@ -70,7 +70,7 @@ export function assign(seatList, games, page = 0) {
 
 // A rift ring as a place: a flat disc on the wall, with the same fields as a screen so pick, facing and neighbour
 // treat it as one more place. Its width and height are the ring's diameter. A storefront door is a ring with a width
-// and a height in place of a radius: an upright box on the shop's front.
+// and a height in place of a radius: an upright oval on the shop's front, picked by its box.
 export function ringPlace(ring) {
   const n = ring.normal, up = [0, 1, 0], right = [up[1] * n[2] - up[2] * n[1], up[2] * n[0] - up[0] * n[2], up[0] * n[1] - up[1] * n[0]];
   return ring.width ? { ring: true, box: true, centre: ring.centre, right, up, normal: n, width: ring.width, height: ring.height } : { ring: true, centre: ring.centre, right, up, normal: n, width: ring.radius * 2, height: ring.radius * 2 };

@@ -91,9 +91,11 @@ const FRAGMENT = `
   uniform float uLit; uniform float uTime; uniform float uHot; uniform float uFlow; uniform float uSeed; uniform float uRadius; uniform float uWave; uniform float uScan; uniform float uDoor; uniform float uBox;
   float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
   float noise(vec2 p) { vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f); return mix(mix(hash(i), hash(i + vec2(1, 0)), f.x), mix(hash(i + vec2(0, 1)), hash(i + vec2(1, 1)), f.x), f.y); }
-  // Under 0 inside the shape. A screen is a box with round corners. A rift ring is a disc.
+  // Under 0 inside the shape. A screen is a box with round corners. A rift ring is a disc. A storefront door is an
+  // upright oval: the distance is the scaled-circle estimate, which is close enough near the rim.
   float shape(vec2 p) {
     if (uDoor > 0.5 && uBox < 0.5) return length(p) - uHalf.x;
+    if (uBox > 0.5) return (length(p / uHalf) - 1.0) * min(uHalf.x, uHalf.y);
     vec2 q = abs(p) - uHalf + uRadius; return length(max(q, 0.0)) + min(max(q.x, q.y), 0.0) - uRadius;
   }
   void main() {
@@ -102,6 +104,8 @@ const FRAGMENT = `
     float turn = atan(p.y / uHalf.y, p.x / uHalf.x); vec2 c = vec2(cos(turn), sin(turn));   // the way round the rim, with no seam
     float n = noise(c * 2.3 + vec2(uTime * 0.55 + uSeed, uSeed)) * 0.6 + noise(c * 6.0 - vec2(uSeed, uTime * 0.9)) * 0.4;
     float edge = d - (n - 0.5) * uWave;                       // the rim wavers
+    // A storefront door has a riptide rim: two trains of waves run round it in opposite ways, over the slow noise.
+    if (uBox > 0.5) edge -= 0.034 * sin(turn * 6.0 - uTime * 2.1 + uSeed * 6.283) + 0.02 * sin(turn * 11.0 + uTime * 3.0 + n * 3.0) + (n - 0.5) * 0.07;
     float inside = smoothstep(0.003, -0.003, edge), rim = smoothstep(-0.07, 0.0, d);
     // The picture covers the shape: the longer side of the picture is cropped.
     vec2 uv = p / uHalf * 0.5; float form = uHalf.x / uHalf.y; if (uAspect > form) uv.x *= form / uAspect; else uv.y *= uAspect / form; uv += 0.5;
@@ -109,6 +113,9 @@ const FRAGMENT = `
     vec2 fl = vec2(noise(uv * 3.0 + vec2(uTime * 0.35, uSeed * 7.0)), noise(uv * 3.0 + vec2(uSeed * 3.0, -uTime * 0.3))) - 0.5;
     fl += 0.5 * (vec2(noise(uv * 7.0 - vec2(uTime * 0.5, 2.0)), noise(uv * 7.0 + vec2(5.0, uTime * 0.45))) - 0.5);
     uv = (uv - 0.5) * (1.0 - 0.07 * uFlow) + 0.5 + fl * 0.06 * uFlow + vec2(sin(uTime * 0.4 + uSeed * 6.0), cos(uTime * 0.33)) * 0.012 * uFlow;
+    // In a storefront door, rings of water run from the rim toward the middle and bend the picture near the rim.
+    float rr = length(p / uHalf), tide = sin(rr * 30.0 + uTime * 2.6 + n * 4.0) * smoothstep(0.45, 1.0, rr) * uBox;
+    uv += normalize(p + 1e-4) * 0.014 * tide;
     vec3 pic = mix(uColor * 0.35, texture2D(uMap, uv).rgb, uHasMap) * (1.0 + 0.12 * uFlow);
     // A game shows as a picture on the machine's own tube: scan lines, darker corners, and a faint shine on the glass.
     float lines = 1.0 - uScan * 0.15 * (0.5 + 0.5 * sin(p.y * 820.0));
@@ -117,7 +124,8 @@ const FRAGMENT = `
     // A door shows its zone through a slow swirl of that zone's light, thicker toward the rim.
     if (uDoor > 0.5) { float r = length(p / uHalf); float swirl = noise(c * 1.6 + vec2(r * 3.0 - uTime * 0.45, uSeed)) * 0.6 + noise(c * 4.0 + vec2(uSeed, r * 5.0 + uTime * 0.3)) * 0.4; art = mix(uColor * (0.10 + 0.5 * swirl * swirl) * (0.35 + 0.65 * smoothstep(0.0, 1.0, r)) + vec3(0.02, 0.01, 0.04), pic * (0.6 + 0.3 * swirl) * (1.0 - 0.5 * rim) + uColor * 0.45 * rim * swirl, uHasMap);
       // Stars in the door: a few points of light that come and go.
-      vec2 cell = floor(p * 26.0), in2 = fract(p * 26.0) - 0.5; float star = step(0.9, hash(cell + uSeed)) * smoothstep(0.22, 0.0, length(in2)) * pow(0.5 + 0.5 * sin(uTime * (1.5 + 3.0 * hash(cell)) + hash(cell + 3.0) * 6.283), 3.0); art += mix(uColor, vec3(1.0), 0.6) * star * 1.4; }
+      vec2 cell = floor(p * 26.0), in2 = fract(p * 26.0) - 0.5; float star = step(0.9, hash(cell + uSeed)) * smoothstep(0.22, 0.0, length(in2)) * pow(0.5 + 0.5 * sin(uTime * (1.5 + 3.0 * hash(cell)) + hash(cell + 3.0) * 6.283), 3.0); art += mix(uColor, vec3(1.0), 0.6) * star * 1.4;
+      art += mix(uColor, vec3(1.0), 0.35) * 0.3 * pow(max(tide, 0.0), 3.0); }   // the crests of the rings catch the light
     else { float glint = exp(-pow((p.x / uHalf.x * 0.7 + p.y / uHalf.y * 0.5 + 1.6 - mod(uTime * 0.55 + uSeed * 5.0, 3.2) * 1.0) / 0.12, 2.0)); art += mix(uColor, vec3(1.0), 0.5) * glint * 0.2 * uHot; }   // a glint crosses the screen in view
     // A machine with no game idles in its zone's colour: a dim tube with a slow bright bar that rolls down it.
     float bar = exp(-pow((fract(p.y / (uHalf.y * 2.0) + uTime * 0.06 + uSeed) - 0.5) / 0.07, 2.0));
@@ -125,6 +133,8 @@ const FRAGMENT = `
     vec3 face = mix(idle, art, uLit);
     float pulse = pow(0.5 + 0.5 * cos(turn - uTime * 1.7 - uSeed * 6.283), 10.0);
     float band = exp(-pow(edge / 0.006, 2.0)) * (0.75 + 0.5 * uHot + 0.8 * pulse) + 0.24 * exp(-pow(max(edge, 0.0) / 0.02, 2.0)) * (0.5 + n) * (1.0 - inside);
+    // Foam outside a storefront door: a second, fainter line that the waves push out and pull back.
+    band += uBox * 0.3 * exp(-pow((edge - 0.045 - 0.02 * sin(turn * 9.0 - uTime * 2.4)) / 0.012, 2.0)) * (0.4 + n);
     band *= mix(0.2, 1.0, uLit);
     vec3 glow = mix(mix(uZone, uColor, uLit), vec3(1.0), 0.5 * exp(-pow(edge / 0.003, 2.0)) + 0.3 * pulse);
     float a = clamp(max(inside, band), 0.0, 1.0);
@@ -179,7 +189,7 @@ function labelTexture(title, color, font = LOOKS.action.font) {
 const flat = { transparent: true, depthWrite: false, depthTest: false };
 function makePortal(place, index, zone) {
   const look = LOOKS[zone.id] || LOOKS.action;
-  const group = new THREE.Group(), half = new THREE.Vector2(place.width / 2 * GROW, place.height / 2 * GROW), size = new THREE.Vector2(half.x + MARGIN * (place.ring ? 3 : 1), half.y + MARGIN * (place.ring ? 3 : 1));
+  const group = new THREE.Group(), half = new THREE.Vector2(place.width / 2 * GROW, place.height / 2 * GROW), size = new THREE.Vector2(half.x + MARGIN * (place.box ? 5 : place.ring ? 3 : 1), half.y + MARGIN * (place.box ? 5 : place.ring ? 3 : 1));
   const uniforms = { uMap: { value: null }, uHasMap: { value: 0 }, uAspect: { value: 1 }, uColor: { value: new THREE.Color('#5ff2ff') }, uHalf: { value: half }, uQuad: { value: size }, uLit: { value: 0 }, uTime: { value: 0 }, uHot: { value: 0 }, uSeed: { value: (index * 0.618) % 1 }, uFlow: { value: 0 }, uZone: { value: new THREE.Color(zone.color) }, uRadius: { value: look.radius }, uWave: { value: place.ring ? 0.03 : look.wave }, uScan: { value: look.scan }, uDoor: { value: place.ring ? 1 : 0 }, uBox: { value: place.box ? 1 : 0 } };
   const face = new THREE.Mesh(quad, new THREE.ShaderMaterial({ uniforms, vertexShader: VERTEX, fragmentShader: FRAGMENT, ...flat, premultipliedAlpha: true }));
   face.scale.set(size.x, size.y, 1); face.renderOrder = 16; face.frustumCulled = false; group.add(face);

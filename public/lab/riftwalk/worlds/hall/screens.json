@@ -1,5 +1,5 @@
 {
- "note": "The main world is a neon alley at a crossroads, a Marble app export (y up, not metric: the floor is 0.5415 units under the origin, so the scale puts the eye at 1.45 m). It has no arcade machines. Each zone is a storefront: ring is the door on the shop front, measured from the splats, and station is the place on the street in front of it.",
+ "note": "The main world is a neon alley at a crossroads, a Marble app export (y up, not metric: the floor is 0.5415 units under the origin, so the scale puts the eye at 1.45 m). It has no arcade machines. Each zone is a storefront: ring is the door on the shop front, measured from the splats, and station is the place on the street in front of it. A door draws as an upright oval inside its width and height.",
  "hall": {
   "scale": 2.6777,
   "eye": 1.45,
@@ -52,7 +52,7 @@
    "ring": {
     "centre": [
      -4.35,
-     1.08,
+     1.06,
      -4.9
     ],
     "normal": [
@@ -60,8 +60,8 @@
      0,
      1.0
     ],
-    "width": 1.66,
-    "height": 2.05
+    "width": 1.5,
+    "height": 1.95
    }
   },
   "action": {
@@ -75,7 +75,7 @@
    "ring": {
     "centre": [
      -2.1,
-     1.08,
+     1.06,
      -6.74
     ],
     "normal": [
@@ -83,8 +83,8 @@
      0,
      0.0
     ],
-    "width": 1.9,
-    "height": 2.05
+    "width": 1.5,
+    "height": 1.95
    }
   },
   "ascii": {
@@ -98,7 +98,7 @@
    "ring": {
     "centre": [
      2.58,
-     1.08,
+     1.06,
      -6.0
     ],
     "normal": [
@@ -106,8 +106,8 @@
      0,
      0.0
     ],
-    "width": 1.9,
-    "height": 2.05
+    "width": 1.5,
+    "height": 1.95
    }
   },
   "strategy": {
@@ -121,7 +121,7 @@
    "ring": {
     "centre": [
      4.14,
-     1.08,
+     1.06,
      -3.83
     ],
     "normal": [
@@ -129,8 +129,8 @@
      0,
      1.0
     ],
-    "width": 1.9,
-    "height": 2.05
+    "width": 1.5,
+    "height": 1.95
    }
   },
   "gta": {
@@ -144,7 +144,7 @@
    "ring": {
     "centre": [
      4.26,
-     1.08,
+     1.06,
      2.04
     ],
     "normal": [
@@ -152,8 +152,8 @@
      0,
      -1.0
     ],
-    "width": 1.9,
-    "height": 2.05
+    "width": 1.5,
+    "height": 1.95
    }
   },
   "lab": {
@@ -167,7 +167,7 @@
    "ring": {
     "centre": [
      -3.81,
-     1.08,
+     1.06,
      2.95
     ],
     "normal": [
@@ -175,8 +175,8 @@
      0,
      0.0
     ],
-    "width": 1.9,
-    "height": 2.05
+    "width": 1.5,
+    "height": 1.95
    }
   }
  },
