@@ -52,6 +52,13 @@ The visitor SHALL look by dragging the view, and a drag SHALL NOT open a door or
 - **WHEN** the alley shows at 390 by 844
 - **THEN** the zone buttons are at the top, the name card is over the buttons at the bottom, and all of them fit the width
 
+### Requirement: Resolution
+On a desktop the view SHALL draw at two device pixels for each CSS pixel. On a touch device it SHALL draw at the display's pixel ratio, at most 2. When frames stay slower than 34 ms, the view SHALL lower its pixel ratio in steps, to no less than the display's own pixels, and SHALL keep every control in place. A door SHALL show a picture of its world as the page draws that world, 1024 px on a side.
+
+#### Scenario: A slow graphics card
+- **WHEN** most frames take more than 34 ms for a second and a half in the alley
+- **THEN** the view draws at a lower pixel ratio, and the doors, the name card and the buttons stay where they were
+
 ### Requirement: Loading
 The page SHALL load the alley's world file with a line that shows the progress, and SHALL enable the start control when the world is ready.
 

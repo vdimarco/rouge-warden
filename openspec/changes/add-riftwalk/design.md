@@ -39,6 +39,16 @@ Why these pairs: the meadow is the cottage look, Olympus leads the Action row an
 - The brick hall is an API world: y down, with Marble's own scale and ground numbers. `flip` in a world's data tells the two kinds apart.
 - Games are floating frames (`frameRing()`): the first straight ahead, the next 0.36 rad to the right each. More than 8 frames reach behind the visitor and crowd the way back, so a page holds 8 and More shows the next page. Action has 2 pages and the Lab 3.
 
+### Resolution
+The user's words: "merge it and then focus on increasing the resolution".
+
+- Pixels: the view drew at the display's own pixel ratio, at most 2. A splat world has more detail than a 1x display shows, so on a desktop the view now draws at 2 device pixels for each CSS pixel, a 2 by 2 supersample on a 1x display. A touch device keeps its own ratio, at most 2. When frames are slow (30 of 45 frames over 34 ms) the ratio goes down a quarter step, to no less than the display's own pixels.
+- Sharpness: Spark's `focalAdjustment` is 2 (its guide: "higher values will tend to sharpen the splats", and 2 matches PlayCanvas). A full-density piece of the alley drawn at 1 and at 2 showed sharper sign letters at 2 and no holes.
+- Multisampling is off. Spark's guide says it "doesn't improve Gaussian Splatting rendering and significantly reduces performance". The portals smooth their own edges in the shader.
+- Door pictures: each door showed a 512 px point drawing with speckles. Now `games/riftwalk/tools/door-shots.mjs` has the page draw each world with Spark at 1024 by 1024, with no frames, and that picture is the door's view.
+- Source: the Spark documentation (sparkjs.dev/docs/spark-renderer and /docs/performance).
+- Not changed: the world files. The alley and four worlds already load at Marble's full export size on a desktop.
+
 ### Size
 `worlds/` is about 215 MB: the alley 29 MB, and six worlds of 10 to 39 MB each.
 

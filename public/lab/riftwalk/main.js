@@ -27,17 +27,23 @@ for (const g of GROUPS) {
 function noGraphics(why) { startCard.hidden = true; loadLine.hidden = true; groupsBar.hidden = keysBar.hidden = target.hidden = true; list.classList.add('shown'); const p = document.createElement('p'); p.textContent = why + ' Here is every game as a link.'; list.prepend(p); }
 
 /* ---------------- the scene ---------------- */
-// For the browser check: ?capture keeps the drawn frame readable, ?px=1 sets the pixel ratio, ?world=none draws the
+// Resolution: the view draws at two device pixels for each CSS pixel where the graphics card keeps up. On a display
+// with one device pixel that is a 2 by 2 supersample, which is the largest gain in detail for a splat world. The
+// frame loop lowers the ratio a step at a time when frames are slow. Spark's guide says multisampling does nothing
+// for splats and costs speed, so it is off; the portals smooth their own edges.
+// For the browser check: ?capture keeps the drawn frame readable, ?px=1 sets the pixel ratio (and holds it), ?world=none draws the
 // portals with no hall (software WebGL draws a splat world at a frame in seconds), and ?q=150k, 500k or full picks a
 // hall file.
 let renderer;
-try { renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance', preserveDrawingBuffer: query.has('capture') }); if (!renderer.capabilities.isWebGL2) throw new Error('WebGL2'); }
+try { renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: 'high-performance', preserveDrawingBuffer: query.has('capture') }); if (!renderer.capabilities.isWebGL2) throw new Error('WebGL2'); }
 catch (e) { noGraphics('Riftwalk needs WebGL2 graphics, and this browser has none to give.'); throw e; }
-renderer.setPixelRatio(+query.get('px') || Math.min(devicePixelRatio || 1, 2));
+const PX = { fixed: +query.get('px') || 0, least: Math.min(devicePixelRatio || 1, 1), slow: 0, frames: 0 }; PX.now = PX.fixed || (touch ? Math.min(devicePixelRatio || 1, 2) : 2);
+renderer.setPixelRatio(PX.now);
 renderer.setClearColor('#06040c');
-const scene = new THREE.Scene(), frame = new THREE.Group(), camera = new THREE.PerspectiveCamera(62, 1, 0.05, 300);
+const scene = new THREE.Scene(), frame = new THREE.Group(), camera = new THREE.PerspectiveCamera(62, 1, 0.05, 30000);   // far: the open worlds have sky and hills kilometres away
 camera.rotation.order = 'YXZ'; frame.add(camera); scene.add(frame);
-scene.add(new SparkRenderer({ renderer }));
+// focalAdjustment 2 sharpens the splats (Spark's guide: the value that matches PlayCanvas). ?focal=1 is Spark's default.
+const spark = new SparkRenderer({ renderer, focalAdjustment: +query.get('focal') || 2 }); scene.add(spark);
 const moteScale = { value: 1 };   // pixels for a mote one metre wide at one metre: set with the view's size
 function resize() { const w = innerWidth, h = innerHeight; renderer.setSize(w, h, false); camera.aspect = w / h; camera.fov = w < h ? 78 : 62; camera.updateProjectionMatrix(); moteScale.value = h * renderer.getPixelRatio() / (2 * Math.tan(camera.fov * Math.PI / 360)); }
 addEventListener('resize', resize); resize();
@@ -394,13 +400,19 @@ go.addEventListener('click', start);
 /* ---------------- the loop ---------------- */
 let last = performance.now();
 function tick(now) {
-  const dt = Math.min(0.05, Math.max(0, (now - last) / 1000)); last = now;
+  const frameMs = now - last, dt = Math.min(0.05, Math.max(0, frameMs / 1000)); last = now;
   if (!window.GameSwitch?.isOpen && !document.hidden) step(dt);
   camera.rotation.set(visit.pitch, -visit.yaw, 0);
   const time = reduced ? 0 : now / 1000;
   for (const m of air) m.material.uniforms.uTime.value = time;
   portals.forEach((p, i) => { p.uniforms.uTime.value = time; p.uniforms.uHot.value += ((i === visit.aim ? 1 : 0) - p.uniforms.uHot.value) * Math.min(1, dt * 10); p.uniforms.uFlow.value += ((!reduced && (i === hover || (touch && i === visit.aim)) ? 1 : 0) - p.uniforms.uFlow.value) * Math.min(1, dt * 5); p.label.material.opacity = p.lit * (p.door || p.frame ? 0.75 + 0.25 * p.uniforms.uHot.value : p.uniforms.uHot.value); if (p.frame && !reduced) p.group.position.y = p.base + 0.035 * Math.sin(time * 0.7 + p.uniforms.uSeed.value * 6.283); });
   renderer.render(scene, camera);
+  // Slow frames lower the pixel ratio: after a second and a half of frames over 34 ms, a quarter step down, to no
+  // less than the display's own pixels. Frames while a world loads or the tab was hidden do not count.
+  if (!PX.fixed && visit.phase === 'hall' && frameMs < 250) {
+    PX.frames++; if (frameMs > 34) PX.slow++;
+    if (PX.frames >= 45) { if (PX.slow > 30 && PX.now > PX.least) { PX.now = Math.max(PX.least, PX.now - 0.25); renderer.setPixelRatio(PX.now); resize(); } PX.frames = PX.slow = 0; }
+  }
   requestAnimationFrame(tick);
 }
 
@@ -425,6 +437,8 @@ window.__riftwalk = {
     motes: air.reduce((n, m) => n + m.geometry.attributes.position.count, 0),
     machines: portals.slice(0, SCREENS.length).map(p => ({ zone: p.zone.id, game: p.game?.id ?? null, title: p.game?.title ?? null, url: p.game?.url ?? null, lit: p.lit, art: p.uniforms.uHasMap.value === 1 })),
     rings: portals.slice(SCREENS.length).map(p => ({ to: p.game.exit ? 'hall' : ZONES[p.game.zone].id, title: p.game.title, lit: p.lit, art: p.uniforms.uHasMap.value === 1 })) }),
+  // The pixel ratio in use, and a bare view (no portals, no motes) for the door pictures (games/riftwalk/tools/door-shots.mjs).
+  px: () => PX.now, bare: on => { for (const p of portals) p.group.visible = !on; for (const m of air) m.visible = !on; },
   // The splat worlds in the scene now: 'hall' or 'room' with the count of splats.
   worlds: () => scene.children.filter(c => c.packedSplats || c.isSplatMesh).map(c => (c === hallMesh ? 'hall' : 'room') + ':' + (c.packedSplats?.numSplats ?? 0)),
   // Where a place's centre is on the page (the machines first, then the six rings), or null when it is behind the view.
