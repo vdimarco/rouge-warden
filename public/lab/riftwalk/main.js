@@ -36,7 +36,8 @@ renderer.setClearColor('#06040c');
 const scene = new THREE.Scene(), frame = new THREE.Group(), camera = new THREE.PerspectiveCamera(62, 1, 0.05, 300);
 camera.rotation.order = 'YXZ'; frame.add(camera); scene.add(frame);
 scene.add(new SparkRenderer({ renderer }));
-function resize() { const w = innerWidth, h = innerHeight; renderer.setSize(w, h, false); camera.aspect = w / h; camera.fov = w < h ? 78 : 62; camera.updateProjectionMatrix(); }
+const moteScale = { value: 1 };   // pixels for a mote one metre wide at one metre: set with the view's size
+function resize() { const w = innerWidth, h = innerHeight; renderer.setSize(w, h, false); camera.aspect = w / h; camera.fov = w < h ? 78 : 62; camera.updateProjectionMatrix(); moteScale.value = h * renderer.getPixelRatio() / (2 * Math.tan(camera.fov * Math.PI / 360)); }
 addEventListener('resize', resize); resize();
 
 /* ---------------- the zones ---------------- */
@@ -110,7 +111,10 @@ const FRAGMENT = `
     float shine = 0.045 * smoothstep(0.22, 0.0, abs(p.x / uHalf.x * 0.6 + p.y / uHalf.y - 0.55));
     vec3 art = pic * lines * (1.0 - 0.38 * rim) * (0.9 + 0.1 * uHot) + shine;
     // A door shows its zone through a slow swirl of that zone's light, thicker toward the rim.
-    if (uDoor > 0.5) { float r = length(p / uHalf); float swirl = noise(c * 1.6 + vec2(r * 3.0 - uTime * 0.45, uSeed)) * 0.6 + noise(c * 4.0 + vec2(uSeed, r * 5.0 + uTime * 0.3)) * 0.4; art = pic * (0.5 + 0.3 * swirl) * (1.0 - 0.55 * rim) + uColor * (0.06 + 0.5 * rim * swirl); }
+    if (uDoor > 0.5) { float r = length(p / uHalf); float swirl = noise(c * 1.6 + vec2(r * 3.0 - uTime * 0.45, uSeed)) * 0.6 + noise(c * 4.0 + vec2(uSeed, r * 5.0 + uTime * 0.3)) * 0.4; art = pic * (0.5 + 0.3 * swirl) * (1.0 - 0.55 * rim) + uColor * (0.06 + 0.5 * rim * swirl);
+      // Stars in the door: a few points of light that come and go.
+      vec2 cell = floor(p * 26.0), in2 = fract(p * 26.0) - 0.5; float star = step(0.9, hash(cell + uSeed)) * smoothstep(0.22, 0.0, length(in2)) * pow(0.5 + 0.5 * sin(uTime * (1.5 + 3.0 * hash(cell)) + hash(cell + 3.0) * 6.283), 3.0); art += mix(uColor, vec3(1.0), 0.6) * star * 1.4; }
+    else { float glint = exp(-pow((p.x / uHalf.x * 0.7 + p.y / uHalf.y * 0.5 + 1.6 - mod(uTime * 0.55 + uSeed * 5.0, 3.2) * 1.0) / 0.12, 2.0)); art += mix(uColor, vec3(1.0), 0.5) * glint * 0.2 * uHot; }   // a glint crosses the screen in view
     // A machine with no game idles in its zone's colour: a dim tube with a slow bright bar that rolls down it.
     float bar = exp(-pow((fract(p.y / (uHalf.y * 2.0) + uTime * 0.06 + uSeed) - 0.5) / 0.07, 2.0));
     vec3 idle = (uZone * (0.07 + 0.05 * n + 0.14 * bar) + 0.012) * lines * (1.0 - 0.5 * rim);
@@ -122,6 +126,39 @@ const FRAGMENT = `
     float a = clamp(max(inside, band), 0.0, 1.0);
     gl_FragColor = vec4(face * inside + glow * band, a);     // premultiplied
   }`;
+/* ---------------- motes of light ---------------- */
+// Magic in the air: small points of light in the zone's colour drift up through the room and twinkle, and sparks
+// circle each rift door and fall into it. They are points drawn after the splats, with light that adds up.
+const MOTE_VERTEX = `
+  attribute vec4 aSeed; uniform float uTime; uniform float uScale; uniform float uRing; uniform vec2 uHalf; varying float vAlpha;
+  void main() {
+    vec3 at = position; float seed = aSeed.x, speed = aSeed.y; float twinkle = 0.5 + 0.5 * sin(uTime * (1.0 + speed * 2.0) + seed * 40.0);
+    if (uRing > 0.5) {
+      // A spark turns round the door and falls toward its middle, then starts again at the rim.
+      float fall = fract(uTime * 0.07 * (0.6 + speed) + seed), turn = seed * 6.283 + uTime * (0.25 + 0.5 * speed), reach = 1.12 - 0.75 * fall;
+      at = vec3(cos(turn) * uHalf.x * reach, sin(turn) * uHalf.y * reach, 0.02); vAlpha = twinkle * smoothstep(0.0, 0.12, fall) * (1.0 - fall);
+    } else {
+      float height = 2.7; at.y = mod(position.y + uTime * speed * 0.07, height) + 0.05;
+      at.x += sin(uTime * 0.31 + seed * 20.0) * 0.14; at.z += cos(uTime * 0.27 + seed * 31.0) * 0.14;
+      vAlpha = (0.25 + 0.75 * twinkle) * smoothstep(0.05, 0.5, at.y) * smoothstep(height, height - 0.6, at.y);
+    }
+    vec4 mv = modelViewMatrix * vec4(at, 1.0); gl_Position = projectionMatrix * mv; gl_PointSize = aSeed.z * uScale / max(0.2, -mv.z);
+  }`;
+const MOTE_FRAGMENT = `
+  uniform vec3 uColor; varying float vAlpha;
+  void main() { float d = length(gl_PointCoord - 0.5); float soft = smoothstep(0.5, 0.0, d), core = smoothstep(0.16, 0.0, d); gl_FragColor = vec4(mix(uColor, vec3(1.0), core * 0.7) * (soft * 0.55 + core) * vAlpha, 0.0); }`;
+function motes(count, color, ring, half, place) {
+  const position = new Float32Array(count * 3), seed = new Float32Array(count * 4); let r = 12345 + count * 7 + (ring ? 99 : 0); const rand = () => (r = (r * 1664525 + 1013904223) >>> 0) / 4294967296;
+  for (let i = 0; i < count; i++) {
+    const turn = rand() * Math.PI * 2, far = 0.9 + rand() * 3.4; position.set(ring ? [0, 0, 0] : [Math.sin(turn) * far, rand() * 2.7, -Math.cos(turn) * far], i * 3);
+    seed.set([rand(), 0.3 + rand() * 0.7, (ring ? 0.034 : 0.03) + rand() * 0.045, 0], i * 4);
+  }
+  const geometry = new THREE.BufferGeometry(); geometry.setAttribute('position', new THREE.BufferAttribute(position, 3)); geometry.setAttribute('aSeed', new THREE.BufferAttribute(seed, 4));
+  const points = new THREE.Points(geometry, new THREE.ShaderMaterial({ uniforms: { uTime: { value: 0 }, uScale: moteScale, uRing: { value: ring ? 1 : 0 }, uHalf: { value: half || new THREE.Vector2(1, 1) }, uColor: { value: new THREE.Color(color) } }, vertexShader: MOTE_VERTEX, fragmentShader: MOTE_FRAGMENT, transparent: true, depthWrite: false, depthTest: false, blending: THREE.CustomBlending, blendEquation: THREE.AddEquation, blendSrc: THREE.OneFactor, blendDst: THREE.OneFactor }));
+  points.frustumCulled = false; points.renderOrder = 18; (place || scene).add(points); return points;
+}
+let air = [];   // the motes of the zone the visitor is in
+
 const quad = new THREE.PlaneGeometry(2, 2), labelGeometry = new THREE.PlaneGeometry(1, 1);
 const textures = new Map(), loader = new THREE.TextureLoader();
 function artTexture(url, done) {
@@ -179,7 +216,9 @@ function enterZone(index) {
   for (const p of portals) { scene.remove(p.group); p.label.material.map?.dispose(); p.label.material.dispose(); p.face.material.dispose(); }
   visit.zone = index; HALL = data.hall; SCREENS = data.screens; const ways = doors(SCREENS, data.hall.doors); PLACES = SCREENS.concat(ways);
   camera.position.set(0, HALL.ground, 0); frame.position.set(0, 0, 0);
+  for (const m of air) { m.parent?.remove(m); m.geometry.dispose(); m.material.dispose(); } air = [];
   portals = PLACES.map((place, i) => makePortal(place, i, zone)); banner(zone);
+  if (!reduced) { air.push(motes(touch ? 110 : 180, zone.color, false)); ways.forEach((door, k) => { const to = ZONES[(index + door.step + ZONES.length) % ZONES.length], p = portals[SCREENS.length + k]; air.push(motes(46, to.color, true, p.uniforms.uHalf.value, p.group)); }); }
   ways.forEach((door, k) => { const to = (index + door.step + ZONES.length) % ZONES.length, z = ZONES[to]; show(portals[SCREENS.length + k], { zone: to, id: 'door-' + z.id, title: z.label, sub: 'A rift door to the next zone', url: null, art: `./worlds/${z.id}/door.webp`, color: z.color }); });
   REST = SCREENS.reduce((s, p) => s + Math.atan2(p.centre[1] - HALL.ground, p.distance), 0) / Math.max(1, SCREENS.length);
   visit.yaw = middle(SCREENS); visit.pitch = REST; visit.turnTo = null;
@@ -309,6 +348,7 @@ function tick(now) {
   if (!window.GameSwitch?.isOpen && !document.hidden) step(dt);
   camera.rotation.set(visit.pitch, -visit.yaw, 0);
   const time = reduced ? 0 : now / 1000;
+  for (const m of air) m.material.uniforms.uTime.value = time;
   portals.forEach((p, i) => { p.uniforms.uTime.value = time; p.uniforms.uHot.value += ((i === visit.aim ? 1 : 0) - p.uniforms.uHot.value) * Math.min(1, dt * 10); p.label.material.opacity = p.lit * (p.door ? 0.7 + 0.3 * p.uniforms.uHot.value : p.uniforms.uHot.value); });
   renderer.render(scene, camera);
   requestAnimationFrame(tick);
@@ -329,6 +369,7 @@ requestAnimationFrame(tick);
 // A handle for the browser check (qa/lab/riftwalk.e2e.mjs). The page never reads it.
 window.__riftwalk = {
   state: () => ({ phase: visit.phase, zone: ZONES[visit.zone].id, page: visit.page, pages: pages(gamesHere().length, SCREENS), aim: visit.aim, yaw: visit.yaw, turning: visit.turnTo !== null, place: { x: frame.position.x, z: frame.position.z }, hall: !!hall, splats: hall?.packedSplats?.numSplats ?? 0,
+    motes: air.reduce((n, m) => n + m.geometry.attributes.position.count, 0),
     machines: portals.slice(0, SCREENS.length).map(p => ({ game: p.game?.id ?? null, title: p.game?.title ?? null, url: p.game?.url ?? null, heading: p.place.heading, lit: p.lit, art: p.uniforms.uHasMap.value === 1 })),
     doors: portals.slice(SCREENS.length).map(p => ({ to: ZONES[p.game.zone].id, title: p.game.title, heading: p.place.heading, lit: p.lit, art: p.uniforms.uHasMap.value === 1 })) }),
   // Where a place's centre is on the page (the machines first, then the two doors), or null when it is behind the view.

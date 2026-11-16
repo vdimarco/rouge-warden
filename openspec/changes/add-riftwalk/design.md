@@ -70,6 +70,17 @@ The user's words: "it looks awkward clean it up make it more natural and differe
 - Each zone has its own look (`LOOKS` in `main.js`): the corner of its screens, how much the edge wavers, the strength of the scan lines, and the letters of its names. ASCII Scenes has square corners, a steady edge, strong scan lines and monospace letters. The Lab has round corners and a restless edge.
 - The zone's name shows large for a moment on the way in, in the zone's colour.
 
+## Magic
+The user's word: "magically".
+
+- Motes of light in the zone's colour drift up through the room and twinkle (180 on a desktop, 110 on a phone). They are `THREE.Points` with a small shader, drawn after the splats with light that adds up.
+- Sparks in the next zone's colour circle each rift door and fall into it. Stars come and go inside the door.
+- A glint crosses the screen of the machine in view.
+- The light on the way into a game or a zone blooms from the middle of the view, and closes back to a point on arrival (`clip-path` on the flash).
+- With reduced motion there are no motes and no sparks, and the light shows and clears at once.
+
+No outside source was needed: these are point sprites and a hash-grid twinkle, both standard shader practice.
+
 ## Layout
 `public/lab/riftwalk/hall.js` holds the rules with no drawing. The collections are a copy of the homepage's `GROUPS`, and the node test compares the two game for game. It also checks that each collection is in one zone. Names, lines, routes and art come from `window.GameSwitch.GAMES` at run time.
 

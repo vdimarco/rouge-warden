@@ -56,6 +56,13 @@ The hall SHALL load the first zone's small world file first and enable the start
 - **WHEN** the small file has loaded on a desktop
 - **THEN** the visitor can enter the hall at once, and the larger file replaces the small one when it has loaded
 
+### Requirement: Magic in the air
+Each zone SHALL show small motes of light in its colour that drift and twinkle in the room, and sparks that circle each rift door. The light on the way into a game or a zone SHALL bloom from the middle of the view and SHALL close to a point on arrival. With reduced motion, the motes and sparks SHALL NOT show.
+
+#### Scenario: Motes in a zone
+- **WHEN** the visitor stands in a zone
+- **THEN** motes of the zone's colour drift in the room, and sparks of the next zones' colours circle the two doors
+
 ### Requirement: Fallback and motion states
 Every game SHALL also be a plain link on the page, grouped by collection, for assistive technology. When WebGL2 is missing or the world does not load, that list SHALL show to everyone with a line that says why. With reduced motion, the zone SHALL change at once and a launch SHALL have no glide. The hall SHALL hold while the arcade's Games menu is open or the tab is hidden.
 

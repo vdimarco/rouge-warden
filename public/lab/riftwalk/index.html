@@ -40,8 +40,10 @@
   .load { position: fixed; left: 50%; bottom: calc(var(--sab) + 28px); transform: translateX(-50%); color: var(--muted); font: 600 14px/1 var(--body); z-index: 6; pointer-events: none; text-align: center; width: max-content; max-width: calc(100vw - 32px); }
   .load[hidden] { display: none; }
   /* The flash that covers the view while a game opens. */
-  .flash { position: fixed; inset: 0; background: radial-gradient(circle at 50% 46%, #fff, var(--tint, var(--cyan)) 55%, #0a0612); opacity: 0; pointer-events: none; z-index: 8; transition: opacity 0.42s ease-in; }
-  .flash.on { opacity: 1; }
+  /* The light that covers the view on the way into a game or a zone: it blooms from the portal in the middle of the view,
+     and on arrival it closes back to a point. */
+  .flash { position: fixed; inset: 0; background: radial-gradient(circle at 50% 46%, #fff, var(--tint, var(--cyan)) 45%, color-mix(in srgb, var(--tint, var(--cyan)) 35%, #0a0612)); clip-path: circle(0% at 50% 46%); pointer-events: none; z-index: 8; transition: clip-path 0.55s cubic-bezier(0.5, 0, 0.9, 0.4); }
+  .flash.on { clip-path: circle(125% at 50% 46%); }
   .card .credit { color: var(--muted); font-size: 13px; margin: 12px 0 0; }
   .card button:disabled { opacity: 0.5; cursor: default; }
   /* Every game as a plain link: read by screen readers always, and shown to everyone when 3D graphics are missing. */

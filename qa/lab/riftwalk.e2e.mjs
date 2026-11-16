@@ -49,6 +49,7 @@ try {
     assert.equal(s.machines[s.aim].title, 'Olympus', 'the first game is on the front machine'); assert.equal(await t.text('tTitle'), 'Olympus'); assert.match(await t.text('tDo'), /Click the screen or press Enter to play/);
     assert.deepEqual(await page.evaluate(() => [...document.querySelectorAll('#groups button')].map(b => b.textContent)), ZONES);
     assert.deepEqual(s.doors.map(d => d.to), ['cottage', 'ascii'], 'the left door leads back and the right door leads on'); assert(s.doors[0].heading < 0 && s.doors[1].heading > 0); await t.until(s => s.doors.every(d => d.art && d.lit === 1), 'each door shows its zone');
+    assert(s.motes > 150, 'motes of light drift in the zone and circle the doors: ' + s.motes);
     if (shots) await page.screenshot({ path: join(shots, 'riftwalk-hall.png') });
     pass('the hall opens in the Action zone, one game on each machine, with two rift doors', { machines });
 
@@ -116,6 +117,7 @@ try {
   }
   {
     const t = await open({ reducedMotion: 'reduce' }), { page } = t; let s = await t.enterHall();
+    assert.equal(s.motes, 0, 'reduced motion: no motes');
     await page.click('#groups button[data-zone="strategy"]'); s = await t.until(s => s.zone === 'strategy' && s.phase === 'hall' && !s.turning && s.aim >= 0 && s.machines.every(m => m.lit === (m.game ? 1 : 0)), 'reduced motion changes the zone at once', 3000);
     await page.click('#kGo'); assert.deepEqual(await t.launched(), [s.machines[s.aim].url]); assert.deepEqual(t.errors, []);
     pass('reduced motion: the zone changes at once and a launch has no glide');

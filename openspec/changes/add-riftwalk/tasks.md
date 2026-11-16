@@ -32,5 +32,9 @@ One zone for each category, and higher fidelity:
 A cleaner look:
 - [x] Tube look for screens, names only for the machine in view, idle machines in the zone's colour, arch doors, the GTA world's own arches, a look for each zone, the zone banner.
 - [x] Pass both tests again; look at three zones in captured frames (`shots/look.jpg`).
+
+Magic:
+- [x] Motes in the air, sparks and stars at the doors, a glint on the screen in view, a blooming light on the way through.
+- [x] Pass both tests; look at the motes over two real worlds (`shots/magic.jpg`).
 - [ ] See the 500,000 and full-resolution files drawn with the portals (software WebGL was too slow for a frame at that size in this session).
 - [ ] Play on a real phone and a real graphics card (not possible in this session).
