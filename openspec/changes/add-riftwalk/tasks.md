@@ -18,9 +18,15 @@ The den of machines whose screens are portals:
 
 The bigger hall with zones:
 - [x] Make three more worlds for the zones (amber, green, violet); record prompts, ids and costs.
-- [x] Find and place the screens of each zone; `face-screens.py` for the Cottage Row world; `door-art.py` for the door pictures.
+- [x] Find and place the screens of each zone; `face-screens.py` for the Cottage world; `door-art.py` for the door pictures.
 - [x] Rules: `ZONES`, `zoneGames`, `doors`. Page: zone worlds that load on the way, rift doors, zone buttons and keys.
 - [x] Pass `qa/lab/riftwalk.test.mjs` (20 checks) and `qa/lab/riftwalk.e2e.mjs` (9 checks, with two real 150,000-splat zones).
 - [x] Look at each zone and a door in a captured frame of the real worlds (150,000 splats, `shots/zones.jpg`).
+
+One zone for each category, and higher fidelity:
+- [x] Six zones in the homepage order; Strategy and GTA from the two earlier worlds; door rule for an open wall.
+- [x] Full-resolution file for every zone; neighbour zones loaded ahead; three worlds kept in memory; art colours and filtering.
+- [x] Pass `qa/lab/riftwalk.test.mjs` (28 checks) and `qa/lab/riftwalk.e2e.mjs` (9 checks).
+- [x] Look at the Strategy and GTA zones in captured frames of the real worlds (`shots/zones.jpg`).
 - [ ] See the 500,000 and full-resolution files drawn with the portals (software WebGL was too slow for a frame at that size in this session).
 - [ ] Play on a real phone and a real graphics card (not possible in this session).

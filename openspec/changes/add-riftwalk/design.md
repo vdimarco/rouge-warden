@@ -5,7 +5,7 @@ The user's words, in order: "a gaussian splot within worldlabs that mimics a cyb
 
 The world is a small dark den. Ten black cabinets stand in a circle around the visitor, about 2 m away, with neon edge strips in magenta, cyan and violet. Neon tubes, cables and old monitors cover the walls, haze fills the air, and the wet floor mirrors the light. The prompt asks for no readable text, logos or characters from real games. The prompt and the world ids are in `public/lab/riftwalk/worlds/sources.json`.
 
-Seven worlds were made in all: these four, and three more for the zones (see Zones). A draft (`marble-1.0-draft`, 230 credits) checked the layout. The first full hall (`marble-1.1`, 1,580 credits) shipped with floating portals and was replaced. A darker hall with cabinets along the walls (1,580 credits) was not used: its screens were far away and few faced the middle. The den (1,580 credits) is the one in the game.
+Seven worlds were made in all: these four, and three more for the zones (see Zones). Six of the seven are zones now. A draft (`marble-1.0-draft`, 230 credits) checked the layout. The first full hall (`marble-1.1`, 1,580 credits) shipped with floating portals and is now the GTA zone. A darker hall with one row of cabinets (1,580 credits) is now the Strategy zone. The den (1,580 credits) is the Action zone.
 
 ## Portals on the machine screens
 Each cabinet screen is a portal to one game. The portal shows the game's key art, fitted to the screen with rounded corners. Its edge is live: a bright band in the game's colour with moving noise and a pulse that travels round the rim. A machine with no game shows dark glass with a faint rim. The game's name stands over the screen.
@@ -28,19 +28,36 @@ The world ships as Marble made it, in three files: 150,000 splats (2.3 MB) shows
 - Live edge: a rounded-box distance field (Inigo Quilez, "2D distance functions") gives the rim, and the noise band from the first version moves along it. These are not splat-to-splat portals, so Spark's `SparkPortals` class is not used.
 
 ## Zones
-The user's words: "make it a bigger hall where you can move between zones".
+The user's words: "make it a bigger hall where you can move between zones", then "of game categories and make it higher fidelity".
 
-A Marble world is sharp near the point it was made from, and it has room for about ten machines there. One world as a large hall would put most screens far from the visitor and would draw them badly. So the hall is four zones, and each zone is its own world from the same prompt with other colours: magenta and cyan (Action Den), amber (Cottage Row), green (Back Room), violet (The Lab). `marble-1.1-plus` makes larger worlds, and it was not tried: the screens of a larger world would be too far from its one panorama for `find-screens.py`.
+A Marble world is sharp near the point it was made from, and it has room for about ten machines there. One world as a large hall would put most screens far from the visitor and would draw them badly. So the hall has one zone for each collection of the homepage, and each zone is its own world. `marble-1.1-plus` makes larger worlds, and it was not tried: the screens of a larger world would be too far from its one panorama for `find-screens.py`.
 
-- `ZONES` in `hall.js` gives each zone its collections. The Back Room holds three small collections (ASCII Scenes, Strategy, GTA), so no zone is nearly empty.
-- Each zone has two rift doors. `doors()` puts one in the widest gap between machines on each side of the visitor, at the distance of the machines beside it, and as wide as the floor between their cabinets (0.36 m to 0.95 m). The left door leads to the zone before and the right door to the zone after, and the last zone leads on to the first.
+| Zone | World | Machines | Games |
+| --- | --- | --- | --- |
+| Cottage | amber ring | 12 | 8 |
+| Action | magenta and cyan ring | 10 | 11 |
+| ASCII Scenes | green ring | 9 | 2 |
+| Strategy | one row of cabinets | 11 | 3 |
+| GTA | brick hall with arches | 2 | 1 |
+| Lab | violet ring | 10 | 19 |
+
+- `ZONES` in `hall.js` is one zone for each collection, with the collection's id and name. The node test checks it against the homepage rows.
+- Strategy and GTA use the two worlds that were made before the ring worlds and first left out. The World Labs account had no credits for two more worlds. Their prompts did not ask for a ring, so the GTA world has few screens near the visitor.
+- Each zone has two rift doors. `doors()` puts one in the widest gap between machines on each side of the visitor, at the distance of the machines beside it, and as wide as the floor between their cabinets (0.36 m to 0.95 m). Where the machines leave an open wall, the door stands on that wall, a quarter turn from the front. The left door leads to the zone before and the right door to the zone after, and the last zone leads on to the first.
 - A door is a portal like a screen, with the same shader. It shows a view into its zone (`door.webp`, cut from that zone's panorama by `door-art.py`) and the zone's name.
-- A way through: the visitor glides to the door, the view fills with the zone's colour, the zone's 150,000-splat world loads (2.3 MB), and the new zone stands around the visitor. A loaded world is kept, so the way back is instant.
-- The zone buttons at the top, the up and down arrow keys and the keys 1 to 4 also change the zone, for a visitor who does not want to turn to a door.
+- A way through: the visitor glides to the door, the view fills with the zone's colour, the zone's world loads, and the new zone stands around the visitor.
+- The zone buttons at the top, the up and down arrow keys and the keys 1 to 6 also change the zone, for a visitor who does not want to turn to a door.
 
-The Cottage Row world came out with dim grey screens and a second panel under each. `find-screens.py` took a brightness ceiling and a latitude cut for it, and `face-screens.py` rebuilt its screens to face the capture point, because the tilt of a small dim screen measures badly. From the middle of the zone the portal covers the screen. After a walk its tilt differs a little from the cabinet's.
+The Cottage world came out with dim grey screens and a second panel under each. `find-screens.py` took a brightness ceiling and a latitude cut for it, and `face-screens.py` rebuilt its screens to face the capture point, because the tilt of a small dim screen measures badly. The GTA world got the same treatment. From the middle of the zone the portal covers the screen. After a walk its tilt differs a little from the cabinet's.
 
-The new zones ship the 150,000 and 500,000 files. The Action Den also ships its full file. The full files of the three new zones are 28 MB each and were left out of the repository.
+## Fidelity of the zones
+The user asked for higher fidelity. No new world could be made, so the gain is in what the page loads:
+- Every zone ships its full-resolution file, and a desktop draws it. The four ring worlds have about 28 MB each; the two earlier worlds have 9 MB each.
+- When a zone is sharp, the worlds behind its two doors load in the background at the same quality (`ahead()`), so the visitor arrives in a sharp zone. A browser that asks to save data loads nothing ahead.
+- The page keeps the worlds of the current zone and its two neighbours, and lets the others go (`keepNear()`), so memory stays at three worlds.
+- The soft glow of the live edge no longer covers the art, so a game's art keeps its own colours. Art textures use the most anisotropic filtering the device has. Door pictures are 512 by 1024.
+
+The worlds folder is about 222 MB.
 
 ## Layout
 `public/lab/riftwalk/hall.js` holds the rules with no drawing. The collections are a copy of the homepage's `GROUPS`, and the node test compares the two game for game. It also checks that each collection is in one zone. Names, lines, routes and art come from `window.GameSwitch.GAMES` at run time.
@@ -49,7 +66,7 @@ In a zone, the first game goes on the front machine, the next games go on the ne
 
 ## Controls
 - Look: drag the view. ◀ and ▶ (keys and buttons) turn to the next lit machine or door and go round the circle.
-- Zones: tap or click a rift door, or press Enter at it. Also the buttons at the top, the up and down arrow keys, or the keys 1 to 4.
+- Zones: tap or click a rift door, or press Enter at it. Also the buttons at the top, the up and down arrow keys, or the keys 1 to 6.
 - More games: the More button, Page Down or M.
 - Play: tap or click a lit screen, press Enter or Space for the machine in the middle of the view, or use the Play button.
 - Walk: W A S D on a keyboard.
@@ -59,4 +76,4 @@ A visitor can do everything with taps alone, with the buttons alone, or with the
 The machines change at once, the arrows turn at once, the edge holds still, and a launch or a way through a door has no glide.
 
 ## Not done
-No sound. No true splat-to-splat portal: a door shows a picture of its zone, and the world changes behind a flash of light. The eye is at the height Marble reports for each world: 0.93 m in the Action Den and about 1.3 m in the other zones. A second try at the Cottage Row world, with brighter screens, did not start: the World Labs account had no credits left.
+No sound. No true splat-to-splat portal: a door shows a picture of its zone, and the world changes behind a flash of light. The eye is at the height Marble reports for each world: 0.93 m in the Action zone and about 1.3 m in the other zones. A second try at the Cottage world, with brighter screens, did not start: the World Labs account had no credits left.

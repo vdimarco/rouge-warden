@@ -7,7 +7,7 @@ The first version was a walk between four PINOC splat worlds with wisps to catch
 
 ## What changes
 - Riftwalk at `/lab/riftwalk/` becomes a hall of machines. The hall is one splat world made with Marble by World Labs: a dark neon den with ten cabinets in a circle. The user saw a first hall with floating portals and asked for a darker, denser, more cyberpunk world, with each machine's main screen as the portal, with a live edge. Each screen now shows one game of the collection that is on, and a tap on the screen launches the game.
-- The user then asked for "a bigger hall where you can move between zones". The hall now has four zones: Action Den, Cottage Row, Back Room (ASCII Scenes, Strategy and GTA) and The Lab. Each zone is its own Marble world with its own machines. Two rift doors in each zone show the zones next to it and take the visitor there.
+- The user then asked for "a bigger hall where you can move between zones", "of game categories", and "higher fidelity". The hall now has one zone for each game category: Cottage, Action, ASCII Scenes, Strategy, GTA and Lab. Each zone is its own Marble world with its own machines. Two rift doors in each zone show the zones next to it and take the visitor there. Every zone ships its full-resolution world, and the next zones load ahead.
 - The wisp game, its four PINOC worlds, its packer and its tests are removed.
 - The cabinet, the switcher entry, the Corridor piece and the Lab card keep the id `riftwalk`, the title "Riftwalk" and the route, with new words and new art.
 
