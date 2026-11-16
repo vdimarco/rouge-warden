@@ -58,7 +58,7 @@ async function loadHall(onProgress) {
 }
 // The rooms: one small Marble world for each zone, loaded when the visitor first goes in. A Marble .spz has y down,
 // so the mesh turns half a turn about x; the room's screens.json gives its scale and the eye height.
-const ROOMS = {}; let hallMesh = null, HALLDATA = null, room = null;   // room: the index of the zone whose room the visitor is in, or null in the hall
+const ROOMS = {}; let hallMesh = null, HALLDATA = null, room = null, RINGS = [];   // RINGS: the zones that have a room, in the order of their rings   // room: the index of the zone whose room the visitor is in, or null in the hall
 const roomData = id => ROOMS[id] ? Promise.resolve(ROOMS[id]) : fetch(`./worlds/rooms/${id}/screens.json`).then(r => { if (!r.ok) throw new Error('Room missing: ' + id); return r.json(); }).then(d => (ROOMS[id] = d));
 async function loadRoom(id, quality) {
   const response = await fetch(`./worlds/rooms/${id}/${quality}.spz`); if (!response.ok) throw new Error('Room file missing: ' + id);
@@ -223,13 +223,13 @@ function setPage(page) { const i = visit.zone, count = pagesIn(i); visit.page[i]
 function mark() {
   const zone = ZONES[visit.zone], count = pagesIn(visit.zone);
   for (const b of groupsBar.children) { const on = b.dataset.zone === zone.id; b.setAttribute('aria-pressed', String(on)); if (on && visit.phase !== 'title') b.scrollIntoView({ block: 'nearest', inline: 'center', behavior: reduced ? 'auto' : 'smooth' }); }
-  $('kBack').hidden = room === null; $('kRoom').hidden = room !== null; $('kRoom').textContent = ZONES[visit.zone].label + ' room'; $('kMore').hidden = count < 2; $('kMore').textContent = `More ${visit.page[visit.zone] + 1}/${count}`;
+  $('kBack').hidden = room === null; $('kRoom').hidden = room !== null || !STATIONS[visit.zone]?.room; $('kRoom').textContent = ZONES[visit.zone].label + ' room'; $('kMore').hidden = count < 2; $('kMore').textContent = `More ${visit.page[visit.zone] + 1}/${count}`;
 }
 function enter(index) { if (room !== null || index === visit.zone) return; visit.zone = index; mark(); banner(ZONES[index]); }
 // Going to another zone: the visitor glides across the hall to that zone's station and turns to its machines.
 function travel(index) {
   if (visit.phase !== 'hall' || visit.glide || !ZONES[index]) return;
-  if (room !== null) { if (index !== room) goRoom(index); return; }
+  if (room !== null) { if (index === room) return; if (HALLDATA.zones[ZONES[index].id].room) goRoom(index); else goHall(index); return; }
   const to = STATIONS[index], from = { x: frame.position.x, z: frame.position.z }, far = Math.hypot(to.station[0] - from.x, to.station[1] - from.z);
   target.hidden = true; canvas.classList.remove('aim'); visit.turnTo = null;
   if (reduced || far < 0.05) { frame.position.set(to.station[0], 0, to.station[1]); visit.yaw = to.facing; visit.pitch = 0; enter(index); visit.aim = -1; paint(); return; }
@@ -242,11 +242,12 @@ function clearPlaces() {
 }
 function buildHall() {
   clearPlaces(); room = null; HALL = HALLDATA.hall; SCREENS = HALLDATA.screens; STATIONS = ZONES.map(z => HALLDATA.zones[z.id]);
-  PLACES = SCREENS.concat(STATIONS.map(z => ringPlace(z.ring))); camera.position.set(0, HALL.eye, 0);
+  RINGS = ZONES.map((z, i) => i).filter(i => STATIONS[i].room); PLACES = SCREENS.concat(RINGS.map(i => ringPlace(STATIONS[i].ring))); camera.position.set(0, HALL.eye, 0);
   const zoneOf = id => ZONES.find(z => z.id === id);
-  portals = PLACES.map((place, i) => makePortal(place, i, place.ring ? ZONES[i - SCREENS.length] : zoneOf(place.zone)));
-  ZONES.forEach((z, i) => { visit.page[i] = 0; fill(i); show(portals[SCREENS.length + i], { zone: i, id: 'ring-' + z.id, title: z.label, sub: `${gamesIn(i).length} ${gamesIn(i).length === 1 ? 'game' : 'games'} · a room of its own`, url: null, art: `./worlds/rooms/${z.id}/door.webp`, color: z.color }); });
-  if (!reduced) ZONES.forEach((z, i) => { const at = new THREE.Group(); at.position.set(STATIONS[i].station[0], 0, STATIONS[i].station[1]); scene.add(at); air.push(motes(touch ? 26 : 44, z.color, false, null, at)); const p = portals[SCREENS.length + i]; air.push(motes(30, z.color, true, p.uniforms.uHalf.value, p.group)); });
+  portals = PLACES.map((place, i) => makePortal(place, i, place.ring ? ZONES[RINGS[i - SCREENS.length]] : zoneOf(place.zone)));
+  ZONES.forEach((z, i) => { visit.page[i] = 0; fill(i); });
+  RINGS.forEach((i, k) => { const z = ZONES[i]; show(portals[SCREENS.length + k], { zone: i, id: 'ring-' + z.id, title: z.label, sub: `${gamesIn(i).length} ${gamesIn(i).length === 1 ? 'game' : 'games'} · a room of its own`, url: null, art: `./worlds/rooms/${z.id}/door.webp`, color: z.color }); });
+  if (!reduced) ZONES.forEach((z, i) => { const at = new THREE.Group(); at.position.set(STATIONS[i].station[0], 0, STATIONS[i].station[1]); scene.add(at); air.push(motes(touch ? 26 : 44, z.color, false, null, at)); const k = RINGS.indexOf(i); if (k >= 0) { const p = portals[SCREENS.length + k]; air.push(motes(30, z.color, true, p.uniforms.uHalf.value, p.group)); } });
 }
 // The places of a room: its machines, with the zone's games from the front machine outward, and the ring back to the hall.
 function buildRoom(index) {
@@ -260,7 +261,7 @@ function buildRoom(index) {
 // stands in its middle and faces the first game. The room shows small first and sharpens.
 const pause = ms => new Promise(done => setTimeout(done, ms));
 function goRoom(index) {
-  if (visit.phase !== 'hall' || visit.glide || !ZONES[index]) return; const zone = ZONES[index];
+  if (visit.phase !== 'hall' || visit.glide || !ZONES[index] || !HALLDATA.zones[ZONES[index].id].room) return; const zone = ZONES[index];
   visit.phase = 'travel'; target.hidden = keysBar.hidden = groupsBar.hidden = true; canvas.classList.remove('aim'); flash.style.setProperty('--tint', zone.color); flash.classList.add('on');
   roomData(zone.id).then(() => Promise.all([noWorld ? null : loadRoom(zone.id, '150k'), pause(reduced ? 0 : 600)])).then(([mesh]) => {
     showWorld(mesh); buildRoom(index); visit.zone = index; frame.position.set(0, 0, 0); visit.yaw = SCREENS[roomSeats(SCREENS)[0]].heading; visit.pitch = 0; visit.turnTo = null;
@@ -269,8 +270,8 @@ function goRoom(index) {
   }).catch(error => { console.error(error); visit.phase = 'hall'; flash.classList.remove('on'); keysBar.hidden = groupsBar.hidden = false; loadLine.hidden = false; loadLine.textContent = `${zone.label} did not load.`; setTimeout(() => { loadLine.hidden = true; }, 4000); paint(); });
 }
 // Back through the ring: the hall again, at the cluster of the zone the visitor came from.
-function goHall() {
-  if (visit.phase !== 'hall' || visit.glide || room === null) return; const index = room, zone = ZONES[index];
+function goHall(to) {
+  if (visit.phase !== 'hall' || visit.glide || room === null) return; const index = Number.isInteger(to) ? to : room, zone = ZONES[index];
   visit.phase = 'travel'; target.hidden = keysBar.hidden = groupsBar.hidden = true; canvas.classList.remove('aim'); flash.style.setProperty('--tint', zone.color); flash.classList.add('on');
   pause(reduced ? 0 : 450).then(() => {
     showWorld(hallMesh); buildHall(); visit.zone = index; const at = STATIONS[index]; frame.position.set(at.station[0], 0, at.station[1]); visit.yaw = at.facing; visit.pitch = 0; visit.turnTo = null;
@@ -371,7 +372,7 @@ addEventListener('keydown', e => {
   else if (['w', 'a', 's', 'd'].includes(k)) keys.add(k);
 });
 addEventListener('keyup', e => keys.delete(e.key.toLowerCase())); addEventListener('blur', () => keys.clear());
-$('kBack').addEventListener('click', goHall); $('kRoom').addEventListener('click', () => goRoom(visit.zone)); $('kPrev').addEventListener('click', () => turn(-1)); $('kNext').addEventListener('click', () => turn(1));
+$('kBack').addEventListener('click', () => goHall()); $('kRoom').addEventListener('click', () => goRoom(visit.zone)); $('kPrev').addEventListener('click', () => turn(-1)); $('kNext').addEventListener('click', () => turn(1));
 $('kGo').addEventListener('click', () => { if (visit.aim >= 0) launch(visit.aim); }); $('kMore').addEventListener('click', () => setPage(visit.page[visit.zone] + 1));
 ZONES.forEach((z, i) => { const b = document.createElement('button'); b.type = 'button'; b.dataset.zone = z.id; b.textContent = z.label; b.style.setProperty('--tint', z.color); b.setAttribute('aria-pressed', 'false'); b.addEventListener('click', () => travel(i)); groupsBar.append(b); });
 go.addEventListener('click', start);

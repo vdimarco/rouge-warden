@@ -51,5 +51,6 @@ One hall with Atlas:
 - [x] The picture under the mouse pointer flows.
 - [x] Put each rift ring inside a neon ring of the hall (nine rings found in the views).
 - [x] Each ring opens its zone's own room: the six earlier Marble worlds come back as rooms, with a ring back to the hall. Tests: 7 rule checks and 9 browser checks pass; a real room and the rings are seen in `shots/rings-and-room.jpg`.
+- [x] Games in the homepage order along each cluster; as many hall machines as games in each zone; rooms for the three large zones only, matched by size.
 - [ ] See the whole world drawn with the portals. Software WebGL did not finish one frame of 2,000,000 splats in 25 minutes.
 - [ ] Play on a real phone and a real graphics card (not possible in this session).

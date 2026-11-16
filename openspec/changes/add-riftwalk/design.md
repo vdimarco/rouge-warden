@@ -15,12 +15,12 @@ There are 41 machines for 44 games. Each collection of the homepage is a zone, a
 
 | Zone | Clusters | Machines | Games |
 | --- | --- | --- | --- |
-| Cottage | amber and teal, left wall | 10 | 8 |
+| Cottage | amber on the left, violet on the right | 8 | 8 |
 | Action | magenta on the left and red on the right, far end | 11 | 11 |
-| ASCII Scenes | green, back wall | 3 | 2 |
+| ASCII Scenes | green, back wall | 2 | 2 |
 | Strategy | cyan, back wall | 3 | 3 |
-| GTA | violet, right wall | 3 | 1 |
-| Lab | blue on the right and green at the entrance | 11 | 19 |
+| GTA | green, back wall | 1 | 1 |
+| Lab | teal, blue and green, entrance end | 16 | 19 |
 
 Every machine shows a game at once, so the whole hall is lit. The Lab has more games than machines, so it has two pages.
 
@@ -50,11 +50,19 @@ The first measure took the middle value over all views, and far and slanted view
 The user's words: "the rift rings are not on the neon rings and can we borrow some existing marbles and each portal opens into a new preconstructed marble with machines in them".
 
 - Rings: the first ring places came from a few depth samples. Now the neon rings are found in the views as bright, saturated pixels high on the walls, unprojected with the depth maps and grouped along each wall. The hall has nine neon rings, and each zone's rift is a disc inside the ring over its cluster.
-- Rooms: each rift ring opens into that zone's own room. The rooms are the six Marble worlds of the earlier versions (ring rooms for Cottage, Action, ASCII Scenes and Lab, the row room for Strategy, the brick hall for GTA), with their measured screens. They are in `worlds/rooms/<zone>/` with 150,000 and 500,000 splats each, 57 MB in all. No new world was made.
+- Rooms: a rift ring opens into its zone's own room. The rooms are Marble worlds of the earlier versions, with their measured screens, in `worlds/rooms/<zone>/` with 150,000 and 500,000 splats each. No new world was made. Which zones have a room is in "Order and machine counts" below.
 - A ring in the hall shows a view into its room (`door.webp`). Going in: the view fills with the zone's light, the room loads small and then sharpens, and the visitor stands in its middle with the zone's first game in front. The room's machines take the zone's games from the front machine outward.
 - A room has one ring, at eye level in the widest gap between its machines. That ring, the Hall button, Esc and Backspace go back to the hall, at the cluster the visitor came from. A zone button in a room goes to that zone's room.
 - In the hall the arrows stop at machines only, because a ring hangs right over its machines. The Room button and the R key open the room of the zone the visitor stands in.
 - A frame with real splats shows the rings inside the neon rings and the Action room with its games (`shots/rings-and-room.jpg`).
+
+## Order and machine counts
+The user's words: "we need a better way to play things properly. The portals in each hall is randomly choosen. And if there is only 1 game we dont need some many machines".
+
+- Order: games go on machines in the homepage order, in one run along each cluster. `seats()` goes clockwise round the visitor from one end of the cluster (the place after the widest gap), which is from left to right along a row. In a room, `roomSeats()` puts the first game on the front machine and goes on clockwise. The earlier room order went right and left in turn from the front, and it read as random.
+- Counts in the hall: each zone has as many machines as games. The zones of the 41 machines were set again: Cottage has 8 (amber, and violet across the hall), Action 11 (magenta and red), ASCII Scenes 2 and GTA 1 (the green cluster), Strategy 3 (cyan), and the Lab the 16 at the entrance end. No machine of the hall is idle. Only the Lab, with 19 games, has a second page.
+- Rooms: a zone has a room only when it has more than three games: Cottage, Action and the Lab. Each room is the earlier Marble world whose machine count is nearest to the zone's games: the green ring room (9 machines) for Cottage's 8, the row room (11) for Action's 11, the amber room (12) for the Lab's 19. The other three earlier worlds are removed, and `worlds/rooms/` is 29 MB.
+- ASCII Scenes, Strategy and GTA have no ring and no room. A zone button for one of them, pressed in a room, brings the visitor back to the hall at that zone.
 
 ## Look
 - A game shows as a picture on the machine's tube: scan lines, darker corners, a faint shine, and a thin live edge. Its name shows only over the machine in the middle of the view.

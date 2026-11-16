@@ -38,21 +38,21 @@ async function open(options = {}, query = 'world=none&px=1') {
   return { page, errors, moves, state, until, text, settled, enterHall, zone, launched, pressed };
 }
 const lit = s => s.machines.filter(m => m.game).length;
-const ZONES = ['Cottage', 'Action', 'ASCII Scenes', 'Strategy', 'GTA', 'Lab'], IDS = ['cottage', 'action', 'ascii', 'strategy', 'gta', 'lab'];
+const ZONES = ['Cottage', 'Action', 'ASCII Scenes', 'Strategy', 'GTA', 'Lab'], IDS = ['cottage', 'action', 'ascii', 'strategy', 'gta', 'lab'], ROOMS = ['cottage', 'action', 'lab'];
 const named = s => s.aim < s.machines.length ? s.machines[s.aim].title : s.rings[s.aim - s.machines.length].title;
 try {
   {
     const t = await open(), { page } = t;
     assert.equal(await page.evaluate(() => document.getElementById('keys').hidden && document.getElementById('groups').hidden), true, 'no buttons on the title');
     let s = await t.enterHall(); const machines = s.machines.length;
-    assert(machines >= 30, 'the hall has machines: ' + machines); assert.deepEqual(s.rings.map(r => r.to), IDS, 'one rift ring for each zone'); assert(s.rings.every(r => r.lit === 1)); await t.until(s => s.rings.every(r => r.art), 'each ring shows a view into its room'); assert.equal(s.room, null);
+    assert(machines >= 30, 'the hall has machines: ' + machines); assert.deepEqual(s.rings.map(r => r.to), ROOMS, 'a rift ring for each zone that has a room'); assert(s.rings.every(r => r.lit === 1)); await t.until(s => s.rings.every(r => r.art), 'each ring shows a view into its room'); assert.equal(s.room, null);
     assert.deepEqual(await page.evaluate(() => [...document.querySelectorAll('#groups button')].map(b => b.textContent)), ZONES); assert.equal((await t.pressed()).length, 1, 'the button of the zone the visitor stands in is on');
     // Every zone's machines show its games: the whole hall is lit at once.
     for (const id of IDS) { const here = s.machines.filter(m => m.zone === id); assert(here.length >= 1 && here.some(m => m.game), id + ' has lit machines'); }
-    assert(lit(s) >= 30, 'most machines show a game: ' + lit(s)); assert.equal(new Set(s.machines.filter(m => m.game).map(m => m.game)).size, lit(s), 'no game is on two machines');
+    assert.equal(lit(s), machines, 'every machine of the hall shows a game: no machine is idle'); assert.deepEqual(IDS.map(id => s.machines.filter(m => m.zone === id).length), [8, 11, 2, 3, 1, 16], 'each zone has as many machines as games, and the Lab has 16'); assert.equal(new Set(s.machines.filter(m => m.game).map(m => m.game)).size, lit(s), 'no game is on two machines');
     await t.until(s => s.machines.every(m => !m.game || m.art), 'each lit screen has its art'); assert(s.motes > 150, 'motes of light drift in the zones and circle the rings: ' + s.motes);
     if (shots) await page.screenshot({ path: join(shots, 'riftwalk-hall.png') });
-    pass('the hall opens with every zone lit and a rift ring over each', { machines, lit: lit(s) });
+    pass('the hall opens with every machine lit, as many machines as games in each zone', { machines, lit: lit(s) });
 
     // A number key glides to a zone's station, and the card names the machine in front.
     await page.keyboard.press('2'); await t.until(s => s.gliding || s.zone === 'action', 'the 2 key starts a glide'); s = await t.zone('action', 'the visitor arrives in Action');
@@ -66,29 +66,33 @@ try {
     pass('a key glides to a zone, the arrows turn from place to place, and a drag looks');
 
     // A rift ring: the card names its zone, and a click on it opens that zone's own room. Esc comes back to the hall.
-    const ring = id => machines + IDS.indexOf(id);
-    await page.evaluate(i => window.__riftwalk.face(i), ring('gta')); s = await t.until(s => s.aim === ring('gta'), 'the GTA ring is in the middle of the view');
-    assert.equal(await t.text('tTitle'), 'GTA'); assert.match(await t.text('tDo'), /Click the ring or press Enter to go in/); assert.equal(await t.text('kGo'), 'Go');
-    let at = await page.evaluate(i => window.__riftwalk.screen(i), ring('gta')); assert(at, 'the ring is in view');
+    const ring = id => machines + ROOMS.indexOf(id);
+    await page.evaluate(i => window.__riftwalk.face(i), ring('action')); s = await t.until(s => s.aim === ring('action'), 'the Action ring is in the middle of the view');
+    assert.equal(await t.text('tTitle'), 'Action'); assert.match(await t.text('tDo'), /Click the ring or press Enter to go in/); assert.equal(await t.text('kGo'), 'Go');
+    let at = await page.evaluate(i => window.__riftwalk.screen(i), ring('action')); assert(at, 'the ring is in view');
     if (shots) await page.screenshot({ path: join(shots, 'riftwalk-ring.png') });
-    await page.mouse.click(at.x, at.y); s = await t.until(s => s.room === 'gta' && s.phase === 'hall', 'the click opens the GTA room'); s = await t.settled();
-    assert.deepEqual(await t.pressed(), ['GTA']); assert.deepEqual(s.machines.filter(m => m.game).map(m => m.title), ['GTA Montréal']); assert(s.machines.every(m => m.zone === 'gta')); assert.deepEqual(s.rings.map(r => r.to), ['hall']);
+    await page.mouse.click(at.x, at.y); s = await t.until(s => s.room === 'action' && s.phase === 'hall', 'the click opens the Action room'); s = await t.settled();
+    assert.deepEqual(await t.pressed(), ['Action']); assert.equal(s.machines.length, 11); assert.equal(lit(s), 11, 'the room has a machine for each of the eleven games'); assert(s.machines.every(m => m.zone === 'action')); assert.deepEqual(s.rings.map(r => r.to), ['hall']);
+    s = await t.until(s => s.aim >= 0 && s.aim < s.machines.length, 'a machine is in front'); assert.equal(s.machines[s.aim].title, 'Olympus', 'the first game is in front');
+    // The games go round the room in the homepage order: one press of ▶ shows the second game.
+    await page.keyboard.press('ArrowRight'); s = await t.until(s => !s.turning && s.aim >= 0 && s.machines[s.aim]?.title === 'Crimson Rogue', 'the next machine to the right has the second game');
     assert(Math.hypot(s.place.x, s.place.z) < 1e-6, 'the visitor stands in the middle of the room'); assert.equal(await page.evaluate(() => document.getElementById('kBack').hidden), false); assert.equal(await page.evaluate(() => document.getElementById('flash').classList.contains('on')), false, 'the light clears');
-    await page.keyboard.press('Escape'); s = await t.until(s => s.room === null && s.phase === 'hall', 'Esc goes back to the hall'); s = await t.settled(); assert.equal(s.zone, 'gta'); assert.equal(s.machines.length, machines); assert.equal(await page.evaluate(() => document.getElementById('kBack').hidden), true);
-    // Enter at a ring opens its room. In the room, the first game is in front, and the ring there leads back.
-    await page.evaluate(i => window.__riftwalk.face(i), ring('strategy')); await t.until(s => s.aim === ring('strategy'), 'the Strategy ring is in view'); await page.keyboard.press('Enter'); s = await t.until(s => s.room === 'strategy' && s.phase === 'hall', 'Enter at a ring opens the Strategy room'); s = await t.settled();
-    assert.deepEqual(s.machines.filter(m => m.game).map(m => m.title).sort(), ['Breakthrough', 'Follow Suit', 'Silent Depth']); s = await t.until(s => s.aim >= 0 && s.aim < s.machines.length, 'a machine is in front'); assert.equal(s.machines[s.aim].title, 'Breakthrough', 'the first game is in front');
-    // A zone button in a room goes to that zone's room.
-    await page.click('#groups button[data-zone="ascii"]'); s = await t.until(s => s.room === 'ascii' && s.phase === 'hall', 'a zone button in a room opens that room'); assert.equal(s.machines.filter(m => m.game).length, 2);
+    await page.keyboard.press('Escape'); s = await t.until(s => s.room === null && s.phase === 'hall', 'Esc goes back to the hall'); s = await t.settled(); assert.equal(s.zone, 'action'); assert.equal(s.machines.length, machines); assert.equal(await page.evaluate(() => document.getElementById('kBack').hidden), true);
+    // Enter at a ring opens its room. A zone button in a room goes to that zone: its room if it has one, or its cluster in the hall.
+    await page.evaluate(i => window.__riftwalk.face(i), ring('cottage')); await t.until(s => s.aim === ring('cottage'), 'the Cottage ring is in view'); await page.keyboard.press('Enter'); s = await t.until(s => s.room === 'cottage' && s.phase === 'hall', 'Enter at a ring opens the Cottage room'); s = await t.settled();
+    assert.equal(lit(s), 8); assert(s.machines.length <= 9, 'the Cottage room is the size of its zone');
+    await page.click('#groups button[data-zone="lab"]'); s = await t.until(s => s.room === 'lab' && s.phase === 'hall', 'a zone button in a room opens that zone\'s room'); assert(s.pages > 1);
+    await page.click('#groups button[data-zone="gta"]'); s = await t.until(s => s.room === null && s.zone === 'gta' && s.phase === 'hall', 'a zone with no room is in the hall'); s = await t.settled();
+    assert.equal(await page.evaluate(() => document.getElementById('kRoom').hidden), true, 'a zone with one game has no room'); s = await t.until(s => s.aim >= 0 && s.aim < machines, 'the GTA machine is in front'); assert.equal(s.machines[s.aim].title, 'GTA Montréal');
+    // The room's ring leads back, and the Room button and the R key open the room of the zone the visitor stands in.
+    await page.keyboard.press('1'); s = await t.zone('cottage', 'the Cottage cluster'); assert.equal(await t.text('kRoom'), 'Cottage room'); await page.click('#kRoom'); s = await t.until(s => s.room === 'cottage' && s.phase === 'hall', 'the Room button opens the room');
     const exit = s.machines.length; await page.evaluate(i => window.__riftwalk.face(i), exit); await t.until(s => s.aim === exit, 'the ring back is in view'); assert.equal(await t.text('tTitle'), 'The hall'); assert.match(await t.text('tDo'), /Click the ring or press Enter to go back/);
-    at = await page.evaluate(i => window.__riftwalk.screen(i), exit); await page.mouse.click(at.x, at.y); s = await t.until(s => s.room === null && s.phase === 'hall', 'the ring leads back to the hall'); s = await t.settled(); assert.equal(s.zone, 'ascii');
-    // The Room button and the R key open the room of the zone the visitor stands in.
-    assert.equal(await t.text('kRoom'), 'ASCII Scenes room'); await page.click('#kRoom'); await t.until(s => s.room === 'ascii' && s.phase === 'hall', 'the Room button opens the room'); await page.keyboard.press('Escape'); await t.until(s => s.room === null && s.phase === 'hall', 'back in the hall');
-    await page.keyboard.press('r'); await t.until(s => s.room === 'ascii' && s.phase === 'hall', 'the R key opens the room'); await page.keyboard.press('Backspace'); s = await t.until(s => s.room === null && s.phase === 'hall', 'Backspace goes back'); s = await t.settled();
-    pass('a rift ring opens its zone\'s room, and Esc, the room\'s ring, the Room button and the zone buttons work');
+    at = await page.evaluate(i => window.__riftwalk.screen(i), exit); await page.mouse.click(at.x, at.y); s = await t.until(s => s.room === null && s.phase === 'hall', 'the ring leads back to the hall'); s = await t.settled(); assert.equal(s.zone, 'cottage');
+    await page.keyboard.press('r'); await t.until(s => s.room === 'cottage' && s.phase === 'hall', 'the R key opens the room'); await page.keyboard.press('Backspace'); s = await t.until(s => s.room === null && s.phase === 'hall', 'Backspace goes back'); s = await t.settled();
+    pass('a rift ring opens a large zone\'s room, with its games in order, and the ways back work');
 
     // The zone buttons and the up and down keys. The Lab has more games than machines: More, and the Lab's own ring.
-    await page.click('#groups button[data-zone="ascii"]'); s = await t.zone('ascii', 'the ASCII Scenes button'); assert.equal(s.machines.filter(m => m.zone === 'ascii' && m.game).length, 2);
+    await page.click('#groups button[data-zone="ascii"]'); s = await t.zone('ascii', 'the ASCII Scenes button'); assert.deepEqual(s.machines.filter(m => m.zone === 'ascii').map(m => m.title), ['ASCII Front', 'Battle Tanks'], 'two machines for two games, in order');
     await page.keyboard.press('ArrowDown'); await t.zone('strategy', 'the down key goes to the next zone'); await page.keyboard.press('ArrowUp'); await t.zone('ascii', 'the up key goes back');
     await page.keyboard.press('6'); s = await t.zone('lab', 'the 6 key picks the Lab');
     assert(s.pages > 1, 'the Lab has pages'); assert.equal(await t.text('kMore'), `More 1/${s.pages}`); const page1 = s.machines.filter(m => m.zone === 'lab').map(m => m.game).filter(Boolean);
@@ -143,8 +147,8 @@ try {
     assert(card.y + card.height <= keys.y + 1, 'the name card is clear of the buttons'); assert(card.x >= 0 && card.x + card.width <= 390, 'the card fits the width'); assert(groups.y + groups.height < card.y, 'the zone buttons are over the card');
     let at = await page.evaluate(i => window.__riftwalk.screen(i), s.aim); assert(at.y > groups.y + groups.height && at.y < card.y, 'the screen in front is between the zone buttons and the name card: ' + JSON.stringify(at));
     // A tap on a ring opens its room, and the Hall button comes back. The last zone button can be reached: the row scrolls.
-    await page.evaluate(i => window.__riftwalk.face(i), machines + 3); await t.until(s => s.aim === machines + 3, 'the Strategy ring is in front'); assert.match(await t.text('tDo'), /Tap the ring to go in/);
-    at = await page.evaluate(i => window.__riftwalk.screen(i), machines + 3); await page.touchscreen.tap(at.x, at.y); s = await t.until(s => s.room === 'strategy' && s.phase === 'hall', 'a tap on the ring opens the Strategy room');
+    await page.evaluate(i => window.__riftwalk.face(i), machines + 1); await t.until(s => s.aim === machines + 1, 'the Action ring is in front'); assert.match(await t.text('tDo'), /Tap the ring to go in/);
+    at = await page.evaluate(i => window.__riftwalk.screen(i), machines + 1); await page.touchscreen.tap(at.x, at.y); s = await t.until(s => s.room === 'action' && s.phase === 'hall', 'a tap on the ring opens the Action room');
     const back = await box('#kBack'); assert(back.width >= 44 && back.height >= 44, 'the Hall button is 44 px'); await page.tap('#kBack'); s = await t.until(s => s.room === null && s.phase === 'hall', 'the Hall button comes back'); s = await t.settled();
     await page.tap('#groups button[data-zone="lab"]'); s = await t.zone('lab', 'a tap on the Lab button');
     if (shots) await page.screenshot({ path: join(shots, 'riftwalk-phone.png') });

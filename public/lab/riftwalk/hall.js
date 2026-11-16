@@ -49,12 +49,15 @@ export function zoneGames(zoneId, games) {
   return zone.groups.flatMap(id => gamesOf(id, games));
 }
 
-// The machines of one zone, as indexes into the screens, in reading order for a visitor at the zone's station who
-// faces the cluster: from the left of the view to the right. Machines behind the visitor come last.
-export function seats(zoneId, screens, station, facing) {
-  const from = { x: station[0], z: station[1] };
-  return screens.map((s, i) => ({ i, zone: s.zone, off: wrap(headingTo(from, { x: s.centre[0], z: s.centre[2] }) - facing) })).filter(e => e.zone === zoneId)
-    .sort((a, b) => (Math.abs(a.off) > Math.PI / 2) - (Math.abs(b.off) > Math.PI / 2) || a.off - b.off).map(e => e.i);
+// The machines of one zone, as indexes into the screens, in reading order for a visitor at the zone's station: clockwise
+// round the visitor, which is from left to right along a row. The order starts after the widest gap between the
+// zone's machines, so it starts at one end of the cluster and never in its middle. `facing` breaks a tie.
+export function seats(zoneId, screens, station, facing = 0) {
+  const from = { x: station[0], z: station[1] }, turn = a => ((a % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
+  const mine = screens.map((s, i) => ({ i, zone: s.zone, at: turn(headingTo(from, { x: s.centre[0], z: s.centre[2] }) - facing) })).filter(e => e.zone === zoneId).sort((a, b) => a.at - b.at);
+  if (mine.length < 2) return mine.map(e => e.i);
+  let first = 0, widest = -1; mine.forEach((e, k) => { const before = mine[(k + mine.length - 1) % mine.length], gap = turn(e.at - before.at) || 2 * Math.PI; if (gap > widest + 1e-9) { widest = gap; first = k; } });
+  return mine.slice(first).concat(mine.slice(0, first)).map(e => e.i);
 }
 // How many pages a zone needs on its machines, and which game each machine shows on one page: seat k of the zone
 // takes game k of the page. The answer maps a screen index to a game; a machine with no game is left out.
@@ -72,10 +75,11 @@ export function ringPlace(ring) {
   return { ring: true, centre: ring.centre, right, up, normal: n, width: ring.radius * 2, height: ring.radius * 2 };
 }
 // A room is a small world of its own for one zone, with machines around the point the visitor stands on. Its machines
-// take games from the front machine outward, right and left in turn, so the first game is straight ahead.
+// take games in order, clockwise: the first game is on the front machine, the next one is to its right, and so on round.
 export function roomSeats(screens) {
+  const turn = a => ((a % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
   const front = screens.reduce((best, p) => Math.abs(wrap(p.heading)) < Math.abs(wrap(best.heading)) ? p : best, screens[0]).heading;
-  return screens.map((p, i) => ({ i, off: wrap(p.heading - front) })).sort((a, b) => Math.abs(a.off) - Math.abs(b.off) || b.off - a.off).map(e => e.i);
+  return screens.map((p, i) => ({ i, at: turn(p.heading - front) })).sort((a, b) => a.at - b.at).map(e => e.i);
 }
 // The way out of a room: a rift ring in the widest gap between its machines, a little behind them, at eye level.
 export function exitRing(screens, radius = 0.55) {
