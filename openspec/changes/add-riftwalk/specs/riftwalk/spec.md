@@ -20,18 +20,25 @@ Riftwalk SHALL show one dark neon arcade hall at eye height, as a Gaussian splat
 - **THEN** the view moves to the screen, fills with its light, and the game's page loads
 
 ### Requirement: Move between zones
-A rift ring SHALL hang on the wall above each zone, with the zone's name. A tap or a click on a ring, or Enter with the ring in the middle of the view, SHALL glide the visitor across the hall to that zone's station and turn them to its machines. A button for each zone, the up and down arrow keys and the keys 1 to 6 SHALL do the same. The ring over the zone the visitor stands in SHALL show that zone's next games. The zone the visitor is in SHALL be the zone whose station is nearest, and its name SHALL show large for a moment when the visitor enters it.
-
-#### Scenario: Go by a ring
-- **WHEN** the visitor in Action looks up at the GTA ring and clicks it
-- **THEN** the name card first reads "GTA", and after the click the visitor glides to the GTA cluster and the GTA button is on
+A button for each zone, the up and down arrow keys and the keys 1 to 6 SHALL glide the visitor across the hall to that zone's station and turn them to its machines. The zone the visitor is in SHALL be the zone whose station is nearest, and its name SHALL show large for a moment when the visitor enters it.
 
 #### Scenario: Use a key
 - **WHEN** the visitor presses 6
 - **THEN** the visitor glides to the Lab cluster
 
+### Requirement: A room behind each rift ring
+A rift ring SHALL hang on the wall above each zone, inside a neon ring of the hall, with the zone's name and a view into the zone's room. A tap or a click on a ring, Enter with the ring in the middle of the view, the Room button and the R key SHALL take the visitor into that zone's own room: a smaller world with machines around the visitor. The room's machines SHALL show the zone's games, with the first game in front. The room SHALL have a ring that leads back to the hall, and the Hall button, Esc and Backspace SHALL do the same. The visitor SHALL come back at the cluster of that zone. A zone button in a room SHALL go to that zone's room.
+
+#### Scenario: Go into a room
+- **WHEN** the visitor looks up at the GTA ring and clicks it
+- **THEN** the name card first reads "GTA", the view fills with light, and the visitor stands in the GTA room with GTA Montréal on a machine
+
+#### Scenario: Come back
+- **WHEN** the visitor in a room presses Esc, or clicks the room's ring
+- **THEN** the visitor stands in the hall at that zone's cluster
+
 ### Requirement: Controls for mouse, keys and touch
-The visitor SHALL look by dragging the view, and a drag SHALL NOT launch a game. The lit machine or ring in the middle of the view SHALL be named in a card, and Enter, Space and the Play or Go button SHALL use it. The left and right arrow keys and the ◀ and ▶ buttons SHALL turn the view to the next lit place. W A S D SHALL walk the visitor on the open floor of the hall and SHALL NOT take them through a wall or a machine. Every on-screen button SHALL be at least 44 px on its shorter side.
+The visitor SHALL look by dragging the view, and a drag SHALL NOT launch a game. The lit machine or ring in the middle of the view SHALL be named in a card, and Enter, Space and the Play or Go button SHALL use it. The left and right arrow keys and the ◀ and ▶ buttons SHALL turn the view to the next lit machine, and in a room also to the ring back. W A S D SHALL walk the visitor on the open floor of the hall and SHALL NOT take them through a wall or a machine. Every on-screen button SHALL be at least 44 px on its shorter side.
 
 #### Scenario: Use the buttons alone on a phone
 - **WHEN** a visitor on a 390 by 844 touch screen taps Lab, then ▶, then the screen in front

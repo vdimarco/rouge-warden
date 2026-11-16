@@ -41,10 +41,20 @@ The first measure took the middle value over all views, and far and slanted view
 
 ## Zones, stations and rift rings
 - A zone has a station: a point on the open floor in front of its cluster, with a facing. The zone the visitor is in is the zone with the nearest station.
-- A rift ring hangs on the wall above each zone, where the world has its neon rings. A tap on a ring glides the visitor across the hall to that zone's station. This answers "a rift above it". The ring over the visitor's own zone shows that zone's next page of games.
-- The zone buttons at the top, the up and down arrow keys and the keys 1 to 6 do the same glide.
+- A rift ring hangs on the wall above each zone, inside one of the world's neon rings. This answers "a rift above it". A tap on a ring opens that zone's room (see below).
+- The zone buttons at the top, the up and down arrow keys and the keys 1 to 6 glide the visitor across the hall to a zone's station.
 - The visitor walks the open floor of the hall, a box 5.3 m by 12.2 m, with W A S D.
 - Machines take games in reading order, from left to right for a visitor who stands at the station.
+
+## Rings on the neon rings, and rooms behind them
+The user's words: "the rift rings are not on the neon rings and can we borrow some existing marbles and each portal opens into a new preconstructed marble with machines in them".
+
+- Rings: the first ring places came from a few depth samples. Now the neon rings are found in the views as bright, saturated pixels high on the walls, unprojected with the depth maps and grouped along each wall. The hall has nine neon rings, and each zone's rift is a disc inside the ring over its cluster.
+- Rooms: each rift ring opens into that zone's own room. The rooms are the six Marble worlds of the earlier versions (ring rooms for Cottage, Action, ASCII Scenes and Lab, the row room for Strategy, the brick hall for GTA), with their measured screens. They are in `worlds/rooms/<zone>/` with 150,000 and 500,000 splats each, 57 MB in all. No new world was made.
+- A ring in the hall shows a view into its room (`door.webp`). Going in: the view fills with the zone's light, the room loads small and then sharpens, and the visitor stands in its middle with the zone's first game in front. The room's machines take the zone's games from the front machine outward.
+- A room has one ring, at eye level in the widest gap between its machines. That ring, the Hall button, Esc and Backspace go back to the hall, at the cluster the visitor came from. A zone button in a room goes to that zone's room.
+- In the hall the arrows stop at machines only, because a ring hangs right over its machines. The Room button and the R key open the room of the zone the visitor stands in.
+- A frame with real splats shows the rings inside the neon rings and the Action room with its games (`shots/rings-and-room.jpg`).
 
 ## Look
 - A game shows as a picture on the machine's tube: scan lines, darker corners, a faint shine, and a thin live edge. Its name shows only over the machine in the middle of the view.
@@ -57,8 +67,9 @@ The first measure took the middle value over all views, and far and slanted view
 
 ## Controls
 - Look: drag the view. ◀ and ▶ turn to the next lit place within 9 m.
-- Zones: a rift ring, a zone button, the up and down arrow keys, or the keys 1 to 6.
-- More games: the More button, Page Down, M, or the zone's own ring.
+- Zones: a zone button, the up and down arrow keys, or the keys 1 to 6.
+- Rooms: a rift ring, the Room button or R to go in; the room's ring, the Hall button, Esc or Backspace to come back.
+- More games: the More button, Page Down or M.
 - Play: tap or click a lit screen, press Enter or Space for the machine in view, or use the Play button.
 - Walk: W A S D.
 A visitor can do everything with taps alone, with the buttons alone, or with the keyboard alone. Every game is also a plain link on the page, and that list shows to everyone when WebGL2 is missing or the world does not load.
@@ -69,6 +80,5 @@ The visitor moves to a zone at once. There are no motes or sparks, the edge hold
 ## Not done, and known limits
 - No sound.
 - The world loads as one 30 MB file. There is no small first file.
-- The rings' places are estimates from a few depth samples. Two zones (Cottage, Lab) have a ring where the world has none.
 - Atlas put a wall with clusters near the first camera's place. The first view saw through that place, so the entrance end can show ghosted surfaces.
 - The Atlas docs list no price for the image and view steps, and the API reports no cost.

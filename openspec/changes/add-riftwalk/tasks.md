@@ -49,5 +49,7 @@ One hall with Atlas:
 - [x] Check the screens' places: the measured screens drawn over the Atlas views sit on the white screens (`shots/hall-screens-check.jpg`), and the world file's splat coordinates match the cameras' world (floor at 0, 8 m by 16 m).
 - [x] The user saw the pictures off the screens. Measure each screen again from its most direct view, with one size for each cluster, and see the pictures on the screens in a drawn frame of a full-detail cut of the world (`shots/hall-cluster-real.jpg`).
 - [x] The picture under the mouse pointer flows.
+- [x] Put each rift ring inside a neon ring of the hall (nine rings found in the views).
+- [x] Each ring opens its zone's own room: the six earlier Marble worlds come back as rooms, with a ring back to the hall. Tests: 7 rule checks and 9 browser checks pass; a real room and the rings are seen in `shots/rings-and-room.jpg`.
 - [ ] See the whole world drawn with the portals. Software WebGL did not finish one frame of 2,000,000 splats in 25 minutes.
 - [ ] Play on a real phone and a real graphics card (not possible in this session).

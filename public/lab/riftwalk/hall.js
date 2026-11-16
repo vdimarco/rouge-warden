@@ -71,6 +71,23 @@ export function ringPlace(ring) {
   const n = ring.normal, up = [0, 1, 0], right = [up[1] * n[2] - up[2] * n[1], up[2] * n[0] - up[0] * n[2], up[0] * n[1] - up[1] * n[0]];
   return { ring: true, centre: ring.centre, right, up, normal: n, width: ring.radius * 2, height: ring.radius * 2 };
 }
+// A room is a small world of its own for one zone, with machines around the point the visitor stands on. Its machines
+// take games from the front machine outward, right and left in turn, so the first game is straight ahead.
+export function roomSeats(screens) {
+  const front = screens.reduce((best, p) => Math.abs(wrap(p.heading)) < Math.abs(wrap(best.heading)) ? p : best, screens[0]).heading;
+  return screens.map((p, i) => ({ i, off: wrap(p.heading - front) })).sort((a, b) => Math.abs(a.off) - Math.abs(b.off) || b.off - a.off).map(e => e.i);
+}
+// The way out of a room: a rift ring in the widest gap between its machines, a little behind them, at eye level.
+export function exitRing(screens, radius = 0.55) {
+  const turns = screens.map(p => wrap(p.heading)).sort((a, b) => a - b); let heading = Math.PI, widest = 0, distance = 3;
+  turns.forEach((a, i) => { const next = i + 1 < turns.length ? turns[i + 1] : turns[0] + 2 * Math.PI, gap = next - a; if (gap > widest) { widest = gap; heading = wrap(a + gap / 2); } });
+  if (screens.length) distance = Math.min(4.5, Math.max(...screens.map(p => p.distance)) * (widest > 1.6 ? 0.8 : 1) + (widest > 1.6 ? 0 : 0.7));
+  const d = direction(heading);
+  return { ring: true, heading, distance, centre: [d.x * distance, 1.45, d.z * distance], right: [-d.z, 0, d.x], up: [0, 1, 0], normal: [-d.x, 0, -d.z], width: radius * 2, height: radius * 2 };
+}
+// One walk step inside a room: the visitor stays within `reach` metres of the room's middle.
+export function walkRoom(to, reach = 1) { const r = Math.hypot(to.x, to.z); return r <= reach ? to : { x: to.x / r * reach, z: to.z / r * reach }; }
+
 // The zone a visitor is in: the one whose station is nearest.
 export function zoneAt(place, zones) {
   let best = 0, least = Infinity;
