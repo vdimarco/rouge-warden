@@ -27,19 +27,30 @@ A button for each zone, the up and down arrow keys and the keys 1 to 6 SHALL gli
 - **THEN** the visitor glides to the Lab cluster
 
 ### Requirement: A room behind each rift ring
-A zone with more than three games SHALL have a room of its own. A rift ring SHALL hang on the wall above each such zone, inside a neon ring of the hall, with the zone's name and a view into the zone's room. A tap or a click on a ring, Enter with the ring in the middle of the view, the Room button and the R key SHALL take the visitor into that zone's own room: a smaller world with machines around the visitor. The room's machines SHALL show the zone's games in order, clockwise, with the first game in front. The room SHALL show a small world file first and then its full-resolution file on a desktop, or a 500,000-splat file on a touch device. The room SHALL have a ring behind the arriving visitor that leads back to the hall, and the Hall button, Esc and Backspace SHALL do the same. The visitor SHALL come back at the cluster of that zone. A zone button in a room SHALL go to that zone: its room when it has one, or its cluster in the hall.
+A zone with more than three games SHALL have a room of its own, and a smaller zone MAY have a scenery room. A rift ring SHALL hang on the wall above each such zone, inside a neon ring of the hall, with the zone's name and a view into the zone's room. A tap or a click on a ring, Enter with the ring in the middle of the view, the Room button and the R key SHALL take the visitor into that zone's own room: a smaller world with machines around the visitor. The room's machines SHALL show the zone's games in order, clockwise, with the first game in front. The room SHALL show a small world file first and then its full-resolution file on a desktop, or a 500,000-splat file on a touch device. The room SHALL have a ring behind the arriving visitor that leads back to the hall, and the Hall button, Esc and Backspace SHALL do the same. The visitor SHALL come back at the cluster of that zone. A zone button in a room SHALL go to that zone: its room when it has one, or its cluster in the hall.
 
 #### Scenario: Go into a room
 - **WHEN** the visitor looks up at the Action ring and clicks it
 - **THEN** the name card first reads "Action", the view fills with light, and the visitor stands in the Action room with Olympus in front and Crimson Rogue on the next machine to the right
 
 #### Scenario: A small zone
-- **WHEN** the visitor goes to GTA
-- **THEN** one machine shows GTA Montréal, and no Room control shows
+- **WHEN** the visitor goes to Strategy
+- **THEN** three machines show the Strategy games, and no Room control shows
 
 #### Scenario: Come back
 - **WHEN** the visitor in a room presses Esc, or clicks the room's ring
 - **THEN** the visitor stands in the hall at that zone's cluster
+
+### Requirement: Scenery rooms with floating portal frames
+A room whose world has no arcade machines SHALL show its zone's games as upright portal frames that float at eye height in an arc in front of the visitor. Each frame SHALL show one game's key art inside the live edge, with the game's name over it, and SHALL move slowly up and down. With reduced motion a frame SHALL hold still. The first game SHALL be straight ahead and the next games SHALL follow to the right. The room SHALL show at most 12 frames on one page, and More SHALL show the others. A frame SHALL launch its game in the same way as a machine. The ring back to the hall SHALL be behind the arriving visitor.
+
+#### Scenario: The GTA room
+- **WHEN** the visitor goes to GTA and presses R
+- **THEN** the visitor stands in a brick neon hall, and one frame straight ahead shows GTA Montréal with its name over it
+
+#### Scenario: Launch from a frame
+- **WHEN** the visitor clicks the frame
+- **THEN** the view fills with light and the game's page loads
 
 ### Requirement: Controls for mouse, keys and touch
 The visitor SHALL look by dragging the view, and a drag SHALL NOT launch a game. The lit machine or ring in the middle of the view SHALL be named in a card, and Enter, Space and the Play or Go button SHALL use it. The left and right arrow keys and the ◀ and ▶ buttons SHALL turn the view to the next lit machine, and in a room also to the ring back. W A S D SHALL walk the visitor on the open floor of the hall and SHALL NOT take them through a wall or a machine. Every on-screen button SHALL be at least 44 px on its shorter side.

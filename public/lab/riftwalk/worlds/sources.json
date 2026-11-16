@@ -372,7 +372,7 @@
     "known_costs": "posedImages2Splats 5,000 credits. The other steps have no listed price in the docs."
   },
   "earlier_marble_worlds": {
-    "note": "Seven Marble worlds were made before the hall: 230 + 6 x 1,580 = 9,710 Marble API credits. Three of them are the rooms behind the rift rings.",
+    "note": "Seven Marble worlds were made before the hall: 230 + 6 x 1,580 = 9,710 Marble API credits. Four of them are the rooms behind the rift rings.",
     "worlds": {
       "cottage": {
         "world_id": "813454e2-60e3-483a-9eb8-2d7adb44f269",
@@ -401,7 +401,7 @@
     }
   },
   "rooms": {
-    "note": "worlds/rooms/<zone>/ holds one Marble world for each zone with more than three games, with 150,000 and 500,000 splats and the measured screens. Each is the earlier Marble world whose machine count is nearest to the zone's games.",
+    "note": "worlds/rooms/<zone>/ holds one Marble world for each zone with more than three games, with 150,000 and 500,000 splats and the measured screens. Each is the earlier Marble world whose machine count is nearest to the zone's games. worlds/rooms/gta/ is a scenery room: the first brick hall world, with no measured screens and \"frames\": true, so its game shows as a floating portal frame.",
     "cottage": "the green ring world (earlier ASCII Scenes zone), 9 machines",
     "action": "the row world (earlier Strategy zone), 11 machines",
     "lab": "the amber ring world (earlier Cottage zone), 12 machines"

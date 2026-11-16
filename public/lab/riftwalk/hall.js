@@ -81,6 +81,18 @@ export function roomSeats(screens) {
   const front = screens.reduce((best, p) => Math.abs(wrap(p.heading)) < Math.abs(wrap(best.heading)) ? p : best, screens[0]).heading;
   return screens.map((p, i) => ({ i, at: turn(p.heading - front) })).sort((a, b) => a.at - b.at).map(e => e.i);
 }
+// A scenery room has no machines of its own, so its games hang in the air as portal frames: one frame for each game,
+// in a ring round the visitor at eye level, each turned to face them. The first frame is straight ahead and the others
+// follow to the right. A room with a few games has larger frames. No room shows more than FRAMES.most frames at once.
+export const FRAMES = { most: 12, radius: 2.5, step: 0.36, width: 0.62, height: 0.82 };
+export function frameRing(count, eye = 1.4) {
+  const n = Math.max(0, Math.min(FRAMES.most, count)), grow = n <= 1 ? 1.5 : n <= 3 ? 1.25 : 1, out = [];
+  for (let k = 0; k < n; k++) {
+    const heading = wrap(k * FRAMES.step * (n <= 3 ? 1.35 : 1)), d = direction(heading);
+    out.push({ frame: true, heading, distance: FRAMES.radius, centre: [d.x * FRAMES.radius, eye + 0.05, d.z * FRAMES.radius], right: [-d.z, 0, d.x], up: [0, 1, 0], normal: [-d.x, 0, -d.z], width: FRAMES.width * grow, height: FRAMES.height * grow });
+  }
+  return out;
+}
 // The way out of a room: a rift ring at eye level, in a gap between the machines. The visitor arrives with the first
 // game in front, so the way back is behind them: the ring takes the gap with room for it that is nearest to straight
 // behind, and stands a little behind the machines beside it.

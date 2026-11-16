@@ -38,7 +38,7 @@ async function open(options = {}, query = 'world=none&px=1') {
   return { page, errors, moves, state, until, text, settled, enterHall, zone, launched, pressed };
 }
 const lit = s => s.machines.filter(m => m.game).length;
-const ZONES = ['Cottage', 'Action', 'ASCII Scenes', 'Strategy', 'GTA', 'Lab'], IDS = ['cottage', 'action', 'ascii', 'strategy', 'gta', 'lab'], ROOMS = ['cottage', 'action', 'lab'];
+const ZONES = ['Cottage', 'Action', 'ASCII Scenes', 'Strategy', 'GTA', 'Lab'], IDS = ['cottage', 'action', 'ascii', 'strategy', 'gta', 'lab'], ROOMS = ['cottage', 'action', 'gta', 'lab'];
 const named = s => s.aim < s.machines.length ? s.machines[s.aim].title : s.rings[s.aim - s.machines.length].title;
 try {
   {
@@ -82,8 +82,11 @@ try {
     await page.evaluate(i => window.__riftwalk.face(i), ring('cottage')); await t.until(s => s.aim === ring('cottage'), 'the Cottage ring is in view'); await page.keyboard.press('Enter'); s = await t.until(s => s.room === 'cottage' && s.phase === 'hall', 'Enter at a ring opens the Cottage room'); s = await t.settled();
     assert.equal(lit(s), 8); assert(s.machines.length <= 9, 'the Cottage room is the size of its zone');
     await page.click('#groups button[data-zone="lab"]'); s = await t.until(s => s.room === 'lab' && s.phase === 'hall', 'a zone button in a room opens that zone\'s room'); assert(s.pages > 1);
-    await page.click('#groups button[data-zone="gta"]'); s = await t.until(s => s.room === null && s.zone === 'gta' && s.phase === 'hall', 'a zone with no room is in the hall'); s = await t.settled();
-    assert.equal(await page.evaluate(() => document.getElementById('kRoom').hidden), true, 'a zone with one game has no room'); s = await t.until(s => s.aim >= 0 && s.aim < machines, 'the GTA machine is in front'); assert.equal(s.machines[s.aim].title, 'GTA Montréal');
+    // A scenery room has no machines: its games hang as floating frames, one for each game. GTA has one.
+    await page.click('#groups button[data-zone="gta"]'); s = await t.until(s => s.room === 'gta' && s.phase === 'hall', 'the GTA button opens the GTA scenery room'); s = await t.settled();
+    assert.deepEqual(s.machines.map(m => m.title), ['GTA Montréal'], 'one frame for the one game'); s = await t.until(s => s.aim === 0, 'the frame is in front'); assert.equal(await t.text('tTitle'), 'GTA Montréal'); assert.deepEqual(s.rings.map(r => r.to), ['hall']);
+    await page.click('#groups button[data-zone="ascii"]'); s = await t.until(s => s.room === null && s.zone === 'ascii' && s.phase === 'hall', 'a zone with no room is in the hall'); s = await t.settled();
+    assert.equal(await page.evaluate(() => document.getElementById('kRoom').hidden), true, 'a zone with no room has no Room button'); s = await t.until(s => s.aim >= 0 && s.aim < machines, 'an ASCII machine is in front'); assert.equal(s.machines[s.aim].zone, 'ascii');
     // The room's ring leads back, and the Room button and the R key open the room of the zone the visitor stands in.
     await page.keyboard.press('1'); s = await t.zone('cottage', 'the Cottage cluster'); assert.equal(await t.text('kRoom'), 'Cottage room'); await page.click('#kRoom'); s = await t.until(s => s.room === 'cottage' && s.phase === 'hall', 'the Room button opens the room');
     const exit = s.machines.length; await page.evaluate(i => window.__riftwalk.face(i), exit); await t.until(s => s.aim === exit, 'the ring back is in view'); assert.equal(await t.text('tTitle'), 'The hall'); assert.match(await t.text('tDo'), /Click the ring or press Enter to go back/);

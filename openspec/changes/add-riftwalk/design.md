@@ -62,7 +62,7 @@ The user's words: "we need a better way to play things properly. The portals in 
 - Order: games go on machines in the homepage order, in one run along each cluster. `seats()` goes clockwise round the visitor from one end of the cluster (the place after the widest gap), which is from left to right along a row. In a room, `roomSeats()` puts the first game on the front machine and goes on clockwise. The earlier room order went right and left in turn from the front, and it read as random.
 - Counts in the hall: each zone has as many machines as games. The zones of the 41 machines were set again: Cottage has 8 (amber, and violet across the hall), Action 11 (magenta and red), ASCII Scenes 2 and GTA 1 (the green cluster), Strategy 3 (cyan), and the Lab the 16 at the entrance end. No machine of the hall is idle. Only the Lab, with 19 games, has a second page.
 - Rooms: a zone has a room only when it has more than three games: Cottage, Action and the Lab. Each room is the earlier Marble world whose machine count is nearest to the zone's games: the green ring room (9 machines) for Cottage's 8, the row room (11) for Action's 11, the amber room (12) for the Lab's 19. The other three earlier worlds are removed, and `worlds/rooms/` is 29 MB.
-- ASCII Scenes, Strategy and GTA have no ring and no room. A zone button for one of them, pressed in a room, brings the visitor back to the hall at that zone.
+- ASCII Scenes and Strategy have no ring and no room. GTA has a scenery room (see "Floating portal frames"). A zone button for one of them, pressed in a room, brings the visitor back to the hall at that zone.
 
 ## Portals in fixed places, and sharper rooms
 The user's words: "games and portals, as well as higher quality backgrounds marbles".
@@ -70,6 +70,15 @@ The user's words: "games and portals, as well as higher quality backgrounds marb
 - The way back from a room was in the widest gap between its machines, which is a different place in each room. Now `exitRing()` puts it behind the visitor: they arrive with the first game in front, and the ring takes the gap nearest to straight behind them.
 - Each room ships its full-resolution Marble file again (about 29 MB each). A room shows its 150,000-splat file first, and then a desktop takes the full file and a phone the 500,000 file. `worlds/` is 144 MB.
 - A sharper room than Marble's full file needs a new world. One room from Atlas, like the hall, costs 5,000 credits.
+
+## Floating portal frames in scenery worlds
+The user's words: "floating portal frames, you choose the categories".
+
+- A borrowed or older world can have no arcade machines, so it has no screens to carry games. Such a room is marked `"frames": true` in its `screens.json`, with an empty screen list. `frameRing(count, eye)` then makes one upright frame for each game, 2.5 m from the visitor, at eye height, with the first game straight ahead and the others 0.36 rad apart to the right. A room with few games has larger frames. A page holds 12 frames.
+- A frame is the same portal quad as a machine screen: key art, live edge, hover flow, launch. Its name stays over it, because a frame has no cabinet to say what it is. It bobs a few centimetres. Reduced motion stops the bob.
+- No source was adapted for the frame layout. It is a plain arc of quads, drawn after the splats like the machine portals.
+- GTA is the first scenery room. Its world is the first brick hall from Marble, which the project already had. Its machines are at the walls and their screens were never measured, so the frame carries the game. A frame with the real 500,000-splat world is in `shots/frame-room.jpg`.
+- The user linked five Marble worlds for more scenery rooms. Their splat files could not be read from the Marble web app in this session. When the files are in the repository, each world needs a scale, a floor height and `"frames": true`. Planned categories: the assistant gives one world each to ASCII Scenes and Strategy first, because those zones have no room, and the other three replace the Cottage, Action and Lab rooms if they look better than the present rooms.
 
 ## Look
 - A game shows as a picture on the machine's tube: scan lines, darker corners, a faint shine, and a thin live edge. Its name shows only over the machine in the middle of the view.

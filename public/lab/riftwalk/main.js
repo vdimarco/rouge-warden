@@ -6,7 +6,7 @@
 // hall.js holds the rules, and worlds/hall/screens.json says where the screens, the stations and the rings are.
 import * as THREE from 'three';
 import { SplatMesh, SparkRenderer } from '@sparkjsdev/spark';
-import { GROUPS, ZONES, GROW, gamesOf, zoneGames, seats, pages, assign, ringPlace, roomSeats, exitRing, walkRoom, zoneAt, headingTo, pick, facing, neighbour, walk } from './hall.js';
+import { GROUPS, ZONES, GROW, gamesOf, zoneGames, seats, pages, assign, ringPlace, roomSeats, exitRing, frameRing, walkRoom, zoneAt, headingTo, pick, facing, neighbour, walk } from './hall.js';
 
 const $ = id => document.getElementById(id);
 const canvas = $('view'), loadLine = $('load'), startCard = $('start'), go = $('go'), target = $('target'), keysBar = $('keys'), groupsBar = $('groups'), flash = $('flash'), list = $('list');
@@ -187,7 +187,7 @@ function makePortal(place, index, zone) {
   // The quad's own axes are the screen's: x along its width, y up it, z out of the glass.
   const m = new THREE.Matrix4().makeBasis(new THREE.Vector3(...place.right), new THREE.Vector3(...place.up), new THREE.Vector3(...place.normal));
   group.quaternion.setFromRotationMatrix(m); group.position.set(...place.centre); scene.add(group);
-  return { place, group, uniforms, face, label, look, zone, door: !!place.ring, game: null, lit: 0, wantLit: 0 };
+  return { place, group, uniforms, face, label, look, zone, door: !!place.ring, frame: !!place.frame, base: place.centre[1], game: null, lit: 0, wantLit: 0 };
 }
 let portals = [];
 function show(portal, game) {
@@ -252,7 +252,8 @@ function buildHall() {
 // The places of a room: its machines, with the zone's games from the front machine outward, and the ring back to the hall.
 function buildRoom(index) {
   clearPlaces(); room = index; const zone = ZONES[index], data = ROOMS[zone.id];
-  HALL = { eye: data.hall.ground, reach: 1 }; SCREENS = data.screens.map(s => ({ ...s, zone: zone.id })); PLACES = SCREENS.concat([exitRing(SCREENS)]); camera.position.set(0, HALL.eye, 0);
+  // A scenery room has no machines: its games hang as floating frames, one for each game.
+  HALL = { eye: data.hall.ground, reach: 1, frames: !!data.hall.frames }; SCREENS = (HALL.frames ? frameRing(gamesIn(index).length, HALL.eye) : data.screens).map(s => ({ ...s, zone: zone.id })); PLACES = SCREENS.concat([exitRing(SCREENS)]); camera.position.set(0, HALL.eye, 0);
   portals = PLACES.map((place, i) => makePortal(place, i, zone)); visit.page[index] = 0; fill(index);
   show(portals[SCREENS.length], { exit: true, zone: index, id: 'ring-hall', title: 'The hall', sub: 'Back to the hall of all the games', url: null, art: null, color: '#ffffff' });
   if (!reduced) { air.push(motes(touch ? 50 : 90, zone.color, false)); const p = portals[SCREENS.length]; air.push(motes(30, '#ffffff', true, p.uniforms.uHalf.value, p.group)); }
@@ -386,7 +387,7 @@ function tick(now) {
   camera.rotation.set(visit.pitch, -visit.yaw, 0);
   const time = reduced ? 0 : now / 1000;
   for (const m of air) m.material.uniforms.uTime.value = time;
-  portals.forEach((p, i) => { p.uniforms.uTime.value = time; p.uniforms.uHot.value += ((i === visit.aim ? 1 : 0) - p.uniforms.uHot.value) * Math.min(1, dt * 10); p.uniforms.uFlow.value += ((!reduced && (i === hover || (touch && i === visit.aim)) ? 1 : 0) - p.uniforms.uFlow.value) * Math.min(1, dt * 5); p.label.material.opacity = p.lit * (p.door ? 0.75 + 0.25 * p.uniforms.uHot.value : p.uniforms.uHot.value); });
+  portals.forEach((p, i) => { p.uniforms.uTime.value = time; p.uniforms.uHot.value += ((i === visit.aim ? 1 : 0) - p.uniforms.uHot.value) * Math.min(1, dt * 10); p.uniforms.uFlow.value += ((!reduced && (i === hover || (touch && i === visit.aim)) ? 1 : 0) - p.uniforms.uFlow.value) * Math.min(1, dt * 5); p.label.material.opacity = p.lit * (p.door || p.frame ? 0.75 + 0.25 * p.uniforms.uHot.value : p.uniforms.uHot.value); if (p.frame && !reduced) p.group.position.y = p.base + 0.035 * Math.sin(time * 0.7 + p.uniforms.uSeed.value * 6.283); });
   renderer.render(scene, camera);
   requestAnimationFrame(tick);
 }
@@ -412,6 +413,8 @@ window.__riftwalk = {
     motes: air.reduce((n, m) => n + m.geometry.attributes.position.count, 0),
     machines: portals.slice(0, SCREENS.length).map(p => ({ zone: p.zone.id, game: p.game?.id ?? null, title: p.game?.title ?? null, url: p.game?.url ?? null, lit: p.lit, art: p.uniforms.uHasMap.value === 1 })),
     rings: portals.slice(SCREENS.length).map(p => ({ to: p.game.exit ? 'hall' : ZONES[p.game.zone].id, title: p.game.title, lit: p.lit, art: p.uniforms.uHasMap.value === 1 })) }),
+  // The splat worlds in the scene now: 'hall' or 'room' with the count of splats.
+  worlds: () => scene.children.filter(c => c.packedSplats || c.isSplatMesh).map(c => (c === hallMesh ? 'hall' : 'room') + ':' + (c.packedSplats?.numSplats ?? 0)),
   // Where a place's centre is on the page (the machines first, then the six rings), or null when it is behind the view.
   screen: i => { const p = portals[i]; if (!p) return null; camera.updateMatrixWorld(true); ndc.set(...p.place.centre).project(camera); return ndc.z > 1 ? null : { x: (ndc.x + 1) / 2 * innerWidth, y: (1 - ndc.y) / 2 * innerHeight }; },
   // Turn at once to a place (a machine, or a ring after the machines), as the visitor sees it from where they stand.

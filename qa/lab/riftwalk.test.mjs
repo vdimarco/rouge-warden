@@ -5,7 +5,7 @@
 // Run: node qa/lab/riftwalk.test.mjs
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { GROW, GROUPS, ZONES, SELF, direction, headingTo, gamesOf, zoneGames, seats, pages, assign, ringPlace, roomSeats, exitRing, walkRoom, zoneAt, pick, facing, neighbour, walk } from '../../public/lab/riftwalk/hall.js';
+import { GROW, GROUPS, ZONES, SELF, direction, headingTo, gamesOf, zoneGames, seats, pages, assign, ringPlace, roomSeats, exitRing, frameRing, FRAMES, walkRoom, zoneAt, pick, facing, neighbour, walk } from '../../public/lab/riftwalk/hall.js';
 const root = new URL('../../', import.meta.url), read = p => readFileSync(new URL(p, root), 'utf8');
 const near = (a, b, e = 1e-9) => Math.abs(a - b) <= e;
 let n = 0; const pass = (name, data) => { n++; console.log('PASS ' + name + (data ? ' ' + JSON.stringify(data) : '')); };
@@ -38,8 +38,9 @@ assert(GAMES.length >= 40, 'switch.js lists the games: ' + GAMES.length);
     assert.equal(zoneAt({ x: s.station[0], z: s.station[1] }, STATIONS), i, 'the nearest station names the zone');
   });
   // A zone with many games has a room of its own behind its ring. A zone with a few games does not need one.
-  ZONES.forEach((z, i) => assert.equal(STATIONS[i].room, zoneGames(z.id, GAMES).length > 3, z.id + ': a room for a large zone only'));
-  pass('each collection is a zone with a station, and each large zone has a rift ring', { rooms: ZONES.filter((z, i) => STATIONS[i].room).map(z => z.id) });
+  // A zone with many games has a room of cabinets behind its ring. A small zone can have a scenery room with one frame for each game.
+  ZONES.forEach((z, i) => { if (zoneGames(z.id, GAMES).length > 3) assert.equal(STATIONS[i].room, true, z.id + ': a large zone has a room'); });
+  pass('each collection is a zone with a station, and each zone with a room has a rift ring', { rooms: ZONES.filter((z, i) => STATIONS[i].room).map(z => z.id) });
 }
 
 { // The machines: unit axes at right angles, upright, a real size, against a wall outside the walking floor, in a zone.
@@ -106,7 +107,15 @@ assert(GAMES.length >= 40, 'switch.js lists the games: ' + GAMES.length);
   ZONES.filter((z, i) => STATIONS[i].room).forEach(zone => {
     const dir = `public/lab/riftwalk/worlds/rooms/${zone.id}/`, room = JSON.parse(read(dir + 'screens.json')), S = room.screens; rooms[zone.id] = S.length;
     for (const f of ['150k.spz', '500k.spz', 'full.spz']) assert(readFileSync(new URL(dir + f, root)).length > 1e6, dir + f); assert(readFileSync(new URL(dir + 'door.webp', root)).length > 2000, zone.id + ': the picture its ring shows');
-    assert(S.length >= 1 && room.hall.scale > 0.2 && room.hall.ground > 0.5 && room.hall.ground < 2.2, zone.id + ' room numbers');
+    assert(room.hall.scale > 0.2 && room.hall.ground > 0.5 && room.hall.ground < 2.2, zone.id + ' room numbers');
+    if (room.hall.frames) {
+      // A scenery room: one floating frame for each game, the first one ahead, each facing the visitor, none overlapping.
+      const games = zoneGames(zone.id, GAMES), F = frameRing(games.length, room.hall.ground); rooms[zone.id] = F.length + ' frames'; assert.equal(F.length, Math.min(FRAMES.most, games.length), zone.id + ': a frame for each game'); assert.deepEqual(room.screens, []);
+      F.forEach((f, k) => { assert(near(len(f.normal), 1, 1e-9) && near(f.normal[0] * f.centre[0] + f.normal[2] * f.centre[2], -f.distance, 1e-9), 'a frame faces the visitor'); assert(f.distance > 1.5 && Math.abs(f.centre[1] - room.hall.ground) < 0.2); if (k) assert((f.heading - F[k - 1].heading) * f.distance > (f.width + F[k - 1].width) / 2 * GROW, 'frames do not overlap'); });
+      assert(near(F[0].heading, 0, 1e-9)); assert.deepEqual(roomSeats(F), F.map((f, k) => k), 'the frames take the games in order'); assert.equal(frameRing(99).length, FRAMES.most); assert.equal(frameRing(0).length, 0);
+      const exit = exitRing(F); for (const f of F) assert(Math.abs(Math.atan2(Math.sin(f.heading - exit.heading), Math.cos(f.heading - exit.heading))) > 0.4, zone.id + ': the way out is clear of the frames'); return;
+    }
+    assert(S.length >= 1);
     for (const p of S) { for (const v of [p.right, p.up, p.normal]) assert(near(len(v), 1, 1e-3)); assert(p.width > 0.25 && p.height > 0.25 && p.distance > 1.3, zone.id + ': a machine is outside the walk circle'); assert(near(p.heading, Math.atan2(p.centre[0], -p.centre[2]), 1e-3)); }
     const order = roomSeats(S), games = zoneGames(zone.id, GAMES), count = pages(games.length, S.length); assert.deepEqual([...order].sort((a, b) => a - b), S.map((p, i) => i), 'every machine has a seat');
     assert.equal(assign(order, games, 0).get(order[0]).id, games[0].id, 'the first game is on the front machine'); assert(S.every(p => Math.abs(S[order[0]].heading) <= Math.abs(p.heading) + 1e-9));
