@@ -1,0 +1,13 @@
+- [x] Campaign over the fragment's scene: twelve sorties, seven stage types, radio, spare jets, stars, hangar upgrades, paint, save, pause
+- [x] Scene patches by script: adjustable hull and enemy health, the ace, the beacon, pause and the scene callback
+- [x] Seven cutscenes with portraits, typed lines, skip, hurry, and a Film reel on the flight line
+- [x] Arcade page: quiet.js, switch.js with a Switch game button on the title, flight line and pause menu, analytics, React and the stylesheet as local files
+- [x] Action cabinet with screen art, palette and stars line, last in the Action group
+- [x] Switcher entry, game-dates entry, Riftwalk hall list, quiet.mjs `PAGES` entry
+- [x] Corridor piece 20 with its screen art, renumbered pieces, written counts and 90 light slots
+- [x] Update `qa/arcade/machines.mjs` for the new last machine of the Action row
+- [x] Run `node qa/arcade/machines.mjs`, the quiet check for this page and `node qa/lab/riftwalk.test.mjs` against the served site
+- [x] Screenshots of the hall and the game at 390, 320 and 1280 wide in `shots/`
+- [x] Check the spec structure by hand (the OpenSpec CLI is not installed in this session) and archive the change
+- [ ] Confirm the Forge fragment's licence allows publishing
+- [ ] A person flies all twelve sorties and tunes the difficulty

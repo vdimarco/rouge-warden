@@ -226,6 +226,11 @@
       "path": "public/ember-drift",
       "added": "2026-11-11T16:08:03+00:00",
       "updated": "2026-11-11T16:08:03+00:00"
+    },
+    "ember-tide": {
+      "path": "public/ember-tide",
+      "added": "2026-11-17T12:39:58+00:00",
+      "updated": "2026-11-17T12:39:58+00:00"
     }
   }
 }
