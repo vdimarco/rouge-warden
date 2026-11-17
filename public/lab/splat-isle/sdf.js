@@ -150,18 +150,21 @@ export function occlusion(sdf, x, y, z, nx, ny, nz) {
   for (let i = 1; i <= 5; i++) { const h = 0.07 * i; occ += (h - sdf(x + nx * h, y + ny * h, z + nz * h)) * w; w *= 0.6; }
   return clamp(1 - 2.2 * occ, 0, 1);
 }
-// Bake the light into each splat's colour: a warm low sun with a soft shadow, a blue sky from above, and a little bounce
-// from the ground, all darkened by the occlusion. A glowing material keeps its own colour. at maps a splat's place to
+// Bake the light into each splat's colour: a warm low sun with a soft shadow, a blue sky from above, a cool fill from
+// the far side, and a little bounce from the ground, all darkened by the occlusion. A glowing material keeps its own colour. at maps a splat's place to
 // the world, for a part that sits away from the origin.
-export function bake(splats, { sun = [0.55, 0.52, 0.65], sunColor = [1.25, 0.95, 0.68], sky = [0.32, 0.4, 0.62], bounce = [0.2, 0.14, 0.1], sdf = null, at = [0, 0, 0], shadows = true } = {}) {
+export function bake(splats, { sun = [0.55, 0.52, 0.65], sunColor = [1.25, 0.95, 0.68], sky = [0.42, 0.5, 0.72], bounce = [0.2, 0.14, 0.1], fill = [0.3, 0.26, 0.36], sdf = null, at = [0, 0, 0], shadows = true } = {}) {
   const l = len3(...sun), lx = sun[0] / l, ly = sun[1] / l, lz = sun[2] / l, { count, pos, nrm, albedo, color, glow } = splats;
+  // a soft fill light from the far side of the sky, low and cool, so the shade side still reads as a shape
+  const fl = len3(-lx, 0.35, -lz) || 1, fx = -lx / fl, fy = 0.35 / fl, fz = -lz / fl;
   for (let i = 0; i < count; i++) {
     const a = albedo[i * 3], b = albedo[i * 3 + 1], c = albedo[i * 3 + 2];
     if (glow[i]) { color.set([a, b, c], i * 3); continue; }
     const x = pos[i * 3] + at[0], y = pos[i * 3 + 1] + at[1], z = pos[i * 3 + 2] + at[2], nx = nrm[i * 3], ny = nrm[i * 3 + 1], nz = nrm[i * 3 + 2];
     const lambert = Math.max(0, nx * lx + ny * ly + nz * lz), sh = sdf && shadows && lambert > 0 ? softShadow(sdf, x + nx * 0.05, y + ny * 0.05, z + nz * 0.05, lx, ly, lz) : 1, ao = sdf ? occlusion(sdf, x, y, z, nx, ny, nz) : 1;
     const up = 0.5 + 0.5 * ny, down = 1 - up;
-    for (let k = 0; k < 3; k++) color[i * 3 + k] = clamp([a, b, c][k] * (sunColor[k] * lambert * sh + (sky[k] * up + bounce[k] * down) * (0.35 + 0.65 * ao)), 0, 1);
+    const back = Math.max(0, nx * fx + ny * fy + nz * fz);
+    for (let k = 0; k < 3; k++) color[i * 3 + k] = clamp([a, b, c][k] * (sunColor[k] * lambert * sh + (sky[k] * up + bounce[k] * down + fill[k] * back) * (0.35 + 0.65 * ao)), 0, 1);
   }
   return splats;
 }
