@@ -452,7 +452,13 @@ canvas.addEventListener('pointermove', e => {
 const lift = e => { if (!drag || e.pointerId !== drag.id) return; const tap = drag.moved < 10 && performance.now() - drag.at < 500, d = drag; drag = null; canvas.classList.remove('look'); if (tap && e.type === 'pointerup' && visit.phase === 'hall' && !visit.glide) { const i = portalAt(d.sx, d.sy); if (i >= 0) launch(i); else walkTo(d.sx, d.sy); } };
 canvas.addEventListener('pointerup', lift); canvas.addEventListener('pointercancel', lift); canvas.addEventListener('pointerleave', () => { hover = -1; noTouch(); });
 const nextZone = step => travel((visit.zone + step + ZONES.length) % ZONES.length);
+// The Views menu: the three views of the arcade's home. A press outside it, or Esc, closes it.
+const viewsBtn = $('views'), viewsMenu = $('viewsMenu');
+const showViews = on => { viewsMenu.hidden = !on; viewsBtn.setAttribute('aria-expanded', String(on)); if (on) viewsMenu.querySelector('a').focus({ preventScroll: true }); };
+viewsBtn.addEventListener('click', () => showViews(viewsMenu.hidden));
+addEventListener('pointerdown', e => { if (!viewsMenu.hidden && !viewsMenu.contains(e.target) && e.target !== viewsBtn) showViews(false); }, true);
 addEventListener('keydown', e => {
+  if (!viewsMenu.hidden) { if (e.key === 'Escape') { e.preventDefault(); showViews(false); viewsBtn.focus({ preventScroll: true }); } return; }
   if (visit.phase !== 'hall' || window.GameSwitch?.isOpen) return; const k = e.key.toLowerCase();
   if (k === 'arrowleft' || k === 'arrowright') { e.preventDefault(); turn(k === 'arrowright' ? 1 : -1); }
   else if (k === 'arrowup' || k === 'arrowdown') { e.preventDefault(); nextZone(k === 'arrowdown' ? 1 : -1); }

@@ -20,9 +20,9 @@
     <meta name="twitter:image" content="https://arcade.uptick.systems/og.jpg">
     <style>
       a.cr-btn { display: inline-flex; align-items: center; text-decoration: none; white-space: nowrap; }
-      #classic-pill { display: none; }
+      #classic-pill, #alley-pill { display: none; }
       /* the top bar has no room on a phone: there the control joins the category strip */
-      @media (max-width: 760px) { #classic-link { display: none; } #classic-pill { display: inline-flex; } }
+      @media (max-width: 760px) { #classic-link, #alley-link { display: none; } #classic-pill, #alley-pill { display: inline-flex; } }
     </style>
     <script>window.CORRIDOR_DATES_URL = "/arcade/game-dates.json";</script>
     <!--
@@ -604,6 +604,7 @@
                 <path class="cr-moon" d="M15.6 12.4A6.2 6.2 0 0 1 7.6 4.4a6.2 6.2 0 1 0 8 8Z" />
               </svg>
             </button>
+            <a class="cr-btn" id="alley-link" href="/?view=alley" aria-label="Alley: the arcade as a neon street of portals">Alley</a>
             <a class="cr-btn" id="classic-link" href="/?view=classic" aria-label="All games: the arcade as a list">All games</a>
             <button type="button" class="cr-btn" id="index-btn" aria-expanded="false">Index <sup>44</sup></button>
             <div class="cr-pop-wrap">
@@ -3560,6 +3561,8 @@ void main() {
         // before the order buttons, so on a phone they stand under All games
         const cats = document.getElementById('cats');
         cats.insertBefore(a, document.getElementById('order'));
+        // the Alley view, the home's default, just before All games
+        const alley = document.createElement('a'); alley.id = 'alley-pill'; alley.className = 'cr-btn cr-cat-btn'; alley.href = '/?view=alley'; alley.textContent = 'Alley'; cats.insertBefore(alley, a);
       });
     </script>
   </body>

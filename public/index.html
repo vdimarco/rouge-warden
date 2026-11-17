@@ -18,24 +18,30 @@
 <meta name="twitter:image" content="https://arcade.uptick.systems/og.jpg">
 <script src="/arcade/quiet.js"></script>
 <script>
-// The walk-through corridor at /corridor/ is the default view. This hall stays for ?view=classic (remembered),
-// a group link such as #cottage, automated browsers, and browsers without WebGL. ?view=walk forgets the choice.
+// The home has three views. The Alley (/lab/riftwalk/), a neon street whose storefronts are portals, is the default.
+// The Corridor (/corridor/) and this hall, All Games, are the other two. ?view=classic keeps this hall and
+// ?view=corridor (or the older ?view=walk) keeps the Corridor, both remembered; ?view=alley forgets the choice.
+// This hall also stays for a group link such as #cottage, for automated browsers, and for browsers without WebGL.
+// The Alley needs WebGL2: a browser with the older WebGL only gets the Corridor.
 (() => {
   const want = new URLSearchParams(location.search).get("view");
   let kept = null;
   try {
     if (want === "classic") localStorage.setItem("arcade.view", "classic");
-    else if (want === "walk") localStorage.removeItem("arcade.view");
+    else if (want === "corridor" || want === "walk") localStorage.setItem("arcade.view", "corridor");
+    else if (want === "alley") localStorage.removeItem("arcade.view");
     kept = localStorage.getItem("arcade.view");
   } catch (e) { /* storage off */ }
-  if (want !== "walk") {
-    if (want === "classic" || kept === "classic" || location.hash.length > 1 || navigator.webdriver) return;
-    try {
-      const c = document.createElement("canvas");
-      if (!(c.getContext("webgl") || c.getContext("experimental-webgl"))) return;
-    } catch (e) { return; }
-  }
-  location.replace("/corridor/");
+  const asked = want === "corridor" || want === "walk" || want === "alley";
+  if (!asked && (want === "classic" || kept === "classic" || location.hash.length > 1 || navigator.webdriver)) return;
+  let gl = 0;
+  try {
+    const c = document.createElement("canvas");
+    gl = c.getContext("webgl2") ? 2 : (c.getContext("webgl") || c.getContext("experimental-webgl")) ? 1 : 0;
+  } catch (e) { /* no graphics */ }
+  if (!gl && !asked) return;
+  const corridor = want === "corridor" || want === "walk" || (want !== "alley" && kept === "corridor") || gl < 2;
+  location.replace(corridor ? "/corridor/" : "/lab/riftwalk/");
 })();
 </script>
 <style data-arcade-fonts>

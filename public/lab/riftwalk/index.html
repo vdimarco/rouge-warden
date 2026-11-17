@@ -9,6 +9,15 @@
 <link rel="icon" href="/favicon.ico">
 <link rel="stylesheet" href="/lab/kit/lab.css">
 <style>
+/* The Views menu: the three views of the arcade's home. It opens under the Views button, over the zone buttons. */
+.views { position: fixed; top: calc(var(--sat, 0px) + 48px); left: 50%; transform: translateX(-50%); z-index: 60; width: min(300px, calc(100vw - 24px)); display: grid; gap: 6px; padding: 8px; border: 1px solid var(--line); border-radius: 16px; background: #0b0a14f2; box-shadow: 0 14px 40px #000a; }
+.views[hidden] { display: none; }
+.views a { display: grid; gap: 2px; min-height: 48px; align-content: center; padding: 7px 12px; border-radius: 11px; border: 1px solid transparent; color: var(--ink); text-decoration: none; font: 600 15px/1.2 var(--body); }
+.views a span { font-weight: 400; font-size: 12.5px; opacity: 0.72; }
+.views a:hover, .views a:focus-visible { border-color: var(--line); background: #ffffff12; }
+.views a[aria-current] { border-color: var(--zone, #ffb45e); background: #ffffff0d; }
+#views[aria-expanded="true"] { border-color: var(--zone, #ffb45e); }
+
   :root { --neon: #ff4fd8; --cyan: #5ff2ff; }
   html, body { background: #0a0612; }
   canvas.view { touch-action: none; cursor: grab; }
@@ -60,7 +69,12 @@
 </head>
 <body class="toy">
 <canvas class="view" id="view" aria-label="Riftwalk: a neon alley at night. Each storefront is a portal to a world for one game category, and in that world each game floats in a portal frame that launches it."></canvas>
-<nav class="labbar"><a class="back" href="/lab/">◀ Lab</a><button type="button" id="menu" data-switch>Games</button></nav>
+<nav class="labbar"><a class="back" href="/lab/">◀ Lab</a><button type="button" id="views" aria-expanded="false" aria-controls="viewsMenu">Views</button><button type="button" id="menu" data-switch>Games</button></nav>
+<div class="views" id="viewsMenu" hidden role="group" aria-label="Views of the arcade">
+  <a href="/?view=alley" aria-current="page"><b>Alley</b><span>A neon street of portals</span></a>
+  <a href="/?view=corridor"><b>Corridor</b><span>A walk past every cabinet</span></a>
+  <a href="/?view=classic"><b>All games</b><span>The list, with search and ranks</span></a>
+</div>
 <div class="groups ui" id="groups" hidden role="group" aria-label="Storefronts of the alley"></div>
 <div class="target" id="target" hidden role="status" aria-live="polite"><b id="tTitle"></b><span id="tSub"></span><i id="tDo"></i></div>
 <div class="keys ui" id="keys" hidden>
