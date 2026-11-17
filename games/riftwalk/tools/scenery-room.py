@@ -2,7 +2,7 @@
 
   python3 scenery-room.py <world.spz> <out dir> [turn in degrees]
 
-Writes full.spz, 500k.spz, 150k.spz, door.webp, preview.jpg (four views from the
+Writes full.spz, 500k.spz, 150k.spz, a rough door.webp (door-shots.mjs makes the real one), preview.jpg (four views from the
 point where the visitor stands) and screens.json. These exports are metric with
 the floor at y = 0, so the page sets the eye 1.45 m over the file's origin.
 """

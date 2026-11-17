@@ -63,5 +63,12 @@ The alley of storefront portals (the user's six Marble worlds):
 - [x] See the alley with its doors (`shots/alley.jpg`, a 600,000-splat copy) and the meadow world with its frames (`shots/worlds.jpg`, 500,000 splats) drawn by the page.
 - [x] New cabinet art and wording in the homepage, the switcher, the Corridor and the Lab page.
 - [x] Oval doors with riptide rims, at the user's word; both tests pass and the doors are seen in `shots/alley.jpg` (a 250,000-splat copy).
+
+Resolution (after the merge of pull request 838):
+- [x] Draw at 2 device pixels for each CSS pixel on a desktop, with a step down on slow frames; multisampling off; Spark `focalAdjustment` 2.
+- [x] Compare `focalAdjustment` 1 and 2 on a full-density piece of the alley in software WebGL.
+- [x] Door pictures drawn by the page at 1024 px (`door-shots.mjs`, `shots/doors.jpg`).
+- [x] Camera range from 300 m to 30 km: the meadow's sky had a dark hole.
+- [ ] Measure the frame rate at the new pixel ratio on a real graphics card (not possible in this session).
 - [ ] See the alley at its full 2,000,000 splats. Software WebGL is too slow for it.
 - [ ] Play on a real phone and a real graphics card (not possible in this session).
