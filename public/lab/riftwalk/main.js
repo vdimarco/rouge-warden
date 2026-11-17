@@ -6,6 +6,7 @@
 // hall.js holds the rules, and worlds/hall/screens.json says where the screens, the stations and the rings are.
 import * as THREE from 'three';
 import { SplatMesh, SparkRenderer } from '@sparkjsdev/spark';
+import * as sound from './sound.js';
 import { direction, GROUPS, ZONES, GROW, gamesOf, zoneGames, seats, pages, assign, ringPlace, roomSeats, exitRing, frameRing, walkRoom, zoneAt, headingTo, pick, facing, neighbour, walk } from './hall.js';
 
 const $ = id => document.getElementById(id);
@@ -253,6 +254,56 @@ function makePortal(place, index, zone) {
   return { place, group, uniforms, face, label, look, zone, door: !!place.ring, frame: !!place.frame, base: place.centre[1], game: null, lit: 0, wantLit: 0, touch: 0 };
 }
 let portals = [];
+// Live windows (desktop): the door in the middle of the view, from 7 m or nearer, shows its world as it is, in three
+// dimensions, in place of the still picture. The world's small file (150,000 splats) is drawn by a second Spark
+// renderer into a texture, from a camera that moves as the visitor moves, so the view through the door shifts like a
+// view through a real opening. Spark's SparkRenderer takes a `target` for this and renderTarget() returns it
+// (sparkjs.dev/docs/spark-renderer). A phone keeps the still picture, and so does ?live=0 and a page whose frames are slow.
+const LIVE = { on: !touch && !noWorld && query.get('live') !== '0', zone: -1, loading: -1, mesh: null, scene: null, spark: null, cam: null, portal: null, still: null, aspect: 1, meshes: new Map(), sorting: false };
+function endLive() { const v = LIVE; if (!v.portal) return; if (v.portal.uniforms.uMap.value !== v.still && v.still) { v.portal.uniforms.uMap.value = v.still; v.portal.uniforms.uAspect.value = v.aspect; } v.portal = v.still = null; }
+function stepLive() {
+  const v = LIVE; if (!v.on) return; const p = portals[visit.aim], near = room === null && visit.phase === 'hall' && p?.door && p.game && !p.game.exit && p.uniforms.uHasMap.value === 1;
+  if (!near) return endLive(); const c = p.place.centre, n = p.place.normal, r = p.place.right, dx = frame.position.x - c[0], dz = frame.position.z - c[2], out = dx * n[0] + dz * n[2], side = dx * r[0] + dz * r[2];
+  if (out < 0.2 || Math.hypot(dx, dz) > 7) return endLive(); const index = p.game.zone, id = ZONES[index].id;
+  if (!v.scene) { v.scene = new THREE.Scene(); v.spark = new SparkRenderer({ renderer, target: { width: 512, height: 664 }, focalAdjustment: 2 }); v.scene.add(v.spark); v.cam = new THREE.PerspectiveCamera(74, 512 / 664, 0.05, 30000); v.cam.rotation.order = 'YXZ'; v.scene.add(v.cam); }
+  if (v.zone !== index) {
+    if (v.portal) endLive(); const have = v.meshes.get(index);
+    if (have) { if (v.mesh) v.scene.remove(v.mesh); v.mesh = have; v.scene.add(have); v.zone = index; }
+    else { if (v.loading !== index) { v.loading = index; roomData(id).then(() => loadRoom(id, '150k')).then(mesh => { v.meshes.set(index, mesh); if (v.loading === index) v.loading = -1; }).catch(() => { v.on = false; }); } return; }
+  }
+  // The camera stands in the world where the visitor stands in front of the door, at a third of the distance, and
+  // turns a little toward the middle of the world, so a step to the side shows the other side of the scene.
+  const eye = ROOMS[id].hall.eye ?? ROOMS[id].hall.ground; v.cam.position.set(side * 0.35, eye, Math.max(0, out - 1) * 0.3); v.cam.rotation.set(0, Math.atan2(side * 0.35, 6), 0); v.cam.updateMatrixWorld(true);
+  if (!v.sorting) { v.sorting = true; v.spark.update({ scene: v.scene, camera: v.cam }).catch(() => {}).then(() => { v.sorting = false; }); }
+  const target = v.spark.renderTarget({ scene: v.scene, camera: v.cam });
+  if (v.portal !== p) { v.portal = p; v.still = p.uniforms.uMap.value; v.aspect = p.uniforms.uAspect.value; }
+  p.uniforms.uMap.value = target.texture; p.uniforms.uAspect.value = 512 / 664;
+}
+// Game previews: a few games have a short silent clip. The frame in the middle of the view plays its game's clip
+// in place of the still picture, after a short look, and goes back to the picture when the view moves on. A browser
+// that cannot play the clip keeps the picture. Reduced motion keeps the picture too.
+const PREVIEWS = { '/river-rush/': '/river-rush/art/river-portrait-flow.mp4', '/crimson/': '/crimson/clips/yield.mp4', '/fish/': '/fish/clips/pull-back-demo.mp4', '/fall/': '/fall/clips/roll.webm', '/plungerd/': '/plungerd/clips/sprint.webm' };
+const preview = { portal: null, video: null, texture: null, since: 0, still: null, aspect: 1 };
+function endPreview() {
+  const v = preview; if (!v.portal) return;
+  if (v.texture) { if (v.portal.uniforms.uMap.value === v.texture) { v.portal.uniforms.uMap.value = v.still; v.portal.uniforms.uAspect.value = v.aspect; v.portal.uniforms.uHasMap.value = v.still ? 1 : 0; } v.texture.dispose(); }
+  if (v.video) { v.video.pause(); v.video.removeAttribute('src'); v.video.load(); }
+  v.portal = v.video = v.texture = v.still = null;
+}
+function stepPreview(now) {
+  const p = portals[visit.aim], clip = !reduced && visit.phase === 'hall' && p?.frame && p.game ? PREVIEWS[p.game.url] : null;
+  if (preview.portal && (preview.portal !== p || !clip)) endPreview();
+  if (!clip || preview.portal === p) { if (!clip) preview.since = 0; return; }
+  if (!preview.since) { preview.since = now; return; } if (now - preview.since < 700) return;
+  const video = document.createElement('video'); video.muted = true; video.loop = true; video.playsInline = true; video.preload = 'auto'; video.src = clip;
+  preview.portal = p; preview.video = video; preview.since = 0; preview.still = p.uniforms.uMap.value; preview.aspect = p.uniforms.uAspect.value;
+  video.addEventListener('playing', () => {
+    if (preview.video !== video) return; const t = new THREE.VideoTexture(video); t.colorSpace = THREE.SRGBColorSpace; preview.texture = t;
+    p.uniforms.uMap.value = t; p.uniforms.uAspect.value = (video.videoWidth || 1) / (video.videoHeight || 1); p.uniforms.uHasMap.value = 1;
+  }, { once: true });
+  video.addEventListener('error', () => { if (preview.video === video) endPreview(); });
+  video.play().catch(() => { if (preview.video === video) endPreview(); });
+}
 function show(portal, game) {
   portal.game = game; portal.wantLit = game ? 1 : 0;
   if (portal.label.material.map) { portal.label.material.map.dispose(); portal.label.material.map = null; }
@@ -300,6 +351,7 @@ function travel(index) {
 }
 // The places of the hall: every machine and ring, each machine with its game, and motes in the air of each zone.
 function clearPlaces() {
+  endPreview(); endLive();
   for (const p of portals) { scene.remove(p.group); p.label.material.map?.dispose(); p.label.material.dispose(); p.face.material.dispose(); } portals = [];
   for (const m of air) { m.parent?.remove(m); m.geometry.dispose(); m.material.dispose(); } air = []; hover = -1; visit.aim = -1;
 }
@@ -326,10 +378,10 @@ function buildRoom(index) {
 const pause = ms => new Promise(done => setTimeout(done, ms));
 function goRoom(index) {
   if (visit.phase !== 'hall' || visit.glide || !ZONES[index] || !HALLDATA.zones[ZONES[index].id].room) return; const zone = ZONES[index];
-  visit.phase = 'travel'; target.hidden = keysBar.hidden = groupsBar.hidden = true; canvas.classList.remove('aim'); flash.style.setProperty('--tint', zone.color); flash.classList.add('on');
+  visit.phase = 'travel'; target.hidden = keysBar.hidden = groupsBar.hidden = true; canvas.classList.remove('aim'); flash.style.setProperty('--tint', zone.color); flash.classList.add('on'); sound.whoosh(true); sound.hum(0);
   roomData(zone.id).then(() => Promise.all([noWorld ? null : loadRoom(zone.id, '150k'), pause(reduced ? 0 : 600)])).then(([mesh]) => {
     showWorld(mesh); buildRoom(index); visit.zone = index; frame.position.set(0, 0, 0); visit.yaw = SCREENS[roomSeats(SCREENS)[0]].heading; visit.pitch = 0; visit.turnTo = null;
-    visit.phase = 'hall'; flash.classList.remove('on'); keysBar.hidden = groupsBar.hidden = false; mark(); banner(zone); paint();
+    visit.phase = 'hall'; flash.classList.remove('on'); keysBar.hidden = groupsBar.hidden = false; mark(); banner(zone); paint(); sound.place(zone.id);
     // The room sharpens: a desktop takes the room's full-resolution file, and a phone the 500,000-splat file.
     if (!noWorld) loadRoom(zone.id, query.get('q') || (touch ? '500k' : 'full')).then(sharp => { if (room === index && visit.phase !== 'travel') showWorld(sharp); else sharp.dispose?.(); }).catch(() => { /* the small room stays */ });
   }).catch(error => { console.error(error); visit.phase = 'hall'; flash.classList.remove('on'); keysBar.hidden = groupsBar.hidden = false; loadLine.hidden = false; loadLine.textContent = `${zone.label} did not load.`; setTimeout(() => { loadLine.hidden = true; }, 4000); paint(); });
@@ -337,10 +389,10 @@ function goRoom(index) {
 // Back through the ring: the hall again, at the cluster of the zone the visitor came from.
 function goHall(to) {
   if (visit.phase !== 'hall' || visit.glide || room === null) return; const index = Number.isInteger(to) ? to : room, zone = ZONES[index];
-  visit.phase = 'travel'; target.hidden = keysBar.hidden = groupsBar.hidden = true; canvas.classList.remove('aim'); flash.style.setProperty('--tint', zone.color); flash.classList.add('on');
+  visit.phase = 'travel'; target.hidden = keysBar.hidden = groupsBar.hidden = true; canvas.classList.remove('aim'); flash.style.setProperty('--tint', zone.color); flash.classList.add('on'); sound.whoosh(false);
   pause(reduced ? 0 : 450).then(() => {
     showWorld(hallMesh); buildHall(); visit.zone = index; const at = STATIONS[index]; frame.position.set(at.station[0], 0, at.station[1]); visit.yaw = at.facing; visit.pitch = 0; visit.turnTo = null;
-    visit.phase = 'hall'; flash.classList.remove('on'); keysBar.hidden = groupsBar.hidden = false; mark(); paint();
+    visit.phase = 'hall'; flash.classList.remove('on'); keysBar.hidden = groupsBar.hidden = false; mark(); paint(); sound.place('alley');
   });
 }
 // Going into a game: the visitor glides to the machine while the view fills with its light, then the game's page opens.
@@ -355,7 +407,7 @@ function launch(index) {
 }
 // A page kept in the back-forward cache comes back mid-launch: put the visitor back in the hall.
 addEventListener('pageshow', e => { if (!e.persisted || visit.phase !== 'launch') return; flash.classList.remove('on'); if (room === null) { const at = STATIONS[visit.zone].station; frame.position.set(at[0], 0, at[1]); } else frame.position.set(0, 0, 0); visit.glide = null; visit.phase = 'hall'; keysBar.hidden = groupsBar.hidden = false; paint(); });
-function start() { visit.phase = 'hall'; startCard.hidden = true; keysBar.hidden = groupsBar.hidden = false; mark(); banner(ZONES[visit.zone]); paint(); }
+function start() { sound.start(); visit.phase = 'hall'; startCard.hidden = true; keysBar.hidden = groupsBar.hidden = false; mark(); banner(ZONES[visit.zone]); paint(); }
 function paint() {
   const p = portals[visit.aim];
   if (visit.phase !== 'hall' || !p?.game) { target.hidden = true; $('kGo').disabled = true; canvas.classList.remove('aim'); return; }
@@ -467,7 +519,9 @@ function step(dt) {
   // The lit place in the middle of the view is named on screen. A ring is high on the wall, so it counts only when
   // the visitor looks up at it.
   const now = seen(), mask = lit().map((on, i) => on && now[i].front && Math.abs(now[i].pitch - visit.pitch) < 0.32);
-  const aim = facing(visit.yaw, now, mask, 0.3, REACH); if (aim !== visit.aim) { visit.aim = aim; paint(); }
+  const aim = facing(visit.yaw, now, mask, 0.3, REACH); if (aim !== visit.aim) { visit.aim = aim; paint(); if (aim >= 0) sound.tick(); }
+  // The door in view hums in its zone's pitch, louder the nearer the visitor stands.
+  { const p = portals[visit.aim]; sound.hum(room === null && p?.door && !p.game?.exit ? clamp(1.4 - now[visit.aim].distance / 6, 0.25, 1) : 0, p?.game?.zone ?? 0); }
 }
 
 /* ---------------- input ---------------- */
@@ -484,6 +538,31 @@ canvas.addEventListener('pointermove', e => {
 const lift = e => { if (!drag || e.pointerId !== drag.id) return; const tap = drag.moved < 10 && performance.now() - drag.at < 500, d = drag; drag = null; canvas.classList.remove('look'); if (tap && e.type === 'pointerup' && visit.phase === 'hall' && !visit.glide) { const i = portalAt(d.sx, d.sy); if (i >= 0) launch(i); else walkTo(d.sx, d.sy); } };
 canvas.addEventListener('pointerup', lift); canvas.addEventListener('pointercancel', lift); canvas.addEventListener('pointerleave', () => { hover = -1; noTouch(); });
 const nextZone = step => travel((visit.zone + step + ZONES.length) % ZONES.length);
+// The door tool (?edit): for the person who places the doors. With a door in the middle of the view, keys move it on
+// its wall and change its size, and a panel shows the numbers to paste into worlds/hall/screens.json.
+//   J L  along the wall     I K  up and down     N M  out of and into the wall
+//   U O  narrower, wider    Y H  taller, shorter     Shift: four times the step     C: copy every zone's numbers
+const EDIT = query.has('edit');
+if (EDIT) {
+  const panel = document.createElement('pre'); panel.id = 'edit'; panel.style.cssText = 'position:fixed;left:8px;bottom:8px;z-index:70;margin:0;padding:8px 10px;max-width:min(430px,calc(100vw - 16px));white-space:pre-wrap;font:12px/1.35 ui-monospace,monospace;color:#d9ffe9;background:#06120cdd;border:1px solid #2c6;border-radius:8px;pointer-events:none';
+  document.body.append(panel);
+  const round = v => Math.round(v * 100) / 100, zoneOf = () => { const p = portals[visit.aim]; return room === null && p?.door && !p.game?.exit ? ZONES[p.game.zone] : null; };
+  const show = note => { const z = zoneOf(); panel.textContent = 'Door tool   J L along · I K up, down · N M out, in · U O width · Y H height · Shift x4 · C copy all\n' + (z ? `"${z.id}": ` + JSON.stringify({ station: HALLDATA.zones[z.id].station, ring: HALLDATA.zones[z.id].ring }) : 'Turn to a door.') + (note ? '\n' + note : ''); };
+  setInterval(() => show(), 400);
+  addEventListener('keydown', e => {
+    if (visit.phase !== 'hall' || room !== null) return; const k = e.key.toLowerCase(), z = zoneOf();
+    if (k === 'c') { e.stopImmediatePropagation(); const text = JSON.stringify(HALLDATA.zones, null, 1); (navigator.clipboard?.writeText(text) || Promise.reject()).then(() => show('Copied every zone.'), () => { console.log(text); show('Copy failed: the numbers are in the console.'); }); return; }
+    if (!z || !'jlikunmoyh'.includes(k) || k.length !== 1) return; e.stopImmediatePropagation(); e.preventDefault();
+    const zone = HALLDATA.zones[z.id], ring = zone.ring, n = ring.normal, along = [n[2], 0, -n[0]], d = (e.shiftKey ? 4 : 1) * 0.05, heading = visit.yaw, pitch = visit.pitch;
+    const move = (v, by) => { ring.centre = ring.centre.map((c, i) => round(c + v[i] * by)); };
+    if (k === 'j') move(along, -d); else if (k === 'l') move(along, d); else if (k === 'i') move([0, 1, 0], d); else if (k === 'k') move([0, 1, 0], -d); else if (k === 'n') move(n, d / 2.5); else if (k === 'm') move(n, -d / 2.5);
+    else if (k === 'u') ring.width = round(Math.max(0.6, ring.width - d)); else if (k === 'o') ring.width = round(ring.width + d); else if (k === 'y') ring.height = round(ring.height + d); else if (k === 'h') ring.height = round(Math.max(0.8, ring.height - d));
+    buildHall(); visit.yaw = heading; visit.pitch = pitch; visit.turnTo = null; paint(); show();
+  }, true);
+}
+// The Sound button turns the page's sound off and on. The choice is kept for the next visit.
+const soundBtn = $('sound'), showSound = () => { soundBtn.setAttribute('aria-pressed', String(sound.isOn())); soundBtn.setAttribute('aria-label', sound.isOn() ? 'Sound: on' : 'Sound: off'); };
+soundBtn.addEventListener('click', () => { sound.start(); sound.setOn(!sound.isOn()); showSound(); }); showSound();
 // The Views menu: the three views of the arcade's home. A press outside it, or Esc, closes it.
 const viewsBtn = $('views'), viewsMenu = $('viewsMenu');
 const showViews = on => { viewsMenu.hidden = !on; viewsBtn.setAttribute('aria-expanded', String(on)); if (on) viewsMenu.querySelector('a').focus({ preventScroll: true }); };
@@ -519,12 +598,13 @@ function tick(now) {
   // where the rift gives way goes slowly round its rim.
   if (touch) portals.forEach((p, i) => { if (!p.door) return; p.touch = !reduced && visit.phase === 'hall' && i === visit.aim ? 0.85 : 0; if (p.touch) { const h = p.uniforms.uHalf.value; p.uniforms.uPoint.value.set(Math.cos(time * 0.55) * h.x, Math.sin(time * 0.55) * h.y); } });
   portals.forEach((p, i) => { p.uniforms.uTime.value = time; p.uniforms.uTouch.value += (p.touch - p.uniforms.uTouch.value) * Math.min(1, dt * 7); p.uniforms.uHot.value += ((i === visit.aim ? 1 : 0) - p.uniforms.uHot.value) * Math.min(1, dt * 10); p.uniforms.uFlow.value += ((!reduced && (i === hover || (touch && i === visit.aim)) ? 1 : 0) - p.uniforms.uFlow.value) * Math.min(1, dt * 5); p.label.material.opacity = p.lit * (p.place.box ? 0.9 + 0.1 * p.uniforms.uHot.value : p.door || p.frame ? 0.75 + 0.25 * p.uniforms.uHot.value : p.uniforms.uHot.value); if (p.frame && !reduced) p.group.position.y = p.base + 0.035 * Math.sin(time * 0.7 + p.uniforms.uSeed.value * 6.283); });
+  stepPreview(now); try { stepLive(); } catch (error) { console.error(error); LIVE.on = false; endLive(); }
   renderer.render(scene, camera);
   // Slow frames lower the pixel ratio: after a second and a half of frames over 34 ms, a quarter step down, to no
   // less than the display's own pixels. Frames while a world loads or the tab was hidden do not count.
   if (!PX.fixed && visit.phase === 'hall' && frameMs < 250) {
     PX.frames++; if (frameMs > 34) PX.slow++;
-    if (PX.frames >= 45) { if (PX.slow > 30 && PX.now > PX.least) { PX.now = Math.max(PX.least, PX.now - 0.25); renderer.setPixelRatio(PX.now); resize(); } PX.frames = PX.slow = 0; }
+    if (PX.frames >= 45) { if (PX.slow > 30 && LIVE.on && LIVE.portal) { LIVE.on = false; endLive(); } else if (PX.slow > 30 && PX.now > PX.least) { PX.now = Math.max(PX.least, PX.now - 0.25); renderer.setPixelRatio(PX.now); resize(); } PX.frames = PX.slow = 0; }
   }
   requestAnimationFrame(tick);
 }
@@ -550,6 +630,8 @@ requestAnimationFrame(tick);
 
 // A handle for the browser check (qa/lab/riftwalk.e2e.mjs). The page never reads it.
 window.__riftwalk = {
+  live: () => ({ on: LIVE.on, zone: LIVE.portal ? ZONES[LIVE.zone].id : null }),
+  sound: () => sound.state(), preview: () => ({ url: preview.portal?.game?.url ?? null, playing: !!preview.texture }),
   state: () => ({ phase: visit.phase, room: room === null ? null : ZONES[room].id, zone: ZONES[visit.zone].id, page: visit.page[visit.zone], pages: pagesIn(visit.zone), aim: visit.aim, yaw: visit.yaw, pitch: visit.pitch, turning: visit.turnTo !== null, gliding: !!visit.glide, walking: !!visit.walk, place: { x: frame.position.x, z: frame.position.z }, hall: !!hall, splats: hall?.packedSplats?.numSplats ?? 0,
     hover, flow: portals.map(p => +p.uniforms.uFlow.value.toFixed(2)), touch: portals.map(p => +p.uniforms.uTouch.value.toFixed(2)),
     motes: air.reduce((n, m) => n + m.geometry.attributes.position.count, 0),
