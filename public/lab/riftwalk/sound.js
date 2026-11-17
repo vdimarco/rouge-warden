@@ -17,6 +17,8 @@ export const VOICES = {
   gta:      { air: ['lowpass', 420, 0.7, 0.3],  drone: [61.7, 123.5],     notes: [246.9, 3.1, 'sawtooth', 0.016], buzz: 0.03 },
   lab:      { air: ['bandpass', 1800, 2.5, 0.09], drone: [87.3, 174.6],   notes: [698.5, 1.9, 'sine', 0.03] },
 };
+// The level of everything: a quiet bed under the visit. The first version was 0.5, and the user found it too loud.
+const LEVEL = 0.15;
 const KEY = 'riftwalk.sound';
 let ctx = null, master = null, noise = null, voice = null, door = null, on = true, timer = 0, seed = 7;
 try { on = localStorage.getItem(KEY) !== 'off'; } catch (e) { /* storage off */ }
@@ -52,7 +54,7 @@ function schedule() {
 export function start() {
   if (ctx) { if (on && ctx.state === 'suspended') ctx.resume().catch(() => {}); return; }
   const Audio = window.AudioContext || window.webkitAudioContext; if (!Audio) return;
-  ctx = new Audio(); master = ctx.createGain(); master.gain.value = on ? 0.5 : 0; master.connect(ctx.destination); noise = brown();
+  ctx = new Audio(); master = ctx.createGain(); master.gain.value = on ? LEVEL : 0; master.connect(ctx.destination); noise = brown();
   const tone = ctx.createGain(); tone.gain.value = 0; tone.connect(master); const a = ctx.createOscillator(), b = ctx.createOscillator(); a.type = b.type = 'sine'; a.connect(tone); b.connect(tone); a.start(); b.start(); door = { tone, a, b };
   timer = setInterval(schedule, 200); place('alley');
 }
@@ -70,7 +72,7 @@ export function hum(level, index = 0) {
 // The way through a portal: noise through a filter that sweeps up, or down on the way back.
 export function whoosh(up = true) {
   if (!ctx || ctx.state !== 'running') return; const t = ctx.currentTime, src = ctx.createBufferSource(), f = ctx.createBiquadFilter(), g = ctx.createGain(); src.buffer = noise; f.type = 'bandpass'; f.Q.value = 1.4;
-  f.frequency.setValueAtTime(up ? 180 : 2600, t); f.frequency.exponentialRampToValueAtTime(up ? 2600 : 180, t + 1.1); g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(0.9, t + 0.25); g.gain.exponentialRampToValueAtTime(0.0001, t + 1.3);
+  f.frequency.setValueAtTime(up ? 180 : 2600, t); f.frequency.exponentialRampToValueAtTime(up ? 2600 : 180, t + 1.1); g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(0.55, t + 0.25); g.gain.exponentialRampToValueAtTime(0.0001, t + 1.3);
   src.connect(f).connect(g).connect(master); src.start(t); src.stop(t + 1.4);
 }
 // A small tick when a new place comes into the middle of the view.
@@ -81,7 +83,7 @@ export function tick() {
 export const isOn = () => on;
 export function setOn(value) {
   on = !!value; try { localStorage.setItem(KEY, on ? 'on' : 'off'); } catch (e) { /* storage off */ }
-  if (ctx) { master.gain.setTargetAtTime(on ? 0.5 : 0, ctx.currentTime, 0.08); if (on && ctx.state === 'suspended') ctx.resume().catch(() => {}); }
+  if (ctx) { master.gain.setTargetAtTime(on ? LEVEL : 0, ctx.currentTime, 0.08); if (on && ctx.state === 'suspended') ctx.resume().catch(() => {}); }
   return on;
 }
 // For the checks: the state of the context and the place that sounds.
