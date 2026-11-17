@@ -493,7 +493,7 @@ function updateAct() {
 
 /* ---------------- camera ---------------- */
 // The view follows you from behind and above. Drag to turn round you; the wheel or a pinch moves in and out.
-const view = { yaw: 0.6, pitch: 0.5, dist: 7, at: new THREE.Vector3() }; let shakeCam = 0;
+const view = { yaw: 0.6, pitch: 0.5, dist: innerWidth < innerHeight ? 9.5 : 7, at: new THREE.Vector3() };   // a tall phone screen stands further back, to see round you let shakeCam = 0;
 function placeCamera(dt) {
   const want = new THREE.Vector3(player.x, player.y + 0.7, player.z); view.at.lerp(want, Math.min(1, dt * 6));
   const o = new THREE.Vector3(Math.sin(view.yaw) * Math.cos(view.pitch), Math.sin(view.pitch), Math.cos(view.yaw) * Math.cos(view.pitch)).multiplyScalar(view.dist).add(view.at);
