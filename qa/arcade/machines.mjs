@@ -150,7 +150,8 @@ for (const { id } of JSON.parse(read("higgsfield/arcade-key-art.json")).art) {
     { id: "eleven-wells", title: "Eleven Wells", kind: "THE LAB", art: "eleven_wells", after: "Orbital Gardener" },
     { id: "ledger", title: "Warden's Ledger", kind: "THE LAB", art: "ledger", after: "Eleven Wells" },
     // a Lab toy lives under /lab/, so it names its route and its folder
-    { id: "riftwalk", title: "Riftwalk", kind: "THE LAB", art: "riftwalk", after: "Warden's Ledger", last: true, url: "/lab/riftwalk/", path: "public/lab/riftwalk" },
+    { id: "riftwalk", title: "Riftwalk", kind: "THE LAB", art: "riftwalk", after: "Warden's Ledger", url: "/lab/riftwalk/", path: "public/lab/riftwalk" },
+    { id: "splat-isle", title: "Splat Isle", kind: "THE LAB", art: "splat_isle", after: "Riftwalk", last: true, url: "/lab/splat-isle/", path: "public/lab/splat-isle" },
   ];
   for (const g of ADDED) {
     const url = g.url || `/${g.id}/`, at = pieces.findIndex((p) => p.url === url), p = pieces[at], prev = pieces[at - 1], next = pieces[at + 1];

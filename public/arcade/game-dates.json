@@ -226,6 +226,11 @@
       "path": "public/ember-drift",
       "added": "2026-11-11T16:08:03+00:00",
       "updated": "2026-11-11T16:08:03+00:00"
+    },
+    "splat-isle": {
+      "path": "public/lab/splat-isle",
+      "added": "2026-11-17T09:30:00-05:00",
+      "updated": "2026-11-17T09:30:00-05:00"
     }
   }
 }
