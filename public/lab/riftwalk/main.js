@@ -112,7 +112,11 @@ const FRAGMENT = `
     float edge = d - (n - 0.5) * uWave;                       // the rim wavers
     // A storefront door has a riptide rim: two trains of waves run round it in opposite ways, over the slow noise.
     if (uBox > 0.5) edge -= 0.034 * sin(turn * 6.0 - uTime * 2.1 + uSeed * 6.283) + 0.02 * sin(turn * 11.0 + uTime * 3.0 + n * 3.0) + (n - 0.5) * 0.07;
-    float inside = smoothstep(0.003, -0.003, edge), rim = smoothstep(-0.07, 0.0, d);
+    // A door or a ring has no hard rim. Its picture fades out over about 30 cm, and noise at two sizes makes the fade
+    // ragged, like mist, so the world behind it seems to seep into the street. A screen or a frame keeps a crisp rim.
+    float mist = (noise(p * 6.0 + vec2(uTime * 0.22, uSeed * 9.0)) - 0.5) * 0.2 + (noise(p * 15.0 - vec2(uSeed * 4.0, uTime * 0.31)) - 0.5) * 0.09;
+    float soft = edge + mist * uDoor, feather = mix(0.003, 0.15, uDoor);
+    float inside = smoothstep(feather, -feather * 1.3, soft), rim = smoothstep(-0.07, 0.0, d);
     // The picture covers the shape: the longer side of the picture is cropped.
     vec2 uv = p / uHalf * 0.5; float form = uHalf.x / uHalf.y; if (uAspect > form) uv.x *= form / uAspect; else uv.y *= uAspect / form; uv += 0.5;
     // Under the pointer the picture flows: it swells a little, drifts, and its surface moves like slow water.
@@ -138,11 +142,13 @@ const FRAGMENT = `
     vec3 idle = (uZone * (0.07 + 0.05 * n + 0.14 * bar) + 0.012) * lines * (1.0 - 0.5 * rim);
     vec3 face = mix(idle, art, uLit);
     float pulse = pow(0.5 + 0.5 * cos(turn - uTime * 1.7 - uSeed * 6.283), 10.0);
-    float band = exp(-pow(edge / 0.006, 2.0)) * (0.75 + 0.5 * uHot + 0.8 * pulse) + 0.24 * exp(-pow(max(edge, 0.0) / 0.02, 2.0)) * (0.5 + n) * (1.0 - inside);
+    // The live edge: a thin bright line on a screen or a frame. On a door it is a wide, faint glow in the mist.
+    float line = mix(0.006, 0.075, uDoor), halo = mix(0.02, 0.2, uDoor);
+    float band = exp(-pow(soft / line, 2.0)) * (0.75 + 0.5 * uHot + 0.8 * pulse) * mix(1.0, 0.3, uDoor) + mix(0.24, 0.2, uDoor) * exp(-pow(max(soft, 0.0) / halo, 2.0)) * (0.5 + n) * (1.0 - inside);
     // Foam outside a storefront door: a second, fainter line that the waves push out and pull back.
-    band += uBox * 0.3 * exp(-pow((edge - 0.045 - 0.02 * sin(turn * 9.0 - uTime * 2.4)) / 0.012, 2.0)) * (0.4 + n);
+    band += uBox * 0.13 * exp(-pow((soft - 0.07 - 0.03 * sin(turn * 9.0 - uTime * 2.4)) / 0.045, 2.0)) * (0.4 + n);
     band *= mix(0.2, 1.0, uLit);
-    vec3 glow = mix(mix(uZone, uColor, uLit), vec3(1.0), 0.5 * exp(-pow(edge / 0.003, 2.0)) + 0.3 * pulse);
+    vec3 glow = mix(mix(uZone, uColor, uLit), vec3(1.0), (0.5 * exp(-pow(edge / 0.003, 2.0)) + 0.3 * pulse) * (1.0 - 0.8 * uDoor));
     float a = clamp(max(inside, band), 0.0, 1.0);
     gl_FragColor = vec4(face * inside + glow * band, a);     // premultiplied
   }`;
@@ -186,6 +192,20 @@ function artTexture(url, done) {
   if (!entry) { entry = { texture: null, waiting: [] }; textures.set(url, entry); loader.load(url, t => { t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = renderer.capabilities.getMaxAnisotropy(); entry.texture = t; for (const f of entry.waiting) f(t); entry.waiting.length = 0; }, undefined, () => { /* a missing picture leaves the portal's own colour */ }); }
   if (entry.texture) done(entry.texture); else entry.waiting.push(done);
 }
+// A storefront's name is its shop sign: a dark board over the door with a neon tube round it and the name in lit
+// letters of the zone's colour, in the zone's own lettering.
+function signTexture(title, color, font = LOOKS.action.font) {
+  const c = document.createElement('canvas'); c.width = 1024; c.height = 256; const g = c.getContext('2d'); g.textAlign = 'center'; g.textBaseline = 'middle';
+  const box = (x, y, w, h, r) => { g.beginPath(); g.roundRect(x, y, w, h, r); };
+  box(26, 26, 972, 204, 26); g.fillStyle = 'rgba(8, 6, 16, 0.86)'; g.fill();
+  g.shadowColor = color; g.shadowBlur = 26; g.lineWidth = 7; g.strokeStyle = color; box(26, 26, 972, 204, 26); g.stroke(); g.stroke();
+  g.shadowBlur = 0; g.lineWidth = 2.5; g.strokeStyle = 'rgba(255, 255, 255, 0.85)'; box(26, 26, 972, 204, 26); g.stroke();
+  const name = title.toUpperCase(); let size = 132; const sized = () => font.replace(/\d+px/, size + 'px'); g.font = sized(); try { g.letterSpacing = '6px'; } catch (e) { /* an older browser sets the letters closer */ }
+  while (size > 44 && g.measureText(name).width > 880) { size -= 4; g.font = sized(); }
+  g.shadowColor = color; g.shadowBlur = 34; g.fillStyle = color; g.fillText(name, 512, 134); g.fillText(name, 512, 134);
+  g.shadowBlur = 8; g.fillStyle = 'rgba(255, 255, 255, 0.92)'; g.fillText(name, 512, 134);
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = renderer.capabilities.getMaxAnisotropy(); return t;
+}
 function labelTexture(title, color, font = LOOKS.action.font) {
   const c = document.createElement('canvas'); c.width = 768; c.height = 128; const g = c.getContext('2d'); g.textAlign = 'center'; g.textBaseline = 'middle';
   let size = +font.match(/(\d+)px/)[1]; const sized = () => font.replace(/\d+px/, size + 'px'); g.font = sized(); while (size > 30 && g.measureText(title).width > 730) { size -= 4; g.font = sized(); }
@@ -195,12 +215,15 @@ function labelTexture(title, color, font = LOOKS.action.font) {
 const flat = { transparent: true, depthWrite: false, depthTest: false };
 function makePortal(place, index, zone) {
   const look = LOOKS[zone.id] || LOOKS.action;
-  const group = new THREE.Group(), half = new THREE.Vector2(place.width / 2 * GROW, place.height / 2 * GROW), size = new THREE.Vector2(half.x + MARGIN * (place.box ? 5 : place.ring ? 3 : 1), half.y + MARGIN * (place.box ? 5 : place.ring ? 3 : 1));
+  const group = new THREE.Group(), half = new THREE.Vector2(place.width / 2 * GROW, place.height / 2 * GROW), size = new THREE.Vector2(half.x + MARGIN * (place.ring ? 12 : 1), half.y + MARGIN * (place.ring ? 12 : 1));   // room for a door's mist outside its rim
   const uniforms = { uMap: { value: null }, uHasMap: { value: 0 }, uAspect: { value: 1 }, uColor: { value: new THREE.Color('#5ff2ff') }, uHalf: { value: half }, uQuad: { value: size }, uLit: { value: 0 }, uTime: { value: 0 }, uHot: { value: 0 }, uSeed: { value: (index * 0.618) % 1 }, uFlow: { value: 0 }, uZone: { value: new THREE.Color(zone.color) }, uRadius: { value: look.radius }, uWave: { value: place.ring ? 0.03 : look.wave }, uScan: { value: look.scan }, uDoor: { value: place.ring ? 1 : 0 }, uBox: { value: place.box ? 1 : 0 } };
   const face = new THREE.Mesh(quad, new THREE.ShaderMaterial({ uniforms, vertexShader: VERTEX, fragmentShader: FRAGMENT, ...flat, premultipliedAlpha: true }));
   face.scale.set(size.x, size.y, 1); face.renderOrder = 16; face.frustumCulled = false; group.add(face);
   const label = new THREE.Mesh(labelGeometry, new THREE.MeshBasicMaterial({ ...flat, opacity: 0 })); label.renderOrder = 20; label.frustumCulled = false; label.visible = false;
-  const width = Math.max(place.width * 1.5, 0.5); label.scale.set(width, width / 6, 1); label.position.set(0, half.y + MARGIN * 0.4 + width / 12, 0.01); group.add(label);
+  // A storefront door carries a shop sign: a board 4 to 1, wider than the door, over the mist at the door's top.
+  if (place.box) { const width = place.width * 1.3; label.scale.set(width, width / 4, 1); label.position.set(0, half.y + 0.2 + width / 8, 0.03); }
+  else { const width = Math.max(place.width * 1.5, 0.5); label.scale.set(width, width / 6, 1); label.position.set(0, half.y + MARGIN * 0.4 + width / 12, 0.01); }
+  group.add(label);
   // The quad's own axes are the screen's: x along its width, y up it, z out of the glass.
   const m = new THREE.Matrix4().makeBasis(new THREE.Vector3(...place.right), new THREE.Vector3(...place.up), new THREE.Vector3(...place.normal));
   group.quaternion.setFromRotationMatrix(m); group.position.set(...place.centre); scene.add(group);
@@ -212,7 +235,7 @@ function show(portal, game) {
   if (portal.label.material.map) { portal.label.material.map.dispose(); portal.label.material.map = null; }
   portal.label.visible = !!game; portal.uniforms.uHasMap.value = 0;
   if (!game) return;
-  portal.uniforms.uColor.value.set(game.color); portal.label.material.map = labelTexture(game.title, game.color, portal.look.font); portal.label.material.needsUpdate = true;
+  portal.uniforms.uColor.value.set(game.color); portal.label.material.map = (portal.place.box ? signTexture : labelTexture)(game.title, game.color, portal.look.font); portal.label.material.needsUpdate = true;
   if (game.art) artTexture(game.art, t => { if (portal.game !== game) return; portal.uniforms.uMap.value = t; portal.uniforms.uHasMap.value = 1; portal.uniforms.uAspect.value = (t.image.width || 1) / (t.image.height || 1); });
 }
 
@@ -405,7 +428,7 @@ function tick(now) {
   camera.rotation.set(visit.pitch, -visit.yaw, 0);
   const time = reduced ? 0 : now / 1000;
   for (const m of air) m.material.uniforms.uTime.value = time;
-  portals.forEach((p, i) => { p.uniforms.uTime.value = time; p.uniforms.uHot.value += ((i === visit.aim ? 1 : 0) - p.uniforms.uHot.value) * Math.min(1, dt * 10); p.uniforms.uFlow.value += ((!reduced && (i === hover || (touch && i === visit.aim)) ? 1 : 0) - p.uniforms.uFlow.value) * Math.min(1, dt * 5); p.label.material.opacity = p.lit * (p.door || p.frame ? 0.75 + 0.25 * p.uniforms.uHot.value : p.uniforms.uHot.value); if (p.frame && !reduced) p.group.position.y = p.base + 0.035 * Math.sin(time * 0.7 + p.uniforms.uSeed.value * 6.283); });
+  portals.forEach((p, i) => { p.uniforms.uTime.value = time; p.uniforms.uHot.value += ((i === visit.aim ? 1 : 0) - p.uniforms.uHot.value) * Math.min(1, dt * 10); p.uniforms.uFlow.value += ((!reduced && (i === hover || (touch && i === visit.aim)) ? 1 : 0) - p.uniforms.uFlow.value) * Math.min(1, dt * 5); p.label.material.opacity = p.lit * (p.place.box ? 0.9 + 0.1 * p.uniforms.uHot.value : p.door || p.frame ? 0.75 + 0.25 * p.uniforms.uHot.value : p.uniforms.uHot.value); if (p.frame && !reduced) p.group.position.y = p.base + 0.035 * Math.sin(time * 0.7 + p.uniforms.uSeed.value * 6.283); });
   renderer.render(scene, camera);
   // Slow frames lower the pixel ratio: after a second and a half of frames over 34 ms, a quarter step down, to no
   // less than the display's own pixels. Frames while a world loads or the tab was hidden do not count.
