@@ -28,6 +28,8 @@ assert(GAMES.length >= 40, 'switch.js lists the games: ' + GAMES.length);
   // station on the street and a door on the shop front, upright, door-sized, on the ground, facing its station.
   assert.deepEqual(ZONES.map(z => [z.id, z.label, z.groups]), GROUPS.map(g => [g.id, g.label, [g.id]]));
   assert(readFileSync(new URL('public/lab/riftwalk/worlds/hall/' + HALL.file, root)).length > 5e6, 'the world file');
+  // A touch device gets a smaller file of the same alley.
+  { const big = readFileSync(new URL('public/lab/riftwalk/worlds/hall/' + HALL.file, root)).length, small = readFileSync(new URL('public/lab/riftwalk/worlds/hall/' + HALL.fileTouch, root)).length; assert(small > 5e6 && small < big * 0.6, 'the touch file is about half the size'); }
   assert(HALL.eye > 1.2 && HALL.eye < 1.8); assert.equal(HALL.flip, false); assert(near(HALL.offset[1], HALL.eye), 'the floor of the alley is at 0'); assert.deepEqual(SCREENS, [], 'the alley has no machines');
   const boxes = HALL.bounds.boxes; assert(boxes.length >= 2); const inside = (x, z) => boxes.some(b => x >= b.x[0] && x <= b.x[1] && z >= b.z[0] && z <= b.z[1]);
   assert(inside(HALL.start.x, HALL.start.z), 'the visitor starts on the street');

@@ -7,6 +7,7 @@
 //   and the ways back return to the alley at that zone's station;
 // - ◀ and ▶ turn from door to door, a drag turns the view only, and W A S D walk the two streets and stay on them;
 // - a zone with more than eight games has a More button in its world, which shows the next games;
+// - the rim of a door gives way under the mouse pointer;
 // - the picture under the mouse pointer flows; a click on a lit frame, Enter, and the Play button launch its route;
 // - every game is also a plain link on the page;
 // - reduced motion moves at once with no motes; a phone layout fits, with 44 px buttons, and takes taps.
@@ -73,7 +74,7 @@ try {
     // A number key glides to a zone's station, and the card names the door in front.
     await page.keyboard.press('2'); await t.until(s => s.gliding || s.zone === 'action', 'the 2 key starts a glide'); s = await t.zone('action', 'the visitor arrives at the Action station');
     assert(atStation(s, 'action'), 'the visitor stands at the station'); assert.deepEqual(await t.pressed(), ['Action']); s = await t.front('a door is in front'); assert.equal(s.aim, door('action'), 'the Action door is in front');
-    assert.equal(await t.text('tTitle'), 'Action'); assert.equal(await t.text('tSub'), '11 games · a world of its own'); assert.match(await t.text('tDo'), /^Click the door or press Enter to go in$/); assert.equal(await t.text('kGo'), 'Go'); assert.equal(await t.text('kRoom'), 'Enter Action');
+    assert.equal(await t.text('tTitle'), 'Action'); assert.equal(await t.text('tSub'), '11 games · a world of its own'); assert.match(await t.text('tDo'), /^Click the door or press Enter to go in$/); assert.equal(await t.text('kGo'), 'Go'); assert.equal(await t.text('kRoom'), 'Go in');
     // A zone button, and the up and down keys.
     await page.click('#groups button[data-zone="ascii"]'); s = await t.zone('ascii', 'the ASCII Scenes button'); assert(atStation(s, 'ascii')); s = await t.front('a door is in front'); assert.equal(s.aim, door('ascii'));
     await page.keyboard.press('ArrowDown'); s = await t.zone('strategy', 'the down key goes to the next zone'); assert(atStation(s, 'strategy')); assert.deepEqual(await t.pressed(), ['Strategy']);
@@ -108,7 +109,7 @@ try {
     // The ring behind the visitor leads back, and the Go in button, the R key and Space open the world again.
     const exit = s.machines.length; await t.face(exit, 'the ring back is in view'); assert.equal(await t.text('tTitle'), 'The alley'); assert.match(await t.text('tDo'), /^Click the portal or press Enter to go back$/); assert.equal(await t.text('kGo'), 'Go');
     at = await t.at(exit); await page.mouse.click(at.x, at.y); s = await t.zone('lab', 'the ring leads back to the alley'); assert(atStation(s, 'lab'), 'back at the station of the zone the visitor was in');
-    assert.equal(await t.text('kRoom'), 'Enter Lab'); await page.click('#kRoom'); await t.world('lab', 'the Go in button opens the world'); await page.keyboard.press('Backspace'); s = await t.zone('lab', 'Backspace goes back');
+    assert.equal(await t.text('kRoom'), 'Go in'); await page.click('#kRoom'); await t.world('lab', 'the Go in button opens the world'); await page.keyboard.press('Backspace'); s = await t.zone('lab', 'Backspace goes back');
     await page.keyboard.press('r'); await t.world('lab', 'the R key opens the world'); await page.click('#kBack'); s = await t.zone('lab', 'the Alley button goes back');
     await t.until(s => s.aim === door('lab'), 'the Lab door is in front'); await t.key(' '); await t.world('lab', 'Space at a door opens the world'); await page.keyboard.press('Escape'); s = await t.zone('lab', 'Esc goes back');
     assert.deepEqual(t.moves, [], 'nothing launched yet');
@@ -162,6 +163,20 @@ try {
     assert.deepEqual(t.errors, [], 'no console errors');
     pass('the picture under the pointer flows, and a click on a lit frame launches its game', { game: game.title, url: game.url });
     await page.close();
+  }
+  {
+    // The rim of a door gives way under the mouse pointer: the door answers a pointer on its rim, not one in its
+    // middle or away from it, and a drag ends the touch.
+    const t = await open(), { page } = t; await t.enterAlley(); await page.keyboard.press('1'); await t.until(s => !s.gliding && s.phase === 'hall' && s.zone === 'cottage', 'at the Cottage storefront');
+    const rim = await page.evaluate(() => window.__riftwalk.rim(0, 1, 0)), mid = await page.evaluate(() => window.__riftwalk.screen(0)); assert(rim && mid && rim.x > mid.x + 30, 'the rim is to the right of the middle');
+    await page.mouse.move(rim.x, rim.y); await t.until(s => s.touch[0] > 0.9, 'the rim answers the pointer');
+    assert((await t.state()).touch.slice(1).every(v => v === 0), 'no other door answers');
+    await page.mouse.move(mid.x, mid.y); await t.until(s => s.touch[0] < 0.05, 'the middle of the door is no touch');
+    await page.mouse.move(rim.x, rim.y); await t.until(s => s.touch[0] > 0.9, 'the rim answers again');
+    await page.mouse.move(rim.x + (960 - rim.x) * 0.9, 30); await t.until(s => s.touch[0] < 0.05, 'away from the door is no touch');
+    await page.mouse.move(rim.x, rim.y); await t.until(s => s.touch[0] > 0.9, 'the rim answers a third time'); await page.mouse.down(); await page.mouse.move(rim.x + 60, rim.y, { steps: 4 }); await t.until(s => s.touch[0] < 0.05, 'a drag ends the touch'); await page.mouse.up();
+    assert.deepEqual(t.errors, []); await page.close();
+    pass('the rim of a door gives way under the mouse pointer');
   }
   {
     // Every game is also a plain link, grouped by collection. ?zone starts at a zone. Enter launches the game in front.
