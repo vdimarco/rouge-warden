@@ -3,6 +3,7 @@
 // - A door in the middle of the view: a soft chord in the pitch of its zone, louder as the visitor looks at it.
 // - Each world: its own air (the same noise through its own filter) and its own slow notes.
 // - A whoosh on the way through a portal, and a tick when a frame or a door comes into view.
+// - Music: a lofi track (audio/lofi.mp3, made with ElevenLabs Music) that loops with no seam, under everything.
 // The context starts on the visitor's first press (browsers ask for that), and /arcade/quiet.js silences it when the
 // page is hidden. The Sound button turns it off and on, and the choice is kept.
 const SCALE = [0, 3, 5, 7, 10];   // minor pentatonic: any two notes sound well together
@@ -20,6 +21,7 @@ export const VOICES = {
 // The level of everything: a quiet bed under the visit. The first version was 0.5, and the user found it too loud.
 const LEVEL = 0.15;
 const KEY = 'riftwalk.sound';
+let music = null;   // { gain, source }: the lofi track, once it has loaded
 let ctx = null, master = null, noise = null, voice = null, door = null, on = true, timer = 0, seed = 7;
 try { on = localStorage.getItem(KEY) !== 'off'; } catch (e) { /* storage off */ }
 const rand = () => (seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296;
@@ -56,13 +58,23 @@ export function start() {
   const Audio = window.AudioContext || window.webkitAudioContext; if (!Audio) return;
   ctx = new Audio(); master = ctx.createGain(); master.gain.value = on ? LEVEL : 0; master.connect(ctx.destination); noise = brown();
   const tone = ctx.createGain(); tone.gain.value = 0; tone.connect(master); const a = ctx.createOscillator(), b = ctx.createOscillator(); a.type = b.type = 'sine'; a.connect(tone); b.connect(tone); a.start(); b.start(); door = { tone, a, b };
-  timer = setInterval(schedule, 200); place('alley');
+  timer = setInterval(schedule, 200); place('alley'); loadMusic();
+}
+// The music loads after the first press, so it costs a visitor with the sound off nothing until they turn it on. It
+// is decoded once and loops as a buffer, which has no gap at the loop point. It fades in over a few seconds.
+const MUSIC = 0.85;   // the music's level under the master level
+function loadMusic() {
+  if (!ctx || music || !on) return; music = { gain: ctx.createGain(), source: null }; music.gain.gain.value = 0; music.gain.connect(master);
+  fetch(new URL('./audio/lofi.mp3', import.meta.url)).then(r => { if (!r.ok) throw new Error('no music'); return r.arrayBuffer(); }).then(bytes => ctx.decodeAudioData(bytes)).then(buffer => {
+    const source = ctx.createBufferSource(); source.buffer = buffer; source.loop = true; source.connect(music.gain); source.start(); music.source = source;
+    music.gain.gain.setTargetAtTime(MUSIC, ctx.currentTime, 1.6);
+  }).catch(() => { music = null; /* the page plays on with no music */ });
 }
 // The place the visitor is in: 'alley' or a zone id. The old place fades out as the new one fades in.
 export function place(id) {
   if (!ctx || voice?.id === id) return; const t = ctx.currentTime, old = voice;
   if (old) { old.out.gain.cancelScheduledValues(t); old.out.gain.setTargetAtTime(0, t, 0.5); setTimeout(() => { for (const s of old.stops) { try { s.stop(); } catch (e) { /* stopped */ } } old.out.disconnect(); }, 2600); }
-  voice = makeVoice(id); voice.out.gain.setTargetAtTime(1, t, 0.9);
+  voice = makeVoice(id); voice.out.gain.setTargetAtTime(0.6, t, 0.9);   // the place's own sound sits under the music
 }
 // The door in view hums: level 0 to 1, in the pitch of zone number `index`.
 export function hum(level, index = 0) {
@@ -83,8 +95,8 @@ export function tick() {
 export const isOn = () => on;
 export function setOn(value) {
   on = !!value; try { localStorage.setItem(KEY, on ? 'on' : 'off'); } catch (e) { /* storage off */ }
-  if (ctx) { master.gain.setTargetAtTime(on ? LEVEL : 0, ctx.currentTime, 0.08); if (on && ctx.state === 'suspended') ctx.resume().catch(() => {}); }
+  if (ctx) { master.gain.setTargetAtTime(on ? LEVEL : 0, ctx.currentTime, 0.08); if (on && ctx.state === 'suspended') ctx.resume().catch(() => {}); if (on) loadMusic(); }
   return on;
 }
 // For the checks: the state of the context and the place that sounds.
-export const state = () => ({ context: ctx ? ctx.state : 'none', on, place: voice?.id ?? null, level: master ? +master.gain.value.toFixed(2) : 0 });
+export const state = () => ({ context: ctx ? ctx.state : 'none', on, place: voice?.id ?? null, music: !!music?.source, level: master ? +master.gain.value.toFixed(2) : 0 });

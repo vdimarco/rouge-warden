@@ -82,7 +82,7 @@ A visitor who walks at a door in the alley, inside its width, SHALL go into that
 - **THEN** the visitor goes into the meadow, and then comes back to the Cottage storefront
 
 ### Requirement: Sound
-The page SHALL make sound after the visitor presses the start control: a hum in the alley, a tone from the door in view, a sound of its own in each world, and a whoosh on the way through a portal. A Sound button SHALL turn the sound off and on, and the choice SHALL be kept. The page SHALL be silent while it is hidden.
+The page SHALL make sound after the visitor presses the start control: quiet lofi music that loops with no gap, a hum in the alley, a tone from the door in view, a sound of its own in each world, and a whoosh on the way through a portal. A Sound button SHALL turn the sound off and on, and the choice SHALL be kept. The page SHALL be silent while it is hidden.
 
 #### Scenario: Sound off
 - **WHEN** the visitor presses Sound
