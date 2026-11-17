@@ -1,0 +1,18 @@
+## Sources
+- The scene, the jet and pilot models, the flame layer, the post effects, the sound code and the 30 sound files come from the Forge fragment the user shared (https://forge.ui8.ai/share/frag_1eb8944c-57b1-42ca-a909-5c2d7e517c24, read 2026-11-17). The downloaded modules are kept unchanged in `games/ember-tide/forge-src/`. **The fragment's licence was not checked.** Confirm that it allows publishing before this goes to production.
+- React 19.2.8 and react-dom 19.2.8 (MIT), bundled into `public/ember-tide/vendor/` by `games/ember-tide/tools/build-vendor.mjs`. Tailwind CSS 4.1.0 (MIT) compiles the classes the scene's component uses into `public/ember-tide/tailwind.css`.
+- The campaign, its story and names, the cutscenes and the portraits were written here.
+
+## Decisions
+- **The scene is patched by a script, not by hand.** `games/ember-tide/tools/build_engine.py` copies the fragment's modules to plain `.js` and applies each change as an exact text replacement that fails if the source no longer matches. The changes: hull and enemy health as settings, an ace (enemy 0) with its own health that a missile cannot kill outright and that takes 0.4 from a cannon round, a beacon drawn with the sights, `setBeacon`, `groundAt`, `respawnFoes`, `ready`, and in the component an `onScene` callback and a `paused` prop.
+- **A sortie is data.** `missions.js` lists each sortie's scene settings and stages. Stage types are `gates`, `skim`, `kills`, `evade`, `counter`, `survive` and `ace`; a stage may carry a time limit, scene settings that change when it starts, and radio lines. Balance changes are edits to that file.
+- **Cutscenes play on the live scene.** `cutscenes.js` lists shots. A shot with `scene` fades through black and starts the scene afresh with those settings (time of day, seed, camera, wingmen, paint); a shot with `move` changes settings without a cut, so the camera swings between the top and chase views. During a cutscene the scene is fitted between the bars so the chase camera's jet is not cut off. Lines type at 46 letters a second and move on by themselves; click, Space or Enter hurries, Escape or Skip ends. With reduced motion, lines appear whole and the bars do not slide.
+- **When a cutscene plays.** The opening plays on Begin campaign. A sortie's cutscene plays before its first briefing (sorties 5, 8, 9 and 12), and the ace's fall plays after sortie 8 is first won. The epilogue plays from the last debrief. Seen cutscenes are listed under Film reel on the flight line.
+- **No CDN.** The first build loaded React from esm.sh and Tailwind's browser build from jsDelivr. The arcade copy has both as local files, like the other static games.
+- **Arcade page.** It loads `/arcade/quiet.js`, `/arcade/switch.js` and `/arcade/analytics.js`. Screens are rebuilt on each change, so each calls `GameSwitch.wire()`; the title, the flight line and the pause menu have a Switch game button. The campaign ignores keys while the switcher is open.
+- **Save.** `ember-tide-save-v1` in localStorage: stars and best time for each sortie, upgrade steps, paint, and the cutscenes seen. The cabinet reads the stars for its line.
+- **Corridor.** Ember Tide is piece 20, after Ember Drift, the last Action machine. The screen light's offset moves from 44 to 45 and the uniform arrays from 88 to 90.
+
+## Not yet verified
+- A scripted pilot completed sorties 1, 8 and 12. Sorties 2 to 7 and 9 to 11 use the same stage types and were not flown. No person has tuned par times, enemy counts or the ace's health.
+- Touch and gamepad flight come from the fragment and were not tested here; the campaign's own screens were checked at 390 and 320 px wide.
