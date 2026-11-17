@@ -151,7 +151,8 @@ for (const { id } of JSON.parse(read("higgsfield/arcade-key-art.json")).art) {
     { id: "eleven-wells", title: "Eleven Wells", kind: "THE LAB", art: "eleven_wells", after: "Orbital Gardener" },
     { id: "ledger", title: "Warden's Ledger", kind: "THE LAB", art: "ledger", after: "Eleven Wells" },
     // a Lab toy lives under /lab/, so it names its route and its folder
-    { id: "riftwalk", title: "Riftwalk", kind: "THE LAB", art: "riftwalk", after: "Warden's Ledger", last: true, url: "/lab/riftwalk/", path: "public/lab/riftwalk" },
+    { id: "riftwalk", title: "Riftwalk", kind: "THE LAB", art: "riftwalk", after: "Warden's Ledger", url: "/lab/riftwalk/", path: "public/lab/riftwalk" },
+    { id: "splat-isle", title: "Splat Isle", kind: "THE LAB", art: "splat_isle", after: "Riftwalk", last: true, url: "/lab/splat-isle/", path: "public/lab/splat-isle" },
   ];
   for (const g of ADDED) {
     const url = g.url || `/${g.id}/`, at = pieces.findIndex((p) => p.url === url), p = pieces[at], prev = pieces[at - 1], next = pieces[at + 1];
@@ -170,7 +171,7 @@ for (const { id } of JSON.parse(read("higgsfield/arcade-key-art.json")).art) {
   }
   const n = pieces.length;
   check(n >= 40 && pieces.every((p, i) => Number(p.n) === i + 1), `the Corridor's ${n} cabinets are numbered 01 to ${String(n).padStart(2, "0")} with no gap`);
-  const WORDS = { 38: "thirty-eight", 39: "thirty-nine", 40: "forty", 41: "forty-one", 42: "forty-two", 43: "forty-three", 44: "forty-four", 45: "forty-five" };
+  const WORDS = { 38: "thirty-eight", 39: "thirty-nine", 40: "forty", 41: "forty-one", 42: "forty-two", 43: "forty-three", 44: "forty-four", 45: "forty-five", 46: "forty-six" };
   const written = {
     "--n": walk.includes(`style="--n: ${n}"`),
     "the aria label": walk.includes(`An arcade hall of ${n} games.`),

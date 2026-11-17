@@ -1,0 +1,7 @@
+{
+ "lofi.mp3": {
+  "made_with": "ElevenLabs Music (api.elevenlabs.io/v1/music), 90 seconds, mp3_44100_128",
+  "prompt": "Instrumental lofi hip hop beat. Mellow electric piano chords with jazzy seventh harmonies, soft boom bap drums with a lazy swing, warm round bass, gentle vinyl crackle and tape wobble, 75 bpm. Relaxed late night neon city mood, calm and unobtrusive background music. No vocals. Steady from start to end so it can loop.",
+  "edit": "ffmpeg: seconds 4 to 84 of the track, with its last 4 seconds crossfaded into the first 4 seconds of the track, so the 80-second file loops with no seam; 112 kbit/s."
+ }
+}
