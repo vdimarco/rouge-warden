@@ -54,7 +54,9 @@ addEventListener('resize', resize); resize();
 let HALL = { scale: 1, eye: 1.45, bounds: { x: [-2, 2], z: [-2, 2] }, start: { x: 0, z: 0, facing: 0 } }, SCREENS = [], PLACES = [], STATIONS = [], hall = null;
 const noWorld = query.get('world') === 'none';
 async function loadHall(onProgress) {
-  const response = await fetch('./worlds/hall/' + HALL.file); if (!response.ok) throw new Error('World file missing: ' + HALL.file);
+  // A touch device loads the alley's smaller file: half the download and half the splats to draw. ?q=full asks for the whole file.
+  const file = touch && HALL.fileTouch && query.get('q') !== 'full' ? HALL.fileTouch : HALL.file;
+  const response = await fetch('./worlds/hall/' + file); if (!response.ok) throw new Error('World file missing: ' + file);
   const total = +response.headers.get('content-length') || 0, reader = response.body.getReader(), parts = []; let got = 0;
   for (;;) { const { done, value } = await reader.read(); if (done) break; parts.push(value); got += value.length; if (onProgress && total) onProgress(got / total); }
   const bytes = new Uint8Array(got); let at = 0; for (const p of parts) { bytes.set(p, at); at += p.length; }
@@ -94,7 +96,7 @@ const LOOKS = {
 const VERTEX = `varying vec2 vUv; void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`;
 const FRAGMENT = `
   varying vec2 vUv; uniform sampler2D uMap; uniform float uHasMap; uniform float uAspect; uniform vec3 uColor; uniform vec3 uZone; uniform vec2 uHalf; uniform vec2 uQuad;
-  uniform float uLit; uniform float uTime; uniform float uHot; uniform float uFlow; uniform float uSeed; uniform float uRadius; uniform float uWave; uniform float uScan; uniform float uDoor; uniform float uBox;
+  uniform float uLit; uniform float uTime; uniform float uHot; uniform float uFlow; uniform float uSeed; uniform float uRadius; uniform float uWave; uniform float uScan; uniform float uDoor; uniform float uBox; uniform vec2 uPoint; uniform float uTouch;
   float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
   float noise(vec2 p) { vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f); return mix(mix(hash(i), hash(i + vec2(1, 0)), f.x), mix(hash(i + vec2(0, 1)), hash(i + vec2(1, 1)), f.x), f.y); }
   // Under 0 inside the shape. A screen is a box with round corners. A rift ring is a disc. A storefront door is an
@@ -112,13 +114,18 @@ const FRAGMENT = `
     float edge = d - (n - 0.5) * uWave;                       // the rim wavers
     // A storefront door has a riptide rim: two trains of waves run round it in opposite ways, over the slow noise.
     if (uBox > 0.5) edge -= 0.034 * sin(turn * 6.0 - uTime * 2.1 + uSeed * 6.283) + 0.02 * sin(turn * 11.0 + uTime * 3.0 + n * 3.0) + (n - 0.5) * 0.07;
+    // Where the mouse pointer touches the rim of a door, the rift gives way: the opening reaches out about 30 cm round
+    // the pointer and shows more of the scene beyond. uPoint is the pointer on the door's plane, in metres.
+    float reach = uTouch * 0.32 * exp(-dot(p - uPoint, p - uPoint) / 0.2); edge -= reach;
     // A door or a ring has no hard rim. Its picture fades out over about 30 cm, and noise at two sizes makes the fade
     // ragged, like mist, so the world behind it seems to seep into the street. A screen or a frame keeps a crisp rim.
     float mist = (noise(p * 6.0 + vec2(uTime * 0.22, uSeed * 9.0)) - 0.5) * 0.2 + (noise(p * 15.0 - vec2(uSeed * 4.0, uTime * 0.31)) - 0.5) * 0.09;
     float soft = edge + mist * uDoor, feather = mix(0.003, 0.15, uDoor);
-    float inside = smoothstep(feather, -feather * 1.3, soft), rim = smoothstep(-0.07, 0.0, d);
+    float inside = smoothstep(feather, -feather * 1.3, soft), rim = smoothstep(-0.07, 0.0, d - reach);
     // The picture covers the shape: the longer side of the picture is cropped.
-    vec2 uv = p / uHalf * 0.5; float form = uHalf.x / uHalf.y; if (uAspect > form) uv.x *= form / uAspect; else uv.y *= uAspect / form; uv += 0.5;
+    // A door shows the middle four fifths of its picture, so the rest is there to see when the rift gives way. The
+    // picture also slides a little against the pointer, like a look round the rim.
+    vec2 uv = p / uHalf * 0.5 * mix(1.0, 0.8, uDoor) - uPoint / uHalf * 0.035 * uTouch * uDoor; float form = uHalf.x / uHalf.y; if (uAspect > form) uv.x *= form / uAspect; else uv.y *= uAspect / form; uv += 0.5;
     // Under the pointer the picture flows: it swells a little, drifts, and its surface moves like slow water.
     vec2 fl = vec2(noise(uv * 3.0 + vec2(uTime * 0.35, uSeed * 7.0)), noise(uv * 3.0 + vec2(uSeed * 3.0, -uTime * 0.3))) - 0.5;
     fl += 0.5 * (vec2(noise(uv * 7.0 - vec2(uTime * 0.5, 2.0)), noise(uv * 7.0 + vec2(5.0, uTime * 0.45))) - 0.5);
@@ -216,7 +223,7 @@ const flat = { transparent: true, depthWrite: false, depthTest: false };
 function makePortal(place, index, zone) {
   const look = LOOKS[zone.id] || LOOKS.action;
   const group = new THREE.Group(), half = new THREE.Vector2(place.width / 2 * GROW, place.height / 2 * GROW), size = new THREE.Vector2(half.x + MARGIN * (place.ring ? 12 : 1), half.y + MARGIN * (place.ring ? 12 : 1));   // room for a door's mist outside its rim
-  const uniforms = { uMap: { value: null }, uHasMap: { value: 0 }, uAspect: { value: 1 }, uColor: { value: new THREE.Color('#5ff2ff') }, uHalf: { value: half }, uQuad: { value: size }, uLit: { value: 0 }, uTime: { value: 0 }, uHot: { value: 0 }, uSeed: { value: (index * 0.618) % 1 }, uFlow: { value: 0 }, uZone: { value: new THREE.Color(zone.color) }, uRadius: { value: look.radius }, uWave: { value: place.ring ? 0.03 : look.wave }, uScan: { value: look.scan }, uDoor: { value: place.ring ? 1 : 0 }, uBox: { value: place.box ? 1 : 0 } };
+  const uniforms = { uMap: { value: null }, uHasMap: { value: 0 }, uAspect: { value: 1 }, uColor: { value: new THREE.Color('#5ff2ff') }, uHalf: { value: half }, uQuad: { value: size }, uLit: { value: 0 }, uTime: { value: 0 }, uHot: { value: 0 }, uSeed: { value: (index * 0.618) % 1 }, uFlow: { value: 0 }, uZone: { value: new THREE.Color(zone.color) }, uRadius: { value: look.radius }, uWave: { value: place.ring ? 0.03 : look.wave }, uScan: { value: look.scan }, uDoor: { value: place.ring ? 1 : 0 }, uPoint: { value: new THREE.Vector2() }, uTouch: { value: 0 }, uBox: { value: place.box ? 1 : 0 } };
   const face = new THREE.Mesh(quad, new THREE.ShaderMaterial({ uniforms, vertexShader: VERTEX, fragmentShader: FRAGMENT, ...flat, premultipliedAlpha: true }));
   face.scale.set(size.x, size.y, 1); face.renderOrder = 16; face.frustumCulled = false; group.add(face);
   const label = new THREE.Mesh(labelGeometry, new THREE.MeshBasicMaterial({ ...flat, opacity: 0 })); label.renderOrder = 20; label.frustumCulled = false; label.visible = false;
@@ -227,7 +234,7 @@ function makePortal(place, index, zone) {
   // The quad's own axes are the screen's: x along its width, y up it, z out of the glass.
   const m = new THREE.Matrix4().makeBasis(new THREE.Vector3(...place.right), new THREE.Vector3(...place.up), new THREE.Vector3(...place.normal));
   group.quaternion.setFromRotationMatrix(m); group.position.set(...place.centre); scene.add(group);
-  return { place, group, uniforms, face, label, look, zone, door: !!place.ring, frame: !!place.frame, base: place.centre[1], game: null, lit: 0, wantLit: 0 };
+  return { place, group, uniforms, face, label, look, zone, door: !!place.ring, frame: !!place.frame, base: place.centre[1], game: null, lit: 0, wantLit: 0, touch: 0 };
 }
 let portals = [];
 function show(portal, game) {
@@ -263,7 +270,7 @@ function setPage(page) { const i = visit.zone, count = pagesIn(i); visit.page[i]
 function mark() {
   const zone = ZONES[visit.zone], count = pagesIn(visit.zone);
   for (const b of groupsBar.children) { const on = b.dataset.zone === zone.id; b.setAttribute('aria-pressed', String(on)); if (on && visit.phase !== 'title') b.scrollIntoView({ block: 'nearest', inline: 'center', behavior: reduced ? 'auto' : 'smooth' }); }
-  $('kBack').hidden = room === null; $('kRoom').hidden = room !== null || !STATIONS[visit.zone]?.room; $('kRoom').textContent = 'Enter ' + ZONES[visit.zone].label; $('kMore').hidden = count < 2; $('kMore').textContent = `More ${visit.page[visit.zone] + 1}/${count}`;
+  $('kBack').hidden = room === null; $('kRoom').hidden = room !== null || !STATIONS[visit.zone]?.room; $('kRoom').textContent = 'Go in'; $('kRoom').setAttribute('aria-label', 'Go into ' + ZONES[visit.zone].label); $('kMore').hidden = count < 2; $('kMore').textContent = `More ${visit.page[visit.zone] + 1}/${count}`;
 }
 function enter(index) { if (room !== null || index === visit.zone) return; visit.zone = index; mark(); banner(ZONES[index]); }
 // Going to another zone: the visitor glides across the hall to that zone's station and turns to its machines.
@@ -350,6 +357,24 @@ function lookRay(clientX, clientY) {
   ndc.set(clientX / innerWidth * 2 - 1, -(clientY / innerHeight) * 2 + 1, 0.5).unproject(camera); dir.copy(ndc).sub(eye).normalize();
   return [{ x: eye.x, y: eye.y, z: eye.z }, { x: dir.x, y: dir.y, z: dir.z }];
 }
+// The pointer on a door's plane: where the look ray meets the plane, in metres along the door's right and up, and
+// how far that point is from the rim (under 0 inside). null when the ray runs along the plane or the door is behind.
+function onDoor(p, origin, d) {
+  const n = p.place.normal, c = p.place.centre, r = p.place.right, u = p.place.up, down = d.x * n[0] + d.y * n[1] + d.z * n[2]; if (Math.abs(down) < 1e-4) return null;
+  const t = ((c[0] - origin.x) * n[0] + (c[1] - origin.y) * n[1] + (c[2] - origin.z) * n[2]) / down; if (t <= 0) return null;
+  const h = [origin.x + d.x * t - c[0], origin.y + d.y * t - c[1], origin.z + d.z * t - c[2]], x = h[0] * r[0] + h[1] * r[1] + h[2] * r[2], y = h[0] * u[0] + h[1] * u[1] + h[2] * u[2];
+  const half = p.uniforms.uHalf.value, rim = p.place.box ? (Math.hypot(x / half.x, y / half.y) - 1) * Math.min(half.x, half.y) : Math.hypot(x, y) - half.x;
+  return { x, y, rim };
+}
+// A touch on the rim: full within 12 cm of it, and none from 40 cm. A door seen from behind does not answer.
+function touchRims(clientX, clientY) {
+  const [origin, d] = lookRay(clientX, clientY);
+  for (const p of portals) {
+    if (!p.door) continue; const at = visit.phase === 'hall' && p.lit > 0.5 && d.x * p.place.normal[0] + d.z * p.place.normal[2] < -0.2 ? onDoor(p, origin, d) : null;
+    p.touch = at ? clamp(1 - (Math.abs(at.rim) - 0.12) / 0.28, 0, 1) : 0; if (at && p.touch > 0) p.uniforms.uPoint.value.set(at.x, at.y);
+  }
+}
+const noTouch = () => { for (const p of portals) p.touch = 0; };
 const portalAt = (x, y) => visit.phase === 'hall' ? pick(...lookRay(x, y), PLACES, lit(), touch ? 1.35 : 1.08) : -1;
 // The machines and rings as the visitor sees them from where they stand: each with its heading, its distance over the
 // floor and the look angle up to it.
@@ -394,14 +419,15 @@ function step(dt) {
 let drag = null, hover = -1;   // hover: the place under the mouse pointer
 canvas.addEventListener('pointerdown', e => { if (visit.phase !== 'hall') return; drag = { id: e.pointerId, x: e.clientX, y: e.clientY, sx: e.clientX, sy: e.clientY, at: performance.now(), moved: 0 }; try { canvas.setPointerCapture(e.pointerId); } catch (error) { /* the drag still works inside the canvas */ } canvas.classList.add('look'); });
 canvas.addEventListener('pointermove', e => {
-  if (!drag || e.pointerId !== drag.id) { if (e.pointerType === 'mouse') { hover = portalAt(e.clientX, e.clientY); canvas.classList.toggle('aim', hover >= 0); } return; }
+  if (!drag || e.pointerId !== drag.id) { if (e.pointerType === 'mouse') { hover = portalAt(e.clientX, e.clientY); canvas.classList.toggle('aim', hover >= 0); touchRims(e.clientX, e.clientY); } return; }
+  noTouch();
   const dx = e.clientX - drag.x, dy = e.clientY - drag.y; drag.x = e.clientX; drag.y = e.clientY; drag.moved += Math.abs(dx) + Math.abs(dy);
   if (visit.glide || drag.moved < 6) return;
   // The view follows the finger: a drag to the right turns the visitor to the left, and a drag down looks up.
   const k = (camera.fov * Math.PI / 180) / innerHeight * 1.15; visit.turnTo = null; visit.yaw = wrap(visit.yaw - dx * k); visit.pitch = clamp(visit.pitch + dy * k, -1.1, 1.1);
 });
 const lift = e => { if (!drag || e.pointerId !== drag.id) return; const tap = drag.moved < 10 && performance.now() - drag.at < 500, d = drag; drag = null; canvas.classList.remove('look'); if (tap && e.type === 'pointerup') { const i = portalAt(d.sx, d.sy); if (i >= 0) launch(i); } };
-canvas.addEventListener('pointerup', lift); canvas.addEventListener('pointercancel', lift); canvas.addEventListener('pointerleave', () => { hover = -1; });
+canvas.addEventListener('pointerup', lift); canvas.addEventListener('pointercancel', lift); canvas.addEventListener('pointerleave', () => { hover = -1; noTouch(); });
 const nextZone = step => travel((visit.zone + step + ZONES.length) % ZONES.length);
 addEventListener('keydown', e => {
   if (visit.phase !== 'hall' || window.GameSwitch?.isOpen) return; const k = e.key.toLowerCase();
@@ -428,7 +454,10 @@ function tick(now) {
   camera.rotation.set(visit.pitch, -visit.yaw, 0);
   const time = reduced ? 0 : now / 1000;
   for (const m of air) m.material.uniforms.uTime.value = time;
-  portals.forEach((p, i) => { p.uniforms.uTime.value = time; p.uniforms.uHot.value += ((i === visit.aim ? 1 : 0) - p.uniforms.uHot.value) * Math.min(1, dt * 10); p.uniforms.uFlow.value += ((!reduced && (i === hover || (touch && i === visit.aim)) ? 1 : 0) - p.uniforms.uFlow.value) * Math.min(1, dt * 5); p.label.material.opacity = p.lit * (p.place.box ? 0.9 + 0.1 * p.uniforms.uHot.value : p.door || p.frame ? 0.75 + 0.25 * p.uniforms.uHot.value : p.uniforms.uHot.value); if (p.frame && !reduced) p.group.position.y = p.base + 0.035 * Math.sin(time * 0.7 + p.uniforms.uSeed.value * 6.283); });
+  // A touch screen has no pointer to rest on a rim, so the door in the middle of the view opens by itself: the place
+  // where the rift gives way goes slowly round its rim.
+  if (touch) portals.forEach((p, i) => { if (!p.door) return; p.touch = !reduced && visit.phase === 'hall' && i === visit.aim ? 0.85 : 0; if (p.touch) { const h = p.uniforms.uHalf.value; p.uniforms.uPoint.value.set(Math.cos(time * 0.55) * h.x, Math.sin(time * 0.55) * h.y); } });
+  portals.forEach((p, i) => { p.uniforms.uTime.value = time; p.uniforms.uTouch.value += (p.touch - p.uniforms.uTouch.value) * Math.min(1, dt * 7); p.uniforms.uHot.value += ((i === visit.aim ? 1 : 0) - p.uniforms.uHot.value) * Math.min(1, dt * 10); p.uniforms.uFlow.value += ((!reduced && (i === hover || (touch && i === visit.aim)) ? 1 : 0) - p.uniforms.uFlow.value) * Math.min(1, dt * 5); p.label.material.opacity = p.lit * (p.place.box ? 0.9 + 0.1 * p.uniforms.uHot.value : p.door || p.frame ? 0.75 + 0.25 * p.uniforms.uHot.value : p.uniforms.uHot.value); if (p.frame && !reduced) p.group.position.y = p.base + 0.035 * Math.sin(time * 0.7 + p.uniforms.uSeed.value * 6.283); });
   renderer.render(scene, camera);
   // Slow frames lower the pixel ratio: after a second and a half of frames over 34 ms, a quarter step down, to no
   // less than the display's own pixels. Frames while a world loads or the tab was hidden do not count.
@@ -456,7 +485,7 @@ requestAnimationFrame(tick);
 // A handle for the browser check (qa/lab/riftwalk.e2e.mjs). The page never reads it.
 window.__riftwalk = {
   state: () => ({ phase: visit.phase, room: room === null ? null : ZONES[room].id, zone: ZONES[visit.zone].id, page: visit.page[visit.zone], pages: pagesIn(visit.zone), aim: visit.aim, yaw: visit.yaw, pitch: visit.pitch, turning: visit.turnTo !== null, gliding: !!visit.glide, place: { x: frame.position.x, z: frame.position.z }, hall: !!hall, splats: hall?.packedSplats?.numSplats ?? 0,
-    hover, flow: portals.map(p => +p.uniforms.uFlow.value.toFixed(2)),
+    hover, flow: portals.map(p => +p.uniforms.uFlow.value.toFixed(2)), touch: portals.map(p => +p.uniforms.uTouch.value.toFixed(2)),
     motes: air.reduce((n, m) => n + m.geometry.attributes.position.count, 0),
     machines: portals.slice(0, SCREENS.length).map(p => ({ zone: p.zone.id, game: p.game?.id ?? null, title: p.game?.title ?? null, url: p.game?.url ?? null, lit: p.lit, art: p.uniforms.uHasMap.value === 1 })),
     rings: portals.slice(SCREENS.length).map(p => ({ to: p.game.exit ? 'hall' : ZONES[p.game.zone].id, title: p.game.title, lit: p.lit, art: p.uniforms.uHasMap.value === 1 })) }),
@@ -466,6 +495,8 @@ window.__riftwalk = {
   worlds: () => scene.children.filter(c => c.packedSplats || c.isSplatMesh).map(c => (c === hallMesh ? 'hall' : 'room') + ':' + (c.packedSplats?.numSplats ?? 0)),
   // Where a place's centre is on the page (the machines first, then the six rings), or null when it is behind the view.
   screen: i => { const p = portals[i]; if (!p) return null; camera.updateMatrixWorld(true); ndc.set(...p.place.centre).project(camera); return ndc.z > 1 ? null : { x: (ndc.x + 1) / 2 * innerWidth, y: (1 - ndc.y) / 2 * innerHeight }; },
+  // Where a point on a place's plane is on the page: (x, y) in half widths and half heights from its centre, so (1, 0) is the right rim.
+  rim: (i, x = 1, y = 0) => { const p = portals[i]; if (!p) return null; const h = p.uniforms.uHalf.value, c = p.place.centre, r = p.place.right, u = p.place.up; camera.updateMatrixWorld(true); ndc.set(c[0] + r[0] * x * h.x + u[0] * y * h.y, c[1] + r[1] * x * h.x + u[1] * y * h.y, c[2] + r[2] * x * h.x + u[2] * y * h.y).project(camera); return ndc.z > 1 ? null : { x: (ndc.x + 1) / 2 * innerWidth, y: (1 - ndc.y) / 2 * innerHeight }; },
   // Turn at once to a place (a machine, or a ring after the machines), as the visitor sees it from where they stand.
   face: i => { const p = seen()[i]; if (!p) return; visit.turnTo = null; visit.yaw = p.heading; visit.pitch = p.pitch; camera.rotation.set(visit.pitch, -visit.yaw, 0); camera.updateMatrixWorld(true); },
   look: heading => { visit.turnTo = null; visit.yaw = wrap(heading); visit.pitch = 0; camera.rotation.set(visit.pitch, -visit.yaw, 0); camera.updateMatrixWorld(true); },

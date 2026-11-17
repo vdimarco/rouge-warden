@@ -70,6 +70,10 @@ Resolution (after the merge of pull request 838):
 - [x] Door pictures drawn by the page at 1024 px (`door-shots.mjs`, `shots/doors.jpg`).
 - [x] Camera range from 300 m to 30 km: the meadow's sky had a dark hole.
 - [x] Soft, misty edges on the doors and the way back, and a neon shop sign with the zone's name over each door (`shots/soft-doors.jpg`); both tests pass.
+- [x] The rim of a door gives way under the mouse pointer, and on a touch screen the door in view opens by itself; a browser check for the pointer.
+- [x] Door pictures from the full world files at 1280 by 1664.
+- [x] Phones: a 1,000,000-splat alley file for touch devices, and a "Go in" button that fits a 390 px screen.
+- [x] The GTA door moved 0.85 m onto the shop's shutter.
 - [ ] Measure the frame rate at the new pixel ratio on a real graphics card (not possible in this session).
 - [ ] See the alley at its full 2,000,000 splats. Software WebGL is too slow for it.
 - [ ] Play on a real phone and a real graphics card (not possible in this session).

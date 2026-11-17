@@ -1,11 +1,15 @@
 ## ADDED Requirements
 
 ### Requirement: A neon alley whose storefronts are portals
-Riftwalk SHALL open in a neon alley at night, at a crossroads, as a Gaussian splat world seen at eye height. Each collection of the homepage (Cottage, Action, ASCII Scenes, Strategy, GTA, Lab) SHALL be a zone with one storefront of the alley. A door-sized portal SHALL stand on the front of each storefront, on the ground, with the zone's name over it and a view into the zone's world. The portal SHALL be an upright oval with a soft edge: its picture SHALL fade into the street through a ragged mist in the zone's colour, with no hard line, and the edge SHALL ripple like water. The zone's name SHALL show on a shop sign over the door: a dark board with a neon border and the name in lit capital letters. With reduced motion the edge SHALL hold still. All six doors SHALL be lit at once. The alley SHALL have no arcade machines. The picture under the mouse pointer SHALL flow, and SHALL be still again when the pointer leaves it. Riftwalk SHALL NOT show a portal to itself.
+Riftwalk SHALL open in a neon alley at night, at a crossroads, as a Gaussian splat world seen at eye height. Each collection of the homepage (Cottage, Action, ASCII Scenes, Strategy, GTA, Lab) SHALL be a zone with one storefront of the alley. A door-sized portal SHALL stand on the front of each storefront, on the ground, with the zone's name over it and a view into the zone's world. The portal SHALL be an upright oval with a soft edge: its picture SHALL fade into the street through a ragged mist in the zone's colour, with no hard line, and the edge SHALL ripple like water. When the mouse pointer touches the edge of a door, the opening SHALL reach out round the pointer and show more of the world's picture, and SHALL close again when the pointer leaves the edge. On a touch screen the door in the middle of the view SHALL open this way by itself, at a place that goes slowly round its edge. The zone's name SHALL show on a shop sign over the door: a dark board with a neon border and the name in lit capital letters. With reduced motion the edge SHALL hold still. All six doors SHALL be lit at once. The alley SHALL have no arcade machines. The picture under the mouse pointer SHALL flow, and SHALL be still again when the pointer leaves it. Riftwalk SHALL NOT show a portal to itself.
 
 #### Scenario: Enter the alley
 - **WHEN** the visitor enters the alley
 - **THEN** six doors show on the shop fronts, each with a picture of its world, and the button of the nearest storefront is on
+
+#### Scenario: Touch the edge of a rift
+- **WHEN** the mouse pointer rests on the edge of the Cottage door
+- **THEN** the door opens wider round the pointer and shows more of the meadow, and no other door moves
 
 #### Scenario: Hover
 - **WHEN** the mouse pointer rests on a door or a frame
@@ -53,7 +57,7 @@ The visitor SHALL look by dragging the view, and a drag SHALL NOT open a door or
 - **THEN** the zone buttons are at the top, the name card is over the buttons at the bottom, and all of them fit the width
 
 ### Requirement: Resolution
-On a desktop the view SHALL draw at two device pixels for each CSS pixel. On a touch device it SHALL draw at the display's pixel ratio, at most 2. When frames stay slower than 34 ms, the view SHALL lower its pixel ratio in steps, to no less than the display's own pixels, and SHALL keep every control in place. A door SHALL show a picture of its world as the page draws that world, 1024 px on a side.
+On a desktop the view SHALL draw at two device pixels for each CSS pixel. On a touch device it SHALL draw at the display's pixel ratio, at most 2. When frames stay slower than 34 ms, the view SHALL lower its pixel ratio in steps, to no less than the display's own pixels, and SHALL keep every control in place. A door SHALL show a picture of its world as the page draws that world from its largest file, 1280 by 1664 px. A touch device SHALL load a copy of the alley with half the splats.
 
 #### Scenario: A slow graphics card
 - **WHEN** most frames take more than 34 ms for a second and a half in the alley
