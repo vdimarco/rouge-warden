@@ -179,6 +179,17 @@ try {
     pass('the rim of a door gives way under the mouse pointer');
   }
   {
+    // Point and click: a click on the street walks the visitor to that spot and no door opens; a click on the sky does
+    // nothing; a key takes over from the walk; and the visitor stays on the streets.
+    const t = await open(), { page } = t; let s = await t.enterAlley(); const from = s.place;
+    await page.mouse.click(480, 430); s = await t.until(s2 => s2.walking, 'a click on the street starts a walk'); s = await t.until(s2 => !s2.walking && !s2.turning, 'the walk ends');
+    assert.equal(s.room, null, 'no door opened'); assert.equal(s.phase, 'hall'); const far = Math.hypot(s.place.x - from.x, s.place.z - from.z); assert(far > 1 && far < 30, 'the visitor walked ' + far.toFixed(1) + ' m'); assert(s.place.z < from.z - 1, 'forward along the alley'); assert(onStreet(s.place), 'still on a street');
+    const there = s.place; await page.mouse.click(480, 170); await page.waitForTimeout(400); s = await t.state(); assert.equal(s.walking, false, 'a click on the sky starts no walk'); assert(Math.hypot(s.place.x - there.x, s.place.z - there.z) < 0.01);
+    await page.mouse.click(480, 430); await t.until(s2 => s2.walking, 'a second walk'); await page.keyboard.down('s'); s = await t.until(s2 => !s2.walking, 'a key ends the walk'); await page.keyboard.up('s'); assert(onStreet((await t.state()).place));
+    assert.deepEqual(t.errors, []); await page.close();
+    pass('a click on the street walks the visitor there', { metres: +far.toFixed(1) });
+  }
+  {
     // Every game is also a plain link, grouped by collection. ?zone starts at a zone. Enter launches the game in front.
     const t = await open({}, 'world=none&px=1&zone=strategy'), { page } = t; let s = await t.enterAlley(); const GAMES = await t.games();
     const links = await page.evaluate(() => [...document.querySelectorAll('#list a')].map(a => a.getAttribute('href'))), heads = await page.evaluate(() => [...document.querySelectorAll('#list h2')].map(h => h.textContent));

@@ -74,6 +74,7 @@ Resolution (after the merge of pull request 838):
 - [x] Door pictures from the full world files at 1280 by 1664.
 - [x] Phones: a 1,000,000-splat alley file for touch devices, and a "Go in" button that fits a 390 px screen.
 - [x] The GTA door moved 0.85 m onto the shop's shutter.
+- [x] Point and click: a click on the street walks the visitor there; a browser check (12 checks pass).
 - [ ] Measure the frame rate at the new pixel ratio on a real graphics card (not possible in this session).
 - [ ] See the alley at its full 2,000,000 splats. Software WebGL is too slow for it.
 - [ ] Play on a real phone and a real graphics card (not possible in this session).

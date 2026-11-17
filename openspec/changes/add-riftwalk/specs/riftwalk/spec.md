@@ -46,7 +46,7 @@ A tap or a click on a door, Enter with the door in the middle of the view, the E
 - **THEN** the visitor stands in the alley in front of that zone's storefront
 
 ### Requirement: Controls for mouse, keys and touch
-The visitor SHALL look by dragging the view, and a drag SHALL NOT open a door or launch a game. The lit door or frame in the middle of the view SHALL be named in a card, and Enter, Space and the Go or Play button SHALL use it. The left and right arrow keys and the ◀ and ▶ buttons SHALL turn the view to the next door in the alley, or to the next frame or the way back in a world. A door that the visitor sees from behind SHALL NOT be a stop and SHALL NOT be named. W A S D SHALL walk the visitor along the two streets of the alley and SHALL NOT take them through a building. Every on-screen button SHALL be at least 44 px on its shorter side.
+The visitor SHALL look by dragging the view, and a drag SHALL NOT open a door or launch a game. The lit door or frame in the middle of the view SHALL be named in a card, and Enter, Space and the Go or Play button SHALL use it. The left and right arrow keys and the ◀ and ▶ buttons SHALL turn the view to the next door in the alley, or to the next frame or the way back in a world. A door that the visitor sees from behind SHALL NOT be a stop and SHALL NOT be named. A tap or a click on the ground SHALL walk the visitor to that spot, with a ring of light on the spot, and SHALL NOT open a door. W A S D SHALL walk the visitor along the two streets of the alley and SHALL NOT take them through a building. Every on-screen button SHALL be at least 44 px on its shorter side.
 
 #### Scenario: Use the buttons alone on a phone
 - **WHEN** a visitor on a 390 by 844 touch screen taps Lab, then the door, then a frame

@@ -374,6 +374,20 @@ function touchRims(clientX, clientY) {
     p.touch = at ? clamp(1 - (Math.abs(at.rim) - 0.12) / 0.28, 0, 1) : 0; if (at && p.touch > 0) p.uniforms.uPoint.value.set(at.x, at.y);
   }
 }
+// Point and click: a tap or a click on the ground walks the visitor to that spot. The spot is where the look ray
+// meets the floor, moved onto the open floor when it is under a building. A ring of light marks it.
+const spot = new THREE.Mesh(new THREE.RingGeometry(0.16, 0.24, 40), new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0, depthTest: false, depthWrite: false, side: THREE.DoubleSide }));
+spot.rotation.x = -Math.PI / 2; spot.renderOrder = 15; spot.frustumCulled = false; spot.visible = false; scene.add(spot);
+function walkTo(clientX, clientY) {
+  const [origin, d] = lookRay(clientX, clientY); if (d.y > -0.03) return false;            // the sky, a wall far off, or the horizon
+  const t = -origin.y / d.y, far = Math.hypot(d.x * t, d.z * t); if (far > 30 || far < 0.3) return false;
+  const at = { x: origin.x + d.x * t, z: origin.z + d.z * t }, to = room !== null ? walkRoom(at, HALL.reach) : walk(at, HALL.bounds);
+  if (Math.hypot(to.x - frame.position.x, to.z - frame.position.z) < 0.15) return false;
+  visit.walk = { to, stuck: 0 }; visit.turnTo = Math.atan2(to.x - frame.position.x, -(to.z - frame.position.z)); visit.pitchTo = 0; visit.aimTo = -1;
+  spot.position.set(to.x, 0.02, to.z); spot.material.color.set(ZONES[visit.zone].color); spot.material.opacity = 0.9; spot.visible = true;
+  if (reduced) { frame.position.x = to.x; frame.position.z = to.z; visit.walk = null; if (room === null) enter(zoneAt(frame.position, STATIONS)); }
+  return true;
+}
 const noTouch = () => { for (const p of portals) p.touch = 0; };
 const portalAt = (x, y) => visit.phase === 'hall' ? pick(...lookRay(x, y), PLACES, lit(), touch ? 1.35 : 1.08) : -1;
 // The machines and rings as the visitor sees them from where they stand: each with its heading, its distance over the
@@ -408,6 +422,15 @@ function step(dt) {
   if (visit.turnTo !== null) { const off = wrap(visit.turnTo - visit.yaw); if (reduced || Math.abs(off) < 0.004) { visit.yaw = visit.turnTo; visit.pitch = reduced ? visit.pitchTo : visit.pitch; visit.turnTo = null; } else visit.yaw = wrap(visit.yaw + off * Math.min(1, dt * 9)); visit.pitch += (visit.pitchTo - visit.pitch) * Math.min(1, dt * 7); }
   // W A S D walk the open floor of the hall.
   let ahead = (keys.has('w') ? 1 : 0) - (keys.has('s') ? 1 : 0), side = (keys.has('d') ? 1 : 0) - (keys.has('a') ? 1 : 0); const length = Math.hypot(ahead, side);
+  // A walk to a clicked spot: straight toward it at a walking pace, held on the open floor. It ends at the spot, when
+  // a wall stops it, when a key takes over, or when the visitor travels another way.
+  if (visit.walk && (visit.phase !== 'hall' || length > 0)) visit.walk = null;
+  if (visit.walk) {
+    const w = visit.walk, dx = w.to.x - frame.position.x, dz = w.to.z - frame.position.z, left = Math.hypot(dx, dz), go = Math.min(left, (room !== null ? 1.6 : 3.2) * dt);
+    const want = { x: frame.position.x + dx / (left || 1) * go, z: frame.position.z + dz / (left || 1) * go }, to = room !== null ? walkRoom(want, HALL.reach) : walk(want, HALL.bounds), moved = Math.hypot(to.x - frame.position.x, to.z - frame.position.z);
+    frame.position.x = to.x; frame.position.z = to.z; w.stuck = moved < go * 0.3 ? w.stuck + dt : 0; if (left < 0.06 || w.stuck > 0.4) visit.walk = null; if (room === null) enter(zoneAt(frame.position, STATIONS));
+  }
+  if (!visit.walk && spot.visible) { spot.material.opacity -= dt * 2.5; if (spot.material.opacity <= 0) spot.visible = false; }
   if (length > 0) { ahead /= length; side /= length; const a = visit.yaw, speed = (room !== null ? 1.3 : 2.2) * dt, step2 = { x: frame.position.x + (Math.sin(a) * ahead + Math.cos(a) * side) * speed, z: frame.position.z + (-Math.cos(a) * ahead + Math.sin(a) * side) * speed }, to = room !== null ? walkRoom(step2, HALL.reach) : walk(step2, HALL.bounds); frame.position.x = to.x; frame.position.z = to.z; if (room === null) enter(zoneAt(frame.position, STATIONS)); }
   // The lit place in the middle of the view is named on screen. A ring is high on the wall, so it counts only when
   // the visitor looks up at it.
@@ -426,7 +449,7 @@ canvas.addEventListener('pointermove', e => {
   // The view follows the finger: a drag to the right turns the visitor to the left, and a drag down looks up.
   const k = (camera.fov * Math.PI / 180) / innerHeight * 1.15; visit.turnTo = null; visit.yaw = wrap(visit.yaw - dx * k); visit.pitch = clamp(visit.pitch + dy * k, -1.1, 1.1);
 });
-const lift = e => { if (!drag || e.pointerId !== drag.id) return; const tap = drag.moved < 10 && performance.now() - drag.at < 500, d = drag; drag = null; canvas.classList.remove('look'); if (tap && e.type === 'pointerup') { const i = portalAt(d.sx, d.sy); if (i >= 0) launch(i); } };
+const lift = e => { if (!drag || e.pointerId !== drag.id) return; const tap = drag.moved < 10 && performance.now() - drag.at < 500, d = drag; drag = null; canvas.classList.remove('look'); if (tap && e.type === 'pointerup' && visit.phase === 'hall' && !visit.glide) { const i = portalAt(d.sx, d.sy); if (i >= 0) launch(i); else walkTo(d.sx, d.sy); } };
 canvas.addEventListener('pointerup', lift); canvas.addEventListener('pointercancel', lift); canvas.addEventListener('pointerleave', () => { hover = -1; noTouch(); });
 const nextZone = step => travel((visit.zone + step + ZONES.length) % ZONES.length);
 addEventListener('keydown', e => {
@@ -484,7 +507,7 @@ requestAnimationFrame(tick);
 
 // A handle for the browser check (qa/lab/riftwalk.e2e.mjs). The page never reads it.
 window.__riftwalk = {
-  state: () => ({ phase: visit.phase, room: room === null ? null : ZONES[room].id, zone: ZONES[visit.zone].id, page: visit.page[visit.zone], pages: pagesIn(visit.zone), aim: visit.aim, yaw: visit.yaw, pitch: visit.pitch, turning: visit.turnTo !== null, gliding: !!visit.glide, place: { x: frame.position.x, z: frame.position.z }, hall: !!hall, splats: hall?.packedSplats?.numSplats ?? 0,
+  state: () => ({ phase: visit.phase, room: room === null ? null : ZONES[room].id, zone: ZONES[visit.zone].id, page: visit.page[visit.zone], pages: pagesIn(visit.zone), aim: visit.aim, yaw: visit.yaw, pitch: visit.pitch, turning: visit.turnTo !== null, gliding: !!visit.glide, walking: !!visit.walk, place: { x: frame.position.x, z: frame.position.z }, hall: !!hall, splats: hall?.packedSplats?.numSplats ?? 0,
     hover, flow: portals.map(p => +p.uniforms.uFlow.value.toFixed(2)), touch: portals.map(p => +p.uniforms.uTouch.value.toFixed(2)),
     motes: air.reduce((n, m) => n + m.geometry.attributes.position.count, 0),
     machines: portals.slice(0, SCREENS.length).map(p => ({ zone: p.zone.id, game: p.game?.id ?? null, title: p.game?.title ?? null, url: p.game?.url ?? null, lit: p.lit, art: p.uniforms.uHasMap.value === 1 })),
