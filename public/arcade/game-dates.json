@@ -231,6 +231,11 @@
       "path": "public/lab/splat-isle",
       "added": "2026-11-17T09:30:00-05:00",
       "updated": "2026-11-17T09:30:00-05:00"
+    },
+    "ember-tide": {
+      "path": "public/ember-tide",
+      "added": "2026-11-17T12:39:58+00:00",
+      "updated": "2026-11-17T12:39:58+00:00"
     }
   }
 }
