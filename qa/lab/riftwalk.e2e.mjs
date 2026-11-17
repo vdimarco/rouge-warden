@@ -132,7 +132,8 @@ try {
     s = await walk('a', s => s.place.x <= cross.x[0] + 1e-6, 'A walks to the west end of the cross street'); await walk('a', () => path.length % 5 === 0, 'A pushes on at the end'); s = await t.state(); assert(Math.abs(s.place.x - cross.x[0]) < 1e-6, 'the end of the street stops the walk: ' + s.place.x);
     s = await walk('w', s => s.place.z <= cross.z[0] + 1e-6, 'W walks to the north side of the cross street'); await walk('w', () => path.length % 5 === 0, 'W pushes on at the side'); s = await t.state(); assert(Math.abs(s.place.z - cross.z[0]) < 1e-6 && Math.abs(s.place.x - cross.x[0]) < 1e-6, 'the side of the street stops the walk: ' + JSON.stringify(s.place));
     s = await walk('d', s => s.place.x >= long.x[0] + 0.5, 'D walks back to the crossing'); assert(s.place.x < long.x[1]);
-    s = await walk('w', s => s.place.z < cross.z[0] - 2, 'W walks up the long street'); assert(s.place.x >= long.x[0] && s.place.x <= long.x[1]);
+    // past the two doors of the long street: a walk at a door goes into its world (the next check)
+    s = await walk('w', s => s.place.z < cross.z[0] - 6.5, 'W walks up the long street, past its doors'); assert(s.place.x >= long.x[0] && s.place.x <= long.x[1]);
     s = await walk('d', s => s.place.x >= long.x[1] - 1e-6, 'D walks to the east side of the long street'); await walk('d', () => path.length % 5 === 0, 'D pushes on at the side'); s = await t.state(); assert(Math.abs(s.place.x - long.x[1]) < 1e-6, 'the side of the long street stops the walk: ' + s.place.x);
     const z0 = s.place.z; s = await walk('s', s => s.place.z > z0 + 0.5, 'S walks back'); assert(path.length > 20 && path.every(onStreet), 'every step of the walk is on a street');
     assert.equal(s.room, null); assert.deepEqual(t.moves, [], 'nothing launched yet');
@@ -177,6 +178,30 @@ try {
     await page.mouse.move(rim.x, rim.y); await t.until(s => s.touch[0] > 0.9, 'the rim answers a third time'); await page.mouse.down(); await page.mouse.move(rim.x + 60, rim.y, { steps: 4 }); await t.until(s => s.touch[0] < 0.05, 'a drag ends the touch'); await page.mouse.up();
     assert.deepEqual(t.errors, []); await page.close();
     pass('the rim of a door gives way under the mouse pointer');
+  }
+  {
+    // Point and click: a click on the street walks the visitor to that spot and no door opens; a click on the sky does
+    // nothing; a key takes over from the walk; and the visitor stays on the streets.
+    const t = await open(), { page } = t; let s = await t.enterAlley(); const from = s.place;
+    await page.mouse.click(480, 430); s = await t.until(s2 => s2.walking, 'a click on the street starts a walk'); s = await t.until(s2 => !s2.walking && !s2.turning, 'the walk ends');
+    assert.equal(s.room, null, 'no door opened'); assert.equal(s.phase, 'hall'); const far = Math.hypot(s.place.x - from.x, s.place.z - from.z); assert(far > 1 && far < 30, 'the visitor walked ' + far.toFixed(1) + ' m'); assert(s.place.z < from.z - 1, 'forward along the alley'); assert(onStreet(s.place), 'still on a street');
+    const there = s.place; await page.mouse.click(480, 170); await page.waitForTimeout(400); s = await t.state(); assert.equal(s.walking, false, 'a click on the sky starts no walk'); assert(Math.hypot(s.place.x - there.x, s.place.z - there.z) < 0.01);
+    await page.mouse.click(480, 430); await t.until(s2 => s2.walking, 'a second walk'); await page.keyboard.down('s'); s = await t.until(s2 => !s2.walking, 'a key ends the walk'); await page.keyboard.up('s'); assert(onStreet((await t.state()).place));
+    assert.deepEqual(t.errors, []); await page.close();
+    pass('a click on the street walks the visitor there', { metres: +far.toFixed(1) });
+  }
+  {
+    // Walking through a portal: W at a door goes into its world, and S, back toward the portal behind the visitor,
+    // comes out again at the same storefront. A walk along a wall past a door opens nothing (the check before this).
+    const t = await open(), { page } = t; await t.enterAlley(); await page.keyboard.press('1'); await t.zone('cottage', 'the Cottage station');
+    await page.keyboard.down('w'); let s; try { s = await t.world('cottage', 'W at the door goes into the Cottage world'); } finally { await page.keyboard.up('w'); }
+    assert.equal(s.room, 'cottage'); assert.equal(s.machines[0].title, (await t.games()).cottage[0].title, 'the first game is in front');
+    // The frame in view plays its game's short clip in place of the still picture (Get Plunger'd has one).
+    await page.waitForFunction(() => { const v = window.__riftwalk.preview(); return v.url === '/plungerd/' && v.playing; }, null, { timeout: 30000 }); await page.keyboard.press('ArrowRight'); await t.until(s2 => !s2.turning && s2.aim === 1, 'the next frame'); await page.waitForFunction(() => window.__riftwalk.preview().url !== '/plungerd/', null, { timeout: 10000 }); await page.keyboard.press('ArrowLeft'); await t.until(s2 => !s2.turning && s2.aim === 0, 'the first frame again');
+    assert.deepEqual(await page.evaluate(() => { const v = window.__riftwalk.sound(); return [v.context, v.place]; }), ['running', 'cottage'], 'the world has its own sound');
+    await page.keyboard.down('s'); try { s = await t.zone('cottage', 'S walks back out to the Cottage storefront'); } finally { await page.keyboard.up('s'); }
+    assert.equal(s.room, null); assert(onStreet(s.place)); assert.deepEqual(t.errors, []); await page.close();
+    pass('a walk at a door goes into its world, and a walk back comes out');
   }
   {
     // Every game is also a plain link, grouped by collection. ?zone starts at a zone. Enter launches the game in front.
@@ -229,9 +254,14 @@ try {
   {
     // The real world file loads, and the page counts its splats.
     const t = await open({ viewport: { width: 480, height: 270 } }, 'px=0.5'), { page } = t;
-    await page.waitForFunction(() => /Loading the alley… \d+%/.test(document.getElementById('load').textContent) || !document.getElementById('go').disabled, null, { timeout: 420000 });
+    // The loading screen covers the view with a progress bar while the first, small file loads. Then it fades, the
+    // start card shows over the alley, and the whole alley takes the small one's place.
+    const first = await page.evaluate(() => { const l = document.getElementById('loading'), b = document.getElementById('loadingBar'), r = l.getBoundingClientRect(); return { covers: r.width >= innerWidth && r.height >= innerHeight && !l.classList.contains('done'), bar: b.getAttribute('role') === 'progressbar', title: document.querySelector('.loading-title').textContent, card: document.getElementById('start').hidden }; });
+    assert(first.covers && first.bar && first.title === 'RIFTWALK' && first.card, 'the loading screen covers the view, with a bar, before the start card: ' + JSON.stringify(first));
     await page.waitForFunction(() => !document.getElementById('go').disabled, null, { timeout: 420000 });
-    const s = await t.state(); assert.equal(s.hall, true); assert.equal(s.splats, 2000000, 'the alley has its splats: ' + s.splats); assert.deepEqual(await page.evaluate(() => window.__riftwalk.worlds()), ['hall:2000000']); assert.equal(await t.text('go'), 'Enter the alley'); assert.deepEqual(t.errors, []);
+    let s = await t.state(); assert.equal(s.hall, true); assert(s.splats === 220000 || s.splats === 2000000, 'the small alley is drawn first: ' + s.splats); assert.equal(await t.text('go'), 'Enter the alley');
+    assert.equal(await page.evaluate(() => document.getElementById('loading').classList.contains('done') && !document.getElementById('start').hidden && +document.getElementById('loadingBar').getAttribute('aria-valuenow')), 100, 'the loading screen is done at 100 and the start card shows');
+    s = await t.until(s2 => s2.splats === 2000000, 'the whole alley takes the small one\'s place', 420000); assert.deepEqual(await page.evaluate(() => window.__riftwalk.worlds()), ['hall:2000000']); assert.equal(await t.hidden('sharp'), true); assert.deepEqual(t.errors, []);
     pass('the alley world loads', { splats: s.splats });
     await page.close();
   }

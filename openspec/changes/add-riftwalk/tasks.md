@@ -74,6 +74,19 @@ Resolution (after the merge of pull request 838):
 - [x] Door pictures from the full world files at 1280 by 1664.
 - [x] Phones: a 1,000,000-splat alley file for touch devices, and a "Go in" button that fits a 390 px screen.
 - [x] The GTA door moved 0.85 m onto the shop's shutter.
+- [x] Point and click: a click on the street walks the visitor there; a browser check (12 checks pass).
+
+The loading screen and the seven improvements:
+- [x] Loading screen with a progress bar (`shots/loading.jpg`); the top bar works over it.
+- [x] Fast first frame: a 3 MB first file, then the whole alley takes its place.
+- [x] Weighted thinning for the small files; all of them made again; old and new compared on the space station.
+- [x] Walk through a portal, both ways; a browser check.
+- [x] Sound with Web Audio and a Sound button; `qa/arcade/quiet.mjs --only=riftwalk` passes (35 checks).
+- [x] Live windows on a desktop, seen in a drawn frame (`shots/live-window.jpg`).
+- [x] Game previews for the five games that have a clip; a browser check.
+- [x] Door tool at `?edit`, tried in the browser.
+- [x] `qa/lab/riftwalk.e2e.mjs`: 13 checks pass. `qa/lab/riftwalk.test.mjs`: 6 pass. `qa/arcade/default-view.e2e.mjs`: all pass.
+- [ ] Hear the sound, and see the frame rate of live windows, on real hardware (not possible in this session).
 - [ ] Measure the frame rate at the new pixel ratio on a real graphics card (not possible in this session).
 - [ ] See the alley at its full 2,000,000 splats. Software WebGL is too slow for it.
 - [ ] Play on a real phone and a real graphics card (not possible in this session).

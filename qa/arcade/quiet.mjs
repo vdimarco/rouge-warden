@@ -377,6 +377,8 @@ const PAGES = [
   { id: "silent-depth", path: "/silent-depth/", boot: () => document.querySelector("#modal")?.open, start: async (t) => { await t.tapEl("#modal-action"); await t.tapEl("#sound"); }, sound: "ctx" },
   // the hall, which has the sound: without ?view=classic a browser with WebGL and no navigator.webdriver (the plain Chromium
   // of the "real" and "freeze" runs) goes on to the walk-through at /corridor/, which makes no sound
+  // Riftwalk makes its sound with Web Audio from the press on Enter the alley. ?world=none skips the 3 MB world file.
+  { id: "riftwalk", path: "/lab/riftwalk/?world=none", boot: () => { const b = document.querySelector("#go"); return !!b && !b.disabled; }, start: click("#go"), sound: "ctx", music: true },
   { id: "arcade", path: "/?view=classic", start: (t) => t.tap(5, 5), sound: "ctx", music: true },
   { id: "fall", path: "/fall/", start: (t) => t.key("Enter"), sound: "ctx", music: true },
   { id: "wild", path: "/wild/", boot: () => document.querySelector("#title") && !document.querySelector("#title").hidden && !document.querySelector("#tpress").hidden, start: (t) => t.key("Enter"), sound: "ctx", music: true, slow: true },

@@ -37,6 +37,7 @@ Why these pairs: the meadow is the cottage look, Olympus leads the Action row an
 - The user's words: "the scenes in the portals should be higher quality". The door pictures came from the 500,000-splat copies at 1024 px square, and the door cut the sides off. Now `door-shots.mjs` draws each world from its largest file at 1280 by 1664, the shape of a door.
 - The user's words: "make sure it's mobile friendly". A touch device loads a 1,000,000-splat copy of the alley (14 MB, half the download). The button that opens a storefront's world reads "Go in" on every screen: "Enter Strategy" pushed the ▶ button off a 390 px screen.
 - The user's words: "center GTA on the store door". A capture of the GTA storefront showed the portal 0.85 m to the right of the shop's shutter. The door and its station moved 0.85 m.
+- The user's words: "make it possible to point and click to navigate". A tap or a click on the ground walks the visitor to that spot: the look ray meets the floor, the spot moves onto the open floor when it is under a building, a ring of light marks it, and the view turns toward it. The walk goes straight at 3.2 m/s and stays on the streets. It ends at the spot, at a wall, or when a key takes over. A click on a door still opens the door. With reduced motion the visitor is at the spot at once.
 - A station is the place on the street 3 to 4 m in front of a door. The arrows turn from door to door. A door seen from behind is not a stop.
 - No source was adapted for the storefront layout or the point drawings. The frame and door quads draw after the splats, like every portal of this page.
 
@@ -57,6 +58,18 @@ The user's words: "merge it and then focus on increasing the resolution".
 - Four of the new door pictures are in `shots/doors.jpg`. They also show that the page draws the temple, the Great Wall, the space station and the brick hall as it should.
 - Source: the Spark documentation (sparkjs.dev/docs/spark-renderer and /docs/performance).
 - Not changed: the world files. The alley and four worlds already load at Marble's full export size on a desktop.
+
+### Loading screen, and the improvements after it
+The user's words: "Can you add a loading screen? and implement the improvements." The improvements are the seven that the assistant listed.
+
+- **Loading screen.** A still of the alley, blurred and dark, the title in neon, a line that says what loads, a progress bar and a hint that changes. It covers the view until the first file is drawn, then fades, and the start card shows over the live alley. The top bar stays over it, so the Views menu and the Games list work during the load. A picture is in `shots/loading.jpg`.
+- **Fast first frame.** The alley loads in two steps: `hall-first.spz` (220,000 splats, 3 MB) and then the whole alley (29 MB on a desktop, the 1,000,000-splat file on a touch device), which takes the small one's place where the visitor stands. A small line says "Sharpening the alley…" with the percent.
+- **Sharper small files.** `thin()` in `scenery-room.py` made a random pick. Now a splat's chance grows with its opacity and with its area to the power 0.35 (a weighted pick without replacement, after Efraimidis and Spirakis, "Weighted random sampling with a reservoir", 2006), and the kept splats grow less. The space station at 500,000 splats, drawn both ways, is clearly sharper with the weighted pick. All small files were made again.
+- **Walk through a portal.** A visitor who walks at a door, inside its width and within about 2 m (the shop's wall stops them there), goes into its world. In a world, a visitor who walks to the edge of the floor toward the portal behind them comes out. A walk along a wall past a door opens nothing.
+- **Sound.** `sound.js` makes all sound with Web Audio, with no files: a low city hum, a drone and a neon buzz in the alley; a soft chord from the door in view, in its zone's pitch; its own air and slow notes in each world; a whoosh on the way through a portal; a tick when a place comes into view. It starts on the press on "Enter the alley". The Sound button turns it off and on, and the choice is kept. `/arcade/quiet.js` silences it when the page is hidden, and `qa/arcade/quiet.mjs` has an entry for the page. No source was adapted for the sounds.
+- **Live windows (desktop).** The door in view, from 7 m or nearer, shows its world in three dimensions. A second `SparkRenderer` with a `target` draws the world's 150,000-splat file into a 512 by 664 texture each frame (`renderTarget()`, sparkjs.dev/docs/spark-renderer), from a camera that moves as the visitor moves. Slow frames switch live windows off before they lower the pixel ratio. A phone and `?live=0` keep the still picture. A picture is in `shots/live-window.jpg`.
+- **Game previews.** Five games have a short silent clip in the repository: River Rush, Crimson Rogue, Reel It In, Down the Drain and Get Plunger'd. The frame in view plays its game's clip after a look of 0.7 s, and shows the picture again when the view moves on. The other games have no clip, so they keep the picture.
+- **Door tool.** `?edit` shows a panel and takes keys that move the door in view on its wall and change its size. The panel shows the numbers for `worlds/hall/screens.json`, and C copies every zone's numbers.
 
 ### Size
 `worlds/` is about 215 MB: the alley 29 MB, and six worlds of 10 to 39 MB each.

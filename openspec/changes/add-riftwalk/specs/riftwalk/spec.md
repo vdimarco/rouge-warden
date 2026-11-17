@@ -46,7 +46,7 @@ A tap or a click on a door, Enter with the door in the middle of the view, the E
 - **THEN** the visitor stands in the alley in front of that zone's storefront
 
 ### Requirement: Controls for mouse, keys and touch
-The visitor SHALL look by dragging the view, and a drag SHALL NOT open a door or launch a game. The lit door or frame in the middle of the view SHALL be named in a card, and Enter, Space and the Go or Play button SHALL use it. The left and right arrow keys and the ◀ and ▶ buttons SHALL turn the view to the next door in the alley, or to the next frame or the way back in a world. A door that the visitor sees from behind SHALL NOT be a stop and SHALL NOT be named. W A S D SHALL walk the visitor along the two streets of the alley and SHALL NOT take them through a building. Every on-screen button SHALL be at least 44 px on its shorter side.
+The visitor SHALL look by dragging the view, and a drag SHALL NOT open a door or launch a game. The lit door or frame in the middle of the view SHALL be named in a card, and Enter, Space and the Go or Play button SHALL use it. The left and right arrow keys and the ◀ and ▶ buttons SHALL turn the view to the next door in the alley, or to the next frame or the way back in a world. A door that the visitor sees from behind SHALL NOT be a stop and SHALL NOT be named. A tap or a click on the ground SHALL walk the visitor to that spot, with a ring of light on the spot, and SHALL NOT open a door. W A S D SHALL walk the visitor along the two streets of the alley and SHALL NOT take them through a building. Every on-screen button SHALL be at least 44 px on its shorter side.
 
 #### Scenario: Use the buttons alone on a phone
 - **WHEN** a visitor on a 390 by 844 touch screen taps Lab, then the door, then a frame
@@ -64,11 +64,36 @@ On a desktop the view SHALL draw at two device pixels for each CSS pixel. On a t
 - **THEN** the view draws at a lower pixel ratio, and the doors, the name card and the buttons stay where they were
 
 ### Requirement: Loading
-The page SHALL load the alley's world file with a line that shows the progress, and SHALL enable the start control when the world is ready.
+The page SHALL show a loading screen that covers the view, with the title, a progress bar and the percent, while the alley's first, small file loads. The top bar SHALL stay usable over the loading screen. When the alley is drawn the loading screen SHALL fade and the start control SHALL show. The whole alley SHALL then load behind the visitor and take the small one's place, with a line that shows its progress.
 
 #### Scenario: Load
 - **WHEN** the page opens
-- **THEN** the line shows the progress in percent, and then the start control reads "Enter the alley"
+- **THEN** the loading screen shows the bar and the percent, and then the start control reads "Enter the alley" over the alley
+
+#### Scenario: The alley sharpens
+- **WHEN** the visitor has entered and the whole alley has loaded
+- **THEN** the alley shows all 2,000,000 splats on a desktop, and the visitor's place and view do not change
+
+### Requirement: Walk through a portal
+A visitor who walks at a door in the alley, inside its width, SHALL go into that door's world. A visitor in a world who walks to the edge of the floor toward the portal behind them SHALL come back to the alley at that storefront. A walk along a wall past a door SHALL NOT open the door.
+
+#### Scenario: Walk in and out
+- **WHEN** the visitor at the Cottage storefront holds W, and then in the meadow holds S
+- **THEN** the visitor goes into the meadow, and then comes back to the Cottage storefront
+
+### Requirement: Sound
+The page SHALL make sound after the visitor presses the start control: a hum in the alley, a tone from the door in view, a sound of its own in each world, and a whoosh on the way through a portal. A Sound button SHALL turn the sound off and on, and the choice SHALL be kept. The page SHALL be silent while it is hidden.
+
+#### Scenario: Sound off
+- **WHEN** the visitor presses Sound
+- **THEN** the page is silent, the button shows as off, and the page is silent on the next visit
+
+### Requirement: Live windows and game previews
+On a desktop, the door in the middle of the view, from 7 m or nearer, SHALL show its world in three dimensions, and the view through it SHALL shift when the visitor moves. On a touch device, and when frames are slow, the door SHALL show its still picture. In a world, the frame in the middle of the view SHALL play its game's short clip when the game has one, and SHALL show the picture again when the view moves on. With reduced motion a frame SHALL keep its picture.
+
+#### Scenario: A clip in a frame
+- **WHEN** the visitor in the Cottage world looks at the Get Plunger'd frame
+- **THEN** the frame plays the game's clip, and shows the picture again when the visitor turns to the next frame
 
 ### Requirement: Magic in the air
 Each zone SHALL show small motes of light in its colour near its station, and sparks at its door. The light on the way through a door or into a game SHALL bloom from the middle of the view. With reduced motion, the motes and sparks SHALL NOT show.
