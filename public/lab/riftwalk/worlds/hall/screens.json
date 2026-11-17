@@ -39,7 +39,8 @@
    "z": -0.6,
    "facing": 0
   },
-  "fileTouch": "hall-1m.spz"
+  "fileTouch": "hall-1m.spz",
+  "fileFirst": "hall-first.spz"
  },
  "zones": {
   "cottage": {

@@ -9,6 +9,26 @@
 <link rel="icon" href="/favicon.ico">
 <link rel="stylesheet" href="/lab/kit/lab.css">
 <style>
+/* The loading screen: a still of the alley, the title in neon, a line that says what loads, and a bar. It covers the
+   view until the first, small file of the alley is drawn, and then fades. */
+.loading { position: fixed; inset: 0; z-index: 40; display: grid; place-items: center; background: #06040c; transition: opacity 0.7s ease, visibility 0.7s; }
+.loading.done { opacity: 0; visibility: hidden; pointer-events: none; }
+.loading-art { position: absolute; inset: -24px; background: url("./worlds/hall/poster.webp") center / cover no-repeat; filter: blur(9px) brightness(0.5) saturate(1.2); animation: loading-drift 16s ease-in-out infinite alternate; }
+.loading-art::after { content: ""; position: absolute; inset: 0; background: radial-gradient(ellipse at center, #06040c00 30%, #06040ccc 100%); }
+.loading-box { position: relative; width: min(440px, calc(100vw - 40px)); text-align: center; color: #fff; }
+.loading-kicker { margin: 0 0 6px; font: 600 12px/1 var(--body); letter-spacing: 0.32em; text-transform: uppercase; color: #ffb45e; }
+.loading-title { margin: 0; font: 800 clamp(40px, 12vw, 76px)/1 var(--body); letter-spacing: 0.08em; color: #fff; text-shadow: 0 0 8px #ff3dd0, 0 0 28px #ff3dd0aa, 0 0 60px #35c8ff88; animation: loading-neon 3.2s ease-in-out infinite; }
+.loading-line { margin: 18px 0 10px; font: 600 15px/1.3 var(--body); min-height: 20px; }
+.loading-bar { height: 8px; border-radius: 99px; background: #ffffff1f; overflow: hidden; box-shadow: 0 0 0 1px #ffffff26; }
+.loading-bar i { display: block; height: 100%; width: 0%; border-radius: 99px; background: linear-gradient(90deg, #ff3dd0, #ffb45e, #35c8ff); box-shadow: 0 0 14px #ff3dd0aa; transition: width 0.25s ease; }
+.loading-hint { margin: 14px 0 0; font: 400 13.5px/1.4 var(--body); color: #ffffffb8; min-height: 38px; }
+@keyframes loading-neon { 0%, 100% { opacity: 1; } 46% { opacity: 1; } 48% { opacity: 0.72; } 50% { opacity: 1; } 78% { opacity: 0.9; } }
+@keyframes loading-drift { from { transform: scale(1.02) translateX(-8px); } to { transform: scale(1.08) translateX(8px); } }
+@media (prefers-reduced-motion: reduce) { .loading-art, .loading-title { animation: none; } .loading, .loading-bar i { transition: none; } }
+/* While the full alley loads behind the visitor, a small line says so. */
+.sharp { position: fixed; right: 10px; bottom: calc(var(--sab, 0px) + 8px); z-index: 4; margin: 0; padding: 5px 10px; border-radius: 99px; background: #0b0a14cc; color: #ffffffb8; font: 600 11.5px/1 var(--body); pointer-events: none; }
+.sharp[hidden] { display: none; }
+
 /* The Views menu: the three views of the arcade's home. It opens under the Views button, over the zone buttons. */
 .views { position: fixed; top: calc(var(--sat, 0px) + 48px); left: 50%; transform: translateX(-50%); z-index: 60; width: min(300px, calc(100vw - 24px)); display: grid; gap: 6px; padding: 8px; border: 1px solid var(--line); border-radius: 16px; background: #0b0a14f2; box-shadow: 0 14px 40px #000a; }
 .views[hidden] { display: none; }
@@ -86,9 +106,20 @@
   <button type="button" id="kNext" aria-label="Turn to the portal on the right">▶</button>
 </div>
 <div class="zone" id="zone" aria-hidden="true"></div>
-<p class="load" id="load">Loading the alley…</p>
+<p class="load" id="load" hidden>Loading the alley…</p>
+<div class="loading" id="loading" role="status" aria-live="polite">
+  <div class="loading-art" aria-hidden="true"></div>
+  <div class="loading-box">
+    <p class="loading-kicker">Cottage Arcade</p>
+    <h2 class="loading-title" aria-hidden="true">RIFTWALK</h2>
+    <p class="loading-line" id="loadingLine">Opening the alley…</p>
+    <div class="loading-bar" id="loadingBar" role="progressbar" aria-label="The alley's world" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><i></i></div>
+    <p class="loading-hint" id="loadingHint">Each storefront is a portal to a world of games.</p>
+  </div>
+</div>
+<p class="sharp" id="sharp" hidden></p>
 <div class="flash" id="flash"></div>
-<section class="card start" id="start">
+<section class="card start" id="start" hidden>
   <h1>Riftwalk</h1>
   <p class="pitch">The arcade as a neon alley at night. Each storefront is a portal to a world for one game category: a meadow, a temple, a diner, a space station, the Great Wall and an arcade hall. In each world the games float in portal frames.</p>
   <ul class="how">

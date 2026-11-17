@@ -1,6 +1,7 @@
 """Make a scenery room from a Marble app splat export (.spz, version 2, y-up).
 
   python3 scenery-room.py <world.spz> <out dir> [turn in degrees]
+  python3 scenery-room.py <world.spz> <out.spz> thin <count>       one smaller copy only
 
 Writes full.spz, 500k.spz, 150k.spz, a rough door.webp (door-shots.mjs makes the real one), preview.jpg (four views from the
 point where the visitor stands) and screens.json. These exports are metric with
@@ -36,10 +37,18 @@ def write(path, head, n, cols):
         f.write(bytes(h)); [f.write(c.tobytes()) for c in cols]
 
 def thin(head, cols, n, want, path):
+    """A smaller copy. A random pick loses the large, solid splats that carry most of the picture, so the pick is
+    weighted: a splat's chance grows with its opacity and, more gently, with its area. The kept splats grow a little
+    to close the gaps."""
     if want >= n: write(path, head, n, cols); return
-    keep = np.sort(np.random.default_rng(7).choice(n, want, replace=False))
+    alpha = cols[1][:, 0].astype(np.float64) / 255
+    ls = np.sort(cols[3].astype(np.float64) / 16 - 10, axis=1)          # log scales, smallest first
+    weight = (alpha + 0.02) * np.exp(0.35 * (ls[:, 1] + ls[:, 2]))      # opacity times area to the power 0.35
+    weight /= weight.mean()
+    keys = np.log(np.random.default_rng(7).random(n)) / weight         # Efraimidis and Spirakis: the largest keys win
+    keep = np.sort(np.argpartition(keys, n - want)[n - want:])
     out = [c[keep].copy() for c in cols]
-    grow = int(round(np.log(np.sqrt(n / want)) * 16 * 0.7))  # larger splats close the holes
+    grow = int(round(np.log(np.sqrt(n / want)) * 16 * 0.45))
     out[3] = np.clip(out[3].astype(np.int32) + grow, 0, 255).astype(np.uint8)
     write(path, head, want, out)
 
@@ -57,6 +66,8 @@ def view(xyz, rgb, yaw, size=(480, 400), fov=80, pitch=0.0):
     return img
 
 def main():
+    if len(sys.argv) > 4 and sys.argv[3] == 'thin':   # scenery-room.py <world.spz> <out.spz> thin <count>
+        head, n, frac, body = read(sys.argv[1]); thin(head, parts(body, n), n, int(sys.argv[4]), sys.argv[2]); print(sys.argv[2], sys.argv[4]); return
     src, out = sys.argv[1], sys.argv[2]; turn = float(sys.argv[3]) if len(sys.argv) > 3 else 0.0
     os.makedirs(out, exist_ok=True)
     head, n, frac, body = read(src); cols = parts(body, n)

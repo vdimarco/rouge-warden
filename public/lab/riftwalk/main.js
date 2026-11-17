@@ -6,7 +6,7 @@
 // hall.js holds the rules, and worlds/hall/screens.json says where the screens, the stations and the rings are.
 import * as THREE from 'three';
 import { SplatMesh, SparkRenderer } from '@sparkjsdev/spark';
-import { GROUPS, ZONES, GROW, gamesOf, zoneGames, seats, pages, assign, ringPlace, roomSeats, exitRing, frameRing, walkRoom, zoneAt, headingTo, pick, facing, neighbour, walk } from './hall.js';
+import { direction, GROUPS, ZONES, GROW, gamesOf, zoneGames, seats, pages, assign, ringPlace, roomSeats, exitRing, frameRing, walkRoom, zoneAt, headingTo, pick, facing, neighbour, walk } from './hall.js';
 
 const $ = id => document.getElementById(id);
 const canvas = $('view'), loadLine = $('load'), startCard = $('start'), go = $('go'), target = $('target'), keysBar = $('keys'), groupsBar = $('groups'), flash = $('flash'), list = $('list');
@@ -24,7 +24,7 @@ for (const g of GROUPS) {
   for (const p of games) { const li = document.createElement('li'), a = document.createElement('a'); a.href = p.url; a.textContent = p.sub ? `${p.title}: ${p.sub}` : p.title; li.append(a); ul.append(li); }
   list.append(h, ul);
 }
-function noGraphics(why) { startCard.hidden = true; loadLine.hidden = true; groupsBar.hidden = keysBar.hidden = target.hidden = true; list.classList.add('shown'); const p = document.createElement('p'); p.textContent = why + ' Here is every game as a link.'; list.prepend(p); }
+function noGraphics(why) { document.getElementById('loading')?.classList.add('done'); startCard.hidden = true; loadLine.hidden = true; groupsBar.hidden = keysBar.hidden = target.hidden = true; list.classList.add('shown'); const p = document.createElement('p'); p.textContent = why + ' Here is every game as a link.'; list.prepend(p); }
 
 /* ---------------- the scene ---------------- */
 // Resolution: the view draws at two device pixels for each CSS pixel where the graphics card keeps up. On a display
@@ -53,16 +53,32 @@ addEventListener('resize', resize); resize();
 // where the visitor starts, and the world's file. ?world=none draws the portals with no world, for the browser check.
 let HALL = { scale: 1, eye: 1.45, bounds: { x: [-2, 2], z: [-2, 2] }, start: { x: 0, z: 0, facing: 0 } }, SCREENS = [], PLACES = [], STATIONS = [], hall = null;
 const noWorld = query.get('world') === 'none';
-async function loadHall(onProgress) {
-  // A touch device loads the alley's smaller file: half the download and half the splats to draw. ?q=full asks for the whole file.
-  const file = touch && HALL.fileTouch && query.get('q') !== 'full' ? HALL.fileTouch : HALL.file;
+// The alley loads in two steps. The first file is small (220,000 splats, 3 MB): the visitor can enter as soon as it
+// is drawn. Then the whole alley loads behind them and takes the small one's place: the full file on a desktop, the
+// 1,000,000-splat file on a touch device (?q=full asks for the whole file there too, ?q=first keeps the small one).
+async function fetchWorld(file, onProgress) {
   const response = await fetch('./worlds/hall/' + file); if (!response.ok) throw new Error('World file missing: ' + file);
   const total = +response.headers.get('content-length') || 0, reader = response.body.getReader(), parts = []; let got = 0;
   for (;;) { const { done, value } = await reader.read(); if (done) break; parts.push(value); got += value.length; if (onProgress && total) onProgress(got / total); }
   const bytes = new Uint8Array(got); let at = 0; for (const p of parts) { bytes.set(p, at); at += p.length; }
   const mesh = new SplatMesh({ fileBytes: bytes }); await mesh.initialized;
-  if (HALL.flip) mesh.quaternion.set(1, 0, 0, 0); mesh.scale.setScalar(HALL.scale); if (HALL.offset) mesh.position.set(...HALL.offset);
-  hallMesh = hall = mesh; scene.add(mesh); return mesh;
+  if (HALL_WORLD.flip) mesh.quaternion.set(1, 0, 0, 0); mesh.scale.setScalar(HALL_WORLD.scale); if (HALL_WORLD.offset) mesh.position.set(...HALL_WORLD.offset);
+  return mesh;
+}
+let HALL_WORLD = null;   // the alley's own numbers, kept while the visitor is in a room
+async function loadHall(onProgress) {
+  HALL_WORLD = HALL; const first = HALL.fileFirst && query.get('q') !== 'full' ? HALL.fileFirst : HALL.file;
+  const mesh = await fetchWorld(first, onProgress); hallMesh = hall = mesh; scene.add(mesh);
+  const whole = query.get('q') === 'first' ? first : touch && HALL.fileTouch && query.get('q') !== 'full' ? HALL.fileTouch : HALL.file;
+  if (whole !== first) sharpenHall(whole);
+  return mesh;
+}
+// The whole alley takes the place of the small one, where the visitor stands or behind the door of a world.
+function sharpenHall(file) {
+  const line = $('sharp'); line.hidden = false; line.textContent = 'Sharpening the alley…';
+  fetchWorld(file, p => { line.textContent = `Sharpening the alley… ${Math.round(p * 100)}%`; }).then(mesh => {
+    const old = hallMesh; hallMesh = mesh; if (hall === old) { scene.remove(old); scene.add(mesh); hall = mesh; } old.dispose?.(); line.hidden = true;
+  }).catch(error => { console.error(error); line.hidden = true; /* the small alley stays */ });
 }
 // The rooms: one small Marble world for each zone, loaded when the visitor first goes in. A Marble .spz has y down,
 // so the mesh turns half a turn about x; the room's screens.json gives its scale and the eye height.
@@ -397,6 +413,22 @@ const seen = () => PLACES.map(p => { const dx = p.centre[0] - frame.position.x, 
 // The arrows start from the place in view, so one press moves on to the next place. In the hall they stop at machines
 // only: a ring hangs right over its machines, and the Room button and the R key open the room of the zone.
 function turn(step) { if (visit.phase !== 'hall' || visit.glide) return; const now = seen(), stops = lit().map((on, k) => on && now[k].front && !(room === null && SCREENS.length && portals[k].door)), i = neighbour(visit.turnTo ?? (visit.aim >= 0 ? now[visit.aim].heading : visit.yaw), now, stops, step, REACH); if (i >= 0) { visit.turnTo = now[i].heading; visit.pitchTo = now[i].pitch; visit.aimTo = i; } }
+// Walking through a portal. In the alley, a visitor who walks at a door, inside its width and within about two
+// metres of it (the wall of the shop stops them there), goes into its world. In a world, a visitor who walks to the
+// edge of the floor toward the portal behind them goes back to the alley. (x, z) is the way they walk, one metre long.
+function through(x, z) {
+  if (visit.phase !== 'hall' || visit.glide) return;
+  if (room === null) {
+    for (let i = 0; i < portals.length; i++) {
+      const p = portals[i]; if (!p.door || !p.game || p.game.exit || p.lit < 0.5) continue; const n = p.place.normal, r = p.place.right, c = p.place.centre;
+      const out = (frame.position.x - c[0]) * n[0] + (frame.position.z - c[2]) * n[2], along = (frame.position.x - c[0]) * r[0] + (frame.position.z - c[2]) * r[2];
+      if (out > 0 && out < 2.1 && Math.abs(along) < p.place.width / 2 + 0.2 && -(x * n[0] + z * n[2]) > 0.6) { visit.walk = null; keys.clear(); goRoom(p.game.zone); return; }
+    }
+  } else {
+    const exit = PLACES[PLACES.length - 1], far = Math.hypot(frame.position.x, frame.position.z); if (!exit?.ring || far < HALL.reach - 0.04) return;
+    const d = direction(exit.heading); if (x * d.x + z * d.z > 0.75 && (frame.position.x * d.x + frame.position.z * d.z) / far > 0.75) { visit.walk = null; keys.clear(); goHall(); }
+  }
+}
 const keys = new Set();
 const ease = t => t * t * (3 - 2 * t);
 function step(dt) {
@@ -428,10 +460,10 @@ function step(dt) {
   if (visit.walk) {
     const w = visit.walk, dx = w.to.x - frame.position.x, dz = w.to.z - frame.position.z, left = Math.hypot(dx, dz), go = Math.min(left, (room !== null ? 1.6 : 3.2) * dt);
     const want = { x: frame.position.x + dx / (left || 1) * go, z: frame.position.z + dz / (left || 1) * go }, to = room !== null ? walkRoom(want, HALL.reach) : walk(want, HALL.bounds), moved = Math.hypot(to.x - frame.position.x, to.z - frame.position.z);
-    frame.position.x = to.x; frame.position.z = to.z; w.stuck = moved < go * 0.3 ? w.stuck + dt : 0; if (left < 0.06 || w.stuck > 0.4) visit.walk = null; if (room === null) enter(zoneAt(frame.position, STATIONS));
+    frame.position.x = to.x; frame.position.z = to.z; w.stuck = moved < go * 0.3 ? w.stuck + dt : 0; if (left < 0.06 || w.stuck > 0.4) visit.walk = null; if (room === null) enter(zoneAt(frame.position, STATIONS)); if (left > 0.06) through(dx / left, dz / left);
   }
   if (!visit.walk && spot.visible) { spot.material.opacity -= dt * 2.5; if (spot.material.opacity <= 0) spot.visible = false; }
-  if (length > 0) { ahead /= length; side /= length; const a = visit.yaw, speed = (room !== null ? 1.3 : 2.2) * dt, step2 = { x: frame.position.x + (Math.sin(a) * ahead + Math.cos(a) * side) * speed, z: frame.position.z + (-Math.cos(a) * ahead + Math.sin(a) * side) * speed }, to = room !== null ? walkRoom(step2, HALL.reach) : walk(step2, HALL.bounds); frame.position.x = to.x; frame.position.z = to.z; if (room === null) enter(zoneAt(frame.position, STATIONS)); }
+  if (length > 0) { ahead /= length; side /= length; const a = visit.yaw, speed = (room !== null ? 1.3 : 2.2) * dt, step2 = { x: frame.position.x + (Math.sin(a) * ahead + Math.cos(a) * side) * speed, z: frame.position.z + (-Math.cos(a) * ahead + Math.sin(a) * side) * speed }, to = room !== null ? walkRoom(step2, HALL.reach) : walk(step2, HALL.bounds); frame.position.x = to.x; frame.position.z = to.z; if (room === null) enter(zoneAt(frame.position, STATIONS)); through(Math.sin(a) * ahead + Math.cos(a) * side, -Math.cos(a) * ahead + Math.sin(a) * side); }
   // The lit place in the middle of the view is named on screen. A ring is high on the wall, so it counts only when
   // the visitor looks up at it.
   const now = seen(), mask = lit().map((on, i) => on && now[i].front && Math.abs(now[i].pitch - visit.pitch) < 0.32);
@@ -500,14 +532,19 @@ function tick(now) {
 /* ---------------- start up ---------------- */
 // The places load first: every machine and ring is set up, each machine gets its game, and motes go into the air of
 // each zone. Then the world loads, with a line that shows the progress.
-const ready = () => { loadLine.hidden = true; go.disabled = false; go.textContent = 'Enter the alley'; go.focus({ preventScroll: true }); };
+// The loading screen shows the progress of the first file, with a hint that changes. When the alley is drawn the
+// screen fades and the start card shows over the live alley.
+const loading = $('loading'), loadingBar = $('loadingBar'), HINTS = ['Each storefront is a portal to a world of games.', 'Drag to look around. Tap or click the street to walk.', 'Touch the edge of a portal to see more of the world behind it.', 'In a world, each game floats in a frame. Tap a frame to play.', 'The Views button at the top opens the Corridor and the list of all games.'];
+let hintAt = 0; const hintTimer = setInterval(() => { hintAt = (hintAt + 1) % HINTS.length; $('loadingHint').textContent = HINTS[hintAt]; }, 3200);
+const progress = p => { const pct = Math.round(p * 100); loadingBar.setAttribute('aria-valuenow', pct); loadingBar.firstElementChild.style.width = pct + '%'; $('loadingLine').textContent = pct < 100 ? `Opening the alley… ${pct}%` : 'Drawing the alley…'; loadLine.textContent = `Loading the alley… ${pct}%`; };
+const ready = () => { clearInterval(hintTimer); loading.classList.add('done'); loadLine.hidden = true; startCard.hidden = false; go.disabled = false; go.textContent = 'Enter the alley'; go.focus({ preventScroll: true }); };
 fetch('./worlds/hall/screens.json').then(r => { if (!r.ok) throw new Error('screens.json missing'); return r.json(); }).then(data => {
   HALLDATA = data; buildHall();
   const at = query.get('zone') ? STATIONS[Math.max(0, ZONES.findIndex(z => z.id === query.get('zone')))] : null;
   frame.position.set(at ? at.station[0] : HALL.start.x, 0, at ? at.station[1] : HALL.start.z); visit.yaw = at ? at.facing : HALL.start.facing; visit.zone = zoneAt(frame.position, STATIONS); mark();
   document.documentElement.style.setProperty('--zone', ZONES[visit.zone].color);
   if (noWorld) return ready();
-  return loadHall(p => { loadLine.textContent = `Loading the alley… ${Math.round(p * 100)}%`; }).then(ready);
+  return loadHall(progress).then(() => { progress(1); return new Promise(done => requestAnimationFrame(() => requestAnimationFrame(done))); }).then(ready);
 }).catch(error => { console.error(error); noGraphics('The alley did not load.'); });
 requestAnimationFrame(tick);
 
