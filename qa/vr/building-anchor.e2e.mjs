@@ -23,11 +23,15 @@ try {
       G.game.skipTutorial();G.test.teleport(0,y,900);G.P.onGround=false;
       window.dispatchEvent(new KeyboardEvent('keydown',{code:'KeyE'}));
       G.test.step(1/60,4);
-      const ropes=G.P.ropes.map(r=>({state:r.state,tag:r.target?.tag}));
+      const ropes=G.P.ropes.map(r=>{
+        const d=r.state==='idle'?0:Math.hypot(r.anchor.x-G.P.pos.x,r.anchor.y-(G.P.pos.y+G.P.chest),r.anchor.z-G.P.pos.z);
+        return {state:r.state,tag:r.target?.tag,d:+d.toFixed(2)};
+      });
       window.dispatchEvent(new KeyboardEvent('keyup',{code:'KeyE'}));G.test.step(1/60,2);
       return ropes;
     },y);
-    check(result.every(r=>r.state==='idle'),label+': no invisible attachment '+JSON.stringify(result));
+    const skyOk=result.every(r=>r.state==='idle'||(r.tag==='sky'&&r.d<=28.8));
+    check(skyOk,label+': a sky rope stays inside 16 body-heights '+JSON.stringify(result));
   }
   const rooftop = await page.evaluate(() => {
     const candidates=G.city.colliders.filter(c=>c.type==='box'&&c.tag==='building'&&c.maxY>100);

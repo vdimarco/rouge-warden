@@ -1693,8 +1693,8 @@ let easyAvoid = -1;
 let noneAt = -99;
 const PICK_OPTS = { avoidBid: -1 }; // reused: the options of the second pick when both swing inputs go down in one frame
 const PHONE_DIR = new THREE.Vector3(), PROJ = { x: 0, y: 0, depth: 0, behind: false, inView: false };
-// Flat play never aims the web. Holding swing takes a point 12 body-heights ahead and 14 up; a building within 6
-// snaps; without a suitable building there is no attachment. A test aim (G.test.aimAt) and a headset
+// Flat play never aims the web. Holding swing takes a point 10 body-heights ahead and 12 up, clamped to 16;
+// a building within 6 snaps; with none, the rope takes that sky point. A test aim (G.test.aimAt) and a headset
 // still use the old ray. A new web waits 150 ms after the last one let go.
 let easyDx = 0, easyDz = -1;
 const CAM = { cam: { x: 0, y: 0, z: 0 }, yaw: 0, pitch: 0, fov: 70, aspect: 1 };
@@ -1741,18 +1741,21 @@ function canHang(a) {
   const gy = city.isWater(P.pos.x, P.pos.z) ? 0 : city.groundY(P.pos.x, P.pos.z);
   return d <= a.y - P.chest - (gy + 1.5 * H);
 }
-function playerEasy(avoid) {
+function playerEasy(avoid, pick) {
   easyDir();
+  // mission or ring within 16h is the aimed cup (markedCup). A building within 6h is the first
+  // sky alternative. The wider samples still prefer a real building over sky. Sky is last, and
+  // easyAnchor keeps that point inside 16h of the chest.
   const tries = [{}, { up: 8, ahead: 20, reach: 10 }, { up: 4, ahead: 34, reach: 16 }];
+  let sky = null;
   for (let t = 0; t < tries.length; t++) {
     const opt = avoid != null && avoid >= 0 ? { ...tries[t], avoid } : (t ? tries[t] : undefined);
     const a = easyAnchor(P, easyDx, easyDz, opt);
-    if (!a || a.sky) continue;
+    if (!a) continue;
+    if (a.sky) { if (!sky) sky = aimCopy(a); continue; }
     if (!(avoid != null && a.bid === avoid)) return { ...aimCopy(a), easy: canHang(a) };
   }
-  // The visible lock-on may find a real building beyond the automatic search samples.
-  // Reject points that would shorten the rope and pull the hero into the ground-clearance cap.
-  if (pickerOn) {
+  if (pick !== false && pickerOn) {
     const res = picker.pick(TCTX, { avoidBid: avoid ?? -1 });
     if (res && res.valid && res.tag === "building" && res.bid !== avoid) {
       const copy = aimCopy(res);
@@ -1761,7 +1764,7 @@ function playerEasy(avoid) {
       return copy;
     }
   }
-  return null;
+  return sky ? { ...sky, easy: true } : null;
 }
 // The building the other rope already holds, or the one this frame's first shot just took.
 function otherWeb(i) {
@@ -1794,9 +1797,8 @@ function aimAndFire(dt, inp) {
     if (useEasy && !inp.easySwing) {
       if (markedCup()) useEasy = false;
       else {
-        easyDir();
-        const probe = easyAnchor(P, easyDx, easyDz);
-        if (probe.sky) {
+        const found = playerEasy(undefined, false);
+        if (!found || found.sky) {
           const res = pickerOn ? picker.result() : null;
           const openWater = !P.onGround && P.city.isWater(P.pos.x, P.pos.z);
           if (!openWater && ((res && res.valid && !res.same) || P.onGround)) useEasy = false;
@@ -2002,9 +2004,9 @@ function phoneClear(i) { phoneRopeT[i] = phoneGroundT[i] = phoneSlowT[i] = 0; ha
 function phoneReleaseRope(i, dt) {
   const r = P.ropes[i], R = PHONE.release;
   if (r.state !== "attached" || r.sticky || SPECIAL_TAGS[r.target.tag]) { phoneClear(i); return; }
-  // a finger holds it down: no hand-off, and no let-go at the bottom of the arc or while it hangs still (only a roof ends it)
+  // a finger still down has no timer: not the roof, not a stall, not the bottom of the arc
   const held = phoneHeld(i);
-  if (held) handoffT[i] = -1;
+  if (held) { handoffT[i] = -1; return; }
   if (handoffT[i] >= 0 && (handoffT[i] -= dt) <= 0) { release(P, i); phoneClear(i); D.mobile.released(i); pushRing({ type: "handoff", side: i }); return; }
   phoneRopeT[i] += dt;
   if (P.onGround) phoneGroundT[i] += dt; // all the time on roofs since the rope caught: a rope that drags you over them lets go
@@ -2348,6 +2350,11 @@ function webCss() {
   const h = innerHeight || renderer.domElement.clientHeight || 1;
   return e5 > 0 && h > 0 ? (2 / e5) / h : 0.001;
 }
+// 2 CSS px at 1280 wide, 1.5 CSS px at 390 wide. The mesh radius is half of that.
+function webPx() {
+  const w = innerWidth || 1280, t = (w - 390) / (1280 - 390), k = t < 0 ? 0 : t > 1 ? 1 : t;
+  return 1.5 + 0.5 * k;
+}
 function ensureWeb() {
   if (webMesh || !scene) return;
   const geo = new THREE.CylinderGeometry(1, 1, 1, 6, 1, true).translate(0, 0.5, 0);
@@ -2380,7 +2387,7 @@ function ensureWeb() {
   webMesh.renderOrder = 2;
   webMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
   webFadeAttr.setUsage(THREE.DynamicDrawUsage);
-  webMesh.onBeforeRender = () => { mat.uniforms.uPix.value = webCss(); };
+  webMesh.onBeforeRender = () => { mat.uniforms.uPix.value = webCss() * webPx() * 0.5; };
   scene.add(webMesh);
 }
 function webSagPx(tension) {
@@ -2500,7 +2507,7 @@ function strokeWeb(ctx, hand, anchor, sag, alpha, w, h) {
   if (!seg.ok) return;
   ctx.strokeStyle = "#2B2A33";
   ctx.globalAlpha = alpha;
-  ctx.lineWidth = 2;
+  ctx.lineWidth = webPx();
   ctx.lineCap = "round";
   ctx.beginPath();
   ctx.moveTo(seg.x0, seg.y0);
@@ -2741,6 +2748,9 @@ function render(frame, rdt = 0) {
     if (G.viewDone && !titleCompiled) { titleCompiled = true; renderer.compile(scene, camera); }
     return;
   }
+  // A painted comic panel covers the canvas. The draw under it is what a software frame spends its time on,
+  // and that stall runs past the music horizon, so the scene goes quiet while the music step still moves.
+  if (!xr && G.state === "cutscene" && cutscenes.painted && !shot && !samples.length && !FLAGS.debug) return;
   if (!xr) {
     const vs = verseFrame(rdt);
     bloom.render(scene, camera, bloomLevel(), vs, sunShaft());
