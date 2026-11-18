@@ -3,7 +3,7 @@
 // Run: node qa/lab/splat-isle.test.mjs
 import assert from 'node:assert/strict';
 import { PRIMS, smin, prepare, field, paint, bake, Grid, softShadow, rng } from '../../public/lab/splat-isle/sdf.js';
-import { build, heightAt, ISLAND } from '../../public/lab/splat-isle/scene.js';
+import { build, figure, goat, world, ISLANDS, ORDER, SEA, sproutSpots } from '../../public/lab/splat-isle/scene.js';
 let n = 0; const pass = (name, data) => { n++; console.log('PASS ' + name + (data ? ' ' + JSON.stringify(data) : '')); };
 const near = (a, b, e) => Math.abs(a - b) <= e;
 
@@ -58,19 +58,39 @@ const near = (a, b, e) => Math.abs(a - b) <= e;
   pass('the light is baked in: sun and shade, a cast shadow, and a lamp that glows');
 }
 
-{ // The island: every object has strokes; the goat is in parts round its joints; nothing stands on the goat's path;
-  // the sea is at the water line; the ground has a height everywhere on the island.
-  const isle = await build(1, { density: 120, cell: 0.24, yieldTo: async () => {} });
-  const ids = isle.objects.map(o => o.id); for (const want of ['island', 'cottage', 'lighthouse', 'goat']) assert(ids.includes(want), want);
-  assert(ids.filter(i => i.startsWith('tree')).length >= 3 && ids.filter(i => i.startsWith('rock')).length >= 3 && ids.filter(i => i.startsWith('cloud')).length === 3);
-  for (const p of isle.parts) assert(p.splats.count > 0, p.name + ' has strokes');
-  const goat = isle.objects.find(o => o.id === 'goat'); assert(goat.rig && goat.parts.filter(p => p.startsWith('goat-leg')).length === 4 && goat.parts.includes('goat-head') && goat.parts.includes('goat-tail'));
-  for (const o of isle.objects) if (!o.fixed && !o.rig && !o.cloud) { const r = Math.hypot(o.center[0], o.center[2]); assert(Math.abs(r - ISLAND.path) > 0.6, o.id + ' is clear of the path'); }
-  const sea = isle.parts.find(p => p.name === 'sea'); assert.equal(sea.pivot[1], ISLAND.water);
-  const ground = isle.parts.find(p => p.name === 'ground'); for (let i = 0; i < ground.splats.count; i++) assert(ground.splats.pos[i * 3 + 1] > ISLAND.water - 0.2, 'no strokes far under the sea');
-  for (let a = 0; a < Math.PI * 2; a += 0.3) { const h = heightAt(Math.cos(a) * ISLAND.path, Math.sin(a) * ISLAND.path); assert(h > -0.6 && h < 0.8, 'the path has ground under it: ' + h.toFixed(2)); }
-  const again = await build(1, { density: 120, cell: 0.24, yieldTo: async () => {} }); assert.equal(again.count, isle.count, 'the same seed builds the same island');
-  const other = await build(2, { density: 120, cell: 0.24, yieldTo: async () => {} }); assert.notDeepEqual(other.objects.map(o => o.center), isle.objects.map(o => o.center), 'another seed builds another island');
-  pass('the island has every object, a jointed goat and a clear path', { splats: isle.count, objects: ids.length });
+{ // The five islands: each has ground, a dock and the things its story needs; nothing in the story is missing from any seed
+  // of the layout; the ground clips at the sea; the same island paints the same way; what the save says is broken stays gone.
+  const fast = { density: 110, cell: 0.3, yieldTo: async () => {} }, made = {};
+  for (const id of ORDER) made[id] = await build(id, fast);
+  const ids = id => made[id].objects.map(o => o.id), has = (id, ...want) => { for (const w of want) assert(ids(id).includes(w), `${id} has ${w}: ${ids(id)}`); };
+  for (const id of ORDER) { has(id, 'ground', 'dock'); const g = made[id].parts.find(p => p.name === 'ground'); for (let i = 0; i < g.splats.count; i++) assert(g.splats.pos[i * 3 + 1] > SEA - 0.2, 'no strokes far under the sea'); const [sx, sz] = made[id].start; assert(Math.hypot(sx, sz) < ISLANDS[id].radius - 0.5 && made[id].heightAt(sx, sz) > -0.5, id + ' start is on land'); }
+  has('home', 'cottage', 'well', 'bloom'); has('orchard', 'gardener', 'thorn0', 'thorn1', 'thorn2', 'thorn3', 'wall'); has('bell', 'tower', 'bellringer'); has('wreck', 'fisher', 'crate0', 'crate1', 'crate2', 'crate3'); has('light', 'lighthouse', 'lampkeeper');
+  const loot = ORDER.flatMap(id => made[id].objects.filter(o => o.loot).map(o => o.loot));
+  assert.equal(loot.filter(l => l === 'shell').length, 7, 'seven shells to find'); assert.equal(loot.filter(l => l === 'rope').length, 1, 'one rope'); assert.equal(loot.filter(l => l === 'stone').length, 1, 'one stone');
+  assert.equal(made.orchard.objects.find(o => o.id === 'wall').hits, 2, 'the wall takes two hits'); for (const o of made.orchard.objects.filter(q => q.id.startsWith('thorn') && q.id !== 'thorntree')) assert.equal(o.again, 'never', 'cleared thorns stay cleared');
+  for (const id of ORDER) for (const p of made[id].parts) assert(p.splats.count > 0, `${id}/${p.name} has strokes`);
+  // the lighthouse's lamp is its own glowing part, so the page can keep it dark until it is lit
+  assert(made.light.parts.some(p => p.object === 'lighthouse' && p.glow), 'a lamp part');
+  const again = await build('bell', fast); assert.equal(again.count, made.bell.count, 'the same island paints the same way');
+  const broken = await build('wreck', { ...fast, state: { broken: { crate0: 'never', barrel1: 'dawn' } } }); assert(!broken.objects.some(o => o.id === 'crate0' || o.id === 'barrel1'), 'broken things stay gone');
+  const far = await build('light', { density: 60, cell: 0.5, far: true, yieldTo: async () => {} }); assert(far.count < made.light.count && far.objects.some(o => o.id === 'lighthouse') && !far.objects.some(o => o.person), 'the far copy is light, with the big things only');
+  pass('five islands with every thing the story needs', Object.fromEntries(ORDER.map(id => [id, made[id].count])));
+}
+
+{ // Thorn sprouts come up on Home Isle at dawn and grow into thorn trees after two days.
+  const ids = sproutSpots(3, 2); assert.deepEqual(ids, ['sprout-3-0', 'sprout-3-1']);
+  const day = 5, state = { day, sprouts: [[ids[0], day], [ids[1], day - 2]] };
+  const home = await build('home', { density: 110, cell: 0.3, state, yieldTo: async () => {} }), a = home.objects.find(o => o.id === ids[0]), b = home.objects.find(o => o.id === ids[1]);
+  assert(a && b, 'both sprouts come up'); assert.equal(a.kind, 'thornbush'); assert.equal(b.kind, 'thorntree', 'an old sprout is a thorn tree'); assert.equal(b.hits, 3);
+  const again = await build('home', { density: 110, cell: 0.3, state: { day: 6, sprouts: [[ids[0], day]] }, yieldTo: async () => {} }); assert.deepEqual(again.objects.find(o => o.id === ids[0]).center.map(v => +v.toFixed(3)).filter((v, i) => i !== 1), a.center.map(v => +v.toFixed(3)).filter((v, i) => i !== 1), 'a sprout stays where it came up');
+  pass('thorn sprouts come up and grow', { sprouts: home.sprouts.length });
+}
+
+{ // People, the goat, the sea and the clouds.
+  for (const kind of ['keeper', 'gardener', 'bellringer', 'fisher', 'lampkeeper']) { const parts = figure(kind, { density: 120 }); assert(parts[0].splats.count > 100, kind + ' has strokes'); }
+  assert(figure('keeper', { density: 120 }).some(p => p.glow), 'the keeper carries a lantern');
+  const g = goat({ density: 120 }); assert(g.filter(p => p.name.startsWith('goat-leg')).length === 4 && g.some(p => p.name === 'goat-head') && g.some(p => p.name === 'goat-tail'), 'a jointed goat');
+  const w = world({ density: 120 }); assert.equal(w.sea.pivot[1], SEA); assert.equal(w.clouds.length, 6); assert(w.sea.splats.count > 5000);
+  pass('people, a jointed goat, the sea and clouds');
 }
 console.log(`${n} checks passed`);
