@@ -4,7 +4,8 @@
 // - Enter the alley: it has no machines, and six lit doors, each with a view into its zone's world;
 // - a zone button, a number key and the up and down keys glide the visitor to that zone's station on the street;
 // - a door opens that zone's world, with its games on floating frames in the homepage order, the first game in front,
-//   and the ways back return to the alley at that zone's station;
+//   and the ways back (S, the ring, and the top-left link, which reads Alley inside a world) return to the alley at that
+//   zone's station;
 // - ◀ and ▶ turn from door to door, a drag turns the view only, and W A S D walk the two streets and stay on them;
 // - a zone with more than eight games has a More button in its world, which shows the next games;
 // - the rim of a door gives way under the mouse pointer;
@@ -196,11 +197,17 @@ try {
     const t = await open(), { page } = t; await t.enterAlley(); await page.keyboard.press('1'); await t.zone('cottage', 'the Cottage station');
     await page.keyboard.down('w'); let s; try { s = await t.world('cottage', 'W at the door goes into the Cottage world'); } finally { await page.keyboard.up('w'); }
     assert.equal(s.room, 'cottage'); assert.equal(s.machines[0].title, (await t.games()).cottage[0].title, 'the first game is in front');
+    assert.equal(await page.textContent('.labbar .back'), '◀ Alley', 'inside a world the top-left link leads back to the alley');
     // The frame in view plays its game's short clip in place of the still picture (Get Plunger'd has one).
     await page.waitForFunction(() => { const v = window.__riftwalk.preview(); return v.url === '/plungerd/' && v.playing; }, null, { timeout: 30000 }); await page.keyboard.press('ArrowRight'); await t.until(s2 => !s2.turning && s2.aim === 1, 'the next frame'); await page.waitForFunction(() => window.__riftwalk.preview().url !== '/plungerd/', null, { timeout: 10000 }); await page.keyboard.press('ArrowLeft'); await t.until(s2 => !s2.turning && s2.aim === 0, 'the first frame again');
     assert.deepEqual(await page.evaluate(() => { const v = window.__riftwalk.sound(); return [v.context, v.place]; }), ['running', 'cottage'], 'the world has its own sound');
     await page.keyboard.down('s'); try { s = await t.zone('cottage', 'S walks back out to the Cottage storefront'); } finally { await page.keyboard.up('s'); }
-    assert.equal(s.room, null); assert(onStreet(s.place)); assert.deepEqual(t.errors, []); await page.close();
+    assert.equal(s.room, null); assert(onStreet(s.place)); assert.equal(await page.textContent('.labbar .back'), '◀ Lab', 'in the alley the link leads to the Lab');
+    // The Alley link walks back out through the ring, and the page stays on Riftwalk.
+    await page.keyboard.down('w'); try { await t.world('cottage', 'back into the Cottage world'); } finally { await page.keyboard.up('w'); }
+    await page.click('.labbar .back'); s = await t.zone('cottage', 'the Alley link leads back to the Cottage storefront');
+    assert.equal(s.room, null); assert(new URL(page.url()).pathname.startsWith('/lab/riftwalk/'), 'still on Riftwalk'); assert.equal(await page.textContent('.labbar .back'), '◀ Lab');
+    assert.deepEqual(t.errors, []); await page.close();
     pass('a walk at a door goes into its world, and a walk back comes out');
   }
   {
