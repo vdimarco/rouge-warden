@@ -91,9 +91,13 @@ The islands SHALL hold crates, barrels, clay pots, thornbushes, thorn trees, tho
 - **THEN** a note says a shell was found, and the HUD shows 1 of 7 shells
 
 ### Requirement: Saved game
-The game SHALL save in the browser: the island, the day and time, what the keeper carries, the story, what is broken, the sprouts, the flower and the goat. Opening the page again SHALL load it with no opening words. New game in the Look panel SHALL ask once more before it wipes the save.
+The game SHALL save in the browser: the island, the day and time, what the keeper carries, the story, what is broken, the sprouts, the flower and the goat. Opening the page again SHALL load it with no opening words. The page SHALL check a save read back from the browser field by field and keep only known fields with the expected types and ranges, because every arcade page shares one origin and one storage. A save that names an unknown island, holds the wrong types, or holds markup SHALL still load a working game, and its text SHALL never be read as markup. New game in the Look panel SHALL ask once more before it wipes the save.
 
 #### Scenario: Come back
 - **WHEN** the player reloads the page after the lamp is lit
 - **THEN** the game opens on the same island and day, with the lamp lit
+
+#### Scenario: A broken or hostile save
+- **WHEN** the stored save names an island that does not exist and puts an HTML tag in the shell count
+- **THEN** the game opens on Home Isle, the HUD shows 0 of 7 shells as plain text, and no markup or script from the save runs
 

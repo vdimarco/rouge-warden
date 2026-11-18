@@ -87,6 +87,7 @@ The loading screen and the seven improvements:
 - [x] Door tool at `?edit`, tried in the browser.
 - [x] `qa/lab/riftwalk.e2e.mjs`: 13 checks pass. `qa/lab/riftwalk.test.mjs`: 6 pass. `qa/arcade/default-view.e2e.mjs`: all pass.
 - [ ] Hear the sound, and see the frame rate of live windows, on real hardware (not possible in this session).
+- [x] Top-left link: ◀ Alley inside a world leads back to the alley; ◀ Lab in the alley (`qa/lab/riftwalk.e2e.mjs`).
 - [ ] Measure the frame rate at the new pixel ratio on a real graphics card (not possible in this session).
 - [ ] See the alley at its full 2,000,000 splats. Software WebGL is too slow for it.
 - [ ] Play on a real phone and a real graphics card (not possible in this session).

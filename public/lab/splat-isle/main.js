@@ -6,6 +6,7 @@
 import * as THREE from 'three';
 import { SplatMesh, SparkRenderer, PackedSplats } from '@sparkjsdev/spark';
 import { build, figure, goat as paintGoat, world, ISLANDS, ORDER, SEA, sproutSpots } from './scene.js';
+import { SAVE_KEY, fresh as freshSave, clean as cleanSave } from './save.js';
 
 const $ = id => document.getElementById(id), query = new URLSearchParams(location.search);
 const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches, touch = matchMedia('(pointer: coarse)').matches;
@@ -139,10 +140,10 @@ function skeleton(shapes) {
 function showShapes(on) { look.xray = on; scene.traverse(o => { if (o.userData.xray) o.visible = on; }); paintButtons(); }
 
 /* ---------------- the saved game ---------------- */
-const SAVE_KEY = 'splat-isle.save.v3';
-const fresh = () => ({ island: 'home', day: 1, time: 0.12, inv: { shell: 0, fruit: 0, stone: 0, rope: 0, oil: 0, water: 0 }, flags: {}, broken: {}, taken: {}, picked: {}, sprouts: sproutSpots(1, 3).map(id => [id, 1]), bloom: { health: 3, watered: 0 }, goat: { trust: 0 }, intro: false });
-let save = fresh();
-try { const got = !query.has('fresh') && JSON.parse(localStorage.getItem(SAVE_KEY) || 'null'); if (got && got.inv) save = { ...fresh(), ...got, inv: { ...fresh().inv, ...got.inv } }; } catch (e) { /* storage off */ }
+// save.js checks a save read back from the browser, field by field, so a bad one cannot stop the page or inject markup.
+const firstSprouts = () => sproutSpots(1, 3).map(id => [id, 1]);
+let save = freshSave(firstSprouts());
+try { const got = !query.has('fresh') && JSON.parse(localStorage.getItem(SAVE_KEY) || 'null'); save = cleanSave(got, firstSprouts()) || save; } catch (e) { /* storage off, or a save that is not JSON */ }
 let saveQueued = false;
 function store() { if (saveQueued) return; saveQueued = true; setTimeout(() => { saveQueued = false; try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (e) { /* storage off */ } }, 400); }
 const brokenOn = id => (save.broken[id] ||= {});
@@ -447,7 +448,7 @@ function openMap() {
   if (talking()) return; const list = $('isles'); list.textContent = '';
   for (const id of ORDER) {
     const b = document.createElement('button'); b.type = 'button'; b.dataset.isle = id; b.disabled = id === save.island;
-    b.innerHTML = `<b>${ISLANDS[id].name}</b><small>${id === save.island ? 'You are here' : NOTE[id]()}</small>`; b.addEventListener('click', () => sail(id)); list.append(b);
+    const name = document.createElement('b'), note = document.createElement('small'); name.textContent = ISLANDS[id].name; note.textContent = id === save.island ? 'You are here' : NOTE[id](); b.append(name, note); b.addEventListener('click', () => sail(id)); list.append(b);
   }
   $('map').hidden = false; list.querySelector('button:not(:disabled)')?.focus();
 }
@@ -477,7 +478,8 @@ function stepNotes(dt) {
 }
 function updateHud() {
   const inv = save.inv, chips = [['Shells', `${inv.shell}/${SHELLS}`], inv.fruit && ['Fruit', inv.fruit], inv.water && ['Can', 'full'], inv.stone && ['Stone', inv.stone], inv.rope && ['Rope', inv.rope], inv.oil && ['Oil', inv.oil], save.goat.trust && ['Goat', '♥'.repeat(save.goat.trust)]].filter(Boolean);
-  $('inv').innerHTML = chips.map(([k, v]) => `<span><b>${k}</b> ${v}</span>`).join('');
+  // built from text nodes, never from markup: the numbers come from the saved game
+  $('inv').replaceChildren(...chips.map(([k, v]) => { const span = document.createElement('span'), b = document.createElement('b'); b.textContent = k; span.append(b, ' ' + v); return span; }));
   $('goal').textContent = goal(); $('where').textContent = `${ISLANDS[save.island].name} · Day ${save.day}`;
   const home = [];
   if (save.bloom.watered < save.day) home.push('water the lantern-bloom'); if (save.sprouts.length) home.push(`pull ${save.sprouts.length} thorn sprout${save.sprouts.length > 1 ? 's' : ''}`);
@@ -493,7 +495,8 @@ function updateAct() {
 
 /* ---------------- camera ---------------- */
 // The view follows you from behind and above. Drag to turn round you; the wheel or a pinch moves in and out.
-const view = { yaw: 0.6, pitch: 0.5, dist: innerWidth < innerHeight ? 9.5 : 7, at: new THREE.Vector3() };   // a tall phone screen stands further back, to see round you let shakeCam = 0;
+// a tall phone screen stands further back, to see round you
+const view = { yaw: 0.6, pitch: 0.5, dist: innerWidth < innerHeight ? 9.5 : 7, at: new THREE.Vector3() }; let shakeCam = 0;
 function placeCamera(dt) {
   const want = new THREE.Vector3(player.x, player.y + 0.7, player.z); view.at.lerp(want, Math.min(1, dt * 6));
   const o = new THREE.Vector3(Math.sin(view.yaw) * Math.cos(view.pitch), Math.sin(view.pitch), Math.cos(view.yaw) * Math.cos(view.pitch)).multiplyScalar(view.dist).add(view.at);

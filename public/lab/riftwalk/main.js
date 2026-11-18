@@ -83,6 +83,7 @@ function sharpenHall(file) {
 }
 // The rooms: one small Marble world for each zone, loaded when the visitor first goes in. A Marble .spz has y down,
 // so the mesh turns half a turn about x; the room's screens.json gives its scale and the eye height.
+const backLink = document.querySelector('.labbar .back');   // the top-left link: Lab in the alley, Alley inside a world
 const ROOMS = {}; let hallMesh = null, HALLDATA = null, room = null, RINGS = [];   // RINGS: the zones that have a room, in the order of their rings   // room: the index of the zone whose room the visitor is in, or null in the hall
 const roomData = id => ROOMS[id] ? Promise.resolve(ROOMS[id]) : fetch(`./worlds/rooms/${id}/screens.json`).then(r => { if (!r.ok) throw new Error('Room missing: ' + id); return r.json(); }).then(d => (ROOMS[id] = d));
 async function loadRoom(id, quality) {
@@ -356,7 +357,7 @@ function clearPlaces() {
   for (const m of air) { m.parent?.remove(m); m.geometry.dispose(); m.material.dispose(); } air = []; hover = -1; visit.aim = -1;
 }
 function buildHall() {
-  clearPlaces(); room = null; HALL = HALLDATA.hall; SCREENS = HALLDATA.screens; STATIONS = ZONES.map(z => HALLDATA.zones[z.id]);
+  clearPlaces(); room = null; paintBack(); HALL = HALLDATA.hall; SCREENS = HALLDATA.screens; STATIONS = ZONES.map(z => HALLDATA.zones[z.id]);
   RINGS = ZONES.map((z, i) => i).filter(i => STATIONS[i].room); PLACES = SCREENS.concat(RINGS.map(i => ringPlace(STATIONS[i].ring))); camera.position.set(0, HALL.eye, 0);
   const zoneOf = id => ZONES.find(z => z.id === id);
   portals = PLACES.map((place, i) => makePortal(place, i, place.ring ? ZONES[RINGS[i - SCREENS.length]] : zoneOf(place.zone)));
@@ -366,7 +367,7 @@ function buildHall() {
 }
 // The places of a room: its machines, with the zone's games from the front machine outward, and the ring back to the hall.
 function buildRoom(index) {
-  clearPlaces(); room = index; const zone = ZONES[index], data = ROOMS[zone.id];
+  clearPlaces(); room = index; paintBack(); const zone = ZONES[index], data = ROOMS[zone.id];
   // A scenery room has no machines: its games hang as floating frames, one for each game.
   HALL = { eye: data.hall.eye ?? data.hall.ground, reach: 1, frames: !!data.hall.frames }; SCREENS = (HALL.frames ? frameRing(gamesIn(index).length, HALL.eye) : data.screens).map(s => ({ ...s, zone: zone.id })); PLACES = SCREENS.concat([exitRing(SCREENS)]); camera.position.set(0, HALL.eye, 0);
   portals = PLACES.map((place, i) => makePortal(place, i, zone)); visit.page[index] = 0; fill(index);
@@ -386,6 +387,12 @@ function goRoom(index) {
     if (!noWorld) loadRoom(zone.id, query.get('q') || (touch ? '500k' : 'full')).then(sharp => { if (room === index && visit.phase !== 'travel') showWorld(sharp); else sharp.dispose?.(); }).catch(() => { /* the small room stays */ });
   }).catch(error => { console.error(error); visit.phase = 'hall'; flash.classList.remove('on'); keysBar.hidden = groupsBar.hidden = false; loadLine.hidden = false; loadLine.textContent = `${zone.label} did not load.`; setTimeout(() => { loadLine.hidden = true; }, 4000); paint(); });
 }
+// The top-left link: in the alley it leads to the Lab page; inside a world it says Alley and walks back through the ring.
+function paintBack() {
+  if (!backLink) return; const inWorld = room !== null;
+  backLink.textContent = inWorld ? '◀ Alley' : '◀ Lab'; backLink.setAttribute('aria-label', inWorld ? 'Back to the alley' : 'Back to the Lab');
+}
+backLink?.addEventListener('click', e => { if (room === null) return; e.preventDefault(); goHall(); });
 // Back through the ring: the hall again, at the cluster of the zone the visitor came from.
 function goHall(to) {
   if (visit.phase !== 'hall' || visit.glide || room === null) return; const index = Number.isInteger(to) ? to : room, zone = ZONES[index];

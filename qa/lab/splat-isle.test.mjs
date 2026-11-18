@@ -4,6 +4,7 @@
 import assert from 'node:assert/strict';
 import { PRIMS, smin, prepare, field, paint, bake, Grid, softShadow, rng } from '../../public/lab/splat-isle/sdf.js';
 import { build, figure, goat, world, ISLANDS, ORDER, SEA, sproutSpots } from '../../public/lab/splat-isle/scene.js';
+import { clean, fresh } from '../../public/lab/splat-isle/save.js';
 let n = 0; const pass = (name, data) => { n++; console.log('PASS ' + name + (data ? ' ' + JSON.stringify(data) : '')); };
 const near = (a, b, e) => Math.abs(a - b) <= e;
 
@@ -92,5 +93,18 @@ const near = (a, b, e) => Math.abs(a - b) <= e;
   const g = goat({ density: 120 }); assert(g.filter(p => p.name.startsWith('goat-leg')).length === 4 && g.some(p => p.name === 'goat-head') && g.some(p => p.name === 'goat-tail'), 'a jointed goat');
   const w = world({ density: 120 }); assert.equal(w.sea.pivot[1], SEA); assert.equal(w.clouds.length, 6); assert(w.sea.splats.count > 5000);
   pass('people, a jointed goat, the sea and clouds');
+}
+{ // A save read back from the browser is checked field by field: a good one comes back whole, a bad one cannot name an
+  // unknown island, put markup or odd types into the HUD, or pollute an object's prototype.
+  const good = { ...fresh([['sprout-1-0', 1]]), island: 'wreck', day: 4, time: 0.5, inv: { shell: 3, fruit: 2, stone: 0, rope: 1, oil: 0, water: 1 }, flags: { bell: true, visited: { light: 1 } }, broken: { wreck: { crate2: 'never' } }, taken: { 'wreck:crate2': 1 }, picked: { 'orchard:fruit0': 3 }, bloom: { health: 2, watered: 3 }, goat: { trust: 4 }, intro: true };
+  assert.deepEqual(clean(JSON.parse(JSON.stringify(good))), good, 'a good save comes back whole');
+  assert.equal(clean(null), null); assert.equal(clean('x'), null); assert.equal(clean({}), null, 'no inventory, no save');
+  const bad = clean(JSON.parse('{"island":"__proto__","day":-3,"time":7,"inv":{"shell":"<img src=x onerror=alert(1)>","fruit":1e9,"water":5,"__proto__":{"x":1}},"flags":{"lit":"yes","bell":true,"constructor":true},"broken":{"home":{"<b>":"never","rock0":"always","tree0":"dawn"},"__proto__":{"a":"never"}},"taken":{"home:pot0":1,"<x>:y":1},"sprouts":[["sprout-2-0",2],["<i>",2],"x",["sprout-3-0","2"]],"bloom":{"health":9},"goat":{"trust":"5"},"riding":true}'));
+  assert.equal(bad.island, 'home', 'an unknown island falls back to Home Isle'); assert.equal(bad.day, 1); assert.equal(bad.time, 0.12);
+  assert.deepEqual(bad.inv, { shell: 0, fruit: 0, stone: 0, rope: 0, oil: 0, water: 0 }, 'only whole numbers in range');
+  assert.deepEqual(bad.flags, { bell: true }); assert.deepEqual(bad.broken, { home: { tree0: 'dawn' } }); assert.deepEqual(bad.taken, { 'home:pot0': 1 });
+  assert.deepEqual(bad.sprouts, [['sprout-2-0', 2]]); assert.deepEqual(bad.bloom, { health: 3, watered: 0 }); assert.equal(bad.goat.trust, 0); assert.equal(bad.riding, false, 'no ride without the goat\'s trust');
+  assert.equal({}.x, undefined, 'no prototype pollution');
+  pass('a saved game is checked before it is used');
 }
 console.log(`${n} checks passed`);

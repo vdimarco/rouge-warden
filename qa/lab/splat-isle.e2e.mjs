@@ -103,4 +103,15 @@ async function open(options = {}, query = 'q=low&fresh') {
   assert.deepEqual(t.errors, []); await page.close();
   pass('phone layout: 44 px controls that fit the width');
 }
+{ // A broken or hostile save, as any page on the arcade's origin could write it, loads a working game and runs no markup.
+  const page = await browser.newPage({ viewport: { width: 960, height: 540 } }), errors = []; page.on('pageerror', e => errors.push(e.message));
+  await page.route('**/api/**', r => r.fulfill({ json: {} }));
+  await page.addInitScript(() => { if (!sessionStorage.getItem('planted')) { sessionStorage.setItem('planted', '1'); localStorage.setItem('splat-isle.save.v3', JSON.stringify({ island: 'nowhere', day: 'x', inv: { shell: '<img src=x onerror="window.__pwned=1">', fruit: 2 }, sprouts: 'no', broken: null })); } });
+  await page.goto(PAGE + '?q=low');
+  await page.waitForFunction(() => window.__splatIsle?.state().ready, null, { timeout: 240000 });
+  const s = await page.evaluate(() => ({ ...window.__splatIsle.state(), pwned: !!window.__pwned, imgs: document.querySelectorAll('#inv img').length, inv: document.getElementById('inv').textContent }));
+  assert.equal(s.island, 'home'); assert.equal(s.day, 1); assert.equal(s.pwned, false); assert.equal(s.imgs, 0, 'no markup in the HUD'); assert.match(s.inv, /Shells 0\/7/); assert.equal(s.inv.includes('Fruit 2'), true, 'the good part of the save is kept');
+  assert.deepEqual(errors, []); await page.close();
+  pass('a broken or hostile save loads a working game and runs no markup');
+}
 await browser.close(); console.log('splat-isle checks passed');
