@@ -1,5 +1,6 @@
 // Splat Isle (public/lab/splat-isle/), checked in Chromium with SwiftShader at low density (?q=low&fresh):
 // - Home Isle paints with a loading bar, the far islands come up on the horizon, and the opening words show;
+// - the first press starts the sound (the sea and the wind), and Sound turns it off and on;
 // - the Look panel: Pixel, Palette, Goop and Shapes;
 // - a tap on the ground walks you there; a tap on a thing walks you to it and breaks it, and it comes back; a drag only turns;
 // - the whole story, through the page's handle: the Map sails, each islander asks for one thing, and the lighthouse is lit;
@@ -34,7 +35,13 @@ async function open(options = {}, query = 'q=low&fresh') {
   let s = await t.until(s2 => s2.ready, 'Home Isle is painted', 240000);
   assert.equal(bar, 'progressbar'); assert(s.splats > 20000, 'strokes: ' + s.splats); assert.equal(s.island, 'home');
   for (const id of ['ground', 'cottage', 'well', 'bloom', 'dock']) assert(s.objects.includes(id), id);
-  assert(s.talking && /Home Isle/.test(s.line), 'the opening words'); await page.click('#talk'); await t.skip();
+  assert(s.talking && /Home Isle/.test(s.line), 'the opening words'); assert.equal(s.sound.context, 'none', 'no sound before the first press');
+  await page.click('#talk'); await t.skip();
+  // The first press starts the sound: the sea and the wind beds, in a running context. Sound turns it off and on.
+  s = await t.until(s2 => s2.sound.context === 'running' && s2.sound.beds, 'the sound starts on the first press', 30000);
+  assert.equal(await page.getAttribute('#bSound', 'aria-pressed'), 'true');
+  await page.click('#bSound'); assert.equal((await t.state()).sound.on, false); assert.equal(await page.getAttribute('#bSound', 'aria-pressed'), 'false');
+  await page.click('#bSound'); assert.equal((await t.state()).sound.on, true); assert.equal(await page.getAttribute('#bSound', 'aria-pressed'), 'true');
   assert.match(await page.textContent('#goal'), /lighthouse/i); assert.match(await page.textContent('#where'), /Home Isle · Day 1/);
   s = await t.until(s2 => s2.far === 4, 'the other islands on the horizon', 240000);
   if (shots) await page.screenshot({ path: join(shots, 'splat-isle.png') });

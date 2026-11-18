@@ -394,6 +394,9 @@ const PAGES = [
   { id: "lab/plunge", path: "/lab/plunge/", start: click(".card.start .go"), sound: "ctx" },
   { id: "lab/creek", path: "/lab/creek/", start: click(".card.start .go"), sound: "ctx" },
   { id: "lab/tilt", path: "/lab/tilt/", start: click("#play-button"), sound: "ctx" },
+  // Splat Isle paints its island in the page first (q=low keeps that short); a fresh game opens on the first words, and a
+  // tap on them is the first press, which starts the sound.
+  { id: "lab/splat-isle", path: "/lab/splat-isle/?q=low&fresh", boot: () => !!window.__splatIsle?.state().ready, start: click("#talk"), sound: "ctx", slow: true },
   { id: "lab/rules", path: "/lab/rules/", start: click(".card.start .go"), sound: "ctx" },
   { id: "lab/worlds", path: "/lab/worlds/", start: click("#start-button"), sound: "ctx" },
   { id: "moonwell", path: "/moonwell/", start: click("#launch"), sound: "ctx" },
