@@ -29,6 +29,8 @@ Warden's Ledger (`/ledger/`) is a Lab game and the arcade's entry for the NEAR H
 
 ## Play
 
+Inkbound is a native 3D action-platformer prototype. To run it locally, open `games/inkbound/project.godot` in Godot 4.6 and press **F5**. See the [Inkbound project guide](games/inkbound/README.md) for controls and asset sources.
+
 Silent Depth (`/silent-depth/`) is a Pacific submarine patrol for desktop and phones. Track a convoy through the periscope, chart or hydrophone, launch torpedoes, then dive and evade the escort. Start in its control room and visit the periscope, chart, individual torpedo tubes, hydrophone and helm. Its circular periscope has etched angular marks, lens shading and 1.5×/6× optical power. Its ocean has GPU-animated traveling ripples and reflections, with a static fallback. Find its cabinet at the end of Strategy or search All Games. Tests: `node --test qa/silent-depth/*.test.mjs`; browser: `NODE_PATH=qa/browser/node_modules node qa/silent-depth/smoke.e2e.mjs`.
 
 The arcade is live at <https://arcade.uptick.systems/>. To run your own copy, deploy to Vercel, or serve `public/` from any static server and open it in a browser. Opened locally, a built-in stand-in answers for Jev.
