@@ -7,6 +7,7 @@ import * as THREE from 'three';
 import { SplatMesh, SparkRenderer, PackedSplats } from '@sparkjsdev/spark';
 import { build, figure, goat as paintGoat, world, ISLANDS, ORDER, SEA, sproutSpots } from './scene.js';
 import { SAVE_KEY, fresh as freshSave, clean as cleanSave } from './save.js';
+import * as sound from './sound.js';
 
 const $ = id => document.getElementById(id), query = new URLSearchParams(location.search);
 const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches, touch = matchMedia('(pointer: coarse)').matches;
@@ -216,7 +217,7 @@ function stepBreaking(dt) {
       for (const p of o.parts) writePart(p, (i, x, y, z) => { const f = p.fly, t = clamp((o.t - f[i * 4 + 3]) / (1 - f[i * 4 + 3]), 0, 1), d = t * 2.2; return [x + f[i * 4] * d, y + f[i * 4 + 1] * d - 2.4 * t * t, z + f[i * 4 + 2] * d, 1 - 0.5 * t, 1 - t]; });
       if (o.t >= 1) { for (const p of o.parts) p.mesh.visible = false; if (o.again === 'pop') { o.state = 'gone'; o.wait = 1.1; } else o.state = 'away'; }
     } else if (o.state === 'gone') {
-      o.wait -= dt; if (o.wait <= 0) { o.state = 'forming'; o.t = 0; for (const p of o.parts) p.mesh.visible = true; }
+      o.wait -= dt; if (o.wait <= 0) { o.state = 'forming'; o.t = 0; for (const p of o.parts) p.mesh.visible = true; sound.pop(); }
     } else if (o.state === 'forming') {
       o.t = Math.min(1, o.t + dt / (reduced ? 0.01 : 0.7));
       for (const p of o.parts) writePart(p, (i, x, y, z) => { const t = clamp((o.t - p.fly[i * 4 + 3] * 0.6) / (1 - p.fly[i * 4 + 3] * 0.6), 0, 1), k = easeBack(t), m = p.mid; return [m[0] + (x - m[0]) * k, m[1] + (y - m[1]) * k, m[2] + (z - m[2]) * k, Math.max(0, k), clamp(t * 1.6, 0, 1)]; });
@@ -361,7 +362,7 @@ function goal() {
   if (f.sawSleeper) return 'Wake the lamp keeper. Bell Isle has a bell.';
   return 'The lighthouse on Lantern Isle is dark. Take the boat (Map) and find out why.';
 }
-function theEnd() { $('end').hidden = false; $('endDays').textContent = `${save.day} day${save.day > 1 ? 's' : ''} · ${save.inv.shell} of ${SHELLS} shells`; $('endGo').focus(); }
+function theEnd() { sound.lit(); $('end').hidden = false; $('endDays').textContent = `${save.day} day${save.day > 1 ? 's' : ''} · ${save.inv.shell} of ${SHELLS} shells`; $('endGo').focus(); }
 
 /* ---------------- using things ---------------- */
 // One verb: act. Talk to a person, feed the goat, use a well or a bell or a flower, or hit a thing until it breaks.
@@ -371,15 +372,15 @@ function act(id) {
   if (o.talk) return talkTo(o.talk);
   if (o.kind === 'goat') return feedGoat();
   if (o.use === 'sail') return openMap();
-  if (o.use === 'well') { if (save.inv.water) return toast('Your can is already full.'); save.inv.water = 1; store(); updateHud(); return toast('You fill the watering can.'); }
+  if (o.use === 'well') { if (save.inv.water) return toast('Your can is already full.'); sound.well(); save.inv.water = 1; store(); updateHud(); return toast('You fill the watering can.'); }
   if (o.use === 'bloom') {
     if (save.bloom.watered >= save.day) return toast('The lantern-bloom has had its water today.');
     if (!save.inv.water) return toast('The lantern-bloom is thirsty. Fill your can at the well.');
-    save.inv.water = 0; save.bloom.watered = save.day; save.bloom.health = 3; store(); updateHud(); return toast('You water the lantern-bloom. It glows a little brighter.');
+    sound.water(); save.inv.water = 0; save.bloom.watered = save.day; save.bloom.health = 3; store(); updateHud(); return toast('You water the lantern-bloom. It glows a little brighter.');
   }
   if (o.use === 'bell') {
-    if (!save.flags.clapper) return toast('The bell has no clapper. It only hums.');
-    o.shake = 0.6; shakeCam = 0.5; floatText('BONG', o.bell || o.center);
+    if (!save.flags.clapper) { sound.hum(); return toast('The bell has no clapper. It only hums.'); }
+    o.shake = 0.6; shakeCam = 0.5; floatText('BONG', o.bell || o.center); sound.bell();
     if (!save.flags.bell) { save.flags.bell = true; store(); setTimeout(() => dialog('', ['The bell rings out across the water.', 'Far away, on Lantern Isle, someone wakes with a start.']), 700); }
     updateHud(); return;
   }
@@ -387,18 +388,20 @@ function act(id) {
 }
 function hit(o) {
   if (o.kind === 'stonewall' && !save.flags.gardenerOk) { o.shake = 0.3; return toast('The gardener\'s old wall. Better ask first.'); }
-  o.hp -= 1; if (o.hp > 0) { o.shake = 0.35; return toast(`${o.label}: one more hit${o.hp > 1 ? ` (${o.hp} left)` : ''}.`); }
+  o.hp -= 1; if (o.hp > 0) { o.shake = 0.35; sound.hit(o.kind); return toast(`${o.label}: one more hit${o.hp > 1 ? ` (${o.hp} left)` : ''}.`); }
   if (!breakApart(o)) return;
+  sound.smash(o.kind);
   if (o.again !== 'pop') { brokenOn(save.island)[o.id] = o.again; if (o.id.startsWith('sprout')) { save.sprouts = save.sprouts.filter(s => s[0] !== o.id); delete brokenOn(save.island)[o.id]; } }
   const key = save.island + ':' + o.id;
-  if (o.loot && !save.taken[key]) { save.taken[key] = 1; save.inv[o.loot] = (save.inv[o.loot] || 0) + 1; toast({ shell: 'A shell! ', rope: 'The fisher\'s net rope!', stone: 'A good round stone.' }[o.loot] + (o.loot === 'shell' ? `(${save.inv.shell} of ${SHELLS})` : '')); }
-  else if (o.kind === 'tree' && o.label === 'Fruit tree' && save.picked[key] !== save.day) { save.picked[key] = save.day; save.inv.fruit += 1; toast('A fruit falls. You catch it.'); }
+  if (o.loot && !save.taken[key]) { save.taken[key] = 1; save.inv[o.loot] = (save.inv[o.loot] || 0) + 1; sound.pickup(o.loot); toast({ shell: 'A shell! ', rope: 'The fisher\'s net rope!', stone: 'A good round stone.' }[o.loot] + (o.loot === 'shell' ? `(${save.inv.shell} of ${SHELLS})` : '')); }
+  else if (o.kind === 'tree' && o.label === 'Fruit tree' && save.picked[key] !== save.day) { save.picked[key] = save.day; save.inv.fruit += 1; sound.pickup('fruit'); toast('A fruit falls. You catch it.'); }
   else if (o.kind === 'thornbush' && save.island === 'orchard' && !save.flags.gardenerOk) { const left = thornsLeft(); toast(left ? `Thornbush cleared. ${left} to go.` : 'The last thornbush! Tell the gardener.'); }
   else if (o.id.startsWith('sprout')) toast('You pull the thorn sprout up, roots and all.');
   store(); updateHud();
 }
 function feedGoat() {
   const g = save.goat;
+  sound.goat();
   if (!save.inv.fruit) return toast(g.trust >= 5 ? 'The goat nudges you. It wants fruit, but it lets you ride anyway.' : 'The goat sniffs your hands. Nothing to eat. (Fruit grows on Orchard Isle.)');
   save.inv.fruit--; g.trust = Math.min(5, g.trust + 1); store(); updateHud(); goat.graze = 1.2;
   toast(['', 'The goat eats the fruit and looks at you.', 'The goat lets you scratch its ears.', 'The goat follows you now.', 'The goat follows you everywhere.', 'The goat kneels: you can ride it now.'][g.trust]);
@@ -434,7 +437,7 @@ function stepDay(dt) {
   save.time += dt / DAY; if (save.time >= 1) { save.time -= 1; dawn(); }
 }
 async function dawn() {
-  save.day += 1;
+  save.day += 1; sound.dawn();
   if (save.bloom.watered < save.day - 1) save.bloom.health = Math.max(0, save.bloom.health - 1);
   if (save.sprouts.length < 7) save.sprouts.push(...sproutSpots(save.day, 2).map(id => [id, save.day]));
   let here = save.island === 'home';
@@ -456,7 +459,7 @@ const NOTE = { home: () => 'Your cottage, your flower, your goat', orchard: () =
 function closeMap() { $('map').hidden = true; }
 const mapOpen = () => !$('map').hidden;
 async function sail(id) {
-  if (building || id === save.island) return; closeMap(); save.riding = false;
+  if (building || id === save.island) return; closeMap(); save.riding = false; sound.sail();
   $('loading').classList.remove('done'); $('loadTitle').textContent = 'Sailing…'; setProgress(0, ISLANDS[id].name);
   save.island = id; store(); placeFar();
   await loadIsland(id);
@@ -468,7 +471,7 @@ async function sail(id) {
 /* ---------------- talking and notes ---------------- */
 let lines = [], speaker = '';
 function dialog(who, said) { lines = [...said]; speaker = who; nextLine(); }
-function nextLine() { if (!lines.length) { $('talk').hidden = true; updateHud(); return; } $('talkName').textContent = speaker; $('talkName').hidden = !speaker; $('talkText').textContent = lines.shift(); $('talk').hidden = false; }
+function nextLine() { if (!lines.length) { $('talk').hidden = true; updateHud(); return; } sound.voice(speaker); $('talkName').textContent = speaker; $('talkName').hidden = !speaker; $('talkText').textContent = lines.shift(); $('talk').hidden = false; }
 const talking = () => !$('talk').hidden;
 let toastTimer = 0; function toast(text) { const t = $('toast'); t.textContent = text; t.hidden = false; toastTimer = 3.2; }
 const floats = []; function floatText(text, at) { const el = document.createElement('div'); el.className = 'float'; el.textContent = text; document.body.append(el); floats.push({ el, at: new THREE.Vector3(at[0], at[1] + 0.6, at[2]), t: 0 }); }
@@ -543,6 +546,12 @@ function paintButtons() {
 $('bPixel').addEventListener('click', () => { look.pixel = !look.pixel; paintButtons(); });
 $('bPalette').addEventListener('click', () => setPalette(PALETTE_NAMES[(PALETTE_NAMES.indexOf(look.palette) + 1) % PALETTE_NAMES.length]));
 $('bShapes').addEventListener('click', () => showShapes(!look.xray));
+// Sound starts on the first press (browsers ask for that). The Sound button is the arcade's one sound switch.
+const startSound = () => { sound.start(); paintSound(); };
+for (const k of ['pointerdown', 'keydown']) addEventListener(k, startSound, { capture: true, passive: true });
+function paintSound() { $('bSound').setAttribute('aria-pressed', String(sound.on())); }
+$('bSound').addEventListener('click', () => { sound.start(); sound.toggle(); paintSound(); });
+paintSound();
 $('bLook').addEventListener('click', () => { const p = $('lookPanel'); p.hidden = !p.hidden; $('bLook').setAttribute('aria-expanded', String(!p.hidden)); });
 $('bAct').addEventListener('click', () => { if (talking()) nextLine(); else if (near) act(near.id); });
 $('bMap').addEventListener('click', () => (mapOpen() ? closeMap() : openMap()));
@@ -572,6 +581,7 @@ function tick(now) {
   const dt = Math.min(0.05, (now - last) / 1000); last = now; clock += dt;
   if (island && !window.GameSwitch?.isOpen && !document.hidden) {
     stepBreaking(dt); movePlayer(dt); moveGoat(dt); stepDay(dt); daylight(); stepNotes(dt); updateAct();
+    sound.update(dt, { night, moving: player.moving, island: save.island, quiet: building });
     if (seaPart && !reduced) seaPart.group.position.y = SEA + Math.sin(now / 900) * 0.025;
     const here = ISLANDS[save.island].at;
     for (const c of clouds) { if (!reduced) c.drift += dt * 0.12; const x = ((c.at[0] + c.drift + here[0] * 0.2 + 60) % 120) - 60; c.root.position.set(x, c.at[1], c.at[2]); }
@@ -605,7 +615,7 @@ window.__splatIsle = {
   state: () => ({ ready: !!island && !building && $('loading').classList.contains('done'), island: save.island, splats: splatCount, parts: allParts.size, objects: [...objects.keys()], far: [...far.keys()].filter(k => k !== save.island).length,
     pixel: look.pixel, palette: look.palette, goop: look.goop, xray: look.xray, riding: !!save.riding, talking: talking(), line: talking() ? $('talkText').textContent : '', map: mapOpen(), ended: !$('end').hidden,
     broken: [...objects.values()].filter(o => o.state !== 'whole').map(o => o.id + ':' + o.state), player: { x: +player.x.toFixed(2), z: +player.z.toFixed(2), walking: !!player.goal || player.moving },
-    inv: { ...save.inv }, flags: { ...save.flags }, day: save.day, time: +save.time.toFixed(3), night: +night.toFixed(2), goal: goal(), goat: { x: +goat.x.toFixed(2), z: +goat.z.toFixed(2), trust: save.goat.trust }, near: near?.id || null, bloom: { ...save.bloom }, sprouts: save.sprouts.length }),
+    inv: { ...save.inv }, flags: { ...save.flags }, day: save.day, time: +save.time.toFixed(3), night: +night.toFixed(2), goal: goal(), goat: { x: +goat.x.toFixed(2), z: +goat.z.toFixed(2), trust: save.goat.trust }, near: near?.id || null, bloom: { ...save.bloom }, sprouts: save.sprouts.length, sound: sound.state() }),
   screen: id => { const o = id === 'goat' ? goatThing() : objects.get(id); if (!o) return null; const v = new THREE.Vector3(...o.center).project(camera); return v.z > 1 ? null : { x: (v.x + 1) / 2 * innerWidth, y: (1 - v.y) / 2 * innerHeight }; },
   pick: (x, y) => pickAt(x, y),
   // stand next to a thing, as if you had walked there

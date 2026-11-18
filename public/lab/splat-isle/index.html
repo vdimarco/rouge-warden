@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<script src="/arcade/quiet.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Splat Isle · Cottage Arcade Lab</title>
 <meta name="description" content="Five tiny islands written as shapes, painted with Gaussian splats like brush strokes, and shown as pixel art. Relight the lighthouse: help the islanders, break things, tend your flower and your goat, and sail.">
@@ -28,6 +29,7 @@
   .controls > *, .panel > * { pointer-events: auto; }
   .controls button, .panel button, .goop, .isles button, .close { min-height: 44px; min-width: 44px; box-sizing: border-box; border-radius: 12px; border: 1px solid #fbe9c440; background: #1b1626e6; color: #fbe9c4; font: 600 14px/1 var(--body); padding: 0 13px; cursor: pointer; }
   .controls button[hidden] { display: none; }
+  #bSound[aria-pressed="false"] { text-decoration: line-through; opacity: 0.7; }
   #bAct { min-width: 150px; background: #73405f; border-color: #f6c58c; } #bAct:disabled { background: #1b1626e6; border-color: #fbe9c440; }
   .controls button[aria-pressed="true"], .panel button[aria-pressed="true"], #bLook[aria-expanded="true"] { background: #d26e5a; border-color: #f6c58c; color: #fff8ea; }
   .controls button:disabled, .panel button:disabled { opacity: 0.5; cursor: default; }
@@ -72,6 +74,7 @@
   <button type="button" id="bMap" title="M">Map</button>
   <button type="button" id="bRide" aria-pressed="false" title="G" hidden>Ride</button>
   <button type="button" id="bLook" aria-expanded="false" aria-controls="lookPanel">Look</button>
+  <button type="button" id="bSound" aria-pressed="true" title="Sound on or off">Sound</button>
 </div>
 <div class="panel" id="lookPanel" role="group" aria-label="How the islands look" hidden>
   <button type="button" id="bPixel" aria-pressed="true" title="P">Pixel</button>
