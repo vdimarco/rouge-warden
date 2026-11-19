@@ -67,7 +67,7 @@ export default {
     pits: [[1, 5, 19, 5], [-14, -70, 36, 9], [-18, -104, 50, 14]],
     flats: [
       { at: [0, 5], box: [10, 9], blend: 7, y: Y.yard }, // the yard
-      { at: [3, 26.6], box: [5.6, 2.6], blend: 3.5, y: Y.start }, // the gate's terrace on the rim: it drops away just past the gate
+      { at: [3, 26.8], box: [5.6, 2.4], blend: 2.6, y: Y.start }, // the gate's terrace on the rim: it drops away just past the gate
       { at: GRAVES, r: 4.2, blend: 3, y: Y.graves }, // the burial shelf
       { at: [-2, -20.6], r: 7, blend: 3, y: Y.top }, // the top
       { at: [0, -12.6], box: [10, 1.7], blend: 0.8, y: Y.t2 }, // the second tier
@@ -211,13 +211,13 @@ export default {
       pillar(gx - span, [1.1, 1.0, 1.15, 0.9], true);
       pillar(gx + span, [1.0, 0.65], false);
       // the lintel lies broken on the lip below the tall pillar, and a drum has rolled down the slope
-      S.box([gx - 1.9, h(gx - 1.9, gz - 2.0) + 0.25, gz - 2.0], [1.7, 0.42, 0.52], gateStone, { ax: yawAx(0.4), rd: 0.1, res: 0.13 });
+      S.box([gx - 2.4, h(gx - 2.4, gz - 4.2) + 0.25, gz - 4.2], [1.7, 0.42, 0.52], gateStone, { ax: yawAx(0.4), rd: 0.1, res: 0.13 });
       S.lathe([gx + 2.6, h(gx + 2.6, gz - 5.6) - 0.35, gz - 5.6], 1.2, 0.68, rough, { ax: [[0, 1, 0], [0.94, 0, 0.34], [0.34, 0, -0.94]], res: 0.13 });
       // the old road: big worn flagstones in staggered rows across the terrace and over the lip, some sunk or tilted, some gone
       {
         const flag = { r: st.slice(0, 4), g: warmStone, mod: (x, y, z) => grit(1.1)(x, y, z) - 0.1 };
         let row = 0;
-        for (let z = 30.2; z > 22.4; z -= 1.0 + B.rr(-0.06, 0.1), row++) {
+        for (let z = 30.2; z > 23.9; z -= 1.0 + B.rr(-0.06, 0.1), row++) {
           const px = 3.2 + (30 - z) * 0.08, wide = z < 26.4 && z > 24 ? 3.1 : 1.8 + B.rr(-0.2, 0.3);
           for (let x = px - wide + (row % 2) * 0.55; x < px + wide - 0.4;) {
             const w = B.rr(0.42, 0.66);
@@ -248,6 +248,8 @@ export default {
     }
 
     /* ---- the cell blocks: the faces of the two tiers, each a row of barred cells ---- */
+    // cell bars: darker than the cage iron, so they stand black against a lit cell
+    const cellBars = { r: [ramp('iron')[0], ramp('iron')[0], st[2]], g: bars.g };
     const cellBlock = ({ x0, x1, zf, zb, top, cells, arch = 2.2, half = 0.88, deep = 1.9, lights = [], res = 0.15 }) => {
       const yb = Math.min(h(x0, zf + 0.5), h(x1, zf + 0.5), h((x0 + x1) / 2, zf + 0.5)) - 1.2;
       const hx = (x1 - x0) / 2, hz = (zf - zb) / 2, hy = (top - yb) / 2;
@@ -264,7 +266,7 @@ export default {
       for (const c of cells) {
         const fy = h(c.x, zf + 0.6), sp = fy + arch - half, zb2 = zf - 0.18;
         // bars: four fat ones and a cross bar, or torn out and bent where the cell is open
-        const bx = [-0.6, -0.2, 0.2, 0.6];
+        const bx = [-0.6, -0.2, 0.2, 0.6], bars = cellBars;
         if (!c.torn) {
           for (const d of bx) S.tube([[c.x + d, fy - 0.2, zb2], [c.x + d, sp + Math.sqrt(half * half - d * d) + 0.05, zb2]], 0.05, 0.05, bars, { res: 0.07 });
           S.tube([[c.x - half, fy + 1.15, zb2], [c.x + half, fy + 1.15, zb2]], 0.055, 0.055, bars, { res: 0.08 });
@@ -278,8 +280,14 @@ export default {
         if (c.skull) S.ball([c.x - 0.3, fy + 0.12, zf - deep + 0.55], [0.16, 0.15, 0.17], bone, { res: 0.06 });
         // a lit cell: a small fire on its floor at the back, so its bars stand black against the glow
         if (c.lit) {
-          S.ball([c.x + 0.2, fy - 0.02, zf - deep + 0.62], [0.32, 0.12, 0.3], iron, { res: 0.07 });
-          ctx.fire([c.x + 0.2, fy + 0.12, zf - deep + 0.62], 0.55, { n: 2, r: 2.6, k: 1.0 });
+          const bz = zf - deep + 0.62;
+          S.ball([c.x + 0.2, fy - 0.02, bz], [0.32, 0.12, 0.3], iron, { res: 0.07 });
+          ctx.fire([c.x + 0.2, fy + 0.12, bz], 0.55, { n: 2, r: 2.6, k: 1.0 });
+          // the glow on the back wall and vault: soft warm light the bars cut across
+          ctx.glow(() => {
+            B.iso(c.x, fy + 1.0, zf - deep + 0.2, half * 0.8, B.P[fire[1]], 0.75, { em: true, nd: true });
+            B.iso(c.x + 0.15, fy + 0.5, zf - deep + 0.3, half * 0.55, B.P[fire[2]], 0.8, { em: true, nd: true });
+          });
         }
       }
       for (const lx of lights) sconce(lx, h(lx, zf + 0.6) + 1.9, zf, 0, 1);

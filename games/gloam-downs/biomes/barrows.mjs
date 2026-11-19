@@ -93,11 +93,11 @@ export default {
       [-3, -20, 18, 2.4], // the crown hill under its bailey
       [-52, -30, 22, 8], [52, -28, 22, 9], // far downs either side
       [-46, 30, 20, 6], [44, 34, 20, 6],
-      [0, -78, 50, -18] // the land falls away north, so the keep, the crown and the moon stand against the sky
+      [0, -122, 96, -32] // the land falls away north into a deep vale, so the keep, the crown and the moon stand against the sky
     ],
     fbm: { amp: 0.45, freq: 1 / 11, oct: 3 },
     warp: { amp: 2.2, freq: 1 / 22 },
-    far: { amp: 8, start: 38, end: 64 },
+    far: { amp: 8, start: 40, end: 66, cz: -24 }, // taller downs far out, but not behind the crown hill
     pits: [[-1, 6, 10, 0.8]], // the hollow
     flats: [
       { at: START, r: 2.6, blend: 4.5, y: Y.start }, // the top of the start barrow
@@ -160,9 +160,12 @@ export default {
     // a standing stone: a fat rounded slab sunk into the ground, leaning `tilt` toward its own +z (yaw turns it). Returns its top.
     const menhir = (x, z, { hgt = 2.6, w = 0.5, d = 0.34, yaw = 0, tilt = 0, roll = 0, mat = slab, sink = 0.7, res = 0.13, y } = {}) => {
       const gy = y ?? lowest(x, z, Math.max(w, d)), ax = tipAx(yaw, tilt, roll), up = ax[1], hh = (hgt + sink) / 2;
-      const c = [x + up[0] * (hh - sink), gy - sink * up[1] + up[1] * hh, z + up[2] * (hh - sink)];
-      S.box(c, [w, hh, d], mat, { ax, rd: Math.min(w, d) * 0.55, res });
-      return [c[0] + up[0] * hh, c[1] + up[1] * hh, c[2] + up[2] * hh];
+      // a fat slab below and a rounded crown above, like a worn tooth
+      const at = k => [x + up[0] * (k - sink), gy - sink + up[1] * k, z + up[2] * (k - sink)];
+      const body = (hgt + sink) * 0.72, cap = (hgt + sink) - body;
+      S.box(at(body / 2), [w, body / 2, d], mat, { ax, rd: Math.min(w, d) * 0.5, res });
+      S.ball(at(body), [w * 0.97, cap * 1.05, d * 0.97], mat, { ax, res });
+      return at(hgt + sink);
     };
     // a fallen stone lying on the ground, its long way along yaw
     const fallen = (x, z, { len = 2.6, w = 0.5, d = 0.34, yaw = 0, roll = 0.2, mat = slab, res = 0.13 } = {}) => {
@@ -322,19 +325,9 @@ export default {
       deadTree(ctx, x, z, { bark: wood, h: hh, seed: s });
     rocks(ctx, [[4.6, 9, 0.6], [-4.4, 0, 0.7], [5, -5, 0.8], [-13, 4, 0.9], [16, -2, 1.0], [-18, 8, 0.8]], { mat: rough, seed: 9 });
 
-    /* ---- the crown hill: a short stair up its south slope to the gate, a fire either side of its foot ---- */
-    {
-      const a = [0.3, -6.6], b = [0, SOUTH + 1.4], ya = h(a[0], a[1]), yb = Y.bailey;
-      const dx = b[0] - a[0], dz = b[1] - a[1], len = Math.hypot(dx, dz), yaw = Math.atan2(dx, dz);
-      const n = Math.max(2, Math.ceil((yb - ya) / 0.36)), half = len / n / 2 + 0.04;
-      for (let i = 0; i < n; i++) {
-        const t = (i + 0.5) / n, x = a[0] + dx * t, z = a[1] + dz * t, top = ya + (yb - ya) * ((i + 1) / n);
-        const low = Math.min(h(x, z), top) - 0.5;
-        S.box([x, (top + low) / 2, z], [1.3, (top - low) / 2, half], rough, { ax: yawAx(yaw), rd: 0.06, res: 0.13 });
-      }
-      bowl(-2.4, -6.2, { s: 0.85 });
-      bowl(2.6, -6.4, { s: 0.85 });
-    }
+    /* ---- the crown hill: a fire either side of the way up to the gate ---- */
+    bowl(-2.4, -6.6, { s: 0.85 });
+    bowl(2.6, -6.8, { s: 0.85 });
 
     /* ---- the curtain wall: the south run with the gate, the west run behind the keep, a stub on the north. It is low and broken in
        front of the keep, so the keep stands clear of it ---- */
@@ -366,11 +359,6 @@ export default {
           if (s > 0 && i === 4) continue;
           S.box([tx + Math.cos(a) * 1.1, gy + tt + 0.3, tz + Math.sin(a) * 1.1], [0.3, 0.32, 0.3], rough, { ax: yawAx(-a), rd: 0.05, res: 0.11 });
         }
-        // a sconce on each tower's face
-        const ox = tx - s * 0.2, oz = tz + 1.55;
-        S.tube([[tx - s * 0.2, gy + 1.7, tz + 1.2], [ox, gy + 1.95, oz]], 0.07, 0.05, iron, { res: 0.06 });
-        S.ball([ox, gy + 2.0, oz], [0.2, 0.12, 0.2], iron, { res: 0.06 });
-        ctx.fire([ox, gy + 2.08, oz], 0.7, { k: 0.7, r: 3.6 });
       }
       S.box([GATE[0], Y.bailey + 2.7 + 0.4, GATE[1]], [1.6, 0.42, 0.75], rough, { rd: 0.08, res: 0.12 });
       // rags hanging from the lintel
@@ -534,8 +522,9 @@ export default {
 
       // the moon: big and low between the keep and the crown, the keep's turret just across its left edge
       const dir = (a, e) => [Math.sin(a) * Math.cos(e), Math.sin(e), -Math.cos(a) * Math.cos(e)];
+      // (its middle sits in the gap between the keep's turret and the dome's shoulder, as the start eye sees them)
       const toKeep = Math.atan2(KEEP[0] - EYE[0], -(KEEP[1] - EYE[2])), dKeep = Math.hypot(KEEP[0] - EYE[0], KEEP[1] - EYE[2]);
-      const mr = 3.0 * Math.PI / 180, az = toKeep + (KW + 1.0) / dKeep + mr * 0.75, el = -0.066, D = 175, rm = D * Math.tan(mr);
+      const mr = 3.0 * Math.PI / 180, az = toKeep + (KW + 1.0) / dKeep + mr * 1.15, el = -0.078, D = 175, rm = D * Math.tan(mr);
       const u = dir(az, el), M = [EYE[0] + u[0] * D, EYE[1] + u[1] * D, EYE[2] + u[2] * D];
       // the dome: near-black overhead, violet low down, fog colour under the horizon
       B.sky(d => (d[1] < -0.07 ? fg[0] : d[1] < 0.03 ? sk[1] : d[1] < 0.16 ? sk[0] : dk), 230);
