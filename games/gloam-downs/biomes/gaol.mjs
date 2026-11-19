@@ -43,8 +43,9 @@ export default {
     ['rust', [0x1f120d, 0x4a2a1a]],
     ['moon', [0x8e9ab4, 0xdfe3d2]]
   ],
-  // the key light is cold moonlight from the west, a little toward the start, so the cell faces read against their black mouths
-  // (the moon you see hangs low in the north: the light is set for form, not to match it)
+  // the key light is cold moonlight from the south-west, over your left shoulder at the start, so the faces you look at (the gate's
+  // drums, the cell fronts) catch it and read against their black mouths. The moon you see rises in the north behind the keep: the
+  // light is set for form, not to match it.
   light: { sun: [-0.5, 0.6, 0.62], amb: 0.11, sky: 0.15, sunK: 0.46, shK: 7 },
   fog: { color: 'fog', far: 72, start: 0.5, max: 0.88 },
   dither: 0.5,
@@ -213,12 +214,12 @@ export default {
       };
       pillar(gx - span, [1.1, 1.0, 1.15, 0.9], true);
       pillar(gx + span, [1.0, 0.65], false);
-      // the lintel lies broken on the lip below the tall pillar, and a drum has rolled down the slope
+      // the lintel lies broken down the slope below the gate, and a drum has rolled after it
       S.box([gx - 2.4, h(gx - 2.4, gz - 4.2) + 0.25, gz - 4.2], [1.7, 0.42, 0.52], gateStone, { ax: yawAx(0.4), rd: 0.1, res: 0.13 });
       S.lathe([gx + 2.6, h(gx + 2.6, gz - 5.6) - 0.35, gz - 5.6], 1.2, 0.68, rough, { ax: [[0, 1, 0], [0.94, 0, 0.34], [0.34, 0, -0.94]], res: 0.13 });
-      // the old road: big worn flagstones in staggered rows across the terrace and over the lip, some sunk or tilted, some gone
+      // the old road: big worn flagstones in staggered rows across the terrace to the lip, some sunk or tilted, some gone
       {
-        const flag = { r: st.slice(0, 4), g: warmStone, mod: (x, y, z) => grit(1.1)(x, y, z) - 0.1 };
+        const fg = grit(1.1), flag = { r: st.slice(0, 4), g: warmStone, mod: (x, y, z) => fg(x, y, z) - 0.1 };
         let row = 0;
         for (let z = 30.2; z > 23.9; z -= 1.0 + B.rr(-0.06, 0.1), row++) {
           const px = 3.2 + (30 - z) * 0.08, wide = z < 26.4 && z > 24 ? 3.1 : 1.8 + B.rr(-0.2, 0.3);
