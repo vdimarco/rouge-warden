@@ -469,14 +469,14 @@ export default {
 
     /* ---- the bell graveyard on the south-west hill: small bells sunk in the grass at odd angles, one stood mouth-down ---- */
     {
-      const list = [[-15.5, 24.5, 0.75, [0.3, 0.5, -0.8]], [-12.6, 21.8, 0.6, [-0.7, 0.4, 0.4]], [-17.8, 21.2, 0.55, [0.9, 0.2, 0.3]], [-13.2, 27.6, 0.65, [-0.2, 0.6, 0.8]]];
+      const list = [[-16.2, 24.6, 1.05, [0.3, 0.45, -0.8]], [-12.2, 22.4, 0.85, [-0.75, 0.35, 0.45]], [-13.0, 27.8, 0.95, [-0.2, 0.55, 0.85]]];
       for (const [x, z, R, d] of list) {
         const up = norm(d), gy = h(x, z);
         bellAt([x - up[0] * R * 0.9, gy - up[1] * R * 0.9 + R * 0.25, z - up[2] * R * 0.9], up, R, R * 1.9, { mat: oldBell, hollow: false, res: 0.09 });
       }
       // the big one, stood on its mouth: low enough to jump onto
-      const bx = -15.0, bz = 18.6, by = h(bx, bz) - 0.15;
-      bellAt([bx, by, bz], [0, 1, 0], 0.95, 1.2, { mat: oldBell, hollow: false, res: 0.09 });
+      const bx = -15.6, bz = 19.4, by = h(bx, bz) - 0.25;
+      bellAt([bx, by, bz], [0, 1, 0], 1.3, 2.1, { mat: oldBell, hollow: false, res: 0.1 });
       post(-11.2, 19.6, { hgt: 1.2, s: 0.7 });
     }
 
@@ -498,9 +498,9 @@ export default {
 
     /* ---- the north-west: a cog lying flat like a millstone, half sunk, with a fire bowl on its hub; climb it for the wisp ---- */
     {
-      const mx = -13.5, mz = -20.5, my = h(mx, mz) + 0.25;
-      S.extrude(gearLoops({ R: 3.0, Ri: 0, n: 12, th: 0.5, tw: 0.5, spokes: 0 }).slice(0, 1), [mx, my, mz], 1.0, bronze, { ax: FLAT, res: 0.14 });
-      S.lathe([mx, my + 0.4, mz], 0.5, 0.75, bronze, { res: 0.09 });
+      const mx = -13.5, mz = -20.5, my = h(mx, mz) + 0.1;
+      S.extrude(gearLoops({ R: 3.0, Ri: 0, n: 12, th: 0.5, tw: 0.5, spokes: 0 }).slice(0, 1), [mx, my, mz], 1.0, walked, { ax: FLAT, res: 0.14 });
+      S.lathe([mx, my + 0.4, mz], 0.5, 0.75, walked, { res: 0.09 });
       bowl(mx + 1.6, mz - 0.9, { y: my + 0.5, s: 0.8 });
       ctx.wisp([mx - 0.6, my + 0.5 + 1.1, mz + 0.5]);
     }
