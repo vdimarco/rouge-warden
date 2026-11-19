@@ -551,7 +551,7 @@ export default {
       }
       // torn cloud in the sky
       for (let i = 0; i < 16; i++) {
-        const a = -1.3 + i * 0.17 + B.rr(-0.05, 0.05), e = 0.12 + B.rr(0, 0.16), r = 186;
+        const a = -1.3 + i * 0.17 + B.rr(-0.05, 0.05), e = 0.12 + B.rr(0, 0.16), r = 215; // far, so they draw faint
         const p = [Math.sin(a) * Math.cos(e) * r, Math.sin(e) * r, -Math.cos(a) * Math.cos(e) * r];
         B.axial(p[0], p[1], p[2], [Math.cos(a), 0, Math.sin(a)], B.rr(10, 18), B.rr(1.4, 2.4), B.P[sk[B.pick([0, 1])]], 0.8, { em: true, nd: true });
       }
