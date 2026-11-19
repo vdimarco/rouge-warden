@@ -301,19 +301,24 @@ export default {
     basket(6.0, 13.8, { y: DECK - 0.05, s: 0.8 });
 
     /* ---- the huts ---- */
-    const hut = ({ at: [x, z], r, to, win, long }, i) => {
-      const face = Math.atan2(to[0] - x, to[1] - z), ph = 2.3, lean = B.rr(-0.04, 0.04), tall = WALL;
-      // the porch: five fat planks across, on six stilts a little out of true, braced
-      for (let k = 0; k < 5; k++) {
-        const o = -ph + (k + 0.5) * (2 * ph / 5), [cx, cz] = turn(x, z, face, o, 0);
-        slab([cx, PORCH - 0.12 + B.rr(-0.03, 0.03), cz], [0.43, 0.12, ph + B.rr(-0.15, 0.1)], plank, { ax: yawAx(face + B.rr(-0.03, 0.03)), rd: 0.04, res: 0.14 });
+    // a stilted porch: fat planks across, on six stilts a little out of true, braced on two sides, with log steps up from the walk
+    // on the side it faces. It returns where its legs stand
+    const stilted = (x, z, face, ph) => {
+      const n = Math.round(ph * 2 / 0.92);
+      for (let k = 0; k < n; k++) {
+        const o = -ph + (k + 0.5) * (2 * ph / n), [cx, cz] = turn(x, z, face, o, 0);
+        slab([cx, PORCH - 0.12 + B.rr(-0.03, 0.03), cz], [ph / n - 0.03, 0.12, ph + B.rr(-0.15, 0.1)], plank, { ax: yawAx(face + B.rr(-0.03, 0.03)), rd: 0.04, res: 0.14 });
       }
       const legs = [[-1, -1], [1, -1], [-1, 1], [1, 1], [-1, 0], [1, 0]].map(([sx, sz]) => turn(x, z, face, sx * (ph - 0.25), sz * (ph - 0.25)));
       for (const [lx, lz] of legs) S.tube([[lx, BED - 0.4, lz], [lx + B.rr(-0.15, 0.15), PORCH - 0.2, lz + B.rr(-0.15, 0.15)]], 0.26, 0.21, wood, { res: 0.11 });
       for (const [p, q] of [[0, 4], [1, 5]]) S.tube([[legs[p][0], 0.1, legs[p][1]], [legs[q][0], PORCH - 0.35, legs[q][1]]], 0.09, 0.09, wood, { res: 0.09 });
-      // log steps from the walk up to the porch
       const [fx, fz] = turn(x, z, face, 0, ph + 0.2), [gx, gz] = turn(x, z, face, 0, ph + 2.0);
       stair([gx, gz], [fx, fz], { width: 1.7, rise: 0.32, ya: DECK, yb: PORCH });
+      return legs;
+    };
+    const hut = ({ at: [x, z], r, to, win, long }, i) => {
+      const face = Math.atan2(to[0] - x, to[1] - z), ph = 2.3, lean = B.rr(-0.04, 0.04), tall = WALL;
+      const legs = stilted(x, z, face, ph);
       let dr;
       if (long) {
         // a long hut: a box of boards along the porch, a ridge roof of thatch
