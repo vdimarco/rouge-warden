@@ -54,6 +54,7 @@
     { id: "ledger", name: "Warden's Ledger", sub: "Hire agents, pay through NEAR Intents", url: "/ledger/", art: "/arcade/ledger.webp", color: "#f3cf7a", labOnly: true },
     { id: "riftwalk", name: "Riftwalk", sub: "A neon alley where each storefront is a portal", url: "/lab/riftwalk/", art: "/arcade/riftwalk.webp", color: "#ffb45e", labOnly: true },
     { id: "splat-isle", name: "Splat Isle", sub: "Sail tiny splat islands and relight the lighthouse", url: "/lab/splat-isle/", art: "/arcade/splat-isle.webp", color: "#f09a68", labOnly: true },
+    { id: "gloam-downs", name: "Gloam Downs", sub: "Walk five dark places on rolling hills and light their beacons", url: "/lab/gloam-downs/", art: "/arcade/gloam-downs.webp", color: "#ff9a32", labOnly: true },
     { id: "last-light", name: "Last Light", sub: "An ASCII sailing adventure", url: "/last-light/", art: "/last-light/art/sunset.svg", color: "#ffcd62", labOnly: true },
   ];
   const home = location.pathname === "/" || location.pathname === "/index.html";

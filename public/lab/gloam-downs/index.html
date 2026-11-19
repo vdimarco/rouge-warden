@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#05060c">
+<title>Gloam Downs · Cottage Arcade Lab</title>
+<meta name="description" content="Five dark places on rolling hills, sculpted and baked into pixel-art Gaussian splats with Ink Studio. Walk them as a small lamplighter: find the wisps and light the beacon on each summit.">
+<link rel="icon" href="/favicon.ico">
+<link rel="stylesheet" href="/lab/kit/lab.css">
+<style>
+  :root { --night: #05060c; --bone: #e8e2d0; --ash: #9a9a9a; --ember: #ff9a32; --emberd: #d2551c; --wisp: #8cf0cc; --panel2: rgba(8, 8, 14, 0.88); --edge: rgba(232, 226, 208, 0.16); }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: var(--night); overscroll-behavior: none; }
+  .view { position: fixed; left: 0; top: 0; display: block; touch-action: none; cursor: grab; image-rendering: pixelated; background: var(--night); }
+  .view.drag { cursor: grabbing; }
+  .labbar { z-index: 30; }
+  .labbar > * { background: var(--panel2); border-color: var(--edge); }
+  /* where you are: top left, under the bar */
+  .hud { position: fixed; left: 10px; top: calc(var(--sat) + 48px); transform: none; display: grid; gap: 4px; justify-items: start; z-index: 6; pointer-events: none; max-width: calc(100vw - 140px); }
+  .hud p { margin: 0; padding: 5px 10px; border-radius: 8px; background: var(--panel2); color: var(--bone); font: 600 13px/1.25 var(--body); border: 1px solid var(--edge); }
+  .hud .where { font: 700 13px/1.1 var(--title); letter-spacing: 0.12em; text-transform: uppercase; color: #f2d7a6; }
+  .hud .count b { color: var(--wisp); }
+  .hud .count i { font-style: normal; color: var(--ember); }
+  .hud .hint { color: var(--ash); font-weight: 500; }
+  /* Map and Look, top right; Jump bottom right on touch screens */
+  .tools { position: fixed; right: 10px; top: calc(var(--sat) + 48px); display: flex; gap: 6px; z-index: 8; }
+  .tools button, .jump, .panel button, .places button { min-width: 44px; min-height: 44px; box-sizing: border-box; border-radius: 10px; border: 1px solid var(--edge); background: var(--panel2); color: var(--bone); font: 700 14px/1 var(--body); padding: 0 12px; cursor: pointer; }
+  .tools button:focus-visible, .panel button:focus-visible, .places button:focus-visible { outline: 2px solid var(--ember); outline-offset: 2px; }
+  .jump { position: fixed; right: calc(14px + env(safe-area-inset-right, 0px)); bottom: calc(var(--sab) + 18px); width: 80px; height: 80px; border-radius: 50%; z-index: 8; font: 800 15px/1 var(--body); letter-spacing: 0.06em; background: rgba(60, 20, 12, 0.72); border: 2px solid var(--emberd); color: #ffd9a8; touch-action: none; }
+  .jump.on { background: rgba(140, 50, 20, 0.85); }
+  .jump[hidden] { display: none; }
+  .stick { position: fixed; width: 112px; height: 112px; margin: -56px 0 0 -56px; border-radius: 50%; border: 2px solid rgba(232, 226, 208, 0.28); background: rgba(8, 8, 14, 0.35); pointer-events: none; z-index: 7; }
+  .stick i { position: absolute; left: 50%; top: 50%; width: 48px; height: 48px; margin: -24px 0 0 -24px; border-radius: 50%; background: rgba(232, 226, 208, 0.35); }
+  .stick[hidden] { display: none; }
+  /* the arrival card: the place's name, large, in the middle, then gone */
+  .arrive { position: fixed; left: 50%; top: 34%; transform: translate(-50%, -50%); z-index: 9; text-align: center; pointer-events: none; width: min(92vw, 640px); transition: opacity 0.6s; }
+  .arrive.off { opacity: 0; }
+  .arrive small { display: block; font: 700 12px/1 var(--body); letter-spacing: 0.32em; color: var(--ember); text-transform: uppercase; margin-bottom: 10px; }
+  .arrive h1 { margin: 0; font: 700 clamp(30px, 8vw, 58px)/1.05 var(--title); color: var(--bone); letter-spacing: 0.04em; text-shadow: 0 3px 0 #000, 0 0 24px rgba(0, 0, 0, 0.9); }
+  .arrive p { margin: 10px 0 0; font: 500 clamp(14px, 3.6vw, 18px)/1.35 var(--body); color: #c9c2ae; text-shadow: 0 2px 0 #000; }
+  .toast { top: calc(var(--sat) + 104px); background: var(--panel2); border-color: var(--edge); color: var(--bone); font-size: 16px; }
+  .toast b { color: var(--wisp); }
+  /* dialogs: map, help, beacon, end */
+  .panel { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; background: rgba(2, 2, 6, 0.6); }
+  .panel[hidden] { display: none; }
+  .panel .box { width: min(440px, calc(100vw - 24px)); max-height: calc(100dvh - 24px); overflow: auto; box-sizing: border-box; padding: 18px; border-radius: 14px; background: rgba(10, 9, 14, 0.97); border: 1px solid #5a3424; box-shadow: 0 16px 50px #000; color: var(--bone); }
+  .panel h2 { margin: 0 0 4px; font: 700 26px/1.1 var(--title); color: #f2d7a6; }
+  .panel p { margin: 6px 0 12px; color: #c9c2ae; font: 500 15px/1.4 var(--body); }
+  .panel ul { margin: 0 0 14px; padding-left: 20px; color: #c9c2ae; font: 500 14px/1.45 var(--body); }
+  .panel kbd { font: 700 12px/1 ui-monospace, monospace; padding: 2px 5px; border-radius: 4px; border: 1px solid var(--edge); color: var(--bone); }
+  .panel .row { display: flex; gap: 8px; }
+  .panel .row button { flex: 1; }
+  .panel button.go { background: #5a2214; border-color: var(--emberd); color: #ffe2bd; }
+  .places { display: grid; gap: 6px; margin: 10px 0 12px; }
+  .places button { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 2px 10px; padding: 8px 12px; text-align: left; width: 100%; }
+  .places button b { font: 700 15px/1.2 var(--title); color: #f2d7a6; }
+  .places button small { grid-column: 2; font: 500 12px/1.3 var(--body); color: var(--ash); }
+  .places button em { grid-row: span 2; font: 700 12px/1 var(--body); font-style: normal; color: var(--wisp); white-space: nowrap; }
+  .places button .n { grid-row: span 2; font: 700 18px/1 var(--title); color: var(--ember); width: 1.4em; text-align: center; }
+  .places button[aria-current="true"] { border-color: var(--emberd); }
+  .places button:disabled { opacity: 0.45; cursor: default; }
+  .places button:disabled b { color: var(--ash); }
+  dl.score { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; margin: 6px 0 16px; }
+  dl.score dt { color: var(--ash); } dl.score dd { margin: 0; text-align: right; font-weight: 700; }
+  /* loading */
+  .loading { position: fixed; inset: 0; z-index: 40; display: grid; place-items: center; background: var(--night); transition: opacity 0.5s, visibility 0.5s; }
+  .loading.done { opacity: 0; visibility: hidden; pointer-events: none; }
+  .loading .box { width: min(400px, calc(100vw - 40px)); text-align: center; color: var(--bone); }
+  .loading h1 { margin: 0 0 4px; font: 700 clamp(36px, 11vw, 60px)/1 var(--title); letter-spacing: 0.08em; color: #f2d7a6; text-shadow: 0 3px 0 #3a0f0c; }
+  .loading p { margin: 10px 0; font: 500 14px/1.4 var(--body); color: #c9c2ae; }
+  .loading button { margin-top: 8px; min-height: 44px; padding: 0 18px; border-radius: 10px; border: 1px solid var(--emberd); background: #5a2214; color: #ffe2bd; font: 700 15px/1 var(--body); cursor: pointer; }
+  .loading button[hidden] { display: none; }
+  .bar { height: 8px; background: #140c0c; border: 1px solid #5a3424; }
+  .bar i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--emberd), var(--ember)); transition: width 0.15s; }
+  .veil { position: fixed; inset: 0; z-index: 25; background: #000; opacity: 0; pointer-events: none; transition: opacity 0.45s; }
+  .veil.on { opacity: 1; }
+  @media (max-width: 520px) { .hud .hint { display: none; } .hud p { font-size: 12px; } .tools button { padding: 0 10px; font-size: 13px; } }
+  @media (max-height: 420px) { .arrive { top: 40%; } .arrive p { display: none; } }
+  @media (prefers-reduced-motion: reduce) { .arrive, .veil, .loading, .bar i { transition: none; } }
+</style>
+</head>
+<body class="toy">
+<canvas class="view" id="view" aria-label="Gloam Downs: a dark place on rolling hills, drawn as pixel art"></canvas>
+<nav class="labbar"><a class="back" href="/lab/">◀ Lab</a><button type="button" id="menu" data-switch>Games</button></nav>
+
+<div class="hud" id="hud" hidden>
+  <p class="where" id="where">The Sunken Gaol</p>
+  <p class="count" id="count"><b>◆ 0/5</b> wisps · <i>beacon dark</i></p>
+  <p class="hint" id="hint">Climb to the keep. Light the beacon.</p>
+</div>
+<div class="tools" id="tools" hidden>
+  <button type="button" id="bLook" title="Turn the view behind the lamplighter (R)">Look</button>
+  <button type="button" id="bMap" title="The five places (M)">Map</button>
+</div>
+<button type="button" class="jump" id="bJump" hidden>JUMP</button>
+<div class="stick" id="stick" hidden><i></i></div>
+
+<div class="arrive off" id="arrive" aria-live="polite"><small id="arriveN">I · The first place</small><h1 id="arriveName">The Sunken Gaol</h1><p id="arriveSub"></p></div>
+<p class="toast" id="toast" role="status"></p>
+
+<div class="panel" id="help" hidden><div class="box" role="dialog" aria-labelledby="helpT">
+  <h2 id="helpT">Gloam Downs</h2>
+  <p>Five dark places on rolling hills. You are the lamplighter. In each place, find the five wisps and light the beacon on the summit. The beacon opens the way to the next place.</p>
+  <ul id="helpKeys">
+    <li><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> or the arrows move. <kbd>Shift</kbd> walks.</li>
+    <li><kbd>Space</kbd> jumps. Hold it to jump higher.</li>
+    <li>Drag the view, or <kbd>Q</kbd> <kbd>E</kbd>, to look round. <kbd>R</kbd> looks ahead.</li>
+    <li><kbd>M</kbd> opens the map. A gamepad works too.</li>
+  </ul>
+  <ul id="helpTouch" hidden>
+    <li>Drag on the left half of the screen to move.</li>
+    <li>Drag on the right half to look round.</li>
+    <li>Press JUMP to jump. Hold it to jump higher.</li>
+  </ul>
+  <div class="row"><button type="button" class="go" id="bStart">Walk</button></div>
+</div></div>
+
+<div class="panel" id="map" hidden><div class="box" role="dialog" aria-labelledby="mapT">
+  <h2 id="mapT">The downs</h2>
+  <p id="mapLine">Light a beacon to open the way to the next place.</p>
+  <div class="places" id="places"></div>
+  <div class="row"><button type="button" id="bMapClose">Close</button></div>
+</div></div>
+
+<div class="panel" id="end" hidden><div class="box" role="dialog" aria-labelledby="endT">
+  <h2 id="endT">The downs are lit</h2>
+  <p>All five beacons burn. The lamplighter can rest.</p>
+  <dl class="score"><dt>Time</dt><dd id="endTime">0:00</dd><dt>Wisps</dt><dd id="endWisps">0/25</dd><dt>Best time</dt><dd id="endBest">–</dd></dl>
+  <div class="row"><button type="button" id="bEndStay">Stay</button><button type="button" class="go" id="bAgain">Walk again</button></div>
+</div></div>
+
+<div class="veil" id="veil"></div>
+<div class="loading" id="loading"><div class="box">
+  <h1>GLOAM DOWNS</h1>
+  <p id="loadLine">Loading the place…</p>
+  <div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="bar"><i id="barFill"></i></div>
+  <button type="button" id="bRetry" hidden>Try again</button>
+</div></div>
+
+<script src="./ink/pixel-look.js"></script>
+<script src="./ink/splat-codec.js"></script>
+<script src="/arcade/switch.js"></script>
+<script type="module" src="./main.js"></script>
+<script src="/arcade/analytics.js" data-game="gloam-downs"></script>
+</body>
+</html>
